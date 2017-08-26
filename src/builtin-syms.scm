@@ -203,6 +203,11 @@
     (strict-r7                 SCM_SYM_STRICT_R7)
     (debug-funcall             SCM_SYM_DEBUG_FUNCALL)
     (reader-lexical-mode       SCM_SYM_READER_LEXICAL_MODE)
+    ;; compiler addition (move this up on 1.0 release)
+    (unused-args               SCM_SYM_UNUSED_ARGS)
+    (next-method               SCM_SYM_NEXT_METHOD)
+    ;; macro addition (move this up on 1.0 release)
+    (_                         SCM_SYM_UNDERBAR)
     ))
 
 

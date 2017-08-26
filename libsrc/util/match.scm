@@ -16,6 +16,7 @@
           match-let1
           match-define
           match:$-ref
+          |setter of match:$-ref|
           match:every
           match:error))
 (select-module util.match)
@@ -170,14 +171,9 @@
 (define match-define.  (%match-id 'match-define))
 (define match:length>=?. (%match-id 'match:length>=?))
 
-;; In the original code, length>= is introduced as a local binding
-;; so that optimizer can inline the call.   In Gauche we can use
-;; define-inline, so we don't need to bother introducing the local
-;; bindings.
-(define-inline (match:length>=? n) (lambda (l) (>= (length l) n)))
+(define-inline (match:length>=? n) (cut length>=? <> n))
 
 ;;; [SK] End of black magic
-
 
 (define match:error
   (lambda (val . args)
@@ -208,16 +204,15 @@
           procedure?
           vector?)))
 
-(define match:$-ref
-  (getter-with-setter
-   (lambda (class fnum obj)
-     (let ((slot (list-ref (class-slots class) fnum #f)))
-       (and slot
-            (slot-ref obj (slot-definition-name slot)))))
-   (lambda (class fnum obj val)
-     (let ((slot (list-ref (class-slots class) fnum #f)))
-       (and slot
-            (slot-set! obj (slot-definition-name slot) val))))))
+;; These two methods are used for positional match of objects using $.
+;; The default is to take the order of class-slots, which is suffice for
+;; most cases.  A metaclass can override these if desired.
+(define-method match:$-ref ((class <class>) fnum obj)
+  (and-let1 slot (list-ref (class-slots class) fnum #f)
+    (slot-ref obj (slot-definition-name slot))))
+(define-method (setter match:$-ref) ((class <class>) fnum obj val)
+  (and-let1 slot (list-ref (class-slots class) fnum #f)
+    (slot-set! obj (slot-definition-name slot) val)))
 
 (define (genmatch x clauses match-expr)
   (let* ((eb-errf (error-maker match-expr))
@@ -442,9 +437,10 @@
         (let* ((pl (vector->list p))
                (rpl (reverse pl)))
           (list->vector
-           (if (dot-dot-k? (car rpl))
+           (if (and (not (null? rpl))
+                    (dot-dot-k? (car rpl)))
              (reverse (cons (car rpl) (map quasi (cdr rpl))))
-             (map ordinary pl)))))
+             (map quasi pl)))))
        (else
         (match:syntax-err pattern "syntax error in pattern")))))
   (define (ordlist p)

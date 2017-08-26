@@ -1,7 +1,7 @@
 /*
  * read.c - reader
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -56,6 +56,9 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
                         int temp_case_fold, int include_hash_sign);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
+static ScmObj read_immediate_symbol(ScmPort *port, ScmChar initial,
+                                    int interned, const char *preceding,
+                                    ScmReadContext *ctx);
 static ScmObj read_number(ScmPort *port, ScmChar initial,
                           int radix, /* #<radix>r case */
                           ScmReadContext *ctx);
@@ -585,13 +588,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case ':': {
                 reject_in_r7(port, ctx, "#:");
                 /* #:name - uninterned symbol */
-                int c2 = Scm_GetcUnsafe(port);
-                if (c2 == '|') {
-                    return read_escaped_symbol(port, c2, FALSE, ctx);
-                } else {
-                    ScmObj name = read_word(port, c2, ctx, FALSE, FALSE);
-                    return Scm_MakeSymbol(SCM_STRING(name), FALSE);
-                }
+                return read_immediate_symbol(port, Scm_GetcUnsafe(port),
+                                             FALSE, "#:", ctx);
             }
             case ';': {
                 /* #;expr - comment out sexpr */
@@ -1298,11 +1296,41 @@ static void check_valid_symbol(ScmString *s)
     }
 }
 
+/* Read a symbol starting with INITIAL (assuming unescaped), interned. */
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
     check_valid_symbol(s);
     return Scm_Intern(s);
+}
+
+/* This is called when a symbol (either bare or escaped) is expected
+   starting with INITIAL char; e.g. after #: or #!.  An error is thrown
+   if a symbol isn't immediately followed.  PRECEDING is used in the
+   error message. */
+static ScmObj read_immediate_symbol(ScmPort *port, ScmChar initial,
+                                    int interned, const char *preceding,
+                                    ScmReadContext *ctx)
+{
+    if (initial == '|') {
+        return read_escaped_symbol(port, initial, interned, ctx);
+    } else if (char_word_constituent(initial, FALSE)) {
+        ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
+        check_valid_symbol(s);
+        /* we have to exclude numbers.  a bit ugly - call for cleanup */
+        if (!(isdigit(initial) || initial == '+' || initial == '-')
+            || SCM_FALSEP(Scm_StringToNumber(s, 10, 0))) {
+            return Scm_MakeSymbol(s, interned);
+        }
+    }
+    /* If we come here, we have invalid syntax. */
+    if (initial == EOF) {
+        Scm_ReadError(port, "'%s' followed by nothing", preceding);
+    } else {
+        Scm_ReadError(port, "invalid %s syntax near '%s%C'", preceding,
+                      preceding, initial);
+    }
+    return SCM_UNDEFINED;   /* dummy */
 }
 
 static ScmObj read_number(ScmPort *port, ScmChar initial, int radix,
@@ -1440,7 +1468,8 @@ static ScmObj read_regexp(ScmPort *port)
 /* gauche extension :  #[charset] */
 static ScmObj read_charset(ScmPort *port)
 {
-    return Scm_CharSetRead(port, NULL, TRUE, FALSE);
+    ScmCharSet *cs = SCM_CHAR_SET(Scm_CharSetRead(port, NULL, TRUE, FALSE));
+    return Scm_CharSetFreezeX(cs); /* literal is immutable */
 }
 
 /*----------------------------------------------------------------
@@ -1620,8 +1649,7 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
         }
         /*NOTREACHED*/
     } else {
-        ScmObj id = read_symbol(port, c2, ctx);
-        SCM_ASSERT(SCM_SYMBOLP(id));
+        ScmObj id = read_immediate_symbol(port, c2, TRUE, "#!", ctx);
         (void)SCM_INTERNAL_MUTEX_LOCK(hashBangData.mutex);
         ScmObj e = Scm_HashTableRef(hashBangData.table, id, SCM_FALSE);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(hashBangData.mutex);

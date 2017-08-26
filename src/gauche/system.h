@@ -1,7 +1,7 @@
 /*
  * system.h - Gauche system interface
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -94,7 +94,7 @@ SCM_EXTERN ScmObj Scm_BaseName(ScmString *filename);
 
 /* struct stat */
 #ifdef GAUCHE_WINDOWS
-typedef struct _stat64 ScmStat;
+typedef struct __stat64 ScmStat;
 #else  /*!GAUCHE_WINDOWS*/
 typedef struct stat ScmStat;
 #endif /*!GAUCHE_WINDOWS*/
@@ -306,6 +306,8 @@ SCM_EXTERN ScmObj Scm_MakeWinProcess(HANDLE h);
 SCM_EXTERN int    Scm_WinProcessP(ScmObj p);
 SCM_EXTERN pid_t  Scm_WinProcessPID(ScmObj p);
 SCM_EXTERN HANDLE Scm_WinProcess(ScmObj p);
+
+SCM_EXTERN ScmObj Scm_WinGetPipeName(HANDLE h);
 #endif /* GAUCHE_WINDOWS */
 
 #endif /* GAUCHE_SYSTEM_H */

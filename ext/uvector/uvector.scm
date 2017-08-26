@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.uvector - uniform vectors
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -37,90 +37,174 @@
 ;; extended syntax such as #s8(1 2 3).
 ;; This module also defines methods for collection and sequence frameworks.
 
+;; NB: The following identifiers are defined in core now:
+;;   uvector? ${TAG}vector-ref  ${TAG}vector-set!  uvector-ref  uvector-set!
+;;   uvector-length    uvector-immutable?
+
 (define-module gauche.uvector
   (use gauche.collection)
   (use gauche.sequence)
   (use data.queue)
-  (export-all)
-  )
+  (export f16vector f16vector->list f16vector->vector
+          f16vector-add f16vector-add! f16vector-append
+          f16vector-clamp f16vector-clamp! f16vector-compare
+          f16vector-copy f16vector-copy! f16vector-div f16vector-div!
+          f16vector-dot f16vector-fill! f16vector-length
+          f16vector-mul f16vector-mul!
+          f16vector-multi-copy! f16vector-range-check
+          f16vector-ref f16vector-set! f16vector-sub f16vector-sub!
+          f16vector-swap-bytes f16vector-swap-bytes!
+          f16vector=? f16vector?
+
+          f32vector f32vector->list f32vector->vector
+          f32vector-add f32vector-add! f32vector-append
+          f32vector-clamp f32vector-clamp! f32vector-compare
+          f32vector-copy f32vector-copy! f32vector-div f32vector-div!
+          f32vector-dot f32vector-fill! f32vector-length
+          f32vector-mul f32vector-mul!
+          f32vector-multi-copy! f32vector-range-check
+          f32vector-ref f32vector-set! f32vector-sub f32vector-sub!
+          f32vector-swap-bytes f32vector-swap-bytes!
+          f32vector=? f32vector?
+
+          f64vector f64vector->list f64vector->vector f64vector-add
+          f64vector-add! f64vector-append f64vector-clamp f64vector-clamp!
+          f64vector-compare f64vector-copy f64vector-copy! f64vector-div
+          f64vector-div! f64vector-dot f64vector-fill! f64vector-length
+          f64vector-mul f64vector-mul! f64vector-multi-copy!
+          f64vector-range-check f64vector-ref f64vector-set! f64vector-sub
+          f64vector-sub! f64vector-swap-bytes f64vector-swap-bytes! f64vector=?
+          f64vector?
+
+          get-output-uvector
+
+          list->f16vector list->f32vector
+          list->f64vector list->s16vector list->s32vector list->s64vector
+          list->s8vector list->u16vector list->u32vector list->u64vector
+          list->u8vector
+
+          make-f16vector make-f32vector make-f64vector
+          make-s16vector make-s32vector make-s64vector make-s8vector
+          make-u16vector make-u32vector make-u64vector make-u8vector
+          make-uvector
+
+          open-output-uvector port->uvector read-block!
+          read-uvector read-uvector! referencer
+
+          s16vector s16vector->list
+          s16vector->vector s16vector-add s16vector-add! s16vector-and
+          s16vector-and! s16vector-append s16vector-clamp s16vector-clamp!
+          s16vector-compare s16vector-copy s16vector-copy! s16vector-dot
+          s16vector-fill! s16vector-ior s16vector-ior! s16vector-length
+          s16vector-mul s16vector-mul! s16vector-multi-copy!
+          s16vector-range-check s16vector-ref s16vector-set! s16vector-sub
+          s16vector-sub! s16vector-swap-bytes s16vector-swap-bytes!
+          s16vector-xor s16vector-xor! s16vector=? s16vector?
+
+          s32vector s32vector->list s32vector->string
+          s32vector->vector s32vector-add s32vector-add! s32vector-and
+          s32vector-and! s32vector-append s32vector-clamp s32vector-clamp!
+          s32vector-compare s32vector-copy s32vector-copy! s32vector-dot
+          s32vector-fill! s32vector-ior s32vector-ior! s32vector-length
+          s32vector-mul s32vector-mul! s32vector-multi-copy!
+          s32vector-range-check s32vector-ref s32vector-set! s32vector-sub
+          s32vector-sub! s32vector-swap-bytes s32vector-swap-bytes!
+          s32vector-xor s32vector-xor! s32vector=? s32vector?
+
+          s64vector s64vector->list
+          s64vector->vector s64vector-add s64vector-add! s64vector-and
+          s64vector-and! s64vector-append s64vector-clamp s64vector-clamp!
+          s64vector-compare s64vector-copy s64vector-copy! s64vector-dot
+          s64vector-fill! s64vector-ior s64vector-ior! s64vector-length
+          s64vector-mul s64vector-mul! s64vector-multi-copy!
+          s64vector-range-check s64vector-ref s64vector-set! s64vector-sub
+          s64vector-sub! s64vector-swap-bytes s64vector-swap-bytes!
+          s64vector-xor s64vector-xor! s64vector=? s64vector?
+
+          s8vector s8vector->list s8vector->string s8vector->vector
+          s8vector-add s8vector-add! s8vector-and s8vector-and! s8vector-append
+          s8vector-clamp s8vector-clamp! s8vector-compare s8vector-copy
+          s8vector-copy! s8vector-dot s8vector-fill! s8vector-ior s8vector-ior!
+          s8vector-length s8vector-mul s8vector-mul! s8vector-multi-copy!
+          s8vector-range-check s8vector-ref s8vector-set! s8vector-sub
+          s8vector-sub! s8vector-xor s8vector-xor! s8vector=? s8vector?
+
+          string->s32vector string->s32vector! string->s8vector
+          string->s8vector! string->u32vector string->u32vector!
+          string->u8vector string->u8vector!
+
+          u16vector u16vector->list
+          u16vector->vector u16vector-add u16vector-add! u16vector-and
+          u16vector-and! u16vector-append u16vector-clamp u16vector-clamp!
+          u16vector-compare u16vector-copy u16vector-copy! u16vector-dot
+          u16vector-fill! u16vector-ior u16vector-ior! u16vector-length
+          u16vector-mul u16vector-mul! u16vector-multi-copy!
+          u16vector-range-check u16vector-ref u16vector-set! u16vector-sub
+          u16vector-sub! u16vector-swap-bytes u16vector-swap-bytes!
+          u16vector-xor u16vector-xor! u16vector=? u16vector?
+
+          u32vector u32vector->list u32vector->string
+          u32vector->vector u32vector-add u32vector-add! u32vector-and
+          u32vector-and! u32vector-append u32vector-clamp u32vector-clamp!
+          u32vector-compare u32vector-copy u32vector-copy! u32vector-dot
+          u32vector-fill! u32vector-ior u32vector-ior! u32vector-length
+          u32vector-mul u32vector-mul! u32vector-multi-copy!
+          u32vector-range-check u32vector-ref u32vector-set! u32vector-sub
+          u32vector-sub! u32vector-swap-bytes u32vector-swap-bytes!
+          u32vector-xor u32vector-xor! u32vector=? u32vector?
+
+          u64vector u64vector->list u64vector->vector u64vector-add
+          u64vector-add! u64vector-and u64vector-and! u64vector-append
+          u64vector-clamp u64vector-clamp! u64vector-compare u64vector-copy
+          u64vector-copy! u64vector-dot u64vector-fill! u64vector-ior
+          u64vector-ior! u64vector-length u64vector-mul u64vector-mul!
+          u64vector-multi-copy! u64vector-range-check u64vector-ref
+          u64vector-set! u64vector-sub u64vector-sub! u64vector-swap-bytes
+          u64vector-swap-bytes! u64vector-xor u64vector-xor! u64vector=?
+          u64vector?
+
+          u8vector u8vector->list u8vector->string u8vector->vector
+          u8vector-add u8vector-add! u8vector-and u8vector-and! u8vector-append
+          u8vector-clamp u8vector-clamp! u8vector-compare u8vector-copy
+          u8vector-copy! u8vector-dot u8vector-fill! u8vector-ior u8vector-ior!
+          u8vector-length u8vector-mul u8vector-mul! u8vector-multi-copy!
+          u8vector-range-check u8vector-ref u8vector-set! u8vector-sub
+          u8vector-sub! u8vector-xor u8vector-xor! u8vector=? u8vector?
+
+          uvector-alias uvector-binary-search uvector-class-element-size
+          uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
+          uvector-swap-bytes uvector-swap-bytes!
+
+          vector->f16vector vector->f32vector vector->f64vector
+          vector->s16vector vector->s32vector vector->s64vector
+          vector->s8vector vector->u16vector vector->u32vector
+          vector->u64vector vector->u8vector
+
+          write-block write-uvector))
 (select-module gauche.uvector)
+
+;; gauche.vport is used by port->uvector.  Technically it's on top
+;; of uniform vector ports provided by gauche.vport, but logically
+;; it is expected to belong gauche.uvector.
+(autoload gauche.vport open-output-uvector get-output-uvector)
 
 (inline-stub
  "#include <math.h>"
  "#define EXTUVECTOR_EXPORTS"
  "#include \"gauche/uvector.h\""
+ "#include \"gauche/priv/vectorP.h\""
  "#include \"uvectorP.h\""
-
- (define-cfn clamp-arg (clamp) ::int :static
-   (cond [(SCM_EQ clamp 'both) (return SCM_CLAMP_BOTH)]
-         [(SCM_EQ clamp 'low)  (return SCM_CLAMP_LO)]
-         [(SCM_EQ clamp 'high) (return SCM_CLAMP_HI)]
-         [(not (or (SCM_FALSEP clamp) (SCM_UNBOUNDP clamp)))
-          (Scm_Error "clamp argument must be either 'both, 'high, 'low or #f, \
-                    but got %S" clamp)])
-   (return SCM_CLAMP_ERROR)))
+ )
 
 ;; uvlib.scm is generated by uvlib.scm.tmpl
 (inline-stub
  (include "./uvlib.scm")
  )
 
-;;-------------------------------------------------------------
-;; Experimental - compile-time inlining *-ref
-;; The TYPE constant must be in sync with ScmUVectorType in gauche/vector.h
-
-(define-inline %uvector-ref (with-module gauche.internal %uvector-ref))
-
-(define-macro (set-reference-inliner ref type)
-  `(define-compiler-macro ,ref
-     (er-transformer
-      (^[x r c] (if (= (length x) 3)
-                  (list (r '%uvector-ref) (cadr x) ,type (caddr x))
-                  x)))))
-
-(set-reference-inliner s8vector-ref 0)
-(set-reference-inliner u8vector-ref 1)
-(set-reference-inliner s16vector-ref 2)
-(set-reference-inliner u16vector-ref 3)
-(set-reference-inliner s32vector-ref 4)
-(set-reference-inliner u32vector-ref 5)
-(set-reference-inliner s64vector-ref 6)
-(set-reference-inliner u64vector-ref 7)
-(set-reference-inliner f16vector-ref 8)
-(set-reference-inliner f32vector-ref 9)
-(set-reference-inliner f64vector-ref 10)
 
 ;;;
 ;;; Generic procedures
 ;;;
-
-;; generic ref and set! is slower but sometimes handy
-(define uvector-set!
-  (let1 setters
-      (list (cons <u8vector> u8vector-set!) (cons <s8vector> s8vector-set!)
-            (cons <u16vector> u16vector-set!) (cons <s16vector> s16vector-set!)
-            (cons <u32vector> u32vector-set!) (cons <s32vector> s32vector-set!)
-            (cons <u64vector> u64vector-set!) (cons <s64vector> s64vector-set!)
-            (cons <f16vector> f16vector-set!) (cons <f32vector> f32vector-set!)
-            (cons <f64vector> f64vector-set!))
-    (^[uvec k val]
-      ((or (assq-ref setters (class-of uvec))
-           (error "uvector required, but got:" uvec))
-       uvec k val))))
-
-(define uvector-ref
-  (let1 uvector-type-constant
-      (map-with-index (^[i c] (cons c i))
-                      (list <s8vector> <u8vector> <s16vector> <u16vector>
-                            <s32vector> <u32vector> <s64vector> <u64vector>
-                            <f16vector> <f32vector> <f64vector>))
-    (getter-with-setter
-     (^[uvec k :optional fallback]
-       (let1 t (assq-ref uvector-type-constant (class-of uvec))
-         (if (undefined? fallback)
-           (%uvector-ref uvec t k)
-           (%uvector-ref uvec t k fallback))))
-     uvector-set!)))
 
 ;; uvector-alias
 (inline-stub
@@ -233,6 +317,104 @@
             [dst::char* (SCM_NEW_ATOMIC_ARRAY (char) newsize)])
        (memcpy dst (+ src (* start eltsize)) newsize)
        (return (Scm_MakeUVector klass (- end start) dst)))))
+ )
+
+;; search
+;; rounding can be #f, 'floor or 'ceiling  (srfi-114 also uses symbols
+;; for rounding.  we don't use 'round and 'truncate, though, for
+;; it doesn't make much sense.)
+(inline-stub
+ ;; aux fn to deal with optional fixnum arg.  we should make genstub handle
+ ;; this in future.
+ (define-cfn get-fixnum-arg (arg fallback::ScmSmallInt name::(const char*))
+   ::ScmSmallInt :static
+   (cond [(SCM_INTP arg) (return (SCM_INT_VALUE arg))]
+         [(SCM_FALSEP arg) (return fallback)]
+         [else (Scm_Error "%s expects fixnum or #f, but got: %S" name arg)
+               (return 0)])) ; dummy
+ 
+ (define-cproc uvector-binary-search (v::<uvector> key::<number>
+                                                   :optional
+                                                   (start #f)
+                                                   (end   #f)
+                                                   (skip  #f)
+                                                   (rounding #f))
+   (let* ([len::size_t (SCM_UVECTOR_SIZE v)]
+          [s::ScmSmallInt (get-fixnum-arg start 0 "start")]
+          [e::ScmSmallInt (get-fixnum-arg end -1 "end")]
+          [p::ScmSmallInt (get-fixnum-arg skip 0 "skip")])
+     (SCM_CHECK_START_END s e len)
+     (unless (== (% (- e s) (+ p 1)) 0)
+       (Scm_Error "uvector size (%d) isn't multiple of record size (%d)"
+                  (- e s) (+ p 1)))
+     (let* ([r::size_t (cast (size_t) -1)]
+            [lb::size_t]
+            [ub::size_t])
+       (case (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
+         [(SCM_UVECTOR_S8)
+          (let* ([k::int8_t
+                  (Scm_GetInteger8Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS8 (+ (SCM_S8VECTOR_ELEMENTS v) s)
+                                        (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_U8)
+          (let* ([k::uint8_t
+                  (Scm_GetIntegerU8Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU8 (+ (SCM_U8VECTOR_ELEMENTS v) s)
+                                        (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_S16)
+          (let* ([k::int16_t
+                  (Scm_GetInteger16Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS16 (+ (SCM_S16VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_U16)
+          (let* ([k::uint16_t
+                  (Scm_GetIntegerU16Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU16 (+ (SCM_U16VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_S32)
+          (let* ([k::int32_t
+                  (Scm_GetInteger32Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS32 (+ (SCM_S32VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_U32)
+          (let* ([k::uint32_t
+                  (Scm_GetIntegerU32Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU32 (+ (SCM_U32VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_S64)
+          (let* ([k::ScmInt64
+                  (Scm_GetInteger64Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS64 (+ (SCM_S64VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_U64)
+          (let* ([k::ScmUInt64
+                  (Scm_GetIntegerU64Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU64 (+ (SCM_U64VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]
+         [(SCM_UVECTOR_F16)
+          (let* ([k::ScmHalfFloat (Scm_DoubleToHalf (Scm_GetDouble key))])
+            (set! r (Scm_BinarySearchF16 (+ (SCM_F16VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]         
+         [(SCM_UVECTOR_F32)
+          (let* ([k::float (Scm_GetDouble key)])
+            (set! r (Scm_BinarySearchF32 (+ (SCM_F32VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]         
+         [(SCM_UVECTOR_F64)
+          (let* ([k::double (Scm_GetDouble key)])
+            (set! r (Scm_BinarySearchF64 (+ (SCM_F64VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]
+         [else (SCM_ASSERT "Invalid uvector type")]
+         )
+       (when (== r (cast (size_t) -1))
+         (cond
+          [(SCM_EQ rounding 'floor)   (set! r lb)]
+          [(SCM_EQ rounding 'ceiling) (set! r ub)]
+          [(not (SCM_FALSEP rounding))
+           (Scm_Error "Rounding argument must be either #f, floor \
+                       or ceiling, but got: %S" rounding)]))
+       (if (== r (cast (size_t) -1))
+         (return SCM_FALSE)
+         (return (Scm_MakeIntegerU (+ r s)))))))
  )
 
 ;; block i/o
@@ -361,7 +543,8 @@
                                   (end::<fixnum> -1))
    (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
- (define-cfn bytevector->string (v::ScmUVector* start::int end::int) :static
+ (define-cfn bytevector->string (v::ScmUVector* start::int end::int term)
+   :static
    (let* ([len::int (SCM_UVECTOR_SIZE v)])
      ;; We automatically avoid copying the string contents when the
      ;; following conditions are met:
@@ -384,24 +567,34 @@
                                            (<= (- end start) (/ len 5)))))
                             0
                             SCM_STRING_COPYING)])
+       (when (SCM_INTP term)
+         (let* ([terminator::u_int (logand #xff (SCM_INT_VALUE term))]
+                [i::int])
+           (for [(set! i start) (< i end) (post++ i)]
+             (when (== terminator
+                       (aref (cast u_char* (SCM_UVECTOR_ELEMENTS v)) i))
+               (set! end i)
+               (break)))))
        (return (Scm_MakeString (+ (cast char* (SCM_UVECTOR_ELEMENTS v)) start)
                                (- end start) -1 flags)))))
 
  (define-cproc s8vector->string (v::<s8vector>
                                  :optional (start::<fixnum> 0)
-                                           (end::<fixnum> -1))
-   (return (bytevector->string (SCM_UVECTOR v) start end)))
+                                           (end::<fixnum> -1)
+                                           (terminator #f))
+   (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cproc u8vector->string (v::<u8vector>
                                  :optional (start::<fixnum> 0)
-                                           (end::<fixnum> -1))
-   (return (bytevector->string (SCM_UVECTOR v) start end)))
+                                           (end::<fixnum> -1)
+                                           (terminator #f))
+   (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cfn string->wordvector
    (klass::ScmClass* s::ScmString* start::int end::int) :static
    (with-input-string-pointers (s start end sp ep)
      (let* ([v (Scm_MakeUVector klass (- end start) NULL)]
-            [eltp::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))]
+            [eltp::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))]
             [i::int 0])
        (for [() (< sp ep) (post++ i)]
          (let* ([ch::ScmChar])
@@ -426,7 +619,7 @@
      (when (and (>= tstart 0) (< tstart tlen))
        (SCM_UVECTOR_CHECK_MUTABLE v)
        (with-input-string-pointers (s start end sp ep)
-         (let* ([buf::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))]
+         (let* ([buf::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))]
                 [i::int tstart])
            (for [() (and (< sp ep) (< i tlen)) (post++ i)]
              (let* ([ch::ScmChar])
@@ -449,30 +642,45 @@
                                              (end::<fixnum> -1))
    (return (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
 
- (define-cfn wordvector->string (v::ScmUVector* start::int end::int) :static
+ (define-cfn wordvector->string (v::ScmUVector* start::int end::int term)
+   :static
    (let* ([len::int (SCM_UVECTOR_SIZE v)]
           [s (Scm_MakeOutputStringPort FALSE)])
      (SCM_CHECK_START_END start end len)
-     (let* ([eltp::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))])
+     (let* ([eltp::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))])
        (while (< start end)
          (let* ([ch::ScmChar (cast ScmChar (aref eltp (post++ start)))])
+           (when (and (SCM_INTP term)
+                      (== (SCM_INT_VALUE term) ch))
+             (break))
            (Scm_PutcUnsafe ch (SCM_PORT s)))))
      (return (Scm_GetOutputStringUnsafe (SCM_PORT s) 0))))
 
  (define-cproc s32vector->string (v::<s32vector>
                                   :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1))
-   (return (wordvector->string (SCM_UVECTOR v) start end)))
+                                            (end::<fixnum> -1)
+                                            (terminator #f))
+   (return (wordvector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cproc u32vector->string (v::<u32vector>
                                   :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1))
-   (return (wordvector->string (SCM_UVECTOR v) start end)))
+                                            (end::<fixnum> -1)
+                                            (terminator #f))
+   (return (wordvector->string (SCM_UVECTOR v) start end terminator)))
  )
 
 ;; for the bakcward compatibility
 (define read-block! read-uvector!)
 (define write-block write-uvector)
+
+;; for symmetry of port->string, etc.
+;; This actually uses uvector port in gauche.vport, but that's inner
+;; details users shouldn't need to care.
+;; TODO: Optional endian argument
+(define (port->uvector iport :optional (class <u8vector>))
+  (let1 p (open-output-uvector (make-uvector class 0) :extendable #t)
+    (copy-port iport p)
+    (get-output-uvector p :shared #t)))
 
 ;;-------------------------------------------------------------
 ;; Appending vectors

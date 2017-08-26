@@ -117,12 +117,12 @@
       (T   ,STAG))))
 
 (define (make-s8rules)
-  `((etype     "signed char")
+  `((etype     "int8_t")
     (ntype     "long")
     (REF_NTYPE ,(^[v i] #"(long)SCM_S8VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,(^[exp] #"(signed char)(~exp)"))
+    (CAST_N2E  ,(^[exp] #"(int8_t)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #"~dst = (signed char)Scm_GetInteger8Clamp(~src, ~clamp, NULL)"))
+                  #"~dst = (int8_t)Scm_GetInteger8Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger8Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
@@ -134,12 +134,12 @@
     ,@(common-rules 's8)))
 
 (define (make-u8rules)
-  `((etype     "unsigned char")
+  `((etype     "uint8_t")
     (ntype     "long")
     (REF_NTYPE ,(^[v i] #"(long)SCM_U8VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,(^[exp] #"(unsigned char)(~exp)"))
+    (CAST_N2E  ,(^[exp] #"(uint8_t)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #"~dst = (u_char)Scm_GetIntegerU8Clamp(~src, ~clamp, NULL)"))
+                  #"~dst = (uint8_t)Scm_GetIntegerU8Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU8Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
@@ -151,12 +151,12 @@
     ,@(common-rules 'u8)))
 
 (define (make-s16rules)
-  `((etype     "short")
+  `((etype     "int16_t")
     (ntype     "long")
     (REF_NTYPE ,(^[v i] #"(long)SCM_S16VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,(^[exp] #"(short)(~exp)"))
+    (CAST_N2E  ,(^[exp] #"(int16_t)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #"~dst = (short)Scm_GetInteger16Clamp(~src, ~clamp, NULL)"))
+                  #"~dst = (int16_t)Scm_GetInteger16Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger16Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
@@ -168,12 +168,12 @@
     ,@(common-rules 's16)))
 
 (define (make-u16rules)
-  `((etype     "unsigned short")
+  `((etype     "uint16_t")
     (ntype     "long")
     (REF_NTYPE ,(^[v i] #"(long)SCM_U16VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,(^[exp] #"(unsigned short)(~exp)"))
+    (CAST_N2E  ,(^[exp] #"(uint16_t)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #"~dst = (u_short)Scm_GetIntegerU16Clamp(~src, ~clamp, NULL)"))
+                  #"~dst = (uint16_t)Scm_GetIntegerU16Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU16Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
@@ -185,12 +185,12 @@
     ,@(common-rules 'u16)))
 
 (define (make-s32rules)
-  `((etype     "ScmInt32")
+  `((etype     "int32_t")
     (ntype     "long")
     (REF_NTYPE ,(^[v i] #"(long)SCM_S32VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,(^[exp] #"(ScmInt32)(~exp)"))
+    (CAST_N2E  ,(^[exp] #"(int32_t)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #"~dst = (ScmInt32)Scm_GetInteger32Clamp(~src, ~clamp, NULL)"))
+                  #"~dst = (int32_t)Scm_GetInteger32Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger32Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
@@ -202,12 +202,12 @@
     ,@(common-rules 's32)))
 
 (define (make-u32rules)
-  `((etype     "ScmUInt32")
+  `((etype     "uint32_t")
     (ntype     "u_long")
     (REF_NTYPE ,(^[v i] #"(u_long)SCM_U32VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,(^[exp] #"(ScmUInt32)(~exp)"))
+    (CAST_N2E  ,(^[exp] #"(uint32_t)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #"~dst = (ScmUInt32)Scm_GetIntegerU32Clamp(~src, ~clamp, NULL)"))
+                  #"~dst = (uint32_t)Scm_GetIntegerU32Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU32Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))

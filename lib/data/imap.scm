@@ -1,7 +1,7 @@
 ;;;
 ;;; data.imap - immutable tree map
 ;;;
-;;;   Copyright (c) 2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2015-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -255,17 +255,13 @@
 
 ;; Dictionary interface
 ;; As a dictionary, it behaves as immutable dictionary.
-(define-method dict-get ((immap <imap>) key :optional default)
-  (imap-get immap key default))
-
-(define-method dict-put! ((immap <imap>) key value)
-  (errorf "imap is immutable:" immap))
-
-(define-method dict-comparator ((immap <imap>))
-  (~ immap'comparator))
-
-(define-method dict-fold ((immap <imap>) proc seed)
-  (%imap-fold immap (^[p s] (proc (car p) (cdr p) s)) seed))
-
-(define-method dict-fold-right ((immap <imap>) proc seed)
-  (%imap-fold-right immap (^[p s] (proc (car p) (cdr p) s)) seed))
+(define-dict-interface <imap>
+  :get imap-get
+  :put! (^[m k v] (error "imap is immutable:" m))
+  :immutable? (^m #t)
+  :fold       (^[m proc seed]
+                (%imap-fold m (^[p s] (proc (car p) (cdr p) s)) seed))
+  :fold-right (^[m proc seed]
+                (%imap-fold-right m (^[p s] (proc (car p) (cdr p) s)) seed))
+  :exists? imap-exists?
+  :comparator imap-comparator)

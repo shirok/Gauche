@@ -1,7 +1,7 @@
 ;;;
 ;;; collection.scm - collection generics
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -92,7 +92,7 @@
 
 (define-method call-with-iterator ((coll <hash-table>) proc :allow-other-keys)
   (let ([eof-marker (cons #f #f)]
-        [iter (%hash-table-iter coll)])
+        [iter ((with-module gauche.internal %hash-table-iter) coll)])
     (receive (k v) (iter eof-marker)
       (proc (cut eq? k eof-marker)
             (^[] (begin0 (cons k v)
@@ -100,7 +100,7 @@
 
 (define-method call-with-iterator ((coll <tree-map>) proc :allow-other-keys)
   (let ([eof-marker (cons #f #f)]
-        [iter (%tree-map-iter coll)])
+        [iter ((with-module gauche.internal %tree-map-iter) coll)])
     (receive (k v) (iter eof-marker #f)
       (proc (cut eq? k eof-marker)
             (^[] (begin0 (cons k v)

@@ -188,23 +188,7 @@
 (use srfi-14)
 (test-module 'srfi-14)
 
-;; char-set writer
-(let ()
-  (define (char-set-printer-tester p)
-    (test* "char-set-printer" (car p)
-           (write-to-string (list->char-set (cdr p)))))
-  (for-each char-set-printer-tester
-            '(("#[ace]" #\a #\e #\c)
-              ("#[ab]"  #\a #\b)
-              ("#[a-c]" #\a #\b #\c)
-              ("#[a-d]" #\a #\b #\c #\d)
-              ("#[a-ce]" #\a #\b #\c #\e)
-              ("#[acd]" #\a #\c #\d)
-              ("#[ac-e]" #\a #\c #\d #\e)
-              ("#[ac-e]" #\a #\c #\d #\e)
-              ("#[\\-\\[\\]]" #\[ #\] #\-)
-              ("#[\\^a]" #\^ #\a)
-              ("#[!^]" #\^ #\!))))
+;; built-in char-set features are tested in test/char.scm
 
 ;; Test samples taken from Olin Shivers' test suite,
 ;; http://srfi.schemers.org/srfi-14/srfi-14-tests.scm
@@ -1367,6 +1351,27 @@
 (test* "booleans->integer" 9 (booleans->integer #f #f #t #f #f #t))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-64")
+
+(use srfi-64 :prefix srfi-64:)
+(test-module 'srfi-64)
+
+(define-module srfi-64-test-module
+  (use srfi-64)
+  (include "include/srfi-64-test"))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-66")
+;; srfi-66 provides u8vector-copy! with different argument order,
+;; so import it with prefix to avoid conflict.
+(use srfi-66 :prefix srfi-66:)
+(test-module 'srfi-66)
+
+(test* "srfi-66 uvector-copy!" '#u8(0 0 1 2 3 0 0)
+       (rlet1 v (u8vector 0 0 0 0 0 0 0)
+         (srfi-66:u8vector-copy! '#u8(0 1 2 3 4) 1 v 2 3)))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-69")
 (use srfi-69)
 (test-module 'srfi-69)
@@ -1563,6 +1568,91 @@
   )
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-74")
+(use srfi-74)
+(test-module 'srfi-74)
+
+;; most procedures are just an alias of binary.io so we don't do
+;; exhausitive tests.
+
+(let ((b1 (make-blob 10)))
+  (test* "blob?" #t (blob? b1))
+  (test* "blob?" #f (blob? '#(1 2 3)))
+  (test* "endianness" 'big-endian (endianness big))
+  (test* "endianness" 'little-endian (endianness little))
+  (test* "endianness" (native-endian) (endianness native))
+
+  (test* "blob-length" 10 (blob-length b1))
+  (test* "blob-[su]8-set!" #u8(#xff #xfe 0 0 0 0 0 0 0 0)
+         (begin
+           (blob-u8-set! b1 0 255)
+           (blob-s8-set! b1 1 -2)
+           b1))
+  (test* "blob-[su]8-ref" '(-1 254)
+         (list (blob-s8-ref b1 0)
+               (blob-u8-ref b1 1)))
+  (test* "blob-uint-ref"
+         '(#xff #xff #xfffe #xfeff #xfffe00 #x00feff #xfe0000 #x0000fe)
+         (list (blob-uint-ref 1 (endianness big) b1 0)
+               (blob-uint-ref 1 (endianness little) b1 0)
+               (blob-uint-ref 2 (endianness big) b1 0)
+               (blob-uint-ref 2 (endianness little) b1 0)
+               (blob-uint-ref 3 (endianness big) b1 0)
+               (blob-uint-ref 3 (endianness little) b1 0)
+               (blob-uint-ref 3 (endianness big) b1 1)
+               (blob-uint-ref 3 (endianness little) b1 1)))
+  (test* "blob-sint-ref"
+         '(-1 -1 -2 -257 -512 #x00feff -131072 #x0000fe)
+         (list (blob-sint-ref 1 (endianness big) b1 0)
+               (blob-sint-ref 1 (endianness little) b1 0)
+               (blob-sint-ref 2 (endianness big) b1 0)
+               (blob-sint-ref 2 (endianness little) b1 0)
+               (blob-sint-ref 3 (endianness big) b1 0)
+               (blob-sint-ref 3 (endianness little) b1 0)
+               (blob-sint-ref 3 (endianness big) b1 1)
+               (blob-sint-ref 3 (endianness little) b1 1)))
+
+  (test* "blob-uint-set!"
+         '#u8(0 #xff #xff 0 0 #xff #xfe #xfe #xff 0)
+         (rlet1 b1 (make-blob 10)
+           (blob-uint-set! 2 (endianness big) b1 0 #xff)
+           (blob-uint-set! 2 (endianness little) b1 2 #xff)
+           (blob-uint-set! 3 (endianness big) b1 4 #xfffe)
+           (blob-uint-set! 3 (endianness little) b1 7 #xfffe)))
+  (test* "blob-sint-set!"
+         '#u8(#xff #xfe #xfe #xff #xff #xfe 00 00 #xfe #xff)
+         (rlet1 b1 (make-blob 10)
+           (blob-sint-set! 2 (endianness big) b1 0 -2)
+           (blob-sint-set! 2 (endianness little) b1 2 -2)
+           (blob-sint-set! 3 (endianness big) b1 4 -512)
+           (blob-sint-set! 3 (endianness little) b1 7 -512)))
+
+  (let1 b1 '#u8(0 1 2 3 4 5 6 7 #xff)
+    (test* "blob->uint-list"
+           '((#x000102 #x030405 #x0607ff)
+             (#x020100 #x050403 #xff0706))
+           (list (blob->uint-list 3 (endianness big) b1)
+                 (blob->uint-list 3 (endianness little) b1)))
+    (test* "blob->uint-list"
+           '((#x000102 #x030405 #x0607ff)
+             (#x020100 #x050403 #x-00f8fa))
+           (list (blob->sint-list 3 (endianness big) b1)
+                 (blob->sint-list 3 (endianness little) b1)))
+
+    (test* "uint-list->blob" (list b1 b1)
+           (list (uint-list->blob 3 (endianness big)
+                                  (blob->uint-list 3 (endianness big) b1))
+                 (uint-list->blob 3 (endianness little)
+                                  (blob->uint-list 3 (endianness little) b1))))
+    (test* "sint-list->blob" (list b1 b1)
+           (list (sint-list->blob 3 (endianness big)
+                                  (blob->sint-list 3 (endianness big) b1))
+                 (sint-list->blob 3 (endianness little)
+                                  (blob->sint-list 3 (endianness little) b1))))
+    )
+  )
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-98")
 (use srfi-98)
 (test-module 'srfi-98)
@@ -1660,6 +1750,26 @@
             
   )
 
+(let ()
+  (define ca (make-car-comparator string-comparator))
+  (define cd (make-cdr-comparator integer-comparator))
+  (define ta ((with-module gauche make-hash-table) ca))
+  (define td ((with-module gauche make-hash-table) cd))
+  (define sa '("orange" "apple" "mango" "papaya"))
+  (define sd '(29 34 98 1001))
+  (define data (append-map (^a (map (^d (cons a d)) sd)) sa))
+
+  (test* "make-car-comparator" (sort sa)
+         (begin (dolist [x data]
+                  (hash-table-put! ta x #t))
+                (sort (map car (hash-table-keys ta)))))
+
+  (test* "make-cdr-comparator" (sort sd)
+         (begin (dolist [x data]
+                  (hash-table-put! td x #t))
+                (sort (map cdr (hash-table-keys td)))))
+  )
+
 (let ([lw (make-listwise-comparator vector?
                                     (make-reverse-comparator number-comparator)
                                     (^x (= (vector-length x) 0))
@@ -1720,6 +1830,17 @@
 (chibi-test
  (include "include/sets-test"))
 
+;; collection framework test
+;; (we use srfi-1 with prefix not to mess gauche.collection#fold etc.)
+(use srfi-1 :prefix srfi-1:)
+(use gauche.collection :prefix col:)
+(test* "coerce-to" '(a b)
+       (col:coerce-to <list> (set eq-comparator 'a 'b 'a 'b))
+       (cut srfi-1:lset= eq? <> <>))
+(test* "coerce-to" '(a a b b)
+       (col:coerce-to <list> (bag eq-comparator 'a 'b 'a 'b))
+       (cut srfi-1:lset= eq? <> <>))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-117")
 (use srfi-117)
@@ -1764,10 +1885,236 @@
                (g)
                (generator->vector! v 3 g))))
 
-(test-end)
+;;-----------------------------------------------------------------------
+(test-section "srfi-127")
+(use srfi-127)
+(test-module 'srfi-127)
+
+(chibi-test
+ (include "include/lseqs-test.scm"))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-128")
 (use srfi-128)
 (test-module 'srfi-128)
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-132")
+(use srfi-132)
+(test-module 'srfi-132)
+
+;; partition-in-place! is not external, but it is such a fundamental
+;; part of the algorithm that we test it independently.
+
+(let ([partition-in-place! (with-module srfi-132 partition-in-place!)]
+      [data '((a #(a))
+              (a #(b))
+              (b #(a))
+              (q #(q z))
+              (z #(q z))
+              (r #(q z))
+              (q #(q q))
+              (z #(j z e))
+              (e #(j e j))
+              (m #(m m m))
+              (p #(z p e a))
+              (m #(m z m m m))
+              (m #(m z z m m))
+              (m #(m z m z m))
+              (m #(p q m r s))
+              (m #(a z m z m))
+              (m #(m z a z m))
+              (m #(m a m m m))
+              (m #(a m a m m))
+              (m #(m a m a a))
+              (p #(t w o h o u s e h o l d s b o t h a l i k e i n d i g n
+                     i t y i n f a i r v e l o n a w h e r e w e l a y o u
+                     r s c e n e)))])
+  (define (t vec pivot)
+    (let* ([smaller (filter (^e (<? default-comparator e pivot))
+                            (vector->list vec))]
+           [greater (filter (^e (<? default-comparator pivot e))
+                            (vector->list vec))]
+           [same    (filter (^e (=? default-comparator pivot e))
+                            (vector->list vec))])
+      (let1 v (vector-copy vec)
+        (test* (format "partition-in-place! ~s @~s" vec pivot)
+               (list smaller greater)
+               (receive (i j) (partition-in-place!
+                               (^[a b] (<? default-comparator a b)) pivot
+                               v 0 (vector-length vec))
+                 (list (vector->list v 0 i)
+                       (vector->list v i j)))
+               (^[a b]
+                 (and (lset= eq? (car a) (car b))
+                      (lset= eq? (cadr a) (cadr b))))))
+      (unless (null? same)
+        (let1 k (+ (length smaller)
+                   (modulo (sys-random) (length same)))
+          (test* (format "vector-separate! ~s ~s" vec k)
+                 (list (append smaller (make-list (- k (length smaller)) pivot))
+                       (append greater (make-list (- (length same)
+                                                     (- k (length smaller)))
+                                                  pivot)))
+                 (let1 v (vector-copy vec)
+                   (vector-separate! (^[a b] (<? default-comparator a b)) v k)
+                   (list (vector->list v 0 k)
+                         (vector->list v k (vector-length vec))))
+                 (^[a b]
+                   (and (lset= eq? (car a) (car b))
+                        (lset= eq? (cadr a) (cadr b)))))))))
+  (dolist [d data] [t (vector-copy (cadr d)) (car d)]))
+
+(let ([data '(#()
+              #(15)
+              #(2 5)
+              #(18 61 30)
+              #(61 39 13 4)
+              #(78 61 19 38 51)
+              #(60 68 17 45 6 1)
+              #(80 38 30 1 9 23 68)
+              #(12 60 49 83 3 17 90 39)
+              #(66 75 31 42 52 20 54 56 18)
+              #(96 84 77 44 93 39 89 92 59 72)
+              #(92 32 8 57 19 52 4 96 32 84 38 74 27 53)
+              #(54 27 14 29 80 16 7 1 98 42 77 39 19 29 0 1 81)
+              #(72 79 77 60 7 92 35 65 11 91 86 85 62 44 33 9 6 37 31 66)
+              #(32 21 51 55 70 40 36 6 97 25 96 24 25 69 49 71 30 14 28 99
+                3 26 60 97 50 41 5 3 27 34 90 63 23 68 14 53 48 44 98 55))])
+  (define (my-median elt< vec fallback)
+    (let* ([svec (vector-sort elt< vec)]
+           [len (vector-length vec)])
+      (if (zero? len)
+        fallback
+        (if (odd? len)
+          (vector-ref svec (quotient len 2))
+          (/ (+ (vector-ref svec (quotient len 2))
+                (vector-ref svec (- (quotient len 2) 1)))
+             2)))))
+  (define (t vec)
+    (test* (format "vector-select! ~s <" vec)
+           (vector->list (vector-sort < vec))
+           (map (^k (vector-select! < (vector-copy vec) k))
+                (iota (vector-length vec))))
+    (test* (format "vector-select! ~s >" vec)
+           (vector->list (vector-sort > vec))
+           (map (^k (vector-select! > (vector-copy vec) k))
+                (iota (vector-length vec))))
+    (let1 expect (list (my-median < vec 'none)
+                       (my-median > vec 'none))
+      (test* (format "vector-find-median ~s" vec)
+             expect
+             (list (vector-find-median < vec 'none)
+                   (vector-find-median > vec 'none)))
+      (test* (format "vector-find-median! ~s" vec)
+             expect
+             (list (vector-find-median! < (vector-copy vec) 'none)
+                   (vector-find-median! > (vector-copy vec) 'none)))))
+
+  (for-each t data))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-141")
+(use srfi-141)
+(test-module 'srfi-141)
+
+(let1 data
+    ;;numer denom floor     truncate ceiling   round    euclidean balanced
+    '[(23   5     (4   3)   (4  3)   (5  -2)   (5  -2)  (4   3)   (5 -2))
+      (22   5     (4   2)   (4  2)   (5  -3)   (4   2)  (4   2)   (4  2))
+      (23   -5    (-5 -2)   (-4  3)  (-4  3)   (-5 -2)  (-4  3)   (-5 -2))
+      (22   -5    (-5 -3)   (-4  2)  (-4  2)   (-4  2)  (-4  2)   (-4  2))
+      (-23  5     (-5  2)   (-4 -3)  (-4 -3)   (-5  2)  (-5  2)   (-5  2))
+      (-22  5     (-5  3)   (-4 -2)  (-4 -2)   (-4 -2)  (-5  3)   (-4 -2))
+      (-23  -5    (4  -3)   (4  -3)  (5  2)    (5   2)  (5   2)   (5   2))
+      (-22  -5    (4  -2)   (4  -2)  (5  3)    (4  -2)  (5   3)   (4  -2))
+      (1    2     (0   1)   (0   1)  (1  -1)   (0   1)  (0   1)   (1  -1))
+      (-1   2     (-1  1)   (0  -1)  (0  -1)   (0  -1)  (-1  1)   (0  -1))
+      (1   -2     (-1 -1)   (0   1)  (0   1)   (0   1)  (0   1)   (-1 -1))
+      (-1  -2     (0  -1)   (0  -1)  (1   1)   (0  -1)  (1   1)   (0  -1))
+      (3    2     (1   1)   (1   1)  (2  -1)   (2  -1)  (1   1)   (2  -1))
+      (-3   2     (-2  1)   (-1 -1)  (-1 -1)   (-2  1)  (-2  1)   (-1 -1))
+      (3   -2     (-2 -1)   (-1  1)  (-1  1)   (-2 -1)  (-1  1)   (-2 -1))
+      (-3  -2     (1  -1)   (1  -1)  (2   1)   (2   1)  (2   1)   (1  -1))
+      (39   6     (6   3)   (6   3)  (7  -3)   (6   3)  (6   3)   (7  -3))
+      (39  -6     (-7 -3)   (-6  3)  (-6  3)   (-6  3)  (-6  3)   (-7 -3))
+      (-39  6     (-7  3)   (-6 -3)  (-6 -3)   (-6 -3)  (-7  3)   (-6 -3))
+      (-39 -6     (6  -3)   (6  -3)  (7   3)   (6  -3)  (7   3)   (6  -3))
+      ]
+  (define (t-1 numer denom floor truncate ceiling round euclidean balanced)
+    (define (t name x-/ x-quotient x-remainder answers)
+      (test* #"srfi-141 ~name ~|numer|/~|denom|"
+             (list answers answers
+                   (map inexact answers) (map inexact answers)
+                   (map inexact answers) (map inexact answers))
+             (list (values->list (x-/ numer denom))
+                   (list (x-quotient numer denom)
+                         (x-remainder numer denom))
+                   (values->list (x-/ (inexact numer) denom))
+                   (list (x-quotient (inexact numer) denom)
+                         (x-remainder (inexact numer) denom))
+                   (values->list (x-/ numer (inexact denom)))
+                   (list (x-quotient numer (inexact denom))
+                         (x-remainder numer (inexact denom))))))
+    (t 'floor   floor/ floor-quotient floor-remainder floor)
+    (t 'truncate truncate/ truncate-quotient truncate-remainder truncate)
+    (t 'ceiling ceiling/ ceiling-quotient ceiling-remainder ceiling)
+    (t 'round   round/ round-quotient round-remainder round)
+    (t 'euclidean euclidean/ euclidean-quotient euclidean-remainder euclidean)
+    (t 'balanced balanced/ balanced-quotient balanced-remainder balanced))
+
+  (for-each (cut apply t-1 <>) data))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-143")
+(use srfi-143)
+(test-module 'srfi-143)
+
+(chibi-test
+ (include "include/fixnum-tests.scm"))
+
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-146")
+(use srfi-146)
+(test-module 'srfi-146)
+
+(define-module srfi-146-tests
+  (use srfi-1)
+  (use srfi-64)
+  (use srfi-146)
+  (use compat.r7rs-srfi-tests)
+  (include "include/srfi-146-tests.scm")
+  (run-tests))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-146.hash")
+(use srfi-146.hash)
+(test-module 'srfi-146.hash)
+
+(define-module srfi-146-tests
+  (use srfi-1)
+  (use srfi-64)
+  (use srfi-146.hash)
+  (use compat.r7rs-srfi-tests)
+  (include "include/srfi-146-hash-tests.scm")
+  (run-tests))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-147")
+
+(define-module srfi-147-tests
+  (use srfi-64)
+  (use compat.r7rs-srfi-tests)
+  (include "include/srfi-147-tests.scm")
+  (run-tests))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-151")
+(use srfi-151)
+(test-module 'srfi-151)
+
+(chibi-test
+ (include "include/srfi-151-tests.scm"))
+
+(test-end)

@@ -1,7 +1,7 @@
 ;;;
-;;; comp-macros.scm - Utility macros for the compiler
+;;; comppile-0.scm - Utility macros for the compiler
 ;;;
-;;;   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -31,11 +31,12 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This file is included in compile.scm.
-
 ;;;
 ;;;  Utility macros used in the main compiler.
 ;;;
+
+;; NB: This file may be included from more than one file, so be careful
+;; to put only macro definitions.
 
 ;; Defines a bunch of constants, and the alist to map name to value.
 (define-macro (define-enum name . syms)

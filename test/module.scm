@@ -313,7 +313,8 @@
 
 (define-module Of
   (export foo)
-  (define foo 1))
+  (define foo 1)
+  (define bar 2))
 (define-module Of-1
   (import Of)
   (export foo))
@@ -343,6 +344,23 @@
          (global-variable-ref (find-module 'Of-4) 'foo-newname #f)
          (global-variable-ref (find-module 'Of-4) 'foo-alias #f)
          (global-variable-ref (find-module 'Of-4) 'foo #f))))
+
+(define-module Of-5
+  (extend Of)
+  (export (rename foo foo-alias)
+          (rename bar bar-alias)))
+(define-module Of-6
+  (import (Of-5 :except (foo-alias) :rename ((bar-alias bah)))))
+(define-module Of-7
+  (import (Of-5 :except (foo) :rename ((foo-alias who)))))
+
+(test "export-time renaming, wrapper module and import renaming"
+      '((#f 1) (#f #f) (1 #f) (2 #f) (#f 2) (#f #f))
+      (lambda ()
+        (map (lambda (s)
+               (list (global-variable-ref (find-module 'Of-6) s #f)
+                     (global-variable-ref (find-module 'Of-7) s #f)))
+             '(who foo-alias foo bah bar-alias bar))))
 
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
@@ -432,6 +450,105 @@
         (global-variable-ref 'U 'c 'huh? #t)))
 
 ;;------------------------------------------------------------------
+;; mpl search bug in 0.9.1 reported by Ryo Akagi
+;; http://sourceforge.jp/projects/gauche/lists/archive/devel-jp/2010-December/001909.html
+
+(define-module mplbug-x (export x) (define x 0))
+(define-module mplbug-a (export a) (define a 1))
+(define-module mplbug-b (export b) (define b 2))
+(define-module mplbug-A (extend mplbug-x mplbug-a))
+(define-module mplbug-B (extend mplbug-x mplbug-b))
+
+(define-module mplbug-user1 (import mplbug-A) (import mplbug-B))
+(define-module mplbug-user2 (import mplbug-B) (import mplbug-A))
+
+(define (mplbug-test mod var)
+  (test* #"mpl search (~mod,~var)" #t
+         (global-variable-bound? (find-module mod) var)))
+
+(mplbug-test 'mplbug-user1 'a)
+(mplbug-test 'mplbug-user1 'b)
+(mplbug-test 'mplbug-user1 'x)
+(mplbug-test 'mplbug-user2 'a)
+(mplbug-test 'mplbug-user2 'b)
+(mplbug-test 'mplbug-user2 'x)
+
+;; module inheritance with prefixing
+(define-module mpl-prefix-a (export-all) (define a 0))
+(define-module mpl-prefix-b (export b) (define b 1) (extend mpl-prefix-a))
+(define-module mpl-prefix-c (export c) (define c 2) (extend mpl-prefix-a))
+
+(define-module mpl-prefix-1
+  (import (mpl-prefix-b :prefix X:)))
+(define-module mpl-prefix-2
+  (import (mpl-prefix-b :prefix X:))
+  (import mpl-prefix-a))
+(define-module mpl-prefix-3
+  (import mpl-prefix-a)
+  (import (mpl-prefix-b :prefix X:)))
+(define-module mpl-prefix-4
+  (import (mpl-prefix-b :prefix X:))
+  (import (mpl-prefix-a :prefix Y:)))
+(define-module mpl-prefix-5
+  (import (mpl-prefix-a :prefix Y:))
+  (import mpl-prefix-b))
+(define-module mpl-prefix-6
+  (import (mpl-prefix-b :prefix X:))
+  (import (mpl-prefix-c :prefix Y:)))
+(define-module mpl-prefix-7
+  (import (mpl-prefix-b :prefix X:))
+  (import (mpl-prefix-c :prefix Y:))
+  (import mpl-prefix-a))
+(define-module mpl-prefix-8
+  (import (mpl-prefix-b :prefix X:))
+  (import (mpl-prefix-b :prefix Y:))
+  (import mpl-prefix-b))
+  
+
+(let ()
+  (define (check mod . syms)
+    (map (lambda (sym)
+           (list sym (global-variable-ref (find-module mod) sym 'undef)))
+         syms))
+  (test* "mpl prefix simple" '((a undef) (b undef) (X:a 0) (X:b 1))
+         (check 'mpl-prefix-1 'a 'b 'X:a 'X:b))
+
+  (test* "mpl prefix simple dupe (w/ prefix first)"
+         '((a 0) (b undef) (X:a 0) (X:b 1))
+         (check 'mpl-prefix-2 'a 'b 'X:a 'X:b))
+
+  (test* "mpl prefix simple dupe (w/o prefix first)"
+         '((a 0) (b undef) (X:a 0) (X:b 1))
+         (check 'mpl-prefix-3 'a 'b 'X:a 'X:b))
+
+  (test* "mpl prefix simple dupe (both prefix)"
+         '((a undef) (b undef) (X:a 0) (X:b 1) (Y:a 0) (Y:b undef))
+         (check 'mpl-prefix-4 'a 'b 'X:a 'X:b 'Y:a 'Y:b))
+
+  (test* "mpl prefix simple dupe (parent prefix)"
+         '((a 0) (b 1) (Y:a 0) (Y:b undef))
+         (check 'mpl-prefix-5 'a 'b 'Y:a 'Y:b))
+  
+  (test* "mpl prefix simple merge (different prefix)"
+         '((a undef) (b undef)   (c undef)
+           (X:a 0)   (X:b 1)     (X:c undef)
+           (Y:a 0)   (Y:b undef) (Y:c 2))
+         (check 'mpl-prefix-6 'a 'b 'c 'X:a 'X:b 'X:c 'Y:a 'Y:b 'Y:c))
+
+  (test* "mpl prefix simple merge/dupe (different prefix)"
+         '((a 0)     (b undef)   (c undef)
+           (X:a 0)   (X:b 1)     (X:c undef)
+           (Y:a 0)   (Y:b undef) (Y:c 2))
+         (check 'mpl-prefix-7 'a 'b 'c 'X:a 'X:b 'X:c 'Y:a 'Y:b 'Y:c))
+  
+  (test* "mpl prefix simple dupe (different prefix)"
+         '((a   0)   (b 1)
+           (X:a 0)   (X:b 1)
+           (Y:a 0)   (Y:b 1))
+         (check 'mpl-prefix-8 'a 'b 'X:a 'X:b 'Y:a 'Y:b))
+  )
+
+;;------------------------------------------------------------------
 ;; creates modules on-the-fly
 
 (test "make-module" #t
@@ -469,30 +586,6 @@
               (m1 (make-module #f)))
           (eval '(define x 13) m0)
           (eval 'x m1))))
-
-;;------------------------------------------------------------------
-;; mpl search bug in 0.9.1 reported by Ryo Akagi
-;; http://sourceforge.jp/projects/gauche/lists/archive/devel-jp/2010-December/001909.html
-
-(define-module mplbug-x (export x) (define x 0))
-(define-module mplbug-a (export a) (define a 1))
-(define-module mplbug-b (export b) (define b 2))
-(define-module mplbug-A (extend mplbug-x mplbug-a))
-(define-module mplbug-B (extend mplbug-x mplbug-b))
-
-(define-module mplbug-user1 (import mplbug-A) (import mplbug-B))
-(define-module mplbug-user2 (import mplbug-B) (import mplbug-A))
-
-(define (mplbug-test mod var)
-  (test* #"mpl search (~mod,~var)" #t
-         (global-variable-bound? (find-module mod) var)))
-
-(mplbug-test 'mplbug-user1 'a)
-(mplbug-test 'mplbug-user1 'b)
-(mplbug-test 'mplbug-user1 'x)
-(mplbug-test 'mplbug-user2 'a)
-(mplbug-test 'mplbug-user2 'b)
-(mplbug-test 'mplbug-user2 'x)
 
 ;;-------------------------------------------------------------------
 ;; Macro and builtin inliner

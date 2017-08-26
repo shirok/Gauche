@@ -1,7 +1,7 @@
 ;;;
 ;;; Debugging aids
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -45,7 +45,6 @@
 ;; (<filename> <line-no> <original-form>).  The latter happens when
 ;; OBJ is a result of macro expansion, and <orginal-form> being
 ;; the original source form.
-#;
 (define (debug-source-info obj)
   (and-let1 sis ((with-module gauche.internal %source-info) obj)
     (any (^[si] ;; si :: (<file> <line> <form>)
@@ -54,17 +53,6 @@
                   `(,(car si) ,(cadr si))
                   si)))
          (reverse sis))))
-
-;; TRANSIENT: We need this old definition for 0.9.5 release, since
-;; compiling 0.9.5 with pre-0.9.5 release needs to use this procedure,
-;; but it doesn't have gauche.internal#%source-info yet.
-(define (debug-source-info obj)
-  (and-let* ([ (pair? obj) ]
-             [info ((with-module gauche.internal pair-attribute-get)
-                    obj 'source-info #f)]
-             [ (pair? info) ]
-             [ (pair? (cdr info)) ])
-    info))
 
 (define debug-print-width (make-parameter 65))
 
@@ -80,27 +68,35 @@
 
 ;; These are internal APIs, but we need to export them in order to
 ;; autoload gauche.vm.debug from precompiled code works.
+;; NB: We create a string by format then display, to avoid messages from
+;; different threads won't intermixed.
 (define (debug-print-pre form)
-  (cond [(debug-source-info form)
-         => (^[info]
-              (format (current-error-port) "#?=~s:~a:~,,,,v:s\n"
-                      (car info) (cadr info) (debug-print-width) form))]
-        [else
-         (format (current-error-port) "#?=~,,,,v:s\n"
-                 (debug-print-width) form)]))
+  (let1 thr-prefix (case (~ (current-thread)'vmid)
+                     [(0) ""]
+                     [else => (cut format "[~a]" <>)])
+    (display (if-let1 info (debug-source-info form)
+               (format "#?=~a~s:~a:~,,,,v:s\n" thr-prefix
+                       (car info) (cadr info) (debug-print-width) form)
+               (format "#?=~a~,,,,v:s\n" thr-prefix
+                       (debug-print-width) form))
+             (current-error-port))))
 
 (define (debug-print-post vals)
-  (if (null? vals)
-    (format (current-error-port) "#?-<void>\n")
-    (begin
-      (format (current-error-port) "#?-    ~,,,,v:s\n"
-              (debug-print-width) (car vals))
-      (for-each (^[elt]
-                  (format/ss (current-error-port)
-                             "#?+    ~,,,,v:s\n"
-                             (debug-print-width) elt))
-                (cdr vals))))
-  (apply values vals))
+  (let1 thr-prefix (case (~ (current-thread)'vmid)
+                     [(0) ""]
+                     [else => (cut format "[~a]" <>)])
+    (if (null? vals)
+      (display (format "#?-~a<void>\n" thr-prefix) (current-error-port))
+      (begin
+        (display (format "#?-~a    ~,,,,v:s\n" thr-prefix
+                         (debug-print-width) (car vals))
+                 (current-error-port))
+        (for-each (^[elt]
+                    (display (format/ss "#?+~a    ~,,,,v:s\n" thr-prefix
+                                        (debug-print-width) elt)
+                             (current-error-port)))
+                  (cdr vals))))
+    (apply values vals)))
 
 ;; debug-funcall
 ;; we need aux syntax definition, since we had to get hold of the original

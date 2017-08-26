@@ -52,18 +52,16 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
     || defined(CYGWIN32)) && !defined(PCR)
 
-#if !defined(SOLARISDL) && !defined(IRIX5) && \
-    !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) && \
-    !(defined(ALPHA) && defined(OSF1)) && \
-    !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
-    !defined(AIX) && !defined(SCO_ELF) && !defined(DGUX) && \
-    !(defined(FREEBSD) && defined(__ELF__)) && \
-    !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) && \
-    !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) && \
-    !defined(DARWIN) && !defined(CYGWIN32)
+#if !defined(DARWIN) && !defined(SCO_ELF) && !defined(SOLARISDL) \
+    && !defined(AIX) && !defined(DGUX) && !defined(IRIX5) && !defined(HPUX) \
+    && !defined(CYGWIN32) && !defined(MSWIN32) && !defined(MSWINCE) \
+    && !(defined(ALPHA) && defined(OSF1)) \
+    && !(defined(FREEBSD) && defined(__ELF__)) \
+    && !((defined(LINUX) || defined(NACL)) && defined(__ELF__)) \
+    && !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) \
+    && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K)))
  --> We only know how to find data segments of dynamic libraries for the
- --> above.  Additional SVR4 variants might not be too
- --> hard to add.
+ --> above.  Additional SVR4 variants might not be too hard to add.
 #endif
 
 #include <stdio.h>
@@ -89,7 +87,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NETBSD) || defined(OPENBSD)))
+                             || defined(NACL) || defined(NETBSD) \
+                             || defined(OPENBSD)))
 # include <stddef.h>
 # if !defined(OPENBSD) && !defined(PLATFORM_ANDROID)
     /* OpenBSD does not have elf.h file; link.h below is sufficient.    */
@@ -109,9 +108,9 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #     undef EM_ALPHA
 #   endif
 #   include <link.h>
-#   if !defined(GC_DONT_DEFINE_LINK_MAP)
-      /* link_map and r_debug should be defined explicitly,             */
-      /* as only bionic/linker/linker.h defines them but the header     */
+#   if !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+      /* link_map and r_debug are defined in link.h of NDK r10+.        */
+      /* bionic/linker/linker.h defines them too but the header         */
       /* itself is a C++ one starting from Android 4.3.                 */
       struct link_map {
         uintptr_t l_addr;
@@ -257,7 +256,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NETBSD) || defined(OPENBSD)))
+                             || defined(NACL) || defined(NETBSD) \
+                             || defined(OPENBSD)))
 
 #ifdef USE_PROC_FOR_LIBRARIES
 
@@ -314,11 +314,11 @@ STATIC word GC_register_map_entries(char *maps)
 
       /* Evaluate DATASTART only once.  */
       if (datastart_cached == (ptr_t)(word)-1) {
-        datastart_cached = (ptr_t)(DATASTART);
+        datastart_cached = DATASTART;
       }
       datastart = datastart_cached;
 #   else
-      datastart = (ptr_t)(DATASTART);
+      datastart = DATASTART;
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -464,6 +464,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     } load_segs[MAX_LOAD_SEGS];
 
     static int n_load_segs;
+    static GC_bool load_segs_overflow;
 # endif /* PT_GNU_RELRO */
 
 STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
@@ -479,74 +480,79 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
     return -1;
 
   p = info->dlpi_phdr;
-  for( i = 0; i < (int)info->dlpi_phnum; i++, p++ ) {
-    switch( p->p_type ) {
+  for (i = 0; i < (int)info->dlpi_phnum; i++, p++) {
+    if (p->p_type == PT_LOAD) {
+      GC_has_static_roots_func callback = GC_has_static_roots;
+      if ((p->p_flags & PF_W) == 0) continue;
+
+      start = (ptr_t)p->p_vaddr + info->dlpi_addr;
+      end = start + p->p_memsz;
+      if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
+        continue;
 #     ifdef PT_GNU_RELRO
-        case PT_GNU_RELRO:
-        /* This entry is known to be constant and will eventually be remapped
-           read-only.  However, the address range covered by this entry is
-           typically a subset of a previously encountered "LOAD" segment, so
-           we need to exclude it.  */
-        {
-            int j;
-
-            start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
-            end = start + p->p_memsz;
-            for (j = n_load_segs; --j >= 0; ) {
-              if ((word)start >= (word)load_segs[j].start
-                  && (word)start < (word)load_segs[j].end) {
-                if (load_segs[j].start2 != 0) {
-                  WARN("More than one GNU_RELRO segment per load seg\n",0);
-                } else {
-                  GC_ASSERT((word)end <= (word)load_segs[j].end);
-                  /* Remove from the existing load segment */
-                  load_segs[j].end2 = load_segs[j].end;
-                  load_segs[j].end = start;
-                  load_segs[j].start2 = end;
-                }
-                break;
-              }
-              if (j == 0) WARN("Failed to find PT_GNU_RELRO segment"
-                               " inside PT_LOAD region", 0);
-            }
+#       if CPP_WORDSZ == 64
+          /* TODO: GC_push_all eventually does the correct          */
+          /* rounding to the next multiple of ALIGNMENT, so, most   */
+          /* probably, we should remove the corresponding assertion */
+          /* check in GC_add_roots_inner along with this code line. */
+          /* start pointer value may require aligning */
+          start = (ptr_t)((word)start & ~(sizeof(word) - 1));
+#       endif
+        if (n_load_segs >= MAX_LOAD_SEGS) {
+          if (!load_segs_overflow) {
+            WARN("Too many PT_LOAD segments;"
+                 " registering as roots directly...\n", 0);
+            load_segs_overflow = TRUE;
+          }
+          GC_add_roots_inner(start, end, TRUE);
+        } else {
+          load_segs[n_load_segs].start = start;
+          load_segs[n_load_segs].end = end;
+          load_segs[n_load_segs].start2 = 0;
+          load_segs[n_load_segs].end2 = 0;
+          ++n_load_segs;
         }
-
-        break;
-#     endif
-
-      case PT_LOAD:
-        {
-          GC_has_static_roots_func callback = GC_has_static_roots;
-          if( !(p->p_flags & PF_W) ) break;
-          start = ((char *)(p->p_vaddr)) + info->dlpi_addr;
-          end = start + p->p_memsz;
-
-          if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
-            break;
-#         ifdef PT_GNU_RELRO
-            if (n_load_segs >= MAX_LOAD_SEGS) ABORT("Too many PT_LOAD segs");
-#           if CPP_WORDSZ == 64
-              /* FIXME: GC_push_all eventually does the correct         */
-              /* rounding to the next multiple of ALIGNMENT, so, most   */
-              /* probably, we should remove the corresponding assertion */
-              /* check in GC_add_roots_inner along with this code line. */
-              /* start pointer value may require aligning */
-              start = (ptr_t)((word)start & ~(sizeof(word) - 1));
-#           endif
-            load_segs[n_load_segs].start = start;
-            load_segs[n_load_segs].end = end;
-            load_segs[n_load_segs].start2 = 0;
-            load_segs[n_load_segs].end2 = 0;
-            ++n_load_segs;
-#         else
-            GC_add_roots_inner(start, end, TRUE);
-#         endif /* PT_GNU_RELRO */
-        }
-      break;
-      default:
-        break;
+#     else
+        GC_add_roots_inner(start, end, TRUE);
+#     endif /* !PT_GNU_RELRO */
     }
   }
+
+# ifdef PT_GNU_RELRO
+    p = info->dlpi_phdr;
+    for (i = 0; i < (int)info->dlpi_phnum; i++, p++) {
+      if (p->p_type == PT_GNU_RELRO) {
+        /* This entry is known to be constant and will eventually be    */
+        /* remapped as read-only.  However, the address range covered   */
+        /* by this entry is typically a subset of a previously          */
+        /* encountered "LOAD" segment, so we need to exclude it.        */
+        int j;
+
+        start = (ptr_t)p->p_vaddr + info->dlpi_addr;
+        end = start + p->p_memsz;
+        for (j = n_load_segs; --j >= 0; ) {
+          if ((word)start >= (word)load_segs[j].start
+              && (word)start < (word)load_segs[j].end) {
+            if (load_segs[j].start2 != 0) {
+              WARN("More than one GNU_RELRO segment per load one\n",0);
+            } else {
+              GC_ASSERT((word)end <= (word)load_segs[j].end);
+              /* Remove from the existing load segment */
+              load_segs[j].end2 = load_segs[j].end;
+              load_segs[j].end = start;
+              load_segs[j].start2 = end;
+            }
+            break;
+          }
+          if (0 == j && 0 == GC_has_static_roots)
+            WARN("Failed to find PT_GNU_RELRO segment"
+                 " inside PT_LOAD region\n", 0);
+            /* No warning reported in case of the callback is present   */
+            /* because most likely the segment has been excluded.       */
+        }
+      }
+    }
+# endif
 
   *(int *)ptr = 1;     /* Signal that we were called */
   return 0;
@@ -575,6 +581,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
     {
       static GC_bool excluded_segs = FALSE;
       n_load_segs = 0;
+      load_segs_overflow = FALSE;
       if (!EXPECT(excluded_segs, TRUE)) {
         GC_exclude_static_roots_inner((ptr_t)load_segs,
                                       (ptr_t)load_segs + sizeof(load_segs));
@@ -606,7 +613,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
         /* Evaluate DATASTART only once.  */
         if (datastart_cached == (ptr_t)(word)-1) {
-          datastart_cached = (ptr_t)(DATASTART);
+          datastart_cached = DATASTART;
         }
         datastart = (char *)datastart_cached;
 #     else
@@ -617,19 +624,28 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
           static ptr_t dataend_cached = 0;
           /* Evaluate DATAEND only once. */
           if (dataend_cached == 0) {
-            dataend_cached = (ptr_t)(DATAEND);
+            dataend_cached = DATAEND;
           }
           dataend = (char *)dataend_cached;
         }
 #     else
         dataend = DATAEND;
 #     endif
+      if (NULL == datastart || (word)datastart > (word)dataend)
+        ABORT_ARG2("Wrong DATASTART/END pair",
+                   ": %p .. %p", datastart, dataend);
 
       /* dl_iterate_phdr may forget the static data segment in  */
       /* statically linked executables.                         */
       GC_add_roots_inner(datastart, dataend, TRUE);
 #     if defined(DATASTART2)
-        GC_add_roots_inner(DATASTART2, (char *)(DATAEND2), TRUE);
+        if ((word)DATASTART2 - 1U >= (word)DATAEND2) {
+                        /* Subtract one to check also for NULL  */
+                        /* without a compiler warning.          */
+          ABORT_ARG2("Wrong DATASTART/END2 pair",
+                     ": %p .. %p", DATASTART2, DATAEND2);
+        }
+        GC_add_roots_inner(DATASTART2, DATAEND2, TRUE);
 #     endif
   }
   return TRUE;
@@ -687,8 +703,15 @@ GC_FirstDLOpenedLinkMap(void)
     if( cachedResult == 0 ) {
 #     if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
         struct link_map *lm = NULL;
-        if (!dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm))
-            cachedResult = lm;
+        if (!dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm) && lm != NULL) {
+            /* Now lm points link_map object of libgc.  Since it    */
+            /* might not be the first dynamically linked object,    */
+            /* try to find it (object next to the main object).     */
+            while (lm->l_prev != NULL) {
+                lm = lm->l_prev;
+            }
+            cachedResult = lm->l_next;
+        }
 #     else
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {

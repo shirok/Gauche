@@ -1,7 +1,7 @@
 /*
  * gauche.h - Gauche scheme system header
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -60,6 +60,7 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <gauche/int64.h>
 #include <gauche/float.h>
 
@@ -518,7 +519,7 @@ typedef struct ScmMacroRec     ScmMacro;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmRegexpRec    ScmRegexp;
 typedef struct ScmRegMatchRec  ScmRegMatch;
-typedef struct ScmWriteControlsRec  ScmWriteControls;  /* see writer.h */
+typedef struct ScmWriteControlsRec  ScmWriteControls;  /* see writerP.h */
 typedef struct ScmWriteContextRec   ScmWriteContext;   /* see writerP.h */
 typedef struct ScmWriteStateRec     ScmWriteState;     /* see wrtierP.h */
 typedef struct ScmAutoloadRec  ScmAutoload;
@@ -811,6 +812,11 @@ SCM_EXTERN void Scm_InitStaticClassWithMeta(ScmClass *klass,
                                             ScmObj supers,
                                             ScmClassStaticSlotSpec *slots,
                                             int flags);
+SCM_EXTERN ScmObj Scm_ShortClassName(ScmClass *klass); /* strip '<' and '>' */
+
+/* Use this in 'compare' slot to allow Scheme method to define
+   compare/equal? behavior thru object-compare/object-equal? */
+SCM_EXTERN int Scm_ObjectCompare(ScmObj x, ScmObj y, int equalp);
 
 /* OBSOLETE */
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
@@ -1274,14 +1280,24 @@ struct ScmProcedureRec {
     unsigned int required : 16;    /* # of required args */
     unsigned int optional : 8;     /* >=1 if it takes opt args. see below.*/
     unsigned int type     : 3;     /* ScmProcedureType */
-    unsigned int locked   : 1;     /* setter locked? */
+    unsigned int locked   : 1;     /* setter locked? (see below) */
     unsigned int currying : 1;     /* autocurrying */
     unsigned int constant : 1;     /* constant procedure. see below. */
-    unsigned int reserved : 2;     /* unused yet. */
-    ScmObj info;                   /* source code info */
+    unsigned int leaf     : 1;     /* leaf procedure/method */
+    unsigned int reserved : 1;     /* unused yet. */
+    ScmObj info;                   /* source code info (see below) */
     ScmObj setter;                 /* setter, if exists. */
-    ScmObj inliner;                /* inliner information.  see below. */
+    ScmObj inliner;                /* inliner information (see below) */
 };
+
+/* About locked slot:
+   For <procedure> and <generic>, it shows whether the setter is locked.
+   For <method>, it shows whether the alteration of the method is disallowed,
+   i.e. one can't redefine a method with matching signature.
+   (These two roles are reflected to the two macors,
+   SCM_PROCEDURE_SETTER_LOCKED and SCM_PROCEDURE_METHOD_LOCKED)
+   TODO: When we change ABI, maybe split these roles to different flags.
+ */
 
 /* About optional slot:
    If this slot is non-zero, the procedure takes optional arguments.
@@ -1313,6 +1329,63 @@ struct ScmProcedureRec {
    or the compiler configuration (e.g. internal encoding).
  */
 
+/* About 'leaf' flag:
+   For METHOD, this flag indicates the method doesn't refer to next-method
+   argument at all, so we can skip creating next-method instance when
+   making a call.
+   For CLOSURE, we *plan* to use this to indicate the closure body doesn't
+   make a call to another procedures, to allow certain optimizations.
+ */
+
+/* About 'info' slot:
+   This is a sort of the kitchen sink slot, keeping whatever miscellaneous
+   information as our implementation evolves.  Since this can be a part of
+   statically allocated structure, we can't change its format in a way
+   that breaks the backward compatibility.
+
+   SUBR, CLOSURE:
+           This slot may contain one of this:
+           - Signature: For example, the subr `cons' has (cons obj1 obj2)
+             in it.  The first pair may have the following pair attributes.
+             
+               `source-info'   (<filename> <lineno>)
+                   The source location the procedure is defined, if known.
+                   This info can be retrieved with (source-location PROC).
+               `bind-info'     (<module-name> <var-name>)
+                   The proc is bound to <var-name> in a module named
+                   <module-name>, and it's inlinable binding.  When the
+                   compiler can pre-calculate the proc to be called in a
+                   code, it can replace the original code with a global
+                   variable reference to <var-name>.  (We can't directly
+                   insert reference to the proc, for it may not be
+                   serializable for AOT compilation).
+
+           - Subr's name, as a string or a symbol.  This is the old format.
+             It may also the case that subr is created from C function
+             Scm_MakeSubr(), for it's cumbersome in C routine to construct
+             the signature list.  Accept it, but not recommended to use
+             this format in the new code.
+           - #f.  Indicates there's no useful info.
+
+   GENERIC:
+           This slot contains the "name" of the gf, which is a symbol.
+           A kludge: For setter gf, which can be created indirectly
+           via (define-method (setter GF) ...), we use a weird name
+           |setter of GF|.  This is a quick hack to make it work, but ideally
+           we should accept a list (setter GF) as the name.  Anticipate
+           this change in future.
+           Furthermore, in order to hold source-info, we might just make
+           it a pair, e.g. (NAME) or ((setter NAME)).
+
+   METHOD:
+           This slot contains (<name> <specializer> ...),
+           where <name> is the name of the generic function, and
+           <specializer>s are the name of classes.
+
+   NEXT_METHOD:
+           This slot isn't used.
+ */
+
 /* About procedure inliner:
    This slot holds information to inline procedures.  The value of this slot
    can be one of the following kinds:
@@ -1329,6 +1402,18 @@ struct ScmProcedureRec {
    <vector>: Procedures defined with define-inline have this.  The vector
       encodes intermediate form (IForm) of the procedure code, which will be
       expanded into the caller.
+
+   <macro>:  A compiler macro.  The macro expander is invoked with the
+      original source and macro-use environment, just like the ordinary macro
+      call.  The expander must return an Sexpr.  If the expander returns
+      the input as is, it indicates expansion is not possible and the form
+      is compiled as the ordinary procedure call.
+
+   <procedure>: A procedural inliner.  It has signature Sexpr,[IForm] -> IForm,
+      where Sexpr is the original source of call size (just for debug info) and
+      input [IForm] is the IForm for list of arguments.  See compiler-1.scm.
+      It returns the modified IForm.  It can return #<undef>, to indicate
+      inlining isn't possible.
  */
 
 /* procedure type */
@@ -1348,6 +1433,8 @@ enum ScmProcedureType {
 #define SCM_PROCEDURE_INFO(obj)     SCM_PROCEDURE(obj)->info
 #define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
 #define SCM_PROCEDURE_INLINER(obj)  SCM_PROCEDURE(obj)->inliner
+#define SCM_PROCEDURE_SETTER_LOCKED(obj) SCM_PROCEDURE(obj)->locked
+#define SCM_PROCEDURE_LEAF(obj)     SCM_PROCEDURE(obj)->leaf
 
 SCM_CLASS_DECL(Scm_ProcedureClass);
 #define SCM_CLASS_PROCEDURE    (&Scm_ProcedureClass)
@@ -1368,15 +1455,18 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->locked = FALSE,                 \
     SCM_PROCEDURE(obj)->currying = FALSE,               \
     SCM_PROCEDURE(obj)->constant = FALSE,               \
+    SCM_PROCEDURE(obj)->leaf = FALSE,                   \
     SCM_PROCEDURE(obj)->reserved = 0,                   \
     SCM_PROCEDURE(obj)->info = inf,                     \
     SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
     SCM_PROCEDURE(obj)->inliner = SCM_FALSE
 
-#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, inf, inl)  \
-    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, 0,              \
+/* This is internal - should never be used directly */
+#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
+    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0,             \
       (inf), SCM_FALSE, (inl) }
 
+SCM_EXTERN ScmObj Scm_CopyProcedure(ScmProcedure *proc);
 SCM_EXTERN ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given,
                                      int ngiven, int foldlen);
 
@@ -1390,6 +1480,8 @@ struct ScmClosureRec {
 #define SCM_CLOSUREP(obj) \
     (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_CLOSURE))
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
+#define SCM_CLOSURE_CODE(obj)      SCM_CLOSURE(obj)->code
+#define SCM_CLOSURE_ENV(obj)       SCM_CLOSURE(obj)->env
 
 SCM_EXTERN ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env);
 
@@ -1419,7 +1511,7 @@ struct ScmSubrRec {
 #define SCM__DEFINE_SUBR_INT(cvar, req, opt, cst, inf, flags, func, inliner, data) \
     ScmSubr cvar = {                                                        \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_ProcedureClass),\
-            req, opt, SCM_PROC_SUBR, cst, inf, inliner),                    \
+             req, opt, SCM_PROC_SUBR, cst, 0, inf, inliner),                \
         flags, (func), (data)                                               \
     }
 
@@ -1453,6 +1545,8 @@ struct ScmGenericRec {
     ScmObj (*fallback)(ScmObj *argv, int argc, ScmGeneric *gf);
     void *data;
     ScmInternalMutex lock;
+    void *dispatcher;           /* To accelerate dispatching. See dispatch.c
+                                   TRANSIENT: Move this up in 1.0 release */
 };
 
 SCM_CLASS_DECL(Scm_GenericClass);
@@ -1464,9 +1558,11 @@ SCM_CLASS_DECL(Scm_GenericClass);
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_GenericClass),\
-                                   0, 0, SCM_PROC_GENERIC, 0,           \
+                                   0, 0, SCM_PROC_GENERIC, 0, 0,        \
                                    SCM_FALSE, NULL),                    \
-        SCM_NIL, 0, cfunc, data                                         \
+        SCM_NIL, 0, cfunc, data,                                        \
+        SCM_INTERNAL_MUTEX_INITIALIZER,                                 \
+        NULL                                                            \
     }
 
 SCM_EXTERN void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name,
@@ -1495,11 +1591,13 @@ SCM_CLASS_DECL(Scm_MethodClass);
 #define SCM_CLASS_METHOD           (&Scm_MethodClass)
 #define SCM_METHODP(obj)           SCM_ISA(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
+#define SCM_METHOD_LOCKED(obj)     SCM_METHOD(obj)->common.locked
+#define SCM_METHOD_LEAF_P(obj)     SCM_METHOD(obj)->common.leaf
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_MethodClass),\
-                                   req, opt, SCM_PROC_METHOD, 0,        \
+                                   req, opt, SCM_PROC_METHOD, 0, 0,     \
                                    SCM_FALSE, NULL),                    \
         gf, specs, func, data, NULL                                     \
     }
@@ -1576,8 +1674,19 @@ SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler);
 SCM_CLASS_DECL(Scm_MacroClass);
 #define SCM_CLASS_MACRO            (&Scm_MacroClass)
 
-SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer);
+/* TRANSIENT: Scm_MakeMacroFull is to keep ABI compatibility.  Will be gone
+   in 1.0.  */
+#if GAUCHE_API_0_95
+SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name, ScmObj transformer,
+                                ScmObj src, ScmObj describer);
+#define Scm_MakeMacroFull(a,b,c,d) Scm_MakeMacro(a,b,c,d)
+#else
+SCM_EXTERN ScmObj Scm_MakeMacroFull(ScmObj name, ScmObj transformer,
+                                    ScmObj src, ScmObj describer);
+ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer);
+#endif
 SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
+SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 
 SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
                                            ScmObj proc);
@@ -1755,6 +1864,7 @@ SCM_CLASS_DECL(Scm_SysSigsetClass);
 
 SCM_EXTERN ScmObj Scm_SysSigsetOp(ScmSysSigset*, ScmObj, int);
 SCM_EXTERN ScmObj Scm_SysSigsetFill(ScmSysSigset*, int);
+SCM_EXTERN void   Scm_SigFillSetMostly(sigset_t *set);
 SCM_EXTERN ScmObj Scm_GetSignalHandler(int);
 SCM_EXTERN ScmObj Scm_GetSignalHandlerMask(int);
 SCM_EXTERN ScmObj Scm_GetSignalHandlers(void);

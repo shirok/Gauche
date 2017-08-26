@@ -7,13 +7,19 @@
 
 ;; Read Unicode data tables and generates Scheme data structures
 ;; for ease of use.
+;;
 ;; This data structures are not intended to be lightweight for
 ;; in-application use; they are intermediate format to generate
 ;; more efficient structure suitable for applications.
+;; The src/gen-unicode.scm script uses this module.
+;;
+;; The applications should never 'use' this module.  The info is
+;; available from Gauche core API and gauche.unicode modules.
 
 (define-module text.unicode.ucd
   (use gauche.record)
   (use gauche.dictionary)
+  (use gauche.collection)
   (use gauche.uvector)
   (use gauche.charconv)
   (use gauche.generator)
@@ -49,6 +55,8 @@
           ucd-general-categories
           ucd-grapheme-break-properties
           ucd-word-break-properties
+
+          ucd-east-asian-widths
 
           eucjp->ucd-entry sjis->ucd-entry
           )
@@ -96,10 +104,13 @@
   ranges
   ;; codepoint -> ucd-break-property
   break-table
+  ;; codepoint -> east-asian-width
+  width-table
   )
 
 (define (make-unichar-db)
   (%make-unichar-db #f
+                    (make-hash-table 'eqv?)
                     (make-hash-table 'eqv?)
                     (make-hash-table 'eqv?)
                     (make-hash-table 'eqv?)))
@@ -193,10 +204,12 @@
        (equal? (ucd-extended-case-map-special-map a)
                (ucd-extended-case-map-special-map b))))
 
-;; This order must match with the enum in src/gauche/char_attr.h
+;; These order must match with the enum in src/gauche/char_attr.h
 (define (ucd-general-categories)
   '(Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po
     Sm Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn))
+(define (ucd-east-asian-widths)
+  '(A F H N Na W))
 
 ;; Break properties.  NB: In order to squeeze grapheme and word break
 ;; properties into a single byte, we treat GB_CR, GB_LF, WB_CR, WB_LF,
@@ -332,10 +345,11 @@
     (word-break-property
      (ucd-word-break-properties)
      (build-path datadir "auxiliary/WordBreakProperty.txt") db)
+    (east-asian-width (build-path datadir "EastAsianWidth.txt") db)
     db))
 
 (define-constant +required-files+
-  '("UnicodeData.txt" "SpecialCasing.txt" "PropList.txt"
+  '("UnicodeData.txt" "SpecialCasing.txt" "PropList.txt" "EastAsianWidth.txt"
     "auxiliary/GraphemeBreakProperty.txt" "auxiliary/WordBreakProperty.txt"))
 
 (define (check-data-files dir)
@@ -373,7 +387,7 @@
          [(not prev-code)           ; initial loop
           (dict-put! table code entry)]
          [(and range? (not (= code (+ prev-code 1)))) ;gap
-          (dict-fill! table (+ prev-code 1) code entry)]
+          (dict-fill! table (+ prev-code 1) (+ code 1) entry)]
          [else
           (dict-put! table code entry)])
         ;; insert category range over U+20000
@@ -500,6 +514,24 @@
   (with-input-from-file file
     (cut generator-for-each handle read-line)))
 
+(define (east-asian-width file db)
+  (define table (unichar-db-width-table db))
+  (define (parse line)
+    (rxmatch-case line
+      [#/^([0-9A-Fa-f]+)(\.\.([0-9A-Fa-f]+))?\s*\;\s*(\w+)/ (#f s #f e p)
+       (list (string->symbol p)
+             (parse-code s)
+             (if e (parse-code e) (parse-code s)))]
+      [else #f]))
+  (define (handle line)
+    (match (parse line)
+      [(width start end)
+       (do-ec (: c start (+ end 1))
+              (dict-put! table c width))]
+      [_ #f]))
+  (with-input-from-file file
+    (cut generator-for-each handle read-line)))
+
 (define (ensure-ucd-break-property db code)
   (let1 table (unichar-db-break-table db)
     (or (dict-get table code #f)
@@ -565,6 +597,9 @@
 ;;
 ;;  RLE compressed list of (<grapheme-break-property> <word-break-property>).
 ;;
+;; 4. East Asian Width properties
+;;
+;;  RLE compressed list of <east-asian-width>
 
 
 (define (ucd-save-db db)
@@ -620,6 +655,15 @@
        $ gmap (^c (format-break-property-entry (dict-get tab c #f)))
        $ giota $ + 1 $ apply max $ dict-keys tab))
   (print ")")
+
+  (print ";; unichar-db-width-table")
+  (print "(")
+  (let1 tab (unichar-db-width-table db)
+    ($ generator-for-each print
+       $ rle-compressing-generator
+       $ gmap (^c (dict-get tab c #f))
+       $ giota $ + 1 $ apply max $ dict-keys tab))
+  (print ")")
   )
 
 (define (ucd-load-db port)
@@ -630,7 +674,6 @@
         [#f #f]
         [(case offset) (make-ucd-simple-case-map case offset)]
         [(code simple ext) (make-ucd-extended-case-map code simple ext)]))
-
     (define (add-entry! e code)
       (and e
            (receive (category case-map flags)
@@ -654,6 +697,11 @@
                  (ucd-break-property-grapheme-set! r g)
                  (ucd-break-property-word-set! r w))]))
 
+    (define (add-width-property! e code)
+      (match e
+        [#f #f]
+        [sym (hash-table-put! (unichar-db-width-table db) code sym)]))
+
     ;; version
     (set! (unichar-db-version db) (read port))
     ;; ucd-entries
@@ -671,6 +719,12 @@
       (generator-for-each add-break-property!
                           ($ rle-decompressiong-generator
                              $ list->generator break-properties)
+                          (giota)))
+    ;; width table
+    (let1 width-properties (read port)
+      (generator-for-each add-width-property!
+                          ($ rle-decompressiong-generator
+                             $ list->generator width-properties)
                           (giota)))
     ))
 
@@ -717,15 +771,4 @@
     (match entry
       [('rep c . items) (gflatten (gmap (^_ items) (giota c)))]
       [item (list->generator (list item))]))
-
-  ;; TRANSIENT: gflatten is in gauche.generator, but it was added after
-  ;; 0.9.4 release and we need our own definition in order to build
-  ;; 0.9.5 with 0.9.4.  Remove this after 0.9.5 release.
-  (define (gflatten gen)
-    (let ([current '()])
-      (rec (g)
-        (cond [(eof-object? current) current]
-              [(pair? current) (pop! current)]
-              [else (set! current (gen)) (g)]))))
-  
   ($ gconcatenate $ gmap entry->gen input-gen))

@@ -1,7 +1,7 @@
 /*
  * vm.h - Virtual machine
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -45,10 +45,10 @@
 
 #define SCM_PCTYPE ScmWord*
 
-#if defined(ITIMER_PROF) && defined(SIGPROF)
+#if (defined(ITIMER_PROF) && defined(SIGPROF)) || defined(GAUCHE_WINDOWS)
 /* define if you want to use profiler */
 #define GAUCHE_PROFILE
-#endif /* defined(ITIMER_PROF) && defined(SIGPROF) */
+#endif /* (defined(ITIMER_PROF) && defined(SIGPROF)) || defined(GAUCHE_WINDOWS) */
 
 
 #ifdef __GNUC__
@@ -703,7 +703,8 @@ enum {
     SCM_COMPILE_NO_LIFTING = (1L<<7),      /* Do not run lambda lifting pass
                                               (pass4). */
     SCM_COMPILE_INCLUDE_VERBOSE = (1L<<8), /* Report expansion of 'include' */
-    SCM_COMPILE_ENABLE_CEXPR = (1L<<9)     /* Support C-expressions by reader */
+    SCM_COMPILE_ENABLE_CEXPR = (1L<<9),    /* Support C-expressions by reader */
+    SCM_COMPILE_NOINLINE_SETTERS = (1L<<10) /* Do not inline setters */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

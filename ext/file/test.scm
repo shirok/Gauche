@@ -9,7 +9,11 @@
 
 (test-start "file.util")
 (use file.util)
-(test-module 'file.util)
+(cond-expand
+ [gauche.os.windows
+  (test-module 'file.util :allow-undefined '(sys-symlink))]
+ [else
+  (test-module 'file.util)])
 
 ;; shorthand of normalizing pathname.  this doesn't do anything on
 ;; unix, but on Windows the separator in PATHNAME is replaced.
@@ -98,6 +102,7 @@
 (test* "path-swap-extension" ".a.o" (path-swap-extension ".a" "o"))
 (test* "path-swap-extension" ".a.o" (path-swap-extension ".a.c" "o"))
 
+;; find-file-in-paths is tested after diretory util tests
 
 ;;=====================================================================
 (test-section "directories")
@@ -703,5 +708,58 @@
 
 (test-lock-file 'file)
 (test-lock-file 'directory)
+
+;;
+;; find-file-in-paths
+;;
+
+(let ()
+  (define (cleanup)
+    (when (file-exists? "test.out")
+      (remove-directory* "test.out")))
+  (define paths '("test.out/bin"
+                  "test.out/usr/bin"
+                  "test.out/usr/sbin"))
+  (cleanup)
+  (dolist [p paths] (make-directory* p))
+  (print (directory-list "."))
+  (touch-files '("test.out/bin/foo"
+                 "test.out/bin/bar"
+                 "test.out/bin/ban.com"
+                 "test.out/usr/bin/foo"
+                 "test.out/usr/bin/bar"
+                 "test.out/usr/bin/baz"
+                 "test.out/usr/bin/ban.exe"
+                 "test.out/usr/sbin/foo"
+                 "test.out/usr/sbin/bar"
+                 "test.out/usr/sbin/ban"))
+
+  (unwind-protect
+      (begin
+        (test* "find-file-in-paths" (n "test.out/bin/foo")
+               (find-file-in-paths "foo"
+                                   :paths paths
+                                   :pred file-exists?))
+        (test* "find-file-in-paths" (n "test.out/usr/bin/foo")
+               (find-file-in-paths "foo"
+                                   :paths (cdr paths)
+                                   :pred file-exists?))
+        (test* "find-file-in-paths" (n "test.out/usr/sbin/ban")
+               (find-file-in-paths "ban"
+                                   :paths paths
+                                   :pred file-exists?))
+        (test* "find-file-in-paths" (n "test.out/usr/bin/ban.exe")
+               (find-file-in-paths "ban"
+                                   :paths paths
+                                   :pred file-exists?
+                                   :extensions '("exe")))
+        (test* "find-file-in-paths" (n "test.out/bin/ban.com")
+               (find-file-in-paths "ban"
+                                   :paths paths
+                                   :pred file-exists?
+                                   :extensions '("exe" "com")))
+        )
+    (cleanup))
+  )
 
 (test-end)

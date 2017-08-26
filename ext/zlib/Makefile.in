@@ -6,7 +6,7 @@ include ../Makefile.ext
 
 XCPPFLAGS = @ZLIB_CPPFLAGS@
 XLDFLAGS  = @ZLIB_LDFLAGS@
-XLIBS     = -lz
+XLIBS     = @ZLIB_LIB@
 
 SCM_CATEGORY = rfc
 

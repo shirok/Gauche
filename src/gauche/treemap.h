@@ -1,7 +1,7 @@
 /*
  * treemap.h - general library of balanced trees
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -60,10 +60,30 @@ struct ScmTreeCoreRec {
 
 #define SCM_TREE_CORE_DATA(core)  ((core)->data)
 
+/* The tree iterator is bidirectional.  We need to keep both next and
+   prev entries in case if the 'current' entry is deleted during traversal.
+   NULL in n and/or p means iter is at the far end.
+   The initial state is exceptional, since we don't know which way the
+   cursor would go.  So 'prev' pointer points to the max node (hence
+   going backwards start from max node) and 'next' pointer points to the
+   min node (so going fowards start from min node).
+   
+   p      c      n
+   cur-1  cur    cur+1          normal state
+   NULL   min    min+1          cursor at the lowest end
+   NULL   NULL   min            cursor exhausted (when going backwards)
+   max-1  max    NULL           cursor at the highest end
+   max    NULL   NULL           cursor exhausted (when goind forwards)
+   max    NULL   min            special initial state
+
+   NULL   cur    NULL           edge case: map only has one entry
+   NULL   NULL   NULL           edge case: map has no entries
+*/
 typedef struct ScmTreeIterRec {
     ScmTreeCore  *t;
-    ScmDictEntry *e;
-    int at_end;
+    ScmDictEntry *c;            /* current */
+    ScmDictEntry *n;            /* next */
+    ScmDictEntry *p;            /* prev */
 } ScmTreeIter;
 
 /*

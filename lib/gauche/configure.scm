@@ -1,7 +1,7 @@
 ;;;
 ;;; configure.scm - configuring Gauche extensions
 ;;;
-;;;   Copyright (c) 2013-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2013-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -59,6 +59,8 @@
 
 ;; NB: cf-define currently only suppors substituting DEFS; it doesn't
 ;; handle config.h.
+
+;; TODO: Caching of test results
 
 (define-module gauche.configure
   (use gauche.parameter)
@@ -163,7 +165,7 @@
   (exit 1))
 
 ;; API
-;; Convenience routie for substitute of shell's echo
+;; Convenience routine for substitute of shell's echo
 ;; e.g.  (cf-echo "something" > "FILE")
 ;; or    (cf-echo "something" >> "FILE")
 ;; The destination, '>' or '>>' followed by a filename, must be at the end
@@ -242,8 +244,8 @@
                     x))
                 url)]
          )
-    (check-arg string? package-name)
-    (check-arg string? version)
+    (assume-type package-name <string>)
+    (assume-type version <string>)
     (sys-unlink "config.log")
     (log-open "config.log" :prefix "")
     (log-format "Configuring ~a ~a" package-name version)
@@ -256,7 +258,7 @@
        :gpd (or gpd
                 ($ make-gauche-package-description package-name
                    :version version :homepage url
-                   :maintainers (list bug-report)))
+                   :maintainers (if bug-report (list bug-report) '())))
        :string (format "~a ~a" package-name version)
        :tarname (cgen-safe-name-friendly (string-downcase package-name))))
     (cf-lang (instance-of <c-language>))
@@ -330,7 +332,7 @@
   (let1 rest
       (parse-options (cdr (command-line))
         (["bindir=s" (dir) (cf-subst 'bindir dir)]
-         ["build=s" (build) (cf-subst 'build-alias build)]
+         ["build=s" (build) (cf-subst 'build_alias build)]
          ["c|cache-file=s" (_)
           (values)] ;; support for the compatibility.  we don't do anything.
          ["C|config-cache" (_) (values)]
@@ -341,7 +343,7 @@
          ;; --disable-option-checking
          ["exec_prefix=s" (pre) (cf-subst 'exec_prefix pre)]
          ["help" () (usage)]
-         ["host=s" (host) (cf-subst 'host-alias host)]
+         ["host=s" (host) (cf-subst 'host_alias host)]
          ["htmldir=s" (dir) (cf-subst 'htmldir dir)]
          ["includedir=s" (dir) (cf-subst 'includedir dir)]
          ["infodir=s" (dir) (cf-subst 'infodir dir)]
@@ -556,16 +558,19 @@
 
 ;; API
 (define (cf-define symbol :optional (value 1))
+  (assume-type symbol <symbol>)
   (dict-put! (~ (ensure-package)'defs) symbol value))
 
 ;; API
 ;; Like AC_SUBST, but we require value (instead of implicitly referencing
 ;; a global variable.
 (define (cf-subst symbol value)
+  (assume-type symbol <symbol>)
   (dict-put! (~ (ensure-package)'substs) symbol value))
 
 ;; API
 (define (cf-have-subst? symbol)
+  (assume-type symbol <symbol>)
   (dict-exists? (~ (ensure-package)'substs) symbol))
 
 ;; API
@@ -575,16 +580,19 @@
 ;; called after cf-init and we can't include help message (the limitation
 ;; of one-pass processing.)
 (define (cf-arg-var symbol)
+  (assume-type symbol <symbol>)
   (update! (~ (ensure-package)'precious) (cut set-adjoin! <> symbol))
   (and-let1 v (sys-getenv (x->string symbol))
     (cf-subst symbol v)))
 
 (define (var-precious? symbol)
+  (assume-type symbol <symbol>)
   (set-contains? (~ (ensure-package)'precious) symbol))
 
 ;; API
 ;; Lookup the current value of the given variable.
 (define (cf-ref symbol :optional (default (undefined)))
+  (assume-type symbol <symbol>)
   (rlet1 v (dict-get (~ (ensure-package)'substs) symbol default)
     (when (undefined? v)
       (errorf "Configure variable ~s is not defined." symbol))))
@@ -1037,51 +1045,63 @@
 
 ;; API
 ;; Returns a string tree
+;; Unlike AC_INCLUDES_DEFAULT, we don't accept argument.  The
+;; behavior of AC_INCLUDES_DEFAULT is convenient for m4 macros,
+;; but makes little sense for Scheme.
 (define cf-includes-default
-  (let1 defaults '("#include <stdio.h>\n"
-                   "#ifdef HAVE_SYS_TYPES_H\n"
-                   "# include <sys/types.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_SYS_STAT_H\n"
-                   "# include <sys/stat.h>\n"
-                   "#endif\n"
-                   "#ifdef STDC_HEADERS\n"
-                   "# include <stdlib.h>\n"
-                   "# include <stddef.h>\n"
-                   "#else\n"
-                   "# ifdef HAVE_STDLIB_H\n"
-                   "#  include <stdlib.h>\n"
-                   "# endif\n"
-                   "#endif\n"
-                   "#ifdef HAVE_STRING_H\n"
-                   "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H\n"
-                   "#  include <memory.h>\n"
-                   "# endif\n"
-                   "# include <string.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_STRINGS_H\n"
-                   "# include <strings.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_INTTYPES_H\n"
-                   "# include <inttypes.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_STDINT_H\n"
-                   "# include <stdint.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_UNISTD_H\n"
-                   "# include <unistd.h>\n"
-                   "#endif\n")
-    (case-lambda
-      [() defaults]
-      [(newval) (set! defaults newval) defaults])))
+  (let* ([defaults '("#include <stdio.h>\n"
+                     "#ifdef HAVE_SYS_TYPES_H\n"
+                     "# include <sys/types.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_SYS_STAT_H\n"
+                     "# include <sys/stat.h>\n"
+                     "#endif\n"
+                     "#ifdef STDC_HEADERS\n"
+                     "# include <stdlib.h>\n"
+                     "# include <stddef.h>\n"
+                     "#else\n"
+                     "# ifdef HAVE_STDLIB_H\n"
+                     "#  include <stdlib.h>\n"
+                     "# endif\n"
+                     "#endif\n"
+                     "#ifdef HAVE_STRING_H\n"
+                     "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H\n"
+                     "#  include <memory.h>\n"
+                     "# endif\n"
+                     "# include <string.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_STRINGS_H\n"
+                     "# include <strings.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_INTTYPES_H\n"
+                     "# include <inttypes.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_STDINT_H\n"
+                     "# include <stdint.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_UNISTD_H\n"
+                     "# include <unistd.h>\n"
+                     "#endif\n")]
+         [requires (delay
+                     (begin (cf-check-headers '("sys/types.h" "sys/stat.h"
+                                                "stdlib.h" "string.h" "memory.h"
+                                                "strings.h" "inttypes.h"
+                                                "stdint.h" "unistd.h")
+                                              :includes defaults)
+                            defaults))])
+    (^[] (force requires))))
 
 ;; Feature Test API
 ;; Like AC_CHECK_HEADER.
 ;; Returns #t on success, #f on failure.
 (define (cf-check-header header-file :key (includes #f))
-  (cf-msg-checking "~a usability" header-file)
-  (rlet1 result (cf-try-compile (or includes (cf-includes-default)) "")
-    (cf-msg-result (if result "yes" "no"))))
+  (let1 includes (or includes (cf-includes-default))
+    (cf-msg-checking "~a usability" header-file)
+    (rlet1 result (cf-try-compile (list includes
+                                        "/* Testing compilability */"
+                                        #"#include <~|header-file|>\n")
+                                  "")
+      (cf-msg-result (if result "yes" "no")))))
 
 ;; Feature Test API
 ;; Like AC_CHECK_HEADERS.  Besides the check, it defines HAVE_<header-file>
@@ -1090,6 +1110,6 @@
                           :key (includes #f) (if-found #f) (if-not-found #f))
   (dolist [h header-files]
     (if (cf-check-header h :includes includes)
-      (begin (cf-define #"HAVE_~(safe-variable-name h)")
+      (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name h)"))
              (when if-found (if-found h)))
       (when if-not-found (if-not-found h)))))

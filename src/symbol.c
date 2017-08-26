@@ -1,7 +1,7 @@
 /*
  * symbol.c - symbol implementation
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -92,10 +92,10 @@ static ScmSymbol *make_sym(ScmClass *klass, ScmString *name, int interned)
            the same name symbol between above HashTableRef and here, we'll
            get the already interned symbol. */
         SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
-        ScmObj e = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
+        ScmObj r = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
                                     SCM_DICT_NO_OVERWRITE);
         SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
-        return SCM_SYMBOL(e);
+        return SCM_UNBOUNDP(r)? sym : SCM_SYMBOL(r);
     }
 }
 
@@ -128,7 +128,7 @@ ScmObj Scm_MakeKeyword(ScmString *name)
         r = Scm_HashTableSet(keywords.table, SCM_OBJ(name), SCM_OBJ(k),
                              SCM_DICT_NO_OVERWRITE);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
-        return r;
+        return SCM_UNBOUNDP(r)? SCM_OBJ(k) : r ;
     }
 #endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
     ScmObj sname = Scm_StringAppend2(&keyword_prefix, name);
@@ -410,6 +410,49 @@ ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list)
         prev = cp;
     }
     return list;
+}
+
+/* Scan kv-list to look for keywords in the array *KEYS.  Saves the first
+ * found value in the corresponding *VALS.  Returns a kv-list with all
+ * the keys deleted.  For unfound keys, the corresponding VAL is set with
+ * FALLBACK.
+ * May throw an error if kv-list isn't even.
+ */
+ScmObj Scm_ExtractKeywords(ScmObj kv_list,
+                           const ScmObj *keys,
+                           int numKeys,
+                           ScmObj *vals,
+                           ScmObj fallback)
+{
+    ScmObj cp, h = SCM_NIL, t = SCM_NIL;
+    int i;
+    for (i=0; i<numKeys; i++) vals[i] = SCM_UNBOUND;
+    SCM_FOR_EACH(cp, kv_list) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            Scm_Error("keyword list not even: %S", kv_list);
+        }
+        for (i=0; i<numKeys; i++) {
+            if (SCM_EQ(keys[i], SCM_CAR(cp))) {
+                if (SCM_UNBOUNDP(vals[i])) {
+                    vals[i] = SCM_CADR(cp);
+                }
+                break;
+            }
+        }
+        if (i == numKeys) {
+            SCM_APPEND1(h, t, SCM_CAR(cp));
+            SCM_APPEND1(h, t, SCM_CADR(cp));
+        }
+        cp = SCM_CDR(cp);
+    }
+    if (!SCM_UNBOUNDP(fallback)) {
+        for (i=0; i<numKeys; i++) {
+            if (vals[i] == SCM_UNBOUND) {
+                vals[i] = fallback;
+            }
+        }
+    }
+    return h;
 }
 
 /*

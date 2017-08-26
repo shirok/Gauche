@@ -1,7 +1,7 @@
 ;;;
 ;;; text.gap-buffer - gap-buffer for character array
 ;;;
-;;;   Copyright (c) 2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2015-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -68,7 +68,7 @@
 
 ;; API
 (define (gap-buffer-gap-start gbuf)
-  (check-arg gap-buffer? gbuf)
+  (assume-type gbuf <gap-buffer>)
   (~ gbuf'gap-start))
 
 ;; API
@@ -78,7 +78,7 @@
 
 ;; API
 (define (gap-buffer-gap-end gbuf)
-  (check-arg gap-buffer? gbuf)
+  (assume-type gbuf <gap-buffer>)
   (~ gbuf'gap-end))
 
 ;; API
@@ -116,12 +116,12 @@
 
 ;; API
 (define (gap-buffer-capacity gbuf)
-  (check-arg gap-buffer? gbuf)
+  (assume-type gbuf <gap-buffer>)
   (%gbuf-size gbuf))
 
 ;; API
 (define (gap-buffer-content-length gbuf)
-  (check-arg gap-buffer? gbuf)
+  (assume-type gbuf <gap-buffer>)
   (%gbuf-content-length gbuf))
 
 ;; Returns gap-start and gap-end index

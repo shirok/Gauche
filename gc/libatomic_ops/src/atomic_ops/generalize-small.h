@@ -449,6 +449,7 @@
     && !defined(AO_HAVE_char_store_write)
   AO_INLINE void
   AO_char_store_write(volatile unsigned/**/char *addr, unsigned/**/char new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -478,6 +479,7 @@
 #if defined(AO_HAVE_char_compare_and_swap) && !defined(AO_HAVE_char_store)
   AO_INLINE void
   AO_char_store(volatile unsigned/**/char *addr, unsigned/**/char new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -493,6 +495,7 @@
     && !defined(AO_HAVE_char_store_release)
   AO_INLINE void
   AO_char_store_release(volatile unsigned/**/char *addr, unsigned/**/char new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -508,6 +511,7 @@
     && !defined(AO_HAVE_char_store_full)
   AO_INLINE void
   AO_char_store_full(volatile unsigned/**/char *addr, unsigned/**/char new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -969,6 +973,7 @@
     && !defined(AO_HAVE_short_store_write)
   AO_INLINE void
   AO_short_store_write(volatile unsigned/**/short *addr, unsigned/**/short new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -998,6 +1003,7 @@
 #if defined(AO_HAVE_short_compare_and_swap) && !defined(AO_HAVE_short_store)
   AO_INLINE void
   AO_short_store(volatile unsigned/**/short *addr, unsigned/**/short new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -1013,6 +1019,7 @@
     && !defined(AO_HAVE_short_store_release)
   AO_INLINE void
   AO_short_store_release(volatile unsigned/**/short *addr, unsigned/**/short new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -1028,6 +1035,7 @@
     && !defined(AO_HAVE_short_store_full)
   AO_INLINE void
   AO_short_store_full(volatile unsigned/**/short *addr, unsigned/**/short new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -1489,6 +1497,7 @@
     && !defined(AO_HAVE_int_store_write)
   AO_INLINE void
   AO_int_store_write(volatile unsigned *addr, unsigned new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -1518,6 +1527,7 @@
 #if defined(AO_HAVE_int_compare_and_swap) && !defined(AO_HAVE_int_store)
   AO_INLINE void
   AO_int_store(volatile unsigned *addr, unsigned new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -1533,6 +1543,7 @@
     && !defined(AO_HAVE_int_store_release)
   AO_INLINE void
   AO_int_store_release(volatile unsigned *addr, unsigned new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -1548,6 +1559,7 @@
     && !defined(AO_HAVE_int_store_full)
   AO_INLINE void
   AO_int_store_full(volatile unsigned *addr, unsigned new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -2009,6 +2021,7 @@
     && !defined(AO_HAVE_store_write)
   AO_INLINE void
   AO_store_write(volatile AO_t *addr, AO_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2038,6 +2051,7 @@
 #if defined(AO_HAVE_compare_and_swap) && !defined(AO_HAVE_store)
   AO_INLINE void
   AO_store(volatile AO_t *addr, AO_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2053,6 +2067,7 @@
     && !defined(AO_HAVE_store_release)
   AO_INLINE void
   AO_store_release(volatile AO_t *addr, AO_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2068,6 +2083,7 @@
     && !defined(AO_HAVE_store_full)
   AO_INLINE void
   AO_store_full(volatile AO_t *addr, AO_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2529,6 +2545,7 @@
     && !defined(AO_HAVE_double_store_write)
   AO_INLINE void
   AO_double_store_write(volatile AO_double_t *addr, AO_double_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 
@@ -2558,6 +2575,7 @@
 #if defined(AO_HAVE_double_compare_and_swap) && !defined(AO_HAVE_double_store)
   AO_INLINE void
   AO_double_store(volatile AO_double_t *addr, AO_double_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 
@@ -2573,6 +2591,7 @@
     && !defined(AO_HAVE_double_store_release)
   AO_INLINE void
   AO_double_store_release(volatile AO_double_t *addr, AO_double_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 
@@ -2588,6 +2607,7 @@
     && !defined(AO_HAVE_double_store_full)
   AO_INLINE void
   AO_double_store_full(volatile AO_double_t *addr, AO_double_t new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 

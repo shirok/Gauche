@@ -33,12 +33,27 @@
  *    must be prepared to deal with objects that have been finalized in
  *    spite of the fact that they are still referenced by statically
  *    allocated pointer variables.
- * 1) It may mean that we get stuck in an infinite loop running
+ * 2) It may mean that we get stuck in an infinite loop running
  *    finalizers which create new finalizable objects, though that's
  *    probably unlikely.
  * Thus this is not recommended for general use.
  */
 GC_API void GC_CALL GC_finalize_all(void);
+
+#ifdef GC_THREADS
+  /* External thread suspension support.  No thread suspension count    */
+  /* (so a thread which has been suspended numerous times will be       */
+  /* resumed with the very first call to GC_resume_thread).             */
+  /* Acquire the allocation lock.  Thread should be registered in GC    */
+  /* (otherwise no-op, GC_is_thread_suspended returns false).           */
+  /* Unimplemented on some platforms.  Not recommended for general use. */
+# ifndef GC_SUSPEND_THREAD_ID
+#   define GC_SUSPEND_THREAD_ID void*
+# endif
+  GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID);
+  GC_API void GC_CALL GC_resume_thread(GC_SUSPEND_THREAD_ID);
+  GC_API int GC_CALL GC_is_thread_suspended(GC_SUSPEND_THREAD_ID);
+#endif /* GC_THREADS */
 
 #ifdef __cplusplus
   } /* end of extern "C" */

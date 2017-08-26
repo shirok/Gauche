@@ -2,7 +2,7 @@
 ;;; combinations.scm - combinations and that sort of stuff.
 ;;;
 ;;;  Copyright(C) 2003 by Alex Shinn (foof@synthcode.com)
-;;;  Copyright (c) 2003-2015  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2003-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,

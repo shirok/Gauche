@@ -51,9 +51,10 @@
   (if-let1 line (with-input-from-file (build-path (top-builddir) makefile)
                   (cute generator-find (string->regexp #"^~|var|\\b")
                         read-line/continuation))
-    (string-split
-     (rxmatch->string (string->regexp #"^~|var|\\s*=\\s*") line 'after)
-     #[\s+])
+    (remove string-null?
+            (string-split
+             (rxmatch->string (string->regexp #"^~|var|\\s*=\\s*") line 'after)
+             #[\s+]))
     (if (undefined? default)
       (errorf "Cannot find ~a definition in ~a" var makefile)
       default)))
@@ -109,9 +110,9 @@
                 (mfvar-ref "lib/Makefile" "SCMFILES"))
            (append-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
                       [:let mf (build-path "ext"subdir"Makefile")]
-                      [:let cat (car (mfvar-ref mf "SCM_CATEGORY"))]
+                      [:let cat (let1 v (mfvar-ref mf "SCM_CATEGORY")
+                                  (if (null? v) "" (car v)))]
                       [:let files (mfvar-ref mf "SCMFILES")]
-                      [if (not (equal? files '("")))]
                       (map (^s (cons (build-path cat s)
                                      (build-path "ext" subdir s)))
                            files)))))
@@ -127,12 +128,15 @@
                    (build-path (top-builddir) (cdr p))))))
 
 (define (get-scm-content path)
-  ;; NB: we can just do (file->string p), but the code below eliminates
+  ;; NB: We can just do (file->string p), but the code below eliminates
   ;; comments and unnecessary spaces.  Using read/write would break if
   ;; the source code contains weird read-time constructor, though.  We
   ;; know Gauche sources don't have one, but should be careful if we ever
   ;; extend this functionality to cover other libraries.
-  (with-output-to-string (cute for-each write (file->sexp-list path))))
+  ;; NB: unwrap-syntax is to strip identifier info inserted by reader macros,
+  ;; if any.
+  (with-output-to-string
+    (cute for-each ($ write $ unwrap-syntax $) (file->sexp-list path))))
 
 ;; This code fragment is evaluated in Scm_InitPrelinked() to set up a load
 ;; hook so that the standard libraries would be load from memory instead of

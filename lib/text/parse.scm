@@ -1,7 +1,7 @@
 ;;;
 ;;; parse.scm - utilities to parse input
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -144,37 +144,39 @@
                 (list (apply char-set (delete '*eof* char-list)) '*eof*)]
                [else #f])))
 
-  (define (prefold-macro-1 form rename compare)
+  (define (prefold-macro-1 form r c)
     (match form
       [(op ('quote cs) . args)
-       (or (and-let* ([cs. (prefold-char-list cs)]) `(,op ',cs. ,@args))
-           form)]
-      [_ form]))
+       (or (and-let* ([cs. (prefold-char-list cs)])
+             `(,(r (symbol-append '% op)) ',cs. ,@args))
+           `(,(r (symbol-append '% op)) ',cs ,@args))]
+      [(op . x) `(,(r (symbol-append '% op)) ,@x)]))
 
-  (define (prefold-macro-2 form rename compare)
+  (define (prefold-macro-2 form r c)
     (match form
       [(op ('quote cs1) ('quote cs2) . args)
        (or (and-let* ([cs1. (prefold-char-list cs1)]
                       [cs2. (prefold-char-list cs2)])
-             `(,op ',cs1. ',cs2. ,@args))
-           form)]
-      [_ form]))
+             `(,(r (symbol-append '% op)) ',cs1. ',cs2. ,@args))
+           `(,(r (symbol-append '% op)) ',cs1 ',cs2 ,@args))]
+      [(op . x) `(,(r (symbol-append '% op)) ,@x)]))
   )
 
 ;; ASSERT-CURR-CHAR <char-list> <string> :optional <port>
-(define-inline (assert-curr-char char-list string
-                                 :optional (port (current-input-port)))
+(define-inline (%assert-curr-char char-list string
+                                  :optional (port (current-input-port)))
   (define pred (char-list-predicate char-list))
   (rlet1 c (read-char port)
     (unless (pred char-list c)
       (errorf "~awrong character ~s ~a. ~s expected."
               (ppp port) c string char-list))))
 
-(define-compiler-macro assert-curr-char (er-transformer prefold-macro-1))
+(define-inline/syntax assert-curr-char
+  %assert-curr-char (er-macro-transformer prefold-macro-1))
 
 ;; SKIP-UNTIL <char-list/number/pred> :optional <port>
-(define-inline (skip-until char-list/number/pred
-                           :optional (port (current-input-port)))
+(define-inline (%skip-until char-list/number/pred
+                            :optional (port (current-input-port)))
   (cond
    [(number? char-list/number/pred)
     (skip-until/number char-list/number/pred port)]
@@ -184,7 +186,8 @@
     (skip-until/char-list (char-list-predicate char-list/number/pred)
                           char-list/number/pred port)]))
 
-(define-compiler-macro skip-until (er-transformer prefold-macro-1))
+(define-inline/syntax skip-until
+  %skip-until (er-macro-transformer prefold-macro-1))
 
 (define (skip-until/number num port)
   (and (<= 1 num)
@@ -204,14 +207,15 @@
 
 
 ;; SKIP-WHILE <char-list/pred> :optional <port>
-(define-inline (skip-while char-list/pred
-                           :optional (port (current-input-port)))
+(define-inline (%skip-while char-list/pred
+                            :optional (port (current-input-port)))
   (cond
    [(procedure? char-list/pred) (skip-while/pred char-list/pred port)]
    [else (skip-while/char-list (char-list-predicate char-list/pred)
                                char-list/pred port)]))
 
-(define-compiler-macro skip-while (er-transformer prefold-macro-1))
+(define-inline/syntax skip-while
+  %skip-while (er-macro-transformer prefold-macro-1))
 
 (define-inline (skip-while/common pred port)
   (let loop ([c (peek-char port)])
@@ -228,16 +232,17 @@
 
 ;; NEXT-TOKEN <prefix-char-list/pred> <break-char-list/pred>
 ;;            :optional <comment> <port>
-(define-inline (next-token prefix-char-list/pred break-char-list/pred
-                           :optional (comment "unexpected EOF")
-                                     (port (current-input-port)))
+(define-inline (%next-token prefix-char-list/pred break-char-list/pred
+                            :optional (comment "unexpected EOF")
+                                      (port (current-input-port)))
   (let1 c (skip-while prefix-char-list/pred port)
     (if (procedure? break-char-list/pred)
       (next-token/pred break-char-list/pred c port comment)
       (next-token/char-list (char-list-predicate break-char-list/pred)
                             break-char-list/pred c port comment))))
 
-(define-compiler-macro next-token (er-transformer prefold-macro-2))
+(define-inline/syntax next-token
+  %next-token (er-macro-transformer prefold-macro-2))
 
 (define-inline (next-token/common break-pred char port errmsg)
   (define o (open-output-string))
@@ -250,14 +255,15 @@
   (next-token/common (cut pred char-list <>) char port errmsg))
 
 ;; NEXT-TOKEN-OF <char-list/pred> :optional <port>
-(define-inline (next-token-of char-list/pred
+(define-inline (%next-token-of char-list/pred
                               :optional (port (current-input-port)))
   (if (procedure? char-list/pred)
     (next-token-of/pred char-list/pred port)
     (next-token-of/char-list (char-list-predicate char-list/pred)
                              char-list/pred port)))
 
-(define-compiler-macro next-token-of (er-transformer prefold-macro-1))
+(define-inline/syntax next-token-of
+  %next-token-of (er-macro-transformer prefold-macro-1))
 
 (define-inline (next-token-of/common pred port)
   (define o (open-output-string))

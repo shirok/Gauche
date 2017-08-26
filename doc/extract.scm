@@ -1,7 +1,7 @@
 ;;;
 ;;; extract - filter bilingual texinfo document
 ;;;
-;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright (c) 2001-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -70,6 +70,9 @@
           (cut filter pattern-in pattern-out) :encoding 'utf8)
         (in (read-line))]
       [#/^@c COMMON$/ () (in (read-line))]
+      [#/^@c MOD\s+(\S+)$/ (#f module)
+             (display #"@{@t{~|module|}@}\n")
+             (in (read-line))]
       [test (^_ (eq? (lang) 'en))
             (display (regexp-replace-all #/@VERSION@/ line *version*))
             (newline) (in (read-line))]

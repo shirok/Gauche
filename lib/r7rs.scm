@@ -1,7 +1,7 @@
 ;;;
 ;;; r7rs - R7RS compatibility
 ;;;
-;;;   Copyright (c) 2013-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2013-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -93,38 +93,65 @@
   (export define-library)
 
   ;; A trick - must be replaced once we have explicit-renaming macro.
-  (define define-module. ((with-module gauche.internal make-identifier)
-                          'define-module (find-module 'gauche) '()))
-  (define with-module.   ((with-module gauche.internal make-identifier)
-                          'with-module (find-module 'gauche) '()))
-  (define define-syntax. ((with-module gauche.internal make-identifier)
-                          'define-syntax (find-module 'gauche) '()))
-  (define extend.        ((with-module gauche.internal make-identifier)
-                          'extend (find-module 'gauche) '()))
+  (define (global-id sym) ((with-module gauche.internal make-identifier)
+                           sym (find-module 'gauche) '()))
+  (define global-id=?     (with-module gauche.internal global-identifier=?))
+  (define define-module.  (global-id 'define-module))
+  (define with-module.    (global-id 'with-module))
+  (define define-syntax.  (global-id 'define-syntax.))
+  (define extend.         (global-id 'extend))
+
+  (define export.         (global-id 'export))
+  (define begin.          (global-id 'begin))
+  (define include.        (global-id 'include))
+  (define include-ci.     (global-id 'include-ci))
+  (define cond-expand.    (global-id 'cond-expand))
+  (define r7rs-import.    ((with-module gauche.internal make-identifier)
+                           'r7rs-import (find-module 'r7rs.import) '()))
+  (define use.            (global-id 'use))
   
   (define-macro (define-library name . decls)
     `(,define-module. ,(library-name->module-name name)
-       (,define-syntax. export      (,with-module. gauche export))
-       (,define-syntax. begin       (,with-module. gauche begin))
-       (,define-syntax. include     (,with-module. gauche include))
-       (,define-syntax. include-ci  (,with-module. gauche include-ci))
-       (,define-syntax. cond-expand (,with-module. gauche cond-expand))
-       (,define-syntax. import      (,with-module. r7rs.import r7rs-import))
        (,extend.)
        ,@(map transform-decl decls)))
 
   (define (transform-decl decl)
-    (cond [(eq? (car decl) 'include-library-declarations)
-           ;; TODO: This is too permissive---this allows the files
-           ;; to have not only library decls but also ordinary scheme
-           ;; expressions.  But this can delegate file searching business
-           ;; to 'include' syntax so it's an easy path.
-           `(include ,@(cdr decl))]
-          [(memq (car decl)
-                 '(export import include include-ci begin cond-expand))
-           decl]
-          [else
-           (error "Invalid library declaration:" decl)]))
+    ;; Since define-library can't be an output of macro, we can just
+    ;; compare symbols literally.
+    (case (car decl)
+      [(include-library-declarations)
+       (unless (string? (cadr decl))
+         (error "include-library-declarations needs a string argument, but got:"
+                (cadr decl)))
+       ;; We share file searching logic with 'include' form.
+       (call-with-port
+        ($ (with-module gauche.internal pass1/open-include-file)
+           (cadr decl)
+           (or (current-load-path) (sys-getcwd)))
+        (^p `(,begin. ,@(map transform-decl (port->sexp-list p)))))]
+      [(export)      `(,export. ,@(cdr decl))]
+      [(import)      `(,r7rs-import. ,@(cdr decl))]
+      [(begin)       `(,begin. ,@(cdr decl))]
+      [(include)     `(,include. ,@(cdr decl))]
+      [(include-ci)  `(,include-ci. ,@(cdr decl))]
+      [(cond-expand)
+       ;; cond-expand needs special handling.  The expansion logic is the
+       ;; same as srfi-0 cond-expand, but we have to treat the expanded
+       ;; form as library-declarations instead of ordinary Scheme expressions.
+       ;; The current implementation relies on how cond-expand constructs
+       ;; the output; if we change cond-expand, we may need to tweak this
+       ;; as well.
+       (let1 expanded (macroexpand `(,cond-expand. ,@(cdr decl)))
+         (if (pair? expanded)
+           (if (global-id=? (car expanded) begin.)
+             `(,begin. ,@(map transform-decl (cdr expanded)))
+             (transform-decl expanded))
+           (error "cond-expand expands to non-list:" expanded)))]
+      [else
+       ;; cond-expand may insert use clause, so
+       (if (and (pair? decl) (global-id=? (car decl) use.))
+         decl
+         (error "Invalid library declaration:" decl))]))
   )
 
 ;;
@@ -153,18 +180,22 @@
 ;; r7rs compatibility thingy.
 
 (define-module r7rs.aux
-  (export define+ define-syntax+)
+  ;; Auxiliary utility module.  This provides two things:
+  ;;  Utility macro define+ to redefine from other module,
+  ;;  and make r7rs#define and r7rs#lambda visible as r7rs:define
+  ;;  and r7rs:lambda.
+  (use gauche.base :except (define lambda))
+  (extend null)
+  (export define+ (rename define r7rs:define) (rename lambda r7rs:lambda))
   (define-macro (define+ sym module)
     `(define-inline ,sym (with-module ,module ,sym)))
-  (define-macro (define-syntax+ sym module)
-    `(define-syntax ,sym (with-module ,module ,sym))))
+  )
 
 (define-module scheme.base
   (use gauche.uvector)
   (use gauche.record)
   (use gauche.parameter)
   (use gauche.unicode)
-  (use srfi-11)
   (use srfi-13)
 
   (require "text/parse")
@@ -180,9 +211,7 @@
           char<?  char=?  char>=?  char>?  char?  close-input-port
           close-output-port close-port complex?  cond cond-expand cons
           current-error-port current-input-port current-output-port
-          (rename r7rs:define define)
-          define-record-type (rename r7rs:define-syntax define-syntax)
-          (rename r7rs:define-values define-values)
+          define define-record-type define-syntax define-values
           denominator do
           dynamic-wind else eof-object?  equal?  error error-object-message
           even?  exact-integer-sqrt exact?  features floor floor-remainder
@@ -197,7 +226,8 @@
           eof-object eq?  eqv?  error-object-irritants error-object?  exact
           exact-integer?  expt file-error?  floor-quotient floor/ for-each
           get-output-bytevector guard include inexact input-port-open?
-          integer->char lambda length let* let-syntax letrec letrec-syntax
+          integer->char (rename r7rs:lambda lambda) length let* let-syntax
+          letrec letrec-syntax
           list->string list-copy list-set!  list?  make-list make-string map
           member memv modulo newline null?  number?  odd?  open-input-string
           open-output-string output-port-open?  pair?  peek-char port?
@@ -220,8 +250,7 @@
             open-input-uvector open-output-uvector get-output-uvector)
 
   ;; 4.1 Primitive expression types
-  ;; quote, if, include, include-ci
-  (define-syntax+ lambda     scheme)
+  ;; quote, if, lambda, include, include-ci
 
   ;; 4.2 Derived expression types
   ;; cond case and or when unless cond-expand let let* letrec letrec*
@@ -232,11 +261,10 @@
   ;; let-synatx letrec-syntax syntax-rules syntax-error
 
   ;; 5.3 Variable definitions
-  (define-syntax r7rs:define define)
-  (define-syntax r7rs:define-values define-values)
+  ;; define define-values
 
   ;; 5.4 Syntax definitions
-  (define-syntax r7rs:define-syntax define-syntax)
+  ;; define-syntax
 
   ;; 5.5 Record type definitions
   ;; define-record-type
@@ -356,7 +384,7 @@
   (define (input-port-open? p) (and (input-port? p) (not (port-closed? p))))
   (define (output-port-open? p) (and (output-port? p) (not (port-closed? p))))
   (define (open-input-bytevector bv)
-    (check-arg u8vector? bv)
+    (assume-type bv <u8vector>)
     (open-input-uvector bv))
   (define (open-output-bytevector) (open-output-uvector))
   (define (get-output-bytevector port)
@@ -540,11 +568,13 @@
           char-numeric? char-ready? char-upcase char-upper-case? char-whitespace?
           char<=? char<? char=? char>=? char>? char? close-input-port
           close-output-port complex? cond cons cos current-input-port
-          current-output-port define define-syntax delay denominator display
+          current-output-port (rename r7rs:define define)
+          define-syntax delay denominator display
           do dynamic-wind eof-object? eq? equal? eqv? eval even? exact->inexact
           exact? exp expt floor for-each force gcd if imag-part inexact->exact
           inexact? input-port? integer->char integer? interaction-environment
-          lambda lcm length let let* let-syntax letrec letrec-syntax list
+          (rename r7rs:lambda lambda)
+          lcm length let let* let-syntax letrec letrec-syntax list
           list->string list->vector list-ref list-tail list? load log magnitude
           make-polar make-rectangular make-string make-vector map max member
           memq memv min modulo negative? newline not null-environment null?
@@ -560,8 +590,6 @@
           vector-fill! vector-length vector-ref vector-set! vector?
           with-input-from-file with-output-to-file write write-char zero?
           )
-  (define-syntax define (with-module scheme define))
-  (define-syntax lambda (with-module scheme lambda))
   (provide "scheme/r5rs")
   )
 

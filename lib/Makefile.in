@@ -28,11 +28,11 @@ MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 SLIB_DIR        = @SLIB_DIR@
 
 GENERATED       = gauche/vm/insn.scm gauche/config.scm srfi/*
-CONFIG_GENERATED = Makefile slib.scm
+CONFIG_GENERATED = Makefile
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
            gauche/package gauche/cgen gauche/experimental gauche/test \
-	   srfi srfi-14 srfi-29 \
+	   srfi srfi-14 srfi-29 srfi-146 \
            binary control data dbd dbm math util compat file rfc scheme \
            text text/unicode text/console www www/cgi lang lang/asm
 
@@ -43,14 +43,18 @@ SCMFILES = srfi-0.scm \
        srfi-14.scm srfi-14/query.scm srfi-14/set.scm srfi-18.scm \
        srfi-25.scm srfi-26.scm srfi-27.scm \
        srfi-29.scm srfi-29/bundle.scm srfi-29/format.scm srfi-31.scm \
-       srfi-37.scm srfi-39.scm srfi-42.scm srfi-55.scm srfi-60.scm \
-       srfi-69.scm srfi-78.scm srfi-98.scm srfi-99.scm \
-       srfi-106.scm srfi-112.scm srfi-113.scm \
-       srfi-114.scm srfi-117.scm srfi-118.scm srfi-121.scm srfi-128.scm \
-       srfi-131.scm \
+       srfi-37.scm srfi-39.scm srfi-42.scm srfi-55.scm srfi-60.scm srfi-64.scm \
+       srfi-66.scm srfi-69.scm srfi-74.scm srfi-78.scm srfi-96.scm srfi-98.scm \
+       srfi-99.scm srfi-106.scm srfi-112.scm srfi-113.scm \
+       srfi-114.scm srfi-117.scm srfi-118.scm srfi-121.scm srfi-127.scm \
+       srfi-128.scm srfi-129.scm srfi-131.scm srfi-132.scm srfi-134.scm \
+       srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
+       srfi-151.scm \
        srfi/*.scm \
        slib.scm	 \
-       gauche/test.scm gauche/test/generative.scm gauche/time.scm \
+       check-script \
+       gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
+       gauche/time.scm \
        gauche/redefutil.scm gauche/macroutil.scm gauche/stringutil.scm \
        gauche/vecutil.scm gauche/condutil.scm gauche/portutil.scm \
        gauche/hashutil.scm gauche/treeutil.scm gauche/computil.scm \
@@ -60,7 +64,7 @@ SCMFILES = srfi-0.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
        gauche/vm/debugger.scm gauche/vm/insn-core.scm gauche/vm/insn.scm \
        gauche/vm/profiler.scm \
-       gauche/pp.scm gauche/procedure.scm gauche/dictionary.scm \
+       gauche/pputil.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
        gauche/interactive/ed.scm gauche/interactive/toplevel.scm \
@@ -70,6 +74,7 @@ SCMFILES = srfi-0.scm \
        gauche/version.scm gauche/partcont.scm gauche/lazy.scm gauche/base.scm \
        gauche/interpolate.scm gauche/defvalues.scm gauche/listener.scm \
        gauche/config.scm gauche/configure.scm gauche/reload.scm \
+       gauche/mop/bound-slot.scm \
        gauche/mop/instance-pool.scm gauche/mop/validator.scm \
        gauche/mop/propagate.scm gauche/mop/singleton.scm \
        gauche/cgen.scm gauche/cgen/unit.scm gauche/cgen/literal.scm \
@@ -92,9 +97,10 @@ SCMFILES = srfi-0.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm util/queue.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
        util/record.scm util/relation.scm util/stream.scm util/trie.scm \
-       util/rbtree.scm util/sparse.scm util/dominator.scm util/levenshtein.scm \
+       util/rbtree.scm util/sparse.scm util/dominator.scm \
+       util/levenshtein.scm util/unification.scm \
        compat/chibi-test.scm compat/jfilter.scm compat/stk.scm \
-       compat/norational.scm \
+       compat/norational.scm compat/r7rs-srfi-tests.scm \
        file/filter.scm \
        rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \
        rfc/cookie.scm rfc/quoted-printable.scm rfc/http.scm rfc/hmac.scm \
@@ -104,10 +110,15 @@ SCMFILES = srfi-0.scm \
        scheme/inexact.scm scheme/lazy.scm scheme/load.scm \
        scheme/process-context.scm scheme/r5rs.scm scheme/read.scm \
        scheme/repl.scm scheme/time.scm scheme/write.scm \
+       scheme/box.scm scheme/charset.scm scheme/comparator.scm \
+       scheme/generator.scm scheme/ideque.scm scheme/list-queue.scm \
+       scheme/list.scm scheme/lseq.scm scheme/set.scm scheme/sort.scm \
+       scheme/vector.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
-       text/progress.scm text/console.scm text/console/windows.scm \
-       text/gap-buffer.scm text/line-edit.scm \
+       text/progress.scm \
+       text/console.scm text/console/generic.scm text/console/windows.scm \
+       text/gap-buffer.scm text/line-edit.scm text/template.scm \
        text/unicode.scm text/unicode/ucd.scm \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
@@ -146,8 +157,8 @@ slibcat-in-place :
 	fi
 
 clean:
-	rm -rf core slibcat *~
-	for d in $(SUBDIRS); do if test -d $$d; then (cd $$d; rm -f core *~); fi; done
+	rm -rf core slibcat *.sci *~
+	for d in $(SUBDIRS); do if test -d $$d; then (cd $$d; rm -f core *.sci *~); fi; done
 
 distclean: clean
 	rm -f $(CONFIG_GENERATED)

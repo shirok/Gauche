@@ -1,7 +1,7 @@
 ;;;
 ;;; selector - simple event loop by select()
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -63,8 +63,8 @@
     [(r) 'rhandlers] [(w) 'whandlers] [(x) 'xhandlers]))
 
 (define-method selector-add! ((selector <selector>) port-or-fd proc flags)
-  (check-arg procedure? proc)
-  (check-arg list? flags)
+  (assume-type proc <procedure>)
+  (assume-type flags <list>)
   (dolist [flag (map canon-flag flags)]
     (let* ([slot (flag->fd-slot flag)]
            [fds (or (slot-ref selector slot)

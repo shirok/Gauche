@@ -113,21 +113,21 @@ install-examples:
 #      dealing with automake.
 clean:
 	rm -rf test.log test.record core Gauche.framework *~
-	for d in $(SRIDBUS); do (cd $$d; $(MAKE) clean); done
-	if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) clean); fi
+	-for d in $(SRIDBUS); do (cd $$d; $(MAKE) clean); done
+	-if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) clean); fi
 
 distclean: clean
-	for d in $(SRIDBUS); do (cd $$d; $(MAKE) distclean); done
-	if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) distclean); fi
-	(cd winnt/wix; $(MAKE) clean)
+	-for d in $(SRIDBUS); do (cd $$d; $(MAKE) distclean); done
+	-if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) distclean); fi
+	-(cd winnt/wix; $(MAKE) clean)
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
-	for d in $(SRIDBUS); do (cd $$d; $(MAKE) maintainer-clean); done
-	if test -f $(LIBATOMICDIR)/Makefile; then \
+	-for d in $(SRIDBUS); do (cd $$d; $(MAKE) maintainer-clean); done
+	-if test -f $(LIBATOMICDIR)/Makefile; then \
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
-	(cd winnt/wix; $(MAKE) clean)
+	-(cd winnt/wix; $(MAKE) clean)
 	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.ja DIST_EXCLUDE_X gc/configure gc/configure.gnu
 
 # MacOSX Framework specific stuff

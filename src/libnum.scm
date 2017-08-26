@@ -1,7 +1,7 @@
 ;;;
 ;;; libnum.stub - builtin number libraries
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -720,7 +720,7 @@
 ;; This can be (- (integer-length (logxor n (- n 1))) 1), but we can save
 ;; creating intermediate numbers by providing this natively.
 (define-cproc twos-exponent-factor (n) ::<int> :constant
-  (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (return 0)]
+  (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (return -1)]
         [(SCM_INTP n)
          (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
            (return (Scm_BitsLowest1 (& z) 0 SCM_WORD_BITS)))]
@@ -814,3 +814,20 @@
 
 (define-cproc magnitude (z) :fast-flonum :constant Scm_VMAbs)
 (define-cproc angle (z)     ::<double> :fast-flonum :constant Scm_Angle)
+
+;; Utility to recognize clamp mode symbols and returns C enum
+;; (Mostly used in uvector-related apis)
+
+(inline-stub
+ ;; NB: This is dupe from ext/uvector/uvector.scm
+ (define-cfn Scm_ClampMode (clamp) ::int
+   (cond [(SCM_EQ clamp 'both) (return SCM_CLAMP_BOTH)]
+         [(SCM_EQ clamp 'low)  (return SCM_CLAMP_LO)]
+         [(SCM_EQ clamp 'high) (return SCM_CLAMP_HI)]
+         [(not (or (SCM_FALSEP clamp) (SCM_UNBOUNDP clamp)))
+          (Scm_Error "clamp argument must be either 'both, 'high, 'low or #f, \
+                    but got %S" clamp)])
+   (return SCM_CLAMP_ERROR)))
+
+
+

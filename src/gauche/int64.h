@@ -1,7 +1,7 @@
 /*
  * int64.h - auxilirary definition for 64bit integers
  *
- *   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -59,9 +59,6 @@
 
 /* assuming gauche/config.h is read. */
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
@@ -138,26 +135,11 @@ typedef struct {
 #define SCM_INT64_CMP(op, a64, b64) ((a64) op (b64))
 #endif /*!SCM_EMULATE_INT64*/
 
-/* ScmInt32 and ScmUInt32 can be used when one needs exactly 32bit int */
-
-#if defined(HAVE_INT32_T) && defined(HAVE_UINT32_T)
-typedef int32_t  ScmInt32;
-typedef uint32_t ScmUInt32;
-#elif SIZEOF_INT == 4
-typedef int   ScmInt32;
-typedef u_int ScmUInt32;
-#elif SIZEOF_LONG == 4
-typedef long   ScmInt32;
-typedef u_long ScmUInt32;
-#else
-#error system does not have 32bit integer
-#endif
-
-/* Some macros that can be used without concerning underlying implementation
-   of int64. */
-
 /* for backward compatibility */
 #define SCM_INT64_TO_DOUBLE  Scm_Int64ToDouble
+/* TRANSIENT: New code should use [u]int32_t. */
+typedef int32_t  ScmInt32;
+typedef uint32_t ScmUInt32;
 
 double    Scm_Int64ToDouble(ScmInt64 v);
 double    Scm_UInt64ToDouble(ScmUInt64 v);

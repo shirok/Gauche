@@ -1,7 +1,7 @@
 ;;;
 ;;; sysutil - Auxiliary system interface, autoloaded
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -46,7 +46,7 @@
   (define (sys-fdset . pfs)
     (list->sys-fdset pfs))
   (define (sys-fdset->list fdset)
-    (check-arg (cut is-a? <> <sys-fdset>) fdset)
+    (assume-type fdset <sys-fdset>)
     (do ([i (sys-fdset-max-fd fdset) (- i 1)]
          [fds '() (if (sys-fdset-ref fdset i) (cons i fds) fds)])
         [(< i 0) fds]

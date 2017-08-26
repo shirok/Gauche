@@ -17,6 +17,9 @@ INSTALL_DATA = @INSTALL_DATA@
 MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 MAKEINFO     = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
+VERSION_INFO = @PACKAGE_STRING@
+
+MAKEDOC = $(GOSH) $(srcdir)/makedoc.scm
 
 TEXIS = concepts.texi      \
 	corelib.texi       \
@@ -55,6 +58,8 @@ DESTDIR =
 	texi html htmls dvi pdf info \
 	clean distclean maintainer-clean
 
+.SUFFIXES: .texi .html .info.gz .pdf .dvi
+
 all: info
 
 install: all
@@ -83,114 +88,57 @@ check :
 
 test :
 
-texi : gauche-refe.texi gauche-refj.texi
+%.html : %.texi
+	$(MAKEDOC) html $< "$(MAKEINFO)"
 
-html : gauche-refe.html gauche-refj.html
+%/index.html : %.texi
+	$(MAKEDOC) htmls $< "$(MAKEINFO)" "$(VERSION_INFO)"
 
-htmls : gauche-refe_toc.html gauche-refj_toc.html
+%.info.gz : %.texi
+	$(MAKEDOC) info $< "$(MAKEINFO)" "$(GZIP_PROGRAM)"
 
-dvi : gauche-refe.dvi gauche-refj.dvi
+%.pdf : %.texi
+	$(MAKEDOC) pdf $< "$(MAKEINFO)"
 
-pdf : gauche-refe.pdf gauche-refj.pdf
-
-info : gauche-refe.info.gz gauche-refj.info.gz
+%.dvi : %.texi
+	$(MAKEDOC) dvi $< "$(MAKEINFO)"
 
 # special rule to regenerate srfis.texi in case srfis.scm is modified.
 srfis.texi : $(top_builddir)/src/srfis.scm
 	cd $(top_builddir)/src; $(MAKE) libsrfis.scm
 
-gauche-refe.html : gauche-refe.texi
-	texi2html --number gauche-refe.texi
 
-gauche-refe_toc.html : gauche-refe.texi
-	texi2html --split=section --number gauche-refe.texi
-
-gauche-refe.dvi : gauche-refe.texi
-	texi2dvi --tidy gauche-refe.texi
-
-gauche-refe.pdf : gauche-refe.texi
-	texi2pdf --tidy gauche-refe.texi
+texi : gauche-refe.texi gauche-refj.texi
+html : gauche-refe.html gauche-refj.html
+htmls : gauche-refe/index.html gauche-refj/index.html
+dvi : gauche-refe.dvi gauche-refj.dvi
+pdf : gauche-refe.pdf gauche-refj.pdf
+info : gauche-refe.info.gz gauche-refj.info.gz
 
 gauche-refe.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
 
-gauche-refe.info.gz : gauche-refe.texi
-	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
-	  env LANG=C $(MAKEINFO) gauche-refe.texi; \
-	  rm -f gauche-refe.info*.gz; \
-	  $(GZIP_PROGRAM) gauche-refe.info gauche-refe.info-[0-9]*; \
-	fi
-
-gauche-refj.html : gauche-refj.texi
-	texi2html --init-file=$(srcdir)/ja-init.pl --number --document-language=ja gauche-refj.texi
-
-gauche-refj_toc.html : gauche-refj.texi
-	texi2html --init-file=$(srcdir)/ja-init.pl --split=section --number --document-language=ja gauche-refj.texi
-
-gauche-refj.dvi : gauche-refj.texi
-	TEX=uptex texi2dvi --tidy gauche-refj.texi
-
-gauche-refj.pdf : gauche-refj.texi
-	TEX=uptex DVIPDF=dvipdfm texi2pdf --tidy --dvipdf gauche-refj.texi
-
 gauche-refj.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
-
-gauche-refj.info.gz : gauche-refj.texi
-	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
-	  env LANG=C $(MAKEINFO) gauche-refj.texi; \
-	  rm -f gauche-refj.info*.gz; \
-	  $(GZIP_PROGRAM) gauche-refj.info gauche-refj.info-[0-9]*; \
-	fi
 
 gauche-deve.texi : gauche-dev.texi extract.scm
 	$(GOSH) $(srcdir)/extract.scm -en -o gauche-deve.texi gauche-dev.texi
 
-gauche-deve.html : gauche-deve.texi
-	texi2html --number gauche-deve.texi
-
-gauche-deve.info.gz : gauche-deve.texi
-	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
-	  env LANG=C $(MAKEINFO) gauche-deve.texi; \
-	  rm -f gauche-deve.info*.gz; \
-	  $(GZIP_PROGRAM) gauche-deve.info ; \
-	fi
-
-gauche-deve.dvi: gauche-deve.texi
-	texi2dvi --tidy gauche-deve.texi
-
-gauche-deve.pdf : gauche-deve.texi
-	texi2pdf --tidy gauche-deve.texi
-
 gauche-devj.texi : gauche-dev.texi extract.scm
 	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-devj.texi gauche-dev.texi
-
-gauche-devj.html : gauche-devj.texi
-	texi2html --init-file=$(srcdir)/ja-init.pl --number --document-language=ja gauche-devj.texi
-
-gauche-devj.info.gz : gauche-devj.texi
-	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
-	  env LANG=C $(MAKEINFO) gauche-devj.texi; \
-	  rm -f gauche-devj.info*.gz; \
-	  $(GZIP_PROGRAM) gauche-devj.info ; \
-	fi
-
-gauche-devj.dvi: gauche-devj.texi
-	TEX=uptex texi2dvi --tidy gauche-devj.texi
-
-gauche-devj.pdf : gauche-devj.texi
-	TEX=uptex DVIPDF=dvipdfm texi2pdf --tidy --dvipdf gauche-devj.texi
 
 clean:
 	rm -f core *~ \
 	      $(EXTRACTED:.texi=.pdf)   \
 	      $(EXTRACTED:.texi=.dvi)   \
 	      $(EXTRACTED:.texi=.info*) \
+	      $(EXTRACTED:.texi=.html)  \
 	      $(EXTRACTED)
+	rm -rf $(EXTRACTED:.texi=/)
 	rm -rf $(EXTRACTED:.texi=.t2d/)
 
 distclean : clean
 	rm -f $(GENERATED)
 
 maintainer-clean : clean
-	rm -f gauche-ref*.html gauche-ref*.dvi gauche-dev*.html gauche-dev*.dvi Makefile $(GENERATED)
+	rm -f $(GENERATED)

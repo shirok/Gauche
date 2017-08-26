@@ -1,7 +1,7 @@
 ;;;
 ;;;liblazy.scm - lazy constructs
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -103,7 +103,9 @@
   ;; Exact numbers.  Fast way.
   (define (gen-exacts)
     (set! start (+ start step))
-    (if (< start end)
+    (if (if (> step 0)
+          (< start end)
+          (> start end))
       start
       (eof-object)))
   ;; Inexact numbers.  We use multiplication to avoid accumulating errors
@@ -111,11 +113,15 @@
   (define (gen-inexacts)
     (set! c (+ c 1))
     (let1 r (+ start (* c step))
-      (if (< r end)
+      (if (if (> step 0)
+            (< r end)
+            (> r end))
         r
         (eof-object))))
 
-  (cond [(>= start end) '()]
+  (cond [(or (and (> step 0) (>= start end))
+             (and (< step 0) (<= start end))) '()]
+        [(= step 0) (generator->lseq (^[] start))]
         [(and (exact? start) (exact? step)) (generator->lseq start gen-exacts)]
         [else (generator->lseq (inexact start) gen-inexacts)]))
 

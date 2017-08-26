@@ -231,3 +231,15 @@
 (define stable-sort-by sort-by)
 (define (sort-by! seq key :optional (cmp #f)) (sort! seq cmp key))
 (define stable-sort-by! sort-by!)
+
+;;;
+;;; K-smallest selection
+;;;  Useful for partial sort---we can do it in O(n) instead of O(n log n).
+;;;
+
+;; Internal parameterized version
+;(define (%select-kth seq k cmp ref )
+;  (define-less? less? cmp 'select-kth)
+;  (
+
+

@@ -264,13 +264,6 @@
             (foo (lambda () (push! aaa 'z)))
             (push! aaa 'e))
            aaa))
-  (test* "unwind-protect (raise)" '(boo e d b a)
-         (guard (e (else (push! aaa e) aaa))
-           (set! aaa '())
-           (unwind-protect
-            (foo (lambda () (raise 'boo)))
-            (push! aaa 'e))
-           aaa))
   (test* "unwind-protect (error)" '(boo e d b a)
          (guard (e (else (push! aaa 'boo) aaa))
            (set! aaa '())
@@ -278,7 +271,23 @@
             (foo (lambda () (error "boo")))
             (push! aaa 'e))
            aaa))
-
+  (test* "unwind-protect (raise)" '(boo d b a)
+         (guard (e (else (push! aaa e) aaa))
+           (set! aaa '())
+           (unwind-protect
+            (foo (lambda () (raise 'boo)))
+            (push! aaa 'e))
+           aaa))
+  (test* "unwind-protect (raise & continue)" '(e d c boo b a)
+         (begin
+           (set! aaa '())
+           (with-exception-handler
+            (lambda (e) (push! aaa e))
+            (lambda ()
+              (unwind-protect
+                  (foo (lambda () (raise 'boo)))
+                (push! aaa 'e))))
+           aaa))
   (test* "unwind-protect (restart)" '(e d c a d z b a)
          (begin
            (set! aaa '())
@@ -289,6 +298,18 @@
                        (let/cc k2
                          (set! k k2) (push! aaa 'z) (k1 0))))
                 (push! aaa 'e)))
+             (when k (let ((k0 k)) (set! k #f) (k0 0))))
+           aaa))
+
+  (test* "unwind-protect (reenter)" (test-error #f #/Attempt to reenter/)
+         (begin
+           (set! aaa '())
+           (let ((k #f))
+             (unwind-protect
+                 (foo (lambda ()
+                        (let/cc k2
+                          (set! k k2) (push! aaa 'z))))
+               (push! aaa 'e))
              (when k (let ((k0 k)) (set! k #f) (k0 0))))
            aaa))
   )

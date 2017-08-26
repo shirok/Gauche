@@ -1,0 +1,28 @@
+                           [SUMMARY]
+
+The actual license documents will follow, but here's a quick summary.
+This part is only provided for your information and not a legally
+binding license document.  Read through the actual licenses for
+the exact condition.
+
+You can use, modify, and redistribute this software under the 
+revised BSD license, except the following component:
+
+* lib/gauche-$ABI_VERSION/$VERSION/$ARCH/gauche--charconv.dll
+
+   This DLL includes libiconv, which is LGPL.  The license 
+   requires to guarantee the users to be able to relink different
+   version of libiconv to the software.
+      You can obtain the source file to rebuild gauche--charconv.dll
+   from http://practical-scheme.net/gauche.
+      If you redistribute the installer with modified
+   gauche--charconv.dll, you *must* provide the files that are
+   sufficient to rebuild gauche--charconv.dll itself with different
+   versions of libiconv.
+
+Here's the end of the summary.  The following is the actual copyright
+holders and the exact terms of license for various components of the software.
+
+============================================
+
+

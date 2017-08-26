@@ -18,9 +18,13 @@ extern "C" {
 #define GAUCHE_WINDOWS 1
 
 /* Preparation. */
-#ifndef WINVER
-#define WINVER 0x0500           /* we support Windows 2000 or later */
-#endif /*WINVER*/
+#if !defined(WINVER)
+#define WINVER 0x0502           /* Windows XP SP2 or later */
+#endif /* !WINVER */
+
+#if !defined(_WIN32_WINNT)
+#define _WIN32_WINNT WINVER
+#endif /* !_WIN32_WINNT */
 
 #if defined(UNICODE) && !defined(_UNICODE)
 #define _UNICODE                /* Windows needs both UNICODE and _UNICODE */
@@ -42,12 +46,6 @@ typedef unsigned int u_int;
 typedef unsigned long u_long;
 #define _BSDTYPES_DEFINED
 #endif /* _BSDTYPES_DEFINED */
-
-/* Mingw-w64 only defines sigset_t when _POSIX is defined. */
-#if defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)
-typedef _sigset_t sigset_t;
-#endif  /*defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)*/
-
 
 /*======================================================================
  * Time calculation
@@ -116,8 +114,18 @@ typedef jmp_buf  sigjmp_buf;
 
 /* Windows doesn't support SIGKILL explicitly, but we want to emulate
    (sys-kill SIGKILL) by TerminateProcess.
-   The signal number 9 is unused in Windows at this moment.  Chekc signal.h.*/
+   The signal number 9 is unused in Windows at this moment.  Check signal.h.*/
 #define SIGKILL 9
+
+/* Mingw-w64 only defines sigset_t when _POSIX is defined. */
+#if defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)
+typedef _sigset_t sigset_t;
+#endif  /*defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)*/
+
+/* for MinGW32 runtime v5.0 */
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION >= 5)
+#define _SIGSET_T_
+#endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION >= 5) */
 
 #ifndef _SIGSET_T_
 #define _SIGSET_T_
@@ -173,7 +181,7 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 /* Replace some system calls with wide-char counterparts
    NB: Windows' mkdir() and _wmkdir() takes one argument.
    NB: Substituing stat with _wstat64 must be in sync with
-       the usage of struct _stat64 in ScmSysStatRec (see system.h)
+       the usage of struct __stat64 in ScmSysStatRec (see system.h)
  */
 #if defined(UNICODE)
 #define open(path, ...)    _wopen(Scm_MBS2WCS(path), __VA_ARGS__)
@@ -186,9 +194,36 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #define rmdir(dir)         _wrmdir(Scm_MBS2WCS(dir))
 #define unlink(path)       _wunlink(Scm_MBS2WCS(path))
 #define system(path)       _wsystem(Scm_MBS2WCS(path))
-#undef stat
-#define stat(path, buf)    _wstat64(Scm_MBS2WCS(path), buf)
 #endif /*UNICODE*/
+
+#undef stat
+#undef fstat
+#if defined(UNICODE)
+#define stat(path, buf)    _wstat64(Scm_MBS2WCS(path), buf)
+#else  /* !UNICODE */
+#define stat(path, buf)    _stat64(path, buf)
+#endif /* !UNICODE */
+#define fstat(fd, buf)     _fstat64(fd, buf)
+
+/* for MinGW32 runtime v3.X */
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION < 5)
+struct __stat64 {
+    _dev_t st_dev;
+    _ino_t st_ino;
+    unsigned short st_mode;
+    short st_nlink;
+    short st_uid;
+    short st_gid;
+    _dev_t st_rdev;
+    __int64 st_size;
+    __time64_t st_atime;
+    __time64_t st_mtime;
+    __time64_t st_ctime;
+};
+_CRTIMP int __cdecl _stat64(const char*, struct __stat64*);
+_CRTIMP int __cdecl _wstat64(const wchar_t*, struct __stat64*);
+_CRTIMP int __cdecl _fstat64(int, struct __stat64*);
+#endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION < 5) */
 
 /*===================================================================
  * Miscellaneous POSIX stuff

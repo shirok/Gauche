@@ -1,7 +1,7 @@
 ;;;
 ;;; data.sparse - sparse data structures
 ;;;
-;;;   Copyright (c) 2007-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2007-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -131,10 +131,6 @@
          (car p))
 
        ;; basic generic operations
-       (define-method ref ((s ,class) key . maybe-fallback)
-         (apply ,ref s key maybe-fallback))
-       (define-method (setter ref) ((s ,class) key v)
-         (,set s key v))
        (define-method call-with-iterator ((s ,class) proc)
          (let ([iter (,iter s)]
                [sentinel (list #f)])
@@ -242,6 +238,13 @@
 
 (define-stuff sparse-table <sparse-table> %sparse-table-iter
   sparse-table-ref sparse-table-set!)
+
+(define-method ref ((t <sparse-table>) k)
+  (sparse-table-ref t k))
+(define-method ref ((t <sparse-table>) k fallback)
+  (sparse-table-ref t k fallback))
+(define-method (setter ref) ((t <sparse-table>) k value)
+  (sparse-table-set! t k value))
 
 ;;===============================================================
 ;; Sparse vectors
@@ -356,6 +359,28 @@
 
 (define-stuff sparse-vector <sparse-vector-base> %sparse-vector-iter
   sparse-vector-ref sparse-vector-set!)
+
+(define-macro (define-refset class)
+  `(begin
+     (define-method ref ((v ,class) k)
+       (sparse-vector-ref v k))
+     (define-method ref ((v ,class) k fallback)
+       (sparse-vector-ref v k fallback))
+     (define-method (setter ref) ((v ,class) k value)
+       (sparse-vector-set! v k value))))
+
+(define-refset <sparse-vector>)
+(define-refset <sparse-u8vector>)
+(define-refset <sparse-s8vector>)
+(define-refset <sparse-u16vector>)
+(define-refset <sparse-s16vector>)
+(define-refset <sparse-u32vector>)
+(define-refset <sparse-s32vector>)
+(define-refset <sparse-u64vector>)
+(define-refset <sparse-s64vector>)
+(define-refset <sparse-f16vector>)
+(define-refset <sparse-f32vector>)
+(define-refset <sparse-f64vector>)
 
 ;; sparse vector comparator is just a singleton.
 (define *sparse-vector-comparator* 

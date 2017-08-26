@@ -104,12 +104,15 @@
                   ^r ^s ^t ^u ^v ^w ^x ^y ^z $)
           (:macro let1 if-let1 and-let1 rlet1)
           (:macro let/cc) (:macro begin0) (:macro fluid-let)
+          (:macro let-values) (:macro let*-values)
           (:macro values-ref values->list)
           (:macro ecase)
-          (:macro dotimes dolist while until)
+          (:macro dotimes dolist doplist while until)
           (:macro guard unwind-protect)
           (:macro cond-list)
-          (:macro er-macro-transformer))
+          (:macro assume)
+          (:macro assume-type)
+          )
 
 (autoload gauche.macroutil
           (:macro quasirename))
@@ -149,7 +152,8 @@
 (autoload srfi-31 (:macro rec))
 (autoload srfi-55 (:macro require-extension))
 
-(autoload gauche.interpolate string-interpolate)
+(autoload gauche.interpolate string-interpolate
+                             (:macro string-interpolate*))
 
 (autoload "gauche/sysutil"
           sys-realpath sys-fdset list->sys-fdset sys-fdset->list)
@@ -164,19 +168,17 @@
           vector-for-each-with-index reverse-list->vector)
 
 (autoload gauche.computil
-          default-comparator
           boolean-comparator char-comparator char-ci-comparator
           string-ci-comparator symbol-comparator
           exact-integer-comparator integer-comparator rational-comparator
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
-          make-default-comparator make-eq-comparator
-          make-eqv-comparator make-equal-comparator
+          make-eq-comparator make-eqv-comparator
           make-reverse-comparator make-key-comparator make-tuple-comparator
-          make-car-comparator make-cdr-comparator make-pair-comparator
+          make-pair-comparator
           make-list-comparator make-vector-comparator
-          =? <? <=? >? >=? (:macro comparator-if<=>))
+          (:macro comparator-if<=>))
 
 (autoload gauche.fileutil
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold
@@ -186,20 +188,23 @@
           sys-stat->atime sys-stat->mtime sys-stat->ctime
           sys-stat->type sys-tm->alist)
 
-(autoload gauche.hashutil hash-table hash-table-fold
+(autoload gauche.hashutil hash-table hash-table-empty? hash-table-fold
+                          hash-table-seek hash-table-find
                           hash-table-for-each hash-table-map
+                          hash-table-compare-as-sets
                           boolean-hash char-hash char-ci-hash
                           string-hash string-ci-hash
-                          symbol-hash number-hash default-hash
-                          hash-bound hash-salt)
+                          symbol-hash number-hash hash-bound)
 
 (autoload gauche.treeutil make-tree-map tree-map-empty?
                           tree-map-min tree-map-max
                           tree-map-pop-min! tree-map-pop-max!
-                          tree-map-fold tree-map-fold-right
+                          tree-map-seek tree-map-fold tree-map-fold-right
                           tree-map-map tree-map-for-each
                           tree-map-keys tree-map-values
-                          tree-map->alist alist->tree-map)
+                          tree-map->alist alist->tree-map
+                          tree-map-compare-as-sets
+                          tree-map-compare-as-sequences)
 
 (autoload gauche.libutil  library-fold library-map library-for-each
                           library-exists? library-has-module?
@@ -216,6 +221,8 @@
                           &i/o-error &i/o-port-error
                           &i/o-read-error &i/o-write-error &i/o-closed-error
                           &read-error)
+
+(autoload gauche.pputil   %pretty-print pprint)
 
 ;; Autoloading r7rs allows Gauche-native programs to load R7RS library
 ;; seamlessly.

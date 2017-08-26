@@ -1,7 +1,7 @@
 /*
  * treemap.c - tree map implementation
  *
- *   Copyright (c) 2007-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2007-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -87,6 +87,7 @@ static Node *next_node(Node *n);
 static Node *prev_node(Node *n);
 static Node *delete_node(ScmTreeCore *tc, Node *n);
 static Node *copy_tree(Node *parent, Node *self);
+static int   node_cleared_p(Node *n);
 
 /*
  * Public API
@@ -201,6 +202,18 @@ int Scm_TreeCoreEq(ScmTreeCore *a, ScmTreeCore *b)
     }
 }
 
+static ScmDictEntry *advance_iter(ScmDictEntry *e)
+{
+    if (e) return (ScmDictEntry*)next_node((Node*)e);
+    else return NULL;
+}
+
+static ScmDictEntry *retrogress_iter(ScmDictEntry *e)
+{
+    if (e) return (ScmDictEntry*)prev_node((Node*)e);
+    else return NULL;
+}
+
 /* START can be NULL; in which case, if next call is TreeIterNext,
    it iterates from the minimum node; if next call is TreeIterPrev,
    it iterates from the maximum node. */
@@ -212,42 +225,52 @@ void Scm_TreeIterInit(ScmTreeIter *iter,
         Scm_Error("Scm_TreeIterInit: iteration start point is not a part of the tree.");
     }
     iter->t = tc;
-    iter->e = start;
-    iter->at_end = FALSE;
+    iter->c = start;
+    iter->n = (start
+               ? advance_iter(start)
+               : Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MIN));
+    iter->p = (start
+               ? retrogress_iter(start)
+               : Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MAX));
 }
 
+/* Mind that the 'current' node might be deleted. */
 ScmDictEntry *Scm_TreeIterNext(ScmTreeIter *iter)
 {
-    if (iter->at_end) return NULL;
-    if (iter->e) {
-        iter->e = (ScmDictEntry*)next_node((Node*)iter->e);
+    if (node_cleared_p((Node*)iter->c)) {
+        iter->c = iter->n;
+        iter->p = retrogress_iter(iter->c);
+        iter->n = advance_iter(iter->c);
     } else {
-        iter->e = Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MIN);
+        iter->p = iter->c;
+        iter->c = iter->n;
+        iter->n = advance_iter(iter->c);
     }
-    if (iter->e == NULL) iter->at_end = TRUE;
-    return iter->e;
+    return iter->c;
 }
 
 ScmDictEntry *Scm_TreeIterPrev(ScmTreeIter *iter)
 {
-    if (iter->at_end) return NULL;
-    if (iter->e) {
-        iter->e = (ScmDictEntry*)prev_node((Node*)iter->e);
+    if (node_cleared_p((Node*)iter->c)) {
+        iter->c = iter->p;
+        iter->n = advance_iter(iter->c);
+        iter->p = retrogress_iter(iter->c);
     } else {
-        iter->e = Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MAX);
+        iter->n = iter->c;
+        iter->c = iter->p;
+        iter->p = retrogress_iter(iter->c);
     }
-    if (iter->e == NULL) iter->at_end = TRUE;
-    return iter->e;
+    return iter->c;
 }
 
 ScmDictEntry *Scm_TreeIterCurrent(ScmTreeIter *iter)
 {
-    return iter->e;
+    return iter->c;
 }
 
 int Scm_TreeIterAtEnd(ScmTreeIter *iter)
 {
-    return iter->at_end;
+    return iter->c == NULL && (iter->p == NULL || iter->n == NULL);
 }
 
 /* consistency check */
@@ -306,7 +329,8 @@ static void treemap_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                Scm_TreeCoreNumEntries(SCM_TREE_MAP_CORE(tm)));
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_TreeMapClass, treemap_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_TreeMapClass, treemap_print, Scm_ObjectCompare,
+                         NULL, NULL,
                          SCM_CLASS_ORDERED_DICTIONARY_CPL);
 
 /*
@@ -344,18 +368,19 @@ ScmObj Scm_TreeMapRef(ScmTreeMap *tm, ScmObj key, ScmObj fallback)
     }
 }
 
+/* Returns previous value; can return SCM_UNBOUND when the association hasn't
+   been there.  Be careful not to let SCM_UNBOUND leak out to Scheme! */
 ScmObj Scm_TreeMapSet(ScmTreeMap *tm, ScmObj key, ScmObj value, int flags)
 {
     ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm),
                                          (intptr_t)key,
                                          (flags&SCM_DICT_NO_CREATE)? SCM_DICT_GET : SCM_DICT_CREATE);
     if (!e) return SCM_UNBOUND;
-    if (e->value) {
-        if (flags&SCM_DICT_NO_OVERWRITE) return SCM_DICT_VALUE(e);
-        else return SCM_DICT_SET_VALUE(e, value);
-    } else {
-        return SCM_DICT_SET_VALUE(e, value);
+    ScmObj oldval = e->value? SCM_DICT_VALUE(e) : SCM_UNBOUND;
+    if (!(flags&SCM_DICT_NO_OVERWRITE) || SCM_UNBOUNDP(oldval)) {
+        SCM_DICT_SET_VALUE(e, value);
     }
+    return oldval;
 }
 
 ScmObj Scm_TreeMapDelete(ScmTreeMap *tm, ScmObj key)
@@ -455,6 +480,12 @@ static Node *new_node(Node *parent, intptr_t key)
 static void clear_node(Node *node)
 {
     node->parent = node->left = node->right = NULL;
+}
+
+static int node_cleared_p(Node *node)
+{
+    return (node && node->parent == NULL
+            && node->left == NULL && node->right == NULL);
 }
 
 /* replace N's position by M. M could be NULL. */

@@ -1,15 +1,24 @@
 #!/bin/sh
-# TODO: once we implement scsh-ish process utility, rewrite
-# this as Gauche script!
-
+#
+# Maintenance script
+# 
 set -e
 
-TGZ_DEST="$HOME/src/practical-scheme.net/vault/"
-MAN_DEST="$HOME/src/practical-scheme.net/gauche/man/"
-DOC_DEST="$HOME/src/test"
-RPMDIR="$HOME/rpm"
-CHANGELOG_DEST="$HOME/practical-scheme.net/gauche/ChangeLog.txt"
-XTRA_TEST_DIR="$HOME/src/test"
+usage () {
+    echo "Maintenance script for Gauche."
+    echo "Usage: DIST command"
+    echo "Commands:"
+    echo "  gen    Generate configure scripts"
+    echo "  tgz    Generate distribution tarball"
+    echo "  clean-build-test   Run make maintainer-clean, then fully build and"
+    echo "                     run tests.  Requires newest release of gosh in"
+    echo "                     PATH."
+    echo "  self-host-test     In a separate directly, first build the current"
+    echo "                     source tree with installed gosh, then build the"
+    echo "                     source tree again using the freshly compiled"
+    echo "                     gosh, and run tests."
+    exit 0
+}
 
 maintainer_clean () {
   if [ -f Makefile ]; then make maintainer-clean; fi
@@ -30,172 +39,94 @@ check_version () {
   VERSION=`cat VERSION`
 }
 
+do_gen () {
+    maintainer_clean
+    rm -f configure gc/configure gc/configure.gnu
+    cp tools/gc-configure.gnu gc/configure.gnu
+    if [ "$LIBTOOLIZE" = "" -a "`uname`" = "Darwin" ]; then
+        if command -v "glibtoolize" > /dev/null; then
+            LIBTOOLIZE=glibtoolize
+        elif command -v "libtoolize" > /dev/null; then
+            LIBTOOLIZE=libtoolize
+        else
+            echo "DIST: line $LINENO: command libtoolize or glibtoolize not found"
+            exit 1
+        fi
+    fi
+    ${LIBTOOLIZE:-libtoolize} -q --copy  # ensures ltmain.sh in the top_srcdir
+    autoconf
+    (cd gc; ./autogen.sh)
+}
 
-while [ $# -gt 0 ]; do
-  case $1 in
-    gen) gen=yes; shift ;;
-    doc) doc=yes; shift ;;
-    docs) doc=yes; docs=yes; shift ;;
-    tgz) tgz=yes; shift ;;
-    test) test=yes; shift ;;
-    testcode) testcode=yes; shift ;;
-    testclean) testclean=yes; shift ;;
-    rpm)  rpm=yes; shift;;
-    rpmfiles) rpmfiles=yes; shift;;
-    mingw) mingw=yes; shift;;
-    winvc) winvc=yes; shift;;
-    sign) sign=yes; shift;;
-    *) echo "DIST [doc][docs][tgz][test][testclean][rpm][rpmfiles][mingw][winvc]"; exit 0;;
-  esac
-done
+do_tgz () {
+    maintainer_clean
+    ./DIST gen
+    ./configure --enable-threads=pthreads --enable-multibyte=utf8 --disable-dependency-tracking || exit 1
+    make GOSH=gosh pre-package
+    make distclean || exit 1
+    rm -rf gc/libatomic_ops/autom4te.cache
 
-if [ "$gen" = "yes" ]; then
-  rm -f configure gc/configure gc/configure.gnu
-  cp tools/gc-configure.gnu gc/configure.gnu
-  autoconf
-  (cd gc; autoconf)
-  (cd gc/libatomic_ops; autoconf)
-fi
+    check_version
+    rm -rf ../Gauche-$VERSION
+    mkdir ../Gauche-$VERSION
 
-if [ "$tgz" = "yes" ]; then
-  maintainer_clean
-  ./DIST gen
-  ./configure --enable-threads=pthreads --enable-multibyte=utf8 --disable-dependency-tracking || exit 1
-  make GOSH=gosh pre-package
-  make distclean || exit 1
-  rm -rf gc/libatomic_ops/autom4te.cache
+    #
+    if [ -e /usr/share/gauche-0.9/$VERSION -a -e /usr/lib/gauche-0.9/$VERSION ]; then
+        find /usr/share/gauche-0.9/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
+        find /usr/share/gauche-0.9/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
+        find /usr/lib/gauche-0.9/$VERSION -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
+        find /usr/lib/gauche-0.9/$VERSION -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
+    fi
 
-  check_version
-  rm -rf ../Gauche-$VERSION
-  mkdir ../Gauche-$VERSION
-  tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
-  (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
-  rm -rf ../Gauche-$VERSION
+    tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
+    (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
+    rm -rf ../Gauche-$VERSION
+}
 
-  if [ "$sign" = "yes" ]; then
+# hidden command - only meaningful on the release engineer's machine
+do_release () {
+    do_tgz
     gpg --detach-sign --armor -o ../Gauche-$VERSION.tgz.asc ../Gauche-$VERSION.tgz
-  fi
-fi
+    cd doc; make pdf; mv gauche-refe.pdf ../../Gauche-$VERSION-refe.pdf; mv gauche-refj.pdf ../../Gauche-$VERSION-refj.pdf
+}
 
-if [ "$doc" = "yes" ]; then
-  (cd doc; make texi)
-  for lang in j e; do
-    rm -rf $DOC_DEST/gauche-ref$lang
-    mkdir $DOC_DEST/gauche-ref$lang
-    (cd doc; make gauche-ref${lang}_toc.html; mv gauche-ref${lang}*.html $DOC_DEST/gauche-ref$lang)
-  done
-fi
+do_mingw_installer () {
+    do_gen
+    MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
+    MSYSTEM=MINGW32 src/mingw-dist.sh --with-gl --with-installer
+}
 
-if [ "$docs" = "yes" ]; then
-  rm -f $MAN_DEST/gauche-ref*.html
-  for lang in j e; do
-#    (cd doc; make gauche-ref$lang.html; gzip gauche-ref$lang.html; mv gauche-ref$lang.html.gz $TGZ_DEST)
-    (cd $DOC_DEST; tar czf $TGZ_DEST/gauche-ref$lang.tgz gauche-ref$lang)
-    cp $DOC_DEST/gauche-ref$lang/* $MAN_DEST
-  done
-fi
+do_clean_build_test () {
+    do_gen
+    gauche-config --reconfigure | sh
+    make -j
+    make -s check
+}
 
-if [ "$test" = "yes" ]; then
-  check_version
-  if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
-  mkdir -p ../test
-  rm -rf ../test/Gauche-$VERSION ../test/test-inst
-  cd ../test
-  mkdir -p test-inst
-  tar xzvf ../Gauche-$VERSION.tgz
-  cd Gauche-$VERSION
-  ./configure --enable-threads=pthreads --prefix=`pwd`/../test-inst --enable-multibyte=utf8
-  make
-  make -s test
-  make install
-  make install-check
-  cd ..
-  testgosh=`pwd`/test-inst/bin/gosh
-  if [ -f $XTRA_TEST_DIR/r4rstest/r4rstest.scm ]; then
-    (cd $XTRA_TEST_DIR/r4rstest/ && make GOSH=$testgosh test)
-  fi
-fi
+do_self_host_test () {
+    do_gen
+    srcdir=`pwd`
+    destdir=`pwd`/../Gauche-tmp-self-host-test
+    # mingw doesn't seem to like parallel make
+    if [ x$MSYSTEM = x ]; then
+	makeopt=-j
+    else
+	makeopt=
+    fi
+    if [ -d $destdir/stage1 ]; then rm -rf $destdir; fi
+    XPATH=$destdir/bin:$PATH
+    mkdir -p $destdir/stage1
+    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt; make install)
+    mkdir -p $destdir/stage2
+    (cd $destdir/stage2; PATH=$XPATH $srcdir/configure; PATH=$XPATH make $makeopt; PATH=$XPATH make -s check)
+}
 
-if [ "$testcode" = "yes" ]; then
-  check_version
-  if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
-  mkdir -p ../test
-  rm -rf ../test/Gauche-$VERSION
-  cd ../test
-  tar xzvf ../Gauche-$VERSION.tgz > /dev/null 2>&1
-  cd Gauche-$VERSION
-  rm -f testcode.log
-  echo "UTF-8 -----------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
-  make -s >> testcode.log 2>&1
-  make -s test
-  make -s distclean
-  echo "EUC-JP ----------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
-  make -s >> testcode.log 2>&1
-  make -s test
-  make -s distclean
-  echo "SJIS ------------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=sjis   >> testcode.log 2>&1
-  make -s >> testcode.log 2>&1
-  make -s test
-  make -s distclean
-  echo "NONE ------------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=none   >> testcode.log 2>&1
-  make -s >> testcode.log 2>&1
-  make -s test
-fi
-
-if [ "$testclean" = "yes" ]; then
-  rm -rf ../test/Gauche ../test/test-inst
-  rm -rf ../test/test.log ../test/temp.o ../test/tmp1.o
-  if [ -f VERSION ]; then rm -rf ../test/Gauche-`cat VERSION`; fi
-fi
-
-if [ "$rpmfiles" = "yes" ]; then
-  # NB: you should be careful to run this _before_ installing any
-  # additional Gauche packages.
-  rm -f rpmfiles-common.txt rpmfiles-encoding.txt rpmfiles-gdbm.txt
-  check_version
-  find /usr/share/gauche-0.9/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
-  find /usr/share/gauche-0.9/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
-  find /usr/lib/gauche-0.9/$VERSION -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
-  find /usr/lib/gauche-0.9/$VERSION -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
-fi
-
-if [ "$rpm" = "yes" ]; then
-  check_version
-  if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
-  rm -f $RPMDIR/SOURCES/Gauche-$VERSION.tgz
-  cp ../Gauche-$VERSION.tgz $RPMDIR/SOURCES/
-  spec=$RPMDIR/SPECS/Gauche.spec
-#  echo "EUC, i686 -----------------------------------------------"
-#  rm -f $spec
-#  cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
-#  rpmbuild -ba --clean --target i686 $spec
-  echo "UTF8, i686 ----------------------------------------------"
-  rm -f $spec
-  cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
-  rpmbuild -bs --clean --target i686 $spec
-  echo "Finishing..."
-#  mv $RPMDIR/RPMS/i386/Gauche-eucjp-*.rpm $TGZ_DEST
-#  mv $RPMDIR/RPMS/i386/Gauche-utf8-*.rpm $TGZ_DEST
-#  mv $RPMDIR/RPMS/i686/Gauche-eucjp-*.rpm $TGZ_DEST
-#  mv $RPMDIR/RPMS/i686/Gauche-utf8-*.rpm $TGZ_DEST
-#  mv $RPMDIR/SRPMS/Gauche-*.rpm $TGZ_DEST
-fi
-
-#
-# MinGW specific packager.  As of 0.9.1, Gauche can self build with MinGW+MSYS
-#
-if [ "$mingw" = "yes" ]; then
-  sh src/mingw-dist.sh --with-installer --with-gl
-fi
-
-# Windows/VC preparation
-if [ "$winvc" = "yes" ]; then
-  maintainer_clean
-  autoconf-2.61
-  (cd gc; autoconf-2.61)
-  sh winnt/winvc-prep.sh
-fi
+case $1 in
+    gen)   do_gen ;;
+    tgz)   do_tgz ;;
+    release) do_release ;;
+    mingw-installer)  do_mingw_installer ;;
+    clean-build-test) do_clean_build_test ;;
+    self-host-test)   do_self_host_test ;;
+    *) usage ;;
+esac

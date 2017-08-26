@@ -558,6 +558,100 @@
        (group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3)
                        :test (^[x y] (= (modulo x 2) (modulo y 2)))))
 
+(test* "group-contiguous-sequence" '()
+       (group-contiguous-sequence '()))
+(test* "group-contiguous-sequence" '((1))
+       (group-contiguous-sequence '(1)))
+(test* "group-contiguous-sequence" '((1 2))
+       (group-contiguous-sequence '(1 2)))
+(test* "group-contiguous-sequence" '((1) (3))
+       (group-contiguous-sequence '(1 3)))
+(test* "group-contiguous-sequence" '((1 2 3))
+       (group-contiguous-sequence '(1 2 3)))
+(test* "group-contiguous-sequence" '((1) (3 4 5))
+       (group-contiguous-sequence '(1 3 4 5)))
+(test* "group-contiguous-sequence"
+       '((1 2 3 4) (7 8 9) (11) (13 14) (16))
+       (group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16)))
+(test* "group-contiguous-sequence" '((#\a #\b #\c) (#\e) (#\g #\h))
+       ($ group-contiguous-sequence "abcegh"
+          :next (^c (integer->char (+ 1 (char->integer c))))
+          :test char=?))
+(test* "group-contiguous-sequence squeeze" '()
+       (group-contiguous-sequence '() :squeeze #t))
+(test* "group-contiguous-sequence squeeze" '((1))
+       (group-contiguous-sequence '(1) :squeeze #t))
+(test* "group-contiguous-sequence squeeze" '((1 2))
+       (group-contiguous-sequence '(1 2) :squeeze #t))
+(test* "group-contiguous-sequence squeeze" '((1) (3))
+       (group-contiguous-sequence '(1 3) :squeeze #t))
+(test* "group-contiguous-sequence squeeze" '((1 3))
+       (group-contiguous-sequence '(1 2 3) :squeeze #t))
+(test* "group-contiguous-sequence squeeze" '((1) (3 5))
+       (group-contiguous-sequence '(1 3 4 5) :squeeze #t))
+(test* "group-contiguous-sequence squeeze" '((1 4) (7 9) (11) (13 14) (16))
+       (group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16) :squeeze #t))
+(test* "group-contiguous-sequence squeeze" '((#\a #\c) (#\e) (#\g #\h))
+       ($ group-contiguous-sequence "abcegh"
+          :next (^c (integer->char (+ 1 (char->integer c))))
+          :test char=?
+          :squeeze #t))
+
+(test* "delete-neighbor-dups" '(1 2 3 4 2 3 1 3)
+       (delete-neighbor-dups '(1 1 1 2 3 4 4 2 2 3 1 1 3)))
+(test* "delete-neighbor-dups" '#(1 2 3 4 2 3 1 3)
+       (delete-neighbor-dups '#(1 1 1 2 3 4 4 2 2 3 1 1 3)))
+(test* "delete-neighbor-dups" "12342313"
+       (delete-neighbor-dups "1112344223113"))
+(test* "delete-neighbor-dups" '()
+       (delete-neighbor-dups '()))
+(test* "delete-neighbor-dups" '(1)
+       (delete-neighbor-dups '(1 1 1 1 1)))
+(test* "delete-neighbor-dups w/key" '(1 2 3 4 3)
+       (delete-neighbor-dups '(1 1 1 2 3 4 4 2 2 3 1 1 3)
+                             :key (cut modulo <> 2)))
+(test* "delete-neighbor-dups w/test" '(1 2 3 4 3)
+       (delete-neighbor-dups '(1 1 1 2 3 4 4 2 2 3 1 1 3)
+                             :test (^[x y] (= (modulo x 2) (modulo y 2)))))
+(test* "delete-neighbor-dups w/range" "12342"
+       (delete-neighbor-dups "1112344223113" :start 1 :end 9))
+(test* "delete-neighbor-dups w/range" "2342"
+       (delete-neighbor-dups "1112344223113" :start 3 :end 9))
+(test* "delete-neighbor-dups w/range" ""
+       (delete-neighbor-dups "1112344223113" :start 2 :end 2))
+(test* "delete-neighbor-dups w/range" "4"
+       (delete-neighbor-dups "1112344223113" :start 5 :end 6))
+(test* "delete-neighbor-dups w/range" "4"
+       (delete-neighbor-dups "1112344223113" :start 5 :end 7))
+
+(test* "delete-neighbor-dups!" '(8 . #(1 2 3 4 2 3 1 3 2 3 1 1 3))
+       (let* ([v (vector-copy '#(1 1 1 2 3 4 4 2 2 3 1 1 3))]
+              [r (delete-neighbor-dups! v)])
+         (cons r v)))
+(test* "delete-neighbor-dups! w/range"
+       '(10 . #(1 1 1 2 3 4 2 3 1 3 1 1 3))
+       (let* ([v (vector-copy '#(1 1 1 2 3 4 4 2 2 3 1 1 3))]
+              [r (delete-neighbor-dups! v :start 2)])
+         (cons r v)))
+(test* "delete-neighbor-dups! w/range"
+       '(10 . (1 1 1 2 3 4 2 3 1 3 1 1 3))
+       (let* ([v (list-copy '(1 1 1 2 3 4 4 2 2 3 1 1 3))]
+              [r (delete-neighbor-dups! v :start 2)])
+         (cons r v)))
+
+(let ([data '(1 1 1 2 3 4 4 2 2 3 1 1 3 3)])
+  (test* "delete-neighbor-dups-squeeze!" '(#t #t)
+         (let* ([l0 (list-copy data)]
+                [l2 (delete-neighbor-dups-squeeze! l0)])
+           (list (eq? l0 l2) (equal? l2 (delete-neighbor-dups l0)))))
+  (test* "delete-neighbor-dups-squeeze! w/range"
+         '(1 2 3 4 2 3 1 3)
+         (delete-neighbor-dups-squeeze! (list-copy data) :start 1))
+  (test* "delete-neighbor-dups-squeeze! w/range"
+         '(1 2 3 4 2)
+         (delete-neighbor-dups-squeeze! (list-copy data) :end 8))
+  )
+
 (test* "sequence-contains" '(#f 0 9 #f)
        (let1 pat "abrabrabre"
          (list (sequence-contains "abracadabra" pat)

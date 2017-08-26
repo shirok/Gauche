@@ -1,7 +1,7 @@
 /*
  * module.c - module implementation
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -276,23 +276,23 @@ static inline void init_module_cache(module_cache *c)
     c->more_searched = SCM_NIL;
 }
 
-static inline int module_visited_p(module_cache *c, ScmObj m)
+static inline int module_visited_p(module_cache *c, ScmModule *m)
 {
     for (int i=0; i<c->num_searched; i++) {
-        if (SCM_EQ(m, c->searched[i])) return TRUE;
+        if (SCM_EQ(SCM_OBJ(m), c->searched[i])) return TRUE;
     }
     if (!SCM_NULLP(c->more_searched)) {
-        if (!SCM_FALSEP(Scm_Memq(m, c->more_searched))) return TRUE;
+        if (!SCM_FALSEP(Scm_Memq(SCM_OBJ(m), c->more_searched))) return TRUE;
     }
     return FALSE;
 }
 
-static inline void module_add_visited(module_cache *c, ScmObj m)
+static inline void module_add_visited(module_cache *c, ScmModule *m)
 {
     if (c->num_searched < SEARCHED_ARRAY_SIZE) {
-        c->searched[c->num_searched++] = m;
+        c->searched[c->num_searched++] = SCM_OBJ(m);
     } else {
-        c->more_searched = Scm_Cons(m, c->more_searched);
+        c->more_searched = Scm_Cons(SCM_OBJ(m), c->more_searched);
     }
 }
 
@@ -322,33 +322,35 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
                    when we search inherited modules we look into it's
                    internal bindings. */
                 external_only = FALSE;
-                symbol = SCM_GLOC(v)->name; /* in case it is renamed on export */
+                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */
             } else {
                 return SCM_GLOC(v);
             }
         }
         if (stay_in_module) return NULL;
-        module_add_visited(&searched, SCM_OBJ(module));
+        module_add_visited(&searched, module);
     }
 
     ScmObj p, mp;
-    /* Next, search from imported modules */
+    /* Next, search from imported modules
+       If the import is prefixed, we avoid caching the result. */
     SCM_FOR_EACH(p, module->imported) {
         ScmObj elt = SCM_CAR(p);
         ScmObj sym = SCM_OBJ(symbol);
+        int prefixed = FALSE;
 
         SCM_ASSERT(SCM_MODULEP(elt));
         SCM_FOR_EACH(mp, SCM_MODULE(elt)->mpl) {
             ScmGloc *g;
 
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
-
-            if (module_visited_p(&searched, SCM_CAR(mp))) continue;
             ScmModule *m = SCM_MODULE(SCM_CAR(mp));
+            if (!prefixed && module_visited_p(&searched, m)) continue;
             if (SCM_SYMBOLP(m->prefix)) {
                 sym = Scm_SymbolSansPrefix(SCM_SYMBOL(sym),
                                            SCM_SYMBOL(m->prefix));
                 if (!SCM_SYMBOLP(sym)) break;
+                prefixed = TRUE;
             }
 
             ScmObj v = Scm_HashTableRef(m->external, SCM_OBJ(sym), SCM_FALSE);
@@ -362,7 +364,7 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
                     return g;
                 }
             }
-            module_add_visited(&searched, SCM_OBJ(m));
+            if (!prefixed) module_add_visited(&searched, m);
         }
     }
 
@@ -382,6 +384,7 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
         if (SCM_GLOCP(v)) {
             if (SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
                 external_only = FALSE; /* See above comment */
+                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */
             } else {
                 return SCM_GLOC(v);
             }

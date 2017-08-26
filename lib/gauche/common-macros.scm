@@ -1,7 +1,7 @@
 ;;;
 ;;; common-macros.scm - common macros
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -40,15 +40,41 @@
 
 (select-module gauche)
 
-;;; syntax-error
-;;; syntax-errorf
-;;;   Signals an error at compile time.
+;;; syntax-error msg arg ...
+;;; syntax-errorf fmtstr arg ...
+;;;   Signal an error at compile time.
+;;;   These are typically used as a result of expansion of syntax-rules
+;;;   macro; er-macro or legacy macro can directly call error/errorf so
+;;;   there's no point to use syntax-error.  Then, the 'original attribute
+;;;   of the form contains the macro input that caused syntax error.
+;;;   We extract that and throw a compound condition, so that the
+;;;   error message will include the macro input that directly caused
+;;;   this error.
+;;;   TODO: Move this to core after 0.9.6.
 
-(define-macro (syntax-error . args)
-  (apply error (map unwrap-syntax args)))
+(define-syntax syntax-error
+  (er-macro-transformer
+   (lambda (f r c)
+     (let ([args (map unwrap-syntax (cdr f))]
+           [original ((with-module gauche.internal pair-attribute-get)
+                      f 'original #f)])
+       (if original
+         (raise (make-compound-condition
+                 (make-error (car args) (cdr args))
+                 (make <compile-error-mixin> :expr original)))
+         (apply error args))))))
 
-(define-macro (syntax-errorf . args)
-  (apply errorf (map unwrap-syntax args)))
+(define-syntax syntax-errorf
+  (er-macro-transformer
+   (lambda (f r c)
+     (let ([args (map unwrap-syntax (cdr f))]
+           [original ((with-module gauche.internal pair-attribute-get)
+                      f 'original #f)])
+       (if original
+         (raise (make-compound-condition
+                 (make-error (apply format/ss (car args) (cdr args)))
+                 (make <compile-error-mixin> :expr original)))
+         (apply errorf args))))))
 
 ;;;-------------------------------------------------------------
 ;;; generalized set! family
@@ -248,6 +274,40 @@
                (lambda () ,@body)
                ,swap))))))
 
+;; srfi-11, r7rs
+(define-syntax let*-values
+  (syntax-rules ()
+    [(_ () . body)
+     (let () . body)]
+    [(_ ((formals init) . rest) . body)
+     (receive formals init
+       (let*-values rest . body))]))
+
+(define-syntax let-values
+  (er-macro-transformer
+   (^[f r c]
+     ;; we rename all the formals and rebind
+     (let* ([bindings (cadr f)]
+            [body (cddr f)]
+            [formals  (map car bindings)]
+            [inits    (map cadr bindings)]
+            [formals* (map (^f (map* (^x (gensym (x->string x)))
+                                     (^t (if (null? t) t (gensym (x->string t))))
+                                     f))
+                           formals)]
+            [rebinds (append-map
+                      (^[f f*]
+                        (map* list
+                              (^[a b] (if (null? a) '() (list (list a b))))
+                              f f*))
+                      formals formals*)])
+       ;; TRANSIENT: Avoid using quasirename until 0.9.6 release, for
+       ;; it autoloads macroutil.scm -> util/match.scm and create
+       ;; circular dependency.
+       `(,(r'let*-values) ,(map list formals* inits)
+         (,(r'let) ,rebinds
+          ,@body))))))
+
 ;;;-------------------------------------------------------------
 ;;; applications
 
@@ -374,6 +434,30 @@
     [(_ . other)
      (syntax-error "malformed dolist" (dolist . other))]))
 
+(define-syntax doplist
+  (syntax-rules ()
+    [(_ ((k v) plis default) . body)
+     (do ([p plis (cddr p)])
+         [(cond [(null? p) #t]
+                [(null? (cdr p))
+                 (let ([k (car p)]
+                       [v default])
+                   . body)]
+                [else #f])]
+       (let ([k (car p)]
+             [v (cadr p)])
+         . body))]
+    [(_ ((k v) plis) . body)
+     (do ([p plis (cddr p)])
+         [(cond [(null? p) #t]
+                [(null? (cdr p)) (error "plist is not even:" plis)]
+                [else #f])]
+       (let ([k (car p)]
+             [v (cadr p)])
+         . body))]
+    [(_ . other)
+     (syntax-error "malformed doplist" (doplist . other))]))
+
 (define-syntax while
   (syntax-rules (=>)
     [(_ expr guard => var . body)
@@ -476,24 +560,37 @@
 ;; deal with "ignore-errors" idiom, e.g. (guard (e [else #f]) body).  The exit
 ;; condition shouldn't be stopped in such a way.
 ;;
-;; TODO: Currently definition doesn't work when unwind-protect is used
+;; TODO: Current definition doesn't work when unwind-protect is used
 ;; within a thread that is terminated; thread termination isn't a condition
 ;; either.
 (define-syntax unwind-protect
   (syntax-rules ()
     [(unwind-protect body handler ...)
      (let ([x (exit-handler)]
-           [h (lambda () handler ...)])
+           [h (lambda () handler ...)]
+           [done #f])
        (with-error-handler
-           (lambda (e) (exit-handler x) (h) (raise e))
+           (lambda (e)
+             (exit-handler x)
+             (when (condition-has-type? e <serious-condition>)
+               (unless done (set! done #t) (h)))
+             ;; NB: We don't know E is thrown by r7rs#raise or
+             ;; r7rs#raise-continuable, but gauche#raise can handle both
+             ;; case.
+             (raise e))
          (lambda ()
            (receive r
                (dynamic-wind
                  (lambda ()
-                   (exit-handler (lambda (code fmt args) (h) (x code fmt args))))
+                   (when done
+                     (error "Attempt to reenter obsoleted dynamic environment"))
+                   (exit-handler (lambda (code fmt args)
+                                   (set! done #t)
+                                   (h)
+                                   (x code fmt args))))
                  (lambda () body)
-                 (lambda ()
-                   (exit-handler x)))
+                 (lambda () (exit-handler x)))
+             (set! done #t)
              (h)
              (apply values r)))
          :rewind-before #t))]
@@ -538,13 +635,24 @@
        (if tmp (cons (begin . expr) r) r))]
     ))
 
-;;; ------------------------------------------------------------
-;;; er-macro-transformer
+;;;----------------------------------------------------------------
+;;; assume (srfi-145) and co.
 ;;;
 
-;; This will become compiled into core after 0.9.5 release; for 0.9.4,
-;; we can't compile-in define-syntaxed macros, so we keep this autoload.
-(define-syntax er-macro-transformer
-  (primitive-macro-transformer
-   (^[form def-env use-env]
-     ((with-module gauche.internal %expand-er-transformer) form use-env))))
+;; We might add run-time optimization switch to expand assume to nothing.
+(define-syntax assume
+  (syntax-rules ()
+    [(_ expr)
+     (unless expr
+       (error (format "Invalid assumption: ~s" 'expr)))]
+    [(_ expr message ...)
+     (unless expr
+       (error (format "Invalid assumption: ~s:" 'expr) message ...))]))
+
+(define-syntax assume-type
+  (syntax-rules ()
+    [(_ expr type)
+     (let1 v expr
+       (unless (is-a? v type)
+         (type-error 'expr type v)))]
+    ))

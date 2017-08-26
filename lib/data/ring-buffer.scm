@@ -1,7 +1,7 @@
 ;;;
 ;;;  data.ring-buffer - Ring buffers
 ;;;
-;;;   Copyright (c) 2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2015-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -199,15 +199,20 @@
   (when (ring-buffer-empty? rb)
     (error "Ring buffer is empty:" rb)))
 
-(define (%ensure-room! rb)
+(define (%ensure-room! rb dir) ; dir = 'forward | 'backward
   (when (= (ring-buffer-num-entries rb) (ring-buffer-capacity rb))
     (let1 v ((ring-buffer-overflow-handler rb) rb (ring-buffer-storage rb))
       (case v
         [(error) (error "Ring buffer overflow:" rb)]
         [(overwrite)
          ;; pop the last item so that we can fill it
-         (let1 s (ring-buffer-storage rb)
-           (%rb-head-inc! rb (%dprocs s) s 1))
+         (ecase dir
+           [(forward)
+            (let1 s (ring-buffer-storage rb)
+              (%rb-head-inc! rb (%dprocs s) s 1))]
+           [(backward)
+            (let1 s (ring-buffer-storage rb)
+              (%rb-tail-inc! rb (%dprocs s) s -1))])
          (dec! (ring-buffer-num-entries rb))]
         [else
          (unless (or (vector? v) (uvector? v))
@@ -232,7 +237,7 @@
 
 ;; API
 (define (ring-buffer-add-front! rb elt)
-  (%ensure-room! rb)
+  (%ensure-room! rb 'backward)
   (let* ([s (ring-buffer-storage rb)]
          [dprocs (%dprocs s)])
     (%rb-head-inc! rb dprocs s -1)
@@ -242,7 +247,7 @@
 
 ;; API
 (define (ring-buffer-add-back! rb elt)
-  (%ensure-room! rb)
+  (%ensure-room! rb 'forward)
   (let* ([s (ring-buffer-storage rb)]
          [dprocs (%dprocs s)])
     (%rb-set! dprocs s (ring-buffer-tail rb) elt)

@@ -1,7 +1,7 @@
 /*
  * compare.c - comparison & sort
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -65,44 +65,6 @@ ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
     c->flags = flags;
     return SCM_OBJ(c);
 }
-
-/* C-level accessors, that take care of on-demand filling of slots. */
-ScmObj Scm_ComparatorComparisonProcedure(ScmComparator *cmpr)
-{
-    if (SCM_FALSEP(cmpr->compareFn)) {
-        static ScmObj p = SCM_UNDEFINED;
-        SCM_BIND_PROC(p, "comparator-comparison-procedure",
-                      Scm_GaucheModule());
-        return Scm_ApplyRec1(p, SCM_OBJ(cmpr)); /* this fills compareFn */
-    } else {
-        return cmpr->compareFn;
-    }
-}
-
-ScmObj Scm_ComparatorOrderingPredicate(ScmComparator *cmpr)
-{
-    if (SCM_FALSEP(cmpr->orderFn)) {
-        static ScmObj p = SCM_UNDEFINED;
-        SCM_BIND_PROC(p, "comparator-ordering-predicate",
-                      Scm_GaucheModule());
-        return Scm_ApplyRec1(p, SCM_OBJ(cmpr)); /* this fills orderFn */
-    } else {
-        return cmpr->orderFn;
-    }
-}
-
-ScmObj Scm_ComparatorHashFunction(ScmComparator *cmpr)
-{
-    if (SCM_FALSEP(cmpr->hashFn)) {
-        static ScmObj p = SCM_UNDEFINED;
-        SCM_BIND_PROC(p, "comparator-hash-function",
-                      Scm_GaucheModule());
-        return Scm_ApplyRec1(p, SCM_OBJ(cmpr)); /* this fills hashFn */
-    } else {
-        return cmpr->hashFn;
-    }
-}
-
 
 /*
  * Generic compare.

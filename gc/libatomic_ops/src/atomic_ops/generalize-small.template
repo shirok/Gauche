@@ -449,6 +449,7 @@
     && !defined(AO_HAVE_XSIZE_store_write)
   AO_INLINE void
   AO_XSIZE_store_write(volatile XCTYPE *addr, XCTYPE new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     XCTYPE old_val;
 
@@ -478,6 +479,7 @@
 #if defined(AO_HAVE_XSIZE_compare_and_swap) && !defined(AO_HAVE_XSIZE_store)
   AO_INLINE void
   AO_XSIZE_store(volatile XCTYPE *addr, XCTYPE new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     XCTYPE old_val;
 
@@ -493,6 +495,7 @@
     && !defined(AO_HAVE_XSIZE_store_release)
   AO_INLINE void
   AO_XSIZE_store_release(volatile XCTYPE *addr, XCTYPE new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     XCTYPE old_val;
 
@@ -508,6 +511,7 @@
     && !defined(AO_HAVE_XSIZE_store_full)
   AO_INLINE void
   AO_XSIZE_store_full(volatile XCTYPE *addr, XCTYPE new_val)
+                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     XCTYPE old_val;
 

@@ -1,7 +1,7 @@
 ;;;
 ;;; libdict.scm - dictionary-like data structures (hashtables etc.)
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -125,11 +125,25 @@
        )])
  )
 
+(select-module gauche.internal)
+(define-cproc %current-recursive-hash (:optional obj) Scm_CurrentRecursiveHash)
+  
+(select-module gauche)
+(define-cproc hash-salt () ::<fixnum> Scm_HashSaltRef)
+
 (define-cproc eq-hash (obj)  ::<ulong> :fast-flonum Scm_EqHash)
 (define-cproc eqv-hash (obj) ::<ulong> :fast-flonum Scm_EqvHash)
-(define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash)
+(define-cproc legacy-hash (obj) ::<ulong> :fast-flonum Scm_Hash)
+(define-cproc portable-hash (obj salt::<fixnum>) ::<ulong>
+  :fast-flonum Scm_PortableHash)
+(define-cproc default-hash (obj) ::<fixnum> :fast-flonum Scm_DefaultHash)
 (define-cproc combine-hash-value (a::<ulong> b::<ulong>) ::<ulong>
   Scm_CombineHashValue)
+
+;; see object-hash in libomega.scm for the reason of this implementation
+(define (hash obj)
+  (let1 h ((with-module gauche.internal %current-recursive-hash))
+    (if h (h obj) (legacy-hash obj))))
 
 (define-cproc hash-table? (obj) ::<boolean> :fast-flonum SCM_HASH_TABLE_P)
 
@@ -214,12 +228,12 @@
       [(eq? comparator string-comparator)
        (make-hash-table 'string=? init-size)]
       [else
-       (unless (comparator-hash-function? comparator)
+       (unless (comparator-hashable? comparator)
          (error "make-hash-table requires a comparator with hash function, \
                  but got:" comparator))
        ($ %make-hash-table-from-comparator
           comparator init-size
-          (not (eq? (comparator-type-test-procedure comparator)
+          (not (eq? (comparator-type-test-predicate comparator)
                     (with-module gauche.internal default-type-test))))])]))
 
 (define-cproc hash-table-type (hash::<hash-table>)
@@ -257,6 +271,12 @@
 (define-cproc hash-table-put! (hash::<hash-table> key value) ::<void>
   (Scm_HashTableSet hash key value 0))
 
+(define-cproc hash-table-adjoin! (hash::<hash-table> key value) ::<void>
+  (Scm_HashTableSet hash key value SCM_DICT_NO_OVERWRITE))
+
+(define-cproc hash-table-replace!  (hash::<hash-table> key value) ::<void>
+  (Scm_HashTableSet hash key value SCM_DICT_NO_CREATE))
+
 ;; this is hash-table-remove! in STk.  I use `delete' for
 ;; it's consistent with SRFI-1 and dbm-delete!.
 (define-cproc hash-table-delete! (hash::<hash-table> key) ::<boolean>
@@ -293,11 +313,13 @@
        (return (values (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
  )
 
+(select-module gauche.internal)
 (define-cproc %hash-table-iter (hash::<hash-table>)
   (let* ([iter::ScmHashIter* (SCM_NEW ScmHashIter)])
     (Scm_HashIterInit iter (SCM_HASH_TABLE_CORE hash))
     (return (Scm_MakeSubr hash_table_iter iter 1 0 '"hash-table-iterator"))))
 
+(select-module gauche)
 (define-cproc hash-table-copy (hash::<hash-table>)   Scm_HashTableCopy)
 (define-cproc hash-table-keys (hash::<hash-table>)   Scm_HashTableKeys)
 (define-cproc hash-table-values (hash::<hash-table>) Scm_HashTableValues)
@@ -357,6 +379,12 @@
 (define-cproc tree-map-put! (tm::<tree-map> key val) ::<void>
   (Scm_TreeMapSet tm key val 0))
 
+(define-cproc tree-map-adjoin! (tm::<tree-map> key val) ::<void>
+  (Scm_TreeMapSet tm key val SCM_DICT_NO_OVERWRITE))
+
+(define-cproc tree-map-replace! (tm::<tree-map> key val) ::<void>
+  (Scm_TreeMapSet tm key val SCM_DICT_NO_CREATE))
+
 (define-cproc tree-map-delete! (tm::<tree-map> key) ::<boolean>
   (return (not (SCM_UNBOUNDP (Scm_TreeMapDelete tm key)))))
 
@@ -382,6 +410,7 @@
 (define-cproc tree-map-num-entries (tm::<tree-map>) ::<int>
   (return (Scm_TreeCoreNumEntries (SCM_TREE_MAP_CORE tm))))
 
+(select-module gauche.internal)
 (define-cproc %tree-map-bound (tm::<tree-map> min::<boolean> pop::<boolean>)
   (let* ([op::ScmTreeCoreBoundOp (?: min SCM_TREE_CORE_MIN SCM_TREE_CORE_MAX)]
          [e::ScmDictEntry*
@@ -403,18 +432,22 @@
        (return (values (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
  )
 
+(select-module gauche.internal)
 (define-cproc %tree-map-iter (tm::<tree-map>)
   (let* ([iter::ScmTreeIter* (SCM_NEW ScmTreeIter)])
     (Scm_TreeIterInit iter (SCM_TREE_MAP_CORE tm) NULL)
     (return (Scm_MakeSubr tree_map_iter iter 2 0 '"tree-map-iterator"))))
 
+(select-module gauche.internal)
 (define-cproc %tree-map-check-consistency (tm::<tree-map>)
   (Scm_TreeCoreCheckConsistency (SCM_TREE_MAP_CORE tm))
   (return '#t))
 
+(select-module gauche.internal)
 (define-cproc %tree-map-dump (tm::<tree-map>) ::<void>
   (Scm_TreeMapDump tm SCM_CUROUT))
 
+(select-module gauche)
 (define-cproc tree-map-clear! (tm::<tree-map>) ::<void>
   (Scm_TreeCoreClear (SCM_TREE_MAP_CORE tm)))
 

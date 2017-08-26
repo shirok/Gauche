@@ -370,7 +370,7 @@ STATIC void GC_print_obj(ptr_t p)
           case UNCOLLECTABLE:
             kind_str = "UNCOLLECTABLE";
             break;
-#         ifdef ATOMIC_UNCOLLECTABLE
+#         ifdef GC_ATOMIC_UNCOLLECTABLE
             case AUNCOLLECTABLE:
               kind_str = "ATOMIC_UNCOLLECTABLE";
               break;
@@ -564,6 +564,23 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     }
     ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, i));
+}
+
+STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
+{
+    void * result = GC_generic_malloc(lb + DEBUG_BYTES, knd);
+
+    if (NULL == result) {
+        GC_err_printf(
+                "GC_debug_generic_malloc(%lu, %d) returning NULL (%s:%d)\n",
+                (unsigned long)lb, knd, s, i);
+        return NULL;
+    }
+    if (!GC_debugging_started) {
+        GC_start_debugging();
+    }
+    ADD_CALL_CHAIN(result, ra);
+    return GC_store_debug_info(result, (word)lb, s, i);
 }
 
 #ifdef DBG_HDRS_ALL
@@ -766,7 +783,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
-#ifdef ATOMIC_UNCOLLECTABLE
+#ifdef GC_ATOMIC_UNCOLLECTABLE
   GC_API GC_ATTR_MALLOC void * GC_CALL
         GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
   {
@@ -784,7 +801,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, i));
   }
-#endif /* ATOMIC_UNCOLLECTABLE */
+#endif /* GC_ATOMIC_UNCOLLECTABLE */
 
 #ifndef GC_FREED_MEM_MARKER
 # if CPP_WORDSZ == 32
@@ -835,7 +852,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     } else {
       hdr * hhdr = HDR(p);
       if (hhdr -> hb_obj_kind == UNCOLLECTABLE
-#         ifdef ATOMIC_UNCOLLECTABLE
+#         ifdef GC_ATOMIC_UNCOLLECTABLE
             || hhdr -> hb_obj_kind == AUNCOLLECTABLE
 #         endif
           ) {
@@ -877,6 +894,11 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     if (p == 0) {
       return GC_debug_malloc(lb, OPT_RA s, i);
     }
+    if (0 == lb) /* and p != NULL */ {
+      GC_debug_free(p);
+      return NULL;
+    }
+
 #   ifdef GC_ADD_CALLER
       if (s == NULL) {
         GC_caller_func_offset(ra, &s, &i);
@@ -907,7 +929,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       case UNCOLLECTABLE:
         result = GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
         break;
-#    ifdef ATOMIC_UNCOLLECTABLE
+#    ifdef GC_ATOMIC_UNCOLLECTABLE
       case AUNCOLLECTABLE:
         result = GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
         break;
@@ -928,6 +950,29 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       GC_debug_free(p);
     }
     return(result);
+}
+
+GC_API GC_ATTR_MALLOC void * GC_CALL
+    GC_debug_generic_or_special_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
+{
+    switch (knd) {
+#     ifdef STUBBORN_ALLOC
+        case STUBBORN:
+            return GC_debug_malloc_stubborn(lb, OPT_RA s, i);
+#     endif
+        case PTRFREE:
+            return GC_debug_malloc_atomic(lb, OPT_RA s, i);
+        case NORMAL:
+            return GC_debug_malloc(lb, OPT_RA s, i);
+        case UNCOLLECTABLE:
+            return GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
+#     ifdef GC_ATOMIC_UNCOLLECTABLE
+        case AUNCOLLECTABLE:
+            return GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
+#     endif
+        default:
+            return GC_debug_generic_malloc(lb, knd, OPT_RA s, i);
+    }
 }
 
 #ifndef SHORT_DBG_HDRS

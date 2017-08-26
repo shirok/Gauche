@@ -12,7 +12,7 @@ extensions such as Gauche-gl.  We'll gradually address these issues.
 
 Static library isn't built by default.
 After building Gauche in usual way (e.g. configure + make),
-go to $(TOP_SRCDIR) and run 'make static'.  It creates
+go to $(TOP_SRCDIR)/src and run 'make static'.  It creates
 libgauche-static-X.Y.a  where X.Y is the ABI version.
 
 IMPORTANT: The static library includes all objects under ext/.

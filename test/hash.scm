@@ -10,6 +10,54 @@
 ;; object-equal? and object-hash overload.
 
 (test-start "hash tables")
+(use gauche.hashutil)           ; usually autoloaded, but to run test-module
+(test-module 'gauche.hashutil)
+
+;;------------------------------------------------------------------
+(test-section "hash function")
+
+;; Test portable hash function.  We must guarantee hash values by
+;; portable-hash won't change.
+
+(let ([data '((#f 3428989595 3428989595)
+              (#t 64744347 64744347)
+              (#\a 3754065427 3754065427)
+              (#\null 3668339987 3668339987)
+              (0 0 2654435761)
+              (1 2654435761 387276917)
+              (-1 2654435761 626627309)
+              (45174651375937459317569347657 3238994630 3238994630)
+              (1.1 324783707 2919879337)
+              (-1.1 1508195907 1375087959)
+              (3.767278962604361e-10 3208588342 0)
+              ;; NB: with old 'hash' code, the following was 0 on 8087
+              (3.767278962604362e-10 3983142176 1)
+              (3.767278962604363e-10 462728714 1)
+              (-3.767278962604361e-10 2477197406 0)
+              ;; NB: with old 'hash' code, the following was 0 on 8087
+              (-3.767278962604362e-10 3251751240 4294967295)
+              (-3.767278962604363e-10 4026305074 4294967295)
+              ;; NB: with old 'hash' code, this was 1981270711 on 8087
+              (3.474701543e9 3535247838 1981271040)
+              (3.474701544e9 3780614622 0)
+              (-3.474701544e9 3597766888 0)
+              (+inf.0 0 0)
+              (+nan.0 0 0)
+              (1/2 1401181143 1401181143)
+              (-5/4 3964193037 91423867)
+              (3.0+1.0i 2174816445 2027808452)
+              (() 995466395 995466395)
+              ((#f a 0) 590094886 509715512)
+              (#(#t :b 3.2) 2915469923 1522869008)
+              ("" 3183946422 0)
+              ("zye" 1276445264 121094)
+              (abc 4121390185 96354)
+              (:foo 696220911 101574))])
+  (test* "portable hash (new, legacy)" data
+         (map (^p (list (car p)
+                        (portable-hash (car p) 0)
+                        (hash (car p))))
+              data)))
 
 ;;------------------------------------------------------------------
 (test-section "eq?-hash")
@@ -27,11 +75,26 @@
          (hash-table-put! h-eq 'a 8)
          (hash-table-get  h-eq 'a)))
 
+(test* "a adjoin" 8
+       (begin
+         (hash-table-adjoin! h-eq 'a 9)
+         (hash-table-get h-eq 'a)))
+
+(test* "a replace" 7
+       (begin
+         (hash-table-replace! h-eq 'a 7)
+         (hash-table-get h-eq 'a)))
+
 (test* "b => non" #t
        (hash-table-get  h-eq 'b #t))
 
 (test* "b => error" (test-error)
        (hash-table-get h-eq 'b))
+
+(test* "b replace" #f
+       (begin
+         (hash-table-replace! h-eq 'b 100)
+         (hash-table-get h-eq 'b #f)))
 
 (test* "b => \"b\"" "b"
        (begin
@@ -48,6 +111,12 @@
          (hash-table-put! h-eq 'c #\c)
          (hash-table-get  h-eq 'c)))
 
+(test* "d adjoin" "D"
+       (begin
+         (hash-table-adjoin! h-eq 'd "D")
+         (hash-table-adjoin! h-eq 'd "d")
+         (hash-table-get h-eq 'd)))
+
 (test* "e => 10" 10
        (begin
          (hash-table-put! h-eq 'e 8)
@@ -60,14 +129,14 @@
          (hash-table-update! h-eq 'f (^x (+ x 1)) 2)
          (hash-table-get h-eq 'f)))
 
-(test* "eq? test" 7
+(test* "eq? test" 8
        (begin
          (hash-table-put! h-eq (string #\d) 4)
          (hash-table-put! h-eq (string #\d) 5)
          (length (hash-table-keys h-eq))))
 
 (test* "hash-table-values(1)" #t
-       (lset= equal? (hash-table-values h-eq) '(8 "b" #\c 3 4 5 10)))
+       (lset= equal? (hash-table-values h-eq) '(7 "b" #\c "D" 3 4 5 10)))
 
 (test* "delete!" '(#t #f #f)
        (let* ((a (hash-table-delete! h-eq 'c))

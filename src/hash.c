@@ -1,7 +1,7 @@
 /*
  * hash.c - hash table implementation
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -32,13 +32,14 @@
  */
 
 #define LIBGAUCHE_BODY
+#include <math.h>
+#include "atomic_ops.h"
 #include "gauche.h"
 #include "gauche/class.h"
 
 /*============================================================
  * Internal structures
  */
-
 
 /* The beginning of this structure must match ScmDictEntry. */
 typedef struct EntryRec {
@@ -54,13 +55,41 @@ typedef struct EntryRec {
 #define MAX_AVG_CHAIN_LIMITS   3
 #define EXTEND_BITS            2
 
-/* We limit hash value to 32bits, for it must be portable across platforms.
-   (Especially EQUAL-hash value */
-#define HASHMASK  0xffffffffUL
+/* We limit portable hash value to 32bits */
+#define PORTABLE_HASHMASK  0xffffffffUL
+
+/* For other hash values, we limit it in the fixnum range. */
+#define HASHMASK SCM_SMALL_INT_MAX
 
 typedef Entry *SearchProc(ScmHashCore *core, intptr_t key, ScmDictOp op);
 
-static unsigned int round2up(unsigned int val);
+static u_int round2up(unsigned int val);
+
+/*============================================================
+ * Hash salt
+ */
+
+/* The salt value is nonnegative fixnum.  For the time being, we initialize
+   the default salt value for each run of the process; we might do
+   per-hashtable salt in future.
+
+   Internally we use parameter slot to keep the hash salt value, but
+   we provide dedicated C API to access it to avoid overhead of parameter
+   mechanism.
+*/
+
+static ScmParameterLoc hash_salt; /* initialized by Scm__InitHash() */
+
+ScmSmallInt Scm_HashSaltRef()
+{
+    return SCM_INT_VALUE(Scm_ParameterRef(Scm_VM(), &hash_salt));
+}
+
+ScmSmallInt Scm_HashSaltSet(ScmSmallInt newval) /* returns old value */
+{
+    return SCM_INT_VALUE(Scm_ParameterSet(Scm_VM(), &hash_salt,
+                                          SCM_MAKE_INT(newval)));
+}
 
 /*============================================================
  * Hash functions
@@ -70,24 +99,6 @@ static unsigned int round2up(unsigned int val);
    HASH2INDEX macro maps the hash value to the bucket number.
    (On 64 bit architecture, it's OK to calculate 64bit, but the
    upper bits are discarded by HASH2INDEX to maintain compatibility. */
-
-/* For String
- *
- * Usually, "shift+add" scheme for string hasing works well.  But
- * I found that it works well only if you take the lower bits.
- * Unfortunately, we need to take higher bits for multiplicative
- * hashing of integers and addresses.  So, in HASH2INDEX function,
- * I take both lower bits and higher bits.
- */
-
-#define STRING_HASH(hv, chars, size)                                    \
-    do {                                                                \
-        int i_ = (size);                                                \
-        (hv) = 0;                                                       \
-        while (i_-- > 0) {                                              \
-            (hv) = ((hv)<<5) - (hv) + ((unsigned char)*chars++);        \
-        }                                                               \
-    } while (0)
 
 /* Integer and address. */
 /* Integer and address hash is a variation of "multiplicative hashing"
@@ -110,6 +121,15 @@ static unsigned int round2up(unsigned int val);
 /* Combining two hash values. */
 #define COMBINE(hv1, hv2)   ((hv1)*5+(hv2))
 
+/* For strings, we employ siphash.
+   We use public domain implementation by Sam Trenholme
+   http://samiam.org/blog/20131006.html.  It has a version suitable
+   for 32bit architecture, too.
+   See dws_adapter.h for the details.
+ */
+#define SCM_DWSIPHASH_INTERFACE
+#include "gauche/priv/dws_adapter.h"
+
 u_long Scm_EqHash(ScmObj obj)
 {
     u_long hashval;
@@ -117,104 +137,233 @@ u_long Scm_EqHash(ScmObj obj)
     return hashval&HASHMASK;
 }
 
-u_long Scm_EqvHash(ScmObj obj)
+static u_long number_hash(ScmObj obj, u_long salt, int portable);
+
+static u_long flonum_hash(double d, u_long salt, int portable)
+{
+    int exp, sign;
+    ScmObj mantissa = Scm_DecodeFlonum(d, &exp, &sign);
+    u_long xh;
+    SMALL_INT_HASH(xh, exp*sign);
+    if (SCM_NUMBERP(mantissa)) {
+        return COMBINE(number_hash(mantissa, salt, portable), xh);
+    } else {
+        /* d is not finite.  we just map +inf.0, -inf.0 and nan.0 to 0. */
+        return 0;
+    }
+}
+
+static u_long number_hash(ScmObj obj, u_long salt, int portable)
 {
     u_long hashval;
-    if (SCM_NUMBERP(obj)) {
-        if (SCM_INTP(obj)) {
-            SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
-        } else if (SCM_BIGNUMP(obj)) {
+    if (SCM_INTP(obj)) {
+        /* On 64bit platform, if we have fixnum that is beyond the range
+           of 32bit fixnum, we have to calculate the hash value the same
+           way as 32bit bignum would do. */
+        long u = SCM_INT_VALUE(obj);
+        if (portable) {
+            if (u < 0) u = -u;  /* safe, for u is in fixnum range */
+#if SIZEOF_LONG == 8
+            u = ((u & ((1UL<<32) - 1)) + (u >> 32)) & ((1UL<<32)-1);
+#endif
+        }
+        SMALL_INT_HASH(hashval, u);
+    } else if (SCM_BIGNUMP(obj)) {
+        if (portable) {
+            u_int i;
+            u_long u = 0;
+            for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
+#if SIZEOF_LONG == 4
+                u += SCM_BIGNUM(obj)->values[i];
+#elif SIZEOF_LONG == 8
+                u += (SCM_BIGNUM(obj)->values[i] & ((1UL<<32) - 1))
+                    + (SCM_BIGNUM(obj)->values[i] >> 32);
+#else
+#error "sizeof(long) > 8 platform unsupported"
+#endif
+            }
+            SMALL_INT_HASH(hashval, u);
+        } else {
             u_int i;
             u_long u = 0;
             for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
                 u += SCM_BIGNUM(obj)->values[i];
             }
             SMALL_INT_HASH(hashval, u);
-        } else if (SCM_FLONUMP(obj)) {
-            /* TODO: I'm not sure this is a good hash. */
-            hashval = (u_long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
-        } else if (SCM_RATNUMP(obj)) {
-            /* Ratnum must be normalized, so we can simply combine
-               hashvals of numerator and denominator. */
-            u_long h1 = Scm_EqvHash(SCM_RATNUM_NUMER(obj));
-            u_long h2 = Scm_EqvHash(SCM_RATNUM_DENOM(obj));
-            hashval = COMBINE(h1, h2);
-        } else {
-            /* TODO: I'm not sure this is a good hash. */
-            hashval = (u_long)((SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj))*2654435761UL);
         }
+    } else if (SCM_FLONUMP(obj)) {
+        hashval = flonum_hash(SCM_FLONUM_VALUE(obj), salt, portable);
+    } else if (SCM_RATNUMP(obj)) {
+        /* Ratnum must already be normalized, so we can simply combine
+           hashvals of numerator and denominator. */
+        u_long h1 = number_hash(SCM_RATNUM_NUMER(obj), salt, portable);
+        u_long h2 = number_hash(SCM_RATNUM_DENOM(obj), salt, portable);
+        hashval = COMBINE(h1, h2);
+    } else {
+        SCM_ASSERT(SCM_COMPNUMP(obj));
+        hashval = COMBINE(flonum_hash(SCM_COMPNUM_REAL(obj), salt, portable),
+                          flonum_hash(SCM_COMPNUM_IMAG(obj), salt, portable));
+    }
+    return hashval & (portable ? PORTABLE_HASHMASK : HASHMASK);
+}
+
+u_long Scm_EqvHash(ScmObj obj)
+{
+    u_long hashval;
+    if (SCM_NUMBERP(obj)) {
+        hashval = number_hash(obj, 0, FALSE);
     } else {
         ADDRESS_HASH(hashval, obj);
     }
     return hashval&HASHMASK;
 }
 
-/* General hash function */
-u_long Scm_Hash(ScmObj obj)
+static u_long internal_string_hash(ScmString *str, u_long salt, int portable)
 {
-    u_long hashval;
-    if (!SCM_PTRP(obj)) {
+    const ScmStringBody *b = SCM_STRING_BODY(str);
+    if (portable) {
+        return (u_long)Scm__DwSipPortableHash((uint8_t*)b->start, b->size,
+                                              salt, salt);
+    } else {
+        return Scm__DwSipDefaultHash((uint8_t*)b->start, b->size,
+                                     salt, salt);
+    }
+}
+
+/* equal-hash, which satisfies
+     forall x, y: equal(x,y) => hash(x) = hash(y)
+  
+   Both default-hash and portable-hash have this property but their
+   requirements are slightly different, so here's the common part.
+*/
+static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
+{
+    if (SCM_NUMBERP(obj)) {
+        return number_hash(obj, salt, portable);
+    } else if (!SCM_PTRP(obj)) {
+        u_long hashval;
         SMALL_INT_HASH(hashval, (u_long)SCM_WORD(obj));
-        return hashval;
-    } else if (SCM_NUMBERP(obj)) {
-        return Scm_EqvHash(obj);
+        return hashval&PORTABLE_HASHMASK;
     } else if (SCM_STRINGP(obj)) {
-        goto string_hash;
+        return internal_string_hash(SCM_STRING(obj), salt, portable);
     } else if (SCM_PAIRP(obj)) {
         u_long h = 0, h2;
         ScmObj cp;
         SCM_FOR_EACH(cp, obj) {
-            h2 = Scm_Hash(SCM_CAR(cp));
+            h2 = equal_hash_common(SCM_CAR(cp), salt, portable);
             h = COMBINE(h, h2);
         }
-        h2 = Scm_Hash(cp);
-        h = COMBINE(h, h2);
-        return h;
+        h2 = equal_hash_common(cp, salt, portable);
+        return COMBINE(h, h2);
     } else if (SCM_VECTORP(obj)) {
         int siz = SCM_VECTOR_SIZE(obj);
         u_long h = 0, h2;
         for (int i=0; i<siz; i++) {
-            h2 = Scm_Hash(SCM_VECTOR_ELEMENT(obj, i));
+            h2 = equal_hash_common(SCM_VECTOR_ELEMENT(obj, i), salt, portable);
             h = COMBINE(h, h2);
         }
         return h;
-    } else if (SCM_SYMBOLP(obj)) {
-        obj = SCM_OBJ(SCM_SYMBOL_NAME(obj));
-        goto string_hash;
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
     } else if (SCM_KEYWORDP(obj)) {
-        obj = SCM_OBJ(SCM_KEYWORD_NAME(obj));
-        goto string_hash;
+        if (portable) {
+            if (SCM_SYMBOLP(obj)) {
+                /* GAUCHE_KEYWORD_IS_SYMBOL mode */
+                return internal_string_hash(SCM_KEYWORD_NAME(obj), salt, TRUE);
+            } else {
+                /* GAUCHE_KEYWORD_IS_DISJOINT mode.  SCM_KEYWORD_NAME does
+                   not include prefix ':'.  We should append it so that
+                   the hash value stays the same.  Appending string incurs
+                   allocation, but we expect this branch isn't taken often
+                   and eventually fade away. */
+                static ScmString *prefix = NULL;
+                if (prefix == NULL) {
+                    /* idempotent.  no MT hazard. */
+                    prefix = SCM_STRING(Scm_MakeString(":", 1, 1, 0));
+                }
+                ScmObj name = Scm_StringAppend2(prefix, SCM_KEYWORD_NAME(obj));
+                return internal_string_hash(SCM_STRING(name), salt, TRUE);
+            }
+        } else {
+            u_long hashval;
+            ADDRESS_HASH(hashval, obj);
+            return hashval;
+        }
+#endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+    } else if (SCM_SYMBOLP(obj)) {
+        if (portable) {
+            return internal_string_hash(SCM_SYMBOL_NAME(obj), salt, TRUE);
+        } else {
+            u_long hashval;
+            ADDRESS_HASH(hashval, obj);
+            return hashval;
+        }
     } else {
-        /* Call specialized object-hash method */
-        ScmObj r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectHash),
-                                SCM_LIST1(obj));
+        /* Call specialized object-hash method
+           We need some trick; See libomega.scm for the details. */
+        static ScmObj call_object_hash_proc = SCM_UNDEFINED;
+        static ScmObj portable_hash_proc = SCM_UNDEFINED;
+        static ScmObj default_hash_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(call_object_hash_proc, "%call-object-hash",
+                      Scm_GaucheInternalModule());
+        SCM_BIND_PROC(portable_hash_proc, "portable-hash", Scm_GaucheModule());
+        SCM_BIND_PROC(default_hash_proc, "default-hash", Scm_GaucheModule());
+        ScmObj r = Scm_ApplyRec3(call_object_hash_proc, obj,
+                                 (portable
+                                  ? portable_hash_proc
+                                  : default_hash_proc),
+                                 (portable
+                                  ? Scm_MakeIntegerU(salt)
+                                  : SCM_FALSE));
         if (SCM_INTP(r)) {
             return (u_long)SCM_INT_VALUE(r);
         }
         if (SCM_BIGNUMP(r)) {
             /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
-               but taking the LSW would give better distribution. */
+               so taking the LSW would give better distribution. */
             return SCM_BIGNUM(r)->values[0];
         }
         Scm_Error("object-hash returned non-integer: %S", r);
         return 0;               /* dummy */
     }
-  string_hash:
-    {
-        const ScmStringBody *b = SCM_STRING_BODY(obj);
-        const char *p = SCM_STRING_BODY_START(b);
-        STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
-        return hashval;
-    }
 }
 
+/* For recursive call to the current hash function - see call-object-hash
+   and object-hash definitions in libomega.scm. */
+static ScmParameterLoc current_recursive_hash;
+
+ScmObj Scm_CurrentRecursiveHash(ScmObj newval)
+{
+    ScmObj val = Scm_ParameterRef(Scm_VM(), &current_recursive_hash);
+    if (newval != SCM_UNBOUND) {
+        Scm_ParameterSet(Scm_VM(), &current_recursive_hash, newval);
+    }
+    return val;
+}
+
+/* 'Portable' general hash function.
+   
+   It is guaranteed that the hash value won't change for the same objects
+   (roughly, indistinguishable in their external representation)
+   accross the runs of the program, and among different platforms.
+   That is, the value can be used in persistent stores.
+ */
+u_long Scm_PortableHash(ScmObj obj, u_long salt)
+{
+    return equal_hash_common(obj, salt, TRUE) & PORTABLE_HASHMASK;
+}
+
+/* 'Default' general hash function. */
+ScmSmallInt Scm_DefaultHash(ScmObj obj)
+{
+    return equal_hash_common(obj, Scm_HashSaltRef(), FALSE) & HASHMASK;
+}
+
+/* This is to expose string hash function.  Modulo is for the compatibility
+   of srfi-13; just give 0 as modulo if you don't need it.  */
 u_long Scm_HashString(ScmString *str, u_long modulo)
 {
-    u_long hashval;
-    const ScmStringBody *b = SCM_STRING_BODY(str);
-    const char *p = SCM_STRING_BODY_START(b);
-    STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
-    if (modulo == 0) return hashval;
+    u_long hashval = internal_string_hash(str, Scm_HashSaltRef(), FALSE);
+    if (modulo == 0) return hashval&HASHMASK;
     else return (hashval % modulo);
 }
 
@@ -385,7 +534,7 @@ static int eqv_cmp(const ScmHashCore *table, intptr_t key, intptr_t k2)
 
 static u_long equal_hash(const ScmHashCore *table, intptr_t key)
 {
-    return Scm_Hash(SCM_OBJ(key));
+    return Scm_DefaultHash(SCM_OBJ(key));
 }
 
 static int equal_cmp(const ScmHashCore *table, intptr_t key, intptr_t k2)
@@ -404,14 +553,12 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
     if (!SCM_STRINGP(key)) {
         Scm_Error("Got non-string key %S to the string hashtable.", key);
     }
-    const ScmStringBody *keyb = SCM_STRING_BODY(key);
-    const char *s = SCM_STRING_BODY_START(keyb);
-    int size = SCM_STRING_BODY_SIZE(keyb);
-    u_long hashval;
-    STRING_HASH(hashval, s, size);
+    u_long hashval = Scm_HashString(SCM_STRING(key), 0);
     u_long index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     Entry **buckets = (Entry**)table->buckets;
 
+    const ScmStringBody *keyb = SCM_STRING_BODY(key);
+    long size = SCM_STRING_BODY_SIZE(keyb);
     for (Entry *e = buckets[index], *p = NULL; e; p = e, e = e->next) {
         ScmObj ee = SCM_OBJ(e->key);
         const ScmStringBody *eeb = SCM_STRING_BODY(ee);
@@ -427,11 +574,7 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 
 static u_long string_hash(const ScmHashCore *table, intptr_t key)
 {
-    u_long hashval;
-    const ScmStringBody *b = SCM_STRING_BODY(key);
-    const char *p = SCM_STRING_BODY_START(b);
-    STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
-    return hashval;
+    return Scm_HashString(SCM_STRING(key), 0);
 }
 
 static int string_cmp(const ScmHashCore *table, intptr_t k1, intptr_t k2)
@@ -691,7 +834,8 @@ ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter)
 
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, Scm_ObjectCompare,
+                         NULL, NULL,
                          SCM_CLASS_DICTIONARY_CPL);
 
 ScmObj Scm_MakeHashTableSimple(ScmHashType type, unsigned int initSize)
@@ -740,6 +884,8 @@ ScmObj Scm_HashTableRef(ScmHashTable *ht, ScmObj key, ScmObj fallback)
     else    return SCM_DICT_VALUE(e);
 }
 
+/* Returns previous value; can return SCM_UNBOUND when the association hasn't
+   been there.  Be careful not to let SCM_UNBOUND leak out to Scheme! */
 ScmObj Scm_HashTableSet(ScmHashTable *ht, ScmObj key, ScmObj value, int flags)
 {
     ScmDictEntry *e;
@@ -748,12 +894,11 @@ ScmObj Scm_HashTableSet(ScmHashTable *ht, ScmObj key, ScmObj value, int flags)
                            (intptr_t)key,
                            (flags&SCM_DICT_NO_CREATE)?SCM_DICT_GET: SCM_DICT_CREATE);
     if (!e) return SCM_UNBOUND;
-    if (e->value) {
-        if (flags&SCM_DICT_NO_OVERWRITE) return SCM_DICT_VALUE(e);
-        else return SCM_DICT_SET_VALUE(e, value);
-    } else {
+    ScmObj oldval = e->value? SCM_DICT_VALUE(e) : SCM_UNBOUND;
+    if (!(flags&SCM_DICT_NO_OVERWRITE) || SCM_UNBOUNDP(oldval)) {
         return SCM_DICT_SET_VALUE(e, value);
     }
+    return oldval;
 }
 
 ScmObj Scm_HashTableDelete(ScmHashTable *ht, ScmObj key)
@@ -863,6 +1008,23 @@ static unsigned int round2up(unsigned int val)
 }
 
 /*====================================================================
+ * Initialization
+ */
+
+void Scm__InitHash()
+{
+    struct timeval t;
+    if (gettimeofday(&t, NULL) < 0) {
+        Scm_Panic("gettimeofday failed");
+    }
+    u_long salt = ((u_long)getpid() * ((u_long)t.tv_sec^(u_long)t.tv_usec));
+    ADDRESS_HASH(salt, salt);
+    salt &= SCM_SMALL_INT_MAX;
+    Scm_InitParameterLoc(Scm_VM(), &hash_salt, Scm_MakeIntegerU(salt));
+    Scm_InitParameterLoc(Scm_VM(), &current_recursive_hash, SCM_FALSE);
+}
+
+/*====================================================================
  * For backward compatibility
  */
 
@@ -949,4 +1111,189 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
 #else
     return SCM_UNDEFINED;
 #endif
+}
+
+/* Legacy hash function.
+ *
+ * This used to be used for equal?-hashtable hash.  It also guaranteed
+ * that the hash result won't change between runs and among different
+ * platforms, so it can be used for persistent data.
+ *
+ * There are several drawbacks, though.  The guaranteed hash value means
+ * we can't change hash function.   The quality of the original hash
+ * functon wasn't good (it behaves terrible on flonums and compnums);
+ * it's vulnerable to collision attacks; and it had a few bugs in the
+ * number hash that broke the 'portable' guarantee between platforms.
+ *
+ * Since there have already been stored data relying on the original hash
+ * values, we keep the old function (with bugs fixed) here.
+ * Scm_Hash() and Scheme's 'hash' function uses this for the backward
+ * comaptibility, but it is not recommended for the new code.
+ */
+
+static u_long legacy_number_hash(ScmObj obj);
+static u_long legacy_string_hash(ScmString *str);
+
+u_long Scm_Hash(ScmObj obj)
+{
+    if (!SCM_PTRP(obj)) {
+        u_long hashval;
+        SMALL_INT_HASH(hashval, (u_long)SCM_WORD(obj));
+        return hashval&PORTABLE_HASHMASK;
+    } else if (SCM_NUMBERP(obj)) {
+        return legacy_number_hash(obj);
+    } else if (SCM_STRINGP(obj)) {
+        goto string_hash;
+    } else if (SCM_PAIRP(obj)) {
+        u_long h = 0, h2;
+        ScmObj cp;
+        SCM_FOR_EACH(cp, obj) {
+            h2 = Scm_Hash(SCM_CAR(cp));
+            h = COMBINE(h, h2);
+        }
+        h2 = Scm_Hash(cp);
+        h = COMBINE(h, h2);
+        return h&PORTABLE_HASHMASK;
+    } else if (SCM_VECTORP(obj)) {
+        int siz = SCM_VECTOR_SIZE(obj);
+        u_long h = 0, h2;
+        for (int i=0; i<siz; i++) {
+            h2 = Scm_Hash(SCM_VECTOR_ELEMENT(obj, i));
+            h = COMBINE(h, h2);
+        }
+        return h&PORTABLE_HASHMASK;
+    } else if (SCM_KEYWORDP(obj)) {
+        /* If we have keyword and symbol unified, KEYWORD_NAME includes
+           ':'.  Legacy hash didn't consider it. */
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
+        if (SCM_SYMBOLP(obj)) {
+            obj = Scm_Substring(SCM_KEYWORD_NAME(obj), 1, -1, FALSE);
+        } else {
+            obj = SCM_OBJ(SCM_KEYWORD_NAME(obj));
+        }
+#else  /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+        obj = Scm_Substring(SCM_KEYWORD_NAME(obj), 1, -1, FALSE);
+#endif /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+        goto string_hash;
+    } else if (SCM_SYMBOLP(obj)) {
+        obj = SCM_OBJ(SCM_SYMBOL_NAME(obj));
+        goto string_hash;
+    } else {
+        /* Call specialized object-hash method */
+        ScmObj r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectHash),
+                                SCM_LIST1(obj));
+        if (SCM_INTP(r)) {
+            return ((u_long)SCM_INT_VALUE(r))&PORTABLE_HASHMASK;
+        }
+        if (SCM_BIGNUMP(r)) {
+            /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
+               but taking the LSW would give better distribution. */
+            return (SCM_BIGNUM(r)->values[0])&PORTABLE_HASHMASK;
+        }
+        Scm_Error("object-hash returned non-integer: %S", r);
+        return 0;               /* dummy */
+    }
+  string_hash:
+    return legacy_string_hash(SCM_STRING(obj));
+}
+
+static u_long legacy_flonum_hash(double f)
+{
+    /* Originally the code was just (u_long)(f * 2654435761UL), but that's
+       UB when the multiplication yields out of range of u_long.  I don't
+       even remember why I adopted that for the hash function in the
+       first place, but we have to stick to existing hash values recorded
+       elsewhere.
+
+       On x86 with 8087-compatible FPU, (u_long)(d) behaves as follows.
+       If -2^63 < d < 2^63, the modulo of 2^32 is taken.  Otherwise
+       it yields 0.
+
+       On x86 with SSE, the out-of-range value yields #x8000_0000.
+
+       On x86_64, if -2^63 < d < 2^64, the modulo of 2^32 is taken.
+       Otherwise it yields #x8000_0000_0000_0000.
+
+       To achieve maximum compatibility with historical data, we
+       take the range of 8087, and the calculation is adjusted for
+       x86_64 behavior.  There can be a slight discrepancy from the
+       result of 8087 because of its internal 80bit calculation---for
+       example, 3.767278962604362e-10 * 2654435761 is just tiny little
+       bit less than 1.0 but with 64bit calculation it is rounded up
+       to 1.0.  With 80 bit and integer truncation the result is 0 but
+       with 64bit we get 1.
+     */
+    volatile double d = f * 2654435761UL;
+    static double two_pow_63 = 0.0;
+    static double minus_two_pow_63 = 0.0;
+    static double two_pow_32 = 0.0;
+    static int initialized = FALSE;
+
+    if (!initialized) {
+        /* This is idempotent - no need to lock */
+        two_pow_63 = ldexp(1.0, 63);
+        minus_two_pow_63 = -ldexp(1.0, 63);
+        two_pow_32 = ldexp(1.0, 32);
+        AO_nop_full();
+        initialized = TRUE;
+    }
+    /* This condition eliminates NaN as well. */
+    if (!(minus_two_pow_63 < d && d < two_pow_63)) return 0;
+    if (-0.5 < d && d < 0.5) return 0;
+                                 
+    double dm = trunc(fmod(d, two_pow_32));
+    if (dm < 0) dm += two_pow_32;
+    return (u_long)trunc(dm);
+}
+
+/* Old hash function for numeric objects.  This is terrible for flonums,
+   and we only keep it in order to maintain portable hash value generated
+   by legacy hash function. */
+static u_long legacy_number_hash(ScmObj obj)
+{
+    u_long hashval;
+    SCM_ASSERT(SCM_NUMBERP(obj));
+    if (SCM_INTP(obj)) {
+        SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
+    } else if (SCM_BIGNUMP(obj)) {
+        u_int i;
+        u_long u = 0;
+        for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
+#if SIZEOF_LONG == 4
+            u += SCM_BIGNUM(obj)->values[i];
+#elif SIZEOF_LONG == 8
+            u += (SCM_BIGNUM(obj)->values[i] & ((1UL<<32) - 1))
+                + (SCM_BIGNUM(obj)->values[i] >> 32);
+#else
+#error "sizeof(long) > 8 platform unsupported"
+#endif
+        }
+        SMALL_INT_HASH(hashval, u);
+    } else if (SCM_FLONUMP(obj)) {
+        hashval = legacy_flonum_hash(SCM_FLONUM_VALUE(obj));
+    } else if (SCM_RATNUMP(obj)) {
+        /* Ratnum must already be normalized, so we can simply combine
+           hashvals of numerator and denominator. */
+        u_long h1 = legacy_number_hash(SCM_RATNUM_NUMER(obj));
+        u_long h2 = legacy_number_hash(SCM_RATNUM_DENOM(obj));
+        hashval = COMBINE(h1, h2);
+    } else {
+        hashval =
+            legacy_flonum_hash(SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj));
+    }
+    return hashval&PORTABLE_HASHMASK;
+}
+
+/* Legacy hash function for strings.  This isn't very good hash function
+   either, and it's difficult to adopt salting. */
+static u_long legacy_string_hash(ScmString *str)
+{
+    const ScmStringBody *b = SCM_STRING_BODY(str);
+    const char *p = SCM_STRING_BODY_START(b);
+    long k = SCM_STRING_BODY_SIZE(b);
+    u_long hv = 0;
+    while (k-- > 0) {
+        hv = (hv<<5) - (hv) + ((unsigned char)*p++);
+    }
+    return hv&PORTABLE_HASHMASK;
 }

@@ -1,7 +1,7 @@
 ;;;
 ;;; procedure.scm - auxiliary procedure utilities.  to be autoloaded.
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -39,7 +39,7 @@
           any-pred every-pred
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          case-lambda ~ ref* disasm
+          source-code source-location disasm
           generator-fold generator-fold-right
           generator-for-each generator-map
           generator-find
@@ -176,7 +176,8 @@
 ;;  (~ <compiled-code>'debug-info) -> definition -> source-info
 ;;  In case if the source is a result of macro expansion, the original
 ;;  source is attached in the 'original pair attribute of the source
-;;  code.  The `source-code' procedure traces the very origin of the source.
+;;  code.  The `source-code' procedure traces the very origin of the source
+;;  (via compiled-code-definition).
 ;;  Note that precompiled closure doesn't have `definition' info, hence
 ;;  source code is not available.
 ;;
@@ -189,16 +190,9 @@
 ;;  at its source-info.
 
 (define (source-code proc)
-  ;; TRANSIENT: Replace this with compiled-code-definition after
-  ;; 0.9.5 release.
-  (and-let* ([ (closure? proc) ]
-             [def (assq-ref (~ (closure-code proc)'info) 'definition)]
-             [src (assq-ref def 'source-info)])
-    (let loop ([src src])
-      (if-let1 orig ((with-module gauche.internal pair-attribute-get)
-                     src 'original #f)
-        (loop orig)
-        src))))
+  (and (closure? proc)
+       ((with-module gauche.internal compiled-code-definition)
+        (closure-code proc))))
 
 (define (source-location proc)
   (define (extract x)
@@ -209,7 +203,7 @@
       (extract (source-code proc))))
 
 ;; disassembler ------------------------------------------------
-;; I'm not sure whether this should be here or not, but fot the time being...
+;; I'm not sure whether this should be here or not, but for the time being...
 
 (define (disasm proc)
   (define dump (with-module gauche.internal vm-dump-code))

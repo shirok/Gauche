@@ -1,7 +1,7 @@
 /*
  * prof.h - Profiler
  *
- *   Copyright (c) 2005-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2005-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -112,7 +112,12 @@ struct ScmVMProfilerRec {
     ScmHashTable* statHash;     /* hashtable for collected data.
                                    value is a pair of integers,
                                    (<call-count> . <sample-hits>) */
-
+#if defined(GAUCHE_WINDOWS)
+    HANDLE hTargetThread;       /* target thread */
+    HANDLE hObserverThread;     /* observer thread */
+    HANDLE hTimerEvent;         /* sampling timer event */
+    char *samplerFileName;      /* temporary file name to remove the file */
+#endif
     ScmProfSample samples[SCM_PROF_SAMPLES_IN_BUFFER];
     ScmProfCount  counts[SCM_PROF_COUNTER_IN_BUFFER];
 };

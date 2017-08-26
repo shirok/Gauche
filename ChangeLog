@@ -1,3 +1,1357 @@
+2017-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/ring-buffer.scm (%ensure-room!): Fix a bug when add-front!
+	  is used in overwrite mode.  It didn't overwrite from the end.
+
+2017-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/progress.scm (make-text-progress-bar): Check if max-value
+	  is positive.  If it's 0, the error message was incomprehensible
+	  to the user.
+
+2017-08-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-11.scm, lib/gauche/common-macro.scm (let-values, let*-values):
+	  Make them built-in.
+
+2017-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-132.scm, src/srfis.scm: Support srfi-132.
+
+2017-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (<write-controls>): INCOMPATIBLE CHANGE:
+	  Dropped 'print-' prefix from slot names, for it is redundant.
+	  Keep make-write-controls and write-controls-copy backward
+	  compatible by making old keywords recognized.  Only the code
+	  that directly access with the slot names must be changed.
+
+2017-08-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (print-mode),
+	  lib/gauche/interactive/toplevel.scm (print-mode, print-all):
+	  New REPL feature to switch print-mode (<write-controls> parameters).
+
+2017-08-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/writerP.h, src/libio.scm: Add printPretty field to
+	  ScmWriteControls.
+	* src/write.c: Integrated pretty printer to 'write'.  If printPretty
+	  slot of controls is true, pretty printer is invoked.
+	  NB: Haven't worked on the case when user-defined object-write method
+	  recurses to write.
+	* lib/gauche/pputil.scm: Renamed from pp.scm and set to be autoloaded.
+
+2017-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/writer.h, src/gauche/priv/writerP.h (ScmWriteControlsRec):
+	  Move the definition to the private header.
+
+2017-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmac.scm (trace-macro, untrace-macro): Added experimentally.
+
+2017-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1/body-rec): First step of fixing internal
+	  definitions.
+
+2017-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/box.scm, lib/scheme/charset.scm, lib/scheme/comparator.scm,
+	  lib/scheme/generator.scm, lib/scheme/ideque.scm,
+	  lib/scheme/list-queue.scm, lib/scheme/list.scm,
+	  lib/scheme/lseq.scm, lib/scheme/set.scm, lib/scheme/sort.scm,
+	  lib/scheme/vector.scm: Added dummy libraries that are defined in
+	  Red edition of R7RS-Large and already supportedin Gauche.
+
+2017-07-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (doplist): Added experimentally.  Not
+	  documented yet (document commented out).  Let's see if it's worth
+	  to have.
+
+2017-07-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-151.scm: Support srfi-151.
+
+2017-07-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: Officially support srfi-149.
+
+2017-07-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libomega.scm (object-hash, object-equal?): Add those methods
+	  for builtin hashtables.
+	* lib/gauche/hashutil.scm (hash-table-empty?)
+	  (hash-table-compare-as-sets): Added.
+
+2017-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/compat/r7rs-srfi-tests.scm: An ad-hoc adapter to run srfi
+	  tests written in r7rs define-library directly without loading
+	  full r7rs layer.  See test/srfi.scm for example usage.
+
+2017-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/libomega.scm (default-comparator): Fix the default comparator
+	  when comparing numbers; we should use =, instead of equal?.
+
+2017-07-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-check-headers): Fix bug that passed
+	  a string, instead of a symbol, to cf-define.
+
+2017-07-13  Shiro Kawai <shiro@acm.org>
+
+	* lib/srfi-146.scm, tests/include/srfi-146-test.scm: Add srfi-146
+	  based on draft #10.  The API may change before finalization.
+
+2017-07-12  Shiro Kawai <shiro@acm.org>
+
+	* src/treemap.c: Fix bug that deleting the current node during
+	  iterator traversal broke the iterator.
+
+2017-07-11  Shiro Kawai <shiro@acm.org>
+
+	* lib/gauche/treeutil.scm, src/treemap.c: Make treemaps comparable
+	  using tree-map-compare-as-sequences.
+
+	* src/gauche.h, src/class.c (Scm_ObjectCompare): Make it public API.
+	  Built-in classes can give this cfn as 'compare' function, then
+	  object-compare and object-equal? methods will work on the instances
+	  of the classes.
+
+2017-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/treeutil.scm (tree-map-compare-as-sets),
+	(tree-map-compare-as-sequences): Added.
+
+2017-07-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm: Move internal procedures (%tree-map-iter etc.) to
+	  gauche.internal.  They're not supposed to be exposed.
+
+2017-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm: Add {hash-table|tree-map}-{adjoin!|replace!}.
+
+2017-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashTableSet), src/treemap.c (Scm_TreeMapSet):
+	  INCOMPATIBLE CHANGE: Let these return the previous value associated
+	  with the key.  If there's no entry with the key, SCM_UNBOUND is
+	  returned.  (1) This works consistently across flags, and (2) The
+	  caller can know whether the association has already been there
+	  or not.  The code that expects these to return the updated value
+	  will break and need to be changed.  We see that in most cases
+	  these procedures are used only for the side effects and the
+	  return value is ignored.
+
+2017-07-01  shiro  <shiro@acm.org>
+
+	* lib/gauche/common-macros (assume-type): Added.
+	* src/libexc.scm (type-error): Added.  Consolidate type error
+	  handling in Scm_TypeError.
+
+2017-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm (generator->uvector, generator->uvector!)
+	  (generator->bytevector, generator->bytevector!): Added.
+
+(2017-06-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-64.scm: Add integration to gauche.test.  When srfi-64 tests
+	  are executed during gauche.test tests, the behavior of default test
+	  runner switches to cope with gauche.test.
+
+2017-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/logger.scm: Allow 'current-output as path of <log-drain>
+	  to send output to stdout.  Accept 'current-error, too, as well as
+	  #t to send output ot stderr, for the consistency.
+	  Also allow 'ignore to completely ignore log-format (not even does
+	  formatting).
+	* lib/gauche/test.scm: Expose test-count++, test-pass++ and test-fail++
+	  (for srfi-64 integration).
+
+2017-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-64.scm: Added.
+
+2017-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: If the interpreter basename is "scheme-r7rs", we assume
+	  the script is in R7RS and invoked under SRFI-22 convention, and calls
+	  r7rs.user#main.
+
+2017-06-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/console.scm: Enhance *vt100-compatible-terminals* to
+	  cover screen-256color.
+
+	* lib/gauche/test.scm (test-module-common): Show the line number
+	  and the actual code for dangling gref etc.   Patch from nkoguro:
+	  https://github.com/shirok/Gauche/pull/288
+
+2017-06-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macro.scm (syntax-error, syntax-errorf):
+	  Wrap the error with extra <compile-error-mixin>, when we know
+	  what macro call resulted the error, helping diagnose macro
+	  error.
+
+2017-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* Bumped libatomic_ops to 7.6.0, thanks to @qykth-git
+	  https://github.com/shirok/Gauche/pull/286
+
+	* lib/gauche/precomp.scm, src/compile-1.scm (define-macro):
+	  We no longer use make-macro-transformer to create legacy macros;
+	  we directly call %make-macro-transformer instead, which is *the*
+	  formal way to create macros.
+	* src/libalpha.scm, src/libmac.scm: Put %make-macro-transformer
+	  in libalpha.scm, since it is now referenced from the precompiled
+	  code of define-macro.  Move make-macro-transformer to src/libmac.scm;
+	  it is no longer used, but old extension code precompiled by 0.9.5
+	  or before may refer to it, so we keep it until 1.0.
+	* src/macro.c (Scm_MakeMacroTransformerOld): This is truly obsoleted.
+	  Nobody should be calling this directly.  We keep the entry for
+	  ABI compatibility but calling it would result Scm_Panic.
+
+2017-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/macro.c (ScmMacro): Enhanced ScmMacro to keep
+	  some useful info for macro debugging.
+
+2017-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-143.scm, src/srfis.scm: Support srfi-143, as the srfi
+	  has been finalized.
+
+	* src/libnum.scm (twos-complement-factor): INCOMPATIBLE BUG FIX:
+	  It used to return 0 when the argument is 0.  Mathematcially, the
+	  result is arbitrary.  But for other arguments, this procedure
+	  is equivalent as first-set-bit and log2-binary-factors in SRFI-60,
+	  and it's unreasonable to diverge in just one argument; the SRFI-60
+	  versions returns -1 for 0.
+	  Unfortunately, the case when argument is 0 has been documented,
+	  so this is compatibility-breaking change.
+
+	* lib/gauche/test/script.scm (test-script): Handle the case
+	  when the script file has its own module (patch from KOGURO Naoki,
+	  https://github.com/shirok/Gauche/pull/285).
+	  Splitted into autoloaded file to avoid the core functions of
+	  gauche.test from depending other modules (we test those modules
+	  using gauche.test so we can't depend on them).
+
+2017-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (compile_rule1, realize_template_rec): Support srfi-149
+	  multiple following ellipses in templates.
+
+2017-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (compile_rule1): Fix a bug that failed to catch
+	  bad ellipses usage in a pattern.
+
+	* libsrc/gauche/record.scm (describe-slots): Provide specialized
+	  describe method for records.  Records may have duplicate slot
+	  names, so the default method, which retrieves slot values by
+	  their name, doesn't work.
+
+2017-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (describe, describe-common, describe-slots):
+	  Moved core methods to here, so that libraries can specialize
+	  'describe' without using gauche.interactive.
+	  (instance-slot-ref): Check unbound slot (it returned #<unbound>
+	  object; yikes!).  Add fallback optional argument so that the caller
+	  can detect and handle the situation.  Note: This API is still
+	  unofficial.
+	  (instance-slot-set!): Renamed from instance-slot-set for the
+	  consistency.  This is unofficial API so we don't mark it incompatible
+	  change.
+
+2017-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/record.scm: INCOMPATIBILE CHANGE: Make positional
+	  pattern match work reasonably on inherited records (the same order
+	  as the default constructor).  We'd say the old behavior was a bug;
+	  it makes little sense to have positional match different from the
+	  constructor.  The document, however, implied that the old behavior
+	  was a supposed one (it defined the position in terms of class-slots).
+	  So we mark it as compatibility-breakage.
+
+2017-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm: Make match:$-ref generic function, so that
+	  a metaclass can tweak how positional match is handled.
+
+2017-05-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-143.scm: Added (provisional; the srfi is still draft).
+
+	* lib/text/console.scm (make-default-console): Check if stdin is tty;
+	  if not, just return #f.  In typical cases, this procedure won't
+	  be called (via gauche.interactive#read-eval-print-loop) when gosh
+	  is in non-interactive mode.  But there can be a settings that the
+	  user invokes it directly.
+
+2017-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm (dict-find, dict-any): Added, defined
+	  on top of dict-seek.  NB: We found the dict-seek protocol is not
+	  enough to implement dict-every, in terms of srfi-1 every semantics,
+	  which returns the result of last invocation of PRED (instead of
+	  acting a pure predicate).  So we keep these and dict-seek unofficial
+	  for now.
+
+2017-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_MethodApplicableForClasses): If a specializer
+	  is <top>, we don't need to check subtypeness.  Micro-optimization,
+	  but the effect is visible.  (A few percent improvement in 'ref'
+	  when dispatch accelerator is on.)
+
+2017-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm (dict-seek): Added new protocol API.
+	* lib/gauche/hashutil.scm (hash-seek),
+	  lib/gauche/treeutil.scm (tree-map-seek): Added.
+
+2017-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm (dict-immutable?): Added new protocol
+	  API.
+
+2017-05-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.scm, src/liblist.scm (append, append!): Strictly check
+	  args to reject dotted list in non-last argument.
+	  NB: We don't check circular list, for it requires more overhead.
+
+2017-05-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (list*, cons*): Require at least one arg, as
+	  specified in srfi-1 and CL.  Zero arg list*/cons* don't make sense.
+	  Gauche doc have always been required >=1 arg, so allowing zero arg
+	  was just an implementation artifacts.
+
+	* lib/gauche/process.scm (shell-tokenize-string): Fix a bug that
+	  failed to recognize quoted string appearing in middle of unquoted
+	  string.
+
+2017-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs.scm (define-library): Fix another bug in cond-expand.
+	  Cond-expand in library decl differs from srfi-0 cond-expand
+	  where the output of the former is spliced into library decls.
+	  It is tricky because we have to deal with the output of cond-expand
+	  macro at the macro transformer level.  For now, we call macroexpand
+	  inside the transformer---very CL-ish.
+
+	* src/compile-1.scm (pass1/body-rec): Use global-identifier=?
+	  to check internal define and internal define-syntax.  See the
+	  added test in test/macro.scm for the case this fixes.
+
+	* lib/r7rs.scm (scheme.r5rs): Avoid redefining 'define',
+	  for it interferes with internal definition recognition.  Instead
+	  we fiddle with r7rs.aux to expose r7rs#define as r7rs:define,
+	  and use export renaming in scheme.r5rs to export it as 'define'.
+
+2017-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs.scm (define-library): Fix a mysterious bug that internal
+	  definitions inserted by a macro defined in an r7rs library
+	  wasn't recognized as internal definitions.  Initially we suspected
+	  a bug that broke hygiene of 'define'.  It turned out that the
+	  bug was in the sloppy definition of 'define-library': The expansion
+	  redefined 'begin'.  And because hygienic expansion is working as
+	  expected, the compiler didn't recognize 'begin' as the original
+	  meaning, and skipped splicing internal defines.
+	  Fix https://github.com/shirok/Gauche/issues/221
+
+	* src/class.c (Scm_ShortClassName): Unofficial API change: Previously
+	  called Scm__InternalClassName.  It's just a C function that strips
+	  '<' and '>' from the class name, but its handy and used from
+	  some ext/* stuff, so let it be public.  Old name will go in 1.0.
+
+2017-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/dispatch.c: EXPERIMENTAL: Add method dispatch
+	  accelerator. By default nothing changes; it must be turned on
+	  explicitly for each GF.  We'll do some experiment before making it
+	  automatic.  Consider this feature highly experimental and
+	  do not use it in production before we declar it's stable.
+	  See src/dispatch.c for the detail mechanism.
+	  A preliminary benchmark shows `ref' being 4x faster on sparse
+	  vectors.
+	  ABI INCOMPATIBILITY: If you have precompiled files with
+	  `define-cgeneric', you need to recompile it; a new field
+	  is added to ScmGeneric so the static initializer needs to be
+	  recompiled.
+
+2017-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/gauche/computil.scm (=?, <?, <=?, >?, >=?):
+	  Reimplemented in C, for they can be used in performance critical
+	  paths (esp. implementation of data structures).
+	  About 2x-3x speed up.  Still 2.5x-3.3x slower than the
+	  primitive =, < etc., but it's hard to beat them since they are
+	  expanded into VM insns.  If we see =?, <? etc are used frequent
+	  enough we might need to go futher into that path, though.
+
+2017-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/vmcall.c: Skip Scm_SortMethods when we have only one applicable
+	  methods.  Obvious, yeah?  This makes 'ref' call 20% faster.
+
+	* src/libproc.scm (method-leaf?): Added.
+	* src/class.c: Changed <method> slot name: method-leaf -> leaf?
+	* src/libobj.scm: Dropped %method-code, for we already have
+	  method-code in libproc.scm.
+
+2017-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (method_initialize): Set LEAF flag if the method doesn't
+	  use next-method arg in its body.
+	* src/vmcall.c: Skip creating next-method instance when the method
+	  is leaf.  About 40% speed up on empty method call.
+
+2017-04-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-5.scm (pass5/lambda): Save list of unused arguments
+	  in 'unused-args pair attributes of (car signature-info).
+	  Useful for optimization.
+
+2017-04-18  shiro  <shiro@acm.org>
+
+	* src/gauche/vm.h: Add SCM_COMPILE_NOINLINE_SETTERS flag
+	* src/main.c: Add -fno-inline-setters option
+	* src/compile-1.scm: Prohibit setter inlining when
+	  SCM_COMPILE_NOINLINE_SETTERS flag is set.
+
+2017-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm: Make most predefined methods `locked'.
+
+2017-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1): Another setter optimization - if
+	  X has inlinable binding, (setter X) is locked and has inlinable
+	  binding in toplevel, we replace (setter X) with the $gref to
+	  the setter.
+
+	  gosh> (disasm (^[p v] (set! (car p) v)))
+	  CLOSURE #<closure (#f p v)>
+	  === main_code (name=#f, code=0x28e3540, size=5, const=1 stack=5):
+	  signatureInfo: ((#f p v))
+	       0 LREF1-PUSH               ; p
+	       1 LREF0-PUSH               ; v
+	       2 GREF-TAIL-CALL(2) #<identifier scheme#set-car!.2936540>; ((setter car) p v)
+	       4 RET
+
+2017-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (<cproc>): Keep subr's binding info
+	  (its name and defined module name) in the pair attributes of
+	  subr's info.  This will allow precompiler to emit a reference
+	  to #<subr> by using $GREF.
+
+	* src/compile-1.scm (set!): Enable inlining setter.  In the syntax
+	  (set! (op arg ...) expr), we check 1. if OP has inlinable binding,
+	  2. if OP has locked setter, and 3. if the setter is inlinable.
+	  When those conditions met, we can inline the setter.  Example:
+
+	  gosh> (disasm (^[] (set! (vector-ref v 2) 'a)))
+	  CLOSURE #<closure (#f)>
+	  === main_code (name=#f, code=0x1557540, size=6, const=2 stack=1):
+	  signatureInfo: ((#f))
+	  0 GREF-PUSH #<identifier user#v.15b3600>; v
+	  2 CONST a
+	  4 VEC-SETI(2)              ; ((setter vector-ref) v 2 (quote a))
+	  5 RET
+
+2017-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (getter-with-setter): Lock the setter; now an error
+	  is thrown when you attempt to alter setter of a proc if it's locked,
+	  as specified in srfi-17.
+	* src/libproc.scm (procedure-locked-setter): Added.
+
+2017-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm: Add --single-interface option to
+	  precomp to generate one *.sci file from multiple source files.
+
+2017-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm (info-search): Added to search
+	  info entries by regexp.
+	* lib/gauche/interactive/toplevel.scm (info): Allow regexp as the
+	  argument to invoke info-search.
+
+2017-04-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm (get-info): Avoid showing multiple
+	  entries when they are merely the variations of API, listed using
+	  @defunx (e.g. see the entry of 'format').
+
+	* libsrc/gauche/sequence.scm (group-contiguous-sequence): Added.
+
+2017-04-02  Shiro Kawai  <shiro@acm.org>
+
+	* doc/*.texi: Add module name in front of the description when it's
+	  relevant.  Since the info command of REPL now only shows the
+	  entry (as opposed to the entire page), it is hard to know which
+	  module to import without having the module name in each entry.
+
+2017-04-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm (get-info-paths): Insert doc/ of
+	  source tree first for info search directory when gosh is invoked
+	  with -ftest.
+
+2017-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: Define feature identifier gauche.in-place if -ftest
+	  option is given (we avoid gauche.test, for it looks too similar to
+	  the module gauche.test; also, 'in-place' is more specific on
+	  what it represents.  We should probably rather rename the command-line
+	  option as -fin-place.)
+
+	* lib/gauche/common-macros.scm (assume): Added srfi-145 assume.
+
+2017-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/libchar.scm (char-set-immutable?): Added Scheme API for
+	  SCM_CHAR_SET_IMMUTABLE_P.
+
+2017-03-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/condutil.scm: Use quasirename in the macro transformer,
+	  to ensure keywords are handled hygienically.
+
+	* src/libobj.scm: Make expansion of define-class, define-generic and
+	  define-method hygiene.  It's a temporary measure---after releasing
+	  0.9.6, we'll rewrite it with er-macro-transformer (hopefully).
+
+2017-03-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm: Added reload and load toplevel
+	  commands.
+
+2017-03-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm: Expand hygienically by closing
+	  rename procedure for the handlers.  Now toplevel commands works
+	  regardless of which module you're in.
+
+2017-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-141.scm: Add srfi-141.
+
+2017-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c: Provide Scm_SigFillSetMostly() to fill
+	  sigset_t with "reasonably-handlable" signals.  By default, libgauche
+	  handles no signals; an application (including gosh) will set up
+	  sigmask.  However, an application needed to exclude system-reserved
+	  signals, which was tedious.  Now it can simply use this API.
+	* src/main.c (sig_setup): Revised using Scm_SigFillSetMostly().
+
+2017-03-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.scm (atomic, atomic-update!): Allow more than
+	  one timeout values, so that the caller can match return arity
+	  in case of timeout.
+
+2017-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c: Added SIGTHR default handler (OpenBSD, FreeBSD).
+
+2017-02-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/console.scm: Split most of APIs into text.console.generic,
+	  so that they won't be loaded unnecessarily if the runtime detects
+	  no controllable consoles.
+
+2017-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/number.h (Scm_ClampMode): Made it common utility; now
+	  used in both libvec.scm and ext/uvector/.
+
+2017-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.c (Scm_UVectorSet):
+	  src/libvec.c (s8vector-ref, s8vector-set!, etc):
+	  src/compile.scm:
+	  ext/uvector/*:  Moved uniform vector referencer and modifiers
+	  to the core, so that the compiler can generate VM insn for
+	  the referencer.  We used to use compiler macros to convert
+	  referencer to %uvector-ref then the compiler inlined it to
+	  VM insn, but that scheme limits the opportunity of optimization;
+	  the compiler macro cannot be applied to the pass3/late-inline pass.
+	  It's better to keep stuff that expands VM insns within the core.
+
+2017-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* doc/makedoc.scm: Check makeinfo version for html/htmls targets;
+	  they require newer version of makeinfo.  It's perplexing for
+	  the users when they get error from older makeinfo.
+
+2017-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (call-macro-expander, %source-info): Save source
+	  information of the macro input in 'original pair-attr instead of
+	  'macro-input; the compiler-transformation and other introspection
+	  utilities use 'original so let's be consistent.
+	  For example, with this change, 'describe' can show source location
+	  of the closure created by macro expanded code:
+
+	  gosh> (define (foo x)
+	          (^y (+ x y)))
+	  foo
+	  gosh> ,d (foo 3)
+	  #<closure ((foo foo) y)> is an instance of class <procedure>
+	  Defined at "(standard input)":2
+	  ...
+
+2017-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Replaced procedural inliner calling convention
+	  (prev: Sexpr, Cenv -> IForm, now: Src, IForm -> IForm).  This allows
+	  pass3/late-inline to call procedural inliner as well, opening
+	  more opportunities for optimization.  Example:
+
+	  (define-inline (foo ref) (^x (ref x 0)))
+	  (disasm (foo vector-ref))
+	  CLOSURE #<closure (foo x)>
+	  === main_code (name=foo, code=0x2300fa0, size=3, const=0 stack=0):
+	  signatureInfo: ((foo x))
+	       0 LREF0                    ; x
+	       1 VEC-REFI(0)              ; (ref x 0)
+	       2 RET
+
+	  The vector-ref call wasn't inlined before.
+
+2017-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/proc.c (Scm_CopyProcedure), src/libproc.scm (%procedure-copy):
+	  Added in order to avoid bookkeeping operation would modify
+	  existing procedure instances.  This should only be used by
+	  internal procedures that needs to mutate procedure instance,
+	  such as %with-inline-transformer.
+
+	* ext/uvector/uvector.scm: Explicitly list exported symbols.
+	  Now that we have some internal symbols (macros, %s8vector-ref, etc),
+	  it's not appropriate to use (export-all).
+	  NB: This makes gauche.colleciton/sequnece symbols not transitively
+	  exported from gauche.uvector.  If a module using only gauche.uvector
+	  and refer to gauche.collection/sequence generic functions, it must
+	  use gauche.collection/sequence explicitly.
+
+	* ext/uvector/uvector.scm: Rewrite TAGvector-ref inlining with
+	  define-inline/syntax.
+
+	* lib/gauche/cgen/precomp.scm: Allow define-inline/syntax to be
+	  precompiled.  (Currently only supports er-macro-transformer).
+	* src/libeval.scm (macro-name): Added accessor.
+
+2017-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (define-inline/syntax): This may be the answer of
+	  compiler macro in Gauche.  We'll experiment more.
+
+2017-02-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/symbol.c (Scm_ExtractKeywords): Added.
+
+2017-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (delete-neighbor-dups)
+	  (delete-neighbor-dups!, delete-neighbor-dups-squeeze!): Added.
+
+2017-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/convaux.scm (ces-convert-to, ces-convert): Support
+	  using u8vector for mutibyte sequences.
+
+2017-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm: Moved here to precompile.
+
+	* lib/gauche/interactive.scm: Experimentally put pretty-printer.
+	  Need better way to switch, though.
+
+2017-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/writer.h (Scm_WriteControls): Add printWidth field.
+
+2017-01-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm, configure.ac, src/libmisc.scm: Instead of generating
+	  slib.scm at configure time, we embed SLIB_DIR as a constant
+	  (in gauche.internal module; see src/libmisc.scm) and let slib.scm
+	  refer to it.  One less irregularity in build process.
+
+	* lib/srfi-96.scm: Added (just extends slib).
+	* lib/srfi-129.scm: Added.
+	* lib/srfi-74.scm: Added.
+
+2017-01-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/binary (get-uint, get-sint, put-uint!, put-sint!): Added.
+	  We had read-uint/write-uint etc but these were missing.
+
+	* ext/uvector (TAGvector=?, TAGvector-compare): Added for support
+	  of srfi-66.
+
+	* src/char.c (Scm_MakeImmutableCharSet): Added.  This is to be called
+	  from generated code.
+	  (SCM_CHAR_SET_LARGE_P, SCM_CHAR_SET_IMMUTABLE_P): Change name for
+	  the consistency.
+
+2017-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (string->file etc.): Added the opposites of
+	  file->string etc.  Clojure's spit and slurp are roughly equivalent
+	  to string->file and file->string.
+
+2017-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm: Add option to use stunnel for https connection
+	  in addition to rfc.tls.  It is useful when the remote site
+	  uses crypto that axTLS doesn't support yet.  (Ideally we should
+	  automatically fall back, but for now the caller should specify
+	  which infrastructure to use.)
+
+	* libsrc/file/util.scm (find-file-in-paths): Add extensions keyword
+	  argument, suggested by Hamayama.
+
+2017-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (do-pipeline, run-pipeline): Introduced
+	  run-pipeline, which returns a process object of the tail of
+	  the pipeline.  We keep other processes in the pipeline in
+	  'upstreams slot of the returned process, so that process-wait
+	  can wait for all processes.  This is more convenient than handling
+	  list of processes by the caller, as in the case of
+	  run-process-pipeline, which we deprecate now.
+
+2017-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (read_charset): Make literal charsets immutable.
+	  Codes that have modified literal charsets would break.  Although
+	  it has never been documented (since we didn't have immutable
+	  charset), it must've been implicitly assumed that literals can't
+	  be changed.  Think this as a bug fix (which catches errors that
+	  have been passed.)
+	* src/regexp.c (rc_charset): Make charsets in regexp immutable.
+
+2017-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/time.h: Added missing exports for time-result-real etc.
+
+2017-01-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/libchar.scm (char-set-freeze, char-set-freeze!):
+	  First step of supporting "frozen", or immutable, char-set, which
+	  binary searches flat vector instead of treemap.  Needs more tests...
+
+2017-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Updated to axTLS 2.1.2
+	  https://github.com/shirok/Gauche/pull/271
+
+2017-01-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (uvector-binary-search): Add optional
+	  rounding argument for floor/ceiling search.
+
+2016-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_DynLoad), src/libeval.scm (%get-initfn-name):
+	  Fix deriving of initfn name---the '.' char should be searched
+	  from right.  Also overhauled various parts to use ScmString
+	  whenever possible, for the simplicity.
+
+2016-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/port.h: Add SCM_PORT_OUTPUT_TRANSIENT flag.
+	  Transient output port is to put data temporarily to file during
+	  lifetime of the process, so we don't bother to flush it upon
+	  process exit.
+
+2016-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Updated to axTLS 2.1.1
+	  https://github.com/shirok/Gauche/pull/265
+
+	* src/prof.c, src/gauche/prof.h, src/gauche/vm.h: Add sampling profiler
+	  support on Windows, by Saito Atsushi and Hamayama.
+	  NB: This only works on the thread the profiler is attached.  The
+	  behavior of samiling profiler on MT app is still ambiguous and we
+	  might change it (e.g. '-ptime' option may want to profile all the
+	  threads, etc.) So don't rely on the current behavior.
+
+2016-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (er-macro-transformer): Fix er-macro issue that
+	  doesn't keep defining environment
+	  (https://github.com/shirok/Gauche/issues/250).
+	  This fix also addresses the issue of precompiling er-macro in
+	  better ways than 0.9.5---the precompilable toplevel er-macro
+	  now expands into a reference of %make-er-transformer/toplevel,
+	  with all the arguments that are serializable.  We don't need to
+	  call %make-toplevel-cenv.
+
+	* ext/tls: Updated to axTLS 2.1.0
+	  https://github.com/shirok/Gauche/pull/261
+
+2016-12-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm: Improved literal module handling.
+
+2016-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (primitive-macro-transformer): Drop primitive macro
+	  transformer.  In order to use passed envirnoment we need to access
+	  compiler internals anyway, so it won't be a good abstraction to
+	  expose to the users; and er-transformer should be good for the
+	  bottom layer for general use.
+
+	* configure.ac: 0.9.6_pre1. We're changing output of macro expansion,
+	  so it's better not to confuse with 0.9.5 release version.
+
+2016-12-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm.in: Updated for slib3b5.  Also emit comprehensive
+	  error message in case we can't find slib installation.
+
+2016-12-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (search_binding): Fixed a bug in case ancestor module
+	  has export renaming.
+	  https://github.com/shirok/Gauche/issues/255
+
+2016-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (unwind-protect): Do not run cleanup
+	  thunk if raised exception is continuable.
+
+2016-12-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm: Make sure secure connection cleanup is run
+	  in any stage of communication fails.
+
+	* ext/tls/axTLS/crypto/crypto_misc.c: The RNG state is kept in
+	  static variable and was not thread-safe.  Wrap arount shared state
+	  with Gauche's mutex layer.
+	* ext/tls/axtls.diff: Updated against axTLS 2.0.1
+
+2016-12-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interpolate.scm: Changed expansion of string
+	  interpolation.  We gave up hygiene in the expanded form---it
+	  causes a form merely 'read' to contain identifiers and will cause
+	  unexpected problems when it is written out.  It won't be reasonable
+	  to ask gauche namespace being visibile when string interpolation
+	  syntax is used.
+	  In order not to tie the expanded form too tightly, though, we
+	  introduce intermediate macro 'string-interpolate*'.  The #"..."
+	  syntax expands into the macro call.  The actual expansion form
+	  can be changed later.
+	* src/preload.scm: Preload gauche.interpolate---we need the new
+	  string-interpolate* macro while compiling core Scheme files
+	  using 0.9.5 compiler.
+
+2016-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libvec.scm: Add binary search of flat numeric vector
+	* ext/gauche/uvector.scm (uvector-binary-search): Expose the above
+	  functionarity to Scheme.
+
+2016-12-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (unwind-protect): Check if the control
+	  tries to enter the body again after the cleanup is done, and if so,
+	  raises an error.
+
+	* lib/gauche/test.scm (test-error): Add a feature to check the message
+	  of the thrown error.
+
+2016-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/hashutil.scm (hash-table-find): Added.
+	* lib/srfi-113.scm: Rewrite early break pattern with hash-table-find
+	  to avoid using call/cc.  This improves, for example, performance
+	  of set-disjoint? 1.5x-2.0x.
+	  Also fix the reference implementation bug of set|bag-map
+	  https://github.com/scheme-requests-for-implementation/srfi-113/pull/9
+
+2016-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-127.scm: Added srfi-127 support.
+
+2016-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* various files: Purge Scm[U]Int32.  We are now in C99 and we can
+	  unconditionally use stdint.h.
+
+2016-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (without-precompiling): Instead of
+	  emitting to *.sci, we can embed the forms as literals in the *.c
+	  file, to be evaluated at load time.
+
+2016-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/parameter.scm (parameterize): Fix a bug on handling
+	  value expressions restarted by call/cc.
+
+	* lib/gauche/cgen/precomp.scm (write-ext-module): Duct-tape fix of
+	  avoiding emitting identifiers into *.sci files---the change of
+	  making string interpolation hygiene can cause such situation.
+	  See the comment for the planned proper fix.
+
+2016-11-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/template.scm: Experimentally added.  This library exposes
+	  string interpolation facility for runtime-provided strings as opposed
+	  to literals.  Kind of a hack but might be useful.
+
+	* src/compile.scm (iform->sexpr): Handle $IT node within $IF.  Right
+	  after pass1, $IT must only appear directly in either then or else
+	  branch of $IF node.
+
+	* lib/gauche/interpolate.scm: Make the expansion of string-interpolate
+	  hygienic.
+
+2016-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/unicode.scm, src/gen-unicode.scm (char-east-asian-width):
+	  Add utility to get Unicode EastAsianWidth property of a character/
+	  codepoint.
+
+2016-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/unicode/ucd.scm, src/unicode-data.scm: Handle EastAsianWidth
+
+2016-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg ($fmap, $<<): Removed those APIs; they're the same as $lift.
+
+2016-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm, src/libomega.scm (er-macro-transformer):
+	  Moved definition from autoloaded macro to built-in.
+
+2016-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/char_utf_8.h (Scm__LookupCharCategory): Fix off-by-one
+	  error (by OOHASHI Daichi)
+	  https://github.com/shirok/Gauche/pull/245
+
+2016-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (execute_script), src/libeval.scm (run-main):
+	  We should use Scm_Apply, instead of Scm_ApplyRec, to call 'main'
+	  procedure, since Scm_ApplyRec should only be called when VM is
+	  running.  It caused failure like this:
+	  https://github.com/shirok/Gauche/issues/244
+	  However, directly calling 'main' with Scm_Apply loses stack
+	  trace, so we introduced a wrapper procedure gauche.internal#run-main
+	  to capture and report error.
+	* src/core.c (Scm_SimpleMain): Changed as well.
+
+2016-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* doc/man.cgi: Added the cgi script to redirect manual page reference
+	  used in practical-scheme.net.  Sort of an example.
+
+2016-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm: Add do-process and do-process-pipeline.
+	  The names are provisional, so keep them experimental for now.
+
+	* doc/Makefile.in: Switched to use makeinfo/texi2any to generate
+	  html files (https://github.com/shirok/Gauche/pull/241).
+
+2016-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* doc/HOWTO-precompile.txt: A memo for the precompilation feature;
+	  not an official support, but a good start point for those who
+	  want to try it.
+
+	* Release 0.9.5
+
+2016-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_ClockGetTimeMonotonic,Scm_ClockGetResMonotonic):
+	  Add workaround of XCode8 issue that it pretends clock_gettime
+	  and clock_getres available but it's not true until OSX 10.12.
+	  The workaround code directly calls mach APIs.
+
+	* src/system.c (Scm_WinGetPipeName),
+	  src/libsys.scm (sys-win-pipe-name): Windows-specific API to obtain
+	  pipe name.
+	* src/libsys.scm (%sys-mintty?): Determine if gosh's input is
+	  connected to mintty on msys.
+
+	* src/main.c (enter_repl, has_terminal): On Windows, Use %sys-mintty?
+	  so that we get REPL on MSYS shell.
+
+2016-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in, lib/Makefile.in: Ensure removing *.sci and *.dll
+	  with 'make clean'---they're supposed to be cleaned by xlink script
+	  but when it fails remaining *.sci and *.dll may interfere the
+	  build process.
+
+2016-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm: Add ,sh toplevel command.
+	  Change define-toplevel-command so that each command can choose
+	  how the arguments are parsed.
+
+2016-09-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm: Add u8array, s8array, ..., f64array
+	  constructors, for the consistency.
+
+2016-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm (ginterval): Added experimentally.
+	  The name is still provisional---it may be called gflip-flop.
+	  I used 'interval' now because it takes data between the one
+	  that satisfies the start predicate and the one that satisfies
+	  the end predicate.  But it may be confusing that the interval
+	  is about sequence, not about the value range.
+
+2016-09-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/check-script: Added.
+
+2016-09-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package.scm (find-gauche-package-description): Fix
+	  an issue on Windows.
+	  http://chaton.practical-scheme.net/gauche/a/2016/09/17#entry-57dc9a84-c61da
+
+2016-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/base.scm (gauche.base): Extend gauche.keyword as well,
+	  so that R7RS code that does (import (gauche base)) can call
+	  Gauche procedures with keyword arguments just like Gauche code.
+
+2016-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/srfi-133.scm (vector-cumulate): Switched argument order,
+	  according to the errata.
+
+2016-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (find-load-file),
+	  src/compile.scm (pass1/open-include-file): Treat include paths
+	  beginning with "./" and "../" as relative pathname to the
+	  includer file.  The original behavior is consistent with 'load',
+	  but it doesn't make much sense for 'include', which is compile-time
+	  operation, unlike 'load' being run-time operation.
+	  This is INCOMPATIBLE CHANGE as the previous behavior was documented,
+	  but I hope it won't affect existing code.
+
+2016-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/macroutil.scm (quasirename): Handle unquote-splicing.
+
+2016-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-113.scm: Fix collection framework implementation.  Bags
+	  must honor item count.
+
+2016-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-113.scm: Fix single-argument case in set-union etc.
+
+2016-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Updated to axTLS-2.0.0
+
+2016-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/extended-lambda): Compare extended
+	  lambda-list keywords hygienically.  If GAUCHE_KEYWORD_IS_SYMBOL,
+	  keywords inserted by macros are wrapped by identifiers and
+	  we should compare it just like symbols inserted by macros.
+
+	* src/hash.c (Scm_Hash, Scm_PortableHash): Take care of the effect
+	  of keyword-symbol integration.  If a keyword is a symbol, its name
+	  includes prefix ':', while if they're disjoint, keyword's name
+	  doesn't include ':'.  For portable hash, we include ':' in the
+	  calculation.  For legacy hash, we don't.
+
+2016-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (port->uvector): Added.
+
+2016-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* gc/libatomic_ops/configure.ac (AM_INIT_AUTOMAKE):
+	  Add no-dependencies option to avoid complication in distclean.
+	  Here's the story: Automake adds 'include' command in
+	  gc/libatomic_ops/src/Makefile to incorporate dependencies in
+	  .deps/*.Plo which are generated during running configure.
+	  On 'make distclean', the .deps directories are removed, but
+	  both gc/ and libatomic_ops/ tries to do so; if we run distclean
+	  in gc/ then in libatomic_ops/, the latter fails since Makefile
+	  cannot include .deps/*.Plo.  If we run distclean in libatomic_ops/
+	  first then gc/, the latter fails since somewhere in
+	  automake-generated rules needs to refer to libatomic_ops/src/.deps.
+	  If we only run distclean in gc/, it succeeds, but leaves Makefiles
+	  in libatomic_ops/ unerased.
+	  (Note: If you have system libatomic_ops, gc uses that and you
+	  won't see this problem.)
+	  It's too much trouble to fight with automake; turning off the
+	  dependency tracking avoids the trouble altogether.
+
+2016-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* gc/: Updated to bdwgc 7.6.0 by qykth-git.
+	  https://github.com/shirok/Gauche/pull/224
+
+2016-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* test/process.scm: In pipeline tests, emulate cat and grep commands
+	  so that the tests work on MinGW.
+
+	* src/system.c (win_prepare_handles): Ensure close handles that should,
+	  and not to close ones that shouldn't.
+
+	* src/port.c (file_closer): Check the return value of close(), and
+	  raise <system-error> if failed.  It may be annoying if you want
+	  to call close-port "just to be safe" on potentially broken port,
+	  but checking the error here would catch a bug that would cause
+	  difficult-to-diagnose bug later.
+
+2016-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/proc.c: EXPERIMENTAL: Use 'locked' flag of
+	  <method> for "method-locked".  Locked method prohibits redefining
+	  the methods with the same signature.  Intended to use methods
+	  important for correct behavior of the language runtime.
+	* src/compile.scm, src/libobj.scm (define-method): Allow method
+	  qualifiers; currently only ':locked' is recognized.
+
+2016-08-02  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, src/libomega.scm, lib/gauche/computil.scm:
+	  Changed default-comparator extension mechanism.  Instead of
+	  dispatching _before_ falling back to system default, we just
+	  use system default stuff (equal?, compare, default-hash) and
+	  dispatch to custom comparators via fallback methods
+	  (object-equal?, object-compare and object-hash).  This way
+	  we won't sacrifice performance of default-comparator for builtin
+	  types.  Caveat: (1) This mechanism relies on we catch the base
+	  case of object-equal? etc.; it breaks if anybody redefines
+	  (object-equal? <top> <top>), for example.  (2) You can't use
+	  _both_ Gauche's way (defining (object-compare <mytype> <mytype>)
+	  and srfi-128 way (registering a comparator for <mytype>); you have
+	  to choose one.
+
+2016-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/axTLS: Update to axTLS-1.5.4.
+
+2016-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* tools/gc-configure.gnu-gauche.in: Add --disable-gcj-support;
+	  GC tests fail without it on msys2+mingw-w64.
+
+	* src/class.c (Scm_GenericObjectEqualP, Scm_GenericObjectCompare):
+	  Use fallback routine of those gfs to handle the default case,
+	  instead of defining (<top> <top>) method.  It's cleaner, and we
+	  need to define (<top> <top>) method to handle
+	  comparator-register-default! later.
+
+2016-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Allow internal define-inline; it's the same as
+	  internal define.  Since the compiler can figure out inlinable
+	  internal defininitions the programmer doesn't need to use
+	  internal define-inline, but it can appear as the result of
+	  macro expansion.  In fact, this fixes the bug that caused
+	  internal define-record-type being a compile error.
+
+2016-07-23  shiro  <shiro@acm.org>
+
+	* lib/util/unification.scm: Added.
+
+2016-07-22  shiro  <shiro@acm.org>
+
+	* lib/gauche/computil.scm (comparator-register-default!): Implement
+	  srfi-128 mechanism of extending default comparator.
+
+2016-07-20  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/srfi-114.scm (make-car-comparator)
+	  (make-cdr-comparator): Moved these to srfi-114.
+
+2016-07-19  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/srfi-114.scm (comparator-equal?): Move
+	  this to srfi-114, for =? covers its usage.
+
+2016-07-17  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/srfi-114.scm (comparator-comparison-procedure?)
+	  (comparator-hash-function?, comparator-type-test-procedure):
+	  Move some srfi-114-specific procedures from builtin to srfi-114.
+	  Code that relies on them being builtin must be changed to use
+	  srfi-128 procedures.  Various internal code has been fixed to
+	  use srfi-128 ones.
+
+2016-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/dws_adapter.h: We need to stick 32bit siphash
+	  for the portable hash regardless of the platforms, though we
+	  do want 64bit siphash for the default hash on 64bit platform.
+	  To workaround name conflicts, we applied some ducttaping so
+	  we can have consistent internal interface.  See the comment
+	  in the file for the details.
+
+2016-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, src/libdict.scm, src/libomega.scm:
+	  We make Scm_Hash() and 'hash' deprecated, and will
+	  keep it only for the backward compatibility.  Add 'portable-hash'
+	  for replacement, which takes explicit salt.  Also provide
+	  'default-hash', ala srfi-128, which honors hash-salt and is
+	  used for equal hashtable.
+	  The object-hash method now takes two arguments, an object to
+	  hash and the hash function to be recursively called when necessary.
+	  To avoid breaking the existing code of object-hash that takes
+	  one argument and recursively calls 'hash' procedure, we tweaked
+	  'hash' so that it dispatches to the appropriate hash function
+	  if it's called recursively.
+
+2016-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashString), src/dwsiphash.[ch], src/dws32hash.[ch]:
+	  Replaced default string hash function with siphash, and using
+	  per-processs random salt to prevent hash collision attack.
+
+2016-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (legacy_flonum_hash): Legacy hash fn for flonums had
+	  stepped on the undefined behavior.  To keep portability and
+	  compatibility, we try to emulate existing behavior.  Note that
+	  there are already discrepancies between platforms; we can't achieve
+	  perfect backward compatibility.  But after this fix we'll at least
+	  eliminate platform dependency.
+
+2016-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/ideque.scm (make-ideque): Changed API to be consistent
+	  with other container datatypes.
+
+2016-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-134.scm: Finalized, so we document data.ideque and
+	  make srfi-134 alias of it.
+
+2016-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (run-process-pipeline): Add an intermediate
+	  convenience API to run pipelined commands.
+
+2016-06-26  Shiro Kawai  <shiro@acm.org>
+
+	* gc/m4/*, gc/libatomic_ops/m4/*: Check-in libtool-related m4 files,
+	  which can be automatically generated by autoreconf, but we avoid
+	  relying on it in case the platform doesn't have matching autoconf
+	  macro libraries (specifically, OSX doesn't have libtool-related m4
+	  macros with the default installation).
+
+2016-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (select-module, export, export-all, import)
+	  (extend, require): Evaluates to zero values instead of #<undef>.
+	  Better for REPL (less cluttering, no messing history).
+	  This is technically an incompatible change, but we assume nobody
+	  has ever used the return value of those forms.
+
+2016-06-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_Hash): Make sure portable hash value is masked
+	  by HASHMASK.  Shouldn't affect existing code as far as they're
+	  using lower <=32 bits, but the whole point of portable hash value
+	  is that it's portable, so it's better to ensure that.
+	  (legacy_number_hash): Fixed a bug that caused to produce different
+	  bignum hash value between 32bit long and 64bit long platforms.
+	  (This changes the portable hash value of bignums on 64bit platforms;
+	  crossing fingers that won't break things)
+
+2016-06-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/debugger.scm: Add thread vmid to '#?=' output
+	  so that output from different threads can be distinguished
+	  easily.  The id is omitted for primordial thread.
+
+	* gc/*: Bumped up to gc-7.4.4.
+	  See https://github.com/shirok/Gauche/pull/210
+
+2016-06-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/mop/bound-slot.scm: Experimentally added.
+
+2016-06-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (s8vector->string, u8vector->string):
+	  Add 'terminator' optional argument, which recognizes terminating
+	  character as the end of string.  Convenient to extract
+	  NUL-terminated string from fixed size buffer, for example.
+
+2016-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_EqvHash): Improve hash value of flonums.
+	  (Scm_Hash): Decouple from Scm_EqvHash to use original code for
+	  number hash, in order to maintain backward compatibility.
+	* src/libdict.scm (portable-hash): Added - better name to indicate
+	  portable hash value.
+
+2016-06-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblazy.scm (lrange): Fix handling zero and negative steps.
+
+	* src/hash.c (Scm_HashSaltRef, Scm_HashSaltSet),
+	  src/libdict.scm (hash-salt): Built-in support of hash salt (not yet
+	  used, but this is the starting point.)
+
+2016-05-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm, lib/gauche/interactive.scm:
+	  Drop read-consuming-trailing-whitespaces,
+	  for it turned out it can't be used meaningfully.  For toplevel
+	  commands we have to call read-line after the first word,
+	  so the first word reader must not consume trailing newline
+	  immediately.  We create consume-trailing-whitespaces instead.
+
+	* src/read.c: Fix erroneous read behavior such as
+	  (read-from-string "#:") => #:|| and
+	  (read-from-string "#: foo") => #:| foo|.  We now reject if '#!'
+	  and '#:' aren't immediately followed by a valid symbol.
+
+2016-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (read-consuming-trailing-whitespaces): Useful
+	  extension of 'read' for REPL.
+	* lib/gauche/interactive.scm,
+	  lib/gauche/interactive/editable-reader.scm: Dropped
+	  %skip-trailing-ws and use r-c-t-w above, for the previous code
+	  won't work when we're not reading from the current input port.
+
 2016-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (read_number): EXPERIMENTAL: Recognize 'pi' suffix

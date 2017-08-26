@@ -1,7 +1,7 @@
 ;;;
 ;;; Array operations.  This is superset of SRFI-25.
 ;;;
-;;;  Copyright (c) 2002-2015  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2002-2017  Shiro Kawai  <shiro@acm.org>
 ;;;  Copyright(C) 2004      by Alex Shinn  (foof@synthcode.com)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
@@ -39,6 +39,8 @@
           make-u8array make-s8array make-u16array make-s16array
           make-u32array make-s32array make-u64array make-s64array
           make-f16array make-f32array make-f64array
+          u8array s8array u16array s16array u32array s32array
+          u64array s64array f16array f32array f64array
           array-concatenate array-transpose array-rotate-90 array-flip array-flip!
           identity-array array-inverse determinant determinant! array-mul array-expt
           array-div-left array-div-right array-add-elements array-add-elements!
@@ -331,31 +333,6 @@
                               (fold * 1 (s32vector-sub Ve Vb))
                               maybe-init))))
 
-(define (make-array shape . opt)
-  (apply make-array-internal <array> shape opt))
-(define (make-u8array shape . opt)
-  (apply make-array-internal <u8array> shape opt))
-(define (make-s8array shape . opt)
-  (apply make-array-internal <s8array> shape opt))
-(define (make-u16array shape . opt)
-  (apply make-array-internal <u16array> shape opt))
-(define (make-s16array shape . opt)
-  (apply make-array-internal <s16array> shape opt))
-(define (make-u32array shape . opt)
-  (apply make-array-internal <u32array> shape opt))
-(define (make-s32array shape . opt)
-  (apply make-array-internal <s32array> shape opt))
-(define (make-u64array shape . opt)
-  (apply make-array-internal <u64array> shape opt))
-(define (make-s64array shape . opt)
-  (apply make-array-internal <s64array> shape opt))
-(define (make-f16array shape . opt)
-  (apply make-array-internal <f16array> shape opt))
-(define (make-f32array shape . opt)
-  (apply make-array-internal <f32array> shape opt))
-(define (make-f64array shape . opt)
-  (apply make-array-internal <f64array> shape opt))
-
 (define (list-fill-array! a inits)
   (let* ([bv  (backing-storage-of a)]
          [set (backing-storage-setter-of (class-of a))]
@@ -368,7 +345,18 @@
         [(= i len) a]
       (set bv i (car inits)))))
 
-(define (array shape . inits) (list-fill-array! (make-array shape) inits))
+(define-macro (define-array-ctors . pfxs)
+  (define (build-ctor-def pfx)
+    (define maker (symbol-append 'make- pfx 'array))
+    (define ctor  (symbol-append pfx 'array))
+    (define class (symbol-append '< pfx 'array>))
+    `((define (,maker shape . opt)
+        (apply make-array-internal ,class shape opt))
+      (define (,ctor shape . inits)
+        (list-fill-array! (,maker shape) inits))))
+  `(begin ,@(append-map build-ctor-def pfxs)))
+
+(define-array-ctors || u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64)
 
 (define (subarray ar sh)
   (receive (Vb Ve) (shape->start/end-vector sh)

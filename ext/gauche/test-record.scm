@@ -1,4 +1,5 @@
 (use gauche.uvector)
+(use gauche.sequence)
 (use gauche.test)
 (test-start "records")
 
@@ -331,5 +332,181 @@
 (pseudo-record-test <f32vector> f32vector)
 (pseudo-record-test <f64vector> f64vector)
 
+;;--------------------------------------------------------------------
+(test-section "inheritance")
+
+(define-record-type base0 #t #t
+  (a) (b) (c))
+
+(define-record-type (sub0 base0) #t #t
+  (a) (d) (b))
+
+(define-record-type (subsub0 sub0) #t #t
+  (e) (c))
+
+(test* "inheritance sub0" '(1 2 3 4 5 6)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z))))
+
+(test* "inheritance sub0 modifier" '(10 20 30 40 50 60)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (base0-a-set! z 10)
+         (base0-b-set! z 20)
+         (base0-c-set! z 30)
+         (sub0-a-set! z 40)
+         (sub0-d-set! z 50)
+         (sub0-b-set! z 60)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z))))
+
+(test* "inheritance subsub0" '(1 2 3 4 5 6 7 8)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z)
+               (subsub0-e z)
+               (subsub0-c z))))
+
+(test* "inheritance subsub0 modifier" '(10 20 30 40 50 60 70 80)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (base0-a-set! z 10)
+         (base0-b-set! z 20)
+         (base0-c-set! z 30)
+         (sub0-a-set! z 40)
+         (sub0-d-set! z 50)
+         (sub0-b-set! z 60)
+         (subsub0-e-set! z 70)
+         (subsub0-c-set! z 80)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z)
+               (subsub0-e z)
+               (subsub0-c z))))
+
+(test* "inheritance access via name" '(4 6 3 5)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (map (^s (slot-ref z s)) '(a b c d))))
+
+(test* "inheritance access via name" '(4 6 8 5 7)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (map (^s (slot-ref z s)) '(a b c d e))))
+
+(test* "inheritance mutation via name" '(40 60 30 50)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (for-each (^s (slot-set! z s (* (slot-ref z s) 10))) '(a b c d))
+         (map (^s (slot-ref z s)) '(a b c d))))
+
+(test* "inheritance mutation via name" '(40 60 80 50 70)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (for-each (^s (slot-set! z s (* (slot-ref z s) 10))) '(a b c d e))
+         (map (^s (slot-ref z s)) '(a b c d e))))
+
+
+(define-record-type (base1 (pseudo-rtd <vector>)) #t #t
+  (a) (b) (c))
+
+(define-record-type (sub1 base1) #t #t
+  (a) (d) (b))
+
+(test* "inheritance (pseudo rtd)" '#(1 2 3 4 5 6)
+       (make-sub1 1 2 3 4 5 6))
+
+(test* "inheritance (pseudo-rtd" '(1 2 3 4 5 6)
+       (let1 z (make-sub1 1 2 3 4 5 6)
+         (list (base1-a z)
+               (base1-b z)
+               (base1-c z)
+               (sub1-a z)
+               (sub1-d z)
+               (sub1-b z))))
+
+;;--------------------------------------------------------------------
+(test-section "describe")
+
+(define-record-type Describe-Test #t #t a)
+(define-record-type (Describe-Sub Describe-Test) #t #t a)
+
+(test* "describe - base" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make-Describe-Test 1)))
+         (or (boolean (#/is an instance of class Describe-Test.*a\s*:\s*1/ x))
+             x)))
+
+(test* "describe - base (unbound)" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make Describe-Test)))
+         (or (boolean (#/slots:.*a\s*:\s*#<unbound>/ x))
+             x)))
+
+(test* "describe - derived" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make-Describe-Sub 1 2)))
+         (or (boolean (#/is an instance of class Describe-Sub.*slots:\s*a\s*:\s*1\s*a\s*:\s*2/ x))
+             x)))
+
+(test* "describe - derived (unbound)" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make Describe-Sub)))
+         (or (boolean (#/is an instance of class Describe-Sub.*slots:\s*a\s*:\s*#<unbound>\s*a\s*:\s*#<unbound>/ x))
+             x)))
+
+;;--------------------------------------------------------------------
+(test-section "positional match")
+
+(use util.match)
+
+(define-record-type m0 #t #t
+  (x) (y) (z))
+
+(define-record-type (m1 m0) #t #t
+  (x) (w))
+
+(define-record-type (m2 m1) #t #t
+  (w) (y))
+
+(test* "inherited record and positional match"
+       '(1 2 3 4 5 6 7)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m2 a b c d e f g)
+          (list a b c d e f g)]))
+
+(test* "inherited record and positional match (superclass)"
+       '(1 2 3)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m0 a b c)
+          (list a b c)]))
+
+(test* "inherited record and positional match (superclass)"
+       '(1 2 3 4 5)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m1 a b c d e)
+          (list a b c d e)]))
+
+(test* "inherited record and named match"
+       '(4 7 3 6)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [(@ m2 (x a) (y b) (z c) (w d))
+          (list a b c d)]))
+
+(test* "inherited record and named match (superclass)"
+       '(4 7 3)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [(@ m0 (x a) (y b) (z c))
+          (list a b c)]))
 
 (test-end)

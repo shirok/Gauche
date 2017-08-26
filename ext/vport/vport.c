@@ -1,7 +1,7 @@
 /*
  * vport.c - 'virtual port'
  *
- *   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -394,7 +394,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
 static void vport_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     Scm_Printf(port, "#<%A%s %A %p>",
-               Scm__InternalClassName(Scm_ClassOf(obj)),
+               Scm_ShortClassName(Scm_ClassOf(obj)),
                SCM_PORT_CLOSED_P(obj)? "(closed)" : "",
                Scm_PortName(SCM_PORT(obj)),
                obj);

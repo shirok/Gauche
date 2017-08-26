@@ -1,7 +1,7 @@
 /*
  * core.c - core kernel interface
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -64,6 +64,7 @@ static struct {
  */
 
 extern void Scm__InitModule(void);
+extern void Scm__InitHash(void);
 extern void Scm__InitSymbol(void);
 extern void Scm__InitNumber(void);
 extern void Scm__InitChar(void);
@@ -97,6 +98,7 @@ extern void Scm_Init_libfmt(void);
 extern void Scm_Init_libio(void);
 extern void Scm_Init_liblazy(void);
 extern void Scm_Init_liblist(void);
+extern void Scm_Init_libmac(void);
 extern void Scm_Init_libmisc(void);
 extern void Scm_Init_libmod(void);
 extern void Scm_Init_libnum(void);
@@ -152,6 +154,7 @@ void Scm_Init(const char *signature)
        rely on the other components to be initialized. */
     Scm__InitParameter();
     Scm__InitVM();
+    Scm__InitHash();
     Scm__InitSymbol();
     Scm__InitModule();
     Scm__InitNumber();
@@ -182,6 +185,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libio();
     Scm_Init_liblazy();
     Scm_Init_liblist();
+    Scm_Init_libmac();
     Scm_Init_libmisc();
     Scm_Init_libmod();
     Scm_Init_libnum();
@@ -651,9 +655,14 @@ void Scm_SimpleMain(int argc, const char *argv[],
     ScmModule *user = Scm_UserModule();
     ScmObj mainproc = Scm_GlobalVariableRef(user, SCM_SYMBOL(SCM_INTERN("main")), 0);
     if (SCM_PROCEDUREP(mainproc)) {
-        ScmObj r = Scm_ApplyRec1(mainproc, args);
-        if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
-        else             Scm_Exit(70);
+        static ScmObj run_main_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(run_main_proc, "run-main", Scm_GaucheInternalModule());
+        SCM_ASSERT(SCM_PROCEDUREP(run_main_proc));
+
+        ScmEvalPacket epak;
+        int r = Scm_Apply(run_main_proc, SCM_LIST2(mainproc, args), &epak);
+        SCM_ASSERT(r == 1 && SCM_INTP(epak.results[0]));
+        Scm_Exit(SCM_INT_VALUE(epak.results[0]));
     } else {
         Scm_Exit(70);
     }

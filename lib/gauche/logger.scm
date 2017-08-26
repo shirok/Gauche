@@ -1,7 +1,7 @@
 ;;;
 ;;; logger.scm - simple use-level logging
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -215,15 +215,18 @@
               (^[] (lock-file drain p l))
               (^[] (proc p))
               (^[] (unlock-file drain p l) (close-output-port p))))]
-          [(eq? path #t)
+          [(or (eq? path #t) (eq? path 'current-error))
            (proc (current-error-port))]
+          [(eq? path 'current-output)
+           (proc (current-output-port))]
           [(eq? path #f)
            (call-with-output-string proc)]
           [(eq? path 'syslog)
            (sys-syslog (logior (slot-ref drain 'syslog-facility)
                                (slot-ref drain 'syslog-priority))
                        (call-with-output-string proc))]
-          [else #f])))
+          [(eq? path 'ignore) #f]
+          [else (error "invalid path value in log drain" path)])))
 
 ;; External APIs
 ;; log-format "fmtstr" arg ...
@@ -233,15 +236,16 @@
   (apply log-format (log-default-drain) fmtstr args))
 
 (define-method log-format ((drain <log-drain>) fmt . args)
-  (let* ([prefix (log-get-prefix drain)]
-         [str ($ string-concatenate
-                 $ fold-right (^[data rest]
-                                (if (and (null? rest) (string-null? data))
-                                  '()          ;ignore trailing newlines
-                                  (list* prefix data "\n" rest)))
-                              '()
-                 $ string-split (apply format #f fmt args) #\newline)])
-    (with-log-output drain (^p (display str p)))))
+  (unless (eq? (slot-ref drain 'path) 'ignore)
+    (let* ([prefix (log-get-prefix drain)]
+           [str ($ string-concatenate
+                   $ fold-right (^[data rest]
+                                  (if (and (null? rest) (string-null? data))
+                                    '()          ;ignore trailing newlines
+                                    (list* prefix data "\n" rest)))
+                   '()
+                   $ string-split (apply format #f fmt args) #\newline)])
+      (with-log-output drain (^p (display str p))))))
 
 ;; log-open path &keyword :program-name :prefix
 

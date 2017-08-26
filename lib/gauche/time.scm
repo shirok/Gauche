@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche/time.scm - time the procedure
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -38,6 +38,7 @@
   (use util.match)
   (export time time-this time-these report-time-results time-these/report
           <time-result> time-result+ time-result-
+          time-result-real time-result-user time-result-sys
           <time-counter> <real-time-counter> <user-time-counter>
           <system-time-counter> <process-time-counter>
           time-counter-start! time-counter-stop! time-counter-reset!
@@ -50,9 +51,11 @@
 
 ;; TODO: Drop these once we support sane formatting of flonums in format.
 (define (format-flonum val mincol digs)
-  (let* ([scale (expt 10 digs)]
-         [n (round->exact (* val scale))])
-    (format "~vd.~v,'0d" mincol (div n scale) digs (mod n scale))))
+  (if (finite? val)
+    (let* ([scale (expt 10 digs)]
+           [n (round->exact (* val scale))])
+      (format "~vd.~v,'0d" mincol (div n scale) digs (mod n scale)))
+    (format "~a" val)))
 
 (define (format-delta-time delta) (format-flonum delta 3 3))
 
@@ -208,7 +211,10 @@
          ks rs ps us ss cs (map (cut ref <> 'count) ts))
         ;; matrix
         (let1 mat (map (^y (map (^x (if (eq? x y) "--" (ratio y x))) ts)) ts)
-          (receive (Cs Cw) (fmt+w (.$ x->string x->integer rate) ts)
+          (receive (Cs Cw) (fmt+w (^t (if (finite? (rate t))
+                                        ($ x->string $ x->integer $ rate t)
+                                        ($ x->string $ rate t)))
+                                  ts)
             (let1 Cw (max (+ Cw 2) 4)   ; minimum width for "Rate"
               (format #t "\n  ~v@a ~v@a" kw "" Cw "Rate")
               (let1 col-widths (map (pa$ apply max)

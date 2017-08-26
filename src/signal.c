@@ -1,7 +1,7 @@
 /*
  * signal.c - signal handling
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -106,6 +106,8 @@ static unsigned int signalPendingLimit = SIGNAL_PENDING_LIMIT_DEFAULT;
 /* Table of signals and its initial behavior.   If Application asks
    Gauche to handle a specific signal (via Scm_SetMasterSigmask),
    Gauche installs a signal handler specified in this table.
+   (In general, the signals reserved by GC are excluded from the master
+   signal mask, so we don't need to consider them here.  See main.c.)
 
    Note on SIGPIPE behavior: The Unix convention is that the default
    behavior or writing to closed pipe terminates the process.  It is
@@ -237,6 +239,9 @@ static struct sigdesc {
 #ifdef SIGPWR
     SIGDEF(SIGPWR,  SIGDEF_NOHANDLE), /* Power failure restart (System V) */
 #endif
+#ifdef SIGTHR
+    SIGDEF(SIGTHR,  SIGDEF_NOHANDLE), /* Thread interrupt / AST (FreeBSD, OpenBSD) */
+#endif
     { NULL, -1 }
 };
 
@@ -359,6 +364,38 @@ ScmObj Scm_SysSigsetFill(ScmSysSigset *set, int emptyp)
     if (emptyp) sigemptyset(&(set->set));
     else        sigfillset(&(set->set));
     return SCM_OBJ(set);
+}
+
+/* Fills sigset_t with as many signals as we can reasonably handle. */
+void Scm_SigFillSetMostly(sigset_t *set) /* out */
+{
+    sigfillset(set);
+    sigdelset(set, SIGABRT);
+    sigdelset(set, SIGILL);
+#ifdef SIGKILL
+    sigdelset(set, SIGKILL);
+#endif
+#ifdef SIGCONT
+    sigdelset(set, SIGCONT);
+#endif
+#ifdef SIGSTOP
+    sigdelset(set, SIGSTOP);
+#endif
+    sigdelset(set, SIGSEGV);
+#ifdef SIGBUS
+    sigdelset(set, SIGBUS);
+#endif
+#ifdef SIGTHR
+    sigdelset(set, SIGTHR);
+#endif
+
+    /* Exclude signals used by GC to stop and restart the world. */
+#ifdef GC_THREADS
+    int sig_suspend = GC_get_suspend_signal();
+    if (sig_suspend >= 0) sigdelset(set, sig_suspend);
+    int sig_restart = GC_get_thr_restart_signal();
+    if (sig_restart >= 0) sigdelset(set, sig_restart);
+#endif /*GC_THREADS*/
 }
 
 /*=============================================================
@@ -733,7 +770,7 @@ sigset_t Scm_GetMasterSigmask(void)
 }
 
 /* this should be called before any thread is created. */
- void Scm_SetMasterSigmask(sigset_t *set)
+void Scm_SetMasterSigmask(sigset_t *set)
 {
     struct sigdesc *desc = sigDesc;
     struct sigaction acton, actoff;

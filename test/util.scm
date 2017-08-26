@@ -8,6 +8,20 @@
 (use srfi-1)
 
 ;;-----------------------------------------------
+(test-section "util.match")
+(use util.match)
+(test-module 'util.match)
+(test* "match (quasiquote + empty-vector)"
+       #t
+       (match '#() (`#() #t) (_ #f)))
+(test* "match (quasi-pattern + vector)"
+       '(3 1 2)
+       (match '#(1 2 3) (`#(,a ,b ,c) (list c a b)) (_ #f)))
+(test* "match (quasi-pattern + ellipsis + vector)"
+       '(1 2 3)
+       (match '#(1 2 3) (`#(,a ...) a) (_ #f)))
+
+;;-----------------------------------------------
 (test-section "util.combinations")
 (use util.combinations)
 (test-module 'util.combinations)
@@ -922,5 +936,38 @@
                            (watch tie)
                            (tie watch))))
 
+
+;;-----------------------------------------------
+(test-section "util.unification")
+(use util.unification)
+(test-module 'util.unification)
+(use util.match)
+
+(let ([data
+       ;; (a b merged)
+       '((1 1 1)
+         (1 2 #f)
+         (a 1 1)
+         (a (1 2) (1 2))
+         (a (1 b) (1 b))
+         (a (1 a) #f)
+         ((a b) (b 1) (1 1))
+         ((a b (c 3)) (2 c (3 b)) (2 3 (3 3)))
+         ((a b (c 3)) (2 c (4 b)) #f)
+         ((a b (c 3)) (2 c b) #f)
+         ((a b (c 3)) (2 d (3 b)) (2 3 (3 3)))
+         ((a b c)     (2 c (3 d)) (2 (3 d) (3 d)))
+         ((a b c)     (2 c (3 a)) (2 (3 2) (3 2)))
+         ((a b c)     (2 c (3 b)) #f))])
+
+  (define var (make-comparator symbol? eq? #f eq-hash))
+  (define val (make-comparator number? eqv? #f #f))
+  (define (node proto args) args)
+
+  (dolist [d data]
+    (match-let1 (a b m) d
+      (test* #"unify-merge ~a ~b => ~m" m (unify-merge a b var val fold node))
+      (test* #"unify-merge ~b ~a => ~m" m (unify-merge b a var val fold node))))
+  )
 
 (test-end)

@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.cgen.precomp - Precompile Scheme into C data
 ;;;
-;;;   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -156,15 +156,6 @@
    <ptmodule>
    (apply %cgen-precompile src keys)))
 
-(define (do-it src ext-initializer sub-initializers)
-  (parameterize ([omitted-code '()])
-    (setup ext-initializer sub-initializers)
-    (with-input-from-file src
-      (cut emit-toplevel-executor
-           (reverse (generator-fold compile-toplevel-form '() read))))
-    (finalize sub-initializers)
-    (cgen-emit-c (cgen-current-unit))))
-
 ;; Precompile multiple Scheme sources that are to be linked into
 ;; single DSO.  Need to check dependency.  The name of the first
 ;; source is used to derive DSO name.
@@ -174,30 +165,54 @@
                                     ((:dso-name dso) #f)
                                     (predef-syms '())
                                     (macros-to-keep '())
+                                    (single-sci-file #f)
                                     (extra-optimization #f))
+  (define (precomp-1 main src)
+    (let* ([out.c ($ xlate-cfilename
+                     $ strip-prefix (path-swap-extension src "c") prefix)]
+           [initname (string-tr (path-sans-extension out.c) "-+." "___")])
+      (%cgen-precompile src
+                        :out.c out.c
+                        :dso-name (or dso (basename-sans-extension main))
+                        :predef-syms predef-syms
+                        :strip-prefix prefix
+                        :macros-to-keep macros-to-keep
+                        :extra-optimization extra-optimization
+                        :ext-initializer (and (equal? src main)
+                                              ext-initializer)
+                        :initializer-name #"Scm_Init_~initname")))
+  (define (tweak-sci sci) ; for consolidating sci files. returns sexp list
+    (if (not sci)
+      '()
+      (let* ([sexps (file->sexp-list sci)]
+             [mod (any (^p (match p [('define-module m . _) m] [_ #f])) sexps)])
+        (if mod
+          (append sexps `((provide ,(module-name->path mod))))
+          (begin
+            (warn "Couldn't find define-module form in ~a." sci)
+            sexps)))))
   (match srcs
     [() #f]
     [(main . subs)
      (clean-output-files srcs prefix)
-     (with-tmodule-recording
-      <ptmodule>
-      (dolist [src (order-files-by-dependency srcs)]
-        (let* ([out.c ($ xlate-cfilename
-                         $ strip-prefix (path-swap-extension src "c") prefix)]
-               [initname (string-tr (path-sans-extension out.c) "-+." "___")])
-          (%cgen-precompile src
-                            :out.c out.c
-                            :dso-name (or dso (basename-sans-extension main))
-                            :predef-syms predef-syms
-                            :strip-prefix prefix
-                            :macros-to-keep macros-to-keep
-                            :extra-optimization extra-optimization
-                            :ext-initializer (and (equal? src main)
-                                                  ext-initializer)
-                            :initializer-name #"Scm_Init_~initname"))))]
+     (let* ([srcs (order-files-by-dependency srcs)]
+            [scis ($ with-tmodule-recording <ptmodule>
+                     $ map (cut precomp-1 main <>) srcs)])
+       (when single-sci-file
+         (and-let* ([main-sci (any (^[s i] (and (equal? s main) i)) srcs scis)]
+                    [other-scis (reverse (delete main-sci scis))]
+                    [sexps (append (append-map tweak-sci other-scis)
+                                   (file->sexp-list main-sci))])
+           (with-output-to-file main-sci
+             (^[]
+               (print ";; generated automatically.  DO NOT EDIT")
+               (print "#!no-fold-case")
+               (dolist [x sexps] (write x) (newline))))
+           (for-each remove-files other-scis))))]
     ))
 
 ;; Common stuff -- process single source
+;; Returns sci file name if it's created.
 (define (%cgen-precompile src
                           :key (out.c #f)
                                (out.sci #f)
@@ -209,6 +224,14 @@
                                (predef-syms '())
                                (macros-to-keep '())
                                (extra-optimization #f))
+  (define (do-it)
+    (parameterize ([omitted-code '()])
+      (setup ext-initializer sub-initializers)
+      (with-input-from-file src
+        (cut emit-toplevel-executor
+             (reverse (generator-fold compile-toplevel-form '() read))))
+      (finalize sub-initializers)
+      (cgen-emit-c (cgen-current-unit))))
   (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
         [out.sci (or out.sci
                      (and (check-first-form-is-define-module src)
@@ -232,10 +255,11 @@
                (^p (display ";; generated automatically.  DO NOT EDIT\n" p)
                    (display "#!no-fold-case\n" p)
                    (parameterize ([ext-module-file p])
-                     (do-it src ext-initializer sub-initializers))))]
+                     (do-it))))]
             [else
              (parameterize ([ext-module-file #f])
-               (do-it src ext-initializer sub-initializers))]))))
+               (do-it))]))
+    out.sci))
 
 ;;================================================================
 ;; Transient modules
@@ -303,6 +327,7 @@
   (with-module gauche.internal vm-eval-situation))
 (define global-eq?? (with-module gauche.internal global-eq??))
 (define make-identifier (with-module gauche.internal make-identifier))
+(define pair-attributes (with-module gauche.internal pair-attributes))
 (define pair-attribute-get (with-module gauche.internal pair-attribute-get))
 
 (define-constant SCM_VM_COMPILING 2) ;; must match with vm.h
@@ -380,8 +405,15 @@
       (error "source file list contains *.sci file:" s))
     (sys-unlink (strip-prefix (path-swap-extension s "sci") prefix))))
 
+;; Writers out FORM to *.sci file if we're generating one.  No-op if we aren't
+;; generating *.sci file.
+;; TODO: Since *.sci file is read back as ordinary Scheme file, we can't
+;; include identifiers in it.  We strip identifier info for now, but it can
+;; break hygiene.  Solution: We should think the feature of writing arbitrary
+;; code to *.sci as a transient measure and eventually we should have a way
+;; to serialize Scheme code, including indentifier info, to the file.
 (define (write-ext-module form)
-  (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
+  (cond [(ext-module-file) => (^_ (write (unwrap-syntax form) _) (newline _))]))
 
 (define (setup ext-init? subinits)
   (cgen-decl "#include <gauche/code.h>")
@@ -604,6 +636,10 @@
       ((with-module gauche.cgen.stub cgen-stub-parse-form)
        (unwrap-syntax (cons 'define-cproc args)))
       (undefined))
+    (define-macro (define-cfn . args)
+      ((with-module gauche.cgen.stub cgen-stub-parse-form)
+       (unwrap-syntax (cons 'define-cfn args)))
+      (undefined))
     (define-macro (define-enum . args)
       ((with-module gauche.cgen.stub cgen-stub-parse-form)
        (unwrap-syntax (cons 'define-enum args)))
@@ -618,21 +654,25 @@
       ((with-module gauche.cgen.precomp handle-define-syntax) f))
     (define-macro (define-macro . f)
       ((with-module gauche.cgen.precomp handle-define-macro) f))
+    (define-macro (define-inline/syntax . f)
+      ((with-module gauche.cgen.precomp handle-define-inline/syntax) f))
     ;; TODO - we need more general framework supporting various declarations.
     ;; for the time being, this ad-hoc solution suffice our needs.
     (define-macro (declare . f)
       ((with-module gauche.cgen.precomp handle-declare) f))
     ;; A special directive not to precompile; the given forms are
-    ;; emitted to *.sci file as they are.  It is useful if you delay
+    ;; not precompiled, but the code that evaluates the forms at
+    ;; the loading time is generated.  It is useful if you want to delay
     ;; macro-expansion until the load time (e.g. cond-expand).  The
     ;; forms are not evaluated at all in the compiling environment,
     ;; so they are not avaialble for macro expansion of the forms
     ;; to be precompiled.  (The case can be handled more generally by
     ;; 'eval-when' mechanism, but properly support eval-when needs more
     ;; work.)
+    ;; NB: When we quote the forms, identifier information in them will be
+    ;; lost, since it becomes a quoted literal.
     (define-macro (without-precompiling . forms)
-      ((with-module gauche.cgen.precomp handle-without-compiling) forms)
-      (undefined))
+      ((with-module gauche.cgen.precomp handle-without-compiling) forms))
     ))
 
 ;; Macros are "consumed" by the Gauche's compiler---that is, it is
@@ -645,20 +685,26 @@
   (define %define-syntax (make-identifier 'define-syntax (find-module 'gauche) '()))
   (define %lambda (make-identifier 'lambda (find-module 'gauche) '()))
   (define %begin (make-identifier 'begin (find-module 'gauche) '()))
-  (define %macro (make-identifier 'make-macro-transformer
+  (define %macro (make-identifier '%make-macro-transformer
                                   (find-module 'gauche.internal) '()))
+  (define %apply (make-identifier 'apply (find-module 'gauche) '()))
+  (define %cdr (make-identifier 'cdr (find-module 'gauche) '()))
   (define (do-handle name expr)
     (if (or (symbol-exported? name)
             (memq name (private-macros-to-keep)))
-      `(,%begin
-        (,%define ,name (,%macro ',name ,expr))
-        ((with-module gauche define-macro) ,name ,expr))
+      (let ([form (gensym)]
+            [env (gensym)])
+        `(,%begin
+          (,%define ,name (,%macro ',name
+                                   (,%lambda (,form ,env)
+                                             (,%apply ,expr (,%cdr ,form)))
+                                   ',expr))
+          ((with-module gauche define-macro) ,name ,expr)))
       `((with-module gauche define-macro) ,name ,expr)))
 
   (match form
     [((name . formals) . body)
-     (handle-define-macro `(,name
-                            (,%lambda ,formals ,@body)))]
+     (handle-define-macro `(,name (,%lambda ,formals ,@body)))]
     [(name expr) (do-handle name expr)]
     [_ (error "Malformed define-macro" form)]))
 
@@ -680,10 +726,33 @@
                         [tx ((with-module gauche.internal macro-transformer) val)]
                         [ (closure? tx) ])
                `((with-module gauche.internal %insert-syntax-binding)
-                 (current-module) ',name ,xformer-spec))
+                 (current-module) ',name
+                 (let ((,name ,xformer-spec)) ,name))) ; attach name to closure
              (write-ext-module `(define-syntax . ,form))
              #f)))]
     [_ (error "Malformed define-syntax" form)]))
+
+(define (handle-define-inline/syntax form)
+  (match form
+    [(name expr xformer-spec)
+     ;; KLUDGE: We treat NAME as a macro during compiling this unit, since
+     ;; we don't have the actual value of EXPR at compile-time.
+     (eval-in-current-tmodule
+      `((with-module gauche define-syntax) ,name ,xformer-spec))
+     ;; Now generate code.  NB: Once we make macro serializable, we won't
+     ;; need all these manual wiring.
+     (let1 val (global-variable-ref (~ (current-tmodule)'module) name #f)
+       (or (and-let* ([ ((with-module gauche.internal macro?) val) ]
+                      [tx ((with-module gauche.internal macro-transformer) val)]
+                      [ (closure? tx) ])
+             ;; TODO: Hygiene
+             `((with-module gauche define-inline) ,name
+               ((with-module gauche.internal %with-inline-transformer)
+                ,expr ,xformer-spec)))
+           (error "Currently, you can't use define-inline/syntax with \
+                   other than er-macro-transformer in precompiled file"
+                  form)))]
+    [_ (error "Malformed define-inline/syntax" form)]))
 
 (define (handle-define-constant form)
   (match form
@@ -694,7 +763,8 @@
   (cons '(with-module gauche define-constant) form))
 
 (define (handle-without-compiling forms)
-  (for-each write-ext-module forms))
+  ;; We eval the toplevel form at the initialization time.
+  `(begin ,@(map (^f `(eval ',f (current-module))) forms)))
 
 ;; Handle declaration.
 ;; At this moment, we only recognize (keep-private-macro name ...) form
@@ -720,6 +790,11 @@
 ;;================================================================
 ;; Compiler-specific literal handling definitions
 ;;
+
+;;----------------------------------------------------------------
+;; <compiled-code>
+;;
+
 (define-cgen-literal <cgen-scheme-code> <compiled-code>
   ([code-name          :init-keyword :code-name]
    [code-vector-c-name :init-keyword :code-vector-c-name]
@@ -782,16 +857,16 @@
 ;; ExtendedPair as it is, and we need to use <serialiable-extended-pair>.
 ;; See literal.scm.
 (define (serializable-signature-info code)
-  ;; TRANSIENT: This code needs to run with 0.9.4 as well, so we use old
-  ;; slot name 'arg-info'.  Replace it to 'signature-info' after 0.9.5
-  ;; release.
-  (and-let* ([sig (~ code'arg-info)])
-    (if-let1 si (and (pair? sig)
-                     (pair? (car sig))
-                     (pair-attribute-get (car sig) 'source-info #f))
-      (cons (make-serializable-extended-pair (unwrap-syntax (caar sig))
-                                             (unwrap-syntax (cdar sig))
-                                             `((source-info . ,si)))
+  (and-let* ([sig (~ code'signature-info)])
+    (if (and (pair? sig)
+             (pair? (car sig))
+             (not (null? (pair-attributes (car sig)))))
+      (cons ($ make-serializable-extended-pair
+               (unwrap-syntax (caar sig)) (unwrap-syntax (cdar sig))
+               (cond-list [(pair-attribute-get (car sig) 'source-info #f)
+                           => (^x `(source-info . ,x))]
+                          [(pair-attribute-get (car sig) 'unused-args #f)
+                           => (^x `(unused-args . ,x))]))
             (unwrap-syntax (cdr sig)))
       (unwrap-syntax sig))))
 
@@ -899,57 +974,103 @@
                          il insns)])
            (cgen-literal packed)))))
 
-;; NB: this doesn't yet handle identifiers that are inserted by hygienic
-;; macro (so that they have different module than the current one).
+;;----------------------------------------------------------------
+;; <module>
+;;
+
+;; We recover modules at runtime.  Anonymous modules can be recovered
+;; if they are used as a proxy of a real module (via <tmodule>).
+(define-cgen-literal <cgen-module> <module>
+  ((name  :init-keyword :name)
+   (name-literal :init-keyword :name-literal))
+  (make (value)
+    (if-let1 n (predefined-module value)
+      (make <cgen-module> :value value
+            :c-name n
+            :name (~ value'name))
+      (let1 name (or (~ value'name)
+                     (any (^[tm] (and (eq? (~ tm'module) value) (~ tm'name)))
+                          (all-tmodules))
+                     (error "Cannot emit literal for anonymous module:" value))
+        (make <cgen-module> :value value
+              :c-name (cgen-allocate-static-datum)
+              :name name :name-literal (cgen-literal name)))))
+  (init (self)
+    (unless (predefined-module (~ self'value))
+      (format #t "  ~a = SCM_OBJ(Scm_FindModule(SCM_SYMBOL(~a), \
+                                     SCM_FIND_MODULE_CREATE)); \
+                  /* module ~a */\n"
+              (~ self'c-name)
+              (cgen-cexpr (~ self'name-literal))
+              (~ self'name))))
+  (static (self) (boolean (predefined-module (~ self'value))))
+  )
+
+(define (predefined-module module)
+  (assq-ref `((,(find-module 'null)   . "Scm_NullModule()")
+              (,(find-module 'scheme) . "Scm_SchemeModule()")
+              (,(find-module 'gauche) . "Scm_GaucheModule()")
+              (,(find-module 'gauche.internal) . "Scm_GaucheInternalModule()")
+              )
+            module))
+
+;;----------------------------------------------------------------
+;; <identifier>
+;;
+
 (define-cgen-literal <cgen-scheme-identifier> <identifier>
-  ((id-name   :init-keyword :id-name)
-   (mod-name  :init-keyword :mod-name))
+  ((id-name        :init-keyword :id-name)
+   (module-literal :init-keyword :module-literal))
   (make (value)
     (unless (null? (~ value'env))
       (error "identifier with compiler environment can't be compiled" value))
     (make <cgen-scheme-identifier> :value value
           :c-name (cgen-allocate-static-datum)
           :id-name (cgen-literal (unwrap-syntax value))
-          :mod-name (cond [(module-name-fix (~ value'module))
-                           => cgen-literal]
-                          [(current-tmodule) => (^m (cgen-literal (~ m'name)))]
-                          [else #f])))
+          :module-literal (cgen-literal (~ value'module))))
   (init (self)
     (let ([name (cgen-cexpr (~ self'id-name))]
           [cname (~ self'c-name)])
-      (or (and-let* ([modnam (~ self'mod-name)])
-            (format #t "  ~a = Scm_MakeIdentifier(~a, \
-                                  Scm_FindModule(SCM_SYMBOL(~a), \
-                                                 SCM_FIND_MODULE_CREATE),
-                                  SCM_NIL); /* ~a#~a */\n"
-                    cname name (cgen-cexpr modnam)
-                    (cgen-safe-comment (~ self'mod-name'value))
-                    (cgen-safe-comment (~ self'id-name'value)))
-            #t)
-          (let1 mod-cname (current-tmodule-cname)
-            (format #t "  ~a = Scm_MakeIdentifier(~a, \
-                                                  SCM_MODULE(~a), \
-                                                  SCM_NIL); /* ~a#~a */\n"
-                    cname name mod-cname
-                    (cgen-safe-comment (~(current-tmodule)'name))
-                    (cgen-safe-comment (~ self'id-name'value)))))))
+      (format #t "  ~a = Scm_MakeIdentifier(~a, SCM_MODULE(~a), \
+                                            SCM_NIL); /* ~a#~a */\n"
+              cname name (cgen-cexpr (~ self'module-literal))
+              (cgen-safe-comment (~ self'module-literal'name))
+              (cgen-safe-comment (~ self'id-name'value)))))
   (static (self) #f)
   )
 
-;; NB: for compatibility, we check modnam vs '# to find out anonymous
-;; modules.  (By 0.8.14 anonymous modules are named as |#|.)
-(define (module-name-fix module)
-  (and-let* ([nam (module-name module)]
-             [ (not (eq? nam '|#|)) ]) ;|# <- to fool emacs
-    nam))
+;;----------------------------------------------------------------
+;; <macro>
+;;
 
-;; NB: for now, we ignore macros (we assume they are only used within
-;; the source file).
-(define-cgen-literal <cgen-scheme-macro> <macro>
-  ()
-  (make (value)
-    (make <cgen-scheme-macro> :value value :c-name #f))
-  )
+;; Macro transformer is usually not a toplevel closure, for it is
+;; likely to close over macro definition environment for hygiene.
+;; We need to figure out better way to serialize macros.
+
+;; (define-cgen-literal <cgen-scheme-macro> <macro>
+;;   ([transformer :init-keyword :transformer] ; <cgen-closure>
+;;    [name :init-keyword :name])              ; maybe <cgen-symbol>
+;;   (make (value)
+;;     (let ([xf   ((with-module gauche.internal macro-transformer) value)]
+;;           [name ((with-module gauche.internal macro-name) value)])
+;;       (unless (toplevel-closure? xf)
+;;         (errorf "A macro ~s cannot be a compile-time constant since its \
+;;                  transformer is not a top-level closure: ~s" value xf))
+;;       (make <cgen-scheme-macro>
+;;         :value value :c-name (cgen-allocate-static-datum)
+;;         :transformer (cgen-literal xf)
+;;         :name (and name (cgen-literal name)))))
+;;   (init (self)
+;;     (format #t "  ~a = Scm_MakeMacroTransformer(~a, ~a); /* ~a */\n"
+;;             (cgen-cexpr self)
+;;             (if-let1 n (~ self'name) (cgen-cexpr n) "NULL")
+;;             (cgen-cexpr (~ self'transformer))
+;;             (cgen-safe-comment (write-to-string (~ self'value)))))
+;;   (static (self) #f))
+
+;;----------------------------------------------------------------
+;; <generic>
+;;
 
 ;; For generic functions, we initialize it at runtime.
 (define-cgen-literal <cgen-scheme-generic> <generic>
@@ -966,6 +1087,10 @@
             (~ self'gf-name'c-name)))
   (static (self) #f)
   )
+
+;;----------------------------------------------------------------
+;; <procedure>
+;;
 
 ;; We allow literal closures if it doens't close environment.
 ;; Closures do not have its own class, so we define cgen-literal class

@@ -51,9 +51,9 @@
 ;; logcount - defined in gauche
 (define-inline bit-count logcount)
 
-(define (log2-binary-factors n)
-  (- (integer-length (logand n (- n))) 1))
-(define first-set-bit log2-binary-factors)
+;; these two are the same as built-in twos-exponent-factor
+(define-inline log2-binary-factors twos-exponent-factor)
+(define-inline first-set-bit twos-exponent-factor)
 
 ;;;
 ;;; Bit within word

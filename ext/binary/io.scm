@@ -23,11 +23,13 @@
           write-uint write-u8 write-u16 write-u32 write-u64
           write-sint write-s8 write-s16 write-s32 write-s64
           write-ber-integer write-f16 write-f32 write-f64
+          get-uint get-sint
           get-u8 get-u16 get-u32 get-u64 get-s8 get-s16 get-s32 get-s64
           get-f16 get-f32 get-f64
           get-u16be get-u16le get-u32be get-u32le get-u64be get-u64le
           get-s16be get-s16le get-s32be get-s32le get-s64be get-s64le
           get-f16be get-f16le get-f32be get-f32le get-f64be get-f64le
+          put-uint! put-sint!
           put-u8! put-u16! put-u32! put-u64! put-s8! put-s16! put-s32! put-s64!
           put-f16! put-f32! put-f64!
           put-u16be! put-u16le! put-u32be! put-u32le! put-u64be! put-u64le!
@@ -454,6 +456,61 @@
    (Scm_PutBinaryF64 v off val (SCM_SYMBOL SCM_SYM_LITTLE_ENDIAN)))
  )
 
+(define (get-uint size uv pos :optional (endian (default-endian)))
+  (case size
+    [(1) (get-u8 uv pos)]
+    [(2) (get-u16 uv pos endian)]
+    [(4) (get-u32 uv pos endian)]
+    [(8) (get-u64 uv pos endian)]
+    [else (ecase endian
+            [(big-endian)
+             (do ([i 0 (+ i 1)]
+                  [r 0 (logior (ash r 8) (get-u8 uv (+ i pos)))])
+                 [(>= i size) r]
+               )]
+            [(little-endian arm-little-endian)
+             (do ([i (- size 1) (- i 1)]
+                  [r 0 (logior (ash r 8) (get-u8 uv (+ i pos)))])
+                 [(< i 0) r]
+               )])]))
+
+(define (get-sint size uv pos :optional (endian (default-endian)))
+  (case size
+    [(1) (get-s8 uv pos)]
+    [(2) (get-s16 uv pos endian)]
+    [(4) (get-s32 uv pos endian)]
+    [(8) (get-s64 uv pos endian)]
+    [else (uint->sint (get-uint size uv pos endian) size)]))
+
+(define (%put-int! size uv pos val endian) ; val can be signed or unsigned
+  (ecase endian
+    [(big-endian)
+     (do ([i (- size 1) (- i 1)]
+          [v val (ash v -8)])
+         [(< i 0) (undefined)]
+       (put-u8! uv (+ i pos) (logand v #xff)))]
+    [(little-endian arm-little-endian)
+     (do ([i 0 (+ i 1)]
+          [v val (ash v -8)])
+         [(>= i size) (undefined)]
+       (put-u8! uv (+ i pos) (logand v #xff)))]))  
+
+(define (put-uint! size uv pos val :optional (endian (default-endian)))
+  (case size
+    [(1) (put-u8! uv pos val)]
+    [(2) (put-u16! uv pos val endian)]
+    [(4) (put-u32! uv pos val endian)]
+    [(8) (put-u64! uv pos val endian)]
+    [else (%put-int! size uv pos val endian)]))
+
+(define (put-sint! size uv pos val :optional (endian (default-endian)))
+  (case size
+    [(1) (put-s8! uv pos val)]
+    [(2) (put-s16! uv pos val endian)]
+    [(4) (put-s32! uv pos val endian)]
+    [(8) (put-s64! uv pos val endian)]
+    [else (%put-int! size uv pos val endian)]))
+
 ;;;
 ;;; Machine-dependent binary parameters
 ;;;
@@ -466,7 +523,7 @@
  "struct { char b; double s; }   double_align;"
  "struct { char b; int8_t s; }   int8_align;"
  "struct { char b; int16_t s; }  int16_align;"
- "struct { char b; ScmInt32 s; } int32_align;"
+ "struct { char b; int32_t s; }  int32_align;"
  "struct { char b; ScmInt64 s; } int64_align;"
 
  "#ifdef HAVE_LONG_LONG"
@@ -510,7 +567,7 @@
                 (SCM_MAKE_INT (sizeof (int16_t)))
                 (SCM_MAKE_INT (alignof int16_align)))
      (SCM_LIST3 'int32
-                (SCM_MAKE_INT (sizeof (ScmInt32)))
+                (SCM_MAKE_INT (sizeof (int32_t)))
                 (SCM_MAKE_INT (alignof int32_align)))
      (SCM_LIST3 'int64
                 (SCM_MAKE_INT (sizeof (ScmInt64)))

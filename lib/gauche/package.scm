@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.package - package management
 ;;;
-;;;   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -249,7 +249,8 @@
 
 ;; API.  utility
 (define (find-gauche-package-description name :key (all-versions #f))
-  (and-let* ([path (find (string->regexp #"/~|name|\\.gpd$")
+  (and-let* ([gpdfile #"~|name|.gpd"]
+             [path (find (^p (equal? gpdfile (sys-basename p)))
                          (gauche-package-description-paths
                           :all-versions all-versions))])
     (path->gauche-package-description path)))

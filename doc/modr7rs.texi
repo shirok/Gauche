@@ -1,6 +1,6 @@
-@node Library modules - R7RS integration, Library modules - SRFIs, Library modules - Gauche extensions, Top
-@chapter Library modules - R7RS integration
-@c NODE ライブラリモジュール - R7RS統合
+@node Library modules - R7RS standard libraries, Library modules - SRFIs, Library modules - Gauche extensions, Top
+@chapter Library modules - R7RS standard libraries
+@c NODE ライブラリモジュール - R7RS標準ライブラリ
 
 @c EN
 Gauche predates R7RS, and for the convenience, Gauche makes quite a few
@@ -32,30 +32,33 @@ R7RSプログラムとライブラリは特定の形式で書かれるので
 但し、コードを書く時には、どちらの「世界」にいるのかを意識する必要があります。
 @c COMMON
 
+@c EN
+If you're familiar with Gauche, take a look at
+the section @ref{R7RS integration}, which describes how you can
+go back and forth between Gauche and R7RS.
+@c JP
+Gaucheに慣れているプログラマは、まず@ref{R7RS integration}に目を通してください。
+どうやってGaucheとR7RSの世界を行き来するか説明してあります。
+@c COMMON
+
 @menu
-* Traveling between two worlds back and forth::  
-* Three forms of import::       
-* R7RS library form::           
-* R7RS base library::           
-* R7RS case-lambda::            
-* R7RS char library::           
-* R7RS complex numbers::        
-* R7RS cxr accessors::          
-* R7RS eval::                   
-* R7RS file library::           
-* R7RS inexact numbers::        
-* R7RS lazy evaluation::        
-* R7RS load::                   
-* R7RS process context::        
-* R7RS read::                   
-* R7RS repl::                   
-* R7RS time::                   
-* R7RS write::                  
-* R5RS compatibility::          
+* R7RS integration::
+* R7RS small language::
+* R7RS large::
 @end menu
 
-@node Traveling between two worlds back and forth, Three forms of import, Library modules - R7RS integration, Library modules - R7RS integration
-@section Traveling between two worlds back and forth
+
+@node R7RS integration, R7RS small language, Library modules - R7RS standard libraries, Library modules - R7RS standard libraries
+@section R7RS integration
+@c NODE R7RS統合
+
+@menu
+* Traveling between two worlds back and forth::
+* Three forms of import::
+@end menu
+
+@node Traveling between two worlds back and forth, Three forms of import, R7RS integration, R7RS integration
+@subsection Traveling between two worlds back and forth
 @c NODE 二つの世界を往き来する
 
 @c EN
@@ -97,7 +100,7 @@ These facts let Gauche to set up appropriate ``world'',
 and you can use R7RS code and traditional Gauche code transparently.
 @c JP
 Gaucheはこれを利用して、適切な「世界」を設定し、R7RSコードと既存のGaucheコードを
-透過的に混ぜるられるようにしています。
+透過的に混ぜられるようにしています。
 @c COMMON
 
 @c EN
@@ -456,9 +459,7 @@ module and directly select @code{r7rs.user}:
 
 @example
 gosh> (use r7rs)
-#<undef>
 gosh> (select-module r7rs.user)
-#<undef>
 gosh[r7rs.user]> 
 @end example
 
@@ -476,9 +477,40 @@ writing Scheme in this environment.
 @c COMMON
 
 
-@node Three forms of import, R7RS library form, Traveling between two worlds back and forth, Library modules - R7RS integration
-@section Three import forms
+@node Three forms of import,  , Traveling between two worlds back and forth, R7RS integration
+@subsection Three import forms
 @c NODE 3つのimport形式
+
+@c EN
+For historical reasons, Gauche has three @code{import} forms; the original
+Gauche's @code{import}, R7RS @code{import}, and the hybrid @code{import}.
+
+Usually it is clear that the code is written in traditional Gauche
+or in R7RS, and usage of @code{import} is typically idiomatic, so there's
+not much confusion in practice.  Only when you talk about @code{import}
+outside of code, you might need to specify which one you're talking.
+
+The hybrid @code{import} is what we described @code{user#import} in
+the previous section (@pxref{Traveling between two worlds back and forth}).
+It understands both of Gauche's @code{import} and
+R7RS @code{import}.
+So what you really need to know is the first two.
+@c JP
+歴史的な事情から、Gaucheには@code{import}形式が3つあります。
+もともとのGaucheの@code{import}、R7RSの@code{import}、
+そしてハイブリッドの@code{import}です。
+
+通常、コードを読み書きしている時は、それが伝統的なGaucheコードかR7RSコードかは
+明確ですし、また@code{import}の使われ方はだいたい決まっているので、
+現場で混乱が起きることはありません。ただ、コードの外で@code{import}について
+話す場合は、どの@code{import}のことかをはっきりさせるのが良いでしょう。
+
+ハイブリッドの@code{import}は前節で説明した@code{user#import}です
+(@ref{Traveling between two worlds back and forth}参照)。
+@code{user#import}は
+Gaucheの@code{import}とR7RSの@code{import}の両方の文法を理解できるので、
+実際に知る必要のあるのは最初の2つの形式です。
+@c COMMON
 
 @c EN
 Gauche's module system design is inherited from STk, and we've been
@@ -494,7 +526,7 @@ Gauche's @code{import}.
 @c JP
 Gaucheのモジュールシステム設計はSTkを継承していて、
 @code{import}は純粋に名前空間の操作として使われています。
-つまり、既にメモり上に存在するモジュールをインポートするということです。
+つまり、既にメモリ上に存在するモジュールをインポートするということです。
 そのモジュールが定義されているファイルを、(必要なら)ロードするという
 操作は別のプリミティブ@code{require}により実現されます。
 典型的には、ひとつのファイルがひとつのモジュールを定義していて、
@@ -517,6 +549,23 @@ R7RSは実装に選択の余地を与えるため、モジュール(ライブラ
 必要ならば暗黙のうちに、透過的にファイルをロードすることが期待されています。
 つまり、R7RSの@code{import}はGaucheの@code{use}と意味的に同じと考えられます。
 @c COMMON
+
+@c EN
+The hybrid @code{import} only appears at the beginning of the Scheme
+scripts.  It finds out whether the script is in the traditional Gauche
+code or in the R7RS code.  @xref{Traveling between two worlds back and forth}, for the details.
+@c JP
+ハイブリッド@code{import}はSchemeスクリプトの最初にのみ現れて、
+実行されるスクリプトが伝統的なGaucheコードであるかR7RSコードであるかを
+判断します。詳細は@ref{Traveling between two worlds back and forth}を参照してください。
+@c COMMON
+
+@c EN
+Now we'll explain R7RS @code{import}:
+@c JP
+ではR7RSの@code{import}を説明します:
+@c COMMON
+
 
 @defspec import import-spec @dots{}
 [R7RS]
@@ -573,7 +622,7 @@ Frankly, we haven't decided yet.   It'll likely be that we use some
 escaping mechanism; for the time being you'd want to stick with
 alphanumeric characters and hyphens as possible.)
 @c JP
-(勘の良い読者な、R7RSのライブラリがピリオドを中に含むシンボルを名前に使っていたら
+(勘の良い読者は、R7RSのライブラリがピリオドを中に含むシンボルを名前に使っていたら
 どうなるのか疑問に思ったことでしょう。正直なところ、まだどうするか決めていません。
 多分、何らかのエスケープ機構を用意することになると思いますが、
 今のところ、できる限りモジュール名にはアルファベット、数字、ハイフンだけを
@@ -608,24 +657,93 @@ R7RSの@code{import}の正式な構文は次の通りです。
 @end smallexample
 @end defspec
 
+@node R7RS small language, R7RS large, R7RS integration, Library modules - R7RS standard libraries
+@section R7RS small language
+@c NODE R7RS small language
 
-@node R7RS library form, R7RS base library, Three forms of import, Library modules - R7RS integration
-@section R7RS library form
+@menu
+* R7RS library form::
+* R7RS base library::           @code{scheme.base}
+* R7RS case-lambda::            @code{scheme.case-lambda}
+* R7RS char library::           @code{scheme.char}
+* R7RS complex numbers::        @code{scheme.complex}
+* R7RS cxr accessors::          @code{scheme.cxr}
+* R7RS eval::                   @code{scheme.eval}
+* R7RS file library::           @code{scheme.file}
+* R7RS inexact numbers::        @code{scheme.inexact}
+* R7RS lazy evaluation::        @code{scheme.lazy}
+* R7RS load::                   @code{scheme.load}
+* R7RS process context::        @code{scheme.process-context}
+* R7RS read::                   @code{scheme.read}
+* R7RS repl::                   @code{scheme.repl}
+* R7RS time::                   @code{scheme.time}
+* R7RS write::                  @code{scheme.write}
+* R5RS compatibility::          @code{scheme.r5rs}
+@end menu
+
+@node R7RS library form, R7RS base library, R7RS small language, R7RS small language
+@subsection R7RS library form
 @c NODE R7RSライブラリ形式
+
+@c EN
+R7RS libraries are defined by @code{define-library} form.
+
+In R7RS view, @code{define-library} form itself does not belong
+to a Scheme code---it exists outside of the Scheme world.
+It defines the boundary of
+R7RS Scheme; inside @code{define-library} there is R7RS world,
+but outside, it's not a business of R7RS.
+For example, you can't generate
+@code{define-library} by a macro, within R7RS specification.
+
+In Gauche, we implement R7RS world inside Gauche world;
+@code{define-library} itself is interpreted in the Gauche world.
+In fact, @code{define-library} @emph{is} a Gauche macro.
+However, if you're writing portable R7RS code, you should forget
+how @code{define-library} is implemented, and do not put anything
+outside of @code{define-library} form.
+@c JP
+R7RSのライブラリは@code{define-library}フォームで定義されます。
+
+R7RSの観点では@code{define-library}フォーム自体はSchemeコードではありません。
+それ自身はScheme世界の外にあります。@code{define-library}フォームが、
+R7RS Schemeの境界となるのです。その内側はR7RSの世界であり、
+その外側に関してR7RSは関知しません。例えば、R7RSの仕様の範囲内では、
+@code{define-library}フォーム自体をマクロで生成する、ということはできません。
+
+Gaucheでは、R7RSの世界をGaucheの世界の中に作っています。
+@code{define-library}自体はGauche世界で解釈されます。実際、
+@code{define-library}はGaucheのマクロとして実装されています。
+けれどもR7RSのコードを書く際には、@code{define-library}がどう実装されているかは
+気にする必要はありません。また、@code{define-library}の外側には
+何も書かないようにしてください。
+@c COMMON
 
 @defmac define-library library-name library-decl @dots{}
 [R7RS]
+@c EN
 Defines a library @var{library-name}, which is a list of 
 symbols or base-10 integer:
+@c JP
+@var{library-name}という名前を持つライブラリを定義します。
+@var{library-name}はシンボルもしくは10進整数のリストです。
+@c COMMON
 
 @smallexample
 <library-name> : (<identifier-or-base-10-integer>
                   <identifier-or-base-10-integer> ...)
 @end smallexample
 
-Library declarations can be export declarations, import declarations,
+@c EN
+Library declarations @var{library-decl} 
+can be export declarations, import declarations,
 @code{begin}-list of Scheme code,
 include forms, or @code{cond-expand} forms.
+@c JP
+ライブラリ宣言@var{library-decl}は、エクスポート宣言、
+インポート宣言、@code{begin}に囲まれたSchemeコード、
+インクルードフォーム、あるいは@code{cond-expand}フォームです。
+@c COMMON
 
 @smallexample
 <library-decl> : (export <export-spec> @dots{})
@@ -642,34 +760,91 @@ include forms, or @code{cond-expand} forms.
                               (else <library-decl> @dots{}))
 @end smallexample
 
+@c EN
 The @code{export} declaration is the same Gauche's @code{export}
 form; @pxref{Using modules}.
+@c JP
+@code{export}宣言はGaucheの@code{export}フォームと同じです。
+@ref{Using modules}参照。
+@c COMMON
 
+@c EN
 The @code{import} declaration is R7RS's @code{import} form,
 described in @ref{Three forms of import}.
+@c JP
+@code{import}宣言はR7RSの@code{import}フォームで、
+@ref{Three forms of import}で説明しています。
+@c COMMON
 
-The @code{include} and @code{include-ci} forms are the same as Gauche's;
-@pxref{Inclusions}.
+@c EN
+The @code{include} and @code{include-ci} declarations
+are the same as Gauche's; @pxref{Inclusions}.
+Note that Gauche allows any code to be included---the content of
+the named file is simply wrapped with @code{begin} and
+substituted with these forms---but in R7RS definition,
+what you include must contain only Scheme code
+(not one of the library declarations or @code{define-library} form).
+@c JP
+@code{include}と@code{include-ci}フォームはGaucheのそれと同じです。
+@ref{Inclusions}参照。Gaucheはインクルードされるコードの中身については
+感知せず、単にその中身を@code{begin}で囲んで元のフォームと
+置き換えるだけです。けれどもR7RSでは、これらのフォームが読み込むファイルには
+Schemeコードのみが許されます(例えば@code{define-library}フォームや
+他のライブラリ宣言フォームはだめです)。
+@c COMMON
 
-The @code{cond-expand} form is also the same as Gauche's;
-@pxref{Feature conditional}.
+@c EN
+The @code{include-library-declarations} declaration works like @code{include},
+but the content of the read file is interpreted
+as library declarations instead of Scheme code.
+@c JP
+@code{include-library-declarations}宣言は@code{include}宣言と
+同じように動作しますが、読み込まれるファイルの中身はSchemeコードではなく
+ライブラリ宣言として解釈されます。
+@c COMMON
+
+@c EN
+The @code{cond-expand} declaration is also the same as Gauche's;
+@pxref{Feature conditional}.  When used directly below
+@code{define-library}, it must expands to one of the
+library declarations.
+@c JP
+@code{cond-expand}宣言もGaucheのそれと同じです。
+@ref{Feature conditional}参照。
+但し、@code{define-library}の直下で使われた場合は、
+展開結果もライブラリ宣言になっている必要があります。
+@c COMMON
 @end defmac
 
 
-@node R7RS base library, R7RS case-lambda, R7RS library form, Library modules - R7RS integration
-@section @code{scheme.base} - R7RS base library
+@node R7RS base library, R7RS case-lambda, R7RS library form, R7RS small language
+@subsection @code{scheme.base} - R7RS base library
 @c NODE R7RS基本ライブラリ, @code{scheme.base} - R7RS基本ライブラリ
 
 @deftp {Module} scheme.base
 @mdindex scheme.base
+@c EN
 Exports bindings of R7RS @code{(scheme base)} library.  From R7RS programs,
 those bindings are available by @code{(import (scheme base))}.
+@c JP
+R7RSの@code{(scheme base)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は@code{(import (scheme base))}とすることで
+使えます。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Bindings common to Gauche's built-ins
+@c JP
+@subheading Gaucheの組み込み束縛と共通なもの
+@c COMMON
 
+@c EN
 The following syntaxes and procedures are the same as Gauche's
 builtins:
+@c JP
+以下の構文の手続きはGaucheの組み込みのものと同じです。
+@c COMMON
 
 @table @asis
 @item Primitive expression types
@@ -745,7 +920,7 @@ values call-with-values dynamic-wind
 @end example
 @item Exception
 @example
-raise error
+error
 @end example
 @item Environments and evaluation
 @example
@@ -761,7 +936,11 @@ newline write-char
 @end example
 @end table
 
+@c EN
 @subheading Bytevector utilities
+@c JP
+@subheading バイトベクタユーティリティ
+@c COMMON
 
 @defun bytevector n @dots{}
 @defunx bytevector? obj
@@ -772,7 +951,9 @@ newline write-char
 @defunx bytevector-copy bv :optional start end
 @defunx bytevector-copy! to at from :optional start end
 @defunx bytevector-append bv @dots{}
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 R7RS's bytevector is Gauche's u8vector.
 
 These are equivalent to @code{gauche.uvector}'s
@@ -780,131 +961,312 @@ These are equivalent to @code{gauche.uvector}'s
 @code{make-u8vector}, @code{u8vector-length}, @code{u8vector-ref},
 @code{u8vector-set!}, @code{u8vector-copy}, @code{u8vector-copy!}, and
 @code{u8vector-append}, respectively.  (@pxref{Uniform vectors}).
+@c JP
+R7RSのbytevectorはGaucheのu8vectorです。
+
+これらの手続きは@code{gauche.uvector}の
+@code{u8vector}、@code{u8vector?}、
+@code{make-u8vector}、@code{u8vector-length}、@code{u8vector-ref}、
+@code{u8vector-set!}、@code{u8vector-copy}、@code{u8vector-copy!}、
+@code{u8vector-append}とそれぞれ同じです。
+(@ref{Uniform vectors}参照)。
+@c COMMON
 @end defun
 
+@c EN
 These two procedures are the same as the ones in @code{gauche.unicode}
 module (@pxref{Unicode transfer encodings}):
+@c JP
+以下の二つの手続きは@code{gauche.unicode}モジュールの同名の手続きと同じです。
+(@ref{Unicode transfer encodings}参照):
+@c COMMON
 
 @example
 utf8->string string->utf8
 @end example
 
+@c EN
 @subheading Control features
+@c JP
+@subheading 制御機能
+@c COMMON
 
 @defun string-map proc str @dots{}
 @defunx string-for-each proc str @dots{}
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 These take different arguments from 
 @code{string-map} and @code{string-for-each} in SRFI-13
-(@pxref{SRFI-13 String mapping}), so provided only in @code{scheme.base} module
+(@pxref{SRFI-13 String mapping}), 
+so provided only in @code{scheme.base} module
 to avoid confusion.
+
+If you pass only one string argunemt, however, it works exactly
+the same way in both @code{srfi-13} and @code{scheme.base}.
+@c JP
+これらの手続きはSRFI-13の@code{string-map}及び@code{string-for-each}
+(@ref{SRFI-13 String mapping}参照)とは異なる引数を取るので、
+混乱を避けるため@code{scheme.base}でのみ提供されます。
+
+但し、文字列引数をひとつだけ渡す場合は、
+@code{srfi-13}でも@code{scheme.base}でも全く同様に動作します。
+@c COMMON
 @end defun
 
-@defun raise-continuable obj
-[R7RS]
-At this moment, this is defined as an alias of @code{raise},
-for Gauche's @code{raise} returns unless @var{obj} is not a
+@defun raise obj
+@defunx raise-continuable obj
+[R7RS base]
+@c MOD scheme.base
+@c EN
+Gauche's @code{raise} may return if @var{obj} isn't a
 @code{<serious-condition>}.
+Distinguishing continuable and noncontinuable exception throw by the
+procedure has an issue when your exception handler wants to reraise
+the condition (you don't know if the original condition is raised
+by @code{raise} or @code{raise-continuable}!).  Yet R7RS adoted
+that model, so we compel.
+
+R7RS @code{raise} is a wrapper of Gauche's @code{raise},
+which throws an error if Gauche's @code{raise} returns.
+
+R7RS @code{raise-continuable} is currently just an alias of
+Gauche's @code{raise}---as long as you don't pass
+@code{<serious-condition>}, it may return.  It is not exactly
+R7RS comformant---it won't return if you pass @code{<serious-condition>}
+or object of one of its subclasses (e.g. @code{<error>}), but
+it's weired to expect returning from raising @code{<error>}, isn't it?
+@c JP
+Gaucheの@code{raise}は、@var{obj}が@code{<serious-condition>}でなければ、
+例外ハンドラから戻って来ることを許しています。
+継続可能な例外報告と継続不可能な例外報告を手続きで区別するのは、
+例外ハンドラが渡されたコンディションを再び投げる場合に問題となります
+(元のコンディションが@code{raise}で投げられたのか@code{raise-continuable}で
+投げられたのか知る術がない!)。
+しかしR7RSではそのモデルを採用したため、何とか合わせようとしています。
+
+R7RS版の@code{raise}はGaucheの@code{raise}のラッパーで、
+Gaucheの@code{raise}から戻って来たらエラーを投げるようにしています。
+
+R7RSの@code{raise-continuable}は今のところGaucheの@code{raise}の
+別名になっています。@code{<serious-condition>}を渡さなければ、
+戻ってくることが可能です。R7RS準拠でないのは、
+@code{<serious-condition>}かそのサブクラスのオブジェクト(例えば@code{<error>})を
+@code{raise-continuable}に渡した場合ですが、
+@code{<error>}を投げて戻って来ることを期待するというのはちょっとおかしいですよね。
+@c COMMON
 @end defun
 
 @defun error-object? exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 Defined as @code{(condition-has-type? exc <error>))}
+@c JP
+@code{(condition-has-type? exc <error>))}として定義されています。
+@c COMMON
 @end defun
 
 @defun error-object-message exc
-[R7RS]
-Returns the message portion of @var{exc} if it has one,
-or an empty string otherwise.
+[R7RS base]
+@c MOD scheme.base
+@c EN
+If @var{exc} is a @code{<message-condition>}, 
+returns its @code{message-prefix} slot;
+otherwise, returns an empty string.
+@c JP
+@var{exc}が@code{<message-condition>}であれば
+@code{message-prefix}の内容を、持っていなければ空文字列を返します。
+@c COMMON
 @end defun
 
 @defun error-object-irritants exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
+If @var{exc} is a @code{<message-condition>}, 
+returns its @code{message-args} slot;
+otherwise, returns an empty string.
+@c JP
+@var{exc}が@code{<message-condition>}であれば
+@code{message-args}の内容を、持っていなければ空文字列を返します。
+@c COMMON
 @end defun
 
 @defun read-error? exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 Defined as @code{(condition-has-type? e <read-error>))}.
+@c JP
+@code{(condition-has-type? e <read-error>))}として定義されています。
+@c COMMON
 @end defun
 
 @defun file-error? exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 At this moment, Gauche doesn't have distinct @code{<file-error>} condition,
 but most file errors are thrown as one of @code{<system-error>}s.
 This procedure checks error code of @code{<system-error>} and
 returns @code{#t} if the error is likely to be related to the filesystem.
+@c JP
+今のところ、Gaucheは独立した@code{<file-error>}コンディションを持っていませんが、
+ファイルエラーのほとんどは@code{<system-error>}として投げられます。
+この手続きは@code{<system-error>}のエラーコードを調べ、ファイルに起因するエラー
+の場合に@code{#t}を返すようにしています。
+@c COMMON
 @end defun
 
-@subsection Input and output
+@c EN
+@subheading Input and output
+@c JP
+@subheading 入出力
+@c COMMON
 
 @defun textual-port? port
 @defunx binary-port? port
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 Gauche's port can handle both, so these are equivalent to @code{port?}.
+@c JP
+Gaucheのポートはどちらも扱えるので、これらの手続きは@code{port?}と等価です。
+@c COMMON
 @end defun
 
-@defun input-port-open? port
-@defunx output-port-open? port
-[R7RS]
+@defun input-port-open? iport
+@defunx output-port-open? oport
+[R7RS base]
+@c MOD scheme.base
+@c EN
+Checks whether @var{iport}/@var{oport} is an input/output port @emph{and}
+it is not closed.
+@c JP
+@var{iport}/@var{oport}がそれぞれ入力/出力ポートであり、かつクローズされていなければ
+@code{#t}を返します。
+@c COMMON
 @end defun
 
-@defun open-input-bytevector bv
+@defun open-input-bytevector u8vector
 @defunx open-output-bytevector
 @defunx get-output-bytevector port
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
+These are basically the same as @code{open-input-uvector},
+@code{open-output-uvector} and @var{get-output-uvector}
+in @code{gauche.vport} (@pxref{Virtual ports}), except that
+R7RS procedures only deal with @code{<u8vector>}.
+@c JP
+これらは基本的に@code{gauche.vport}の
+@code{open-input-uvector}、
+@code{open-output-uvector}、@var{get-output-uvector}
+とそれぞれ同じです(@ref{Virtual ports}参照)。
+但しR7RS版は@code{<u8vector>}しか受け付けません。
+@c COMMON
 @end defun
 
 @defun read-u8 :optional iport
 @defunx peek-u8 :optional iport
 @defunx u8-ready? :optional iport
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 These are aliases to @code{read-byte}, @code{peek-byte} and @code{byte-ready?},
 respectively.
+@c JP
+それぞれ@code{read-byte}、@code{peek-byte}、@code{byte-ready?}と
+同じです。
+@c COMMON
 @end defun
 
 @defun read-bytevector size :optional iport
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 Equivalent to @code{(read-uvector <u8vector> size iport)}. 
+@c JP
+@code{(read-uvector <u8vector> size iport)}と等価です。
+@c COMMON
 @xref{Uvector block I/O}.
 @end defun
 
 @defun read-bytevector! bv :optional iport start end
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
+@c JP
+@code{read-uvector!}の別名です。@ref{Uvector block I/O}参照。
+@c COMMON
 @end defun
 
 @defun write-string string :optional oport start end
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
+If the optional @var{start} and @var{end} arguments are omitted,
+it is the same as @code{(display string oport)}.  The optional
+arguments restricts the range of @var{string} to be written.
+@c JP
+@var{start}と@var{end}引数が省略された場合は@code{(display string oport)}と
+同じです。それらが与えられた場合は、@var{string}中の指定範囲のみが出力されます。
+@c COMMON
 @end defun
 
 @defun write-u8
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 An alias to @code{write-byte}.
+@c JP
+@code{write-byte}の別名です。
+@c COMMON
 @end defun
 
 @defun write-bytevector bv :optional oport start end
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 Equivalent to @code{write-uvector}.  @xref{Uvector block I/O}.
+@c JP
+@code{write-uvector}と同じです。@ref{Uvector block I/O}参照。
+@c COMMON
 @end defun
 
 @defun flush-output-port :optional oport
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 An alias to @code{flush}.
+@c JP
+@code{flush}の別名です。
+@c COMMON
 @end defun
 
 @defun features
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
+@c EN
 Returns a list of symbols of supported feature identifiers,
 recognized by @code{cond-expand} (@pxref{Feature conditional}).
+@c JP
+サポートされている@code{feature-identifier}のリストを返します。
+@code{feature-identifier}については、@code{cond-expand}を参照してください
+(@ref{Feature conditional}参照)。
+@c COMMON
 @end defun
 
 
-@node R7RS case-lambda, R7RS char library, R7RS base library, Library modules - R7RS integration
-@section @code{scheme.case-lambda} - R7RS case-lambda
+@node R7RS case-lambda, R7RS char library, R7RS base library, R7RS small language
+@subsection @code{scheme.case-lambda} - R7RS case-lambda
 @c NODE R7RS case-lambda, @code{scheme.case-lambda} - R7RS case-lambda
 
 @deftp {Module} scheme.case-lambda
 @mdindex scheme.case-lambda
+@c EN
 Exports bindings of R7RS @code{(scheme case-lambda)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme case-lambda))}.
@@ -912,22 +1274,41 @@ those bindings are available by @code{(import (scheme case-lambda))}.
 The only binding exported from this module is @code{case-lambda},
 and it is the same as Gauche's built-in @code{case-lambda};
 @pxref{Making Procedures} for the details.
+@c JP
+R7RSの@code{(scheme case-lambda)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme case-lambda))}とすることで使えます。
+
+このモジュールからエクスポートされるのは@code{case-lambda}だけで、
+Gauche組み込みの@code{case-lambda}そのものです。
+詳しくは@ref{Making Procedures}を参照してください。
+@c COMMON
 @end deftp
 
 
-@node R7RS char library, R7RS complex numbers, R7RS case-lambda, Library modules - R7RS integration
-@section @code{scheme.char} - R7RS char library
+@node R7RS char library, R7RS complex numbers, R7RS case-lambda, R7RS small language
+@subsection @code{scheme.char} - R7RS char library
 @c NODE R7RS文字ライブラリ, @code{scheme.char} - R7RS文字ライブラリ
 
 @deftp {Module} scheme.char
 @mdindex scheme.char
+@c EN
 Exports bindings of R7RS @code{(scheme char)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme char))}.
+@c JP
+R7RSの@code{(scheme char)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme char))}とすることで使えます。
+@c COMMON
 @end deftp
 
+@c EN
 The following procedures are the same as Gauche's builtin procedures;
 @pxref{Characters}.
+@c JP
+以下の手続きはGaucheの組み込みのものと同じです。@ref{Characters}参照。
+@c COMMON
 
 @example
 char-alphabetic? char-ci<=? char-ci<?  char-ci=? char-ci>=? char-ci>?
@@ -935,10 +1316,16 @@ char-downcase char-foldcase char-lower-case? char-numeric?
 char-upcase char-upper-case?  char-whitespace?
 @end example
 
+@c EN
 The following procedures are the same as the ones provided
 in @code{gauche.unicode} module (@pxref{Full string case conversion}).
 They use full case folding by Unicode standard (e.g. taking into
 account of German eszett).
+@c JP
+以下の手続きは@code{gauche.unicode}で提供されているものと同じです
+(@ref{Full string case conversion}参照)。Unicodeで定義されている
+フルセットの大文字小文字変換を使います(例えばドイツ語のエスツェットが考慮されます)。
+@c COMMON
 
 @example
 string-ci<=? string-ci<?  string-ci=? string-ci>=?  string-ci>?
@@ -946,10 +1333,16 @@ string-downcase string-foldcase string-upcase
 @end example
 
 @defun digit-value c
-[R7RS]
+[R7RS char]
+@c MOD scheme.char
+@c EN
 If @var{c} is a character with @code{Nd} general category---that is,
 if it represents a decimal digit---this procedure returns the value
 the character represents.  Otherwise it returns @code{#f}.
+@c JP
+@var{c}が@code{Nd}カテゴリの文字、つまり十進数の数字を表す文字であれば、
+その文字が表す値を返します。それ以外の場合は@code{#f}を返します。
+@c COMMON
 
 @example
 (digit-value #\3) @result{} 3
@@ -957,32 +1350,52 @@ the character represents.  Otherwise it returns @code{#f}.
 (digit-value #\z) @result{} #f
 @end example
 
+@c EN
 Note that Unicode defines about two dozen sets of digit characters.
+@c JP
+Unicodeには20種類以上の数字が定義されています。
+@c COMMON
 
 @example
 (digit-value #\x11068) @result{} 2
 @end example
 
+@c EN
 Gauche's built-in procedure @code{digit->integer} has more general
 interface (@pxref{Characters}).
+@c JP
+Gauche組み込みの@code{digit->integer}はより汎用的なインタフェースを
+持っています(@ref{Characters}参照)。
+@c COMMON
 
 @example
 (digit-value c) @equiv{} (digit->integer c 10 #t)
 @end example
 @end defun
 
-@node R7RS complex numbers, R7RS cxr accessors, R7RS char library, Library modules - R7RS integration
-@section @code{scheme.complex} - R7RS complex numbers
+@node R7RS complex numbers, R7RS cxr accessors, R7RS char library, R7RS small language
+@subsection @code{scheme.complex} - R7RS complex numbers
 @c NODE R7RS複素数, @code{scheme.compex} - R7RS複素数
 
 @deftp {Module} scheme.complex
 @mdindex scheme.complex
+@c EN
 Exports bindings of R7RS @code{(scheme complex)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme complex))}.
+@c JP
+R7RSの@code{(scheme complex)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme complex))}とすることで使えます。
+@c COMMON
 
+@c EN
 This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{Numerical conversions}).
+@c JP
+このモジュールは以下の束縛を提供します。
+全てGaucheの組み込みです(@ref{Numerical conversions}参照)。
+@c COMMON
 
 @example
 angle imag-part magnitude make-polar make-rectangular real-part
@@ -990,18 +1403,29 @@ angle imag-part magnitude make-polar make-rectangular real-part
 @end deftp
 
 
-@node R7RS cxr accessors, R7RS eval, R7RS complex numbers, Library modules - R7RS integration
-@section @code{scheme.cxr} - R7RS cxr accessors
+@node R7RS cxr accessors, R7RS eval, R7RS complex numbers, R7RS small language
+@subsection @code{scheme.cxr} - R7RS cxr accessors
 @c NODE R7RS cxrアクセサ, @code{scheme.cxr} - R7RS cxrアクセサ
 
 @deftp {Module} scheme.cxr
 @mdindex scheme.cxr
+@c EN
 Exports bindings of R7RS @code{(scheme cxr)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme cxr))}.
+@c JP
+R7RSの@code{(scheme complex)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme complex))}とすることで使えます。
+@c COMMON
 
+@c EN
 This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{List accessors and modifiers}).
+@c JP
+このモジュールは以下の束縛を提供します。
+全てGaucheの組み込みです(@ref{List accessors and modifiers}参照)。
+@c COMMON
 
 @example
 caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar caaadr caadar
@@ -1010,33 +1434,62 @@ cddadr cdddar cddddr
 @end example
 @end deftp
 
-@node R7RS eval, R7RS file library, R7RS cxr accessors, Library modules - R7RS integration
-@section @code{scheme.eval} - R7RS eval
+@node R7RS eval, R7RS file library, R7RS cxr accessors, R7RS small language
+@subsection @code{scheme.eval} - R7RS eval
 @c NODE R7RS eval, @code{scheme.eval} - R7RS eval
 
 @deftp {Module} scheme.eval
 @mdindex scheme.eval
+@c EN
 Exports bindings of R7RS @code{(scheme eval)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme eval))}.
+@c JP
+R7RSの@code{(scheme eval)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme eval))}とすることで使えます。
+@c COMMON
 @end deftp
 
 @defun eval expr environment
-[R7RS]
+[R7RS eval]
+@c MOD scheme.eval
+@c EN
 This is the same as Gauche's built-in @code{eval} (@pxref{Eval and repl}).
+@c JP
+Gauche組み込みの@code{eval}と同じです (@ref{Eval and repl}参照)。
+@c COMMON
 @end defun
 
 @defun environment import-list @dots{}
-[R7RS]
+[R7RS eval]
+@c MOD scheme.eval
+@c EN
 This is R7RS way to create an environment specifier suitable to pass
 to @code{eval}.  In Gauche, an environment specifier is just a
 module object.
+@c JP
+これはR7RSで@code{eval}に渡せる環境指定子を作る手段です。Gaucheでは、
+環境指定子は単なるモジュールオブジェクトです。
+@c COMMON
 
-The argument is the same as what @code{import} takes.
+@c EN
+The argument is the same as what @code{r7rs#import} takes.
 This procedure creates an empty environment (as a fresh anonymous module;
-see @code{make-module} in @ref{Module introspection}, for the details).
+see @code{make-module} in @ref{Module introspection}, for the details),
+then imports the bindings as specified by @var{import-list}s.
+
 The following example creates an environment that includes
 @code{scheme.base} bindings plus @code{select-module} syntax from Gauche.
+@c JP
+引数は@code{r7rs#import}が取るものと同じです。
+この手続きはまず空の環境(=無名のモジュールです。
+詳しくは@ref{Module introspection}の@code{make-module}参照)を作り、
+それから@var{import-list}に指定される束縛をインポートします。
+
+以下の例は、@code{scheme.base}及びGauche組み込みの@code{select-module}を
+インポートした環境を作ります。
+@c COMMON
 
 @example
 (environment
@@ -1047,19 +1500,30 @@ The following example creates an environment that includes
 @end defun
 
 
-@node R7RS file library, R7RS inexact numbers, R7RS eval, Library modules - R7RS integration
-@section @code{scheme.file} - R7RS file library
+@node R7RS file library, R7RS inexact numbers, R7RS eval, R7RS small language
+@subsection @code{scheme.file} - R7RS file library
 @c NODE R7RSファイルライブラリ, @code{scheme.file} - R7RSファイルライブラリ
 
 @deftp {Module} scheme.file
 @mdindex scheme.file
+@c EN
 Exports bindings of R7RS @code{(scheme file)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme file))}.
+@c JP
+R7RSの@code{(scheme file)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme file))}とすることで使えます。
+@c COMMON
 @end deftp
 
+@c EN
 The following bindings provided in this module are
 Gauche built-in (@pxref{File ports}, and @ref{File stats}).
+@c JP
+次に挙げる束縛はGaucheの組み込みと同じです
+(@ref{File ports}及び@ref{File stats}参照)。
+@c COMMON
 
 @example
 call-with-input-file call-with-output-file
@@ -1068,82 +1532,145 @@ open-input-file open-output-file
 with-input-from-file with-output-to-file
 @end example
 
-@defun delete-file filename
-[R7RS]
-This is the same as @code{delete-file} in @code{file.util}.
-@end defun
+@c EN
+The following binding is the same as one in @code{file.util}
+(@pxref{File operations}).
+@c JP
+以下の束縛は@code{file.util}で提供されるものと同じです
+(@ref{File operations}参照)。
+@c COMMON
+
+@example
+delete-file
+@end example
 
 @defun open-binary-input-file filename
 @defunx open-binary-output-file filename
-[R7RS]
+[R7RS file]
+@c MOD scheme.file
+@c EN
 In Gauche, ports are both textual and binary at the same time,
 so these R7RS procedures
 are just aliases of @code{open-input-file} and @code{open-output-file},
 respectively.  @xref{File ports}.
+@c JP
+Gaucheでは、ポートは同時にテキストポートでもバイナリポートでもあるので、
+これらのR7RS手続きは単に
+@code{open-input-file}と@code{open-output-file}の別名になっています。
+@ref{File ports}参照。
+@c COMMON
 @end defun
 
-@node R7RS inexact numbers, R7RS lazy evaluation, R7RS file library, Library modules - R7RS integration
-@section @code{scheme.inexact} - R7RS inexact numbers
+@node R7RS inexact numbers, R7RS lazy evaluation, R7RS file library, R7RS small language
+@subsection @code{scheme.inexact} - R7RS inexact numbers
 @c NODE R7RS不正確数, @code{scheme.inexact} - R7RS不正確数
 
 @deftp {Module} scheme.inexact
 @mdindex scheme.inexact
+@c EN
 Exports bindings of R7RS @code{(scheme inexact)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme inexact))}.
+@c JP
+R7RSの@code{(scheme inexact)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme inexact))}とすることで使えます。
+@c COMMON
 
+@c EN
 This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{Arithmetics}, and @ref{Numerical predicates}).
+@c JP
+このモジュールは以下の束縛を提供します。全てGaucheの組み込みです
+(@ref{Arithmetics}及び@ref{Numerical predicates}参照)。
+@c COMMON
 
 @example
 acos asin atan cos exp finite? infinite? log nan? sin sqrt tan
 @end example
 @end deftp
 
-@node R7RS lazy evaluation, R7RS load, R7RS inexact numbers, Library modules - R7RS integration
-@section @code{scheme.lazy} - R7RS lazy evaluation
+@node R7RS lazy evaluation, R7RS load, R7RS inexact numbers, R7RS small language
+@subsection @code{scheme.lazy} - R7RS lazy evaluation
 @c NODE R7RS遅延評価, @code{scheme.lazy} - R7RS遅延評価
 
 @deftp {Module} scheme.lazy
 @mdindex scheme.lazy
+@c EN
 Exports bindings of R7RS @code{(scheme lazy)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme lazy))}.
+@c JP
+R7RSの@code{(scheme inexact)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme inexact))}とすることで使えます。
+@c COMMON
 @end deftp
 
+@c EN
 The following bindings this module provides are Gauche built-ins
 (@pxref{Delay force and lazy}).
+@c JP
+以下の束縛は、Gauche組み込みです
+(@ref{Delay force and lazy}参照)。
+@c COMMON
 
 @example
 delay force promise?
 @end example
 
 @defspec delay-force promise
-[R7RS]
-This is the same as @code{lazy}.
+[R7RS lazy]
+@c MOD scheme.lazy
+@c EN
+This is the same as Gauche's built-in @code{lazy}.
 @pxref{Delay force and lazy} for the discussion about when this
 form should be used.
+@c JP
+これはGauche組み込みの@code{lazy}と同じです。
+使い方については@ref{Delay force and lazy}の議論を参照してください。
+@c COMMON
 @end defspec
 
 @defun make-promise obj
-[R7RS]
+[R7RS lazy]
+@c MOD scheme.lazy
+@c EN
 If @var{obj} is a promise, it is returned as is.  Otherwise,
 A promise, which yields @var{obj} when forced, is returned.
 Because this is a procedure, expression passed as @var{obj} is
 eagerly evaluated, so this doesn't have effect on lazy evaluation,
 but can be used to ensure you have a promise.
+@c JP
+@var{obj}がプロミスならそのまま返されます。そうでなければ、
+forceされた時に@var{obj}が返されるようなプロミスが返されます。
+これは手続きなので、@var{obj}は@code{make-promise}を呼び出す前に
+評価されてしまいます。従って遅延評価には使えませんが、
+確実にプロミスを得たい場合に使えます。
+@c COMMON
 
+@c EN
 This procedure is important on implementations where
 @code{force} only takes a promise, and portable code should
 use this procedure to yield a value that can be passed to @code{force}.
+@c JP
+@code{force}がプロミスのみを取るような実装ではこの手続きは重要です。
+ポータブルなコードは、@code{force}に渡すものがプロミスであることを
+確実にしたい場所でこの手続きを使うようにしてください。
+@c COMMON
 
+@c EN
 If you write Gauche-specific code, however, @code{force} can take
 non-promise values, so you don't need this.
+@c JP
+Gaucheの@code{force}はプロミスでない値も取れるので、
+Gauche専用のコードを書いている時はこの手続きは不要です。
+@c COMMON
 @end defun
 
 
-@node R7RS load, R7RS process context, R7RS lazy evaluation, Library modules - R7RS integration
-@section @code{scheme.load} - R7RS load
+@node R7RS load, R7RS process context, R7RS lazy evaluation, R7RS small language
+@subsection @code{scheme.load} - R7RS load
 @c NODE R7RS load, @code{scheme.load} - R7RS load
 
 @deftp {Module} scheme.load
@@ -1154,7 +1681,9 @@ those bindings are available by @code{(import (scheme load))}.
 @end deftp
 
 @defun load file :optional env
-[R7RS]
+[R7RS load]
+@c MOD scheme.load
+@c EN
 R7RS @code{load} takes environment as an optional argument,
 while Gauche @code{load} takes it as a keyword argument
 (among other keyword arguments).  @xref{Loading Scheme file}.
@@ -1162,11 +1691,20 @@ while Gauche @code{load} takes it as a keyword argument
 In Gauche, @var{env} is just a module.  In portable code,
 you can create a module with desired bindings with R7RS @code{environment}
 procedure; @pxref{R7RS eval}.
+@c JP
+R7RSの@code{load}は省略可能引数として環境を取ります。
+Gaucheの@code{load}では環境はキーワード引数で受け取られることに注意してください。
+@ref{Loading Scheme file}参照。
+
+また、Gaucheでは環境は単にモジュールで良いのですが、
+ポータブルなコードではR7RSの@code{environment}手続きを使って
+環境を作る必要があります。@ref{R7RS eval}参照。
+@c COMMON
 @end defun
 
 
-@node R7RS process context, R7RS read, R7RS load, Library modules - R7RS integration
-@section @code{scheme.process-context} - R7RS process context
+@node R7RS process context, R7RS read, R7RS load, R7RS small language
+@subsection @code{scheme.process-context} - R7RS process context
 @c NODE R7RSプロセスコンテキスト, @code{scheme.process-context} - R7RSプロセスコンテキスト
 
 @deftp {Module} scheme.process-context
@@ -1191,7 +1729,8 @@ get-environment-variable get-environment-variables
 @end example
 
 @defun emergency-exit :optional (obj 0)
-[R7RS]
+[R7RS process-context]
+@c MOD scheme.process-context
 Terminate the program without running any clean-up procedures
 (@var{after} thunks of @code{dynamic-wind}).  Internally, 
 it calls the @code{_exit(2)} system call directly.
@@ -1202,8 +1741,8 @@ as Gauche's @code{sys-exit}, except that @code{sys-exit} requires
 the exit code object (@pxref{Program termination}).
 @end defun
 
-@node R7RS read, R7RS repl, R7RS process context, Library modules - R7RS integration
-@section @code{scheme.read} - R7RS read
+@node R7RS read, R7RS repl, R7RS process context, R7RS small language
+@subsection @code{scheme.read} - R7RS read
 @c NODE R7RS read, @code{scheme.read} - R7RS read
 
 @deftp {Module} scheme.read
@@ -1216,8 +1755,8 @@ The only binding exported from this module is @code{read},
 which is the same as Gauche's built-in.  @xref{Reading data}.
 @end deftp
 
-@node R7RS repl, R7RS time, R7RS read, Library modules - R7RS integration
-@section @code{scheme.repl} - R7RS repl
+@node R7RS repl, R7RS time, R7RS read, R7RS small language
+@subsection @code{scheme.repl} - R7RS repl
 @c NODE R7RS repl, @code{scheme.repl} - R7RS repl
 
 @deftp {Module} scheme.repl
@@ -1231,8 +1770,8 @@ which is the same as Gauche's built-in.  @xref{Eval and repl}.
 @end deftp
 
 
-@node R7RS time, R7RS write, R7RS repl, Library modules - R7RS integration
-@section @code{scheme.time} - R7RS time
+@node R7RS time, R7RS write, R7RS repl, R7RS small language
+@subsection @code{scheme.time} - R7RS time
 @c NODE R7RS time, @code{scheme.time} - R7RS time
 
 @deftp {Module} scheme.time
@@ -1243,7 +1782,8 @@ those bindings are available by @code{(import (scheme time))}.
 @end deftp
 
 @defun current-second
-[R7RS]
+[R7RS time]
+@c MOD scheme.time
 Returns a real number represents the number of seconds since
 the midnight of Jan. 1, 1970 TAI (which is 23:59:52, Dec 31, 1969 UTC, that
 is, -8 seconds before Unix Epoch.)  Number of leap seconds were
@@ -1271,7 +1811,8 @@ between TAI and UTC using srfi-19 (@pxref{SRFI-19 Date}).
 @end defun
 
 @defun current-jiffy
-[R7RS]
+[R7RS time]
+@c MOD scheme.time
 Returns an exact integer measuring a real (wallclock) time elapsed
 since some point in the past, which does not change while a
 process is running.  The time unit is @code{(/ jiffies-per-second)}-th
@@ -1301,8 +1842,8 @@ you need to roll your own with @code{sys-clock-gettime-monotonic} or
 @end defun
 
 
-@node R7RS write, R5RS compatibility, R7RS time, Library modules - R7RS integration
-@section @code{scheme.write} - R7RS write
+@node R7RS write, R5RS compatibility, R7RS time, R7RS small language
+@subsection @code{scheme.write} - R7RS write
 @c NODE R7RS write, @code{scheme.write} - R7RS write
 
 @deftp {Module} scheme.write
@@ -1319,8 +1860,8 @@ display write write-shared write-simple
 @end example
 @end deftp
 
-@node R5RS compatibility,  , R7RS write, Library modules - R7RS integration
-@section @code{scheme.r5rs} - R5RS compatibility
+@node R5RS compatibility,  , R7RS write, R7RS small language
+@subsection @code{scheme.r5rs} - R5RS compatibility
 @c NODE R5RS compatibility, @code{scheme.r5rs} - R5RS互換性
 
 @deftp {Module} scheme.r5rs
@@ -1365,6 +1906,3512 @@ with-input-from-file with-output-to-file write write-char zero?
 @end example
 @end deftp
 
+@node R7RS large,  , R7RS small language, Library modules - R7RS standard libraries
+@section R7RS large
+@c NODE R7RS large
+
+R7RS large is still under development, and we're gradually
+adding support of the libraries that has been passed.
+
+@menu
+* R7RS lists::                  @code{scheme.list}
+* R7RS vectors::                @code{scheme.vector}
+* R7RS sort::                   @code{scheme.sort}
+* R7RS sets::                   @code{scheme.set}
+* R7RS character sets::         @code{scheme.charset}
+* R7RS immutable deques::       @code{scheme.ideque}
+* R7RS generators::             @code{scheme.generator}
+* R7RS lazy sequences::         @code{scheme.lseq}
+* R7RS boxes::                  @code{scheme.box}
+* R7RS list queues::            @code{scheme.list-queue}
+* R7RS comparators::            @code{scheme.comparator}
+@end menu
+
+@node R7RS lists, R7RS vectors, R7RS large, R7RS large
+@subsection @code{scheme.list} - R7RS lists
+@c NODE R7RSリスト, @code{scheme.list} - R7RSリスト
+
+@deftp {Module} scheme.list
+@mdindex scheme.list
+@c EN
+This module is a rich collection of list manipulation procedures,
+and same as @code{srfi-1}.
+
+Note that Gauche supports quite a few @code{scheme.list}
+procedures as built-in.
+The following procedures can be used
+without loading @code{scheme.list} module.  For the manual entries of
+these procedures, @ref{Pairs and Lists}.
+@c JP
+このモジュールは、豊富なリスト操作手続きのコレクションです (srfi-1と同じです)。
+
+Gaucheは@code{scheme.list}の手続きの多くを組み込みで提供しています。
+以下に挙げる手続きは@code{scheme.list}モジュールをロードしなくても使えます。
+これらの手続きの説明は、@ref{Pairs and Lists}を参照してください。
+@c COMMON
+
+@example
+null-list? cons* last member
+take drop take-right drop-right take! drop-right!
+delete delete! delete-duplicates delete-duplicates!
+assoc alist-copy alist-delete alist-delete!
+any every filter filter! fold fold-right find find-tail
+split-at split-at! iota
+@end example
+@end deftp
+
+@subsubheading List constructors
+
+@defun xcons cd ca
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Equivalent to @code{(cons ca cd)}.  Useful to pass to
+higher-order procedures.
+@c JP
+@code{(cons ca cd)} と同等です。高階手続きへ渡すのに便利です。
+@c COMMON
+@end defun
+
+@defun list-tabulate n init-proc
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Constructs an @var{n}-element list, in which
+each element is generated by @code{(@var{init-proc} @i{i})}.
+@c JP
+@var{n}個の要素をもつリストを構築し、それぞれの要素を
+@code{(@var{init-proc} @i{i})} で生成します。
+@c COMMON
+@example
+(list-tabulate 4 values) @result{} (0 1 2 3)
+@end example
+@end defun
+
+@defun circular-list elt1 elt2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Constructs a circular list of the elements.
+@c JP
+指定した要素をもつ循環リストを構築します。
+@c COMMON
+@example
+(circular-list 'z 'q) @result{} (z q z q z q @dots{})
+@end example
+@end defun
+
+@subsubheading List predicates
+
+@defun not-pair? x
+[R7RS list]
+@c MOD scheme.list
+@c EN
+@code{(lambda (x) (not (pair? x)))}.
+
+SRFI-1 says: Provided as a procedure as it can be useful as
+the termination condition for list-processing procedures that wish to
+handle all finite lists, both proper and dotted.
+@c JP
+@code{(lambda (x) (not (pair? x)))}と同じです。
+
+SRFI-1 では、「真性リストおよびドットリストの両方で、すべての有限リストを
+扱う手続き用の終端条件として便利なように用意した」とあります。
+@c COMMON
+@end defun
+
+@defun list= elt= list @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Determines list equality by comparing every n-th element
+of given lists by the procedure @var{elt=}.
+
+It is an error to apply @code{list=} to anything except proper lists.
+
+The equality procedure must be consistent with @code{eq?}, i.e.
+@c JP
+@var{elt=} を用いて、n番目の要素をそれぞれ比較することで、
+与えられたリストの同値性を決定します。
+
+@code{list=} を真性リスト以外に適用するとエラーになります。
+
+同値性判定の手続きは @code{eq?} と整合性がなければなりません。すなわち
+@c COMMON
+
+@example
+(eq? x y) @result{} (elt= x y).
+@end example
+@end defun
+
+@subsubheading List selectors
+
+@defun  first pair
+@defunx second pair
+@defunx third pair
+@defunx fourth pair
+@defunx fifth pair
+@defunx sixth pair
+@defunx seventh pair
+@defunx eighth pair
+@defunx ninth pair
+@defunx tenth pair
+[SRFI-1]
+@c MOD srfi-1
+@c EN
+Returns n-th element of the (maybe improper) list.
+@c JP
+リスト(非真性でも可)のn番目の要素を返します。
+@c COMMON
+@end defun
+
+@defun car+cdr pair
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns two values, @code{(car pair)} and @code{(cdr pair)}.
+@c JP
+@code{(car pair)} および @code{(cdr pair)} の二つの値を返します。
+@c COMMON
+@end defun
+
+@subsubheading List miscellaneous routines
+
+@defun zip clist1 clist2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Equivalent to @code{(map list clist1 clist2 @dots{})}.
+If @code{zip} is passed @var{n} lists, it returns a list as long as
+the shortest of these lists, each element of which is an @var{n}-element list
+comprised of the corresponding elements from the parameter lists.
+@c JP
+@code{(map list clist1 clist2 @dots{})} と同等です。
+@var{n} 本のリストが @code{zip} に渡された場合には、そのなかで一番短いものと
+同じ長さのリストを返します。返されたリストは、要素が @var{n} 要素のリストで、
+そのそれぞれが、引数として渡ってリストの対応する要素になっています。
+@c COMMON
+
+@example
+(zip '(one two three)
+     '(1 2 3)
+     '(odd even odd even odd even odd even))
+     @result{} ((one 1 odd) (two 2 even) (three 3 odd))
+
+(zip '(1 2 3)) @result{} ((1) (2) (3))
+@end example
+
+@c EN
+At least one of the argument lists must be finite:
+@c JP
+引数のリストのうち、少くともひとつは有限のリストでなければなりません。
+@c COMMON
+
+@example
+(zip '(3 1 4 1) (circular-list #f #t))
+     @result{} ((3 #f) (1 #t) (4 #f) (1 #t))
+@end example
+@end defun
+
+@defun unzip1 list
+@defunx unzip2 list
+@defunx unzip3 list
+@defunx unzip4 list
+@defunx unzip5 list
+[R7RS list]
+@c MOD scheme.list
+@c EN
+@code{unzip1} takes a list of lists, where every list must
+contain at least one element, and returns a list containing the
+initial element of each such list.
+@code{unzip2} takes a list of lists, where every list
+must contain at least two elements, and returns two values:
+a list of the first elements, and a list of the second
+elements. @code{unzip3} does the same for the first
+three elements of the lists, and so on.
+@c JP
+@code{unzip1} はリストのリストを引数としてとります。それぞれの
+リストは少くとも一つの要素を含むものでなくてはなりません。結果として
+それぞれのリストの最初の要素のリストを返します。
+@code{unzip2} はリストのリストを引数としてとります。それぞれのリストは
+少くとも二つの要素を含むものでなくてはなりません。結果として二つの値を
+返します。最初の要素のリストと二番目の要素のリストです。@code{unzip3} は
+3番目までの要素について同様です。以下も同様です。
+@c COMMON
+
+@example
+(unzip2 '((1 one) (2 two) (3 three))) @result{}
+   (1 2 3) @r{and}
+   (one two three)
+@end example
+@end defun
+
+@subsubheading List fold, unfold & map
+
+@defun pair-fold kons knil clist1 clist2 @dots{}
+@defunx pair-fold-right kons knil clist1 clist2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Like @code{fold} and @code{fold-right}, but the procedure @var{kons}
+gets each @code{cdr} of the given @var{clist}s, instead of @code{car}.
+@c JP
+@code{fold} および @code{fold-right} と同様ですが、@var{kons} 手続き
+は与えられた @var{clist} の @code{car} ではなく、@code{cdr} をとります。
+@c COMMON
+
+@example
+(pair-fold cons '() '(a b c d e))
+  @result{} ((e) (d e) (c d e) (b c d e) (a b c d e))
+
+(pair-fold-right cons '() '(a b c d e))
+  @result{} ((a b c d e) (b c d e) (c d e) (d e) (e))
+@end example
+@end defun
+
+@defun unfold p f g seed :optional tail-gen
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Fundamental recursive list constructor.
+Defined by the following recursion.
+@c JP
+基本リスト再帰構築子です。
+以下のように再帰的に定義されています。
+@c COMMON
+
+@example
+(unfold p f g seed tail-gen) @equiv{}
+   (if (p seed)
+       (tail-gen seed)
+       (cons (f seed)
+             (unfold p f g (g seed))))
+@end example
+
+@c EN
+That is, @var{p} determines where to stop, @var{g} is used to generate
+successive seed value from the current seed value, and @var{f} is used
+to map each seed value to a list element.
+@c JP
+ここでは、@var{p} は終了位置の判定、@var{g} は現在の「種」から次の「種」
+を生成するのに用い、@var{f} はそれぞれの「種」をリストの要素に変換する
+のに用いられます。
+@c COMMON
+
+@example
+(unfold (pa$ = 53) integer->char (pa$ + 1) 48)
+  @result{} (#\0 #\1 #\2 #\3 #\4)
+@end example
+@end defun
+
+@defun unfold-right p f g seed :optional tail
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Fundamental iterative list constructor.
+Defined by the following recursion.
+@c JP
+基本リスト反復構築子です。
+以下のように再帰的に定義されています。
+@c COMMON
+
+@example
+(unfold-right p f g seed tail) @equiv{}
+  (let lp ((seed seed) (lis tail))
+    (if (p seed)
+        lis
+        (lp (g seed) (cons (f seed) lis))))
+@end example
+
+@example
+(unfold-right (pa$ = 53) integer->char (pa$ + 1) 48)
+ @result{} (#\4 #\3 #\2 #\1 #\0)
+@end example
+@end defun
+
+@defun map! f clist1 clist2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+The procedure @var{f} is applied to each element of @var{clist1} and
+corresponding elements of @var{clist2}s, and the result is collected
+to a list.  Cells in @var{clist1} is reused to construct the result list.
+@c JP
+手続き @var{f} は @var{clist1} の各要素と @var{clist2} の対応する要素
+に適用され、結果はひとつのリストになります。@var{clist1} のセルは
+結果のリストを構築するのに再利用されます。
+@c COMMON
+@end defun
+
+@defun map-in-order f clist1 clist2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+A variant of @code{map}, but it guarantees to apply @var{f}
+on each elements of arguments in a left-to-right order.
+Since Gauche's @code{map} implementation follows the same order,
+this function is just a synonym of @code{map}.
+@c JP
+@code{map} の変形バージョンですが、@var{f} の適用順序が、引数として
+与えられたリストの要素の左から右への順であることを保証します。
+Gauche では @code{map} の実装はこの順になっているので、@code{map} と
+同意です。
+@c COMMON
+@end defun
+
+@defun pair-for-each f clist1 clist2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Like @code{for-each}, but the procedure @var{f} is applied on
+@var{clist}s themselves first, then each @code{cdr}s of them, and so on.
+@c JP
+@code{for-each} と似ていますが、手続き @var{f} はまず @var{clist}自体に
+適用され、次ににそれらの@code{cdr} に適用され、となります。
+@c COMMON
+
+@example
+(pair-for-each write '(a b c))
+ @result{} @r{prints} (a b c)(b c)(c)
+@end example
+@end defun
+
+@subsubheading List partitioning
+
+@defun partition pred list
+@defunx partition! pred list
+[R7RS list]
+@c MOD scheme.list
+@c EN
+@code{filter} and @code{remove} simultaneously, i.e.
+returns two lists, the first is the result of filtering elements of
+@var{list} by @var{pred}, and the second is the result of
+removing elements of @var{list} by @var{pred}.
+@c JP
+@code{filter} と @code{remove} を同時に行い、
+2つのリストを返します。一つ目は @var{pred} により @var{list} の要素をフィルタリング
+した結果で、二つ目は @var{pred} により @var{list} の要素を削除した結果です。
+@c COMMON
+@example
+(partition odd? '(3 1 4 5 9 2 6))
+  @result{} (3 1 5 9) (4 2 6)
+@end example
+@c EN
+@code{partition!} is the linear-update variant.  It may destructively
+modifies @var{list} to produce the result.
+@c JP
+@code{partition!} はその場で更新されるバージョンです。結果を生成するために
+@var{list} を破壊的に更新するかもしれません。
+@c COMMON
+@end defun
+
+@subsubheading List searching
+
+@defun take-while pred clist
+@defunx take-while! pred list
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns the longest initial prefix of @var{clist} whose elements all
+satisfy @var{pred}.
+@c JP
+@var{clist} の最初から、@var{pred} を満足する限りの最長部分要素を返します。
+@c COMMON
+@end defun
+
+@defun drop-while pred clist
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Drops the longest initial prefix of @var{clist} whose elements all
+satisfy @var{pred}, and returns the rest.
+@c JP
+@var{clist} の最初から、@var{pred} を満足する限りの最長部分要素を削除し、
+残りを返します。
+@c COMMON
+@end defun
+
+@defun span pred clist
+@defunx span! pred list
+@defunx break pred clist
+@defunx break! pred list
+[R7RS list]
+@c MOD scheme.list
+@c EN
+@code{span} is equivalent to
+@code{(values (take-while pred clist) (drop-while pred clist))}.
+@code{break} inverts the sense of @var{pred}.
+@c JP
+@code{span} は @code{(values (take-while pred clist) (drop-while pred clist))}
+と等価です。@code{break} は @var{pred} の意味を反転します。
+@c COMMON
+@end defun
+
+@defun list-index pred clist1 clist2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns the index of the leftmost element that satisfies @var{pred}.
+If no element satisfies @var{pred}, @code{#f} is returned.
+@c JP
+@var{pred} を満足する最も左の要素のインデックスを返します。
+@var{pred}を満たす要素が無い場合は@code{#f}を返します。
+@c COMMON
+@end defun
+
+@subsubheading Association lists
+
+@defun alist-cons key datum alist
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns @code{(cons (cons @var{key} @var{datum}) @var{alist})}.
+This is an alias of the Gauche builtin procedure @code{acons}.
+@c JP
+@code{(cons (cons @var{key} @var{datum}) @var{alist})} を返します。
+これは、Gauche の組み込み手続き @code{acons} の別名です。
+@c COMMON
+@end defun
+
+@subsubheading Lists as sets
+
+@c EN
+These procedures use a list as a set, that is,
+the elements in a list matter, but their order doesn't.
+
+All procedures in this category takes a comparison procedure
+@var{elt=}, as the first argument, which is used to determine
+two elements in the given sets are the same.
+
+Since lists require linear time to search, those procedures aren't
+suitable to deal with large sets.  @xref{R7RS sets}, if you
+know your sets will contain more than a dozen items or so.
+
+See also @ref{Combination library}, which
+concerns combinations of elements in the set.
+@c JP
+これらの手続きはリストを集合としてあつかいます。すなわち、どのような
+要素があるかは重要ですが、その順序は重要ではありません。
+
+この範疇にあるすべての手続きは、比較手続き @var{elt=} を最初の引数として
+とります。この比較手続きは与えられた二つの集合の要素が等しいかどうかを
+判定します。
+
+リストは検索に線形時間を必要とするため、ここに挙げた手続きは
+大きな集合を扱うには向いていません。もし対象となる集合が
+二桁以上の要素を持つことが分かっているなら、@ref{R7RS sets}を
+参照してください。
+
+集合の要素の組み合せについては @ref{Combination library}
+も参照してください。
+@c COMMON
+
+@defun lset<= elt= list1 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns @code{#t} iff all elements in @var{list1} are also included
+in @var{list2}, and so on.
+If no lists are given, or a single list is given,
+@code{#t} is returned.
+@c JP
+@var{list1} のすべての要素が @var{list2} (以降の集合)に含まれている
+ときに限り @code{#t} を返します。リストが与えられなかった場合
+および一つだけしか与えられなかった場合には、@code{#t} を返します。
+@c COMMON
+@end defun
+
+@defun lset= elt= list1 list2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns @code{#t} if all elements in @var{list1} are in @var{list2},
+and all elements in @var{list2} are in @var{list1}, and so on.
+@c JP
+@var{list1} のすべての要素が @var{list2} に含まれており、かつ、
+@var{list2} のすべての要素が @var{list1} に含まれていれば、@code{#t}
+を返します。
+@c COMMON
+
+@example
+(lset= eq? '(b e a) '(a e b) '(e e b a)) @result{} #t
+@end example
+@end defun
+
+@defun lset-adjoin elt= list elt @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Adds @var{elt} @dots{} to the set @var{list}, if each one is not
+already a member of @var{list}.  (The order doesn't matter).
+@c JP
+@var{elt} @dots{} を集合 @var{list} にまだなければ、追加します。
+(順序はとくに決っていません。)
+@c COMMON
+
+@example
+(lset-adjoin eq? '(a b c) 'a 'e) @result{} '(e a b c)
+@end example
+@end defun
+
+@defun lset-union elt= list1 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns the union of the sets @var{list1} @dots{}.
+@c JP
+@var{list1} @dots{} の和集合を返します。
+@c COMMON
+@end defun
+
+@defun lset-intersection elt= list1 list2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns a set of elements that are in every @var{list}s.
+@c JP
+すべての @var{list} に含まれる要素の集合を返します。
+@c COMMON
+@end defun
+
+@defun lset-difference elt= list1 list2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns a set of elements that are in @var{list1} but not
+in @var{list2}.  In n-ary case, binary differece operation is
+simply folded.
+@c JP
+@var{list1} には含まれていて、@var{list2} には含まれていない要素の集合を
+返します。引数が n 個与えられた場合には、差分をとる二項演算が
+畳み込まれます。
+@c COMMON
+@end defun
+
+@defun lset-xor elt= list1 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns the exclusive-or of given sets; that is, the returned
+set consists of the elements that are in either @var{list1} or @var{list2},
+but not in both.   In n-ary case, binary xor operation is simply folded.
+@c JP
+与えられた集合の排他的論理和を返します。すなわち、@var{list1} および
+@var{list2} のどちらか一方にのみ属する要素からなる集合を返します。
+引数が n 個の場合には、xor の二項演算が畳み込まれます。
+@c COMMON
+@end defun
+
+@defun lset-diff+intersection elt= list1 list2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Returns two sets, a difference and an intersection of given sets.
+@c JP
+与えられた集合の差集合と積集合のふたつの集合を返します。
+@c COMMON
+@end defun
+
+@defun lset-union! elt= list @dots{}
+@defunx lset-intersection! elt= list1 list2 @dots{}
+@defunx lset-difference! elt= list1 list2 @dots{}
+@defunx lset-xor! elt= list1 @dots{}
+@defunx lset-diff+intersection! elt= list1 list2 @dots{}
+[R7RS list]
+@c MOD scheme.list
+@c EN
+Linear update variant of the corresponding procedures.
+The cells in the first list argument may be reused to construct the result.
+@c JP
+それぞれ対応する手続きのその場で更新するバージョンです。
+最初の引数のリストのセルが結果を構築するのに再利用されるかもしれません。
+@c COMMON
+@end defun
+
+@node R7RS vectors, R7RS sort, R7RS lists, R7RS large
+@subsection @code{scheme.vector} - R7RS vectors
+@c NODE R7RSベクタ, @code{scheme.vector} - R7RSベクタ
+
+@deftp {Module} scheme.vector
+@mdindex scheme.vector
+This module adds rich set of vector operations to the built-in / R7RS
+vector procedures.
+
+The following procedures are built-in.
+@xref{Vectors}, for the description.  We only explain
+the procedures that are not built-in.
+
+@example
+make-vector          vector               vector?
+vector-ref           vector-set!          vector-length
+vector-fill!         vector-copy          vector-copy!
+vector-append        vector->list         list->vector
+reverse-list->vector vector->string       string->vector
+vector-map           vector-map!          vector-for-each
+@end example
+
+This module is @code{srfi-133}, which supersedes @code{srfi-43}
+(@pxref{Vector library (Legacy)}).
+Note that the interface of following procedures in @code{srfi-43}
+are changed for the consistency:
+
+@example
+vector-map           vector-map!          vector-for-each
+vector-fold          vector-fold-right    vector-count
+@end example
+
+Some of the functionalities
+of @code{srfi-43} version is supported by built-in procedures
+(e.g. Built-in @code{vector-map-with-index} is the same as
+@code{srfi-43}'s @code{vector-map}).  So there's little point
+for new code to use @code{srfi-43}.
+@end deftp
+
+@c EN
+@subheading Vector constructors
+@c JP
+@subheading ベクタ構成子
+@c COMMON
+
+@defun vector-unfold f length seed @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+Creates a vector of length @var{length}, filling elements
+left to right by calling @var{f} repeatedly.  
+
+The procedure @var{f} must take as many arguments as
+one plus number of seed values, and must return the same number
+of values.  The first argument is the index.  The first return
+value is used for the element of the result vector, and the
+rest of return values are passed to the next call of @var{f}.
+
+@example
+(vector-unfold (^[i] (* i i)) 5)
+ @result{} #(0 1 4 9 16)
+
+(vector-unfold (^[i x] (values (cons i x) (* x 2))) 8 1)
+ @result{} #((0 . 1) (1 . 2) (2 . 4) (3 . 8)
+    (4 . 16) (5 . 32) (6 . 64) (7 . 128))
+@end example
+@end defun
+
+@defun vector-unfold-right f length seed @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+Creates a vector of length @var{length}, filling elements
+right to left by calling @var{f} repeatedly.  
+
+The procedure @var{f} must take as many arguments as
+one plus number of seed values, and must return the same number
+of values.  The first argument is the index.  The first return
+value is used for the element of the result vector, and the
+rest of return values are passed to the next call of @var{f}.
+
+@example
+(vector-unfold-right (^[i] (* i i)) 5)
+ @result{} #(0 1 4 9 16)
+
+(vector-unfold-right (^[i x] (values (cons i x) (* x 2))) 8 1)
+ @result{} #((0 . 128) (1 . 64) (2 . 32) (3 . 16)
+    (4 . 8) (5 . 4) (6 . 2) (7 . 1))
+@end example
+@end defun
+
+@defun vector-reverse-copy vec :optional start end
+[R7RS vector]
+@c MOD scheme.vector
+Copies the vector @var{vec} with reversing its elements.
+Optional @var{start} and @var{end} arguments can limit
+the range of the input.
+
+@example
+(vector-reverse-copy '#(a b c d e) 1 4)
+ @result{} #(d c b)
+@end example
+@end defun
+
+@defun vector-concatenate list-of-vectors
+[R7RS vector]
+@c MOD scheme.vector
+Same as @code{(apply vector-append list-of-vectors)}.
+@end defun
+
+@defun vector-append-subvectors spec @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+The number of arguments must be multiple of 3.  The argument list
+must be in the following format, where each @var{vecN} is
+a vector, and @code{startN} and @code{endN} are nonnegative integers:
+
+@example
+vec1 start1 end1 vec2 start2 end2 @dots{}
+@end example
+
+This procedure creates a new vector by concatenating subvectors
+specified by each triplet.  That is, it works as if it's the following
+code, except it avoids copying each subvector:
+
+@example
+(vector-append (vector-copy vec1 start1 end1)
+               (vector-copy vec2 start2 end2)
+               @dots{})
+@end example
+
+Here's an example:
+
+@example
+(vector-append-subvectors '#(a b c d e) 0 3
+                          '#(f g h i j) 2 5)
+  @result{} #(a b c h i j)
+@end example
+@end defun
+
+
+@c EN
+@subheading Vector predicates
+@c JP
+@subheading ベクタ上の述語
+@c COMMON
+
+@defun vector-empty? vec
+[R7RS vector]
+@c MOD scheme.vector
+Returns @code{#t} if @var{vec}'s length is zero, and
+@code{#f} if @var{vec}'s length is more than zero.
+Signals an error if @var{vec} is not a vector.
+@end defun
+
+@defun vector= elt= vec @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+Compares @var{vec}s element-wise, using given predicate @var{elt=}.
+Returns @code{#t} iff lengths of all the vectors are the same,
+and every corresponding elements are equal by @var{elt=}.
+@var{Elt=} is always called with two arguments and must
+return @code{#t} iff two are the same.
+@end defun
+
+@c EN
+@subheading Vector iteration
+@c JP
+@subheading ベクタ上の繰り返し
+@c COMMON
+
+@defun vector-fold kons knil vec1 vec2 @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+@var{Kons} is a procedure that takes @var{n}+1 arguments, where
+@var{n} is the number of given vectors.  For each element of the
+given vectors, @var{kons} is called as
+@code{(@var{kons} @var{seed} @var{e_1i} @var{e_2i} @dots{})},
+where and @var{e_ni} is the @var{i}-th element
+of the vector @var{n}.  If the lengths of the vectors differ,
+iteration stops when the shortest vector is exhausted.
+
+The initial value of @var{seed} is @var{knil}, and the return value
+from @var{kons} is used as the next seed value.  The last return value
+of @var{kons} is returned from @code{vector-fold}.
+
+The iteration is strictly left to right.
+
+Note that the seed value precedes elements, which is opposite to
+@code{fold} (@pxref{Mapping over collection}).  It's an unfortunate
+historical glitch; @code{vector-fold-left} would be more consistent
+name.
+
+@example
+(vector-fold (^[a b] (cons b a)) '() '#(a b c d))
+  @result{} (d c b a)
+@end example
+@end defun
+
+@defun vector-fold-right kons knil vec1 vec2 @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+Like @code{vector-fold}, but elements in the @var{vec1} @var{vec2} @dots{}
+are visited from right to left.
+
+Unlike @code{fold-right} (@pxref{Mapping over sequences}),
+the procedure @var{kons} takes the accumulated value in the
+first argument.
+
+@example
+(vector-fold-right (^[a b] (cons b a)) '() '#(a b c d))
+  @result{} (a b c d)
+@end example
+@end defun
+
+@defun vector-count pred vec1 vec2 @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+Applies @var{pred} on each elements in argument vectors (if N vectors
+are given, @var{pred} takes N arguments, the first being
+@var{i}-th element of @var{vec1}, the second being @var{i}-th element
+of @var{vec2}, etc.)  Then returns the number of times
+@var{pred} returned true value.   The order @var{pred} applied
+to each element is unspecified.
+
+@example
+(vector-count odd? '#(0 1 2 3 4)
+  @result{} 2
+
+(vector-count < '#(7 3 9 1 5) '#(6 8 2 3 8 8))
+  @result{} 3
+@end example
+@end defun
+
+@defun vector-cumulate f seed vec
+[R7RS vector]
+@c MOD scheme.vector
+Returns a fresh vector with the same size of @var{vec}, with
+the elements calculated as follows:
+
+The first element of result vector is a result of procedure @var{f}
+called with @var{seed} and the first element of @var{vec}.
+
+The @var{i}-th element of result vector is a result of procedure @var{f}
+called with @var{i-1}-th element of result vector and @var{i}-th element
+of @var{vec}.
+
+@example
+(vector-cumulate string-append "z" '#("a" "b" "c"))
+  @result{} #("za" "zab" "zabc")
+@end example
+@end defun
+
+
+@c EN
+@subheading Vector searching
+@c JP
+@subheading ベクタ上の検索
+@c COMMON
+
+@defun vector-index pred vec1 vec2 @dots{}
+@defunx vector-index-right pred vec1 vec2 @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+Returns the index of the first or the last elements in @var{vec1}
+@var{vec2} @dots{} that satisfy @var{pred}, respectively.
+Returns @code{#f} if no elements satisfy @var{pred}.
+In @code{vector-index}, comparison ends at the end of the shortest vector.
+For @code{vector-index-right}, all the vectors must have the same length.
+@end defun
+
+@defun vector-skip pred vec1 vec2 @dots{}
+@defunx vector-skip-right pred vec1 vec2 @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+Like @code{vector-index} and @code{vector-index-right}, except that
+the result of @var{pred} is negated.  That is, returns the index
+of the first or the last elements that don't satisfy @var{pred}.
+@end defun
+
+@defun vector-binary-search vec value cmp :optional start end
+[R7RS+]
+@c MOD scheme.vector
+@c EN
+Look for @var{value} in a sorted vector @var{vec}, and returns its
+index if it is found, or @code{#f} if it is not found.
+
+Comparison of @var{value} and an element in @var{vec} is
+done by a procedure @var{cmp}, which takes two arguments,
+and should return a negative integer if the first argument is less than the
+second, 0 if they are the same, and a positive integer if the first
+is greater than the second.
+
+Elements in @var{vec} must be ordered from smaller to greater
+w.r.t. @var{cmp}.  Using that fact, this procedure performs
+binary search instead of linear search.
+
+The optional arguments @var{start} and @var{end} are an
+extention to SRFI-133, and can be used to limit the range of the
+search in @var{start}-th element (inclusive) to
+@var{end}-th element (exclusive).
+@c JP
+ソートされたベクタ@var{vec}中から値@var{value}を探し、
+見つかればそのインデックスを、見つからなければ@code{#f}を返します。
+
+@var{vec}の要素と@var{value}の比較は手続き@var{cmp}で行われます。
+@var{cmp}は二つの引数を取り、最初の引数の方が小さければ負の整数を、
+等しければ0を、最初の引数の方が大きければ正の整数を買えす手続きです。
+
+@var{vec}の要素は@var{cmp}による比較に従い小さい方から順にソート済みで
+なければなりません。この手続きはその仮定のもとに、二分探索を行います。
+
+省略可能な@var{start}と@var{end}引数は、Gauche独自の拡張です。指定された場合、
+@var{start}番目の要素(含む)から@var{end}番目の要素(含まない)までが探索の対象となります。
+@c COMMON
+@end defun
+
+@defun vector-any pred vec1 vec2 @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Applies @var{pred} on each corresponding elements
+of @var{vec1} @var{vec2} @dots{} left to right, and
+as soon as @var{pred} returns non-@code{#f} value,
+the procedure stops iteration and returns the value.
+
+If no elements that satisfy @var{pred} are found, it returns @code{#f}.
+
+Vectors can have different lengths.  Iteration stops at the end
+of the shortest.
+@c JP
+@var{vec1} @var{vec2} @dots{}の各ベクタの先頭から順に、
+ひとつづつ対応する要素を取って、それに@var{pred}を適用してゆきます。
+@var{pred}が真の値を返したら、直ちにその値を返します。
+
+@var{pred}を満たす要素が見つからなければ、@code{#f}が返されます。
+
+ベクタの長さは異なっていても構いません。最も短いベクタの要素を使い切ったところで
+探索は打ちきられます。
+@c COMMON
+@end defun
+
+@defun vector-every pred vec1 vec2 @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Applies @var{pred} on each corresponding elements
+of @var{vec1} @var{vec2} @dots{} left to right.
+If all the elements (when the lengths of vectors differ, the
+first N elements where N is the length of the shortest) satisfy
+@var{pred}, returns the last result of @var{pred}.
+If any of the elements don't satisfy @var{pred},
+it returns @code{#f} immediately without looking further.
+@c JP
+@var{vec1} @var{vec2} @dots{}の各ベクタの先頭から順に、
+ひとつづつ対応する要素を取って、それに@var{pred}を適用します。
+全ての要素が@var{pred}を満たした場合(ベクタの長さが異なる場合は、
+最も短いベクタを使い切った時点)で、最後の@var{pred}の結果を返します。
+途中で@var{pred}が@code{#f}を返した場合は、その先は見ずに直ちに@code{#f}を返します。
+@c COMMON
+
+@example
+(vector-every < '#(1 2 3 4 5) '#(2 3 4 4 5)
+  @result{} #f
+
+(vector-every (^[x y] (and (real? x) (real? y) (- x y)))
+              '#(1 2 3)
+              '#(2 4 6))
+  @result{} -3
+@end example
+@end defun
+
+@defun vector-partition pred vec
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Allocates a fresh vector of the same size as @var{vec},
+then fill it with elements in @var{vec} that satisfy @var{pred},
+followed by elements that don't satisfy @var{pred}.
+
+Returns two values, the newly created vector and
+an exact integer of the index of the first element that doesn't satisfy
+@var{pred} in the returned vector.
+@c JP
+@var{vec}と同じ大きさのベクタを新たにアロケートし、
+まず@var{vec}中の@var{pred}を満たす要素を順に詰めてゆき、
+その後を@var{pred}を満たさない要素で埋めます。
+
+新たに作られたベクタと、その中で@var{pred}を満たさない最初の要素を指す
+インデックスの二つの値を返します。
+@c COMMON
+
+@example
+(vector-partition odd? '#(1 2 3 4 5 6 7 8))
+  @result{} #(1 3 5 7 2 4 6 8) @r{and} 4
+@end example
+@end defun
+
+@c EN
+@subheading Vector mutators
+@c JP
+@subheading ベクタの変更子
+@c COMMON
+
+@defun vector-swap! vec i j
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Swaps vector @var{vec}'s @var{i}-th and @var{j}-th elements.
+Returns unspecified value.
+@c JP
+@var{vec}の@var{i}番目の要素と@var{j}番目の要素を交換します。
+戻り値はunspecifiedです。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-swap! v 0 2))
+  @result{} #(c b a d e)
+@end example
+@end defun
+
+@defun vector-reverse! vec :optional start end
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Reverse the elements of @var{vec}.  Returns an undefined value.
+Optional @var{start} and @var{end} arguments can limit
+the range of operation.
+@c JP
+@code{vec}の要素を逆順に並べ替えます。戻り値は未定義です。
+省略可能引数@var{start}と@var{end}は影響が及ぶ範囲を限定します。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse! v 0 4))
+  @result{} #(d c b a e)
+@end example
+@end defun
+
+@defun vector-reverse-copy! target tstart source :optional sstart send
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
+@c JP
+@code{vector-copy!}と似ていますが、指定範囲を逆順にコピーします。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse-copy! v 2 '#(1 2)))
+  @result{} #(a b 2 1 e)
+@end example
+
+@c EN
+It is ok to pass the same vector to @var{target} and @var{source};
+it always works even if the regions of source and destination are
+overlapping.
+@c JP
+@var{target}と@var{source}に同じベクタを指定しても構いません。
+コピー範囲が重なっていても問題なく動作します。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse-copy! v 1 v 1))
+  @result{} #(a e d c b)
+@end example
+@end defun
+
+@defun vector-unfold! f rvec start end seeds @dots{}
+@defunx vector-unfold-right! f rvec start end seeds @dots{}
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Fill @var{rvec} starting from index @var{start} (inclusive) and
+ending at index @var{end} (exclusive), with the elements
+calculated by @var{f}.
+
+The procedure @var{f} takes the number of seed values @var{seeds} @dots{}
+plus one arguments.  The first argument is the current index,
+followed by seed values.  The same number of values
+as the arguments must be returned from @var{f}; the first return value
+is used to fill the current element of @var{rvec}, and the rest of the values
+are used as the next seed values.
+
+The result vector is filled from left to right by @code{vector-unfold!},
+and right to left by @code{vector-unfold-right!}.
+The return value is unspecified.
+@c JP
+@var{rvec}の、@var{start}から@var{end}の直前までの範囲を@var{f}が算出する
+新たな要素で埋めます。
+
+@var{f}は、@var{seeds} @dots{}の数よりひとつ多い引数を取ります。
+最初の引数は現在のインデックスで、それにシード値が続きます。
+@var{f}は引数と同数の値を返します。最初の戻り値が@var{rvec}を埋めるのに使われ、
+残りの戻り値は新たなシード値として次の@var{f}の呼び出しに使われます。
+
+結果のベクタは、@code{vector-unfold!}では左から右へ、
+@code{vector-unfold-right!}では右から左へと埋められます。
+戻り値はunspecifiedです。
+@c COMMON
+
+@example
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold! (^[i] (+ i 1)) rvec 1 4)
+  rvec)
+ @result{} #(a 2 3 4 e f)
+
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold-right! (^[i] (+ i 1)) rvec 1 4)
+  rvec)
+ @result{} #(a 2 3 4 e f)
+
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold! (^[i x] (values x (* x 2))) rvec 1 5 10)
+  rvec)
+ @result{} #(a 10 20 40 80 f)
+
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold! (^[i x] (values x (* x 2))) rvec 1 5 10)
+  rvec)
+ @result{} #(a 80 40 20 10 f)
+@end example
+@end defun
+
+@c EN
+@subheading Vector conversion
+@c JP
+@subheading ベクタの変換
+@c COMMON
+
+@defun reverse-vector->list vec :optional start end
+[R7RS vector]
+@c MOD scheme.vector
+@c EN
+Same as @code{(reverse (vector->list vec start end))}, but more efficient.
+@c JP
+@code{(reverse (vector->list vec start end))}と同じですが、より効率的です。
+@c COMMON
+@end defun
+
+@node R7RS sort, R7RS sets, R7RS vectors, R7RS large
+@subsection @code{scheme.sort} - R7RS sort
+@c NODE R7RSソート, @code{scheme.sort} - R7RSソート
+
+@deftp {Module} scheme.sort
+@mdindex scheme.sort
+Provides utilities to sort, and to work on sorted lists/vectors.
+This module is the same as @code{srfi-132}.
+
+Gauche has built-in sort and merge procedures (@pxref{Sorting and merging}).
+This module has a bit different API.  Notably, the ordering predicate
+comes first than the sequence to be sorted, and the procedures
+dealing with vectors uniformly support start/end arguments
+
+This module also provide useful procedures working on sorted or
+partially sorted sequences.
+@end deftp
+
+@defun list-sort elt< lis
+@defunx list-sort! elt< lis
+@defunx list-stable-sort elt< lis
+@defunx list-stable-sort! elt< lis
+[R7RS sort]
+@c MOD scheme.sort
+Sort elements in a list @var{lis} according to the ordering
+predicate @var{elt<}, which takes two elements from @var{lis}
+and returns true iff the first argument is strictly less
+than the second argument.
+
+Returns a sorted list.
+The procedures with bang are allowed, but not required, to reuse
+@code{lis}.  The ``stable'' variation guarantees stable sort.
+
+These are basically the same as Gauche's built-in  
+@code{sort}, @code{sort!}, @code{stable-sort} and @var{stable-sort!},
+except the Gauche's version works on any sequences and takes
+arguments differently.  (@xref{Sorting and merging}.)
+@end defun
+
+
+@defun list-sorted? elt< lis
+[R7RS sort]
+@c MOD scheme.sort
+Returns true if the list @var{list} is sorted according to the
+ordering predicate @var{elt<}.
+
+See also @code{sorted?} in @ref{Sorting and merging}.
+@end defun
+
+
+@defun list-merge elt< lis1 lis2
+@defunx list-merge! elt< lis1 lis2
+[R7RS sort]
+@c MOD scheme.sort
+Given two sorted lists @var{lis1} and @var{lis2}, returns
+a new sorted list according to the ordering predicate @var{elt<}.
+
+Note that @code{list-merge!} works in-place, that is, all the pairs
+in @var{lis1} and @var{lis2} are reused.
+
+See also @code{merge} and @var{merge!} in @ref{Sorting and merging}.
+@end defun
+
+@defun vector-sort elt< vec :optional start end
+@defunx vector-stable-sort elt< vec :optional start end
+[R7RS sort]
+@c MOD scheme.sort
+Sort elements in a vector @var{vec} according to the ordering
+predicate @var{elt<}, which takes two elements from @var{vec}
+and returns true iff the first argument is strictly less
+than the second argument.  Returns a fresh sorted vector.
+The ``stable'' variation guarantees stable sort.
+
+When the optional @var{start} and/or @var{end} arguments are given,
+only the portion from @var{start} (inclusive) and
+@var{end} (exlusive) of @var{vec} are looked at.
+The result vector's length is @code{@var{end} - @var{start})}.
+When @var{end} is omitted, the length of @var{vec} is assumed.
+
+See also @code{sort} and @code{stable-sort} in @ref{Sorting and merging}.
+@end defun
+
+@defun vector-sort! elt< vec :optional start end
+@defunx vector-stable-sort! elt< vec :optional start end
+[R7RS sort]
+@c MOD scheme.sort
+Sort elements ``in-place'' in a vector @var{vec} according to the ordering
+predicate @var{elt<}, which takes two elements from @var{vec}
+and returns true iff the first argument is strictly less
+than the second argument.  Upon successful return,
+@var{vec}'s elements are sorted.  Returns unspecified value; the
+caller must rely on the side effect.
+
+When the optional @var{start} and/or @var{end} arguments are given,
+only the portion from @var{start} (inclusive) and
+@var{end} (exlusive) of @var{vec} are sorted; other elements
+will remain intact.
+When @var{end} is omitted, the length of @var{vec} is assumed.
+
+See also @code{sort!} and @code{stable-sort!} in @ref{Sorting and merging}.
+@end defun
+
+@defun vector-sorted? elt< vec :optional start end
+[R7RS sort]
+@c MOD scheme.sort
+Returns true iff @var{vec} between @var{start} (inclusive)
+and @var{end} (exlusive) is sorted according to the ordering
+predicate @var{elt<}.  If @var{start} and/or @var{end} is/are omitted,
+0 and the length of @var{vec} are assumed, respectively.
+
+See also @code{sorted?} in @ref{Sorting and merging}.
+@end defun
+
+
+@defun vector-merge elt< vec1 vec2 :optional start1 end1 start2 end2
+@defunx vector-merge! elt< rvec vec1 vec2 :optional rstart start1 end1 start2 end2
+[R7RS sort]
+@c MOD scheme.sort
+Merge two sorted vectors @var{vec1} and @var{vec2}
+into one vector, according to the
+ordering predicate @var{elt<}.
+
+The optional argument @var{start1} and @var{end1} restricts @var{vec1}'s
+portion to be looked at, and @var{start2} and @var{end2}
+restricts @var{vec2}'s portion to be looked at.
+
+The functional version @var{vector-merge} allocates a fresh vector
+to hold the result, and returns it.
+
+The side-effecting version @var{vector-merge!} uses @var{rvec}.
+to hold the result. The procedure doesn't return a meaningful value.
+The optional @var{rstart} argument specifies
+the index of @var{rvec} from which the result is filled; the default
+is 0.
+@end defun
+
+@defun list-delete-neighbor-dups elt= lis
+@defunx list-delete-neighbor-dups! elt= lis
+@defunx vector-delete-neighbor-dups elt= vec :optional start end)
+@defunx vector-delete-neighbor-dups! elt= vec :optional start end)
+[R7RS sort]
+@c MOD scheme.sort
+From the given list @var{lis} or vector @var{vec},
+these procedures delete adjacent duplicate elements.  Equivalence
+is checked by @var{elt=} procedure.
+
+@example
+(list-delete-neighbor-dups eq? '(m i s s i s s i p p i))
+  @result{} (m i s i s i p i)
+@end example
+
+The non-destructive versions @code{list-delete-neighbor-dups} and
+@code{vector-delete-neighbor-dups} returns a freshly allocated
+list and vector, respectively.
+
+The destructive @code{list-delete-neighbor-dups!} works in-place,
+reusing pairs of @var{lis}.  No allocation will be done.
+
+The destructive @code{vector-delete-neighbor-dups!} has a bit different
+interface.  It updates @var{vec} in-place, but since we can't change
+the length of the vector, it gathers the result from the beginning of
+the @var{vec}, then returns the next index @var{newend}
+of @var{vec}---that is,
+after calling this procedure, @code{[@var{start}, @var{newend})}
+holds the result.
+The elements between @code{[@var{newend}, @var{end})} will remain intact.
+
+The optional @var{start} and @var{end} arguments limits the region
+of @var{vec} to be looked at.
+
+@example
+(vector-delete-neighbor-dups eq? '#(a a a b b c c d d e e f f) 3 10)
+  @result{} #(b c d e)
+
+(let1 v '#(a a a b b c c d d e e f f)
+  (cons (vector-delete-neighbor-dups! eq? v 3 10) v))
+  @result{} (7 . #(a a a b c d e d d e e f f))
+@end example
+
+Note: The @code{gauche.sequence} module provides neighbor duplicate
+deletion on generic sequences.  Those procedures are implemented by
+the generic versions as shown below.  @xref{Other operations over sequences},
+for the details.
+@table @code
+@item list-delete-neighbor-dups
+@code{delete-neighbor-dups}
+@item list-delete-neighbor-dups!
+@code{delete-neighbor-dups-squeeze!}
+@item vector-delete-neighbor-dups
+@code{delete-neighbor-dups}
+@item vector-delete-neighbor-dups!
+@code{delete-neighbor-dups!}
+@end table
+@end defun
+
+@defun vector-select! elt< vec k :optional start end
+[R7RS sort]
+@c MOD scheme.sort
+Select @var{k}-th smallest element in @var{vec} according to the
+ordering predicate @var{elt<}.  @var{K} is zero based, i.e. 0 means
+the smallest.  The optional @var{start} and @var{end} arguments
+limits the range of @var{vec} to be looked at, and defaulted to
+0 and the length of @var{vec}, respectively.
+@var{K} must satisfy @code{@var{start} <= @var{k} < @var{end}}.
+
+This procedure runs in O(n) time, and requires no extra stroage.
+This procedure may partially modify @var{vec}.
+@end defun
+
+@defun vector-separate! elt< vec k :optional start end
+[R7RS sort]
+@c MOD scheme.sort
+Find @var{k}-th smallerst element in @var{vec} (pivot) between
+between @var{start} and @var{end}, according to the ordering
+predicate @var{elt<}, then rearrange elements 
+between @var{start} and @var{end} so that
+elements smaller than the pivot comes between @code{@var{start}} and
+@code{@var{start} + @var{k}}, and the rest of the elements come
+afterwards.  When omitted, @var{start} is 0 and @var{end} is
+the lenght of the @var{vec}.
+
+This can be used as a building block for in-place divide-and-conquer
+algorithms.  Runs in O(n) time.
+@end defun
+
+@defun vector-find-median elt< vec knil :optional mean
+@defunx vector-find-median! elt< vec knil :optional mean
+[R7RS sort]
+@c MOD scheme.sort
+Find median value of elements in @var{vec}, when ordered by
+the ordering predicate @var{elt<}.  Non-destructive version
+@code{vector-find-median} runs in O(n) time.  The destructive
+version @code{vector-find-median!} is specified to leave
+@var{vec} sorted, so it runs in O(n log n).
+
+@enumerate
+@item
+If @var{vec} is empty, @var{knil} is returned.  This is the only case
+@var{knil} is used.
+@item
+If @var{vec} has odd number of elements, the element falls in the exactly
+the midpoint when ordered, is returned.
+@item
+If @var{vec} has even number of elements, the two elements closest to
+the midpoint is chosen and passed to the procedure @var{mean}, and
+its result is returned.  The default of @var{mean} is an arithmetic
+mean of numbers.
+@end enumerate
+
+@example
+(vector-find-median < #() 0)
+  @result{} 0
+
+(vector-find-median < #(78 61 19 38 51) 0)
+  @result{} 51
+
+(vector-find-median < #(78 61 19 38 51 52) 0)
+  @result{} 103/2
+@end example
+@end defun
+
+@node R7RS sets, R7RS character sets, R7RS sort, R7RS large
+@subsection @code{scheme.set} - R7RS sets
+@c NODE R7RSセット, @code{scheme.set} - R7RSセット
+
+@deftp {Module} scheme.set
+@mdindex scheme.set
+@c EN
+Sets and bags are unordered collection of Scheme values.
+A set doesn't count duplicates; if you add an item
+which is already in a set, you still have one item of the kind.
+A bag counts duplicates; if you add an item which
+is already in a bag, you have two items of the kind.
+@c JP
+セットとバッグは、Scheme値の順序づけのないコレクションです。
+セットは重複を考慮しません。既にセット中にある要素をさらに追加しても、
+その要素は依然として一つだけセット中にあると認識されます。
+一方、バッグは重複を数えます。既にバッグ中にひとつだけある要素と同じものを
+追加すると、バッグ中のその要素は二つと数えられます。
+@c COMMON
+
+@c EN
+To check whether the items are ``the same'', sets and bags
+takes a comparator at constrution time.  The comparator
+doesn't need to have an ordering predicate (we don't need
+to order the elements) but has to have a hash function.
+@xref{Basic comparators}, for the details of comparators.
+@c JP
+要素が「同じ」であるかどうかの判定のため、セットとバッグは構築時に
+比較器を取ります。比較器は順序手続きを持っていなくても構いません
+(要素の順序づけは必要ありません)が、ハッシュ手続きは持っている必要があります。
+比較器について詳しくは@ref{Basic comparators}を参照してください。
+@c COMMON
+
+@c EN
+This module is originally specified as @code{srfi-113}, and then
+incorporated to R7RS large.
+@c JP
+このモジュールは当初@code{srfi-113}として定義され、のちにR7RS largeに
+採用されました。
+@c COMMON
+
+@c EN
+As a Gauche's extension, sets and bags implement collection protocol
+(@pxref{Collection framework}, for the details), and generic collection
+operations can be applied.
+@c JP
+Gauche独自拡張として、セットやバッグはコレクションプロトコルを実装しており、
+汎用のコレクション操作が適用できます
+(@ref{Collection framework}参照)。
+@c COMMON
+
+@example
+(coerce-to <list> (set eq-comparator 'a 'b 'a 'b))
+  @result{} (a b)      ; @r{order may differ}
+
+(coerce-to <list> (bag eq-comparator 'a 'b 'a 'b))
+  @result{} (a a b b)  ; @r{order may differ}
+@end example
+@end deftp
+
+@subheading Constructors
+
+@defun set comparator elt @dots{}
+@defunx bag comparator elt @dots{}
+[R7RS set]
+@c MOD scheme.set
+Creates a new set and bag from given elements @var{elt} @dots{}.
+Given @var{comparator} will be used to compare equality of elements.
+
+@example
+(set->list (set eq-comparator 'a 'b 'a 'b))
+  @result{} (a b)
+
+(bag->list (bag eq-comparator 'a 'b 'a 'b))
+  @result{} (a a b b)
+@end example
+@end defun
+
+@defun set-unfold stop? mapper successor seed comparator
+@defunx bag-unfold stop? mapper successor seed comparator
+[R7RS set]
+@c MOD scheme.set
+Procedurally creates a set or a bag.  The first three
+arguments, @var{stop?},  @var{mapper} and @var{successor},
+are all procedures that takes one argument, the current seed value.
+It may be easier to know their types:
+
+@example
+seed      :: Seed
+stop?     :: Seed -> Boolean
+mapper    :: Seed -> ElementType
+successor :: Seed -> Seed
+@end example
+
+The @code{stop?} procedure takes the current seed value and
+returns a boolean value - if it is true, iteration stops.
+
+The @code{mapper} procedure takes the current seed value
+and returns an item, which is to be included in the resulting set or bag.
+
+The @code{successor} procedure takes the current seed value
+and returns the next seed value.
+
+And the @code{seed} argument gives the initial seed value.
+
+@example
+(set->list (set-unfold (^s (= s 75))
+                       integer->char
+                       (^s (+ s 1))
+                       65
+                       eqv-comparator))
+ @result{} (#\D #\H #\A #\E #\I #\J #\B #\F #\C #\G)
+@end example
+@end defun
+
+@subheading Predicates
+
+@defun set-contains? set obj
+@defunx bag-contains? bag obj
+[R7RS set]
+@c MOD scheme.set
+Check if @var{obj} is in the set or the bag.
+@end defun
+
+@defun set-empty? set
+@defunx bag-empty? bag
+[R7RS set]
+@c MOD scheme.set
+Returns @code{#t} iff the given set or bag is empty.
+@end defun
+
+@defun set-disjoint? set1 set2
+@defunx bag-disjoint? bag1 bag2
+[R7RS set]
+@c MOD scheme.set
+Returns @code{#t} iff the given arguments (sets or bags) don't have
+common items.  Both arguments must have the same comparator---otherwise
+an error is signaled.
+@end defun
+
+@subheading Accessors
+
+@defun set-member set obj default
+@defunx bag-member bag obj default
+[R7RS set]
+@c MOD scheme.set
+Returns an element in the given set or bag which is equal to @var{obj}
+in terms of the set's or the bag's comparator.  If no such element is
+found, @var{default} will be returned.
+
+Note that the returned object doesn't need to be ``the same''
+as @var{obj} in a usual sense.  See the following example:
+
+@example
+(let s (set string-ci-comparator "abc" def")
+  (set-member s "ABC" #f))
+  @result{} "abc"
+@end example
+@end defun
+
+@defun set-element-comparator set
+@defunx bag-element-comparator bag
+[R7RS set]
+@c MOD scheme.set
+Returns the comparator used to compare the elements for the set or the bag.
+@end defun
+
+@subheading Updaters
+
+@defun set-adjoin set elt @dots{}
+@defunx bag-adjoin bag elt @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set or bag that contains all the elements
+in the original set/bag, plus given elements.  The new set/bag's
+comparator is the same as the original set/bag's one.
+@end defun
+
+@defun set-replace set elt
+@defunx bag-replace bag elt
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set/bag with the same comparator with
+the original set/bag, and the same elements, except that the elements
+equal to @var{elt} (in terms of set/bag's comparator) is replaced
+by @var{elt}.  If the original set/bag doesn't contain an element
+equal to @var{elt}, the original one is returned.
+
+@example
+(let ((s (set string-ci-comparator "ABC" "def")))
+  (set->list (set-replace s "abc")))
+  @result{} ("abc" "def")
+@end example
+@end defun
+
+@defun set-delete set elt @dots{}
+@defunx bag-delete bag elt @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set or bag that has the same comparator
+and the same elements in the original set/bag, except that the
+item which is equal to @var{elt}.
+@end defun
+
+@defun set-delete-all set elt-list
+@defunx bag-delete-all bag elt-list
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set or bag with the same comparator of
+the original set/bag, with the elements of the original set/bag
+except the ones listed in @var{elt-list}.
+@end defun
+
+
+@defun set-adjoin! set elt @dots{}
+@defunx bag-adjoin! bag elt @dots{}
+@defunx set-replace! set elt
+@defunx bag-replace! bag elt
+@defunx set-delete! set elt @dots{}
+@defunx bag-delete! bag elt @dots{}
+@defunx set-delete-all! set elt-list
+@defunx bag-delete-all! bag elt-list
+[R7RS set]
+@c MOD scheme.set
+These are the linear update versions of their counterparts.
+It works just like the ones without @code{!}, except that
+the original set/bag @emph{may} be reused to produce the result,
+instead of new one being allocated.
+
+Note that it's not guaranteed that the original
+set/bag is modified, so you should use the return value of them,
+instead of relying on the side effects.
+@end defun
+
+@defun set-search! set elt failure success
+@defunx bag-search! bag elt failure success
+[R7RS set]
+@c MOD scheme.set
+Lookup-and-modify procedures.  The @var{failure} and @var{success}
+arguments are procedures.
+
+First, they search @var{elt} in the given set/bag.  
+If an item that matches @var{elt} is found, the @var{success} procedure
+is called with three arguments, as follows:
+@example
+(success item update remove)
+@end example
+The @var{update} argument is a procedure that takes two arguments,
+as @code{(update new-item retval)}.  It replaces the matching @var{item} in the
+set/bag with @var{new-item}, and returns @var{retval}.
+The @var{remove} argument is a procedure that takes one argument,
+as @code{(remove retval)}.  It removes the mathing @var{item} in
+the set/bag, and returns @var{retval}.
+
+If an item that matches @var{elt} is not found, the @var{failure} procedure
+is called with two arguments, as follows:
+@example
+(failure insert ignore)
+@end example
+The @var{insert} argument is a procedure that takes one argument,
+as @code{(insert retval)}.  It inserts @var{elt} into the set/bag, and
+returns @var{retval}.
+The @var{ignore} argument is a procedure that takes one argument,
+as @code{(ignore retval)}.  It just returns @var{retval}.
+
+The return values of @code{set-search!} and @code{bag-search!} is
+the modified set/bag (which may or may not be @code{eq?} to the passed one),
+and the value returned by @var{success} or @var{failure} procedures.
+
+Note that @var{retval} isn't used in this process; it is just to provide
+one of the return values of @code{set-search!}/@code{bag-search!}, for
+the procedures passed to @var{success} or @var{failure} are expected
+to be tail-called.
+
+If there are more than one item that matches @var{elt} in a bag,
+@code{bag-search!} only invokes @var{success} for the first item
+it finds.  You can recurse into @code{bag-search!} in the @var{failure}
+procedure to visit all matching items.  It is guaranteed that @var{success}
+and @var{failure} procedures are tail-called.
+@end defun
+
+@subheading The whole set
+
+@defun set-size set
+@defunx bag-size bag
+[R7RS set]
+@c MOD scheme.set
+Returns the number of items in the set/bag.
+@end defun
+
+@defun set-find pred set failure
+@defunx bag-find pred bag failure
+[R7RS set]
+@c MOD scheme.set
+Apply @var{pred} on each item in the set/bag, and returns the
+first item on which @var{pred} returns true.  Since sets and bags
+are unordered, if there are more than one items that satisfy @var{pred},
+you won't know which one will be returned.
+
+If there're no items that satisfy @var{pred}, a thunk @code{failure}
+is called and its result is returned.
+@end defun
+
+@defun set-count pred set
+@defunx bag-count pred bag
+[R7RS set]
+@c MOD scheme.set
+Returns the number of items that satisfy @var{pred} in the set/bag.
+@end defun
+
+@defun set-any? pred set
+@defunx bag-any? pred bag
+[R7RS set]
+@c MOD scheme.set
+Returns true iff any item in the set/bag satisfy @var{pred}.
+@end defun
+
+@defun set-every? pred set
+@defunx bag-every? pred bag
+[R7RS set]
+@c MOD scheme.set
+Returns true iff every item in the set/bag satisfy @var{pred}.
+@end defun
+
+@subheading Mapping and folding
+
+@defun set-map comparator proc set
+@defunx bag-map comparator proc bag
+[R7RS set]
+@c MOD scheme.set
+Create and return a new set/bag with the comparator @var{comparator},
+whose items are calculated by applying @var{proc} to each element
+in the original set/bag.
+@end defun
+
+@defun set-for-each proc set
+@defunx bag-for-each proc bag
+[R7RS set]
+@c MOD scheme.set
+Apply @var{proc} to each element in the set/bag.   The result of @var{proc}
+is ignored.  Return value is undefined.
+@end defun
+
+@defun set-fold proc seed set
+@defunx bag-fold proc seed bag
+[R7RS set]
+@c MOD scheme.set
+For each item in the set/bag, call @var{proc} with two arguments, an item
+and a seed value.  What @var{proc} returns becomes the next seed value.
+The @var{seed} argument gives the initial seed value, and the last return
+value of @var{proc} will be the result of @code{set-fold}/@code{bag-fold}.
+
+@example
+(bag-fold + 0 (bag eqv-comparator 1 1 2 2 3 3 4 4))
+  @result{} 20
+@end example
+@end defun
+
+@defun set-filter pred set
+@defunx bag-filter pred bag
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set/bag with the same comparator of the original
+set/bag, and its content consists of items from the original set/bag
+that satisfy @var{pred}.
+
+@example
+(set->list (set-filter odd? (set eqv-comparator 1 2 3 4 5)))
+  @result{} (1 3 5)
+@end example
+@end defun
+
+@defun set-remove pred set
+@defunx bag-remove pred bag
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set/bag with the same comparator of the original
+set/bag, and its content consists of items from the original set/bag
+that does not satisfy @var{pred}.
+
+@example
+(set->list (set-remove odd? (set eqv-comparator 1 2 3 4 5)))
+  @result{} (2 4)
+@end example
+@end defun
+
+@defun set-partition pred set
+@defunx bag-partition pred bag
+[R7RS set]
+@c MOD scheme.set
+Returns two sets or bags, both have the same comparator of the original
+set or bag.  The first one consists of the items from the original set/bag
+that satisfy @var{pred}, and the second one consists of the items that don't.
+
+@example
+(receive (in out) (set-remove odd? (set eqv-comparator 1 2 3 4 5))
+  (values (set->list in)
+          (set->list out)))
+  @result{} (1 3 5) @r{and} (2 4)
+@end example
+@end defun
+
+@defun set-filter! pred set
+@defunx bag-filter! pred bag
+@defunx set-remove! pred set
+@defunx bag-remove! pred bag
+@defunx set-partition! pred set
+@defunx bag-partition! pred bag
+[R7RS set]
+@c MOD scheme.set
+Linear update versions of their counterparts (the procedures without @code{!}).
+They work like their respective counterpart, but they are allowed (but not
+required) to reuse the original set/bag to produce the result(s).
+
+Note that it is not guaranteed that the original set/bag is modified, so
+you have to use the return value(s) instead of relying on the side effects.
+@end defun
+
+@subheading Copying and conversion
+
+@defun set-copy set
+@defunx bag-copy bag
+[R7RS set]
+@c MOD scheme.set
+Returns a copy of the set/bag.
+@end defun
+
+@defun set->list set
+@defunx bag->list bag
+[R7RS set]
+@c MOD scheme.set
+Returns a list of all items in the set/bag.
+Since sets and bags are unordered, there's no guarantee on the
+order of items.
+@end defun
+
+@defun list->set comparator elt-list
+@defunx list->bag comparator elt-list
+[R7RS set]
+@c MOD scheme.set
+Creates a set or a bag with the given comparator, and
+the list of element.  Functionally equivalent to the followings:
+
+@example
+(apply set comparator elt-list)
+(apply bag comparator elt-list)
+@end example
+@end defun
+
+@defun list->set! set elt-list
+@defunx list->bag! bag elt-list
+[R7RS set]
+@c MOD scheme.set
+Add items in @var{elt-list} to the existing set/bag, and returns
+the updated set/bag.  The original set/bag is also modified.
+Functionally equivalent to the followings:
+
+@example
+(apply set-adjoin! set elt-list)
+(apply bag-adjoin! bag elt-list)
+@end example
+@end defun
+
+@defun bag->set bag
+@defunx set->bag set
+[R7RS set]
+@c MOD scheme.set
+Conversions between a bag and a set.  Returns a newly created bag or set,
+respectively.
+
+If @var{bag} has duplicated items, @code{bag->set} coerces them to one
+item.
+@end defun
+
+@defun set->bag! bag set
+[R7RS set]
+@c MOD scheme.set
+Adds all items in @var{set} to @var{bag}, and returns @var{bag}.
+Both @var{bag} and @var{set} must have the same comparator.
+@end defun
+
+
+@defun bag->alist bag
+[R7RS set]
+@c MOD scheme.set
+Returns a list of @code{(item . count)}, where @var{item} is
+an item in @var{bag}, and @var{count} is the number of that item
+in the bag.
+@end defun
+
+@defun alist->bag comparator alist
+[R7RS set]
+@c MOD scheme.set
+Creates a new bag with @var{comparator}, and fills it according to
+@var{alist}, which must be a list of @code{(item . count)}.
+
+If there's duplicate items in @var{alist}, only fist one counts.
+@end defun
+
+@subheading Subsets
+
+@defun set=? set1 set2 @dots{}
+@defunx bag=? bag1 bag2 @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returns true iff all sets/bags have exactly same items.
+
+The comparators of the argument sets/bags are not checked, but assumed
+to be the same, in terms of the equality of items.
+@end defun
+
+@defun set<? set1 set2 @dots{}
+@defunx bag<? bag1 bag2 @dots{}
+@defunx set>? set1 set2 @dots{}
+@defunx bag>? bag1 bag2 @dots{}
+@defunx set<=? set1 set2 @dots{}
+@defunx bag<=? bag1 bag2 @dots{}
+@defunx set>=? set1 set2 @dots{}
+@defunx bag>=? bag1 bag2 @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returs true iff each preceding set/bag is a proper subset of, 
+a proper superset of, a subset of, or a superset of the following
+set/bags, respectively.
+
+Again, the comparators of the argument sets/bags are not checked, but assumed
+to be the same, in terms of the equality of items.
+@end defun
+
+@subheading Set theory operations
+
+@defun set-union set1 set2 @dots{}
+@defunx bag-union bag1 bag2 @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returns a newly allocated set or bag which is a union of all
+the sets/bags.
+@end defun
+
+@defun set-intersection set1 set2 @dots{}
+@defunx bag-intersection bag1 bag2 @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returns a newly allocated set or bag which is an intersection of
+all the sets/bags.
+@end defun
+
+@defun set-difference set1 set2 @dots{}
+@defunx bag-difference bag1 bag2 @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set or bag that contains items in @var{set1}/@var{bag1}
+except those are also in @var{set2}/@var{bag2} @dots{}.
+
+@example
+(sort (set->list (set-difference (set eqv-comparator 1 2 3 4 5 6 7)
+                                 (set eqv-comparator 3 5 7 9 11 13)
+                                 (set eqv-comparator 4 8 16 32))))
+  @result{} (1 2 6)
+@end example
+@end defun
+
+@defun set-xor set1 set2
+@defunx bag-xor bag1 bag2
+[R7RS set]
+@c MOD scheme.set
+Returns a newly created set or bag that consists of items
+that are either in @var{set1}/@var{bag1} or @var{set2}/@var{bag2},
+but not in both.
+
+@example
+(sort (set->list (set-xor (set eqv-comparator 2 3 5 7 11 13 17)
+                          (set eqv-comparator 3 5 7 9 11 13 15))))
+  @result{} (2 9 15 17)
+@end example
+@end defun
+
+@defun set-union! set1 set2 @dots{}
+@defunx bag-union! bag1 bag2 @dots{}
+@defunx set-intersection! set1 set2 @dots{}
+@defunx bag-intersection! bag1 bag2 @dots{}
+@defunx set-difference! set1 set2 @dots{}
+@defunx bag-difference! bag1 bag2 @dots{}
+@defunx set-xor! set1 set2
+@defunx bag-xor! bag1 bag2
+[R7RS set]
+@c MOD scheme.set
+Linear update versions of their corresponding procedures.
+Those procedures works like their @code{!}-less counterparts,
+except that they are allowed to, but not required to, reuse
+@var{set1}/@var{bag1} to produce the result.
+
+The caller should always use the returned set/bag instead of
+relying on the side effects.
+@end defun
+
+@subheading Bag-specific procedures
+
+@defun bag-sum bag1 bag2 @dots{}
+@defunx bag-sum! bag1 bag2 @dots{}
+[R7RS set]
+@c MOD scheme.set
+Returns a bag that gathers all the items in given bags, counting
+duplicates.  The functional version @code{bag-sum} always
+creates new bag to return.
+The linear update version @code{bag-sum!} is allowed to,
+but not required to, modify @var{bag1} to produce the result.
+
+@example
+(sort (bag->list (bag-sum (bag eqv-comparator 1 1 2 4 5 5 6)
+                          (bag eqv-comparator 3 3 5 9))))
+  @result{} (1 1 2 3 3 4 5 5 5 6 9)
+@end example
+
+Note the difference from @code{bag-union}:
+
+@example
+(sort (bag->list (bag-union (bag eqv-comparator 1 1 2 4 5 5 6)
+                            (bag eqv-comparator 3 3 5 9))))
+  @result{} (1 1 2 3 3 4 5 5 6 9)
+@end example
+@end defun
+
+@defun bag-product n bag
+@defunx bag-product! n bag
+[R7RS set]
+@c MOD scheme.set
+Returns a bag that contains every item as @var{n}-times
+many as the original bag.  A fresh bag is created and returned
+by @code{bag-product}, while @code{bag-product!} may reuse
+@var{bag} to produce the result.
+
+@example
+(sort (bag->list (bag-product 2 (bag eq-comparator 'a 'b 'r 'a))))
+  @result{} (a a a a b b r r)
+@end example
+@end defun
+
+@defun bag-unique-size bag
+[R7RS set]
+@c MOD scheme.set
+Returns the number of unique elements in @var{bag}.
+
+@example
+(bag-unique-size (bag eqv-comparator 1 1 2 2 3 3 4))
+ @result{} 4
+@end example
+@end defun
+
+@defun bag-element-count bag elt
+[R7RS set]
+@c MOD scheme.set
+Returns the number of specified element @var{elt} in @var{bag}.
+
+@example
+(bag-element-count (bag eqv-comparator 1 1 2 2 2 3 3) 2)
+ @result{} 3
+@end example
+@end defun
+
+@defun bag-for-each-unique proc bag
+[R7RS set]
+@c MOD scheme.set
+For each unique item in @var{bag}, calls @code{proc} with two arguments:
+The item, and the count of the item in the bag.
+@end defun
+
+@defun bag-fold-unique proc seed bag
+[R7RS set]
+@c MOD scheme.set
+For each unique item in @var{bag}, calls @var{proc} with three arguments:
+The item, the count of the item, and the previous seed value.
+The @var{seed} argument provides the initial seed value; the result
+of @var{proc} is used for the next seed value, and the last
+result of @code{proc} is returned from @code{bag-fold-unique}.
+
+@example
+(sort (bag-fold-unique acons '()
+        (bag equal-comparator "a" "a" "b" "b" "b" "c" "d"))
+      string<? car)
+ @result{} (("a" . 2) ("b" . 3) ("c" . 1) ("d" . 1))
+@end example
+@end defun
+
+@defun bag-increment! bag elt count
+@defunx bag-decrement! bag elt count
+[R7RS set]
+@c MOD scheme.set
+Linear update @var{bag} to increase or decrease the count of @var{elt} in it
+by @var{count}, which must be an exact integer.  Note that the
+element count won't get below zero; if a bag has two @code{a}'s, and
+you call @code{(bag-decrement! bag 'a 100)}, you get a bag
+with zero @code{a}'s.
+@end defun
+
+@subheading Comparators
+
+@defvr {Comparator} set-comparator
+@defvrx {Comparator} bag-comparator
+[R7RS comparator]
+@c MOD scheme.set
+Comparators to be used to compare sets or bags.  They don't provide
+comparison procedure, for you cannot define a total order among sets or bags.
+They do provide hash functions.
+@end defvr
+
+
+@node R7RS character sets, R7RS immutable deques, R7RS sets, R7RS large
+@subsection @code{scheme.charset} - R7RS character sets
+@c NODE R7RS文字セット, @code{scheme.charset} - R7RS文字セット
+
+@deftp {Module} scheme.charset
+@mdindex scheme.charset
+@c EN
+Implements character set library, originally defined as SRFI-14.
+Note that the following
+character-set procedures are Gauche's build-in.  @xref{Character set}.
+@c JP
+文字集合ライブラリを実装します。元はSRFI-14で定義されたものです。
+以下の文字集合手続きはGauche組み込みになっているので、@ref{Character set}を参照してください。
+@c COMMON
+
+@example
+char-set char-set? char-set-contains? char-set-copy
+char-set-complement char-set-complement!
+@end example
+
+@c EN
+In Gauche,
+the @code{<char-set>} class inherits @code{<collection>} and implements
+the collection protocol, so that the generic operations defined in
+@code{gauche.collection} can also be used (@pxref{Collection framework}).
+@c JP
+Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
+コレクションプロトコルを実装しているので、@code{gauche.collection}モジュールで
+提供される操作も使えます (@ref{Collection framework}参照)。
+@c COMMON
+@end deftp
+
+@menu
+* Character-set constructors::
+* Character-set comparison::
+* Character-set iteration::
+* Character-set query::
+* Character-set algebra::
+* Predefined character-set::
+@end menu
+
+@node Character-set constructors, Character-set comparison, R7RS character sets, R7RS character sets
+@subsubsection Character-set constructors
+@c NODE 文字セットの構築子
+
+@defun list->char-set char-list :optional base-cs
+@defunx list->char-set! char-list base-cs
+[R7RS comparator]
+@c MOD scheme.charset
+@c EN
+Constructs a character set from a list of characters @var{char-list}.
+If @var{base-cs} is given, it must be a character set, and the characters
+in it are added to the result character set.
+@code{List->char-set!} is allowed, but not required, to reuse @var{base-cs}
+to store the result.
+@c JP
+与えられた文字のリスト@var{char-list}から文字セットを構築して返します。
+文字セット@var{base-cs}が与えられていた場合、返される文字セットは
+その文字セットに@var{char-list}中の文字を追加したものとなります。
+@code{list->char-set!}は、結果を格納するために@var{base-cs}を
+変更するかもしれません。
+@c COMMON
+@end defun
+
+@defun string->char-set s :optional base-cs
+@defunx string->char-set! s base-cs
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+Like @code{list->char-set} and @code{list->char-set!},
+but take a list of characters from a string @var{s}.
+@c JP
+追加する文字をリストでなく文字列@var{s}で与えることを除けば
+@code{list->char-set}、@code{list->char-set!}と同じです。
+@c COMMON
+@end defun
+
+@defun char-set-filter pred char-set :optional base-cs
+@defunx char-set-filter! pred char-set base-cs
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+Returns a character set containing every character @var{c} in
+@var{char-set} such that @code{(@var{pred} @var{c})} returns true.
+If a character set @var{base-cs} is given, its content is added to
+the result.  The linear update version @code{char-set-filter!}
+is allowed, but not required, to modify @var{base-cs} to store the result.
+@c JP
+@var{char-set}内の文字のうち、@code{(@var{pred} @var{c})} が真の値を
+返すような@var{c}からなる文字セットを作成して返します。
+文字セット@var{base-cs}が与えられた場合は、その内容が結果に追加されます。
+@code{char-set-filter!}は、結果を格納するために@var{base-cs}を変更するかも
+しれません。
+@c COMMON
+@end defun
+
+@defun ucs-range->char-set lower upper :optional error? base-cs
+@defunx ucs-range->char-set! lower upper error? base-cs
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+Creates 
+@c JP
+@c COMMON
+@end defun
+
+@defun integer-range->char-set lower upper :optional error? base-cs
+@defunx integer-range->char-set! lower upper error? base-cs
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun ->char-set x
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+A convenience function to coerce various kinds of objects to a char-set.
+The argument @var{x} can be a collection of characters,
+a char-set, or a character.  If the argument is a char-set, 
+it is returned as-is.  If the argument is a character,
+a char-set with that single character is returned.
+@c JP
+様々な種類のオブジェクトを文字セットに変換する関数です。@var{x}に
+文字のコレクション、文字セット、あるいは文字を渡すことができます。
+引数が文字セットの場合はそれがそのまま返されます。
+引数が文字の場合は、その文字のみを含む文字セットが返されます。
+@c COMMON
+
+@c EN
+Note: R7RS @code{(scheme charset)}'s
+@code{->char-set} only accepts a string, a char-set
+or a character as an argument.  Gauche extends it so that it can
+accept any collection of characters.
+@c JP
+註: R7RS @code{(scheme charset)}の@code{->char-set}
+は文字列、文字セット、文字のいずれかのみを
+引数に取ります。Gaucheでは文字の任意のコレクションを取るように拡張しました。
+@c COMMON
+@end defun
+
+@node Character-set comparison, Character-set iteration, Character-set constructors, R7RS character sets
+@subsubsection Character-set comparison
+@c NODE 文字セットの比較
+
+@defun char-set= char-set1 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+Returns @code{#t} iff all the character sets have exactly the
+same members.
+@c JP
+与えられた文字セットが全て同じ要素を持っている場合に限り@code{#t}を返します。
+@c COMMON
+
+@example
+(char-set=)  @result{} #t
+(char-set= (char-set)) @result{} #t
+(char-set= (string->char-set "cba")
+           (list->char-set #\a #\b #\c))
+  @result{} #t
+@end example
+
+@end defun
+
+@defun char-set<= char-set1 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-hash char-set :optional bound
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@node Character-set iteration, Character-set query, Character-set comparison, R7RS character sets
+@subsubsection Character-set iteration
+@c NODE 文字セットのイテレーション
+
+@defun char-set-cursor char-set
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-ref char-set cursor
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-cursor-next char-set cursor
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun end-of-char-set? ccursor
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-fold kons knil char-set
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-unfold pred fun gen seed :optional base-char-set
+@defunx char-set-unfold! pred fun gen seed base-char-set
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-for-each proc char-set
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-map proc char-set
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@node Character-set query, Character-set algebra, Character-set iteration, R7RS character sets
+@subsubsection Character-set query
+@c NODE 文字セットへの問い合わせ
+
+@defun char-set-every pred char-set
+@defunx char-set-any pred char-set
+@defunx char-set-count pred char-set
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+These procedures apply @var{pred} to each character in @var{char-set}.
+
+@code{char-set-every} returns @code{#f} as soon as @var{pred} returns
+@code{#f}.  Otherwise, it returns the result of the last application of
+@var{pred}.
+
+@code{char-set-any} returns as soon as @var{pred} returns a true value,
+and the return value is the one @var{pred} returns.
+If @var{pred} returns @code{#f} for all characters, @code{#f} is returned.
+
+@code{char-set-count} returns the number of times
+@var{pred} returns a true value.
+
+Note that @var{char-set} can be huge (e.g. a complement of small char-set),
+which can make these procedures take very long.
+@c JP
+これらの手続きは、@var{pred}を@var{char-set}に含まれる各文字に適用します。
+
+@code{char-set-every}は@var{pred}が@code{#f}を返したら直ちに@code{#f}を返します。
+@var{pred}が最後まで@code{#f}を返さなかった場合は、最後の@var{pred}の返り値が
+@code{char-set-every}の返り値となります。
+
+@code{char-set-any}は@var{pred}が真の値を返した場合に直ちにその値を返します。
+@var{pred}が最後まで@code{#f}を返した場合には@code{#f}を返します。
+
+@code{char-set-count}は@var{pred}が真の値を返した回数を返します。
+
+@var{char-set}は非常に大きくなる可能性があり (例えばごく小さな文字セットの補集合)、
+その場合、これらの手続きは非常に長くかかり得ることに注意してください。
+@c COMMON
+@end defun
+
+@defun char-set->list char-set
+@defunx char-set->string char-set
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+Returns a list of each character, or a string consisting of
+each character, in @var{char-set}, respectively.
+Be careful to apply this on a large char set.
+@c JP
+@var{char-set}に含まれる文字をリストあるいは文字列にして返します。
+大きな文字セットに適用する場合は注意してください。
+@c COMMON
+@end defun
+
+
+@node Character-set algebra, Predefined character-set, Character-set query, R7RS character sets
+@subsubsection Character-set algebra
+@c NODE 文字セットに適用できる代数的関数
+
+@defun char-set-adjoin char-set char1 @dots{}
+@defunx char-set-adjoin! char-set char1 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@c EN
+Returns a character set that adds @var{char1} @dots{} to
+@var{char-set}.
+@c JP
+@var{char-set}に@var{char1} @dots{}を加えた文字集合を返します。
+@c COMMON
+@end defun
+
+@defun char-set-delete char-set char1 @dots{}
+@defunx char-set-delete! char-set char1 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-union char-set @dots{}
+@defunx char-set-union! char-set1 char-set2 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-intersection char-set @dots{}
+@defunx char-set-intersection! char-set1 char-set2 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-difference char-set1 char-set2 @dots{}
+@defunx char-set-difference! char-set1 char-set2 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-xor char-set @dots{}
+@defunx char-set-xor! char-set1 char-set2 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-diff+intersection char-set1 char-set2 @dots{}
+@defunx char-set-diff+intersection! char-set1 char-set2 char-set3 @dots{}
+[R7RS charset]
+@c MOD scheme.charset
+@end defun
+
+
+
+@node Predefined character-set,  , Character-set algebra, R7RS character sets
+@subsubsection Predefined character-set
+@c NODE 定義済みの文字セット
+
+@defvar char-set:letter
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:blank
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:iso-control
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:digit
+@defvarx char-set:hex-digit
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:graphic
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:lower-case
+@defvarx char-set:upper-case
+@defvarx char-set:title-case
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:printing
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:punctuation
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:whitespace
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:symbol
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:ascii
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:empty
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:full
+[R7RS charset]
+@c MOD scheme.charset
+@end defvar
+
+@node R7RS immutable deques, R7RS generators, R7RS character sets, R7RS large
+@subsection @code{scheme.ideque} - R7RS immutable deques
+@c NODE R7RS変更不可な両端キュー, @code{scheme.ideque} - R7RS変更不可な両端キュー
+
+@deftp {Module} scheme.ideque
+@mdindex scheme.ideque
+This module provides a functional double-ended queue
+(deque, pronounced as ``deck''),
+with amortized O(1) access of queue operations on either end.
+
+It also serves as a convenient bidrectional list structures
+in a sense that operations from the end of the list is just as
+efficient as the ones from the front.
+
+Note: If you don't need immutability and wants space-efficient
+deque, you can also use @code{data.ring-buffer} as a deque
+(@pxref{Ring buffer}).
+
+This module was originally defined as @code{srfi-134}, then
+became a part of R7RS large.
+
+Gauche's @code{data.ideque} is a superset of this module.
+@xref{Immutable deques}.
+@end deftp
+
+@defun ideque element @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+Returns an ideque with the given elements.
+@end defun
+
+@defun ideque-unfold p f g seed
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-unfold-right p f g seed
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-tabulate size init
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque? idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-empty? idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-add-front idq x
+@defunx ideque-add-back idq x
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-front idq
+@defunx ideque-back idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-remove-front idq
+@defunx ideque-remove-back idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-reverse idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque= idq idq2 @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-ref idq n
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-take idq n
+@defunx ideque-take-right idq n
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-drop idq n
+@defunx ideque-drop-right idq n
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-split-at idq n
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-length idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-append idq @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-zip idq idq2 @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-map proc idq @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-filter-map proc idq @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-for-each proc idq @dots{}
+@defunx ideque-for-each-right proc idq @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-fold proc knil idq @dots{}
+@defunx ideque-fold-right proc knil idq @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-append-map proc idq @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-filter pred idq
+@defunx ideque-remove pred idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-partition pred idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-find pred idq :optional failure
+@defunx ideque-find-right pred idq :optional failure
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-take-while pred idq
+@defunx ideque-take-while-right pred idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-drop-while pred idq
+@defunx ideque-drop-while-right pred idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-span pred idq
+@defunx ideque-break pred idq
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-any pred idq @dots{}
+@defunx ideque-every pred idq @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque->list idq
+@defunx list->ideque list
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque->generator idq
+@defunx generator->ideque gen
+[R7RS ideque]
+@c MOD scheme.ideque
+@end defun
+
+@node R7RS generators, R7RS lazy sequences, R7RS immutable deques, R7RS large
+@subsection @code{scheme.generator} - R7RS generators
+@c NODE R7RSジェネレータ, @code{scheme.generator} - R7RSジェネレータ
+
+@deftp {Module} scheme.generator
+@mdindex scheme.generator
+A generator is a thunk to generate a sequence of values, potentially
+terminated by EOF.  The interface was first defined in srfi-121, then
+incorporated R7RS large as @code{(scheme generator)}.
+
+Gauche provides a generator library
+@code{gauche.generator}, which is a superset of @code{scheme.generator}.
+@xref{Generators}, for the details.
+
+The following procedures are defined in this module.  Please see the
+respective manual section for each entry.
+
+@itemize
+@item @ref{Generator constructors}:
+@example
+generator                  make-iota-generator      make-range-generator
+make-coroutine-generator   make-bits-geneartor      make-for-each-generator
+make-unfold-generator      list->generator          vector->generator
+reverse-vector->generator  string->generator
+@end example
+@item @ref{Generator operations}:
+@example
+gcons*      gappend     gcombine    gfilter     gremove
+gtake       gdrop       gtake-while gdrop-while gdelete
+gdelete-neighbor-dups   gindex      gselect
+@end example
+@item @ref{Generator consumers}:
+@example
+generator->list         generator->reverse-list   generator->vector
+generator->vector!      generator->string
+generator-count         generator-any             genreator-every
+generator-unfold
+@end example
+@item @ref{Folding generated values}:
+@example
+generator-fold          generator-for-each        generator-find
+@end example
+@end itemize
+@end deftp
+
+@node R7RS lazy sequences, R7RS boxes, R7RS generators, R7RS large
+@subsection @code{scheme.lseq} - R7RS lazy sequences
+@c NODE R7RS遅延シーケンス, @code{scheme.lseq} - R7RS遅延シーケンス
+
+
+@deftp {Module} scheme.generator
+@mdindex scheme.generator
+This module provides lightweight lazy sequence (lseq), conceptually represented
+by a pair of element and generator.  When the rest of sequence is
+taken, the generator is evaluated and yields another pair of element and
+generator, and so on.  The overhead is one allocation of a pair per
+element.  It is much lighter than streams (@pxref{Stream library}),
+which requires to create a thunk for every element.
+
+Gauche already has built-in support for such lazy sequences;
+we go futher to make it behave like ordinary pairs---that is, if you
+take cdr of a lazy pair, we automatically forces the generator so
+it is indistinguishable from an ordinary pair, modulo side effects.
+@xref{Lazy sequences}.
+
+Srfi-127, the original srfi for this module,
+is a bit ambiguous whether its lazy sequence @emph{must} be
+implemented with a pair whose cdr is a generator procedure, or
+it refers to the pair+generator as a conceptual model.  Considering
+of the purpose of lazy sequence, the concrete implementation shouldn't
+matter; that is, the user of lazy sequence should not count on the fact
+that the lseq is an improper list terminated by a generator procedure.
+Instead, an lseq should be treated as an opaque object that can be
+passed to @code{scheme.lseq} procedures.
+
+With that premise, we implement this module as just a thin wrapper of
+Gauche's native lazy sequence.  It is upper-compatible,
+except that the code that assumes the internal structure could break.
+Notably, the constructor @code{generator->lseq} is the same as
+Gauche's built-in, which returns Gauche's lseq, undistinguishable
+to the oridnary list.
+
+@example
+(procedure? (generator->lseq (generator 1))) 
+  ;; => #t, in srfi-127 reference implementation,
+  ;;    #f, in our implementation.
+@end example
+@end deftp
+
+@defun lseq? x
+[R7RS lseq]
+@c MOD scheme.lseq
+Returns true iff @var{x} is an object that can be passed to
+lseq procedures.  In Gauche, it returns @code{#t} if @var{x} is
+a pair or an empty list, since a lazy pair is indistinguishable
+from a pair.
+@end defun
+
+@defun lseq=? elt=? lseq1 lseq2
+[R7RS lseq]
+@c MOD scheme.lseq
+Compare two lseqs element-wise using @code{elt=?} and returns @code{#t}
+iff two lseqs are equal. 
+@end defun
+
+@defun lseq-car lseq
+@defunx lseq-first lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+Returns the first item of @var{lseq}.  If @var{lseq} is empty, an error
+is raised.  In Gauche, these are just aliases of @code{car}.
+@end defun
+
+@defun lseq-cdr lseq
+@defunx lseq-rest lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+Returns the rest of @var{lseq}.  If @var{lseq} is empty, an error
+is raised.  In Gauche, these are just aliases of @code{cdr}.
+@end defun
+
+@defun lseq-take lseq k
+@defunx lseq-drop lseq k
+[R7RS lseq]
+@c MOD scheme.lseq
+Returns an lseq that has first @code{k} items,
+or an lseq that skips first @code{k} items, respectively.
+
+An error is signaled when the resulting lseq of @code{lseq-take}
+reached at the end of sequence before @code{k} items are taken.
+It is different from Gauche's @code{ltake}, which simply returns @code{()}
+in such case.
+
+On the other hand,  @code{lseq-drop} is the same as @code{drop}
+in Gauche; it just drops @var{k} items from the head of input
+sequence, regardless of whether it is an ordinary list or lseq.
+@end defun
+
+@defun lseq-realize lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+Realizes all the elements in @var{lseq}, resulting an ordinary list.
+@end defun
+
+@defun lseq->generator lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+Creates a generator from @var{lseq}.  In Gauche, this is same
+as @code{list->generator}.
+@end defun
+
+@defun lseq-length lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+Returns the length of @var{lseq}.  All the elements in @var{lseq} are
+realized as the side effect.  In Gauche, this is same as @code{length}.
+@end defun
+
+@defun lseq-append lseq lseq2 @dots{}
+[R7RS lseq]
+@c MOD scheme.lseq
+Append one or more @var{lseq}s lazily.  This is the same as @code{lappend}
+in Gauche.
+@end defun
+
+@defun lseq-zip lseq lseq2 @dots{}
+[R7RS lseq]
+@c MOD scheme.lseq
+Returns a lazy sequence in which the first element is a list of
+first elements of @code{lseq}s, and so on.
+@end defun
+
+@defun lseq-map proc lseq lseq2 @dots{}
+[R7RS lseq]
+@c MOD scheme.lseq
+Lazy map.  The same as Gauche's @code{lmap}.  Returns a lazy sequence.
+@end defun
+
+@defun lseq-for-each proc lseq lseq2 @dots{}
+[R7RS lseq]
+@c MOD scheme.lseq
+This one consumes all the input lseqs, applying @var{proc} on
+each corresponding elements of the input sequences for the side
+effects.  In Gauche, it is the same as @code{for-each}, for
+Gauche doesn't distinguish lseqs and ordinary lists.
+@end defun
+
+@defun lseq-filter pred lseq
+@defunx lseq-remove pred lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+Returns an lseq that contains elements from the input 
+@var{lseq} that satisfy or don't satisfy @var{pred}, respectively.
+@code{Lseq-filter} is the same as Gauche's @code{lfilter}.
+@end defun
+
+@defun lseq-take-while pred lseq
+@defunx lseq-drop-while pred lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+These are the same as Gauche's @code{ltake-while} and @code{drop-while}
+(the latter doesn't have @code{l}-prefix, since it just drops items
+from the head of the input sequence, regardless of whether it is
+an ordinary list or an lseq.
+@end defun
+
+@defun lseq-find pred lseq
+@defunx lseq-find-tail pred lseq
+@defunx lseq-any pred lseq
+@defunx lseq-every pred lseq
+@defunx lseq-index pred lseq
+@defunx lseq-member pred lseq :optional eq
+@defunx lseq-memq pred lseq
+@defunx lseq-memv pred lseq
+[R7RS lseq]
+@c MOD scheme.lseq
+In Gauche, these are the same as the corresponding list functions,
+@code{find}, @code{find-tail}, @code{any}, @code{every},
+@code{list-index}, @code{member}, @code{memq} and @code{memv}, respectively,
+for all of those functions won't look at input more than necessary
+so @var{lseq}s work just as well as ordinary lists.
+@end defun
+
+@node R7RS boxes, R7RS list queues, R7RS lazy sequences, R7RS large
+@subsection @code{scheme.box} - R7RS boxes
+@c NODE R7RSボックス, @code{scheme.box} - R7RSボックス
+
+@deftp {Module} scheme.box
+@mdindex scheme.box
+This module defines the box datatype, which is a simple
+container that can hold one Scheme object.  It can be used
+as a minimal data storage, or a sort of mutable indirect
+``pointer''.
+
+Traditionally a pair (with ignoring its cdr) or a single-element vector
+has been used for this purpose; in modern Scheme you can also define
+a record type with one mutable field.  Nevertheless,
+a box is very common abstraction to describe various
+algorithms, and having common interface to it is useful.
+
+The srfi leaves some details to implementations.  Here are our choices:
+@itemize
+@item
+We don't support autoboxing; that is, it is an error to pass non-box
+value to the procedure expecting boxed value and vice versa.
+@item
+Comparing two boxes with @code{equal?} compares their contents when
+two are not @code{eqv?}.  In the spec, when two boxes are @code{eqv?}
+then they must also be @code{equal?} to each other, but it's up
+to the implementation when two are not @code{eqv?}.
+@end itemize
+
+When you're writing portable code, be careful not to depend on the
+@code{equal?} behavoir.
+@end deftp
+
+@defun box val
+[R7RS box]
+@c MOD scheme.box
+Returns a fresh box object that contains the value @code{val}.
+@end defun
+
+@defun box? obj
+[R7RS box]
+@c MOD scheme.box
+Returns @code{#t} iff @var{obj} is a box object.
+@end defun
+
+@defun unbox box
+[R7RS box]
+@c MOD scheme.box
+Returns @var{box}'s content.
+@end defun
+
+@defun set-box! box val
+[R7RS box]
+@c MOD scheme.box
+Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
+@end defun
+
+@node R7RS list queues, R7RS comparators, R7RS boxes, R7RS large
+@subsection @code{scheme.list-queue} - R7RS list queues
+@c NODE R7RSリストキュー, @code{scheme.list-queue} - R7RSリストキュー
+
+@deftp {Module} scheme.list-queue
+@mdindex scheme.list-queue
+@c EN
+A library of simple queue based on lists.
+Gauche has a queue support in @code{data.queue} module, which also
+includes MT-safe queue (@pxref{Queue}).  This library is implemented
+on top of @code{data.queue}'s @code{<queue>} object and mainly provided
+for portable code.
+@c JP
+リストを元にしたキューのライブラリです。
+Gaucheは@code{data.queue}モジュールでキューをサポートしています
+(スレッドセーフなキューも含まれています。詳しくは@ref{Queue}を参照。)
+このモジュールは、主としてポータブルなコードのために、
+@code{data.queue}の@code{<queue>}の上に実装されています。
+@c COMMON
+
+@c EN
+The list-queue is just an instance of @code{<queue>}, so you can
+pass a queue created by @code{make-queue} to @code{scheme.list-queue}
+API and
+a list-queue created by @code{make-list-queue} to Gauche's queue API.
+@c JP
+このモジュールでいうリストキューは@code{<queue>}のインスタンスそのものなので、
+@code{make-queue}で作ったキューを@code{scheme.list-queue}のAPIに渡したり、
+@code{make-list-queue}で作ったキューをGaucheのキューAPIに渡すこともできます。
+@c COMMON
+
+@c EN
+Note: Some API of this library requires to return internal pairs the queue
+uses, for the efficiency.  
+The pair's car/cdr will be mutated by subsequent queue operation,
+and also any mutation done on the pair would cause inconsistency
+in the original queue.
+@c JP
+註: このライブラリのAPIには、性能のために、
+キューが使う内部のペアをそのまま返すことを要求されている
+ものがあります。これらの内部ペアはキューの操作によって破壊的に変更される可能性があります。
+ユーザ側でも変更した場合、その後のキューの動作は保証されません。
+@c COMMON
+@end deftp
+
+@defun make-list-queue lis :optional last
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Creates and returns a list-queue whose initial content is @var{lis}.
+In Gauche, a list queue is just an instance of @code{<queue>} (@pxref{Queue}).
+
+The cells in @var{lis} are owned by the queue; the caller shouldn't mutate
+it afterwords, nor assume its structure remains the same.
+
+The optional @var{last} argument must be the last pair of @var{lis}.
+If it is passed, @code{make-list-queue} will skip scanning @var{lis}
+and just hold a reference to @var{last} as the tail of the queue.
+@c JP
+リスト@var{lis}の内容を初期値として持つリストキューを作って返します。
+Gaucheでは、リストキューは@code{<queue>}のインスタンスです(@ref{Queue}参照)。
+
+@var{lis}の実体は作成されたキューの所有物となります。
+呼び出し側は、この関数を呼んだ後で@var{lis}を変更してはいけません。
+また、作成されたキューの操作によって@var{lis}の内容は変更されるでしょう。
+
+省略可能な@var{last}引数は、もし与えられる場合は、@var{lis}の最後のペアで
+なければなりません。この引数が渡された場合、@code{make-list-queue}は自分で
+リストの末尾のペアを見つけるかわりに、呼び出し側を信頼して@var{last}を最後の
+ペアとして保持します。
+@c COMMON
+@end defun
+
+@defun list-queue elt @dots{}
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Creates and returns a list-queue whose initial content is @var{elt} @dots{}.
+In Gauche, a list queue is just an instance of @code{<queue>} (@pxref{Queue}).
+@c JP
+@var{elt} @dots{}を初期内容とするリストキューを作成して返します。
+Gaucheでは、リストキューは@code{<queue>}のインスタンスです(@ref{Queue}参照)。
+@c COMMON
+@end defun
+
+@defun list-queue-copy queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns a copy of a list-queue @var{queue}.
+@c JP
+リストキュー@var{queue}のコピーを返します。
+@c COMMON
+@end defun
+
+@defun list-queue-unfold p f g seed :optional queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Prepend @var{queue} with the items generated by
+@code{(unfold p f g seed)} and returns the updated queue.
+@xref{R7RS lists}, for @code{unfold}.
+If @var{queue} is omitted, a fresh queue is created.
+@c JP
+リストキュー@var{queue}の前に、@code{(unfold p f g seed)}で生成される
+要素を付け足して、@var{queue}を返します。
+@code{unfold}については@ref{R7RS lists}を参照してください。
+@var{queue}が省略された場合は新たに作成したキューを使います。
+@c COMMON
+
+@example
+(list-queue-unfold (pa$ = 5) ; p
+                   (pa$ * 2) ; f
+                   (pa$ + 1) ; g
+                   0         ; seed
+                   (list-queue 'x 'y 'z))
+ @result{} @r{a queue containing (0 2 4 6 8 x y z)}
+@end example
+@end defun
+
+@defun list-queue-unfold-right p f g seed :optional queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Append @var{queue} with the items generated by
+@code{(unfold-right p f g seed)} and returns the updated queue.
+@xref{R7RS lists}, for @code{unfold-right}.
+If @var{queue} is omitted, a fresh queue is created.
+@c JP
+@var{queue}の後ろに、@code{(unfold-right p f g seed)}で生成される
+要素を付け足して、@var{queue}を返します。
+@code{unfold-right}については@ref{R7RS lists}を参照してください。
+@var{queue}が省略された場合は
+新たに作成したキューを使います。
+@c COMMON
+
+@example
+(list-queue-unfold-right (pa$ = 5) ; p
+                         (pa$ * 2) ; f
+                         (pa$ + 1) ; g
+                         0         ; seed
+                         (list-queue 'x 'y 'z))
+ @result{} @r{a queue containing (x y z 8 6 4 2 0)}
+@end example
+@end defun
+
+@defun list-queue? obj
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns true iff @var{queue} is a list-queue.
+In Gauche, it is the same as @code{queue?} in the @code{data.queue} module.
+@c JP
+@var{queue}がリストキューなら@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheでは@code{data.queue}モジュールの@code{queue?}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-empty? queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns true iff @var{queue} is empty.
+Same as @code{queue-empty?} of @code{data.queue}.
+@c JP
+@var{queue}が空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@code{data.queue}の@code{queue-empty?}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-front queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns the front element of the @var{queue}.
+An error is thrown if @var{queue} is empty.
+Same as @code{queue-front} of @code{data.queue}.
+@c JP
+@var{queue}の先頭の要素を返します。@var{queue}が空の場合はエラーを報告します。
+@code{data.queue}の@code{queue-front}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-back queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns the rear element of the @var{queue}.
+An error is thrown if @var{queue} is empty.
+Same as @code{queue-rear} of @code{data.queue}.
+@c JP
+@var{queue}の末尾の要素を返します。@var{queue}が空の場合はエラーを報告します。
+@code{data.queue}の@code{queue-rear}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-list queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns the internal list of @var{queue}.
+Note that the list would be modified by subsequent operations of @var{queue},
+and any modification on the list would make @var{queue} inconsistent.
+The primary purpose of this procedure is to implement other
+queue-related operations with small overhead.
+
+If you merely need a cheap access the content of the queue,
+consider @code{list-queue-remove-all!}.
+That returns the list of elements of the queue without copying, and
+simultaneoulsy reset the queue to empty, so it's safe.
+@c JP
+@var{queue}が内部的に保持している要素のリストを返します。
+返されたリストは、@var{queue}が操作されれば破壊的に変更される可能性があり、
+また返されたリストを破壊的に変更した場合は@var{queue}の一貫性が失われます。
+この手続きの主な目的は、他のキュー操作を効率よく実装することです。
+
+単にキューの中身にオーバーヘッド無くアクセスしたい場合は、
+@code{list-queue-remove-all!}が使えないかどうか検討してください。
+そちらはキューの中身のリストを直接返すと同時にキュー自体を空にするので、安全です。
+@c COMMON
+@end defun
+
+@defun list-queue-fist-last queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns two values, the first and last pair of @var{queue}.
+If the queue is empty, two empty lists are returned.
+
+This also returns the internal pair of the queue, so
+any subsequent operations of @var{queue} would change the contents
+of the pairs, and any modification on the pairs would make @var{queue}
+inconsistent.
+The purpose of this procedure is to implement other
+queue-related operations with small overhead.  This procedure should
+not be used in general.
+@c JP
+@var{queue}の内部で要素を保持しているリストの先頭と末尾のペアを返します。
+キューが空の場合は、二つの空リストを返します。
+
+この手続きも、@code{list-queue-list}と同じく、内部のリストを直接返すため、
+返されたリストは、@var{queue}が操作されれば破壊的に変更される可能性があり、
+また返されたリストを破壊的に変更した場合は@var{queue}の一貫性が失われます。
+この手続きの主な目的は、他のキュー操作を効率よく実装することであり、
+一般的な用途に使うべきではありません。
+@c COMMON
+@end defun
+
+@defun list-queue-add-front! queue elt
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Add @var{elt} to the front of @var{queue}.
+Same as @code{(queue-push! queue elt)} of @code{data.queue}.
+@c JP
+@var{elt}を@var{queue}の先頭に追加します。
+@code{data.queue}の@code{(queue-push! queue elt)}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-add-back! queue elt
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Add @var{elt} to the back of @var{queue}.
+Same as @code{(enqueue! queue elt)} of @code{data.queue}.
+@c JP
+@var{elt}を@var{queue}の末尾に追加します。
+@code{data.queue}の@code{(enqueue! queue elt)}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-remove-front! queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Remove an element from the front of @var{queue} and returns
+the removed element.  Throws an error if @var{queue} is empty.
+Same as @code{dequeue!} of @code{data.queue}.
+@c JP
+@var{queue}の先頭から要素をひとつ取り除き、その取り除かれた要素を返します。
+@var{queue}が空ならエラーを報告します。
+@code{data.queue}の@code{(dequeue! queue elt)}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-remove-back! queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Remove an element from the back of @var{queue} and returns the
+removed element.  Throws an error if @var{queue} is empty.
+This isn't guaranteed to be efficient; it is O(n)
+operation where n is the number of elements.
+In general, if you need this operation frequently, you should
+consider double-ended queue.  (@xref{Immutable deques}, and also
+@pxref{Ring buffer}.)
+@c JP
+@var{queue}の末尾から要素をひとつ取り除き、その取り除かれた要素を返します。
+@var{queue}が空ならエラーを報告します。
+この手続きは、キューの持つ要素数nに対してO(n)の時間がかかります。
+もしこの操作を頻繁に必要とするなら、デック(deque, 両端キュー)を使うことを
+検討すべきでしょう。(@ref{Immutable deques}および
+@ref{Ring buffer}参照。)
+@c COMMON
+@end defun
+
+@defun list-queue-remove-all! queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Remove all the elements from @var{queue} and returns them as a list.
+The list isn't copied---this is O(1) operation.  This should be preferred
+over @code{list-queue-list}, for it's safer.
+In Gauhce, this is the same as @code{dequeue-all!} in @code{data.queue}.
+@c JP
+@var{queue}を空にして、入っていた全ての要素をリストで返します。
+リストはコピーされません。つまりO(1)の操作です。
+可能なら、@code{list-queue-list}よりはこちらを使う方が安全です。
+Gaucheでは、これは@code{data.queue}の@code{deque-all!}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-set-list! queue lis :optional last
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Modify @var{queue} to have the elements in @var{lis} as its element.
+The original content of @var{queue} is discarded.  If the optional
+@var{last} argument is provided, it must be the last pair of @var{lis},
+and the procedure uses that instead of scanning @var{lis}, to achieve
+O(1) operation.
+
+After calling this, @var{lis} is owned by @var{queue} and it may
+be mutated.  The caller shouldn't change, or rely on @var{lis} afterwards.
+@c JP
+@var{queue}を変更して、@var{lis}の内容がキューの内容になるようにします。
+@var{queue}の元の内容は捨てられます。省略可能な@var{last}引数が渡される場合、
+それは@var{lis}の最後のペアでなければなりません。手続きは呼び出し元を信頼して、
+@var{lis}をスキャンせずに@var{last}を最後のペアと考えることで
+O(1)操作を実現しています。
+
+この手続きを呼び出した後では、@var{lis}は@var{queue}に所有され、破壊的変更を
+受けます。この後で@var{lis}の内容をあてにしたり変更したりしてはいけません。
+@c COMMON
+@end defun
+
+@defun list-queue-append queue @dots{}
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns a fresh list-queue whose contents are concatenation of
+@var{queue}s.  The contents of arguments are intact.
+This is O(n) operation where n is the total number of elements.
+@c JP
+与えられた@var{queue}を全部つないだ要素を持つリストキューを
+新たに作成して返します。引数のキューは変更されません。
+これは要素の総数nについてO(n)の操作となります。
+@c COMMON
+@end defun
+
+@defun list-queue-append! queue @dots{}
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns a list-queue whose contents are concatenation of
+@var{queue}s.  During the operation, the contents of @var{queue}s
+may be mutated, and they shouldn't be used any longer.  (In Gauche,
+to avoid accident, we actually empty all the @var{queue}s.)
+It is also noted that the result doesn't need to be @code{eq?} to
+any of the arguments.
+This is O(m) operation where m is the total number of queues
+(as opposed to the number of elements).
+@c JP
+与えられた@var{queue}の要素を全てつないだものを要素とするリストキューを
+返します。操作によって、@var{queue}の内容は破壊されることがあり、
+以降それらのキューを使ってはなりません
+(Gaucheでは、事故を避けるために、全ての@var{queue}を空にしています)。
+結果として返されるキューが、引数のどれとも@code{eq?}になる必要はない、
+ということに注意してください。
+これはキューの総数mに対してO(m)の操作です(要素の総数ではなく)。
+@c COMMON
+@end defun
+
+@defun list-queue-concatenate queues
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@code{(apply list-queue-append queues)}.
+@end defun
+
+@defun list-queue-map proc queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Returns a fresh list-queue whose elements are obtained by
+applying @var{proc} on every elements in @var{queue}.
+@c JP
+@var{proc}を@var{queue}の各要素に適用して得られた結果を要素とする
+新たなリストキューを返します。
+@c COMMON
+@end defun
+
+@defun list-queue-map! proc queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Replaces every element in @var{queue} by the result of
+application of @var{proc} on the element.
+@c JP
+@var{queue}の各要素を、それに@var{proc}を適用して得られた結果に
+置き替えます。
+@c COMMON
+@end defun
+
+@defun list-queue-for-each proc queue
+[R7RS list-queue]
+@c MOD scheme.list-queue
+@c EN
+Applies @var{proc} on every element of @var{queue}.
+The results are discarded.
+@c JP
+@var{proc}を@var{queue}の各要素に適用します。結果は捨てられます。
+@c COMMON
+@end defun
+
+@node R7RS comparators,  , R7RS list queues, R7RS large
+@subsection @code{scheme.comparator} - R7RS comparators
+@c NODE R7RS比較器, @code{scheme.box} - R7RS比較器
+
+@deftp {Module} scheme.comparator
+@mdindex scheme.comparator
+This module defines comparators and related procedures.
+Originally called @code{srfi-128}.
+
+Gauche supports comparators fully compatible to
+@code{scheme.comparator} built-in.
+@xref{Basic comparators}, for the following procedures
+defined in this module.
+
+@example
+comparator? comparator-ordered? comparator-hashable?
+make-comparator make-pair-comparator
+make-list-comparator make-vector-comparator
+make-eq-comparator make-eqv-comparator make-equal-comparator
+
+boolean-hash char-hash char-ci-hash string-hash
+string-ci-hash symbol-hash number-hash
+hash-bound hash-salt
+
+make-default-comparator default-hash
+comparator-register-default!
+
+comparator-type-test-predicate comparator-equality-predicate
+comparator-ordering-predicate comparator-hash-function
+comparator-test-type comparator-check-type comparator-hash
+
+=? <? >? <=? >=? comparator-if<=>
+@end example
+@end deftp
 
 @c Local variables:
 @c mode: texinfo

@@ -21,25 +21,6 @@
 ;;----------------------------------------------------------------------
 ;; 
 
-(test-section "primitive macro transformer")
-
-(define-syntax defmac  ; (defmac name args . body)
-  (primitive-macro-transformer
-   (lambda (form def-env use-env)
-     (let ([name (cadr form)]
-           [args (caddr form)]
-           [body (cdddr form)])
-       `(define-syntax ,name
-          (let ((,name (lambda ,args ,@body)))
-            (primitive-macro-transformer
-             (lambda (f d u) (apply ,name (cdr f))))))))))
-
-(defmac myif (test then else) `(if ,test ,then ,else))
-
-(test-macro "defmac if" (if a b c) (myif a b c))
-
-;; explicit renaming macros
-
 (test-section "ER macro basics")
 
 (define-syntax er-when
@@ -204,6 +185,28 @@
              '((1 2) . #(1 2))
              (foo)))))
 
+;; er-macro and with-module
+;; cf. https://github.com/shirok/Gauche/issues/250
+(define er-macro-scope-test-a 'a)
+
+(define-module er-macro-test-1
+  (define er-macro-scope-test-a 'b))
+
+(with-module er-macro-test-1
+  (define-syntax er-macro-test-x
+    (er-macro-transformer
+     (^[f r c] (r 'er-macro-scope-test-a)))))
+
+(test* "er-macro and with-module" 'b
+       ((with-module er-macro-test-1 er-macro-test-x)))
+
+;; er-macro and eval
+(test* "er-macro and eval" 'b
+       (eval '(let-syntax ((m (er-macro-transformer
+                               (^[f r c] (r 'er-macro-scope-test-a)))))
+                (m))
+             (find-module 'er-macro-test-1)))
+
 ;; quasirename
 ;; Note: currently quasirename depends on util.match, too.
 (let ((unquote list)
@@ -212,14 +215,16 @@
   (let-syntax ([foo (er-macro-transformer
                      (^[f r c]
                        (let ([a (cadr f)]
-                             [b (caddr f)])
+                             [b (caddr f)]
+                             [all (cdr f)])
                          (quasirename r
-                           (list x ,a y ,b '#(x ,a y ,b))))))])
+                           (list x ,a y ,b ,@all
+                                 '#(x ,a y ,b) ,@(reverse all))))))])
     (let ((list vector)
           (x 10)
           (y 20))
       (test* "er-macro and quasirename"
-             '(1 3 2 4 #(x 3 y 4))
+             '(1 3 2 4 3 4 #(x 3 y 4) 4 3)
              (foo 3 4)))))
 
 ;;----------------------------------------------------------------------
@@ -243,6 +248,18 @@
 (test-macro "simple" (f z #(1.0 2.0)) (simple #(1.0 2.0) z))
 (test-macro "simple" (f z (#\b #\a)) (simple (#\b #\a) z))
 (test-macro "simple" (f z #(2 1)) (simple #(2 1) z))
+
+(define-syntax underbar (syntax-rules ()
+                          [(_) 0]
+                          [(_ _) 1]
+                          [(_ _ _) 2]
+                          [(_ _ _ _) 3]
+                          [(_ _ _ _ . _) many]))
+(test-macro "underbar" 0 (underbar))
+(test-macro "underbar" 1 (underbar a))
+(test-macro "underbar" 2 (underbar a b))
+(test-macro "underbar" 3 (underbar a b c))
+(test-macro "underbar" many (underbar a b c d))
 
 (define-syntax repeat (syntax-rules ()
                         ((_ 0 (?a ?b) ...)     ((?a ...) (?b ...)))
@@ -331,12 +348,38 @@
                      j)
             (nest5 (z (a b c) (d e f g) (h i) . j)))
 
+(define-syntax nest6 (syntax-rules ()
+                       ((_ (?a ...) ...)
+                        (?a ... ...)))) ;srfi-149
+(test-macro "nest6" (a b c d e f g h i j)
+            (nest6 (a b c d) (e f g) (h i) (j)))
+(test-macro "nest6" (a b c d e f g)
+            (nest6 (a b c d) () (e) () (f g)))
 
+(define-syntax nest7 (syntax-rules ()
+                       ((_ (?a ...) ...)
+                        (?a ... ... z ?a ... ...)))) ;srfi-149
+(test-macro "nest7" (a b c d e f g h i j z a b c d e f g h i j)
+            (nest7 (a b c d) (e f g) (h i) (j)))
+(test-macro "nest7" (a b c d e f g z a b c d e f g)
+            (nest7 (a b c d) () (e) () (f g)))
+
+(define-syntax nest8 (syntax-rules ()
+                       ((_ ((?a ...) ...) ...)
+                        (?a ... ... ... z)))) ;srfi-149
+(test-macro "nest8" (a b c d e f g h i j z)
+            (nest8 ((a b c d) (e f g)) ((h i) (j))))
+(test-macro "nest8" (a b c d e f g h i j z)
+            (nest8 ((a b c d) () (e f g)) () ((h i) () (j) ())))
+
+;; mixlevel is allowed by srfi-149
 (define-syntax mixlevel1 (syntax-rules ()
                            ((_ (?a ?b ...)) ((?a ?b) ...))))
 
 (test-macro "mixlevel1" ((1 2) (1 3) (1 4) (1 5) (1 6))
             (mixlevel1 (1 2 3 4 5 6)))
+(test-macro "mixlevel1" ()
+            (mixlevel1 (1)))
 
 (define-syntax mixlevel2 (syntax-rules ()
                            ((_ (?a ?b ...) ...)
@@ -357,33 +400,33 @@
 (test "bad ellipsis 1" (test-error)
       (lambda () 
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t) (3 ...)))
+                 (syntax-rules () [(t) (3 ...)]))
               (interaction-environment))))
 (test "bad ellipsis 2" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t a) (a ...)))
+                 (syntax-rules () [(t a) (a ...)]))
               (interaction-environment))))
 (test "bad ellipsis 3" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t a b ...) (a ...)))
+                 (syntax-rules () [(t a b ...) (a ...)]))
               (interaction-environment))))
 (test "bad ellipsis 4" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t a ...) ((a ...) ...)))
+                 (syntax-rules () [(t a ...) ((a ...) ...)]))
               (interaction-environment))))
 
 (test "bad ellipsis 5" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () ((a ... b ...)) ((a ...) (b ...))))
+                 (syntax-rules () [(t (a ... b ...)) ((a ...) (b ...))]))
               (interaction-environment))))
 (test "bad ellipsis 6" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () ((... a b)) (... a b )))
+                 (syntax-rules () [(t (... a b)) (... a b )]))
               (interaction-environment))))
 
 (define-syntax hygiene (syntax-rules ()
@@ -481,6 +524,14 @@
     [(_ ... :::) '((... ...) :::)]))
 
 (test "alt-elli2" '((a a) (b b) (c c)) (lambda () (alt-elli2 a b c)))
+
+;; https://srfi-email.schemers.org/srfi-148/msg/6115633
+(define-syntax alt-elli3
+  (syntax-rules ... (...)
+    [(m x y ...) 'ellipsis]
+    [(m x ...)   'literal]))
+
+(test "alt-elli3" 'literal (lambda () (alt-elli3 x ...)))
 
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
@@ -924,6 +975,71 @@
         (gen-idef-5 ooo? eee?)
         (list (ooo? 5) (eee? 7))))
 
+;; crazy case when define is redefined
+(define-module mac-idef
+  (export (rename my-define define))
+  (define (my-define . args) args))
+
+(define-module mac-idef.user
+  (import mac-idef))
+
+(test "define (redefined)" '(5 2)
+      (lambda ()
+        (with-module mac-idef.user
+          (let ((a 5)) (define a 2)))))
+
+(define-module mac-idef2
+  (export (rename my-define define))
+  (define-syntax my-define
+    (syntax-rules ()
+      [(_ var expr) (define (var) expr)])))
+
+(define-module mac-idef2.user
+  (import mac-idef2))
+
+(test "define (redefined2)" 5
+      (lambda ()
+        (with-module mac-idef2.user
+          (let ((a 5)) (define x a) (x)))))
+
+(test "internal define-syntax and scope 1" 'inner
+      (let ((x 'outer))
+        (lambda ()
+          (define x 'inner)
+          (define-syntax foo
+            (syntax-rules ()
+              [(_) x]))
+          (foo))))
+
+'(test "internal define-syntax and scope 2" 'inner
+      (let ((x 'outer))
+        (lambda ()
+          (define-syntax foo
+            (syntax-rules ()
+              [(_) x]))
+          (define x 'inner)
+          (foo))))
+
+'(test "internal define-syntax and scope 3" '(inner inner)
+      (let ((x 'outer))
+        (lambda ()
+          (define-syntax def
+            (syntax-rules ()
+              [(_ v) (define v x)]))
+          (define x 'inner)
+          (def y)
+          (list x y))))
+
+'(test "internal define-syntax and scope 3" '(inner inner)
+      (let ((x 'outer))
+        (lambda ()
+          (define-syntax def
+            (syntax-rules ()
+              [(_ v) (define v (lambda () x))]))
+          (def y)
+          (define x 'inner)
+          (list x (y)))))
+
 ;;----------------------------------------------------------------------
 ;; macro defining macros
 
@@ -1107,6 +1223,8 @@
 ;;----------------------------------------------------------------------
 ;; identifier comparison
 
+(test-section "identifier comparison")
+
 ;; This is EXPERIMENTAL: may be changed in later release.
 
 (define-syntax hoge (syntax-rules () ((hoge foo ...) (cdr b))))
@@ -1114,6 +1232,30 @@
       (lambda () (macroexpand '(hoge bar))))
 (test "comparison of identifiers" (macroexpand '(hoge bar))
       (lambda () (macroexpand '(hoge bar))))
+
+;;----------------------------------------------------------------------
+;; keyword and extended lambda list
+
+(test-section "keyword inserted by macro")
+
+(define-syntax define-extended-1
+  (syntax-rules ()
+    [(_ name)
+     (define (name a :key (b #f))
+       (list a b))]))
+
+(define-extended-1 extended-1)
+(test "macro expands to extended lambda list" '(1 2)
+      (lambda () (extended-1 1 :b 2)))
+
+(define-syntax define-extended-2
+  (syntax-rules ()
+    [(_ name)
+     (define (name a :key ((:b boo) #f))
+       (list a boo))]))
+(define-extended-2 extended-2)
+(test "macro expands to extended lambda list" '(3 4)
+      (lambda () (extended-2 3 :b 4)))
 
 ;;----------------------------------------------------------------------
 ;; common-macros
@@ -1310,6 +1452,20 @@
 (test "if-let1" 'bar
       (lambda () (if-let1 it (memq 'a '(b c d)) 'boo 'bar)))
 
+(test "let-values" '(2 1 1 (2) (2 1))
+      (lambda () (let ([a 1] [b 2])
+                   (let-values ([(a b) (values b a)]
+                                [(c . d) (values a b)]
+                                [e (values b a)])
+                     (list a b c d e)))))
+
+(test "let*-values" '(2 1 2 (1) (1 2))
+      (lambda () (let ([a 1] [b 2])
+                   (let*-values ([(a b) (values b a)]
+                                 [(c . d) (values a b)]
+                                 [e (values b a)])
+                     (list a b c d e)))))
+
 (test "ecase" 'b
       (lambda () (ecase 3 ((1) 'a) ((2 3) 'b) ((4) 'c))))
 (test "ecase" (test-error)
@@ -1376,5 +1532,86 @@
 (define-macro (bad-fi a b c) `(,fi ,a ,b ,c))
 (test "reject first-class macro usage" (test-error)
       (lambda () (bad-fi #t 'a 'b)))
+
+;;----------------------------------------------------------------------
+;; compiler macros
+
+(test-section "define-inline/syntax")
+
+(define-inline/syntax cpm
+  (lambda (a b) (+ a b))
+  (er-macro-transformer
+   (lambda (f r c) `(,(r '*) ,(cadr f) ,(caddr f)))))
+(test "compiler macro" '(6 5 6)
+      (lambda ()
+        (list (cpm 2 3)
+              (apply cpm '(2 3))
+              (let ((* -)) (cpm 2 3)))))
+
+;;----------------------------------------------------------------------
+;; syntax error
+
+(test-section "syntax-error")
+
+(define-syntax test-syntax-error
+  (syntax-rules ()
+    [(_ a) 'ok]
+    [(_ a b) (syntax-errorf "bad {~a ~a}" a b)]
+    [(_ x ...) (syntax-error "bad number of arguments" x ...)]))
+
+;; NB: These tests depends on the fact that the compile "wraps"
+;; the error by <compile-error-mixin> in order.  If the compiler changes
+;; the error handling, adjust the tests accordingly.
+;; Our purpose here is to make sure syntax-error preserves the offending macro
+;; call (test-syntax-error ...).
+(test "syntax-error"
+      '("bad number of arguments (x y z)"
+        (test-syntax-error x y z)
+        (list (test-syntax-error x y z)))
+      (lambda ()
+        (guard [e (else (let1 xs (filter <compile-error-mixin>
+                                         (slot-ref e '%conditions))
+                          (cons (slot-ref e 'message)
+                                (map (lambda (x) (slot-ref x 'expr)) xs))))]
+          (eval '(list (test-syntax-error x y z))
+                (interaction-environment)))))
+(test "syntax-errorf"
+      '("bad {x y}"
+        (test-syntax-error x y)
+        (list (test-syntax-error x y)))
+      (lambda ()
+        (guard [e (else (let1 xs (filter <compile-error-mixin>
+                                         (slot-ref e '%conditions))
+                          (cons (slot-ref e 'message)
+                                (map (lambda (x) (slot-ref x 'expr)) xs))))]
+          (eval '(list (test-syntax-error x y))
+                (interaction-environment)))))
+
+;;----------------------------------------------------------------------
+;; srfi-147 begin
+;; (not yest supported)
+
+'(test-section "srfi-147 begin")
+
+'(test "srfi-147 begin (internal)"
+      '(yes no)
+      (lambda ()
+        (define-syntax foo
+          (begin (define-syntax bar if)
+                 (syntax-rules ()
+                   [(_ x y z) (bar z x y)])))
+        (list (foo 'yes 'no (zero? 0))
+              (foo 'yes 'no (zero? 1)))))
+
+'(test "srfi-147 begin (internal)"
+      11
+      (lambda ()
+        (let-syntax ([foo (syntax-rules ()
+                            [(_ a) (begin (define x (* a 2))
+                                          (syntax-rules ()
+                                            [(_ b) (+ b x)]))])])
+          (define-syntax bar (foo 3))
+          (bar 5))))
+      
 
 (test-end)

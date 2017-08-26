@@ -11,13 +11,36 @@ set -e
 case "$MSYSTEM" in
   MINGW64)
     mingwdir=${MINGWDIR:-/mingw64}
+    mingwarch="x86_64"
     ;;
   MINGW32)
     mingwdir=${MINGWDIR:-/mingw32}
+    mingwarch="i686"
     ;;
   *)
+    echo 'WARNING: $MSYSTEM is neither "MINGW32" or "MINGW64".'
     mingwdir=${MINGWDIR:-/mingw}
+    mingwarch="unknown"
     ;;
+esac
+
+# Setting PATH to make sure the build process find right tools.
+# NB: We don't use CC=/path/to/gcc trick for ./configure, since
+# the gcc path embedded in gauche-config should be Windows path.
+PATH=$mingwdir/bin:$PATH
+
+## Build architecture
+#  Mingw-w64 automatically identifies this by default if you're in an
+#  appropriate shell, but we sometimes need to cross-build (meaning,
+#  building i686 binary on x86_64 shell, for example), so this setting
+#  makes things easier.
+case "$MSYSTEM" in
+  MINGW64)
+    buildopt=--build=x86_64-w64-mingw32;;
+  MINGW32)
+    buildopt=--build=i686-w64-mingw32;;
+  *)
+    buildopt=--build=i686-pc-mingw32;;
 esac
 
 # Process Options:
@@ -59,12 +82,12 @@ fi
 if [ "$INSTALLER" = yes ]; then
   distdir=`pwd`/winnt/wix/Gauche
 else
-  distdir=`pwd`/../Gauche-mingw-dist/Gauche
+  distdir=`pwd`/../Gauche-mingw-dist/Gauche-${mingwarch}
 fi
 rm -rf $distdir
 ./configure --prefix=$distdir --enable-threads=win32 \
             --enable-multibyte=utf8 --enable-ipv6=no \
-            --with-dbm=ndbm,odbm
+            --with-dbm=ndbm,odbm $buildopt
 make
 
 if [ $? -ne 0 ]; then
@@ -79,7 +102,7 @@ make install-examples
 rm -rf $distdir/lib/libgauche.dll*
 case "$MSYSTEM" in
   MINGW64|MINGW32)
-    for dll in libwinpthread-1.dll libcharset-1.dll libiconv-2.dll zlib1.dll libz-1.dll; do
+    for dll in libwinpthread-1.dll; do
       if [ -f $mingwdir/bin/$dll ]; then
         cp $mingwdir/bin/$dll $distdir/bin
       fi
@@ -87,26 +110,22 @@ case "$MSYSTEM" in
     ;;
   *)
     cp $mingwdir/bin/mingwm10.dll $distdir/bin
-    for dll in libcharset-1.dll libiconv-2.dll zlib1.dll libz-1.dll; do
-      if [ -f $mingwdir/bin/$dll ]; then
-        cp $mingwdir/bin/$dll $distdir/bin
-      fi
-    done
     ;;
 esac
 
 # Build GL
+# NB: 
 if [ "$WITH_GL" = "yes" ]; then
   PATH=$distdir/bin:$PATH
   (cd ../Gauche-gl; ./DIST gen; \
-   if test -f Makefile; then make clean; fi; \
-   ./configure --prefix=$distdir --with-glut=mingw-static; \
-   make; make install; make install-examples)
+   ./configure --prefix=$distdir --with-glut=mingw-static $buildopt; \
+   make clean; make; make install; make install-examples)
 fi
 
 # Build installer
 if [ "$INSTALLER" = "yes" ]; then
   (cd winnt/wix; make)
+  cp winnt/wix/Gauche-mingw-*.msi ..
 fi
 
 # 'zip' isn't included in MinGW.

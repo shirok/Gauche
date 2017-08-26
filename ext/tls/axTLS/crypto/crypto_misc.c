@@ -32,6 +32,20 @@
  * Some misc. routines to help things out
  */
 
+/* Make RNG thread-safe (Gauche specific) */
+#include "gauche.h"
+#if defined(GAUCHE_WINDOWS)
+#undef open
+#undef chdir
+#undef unlink
+#if defined(GAUCHE_USE_WTHREADS)
+#undef SCM_INTERNAL_MUTEX_INIT
+#undef SCM_INTERNAL_MUTEX_LOCK
+#define SCM_INTERNAL_MUTEX_INIT(mutex) ((mutex) = CreateMutex(NULL, FALSE, NULL))
+#define SCM_INTERNAL_MUTEX_LOCK(mutex) WaitForSingleObject(mutex, INFINITE)
+#endif /* GAUCHE_USE_WTHREADS */
+#endif /* GAUCHE_WINDOWS */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -41,6 +55,42 @@
 #ifdef CONFIG_WIN32_USE_CRYPTO_LIB
 #include "wincrypt.h"
 #endif
+
+/* Make RNG thread-safe (Gauche specific) */
+static ScmInternalMutex mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
+static u_long counter = 0;
+#if defined(GAUCHE_WINDOWS)
+/* ensuring initialization of global mutex on Windows. */
+#if defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)
+static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
+static BOOL CALLBACK init_mutex(PINIT_ONCE once, PVOID param, PVOID *ctx)
+{
+    SCM_INTERNAL_MUTEX_INIT(mutex);
+    return TRUE;
+}
+static void ensure_mutex_initialization()
+{
+    InitOnceExecuteOnce(&once, (PINIT_ONCE_FN)init_mutex, NULL, NULL);
+}
+#else /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
+static volatile LONG once = 0;
+static void ensure_mutex_initialization()
+{
+    for (;;) {
+        switch (InterlockedCompareExchange(&once, 2, 0)) {
+        case 0:  /* first time */
+            SCM_INTERNAL_MUTEX_INIT(mutex);
+            InterlockedExchange(&once, 1);
+            return;
+        case 1:  /* done */
+            return;
+        default: /* wait (another thread is initializing) */
+            SwitchToThread();
+        }
+    }
+}
+#endif /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
+#endif /* GAUCHE_WINDOWS */
 
 #ifndef WIN32
 static int rng_fd = -1;
@@ -103,8 +153,17 @@ int get_file(const char *filename, uint8_t **buf)
  */
 EXP_FUNC void STDCALL RNG_initialize()
 {
+#if defined(GAUCHE_WINDOWS)
+    ensure_mutex_initialization();
+#endif /* GAUCHE_WINDOWS */
+    SCM_INTERNAL_MUTEX_LOCK(mutex);
+    if (counter++ > 0) {
+        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+        return;
+    }
+    
 #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
-    rng_fd = ax_open("/dev/urandom", O_RDONLY);
+    rng_fd = open("/dev/urandom", O_RDONLY);
 #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
     if (!CryptAcquireContext(&gCryptProv, 
                       NULL, NULL, PROV_RSA_FULL, 0))
@@ -122,10 +181,14 @@ EXP_FUNC void STDCALL RNG_initialize()
     }
 #else
     /* start of with a stack to copy across */
-    int i;
-    memcpy(entropy_pool, &i, ENTROPY_POOL_SIZE);
-    srand((unsigned int)&i); 
+    /* int i; */
+    /* memcpy(entropy_pool, &i, ENTROPY_POOL_SIZE); */
+    uint8_t arr[ENTROPY_POOL_SIZE];
+    memcpy(entropy_pool, arr, ENTROPY_POOL_SIZE);
+    rand_r((unsigned int *)entropy_pool); 
 #endif
+
+    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
 }
 
 /**
@@ -146,29 +209,41 @@ EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size)
  */
 EXP_FUNC void STDCALL RNG_terminate(void)
 {
+    SCM_INTERNAL_MUTEX_LOCK(mutex);
+    if (--counter > 0) {
+        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+        return;
+    }
+    
 #ifndef WIN32
     close(rng_fd);
 #elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
     CryptReleaseContext(gCryptProv, 0);
 #endif
+
+    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
 }
 
 /**
  * Set a series of bytes with a random number. Individual bytes can be 0
  */
 EXP_FUNC int STDCALL get_random(int num_rand_bytes, uint8_t *rand_data)
-{   
+{
+    SCM_INTERNAL_MUTEX_LOCK(mutex);
+    
 #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
     /* use the Linux default - read from /dev/urandom */
-    if (read(rng_fd, rand_data, num_rand_bytes) < 0) 
+    if (read(rng_fd, rand_data, num_rand_bytes) < 0) {
+        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
         return -1;
+    }
 #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
     /* use Microsoft Crypto Libraries */
     CryptGenRandom(gCryptProv, num_rand_bytes, rand_data);
 #else   /* nothing else to use, so use a custom RNG */
     /* The method we use when we've got nothing better. Use RC4, time 
        and a couple of random seeds to generate a random sequence */
-    RC4_CTX rng_ctx;
+    AES_CTX rng_ctx;
     struct timeval tv;
     MD5_CTX rng_digest_ctx;
     uint8_t digest[MD5_SIZE];
@@ -187,10 +262,10 @@ EXP_FUNC int STDCALL get_random(int num_rand_bytes, uint8_t *rand_data)
     MD5_Final(digest, &rng_digest_ctx);
 
     /* come up with the random sequence */
-    RC4_setup(&rng_ctx, digest, MD5_SIZE); /* use as a key */
+    AES_set_key(&rng_ctx, digest, (const uint8_t *)ep, AES_MODE_128); /* use as a key */
     memcpy(rand_data, entropy_pool, num_rand_bytes < ENTROPY_POOL_SIZE ?
 				num_rand_bytes : ENTROPY_POOL_SIZE);
-    RC4_crypt(&rng_ctx, rand_data, rand_data, num_rand_bytes);
+    AES_cbc_encrypt(&rng_ctx, rand_data, rand_data, num_rand_bytes);
 
     /* move things along */
     for (i = ENTROPY_POOL_SIZE-1; i >= MD5_SIZE ; i--)
@@ -199,6 +274,7 @@ EXP_FUNC int STDCALL get_random(int num_rand_bytes, uint8_t *rand_data)
     /* insert the digest at the start of the entropy pool */
     memcpy(entropy_pool, digest, MD5_SIZE);
 #endif
+    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
     return 0;
 }
 

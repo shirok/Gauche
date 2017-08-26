@@ -1,7 +1,7 @@
 /*
  * vector.c - vector implementation
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/writerP.h"
 
 /*=====================================================================
  * Generic vectors
@@ -319,27 +320,27 @@ ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
         switch (type) {
         case SCM_UVECTOR_S8:
             SCM_S8VECTOR_ELEMENTS(v)[i] =
-                (signed char)Scm_GetInteger8Clamp(SCM_CAR(cp), clamp, NULL);
+                (int8_t)Scm_GetInteger8Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_U8:
             SCM_U8VECTOR_ELEMENTS(v)[i] =
-                (unsigned char)Scm_GetIntegerU8Clamp(SCM_CAR(cp), clamp, NULL);
+                (uint8_t)Scm_GetIntegerU8Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_S16:
             SCM_S16VECTOR_ELEMENTS(v)[i] =
-                (short)Scm_GetInteger16Clamp(SCM_CAR(cp), clamp, NULL);
+                (int16_t)Scm_GetInteger16Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_U16:
             SCM_U16VECTOR_ELEMENTS(v)[i] =
-                (u_short)Scm_GetIntegerU16Clamp(SCM_CAR(cp), clamp, NULL);
+                (uint16_t)Scm_GetIntegerU16Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_S32:
             SCM_S32VECTOR_ELEMENTS(v)[i] =
-                (ScmInt32)Scm_GetInteger32Clamp(SCM_CAR(cp), clamp, NULL);
+                (int32_t)Scm_GetInteger32Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_U32:
             SCM_U32VECTOR_ELEMENTS(v)[i] =
-                (ScmUInt32)Scm_GetIntegerU32Clamp(SCM_CAR(cp), clamp, NULL);
+                (uint32_t)Scm_GetIntegerU32Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_S64:
             SCM_S64VECTOR_ELEMENTS(v)[i] =
@@ -403,6 +404,53 @@ ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, ScmSmallInt k, ScmObj fallback)
     }
 }
 
+/* Generic modifier */
+ScmObj Scm_UVectorSet(ScmUVector *v, int t, ScmSmallInt k, ScmObj val, int clamp)
+{
+    SCM_ASSERT(Scm_UVectorType(SCM_CLASS_OF(v)) == t);
+    SCM_UVECTOR_CHECK_MUTABLE(SCM_OBJ(v));
+    if (k < 0 || k >= SCM_UVECTOR_SIZE(v)) {
+        Scm_Error("%s-set! index out of range: %ld", Scm_UVectorTypeName(t), k);
+    }
+    switch (t) {
+    case SCM_UVECTOR_S8:
+        SCM_S8VECTOR_ELEMENTS(v)[k] = Scm_GetInteger8Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U8:
+        SCM_U8VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU8Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_S16:
+        SCM_S16VECTOR_ELEMENTS(v)[k] = Scm_GetInteger16Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U16:
+        SCM_U16VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU16Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_S32:
+        SCM_S32VECTOR_ELEMENTS(v)[k] = Scm_GetInteger32Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U32:
+        SCM_U32VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU32Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_S64:
+        SCM_S64VECTOR_ELEMENTS(v)[k] = Scm_GetInteger64Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U64:
+        SCM_U64VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU64Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_F16:
+        SCM_F16VECTOR_ELEMENTS(v)[k] = Scm_DoubleToHalf(Scm_GetDouble(val));
+        break;
+    case SCM_UVECTOR_F32:
+        SCM_F32VECTOR_ELEMENTS(v)[k] = (float)Scm_GetDouble(val);
+        break;
+    case SCM_UVECTOR_F64:
+        SCM_F64VECTOR_ELEMENTS(v)[k] = Scm_GetDouble(val);
+        break;
+    default:
+        Scm_Error("[internal error] unknown uvector type given to Scm_VMUVectorRef");
+    }
+    return SCM_UNDEFINED;
+}
 
 /*
  * Inidividual constructors for convenience
@@ -436,7 +484,7 @@ ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArrayShared)(ScmSmallInt size,\
 
 /* NB: For u8vector and s8vector we can let memset() to fill the
    contents, expecting it's optimized. */
-ScmObj Scm_MakeS8Vector(ScmSmallInt size, signed char fill)
+ScmObj Scm_MakeS8Vector(ScmSmallInt size, int8_t fill)
 {
     ScmUVector *u =
         (ScmUVector*)Scm_MakeUVector(SCM_CLASS_S8VECTOR, size, NULL);
@@ -444,7 +492,7 @@ ScmObj Scm_MakeS8Vector(ScmSmallInt size, signed char fill)
     return SCM_OBJ(u);
 }
 
-ScmObj Scm_MakeU8Vector(ScmSmallInt size, unsigned char fill)
+ScmObj Scm_MakeU8Vector(ScmSmallInt size, uint8_t fill)
 {
     ScmUVector *u =
         (ScmUVector*)Scm_MakeUVector(SCM_CLASS_U8VECTOR, size, NULL);
@@ -452,22 +500,22 @@ ScmObj Scm_MakeU8Vector(ScmSmallInt size, unsigned char fill)
     return SCM_OBJ(u);
 }
 
-DEF_UVCTOR_FILL(S16, short)
-DEF_UVCTOR_FILL(U16, u_short)
-DEF_UVCTOR_FILL(S32, ScmInt32)
-DEF_UVCTOR_FILL(U32, ScmUInt32)
+DEF_UVCTOR_FILL(S16, int16_t)
+DEF_UVCTOR_FILL(U16, uint16_t)
+DEF_UVCTOR_FILL(S32, int32_t)
+DEF_UVCTOR_FILL(U32, uint32_t)
 DEF_UVCTOR_FILL(S64, ScmInt64)
 DEF_UVCTOR_FILL(U64, ScmUInt64)
 DEF_UVCTOR_FILL(F16, ScmHalfFloat)
 DEF_UVCTOR_FILL(F32, float)
 DEF_UVCTOR_FILL(F64, double)
 
-DEF_UVCTOR_ARRAY(S8, signed char)
-DEF_UVCTOR_ARRAY(U8, unsigned char)
-DEF_UVCTOR_ARRAY(S16, short)
-DEF_UVCTOR_ARRAY(U16, u_short)
-DEF_UVCTOR_ARRAY(S32, ScmInt32)
-DEF_UVCTOR_ARRAY(U32, ScmUInt32)
+DEF_UVCTOR_ARRAY(S8,  int8_t)
+DEF_UVCTOR_ARRAY(U8,  uint8_t)
+DEF_UVCTOR_ARRAY(S16, int16_t)
+DEF_UVCTOR_ARRAY(U16, uint16_t)
+DEF_UVCTOR_ARRAY(S32, int32_t)
+DEF_UVCTOR_ARRAY(U32, uint32_t)
 DEF_UVCTOR_ARRAY(S64, ScmInt64)
 DEF_UVCTOR_ARRAY(U64, ScmUInt64)
 DEF_UVCTOR_ARRAY(F16, ScmHalfFloat)
@@ -567,12 +615,12 @@ static inline void f16pr(ScmPort *out, ScmHalfFloat elt)
     Scm_PrintDouble(out, Scm_HalfToDouble(elt), 0);
 }
 
-DEF_PRINT(S8, s8, signed char, spr)
-DEF_PRINT(U8, u8, unsigned char, upr)
-DEF_PRINT(S16, s16, short, spr)
-DEF_PRINT(U16, u16, u_short, upr)
-DEF_PRINT(S32, s32, ScmInt32, spr)
-DEF_PRINT(U32, u32, ScmUInt32, upr)
+DEF_PRINT(S8, s8,   int8_t, spr)
+DEF_PRINT(U8, u8,   uint8_t, upr)
+DEF_PRINT(S16, s16, int16_t, spr)
+DEF_PRINT(U16, u16, uint16_t, upr)
+DEF_PRINT(S32, s32, int32_t, spr)
+DEF_PRINT(U32, u32, uint32_t, upr)
 DEF_PRINT(S64, s64, ScmInt64, s64pr)
 DEF_PRINT(U64, u64, ScmUInt64, u64pr)
 DEF_PRINT(F16, f16, ScmHalfFloat, f16pr)
@@ -649,12 +697,12 @@ static inline int uint64lt(ScmUInt64 x, ScmUInt64 y)
 #define f16eqv(a, b) SCM_HALF_FLOAT_CMP(==, a, b)
 #define f16lt(a, b)  SCM_HALF_FLOAT_CMP(<, a, b)
 
-DEF_CMP(S8, s8, signed char, common_eqv, common_lt)
-DEF_CMP(U8, u8, unsigned char, common_eqv, common_lt)
-DEF_CMP(S16, s16, short, common_eqv, common_lt)
-DEF_CMP(U16, u16, u_short, common_eqv, common_lt)
-DEF_CMP(S32, s32, ScmInt32, common_eqv, common_lt)
-DEF_CMP(U32, u32, ScmUInt32, common_eqv, common_lt)
+DEF_CMP(S8, s8,   int8_t, common_eqv, common_lt)
+DEF_CMP(U8, u8,   uint8_t, common_eqv, common_lt)
+DEF_CMP(S16, s16, int16_t, common_eqv, common_lt)
+DEF_CMP(U16, u16, uint16_t, common_eqv, common_lt)
+DEF_CMP(S32, s32, int32_t, common_eqv, common_lt)
+DEF_CMP(U32, u32, uint32_t, common_eqv, common_lt)
 DEF_CMP(S64, s64, ScmInt64, int64eqv, int64lt)
 DEF_CMP(U64, u64, ScmUInt64, uint64eqv, uint64lt)
 DEF_CMP(F16, f16, ScmHalfFloat, f16eqv, f16lt)

@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.package.util - internal utilities used in package manager
 ;;;
-;;;   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -53,7 +53,7 @@
     (print cmdline))
   (unless (dry-run)
     (let1 p (run-process (cond-expand
-                          [gauche.os.windows (win-break-cmdargs cmdline)]
+                          [gauche.os.windows (shell-tokenize-string cmdline 'posix)]
                           [else `("/bin/sh" "-c" ,cmdline)])
                          :input (if stdin-string :pipe :null)
                          :wait #f)
@@ -65,37 +65,6 @@
       (process-wait p)
       (unless (zero? (process-exit-status p))
         (errorf "command execution failed: ~a" cmdline)))))
-
-;; A kludge to parse unix-style command line to break into list of
-;; arguments.  We pass the list to run-process, which eventually
-;; calls sys-exec, which takes care of proper escaping for CreateProcess
-;; windows API.  This isn't probably general enough, but I guess it
-;; suffices for the command lines we're dealing during building.
-(define (win-break-cmdargs cmdline)
-  (define (word in)
-    (let loop ([chs '()] [in-quote #f])
-      (let1 ch (read-char in)
-        (cond [(eof-object? ch)
-               (if (null? chs)
-                 ch
-                 (list->string (reverse chs)))]
-              [(and (char-whitespace? ch) (not in-quote))
-               (if (null? chs)
-                 (loop '() in-quote)
-                 (list->string (reverse chs)))]
-              [(char=? ch #\")
-               (case in-quote
-                 [(#\") (loop chs #f)] ;out
-                 [(#\') (loop (cons ch chs) in-quote)] ;as-is
-                 [else  (loop chs ch)])] ;in
-              [(char=? ch #\')
-               (case in-quote
-                 [(#\") (loop (cons ch chs) in-quote)] ;as-is
-                 [(#\') (loop chs #f)] ;out
-                 [else  (loop chs ch)])] ;in
-              [else (loop (cons ch chs) in-quote)]))))
-
-  (call-with-input-string cmdline (cut port->list word <>)))
 
 ;; Read password from the terminal without echoing
 (define (get-password)

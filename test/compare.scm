@@ -68,6 +68,8 @@
      ))
   )
 
+(test-section "object-compare")
+
 ;; comparing different types
 (define-class <other-type> () ())
 (define-method object-compare ((a <other-type>) (b <other-type>)) 0)
@@ -115,25 +117,7 @@
                (compare ay bx)
                (compare bx ay))))
 
-(let ()
-  (define ca (make-car-comparator string-comparator))
-  (define cd (make-cdr-comparator integer-comparator))
-  (define ta (make-hash-table ca))
-  (define td (make-hash-table cd))
-  (define sa '("orange" "apple" "mango" "papaya"))
-  (define sd '(29 34 98 1001))
-  (define data (append-map (^a (map (^d (cons a d)) sd)) sa))
-
-  (test* "make-car-comparator" (sort sa)
-         (begin (dolist [x data]
-                  (hash-table-put! ta x #t))
-                (sort (map car (hash-table-keys ta)))))
-
-  (test* "make-cdr-comparator" (sort sd)
-         (begin (dolist [x data]
-                  (hash-table-put! td x #t))
-                (sort (map cdr (hash-table-keys td)))))
-  )
+(test-section "builtin comparators")
 
 (let ()
   (define tc (make-tuple-comparator integer-comparator
@@ -145,10 +129,10 @@
                (comparator-test-type tc '(3 a "abc"))
                (comparator-test-type tc '(3 8 abc))))
   (test* "tuple comparator - equality" '(#t #f #f #f)
-         (list (comparator-equal? tc '(1 2/3 "abc") '(1 2/3 "abc"))
-               (comparator-equal? tc '(1 2/3 "abc") '(2 2/3 "abc"))
-               (comparator-equal? tc '(1 2/3 "abc") '(1 1/3 "abc"))
-               (comparator-equal? tc '(1 2/3 "abc") '(1 2/3 "qbc"))))
+         (list (=? tc '(1 2/3 "abc") '(1 2/3 "abc"))
+               (=? tc '(1 2/3 "abc") '(2 2/3 "abc"))
+               (=? tc '(1 2/3 "abc") '(1 1/3 "abc"))
+               (=? tc '(1 2/3 "abc") '(1 2/3 "qbc"))))
   (test* "tuple comparator - compare" '(0 1 -1 -1 1 1 -1)
          (list (comparator-compare tc '(1 2/3 "abc") '(1 2/3 "abc"))
                (comparator-compare tc '(1 2/3 "abc") '(0 2/3 "abc"))
@@ -173,16 +157,16 @@
        ((comparator-equality-predicate (make-comparator/compare #t #t (^[a b] 0) #f))
         1 2))
 (test* "has comparison proc" #t
-       (comparator-comparison-procedure? (make-comparator/compare #t eq? compare #f)))
+       (comparator-ordered? (make-comparator/compare #t eq? compare #f)))
 (test* "no comparison proc" #f
-       (comparator-comparison-procedure? (make-comparator/compare #t eq? #f #f)))
+       (comparator-ordered? (make-comparator/compare #t eq? #f #f)))
 (test* "comparator fallback behavior" (test-error)
        ((comparator-comparison-procedure (make-comparator/compare #t eq? #f #f))
         'a 'b))
 (test* "has hash function" #t
-       (comparator-hash-function? (make-comparator/compare #t eq? #f hash)))
+       (comparator-hashable? (make-comparator/compare #t eq? #f hash)))
 (test* "no hash function" #f
-       (comparator-hash-function? (make-comparator/compare #t eq? #f #f)))
+       (comparator-hashable? (make-comparator/compare #t eq? #f #f)))
 (test* "hash fallback behavior" (test-error)
        ((comparator-hash-procedure (make-comparator/compare #t eq? #f #f)) 'a))
 
@@ -224,7 +208,8 @@
        (equal? (make-comparator/compare #t equal? #f #f 'bo)
                (make-comparator/compare #t equal? #f #f 'yo)))
 
-;; srfi-128 comparator utilities
+(test-section "comparator utilities")
+
 (let ()
   (define (t rcmp xss)
     (test* "=?"
@@ -276,6 +261,43 @@
   (t (make-comparator/compare #t = (^[a b] (compare b a)) #f)
      '(1 0) '(1 1) '(0 1))
   (t #f '(0 1) '(1 1) '(1 0))
+  )
+
+(test-section "default comparator extension")
+
+(define-class <moo> () ((v :init-keyword :v)))
+
+(comparator-register-default!
+ (make-comparator (^x (is-a? x <moo>))
+                  (^[x y] (= (~ x'v) (~ y'v)))
+                  (^[x y] (< (~ x'v) (~ y'v)))
+                  (^x (default-hash (~ x'v)))))
+
+
+(let ([a (make <moo> :v 0)]
+      [b (make <moo> :v 10)]
+      [c (make <moo> :v 10)]
+      [d (make <moo> :v -10)])
+  (define pairs `((,a ,b) (,a ,c) (,a ,d) (,b ,c) (,b ,d) (,c ,d)))
+  (test* "extended default comparator comparison"
+         (map (^p (let ([a (car p)] [b (cadr p)])
+                    (list (= (~ a'v) (~ b'v))
+                          (< (~ a'v) (~ b'v))
+                          (<= (~ a'v) (~ b'v))
+                          (> (~ a'v) (~ b'v))
+                          (>= (~ a'v) (~ b'v)))))
+              pairs)
+         (map (^p (let ([a (car p)] [b (cadr p)])
+                    (list (=? default-comparator a b)
+                          (<? default-comparator a b)
+                          (<=? default-comparator a b)
+                          (>? default-comparator a b)
+                          (>=? default-comparator a b))))
+              pairs))
+
+  (test* "extended default comparator hash"
+         (map (^a (default-hash (~ a 'v))) (list a b c d))
+         (map (cut comparator-hash default-comparator <>) (list a b c d)))
   )
 
 (test-end)

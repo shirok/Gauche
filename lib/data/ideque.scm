@@ -1,7 +1,7 @@
 ;;;
 ;;; data.ideque - immutable double-ended queue
 ;;;
-;;;   Copyright (c) 2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2015-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -34,7 +34,7 @@
 ;; This implements banker's deque
 ;; as described in Chris Okasaki's Purely Functional Data Structures.
 ;; It provides amortized O(1) operation.
-;; The API is adapted to draft srfi-134
+;; The API is adapted to srfi-134
 
 (define-module data.ideque
   (use gauche.record)
@@ -78,7 +78,11 @@
 ;;
 
 ;; API
-(define (make-ideque) *empty*)
+(define (make-ideque n :optional (init #f))
+  (let* ([lenf (quotient n 2)]
+         [lenr (- n lenf)])
+    (%make-dq lenf (make-list lenf init)
+              lenr (make-list lenr init))))
 
 ;; API [srfi-134]
 (define (ideque . args) (list->ideque args))
@@ -183,11 +187,11 @@
 (define ideque=
   (case-lambda
     [(elt=) #t]
-    [(elt= ideque) (check-arg ideque? ideque) #t]
+    [(elt= ideque) (assume-type ideque <ideque>) #t]
     [(elt= dq1 dq2)
      ;; we optimize two-arg case
-     (check-arg ideque? dq1)
-     (check-arg ideque? dq2)
+     (assume-type dq1 <ideque>)
+     (assume-type dq2 <ideque>)
      (or (eq? dq1 dq2)
          (let ([len1 (+ (dq-lenf dq1) (dq-lenr dq1))]
                [len2 (+ (dq-lenf dq2) (dq-lenr dq2))])

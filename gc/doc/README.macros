@@ -43,6 +43,10 @@ GC_NO_THREAD_REDIRECTS  Tested by gc.h.  Prevents redirection of thread
 GC_NO_THREAD_DECLS      Tested by gc.h.  MS Windows only.  Do not declare
                 Windows thread creation routines and do not include windows.h.
 
+GC_DONT_INCLUDE_WINDOWS_H   Tested by gc.h.  MS Windows only.  Do not include
+                windows.h from gc.h (but Windows-specific thread creation
+                routines are declared).
+
 GC_UNDERSCORE_STDCALL   Tested by gc.h.  Explicitly prefix exported/imported
                 WINAPI (__stdcall) symbols with '_' (underscore).  Could be
                 used with MinGW (for x86) compiler (in conjunction with
@@ -107,10 +111,6 @@ SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
 PCR     Set if the collector is being built as part of the Xerox Portable
   Common Runtime.
 
-USE_COMPILER_TLS  Assume the existence of __thread-style thread-local storage.
-  Set automatically for thread-local allocation with the HP/UX vendor
-  compiler.  Usable with gcc on sufficiently up-to-date ELF platforms.
-
 IMPORTANT: Any of the _THREADS options must normally also be defined in
   the client before including gc.h.  This redefines thread primitives to
   invoke the GC_ versions instead.  Alternatively, linker-based symbol
@@ -149,9 +149,9 @@ GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
 GC_WIN32_THREADS        Enables support for Win32 threads.  That makes sense
   for this Makefile only under Cygwin.
 
-GC_WIN32_PTHREADS       Enables support for Ming32 pthreads.  This cannot be
-  enabled automatically by GC_THREADS, which would assume Win32 native
-  threads.
+GC_WIN32_PTHREADS       Enables support for pthreads-win32 (or other
+  non-Cygwin pthreads library for Windows).  This cannot be enabled
+  automatically by GC_THREADS, which would assume Win32 native threads.
 
 PTW32_STATIC_LIB        Causes the static version of the Mingw pthreads
   library to be used.  Requires GC_WIN32_PTHREADS.
@@ -235,6 +235,8 @@ IGNORE_FREE     Turns calls to free into a no-op.  Only useful with
 NO_DEBUGGING    Removes GC_dump and the debugging routines it calls.
   Reduces code size slightly at the expense of debuggability.
 
+GC_DUMP_REGULARLY       Generate regular debugging dumps.
+
 DEBUG_THREADS   Turn on printing additional thread-support debugging
   information.
 
@@ -255,9 +257,11 @@ FINALIZE_ON_DEMAND      Causes finalizers to be run only in response
   In 5.0 this became runtime adjustable, and this only determines the
   initial value of GC_finalize_on_demand.
 
-GC_NO_FINALIZATION      Exclude finalization support (for smaller code size)
+GC_NO_FINALIZATION      Exclude finalization support (for smaller code size).
 
-ATOMIC_UNCOLLECTABLE    Includes code for GC_malloc_atomic_uncollectable.
+GC_TOGGLE_REFS_NOT_NEEDED       Exclude toggle-refs support.
+
+GC_ATOMIC_UNCOLLECTABLE Includes code for GC_malloc_atomic_uncollectable.
   This is useful if either the vendor malloc implementation is poor,
   or if REDIRECT_MALLOC is used.
 
@@ -390,8 +394,17 @@ USE_COMPILER_TLS        Causes thread local allocation to use
   default in HP/UX.  It may help performance on recent Linux installations.
   (It failed for me on RedHat 8, but appears to work on RedHat 9.)
 
+GC_ATTR_TLS_FAST        Use specific attributes for GC_thread_key like
+  __attribute__((tls_model("local-exec"))).
+
 PARALLEL_MARK   Allows the marker to run in multiple threads.  Recommended
   for multiprocessors.
+
+GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
+  (Turns GC_allow_register_threads into a no-op routine.)
+
+GC_ENABLE_SUSPEND_THREAD (Linux only)   Turn on thread suspend/resume API
+support.
 
 GC_WINMAIN_REDIRECT (Win32 only)        Redirect (rename) an application
   WinMain to GC_WinMain; implement the "real" WinMain which starts a new

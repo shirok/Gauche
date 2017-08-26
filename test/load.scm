@@ -184,6 +184,14 @@
        (let ((inc-var 2))
          (include "test.o/inc0")
          inc-var))
+(test* "include (relative to current, dots, expands inside let)" 4
+       (let ((inc-var 2))
+         (include "../src/test.o/inc0")
+         inc-var))
+(test* "include (relative to current, dots, expands inside let)" 4
+       (let ((inc-var 2))
+         (include "./test.o/inc0")
+         inc-var))
 (test* "include (absolute, expands into toplevel)" 4
        (include-into-toplevel
         (sys-normalize-pathname "test.o/inc0" :absolute #t)))

@@ -232,13 +232,16 @@ following options available:
 @table @asis
 @item no-inline
 Prohibits the compiler from inlining procedures and constants. Equivalent to
-no-inline-globals, no-inline-locals and no-inline constants combined.
+no-inline-globals, no-inline-locals, no-inline-constants
+and no-inline-setters combined.
 @item no-inline-globals
 Prohibits the compiler from inlining global procedures.
 @item no-inline-locals
 Prohibits the compiler from inlining local procedures.
 @item no-inline-constants
 Prohibits the compiler from inlining constants.
+@item no-inline-setters
+Prohibits the compiler from inlining setters.
 @item no-post-inline-pass
 Prohibits the compiler from running post-inline optimization pass.
 @item no-lambda-lifting-pass
@@ -361,7 +364,7 @@ If you invoke @code{gosh} into an interactive REPL mode with @code{-r7} option,
 all standard R7RS-small libraries (except @code{(scheme r5rs)} are already
 imported for your convenience.
 
-@xref{Library modules - R7RS integration}, for the details on
+@xref{Library modules - R7RS standard libraries}, for the details on
 how Gauche supports R7RS.
 
 (Note: The @code{-r7} option doesn't change reader lexiacl mode
@@ -392,7 +395,7 @@ R7RSでないと混乱してしまうかもしれません。
 importされた状態になっています。
 
 GaucheがR7RSをどのようにサポートしているかの詳細については
-@ref{Library modules - R7RS integration}を参照してください。
+@ref{Library modules - R7RS standard libraries}を参照してください。
 
 (註: @code{-r7}オプションは、リーダ字句モードを@code{strict-r7}に
 替えることはしません。@code{strict-r7}モードをデフォルトにすると、
@@ -863,14 +866,22 @@ A word preceeded with comma has special meaning.  Type ,help <cmd>
 to see the detailed help for <cmd>.
 Commands can be abbreviated as far as it is not ambiguous.
 
- ,a|apropos  Show the names of global bindings that match the regexp.
+ ,apropos|a  Show the names of global bindings that match the regexp.
  ,cd         Change the current directory.
- ,doc|info   Show info document for an entry of NAME.
- ,d|describe Describe the object.
+ ,describe|d Describe the object.
+ ,help|h     Show the help message of the command.
  ,history    Show REPL history.
- ,h|help     Show the help message of the command.
+ ,info|doc   Show info document for an entry of NAME, or search entries by REGEXP.
+ ,load|l     Load the specified file.
+ ,print-all|pa
+             Print previous result (*1) without abbreviation.
+ ,print-mode|pm
+             View/set print-mode of REPL.
  ,pwd        Print working directory.
+ ,reload|r   Reload the specified module, using gauche.reload.
+ ,sh         Run command via shell.
  ,source     Show source code of the procedure if it's available.
+ ,use|u      Use the specified module.  Same as (use module option ...).
 @end example
 
 @c EN
@@ -1034,6 +1045,37 @@ gosh> ,info <list>
 @end example
 
 @c EN
+You can also give a regexp pattern to @code{,info} command
+(@pxref{Regular expressions}).
+It shows the entries in the document that match the pattern.
+@c JP
+また、@code{,info}コマンドに正規表現のパターンを与えることもできます
+(@ref{Regular expressions}参照)。
+その場合、パターンにマッチするドキュメントの項目の一覧が表示されます。
+@c COMMON
+
+@example
+gosh> ,info #/^string-.*\?/
+string-ci<=?             Full string case conversion:44
+                         String Comparison:19
+string-ci<?              Full string case conversion:43
+                         String Comparison:18
+string-ci=?              Full string case conversion:42
+                         String Comparison:17
+string-ci>=?             Full string case conversion:46
+                         String Comparison:21
+string-ci>?              Full string case conversion:45
+                         String Comparison:20
+string-immutable?        String Predicates:9
+string-incomplete?       String Predicates:12
+string-null?             SRFI-13 String predicates:6
+string-prefix-ci?        SRFI-13 String Prefixes & Suffixes:28
+string-prefix?           SRFI-13 String Prefixes & Suffixes:26
+string-suffix-ci?        SRFI-13 String Prefixes & Suffixes:29
+string-suffix?           SRFI-13 String Prefixes & Suffixes:27
+@end example
+
+@c EN
 The @code{,a} command (or @code{,apropos}) shows the global identifiers
 matches the given name or regexp:
 @c JP
@@ -1050,14 +1092,98 @@ filter-map                     (gauche)
 @end example
 
 @c EN
-Note: The @code{apropos} command only shows the symbols that has
-loaded into the current process.  On the other hand, the @code{info}
+Note: The @code{apropos} command looks for symbols from the
+current process---that is, it only shows names that have been loaded
+and imported.
+But it also mean it can show any name as far as it exists in the
+current process, regardless of whether it's a documented API or an
+internal entry.
+
+On the other hand, the @code{info}
 command searches info document, regardless of the named entity
-has loaded into the current process or not.
+has loaded into the current process or not.  It doesn't show
+undocumented APIs.
+
+You can think that @code{apropos} is an introspection tool,
+while @code{info} is a document browsing tool.
 @c JP
-註: @code{apropos}コマンドは現在のプロセスにロードされている名前のみから
-検索します。一方、@code{info}コマンドは現在のプロセスにロードされているかどうか
-とは関係なく、infoドキュメントから検索します。
+註: @code{apropos}コマンドは現在のプロセス中から名前を探します。
+つまり、既にロードされたインポートされた名前しか表示しません。
+それは同時に、ロードされてさえいれば、ドキュメントのある公式なAPIか
+内部的な非公式なエントリかにかかわらず表示されるということでもあります。
+
+一方、@code{info}コマンドは現在のプロセスにロードされているかどうか
+とは関係なく、infoドキュメントから検索します。ドキュメントされていない
+APIにはヒットしません。
+
+@code{apropos}はイントロスペクションのツール、
+@code{info}はドキュメント参照のツールと考えると良いでしょう。
+@c COMMON
+
+@c EN
+When the result of evaluation is a huge nested structure,
+it may take too long to display the result.  Gauche actually set
+a limit of length and depth in displaying structures, so you might
+occasionally see the very long or deep list is trucated, with
+@dots{} to show there are more items.
+(Try evaluating @code{(make-list 100)} on REPL).
+@c JP
+評価結果が巨大な構造になる場合、それを表示するのに時間がかかりすぎる問題があります。
+Gaucheはデフォルトで、表示する構造の長さと深さに制限を設けているので、
+非常に長い、あるいは深い構造を表示しようとした場合に、@dots{}によって後の方が
+省略されて表示される場合があります。
+(REPLで@code{(make-list 100)}を評価してみてください。)
+@c COMMON
+
+@c EN
+You can type @code{,pa} (or @code{,print-all}) toplevel REPL command
+to fully redisplay the previous result without omission.
+@c JP
+直前の結果を省略無しで再表示するには @code{,pa} (もしくは@code{,print-all})
+トップレベルREPLコマンドをタイプしてください。
+@c COMMON
+
+@c EN
+For deeply nested structures, you may want it to be @emph{pretty printed},
+that is, with newlines and indentations to show the tree structure.
+Type @code{,pm pretty #t} (or @code{,print-mode pretty #t}) to turn on
+pretty printing.
+@c JP
+深くネストした構造には、適切に改行やインデントを挿入してみやすくしてくれる
+プリティプリント機能が欲しくなるかもしれません。
+@code{,pm pretty #t} (もしくは@code{,print-mode pretty #t}) 
+でプリティプリントをONにできます。
+@c COMMON
+
+@example
+gosh> ,pm pretty #t length 5
+Current print mode:
+  length :   5
+   level :  10
+  pretty :  #t
+   width :  #f
+    base :  10
+   radix :  #f
+gosh> (call-with-input-file "Info.plist" (cut ssax:xml->sxml <> '()))
+(*TOP*
+ (*PI* xml "version=\"1.0\" encoding=\"UTF-8\"")
+ (plist
+  (|@|
+   (version "1.0"))
+  (dict
+   (key "CFBundleDevelopmentRegion")
+   (string "English")
+   (key "CFBundleExecutable")
+   (string "Gauche")
+   ....)))
+@end example
+
+@c EN
+Type @code{,pm default} to make print mode back to default.
+For more details, type @code{,help pm}.
+@c JP
+プリントモードをデフォルトに戻すには@code{,pm default}とタイプします。
+より詳しくは@code{,help pm}を見てください。
 @c COMMON
 
 @c EN
@@ -1204,6 +1330,35 @@ alternate main procedure.
 @c COMMON
 
 @c EN
+@emph{Note on R7RS Scripts}: If the script is written in R7RS Scheme
+(which can be distinguished by the first @code{import} declaration,
+@pxref{Three forms of import}), it is read into @code{r7rs.user}
+module and its @code{main} isn't called.
+You can give @code{-mr7rs.main} command-line argument to call
+the @code{main} function in R7RS script.
+Alternatively, as specified in SRFI-22, if the script interpreter's
+basename is @file{scheme-r7rs}, we assume the script is R7RS SRFI-22 script
+and calls @code{main} in @code{r7rs.user} module rather than @code{user}
+module.  We don't install such an alias, but you can manually
+make symbolic link or just copy @file{gosh} binary as @file{scheme-r7rs}.
+@c JP
+@emph{R7RSスクリプトに関する註}: スクリプトがR7RS Schemeで書かれている場合
+(先頭にR7RSの@code{import}があることで区別されます。
+詳しくは@ref{Three forms of import}参照)、
+スクリプト本体は@code{r7rs.user}へと読み込まれるため、
+@code{main}は自動的には呼ばれません。
+コマンドライン引数@code{-mr7rs.main}を指定することで、
+R7RSスクリプトの@code{main}を実行できます。
+別の方法として、SRFI-22に指定されているように、
+スクリプトインタプリタのbasenameが@file{scheme-r7rs}であった場合、
+スクリプトはR7RSで書かれたSRFI-22形式であると見なされ、
+@code{user}モジュールのかわりに@code{r7rs.user}モジュールの@code{main}が呼ばれます。
+そのような別名は自動的にはインストールされませんが、
+@file{gosh}に@file{scheme-r7rs}という名前でシンボリックリンクを張るか、
+コピーすることができるでしょう。
+@c COMMON
+
+@c EN
 Although the argument of the @code{main} procedure is the standard way
 to receive the command-line arguments, there are a couple of other
 ways to access to the info.  @xref{Command-line arguments}, for the
@@ -1329,6 +1484,34 @@ foo
 a
 b
 c
+@end example
+
+@c EN
+Note: If the debug stub is evaluated in a thread other than
+the primordial thread (@pxref{Threads}), the output
+includes a number to distinguish which thread it is generated.
+In the following example, @code{#<thread ...>} and the prompt
+is the output of REPL in the primordial thread,
+but followig @code{#?=[1]...} and @code{#?-[1]...} are
+the debug output from the thread created by @code{make-thread}.
+The number is for debugging only---
+they differ for each thread, but other than that there's no meaning.
+@c JP
+註: デバッグスタブが原始スレッド(@ref{Threads}参照)以外のスレッドで評価された場合、
+スタブの出力には、どのスレッドから出力されたかを示す番号がつけられます。
+次の例では、@code{#<thread ...>}およびプロンプトが原始スレッドのREPLの
+出力ですが、続く@code{#?=[1]...}と@code{#?-[1]...}は
+@code{make-thread}により作られたスレッドからのデバッグ出力です。
+この番号はデバッグ時にスレッドを区別するためだけのもので、スレッド毎に異なりますが、
+それ以外の意味はありません。
+@c COMMON
+
+@example
+gosh> (use gauche.threads)
+gosh> (thread-start! (make-thread (^[] #?=(+ 2 3))))
+#<thread #f (1) runnable 0xf51400>
+gosh> #?=[1]"(standard input)":1:(+ 2 3)
+#?-[1]    5
 @end example
 
 @c EN
@@ -1468,12 +1651,10 @@ write Scheme code portable across multiple implementations.
 @c COMMON
 @item gauche.os.windows
 @c EN
-Defined on Windows native platform (currently using MinGW, but we'll
-have VC++ version in future).  Note that cygwin does not define
+Defined on Windows native platform.  Note that cygwin does not define
 this feature identifier (but see below).
 @c JP
-Windowsネイティブプラットフォームで定義されます。(現時点では、MinGWを
-使っていますが、将来VC++版をサポートする予定です。) cygwinでは
+Windowsネイティブプラットフォームで定義されます。cygwinでは
 この機能識別子は定義されません (下記も参照)。
 @c COMMON
 @item gauche.os.cygwin
@@ -1555,17 +1736,17 @@ Or even conditionally "use" the modules:
 @end example
 
 @c EN
-The traditional technique of testing a toplevel binding at runtime
+The traditional technique of testing a toplevel binding
 (using @code{global-variable-bound?}, @pxref{Module introspection})
-does not work well, since the test is done in runtime, while
-the @code{use} form takes effect at compile time.  It is strongly
-recommended to use @code{cond-expand} whenever possible.
+doesn't work well in this case, since
+the @code{use} form takes effect at compile time.  
+It is strongly recommended to use @code{cond-expand} whenever possible.
 @c JP
-実行時にトップレベルの束縛をチェックするような旧いテクニック
+トップレベルの束縛をチェックするような旧いテクニック
 (@code{global-variable-bound?}を使う, @ref{Module introspection}参照)
-は正しく働きません。これはプログラム実行時に実行されますが、@code{use}
-形式はコンパイル時に意味をもちます。可能なかぎり、@code{cond-expand}を
-使うことを推奨します。
+は実行時に効果を持つので、コンパイル時に解釈される@code{use}
+を切り替えるのはうまくいきません。
+可能なかぎり、@code{cond-expand}を使うことを推奨します。
 @c COMMON
 
 @c EN
@@ -1578,7 +1759,7 @@ and execution is interleaved, so we're carefully assessing the effects now.
 現時点では機能識別子集合はGaucheのコンパイル時に固定されます。つまり、
 Cのプリプロセッサを使った条件分岐よりも柔軟性に劣ります。この機能を拡
 張してあとから機能識別子を追加できるようにする計画ですが、この機能拡張
-はコンパイルと実行交互におこるときのセマンティクスを複雑にしてしまう可
+はコンパイルと実行が細切れに入れ替わる場合のセマンティクスを複雑にしてしまう可
 能性があり、現在その影響を慎重にみきわめている最中です。
 @c COMMON
 

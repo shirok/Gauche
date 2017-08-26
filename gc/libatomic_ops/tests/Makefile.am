@@ -10,19 +10,31 @@ AM_CPPFLAGS = \
         -I$(top_builddir)/src -I$(top_srcdir)/src \
         -I$(top_builddir)/tests -I$(top_srcdir)/tests
 
+CFLAGS += $(CFLAGS_EXTRA)
+
+TESTS = test_atomic$(EXEEXT) test_atomic_generalized$(EXEEXT) \
+        test_stack$(EXEEXT) test_malloc$(EXEEXT)
+TEST_OBJS = test_atomic.o test_atomic_generalized-test_atomic.o \
+        test_stack.o test_malloc.o
+check_PROGRAMS = test_atomic test_atomic_generalized \
+        test_stack test_malloc
+
 if HAVE_PTHREAD_H
-TESTS=test_atomic test_atomic_pthreads test_stack test_malloc
+TESTS += test_atomic_pthreads$(EXEEXT)
+TEST_OBJS += test_atomic_pthreads-test_atomic.o
+check_PROGRAMS += test_atomic_pthreads
 test_atomic_pthreads_SOURCES=$(test_atomic_SOURCES)
 test_atomic_pthreads_CPPFLAGS=-DAO_USE_PTHREAD_DEFS $(AM_CPPFLAGS)
 test_atomic_pthreads_LDADD=$(test_atomic_LDADD)
-else
-TESTS=test_atomic test_stack test_malloc
 endif
-
-check_PROGRAMS=$(TESTS)
 
 test_atomic_SOURCES=test_atomic.c
 test_atomic_LDADD = $(THREADDLLIBS) $(top_builddir)/src/libatomic_ops.la
+
+test_atomic_generalized_SOURCES=$(test_atomic_SOURCES)
+test_atomic_generalized_CPPFLAGS= \
+        -DAO_PREFER_GENERALIZED -DAO_TEST_EMULATION $(AM_CPPFLAGS)
+test_atomic_generalized_LDADD=$(test_atomic_LDADD)
 
 test_stack_SOURCES=test_stack.c
 test_stack_LDADD = $(THREADDLLIBS) \
@@ -34,7 +46,18 @@ test_malloc_LDADD = $(THREADDLLIBS) \
         $(top_builddir)/src/libatomic_ops_gpl.la \
         $(top_builddir)/src/libatomic_ops.la
 
+# Run the tests directly (without test-driver):
+.PHONY: check-without-test-driver
+check-without-test-driver: $(TESTS)
+	@echo "The following will print some 'Missing ...' messages"
+	./test_atomic$(EXEEXT)
+	./test_atomic_generalized$(EXEEXT)
+	./test_stack$(EXEEXT)
+	./test_malloc$(EXEEXT)
+	test ! -f test_atomic_pthreads$(EXEEXT) || ./test_atomic_pthreads$(EXEEXT)
+
 test_atomic_include.h: test_atomic_include.template
+	mkdir -p `dirname $@`
 	sed -e s:XX::g $? > $@
 	sed -e s:XX:_release:g $? >> $@
 	sed -e s:XX:_acquire:g $? >> $@
@@ -43,8 +66,10 @@ test_atomic_include.h: test_atomic_include.template
 	sed -e s:XX:_full:g $? >> $@
 	sed -e s:XX:_release_write:g $? >> $@
 	sed -e s:XX:_acquire_read:g $? >> $@
+	sed -e s:XX:_dd_acquire_read:g $? >> $@
 
 list_atomic.c: list_atomic.template
+	mkdir -p `dirname $@`
 	echo "#include \"atomic_ops.h\"" > $@
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g -e s:XX::g $? >> $@
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g -e s:XX:_release:g $? >> $@
@@ -93,8 +118,12 @@ list_atomic.c: list_atomic.template
 	sed -e s:XSIZE:double:g -e s:XCTYPE:AO_double_t:g -e s:XX:_dd_acquire_read:g $? >> $@
 
 list_atomic.i: list_atomic.c
+	mkdir -p `dirname $@`
 	$(COMPILE) $? -E > $@
 
 # Verify list_atomic.c syntax:
 list_atomic.o: list_atomic.c
 	$(COMPILE) -c -o $@ $?
+
+# Just compile all tests (without linking and execution):
+check-nolink-local: $(TEST_OBJS)

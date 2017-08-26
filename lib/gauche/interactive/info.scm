@@ -1,7 +1,7 @@
 ;;;
 ;;; interactive/info.scm - online helper
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -41,7 +41,7 @@
   (use gauche.process)
   (use gauche.config)
   (use gauche.sequence)
-  (export info info-page)
+  (export info info-page info-search)
   )
 (select-module gauche.interactive.info)
 
@@ -66,9 +66,21 @@
           ;; with them.
           (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
             (hash-table-push! index #"<~(car p)>" (cdr p)))
+          ($ hash-table-for-each index
+             (^[k v] (hash-table-put! index k (squash-entries v))))
           (make <repl-info>
             :info info :index index)))
     (^[] (force repl-info))))
+
+;; We sometimes list API variations using @defunx.  We want to pick only
+;; the first one of such entries.
+(define (squash-entries node&lines)
+  (if (length=? node&lines 1)
+    node&lines
+    (append-map (^[node&lines]
+                  ($ map (^l `(,(caar node&lines) ,(car l)))
+                     $ group-contiguous-sequence $ sort $ map cadr node&lines))
+         (group-collection node&lines :key car :test equal?))))
 
 ;; When there are more than one entry with the same name, texinfo appends
 ;; " <n>" in the index entry.  This strips that.
@@ -79,25 +91,61 @@
                     (find-file-in-paths "less")
                     (find-file-in-paths "more")))
 
+(define (viewer-pager s)
+  (let1 p (run-process *pager* :input :pipe)
+    (guard (e (else #f))
+      (display s (process-input p)))
+    (close-output-port (process-input p))
+    (process-wait p)))
+
+(define (viewer-dumb s) (display s))
+
+(define (viewer-nounicode s)
+  (display ($ regexp-replace-all* s
+              #/\u21d2/ "==>"      ; @result{}
+              #/\u2026/ "..."      ; @dots{}
+              #/\u2018/ "`"        ; @code{}
+              #/\u2019/ "'"        ; @code{}
+              #/\u201C/ "``"       ; ``         (e.g. ,i do)
+              #/\u201D/ "''"       ; ''         (e.g. ,i do)
+              #/\u2261/ "=="       ; @equiv{}   (e.g. ,i cut)
+              #/\u2212/ "-"        ; @minus     (e.g. ,i modulo)
+              #/\u2022/ "*"        ; @bullet    (e.g. ,i lambda)
+              #/\u2013/ "--"       ; --         (e.g. ,i utf8-length)
+              #/\u2014/ "---"      ; ---        (e.g. ,i lambda)
+              #/\u00df/ "[Eszett]" ; eszett     (e.g. ,i char-upcase)
+              )))
+
 (define viewer
-  (if (or (equal? (sys-getenv "TERM") "emacs")
-          (equal? (sys-getenv "TERM") "dumb")
-          (not (sys-isatty (current-output-port)))
-          (not *pager*))
-    display
-    (^s
-     (let1 p (run-process *pager* :input :pipe)
-       (guard (e (else #f))
-         (display s (process-input p)))
-       (close-output-port (process-input p))
-       (process-wait p)))))
+  (cond [(cond-expand
+          [(and gauche.os.windows
+                (not gauche.ces.none))
+           (use os.windows)
+           (guard (e [else #f])
+             (and (sys-isatty 1)
+                  (sys-get-console-mode 
+                   (sys-get-std-handle STD_OUTPUT_HANDLE))
+                  (not (= (sys-get-console-output-cp) 65001))))] ;unicode cp
+          [else #f])
+         viewer-nounicode]
+        [(or (equal? (sys-getenv "TERM") "emacs")
+             (equal? (sys-getenv "TERM") "dumb")
+             (not (sys-isatty (current-output-port)))
+             (not *pager*))
+         viewer-dumb]
+        [else 
+         viewer-pager]))
 
 (define (get-info-paths)
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
                         [else '()])]
          [instpath (list (gauche-config "--infodir"))]
-         [in-place (list "../doc")])
-    (append syspath instpath in-place)))
+         [in-place (cond-expand
+                    [gauche.in-place (if (member "../../lib" *load-path*)
+                                       '("../../doc")
+                                       '("../doc"))]
+                    [else '()])])
+    (append in-place syspath instpath)))
 
 (define (find-info-file)
   (let1 paths (get-info-paths)
@@ -165,3 +213,37 @@
      (^[node&line]
        (viewer (~ (info-get-node (~ (get-info)'info) (car node&line))
                   'content)))))
+
+;;
+;; Search info entries by regexp
+;;
+
+(define (search-entries rx)
+  (sort (filter (^e (rx (car e))) (hash-table->alist (~ (get-info)'index)))
+        string<? car))
+
+(define *search-entry-indent* 25)
+
+(define (format-search-result-entry entry) ; (key (node line) ...)
+  (define indent (make-string *search-entry-indent* #\space))
+  (define (subsequent-lines node&lines)
+    (dolist [l node&lines]
+      (format #t "~va~a:~d\n" *search-entry-indent* " " (car l) (cadr l))))
+  (match-let1 (key node&lines ...) entry
+    (if (> (string-length key) (- *search-entry-indent* 1))
+      (begin (print key) (subsequent-lines node&lines))
+      (begin (format #t "~va ~a:~d\n" (- *search-entry-indent* 1) key
+                     (caar node&lines) (cadar node&lines))
+             (subsequent-lines (cdr node&lines))))))
+
+;; API
+(define (info-search rx)
+  (assume-type rx <regexp>)
+  (let1 entries (search-entries rx)
+    (if (null? entries)
+      (print #"No entry matching ~|rx|")
+      (viewer (with-output-to-string
+                (^[] (for-each format-search-result-entry entries))))))
+  (values))
+
+               

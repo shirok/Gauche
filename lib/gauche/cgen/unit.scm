@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.cgen.unit - cgen-unit
 ;;;
-;;;   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -222,10 +222,10 @@
   (define (with-cpp-condition gf)
     (cond [(~ node'cpp-conditions)
            => (^[cppc] (cond [(method-overridden? gf)
-                              (for-each (cut print "#if " <>) cppc)
+                              (for-each (cut print "#if " <>) (reverse cppc))
                               (gf node)
                               (for-each (cut print "#endif /* "<>" */")
-                                        (reverse cppc))]
+                                        cppc)]
                              [else (gf node)]))]
           [else (gf node)]))
   (case part

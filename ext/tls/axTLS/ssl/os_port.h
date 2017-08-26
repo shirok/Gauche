@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2015, Cameron Rich
+ * Copyright (c) 2007-2016, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 #include "os_int.h"
-#include "config.h"
+#include "../config/config.h"
 #include <stdio.h>
 
 #if defined(WIN32)
@@ -100,7 +100,9 @@ extern "C" {
 #define usleep(A)               Sleep(A/1000)
 #define strdup(A)               _strdup(A)
 #define chroot(A)               _chdir(A)
+#ifndef chdir
 #define chdir(A)                _chdir(A)
+#endif
 #ifndef alloca
 #define alloca(A)               _alloca(A)
 #endif
@@ -122,14 +124,16 @@ extern "C" {
 
 typedef int socklen_t;
 
-EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
 #if !defined(__MINGW32__)
+EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
 EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
 EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #endif /*!defined(__MINGW32__)*/
 
 #if defined(__MINGW32__)
 #include <malloc.h>
+#include <sys/time.h>
+#define be64toh(x) __builtin_bswap64(x)
 #endif /*defined(__MINGW32__)*/
 
 #else   /* Not Win32 */
@@ -152,15 +156,15 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #define SOCKET_CLOSE(A)         if (A >= 0) close(A)
 #define TTY_FLUSH()
 
-/* OSX quirks */
-#ifdef __APPLE__
+/* get be64toh */
+#if    defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
 #define be64toh(x) OSSwapBigToHostInt64(x)
-#elif defined(__NetBSD__) || defined(__FreeBSD__)
+#elif  defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/endian.h>
-#else  /*!__APPLE__ && !__NetBSD__ */
+#else
 #include <asm/byteorder.h>
-#endif /*!__APPLE__*/
+#endif
 
 #ifndef be64toh
 #define be64toh(x) __be64_to_cpu(x)
@@ -169,15 +173,6 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #endif  /* Not Win32 */
 
 /* some functions to mutate the way these work */
-#define malloc(A)       ax_malloc(A)
-#ifndef realloc
-#define realloc(A,B)    ax_realloc(A,B)
-#endif
-#define calloc(A,B)     ax_calloc(A,B)
-
-EXP_FUNC void * STDCALL ax_malloc(size_t s);
-EXP_FUNC void * STDCALL ax_realloc(void *y, size_t s);
-EXP_FUNC void * STDCALL ax_calloc(size_t n, size_t s);
 EXP_FUNC int STDCALL ax_open(const char *pathname, int flags); 
 
 #ifdef CONFIG_PLATFORM_LINUX

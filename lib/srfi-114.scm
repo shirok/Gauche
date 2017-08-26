@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-114 - comparators
 ;;;
-;;;   Copyright (c) 2014-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2014-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -46,8 +46,8 @@
 (define-module srfi-114
   (use gauche.uvector)
   (export comparator?                   ;builtin (srfi-128)
-          comparator-comparison-procedure? ;builtin
-          comparator-hash-function?        ;builtin
+          comparator-comparison-procedure?
+          comparator-hash-function?
 
           boolean-comparator char-comparator char-ci-comparator
           string-comparator string-ci-comparator symbol-comparator
@@ -59,7 +59,7 @@
           default-comparator            ;builtin
           
           (rename make-comparator/compare make-comparator) ;builtin
-          make-car-comparator make-cdr-comparator ; builtin
+          make-car-comparator make-cdr-comparator
           
           make-inexact-real-comparator
           make-vector-comparator ; builtin
@@ -75,14 +75,14 @@
           eqv-comparator                ;builtin
           equal-comparator              ;builtin
 
-          comparator-type-test-procedure  ;builtin
+          comparator-type-test-procedure
           comparator-equality-predicate   ;builtin
           comparator-comparison-procedure ;builtin
           comparator-hash-function        ;builtin
 
           comparator-test-type          ;builtin
           comparator-check-type         ;builtin
-          comparator-equal?             ;builtin
+          comparator-equal?
           comparator-compare            ;builtin
           comparator-hash               ;builtin
 
@@ -91,7 +91,7 @@
 
           if3 if=? if<? if>? if<=? if>=? if-not=?
 
-          =? <? >? <=? >=?
+          =? <? >? <=? >=?              ;builtin
 
           make=? make<?  make>? make<=? make>=?
 
@@ -100,6 +100,17 @@
 
           comparator-min comparator-max))
 (select-module srfi-114)
+
+;;;
+;;; Predicates
+;;;
+(define (comparator-comparison-procedure? c)
+  (comparator-ordered? c))              ;srfi-128
+(define (comparator-hash-function? c)
+  (comparator-hashable? c))             ;srfi-128
+(define (comparator-type-test-procedure c)
+  (comparator-type-test-predicate c))   ;srfi-128
+(define (comparator-equal? c a b) (=? c a b))
 
 ;;;
 ;;; Inexact comparator
@@ -155,6 +166,12 @@
 ;;;
 ;;; Comparator transformers
 ;;;
+
+(define (make-car-comparator comparator)
+  (make-key-comparator comparator pair? car))
+
+(define (make-cdr-comparator comparator)
+  (make-key-comparator comparator pair? cdr))
 
 (define (make-listwise-comparator test elt-comparator null? car cdr)
   (make-list-comparator elt-comparator test null? car cdr)) ; srfi-128
@@ -329,12 +346,6 @@
 (define make>? (gen-make-x >))
 (define make<=? (gen-make-x <=))
 (define make>=? (gen-make-x >=))
-
-(define (=? cmp a b . args)  (apply (make=? cmp) a b args))
-(define (<? cmp a b . args)  (apply (make<? cmp) a b args))
-(define (>? cmp a b . args)  (apply (make>? cmp) a b args))
-(define (<=? cmp a b . args) (apply (make<=? cmp) a b args))
-(define (>=? cmp a b . args) (apply (make>=? cmp) a b args))
 
 (define in-open-interval?
   (case-lambda

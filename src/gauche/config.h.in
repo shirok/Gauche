@@ -318,9 +318,6 @@
 /* Define to 1 if you have the `srandom' function. */
 #undef HAVE_SRANDOM
 
-/* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
@@ -452,6 +449,9 @@
 
 /* The size of `rlim_t', as computed by sizeof. */
 #undef SIZEOF_RLIM_T
+
+/* Slib installation path */
+#undef SLIB_DIR
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be

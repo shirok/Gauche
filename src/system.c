@@ -1,7 +1,7 @@
 /*
  * system.c - system interface
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -65,7 +65,15 @@ extern char **environ;
 #else   /* GAUCHE_WINDOWS */
 #include <lm.h>
 #include <tlhelp32.h>
-static HANDLE *win_prepare_handles(int *fds);
+/* For windows redirection; win_prepare_handles creats and returns
+   win_redirects[3].  Each entry contains an inheritable handle for
+   the child process' stdin, stdout and stderr, respectively, and the flag
+   duped indicates whether the parent process must close the handle. */
+typedef struct win_redirects_rec {
+    HANDLE *h;
+    int duped;
+} win_redirects;
+static win_redirects *win_prepare_handles(int *fds);
 static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
                                 int *status /*out*/);
 #endif  /* GAUCHE_WINDOWS */
@@ -990,10 +998,30 @@ void Scm_GetTimeOfDay(u_long *sec, u_long *usec)
 /* Abstract clock_gettime and clock_getres.
    If the system doesn't have these, those API returns FALSE; the caller
    should make up fallback means.
+
+   NB: XCode8 breaks clock_getres on OSX 10.11---it's only provided in
+   OSX 10.12, but the SDK pretends it's available on all platforms.
+   For the workaround, we call OSX specific functions.
+   Cf. http://developer.apple.com/library/mac/#qa/qa1398/_index.html
  */
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+static mach_timebase_info_data_t tinfo;
+#endif /* __APPLE__ && __MACH__ */
+
 int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
 {
-#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+#if defined(__APPLE__) && defined(__MACH__)
+    if (tinfo.denom == 0) {
+	(void)mach_timebase_info(&tinfo);
+    }
+    uint64_t t = mach_absolute_time();
+    uint64_t ns = t * tinfo.numer / tinfo.denom;
+    *sec = ns / 1000000000;
+    *nsec = ns % 1000000000;
+    return TRUE;
+#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
     ScmTimeSpec ts;
     int r;
     SCM_SYSCALL(r, clock_gettime(CLOCK_MONOTONIC, &ts));
@@ -1009,7 +1037,21 @@ int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
 
 int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
 {
-#if defined(HAVE_CLOCK_GETRES) && defined(CLOCK_MONOTONIC)
+#if defined(__APPLE__) && defined(__MACH__)
+    if (tinfo.denom == 0) {
+	(void)mach_timebase_info(&tinfo);
+    }
+    if (tinfo.numer <= tinfo.denom) {
+	/* The precision is finer than nano seconds, but we can only
+	   represent nanosecond resolution. */
+	*sec = 0;
+	*nsec = 1;
+    } else {
+	*sec = 0;
+	*nsec = tinfo.numer / tinfo.denom;
+    }
+    return TRUE;
+#elif defined(HAVE_CLOCK_GETRES) && defined(CLOCK_MONOTONIC)
     ScmTimeSpec ts;
     int r;
     SCM_SYSCALL(r, clock_getres(CLOCK_MONOTONIC, &ts));
@@ -1726,7 +1768,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 
     if (forkp) {
         TCHAR  program_path[MAX_PATH+1], *filepart;
-        HANDLE *hs = win_prepare_handles(fds);
+        win_redirects *hs = win_prepare_handles(fds);
         PROCESS_INFORMATION pi;
         DWORD creation_flags = 0;
 
@@ -1740,9 +1782,9 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         GetStartupInfo(&si);
         if (hs != NULL) {
             si.dwFlags |= STARTF_USESTDHANDLES;
-            si.hStdInput  = hs[0];
-            si.hStdOutput = hs[1];
-            si.hStdError  = hs[2];
+            si.hStdInput  = hs[0].h;
+            si.hStdOutput = hs[1].h;
+            si.hStdError  = hs[2].h;
         }
 
         LPCTSTR curdir = NULL;
@@ -1762,6 +1804,16 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                                curdir, /* current dir */
                                &si,  /* startup info */
                                &pi); /* process info */
+        if (hs != NULL) {
+            for (int i=0; i<3; i++) {
+                /* hs[i].h may be a handle duped in win_prepare_handles(). 
+                   We have to close it in parent process or they would be
+                   inherited to subsequent child process.  (The higher-level
+                   Scheme routine closes the open end of the pipe, but that
+                   won't affect the duped one. */
+                if (hs[i].duped) CloseHandle(hs[i].h);
+            }
+        }
         if (r == 0) Scm_SysError("spawning %s failed", program);
         CloseHandle(pi.hThread); /* we don't need it. */
         return win_process_register(Scm_MakeWinProcess(pi.hProcess));
@@ -1897,38 +1949,43 @@ void Scm_SysSwapFds(int *fds)
 }
 
 #if defined(GAUCHE_WINDOWS)
-static HANDLE *win_prepare_handles(int *fds)
+/* Fds is Scm_SysPrepareFdMap returns. */
+static win_redirects *win_prepare_handles(int *fds)
 {
     if (fds == NULL) return NULL;
 
     /* For the time being, we only consider stdin, stdout, and stderr. */
-    HANDLE *hs = SCM_NEW_ATOMIC_ARRAY(HANDLE, 3);
+    win_redirects *hs = SCM_NEW_ATOMIC_ARRAY(win_redirects, 3);
     int count = fds[0];
 
     for (int i=0; i<count; i++) {
         int to = fds[i+1], from = fds[i+1+count];
         if (to >= 0 && to < 3) {
             if (from >= 3) {
-                /* from_fd may be a pipe. */
+                /* FROM may be a pipe.  in that case, it will be closed
+                   in the higher-level, so we shouldn't give
+                   DUPLICATE_CLOSE_SOURCE here. */
                 HANDLE zh;
                 if (!DuplicateHandle(GetCurrentProcess(),
                                      (HANDLE)_get_osfhandle(from),
                                      GetCurrentProcess(),
                                      &zh,
                                      0, TRUE,
-                                     DUPLICATE_CLOSE_SOURCE
-                                     |DUPLICATE_SAME_ACCESS)) {
+                                     DUPLICATE_SAME_ACCESS)) {
                     Scm_SysError("DuplicateHandle failed");
                 }
-                hs[to] = zh;
+                hs[to].h = zh;
+                hs[to].duped = TRUE;
             } else {
-                hs[to] = (HANDLE)_get_osfhandle(from);
+                hs[to].h = (HANDLE)_get_osfhandle(from);
+                hs[to].duped = FALSE;
             }
         }
     }
     for (int i=0; i<3; i++) {
-        if (hs[i] == NULL) {
-            hs[i] = (HANDLE)_get_osfhandle(i);
+        if (hs[i].h == NULL) {
+            hs[i].h = (HANDLE)_get_osfhandle(i);
+            hs[i].duped = FALSE;
         }
     }
     return hs;
@@ -2752,6 +2809,8 @@ clock_t times(struct tms *info)
     return 0;
 }
 
+
+
 /*
  * Other obscure stuff
  */
@@ -2766,10 +2825,47 @@ int pipe(int fd[])
 {
 #define PIPE_BUFFER_SIZE 512
     /* NB: We create pipe with NOINHERIT to avoid complication when spawning
-       child process.  Sys_Exec will dups the handle with inheritable flag
+       child process.  Scm_SysExec will dups the handle with inheritable flag
        for the children.  */
     int r = _pipe(fd, PIPE_BUFFER_SIZE, O_BINARY|O_NOINHERIT);
     return r;
+}
+
+/* If the given handle points to a pipe, returns its name.
+   As of Oct 2016, mingw headers does not include
+   GetFileInformationByHandleEx API, so we provide alternative. */
+
+typedef struct {
+    DWORD FileNameLength;
+    WCHAR FileName[1];
+} X_FILE_NAME_INFO;
+
+typedef enum {
+    X_FileNameInfo = 2
+} X_FILE_INFO_BY_HANDLE_CLASS;
+
+ScmObj Scm_WinGetPipeName(HANDLE h)
+{
+    if (GetFileType(h) != FILE_TYPE_PIPE) return SCM_FALSE;
+    static BOOL (WINAPI *pGetFileInformationByHandleEx)(HANDLE,
+							X_FILE_INFO_BY_HANDLE_CLASS,
+							LPVOID, DWORD) = NULL;
+    
+    if (pGetFileInformationByHandleEx == NULL) {
+	pGetFileInformationByHandleEx = 
+	    get_api_entry(_T("kernel32.dll"),
+			  "GetFileInformationByHandleEx",
+			  FALSE);
+    }
+    if (pGetFileInformationByHandleEx == NULL) return SCM_FALSE;
+
+    DWORD size = sizeof(X_FILE_NAME_INFO) + sizeof(WCHAR)*MAX_PATH;
+    X_FILE_NAME_INFO *info = SCM_MALLOC_ATOMIC(size);
+    BOOL r = pGetFileInformationByHandleEx(h, X_FileNameInfo, info, size);
+    if (!r) return SCM_FALSE;
+    
+    info->FileName[info->FileNameLength / sizeof(WCHAR)] = 0;
+    return SCM_MAKE_STR_COPYING(SCM_WCS2MBS(info->FileName));
 }
 
 char *ttyname(int desc)

@@ -1,7 +1,7 @@
 ;;;
 ;;; libalpha.scm - Procedures needed by other lib*.scm
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -37,7 +37,8 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>)))
+ (declcode (.include <gauche/vminsn.h>
+                     <gauche/priv/macroP.h>)))
 
 ;;;
 ;;;  errors
@@ -52,23 +53,29 @@
       (loop (cddr args) (list* (cadr args) (car args) keys))
       (values (reverse! keys) args))))
 
+(define (%make-error-message msg args) ; srfi-23 style message
+  (let1 p (open-output-string)
+    (display msg p)
+    (dolist [obj args] (display " " p) (write/ss obj p))
+    (get-output-string p)))
+
+;; Handy when you want to create <error> object without immediately raising it.
+(define-in-module gauche (make-error msg . args)
+  (make <error> :message (%make-error-message msg args)
+        :message-prefix msg :message-args args))
+
+;; error and errorf.  A bit messy to allow optional condition class argument
+;; as the first arg.
 (define-in-module gauche (error msg . args)
-  (define (mkmsg msg args) ;; srfi-23 style message
-    (let1 p (open-output-string)
-      (display msg p)
-      (dolist [obj args] (display " " p) (write/ss obj p))
-      (get-output-string p)))
   (raise
    (cond
     [(is-a? msg <condition-meta>)
      (receive (keys msgs) (%error-scan-keys args)
        (if (null? msgs)
          (apply make msg keys)
-         (apply make msg :message (mkmsg (car msgs) (cdr msgs)) keys)))]
-    [else (make <error>
-            :message (mkmsg msg args)
-            :message-prefix msg
-            :message-args args)])))
+         (apply make msg
+                :message (%make-error-message (car msgs) (cdr msgs)) keys)))]
+    [else (apply make-error msg args)])))
 
 (define-in-module gauche (errorf fmt . args)
   (raise
@@ -97,15 +104,35 @@
 ;; so we should have it before them.
 
 (select-module gauche)
+(define-cproc getter-with-setter (proc::<procedure> set::<procedure>) ;SRFI-17
+  (case (SCM_PROCEDURE_TYPE proc)
+    [(SCM_PROC_SUBR SCM_PROC_CLOSURE)]  ;ok
+    [(SCM_PROC_GENERIC SCM_PROC_METHOD)
+     (Scm_Error "You can't attach a setter to a generic function or a method \
+                 using getter-with-setter.  Instead, you can define a setter \
+                 method using the name (setter %S)."
+                (SCM_PROCEDURE_INFO proc))]
+    [else (Scm_Error "You can't attach a setter to %S." (SCM_OBJ proc))])
+  (let* ([p (Scm_CopyProcedure proc)])
+    ;; NB: We override p->locked, for p is a copy.
+    (set! (SCM_PROCEDURE_SETTER_LOCKED p) FALSE)
+    (return (Scm_SetterSet (SCM_PROCEDURE p) set TRUE))))
+
 (define-cproc setter (proc) ;SRFI-17
   (inliner SETTER)
   (setter (proc::<procedure> setter::<procedure>) ::<void>
           (Scm_SetterSet proc setter FALSE))
   Scm_Setter)
 
-(define (getter-with-setter get set)
-  (rlet1 proc (^ x (apply get x))
-    (set! (setter proc) set)))
+;;;
+;;;  srfi-111 box
+;;;
+
+;; We use them in equal? implementation as well, so here we go...
+(define-cproc box (v) (return (SCM_OBJ (Scm_MakeBox v))))
+(define-cproc box? (v) ::<boolean> (return (SCM_BOXP v)))
+(define-cproc unbox (b::<box>) (return (SCM_BOX_VALUE b)))
+(define-cproc set-box! (b::<box> v) ::<void> (SCM_BOX_SET b v))
 
 ;;;
 ;;;  case-lambda support
@@ -249,3 +276,13 @@
                     (if-let1 proc (vector-ref dispatch-vec i)
                       (loop (cons `(,(+ min-args i) #f ,proc) r) (+ i 1))
                       (loop r (+ i 1))))))))))
+
+;;;
+;;; This is needed before we use define-macro.
+;;;
+
+(with-module gauche.internal)
+;; proc :: Sexpr, Cenv -> Sexpr
+(define-cproc %make-macro-transformer (name transformer
+                                       :optional (src #f) (describer #f))
+  Scm_MakeMacroFull)

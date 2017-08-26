@@ -235,4 +235,23 @@
 (test* "string-titlecase" "Stra\u00dfe" (string-titlecase "stra\u00dfe"))
 (test* "string-foldcase" "strasse" (string-foldcase "stra\u00dfe"))
 
+(test-section "east asian width")
+
+(let ([data1 '((#\a  Na)
+               (#\x7e Na)
+               (#\x7f N))]
+      [data2 (cond-expand
+              [gauche.ces.none '()]
+              [else '((#\u03b1 A)
+                      (#\u3000 F)
+                      (#\u30a2 W))])])
+  (define (width-test ch expected)
+    (test* #"east asian width (~ch)" `(,expected ,expected)
+           (list (char-east-asian-width ch)
+                 (char-east-asian-width (char->ucs ch)))))
+
+  (dolist [f data1] (apply width-test f))
+  (dolist [f data2] (apply width-test f))
+  )
+
 (test-end)

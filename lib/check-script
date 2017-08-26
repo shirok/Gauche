@@ -1,0 +1,33 @@
+;;
+;; Quick check for scripts.
+;;
+;; Run this as 'gosh check-script <script-file> ...'
+;;
+
+(use gauche.test)
+(use file.util)
+
+(define (main args)
+  (if (null? (cdr args))
+    (usage)
+    (begin
+      (test-start "scripts")
+      (dolist [f (cdr args)]
+        ;; Often, "." is not in *load-path* and relative pathname may be
+        ;; given without "./"... so we ensure relative path begins with "./".
+        (let1 p (if (absolute-path? f)
+                  f
+                  ($ build-path "."
+                     $ sys-normalize-pathname f :canonicalize #t))
+          (test-script p)))
+      (test-end))))
+
+(define (usage)
+  (print "Usage: gosh check-script <script-file> ...")
+  (print "Runs test-script function on each <script-file> to find out")
+  (print "undefined functions, call procedures with wrong number of arguments, etc.")
+  (exit 1))
+
+;; Local variables:
+;; mode: scheme
+;; end:

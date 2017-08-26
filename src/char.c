@@ -1,7 +1,7 @@
 /*
  * char.c - character and character set operations
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -35,6 +35,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/char_attr.h"
+#include "gauche/priv/vectorP.h"
 
 #include "char_attr.c"          /* generated tables */
 
@@ -211,6 +212,20 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
 #define MASK_SET(cs, ch)    SCM_BITS_SET(cs->small, ch)
 #define MASK_RESET(cs, ch)  SCM_BITS_RESET(cs->small, ch)
 
+static inline void check_mutable(ScmCharSet *cs) 
+{
+    if (SCM_CHAR_SET_IMMUTABLE_P(cs))
+        Scm_Error("Char set is immutable: %S", cs);
+}
+
+static inline void set_large(ScmCharSet *cs, int flag)
+{
+    if (flag) {
+        cs->flags |= SCM_CHAR_SET_LARGE;
+    } else {
+        cs->flags &= ~(SCM_CHAR_SET_LARGE);
+    }
+}
 
 /*----------------------------------------------------------------------
  * Printer
@@ -266,17 +281,85 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
             charset_print_ch(out, code-1, FALSE);
         }
     }
-    ScmTreeIter iter;
-    ScmDictEntry *e;
-    Scm_TreeIterInit(&iter, &cs->large, NULL);
-    while ((e = Scm_TreeIterNext(&iter)) != NULL) {
-        charset_print_ch(out, (int)e->key, FALSE);
-        if (e->value != e->key) {
-            if (e->value - e->key > 2) Scm_Printf(out, "-");
-            charset_print_ch(out, (int)e->value, FALSE);
+
+    if (cs->flags & SCM_CHAR_SET_IMMUTABLE) {
+        const uint32_t *v = cs->large.frozen.vec;
+        for (int i = 0; i < cs->large.frozen.size; i += 2) {
+            charset_print_ch(out, (int)v[i], FALSE);
+            if (v[i] != v[i+1]) {
+                if (v[i+1] - v[i] > 2) Scm_Printf(out, "-");
+                charset_print_ch(out, (int)v[i+1], FALSE);
+            }
+        }
+    } else {
+        ScmTreeIter iter;
+        ScmDictEntry *e;
+        Scm_TreeIterInit(&iter, &cs->large.tree, NULL);
+        while ((e = Scm_TreeIterNext(&iter)) != NULL) {
+            charset_print_ch(out, (int)e->key, FALSE);
+            if (e->value != e->key) {
+                if (e->value - e->key > 2) Scm_Printf(out, "-");
+                charset_print_ch(out, (int)e->value, FALSE);
+            }
         }
     }
     Scm_Printf(out, "]");
+}
+
+/*-----------------------------------------------------------------
+ * Iterators for large char set
+ */
+typedef struct cs_iter_rec {
+    ScmCharSet *cs;
+    int end;
+    union {
+        ScmTreeIter ti;
+        size_t vi;
+    } iter;
+} cs_iter;
+
+static void cs_iter_init(cs_iter *ci, ScmCharSet *cs)
+{
+    ci->cs = cs;
+    if (!SCM_CHAR_SET_LARGE_P(cs)) {
+        ci->end = TRUE;
+    } else {
+        ci->end = FALSE;
+        if (SCM_CHAR_SET_IMMUTABLE_P(cs)) {
+            ci->iter.vi = 0;
+        } else {
+            Scm_TreeIterInit(&ci->iter.ti, &cs->large.tree, NULL);
+        }
+    }
+}
+
+/* returns FALSE if already exhausted */
+static int cs_iter_next(cs_iter *ci,
+                        ScmChar *from /*out*/,
+                        ScmChar *to   /*out*/)
+{
+    if (ci->end) return FALSE;
+    if (SCM_CHAR_SET_IMMUTABLE_P(ci->cs)) {
+        if (ci->iter.vi >= ci->cs->large.frozen.size) {
+            ci->end = TRUE;
+            return FALSE;
+        } else {
+            *from = (ScmChar)ci->cs->large.frozen.vec[ci->iter.vi];
+            *to   = (ScmChar)ci->cs->large.frozen.vec[ci->iter.vi+1];
+            ci->iter.vi += 2;
+            return TRUE;
+        }
+    } else {
+        ScmDictEntry *e = Scm_TreeIterNext(&ci->iter.ti);
+        if (e == NULL) {
+            ci->end = TRUE;
+            return FALSE;
+        } else {
+            *from = (ScmChar)e->key;
+            *to = (ScmChar)e->value;
+            return TRUE;
+        }
+    }
 }
 
 /*-----------------------------------------------------------------
@@ -294,7 +377,8 @@ static ScmCharSet *make_charset(void)
     ScmCharSet *cs = SCM_NEW(ScmCharSet);
     SCM_SET_CLASS(cs, SCM_CLASS_CHARSET);
     Scm_BitsFill(cs->small, 0, SCM_CHAR_SET_SMALL_CHARS, 0);
-    Scm_TreeCoreInit(&cs->large, cmp, NULL);
+    Scm_TreeCoreInit(&cs->large.tree, cmp, NULL);
+    cs->flags = 0;              /* small & mutable by default */
     return cs;
 }
 
@@ -303,12 +387,103 @@ ScmObj Scm_MakeEmptyCharSet(void)
     return SCM_OBJ(make_charset());
 }
 
+/* This is mainly for precompiled module. */
+ScmObj Scm_MakeImmutableCharSet(const ScmBits *small,
+                                const uint32_t *vec,
+                                size_t size)
+{
+    SCM_ASSERT(size > 0 && size % 2 == 0);
+    ScmCharSet *cs = SCM_NEW(ScmCharSet);
+    cs->flags |= SCM_CHAR_SET_IMMUTABLE;
+    memcpy(cs->small, small, sizeof(cs->small));
+    if (vec != NULL) {
+        set_large(cs, TRUE);
+        if ((cs->large.frozen.size = size) == 2) {
+            cs->large.frozen.ivec[0] = vec[0];
+            cs->large.frozen.ivec[1] = vec[1];
+            cs->large.frozen.vec = cs->large.frozen.ivec;
+        } else {
+            cs->large.frozen.vec = vec;
+        }
+    }
+    return SCM_OBJ(cs);
+}
+
 ScmObj Scm_CharSetCopy(ScmCharSet *src)
 {
     ScmCharSet *dst = make_charset();
     Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHAR_SET_SMALL_CHARS);
-    Scm_TreeCoreCopy(&dst->large, &src->large);
+    set_large(dst, SCM_CHAR_SET_LARGE_P(src));
+    if (SCM_CHAR_SET_IMMUTABLE_P(src)) {
+        /* The destination is mutable */
+        const uint32_t *vec = src->large.frozen.vec;
+        for (size_t k = 0; k < src->large.frozen.size; k += 2) {
+            ScmDictEntry *e = Scm_TreeCoreSearch(&dst->large.tree,
+                                                 vec[k], SCM_DICT_CREATE);
+            e->value = vec[k+1];
+        }
+    } else {
+        Scm_TreeCoreCopy(&dst->large.tree, &src->large.tree);
+    }
     return SCM_OBJ(dst);
+}
+
+/* Creates flat searched vector to be used for immutable charset.
+   SRC must be a mutable charset.
+   The caller must provide uint32_t[2] buffer for ivec. */
+static uint32_t *char_set_freeze_vec(ScmCharSet *src,
+                                     uint32_t *ivec,
+                                     size_t *size /*out*/)
+{
+    SCM_ASSERT(!SCM_CHAR_SET_IMMUTABLE_P(src));
+    size_t s = (size_t)Scm_TreeCoreNumEntries(&src->large.tree) * 2;
+    uint32_t *v = (s == 2)? ivec : SCM_NEW_ATOMIC_ARRAY(uint32_t, s);
+    
+    cs_iter iter;
+    cs_iter_init(&iter, src);
+    ScmChar lo, hi;
+    for (size_t k = 0; cs_iter_next(&iter, &lo, &hi); k += 2) {
+        SCM_ASSERT(k < s);
+        v[k]   = (uint32_t)lo;
+        v[k+1] = (uint32_t)hi;
+    }
+    *size = s;
+    return v;
+}
+
+ScmObj Scm_CharSetFreeze(ScmCharSet *src)
+{
+    if (SCM_CHAR_SET_IMMUTABLE_P(src)) return SCM_OBJ(src);
+    ScmCharSet *dst = make_charset();
+    Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHAR_SET_SMALL_CHARS);
+
+    dst->flags |= SCM_CHAR_SET_IMMUTABLE;
+    if (SCM_CHAR_SET_LARGE_P(src)) {
+        set_large(dst, TRUE);
+        dst->large.frozen.vec = char_set_freeze_vec(src,
+                                                    dst->large.frozen.ivec,
+                                                    &dst->large.frozen.size);
+    } else {
+        dst->large.frozen.vec = NULL;
+        dst->large.frozen.size = 0;
+    }
+    return SCM_OBJ(dst);
+}
+
+ScmObj Scm_CharSetFreezeX(ScmCharSet *src)
+{
+    if (SCM_CHAR_SET_IMMUTABLE_P(src)) return SCM_OBJ(src);
+    if (SCM_CHAR_SET_LARGE_P(src)) {
+        size_t s;
+        uint32_t iv[2];
+        uint32_t *v = char_set_freeze_vec(src, iv, &s);
+        src->large.frozen.size = s;
+        src->large.frozen.vec = (s == 2)? src->large.frozen.ivec : v;
+        src->large.frozen.ivec[0] = iv[0];
+        src->large.frozen.ivec[1] = iv[1];
+    }
+    src->flags |= SCM_CHAR_SET_IMMUTABLE;
+    return SCM_OBJ(src);
 }
 
 /*-----------------------------------------------------------------
@@ -334,8 +509,59 @@ int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
 {
     if (!Scm_BitsEqual(x->small, y->small, 0, SCM_CHAR_SET_SMALL_CHARS))
         return FALSE;
-    if (!Scm_TreeCoreEq(&x->large, &y->large))
-        return FALSE;
+    if (!SCM_CHAR_SET_IMMUTABLE_P(x) && !SCM_CHAR_SET_IMMUTABLE_P(y)) {
+        /* shortcut */
+        return Scm_TreeCoreEq(&x->large.tree, &y->large.tree);
+    } else {
+        cs_iter xi, yi;
+        cs_iter_init(&xi, x);
+        cs_iter_init(&yi, y);
+        for (;;) {
+            ScmChar xl, xh, yl, yh;
+            int xr = cs_iter_next(&xi, &xl, &xh);
+            int yr = cs_iter_next(&yi, &yl, &yh);
+            if (xr == FALSE && yr == FALSE) return TRUE;
+            if (!(xr && yr)) return FALSE;
+            if (!(xl == yl && xh == yh)) return FALSE;
+        }
+    }
+}
+
+/* See if cs contains the range [lo,hi] in large char range. */
+static int cs_contains_range(ScmCharSet *s, ScmChar lo, ScmChar hi)
+{
+    if (!SCM_CHAR_SET_LARGE_P(s)) return FALSE;
+    /* We can have two cases.
+     *
+     * Case 1:
+     *    lo<---------->hi
+     *    ye<----------------->
+     * Case 2:
+     *         lo<---------->hi
+     *    yl<------------------->
+     */
+    if (SCM_CHAR_SET_IMMUTABLE_P(s)) {
+        size_t ye, yl;
+        ye = Scm_BinarySearchU32(s->large.frozen.vec, s->large.frozen.size,
+                                 (uint32_t)lo, 1, &yl, NULL);
+        if (ye != (size_t)-1) { /* case 1 */
+            if (s->large.frozen.vec[ye+1] < hi) return FALSE;
+        } else if (yl != (size_t)-1) { /* case 2 */
+            if (s->large.frozen.vec[yl+1] < hi) return FALSE;
+        } else {
+            return FALSE;
+        }
+    } else {
+        ScmDictEntry *ye, *yl, *yh;
+        ye = Scm_TreeCoreClosestEntries(&s->large.tree, lo, &yl, &yh);
+        if (ye) {               /* case 1 */
+            if (ye->value < hi) return FALSE;
+        } else if (yl) {        /* case 2 */
+            if (yl->value < hi) return FALSE;
+        } else {
+            return FALSE;
+        }
+    }
     return TRUE;
 }
 
@@ -344,37 +570,25 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 {
     if (!Scm_BitsIncludes(y->small, x->small, 0, SCM_CHAR_SET_SMALL_CHARS))
         return FALSE;
-    /* For each range of X, check if it is fully contained by a range of Y.
-     *
-     * Case 1:
-     *    xk<---------->xv
-     *    yk<----------------->yv
-     * Case 2:
-     *         xk<---------->xv
-     *    yk<------------------>yv
-     */
-    ScmTreeIter xi;
-    ScmDictEntry *xe, *ye, *yl, *yh;
-    Scm_TreeIterInit(&xi, &x->large, NULL);
-    for (xe = Scm_TreeIterNext(&xi); xe; xe = Scm_TreeIterNext(&xi)) {
-        ye = Scm_TreeCoreClosestEntries(&y->large, xe->key, &yl, &yh);
-        if (ye) {               /* case 1 */
-            if (ye->value < xe->value) return FALSE;
-        } else if (yl) {        /* case 2 */
-            if (yl->value < xe->value) return FALSE;
-        } else {
-            return FALSE;
-        }
+
+    cs_iter xi;
+    cs_iter_init(&xi, x);
+    ScmChar lo, hi;
+    while (cs_iter_next(&xi, &lo, &hi)) {
+        if (!cs_contains_range(y, lo, hi)) return FALSE;
     }
     return TRUE;
 }
 
 /*-----------------------------------------------------------------
  * Modification
+ * We reject immutable set at the top, so that we only deal with treemap.
  */
 
 ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 {
+    check_mutable(cs);
+    
     ScmDictEntry *e, *lo, *hi;
 
     if (to < from) return SCM_OBJ(cs);
@@ -387,11 +601,13 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
         from = SCM_CHAR_SET_SMALL_CHARS;
     }
 
+    set_large(cs, TRUE);
+    
     /* Let e have the lower bound. */
-    e = Scm_TreeCoreClosestEntries(&cs->large, from, &lo, &hi);
+    e = Scm_TreeCoreClosestEntries(&cs->large.tree, from, &lo, &hi);
     if (!e) {
         if (!lo || lo->value < from-1) {
-            e = Scm_TreeCoreSearch(&cs->large, from, SCM_DICT_CREATE);
+            e = Scm_TreeCoreSearch(&cs->large.tree, from, SCM_DICT_CREATE);
         } else {
             e = lo;
         }
@@ -401,12 +617,12 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
     if (e->value >= to) return SCM_OBJ(cs);
 
     hi = e;
-    while ((hi = Scm_TreeCoreNextEntry(&cs->large, hi->key)) != NULL) {
+    while ((hi = Scm_TreeCoreNextEntry(&cs->large.tree, hi->key)) != NULL) {
         if (hi->key > to+1) {
             e->value = to;
             return SCM_OBJ(cs);
         }
-        Scm_TreeCoreSearch(&cs->large, hi->key, SCM_DICT_DELETE);
+        Scm_TreeCoreSearch(&cs->large.tree, hi->key, SCM_DICT_DELETE);
         if (hi->value > to) {
             e->value = hi->value;
             return SCM_OBJ(cs);
@@ -418,13 +634,17 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 
 ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 {
+    check_mutable(dst);
+
     if (dst == src) return SCM_OBJ(dst);  /* precaution */
 
+    set_large(dst, SCM_CHAR_SET_LARGE_P(src));
+    
     ScmTreeIter iter;
     ScmDictEntry *e;
     Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
                     0, SCM_CHAR_SET_SMALL_CHARS);
-    Scm_TreeIterInit(&iter, &src->large, NULL);
+    Scm_TreeIterInit(&iter, &src->large.tree, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
         Scm_CharSetAddRange(dst, SCM_CHAR(e->key), SCM_CHAR(e->value));
     }
@@ -433,22 +653,26 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 
 ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 {
+    check_mutable(cs);
+    
     ScmDictEntry *e, *n;
 
+    set_large(cs, !SCM_CHAR_SET_LARGE_P(cs));
+    
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
                     0, SCM_CHAR_SET_SMALL_CHARS);
     int last = SCM_CHAR_SET_SMALL_CHARS-1;
     /* we can't use treeiter, since we modify the tree while traversing it. */
-    while ((e = Scm_TreeCoreNextEntry(&cs->large, last)) != NULL) {
-        Scm_TreeCoreSearch(&cs->large, e->key, SCM_DICT_DELETE);
+    while ((e = Scm_TreeCoreNextEntry(&cs->large.tree, last)) != NULL) {
+        Scm_TreeCoreSearch(&cs->large.tree, e->key, SCM_DICT_DELETE);
         if (last < e->key-1) {
-            n = Scm_TreeCoreSearch(&cs->large, last+1, SCM_DICT_CREATE);
+            n = Scm_TreeCoreSearch(&cs->large.tree, last+1, SCM_DICT_CREATE);
             n->value = e->key-1;
         }
         last = (int)e->value;
     }
     if (last < SCM_CHAR_MAX) {
-        n = Scm_TreeCoreSearch(&cs->large, last+1, SCM_DICT_CREATE);
+        n = Scm_TreeCoreSearch(&cs->large.tree, last+1, SCM_DICT_CREATE);
         n->value = SCM_CHAR_MAX;
     }
     return SCM_OBJ(cs);
@@ -457,6 +681,8 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 /* Make CS case-insensitive. */
 ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 {
+    check_mutable(cs);
+
     for (int ch='a'; ch<='z'; ch++) {
         if (MASK_ISSET(cs, ch) || MASK_ISSET(cs, (ch-('a'-'A')))) {
             MASK_SET(cs, ch);
@@ -466,7 +692,7 @@ ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 
     ScmTreeIter iter;
     ScmDictEntry *e;
-    Scm_TreeIterInit(&iter, &cs->large, NULL);
+    Scm_TreeIterInit(&iter, &cs->large.tree, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
         for (ScmChar c = e->key; c <= e->value; c++) {
             ScmChar uch = Scm_CharUpcase(c);
@@ -486,9 +712,26 @@ int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
 {
     if (c < 0) return FALSE;
     if (c < SCM_CHAR_SET_SMALL_CHARS) return MASK_ISSET(cs, c);
-    else {
+    else if (SCM_CHAR_SET_IMMUTABLE_P(cs)) {
+        if (cs->large.frozen.size == 2) {
+            /* shortcut */
+            return (c >= (ScmChar)cs->large.frozen.ivec[0]
+                    && c <= (ScmChar)cs->large.frozen.ivec[1]);
+        } else {
+            size_t lo;
+            size_t k = Scm_BinarySearchU32(cs->large.frozen.vec,
+                                           cs->large.frozen.size,
+                                           (uint32_t)c,
+                                           1, &lo, NULL);
+            if ((k != (size_t)-1)
+                || (lo != (size_t)-1 && c <= cs->large.frozen.vec[lo+1]))
+                return TRUE;
+            else
+                return FALSE;
+        }
+    } else {
         ScmDictEntry *e, *l, *h;
-        e = Scm_TreeCoreClosestEntries(&cs->large, (int)c, &l, &h);
+        e = Scm_TreeCoreClosestEntries(&cs->large.tree, (int)c, &l, &h);
         if (e || (l && l->value >= c)) return TRUE;
         else return FALSE;
     }
@@ -518,11 +761,11 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
         SCM_APPEND1(h, t, cell);
     }
 
-    ScmTreeIter iter;
-    ScmDictEntry *e;
-    Scm_TreeIterInit(&iter, &cs->large, NULL);
-    while ((e = Scm_TreeIterNext(&iter)) != NULL) {
-        ScmObj cell = Scm_Cons(SCM_MAKE_INT(e->key), SCM_MAKE_INT(e->value));
+    cs_iter iter;
+    cs_iter_init(&iter, cs);
+    ScmChar lo, hi;
+    while (cs_iter_next(&iter, &lo, &hi)) {
+        ScmObj cell = Scm_Cons(SCM_MAKE_INT(lo), SCM_MAKE_INT(hi));
         SCM_APPEND1(h, t, cell);
     }
     return h;
@@ -530,7 +773,9 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
 
 void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 {
-    Scm_Printf(port, "CharSet %p\nmask:", cs);
+    Scm_Printf(port, "CharSet %p%s\nmask:",
+               cs,
+               SCM_CHAR_SET_IMMUTABLE_P(cs) ? " (frozen)" : "");
     for (int i=0; i<SCM_BITS_NUM_WORDS(SCM_CHAR_SET_SMALL_CHARS); i++) {
 #if SIZEOF_LONG == 4
         Scm_Printf(port, "[%08lx]", cs->small[i]);
@@ -539,7 +784,12 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 #endif
     }
     Scm_Printf(port, "\nranges:");
-    Scm_TreeCoreDump(&cs->large, port);
+    cs_iter iter;
+    cs_iter_init(&iter, cs);
+    ScmChar lo, hi;
+    while (cs_iter_next(&iter, &lo, &hi)) {
+        Scm_Printf(port, " %x-%x", lo, hi);
+    }
     Scm_Printf(port, "\n");
 }
 
@@ -746,7 +996,7 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
 ScmObj read_predef_charset(const char **cp, int error_p)
 {
     int i;
-    char name[MAX_CHARSET_NAME_LEN];
+    char name[MAX_CHARSET_NAME_LEN+1];
     for (i=0; i<MAX_CHARSET_NAME_LEN; i++) {
         ScmChar ch;
         SCM_CHAR_GET(*cp, ch);

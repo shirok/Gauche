@@ -201,5 +201,98 @@
       (t (integer->char #x8686) #f #f #f 'Sk))
     ))
 
+;; Built-in char-set tests
+;; NB: We test some large-char range if we have utf8 ces.  More comprehensive
+;; tests are in multibyte.scm.
+
+;; char-set writer
+(let ()
+  (define (char-set-printer-tester p)
+    (test* "char-set-printer" (car p)
+           (write-to-string (apply char-set (cdr p)))))
+  (for-each char-set-printer-tester
+            '(("#[ace]" #\a #\e #\c)
+              ("#[ab]"  #\a #\b)
+              ("#[a-c]" #\a #\b #\c)
+              ("#[a-d]" #\a #\b #\c #\d)
+              ("#[a-ce]" #\a #\b #\c #\e)
+              ("#[acd]" #\a #\c #\d)
+              ("#[ac-e]" #\a #\c #\d #\e)
+              ("#[ac-e]" #\a #\c #\d #\e)
+              ("#[\\-\\[\\]]" #\[ #\] #\-)
+              ("#[\\^a]" #\^ #\a)
+              ("#[!^]" #\^ #\!))))
+
+;; Test both mutable and immutable version
+(define (test-cs name expect proc arg1 :optional (arg2 #f))
+  (if arg2
+    (let ([iarg1 (char-set-freeze arg1)]
+          [iarg2 (char-set-freeze arg2)])
+      (test* name (make-list 4 expect)
+             (list (proc arg1 arg2)
+                   (proc iarg1 arg2)
+                   (proc arg1 iarg2)
+                   (proc iarg1 iarg2))))
+    (test* name (list expect expect)
+           (list (proc arg1) (proc (char-set-freeze arg1))))))
+
+(test* "char-set?" #f (char-set? 5))
+(test-cs "char-set?" #t char-set? (char-set #\a #\e #\i #\o #\u))
+
+;; N-ary comparison procedures are provided in srfi-14.  We test primitive
+;; ones here.
+(test-cs "%char-set-equal?" #t
+         (with-module gauche.internal %char-set-equal?)
+         (char-set #\a #\e #\i #\o #\u)
+         (char-set #\a #\i #\e #\u #\o))
+(test-cs "%char-set-equal?" #f
+         (with-module gauche.internal %char-set-equal?)
+         (char-set #\a #\e #\i #\o #\q)
+         (char-set #\a #\e #\i #\o #\u))
+
+(cond-expand
+ [gauche.ces.utf8
+  (test-cs "%char-set-equal?" #t
+           (with-module gauche.internal %char-set-equal?)
+           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3031 #\u3032)
+           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
+  ]
+ [else])
+
+(test-cs "%char-set<=?" #t
+         (with-module gauche.internal %char-set<=?)
+         (char-set #\a #\e #\i #\o #\u)
+         (char-set #\a #\i #\e #\u #\o))
+(test-cs "%char-set<=?" #t
+         (with-module gauche.internal %char-set<=?)
+         (char-set #\a #\i #\u)
+         (char-set #\a #\i #\e #\u #\o))
+(test-cs "%char-set<=?" #f
+         (with-module gauche.internal %char-set<=?)
+         (char-set #\a #\e #\i #\o #\q)
+         (char-set #\a #\e #\i #\o #\u))
+(test-cs "%char-set<=?" #f
+         (with-module gauche.internal %char-set<=?)
+         (char-set #\a #\i #\e #\u #\o)
+         (char-set #\a #\i #\u))
+
+(cond-expand
+ [gauche.ces.utf8
+  (test-cs "%char-set<=?" #t
+           (with-module gauche.internal %char-set<=?)
+           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3031 #\u3032)
+           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
+  (test-cs "%char-set<=?" #t
+           (with-module gauche.internal %char-set<=?)
+           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3032)
+           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
+  (test-cs "%char-set<=?" #f
+           (with-module gauche.internal %char-set<=?)
+           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032)
+           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3032))
+  ]
+ [else])
+
+
 (test-end)
 

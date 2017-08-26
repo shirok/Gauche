@@ -1,7 +1,7 @@
 /*
  * gauche/port.h - Port API
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -43,10 +43,10 @@
  * performance and feature requirements.  In the core API level,
  * ports are categorized in one of three types: file ports, string
  * ports and procedural ports.   A port may be an input port or
- * an output port.   A port may handle byte (binary) streams, as
- * well as character streams.  Some port may interchange byte (binary)
- * I/O versus character I/O, while some may signal an error if you
- * mix those operations.
+ * an output port.   A port may handle byte (binary) streams,
+ * as well as character streams.  Some port may
+ * interchange byte (binary) I/O versus character I/O, while some
+ * may signal an error if you mix those operations.
  *
  * You shouldn't rely on the underlying port implementation, for
  * it is likely to be changed in future.  There are enough macros
@@ -56,7 +56,9 @@
  * Most public port APIs locks the given port to ensure it won't
  * interfere with other threads.  Some basic APIs have corresponding
  * "Unsafe" version (e.g. Scm_Putc() vs Scm_PutcUnsafe()), which
- * assumes the caller already has the lock.
+ * assumes the caller already has the lock; but the base version
+ * won't do extra locking when the calling thread alreay hold the lock,
+ * so there's no reason for general code to call unsafe verson directly.
  */
 
 /*================================================================
@@ -180,10 +182,17 @@ struct ScmPortRec {
                                    access. */
 };
 
-/* Port direction.  Bidirectional port is not supported yet. */
+/* Port direction.  Bidirectional port is not supported yet.
+   SCM_PORT_OUTPUT_TRANSIENT is only used for constructor to indicate
+   that the output buffer doesn't need to be flushed when the process
+   exits.  It is same as SCM_PORT_OUTPUT for non-buffered ports.
+   Only the lower two bits are stored in port->direction.
+ */
 enum ScmPortDirection {
     SCM_PORT_INPUT = 1,
-    SCM_PORT_OUTPUT = 2
+    SCM_PORT_OUTPUT = 2,
+    SCM_PORT_IOMASK = 3,
+    SCM_PORT_OUTPUT_TRANSIENT = 4+SCM_PORT_OUTPUT
 };
 
 /* Port buffering mode */
@@ -227,8 +236,11 @@ enum ScmPortFlags {
                                    of two-pass writing. */
     SCM_PORT_PRIVATE = (1L<<2), /* this port is for 'private' use within
                                    a thread, so never need to be locked. */
-    SCM_PORT_CASE_FOLD = (1L<<3) /* read from or write to this port should
+    SCM_PORT_CASE_FOLD = (1L<<3),/* read from or write to this port should
                                     be case folding. */
+    SCM_PORT_TRANSIENT = (1L<<4) /* a buffered output port that's used
+                                    transiently and doesn't need to be
+                                    registered for flushing. */
 };
 
 #if 0 /* not implemented */
@@ -286,13 +298,6 @@ SCM_CLASS_DECL(Scm_PortClass);
 
 SCM_CLASS_DECL(Scm_CodingAwarePortClass);
 #define SCM_CLASS_CODING_AWARE_PORT   (&Scm_CodingAwarePortClass)
-
-SCM_CLASS_DECL(Scm_LimitedLengthPortClass);
-#define SCM_CLASS_LIMITED_LENGTH_PORT (&Scm_LimitedLengthPortClass)
-
-SCM_CLASS_DECL(Scm_WriterPortClass);
-#define SCM_CLASS_WRITER_PORT         (&Scm_WriterPortClass)
-
 
 /* Conversion between Scheme keyword and ScmPortBufferMode enums */
 SCM_EXTERN ScmObj Scm_GetPortBufferingModeAsKeyword(ScmPort *port);
@@ -381,15 +386,6 @@ SCM_EXTERN ScmObj Scm_UngottenBytesUnsafe(ScmPort *port);
 SCM_EXTERN ScmObj Scm_ReadLine(ScmPort *port);
 SCM_EXTERN ScmObj Scm_ReadLineUnsafe(ScmPort *port);
 
-#if 0
-#define SCM_PORT_CURIN  (1<<0)
-#define SCM_PORT_CUROUT (1<<1)
-#define SCM_PORT_CURERR (1<<2)
-
-SCM_EXTERN ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk,
-                               int mask, int closep);
-#endif
-
 /*================================================================
  * File ports
  */
@@ -441,7 +437,6 @@ SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
                                      int bufmode,
                                      int ownerp);
 SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
-SCM_EXTERN ScmObj Scm_MakeWriterPort(ScmPort *port, ScmObj context);
 
 #endif /*GAUCHE_PORT_H*/
 

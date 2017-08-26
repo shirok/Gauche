@@ -1,7 +1,7 @@
 ;;;
 ;;; netlib.stub - network interface
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -85,8 +85,8 @@
 
    (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
      (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
-            [p::ScmUInt32*
-             (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr))]
+            [p::uint32_t*
+             (cast uint32_t* (ref (-> a addr) sin6_addr s6_addr))]
             [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
        (dotimes [i 3]
          (set! n (Scm_LogIor (Scm_Ash n 32)

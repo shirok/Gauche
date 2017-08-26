@@ -37,7 +37,7 @@ typedef void (* oom_fn)(void);
 oom_fn CORD_oom_fn = (oom_fn) 0;
 
 # define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
-                          ABORT("Out of memory\n"); }
+                          ABORT("Out of memory"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
 typedef unsigned long word;
@@ -221,7 +221,8 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
         if (result == 0) OUT_OF_MEMORY;
         result->header = CONCAT_HDR;
         result->depth = depth;
-        if (lenx <= MAX_LEFT_LEN) result->left_len = lenx;
+        if (lenx <= MAX_LEFT_LEN)
+            result->left_len = (unsigned char)lenx;
         result->len = result_len;
         result->left = x;
         result->right = y;
@@ -262,7 +263,8 @@ CORD CORD_cat(CORD x, CORD y)
         if (result == 0) OUT_OF_MEMORY;
         result->header = CONCAT_HDR;
         result->depth = depth;
-        if (lenx <= MAX_LEFT_LEN) result->left_len = lenx;
+        if (lenx <= MAX_LEFT_LEN)
+            result->left_len = (unsigned char)lenx;
         result->len = result_len;
         result->left = x;
         result->right = y;
@@ -598,7 +600,7 @@ typedef ForestElement Forest [ MAX_DEPTH ];
                         /* of the forest in order of DECREASING */
                         /* indices.                             */
 
-void CORD_init_min_len()
+void CORD_init_min_len(void)
 {
     register int i;
     register size_t last, previous, current;

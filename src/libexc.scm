@@ -1,7 +1,7 @@
 ;;;
 ;;; libexc.scm - errors and exceptions
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -77,6 +77,17 @@
             (format out "*** ~a\n" name)))
         (for-each (cut report-mixin-condition <> out) mixins)))))
 
+(select-module gauche.internal)
+(define-cproc %type-error (what::<const-cstring>
+                           expected-type::<const-cstring>
+                           actual-object)
+  ::<void> Scm_TypeError)
+
+(define-in-module gauche (type-error expr expected-type actual-object)
+  (%type-error (write-to-string expr)
+               (write-to-string expected-type) ;TODO: nicer formatting in future
+               actual-object))
+
 ;;;
 ;;; Srfi-18 primitives
 ;;;
@@ -126,7 +137,7 @@
    ::void :static
    (let* ([k::ScmClass* (SCM_CLASS_OF obj)]
           [exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)]
-          [cname (Scm__InternalClassName k)])
+          [cname (Scm_ShortClassName k)])
      (if (SCM_UNDEFINEDP (-> exc data))
        (Scm_Printf port "#<%A %S>" cname (SCM_OBJ_SAFE (-> exc thread)))
        (Scm_Printf port "#<%A %S %S>" cname (SCM_OBJ_SAFE (-> exc thread))

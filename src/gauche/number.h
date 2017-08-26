@@ -1,7 +1,7 @@
 /*
  * number.h - Public API for Scheme numbers
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -189,6 +189,8 @@ enum ScmClampMode {
     SCM_CLAMP_NONE = 4         /* do not convert when out-of-range */
 };
 
+SCM_EXTERN int    Scm_ClampMode(ScmObj clamp);
+
 SCM_EXTERN ScmObj Scm_MakeInteger(long i);
 SCM_EXTERN ScmObj Scm_MakeIntegerU(u_long i);
 
@@ -198,8 +200,8 @@ SCM_EXTERN int    Scm_GetInteger8Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN u_int  Scm_GetIntegerU8Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN int    Scm_GetInteger16Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN u_int  Scm_GetIntegerU16Clamp(ScmObj obj, int clamp, int *oor);
-SCM_EXTERN ScmInt32  Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor);
-SCM_EXTERN ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN int32_t  Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN uint32_t Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor);
 
 SCM_EXTERN u_long Scm_GetIntegerUMod(ScmObj obj);
 

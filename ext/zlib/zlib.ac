@@ -65,6 +65,10 @@ AS_IF([test "$ac_cv_use_zlib" = yes], [
 ])
 
 AS_IF([test "$ac_cv_use_zlib" = yes], [
+  dnl Force static linking on MinGW
+  AS_CASE(["$target"],
+    [*mingw*], [ZLIB_LIB="-Wl,-dn,$ZLIB_LIB,-dy"])
+
   AC_DEFINE(USE_ZLIB, [], [Define if uses zlib])
   ZLIB_ARCHFILES=rfc--zlib.$SHLIB_SO_SUFFIX
   AC_SUBST(ZLIB_ARCHFILES)
@@ -76,7 +80,7 @@ AS_IF([test "$ac_cv_use_zlib" = yes], [
 ])
 AC_SUBST(ZLIB_CPPFLAGS)
 AC_SUBST(ZLIB_LDFLAGS)
-
+AC_SUBST(ZLIB_LIB)
 
 dnl Local variables:
 dnl mode: autoconf

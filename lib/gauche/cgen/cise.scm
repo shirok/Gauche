@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.cgen.cise - C in S expression
 ;;;
-;;;   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -159,6 +159,10 @@
 
 (define (cise-push-static-decl! stree :optional (ambient (cise-ambient)))
   (push! (~ ambient'static-decls) stree))
+
+(define (cise-push-static-decl-unique! stree :optional (ambient (cise-ambient)))
+  (unless (memq stree (~ ambient'static-decls))
+    (push! (~ ambient'static-decls) stree)))
 
 (define (emit-static-decls port :optional (ambient (cise-ambient)))
   (dolist [stree (reverse (~ ambient'static-decls))]
@@ -464,11 +468,15 @@
   (define (type-symbol-type s)
     (string->symbol (string-drop (keyword->string s) 1)))
 
+  (define (gen-ret-type ret-type)
+    (match ret-type
+      [(x ...) (intersperse " " (map x->string x))]
+      [x (x->string x)]))
   (define (record-static name quals args ret-type)
     (cise-push-static-decl!
      `(,(source-info form env)
        ,@(gen-qualifiers quals) " "
-       ,ret-type" ",(cise-render-identifier name)
+       ,(gen-ret-type ret-type)" ",(cise-render-identifier name)
        "(",(gen-args args env)");")))
 
   (define (check-quals name quals args ret-type body)
@@ -562,7 +570,8 @@
                         closed)
                   ,@body))
              'toplevel)))
-         (for-each cise-push-static-decl! (reverse (~ amb'static-decls))))
+         (for-each cise-push-static-decl-unique!
+                   (reverse (~ amb'static-decls))))
          
        `(let* ([,data :: (.array void* (,(length closed)))])
           ,@(map-with-index

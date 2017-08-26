@@ -139,7 +139,7 @@ if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
 real numbers.
 The number reader recognizes '@code{#}' as insignificant digits.
 Complex numbers can be written both in the rectangular format
-(e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
+(e.g. @code{1+0.3i}) and in the polar format (e.g. @code{3.0@@1.57}).
 Inexact real numbers include
 the positive infinity, the negative infinity, and NaN,
 which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
@@ -155,12 +155,30 @@ Gauche also adopts Common-Lisp style radix prefixed numeric literals,
 e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
 2 and 36 are recognized; alphabetic letters @code{a-zA-Z}
 are used beyond decimal.
+
+For the polar notation of complex numbers, Gauche allows the suffix @code{pi}
+to denote the phase by multiples of pi.  The Scheme syntax use radians for
+the phase, but you can only approximate pi with the floating point numbers,
+so it can't represent round numbers except zero angle.
+@example
+gosh> 2@@3.141592653589793
+-2.0+2.4492935982947064e-16i
+@end example
+With the @code{pi} suffix, you can get a round numbers.
+@example
+gosh> 2@@1pi
+-2.0
+gosh> 2@@0.5pi
+0.0+2.0i
+gosh> 2@@-0.5pi
+0.0-2.0i
+@end example
 @c JP
 @item 数値リテラル
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
 できます。例：@code{30.}, @code{.25}, @code{-.4}。
 数値のリーダは、パディングの'@code{#}'を認識します。
-複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
+複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：@code{3.0@@1.57}) でも
 認識されます。
 非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
 それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
@@ -173,6 +191,24 @@ Gaucheの拡張機能として、プレフィクス(@code{#e}, @code{#x}等)つ�
 Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
 例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
 認識されます。10進数より上では@code{a-zA-Z}のアルファベットを使えます。
+
+複素数の極座標記法において、Gaucheではサフィックス@code{pi}をつけることにより
+偏角をπの係数で表すことができます。Schemeの構文では偏角はラジアンですが、
+πは浮動小数点数では近似値でしか扱えないので、偏角ゼロ以外で切りの良い数値を
+表現することができません。
+@example
+gosh> 2@@3.141592653589793
+-2.0+2.4492935982947064e-16i
+@end example
+@code{pi}サフィックスを使うと切りの良い数値が書けます。
+@example
+gosh> 2@@1pi
+-2.0
+gosh> 2@@0.5pi
+0.0+2.0i
+gosh> 2@@-0.5pi
+0.0-2.0i
+@end example
 @c COMMON
 
 @c EN
@@ -613,7 +649,7 @@ compatible to Gauche 0.9.3 and before.
 @c NODE リテラル
 
 @defspec quote datum
-[R7RS]
+[R7RS base]
 @c EN
 Evaluates to @var{datum}.
 @c JP
@@ -762,7 +798,7 @@ collected to form a new list and bound to @var{variable_N}.
 @c COMMON
 
 @example
-((lambda (a b . c) (print "a="a" b="b" c="c)) 1 2 3 4 5)
+((lambda (a b . c) (print "a=" a " b=" b " c=" c)) 1 2 3 4 5)
  @result{} @r{prints} a=1 b=2 c=(3 4 5)
 @end example
 
@@ -1242,7 +1278,7 @@ argument list, it just calls the function.
 @end defmac
 
 @defmac case-lambda clause @dots{}
-[R7RS][SRFI-16]
+[R7RS case-lambda]
 @c EN
 Each @var{clause} should have the form (@var{formals} @var{expr} @dots{}),
 where @var{formals} is a formal arguments list as for @code{lambda}.
@@ -1274,6 +1310,47 @@ the @var{formals} of any @var{clause}.
 
 実際の引数がどの @var{clause} の @var{formals} にも一致しなければエラーです。
 @c COMMON
+
+@example
+(define f
+  (case-lambda
+    [() 'zero]
+    [(a) `(one ,a)]
+    [(a b) `(two ,a ,b)]))
+
+(f)       @result{} zero
+(f 1)     @result{} (one 1)
+(f 1 2)   @result{} (two 1 2)
+(f 1 2 3) @result{} @r{Error: wrong number of arguments to case lambda}
+
+(define g
+  (case-lambda
+    [() 'zero]
+    [(a) `(one ,a)]
+    [(a . b) `(more ,a ,@@b)]))
+
+(g)       @result{} zero
+(g 1)     @result{} (one 1)
+(g 1 2 3) @result{} (more 1 2 3)
+@end example
+
+@c EN
+Note that the clauses are examined sequentially to match the number of
+arguments, so in the following example @code{g2} never returns @code{(one ...)}.
+@c JP
+各@var{clause}は順に引数の個数とマッチするかどうか調べられます。次の例では
+@code{g2}が@code{(one ...)}を返すことはありません。
+@c COMMON
+
+@example
+(define g2
+  (case-lambda
+    [() 'zero]
+    [(a . b) `(more ,a ,@@b)]
+    [(a) `(one ,a)]))
+
+(g2 1)    @result{} (more 1)
+@end example
 @end defmac
 
 @c ----------------------------------------------------------------------
@@ -1283,7 +1360,7 @@ the @var{formals} of any @var{clause}.
 
 @defspec set! symbol expression
 @defspecx set! (proc arg @dots{}) expression
-[R7RS][SRFI-17]
+[R7RS+ base][SRFI-17]
 @c EN
 First, @var{expression} is evaluated.
 In the first form, the binding of @var{symbol} is modified
@@ -1321,10 +1398,10 @@ CommonLispの@code{setf}とは、setter手続きに渡される引数の順序�
 
 @example
 (define x 3)
-(set! x (list 1 2))  @result{} @r{undefined}
+(set! x (list 1 2))
 x                    @result{} (1 2)
 
-(set! (car x) 5)     @result{} @r{undefined}
+(set! (car x) 5)
 x                    @result{} (5 2)
 @end example
 @end defspec
@@ -1342,10 +1419,10 @@ the corresponding @var{var}.
 @example
 (define a 0)
 (define b 1)
-(set!-values (a b) (values 3 4)) @result{} @r{undefined}
+(set!-values (a b) (values 3 4))
 a @result{} 3
 b @result{} 4
-(set!-values (a b) (values b a)) @result{} @r{undefined}
+(set!-values (a b) (values b a))
 a @result{} 4
 b @result{} 3
 @end example
@@ -1454,10 +1531,10 @@ is undefined.
 
 @example
 (define x (list 2))
-(push! x 3) @result{} @r{undefined}
+(push! x 3)
 x @result{} (3 2)
 
-(push! (cdr x) 4) @result{} @r{undefined}
+(push! (cdr x) 4)
 x @result{} (3 4 2)
 @end example
 
@@ -1559,7 +1636,7 @@ which takes one argument and returns one value.   The original value of
 @c COMMON
 @example
 (define a (cons 2 3))
-(update! (car a) (lambda (v) (* v 3))) @result{} @r{undefined}
+(update! (car a) (lambda (v) (* v 3)))
 a @result{} (6 . 3)
 
 (update! (cdr a) (cut - <> 3))
@@ -1574,7 +1651,7 @@ a @result{} (6 . 0)
 
 @defspec if test consequent alternative
 @defspecx if test consequent
-[R7RS]
+[R7RS base]
 @c EN
 @var{Test} is evaluated.  If it yields a true value,
 @var{consequent} is evaluated.  Otherwise, @var{alternative} is
@@ -1598,7 +1675,7 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
 @end defspec
 
 @defspec cond clause1 clause2 @dots{}
-[R7RS][SRFI-61]
+[R7RS+ base][SRFI-61]
 @c EN
 Each @code{clause} must be the form
 @example
@@ -1675,7 +1752,7 @@ If the last clause is else clause and all tests are failed,
 
 
 @defspec case key clause1 clause2 @dots{}
-[R7RS][SRFI-87]
+[R7RS+ base][SRFI-87]
 @c EN
 @var{Key} may be any expression.
 Each @var{clause} should have the form
@@ -1782,7 +1859,7 @@ you want to detect when unexpected value is passed just in case.
 @end defmac
 
 @defspec and test @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 The @var{test} expressions are evaluated from left to right,
 and the value of the first expression that evaluates to a false
@@ -1808,7 +1885,7 @@ If there are no expressions then @code{#t} is returned.
 
 
 @defspec or test @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 The @var{test} expressions are evaluated from left to right,
 and the value of the first expression that evaluates to a true
@@ -1834,7 +1911,7 @@ last expression is returned. If there are no expressions then
 
 @defspec when test expr1 expr2 @dots{}
 @defspecx unless test expr1 expr2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Evaluates @var{test}.  If it yields true value (or false in case of
 @code{unless}), @var{expr1} and @var{expr2} @dots{} are evaluated
@@ -1847,6 +1924,50 @@ Otherwise, undefined value is returned.
 @c COMMON
 @end defspec
 
+@defmac assume test-expr message @dots{}
+[SRFI-145]
+@c EN
+This declares the programmer's intent that the code following this path
+always satisfy @var{test-expr}.
+
+Currently, Gauche evaluates @var{test-expr}, and if it evaluates to false,
+an error is signalled.
+@c JP
+@c COMMON
+
+@example
+(define (real-sqrt x)
+  (assume (and (real? x) (>= x 0)))
+  (sqrt x))
+
+gosh> (real-sqrt -1)
+*** ERROR: Invalid assumption: (and (real? x) (>= x 0))
+@end example
+
+@c EN
+Note: This form is advisory---@var{test-expr} isn't guaranteed to be
+evaluated, nor it isn't guaranteed for an error is signaled when
+@var{test-expr} fails.  For example, we may add an optimization
+option that omits testing in speed-optimized code in future.
+We may also enhance the compiler to generate better code using the
+given information---for example, in the above @code{real-sqrt} code,
+the compiler could theoretically deduce that @code{(sqrt x)} only needs to
+work as real functions, so it would be able to generate specialized code.
+Use this form to inform the compiler and the reader your intention.
+@c JP
+註: このフォームは勧告として機能します。@var{test-expr}は評価されるとは限らず、
+また@var{test-expr}が失敗してもエラーが投げられるとは限りません。例えば、
+将来、最適化オプションをつけて、
+速度最適化レベルが高い時はテストを省略するようになるかもしれません。
+また一方で、この情報を利用してコンパイラがより良いコードを出すように拡張される
+可能性もあります。例えば上の@code{real-sqrt}の例では、コンパイラは理論的には
+@code{(sqrt x)}が実関数として動作すれば良いということを演繹できるため、
+実数に特化したコードを生成できる可能性があります。
+このフォームを、コードの書き手の意図をコンパイラやコードの読み手に知らせるために
+用いると良いでしょう。
+@c COMMON
+@end defmac
+
 @node Binding constructs, Sequencing, Conditionals, Core syntax
 @section Binding constructs
 @c NODE 変数束縛
@@ -1855,7 +1976,7 @@ Otherwise, undefined value is returned.
 @defspecx let* ((var expr) @dots{}) body @dots{}
 @defspecx letrec ((var expr) @dots{}) body @dots{}
 @defspecx letrec* ((var expr) @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Creates a local scope where @var{var} @dots{} are bound to the
 value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
@@ -2204,18 +2325,89 @@ See also @code{call-with-values} in @ref{Multiple values}
 which is the procedural equivalent of @code{receive}.
 You can use @code{define-values} (@pxref{Definitions}) to
 bind multiple values to variables simultaneously.
-Also @code{let-values} and @code{let*-values}
-in SRFI-11 (@ref{Let-values}) provides
-@code{let}-like syntax with multiple values.
+Also @code{let-values} and @code{let*-values} below
+provides @code{let}-like syntax with multiple values.
 @c JP
 なお、@ref{Multiple values}の@code{call-with-values}は
 @code{receive}と等価な手続き的インタフェースです。
 多値を複数の変数に同時に束縛するには、@code{define-values}
 (@ref{Definitions}参照) が使えます。
-また、SRFI-11 (@ref{Let-values}) の@code{let-values}と
+また、下の@code{let-values}と
 @code{let*-values}は@code{let}のような形式で多値を扱うことができます。
 @c COMMON
 @end defspec
+
+@defmac let-values ((vars expr) @dots{}) body @dots{}
+[R7RS base]
+@c EN
+@var{vars} are a list of variables. @var{expr} is evaluated, and
+its first return value is bound to the first variable in @var{vars},
+its second return value to the second variable, and so on, then
+@var{body} is evaluated.
+The scope of @var{expr}s are the outside of @code{let-values} form,
+like @code{let}.
+@c JP
+@var{vars} は変数のリストです。@var{expr} は評価され、最初の返り値は、
+@var{vars} の最初の変数に束縛されます。二番目の返り値は、@var{vars} の
+二番目の変数に束縛され、以下同様です。そのあと、@var{body} が評価されます。
+@var{expr} のスコープは @code{let} と同様に、@code{let-values} の
+外側になります。
+@c COMMON
+
+@example
+(let-values (((a b) (values 1 2))
+             ((c d) (values 3 4)))
+  (list a b c d)) @result{} (1 2 3 4)
+
+(let ((a 1) (b 2) (c 3) (d 4))
+  (let-values (((a b) (values c d))
+               ((c d) (values a b)))
+    (list a b c d))) @result{} (3 4 1 2)
+@end example
+
+@c EN
+@var{vars} can be a dotted list or a single symbol, like the
+lambda parameters.
+@c JP
+@var{vars} lambda パラメータと同様に、ドット付リストでも、
+単一のシンボルでもかまいません。
+@c COMMON
+
+@example
+(let-values (((x . y) (values 1 2 3 4)))
+  y) @result{} (2 3 4)
+
+(let-values ((x (values 1 2 3 4)))
+  x) @result{} (1 2 3 4)
+@end example
+
+@c EN
+If the number of values returned by @var{expr} doesn't match
+what @var{vars} expects, an error is signaled.
+@c JP
+@var{expr} によって返された値の数と @var{vars} が期待する数とが一致しない
+場合にはエラーになります。
+@c COMMON
+@end defmac
+
+@defmac let*-values ((vars expr) @dots{}) body @dots{}
+[R7RS base]
+@c EN
+Same as @code{let-values}, but each @var{expr}'s scope includes
+the preceding @var{vars}.
+@c JP
+@code{let-values}と同じですが、各 @var{expr} のスコープが先行する @var{vars}
+を含みます。
+@c COMMON
+
+@example
+(let ((a 1) (b 2) (c 3) (d 4))
+  (let*-values (((a b) (values c d))
+                ((c d) (values a b)))
+    (list a b c d))) @result{} (3 4 3 4)
+@end example
+@end defmac
+
 
 @defmac rec var expr
 @defmacx rec (name . vars) expr @dots{}
@@ -2261,7 +2453,7 @@ Some examples:
 
 
 @defspec begin form @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Evaluates @var{form}s sequentially, and returns the last result(s).
 @c JP
@@ -2342,7 +2534,7 @@ for the @code{begin0} form is expanded as follows.
 @c NODE 繰り返し
 
 @defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 @enumerate
 @item
@@ -2451,7 +2643,7 @@ created.
 
 
 @defspec let name ((var init) @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 This variation of @code{let} is called ``named let''.  It creates
 the following procedure and binds it to @var{name}, then calls
@@ -2525,72 +2717,155 @@ The tricky use of @code{letrec} in the expansion is to make
 @end defspec
 
 
-
-@defmac dotimes ([variable] expr [result]) body @dots{}
-@defmacx dolist ([variable] expr [result]) body @dots{}
+@defmac dotimes ([variable] num-expr [result]) body @dots{}
+@defmacx dolist ([variable] list-expr [result]) body @dots{}
 @c EN
-Imported from Common Lisp.  The full form are
-expanded as follows:
+Convenience loop syntaxes, imported from Common Lisp.
+They are not very Scheme-y, in a sense that these
+rely on some side-effects in @var{body} @dots{}.  Nevertheless these
+capture some common pattern in day-to-day scripting.
 @c JP
-Common Lispからの輸入です。完全なフォームは以下のように展開されます。
-@c COMMON
-@example
-(dotimes (variable expr result) body @dots{})
-==>
-(do ((limit expr)
-     (variable 0 (+ variable 1)))
-    ((>= variable expr) result)
-  body @dots{})
-
-(dolist (variable expr result) body @dots{})
-==>
-(begin
-  (for-each (lambda (variable) body @dots{}) expr)
-  (let ((variable '())) result))
-@end example
-
-@c EN
-(The reason we bind @var{variable} to @code{()} to evaluate @var{result}
-in @code{dolist} is the CL compatibility.)
-@c JP
-(@code{dolist}で@var{result}の評価時に@var{variable}を@code{()}に
-束縛しているのはCLとの互換性のためです。)
+Common Lispから輸入された、簡易なループ構文です。
+これらは、@var{body} @dots{}における副作用を前提としているという点で
+あまりSchemeっぽくありませんが、
+日常のスクリプティングでよく出てくるパターンを手軽に書けます。
 @c COMMON
 
 @c EN
-You can omit @var{result}, or both @var{result} and @var{variable}.
-That is, if the first argument has two elements, they're @var{variable}
-and @var{expr}.  In which case, the result of these forms is
-undefined.
-
-If both @var{result} and @var{variable} are omitted, these forms
-just repeatedly executes @var{body} @dots{}
-number of times determined by @var{expr}.
+You can use @code{dotimes} to repeat @var{body} @dots{} for a number
+of times given by @var{num-expr},
+and @code{dolist} to repeat @var{body} @dots{}
+while traversing a list given by @var{list-expr}.  While @var{body} @dots{}
+is evaluated,
+@var{variable} is bound to the current iteration count (in @code{dotimes}),
+or the current element in the list (in @code{dolist}).
 @c JP
-@var{result}、もしくは@var{result}と@var{variable}両方を省略することが
-できます。つまり、最初の引数が2要素であれば、それは@var{variable}と
-@var{expr}だということです。その場合、これらのフォームの結果は未定義です。
-
-もし@var{result}と@var{variable}の両方が省略されたら、
-@var{expr}で決定される回数だけ単に@var{body} @dots{}を繰り返し実行します。
+@code{dotimes}は、@var{num-expr}で与えられる回数@var{body} @dots{}を繰り返すのに、
+@code{dolist}は、@var{list-expr}で与えられるリストの各要素に対して
+@var{body} @dots{}を繰り返すのに使えます。@var{body} @dots{}の実行中、
+@var{variable}はそれまで繰り返した回数(@code{dotimes}の場合)もしくは
+現在のリスト要素(@code{dolist}の場合)に束縛されます。
 @c COMMON
 
 @example
-;; print "a" 10 times.
-(dotimes (10) (print "a")) 
+(dotimes (n 5) (write n))
+ @result{} @r{writes "12345"}
 
-;; print "a" (length lst) times.
-(dolist (lst) (print "a"))
+(dolist (v '(a b c d e)) (write v))
+ @result{} @r{writes "abcde"}
 @end example
 
 @c EN
-See also @ref{Eager comprehensions}, which provides
+If you don't need to refer to @var{variable}, you can omit it.
+For example, the following example prints @code{year!} 10 times:
+@c JP
+@var{variable}を使う必要がなければ省略することができます。
+次の例は@code{year!}を10回出力します。
+@c COMMON
+
+@example
+(dotimes (10) (print "yeah!"))
+@end example
+
+@c EN
+If the third element (@var{result}) is given in @code{dotimes} or
+@code{dolist}, it is evaluated after all repetition is done, and its result
+becomes the result of @code{dotimes}/@code{dolist}.  While @var{result}
+is evaluated, @var{variable} is bound to the number of repetitions 
+(in @code{dotimes}) or @code{()} (in @code{dolist}).
+It is supported because Common Lisp has it.
+@c JP
+3番めの要素@var{result}が@code{dotimes}や@code{dolist}に与えられた場合、
+その式はすべての繰り返しが終わった後で評価され、
+その結果が@code{dotimes}/@code{dolist}の値となります。
+@var{result}は、@var{variable}が繰り返しの総回数(@code{dotimes}の場合)
+もしくは@code{()}(@code{dolist}の場合)に束縛された環境で評価されます。
+これはCommon Lispに倣っています。
+@c COMMON
+
+@c EN
+Note that a fresh @var{variable} is bound for each iteration,
+as opposed to Common Lisp where @var{variable} is mutated.
+So if you create a closure closing @var{variable}, it won't be
+overwritten by the subsequent iteration.
+@c JP
+Common Lispと違い、新たな@var{variable}が繰り返しの度に束縛されます
+(Common Lispでは、一つの@var{variable}が繰り返しごとに変更を受けます)。
+したがって、@var{variable}を綴じ込むクロージャを作った場合でも、
+繰り返しの進行で@var{variable}が上書きされることはありません。
+@c COMMON
+
+@c EN
+If you need more than simple iteration, you can use @code{do} form,
+named @code{let}, or @ref{Eager comprehensions}, which provides
 rich way to iterate.
 @c JP
+単純な繰り返し以上のことがしたいなら、@code{do}フォーム、名前付き@code{let}、あるいは
 @ref{Eager comprehensions}も参照してください。
 より複雑な繰り返しを記述できます。
 @c COMMON
 @end defmac
+
+@c @defmac doplist ((kvar vvar) plist-expr [default]) body @dots{}
+@c @c EN
+@c A @emph{plist} is a list alternating key and values.  This macro
+@c provides a convenient way to loop over a plist.
+
+@c @example
+@c ;; example of a plist, associating a => 1 and b => 2.
+@c (a 1 b 2)
+@c @end example
+@c @c JP
+@c @emph{plist}とは、キーと値が交互に現れるリストです。
+@c このマクロはplistに対する繰り返しを簡単にするものです。
+
+@c @example
+@c ;; plistの例。a => 1、 b => 2 という関係を示す。
+@c (a 1 b 2)
+@c @end example
+@c @c COMMON
+
+@c @c EN
+@c The @var{plist-expr} form must evaluate to a plist.
+@c It evaluates @code{body} @dots{} while binding
+@c @var{kvar} and @var{vvar} to each key and value.
+@c @c JP
+@c @var{plist-expr}はplistを返す式です。
+@c @var{kvar}と@var{vvar}にそれぞれキーと値に束縛された環境で
+@c @code{body} @dots{}が評価されます。
+@c @c COMMON
+
+@c @example
+@c (doplist ((k v) '(a 1 b 2 c 3)) (print k " => " v))
+@c  @result{} @r{prints:}
+@c  a => 1
+@c  b => 2
+@c  c => 3
+@c @end example
+
+@c @c EN
+@c By default, an error is signalled if @var{plist-expr} isn't even
+@c (we only detect the error when we reach to the end of the list).
+@c If you give @var{default} argument, however, it is used as the missing
+@c value for the last key.
+@c @c JP
+@c デフォルトでは、@var{plist-expr}の生成するリストの要素が偶数個でなければ
+@c エラーが報告されます(エラーはリストを最後までループした段階で検出されます)。
+@c しかし、@var{default}引数が与えられていれば、要素が奇数個の場合は@var{default}の
+@c 値が最後のキーに対応する値として使われます。
+@c @c COMMON
+
+@c @example
+@c (doplist ((k v) '(a 1 b 2 c)) (print k " => " v))
+@c   @result{} @r{Error, after printing} a => 1 @r{and} b => 2
+
+@c (doplist ((k v) '(a 1 b 2 c) #f) (print k " => " v))
+@c   @result{} @r{prints:}
+@c  a => 1
+@c  b => 2
+@c  c => #f
+@c @end example
+@c @end defmac
 
 @defmac while expr body @dots{}
 @defmacx while expr @code{=>} var body @dots{}
@@ -2697,7 +2972,7 @@ The return value of @code{until} form itself isn't specified.
 @c NODE 準クオート, 準クオート(Quasiquote)
 
 @defspec quasiquote template
-[R7RS]
+[R7RS base]
 @c EN
 Quasiquotation is a convenient way to build a structure that has
 some fixed parts and some variable parts.  See the explanation below.
@@ -2719,7 +2994,7 @@ The syntax @code{`x} is read as @code{(quasiquote x)}.
 
 @defspec unquote datum @dots{}
 @defspecx unquote-splicing datum @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 These syntaxes have meaning only when they appear in the @var{template}
 of quasiquoted form.  R5RS says nothing about these syntaxes
@@ -3203,7 +3478,7 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @defmac define-values (var @dots{}) expr
 @defmacx define-values (var var1 @dots{} . var2) expr
 @defmacx define-values var expr
-[R7RS]
+[R7RS base]
 @c EN
 @var{Expr} is evaluated, and each value of the result
 is bound to each @var{var}s.  In the first form, it is an error
@@ -3268,12 +3543,6 @@ that is, you can mix @code{define-values} in internal defines.
 (foo 1 4 9 3 0 7)
  @result{} (6 0 9)
 @end example
-
-@c EN
-@xref{Let-values}.
-@c JP
-@ref{Let-values}も参照してください。
-@c COMMON
 @end defmac
 
 @defspec define-constant variable expression
@@ -3352,7 +3621,7 @@ the current module, you can use @code{global-variable-bound?}
 
 @defspec include filename @dots{}
 @defspecx include-ci filename @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Reads @var{filename} @dots{} at compile-time, and insert their
 contents as if the forms are placed in the includer's source file,
@@ -3380,15 +3649,12 @@ that file (@pxref{Multibyte scripts}).
 
 @c EN
 If @var{filename} is absolute, the file is just searched.  If it
-begins with @file{./} or @file{../}, the file is searched relative
-to the process's current working directory.  Otherwise, the file
+is relative, the file
 is first searched relative to the file contaning the @code{include}
 form, then the directories in @code{*load-path*} are tried.
 @c JP
 @var{filename}が絶対パスならば、そのパスに正確に合致するファイルが探されます。
-@var{filename}が@code{./}か@code{../}で始まっていれば、
-ファイルはコンパイル時のプロセスのカレントワーキングディレクトリからの
-相対で探されます。そうでない場合、ファイルはまず@code{include}フォームが
+相対パスなら、まず@code{include}フォームが
 置かれていたファイルからの相対で探され、見つからなければ
 @code{*load-path*}にあるディレクトリからの相対パスが順に試されます。
 @c COMMON
@@ -3429,6 +3695,26 @@ It works as if the source is written as follows:
    (define y 1))
   (list x y))
 @end example
+
+@c EN
+(Note: In version 0.9.4, @code{include} behaved differently when
+pathname begins with either @code{./} or @code{../}---in which case
+the file is searched relative to the current working directory of the
+compiler.  It is rather an artifact of @code{include} sharing file
+search routine with @code{load}.  But unlike @code{load}, which is
+a run-time operation, using relative path to the current directory
+won't make much sense for @code{include}, so we changed the behavior
+in 0.9.5.)
+@c JP
+(註: バージョン0.9.4では、@code{include}は渡されたパス名が
+@code{./}か@code{../}で始まっていた場合は特別な動作をしていました。
+コンパイラのカレントディレクトリからの相対でファイルを探していたのです。
+これは意図した動作というより、@code{load}とファイル探索ルーチンを共有していた
+ために生じた仕様でした。しかし@code{load}が常に実行時の動作であるのに対し、
+@code{include}でカレントディレクトリからの相対パスを考える意味はほとんどありません。
+そこで0.9.5では仕様を変更しました。)
+@c COMMON
+
 @end defspec
 
 @c EN
@@ -3618,7 +3904,7 @@ Schemeでは、こういう時には@code{cond-expand}を使います。
 @c COMMON
 
 @defmac cond-expand (feature-requirement command-or-definition @dots{}) @dots{}
-[SRFI-0][R7RS]
+[R7RS base]
 @c EN
 This macro expands to @var{command-or-definition} @dots{} if
 @var{feature-requirement} is supported by the current platform.
@@ -4366,7 +4652,7 @@ Gaucheではモジュールはコンパイル時に静的に決定されます�
 @c NODE モジュールの使用
 
 @defspec export spec @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Makes bindings specified by each @var{spec} available
 to modules that imports the current module.
@@ -5116,44 +5402,94 @@ all the bindings of @code{gauche} module is imported.
 @end deftp
 
 @deftp {Builtin Module} gauche.keyword
+@deftpx {Builtin Module} keyword
 @mdindex gauche.keyword
+@mdindex keyword
 @c EN
 When Gauche is running with @code{GAUCHE_KEYWORD_IS_SYMBOL} mode
 keywords (symbols beginning with @code{:}) is automatically bound
-to itself in this module. 
+to itself in these modules.
 (@pxref{Keywords}, for the details.)
+
+The @code{keyword} module doesn't export those bindings, while
+@code{gauche.keyword} does.  The former is intended to be
+used internally; the programmer need to know the latter.
 
 If you use the default module inheritance,
 you don't need to use this module, since
-the keyword module is included in the inheritance chain.
-If you don't inherit @code{gauche} module, however, importing this
-module gives you access to the keywords without quotes.
+the @code{keyword} module is included in the inheritance chain.
+If you don't inherit @code{gauche} module, however, importing the
+@code{gauche.keyword} module gives you access to the keywords without quotes.
 For example, R7RS programs
-and libraries would require @code{(import (gauche keyword))},
-or you have to quote all keywords.
+and libraries would require either @code{(import (gauche keyword))}
+or @code{(import (gauche base))} (the latter inherits
+@code{gauche.keyword}), or you have to quote all keywords.
 @c JP
 Gaucheが@code{GAUCHE_KEYWORD_IS_SYMBOL}モードで実行されている時は、
-キーワード (@code{:}で始まるシンボル) が自動的にこのモジュールの中で
+キーワード (@code{:}で始まるシンボル) が自動的にこれらのモジュールの中で
 自分自身に束縛されます。(詳しくは@ref{Keywords}を参照してください。)
+
+@code{keyword}モジュールはキーワードの自己束縛をエクスポートせず、
+@code{gauche.keyword}モジュールはエクスポートします。前者は主に
+内部的に使うためのもので、プログラマが知る必要があるのは後者です。
 
 デフォルトのモジュール継承を使っている場合、キーワードモジュールは
 継承チェインの中に含まれているので、このモジュールを陽に使用する必要はありません。
 @code{gauche}を継承しないモジュールを書いていて、キーワードをクオートせずに
 使いたい場合にこのモジュールをインポートしてください。
 例えばR7RSプログラムやライブラリは、@code{(import (gauche keyword))}
-しない限り、キーワードにクオートが必要です。
+もしくは@code{(import (gauche base))} (後者は@code{gauche.keyword}を
+継承しています)しない限り、キーワードにクオートが必要です。
+@c COMMON
+
+@c EN
+The followig R7RS program imports @code{gauche.base}; it makes gauche
+built-in identifiers, @emph{and} all self-bound keywords, available:
+@c JP
+次のR7RSプログラムは@code{gauche.base}をimportすることで、
+Gaucheの組み込みの識別子とともに自己束縛されたキーワードが使えるようになります。
 @c COMMON
 
 @example
 ;; R7RS program
 (import (scheme base)
-        (gauche base)    ; to use Gauche builtins
-        (gauche keyword))
+        (gauche base))  ; import gauche builtins and keywords
 
-;; Without importing gauche.keyword,
-;; you need to write ':directory below.
+;; You can use :directory without quote, for it is bound to itself.
 (sys-exec "ls" '("ls" "-l") :directory "/")
 @end example
+
+@c EN
+If you use more sophisitcated import tricks, however, keep in mind
+that keywords are just imported symbols if
+@code{GAUCHE_KEYWORD_IS_SYMBOL} is set.  The following code imports
+Gauche builtin identifiers with prefix @code{gauche/}.  That causes
+keywords, imported via inheritance, also get the same prefix; if
+you don't want to bother adding prefix to all keywords or
+quote them, import @code{gauche.keyword} separately.
+@c JP
+ただ、もうちょっと凝ったインポートをする場合は、
+@code{GAUCHE_KEYWORD_IS_SYMBOL}がセットされている状態ではキーワードも
+単なるインポートされるシンボルにすぎないということを覚えておいてください。
+例えば次のコードではGaucheの組み込み識別子を@code{gauche/}というプレフィクス
+つきでインポートしています。この場合、@code{gauche.base}の継承経由で
+インポートされているキーワードもプレフィクスがつけられることになります。
+キーワードをいちいちプレフィクスつき、もしくはクオートつきで書きたくなければ、
+@code{gauche.keyword}を別にインポートしましょう。
+@c COMMON
+
+@example
+;; R7RS program
+(import (scheme base)
+        (prefix (gauche base) gauche/) ; use gauche builting with gauche/ prefix
+        (gauche keyword))              ; imports keywords
+
+;; Without importing gauche.keyword,
+;; you need to write ':directory
+(gauche/sys-exec "ls" '("ls" "-l") :directory "/")
+@end example
+
+
 @end deftp
 
 

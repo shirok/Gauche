@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.generator - generator framework
 ;;;
-;;;   Copyright (c) 2011-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2011-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -47,12 +47,14 @@
           generator->list generator->reverse-list
           generator->vector generator->vector!
           generator->string
+          generator->uvector generator->uvector!
+          generator->bytevector generator->bytevector!
           generator-any generator-every generator-unfold
           generator-count
 
           null-generator gcons* gappend gflatten
           gconcatenate gmerge
-          circular-generator gunfold giota grange gindex gselect
+          circular-generator gunfold giota grange gindex gselect ginterval
           gmap gmap-accum gfilter gremove gdelete gdelete-neighbor-dups
           gfilter-map gstate-filter gbuffer-filter
           gtake gtake* gdrop gtake-while gdrop-while grxmatch gslices
@@ -82,7 +84,11 @@
     [(_ exp body ...) (rlet1 tmp exp body ...)]))
 
 ;; Avoid circular dependency during build
-(autoload gauche.uvector uvector-ref u8vector?)
+(autoload gauche.uvector uvector-ref uvector-set! uvector-length
+          make-uvector u8vector?
+          <u8vector> <s8vector> <u16vector> <s16vector>
+          <u32vector> <s32vector> <u64vector> <s64vector>
+          <f16vector> <f32vector> <f64vector>)
 
 ;;;
 ;;; Converters and constructors
@@ -513,6 +519,29 @@
                  (loop)
                  (begin (set! found? #t) v))))))))
 
+;; generate values in the interval defined by start-pred and end-pred.
+;; OPEN determines whether the interval is open in either side or both;
+;; #f (default) means closed interval; 'both or #t means open interval;
+;; 'start means open-closed, and 'end means closed-open.
+(define (ginterval start-pred end-pred gen :key (open #f) (repeat #f))
+  (let ([active #f]
+        [end? #f])
+    (rec (g)
+      (cond [end? (eof-object)]
+            [active (let1 v (gen)
+                      (cond [(eof-object? v) (set! end? #t) v]
+                            [(end-pred v)
+                             (set! active #f)
+                             (unless repeat (set! end? #t))
+                             (if (memq open '(end both #t)) (g) v)]
+                            [else v]))]
+            [else   (let1 v (gen)
+                      (cond [(eof-object? v) (set! end? #t) v]
+                            [(start-pred v)
+                             (set! active #t)
+                             (if (memq open '(start both #t)) (g) v)]
+                            [else (g)]))]))))
+
 ;; generate :: ((a -> ()) -> ()) -> Generator a
 (define (generate proc)
   (define (cont)
@@ -600,7 +629,6 @@
         (glet1 v (vgen)
           (if b v (g)))))))
 
-
 ;;;
 ;;; Consumers
 ;;;
@@ -644,6 +672,33 @@
         (cond [(eof-object? v) (- k at)]
               [else (vector-set! vec k v) (loop (+ k 1))])))))
 
+(define (generator->uvector gen :optional (n #f) (class <u8vector>))
+  (define (gather i r)
+    (if (eqv? i n)
+      (values r i)
+      (let1 v (gen)
+        (if (eof-object? v)
+          (values r i)
+          (gather (+ i 1) (cons v r))))))
+  (receive (r k) (gather 0 '())
+    (rlet1 vec (make-uvector class k)
+      (do ([i (- k 1) (- i 1)]
+           [r r       (cdr r)])
+          [(null? r)]
+        (uvector-set! vec i (car r))))))
+(define (generator->bytevector gen :optional (n #f))
+  (generator->uvector gen n <u8vector>))
+
+(define (generator->uvector! vec at gen)
+  (let1 len (uvector-length vec)
+    (let loop ([k at])
+      (let1 v (if (>= k len) (eof-object) (gen))
+        (cond [(eof-object? v) (- k at)]
+              [else (uvector-set! vec k v) (loop (+ k 1))])))))
+(define (generator->bytevector! vec at gen)
+  (check-arg u8vector? vec)
+  (generator->uvector! vec at gen))
+  
 (define (generator->string gen :optional (n #f))
   (with-output-to-string
     (^[]
@@ -702,8 +757,6 @@
 ;;  (gen-ec (: i ...) ...)
 ;;    srfi-42-ish macro to create generator.  it's not "eager", so
 ;;    the name needs to be reconsidered.
-;;  (gflip-flop pred1 pred2 gen)
-;;    flip-flop operator to extract a range from the input generator.
 ;;  multi-valued generators
 ;;    take a generator and creates a multi-valued generator which
 ;;    returns auxiliary info in extra values, e.g. item count.

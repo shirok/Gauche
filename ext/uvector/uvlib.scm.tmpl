@@ -39,6 +39,9 @@
 ;;--------------------------------------------------------------------
 ;; ${t}vector basic API
 ;;
+
+;; NB: Constructors, referencers and modifiers are in the core.
+
 (define-cproc ${t}vector? (obj) ::<boolean> SCM_${T}VECTORP)
 
 ;; we need this in string, for the UNBOX macro is substituted to the
@@ -62,18 +65,6 @@
            (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR p SCM_CLAMP_ERROR)))]))
 
 (define-cproc ${t}vector-length (v::<${t}vector>) ::<int> SCM_${T}VECTOR_SIZE)
-
-;; This is only called via apply.  The standard call will be inlined
-;; as UVEC-REF instruction.
-(define-cproc ${t}vector-ref
-  (v::<${t}vector> i::<fixnum> :optional fallback) :fast-flonum
-  (setter ${t}vector-set!)
-  (return (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
-                            i fallback)))
-
-(define-cproc ${t}vector-set!
-  (v::<${t}vector> i::<fixnum> val :optional clamp) :fast-flonum
-  (return (Scm_${T}VectorSet v i val (clamp_arg clamp))))
 
 (define-cproc ${t}vector-copy
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
@@ -138,7 +129,7 @@
   Scm_${T}VectorToList)
 
 (define-cproc list->${t}vector (l::<list> :optional clamp)
-  (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (clamp-arg clamp))))
+  (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (Scm_ClampMode clamp))))
 
 (define-cproc ${t}vector-fill!
   (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1))
@@ -152,18 +143,28 @@
 
 (define-cproc vector->${t}vector
   (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) clamp)
-  (return (Scm_VectorTo${T}Vector v start end (clamp-arg clamp))))
+  (return (Scm_VectorTo${T}Vector v start end (Scm_ClampMode clamp))))
+
+(define-cproc ${t}vector=?              ; srfi-66
+  (a::<${t}vector> b::<${t}vector>)     ;  we just typecheck args and call equal?
+  ::<boolean>
+  (return (Scm_EqualP (SCM_OBJ a) (SCM_OBJ b))))
+
+(define-cproc ${t}vector-compare        ; srfi-66
+  (a::<${t}vector> b::<${t}vector>)     ;  we just typecheck args and call compare
+  ::<int>
+  (return (Scm_Compare (SCM_OBJ a) (SCM_OBJ b))))
 
 ///)) ;; end of tmpl-body
 
 ///(define *tmpl-numop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> v1 :optional clamp)
   :fast-flonum
-  (return (Scm_${T}Vector${Opname} v0 v1 (clamp-arg clamp))))
+  (return (Scm_${T}Vector${Opname} v0 v1 (Scm_ClampMode clamp))))
 
 (define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1 :optional clamp)
   :fast-flonum
-  (return (Scm_${T}Vector${Opname}X v0 v1 (clamp-arg clamp))))
+  (return (Scm_${T}Vector${Opname}X v0 v1 (Scm_ClampMode clamp))))
 ///)) ;; end of tmpl-numop
 
 ///(define *tmpl-bitop* '(

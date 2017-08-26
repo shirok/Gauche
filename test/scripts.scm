@@ -14,6 +14,13 @@
    [gauche.os.windows "NUL"]
    [else "/dev/null"]))
 
+(define *top-srcdir*
+  (sys-normalize-pathname (or (sys-getenv "top_srcdir") "..")
+                          :absolute #t :canonicalize #t))
+
+(define *executable-suffix*
+  (process-output->string '(gauche-config --executable-suffix)))
+
 ;;=======================================================================
 (test-section "gosh")
 
@@ -55,6 +62,45 @@
                   '(define (main args) (display "bar\n")))
                  (write
                   '(display "baz\n"))))
+             (process-output->string '("./gosh" "-ftest" "test.o")))
+         (delete-files "test.o")))
+
+(test* "r7rs + srfi-22 by interpreter name" "baz bar"
+       (unwind-protect
+           (begin
+             (delete-files "test.o" "scheme-r7rs")
+             (copy-file #"./gosh~*executable-suffix*" "./scheme-r7rs")
+             (sys-chmod "./scheme-r7rs" #o755)
+             (with-output-to-file "test.o"
+               (^[]
+                 (write
+                  '(import (scheme base) (scheme write)))
+                 (write
+                  '(define (main args) (display "bar\n") 0))
+                 (write
+                  '(display "baz\n"))))
+             (process-output->string '("./scheme-r7rs" "-ftest" "test.o")
+                                     :on-abnormal-exit :ignore))
+         (delete-files "test.o" "scheme-r7rs")))
+
+;; This caused assertion failure in 0.9.5, because 'main' was called
+;; via Scm_ApplyRec without base VM running.
+;; See https://github.com/shirok/Gauche/issues/244
+(test* "proper error handling of 'main'" "ok"
+       (unwind-protect
+           (let1 gauche.h (if-let1 top (sys-getenv "top_srcdir")
+                            (build-path top "src/gauche.h")
+                            "gauche.h")
+             (delete-files "test.o")
+             (with-output-to-file "test.o"
+               (^[]
+                 (write
+                  '(use gauche.partcont))
+                 (write
+                  `(define (main args)
+                     (reset (shift k (call-with-input-file ,gauche.h k)))
+                     (print 'ok)
+                     0))))
              (process-output->string '("./gosh" "-ftest" "test.o")))
          (delete-files "test.o")))
 
@@ -299,17 +345,11 @@
 (test-script
  (build-path (or (sys-getenv "top_srcdir") "..") "src" "gauche-package.in"))
 
-(remove-files "test.o")
-(make-directory* "test.o")
-
 (define (package-generate-tests)
   (define (file-check name)
     (test* #"checking existence of ~name" #t
            (file-exists? #"test.o/Test/~name")))
   (define pwd (sys-getcwd))
-  (define top-srcdir (sys-normalize-pathname
-                      (or (sys-getenv "top_srcdir") "..")
-                      :absolute #t :canonicalize #t))
 
   ;; When we run the test before installation, we need to tweak
   ;; some directories.  We can distinguish it, for install-check
@@ -336,7 +376,7 @@
              (define prefix (if (equal? (sys-basename (sys-getcwd)) "Test")
                               "../" ""))
              (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
-             (define top-srcdir ,top-srcdir)
+             (define top-srcdir ,*top-srcdir*)
              ;; This is used to copy templates from.
              (define (gauche-library-directory) #"~|top-srcdir|/ext/x")
              ;; Intercept gauche-config to override compiler flags
@@ -371,7 +411,82 @@
            (or (zero? (process-exit-status p)) o)))
   )
 
+(remove-files "test.o")
+(make-directory* "test.o")
 (unwind-protect (package-generate-tests)
   (remove-directory* "test.o"))
+
+
+(define (wrap-precomp-test thunk)
+  (remove-files "test.o")
+  (make-directory* "test.o")
+  (unwind-protect (thunk)
+    (remove-directory* "test.o")))
+
+(define (fix-path path)
+  (cond-expand
+   [gauche.os.windows (regexp-replace-all #/\\/ path "/")]
+   [else              path]))
+
+(define (precomp-test-1)
+  (do-process `("../../src/gosh" "-ftest"
+                ,#"-I~|*top-srcdir*|/test/test-precomp"
+                ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
+                ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
+                ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
+                       '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
+              :directory "test.o")
+  (test* "precomp generated files"
+         '("test.o/foo--bar1.c"
+           "test.o/foo--bar2.c"
+           "test.o/foo--bar3.c"
+           "test.o/foo.c"
+           "test.o/foo.sci"
+           "test.o/foo/bar1.sci"
+           "test.o/foo/bar2.sci"
+           "test.o/foo/bar3.sci")
+         (sort (map fix-path (directory-fold "test.o" cons '()))))
+  )
+
+(define (precomp-test-2)
+  (do-process `("../../src/gosh" "-ftest"
+                ,#"-I~|*top-srcdir*|/test/test-precomp"
+                ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
+                ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
+                "--single-interface"
+                ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
+                       '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
+              :directory "test.o")
+  (test* "precomp generated files with --single-interface"
+         '("test.o/foo--bar1.c"
+           "test.o/foo--bar2.c"
+           "test.o/foo--bar3.c"
+           "test.o/foo.c"
+           "test.o/foo.sci")
+         (sort (map fix-path (directory-fold "test.o" cons '()))))
+
+  (test* "consolidated sci file"
+         '(";; generated automatically.  DO NOT EDIT"
+           "#!no-fold-case"
+           "(define-module foo.bar2 (use util.match) (export bar2))"
+           "(select-module foo.bar2)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar2\")"
+           "(provide \"foo/bar2\")"
+           "(define-module foo.bar3 (use foo.bar2) (export bar3))"
+           "(select-module foo.bar3)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar3\")"
+           "(provide \"foo/bar3\")"
+           "(define-module foo.bar1 (use foo.bar2) (export bar1))"
+           "(select-module foo.bar1)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
+           "(provide \"foo/bar1\")"
+           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master))"
+           "(select-module foo)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
+         (file->string-list "test.o/foo.sci"))
+  )
+
+(wrap-precomp-test precomp-test-1)
+(wrap-precomp-test precomp-test-2)
 
 (test-end)

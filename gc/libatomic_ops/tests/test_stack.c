@@ -43,7 +43,7 @@
 
 #include "atomic_ops_stack.h" /* includes atomic_ops.h as well */
 
-#if (defined(_WIN32_WCE) || defined(__MINGW32CE__)) && !defined(abort)
+#if (defined(_WIN32_WCE) || defined(__MINGW32CE__)) && !defined(AO_HAVE_abort)
 # define abort() _exit(-1) /* there is no abort() in WinCE */
 #endif
 
@@ -53,25 +53,25 @@
 
 #ifdef NO_TIMES
 # define get_msecs() 0
-#elif defined(USE_WINTHREADS) || defined(AO_USE_WIN32_PTHREADS)
+#elif (defined(USE_WINTHREADS) || defined(AO_USE_WIN32_PTHREADS)) \
+      && !defined(CPPCHECK)
 # include <sys/timeb.h>
-  long long get_msecs(void)
+  unsigned long get_msecs(void)
   {
     struct timeb tb;
 
     ftime(&tb);
-    return (long long)tb.time * 1000 + tb.millitm;
+    return (unsigned long)tb.time * 1000 + tb.millitm;
   }
 #else /* Unix */
 # include <time.h>
 # include <sys/time.h>
-  /* Need 64-bit long long support */
-  long long get_msecs(void)
+  unsigned long get_msecs(void)
   {
     struct timeval tv;
 
     gettimeofday(&tv, 0);
-    return (long long)tv.tv_sec * 1000 + tv.tv_usec/1000;
+    return (unsigned long)tv.tv_sec * 1000 + tv.tv_usec/1000;
   }
 #endif /* !NO_TIMES */
 
@@ -97,6 +97,7 @@ void add_elements(int n)
   AO_stack_push(&the_list, (AO_t *)le);
 }
 
+#ifdef VERBOSE
 void print_list(void)
 {
   list_element *p;
@@ -106,6 +107,7 @@ void print_list(void)
        p = (list_element *)AO_REAL_NEXT_PTR(p -> next))
     printf("%d\n", p -> data);
 }
+#endif /* VERBOSE */
 
 static char marks[MAX_NTHREADS * (MAX_NTHREADS + 1) / 2 + 1];
 
@@ -175,9 +177,9 @@ volatile AO_t ops_performed = 0;
   list_element * t[MAX_NTHREADS + 1];
   int index = (int)(size_t)arg;
   int i;
-  int j = 0;
-
 # ifdef VERBOSE
+    int j = 0;
+
     printf("starting thread %d\n", index);
 # endif
   while (fetch_and_add(&ops_performed, index + 1) + index + 1 < LIMIT)
@@ -195,7 +197,9 @@ volatile AO_t ops_performed = 0;
         {
           AO_stack_push(&the_list, (AO_t *)t[i]);
         }
-      j += (index + 1);
+#     ifdef VERBOSE
+        j += index + 1;
+#     endif
     }
 # ifdef VERBOSE
     printf("finished thread %d: %d total ops\n", index, j);
@@ -242,7 +246,7 @@ int main(int argc, char **argv)
           pthread_t thread[MAX_NTHREADS];
 #       endif
         int list_length = nthreads*(nthreads+1)/2;
-        long long start_time;
+        unsigned long start_time;
         list_element * le;
 
 #       ifdef VERBOSE
@@ -290,10 +294,10 @@ int main(int argc, char **argv)
             abort();
           }
         }
-        times[nthreads][exper_n] = (unsigned long)(get_msecs() - start_time);
+        times[nthreads][exper_n] = get_msecs() - start_time;
   #     ifdef VERBOSE
-          printf("%d %lu\n", nthreads,
-                 (unsigned long)(get_msecs() - start_time));
+          printf("nthreads=%d, time_ms=%lu\n",
+                 nthreads, times[nthreads][exper_n]);
           printf("final list (should be reordered initial list):\n");
           print_list();
   #     endif
@@ -303,22 +307,23 @@ int main(int argc, char **argv)
       }
     for (nthreads = 1; nthreads <= max_nthreads; ++nthreads)
       {
-        unsigned long sum = 0;
+#       ifndef NO_TIMES
+          unsigned long sum = 0;
+#       endif
 
         printf("About %d pushes + %d pops in %d threads:",
                LIMIT, LIMIT, nthreads);
-        for (exper_n = 0; exper_n < N_EXPERIMENTS; ++exper_n)
-          {
-#           if defined(VERBOSE)
-              printf(" [%lu]", times[nthreads][exper_n]);
+#       ifndef NO_TIMES
+          for (exper_n = 0; exper_n < N_EXPERIMENTS; ++exper_n) {
+#           ifdef VERBOSE
+              printf(" [%lums]", times[nthreads][exper_n]);
 #           endif
             sum += times[nthreads][exper_n];
           }
-#     ifndef NO_TIMES
-        printf(" %lu msecs\n", (sum + N_EXPERIMENTS/2)/N_EXPERIMENTS);
-#     else
-        printf(" completed\n");
-#     endif
+          printf(" %lu msecs\n", (sum + N_EXPERIMENTS/2)/N_EXPERIMENTS);
+#       else
+          printf(" completed\n");
+#       endif
       }
   return 0;
 }

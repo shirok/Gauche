@@ -1,6 +1,12 @@
-\input texinfo  @c -*- mode: texinfo; coding: utf-8; -*-
-@comment %**start of header
 @c EN
+\input texinfo    @c -*- mode: texinfo; coding: utf-8; -*-
+@c JP
+\input texinfo-ja @c -*- mode: texinfo; coding: utf-8; -*-
+@c COMMON
+@comment %**start of header
+@documentencoding UTF-8
+@c EN
+@documentlanguage en
 @setfilename gauche-refe.info
 @settitle Gauche Users' Reference
 @afourpaper
@@ -9,6 +15,7 @@
 * Gauche: (gauche-refe.info).	        An R7RS Scheme implementation.
 @end direntry
 @c JP
+@documentlanguage ja
 @setfilename gauche-refj.info
 @settitle Gauche ユーザリファレンス
 @afourpaper
@@ -16,7 +23,6 @@
 @direntry
 * Gauche (ja): (gauche-refj.info).	An R7RS Scheme implementation.
 @end direntry
-@documentencoding utf-8
 @c COMMON
 @comment %**end of header
 
@@ -24,11 +30,6 @@
 @defcodeindex md
 @defcodeindex cl
 @defcodeindex lx
-
-@iftex
-@finalout
-@parskip 4pt plus 1pt
-@end iftex
 
 @titlepage
 @c EN
@@ -52,11 +53,16 @@ Copyright @copyright{} 2001-2010 Shiro Kawai (shiro@@acm.org)
 @ifnottex
 @c EN
 This is a reference manual of Gauche, an R7RS Scheme implementation.
-This manual is for version @VERSION@.
 @c JP
 本書は、R7RS準拠のScheme処理系、Gaucheのリファレンスマニュアルです。
+@c COMMON
+@ifnothtml
+@c EN
+This manual is for version @VERSION@.
+@c JP
 Gaucheのバージョン@VERSION@に対応します。
 @c COMMON
+@end ifnothtml
 @end ifnottex
 
 @menu
@@ -69,7 +75,7 @@ Gaucheのバージョン@VERSION@に対応します。
 * Object system::               
 * Library modules - Overview::  
 * Library modules - Gauche extensions::  
-* Library modules - R7RS integration::  
+* Library modules - R7RS standard libraries::  
 * Library modules - SRFIs::     
 * Library modules - Utilities::  
 * References::                  
@@ -80,6 +86,8 @@ Gaucheのバージョン@VERSION@に対応します。
 * Class Index::                 
 * Variable Index::              
 @end menu
+
+@contents
 
 @include intro.texi
 @include concepts.texi
@@ -101,6 +109,5 @@ Gaucheのバージョン@VERSION@に対応します。
 @include indexcl.texi
 @include indexvr.texi
 
-@contents
 @bye
 

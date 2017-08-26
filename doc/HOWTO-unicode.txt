@@ -48,6 +48,7 @@ You need to obtain the following files from the Unicode site
     UnicodeData.txt
     SpecialCasing.txt
     PropList.txt
+    EastAsianWidth.txt
     auxiliary/GraphemeBreakProperty.txt
     auxiliary/WordBreakProperty.txt
 
@@ -55,6 +56,16 @@ Save those files in some directory (we call it $UNICODEDIR).
 Note that you need to keep subdirectory (auxiliary/).
 
 The list of files may grow in future versions of Gauche.
+
+For your convenience, the script src/gen-unicode.scm can download
+those files:
+
+    $ gosh src/gen-unicode.scm --fetch $UNICODEDIR [$UNICODE_VERSION]
+
+This downloads those files into $UNICODEDIR.  By default it downloads
+the latest version; however, if the changes in newer versions of Unicode
+trip build process, you can give version number in the second argument
+to download older versions of data files.
 
 
 Review the changes

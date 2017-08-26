@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Cameron Rich
+ * Copyright (c) 2012-2016, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -56,15 +56,6 @@ typedef INT64 int64_t;
 #include <inttypes.h>
 #else
 #include <stdint.h>
-#ifdef __APPLE__
-#include <machine/endian.h>
-#elif defined(__MINGW32__)
-#define be64toh(x) __builtin_bswap64(x)
-#elif defined(__NetBSD__) || defined(__FreeBSD__)
-#include <sys/endian.h>
-#else
-#include <endian.h>
-#endif
 #endif /* Not Solaris */
 
 #endif /* Not Win32 */

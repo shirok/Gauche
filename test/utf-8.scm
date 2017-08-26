@@ -244,20 +244,69 @@
 
 (use srfi-14)
 
-(test "char-set" #t
-      (lambda () (char-set= (char-set #\あ #\い #\う #\え #\お)
-                            (string->char-set "おうえいあ"))))
-(test "char-set" #t
-      (lambda () (char-set= (list->char-set '(#\あ #\い #\う #\ん))
-                            (string->char-set "んんいいいああう"))))
-(test "char-set" #t
-      (lambda () (char-set<= (list->char-set '(#\ほ #\げ))
-                             char-set:full)))
-(test "char-set" #t
-      (lambda ()
-        (char-set= (->char-set "ぁぃぅぇぉあいうえ")
-                   (integer-range->char-set (char->integer #\ぁ)
-                                            (char->integer #\お)))))
+(let ((data '(#[ぁ-ん他-唖ァ-ン]
+              #[aあ唖ア])))
+  (define (t x)
+    (test* "char-set mutable/immutable roundtrip" #t
+           (char-set= (char-set-copy x)
+                      (char-set-copy (char-set-freeze! (char-set-copy x))))))
+  (for-each t data))
+
+(test-char-set-1 "char-set-contains?" #t (cut char-set-contains? <> #\あ)
+                 (char-set #\あ #\い #\う #\え #\お))
+(test-char-set-1 "char-set-contains?" #f (cut char-set-contains? <> #\ぁ)
+                 (char-set #\あ #\い #\う #\え #\お))
+(test-char-set-1 "char-set-contains?" #t (cut char-set-contains? <> #\ほ)
+                 (char-set-union
+                  (integer-range->char-set (char->integer #\ぁ)
+                                           (char->integer #\ん))
+                  (integer-range->char-set (char->integer #\ァ)
+                                           (char->integer #\ン))))
+(test-char-set-1 "char-set-contains?" #t (cut char-set-contains? <> #\ケ)
+                 (char-set-union
+                  (integer-range->char-set (char->integer #\ぁ)
+                                           (char->integer #\ん))
+                  (integer-range->char-set (char->integer #\ァ)
+                                           (char->integer #\ン))))
+(test-char-set-1 "char-set-contains?" #f (cut char-set-contains? <> #\ん)
+                 (char-set-union
+                  (integer-range->char-set (char->integer #\ぁ)
+                                           (char->integer #\ん))
+                  (integer-range->char-set (char->integer #\ァ)
+                                           (char->integer #\ン))))
+(test-char-set-1 "char-set-contains?" #f (cut char-set-contains? <> #\ヴ)
+                 (char-set-union
+                  (integer-range->char-set (char->integer #\ぁ)
+                                           (char->integer #\ん))
+                  (integer-range->char-set (char->integer #\ァ)
+                                           (char->integer #\ン))))
+
+(test-char-set-2 "char-set=" #t char-set=
+                 (char-set #\あ #\い #\う #\え #\お)
+                 (string->char-set "おうえいあ"))
+(test-char-set-2 "char-set=" #t char-set=
+                 (list->char-set '(#\あ #\い #\う #\ん))
+                 (string->char-set "んんいいいああう"))
+(test-char-set-2 "char-set<=" #t char-set<=
+                 (list->char-set '(#\ほ #\げ))
+                 char-set:full)
+(test-char-set-2 "char-set<=" #t char-set<= #[あい] #[あい])
+(test-char-set-2 "char-set<=" #t char-set<= #[あい] #[あ-い])
+(test-char-set-2 "char-set<=" #f char-set<= #[あ-い] #[あい])
+(test-char-set-2 "char-set<=" #t char-set<= #[あ-いう-え] #[あ-え])
+(test-char-set-2 "char-set<=" #f char-set<= #[あ-え] #[あ-いう-え])
+(test-char-set-2 "char-set<=" #f char-set<= #[あ-いう-ぉ] #[あ-え])
+(test-char-set-2 "char-set<=" #f char-set<= #[ぁ-いう-え] #[あ-え])
+(test-char-set-2 "char-set<=" #t char-set<= #[あ-いか-き] #[あ-うお-け])
+(test-char-set-2 "char-set<=" #t char-set<= #[あ-いか-き] #[あ-うお-き])
+(test-char-set-2 "char-set<=" #t char-set<= #[あ-いか-き] #[あ-うか-こ])
+(test-char-set-2 "char-set<=" #t char-set<= #[か-き] #[あ-うか-こ])
+(test-char-set-2 "char-set<=" #t char-set<= #[か-きく-け] #[あ-うか-こ])
+(test-char-set-2 "char-set<=" #f char-set<= #[う-く] #[あ-えか-こ])
+(test-char-set-2 "->char-set" #t char-set=
+                 (->char-set "ぁぃぅぇぉあいうえ")
+                 (integer-range->char-set (char->integer #\ぁ)
+                                          (char->integer #\お)))
 
 ;;-------------------------------------------------------------------
 (test-section "ports")

@@ -18,9 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- * Most of this code originally comes from Hans-Peter Nilsson.  It is included
- * here with his permission.
  */
 
 /* FIXME: seems to be untested.         */
@@ -41,7 +38,7 @@
  * http://developer.axis.com/doc/hardware/etrax100lx/prog_man/
  *      1_architectural_description.pdf
  *
- * Presumably many other primitives (notably CAS, including the double-
+ * TODO: Presumably many other primitives (notably CAS, including the double-
  * width versions) could be implemented in this manner, if someone got
  * around to it.
  */

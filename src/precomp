@@ -47,25 +47,29 @@
 (define (main args)
   (let1 predef-syms '()
     (let-args (cdr args)
-        ([keep-private-macro "M|keep-private-macro=s"]
+        ([help               "h|help" => (^_ (usage #f))]
+         [keep-private-macro "M|keep-private-macro=s"]
          [ext-main           "e|ext-main"]
          [xprefix            "p|strip-prefix=s"]
          [xprefix-all        "P|strip-prefix-all"]
          [out.sci            "i|interface=s"]
          [out.c              "o|output=s"]
+         [single-sci         "single-interface"]
          [subinits           "s|sub-initializers=s"]
          [dso-name           "d|dso-name=s"]
          [ext-module         "ext-module=s" #f] ;for backward compatibility
-         [#f "D=s" => (lambda (sym) (push! predef-syms sym))]
-         [else => (lambda _ (usage))]
+         [#f "D=s" => (^[sym] (push! predef-syms sym))]
+         [else (opt . _) (usage #"Unrecognized option: ~opt")]
          . args)
       (let ([mtk      (split-to-symbols keep-private-macro)]
             [subinits (split-to-symbols subinits)]
             [extini   (or ext-module ext-main)]
             [prefix   (or xprefix-all xprefix)])
         (match args
-          [() (usage)]
+          [() (usage #f)]
           [(src)
+           (when single-sci
+             (usage "The `--single-interface' option is only valid with multiple input files"))
            (cgen-precompile src
                             :out.c out.c
                             :out.sci (or out.sci ext-module)
@@ -76,19 +80,24 @@
                             :predef-syms predef-syms
                             :macros-to-keep mtk)]
           [(srcs ...)
+           (when out.sci
+             (usage "The `-i' or `--interface' option is only valid with single input file"))
            (cgen-precompile-multi srcs
                                   :ext-initializer extini
                                   :strip-prefix prefix
+                                  :single-sci-file single-sci
                                   :dso-name dso-name
                                   :predef-syms predef-syms
                                   :macros-to-keep mtk)]))))
   0)
 
-(define (usage)
+(define (usage msg)
+  (when msg (print msg))
   (print "Usage: gosh precomp [options] <file.scm> ...")
   (print "Options:")
   (print "  --keep-private-macro=NAME,NAME,...")
-  (print "  -i,--interface=FILE.SCI")
+  (print "  -i,--interface=FILE.SCI   (valid only for single input file)")
+  (print "  --single-interface        (valid only for multiple input files)")
   (print "  -e,--ext-main")
   (print "  -o,--output=FILE.C")
   (print "  -p,--strip-prefix=PREFIX")

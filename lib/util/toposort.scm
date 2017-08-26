@@ -23,35 +23,28 @@
 
   ;; set up - compute number of nodes that each node depends on.
   (define (set-up)
-    (for-each (lambda (node)
-                (for-each (lambda (to)
-                            (cond ((assoc to table eq)
-                                   => (^p (inc! (cdr p))))
-                                  (else
-                                   (push! table (cons to 1)))))
-                          (cdr node)))
-              nodes))
+    (dolist [node nodes]
+      (dolist [to (cdr node)]
+        (if-let1 p (assoc to table eq)
+          (inc! (cdr p))
+          (push! table (cons to 1))))))
 
   ;; traverse
   (define (traverse)
     (unless (null? queue)
-      (let ((n0 (assoc (pop! queue) nodes eq)))
+      (let1 n0 (assoc (pop! queue) nodes eq)
         (when n0
-          (for-each (lambda (to)
-                      (cond ((assoc to table eq)
-                             => (lambda (p)
-                                  (let ((cnt (- (cdr p) 1)))
-                                    (when (= cnt 0)
-                                      (push! result to)
-                                      (push! queue to))
-                                    (set! (cdr p) cnt))))
-                            ))
-                    (cdr n0)))
+          (dolist [to (cdr n0)]
+            (if-let1 p (assoc to table eq)
+              (let1 cnt (- (cdr p) 1)
+                (when (= cnt 0)
+                  (push! result to)
+                  (push! queue to))
+                (set! (cdr p) cnt)))))
         (traverse))))
 
   (set-up)
-  (set! queue (append-map (^p (if (= (cdr p) 0) (list (car p)) '()))
-                          table))
+  (set! queue (append-map (^p (if (= (cdr p) 0) (list (car p)) '())) table))
   (set! result queue)
   (traverse)
   (let1 rest (filter (^e (not (zero? (cdr e)))) table)

@@ -26,18 +26,18 @@ are not familiar with hygienic macros; if you know what they are,
 you can skip the section.
 @c JP
 Gaucheは、名前の衝突を避ける安全なマクロを簡単に書ける、「衛生的な(hygienic)」
-マクロをサポートします。これは、従来のLispマクロは知っているけれど衛生的なマクロを
-始めて見る人には、やや難解に見えるかもしれません。
+マクロをサポートします。これは、従来のLispマクロは知っていても衛生的なマクロを
+初めて見る人には、やや難解に見えるかもしれません。
 衛生的マクロに馴染みが無い読者向けに、紹介の節を用意しました(@ref{Why hygienic?})。
 既に衛生的マクロを知っている読者はその節は読み飛ばして構いません。
 @c COMMON
 
 @menu
-* Why hygienic?::               
-* Hygienic macros::             
-* Traditional macros::          
-* Macro expansion::             
-* Macro utilities::             
+* Why hygienic?::
+* Hygienic macros::
+* Traditional macros::
+* Macro expansion::
+* Macro utilities::
 @end menu
 
 @node Why hygienic?, Hygienic macros, Macros, Macros
@@ -160,7 +160,7 @@ rebinding symbols that are provided by user libraries.)
 異なるLisp方言はそれぞれ異なる方法でこの問題に対処してきました。
 Common Lispは、ある意味プログラマの常識に頼ります。マクロ作成者は
 ライブラリのパッケージを分けることで、偶然名前が衝突してしまう危険性を
-減らせますが、マクロ使用者が同じパッケージの名前を再束縛することを防げるわけではなりません。
+減らせますが、マクロ使用者が同じパッケージの名前を再束縛することを防げるわけではありません。
 (Common Lispの仕様ではCL標準のシンボルをローカルに再束縛した場合の
 動作は未定義とされていますが、ユーザが提供するライブラリについては
 何も決められていません。)
@@ -490,28 +490,58 @@ so that you can familiarize yourself to the concept.
 @section Hygienic macros
 @c NODE 衛生的マクロ
 
+@c EN
 @subheading Macro bindings
+@c JP
+@subheading マクロ束縛
+@c COMMON
 
+@c EN
 The following forms establish bindings of @var{name} and
 a macro transformer created by @var{transformer-spec}.  The
 binding introduced by these forms shadows
 a binding of @var{name} established in outer scope, if there's any.
+@c JP
+以下のフォームは@var{transformer-spec}で作られるマクロ変換器と
+@var{name}の束縛を作ります。外側のスコープに@var{name}の束縛があれば、
+それはシャドウされます。
+@c COMMON
 
+@c EN
 For toplevel bindings, it will shadow bindings of @var{name} imported
 or inherited from other modules (@pxref{Modules}).
 (Note: This toplevel shadowing behavior is Gauche's extension;
-in R7RS, it is an error to redefine imported bindings, so the portable
+in R7RS, you shouldn't redefine imported bindings, so the portable
 code should avoid it.)
+@c JP
+トップレベル束縛の場合、@var{name}に他のモジュールからインポートされたり
+継承されている束縛があれば、それをシャドウすることになります
+(@ref{Modules}参照)。
+(註:モジュール内でのトップレベル束縛がインポートした束縛をシャドウするのは
+Gaucheの拡張です。R7RSではインポートした束縛の再定義はしてはいけないことに
+なっているので、ポータブルなコードでは避けて下さい)。
+@c COMMON
 
+@c EN
 The effect is undefined if you bind the same name more than once
 in the same scope.
+@c JP
+同じスコープで同じ名前を複数回束縛した場合の動作は未定義です。
+@c COMMON
 
+@c EN
 The @var{transformer-spec} can be either one of @code{syntax-rules}
 form, @code{er-macro-transformer} form, or another macro keyword
 or syntactic keyword.  We'll explain them later.
+@c JP
+@var{transformer-spec}は@code{syntax-rules}フォーム、
+@code{er-macro-transformer}フォーム、あるいは他のマクロキーワードか
+構文キーワードです。これについては後述します。
+@c COMMON
 
 @defspec define-syntax name transformer-spec
-[R7RS]
+[R7RS base]
+@c EN
 If this form appears in toplevel, it binds toplevel @var{name} to
 a macro transformer defined by @var{transformer-spec}.
 
@@ -519,13 +549,22 @@ If this form appears in the @emph{declaration} part of
 body of @code{lambda} (internal define-syntax), @code{let} and
 other similar forms, it binds @var{name} locally within that body.
 Internal @code{define-syntax}es are converted to @code{letrec-syntax},
-just like internal @code{define}s are converted to @code{letrec}.
-See the examples below.
+just like internal @code{define}s are converted to @code{letrec*}.
+@c JP
+トップレベルで使われた場合、このフォームはトップレベルの@var{name}を
+@var{transformer-spec}で定義されるマクロ変換器に束縛します。
+
+@code{lambda}、@code{let}等の本体の宣言部分に使われた場合 (内部define-syntax)、
+その本体内のスコープで@var{name}を束縛します。
+内部defineが@code{letrec*}に変換されるのと同じように、
+内部define-syntaxは@code{letrec-syntax}へと変換されます。
+@c COMMON
 @end defspec
 
 @defspec let-syntax ((name transformer-spec) @dots{}) body
 @defspecx letrec-syntax ((name transformer-spec) @dots{}) body
-[R7RS]
+[R7RS base]
+@c EN
 Defines local macros.  Each @var{name} is bound to a macro
 transformer as specified by the corresponding @var{transformer-spec},
 then @code{body} is expanded.  With @code{let-syntax},
@@ -534,36 +573,76 @@ surrounding @code{let-syntax}, while with @code{letrec-syntax}
 the bindings of @var{name}s are included in the scope where
 @var{transformer-spec} is evaluated.  Thus @code{letrec-syntax}
 allows mutually recursive macros.
+@c JP
+ローカルマクロを定義します。各@var{name}が
+対応する@var{transformer-spec}で定義されるマクロ変換器へと束縛された
+環境を作り@var{body}を評価します。
+@code{let-synta}では、@var{transformer-spec}は@code{let-syntax}を
+囲むスコープ内で@var{transformer-spec}を評価するのに対し、
+@code{letrec-syntax}では@var{name}の束縛がなされた環境で
+@var{transformer-spec}を評価します。つまり@code{letrec-syntax}は
+相互再帰的なマクロを定義できます。
+@c COMMON
 @end defspec
 
 @subheading Transformer specs
 
+@c EN
 The @var{trasformer-spec} is a special expression that evaluates
 to a macro transformer.  It is evaluated in a different phase
 than the other expressions, since macro transformers must be
 executed during compiling.  So there are some restrictions.
 
 At this moment, only one of the following expressions are allowed:
+@c JP
+@var{transformer-spec}は、マクロ展開器へと評価される特別な式です。
+マクロ変換器はコンパイル時に実行されるため、他の式とは異なった段階で評価されます。
+そのためにいくらか制限があります。
+
+現在のところ、以下の上げる式しか許されていません。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 A @code{syntax-rules} form.   This is called ``high-level'' macro,
 for it uses pattern matching entirely, which is basically a
 different declarative language from Scheme, thus putting the
 complication of the phasing and hygiene issues completely under the hood.
 Some kind of macros are easier to write in @code{syntax-rules}.
-@xref{Syntax-rules pattern langauge}, for further description.
+@xref{Syntax-rules macro transformer}, for further description.
+@c JP
+@code{syntax-rules}フォーム。これは「高レベル」マクロと呼ばれ、
+パターンマッチングのみによってマクロを定義します。
+これはSchemeとは異なる一種の宣言的言語で、
+マクロの段階や衛生の問題をボンネットの下に隠してしまいます。
+ある種のマクロは@code{syntax-rules}でより簡単に書けます。
+詳しくは@ref{Syntax-rules macro transformer}を参照してください。
+@c COMMON
 
 @item
+@c EN
 An @code{er-macro-transformer} form.  This employs @emph{explicit-renaming}
 (ER) macro, where you can use arbitrary Scheme code to transform
 the program, with required renaming to keep hygienity.  The legacy
 Lisp macro can also be written with ER macro if you don't use
 renaming.  @xref{Explicit-renaming macro transformer}, for the details.
+@c JP
+@code{er-macro-transfomer}フォーム。
+これは@emph{explicit renaming}(ER)マクロを定義します。
+ERマクロでは、必要な衛生を保ちながら、任意のSchemeコードを使って変換を書けます。
+伝統的なLispのマクロは、ERマクロでリネームを使わない特別な場合と考えられます。
+詳しくは@ref{Explicit-renaming macro transformer}を参照してください。
+@c COMMON
 
 @item
+@c EN
 Macro or syntax keyword.  This is Gauche's extension, and can be
 used to define alias of existing macro or syntax keyword.
+@c JP
+マクロキーワードか構文キーワード。これはGauche独自の拡張で、
+既存のマクロキーワードや構文キーワードの別名を定義するものです。
+@c COMMON
 @example
 (define-syntax si if)
 (define écrivez write)
@@ -575,32 +654,649 @@ used to define alias of existing macro or syntax keyword.
 
 
 @menu
-* Syntax-rules pattern langauge::  
-* Explicit-renaming macro transformer::  
+* Syntax-rules macro transformer::
+* Explicit-renaming macro transformer::
 @end menu
 
-@node Syntax-rules pattern langauge, Explicit-renaming macro transformer, Hygienic macros, Hygienic macros
-@subsection Syntax-rules pattern langauge
+@node Syntax-rules macro transformer, Explicit-renaming macro transformer, Hygienic macros, Hygienic macros
+@subsection Syntax-rules macro transformer
+@c NODe Syntax-rulesマクロ変換器
 
-@defspec syntax-rules (literal @dots{}) clause1 clause2 @dots{}
-@defspecx syntax-rules ellipsis (literal @dots{}) clause1 clause2 @dots{}
-[R7RS]
-This specifies a macro transformer by pattern matching.
+@defspec syntax-rules (literal @dots{}) clause clause2 @dots{}
+@defspecx syntax-rules ellipsis (literal @dots{}) clause clause2 @dots{}
+[R7RS base]
+@c EN
+This form creates a macro transformer by pattern matching.
+
+Each @var{clause} has the following form:
+@c JP
+パターンマッチングによるマクロ変換器を作ります。
+
+各@var{clause}は次の形式です。
+@c COMMON
+
+@example
+(@var{pattern} @var{template})
+@end example
+
+@c EN
+A @var{pattern} denotes a pattern to be matched to the macro call.
+It is an S-expression that matches if the macro call has the same
+structure, except that symbols in @var{pattern} can match a whole subtree
+of the input; the matched symbol is called a @emph{pattern variable},
+and can be referenced in the @var{template}.
+@c JP
+@var{pattern}はマクロ呼び出しにマッチすべきパターンを記述します。
+パターンはS式で、マクロ呼び出しの式と同じ構造を持っている場合にマッチします。
+但し、パターン中のシンボルは@emph{パターン変数}と呼ばれ、
+マクロ呼び出し式の対応する任意の部分木とマッチし、
+@var{template}の中でマッチした部分木を参照するのに使えます。
+@c COMMON
+
+@c EN
+For example, if a pattern is @code{(_ "foo" (a b))}, it can match the
+macro call @code{(x "foo" (1 2))}, or @code{(x "foo" (1 (2 3)))}, but does
+not match @code{(x "bar" (1 2))}, @code{(x "foo" (1))} or
+@code{(x "foo" (1 2) 3)}.  You can also match repeating structure or
+literal symbols; we'll discuss it fully later.
+@c JP
+例えば、パターンが@code{(_ "foo" (a b))}であったとすると、それは
+@code{(x "foo" (1 2))}や@code{(x "foo" (1 (2 3)))}といったマクロ呼び出しとマッチしますが、
+@code{(x "bar" (1 2))}、@code{(x "foo" (1))}、@code{(x "foo" (1 2) 3)}とは
+マッチしません。
+さらに、後で説明するように、繰り返しのある構造やリテラルシンボルとマッチするような記述も可能です。
+@c COMMON
+
+@c EN
+Clauses are examined in order to see if the macro call form matches
+its pattern.  If matching pattern is found, the corresponding @var{template}
+replaces the macro call form.  A pattern variable in the template is
+replaced with the subtree of input that is bound to the pattern variable.
+@c JP
+@var{clause}は順番に、そのパターンにマクロ呼び出しとマッチするかが検査されます。
+マッチするパターンが見つかれば、対応する@var{template}でマクロ呼び出しの式が
+置き換えられます。@var{template}中のパターン変数は、
+マクロ呼び出し式のその変数にマッチした部分木で置き換えられます。
+@c COMMON
+
+@c EN
+Here's a definition of @code{when} macro in @ref{Why hygienic?},
+using @code{syntax-rules}:
+@c JP
+これは@ref{Why hygienic?}で例に出した@code{when}マクロを
+@code{syntax-rules}で書いたものです:
+@c COMMON
+
+@example
+(define-syntax when
+  (syntax-rules ()
+    [(_ test body ...) (if test (begin body ...))]))
+@end example
+
+@c EN
+The pattern is @code{(_ test body ...)}, and the template is
+@code{(if test (begin body ...))}.
+The ellipsis @code{...} is a symbol; we're not omitting code here.
+It denotes that the previous pattern (@code{body}) may
+repeat zero or more times.
+@c JP
+パターンが@code{(_ test body ...)}で、
+テンプレートが@code{(if test (begin body ...))}です。
+@code{...} (エリプシス) は、記述を省略しているわけではなく、
+ピリオド3つからなる名前を持つシンボルです。
+これは直前のパターン(@code{body})がゼロ個以上繰り替えされるということを示します。
+@c COMMON
+
+@c EN
+So, if the @code{when} macro is called as
+@code{(when (zero? x) (print "huh?") (print "we got zero!"))},
+the macro expander first check if the input matches the pattern.
+@c JP
+@code{when}マクロが
+@code{(when (zero? x) (print "huh?") (print "we got zero!"))}
+という形で呼び出されたとしまそう。
+マクロ展開器はまず、この入力がパターンとマッチするかどうかを調べます。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+The @var{test} in pattern matches the input @code{(zero? x)}.
+@c JP
+パターン中の@var{test}は入力の@code{(zero? x)}とマッチ。
+@c COMMON
+@item
+@c EN
+The @var{body} in pattern matches the input @code{(print "huh?")} 
+@emph{and} @code{(print "we got zero!")}.
+@c JP
+パターン中の@var{body}は入力の@code{(print "huh?")}および@code{(print "we got zero!")}とマッチ
+@c COMMON
+@end itemize
+
+@c EN
+The matching of @var{body} is a bit tricky; as a pattern variable,
+you may think that @var{body} works like an array variable, each element
+holds each match---and you can use them in similarly
+repeating substructures in template.
+Let's see the template, now that the input fully matched the pattern.
+@c JP
+@var{body}とのマッチングはちょっとややこしいです。
+パターン変数@var{body}は配列のようなものだと考えても良いでしょう。
+配列の各要素がマッチする入力の部分木を保持します。
+その値は、テンプレート中の似たような繰り返し部分構造の中で使うことができます。
+ここまでで入力がパターンにマッチしたので、テンプレートの方を見てみましょう。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+In the template, @code{if} and @code{begin} are not pattern variable,
+since they are not appeared in the pattern.
+So they are inserted as identifiers---that is, hygienic symbols effectively
+renamed to make sure to refer to the global @code{if} and @code{begin},
+and will be unaffected by the macro use environment.
+@c JP
+テンプレート中の@code{if}と@code{begin}はパターン中に現れていないので
+パターン変数ではありません。従って、識別子として出力に挿入されます。
+ここで、識別子@code{if}や@code{begin}はこのマクロのスコープから見えるグローバルな
+@code{if}や@code{begin}を常に参照できるように、衛生的に扱われます。
+マクロが使われた場所で@code{if}や@code{begin}がシャドウされていたとしても影響を受けません。
+@c COMMON
+@item
+@c EN
+The @var{test} in the template is a pattern variable, so it is replaced
+for the matched value, @code{(zero? x)}.
+@c JP
+テンプレート中の@var{test}はパターン変数なので、マッチした値である@code{(zero? x)}へと
+置き換えられます。
+@c COMMON
+@item
+@c EN
+The @var{body} is also a pattern variable.  The important point is
+that it is also followed by ellipsis.  So we repeat @var{body} as many
+times as the number of matched values.
+The first value, @code{(print "huh?")}, and the second value,
+@code{(print "we got zero!")}, are expanded here.
+@c JP
+@var{body}もパターン変数です。重要な点はここでも@var{body}の後にエリプシスがあることで、
+@var{body}はパターン変数にマッチした値のぶんだけ繰り返されます。
+最初のマッチした値である@code{(print "huh?")}と、次の
+@code{(print "we got zero!")}とがここに展開されます。
+@c COMMON
+@item
+@c EN
+Hence, we get
+@code{(if (zero? x) (begin (print "huh?") (print "we got zero!")))}
+as the result of expansion.  (With the note that @code{if} and @code{begin}
+refers to the identifiers visible from the macro definition environment.)
+@c JP
+以上から、最終的な展開結果として
+@code{(if (zero? x) (begin (print "huh?") (print "we got zero!")))}
+が得られます (このうち、@code{if}と@code{begin}は
+マクロ定義環境から見える識別子を指すようになっています)。
+@c COMMON
+@end itemize
+
+@c EN
+The expansion of ellipses is quite powerful.  In the template,
+the ellipses don't need to follow the sequence-valued pattern variable
+immediately; the variable can be in a substructure, as long as the
+substructure itself is followed by an ellipsis.
+See the following example:
+@c JP
+エリプシスを使った展開はかなり強力です。
+テンプレート中で、エリプシスは複数の値を持つパターン変数の直後にある必要はありません。
+そういった変数を中に含む部分構造をエリプシスで繰り返すことも可能です。
+次の例を見てください。
+@c COMMON
+
+@example
+(define show
+  (syntax-rules ()
+    [(_ expr ...)
+     (begin 
+       (begin (write 'expr) (display "=") (write expr) (newline)) 
+       ...)]))
+@end example
+
+@c EN
+If you call this macro as follows:
+@c JP
+このマクロを次のように呼ぶと:
+@c COMMON
+
+@example
+(show (+ 1 2) (/ 3 4))
+@end example
+
+@c EN
+It is expanded to the following form, modulo hygienity:
+@c JP
+以下のとおりに展開されます (シンボルの衛生性は保たれているとします)。
+@c COMMON
+
+@example
+(begin
+  (begin (write '(+ 1 2)) (display "=") (write (+ 1 2)) (newline))
+  (begin (write '(/ 3 4)) (display "=") (write (/ 3 4)) (newline)))
+@end example
+
+@c EN
+So you'll get this output.
+@c JP
+これを実行すれば、以下の出力が得られるでしょう。
+@c COMMON
+
+@example
+(+ 1 2)=3
+(/ 3 4)=3/4
+@end example
+
+@c EN
+You can also match with a repetition of substructures in the pattern.
+The following example is a simplified @code{let} that expands to
+@code{lambda}:
+@c JP
+また、パターン中の部分構造を繰り返しマッチするのにも使えます。
+次の例は@code{let}を@code{lambda}に展開する、簡略化した例です:
+@c COMMON
+
+@example
+(define-syntax my-let
+  (syntax-rules ()
+    [(_ ((var init) ...) body ...)
+     ((lambda (var ...) body ...) init ...)]))
+@end example
+
+@c EN
+If you call it as @code{(my-let ((a expr1) (b expr2)) foo)},
+then @var{var} is matched to @code{a} and @code{b},
+while @var{init} is matched to @code{expr1} and @code{expr2}, respectively.
+They can be used separately in the template.
+@c JP
+このマクロを@code{(my-let ((a expr1) (b expr2)) foo)}のように呼び出すと、
+@var{var}は@code{a}および@code{b}に、
+@var{init}は@code{expr1}および@code{expr2}にそれぞれマッチします。
+@var{var}と@var{init}はテンプレート中でばらばらに使うことができます。
+@c COMMON
+
+@c EN
+Suppose ``level'' of a pattern variable
+means the number of nested ellipses that designate repetition of the pattern
+variable.
+A subtemplate can be followed as many ellipses as the maximum level of
+pattern variables in the subtemplate.
+In the following example, the level of pattern variable @code{a} is 1
+(it is repeated by the last ellipsis in the pattern),
+while the level of @code{b} is 2 (repeated by the last two ellipses),
+and the level of @code{c} is 3 (repeated by all the ellipses).
+@c JP
+パターン変数の繰り返しを示すエリプシスの入れ子の数を、
+そのパターン変数のレベルと呼ぶことにします。
+サブテンプレートは、その中に含まれるパターン変数のレベルの最大値と同じだけの
+エリプシスの入れ子に中になければなりません。
+次の例では、パターン変数@code{a}のレベルは1 (最後のエリプシスによって繰り返される)、
+@code{b}は2 (後ろの2つのエリプシスで繰り返される)、
+@code{c}は3 (全てのエリプシスで繰り返される) です。
+@c COMMON
+
+@example
+(define-syntax ellipsis-test
+  (syntax-rules ()
+    [(_ (a (b c ...) ...) ...)
+     '((a ...)
+       (((a b) ...) ...)
+       ((((a b c) ...) ...) ...))]))
+@end example
+
+@c EN
+In this case, the subtemplate @code{a} must be repeated by one level
+of ellipsis, @code{(a b)} must be repeated by two,
+and @code{(a b c)} must be repeated by three.
+@c JP
+したがって、サブテンプレート @code{a} は1重、
+サブテンプレート @code{(a b)}は2重、
+@code{(a b c)}は3重のエリプシスで繰り返されることになります。
+@c COMMON
+
+@example
+(ellipsis-test (1 (2 3 4) (5 6)) (7 (8 9 10 11)))
+ @result{} ((1 7)
+    (((1 2) (1 5)) ((7 8)))
+    ((((1 2 3) (1 2 4)) ((1 5 6))) (((7 8 9) (7 8 10) (7 8 11)))))
+@end example
+
+@c EN
+In the template, more than one ellipsis directly follow a subtemplate,
+splicing the leaves into the surrounding list:
+@c JP
+また、サブテンプレートの後ろには複数のエリプシスを直接置くことができ、
+繰り返しの「葉」の部分がそこにスプライスされます。
+@c COMMON
+
+@example
+(define-syntax my-append
+  (syntax-rules ()
+    [(_ (a ...) ...)
+     '(a ... ...)]))
+
+(my-append (1 2 3) (4) (5 6))
+  @result{} (1 2 3 4 5 6)
+
+(define-syntax my-append2
+  (syntax-rules ()
+    [(_ ((a ...) ...) ...)
+     '(a ... ... ...)]))
+
+(my-append2 ((1 2) (3 4)) ((5) (6 7 8)))
+  @result{} (1 2 3 4 5 6 7 8)
+@end example
+
+@c EN
+Note: Allowing multiple ellipses to directly follow a subtemplate,
+and a pattern variable in a subtemplate to be enclosed within more
+than the variable's level of nesting of ellipses, are extention to
+R7RS, and defined in SRFI-149.  In the above examples, 
+@code{ellipsis-test}, @code{my-append} and @code{my-append2} are
+outside of R7RS.
+@c JP
+註：サブテンプレートの直後に複数のエリプシスを置くこと、
+及びパターン変数をそのレベルよりもエリプシスのネストが深いテンプレート中に置けることは、
+R7RSに対する拡張で、SRFI-149で定義されています。上記の例では、
+@code{ellipsis-test}、@code{my-append}、@code{my-append2}が
+R7RSの範囲外になります。
+@c COMMON
 
 @end defspec
 
-@node Explicit-renaming macro transformer,  , Syntax-rules pattern langauge, Hygienic macros
+@node Explicit-renaming macro transformer,  , Syntax-rules macro transformer, Hygienic macros
 @subsection Explicit-renaming macro transformer
+@c NODE Explcit-renamingマクロ変換器
 
 @defspec er-macro-transformer procedure-expr
+@c EN
+Creates a macro transformer from the given @var{procedure-expr}.
+The created macro transformer has to be bound to the syntactic keyword
+by @code{define-syntax}, @code{let-syntax} or @code{letrec-syntax}.
+Other use of macro transformers is undefined.
+
+The @var{procedure-expr} must evaluate to a procedure that takes
+three arguments; @var{form}, @var{rename} and @var{id=?}.
+
+The @var{form} argument receives the S-expression of
+the macro call.  The @var{procedure-expr} must return an
+S-expression as the result of macro expansion.  This part is pretty much
+like the traditional lisp macro.  In fact, if you ignore @var{rename}
+and @var{id=?}, the semantics is the same as the traditional
+(unhygienic) macro.  See the following example
+(Note the use of @code{match}; it is a good
+tool to decompose macro input):
+@c JP
+@var{procedure-expr}からマクロ変換器を作ります。
+作られたマクロ変換器は、@code{define-syntax}、@code{let-syntax}、
+@code{letrec-syntax}により構文キーワードに束縛されなければなりません。
+マクロ変換器の他の用途は定義されていません。
+
+@var{procedure-expr}は3つの引数、@var{form}、@var{rename}、@var{id=?}を
+取る手続きへと評価される式です。
+
+@var{form}引数には、マクロ呼び出しのS式そのものが渡されます。
+@var{procedure-expr}はマクロ展開の結果をS式として返します。
+この点は、伝統的なマクロとよく似ています。実のところ、
+@var{rename}と@var{id=?}を無視すれば、セマンティクスは伝統的な(非衛生な)マクロと
+同じになります。次の例を見てください
+(この例では@code{match}を使っています。マクロの入力を分解するのにも
+手軽なツールです。)
+@c COMMON
+
+@example
+(use util.match)
+
+;; Unhygienic 'when-not' macro
+(define-syntax when-not
+  (er-macro-transformer
+    (^[form rename id=?]
+      (match form
+        [(_ test expr1 expr ...)
+         `(if (not ,test) (begin ,expr1 ,@@expr))]
+        [_ (error "malformed when-not:" form)]))))
+
+(macroexpand '(when-not (foo) (print "a") 'boo))
+  @result{} (if (not (foo)) (begin (print "a") 'boo))
+@end example
+
+@c EN
+This is ok as long as you know you don't need hygiene---e.g. when
+you only use this macro locally in your code, knowning all the
+macro call site won't contain name conflicts.  However, if you
+provide your @code{when-not} macro for general use,
+you have to protect namespace pollution around the macro use.
+For example, you want to make sure your macro work even if it is
+used as follows:
+@c JP
+衛生を気にする必要がない場合は、これでも十分です。
+例えばマクロを自分で書いたコードの中だけで使い、
+すべてのマクロ呼び出しを把握していて名前の衝突が起きないことを知っている場合です。
+けれども、この@code{when-not}マクロを広く使えるようにするなら、
+マクロの使われる場所での名前の衝突からの防御が必要です。
+たとえば、次のとおり呼び出されたとしてもちゃんと動くようにしたい場合です。
+@c COMMON
+
+@example
+(let ((not values))
+  (when-not #t (print "This shouldn't be printed")))
+@end example
+
+@c EN
+The @var{rename} argument passed to @var{procedure-expr} is
+a procedure that takes a symbol (or, to be precise, a symbol or
+an identifier) and @emph{effectively renames} it to a unique 
+identifier that keeps identity within the macro definition environment and
+won't be affected in the macro use environment.
+@c JP
+@var{procedure-expr}に渡される@var{rename}引数は、
+シンボル(正確には、シンボルか識別子)を取り、それをマクロ定義時の環境を保持する
+ユニークな識別子へと@emph{実質的にリネームする}手続きです。
+リネームされた識別子はマクロ使用時の環境には影響を受けません。
+@c COMMON
+
+@c EN
+As a rule of thumb, you have to pass
+@emph{all new identifiers you insert into macro output} to the
+@var{rename} procedure to keep hygiene.  In our @code{when-not} macro,
+we insert @code{if}, @code{not} and @code{begin} into the macro output,
+so our hygienic macro would look like this:
+@c JP
+大雑把なルールとして、マクロの出力に挿入する識別子はすべて@var{rename}を通すことを
+徹底すれば、衛生は保たれます。@code{when-not}マクロの例では、
+マクロの出力に@code{if}、@code{not}、@code{begin}を挿入していますから、
+衛生的なバージョンは次のとおり書けます。
+@c COMMON
+
+@example
+(define-syntax when-not
+  (er-macro-transformer
+    (^[form rename id=?]
+      (match form
+        [(_ test expr1 expr ...)
+         `(,(rename 'if) (,(rename 'not) ,test)
+            (,(rename 'begin) ,expr1 ,@@expr))]
+        [_ (error "malformed when-not:" form)]))))
+@end example
+
+@c EN
+This is cumbersome and makes it hard to read the macro, so Gauche
+provides an auxiliary macro @code{quasirename}, which works like
+@code{quasiquote} but renaming identifiers in the form.  See the
+entry of @code{quasirename} below for the details.  You can write
+the hygienic @code{when-not} as follows:
+@c JP
+でもこれは面倒ですし読みづらいですね。そこでGaucheでは、
+補助マクロ@code{quasirename}を用意しています。これは@code{quasiquote}のように
+動作しますが、フォーム中の識別子をリネームしてゆきます。詳しくは後述の
+@code{quasirename}のエントリを参照してください。@code{quasirename}を使うと
+衛生的な@code{when-not}はこうなります:
+@c COMMON
+
+@example
+(define-syntax when-not
+  (er-macro-transformer
+    (^[form rename id=?]
+      (match form
+        [(_ test expr1 expr ...)
+         (quasirename rename
+           (if (not ,test) (begin ,expr1 ,@@expr)))]
+        [_ (error "malformed when-not:" form)]))))
+@end example
+
+@c EN
+You can intentionally break hyginene by inserting a symbol
+without renaming.  The following code implements
+@emph{anaphoric} @code{when}, meaning the result of the
+test expression is available in the @var{expr1} @var{exprs} @dots{}
+with the name @code{it}.  Since the binding of the identifier @code{it}
+does not exist in the macro use site, but rather injected into
+the macro use site by the macro expander, it is unhygienic.
+@c JP
+シンボルをリネームせずに挿入すれば、意図的に衛生を破ることができます。
+次のコードは@emph{アナフォリック(前方照応的)な}@code{when}を定義しています。
+つまり、テスト式の結果が、@var{expr1} @var{exprs} @dots{} から@code{it}という
+変数で参照できるということです。
+@code{it}の束縛はマクロ呼び出し箇所には無かったもので、
+マクロ展開器により挿入されるので、これは非衛生マクロになります。
+@c COMMON
+
+@example
+(define-syntax awhen
+  (er-macro-transformer
+    (^[form rename id=?]
+      (match form
+        [(_ test expr1 expr ...)
+         `(,(rename 'let1) it ,test     ; 'it' is not renamed
+             (,(rename 'begin) ,expr1 ,@@expr))]))))
+@end example
+
+@c EN
+If you use @code{quasirename}, you can write @code{,'it} to prevent
+@code{it} from being renamed:
+@c JP
+@code{quasirename}を使う場合、@code{it}がリネームされないようにするには
+@code{,'it}と書きます。
+@c COMMON
+
+@example
+(define-syntax awhen
+  (er-macro-transformer
+    (^[form rename id=?]
+      (match form
+        [(_ test expr1 expr ...)
+         (quasirename rename
+           (let1 ,'it ,test
+             (begin ,expr1 ,@@expr)))]))))
+@end example
+
+@c EN
+Here's an example:
+@c JP
+使用例を見てみましょう。
+@c COMMON
+
+@example
+(awhen (find odd? '(0 2 8 7 4))
+  (print "Found odd number:" it))
+ @result{} @r{prints} Found odd number:7
+@end example
+
+@c EN
+Finally, the @var{id=?} argument to the @var{procedure-expr} is
+a procedure that takes two arguments, and returns @code{#t} iff
+both are identifiers and either both are referring to the same binding
+or both are free.  It can be used to compare literal syntactic keyword
+(e.g. @code{else} in @code{cond} and @code{case} forms) hygienically.
+
+The following @code{if=>} macro behaves like @code{if}, except that
+it accepts @code{(if=> test => procedure)} syntax,
+in which @code{procedure} is called with the value of @code{test}
+if it is not false (similar to @code{(cond [test => procedure])} syntax).
+The symbol @code{=>} must match hygienically,
+that is, it must refer to the same binding as in the macro definition.
+@c JP
+最後に、@var{procedure-expr}の@var{id=?}引数はふたつの引数を取り、
+それらがともに識別子であって、しかも同じ束縛を参照するか束縛されていないか、という
+場合に限り@code{#t}を返します。
+これはリテラル構文キーワード(@code{cond}や@code{case}フォームの@code{else}等)
+を比較するのに使えます。
+
+下の@code{if=>}マクロは@code{if}と同じように動作しますが、
+@code{(if=> test => procedure)}のように呼ばれた場合、
+@code{(cond [test => procedure])}構文と同じように、
+@code{test}が真の値を返した際には結果を引数にして@code{procedure}を呼び出します。
+シンボル@code{=>}は衛生的に比較されます。つまり、マクロ定義時と同じ束縛を
+参照している場合にのみ有効となります。
+@c COMMON
+
+@example
+(define-syntax if=>
+  (er-macro-transformer
+    (^[form rename id=?]
+      (match form
+        [(_ test a b)
+         (if (id=? (rename '=>) a)
+           (quasirename rename
+             (let ((t ,test))
+               (if t (,b t))))
+           (quasirename rename
+             (if ,test ,a ,b)))]))))
+@end example
+
+@c EN
+The call @code{(rename '=>)} returns an identifier that captures
+the binding of @code{=>} in the macro definition, and using
+@code{id=?} with the thing passed to the macro argument
+checks if both refer to the same binding.
+@c JP
+@code{(rename '=>)}とすることで、マクロ定義時における@code{=>}の束縛を
+参照する識別子を手に入れ、@code{id=?}でそれをマクロ引数から渡された式と
+比較しています。
+@c COMMON
+
+@example
+(if=> 3 => list)  @result{} (3)
+(if=> #f => list) @result{} #<undef>
+
+@c EN
+;; If the second argument isn't =>, if=> behaves like ordinary if:
+@c JP
+;; 第二引数が=>でなければ、if=>は通常のifと同じ:
+@c COMMON
+(if=> #t 1 2)     @result{} 1
+
+@c EN
+;; The binding of => in macro use environment differs from
+;; the macro definition environment, so this if=> behaves like
+;; ordinary if, instead of recognizing literal =>.
+@c JP
+;; 下の例ではマクロ呼び出しでの=>の束縛がマクロ使用時の束縛と違っているため、
+;; => はリテラルと認識されず、if=> は通常のifとして振る舞う。
+@c COMMON
+(let ((=> 'oof)) (if=> 3 => list)) @result{} oof
+@end example
 @end defspec
 
 @defmac quasirename renamer form
+@c EN
 It works like quasiquote, except that the symbols and identifiers
 that appear in the ``literal'' portion of @var{form} (i.e. outside
 of @code{unquote} and @code{unquote-splicing}) are replaced
 by the result of applying @var{rename} on themselves.
+@c JP
+@var{form}中の「リテラル」な部分 (@code{unquote}や@code{unquote-splicing}の外側)
+に現れるシンボルや識別子が@var{rename}によってリネームされることを除いて、
+準クオートのように動作します。
+@c COMMON
 
+@c EN
 For example, a form:
 @example
 (quasirename r (a ,b c "d"))
@@ -609,17 +1305,36 @@ would be equivalent to write:
 @example
 (list (r 'a) b (r 'c) "d")
 @end example
+@c JP
+例えば次のフォームは:
+@example
+(quasirename r (a ,b c "d"))
+@end example
+次のとおり書くのと同じです:
+@example
+(list (r 'a) b (r 'c) "d")
+@end example
+@c COMMON
 
+@c EN
 This is not specifically tied to macros; the @var{renamer} can
 be any procedure that takes one symbol or identifier argument:
+@c JP
+この手続きはマクロ専用というわけではありません。
+@var{renamer}はシンボルか識別子を取る手続きであれば何でも構いません。
+@c COMMON
 
 @example
 (quasirename (^[x] (symbol-append 'x: x)) (+ a ,(+ 1 2) 5))
   @result{} (x:+ x:a 3 5)
 @end example
 
+@c EN
 However, it comes pretty handy to construct the result form
 in ER macros.  Compare the following two:
+@c JP
+ただ、ERマクロを書く際にとても便利なのは確かです。次の2つを比べてみてください。
+@c COMMON
 
 @example
 (use util.match)
@@ -707,18 +1422,35 @@ These procedures can be used to expand globally defined macros.
 @end defun
 
 @defun macroexpand-all form
+@c EN
 Fully expand macros inside @var{form}.  The result only contains
 function calls and Gauche's built-in syntax.
-The @code{form} is assumed to be a toplevel form within the current module.
+The @var{form} is assumed to be a toplevel form within the current module.
 (@xref{Module semantics}, for the concept of the current module.
 It can be tricky, for sometimes the current module differ
 between compile-time and run-time.)
+@c JP
+@var{form}中にあるマクロを全て展開します。結果の中に残るのは、
+関数呼び出しとGaucheの組み込み構文だけになります。
+@var{form}は現在のモジュール中のトップレベルにあるものと解釈されます
+(現在のモジュールについては@ref{Module semantics}を参照してください。
+この概念はちょっとややこしいです。コンパイル時と実行時で
+現在のモジュールが異なる場合があるからです。)
+@c COMMON
 
+@c EN
 Any local variables introduced in @var{form} is renamed to avoid collision.
 Since each local variable has unique name, all @code{let} forms become
 @code{letrec} forms (we can safely replace @code{let} with @code{letrec}
 if no bindings introduced by @code{let} shadows outer bindings.)
+@c JP
+@var{form}中で導入されるローカル変数は全て、衝突を避けるためにリネームされます。
+ローカル変数が全て固有の名前を持つようになるので、@code{let}フォームはすべて
+@code{letrec}で表されます(@code{let}による束縛が他の束縛をシャドウしないと
+わかっていれば、@code{let}を@code{letrec}に置き換えても意味は変わりません)。
+@c COMMON
 
+@c EN
 NB: If a macro in @var{form} inserts a reference to a global variable
 which belongs to other module, the information is lost in the current
 implementation.  There are a few ways to address this issue; we may
@@ -727,6 +1459,17 @@ leave such reference as an identifier object, convert it to
 such case.  It's undecided currently, so do not rely too much on
 the current behavior.  For the time being, it's best to use this
 feature only for interactive macro testing.
+@c JP
+注意: もし@var{form}内で呼ばれているマクロが、他のモジュール中にあるグローバル
+変数への参照を挿入した場合、現在の実装ではその情報は失われてしまいます。
+いくつか、その問題を修正する方法は考えられるのですが(例えば他のモジュール中に
+グローバル変数参照は識別子オブジェクトのまま残しておくとか、
+@code{with-module}フォームに変換するとか、
+そういったケースのための特殊構文を導入するとか)、今のところどうするか
+決まっていません。なので、現在のふるまいにあまり依存しないようにしてください。
+今のところ、この手続きは、マクロの展開結果をインタラクティブに確かめる用途に
+限って使うのが安全です。
+@c COMMON
 
 @example
 (macroexpand-all
@@ -787,7 +1530,7 @@ the internal syntactic binding informations.
      (syntax-error "malformed my-macro" (my-macro . ?)))))
 
 (my-macro 1 2 3 4)
-  @result{} @r{error: "malformed my-macro: (mymacro 1 2 3 4)"}
+  @result{} @r{error: "malformed my-macro: (my-macro 1 2 3 4)"}
 @end example
 @end defmac
 
@@ -803,7 +1546,7 @@ replaces occurrences of identifiers in @var{form} to the original
 symbols.
 @c JP
 @var{form}の内部的な構文情報を取り除きます。
-健全なマクロの実装のために、マクロ拡張ルーチンはマクロ内のシンボルを
+衛生マクロの実装のために、マクロ拡張ルーチンはマクロ内のシンボルを
 識別子(identifier)に置き換えます。識別子はそれが現れる構文的環境を
 捕捉します。それはコンパイラに取っては必要な情報ですが、
 エラーメッセージに現れるとユーザーを混乱させるもとにもなります。

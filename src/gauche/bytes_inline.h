@@ -1,7 +1,7 @@
 /*
  * gauche/bytes_inline.h - Some speed-sensitive byte-swapping routines
  *
- *   Copyright (c) 2009-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2009-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -57,10 +57,10 @@
  * Swapping macros.   They can be used both ways (native <-> external)
  */
 
-typedef union { char buf[2]; short val; }        swap_s16_t;
-typedef union { char buf[2]; u_short val; }      swap_u16_t;
-typedef union { char buf[4]; ScmInt32 val; }     swap_s32_t;
-typedef union { char buf[4]; ScmUInt32 val; }    swap_u32_t;
+typedef union { char buf[2]; int16_t val; }      swap_s16_t;
+typedef union { char buf[2]; uint16_t val; }     swap_u16_t;
+typedef union { char buf[4]; int32_t val; }      swap_s32_t;
+typedef union { char buf[4]; uint32_t val; }     swap_u32_t;
 typedef union { char buf[8]; ScmInt64 val; }     swap_s64_t;
 typedef union { char buf[8]; ScmUInt64 val; }    swap_u64_t;
 

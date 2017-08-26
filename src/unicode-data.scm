@@ -1993,11 +1993,11 @@
 (rep 63 (So))
 #f
 (rep 256 (So))
-(rep 6581 (Lo A))
-(rep 11 #f)
+(rep 6582 (Lo A))
+(rep 10 #f)
 (rep 64 (So))
-(rep 20949 (Lo A))
-(rep 43 #f)
+(rep 20950 (Lo A))
+(rep 42 #f)
 (rep 21 (Lo A))
 (Lm A)
 (rep 1143 (Lo A))
@@ -2356,20 +2356,14 @@
 (Nd 8)
 (Nd 9)
 (rep 6 #f)
-(rep 11171 (Lo A))
-(rep 13 #f)
+(rep 11172 (Lo A))
+(rep 12 #f)
 (rep 23 (Lo A))
 (rep 4 #f)
 (rep 49 (Lo A))
 (rep 4 #f)
-(rep 895 (Cs))
-#f
-(rep 127 (Cs))
-#f
-(rep 1023 (Cs))
-#f
-(rep 6399 (Co))
-#f
+(rep 2048 (Cs))
+(rep 6400 (Co))
 (rep 366 (Lo A))
 (rep 2 #f)
 (rep 106 (Lo A))
@@ -3369,14 +3363,14 @@
 (rep 59 #f)
 (So)
 (rep 1599 #f)
-(rep 42710 (Lo A))
-(rep 42 #f)
-(rep 4148 (Lo A))
-(rep 12 #f)
-(rep 221 (Lo A))
-(rep 3 #f)
-(rep 5761 (Lo A))
-(rep 10591 #f)
+(rep 42711 (Lo A))
+(rep 41 #f)
+(rep 4149 (Lo A))
+(rep 11 #f)
+(rep 222 (Lo A))
+(rep 2 #f)
+(rep 5762 (Lo A))
+(rep 10590 #f)
 (rep 542 (Lo A))
 (rep 722403 #f)
 (Cf)
@@ -3385,9 +3379,9 @@
 (rep 128 #f)
 (rep 240 (Mn))
 (rep 65040 #f)
-(rep 65533 (Co))
-(rep 3 #f)
-(rep 65533 (Co))
+(rep 65534 (Co))
+(rep 2 #f)
+(rep 65534 (Co))
 )
 ;; unichar-db-high-ranges
 (
@@ -5870,4 +5864,1487 @@
 (rep 128 (Control Other))
 (rep 240 (Extend Extend))
 (rep 3600 (Control Other))
+)
+;; unichar-db-width-table
+(
+(rep 32 N)
+(rep 95 Na)
+(rep 34 N)
+A
+(rep 2 Na)
+A
+(rep 2 Na)
+(rep 2 A)
+N
+A
+N
+Na
+(rep 2 A)
+Na
+(rep 5 A)
+N
+(rep 5 A)
+N
+(rep 4 A)
+(rep 6 N)
+A
+(rep 9 N)
+A
+(rep 6 N)
+(rep 2 A)
+(rep 5 N)
+(rep 4 A)
+(rep 4 N)
+A
+N
+(rep 3 A)
+N
+(rep 2 A)
+(rep 2 N)
+A
+N
+(rep 2 A)
+(rep 3 N)
+(rep 4 A)
+(rep 2 N A)
+(rep 2 N)
+A
+(rep 15 N)
+(rep 2 A N)
+(rep 6 N)
+A
+(rep 10 N)
+(rep 2 A)
+(rep 3 N)
+A
+(rep 5 N)
+(rep 3 A)
+(rep 4 N)
+A
+(rep 6 N)
+(rep 4 A)
+N
+A
+(rep 3 N)
+(rep 4 A)
+N
+A
+(rep 4 N)
+(rep 2 A)
+(rep 18 N)
+(rep 2 A)
+(rep 3 N)
+A
+(rep 98 N)
+(rep 8 A N)
+(rep 115 N)
+A
+(rep 15 N)
+A
+(rep 98 N)
+A
+(rep 2 N)
+A
+N
+(rep 3 A)
+N
+A
+(rep 2 N)
+A
+(rep 7 N)
+(rep 4 A)
+(rep 2 N A)
+(rep 32 N)
+(rep 112 A)
+(rep 8 N)
+(rep 2 #f)
+(rep 6 N)
+(rep 4 #f)
+(rep 7 N)
+(rep 2 #f N)
+(rep 2 N)
+(rep 17 A)
+#f
+(rep 7 A)
+(rep 7 N)
+(rep 17 A)
+N
+(rep 7 A)
+(rep 55 N)
+A
+(rep 14 N)
+(rep 64 A)
+N
+A
+(rep 222 N)
+#f
+(rep 38 N)
+(rep 2 #f)
+(rep 7 N)
+#f
+(rep 39 N)
+#f
+(rep 2 N)
+(rep 2 #f)
+(rep 3 N)
+#f
+(rep 55 N)
+(rep 8 #f)
+(rep 27 N)
+(rep 5 #f)
+(rep 5 N)
+(rep 11 #f)
+(rep 29 N)
+#f
+(rep 240 N)
+#f
+(rep 60 N)
+(rep 2 #f)
+(rep 101 N)
+(rep 14 #f)
+(rep 59 N)
+(rep 5 #f)
+(rep 46 N)
+(rep 2 #f)
+(rep 15 N)
+#f
+(rep 28 N)
+(rep 2 #f)
+N
+(rep 65 #f)
+(rep 21 N)
+(rep 46 #f)
+(rep 161 N)
+#f
+(rep 8 N)
+(rep 2 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 22 N)
+#f
+(rep 7 N)
+#f
+N
+(rep 3 #f)
+(rep 4 N)
+(rep 2 #f)
+(rep 9 N)
+(rep 2 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 4 N)
+(rep 8 #f)
+N
+(rep 4 #f)
+(rep 2 N)
+#f
+(rep 5 N)
+(rep 2 #f)
+(rep 22 N)
+(rep 5 #f)
+(rep 3 N)
+#f
+(rep 6 N)
+(rep 4 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 22 N)
+#f
+(rep 7 N)
+#f
+(rep 2 N)
+#f
+(rep 2 N)
+#f
+(rep 2 N)
+(rep 2 #f)
+N
+#f
+(rep 5 N)
+(rep 4 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 3 N)
+(rep 3 #f)
+N
+(rep 7 #f)
+(rep 4 N)
+#f
+N
+(rep 7 #f)
+(rep 16 N)
+(rep 11 #f)
+(rep 3 N)
+#f
+(rep 9 N)
+#f
+(rep 3 N)
+#f
+(rep 22 N)
+#f
+(rep 7 N)
+#f
+(rep 2 N)
+#f
+(rep 5 N)
+(rep 2 #f)
+(rep 10 N)
+#f
+(rep 3 N)
+#f
+(rep 3 N)
+(rep 2 #f)
+N
+(rep 15 #f)
+(rep 4 N)
+(rep 2 #f)
+(rep 12 N)
+(rep 7 #f)
+N
+(rep 7 #f)
+(rep 3 N)
+#f
+(rep 8 N)
+(rep 2 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 22 N)
+#f
+(rep 7 N)
+#f
+(rep 2 N)
+#f
+(rep 5 N)
+(rep 2 #f)
+(rep 9 N)
+(rep 2 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 3 N)
+(rep 8 #f)
+(rep 2 N)
+(rep 4 #f)
+(rep 2 N)
+#f
+(rep 5 N)
+(rep 2 #f)
+(rep 18 N)
+(rep 10 #f)
+(rep 2 N)
+#f
+(rep 6 N)
+(rep 3 #f)
+(rep 3 N)
+#f
+(rep 4 N)
+(rep 3 #f)
+(rep 2 N)
+(rep 2 #f N)
+N
+(rep 3 #f)
+(rep 2 N)
+(rep 3 #f)
+(rep 3 N)
+(rep 3 #f)
+(rep 12 N)
+(rep 4 #f)
+(rep 5 N)
+(rep 3 #f)
+(rep 3 N)
+#f
+(rep 4 N)
+(rep 2 #f)
+N
+(rep 6 #f)
+N
+(rep 14 #f)
+(rep 21 N)
+(rep 5 #f)
+(rep 4 N)
+#f
+(rep 8 N)
+#f
+(rep 3 N)
+#f
+(rep 23 N)
+#f
+(rep 16 N)
+(rep 3 #f)
+(rep 8 N)
+#f
+(rep 3 N)
+#f
+(rep 4 N)
+(rep 7 #f)
+(rep 2 N)
+#f
+(rep 3 N)
+(rep 5 #f)
+(rep 4 N)
+(rep 2 #f)
+(rep 10 N)
+(rep 8 #f)
+(rep 8 N)
+#f
+(rep 3 N)
+#f
+(rep 8 N)
+#f
+(rep 3 N)
+#f
+(rep 23 N)
+#f
+(rep 10 N)
+#f
+(rep 5 N)
+(rep 2 #f)
+(rep 9 N)
+#f
+(rep 3 N)
+#f
+(rep 4 N)
+(rep 7 #f)
+(rep 2 N)
+(rep 7 #f)
+N
+#f
+(rep 4 N)
+(rep 2 #f)
+(rep 10 N)
+#f
+(rep 2 N)
+(rep 14 #f)
+(rep 3 N)
+#f
+(rep 8 N)
+#f
+(rep 3 N)
+#f
+(rep 41 N)
+(rep 2 #f)
+(rep 8 N)
+#f
+(rep 3 N)
+#f
+(rep 5 N)
+(rep 8 #f)
+N
+(rep 7 #f)
+(rep 5 N)
+(rep 2 #f)
+(rep 16 N)
+(rep 3 #f)
+(rep 7 N)
+(rep 2 #f)
+(rep 2 N)
+#f
+(rep 18 N)
+(rep 3 #f)
+(rep 24 N)
+#f
+(rep 9 N)
+#f
+N
+(rep 2 #f)
+(rep 7 N)
+(rep 3 #f)
+N
+(rep 4 #f)
+(rep 6 N)
+(rep 2 #f N)
+(rep 7 N)
+(rep 6 #f)
+(rep 10 N)
+(rep 2 #f)
+(rep 3 N)
+(rep 12 #f)
+(rep 58 N)
+(rep 4 #f)
+(rep 29 N)
+(rep 37 #f)
+(rep 2 N)
+#f
+N
+(rep 2 #f)
+(rep 2 N)
+#f
+N
+(rep 2 #f)
+N
+(rep 6 #f)
+(rep 4 N)
+#f
+(rep 7 N)
+#f
+(rep 3 N)
+(rep 2 #f N)
+(rep 2 #f)
+(rep 2 N)
+#f
+(rep 13 N)
+#f
+(rep 3 N)
+(rep 2 #f)
+(rep 5 N)
+(rep 2 #f N)
+(rep 5 N)
+(rep 2 #f)
+(rep 10 N)
+(rep 2 #f)
+(rep 4 N)
+(rep 32 #f)
+(rep 72 N)
+#f
+(rep 36 N)
+(rep 4 #f)
+(rep 39 N)
+#f
+(rep 36 N)
+#f
+(rep 15 N)
+#f
+(rep 13 N)
+(rep 37 #f)
+(rep 198 N)
+#f
+N
+(rep 5 #f)
+N
+(rep 2 #f)
+(rep 48 N)
+(rep 96 W)
+(rep 233 N)
+#f
+(rep 4 N)
+(rep 2 #f)
+(rep 7 N)
+(rep 2 #f N)
+(rep 3 N)
+(rep 2 #f)
+(rep 41 N)
+#f
+(rep 4 N)
+(rep 2 #f)
+(rep 33 N)
+#f
+(rep 4 N)
+(rep 2 #f)
+(rep 7 N)
+(rep 2 #f N)
+(rep 3 N)
+(rep 2 #f)
+(rep 15 N)
+#f
+(rep 57 N)
+#f
+(rep 4 N)
+(rep 2 #f)
+(rep 67 N)
+(rep 2 #f)
+(rep 32 N)
+(rep 3 #f)
+(rep 26 N)
+(rep 6 #f)
+(rep 86 N)
+(rep 2 #f)
+(rep 6 N)
+(rep 2 #f)
+(rep 669 N)
+(rep 3 #f)
+(rep 89 N)
+(rep 7 #f)
+(rep 13 N)
+#f
+(rep 7 N)
+(rep 11 #f)
+(rep 23 N)
+(rep 9 #f)
+(rep 20 N)
+(rep 12 #f)
+(rep 13 N)
+#f
+(rep 3 N)
+#f
+(rep 2 N)
+(rep 12 #f)
+(rep 94 N)
+(rep 2 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 15 N)
+#f
+(rep 10 N)
+(rep 6 #f)
+(rep 88 N)
+(rep 8 #f)
+(rep 43 N)
+(rep 5 #f)
+(rep 70 N)
+(rep 10 #f)
+(rep 31 N)
+#f
+(rep 12 N)
+(rep 4 #f)
+(rep 12 N)
+(rep 4 #f)
+N
+(rep 3 #f)
+(rep 42 N)
+(rep 2 #f)
+(rep 5 N)
+(rep 11 #f)
+(rep 44 N)
+(rep 4 #f)
+(rep 26 N)
+(rep 6 #f)
+(rep 11 N)
+(rep 3 #f)
+(rep 62 N)
+(rep 2 #f)
+(rep 65 N)
+#f
+(rep 29 N)
+(rep 2 #f)
+(rep 11 N)
+(rep 6 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 14 N)
+(rep 2 #f)
+(rep 15 N)
+(rep 65 #f)
+(rep 76 N)
+(rep 4 #f)
+(rep 45 N)
+(rep 3 #f)
+(rep 116 N)
+(rep 8 #f)
+(rep 60 N)
+(rep 3 #f)
+(rep 15 N)
+(rep 3 #f)
+(rep 51 N)
+(rep 64 #f)
+(rep 8 N)
+(rep 8 #f)
+(rep 39 N)
+#f
+(rep 2 N)
+(rep 6 #f)
+(rep 246 N)
+(rep 6 #f)
+(rep 282 N)
+(rep 2 #f)
+(rep 6 N)
+(rep 2 #f)
+(rep 38 N)
+(rep 2 #f)
+(rep 6 N)
+(rep 2 #f)
+(rep 8 N)
+(rep 4 #f N)
+(rep 30 N)
+(rep 2 #f)
+(rep 53 N)
+#f
+(rep 15 N)
+#f
+(rep 14 N)
+(rep 2 #f)
+(rep 6 N)
+#f
+(rep 19 N)
+(rep 2 #f)
+(rep 3 N)
+#f
+(rep 9 N)
+#f
+(rep 16 N)
+A
+(rep 2 N)
+(rep 4 A)
+N
+(rep 2 A)
+(rep 2 N)
+(rep 2 A)
+(rep 2 N)
+(rep 3 A)
+N
+(rep 4 A)
+(rep 8 N)
+A
+N
+(rep 2 A)
+N
+A
+(rep 5 N)
+A
+(rep 2 N)
+A
+(rep 38 N)
+#f
+(rep 12 N)
+(rep 2 #f)
+A
+(rep 10 N)
+A
+N
+(rep 4 A)
+(rep 10 N)
+#f
+(rep 13 N)
+(rep 3 #f)
+(rep 9 N)
+H
+(rep 2 N)
+A
+(rep 18 N)
+(rep 17 #f)
+(rep 33 N)
+(rep 15 #f)
+(rep 3 N)
+(rep 2 A N)
+(rep 2 N)
+A
+(rep 9 N)
+A
+(rep 2 N)
+A
+(rep 10 N)
+(rep 2 A)
+(rep 3 N)
+A
+(rep 4 N)
+A
+(rep 39 N)
+(rep 2 A)
+(rep 6 N)
+(rep 4 A)
+N
+(rep 12 A)
+(rep 4 N)
+(rep 10 A)
+(rep 15 N)
+A
+(rep 2 N)
+(rep 4 #f)
+(rep 10 A)
+(rep 30 N)
+(rep 2 A)
+(rep 24 N)
+(rep 2 A N)
+(rep 17 N)
+A
+(rep 24 N)
+A
+N
+(rep 2 A)
+(rep 3 N)
+(rep 2 A)
+(rep 2 N)
+A
+(rep 3 N)
+(rep 2 A N)
+(rep 2 N)
+A
+(rep 4 N)
+A
+(rep 2 N)
+(rep 4 A)
+(rep 2 N)
+(rep 2 A N)
+(rep 6 A)
+N
+A
+(rep 5 N)
+(rep 4 A)
+(rep 4 N)
+(rep 2 A)
+(rep 10 N)
+A
+(rep 3 N)
+A
+(rep 5 N)
+A
+(rep 13 N)
+(rep 2 A)
+(rep 2 N)
+(rep 4 A)
+(rep 2 N)
+(rep 2 A)
+(rep 2 N)
+(rep 2 A)
+(rep 18 N)
+(rep 2 A)
+(rep 2 N)
+(rep 2 A)
+(rep 13 N)
+A
+(rep 3 N)
+A
+(rep 11 N)
+A
+(rep 25 N)
+A
+(rep 82 N)
+A
+(rep 22 N)
+(rep 2 W)
+(rep 208 N)
+(rep 5 #f)
+(rep 39 N)
+(rep 25 #f)
+(rep 11 N)
+(rep 21 #f)
+(rep 138 A)
+N
+(rep 97 A)
+(rep 4 N)
+(rep 36 A)
+(rep 12 N)
+(rep 16 A)
+(rep 2 N)
+(rep 4 A)
+(rep 10 N)
+(rep 2 A)
+N
+(rep 7 A)
+(rep 8 N)
+(rep 2 A)
+(rep 2 N)
+(rep 2 A)
+(rep 4 N)
+(rep 2 A)
+(rep 2 N)
+(rep 2 A)
+(rep 4 N)
+(rep 3 A)
+(rep 2 N)
+A
+(rep 2 N)
+(rep 4 A)
+(rep 16 N)
+(rep 4 A)
+(rep 9 N)
+A
+(rep 21 N)
+(rep 2 A)
+(rep 2 N)
+A
+(rep 4 N)
+(rep 2 A)
+(rep 4 N)
+(rep 2 A)
+(rep 6 N)
+(rep 2 A N)
+(rep 32 N)
+(rep 2 A N)
+(rep 28 N)
+(rep 2 A)
+N
+(rep 3 A)
+N
+(rep 4 A)
+N
+(rep 2 A)
+N
+A
+(rep 46 N)
+(rep 2 A)
+(rep 30 N)
+(rep 2 A)
+(rep 4 N)
+(rep 10 A)
+N
+(rep 19 A)
+N
+A
+(rep 4 N)
+(rep 24 A)
+(rep 61 N)
+A
+(rep 25 N)
+A
+(rep 30 N)
+(rep 10 A)
+(rep 102 N)
+(rep 8 Na)
+(rep 407 N)
+(rep 2 Na)
+(rep 462 N)
+(rep 5 A)
+(rep 26 N)
+(rep 2 #f)
+(rep 32 N)
+(rep 2 #f)
+(rep 34 N)
+(rep 3 #f)
+(rep 12 N)
+#f
+(rep 8 N)
+(rep 26 #f)
+(rep 4 N)
+(rep 16 #f)
+(rep 47 N)
+#f
+(rep 47 N)
+#f
+(rep 148 N)
+(rep 5 #f)
+(rep 45 N)
+#f
+N
+(rep 5 #f)
+N
+(rep 2 #f)
+(rep 56 N)
+(rep 7 #f)
+(rep 2 N)
+(rep 14 #f)
+(rep 24 N)
+(rep 9 #f)
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 99 N)
+(rep 61 #f)
+(rep 26 W)
+#f
+(rep 89 W)
+(rep 12 #f)
+(rep 214 W)
+(rep 26 #f)
+(rep 12 W)
+(rep 4 #f)
+F
+(rep 62 W)
+N
+#f
+(rep 86 W)
+(rep 2 #f)
+(rep 103 W)
+(rep 5 #f)
+(rep 41 W)
+(rep 3 #f)
+(rep 94 W)
+#f
+(rep 43 W)
+(rep 5 #f)
+(rep 36 W)
+(rep 12 #f)
+(rep 47 W)
+#f
+(rep 40 W)
+(rep 8 A)
+(rep 175 W)
+#f
+(rep 6848 W)
+(rep 64 N)
+(rep 22157 W)
+(rep 3 #f)
+(rep 55 W)
+(rep 9 #f)
+(rep 348 N)
+(rep 20 #f)
+(rep 184 N)
+(rep 8 #f)
+(rep 174 N)
+(rep 2 #f)
+(rep 8 N)
+(rep 63 #f)
+(rep 53 N)
+(rep 4 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 56 N)
+(rep 8 #f)
+(rep 69 N)
+(rep 9 #f)
+(rep 12 N)
+(rep 6 #f)
+(rep 30 N)
+(rep 2 #f)
+(rep 84 N)
+(rep 11 #f)
+N
+(rep 29 W)
+(rep 3 #f)
+(rep 78 N)
+#f
+(rep 11 N)
+(rep 4 #f)
+(rep 33 N)
+#f
+(rep 55 N)
+(rep 9 #f)
+(rep 14 N)
+(rep 2 #f)
+(rep 10 N)
+(rep 2 #f)
+(rep 103 N)
+(rep 24 #f)
+(rep 28 N)
+(rep 10 #f)
+(rep 6 N)
+(rep 2 #f)
+(rep 6 N)
+(rep 2 #f)
+(rep 6 N)
+(rep 9 #f)
+(rep 7 N)
+#f
+(rep 7 N)
+#f
+(rep 54 N)
+(rep 10 #f)
+(rep 126 N)
+(rep 2 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 11172 W)
+(rep 12 #f)
+(rep 23 N)
+(rep 4 #f)
+(rep 49 N)
+(rep 4 #f)
+(rep 2048 N)
+(rep 6400 A)
+(rep 512 W)
+(rep 7 N)
+(rep 12 #f)
+(rep 5 N)
+(rep 5 #f)
+(rep 26 N)
+#f
+(rep 5 N)
+(rep 2 #f N)
+N
+#f
+(rep 2 N)
+#f
+(rep 124 N)
+(rep 17 #f)
+(rep 365 N)
+(rep 16 #f)
+(rep 64 N)
+(rep 2 #f)
+(rep 54 N)
+(rep 40 #f)
+(rep 14 N)
+(rep 2 #f)
+(rep 16 A)
+(rep 10 W)
+(rep 6 #f)
+(rep 16 N)
+(rep 35 W)
+#f
+(rep 19 W)
+#f
+(rep 4 W)
+(rep 4 #f)
+(rep 5 N)
+#f
+(rep 135 N)
+(rep 2 #f)
+N
+#f
+(rep 96 F)
+(rep 94 H)
+(rep 3 #f)
+(rep 6 H)
+(rep 2 #f)
+(rep 6 H)
+(rep 2 #f)
+(rep 6 H)
+(rep 2 #f)
+(rep 3 H)
+(rep 3 #f)
+(rep 7 F)
+#f
+(rep 7 H)
+(rep 10 #f)
+(rep 4 N)
+A
+(rep 2 #f)
+(rep 12 N)
+#f
+(rep 26 N)
+#f
+(rep 19 N)
+#f
+(rep 2 N)
+#f
+(rep 15 N)
+(rep 2 #f)
+(rep 14 N)
+(rep 34 #f)
+(rep 123 N)
+(rep 5 #f)
+(rep 3 N)
+(rep 4 #f)
+(rep 45 N)
+(rep 3 #f)
+(rep 86 N)
+(rep 3 #f)
+(rep 12 N)
+(rep 4 #f)
+N
+(rep 47 #f)
+(rep 46 N)
+(rep 130 #f)
+(rep 29 N)
+(rep 3 #f)
+(rep 49 N)
+(rep 15 #f)
+(rep 28 N)
+(rep 4 #f)
+(rep 36 N)
+(rep 12 #f)
+(rep 27 N)
+(rep 5 #f)
+(rep 43 N)
+(rep 5 #f)
+(rep 30 N)
+#f
+(rep 37 N)
+(rep 4 #f)
+(rep 14 N)
+(rep 42 #f)
+(rep 158 N)
+(rep 2 #f)
+(rep 10 N)
+(rep 86 #f)
+(rep 40 N)
+(rep 8 #f)
+(rep 52 N)
+(rep 11 #f)
+N
+(rep 144 #f)
+(rep 311 N)
+(rep 9 #f)
+(rep 22 N)
+(rep 10 #f)
+(rep 8 N)
+(rep 152 #f)
+(rep 6 N)
+(rep 2 #f)
+N
+#f
+(rep 44 N)
+#f
+(rep 2 N)
+(rep 3 #f)
+N
+(rep 2 #f)
+(rep 23 N)
+#f
+(rep 72 N)
+(rep 8 #f)
+(rep 9 N)
+(rep 48 #f)
+(rep 19 N)
+#f
+(rep 2 N)
+(rep 5 #f)
+(rep 33 N)
+(rep 3 #f)
+(rep 27 N)
+(rep 5 #f)
+N
+(rep 64 #f)
+(rep 56 N)
+(rep 4 #f)
+(rep 20 N)
+(rep 2 #f)
+(rep 50 N)
+#f
+(rep 2 N)
+(rep 5 #f)
+(rep 8 N)
+#f
+(rep 3 N)
+#f
+(rep 27 N)
+(rep 4 #f)
+(rep 3 N)
+(rep 4 #f)
+(rep 9 N)
+(rep 8 #f)
+(rep 9 N)
+(rep 7 #f)
+(rep 64 N)
+(rep 32 #f)
+(rep 39 N)
+(rep 4 #f)
+(rep 12 N)
+(rep 9 #f)
+(rep 54 N)
+(rep 3 #f)
+(rep 29 N)
+(rep 2 #f)
+(rep 27 N)
+(rep 5 #f)
+(rep 26 N)
+(rep 7 #f)
+(rep 4 N)
+(rep 12 #f)
+(rep 7 N)
+(rep 80 #f)
+(rep 73 N)
+(rep 55 #f)
+(rep 51 N)
+(rep 13 #f)
+(rep 51 N)
+(rep 7 #f)
+(rep 6 N)
+(rep 352 #f)
+(rep 31 N)
+(rep 385 #f)
+(rep 78 N)
+(rep 4 #f)
+(rep 30 N)
+(rep 15 #f)
+(rep 67 N)
+(rep 14 #f)
+(rep 25 N)
+(rep 7 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 53 N)
+#f
+(rep 14 N)
+(rep 12 #f)
+(rep 39 N)
+(rep 9 #f)
+(rep 78 N)
+(rep 2 #f)
+(rep 16 N)
+#f
+(rep 20 N)
+(rep 11 #f)
+(rep 18 N)
+#f
+(rep 43 N)
+(rep 66 #f)
+(rep 7 N)
+(rep 2 #f N)
+(rep 3 N)
+#f
+(rep 15 N)
+#f
+(rep 11 N)
+(rep 6 #f)
+(rep 59 N)
+(rep 5 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 4 N)
+#f
+(rep 8 N)
+(rep 2 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 22 N)
+#f
+(rep 7 N)
+#f
+(rep 2 N)
+#f
+(rep 5 N)
+(rep 2 #f)
+(rep 9 N)
+(rep 2 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 3 N)
+(rep 2 #f)
+N
+(rep 6 #f)
+N
+(rep 5 #f)
+(rep 7 N)
+(rep 2 #f)
+(rep 7 N)
+(rep 3 #f)
+(rep 5 N)
+(rep 267 #f)
+(rep 72 N)
+(rep 8 #f)
+(rep 10 N)
+(rep 166 #f)
+(rep 54 N)
+(rep 2 #f)
+(rep 38 N)
+(rep 34 #f)
+(rep 69 N)
+(rep 11 #f)
+(rep 10 N)
+(rep 38 #f)
+(rep 56 N)
+(rep 8 #f)
+(rep 10 N)
+(rep 54 #f)
+(rep 26 N)
+(rep 3 #f)
+(rep 15 N)
+(rep 4 #f)
+(rep 16 N)
+(rep 352 #f)
+(rep 83 N)
+(rep 12 #f)
+N
+(rep 448 #f)
+(rep 57 N)
+(rep 1287 #f)
+(rep 922 N)
+(rep 102 #f)
+(rep 111 N)
+#f
+(rep 5 N)
+(rep 11 #f)
+(rep 196 N)
+(rep 2748 #f)
+(rep 1071 N)
+(rep 4049 #f)
+(rep 583 N)
+(rep 8633 #f)
+(rep 569 N)
+(rep 7 #f)
+(rep 31 N)
+#f
+(rep 10 N)
+(rep 4 #f)
+(rep 2 N)
+(rep 96 #f)
+(rep 30 N)
+(rep 2 #f)
+(rep 6 N)
+(rep 10 #f)
+(rep 70 N)
+(rep 10 #f)
+(rep 10 N)
+#f
+(rep 7 N)
+#f
+(rep 21 N)
+(rep 5 #f)
+(rep 19 N)
+(rep 880 #f)
+(rep 69 N)
+(rep 11 #f)
+(rep 47 N)
+(rep 16 #f)
+(rep 17 N)
+(rep 16480 #f)
+(rep 2 W)
+(rep 3070 #f)
+(rep 107 N)
+(rep 5 #f)
+(rep 13 N)
+(rep 3 #f)
+(rep 9 N)
+(rep 7 #f)
+(rep 10 N)
+(rep 2 #f)
+(rep 8 N)
+(rep 4956 #f)
+(rep 246 N)
+(rep 10 #f)
+(rep 39 N)
+(rep 2 #f)
+(rep 192 N)
+(rep 23 #f)
+(rep 70 N)
+(rep 186 #f)
+(rep 87 N)
+(rep 9 #f)
+(rep 18 N)
+(rep 142 #f)
+(rep 85 N)
+#f
+(rep 71 N)
+#f
+(rep 2 N)
+(rep 2 #f)
+N
+(rep 2 #f)
+(rep 2 N)
+(rep 2 #f)
+(rep 4 N)
+#f
+(rep 12 N)
+(rep 2 #f N)
+(rep 6 N)
+#f
+(rep 65 N)
+#f
+(rep 4 N)
+(rep 2 #f)
+(rep 8 N)
+#f
+(rep 7 N)
+#f
+(rep 28 N)
+#f
+(rep 4 N)
+#f
+(rep 5 N)
+#f
+N
+(rep 3 #f)
+(rep 7 N)
+#f
+(rep 340 N)
+(rep 2 #f)
+(rep 292 N)
+(rep 2 #f)
+(rep 702 N)
+(rep 15 #f)
+(rep 5 N)
+#f
+(rep 15 N)
+(rep 3408 #f)
+(rep 197 N)
+(rep 2 #f)
+(rep 16 N)
+(rep 1321 #f)
+(rep 4 N)
+#f
+(rep 27 N)
+#f
+(rep 2 N)
+#f
+N
+(rep 2 #f)
+N
+#f
+(rep 10 N)
+#f
+(rep 4 N)
+(rep 2 #f N)
+(rep 6 #f)
+N
+(rep 4 #f)
+(rep 3 N #f)
+(rep 3 N)
+#f
+(rep 2 N)
+#f
+N
+(rep 2 #f)
+(rep 5 N #f)
+(rep 2 N)
+#f
+N
+(rep 2 #f)
+(rep 4 N)
+#f
+(rep 7 N)
+#f
+(rep 4 N)
+#f
+(rep 4 N)
+(rep 2 #f N)
+(rep 9 N)
+#f
+(rep 17 N)
+(rep 5 #f)
+(rep 3 N)
+#f
+(rep 5 N)
+#f
+(rep 17 N)
+(rep 52 #f)
+(rep 2 N)
+(rep 270 #f)
+(rep 44 N)
+(rep 4 #f)
+(rep 100 N)
+(rep 12 #f)
+(rep 15 N)
+(rep 2 #f)
+(rep 15 N)
+#f
+(rep 15 N)
+#f
+(rep 37 N)
+(rep 10 #f)
+(rep 11 A)
+(rep 2 N)
+(rep 3 #f)
+(rep 30 A)
+N
+#f
+(rep 58 A)
+(rep 2 N)
+(rep 4 #f)
+(rep 43 A)
+(rep 75 #f)
+(rep 26 N)
+(rep 3 W)
+(rep 13 #f)
+(rep 43 W)
+(rep 5 #f)
+(rep 9 W)
+(rep 7 #f)
+(rep 2 W)
+(rep 174 #f)
+(rep 634 N)
+#f
+(rep 41 N)
+#f
+(rep 300 N)
+(rep 15 #f)
+(rep 13 N)
+(rep 3 #f)
+(rep 4 N)
+(rep 12 #f)
+(rep 116 N)
+(rep 12 #f)
+(rep 85 N)
+(rep 43 #f)
+(rep 12 N)
+(rep 4 #f)
+(rep 56 N)
+(rep 8 #f)
+(rep 10 N)
+(rep 6 #f)
+(rep 40 N)
+(rep 8 #f)
+(rep 30 N)
+(rep 98 #f)
+(rep 9 N)
+(rep 103 #f)
+(rep 5 N)
+(rep 59 #f)
+N
+(rep 1599 #f)
+(rep 65534 W)
+(rep 2 #f)
+(rep 65534 W)
+(rep 655363 #f)
+N
+(rep 30 #f)
+(rep 96 N)
+(rep 128 #f)
+(rep 240 A)
+(rep 65040 #f)
+(rep 65534 A)
+(rep 2 #f)
+(rep 65534 A)
 )

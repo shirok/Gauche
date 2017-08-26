@@ -1,58 +1,125 @@
 A note on Windows/MinGW support
 
-Now you can compile Gauche to use MinGW runtime library
-(see http://www.mingw.org/ ), so that the produced binary can
-be easily distributed.
+Now you can compile Gauche to use MinGW runtime library.  It is
+the recommended way to build Gauche on Windows.  (You may still be
+able to build with Cygwin but it has a few quirks that interfere
+with Gauche that may surprise you.)
 
 Because of the difference of the underlying system, not all
 system-related procedures are available on MinGW port.
 The reference manual tells whether a particular procedure
-is supported on "Windows native"---meaning MinGW or WinVC version.
+is supported on "Windows native".
 
-[Compilation]
+As of 0.9.5, the official Windows binaries are built with
+mingw-w64 (see http://mingw-w64.org/ ).  It may still be
+built with the original MinGW, but our support efforts are
+prioritized in favor of mingw-w64.  By 'MinGW version' in
+the following sections, we mean Gauche built with mingw-w64.
 
-To compile MinGW version from the source tarball, you need MSYS
-environment in order to run 'configure'.   (You don't need MSYS to
-run the compiled Gauche.)
+If you just want to use Gauche on Windows, you can use the binary
+installer.  Below, we describe what you need to build Gauche
+from the source.
 
-If you try to build from svn source, you also need a running
-Gauche. Grab one of the precompiled mingw binary, or first build
-and install Gauche from the tarball.
 
-The following MinGW libraries are also recommended, although
-you can build Gauche without them.   They don't come with MinGW
-itself.  You have to download the precompiled tarballs from
-the MinGW download site and untar them under c:\mingw (or
-the directory you installed MinGW.)
+[Prerequisites]
 
-- MinGW libiconv
-    Required to make gauche.charconv fully functional.
-    You need libiconv-dll, libiconv-dev, libcharset-dll.
-- MinGW zlib
-    Required to make rfc.zlib.
-    You need libz-dll and libz-dev.
+You need the following software:
 
-(Note: You'll find MSYS {libiconv,zlib} and MinGW {libiconv,zlib}
-on the dowlonad site; make sure you download MinGW version.)
+* MSYS2  http://msys2.github.io
 
-Gdbm doesn't work straightforwardly, since there's no official
-MinGW port of gdbm.  MSYS-gdbm does NOT work.  You may be
-able to compile gdbm from source on MinGW (you need some patches;
-look for them the Net.  It is also said that you have to configure
-it with --disable-shared.)  Once you have MinGW gdbm installed,
-Gauche's 'configure' will find it and builds dbm.gdbm etc,
-though some test errors result.
+   Download the installer and follow the instruction.  I recommend
+   to leave the installation folder default (C:\msys64, for x86_64).
+   After setup wizard finished, do not forget to follow the instruction
+   in the above site to update packages.
 
-[Installtaion and packaging]
+   Once MSYS2 is in place, you can get mingw-w64 toolchain using
+   pacman.  Fire MSYS2 shell and type 'pacman -S <package> ...'.
+   For mingw-w64-*** packages, choose suitable architecture.
+   NOTE: If you want to build x86_64 and i686 binary installers
+   on x86_64 machine, you have to install both architecture versions.
 
-If you want to run the mingw version of Gauche on the same
-machine you compile it, probably it is easier to give
---prefix=/mingw to 'configure'.
+   The following packages are needed:
 
-If you want to copy compiled Gauche to the machine where
-mingw might not exist, you need to include mingw DLL
-(and zlib DLL if you compiled with zlib).  There's a
-convenience shell script in src/mingw-dist.sh.   Just run
-it on the top of the Gauche source directory, and it will
-create a directory ../Gauche-mingw-dist and installs compiled
-Gauche into it, with MinGW dlls.
+   - mingw-w64-x86_64-gcc / mingw-w64-i686-gcc
+   - autoconf
+   - automake
+   - libtool
+   - pkg-config
+   - make
+
+   The following packages are strongly recommended.  Gauche can be built
+   without them, but some features will not be available.
+
+   - mingw-w64-x86_64-zlib / mingw-w64-i686-zlib
+   - mingw-w64-x86_64-libiconv / mingw-w64-i686-libiconv
+   - texinfo
+
+   NOTE: pacman tries to install packages under c:/msys64/mingw64 etc,
+   but sometimes the first attempt fails saying:
+
+      error: failed to commit transaction (conflicting files)
+      ....  /mingw64 exists in filesystem
+
+   There is /mingw64.exe and /mingw64.bat (in msys2 filesystem) and
+   the installe gets confused.  Manually creating directory /mingw64
+   will solve the problem.
+
+
+* Gauche
+
+   You need the latest release version of Gauche in order to build
+   Gauche from git source.  Install it using binary installer, or,
+   get a tarball and build it with MSYS2.
+
+   Make sure that gosh is visible from the PATH of your MSYS shell.
+
+
+* Wix toolset   http://wixtoolset.org
+
+   (Optional) This is used to create installer.   If you just want
+   to build just for your machine, you don't need this.
+
+
+[Build]
+
+You can build it just like on any other Unix systems; but for your
+convenience, there's a script src/mingw-dist.sh which builds Gauche
+in a way that you can zip and copy the resulting binary elsewhere,
+or build a binary installer.
+
+If you start from git repo clone (instead of source tarball), you
+have to run './DIST gen' first to generate configure scripts.
+
+Once configure scripts are in place, run the mingw-dist.sh on the
+MSYS shell as follows:
+
+   # For x86_64 build:
+   $ MSYSTEM=MINGW64 src/mingw-dist.sh
+
+   # For i686 build:
+   $ MSYSTEM=MINGW32 src/mingw-dist.sh
+
+The compiled binaries are in ../Gauche-mingw-dist/Gauche-x86_64 or
+../Gauche-mingw-dist/Gauche-i686, respectively.  It includes DLLs
+needed to run gosh, so you can just zip the directory and copy
+to whatever machine you like.
+
+
+[Build with Gauche-gl]
+
+If you have Gauche-gl source tree aside of Gauche source tree
+(that is, from Gauche's $top_srcdir, you have ../Gauche-gl),
+you can build Gauche-gl as well.  Give --with-gl option:
+
+   $ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
+
+
+[Build installer]
+
+Make sure candle.exe and light.exe (WiX toolset) are in the PATH.
+
+Run src/mingw-dist.sh with --with-installer option, for example:
+
+   $ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
+
+This creates installer file ../Gauche-mingw-X.X.X-{32|64}bit.msi.

@@ -1,7 +1,7 @@
 ;;;
 ;;; file/util.scm - filesystem utility functions
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -66,6 +66,7 @@
           remove-files delete-files
           null-device console-device
           file->string file->string-list file->list file->sexp-list
+          string->file string-list->file list->file sexp-list->file
           <lock-file-failure> with-lock-file
           ))
 (select-module file.util)
@@ -469,13 +470,20 @@
                                                         [gauche.os.windows #\;]
                                                         [else #\:]))]
                                               [else '()]))
-                                 (pred file-is-executable?))
+                                 (pred file-is-executable?)
+                                 (extensions '()))
+  (define names
+    (if (null? extensions)
+      `(,name)
+      (cons name
+            (map (^e (string-append name "." e)) extensions))))
+  (define (try n) (and (pred n) n))
   (if (absolute-path? name)
-    (and (pred name) name)
+    (any try names)
     (let loop ((paths paths))
       (and (not (null? paths))
-           (let1 p (build-path (car paths) name)
-             (if (pred p) p (loop (cdr paths))))))))
+           (or (any try (map (cute build-path (car paths) <>) names))
+               (loop (cdr paths)))))))
 
 ;;;=============================================================
 ;;; File attributes
@@ -819,6 +827,19 @@
 
 (define (file->sexp-list file . opts)
   (apply call-with-input-file file (%maybe (cut port->list read <>)) opts))
+
+;; inverse of file->*
+(define (string->file file str . opts)
+  (apply call-with-output-file file (cut display str <>) opts))
+
+(define (list->file writer file lis . opts)
+  (apply call-with-output-file file (^p (dolist [s lis] (writer s p))) opts))
+
+(define string-list->file
+  (cute list->file (^[s p] (display s p) (newline p)) <> <> <...>))
+
+(define sexp-list->file
+  (cute list->file (^[s p] (write s p) (newline p)) <> <> <...>))
 
 ;;;=============================================================
 ;;; File locking

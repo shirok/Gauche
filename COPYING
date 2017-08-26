@@ -7,7 +7,7 @@ of the software.
 Copyright and condition of use of main portion of the source:
 -----------------------------------------------------------------------------
 
-  Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+  Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -43,9 +43,9 @@ Copyright and condition of use of main portion of the source:
 Copyright of gc/* -----------------------------------------------------------
 
     Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
-    Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
+    Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
     Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
-    Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
+    Copyright (c) 1999-2001 by Hewlett-Packard. All rights reserved.
 
     THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
     OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -57,7 +57,13 @@ Copyright of gc/* -----------------------------------------------------------
     modified is included with the above copyright notice.
 
 
-Copyright of lib/srfi-1.scm -------------------------------------------------
+Copyright of gc/libatomic_ops/* ---------------------------------------------
+
+GNU GENERAL PUBLIC LICENSE
+Version 2, June 1991
+
+
+Copyright of libsrc/srfi-1.scm ----------------------------------------------
 
 ;;; Copyright (c) 1998, 1999 by Olin Shivers. You may do as you please with
 ;;; this code as long as you do not remove this copyright notice or

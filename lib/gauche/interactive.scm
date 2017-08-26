@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.interactive - useful stuff in the interactive session
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -34,9 +34,9 @@
 #!no-fold-case
 
 (define-module gauche.interactive
-  (export apropos describe d read-eval-print-loop
+  (export apropos d read-eval-print-loop print-mode
           ;; autoloaded symbols follow
-          info info-page reload ed
+          info info-page info-search reload ed
           reload-modified-modules module-reload-rules reload-verbose)
   )
 (select-module gauche.interactive)
@@ -105,11 +105,10 @@
 ;;; Describe - describe object
 ;;;
 
-(define-method describe () (describe *1)) ; for convenience
+;; NB: The base methods (describe (obj <top>)) and
+;; (describe-slots (obj <top>)) are defined in src/libobj.scm
 
-(define-method describe (object) ; default
-  (describe-common object)
-  (describe-slots object))
+(define-method describe () (describe *1)) ; for convenience
 
 (define-method describe ((s <symbol>))
   (describe-common s)
@@ -174,22 +173,6 @@
 
 (define d describe)
 
-(define (describe-common obj)
-  (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj))))
-
-(define (describe-slots obj)
-  (let* ([class (class-of obj)]
-         [slots (class-slots class)])
-    (unless (null? slots)
-      (format #t "slots:\n")
-      (dolist [s (map slot-definition-name slots)]
-        (format #t "  ~10s: ~a\n" s
-                (if (slot-bound? obj s)
-                  (with-output-to-string
-                    (^[] (write-limited (slot-ref obj s) 60)))
-                  "#<unbound>"))))
-    (values)))
-
 ;;;
 ;;; Enhanced REPL
 ;;;
@@ -240,8 +223,13 @@
           (format "~a~a " *repl-name* delim)
           (format "~a[~a]~a " *repl-name* (module-name m) delim))))))
 
-;; Returns a reader procedure that can handle toplevel command
-(define (make-repl-reader read read-line)
+;; Returns a reader procedure that can handle toplevel command.
+;; READ - reads one sexpr from the REPL input
+;; READ-LINE - read to the EOL from REPL input and returns a string.
+;;             The newline char is read but not included in the string.
+;; SKIPPER - consumes trailing whitespaces from REPL input until either
+;;           first newline is read, or encounters non-whitespace character.
+(define (make-repl-reader read read-line skipper)
   (^[]
     (let1 expr (read)
       (if (and (pair? expr)      ; avoid depending on util.match yet
@@ -250,8 +238,7 @@
                (null? (cddr expr)))
         (handle-toplevel-command (cadr expr) (read-line))
         (begin
-          (unless (eof-object? expr)
-            (%skip-trailing-ws))
+          (unless (eof-object? expr) (skipper))
           expr)))))
 
 ;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
@@ -261,27 +248,16 @@
 ;; the feature available through command-line options of gosh.
 
 (define-values (%prompter %reader)
-  (receive (r rl)
+  (receive (r rl skipper)
       (if (sys-getenv "GAUCHE_READ_EDIT")
         (make-editable-reader (^[] (default-prompt-string "$")))
-        (values #f #f))
-    (if (and r rl)
+        (values #f #f #f))
+    (if (and r rl skipper)
       (values (^[] #f)
-              (make-repl-reader r rl))
+              (make-repl-reader r rl skipper))
       (values (^[] (display (default-prompt-string)) (flush))
-              (make-repl-reader read read-line)))))
-
-(define (%skip-trailing-ws)
-  ;; We use byte i/o here to avoid blocking.
-  (if (byte-ready?)
-    (let1 b (peek-byte)
-      (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
-            [(eqv? b 13)
-             (read-byte)
-             (when (and (byte-ready?) (eqv? (peek-byte) 10)) (read-byte))]
-            [(eqv? b 10) (read-byte)]
-            [else #t]))
-    #t))
+              (make-repl-reader read read-line
+                                consume-trailing-whitespaces)))))
 
 ;; error printing will be handled by the original read-eval-print-loop
 (define (%evaluator expr env)
@@ -290,14 +266,40 @@
       (%set-history-expr! r)
       (apply values r))))
 
+;; <write-controls> used for the printer.
+(define-constant *default-controls*
+  (make-write-controls :length 50 :level 10))
+(define *controls* *default-controls*)
+
+(define (%printer . exprs)
+  (dolist [expr exprs]
+    (write expr *controls*)
+    (newline)))
+
+;; API
+(define print-mode
+  (case-lambda
+    [() *controls*]                     ; return the current controls
+    [(c)                                ; set controls directly
+     (let1 c (if (eq? c 'default)
+               *default-controls*
+               c)
+       (assume-type c <write-controls>)
+       (rlet1 old *controls*
+         (set! *controls* c)))]
+    [kvs
+     (rlet1 old *controls*
+       (set! *controls* (apply write-controls-copy *controls* kvs)))]))
+
 ;; This shadows gauche#read-eval-print-loop
 (define (read-eval-print-loop :optional (reader #f)
                                         (evaluator #f)
                                         (printer #f)
                                         (prompter #f))
-  (let ([reader (or reader %reader)]
+  (let ([reader    (or reader %reader)]
         [evaluator (or evaluator %evaluator)]
-        [prompter (or prompter %prompter)])
+        [printer   (or printer %printer)]
+        [prompter  (or prompter %prompter)])
     ((with-module gauche read-eval-print-loop)
      reader evaluator printer prompter)))
 
@@ -306,7 +308,7 @@
 ;;;
 
 ;; Autoload online info viewer
-(autoload gauche.interactive.info info info-page)
+(autoload gauche.interactive.info info info-page info-search)
 
 ;; Autoload module reloader
 (autoload gauche.reload reload reload-modified-modules

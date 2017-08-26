@@ -1,7 +1,7 @@
 ;;;
 ;;; http.scm - HTTP 1.1
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -83,7 +83,11 @@
           mime-compose-parameters
           mime-parse-content-type)
 (autoload rfc.tls
-          make-tls tls-destroy tls-connect tls-input-port tls-output-port tls-close)
+          make-tls tls-destroy tls-connect tls-input-port
+          tls-output-port tls-close)
+(autoload gauche.process
+          run-process process-input process-output process-error
+          process-wait process-kill)
 
 (autoload file.util file-size find-file-in-paths null-device)
 
@@ -490,15 +494,14 @@
    (socket :init-value #f)              ; A <socket> for persistent connection.
                                         ; If it is shutdown by the server,
                                         ; the APIs attempt to reconnect.
-   (secure-agent  :init-value #f)       ; When using secure connection via
-                                        ; tls, this slot holds its handle.
+   (secure-agent  :init-value #f)       ; See "secure agent handling" below
    (persistent    :init-keyword :persistent)   ; true for persistent connection.
    (auth-handler  :init-keyword :auth-handler  :init-value #f)
    (auth-user     :init-keyword :auth-user     :init-value #f)
    (auth-password :init-keyword :auth-password :init-value #f)
    (proxy         :init-keyword :proxy)
    (extra-headers :init-keyword :extra-headers)
-   (secure        :init-keyword :secure) ; boolean
+   (secure        :init-keyword :secure) ; either #f, tls or stunnel
    ))
 
 (define (make-http-connection server :key
@@ -520,15 +523,21 @@
 ;; This modifies CONN.
 (define (redirect-connection! conn proto new-server)
   (let1 orig-server (~ conn'server)
+    ;; Unless we're connecting the same server with same secure level,
+    ;; we reset the connection.
     (unless (and (string=? orig-server new-server)
-                 (eq? (~ conn'secure) (equal? proto "https")))
+                 (or (and (equal? proto "https") (~ conn'secure))
+                     (and (not (equal? proto "https")) (not (~ conn'secure)))))
       (shutdown-secure-agent conn)
       (and-let* ([s (~ conn'socket)])
         (socket-shutdown s)
         (socket-close s)
         (set! (~ conn'socket) #f))
       (set! (~ conn'server) new-server)
-      (set! (~ conn'secure) (equal? proto "https"))))
+      ;; NB: If the server redirects http connection to https, we don't have
+      ;; a chance for the caller to select alternative TLS flavor---for the
+      ;; time being we blindly assume tls.
+      (set! (~ conn'secure) (and (equal? proto "https") 'tls))))
   conn)
 
 ;;==============================================================
@@ -694,7 +703,15 @@
       (check-override auth-password)
       (check-override proxy)
       (check-override extra-headers)
-      (check-override secure))))
+      (set! (~ conn'secure)
+            (and (not (undefined? secure))
+                 (case secure
+                   [(#f) #f]
+                   [(#t tls) 'tls]
+                   [(stunnel) 'stunnel]
+                   [else (error "`secure' argument for http connection must be \
+                                 either boolean, 'tls or 'stunnel, but got:"
+                                secure)]))))))
 
 (define (reset-http-connection conn)
   (shutdown-socket-connection conn)
@@ -705,13 +722,17 @@
   ;; use "::1" part as the hostname, excluding [].
   (define (parse-address addr)
     (rxmatch-case addr
-      [#/^\[([a-fA-F\d:]+)\](?::(\d+))?$/ (_ host port) (values host port)]
-      [#/^([^:]+)(?::(\d+))?$/ (_ host port) (values host port)]))
-  (receive (host port) (parse-address (or (~ conn'proxy) (~ conn'server)))
+      [#/^unix:(\/.*)$/ (_ path) (values #f #f path)] ;unix domain
+      [#/^\[([a-fA-F\d:]+)\](?::(\d+))?$/ (_ host port) (values host port #f)]
+      [#/^([^:]+)(?::(\d+))?$/ (_ host port) (values host port #f)]
+      [else (error "Unrecognized http server address:" addr)]))
+  (receive (host port path) (parse-address (or (~ conn'proxy) (~ conn'server)))
     (set! (~ conn'socket)
-          (make-client-socket host (if port
-                                     (x->integer port)
-                                    (if (~ conn'secure) 443 80))))))
+          (if path
+            (make-client-socket 'unix path)
+            (make-client-socket host (if port
+                                       (x->integer port)
+                                       (if (~ conn'secure) 443 80)))))))
 
 (define (shutdown-socket-connection conn)
   (when (~ conn'socket)
@@ -721,15 +742,16 @@
     (set! (~ conn'socket) #f)))
 
 (define (with-connection conn proc)
-  (unless (~ conn'persistent)
-    (unless (~ conn'socket) (start-socket-connection conn))
-    (when (~ conn'secure) (start-secure-agent conn)))
   (unwind-protect
-      (apply proc (if (~ conn'secure)
-                    `(,(tls-input-port (~ conn'secure-agent))
-                      ,(tls-output-port (~ conn'secure-agent)))
-                    `(,(socket-input-port (~ conn'socket))
-                      ,(socket-output-port (~ conn'socket)))))
+      (begin
+        (unless (~ conn'persistent)
+          (unless (~ conn'socket) (start-socket-connection conn))
+          (when (~ conn'secure) (start-secure-agent conn)))
+        (apply proc (if (~ conn'secure)
+                      `(,(secure-agent-input-port conn)
+                        ,(secure-agent-output-port conn))
+                      `(,(socket-input-port (~ conn'socket))
+                        ,(socket-output-port (~ conn'socket))))))
     (unless (~ conn'persistent)
       (when (~ conn'secure) (shutdown-secure-agent conn))
       (shutdown-socket-connection conn))))
@@ -859,25 +881,99 @@
 ;; secure agent handling
 ;;
 
+;; We provide two options to handle secure connection.
+;;  tls     - using Gauche's rfc.tls module (default)
+;;  stunnel - using external stunnel process
+
 (define (shutdown-secure-agent conn)
   (when (~ conn'secure-agent)
-    (tls-close (~ conn'secure-agent))
-    (tls-destroy (~ conn'secure-agent))
+    (ecase (~ conn'secure)
+      [(tls)
+       (tls-close (~ conn'secure-agent))
+       (tls-destroy (~ conn'secure-agent))]
+      [(stunnel)
+       (close-output-port (process-input (~ conn'secure-agent)))
+       (or (process-wait (~ conn'secure-agent) #t)
+           (begin (sys-nanosleep #e1e8)    ;0.1s
+                  (process-wait (~ conn'secure-agent) #t))
+           (begin (sys-nanosleep #e1e8)    ;0.1s
+                  (process-kill (~ conn'secure-agent))))])
     (set! (~ conn'secure-agent) #f)))
 
 (define (start-secure-agent conn)
-  (unless (http-secure-connection-available?)
-    (error "Secure connection is not available on this platform"))
   (when (~ conn'secure-agent) (shutdown-secure-agent conn))
-  (let1 tls (make-tls)
-    (tls-connect tls (socket-fd (~ conn'socket)))
-    (set! (~ conn'secure-agent) tls)))
+  (ecase (~ conn'secure)
+    [(tls)
+     (let1 tls (make-tls)
+       (set! (~ conn'secure-agent) tls)
+       (tls-connect tls (socket-fd (~ conn'socket))))]
+    [(stunnel)
+     (let* ([rhost      (or (~ conn'proxy) (~ conn'server))]
+            [rhost:port (if (string-index rhost #\:) rhost #"~|rhost|:https")])
+       (if-let1 p ((probe-stunnel) rhost:port)
+         (set! (~ conn'secure-agent) p)
+         (error "Couldn't start stunnel subprocess")))]))
+
+(define (secure-agent-input-port conn)
+  (ecase (~ conn'secure)
+    [(tls)     (tls-input-port (~ conn'secure-agent))]
+    [(stunnel) (process-output (~ conn'secure-agent))]))
+
+(define (secure-agent-output-port conn)
+  (ecase (~ conn'secure)
+    [(tls)     (tls-output-port (~ conn'secure-agent))]
+    [(stunnel) (process-input (~ conn'secure-agent))]))
 
 ;; for external api
-(define (http-secure-connection-available?)
-  (cond-expand
-   [gauche.net.tls #t]
-   [else #f]))
+(define (http-secure-connection-available? :optional (type #t))
+  (case type
+    [(#t tls)
+     (cond-expand
+      [gauche.net.tls #t]
+      [else #f])]
+    [(stunnel)
+     (boolean (probe-stunnel))]
+    [else
+     (error "Unknown secure connection type (must be tls, stunnel or #t):"
+            type)]))
+
+(define probe-stunnel
+  (let1 result #f
+    (define (run-stunnel3 path)
+      (lambda (host:port)
+        (run-process `(,path "-c" "-r" ,host:port) :input :pipe :output :pipe
+                     :error :null :wait #f)))
+    (define (run-stunnel4 path)
+      (lambda (host:port)
+        (receive (in out) (sys-pipe)
+          (rlet1 p (run-process `(,path "-fd" 3)
+                                :redirects `((< 0 stdin)
+                                             (> 1 stdout)
+                                             (> 2 :null)
+                                             (< 3 ,(port-file-number in)))
+                                :wait #f)
+            (format out "client = yes\n")
+            (format out "connect = ~a" host:port)
+            (close-output-port out)))))
+
+    (lambda (:key (force #f))
+      (if (and result (not force))
+        result
+        (and-let* ([path (or (find-file-in-paths "stunnel4") ;ubuntu has this
+                             (find-file-in-paths "stunnel"))]
+                   [p (run-process `(,path "-version")
+                                   :error :pipe :output :pipe)]
+                   [vers (read-line (process-error p))])
+          (process-wait p)
+          (rlet1 proc (cond
+                       [(eof-object? vers) (run-stunnel3 path)]
+                       [(#/stunnel (\d+)\.\d+/ vers)
+                        => (^m (if (>= (x->integer (m 1)) 4)
+                                 (run-stunnel4 path)
+                                 (run-stunnel3 path)))]
+                       [(#/exec failed/i vers) #f]
+                       [else (run-stunnel3 path)])
+            (set! result proc)))))))
 
 ;;==============================================================
 ;; authentication handling

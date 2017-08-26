@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.interactive.editable-reader
 ;;;
-;;;   Copyright (c) 2016  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2016-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -35,19 +35,19 @@
 
 (define-module gauche.interactive.editable-reader
   (use text.console)
-  (use text.line-edit)
   (use util.match)
   (use gauche.listener :only (complete-sexp?))
   (export make-editable-reader))
 (select-module gauche.interactive.editable-reader)
 
+;; Delay loading line-edit in case editable console isn't available.
+(autoload text.line-edit <line-edit-context> read-line/edit)
+
 ;; Internal API, to be used by gauche.interactive.
 ;; Because of toplevel commands, we can't just provide alternative 'read'
-;; procedure.  Instead, this returns two procedures, one is for 'read'
-;; and another is for 'read-line'.  They are used in very specific way---
-;; the 'read-line' part will only be called to fetch the rest part of
-;; toplevel commands.
-;; May return (valuse #f #f) if it can't open the console.
+;; procedure.  Instead, this returns three procedures, one for 'read',
+;; one for 'read-line', and another for skipping trailing whitespaces.
+;  They are suitable to be passed to make-repl-reader.
 ;; NB: Currently we assume we use default console.  Might be useful
 ;; to allow other console (e.g. over pty).
 (define (make-editable-reader get-prompt-string)
@@ -69,8 +69,9 @@
                     (try))))
               x))))
       (values (read-1 read)
-              (read-1 read-line)))
-    (values #f #f)))                    ;no default console
+              (read-1 read-line)
+              (^[] (consume-trailing-whitespaces buffer))))
+    (values #f #f #f)))                    ;no default console
 
 ;; We have to handle both toplevel command (begins with comma, ends with
 ;; newline) and the complete sexp.

@@ -300,6 +300,14 @@
                 list->f32vector
                 list->f64vector))
 
+;; srfi-66 procedures
+;;  Internally we just call builtin equal? and compare, so here we just
+;;  check it can be callable.
+(test* "u8vector=?" #t (u8vector=? '#u8(1 2 3) '#u8(1 2 3)))
+(test* "u8vector=?" (test-error) (u8vector=? '#u8(1 2 3) '#s8(1 2 3)))
+(test* "u8vector-compare" -1 (u8vector-compare '#u8(2 2) '#u8(1 2 3)))
+(test* "u8vector-compare" (test-error) (u8vector-compare '#s8(2 2) '#u8(1 2 3)))
+
 ;;-------------------------------------------------------------------
 (test-section "copying and filling")
 
@@ -1463,6 +1471,15 @@
 (test* "u8vector->string (OOB)" (test-error)
        (u8vector->string '#u8(64 65 66 67 68) 0 8))
 
+(test* "u8vector->string (terminator, 0)" "@ABCD"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 0 8 0))
+(test* "u8vector->string (terminator, 0)" "@ABCD\x00;EF"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 0 8 1))
+(test* "u8vector->string (terminator, 0)" "@AB"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 0 8 67))
+(test* "u8vector->string (terminator, 0)" "BCD"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 2 8 0))
+
 (test* "string->s8vector" '#s8(64 65 66 67 68)
        (string->s8vector "@ABCD"))
 (test* "string->s8vector (start)" '#s8(66 67 68)
@@ -1507,6 +1524,13 @@
 (test* "s8vector->string (OOB)" (test-error)
        (s8vector->string '#s8(64 65 66 67 68) 0 8))
 
+(test* "s8vector->string (terminator,0)" "@ABCD"
+       (s8vector->string '#s8(64 65 66 67 68 0 69 70) 0 8 0))
+(test* "s8vector->string (terminator,1)" "@ABCD\x00;EF"
+       (s8vector->string '#s8(64 65 66 67 68 0 69 70) 0 8 1))
+(test* "s8vector->string (terminator,-1)" "@ABCD"
+       (s8vector->string '#s8(64 65 66 67 68 -1 69 70) 0 8 -1))
+
 (test* "string->u32vector" '#u32(64 65 66 67 68)
        (string->u32vector "@ABCD"))
 (test* "string->u32vector (start)" '#u32(66 67 68)
@@ -1536,6 +1560,12 @@
        (u32vector->string '#u32(64 65 66 67 68) 0 5))
 (test* "u32vector->string (OOB)" (test-error)
        (u32vector->string '#u32(64 65 66 67 68) 0 8))
+(test* "u32vector->string (terminator)" "@AB"
+       (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 0))
+(test* "u32vector->string (terminator)" "@AB\0CD"
+       (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 1))
+(test* "u32vector->string (terminator)" "@AB\0C"
+       (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 68))
 
 (test* "string->s32vector" '#s32(64 65 66 67 68)
        (string->s32vector "@ABCD"))
@@ -1558,6 +1588,12 @@
        (s32vector->string '#s32(64 65 66 67 68) 0 5))
 (test* "s32vector->string (OOB)" (test-error)
        (s32vector->string '#s32(64 65 66 67 68) 0 8))
+(test* "s32vector->string (terminator)" "@AB"
+       (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 0))
+(test* "s32vector->string (terminator)" "@AB\0CD"
+       (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 1))
+(test* "s32vector->string (terminator)" "@AB\0C"
+       (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 68))
 
 ;; test for multibyte chars
 (cond-expand
@@ -2345,5 +2381,104 @@
 (test* "copy-port (unit 100000)" #t
        (equal? s (call-with-string-io s (^[in out]
                                           (copy-port in out :unit 100000)))))
+
+;;-------------------------------------------------------------------
+(test-section "binary search")
+
+(use srfi-42)
+
+
+(let ([data '(;; NB: keep the length of vector a multiple of 6 for skip test
+              ;; (<vec> . <keys>)
+              (#s8(-100 -99 -50 -41 -15 -2 -1 0 1 2 5 7 9 18 19 50 99 100)
+                  -101 -100 -99 -98 -50 -49 -1 0 2 3 98 99 100)
+              (#u8(1 2 3 4 5 9 20 50 70 75 89 100)
+                  0 1 2 3 4 5 6 50 99 100)
+              (#s16(-4515 -4514 -2 -1 0 1 2 19 27 55 32765 32767)
+                   -32768 -4514 -3 -2 2 32765 32766 32767)
+              (#u16(0 2 65529 65531 65533 65535)
+                   0 1 2 65528 65529 65530 65531 65532 65533 65534)
+              (#f64(-10000 -0.5 0 0.1 5.5 100)
+                   -10000 -0.51 -0.5 0 0.1 0.2 100 100.1)
+              )])
+  (define (linear-search vec key start end :optional (skip 0))
+    (let loop ((k start))
+      (cond [(not (zero? (modulo (- end start) (+ skip 1)))) (test-error)]
+            [(>= (+ k skip) end) #f]
+            [(= (~ vec k) key) k]
+            [(< (~ vec k) key) (loop (+ k skip 1))]
+            [else #f])))
+
+  (define (ranges vec)
+    (let ([len (uvector-length vec)])
+      `((0 ,len) (0 0) (0 1) (0 6))))
+
+  ;; generates list of (<key> <start> <end> :optional <esize>)
+  (define (all-args vec keys)
+    (list-ec (: k keys)
+             (: r (ranges vec))
+             (: e '(() (1) (2)))
+             (append (cons k r) e)))
+
+  (define (expected vec arg) (apply linear-search vec arg))
+
+  (define (test-1 vec . keys)
+    (let1 args (all-args vec keys)
+      (dolist [arg args]
+        (test* #"binary search ~(cons (class-of vec) arg)"
+               (apply linear-search vec arg)
+               (let ([key (car arg)]
+                     [start (cadr arg)]
+                     [end (caddr arg)]
+                     [maybe-skip (cdddr arg)])
+                 (and-let1 r (apply uvector-binary-search vec
+                                    key start end maybe-skip)
+                   (+ r start)))))))
+
+  (dolist [v data]
+    (apply test-1 v))
+  )
+
+;; We test only on s8; the code path is the same so it should work
+;; on other varieties
+(let ((vec '#s8(-10 -7 -2 5 9 33))
+      (data '(;; search-key expect-floor expect-ceiling
+              (-25          #f           -10)
+              (-10          -10          -10)
+              (-9           -10          -7)
+              (0            -2           5)
+              (8            5            9)
+              (33           33           33)
+              (100          33           #f))))
+  (define (test-1 entry)
+    (let1 search-key (car entry)
+      (list search-key
+            (pick (uvector-binary-search vec search-key #f #f #f 'floor))
+            (pick (uvector-binary-search vec search-key #f #f #f 'ceiling)))))
+  (define (pick index)
+    (and index (~ vec index)))
+  (test* "binary search, floor and ceiling" data
+         (map test-1 data)))
+
+;;-------------------------------------------------------------------
+(test-section "generator and uvector")
+
+(use gauche.generator)
+
+(test* "generator->bytevector" '#u8(0 1 2 3 0 1 2 3 0 1)
+       (generator->bytevector (circular-generator 0 1 2 3) 10))
+(test* "generator->bytevector" '#u8(0 1 2 3)
+       (generator->bytevector (list->generator '(0 1 2 3)) 10))
+(test* "generator->bytevector!" '(8 #u8(255 255 0 1 2 3 0 1 2 3))
+       (let1 vec (make-u8vector 10 255)
+         (list (generator->bytevector! vec 2 (circular-generator 0 1 2 3))
+               vec)))
+
+(test* "generator->uvector" '#u32(0 1 2 3 0 1 2 3 0 1)
+       (generator->uvector (circular-generator 0 1 2 3) 10 <u32vector>))
+(test* "generator->uvector!" '(7 #s32(-1 -1 -1 0 1 2 3 0 1 2))
+       (let1 vec (make-s32vector 10 -1)
+         (list (generator->uvector! vec 3 (circular-generator 0 1 2 3))
+               vec)))
 
 (test-end)

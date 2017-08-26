@@ -241,8 +241,18 @@
 
 (test* "lrange" '(1 2 3 4 5) (take (lrange 1) 5))
 (test* "lrange" '(1 2 3 4 5) (lrange 1 6))
+(test* "lrange" '(1 2 3 4 5) (lrange 1 6 1))
+(test* "lrange" '(1 3 5) (lrange 1 6 2))
+(test* "lrange" '() (lrange 6 1))
+(test* "lrange" '(6 5 4 3 2) (lrange 6 1 -1))
+(test* "lrange" '(6 4 2) (lrange 6 1 -2))
+(test* "lrange" '(6 4 2) (lrange 6 0 -2))
+(test* "lrange" '() (lrange 1 6 -1))
+(test* "lrange" '(1 1 1 1) (take (lrange 1 5 0) 4))
+(test* "lrange" '(5 5 5 5) (take (lrange 5 1 0) 4))
 (test* "lrange" '(1 13/7 19/7 25/7 31/7 37/7) (lrange 1 6 6/7))
 (test* "lrange" '(1.0 1.5 2.0 2.5) (lrange 1 3 0.5))
+(test* "lrange" '(3.0 2.5 2.0 1.5) (lrange 3 1 -0.5))
 
 ;; Interference with partial continuations
 (use gauche.partcont)

@@ -1,7 +1,7 @@
 /*
  * spvec.c - Sparse vector
  *
- *   Copyright (c) 2009-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2009-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -266,12 +266,12 @@ typedef struct ULeafRec {
     Leaf hdr;                   /* LEAF_DATA has bitmap of used entries */
     union {
         ScmWord dummy[2];       /* placeholder */
-        signed char    s8[2*SIZEOF_LONG];
-        unsigned char  u8[2*SIZEOF_LONG];
-        signed short   s16[SIZEOF_LONG];
-        unsigned short u16[SIZEOF_LONG];
-        ScmInt32       s32[SIZEOF_LONG/2];
-        ScmUInt32      u32[SIZEOF_LONG/2];
+        int8_t         s8[2*SIZEOF_LONG];
+        uint8_t        u8[2*SIZEOF_LONG];
+        int16_t        s16[SIZEOF_LONG];
+        uint16_t       u16[SIZEOF_LONG];
+        int32_t        s32[SIZEOF_LONG/2];
+        uint32_t       u32[SIZEOF_LONG/2];
         ScmInt64       s64[SIZEOF_LONG/4];
         ScmUInt64      u64[SIZEOF_LONG/4];
         ScmHalfFloat   f16[SIZEOF_LONG];

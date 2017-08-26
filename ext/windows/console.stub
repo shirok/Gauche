@@ -1,7 +1,7 @@
 ;;;
 ;;; console.stub - console-related apis
 ;;;
-;;;   Copyright (c) 2010-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2010-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -209,8 +209,7 @@
    (window.bottom :c-name "info.srWindow.Bottom" :type <short>)
    (maximum-window-size.x :c-name "info.dwMaximumWindowSize.X" :type <short>)
    (maximum-window-size.y :c-name "info.dwMaximumWindowSize.Y" :type <short>))
-  (allocator (c "make_console_screen_buffer_info"))
-  )
+  (allocator (c "make_console_screen_buffer_info")))
 
 (define-enum FOREGROUND_BLUE)
 (define-enum FOREGROUND_GREEN)
@@ -296,7 +295,7 @@
                             :type <uint>)
    (focus.set-focus         :c-name "rec.Event.FocusEvent.bSetFocus"
                             :type <boolean>))
-  (allocate (c "make_input_record")))
+  (allocator (c "make_input_record")))
 
 (define-cproc sys-get-number-of-console-input-events (h) ::<uint>
   (let* ([num::DWORD 0])
@@ -367,8 +366,10 @@
                                        len coord (& nread)))
     (result nread)))
 
-(define-cproc sys-read-console-output-character (handle len::<uint>
-                                                        x::<short> y::<short>)
+
+(define-cproc sys-read-console-output-character (handle
+                                                 len::<uint>
+                                                 x::<short> y::<short>)
   ::<const-cstring>
   (when (> len USHRT_MAX)
     (Scm_Error "ReadConsoleOutputCharacter: length argument too large"))
@@ -393,7 +394,7 @@
                                      (SCM_UVECTOR_ELEMENTS window)))))
 
 (define-cproc sys-write-console (h s::<string>) ::<uint>
-  (let* ([wcs::TCHAR* (SCM_MBS2WCS (Scm_GetStringConst s))]
+  (let* ([wcs::LPCTSTR (SCM_MBS2WCS (Scm_GetStringConst s))]
          [nwritten::DWORD 0])
     (check (WriteConsole (Scm_WinHandle h '#f)
                          wcs
@@ -404,7 +405,7 @@
 (define-cproc sys-write-console-output-character (h s::<string>
                                                     x::<short> y::<short>)
   ::<uint>
-  (let* ([wcs::TCHAR* (SCM_MBS2WCS (Scm_GetStringConst s))]
+  (let* ([wcs::LPCTSTR (SCM_MBS2WCS (Scm_GetStringConst s))]
          [c::COORD] [nwritten::DWORD 0])
     (= (ref c X) x (ref c Y) y)
     (check (WriteConsoleOutputCharacter (Scm_WinHandle h '#f)
@@ -450,7 +451,7 @@
     (result (SCM_WCS2MBS buf))))
 
 (define-cproc sys-set-console-title (s::<string>) ::<void>
-  (let* ([wcs::TCHAR* (SCM_MBS2WCS (Scm_GetStringConst s))])
+  (let* ([wcs::LPCTSTR (SCM_MBS2WCS (Scm_GetStringConst s))])
     (when (>= (_tcslen wcs) 1024)
       (Scm_Error "SetConsoleTitle: string argument too long"))
     (check (SetConsoleTitle wcs))))
@@ -471,7 +472,7 @@
       (unless (DuplicateHandle p h p (& h2) 0 TRUE DUPLICATE_SAME_ACCESS)
         (Scm_SysError "DuplicateHandle failed"))
       (result (Scm_MakeWinHandle h2 '#f)))))
-(define-cproc sys-set-std-handle (which::<int> handle)
+(define-cproc sys-set-std-handle (which::<int> handle) ::<void>
   (check (SetStdHandle (DWORD which) (Scm_WinHandle handle '#f))))
 
 ;; not supported yet

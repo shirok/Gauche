@@ -18,7 +18,7 @@
           hash-bound hash-salt
 
           make-default-comparator default-hash
-          ;comparator-register-default!
+          comparator-register-default!
 
           comparator-type-test-predicate comparator-equality-predicate
           comparator-ordering-predicate comparator-hash-function

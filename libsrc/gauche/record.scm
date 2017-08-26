@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.record - record implementation
 ;;;
-;;;   Copyright (c) 2010-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2010-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -91,7 +91,15 @@
 ;;;
 
 (define-class <record-meta> (<class>)
-  ((field-specs :init-keyword :field-specs :init-value '#())))
+  ((field-specs :init-keyword :field-specs :init-value '#())
+   ;; - A vector of field specs, as specified in the fieldspecs argument
+   ;;   of make-rtd.  This only includes direct slots.
+   (positional-field-accessors)
+   ;; - A vector of getter/setter pairs, corresponding to the layout
+   ;;   of the instance; that is, base record slots comes first.
+   ;;   The setter can be nil if the slot is immutable.
+   ;;   This is used to access slots positionally; e.g. util.match's '$'.
+   ))
 (define-class <record> () () :metaclass <record-meta>)
 
 (define-class <pseudo-record-meta> (<record-meta>)
@@ -123,6 +131,21 @@
               <u32vector>, <s32vector>, <u64vector>, <s64vector>, \
               <f16vector>, <f32vector>, <f64vector>, \
               or other pseudo-rtd, but got" class)))
+
+(define-method initialize ((class <record-meta>) initargs)
+  (next-method)
+  (let1 index&p  ; [(index . (ref . set))]
+      (map (^[slotdef]
+             (if-let1 i (get-keyword :index (cdr slotdef) #f)
+               (cons i
+                     (cons (cut instance-slot-ref <> i <...>)
+                           (and (not (get-keyword :immutable (cdr slotdef) #f))
+                                (cut instance-slot-set! <> i <>))))
+               (errorf "Record type definition has non-instance slots `~s': \
+                        MOP implementation error?" (car slotdef))))
+           (~ class'slots))
+    (slot-set! class 'positional-field-accessors
+               (map-to <vector> cdr (sort index&p < car)))))
 
 ;; We just collect ancestor's slots, ignoring duplicate slot names.
 ;; R6RS records require the same name slot merely shadows ancestors' one,
@@ -213,6 +236,24 @@
   (if-let1 s (assq field (class-slots rtd))
     (not (slot-definition-option s :immutable #f))
     (error "rtd-mutable?: ~a does not have a slot ~a" rtd field)))
+
+;; We need to specialize this, for the default method uses slot names;
+;; but a record type may have multiple slots with the same name.
+(define *unique* (list #f))
+
+(define-method describe-slots ((obj <record>))
+  (let* ([class (class-of obj)]
+         [slots (sort (class-slots class) < (^s (get-keyword :index (cdr s))))]
+         [accessors (slot-ref class 'positional-field-accessors)])
+    (unless (null? slots)
+      (format #t "slots:\n")
+      (dolist [s slots]
+        (let* ([index (get-keyword :index (cdr s))]
+               [val   ((car (vector-ref accessors index)) obj *unique*)])
+          (format #t "  ~10s: ~a\n" (slot-definition-name s)
+                  (if (eq? val *unique*)
+                    "#<unbound>"
+                    (with-output-to-string (^[] (write-limited val 60))))))))))
 
 ;;;
 ;;; Procedural layer
@@ -355,10 +396,27 @@
 (define (rtd-accessor rtd field) (%rtd-accessor rtd field))
 (define (rtd-mutator rtd field) (%rtd-mutator rtd field))
 
+;; These methods auguments positional field match using $ in util.match.
+;; Provides a way to get/set NUM-th instance field.  Note that the order
+;; of class-slots doesn't corresponds to the instance layout, since the
+;; class-slots have slots of derived classes come first, while the instance
+;; has parent class's slots first.
+(define-method match:$-ref ((class <record-meta>) num obj)
+  ((car (vector-ref (slot-ref class 'positional-field-accessors) num)) obj))
+
+(define-method (setter match:$-ref) ((class <record-meta>) num obj val)
+  (let1 m (vector-ref (slot-ref class 'positional-field-accessors) num)
+    (or (and (cdr m) ((cdr m) obj val))
+        (errorf "attempt to set immutable field `~a' of ~s"
+                ($ slot-definition-name
+                   (find (^s (= num (get-keyword :index (cdr s))))
+                         (class-slots class)))))))
+
 ;;;
 ;;; Syntactic layer
 ;;;
 
+;; TODO: Rewriter this w/ er-macro after 0.9.6 release
 (define-macro (define-record-type type-spec ctor-spec pred-spec . field-specs)
   (define (->id x) ((with-module gauche.internal make-identifier) x
                     (find-module 'gauche.record) '()))

@@ -1,7 +1,7 @@
 ;;;
 ;;; info.scm - parse info file
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -121,7 +121,7 @@
          (^[line]
            (rxmatch-case line
              [#/^Node: ([^\u007f]+)\u007f(\d+)/ (#f node count)
-              (hash-table-put! (ref info 'node-table)
+              (hash-table-put! (~ info 'node-table)
                                node
                                (find-file (x->integer count)))]
              [else line #f]))
@@ -145,7 +145,7 @@
      (rlet1 info-node (make <info-node>
                        :name node :next next :prev prev :up up :file info
                        :content (cdr part))
-       (hash-table-put! (ref info 'node-table) node info-node))]
+       (hash-table-put! (~ info 'node-table) node info-node))]
     [else #f]))
 
 ;; API
@@ -156,13 +156,16 @@
 ;; API
 ;; Returns <info-node>
 (define-method info-get-node ((info <info-file>) nodename)
-  (if-let1 node (hash-table-get (ref info 'node-table) nodename #f)
+  (if-let1 node (hash-table-get (~ info 'node-table) nodename #f)
     (cond [(is-a? node <info-node>) node]
           [else
+           ;; The entry is in subfile yet to be read.  NODE has the
+           ;; subfile name.
            (read-sub-info-file info
-                               (build-path (ref info 'directory) node)
+                               (build-path (~ info 'directory) node)
                                '())
-           (hash-table-get (ref info 'node-table) nodename #f)])
+           ;; Now the hashtable should contain real node.
+           (hash-table-get (~ info 'node-table) nodename #f)])
     #f))
 
 ;; API
@@ -172,7 +175,7 @@
 ;; Where <entry-name> is either a node name, function or macro name,
 ;; module name, 
 (define-method info-parse-menu ((info <info-node>))
-  (with-input-from-string (ref info 'content)
+  (with-input-from-string (~ info 'content)
     (^[]
       (define (skip line)
         (cond [(eof-object? line) '()]
@@ -219,6 +222,11 @@
   ;; And the texinfo menu's line points to "redirect-handler secure ..." line
   ;; instead of "-- Function: http-get" line.  So we have to check the lines
   ;; to find out the last #/^ --/ line before START-LINE.
+  (define (entry-line? line)
+    (or (#/^ --/ line)           ; start of entry line
+        (#/^ {10}/ line)         ; folded entry line
+        (#/^ {5}\.\.\.$/ line)   ; dots between entry line
+        (#/^ {5}\u2026$/ line))) ; dots between entry line (unicode)
   (define (skip-lines)
     (let loop ([n (- start-line 3)]
                [lines '()])
@@ -227,25 +235,24 @@
           (for-each print (reverse lines))
           line)
         (let1 line (read-line)
-          (cond [(eof-object? line) line]  ;something's wrong, but tolerate.
-                [(#/^ --/ line) (loop (- n 1) (cons line lines))]
-                [(#/^ {10}/ line) (loop (- n 1) (cons line lines))]
+          (cond [(eof-object? line) line] ; something's wrong, but tolerate.
+                [(entry-line? line) (loop (- n 1) (cons line lines))]
                 [else (loop (- n 1) '())])))))
-  
+
+  ;; Once the start line is found, we find the start of description (since
+  ;; the entry may have multiple entry line, e.g. @defunx.) then scan the
+  ;; description until we get an emtpy line.
   (with-string-io (~ info-node'content)
     (^[]
       (let entry ([line (skip-lines)])
-        (unless (eof-object? line)
-          (cond [(#/^ --/ line) (print line) (entry (read-line))]
-                [(#/^$/ line)] ;; no description
-                [(#/^ {6}/ line) ;; folded entry line
-                 (print line) (entry (read-line))]
-                [(#/^ {5}\S/ line) ;; start description
-                 (print line)
-                 (let desc ([line (read-line)])
-                   (unless (eof-object? line)
-                     (cond [(#/^$/ line) (print) (desc (read-line))]
-                           [(#/^ {4}/ line) (print line) (desc (read-line))]
-                           [else])))]))))))
-      
-  
+        (cond [(eof-object? line)]
+              [(entry-line? line) (print line) (entry (read-line))]
+              [(#/^$/ line)]     ; no description
+              [(#/^ {5}\S/ line) ; start description
+               (print line)
+               (let desc ([line (read-line)])
+                 (cond [(eof-object? line)]
+                       [(#/^$/ line) (print) (desc (read-line))]
+                       [(#/^ {4}/ line) (print line) (desc (read-line))]
+                       [else]))])))))
+

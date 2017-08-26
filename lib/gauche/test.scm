@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.test - test framework
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -82,12 +82,16 @@
 ;;         into the named file instead of reporting it out immediately.
 
 (define-module gauche.test
-  (export test test* test-start test-end test-section test-log
+  (export test test* test-start test-end test-running? test-section test-log
           test-module test-script
           test-error test-one-of test-none-of
           test-check test-record-file test-summary-check
-          *test-error* *test-report-error* test-error? prim-test))
+          *test-error* *test-report-error* test-error? prim-test
+          test-count++ test-pass++ test-fail++))
 (select-module gauche.test)
+
+;; Autoload test-script to avoid depending other modules
+(autoload "gauche/test/script" test-script)
 
 ;; An object to represent error.  This class isn't exported; the user
 ;; must use `test-error' procedure to create an instance.
@@ -146,7 +150,12 @@
               (let ([c (slot-ref expected'class)]
                     [e (slot-ref result'condition)])
                 (or (not c)
-                    (condition-has-type? e c))))]
+                    (condition-has-type? e c)))
+              (let ([m (slot-ref expected'message)]
+                    [em (slot-ref result'message)])
+                (cond [(string? m) (and (string? em) (equal? m em))]
+                      [(regexp? m) (and (string? em) (m em))]
+                      [else #t])))]
         [(is-a? expected <test-one-of>)
          (any (lambda (choice) (test-check choice result fallback))
               (slot-ref expected 'choices))]
@@ -171,8 +180,9 @@
   (vector-set! *test-counts* 0 (+ (vector-ref *test-counts* 0) 1)))
 (define (test-pass++)
   (vector-set! *test-counts* 1 (+ (vector-ref *test-counts* 1) 1)))
-(define (test-fail++)
-  (vector-set! *test-counts* 2 (+ (vector-ref *test-counts* 2) 1)))
+(define (test-fail++ msg expected result)
+  (vector-set! *test-counts* 2 (+ (vector-ref *test-counts* 2) 1))
+  (set! *discrepancy-list* (cons (list msg expected result) *discrepancy-list*)))
 (define (format-summary)
   (format "Total: ~5d tests, ~5d passed, ~5d failed, ~5d aborted.\n"
           (vector-ref *test-counts* 0)
@@ -221,9 +231,7 @@
              (test-pass++)]
             [else
              (format/ss #t "ERROR: GOT ~S\n" r)
-             (set! *discrepancy-list*
-                   (cons (list msg expect r) *discrepancy-list*))
-             (test-fail++)])
+             (test-fail++ msg expect r)])
       (flush))))
 
 ;; Normal test.
@@ -272,22 +280,12 @@
     (format #t "testing bindings in ~a ... " mod) (flush)
     (test-module-common mod module allow-undefined bypass-arity-check)))
 
-;; Check toplevel bindings of a script file.  Script files usually don't
-;; have their own modules.  For this test, we load the script file into
-;; an anonymous module then use test-module on it.  
-(define (test-script file :key (allow-undefined '()) (bypass-arity-check '()))
-  (test-count++)
-  (let1 m (make-module #f)
-    (format #t "testing bindings in script ~a ... " file) (flush)
-    ;; *program-name* and *argv* are defined in #<module user> by gosh,
-    ;; but we'll load the script in a temporary module, so we fake them.
-    (eval `(define *program-name* ',file) m)
-    (eval `(define *argv* '()) m)
-    (load file :environment m)
-    (test-module-common m file allow-undefined bypass-arity-check)))
-
-;; Common op for test-module and test-script.  Returns 
+;; Common op for test-module and test-script.
 (define (test-module-common mod name allow-undefined bypass-arity-check)
+  (define (code-location src-code)
+    (let1 src-info (debug-source-info src-code)
+      (string-append (if src-info (format "~a:" (cadr src-info)) "")
+                     (format "~a" src-code))))
   (let ([bad-autoload '()]
         [bad-export '()]
         [bad-gref '()]
@@ -310,14 +308,18 @@
      (lambda (closure)
        (for-each (lambda (arg)
                    (let ([gref (car arg)]
-                         [numargs (cadr arg)])
+                         [numargs (cadr arg)]
+                         [src-code (caddr arg)])
                      (cond [(memq (slot-ref gref 'name) allow-undefined)]
-                           [(dangling-gref? gref closure)
+                           [(dangling-gref? gref (or src-code (slot-ref closure 'info)))
                             => (lambda (bad) (push! bad-gref bad))]
                            [(memq (slot-ref gref 'name) bypass-arity-check)]
-                           [(arity-invalid? gref numargs closure)
+                           [(arity-invalid? gref numargs (or src-code (slot-ref closure 'info)))
                             => (lambda (bad) (push! bad-arity bad))])))
-                 (closure-grefs closure)))
+                 (append-map closure-grefs
+                             (cons closure
+                                   (filter closure?
+                                           ((with-module gauche.internal %closure-env->list) closure))))))
      (toplevel-closures mod))
     ;; report discrepancies
     (unless (null? bad-autoload)
@@ -331,7 +333,7 @@
       (push! report
              (format "symbols referenced but not defined: ~a"
                      (string-join (map (lambda (z)
-                                         (format "~a(~a)" (car z) (cdr z)))
+                                         (format "~a(~a)" (car z) (code-location (cdr z))))
                                        bad-gref)
                                   ", "))))
     (unless (null? bad-arity)
@@ -340,18 +342,15 @@
              (format "procedures received wrong number of argument: ~a"
                      (string-join (map (lambda (z)
                                          (format "~a(~a) got ~a"
-                                                 (car z) (cadr z) (caddr z)))
+                                                 (car z) (code-location (cadr z)) (caddr z)))
                                        bad-arity)
                                   ", "))))
     (cond
      [(null? report) (test-pass++) (format #t "ok\n")]
      [else
-      (test-fail++)
       (let ([s (apply string-append report)])
         (format #t "ERROR: ~a\n" s)
-        (set! *discrepancy-list*
-              (cons (list (format #f "bindings in ~a" name) '() s)
-                    *discrepancy-list*)))])
+        (test-fail++ (format #f "bindings in ~a" name) '() s))])
     ))
 
 
@@ -378,31 +377,55 @@
 ;; Combs closure's instruction list to extract references for the global
 ;; identifiers.  If it is a call to the global function, we also picks
 ;; up the number of arguments, so that we can check it against arity.
-;; Returns ((<identifier> <num-args>) ...)
+;; Returns ((<identifier> <num-args> <source-code>|#f) ...)
 (define (closure-grefs closure)
   (define code->list (with-module gauche.internal vm-code->list))
   (define (gref-numargs code) (cadr code))
   (define gref-call-insns
     '(GREF-CALL PUSH-GREF-CALL GREF-TAIL-CALL PUSH-GREF-TAIL-CALL))
-  (let loop ([r '()] [code (code->list (closure-code closure))])
+  (let loop ([r '()]
+             [code (code->list (closure-code closure))]
+             [i 0]
+             [debug-info (~ (closure-code closure)'debug-info)])
     (cond [(null? code) r]
           [(and (pair? (car code))
                 (memq (caar code) gref-call-insns))
            (if (pair? (cdr code))
              (if (identifier? (cadr code))
-               (loop `((,(cadr code) ,(gref-numargs (car code))) ,@r)
-                     (cddr code))
-               (loop r (cddr code)))    ;skip #<gloc>
-             (loop r '()))]
+               (let* ([src-code (assq-ref (assv-ref debug-info i '())
+                                          'source-info)]
+                      ;; If the identifier is in `code' and the source-code
+                      ;; field is empty, fill the field with the current
+                      ;; `src-code'.
+                      [new-r (map (lambda (e)
+                                    (let ([ident (car e)]
+                                          [numargs (cadr e)]
+                                          [orig-src-code (caddr e)])
+                                      (if (and (memq (identifier->symbol ident)
+                                                     src-code)
+                                               (not orig-src-code))
+                                        `(,ident ,numargs ,src-code)
+                                        e)))
+                                  r)])
+                 (loop `((,(cadr code) ,(gref-numargs (car code)) ,src-code)
+                         ,@new-r)
+                       (cddr code)
+                       (+ i 2)
+                       debug-info))
+               (loop r (cddr code) (+ i 2) debug-info))    ;skip #<gloc>
+             (loop r '() (+ i 1) debug-info))]
           [(identifier? (car code))
-           (loop `((,(car code) #f) ,@r) (cdr code))]
+           (loop `((,(car code) #f #f) ,@r) (cdr code) (+ i 1) debug-info)]
           [(is-a? (car code) <compiled-code>)
-           (loop (loop r (code->list (car code))) (cdr code))]
+           (loop (loop r (code->list (car code)) 0 (~ (car code)'debug-info))
+                 (cdr code)
+                 (+ i 1)
+                 debug-info)]
           [(list? (car code)) ; for the operand of LOCAL-ENV-CLOSURES
-           (loop (loop r (car code)) (cdr code))]
-          [else (loop r (cdr code))])))
+           (loop (loop r (car code) 0 '()) (cdr code) (+ i 1) debug-info)]
+          [else (loop r (cdr code) (+ i 1) debug-info)])))
 
-(define (arity-invalid? gref numargs closure)
+(define (arity-invalid? gref numargs src-code)
   (and-let* ([ numargs ]
              ;; TODO: What if GREF is nested identifier?
              [proc (global-variable-ref
@@ -415,20 +438,28 @@
              [ (not (and (is-a? proc <generic>) (null? (~ proc'methods)))) ]
              [ (not (apply applicable? proc (make-list numargs <bottom>))) ])
     (list (slot-ref gref 'name)
-          (slot-ref closure 'info)
+          src-code
           numargs)))
 
-(define (dangling-gref? ident closure)
+(define (dangling-gref? ident src-code)
   (let1 name (unwrap-syntax ident)
     (and (not ((with-module gauche.internal id->bound-gloc) ident))
-         (cons name (slot-ref closure 'info)))))
+         (cons name src-code))))
 
 ;; Logging and bookkeeping -----------------------------------------
+
+;; private global flag, true during we're running tests.
+;; (we avoid using parameters intentionally.)
+(define *test-running* #f)
+
+(define (test-running?) *test-running*)
+
 (define (test-section msg)
   (let ([msglen (string-length msg)])
     (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
 
 (define (test-start msg)
+  (set! *test-running* #t)
   (let* ([s (format #f "Testing ~a ... " msg)]
          [pad (make-string (max 3 (- 65 (string-length s))) #\space)])
     (display s (current-error-port))
@@ -477,6 +508,8 @@
 
     (when *test-record-file*
       (write-summary))
+
+    (set! *test-running* #f)
 
     ;; the number of failed tests.
     (let ([num-failures (length *discrepancy-list*)])

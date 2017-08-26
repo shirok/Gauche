@@ -1,7 +1,7 @@
 /*
  * number.c - numeric functions
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -997,10 +997,10 @@ SMALL_INT_XTRACT(u_int Scm_GetIntegerU16Clamp, 65535, 0)
 
 
 /* 32bit integer specific */
-ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
+int32_t Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
 {
 #if SIZEOF_LONG == 4
-    return (ScmInt32)Scm_GetIntegerClamp(obj, clamp, oor);
+    return (int32_t)Scm_GetIntegerClamp(obj, clamp, oor);
 #else  /* SIZEOF_LONG >= 8 */
 
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
@@ -1035,10 +1035,10 @@ ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
 #endif /* SIZEOF_LONG >= 8 */
 }
 
-ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor)
+uint32_t Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor)
 {
 #if SIZEOF_LONG == 4
-    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamp, oor);
+    return (uint32_t)Scm_GetIntegerUClamp(obj, clamp, oor);
 #else  /* SIZEOF_LONG >= 8 */
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {

@@ -13,9 +13,9 @@
 /gauche-dev[ej].info*.gz
 /gauche-dev[ej].pdf
 
+/gauche-ref[ej]/
 /gauche-ref[ej].dvi
 /gauche-ref[ej].html
-/gauche-ref[ej]_*.html
 /gauche-ref[ej].info*.gz
 /gauche-ref[ej].pdf
 

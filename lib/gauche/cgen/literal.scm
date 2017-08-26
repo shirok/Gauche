@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.cgen.literal - static literal data
 ;;;
-;;;   Copyright (c) 2004-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -159,14 +159,14 @@
               (if (eq? category 'constant) "SCM_CGEN_CONST " "")
               name)
       (dolist [dl dls]
-        (for-each (cut print "#if "<>) (~ dl'cpp-conditions))
+        (for-each (cut print "#if "<>) (reverse (~ dl'cpp-conditions)))
         (format #t "  ~a ~a[~a];\n" (~ dl'c-type) (~ dl'c-member-name)
                 (~ dl'count))
         (for-each (cut print "#endif /*"<>"*/") (~ dl'cpp-conditions)))
       (format #t "} ~a = " name)))
 
   (define (emit-initializers dl)
-    (for-each (cut print "#if "<>) (~ dl'cpp-conditions))
+    (for-each (cut print "#if "<>) (reverse (~ dl'cpp-conditions)))
     (print "  {   /* "(~ dl'c-type)" "(~ dl'c-member-name)" */")
     (dolist [thunk (reverse (~ dl'init-thunks))]
       (if (string? thunk)

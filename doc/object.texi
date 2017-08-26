@@ -2883,7 +2883,7 @@ generic function application behavior.
 @c COMMON
 @end defmac
 
-@defmac define-method name specs body
+@defmac define-method name [qualifier @dots{}] specs body
 @c EN
 Defines a method whose name is @var{name}.  If there's already
 a generic function object globally bound to @var{name}, the created
@@ -2891,17 +2891,51 @@ method is added to the generic function.  If @var{name} is unbound,
 or bound to an object except a generic function, then a new generic
 function is created, bound to @var{name}, then a new method is
 added to it.
-
-@var{Specs} specifies the arguments and their types for this method.
-It's like the argument list of lambda form, except you can specify
-the type of each argument.
 @c JP
 @var{name} という名前のメソッドを定義します。すでにグローバルに @var{name}
 に束縛されているジェネリック関数オブジェクトが存在していれば、生成された
 メソッドはそのジェネリック関数に追加されます。@var{name} が未束縛であるか
 またはジェネリック関数以外に束縛されているなら、新しいジェネリック関数が
 生成され、@var{name} に束縛されて、新しいメソッドがそれに追加されます。
+@c COMMON
 
+@c EN
+The name can be followed by optional @var{qualifiers}, each of
+which is a keyword.  Currently, only the following qualifier is
+valid.
+@c JP
+名前の後に、省略可能な@var{qualifier}を置くことができます。
+各@var{qualifier}はキーワードです。
+現在、次の@var{qualifier}のみが有効です。
+@c COMMON
+
+@table @code
+@item :locked
+@c EN
+Declares that you won't redefine
+the method with the same specifiers.  Attempt to redefine it
+will raise an error.  (You can still define methods with
+different specifiers.)
+
+Most methods concerning basic operations on built-in objects
+are locked, for redefining them would case Gauche's infrastracture
+unstable.  It also allows Gauche to perform certain optimizations.
+@c JP
+同じ特定化子(@var{specs})を持つメソッドを再定義しないことを宣言します。
+再定義しようとするとエラーが投げられます。
+(特定化子の異なるメソッドは定義できます)。
+
+組み込みオブジェクトの基本的な操作に関わるメソッドの多くはロックされています。
+それらを再定義してしまうと、Gaucheの基盤が不安定になる恐れがあるからです。
+また、最適化が可能になります。
+@c COMMON
+@end table
+
+@c EN
+@var{Specs} specifies the arguments and their types for this method.
+It's like the argument list of lambda form, except you can specify
+the type of each argument.
+@c JP
 @var{specs} はこのメソッドに対応する引数とその型を指定します。これは
 lambda 形式の引数リストに似ていますが、それぞれの引数の型を指定できる
 ところが違います。
@@ -2981,14 +3015,31 @@ optional:     #t
 @c EN
 If you define a method on @var{name} whose specializer list,
 and whether it takes rest argumetns,
-matche with one in the generic function's methods,
+match with one in the generic function's methods,
 then the existing method is
-replaced by the newly defined one.
+replaced by the newly defined one, unless the original method is locked.
 @c JP
 その特定化子リストがジェネリック関数の中のメソッドの一つに一致し、
 rest引数の有無も同じである
 @var{name} 上のメソッドを定義すると、既存のメソッドは新しく定義された
-メソッドに置き換えられます。
+メソッドに置き換えられます。(既存のメソッドがロックされていない限り)。
+@c COMMON
+
+@c EN
+Note: If you're running Gauche with keyword-symbol integrated
+mode (@pxref{Keyword and symbol integration}), there's an ambiguity
+if you specify a keyword as the sole @var{specs} (to receive entire
+arguments in a single variable).
+Gauche parses keywords following @var{name}
+as qualifiers, so avoid using a keyword as such a variable.
+@c JP
+註: Gaucheがキーワード-シンボル統合モード
+((@ref{Keyword and symbol integration}参照)で実行されている場合、
+@var{specs}が単独のシンボルで、それがキーワードでもあった場合
+(引数すべてを単一の変数で受け取る、その変数がキーワードでもあった場合)
+に曖昧性が生じます。Gaucheでは@var{name}に続くキーワードはすべて
+qualifierとしてパーズするので、単一の変数からなる@var{specs}には
+キーワードを使わないようにしてください。
 @c COMMON
 @end defmac
 
@@ -3513,11 +3564,17 @@ is called right before the core class slots are frozen.
 @c NODE スロットアクセスのカスタマイズ
 
 
-@deffn {Generic Function} compute-slots
-@deffnx {Generic Function} compute-get-n-set
+@deffn {Generic Function} compute-slots class
+@deffnx {Generic Function} compute-get-n-set class slot-definition
+@c EN
 These two generic functions are responsible to determine
 what slots a class has, and how each slot is accessed.
+@c JP
+これらふたつのジェネリックファンクションによって、クラスの持つべきスロット、
+及び各スロットがどのようにアクセスされるかが決定されます。
+@c COMMON
 
+@c EN
 In the @code{initialize} method of a class,
 @code{compute-slots} is called after the class's
 @code{direct-supers}, @code{cpl} and @code{direct-slots} are set.
@@ -3525,6 +3582,16 @@ It must decide what slots the class should have, and what
 slot options each slot should have, based on those three piece
 of information.  The returned value should have the following
 form, and it is used as the value of the @code{slots} slot of the class.
+@c JP
+クラスの@code{initialize}メソッドは、クラスの
+@code{direct-supers}、@code{cpl}、@code{direct-slots}スロットを
+セットしてから、@code{compute-slots}メソッドを呼びます。
+このメソッドは既にセットされた3つのスロットの情報から、
+該当クラスの持つべきスロットと、
+各スロットのスロットオプションを決定します。
+メソッドの返り値は以下の形式のフォームで、これがクラスの@code{slots}スロットに
+セットされます。
+@c COMMON
 
 @example
 <slots> : (<slot-definition> ...)
@@ -3533,14 +3600,23 @@ form, and it is used as the value of the @code{slots} slot of the class.
 <slot-options> : keyword-value alternating list.
 @end example
 
+@c EN
 After the @code{slots} slot of the class is set by the returned
 value from @code{compute-slots},
 @code{compute-get-n-set} is called for each slot
 to calculate how to access and modify the slot.
 The class and the slot definition are the arguments.
 It must return either one of the followings:
+@c JP
+@code{compute-slots}の返り値によって@code{slots}スロットが設定されたら、
+次に各スロットについて@code{compute-get-n-set}が呼ばれます。
+このメソッドは、各スロットをどのようにアクセスするかを決定します。
+引数はクラスとスロット定義(上の@code{<slot-definition>})です。
+返り値は以下のいずれかでなけばなりません。
+@c COMMON
 
 @table @asis
+@c EN
 @item an integer @var{n}
 This slot becomes @var{n}-th instance slot.  This is the only way to
 allocate a slot per instance.
@@ -3554,6 +3630,21 @@ to call @code{next-method} to let the base method reserve an instance
 slot for you.
 
 See the examples below for modifying instance slot access behaviors.
+@c JP
+@item 整数@var{n}
+このスロットは@var{n}番目のインスタンススロットになります。
+インスタンスにスロットを割り当てる唯一の方法です。
+
+@var{compute-get-n-set}のベースメソッドは、それまでに割り当てられた
+インスタンススロットの数をクラスの@code{num-instance-slots}スロットに格納しています。
+他の特殊化されたメソッドでこのスロットの値を参照したり変更したりすることは
+避けてください(オブジェクトシステムの中身を知悉していて、そうすべき十分な理由が
+ある場合は別ですが。)
+通常の場合、単に@code{next-method}を呼び出せば、ベースメソッドが
+インスタンススロットを新たに割り当ててそのインデックスを返してくれます。
+
+インスタンススロットアクセスのふるまいを変更する、下に示す例も参照してください。
+@c COMMON
 
 @item a list @code{(@var{get-proc} @var{set-proc} @var{bound?-proc} @var{initializable})}
 The @var{get-proc}, @var{set-proc} and @var{bound?-proc} elements are procedures

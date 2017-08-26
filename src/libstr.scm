@@ -1,7 +1,7 @@
 ;;;
 ;;;libstr.scm - built-in string library
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -121,12 +121,12 @@
 (define-cproc %hash-string (str::<string> :optional bound) ::<ulong>
   (let* ([modulo::u_long 0])
     (cond [(or (SCM_UNBOUNDP bound) (SCM_UNDEFINEDP bound))
-           (set! modulo SCM_SMALL_INT_MAX)]
+           (set! modulo 0)]
           [(SCM_INTP bound) (set! modulo (SCM_INT_VALUE bound))]
           [(SCM_BIGNUMP bound)
            (set! modulo
-                 (Scm_BignumToUI (SCM_BIGNUM bound) SCM_CLAMP_BOTH NULL))])
-    (when (== modulo 0) (Scm_Error "argument out of domain: %S" bound))
+                 (Scm_BignumToUI (SCM_BIGNUM bound) SCM_CLAMP_BOTH NULL))]
+          [else (Scm_Error "argument out of domain: %S" bound)])
     (return (Scm_HashString str modulo))))
 
 (select-module gauche)

@@ -1,7 +1,7 @@
 /*
  * main.c - interpreter main program
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -55,8 +55,16 @@ ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
                                    or #\e, according to the given cmdargs. */
 
 ScmObj main_module = SCM_FALSE; /* The name of the module where we
-                                   look for 'main'.  If #f, 'user' module
-                                   is used. */
+                                   look for 'main'.
+                                   If #f (default), 'user' module is used.
+                                   NB: R7RS script is read into 'r7rs.user'
+                                   module, so its 'main' routine isn't called
+                                   automatically.  It is as specified in
+                                   R7RS.  However, if the basename of the
+                                   interpreter executale is "scheme-r7rs",
+                                   we honor SRFI-22 and calls r7rs.user#main
+                                   after loading the script.
+                                */
 ScmModule *default_toplevel_module = NULL;
                                 /* The initial module for the script execution
                                    and interactive REPL.  If NULL, the user
@@ -70,7 +78,7 @@ void usage(void)
 {
     fprintf(stderr,
             "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-m<module>][-l<file>][-L<file>][-e<expr>][-E<expr>][-p<type>][-F<feature>][-r<standard>][-f<flag>][--] [file]\n"
-            "options:\n"
+            "Options:\n"
             "  -V       Prints version and exits.\n"
             "  -b       Batch mode.  Doesn't print prompts.  Supersedes -i.\n"
             "  -i       Interactive mode.  Forces to print prompts.\n"
@@ -111,10 +119,47 @@ void usage(void)
             "                      don't inline local procedures.\n"
             "      no-inline-constants\n"
             "                      don't inline constants.\n"
+            "      no-lambda-lifting-pass\n"
+            "                      don't run lambda lifting pass.\n"
             "      no-post-inline-pass\n"
             "                      don't run post-inline optimization pass.\n"
             "      no-source-info  don't preserve source information for debugging\n"
             "      test            test mode, to run gosh inside the build tree\n"
+            "Environment variables:\n"
+            "  GAUCHE_AVAILABLE_PROCESSORS\n"
+            "      Value must be an integer.  If set, it overrides the number of\n"
+            "      available processors on the system, returned from\n"
+            "      `sys-available-processors'.\n"
+            "  GAUCHE_DYNLOAD_PATH\n"
+            "      Directories separated by colon (on Unix) or semilcolon (on Windows)\n"
+            "      to search dynamically loadable files.\n"
+            "  GAUCHE_EDITOR\n"
+            "      Path of the editor invoked with `ed'.\n"
+            "  GAUCHE_KEYWORD_IS_SYMBOL\n"
+            "      If set, keywords become subclass of symbols, to be fully R7RS\n"
+            "      conformant.  It might break older code.  See ``Keyword and symbol\n"
+            "      integration'' section of the manual for the details.\n"
+            "  GAUCHE_KEYWORD_DISJOINT\n"
+            "      If set, keywords are of their own disjoint type, rather than symbols.\n"
+            "      This is the current default behavior, but we'll switch the default\n"
+            "      to keyword-is-symbol soon.  See ``Keyword and symbol integration''\n"
+            "      section of the manual for the details.\n"
+            "  GAUCHE_LOAD_PATH\n"
+            "      Directories separated by colon (on Unix) or semilcolon (on Windows)\n"
+            "      to search scheme files to load.\n"
+            "  GAUCHE_READ_EDIT\n"
+            "      If set, and the terminal is capable, turn on the experimental\n"
+            "      line-editing feature in REPL.\n"
+            "  GAUCHE_SUPPRESS_WARNING\n"
+            "      Suppress warnings displayed by ``warn''.  This should be a quick-fix\n"
+            "      when you need to get rid of warnings but do not have time to fix the\n"
+            "      root cause.\n"
+            "  GAUCHE_TEST_REPORT_ERROR\n"
+            "      When set, a stack trace is printed when an error is raised during\n"
+            "      running the test code in ``gauche.test'' framework.\n"
+            "  GAUCHE_TEST_RECORD\n"
+            "      When set, it specifies a file name to accumulated test statistics.\n"
+            "      See ``gauche.test'' manual entry for the details.\n"
             );
     exit(1);
 }
@@ -147,10 +192,14 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "no-inline-constants") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
     }
+    else if (strcmp(optarg, "no-inline-setters") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_SETTERS);
+    }
     else if (strcmp(optarg, "no-inline") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_GLOBALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_LOCALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_SETTERS);
     }
     else if (strcmp(optarg, "no-post-inline-pass") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NO_POST_INLINE_OPT);
@@ -199,7 +248,7 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-inline-setters, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
         exit(1);
     }
 }
@@ -262,33 +311,7 @@ int parse_options(int argc, char *argv[])
 static void sig_setup(void)
 {
     sigset_t set;
-    sigfillset(&set);
-    sigdelset(&set, SIGABRT);
-    sigdelset(&set, SIGILL);
-#ifdef SIGKILL
-    sigdelset(&set, SIGKILL);
-#endif
-#ifdef SIGCONT
-    sigdelset(&set, SIGCONT);
-#endif
-#ifdef SIGSTOP
-    sigdelset(&set, SIGSTOP);
-#endif
-    sigdelset(&set, SIGSEGV);
-#ifdef SIGBUS
-    sigdelset(&set, SIGBUS);
-#endif /*SIGBUS*/
-#if defined(GC_LINUX_THREADS)
-    /* some signals are used in the system */
-    sigdelset(&set, SIGPWR);  /* used in gc */
-    sigdelset(&set, SIGXCPU); /* used in gc */
-    sigdelset(&set, SIGUSR1); /* used in linux threads */
-    sigdelset(&set, SIGUSR2); /* used in linux threads */
-#endif /*GC_LINUX_THREADS*/
-#if defined(GC_FREEBSD_THREADS)
-    sigdelset(&set, SIGUSR1); /* used by GC to stop the world */
-    sigdelset(&set, SIGUSR2); /* used by GC to restart the world */
-#endif /*GC_FREEBSD_THREADS*/
+    Scm_SigFillSetMostly(&set);
     Scm_SetMasterSigmask(&set);
 }
 
@@ -314,6 +337,9 @@ void test_paths_setup(void)
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
     }
+    /* Also set a feature identifier gauche.in-place, so that other modules
+       may initialize differently if needed. */
+    Scm_AddFeature("gauche.in-place", NULL);
 }
 
 /* Cleanup */
@@ -502,30 +528,39 @@ int execute_script(const char *scriptfile, ScmObj args)
                                          SCM_BINDING_STAY_IN_MODULE);
     }
     if (SCM_PROCEDUREP(mainproc)) {
-#if 0 /* Temporarily turned off due to the bug that loses stack traces. */
+        static ScmObj run_main_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(run_main_proc, "run-main", Scm_GaucheInternalModule());
+        SCM_ASSERT(SCM_PROCEDUREP(run_main_proc));
+        
         ScmEvalPacket epak;
-        int r = Scm_Apply(mainproc, SCM_LIST1(args), &epak);
-        if (r > 0) {
-            ScmObj res = epak.results[0];
-            if (SCM_INTP(res)) return SCM_INT_VALUE(res);
-            else return 70;  /* EX_SOFTWARE, see SRFI-22. */
-        } else {
-            Scm_ReportError(epak.exception);
-            return 70;  /* EX_SOFTWARE, see SRFI-22. */
-        }
-#else
-        ScmObj r = Scm_ApplyRec1(mainproc, args);
-        if (SCM_INTP(r)) return SCM_INT_VALUE(r);
-        else             return 70;
-#endif
+        int r = Scm_Apply(run_main_proc, SCM_LIST2(mainproc, args), &epak);
+        SCM_ASSERT(r == 1 && SCM_INTP(epak.results[0]));
+        return SCM_INT_VALUE(epak.results[0]);
     }
     return 0;
+}
+
+static int has_terminal()
+{
+    if (isatty(0)) return TRUE;
+#if defined(GAUCHE_WINDOWS)
+    /* MinGW console (mintty) communicates with running processes via pipe,
+       so isatty(0) returns false even if we're running on mintty.
+       We use pipe name to determine whether we're talking to mintty.
+       %sys-mintty? is defined in libsys.scm. */
+    ScmEvalPacket pac;
+    int r = Scm_EvalCString("(%sys-mintty? 0)",
+			    SCM_OBJ(Scm_GaucheInternalModule()),
+			    &pac);
+    if (r == 1 && !SCM_FALSEP(pac.results[0])) return TRUE;
+#endif /*GAUCHE_WINDOWS*/
+    return FALSE;
 }
 
 /* When no script is given, enter REPL. */
 void enter_repl()
 {
-    /* We're in interactive mode. (use gauche.interactive) */
+    /* Load gauche.interactive, for we're not executing a script. */
     if (load_initfile) {
         ScmLoadPacket lpak;
         if (Scm_Require(SCM_MAKE_STR("gauche/interactive"), 0, &lpak) < 0) {
@@ -543,7 +578,7 @@ void enter_repl()
         Scm_SetPortCaseFolding(SCM_PORT(Scm_Stdin()), TRUE);
     }
     
-    if (batch_mode || (!isatty(0) && !interactive_mode)) {
+    if (batch_mode || (!has_terminal() && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), SCM_LOAD_PROPAGATE_ERROR, NULL);
     } else {
         /* Call read-eval-print-loop.  If gauche.interactive is loaded,
@@ -552,6 +587,13 @@ void enter_repl()
         Scm_EvalCString("(read-eval-print-loop)",
                         SCM_OBJ(Scm_CurrentModule()), NULL);
     }
+}
+
+/* POSIX basename() may or may not modify arg, so we roll our own. */
+static const char *safe_basename(const char *path)
+{
+    ScmObj bn = Scm_BaseName(SCM_STRING(SCM_MAKE_STR(path)));
+    return Scm_GetStringConst(SCM_STRING(bn));
 }
 
 /*-----------------------------------------------------------------
@@ -581,7 +623,7 @@ int main(int ac, char **av)
 #  if defined(UNICODE)
     /* Set up argument array correctly */
     LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
-    argv = SCM_NEW_ATOMIC_ARRAY(char*, argc);
+    argv = SCM_NEW_ARRAY(char*, argc);
     /* Kludge! Need to discard 'const' qualifier, for getopt() expects
        char * const*, not const char**.  It's safe since Scm_WCS2MBS
        always returns freshly allocated strings and we won't share them. */
@@ -590,6 +632,12 @@ int main(int ac, char **av)
 #  endif  /* UNICODE */
 #endif /*defined(GAUCHE_WINDOWS)*/
 
+    /* If interpreter has the name scheme-r7rs, we assume it's
+       SRFI-22 *and* R7RS script. */
+    if (strcmp(safe_basename(argv[0]), "scheme-r7rs") == 0) {
+        main_module = SCM_INTERN("r7rs.user");
+    }
+    
     /* Check command-line options */
     int argind = parse_options(argc, argv);
 

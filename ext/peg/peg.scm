@@ -2,7 +2,7 @@
 ;;; peg.scm - Parser Expression Grammar Parser
 ;;;
 ;;;   Copyright (c) 2006 Rui Ueyama (rui314@gmail.com)
-;;;   Copyright (c) 2008-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2008-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -51,8 +51,6 @@
           return-failure/message return-failure/compound
           
           $return $fail $expect $lift $lift* $debug
-          $fmap ;obsoleted - same as $lift
-          $<<   ;obsoleted - same as $lift
           $do $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many $skip-many1
           $repeat $optional
@@ -375,10 +373,6 @@
             (if (parse-success? r)
               (accum s1 (cdr parsers) (cons v vs))
               (values r v s1)))))))
-
-;; for the backward compatibility - will be dropped by 0.9.5
-(define $fmap $lift)
-(define $<< $lift)
 
 ;; API
 ;; For debugging

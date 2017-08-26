@@ -42,11 +42,15 @@
                (for-each print (sys-readdir "."))
                0))
      (write '(define (grep args)
-               (let ([pat (string->regexp (car args))]
-                     [hit 1])
+               (let* ([opt-v (equal? (car args) "-v")]
+                      [pat (string->regexp (if opt-v (cadr args) (car args)))]
+                      [hit 1])
                  (generator-for-each
                   (lambda (line)
-                    (when (rxmatch pat line) (set! hit 0) (print line)))
+                    (when ((if opt-v not identity)
+                           (rxmatch pat line))
+                      (set! hit 0)
+                      (print line)))
                   read-line)
                  hit)))
      ))]
@@ -252,6 +256,46 @@
 
 (test* "process-list" '()
        (process-list))
+
+;;-------------------------------
+(test-section "pipeline")
+
+(let ()
+  (with-output-to-file "test.o"
+    (^[] (for-each print '("banana" "habana" "tabata" "cabara"))))
+
+  (test* "pipelining 1" "banana\nhabana\n"
+         (let1 p (run-pipeline `(,(cmd cat "test.o")
+                                 ,(cmd grep "bana"))
+                               :output :pipe)
+           (process-wait p)
+           (port->string (process-output p))))
+
+  (test* "pipelining 2" "tabata\ncabara\n"
+         (let1 p (run-pipeline `(,(cmd cat)
+                                 ,(cmd grep "-v" "bana"))
+                               :input "test.o" :output :pipe)
+           (process-wait p)
+           (port->string (process-output p))))
+
+  (test* "pipelining 3" "banana\ncabara\n"
+         (let1 p (run-pipeline `(,(cmd cat)
+                                 ,(cmd grep "-v" "ta")
+                                 ,(cmd grep "-v" "ha"))
+                               :input "test.o" :output :pipe)
+           (process-wait p)
+           (port->string (process-output p))))
+
+  (test* "pipelining 4" "habana\ntabata\ncabara\n"
+         (let1 p (run-pipeline `(,(cmd cat)
+                                 ,(cmd grep "aba"))
+                               :input :pipe :output :pipe)
+           (display "banana\nhabana\ntabata\ncabara\n"
+                    (process-input p))
+           (close-port (process-input p))
+           (process-wait p)
+           (port->string (process-output p))))
+  )
 
 ;;-------------------------------
 (test-section "process ports")
@@ -529,6 +573,10 @@
   (t "'ab c d' ef \"g h\"" '("ab c d" "ef" "g h")      'posix)
   (t "'ab\\\\cd' \"ab\\\\cd\"" '("ab\\\\cd" "ab\\cd")  'posix)
   (t "'ab\\xcd' \"ab\\xcd\"" '("ab\\xcd" "ab\\xcd")    'posix)
+  (t "a\"\"b"              '("ab")                     'posix)
+  (t "a''b"                '("ab")                     'posix)
+  (t "a'\"'b"              '("a\"b")                   'posix)
+  (t "a\"'\"b"             '("a'b")                    'posix)
 
   (t "$abc"                (test-error)                'posix)
   (t "\"$abc\""            (test-error)                'posix)

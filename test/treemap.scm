@@ -5,6 +5,9 @@
 (use gauche.test)
 (test-start "treemap")
 
+(define %tree-map-check-consistency
+  (with-module gauche.internal %tree-map-check-consistency))
+
 ;; Basic stuff
 (define (do-tree-map ctor)
   (let1 tree1 #f
@@ -29,11 +32,21 @@
            (begin (tree-map-put! tree1 2 'foo)
                   (tree-map-put! tree1 2 'bar)
                   (tree-map-get tree1 2)))
-    '(test* "tree-map-check" #t
-            (tree-map-check tree1))
-    (test* "tree-map-fold" '(2 bar 1 "1" 0 "0")
+    (test* "tree-map-adjoin! (no overwrite)" 'bar
+           (begin (tree-map-adjoin! tree1 2 'foo)
+                  (tree-map-get tree1 2)))
+    (test* "tree-map-replace! (nonexistent)" #f
+           (begin (tree-map-replace! tree1 3 'foo)
+                  (tree-map-get tree1 3 #f)))
+    (test* "tree-map-adjoin! (nonexistent)" 'baz
+           (begin (tree-map-adjoin! tree1 3 'baz)
+                  (tree-map-get tree1 3)))
+    (test* "tree-map-replace! (exists)" 'boo
+           (begin (tree-map-replace! tree1 3 'boo)
+                  (tree-map-get tree1 3)))
+    (test* "tree-map-fold" '(3 boo 2 bar 1 "1" 0 "0")
            (tree-map-fold tree1 list* '()))
-    (test* "tree-map-fold-right" '(0 "0" 1 "1" 2 bar)
+    (test* "tree-map-fold-right" '(0 "0" 1 "1" 2 bar 3 boo)
            (tree-map-fold-right tree1 list* '()))
     (test* "tree-map-delete! (exiting key)" '(#t not-found)
            (let1 r (tree-map-delete! tree1 1)
@@ -371,6 +384,56 @@
   (test* "insertion case4b" #t (begin (i -0.4) (c)))
   )
 
+;; deletion during traversal
+(let ()
+  (define (make-tm) (alist->tree-map '((a . 1) (b . 2) (c . 3))
+                                     default-comparator))
+  (test* "deletion during traversal 1" '((b c) (a c) (a b))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold tm
+                    (^[k v _] (when (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 1 (reverse)" '((b c) (a c) (a b))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold-right tm
+                    (^[k v _] (when (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 2" '((a) (b) (c))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold tm
+                    (^[k v _] (unless (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 2 (reverse)" '((a) (b) (c))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold-right tm
+                    (^[k v _] (unless (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))  
+  (test* "deletion during traversal 3" '(() () ())
+         (map (^s
+               (let1 tm (make-tm)
+                 (tree-map-fold tm (^[k v _] (tree-map-delete! tm k)) #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 3 (reverse)" '(() () ())
+         (map (^s
+               (let1 tm (make-tm)
+                 (tree-map-fold-right tm (^[k v _] (tree-map-delete! tm k)) #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))  
+  )
+
 ;;
 ;; tree-map-{floor|ceiling|predecessor|successor}
 ;;
@@ -444,6 +507,64 @@
            (tree-map->alist tmap)))
   (test* "comparator error check" (test-error)
          (tree-map-put! tmap 3 'z))
+  )
+
+(let* ([tm1 (alist->tree-map '((1 . "a") (2 . "b") (3 . "c"))
+                             default-comparator)]
+       [tm2 (alist->tree-map '((1 . "a") (2 . "b") (3 . "c") (4 . "d"))
+                             default-comparator)]
+       [tm3 (alist->tree-map '((2 . "b") (4 . "d"))
+                             default-comparator)]
+       [tm4 (alist->tree-map '((3 . "c") (2 . "b") (1 . "a"))
+                             default-comparator)]
+       [tm5 (alist->tree-map '((1 . "a") (2 . "b") (3 . "x"))
+                             default-comparator)]
+       [tm6 (alist->tree-map '((1 . "a") (2 . "b") (3 . "c"))
+                             (make-comparator integer? eqv? < #f))]
+       [tm7 (alist->tree-map '((2 . "B") (1 . "a") (3 . "C"))
+                             default-comparator)])
+  (test* "compare-as-sets - same" 0 (tree-map-compare-as-sets tm1 tm1))
+  (test* "compare-as-sets - different comparator"
+         (test-error <error> #/different comparator/)
+         (tree-map-compare-as-sets tm1 tm6))
+  (test* "compare-as-sets <" -1
+         (tree-map-compare-as-sets tm1 tm2))
+  (test* "compare-as-sets >" 1
+         (tree-map-compare-as-sets tm2 tm1))
+  (test* "compare-as-sets <" -1
+         (tree-map-compare-as-sets tm3 tm2))
+  (test* "compare-as-sets >" 1
+         (tree-map-compare-as-sets tm2 tm3))
+  (test* "compare-as-sets =" 0
+         (tree-map-compare-as-sets tm1 tm4))
+  (test* "compare-as-sets - unorderable" (test-error <error> #/can't be ordered/)
+         (tree-map-compare-as-sets tm1 tm5))
+  (test* "compare-as-sets - unorderable, fallback" #f
+         (tree-map-compare-as-sets tm1 tm5 equal? #f))
+  (test* "compare-as-sets - custom value=?" #f
+         (tree-map-compare-as-sets tm1 tm7 string=? #f))
+  (test* "compare-as-sets - custom value=?" 0
+         (tree-map-compare-as-sets tm1 tm7 string-ci=?))
+
+  (test* "compare-as-sequences - same" 0
+         (tree-map-compare-as-sequences tm1 tm1))
+  (test* "compare-as-sequences - different comparator"
+         (test-error <error> #/different comparator/)
+         (tree-map-compare-as-sequences tm1 tm6))
+  (test* "compare-as-sequences tm1 < tm2" -1
+         (tree-map-compare-as-sequences tm1 tm2))
+  (test* "compare-as-sequences tm2 > tm1" 1
+         (tree-map-compare-as-sequences tm2 tm1))
+  (test* "compare-as-sequences tm1 < tm3" -1
+         (tree-map-compare-as-sequences tm1 tm3))
+  (test* "compare-as-sequences tm4 = tm1" 0
+         (tree-map-compare-as-sequences tm4 tm1))
+  (test* "compare-as-sequences tm1 < tm5" -1
+         (tree-map-compare-as-sequences tm1 tm5))
+  (test* "compare-as-sequences tm1 > tm7" 1
+         (tree-map-compare-as-sequences tm1 tm7))
+  (test* "compare-as-sequences tm1 = tm7" 0
+         (tree-map-compare-as-sequences tm1 tm7 string-ci-comparator))
   )
 
 (test-end)

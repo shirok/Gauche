@@ -1,7 +1,7 @@
 /*
- * class.h - Gauche object system private header
+ * class.h - Gauche object system header
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -131,10 +131,6 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
 
 SCM_EXTERN ScmObj Scm_Allocate(ScmClass *klass, ScmObj initargs);
 SCM_EXTERN ScmObj Scm_NewInstance(ScmClass *klass, int coresize);
-SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
-                                                     ScmObj *inits,
-                                                     int numInits,
-                                                     u_long flags);
 SCM_EXTERN ScmObj Scm_ComputeCPL(ScmClass *klass);
 SCM_EXTERN int    Scm_MethodApplicableForClasses(ScmMethod *m,
                                                  ScmClass *types[],
@@ -179,8 +175,6 @@ SCM_EXTERN ScmObj Scm_VMTouchInstance(ScmObj obj);
 
 SCM_EXTERN void   Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void   Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m);
-
-SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 SCM_EXTERN ScmGeneric Scm_GenericObjectHash;

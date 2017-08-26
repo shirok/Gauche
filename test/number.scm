@@ -2028,7 +2028,7 @@
 (test* "integer-length" 62 (integer-length (- (- (expt 2 61)) 1)))
 (test* "integer-length" 1025 (integer-length (expt 2 1024)))
 
-(let1 2s-exponent-factor-tests `((0 0) (-1 0) (1 0) (2 1) (-2 1)
+(let1 2s-exponent-factor-tests `((0 -1) (-1 0) (1 0) (2 1) (-2 1)
                                  (1048576 20) (-1048576 20)
                                  (,(expt 2 100) 100)
                                  (,(- (expt 2 100)) 100)

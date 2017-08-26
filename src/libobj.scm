@@ -1,7 +1,7 @@
 ;;;
 ;;; object.scm - object system
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -35,9 +35,11 @@
 
 ;; preparing inline stub code
 (inline-stub
- (declcode "#include <gauche/class.h>"
-           "#include <gauche/vminsn.h>")
+ (declcode (.include <gauche/class.h>
+                     <gauche/priv/classP.h>
+                     <gauche/vminsn.h>))
  (define-type <slot-accessor> "ScmSlotAccessor*")
+ (define-type <generic> "ScmGeneric*")
  (define-type <method> "ScmMethod*")
  )
 
@@ -47,9 +49,14 @@
 (define-module gauche.object)
 (select-module gauche.object)
 
+;; TRANSIENT: If GAUCHE_KEYWORD_IS_SYMBOL, we need to rename keywords as well
+;; to preserve hygiene.  The symbol? check allows us to pass a keyword to
+;; %id, regardless of GAUCHE_KEYWORD_IS_SYMBOL setting.
 (define (%id name)
-  ((with-module gauche.internal make-identifier)
-   name (find-module 'gauche.object) '()))
+  (if (symbol? name)
+    ((with-module gauche.internal make-identifier)
+     name (find-module 'gauche.object) '())
+    name))
 
 ;;; I'm trying to make MOP as close to STklos and Goops as possible.
 ;;; The perfect compatibility can't be done since the underlying implemenation
@@ -84,15 +91,15 @@
 (define (%expand-define-generic name opts)
   (receive (true-name getter-name) (%check-setter-name name)
     (let ([class (get-keyword :class opts <generic>)]
-          [other (delete-keyword :class opts)]
-          [define. (%id'define)]
-          [make. (%id'make)]
-          [Q. (%id'quote)])
+          [other (delete-keyword :class opts)])
       (if getter-name
-        `(,(%id'begin)
-          (,define. ,true-name (,make. ,class :name (,Q. ,true-name) ,@other))
-          (,(%id'set!) (,(%id'setter) ,getter-name) ,true-name))
-        `(,define. ,true-name (,make. ,class :name (,Q. ,true-name) ,@other))))))
+        (quasirename %id
+          (define ,true-name
+            (rlet1 ,true-name (make ,class ':name ',true-name ,@other)
+              (set! (setter ,getter-name) ,true-name))))
+        (quasirename %id
+          (define ,true-name
+            (make ,class ':name ',true-name ,@other)))))))
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
@@ -112,22 +119,15 @@
 ;; Method
 ;;
 
-;(define-macro (define-method name specs . body)
-;  (%expand-define-macro name specs body))
+;(define-macro (define-method name [quals ...] specs . body)
+;  (%expand-define-macro name quals specs body))
 
-(define (%expand-define-method name specs body)
-  (define lambda. (%id'lambda))
-  (define let. (%id'let))
-  (define unless. (%id'unless))
-  (define set!. (%id'set!))
-  (define quote. (%id'quote))
-  (define make. (%id'make))
-  (define apply. (%id'apply))
-  (define list. (%id'list))
-  (define has-setter?. (%id'has-setter?))
-  (define setter. (%id'setter))
-  (define %ensure-generic-function. (%id'%ensure-generic-function))
-  (define add-method!. (%id'add-method!))
+(define (%expand-define-method name quals specs body)
+  ;; check qualifiers.  we only support :locked for now
+  ;; TRANSIENT: Must use hygienic compare.
+  (if-let1 bad (find (^q (not (memq q '(:locked)))) quals)
+    (error "syntax-error: unsupported method qualifier:" bad))
+
   ;; classify arguments to required, rest, and optionals
   ;;  ((a <x>) b (c <y>))   => r:((a <x>) b (c <y>)) r:#f o:#f
   ;;  ((a <x>) b . c)       => r:((a <x>) b) r:c o:#f
@@ -146,24 +146,25 @@
                            `(,@reqargs ,rest next-method)
                            `(,@reqargs next-method))]
            [real-body (if opts
-                        `(,lambda. ,real-args
-                           (,apply. (,lambda. ,opts ,@body) ,rest))
-                        `(,lambda. ,real-args ,@body))])
+                        (quasirename %id
+                          (lambda ,real-args
+                            (apply (lambda ,opts ,@body) ,rest)))
+                        (quasirename %id
+                          (lambda ,real-args ,@body)))])
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym)
-          `(,let. ((,gf (,%ensure-generic-function. (,quote. ,true-name) (current-module))))
-             (,add-method!. ,gf
-                            (,make. <method>
-                                    :generic ,gf
-                                    :specializers (,list. ,@specializers)
-                                    :lambda-list (,quote. ,lambda-list)
-                                    :body ,real-body))
-             ,@(if getter-name
-                 `((,unless. (,has-setter?. ,getter-name)
-                     (,set!. (,setter. ,getter-name) ,gf)))
-                 '())
-             ,gf)))
-      )))
+          (quasirename %id
+            (rlet1 ,gf (%ensure-generic-function ',true-name (current-module))
+              (add-method! ,gf (make <method>
+                                 ':generic ,gf
+                                 ':specializers (list ,@specializers)
+                                 ':lambda-list ',lambda-list
+                                 ':method-locked (boolean (memq ':locked ',quals))
+                                 ':body ,real-body))
+              ,@(cond-list [getter-name
+                            (quasirename %id
+                              (unless (has-setter? ,getter-name)
+                                (set! (setter ,getter-name) ,gf)))]))))))))
 
 (inline-stub
  ;; internal for %ensure-generic-function
@@ -183,11 +184,15 @@
  ;; the current module.
  (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
    (let* ([val (Scm_GlobalVariableRef module name 0)])
-     (when (not (Scm_TypeP val SCM_CLASS_GENERIC))
+     (cond
+      [(Scm_TypeP val SCM_CLASS_GENERIC)
+       (unless (Scm_GlobalVariableRef module name SCM_BINDING_STAY_IN_MODULE)
+         (Scm_Define module name val))]
+      [else
        (if (or (SCM_SUBRP val) (SCM_CLOSUREP val))
          (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) call_fallback_proc val))
-         (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL))))
-     (Scm_Define module name val)
+         (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL)))
+       (Scm_Define module name val)])   ;redefine
      (return val)))
 
  (define-cproc %make-next-method (gf methods::<list> args::<list>)
@@ -200,76 +205,62 @@
      (set! argv (Scm_ListToArray args (& argc) NULL TRUE))
      (return (Scm_MakeNextMethod (SCM_GENERIC gf) methods argv argc
                                  FALSE FALSE))))
-
- (define-cproc %method-code (method::<method>)
-   (if (-> method func)
-     (return SCM_FALSE)
-     (return (-> method data))))
  )
 
 ;;----------------------------------------------------------------
 ;; Class
 ;;
 
+;; TRANSIENT: We should employ er-macro-transformer to expand
+;; define-class etc., but this file need to be compiled by 0.9.5
+;; and we've improved the transformer since then.  So we postponed
+;; rewriting these after 0.9.6 release.  Meanwhile, we manually
+;; replacing identifiers.
+
 ;(define-macro (define-class name supers slots . options)
 ;  (%expand-define-class name supers slots options))
 
-;; kludge to import make-identifier.  At the time libobj is initialized,
-;; libmod isn't initialized yet, so we can't say
-;; (define make-identifier (with-module gauche.internal make-identifier).
-(define-macro (make-identifier name mod local)
-  `((with-module gauche.internal make-identifier) ,name ,mod ,local))
-
 (define (%expand-define-class name supers slots options)
-  (define define. (%id'define))
-  (define let. (%id'let))
-  (define make. (%id'make))
-  (define quote. (%id'quote))
-  (define list. (%id'list))
-  (define when. (%id'when))
-  (define lambda. (%id'lambda))
-  (define %check-class-binding. (%id'%check-class-binding))
-  (define for-each. (%id'for-each))
-  (define class-slots. (%id'class-slots))
   (let* ([metaclass (or (get-keyword :metaclass options #f)
-                        `(,(%id '%get-default-metaclass)
-                          (,list. ,@supers)))]
+                        (quasirename %id
+                          (%get-default-metaclass (list ,@supers))))]
          [slot-defs (map %process-slot-definition slots)]
          [class     (gensym)]
          [slot      (gensym)])
-    `(,define. ,name
-       (,let. ((,class (,make. ,metaclass
-                               :name (,quote. ,name)
-                               :supers (,list. ,@supers)
-                               :slots (,list. ,@slot-defs)
-                               :defined-modules (,list. (current-module))
-                               ,@options)))
-         (,when. (,%check-class-binding. (,quote. ,name) (current-module))
-           (,(%id'redefine-class!) ,name ,class))
-         (,for-each.
-          (,lambda.[,slot]
-                   (,(%id'%make-accessor) ,class ,slot (current-module)))
-          (,class-slots. ,class))
-         ,class))
-    ))
+    (quasirename %id
+      (define ,name
+        (rlet1 ,class (make ,metaclass
+                        ':name ',name ':supers (list ,@supers)
+                        ':slots (list ,@slot-defs)
+                        ':defined-modules (list (current-module))
+                        ,@options)
+          (when (%check-class-binding ',name (current-module))
+            (redefine-class! ,name ,class))
+          (for-each (lambda (,slot)
+                      (%make-accessor ,class ,slot (current-module)))
+                    (class-slots ,class)))))))
 
 (define (%process-slot-definition sdef)
-  (define list. (%id'list))
-  (define quote. (%id'quote))
-  (define lambda. (%id'lambda))
   (if (pair? sdef)
     (let loop ([opts (cdr sdef)] [r '()])
-      (cond [(null? opts) `(,list. (,quote. ,(car sdef)) ,@(reverse! r))]
+      (cond [(null? opts) (quasirename %id (list ',(car sdef) ,@(reverse! r)))]
             [(not (and (pair? opts) (pair? (cdr opts))))
              (error "bad slot specification:" sdef)]
             [else
+             ;; TRANSIENT: These comparison must be done hygienically, once
+             ;; we replace expander with er transformer.
              (case (car opts)
                [(:initform :init-form)
-                (loop (cddr opts) `((,lambda.[] ,(cadr opts)) :init-thunk ,@r))]
+                (loop (cddr opts)
+                      (quasirename %id
+                        ((lambda () ,(cadr opts)) ':init-thunk ,@r)))]
                [(:getter :setter :accessor)
-                (loop (cddr opts) `((,quote. ,(cadr opts)) ,(car opts) ,@r))]
-               [else (loop (cddr opts) (list* (cadr opts) (car opts) r))])]))
-    `(,quote. (,sdef))))
+                (loop (cddr opts)
+                      (quasirename %id (',(cadr opts) ',(car opts) ,@r)))]
+               [else
+                (loop (cddr opts)
+                      (quasirename %id (,(cadr opts) ',(car opts) ,@r)))])]))
+    (quasirename %id '(,sdef))))
 
 ;; Determine default metaclass, that is a class inheriting all the metaclasses
 ;; of supers.  The idea is taken from stklos.  The difference is that
@@ -306,7 +297,7 @@
 ;;; Method INITIALIZE (class <class>) initargs
 ;;;
 
-(define-method initialize ((class <class>) initargs)
+(define-method initialize :locked ((class <class>) initargs)
   (next-method)
   (let* ([slots  (get-keyword :slots  initargs '())]
          [sup    (get-keyword :supers initargs '())]
@@ -381,7 +372,7 @@
     ))
 
 ;;; Method COMPUTE-SLOTS (class <class>)
-(define-method compute-slots ((class <class>))
+(define-method compute-slots :locked ((class <class>))
   (let ([cpl (slot-ref class 'cpl)]
         [slots '()])
     (dolist [c cpl]
@@ -395,7 +386,7 @@
 ;;;      integer for instance slot
 ;;;      list    (getter [setter [bound? [allocate?]]])
 ;;;      slot accessor
-(define-method compute-get-n-set ((class <class>) slot)
+(define-method compute-get-n-set :locked ((class <class>) slot)
 
   ;; NB: STklos ignores :initform slot option for class slots, but
   ;;     I think it's sometimes useful.
@@ -442,7 +433,7 @@
 
 ;; METHOD COMPUTE-SLOT-ACCESSOR (class <class>) g-n-s
 ;;  this method doesn't have equivalent one in STklos.
-(define-method compute-slot-accessor ((class <class>) slot gns)
+(define-method compute-slot-accessor :locked ((class <class>) slot gns)
   (if (is-a? gns <slot-accessor>)
     gns
     (apply make <slot-accessor>
@@ -548,8 +539,16 @@
                                                    initargs)
   Scm_VMSlotInitializeUsingAccessor)
 
-(define-cproc instance-slot-ref (obj num::<fixnum>) Scm_InstanceSlotRef)
-(define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
+;; Internal API - undocumented
+(define-cproc instance-slot-ref (obj num::<fixnum> :optional fallback)
+  (let* ([v (Scm_InstanceSlotRef obj num)])
+    (if (SCM_UNBOUNDP v)
+      (if (SCM_UNBOUNDP fallback)
+        (Scm_Error "Slot #%d of object %S is unbound." num obj)
+        (return fallback))
+      (return v))))
+;; Internal API - undocumented
+(define-cproc instance-slot-set! (obj num::<fixnum> value) ::<void>
   Scm_InstanceSlotSet)
 
 (define-cproc %finish-class-initialization! (klass::<class>) ::<void>
@@ -594,7 +593,7 @@
 ;          update-direct-subclass! change-object-class)
 
 ;; change-class gf is defined in C, so we can't use autoload for it.
-(define-method change-class ((obj <object>) (new-class <class>))
+(define-method change-class :locked ((obj <object>) (new-class <class>))
   (change-object-class obj (current-class-of obj) new-class))
 
 ;; C bindings used by class redefinition routine.
@@ -632,18 +631,18 @@
 ;; The protocol mimics STklos, but the underlying application mechanism
 ;; differs a bit.
 
-(define-method apply-generic ((gf <generic>) args)
+(define-method apply-generic :locked ((gf <generic>) args)
   (let1 methods (compute-applicable-methods gf args)
     (apply-methods gf (sort-applicable-methods gf methods args) args)))
 
-(define-method sort-applicable-methods ((gf <generic>) methods args)
+(define-method sort-applicable-methods :locked ((gf <generic>) methods args)
   (let1 types (map class-of args)
     (sort methods (^[x y] (method-more-specific? x y types)))))
 
-(define-method apply-methods ((gf <generic>) methods args)
+(define-method apply-methods :locked ((gf <generic>) methods args)
   (apply-method gf methods %make-next-method args))
 
-(define-method apply-method ((gf <generic>) methods build-next args)
+(define-method apply-method :locked ((gf <generic>) methods build-next args)
   (apply (build-next gf methods args) args))
 
 ;; internal, but useful to expose
@@ -659,6 +658,22 @@
                 (post++ n))
               classes)
     (return (Scm_MethodApplicableForClasses m cp argc))))
+
+;; Manually trigger dispatch table construction
+;; (This is for development - eventually we set this triggered automatically)
+(define-cproc generic-build-dispatcher! (gf::<generic> axis::<fixnum>)
+  Scm__GenericBuildDispatcher)
+
+(define-cproc generic-dispatcher-vector (gf::<generic>)
+  (return (-> gf dispatcher)))
+
+(define-cproc generic-invalidate-dispatcher! (gf::<generic>) ::<void>
+  Scm__GenericInvalidateDispatcher)
+
+(define-cproc %generic-dispatcher-dump (gf::<generic>
+                                        :optional (port::<port>
+                                                   (current-output-port)))
+  ::<void> Scm__GenericDispatcherDump)
 
 ;;----------------------------------------------------------------
 ;; Introspection routines
@@ -696,63 +711,63 @@
 ;;  (should this be in separate file, e.g. coerce.scm?
 ;;   autoload may have problem with autoloading generic fn.)
 
-(define-method x->string ((obj <string>)) obj)
-(define-method x->string ((obj <number>)) (number->string obj))
-(define-method x->string ((obj <symbol>)) (symbol->string obj))
-(define-method x->string ((obj <char>))   (string obj))
-(define-method x->string ((obj <top>))    (write-to-string obj display))
+(define-method x->string :locked ((obj <string>)) obj)
+(define-method x->string :locked ((obj <number>)) (number->string obj))
+(define-method x->string :locked ((obj <symbol>)) (symbol->string obj))
+(define-method x->string :locked ((obj <char>))   (string obj))
+(define-method x->string :locked ((obj <top>))    (write-to-string obj display))
 
-(define-method x->integer ((obj <integer>)) obj)
-(define-method x->integer ((obj <real>))    (round->exact obj))
-(define-method x->integer ((obj <number>))  0) ;complex numbers to 0
-(define-method x->integer ((obj <char>))    (char->integer obj))
-(define-method x->integer ((obj <top>))     (x->integer (x->number obj)))
+(define-method x->integer :locked ((obj <integer>)) obj)
+(define-method x->integer :locked ((obj <real>))    (round->exact obj))
+(define-method x->integer :locked ((obj <number>))  (round->exact (real-part obj)))
+(define-method x->integer :locked ((obj <char>))    (char->integer obj))
+(define-method x->integer :locked ((obj <top>))     (x->integer (x->number obj)))
 
-(define-method x->number  ((obj <number>)) obj)
-(define-method x->number  ((obj <string>)) (or (string->number obj) 0))
-(define-method x->number  ((obj <char>))   (char->integer obj))
-(define-method x->number  ((obj <top>))    0)
+(define-method x->number  :locked ((obj <number>)) obj)
+(define-method x->number  :locked ((obj <string>)) (or (string->number obj) 0))
+(define-method x->number  :locked ((obj <char>))   (char->integer obj))
+(define-method x->number  :locked ((obj <top>))    0)
 
 ;;----------------------------------------------------------------
 ;; Generic accessor
 ;;
 
-(define-method ref ((obj <top>) (slot <symbol>))
+(define-method ref :locked ((obj <top>) (slot <symbol>))
   (slot-ref obj slot))
-(define-method ref ((obj <top>) (slot <symbol>) fallback)
+(define-method ref :locked ((obj <top>) (slot <symbol>) fallback)
   (if (slot-bound? obj slot)
     (slot-ref obj slot)
     fallback))
-(define-method (setter ref) ((obj <top>) (slot <symbol>) value)
+(define-method (setter ref) :locked ((obj <top>) (slot <symbol>) value)
   (slot-set! obj slot value))
 
-(define-method ref ((obj <hash-table>) key)
+(define-method ref :locked ((obj <hash-table>) key)
   (hash-table-get obj key))
-(define-method ref ((obj <hash-table>) key fallback)
+(define-method ref :locked ((obj <hash-table>) key fallback)
   (hash-table-get obj key fallback))
-(define-method (setter ref) ((obj <hash-table>) key value)
+(define-method (setter ref) :locked ((obj <hash-table>) key value)
   (hash-table-put! obj key value))
 
-(define-method ref ((obj <tree-map>) key)
+(define-method ref :locked ((obj <tree-map>) key)
   (tree-map-get obj key))
-(define-method ref ((obj <tree-map>) key fallback)
+(define-method ref :locked ((obj <tree-map>) key fallback)
   (tree-map-get obj key fallback))
-(define-method (setter ref) ((obj <tree-map>) key value)
+(define-method (setter ref) :locked ((obj <tree-map>) key value)
   (tree-map-put! obj key value))
 
 ;; gauche.sequence has the generic version for <sequence>, but these
 ;; shortcuts would be faster.
-(define-method ref ((obj <list>) (index <integer>))
+(define-method ref :locked ((obj <list>) (index <integer>))
   (list-ref obj index))
-(define-method ref ((obj <vector>) (index <integer>))
+(define-method ref :locked ((obj <vector>) (index <integer>))
   (vector-ref obj index))
-(define-method ref ((obj <string>) (index <integer>))
+(define-method ref :locked ((obj <string>) (index <integer>))
   (string-ref obj index))
-(define-method (setter ref) ((obj <list>) (index <integer>) val)
+(define-method (setter ref) :locked ((obj <list>) (index <integer>) val)
   (set-car! (list-tail obj index) val))
-(define-method (setter ref) ((obj <vector>) (index <integer>) val)
+(define-method (setter ref) :locked ((obj <vector>) (index <integer>) val)
   (vector-set! obj index val))
-(define-method (setter ref) ((obj <string>) (index <integer>) val)
+(define-method (setter ref) :locked ((obj <string>) (index <integer>) val)
   (string-set! obj index val))
 
 ;; Universal accessor
@@ -772,17 +787,17 @@
 ;; Generalized application hooks
 ;;  (should this be in separate file, e.g. apply.scm?)
 
-(define-method object-apply ((self <regexp>) (s <string>))
+(define-method object-apply :locked ((self <regexp>) (s <string>))
   (rxmatch self s))
-(define-method object-apply ((self <regmatch>))
+(define-method object-apply :locked ((self <regmatch>))
   (rxmatch-substring self))
-(define-method object-apply ((self <regmatch>) (i <integer>))
+(define-method object-apply :locked ((self <regmatch>) (i <integer>))
   (rxmatch-substring self i))
-(define-method object-apply ((self <regmatch>) (s <symbol>))
+(define-method object-apply :locked ((self <regmatch>) (s <symbol>))
   (case s
     [(before after) (object-apply self s 0)]
     [else (rxmatch-substring self s)]))
-(define-method object-apply ((self <regmatch>) (s <symbol>) group)
+(define-method object-apply :locked ((self <regmatch>) (s <symbol>) group)
   (case s
     [(before) (rxmatch-before self group)]
     [(after)  (rxmatch-after self group)]
@@ -791,11 +806,11 @@
              self s)]))
 
 ;; Char-set membership
-(define-method object-apply ((self <char-set>) (c <char>))
+(define-method object-apply :locked ((self <char-set>) (c <char>))
   (char-set-contains? self c))
 
 ;; A trick to let a condition type behave its own predicate
-(define-method object-apply ((type <condition-meta>) obj)
+(define-method object-apply :locked ((type <condition-meta>) obj)
   (condition-has-type? obj type))
 
 ;; Regexp printer.  It doesn't need speed, and it's easier to write in Scheme.
@@ -819,11 +834,42 @@
 
 (define-method write-object ((obj <write-controls>) port)
   (format port "#<write-controls ~s>"
-          `(:print-length ,(~ obj'print-length)
-            :print-level  ,(~ obj'print-level)
-            :print-base   ,(~ obj'print-base)
-            :print-radix  ,(~ obj'print-radix))))
+          `(:length ,(~ obj'length)
+            :level  ,(~ obj'level)
+            :base   ,(~ obj'base)
+            :radix  ,(~ obj'radix)
+            :pretty ,(~ obj'pretty)
+            :width  ,(~ obj'width))))
 
+;;----------------------------------------------------------------
+;; Describe
+;;
+
+;; This feature used to be provided in gauche.interactive.  However,
+;; it is better that libraries can customize describe on their data
+;; structures without loading gauche.interactive, so we provide the core
+;; methods here.  Other specialized methods on built-in objects are
+;; still defined in gauche.interactive.
+
+(define (describe-common obj)
+  (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj))))
+
+(define-method describe-slots (obj)
+  (let* ([class (class-of obj)]
+         [slots (class-slots class)])
+    (unless (null? slots)
+      (format #t "slots:\n")
+      (dolist [s (map slot-definition-name slots)]
+        (format #t "  ~10s: ~a\n" s
+                (if (slot-bound? obj s)
+                  (with-output-to-string
+                    (^[] (write-limited (slot-ref obj s) 60)))
+                  "#<unbound>"))))))
+
+(define-method describe (object) ; default
+  (describe-common object)
+  (describe-slots object)
+  (values))
 
 ;;;
 ;;; Make exported symbol visible from outside
@@ -843,7 +889,7 @@
                 class-of current-class-of is-a? subtype? slot-ref slot-set!
                 slot-bound? slot-ref-using-accessor slot-bound-using-accessor?
                 slot-set-using-accessor! slot-initialize-using-accessor!
-                instance-slot-ref instance-slot-set touch-instance!
+                instance-slot-ref instance-slot-set! touch-instance!
                 class-name class-precedence-list class-direct-supers
                 class-direct-methods class-direct-subclasses
                 class-direct-slots class-slots
@@ -855,6 +901,7 @@
                 class-slot-definition class-slot-accessor
                 x->string x->integer x->number ref |setter of ref|
                 ~ ref*
+                describe describe-common describe-slots
 
                 ;; These shouldn't be necessary to be injected into gauche
                 ;; module; unfortunately, the current define-method and

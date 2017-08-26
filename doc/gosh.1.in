@@ -165,10 +165,11 @@ Sets various flags.
   include-verbose report while including files
   no-inline       don't inline primitive procedures and constants
                   (combined no-inline-globals, no-inline-locals,
-                  and no-inline-constants.)
+                  no-inline-constants and no-inline-setters.)
   no-inline-globals don't inline global procedures.
   no-inline-locals  don't inline local procedures.
   no-inline-constants don't inline constants.
+  no-inline-setters don't inline setters.
   no-post-inline-pass don't run post-inline optimization pass.
   no-lambda-lifting-pass don't run lambda lifting optimization pass.
   no-source-info  don't retain source information.

@@ -241,6 +241,28 @@
               (list (slot-bound? s5 'v)
                     (slot-ref s5 'v))))
 
+;; Direct instance-slot access is only for under-the-hood work, and
+;; shouldn't be casually used.  But that doesn't diminish the importance
+;; of tests!
+(define-class <ssss> () ((a :init-keyword :a) b))
+
+(let ((z (make <ssss> :a 1)))
+  (test* "instance-slot-ref a" 1 (instance-slot-ref z 0))
+  (test* "instance-slot-ref b" (test-error <error> #/unbound/)
+         (instance-slot-ref z 1))
+  (test* "instance-slot-ref b fallback" 2
+         (instance-slot-ref z 1 2))
+  (test* "instance-slot-set!" 3
+         (begin (instance-slot-set! z 1 3)
+                (instance-slot-ref z 1)))
+  (test* "instance-slot-ref oob" (test-error <error> #/out of bound/)
+         (instance-slot-ref z 2))
+  (test* "instance-slot-ref oob" (test-error <error> #/out of bound/)
+         (instance-slot-ref z -1))
+  (test* "instance-slot-set! oob" (test-error <error> #/out of bound/)
+         (instance-slot-set! z 2 0))
+  )
+
 ;;----------------------------------------------------------------
 (test-section "next method")
 
@@ -273,6 +295,14 @@
 (test* "next-method"
        '(y-in (y*-in (x-in (t*-in fallback t*-out) x-out) y*-out) y-out)
        (nm (make <y>)))
+
+;; check if method-leaf is properly set
+(define-method nm-1 (obj) #f)
+(define-method nm-2 (obj) (next-method))
+
+(test* "method-leaf" '(#t #f)
+       (list (method-leaf? (car (slot-ref nm-1 'methods)))
+             (method-leaf? (car (slot-ref nm-2 'methods)))))
 
 ;;----------------------------------------------------------------
 (test-section "method sorting")
@@ -318,6 +348,78 @@
 (test* "method optarg (optarg)" '(0 1 2 ()) (optarg (make <y>)))
 (test* "method optarg (optarg)" '(a b 2 ()) (optarg (make <y>) 'a 'b))
 (test* "method optarg (optarg)" '(a b 4 (:z 4)) (optarg (make <y>) 'a 'b :z 4))
+
+;;----------------------------------------------------------------
+(test-section "accelerated dispatch")
+
+(define-generic acc-dis-1)
+(define-generic acc-dis-2)
+((with-module gauche.object generic-build-dispatcher!) acc-dis-2 0)
+
+(define-method acc-dis-1 ((a <top>)) 'top)
+(define-method acc-dis-2 ((a <top>)) 'top)
+
+(define *acc-dis-count* 25)
+
+(define-macro (gen-acc-dis-classes&methods)
+  (define (gen-1 n)
+    (let1 cl (symbol-append '<acc-dis- n '>)
+      `(begin
+         (define-class ,cl () ())
+         (define-method acc-dis-1 ((a ,cl)) `(,',n 0))
+         (define-method acc-dis-1 ((a ,cl) x) `(,',n 1))
+         (define-method acc-dis-1 ((a ,cl) x y) `(,',n 2))
+         (define-method acc-dis-1 ((a ,cl) x y . z) `(,',n 3))
+         (define-method acc-dis-2 ((a ,cl)) `(,',n 0))
+         (define-method acc-dis-2 ((a ,cl) x) `(,',n 1))
+         (define-method acc-dis-2 ((a ,cl) x y) `(,',n 2))
+         (define-method acc-dis-2 ((a ,cl) x y . z) `(,',n 3))
+         )))
+  `(begin ,@(append-map gen-1 (iota *acc-dis-count*))))
+
+(gen-acc-dis-classes&methods)
+
+(define-macro (acc-dis-classes)
+  `(list ,@(map (^n (symbol-append '<acc-dis- n '>)) (iota *acc-dis-count*))))
+
+(define (test-acc-dis name gf :optional (expect '()))
+  (test* name expect
+         (let1 r '()
+           (do ([cs (acc-dis-classes) (cdr cs)]
+                [n  0       (+ n 1)])
+               [(null? cs) r]
+             (do ([obj (make (car cs))]
+                  [k 0 (+ k 1)]
+                  [args '() (cons #f args)])
+                 [(= k 4)]
+               (let* ([expected `(,n ,k)]
+                      [actual (apply gf obj args)])
+                 (unless (equal? expected actual)
+                   (push! r `(:expected ,expected :actual ,actual)))))))))
+
+((with-module gauche.object generic-build-dispatcher!) acc-dis-1 0)
+(test-acc-dis "batch build" acc-dis-1)
+
+(test-acc-dis "incremental build" acc-dis-2)
+
+(define-method acc-dis-1 ((c <acc-dis-0>)) (cons '(0 0) (next-method)))
+(define-method acc-dis-1 ((c <acc-dis-1>)) 'redefined)
+
+(test-acc-dis "redefinition 1" acc-dis-1
+              '((:expected (1 0) :actual redefined)
+                (:expected (0 0) :actual ((0 0) . top))))
+
+(define-method acc-dis-1 ((c <acc-dis-0>)) '(0 0))
+(define-method acc-dis-1 ((c <acc-dis-1>) (x <integer>)) (cons '(1 1) (next-method)))
+(test-acc-dis "redefinition 2" acc-dis-1
+              '((:expected (1 0) :actual redefined)))
+(test* "redefiniton 2'" '((1 1) 1 1)
+       (acc-dis-1 (make <acc-dis-1>) 2))
+(define-method acc-dis-1 ((c <acc-dis-1>) (x <integer>)) 'leaf)
+(test* "redefiniton 3" '((1 1) . leaf)
+       (cons (acc-dis-1 (make <acc-dis-1>) #f)
+             (acc-dis-1 (make <acc-dis-1>) 2)))
+
 
 ;;----------------------------------------------------------------
 (test-section "module and accessor")
@@ -890,6 +992,22 @@
        (map (cut slot-ref *docu-sub* <>) '(a b c x y z)))
 
 ;;----------------------------------------------------------------
+(test-section "metaclass/bound-slot")
+
+(use gauche.mop.bound-slot)
+(test-module 'gauche.mop.bound-slot)
+
+(define-class <bound-slot-A> (<bound-slot-mixin>)
+  ((a :init-keyword :a)
+   (b :init-keyword :b :init-value 1)))
+
+(test* "<bound-slot-A> check" (test-error)
+       (make <bound-slot-A>))
+
+(test* "<bound-slot-A> check" #t
+       (is-a? (make <bound-slot-A> :a 3) <bound-slot-A>))
+
+;;----------------------------------------------------------------
 (test-section "metaclass/singleton")
 
 (use gauche.mop.singleton)
@@ -1425,5 +1543,30 @@
 
 (atest* #/a/ [() => #f] [(<string>) => #t] [(<integer>) => #f])
 
-(test-end)
+;;----------------------------------------------------------------
+(test-section "expansion hygiene")
 
+;; define-class etc. are expanded in libobj.scm.  we should make sure that
+;; the expansion won't break even user env doesn't import gauche native stuff.
+
+(define-module object-hygiene-1
+  (define-syntax defclass (with-module gauche define-class))
+  (define-syntax defmethod (with-module gauche define-method))
+  (define ref (with-module gauche ref))
+  (define-syntax quote (with-module gauche quote))
+  (export <object-hygiene-1> object-hygiene-1-c)
+  (extend)
+  (defclass <object-hygiene-1> ()
+    (a b (c :init-keyword ':c)))
+  (defmethod object-hygiene-1-c ((self <object-hygiene-1>))
+    (ref self 'c)))
+
+(import object-hygiene-1)
+(test* "object-hygiene-1" '(#t (a) (b) (c :init-keyword :c))
+       (cons (is-a? <object-hygiene-1> <class>)
+             (class-slots <object-hygiene-1>)))
+(test* "object-hygiene-1-c" 4
+       (let1 z (make <object-hygiene-1> :c 4)
+         (object-hygiene-1-c z)))
+  
+(test-end)

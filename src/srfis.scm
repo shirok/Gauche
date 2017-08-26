@@ -138,22 +138,25 @@ srfi-0
 ()
 
 Feature-based conditional expansion construct.
+This has become a part of R7RS small.  Gauche supports this as
 Built-in.   @xref{Feature conditional}.
 
 機能ベースの条件展開
-組み込みです。@ref{Feature conditional}参照。
+R7RS smallに取り込まれました。Gaucheは組み込みでサポートしています。
+@ref{Feature conditional}参照。
 
 
 srfi-1, srfi-1
 ()
 
-List library.
-Supported by the module @code{srfi-1}.  @xref{List library}.
+List library (R7RS lists)
+This has become a part of R7RS large.  @xref{R7RS lists}.
 (Some of SRFI-1 procedures are built-in).
 
 リストライブラリ
-モジュール@code{srfi-1}でサポートされます。@ref{List library}参照。
+これはR7RS largeの一部になりました。@ref{R7RS lists}参照。
 SRFI-1の手続きのうちいくつかは組み込みになっています。
+
 
 srfi-2
 (and-let*)
@@ -163,6 +166,7 @@ Supported natively.  @xref{Binding constructs}.
 
 AND-LET*: 局所束縛をともなう AND、ガード付 LET* 特殊フォーム
 組み込みです。@ref{Binding constructs}参照。
+
 
 srfi-4, gauche.uvector
 ()
@@ -177,6 +181,7 @@ generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 @code{srfi-4}の上位互換手続きを提供します。
 同モジュールにはSRFI-4の手続きに加え、
 算術演算やジェネリックなインタフェースが定義されています。@ref{Uniform vectors}参照。
+
 
 srfi-5, srfi-5
 ()
@@ -194,10 +199,13 @@ srfi-6
 (open-input-string open-output-string get-output-string)
 
 Basic String Ports.
-SRFI-6 procedures are built-in.  @xref{String ports}.
+This has become a part of R7RS small.
+Gauche supports this as built-in.  @xref{String ports}.
 
 基本文字列ポート
-SRFI-6の手続きは組み込みになっています。@ref{String ports}参照。
+これはR7RS smallの一部になりました。
+Gaucheは組み込みでサポートしています。@ref{String ports}参照。
+
 
 srfi-7
 ()
@@ -209,6 +217,7 @@ Supported as an autoloaded macro.
 機能ベースプログラム設定言語
 オートロードされるマクロとしてサポートされています。
 @ref{Feature-based program configuration language}参照。
+
 
 srfi-8
 (receive)
@@ -240,14 +249,17 @@ Sharp-comma外部フォーム
 組み込みです。@ref{Read-time constructor}参照。
 
 
-srfi-11, srfi-11
-()
+srfi-11
+(let-values let*-values)
 
 Syntax for receiving multiple values.
-Supported by the module @code{srfi-11}.  @xref{Let-values}.
+This has become a part of R7RS small.  Gauche supports it
+as built-in.  @xref{Binding constructs}.
 
 多値を受け取るための構文
-モジュール@code{srfi-11}でサポートされます。@ref{Let-values}参照。
+これはR7RS smallの一部になりました。Gaucheは組み込みでサポートしています。
+@ref{Binding constructs}参照。
+
 
 srfi-13, srfi-13
 ()
@@ -264,23 +276,29 @@ srfi-14, srfi-14
 ()
 
 Character-set library
-Character-set object and a few SRFI-14 procedures are built-in.
+This has become a part of R7RS large.
+Character-set object and a few procedures are built-in.
 @xref{Character set}.
-Complete set of SRFI-14 is supported by the module @code{srfi-14}.
-@xref{Character-set library}.
+Complete set of SRFI-14 is supported by the module @code{scheme.charset}.
+@xref{R7RS character sets}.
 
 文字集合のライブラリ
-文字集合と基本的なSRFI-14手続きは組み込みになっています。
-@ref{Character set}参照。SRFI-14の完全なサポートはモジュール@code{srfi-14}
-で提供されています。@ref{Character-set library}参照。
+これはR7RS largeの一部になりました。
+文字集合と基本的な手続きは組み込みになっています。
+@ref{Character set}参照。
+SRFI-14の完全なサポートはモジュール@code{scheme.charset}
+で提供されています。@ref{R7RS character sets}参照。
+
 
 srfi-16
 (case-lambda)
 
 Syntax for procedures of variable arity (case-lambda)
+This has become a part of R7RS small.
 Built-in.  @xref{Making Procedures}.
 
 可変長引数手続き構文 (case-lambda)
+これはR7RS smallの一部になりました。
 組み込みです。@ref{Making Procedures}参照。
 
 
@@ -334,9 +352,11 @@ srfi-23
 (error)
 
 Error reporting mechanism.
+This has become a part of R7RS small.
 Built-in.   @xref{Signaling exceptions}.
 
 エラー報告機構
+これはR7RS smallの一部になりました。
 組み込みです。@ref{Signaling exceptions}参照。
 
 
@@ -351,6 +371,7 @@ superset of SRFI-25.  @xref{Arrays}.
 モジュール@code{gauche.array}が、SRFI-25の上位互換と
 なっています。@ref{Arrays}参照。
 
+
 srfi-26, srfi-26
 ()
 
@@ -360,6 +381,7 @@ As an autoloaded macro.  @xref{Making Procedures}.
 カリー化をともなわないパラメータの特殊化記法
 オートロードされるマクロとして定義されています。@ref{Making Procedures}参照。
 
+
 srfi-27, srfi-27
 ()
 
@@ -368,6 +390,7 @@ Supported by the module @code{srfi-27}.  @xref{Sources of random bits}.
 
 ランダムビットのソース
 モジュール@code{srfi-27}でサポートされます。@ref{Sources of random bits}参照。
+
 
 srfi-28
 (format)
@@ -379,6 +402,7 @@ SRFI-28 @code{format}.  @xref{Output}.
 基本フォーマット文字列
 Gauche組み込みの@code{format}がSRFI-28のものの上位互換に
 なっています。@ref{Output}参照。
+
 
 srfi-29, srfi-29
 ()
@@ -396,13 +420,15 @@ srfi-30
 ()
 
 Nested multi-line comments.
+This has become a part of R7RS small.
 Supported by the native reader.  @xref{Lexical structure}.
 
 ネストした複数行コメント
+これはR7RS smallの一部になりました。
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 
 
-srfi-31
+srfi-31, srfi-31
 ()
 
 A special form rec for recursive evaluation
@@ -411,15 +437,18 @@ Defined as an autoloaded macro.  @xref{Binding constructs}.
 再帰評価用の特殊フォーム rec
 オートロードされるマクロとして定義されています。@ref{Binding constructs}参照。
 
+
 srfi-34
 (with-exception-handler guard raise)
 
 Exception Handling for Programs
+This has become a part of R7RS small.
 Built-in.  @xref{Exceptions}.
 (However, Gauche implements srfi-18's semantics of @code{raise} literally,
 which differs slightly from srfi-34's.  This may be changed in future.)
 
 プログラムの例外処理
+これはR7RS smallの一部になりました。
 組み込みです。@ref{Exceptions}参照。
 (但し、Gaucheは@code{raise}に関してはsrfi-18のセマンティクスを文字通り
 実装していて、それはsrfi-34と若干異なります。将来はsrfi-34に合わせるかもしれません。)
@@ -466,16 +495,20 @@ Built-in.  See @ref{Reading data} and @ref{Output}.
 共有されるデータの外部表現
 組み込みです。@ref{Reading data}と@ref{Output}参照。
 
+
 srfi-39, gauche.parameter
 ()
 
 Parameter objects
+This has become a part of R7RS small.
 Supported by the module @code{gauche.parameter}.
 @xref{Parameters}.
 
 パラメータオブジェクト
+これはR7RS smallの一部になりました。
 モジュール@code{gauche.parameter}でサポートされます。
 @ref{Parameters}参照。
+
 
 srfi-40, util.stream
 ()
@@ -487,6 +520,7 @@ Supported by the module @code{util.stream}.
 ストリームライブラリ
 モジュール@code{util.stream}でサポートされています。
 @xref{Stream library}.
+
 
 srfi-42, srfi-42
 ()
@@ -506,10 +540,15 @@ srfi-43, srfi-43
 Vector library
 Supported by the module @code{srfi-43}.
 @xref{Vector library (Legacy)}.
+Note that this srfi is superseded by R7RS @code{scheme.vector}
+library (formerly known as @code{srfi-133}).  @xref{R7RS vectors}.
 
 ベクタライブラリ
 モジュール@code{srfi-43}でサポートされます。
 @ref{Vector library (Legacy)}参照。
+註：このsrfiはR7RSの@code{scheme.vector}ライブラリ
+(@code{srfi-133}として導入されたもの)により置き換えられました。
+@ref{R7RS vectors}参照。
 
 
 srfi-45
@@ -528,10 +567,12 @@ srfi-46
 (syntax-rules ...)
 
 Basic Syntax-rules Extensions
+This has become a part of R7RS small.
 Built-in.
 @xref{Hygienic macros}.
 
 基本的なsyntax-rulesの拡張
+これR7RS smallの一部となりました。
 組み込みです。
 @xref{Hygienic macros}.
 
@@ -560,6 +601,7 @@ The complete support is in @code{srfi-60} module: @xref{Integers as bits}.
 完全なサポートは@code{srfi-60}モジュールで提供されます。
 @ref{Integers as bits}参照。
 
+
 srfi-61
 (cond else)
 
@@ -574,13 +616,39 @@ srfi-62
 ()
 
 S-expression comments
+This has become a part of R7RS small.
 Supported by the native reader.  @xref{Lexical structure}.
 
 S式コメント
+これはR7RS smallの一部となりました。
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 
 
-srfi-69
+srfi-64, srfi-64
+()
+
+A Scheme API for test suites
+Supported by the module @code{srfi-64}.
+
+テストスイートのためのScheme API
+モジュール@code{srfi-64}でサポートされます。
+
+
+srfi-66, srfi-66
+()
+
+Octet vectors
+Supported by the module @code{srfi-66} (@pxref{Octet vectors}).
+This is mostly a subset of @code{gauche.uvector}, but has one
+slight difference.
+
+オクテットベクタ
+モジュール@code{srfi-66}でサポートされます (@ref{Octet vectors}参照)。
+ほぼ@code{gauche.uvector}のサブセットですが、
+一ヶ所だけ違いがあります。
+
+
+srfi-69, srfi-69
 ()
 
 Basic hash tables
@@ -595,7 +663,18 @@ Gaucheにも組み込みのハッシュテーブルサポートがあります�
 いくつかの手続きにおいて異なる名前を使っています。
 
 
-srfi-78
+srfi-74, srfi-74
+()
+
+Octet-addressed binary blocks
+Supported by the module @code{srfi-74} (@pxref{Octet-addressed binary blocks}).
+
+オクテット毎にアクセス可能なバイナリブロック
+モジュール@code{srfi-74}でサポートされます (@ref{Octet-addressed binary blocks}参照)。
+
+
+
+srfi-78, srfi-78
 ()
 
 Lightweight testing
@@ -614,10 +693,13 @@ srfi-87
 (case => else)
 
 @code{=>} in case clauses
+This has become a part of R7RS small.
 Supported natively.  @xref{Conditionals}.
 
 case節での@code{=>}
+これはR7RS smallの一部となりました。
 組込みです。@ref{Conditionals}参照。
+
 
 srfi-95
 (sorted? merge merge! sort sort!)
@@ -627,6 +709,23 @@ Supported natively.  @xref{Sorting and merging}.
 
 ソートとマージ
 組み込みです。@ref{Sorting and merging}参照。
+
+
+srfi-96, srfi-96
+()
+
+SLIB Prerequisites
+This srfi is not exactly a library, but
+rather a description of features the platform should provide
+to support SLIB.  In order to load this module, SLIB must be
+already installed.  @xref{SLIB}, for the details.  
+
+SLIB必要事項
+このsrfiはライブラリというよりは、SLIBをサポートするためにプラットフォームが
+提供しなければならない機能要件を記述するものです。このモジュールをロードするためには、
+SLIBが既にインストールされていることが必要です。
+詳しくは@ref{SLIB}を参照してください。
+
 
 srfi-98, srfi-98
 ()
@@ -660,10 +759,12 @@ srfi-111, srfi-111
 (box box? unbox set-box!)
 
 Boxes
-Supported by the module @code{srfi-111}.  @xref{Boxes}.
+This has become a part of R7RS large.
+Supported by the module @code{scheme.box}.  @xref{R7RS boxes}.
 
 ボックス
-モジュール@code{srfi-111}でサポートされます。@ref{Boxes}参照。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.box}でサポートされます。@ref{R7RS boxes}参照。
 
 
 srfi-112, srfi-112
@@ -683,10 +784,12 @@ srfi-113, srfi-113
 ()
 
 Sets and Bags
-Supported by the module @code{srfi-113}.  @xref{Sets and bags}.
+This has become a part of R7RS large.
+Supported by the module @code{scheme.set}.  @xref{R7RS sets}.
 
 セットとバッグ
-モジュール@code{srfi-113}でサポートされます。 @ref{Sets and bags}参照。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.set}でサポートされます。 @ref{R7RS sets}参照。
 
 
 srfi-114, srfi-114
@@ -703,13 +806,15 @@ srfi-117, srfi-117
 ()
 
 Queues based on lists.
-Supported by the module @code{srfi-117}, which is implemented on top
+This has become a part of R7RS large.
+Supported by the module @code{scheme.list-queue}, which is implemented on top
 of @code{data.queue}.
-(@pxref{Queues based on lists})
+(@pxref{R7RS list queues})
 
 リストを元にしたキュー
-@code{data.queue}上に実装されたモジュール@code{srfi-117}でサポートされます。
-(@ref{リストを元にしたキュー}参照)
+これはR7RS largeの一部となりました。
+@code{data.queue}上に実装されたモジュール@code{scheme.list-queue}でサポートされます。
+(@ref{R7RS list queues}参照)
 
 srfi-118, srfi-118
 ()
@@ -727,12 +832,55 @@ srfi-121, gauche.generator
 ()
 
 Generators
+This has become a part of R7RS large.
 Gauche's @code{gauche.generator} is superset of srfi-121
 (@pxref{Generators}).
 
 ジェネレータ
+これはR7RS largeの一部となりました。
 Gaucheの@code{gauche.generator}がsrfi-121のスーパーセットになっています。
 (@ref{Generators}参照)
+
+
+srfi-127, srfi-127
+()
+
+Lazy sequences
+This has become a part of R7RS large.
+Supported by @code{scheme.lseq} (@pxref{R7RS lazy sequences}).
+
+遅延シーケンス
+これはR7RS largeの一部となりました。
+@code{scheme.lseq}モジュールでサポートされます。
+@ref{R7RS lazy sequences}参照。
+
+
+srfi-128, srfi-128
+()
+
+Comparators (reduced)
+This has become a part of R7RS large.
+Built-in.  @xref{Basic comparators}, for the details.
+
+比較器 (縮小版)
+これはR7RS largeの一部となりました。
+組み込みです。@ref{Basic comparators}参照。
+
+
+srfi-129, srfi-129
+()
+
+Titlecase procedures
+The procedures @code{char-title-case?} and @code{char-titlecase} are
+built-in, and @code{string-titlecase} is in @code{gauche.unicode}.
+For the compatibility, you can @code{(use srfi-129)} or
+@code{(import (srfi 129))} to get these three procedures.
+
+Titlecase手続き
+@code{char-title-case?}と@code{char-titlecase}は組み込みで、
+@code{string-titlecase}は@code{gauche.unicode}モジュールにあります。
+互換性のため、@code{(use srfi-129)}や@code{(import (srfi 129))}とすれば
+この3つの手続きがインポートされます。
 
 
 srfi-131, gauche.record
@@ -747,12 +895,94 @@ ERR5RSレコード構文 (簡易版)
 @code{define-record-type}でカバーされます。@ref{Record types}参照。
 
 
-srfi-133
+srfi-132, srfi-132
+()
+
+Sort libraries
+This has become a part of R7RS large.
+Supported by the module @code{scheme.sort}.
+@xref{R7RS sort}.
+
+ソートライブラリ
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.sort}でサポートされます。
+@ref{R7RS sort}参照。
+
+
+srfi-133, srfi-133
 ()
 
 Vector library (R7RS-compatible)
-Supported by the module @code{srfi-133}.  @xref{Vector library}.
+This has become a part of R7RS large.
+Supported by the module @code{scheme.vector}.  @xref{R7RS vectors}.
 
 ベクタライブラリ (R7RS互換)
-モジュール@code{srfi-133}でサポートされます。 @ref{Vector library}参照。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.vector}でサポートされます。 @ref{R7RS vectors}参照。
 
+
+srfi-134, data.ideque
+()
+
+Immutable Deques
+This has become a part of R7RS large.
+The module @code{data.ideque} is compatible to srfi-134.
+@xref{Immutable deques}.
+
+変更不可な両端キュー
+これはR7RS largeの一部となりました。
+モジュール@code{data.ideque}がsrfi-134と互換です。
+@ref{変更不可な両端キュー}参照。
+
+
+srfi-141, srfi-141
+()
+
+
+Integer division
+Supported by the module @code{srfi-141}.  @xref{Integer division}.
+
+整数除算
+モジュール@code{srfi-141}でサポートされます。@ref{Integer division}参照。
+
+
+srfi-143, srfi-143
+()
+
+Finxums
+Supported by the module @code{srfi-143}.  @xref{Fixnums}.
+
+Fixnumx
+モジュール@code{srfi-143}でサポートされます。@ref{Fixnums}参照。
+
+
+srfi-145
+(assume)
+
+Assumptions
+Built-in.  @xref{Conditionals}.
+
+アサンプション
+組み込みです。@ref{Conditionals}参照。
+
+
+srfi-149
+(syntax-rules)
+
+Basic syntax-rules template extensions
+The built-in @code{syntax-rules} support @code{srfi-149}.
+
+基本的なsyntax-rulesの拡張
+組み込みの@code{syntax-rules}は@code{srfi-149}に対応しています。
+
+
+srfi-151, srfi-151
+()
+
+Bitwise operations
+Supported by the module @code{srfi-151}.  Note that many of its APIs
+are available as built-in, or via @code{srfi-60}.
+
+ビット演算
+モジュール@code{srfi-151}でサポートされます。なお、多くのAPIは既に
+組み込みや@code{srfi-60}でもサポートされています。

@@ -1,7 +1,7 @@
 /*
  * gauche/vector.h - Vector API
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -151,6 +151,8 @@ SCM_EXTERN ScmObj Scm_MakeUVectorFull(ScmClass *klass,
 SCM_EXTERN ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp);
 SCM_EXTERN ScmObj Scm_VMUVectorRef(ScmUVector *v, int t,
                                    ScmSmallInt k, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_UVectorSet(ScmUVector *v, int t,
+                                 ScmSmallInt k, ScmObj val, int clamp);
 SCM_EXTERN ScmObj Scm_ReadUVector(ScmPort *port, const char *tag,
                                   ScmReadContext *ctx);
 
@@ -164,76 +166,76 @@ SCM_CLASS_DECL(Scm_S8VectorClass);
 #define SCM_S8VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_S8VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_S8VECTOR)
 #define SCM_S8VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_S8VECTOR_ELEMENTS(obj) ((signed char*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_S8VECTOR_ELEMENTS(obj) ((int8_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_S8VECTOR_ELEMENT(obj,k) SCM_S8VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeS8Vector(ScmSmallInt size, signed char fill);
+SCM_EXTERN ScmObj Scm_MakeS8Vector(ScmSmallInt size, int8_t fill);
 SCM_EXTERN ScmObj Scm_MakeS8VectorFromArray(ScmSmallInt size,
-                                            const signed char array[]);
+                                            const int8_t array[]);
 SCM_EXTERN ScmObj Scm_MakeS8VectorFromArrayShared(ScmSmallInt size,
-                                                  signed char array[]);
+                                                  int8_t array[]);
 
 SCM_CLASS_DECL(Scm_U8VectorClass);
 #define SCM_CLASS_U8VECTOR         (&Scm_U8VectorClass)
 #define SCM_U8VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_U8VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_U8VECTOR)
 #define SCM_U8VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_U8VECTOR_ELEMENTS(obj) ((u_char*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_U8VECTOR_ELEMENTS(obj) ((uint8_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_U8VECTOR_ELEMENT(obj,k) SCM_U8VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeU8Vector(ScmSmallInt size, unsigned char fill);
+SCM_EXTERN ScmObj Scm_MakeU8Vector(ScmSmallInt size, uint8_t fill);
 SCM_EXTERN ScmObj Scm_MakeU8VectorFromArray(ScmSmallInt size,
-                                            const unsigned char array[]);
+                                            const uint8_t array[]);
 SCM_EXTERN ScmObj Scm_MakeU8VectorFromArrayShared(ScmSmallInt size,
-                                                  unsigned char array[]);
+                                                  uint8_t array[]);
 
 SCM_CLASS_DECL(Scm_S16VectorClass);
 #define SCM_CLASS_S16VECTOR         (&Scm_S16VectorClass)
 #define SCM_S16VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_S16VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_S16VECTOR)
 #define SCM_S16VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_S16VECTOR_ELEMENTS(obj) ((short*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_S16VECTOR_ELEMENTS(obj) ((int16_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_S16VECTOR_ELEMENT(obj,k) SCM_S16VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeS16Vector(ScmSmallInt size, short fill);
+SCM_EXTERN ScmObj Scm_MakeS16Vector(ScmSmallInt size, int16_t fill);
 SCM_EXTERN ScmObj Scm_MakeS16VectorFromArray(ScmSmallInt size,
-                                             const short array[]);
+                                             const int16_t array[]);
 SCM_EXTERN ScmObj Scm_MakeS16VectorFromArrayShared(ScmSmallInt size,
-                                                   short array[]);
+                                                   int16_t array[]);
 
 SCM_CLASS_DECL(Scm_U16VectorClass);
 #define SCM_CLASS_U16VECTOR         (&Scm_U16VectorClass)
 #define SCM_U16VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_U16VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_U16VECTOR)
 #define SCM_U16VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_U16VECTOR_ELEMENTS(obj) ((u_short*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_U16VECTOR_ELEMENTS(obj) ((uint16_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_U16VECTOR_ELEMENT(obj,k) SCM_U16VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeU16Vector(ScmSmallInt size, unsigned short fill);
+SCM_EXTERN ScmObj Scm_MakeU16Vector(ScmSmallInt size, uint16_t fill);
 SCM_EXTERN ScmObj Scm_MakeU16VectorFromArray(ScmSmallInt size,
-                                             const unsigned short array[]);
+                                             const uint16_t array[]);
 SCM_EXTERN ScmObj Scm_MakeU16VectorFromArrayShared(ScmSmallInt size,
-                                                   unsigned short array[]);
+                                                   uint16_t array[]);
 
 SCM_CLASS_DECL(Scm_S32VectorClass);
 #define SCM_CLASS_S32VECTOR         (&Scm_S32VectorClass)
 #define SCM_S32VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_S32VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_S32VECTOR)
 #define SCM_S32VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_S32VECTOR_ELEMENTS(obj) ((ScmInt32*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_S32VECTOR_ELEMENTS(obj) ((int32_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_S32VECTOR_ELEMENT(obj,k) SCM_S32VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeS32Vector(ScmSmallInt size, ScmInt32 fill);
-SCM_EXTERN ScmObj Scm_MakeS32VectorFromArray(ScmSmallInt size, const ScmInt32 array[]);
-SCM_EXTERN ScmObj Scm_MakeS32VectorFromArrayShared(ScmSmallInt size, ScmInt32 array[]);
+SCM_EXTERN ScmObj Scm_MakeS32Vector(ScmSmallInt size, int32_t fill);
+SCM_EXTERN ScmObj Scm_MakeS32VectorFromArray(ScmSmallInt size, const int32_t array[]);
+SCM_EXTERN ScmObj Scm_MakeS32VectorFromArrayShared(ScmSmallInt size, int32_t array[]);
 
 SCM_CLASS_DECL(Scm_U32VectorClass);
 #define SCM_CLASS_U32VECTOR         (&Scm_U32VectorClass)
 #define SCM_U32VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_U32VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_U32VECTOR)
 #define SCM_U32VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_U32VECTOR_ELEMENTS(obj) ((ScmUInt32*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_U32VECTOR_ELEMENTS(obj) ((uint32_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_U32VECTOR_ELEMENT(obj,k) SCM_U32VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeU32Vector(ScmSmallInt size, ScmUInt32 fill);
+SCM_EXTERN ScmObj Scm_MakeU32Vector(ScmSmallInt size, uint32_t fill);
 SCM_EXTERN ScmObj Scm_MakeU32VectorFromArray(ScmSmallInt size,
-                                             const ScmUInt32 array[]);
+                                             const uint32_t array[]);
 SCM_EXTERN ScmObj Scm_MakeU32VectorFromArrayShared(ScmSmallInt size,
-                                                   ScmUInt32 array[]);
+                                                   uint32_t array[]);
 
 SCM_CLASS_DECL(Scm_S64VectorClass);
 #define SCM_CLASS_S64VECTOR         (&Scm_S64VectorClass)

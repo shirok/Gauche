@@ -1,7 +1,7 @@
 ;;;
 ;;;  data.heap - Heaps
 ;;;
-;;;   Copyright (c) 2014-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2014-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -108,10 +108,15 @@
 (define (make-binary-heap :key (comparator default-comparator)
                                (storage (make-sparse-vector))
                                (key identity))
-  (unless (comparator-comparison-procedure? comparator)
-    (error "make-binary-heap requires comparator with comparison procedure, \
+  (unless (comparator-ordered? comparator)
+    (error "make-binary-heap requires ordered comparator, \
             but got:" comparator))
-  (let1 cmp (comparator-comparison-procedure comparator)
+  (receive (<: >:)
+      (ecase (comparator-flavor comparator)
+        [(ordering) (values (comparator-ordering-predicate comparator)
+                            (^[a b] (>? comparator a b)))]
+        [(comparison) (values (^[a b] (<? comparator a b))
+                              (^[a b] (>? comparator a b)))])
     (make <binary-heap> :comparator comparator
           :storage (if (or (vector? storage) (uvector? storage)
                            (is-a? storage <sparse-vector-base>))
@@ -123,15 +128,15 @@
           :capacity (cond [(vector? storage) (vector-length storage)]
                           [(uvector? storage) (uvector-length storage)]
                           [else +inf.0])
-          :<: (^[a b] (< (cmp (key a) (key b)) 0))
-          :>: (^[a b] (> (cmp (key a) (key b)) 0)))))
+          :<: <:
+          :>: >:)))
 
 ;; heapify 
 (define (build-binary-heap storage :key (num-entries #f)
                                         (comparator default-comparator)
                                         (key identity))
-  (unless (comparator-comparison-procedure? comparator)
-    (error "build-binary-heap requires comparator with comparison procedure, \
+  (unless (comparator-ordered? comparator)
+    (error "build-binary-heap requires ordered comparator, \
             but got:" comparator))
   (let* ([xlen (cond
                 [(vector? storage) (vector-length storage)]
@@ -146,16 +151,19 @@
                       (min num-entries xlen)]
                      [else
                       (error "invalid num-entris value for build-binary-heap:"
-                             num-entries)])]
-         [cmp (comparator-comparison-procedure comparator)]
-         [<: (^[a b] (< (cmp (key a) (key b)) 0))]
-         [>: (^[a b] (> (cmp (key a) (key b)) 0))])
-    (bh-heapify! storage <: >: size)
-    (make <binary-heap> :comparator comparator :storage storage :key key
-          :<: <: :>: >: :next-leaf (+ size 1)
-          :capacity (cond [(vector? storage) (vector-length storage)]
-                          [(uvector? storage) (uvector-length storage)]
-                          [else +inf.0]))))
+                             num-entries)])])
+    (receive (<: >:)
+        (ecase (comparator-flavor comparator)
+          [(ordering) (values (comparator-ordering-predicate comparator)
+                              (^[a b] (>? comparator a b)))]
+          [(comparison) (values (^[a b] (<? comparator a b))
+                                (^[a b] (>? comparator a b)))])        
+      (bh-heapify! storage <: >: size)
+      (make <binary-heap> :comparator comparator :storage storage :key key
+            :<: <: :>: >: :next-leaf (+ size 1)
+            :capacity (cond [(vector? storage) (vector-length storage)]
+                            [(uvector? storage) (uvector-length storage)]
+                            [else +inf.0])))))
 
 (define (binary-heap-copy hp)
   (make <binary-heap>
@@ -315,7 +323,7 @@
 (define (binary-heap-delete! hp item)
   (let ([cmp (~ hp'comparator)]
         [key (~ hp'key)])
-    (binary-heap-remove! hp (^e (comparator-equal? cmp (key item) (key e))))))
+    (binary-heap-remove! hp (^e (=? cmp (key item) (key e))))))
 
 ;; Internal procedures
 (define-inline (min-node? index) (odd? (integer-length index)))

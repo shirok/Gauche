@@ -148,7 +148,7 @@ void * test_and_set_thr(void * id)
       if (locked_counter != 1)
         {
           fprintf(stderr, "Test and set failure 1, counter = %ld, id = %d\n",
-                  locked_counter, (int)(AO_PTRDIFF_T)id);
+                  (long)locked_counter, (int)(AO_PTRDIFF_T)id);
           abort();
         }
       locked_counter *= 2;
@@ -158,7 +158,7 @@ void * test_and_set_thr(void * id)
       if (locked_counter != 1)
         {
           fprintf(stderr, "Test and set failure 2, counter = %ld, id = %d\n",
-                  locked_counter, (int)(AO_PTRDIFF_T)id);
+                  (long)locked_counter, (int)(AO_PTRDIFF_T)id);
           abort();
         }
       --locked_counter;
@@ -177,6 +177,46 @@ int test_and_set_test(void)
 
 #endif /* defined(AO_HAVE_test_and_set_acquire) */
 
+#if (!defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__BORLANDC__) \
+     || defined(AO_USE_NO_SIGNALS) || defined(AO_USE_WIN32_PTHREADS)) \
+    && defined(AO_TEST_EMULATION)
+
+  void AO_store_full_emulation(volatile AO_t *addr, AO_t val);
+  AO_t AO_fetch_compare_and_swap_emulation(volatile AO_t *addr, AO_t old_val,
+                                           AO_t new_val);
+# ifdef AO_HAVE_double_t
+    int AO_compare_double_and_swap_double_emulation(volatile AO_double_t *,
+                                                AO_t old_val1, AO_t old_val2,
+                                                AO_t new_val1, AO_t new_val2);
+# endif
+
+  void test_atomic_emulation(void)
+  {
+    AO_t x;
+#   ifdef AO_HAVE_double_t
+      AO_double_t w; /* double-word alignment not needed */
+
+      w.AO_val1 = 0;
+      w.AO_val2 = 0;
+      TA_assert(!AO_compare_double_and_swap_double_emulation(&w, 4116, 2121,
+                                                             8537, 6410));
+      TA_assert(w.AO_val1 == 0 && w.AO_val2 == 0);
+      TA_assert(AO_compare_double_and_swap_double_emulation(&w, 0, 0,
+                                                            8537, 6410));
+      TA_assert(w.AO_val1 == 8537 && w.AO_val2 == 6410);
+#   endif
+    AO_store_full_emulation(&x, 1314);
+    TA_assert(x == 1314);
+    TA_assert(AO_fetch_compare_and_swap_emulation(&x, 14, 13117) == 1314);
+    TA_assert(x == 1314);
+    TA_assert(AO_fetch_compare_and_swap_emulation(&x, 1314, 14117) == 1314);
+    TA_assert(x == 14117);
+  }
+
+#else
+# define test_atomic_emulation() (void)0
+#endif /* _MSC_VER && !AO_USE_NO_SIGNALS || !AO_TEST_EMULATION */
+
 int main(void)
 {
   test_atomic();
@@ -187,6 +227,7 @@ int main(void)
   test_atomic_full();
   test_atomic_release_write();
   test_atomic_acquire_read();
+  test_atomic_dd_acquire_read();
 # if defined(AO_HAVE_fetch_and_add1) && defined(AO_HAVE_fetch_and_sub1)
     run_parallel(4, add1sub1_thr, add1sub1_test, "add1/sub1");
 # endif
@@ -198,6 +239,7 @@ int main(void)
     run_parallel(5, test_and_set_thr, test_and_set_test,
          "test_and_set");
 # endif
+  test_atomic_emulation();
   return 0;
 }
 

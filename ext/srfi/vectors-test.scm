@@ -78,7 +78,7 @@
     (test '(5 4 3 2 1 0) (cons (car result) (cdr result)))
     (test 3 (vector-count even? '#(3 1 4 1 5 9 2 5 6)))
     (test 2 (vector-count < '#(1 3 6 9) '#(2 4 6 8 10 12)))
-    (test '#(3 4 8 9 14 23 25 30 36) (vector-cumulate + '#(3 1 4 1 5 9 2 5 6) 0))
+    (test '#(3 4 8 9 14 23 25 30 36) (vector-cumulate + 0 '#(3 1 4 1 5 9 2 5 6)))
   ) ; end vectors/iteration
 
   (test-group "vectors/searching"

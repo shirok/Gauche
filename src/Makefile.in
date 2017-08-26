@@ -167,7 +167,9 @@ GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
 PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 	          gauche/priv/arith_x86_64.h \
+	          gauche/priv/dws_adapter.h \
 	          gauche/priv/builtin-syms.h gauche/priv/codeP.h \
+		  gauche/priv/classP.h gauche/priv/dispatchP.h \
 	          gauche/priv/macroP.h gauche/priv/moduleP.h \
 	          gauche/priv/portP.h \
 	          gauche/priv/readerP.h gauche/priv/writerP.h
@@ -194,10 +196,11 @@ libgauche_LIBRARY = $(LIBGAUCHE).$(SOEXT)
 libgauche_OBJECTS = \
         box.$(OBJEXT) core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) \
 	macro.$(OBJEXT) \
-	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) prof.$(OBJEXT) \
-	collection.$(OBJEXT) \
+	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) dispatch.$(OBJEXT) \
+        prof.$(OBJEXT) collection.$(OBJEXT) \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
-	hash.$(OBJEXT) treemap.$(OBJEXT) bits.$(OBJEXT) \
+	hash.$(OBJEXT) dws32hash.$(OBJEXT) dwsiphash.$(OBJEXT) \
+	treemap.$(OBJEXT) bits.$(OBJEXT) \
 	port.$(OBJEXT) write.$(OBJEXT) read.$(OBJEXT) \
 	vector.$(OBJEXT) weak.$(OBJEXT) symbol.$(OBJEXT) \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
@@ -207,8 +210,8 @@ libgauche_OBJECTS = \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
-	libexc.$(OBJEXT) libfmt.$(OBJEXT) \
-	libio.$(OBJEXT) liblazy.$(OBJEXT) liblist.$(OBJEXT) \
+	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
+	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmac.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
@@ -270,7 +273,9 @@ $(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi/0.scm : srfis.scm
 libsrfis.scm : $(top_builddir)/lib/srfi/0.scm $(top_builddir)/doc/srfis.texi
 	@:
 
-compile.c  : compile.scm compile-0.scm $(PRECOMP_DEPENDENCY)
+compile.c  : compile.scm compile-0.scm compile-1.scm compile-2.scm \
+             compile-3.scm compile-4.scm compile-5.scm compile-i.scm \
+             $(PRECOMP_DEPENDENCY)
 libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c  : libbool.scm $(PRECOMP_DEPENDENCY)
 libchar.c  : libchar.scm $(PRECOMP_DEPENDENCY)
@@ -283,6 +288,7 @@ libfmt.c   : libfmt.scm $(PRECOMP_DEPENDENCY)
 libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
 liblazy.c  : liblazy.scm $(PRECOMP_DEPENDENCY)
 liblist.c  : liblist.scm $(PRECOMP_DEPENDENCY)
+libmac.c   : libmac.scm $(PRECOMP_DEPENDENCY)
 libmisc.c  : libmisc.scm $(PRECOMP_DEPENDENCY)
 libnum.c   : libnum.scm $(PRECOMP_DEPENDENCY)
 libobj.c   : libobj.scm $(PRECOMP_DEPENDENCY)
@@ -389,7 +395,11 @@ static : $(LIBGAUCHE_STATIC).a
 
 $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT)
 	rm -f $@
-	$(AR) -rc $@ $(libgauche_OBJECTS) $(libgc_pic_OBJECTS) $(libatomic_ops_pic_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
+	$(AR) -rc $@ $(libgauche_OBJECTS) \
+            `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
+            `if [ X$(libatomic_ops_pic_LIBRARY) != X ]; then echo $(libatomic_ops_pic_OBJECTS); fi` \
+            staticinit.$(OBJEXT) \
+            `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
 
 staticinit.c : all gen-staticinit.scm
 	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
@@ -456,8 +466,8 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    char_attr.c gauche/priv/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
-	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
-	    libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
+	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmac.c \
+	    libmisc.c libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
 
@@ -466,7 +476,7 @@ clean :
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
-               *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
+               *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c staticinit.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Cameron Rich
+ * Copyright (c) 2007-2016, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -50,8 +50,8 @@
 #include "os_port.h"
 #include "ssl.h"
 
-#define DEFAULT_CERT            "../ssl/test/axTLS.x509_512.cer"
-#define DEFAULT_KEY             "../ssl/test/axTLS.key_512"     
+#define DEFAULT_CERT            "../ssl/test/axTLS.x509_1024.cer"
+#define DEFAULT_KEY             "../ssl/test/axTLS.key_1024"     
 //#define DEFAULT_SVR_OPTION      SSL_DISPLAY_BYTES|SSL_DISPLAY_STATES
 #define DEFAULT_SVR_OPTION      0
 //#define DEFAULT_CLNT_OPTION      SSL_DISPLAY_BYTES|SSL_DISPLAY_STATES
@@ -171,78 +171,6 @@ static int AES_test(BI_CTX *bi_ctx)
 
     res = 0;
     printf("All AES tests passed\n");
-
-end:
-    return res;
-}
-
-/**************************************************************************
- * RC4 tests 
- *
- * ARC4 tests vectors from OpenSSL (crypto/rc4/rc4test.c)
- **************************************************************************/
-static const uint8_t keys[7][30]=
-{
-    {8,0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef},
-    {8,0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef},
-    {8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-    {4,0xef,0x01,0x23,0x45},
-    {8,0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef},
-    {4,0xef,0x01,0x23,0x45},
-};
-
-static const uint8_t data_len[7]={8,8,8,20,28,10};
-static uint8_t data[7][30]=
-{
-    {0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef,0xff},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-        0x00,0x00,0x00,0x00,0xff},
-        {0x12,0x34,0x56,0x78,0x9A,0xBC,0xDE,0xF0,
-            0x12,0x34,0x56,0x78,0x9A,0xBC,0xDE,0xF0,
-            0x12,0x34,0x56,0x78,0x9A,0xBC,0xDE,0xF0,
-            0x12,0x34,0x56,0x78,0xff},
-            {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff},
-            {0},
-};
-
-static const uint8_t output[7][30]=
-{
-    {0x75,0xb7,0x87,0x80,0x99,0xe0,0xc5,0x96,0x00},
-    {0x74,0x94,0xc2,0xe7,0x10,0x4b,0x08,0x79,0x00},
-    {0xde,0x18,0x89,0x41,0xa3,0x37,0x5d,0x3a,0x00},
-    {0xd6,0xa1,0x41,0xa7,0xec,0x3c,0x38,0xdf,
-        0xbd,0x61,0x5a,0x11,0x62,0xe1,0xc7,0xba,
-        0x36,0xb6,0x78,0x58,0x00},
-        {0x66,0xa0,0x94,0x9f,0x8a,0xf7,0xd6,0x89,
-            0x1f,0x7f,0x83,0x2b,0xa8,0x33,0xc0,0x0c,
-            0x89,0x2e,0xbe,0x30,0x14,0x3c,0xe2,0x87,
-            0x40,0x01,0x1e,0xcf,0x00},
-            {0xd6,0xa1,0x41,0xa7,0xec,0x3c,0x38,0xdf,0xbd,0x61,0x00},
-            {0},
-};
-
-static int RC4_test(BI_CTX *bi_ctx)
-{
-    int i, res = 1;
-    RC4_CTX s;
-
-    for (i = 0; i < 6; i++)
-    {
-        RC4_setup(&s, &keys[i][1], keys[i][0]);
-        RC4_crypt(&s, data[i], data[i], data_len[i]);
-
-        if (memcmp(data[i], output[i], data_len[i]))
-        {
-            printf("Error: RC4 CRYPT #%d failed\n", i);
-            goto end;
-        }
-    }
-
-    res = 0;
-    printf("All RC4 tests passed\n");
 
 end:
     return res;
@@ -522,9 +450,9 @@ end:
  **************************************************************************/
 static int HMAC_test(BI_CTX *bi_ctx)
 {
-    uint8_t key[SHA1_SIZE];
-    uint8_t ct[SHA1_SIZE];
-    uint8_t dgst[SHA1_SIZE];
+    uint8_t key[SHA256_SIZE];
+    uint8_t ct[SHA256_SIZE];
+    uint8_t dgst[SHA256_SIZE];
     int res = 1;
     const char *key_str;
 
@@ -553,8 +481,8 @@ static int HMAC_test(BI_CTX *bi_ctx)
    
     data_str = "Hi There";
     key_bi = bi_str_import(bi_ctx, "0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B");
-    bi_export(bi_ctx, key_bi, key, SHA1_SIZE);
     ct_bi = bi_str_import(bi_ctx, "B617318655057264E28BC0B6FB378C8EF146BE00");
+    bi_export(bi_ctx, key_bi, key, SHA1_SIZE);
     bi_export(bi_ctx, ct_bi, ct, SHA1_SIZE);
 
     hmac_sha1((const uint8_t *)data_str, 8, 
@@ -570,12 +498,77 @@ static int HMAC_test(BI_CTX *bi_ctx)
     ct_bi = bi_str_import(bi_ctx, "EFFCDF6AE5EB2FA2D27416D5F184DF9C259A7C79");
     bi_export(bi_ctx, ct_bi, ct, SHA1_SIZE);
 
-    hmac_sha1((const uint8_t *)data_str, 28, (const uint8_t *)key_str, 5, dgst);
+    hmac_sha1((const uint8_t *)data_str, 28, (const uint8_t *)key_str, 4, dgst);
     if (memcmp(dgst, ct, SHA1_SIZE))
     {
-        printf("HMAC SHA1 failed\n");
-        exit(1);
+        printf("HMAC SHA1 #2 failed\n");
+        goto end;
     }
+
+    data_str = "Hi There";
+    key_bi = bi_str_import(bi_ctx, "0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B0B");
+    ct_bi = bi_str_import(bi_ctx,
+            "B0344C61D8DB38535CA8AFCEAF0BF12B881DC200C9833DA726E9376C2E32CFF7");
+    bi_export(bi_ctx, key_bi, key, 20);
+    bi_export(bi_ctx, ct_bi, ct, SHA256_SIZE);
+
+    hmac_sha256((const uint8_t *)data_str, 8, 
+            (const uint8_t *)key, 20, dgst);
+
+    if (memcmp(dgst, ct, SHA256_SIZE))
+    {
+        printf("HMAC SHA256 #1 failed\n");
+        goto end;
+    } 
+
+    data_str = "what do ya want for nothing?";
+    key_str = "Jefe";
+    ct_bi = bi_str_import(bi_ctx,
+            "5BDCC146BF60754E6A042426089575C75A003F089D2739839DEC58B964EC3843");
+    bi_export(bi_ctx, ct_bi, ct, SHA256_SIZE);
+
+    hmac_sha256((const uint8_t *)data_str, 28, 
+            (const uint8_t *)key_str, 4, dgst);
+    if (memcmp(dgst, ct, SHA256_SIZE))
+    {
+        printf("HMAC SHA256 #2 failed\n");
+        goto end;
+    }
+
+    // other test
+    /*uint8_t secret[16];
+    key_str = "9BBE436BA940F017B17652849A71DB35";
+    ct_bi = bi_str_import(bi_ctx, key_str);
+    bi_export(bi_ctx, ct_bi, secret, 16);
+
+    uint8_t random[26];
+    data_str = "74657374206C6162656CA0BA9F936CDA311827A6F796FFD5198C";
+    ct_bi = bi_str_import(bi_ctx, data_str);
+    bi_export(bi_ctx, ct_bi, random, 26);
+
+    uint8_t output[256];
+    p_hash_sha256(secret, 16, random, 26, output, 100);
+    ct_bi = bi_import(bi_ctx, output, 100);
+    bi_print("RESULT", ct_bi);
+    */
+
+    /*uint8_t secret[48];
+    uint8_t random[256];
+    uint8_t output[256];
+
+    key_str =
+        "8C6D256467157DAEC7BAEBC1371E6DABFF1AB686EFA7DCF6B65242AA6EEBFC0A7472A1E583C4F2B23F784F25A6DE05A6";
+    ct_bi = bi_str_import(bi_ctx, key_str);
+    bi_export(bi_ctx, ct_bi, secret, 48);
+
+    data_str =
+        "636C69656E742066696E697368656475F80B2E4375CFA44105D16694A5E2D232302FF27241BDF52BA681C13E2CDF9F";
+    ct_bi = bi_str_import(bi_ctx, data_str);
+    bi_export(bi_ctx, ct_bi, random, 47);
+
+    p_hash_sha256(secret, 48, random, 47, output, 12);
+    ct_bi = bi_import(bi_ctx, output, 12);
+    bi_print("RESULT1", ct_bi);*/
 
     res = 0;
     printf("All HMAC tests passed\n");
@@ -973,31 +966,32 @@ static void do_client(client_t *clnt)
     /* show the session ids in the reconnect test */
     if (strcmp(clnt->testname, "Session Reuse") == 0)
     {
-        sprintf(openssl_buf, "echo \"hello client\" | openssl s_client -tls1 "
+        sprintf(openssl_buf, "echo \"hello client\" | openssl s_client "
             "-connect localhost:%d %s 2>&1 | grep \"Session-ID:\"", 
             g_port, clnt->openssl_option);
     }
     else if (strstr(clnt->testname, "GNUTLS") == NULL)
     {
-        sprintf(openssl_buf, "echo \"hello client\" | openssl s_client -tls1 "
+        sprintf(openssl_buf, "echo \"hello client\" | openssl s_client "
 #ifdef WIN32
             "-connect localhost:%d -quiet %s",
 #else
             "-connect localhost:%d -quiet %s > /dev/null 2>&1",
 #endif
-        g_port, clnt->openssl_option);
+            g_port, clnt->openssl_option);
     }
     else /* gnutls */
     {
         sprintf(openssl_buf, "echo \"hello client\" | gnutls-cli "
 #ifdef WIN32
-            "-p %d %s 127.0.0.1",
+            "-p %d %s localhost",
 #else
-            "-p %d %s 127.0.0.1 > /dev/null 2>&1",
+            "-p %d %s localhost > /dev/null 2>&1",
 #endif
         g_port, clnt->openssl_option);
     }
 
+//printf("CLIENT %s\n", openssl_buf);
     SYSTEM(openssl_buf);
 }
 
@@ -1149,42 +1143,62 @@ int SSL_server_tests(void)
     /* Go through the algorithms */
 
     /* 
-     * TLS1 client hello 
+     * TLS client hello 
      */
-    if ((ret = SSL_server_test("TLSv1", "-cipher RC4-SHA -tls1", 
-                    NULL, NULL, NULL, NULL, NULL, DEFAULT_SVR_OPTION)))
-        goto cleanup;
 
     /*
-     * AES128-SHA
+     * AES128-SHA TLS1.2
      */
-    if ((ret = SSL_server_test("AES256-SHA", "-cipher AES128-SHA", 
+    if ((ret = SSL_server_test("AES128-SHA TLS1.2", 
+                    "-cipher AES128-SHA -tls1_2", 
                     DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
                     DEFAULT_SVR_OPTION)))
         goto cleanup;
 
     /*
-     * AES256-SHA
+     * AES256-SHA TLS1.2
      */
-    if ((ret = SSL_server_test("AES256-SHA", "-cipher AES128-SHA", 
+    if ((ret = SSL_server_test("AES256-SHA TLS1.2", 
+                    "-cipher AES256-SHA -tls1_2", 
                     DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
                     DEFAULT_SVR_OPTION)))
         goto cleanup;
 
     /*
-     * RC4-SHA
+     * AES128-SHA256 TLS1.2
      */
-    if ((ret = SSL_server_test("RC4-SHA", "-cipher RC4-SHA", 
-                DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
-                DEFAULT_SVR_OPTION)))
+    if ((ret = SSL_server_test("AES128-SHA256 TLS1.2", 
+                    "-cipher AES128-SHA256 -tls1_2", 
+                    DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
+                    DEFAULT_SVR_OPTION)))
+        goto cleanup;
+
+
+    /*
+     * AES256-SHA256 TLS1.2
+     */
+    if ((ret = SSL_server_test("AES256-SHA256 TLS1.2", 
+                    "-cipher AES256-SHA256 -tls1_2", 
+                    DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
+                    DEFAULT_SVR_OPTION)))
         goto cleanup;
 
     /*
-     * RC4-MD5
+     * AES128-SHA TLS1.1
      */
-    if ((ret = SSL_server_test("RC4-MD5", "-cipher RC4-MD5", 
-                DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
-                DEFAULT_SVR_OPTION)))
+    if ((ret = SSL_server_test("AES128-SHA TLS1.1", 
+                    "-cipher AES128-SHA -tls1_1", 
+                    DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
+                    DEFAULT_SVR_OPTION)))
+        goto cleanup;
+
+    /*
+     * AES128-SHA TLS1.0
+     */
+    if ((ret = SSL_server_test("AES128-SHA TLS1.0", 
+                    "-cipher AES128-SHA -tls1", 
+                    DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
+                    DEFAULT_SVR_OPTION)))
         goto cleanup;
 
     /*
@@ -1192,45 +1206,26 @@ int SSL_server_tests(void)
      * all the session id's should match for session resumption.
      */
     if ((ret = SSL_server_test("Session Reuse", 
-                    "-cipher RC4-SHA -reconnect", 
+                    "-cipher AES128-SHA -reconnect -tls1_2", 
                     DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
                     DEFAULT_SVR_OPTION)))
-        goto cleanup;
-
-    /* 
-     * 512 bit RSA key 
-     */
-    if ((ret = SSL_server_test("512 bit key", 
-                    "-cipher RC4-SHA", 
-                    "../ssl/test/axTLS.x509_512.cer", NULL, 
-                    "../ssl/test/axTLS.key_512",
-                    NULL, NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
 
     /* 
      * 1024 bit RSA key (check certificate chaining)
      */
     if ((ret = SSL_server_test("1024 bit key", 
-                    "-cipher RC4-SHA",
+                    "-cipher AES128-SHA -tls1_2",
                     "../ssl/test/axTLS.x509_1024.cer", NULL, 
                     "../ssl/test/axTLS.key_1024",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
 
     /* 
-     * 1042 bit RSA key (check certificate chaining)
-     */
-    if ((ret = SSL_server_test("1042 bit key", 
-                    "-cipher RC4-SHA",
-                    "../ssl/test/axTLS.x509_1042.cer", NULL, 
-                    "../ssl/test/axTLS.key_1042",
-                    NULL, NULL, DEFAULT_SVR_OPTION)))
-        goto cleanup;
-    /* 
      * 2048 bit RSA key 
      */
     if ((ret = SSL_server_test("2048 bit key", 
-                    "-cipher RC4-SHA",
+                    "-cipher AES128-SHA -tls1_2",
                     "../ssl/test/axTLS.x509_2048.cer", NULL, 
                     "../ssl/test/axTLS.key_2048",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
@@ -1240,20 +1235,63 @@ int SSL_server_tests(void)
      * 4096 bit RSA key 
      */
     if ((ret = SSL_server_test("4096 bit key", 
-                    "-cipher RC4-SHA",
+                    "-cipher AES128-SHA -tls1_2",
                     "../ssl/test/axTLS.x509_4096.cer", NULL, 
                     "../ssl/test/axTLS.key_4096",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
 
     /* 
+     * RSA1024/SHA256
+     */
+    if ((ret = SSL_server_test("RSA1024/SHA256",
+                    "-tls1_2",
+                    "../ssl/test/axTLS.x509_1024_sha256.pem" , NULL, 
+                    "../ssl/test/axTLS.key_1024",
+                    NULL, NULL, DEFAULT_SVR_OPTION)))
+        goto cleanup;
+
+    /* 
+     * RSA1024/SHA384
+     */
+    if ((ret = SSL_server_test("RSA1024/SHA384",
+                    "-tls1_2",
+                    "../ssl/test/axTLS.x509_1024_sha384.pem" , NULL, 
+                    "../ssl/test/axTLS.key_1024",
+                    NULL, NULL, DEFAULT_SVR_OPTION)))
+        goto cleanup;
+
+    /* 
+     * RSA1024/SHA512
+     */
+    if ((ret = SSL_server_test("RSA1024/SHA512",
+                    "-tls1_2",
+                    "../ssl/test/axTLS.x509_1024_sha512.pem" , NULL, 
+                    "../ssl/test/axTLS.key_1024",
+                    NULL, NULL, DEFAULT_SVR_OPTION)))
+        goto cleanup;
+
+    /* 
      * Client Verification
      */
-    if ((ret = SSL_server_test("Client Verification", 
-                    "-cipher RC4-SHA -tls1 "
+    if ((ret = SSL_server_test("Client Verification TLS1.2", 
+                    "-cipher AES128-SHA -tls1_2 "
+                    "-cert ../ssl/test/axTLS.x509_2048.pem "
+                    "-key ../ssl/test/axTLS.key_2048.pem ", 
+                    NULL,
+                "../ssl/test/axTLS.x509_1024.pem", 
+                "../ssl/test/axTLS.key_1024.pem",
+                    "../ssl/test/axTLS.ca_x509.cer", NULL,
+                    DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)))
+        goto cleanup;
+
+    if ((ret = SSL_server_test("Client Verification TLS1.1", 
+                    "-cipher AES128-SHA -tls1_1 "
                     "-cert ../ssl/test/axTLS.x509_2048.pem "
                     "-key ../ssl/test/axTLS.key_2048.pem ",
-                    NULL, NULL, NULL, 
+                    NULL,
+                "../ssl/test/axTLS.x509_1024.pem", 
+                "../ssl/test/axTLS.key_1024.pem",
                     "../ssl/test/axTLS.ca_x509.cer", NULL,
                     DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)))
         goto cleanup;
@@ -1262,10 +1300,12 @@ int SSL_server_tests(void)
     if (stat("../ssl/test/axTLS.x509_bad_before.pem", &stat_buf) >= 0)
     {
         if ((ret = SSL_server_test("Error: Bad Before Cert", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1_2 "
                     "-cert ../ssl/test/axTLS.x509_bad_before.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem ",
-                    NULL, NULL, NULL, 
+                    "-key ../ssl/test/axTLS.key_1024.pem ",
+                    NULL,
+                "../ssl/test/axTLS.x509_1024.pem", 
+                "../ssl/test/axTLS.key_1024.pem",
                     "../ssl/test/axTLS.ca_x509.cer", NULL,
                     DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)) !=
                             SSL_X509_ERROR(X509_VFY_ERROR_NOT_YET_VALID))
@@ -1277,10 +1317,12 @@ int SSL_server_tests(void)
 
     /* this test should fail */
     if ((ret = SSL_server_test("Error: Bad After Cert", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1_2 "
                     "-cert ../ssl/test/axTLS.x509_bad_after.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem ",
-                    NULL, NULL, NULL, 
+                    "-key ../ssl/test/axTLS.key_1024.pem ",
+                    NULL,
+                "../ssl/test/axTLS.x509_1024.pem", 
+                "../ssl/test/axTLS.key_1024.pem",
                     "../ssl/test/axTLS.ca_x509.cer", NULL,
                     DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)) !=
                             SSL_X509_ERROR(X509_VFY_ERROR_EXPIRED))
@@ -1293,10 +1335,12 @@ int SSL_server_tests(void)
      * No trusted cert
      */
     if ((ret = SSL_server_test("Error: No trusted certificate", 
-                    "-cipher RC4-SHA -tls1 "
-                    "-cert ../ssl/test/axTLS.x509_512.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem ",
-                    NULL, NULL, NULL, 
+                    "-cipher AES128-SHA -tls1_2 "
+                    "-cert ../ssl/test/axTLS.x509_1024.pem "
+                    "-key ../ssl/test/axTLS.key_1024.pem ",
+                    NULL,
+                "../ssl/test/axTLS.x509_1024.pem", 
+                "../ssl/test/axTLS.key_1024.pem",
                     NULL, NULL,
                     DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)) !=
                             SSL_X509_ERROR(X509_VFY_ERROR_NO_TRUSTED_CERT))
@@ -1309,11 +1353,13 @@ int SSL_server_tests(void)
      * Self-signed (from the server)
      */
     if ((ret = SSL_server_test("Error: Self-signed certificate (from server)", 
-                    "-cipher RC4-SHA -tls1 "
-                    "-cert ../ssl/test/axTLS.x509_512.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem "
+                    "-cipher AES128-SHA -tls1_2 "
+                    "-cert ../ssl/test/axTLS.x509_1024.pem "
+                    "-key ../ssl/test/axTLS.key_1024.pem "
                     "-CAfile ../ssl/test/axTLS.ca_x509.pem ",
-                    NULL, NULL, NULL, 
+                    NULL,
+                "../ssl/test/axTLS.x509_1024.pem", 
+                "../ssl/test/axTLS.key_1024.pem",
                     NULL, NULL,
                     DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)) !=
                             SSL_X509_ERROR(X509_VFY_ERROR_SELF_SIGNED))
@@ -1327,10 +1373,12 @@ int SSL_server_tests(void)
      * Self-signed (from the client)
      */
     if ((ret = SSL_server_test("Self-signed certificate (from client)", 
-                    "-cipher RC4-SHA -tls1 "
-                    "-cert ../ssl/test/axTLS.x509_512.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem ",
-                    NULL, NULL, NULL, 
+                    "-cipher AES128-SHA -tls1_2 "
+                    "-cert ../ssl/test/axTLS.x509_1024.pem "
+                    "-key ../ssl/test/axTLS.key_1024.pem ",
+                    NULL,
+                "../ssl/test/axTLS.x509_1024.pem", 
+                "../ssl/test/axTLS.key_1024.pem",
                     "../ssl/test/axTLS.ca_x509.cer",
                     NULL,
                     DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)))
@@ -1340,9 +1388,9 @@ int SSL_server_tests(void)
      * Key in PEM format
      */
     if ((ret = SSL_server_test("Key in PEM format",
-                    "-cipher RC4-SHA", 
-                    "../ssl/test/axTLS.x509_512.cer", NULL, 
-                    "../ssl/test/axTLS.key_512.pem", NULL,
+                    "-cipher AES128-SHA -tls1_2", 
+                    "../ssl/test/axTLS.x509_1024.cer", NULL, 
+                    "../ssl/test/axTLS.key_1024.pem", NULL,
                     NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
 
@@ -1350,9 +1398,9 @@ int SSL_server_tests(void)
      * Cert in PEM format
      */
     if ((ret = SSL_server_test("Cert in PEM format", 
-                    "-cipher RC4-SHA", 
-                    "../ssl/test/axTLS.x509_512.pem", NULL, 
-                    "../ssl/test/axTLS.key_512.pem", NULL,
+                    "-cipher AES128-SHA -tls1_2", 
+                    "../ssl/test/axTLS.x509_1024.pem", NULL, 
+                    "../ssl/test/axTLS.key_1024.pem", NULL,
                     NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
 
@@ -1360,9 +1408,9 @@ int SSL_server_tests(void)
      * Cert chain in PEM format
      */
     if ((ret = SSL_server_test("Cert chain in PEM format", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA -tls1_2", 
                     "../ssl/test/axTLS.x509_device.pem", 
-                    NULL, "../ssl/test/axTLS.device_key.pem",
+                    NULL, "../ssl/test/axTLS.key_device.pem",
                     "../ssl/test/axTLS.ca_x509.pem", NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
 
@@ -1370,7 +1418,7 @@ int SSL_server_tests(void)
      * AES128 Encrypted key 
      */
     if ((ret = SSL_server_test("AES128 encrypted key", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA -tls1_2", 
                     "../ssl/test/axTLS.x509_aes128.pem", NULL, 
                     "../ssl/test/axTLS.key_aes128.pem",
                     NULL, "abcd", DEFAULT_SVR_OPTION)))
@@ -1380,7 +1428,7 @@ int SSL_server_tests(void)
      * AES256 Encrypted key 
      */
     if ((ret = SSL_server_test("AES256 encrypted key", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA -tls1_2", 
                     "../ssl/test/axTLS.x509_aes256.pem", NULL, 
                     "../ssl/test/axTLS.key_aes256.pem",
                     NULL, "abcd", DEFAULT_SVR_OPTION)))
@@ -1390,7 +1438,7 @@ int SSL_server_tests(void)
      * AES128 Encrypted invalid key 
      */
     if ((ret = SSL_server_test("AES128 encrypted invalid key", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA -tls1_2", 
                     "../ssl/test/axTLS.x509_aes128.pem", NULL, 
                     "../ssl/test/axTLS.key_aes128.pem",
                     NULL, "xyz", DEFAULT_SVR_OPTION)) != SSL_ERROR_INVALID_KEY)
@@ -1402,7 +1450,8 @@ int SSL_server_tests(void)
     /*
      * PKCS#8 key (encrypted)
      */
-    if ((ret = SSL_server_test("pkcs#8 encrypted", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#8 encrypted", 
+                "-cipher AES128-SHA -tls1_2", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.encrypted.p8", 
                 NULL, "abcd", DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1410,7 +1459,8 @@ int SSL_server_tests(void)
     /*
      * PKCS#8 key (unencrypted DER format)
      */
-    if ((ret = SSL_server_test("pkcs#8 DER unencrypted", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#8 DER unencrypted", 
+                "-cipher AES128-SHA -tls1_2", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.unencrypted.p8", 
                 NULL, NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1418,7 +1468,8 @@ int SSL_server_tests(void)
     /*
      * PKCS#8 key (unencrypted PEM format)
      */
-    if ((ret = SSL_server_test("pkcs#8 PEM unencrypted", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#8 PEM unencrypted", 
+                "-cipher AES128-SHA -tls1_2", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.unencrypted_pem.p8", 
                 NULL, NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1426,12 +1477,12 @@ int SSL_server_tests(void)
     /*
      * PKCS#12 key/certificate
      */
-    if ((ret = SSL_server_test("pkcs#12 with CA", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#12 with CA", "-cipher AES128-SHA", 
                 NULL, NULL, "../ssl/test/axTLS.withCA.p12", 
                 NULL, "abcd", DEFAULT_SVR_OPTION)))
         goto cleanup;
 
-    if ((ret = SSL_server_test("pkcs#12 no CA", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#12 no CA", "-cipher AES128-SHA", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.withoutCA.p12", 
                 NULL, "abcd", DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1445,6 +1496,15 @@ int SSL_server_tests(void)
                     "../ssl/test/axTLS.x509_1024.cer", NULL, 
                     "../ssl/test/axTLS.key_1024",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
+        goto cleanup;
+    
+    if ((ret = SSL_server_test("GNUTLS client with verify", 
+                    "--x509certfile ../ssl/test/axTLS.x509_1024.pem "
+                    "--x509keyfile ../ssl/test/axTLS.key_1024.pem",
+                    "../ssl/test/axTLS.x509_1024.cer", NULL, 
+                    "../ssl/test/axTLS.key_1024",
+                    "../ssl/test/axTLS.ca_x509.cer", NULL, 
+                    DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)))
         goto cleanup;
 #endif
     ret = 0;
@@ -1499,10 +1559,15 @@ static void do_server(server_t *svr)
     }
     else
     {
-        sprintf(openssl_buf, "openssl s_server -tls1 " 
-                "-accept %d -quiet %s ", g_port, svr->openssl_option);
+        sprintf(openssl_buf, "openssl s_server " 
+#ifdef WIN32
+                "-accept %d -quiet %s", 
+#else
+                "-accept %d -quiet %s > /dev/null", 
+#endif
+                g_port, svr->openssl_option);
     }
-
+//printf("SERVER %s\n", openssl_buf);
     SYSTEM(openssl_buf);
 }
 
@@ -1604,7 +1669,8 @@ static int SSL_client_test(
         goto client_test_exit;
     }
 
-    ssl = ssl_client_new(*ssl_ctx, client_fd, session_id, sizeof(session_id));
+    ssl = ssl_client_new(*ssl_ctx, client_fd, 
+            session_id, sizeof(session_id), NULL);
 
     /* check the return status */
     if ((ret = ssl_handshake_status(ssl)))
@@ -1694,10 +1760,11 @@ int SSL_client_tests(void)
     sess_resume.start_server = 1;
     printf("### starting client tests\n");
    
-    if ((ret = SSL_client_test("512 bit key", 
+    if ((ret = SSL_client_test("1024 bit key", 
                     &ssl_ctx,
-                    "-cert ../ssl/test/axTLS.x509_512.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem", &sess_resume, 
+                    "-cert ../ssl/test/axTLS.x509_1024.pem "
+                    "-key ../ssl/test/axTLS.key_1024.pem", 
+                    &sess_resume, 
                     DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
         goto cleanup;
 
@@ -1746,11 +1813,52 @@ int SSL_client_tests(void)
                     DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
         goto cleanup;
 
+    if ((ret = SSL_client_test("TLS 1.1", 
+                    &ssl_ctx,
+                    "-cert ../ssl/test/axTLS.x509_1024.pem "
+                    "-key ../ssl/test/axTLS.key_1024.pem -tls1_1", NULL,
+                    DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
+        goto cleanup;
+
+    if ((ret = SSL_client_test("TLS 1.0", 
+                    &ssl_ctx,
+                    "-cert ../ssl/test/axTLS.x509_1024.pem "
+                    "-key ../ssl/test/axTLS.key_1024.pem -tls1", NULL,
+                    DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
+        goto cleanup;
+
+    if ((ret = SSL_client_test("Basic Constraint - len OK", 
+                    &ssl_ctx,
+                    "-cert ../ssl/test/axTLS.x509_end_chain.pem -key "
+                    "../ssl/test/axTLS.key_end_chain.pem -CAfile "
+                    "../ssl/test/axTLS.x509_intermediate_ca.pem",
+                    NULL, 
+                    DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
+        goto cleanup;
+
+    if ((ret = SSL_client_test("Basic Constraint - len NOT OK", 
+                    &ssl_ctx,
+                    "-cert ../ssl/test/axTLS.x509_end_chain_bad.pem -key "
+                    "../ssl/test/axTLS.key_end_chain.pem -CAfile "
+                    "../ssl/test/axTLS.x509_intermediate_ca2.pem",
+                    NULL, 
+                    DEFAULT_CLNT_OPTION, NULL, NULL, NULL))
+                            != SSL_X509_ERROR(X509_VFY_ERROR_BASIC_CONSTRAINT))
+    {
+        printf("*** Error: %d\n", ret); 
+        if (ret == 0)
+            ret = SSL_NOT_OK;
+
+        goto cleanup;
+    }
+
+    printf("SSL server test \"%s\" passed\n", "Basic Constraint - len NOT OK");
+
     if ((ret = SSL_client_test("Server cert chaining", 
                     &ssl_ctx,
                     "-cert ../ssl/test/axTLS.x509_device.pem "
-                    "-key ../ssl/test/axTLS.device_key.pem "
-                    "-CAfile ../ssl/test/axTLS.x509_512.pem ", NULL,
+                    "-key ../ssl/test/axTLS.key_device.pem "
+                    "-CAfile ../ssl/test/axTLS.x509_1024.pem ", NULL,
                     DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
         goto cleanup;
 
@@ -1765,12 +1873,23 @@ int SSL_client_tests(void)
                     "../ssl/test/axTLS.x509_1024.cer")))
         goto cleanup;
 
+    /* Check the server can verify the client */
+    if ((ret = SSL_client_test("Client peer authentication TLS1.1",
+                    &ssl_ctx,
+                    "-cert ../ssl/test/axTLS.x509_2048.pem "
+                    "-key ../ssl/test/axTLS.key_2048.pem "
+                    "-CAfile ../ssl/test/axTLS.ca_x509.pem "
+                    "-verify 1 -tls1_1", NULL, DEFAULT_CLNT_OPTION, 
+                    "../ssl/test/axTLS.key_1024", NULL,
+                    "../ssl/test/axTLS.x509_1024.cer")))
+        goto cleanup;
+
     /* Should get an "ERROR" from openssl (as the handshake fails as soon as
      * the certificate verification fails) */
     if ((ret = SSL_client_test("Error: Expired cert (verify now)",
                     &ssl_ctx,
                     "-cert ../ssl/test/axTLS.x509_bad_after.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem", NULL,
+                    "-key ../ssl/test/axTLS.key_1024.pem", NULL,
                     DEFAULT_CLNT_OPTION, NULL, NULL, NULL)) != 
                             SSL_X509_ERROR(X509_VFY_ERROR_EXPIRED))
     {
@@ -1784,7 +1903,7 @@ int SSL_client_tests(void)
     if ((ret = SSL_client_test("Error: Expired cert (verify later)", 
                     &ssl_ctx,
                     "-cert ../ssl/test/axTLS.x509_bad_after.pem "
-                    "-key ../ssl/test/axTLS.key_512.pem", NULL,
+                    "-key ../ssl/test/axTLS.key_1024.pem", NULL,
                     DEFAULT_CLNT_OPTION|SSL_SERVER_VERIFY_LATER, NULL, 
                     NULL, NULL)) != SSL_X509_ERROR(X509_VFY_ERROR_EXPIRED))
     {
@@ -1795,28 +1914,44 @@ int SSL_client_tests(void)
     printf("SSL client test \"Expired cert (verify later)\" passed\n");
 
     /* invalid cert type */
-    if ((ret = SSL_client_test("Error: Invalid certificate type", 
+    /*if ((ret = SSL_client_test("Error: Invalid certificate type", 
                     &ssl_ctx,
                     "-cert ../ssl/test/axTLS.x509_2048.pem "
                     "-key ../ssl/test/axTLS.key_2048.pem "
                     "-CAfile ../ssl/test/axTLS.ca_x509.pem "
                     "-verify 1 ", NULL, DEFAULT_CLNT_OPTION, 
-                    "../ssl/test/axTLS.x509_1024.cer", NULL,
-                    "../ssl/test/axTLS.x509_1024.cer")) 
+                    "../ssl/test/axTLS.key_1024.pem", NULL,
+                    "../ssl/test/axTLS.x509_1024.pem")) 
                             != SSL_ERROR_INVALID_KEY)
     {
+        if (ret == 0)
+            ret = SSL_NOT_OK;
+
         printf("*** Error: %d\n", ret); TTY_FLUSH();
         goto cleanup;
     }
 
-    printf("SSL client test \"Invalid certificate type\" passed\n");
+    printf("SSL client test \"Invalid certificate type\" passed\n"); */
 
 #if 0
     if ((ret = SSL_client_test("GNUTLS client", 
                     &ssl_ctx,
                     "--x509certfile ../ssl/test/axTLS.x509_1024.pem "
-                    "--x509keyfile ../ssl/test/axTLS.key_1024.pem -q", NULL,
-                    DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
+                    "--x509keyfile ../ssl/test/axTLS.key_1024.pem -g", NULL,
+                    DEFAULT_CLNT_OPTION, 
+                    "../ssl/test/axTLS.key_1024.pem", NULL,
+                    "../ssl/test/axTLS.x509_1024.pem")))
+        goto cleanup;
+
+    ret = 0;
+
+    if ((ret = SSL_client_test("GNUTLS client with verify", 
+                    &ssl_ctx,
+                    "--x509certfile ../ssl/test/axTLS.x509_1024.pem "
+                    "--x509keyfile ../ssl/test/axTLS.key_1024.pem -r -g", NULL,
+                    DEFAULT_CLNT_OPTION|SSL_SERVER_VERIFY_LATER, 
+                    "../ssl/test/axTLS.key_1024.pem", NULL,
+                    "../ssl/test/axTLS.x509_1024.pem"))) 
         goto cleanup;
 #endif
     ret = 0;
@@ -1860,7 +1995,7 @@ static void do_basic(void)
                                         "../ssl/test/axTLS.ca_x509.cer", NULL))
         goto error;
 
-    ssl_clnt = ssl_client_new(ssl_clnt_ctx, client_fd, NULL, 0);
+    ssl_clnt = ssl_client_new(ssl_clnt_ctx, client_fd, NULL, 0, NULL);
 
     /* check the return status */
     if (ssl_handshake_status(ssl_clnt) < 0)
@@ -1897,7 +2032,13 @@ static int SSL_basic_test(void)
         goto error;
 
     ssl_svr_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
+    if ((ret = ssl_obj_load(ssl_svr_ctx, SSL_OBJ_X509_CERT, 
+                    "../ssl/test/axTLS.x509_1024.pem", NULL)) != SSL_OK)
+        goto error;
 
+    if ((ret = ssl_obj_load(ssl_svr_ctx, SSL_OBJ_RSA_KEY, 
+                    "../ssl/test/axTLS.key_1024.pem", NULL)) != SSL_OK)
+        goto error;
 #ifndef WIN32
     pthread_create(&thread, NULL, 
                 (void *(*)(void *))do_basic, NULL);
@@ -1984,7 +2125,7 @@ static void do_unblocked(void)
                                         "../ssl/test/axTLS.ca_x509.cer", NULL))
         goto error;
 
-    ssl_clnt = ssl_client_new(ssl_clnt_ctx, client_fd, NULL, 0);
+    ssl_clnt = ssl_client_new(ssl_clnt_ctx, client_fd, NULL, 0, NULL);
 
     while (ssl_handshake_status(ssl_clnt) != SSL_OK)
     {
@@ -2023,6 +2164,13 @@ static int SSL_unblocked_test(void)
         goto error;
 
     ssl_svr_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
+    if ((ret = ssl_obj_load(ssl_svr_ctx, SSL_OBJ_X509_CERT, 
+                    "../ssl/test/axTLS.x509_1024.pem", NULL)) != SSL_OK)
+        goto error;
+
+    if ((ret = ssl_obj_load(ssl_svr_ctx, SSL_OBJ_RSA_KEY, 
+                    "../ssl/test/axTLS.key_1024.pem", NULL)) != SSL_OK)
+        goto error;
 
 #ifndef WIN32
     pthread_create(&thread, NULL, 
@@ -2104,7 +2252,7 @@ void do_multi_clnt(multi_t *multi_data)
         goto client_test_exit;
 
     usleep(200000);
-    ssl = ssl_client_new(multi_data->ssl_clnt_ctx, client_fd, NULL, 0);
+    ssl = ssl_client_new(multi_data->ssl_clnt_ctx, client_fd, NULL, 0, NULL);
 
     if ((res = ssl_handshake_status(ssl)))
     {
@@ -2174,7 +2322,14 @@ int multi_thread_test(void)
 
     printf("Do multi-threading test (takes a minute)\n");
 
-    ssl_server_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
+    ssl_svr_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
+    if ((ret = ssl_obj_load(ssl_svr_ctx, SSL_OBJ_X509_CERT, 
+                    "../ssl/test/axTLS.x509_1024.pem", NULL)) != SSL_OK)
+        goto error;
+
+    if ((ret = ssl_obj_load(ssl_svr_ctx, SSL_OBJ_RSA_KEY, 
+                    "../ssl/test/axTLS.key_1024.pem", NULL)) != SSL_OK)
+        goto error;
     ssl_clnt_ctx = ssl_ctx_new(DEFAULT_CLNT_OPTION, SSL_DEFAULT_CLNT_SESS);
 
     if (ssl_obj_load(ssl_clnt_ctx, SSL_OBJ_X509_CACERT, 
@@ -2227,7 +2382,7 @@ int multi_thread_test(void)
 
     printf("Multi-thread test passed (%d)\n", NUM_THREADS);
 error:
-    ssl_ctx_free(ssl_server_ctx);
+    ssl_ctx_free(ssl_svr_ctx);
     ssl_ctx_free(ssl_clnt_ctx);
     SOCKET_CLOSE(server_fd);
     return res;
@@ -2306,7 +2461,7 @@ int main(int argc, char *argv[])
     int ret = 1;
     BI_CTX *bi_ctx;
     int fd;
-    /*<SK> NB: String "openssl " will re replaced by the build script, so
+    /*<SK> NB: String "openssl " will be replaced by the build script, so
       avoid ending the variable name with "openssl". */
     int have_openssl_p = 0;
     /*</SK>*/
@@ -2340,13 +2495,6 @@ int main(int argc, char *argv[])
     if (AES_test(bi_ctx))
     {
         printf("AES tests failed\n");
-        goto cleanup;
-    }
-    TTY_FLUSH();
-
-    if (RC4_test(bi_ctx))
-    {
-        printf("RC4 tests failed\n");
         goto cleanup;
     }
     TTY_FLUSH();

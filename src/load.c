@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -421,7 +421,7 @@ typedef struct dlobj_initfn_rec {
 
 struct ScmDLObjRec {
     SCM_HEADER;
-    const char *path;           /* pathname for DSO, including suffix */
+    ScmString *path;            /* pathname for DSO, including suffix */
     int loaded;                 /* TRUE if this DSO is already loaded.
                                    It may need to be initialized, though.
                                    Check initfns.  */
@@ -440,7 +440,7 @@ static void dlobj_print(ScmObj obj, ScmPort *sink, ScmWriteContext *mode)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_DLObjClass, dlobj_print);
 
-static ScmDLObj *make_dlobj(const char *path)
+static ScmDLObj *make_dlobj(ScmString *path)
 {
     ScmDLObj *z = SCM_NEW(ScmDLObj);
     SCM_SET_CLASS(z, &Scm_DLObjClass);
@@ -465,19 +465,17 @@ static ScmDLObj *make_dlobj(const char *path)
 #endif
 
 /* Find dlobj with path, creating one if there aren't, and returns it. */
-static ScmDLObj *find_dlobj(const char *path)
+static ScmDLObj *find_dlobj(ScmObj path)
 {
-    ScmObj p;
-    ScmObj spath = SCM_MAKE_STR_COPYING(path);
     ScmDLObj *z = NULL;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    p = Scm_HashTableRef(ldinfo.dso_table, spath, SCM_FALSE);
+    ScmObj p = Scm_HashTableRef(ldinfo.dso_table, path, SCM_FALSE);
     if (SCM_DLOBJP(p)) {
         z = SCM_DLOBJ(p);
     } else {
-        z = make_dlobj(path);
-        Scm_HashTableSet(ldinfo.dso_table, spath, SCM_OBJ(z), 0);
+        z = make_dlobj(SCM_STRING(path));
+        Scm_HashTableSet(ldinfo.dso_table, path, SCM_OBJ(z), 0);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     return z;
@@ -503,31 +501,6 @@ static void unlock_dlobj(ScmDLObj *dlo)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
 }
 
-/* Derives initialization function name from the module file name.
-   This function _always_ appends underscore before the symbol.
-   The dynamic loader first tries the symbol without underscore,
-   then tries with underscore. */
-#define DYNLOAD_PREFIX   "_Scm_Init_"
-
-static const char *derive_dynload_initfn(const char *filename)
-{
-    const char *head = strrchr(filename, '/');
-    if (head == NULL) head = filename;
-    else head++;
-    const char *tail = strchr(head, '.');
-    if (tail == NULL) tail = filename + strlen(filename);
-
-    char *name = SCM_NEW_ATOMIC2(char *, sizeof(DYNLOAD_PREFIX) + tail - head);
-    strcpy(name, DYNLOAD_PREFIX);
-    char *d = name + sizeof(DYNLOAD_PREFIX) - 1;
-    for (const char *s = head; s < tail; s++, d++) {
-        if (isalnum(*s)) *d = tolower(*s);
-        else *d = '_';
-    }
-    *d = '\0';
-    return name;
-}
-
 /* find dlobj_initfn from the given dlobj with name.
    Assuming the caller holding the lock of OBJ. */
 static dlobj_initfn *find_initfn(ScmDLObj *dlo, const char *name)
@@ -545,34 +518,6 @@ static dlobj_initfn *find_initfn(ScmDLObj *dlo, const char *name)
     return fns;
 }
 
-/* From the given DSO name, find out the path of the actual DSO */
-static const char *find_dso_path(ScmString *dsoname)
-{
-    static ScmObj find_file = SCM_UNDEFINED;
-    SCM_BIND_PROC(find_file, "find-load-file", Scm_GaucheInternalModule());
-
-    ScmObj spath = Scm_ApplyRec5(find_file, SCM_OBJ(dsoname), Scm_GetDynLoadPath(),
-                                 ldinfo.dso_suffixes, SCM_FALSE, SCM_FALSE);
-    if (SCM_FALSEP(spath)) {
-        Scm_Error("can't find dlopen-able module %S", dsoname);
-    }
-    SCM_ASSERT(SCM_STRINGP(SCM_CAR(spath)));
-    return Scm_GetStringConst(SCM_STRING(SCM_CAR(spath)));
-}
-
-/* Obtain the initializer function name (with '_' prepended) */
-const char *get_initfn_name(ScmObj initfn, const char *dsopath)
-{
-    if (SCM_STRINGP(initfn)) {
-        ScmObj _initfn =
-            Scm_StringAppend2(SCM_STRING(Scm_MakeString("_", 1, 1, 0)),
-                              SCM_STRING(initfn));
-        return Scm_GetStringConst(SCM_STRING(_initfn));
-    } else {
-        return derive_dynload_initfn(dsopath);
-    }
-}
-
 /* Load the DSO.  The caller holds the lock of dlobj.  May throw an error;
    the caller makes sure it releases the lock even in that case. */
 static void load_dlo(ScmDLObj *dlo)
@@ -582,15 +527,15 @@ static void load_dlo(ScmDLObj *dlo)
         int len = Scm_Length(PARAM_REF(vm, load_history));
         SCM_PUTZ(";;", 2, SCM_CURERR);
         while (len-- > 0) Scm_Putz("  ", 2, SCM_CURERR);
-        Scm_Printf(SCM_CURERR, "Dynamically Loading %s...\n", dlo->path);
+        Scm_Printf(SCM_CURERR, "Dynamically Loading %A...\n", dlo->path);
     }
-    dlo->handle = dl_open(dlo->path);
+    dlo->handle = dl_open(Scm_GetStringConst(dlo->path));
     if (dlo->handle == NULL) {
         const char *err = dl_error();
         if (err == NULL) {
-            Scm_Error("failed to link %s dynamically", dlo->path);
+            Scm_Error("failed to link %A dynamically", dlo->path);
         } else {
-            Scm_Error("failed to link %s dynamically: %s", dlo->path, err);
+            Scm_Error("failed to link %A dynamically: %s", dlo->path, err);
         }
         /*NOTREACHED*/
     }
@@ -615,7 +560,7 @@ static void call_initfn(ScmDLObj *dlo, const char *name)
             if (ifn->fn == NULL) {
                 dl_close(dlo->handle);
                 dlo->handle = NULL;
-                Scm_Error("dynamic linking of %s failed: "
+                Scm_Error("dynamic linking of %A failed: "
                           "couldn't find initialization function %s",
                           dlo->path, name);
                 /*NOTREACHED*/
@@ -642,15 +587,6 @@ static void call_initfn(ScmDLObj *dlo, const char *name)
    already loaded from a pseudo pathname "@/DSONAME" (e.g. for
    "gauche--collection", we use "@/gauche--collection".) */
 
-static const char *pseudo_pathname_for_prelinked(ScmString *dsoname)
-{
-    ScmDString ds;
-    Scm_DStringInit(&ds);
-    Scm_DStringPutz(&ds, "@/", 2);
-    Scm_DStringAdd(&ds, dsoname);
-    return Scm_DStringGetz(&ds);
-}
-
 /* Register DSONAME as prelinked.  DSONAME shoudn't have system's suffix.
    INITFNS is an array of function pointers, NULL terminated.
    INITFN_NAMES should have prefixed with '_', for call_initfn() searches
@@ -659,7 +595,8 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
                            const char *initfn_names[],
                            ScmDynLoadInitFn initfns[])
 {
-    const char *path = pseudo_pathname_for_prelinked(dsoname);
+    ScmObj path = Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR_IMMUTABLE("@/")),
+                                    dsoname);
     ScmDLObj *dlo = find_dlobj(path);
     dlo->loaded = TRUE;
 
@@ -673,7 +610,7 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
 }
 
-static const char *find_prelinked(ScmString *dsoname)
+static ScmObj find_prelinked(ScmString *dsoname)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
     /* in general it is dangerous to invoke equal?-comparison during lock,
@@ -681,7 +618,12 @@ static const char *find_prelinked(ScmString *dsoname)
        an error. */
     ScmObj z = Scm_Member(SCM_OBJ(dsoname), ldinfo.dso_prelinked, SCM_CMP_EQUAL);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
-    return SCM_FALSEP(z) ? NULL : pseudo_pathname_for_prelinked(dsoname);
+    if (!SCM_FALSEP(z)) {
+        return Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR_IMMUTABLE("@/")),
+                                 dsoname);
+    } else {
+        return SCM_FALSE;
+    }
 }
 
 /* Dynamically load the specified object by DSONAME.
@@ -692,9 +634,26 @@ static const char *find_prelinked(ScmString *dsoname)
 */
 ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
 {
-    const char *dsopath = find_prelinked(dsoname);
-    if (!dsopath) dsopath = find_dso_path(dsoname);
-    const char *initname = get_initfn_name(initfn, dsopath);
+    ScmObj dsopath = find_prelinked(dsoname);
+    if (SCM_FALSEP(dsopath)) {
+        static ScmObj find_load_file_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(find_load_file_proc, "find-load-file",
+                      Scm_GaucheInternalModule());
+        ScmObj spath = Scm_ApplyRec3(find_load_file_proc,
+                                     SCM_OBJ(dsoname),
+                                     Scm_GetDynLoadPath(),
+                                     ldinfo.dso_suffixes);
+        if (!SCM_PAIRP(spath)) {
+            Scm_Error("can't find dlopen-able module %S", dsoname);
+        }
+        dsopath = SCM_CAR(spath);
+        SCM_ASSERT(SCM_STRINGP(dsopath));
+    }
+    static ScmObj get_initfn_name_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(get_initfn_name_proc, "%get-initfn-name",
+                  Scm_GaucheInternalModule());
+    ScmObj s_initname = Scm_ApplyRec2(get_initfn_name_proc, initfn, dsopath);
+    const char *initname = Scm_GetStringConst(SCM_STRING(s_initname));
     ScmDLObj *dlo = find_dlobj(dsopath);
 
     /* Load the dlobj if necessary. */
@@ -720,7 +679,7 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
 
 static ScmObj dlobj_path_get(ScmObj obj)
 {
-    return SCM_MAKE_STR_IMMUTABLE(SCM_DLOBJ(obj)->path);
+    return SCM_OBJ(SCM_DLOBJ(obj)->path);
 }
 
 static ScmObj dlobj_loaded_get(ScmObj obj)

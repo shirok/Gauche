@@ -1,7 +1,7 @@
 /*
  * macro.h - structures used internally in macro expander
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -31,8 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GAUCHE_MACRO_H
-#define GAUCHE_MACRO_H
+#ifndef GAUCHE_PRIV_MACROP_H
+#define GAUCHE_PRIV_MACROP_H
 
 
 SCM_DECL_BEGIN
@@ -40,15 +40,17 @@ SCM_DECL_BEGIN
 /* Syntax is a built-in procedure to compile given form. */
 struct ScmSyntaxRec {
     SCM_HEADER;
-    ScmSymbol *name;            /* for debugging.  can be NULL */
-    ScmObj     handler;         /* syntax handler.  (Sexpr, Env) -> IForm */
+    ScmSymbol *name;         /* for debugging.  can be NULL */
+    ScmObj     handler;      /* syntax handler.  (Sexpr, Env) -> IForm */
 };
 
 /* Macro */
 struct ScmMacroRec {
     SCM_HEADER;
-    ScmSymbol *name;            /* for debugging.  can be NULL */
-    ScmObj transformer;         /* (Sexpr, CEnv) -> Sexpr */
+    ScmObj name;             /* for debugging.  */
+    ScmObj transformer;      /* (Sexpr, CEnv) -> Sexpr */
+    ScmObj src;              /* for debugging.  #f if n/a */
+    ScmObj describer;        /* for debugging.  Maybe ((Macro, Port) -> ()) */
 };
 
 /*
@@ -76,7 +78,8 @@ SCM_CLASS_DECL(Scm_SyntaxRulesClass);
 #define SCM_SYNTAX_RULES(obj)    ((ScmSyntaxRules*)(obj))
 #define SCM_SYNTAX_RULES_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_RULES)
 
-SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
+SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src,
+                                         ScmObj ellipsis,
                                          ScmObj lietrals,
                                          ScmObj rules, ScmObj mod, ScmObj env);
 
@@ -91,10 +94,6 @@ SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
 #define SCM_MAKE_PVREF(level, count)  \
     SCM_OBJ((SCM_WORD(level)<<24) | (SCM_WORD(count)<<16) | SCM_PVREF_TAG)
 
-/* Temporary */
-SCM_EXTERN ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name,
-                                              ScmProcedure *proc);
-
 SCM_DECL_END
 
-#endif /* GAUCHE_MACRO_H */
+#endif /* GAUCHE_PRIV_MACROP_H */

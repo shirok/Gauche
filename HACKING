@@ -9,60 +9,61 @@ On Unix platforms
 -----------------
 
 In order to build Gauche from the git sources, instead of from
-the distribution, you need to have autoconf 2.69 or higher.
-The author using autoconf 2.69.
+the distribution, you need to have the *latest* release of
+Gauche installed on your machine, for it is required to generate
+some C files.   If you don't have one, grab the release tarball
+and install it.
 
-You also need to have the *latest* release of Gauche installed
-on your machine, for it is required to generate some C files.
+You also need autoconf (>= 2.69), automake (>= 1.14.1),
+libtool (>= 2.4.2) and pkg-config (>= 0.26).
+(Note on OSX users: XCode now only includes subset
+of autotools.  You have to install full set either manually
+or thru MacPorts or Homebrew.  Xcode's libtool *does not work*).
 
 The git source tree doesn't include "configure" scripts.
 You can use the DIST script like the following to generate them.
 
   % ./DIST gen
 
+Afterwards, you just do the usual ./configure + make.  For
+configure options, see the INSTALL file in the distribution
+tarball (it is a generated file, so it's not in the repo).
+
+In case if the latest release of Gauche can't be built on your
+target machine but the fix is already in the HEAD, you need to
+take more steps---you need the source with that fix, but in order
+to build it, you need the latest release of Gauche installed,
+which you can't.  If you stuck in this Catch-22 situation, you
+have to generate tarball on other machines.  Find a Linux box
+(or BSD, or most Unix box would do) and take the following steps:
+
+  (1) Build and install the latest release of Gauche on that box
+  (2) Clone the source on that box, and build the HEAD as explained
+      above.
+  (3) Run
+        % ./DIST tgz
+      This creates a tarball Gauche-$VERSION.tgz in the parent
+      directory of the source tree.
+  (4) Copy the created tarball to your target machine, untar,
+      configure and build.  The created tarball includes generated
+      files, so you don't need Gauche in this step.
+      
 Note for seasoned libtool/automake users: the git source tree
 includes files that are usually generated automatically by
 autotools, such as aclocal.m4, ltmain.sh, src/gauche/config.h.in,
-etc.  Be careful not to clobber these files.  First, if your
-autotools version doesn't match mine, it tends to break.
-Second, those files may be edited after generated,
-in order to fix some build problem on certain platforms.
+etc.  Avoid clobbering these files, unless you're sure you want
+to do so.  If your autotools version doesn't match mine, 
+it tends to break.
 
 
 On Windows
 ----------
 
-The recommended way to build Gauche on Windows is MinGW/MSYS.
-If you install MSYS enviornment and MinGW, you can build
-Gauche just as on Unix; that is, run "./DIST gen" to generate
-configure scripts, run "./configure", then make.
-
-Alternatively, you can use src/mingw-dist.sh script.  Just run
-it on MSYS shell:
-
-  % sh src/mingw-dist.sh
-
-The shell script assumes MinGW is installed in /mingw.  If not,
-you need to tell the place by setting MINGWDIR environment variable.
-
-You also want to have MinGW libiconv and zlib libraries, for they
-enable full-functional gauche.charconv and rfc.zlib build.  (You
-can build Gauche without them, but then those modules won't
-work fully.)  Put the dlls in $MINGWDIR.
-
-The mingw-dist.sh script builds Gauche binary and installs it
-in ../Gauche-mingw-dist/Gauche.  It also copies MinGW runtime and
-other dlls, so the directory becomes self-contained.  You can copy
-the Gauche directory to anywhere and run Gauche/bin/gosh.
-
-If you have WiX SDK, you can build Windows installer as well.
-The easiest way is to use src/mingw-dist.sh script.
-Make sure the WiX tools (candle.exe and light.exe) in your PATH,
-and run this command on MSYS shell.
-
-  % sh src/mingw-dist.sh --with-installer
-
-Then you'll find MSI file under winnt/wix.
+The recommended way to build Gauche on Windows is mingw-w64 and
+MSYS2.  If you want to build from git source, you need Gauche
+of the latest release to be installed.  The easiest way is to
+grab the windows installer from http://practical-scheme.net/gauche.
+For the details of build procedure, see doc/HOWTO-mingw.txt.
 
 You can build Gauche with cygwin; do it just like on Unix.
 

@@ -1,7 +1,7 @@
 /*
  * regexp.c - regular expression
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *   Copyright (c) 2006 Rui Ueyama, All rights reserved.
  *
  *   Redistribution and use in source and binary forms, with or without
@@ -1013,7 +1013,7 @@ static ScmObj rc_charset(regcomp_ctx *ctx)
     if (ctx->casefoldp) {
         Scm_CharSetCaseFold(SCM_CHAR_SET(set));
     }
-
+    Scm_CharSetFreezeX(SCM_CHAR_SET(set));
     rc_register_charset(ctx, SCM_CHAR_SET(set));
     if (complement) {
         return Scm_Cons(SCM_SYM_COMP, SCM_OBJ(set));
@@ -1414,7 +1414,8 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
         }
         /* charset */
         if (SCM_CHAR_SET_P(ast)) {
-            EMIT4(!SCM_CHAR_SET_SMALLP(ast), RE_SET, RE_SET_RL, RE_SET1, RE_SET1_RL);
+            EMIT4(SCM_CHAR_SET_LARGE_P(ast),
+                  RE_SET, RE_SET_RL, RE_SET1, RE_SET1_RL);
             rc3_emit(ctx, rc3_charset_index(rx, ast));
             return;
         }
@@ -1455,7 +1456,8 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
     if (SCM_EQ(type, SCM_SYM_COMP)) {
         ScmObj cs = SCM_CDR(ast);
         SCM_ASSERT(SCM_CHAR_SET_P(cs));
-        EMIT4(!SCM_CHAR_SET_SMALLP(cs), RE_NSET, RE_NSET_RL, RE_NSET1, RE_NSET1_RL);
+        EMIT4(SCM_CHAR_SET_LARGE_P(cs),
+              RE_NSET, RE_NSET_RL, RE_NSET1, RE_NSET1_RL);
         rc3_emit(ctx, rc3_charset_index(rx, cs));
         return;
     }
@@ -1513,7 +1515,8 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
             }
             if (SCM_CHAR_SET_P(elem1)) {
                 rc3_seq_rep(ctx, elem, SCM_INT_VALUE(m), FALSE);
-                EMIT4(!SCM_CHAR_SET_SMALLP(elem1), RE_SETR, RE_SETR_RL, RE_SET1R, RE_SET1R_RL);
+                EMIT4(SCM_CHAR_SET_LARGE_P(elem1),
+                      RE_SETR, RE_SETR_RL, RE_SET1R, RE_SET1R_RL);
                 rc3_emit(ctx, rc3_charset_index(rx, elem1));
                 return;
             }

@@ -1,7 +1,7 @@
 ;;;
 ;;; gauce.cgen.stub - stub forms parsing and code generation
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -327,7 +327,9 @@
   (eval `(define-cise-expr ,@args) (current-module)))
 
 (define-form-parser define-cfn args
-  (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel)))
+  (parameterize ([cise-ambient (cise-ambient-copy (cise-ambient) '())])
+    (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel))
+    (cgen-decl (cise-ambient-decl-strings (cise-ambient)))))
 
 ;; extra check of valid clauses
 (define (check-clauses directive name clauses valid-keys)
@@ -557,7 +559,11 @@
       ;; list of strings for code that must be emitted before the
       ;; procedure definition
    (source-info       :initform #f :init-keyword :source-info)
-      ;; (file . line-no), if known.
+      ;; (file::<string> line-no::<integer>), if known.
+      ;; Will be saved in pair attributes of info.
+   (bind-info         :initform #f :init-keyword :bind-info)
+      ;; (module-name::<symbol> proc-name::<symbol>), if known.
+      ;; Will be saved in pair attributes of info.
    (info              :initform #f)
       ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
@@ -650,6 +656,10 @@
                       :source-info (or (debug-source-info &whole)
                                        (debug-source-info (cdr &whole))
                                        (debug-source-info (caddr &whole)))
+                      :bind-info (and-let* ([m (current-tmodule)]
+                                            [mod-name (~ m'name)]
+                                            [ (symbol? mod-name) ])
+                                   (list mod-name scheme-name))
                       :keyword-args keyargs
                       :num-reqargs nreqs
                       :num-optargs nopts
@@ -704,8 +714,7 @@
     (errorf "~a form is not in define-cproc" who)))
 
 (define (%expand-funcall-apply applyproc tmpvar args)
-  (define (suffix n) ; NB: symbol-append is not in 0.9.4 yet
-    (string->symbol #"~|applyproc|~|n|"))
+  (define (suffix n) (string->symbol #"~|applyproc|~|n|"))
   (match args
     [()           `(,(suffix 0) ,tmpvar)]
     [(a)          `(,(suffix 1) ,tmpvar ,a)]
@@ -1097,9 +1106,11 @@
                         [(pair? aarg) @ `(:optarray ,(arginfo (car aarg)))]))])
     (set! (~ proc'info)
           (make-literal
-           (if (~ proc'source-info)
+           (if (or (~ proc'source-info) (~ proc'bind-info))
              ($ make-serializable-extended-pair (~ proc'scheme-name) all-args
-                `((source-info . ,(~ proc'source-info))))
+                (cond-list
+                 [(~ proc'source-info) => (cut cons 'source-info <>)]
+                 [(~ proc'bind-info)   => (cut cons 'bind-info <>)]))
              (cons (~ proc'scheme-name) all-args))))))
 
 ;;;
@@ -1112,7 +1123,7 @@
 (define-method cgen-emit-decl ((cproc <cproc>))
   (next-method)
   ;; We emit forward definitions of C function names and stub record definitions
-  ;; first, so that the funciton body can refer to the stub record.
+  ;; first, so that the function body can refer to the stub record.
   (p "static ScmObj "(~ cproc'c-name)"(ScmObj*, int, void*);")
   (let1 flags (~ cproc'flags)
     (format #t "static SCM_DEFINE_SUBR~a(" (if (null? flags) "" "X"))

@@ -196,17 +196,6 @@ ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int start, int end)
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp)
-{
-    if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec))
-        Scm_Error("index out of range: %d", index);
-    SCM_UVECTOR_CHECK_MUTABLE(vec);
-    ${etype} elt;
-    ${UNBOX elt val clamp};
-    SCM_${T}VECTOR_ELEMENTS(vec)[index] = elt;
-    return SCM_OBJ(vec);
-}
-
 ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL;
@@ -1353,7 +1342,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
         case 2: {
             swap_u16_t d;
             for (int i=start; i<end; i++) {
-                d.val = ((unsigned short*)v->elements)[i];
+                d.val = ((uint16_t*)v->elements)[i];
                 SWAP_2(d);
                 Scm_Putz((const char*)d.buf, 2, port);
             }
@@ -1362,7 +1351,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
         case 4: {
             swap_u32_t d;
             for (int i=start; i<end; i++) {
-                d.val = ((ScmUInt32*)v->elements)[i];
+                d.val = ((uint32_t*)v->elements)[i];
                 SWAP_4(d);
                 Scm_Putz((const char*)d.buf, 4, port);
             }

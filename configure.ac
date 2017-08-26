@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.68])
-AC_INIT([Gauche],[0.9.5_pre1],[shiro@acm.org],,[http://practical-scheme.net/gauche/])
+AC_INIT([Gauche],[0.9.6_pre2],[shiro@acm.org],,[http://practical-scheme.net/gauche/])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -76,6 +76,7 @@ AS_IF([test $search_slib = "yes"], [
   ])
 ])
 AC_SUBST(SLIB_DIR)
+AC_DEFINE_UNQUOTED(SLIB_DIR, "$SLIB_DIR", [Slib installation path])
 
 dnl ----------------------------------------------------------
 dnl  with-local=PATH:...
@@ -247,6 +248,12 @@ case $GAUCHE_THREAD_TYPE in
       THREADDLLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
       ;;
+    *-*-openbsd*)
+      AC_DEFINE(GC_OPENBSD_THREADS,1,[Define to use OpenBSD threads])
+      THREADLIBS="-lpthread"
+      THREADDLLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
+      ;;      
     *-*-solaris*)
       AC_DEFINE(GC_SOLARIS_THREADS,1,[Define to use Solaris threads])
       AC_DEFINE(GC_SOLARIS_PTHREADS,1,[Define to use Solaris pthreads])
@@ -404,7 +411,7 @@ dnl   for some tests needs it.
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS(time.h sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h)
-AC_CHECK_HEADERS(unistd.h stdint.h inttypes.h rpc/types.h malloc.h)
+AC_CHECK_HEADERS(unistd.h inttypes.h rpc/types.h malloc.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
 AC_CHECK_HEADERS(pty.h util.h bsd/libutil.h libutil.h sys/loadavg.h sys/resource.h)
 
@@ -890,7 +897,7 @@ AC_CONFIG_COMMANDS([VERSION],
 AC_CONFIG_FILES([
           Makefile
           src/Makefile src/genconfig src/makeverslink
-          lib/Makefile lib/slib.scm
+          lib/Makefile
           doc/gosh.1 doc/gauche-config.1 doc/gauche-cesconv.1
           doc/gauche-install.1 doc/gauche-package.1 doc/Makefile
           ext/Makefile ext/Makefile.ext

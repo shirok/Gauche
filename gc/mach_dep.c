@@ -103,7 +103,14 @@
 # define HAVE_PUSH_REGS
 #else  /* No asm implementation */
 
-# if defined(M68K) && defined(AMIGA)
+# ifdef STACK_NOT_SCANNED
+    void GC_push_regs(void)
+    {
+      /* empty */
+    }
+#   define HAVE_PUSH_REGS
+
+# elif defined(M68K) && defined(AMIGA)
     /* This function is not static because it could also be             */
     /* erroneously defined in .S file, so this error would be caught    */
     /* by the linker.                                                   */
@@ -211,7 +218,7 @@
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.      */
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
-                                          ptr_t arg)
+                                          volatile ptr_t arg)
 {
     volatile int dummy;
     void * context = 0;

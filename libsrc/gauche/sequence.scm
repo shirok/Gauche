@@ -1,7 +1,7 @@
 ;;;
 ;;; sequence.scm - sequence operations
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -41,7 +41,9 @@
   (export referencer modifier subseq
           fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
-          find-index find-with-index group-sequence
+          find-index find-with-index group-sequence group-contiguous-sequence
+          delete-neighbor-dups
+          delete-neighbor-dups! delete-neighbor-dups-squeeze!
           sequence->kmp-stepper sequence-contains
           break-list-by-sequence! break-list-by-sequence
           common-prefix-to common-prefix
@@ -60,7 +62,7 @@
 
 (define-method referencer ((obj <tree-map>))
   (define (ref o k from-right)
-    (let loop ((i k) (iter (%tree-map-iter o)))
+    (let loop ((i k) (iter ((with-module gauche.internal %tree-map-iter) o)))
       (cond [(zero? i) (receive (k v) (iter #f from-right) (cons k v))]
             [else (iter #f from-right) (loop (- i 1) iter)])))
   (^[o i . opt]
@@ -297,6 +299,113 @@
       (reverse! results)
       (reverse! (cons (reverse! (cdr bucket)) results)))
     ))
+
+;; (group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16))
+;;  => ((1 2 3 4) (7 8 9) (11) (13 14) (16))
+;; (group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16) :squeeze #t)
+;;  => ((1 4) (7 9) (11) (13 14) (16))
+(define-method group-contiguous-sequence ((seq <sequence>)
+                                          :key ((:key key-proc) identity)
+                                               ((:next next-proc) (cut + 1 <>))
+                                               ((:test test-proc) eqv?)
+                                               (squeeze #f))
+  (receive (last results)
+      (fold2 (^[elt last results]
+               (let1 key (key-proc elt)
+                 (cond
+                  [(not last) (values key `((,key)))]  ; initial
+                  [(test-proc key (next-proc last))
+                   (if squeeze
+                     (values key results)
+                     (values key `((,key ,@(car results)) ,@(cdr results))))]
+                  [else
+                   (if squeeze
+                     (let1 start (caar results)
+                       (if (test-proc last start)
+                         (values key `((,key) ,@results))
+                         (values key `((,key) (,start ,last)
+                                       ,@(cdr results)))))
+                     (values key `((,key) ,@results)))])))
+             #f '() seq)
+    (if (null? results)
+      '()
+      (if squeeze
+        (let1 start (caar results)
+          (if (test-proc last start)
+            (reverse! results)
+            (reverse! `((,start ,last) ,@(cdr results)))))
+        (reverse! (map reverse! results))))))
+                                          
+(define-method delete-neighbor-dups ((seq <sequence>)
+                                     :key ((:key key-proc) identity)
+                                          ((:test test-proc) eqv?)
+                                          (start 0)
+                                          (end #f))
+  (with-builder ((class-of seq) add! get)
+    (with-iterator (seq end? next)
+      (dotimes [start] (next))
+      (cond [(or (end?) (and end (= start end))) (get)]
+            [else (let1 e (next)
+                    (add! e)
+                    (let loop ([ek (key-proc e)]
+                               [k  (+ start 1)])
+                      (if (or (end?) (and end (= k end)))
+                        (get)
+                        (let* ([n (next)]
+                               [nk (key-proc n)])
+                          (cond [(test-proc ek nk) (loop nk (+ k 1))]
+                                [else (add! n) (loop nk (+ k 1))])))))]))))
+
+;; Store result into SEQ, which must be modifiable.
+;; Returns the index right after the last modified entry.
+(define-method delete-neighbor-dups! ((seq <sequence>)
+                                      :key ((:key key-proc) identity)
+                                           ((:test test-proc) eqv?)
+                                           (start 0)
+                                           (end #f))
+  (define mod! (modifier seq))
+  (with-iterator (seq end? next)
+    (dotimes [start] (next))
+    (if (or (end?) (and end (= start end)))
+      start
+      (let1 e (next)
+        (mod! seq start e)
+        (let loop ([d (+ start 1)]
+                   [ek (key-proc e)]
+                   [k (+ start 1)]
+                   [e e])
+          (if (or (end?) (and end (= k end)))
+            d
+            (let* ([n (next)]
+                   [nk (key-proc n)])
+              (cond [(test-proc ek nk) (loop d nk (+ k 1) n)]
+                    [else (mod! seq d n) (loop (+ d 1) nk (+ k 1) n)]))))))))
+
+;; This can only be defined in sequences whose length can be changed.
+;; NB: We can't define generic version, since there's no generic way
+;; for length-changing mutation.  Each capable sequence should implement
+;; the method.  Here we only provide for <list>.
+(define-method delete-neighbor-dups-squeeze! ((seq <list>)            
+                                              :key ((:key key-proc) identity)
+                                                   ((:test test-proc) eqv?)
+                                                   (start 0)
+                                                   (end #f))
+  (let1 seq (drop* seq start)
+    (if (null? seq)
+      seq
+      (let loop ([p seq]
+                 [pk (key-proc (car seq))]
+                 [k (+ start 1)]
+                 [last seq])
+        (if (or (not (pair? (cdr p))) (and end (= k end)))
+          (begin (set-cdr! last '()) seq)
+          (let* ([q (cdr p)]
+                 [qk (key-proc (car q))])
+            (if (test-proc pk qk)
+              (loop q qk (+ k 1) last)
+              (begin
+                (set-cdr! last q)
+                (loop q qk (+ k 1) q)))))))))
 
 ;; searching sequence -----------------------------------------------
 

@@ -1,7 +1,7 @@
 /*
  * gauche/bits.h - Bit manipulation utilities
  *
- *   Copyright (c) 2007-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2007-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -46,6 +46,7 @@
    The user can use ScmBits as opaque structure and don't need to
    worry about the bit ordering.  For internal hackers: ScmBits are
    also used in bignum.c, and it must maintain this bit ordering.
+   It is important that ScmBignum->values can be casted to ScmBits*.
 */
 
 typedef u_long ScmBits;

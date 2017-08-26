@@ -1,7 +1,7 @@
 ;;;
 ;;; interpolate.scm - string interpolation; to be autoloaded
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -31,11 +31,39 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+
 ;; Legacy syntax:
 ;;  #`"The value is ,(foo)." => (string-append "The value is " (foo) ".")
 ;;
 ;; New syntax:
 ;;  #"The value is ~(foo)." => (string-append "The value is " (foo) ".")
+;;
+;; The reader reads #"... ~expr ..."  as #,(string-interpolate "... ~expr ...").
+;; The reader-ctor calls string-interpolate, which parses the given string
+;; and expands the whole form into a macro call:
+;;  (string-interpolate* "... ~expr ..." ("... " expr " ..."))
+;; The macro string-interpolate* further expands into string-append and
+;; x->string:
+;;  (string-append "... " (x->string expr) " ...")
+;;
+;; We need this multi-step expansion for the following reasons:
+;;
+;;  1) We have to parse target string and extract embedded expressions
+;;     _before_ macro expansion.  Otherwise we can't handle hygiene of
+;;     embedded expressions.
+;;  2) If we do some source-to-source translation, the expansion of
+;;     the reader macro will be embedded in the output.  For the possibility
+;;     of future expansion, we'd like to keep intermediate form that does
+;;     minimal expansion (in our case, parsing the template string and
+;;     extract expressions).  By that, we can tweak the macro later.
+;;
+;; One caveat of reader macro approach is that it inserts global identifier
+;; (string-interpolate*) unhygienically.  We could cheat by directly inserting
+;; an identifier, but it turned out a bad idea because it won't work well
+;; with source-to-source translators.   So we gave up hygiene and ask
+;; users that they need to use #"..." where gauche#string-interpolate* is
+;; visible.  After all, it's Gauche's extension, so you can't use it
+;; in portable R7RS code, anyway.
 ;;
 ;; We use 'read' to get expression after reading an unquote character
 ;; (#\, for the legacy syntax, #\~ for the new syntax.)  This presents
@@ -57,16 +85,19 @@
 ;; for free.  We don't know yet, though.
 
 (define-module gauche.interpolate
-  (export string-interpolate)
+  (export string-interpolate
+          parse-string-interpolation-template
+          string-interpolate*)
   )
 (select-module gauche.interpolate)
 
 (define (string-interpolate str :optional (legacy? #f))
   (if (string? str)
-    (%string-interpolate str (if legacy? #\, #\~))
+    `(string-interpolate*
+      ,(parse-string-interpolation-template str (if legacy? #\, #\~)))
     (errorf "malformed string-interpolate: ~s" (list 'string-interpolate str))))
 
-(define (%string-interpolate str unquote-char)
+(define (parse-string-interpolation-template str unquote-char)
   (define (accum c acc)
     (cond [(eof-object? c)
            (let1 r (get-output-string acc)
@@ -88,9 +119,28 @@
                             (errorf "unmatched parenthesis in interpolating string: ~s" str)])
                    (read))]
            [rest (accum (read-char) (open-output-string))])
-      (cons `(x->string ,item) rest)))
-  (let1 args (with-input-from-string str
-               (^[] (accum (read-char) (open-output-string))))
-    (cond [(null? args) ""]
-          [(null? (cdr args)) (car args)]
-          [else (cons 'string-append args)])))
+      (cons item rest)))
+  (with-input-from-string str
+    (^[] (accum (read-char) (open-output-string)))))
+
+(define-syntax string-interpolate*
+  (er-macro-transformer
+   (^[f r c] (apply %string-interpolate r (cdr f)))))
+
+;; NB: We allow extra args for possible future extension.  For the time
+;; being, we ignore them.
+(define (%string-interpolate rename elts . _)
+  (define x->string. (rename 'x->string))
+  (define string-append. (rename 'string-append))
+  ;; Trying to simplify output form
+  (cond [(null? elts) ""]
+        [(null? (cdr elts))
+         (if (string? (car elts))
+           (car elts)
+           `(,x->string. ,(car elts)))]
+        [else
+         `(,string-append.
+           ,@(map (^e (if (string? e)
+                        e
+                        `(,x->string. ,e)))
+                  elts))]))

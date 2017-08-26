@@ -1,7 +1,7 @@
 ;;;
 ;;; convaux - auxiliary charconv routines
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -34,6 +34,9 @@
 (select-module gauche.charconv)
 (use srfi-1)
 (use srfi-13)
+(use gauche.sequence)
+(autoload gauche.vport
+          open-input-uvector open-output-uvector get-output-uvector)
 
 ;; Determine charset compatibility.  (ces-equivalent? a b) is true if CES a and
 ;; CES b refer to the same CES.
@@ -110,17 +113,38 @@
 
     (values ces-equivalent? ces-upper-compatible?)))
 
-;; Convert string
-(define (ces-convert string fromcode :optional (tocode #f))
-  (let ([out (open-output-string :private? #t)]
-        [in  (open-input-conversion-port
-              (open-input-string string :private? #t)
-              fromcode
-              :to-code tocode :buffer-size (string-size string) :owner? #t)])
-    (copy-port in out :unit 'byte)
-    (close-input-port in)
-    (begin0 (get-output-string out)
-      (close-output-port out))))
+;; returns appropriate input port and size
+(define (%ces-input input)
+  (cond [(string? input)
+         (values (open-input-string input :private? #t) (string-length input))]
+        ;; avoid using u8vector? so that we don't depend on gauche.uvector
+        [(is-a? input <u8vector>)
+         (values (open-input-uvector input) (uvector-length input))]
+        [else (error "string or u8vector required, but got:" input)]))
+
+;; returns appropriate output port and get-output-*
+(define (%ces-output class)
+  (cond
+   [(eq? class <string>)
+    (values (open-output-string :private? #t) get-output-string)]
+   [(eq? class <u8vector>)
+    (values (open-output-uvector) get-output-uvector)]
+   [else (error "Only <string> or <u8vector> is supported, but got:" class)]))
+
+;; Convert string or uvector -> string or uvector
+(define (ces-convert-to class input fromcode :optional (tocode #f))
+  (receive (inp isize) (%ces-input input)
+    (receive (out get) (%ces-output class)
+      (let1 in ($ open-input-conversion-port inp fromcode
+                  :to-code tocode :buffer-size isize :owner? #t)
+        (copy-port in out :unit 'byte)
+        (close-input-port in)
+        (flush out)
+        (begin0 (get out)
+          (close-output-port out))))))
+
+(define (ces-convert input fromcode :optional (tocode #f))
+  (ces-convert-to <string> input fromcode tocode))
 
 ;; "Wrap" the given port for convering to/from native encoding if needed.
 ;; Unlike open-*-conversion-port, these return port itself if the conversion

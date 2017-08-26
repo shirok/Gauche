@@ -1,7 +1,7 @@
 /*
  * paths.h - get 'known' pathnames, such as the system's library directory.
  *
- *   Copyright (c) 2005-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2005-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions

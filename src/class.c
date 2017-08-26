@@ -1,7 +1,7 @@
 /*
  * class.c - class metaobject implementation
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -35,14 +35,17 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/code.h"
+#include "gauche/priv/classP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/macroP.h"
 #include "gauche/priv/writerP.h"
+#include "gauche/priv/dispatchP.h"
 
 /* Some routines uses small array on stack to keep data about
    arguments to dispatch.  If the # of args used for dispach is bigger
    than this, the routine allocates an array in heap. */
 #define PREALLOC_SIZE  32
+
 
 /*===================================================================
  * Built-in classes
@@ -66,7 +69,7 @@ static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
                                       ScmObj val);
 static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs);
 
-static int object_compare(ScmObj x, ScmObj y, int equalp);
+static ScmObj fallback_compare(ScmObj *, int, ScmGeneric *);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
@@ -147,8 +150,8 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotRefUsingClass, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotSetUsingClass, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, fallback_compare, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, fallback_compare, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectHash, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectSetter, Scm_InvalidApply, NULL);
@@ -160,6 +163,7 @@ static ScmObj key_slot_accessor  = SCM_FALSE;
 static ScmObj key_builtin        = SCM_FALSE;
 static ScmObj key_name           = SCM_FALSE;
 static ScmObj key_lambda_list    = SCM_FALSE;
+static ScmObj key_method_locked  = SCM_FALSE;
 static ScmObj key_generic        = SCM_FALSE;
 static ScmObj key_specializers   = SCM_FALSE;
 static ScmObj key_body           = SCM_FALSE;
@@ -226,7 +230,7 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
    returns a string without those brackets.  Otherwise returns the class
    name in a string.  This is used by some print method.  Always returns
    a string. */
-ScmObj Scm__InternalClassName(ScmClass *klass)
+ScmObj Scm_ShortClassName(ScmClass *klass)
 {
     ScmObj name = klass->name;
 
@@ -246,6 +250,12 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
        so this is an ad hoc code.  We may need better handling
        (like write-to-string) later. */
     return SCM_MAKE_STR("(unnamed class)");
+}
+
+/* TRANSIENT: For the backward compatibility.  Remove this on 1.0. */
+ScmObj Scm__InternalClassName(ScmClass *klass)
+{
+    return Scm_ShortClassName(klass);
 }
 
 /*=====================================================================
@@ -376,7 +386,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     ScmClass *instance = SCM_NEW_INSTANCE(ScmClass, klass);
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
-    instance->compare = object_compare;
+    instance->compare = Scm_ObjectCompare;
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
@@ -1957,7 +1967,7 @@ static SCM_DEFINE_METHOD(object_initialize_rec,
 
 /* Default equal? delegates compare action to generic function object-equal?.
    We can't use VMApply here */
-static int object_compare(ScmObj x, ScmObj y, int equalp)
+int Scm_ObjectCompare(ScmObj x, ScmObj y, int equalp)
 {
     ScmObj r;
     if (equalp) {
@@ -1976,26 +1986,16 @@ static int object_compare(ScmObj x, ScmObj y, int equalp)
     }
 }
 
-/* Fallback methods */
-static ScmObj object_compare_default(ScmNextMethod *nm, ScmObj *argv,
-                                     int argc, void *data)
+/* Fallback of object-equal? and object-compare.
+   We return #f for fallback of object-compare, which means two objects
+   can't be ordered.
+ */
+static ScmObj fallback_compare(ScmObj *argv, int argc, ScmGeneric *gf)
 {
-    return SCM_FALSE;
+    if (argc == 2) return SCM_FALSE;
+    else return Scm_NoNextMethod(argv, argc, gf);
 }
 
-static ScmClass *object_compare_SPEC[] = {
-    SCM_CLASS_STATIC_PTR(Scm_TopClass), SCM_CLASS_STATIC_PTR(Scm_TopClass)
-};
-static SCM_DEFINE_METHOD(object_compare_rec,
-                         &Scm_GenericObjectCompare,
-                         2, 0,
-                         object_compare_SPEC,
-                         object_compare_default, NULL);
-static SCM_DEFINE_METHOD(object_equalp_rec,
-                         &Scm_GenericObjectEqualP,
-                         2, 0,
-                         object_compare_SPEC,
-                         object_compare_default, NULL);
 
 /*=====================================================================
  * Generic function
@@ -2006,6 +2006,7 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     ScmGeneric *gf = SCM_NEW_INSTANCE(ScmGeneric, klass);
     SCM_PROCEDURE_INIT(gf, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
     gf->methods = SCM_NIL;
+    gf->dispatcher = NULL;
     gf->fallback = Scm_NoNextMethod;
     gf->data = NULL;
     gf->maxReqargs = 0;
@@ -2113,6 +2114,7 @@ int Scm_MethodApplicableForClasses(ScmMethod *m, ScmClass *types[], int nargs)
         ScmClass **sp = m->specializers;
         int n = 0;
         for (; n < m->common.required; n++) {
+            if (SCM_EQ(sp[n], SCM_CLASS_TOP)) continue;
             if (!Scm_SubtypeP(types[n], sp[n])) return FALSE;
         }
     }
@@ -2145,14 +2147,34 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
         }
     }
 
-    SCM_FOR_EACH(mp, methods) {
-        ScmObj m = SCM_CAR(mp);
-        SCM_ASSERT(SCM_METHODP(m));
-        if (Scm_MethodApplicableForClasses(SCM_METHOD(m), typev, argc)) {
-            SCM_APPEND1(h, t, SCM_OBJ(m));
-        }
+    if (gf->dispatcher
+        && argc <= SCM_DISPATCHER_MAX_NARGS
+        && argc >= 1) {
+        ScmMethodDispatcher *dis = (ScmMethodDispatcher*)gf->dispatcher;
+        ScmObj p = Scm__MethodDispatcherLookup(dis, typev, argc);
+        if (SCM_PAIRP(p)) methods = p;
     }
-    return h;
+
+    SCM_ASSERT(SCM_PAIRP(methods));
+    if (SCM_NULLP(SCM_CDR(methods))) {
+        /* We have only one method, so just check its applicability
+           and retrun the list without allocation if possible. */
+        if (Scm_MethodApplicableForClasses(SCM_METHOD(SCM_CAR(methods)),
+                                           typev, argc)) {
+            return methods;
+        } else {
+            return SCM_NIL;
+        }
+    } else {
+        SCM_FOR_EACH(mp, methods) {
+            ScmObj m = SCM_CAR(mp);
+            SCM_ASSERT(SCM_METHODP(m));
+            if (Scm_MethodApplicableForClasses(SCM_METHOD(m), typev, argc)) {
+                SCM_APPEND1(h, t, SCM_OBJ(m));
+            }
+        }
+        return h;
+    }
 }
 
 static ScmObj compute_applicable_methods(ScmNextMethod *nm,
@@ -2287,6 +2309,41 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
     return Scm_ArrayToList(array, len);
 }
 
+
+/* Developer API.  Accessible from Scheme via generic-build-dispatcher!
+   If axis is out of range, we do nothing and returns #f. 
+ */
+ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis)
+{
+    if (axis >= 0 && axis < SCM_DISPATCHER_MAX_NARGS) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
+        gf->dispatcher = Scm__BuildMethodDispatcher(gf->methods, axis);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
+        return SCM_TRUE;
+    } else {
+        return SCM_FALSE;
+    }
+}
+
+/* Developer API */
+void Scm__GenericInvalidateDispatcher(ScmGeneric *gf)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
+    gf->dispatcher = NULL;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
+}
+
+/* Developer API */
+void Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port)
+{
+    if (gf->dispatcher) {
+        Scm_Printf(port, "%S's dispatcher:\n", gf);
+        Scm__MethodDispatcherDump((ScmMethodDispatcher*)gf->dispatcher, port);
+    } else {
+        Scm_Printf(port, "%S doesn't have a dispatcher.\n", gf);
+    }
+}
+
 /*=====================================================================
  * Method
  */
@@ -2306,8 +2363,20 @@ static void method_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, "#<method %S>", SCM_METHOD(obj)->common.info);
 }
 
+/* See if this method doesn't use 'next-method' in its body. */
+static int method_leaf_p(ScmClosure *body)
+{
+    ScmCompiledCode *code = SCM_COMPILED_CODE(SCM_CLOSURE_CODE(body));
+    if (!SCM_PAIRP(code->signatureInfo)
+        || !SCM_PAIRP(SCM_CAR(code->signatureInfo))) return FALSE;
+    ScmObj attr = Scm_PairAttrGet(SCM_PAIR(SCM_CAR(code->signatureInfo)),
+                                  SCM_SYM_UNUSED_ARGS,
+                                  SCM_NIL);
+    return !SCM_FALSEP(Scm_Memq(SCM_SYM_NEXT_METHOD, attr));
+}
+
 /*
- * (initialize <method> (&key lamdba-list generic specializers body))
+ * (initialize <method> (&key lamdba-list generic specializers body method-locked))
  *    Method initialization.   This needs to be hardcoded, since
  *    we can't call Scheme verison of initialize to initialize the
  *    "initialize" method (chicken-and-egg circularity).
@@ -2321,6 +2390,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
     ScmObj generic = Scm_GetKeyword(key_generic, initargs, SCM_FALSE);
     ScmObj specs = Scm_GetKeyword(key_specializers, initargs, SCM_FALSE);
     ScmObj body = Scm_GetKeyword(key_body, initargs, SCM_FALSE);
+    ScmObj locked = Scm_GetKeyword(key_method_locked, initargs, SCM_FALSE);
     ScmObj lp, h, t;
     int speclen = 0, req = 0, opt = 0;
 
@@ -2347,11 +2417,14 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
     m->common.optional = opt;
     m->common.info = Scm_Cons(g->common.info,
                               class_array_to_names(specarray, speclen));
+    m->common.leaf = method_leaf_p(SCM_CLOSURE(body));
     m->generic = g;
     m->specializers = specarray;
     m->func = NULL;
-    m->data = SCM_CLOSURE(body)->code;
-    m->env = SCM_CLOSURE(body)->env;
+    m->data = SCM_CLOSURE_CODE(body);
+    m->env = SCM_CLOSURE_ENV(body);
+
+    SCM_METHOD_LOCKED(m) = SCM_BOOL_VALUE(locked);
 
     /* NB: for comprehensive debugging & profiling information, we modify
        the 'name' field of the compiled code to contain
@@ -2393,6 +2466,16 @@ static ScmObj method_required(ScmMethod *m)
 static ScmObj method_optional(ScmMethod *m)
 {
     return SCM_MAKE_BOOL(m->common.optional);
+}
+
+static ScmObj method_locked(ScmMethod *m)
+{
+    return SCM_MAKE_BOOL(SCM_METHOD_LOCKED(m));
+}
+
+static ScmObj method_leaf(ScmMethod *m)
+{
+    return SCM_MAKE_BOOL(SCM_METHOD_LEAF_P(m));
 }
 
 static ScmObj method_generic(ScmMethod *m)
@@ -2453,6 +2536,11 @@ ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *newc)
     if (SCM_FALSEP(Scm_Memq(SCM_OBJ(m), newc->directMethods))) {
         newc->directMethods = Scm_Cons(SCM_OBJ(m), newc->directMethods);
     }
+    /* NB: For now, we just invalidate dispatcher.  Redefining class may
+       trigger massive update-direct-method! and it's inefficient to rebuild
+       dispatcher table for every invocation of it.
+     */
+    Scm__GenericInvalidateDispatcher(m->generic);
     return SCM_OBJ(m);
 }
 
@@ -2487,7 +2575,7 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                   " something wrong in MOP implementation?",
                   method, gf);
 
-    int replaced = FALSE, reqs = gf->maxReqargs;
+    int reqs = gf->maxReqargs;  /* # of maximum required args */
     method->generic = gf;
     /* pre-allocate cons pair to avoid triggering GC in the critical region */
     ScmObj pair = Scm_Cons(SCM_OBJ(method), gf->methods);
@@ -2495,7 +2583,10 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
         reqs = SCM_PROCEDURE_REQUIRED(method);
     }
 
-    /* Check if a method with the same signature exists */
+    /* Check if a method with the same signature exists.
+       If so, we replace the method instead of adding it.  */
+    ScmMethod *replaced = NULL;
+    ScmMethod *method_locked = NULL;
     (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
     ScmObj mp;
     SCM_FOR_EACH(mp, gf->methods) {
@@ -2509,17 +2600,32 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                 if (sp1[i] != sp2[i]) break;
             }
             if (i == SCM_PROCEDURE_REQUIRED(method)) {
-                SCM_SET_CAR(mp, SCM_OBJ(method));
-                replaced = TRUE;
+                if (SCM_METHOD_LOCKED(mm)) {
+                    /* We'll throw an error */
+                    method_locked = mm;
+                } else {
+                    replaced = mm;
+                    SCM_SET_CAR(mp, SCM_OBJ(method));
+                }
                 break;
             }
         }
     }
-    if (!replaced) {
+    if (!replaced && (method_locked == NULL)) {
         gf->methods = pair;
         gf->maxReqargs = reqs;
     }
+    if (gf->dispatcher && (method_locked == NULL)) {
+        ScmMethodDispatcher *dis = (ScmMethodDispatcher*)gf->dispatcher;
+        if (replaced) Scm__MethodDispatcherDelete(dis, replaced);
+        Scm__MethodDispatcherAdd(dis, method);
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
+
+    if (method_locked != NULL) {
+        Scm_Error("Attempt to replace a locked method %S",
+                  SCM_OBJ(method_locked));
+    }
     return SCM_UNDEFINED;
 }
 
@@ -2561,6 +2667,10 @@ ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method)
                 mp = SCM_CDR(mp);
             }
         }
+    }
+    if (gf->dispatcher) {
+        Scm__MethodDispatcherDelete((ScmMethodDispatcher*)gf->dispatcher,
+                                    method);
     }
     SCM_FOR_EACH(mp, gf->methods) {
         /* sync # of required selector */
@@ -2935,6 +3045,8 @@ static ScmClassStaticSlotSpec generic_slots[] = {
 static ScmClassStaticSlotSpec method_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
+    SCM_CLASS_SLOT_SPEC("method-locked", method_locked, NULL),
+    SCM_CLASS_SLOT_SPEC("leaf?", method_leaf, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC_END()
@@ -2943,6 +3055,8 @@ static ScmClassStaticSlotSpec method_slots[] = {
 static ScmClassStaticSlotSpec accessor_method_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
+    SCM_CLASS_SLOT_SPEC("method-locked", method_locked, NULL),
+    SCM_CLASS_SLOT_SPEC("leaf?", method_leaf, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC("slot-accessor", accessor_method_slot_accessor, accessor_method_slot_accessor_set),
@@ -3182,6 +3296,7 @@ void Scm__InitClass(void)
     key_name = SCM_MAKE_KEYWORD("name");
     key_lambda_list = SCM_MAKE_KEYWORD("lambda-list");
     key_generic = SCM_MAKE_KEYWORD("generic");
+    key_method_locked = SCM_MAKE_KEYWORD("method-locked");
     key_specializers = SCM_MAKE_KEYWORD("specializers");
     key_body = SCM_MAKE_KEYWORD("body");
 
@@ -3358,6 +3473,4 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
     Scm_InitBuiltinMethod(&generic_updatedirectmethod_rec);
     Scm_InitBuiltinMethod(&method_more_specific_p_rec);
-    Scm_InitBuiltinMethod(&object_equalp_rec);
-    Scm_InitBuiltinMethod(&object_compare_rec);
 }

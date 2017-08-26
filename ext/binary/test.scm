@@ -407,6 +407,40 @@
                  <> 'arm-little-endian)
             '(0 8)))
 
+(test* "get-uint"
+       '(#xff #xff #xfffe #xfeff #xfffe00 #x00feff #xfe0000 #x0000fe
+         #xfe00000003 #x03000000fe #x0000000300 #x0003000000)
+       (let1 v '#u8(#xff #xfe 0 0 0 3 0 0 0 0)
+         (list (get-uint 1 v 0 'big-endian)
+               (get-uint 1 v 0 'little-endian)
+               (get-uint 2 v 0 'big-endian)
+               (get-uint 2 v 0 'little-endian)
+               (get-uint 3 v 0 'big-endian)
+               (get-uint 3 v 0 'little-endian)
+               (get-uint 3 v 1 'big-endian)
+               (get-uint 3 v 1 'little-endian)
+               (get-uint 5 v 1 'big-endian)
+               (get-uint 5 v 1 'little-endian)
+               (get-uint 5 v 2 'big-endian)
+               (get-uint 5 v 2 'little-endian))))
+
+(test* "get-sint"
+       '(-1 -1 -2 -257 -512 #x00feff -131072 #x0000fe
+         -8589934589 #x03000000fe #x0000000300 #x0003000000)
+       (let1 v '#u8(#xff #xfe 0 0 0 3 0 0 0 0)
+         (list (get-sint 1 v 0 'big-endian)
+               (get-sint 1 v 0 'little-endian)
+               (get-sint 2 v 0 'big-endian)
+               (get-sint 2 v 0 'little-endian)
+               (get-sint 3 v 0 'big-endian)
+               (get-sint 3 v 0 'little-endian)
+               (get-sint 3 v 1 'big-endian)
+               (get-sint 3 v 1 'little-endian)
+               (get-sint 5 v 1 'big-endian)
+               (get-sint 5 v 1 'little-endian)
+               (get-sint 5 v 2 'big-endian)
+               (get-sint 5 v 2 'little-endian))))
+
 (test* "put-u8!" '#u8(0 1 254 255)
        (let1 v (make-u8vector 4)
          (put-u8! v 3 255)
@@ -533,6 +567,22 @@
          (put-f64! v 0 1.0 'arm-little-endian)
          (put-f64! v 9 -1.0 'arm-little-endian)
          v))
+
+(test* "put-uint!"
+       '#u8(0 #xff #xff 0 0 #xff #xfe #xfe #xff 0)
+       (rlet1 v (make-u8vector 10)
+         (put-uint! 2 v 0 #xff 'big-endian)
+         (put-uint! 2 v 2 #xff 'little-endian)
+         (put-uint! 3 v 4 #xfffe 'big-endian)
+         (put-uint! 3 v 7 #xfffe 'little-endian)))
+
+(test* "put-sint!"
+       '#u8(#xff #xfe #xfe #xff #xff #xfe 00 00 #xfe #xff)
+       (rlet1 v (make-u8vector 10)
+         (put-sint! 2 v 0 -2 'big-endian)
+         (put-sint! 2 v 2 -2 'little-endian)
+         (put-sint! 3 v 4 -512 'big-endian)
+         (put-sint! 3 v 7 -512 'little-endian)))
 
 ;;----------------------------------------------------------
 (test-section "binary.ftype")

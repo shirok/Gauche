@@ -12,7 +12,7 @@
 dnl Process this file with autoconf to produce configure.
 
 # Initialization
-AC_INIT(gc,7.4.2,bdwgc@lists.opendylan.org)
+AC_INIT(gc,7.6.0,bdwgc@lists.opendylan.org)
     ## version must conform to [0-9]+[.][0-9]+[.][0-9]+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
@@ -145,7 +145,8 @@ AH_TEMPLATE([GC_OPENBSD_THREADS],   [Define to support OpenBSD pthreads.])
 AH_TEMPLATE([GC_OSF1_THREADS],      [Define to support Tru64 pthreads.])
 AH_TEMPLATE([GC_SOLARIS_THREADS],   [Define to support Solaris pthreads.])
 AH_TEMPLATE([GC_WIN32_THREADS],     [Define to support Win32 threads.])
-AH_TEMPLATE([GC_WIN32_PTHREADS],    [Define to support win32-pthreads.])
+AH_TEMPLATE([GC_WIN32_PTHREADS],
+                [Define to support pthreads-win32 or winpthreads.])
 AH_TEMPLATE([GC_RTEMS_PTHREADS],    [Define to support rtems-pthreads.])
 
 dnl System header feature requests.
@@ -186,7 +187,7 @@ case "$THREADS" in
         AC_DEFINE(THREAD_LOCAL_ALLOC)
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         ;;
-     *-*-linux*)
+     *-*-linux* | *-*-nacl*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
         ;;
@@ -275,7 +276,7 @@ case "$THREADS" in
         ;;
      *-*-mingw*)
         AC_DEFINE(GC_WIN32_PTHREADS)
-        # Using win32-pthreads
+        # Using pthreads-win32 (or other non-Cygwin pthreads) library.
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
@@ -310,9 +311,8 @@ case "$THREADS" in
         ;;
     esac
     case "$host" in
-     sparc*-*-solaris*)
+      sparc*-*-solaris*)
         if test "$GCC" != yes; then
-          CFLAGS="-O $CFLAGS"
           need_atomic_ops_asm=true
         fi
         ;;
@@ -378,9 +378,17 @@ AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
 
+compiler_suncc=no
 case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
+      ;;
+   *-*-solaris*)
+      if test "$GCC" != yes; then
+        # Solaris SunCC
+        compiler_suncc=yes
+        CFLAGS="-O $CFLAGS"
+      fi
       ;;
    *-*-wince*)
       if test "$enable_gc_debug" != "no"; then
@@ -409,11 +417,15 @@ AC_TRY_COMPILE([],[
  #endif
 ], [compiler_xlc=yes], [compiler_xlc=no])
 AC_MSG_RESULT($compiler_xlc)
-AM_CONDITIONAL(COMPILER_XLC,test $compiler_xlc = yes)
 if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   # the darwin stack-frame-walking code is completely broken on xlc
   AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1, [See doc/README.macros.])
 fi
+
+# XLC neither requires nor tolerates the unnecessary assembler goop.
+# Similar for the Sun C compiler.
+AM_CONDITIONAL([ASM_WITH_CPP_UNSUPPORTED],
+    [test $compiler_xlc = yes -o $compiler_suncc = yes])
 
 if test "$GCC" = yes; then
   # Disable aliasing optimization unless forced to.
@@ -461,10 +473,16 @@ case "$host" in
 esac
 AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 
+# Check for various headers.
+AC_CHECK_HEADERS([execinfo.h])
+if test "$ac_cv_header_execinfo_h" != "yes"; then
+  AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header])
+fi
+
 # extra LD Flags which are required for targets
 case "${host}" in
   *-*-darwin*)
-    extra_ldflags_libgc="-Wl,-single_module -framework CoreFoundation"
+    extra_ldflags_libgc=-Wl,-single_module
     ;;
 esac
 AC_SUBST(extra_ldflags_libgc)
@@ -550,7 +568,8 @@ if test "${enable_shared}" = yes; then
                      [ac_cv_fvisibility_hidden=no])
       CFLAGS="$old_CFLAGS"
       AS_IF([test "$ac_cv_fvisibility_hidden" = yes],
-            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"])
+            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"],
+            [CFLAGS="-DGC_NO_VISIBILITY $CFLAGS"])
       AC_MSG_RESULT($ac_cv_fvisibility_hidden)
     fi
   fi
@@ -593,6 +612,9 @@ case "$host" in
     ;;
  ia64-*-*)
     machdep="ia64_save_regs_in_stack.lo"
+    ;;
+ *-*-nacl*)
+    AC_DEFINE(NO_EXECUTE_PERMISSION)
     ;;
 esac
 AC_MSG_RESULT($machdep)
@@ -666,6 +688,8 @@ AC_ARG_ENABLE(gcj-support,
         [Disable support for gcj.])])
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
+    AC_DEFINE([GC_ENABLE_SUSPEND_THREAD], 1,
+              [Define to turn on GC_suspend_thread support.])
 fi
 
 dnl Interaction with other programs that might use signals.
@@ -768,7 +792,7 @@ AC_ARG_ENABLE(atomic-uncollectable,
     [AC_HELP_STRING([--disable-atomic-uncollectible],
         [Disable support for atomic uncollectible allocation.])])
 if test x"$enable_atomic_uncollectible" != x"no"; then
-    AC_DEFINE(ATOMIC_UNCOLLECTABLE, 1,
+    AC_DEFINE([GC_ATOMIC_UNCOLLECTABLE], 1,
         [Define to enable atomic uncollectible allocation.])
 fi
 
@@ -875,6 +899,13 @@ else
 fi
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
+
+AC_ARG_ENABLE(werror, [--enable-werror Pass -Werror to the C compiler],
+              werror_flag=$enableval, werror_flag=no)
+if test x$werror_flag = xyes; then
+    WERROR_CFLAGS="-Werror"
+fi
+AC_SUBST([WERROR_CFLAGS])
 
 AC_ARG_ENABLE(single-obj-compilation,
    [AC_HELP_STRING([--enable-single-obj-compilation],

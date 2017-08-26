@@ -1,7 +1,7 @@
 ;;;
 ;;; threads.scm - thread related procedures.  to be autoloaded
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -86,17 +86,17 @@
 (define (thread? obj) (is-a? obj <thread>))
 
 (define (thread-name thread)
-  (check-arg thread? thread)
+  (assume-type thread <thread>)
   (slot-ref thread 'name))
 
 (define (thread-specific-set! thread value)
-  (check-arg thread? thread)
+  (assume-type thread <thread>)
   (slot-set! thread 'specific value))
 
 (define thread-specific
   (getter-with-setter
    (^[thread]
-     (check-arg thread? thread)
+     (assume-type thread <thread>)
      (slot-ref thread 'specific))
    thread-specific-set!))
 
@@ -141,21 +141,21 @@
 (define (mutex? obj)  (is-a? obj <mutex>))
 
 (define (mutex-name mutex)
-  (check-arg mutex? mutex)
+  (assume-type mutex <mutex>)
   (slot-ref mutex 'name))
 
 (define (mutex-state mutex)
-  (check-arg mutex? mutex)
+  (assume-type mutex <mutex>)
   (slot-ref mutex 'state))
 
 (define (mutex-specific-set! mutex value)
-  (check-arg mutex? mutex)
+  (assume-type mutex <mutex>)
   (slot-set! mutex 'specific value))
 
 (define mutex-specific
   (getter-with-setter
    (^[mutex]
-     (check-arg mutex? mutex)
+     (assume-type mutex <mutex>)
      (slot-ref mutex 'specific))
    mutex-specific-set!))
 
@@ -199,17 +199,17 @@
 (define (condition-variable? obj) (is-a? obj <condition-variable>))
 
 (define (condition-variable-name cv)
-  (check-arg condition-variable? cv)
+  (assume-type cv <condition-variable>)
   (slot-ref cv 'name))
 
 (define (condition-variable-specific-set! cv value)
-  (check-arg condition-variable? cv)
+  (assume-type cv <condition-variable>)
   (slot-set! cv 'specific value))
 
 (define condition-variable-specific
   (getter-with-setter
    (lambda (cv)
-     (check-arg condition-variable? cv)
+     (assume-type cv <condition-variable>)
      (slot-ref cv 'specific))
    condition-variable-specific-set!))
 
@@ -241,7 +241,7 @@
   (is-a? obj <uncaught-exception>))
 
 (define (uncaught-exception-reason exc)
-  (check-arg uncaught-exception? exc)
+  (assume-type exc <uncaught-exception>)
   (slot-ref exc 'reason))
 
 ;;===============================================================
@@ -256,20 +256,22 @@
   (define m (make-mutex))
   (let-syntax ([with-lock
                 (syntax-rules ()
-                  [(_ timeout timeout-val . form)
+                  [(_ timeout timeout-val timeout-vals . form)
                    (unwind-protect
                        (if (mutex-lock! m timeout)
                          (begin . form)
-                         timeout-val)
+                         (if (null? timeout-vals)
+                           timeout-val
+                           (apply values (cons timeout-val timeout-vals))))
                      (when (eq? (mutex-state m) (current-thread))
                        (mutex-unlock! m)))])])
     ;; TODO: we may expand special cases like vals is 1 to 3 elements long,
     ;; avoiding creation of lists every time updater is called.
     (%make-atom
-     (^[proc timeout timeout-val]
-       (with-lock timeout timeout-val (apply proc vals)))
-     (^[proc timeout timeout-val]
-       (with-lock timeout timeout-val
+     (^[proc timeout timeout-val timeout-vals]
+       (with-lock timeout timeout-val timeout-vals (apply proc vals)))
+     (^[proc timeout timeout-val timeout-vals]
+       (with-lock timeout timeout-val timeout-vals
                   (call-with-values (cut apply proc vals)
                     (^ vs
                       (unless (= (length vs) (length vals))
@@ -279,14 +281,14 @@
                       (set! vals vs)
                       (apply values vals))))))))
 
-(define (atomic atom proc :optional (timeout #f) (timeout-val #f))
+(define (atomic atom proc :optional (timeout #f) (timeout-val #f) :rest vals)
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-applier atom) proc timeout timeout-val))
+  ((atom-applier atom) proc timeout timeout-val vals))
 
-(define (atomic-update! atom proc :optional (timeout #f) (timeout-val #f))
+(define (atomic-update! atom proc :optional (timeout #f) (timeout-val #f) :rest vals)
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-updater atom) proc timeout timeout-val))
+  ((atom-updater atom) proc timeout timeout-val vals))
 
 (define (atom-ref atom :optional (index 0) (timeout #f) (timeout-val #f))
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-applier atom) (^ xs (list-ref xs index)) timeout timeout-val))
+  ((atom-applier atom) (^ xs (list-ref xs index)) timeout timeout-val '()))

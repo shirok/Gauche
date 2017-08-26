@@ -51,7 +51,7 @@ the core features of Gauche but separated since less frequently used.
 (Some modules are rather ad-hoc, but here for historical reasons).
 
 @item
-@ref{Library modules - R7RS integration} explains how Gauche
+@ref{Library modules - R7RS standard libraries} explains how Gauche
 integrates R7RS into exising Gauche structures.  If you want to
 write R7RS-compliant portable programs, you definitely want to
 check the first two sections of this chapter.  What follows is
@@ -85,7 +85,7 @@ network protocol utilities, and more.
 (いくつかのモジュールはもっと付加的なものですが、歴史的理由からここにあります)。
 
 @item
-@ref{Library modules - R7RS integration}ではR7RSが既存のGaucheの
+@ref{Library modules - R7RS standard libraries}ではR7RSが既存のGaucheの
 構造にどのように統合されているかについて説明します。R7RS準拠のポータブルな
 プログラムを書く場合は、この章の最初の2節にはぜひ目を通してください。
 その後には、R7RSで定義されているモジュールの説明が続きますが、R7RSの
@@ -275,7 +275,7 @@ to construct and traverse collections/sequences in concise code.
 @itemize @bullet
 @item
 @emph{List} - the universal data structure.  You want to check
-@ref{Pairs and Lists} and @ref{List library}
+@ref{Pairs and Lists} and @ref{R7RS lists}
 @item
 @emph{Vector} - a one-dimensional array of arbitrary Scheme values.
 See @ref{Vectors} and @ref{Vector library}.
@@ -340,7 +340,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @itemize @bullet
 @item
 @emph{リスト} - もっともよく使うデータ構造。
-@ref{Pairs and Lists}と@ref{List library}をチェックしましょう。
+@ref{Pairs and Lists}と@ref{R7RS lists}をチェックしましょう。
 @item
 @emph{ベクタ} - 任意のSchemeの値を格納する一次元配列。@ref{Vectors}お
 よび@ref{Vector library}を見ましょう。
@@ -1048,6 +1048,15 @@ It checks internal consistency of the given tree-map.
 @example
 rbtree-check
 @end example
+@end deftp
+
+@deftp {Module} util.sparse
+@mdindex util.sparse
+@c EN
+Renamed to @code{data.sparse}.  @xref{Sparse data containers}.
+@c JP
+@code{data.sparse}へと名前変更。@ref{Sparse data containers}参照。
+@c COMMON
 @end deftp
 
 @deftp {Module} util.trie

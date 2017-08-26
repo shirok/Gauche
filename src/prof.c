@@ -1,7 +1,7 @@
 /*
  * prof.c - profiler
  *
- *   Copyright (c) 2005-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2005-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -53,6 +53,65 @@
 
 #define SAMPLING_PERIOD 10000
 
+#if defined(GAUCHE_WINDOWS)
+
+static void sampler_sample(ScmVM*);
+
+static unsigned __stdcall observer_thread(void *arg)
+{
+    ScmVM *vm = (ScmVM*)arg;
+    CONTEXT ctx;
+    DWORD sleep_time;
+    DWORD resume_result = 0;
+
+    /* NB: We can't use Scm_SysError in this thread. */
+    /* NB: GetThreadContext might be required to make the target thread
+           certainly suspended. */
+    sleep_time = SAMPLING_PERIOD / 1000;
+    if (sleep_time <= 0) sleep_time = 1;
+    do {
+        if (resume_result != -1) {
+            if (SuspendThread(vm->prof->hTargetThread) != -1) {
+                if (GetThreadContext(vm->prof->hTargetThread, &ctx)) {
+                    sampler_sample(vm);
+                }
+            }
+        }
+        resume_result = ResumeThread(vm->prof->hTargetThread);
+    } while (WAIT_OBJECT_0 != WaitForSingleObject(vm->prof->hTimerEvent,
+                                                  sleep_time));
+    return 0;
+}
+
+static void ITIMER_START(void)
+{
+    ScmVM *vm = Scm_VM();
+
+    vm->prof->hTimerEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (vm->prof->hTimerEvent == NULL) {
+        Scm_SysError("CreateEvent failed");
+    }
+    vm->prof->hObserverThread = (HANDLE)_beginthreadex(NULL, 0, observer_thread,
+                                                       (void*)vm, 0, NULL);
+    if (vm->prof->hObserverThread == NULL) {
+        Scm_SysError("_beginthreadex failed");
+    }
+}
+
+static void ITIMER_STOP(void)
+{
+    ScmVM *vm = Scm_VM();
+
+    SetEvent(vm->prof->hTimerEvent);
+    WaitForSingleObject(vm->prof->hObserverThread, INFINITE);
+    CloseHandle(vm->prof->hObserverThread);
+    vm->prof->hObserverThread = NULL;
+    CloseHandle(vm->prof->hTimerEvent);
+    vm->prof->hTimerEvent = NULL;
+}
+
+#else  /* !GAUCHE_WINDOWS */
+
 #define ITIMER_START()                                  \
     do {                                                \
         struct itimerval tval, oval;                    \
@@ -72,6 +131,8 @@
         tval.it_value.tv_usec = 0;              \
         setitimer(ITIMER_PROF, &tval, &oval);   \
     } while (0)
+
+#endif /* !GAUCHE_WINDOWS */
 
 /*=============================================================
  * Statistic sampler
@@ -100,16 +161,26 @@ static void sampler_flush(ScmVM *vm)
 }
 
 /* signal handler */
+#if defined(GAUCHE_WINDOWS)
+static void sampler_sample(ScmVM *vm)
+#else  /* !GAUCHE_WINDOWS */
 static void sampler_sample(int sig)
+#endif /* !GAUCHE_WINDOWS */
 {
+#if !defined(GAUCHE_WINDOWS)
     ScmVM *vm = Scm_VM();
+#endif /* !GAUCHE_WINDOWS */
     if (vm == NULL || vm->prof == NULL) return;
     if (vm->prof->state != SCM_PROFILER_RUNNING) return;
 
     if (vm->prof->currentSample >= SCM_PROF_SAMPLES_IN_BUFFER) {
+#if !defined(GAUCHE_WINDOWS)
         ITIMER_STOP();
+#endif /* !GAUCHE_WINDOWS */
         sampler_flush(vm);
+#if !defined(GAUCHE_WINDOWS)
         ITIMER_START();
+#endif /* !GAUCHE_WINDOWS */
     }
 
     int i = vm->prof->currentSample++;
@@ -162,10 +233,12 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
     if (vm->prof->currentCount == 0) return;
 
     /* suspend itimer during hash table operation */
+#if !defined(GAUCHE_WINDOWS)
     sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIGPROF);
     SIGPROCMASK(SIG_BLOCK, &set, NULL);
+#endif /* !GAUCHE_WINDOWS */
 
     int ncounts = vm->prof->currentCount;
     for (int i=0; i<ncounts; i++) {
@@ -180,17 +253,13 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
             func = SCM_OBJ(SCM_METHOD(func)->data);
         }
 
-        e = Scm_HashTableSet(vm->prof->statHash,
+        e = Scm_HashTableRef(vm->prof->statHash,
                              vm->prof->counts[i].func,
-                             SCM_FALSE,
-                             SCM_DICT_NO_OVERWRITE);
-        if (SCM_FALSEP(e)) {
-            e = Scm_HashTableSet(vm->prof->statHash,
-                                 vm->prof->counts[i].func,
-                                 Scm_Cons(SCM_MAKE_INT(0), SCM_MAKE_INT(0)),
-                                 0);
+                             SCM_UNBOUND);
+        if (SCM_UNBOUNDP(e)) {
+            e = Scm_Cons(SCM_MAKE_INT(0), SCM_MAKE_INT(0));
+            Scm_HashTableSet(vm->prof->statHash, vm->prof->counts[i].func, e, 0);
         }
-
         SCM_ASSERT(SCM_PAIRP(e));
         cnt = SCM_INT_VALUE(SCM_CAR(e)) + 1;
         SCM_SET_CAR(e, SCM_MAKE_INT(cnt));
@@ -198,7 +267,9 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
     vm->prof->currentCount = 0;
 
     /* resume itimer */
+#if !defined(GAUCHE_WINDOWS)
     SIGPROCMASK(SIG_UNBLOCK, &set, NULL);
+#endif /* !GAUCHE_WINDOWS */
 }
 
 /*=============================================================
@@ -221,10 +292,21 @@ void Scm_ProfilerStart(void)
         vm->prof->currentCount = 0;
         vm->prof->statHash =
             SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+#if defined(GAUCHE_WINDOWS)
+        vm->prof->hTargetThread = NULL;
+        vm->prof->hObserverThread = NULL;
+        vm->prof->hTimerEvent = NULL;
+        vm->prof->samplerFileName = templat_buf;
+#else  /* !GAUCHE_WINDOWS */
         unlink(templat_buf);       /* keep anonymous tmpfile */
+#endif /* !GAUCHE_WINDOWS */
     } else if (vm->prof->samplerFd < 0) {
         vm->prof->samplerFd = Scm_Mkstemp(templat_buf);
+#if defined(GAUCHE_WINDOWS)
+        vm->prof->samplerFileName = templat_buf;
+#else  /* !GAUCHE_WINDOWS */
         unlink(templat_buf);
+#endif /* !GAUCHE_WINDOWS */
     }
 
     if (vm->prof->state == SCM_PROFILER_RUNNING) return;
@@ -232,6 +314,16 @@ void Scm_ProfilerStart(void)
     vm->profilerRunning = TRUE;
 
     /* NB: this should be done globally!!! */
+#if defined(GAUCHE_WINDOWS)
+    if (!DuplicateHandle(GetCurrentProcess(),
+                         GetCurrentThread(),
+                         GetCurrentProcess(),
+                         &vm->prof->hTargetThread,
+                         0, FALSE, DUPLICATE_SAME_ACCESS)) {
+        vm->prof->hTargetThread = NULL;
+        Scm_SysError("DuplicateHandle failed");
+    }
+#else  /* !GAUCHE_WINDOWS */
     struct sigaction act;
     act.sa_handler = sampler_sample;
     sigfillset(&act.sa_mask);
@@ -239,6 +331,7 @@ void Scm_ProfilerStart(void)
     if (sigaction(SIGPROF, &act, NULL) < 0) {
         Scm_SysError("sigaction failed");
     }
+#endif /* !GAUCHE_WINDOWS */
 
     ITIMER_START();
 }
@@ -249,6 +342,10 @@ int Scm_ProfilerStop(void)
     if (vm->prof == NULL) return 0;
     if (vm->prof->state != SCM_PROFILER_RUNNING) return 0;
     ITIMER_STOP();
+#if defined(GAUCHE_WINDOWS)
+    CloseHandle(vm->prof->hTargetThread);
+    vm->prof->hTargetThread = NULL;
+#endif /* GAUCHE_WINDOWS */
     vm->prof->state = SCM_PROFILER_PAUSING;
     vm->profilerRunning = FALSE;
     return vm->prof->totalSamples;
@@ -265,6 +362,9 @@ void Scm_ProfilerReset(void)
     if (vm->prof->samplerFd >= 0) {
         close(vm->prof->samplerFd);
         vm->prof->samplerFd = -1;
+#if defined(GAUCHE_WINDOWS)
+        unlink(vm->prof->samplerFileName);
+#endif /* GAUCHE_WINDOWS */
     }
     vm->prof->totalSamples = 0;
     vm->prof->currentSample = 0;
@@ -308,9 +408,17 @@ ScmObj Scm_ProfilerRawResult(void)
         collect_samples(vm->prof);
     }
     vm->prof->currentSample = 0;
+#if defined(GAUCHE_WINDOWS)
+    if (vm->prof->samplerFd >= 0) {
+        close(vm->prof->samplerFd);
+        vm->prof->samplerFd = -1;
+        unlink(vm->prof->samplerFileName);
+    }
+#else  /* !GAUCHE_WINDOWS */
     if (ftruncate(vm->prof->samplerFd, 0) < 0) {
         Scm_SysError("profiler: failed to truncate temporary file");
     }
+#endif /* !GAUCHE_WINDOWS */
 
     return SCM_OBJ(vm->prof->statHash);
 }

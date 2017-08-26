@@ -4,11 +4,14 @@
 # Automake and Autoconf
 config.guess
 config.log
-config.rpath
 config.status
 config.sub
+/compile
 /configure
-libtool
+/depcomp
+/ltmain.sh
+/missing
+/test-driver
 autom4te.cache
 Makefile
 /gc/configure
@@ -18,6 +21,11 @@ Makefile
 /gc/libatomic_ops/configure
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
+/m4/libtool.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
+/m4/lt~obsolete.m4
 /src/gauche/config.h
 
 # Compiler-generated files
@@ -49,6 +57,7 @@ test.out
 test.record
 
 # Precomp and etc.
+/DIST_EXCLUDE_X
 /INSTALL
 /INSTALL.ja
 .deps
@@ -73,6 +82,7 @@ test.record
 /ext/fcntl/gauche--fcntl.c
 /ext/file/file--util.c
 /ext/gauche/gauche--collection.c
+/ext/gauche/gauche--dictionary.c
 /ext/gauche/gauche--hook.c
 /ext/gauche/gauche--parameter.c
 /ext/gauche/gauche--sequence.c
@@ -149,7 +159,6 @@ test.record
 /lib/os/
 /lib/rfc/sha1.scm
 /lib/rfc/zlib.scm
-/lib/slib.scm
 /lib/srfi/
 /lib/sxml/
 /src/autoloads.c
@@ -179,6 +188,7 @@ test.record
 /src/libio.c
 /src/liblazy.c
 /src/liblist.c
+/src/libmac.c
 /src/libmisc.c
 /src/libmod.c
 /src/libnum.c

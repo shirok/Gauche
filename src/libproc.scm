@@ -1,7 +1,7 @@
 ;;;
 ;;; libproc.scm - procedure call & return, and other control stuff
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -231,7 +231,7 @@
 (define-cproc toplevel-closure? (obj) ::<boolean>
   (return (and (SCM_CLOSUREP obj) (== (-> (SCM_CLOSURE obj) env) NULL))))
 
-(define-cproc closure-code (clo::<closure>) (return (-> clo code)))
+(define-cproc closure-code (clo::<closure>) (return (SCM_CLOSURE_CODE clo)))
 (define-cproc method-code (m::<method>)
   (if (-> m func)
     ;; code is not available for C-defined method
@@ -240,6 +240,8 @@
 
 (define-cproc procedure-info (proc::<procedure>)
   (return (SCM_PROCEDURE_INFO proc)))
+
+(define-cproc method-leaf? (m::<method>) ::<boolean> SCM_METHOD_LEAF_P)
 
 ;; NB: This takes a list of classes.  But what if we support eqv-specilizer?
 ;; One idea is to let the caller wrap a concrete instance.  We'll see...
@@ -260,6 +262,30 @@
            (any (^m (apply method-applicable? m arg-types)) (~ proc'methods))]
           [(eq? c <method>)  (apply method-applicable? m arg-types)]
           [else (apply applicable? object-apply c arg-types)])))
+
+(select-module gauche.internal)
+;; If procedure has a setter and it's locked, return it.  Otherwise
+;; return #f
+(define-cproc procedure-locked-setter (proc::<procedure>)
+  (if (and (-> proc locked)
+           (SCM_PROCEDUREP (-> proc setter)))
+    (result (-> proc setter))
+    (result SCM_FALSE)))
+
+(define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
+
+(select-module gauche.internal)
+;; Make the environment the closure closes into a list and return it.
+;; Used from gauche.test.
+(define-cproc %closure-env->list (clo::<closure>)
+  (let* ([env::ScmEnvFrame* (SCM_CLOSURE_ENV clo)]
+         [h SCM_NIL]
+         [t SCM_NIL])
+    (when (== env NULL)
+      (return SCM_NIL))
+    (dotimes [i (-> env size)]
+      (SCM_APPEND1 h t (ENV_DATA env i)))
+    (return h)))
 
 (select-module gauche.internal)
 ;; Tester procedures

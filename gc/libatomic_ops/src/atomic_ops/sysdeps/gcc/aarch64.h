@@ -15,21 +15,25 @@
  *
  */
 
-#include "../test_and_set_t_is_ao_t.h"
-
 #include "../standard_ao_double_t.h"
 
-#ifndef AO_UNIPROCESSOR
-  AO_INLINE void
-  AO_nop_write(void)
-  {
-    __asm__ __volatile__("dmb st" : : : "memory");
-  }
-# define AO_HAVE_nop_write
-#endif
+#ifdef AO_PREFER_BUILTIN_ATOMICS
+  /* As of clang 3.6 (and gcc 5.0), load atomics for double word are    */
+  /* translated to incorrect code lacking STXP (see the note below).    */
+# define AO_SKIPATOMIC_double_load
+# define AO_SKIPATOMIC_double_load_acquire
+#else
 
-/* TODO: Adjust version check on fixing double-wide AO support in GCC. */
-#if __GNUC__ == 4
+  /* As of clang 3.6 (and gcc 4.9), __atomic_thread_fence is always     */
+  /* translated to DMB (which is inefficient for AO_nop_write).         */
+# ifndef AO_UNIPROCESSOR
+    AO_INLINE void
+    AO_nop_write(void)
+    {
+      __asm__ __volatile__("dmb ishst" : : : "memory");
+    }
+#   define AO_HAVE_nop_write
+# endif
 
   AO_INLINE AO_double_t
   AO_double_load(const volatile AO_double_t *addr)
@@ -66,6 +70,9 @@
     return result;
   }
 # define AO_HAVE_double_load_acquire
+
+  /* As of gcc 5.0, all built-in store and CAS atomics for double       */
+  /* word require -latomic, so use asm-based implementation by default. */
 
   AO_INLINE void
   AO_double_store(volatile AO_double_t *addr, AO_double_t value)
@@ -194,6 +201,16 @@
     return !result;
   }
 # define AO_HAVE_double_compare_and_swap_full
-#endif /* __GNUC__ == 4 */
+
+#endif /* !AO_PREFER_BUILTIN_ATOMICS */
+
+#if defined(__clang__)
+  /* As of clang-3.6/arm64, __GCC_HAVE_SYNC_COMPARE_AND_SWAP_n are missing. */
+# define AO_GCC_FORCE_HAVE_CAS
+# define AO_GCC_HAVE_double_SYNC_CAS
+#endif
 
 #include "generic.h"
+
+#undef AO_SKIPATOMIC_double_load
+#undef AO_SKIPATOMIC_double_load_acquire

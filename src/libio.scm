@@ -1,7 +1,7 @@
 ;;;
 ;;; libio.scm - builtin port and I/O procedures
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -521,6 +521,29 @@
             (get-output-string o))
           (begin (write-char c o) (loop (+ i 1))))))))
 
+;; Consume trailing whiespaces up to (including) first EOL.
+;; This is mainly intended for interactive REPL,
+;; where the input is buffered by line.  We want to ignore the
+;; trailing newline, so that when the user type (read-line) RET,
+;; we consume that RET and start reading from the fresh line.
+;
+;; We need to be careful not to block; that's why we use binary
+;; input here, since character input may block if the input stop
+;; between a multibyte character.
+;; Note that the 'whitespaces' here only inlucdes #\tab, #\space,
+;; #\return and #\newline.
+(define (consume-trailing-whitespaces :optional (port (current-input-port)))
+  (let loop ()
+    (when (byte-ready? port)
+      (let1 b (peek-byte port)
+        (cond [(memv b '(9 32)) (read-byte port) (loop)] ;tab, space
+              [(eqv? b 13)                               ;cr or crlf
+               (read-byte port)
+               (when (and (byte-ready? port)
+                          (eqv? (peek-byte port) 10))
+                 (read-byte port))]
+              [(eqv? b 10) (read-byte port)])))))        ;lf
+
 ;; DEPRECATED - read-uvector should be used
 (define-cproc read-block (bytes::<fixnum>
                           :optional (port::<input-port> (current-input-port)))
@@ -774,48 +797,88 @@
  (define-cclass <write-controls>
    "ScmWriteControls*" "Scm_WriteControlsClass"
    ("Scm_TopClass")
-   ((print-length :type <int>     :c-name "printLength"
-                  :getter "if (obj->printLength < 0) return SCM_FALSE; \
-                           else return SCM_MAKE_INT(obj->printLength);"
-                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                             obj->printLength = SCM_INT_VALUE(value); \
-                           else obj->printLength = -1;")
-    (print-level  :type <int>     :c-name "printLevel"
-                  :getter "if (obj->printLevel < 0) return SCM_FALSE; \
-                           else return SCM_MAKE_INT(obj->printLevel);"
-                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                             obj->printLevel = SCM_INT_VALUE(value); \
-                           else obj->printLevel = -1;")
-    (print-base   :type <int>     :c-name "printBase"
-                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 2 \
-                               && SCM_INT_VALUE(value) <= 36) \
-                             obj->printBase = SCM_INT_VALUE(value); \
-                           else Scm_Error(\"print-base must be an integer \
-                                   between 2 and 36, but got: %S\", value);")
-    (print-radix  :type <boolean> :c-name "printRadix"
-                  :setter "obj->printRadix = !SCM_FALSEP(value);"))
+   ((length :type <int>     :c-name "printLength"
+            :getter "if (obj->printLength < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(obj->printLength);"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                       obj->printLength = SCM_INT_VALUE(value); \
+                     else obj->printLength = -1;")
+    (level  :type <int>     :c-name "printLevel"
+            :getter "if (obj->printLevel < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(obj->printLevel);"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                       obj->printLevel = SCM_INT_VALUE(value); \
+                     else obj->printLevel = -1;")
+    (width  :type <int>     :c-name "printWidth"
+            :getter "if (obj->printWidth < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(obj->printWidth);"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                       obj->printWidth = SCM_INT_VALUE(value); \
+                     else obj->printWidth = -1;")
+    (base   :type <int>     :c-name "printBase"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 2 \
+                         && SCM_INT_VALUE(value) <= 36) \
+                       obj->printBase = SCM_INT_VALUE(value); \
+                     else Scm_Error(\"print-base must be an integer \
+                                    between 2 and 36, but got: %S\", value);")
+    (radix  :type <boolean> :c-name "printRadix"
+            :setter "obj->printRadix = !SCM_FALSEP(value);")
+    (pretty :type <boolean> :c-name "printPretty"
+            :setter "obj->printPretty = !SCM_FALSEP(value);"))
    (allocator (c "write_controls_allocate")))
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
 
-;; The :key and :rest combination is to catch invalid keyword error
-(define (make-write-controls :key print-length print-level
-                                  print-base print-radix
-                             :rest args)
-  (apply make <write-controls> args))
+;; TRANSIENT: The print-* keyword arguments for the backward compatibility
+(define (make-write-controls :key length level width base radix pretty
+                                  print-length print-level print-width
+                                  print-base print-radix print-pretty)
+  (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
+  (make <write-controls>
+    :length (arg length print-length)
+    :level  (arg level  print-level)
+    :width  (arg width  print-width)
+    :base   (arg base   print-base)
+    :radix  (arg radix  print-radix)
+    :pretty (arg pretty print-pretty)))
 
-(define (write-controls-copy wc :key print-length print-level
-                                     print-base print-radix)
+;; Returns fresh write-controls where the specified slot value is replaced
+;; from the original WC.
+;; NB: If the specified values doesn't change the original value at all,
+;; we don't bother to create a copy.  This assumes we treat WC immutable.
+;; (Maybe we should write this in C to avoid overhead.)
+;; TRANSIENT: The print-* keyword arguments for the backward compatibility
+(define (write-controls-copy wc :key length level width base radix pretty
+                                     print-length print-level print-width
+                                     print-base print-radix print-pretty)
   (let-syntax [(select
                 (syntax-rules ()
-                  [(_ k) (if (undefined? k)
-                           (slot-ref wc 'k)
-                           k)]))]
-    (make <write-controls>
-      :print-length (select print-length)
-      :print-level  (select print-level)
-      :print-base   (select print-base)
-      :print-radix  (select print-radix))))
+                  [(_ k k-alt)
+                   (if (undefined? k)
+                     (if (undefined? k-alt)
+                       (slot-ref wc 'k)
+                       k-alt)
+                     k)]))]
+    (let ([length (select length print-length)]
+          [level  (select level  print-level)]
+          [width  (select width  print-width)]
+          [base   (select base   print-base)]
+          [radix  (select radix  print-radix)]
+          [pretty (select pretty print-pretty)])
+      (if (and (eqv? length (slot-ref wc 'length))
+               (eqv? level  (slot-ref wc 'level))
+               (eqv? width  (slot-ref wc 'width))
+               (eqv? base   (slot-ref wc 'base))
+               (eqv? radix  (slot-ref wc 'radix))
+               (eqv? pretty (slot-ref wc 'pretty)))
+        wc
+        (make <write-controls>
+          :length length
+          :level  level
+          :width  width
+          :base   base
+          :radix  radix
+          :pretty pretty)))))
 
 ;;;
 ;;; With-something

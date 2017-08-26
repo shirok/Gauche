@@ -1,7 +1,7 @@
 ;;;
 ;;; libvec.scm - builtin vector procedures
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -34,7 +34,8 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>)))
+ (declcode (.include <gauche/vminsn.h>)
+           (.include <gauche/priv/vectorP.h>)))
 
 ;;;
 ;;; Standard Vector
@@ -160,10 +161,15 @@
 ;;; Uniform vectors
 ;;;
 
-;; (public uniform vector APIs are defined in gauche.uvector, which calls
-;; this one internally).
-(select-module gauche.internal)
+;; Most public uniform vector APIs are defined in gauche.uvector.
+;; We provide a handful basic APIs here for the performance.
 
+(select-module gauche.internal)
+;; TRANSIENT: This is inserted by old compiler macro, expecting to be
+;; futher expanded into VM instruction UVEC-REF by the compiler.
+;; Now we directly expands TAGvector-ref into VM insn so this is no longer
+;; called.  We keep this only for the modules precompiled by older versions.
+;; Will remove on 1.0.
 (define-cproc %uvector-ref (v::<uvector> t::<int> k::<fixnum>
                                          :optional fallback)
   :constant
@@ -172,6 +178,7 @@
   (return (Scm_VMUVectorRef v t k fallback)))
 
 (select-module gauche)
+
 (inline-stub
  (define-enum SCM_UVECTOR_S8)
  (define-enum SCM_UVECTOR_U8)
@@ -186,6 +193,92 @@
  (define-enum SCM_UVECTOR_F64)
  )
 
+(define-cproc s8vector-set! (v::<s8vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_S8 i val (Scm_ClampMode clamp))))
+(define-cproc s8vector-ref (v::<s8vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter s8vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_S8 i fallback)))
+
+(define-cproc u8vector-set! (v::<u8vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_U8 i val (Scm_ClampMode clamp))))
+(define-cproc u8vector-ref (v::<u8vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter u8vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_U8 i fallback)))
+
+(define-cproc s16vector-set! (v::<s16vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_S16 i val (Scm_ClampMode clamp))))
+(define-cproc s16vector-ref (v::<s16vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter s16vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_S16 i fallback)))
+
+(define-cproc u16vector-set! (v::<u16vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_U16 i val (Scm_ClampMode clamp))))
+(define-cproc u16vector-ref (v::<u16vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter u16vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_U16 i fallback)))
+
+(define-cproc s32vector-set! (v::<s32vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_S32 i val (Scm_ClampMode clamp))))
+(define-cproc s32vector-ref (v::<s32vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter s32vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_S32 i fallback)))
+
+(define-cproc u32vector-set! (v::<u32vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_U32 i val (Scm_ClampMode clamp))))
+(define-cproc u32vector-ref (v::<u32vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter u32vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_U32 i fallback)))
+
+(define-cproc s64vector-set! (v::<s64vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_S64 i val (Scm_ClampMode clamp))))
+(define-cproc s64vector-ref (v::<s64vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter s64vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_S64 i fallback)))
+
+(define-cproc u64vector-set! (v::<u64vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_U64 i val (Scm_ClampMode clamp))))
+(define-cproc u64vector-ref (v::<u64vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter u64vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_U64 i fallback)))
+
+(define-cproc f16vector-set! (v::<f16vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_F16 i val (Scm_ClampMode clamp))))
+(define-cproc f16vector-ref (v::<f16vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter f16vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_F16 i fallback)))
+
+(define-cproc f32vector-set! (v::<f32vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_F32 i val (Scm_ClampMode clamp))))
+(define-cproc f32vector-ref (v::<f32vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter f32vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_F32 i fallback)))
+
+(define-cproc f64vector-set! (v::<f64vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_F64 i val (Scm_ClampMode clamp))))
+(define-cproc f64vector-ref (v::<f64vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter f64vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_F64 i fallback)))
+
+(define-cproc uvector-set! (v::<uvector> i::<fixnum> val :optional clamp)
+  ::<void> :fast-flonum 
+  (Scm_UVectorSet v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v))) i val
+                  (Scm_ClampMode clamp)))
+(define-cproc uvector-ref (v::<uvector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter uvector-set!)
+  (return (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
+                            i fallback)))
 (define-cproc uvector-length (v::<uvector>) ::<int> :constant
   SCM_UVECTOR_SIZE)
 (define-cproc uvector-immutable? (v::<uvector>) ::<boolean>
@@ -193,4 +286,121 @@
 (define-cproc uvector? (obj) ::<boolean> :constant
   SCM_UVECTORP)
 
+;;;
+;;; Flat vector API (interact with underlying C array)
+;;;
 
+(inline-stub
+ (define-cise-stmt %binary-search
+   [(_ elttype)
+    `(let* ([esize::u_int  (+ skip 1)]
+            [nume::size_t (/ len esize)]
+            [k::size_t (/ nume 2)]
+            [hi::size_t nume]
+            [lo::size_t 0])
+       (while (< lo hi)
+         (let* ([v:: ,elttype (aref vec (* k esize))])
+           (cond [(== v key) (return (* k esize))]
+                 [(< v key)
+                  (set! lo k) (set! k (+ lo (/ (- hi lo) 2)))
+                  (when (== lo k) (break))]
+                 [else
+                  (set! hi k) (set! k (+ lo (/ (- hi lo) 2)))])))
+       (when floor
+         (if (== lo hi)
+           (set! (* floor) (cast (size_t) -1))
+           (set! (* floor) (* lo esize))))
+       (when ceil
+         (if (== hi nume)
+           (set! (* ceil) (cast (size_t) -1))
+           (set! (* ceil) (* hi esize))))
+       (return (cast (size_t) -1)))])
+ 
+ (define-cfn Scm_BinarySearchS8 (vec::(const int8_t*)
+                                 len::size_t
+                                 key::int8_t
+                                 skip::u_int
+                                 floor::size_t*
+                                 ceil::size_t*)
+   ::size_t (%binary-search int8_t))
+
+ (define-cfn Scm_BinarySearchU8 (vec::(const uint8_t*)
+                                 len::size_t
+                                 key::uint8_t
+                                 skip::u_int
+                                 floor::size_t*
+                                 ceil::size_t*)
+   ::size_t (%binary-search uint8_t))
+
+ (define-cfn Scm_BinarySearchS16 (vec::(const int16_t*)
+                                  len::size_t
+                                  key::int16_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search int16_t))
+
+ (define-cfn Scm_BinarySearchU16 (vec::(const uint16_t*)
+                                  len::size_t
+                                  key::uint16_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search uint16_t))
+
+ (define-cfn Scm_BinarySearchS32 (vec::(const int32_t*)
+                                  len::size_t
+                                  key::int32_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search int32_t))
+
+ (define-cfn Scm_BinarySearchU32 (vec::(const uint32_t*)
+                                  len::size_t
+                                  key::uint32_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search uint32_t))
+
+ (define-cfn Scm_BinarySearchS64 (vec::(const ScmInt64*)
+                                  len::size_t
+                                  key::ScmInt64
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search ScmInt64))
+
+ (define-cfn Scm_BinarySearchU64 (vec::(const ScmUInt64*)
+                                  len::size_t
+                                  key::ScmUInt64
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search ScmUInt64))
+ 
+ (define-cfn Scm_BinarySearchF16 (vec::(const ScmHalfFloat*)
+                                  len::size_t
+                                  key::ScmHalfFloat
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search ScmHalfFloat))
+
+ (define-cfn Scm_BinarySearchF32 (vec::(const float*)
+                                  len::size_t
+                                  key::float
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search float))
+
+ (define-cfn Scm_BinarySearchF64 (vec::(const double*)
+                                  len::size_t
+                                  key::double
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search double))
+ )

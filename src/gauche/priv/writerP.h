@@ -1,7 +1,7 @@
 /*
  * writerP.h - Writer private API
  *
- *   Copyright (c) 2013-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2013-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -33,6 +33,22 @@
 
 #ifndef GAUCHE_PRIV_WRITERP_H
 #define GAUCHE_PRIV_WRITERP_H
+
+/* Writer control parameters */
+struct ScmWriteControlsRec {
+    SCM_HEADER;
+    int printLength;            /* -1 for no limit */
+    int printLevel;             /* -1 for no limit */
+    int printWidth;             /* -1 for no limit */
+    int printBase;              /* 2-36 */
+    int printRadix;             /* boolean, #t to print radix for all numbers */
+    int printPretty;            /* boolean, #t to use pretty printer */
+};
+
+SCM_CLASS_DECL(Scm_WriteControlsClass);
+#define SCM_CLASS_WRITE_CONTROLS  (&Scm_WriteControlsClass)
+#define SCM_WRITE_CONTROLS(obj)   ((ScmWriteControls*)(obj))
+#define SCM_WRITE_CONTROLS_P(obj) SCM_XTYPEP(obj, SCM_CLASS_WRITE_CONTROLS)
 
 /* WriteContext and WriteState
 

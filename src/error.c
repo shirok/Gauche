@@ -1,7 +1,7 @@
 /*
  * error.c - error handling
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -94,7 +94,7 @@ static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmClass *k = Scm_ClassOf(obj);
     Scm_Printf(port, "#<%A \"%30.1A\">",
-               Scm__InternalClassName(k),
+               Scm_ShortClassName(k),
                SCM_ERROR_MESSAGE(obj));
 }
 
@@ -369,7 +369,7 @@ static ScmClass *compound_cpl[] = {
 static void compound_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmClass *k = Scm_ClassOf(obj);
-    Scm_Printf(port, "#<%A", Scm__InternalClassName(k));
+    Scm_Printf(port, "#<%A", Scm_ShortClassName(k));
     ScmCompoundCondition *c = SCM_COMPOUND_CONDITION(obj);
     ScmObj cp;
     SCM_FOR_EACH(cp, c->conditions) {
@@ -566,17 +566,17 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
     if (!SCM_CONDITIONP(c)) return SCM_MAKE_STR("(not a condition)");
 
     if (!SCM_COMPOUND_CONDITION_P(c)) {
-        sname = Scm__InternalClassName(Scm_ClassOf(c));
+        sname = Scm_ShortClassName(Scm_ClassOf(c));
     } else {
         ScmObj h = SCM_NIL, t = SCM_NIL, cp;
         SCM_FOR_EACH(cp, SCM_COMPOUND_CONDITION(c)->conditions) {
             ScmObj cc = SCM_CAR(cp);
             if (SCM_MIXIN_CONDITION_P(cc)) continue;
-            SCM_APPEND1(h, t, Scm__InternalClassName(Scm_ClassOf(cc)));
+            SCM_APPEND1(h, t, Scm_ShortClassName(Scm_ClassOf(cc)));
         }
         if (SCM_NULLP(h)) {
             /* not usual, but tolerate */
-            sname = Scm__InternalClassName(Scm_ClassOf(c));
+            sname = Scm_ShortClassName(Scm_ClassOf(c));
         } else {
             sname = Scm_StringJoin(h, &cond_name_delim, SCM_STRING_JOIN_INFIX);
         }
@@ -746,7 +746,8 @@ void Scm_SysError(const char *msg, ...)
  */
 void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 {
-    Scm_Error("%s expected for %s, but got %S", expected, what, got);
+    Scm_Error("%s is supposed to be of type %s, but got %S",
+              what, expected, got);
 }
 
 

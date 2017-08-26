@@ -1,6 +1,12 @@
-\input texinfo  @c -*- mode: texinfo; coding: utf-8; -*-
-@comment %**start of header
 @c EN
+\input texinfo    @c -*- mode: texinfo; coding: utf-8; -*-
+@c JP
+\input texinfo-ja @c -*- mode: texinfo; coding: utf-8; -*-
+@c COMMON
+@comment %**start of header
+@documentencoding UTF-8
+@c EN
+@documentlanguage en
 @setfilename gauche-deve.info
 @settitle Gauche Developers' Reference
 @dircategory The Algorithmic Language Scheme
@@ -8,6 +14,7 @@
 * Gauche Developers' Reference: (gauche-deve.info).	Internals of Gauche
 @end direntry
 @c JP
+@documentlanguage ja
 @setfilename gauche-devj.info
 @settitle Gauche Developers' Reference
 @dircategory The Algorithmic Language Scheme

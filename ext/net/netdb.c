@@ -1,7 +1,7 @@
 /*
  * netdb.c - obtain information about network
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -502,7 +502,13 @@ ScmObj Scm_GetAddrinfo(const char *nodename,
 
     int r = getaddrinfo(nodename, servname, hints, &res0);
 #if !defined(GAUCHE_WINDOWS)
-    if (r) Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
+    if (r) {
+        if (r == EAI_SYSTEM) {
+            Scm_SysError("getaddrinfo failed: %s", gai_strerror(r));
+        } else {
+            Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
+        }
+    }
 #else  /*GAUCHE_WINDOWS*/
     if (r) Scm_SysError("getaddrinfo failed");
 #endif /*GAUCHE_WINDOWS*/

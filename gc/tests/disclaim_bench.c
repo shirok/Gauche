@@ -38,7 +38,8 @@ typedef struct testobj_s *testobj_t;
 void GC_CALLBACK testobj_finalize(void *obj, void *carg)
 {
     ++*(int *)carg;
-    my_assert(((testobj_t)obj)->i++ == 109);
+    my_assert(((testobj_t)obj)->i == 109);
+    ((testobj_t)obj)->i = 110;
 }
 
 static const struct GC_finalizer_closure fclos = {
@@ -91,9 +92,6 @@ int main(int argc, char **argv)
 
     GC_INIT();
     GC_init_finalized_malloc();
-
-    keep_arr = GC_MALLOC(sizeof(void *)*KEEP_CNT);
-
     if (argc == 2 && strcmp(argv[1], "--help") == 0) {
         fprintf(stderr,
                 "Usage: %s [FINALIZATION_MODEL]\n"
@@ -110,6 +108,12 @@ int main(int argc, char **argv)
     else {
         model_min = 0;
         model_max = 2;
+    }
+
+    keep_arr = GC_MALLOC(sizeof(void *) * KEEP_CNT);
+    if (NULL == keep_arr) {
+        fprintf(stderr, "Out of memory!\n");
+        exit(3);
     }
 
     printf("\t\t\tfin. ratio       time/s    time/fin.\n");

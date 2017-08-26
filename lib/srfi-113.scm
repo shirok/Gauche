@@ -49,6 +49,7 @@
 (define-module srfi-113
   (use srfi-114)
   (use gauche.collection)
+  (use gauche.generator)
   (export set set-unfold
           set? set-contains? set-empty? set-disjoint?
           set-member set-element-comparator
@@ -119,16 +120,35 @@
 (define-method object-equal? ((a <set>) (b <set>)) (sob=? a b))
 (define-method object-equal? ((a <bag>) (b <bag>)) (sob=? a b))
 
+(define-method write-object ((obj <set>) out)
+  (format out "#<set ~a ~aitems>" (debug-label obj)
+          (hash-table-num-entries (sob-hash-table obj))))
+(define-method write-object ((obj <bag>) out)
+  (format out "#<bag ~a ~akinds, ~aitems>" (debug-label obj)
+          (hash-table-num-entries (sob-hash-table obj))
+          (apply + (hash-table-values (sob-hash-table obj)))))
+
 (define-method call-with-iterator ((obj <sob>) proc :allow-other-keys)
-  (call-with-iterator (sob-hash-table obj)
-                      (^[end? next]
-                        (proc end? (^[] (car (next)))))))
+  ($ call-with-iterator (sob-hash-table obj)
+     (^[end? next]
+       (define current (if (end?) #f (next))) ; (<item> . <count>)
+       (define (over?) (or (not current) (and (end?) (zero? (cdr current)))))
+       (define (get) (and (pair? current)
+                          (if (zero? (cdr current))
+                            (and (not (end?))
+                                 (begin (set! current (next))
+                                        (dec! (cdr current))
+                                        (car current)))
+                            (begin (dec! (cdr current))
+                                   (car current)))))
+       (proc over? get))))
 
 ;; TODO: To impelment call-with-builder, we need some way to specify
 ;; comparator argument for the constructor.
 
 ;; The following code is mostly intact from the reference implementation
-;; (I commented out some irrelevant definitions.)
+;; I commented out some irrelevant definitions, and rewrote early break
+;; pattern (by call/cc) with hash-table-find.
 
 ;;; Record definition and core typing/checking procedures
 
@@ -273,12 +293,7 @@
 (define (sob-half-disjoint? a b)
   (let ((ha (sob-hash-table a))
         (hb (sob-hash-table b)))
-    (call/cc
-      (lambda (return)
-        (hash-table-for-each
-          (lambda (key val) (if (hash-table-contains? hb key) (return #f)))
-          ha)
-      #t))))
+    (not (hash-table-find ha (^[k _] (hash-table-contains? hb k))))))
 
 (define (set-disjoint? a b)
   (check-set a)
@@ -303,12 +318,9 @@
 
 (define (sob-member sob element default)
   (define (same? a b) (=? (sob-comparator sob) a b))
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (key val) (if (same? key element) (return key)))
-        (sob-hash-table sob))
-      default)))
+  (let1 r (hash-table-find (sob-hash-table sob)
+                           (^[k v] (and (same? k element) (list k))))
+    (if (pair? r) (car r) default)))
 
 (define (set-member set element default)
   (check-set set)
@@ -438,16 +450,14 @@
          (= (comparator-equality-predicate comparator))
          (ht (sob-hash-table sob)))
     (comparator-check-type comparator element)
-    (call/cc
-      (lambda (return)
-        (hash-table-for-each
-          (lambda (key value)
-            (when (= key element)
-              (hash-table-delete! ht key)
-              (hash-table-set! ht element value)
-              (return sob)))
-          ht)
-        sob))))
+    (or (hash-table-find ht
+                         (^[k v]
+                           (and (= k element)
+                                (begin 
+                                  (hash-table-delete! ht k)
+                                  (hash-table-set! ht element v)
+                                  sob))))
+        sob)))
 
 (define (set-replace! set element)
   (check-set set)
@@ -580,13 +590,9 @@
 ;; call the failure thunk.
 
 (define (sob-find pred sob failure)
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (key value)
-          (if (pred key) (return key)))
-        (sob-hash-table sob))
-    (failure))))
+  (let1 r (hash-table-find (sob-hash-table sob)
+                           (^[k _] (and (pred k) (list k))))
+    (if (pair? r) (car r) (failure))))
 
 (define (set-find pred set failure)
   (check-set set)
@@ -617,12 +623,7 @@
 ;; early (with call/cc) if a success is found.
 
 (define (sob-any? pred sob)
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (elem value) (if (pred elem) (return #t)))
-        (sob-hash-table sob))
-      #f)))
+  (hash-table-find (sob-hash-table sob) (^[k _] (boolean (pred k)))))
 
 (define (set-any? pred set)
   (check-set set)
@@ -635,12 +636,7 @@
 ;; Analogous to set-any?.  Breaks out early if a failure is found.
 
 (define (sob-every? pred sob)
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (elem value) (if (not (pred elem)) (return #f)))
-        (sob-hash-table sob))
-      #t)))
+  (not (hash-table-find (sob-hash-table sob) (^[k _] (not (pred k))))))
 
 (define (set-every? pred set)
   (check-set set)
@@ -682,7 +678,7 @@
 ;; because each instance of an element in a bag will be treated identically
 ;; anyway; we insert them all at once with sob-increment!.
 
-(define (sob-map proc comparator sob)
+(define (sob-map comparator proc sob)
   (let ((result (make-sob comparator (sob-multi? sob))))
     (hash-table-for-each
       (lambda (key value) (sob-increment! result (proc key) value))
@@ -887,18 +883,11 @@
 ;; again they can't be equal.
 
 (define (dyadic-sob=? sob1 sob2)
-  (call/cc
-    (lambda (return)
-      (let ((ht1 (sob-hash-table sob1))
-            (ht2 (sob-hash-table sob2)))
-        (if (not (= (hash-table-size ht1) (hash-table-size ht2)))
-          (return #f))
-        (hash-table-for-each
-          (lambda (key value)
-            (if (not (= value (hash-table-ref/default ht2 key 0)))
-              (return #f)))
-          ht1))
-     #t)))
+  (let ((ht1 (sob-hash-table sob1))
+        (ht2 (sob-hash-table sob2)))
+    (and (= (hash-table-size ht1) (hash-table-size ht2))
+         (not ($ hash-table-find ht1
+                 (^[k v] (not (= v (hash-table-ref/default ht2 k 0)))))))))
 
 (define sob<=?
   (case-lambda
@@ -921,18 +910,11 @@
 ;; that we've traversed all the elements in either sob.
 
 (define (dyadic-sob<=? sob1 sob2)
-  (call/cc
-    (lambda (return)
-      (let ((ht1 (sob-hash-table sob1))
-            (ht2 (sob-hash-table sob2)))
-        (if (not (<= (hash-table-size ht1) (hash-table-size ht2)))
-          (return #f))
-        (hash-table-for-each
-          (lambda (key value)
-            (if (not (<= value (hash-table-ref/default ht2 key 0)))
-              (return #f)))
-          ht1))
-      #t)))
+  (let ((ht1 (sob-hash-table sob1))
+        (ht2 (sob-hash-table sob2)))
+    (and (<= (hash-table-size ht1) (hash-table-size ht2))
+         (not ($ hash-table-find ht1
+                 (^[k v] (not (<= v (hash-table-ref/default ht2 k 0)))))))))
 
 (define sob>?
   (case-lambda
@@ -1014,13 +996,15 @@
 
 ;; Note that there is no set-sum, as it is the same as set-union.
 
-(define (sob-union sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-union! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-union! result result sob))
-      sobs)
-    result))
+(define (sob-union sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-union! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-union! result result sob))
+       (cdr sobs))
+      result)))
 
 ;; For union, we take the max of the counts of each element found
 ;; in either sob and put that in the result.  On the pass through
@@ -1051,11 +1035,10 @@
   (check-all-bags bags)
   (apply sob-union bags))
 
-(define (sob-union! sob1 sob2 . sobs)
-  (dyadic-sob-union! sob1 sob1 sob2)
+(define (sob-union! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-union! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-union! sob1 sob1 sob))
+   sobs)
   sob1)
 
 (define (set-union! . sets)
@@ -1066,13 +1049,15 @@
   (check-all-bags bags)
   (apply sob-union! bags))
 
-(define (sob-intersection sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-intersection! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-intersection! result result sob))
-      sobs)
-    (sob-cleanup! result)))
+(define (sob-intersection sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-intersection! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-intersection! result result sob))
+       (cdr sobs))
+      (sob-cleanup! result))))
 
 ;; For intersection, we compute the min of the counts of each element.
 ;; We only have to scan sob1.  We clean up the result when we are
@@ -1096,11 +1081,10 @@
   (check-all-bags bags)
   (apply sob-intersection bags))
 
-(define (sob-intersection! sob1 sob2 . sobs)
-  (dyadic-sob-intersection! sob1 sob1 sob2)
+(define (sob-intersection! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-intersection! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-intersection! sob1 sob1 sob))
+   sobs)
   (sob-cleanup! sob1))
 
 (define (set-intersection! . sets)
@@ -1111,13 +1095,15 @@
   (check-all-bags bags)
   (apply sob-intersection! bags))
 
-(define (sob-difference sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-difference! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-difference! result result sob))
-      sobs)
-    (sob-cleanup! result)))
+(define (sob-difference sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-difference! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-difference! result result sob))
+       (cdr sobs))
+      (sob-cleanup! result))))
 
 ;; For difference, we use (big surprise) the numeric difference, bounded
 ;; by zero.  We only need to scan sob1, but we clean up the result in
@@ -1141,11 +1127,10 @@
   (check-all-bags bags)
   (apply sob-difference bags))
 
-(define (sob-difference! sob1 sob2 . sobs)
-  (dyadic-sob-difference! sob1 sob1 sob2)
+(define (sob-difference! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-difference! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-difference! sob1 sob1 sob))
+   sobs)
   (sob-cleanup! sob1))
 
 (define (set-difference! . sets)
@@ -1156,13 +1141,15 @@
   (check-all-bags bags)
   (apply sob-difference! bags))
 
-(define (sob-sum sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-sum! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-sum! result result sob))
-      sobs)
-    result))
+(define (sob-sum sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-sum! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-sum! result result sob))
+       (cdr sobs))
+      result)))
 
 ;; Sum is just like union, except that we take the sum rather than the max.
 
@@ -1189,11 +1176,10 @@
   (check-all-bags bags)
   (apply sob-sum bags))
 
-(define (sob-sum! sob1 sob2 . sobs)
-  (dyadic-sob-sum! sob1 sob1 sob2)
+(define (sob-sum! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-sum! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-sum! sob1 sob1 sob))
+   sobs)
   sob1)
 
 (define (bag-sum! . bags)

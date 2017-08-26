@@ -35,7 +35,7 @@
 (use gauche.parseopt)
 
 (define (usage)
-  (print "Usage: make-standalone [-o outfile][-I dir][-L dir] file.scm")
+  (print "Usage: build-standalone [-o outfile][-I dir][-L dir] file.scm")
   (print "  -o outfile  Specify output file name.")
   (print "  -I dir      Specify extra include directory to find gauche.h etc.")
   (print "  -L dir      Specify extra library directory to find libgauche-static.")

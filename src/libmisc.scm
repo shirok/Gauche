@@ -1,7 +1,7 @@
 ;;;
 ;;; libmisc.scm - miscellaneous built-in procedures
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -53,18 +53,6 @@
     (apply format (current-error-port) (string-append "WARNING: " fmt) args)
     (flush (current-error-port))))
 
-;; srfi-111 box
-;; NB: We have built-in support for boxes to use internally, but Scheme
-;; interface is less frequently used, so we put these symbols in a separate
-;; module.  It is a bit awkward to do so in the current genstub.
-;; TODO: Better stub syntax for handling modules.
-(select-module srfi-111)
-(define-cproc box (v) (return (SCM_OBJ (Scm_MakeBox v))))
-(define-cproc box? (v) ::<boolean> (return (SCM_BOXP v)))
-(define-cproc unbox (b::<box>) (return (SCM_BOX_VALUE b)))
-(define-cproc set-box! (b::<box> v) ::<void> (SCM_BOX_SET b v))
-(export box box? unbox set-box!)
-
 ;; Debug label
 (select-module gauche)
 (define-cproc debug-label (obj) (result (Scm_Sprintf "@%lx" obj)))
@@ -98,3 +86,7 @@
 
 (select-module gauche.internal)
 (define-cproc cond-features () Scm_GetFeatures)
+
+(inline-stub
+ (define-constant SLIB_DIR (c (SCM_MAKE_STR_IMMUTABLE SLIB_DIR))))
+

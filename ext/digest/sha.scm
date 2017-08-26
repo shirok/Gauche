@@ -2,7 +2,7 @@
 ;;; sha - SHA-1/SHA-224/SHA-256/SHA-384/SHA-512 message-digest
 ;;;
 ;;;   Copyright (c) 2002-2003 Kimura Fuyuki, All rights reserved.
-;;;   Copyright (c) 2008-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2008-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions

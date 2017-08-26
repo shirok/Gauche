@@ -1,7 +1,7 @@
 /*
  * macro.c - macro implementation
  *
- *   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -70,26 +70,35 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler)
  * Macro object
  */
 
-static void macro_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
-{
-    ScmSymbol *name = SCM_MACRO(obj)->name;
-    Scm_Printf(port, "#<macro %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MacroClass, macro_print);
-
-ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer)
+ScmObj Scm_MakeMacroFull(ScmObj name, ScmObj transformer,
+                         ScmObj src, ScmObj describer)
 {
     ScmMacro *s = SCM_NEW(ScmMacro);
     SCM_SET_CLASS(s, SCM_CLASS_MACRO);
     s->name = name;
     s->transformer = transformer;
+    s->src = src;
+    s->describer = describer;
     return SCM_OBJ(s);
 }
+
+#if GAUCHE_API_0_95
+/* Kept for the backward compatibility */
+ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer)
+{
+    return Scm_MakeMacroFull(SCM_OBJ_SAFE(name), transformer,
+                             SCM_FALSE, SCM_FALSE);
+}
+#endif
 
 ScmObj Scm_MacroTransformer(ScmMacro *mac)
 {
     return mac->transformer;
+}
+
+ScmObj Scm_MacroName(ScmMacro *mac)
+{
+    return (mac->name? SCM_OBJ(mac->name) : SCM_FALSE);
 }
 
 /*===================================================================
@@ -189,11 +198,12 @@ static ScmObj macro_transform_old(ScmObj *argv, int argc, void *data)
     return Scm_VMApply(proc, SCM_CDR(form));
 }
 
+/* TRANSIENT
+   This used to be called via make-macro-transformer, but no longer.
+   We leave stub here for ABI compatibility. */
 ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 {
-    ScmObj transformer = Scm_MakeSubr(macro_transform_old, proc, 2, 0,
-                                      SCM_FALSE);
-    return Scm_MakeMacro(name, transformer);
+    Scm_Panic("Obsoleted Scm_MakeMacroTransformerOld called!  Something is wrong!");
 }
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
@@ -224,7 +234,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 {
     ScmObj transformer = Scm_MakeSubr(macro_autoload, adata,
                                       2, 0, SCM_FALSE);
-    return Scm_MakeMacro(name, transformer);
+    return Scm_MakeMacroFull(SCM_OBJ(name), transformer, SCM_FALSE, SCM_FALSE);
 }
 
 /*===================================================================
@@ -335,24 +345,29 @@ static ScmObj id_memq(ScmObj name, ScmObj list)
 /* Check if obj is ellipsis.  What we really need is free-identifier=?,
    but we leave it for the new low-level macro subsystem.  This is a
    hack to make it work in most of the time. */
-static int isEllipsis(PatternContext *ctx, ScmObj obj)
+static int compare_ellipsis(ScmObj elli, ScmObj obj)
 {
-    if (SCM_FALSEP(ctx->ellipsis)) return FALSE;
     if (SCM_IDENTIFIERP(obj)) {
-        if (SCM_IDENTIFIERP(ctx->ellipsis)) {
+        if (SCM_IDENTIFIERP(elli)) {
             static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
             SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
                           Scm_GaucheInternalModule());
             if (!SCM_NULLP(SCM_IDENTIFIER(obj)->env)) return FALSE;
             return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
-                                             ctx->ellipsis, obj));
-        } else {
-            return SCM_EQ(ctx->ellipsis,
+                                             elli, obj));
+        } else {        
+            return SCM_EQ(elli,
                           SCM_OBJ(Scm_UnwrapIdentifier(SCM_IDENTIFIER(obj))));
         }
     } else {
-        return SCM_EQ(ctx->ellipsis, obj);
+        return SCM_EQ(elli, obj);
     }
+}
+
+static int isEllipsis(PatternContext *ctx, ScmObj obj)
+{
+    if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */
+    return compare_ellipsis(ctx->ellipsis, obj);
 }
 
 #define ELLIPSIS_FOLLOWING(Pat, Ctx)                                    \
@@ -417,40 +432,62 @@ static ScmObj compile_rule1(ScmObj form,
         ScmObj pp;
         SCM_FOR_EACH(pp, form) {
             if (ELLIPSIS_FOLLOWING(pp, ctx)) {
-                int num_trailing = 0;
-
                 if (patternp && ellipsis_seen) {
                     Scm_Error("in definition of macro %S: "
                               "Ellipses are not allowed to appear "
                               "within the same list/vector more than once "
                               "in a pattern: %S", ctx->name, form);
-                    ellipsis_seen = TRUE;
                 }
+                ellipsis_seen = TRUE;
 
+                ScmObj base = SCM_CAR(pp);
+                pp = SCM_CDR(pp);
+
+                int num_trailing = 0;
+                int ellipsis_nesting = 1;
                 if (patternp) {
                     /* Count trailing items to set ScmSyntaxPattern->repeat. */
-                    ScmObj trailing = SCM_CDDR(pp);
+                    ScmObj trailing = SCM_CDR(pp);
                     while (SCM_PAIRP(trailing)) {
                         num_trailing++;
                         trailing = SCM_CDR(trailing);
                     }
+                } else {
+                    /* srfi-149 allows more than one ellipsis to follow a
+                       template. */
+                    while (ELLIPSIS_FOLLOWING(pp, ctx)) {
+                        ellipsis_nesting++;
+                        if (!SCM_PAIRP(SCM_CDR(pp))) break;
+                        pp = SCM_CDR(pp);
+                    }
                 }
-                ScmSyntaxPattern *nspat = make_syntax_pattern(spat->level + 1,
-                                                              num_trailing);
-                if (ctx->maxlev <= spat->level) ctx->maxlev++;
-                nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
-                                               patternp);
-                SCM_APPEND1(h, t, SCM_OBJ(nspat));
+                /* at this point, pp points the last ellipsis */
+
+                if (ctx->maxlev < spat->level + ellipsis_nesting)
+                    ctx->maxlev = spat->level + ellipsis_nesting + 1;
+
+                ScmSyntaxPattern *outermost =
+                    make_syntax_pattern(spat->level+1, num_trailing);
+                ScmSyntaxPattern *outer = outermost;
+                for (int i=1; i<ellipsis_nesting; i++) {
+                    ScmSyntaxPattern *inner =
+                        make_syntax_pattern(spat->level+i+1, 0);
+                    outer->pattern = SCM_OBJ(inner);
+                    outer = inner;
+                }
+                outer->pattern = compile_rule1(base, outer, ctx, patternp);
+                outermost->vars = outer->vars;
+                SCM_APPEND1(h, t, SCM_OBJ(outermost));
                 if (!patternp) {
                     ScmObj vp;
-                    if (SCM_NULLP(nspat->vars)) {
+                    if (SCM_NULLP(outermost->vars)) {
                         Scm_Error("in definition of macro %S: "
                                   "a template contains repetition "
                                   "of constant form: %S",
                                   ctx->name, form);
                     }
-                    SCM_FOR_EACH(vp, nspat->vars) {
-                        if (PVREF_LEVEL(SCM_CAR(vp)) >= nspat->level) break;
+                    SCM_FOR_EACH(vp, outermost->vars) {
+                        if (PVREF_LEVEL(SCM_CAR(vp)) >= outermost->level) break;
                     }
                     if (SCM_NULLP(vp)) {
                         Scm_Error("in definition of macro %S: "
@@ -459,8 +496,7 @@ static ScmObj compile_rule1(ScmObj form,
                                   ctx->name, form);
                     }
                 }
-                spat->vars = Scm_Append2(spat->vars, nspat->vars);
-                pp = SCM_CDR(pp);
+                spat->vars = Scm_Append2(spat->vars, outermost->vars);
             } else {
                 SCM_APPEND1(h, t,
                             compile_rule1(SCM_CAR(pp), spat, ctx, patternp));
@@ -485,7 +521,8 @@ static ScmObj compile_rule1(ScmObj form,
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
         ScmObj q = id_memq(form, ctx->literals);
-        if (!SCM_FALSEP(q)) return q;
+        if (!SCM_FALSEP(q)) return q; /* literal identifier */
+        if (SCM_EQ(form, SCM_SYM_UNDERBAR)) return form; /* '_' */
 
         if (patternp) {
             return add_pvar(ctx, spat, form);
@@ -531,6 +568,19 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     ctx.literals = preprocess_literals(literals, mod, env);
     ctx.mod = mod;
     ctx.env = env;
+
+    /* Corner case when literal contains the same (free-identifer=?) symbol
+       as ellipsis.  R7RS specifies the literal has precedence.
+       https://srfi-email.schemers.org/srfi-148/msg/6115633 */
+    if (!SCM_FALSEP(ellipsis)) {
+        ScmObj cp;
+        SCM_FOR_EACH(cp, ctx.literals) {
+            if (compare_ellipsis(ellipsis, SCM_CAR(cp))) {
+                ctx.ellipsis = FALSE;
+                break;
+            }
+        }
+    }
 
     ScmSyntaxRules *sr = make_syntax_rules(numRules);
     sr->name = name;
@@ -779,6 +829,9 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
         match_insert(pattern, form, mvec);
         return TRUE;
     }
+    if (SCM_EQ(pattern, SCM_SYM_UNDERBAR)) {
+        return TRUE;            /* unconditional match */
+    }
     if (SCM_IDENTIFIERP(pattern)) {
         return match_identifier(SCM_IDENTIFIER(pattern), form, mod, env);
     }
@@ -889,7 +942,11 @@ static ScmObj realize_template_rec(ScmObj template,
         for (;;) {
             ScmObj r = realize_template_rec(pat->pattern, mvec, level+1, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return (*exlev < pat->level)? r : h;
-            SCM_APPEND1(h, t, r);
+            if (SCM_SYNTAX_PATTERN_P(pat->pattern)) {
+                SCM_APPEND(h, t, r);
+            } else {
+                SCM_APPEND1(h, t, r);
+            }
             indices[level+1]++;
         }
     }
@@ -984,7 +1041,7 @@ static ScmObj synrule_transform(ScmObj *argv, int argc, void *data)
 }
 
 /* NB: a stub for the new compiler (TEMPORARY) */
-ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
+ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
                               ScmObj literals, ScmObj rules,
                               ScmObj mod, ScmObj env)
 {
@@ -994,7 +1051,7 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
                                        SCM_MODULE(mod), env);
     ScmObj sr_xform = Scm_MakeSubr(synrule_transform, sr,
                                    2, 0, SCM_FALSE);
-    return Scm_MakeMacro(SCM_SYMBOL(name), sr_xform);
+    return Scm_MakeMacroFull(name, sr_xform, src, SCM_FALSE);
 }
 
 /*===================================================================

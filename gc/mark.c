@@ -48,41 +48,33 @@ GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 /* It's done here, since we need to deal with mark descriptors.         */
 GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
-                0 | GC_DS_LENGTH, FALSE, FALSE
+                /* 0 | */ GC_DS_LENGTH, FALSE, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
-/* NORMAL  */ { &GC_objfreelist[0], 0,
-                0 | GC_DS_LENGTH,  /* Adjusted in GC_init for EXTRA_BYTES */
+/* NORMAL */  { &GC_objfreelist[0], 0,
+                /* 0 | */ GC_DS_LENGTH,
+                                /* adjusted in GC_init for EXTRA_BYTES  */
                 TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 /* UNCOLLECTABLE */
               { &GC_uobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
+                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
-# ifdef ATOMIC_UNCOLLECTABLE
-   /* AUNCOLLECTABLE */
+# ifdef GC_ATOMIC_UNCOLLECTABLE
               { &GC_auobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
+                /* 0 | */ GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 # ifdef STUBBORN_ALLOC
-/*STUBBORN*/ { (void **)&GC_sobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
+              { (void **)&GC_sobjfreelist[0], 0,
+                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 };
 
-# ifdef ATOMIC_UNCOLLECTABLE
-#   ifdef STUBBORN_ALLOC
-#     define GC_N_KINDS_INITIAL_VALUE 5
-#   else
-#     define GC_N_KINDS_INITIAL_VALUE 4
-#   endif
+# ifdef STUBBORN_ALLOC
+#   define GC_N_KINDS_INITIAL_VALUE (STUBBORN+1)
 # else
-#   ifdef STUBBORN_ALLOC
-#     define GC_N_KINDS_INITIAL_VALUE 4
-#   else
-#     define GC_N_KINDS_INITIAL_VALUE 3
-#   endif
+#   define GC_N_KINDS_INITIAL_VALUE STUBBORN
 # endif
 
 GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
@@ -92,9 +84,9 @@ GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
                 /* INITIAL_MARK_STACK_SIZE * sizeof(mse) should be a    */
                 /* multiple of HBLKSIZE.                                */
                 /* The incremental collector actually likes a larger    */
-                /* size, since it want to push all marked dirty objs    */
-                /* before marking anything new.  Currently we let it    */
-                /* grow dynamically.                                    */
+                /* size, since it wants to push all marked dirty        */
+                /* objects before marking anything new.  Currently we   */
+                /* let it grow dynamically.                             */
 # endif
 
 STATIC word GC_n_rescuing_pages = 0;
@@ -608,9 +600,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             mse *mark_stack_limit)
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work  */
-  ptr_t current_p;      /* Pointer to current candidate ptr.    */
-  word current; /* Candidate pointer.                           */
-  ptr_t limit;  /* (Incl) limit of current candidate range.     */
+  ptr_t current_p;      /* Pointer to current candidate ptr.            */
+  word current;         /* Candidate pointer.                           */
+  ptr_t limit = 0;      /* (Incl) limit of current candidate range.     */
   word descr;
   ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
   ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -637,13 +629,17 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     if (descr & ((~(WORDS_TO_BYTES(SPLIT_RANGE_WORDS) - 1)) | GC_DS_TAGS)) {
       word tag = descr & GC_DS_TAGS;
 
+      GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
       switch(tag) {
         case GC_DS_LENGTH:
           /* Large length.                                              */
           /* Process part of the range to avoid pushing too much on the */
           /* stack.                                                     */
           GC_ASSERT(descr < (word)GC_greatest_plausible_heap_addr
-                            - (word)GC_least_plausible_heap_addr);
+                            - (word)GC_least_plausible_heap_addr
+                || (word)(current_p + descr)
+                            <= (word)GC_least_plausible_heap_addr
+                || (word)current_p >= (word)GC_greatest_plausible_heap_addr);
 #         ifdef ENABLE_TRACE
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p + descr)) {
@@ -746,8 +742,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             /* word in object.                                          */
             ptr_t type_descr = *(ptr_t *)current_p;
             /* type_descr is either a valid pointer to the descriptor   */
-            /* structure, or this object was on a free list.  If it     */
-            /* it was anything but the last object on the free list,    */
+            /* structure, or this object was on a free list.            */
+            /* If it was anything but the last object on the free list, */
             /* we will misinterpret the next object on the free list as */
             /* the type descriptor, and get a 0 GC descriptor, which    */
             /* is ideal.  Unfortunately, we need to check for the last  */
@@ -756,6 +752,28 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 /* Rarely executed.     */
                 mark_stack_top--;
                 continue;
+            }
+            if ((GC_word)(type_descr) >= (GC_word)GC_least_plausible_heap_addr
+                    && (GC_word)(type_descr)
+                        <= (GC_word)GC_greatest_plausible_heap_addr) {
+                /* type_descr looks like a pointer into the heap.       */
+                /* It could still be the link pointer in a free list    */
+                /* though.  That's not a problem as long as the offset  */
+                /* of the actual descriptor in the pointed to object is */
+                /* within the same object.  In that case it will either */
+                /* point at the next free object in the list (if offset */
+                /* is 0) or be zeroed (which we check for below,        */
+                /* descr == 0).  If the offset is larger than the       */
+                /* objects in the block type_descr points to it cannot  */
+                /* be a proper pointer.                                 */
+                word offset = ~(descr + (GC_INDIR_PER_OBJ_BIAS
+                                         - GC_DS_PER_OBJECT - 1));
+                hdr *hhdr;
+                GET_HDR(type_descr, hhdr);
+                if (NULL == hhdr || hhdr->hb_sz - sizeof(word) < offset) {
+                    mark_stack_top--;
+                    continue;
+                }
             }
             descr = *(word *)(type_descr
                               - (descr + (GC_INDIR_PER_OBJ_BIAS
@@ -768,9 +786,6 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               continue;
           }
           goto retry;
-        default:
-          limit = 0; /* initialized to prevent warning. */
-          ABORT_RET("GC_mark_from: bad state");
       }
     } else /* Small object with length descriptor */ {
       mark_stack_top--;
@@ -888,6 +903,24 @@ GC_INNER word GC_mark_no = 0;
         /* we don't overflow half of it in a single call to             */
         /* GC_mark_from.                                                */
 
+/* Wait all markers to finish initialization (i.e. store        */
+/* marker_[b]sp, marker_mach_threads, GC_marker_Id).            */
+GC_INNER void GC_wait_for_markers_init(void)
+{
+  word count;
+
+  if (GC_markers_m1 == 0)
+    return;
+
+  /* Reuse marker lock and builders count to synchronize        */
+  /* marker threads startup.                                    */
+  GC_acquire_mark_lock();
+  GC_fl_builder_count += (word)GC_markers_m1;
+  count = GC_fl_builder_count;
+  GC_release_mark_lock();
+  if (count != 0)
+    GC_wait_for_reclaim();
+}
 
 /* Steal mark stack entries starting at mse low into mark stack local   */
 /* until we either steal mse high, or we have max entries.              */
@@ -953,8 +986,8 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
                              (AO_t)(my_top + stack_size));
                 /* Ensures visibility of previously written stack contents. */
     }
-    GC_notify_all_marker();
     GC_release_mark_lock();
+    GC_notify_all_marker();
 }
 
 /* Mark from the local mark stack.              */
@@ -1085,8 +1118,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                     if (0 == GC_helper_count) need_to_notify = TRUE;
                     GC_VERBOSE_LOG_PRINTF("Finished mark helper %lu\n",
                                           (unsigned long)id);
-                    if (need_to_notify) GC_notify_all_marker();
                     GC_release_mark_lock();
+                    if (need_to_notify) GC_notify_all_marker();
                     return;
                 }
                 /* else there's something on the stack again, or        */
@@ -1133,8 +1166,8 @@ STATIC void GC_do_parallel_mark(void)
     GC_active_count = 0;
     GC_helper_count = 1;
     GC_help_wanted = TRUE;
-    GC_notify_all_marker();
     GC_release_mark_lock();
+    GC_notify_all_marker();
         /* Wake up potential helpers.   */
     GC_mark_local(local_mark_stack, 0);
     GC_acquire_mark_lock();
@@ -1147,8 +1180,8 @@ STATIC void GC_do_parallel_mark(void)
     GC_VERBOSE_LOG_PRINTF("Finished marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
     GC_mark_no++;
-    GC_notify_all_marker();
     GC_release_mark_lock();
+    GC_notify_all_marker();
 }
 
 
@@ -1399,15 +1432,12 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 
     PREFETCH(p);
     GET_HDR(p, hhdr);
-    if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)) {
-        if (hhdr != 0) {
-          r = GC_base(p);
-          hhdr = HDR(r);
-        }
-        if (hhdr == 0) {
-            GC_ADD_TO_BLACK_LIST_STACK(p, source);
-            return;
-        }
+    if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)
+        && (NULL == hhdr
+            || (r = GC_base(p)) == NULL
+            || (hhdr = HDR(r)) == NULL)) {
+        GC_ADD_TO_BLACK_LIST_STACK(p, source);
+        return;
     }
     if (EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
@@ -1488,7 +1518,7 @@ void GC_print_trace(word gc_no)
  * and scans the entire region immediately, in case the contents
  * change.
  */
-GC_INNER void GC_push_all_eager(ptr_t bottom, ptr_t top)
+GC_API void GC_CALL GC_push_all_eager(char *bottom, char *top)
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
@@ -1735,7 +1765,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     mse * mark_stack_limit = GC_mark_stack_limit;
 
     /* Some quick shortcuts: */
-        if ((0 | GC_DS_LENGTH) == descr) return;
+        if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
     GC_n_rescuing_pages++;
     GC_objects_are_marked = TRUE;
@@ -1793,7 +1823,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     mse * GC_mark_stack_top_reg;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
-    if ((0 | GC_DS_LENGTH) == descr)
+    if ((/* 0 | */ GC_DS_LENGTH) == descr)
         return;
 
     GC_n_rescuing_pages++;
@@ -1805,7 +1835,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 
     GC_mark_stack_top_reg = GC_mark_stack_top;
     for (p = h -> hb_body; (word)p <= (word)lim; p += sz)
-        if ((*(GC_word *)p & 0x3) != 0)
+        if ((*(word *)p & 0x3) != 0)
             PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
     GC_mark_stack_top = GC_mark_stack_top_reg;
   }

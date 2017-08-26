@@ -4,32 +4,32 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Types and classes::           
-* Equality and comparison::     
-* Numbers::                     
-* Booleans::                    
-* Undefined values::            
-* Pairs and Lists::             
-* Symbols::                     
-* Keywords::                    
-* Identifiers::                 
-* Characters::                  
-* Character set::               
-* Strings::                     
-* Regular expressions::         
-* Vectors::                     
-* Hashtables::                  
-* Treemaps::                    
-* Weak pointers::               
-* Procedures and continuations::  
-* Lazy evaluation::             
-* Exceptions::                  
-* Eval and repl::               
-* Input and output::            
-* Loading Programs::            
-* Sorting and merging::         
-* System interface::            
-* Development helper API::      
+* Types and classes::
+* Equality and comparison::
+* Numbers::
+* Booleans::
+* Undefined values::
+* Pairs and Lists::
+* Symbols::
+* Keywords::
+* Identifiers::
+* Characters::
+* Character set::
+* Strings::
+* Regular expressions::
+* Vectors::
+* Hashtables::
+* Treemaps::
+* Weak pointers::
+* Procedures and continuations::
+* Lazy evaluation::
+* Exceptions::
+* Eval and repl::
+* Input and output::
+* Loading Programs::
+* Sorting and merging::
+* System interface::
+* Development helper API::
 @end menu
 
 @node Types and classes, Equality and comparison, Core library, Core library
@@ -259,10 +259,10 @@ as well as the way to make your own.
 @c COMMON
 
 @menu
-* Equality::                    
-* Comparison::                  
-* Hashing::                     
-* Basic comparators::           
+* Equality::
+* Comparison::
+* Hashing::
+* Basic comparators::
 @end menu
 
 @node Equality, Comparison, Equality and comparison, Equality and comparison
@@ -278,24 +278,31 @@ Schemeには等価性を判定する汎用的な述語が3つあります。
 @c COMMON
 
 @defun eq? obj1 obj2
-[R7RS]
+[R7RS base]
 @c EN
 This is the fastest and finest predicate.
-Returns @code{#t} if @var{obj1} and @var{obj2} are allocated objects of
-the same types, and denote the same location.  Returns @code{#t}
-if both objects are @code{#f}, @code{#t}, or @code{()}.
-You can think @var{eq?} as a pointer comparison.
-Note that the result is unspecified in Scheme standard when
-both objects are characters or numbers.
+Returns @code{#t} if @var{obj1} and @var{obj2} are identical
+objects---that is, if they represents the same object on memory
+or in a register.  Notably, you can compare two symbols with
+@code{eq?} to check if they are the same or not.
+You can think @var{eq?} as a pointer comparison for
+any heap-allocated objects.
+
+Booleans can be compared with @code{eq?}, but you can't
+compare characters and numbers reliably---objects with the same
+numerical value may or may not @code{eq?} to each other.
+If you identity comparison needs to include those objects,
+use @code{eqv?} below.
 @c JP
 最も高速で、細かい区別ができる述語です。
-@var{obj1}と@var{obj2}がアロケートされる同じ型のオブジェクトで、
-かつ両者がメモリ上の全く同じ場所を占めるオブジェクトを指している場合に
-@code{#t}を返します。また、@var{obj1}と@var{obj2}がともに
-@code{#f}, @code{#t}あるいは@code{()}である場合も@code{#t}を返します。
-ポインタ比較と考えても良いでしょう。
-@var{obj1}と@var{obj2}がともに文字、あるいは数値であった場合の振るまいは
-Schemeの標準では定められていません。
+@var{obj1}と@var{obj2}が同一(identical)のオブジェクト、
+すなわち、メモリ上の同じオブジェクトを表している場合に@code{#t}を返します。
+特に、二つのシンボルが同一かどうかを比較するのに@code{eq?}が使えます。
+ヒープアロケートされるオブジェクトに対しては、ポインタ比較と考えても良いでしょう。
+
+真偽値も@code{eq?}で比較できますが、文字と数値はたとえ値が同じオブジェクトであっても
+互いに@code{eq?}になるかどうかはわかりません。
+同一性比較で文字や数値も扱う必要がある場合は、下の@var{eqv?}を使いましょう。
 @c COMMON
 
 @example
@@ -310,7 +317,7 @@ Schemeの標準では定められていません。
 @end defun
 
 @defun eqv? obj1 obj2
-[R7RS]
+[R7RS base]
 @c EN
 When @var{obj1} and @var{obj2} are both exact or both inexact numbers
 (except NaN),
@@ -360,8 +367,8 @@ If @var{obj1} and @var{obj2} are both aggregate types,
 @code{equal?} compares its elements recursively.
 Otherwise, @code{equal?} behaves the same as @code{eqv?}.
 
-If @var{obj1} and @var{obj2} are other than booleans, numbers,
-characters, pairs, strings and vectors, and the class of both
+If @var{obj1} and @var{obj2} are not @code{eqv?} to each other,
+not of builtin types, and the class of both
 objects are the same, @code{equal?} calls the generic
 function @code{object-equal?}.
 By defining the method, users can extend the behavior of @code{equal?}
@@ -371,8 +378,8 @@ for user-defined classes.
 @code{equal?}は再帰的に対応する要素同士を@code{equal?}で比較してゆきます。
 そうでなければ、@code{equal?}は@code{eqv?}と同じようにふるまいます。
 
-もし@code{obj1}と@var{obj2}が論理値、数値、文字、ペア、文字列、
-ベクタのいずれでもなく、かつ両者のクラスが等しい場合、@code{equal?}は
+もし@code{obj1}と@var{obj2}が互いに@code{eqv?}でなく、
+組み込み型でもなく、かつ両者のクラスが等しい場合、@code{equal?}は
 ジェネリックファンクション@code{object-equal?}を呼びます。
 @code{object-equal?}にメソッドを定義することにより、
 ユーザ定義のデータ型に対する@code{equal?}の振るまいを拡張することができます。
@@ -436,6 +443,46 @@ do not call @code{object-equal?} directly; call @code{equal?} on each element.
 @end example
 @end deffn
 
+@deffn {Method} object-equal? (obj1 <top>) (obj2 <top>)
+@c EN
+This method catches @code{equal?} between two objects of a user-defined
+classe, in case the user doesn't define a specialized method for the class.
+
+When called, it scans the registered default comparators that can handle
+both @var{obj1} and @var{obj2},
+and if it finds one, use the comparator's equality
+predicate to see if two arguments are equal to each other.  When no
+matching comparators are found, it just returns @code{#f}.
+@xref{Predefined comparators}, about the default comparators:
+Look for the entries of
+@code{default-comparator} and @code{comparator-register-default!}.
+
+Note: If you define @code{object-equal?} with exactly the same
+specializers of this method,
+you'll replace it and that breaks
+@code{default-comparator} operation.  Future versions of Gauche
+will prohibit such redefinition.  For now, be careful not to redefine
+it accidentally.
+@c JP
+このメソッドは、ユーザ定義クラスの2つのインスタンスが@code{equal?}であるかを
+調べる際に、そのクラスに特殊化したメソッドが無かった場合を捕まえるものです。
+
+このメソッドが呼ばれると、まず登録されたデフォルト比較器の中に@var{obj1}と
+@var{obj2}を共に処理できるものがあるかどうかを調べ、
+あればその比較器の等価述語を使って比較します。デフォルト比較器が引数を処理できなければ
+@code{#f}を返します。デフォルト比較器については
+@ref{Predefined comparators}を参照してください。特に
+@code{default-comparator}と@code{comparator-register-default!}の
+項目を見てください。
+
+註: もし、このメソッドと全く同じスペシャライザを
+指定して@var{object-equal?}メソッドを定義すると、それはこのメソッドを
+置き換えることになり、@code{default-comparator}の動作が壊れることになります。
+将来のGaucheのバージョンではそのような再定義は禁止される予定です。
+うっかりそういう再定義を行わないように気をつけてください。
+@c COMMON
+@end deffn
+
 @c EN
 Sometimes you want to test if two aggregate structures
 are topologically equal, i.e., if one has a shared substructure,
@@ -475,34 +522,191 @@ result of sorting a list of objects including numbers.
 @c EN
 A general comparison procedure.  Returns -1 if @var{obj1} is less than
 @var{obj2}, 0 if @var{obj1} is equal to @var{obj2}, and 1 if @var{obj1}
-is greater than @var{obj2}.  Signals an error if @var{obj1} and @var{obj2}
-are incomparable.
-
-Some built-in types are handled by this procedure reflecting ``natural''
-order of comparison.  Other built-in types are generally
-uncomparable.  For Scheme-defined classes, this procedure calls
-a generic function @code{object-compare}.
+is greater than @var{obj2}. 
 @c JP
 一般的な比較手続きです。@var{obj1}が@var{obj2}より小さければ-1を、
-等しければ0を、大きければ1を返します。@var{obj1}と@var{obj2}が
-比較できない場合はエラーとなります。
-
-いくつかの組み込み型は「自然な」比較順を用いて比較されます。
-他の組み込み型は通常比較不可能です。Schemeで定義されたクラスについては、
-この手続きはジェネリックファンクション@code{object-compare}を
-呼び出します。
+等しければ0を、大きければ1を返します。
 @c COMMON
+
+@c EN
+If @var{obj1} and @var{obj2} are incomparable, an error is signalled.
+However, @code{compare} defines total order between most Scheme objects,
+so that you can use it on wide variety of objects.  The definition is
+upper-compatible to the order defined in @code{srfi-114}.
+@c JP
+@var{obj1}と@var{obj2}が比較できない場合はエラーとなりますが、
+@code{compare}は多くのSchemeオブジェクト間に全順序を定義しているので、
+様々なオブジェクトの比較に使うことができます。この全順序は、
+@code{srfi-114}で定義されているものの上位互換です。
+@c COMMON
+
+@c EN
+Some built-in types are handled by this procedure reflecting
+``natural'' order of comparison if any (e.g. real numbers are compared
+by numeric values, characters are compared by @code{char<} etc.)
+For convenience,
+it also defines superficial order between objects that doesn't have
+natural order; complex numbers are ordered first by their real part,
+then their imaginary part, for example.  That is,
+@code{1+i} comes before @code{2-i},
+which comes before @code{2}, which comes before @code{2+i}.
+@c JP
+組み込みオブジェクトのうち、自然な順序が定義されているものはそれに従って順序づけられます
+(例えば実数はその数値の大小で、文字は@code{char<}等を使って比較されます)。
+また便宜上、通常の意味で大小が定義されないオブジェクトについても
+ある程度表面的な順序が定義されます。例えば複素数は、まず実部の大小によって
+順序づけられ、次に虚部の大小によって順序づけられます。
+すなわち、@code{1+i}、@code{2-i}、@code{2}、@code{2+i}はこの順番に並びます。
+@c COMMON
+
+@c EN
+Boolean false comes before boolean true.
+@c JP
+@code{#f}は@code{#t}より前に来ます。
+@c COMMON
+
+@c EN
+Lists are ordered by dictionary order: Take the common prefix.
+If either one is @code{()} and the other is not, @code{()} comes first.
+If both tails are not empty, compare the heads of the tails.
+(This makes empty list the ``smallest'' of all lists).
+@c JP
+リストは辞書順で比較されます。すなわち、まず共通のプリフィクスを除きます。
+一方が@code{()}でもう一方がそうでなければ、@code{()}である方が先にきます。
+どちらの尾部も空でなければ、尾部の先頭要素同士を比べます。
+(この定義により、空リストは全てのリストの「最小」のものになります)。
+@c COMMON
+
+@c EN
+Vectors (including uniform vectors) are compared first by their
+lengths, and if they are the same, elements are compared from left to right.
+Note that it's different from lists and strings.
+@c JP
+(ユニフォームベクタを含む)ベクタは、まず長さで比較され、
+長さが同じ場合は要素同士が左から比較されます。
+リストや文字列とは異なることに注意。
+@c COMMON
+
+@example
+(compare '(1 2 3) '(1 3))
+  @result{} -1  ; (1 2 3) is smaller
+(compare '#(1 2 3) '#(1 3))
+  @result{} 1   ; #(1 3) is smaller
+(compare "123" "13")
+  @result{} -1  ; "123" is smaller
+@end example
+
+@c EN
+If two objects are of subclasses of @code{<object>}, 
+a generic function @code{object-compare} is called.
+@c JP
+二つのオブジェクトがともに@code{<object>}のサブクラスであれば、
+ジェネリックファンクション@code{object-compare}が呼ばれます。
+@c COMMON
+
+@c EN
+If two objects are of different types and at least one of them
+isn't @code{<object>}, then they are ordered by their types.
+@code{Srfi-114} defines the order of builtin types as follows:
+@c JP
+二つのオブジェクトが異なる型で、少なくとも一方が@code{<object>}でない時は、
+両者の型により順序が決まります。@code{srfi-114}は組み込み型について
+次の順序を定めています。
+@c COMMON
+
+@enumerate 
+@item
+Empty list.
+@item
+Pairs.
+@item
+Booleans.
+@item
+Characters.
+@item
+Strings.
+@item
+Symbols.
+@item
+Numbers.
+@item 
+Vectors.
+@item 
+Uniform vectors
+(u8 < s8 < u16 < s16 < u32 < s32 < u64 < s64 < f16 < f32 < f64)
+@item
+@c EN
+All other objects.
+@c JP
+他のオブジェクトすべて
+@c COMMON
+@end enumerate
 @end defun
 
 @deffn {Generic Function} object-compare obj1 obj2
 @c EN
 Specializing this generic function extends @code{compare} procedure
 for user-defined classes.
+
+This method must return either @code{-1} (@var{obj1} precedes @var{obj2}),
+@code{0} (@var{obj1} equals to @var{obj2}),
+@code{1} (@var{obj1} succeeds @var{obj2}),
+or @code{#f} (@var{obj1} and @var{obj2} cannot be ordered).
 @c JP
 このジェネリックファンクションを特殊化することで
 @code{compare}手続きをユーザ定義クラスに対して動作するように拡張できます。
+
+このメソッドは以下のいずれかの値を返さねばなりません。
+@code{-1} (@var{obj1}は@var{obj2}より前)、
+@code{0} (@var{obj1}と@var{obj2}は等しい)、
+@code{1} (@var{obj1}は@var{obj2}より後)、
+@code{#f} (@var{obj1}と@var{obj2}は順序づけできない)。
 @c COMMON
 @end deffn
+
+@deffn {Method} object-compare (obj1 <top>) (obj2 <top>)
+@c EN
+This method catches @code{compare} between two objects of a 
+user-defined class, in case the user doesn't define a specialized
+method for the class.
+
+When called, it scans the registered default comparators that can
+handle both @var{obj1} and @var{obj2},
+and if it finds one, use the comparator's compare procedure
+to determine the order of @var{obj1} and @var{obj2}.
+When no matching comparators are found, it returns @code{#f}, meaning
+two objects can't be ordered.
+@xref{Predefined comparators}, about the default comparators:
+Look for the entries of
+@code{default-comparator} and @code{comparator-register-default!}.
+
+Note: If you define @code{object-compare} with exactly the same
+specializers of this method,
+you'll replace it and that breaks
+@code{default-comparator} operation.  Future versions of Gauche
+will prohibit such redefinition.  For now, be careful not to redefine
+it accidentally.
+@c JP
+このメソッドは、ユーザ定義クラスの2つのインスタンスを@code{compare}する
+際に、そのクラスに特殊化したメソッドが無かった場合を捕まえるものです。
+
+このメソッドが呼ばれると、まず登録されたデフォルト比較器の中に@var{obj1}と
+@var{obj2}を共に処理できるものがあるかどうかを調べ、
+あればその比較器の比較手続きを使って両者の順序を判定します。
+デフォルト比較器が引数を処理できなければ
+@code{#f}(「比較できない」)を返します。デフォルト比較器については
+@ref{Predefined comparators}を参照してください。特に
+@code{default-comparator}と@code{comparator-register-default!}の
+項目を見てください。
+
+註: もし、このメソッドと全く同じスペシャライザを
+指定して@var{object-compare}メソッドを定義すると、それはこのメソッドを
+置き換えることになり、@code{default-comparator}の動作が壊れることになります。
+将来のGaucheのバージョンではそのような再定義は禁止される予定です。
+うっかりそういう再定義を行わないように気をつけてください。
+@c COMMON
+@end deffn
+
 
 @defun eq-compare obj1 obj2
 @c EN
@@ -580,62 +784,196 @@ are not guaranteed to be @code{eq?} even if they are numerically equal.
 @c COMMON
 @end defun
 
-@defun hash obj
+@defun default-hash obj
+[R7RS+]
 @c EN
 This is a hash function suitable to be used with @code{equal?}.
-
-The hash value is an exact non-negative integer, and
-is independent from the runtime state
-of the machine (such as address of the data); so you can save
-the hash value to file and read it again with different process
-without losing validity of the hash value.
+In R7RS, this is defined in @code{scheme.comparator} (originally
+in @code{srfi-128}).
 
 If @var{obj} is either a number, a boolean, a character,
 a symbol, a keyword, a string, a list or a vector,
 internal hash function is used to calculate the hash value.
-If @var{obj} is other than that, @code{hash} calls
-a generic function @code{object-hash} to calculate the hash value.
+If @var{obj} is other than that,
+a generic function @code{object-hash} is called to calculate the hash value
+(see below).
+
+The hash value also depends on @code{hash-salt}, which differs
+for every run of the process.
 @c JP
 @code{equal?}と一緒に使うのに適したハッシュ関数です。
-
-この関数が返すハッシュ値は正確な非負整数で、
-(そのデータのアドレスというような)実行時の計算機の状態とは
-独立した値となります。それゆえ、その値をファイルに格納し、別のプロセスで読み込む
-といった用途に使えます。
+R7RSでは、@code{scheme.comparator}ライブラリで定義されています
+(元は@code{srfi-128})。
 
 @var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
 ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
 使います。
 @var{obj} が、それ以外であれば、 @code{hash} は総称関数 @code{object-hash}
 を呼んで、そのハッシュ値を計算します。
+
+返されるハッシュ値は@code{hash-salt}の値にも依存します。@code{hash-salt}
+はプロセスが走る度に異なる値をとります。
 @c COMMON
 @end defun
 
-@deffn {Generic Function} object-hash obj
+@defun portable-hash obj salt
+@c EN
+Sometimes you need to calculate a hash value that's ``portable'',
+in a sense that the value won't change across multiple runs of
+the process, nor between different platforms.  Such hash value can
+be used with storing objects externally to share among processes.
+
+This procedure calculates a hash value of @var{obj} with such
+characteristics; the hash value is the same for the same
+object and the same salt value.
+Here ``same object'' roughly means having
+the same external representation.  Objects @code{equal?} to each
+other are same.  If you write out an object with @code{write},
+and read it back, they are also the same objects in this sense.
+
+This means objects without read/write invariance, such as
+ports, can't be handled with @code{portable-hash}.  It is caller's
+responsibility that @var{obj} won't contain such objects.
+
+The @code{salt} argument is a nonnegative fixnum and gives variations
+in the hash function.  You have to use the same salt to get consistent
+results.
+
+If @var{obj} is other than a number, a boolean, a character,
+a symbol, a keyword, a string, a list or a vector,
+this procedure calls 
+a generic function @code{object-hash} is called to calculate the hash value
+(see below).
+@c JP
+時に、「ポータブル」なハッシュ値が必要になることがあります。ここでポータブルとは、
+プロセスを何度実行しても、また異なるプラットフォームで実行しても、同じオブジェクト
+に対して常に同じ値となることです。そのようなハッシュ値は、
+プロセスの外に保存したり他のプロセスと共有するオブジェクトと一緒に使えます。
+
+この手続きは@var{obj}についてその性質を持つハッシュ値を計算して返します。
+つまり、同じオブジェクトと同じソルト値が渡されれば同じハッシュ値となる、ということです。
+ここで、「同じオブジェクト」とは、だいたい外部表現が同じになるものと
+考えて構いません。@code{equal?}であるもの同士は同じです。
+また、オブジェクトを@code{write}で書き出して@code{read}で読み込んだものは
+元のオブジェクトと同じになります。
+
+このことから、read/write不変性をもたないオブジェクトは@code{portable-hash}
+では扱えません。@var{obj}がそのようなオブジェクトを含まないことは
+呼び出し側で保証する必要があります。
+
+@code{salt}は非負のfixnumで、ハッシュ関数に変化をつけます。一貫した結果を
+得るには同じソルト値を使わなければなりません。
+
+@var{obj}が数値、真理値、文字、シンボル、キーワード、文字列、リスト、
+ベクタのいずれでもない場合、ハッシュ値を計算するのに
+総称関数 @code{object-hash}が呼ばれます。
+@c COMMON
+@end defun
+
+@defun legacy-hash obj
+@c EN
+Up to 0.9.4, Gauche had a hash function called @code{hash}
+that was used in both @code{equal?}-hashtable @emph{and}
+for the portable hash function.  It had a problem, though.
+@c JP
+バージョン0.9.4まで、Gaucheでは@code{hash}と呼ばれるハッシュ関数が
+@code{equal?}ハッシュテーブル用のハッシュ計算と
+ポータブルなハッシュ値の計算の両方を兼ねていました。
+しかしそれには問題がありました。
+@c COMMON
+
+@enumerate
+@item
+@c EN
+There was no way to salt the hash function, which makes the
+hashtables storing externally provided data vulnerable
+to collision attack.
+@c JP
+ハッシュ関数にソルトを与えることができなかったため、
+外部からのデータによる衝突攻撃が可能だった
+@c COMMON
+@item
+@c EN
+The hash function behaves poorly, especially on flonums.
+@c JP
+ハッシュ関数自体があまり良くなかった(特に浮動小数点数)
+@c COMMON
+@item
+@c EN
+There are bugs in bignum and flonum hashing code that
+have produced different results on different architectures.
+@c JP
+多倍長整数と浮動小数点数のハッシュ値計算で、
+異なるアーキテクチャで異なる値を返してしまうバグがあった。
+@c COMMON
+@end enumerate
+
+@c EN
+Since there are existing hash values calculated with
+the old hash function, we preserve the behavior of the
+original @code{hash} function as @code{legacy-hash}.
+Use this when you need to access old data.
+(The @code{hash} function also behaves as @code{legacy-hash}
+by default, but it has tweaks; see below.)
+@c JP
+既に@code{hash}で計算されたハッシュ値を利用しているデータがあるため、
+以前の@code{hash}で提供していたハッシュ関数を@code{legacy-hash}として
+保存することにしました。古いデータにアクセスする場合に使ってください。
+(@code{hash}関数自体もデフォルトでは
+@code{legacy-hash}と同様に振る舞いますが、ちょっとした仕掛けがあります。
+下の説明を参照)。
+@c COMMON
+
+@c EN
+The new code that needs portable hash value should use
+@code{portable-hash} instead.
+@c JP
+新たに書くコードでポータブルなハッシュ値が必要なら
+@code{portable-hash}を使ってください。
+@c COMMON
+@end defun
+
+@deffn {Generic Function} object-hash obj rec-hash
 @c EN
 By defining a method for this generic function, objects of
 user-defined types can have a hash value and can be used
-in @code{equal?} hash table.
+in a @code{equal?} hash table.
 
-The method has to return an exact non-negative integer, and
-has to follow the same constraints as of @code{hash}.
+The method has to return an exact non-negative integer,
+and must return the same value for two object which are @code{equal?}.
+Furthermore, the returned value must not rely on the platform
+or state of the process, if @var{obj} is a portable object
+(see @code{portable-hash} above for what is portable.)
 
 If the method needs to get hash value of @var{obj}'s elements,
-it has to call @code{hash} on them, not @code{object-hash}.
-For the hashing of primitive objects are done in @code{hash}.
+it has to call @code{rec-hash} on them.  It guarantees that
+the proper hash function is called recursively.  So you can
+count on @code{rec-hash} to calculate a portable hash value
+when @code{object-hash} itself is called from @code{portable-hash}.
+
+If @var{obj} has several elements,
+you can call @code{combine-hash-value} on the elements'
+hash values.
 @c JP
 この総称関数に対するメソッドを定義することにより、ユーザ定義された
 型のオブジェクトはハッシュ値を持つことができ、@code{equal?}型のハッシュ
-テーブルで利用することができるようになります。
+テーブルで利用できるようになります。
 
-メソッドは正確な非負整数を返さなければなりません。また、@code{hash} と
-同じ制約に従わなければなりません。
+メソッドは正確な非負整数を返さなければなりません。また、
+互いに@code{equal?}であるオブジェクト同士に対しては同じハッシュ値を
+返さなければなりません。
+さらに、@code{obj}がポータブル(「ポータブル」の意味については
+上の@code{portable-hash}の説明を参照)の場合には、
+ハッシュ値は実行中のプラットフォームやプロセスの状態に依存してはなりません。
 
 メソッドが @var{obj} の要素のハッシュ値を必要とする場合には、
-それらに対しては、@code{object-hash} ではなく、@code{hash} を
-呼ばなければなりません。プリミティブなオブジェクトのハッシュ計算は
-@code{hash} が行うからです。
+それらに対して、@var{rec-hash}を呼び出してください。そうすれば
+適切なハッシュ関数が再帰的に呼び出されます。例えば@code{object-hash}が
+@code{portable-hash}経由で呼び出されている場合、
+@var{rec-hash}を呼べば同じソルト値でポータブルなハッシュ値が計算されます。
 
+@var{obj}がいくつかの要素を持っている場合、各要素のハッシュ値を
+まとめるには@code{combine-hash-value}を呼びます。
 @c COMMON
 @example
 (define-class <myclass> () (x y))
@@ -643,13 +981,194 @@ For the hashing of primitive objects are done in @code{hash}.
 ;; user-defined equality function
 (define-method object-equal? ((a <myclass>) (b <myclass>))
   (and (equal? (ref a 'x) (ref b 'x))
-       (eq?    (ref a 'y) (ref b 'y))))
+       (= (abs (ref a 'y)) (abs (ref b 'y)))))
 
 ;; user-defined hash function
-(define-method object-hash ((a <myclass>))
-  (hash (list (ref a 'x) (ref a 'y))))
+(define-method object-hash ((a <myclass>) rec-hash)
+  (combine-hash-value (rec-hash (ref a 'x))
+                      (rec-hash (abs (ref a 'y)))))
 @end example
 @end deffn
+
+@deffn {Method} object-hash (obj <top>) rec-hash
+@deffnx {Method} object-hash (obj <top>)
+@c EN
+These two methods are defined by the system and ensures the
+backward compatibility and the behavior of @code{default-comparator}.
+Be careful not to replace these methods by defining the exactly same
+specializers.  In future versions of Gauche, attempts to replace
+these methods will raise an error.
+@c JP
+これら二つのメソッドはシステムで定義されており、
+後方互換性および@code{default-comparator}の正しい振る舞いを保証しています。
+全く同じスペシャライザを持つメソッドを定義することでこれらを置き換えてしまわないように
+注意してください。将来のバージョンでは、これらのメソッドを置き換えるのは
+エラーになる予定です。
+@c COMMON
+@end deffn
+
+@defun combine-hash-value ha hb
+@c EN
+Returns a hash value which is a combination of two hash
+values, @var{ha} and @var{hb}.  The guaranteed invariance
+is that if @code{(= ha1 ha2)} and @code{(= hb1 hb2)}
+then @code{(= (combine-hash-value ha1 hb1) (combine-hash-value ha2 hb2))}.
+This is useful to write user-defined @code{object-hash} method.
+@c JP
+二つのハッシュ値@var{ha}と@var{hb}を組み合わせたハッシュ値を返します。
+次の性質が保証されます：@code{(= ha1 ha2)} かつ @code{(= hb1 hb2)}
+ならば @code{(= (combine-hash-value ha1 hb1) (combine-hash-value ha2 hb2))}。
+これはユーザ定義の@code{object-hash}メソッドを書くのに便利です。
+@c COMMON
+@end defun
+
+@defun hash obj
+@c EN
+This function is deprecated.
+
+Calculate a hash value of @code{obj} suitable for @code{equal?} hash.
+By default, it returns the same value as @code{legacy-hash}.  However,
+if this is called from @code{default-hash} or @code{portable-hash}
+(via @code{object-hash} method), it recurses to the calling hash
+function.
+
+The behavior is to keep the legacy code work.  Until 0.9.5,
+@code{hash} is the only hash function to be used for both portable
+hash and @code{equal?}-hash, and @code{object-hash} method takes single
+argument (an object to hash) and calls @code{hash} recursively whenever it
+needs to get a hash value of other objects pointed from the argument.
+
+As of 0.9.5 we have more than one hash functions that calls
+@code{object-hash}, so the method takes the hash function as
+the second argument to recurse.  However, we can't just break
+the legacy code; so there's a default method defined in
+@code{object-hash} which is invoked when no two-arg method
+is defined for the given object, and dispatches to one-arg method.
+As far as the legacy @code{object-hash}
+code calls @code{hash}, it calls proper function.
+The new code shouldn't rely on this behavior, and must use
+the second argument of @code{object-hash} instead.
+@c JP
+この関数は非推奨となりました。
+
+@code{equal?}ハッシュとして使える、@var{obj}のハッシュ値を返します。
+デフォルトでは、この関数は@code{legacy-hash}と同じ値を返します。
+しかし、この関数が@code{default-hash}か@code{portable-hash}から
+(@code{object-hash}を経由して)呼ばれた場合は、呼び出したハッシュ関数へと
+再帰します。
+
+この振る舞いは既存のコードを動かすためのものです。0.9.5より前は、
+@code{hash}が、ポータブルなハッシュ値にも@code{equal?}ハッシュテーブルにも
+使えるハッシュ値を計算する唯一の関数でした。@code{object-hash}メソッドは
+ハッシュ値を計算したいオブジェクトだけを引数に取り、もしそのオブジェクトが
+指す他のオブジェクトのハッシュ値が欲しいなら、@code{hash}を再帰呼び出ししていました。
+
+0.9.5から、@code{object-hash}はいくつかのハッシュ関数から呼び出されるようになり、
+第2引数に再帰すべきハッシュ関数を取るようになりました。
+けれども既存のコードを動かなくしてしまうわけにはいきません。そこで、
+@code{object-hash}のデフォルトメソッド(2引数でマッチするメソッドが
+無い場合に呼ばれるもの)が、1引数の@code{object-hash}を呼び出すように
+定義されています。既存の@code{object-hash}が@code{hash}を呼び出していれば、
+正しいハッシュ関数へと再帰するというわけです。
+新たに書くコードはこの振る舞いに依存してはいけません。
+2引数の@code{object-hash}メソッドを定義してください。
+@c COMMON
+@end defun
+
+
+@defun boolean-hash bool
+@defunx char-hash char
+@defunx char-ci-hash char
+@defunx string-hash str
+@defunx string-ci-hash str
+@defunx symbol-hash sym
+@defunx number-hash num
+[R7RS comparator]
+@c EN
+These are hash functions for specific type of objects,
+defined in R7RS @code{scheme.comparator}.
+In Gauche, these procedures are just a wrapper of @code{default-hash}
+with type checks (and case folding when relevant).  These are
+mainly provided to conform @code{scheme.comparator}; in your code you might
+just want to use @code{default-hash} (or @code{eq-hash}/@code{eqv-hash},
+depending on the equality predicate).
+@c JP
+これらは、R7RSの@code{scheme.comparator}で定義された、
+特定の型のオブジェクト専用のハッシュ関数です。
+Gaucheでは、これらの関数は単に引数の型チェックをして(必要なら大文字小文字の
+区別をなくした後)、組み込みの@code{default-hash}を呼び出しているだけです。
+これらは@code{scheme.comparator}で定義されているために提供されていますが、
+特にポータビリティが必要でなければ@code{defailt-hash}
+(あるいは、等価述語によっては@code{eq-hash}や
+@code{eqv-hash})を呼んでしまう方が簡単だし高速です。
+@c COMMON
+
+@c EN
+The case-folding versions, @code{char-ci-hash} and
+@code{string-ci-hash}, calls @code{char-foldcase} and
+@code{string-foldcase} respectively, on the argument before
+passing it to @code{hash}.
+(@xref{Characters}, for @code{char-foldcase}.
+@xref{Full string case conversion}, for @code{string-foldcase}).
+@c JP
+大文字小文字を区別しない、@code{char-ci-hash}および@code{string-ci-hash}は、
+引数にそれぞれ@code{char-foldcase}と@code{string-foldcase}を適用してから
+@code{hash}に渡します。
+(@code{char-foldcase}については@ref{Characters}を、
+@code{string-foldcase}については@ref{Full string case conversion}を
+参照してください。)
+@c COMMON
+@end defun
+
+@defun hash-bound
+@defunx hash-salt
+[R7RS comparator]
+@c EN
+Both evaluates to an exact nonnegative integers.  In R7RS,
+these are defined in @code{scheme.comparator}.
+
+(Note: @code{scheme.comparator}
+defines these as macros, in order to allow
+implementatins optimize runtime overhead.  In Gauche we use
+procedures but the overhead is negligible.)
+
+User-defined hash functions can limit the range of the result between
+0 and @code{(hash-bound)}, respectively, without worrying to lose
+quality of hash function.  (User-defined hash functions don't need
+to honor @code{(hash-bound)} at all; hashtables takes modulo when
+necessary.)
+
+User-defined hash function can also take into account of the
+value @code{(hash-salt)} into hash calculation; the salt value may
+differ between runs of the Scheme processes, or even between
+hash table instances.  It is to avoid collision attack.
+Built-in hash functions already takes the salt value into account,
+so if your hash function is combining the hash values of
+primitive types, you don't need to worry about salt values.
+@c JP
+どちらも、正確な非負整数へと展開されます。R7RSでは、
+@code{scheme.comparator}ライブラリで定義されています。
+
+(註: @code{scheme.comparator}はこれらをマクロと定義しています。処理系が
+ランタイムオーバヘッドを避けられるようにするためです。
+Gaucheでは、呼び出しのオーバヘッドはそれほど問題にならないという
+立場から、どちらも手続きにしています。)
+
+ユーザ定義のハッシュ関数は、
+結果を0と@code{(hash-bound)}の間に限定してもハッシュの質を落とさないことが
+保証されます。(ユーザ定義のハッシュ関数は@code{(hash-bound)}を気にする
+必要はありません。ハッシュテーブルが必要な時にモジュロを取ります)。
+
+ユーザ定義のハッシュ関数はまた、@code{(hash-salt)}を計算に組み入れることが
+できます。展開されるソルト値は、Schemeプロセスの実行ごとに異なる値を
+取ったり、ハッシュテーブルごとに異なる値を取るかもしれません。
+これは、コリジョン攻撃を回避するためのものです。
+組み込みのハッシュ関数は既にソルト値を考慮しているので、
+ユーザ定義ハッシュ関数がプリミティブ型のハッシュ値を組み合わせるだけの
+場合は、ソルト値を気にする必要はありません。
+@c COMMON
+@end defun
+
 
 @node Basic comparators,  , Hashing, Equality and comparison
 @subsection Basic comparators
@@ -677,19 +1196,40 @@ a record that bundles closely-related comparison procedures together.
 @c COMMON
 
 @c EN
-The APIs of comparators are defined in SRFI-114, which is rather
-large.  Gauche supports essential APIs in the core.  To access full
-set of APIs, use @code{srfi-114} module (@pxref{Comparators}).
+There are two SRFIs that define comparators.  The one that was originally
+called @code{srfi-128} has now become a part of R7RS large as 
+@code{scheme.comparator}, and we recommend new code to use it.
+Gauche has all of @code{scheme.comparator}
+procedures built-in.  The older, and rather complex one is @code{srfi-114};
+Gauche also supports it mainly for the backward compatibility.
+Importantly, Gauche's native @code{<comparator>} object is compatible
+to both @code{scheme.comparator} and @code{srfi-114}
+comparators.
 @c JP
-比較器のAPIはSRFI-114で定義されていますがかなり大きいので、
-Gaucheでは重要なAPIだけを組み込みで用意しています。
-全てのAPIを使うには@code{srfi-114}を@code{use}してください
-(@ref{Comparators}参照)。
+比較器を定義したSRFIは二つあります。@code{srfi-128}と呼ばれていた規格は
+R7RS largeに取り込まれ、@code{scheme.comparator}になりました。
+新しいコードではそちらを使うべきです。
+Gaucheは@code{scheme.comparator}のAPIを全て組み込みで提供します。
+古く、より複雑なのが@code{srfi-114}で、Gaucheはそちらは主に後方互換性のために
+サポートしています。重要なのは、Gaucheの組み込みの@code{<comparator>}オブジェクトは
+@code{scheme.comparator}の比較器としても
+@code{srfi-114}の比較器としても使えるということです。
 @c COMMON
+
+@menu
+* Comparator class and constructors::
+* Comparator predicates and accessors::
+* Predefined comparators::
+* Combining comparators::
+@end menu
+
+@node Comparator class and constructors, Comparator predicates and accessors, Basic comparators, Basic comparators
+@subsubsection Comparator class and constructors
+@c NODE 比較器クラスとコンストラクタ
 
 @deftp {Builtin Class} <comparator>
 @c EN
-A record that bundles the following procedures:
+A comparator record that bundles the following procedures:
 @c JP
 以下の手続きをひとまとめにするレコードです。
 @c COMMON
@@ -701,6 +1241,9 @@ Checks if an object can be compared with this comparator.
 @item Equality predicate
 See if given two objects
 are equal to each other; returns a boolean value.
+@item Ordering predicate
+Compare given two objects, and returns true iff the first one is
+strictly precedes the second one.  That is, this is a less-than predicate.
 @item Comparison procedure
 Compare given two objects, and returns either -1 (the first one is less
 than the second), 0 (they are equal), or 1 (the first one is greater
@@ -715,6 +1258,10 @@ Returns a hash value of the given object.
 @item 等価述語
 二つのオブジェクトが等価かどうかを判定し、等価なら@code{#t}を、そうでなければ@code{#f}
 を返します。
+@item 順序手続き
+二つのオブジェクトの大小関係を判定し、
+最初のオブジェクトが二つ目のオブジェクトより小さければ@code{#t}を、
+そうでなければ@code{#f}を返します。
 @item 比較手続き
 二つのオブジェクトの大小関係を判定し、
 最初のオブジェクトの方が小さければ-1を、
@@ -726,16 +1273,37 @@ Returns a hash value of the given object.
 @c COMMON
 
 @c EN
-A comparator may not have a comparison procedure and/or
-a hash function.  You can check if a comparison procedure
-or a hash function is available in a given comparator
-by @code{comparator-comparison-procedure?} and
-@code{comparator-hash-function?}, respectively.
+@code{Scheme.comparator}'s
+comparators use the ordering predicate, 
+while SRFI-114 comparators use the comparison procedure.
+Gauche's @code{<comparator>} supports both by automatically
+generating the missing one; that is, if you create a comparator
+with @code{scheme.comparator} interface, by giving an ordering predicate,
+Gauche automatically fills the comparison procedure, and
+if you create one with SRFI-114 interface by giving a comparison
+procedure, Gauche generates the ordering predicate.
 @c JP
-比較器は、比較手続き、ハッシュ関数、あるいはその両方を欠いていることもあります。
-比較手続きとハッシュ関数が使えるかどうかは、それぞれ
-@code{comparator-comparison-procedure?}と
-@code{comparator-hash-function?}で調べることができます。
+@code{scheme.comparator}の比較器は順序手続きを使い、
+SRFI-114の比較器は比較手続きを使います。
+Gaucheの@code{<comparator>}は両方をサポートするために、
+自動的に欠けている手続きを補います。
+つまり、順序手続きを与えて@code{scheme.comparator}のインタフェースで
+比較器を作った場合、Gaucheは自動的に比較手続きを生成しますし、
+比較手続きを与えてSRFI-114のインタフェースで比較器を作った場合は
+順序手続きが自動生成されます。
+@c COMMON
+
+@c EN
+A comparator may not have an ordering predicate / comparison procedure,
+and/or a hash function.  You can check if the comparator
+can be used for ordering or hashing by
+@code{comparator-ordered?} and
+@code{comparator-hashable?}, respectively.
+@c JP
+比較器は、順序/比較手続き、ハッシュ関数、あるいはその両方を欠いていることもあります。
+比較器が順序づけやハッシュに使えるかどうかは、それぞれ
+@code{comparator-ordered?}と
+@code{comparator-hashable?}で調べることができます。
 @c COMMON
 
 @c EN
@@ -752,19 +1320,39 @@ Gauche組み込みのデータ型は、コンストラクタで比較器を取�
 @c COMMON
 @end deftp
 
-@defun make-comparator type-test equal compare hash :optional name
-[SRFI-114+]
+@defun make-comparator type-test equal order hash :optional name
+[R7RS comparator]
 @c EN
 Creates a new comparator form the given @var{type-test}, 
-@var{equal}, @var{compare} and @var{hash} functions, and returns it.
+@var{equal}, @var{order} and @var{hash} functions, and returns it.
+In R7RS, this is defined in @code{scheme.comparator}
 
 See the description of @code{<comparator>} above for the role of
 those procedures.
 @c JP
-与えられた@var{type-test}、@var{equal}、@var{compare}、@var{hash}の
+与えられた@var{type-test}、@var{equal}、@var{order}、@var{hash}の
 各関数をまとめて、新たな比較器を作って返します。
+R7RSではこの関数は@code{scheme.comparator}で定義されています。
 
 各関数の役割については上の@code{<comparator>}の説明を参照してください。
+@c COMMON
+
+@c EN
+Note: Both @code{scheme.comparator}
+and @code{srfi-114} defines @code{make-comparator},
+but where @code{scheme.comparator} takes @var{order} argument,
+@code{srfi-114} takes @var{compare} argument.
+Since @code{scheme.comparator} is preferable, we adopt
+it for the built-in interface, and give a different name
+(@code{make-comparator/compare}) for SRFI-114 constructor.
+@c JP
+註: @code{scheme.comparator}と@code{srfi-114}は両方とも
+@code{make-comparator}を定義していますが、
+@code{scheme.comparator}が@var{order}手続きを取るところで
+@code{srfi-114}は@var{compare}手続きを取ります。
+@code{scheme.comparator}の方が推奨されるので、
+Gaucheでは組み込みの@code{make-comparator}を@code{scheme.comparator}に合わせ、
+SRFI-114の方は@code{make-comparator/compare}という名前にしてあります。
 @c COMMON
 
 @c EN
@@ -796,47 +1384,34 @@ a procedure that always return @code{#t} is used.
 @c COMMON
 
 @c EN
-The @var{equal} argument must be either @code{#t}, or
+The @var{equal} argument must
 a predicate taking two arguments to test equality.
-If it is @code{#t}, the @var{compare} argument must be a procedure,
-and the predefined equality procedure passes both arguments
-to it, and return true iff the compare procedure returns 0.
 @c JP
-@var{equal}引数は@code{#t}もしくは二つの引数を取りその等価性を判定する
-述語でなければなりません。@code{#t}が渡された場合、@var{compare}引数が
-手続きでなければならず、@var{compare}が0を返した場合に@var{#t}となるような
-手続きが等価述語として補われます。
+@var{equal}引数は二つの引数を取りその等価性を判定する
+述語でなければなりません。
 @c COMMON
 
 @c EN
-The @var{compare} argument must be either @code{#f}, or
-a procedure taking two arguments and returning either -1, 0, or
-1, depending on whether the first argument is less than, equal to,
-or greater than the second argument.
-If it is @code{#f}, it indicates the comparator can't order objects
-(equality can still be tested, though).  The predefined procedure
-just throws an error.
+the @var{order} argument must be either @code{#f} or
+a procedure taking two arguments and returning a boolean value.
+It must return @code{#t} iff the first argument strictly precedes
+the second one.  If @code{#f} is passed, the comparator can not be
+used for ordering.
 @c JP
-@var{compare}引数は@code{#f}か、二つの引数を取りそれらの大小関係を
-判定する手続きでなければなりません。手続きの場合、引数の最初の方が小さいか、
-両者が等しいか、最初の方が大きいか、に応じて-1, 0, 1をそれぞれ返さなければ
-なります。@code{#f}の場合、対象とするオブジェクトの集合に全順序関係がつけられない
-ことを表します。この場合、呼ばれたらエラーを投げる手続きが補われます。
+@var{order}手続きは@code{#f}もしくは二つの引数を取り真偽値を返す手続きで
+なければなりません。手続きの場合、最初の引数が二番目の引数より厳密に手前に
+ある場合にのみ@code{#t}を返します。@code{#f}が渡された場合は、
+作られる比較器は順序づけには使えません。
 @c COMMON
 
 @c EN
 The @var{hash} argument must be either @code{#f}, or
 a procedure taking one argument and returning nonnegative exact
-integer.  SRFI-114 doesn't specify the range of the hash value,
-but in Gauche, hashtable won't use greater than 32bits range,
-most likely much less bits, so you can limit to the result to
-fixnum range.  If @var{#f} is given, it indicates the comparator
+integer.  If @var{#f} is given, it indicates the comparator
 can't hash objects; the predefined procedure just throws an error.
 @c JP
 @var{hash}引数は@code{#f}か、一つの引数を取り非負の正確な整数をハッシュ値と
-して返す手続きでなければなりません。SRFI-114ではハッシュ値の値域は定めて
-いませんが、Gaucheではハッシュテーブルは最大でも下位から32ビットの値しか
-使わないので、ハッシュ関数もその範囲に値を絞って良いです。
+して返す手続きでなければなりません。
 @code{#f}が渡された場合は、この比較器ではハッシュ値を取れないことを意味します。
 この場合、呼ばれたらエラーを投げる手続きが補われます。
 @c COMMON
@@ -852,12 +1427,73 @@ printing the comparator, to help debugging.
 @c COMMON
 @end defun
 
+@defun make-comparator/compare type-test equal compare hash :optional name
+@c EN
+This is SRFI-114 comparator constructor.  In SRFI-114, this is called
+@code{make-comparator}.  Avoiding name conflict, we renamed it.
+If you @code{(use srfi-114)} you get the original name @code{make-comparator}
+(and the built-in @code{make-comparator} is shadowed).
+This is provided for the backward
+compatibility, and new code should use built-in @code{make-comparator} above.
+@c JP
+これはSRFI-114比較器のコンストラクタです。SRFI-114ではこれが
+@code{make-comparator}と呼ばれていますが、名前の衝突を避けるために別の名前を用意しました。
+@code{(use srfi-114)}した場合は、SRFI-114のコンストラクタが元の名前
+で使えるようになります(組み込みの@code{make-comparator}がシャドウされます。)
+これは後方互換性のために提供されています。
+新たなコードは上に示した組み込みの@code{make-comparator}を使ってください。
+@c COMMON
+
+@c EN
+It's mostly the same as @code{make-comparator} above, except
+the following:
+@c JP
+以下の点を除き、上の@code{make-comparator}とほぼ同じです。
+@c COMMON
+
+@itemize
+@item
+@c EN
+The third argument (@var{compare}) is a comparison procedure
+instead of an ordering predicate.
+It must be either @code{#f}, or a procedure taking two arguments
+and returning either -1, 0, or 1, depending on whether the
+first argument is less than, equal to,
+or greater than the second argument.
+If it is @code{#f}, it indicates the comparator can't order objects.
+@c JP
+第3引数(@var{compare})には順序手続きのかわりに比較手続きを渡します。
+この引数は@code{#f}か、二つの引数を取りそれらの大小関係を
+判定する手続きでなければなりません。手続きの場合、引数の最初の方が小さいか、
+両者が等しいか、最初の方が大きいか、に応じて-1, 0, 1をそれぞれ返さなければ
+なりません。@code{#f}の場合、対象とするオブジェクトの集合に全順序関係がつけられない
+ことを表します。
+@c COMMON
+@item
+@c EN
+You can pass @code{#t} to the @var{equal} argument when you give
+a comparison procedure.  In that case, equality is determined
+by calling the comparison procedure and see if the result is 0.
+@c JP
+比較手続きを与えた場合、@var{equal}手続きに@code{#t}を渡すことができます。
+その場合、等価性の判定は比較手続きが0を返すかどうかで行われます。
+@c COMMON
+@end itemize
+@end defun
+
+@node Comparator predicates and accessors, Predefined comparators, Comparator class and constructors, Basic comparators
+@subsubsection Comparator predicates and accessors
+@c NODE 比較器にまつわる述語とアクセサ
+
+
 @defun comparator? obj
-[SRFI-114]
+[R7RS comparator]
 @c EN
 Returns true iff @var{obj} is a comparator.
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 @var{obj}が比較器である場合に@code{#t}を、そうでなければ@code{#f}を返します。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
@@ -868,7 +1504,7 @@ via this method.  Even @var{a} and @var{b} are comparators created
 separately, they can be @code{equal?} if all of their slots are
 the same.
 
-This is Gauche's extension.  SRFI-114 says nothing about
+This is Gauche's extension.  The standard says nothing about
 equality of comparators, but it is sometimes useful if you can compare
 two.
 @c JP
@@ -877,7 +1513,7 @@ two.
 比較器@var{a}と@var{b}が別々に作られたものであっても、各スロットの内容が
 等価であれば@code{equal?}とみなされます。
 
-これはGaucheの拡張です。SRFI-114は比較器同士の等価性については何も定義していません。
+これはGaucheの拡張です。標準は比較器同士の等価性については何も定義していません。
 けれども、時には等価判定が便利なことがあります。
 @c COMMON
 
@@ -898,82 +1534,186 @@ two.
 @end example
 @end deffn
 
-@defun comparator-comparison-procedure? cmpr
-@defunx comparator-hash-function? cmpr
-[SRFI-114]
+@defun comparator-flavor cmpr
 @c EN
-Returns true iff a comparator @var{cmpr} has provided comparison procedure
-and hash function, respectively.
+Returns a symbol @code{ordering} if @var{cmpr} is created with
+@code{scheme.comparator} constructor, and
+returns @code{comparison} if @var{cmpr}
+is created with SRFI-114 constructor.
 
-Note that @code{comparator-comparison-procedure} and 
-@code{comparator-hash-function} always returns a procedure, even
-no procedure is given when a comparator is created; in that case,
-returned procedures are just raises an error when called.
+Usually applications don't need to distinguish these two kinds of
+comparators, for either kind of comparators can behave just as another
+kind.  This procedure is for some particular cases when one
+wants to optimize for the underlying comparator implementation.
 @c JP
-比較器@var{cmpr}が、有効な比較手続きおよびハッシュ関数を持っている
-場合にそれぞれ@code{#t}を返します。
+@var{cmpr}が@code{scheme.comparator}コンストラクタで作られた場合は
+シンボル@code{ordering}を、
+srfi-114コンストラクタで作られた場合はシンボル@code{comparison}を返します。
 
-比較器作成時に比較手続きやハッシュ関数が与えられなかった場合でも、
-@code{comparator-comparison-procedure}と@code{comparator-hash-function} 
-は常に手続きを返すことに注意してください。それらの手続きは呼ばれると単に
-エラーを報告します。
+アプリケーションは通常両者を区別する必要はありません。一方の比較器は
+もう一方の比較器としても使うことができるからです。
+比較器の実装に特化した最適化をしたい場合にのみ、区別が必要です。
+@c COMMON
+@end defun
+
+@defun comparator-ordered? cmpr
+@defunx comparator-hashable? cmpr
+[R7RS comparator]
+@c EN
+Returns true iff a comparator @var{cmpr} can be used to order
+objects, or to hash them, respectively.
+In R7RS, this is provided from @code{scheme.comparator}.
+@c JP
+比較器@var{cmpr}が、オブジェクトの順序づけあるいはハッシュに使える
+場合にそれぞれ@code{#t}を返します。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
 @defun comparator-type-test-procedure cmpr
 @defunx comparator-equality-predicate cmpr
-@defunx comparator-comparison-procedure cmpr
+@defunx comparator-ordering-predicate cmpr
 @defunx comparator-hash-function cmpr
+[R7RS comparator]
+@c EN
+Returns type test procedure, equality predicate, ordering procedure
+and hash function of comparator @var{cmpr}, respectively.
+In R7RS, this is provided from @code{scheme.comparator}.
+
+These accessors always return procedures; if you give @code{#f}
+to the @var{order} or @var{hash} argument of the constructor,
+@code{comparator-ordering-predicate} and
+@code{comparator-hash-function} still return a procedure,
+which will just raise an error.
+@c JP
+比較器の型検査述語、等価述語、順序手続きおよびハッシュ関数をそれぞれ返します。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
+
+これらの手続きは常に手続きを返します。@code{make-comparator}で
+@var{order}や@var{hash}に@code{#f}を渡した場合でも、エラーを投げるだけの
+手続きが返されます。
+@c COMMON
+@end defun
+
+@defun comparator-comparison-procedure cmpr
 [SRFI-114]
 @c EN
-Returns type test procedure, equality predicate, comparison procedure
-and hash function of comparator @var{cmpr}, respectively.
-
-These accessors always return procedures; if you give boolean
-values to @code{make-comparator},
-appropriate default procedures are returned.
+This is a SRFI-114 procedure, but sometimes handy with
+@code{scheme.comparator} comparators.
+Returns a procedure that takes two objects
+that satisfy the type predicates of @var{cmpr}.  The procedure
+returns either -1, 0 or 1, depending on whether the first object
+is less than, equal to, or greater than the second.  The comparator
+must be ordered, that is, it must have an ordering predicate
+(or a comparison procedure, if it is created by SRFI-114 consturctor).
 @c JP
-比較器の型検査述語、等価述語、比較手続きおよびハッシュ関数をそれぞれ返します。
-
-これらの手続きは常に手続きを返します。@code{make-comparator}で該当する
-引数に真偽値を渡した場合でも、デフォルトで補われる手続きが返されます。
+これはSRFI-114の手続きですが、
+@code{scheme.comparator}比較器でも時々便利なことがあります。
+@var{cmpr}の型検査述語を満たす二つのオブジェクトを取り、-1、0、1のいずれかを
+返す手続きを返します。二つのオブジェクトのうち最初の方が小さければ-1が、
+等しければ0が、大きければ1が返されます。
+比較器は大小比較可能でなけばなりません(順序手続きが渡されるか、
+あるいはSRFI-114コンストラクタで比較手続きが渡されるか)。
 @c COMMON
 @end defun
 
 @defun comparator-test-type cmpr obj
 @defunx comparator-check-type cmpr obj
-@defunx comparator-equal? cmpr a b
-@defunx comparator-compare cmpr a b
-@defunx comparator-hash cmpr obj
+[R7RS comparator]
+@c EN
+Test whether @var{obj} can be handled by a comparator @var{cmpr},
+by applying @var{cmpr}'s type test predicate.
+The former (@code{comparator-test-type}) returns a boolean
+values, while the latter (@code{comparator-check-type})
+signals an error when @var{obj} can't be handled.
+
+In R7RS, this is provided from @code{scheme.comparator}.
+@c JP
+@var{obj}が比較器@var{cmpr}で扱えるオブジェクトかどうかを、
+@var{cmpr}の型検査述語を適用して調べます。
+@code{comparator-test-type}は結果の真偽値を返します。
+@code{comparator-check-type}は@var{obj}が扱えないオブジェクトである場合に
+エラーを投げます。
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
+@c COMMON
+@end defun
+
+@defun =? cmpr obj obj2 obj3 @dots{}
+@defunx <? cmpr obj obj2 obj3 @dots{}
+@defunx <=? cmpr obj obj2 obj3 @dots{}
+@defunx >? cmpr obj obj2 obj3 @dots{}
+@defunx >=? cmpr obj obj2 obj3 @dots{}
+[R7RS comparator]
+@c EN
+Compare objects using a comparator @var{cmpr}.  All of
+@var{obj}, @var{obj2}, @var{obj3} @dots{} must satisfy
+the type predicate of @var{cmpr}.  When more than two objects
+are given, the order of comparison is undefined.
+
+In order to use @code{<?}, @code{<=?}, @code{>?} and @code{>=?},
+comparator must be ordered.
+
+In R7RS, this is provided from @code{scheme.comparator}.
+@c JP
+比較器@code{cmpr}を使ってオブジェクトを比較します。
+@var{obj}, @var{obj2}, @var{obj3} @dots{}は全て@code{cmpr}の
+型検査述語を満たさなければなりません。
+3つ以上のオブジェクトが渡された場合、比較の順番は規定されていません。
+
+@code{<?}、@code{<=?}、@code{>?}、@code{>=?}を使うためには
+比較器は順序比較可能でなければなりません。
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
+@c COMMON
+@end defun
+
+@defun comparator-hash cmpr obj
+[R7RS comparator]
+@c EN
+Returns a hash value of @var{obj} with the hash function of
+a comparator @var{cmpr}.  The comparator must be hashable,
+and @var{obj} must satisfy comparator's type test predicate.
+
+In R7RS, this is provided from @code{scheme.comparator}.
+@c JP
+比較器@var{cmpr}のハッシュ関数を使って@var{obj}のハッシュ値を計算して返します。
+比較器はハッシュ計算可能でなければなりません。また、@var{obj}は
+比較器の型検査述語を満たさなければなりません。
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
+@c COMMON
+@end defun
+
+@defun comparator-compare cmpr a b
 [SRFI-114]
 @c EN
-Apply the comparator's procedures to the given arguments.
-The following equivalence holds, but these are slightly compact,
-and in Gauche they are a bit more efficient.
+Order two objects @var{a} and @var{b}
+using @var{cmpr}, and returns either one of 
+-1 (@var{a} is less than @var{b}),
+0 (@var{a} equals to @var{b}), or
+1 (@var{a} is greater than @var{b}).
+Objects must satisfy @var{cmpr}'s type test predicate.
+
+A simple comparison can be done by @code{<?} etc, but sometimes
+three-way comparison comes handy.  So we adopt this procedure
+from srfi-114.
 @c JP
-比較器の持つ手続きを引数に適用します。下に挙げる等価性が成り立っていますが、
-これらの手続きを使う方がややコンパクトに書けますし、
-Gaucheではわずかですがこれらの手続きの方が効率が良いです。
+ふたつのオブジェクト@var{a}と@var{b}の順序を調べ、
+@var{a}が先 (小さい) なら -1を、
+等しければ0を、
+@var{a}が後 (大きい) なら 1を返します。
+@var{a}と@var{b}はともに@var{cmpr}の型検査述語を満たさねばなりません。
+
+単純な比較なら@code{<?}等の手続きでできますが、
+時に3分岐の比較が便利なこともあります。そのため、srfi-114から
+この手続きを採用しました。
 @c COMMON
-
-@example
-(comparator-test-type cmpr obj)
-  @equiv{} ((comparator-type-test-procedure cmpr) obj))
-
-(comparator-check-type cmpr obj)
-  @equiv{} (or ((comparator-type-test-procedure cmpr) obj)
-      (error ...))
-
-(comparator-equal? cmpr a b)
-  @equiv{} ((comparator-equality-predicate cmpr) a b)
-
-(comparator-compare cmpr a b)
-  @equiv{} ((comparator-comparison-procedure cmpr) a b)
-
-(comparator-hash cmpr obj)
-  @equiv{} ((comparator-hash-function cmpr) obj)
-@end example
 @end defun
+
+@node Predefined comparators, Combining comparators, Comparator predicates and accessors, Basic comparators
+@subsubsection Predefined comparators
+@c NODE 用意されている比較器
 
 @defvar default-comparator
 [SRFI-114]
@@ -982,72 +1722,137 @@ This variable bounds to a comparator that is used by default in
 many context.
 
 It can compare most of Scheme objects, even between objects with
-different types.  The ordering of heterogeneous objects are
-purely artificial---whether @code{#t} is smaller than @code{#(a b c)} or
-not doesn't mean anything, but having some consistent order
-allows us to put Scheme objects in treemaps (@pxref{Treemaps}) or heaps
-(@pxref{Heap}).  The @code{default-comparator} gives this expedient
-ordering.
+different types.  In fact, it is defined as follows:
 @c JP
 この変数は、様々な場所でオブジェクトを比較する際のデフォルトとして使われる
 比較器に束縛されています。
 
-デフォルト比較器はほぼすべてのSchemeオブジェクト間の比較が出来ます。
-比較するSchemeオブジェクト同士の型が違っていても構いません。
-型の異なるSchemeオブジェクトの間の大小関係は、純粋に人為的なものです。
-@code{#t}が@code{#(a b c)}より大きいか小さいかということに特別な意味はありません。
-ただ、一貫する順序が決まっていれば、Schemeオブジェクトをtreemap (@ref{Treemaps}参照)
-やヒープ(@ref{Heap}参照)に保存することができます。
-@code{default-comparator}はこの便宜上の順序を与えてくれます。
+デフォルト比較器は次のとおり定義されており、
+ほぼすべてのSchemeオブジェクト間の比較が出来ます。
+@c COMMON
+
+@example
+(define default-comparator
+  (make-comparator/compare #t equal? compare default-hash 'default-comparator))
+@end example
+
+@c EN
+As you see in the definition, equality, ordering and hashing are
+handled by @code{equal?}, @code{compare} and @code{default-hash},
+respectively.  They takes care of builtin objects, and
+also @code{equal?} and @code{compare} handle the case
+when two objects () are of different types.
+@c JP
+定義からわかるように、等価述語、比較手続き、そしてハッシュ計算はそれぞれ
+@code{equal?}、@code{compare}、@code{default-hash}で処理されます。
+組み込みオブジェクト、及び二つの異なる型の間の比較についてはそれらが処理します。
 @c COMMON
 
 @c EN
-(NB: I say ``almost'' because, although @code{default-comparator}
-can order built-in objects, and objects with different types,
-the ordering of objects of the same user-defined type depends on
-how you define @code{object-compare} method (@pxref{Comparison}).
-It's up to the user to make two objects of user-defined types be
-comparable or not.)
+For objects of user-defined classes,
+those procedures calls generic functions
+@code{object-equal?}, @code{object-compare} and @code{object-hash},
+respectively.   Defining methods for them automatically extended
+the domain of @code{default-comparator}.
 @c JP
-(上で「ほぼすべて」と書いたのは、@code{default-comparator}は組み込みオブジェクト
-同士および異なる型のオブジェクト同士の比較はできますが、
-ユーザ定義型のオブジェクト同士の比較は@code{object-compare}メソッドの定義によるからです。
-ユーザ定義型のオブジェクト同士の比較が可能かどうかはその型の定義次第になります。
+ユーザ定義クラスのオブジェクトについては、
+上記手続きがそれぞれジェネリック関数
+@code{object-equal?}、@code{object-compare}、@code{object-hash}を
+呼び出します。これらのメソッドを定義することにより、
+@code{default-comparator}の定義域も自動的に拡張されます。
 @c COMMON
 
 @c EN
-@code{Srfi-114} specifies the ordering of Scheme native objects as follows.
+@code{Scheme.comparator} defines another way to extend @code{default-comparator}.
+See @code{comparator-register-default!} below for the details.
 @c JP
-@code{srfi-114}はSchemeの基本オブジェクト間の順序を以下の通り定めています。
+@code{scheme.comparator}は、@code{default-comparator}を拡張する別の方法を定義しています。
+下の@code{comparator-register-default!}の項を参照してください。
 @c COMMON
-
-@enumerate 
-@item
-Empty list.
-@item
-Pairs.
-@item
-Booleans.
-@item
-Characters.
-@item
-Strings.
-@item
-Symbols.
-@item
-Numbers.
-@item 
-Vectors.
-@item 
-Uniform vectors.
-@item
-@c EN
-All other objects.
-@c JP
-他のオブジェクトすべて
-@c COMMON
-@end enumerate
 @end defvar
+
+@defun comparator-register-default! comparator
+[R7RS comparator]
+@c EN
+In R7RS, this is provided from @code{scheme.comparator}.
+This is the @code{scheme.comparator} way for user
+programs to extend the behavior of
+the @code{default-comparator}
+(which is what @code{make-default-comparator} returns).
+
+Note that, in Gauche, you can also extend default comparator's behavior
+by defining specialized methods for @code{object-equal?}, 
+@code{object-compare} and @code{object-hash}.
+See the description of @code{default-comparator} above, for the details.
+@c JP
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
+これは、@code{default-comparator}(@code{make-default-comparator}が
+返す比較器)の振る舞いをユーザプログラムが拡張できるようにする、
+@code{scheme.comparator}が定める方法です。
+
+Gaucheでは、@code{object-equal?}、@code{object-compare}、@code{object-hash}に
+特殊化したメソッドを定義することでも、デフォルト比較器を拡張できることに
+留意してください。詳しくは上の@code{default-comparator}の説明を参照のこと。
+@c COMMON
+
+@c EN
+In fact, Gauche uses those generic functions to
+handle the registered comparators; methods specialized for
+@code{<top>} are defined for these generic functions, which
+catches the case when @code{default-comparator} is applied
+on object(s) of user-defined classes that don't have specialized
+methods defined for those generic functions.
+The catching method examines registered comparators to find
+one that can handle passed argument(s), and if it finds one,
+use it.
+@c JP
+実際、Gaucheではこれらのジェネリックファンクションを使って、
+登録されたデフォルト比較器を処理しています。これらのジェネリックファンクションには、
+あらかじめ@code{<top>}に特殊化されたメソッドが定義されており、
+@code{default-comparator}がユーザ定義クラスのオブジェクトに使われ、
+かつそのクラスに特殊化されたメソッドが定義されていない場合を捕まえます。
+そして、登録された比較器から与えられた引数に適用可能なものを探し、
+見つかればそれを使います。
+@c COMMON
+
+@c EN
+You might frown at this procedure having a global side-effect.
+Well, @code{scheme.comparator} explicitly prohibits comparators registered
+by this procedure alters the behavior of the default comparator
+in the existing domain---it is only allowed to handle objects that
+aren't already handled by the system's original default comparator
+and other already registered comparators.  So, the only effect of
+adding new comparator should make the default comparator
+work on objects that had been previously raised an error.
+@c JP
+この手続きがグローバルな副作用を持つことに顔をしかめる人もいるかもしれません。
+@code{scheme.comparator}では、
+デフォルトの比較器や登録された比較器が既にカバーしている定義域と
+重複する定義域を持つ比較器を登録することを禁じています。
+言い換えれば、@code{comparator-register-default!}で定義できるのは、
+デフォルトの比較器や既に登録された比較器が処理できないオブジェクトを扱う
+比較器だけです。従って、新たな比較器を登録することによる副作用は、
+それまで@code{default-comparator}が扱えなかったオブジェクトを
+扱えるようになるというだけで、既に扱えていたオブジェクトに対する
+@code{default-comparator}の動作が変わってしまうということはありません。
+@c COMMON
+
+@c EN
+In reality, it is impossible to enforce the condition.  If you
+register a comparator whose domain overlaps overlaps the domain
+the default comparator (and its extensions via Gauche's methods),
+the program becomes non-portable at that moment.  In the current version,
+the comparators registered by @code{comparator-register-default!} has
+the lowest precedence on the dispatch mechanism, but you shouldn't count
+on that.
+@c JP
+尤も、現実にその条件を強制することは不可能です。
+もし、既にデフォルトの比較器の定義域(および、Gaucheのメソッドにより拡張された定義域)
+と重なるような定義域を持つ比較器を登録してしまったら、その時点でプログラムの
+移植性は損なわれます。現在のバージョンでは、@code{comparator-register-default!}
+で登録された比較器は最も低い優先度を持ちますが、その動作をあてにすべきではありません。
+@c COMMON
+@end defun
 
 @defvar eq-comparator
 @defvarx eqv-comparator
@@ -1059,14 +1864,41 @@ for the equality predicate, respectively.  They accept any kind of
 Scheme objects.  Each has corresponding hash functions
 (i.e. @code{eq-hash} for @code{eq-comparator},
 @code{eqv-hash} for @code{eqv-comparator} and
-@code{hash} for @code{equal-comparator}).
-None has comparison procedure, though.
+@code{default-hash} for @code{equal-comparator}).
+Only @code{eq-comparator} is ordered, using @code{eq-compare} to
+order the objects
+(@pxref{Comparison}, for @code{eq-compare}).
 @c JP
 それぞれ、等価述語に@code{eq?}、@code{eqv?}、@code{equal?}を使う
 組み込みの比較器です。全てのSchemeオブジェクトを受け付けます。
 対応するハッシュ関数(@code{eq-comparator}は@code{eq-hash}、
 @code{eqv-comparator}は@code{eqv-hash}、@code{equal-comparator}は
-@code{hash})を備えています。比較手続きは持っていません。
+@code{hash})を備えています。
+@code{eq-comparator}のみ、@code{eq-compare}を使った順序づけが可能です
+(@code{eq-compare}については@ref{Comparison}参照)。
+@c COMMON
+
+@c EN
+Note that @code{eq-comparator} and @code{eqv-comparator} are not
+equivalent from what @code{make-eq-comparator} and @code{make-eqv-comparator}
+return, respectively.  The latter two are defined in @code{scheme.comparator}
+and specified to use @code{default-hash} for the hash function.  It is
+heavier than @code{eq-hash}/@code{eqv-hash}, and it can't be used
+for circular objects, nor for the mutable objects with which you want
+to hash them by identity.  We provide @code{eq-comparator} and
+@code{eqv-comparator} in case you want to avoid limitations of
+@code{default-hash}.
+@c JP
+@code{eq-comparator}と@code{eqv-comparator}はそれぞれ、
+@code{make-eq-comparator} and @code{make-eqv-comparator}が返す比較器とは
+等価でないことに注意してください。後者の手続きは@code{scheme.comparator}
+で規定されていますが、
+ハッシュ関数には@code{default-hash}を使うように指定されています。
+@code{default-hash}は@code{eq-hash}や@code{eqv-hash}より重く、
+ループのある構造は扱えず、また変更可能なオブジェクトの同一性のみに基づいてハッシュ値を
+計算するのには使えません。
+こういった@code{default-hash}の制限を避けたい場合のために
+@code{eq-comparator}と@code{eqv-comparator}を用意しました。
 @c COMMON
 @end defvar
 
@@ -1158,6 +1990,50 @@ shorter ones are ordered first (
 @c COMMON
 @end defvar
 
+@node Combining comparators,  , Predefined comparators, Basic comparators
+@subsubsection Combining comparators
+@c NODE 比較器を組み合わせる
+
+@defun make-default-comparator
+[R7RS comparator]
+@c EN
+Returns a default comparator.  In Gauche, this returns the
+@code{default-comparator} object.
+In R7RS, this is provided from @code{scheme.comparator}.
+@c JP
+デフォルト比較器を返します。Gaucheでは常に唯一の@code{default-comparator}が
+返されます。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
+@c COMMON
+@end defun
+
+@defun make-eq-comparator
+@defunx make-eqv-comparator
+[R7RS comparator]
+@c EN
+Returns comparators that use @code{eq?} and @code{eqv?} for its
+equality predicate, respectively.  Note that they use @code{default-hash}
+for hash functions, as specified by @code{scheme.comparator},
+which has a few drawbacks:
+You can't use it if you want to hash based on identity of mutable objects,
+it diverges on circular objects, and it is slow if applied on a large
+structures.  We recommend to use @code{eq-comparator} or
+@code{eqv-comparator} if possible (@pxref{Predefined comparators}).
+
+In R7RS, this is provided from @code{scheme.comparator}.
+@c JP
+@code{eq?}および@code{eqv?}を等価述語に使う比較器をそれぞれ返します。
+これらの関数が返す比較器のハッシュには、@code{default-hash}を使うことが
+@code{scheme.comparator}で規定されていますが、それにはいくつか欠点があります。
+変更可能なオブジェクトの同一性に基づいたハッシュ関数が欲しい場合は使えませんし、
+循環するオブジェクトでは発散します。大きな構造をハッシュしようとすると遅くなります。
+可能ならば、@code{eq-comparator}や@code{eqv-comparator}を
+使うことを推奨します(@ref{Predefined comparators})参照。)
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
+@c COMMON
+@end defun
+
 @defun make-reverse-comparator cmpr
 [SRFI-114]
 @c EN
@@ -1172,7 +2048,6 @@ but the comparison procedure is flipped.
 
 @defun make-key-comparator cmpr test key
 @c EN
-This isn't in srfi-114, but we found it convenient.
 Suppose you have some kind of structure, but you only need to look
 at one part of it to compare them.
 
@@ -1183,7 +2058,6 @@ the result to the corresponding procedure of @var{cmpr}.  If @var{cmpr}
 lacks comparison procedure and/or hash function, so does the returned
 comparator.
 @c JP
-これはsrfi-114には含まれていませんが、便利なので用意しました。
 何らかの構造体があって、その比較に際してはその中の一つの要素を見るだけで良い、
 という場合に使える手続きです。
 
@@ -1213,29 +2087,6 @@ userレコードの@code{username}スロットだけを見て比較を行いま�
 (define users   ; table of users, managed by tree-map
   (make-tree-map
     (make-key-comparator string-comparator user? user-username)))
-@end example
-@end defun
-
-@defun make-car-comparator cmpr
-@defunx make-cdr-comparator cmpr
-[SRFI-114]
-@c EN
-Returns comparators that accept pairs, and compare them with
-their car or cdr by @var{cmpr}, respectively.
-
-Using @code{make-key-comparator}, these cam be written as follows:
-@c JP
-ペアを受け取り、その@code{car}のみまたは@code{cdr}のみを@var{cmpr}で
-比較するような比較器を返します。
-
-@code{make-key-comparator}を使えばこれらは以下の通りに書けます。
-@c COMMON
-@example
-(define (make-car-comparator cmpr)
-  (make-key-comparator cmpr pair? car))
-
-(define (make-cdr-comparator cmpr)
-  (make-key-comparator cmpr pair? cdr))
 @end example
 @end defun
 
@@ -1291,13 +2142,13 @@ Gaucheは次のタイプの数値をサポートしています。
 @c COMMON
 
 @menu
-* Number classes::              
-* Numerical predicates::        
-* Numerical comparison::        
-* Arithmetics::                 
-* Numerical conversions::       
-* Bitwise operations::          
-* Endianness::                  
+* Number classes::
+* Numerical predicates::
+* Numerical comparison::
+* Arithmetics::
+* Numerical conversions::
+* Bitwise operations::
+* Endianness::
 @end menu
 
 @node Number classes, Numerical predicates, Numbers, Numbers
@@ -1356,7 +2207,7 @@ class.  That is,
 @defunx real? obj
 @defunx rational? obj
 @defunx integer? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a number, a complex number, a real number,
 a rational number or an integer, respectively.   In Gauche, a set of
@@ -1431,7 +2282,7 @@ R6RSで規定されている、これらの手続きと@code{-valued}がつい�
 
 @defun exact? obj
 @defunx inexact? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is an exact number and an inexact number,
 respectively.
@@ -1451,7 +2302,7 @@ respectively.
 @end defun
 
 @defun exact-integer? obj
-[R7RS]
+[R7RS base]
 @c EN
 Same as @code{(and (exact? obj) (integer? obj))}, but more efficient.
 @c JP
@@ -1460,7 +2311,7 @@ Same as @code{(and (exact? obj) (integer? obj))}, but more efficient.
 @end defun
 
 @defun zero? z
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if a number @var{z} equals to zero.
 @c JP
@@ -1477,7 +2328,7 @@ Returns @code{#t} if a number @var{z} equals to zero.
 
 @defun positive? x
 @defunx negative? x
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if a real number @var{x} is positive and negative,
 respectively.  It is an error to pass a non-real number.
@@ -1490,7 +2341,7 @@ respectively.  It is an error to pass a non-real number.
 @defun finite? z
 @defunx infinite? z
 @defunx nan? z
-[R7RS]
+[R7RS inexact]
 @c EN
 For real numbers, returns @code{#f} iff the given number
 is finite, infinite, or NaN, respectively.
@@ -1519,7 +2370,7 @@ R7RSではこれらの手続きは@code{(scheme inexact)}ライブラリにあ�
 
 @defun odd? n
 @defunx even? n
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if an integer @var{n} is odd and even,
 respectively.  It is an error to pass a non-integral number.
@@ -1556,7 +2407,7 @@ routines that does particular optimization.
 @c NODE 数値の比較
 
 @defun = z1 z2 z3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 If all the numbers @var{z} are equal, returns @code{#t}.
 @c JP
@@ -1576,7 +2427,7 @@ If all the numbers @var{z} are equal, returns @code{#t}.
 @defunx <= x1 x2 x3 @dots{}
 @defunx > x1 x2 x3 @dots{}
 @defunx >= x1 x2 x3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} If all the real numbers @var{x} are
 monotonically increasing,
@@ -1591,7 +2442,7 @@ nonincreasing, respectively.
 
 @defun max x1 x2 @dots{}
 @defunx min x1 x2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a maximum or minimum number in the given real numbers, respectively.
 If any of the arguments are NaN, NaN is returned.
@@ -1631,7 +2482,7 @@ See also @code{find-min&max} in
 
 @defun + z @dots{}
 @defunx * z @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns the sum or the product of given numbers, respectively.
 If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
@@ -1643,7 +2494,7 @@ If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
 
 @defun - z1 z2 @dots{}
 @defunx / z1 z2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 If only one number @var{z1} is given, returns its
 negation and reciprocal, respectively.
@@ -1741,7 +2592,7 @@ The complex part is Gauche extension.
 @defun quotient n1 n2
 @defunx remainder n1 n2
 @defunx modulo n1 n2
-[R7RS]
+[R7RS base]
 @c EN
 Returns the quotient, remainder and modulo of dividing an integer @var{n1}
 by an integer @var{n2}.   The result is an exact number only if
@@ -1932,16 +2783,104 @@ and returns their results in two values.
 @code{div0-and-mod0}は@code{div0}と@code{mod0}を同時に計算し、
 結果を二つの値で返します。
 @c COMMON
+
+@c EN
+Here's a visualization of R6RS and R7RS division and modulo operations:
+@url{http://blog.practical-scheme.net/gauche/20100618-integer-divisions}
+It might help to grasp how they works.
+@c JP
+R6RSとR7RSの除算・剰余操作を可視化したものが
+@url{http://blog.practical-scheme.net/gauche/20100618-integer-divisions}
+にあります。
+@c COMMON
+@end defun
+
+@defun floor-quotient n d
+@defunx floor-remainder n d
+@defunx floor/ n d
+@defunx truncate-quotient n d
+@defunx truncate-remainder n d
+@defunx truncate/ n d
+[R7RS base]
+@c EN
+These are integer division operators introduced in R7RS.  The names
+explicitly indicate how they behave when numerator and/or denominator
+is/are negative.
+
+The arguments @var{n} and @var{d} must be an integer.  If any of them are
+inexact, the result is inexact.  If all of them are exact, the result is
+exact.  Also, @var{d} must not be zero.
+
+Given numerator @var{n}, denominator @var{d}, quotient @var{q} and
+remainder @var{r}, the following relations are always kept.
+
+@example
+r = n - dq
+abs(r) < abs(d)
+@end example
+
+Now, @code{(floor-quotient n d)} and @code{(truncate-quotient n d)}
+are the same as @code{(floor (/ n d))} and
+@code{(truncate (/ n d))}, respectively.
+The @code{*-remainder} counterparts are
+derived from the above relation.
+
+The @code{/}-suffixed version, @code{floor/} and @code{truncate/},
+returns corresponding quotient and remainder as two values.
+@c JP
+R7RSで導入された整数除算オペレータです。除数や被除数が負の場合の振る舞いが、
+名前によって明示されています。
+
+引数@var{n}と@var{d}は整数でなけばなりません。
+両方とも正確数であれば結果は正確数に、一方でも不正確数であれば
+結果は不正確数になります。また、@var{d}はゼロであってはなりません。
+
+被除数@var{n}、除数@var{d}、商@var{q}、剰余@var{r}には常に以下の関係が成り立ちます。
+
+@example
+r = n - dq
+abs(r) < abs(d)
+@end example
+
+@code{(floor-quotient n d)}と @code{(truncate-quotient n d)}はそれぞれ
+@code{(floor (/ n d))}と@code{(truncate (/ n d))}と同じです。
+対応する@code{*-remainder}は、上記の関係から導かれます。
+
+@code{floor/} と @code{truncate/}は、対応する商と剰余を二つの値として返します。
+@c COMMON
+
+@example
+(floor-quotient 10 -3)     @result{} -4
+(floor-remainder 10 -3)    @result{} -2
+(truncate-quotient 10 -3)  @result{} -3
+(truncate-remainder 10 -3) @result{} 1
+@end example
+
+@c EN
+SRFI-141 introduces other variation of integer divisions
+(@pxref{Integer division}).
+@c JP
+SRFI-141では、他の整数除算のバリエーションが定義されています。
+(@ref{Integer division}参照)。
+@c COMMON
 @end defun
 
 @defun gcd n @dots{}
 @defunx lcm n @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns the greatest common divisor or the least common multiplier
 of the given integers, respectively
 @c JP
 与えられた整数の、最大公約数と最小公倍数をそれぞれ返します。
+@c COMMON
+
+@c EN
+Arguments must be integers, but doesn't need to be exact.
+If any of arguments is inexact, the result is inexact.
+@c JP
+引数は整数でなければなりませんが、正確数である必要はありません。
+引数が一つでも非正確なら、結果は非正確数になります。
 @c COMMON
 @end defun
 
@@ -1975,7 +2914,7 @@ The returned sequence is lazy, so the terms are calculated as needed.
 
 @defun numerator q
 @defunx denominator q
-[R7RS]
+[R7RS base]
 @c EN
 Returns the numerator and denominator of a rational number @var{q}.
 @c JP
@@ -1984,7 +2923,7 @@ Returns the numerator and denominator of a rational number @var{q}.
 @end defun
 
 @defun rationalize x ebound
-[R7RS]
+[R7RS base]
 @c EN
 Returns the simplest rational approximation @var{q} of a real number @var{x},
 such that the difference between @var{x} and @var{q} is no more than
@@ -2022,7 +2961,7 @@ Gaucheは不正確な有理数をサポートしないので、引数の少な�
 @defunx ceiling x
 @defunx truncate x
 @defunx round x
-[R7RS]
+[R7RS base]
 @c EN
 The argument @var{x} must be a real number.
 @code{Floor} and @code{ceiling} return a maximum integer that
@@ -2107,7 +3046,7 @@ Returns an exact integer only if all the given numbers are exact integers.
 @defunx acos z
 @defunx atan z
 @defunx atan y x
-[R7RS]
+[R7RS inexact]
 @c EN
 Transcendental functions.  Work for complex numbers as well.
 In R7RS, these procedures are in the @code{(scheme inexact)} module.
@@ -2148,7 +3087,7 @@ Hyperbolic trigonometric functions.  Work for complex numbers as well.
 @end defun
 
 @defun sqrt z
-[R7RS]
+[R7RS inexact]
 @c EN
 Returns a square root of a complex number @var{z}.
 The branch cut scheme is the same as Common Lisp.
@@ -2173,7 +3112,7 @@ is also an exact number.
 @end defun
 
 @defun exact-integer-sqrt k
-[R7RS]
+[R7RS base]
 @c EN
 Given an exact nonnegative integer @var{k},
 returns two exact nonnegative integer @var{s} and @var{r}
@@ -2195,8 +3134,17 @@ that satisfy the following equations:
 @end defun
 
 
+@defun square z
+[R7RS base]
+@c EN
+Returns @code{(* z z)}.
+@c JP
+@code{(* z z)}を返します。
+@c COMMON
+@end defun
+
 @defun expt z1 z2
-[R7RS]
+[R7RS base]
 @c EN
 Returns @var{z1}^@var{z2} (@var{z1} powered by @var{z2}),
 where @var{z1} and @var{z2} are complex numbers.
@@ -2282,7 +3230,7 @@ to return one smaller than the supposed value.
 
 @defun make-rectangular x1 x2
 @defunx make-polar x1 x2
-[R7RS]
+[R7RS complex]
 @c EN
 Creates a complex number from two real numbers, @var{x1} and @var{x2}.
 @code{make-rectangular} returns @var{x1} + @b{i}@var{x2}.
@@ -2302,7 +3250,7 @@ R7RSではこれらの手続きは@code{(scheme complex)}ライブラリにあ�
 @defunx imag-part z
 @defunx magnitude z
 @defunx angle z
-[R7RS]
+[R7RS complex]
 @c EN
 Decompose a complex number @var{z} and returns a real number.
 @code{real-part} and @code{imag-part} return @var{z}'s real and imaginary
@@ -2423,7 +3371,7 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 
 @defun exact z
 @defunx inexact z
-[R7RS]
+[R7RS base]
 @c EN
 Returns an exact or an inexact representation of the
 given number @var{z}, respectively.  Passing an exact number
@@ -2918,11 +3866,12 @@ then returns @code{k}.  Returns @code{#f} if @var{n} is not a power of two.
 @c EN
 Returns maximum @var{k} such that @code{(expt 2 k)} is a factor of @var{n}.
 In other words, returns the number of consecutive zero bits from LSB
-of @var{n}.  If @var{n} is zero, zero is returned.
+of @var{n}.  When @var{n} is zero, we return @code{-1} for the
+consistency of the following equivalent expression.
 @c JP
 @code{(expt 2 k)}が@var{n}の約数であるような最大の@var{k}を返します。
 言い換えれば、@var{n}のLSBから連続するゼロビットの数を返します。
-ただし@var{n}がゼロならゼロを返します。
+ただし@var{n}がゼロの場合は、下の等価式との一貫性から@code{-1}が返されます。
 @c COMMON
 
 @c EN
@@ -2935,6 +3884,14 @@ is for speed to save creating intermediate numbers when @var{n} is bignum.
 @example
 (- (integer-length (logxor n (- n 1))) 1)
 @end example
+
+@c EN
+This procedure is also equivalent to srfi-60's @code{log2-binary-factors} and
+@code{first-set-bit} (@pxref{Integers as bits}).
+@c JP
+この手続きはまた、srfi-60の@code{log2-binary-factors}および
+@code{first-set-bit}と等価です(@ref{Integers as bits}参照)。
+@c COMMON
 @end defun
 
 @node Endianness,  , Bitwise operations, Numbers
@@ -3059,7 +4016,7 @@ A boolean class.  Only @code{#t} and @code{#f} belong to this class.
 @end deftp
 
 @defun not obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if and only if @var{obj} is @code{#f},
 and returns @code{#f} otherwise.
@@ -3070,7 +4027,7 @@ and returns @code{#f} otherwise.
 @end defun
 
 @defun boolean? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a boolean value.
 @c JP
@@ -3089,7 +4046,7 @@ otherwise.  Convenient to coerce a value to boolean.
 @end defun
 
 @defun boolean=? a b c @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Every argument must be a boolean value.  Returns @code{#t} iff all
 values are the same, @code{#f} otherwise.
@@ -3192,7 +4149,7 @@ Pairs and lists are one of the most fundamental data structure in Scheme.
 Gauche core provides all standard list procedures, plus some useful
 procedures that are commonly supported in lots of implementations.
 If they are not enough, you can find more procedures in the modules
-described in @ref{List library} and
+described in @ref{R7RS lists} and
 @ref{Combination library}.
 See also @ref{Collection framework} and
 @ref{Sequence framework} for generic collection/sequence
@@ -3201,7 +4158,7 @@ operations.
 ペアとリストはSchemeにおける最も基本的なデータ構造のひとつです。
 Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実装に見られる
 便利な手続きのいくつかを提供します。それらで足りない場合は
-さらに多くの手続きが@ref{List library}、
+さらに多くの手続きが@ref{R7RS lists}、
 @ref{Combination library}
 といったモジュールで提供されています。
 また、リストに限らないジェネリックなシーケンス/コレクションの操作が
@@ -3210,13 +4167,13 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 @c COMMON
 
 @menu
-* Pair and null class::         
-* List predicates::             
-* List constructors::           
-* List accessors and modifiers::  
-* Walking over lists::          
-* Other list procedures::       
-* Association lists::           
+* Pair and null class::
+* List predicates::
+* List constructors::
+* List accessors and modifiers::
+* Walking over lists::
+* Other list procedures::
+* Association lists::
 @end menu
 
 @node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
@@ -3269,7 +4226,7 @@ A class of pairs.
 @c NODE リストに関する述語
 
 @defun pair? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @c JP
@@ -3278,7 +4235,7 @@ Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @end defun
 
 @defun null? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 @c JP
@@ -3305,7 +4262,7 @@ condition when you want to be more picky about non-proper lists.
 @end defun
 
 @defun list? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a proper list, @code{#f} otherwise.
 This function returns @code{#f} if @var{obj} is a dotted or circular list.
@@ -3357,7 +4314,7 @@ which are considered to be dotted lists of length 0.
 @c NODE リストの作成
 
 @defun cons obj1 obj2
-[R7RS]
+[R7RS base]
 @c EN
 Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @c JP
@@ -3369,7 +4326,7 @@ Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @end defun
 
 @defun make-list len :optional fill
-[R7RS][SRFI-1]
+[R7RS base]
 @c EN
 Makes a proper list of length @var{len}.  If optional argument
 @var{fill} is provided, each element is initialized by it.  Otherwise
@@ -3385,7 +4342,7 @@ each element is undefined.
 @end defun
 
 @defun list obj @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Makes a list, whose elements are @var{obj} @dots{}.
 @c JP
@@ -3399,15 +4356,15 @@ Makes a list, whose elements are @var{obj} @dots{}.
 
 @defun list* obj1 obj2 @dots{}
 @defunx cons* obj1 obj2 @dots{}
-[SRFI-1]
+[R7RS list]
 @c EN
 Like @code{list}, but the last argument becomes cdr of the last pair.
 Two procedures are exactly the same.  Gauche originally had @code{list*},
-and SRFI-1 defines @code{cons*}.
+and SRFI-1 (R7RS @code{(scheme list)})defines @code{cons*}.
 @c JP
 @code{list}とほぼ同じですが、最後の引数が作成されるリストの最後のペアのcdrになります。
 二つの手続きは全く同じです。Gaucheはもともと@code{list*}を持っていましたが、
-SRFI-1が@code{cons*}という名前を定義しました。
+SRFI-1 (R7RS @code{(scheme list)}) が@code{cons*}という名前を定義しました。
 @c COMMON
 @lisp
 (list* 1 2 3) @result{} (1 2 . 3)
@@ -3416,7 +4373,7 @@ SRFI-1が@code{cons*}という名前を定義しました。
 @end defun
 
 @defun list-copy list
-[R7RS][SRFI-1]
+[R7RS base]
 @c EN
 Shallow copies @var{list}.  If @var{list} is circular,
 this function diverges.
@@ -3427,7 +4384,7 @@ this function diverges.
 @end defun
 
 @defun iota count :optional (start 0) (step 1)
-[SRFI-1]
+[R7RS list]
 @c EN
 Returns a list of @var{count} numbers, starting from @var{start},
 increasing by @var{step}.   @var{Count} must be a nonnegative
@@ -3536,7 +4493,7 @@ the resulting list, like unquote-splicing.
 
 @defun car pair
 @defunx cdr pair
-[R7RS]
+[R7RS base]
 @c EN
 Returns car and cdr of @var{pair}, respectively.
 @c JP
@@ -3546,7 +4503,7 @@ Returns car and cdr of @var{pair}, respectively.
 
 @defun set-car! pair obj
 @defunx set-cdr! pair obj
-[R7RS]
+[R7RS base]
 @c EN
 Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
 
@@ -3590,7 +4547,7 @@ Note: @code{(setter car)} @equiv{} @code{set-car!}, and
 @end defun
 @defun cdddar pair
 @defunx cddddr pair
-[R7RS]
+[R7RS base][R7RS cxr]
 @c EN
 @code{caar} @equiv{} @code{(car (car x))},
 @code{cadr} @equiv{} @code{(car (cdr x))}, and so on.
@@ -3616,7 +4573,7 @@ R7RSでは、2レベルよりも深いアクセサは@code{(scheme cxr)}ライ�
 @end defun
 
 @defun length list
-[R7RS]
+[R7RS base]
 @c EN
 Returns the length of a proper list @var{list}.
 If @var{list} is a dotted list, an error is signaled.
@@ -3629,7 +4586,7 @@ If @var{list} is a circular list, this function diverges.
 @end defun
 
 @defun length+ x
-[SRFI-1]
+[R7RS list]
 @c EN
 If @var{x} is a proper list, returns its length.
 For all other @var{x}, including a circular list,
@@ -3695,7 +4652,7 @@ We don't have any better idea now, unfortunately.
 
 @defun take x i
 @defunx drop x i
-[SRFI-1]
+[R7RS list]
 @c EN
 @code{take} returns the first i elements of list x.
 @code{drop} returns all but the first i elements of list x.
@@ -3787,7 +4744,7 @@ see @code{subseq} in @ref{Slicing sequence}.
 
 @defun take-right lis k
 @defunx drop-right lis k
-[SRFI-1]
+[R7RS list]
 @c EN
 @code{take-right} returns the last @var{k} elements of @var{lis}.
 @code{drop-right} returns all but the last @var{k} elements of @var{lis}.
@@ -3855,7 +4812,7 @@ The result still shares the @var{list}.
 
 @defun take! lis k
 @defunx drop-right! lis k
-[SRFI-1]
+[R7RS list]
 @c EN
 Linear update variants of @var{take} and @var{drop-right}.
 Those procedures may destructively modifies @var{lis}.
@@ -3863,7 +4820,7 @@ Those procedures may destructively modifies @var{lis}.
 If @var{lis} is circular, @code{take!} may return a list
 shorter than expected.
 @c JP
-[SRFI-1] @var{take} および @var{drop-right} の
+@var{take} および @var{drop-right} の
 その場で更新されるバージョンです。これらの
 手続きは @var{lis} を破壊的に変更するかもしれません。
 
@@ -3873,7 +4830,7 @@ shorter than expected.
 @end defun
 
 @defun list-tail list k :optional fallback
-[R7RS]
+[R7RS base]
 @c EN
 Returns @var{k}-th cdr of @var{list}.
 @var{list} can be a proper, dotted or circular list.
@@ -3915,7 +4872,7 @@ it is returned for such case.  This is an extension of Gauche.
 @end defun
 
 @defun list-set! list k v
-[R7RS]
+[R7RS base]
 @c EN
 Modifies the @var{k}-th element of a @var{list} by @var{v}.
 It is an error unless @var{k} is an exact integer between 0 and
@@ -3931,7 +4888,7 @@ no error is signalled but the behavior is undefined.
 
 
 @defun last-pair list
-[SRFI-1]
+[R7RS list]
 @c EN
 Returns the last pair of @var{list}.
 @var{list} can be a proper or dotted list.
@@ -3948,7 +4905,7 @@ Returns the last pair of @var{list}.
 @end defun
 
 @defun last pair
-[SRFI-1]
+[R7RS list]
 @c EN
 Returns the last element of the non-empty, finite list @var{pair}.
 It is equivalent to @code{(car (last-pair pair))}.
@@ -3965,7 +4922,7 @@ It is equivalent to @code{(car (last-pair pair))}.
 
 @defun split-at x i
 @defunx split-at! x i
-[SRFI-1]
+[R7RS list]
 @c EN
 @code{split-at} splits the list @var{x} at index @var{i},
 returning a list of the first @var{i} elements, and the remaining tail.
@@ -3991,7 +4948,7 @@ modifies @var{x} to produce the result.
 More tolerant version of @code{split-at}.
 Returns the results of @code{take*} and @var{drop*}.
 @c JP
-SRFI-1の@code{split-at}の寛容なバージョンです。
+SRFI-1 (R7RS @code{(scheme list)})の@code{split-at}の寛容なバージョンです。
 @code{take*}と@var{drop*}の結果を返します。
 @c COMMON
 
@@ -4080,11 +5037,10 @@ extends @code{map} to work on any type of collection.
 
 @defun append-map f clist1 clist2 @dots{}
 @defunx append-map! f clist1 clist2 @dots{}
+[R7RS list]
 @c EN
-[SRFI-1]
 Functionally equivalent to the followings, though a bit more efficient:
 @c JP
-[SRFI-1]
 機能的には以下と同等ですが、若干効率が良いです:
 @c COMMON
 
@@ -4145,16 +5101,16 @@ cdrs of the current pairs.
 @c EN
 Note: The name @code{map*} is along the line of
 @code{list*}/@code{cons*} that can produce improper list
-(@xref{List constructors}, @pxref{SRFI-1 List utilities}).
+(@xref{List constructors}, @pxref{R7RS lists}).
 @c JP
 註: @code{map*}という名前は、正規でないリストを作り得る@code{list*}/@code{cons*}からの
 連想でつけられました
-(@ref{List constructors}、@ref{SRFI-1 List utilities}参照)。
+(@ref{List constructors}、@ref{R7RS lists}参照)。
 @c COMMON
 @end defun
 
 @defun for-each proc list1 list2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Applies @var{proc} for each element(s) of given list(s) in order.
 The results of @var{proc} are discarded.  The return value of
@@ -4176,7 +5132,7 @@ extends @code{for-each} to work on any type of collection.
 @end defun
 
 @defun fold kons knil clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS list]
 @c EN
 The fundamental list iterator.
 When it is given a single list
@@ -4217,7 +5173,7 @@ Examples:
 @end defun
 
 @defun fold-right kons knil clist1 clist2 @dots{}
-[R6RS][SRFI-1]
+[R7RS list]
 @c EN
 The fundamental list recursion operator.
 When it is given a single list
@@ -4334,7 +5290,7 @@ Schemeでは、まず@code{SRFI-1}によって@code{fold}と@code{fold-right}が
 
 @defun reduce f ridentity list
 @defunx reduce-right f ridentity list
-[SRFI-1]
+[R7RS list]
 @c EN
 Variant of @code{fold} and @code{fold-right}.   @var{f} must be a
 binary operator, and @var{ridentity} is the value such that for
@@ -4366,7 +5322,7 @@ So @var{ridentity} is used only when @var{list} is empty.
 
 @defun filter pred list
 @defunx filter! pred list
-[SRFI-1]
+[R7RS list]
 @c EN
 A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned true on it is returned.
@@ -4388,7 +5344,7 @@ modifies @var{list} to produce the result.
 
 @defun filter-map  f clist1 clist2 @dots{}
 @c EN
-[SRFI-1]
+[R7RS list]
 Like @code{map}, but only true values are saved.
 At least one of the list arguments must be finite.
 @c JP
@@ -4404,11 +5360,12 @@ At least one of the list arguments must be finite.
 
 @defun remove pred list
 @defunx remove! pred list
+[R7RS list]
 @c EN
-[SRFI-1] A procedure @var{pred} is applied on each element of @var{list},
+A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned false on it is returned.
 @c JP
-[SRFI-1] 手続き @var{pred} が @var{list} の各要素に適用され、
+手続き @var{pred} が @var{list} の各要素に適用され、
 @var{pred} が偽を返す要素のリストが返されます。
 @c COMMON
 @example
@@ -4424,7 +5381,7 @@ modifies @var{list} to produce the result.
 @end defun
 
 @defun find pred clist
-[SRFI-1]
+[R7RS list]
 @c EN
 Applies @var{pred} for each element of @var{clist}, from
 left to right, and returns the first element that @var{pred} returns
@@ -4437,7 +5394,7 @@ true on.  If no element satisfies @var{pred}, @code{#f} is returned.
 @end defun
 
 @defun find-tail pred clist
-[SRFI-1]
+[R7RS list]
 @c EN
 Applies @var{pred} for each element of @var{clist}, from left to right,
 and when @var{pred} returns a true value, returns the pair whose car
@@ -4450,7 +5407,7 @@ is the element.  If no element satisfies @var{pred}, @code{#f} is returned.
 @end defun
 
 @defun any pred clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS list]
 @c EN
 Applies @var{pred} across each element of @var{clist}s, and
 returns as soon as @var{pred} returns a non-false value.
@@ -4466,7 +5423,7 @@ value, @code{#f} is returned.
 @end defun
 
 @defun every pred clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS list]
 @c EN
 Applies @var{pred} across each element of @var{clist}s, and
 returns @code{#f} as soon as @var{pred} returns @code{#f}.
@@ -4480,7 +5437,7 @@ If all application of @var{pred} return a non-false value,
 @end defun
 
 @defun count pred clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS list]
 @c EN
 A procedure @var{pred} is applied to the @var{n}-th element
 of given lists, from @var{n} is zero to the length of the
@@ -4512,7 +5469,7 @@ At least one of the argument lists must be finite:
 
 @defun delete x list :optional elt=
 @defunx delete! x list :optional elt=
-[SRFI-1]
+[R7RS list]
 @c EN
 Equivalent to
 @c JP
@@ -4531,7 +5488,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 
 @defun delete-duplicates list :optional elt=
 @defunx delete-duplicates! list :optional elt=
-[SRFI-1]
+[R7RS list]
 @c EN
 Removes duplicate elements from @var{list}.
 If there are multiple equal elements in @var{list},
@@ -4552,7 +5509,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @c NODE 他のリスト手続き
 
 @defun append list @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a list consisting of the elements of the first @var{list} followed by
 the elements of the other lists.  The resulting list is always newly
@@ -4567,7 +5524,7 @@ if the last argument is not a proper list.
 @end defun
 
 @defun append! list @dots{}
-[SRFI-1]
+[R7RS list]
 @c EN
 Returns a list consisting of the elements of the first @var{list} followed by
 the elements of the other lists.  The cells in the lists except the last
@@ -4582,12 +5539,13 @@ any object.
 
 @defun concatenate list-of-lists
 @defunx concatenate! list-of-lists!
+[R7RS list]
 @c EN
-[SRFI-1] Equivalent to @code{(apply append @var{list-of-lists})} and
+Equivalent to @code{(apply append @var{list-of-lists})} and
 @code{(apply append! @var{list-of-lists})}, respectively, but this
 can be a bit efficient by skipping overhead of @code{apply}.
 @c JP
-[SRFI-1] それぞれ、@code{(apply append @var{list-of-lists})} および
+それぞれ、@code{(apply append @var{list-of-lists})} および
 @code{(apply append! @var{list-of-lists})} と同等ですが、
 @code{apply}のオーバヘッドが無い分、わずかに効率的です。
 @c COMMON
@@ -4595,7 +5553,7 @@ can be a bit efficient by skipping overhead of @code{apply}.
 
 @defun reverse list :optional (tail '())
 @defunx reverse! list :optional (tail '())
-[R7RS+, SRFI-1+]
+[R7RS+]
 @c EN
 Returns a list consisting of the elements of @var{list}
 in the reverse order.
@@ -4647,13 +5605,13 @@ The rationale is the following correspondence:
 
 @defun append-reverse rev-head tail
 @defunx append-reverse! rev-head tail
-[SRFI-1]
+[R7RS list]
 @c EN
 Equivalent to the two-argument @code{reverse} and @code{reverse!}.
-Provided for srfi-1 compatibility.
+Provided for srfi-1 (R7RS @code{(scheme list)}) compatibility.
 @c JP
-[SRFI-1] 2引数の@code{reverse}および@code{reverse!}と同等です。
-srfi-1との互換のために用意されています。
+2引数の@code{reverse}および@code{reverse!}と同等です。
+srfi-1 (R7RS @code{(scheme list)}) との互換のために用意されています。
 @c COMMON
 @end defun
 
@@ -4661,7 +5619,7 @@ srfi-1との互換のために用意されています。
 @defun memq obj list
 @defunx memv obj list
 @defunx member obj list :optional obj=
-[R7RS][SRFI-1]
+[R7RS base]
 @c EN
 Searches @var{obj} in the @var{list}.  If @code{n}-th element of
 @var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
@@ -4702,13 +5660,13 @@ instead of @code{equal?}.
 Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
 Useful to put an entry at the head of an associative list.
 
-(This procedure is defined in SRFI-1 as @code{alist-cons}; @pxref{List library}).
+(This procedure is defined in SRFI-1 (R7RS @code{(scheme list)}) as @code{alist-cons}; @pxref{R7RS lists}).
 @c JP
 @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})} を返します。
 連想リストの先頭に新しいエントリを加えるのに便利です。
 
-(この手続きはSRFI-1では@code{alist-cons}という名前で定義されています。
-@ref{List library}参照)。
+(この手続きはSRFI-1 (R7RS @code{(scheme list)})では@code{alist-cons}という名前で定義されています。
+@ref{R7RS lists}参照)。
 @c COMMON
 
 @lisp
@@ -4717,7 +5675,7 @@ Useful to put an entry at the head of an associative list.
 @end defun
 
 @defun alist-copy alist
-[SRFI-1]
+[R7RS list]
 @c EN
 Returns a fresh copy of @var{alist}.
 The spine of @var{alist} and each cell that points a key and a value
@@ -4742,7 +5700,7 @@ b @result{} ((a . b) (c . d))
 @defun assq obj list
 @defunx assv obj list
 @defunx assoc obj list :optional key=
-[R7RS][SRFI-1]
+[R7RS base]
 @c EN
 Each element in @var{list} must be a pair.
 These procedures search a pair whose car matches @var{obj}
@@ -4772,7 +5730,7 @@ to check the equivalence of @var{obj} and each key.
 
 @defun alist-delete key alist :optional key=
 @defunx alist-delete! key alist :optional key=
-[SRFI-1]
+[R7RS list]
 @c EN
 Deletes all cells in @var{alist} whose key is the same as @var{key}.
 Comparison is done by a procedure @var{key=}.  The default is @code{eqv?}.
@@ -4998,7 +5956,7 @@ is the same (@code{eq?}) to which.
 
 
 @defun symbol? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns true if and only if @var{obj} is a symbol.
 @c JP
@@ -5025,7 +5983,7 @@ if @var{symbol} is not a symbol.
 @end defun
 
 @defun symbol=? a b c @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Every argument must be a symbol.  Returns @code{#t} iff
 every pair of arguments are @code{eq?} to each other.
@@ -5036,7 +5994,7 @@ every pair of arguments are @code{eq?} to each other.
 @end defun
 
 @defun symbol->string symbol
-[R7RS]
+[R7RS base]
 @c EN
 Returns the name of @var{symbol} in a string.  Returned
 string is immutable.
@@ -5050,7 +6008,7 @@ string is immutable.
 @end defun
 
 @defun string->symbol string
-[R7RS]
+[R7RS base]
 @c EN
 Returns a symbol whose name is a string @var{string}.
 @var{String} may contain weird characters.
@@ -5150,9 +6108,9 @@ only allows symbols as the arguments and the result is always interned.
 @c COMMON
 
 @example
-(string-append 'ab 'cd) @result{} abcd
-(string-append 'ab ':c 30) @result{} ab:c30
-(string-append #f 'g 100) @result{} #:g100
+(symbol-append 'ab 'cd) @result{} abcd
+(symbol-append 'ab ':c 30) @result{} ab:c30
+(symbol-append #f 'g 100) @result{} #:g100
 @end example
 @end defun
 
@@ -5173,12 +6131,16 @@ See @ref{Making Procedures} for how Gauche supports keyword
 arguments, and @code{let-keywords} macro (@ref{Optional argument parsing})
 for parsing keyword-value list manually.
 
-Unlike Common Lisp, keywords and symbols are distinct types in
-the current version of Gauche by default.
-When you set the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL},
-however, keywords become a subtype of symbols;
-a keyword will be evaluated as an identifier, just like symbols,
+Unlike Common Lisp, keywords and symbols have been distinct types in
+Gauche.  Since it isn't conformant to R7RS, in which symbols can begin
+with @code{:}, we're moving on to integrate keywords and symbols---
+that is, a keyword will be evaluated as an identifier, just like symbols,
 but just happens to have itself as a value.
+
+The integration may break the backward compatibility, we haven't
+turned it on by default.
+When you set the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL},
+keywords become a subtype of symbols;
 
 Our plan is to make keywords as a subtype of symbols by default
 in near future.  So we urge developers to test their libraries and
@@ -5195,12 +6157,15 @@ Gaucheにおけるキーワード引数のサポートについては@ref{Making
 また独自にキーワード-値リストをパーズする方法については
 @code{let-keywords} マクロ(@ref{Optional argument parsing}) も参照して下さい。
 
-CommonLisp とは異なり、現在のGaucheではキーワードとシンボルは
-デフォルトで全く別の型として扱われます。ただし、
-環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}がセットされていると、
-キーワードはシンボルのサブタイプとなります。すなわち、
-キーワードもシンボルと同様通常の変数として評価されるのですが、
+CommonLisp とは異なり、Gaucheではキーワードとシンボルを別の型として扱ってきました。
+しかしこれはR7RSに違反しています。R7RSでは@code{:}で始まる識別子はシンボルとして
+読まれるからです。そこで、Gaucheでもキーワードをシンボルのサブタイプとすることにしました。
+すなわち、キーワードもシンボルと同様通常の変数として評価されるのですが、
 たまたまその値がそれ自身に束縛されているように見えるのです。
+
+この変更は後方互換性を壊す可能性があるので、現在はデフォルトでは有効になっていません。
+環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}をセットした状態で@code{gosh}を
+起動することにより、キーワードがシンボルとして扱われるようになります。
 
 この「キーワードはシンボルのサブタイプ」が近い将来デフォルトの動作になる予定です。
 開発者は、@code{GAUCHE_KEYWORD_IS_SYMBOL}をセットした状態で
@@ -5386,7 +6351,7 @@ the key and the following value is removed from @var{kv-list}.
 @end defun
 
 @menu
-* Keyword and symbol integration::  
+* Keyword and symbol integration::
 @end menu
 
 @node Keyword and symbol integration,  , Keywords, Keywords
@@ -5394,7 +6359,7 @@ the key and the following value is removed from @var{kv-list}.
 @c NODE キーワードとシンボルの統合
 
 @c EN
-In future versions of Gauche, keywords will become a subtype of symbols,
+In future versions of Gauche, keywords will become symbols,
 automatically bound to itself by default. 
 On the surface it won't make much difference;
 you can write a keyword @code{:key}, which evaluates to itself; so you
@@ -5416,7 +6381,7 @@ You can test if your library/application works after the change,
 by setting the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL}.
 @c JP
 将来のGaucheでは、キーワードは「デフォルトで自分自身に束縛されている」という
-性質を持つ、シンボルのサブタイプとなる予定です。
+性質を持つシンボルとなります。
 表面的にはこの変更はたいした違いをもたらさないでしょう。
 プログラム中に表記してあるキーワードはそれ自身に評価されるので、
 今までどおりキーワード引数を渡すことができます。
@@ -5574,6 +6539,89 @@ in both versions.
 どのバージョンでも同じように動作します。
 @c COMMON
 
+@c EN
+@subsubheading For R7RS code, quote them or import Gauche modules
+@c JP
+@subsubheading R7RSコードではクオートするかGaucheのモジュールをインポートする
+@c COMMON
+
+@c EN
+After integration, keywords (i.e. symbols that begins with
+@code{:}) are automatically bound to itself,
+in the @code{gauche.keyword} module.
+
+Gauche code inherits the @code{gauche} module by default, which inherits
+@code{keyword}, so you can see the binding of the keyword by default.
+
+In R7RS code, however, you don't inherit @code{gauche},
+so symbols beginning with @code{:} are just ordinary symbols by default.
+Usually you do @code{(import (gauche base))} to use Gauche built-ins,
+and that makes binding of @code{gauche.keyword} available in your
+code, too (since @code{gauche.base} inherits @code{gauche.keyword}).
+But keep this in mind just in case you want to handle keywords in
+your R7RS code separate from Gauche procedures---you have to either say
+@code{(import (gauche keyword))} to get just the self-bound keywords,
+or quote them.
+@c JP
+統合後は、キーワード(@code{:}で始まるシンボル)は@code{gauche.keyword}モジュール
+の中で自分自身に束縛されます。
+
+Gaucheコードはデフォルトで@code{gauche}モジュールを継承し、
+それが@code{keyword}モジュールを継承しているので、
+キーワードの束縛は自動的に見えるようになります。
+
+しかしR7RSコードでは@code{gauche}モジュールは継承されないので、
+@code{:}で始まるシンボルもデフォルトではただのシンボルです。
+通常、Gaucheの組み込み機能を使うには@code{(import (gauche base))}としますが、
+こうするとキーワードの自分自身への束縛もインポートされるようになっています
+(@code{gauche.base}が@code{gauche.keyword}も継承しているからです)。
+ただ、Gaucheの手続きとは別にキーワードをR7RSコード中で使いたい場合は
+注意してください。自己束縛されているキーワードだけが欲しければ
+@code{(import (gauche keyword))}とする必要がありますし、
+そうしない場合はキーワードに見えるシンボルでもクオートする必要があります。
+@c COMMON
+
+@example
+(import (scheme base))
+
+:foo @result{} @r{ERROR: unbound variable: :foo}
+
+(import (gauche base))
+
+:foo @result{} :foo
+@end example
+
+@c EN
+In the following example, the R7RS library @code{foo} imports only
+@code{copy-port} from @code{(gauche base)}; in that case,
+you have to import @code{(gacueh keyword)} separately
+in order to use @code{:size} keyword without quoting.
+(Or add @code{:size} explicitly in the imported symbol
+list of @code{(gauche base)}.)
+@c JP
+次の例では、R7RSライブラリ@code{foo}が@code{(gauche base)}から
+@code{copy-port}のみをインポートしています。こういった場合、
+@code{:size}キーワードをクオートなしで使うには、@code{(gauhce keyword)}も
+別にインポートしなければなりません。
+(あるいは、@code{(gauche base)}からインポートするシンボルのリストに
+@code{:size}も明示するか)。
+@c COMMON
+
+@example
+(define-library (foo)
+  (import (scheme base)
+          (only (gauche base) copy-port)
+          (gauche keyword))
+  (export cat)        
+
+  (begin
+    (define (cat)
+      (copy-port (current-input-port)
+                 (current-output-port)
+                 :size 4096))))
+@end example
+
+
 
 @c ----------------------------------------------------------------------
 @node Identifiers, Characters, Keywords, Core library
@@ -5582,6 +6630,26 @@ in both versions.
 
 @deftp {Builtin Class} <identifier>
 @clindex identifier
+An identifier is an internal object to keep track of
+binding of variables by the compiler.
+
+Usually it is hidden from Scheme world, but the higyenic
+macro expander inserts identifiers into its output, which
+is necessary for hygiene.  But that makes reading macro expansion
+result difficult.
+
+If you bothered by all the @code{#<identifier ...>} stuff in
+the macro output, remember a handy trick
+to pass the expansion result to @code{unwrap-syntax}; it converts
+all identifiers in the passed form to bare symbols.   It does lose
+information---two different identifiers may be converted to a symbol
+with the same name---so you need some care to interpret the output,
+but usually the output gives a fairly good idea of what the macro is doing.
+
+Currently, identifiers are disjoint from symbols.  That might cause
+problems if you tweak macro output.  The plan is to make identifiers
+just a special kind of symbols eventually, so do not assume too much
+about identifiers.
 @end  deftp
 
 @defun identifier? obj
@@ -5590,6 +6658,8 @@ in both versions.
 @defun identifier->symbol identifier
 @end defun
 
+@defun unwrap-syntax form
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Characters, Character set, Identifiers, Core library
@@ -5734,7 +6804,7 @@ Unicodeコードポイントでなく内部文字エンコーディングで文�
 @c COMMON
 
 @defun char? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @c JP
@@ -5747,7 +6817,7 @@ Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @defunx char<=? char1 char2 char3 @dots{}
 @defunx char>? char1 char2 char3 @dots{}
 @defunx char>=? char1 char2 char3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Compares characters.  Character comparison is done in internal
 character encoding.
@@ -5761,7 +6831,7 @@ character encoding.
 @defunx char-ci<=? char1 char2 char3 @dots{}
 @defunx char-ci>? char1 char2 char3 @dots{}
 @defunx char-ci>=? char1 char2 char3 @dots{}
-[R7RS]
+[R7RS char]
 @c EN
 Compares characters in case-insensitive way.
 The comparison is done in the internal character code
@@ -5782,7 +6852,7 @@ R7RSではこれらの手続きは@code{(scheme char)}ライブラリにあり�
 @defunx char-whitespace? char
 @defunx char-upper-case? char
 @defunx char-lower-case? char
-[R7RS]
+[R7RS char]
 @c EN
 Returns true if a character @var{char} is an alphabetic character
 (Unicode character category @code{Lu}, @code{Ll}, @code{Lt},
@@ -5899,7 +6969,7 @@ Unicodeに対応するものがない文字がいくつかあります
 
 @defun char->integer char
 @defunx integer->char n
-[R7RS]
+[R7RS base]
 @c EN
 @code{char->integer} returns an exact integer that represents
 internal encoding of the character @var{char}.
@@ -5979,7 +7049,7 @@ Gaucheの内部文字エンコーディングがUTF-8でない場合、
 @defunx char-downcase char
 @defunx char-titlecase char
 @defunx char-foldcase char
-[R6RS][R7RS]
+[R7RS char]
 @c EN
 Returns the upper case, lower case, title case and folded case of
 @var{char}, respectively.
@@ -6305,6 +7375,14 @@ POSIX流文字集合表記。以下の文字集合名が認識されます:
 @c COMMON
 
 @c EN
+Literal character sets are immutable, as other literal data.  An error
+is signalled when you attempt to modify an immutable character set.
+@c JP
+リテラル文字集合は他のリテラルデータ同様、変更不可です。
+変更しようとした場合はエラーが通知されます。
+@c COMMON
+
+@c EN
 @b{Note for the compatibility}:
 We used to recognize a syntax @code{\xNN} (two-digit hexadecimal number,
 without semicolon terminator) as a character; for example,
@@ -6343,6 +7421,16 @@ To write code that can work both in new and old syntax, use @code{\u} escape.
 Returns true if and only if @var{obj} is a character set object.
 @c JP
 @var{obj}が文字集合であれば真の値を返します。
+@c COMMON
+@end defun
+
+@defun char-set-immutable? char-set
+@c EN
+Returns @code{#t} if @var{char-set} is an immutable char-set,
+@code{#f} if it's a mutable char-set.
+@c JP
+@var{char-set}が変更不可の文字集合であれば@code{#t}を、変更可能な文字集合であれば
+@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -6532,14 +7620,14 @@ SRFI-13については@ref{String library}を参照してください。
 @c COMMON
 
 @menu
-* String syntax::               
-* String Predicates::           
-* String Constructors::         
-* String interpolation::        
-* String Accessors & Modifiers::  
-* String Comparison::           
-* String utilities::            
-* Incomplete strings::          
+* String syntax::
+* String Predicates::
+* String Constructors::
+* String interpolation::
+* String Accessors & Modifiers::
+* String Comparison::
+* String utilities::
+* Incomplete strings::
 @end menu
 
 @node String syntax, String Predicates, Strings, Strings
@@ -6735,7 +7823,7 @@ and two can coexist).
 @c NODE 文字列に関する述語
 
 @defun string? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
 @c JP
@@ -6764,7 +7852,7 @@ Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @c NODE 文字列の作成
 
 @defun make-string k :optional char
-[R7RS]
+[R7RS base]
 @c EN
 Returns a string of length @var{k}.  If optional @var{char} is given,
 the new string is filled with it.  Otherwise, the string is filled with
@@ -6776,9 +7864,14 @@ a whitespace.  The result string is always complete.
 
 Note that the algorithm to allocate a string by @code{make-string} and
 then fills it one character at a time is @emph{extremely} inefficient
-in Gauche, and should be avoided.   That kind of algorithms unnecessarily
-assumes underlying string allocation and representation mechanism,
-which Gauche doesn't follow.
+in Gauche, and should be avoided. 
+
+In Gauche, a string is simply a pointer to an immutable string content.
+If you mutate a string by, e.g. @code{string-set!}, Gauche allocates
+whole new immutable string content, copies the original content with
+modification, then swap the pointer of the original string.  It is no
+more efficient than making a new copy.
+
 You can use an output string port for a string construction
 (@pxref{String ports}).
 Even creating a list of characters and
@@ -6796,8 +7889,14 @@ using @code{list->string} is faster than using @code{make-string} and
 
 @code{make-string}で必要な長さの文字列をアロケートして、@code{string-set!}
 で順番に埋めて行くアルゴリズムは、Gaucheでは@emph{極めて}非効率であることに
-注意してください。そのようなアルゴリズムは、文字列の内部表現とアロケーションメカニズムに
-関して不必要な仮定を置いており、Gaucheはその仮定とは合致しません。
+注意してください。
+
+Gaucheの文字列オブジェクトは、変更不可能な文字列本体への単なるポインタです。
+@code{string-set!}等の文字列を破壊的変更する操作は、
+実際には変更箇所以外は元の文字列本体をコピーした新たな文字列本体をアロケートして、
+元の文字列オブジェクトのポインタを差し替えるこようになっています。
+従って、文字列のコピーを作るのと同等の効率となります。
+
 文字列の順次作成に適しているのは文字列ポートです
 (@ref{文字列ポート}参照)。それが使えない場合、
 文字のリストを作成し、@code{list->string}で変換する方がまだ@code{make-string}と
@@ -6819,7 +7918,7 @@ are used to initialize every byte in the created string.
 @end defun
 
 @defun string char @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a string consisted by @var{char} @dots{}.
 @c JP
@@ -6952,10 +8051,44 @@ as follows:
 @example
 #"This is Gauche, version ~(gauche-version)."
  @equiv{}
+(string-interpolate* ("This is Gauche, version "
+                      (gauche-version)
+                      "."))
+
+;; then, it expands to...
+
 (string-append "This is Gauche, version "
                (x->string (gauche-version))
                ".")
 @end example
+
+@c EN
+(NB: The exact spec of @code{string-interpolate*} might change in future,
+so do not rely on the current behavior.)
+@c JP
+(註: @code{string-interpolate*}の厳密な仕様は将来変わるかもしれないので、
+現在の振る舞いに依存したコードは避けて下さい。)
+@c COMMON
+
+@c EN
+Since the @code{#"..."} syntax is eqivalent to a macro call
+of @code{string-interpolate*}, which is provided in the Gauche module,
+it must be visible from where you use the interpolation syntax.
+When you write Gauche code, typically you implicitly inherit the Gauche
+module so you don't need to worry; however, if you start from R7RS code,
+make sure you import @code{string-interpolate*}
+(by @code{(import (gauche base))}, for example) whenever you use
+string interpolation syntax.  Also be careful not to shadow
+@code{string-interpolate*} locally.
+@c JP
+@code{#"..."}構文はマクロ@code{string-interpolate*}の呼び出しと等価なので、
+この構文を使う際にはGaucheモジュールの@code{string-interpolate*}が
+見えている必要があります。Gaucheコードを書く場合、Gaucheモジュールはデフォルトで
+継承されているので、普通は気にする必要はありません。R7RSコードから始めて
+@code{#"..."}構文を使いたくなった場合は、@code{(import (gauche base))}等で
+@code{string-interpolate*}を見えるようにしてください。
+また、ローカルに@code{string-interpolate*}をシャドウしないように気をつけてください。
+@c COMMON
 @end deftp
 
 @deftp {Reader Syntax} @code{#`}@var{string-literal}
@@ -7065,7 +8198,7 @@ Schemeは他のスクリプト言語より一般的により多くの文字を�
 @c NODE 文字列のアクセスと変更
 
 @defun string-length string
-[R7RS]
+[R7RS base]
 @c EN
 Returns a length of (possibly incomplete) string @var{string}.
 @c JP
@@ -7126,7 +8259,7 @@ Returned value is an integer in the range between 0 and 255.
 @end defun
 
 @defun string-set! string k char
-[R7RS]
+[R7RS base]
 @c EN
 Substitute @var{string}'s @var{k}-th character by @var{char}.
 @var{k} must be greater than or equal to zero, and less than
@@ -7172,7 +8305,7 @@ Return value is undefined.
 @c NODE 文字列の比較
 
 @defun string=? string1 string2 string3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} iff all arguments are strings with the same content.
 @c JP
@@ -7184,7 +8317,7 @@ Returns @code{#t} iff all arguments are strings with the same content.
 @defunx string<=? string1 string2 string3 @dots{}
 @defunx string>? string1 string2 string3 @dots{}
 @defunx string>=? string1 string2 string3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Compares strings in codepoint order.  Returns @code{#t} iff
 all the arguments are ordered.
@@ -7244,7 +8377,7 @@ R7RSでプログラミングする際に@code{(scheme char)}をインポート�
 @c NODE 文字列を扱うその他の手続き
 
 @defun substring string start end
-[R7RS]
+[R7RS base]
 @c EN
 Returns a substring of @var{string}, starting from @var{start}-th
 character (inclusive) and ending at @var{end}-th character (exclusive).
@@ -7285,7 +8418,7 @@ for the generic version.
 @end defun
 
 @defun string-append string @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a newly allocated string whose content is concatenation of
 @var{string} @dots{}.
@@ -7304,7 +8437,7 @@ See also @code{string-concatenate} in @ref{SRFI-13 String reverse & append}.
 
 @defun string->list string :optional start end
 @defunx list->string list
-[R7RS]
+[R7RS base]
 @c EN
 Converts a string to a list of characters or vice versa.
 @c JP
@@ -7332,7 +8465,7 @@ may want to use @code{tree->string} in @ref{Lazy text construction}.
 @end defun
 
 @defun string-copy string :optional start end
-[R7RS]
+[R7RS base]
 @c EN
 Returns a copy of @var{string}.  You can give @var{start} and/or
 @var{end} index to extract the part of the original string
@@ -7371,7 +8504,7 @@ by @code{srfi-13} module (@pxref{String library}).
 @end defun
 
 @defun string-fill! string char :optional start end
-[R7RS]
+[R7RS base]
 @c EN
 Fills @var{string} by @var{char}.  Optional
 @var{start} and @var{end} limits the effective area.
@@ -7386,6 +8519,12 @@ Fills @var{string} by @var{char}.  Optional
 (string-fill! "orange" #\X 2 4)
   @result{} "orXXge"
 @end example
+
+@c EN
+See the notes in @code{make-string} about performance consideration.
+@c JP
+パフォーマンス上の考慮点について、@code{make-string}の説明を参照して下さい。
+@c COMMON
 @end defun
 
 @defun string-join strs :optional delim grammer
@@ -7763,9 +8902,9 @@ Gaucheはまた、リテラル正規表現用の構文を備えています。
 @end example
 
 @menu
-* Regular expression syntax::   
-* Using regular expressions::   
-* Inspecting and assembling regular expressions::  
+* Regular expression syntax::
+* Using regular expressions::
+* Inspecting and assembling regular expressions::
 @end menu
 
 @node Regular expression syntax, Using regular expressions, Regular expressions, Regular expressions
@@ -9331,7 +10470,7 @@ R7RSはバイトベクタを定義しています。Gaucheではそれは単に
 @end deftp
 
 @defun vector? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @c JP
@@ -9340,7 +10479,7 @@ Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @end defun
 
 @defun make-vector k :optional fill
-[R7RS]
+[R7RS base]
 @c EN
 Creates and returns a vector with length @var{k}.
 If optional argument @var{fill} is given, each element of the vector
@@ -9354,7 +10493,7 @@ is undefined.
 @end defun
 
 @defun vector obj @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Creates a vector whose elements are @var{obj} @dots{}.
 @c JP
@@ -9380,7 +10519,7 @@ for all @var{i} between @code{0} and @var{len}
 @end defun
 
 @defun vector-length vector
-[R7RS]
+[R7RS base]
 @c EN
 Returns the length of a vector @var{vector}.
 
@@ -9419,7 +10558,7 @@ you can also use a method @code{ref}.
 @end defun
 
 @defun vector-set! vector k obj
-[R7RS]
+[R7RS base]
 @c EN
 Sets @var{k}-th element of the vector @var{vector} to @var{obj}.
 It is an error if @var{k} is negative or greater than or equal to the
@@ -9438,20 +10577,20 @@ a setter method of @code{ref}.
 
 @defun vector->list vector :optional start end
 @defunx list->vector list :optional start end
-[R7RS+][SRFI-133+]
+[R7RS+]
 @c EN
 Converts a vector to a list, or vice versa.
 
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
-(R7RS and SRFI-133 don't define @var{start} and @var{end} arguments
+(R7RS don't define @var{start} and @var{end} arguments
 for @code{list->vector}.)
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
 値を取り出す範囲を制限することができます。
-(R7RSおよびSRFI-133の@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
+(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
 @c COMMON
 @example
 (vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
@@ -9473,7 +10612,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun reverse-list->vector list :optional start end
-[SRFI-133]
+[R7RS vector]
 @c EN
 Without optional arguments, it returns the same thing as
 @code{(list->vector (reverse list))}, but does not
@@ -9493,7 +10632,7 @@ allocate the intermediate list.   The optional @var{start} and
 
 @defun vector->string vector :optional start end
 @defunx string->vector string :optional start end
-[R7RS]
+[R7RS base]
 @c EN
 Converts a vector of characters to a string, or vice versa.
 It is an error to pass a vector that contains other than characters
@@ -9527,7 +10666,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun vector-fill! vector fill :optional start end
-[R7RS][SRFI-133]
+[R7RS base]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
 
@@ -9546,7 +10685,7 @@ zero, and @var{end} defaults to the length of @var{vector}.
 @end defun
 
 @defun vector-copy vector :optional start end fill
-[R7RS][SRFI-133]
+[R7RS base]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
 arguments can be used to limit the range of @var{vector} to be copied.
@@ -9568,7 +10707,7 @@ the result vector.
 @end defun
 
 @defun vector-copy! target tstart source :optional sstart send
-[R7RS][SRFI-133]
+[R7RS base]
 @c EN
 Copies the content of @var{source} vector into the @var{target} vector
 starting from @var{tstart} in the target.  The @var{target} vector
@@ -9609,7 +10748,7 @@ overlapping.
 @end defun
 
 @defun vector-append vec @dots{}
-[R7RS][SRFI-133]
+[R7RS base]
 @c EN
 Returns a newly allocated vector whose contents are concatenation
 of elements of @var{vec} in order.
@@ -9624,7 +10763,7 @@ of elements of @var{vec} in order.
 @end defun
 
 @defun vector-map proc vec1 vec2 @dots{}
-[R7RS][SRFI-133]
+[R7RS base]
 @c EN
 Returns a new vector, @var{i}-th of which is calculated
 by applying @var{proc} on the list of each @var{i}-th element
@@ -9653,10 +10792,10 @@ affected by the order.
 
 @c EN
 Note: If you use @code{gauche.collection}, you can get the same
-function by @code{(map-to <vector> proc vec1 vec2 @dots{}}.
+function by @code{(map-to <vector> proc vec1 vec2 @dots{})}.
 @c JP
 註: @code{gauche.collection}をuseして
-@code{(map-to <vector> proc vec1 vec2 @dots{}} としても同じ機能は得られます。
+@code{(map-to <vector> proc vec1 vec2 @dots{})} としても同じ機能は得られます。
 @c COMMON
 @end defun
 
@@ -9683,16 +10822,16 @@ This is what SRFI-43 calls @code{vector-map}.  @xref{Vector library (Legacy)}.
 
 @c EN
 Note: If you use @code{gauche.collection}, you can get the same
-function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}.
+function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{})}.
 @c JP
 註: @code{gauche.collection}をuseして
-@code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}
+@code{(map-to-with-index <vector> proc vec1 vec2 @dots{})}
 としても同じ機能は得られます。
 @c COMMON
 @end defun
 
 @defun vector-map! proc vec1 vec2 @dots{}
-[SRFI-133]
+[R7RS vector]
 @c EN
 For each index @var{i}, calls @var{proc} with @var{i}-th index
 of @var{vec1} @var{vec2} @dots{}, and set the result back to
@@ -9736,7 +10875,7 @@ index as the first argument.  This is equivalent to SRFI-43's
 @end defun
 
 @defun vector-for-each proc vec1 vec2 @dots{}
-[R7RS][SRFI-133]
+[R7RS base]
 @c EN
 For all @var{i} below the minimum length of input vectors,
 calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
@@ -10065,6 +11204,60 @@ from @code{hash-table-fold}.
 最初の@var{kons}の呼び出しの時には、第3引数に@var{knil}が渡されます。
 最後の@var{kons}の返り値が@code{hash-table-fold}の返り値となります。
 @c COMMON
+@end defun
+
+@defun hash-table-find ht pred :optional failure
+[SRFI-125]
+@c EN
+Apply @var{pred} with each key and value in the hash table @var{ht}.
+Once @var{pred} returns a true value, that return value is immediately returned
+from @code{hash-table-find}.
+If no key-value satisfies @var{pred}, a thunk @var{failure} is
+invoked and its result is returned.  If @var{failure} is
+omitted, @code{(lambda () #f)} is assumed.
+@c JP
+@var{pred}をハッシュテーブル@var{ht}の各エントリのキーと値を引数にして
+呼び出し、それが真の値を返したら直ちにそれを戻り値とします。
+@var{pred}を満たすキーと値が無ければ、無引数の手続き@var{failure}が呼び出され、
+その値が戻り値となります。@var{failure}が省略された場合は
+@code{(lambda () #f)}が使われます。
+@c COMMON
+
+@c EN
+This procedure is taken from SRFI-125, except that in SRFI-125 the
+@var{failure} argument isn't optional.
+@c JP
+この手続きはSRFI-125から取られました。但し、SRFI-125では
+@var{failure}引数は省略できません。
+@c COMMON
+
+@c EN
+Note: The convention starting from srfi-1 is that
+@code{*-find} returns an item in the collection that
+satisfy the predicate, while @code{*-any} returns a non-false
+value the predicate returns.  SRFI-125 broke the convention.
+The justification given in SRFI-125 discussion
+was that the ``any'' semantics is strictly upper-compatible to the
+``find'' semantics so we can combine two.  So far, though, SRFI-125
+is the only exception of this convention.
+@c JP
+註: srfi-1から始まった慣習では、@code{*-find}というAPIは
+述語を満たすようなコレクション内の要素を返し、@code{*-any}というAPIが
+述語が偽でない値を返した時にその値をそのまま返り値とします。
+SRFI-125が慣習を破った理由は、
+``any''のセマンティクスで従来の ``find'' の動作もエミュレートできるので
+``find''が ``any'' の動作も兼ねてしまえばよいというものです。
+しかし、現在までのところ、この慣習を破っているのはSRFI-125のみです。
+@c COMMON
+
+@example
+@c EN
+;; Find if hash tables ha and hb has a common key.
+@c JP
+;; ハッシュテーブルhaとhbに共通のキーがあるかどうか調べる
+@c COMMON
+(hash-table-find ha (^[k v] (hash-table-exists? hb k)))
+@end example
 @end defun
 
 @defun hash-table-keys ht
@@ -10517,6 +11710,139 @@ the same as @code{make-tree-map}.
 @c COMMON
 @end defun
 
+@c EN
+The following two procedures compares two tree maps with slightly different
+views.
+@c JP
+以下の二つの手続きは二つのツリーマップを比較しますが、見方が異なります。
+@c COMMON
+
+@defun tree-map-compare-as-sets tree-map1 tree-map2 :optional value=? fallback
+@c EN
+Compares two tree maps as sets of entries.  If we look at tree maps
+as sets of entries, we can define a partial order between two maps;
+they are equal to each other if they have exactly the same entries,
+and tree-map A is smaller than tree-map B if A us a strict subset of B.
+
+If @var{tree-map1} and @var{tree-map2} are the same, 0 is
+returned.  If @var{tree-map1} is smaller than @var{tree-map2}, -1
+is returned.  If @var{tree-map1} is greater than @var{tree-map2}, 1
+is returned.
+
+If one argument isn't subset of the other, we can't determine the order.
+In such a case, if @var{fallback} is given, it is returned.  Otherwise,
+an error is signalled.
+
+The comparators of @var{tree-map1} and @var{tree-map2} must be
+the same (@code{equal?}), otherwise an error is signalled.
+@xref{Basic comparators}, about the comparators.
+
+An entry is equal to another entry if their keys match in terms
+of the comparator of the tree-map, and also their values match
+with the provided @var{value=?} predicate, which is defaulted to
+@code{equal?}.
+@c JP
+二つのツリーマップを、エントリの集合として比較します。エントリの集合として見れば、
+ツリーマップ間に半順序関係を定義できます。すなわち、全てのエントリが等しければ
+ツリーマップ同士も等しく、ツリーマップAがツリーマップBの真部分集合であれば
+AはBより小さい、とします。
+
+@var{tree-map1}と@var{tree-map2}が等しければ0が、
+@var{tree-map1}の方が@var{tree-map2}より小さければ-1が、
+@var{tree-map1}の方が@var{tree-map2}より大きければ1が返されます。
+
+どちらのツリーマップも相手の部分集合になっていない場合は、順序が決められません。
+その場合、@var{fallback}引数が与えられていればその値が返され、
+与えられていなければエラーが報告されます。
+
+@var{tree-map1}と@var{tree-map2}の比較器は@code{equal?}の意味で
+等しくなければなりません。比較器については@ref{Basic comparators}を参照してください。
+
+エントリは、それぞれのキーがツリーマップの比較器による比較で等しく、
+かつ対応する値が@var{value=?}手続きによる比較で等しい場合にのみ等しいとみなされます。
+@var{value=?}が省略された場合は@code{equal?}が使われます。
+@c COMMON
+
+@example
+(tree-map-compare-as-sets
+ (alist->tree-map '((1 . a) (2 . b) (3 . c)) default-comparator)
+ (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
+ @result{} 0
+
+(tree-map-compare-as-sets
+ (alist->tree-map '((1 . a) (3 . c)) default-comparator)
+ (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
+ @result{} -1
+
+(tree-map-compare-as-sets
+ (alist->tree-map '((1 . a) (3 . c) (4 . d) (2 . b)) default-comparator)
+ (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
+ @result{} 1
+
+(tree-map-compare-as-sets
+ (alist->tree-map '((1 . a) (3 . c) (4 . d)) default-comparator)
+ (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
+ @result{} ERROR: tree-maps can't be ordered
+
+(tree-map-compare-as-sets
+ (alist->tree-map '((1 . a) (3 . c) (4 . d)) default-comparator)
+ (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator)
+ eq?
+ #f)
+ @result{} #f
+@end example
+@end defun
+
+@defun tree-map-compare-as-sequences tree-map1 tree-map2 :optional value-cmp
+@c EN
+Compares two tree maps as sequence of entries, ordered by keys.
+If both maps have entries with the same key, we use a comparator
+@var{value-cmp} to break the tie (naturally, @var{value-cmp} must
+have ordering predicate.)
+If @var{value-cmp} is omitted, @code{default-comparator} is used.
+
+The comparators of @var{tree-map1} and @var{tree-map2} must be
+the same (@code{equal?}), otherwise an error is signalled.
+@xref{Basic comparators}, about the comparators.
+
+If @var{tree-map1} and @var{tree-map2} are the same, 0 is
+returned.  If @var{tree-map1} is smaller than @var{tree-map2}, -1
+is returned.  If @var{tree-map1} is greater than @var{tree-map2}, 1
+is returned.
+
+Unlike @code{tree-map-compare-as-sets}, this procedure defines total order
+of tree maps which share the same comparator.
+@c JP
+二つのツリーマップを、キーの順序で並べられたエントリのシーケンスとして比較します。
+両マップにキーが同じであるエントリがあった場合は、
+対応する値同士を@var{value-cmp}比較器で比べます
+(従って、@var{value-cmp}は比較述語を持っていなければなりません。)
+@var{value-cmp}が省略された場合は@code{default-comparator}が使われます。
+
+@var{tree-map1}と@var{tree-map2}の比較器は@code{equal?}の意味で
+等しくなければなりません。比較器については@ref{Basic comparators}を参照してください。
+
+@var{tree-map1}と@var{tree-map2}が等しければ0が、
+@var{tree-map1}の方が@var{tree-map2}より小さければ-1が、
+@var{tree-map1}の方が@var{tree-map2}より大きければ1が返されます。
+
+@code{tree-map-compare-as-sets}と異なり、
+この手続きは比較器が同じであるようなツリーマップについて全順序関係を定義します。
+@c COMMON
+
+@example
+(tree-map-compare-as-sequences
+ (alist->tree-map '((1 . a) (3 . c)) default-comparator)
+ (alist->tree-map '((3 . c) (2 . b)) default-comparator))
+ @result{} -1
+
+(tree-map-compare-as-sequences
+ (alist->tree-map '((2 . b) (3 . d)) default-comparator)
+ (alist->tree-map '((3 . c) (2 . b)) default-comparator))
+ @result{} 1
+ @end example
+@end defun
+
 @c ----------------------------------------------------------------------
 @node Weak pointers, Procedures and continuations, Treemaps, Core library
 @section Weak pointers
@@ -10665,15 +11991,15 @@ Gaucheをセットアップすることができます。
 @c COMMON
 
 @menu
-* Procedure class and applicability::  
-* Universal accessor::          
-* Combinators::                 
-* Optional argument parsing::   
-* Procedure arity::             
-* Applicable objects::          
-* Continuations::               
-* Multiple values::             
-* Folding generated values::    
+* Procedure class and applicability::
+* Universal accessor::
+* Combinators::
+* Optional argument parsing::
+* Procedure arity::
+* Applicable objects::
+* Continuations::
+* Multiple values::
+* Folding generated values::
 @end menu
 
 @node Procedure class and applicability, Universal accessor, Procedures and continuations, Procedures and continuations
@@ -10697,7 +12023,7 @@ Gaucheではどんな型のオブジェクトも適用可能にできるので�
 @end deftp
 
 @defun procedure? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is @emph{inherently} applicable
 objects, @code{#f} otherwise.  By @emph{inherently} applicable
@@ -10730,7 +12056,7 @@ Gaucheでは、どんなオブジェクトも適用可能にすることがで�
 @end defun
 
 @defun apply proc arg1 @dots{} args
-[R7RS]
+[R7RS base]
 @c EN
 Calls a procedure @var{proc} with a list of arguments,
 @code{(@var{arg1} @dots{} . @var{args})}.
@@ -11072,10 +12398,11 @@ Partial application versions of @code{apply}, @code{map} and @code{for-each}.
 @defunx delete$ pred
 @defunx assoc$ item
 @c EN
-Partial application versions of some srfi-1 procedures
-(@pxref{List library}).
+Partial application versions of some srfi-1 (R7RS @code{(scheme list)})
+procedures (@pxref{R7RS lists}).
 @c JP
-SRFI-1(@ref{List library}参照)の手続に対応する部分適用版手続。
+SRFI-1 (R7RS @code{(scheme list)}) 
+(@ref{R7RS lists}参照)の手続に対応する部分適用版手続。
 @c COMMON
 @end defun
 
@@ -11675,7 +13002,7 @@ of @code{set!} form, this method is called, that is:
 
 @defun call-with-current-continuation proc
 @defunx call/cc proc
-[R7RS]
+[R7RS base]
 @c EN
 Encapsulates the current continuation to a procedure
 (``continuation procedure''), and calls @var{proc} with it.
@@ -11803,7 +13130,7 @@ APIはPLT Schemeから取りました。
 
 
 @defun dynamic-wind before body after
-[R7RS]
+[R7RS base]
 @c EN
 This is a primitive to manage @emph{dynamic environment}.
 Dynamic environment is a set of states which are kept during execution
@@ -11909,19 +13236,19 @@ reverted by @var{before}, such as manipulating error handler stack
 @c NODE 多値
 
 @defun values obj @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
-@code{receive} (@ref{Binding constructs}), or the R5Rs procedure
+@code{receive} or @code{let-values}
+(@ref{Binding constructs}), or the R5Rs procedure
 @code{call-with-values} described below.
-See also @ref{Let-values}.
 @c JP
 @var{obj} @dots{} を多値として返します。
-呼び出し側は、組み込み構文の @code{receive} (@ref{Binding constructs}参照)か、
+呼び出し側は、組み込み構文の @code{receive}や@code{let-values}
+(@ref{Binding constructs}参照)か、
 下に説明するR7RSの手続き@code{call-with-values}を使って多値を受け取ることが
 できます。
-@ref{Let-values}も参照してください。
 @c COMMON
 @example
 (values 1 2) @result{} 1 @r{and} 2
@@ -11929,7 +13256,7 @@ See also @ref{Let-values}.
 @end defun
 
 @defun call-with-values producer consumer
-[R7RS]
+[R7RS base]
 @c EN
 Call a procedure @var{producer} with no argument.
 Then applies a procedure @var{consumer} on the
@@ -12026,6 +13353,7 @@ have them built-in instead of putting them in a separate module.
 @c COMMON
 
 @defun generator-fold proc seed gen gen2 @dots{}
+[R7RS generator]
 @c EN
 Works like @code{fold} on the generated values by generator
 procedures @var{gen} @var{gen2} @dots{} (@xref{Walking over lists},
@@ -12120,6 +13448,7 @@ benefit of generators.
 @end defun
 
 @defun generator-for-each proc gen gen2 @dots{}
+[R7RS generator]
 @c EN
 A generator version of @code{for-each}.  Repeatedly applies @var{proc} on
 the values yielded by @var{gen}, @var{gen2} @dots{} until any one of
@@ -12170,6 +13499,7 @@ is provided for the backward compatibility.
 @end defun
 
 @defun generator-find pred gen
+[R7RS generator]
 @c EN
 Returns the first item from the generator @var{gen} that satisfies
 the predicate @var{pred}.
@@ -12242,8 +13572,8 @@ internally, its element isn't calculated until it is required.
 @c COMMON
 
 @menu
-* Delay force and lazy::        
-* Lazy sequences::              
+* Delay force and lazy::
+* Lazy sequences::
 @end menu
 
 
@@ -12274,7 +13604,7 @@ Schemeは伝統的に、@code{delay}と@code{force}を使った
 
 @defspec delay expression
 @defspecx lazy expression
-[R7RS][SRFI-45]
+[R7RS lazy][SRFI-45]
 @c EN
 These forms creates a @emph{promise} that delays the evaluation
 of @var{expression}.  @var{Expression} will be evaluated
@@ -12333,7 +13663,7 @@ you may want to check the implementation of @code{util.stream}
 @end defspec
 
 @defun force promise
-[R7RS]
+[R7RS lazy]
 @c EN
 If @var{promise} is not a promise, it is just returned.
 
@@ -12355,7 +13685,7 @@ so that subsequent @code{force} on it won't cause the computation.
 @end defun
 
 @defun promise? obj
-[R7RS]
+[R7RS lazy]
 @c EN
 Returns @code{#t} iff @var{obj} is a promise object.
 @c JP
@@ -12431,7 +13761,7 @@ big it is, or to give up using the mighty @code{match} macro and
 to write a basic state machine that reads one character one at a time.
 @c JP
 このコードは、ファイル@file{file}中に最初に出現する
-``car''または''cdr''という文字列の場所を返します。
+``car''または``cdr''という文字列の場所を返します。
 文字は必要に応じて読まれ、目的の文字列が見つかれば残りは読まれません。
 これを遅延無しでやろうとすると、一旦全てのファイルを読み込んでリストに
 変換するか、あるいは便利な@code{match}マクロを使うのを諦めて
@@ -12497,6 +13827,25 @@ Gaucheの遅延シーケンスは、常に@emph{ひとつ余分に}評価しま�
 @end enumerate
 
 @c EN
+Note: Srfi-127 provides a portable alternative of lazy sequence
+(@pxref{Lazy sequence (srfi)}).  It uses
+dedicated APIs (e.g. @code{lseq-cdr}) to operate on lazy sequences
+so that portable implementation is possible.  In Gauche, we just
+use our built-in lazy sequence as srfi-127 lazy sequence; if you
+want your code to be portable, consider using srfi-127, but be careful
+not to mix lazy sequences and ordinary lists; Gauche won't complain,
+but other Scheme implementation may choke on it.
+@c JP
+註: ポータブルな遅延シーケンスはsrfi-127でも提供されています
+(@ref{Lazy sequence (srfi)}参照)。srfi-127では、遅延シーケンスを扱う
+専用のAPI (@code{lseq-cdr}等) を提供することで、ポータブルな実装を可能にしています。
+Gaucheではsrfi-127の遅延シーケンスはGaucheの組み込み遅延シーケンスそのものです。
+移植性が重要であれば、srfi-127を使うのが良いでしょう。但し、遅延シーケンスと
+通常のリストを混ぜないように気をつけてください。Gaucheは問題なく処理しますが、
+他のScheme処理系は喉を詰まらせてしまうかもしれません。
+@c COMMON
+
+@c EN
 @subsubheading Primitives
 @c JP
 @subsubheading プリミティブ
@@ -12541,6 +13890,14 @@ way to build lazy sequences.
 @c JP
 内部的には、Gaucheの遅延シーケンスはジェネレータを使うように最適化
 されています。遅延シーケンスを作る最も効率の良い方法はこの手続きを使うことです。
+@c COMMON
+
+@c EN
+Note: Srfi-127 also has @code{generator->lseq}, which is exactly
+the same as this in Gauche.
+@c JP
+註: srfi-127も@code{generator->lseq}を定義していますが、Gaucheではそれは
+この手続きと同じものです。
 @c COMMON
 @end defun
 
@@ -12848,6 +14205,17 @@ and don't ever read from @var{port} directly.
 @c COMMON
 
 @c EN
+Note that the lazy sequence terminates when EOF is read from the port,
+but the port isn't closed.  The port should be managed in larger
+dynamic extent where the lazy sequence is used.
+@c JP
+遅延シーケンスはポートがEOFを返した時点で終端となりますが、
+ポート自体はクローズされないことに注意してください。ポートの管理は、
+遅延シーケンスを使う部分全体を囲むような大きな動的エクステントで
+行う必要があります。
+@c cOMMON
+
+@c EN
 You can also convert input data into various lists by
 the following expressions (@pxref{Input utility functions}).
 Those procedures read the port eagerly until EOF and returns
@@ -13121,10 +14489,10 @@ SRFI-35にならって@emph{コンディション(condition)}を使います。
 @c COMMON
 
 @menu
-* Exception handling overview::  
-* Signaling exceptions::        
-* Handling exceptions::         
-* Conditions::                  
+* Exception handling overview::
+* Signaling exceptions::
+* Handling exceptions::
+* Conditions::
 @end menu
 
 @node Exception handling overview, Signaling exceptions, Exceptions, Exceptions
@@ -13607,7 +14975,7 @@ The second form can be used to raise an error other than an
 @c COMMON
 
 @defun raise condition
-[SRFI-18][R7RS]
+[SRFI-18][R7RS base]
 @c EN
 This is the base mechanism of signaling exceptions.
 
@@ -13677,7 +15045,7 @@ R7RSは@code{raise-continuable}という別の手続きで、ハンドラから
 @c COMMON
 
 @defmac guard (var clause @dots{}) body @dots{}
-[R7RS][SRFI-34]
+[R7RS base]
 @c EN
 This is @emph{the} high-level form to handle errors in Gauche.
 @c JP
@@ -13800,7 +15168,7 @@ handler is evaluated before the dynamic environment are unwound.
 @defmac unwind-protect expr cleanup @dots{}
 @c EN
 Executes @var{expr}, then executes @var{cleanup}s, and
-returns the result(s) of @var{expr}.  If an exception is raised
+returns the result(s) of @var{expr}.  If an uncontinuable exception is raised
 within @var{expr}, @var{cleanup}s are executed before the
 exception escapes from the @code{unwind-protect} form.
 For example, the following code calls @code{start-motor},
@@ -13810,7 +15178,7 @@ or @code{drill-a-hole}, @code{stop-motor} is still called
 before the exception escapes @code{unwind-protect}.
 @c JP
 @var{expr}を実行してから@var{cleanup} @dots{}を実行し、@var{expr}の結果を返します。
-@var{expr}内で例外が挙がった場合、その例外が@code{unwind-protect}フォー
+@var{expr}内で継続不可能な例外が挙がった場合、その例外が@code{unwind-protect}フォー
 ムを抜ける前に、@var{cleanup} @dots{}が実行されます。たとえば、以下のコードで
 はなにも問題が起きなければ、@code{start-motor}、@code{drill-a-hole}、
 @code{stop-motor}が、この順で呼ばれます。何か不具合が
@@ -13869,6 +15237,50 @@ Gaucheの例外を投げたときにのみ呼びだされます。上述の例�
 @code{call/cc}で実装されているような場合にこのようなことが起こる可能性
 があります。
 @c COMMON
+
+@c EN
+You can go back to the body @var{expr}
+from outside of @code{unwind-protect}
+as long as @var{cleanup} hasn't been executed.  Once @var{cleanup} is
+executed (more precisely, once execution of @var{cleanup} is started),
+returning back to the body is prohibited---attempting to do so will
+raise an error.
+In the above example, once you stop a motor, you can't restart
+@code{drill-a-hole}.  Reasonable, right?
+
+The following example shows what happens if you try to reenter
+the body after cleanup is executed:
+@c JP
+@var{cleanup}が実行されない限り、@code{unwind-protect}の本体の@var{expr}へ
+外側から戻ることは可能です。けれども、ひとたび@var{cleanup}が
+実行されてしまったら (より正確には、@var{cleanup}の実行が始まってしまったら)、
+本体へ戻ることは禁止されます。戻ろうとするとエラーが投げられます。
+上記の例で言えば、一度モーターを止めてしまったら、
+@code{drill-a-hole}へは戻れないということです。そりゃそうですよね。
+
+次の例は、@var{cleanup}が実行された後で本体に戻ろうとした時にどうなるかを
+示します:
+@c COMMON
+
+@example
+gosh> (define k #f)
+k
+gosh> (unwind-protect
+         (begin (let/cc c (set! k c))
+                (print "body"))
+       (print "cleanup"))
+body
+cleanup
+#<undef>
+gosh> (k 0)
+*** ERROR: Attempt to reenter obsoleted dynamic environment
+Stack Trace:
+_______________________________________
+  0  (error "Attempt to reenter obsoleted dynamic environment")
+        [unknown location]
+  1  (eval expr env)
+        at "../lib/gauche/interactive.scm":282
+@end example
 
 @c EN
 The name of this form is taken from Common Lisp.  Some Scheme
@@ -14094,17 +15506,16 @@ or you are porting from other SRFI-18 code.
 @c COMMON
 
 @defun current-exception-handler
-@c EN
 [SRFI-18]
+@c EN
 Returns the current exception handler.
 @c JP
-[SRFI-18]
 現在の例外ハンドラを返します。
 @c COMMON
 @end defun
 
 @defun with-exception-handler handler thunk
-[R7RS][SRFI-18]
+[R7RS base][SRFI-18]
 @c EN
 A procedure @var{handler} must take one argument.  This procedure
 sets @var{handler} to the current exception handler and calls
@@ -14826,7 +16237,7 @@ A convenience macro to create a (possibly compound) condition.
 @c NODE eval と repl
 
 @defun eval expr env
-[R7RS]
+[R7RS eval]
 @c EN
 Evaluate @var{expr} under the environment @var{env}.
 In Gauche, @var{env} is just a @code{<module>} object.
@@ -14987,14 +16398,14 @@ and re-invoke them afterwards.
 @c NODE 入出力
 
 @menu
-* Ports::                       
-* Port and threads::            
-* Common port operations::      
-* File ports::                  
-* String ports::                
-* Coding-aware ports::          
-* Input::                       
-* Output::                      
+* Ports::
+* Port and threads::
+* Common port operations::
+* File ports::
+* String ports::
+* Coding-aware ports::
+* Input::
+* Output::
 @end menu
 
 @node Ports, Port and threads, Input and output, Input and output
@@ -15181,7 +16592,7 @@ mutex if you know there will be conflicts.
 @defun port? obj
 @defunx input-port? obj
 @defunx output-port? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns true if @var{obj} is a port, an input port and an output port,
 respectively.  @code{Port?} is not listed in the
@@ -15207,7 +16618,7 @@ A closed port can't be reopened.
 @deffn {Parameter} current-input-port
 @deffnx {Parameter} current-output-port
 @deffnx {Parameter} current-error-port
-[R7RS]
+[R7RS base]
 @c EN
 Returns the current input, output and error output port, respectively.
 
@@ -15312,7 +16723,7 @@ which does close the port.  See below.)
 @defun close-port port
 @defunx close-input-port port
 @defunx close-output-port port
-[R7RS]
+[R7RS base]
 @c EN
 Closes the port.  @code{Close-port} works both input and
 output ports, while @code{close-input-port} and @code{close-output-port}
@@ -15336,7 +16747,7 @@ R6RSとR7RSは3つ全てをサポートしています。
 
 
 @defun call-with-port port proc
-[R7RS]
+[R7RS base]
 @c EN
 Calls @var{proc} with one argument, @var{port}.  After @var{proc} returns,
 or it throws an uncaptured error, @var{port} is closed.  Value(s) returned
@@ -15930,7 +17341,7 @@ Returns the value(s) @code{proc} returned.
 
 @defun with-input-from-file string thunk :key if-does-not-exist buffering element-type encoding conversion-buffer-size
 @defunx with-output-to-file string thunk :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
-[R7RS]
+[R7RS file]
 @c EN
 Opens a file specified by @var{string} for input or output
 and makes the opened port as the current input or output port,
@@ -16086,7 +17497,7 @@ memory.
 @c COMMON
 
 @defun open-input-string string
-[R7RS][SRFI-6]
+[R7RS base][SRFI-6]
 @c EN
 Creates an input string port that has the content @var{string}.
 This is a more efficient way to access a string in order
@@ -16141,7 +17552,7 @@ If @var{port} has already reached to EOF, a null string is returned.
 
 
 @defun open-output-string
-[R7RS][SRFI-6]
+[R7RS base][SRFI-6]
 @c EN
 Creates an output string port.   Anything written to the
 port is accumulated in the buffer, and can be obtained
@@ -16159,7 +17570,7 @@ sequentially than pre-allocate a string and fill it with
 @end defun
 
 @defun get-output-string port
-[R7RS][SRFI-6]
+[R7RS base][SRFI-6]
 @c EN
 Takes an output string port @code{port} and returns a string
 that has been accumulated to @code{port} so far.
@@ -16353,10 +17764,10 @@ an input port, and when omitted, the current input port is assumed.
 @c COMMON
 
 @menu
-* Reading data::                
-* Reader lexical mode::         
-* Read-time constructor::       
-* Input utility functions::     
+* Reading data::
+* Reader lexical mode::
+* Read-time constructor::
+* Input utility functions::
 @end menu
 
 @node Reading data, Reader lexical mode, Input, Input
@@ -16364,7 +17775,7 @@ an input port, and when omitted, the current input port is assumed.
 @c NODE データの読み込み
 
 @defun read :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Reads an S-expression from @var{iport} and returns it.
 Gauche recognizes the lexical structure specified in R7RS,
@@ -16406,7 +17817,7 @@ are only provided for srfi-38 compatibility.
 @end defun
 
 @defun read-char :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Reads one character from @var{iport} and returns it.
 If @var{iport} has already
@@ -16424,7 +17835,7 @@ to deal with invalid characters).
 @end defun
 
 @defun peek-char :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Reads one character in @var{iport} and returns it, keeping the character
 in the @var{port}.
@@ -16509,7 +17920,7 @@ This optional argument is Gauche's extension to R7RS.
 @end defun
 
 @defun read-string nchars :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Read @var{nchars} characters, or as many characters as available
 before EOF, and returns a string that consists of those characters.
@@ -16591,7 +18002,7 @@ if the data is in uniform vector.
 @end defun
 
 @defun eof-object
-[R7RS]
+[R7RS base]
 @c EN
 Returns an EOF object.
 @c JP
@@ -16601,7 +18012,7 @@ EOFオブジェクトを返します。
 
 
 @defun eof-object? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns true if @var{obj} is an EOF object.
 @c JP
@@ -16610,7 +18021,7 @@ Returns true if @var{obj} is an EOF object.
 @end defun
 
 @defun char-ready? :optional port
-[R7RS]
+[R7RS base]
 @c EN
 If a character is ready to be read from @var{port}, returns @code{#t}.
 
@@ -17027,10 +18438,12 @@ until EOF and returns the accumulated data as a string.
 @code{port->list} applies @var{reader} on @var{port} repeatedly, until
 @var{reader} returns an EOF, then returns the list of objects
 @var{reader} returned.
+Note that @var{port} isn't closed.
 @c JP
 @code{port->list}は手続き@var{reader}を@var{port}に繰り返し適用し、
 結果をリストに蓄積します。@var{reader}がEOFを返したら
 蓄積されたリストを返します。
+@var{port}自体はクローズされないことに注意してください。
 @c COMMON
 
 @c EN
@@ -17050,10 +18463,15 @@ If the input contains an octet sequence that's not form a valid
 character in the Gauche's native character encoding,
 @code{port->string} and @code{port->string-list} may return
 incomplete string(s).
+If you want to deal with binary data, consider using
+@code{port->uvector} in @code{gauche.uvector} (@pxref{Uvector block I/O}).
 @c JP
 もし入力にGaucheの内部エンコーディングにおいて有効な文字をつくらない
 バイト列が含まれていた場合、@code{port->string}と@code{port->string-list}
 の返り値には不完全な文字列が含まれている可能性があります。
+入力をバイナリデータとして扱いたい場合は、
+@code{gauche.uvector}の@code{port->uvector}を使って下さい
+(@ref{Uvector block I/O}参照)。
 @c COMMON
 @end defun
 
@@ -17088,11 +18506,11 @@ We provide these only for the backward compatibility.
 @c NODE 出力
 
 @menu
-* Layers of output routines::   
-* Output controls::             
-* Object output::               
-* Formatting output::           
-* Low-level output::            
+* Layers of output routines::
+* Output controls::
+* Object output::
+* Formatting output::
+* Low-level output::
 @end menu
 
 @node Layers of output routines, Output controls, Output, Output
@@ -17200,6 +18618,8 @@ To flush the output buffer: @code{flush}, @code{flush-all-ports}.
 @subsubsection Output controls
 @c NODE 出力制御
 
+@deftp {Class} <write-controls>
+@clindex write-controls
 @c EN
 You can control several aspects of Lisp structure output via
 @code{<write-controls>} object.  The object output routines
@@ -17221,11 +18641,11 @@ write controls can do:
 
 @example
 (write '(1 10 100 1000)
-       (make-write-controls :print-base 16 :print-radix #t))
+       (make-write-controls :base 16 :radix #t))
  @r{prints} (#x1 #xa #x64 #x3e8)
 
 (write (iota 100)
-       (make-write-controls :print-length 5))
+       (make-write-controls :length 5))
  @r{prints} (0 1 2 3 4 ...)
 @end example
 
@@ -17239,8 +18659,7 @@ print control variables):
 (これらのスロット名はCommon Lispの対応するプリント制御変数から取られました)。
 @c COMMON
 
-@table @code
-@item print-length
+@defivar <write-controls> length
 @c EN
 If this slot has a nonnegative integer, it determines the maximum number
 of items displayed for lists and vectors (including uniform vectors).
@@ -17254,8 +18673,9 @@ out fully.
 @code{...}が表示されます。このスロットが@code{#f}(デフォルト)であれば、
 すべての要素が表示されます。
 @c COMMON
+@end defivar
 
-@item print-level
+@defivar <write-controls> level
 @c EN
 If this slot has a nonnegative integer, it determines the maximum depth
 of the structure (lists and vectors) to be displayed.  If the structure
@@ -17267,8 +18687,9 @@ If this slot is @code{#f} (default), no depth limit is enforced.
 そのノードの代わりに@code{#}が表示されます。
 このスロットが@code{#f}(デフォルト)であれば、すべての要素が表示されます。
 @c COMMON
+@end defivar
 
-@item print-base
+@defivar <write-controls> base
 @c EN
 This slot must have an integer between 2 and 36, inclusive, and specifies
 the radix used to print exact numbers.  The default value is 10.
@@ -17276,8 +18697,9 @@ the radix used to print exact numbers.  The default value is 10.
 このスロットは2以上36以下の整数でなければならず、
 正確な整数を印字する基数を指定します。デフォルトは10です。
 @c COMMON
+@end defivar
 
-@item print-radix
+@defivar <write-controls> radix
 @c EN
 This slot must have a boolean value.  If it is true, radix prefix
 is always printed before exact numbers.  The default value is @code{#f}.
@@ -17286,7 +18708,29 @@ is always printed before exact numbers.  The default value is @code{#f}.
 正確な整数の前に常に基数プレフィクスが表示されます。
 デフォルトは@code{#f}です。
 @c COMMON
-@end table
+@end defivar
+
+@defivar <write-controls> pretty
+@c EN
+If this slot has true value,
+@emph{pretty printing} is used, that is, newlines and indentations are
+inserted
+to show nested data structures fit in the specified width of columns.
+@c JP
+このスロットが真の値の場合、
+指定されたカラム幅内で、改行やインデントを適宜挿入してネストした構造を見やすく表示する、
+@emph{プリティプリント}機能を使います。
+@c COMMON
+@end defivar
+
+@defivar <write-controls> width
+@c EN
+If this slot has a nonnegative integer, it specifies the display
+column width used for pretty printing.
+@c JP
+このスロットが非負整数の場合、プリティプリントで使われる表示幅を指定します。
+@c COMMON
+@end defivar
 
 @c EN
 A write-controls object is immutable.  If you need a controls object
@@ -17297,15 +18741,38 @@ use @code{write-controls-copy}.
 少し変えたものが欲しければ、@code{write-controls-copy}が使えます。
 @c COMMON
 
-@defun make-write-controls :key print-length print-level print-base print-radix
 @c EN
-Returns a write-controls object.
+Note: When we introduced @code{<write-controls>} object in 0.9.5,
+we used slot names as @code{print-length}, @code{print-pretty} etc.,
+mirroring Common Lisp's special variables.  However, the @code{print-} part
+is redundant, as it is a part of a class dedicated to print control.  So
+we changed the slot names as of 0.9.6.
+The procedures @code{make-write-controls} and @code{write-controls-copy}
+accepts both old and new names for the backward compatibility.  The old
+code that directly refers to the slots needs to be rewritten (we think
+there're a not a lot).  We'll drop the old name support in 1.0 release.
 @c JP
-出力制御オブジェクトを返します。
+註: 0.9.5で@code{<write-controls>}オブジェクトを導入した際には、
+Common Lispのスペシャル変数の名前をそのまま反映した
+@code{print-length}、@code{print-pretty}等をスロット名としていました。
+しかし出力制御オブジェクトの一部であることがわかっている以上、@code{print-}の部分は冗長です。
+そこで0.9.6からスロット名を変えました。
+互換性のために、@code{make-write-controls}と@code{write-controls-copy}は
+古いスロット名でのキーワード引数も認識します。
+スロットを直接指定してアクセスしているコードは修正の必要があります。
+1.0リリース時に古いスロット名のサポートを落とす予定です。
+@c COMMON
+@end deftp
+
+@defun make-write-controls :key length level base radix pretty width
+@c EN
+Creates and returns a write-controls object.
+@c JP
+出力制御オブジェクトを作って返します。
 @c COMMON
 @end defun
 
-@defun write-controls-copy controls :key print-length print-level print-base print-radix
+@defun write-controls-copy controls :key length level base radix pretty width
 @c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the
@@ -17364,7 +18831,7 @@ controls.
 @defun write obj :optional port/controls1 port/controls2
 @defunx write-shared obj :optional port/controls1 port/controls2
 @defunx write-simple obj :optional port/controls1 port/controls2
-[R7RS+]
+[R7RS+ write]
 @c EN
 The @code{write}-family procedures are used to write an
 external representation of Scheme object,
@@ -17481,7 +18948,7 @@ srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
 
 
 @defun display obj :optional port/controls1 port/controls2
-[R7RS]
+[R7RS write]
 @c EN
 Produces a human-friendly representation of an object @var{obj} 
 to the output port.
@@ -17532,7 +18999,7 @@ You can customize how the object is printed out by this method.
 @end deffn
 
 @defun newline :optional port
-[R7RS]
+[R7RS base]
 @c EN
 Writes a newline character to @var{port}.
 This is equivalent to @code{(write-char #\newline port)},
@@ -17928,7 +19395,7 @@ absolute position of the arguments, starting from 0.
 @c NODE 低レベル出力
 
 @defun write-char char :optional port
-[R7RS]
+[R7RS base]
 @c EN
 Write a single character @var{char} to the output port @var{port}.
 @c JP
@@ -17979,11 +19446,11 @@ R7RSでは@code{flush-output-port}を採用しています。
 @c NODE プログラムのロード
 
 @menu
-* Loading Scheme file::         
-* Loading dynamic library::     
-* Require and provide::         
-* Autoload::                    
-* Operations on libraries::     
+* Loading Scheme file::
+* Loading dynamic library::
+* Require and provide::
+* Autoload::
+* Operations on libraries::
 @end menu
 
 @node Loading Scheme file, Loading dynamic library, Loading Programs, Loading Programs
@@ -19118,19 +20585,19 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 @c COMMON
 
 @menu
-* Program termination::         
-* Command-line arguments::      
-* Environment Inquiry::         
-* Filesystems::                 
-* Unix groups and users::       
-* Locale::                      
-* Signal::                      
-* System inquiry::              
-* Time::                        
-* Process management::          
-* I/O multiplexing::            
-* Garbage Collection::          
-* Miscellaneous system calls::  
+* Program termination::
+* Command-line arguments::
+* Environment Inquiry::
+* Filesystems::
+* Unix groups and users::
+* Locale::
+* Signal::
+* System inquiry::
+* Time::
+* Process management::
+* I/O multiplexing::
+* Garbage Collection::
+* Miscellaneous system calls::
 @end menu
 
 @node Program termination, Command-line arguments, System interface, System interface
@@ -19744,11 +21211,11 @@ on top of the procedures described here.
 @c COMMON
 
 @menu
-* Directories::                 
-* Directory manipulation::      
-* Pathnames::                   
-* File stats::                  
-* Other file operations::       
+* Directories::
+* Directory manipulation::
+* Pathnames::
+* File stats::
+* Other file operations::
 @end menu
 
 @node Directories, Directory manipulation, Filesystems, Filesystems
@@ -20517,7 +21984,7 @@ See also @ref{File attribute utilities}, for high-level APIs.
 @c COMMON
 
 @defun file-exists? path
-[R7RS]
+[R7RS file]
 @c EN
 Returns true if @var{path} exists.
 @c JP
@@ -21234,11 +22701,11 @@ Windowsネイティブ環境では、@code{sys-kill}の限定的なサポート�
 @c COMMON
 
 @menu
-* Signals and signal sets::     
-* Sending signals::             
-* Handling signals::            
-* Masking and waiting signals::  
-* Signals and threads::         
+* Signals and signal sets::
+* Sending signals::
+* Handling signals::
+* Masking and waiting signals::
+* Signals and threads::
 @end menu
 
 @node Signals and signal sets, Sending signals, Signal, Signal
@@ -23700,7 +25167,7 @@ amount of time.
 
 The reason that we retries by default is that Gauche's GC may use
 signals to synchronize between threads.   If GC is invoked by one thread
-While another thread is sleeping on @code{nanosleep(2)}, it may return
+while another thread is sleeping on @code{nanosleep(2)}, it may return
 prematurely.  It could happen often if other threads allocate a lot,
 which could make @code{sys-nanosleep} unreliable.
 
@@ -23801,10 +25268,18 @@ Bound to a positive integer that @code{sys-random} may return.
 @end defvar
 
 @defun sys-get-osfhandle port-or-fd
-[Windows] This procedure is only available on Windows native platforms.
+[Windows] 
+@c EN
+This procedure is only available on Windows native platforms.
 Returns a Windows file handle associated to the given port or
 integer file descriptor.   Throws an error if the given argument
 does not have associated file handle.
+@c JP
+この手続きはWindowsネイティブ版だけにあります。
+与えられたポートまたは整数のファイルディスクリプタに対応する
+Windowsファイルハンドルを返します。引数がファイルハンドルに
+対応していなかった場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 
@@ -23821,8 +25296,8 @@ Gauche には開発者がプログラムを解析するための基本的な組�
 @c COMMON
 
 @menu
-* Debugging aid::               
-* Profiler API::                
+* Debugging aid::
+* Profiler API::
 @end menu
 
 @node Debugging aid, Profiler API, Development helper API, Development helper API
@@ -23921,7 +25396,6 @@ is defined, if available.  Otherwise, @code{#f} is returned.
 
 @example
 gosh> (use rfc.http)
-#<undef>
 gosh> (source-location http-get)
 ("/usr/share/gauche-0.9/0.9.5/lib/rfc/http.scm" 443)
 @end example

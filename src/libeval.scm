@@ -1,7 +1,7 @@
 ;;;
 ;;; libeval.scm - eval, load and related stuff
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -36,11 +36,9 @@
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
                      <gauche/class.h>
-                     <gauche/priv/macroP.h>
                      <gauche/priv/readerP.h>)))
 
-(declare (keep-private-macro autoload add-load-path
-                             define-compiler-macro))
+(declare (keep-private-macro autoload add-load-path))
 
 ;;;
 ;;; Eval
@@ -74,7 +72,9 @@
                                          (environment #f)
                                          (ignore-coding #f))
   ;; NB: 'File not found' error is handled in find-load-file.
-  (and-let* ([r (find-load-file file paths suffixes error-if-not-found #t)])
+  (and-let* ([r (find-load-file file paths suffixes
+                                :error-if-not-found error-if-not-found
+                                :allow-archive #t)])
     (let* ([path (car r)]
            [remaining-paths (cadr r)]
            [hooked? (pair? (cddr r))]
@@ -180,6 +180,24 @@
 (define-cproc %load-verbose? () ::<boolean>
   (return (SCM_VM_RUNTIME_FLAG_IS_SET (Scm_VM) SCM_LOAD_VERBOSE)))
 
+;; Called from Scm_DynLoad to get initfn name, which always begins with #\_.
+;; If INITFN is given, we just add "_" in front of it.  Otherwise we
+;; derive it from the name of DSO.
+(select-module gauche.internal)
+(define (%get-initfn-name initfn dsopath)
+  (if (string? initfn)
+    (string-append "_" initfn)
+    (let* ([base (sys-basename dsopath)]
+           [stem (or (string-scan-right base #\. 'before) base)])
+      (string-append "_Scm_Init_"
+                     ;; string-map is in srfi-13, so we roll our own.
+                     ;; This looks awful, but we don't call this frequently.
+                     (list->string
+                      (map (^c (cond [(char-alphabetic? c) (char-downcase c)]
+                                     [(char-numeric? c) c]
+                                     [else #\_]))
+                           (string->list stem)))))))
+
 
 (select-module gauche)
 
@@ -254,7 +272,8 @@
 ;;   Search rules are:
 ;;
 ;;    (1) If given filename begins with "/", "./" or "../", the file is
-;;        searched.
+;;        searched (unless relative-dot-path is true, in that case
+;;        "./" and "../" are taken as relative to the PATHS.)
 ;;    (2) If given filename begins with "~", unix-style username
 ;;        expansion is done, then the resulting file is searched.
 ;;    (3) Otherwise, the file is searched for each directory in PATHs.
@@ -286,8 +305,9 @@
 ;;   captures the exact behavior of `load'.
 (select-module gauche.internal)
 (define (find-load-file filename paths suffixes
-                        :optional (error-if-not-found #f)
-                                  (allow-archive #f))
+                        :key (error-if-not-found #f)
+                             (allow-archive #f)
+                             (relative-dot-path #f))
   (define (file-ok? file)
     (and (file-exists? file)
          (not (file-is-directory? file))))
@@ -321,7 +341,10 @@
     (error "bad filename to load" filename))
   (cond [(char=? (string-ref filename 0) #\~)
          (do-absolute (sys-normalize-pathname filename :expand #t))]
-        [(rxmatch #/^\.{0,2}\// filename) (do-absolute filename)]
+        [(char=? (string-ref filename 0) #\/)
+         (do-absolute filename)]
+        [(and (not relative-dot-path) (rxmatch #/^\.\.?\// filename))
+         (do-absolute filename)]
         ;; we can't use cond-expand here, for this file is precompiled
         ;; on a system different from the final target.
         [(and (or (assq 'gauche.os.windows (cond-features))
@@ -363,64 +386,15 @@
        (loop1)))))
 
 ;;;
-;;; Macros
-;;;
-
+;;; Kick 'main' procedure
+;;;   Returns an integer suitable for the exit code.
+;;;   This is mainly to display proper stack trace in case 'main'
+;;;   raises an error.
 (select-module gauche.internal)
-;; API
-(define-in-module gauche (macroexpand form)
-  (%internal-macro-expand form (make-cenv (vm-current-module)) #f))
-;; API
-(define-in-module gauche (macroexpand-1 form)
-  (%internal-macro-expand form (make-cenv (vm-current-module)) #t))
-
-(select-module gauche)
-;; API
-(define-cproc unwrap-syntax (form) Scm_UnwrapSyntax)
-
-(select-module gauche.internal)
-(inline-stub
- (define-type <macro> "ScmMacro*" "macro"
-   "SCM_MACROP" "SCM_MACRO" "SCM_OBJ")
- )
-
-;; These are used in the compiler, and hidden inside gauche.internal.
-(define-cproc macro? (obj) ::<boolean> SCM_MACROP)
-(define-cproc syntax? (obj) ::<boolean> SCM_SYNTAXP)
-
-(define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
-  Scm_MakeMacroTransformerOld)
-
-(define-cproc %make-macro-transformer (name::<symbol>? proc)
-  Scm_MakeMacro)
-
-(define-cproc compile-syntax-rules (name ellipsis literals rules mod env)
-  Scm_CompileSyntaxRules)
-
-(define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
-
-(define (call-macro-expander mac expr cenv)
-  (let1 r ((macro-transformer mac) expr cenv)
-    (if (and (pair? r) (not (eq? expr r)))
-      (rlet1 p (if (extended-pair? r)
-                 r
-                 (extended-cons (car r) (cdr r)))
-        (pair-attribute-set! p 'macro-input expr))
-      r)))
-
-(define-cproc make-syntax (name::<symbol> proc)
-  Scm_MakeSyntax)
-
-(define-cproc make-syntactic-closure (env literals expr)
-  Scm_MakeSyntacticClosure)
-
-(define-cproc call-syntax-handler (syn program cenv)
-  (SCM_ASSERT (SCM_SYNTAXP syn))
-  (return (Scm_VMApply2 (-> (SCM_SYNTAX syn) handler) program cenv)))
-
-(define-cproc syntax-handler (syn)
-  (SCM_ASSERT (SCM_SYNTAXP syn))
-  (return (-> (SCM_SYNTAX syn) handler)))
+(define (run-main main args)
+  (guard (e [else (report-error e) 70])
+    (let1 r (main args)
+      (if (fixnum? r) r 70))))
 
 ;;;
 ;;; System termination
@@ -610,7 +584,7 @@
   (let loop ([obj obj] [r '()])
     (if (pair? obj)
       (let1 si (pair-attribute-get obj 'source-info '(#f #f))
-        (if-let1 mi (pair-attribute-get obj 'macro-input #f)
+        (if-let1 mi (pair-attribute-get obj 'original #f)
           (loop mi `((,(car si) ,(cadr si) ,obj) ,@r))
           (reverse r `((,(car si) ,(cadr si) ,obj)))))
       '())))
@@ -652,39 +626,3 @@
 (define (%vm-parameter-set! index id value)
   ((with-module gauche.internal %vm-parameter-set!) index #f value))
 
-;;;
-;;;Tentative compiler macro
-;;;
-
-;;
-;;  (define-compiler-macro <name> <transformer>)
-;;
-;;  The <transformer> is the same as macro transformers, except that
-;;  <transformer> can return the given form untouched if it gives up
-;;  expansion.
-;;
-;;  For the backward compatilibity, the following form is also recognized
-;;  as <transfomer>:
-;;
-;;    (er-transformer
-;;     (lambda (form rename compare) ...)))
-;;
-;;  This resembles er-macro-transformer, but in fact we dispatch to a
-;;  half-baked temporary implementation of macro transformer; it is
-;;  for internal optimization experiment until the 'real' macro system
-;;  is in place.   It'll be dropped once we have revised macro system,
-;;  and user code shouldn't use it.
-
-(select-module gauche)
-
-;; API
-(define-macro (define-compiler-macro name xformer-spec)
-  (if (and (= (length xformer-spec) 2)
-           (eq? (unwrap-syntax (car xformer-spec)) 'er-transformer))
-    `((with-module gauche.internal %bind-inline-er-transformer)
-      (current-module) ',name ,(cadr xformer-spec))
-    `((with-module gauche.internal %attach-inline-transformer)
-      (current-module) ',name
-      (^[form cenv]
-        ((with-module gauche.internal call-macro-expander)
-         ,xformer-spec form cenv)))))

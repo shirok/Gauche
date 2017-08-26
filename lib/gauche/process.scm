@@ -1,7 +1,7 @@
 ;;;
 ;;; process.scm - process interface
 ;;;
-;;;   Copyright (c) 2000-2015  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -42,11 +42,13 @@
   (use srfi-13)
   (use srfi-14)
   (export <process> <process-abnormal-exit>
-          run-process process? process-alive? process-pid
+          run-process do-process process? process-alive? process-pid
           process-command process-input process-output process-error
+          process-upstreams
           process-wait process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
           process-list
+          run-pipeline do-pipeline
           ;; process ports
           open-input-process-port   open-output-process-port
           call-with-input-process   call-with-output-process
@@ -55,6 +57,8 @@
           process-output->string    process-output->string-list
           ;; shell utilities
           shell-escape-string shell-tokenize-string
+          ;; deprecated
+          run-process-pipeline
           ))
 (select-module gauche.process)
 
@@ -75,6 +79,9 @@
    (error     :allocation :virtual :slot-ref (^o (process-output o 2)))
    (extra-inputs  :initform '())
    (extra-outputs :initform '())
+   (upstreams :init-value '()) ; pipeline upstream #<process>es
+
+   ;; class slot - keep reference to all processes whose status is unclaimed
    (processes :allocation :class :initform '())
   ))
 
@@ -86,8 +93,15 @@
 ;; to an output port).
 ;; For the backward compatibility, (process-input p) and (process-output p)
 ;; returns pipes connected to child's stdin and stdout, respectively.
+;; NB: If P is the result of run-pipeline, (process-input p 'stdin) returns
+;; the input pipe to the head of the pipeline, not the input pipe of
+;; the process represented by P (which is, of course, connected to the
+;; previous process and not available).
 (define (process-input p :optional (name 'stdin))
-  (cond [(assv name (~ p'in-pipes)) => cdr] [else #f]))
+  (if (and (eq? name 'stdin)
+           (not (null? (~ p'upstreams))))
+    (process-input (car (~ p'upstreams))) ; the input of the whole pipeline
+    (cond [(assv name (~ p'in-pipes)) => cdr] [else #f])))
 
 (define (process-output p :optional (name 'stdout))
   (cond [(assv name (~ p'out-pipes)) => cdr] [else #f]))
@@ -114,6 +128,19 @@
   (if (not (list? command))
     (%run-process-old command args) ;; backward compatibility
     (%run-process-new command args)))
+
+;; A typical use case---run process synchronously, returns #t for
+;; success, #f for failure.
+(define (do-process command . args)
+  (let* ([eflag (case (get-keyword :on-abnormal-exit args #f)
+                  [(#f) #f]
+                  [(:error) #t]
+                  [else => (cut error
+                                "Value for on-abnormal-exit argument \
+                                 must be either #f or :error, but got:" <>)])]
+         [p (apply run-process command (delete-keyword :on-abnormal-exit args))])
+    (process-wait p #f eflag)
+    (zero? (process-exit-status p))))
 
 ;; Note: I/O redirection
 ;;  'Redirects' keyword argument is a generic way to wire child's I/Os.
@@ -173,10 +200,10 @@
            [argv (if host (%prepare-remote host argv directory) argv)]
            [dir  (if host #f directory)])
       (%check-directory dir)
-      (receive (iomap toclose ipipes opipes)
+      (receive (iomap toclose ipipes opipes tmpfiles)
           (if (pair? redirs)
             (%setup-iomap proc redirs)
-            (values #f '() '() '()))
+            (values #f '() '() '() '()))
         (set! (~ proc'in-pipes) ipipes)
         (set! (~ proc'out-pipes) opipes)
         (if fork
@@ -186,14 +213,15 @@
                                        :detached detached)
             (push! (ref proc 'processes) proc)
             (set!  (ref proc 'pid) pid)
-            (dolist (p toclose)
+            (dolist [p toclose]
               (if (input-port? p)
                 (close-input-port p)
                 (close-output-port p)))
             (when (and wait (not detached))
               ;; the following expr waits until the child exits
               (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
-              (update! (ref proc 'processes) (cut delete proc <>)))
+              (update! (ref proc 'processes) (cut delete proc <>))
+              (for-each sys-unlink tmpfiles))
             proc)
           (sys-exec (car argv) argv
                     :iomap iomap :directory dir
@@ -212,7 +240,8 @@
     (fold (^[redir seen]
             (%check-redirects redir)
             (let1 source-sink (caddr redir)
-              (if (symbol? source-sink)
+              (if (and (symbol? source-sink)
+                       (not (memq source-sink '(:null :pipe))))
                 (if (memq source-sink seen)
                   (errorf "Pipe name `~s' appears more than once in the \
                            redirection source or target" source-sink)
@@ -302,6 +331,7 @@
   (define opipes '())   ;list of (name . port)
   (define iomap '())    ;list of (fd . port/fd)
   (define seen '())     ;list of seen fds
+  (define tmpfiles '()) ;list of temporary files
 
   (define (do-file dir fd arg)
     (let1 p (case dir
@@ -362,13 +392,21 @@
                                            [else (write-block arg o)])
                                    (close-output-port o)))])
            (cond-expand
-            [gauche.sys.pthreads
+            [gauche.sys.threads
              (receive (in out) (sys-pipe)
                (push! iomap `(,fd . ,in))
+               (push! toclose in)
                (thread-start! (make-thread (cut write-arg out))))]
             [else
+             ;; If we can't use threads, we fall back to using temporary
+             ;; files.  It has some drawbacks: (1) If we 'exec'-ing
+             ;; (not forking), we don't have chance to remove them, and
+             ;; (2) On Windows we won't be able to remove temp file unless
+             ;; we wait the child process to complete.  We'll do our best
+             ;; anyway.
              (receive (out nam) (sys-mkstemp (%temp-path-prefix))
                (write-arg out)
+               (push! tmpfiles nam)
                (do-file '< fd nam))]))]
         [(<& >&) (push! todup r)] ;; process dups later
         [else (error "invalid redirection" dir)])))
@@ -382,7 +420,7 @@
   (unless (assv 1 iomap) (push! iomap '(1 . 1)))
   (unless (assv 2 iomap) (push! iomap '(2 . 2)))
 
-  (values iomap toclose ipipes opipes))
+  (values iomap toclose ipipes opipes tmpfiles))
 
 (define (%ensure-mask mask)
   (cond
@@ -417,6 +455,8 @@
        (process-pid process)))
 (define (process-list) (class-slot-ref <process> 'processes))
 
+(define (process-upstreams p) (~ p'upstreams))
+
 ;;-----------------------------------------------------------------
 ;; wait
 ;;
@@ -429,6 +469,11 @@
              (slot-set! process 'processes
                         (delete process (slot-ref process 'processes)))
              (when raise-error? (%check-normal-exit process))
+             ;; If we're the end of the pipeline, salvage status of
+             ;; the upstream processes.  We won't raise error on non-zero
+             ;; exit in those processes, but we do care nohang? flag.
+             (dolist [p (~ process 'upstreams)]
+               (process-wait p nohang?))
              #t)))
     #f))
 
@@ -457,6 +502,58 @@
   (cond-expand
    [gauche.os.windows (undefined)]
    [else (process-send-signal process SIGCONT)]))
+
+;;-----------------------------------------------------------------
+;; pipeline
+;;
+
+;; We might adopt scsh-like process forms eventually, but finding an
+;; optimal DSL takes time.  Meanwhile, this intermediate-level API
+;; would cover typical use case...
+(define (run-pipeline commands
+                      :key (input #f) (output #f) (error #f)
+                      (wait #f) (sigmask #f) (directory #f) (detached #f))
+  (when (null? commands)
+    (error "At least one command is required to run-command-pipeline"))
+  (and-let1 offending (any (^c (and (not (pair? c)) (list c))) commands)
+    (errorf "Command list contains non-list command line '~s': ~s"
+            (car offending) commands))
+  (let* ([pipe-pairs (map (^_ (call-with-values sys-pipe cons))
+                          (cdr commands))]
+         [cmds (map (^[cmdline in out]
+                      `(,cmdline :input ,in :output ,out :error ,error
+                                 :sigmask ,sigmask
+                                 :directory ,directory :detached ,detached))
+                    commands
+                    (cons input (map car pipe-pairs))
+                    (fold-right cons (list output) (map cdr pipe-pairs)))]
+         ;; We have to close output pipe after spawning the process, for
+         ;; the process that reads from the pipe would wait until all the
+         ;; ends are closed.  We have to treat the last command separately,
+         ;; for we might :wait #t for it.
+         [ps (map (cut apply run-process <>) (drop-right cmds 1))])
+    (dolist [p pipe-pairs] (close-output-port (cdr p)))
+    ;; Keep upstream processes in 'upstreams' slot.
+    (rlet1 p (apply run-process (last cmds))
+      (set! (~ p'upstreams) ps)
+      (when wait (process-wait p)))))
+
+(define (do-pipeline commands . args)
+  (let* ([eflag (case (get-keyword :on-abnormal-exit args #f)
+                  [(#f) #f]
+                  [(:error) #t]
+                  [else => (cut error
+                                "Value for on-abnormal-exit argument \
+                                 must be either #f or :error, but got:" <>)])]
+         [p (apply run-pipeline commands
+                   (delete-keyword :on-abnormal-exit args))])
+    (process-wait p #f eflag)
+    (zero? (process-exit-status p))))
+
+;; For the backward compatiblity.  DEPRECATED.
+(define (run-process-pipeline . args) ; returns list of processes.
+  (let1 p (apply run-pipeline args)
+    (append (~ p'upstreams) (list p))))
 
 ;;===================================================================
 ;; Process ports
@@ -605,8 +702,8 @@
           (let1 c (peek-char)
             (cond [(eof-object? c) (list c0)]
                   [(char-whitespace? c) (skip-ws) (list c0)]
-                  [(eqv? c #\') (cons c0 (read-sq))]
-                  [(eqv? c #\") (cons c0 (read-dq))]
+                  [(eqv? c #\') (read-char) (cons c0 (read-sq))]
+                  [(eqv? c #\") (read-char) (cons c0 (read-dq))]
                   [(eqv? c #\\) (read-char) (cons c0 (read-escaped))]
                   [(#[|&\;<>()$`] c) (err-meta c)]
                   [else (read-char) (cons c0 (read-unquoted c))])))
@@ -698,8 +795,8 @@
 (define (%apply-run-process command stdin stdout stderr host)
   (apply run-process
          (cond [(string? command)
-                (cond-expand [gauche.os.windows `("cmd" "/c" ,command)]
-                             [else        `("/bin/sh" "-c" ,command)])]
+                (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
+                             [else              `("/bin/sh" "-c" ,command)])]
                [(list? command) command]
                [else (error "Bad command spec" command)])
          :input stdin :output stdout :host host
