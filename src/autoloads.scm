@@ -188,13 +188,15 @@
           sys-stat->atime sys-stat->mtime sys-stat->ctime
           sys-stat->type sys-tm->alist)
 
-(autoload gauche.hashutil hash-table hash-table-empty? hash-table-fold
-                          hash-table-seek hash-table-find
-                          hash-table-for-each hash-table-map
-                          hash-table-compare-as-sets
-                          boolean-hash char-hash char-ci-hash
-                          string-hash string-ci-hash
-                          symbol-hash number-hash hash-bound)
+(autoload gauche.hashutil
+          hash-table-from-pairs hash-table-r7 hash-table
+          hash-table-empty? hash-table-contains? hash-table-fold
+          hash-table-seek hash-table-find
+          hash-table-for-each hash-table-map hash-table-map-r7
+          hash-table-compare-as-sets
+          boolean-hash char-hash char-ci-hash
+          string-hash string-ci-hash
+          symbol-hash number-hash hash-bound)
 
 (autoload gauche.treeutil make-tree-map tree-map-empty?
                           tree-map-min tree-map-max

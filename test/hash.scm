@@ -10,8 +10,6 @@
 ;; object-equal? and object-hash overload.
 
 (test-start "hash tables")
-(use gauche.hashutil)           ; usually autoloaded, but to run test-module
-(test-module 'gauche.hashutil)
 
 ;;------------------------------------------------------------------
 (test-section "hash function")
@@ -434,6 +432,41 @@
          (list (assoc "a" a)
                (assoc "b" a))))
 
+;;------------------------------------------------------------------
+(test-section "compare as sets")
+
+(let ([a (hash-table-r7 eq-comparator 'a 1)]
+      [b (hash-table-r7 eq-comparator 'a 1 'b 2)]
+      [c (hash-table-r7 eq-comparator 'a 1 'b 2 'c 3)]
+      [d (hash-table-r7 eq-comparator 'a 1 'b 2 'c 4)]
+      [e (hash-table-r7 eq-comparator 'a 1 'e 2)]
+      [f (hash-table-r7 eq-comparator 'a 1 'b 2 'c 3 'e 2)]
+      [g (hash-table-r7 eq-comparator 'a 1 'b 2 'c 3)])
+  (define (inv a) (and a (- a)))
+  (define-syntax D
+    (syntax-rules ()
+      ([_ x y expected] `(,x ,y x y ,expected))))
+  (define data
+    (list (D a b -1)
+          (D a c -1)
+          (D b c -1)
+          (D b d -1)
+          (D b e #f)
+          (D c d #f)
+          (D c e #f)
+          (D d e #f)
+          (D e f -1)
+          (D c g 0)))
+
+  (dolist [d data]
+    (receive (x y xname yname expected) (apply values d)
+      (test* "hash-table-compare-as-sets"
+             `((,xname ,yname ,expected)
+               (,yname ,xname ,(and expected (- expected))))
+             (list
+              `(,xname ,yname ,(hash-table-compare-as-sets x y eqv? #f))
+              `(,yname ,xname ,(hash-table-compare-as-sets y x eqv? #f)))))))
+              
 (test-module 'gauche.hashutil) ; autoloaded module
 
 (test-end)

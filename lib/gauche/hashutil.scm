@@ -32,9 +32,9 @@
 ;;;
 
 (define-module gauche.hashutil
-  (export hash-table hash-table-from-pairs hash-table-r7rs
+  (export hash-table hash-table-from-pairs hash-table-r7
           hash-table-empty? hash-table-contains?
-          hash-table-for-each hash-table-map hash-table-map-r7rs
+          hash-table-for-each hash-table-map hash-table-map-r7
           hash-table-fold
           hash-table-seek hash-table-find hash-table-compare-as-sets
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
@@ -55,14 +55,14 @@
 ;; R7RS's API is more convenient to use, so we eventually
 ;; switch to it.  Meantime, we provide original hash-table
 ;; with a different name, hash-table-from-pairs, and R7RS
-;; hash-table as hash-table-r7rs.
+;; hash-table as hash-table-r7.
 (define (hash-table-from-pairs cmpr . kvs)
   (rlet1 h (make-hash-table cmpr)
     (for-each (^[kv] (hash-table-put! h (car kv) (cdr kv))) kvs)))
 
 (define hash-table hash-table-from-pairs) ; transient
 
-(define (hash-table-r7rs cmpr . kvs) ; r7rs's hash-table
+(define (hash-table-r7 cmpr . kvs) ; r7rs's hash-table
   (rlet1 h (make-hash-table cmpr)
     (doplist [(k v) kvs] (hash-table-put! h k v))))
 
@@ -77,7 +77,7 @@
 (define (hash-table-map ht proc :optional arg)
   (when (not (undefined? arg))
     (error "Gauche's bulit-in hash-table-map is called with R7RS interface. \
-            Use hash-table-map-r7rs, or say (use scheme.hash-table)."))
+            Use hash-table-map-r7, or say (use scheme.hash-table)."))
   (assume-type ht <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
         [i   ((with-module gauche.internal %hash-table-iter) ht)])
@@ -88,7 +88,7 @@
           (loop (cons (proc k v) r)))))))
 
 ;; This is R7RS version of hash-table-map
-(define (hash-table-map-r7rs proc cmpr ht) ; r7rs
+(define (hash-table-map-r7 proc cmpr ht) ; r7rs
   (assume-type cmpr <comparator>)
   (assume-type ht <hash-table>)
   (rlet1 r (make-hash-table cmpr)
@@ -166,49 +166,37 @@
 (define (hash-bound) (greatest-fixnum))
 
 ;; Compare two hash-tables as sets.
-;; Lots of dupes from tree-map-compare-as-sets, and probably we should
-;; refactor it.  
 (define (hash-table-compare-as-sets h1 h2
                                     :optional (value=? equal?)
-                                    (fallback (undefined)))
-  (define eof (cons #f #f))
+                                              (fallback (undefined)))
+  (define unique (cons #f #f))
   (define (fail)
     (if (undefined? fallback)
       (error "hash-tables can't be ordered:" h1 h2)
       fallback))
-  (define key-cmp
-    (let ([c1 (hash-table-comparator h1)]
-          [c2 (hash-table-comparator h2)])
-      (cond [(and c1 c2 (equal? c1 c2)) c1]
-            [(or c1 c2) (error "hash-tables with different comparators can't be \
-                                compared:" h1 h2)]
-            [else (error "hash-tables don't have comparators and can't be \
-                          compared:" h1 h2)])))
+  ;; Returns #t iff smaller is a subset of larger.
+  (define (subset? smaller larger)
+    (hash-table-seek smaller
+                     (^[k v] (let1 w (hash-table-get larger k unique)
+                               (or (eq? unique w)
+                                   (not (value=? v w)))))
+                     (^[r k v] #f)
+                     (^[] #t)))
+
+  ;; Check comparator compatibility
+  (let ([c1 (hash-table-comparator h1)]
+        [c2 (hash-table-comparator h2)])
+    (cond [(and c1 c2 (equal? c1 c2)) c1]
+          [(or c1 c2) (error "hash-tables with different comparators can't be \
+                              compared:" h1 h2)]
+          [else (error "hash-tables don't have comparators and can't be \
+                        compared:" h1 h2)]))  
+  ;; Let's start
   (if (eq? h1 h2)
-    0                                   ;fast path
-    (let ([i1 ((with-module gauche.internal %hash-table-iter) h1)]
-          [i2 ((with-module gauche.internal %hash-table-iter) h2)])
-      (define (loop k1 v1 k2 v2 r)
-        (if (eq? k1 eof)
-          (if (eq? k2 eof)
-            r
-            (if (<= r 0) -1 (fail)))
-          (if (eq? k2 eof)
-            (if (>= r 0) 1 (fail))
-            (case (comparator-compare key-cmp k1 k2)
-              [(0)  (if (value=? v1 v2)
-                      (receive (k1 v1) (i1 eof)
-                        (receive (k2 v2) (i2 eof)
-                          (loop k1 v1 k2 v2 r)))
-                      (fail))]
-              [(-1) (if (>= r 0)
-                      (receive (k1 v1) (i1 eof)
-                        (loop k1 v1 k2 v2 1))
-                      (fail))]
-              [else (if (<= r 0)
-                      (receive (k2 v2) (i2 eof)
-                        (loop k1 v1 k2 v2 -1))
-                      (fail))]))))
-      (receive (k1 v1) (i1 eof)
-        (receive (k2 v2) (i2 eof)
-          (loop k1 v1 k2 v2 0))))))
+    0                 ;fast path
+    (let ([n1 (hash-table-num-entries h1)]
+          [n2 (hash-table-num-entries h2)])
+      (cond
+       [(= n1 n2) (if (subset? h1 h2) 0 (fail))]
+       [(< n1 n2) (if (subset? h1 h2) -1 (fail))]
+       [else      (if (subset? h2 h1) 1 (fail))]))))
