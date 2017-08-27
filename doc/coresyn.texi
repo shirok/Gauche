@@ -4666,8 +4666,6 @@ The binding with @var{name} is exported.
 @item (rename @var{name} @var{exported-name})
 The binding with @var{name} is exported under an alias @var{exported-name}.
 @end table
-
-@var{spec}
 @c JP
 カレントモジュールから、@var{spec}で指定される束縛をexportします。
 exportされた束縛は、カレントモジュールをimportしたモジュール中で見えるようになります。
