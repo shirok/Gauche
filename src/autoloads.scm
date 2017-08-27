@@ -190,11 +190,12 @@
 
 (autoload gauche.hashutil
           hash-table-from-pairs hash-table-r7 hash-table
-          hash-table-empty? hash-table-contains? hash-table-empty-copy
+          hash-table-empty? hash-table-contains? hash-table-mutable?
+          hash-table-empty-copy
           hash-table-entries hash-table-unfold
           hash-table-ref hash-table-ref/default
-          hash-table-update!-r7 hash-table-update!/default
-          hash-table-intern!-r7 hash-table-pop!-r7
+          hash-table-update!-r7 hash-table-update!/default hash-table-set!
+          hash-table-intern!-r7 hash-table-delete!-r7 hash-table-pop!-r7
           hash-table-seek hash-table-find hash-table-find-r7
           hash-table-for-each hash-table-for-each-r7
           hash-table-map hash-table-map-r7 hash-table-map!-r7

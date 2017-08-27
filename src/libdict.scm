@@ -320,10 +320,12 @@
     (return (Scm_MakeSubr hash_table_iter iter 1 0 '"hash-table-iterator"))))
 
 (select-module gauche)
-(define-cproc hash-table-copy (hash::<hash-table>)   Scm_HashTableCopy)
-(define-cproc hash-table-keys (hash::<hash-table>)   Scm_HashTableKeys)
-(define-cproc hash-table-values (hash::<hash-table>) Scm_HashTableValues)
-(define-cproc hash-table-stat (hash::<hash-table>)   Scm_HashTableStat)
+(define-cproc hash-table-copy (ht::<hash-table> :optional mutable?)
+  ;; we don't have immutable hash table, and ignore mutable? argument (srfi-125)
+  (return (Scm_HashTableCopy ht)))
+(define-cproc hash-table-keys (ht::<hash-table>)   Scm_HashTableKeys)
+(define-cproc hash-table-values (ht::<hash-table>) Scm_HashTableValues)
+(define-cproc hash-table-stat (ht::<hash-table>)   Scm_HashTableStat)
 
 ;; conversion to/from hash-table
 (define (alist->hash-table a . opt-cmpr)

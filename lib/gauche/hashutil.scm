@@ -33,11 +33,12 @@
 
 (define-module gauche.hashutil
   (export hash-table hash-table-from-pairs hash-table-r7
-          hash-table-empty? hash-table-contains? hash-table-empty-copy
+          hash-table-empty? hash-table-contains? hash-table-mutable?
+          hash-table-empty-copy
           hash-table-entries hash-table-unfold
-          hash-table-ref hash-table-ref/default
+          hash-table-ref hash-table-ref/default hash-table-set!
           hash-table-update!-r7 hash-table-update!/default
-          hash-table-intern!-r7 hash-table-pop!-r7
+          hash-table-intern!-r7 hash-table-delete!-r7 hash-table-pop!-r7
           hash-table-for-each hash-table-for-each-r7
           hash-table-map hash-table-map-r7 hash-table-map!-r7
           hash-table-map->list-r7
@@ -49,8 +50,7 @@
           hash-table-union! hash-table-intersection!
           hash-table-difference! hash-table-xor!
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
-          symbol-hash number-hash default-hash
-          hash-bound hash-salt))
+          symbol-hash number-hash hash-bound))
 (select-module gauche.hashutil)
 
 ;; TRANSIENT: Precompiling with 0.9.5 doesn't load assume-type yet.
@@ -83,6 +83,10 @@
 (define hash-table-contains? hash-table-exists?) ; r7rs
 (define hash-table-size hash-table-num-entries)  ; r7rs
 
+(define (hash-table-mutable? ht)      ; r7rs
+  (assume-type ht <hash-table>)
+  #t)
+
 (define (hash-table-empty-copy ht)      ; r7rs
   (make-hash-table (hash-table-comparator ht)))
 
@@ -112,13 +116,22 @@
 (define (hash-table-ref/default ht key default) ; r7rs
   (hash-table-get ht key default))
 
+(define (hash-table-set! ht . kvs) ; r7rs
+  (doplist [[k v] kvs]
+    (hash-table-put! ht k v)))
+
 (define (hash-table-intern!-r7 ht key failure) ; r7rs
-  ;; this might be more efficient if implemented natively.
+  ;; we can't use hash-table-adjoin!, for we have to evaluate failure thunk
+  ;; after we know the entry's not in the table.
   (let1 v (hash-table-get ht key unique)
     (if (eq? v unique)
       (rlet1 v (failure)
         (hash-table-put! ht key v))
       v)))
+
+(define (hash-table-delete!-r7 ht . keys) ; r7rs
+  (fold (^[key count] (if (hash-table-delete! ht key) (+ count 1) count))
+        0 keys))
         
 (define (hash-table-update!/default ht key updater default) ;r7rs
   (hash-table-update! ht key updater default))
