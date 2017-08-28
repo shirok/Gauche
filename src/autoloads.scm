@@ -192,7 +192,7 @@
           hash-table-from-pairs hash-table-r7 hash-table
           hash-table-empty? hash-table-contains? hash-table-mutable?
           hash-table-empty-copy
-          hash-table-entries hash-table-unfold
+          hash-table-size hash-table-entries hash-table-unfold
           hash-table-ref hash-table-ref/default
           hash-table-update!-r7 hash-table-update!/default hash-table-set!
           hash-table-intern!-r7 hash-table-delete!-r7 hash-table-pop!-r7

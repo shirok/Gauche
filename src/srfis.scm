@@ -842,6 +842,23 @@ Gaucheの@code{gauche.generator}がsrfi-121のスーパーセットになって�
 (@ref{Generators}参照)
 
 
+srfi-125, srfi-125
+()
+
+Intermediate hash tables
+This has become a part of R7RS large.
+Supported by @code{scheme.hash-table}.
+Note that Gauche's native interface provides the same functionalities, but
+under slightly different names for the backward compatibility.
+@xref{Hashtables}.
+
+ハッシュテーブル中位層
+これはR7RS largeの一部となりました。
+@code{scheme.hash-table}モジュールでサポートされます。
+Gaucheの組み込みインタフェースも同じ機能を提供していますが、
+既存のコードとの互換性のために名前が若干異なります (@ref{Hashtables}参照)。
+
+
 srfi-127, srfi-127
 ()
 
