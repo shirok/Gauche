@@ -61,18 +61,27 @@
 ;;             return #f if the input is complete, or #t otherwise.
 ;;             If the procedure returns #t, commit-or-newline inserts a
 ;;             newline to the buffer and enters multiline edit mode.
-;;   wide-char-mode - if this is 'Unicode, wide-char-disp/pos-width and
-;;             ambiguous-char-disp/pos-width are selected by checking
-;;             East Asian Width of Unicode.
-;;             if this is 'Surrogate, wide-char-disp/pos-width and
-;;             surrogate-char-disp/pos-width are selected by checking
-;;             surrogate pairs of Unicode.
-;;             if this is 'Wide, wide-char-disp/pos-width is selected
-;;             by checking character codes.
-;;             Otherwise, wide characters support is disabled.
-;;   xxx-char-disp-width - a character width for display.
-;;   xxx-char-pos-width - a character width for calculating a cursor
-;;             position.
+;;
+;;   wide-char-disp-mode - specify the mode for determining a display
+;;             width of wide characters.
+;;             If 'Unicode is specified, a character width is determined
+;;             by East Asian Width of Unicode.
+;;             If 'Surrogate is specified, a character width is determined
+;;             by checking surrogate pairs of Unicode.
+;;             If 'Wide is specified, a character width is determined
+;;             by character codes.
+;;             Otherwise, wide character support is disabled.
+;;   wide-char-pos-mode - specify the mode for determining a cursor
+;;             movement width of wide characters.
+;;             Possible values are the same as wide-char-disp-mode.
+;;   wide-char-disp-width,
+;;   surrogate-char-disp-width,
+;;   ambiguous-char-disp-width - a character width for display.
+;;             Specify the equivalent to a half-width character's count.
+;;   wide-char-pos-width,
+;;   surrogate-char-pos-width,
+;;   ambiguous-char-pos-width - a character width for cursor movement.
+;;             Specify the equivalent to a half-width character's count.
 ;;   emoji-char-workaround - if this is not #f, emoji characters are
 ;;             treated as wide characters.
 ;;
@@ -82,7 +91,8 @@
    (keymap  :init-keyword :keymap :init-form (default-keymap))
    (input-continues :init-keyword :input-continues :init-form #f)
    ;; for wide characters support
-   (wide-char-mode :init-keyword :wide-char-mode :init-value 'Unicode)
+   (wide-char-disp-mode :init-keyword :wide-char-disp-mode :init-value 'Unicode)
+   (wide-char-pos-mode  :init-keyword :wide-char-pos-mode  :init-value 'Unicode)
    (wide-char-disp-width :init-keyword :wide-char-disp-width :init-value 2)
    (wide-char-pos-width  :init-keyword :wide-char-pos-width  :init-value 2)
    (surrogate-char-disp-width :init-keyword :surrogate-char-disp-width :init-value 2)
@@ -262,11 +272,12 @@
 ;; Make a procedure to get a character width
 (define-syntax make-get-char-width-proc
   (syntax-rules ()
-    ((_ wide-char-width-prop
+    [(_ wide-char-mode-prop
+        wide-char-width-prop
         surrogate-char-width-prop
         ambiguous-char-width-prop)
      (^[ctx ch x]
-       (define wide-char-mode        (~ ctx'wide-char-mode))
+       (define wide-char-mode        (~ ctx wide-char-mode-prop))
        (define wide-char-width       (~ ctx wide-char-width-prop))
        (define surrogate-char-width  (~ ctx surrogate-char-width-prop))
        (define ambiguous-char-width  (~ ctx ambiguous-char-width-prop))
@@ -275,7 +286,7 @@
        (cond
         [(eqv? ch #\tab)
          (get-tab-width x)]
-        [(and (>= chcode 0) (<= chcode #x7f))
+        [(<= 0 chcode #x7f)
          1]
         [else
          (cond-expand
@@ -283,8 +294,7 @@
            (case wide-char-mode
              [(Unicode)
               (if (and emoji-char-workaround
-                       (>= chcode #x1f000)
-                       (<= chcode #x1ffff))
+                       (<= #x1f000 chcode #x1ffff))
                 wide-char-width
                 (case (char-east-asian-width ch)
                   [(A)      ambiguous-char-width]
@@ -304,16 +314,18 @@
              [(Unicode Surrogate Wide)
               wide-char-width]
              [else
-              1])])])))))
+              1])])]))]))
 
 ;; Get a character width for display
 (define get-char-disp-width (make-get-char-width-proc
+                             'wide-char-disp-mode
                              'wide-char-disp-width
                              'surrogate-char-disp-width
                              'ambiguous-char-disp-width))
 
-;; Get a character width for calculating a cursor position
+;; Get a character width for cursor movement
 (define get-char-pos-width (make-get-char-width-proc
+                            'wide-char-pos-mode
                             'wide-char-pos-width
                             'surrogate-char-pos-width
                             'ambiguous-char-pos-width))
@@ -324,22 +336,22 @@
   (if (< (~ ctx'initpos-y) 0)
     (set! (~ ctx'initpos-y) 0))
 
-  (let* ([con (~ ctx'console)]
-         [y   (~ ctx'initpos-y)]
-         [x   (~ ctx'initpos-x)]
-         [w   (~ ctx'screen-width)]
-         [h   (~ ctx'screen-height)]
-         [sel (selected-range ctx buffer)]
-         [oparen (buffer-find-matching-paren-on-cursor buffer)]
+  (let* ([con     (~ ctx'console)]
+         [y       (~ ctx'initpos-y)]
+         [x       (~ ctx'initpos-x)]
+         [w       (~ ctx'screen-width)]
+         [h       (~ ctx'screen-height)]
+         [sel     (selected-range ctx buffer)]
+         [oparen  (buffer-find-matching-paren-on-cursor buffer)]
          [oldattr '(#f #f)]
          [newattr '(#f #f)]
-         [disp-x x]
-         [g   (gap-buffer->generator buffer)]
-         [pos (gap-buffer-pos buffer)]
-         [pos-x  x]
-         [pos-y  y]
+         [disp-x  x]
+         [g       (gap-buffer->generator buffer)]
+         [pos     (gap-buffer-pos buffer)]
+         [pos-x   x]
+         [pos-y   y]
          [pos-set-flag (= pos 0)]
-         [maxy   #f])
+         [maxy    #f])
 
     (define (display-area?)
       (and (>= y 0) (or (not maxy) (<= y maxy))))
@@ -361,13 +373,10 @@
               ;; check a cursor position for clipping a display area
               (when (<= pos-y 0)
                 (set! pos-y 0)
-                (set! maxy  (- h 2)))
-              ))
+                (set! maxy  (- h 2)))))]
 
-          ]
          [else
-          (inc! y)
-          ])))
+          (inc! y)])))
 
     (reset-character-attribute con)
     (move-cursor-to con y 0)
