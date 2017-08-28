@@ -297,11 +297,18 @@
                            (guard (_ (else (push! bad-autoload sym)))
                              (global-variable-ref mod sym))))
     ;; 2. Check if all exported symbols are properly defined.
+    ;; We create an anonymous moudle and import the tested module.  By this
+    ;; way, we can test renaming export (in which case, the exported name
+    ;; doesn't correspond to the binding in MOD so we can't look up directly
+    ;; in MOD.)
     (when (pair? (module-exports mod))
-      (for-each (lambda (sym)
-                  (guard (_ [else (push! bad-export sym)])
-                    (global-variable-ref mod sym)))
-                (module-exports mod)))
+      (let ([m (make-module #f)])
+        (eval `(import ,name) m)
+        (eval `(extend) m)
+        (for-each (lambda (sym)
+                    (guard (_ [else (push! bad-export sym)])
+                      (global-variable-ref m sym)))
+                  (module-exports mod))))
     ;; 3. Check if all global references are resolvable, and if it is
     ;; called, gets valid number of arguments.
     (for-each

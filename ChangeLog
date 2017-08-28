@@ -1,3 +1,8 @@
+2017-08-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-module-common): Fix binding check on
+	  remaing export.
+
 2017-08-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/ring-buffer.scm (%ensure-room!): Fix a bug when add-front!
