@@ -69,7 +69,7 @@
 ;;             If 'Surrogate is specified, a character width is determined
 ;;             by checking surrogate pairs of Unicode.
 ;;             If 'Wide is specified, a character width is determined
-;;             by character codes.
+;;             by only character codes.
 ;;             Otherwise, wide character support is disabled.
 ;;   wide-char-pos-mode - specify the mode for determining a cursor
 ;;             movement width of wide characters.
@@ -77,11 +77,11 @@
 ;;   wide-char-disp-width,
 ;;   surrogate-char-disp-width,
 ;;   ambiguous-char-disp-width - a character width for display.
-;;             Specify the equivalent to a half-width character's count.
+;;             Specify a multiple of the width of half-width characters.
 ;;   wide-char-pos-width,
 ;;   surrogate-char-pos-width,
 ;;   ambiguous-char-pos-width - a character width for cursor movement.
-;;             Specify the equivalent to a half-width character's count.
+;;             Specify a multiple of the width of half-width characters.
 ;;   emoji-char-workaround - if this is not #f, emoji characters are
 ;;             treated as wide characters.
 ;;
