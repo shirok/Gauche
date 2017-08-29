@@ -847,14 +847,16 @@ srfi-125, srfi-125
 
 Intermediate hash tables
 This has become a part of R7RS large.
-Supported by @code{scheme.hash-table}.
+Supported by @code{scheme.hash-table}
+(@pxref{R7RS hash tables}).
 Note that Gauche's native interface provides the same functionalities, but
 under slightly different names for the backward compatibility.
 @xref{Hashtables}.
 
 ハッシュテーブル中位層
 これはR7RS largeの一部となりました。
-@code{scheme.hash-table}モジュールでサポートされます。
+@code{scheme.hash-table}モジュールでサポートされます
+(@ref{R7RS hash tables}参照)。
 Gaucheの組み込みインタフェースも同じ機能を提供していますが、
 既存のコードとの互換性のために名前が若干異なります (@ref{Hashtables}参照)。
 

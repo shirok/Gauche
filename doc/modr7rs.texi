@@ -1919,6 +1919,7 @@ adding support of the libraries that has been passed.
 * R7RS sort::                   @code{scheme.sort}
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
+* R7RS hash tables::            @code{scheme.hash-table}
 * R7RS immutable deques::       @code{scheme.ideque}
 * R7RS generators::             @code{scheme.generator}
 * R7RS lazy sequences::         @code{scheme.lseq}
@@ -4038,7 +4039,7 @@ They do provide hash functions.
 @end defvr
 
 
-@node R7RS character sets, R7RS immutable deques, R7RS sets, R7RS large
+@node R7RS character sets, R7RS hash tables, R7RS sets, R7RS large
 @subsection @code{scheme.charset} - R7RS character sets
 @c NODE R7RS文字セット, @code{scheme.charset} - R7RS文字セット
 
@@ -4472,7 +4473,56 @@ Returns a character set that adds @var{char1} @dots{} to
 @c MOD scheme.charset
 @end defvar
 
-@node R7RS immutable deques, R7RS generators, R7RS character sets, R7RS large
+@node R7RS hash tables, R7RS immutable deques, R7RS character sets, R7RS large
+@subsection @code{scheme.hash-table} - R7RS hash tables
+@c NODE R7RSハッシュテーブル, @code{scheme.hash-table} - R7RSハッシュテーブル
+
+@deftp {Module} scheme.hash-table
+@mdindex scheme.hash-table
+This module provides hash table library, originally defined as @code{srfi-125}.
+
+Hash table provided with this module is the same as Gauche's built-in
+hash table.  However, srfi-125 introduces procedures that conflict
+with Gauche's original procedures, so Gauche provides those procedures
+built-in but under aliases.
+@xref{Hashtables}, for the built-in hash table procedures.
+
+With this module, procedures are provided as defined in R7RS.  Use this
+module when you're writing portable code.
+
+Srfi-125 also defines compatiblity procedures with srfi-69, although saying
+they're deprecated.  Those deprecated procedures are supported in this
+module, too.
+@end deftp
+
+The following procedures are the same as Gauche's built-in.
+@example
+hash-table-unfold   hash-table?       hash-table-contains?
+hash-table-exists?  hash-table-empty? hash-table=?
+hash-table-mutable? hash-table-ref    hash-table-ref/default
+hash-table-set!     hash-table-update!/default
+hash-table-clear!   hash-table-size   hash-table-keys
+hash-table-values   hash-table-copy   hash-table-empty-copy
+hash-table->alist   hash-table-union! hash-table-intersection!
+hash-table-differnce!                 hash-table-xor!
+@end example
+
+The following procedures are also provided as Gauche's built-in,
+but with @code{-r7} suffix.
+@example
+hash-table         hash-table-delete! hash-table-intern!
+hash-table-update! hash-table-pop!    hash-table-find
+hash-table-count   hash-table-map     hash-table-for-each
+hash-table-map!    hash-table-map->list
+hash-table-prune!
+@end example
+
+@xref{Hashtables}, for the description of those procedures.
+
+
+
+
+@node R7RS immutable deques, R7RS generators, R7RS hash tables, R7RS large
 @subsection @code{scheme.ideque} - R7RS immutable deques
 @c NODE R7RS変更不可な両端キュー, @code{scheme.ideque} - R7RS変更不可な両端キュー
 
