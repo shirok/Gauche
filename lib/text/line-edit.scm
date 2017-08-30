@@ -45,7 +45,6 @@
 
 (define *kill-ring-size* 60)
 (define *history-size* 200)
-(define *tab-width* 8)
 
 ;; <line-edit-context>
 ;; Initializable slots:
@@ -61,6 +60,8 @@
 ;;             return #f if the input is complete, or #t otherwise.
 ;;             If the procedure returns #t, commit-or-newline inserts a
 ;;             newline to the buffer and enters multiline edit mode.
+;;   tab-char-width - a tab character width.
+;;             Specify a multiple of the width of half-width characters.
 ;;
 ;;   wide-char-disp-mode - specify the mode for determining a display
 ;;             width of wide characters.
@@ -90,6 +91,7 @@
    (prompt  :init-keyword :prompt :init-value "")
    (keymap  :init-keyword :keymap :init-form (default-keymap))
    (input-continues :init-keyword :input-continues :init-form #f)
+   (tab-char-width :init-keyword :tab-char-width :init-value 8)
    ;; for wide characters support
    (wide-char-disp-mode :init-keyword :wide-char-disp-mode :init-value 'Unicode)
    (wide-char-pos-mode  :init-keyword :wide-char-pos-mode  :init-value 'Unicode)
@@ -267,7 +269,9 @@
     (putstr (~ ctx'console) (make-string (~ ctx'initpos-x) #\.))))
 
 ;; Get a tab character width
-(define (get-tab-width x) (- *tab-width* (modulo x *tab-width*)))
+(define (get-tab-char-width ctx x w)
+  (define tab-char-width (~ ctx'tab-char-width))
+  (min (- w x) (- tab-char-width (modulo x tab-char-width))))
 
 ;; Make a procedure to get a character width
 (define-syntax make-get-char-width-proc
@@ -276,7 +280,7 @@
         wide-char-width-prop
         surrogate-char-width-prop
         ambiguous-char-width-prop)
-     (^[ctx ch x]
+     (^[ctx ch x w]
        (define wide-char-mode        (~ ctx wide-char-mode-prop))
        (define wide-char-width       (~ ctx wide-char-width-prop))
        (define surrogate-char-width  (~ ctx surrogate-char-width-prop))
@@ -285,7 +289,7 @@
        (define chcode (char->integer ch))
        (cond
         [(eqv? ch #\tab)
-         (get-tab-width x)]
+         (get-tab-char-width ctx x w)]
         [(<= 0 chcode #x7f)
          1]
         [else
@@ -395,20 +399,19 @@
           [(#\newline)]
           [(#\tab)
            (when (display-area?)
-             (let1 tw (min (get-tab-width disp-x) (- w disp-x))
-               (move-cursor-to con y x)
-               (putstr con (make-string tw #\space))))]
+             (move-cursor-to con y x)
+             (putstr con (make-string (get-tab-char-width ctx disp-x w) #\space)))]
           [else
            ;; wide characters need a check of line wrapping before
            ;; displaying them
-           (line-wrapping (+ disp-x (get-char-disp-width ctx ch disp-x)) (+ w 1))
+           (line-wrapping (+ disp-x (get-char-disp-width ctx ch disp-x w)) (+ w 1))
            (when (display-area?)
              (move-cursor-to con y x)
              (putch con ch))])
 
         ;; line wrapping
-        (set! x      (+ x      (get-char-pos-width  ctx ch x)))
-        (set! disp-x (+ disp-x (get-char-disp-width ctx ch disp-x)))
+        (set! x      (+ x      (get-char-pos-width  ctx ch x      w)))
+        (set! disp-x (+ disp-x (get-char-disp-width ctx ch disp-x w)))
         (case ch
           [(#\newline)
            (line-wrapping w w)
