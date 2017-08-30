@@ -84,7 +84,6 @@
                                                 :pretty #t))
 
 ;; for internal convenience
-(define-inline (rp-writer c) (~ c 'writer))
 (define-inline (rp-shared c) (~ c 'shared))
 (define-inline (rp-length c) (~ c 'controls 'length))
 (define-inline (rp-level c)  (~ c 'controls 'level))
@@ -103,6 +102,16 @@
 (define-inline (-* a b . args)
   (and a b (if (null? args) (- a b) (apply -* (- a b) args))))
 (define-inline (min* a b) (if a (if b (min a b) a) b))
+
+;; Recurse to the system's writer to handle objects other than
+;; lists and vectors.  We want to pass down the controls (for
+;; print-base etc.), but the system's writer directly recurse into
+;; %pretty-print if print-pretty is true, causing infinite loop.
+;; So we drop pretty-print.  It is, however, 
+(define (rec-writer c)
+  (let ([w  (~ c'writer)]
+        [c2 (write-controls-copy (~ c'controls) :pretty #f)])
+    (^x (w x c2))))
 
 ;; scan obj to find out shared structure and mark it in rp-shared.
 (define (scan-shared! obj level len c)
@@ -170,7 +179,7 @@
 ;; layout :: (Obj, Integer, Context) -> Layouter
 (define (layout obj level c)
   (cond [(obj-label obj c) (layout-ref obj c)]
-        [(simple-obj? obj) (layout-simple (write-to-string obj (rp-writer c)))]
+        [(simple-obj? obj) (layout-simple (write-to-string obj (rec-writer c)))]
         [(>=* level (rp-level c)) (layout-simple "#")]
         [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
 
@@ -206,7 +215,7 @@
                      (#/[suf]\d+/ (x->string (class-name (class-of obj)))))
            (layout-list (sprefix obj (format "#~a(" tag) c) (mapi rec obj) c))]
         [else
-         (layout-simple (sprefix obj (write-to-string obj (rp-writer c)) c))]))
+         (layout-simple (sprefix obj (write-to-string obj (rec-writer c)) c))]))
 
 ;; :: Layouter
 (define dots (^[w m] '("...." . 4)))
