@@ -1,3 +1,8 @@
+2017-08-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/console.scm, lib/text/line-edit.scm: Incorporated patches
+	  from @Hamayama to support various Windows console supports.
+
 2017-08-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-module-common): Fix binding check on
