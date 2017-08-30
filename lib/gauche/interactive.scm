@@ -268,7 +268,7 @@
 
 ;; <write-controls> used for the printer.
 (define-constant *default-controls*
-  (make-write-controls :length 50 :level 10))
+  (make-write-controls :length 50 :level 10 :width 79))
 (define *controls* *default-controls*)
 
 (define (%printer . exprs)
