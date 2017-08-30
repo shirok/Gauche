@@ -291,10 +291,19 @@
 (define-method show-cursor ((con <vt100>)) (putstr con "\x1b;[?25h"))
 
 ;; Move cursor; if cursor is already top or bottom, scroll.
-(define-method cursor-down/scroll-up ((con <vt100>))
-  (putstr con "\x1b;D"))
-(define-method cursor-up/scroll-down ((con <vt100>))
-  (putstr con "\x1b;M"))
+;; If optional arguments are specified, these methods return
+;; the difference of the cursor position y.
+;; NB: full-column-flag is a dummy argument for compatibility with
+;; <windows-console>.
+(define-method cursor-down/scroll-up ((con <vt100>)
+                                      :optional (y #f) (height #f)
+                                      (full-column-flag #f))
+  (putstr con "\x1b;D")
+  (if (and y height (>= y (- height 1))) 0 1))
+(define-method cursor-up/scroll-down ((con <vt100>)
+                                      :optional (y #f))
+  (putstr con "\x1b;M")
+  (if (and y (<= y 0)) 0 -1))
 
 ;; No portable way to directly query it, so we take a kind of heuristic approach.
 (define-method query-screen-size ((con <vt100>))

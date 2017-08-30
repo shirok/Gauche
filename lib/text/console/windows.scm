@@ -292,14 +292,35 @@
           (move-cursor-to con (- y2 1) x1))
         ))))
 
-(define-method cursor-down/scroll-up ((con <windows-console>))
-  (ensure-bottom-room con)
-  (receive (y x) (query-cursor-position con)
-    (move-cursor-to con (+ y 1) x)))
+(define-method cursor-down/scroll-up ((con <windows-console>)
+                                      :optional (y #f) (height #f)
+                                      (full-column-flag #f))
+  ;; When windows ime is on, a full column wrapping
+  ;; causes one more line scroll-up.
+  ;; So we must deal with this problem.
+  (ensure-bottom-room con full-column-flag)
 
-(define-method cursor-up/scroll-down ((con <windows-console>))
-  (receive (y x) (query-cursor-position con)
-    (move-cursor-to con (max (- y 1) 0) x)))
+  ;; move cursor to the next line
+  (receive (y1 x1) (query-cursor-position con)
+    (move-cursor-to con (+ y1 1) x1))
+
+  ;; We have to make a room on the last line of console,
+  ;; because windows ime overwrites the last line and causes
+  ;; a system error.
+  (ensure-bottom-room con full-column-flag)
+
+  ;; return the difference of the cursor position y
+  (receive (y2 x2) (query-cursor-position con)
+    (if y (- y2 y) 1)))
+
+(define-method cursor-up/scroll-down ((con <windows-console>)
+                                      :optional (y #f))
+  ;; move cursor to the previous line
+  (receive (y1 x1) (query-cursor-position con)
+    (move-cursor-to con (max (- y1 1) 0) x1))
+
+  ;; return the difference of the cursor position y
+  (if (and y (<= y 0)) 0 -1))
 
 (define-method query-screen-size ((con <windows-console>))
   (let1 cinfo (sys-get-console-screen-buffer-info (get-ohandle))

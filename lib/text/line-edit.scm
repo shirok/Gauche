@@ -65,6 +65,11 @@
    (prompt  :init-keyword :prompt :init-value "")
    (keymap  :init-keyword :keymap :init-form (default-keymap))
    (input-continues :init-keyword :input-continues :init-form #f)
+   ;; for wide characters support
+   (wide-char-disp-width :init-keyword :wide-char-disp-width :init-value 2)
+   (wide-char-pos-width  :init-keyword :wide-char-pos-width  :init-value 2)
+   (surrogate-char-disp-width :init-keyword :surrogate-char-disp-width :init-value 2)
+   (surrogate-char-pos-width  :init-keyword :surrogate-char-pos-width  :init-value 2)
 
    ;; Following slots are private.
    (initpos-y)
@@ -231,87 +236,132 @@
   (when (> (~ ctx'initpos-x) 0)
     (putstr (~ ctx'console) (make-string (~ ctx'initpos-x) #\.))))
 
-;; TODO: Mind char-width.
-;; Calculate cursor location of the buffer position, considering
-;; tab expansion & newlines.
-;; Returns y and x.  assuming we know cursor is inside screen.
-(define (current-buffer-cursor-position ctx buffer)
-  (let ([g (gap-buffer->generator buffer)]
-        [width (~ ctx'screen-width)]
-        [start-y (~ ctx'initpos-y)]
-        [start-x (~ ctx'initpos-x)]
-        [buffer-pos (gap-buffer-pos buffer)])
-    (let loop ([n 0] ; character count
-               [y start-y]
-               [x start-x])
-      (cond [(= n buffer-pos) (values y x)]
-            [(= x width) (loop n (+ y 1) 0)]
-            [else
-             (case (g)
-               [(#\tab) (loop (+ n 1) y (* (quotient (+ x 8) 8) 8))]
-               [(#\newline) (loop (+ n 1) (+ y 1) (~ ctx'initpos-x))]
-               [else (loop (+ n 1) y (+ x 1))])]))))  
-
-;; TODO: Mind char-width.
+;; TODO: Mind char-width correctly.
 (define (redisplay ctx buffer)
-  ;; generator that handles tab expansion
-  ;; generate (<char> . <pos>) where <pos> is the input position, or
-  ;; #f if <char> is expanded.
-  (define (gen/tab g start-column)
-    (gbuffer-filter (^[ch col&pos]
-                      (match-let1 (col . pos) col&pos
-                        (if (eqv? ch #\tab)
-                          (let1 nextcol (* (quotient (+ col 8) 8) 8)
-                            (values (cons (cons #\space pos)
-                                          (make-list (- nextcol col 1)
-                                                     (cons #\space #f)))
-                                    (cons nextcol (+ pos 1))))
-                          (values (list (cons ch pos))
-                                  (cons (+ col 1) (+ pos 1))))))
-                    (cons start-column 0) g))
+  (define (get-tab-width x) (- 8 (modulo x 8)))
+  (define (make-get-char-width-proc wide-char-width surrogate-char-width)
+    (^[ch x]
+      (let1 chcode (char->integer ch)
+        (cond
+         [(eqv? ch #\tab)
+          (get-tab-width x)]
+         [(and (>= chcode 0) (<= chcode #x7f))
+          1]
+         [(>= chcode #x10000)
+          (cond-expand
+           [gauche.ces.utf8
+            surrogate-char-width]
+           [else
+            wide-char-width])]
+         [else
+          wide-char-width]))))
+  (define get-char-pos-width
+    (make-get-char-width-proc (~ ctx'wide-char-pos-width)
+                              (~ ctx'surrogate-char-pos-width)))
+  (define get-char-disp-width
+    (make-get-char-width-proc (~ ctx'wide-char-disp-width)
+                              (~ ctx'surrogate-char-disp-width)))
 
-  (let ([con (~ ctx'console)]
-        [y   (~ ctx'initpos-y)]
-        [x   (~ ctx'initpos-x)]
-        [w   (~ ctx'screen-width)]
-        [h   (~ ctx'screen-height)]
-        [sel (selected-range ctx buffer)]
-        [oparen (buffer-find-matching-paren-on-cursor buffer)])
-    (define g (gen/tab (gap-buffer->generator buffer) x))
-    ;; NB: If multiline chunk exceeds screen height, we skip the region
-    ;; where y becomes negative.
-    (move-cursor-to con (max y 0) x)
-    (clear-to-eos con)
+  ;; check a initial position
+  (if (< (~ ctx'initpos-y) 0)
+    (set! (~ ctx'initpos-y) 0))
+
+  (let* ([con (~ ctx'console)]
+         [y   (~ ctx'initpos-y)]
+         [x   (~ ctx'initpos-x)]
+         [w   (~ ctx'screen-width)]
+         [h   (~ ctx'screen-height)]
+         [sel (selected-range ctx buffer)]
+         [oparen (buffer-find-matching-paren-on-cursor buffer)]
+         [oldattr '(#f #f)]
+         [newattr '(#f #f)]
+         [disp-x x]
+         [g   (gap-buffer->generator buffer)]
+         [pos (gap-buffer-pos buffer)]
+         [pos-x  x]
+         [pos-y  y]
+         [pos-set-flag (= pos 0)]
+         [maxy   #f])
+
+    (define (display-area?)
+      (and (>= y 0) (or (not maxy) (<= y maxy))))
+
+    (define (line-wrapping disp-x1 w :optional (full-column-flag #f))
+      (when (>= disp-x1 w)
+        (set! x      0)
+        (set! disp-x 0)
+        (cond
+         [(display-area?)
+          (move-cursor-to con y 0)
+
+          ;; move cursor to the next line
+          (let1 dy (cursor-down/scroll-up con y h full-column-flag)
+            (set! y (+ y dy))
+            (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- dy 1)))
+            (when pos-set-flag
+              (set! pos-y (+ pos-y (- dy 1)))
+              ;; check a cursor position for clipping a display area
+              (when (<= pos-y 0)
+                (set! pos-y 0)
+                (set! maxy  (- h 2)))
+              ))
+
+          ]
+         [else
+          (inc! y)
+          ])))
+
     (reset-character-attribute con)
-    (let loop ([y y] [x x] [attr '(#f #f)])
-      (glet1 ch&pos (g)
-        (match-let1 (ch . pos) ch&pos
-          (define newattr (current-char-attr pos sel oparen))
-          (switch-char-attr-when-needed con attr newattr)
-          (cond
-           [(= x w)
-            (if (= y (- h 1))
-              (begin (dec! (~ ctx'initpos-y))
-                     (cursor-down/scroll-up con))
-              (inc! y))
-            (when (>= y 0)
-              (move-cursor-to con y 0)
-              (putch con ch)
-              (move-cursor-to con y 1))
-            (loop y 1 newattr)]
-           [(eqv? ch #\newline) ; works as if CR+LF
-            (if (= y (- h 1))
-              (begin (dec! (~ ctx'initpos-y))
-                     (cursor-down/scroll-up con))
-              (inc! y))
-            (when (>= y 0)
-              (move-cursor-to con y 0)
-              (show-secondary-prompt ctx))
-            (loop y (~ ctx'initpos-x) newattr)]
-           [else (when (>= y 0) (putch con ch))
-                 (loop y (+ x 1) newattr)])))))
-  (receive (cy cx) (current-buffer-cursor-position ctx buffer)
-    (move-cursor-to (~ ctx'console) cy cx)))
+    (move-cursor-to con y 0)
+    (show-prompt ctx)
+    (clear-to-eos con)
+    (let loop ([n 0])
+      (glet1 ch (g)
+
+        ;; set character attributes
+        (set! newattr (current-char-attr n sel oparen))
+        (switch-char-attr-when-needed con oldattr newattr)
+        (set! oldattr newattr)
+
+        ;; display a character
+        (case ch
+          [(#\newline)]
+          [(#\tab)
+           (when (display-area?)
+             (let1 tw (min (get-tab-width disp-x) (- w disp-x))
+               (move-cursor-to con y x)
+               (putstr con (make-string tw #\space))))]
+          [else
+           ;; wide characters need a check of line wrapping before
+           ;; displaying them
+           (line-wrapping (+ disp-x (get-char-disp-width ch disp-x)) (+ w 1))
+           (when (display-area?)
+             (move-cursor-to con y x)
+             (putch con ch))])
+
+        ;; line wrapping
+        (set! x      (+ x      (get-char-pos-width  ch x)))
+        (set! disp-x (+ disp-x (get-char-disp-width ch disp-x)))
+        (case ch
+          [(#\newline)
+           (line-wrapping w w)
+           (when (display-area?)
+             (switch-char-attr-when-needed con newattr '(#f #f))
+             (show-secondary-prompt ctx)
+             (switch-char-attr-when-needed con '(#f #f) newattr))
+           (set! x      (~ ctx'initpos-x))
+           (set! disp-x x)]
+          [else
+           (line-wrapping disp-x w #t)])
+
+        ;; set a cursor position
+        (when (= pos (+ n 1))
+          (set! pos-set-flag #t)
+          (set! pos-x x)
+          (set! pos-y y))
+
+        (loop (+ n 1))))
+    (move-cursor-to con pos-y pos-x)))
 
 (define (current-char-attr pos sel oparen)
   (cond-list
