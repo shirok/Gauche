@@ -72,7 +72,6 @@
 ;; For now we just require one argument.
 
 (define (ed path-or-proc :key (editor #f) (load-after 'ask))
-  (consume-remaining-whitespaces)
   (if-let1 target (ed-pick-file path-or-proc)
     (let* ([filename (car target)]
            [lineno   (cadr target)]
@@ -104,20 +103,6 @@
     ;; much useful since that won't contain the definition.  So we ignore it.
     (and (file-exists? (car loc)) loc)))
 (define-method ed-pick-file ((fn <top>)) #f)
-
-;; internal
-;; Consume any whitespaces and a newline in the current input if any;
-;; so that when we ask a user next question we can read user's input.
-;; NB: This may fail to work if the current input port is cascaded,
-;; e.g. with a ces-conversion port.
-(define (consume-remaining-whitespaces)
-  (let loop ()
-    (when (char-ready?)
-      (let1 c (peek-char)
-        (case c
-          [(#\space) (read-char) (loop)]
-          [(#\newline) (read-char)]
-          [else #t])))))
 
 ;; internal
 ;; NB: If specified editor isn't actually name an executable, we let
