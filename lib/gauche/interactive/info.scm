@@ -230,6 +230,7 @@
     (dolist [l node&lines]
       (format #t "~va~a:~d\n" *search-entry-indent* " " (car l) (cadr l))))
   (match-let1 (key node&lines ...) entry
+    (set! node&lines (reverse node&lines))
     (if (> (string-length key) (- *search-entry-indent* 1))
       (begin (print key) (subsequent-lines node&lines))
       (begin (format #t "~va ~a:~d\n" (- *search-entry-indent* 1) key
