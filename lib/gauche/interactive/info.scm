@@ -67,7 +67,8 @@
           (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
             (hash-table-push! index #"<~(car p)>" (cdr p)))
           ($ hash-table-for-each index
-             (^[k v] (hash-table-put! index k (squash-entries v))))
+             ;; reverse v here so that earlier entry listed first
+             (^[k v] (hash-table-put! index k (squash-entries (reverse v)))))
           (make <repl-info>
             :info info :index index)))
     (^[] (force repl-info))))
@@ -173,9 +174,8 @@
     '()))
 
 (define (get-node&line entry-name)
-  (reverse
-   (or (hash-table-get (~ (get-info)'index) (x->string entry-name) #f)
-       (handle-ambiguous-name entry-name))))
+  (or (hash-table-get (~ (get-info)'index) (x->string entry-name) #f)
+      (handle-ambiguous-name entry-name)))
 
 (define (lookup&show key show)
   (match (get-node&line key)
