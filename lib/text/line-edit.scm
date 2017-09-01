@@ -46,6 +46,32 @@
 (define *kill-ring-size* 60)
 (define *history-size* 200)
 
+;; <wide-char-setting>
+;; Initializable slots:
+;;   mode    - specify the mode for determining widths of wide characters.
+;;             If 'Unicode is specified, character widths are determined
+;;             by East Asian Width of Unicode.
+;;             If 'Surrogate is specified, character widths are determined
+;;             by checking surrogate pairs of Unicode.
+;;             If 'Wide is specified, character widths are determined
+;;             by only character codes.
+;;             Otherwise, wide character support is disabled.
+;;   wide-char-width - a width of wide characters.
+;;   surrogate-char-width - a width of surrogate pair characters of Unicode.
+;;   ambiguous-char-width - a width of ambiguous width characters of Unicode.
+;;             To the above 3 slots, specify a multiple of the width of
+;;             half-width characters.
+;;   emoji-char-workaround - if this is not #f, emoji characters are
+;;             treated as wide characters.
+;;
+(define-class <wide-char-setting> ()
+  ((mode :init-keyword :mode :init-value 'Unicode)
+   (wide-char-width :init-keyword :wide-char-width :init-value 2)
+   (surrogate-char-width :init-keyword :surrogate-char-width :init-value 2)
+   (ambiguous-char-width :init-keyword :ambiguous-char-width :init-value 2)
+   (emoji-char-workaround :init-keyword :emoji-char-workaround :init-value #t)
+   ))
+
 ;; <line-edit-context>
 ;; Initializable slots:
 ;;   console - <console> object to use.  if omitted, make-default-console
@@ -61,30 +87,10 @@
 ;;             If the procedure returns #t, commit-or-newline inserts a
 ;;             newline to the buffer and enters multiline edit mode.
 ;;   tab-char-width - a tab character width.
-;;             Specify a multiple of the width of half-width characters.
-;;
-;;   wide-char-disp-mode - specify the mode for determining a display
-;;             width of wide characters.
-;;             If 'Unicode is specified, a character width is determined
-;;             by East Asian Width of Unicode.
-;;             If 'Surrogate is specified, a character width is determined
-;;             by checking surrogate pairs of Unicode.
-;;             If 'Wide is specified, a character width is determined
-;;             by only character codes.
-;;             Otherwise, wide character support is disabled.
-;;   wide-char-pos-mode - specify the mode for determining a cursor
-;;             movement width of wide characters.
-;;             Possible values are the same as wide-char-disp-mode.
-;;   wide-char-disp-width,
-;;   surrogate-char-disp-width,
-;;   ambiguous-char-disp-width - a character width for display.
-;;             Specify a multiple of the width of half-width characters.
-;;   wide-char-pos-width,
-;;   surrogate-char-pos-width,
-;;   ambiguous-char-pos-width - a character width for cursor movement.
-;;             Specify a multiple of the width of half-width characters.
-;;   emoji-char-workaround - if this is not #f, emoji characters are
-;;             treated as wide characters.
+;;   wide-char-disp-setting - <wide-char-setting> object to configure
+;;             a wide character setting for display.
+;;   wide-char-pos-setting - <wide-char-setting> object to configure
+;;             a wide character setting for cursor movement.
 ;;
 (define-class <line-edit-context> ()
   ((console :init-keyword :console :init-form (make-default-console))
@@ -92,16 +98,10 @@
    (keymap  :init-keyword :keymap :init-form (default-keymap))
    (input-continues :init-keyword :input-continues :init-form #f)
    (tab-char-width :init-keyword :tab-char-width :init-value 8)
-   ;; for wide characters support
-   (wide-char-disp-mode :init-keyword :wide-char-disp-mode :init-value 'Unicode)
-   (wide-char-pos-mode  :init-keyword :wide-char-pos-mode  :init-value 'Unicode)
-   (wide-char-disp-width :init-keyword :wide-char-disp-width :init-value 2)
-   (wide-char-pos-width  :init-keyword :wide-char-pos-width  :init-value 2)
-   (surrogate-char-disp-width :init-keyword :surrogate-char-disp-width :init-value 2)
-   (surrogate-char-pos-width  :init-keyword :surrogate-char-pos-width  :init-value 2)
-   (ambiguous-char-disp-width :init-keyword :ambiguous-char-disp-width :init-value 2)
-   (ambiguous-char-pos-width  :init-keyword :ambiguous-char-pos-width  :init-value 2)
-   (emoji-char-workaround :init-keyword :emoji-char-workaround :init-value #t)
+   (wide-char-disp-setting :init-keyword :wide-char-disp-setting
+                           :init-form (make <wide-char-setting>))
+   (wide-char-pos-setting :init-keyword :wide-char-pos-setting
+                          :init-form (make <wide-char-setting>))
 
    ;; Following slots are private.
    (initpos-y)
@@ -273,66 +273,44 @@
   (define tab-char-width (~ ctx'tab-char-width))
   (min (- w x) (- tab-char-width (modulo x tab-char-width))))
 
-;; Make a procedure to get a character width
-(define-syntax make-get-char-width-proc
-  (syntax-rules ()
-    [(_ wide-char-mode-prop
-        wide-char-width-prop
-        surrogate-char-width-prop
-        ambiguous-char-width-prop)
-     (^[ctx ch x w]
-       (define wide-char-mode        (~ ctx wide-char-mode-prop))
-       (define wide-char-width       (~ ctx wide-char-width-prop))
-       (define surrogate-char-width  (~ ctx surrogate-char-width-prop))
-       (define ambiguous-char-width  (~ ctx ambiguous-char-width-prop))
-       (define emoji-char-workaround (~ ctx'emoji-char-workaround))
-       (define chcode (char->integer ch))
-       (cond
-        [(eqv? ch #\tab)
-         (get-tab-char-width ctx x w)]
-        [(<= 0 chcode #x7f)
-         1]
+;; Get a character width
+(define (get-char-width wide-char-setting ch)
+  (define wide-char-mode        (~ wide-char-setting'mode))
+  (define wide-char-width       (~ wide-char-setting'wide-char-width))
+  (define surrogate-char-width  (~ wide-char-setting'surrogate-char-width))
+  (define ambiguous-char-width  (~ wide-char-setting'ambiguous-char-width))
+  (define emoji-char-workaround (~ wide-char-setting'emoji-char-workaround))
+  (define chcode (char->integer ch))
+  (cond
+   [(<= 0 chcode #x7f)
+    1]
+   [else
+    (cond-expand
+     [gauche.ces.utf8
+      (case wide-char-mode
+        [(Unicode)
+         (if (and emoji-char-workaround
+                  (<= #x1f000 chcode #x1ffff))
+           wide-char-width
+           (case (char-east-asian-width ch)
+             [(A)      ambiguous-char-width]
+             [(F W)    wide-char-width]
+             [(H N Na) 1]
+             [else     ambiguous-char-width]))]
+        [(Surrogate)
+         (if (>= chcode #x10000)
+           surrogate-char-width
+           wide-char-width)]
+        [(Wide)
+         wide-char-width]
         [else
-         (cond-expand
-          [gauche.ces.utf8
-           (case wide-char-mode
-             [(Unicode)
-              (if (and emoji-char-workaround
-                       (<= #x1f000 chcode #x1ffff))
-                wide-char-width
-                (case (char-east-asian-width ch)
-                  [(A)      ambiguous-char-width]
-                  [(F W)    wide-char-width]
-                  [(H N Na) 1]
-                  [else     ambiguous-char-width]))]
-             [(Surrogate)
-              (if (>= chcode #x10000)
-                surrogate-char-width
-                wide-char-width)]
-             [(Wide)
-              wide-char-width]
-             [else
-              1])]
-          [else
-           (case wide-char-mode
-             [(Unicode Surrogate Wide)
-              wide-char-width]
-             [else
-              1])])]))]))
-
-;; Get a character width for display
-(define get-char-disp-width (make-get-char-width-proc
-                             'wide-char-disp-mode
-                             'wide-char-disp-width
-                             'surrogate-char-disp-width
-                             'ambiguous-char-disp-width))
-
-;; Get a character width for cursor movement
-(define get-char-pos-width (make-get-char-width-proc
-                            'wide-char-pos-mode
-                            'wide-char-pos-width
-                            'surrogate-char-pos-width
-                            'ambiguous-char-pos-width))
+         1])]
+     [else
+      (case wide-char-mode
+        [(Unicode Surrogate Wide)
+         wide-char-width]
+        [else
+         1])])]))
 
 (define (redisplay ctx buffer)
 
@@ -394,24 +372,7 @@
         (switch-char-attr-when-needed con oldattr newattr)
         (set! oldattr newattr)
 
-        ;; display a character
-        (case ch
-          [(#\newline)]
-          [(#\tab)
-           (when (display-area?)
-             (move-cursor-to con y x)
-             (putstr con (make-string (get-tab-char-width ctx disp-x w) #\space)))]
-          [else
-           ;; wide characters need a check of line wrapping before
-           ;; displaying them
-           (line-wrapping (+ disp-x (get-char-disp-width ctx ch disp-x w)) (+ w 1))
-           (when (display-area?)
-             (move-cursor-to con y x)
-             (putch con ch))])
-
-        ;; line wrapping
-        (set! x      (+ x      (get-char-pos-width  ctx ch x      w)))
-        (set! disp-x (+ disp-x (get-char-disp-width ctx ch disp-x w)))
+        ;; display a character and do line wrapping
         (case ch
           [(#\newline)
            (line-wrapping w w)
@@ -421,8 +382,26 @@
              (switch-char-attr-when-needed con '(#f #f) newattr))
            (set! x      (~ ctx'initpos-x))
            (set! disp-x x)]
+          [(#\tab)
+           (let1 tw (get-tab-char-width ctx disp-x w)
+             (when (display-area?)
+               (move-cursor-to con y x)
+               (putstr con (make-string tw #\space)))
+             (set! x      (+ x      tw))
+             (set! disp-x (+ disp-x tw))
+             (line-wrapping disp-x w #t))]
           [else
-           (line-wrapping disp-x w #t)])
+           (let ([dw (get-char-width (~ ctx'wide-char-disp-setting) ch)]
+                 [pw (get-char-width (~ ctx'wide-char-pos-setting)  ch)])
+             ;; wide characters need a check of line wrapping before
+             ;; displaying them
+             (if (> dw 1) (line-wrapping (+ disp-x dw) (+ w 1)))
+             (when (display-area?)
+               (move-cursor-to con y x)
+               (putch con ch))
+             (set! x      (+ x      pw))
+             (set! disp-x (+ disp-x dw))
+             (line-wrapping disp-x w #t))])
 
         ;; set a cursor position
         (when (= pos (+ n 1))
