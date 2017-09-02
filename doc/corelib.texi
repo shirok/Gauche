@@ -11680,7 +11680,50 @@ Returns all the keys or values of hash table @var{ht} in a list,
 @subheading 集合としてのハッシュテーブル
 @c COMMON
 
+@defun hash-table-compare-as-sets ht1 ht2 :optional value=? fallback
+A hash table can be viewed as a set of pairs of key and value.
+This procedure compares two hash tables @var{ht1} and @var{ht2} as such
+sets.
 
+The key comparators of two tables must match (in terms of @code{equal?}
+of the comparators).  Otherwise, an error is signaled.
+
+Two elements of the set are equal to each other iff their keys match
+with the equality predicate of the key comparator, and their values
+match with @var{value=?} procedure.  If omitted, @var{equal?} is
+used for @var{value=?}
+
+There can be four cases.
+@itemize
+@item
+If @var{ht1} is a pure subset of @var{ht2}, returns -1 (@var{ht1} is smaller
+than @var{ht2}).
+@item
+If @var{ht2} is a pure subset of @var{ht1}, returns 1 (@var{ht1} is greater
+than @var{ht2}).
+@item
+If @var{ht1} and @var{ht2} contains exactly the same elements,
+returns 0 (@var{ht1} equals to @var{ht2}).
+@item
+Neither @var{ht1} nor @var{ht2} is a subset of another.  In this case,
+@var{fallback} is returned if it is given, or an error is thrown.
+@end itemize
+@end defun
+
+@defun hash-table=? value-cmpr ht1 ht2
+[R7RS hash-table]
+This also compares two hash tables @var{ht1} and @var{ht2} as sets,
+and returns true iff two are the same.  That is, every element in @var{ht1}
+is also in @var{ht2} and vice versa.
+
+Two element are the same iff their keys are the same in terms of
+the equality predicate of the tables' key comparator, and their values
+are the same in terms of the equality predicate of a comparator
+@var{value-cmpr}.
+
+It is an error if @var{ht1} and @var{ht2} has different key comparators.
+See also @code{hash-table-compare-as-sets} above.
+@end defun
 
 
 @c ----------------------------------------------------------------------
