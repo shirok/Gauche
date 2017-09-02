@@ -49,6 +49,7 @@ DESTDIR  =
 CC       = @CC@
 AR       = @AR@
 LIBS     = @LIBS@
+LN_S     = @LN_S@
 CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS  = @LDFLAGS@
@@ -82,8 +83,10 @@ RELINK    = TARGETLIB=$(TARGETLIB) $(CCLD) $(CFLAGS) $(RPATH_REAL) -L. $(LDFLAGS
 INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 POSTBUILD   = TARGETLIB=`pwd` DESTDIR= $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
-POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
-PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT)
+POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT) ; \
+              TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
+PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT); \
+               TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT)
 
 PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 
@@ -125,10 +128,11 @@ SITE_SCM_DIR          = $(GAUCHE_DATA_DIR)/site/lib
 SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@host@
 ARCH = @host@
 
-# targetlib is given when we relink the final version of gosh to embed
-# the path to libgauche.  Usually it is LIB_INSTALL_DIR, but under
-# certain circumstances (e.g. MacOSX framework build) it may be overridden.
-TARGETLIB=$(LIB_INSTALL_DIR)
+# TARGETLIB is given when we relink the final version of gosh to embed
+# the path to libgauche.  Usually it is ARCH_INSTALL_DIR (not LIB_INSTALL_DIR,
+# so that we can keep muliple versions of gosh coexist).   The variable
+# may be overridden in certain circumstances (e.g. MacOSX framework build).
+TARGETLIB=$(ARCH_INSTALL_DIR)
 
 INSTALL_HEADERS = gauche.h \
 	../gc/include/gc.h ../gc/include/gc_allocator.h \

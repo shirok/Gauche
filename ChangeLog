@@ -1,3 +1,13 @@
+2017-09-02  shiro  <shiro@acm.org>
+
+	* configure.ac, src/Makefile.in: Link gosh aganist
+	  $(ARCH_INSTALL_DIR)/libgauche instead of $(LIB_INSTALL_DIR)'s.
+	  The former isn't overwritten by installation of other versions of
+	  Gauche, so $(ARCH_INSTALL_DIR)/gosh stays runnable when
+	  multiple versions of Gauche are installed.
+	  NB: We still install libgauche to $(LIB_INSTALL_DIR) for linking
+	  extension modules and applications.
+
 2017-08-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/console.scm, lib/text/line-edit.scm: Incorporated patches
