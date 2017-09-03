@@ -145,9 +145,11 @@
         (set! ces 'CP932))]
      [else])
     ;; check a ces conversion
-    (if stdin-flag
-      (check-ces ces ces2 ces)
-      (check-ces ces2 ces ces))
+    (guard (e [(<error> e)
+               (set! conv #f)])
+      (if stdin-flag
+        (check-ces ces ces2 ces)
+        (check-ces ces2 ces ces)))
     ;; check a redirection
     (if rdir (set! use-api #f))
     ;; return parameters

@@ -333,20 +333,20 @@
     ;; wide character settings for text.line-edit
     (if-let1 ctx %line-edit-ctx
       (case (sys-get-console-output-cp)
-        [(932)
-         (set! (~ ctx 'wide-char-disp-setting 'mode) 'Surrogate)
-         (set! (~ ctx 'wide-char-pos-setting  'mode) 'Surrogate)
-         (set! (~ ctx 'wide-char-disp-setting 'wide-char-width) 2)
-         (set! (~ ctx 'wide-char-pos-setting  'wide-char-width) 2)
-         (set! (~ ctx 'wide-char-disp-setting 'surrogate-char-width) 4)
-         (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 4)]
         [(65001)
          (set! (~ ctx 'wide-char-disp-setting 'mode) 'Surrogate)
          (set! (~ ctx 'wide-char-pos-setting  'mode) 'Surrogate)
          (set! (~ ctx 'wide-char-disp-setting 'wide-char-width) 2)
          (set! (~ ctx 'wide-char-pos-setting  'wide-char-width) 1)
          (set! (~ ctx 'wide-char-disp-setting 'surrogate-char-width) 2)
-         (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 2)])))]
+         (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 2)]
+        [else ; 932 etc.
+         (set! (~ ctx 'wide-char-disp-setting 'mode) 'Surrogate)
+         (set! (~ ctx 'wide-char-pos-setting  'mode) 'Surrogate)
+         (set! (~ ctx 'wide-char-disp-setting 'wide-char-width) 2)
+         (set! (~ ctx 'wide-char-pos-setting  'wide-char-width) 2)
+         (set! (~ ctx 'wide-char-disp-setting 'surrogate-char-width) 4)
+         (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 4)])))]
  [else])
 
 ;;;
