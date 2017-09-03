@@ -247,17 +247,19 @@
 ;; than the screen height.  Once we complete text.line-edit, we make
 ;; the feature available through command-line options of gosh.
 
-(define-values (%prompter %reader)
-  (receive (r rl skipper)
+(define-values (%prompter %reader %line-edit-ctx)
+  (receive (r rl skipper ctx)
       (if (sys-getenv "GAUCHE_READ_EDIT")
         (make-editable-reader (^[] (default-prompt-string "$")))
-        (values #f #f #f))
-    (if (and r rl skipper)
+        (values #f #f #f #f))
+    (if (and r rl skipper ctx)
       (values (^[] #f)
-              (make-repl-reader r rl skipper))
+              (make-repl-reader r rl skipper)
+              ctx)
       (values (^[] (display (default-prompt-string)) (flush))
               (make-repl-reader read read-line
-                                consume-trailing-whitespaces)))))
+                                consume-trailing-whitespaces)
+              #f))))
 
 ;; error printing will be handled by the original read-eval-print-loop
 (define (%evaluator expr env)
@@ -302,6 +304,50 @@
         [prompter  (or prompter %prompter)])
     ((with-module gauche read-eval-print-loop)
      reader evaluator printer prompter)))
+
+;;;
+;;; for windows console
+;;;
+
+;; EXPERIMENTAL: windows console code page support.
+;; environment variable GAUCHE_WINDOWS_CONSOLE_CES enables to specify
+;; a ces (character encoding scheme) of windows console. (e.g. SJIS)
+;; if NONE is specified, no conversion is done.
+;; if this environment variable doesn't exist, the ces is automatically
+;; detected.
+;; if environment variable GAUCHE_WINDOWS_CONSOLE_API exists, windows api
+;; ReadConsole and WriteConsole are used.
+(cond-expand
+ [gauche.os.windows
+  (autoload gauche.interactive.windows wrap-windows-console-standard-ports)
+  (autoload os.windows sys-get-console-output-cp)
+  ;; check if we have a windows console.
+  (when (or (sys-isatty (standard-input-port))
+            (sys-isatty (standard-output-port))
+            (sys-isatty (standard-error-port)))
+    ;; wrap windows console standard ports
+    (let ([ces (sys-getenv "GAUCHE_WINDOWS_CONSOLE_CES")]
+          [api (sys-getenv "GAUCHE_WINDOWS_CONSOLE_API")])
+      (unless (and (string? ces) (string-ci=? ces "none"))
+        (wrap-windows-console-standard-ports 0 ces api)))
+    ;; wide character settings for text.line-edit
+    (if-let1 ctx %line-edit-ctx
+      (case (sys-get-console-output-cp)
+        [(932)
+         (set! (~ ctx 'wide-char-disp-setting 'mode) 'Surrogate)
+         (set! (~ ctx 'wide-char-pos-setting  'mode) 'Surrogate)
+         (set! (~ ctx 'wide-char-disp-setting 'wide-char-width) 2)
+         (set! (~ ctx 'wide-char-pos-setting  'wide-char-width) 2)
+         (set! (~ ctx 'wide-char-disp-setting 'surrogate-char-width) 4)
+         (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 4)]
+        [(65001)
+         (set! (~ ctx 'wide-char-disp-setting 'mode) 'Surrogate)
+         (set! (~ ctx 'wide-char-pos-setting  'mode) 'Surrogate)
+         (set! (~ ctx 'wide-char-disp-setting 'wide-char-width) 2)
+         (set! (~ ctx 'wide-char-pos-setting  'wide-char-width) 1)
+         (set! (~ ctx 'wide-char-disp-setting 'surrogate-char-width) 2)
+         (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 2)])))]
+ [else])
 
 ;;;
 ;;; Misc. setup
