@@ -180,6 +180,21 @@ void version(void)
     exit(0);
 }
 
+void invoke_other_version(const char *version, int argc, char **argv)
+{
+    static ScmObj invoke_other_version = SCM_UNDEFINED;
+    SCM_BIND_PROC(invoke_other_version, "%invoke-other-version",
+                  Scm_GaucheInternalModule());
+    ScmEvalPacket epkt;
+    Scm_Apply(invoke_other_version,
+              SCM_LIST2(SCM_MAKE_STR_COPYING(version),
+                        Scm_CStringArrayToList((const char**)argv, argc, 0)),
+              &epkt);
+    /* %invoke-other-version won't return.  If we're here,
+       we even failed to call it. */
+    Scm_Panic("Failed to call %invoke-other-version.  Installation problem?");
+}
+
 void further_options(const char *optarg)
 {
     ScmVM *vm = Scm_VM();
@@ -277,7 +292,7 @@ void feature_options(const char *optarg)
 int parse_options(int argc, char *argv[])
 {
     int c;
-    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:Vr:F:f:I:A:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:Vv:r:F:f:I:A:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
@@ -299,6 +314,12 @@ int parse_options(int argc, char *argv[])
         case 'E': /*FALLTHROUGH*/;
             pre_cmds = Scm_Acons(SCM_MAKE_CHAR(c),
                                  SCM_MAKE_STR_COPYING(optarg), pre_cmds);
+            break;
+        case 'v':
+            if (strcmp(optarg, GAUCHE_VERSION) != 0) {
+                invoke_other_version(optarg, argc, argv);
+                /*NOTREACHED*/
+            }
             break;
         case '-': break;
         case '?': usage(); break;

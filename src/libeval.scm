@@ -397,6 +397,34 @@
       (if (fixnum? r) r 70))))
 
 ;;;
+;;; Invoke other version of gosh
+;;;   This is called when gosh gets -vVERSION option.
+;;;
+(select-module gauche.internal)
+(define (%invoke-other-version version args)
+  ;; Note: We assume other versions of gauche is installed under the
+  ;; same exec_prefix: $exec_prefix/lib/gauche-ABIVERSION/VERSION/ARCH/
+  (let* ([prefix (sys-normalize-pathname
+                  (string-append (gauche-architecture-directory) "/../../..")
+                  :canonicalize #t)]
+         [globpath (string-append prefix "/gauche-*/" version "/"
+                                  (gauche-architecture) "/gosh")]
+         [goshes (glob globpath)]
+         ;; Remove -v option from args
+         [args (let loop ([args (cdr args)]
+                          [r '()])
+                 (cond [(null? args) (reverse r)]
+                       [(equal? (car args) "-v") (loop (cddr args) r)]
+                       [(#/^-v/ (car args)) (loop (cdr args) r)]
+                       [else (loop (cdr args) (cons (car args) r))]))])
+    (unless (pair? goshes)
+      (format (current-error-port)
+              "No installed Gauche with version ~a under ~a.\n"
+              version prefix)
+      (exit 1))
+    (sys-exec (car goshes) (cons (car goshes) args))))
+
+;;;
 ;;; System termination
 ;;;
 

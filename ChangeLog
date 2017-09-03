@@ -1,4 +1,12 @@
-2017-09-02  shiro  <shiro@acm.org>
+2017-09-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c, src/libeval.scm (%invoke-other-version):
+	  EXPERIMENTAL: Add -v VERSION option to gosh, which execs the
+	  specified version of gosh given that the version is also installed
+	  in parallel.  It is mainly for testing---invoking different version
+	  incurs overhead, so it shouldn't be used in production.
+
+2017-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/Makefile.in: Link gosh aganist
 	  $(ARCH_INSTALL_DIR)/libgauche instead of $(LIB_INSTALL_DIR)'s.
