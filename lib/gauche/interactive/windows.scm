@@ -123,9 +123,6 @@
 
 ;; get conversion parameters
 (define (get-conv-param rmode hdl ces use-api stdin-flag)
-  (define (check-ces ces1 ces2 ces-err)
-    (unless (ces-conversion-supported? ces1 ces2)
-      (errorf "ces \"~a\" is not supported" ces-err)))
   (let* ([rdir (redirected-handle? hdl)]
          [conv (if rdir (if (or (= rmode 2) (= rmode 3)) #t #f) #t)]
          [crlf (if rdir (if (or (= rmode 1) (= rmode 3)) #t #f) #f)]
@@ -134,9 +131,11 @@
     (unless ces
       (let1 cp (if stdin-flag (sys-get-console-cp) (sys-get-console-output-cp))
         (case cp
-          [(65001) (set! ces 'UTF-8)
-                   (set! use-api #t)]
-          [else    (set! ces (string->symbol (format "CP~d" cp)))])))
+          [(65001)
+           (set! ces 'UTF-8)
+           (set! use-api #t)]
+          [else
+           (set! ces (string->symbol (format "CP~d" cp)))])))
     ;; a workaroud for the yen mark conversion error
     (cond-expand
      [gauche.ces.sjis
@@ -145,13 +144,20 @@
         (set! ces 'CP932))]
      [else])
     ;; check a ces conversion
-    (guard (e [(<error> e)
-               (set! conv #f)])
-      (if stdin-flag
-        (check-ces ces ces2 ces)
-        (check-ces ces2 ces ces)))
+    (unless (if stdin-flag
+              (ces-conversion-supported? ces ces2)
+              (ces-conversion-supported? ces2 ces))
+      (set! conv #f))
+    ;; check gauche's encoding
+    (cond-expand
+     [gauche.ces.utf8]
+     [else
+      (set! use-api #f)])
     ;; check a redirection
     (if rdir (set! use-api #f))
+    ;; check a ces equivalent
+    (if (and (ces-equivalent? ces ces2) (not use-api))
+      (set! conv #f))
     ;; return parameters
     (values conv crlf hdl ces ces2 use-api)))
 
