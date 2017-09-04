@@ -465,6 +465,23 @@
   (let ([msglen (string-length msg)])
     (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
 
+;; On windows, current ports are useless to check a redirection.
+(define (not-redirected? type)
+  (cond-expand
+   [gauche.os.windows
+    (let1 port (ecase type
+                 [(stdin)  (standard-input-port)]
+                 [(stdout) (standard-output-port)]
+                 [(stderr) (standard-error-port)])
+      (or (sys-isatty port)
+          ((with-module gauche.internal %sys-mintty?) port)))]
+   [else
+    (let1 port (ecase type
+                 [(stdin)  (current-input-port)]
+                 [(stdout) (current-output-port)]
+                 [(stderr) (current-error-port)])
+      (sys-isatty port))]))
+
 (define (test-start msg)
   (set! *test-running* #t)
   (let* ([s (format #f "Testing ~a ... " msg)]
@@ -474,12 +491,12 @@
     (flush (current-error-port))
     (read-summary)
     (prepare-summary)
-    (when (and (sys-isatty (current-error-port))
-               (sys-isatty (current-output-port)))
+    (when (and (not-redirected? 'stderr)
+               (not-redirected? 'stdout))
       (newline (current-error-port))))
   (set! *discrepancy-list* '())
-  (unless (and (sys-isatty (current-error-port))
-               (sys-isatty (current-output-port)))
+  (unless (and (not-redirected? 'stderr)
+               (not-redirected? 'stdout))
     (let ([msglen (string-length msg)])
       (format #t "Testing ~a ~a\n" msg (make-string (max 5 (- 70 msglen)) #\=)))
     (flush))
@@ -500,7 +517,7 @@
         [o (current-output-port)]
         [exit-on-failure (get-keyword :exit-on-failure args #f)])
     (define (fmt . args)
-      (if (and (sys-isatty e) (sys-isatty o))
+      (if (and (not-redirected? 'stderr) (not-redirected? 'stdout))
         (apply format/ss o args)
         (begin (apply format/ss e args)
                (apply format/ss o args))))

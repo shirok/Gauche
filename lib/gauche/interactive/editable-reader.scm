@@ -45,7 +45,8 @@
 
 ;; Internal API, to be used by gauche.interactive.
 ;; Because of toplevel commands, we can't just provide alternative 'read'
-;; procedure.  Instead, this returns three procedures, one for 'read',
+;; procedure.  Instead, this returns three procedures and
+;; one <line-edit-context> object. three procedures are one for 'read',
 ;; one for 'read-line', and another for skipping trailing whitespaces.
 ;  They are suitable to be passed to make-repl-reader.
 ;; NB: Currently we assume we use default console.  Might be useful
@@ -70,8 +71,9 @@
               x))))
       (values (read-1 read)
               (read-1 read-line)
-              (^[] (consume-trailing-whitespaces buffer))))
-    (values #f #f #f)))                    ;no default console
+              (^[] (consume-trailing-whitespaces buffer))
+              ctx))
+    (values #f #f #f #f)))                  ;no default console
 
 ;; We have to handle both toplevel command (begins with comma, ends with
 ;; newline) and the complete sexp.
