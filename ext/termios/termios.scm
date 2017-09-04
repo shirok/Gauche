@@ -170,16 +170,17 @@
   [gauche.os.windows (use os.windows)]
   [else])
 
+ ;; Heuristics - check if we have a windows console.
+ (define (has-windows-console?)
+   (cond-expand
+    [gauche.os.windows
+     (or (sys-isatty (standard-input-port))
+         (sys-isatty (standard-output-port))
+         (sys-isatty (standard-error-port)))]
+    [else #f]))
+
  (cond-expand
   [gauche.os.windows
-   ;; Heuristics - check if we have a console, and it's not MSYS one.
-   (define (has-windows-console?)
-     ;; MSVCRT's isatty always returns 0 for mintty on MSYS
-     ;; (except for using winpty).
-     (or (not (sys-getenv "MSYSCON"))
-         (sys-isatty (standard-input-port))
-         (sys-isatty (standard-output-port))
-         (sys-isatty (standard-error-port))))
    ;; For mintty on MSYS - we don't want to depend on cygwin's dll,
    ;; but if we're running on MSYS, we're likely to have stty.
    ;; NB: It's better if we could use gauche.process and directly read
@@ -193,8 +194,7 @@
              (sys-system #"stty -g > ~tempfile")
              (with-input-from-file tempfile read-line))
          (sys-unlink tempfile))))]
-  [else ; not gauche.os.windows
-   (define (has-windows-console?) #f)])
+  [else])
 
  (define (without-echoing iport proc)
    (cond-expand
@@ -215,7 +215,7 @@
               (define (echo-on)
                 (sys-set-console-mode ihandle orig-mode))
               (unwind-protect (begin (echo-off) (proc iport)) (echo-on)))]
-           [(not (has-windows-console?))
+           [((with-module gauche.internal %sys-mintty?) iport)
             ;; We're dealing with mintty
             (let ()
               (define saved-attr (msys-get-stty))
@@ -262,7 +262,7 @@
  (define (with-terminal-mode port mode proc :optional (cleanup #f))
    (cond-expand
     [gauche.os.windows
-     (if (has-windows-console?)
+     (if (not ((with-module gauche.internal %sys-mintty?) port))
        (proc port) ; for windows console
        (let ()     ; for mintty on MSYS
          (define saved-attr (msys-get-stty))
