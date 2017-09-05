@@ -1820,10 +1820,13 @@ cache.
 
 @c EN
 The effect of cache isn't very visible in the above example.  You
-can insert some print stubs to see the cache is actually in action:
+can insert some print stubs to see the cache is actually in action,
+as the following example.
+Try read various files using @code{file->string/cached}.
 @c JP
-上の例そのままではキャッシュの効果が見え辛いですが、
-printスタブをいれて試してみると、
+上の例そのままではキャッシュの効果が見え辛いです。
+次の例の通り、printスタブをいれて、いろいろなファイルを
+@code{file->string/cached}で読んでみて下さい。
 いつキャッシュが実際にファイルの中身を取りにゆくかわかるでしょう。
 @c COMMON
 
