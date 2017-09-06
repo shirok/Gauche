@@ -309,27 +309,15 @@
 ;;; for windows console
 ;;;
 
-;; EXPERIMENTAL: windows console code page support.
-;; environment variable GAUCHE_WINDOWS_CONSOLE_CES enables to specify
-;; a ces (character encoding scheme) of windows console. (e.g. SJIS)
-;; if NONE is specified, no conversion is done.
-;; if this environment variable doesn't exist, the ces is automatically
-;; detected.
-;; if environment variable GAUCHE_WINDOWS_CONSOLE_API exists, windows api
-;; ReadConsole and WriteConsole are used.
+;; EXPERIMENTAL: windows console code page support for text.line-edit
+;; NB: ces (character encoding scheme) conversion is not implemented.
 (cond-expand
  [gauche.os.windows
-  (autoload gauche.interactive.windows wrap-windows-console-standard-ports)
   (autoload os.windows sys-get-console-output-cp)
   ;; check if we have a windows console.
   (when (or (sys-isatty (standard-input-port))
             (sys-isatty (standard-output-port))
             (sys-isatty (standard-error-port)))
-    ;; wrap windows console standard ports
-    (let ([ces (sys-getenv "GAUCHE_WINDOWS_CONSOLE_CES")]
-          [api (sys-getenv "GAUCHE_WINDOWS_CONSOLE_API")])
-      (unless (and (string? ces) (string-ci=? ces "none"))
-        (wrap-windows-console-standard-ports 0 ces api)))
     ;; wide character settings for text.line-edit
     (if-let1 ctx %line-edit-ctx
       (case (sys-get-console-output-cp)
