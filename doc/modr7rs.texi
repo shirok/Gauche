@@ -4493,7 +4493,6 @@ module when you're writing portable code.
 Srfi-125 also defines compatiblity procedures with srfi-69, although saying
 they're deprecated.  Those deprecated procedures are supported in this
 module, too.
-@end deftp
 
 The following procedures are the same as Gauche's built-in.
 @example
@@ -4507,6 +4506,8 @@ hash-table->alist   hash-table-union! hash-table-intersection!
 hash-table-differnce!                 hash-table-xor!
 @end example
 
+@xref{Hashtables}, for the description of those procedures.
+
 The following procedures are also provided as Gauche's built-in,
 but with @code{-r7} suffix.
 @example
@@ -4516,10 +4517,94 @@ hash-table-count   hash-table-map     hash-table-for-each
 hash-table-map!    hash-table-map->list
 hash-table-prune!
 @end example
+@end deftp
 
-@xref{Hashtables}, for the description of those procedures.
+@defun make-hash-table comparator arg @dots{}
+@defunx make-hash-table equal-proc hash-proc arg @dots{}
+[R7RS hash-table]
+@c MOD scheme.hash-table
+This enhances built-in @code{make-hash-table} with the second form,
+that takes two procedures instead of one comparator, as srfi-69.
 
+In the srfi-69 form, equal-proc is a procedure taking two keys
+to see if they are the same, and hash-proc is a procedure taking
+a key to calculate its hash value (nonnegative fixnum).
+The compatibility form is deprecated and should be avoided in the new code.
 
+The optional @var{arg} @var{dots} are ignored in Gauche.
+@end defun
+
+@defun hash-table cmpr key value @dots{}
+[R7RS hash-table]
+@c MOD scheme.hash-table
+This is the same as built-in @code{hash-table-r7} (@pxref{Hashtables}).
+
+Construct a new hash table with key-comparator @var{cmpr}.  It is
+populated by @var{key} @var{value} @dots{}, which is a list with
+keys and values appear alternatively.  It is an error if the length
+of key-value list is not even.
+
+Note that srfi-125 defines this procedure to return an immutable
+hash table if the implementation supports one.  Gauche doesn't provide
+immutable hash tables (we do have immutable map
+instead, @pxref{Immutable map}), but when you're writing a portable
+program, be careful not to modify the table returned by this procedure.
+@end defun
+
+@defun alist->hash-table alist cmpr arg @dots{}
+@defunx alist->hash-table equal-proc hash-proc cmpr arg @dots{}
+[R7RS hash-table]
+@c MOD scheme.hash-table
+This enhances built-in @code{alist->hash-table} with the second form,
+that takes two procedures instead of one comparator, as srfi-69.
+
+In the srfi-69 form, equal-proc is a procedure taking two keys
+to see if they are the same, and hash-proc is a procedure taking
+a key to calculate its hash value (nonnegative fixnum).
+The compatibility form is deprecated and should be avoided in the new code.
+
+The optional @var{arg} @var{dots} are ignored in Gauche.
+@end defun
+
+@defun hash-table-delete! ht key @dots{}
+[R7RS hash-table]
+@c MOD scheme.hash-table
+This is the same as built-in @code{hash-table-delete!-r7}.
+
+Deletes entries associated with the given @var{key}s from the
+table @var{ht}.  It is ok if @var{ht} doesn't have @var{key}.
+Returns the number of entries that are actually deleted.
+
+It differs from built-in @code{hash-table-delete!} in two points:
+The bulit-in one can take exactly one @var{key}, and returns
+a boolean indicating if the entry is actually deleted.
+@end defun
+
+@defun hash-table-intern! ht key failure
+[R7RS hash-table]
+@c MOD scheme.hash-table
+This is the same as built-in @code{hash-table-intern!-r7}.
+
+Search @var{key} in @var{ht}.  If it is found, returns the associated
+value.  If it is not found, call @var{failure} without artuments,
+and insert a new entry associating @var{key} and the value
+@var{failure} returns, and returns that new value.
+@end defun
+
+@defun hash-table-update! ht key updater :optional failure success
+[R7RS hash-table]
+@c MOD scheme.hash-table
+This is the same as built-in @code{hash-table-update!-r7}.
+
+@var{Updater} is a procedure that takes one argument,
+@var{failure} is a thunk, and @var{success} is a procedure
+that takes one argument.
+
+Works the same as follows, except maybe more efficiently.
+@example
+(hash-table-set! ht key (updater (hash-table-ref ht key failure success)))
+@end example
+@end defun
 
 
 @node R7RS immutable deques, R7RS generators, R7RS hash tables, R7RS large
