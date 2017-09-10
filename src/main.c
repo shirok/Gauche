@@ -718,6 +718,20 @@ int main(int ac, char **av)
         Scm_SelectModule(default_toplevel_module);
     }
 
+#if defined(GAUCHE_WINDOWS)
+    /* auto wrap windows console standard ports */
+    if (!test_mode) {
+        if (Scm_Require(SCM_MAKE_STR("os/windows/console/codepage"), 0, &lpak) < 0) {
+            /* error_exit(lpak.exception); */
+        } else {
+            Scm_ImportModule(SCM_CURRENT_MODULE(),
+                             SCM_INTERN("os.windows.console.codepage"), SCM_FALSE, 0);
+            Scm_EvalCString("(auto-wrap-windows-console-standard-ports)",
+                            SCM_OBJ(Scm_CurrentModule()), NULL);
+        }
+    }
+#endif /*defined(GAUCHE_WINDOWS)*/
+
     /* Following is the main dish. */
     if (scriptfile != NULL) exit_code = execute_script(scriptfile, args);
 #if !defined(GAUCHE_WINDOWS_NOCONSOLE)
