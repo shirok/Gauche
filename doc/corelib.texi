@@ -11725,6 +11725,33 @@ It is an error if @var{ht1} and @var{ht2} has different key comparators.
 See also @code{hash-table-compare-as-sets} above.
 @end defun
 
+@defun hash-table-union! ht1 ht2
+@defunx hash-table-intersection! ht1 ht2
+@defunx hash-table-difference! ht1 ht2
+@defunx hash-table-xor! ht1 ht2
+[R7RS hash-table]
+Perform set operations on two hashtables @var{ht1} and @var{ht2},
+and modify @var{ht1} to store the result.
+Note that these procedures only look at the keys for operation; if
+the values of the same key differ between @var{ht1} and @var{ht2},
+the value in @var{ht1} is taken.
+
+@itemize
+@item
+The union operation picks each entry that is in at least one of @var{ht1}
+or @var{ht2}.
+@item
+The intersection operation picks each entry that is both in @var{ht1} and
+@var{ht2}.
+@item
+The difference operation picks each entry that is in @var{ht1} but
+not in @var{ht2}.
+@item
+The xor operation picks each entry that is in only one of @var{ht1} or
+@var{ht2}, but not in both.
+@end itemize
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Treemaps, Weak pointers, Hashtables, Core library
