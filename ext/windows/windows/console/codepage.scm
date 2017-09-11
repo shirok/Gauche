@@ -101,7 +101,9 @@
         (if use-api
           (conv-puts-sub1 str/char hdl-type ces ces2 4096)
           (conv-puts-sub2 str/char port ces ces2))
-        (display str/char port)))))
+        (begin
+          (display str/char port)
+          (flush port))))))
 (define (conv-puts-sub1 str/char hdl-type ces ces2 maxchars)
   ;; windows api WriteConsole adjustment
   (define (sys-write-console-sub hdl str)
