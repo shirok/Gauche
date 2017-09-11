@@ -213,7 +213,7 @@
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_ERROR_HANDLE))))
     (make <windows-console-conversion-output-port>
-      :name "windows console conversion output error"
+      :name "windows console conversion error output"
       :putc (make-conv-puts (standard-error-port)
                             STD_ERROR_HANDLE ces use-api)
       :puts (make-conv-puts (standard-error-port)
