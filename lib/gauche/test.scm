@@ -468,9 +468,11 @@
 (define (not-redirected? port)
   (cond-expand
    [gauche.os.windows
-    ;; for MSYS (mintty)
     (or (sys-isatty port)
-        ((with-module gauche.internal %sys-mintty?) port))]
+        ;; for MSYS (mintty)
+        ((with-module gauche.internal %sys-mintty?) port)
+        ;; for windows console conversion ports
+        (#/^windows console conversion/ (~ port'name)))]
    [else
     (sys-isatty port)]))
 

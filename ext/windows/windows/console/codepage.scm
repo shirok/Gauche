@@ -33,7 +33,6 @@
 
 (define-module os.windows.console.codepage
   (use gauche.uvector)
-  (use gauche.sequence)
   (use os.windows)
   (autoload gauche.charconv ces-convert ces-conversion-supported?
             ces-equivalent?)
@@ -41,6 +40,12 @@
   (export wrap-windows-console-standard-ports
           auto-wrap-windows-console-standard-ports))
 (select-module os.windows.console.codepage)
+
+;; windows console conversion port class
+(define-class <windows-console-conversion-input-port> (<virtual-input-port>)
+  ((name :init-keyword :name :init-value "")))
+(define-class <windows-console-conversion-output-port> (<virtual-output-port>)
+  ((name :init-keyword :name :init-value "")))
 
 ;; check a standard handle redirection
 (define (redirected-handle? hdl)
@@ -64,7 +69,7 @@
 (define (conv-getc-sub port hdl-type ces ces2 use-api
                        maxbytes extrabytes readbytes)
   (rlet1 chr #\null
-    ;; we have to allocate extra bytes because ReadConsole might writes
+    ;; we have to allocate extra bytes because ReadConsole might write
     ;; extra 1 byte more than a specified buffer size.
     (let ([buf (make-u8vector (+ maxbytes extrabytes) 0)]
           [hdl (if use-api (sys-get-std-handle hdl-type) #f)])
@@ -102,24 +107,27 @@
   (define (sys-write-console-sub hdl str)
     (cond-expand
      [gauche.ces.utf8
-      ;; unicode version api needs a workaroud for the line wrapping of
+      ;; unicode version api needs a workaround for the line wrapping of
       ;; surrogate pair characters.
       (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
              [w     (+ 1 (- (~ cinfo'window.right)
                             (~ cinfo'window.left)))]
-             [i1    0])
-        (for-each-with-index
-         (^[i2 c]
-           (when (>= (char->integer c) #x10000)
-             (sys-write-console hdl (string-copy str i1 i2))
-             (set! i1 i2)
-             (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
-                    [x     (~ cinfo'cursor-position.x)]
-                    [y     (~ cinfo'cursor-position.y)])
-               (when (> x (- w 4))
-                 (sys-set-console-cursor-position hdl (- w 1) y)
-                 (sys-write-console hdl " ")))))
-         str)
+             [len   (string-length str)]
+             [i1    0]
+             [i2    0])
+        (let loop ([c (string-ref str 0)])
+          (when (>= (char->integer c) #x10000)
+            (sys-write-console hdl (string-copy str i1 i2))
+            (set! i1 i2)
+            (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
+                   [x     (~ cinfo'cursor-position.x)]
+                   [y     (~ cinfo'cursor-position.y)])
+              (when (> x (- w 4))
+                (sys-set-console-cursor-position hdl (- w 1) y)
+                (sys-write-console hdl " "))))
+          (inc! i2)
+          (if (< i2 len)
+            (loop (string-ref str i2))))
         (sys-write-console hdl (string-copy str i1)))]
      [else
       ;; ansi version api needs a ces conversion
@@ -141,9 +149,9 @@
 
 ;; get conversion parameters
 (define (get-conv-param hdl-type ces use-api)
-  (let* ([stdin-flag (eqv? hdl-type STD_INPUT_HANDLE)]
-         [conv       #t]
-         [ces2       (gauche-character-encoding)])
+  (let ([stdin-flag (eqv? hdl-type STD_INPUT_HANDLE)]
+        [conv       #t]
+        [ces2       (gauche-character-encoding)])
     ;; automatic detection of ces
     (unless ces
       (let1 cp (if stdin-flag
@@ -155,7 +163,7 @@
            (set! use-api #t)]
           [else
            (set! ces (string->symbol (format "CP~d" cp)))])))
-    ;; a workaroud for the yen mark conversion error
+    ;; workaround for the yen mark conversion error
     (cond-expand
      [gauche.ces.sjis
       (set! ces2 'CP932)
@@ -182,7 +190,8 @@
 (define (make-stdin-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_INPUT_HANDLE))))
-    (make <virtual-input-port>
+    (make <windows-console-conversion-input-port>
+      :name "windows console conversion input"
       :getc (make-conv-getc (standard-input-port)
                             STD_INPUT_HANDLE ces use-api))
     #f))
@@ -190,7 +199,8 @@
 (define (make-stdout-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_OUTPUT_HANDLE))))
-    (make <virtual-output-port>
+    (make <windows-console-conversion-output-port>
+      :name "windows console conversion output"
       :putc (make-conv-puts (standard-output-port)
                             STD_OUTPUT_HANDLE ces use-api)
       :puts (make-conv-puts (standard-output-port)
@@ -200,7 +210,8 @@
 (define (make-stderr-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_ERROR_HANDLE))))
-    (make <virtual-output-port>
+    (make <windows-console-conversion-output-port>
+      :name "windows console conversion output error"
       :putc (make-conv-puts (standard-error-port)
                             STD_ERROR_HANDLE ces use-api)
       :puts (make-conv-puts (standard-error-port)
