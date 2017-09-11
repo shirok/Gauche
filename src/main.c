@@ -720,7 +720,7 @@ int main(int ac, char **av)
 
 #if defined(GAUCHE_WINDOWS)
     /* auto wrap windows console standard ports */
-    if (!test_mode) {
+    if (!test_mode && Scm_GetEnv("GAUCHE_WINDOWS_CONSOLE_RAW") == NULL) {
         if (Scm_Require(SCM_MAKE_STR("os/windows/console/codepage"), 0, &lpak) < 0) {
             /* error_exit(lpak.exception); */
         } else {

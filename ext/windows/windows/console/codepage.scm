@@ -32,11 +32,11 @@
 ;;;
 
 (define-module os.windows.console.codepage
+  (use gauche.vport)
   (use gauche.uvector)
   (use os.windows)
   (autoload gauche.charconv ces-convert ces-conversion-supported?
             ces-equivalent?)
-  (autoload gauche.vport <virtual-input-port> <virtual-output-port>)
   (export wrap-windows-console-standard-ports
           auto-wrap-windows-console-standard-ports))
 (select-module os.windows.console.codepage)
@@ -229,7 +229,5 @@
 (define (auto-wrap-windows-console-standard-ports)
   (let ([ces (sys-getenv "GAUCHE_WINDOWS_CONSOLE_CES")]
         [api (sys-getenv "GAUCHE_WINDOWS_CONSOLE_API")])
-    (unless (and (string? ces) (string-ci=? ces "none"))
-      (wrap-windows-console-standard-ports ces (boolean api)))
-    (values)))
+    (wrap-windows-console-standard-ports ces (boolean api))))
 
