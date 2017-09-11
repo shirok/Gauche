@@ -11681,6 +11681,7 @@ Returns all the keys or values of hash table @var{ht} in a list,
 @c COMMON
 
 @defun hash-table-compare-as-sets ht1 ht2 :optional value=? fallback
+@c EN
 A hash table can be viewed as a set of pairs of key and value.
 This procedure compares two hash tables @var{ht1} and @var{ht2} as such
 sets.
@@ -11692,7 +11693,19 @@ Two elements of the set are equal to each other iff their keys match
 with the equality predicate of the key comparator, and their values
 match with @var{value=?} procedure.  If omitted, @var{equal?} is
 used for @var{value=?}
+@c JP
+ハッシュテーブルは、キーと値の組を要素とする集合とみなすことができます。
+この手続きは二つのハッシュテーブル@var{ht1}と@var{ht2}を集合として比較します。
 
+二つのハッシュテーブルのキー比較器は同じ (@code{equal?}の意味で)
+でなければなりません。そうでない場合はエラーが投げられます。
+
+二つの要素は、キー同士がキー比較器によって等価と判断され、かつ
+値同士が@var{value=?}手続きによって等価と判断された場合に等しいとみなされます。
+@var{value=?}が省略された場合は@code{equal?}が使われます。
+@c COMMON
+
+@c EN
 There can be four cases.
 @itemize
 @item
@@ -11708,10 +11721,30 @@ returns 0 (@var{ht1} equals to @var{ht2}).
 Neither @var{ht1} nor @var{ht2} is a subset of another.  In this case,
 @var{fallback} is returned if it is given, or an error is thrown.
 @end itemize
+@c JP
+4通りの結果が有り得ます。
+@itemize
+@item
+@var{ht1}が@var{ht2}の純粋部分集合である場合は-1が返されます
+(@var{ht1} ＜ @var{ht2})。
+@item
+@var{ht2}が@var{ht1}の純粋部分集合である場合は1が返されます
+(@var{ht1} ＞ @var{ht2})。
+@item
+@var{ht1}と@var{ht2}がまったく同じだけの要素を含んでいる場合は0が返されます
+(@var{ht1} ＝ @var{ht2})。
+@item
+@var{ht1}と@var{ht2}がお互いに相手の部分集合でない場合は、
+@var{fallback}が与えられていればそれが返され、
+省略された場合はエラーが投げられます。
+@end itemize
+@c JP
+@c COMMON
 @end defun
 
 @defun hash-table=? value-cmpr ht1 ht2
 [R7RS hash-table]
+@c EN
 This also compares two hash tables @var{ht1} and @var{ht2} as sets,
 and returns true iff two are the same.  That is, every element in @var{ht1}
 is also in @var{ht2} and vice versa.
@@ -11723,6 +11756,18 @@ are the same in terms of the equality predicate of a comparator
 
 It is an error if @var{ht1} and @var{ht2} has different key comparators.
 See also @code{hash-table-compare-as-sets} above.
+@c JP
+この手続きも@var{ht1}と@var{ht2}を集合として比較し、
+二つのテーブルが等しい集合である場合、つまり@var{ht1}の要素がすべて@var{ht2}の要素でもあり、
+またその逆も真である場合に@code{#t}を、そうでなければ@code{#f}を返します。
+
+二つの要素は、キー同士がキー比較器によって等価と判定され、かつ
+また値同士が比較器@var{value-cmpr}によって等価と判定された場合に
+等しいとみなされます。
+
+@var{ht1}と@var{ht2}のキー比較器が異なっていた場合はエラーが投げられます。
+上の@code{hash-table-compare-as-sets}も参照してください。
+@c COMMON
 @end defun
 
 @defun hash-table-union! ht1 ht2
@@ -11730,25 +11775,48 @@ See also @code{hash-table-compare-as-sets} above.
 @defunx hash-table-difference! ht1 ht2
 @defunx hash-table-xor! ht1 ht2
 [R7RS hash-table]
+@c EN
 Perform set operations on two hashtables @var{ht1} and @var{ht2},
 and modify @var{ht1} to store the result.
 Note that these procedures only look at the keys for operation; if
 the values of the same key differ between @var{ht1} and @var{ht2},
 the value in @var{ht1} is taken.
+@c JP
+二つのハッシュテーブル間で集合演算を行い、結果を@var{ht1}に格納します。
+これらの手続きでは、集合の要素としてキーだけを見ます。
+もし同じキーを持つ要素の値が@var{ht1}と@var{ht2}で異なっていた場合、
+@var{ht1}の値が優先されます。
+@c COMMON
 
 @itemize
 @item
+@c EN
 The union operation picks each entry that is in at least one of @var{ht1}
 or @var{ht2}.
+@c JP
+unionは、@var{ht1}か@var{ht2}の少なくとも一方に入っている要素を集めます。
+@c COMMON
 @item
+@c EN
 The intersection operation picks each entry that is both in @var{ht1} and
 @var{ht2}.
+@c JP
+intersectionは、@var{ht1}と@var{ht2}の両方に含まれる要素のみを集めます。
+@c COMMON
 @item
+@c EN
 The difference operation picks each entry that is in @var{ht1} but
 not in @var{ht2}.
+@c JP
+differenceは、@var{ht1}に含まれるが@var{ht2}には含まれない要素のみを集めます。
+@c COMMON
 @item
+@c EN
 The xor operation picks each entry that is in only one of @var{ht1} or
 @var{ht2}, but not in both.
+@c JP
+xorは、@var{ht1}か@var{ht2}の一方のみに含まれる要素のみを集めます。
+@c COMMON
 @end itemize
 @end defun
 
