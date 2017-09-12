@@ -72,25 +72,25 @@
 (define (make-conv-getc-sub port hdl-type ces ces2 use-api
                             maxbytes extrabytes readbytes)
   (^[]
-    (rlet1 chr #\null
-      ;; we have to allocate extra bytes because ReadConsole might write
-      ;; extra 1 byte more than a specified buffer size.
-      (let ([buf (make-u8vector (+ maxbytes extrabytes) 0)]
-            [hdl (if use-api (sys-get-std-handle hdl-type) #f)])
-        (let loop ([i 0])
-          (if (if use-api
-                (zero? ($ sys-read-console hdl
-                          (uvector-alias <u8vector> buf i (+ i readbytes))))
-                (eof-object? (read-uvector! buf port i (+ i readbytes))))
-            (set! chr (eof-object))
-            (let1 str (ces-convert (u8vector->string buf 0 (+ i readbytes))
-                                   ces ces2)
-              (guard (e [(<error> e)
-                         ;; a character is incomplete
-                         (if (< (+ i readbytes) maxbytes)
-                           (loop (+ i readbytes)))])
-                ;; a character is complete
-                (set! chr (string-ref str 0))))))))))
+    ;; we have to allocate extra bytes because ReadConsole might write
+    ;; extra 1 byte more than a specified buffer size.
+    (let ([buf (make-u8vector (+ maxbytes extrabytes) 0)]
+          [hdl (if use-api (sys-get-std-handle hdl-type) #f)])
+      (let loop ([i 0])
+        (if (if use-api
+              (zero? ($ sys-read-console hdl
+                        (uvector-alias <u8vector> buf i (+ i readbytes))))
+              (eof-object? (read-uvector! buf port i (+ i readbytes))))
+          (eof-object)
+          (let1 str (ces-convert (u8vector->string buf 0 (+ i readbytes))
+                                 ces ces2)
+            (guard (e [(<error> e)
+                       ;; a character is incomplete
+                       (if (< (+ i readbytes) maxbytes)
+                         (loop (+ i readbytes))
+                         #\null)])
+              ;; a character is complete
+              (string-ref str 0))))))))
 
 ;; make a puts procedure
 (define (make-conv-puts port hdl-type ces use-api vport)
