@@ -53,58 +53,66 @@
     (sys-get-console-mode hdl) #f))
 
 ;; make a getc procedure
-(define (make-conv-getc port hdl-type ces use-api)
+(define (make-conv-getc port hdl-type ces use-api vport)
   (^[]
+    ;; get conversion parameters only once
     (receive (conv ces ces2 use-api)
-        ;; get conversion parameters only once
-        ($ apply values $ force $ delay
-           (begin
-             (guard (e [(<system-error> e) #f]) (sys-alloc-console))
-             (get-conv-param hdl-type ces use-api)))
-      (if conv
-        (if use-api
-          (conv-getc-sub port hdl-type 'UTF-16LE ces2 #t 4 2 2)
-          (conv-getc-sub port hdl-type ces       ces2 #f 6 0 1))
-        (read-char port)))))
-(define (conv-getc-sub port hdl-type ces ces2 use-api
-                       maxbytes extrabytes readbytes)
-  (rlet1 chr #\null
-    ;; we have to allocate extra bytes because ReadConsole might write
-    ;; extra 1 byte more than a specified buffer size.
-    (let ([buf (make-u8vector (+ maxbytes extrabytes) 0)]
-          [hdl (if use-api (sys-get-std-handle hdl-type) #f)])
-      (let loop ([i 0])
-        (if (if use-api
-              (zero? ($ sys-read-console hdl
-                        (uvector-alias <u8vector> buf i (+ i readbytes))))
-              (eof-object? (read-uvector! buf port i (+ i readbytes))))
-          (set! chr (eof-object))
-          (let1 str (ces-convert (u8vector->string buf 0 (+ i readbytes))
-                                 ces ces2)
-            (guard (e [(<error> e)
-                       ;; a character is incomplete
-                       (if (< (+ i readbytes) maxbytes)
-                         (loop (+ i readbytes)))])
-              ;; a character is complete
-              (set! chr (string-ref str 0)))))))))
+        (begin
+          (guard (e [(<system-error> e) #f]) (sys-alloc-console))
+          (get-conv-param hdl-type ces use-api))
+      ;; replace to a real getc procedure
+      (let1 proc
+          (if conv
+            (if use-api
+              (make-conv-getc-sub port hdl-type 'UTF-16LE ces2 #t 4 2 2)
+              (make-conv-getc-sub port hdl-type ces       ces2 #f 6 0 1))
+            (^[] (read-char port)))
+        (set! (~ vport'getc) proc)
+        (proc)))))
+(define (make-conv-getc-sub port hdl-type ces ces2 use-api
+                            maxbytes extrabytes readbytes)
+  (^[]
+    (rlet1 chr #\null
+      ;; we have to allocate extra bytes because ReadConsole might write
+      ;; extra 1 byte more than a specified buffer size.
+      (let ([buf (make-u8vector (+ maxbytes extrabytes) 0)]
+            [hdl (if use-api (sys-get-std-handle hdl-type) #f)])
+        (let loop ([i 0])
+          (if (if use-api
+                (zero? ($ sys-read-console hdl
+                          (uvector-alias <u8vector> buf i (+ i readbytes))))
+                (eof-object? (read-uvector! buf port i (+ i readbytes))))
+            (set! chr (eof-object))
+            (let1 str (ces-convert (u8vector->string buf 0 (+ i readbytes))
+                                   ces ces2)
+              (guard (e [(<error> e)
+                         ;; a character is incomplete
+                         (if (< (+ i readbytes) maxbytes)
+                           (loop (+ i readbytes)))])
+                ;; a character is complete
+                (set! chr (string-ref str 0))))))))))
 
 ;; make a puts procedure
-(define (make-conv-puts port hdl-type ces use-api)
+(define (make-conv-puts port hdl-type ces use-api vport)
   (^[str/char]
+    ;; get conversion parameters only once
     (receive (conv ces ces2 use-api)
-        ;; get conversion parameters only once
-        ($ apply values $ force $ delay
-           (begin
-             (guard (e [(<system-error> e) #f]) (sys-alloc-console))
-             (get-conv-param hdl-type ces use-api)))
-      (if conv
-        (if use-api
-          (conv-puts-sub1 str/char hdl-type ces ces2 4096)
-          (conv-puts-sub2 str/char port ces ces2))
         (begin
-          (display str/char port)
-          (flush port))))))
-(define (conv-puts-sub1 str/char hdl-type ces ces2 maxchars)
+          (guard (e [(<system-error> e) #f]) (sys-alloc-console))
+          (get-conv-param hdl-type ces use-api))
+      ;; replace to a real puts procedure
+      (let1 proc
+          (if conv
+            (if use-api
+              (make-conv-puts-sub1 str/char hdl-type ces ces2 4096)
+              (make-conv-puts-sub2 str/char port ces ces2))
+            (begin
+              (display str/char port)
+              (flush port)))
+        (set! (~ vport'putc) proc)
+        (set! (~ vport'puts) proc)
+        (proc str/char)))))
+(define (make-conv-puts-sub1 str/char hdl-type ces ces2 maxchars)
   ;; windows api WriteConsole adjustment
   (define (sys-write-console-sub hdl str)
     (cond-expand
@@ -134,20 +142,22 @@
      [else
       ;; ansi version api needs a ces conversion
       (sys-write-console hdl (ces-convert str ces2 ces))]))
-  (let ([str (x->string str/char)]
-        [hdl (sys-get-std-handle hdl-type)])
-    (let loop ([i 0])
-      (cond
-       [(<= (string-length str) (+ i maxchars))
-        (sys-write-console-sub hdl (string-copy str i))]
-       [else
-        (sys-write-console-sub hdl (string-copy str i (+ i maxchars)))
-        (loop (+ i maxchars))]))))
-(define (conv-puts-sub2 str/char port ces ces2)
-  (write-uvector (string->u8vector
-                  (ces-convert (x->string str/char) ces2 ces))
-                 port)
-  (flush port))
+  (^[str/char]
+    (let ([str (x->string str/char)]
+          [hdl (sys-get-std-handle hdl-type)])
+      (let loop ([i 0])
+        (cond
+         [(<= (string-length str) (+ i maxchars))
+          (sys-write-console-sub hdl (string-copy str i))]
+         [else
+          (sys-write-console-sub hdl (string-copy str i (+ i maxchars)))
+          (loop (+ i maxchars))])))))
+(define (make-conv-puts-sub2 str/char port ces ces2)
+  (^[str/char]
+    (write-uvector (string->u8vector
+                    (ces-convert (x->string str/char) ces2 ces))
+                   port)
+    (flush port)))
 
 ;; get conversion parameters
 (define (get-conv-param hdl-type ces use-api)
@@ -186,38 +196,39 @@
     (if (and (ces-equivalent? ces ces2) (not use-api))
       (set! conv #f))
     ;; return parameters
-    (list conv ces ces2 use-api)))
+    (values conv ces ces2 use-api)))
 
 ;; make a standard input conversion port
 (define (make-stdin-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_INPUT_HANDLE))))
-    (make <windows-console-conversion-input-port>
-      :name "windows console conversion input"
-      :getc (make-conv-getc (standard-input-port)
-                            STD_INPUT_HANDLE ces use-api))
+    (rlet1 vport (make <windows-console-conversion-input-port>
+                   :name "windows console conversion input")
+      (let1 proc (make-conv-getc (standard-input-port)
+                                 STD_INPUT_HANDLE ces use-api vport)
+        (set! (~ vport'getc) proc)))
     #f))
 ;; make a standard output conversion port
 (define (make-stdout-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_OUTPUT_HANDLE))))
-    (make <windows-console-conversion-output-port>
-      :name "windows console conversion output"
-      :putc (make-conv-puts (standard-output-port)
-                            STD_OUTPUT_HANDLE ces use-api)
-      :puts (make-conv-puts (standard-output-port)
-                            STD_OUTPUT_HANDLE ces use-api))
+    (rlet1 vport (make <windows-console-conversion-output-port>
+                   :name "windows console conversion output")
+      (let1 proc (make-conv-puts (standard-output-port)
+                                 STD_OUTPUT_HANDLE ces use-api vport)
+        (set! (~ vport'putc) proc)
+        (set! (~ vport'puts) proc)))
     #f))
 ;; make a standard error conversion port
 (define (make-stderr-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_ERROR_HANDLE))))
-    (make <windows-console-conversion-output-port>
-      :name "windows console conversion error output"
-      :putc (make-conv-puts (standard-error-port)
-                            STD_ERROR_HANDLE ces use-api)
-      :puts (make-conv-puts (standard-error-port)
-                            STD_ERROR_HANDLE ces use-api))
+    (rlet1 vport (make <windows-console-conversion-output-port>
+                   :name "windows console conversion error output")
+      (let1 proc (make-conv-puts (standard-error-port)
+                                 STD_ERROR_HANDLE ces use-api vport)
+        (set! (~ vport'putc) proc)
+        (set! (~ vport'puts) proc)))
     #f))
 
 ;; wrap windows console standard ports
