@@ -138,13 +138,16 @@
 
 (define (hash-table-merge! ht1 ht2) (hash-table-union! ht1 ht2))
 
-(define (hash obj :optional ignore) (default-hash obj))
+(define (hash obj :optional ignore)
+  (warn "srfi-69 `hash' is deprecated.  Use `default-hash' instead.")
+  (default-hash obj))
 (define (string-hash obj :optional ignore)
   ((with-module gauche string-hash) obj))
 (define (string-ci-hash obj :optional ignore)
   ((with-module gauche string-ci-hash) obj))
 (define (hash-by-identity obj :optional ignore)
-  (error "this srfi-69 procedure does not work compatible way with Gauche's eq hash"))
+  (warn "srfi-69 `hash-by-identity' is deprecated and does not work compatible way with Gauche's eq-hash.")
+  (default-hash obj))
 
 (define (hash-table-equivalence-function ht)
   (assume-type ht <hash-table>)
