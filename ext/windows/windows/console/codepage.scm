@@ -104,15 +104,15 @@
       (let1 proc
           (if conv
             (if use-api
-              (make-conv-puts-sub1 str/char hdl-type ces ces2 4096)
-              (make-conv-puts-sub2 str/char port ces ces2))
-            (begin
+              (make-conv-puts-sub1 hdl-type ces ces2 4096)
+              (make-conv-puts-sub2 port ces ces2))
+            (^[str/char]
               (display str/char port)
               (flush port)))
         (set! (~ vport'putc) proc)
         (set! (~ vport'puts) proc)
         (proc str/char)))))
-(define (make-conv-puts-sub1 str/char hdl-type ces ces2 maxchars)
+(define (make-conv-puts-sub1 hdl-type ces ces2 maxchars)
   ;; windows api WriteConsole adjustment
   (define (sys-write-console-sub hdl str)
     (cond-expand
@@ -143,16 +143,17 @@
       ;; ansi version api needs a ces conversion
       (sys-write-console hdl (ces-convert str ces2 ces))]))
   (^[str/char]
-    (let ([str (x->string str/char)]
-          [hdl (sys-get-std-handle hdl-type)])
+    (let* ([str (x->string str/char)]
+           [hdl (sys-get-std-handle hdl-type)]
+           [len (string-length str)])
       (let loop ([i 0])
         (cond
-         [(<= (string-length str) (+ i maxchars))
+         [(<= len (+ i maxchars))
           (sys-write-console-sub hdl (string-copy str i))]
          [else
           (sys-write-console-sub hdl (string-copy str i (+ i maxchars)))
           (loop (+ i maxchars))])))))
-(define (make-conv-puts-sub2 str/char port ces ces2)
+(define (make-conv-puts-sub2 port ces ces2)
   (^[str/char]
     (write-uvector (string->u8vector
                     (ces-convert (x->string str/char) ces2 ces))
