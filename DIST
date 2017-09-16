@@ -83,11 +83,18 @@ do_tgz () {
     rm -rf ../Gauche-$VERSION
 }
 
+do_pdf () {
+    ./DIST gen
+    ./configure --enable-threads=pthreads --enable-multibyte=utf8
+    make
+    (cd doc; make gauche-refe.pdf; mv gauche-refe.pdf ../../Gauche-$VERSION-refe.pdf)
+}
+
 # hidden command - only meaningful on the release engineer's machine
 do_release () {
     do_tgz
+    do_pdf
     gpg --detach-sign --armor -o ../Gauche-$VERSION.tgz.asc ../Gauche-$VERSION.tgz
-    cd doc; make pdf; mv gauche-refe.pdf ../../Gauche-$VERSION-refe.pdf; mv gauche-refj.pdf ../../Gauche-$VERSION-refj.pdf
 }
 
 do_mingw_installer () {
