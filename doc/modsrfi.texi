@@ -4124,7 +4124,7 @@ libraries to avoid confusion.
 @deftp {Module} srfi-69
 @mdindex srfi-69
 This module has been superseded by R7RS @code{scheme.hash-table}
-(@pxref{R7Rs hash tables}).  New code should use it instead.
+(@pxref{R7RS hash tables}).  New code should use it instead.
 
 This is a thin adaptor on Gauche's built-in hashtables
 (@pxref{Hashtables}).  This is provided for the compatibility
