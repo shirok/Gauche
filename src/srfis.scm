@@ -653,14 +653,15 @@ srfi-69, srfi-69
 
 Basic hash tables
 Supported by the module @code{srfi-69} (@pxref{Basic hash tables}).
-Note that Gauche provides
-built-in hashtable support (@pxref{Hashtables}).
-They just use different names in some procedures.
+Note that this srfi is superseded by R7RS @code{scheme.hash-table}
+library (formerly known as @code{srfi-125}).
+@xref{R7RS hash tables}.
 
 基本的なハッシュテーブル
 モジュール@code{srfi-69}でサポートされます (@ref{Basic hash tables}参照)。
-Gaucheにも組み込みのハッシュテーブルサポートがありますが(@ref{Hashtables}参照)、
-いくつかの手続きにおいて異なる名前を使っています。
+このsrfiはR7RSの@code{scheme.hash-table}
+(@code{srfi-125}として導入されたもの) で置き換えられました。
+詳しくは@ref{R7RS hash tables}を参照してください。
 
 
 srfi-74, srfi-74

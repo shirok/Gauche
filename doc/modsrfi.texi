@@ -4123,7 +4123,10 @@ libraries to avoid confusion.
 
 @deftp {Module} srfi-69
 @mdindex srfi-69
-This module is a thin adaptor on Gauche's built-in hashtables
+This module has been superseded by R7RS @code{scheme.hash-table}
+(@pxref{R7Rs hash tables}).  New code should use it instead.
+
+This is a thin adaptor on Gauche's built-in hashtables
 (@pxref{Hashtables}).  This is provided for the compatibility
 to the portable libraries; the hashtable object created by
 this module's @code{make-hash-table} is the same as the one
