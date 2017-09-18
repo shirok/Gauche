@@ -3,10 +3,9 @@
 @c JP
 \input texinfo-ja @c -*- mode: texinfo; coding: utf-8; -*-
 @c COMMON
-@comment %**start of header
+@c %**start of header
 @documentencoding UTF-8
 @c EN
-@documentlanguage en
 @setfilename gauche-refe.info
 @settitle Gauche Users' Reference
 @afourpaper
@@ -14,8 +13,8 @@
 @direntry
 * Gauche: (gauche-refe.info).	        An R7RS Scheme implementation.
 @end direntry
+@documentlanguage en
 @c JP
-@documentlanguage ja
 @setfilename gauche-refj.info
 @settitle Gauche ユーザリファレンス
 @afourpaper
@@ -23,8 +22,9 @@
 @direntry
 * Gauche (ja): (gauche-refj.info).	An R7RS Scheme implementation.
 @end direntry
+@documentlanguage ja
 @c COMMON
-@comment %**end of header
+@c %**end of header
 
 @c module, class and lexical-syntax index
 @defcodeindex md
