@@ -64,30 +64,50 @@
       (let1 proc
           (if conv
             (if use-api
-              (make-conv-getc-sub port hdl-type 'UTF-16LE ces2 #t 4 2 2)
-              (make-conv-getc-sub port hdl-type ces       ces2 #f 6 0 1))
+              (make-conv-getc-sub1 hdl-type 'UTF-16LE ces2 4 2 2)
+              (make-conv-getc-sub2 port ces ces2 6 1))
             (^[] (read-char port)))
         (set! (~ vport'getc) proc)
         (proc)))))
-(define (make-conv-getc-sub port hdl-type ces ces2 use-api
-                            maxbytes extrabytes readbytes)
+;; getc using windows api ReadConsole
+(define (make-conv-getc-sub1 hdl-type ces ces2 maxbytes extrabytes readbytes)
+  (define line-start-flag #t)
   (^[]
     ;; we have to allocate extra bytes because ReadConsole might write
     ;; extra 1 byte more than a specified buffer size.
     (let ([buf (make-u8vector (+ maxbytes extrabytes) 0)]
-          [hdl (if use-api (sys-get-std-handle hdl-type) #f)])
-      (let loop ([i 0])
-        (if (if use-api
-              (zero? ($ sys-read-console hdl
-                        (uvector-alias <u8vector> buf i (+ i readbytes))))
-              (eof-object? (read-uvector! buf port i (+ i readbytes))))
+          [hdl (sys-get-std-handle hdl-type)])
+      (let loop ([i1 0] [i2 readbytes])
+        (if (zero? ($ sys-read-console hdl
+                      (uvector-alias <u8vector> buf i1 i2)))
           (eof-object)
-          (let1 str (ces-convert (u8vector->string buf 0 (+ i readbytes))
-                                 ces ces2)
+          (let1 str (ces-convert (u8vector->string buf 0 i2) ces ces2)
             (guard (e [(<error> e)
                        ;; a character is incomplete
-                       (if (< (+ i readbytes) maxbytes)
-                         (loop (+ i readbytes))
+                       (if (< i2 maxbytes)
+                         (loop i2 (+ i2 readbytes))
+                         #\null)])
+              ;; a character is complete
+              (let1 chr (string-ref str 0)
+                (cond
+                 ;; ctrl-z
+                 [(and line-start-flag (eqv? chr #\x1a))
+                  (eof-object)]
+                 [else
+                  (set! line-start-flag (eqv? chr #\newline))
+                  chr])))))))))
+;; getc using read-uvector!
+(define (make-conv-getc-sub2 port ces ces2 maxbytes readbytes)
+  (^[]
+    (let1 buf (make-u8vector maxbytes 0)
+      (let loop ([i1 0] [i2 readbytes])
+        (if (eof-object? (read-uvector! buf port i1 i2))
+          (eof-object)
+          (let1 str (ces-convert (u8vector->string buf 0 i2) ces ces2)
+            (guard (e [(<error> e)
+                       ;; a character is incomplete
+                       (if (< i2 maxbytes)
+                         (loop i2 (+ i2 readbytes))
                          #\null)])
               ;; a character is complete
               (string-ref str 0))))))))
@@ -112,13 +132,14 @@
         (set! (~ vport'putc) proc)
         (set! (~ vport'puts) proc)
         (proc str/char)))))
+;; puts using windows api WriteConsole
 (define (make-conv-puts-sub1 hdl-type ces ces2 maxchars)
-  ;; windows api WriteConsole adjustment
+  ;; WriteConsole adjustment
   (define (sys-write-console-sub hdl str)
     (cond-expand
      [gauche.ces.utf8
-      ;; unicode version api needs a workaround for the line wrapping of
-      ;; surrogate pair characters.
+      ;; unicode version of WriteConsole needs a workaround for
+      ;; the line wrapping of surrogate pair characters.
       (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
              [w     (+ 1 (- (~ cinfo'window.right)
                             (~ cinfo'window.left)))]
@@ -140,7 +161,7 @@
             (loop (string-ref str i2))))
         (sys-write-console hdl (string-copy str i1)))]
      [else
-      ;; ansi version api needs a ces conversion
+      ;; ansi version of WriteConsole needs a ces conversion
       (sys-write-console hdl (ces-convert str ces2 ces))]))
   (^[str/char]
     (let* ([str (x->string str/char)]
@@ -153,6 +174,7 @@
          [else
           (sys-write-console-sub hdl (string-copy str i (+ i maxchars)))
           (loop (+ i maxchars))])))))
+;; puts using write-uvector
 (define (make-conv-puts-sub2 port ces ces2)
   (^[str/char]
     (write-uvector (string->u8vector
