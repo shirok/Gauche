@@ -50,7 +50,7 @@
 (define (make-template-environment :key
                                    (extends '(gauche))
                                    (imports '())
-                                   (bindings #f))
+                                   (bindings #f)) ; can be dict, or kv-list
   (make <template-environment>
     :module (setup-template-environment extends imports bindings)))
 
@@ -60,19 +60,34 @@
       (if (list? i)
         (eval `(import ,@i) m)
         (eval `(import ,i) m)))
-    (dict-for-each
-     bindings
-     (^[k v]
-       (unless (symbol? k)
-         (error "Symbol required for binding table key, but got:" k))
-       (eval `(define ,k ,v) m)))
+    (cond
+     [(is-a? bindings <dictionary>)
+      (dict-for-each
+       bindings
+       (^[k v]
+         (unless (symbol? k)
+           (error "Symbol required for binding table key, but got:" k))
+         (eval `(define ,k ',v) m)))]
+     [(list? bindings)
+      (doplist ([k v] bindings)
+         (unless (symbol? k)
+           (error "Symbol required for binding table key, but got:" k))
+         (eval `(define ,k ',v) m))]
+     [(not bindings)]
+     [else (error "Invalid bindings: a dictionary or kv-list expected, but got"
+                  bindings)])
     (eval `(extend ,@extends) m)))
 
 (define (expand-template-string text env)
-  (assume-type env <template-enviroment>)
+  (assume-type env <template-environment>)
   (eval (string-interpolate text) (~ env'module)))
 
-(define (expand-template-file filename env)
-  (assume-type env <template-enviroment>)
-  (expand-template-string (file->string filename) env))
-
+(define (expand-template-file filename env :optional (paths '()))
+  (assume-type env <template-environment>)
+  (if-let1 file (if (or (null? paths) (absolute-path? filename))
+                  filename
+                  (any (^p (let1 f (build-path p filename)
+                             (and (file-exists? f) f)))
+                       paths))
+    (expand-template-string (file->string file) env)
+    (errorf "Couldn't find template file ~s in ~s" filename paths)))

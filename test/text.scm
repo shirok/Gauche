@@ -618,6 +618,27 @@ fuga
   (t "(a#\\(b)c)" 6 0)
   )
 
+;;-------------------------------------------------------------------
+(test-section "template")
+(use text.template)
+(test-module 'text.template)
+
+(test* "expand-template-string"
+       "abc 9 ghi mno3e8"
+       (expand-template-string
+        "abc ~def ghi ~(jkl \"mno~x\" pqr)"
+        (make-template-environment
+         :bindings `(abc 3 def 9 jkl ,format pqr 1000))))
+
+(test* "expand-template-file"
+       "<html><head><title>Test</title></head><body><p><a href=\"foo\">bar</a\n>baz</p\n></body></html>\n"
+       (expand-template-file
+        "template.txt"
+        (make-template-environment
+         :imports '(text.tree)
+         :bindings `(title "Test"
+                     body ,(html:p (html:a :href "foo" "bar") "baz")))
+        '("../test/data")))
 
 ;;-------------------------------------------------------------------
 (test-section "tree")
