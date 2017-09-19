@@ -140,26 +140,27 @@
      [gauche.ces.utf8
       ;; unicode version of WriteConsole needs a workaround for
       ;; the line wrapping of surrogate pair characters.
-      (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
-             [w     (+ 1 (- (~ cinfo'window.right)
-                            (~ cinfo'window.left)))]
-             [len   (string-length str)]
-             [i1    0]
-             [i2    0])
-        (let loop ([c (string-ref str 0)])
-          (when (>= (char->integer c) #x10000)
-            (sys-write-console hdl (string-copy str i1 i2))
-            (set! i1 i2)
-            (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
-                   [x     (~ cinfo'cursor-position.x)]
-                   [y     (~ cinfo'cursor-position.y)])
-              (when (> x (- w 4))
-                (sys-set-console-cursor-position hdl (- w 1) y)
-                (sys-write-console hdl " "))))
-          (inc! i2)
-          (if (< i2 len)
-            (loop (string-ref str i2))))
-        (sys-write-console hdl (string-copy str i1)))]
+      (let1 buf (string->u32vector str)
+        (if (u32vector-range-check buf 0 #xffff)
+          (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
+                 [w     (+ 1 (- (slot-ref cinfo'window.right)
+                                (slot-ref cinfo'window.left)))]
+                 [cw    (if (= (sys-get-console-output-cp) 65001) 2 4)]
+                 [len   (string-length str)])
+            (let loop ([i1 0] [i2 0])
+              (when (>= (u32vector-ref buf i2) #x10000)
+                (sys-write-console hdl (string-copy str i1 i2))
+                (set! i1 i2)
+                (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
+                       [x     (slot-ref cinfo'cursor-position.x)]
+                       [y     (slot-ref cinfo'cursor-position.y)])
+                  (when (> x (- w cw))
+                    (sys-set-console-cursor-position hdl (- w 1) y)
+                    (sys-write-console hdl " "))))
+              (if (< (+ i2 1) len)
+                (loop i1 (+ i2 1))
+                (sys-write-console hdl (string-copy str i1)))))
+          (sys-write-console hdl str)))]
      [else
       ;; ansi version of WriteConsole needs a ces conversion
       (sys-write-console hdl (ces-convert str ces2 ces))]))
