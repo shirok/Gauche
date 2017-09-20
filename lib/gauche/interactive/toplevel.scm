@@ -232,6 +232,7 @@
                  (car cmd&help)
                  (cdr cmd&help)))
        *no-value*]
+      [(('unquote cmd)) ((toplevel-command-helper cmd)) *no-value*]
       [(cmd) ((toplevel-command-helper cmd)) *no-value*]
       [_ (usage)])))
 
