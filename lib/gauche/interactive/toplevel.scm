@@ -324,7 +324,7 @@
   " default | [key value ...]\
   \nView/set print-mode of REPL.\
   \nWithout arguments, it shows the current print mode.\
-  \nWith single argument, 'default', resets the print mode to the default.\
+  \nWith a single argument, 'default', resets the print mode to the default.\
   \nOtherwise, the arguments must be a key-value list where keys are symbols,\
   \nand values are either integers or booleans.\
   \nThe following keys are recognized.\
@@ -333,8 +333,8 @@
   \n                        #f for unlimited.  [default: 50]\
   \n  level <integer>|#f  - Max # of nestings shown before abbreviated.\
   \n                        #f for unlimited.  [default: 50]\
-  \n  width <integer>|#f  - Column width before line is wrapped.  Only used in pretty\
-  \n                        printer.  #f for unlimited.  [default: 79]\
+  \n  width <integer>|#f  - Column width before line is wrapped.  Only used in\
+  \n                        the pretty printer.  #f for unlimited.  [default: 79]\
   \n  base <integer>      - Base radix of showing whole numbers.  [default: 10]\
   \n  radix <boolean>     - Add radix prefix ('#x' etc.) befors whole numbers.\
   \n                        [default: #f]"
