@@ -472,7 +472,7 @@
         ;; for MSYS (mintty)
         ((with-module gauche.internal %sys-mintty?) port)
         ;; for windows console conversion ports
-        (#/^windows console conversion/ (~ port'name)))]
+        (port-attribute-ref port 'windows-console-conversion #f))]
    [else
     (sys-isatty port)]))
 
@@ -523,6 +523,7 @@
         (for-each (lambda (r)
                     (apply fmt "test ~a: expects ~s => got ~s\n" r))
                   (reverse *discrepancy-list*))))
+    (flush)
 
     (when *test-record-file*
       (write-summary))

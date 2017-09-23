@@ -296,11 +296,6 @@
 (test-module 'os.windows.console.codepage)
 (test-end)
 
-(test-start "os.windows.console.convport")
-(use os.windows.console.convport)
-(test-module 'os.windows.console.convport)
-(test-end)
-
  ] ; gauche.os.windows
  [else])
 

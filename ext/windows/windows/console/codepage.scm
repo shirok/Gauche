@@ -33,9 +33,9 @@
 
 (define-module os.windows.console.codepage
   (use os.windows)
-  (autoload os.windows.console.convport
-            <windows-console-conversion-input-port>
-            <windows-console-conversion-output-port>)
+  (autoload gauche.vport
+            <virtual-input-port>
+            <virtual-output-port>)
   (autoload gauche.uvector
             <u8vector> make-u8vector uvector-alias
             read-uvector! write-uvector u8vector->string string->u8vector
@@ -225,8 +225,8 @@
 (define (make-stdin-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_INPUT_HANDLE))))
-    (rlet1 vport (make <windows-console-conversion-input-port>
-                   :name "windows console conversion input")
+    (rlet1 vport (make <virtual-input-port>)
+      (port-attribute-set! vport 'windows-console-conversion #t)
       (let1 proc (make-conv-getc (standard-input-port)
                                  STD_INPUT_HANDLE ces use-api vport)
         (set! (~ vport'getc) proc)))
@@ -235,8 +235,8 @@
 (define (make-stdout-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_OUTPUT_HANDLE))))
-    (rlet1 vport (make <windows-console-conversion-output-port>
-                   :name "windows console conversion output")
+    (rlet1 vport (make <virtual-output-port>)
+      (port-attribute-set! vport 'windows-console-conversion #t)
       (let1 proc (make-conv-puts (standard-output-port)
                                  STD_OUTPUT_HANDLE ces use-api vport)
         (set! (~ vport'putc) proc)
@@ -246,8 +246,8 @@
 (define (make-stderr-conv-port :optional (ces '#f) (use-api #f))
   (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
           (not (redirected-handle? (sys-get-std-handle STD_ERROR_HANDLE))))
-    (rlet1 vport (make <windows-console-conversion-output-port>
-                   :name "windows console conversion error output")
+    (rlet1 vport (make <virtual-output-port>)
+      (port-attribute-set! vport 'windows-console-conversion #t)
       (let1 proc (make-conv-puts (standard-error-port)
                                  STD_ERROR_HANDLE ces use-api vport)
         (set! (~ vport'putc) proc)
