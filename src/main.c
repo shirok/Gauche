@@ -714,23 +714,19 @@ int main(int ac, char **av)
     }
     Scm_AddCleanupHandler(cleanup_main, NULL);
 
-    if (default_toplevel_module != NULL) {
-        Scm_SelectModule(default_toplevel_module);
-    }
-
 #if defined(GAUCHE_WINDOWS)
     /* auto wrap windows console standard ports */
     if (!test_mode && Scm_GetEnv("GAUCHE_WINDOWS_CONSOLE_RAW") == NULL) {
-        if (Scm_Require(SCM_MAKE_STR("os/windows/console/codepage"), 0, &lpak) < 0) {
-            /* error_exit(lpak.exception); */
-        } else {
-            Scm_ImportModule(SCM_CURRENT_MODULE(),
-                             SCM_INTERN("os.windows.console.codepage"), SCM_FALSE, 0);
-            Scm_EvalCString("(auto-wrap-windows-console-standard-ports)",
-                            SCM_OBJ(Scm_CurrentModule()), NULL);
+        if (!Scm_Require(SCM_MAKE_STR("os/windows/console/codepage"), 0, NULL)) {
+            Scm_EvalCString("(with-module os.windows.console.codepage (auto-wrap-windows-console-standard-ports))",
+                            SCM_OBJ(Scm_UserModule()), NULL);
         }
     }
 #endif /*defined(GAUCHE_WINDOWS)*/
+
+    if (default_toplevel_module != NULL) {
+        Scm_SelectModule(default_toplevel_module);
+    }
 
     /* Following is the main dish. */
     if (scriptfile != NULL) exit_code = execute_script(scriptfile, args);

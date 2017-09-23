@@ -32,20 +32,19 @@
 ;;;
 
 (define-module os.windows.console.codepage
-  (use gauche.vport)
-  (use gauche.uvector)
   (use os.windows)
-  (autoload gauche.charconv ces-convert ces-conversion-supported?
-            ces-equivalent?)
+  (autoload os.windows.console.convport
+            <windows-console-conversion-input-port>
+            <windows-console-conversion-output-port>)
+  (autoload gauche.uvector
+            <u8vector> make-u8vector uvector-alias
+            read-uvector! write-uvector u8vector->string string->u8vector
+            string->u32vector u32vector-range-check u32vector-ref)
+  (autoload gauche.charconv
+            ces-convert ces-conversion-supported? ces-equivalent?)
   (export wrap-windows-console-standard-ports
           auto-wrap-windows-console-standard-ports))
 (select-module os.windows.console.codepage)
-
-;; windows console conversion port class
-(define-class <windows-console-conversion-input-port> (<virtual-input-port>)
-  ((name :init-keyword :name :init-value "")))
-(define-class <windows-console-conversion-output-port> (<virtual-output-port>)
-  ((name :init-keyword :name :init-value "")))
 
 ;; check a standard handle redirection
 (define (redirected-handle? hdl)

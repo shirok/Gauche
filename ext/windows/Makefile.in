@@ -7,7 +7,9 @@ SCM_CATEGORY = os
 include ../Makefile.ext
 
 LIBFILES = os--windows.$(SOEXT)
-SCMFILES = windows.scm windows/console/codepage.scm
+SCMFILES = windows.scm \
+           windows/console/codepage.scm \
+           windows/console/convport.scm
 
 GENERATED = Makefile
 XCLEANFILES = windows.c console.c
