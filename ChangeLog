@@ -1,3 +1,8 @@
+2017-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm (make-peg-parse-error): Fix error message of
+	  nested compound error.
+
 2017-09-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c, src/libeval.scm (%invoke-other-version):

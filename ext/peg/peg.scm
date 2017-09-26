@@ -38,6 +38,7 @@
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)
+  (use text.tree)
   (use util.match)
   (export <parse-error>
           make-peg-parse-error
@@ -183,17 +184,23 @@
   `(values 'fail-compound ,m ,s))
 
 (define (make-peg-parse-error type objs pos seq)
+  (define (flatten-compound-error objs)
+    (append-map (^e (if (eq? (car e) 'fail-compound)
+                      (flatten-compound-error (cdr e))
+                      (list e)))
+                objs))
   (define (analyze-compound-error objs pos)
     (let1 grps (map (^g (cons (caar g) (map cdr g)))
                     (group-collection objs :key car))
       (let ([msgs (assoc-ref grps 'fail-message)]
             [exps (assoc-ref grps 'fail-expect)]
             [unexps (assoc-ref grps 'fail-unexpect)])
-        (string-concatenate
-         (or-concat (cond-list
-                     [exps (compound-exps exps)]
-                     [unexps (compound-unexps unexps)]
-                     [msgs @ msgs]))))))
+        (tree->string
+         (cons (or-concat (cond-list
+                           [exps (compound-exps exps)]
+                           [unexps (compound-unexps unexps)]
+                           [msgs @ msgs]))
+               (format " at ~s" pos))))))
   (define (or-concat lis)
     (match lis
       [() '()]
@@ -219,7 +226,8 @@
        (if (char? objs)
          (format "expecting but ~s at ~a, and got ~s" objs pos nexttok)
          (format "expecting but ~a at ~a, and got ~s" objs pos nexttok))]
-      [(fail-compound) (analyze-compound-error objs pos)]
+      [(fail-compound)
+       (analyze-compound-error (flatten-compound-error objs) pos)]
       [else (format "unknown parser error at ~a: ~a" pos objs)]  ;for safety
       ))
   (let1 nexttok (if (pair? seq) (car seq) (eof-object))

@@ -496,6 +496,21 @@
   )
 
 ;;;============================================================
+;;; Error handling
+;;;
+
+(test-section "error handling")
+
+;; compound error
+
+(let* ([p1 ($or ($char #\a) ($char #\b))]
+       [p2 ($seq anychar ($or ($char #\c) p1))])
+  (test* "nested compound error"
+         (test-error <parse-error> "expecting one of (#\\c #\\a #\\b) at 1")
+         (peg-parse-string p2 "dd")))
+
+
+;;;============================================================
 ;;; Token Parsers
 ;;;
 
