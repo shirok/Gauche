@@ -25670,7 +25670,7 @@ query stringとなります。その引数が渡されなければこの手続�
 
 @c EN
 If @code{REQUEST_METHOD} is @code{POST}, this procedure can handle
-both @code{application/x-www-from-urlencoded} and
+both @code{application/x-www-form-urlencoded} and
 @code{multipart/form-data} as the enctype.  The latter is usually
 used if the form has file-uploading capability.
 
@@ -25684,7 +25684,7 @@ argument.  The details are explained in the "Handling file uploads"
 section below.
 @c JP
 @code{REQUEST_METHOD}が@code{POST}の場合、この手続きはenctypeとして
-@code{application/x-www-from-urlencoded}と@code{multipart/form-data}の
+@code{application/x-www-form-urlencoded}と@code{multipart/form-data}の
 両方を処理できます。後者は通常、ファイルアップロード機能を持つフォームに使われます。
 
 POSTデータが@code{multipart/form-data}で送られて来た場合、
