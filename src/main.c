@@ -714,6 +714,16 @@ int main(int ac, char **av)
     }
     Scm_AddCleanupHandler(cleanup_main, NULL);
 
+#if defined(GAUCHE_WINDOWS)
+    /* auto wrap windows console standard ports */
+    if (!test_mode && Scm_GetEnv("GAUCHE_WINDOWS_CONSOLE_RAW") == NULL) {
+        if (!Scm_Require(SCM_MAKE_STR("os/windows/console/codepage"), 0, NULL)) {
+            Scm_EvalCString("(with-module os.windows.console.codepage (auto-wrap-windows-console-standard-ports))",
+                            SCM_OBJ(Scm_UserModule()), NULL);
+        }
+    }
+#endif /*defined(GAUCHE_WINDOWS)*/
+
     if (default_toplevel_module != NULL) {
         Scm_SelectModule(default_toplevel_module);
     }

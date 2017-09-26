@@ -291,6 +291,11 @@
 
 (test-end)
 
+(test-start "os.windows.console.codepage")
+(use os.windows.console.codepage)
+(test-module 'os.windows.console.codepage)
+(test-end)
+
  ] ; gauche.os.windows
  [else])
 
