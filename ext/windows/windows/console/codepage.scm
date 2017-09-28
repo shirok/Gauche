@@ -33,15 +33,10 @@
 
 (define-module os.windows.console.codepage
   (use os.windows)
-  (autoload gauche.vport
-            <virtual-input-port>
-            <virtual-output-port>)
-  (autoload gauche.uvector
-            <u8vector> make-u8vector uvector-alias
-            read-uvector! write-uvector u8vector->string string->u8vector
-            string->u32vector u32vector-range-check u32vector-ref)
-  (autoload gauche.charconv
-            ces-convert ces-conversion-supported? ces-equivalent?)
+  (use gauche.vport)
+  (use gauche.uvector)
+  (use gauche.charconv)
+  (use gauche.portutil)
   (export wrap-windows-console-standard-ports
           auto-wrap-windows-console-standard-ports))
 (select-module os.windows.console.codepage)
