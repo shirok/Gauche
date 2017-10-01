@@ -2135,4 +2135,18 @@
   (include "include/srfi-154-tests.scm")
   (run-tests))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-155")
+(use srfi-155)
+(test-module 'srfi-155)
+
+(define-module srfi-155-tests
+  (use srfi-64)
+  (use srfi-154)
+  (use srfi-155)
+  (use gauche.parameter)
+  (use compat.r7rs-srfi-tests)
+  (include "include/srfi-155-tests.scm")
+  (run-tests))
+
 (test-end)
