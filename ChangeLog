@@ -1,3 +1,8 @@
+2017-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-154.scm : Added.  NB: srfi-154 hasn't finalized yet.
+	  This is for testing.
+
 2017-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm (make-peg-parse-error): Fix error message of

@@ -2122,4 +2122,17 @@
 (chibi-test
  (include "include/srfi-151-tests.scm"))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-154")
+(use srfi-154)
+(test-module 'srfi-154)
+
+(define-module srfi-154-tests
+  (use srfi-64)
+  (use srfi-154)
+  (use gauche.parameter)
+  (use compat.r7rs-srfi-tests)
+  (include "include/srfi-154-tests.scm")
+  (run-tests))
+
 (test-end)
