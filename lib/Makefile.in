@@ -49,7 +49,7 @@ SCMFILES = srfi-0.scm \
        srfi-117.scm srfi-118.scm srfi-121.scm srfi-125.scm srfi-127.scm \
        srfi-128.scm srfi-129.scm srfi-131.scm srfi-132.scm srfi-134.scm \
        srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
-       srfi-151.scm srfi-154.scm \
+       srfi-151.scm srfi-154.scm srfi-155.scm \
        srfi/*.scm \
        slib.scm	 \
        check-script \
