@@ -12654,7 +12654,7 @@ operators.
 
 @c EN
 If you use @code{run-process} instead, you'll get @code{<process>} object
-without waiting @code{ls -al} to finish.  If you run the followign expression
+without waiting @code{ls -al} to finish.  If you run the following expression
 on REPL, you'll likely to see the return value before output of @code{ls}.
 @c JP
 代わりに@code{run-process}を使った場合は、@code{ls -al}の終了を待たずに
