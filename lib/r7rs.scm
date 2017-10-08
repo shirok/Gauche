@@ -378,7 +378,7 @@
   ;; current-error-port close-port close-input-port close-ouptut-port
   ;; open-input-string open-output-string get-output-string read-string
   ;; read-char peek-char read-line eof-object? eof-object char-ready?
-  ;; newline write-char
+  ;; newline write-char write-string
   (define (textual-port? p) (port? p))    ; gauche's port can handle both
   (define (binary-port? p) (port? p))     ; gauche's port can handle both
   (define (input-port-open? p) (and (input-port? p) (not (port-closed? p))))
@@ -400,13 +400,6 @@
                                          (start 0)
                                          (end (u8vector-length bv)))
     (read-block! bv port start end))
-  (define (write-string string :optional (port (current-output-port))
-                        (start #f)
-                        (end #f))
-    (if (or start end)
-      (display (substring string (or start 0) (or end (string-length string)))
-               port)
-      (display string port)))
   (define-inline write-u8 write-byte)
   (define write-bytevector write-uvector)
   (define flush-output-port flush)

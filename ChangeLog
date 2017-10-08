@@ -1,3 +1,9 @@
+2017-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm, lib/r7rs.scm (write-string): Make it built-in,
+	  for it'll be also exported from srfi-152.  Also, made it more
+	  efficient using %maybe-substring.
+
 2017-10-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-154.scm, lib/srfi-155.scm : Added.

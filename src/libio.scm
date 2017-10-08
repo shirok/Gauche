@@ -521,6 +521,12 @@
             (get-output-string o))
           (begin (write-char c o) (loop (+ i 1))))))))
 
+(define (write-string string :optional (port (current-output-port))
+                                       (start 0)
+                                       (end -1))
+  (display ((with-module gauche.internal %maybe-substring) string start end)
+           port))
+
 ;; Consume trailing whiespaces up to (including) first EOL.
 ;; This is mainly intended for interactive REPL,
 ;; where the input is buffered by line.  We want to ignore the

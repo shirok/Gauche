@@ -19946,6 +19946,19 @@ This procedure is called @code{write-u8} in R7RS.
 @c COMMON
 @end defun
 
+@defun write-string string :optional oport start end
+[R7RS base]
+@c EN
+If the optional @var{start} and @var{end} arguments are omitted,
+it is the same as @code{(display string oport)}.  The optional
+arguments restricts the range of @var{string} to be written.
+@c JP
+@var{start}と@var{end}引数が省略された場合は@code{(display string oport)}と
+同じです。それらが与えられた場合は、@var{string}中の指定範囲のみが出力されます。
+@c COMMON
+@end defun
+
+
 @defun flush :optional port
 @defunx flush-all-ports
 @c EN
