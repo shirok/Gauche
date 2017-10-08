@@ -134,9 +134,14 @@
           (set! j (+ j k))))
       (return dst))))
 
-(define (vector->string v :optional (start 0) (end -1)) ;;R7RS
+;; TRANSIENT: :optional thing will be expanded unhygienically, inserting
+;; reference to 'error'.  If we define these within #<module scheme> it
+;; would cause 'error' to be unbound.  Better fix would be to make
+;; expansion hygienic, but this is a quick remedy.
+(select-module gauche)
+(define-in-module scheme (vector->string v :optional (start 0) (end -1)) ;;R7RS
   (list->string (vector->list v start end))) ; TODO: can be more efficient
-(define (string->vector s :optional (start 0) (end -1)) ;;R7RS
+(define-in-module scheme (string->vector s :optional (start 0) (end -1)) ;;R7RS
   (list->vector (string->list s start end))) ; TOOD: can be more efficient
 
 ;;;
