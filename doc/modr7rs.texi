@@ -3092,7 +3092,7 @@ The procedures with bang are allowed, but not required, to reuse
 @code{lis}.  The ``stable'' variation guarantees stable sort.
 
 These are basically the same as Gauche's built-in  
-@code{sort}, @code{sort!}, @code{stable-sort} and @var{stable-sort!},
+@code{sort}, @code{sort!}, @code{stable-sort} and @code{stable-sort!},
 except the Gauche's version works on any sequences and takes
 arguments differently.  (@xref{Sorting and merging}.)
 @end defun
@@ -5010,8 +5010,8 @@ generator-fold          generator-for-each        generator-find
 @c NODE R7RS遅延シーケンス, @code{scheme.lseq} - R7RS遅延シーケンス
 
 
-@deftp {Module} scheme.generator
-@mdindex scheme.generator
+@deftp {Module} scheme.lseq
+@mdindex scheme.lseq
 This module provides lightweight lazy sequence (lseq), conceptually represented
 by a pair of element and generator.  When the rest of sequence is
 taken, the generator is evaluated and yields another pair of element and
