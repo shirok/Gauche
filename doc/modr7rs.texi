@@ -1995,7 +1995,7 @@ Constructs a circular list of the elements.
 [R7RS list]
 @c MOD scheme.list
 @c EN
-@code{(lambda (x) (not (pair? x)))}.
+Same as @code{(lambda (x) (not (pair? x)))}.
 
 SRFI-1 says: Provided as a procedure as it can be useful as
 the termination condition for list-processing procedures that wish to
@@ -2045,7 +2045,7 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 @defunx ninth pair
 @defunx tenth pair
 [SRFI-1]
-@c MOD srfi-1
+@c MOD scheme.list
 @c EN
 Returns n-th element of the (maybe improper) list.
 @c JP
