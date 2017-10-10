@@ -211,7 +211,7 @@
        (string-split "--aa--bbb---c-c-" #/\w+/))
 (test* "string-split (regexp)" '("--aa--bbb---c-c-")
        (string-split "--aa--bbb---c-c-" #/z+/))
-(test* "string-split (regexp)" (test-error) ;; test detection of infinite loop
+(test* "string-split (regexp)" '("" "a" "a" "" "b" "b" "b" "" "c" "" "c" "" "")
        (string-split "--aa--bbb---c-c-" #/-*/))
 
 (test* "string-split (charset)" '("aa" "bbb" "c" "d")
@@ -314,8 +314,8 @@
        (string-split "--aa--bbb---c-c-" #/\w+/ 3))
 (test* "string-split (regexp)" '("--aa--bbb---c-c-")
        (string-split "--aa--bbb---c-c-" #/z+/ 2))
-(test* "string-split (regexp)" (test-error) ;; test detection of infinite loop
-       (string-split "--aa--bbb---c-c-" #/-*/ 2))
+(test* "string-split (regexp)" '("" "a" "a" "--bbb---c-c-")
+       (string-split "--aa--bbb---c-c-" #/-*/ 3))
 (test* "string-split (bad limit)" (test-error)
        (string-split "--aa--bbb---c-c-" #/-+/ 'a))
 

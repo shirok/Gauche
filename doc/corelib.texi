@@ -8711,7 +8711,8 @@ after @var{item}.  If @var{item} is not found, returns
 @end table
 @end defun
 
-@defun string-split string splitter &optional limit
+@defun string-split string splitter &optional grammar limit start end
+@defunx string-split string splitter &optional limit start end
 @c EN
 Splits @var{string} by @var{splitter} and returns a list of strings.
 @var{splitter} can be a character, a character set, a string,
@@ -8755,6 +8756,34 @@ character in @var{string}, and the consecutive characters that caused
 @end example
 
 @c EN
+The @var{grammar} argument is the same as @code{string-join} above; it
+must be one of symbols @code{infix}, @code{strict-infix}, @code{prefix}
+or @code{suffix}.  When ommitted, @code{infix} is assumed.
+@c JP
+@var{grammar}引数の意味は上の@code{string-join}と同じです。
+シンボル@code{infix}、@code{strict-infix}、@code{prefix}、
+@code{suffix}のいずれかでなければなりません。
+省略時は@code{infix}が指定されたのと同じです。
+@c COMMON
+
+@example
+(string-split "/a/b/c/" "/" 'infix)  @result{} ("" "a" "b" "c" "")
+(string-split "/a/b/c/" "/" 'prefix) @result{} ("a" "b" "c" "")
+(string-split "/a/b/c/" "/" 'suffix) @result{} ("" "a" "b" "c")
+@end example
+
+@c EN
+In general, the following relationship holds:
+@c JP
+一般的に、以下の関係が成り立ちます。
+@c COMMON
+
+@example
+(string-join XS DELIM GRAMMAR) @result{} S
+(string-split S DELIM GRAMMAR) @result{} XS
+@end example
+
+@c EN
 If @var{limit} is given and not @code{#f}, it must be a nonnegative
 integer and specifies the maximum number of match to the @var{splitter}.
 Once the limit is reached, the rest of string is included in the result
@@ -8766,10 +8795,33 @@ as is.
 @c COMMON
 
 @example
-(string-split "a.b..c" "." 0)   @result{} ("a.b..c")
-(string-split "a.b..c" "." 1)   @result{} ("a" "b..c")
+(string-split "a.b..c" "." 'infix 0)   @result{} ("a.b..c")
+(string-split "a.b..c" "." 'infix 1)   @result{} ("a" "b..c")
+(string-split "a.b..c" "." 'infix 2)   @result{} ("a" "b" ".c")
+@end example
+
+@c EN
+The @var{grammar} argument is added for the consistency of srfis
+(srfi-130, srfi-152).  However, for the backward compatibility and
+the covenience, it also accepts @var{limit} without @var{grammar} argument;
+it is distinguishable since @var{grammar} is a symbol and
+@var{limit} is an integer.
+@c JP
+@var{grammar}引数はsrfi-130およびsrfi-152との一貫性のために追加されました。
+しかし、互換性および簡便性のため、@var{grammar}を省略して@var{limit}を与えることも
+できます。@var{grammar}はシンボルで@var{limit}は整数なので判別可能です。
+@c COMMON
+
+@example
 (string-split "a.b..c" "." 2)   @result{} ("a" "b" ".c")
 @end example
+
+@c EN
+The @var{start} and @var{end} arguments limits input string
+in the given range before splitting.
+@c JP
+@var{start}と@var{end}引数は分割する前に入力文字列を指定の範囲に制限します。
+@c COMMON
 
 @c EN
 See also @code{string-tokenize} in
@@ -8779,6 +8831,7 @@ See also @code{string-tokenize} in
 も参照して下さい。
 @c COMMON
 @end defun
+
 
 @node Incomplete strings,  , String utilities, Strings
 @subsection Incomplete strings

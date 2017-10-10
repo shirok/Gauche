@@ -1,3 +1,9 @@
+2017-10-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/stringutil.scm (string-split): Enhanced to support
+	  srfi-152.  Accept grammar, start and end optional arguments.
+	  Allow zero-width splitting.
+
 2017-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm, lib/r7rs.scm (write-string): Make it built-in,
