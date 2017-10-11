@@ -1,3 +1,9 @@
+2017-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/stringutil.scm (string-split): INCOMPATIBLE CHANGE:
+	  splitting an empty string now yields an empty list instead of
+	  (""), as srfi-152 specifies.  Let's see if it cause a problem.
+
 2017-10-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/stringutil.scm (string-split): Enhanced to support

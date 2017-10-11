@@ -58,20 +58,22 @@
   (unless (or (not limit) (and (integer? limit) (>= limit 0)))
     (error "limit argument must be a nonnegative integer or #f, but got" limit))
   (let1 s ((with-module gauche.internal %maybe-substring) string start end)
-    (when (and (equal? s "") (eq? grammar 'strict-infix))
-      (error "string must not be empty with strict-infix grammar"))
-    (let1 r (if (char? splitter)
-              (%string-split-by-char s splitter (or limit -1))
-              (%string-split-by-scanner s (%string-split-scanner splitter)
-                                        (or limit -1)))
-      (case grammar
-        [(prefix) (if (and (pair? r) (equal? (car r) ""))
-                    (cdr r)
-                    r)]
-        [(suffix) (if (and (pair? r) (equal? (car (last-pair r)) ""))
-                    (drop-right r 1)
-                    r)]
-        [else r]))))
+    (if (equal? s "")
+      (if (eq? grammar 'strict-infix)
+        (error "string must not be empty with strict-infix grammar")
+        '())
+      (let1 r (if (char? splitter)
+                (%string-split-by-char s splitter (or limit -1))
+                (%string-split-by-scanner s (%string-split-scanner splitter)
+                                          (or limit -1)))
+        (case grammar
+          [(prefix) (if (and (pair? r) (equal? (car r) ""))
+                      (cdr r)
+                      r)]
+          [(suffix) (if (and (pair? r) (equal? (car (last-pair r)) ""))
+                      (drop-right r 1)
+                      r)]
+          [else r])))))
 
 ;; aux fns
 (define (%string-split-scanner splitter)
