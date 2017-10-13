@@ -3652,15 +3652,12 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         Scm_Putz(buf, -1, port);
         return strlen(buf);
     } else if (SCM_RATNUMP(obj)) {
-        if (show_plus && Scm_Sign(obj) >= 0) {
-            Scm_Putc('+', port);
-            nchars++;
-        }
-        nchars = print_number(port, SCM_RATNUM_NUMER(obj), flags, fmt);
+        u_long flags2 = flags & ~SCM_NUMBER_FORMAT_ALT_RADIX;
+        nchars = print_number(port, SCM_RATNUM_NUMER(obj), flags2, fmt);
         Scm_Putc('/', port);
         nchars++;
-        nchars += print_number(port, SCM_RATNUM_DENOM(obj),
-                               flags & ~SCM_NUMBER_FORMAT_SHOW_PLUS, fmt);
+        flags2 &= ~SCM_NUMBER_FORMAT_SHOW_PLUS;
+        nchars += print_number(port, SCM_RATNUM_DENOM(obj), flags2, fmt);
         return nchars;
     } else if (SCM_COMPNUMP(obj)) {
         print_double(buf, FLT_BUF, SCM_COMPNUM_REAL(obj),

@@ -499,10 +499,14 @@
          ("cafebabedeadbeef" "CAFEBABEDEADBEEF" "CAFEBABEDEADBEEF"
           "+cafebabedeadbeef" "#xcafebabedeadbeef" "#x+CAFEBABEDEADBEEF")
          ("0" "0" "0" "+0" "#x0" "#x+0")
-         ("-e" "-E" "-E" "-e" "#x-e" "#x-E"))
+         ("-e" "-E" "-E" "-e" "#x-e" "#x-E")
+         ("a/b" "A/B" "A/B" "+a/b" "#xa/b" "#x+A/B")
+         ("1.0+1.0i" "1.0+1.0i" "1.0+1.0i" "+1.0+1.0i" "1.0+1.0i" "+1.0+1.0i"))
        (map (^n (map (cut number->string n 16 <>)
                      '(#f #t (uppercase) (plus) (radix) (uppercase plus radix))))
-            '(#xcafe #xcafebabedeadbeef 0 -14)))
+            '(#xcafe #xcafebabedeadbeef 0 -14 10/11 1+i)))
+
+
 
 ;;==================================================================
 ;; Conversions
