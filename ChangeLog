@@ -1,3 +1,9 @@
+2017-10-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (number->string): Use Scm_PrintNumber directly
+	  so that we can make ScmNumberFormat customization feature available
+	  to Scheme.  Need more testing, so it's unofficial yet.
+
 2017-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/stringutil.scm (string-split): INCOMPATIBLE CHANGE:

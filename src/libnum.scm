@@ -175,12 +175,32 @@
 (define inexact exact->inexact)           ;R6RS
 
 (select-module scheme)
-(define-cproc number->string
-  (obj :optional (radix::<fixnum> 10) (use-upper? #f)) :fast-flonum :constant
-  (return (Scm_NumberToString obj radix
-                              (?: (SCM_FALSEP use_upperP)
-                                  0
-                                  SCM_NUMBER_FORMAT_USE_UPPER))))
+(define-cproc number->string (obj :optional (radix::<fixnum> 10)
+                                            (flags #f)
+                                            (precision::<fixnum> -1))
+  :fast-flonum :constant
+  (let* ([f::u_long 0]
+         [fmt::ScmNumberFormat]
+         [o::ScmPort* (SCM_PORT (Scm_MakeOutputStringPort TRUE))])
+    (cond [(SCM_FALSEP flags) (set! f 0)]
+          [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
+          [(SCM_PAIRP flags)
+           (unless (SCM_FALSEP (Scm_Memq 'use-upper flags))
+             (logior= f SCM_NUMBER_FORMAT_USE_UPPER))
+           (unless (SCM_FALSEP (Scm_Memq 'show-plus flags))
+             (logior= f SCM_NUMBER_FORMAT_SHOW_PLUS))
+           (unless (SCM_FALSEP (Scm_Memq 'add-radix flags))
+             (logior= f SCM_NUMBER_FORMAT_ALT_RADIX))]
+          [else
+           (Scm_Error "flags argument must be a list of symbols \
+                       (use-upper, show-plus, add-radix) or a boolean, \
+                       but got: %S" flags)])
+    (Scm_NumberFormatInit (& fmt))
+    (set! (ref fmt radix) radix)
+    (set! (ref fmt flags) f)
+    (set! (ref fmt precision) precision)
+    (Scm_PrintNumber o obj (& fmt))
+    (return (Scm_GetOutputString o 0))))
 
 (define-cproc string->number (obj::<string> :optional (radix::<fixnum> 10))
   (return (Scm_StringToNumber obj radix 0)))
