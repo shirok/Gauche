@@ -491,6 +491,19 @@
         "-340282366920938463463374607431768211457")
       (i-tester2 (exp2 127)))
 
+;;------------------------------------------------------------------
+(test-section "number->string customization")
+
+(test* "number->string flags"
+       '(("cafe" "CAFE" "CAFE" "+cafe" "#xcafe" "#x+CAFE")
+         ("cafebabedeadbeef" "CAFEBABEDEADBEEF" "CAFEBABEDEADBEEF"
+          "+cafebabedeadbeef" "#xcafebabedeadbeef" "#x+CAFEBABEDEADBEEF")
+         ("0" "0" "0" "+0" "#x0" "#x+0")
+         ("-e" "-E" "-E" "-e" "#x-e" "#x-E"))
+       (map (^n (map (cut number->string n 16 <>)
+                     '(#f #t (uppercase) (plus) (radix) (uppercase plus radix))))
+            '(#xcafe #xcafebabedeadbeef 0 -14)))
+
 ;;==================================================================
 ;; Conversions
 ;;

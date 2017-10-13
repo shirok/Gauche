@@ -185,16 +185,15 @@
     (cond [(SCM_FALSEP flags) (set! f 0)]
           [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
           [(SCM_PAIRP flags)
-           (unless (SCM_FALSEP (Scm_Memq 'use-upper flags))
+           (unless (SCM_FALSEP (Scm_Memq 'uppercase flags))
              (logior= f SCM_NUMBER_FORMAT_USE_UPPER))
-           (unless (SCM_FALSEP (Scm_Memq 'show-plus flags))
+           (unless (SCM_FALSEP (Scm_Memq 'plus flags))
              (logior= f SCM_NUMBER_FORMAT_SHOW_PLUS))
-           (unless (SCM_FALSEP (Scm_Memq 'add-radix flags))
+           (unless (SCM_FALSEP (Scm_Memq 'radix flags))
              (logior= f SCM_NUMBER_FORMAT_ALT_RADIX))]
           [else
-           (Scm_Error "flags argument must be a list of symbols \
-                       (use-upper, show-plus, add-radix) or a boolean, \
-                       but got: %S" flags)])
+           (Scm_Error "flags argument must be a list of symbols (uppercase, \
+                       plus, radix) or a boolean, but got: %S" flags)])
     (Scm_NumberFormatInit (& fmt))
     (set! (ref fmt radix) radix)
     (set! (ref fmt flags) f)

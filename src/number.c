@@ -3620,12 +3620,15 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
 
     if (SCM_INTP(obj)) {
         long value = SCM_INT_VALUE(obj);
-        if (value == 0) { SCM_PUTC('0', port); return 1; }
         if (value < 0) {
             SCM_PUTC('-', port);
             nchars++;
             value = -value;     /* this won't overflow */
+        } else if (show_plus) {
+            SCM_PUTC('+', port);
+            nchars++;
         }
+        if (value == 0) { SCM_PUTC('0', port); return nchars+1; }
         int i;
         for (i = FLT_BUF-1; i >= 0 && value > 0; i--) {
             int c = value % radix;
@@ -3637,14 +3640,22 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         return nchars;
     } else if (SCM_BIGNUMP(obj)) {
         ScmObj s = Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper);
+        if(show_plus && Scm_Sign(obj) >= 0) {
+            Scm_Putc('+', port);
+            nchars++;
+        }
         Scm_Puts(SCM_STRING(s), port);
-        return SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(s));
+        return nchars + SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(s));
     } else if (SCM_FLONUMP(obj)) {
         print_double(buf, FLT_BUF, SCM_FLONUM_VALUE(obj),
                      show_plus, fmt->precision, fmt->exp_lo, fmt->exp_hi);
         Scm_Putz(buf, -1, port);
         return strlen(buf);
     } else if (SCM_RATNUMP(obj)) {
+        if (show_plus && Scm_Sign(obj) >= 0) {
+            Scm_Putc('+', port);
+            nchars++;
+        }
         nchars = print_number(port, SCM_RATNUM_NUMER(obj), flags, fmt);
         Scm_Putc('/', port);
         nchars++;
