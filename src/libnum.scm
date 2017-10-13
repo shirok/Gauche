@@ -182,7 +182,7 @@
   (let* ([f::u_long 0]
          [fmt::ScmNumberFormat]
          [o::ScmPort* (SCM_PORT (Scm_MakeOutputStringPort TRUE))])
-    (cond [(SCM_FALSEP flags) (set! f 0)]
+    (cond [(or (SCM_FALSEP flags) (SCM_NULLP flags)) (set! f 0)]
           [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
           [(SCM_PAIRP flags)
            (unless (SCM_FALSEP (Scm_Memq 'uppercase flags))
