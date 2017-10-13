@@ -50,6 +50,8 @@
 ;;         | (O flags mincol padchar commachar interval)
 ;;         | (X flags mincol padchar commachar interval)
 ;;         | (x flags mincol padchar commachar interval)
+;;         | (R flags mincol padchar commachar interval)
+;;         | (r flags mincol padchar commachar interval)
 ;;         | (* flags count)
 ;; flags : '() | (Cons #\@ flags) | (Cons #\: flags)
 
