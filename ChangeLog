@@ -1,3 +1,8 @@
+2017-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-158.scm: Added.  Srfi-158 is still draft, so this is
+	  a provisional addition and may be changed later.
+
 2017-10-13  Shiro Kawai  <shiro@acm.org>
 
 	* test/include/srfi-152-tests.scm: Added srfi-152 tests.

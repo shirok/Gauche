@@ -2157,4 +2157,19 @@
   (include "include/srfi-155-tests.scm")
   (run-tests))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-158")
+(use srfi-158)
+(test-module 'srfi-158)
+
+(define-module srfi-158-test
+  (use compat.chibi-test)
+  (use gauche.uvector)
+  (define bytevector u8vector)
+  (use srfi-1)
+  (use srfi-13)
+  (use srfi-158)
+  (chibi-test
+   (include "include/srfi-158-tests.scm")))
+
 (test-end)
