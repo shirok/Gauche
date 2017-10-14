@@ -1,3 +1,8 @@
+2017-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* test/include/srfi-152-tests.scm: Added srfi-152 tests.
+	  Now srfi-152 support is complete.
+
 2017-10-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (number->string): Use Scm_PrintNumber directly

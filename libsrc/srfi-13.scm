@@ -83,6 +83,7 @@
 ;; Utility macro to handle char/char-set/pred match.
 ;; To avoid closure creation in inner loop, this returns a static procedure
 ;; that takes char/char-set/pred and char.
+;; NB: This is not exported, but shared with srfi-152.
 (define-inline (%get-char-pred char/char-set/pred)
   (cond [(char? char/char-set/pred) char=?]
         [(char-set? char/char-set/pred) char-set-contains?]

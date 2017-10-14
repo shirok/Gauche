@@ -2123,6 +2123,14 @@
  (include "include/srfi-151-tests.scm"))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-152")
+(use srfi-152)
+(test-module 'srfi-152)
+
+(chibi-test
+ (include "include/srfi-152-tests.scm"))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-154")
 (use srfi-154)
 (test-module 'srfi-154)
