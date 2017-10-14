@@ -3423,7 +3423,9 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
         ScmObj r, s, mm;
         int exp, sign;
         int mp2 = FALSE, fixup = FALSE;
-        int fracdigs = 0;         /* count digits below the decimal point */
+        int fracdigs = -1;   /* Count digits below the decimal point.
+                                Initial value is -1.  Once we emit the decimal
+                                point it becomes 0, then we start counting. */
 
         IEXPT10_INIT();
         if (val < 0) val = -val;
@@ -3502,7 +3504,7 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
            If POINT <= 0, we need to emit preceding zeros. */
         if (point <= 0) {
             *buf++ = '0'; buflen--;
-            *buf++ = '.', buflen--;
+            *buf++ = '.', buflen--, fracdigs++; 
             for (int digs=point;digs<0 && buflen>5;digs++) {
                 *buf++ = '0'; buflen--; fracdigs++;
             }
@@ -3510,12 +3512,12 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
 
         /* generate the digits */
         int digs;
-        for (digs=1;buflen>5;digs++, fracdigs++) {
+        for (digs=1; buflen>5; digs++) {
             ScmObj r10 = Scm_Mul(r, SCM_MAKE_INT(10));
             ScmObj q = Scm_Quotient(r10, s, &r);
             ScmObj mp;
 
-            if (fracdigs == precision) {
+            if (precision >= 0 && fracdigs >= precision-1) {
                 mm = mp = Scm_Ash(s, -1);
             } else {
                 mm = Scm_Mul(mm, SCM_MAKE_INT(10));
@@ -3537,7 +3539,8 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
             if (!tc1) {
                 if (!tc2) {
                     *buf++ = (char)SCM_INT_VALUE(q) + '0';
-                    if (digs == point) *buf++ = '.', buflen--;
+                    if (digs == point) *buf++ = '.', buflen--, fracdigs++;
+                    if (digs > point) fracdigs++;
                     continue;
                 } else {
                     *buf++ = (char)SCM_INT_VALUE(q) + '1';
@@ -3545,6 +3548,7 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
                 }
             } else {
                 if (!tc2) {
+                    SCM_ASSERT(SCM_INTP(q));
                     *buf++ = (char)SCM_INT_VALUE(q) + '0';
                     break;
                 } else {
@@ -3566,7 +3570,7 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
                 *buf++ = '0', buflen--;
             }
             *buf++ = '.';
-            *buf++ = '0';
+            if (precision != 0) *buf++ = '0';
         }
 
         /* prints exponent.  we shifted decimal point, so -1. */
