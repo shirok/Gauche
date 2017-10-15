@@ -1,5 +1,9 @@
 2017-10-14  Shiro Kawai  <shiro@acm.org>
 
+	* doc/modsrfi.scm: Document srfi-151.  Reduces content of srfi-60
+	  description to avoid duplication.  Change references to srfi-60
+	  for references to srfi-151 wherever relevant.
+
 	* lib/srfi-158.scm: Added.  Srfi-158 is still draft, so this is
 	  a provisional addition and may be changed later.
 

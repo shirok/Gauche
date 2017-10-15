@@ -53,6 +53,7 @@ srfi N is supporeted by Gauche.)
 * Vector library::              srfi-133
 * Integer division::            srfi-141
 * Fixnums::                     srfi-143
+* Bitwise operations::          srfi-151
 @end menu
 
 
@@ -3877,167 +3878,70 @@ Roughly corresponds to Gauche's @code{use} forms:
 @deftp {Module} srfi-60
 @mdindex srfi-60
 This srfi provides bit operations on integers, regarding them
-as 2's complement representation.
+as 2's complement representation.  It is compatible to SLIB's @code{logical}
+module.
 
-Most of the functionalities in this module are already provided
-as builtin procedures (@pxref{Bitwise operations}).  This srfi
-defines popular aliases for many of those procedures, thus
-has better portability.  There are also several additional
-procedures than Gauche's builtin bitwise operations.
-@end deftp
+The newer srfi-151 (@pxref{Bitwise operations}) provides the same
+functionality and more, with more consistent naming.  We recommend
+new code to use srfi-151, while we keep srfi-60 for the backward
+compatibility.
 
-@subsection Bitwise operators
-
-@defun lognot n
-@defunx bitwise-not n
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{lognot} (@pxref{Bitwise operations}).
-@end defun
-
-@defun logand n @dots{}
-@defunx bitwise-and n @dots{}
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{logand} (@pxref{Bitwise operations}).
-@end defun
-
-@defun logior n @dots{}
-@defunx bitwise-ior n @dots{}
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{logior} (@pxref{Bitwise operations}).
-@end defun
-
-@defun logxor n @dots{}
-@defunx bitwise-xor n @dots{}
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{logxor} (@pxref{Bitwise operations}).
-@end defun
-
-@defun bitwise-if mask n0 n1
-[SRFI-60]
-@c MOD srfi-60
-Returns integer, whose @var{n}-th bit is taken as follows:
-If the @var{n}-th bit of @var{mask} is 1, the @var{n}-th bit of @var{n0};
-otherwise, the @var{n}-th bit of @var{n1}.
+The following procedures are Gauche built-in.
+@xref{Basic bitwise operations}, for the description.
 
 @example
-(bitwise-if #b10101100 #b00110101 #b11001010)
- @result{} #b01100110
+lognot           logand           logior           logxor
+logtest          logcount         integer-length   logbit?
+copy-bit         bit-field        copy-bit-field   ash
 @end example
-@end defun
 
-@defun logtest mask n
-@defunx any-bits-set? mask n
+The following procedures are defined in srfi-151.
+@xref{Bitwise operations}, for the description.
+
+@example
+bitwise-not      bitwise-and      bitwise-ior      bitwise-xor
+arithmetic-shift bit-count        bitwise-if       bit-set?
+copy-bit         first-set-bit    
+@end example
+@end deftp
+
+We describe procedures that are unique in srfi-60 below.
+
+@defun bitwise-merge mask n0 n1
 [SRFI-60]
 @c MOD srfi-60
-Same as builtin @code{logtest} (@pxref{Bitwise operations}).
+Same as @code{bitwise-if} (@pxref{Bitwise operations}).
 @end defun
 
-@subsection Integer properties
-
-@defun logcount n
-@defunx bit-count n
+@defun any-bits-set? mask n
 [SRFI-60]
 @c MOD srfi-60
-Same as builtin @code{logcount} (@pxref{Bitwise operations}).
-@end defun
-
-@defun integer-length n
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{integer-length} (@pxref{Bitwise operations}).
+Same as builtin @code{logtest} (@pxref{Basic bitwise operations}).
+It is also called @code{any-bit-set?} in srfi-151 (@pxref{Bitwise operations}).
 @end defun
 
 @defun log2-binary-factors n
-@defunx first-set-bit n
 [SRFI-60]
 @c MOD srfi-60
-Returns the number of factors of two of integer @var{n}; that is,
-returns a maximum @var{k} such that @code{(expt 2 k)} divides
-@var{n} without a remainder.
-It is the same as the index of the least significant @code{1} in @var{n},
-hence the alias @code{first-set-bit}.
-
-@example
-(log2-binary-factors 0) @result{} -1   ; @r{edge case}
-(log2-binary-factors 1) @result{} 0
-(log2-binary-factors 2) @result{} 1
-(log2-binary-factors 15) @result{} 0
-(log2-binary-factors 16) @result{} 4
-@end example
-
-These are equivalent to Gauche's built-in @code{twos-exponent-factor}
-(@pxref{Bitwise operations}).
-@end defun
-
-@subsection Bit within word
-
-@defun logbit? index n
-@defunx bit-set? index n
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{logbit?} (@pxref{Bitwise operations}).
-@end defun
-
-@defun copy-bit index n bit
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{copy-bit} (@pxref{Bitwise operations}).
-@end defun
-
-@subsection Field of bits
-
-@defun bit-field n start end
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{bit-field} (@pxref{Bitwise operations}).
-@end defun
-
-@defun copy-bit-field to from start end
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{copy-bit-field} (@pxref{Bitwise operations}).
-@end defun
-
-@defun ash n count
-@defunx arithmetic-shift n count
-[SRFI-60]
-@c MOD srfi-60
-Same as builtin @code{ash} (@pxref{Bitwise operations}).
+It is also called as @code{first-set-bit} in this srfi, which is also
+in srfi-151 (@pxref{Bitwise operations}).
+This is equivalent to Gauche's built-in  @code{twos-exponent-factor}
+(@pxref{Basic bitwise operations}).
 @end defun
 
 @defun rotate-bit-field n count start end
 [SRFI-60]
 @c MOD srfi-60
-Rotate the region of @var{n} between @var{start}-th bit (inclusive) and
-@var{end}-th bit (exclusive) by @var{count} bits.
-
-@example
-(rotate-bit-field #b110100100010000 -1 5 9)
- @result{} 26768 ; #b110100010010000
-
-(rotate-bit-field #b110100100010000 1 5 9)
- @result{} 26672 ; #b110100000110000
-@end example
+This is equivalent to @code{bit-field-rotate} in srfi-151
+(@pxref{Bitwise operations}).
 @end defun
 
 @defun reverse-bit-field n start end
 [SRFI-60]
 @c MOD srfi-60
-Reverse the order of bits of @var{n} between @var{start}-th bit
-(inclusive) and @var{end}-th bit (exclusive).
-
-@example
-(reverse-bit-field #b10100111 0 8)
- @result{} 229 ; #b11100101
-@end example
-
+This is equivalent to @code{bit-field-reverse} in srfi-151
+(@pxref{Bitwise operations}).
 @end defun
-
-@subsection Bit as booleans
 
 @defun integer->list n :optional len
 [SRFI-60]
@@ -4048,9 +3952,12 @@ If a nonnegative integer @var{len} is given, it specifies the length
 of the result.   If it is omitted, @code{(integer-length n)} is used.
 
 @example
-(integer->list 9)   @result{} (#t #f #f #t)
-(integer->list 9 6) @result{} (#f #f #t #f #f #t)
+(integer->list 10)   @result{} (#t #f #t #f)
+(integer->list 10 6) @result{} (#f #f #t #f #t #f)
 @end example
+
+Srfi-151 has similar procedure @code{bits->list}, with a reversed bit
+order (LSB first) (@pxref{Bitwise operations}).
 @end defun
 
 @defun list->integer lis
@@ -4062,14 +3969,20 @@ each value as a binary digit.  If @var{n} is nonnegative integer,
 @code{(eqv? (list->integer (integer->list n)) n)} is true.
 
 @example
-(list->integer '(#f #t #f #f #t)) @result{} 9
+(list->integer '(#f #t #f #t #f)) @result{} 10
 @end example
+
+Srfi-151 has similar procedure @code{list->bits}, with a reversed bit
+order (LSB first) (@pxref{Bitwise operations}).
 @end defun
 
 @defun booleans->integer bool @dots{}
 [SRFI-60]
 @c MOD srfi-60
 @equiv{} @code{(list->integer (list @var{bool} @dots{}))}
+
+Srfi-151 has similar procedure @code{bits}, with a reversed bit
+order (LSB first) (@pxref{Bitwise operations}).
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -5696,7 +5609,7 @@ Balancedバージョンは@code{-abs(d/2) <= remainder < abs(d/2)}という
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Fixnums,  , Integer division, Library modules - SRFIs
+@node Fixnums, Bitwise operations, Integer division, Library modules - SRFIs
 @section @code{srfi-143} - Fixnums
 @c NODE Fixnums, @code{srfi-143} - Fixnums
 
@@ -5975,7 +5888,7 @@ These are equivalent to @code{lognot}, @code{logand},
 @code{copy-bit}, @code{logbit?}, @code{bit-field},
 and @code{twos-exponent-factor} respectively,
 except that you should use these only for fixnums.
-@xref{Bitwise operations}.
+@xref{Basic bitwise operations}.
 @c JP
 これらはfixnumのみに適用しなければならないことを除き、
 組み込みの@code{lognot}、 @code{logand}、
@@ -5983,7 +5896,7 @@ except that you should use these only for fixnums.
 @code{logcount}、
 @code{copy-bit}、 @code{logbit?}、 @code{bit-field}、
 @code{twos-exponent-factor}とそれぞれ同じです。
-詳しくは@ref{Bitwise operations}参照。
+詳しくは@ref{Basic bitwise operations}参照。
 @c COMMON
 @end defun
 
@@ -6006,8 +5919,346 @@ srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
 @c COMMON
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Bitwise operations,  , Fixnums, Library modules - SRFIs
+@section @code{srfi-151} - Bitwise operations
+@c NODE ビット演算, @code{srfi-151} - ビット演算
+
+@deftp {Module} srfi-151
+@mdindex srfi-151
+This module provides comprehensive bitwise operations.  It is mostly
+a superset of srfi-60, with some change of names for the consistency
+and the compatibility (@pxref{Integers as bits}).  We keep srfi-60 for
+legacy code, while recommend this module to be used in the new code.
+
+The following procedures are Gauche built-in.
+@xref{Basic bitwise operations}, for the description.
+
+@example
+integer-length    copy-bit          bit-field
+@end example
+@end deftp
+
+@subheading Basic operations
+
+@defun bitwise-not n
+[SRFI-151]
+@c MOD srfi-151
+Returns the bitwise complement of @var{n}.
+Same as builtin @code{lognot} (@pxref{Basic bitwise operations}).
+@end defun
+
+@defun bitwise-and n @dots{}
+@defunx bitwise-ior n @dots{}
+@defunx bitwise-xor n @dots{}
+@defunx bitwise-eqv  n @dots{}
+[SRFI-151]
+@c MOD srfi-151
+When no arguments are given, these procedures returns @code{-1}, @code{0},
+@code{0} and @code{-1}, respectively.  With one arguments, they return the
+argument as is.  With two arguments, they return bitwise and, ior, xor,
+and eqv (complement of xor).  With three or more arguments, they apply
+binary operations associaively, that is,
+
+@example
+(bitwise-xor a b c)
+ @equiv{} (bitwise-xor a (bitwise-xor b c))
+ @equiv{} (bitwise-xor (bitwise-xor a b) c)
+@end example
+
+Be careful that multi-argument @code{bitwise-eqv} does not produce
+bit 1 everywhere that all the argument's bit agree.
+
+The first three procedures are the same as built-in 
+@code{logand}, @code{logior} and @code{logxor}, respectively
+(@pxref{Basic bitwise operations}).
+@end defun
+
+@defun bitwise-nand n0 n1
+@defunx bitwise-nor n0 n1
+@defunx bitwise-andc1 n0 n1
+@defunx bitwise-andc2 n0 n1
+@defunx bitwise-orc1 n0 n1
+@defunx bitwise-orc2 n0 n1
+[SRFI-151]
+@c MOD srfi-151
+These operations are not associative.
+
+@example
+nand n0 n1   @equiv{}  (NOT (AND n0 n1))
+nor n0 n1    @equiv{}  (NOT (OR n0 n1))
+andc1 n0 n1  @equiv{}  (AND (NOT n0) n1)
+andc2 n0 n1  @equiv{}  (AND n0 (NOT n1))
+orc1 n0 n1   @equiv{}  (OR (NOT n0) n1)
+orc2 n0 n1   @equiv{}  (OR n0 (NOT n1))
+@end example
+@end defun
+
+@subheading Integer operations
+
+@defun arithmetic-shift n count
+[SRFI-151]
+@c MOD srfi-151
+Shift @var{n} for @var{count} bits to left; if @var{count} is negative,
+it shifts @var{n} to right for @var{-count} bits.
+
+Same as builtin @code{ash} (@pxref{Basic bitwise operations}).
+@end defun
+
+@defun bit-count n
+[SRFI-151]
+@c MOD srfi-151
+If @var{n} is positive, returns the number of @code{1}'s in @var{n}.
+If @var{n} is negative, returns the number of @code{0}'s in @var{n}.
+
+Same as builtin @code{logcount} (@pxref{Basic bitwise operations}).
+@end defun
+
+@defun bitwise-if mask n0 n1
+[SRFI-151]
+@c MOD srfi-151
+Returns integer, whose @var{n}-th bit is taken as follows:
+If the @var{n}-th bit of @var{mask} is 1, the @var{n}-th bit of @var{n0};
+otherwise, the @var{n}-th bit of @var{n1}.
+
+@example
+(bitwise-if #b10101100 #b00110101 #b11001010)
+ @result{} #b01100110
+@end example
+@end defun
+
+@subheading Single-bit operations
+
+@defun bit-set? index n
+[SRFI-151]
+@c MOD srfi-151
+Returns @code{#t} or @code{#f} if @var{index}-th bit (counted from LSB)
+of @var{n} is @code{1} or @code{0}, respectively.
+
+Same as built-in @code{logbit?} (@pxref{Basic bitwise operations}).
+@end defun
+
+@defun bit-swap index1 index2 n
+[SRFI-151]
+@c MOD srfi-151
+Returns an integer with @var{index1}-th bit and @var{index2}-th bit are
+swapped.  Index is counted from LSB.
+@end defun
+
+@defun any-bit-set? mask n
+@defunx every-bit-set? mask n
+[SRFI-151]
+@c MOD srfi-151
+Returns @code{#t} iff any/all bits set in @var{mask} are also set in @var{n}.
+
+@code{any-bit-set?} is the same as built-in @code{logtest},
+except @code{logtest} accepts one or more arguments
+(@pxref{Basic bitwise operations}).
+@end defun
+
+@defun first-set-bit n
+[SRFI-151]
+@c MOD srfi-151
+Returns the number of factors of two of integer @var{n}; that is,
+returns a maximum @var{k} such that @code{(expt 2 k)} divides
+@var{n} without a remainder.
+It is the same as the index of the least significant @code{1} in @var{n},
+hence the alias @code{first-set-bit}.
+
+@example
+(first-set-bit 0) @result{} -1   ; @r{edge case}
+(first-set-bit 1) @result{} 0
+(first-set-bit 2) @result{} 1
+(first-set-bit 15) @result{} 0
+(first-set-bit 16) @result{} 4
+@end example
+
+This is equivalent to Gauche's built-in @code{twos-exponent-factor}
+(@pxref{Basic bitwise operations}).
+@end defun
+
+@subheading Bit field operations
+
+@defun bit-field-any? n start end
+@defunx bit-field-every? n start end
+[SRFI-151]
+@c MOD srfi-151
+Returns @code{#t} iff any/all bits of @var{n} from @var{start} (inclusive)
+to @var{end} (exclusive) are set.
+@end defun
+
+@defun bit-field-clear n start end
+@defunx bit-field-set n start end
+[SRFI-151]
+@c MOD srfi-151
+Returns @var{n} with the bits from @var{start} (inclusive)
+to @var{end} (exclusive) are set to all @code{0}'s/@code{1}'s.
+@end defun
+
+@defun bit-field-replace dst src start end
+[SRFI-151]
+@c MOD srfi-151
+Returns @var{dst} with the bitfield from @var{start} to @var{end}
+are replaced with the least-significant (@var{end}-@var{start}) bits
+of @var{src.}
+
+@example
+(bit-field-replace #b101010 #b010 1 4) @result{} #b100100
+@end example
+
+Same as built-in @code{copy-bit-field} (@pxref{Basic bitwise operations}).
+@end defun
+
+@defun bit-field-replace-same dst src start end
+[SRFI-151]
+@c MOD srfi-151
+Returns @var{dst} with the bitfield from @var{start} to @var{end}
+are replaced with the @code{src}'s bitfield from @var{start} to @var{end}.
+
+@example
+(bit-field-replace-same #b111111 #b100100 1 4) @result{} #b110101
+@end example
+@end defun
+
+@defun bit-field-rotate n count start end
+[SRFI-151]
+@c MOD srfi-151
+Rotate the region of @var{n} between @var{start}-th bit (inclusive) and
+@var{end}-th bit (exclusive) by @var{count} bits.
+
+@example
+(bit-field-rotate #b110100100010000 -1 5 9)
+ @result{} 26768 ; #b110100010010000
+
+(bit-field-rotate #b110100100010000 1 5 9)
+ @result{} 26672 ; #b110100000110000
+@end example
+@end defun
+
+@defun bit-field-reverse n start end
+[SRFI-151]
+@c MOD srfi-151
+Reverse the order of bits of @var{n} between @var{start}-th bit
+(inclusive) and @var{end}-th bit (exclusive).
+
+@example
+(bit-field-reverse #b10100111 0 8)
+ @result{} 229 ; #b11100101
+@end example
+@end defun
+
+@subheading Bits conversion
+
+@defun bits->list n :optional len
+@defunx bits->vector n :optional len
+[SRFI-151]
+@c MOD srfi-151
+Returns a list/vector of booleans of length @var{len},
+corresponding to each bit in non-negative integer @var{n}, LSB-first.
+When @var{len} is omitted, @code{(integer-length n)} is used.
+
+@example
+(bits->vector #b101101110)
+  @result{} #(#f #t #t #t #f #t #t #f #t)
+@end example
+
+Note: Srfi-60 has a similar @code{integer->list}, but the order of
+bits is reversed.
+@end defun
+
+@defun list->bits bool-list
+@defunx vector->bits bool-vector
+[SRFI-151]
+@c MOD srfi-151
+Returns an exact integer formed from boolean values in given list/vector,
+LSB first.  The result will never be negative.
+
+@example
+(list->bits '(#f #t #t #t #f #t #t #f #t))
+ @result{} #b101101110
+@end example
+
+Note: Srfi-60 has a similar @code{list->integer}, but the order of
+bits is reversed.
+@end defun
+
+@defun bits bool @dots{}
+[SRFI-151]
+@c MOD srfi-151
+Returns the integer coded by @var{bool}s, LSB first.
+The result will never be negative.
+
+@example
+(bits #f #t #t #t #f #t #t #f #t)
+ @result{} #b101101110
+@end example
+
+Note: Srfi-60 has a similar @code{booleans->integer}, but the order of
+bits is reversed.
+@end defun
+
+@subheading Fold, unfold and generate
+
+@defun bitwise-fold kons knil n
+[SRFI-151]
+@c MOD srfi-151
+Traverse bits in integer @var{n} from LSB to the @code{(integer-length n)} bit,
+applying @code{kons} on the bit as boolean
+and the seed value, whose initial value
+is given by @var{knil}.  Returns the last result of @var{kons}.
+
+@example
+(bitwise-fold cons '() #b10110111)
+ @result{} (#t #f #t #t #f #t #t #t)
+@end example
+@end defun
+
+@defun bitwise-for-each proc n
+[SRFI-151]
+@c MOD srfi-151
+Applies @var{proc} to the bit as boolean in @var{n}, from LSB to
+the @code{(integer-length n)} bit.  The result is discarded.
+@end defun
+
+@defun bitwise-unfold p f g seed
+[SRFI-151]
+@c MOD srfi-151
+Generates a non-negative integer bit by bit, from LSB to MSB.
+For each iteration, @var{p} is applied to the current state value,
+and if it returns a true value, the iteration ends and @code{bitwise-unfold}
+returns the accumulated bits as an integer.
+Otherwise, @var{f} is applied to the current state value, and
+its result, coerced to a boolean value, determines the bit value.
+Then @var{g} is applied to the current state value to produce
+the next state value of the next iteration.
+
+The following expression produces a bitfield where n-th bit
+indicates whether n is prime or not:
+
+@example
+(use math.prime)
+(bitwise-unfold (cut = 100 <>)
+                small-prime?
+                (cut + 1 <>)
+                0)
+@end example
+@end defun
+
+@defun make-bitwise-generator n
+[SRFI-151]
+@c MOD srfi-151
+Returns a generator that generates boolean values
+corresponding to the bits in @var{n}, LSB-first.  The returned generator
+is infinite.
+
+This is similar to @code{bits->generator} in @code{gauche.generator},
+except that the generator created by it stops at the integer
+length of @code{n} (@pxref{Generators}).
+@end defun
+
 
 @c Local variables:
 @c mode: texinfo
 @c coding: utf-8
 @c end:
+

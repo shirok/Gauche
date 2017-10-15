@@ -773,11 +773,15 @@ binary data, a la Perl's @code{pack}/@code{unpack}.
 @c COMMON
 
 @c EN
-Gauche core provides bitshift and mask operations.
-See @ref{Bitwise operations}.
+Gauche core provides basic bitshift and mask operations
+(@pxref{Basic bitwise operations}).
+SRFI-151 has comprehensive bitwise operations
+(@pxref{Bitwise operations}).
 @c JP
-Gaucheコアはビットシフトおよびマスク操作を提供しています。
-@ref{Bitwise operations}を見てください。
+Gaucheコアは基本的なビットシフトおよびマスク操作を提供しています
+(@ref{Basic bitwise operations}参照)。
+SRFI-151はより包括的なビット演算を提供します
+(@ref{Bitwise operations}参照)。
 @c COMMON
 
 @node Naming convention of libraries, Obsoleted modules, Finding libraries you need, Library modules - Overview

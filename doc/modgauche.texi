@@ -5823,12 +5823,12 @@ at the last element, and reverse generators ends at the first element.
 @c MOD gauche.generator
 @c EN
 These procedures take an exact integer and treat it as a sequence of
-boolean values (0 for false and 1 for true), as @code{integer->list} does
-(@pxref{Integers as bits}).  @code{Bits->generator} takes bits from
+boolean values (0 for false and 1 for true), as @code{bits->list} does
+(@pxref{Bitwise operations}).  @code{Bits->generator} takes bits from
 LSB, while @code{reverse-bits->generator} takes them from MSB.
 @c JP
 これらの手続きは正確な整数を引数に取り、
-@code{integer->list}と同様に(@ref{Integers as bits}参照)、
+@code{bits->list}と同様に(@ref{Bitwise operations}参照)、
 それを真偽値のシーケンス(0が偽、1を真)として扱います。
 @code{bits->generator}はLSBから、@code{reverse-bits->generator}は
 MSBからビットを取り出します。
@@ -5847,13 +5847,13 @@ the range of bitfield, LSB being 0.  Unlike @code{list->generator} etc,
 @var{start} specifies the rightmost position (inclusive) and
 @var{end} specfies the leftmost position (exclusive).  It is consistent
 with other procedures that accesses bit fields in integers
-(@pxref{Integers as bits}).
+(@pxref{Bitwise operations}).
 @c JP
 省略可能引数@var{start}と@var{end}はビットフィールドの範囲を指定します
 (LSBが0)。@code{list->generator}等の同名の引数と違って、
 @var{start}が右端(含まれる)、@var{end}が左端(含まれない)を指定します。
 この指定方法は整数のビットフィールドにアクセスする他の手続きと一貫しています
-(@ref{Integers as bits}参照)。
+(@ref{Bitwise operations}参照)。
 @c COMMON
 
 @example
@@ -5865,6 +5865,16 @@ with other procedures that accesses bit fields in integers
 (generator->list (reverse-bits->generator #x56 4 8)
   @result{} (#f #t #f #t)  ; takes bit 7, 6, 5 and 4 
 @end example
+
+@c EN
+Note: SRFI-151's @code{make-bitwise-generator} is similar to
+@code{bits->generator}, except that it produces an infinite generator.
+@xref{Bitwise operations}.
+@c JP
+註: SRFI-151の@code{make-bitwise-generator}は
+@code{bits->generator}と似ていますが、生成されるジェネレータは無限ジェネレータになります。
+@ref{Bitwise operations}参照。
+@c COMMON
 @end defun
 
 @defun port->sexp-generator input-port

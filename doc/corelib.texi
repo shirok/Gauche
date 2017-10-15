@@ -2147,7 +2147,7 @@ Gaucheは次のタイプの数値をサポートしています。
 * Numerical comparison::
 * Arithmetics::
 * Numerical conversions::
-* Bitwise operations::
+* Basic bitwise operations::
 * Endianness::
 @end menu
 
@@ -3224,7 +3224,7 @@ to return one smaller than the supposed value.
 @c COMMON
 @end defun
 
-@node Numerical conversions, Bitwise operations, Arithmetics, Numbers
+@node Numerical conversions, Basic bitwise operations, Arithmetics, Numbers
 @subsection Numerical conversions
 @c NODE 数値の変換
 
@@ -3612,9 +3612,9 @@ Other class may provide a method to customize the behavior.
 @c COMMON
 @end deffn
 
-@node Bitwise operations, Endianness, Numerical conversions, Numbers
-@subsection Bitwise operations
-@c NODE ビット演算
+@node Basic bitwise operations, Endianness, Numerical conversions, Numbers
+@subsection Basic bitwise operations
+@c NODE 基本的なビット演算
 
 @c EN
 These procedures treat integers as half-open bit vectors.
@@ -3642,11 +3642,11 @@ GaucheはSLIBの元々の``logical''モジュールに合わせました。
 @c COMMON
 
 @c EN
-SRFI-60 (@pxref{Integers as bits}) defines both names, and also
+SRFI-151 (@pxref{Bitwise operations}) defines both names, and also
 some additional procedures.  If you're porting libraries written
 for other Scheme, you might want to check it.
 @c JP
-SRFI-60 (@pxref{Integers as bits}) は両方の流儀の名前を定義しており、
+SRFI-151 (@pxref{Bitwise operations}) は両方の流儀の名前を定義しており、
 さらにいくつかの追加の手続きも用意しています。他のScheme向けに書かれた
 コードをGaucheに移植する際には有用でしょう。
 @c COMMON
@@ -3714,7 +3714,7 @@ Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
 @end defun
 
 @defun bit-field n start end
-[SRFI-60]
+[SRFI-151]
 @c EN
 Extracts @var{start}-th bit (inclusive) to @var{end}-th bit (exclusive) from
 an exact integer @var{n}, where @var{start} < @var{end}.
@@ -3725,7 +3725,7 @@ an exact integer @var{n}, where @var{start} < @var{end}.
 @end defun
 
 @defun copy-bit index n bit
-[SRFI-60]
+[SRFI-151]
 @c EN
 If @var{bit} is true, sets @var{index}-th bit of an exact integer @var{n}.
 If @var{bit} is false, resets @var{index}-th bit of an exact integer @var{n}.
@@ -3833,7 +3833,7 @@ representation of @var{n}.
 @end defun
 
 @defun integer-length n
-[SRFI-60]
+[SRFI-151]
 @c EN
 Returns the minimum number of bits required to represent an
 exact integer @var{n}.  Negative integer is assumed to be in
@@ -3894,7 +3894,7 @@ This procedure is also equivalent to srfi-60's @code{log2-binary-factors} and
 @c COMMON
 @end defun
 
-@node Endianness,  , Bitwise operations, Numbers
+@node Endianness,  , Basic bitwise operations, Numbers
 @subsection Endianness
 @c NODE エンディアン
 

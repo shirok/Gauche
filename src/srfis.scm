@@ -1000,9 +1000,12 @@ srfi-151, srfi-151
 ()
 
 Bitwise operations
-Supported by the module @code{srfi-151}.  Note that many of its APIs
-are available as built-in, or via @code{srfi-60}.
+Supported by the module @code{srfi-151} (@pxref{Bitwise operations}).
+Note that many equivalent procedures are provided built-in
+(@pxref{Basic bitwise operations}).
 
 ビット演算
-モジュール@code{srfi-151}でサポートされます。なお、多くのAPIは既に
-組み込みや@code{srfi-60}でもサポートされています。
+モジュール@code{srfi-151}でサポートされます (@ref{Bitwise operations}参照)。
+なお、組み込みでも多くの手続きについては同等の手続きが提供されています
+(@ref{Basic bitwise operations}参照).
+
