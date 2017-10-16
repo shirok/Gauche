@@ -117,9 +117,9 @@ See @ref{Operations on libraries}, for the details.
 @c COMMON
 
 @menu
-* Finding libraries you need::  
-* Naming convention of libraries::  
-* Obsoleted modules::           
+* Finding libraries you need::
+* Naming convention of libraries::
+* Obsolete and superseded modules::
 @end menu
 
 @node Finding libraries you need, Naming convention of libraries, Library modules - Overview, Library modules - Overview
@@ -186,15 +186,15 @@ brief descriptions.
 @c COMMON
 
 @menu
-* Library directory - data containers::  
-* Library directory - strings and characters::  
-* Library directory - data exchange::  
-* Library directory - files::   
-* Library directory - processes and threads::  
-* Library directory - networking::  
-* Library directory - input and output::  
-* Library directory - time::    
-* Library directory - bits and bytes::  
+* Library directory - data containers::
+* Library directory - strings and characters::
+* Library directory - data exchange::
+* Library directory - files::
+* Library directory - processes and threads::
+* Library directory - networking::
+* Library directory - input and output::
+* Library directory - time::
+* Library directory - bits and bytes::
 @end menu
 
 @node Library directory - data containers, Library directory - strings and characters, Finding libraries you need, Finding libraries you need
@@ -784,7 +784,7 @@ SRFI-151はより包括的なビット演算を提供します
 (@ref{Bitwise operations}参照)。
 @c COMMON
 
-@node Naming convention of libraries, Obsoleted modules, Finding libraries you need, Library modules - Overview
+@node Naming convention of libraries, Obsolete and superseded modules, Finding libraries you need, Library modules - Overview
 @section Naming convention of libraries
 @c NODE ライブラリの命名規則
 
@@ -924,23 +924,37 @@ WWWで主として使われるプロトコルやデータフォーマットの�
 @c COMMON
 @end table
 
-@node Obsoleted modules,  , Naming convention of libraries, Library modules - Overview
-@section Obsoleted modules
-@c NODE 廃止されたモジュール
+@node Obsolete and superseded modules,  , Naming convention of libraries, Library modules - Overview
+@section Obsolete and superseded modules
+@c NODE 廃止あるいは置き換えられたモジュール
 
 @c EN
 During the course of development of Gauche,
 some modules have been renamed, merged, or dissolved into the core.
+Also, some SRFI libraries become standard and given a new name,
+or superseded with a newer SRFI library.
+@c JP
+Gaucheの開発の過程で、いくつかのモジュールは名前が変わったり、
+合併したり、あるいはコアに取り込まれたりしてきました。
+また、いくつかのSRFIライブラリは標準に取り込まれ新しい名前をつけられたり、
+より新しいSRFIで置き換えられたりしています。
+@c COMMON
+
+@c EN
 We list such modules here for the reference.
 New code shouldn't use these modules, although they are kept in
 the distribution so that legacy code can keep running.
 @c JP
-Gaucheの開発の過程で、いくつかのモジュールは名前が変わったり、
-合併したり、あるいはコアに取り込まれたりしてきました。
 参考のため、それらのモジュールをここにリストしておきます。
 新たなコードはこれらのモジュールを使うべきではありませんが、
 古いコードがそのまま動きつづけるよう、Gaucheの配布物の中にはこれらの
 モジュールが含まれています。
+@c COMMON
+
+@c EN
+@subheading Obsolete modules
+@c JP
+@subheading 廃止されたモジュール
 @c COMMON
 
 @deftp {Module} text.unicode
@@ -1072,6 +1086,151 @@ Renamed to @code{data.trie}.  @xref{Trie}.
 @c COMMON
 @end deftp
 
+@c EN
+@subheading Superseded modules
+@c JP
+@subheading 置き換えられたモジュール
+@c COMMON
+
+@c Note: Don't use mdindex below, for the entries of these modules
+@c are still in the modsrfi.texi.
+
+@deftp {Module} srfi-1
+@c EN
+SRFI-1 (List library) has become a part of R7RS large, as @code{scheme.list}.
+@xref{R7RS lists}.
+@c JP
+SRFI-1(リストライブラリ)はR7RS largeに採り入れられ、
+@code{scheme.list}モジュールになりました。
+@ref{R7RS lists}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-14
+@c EN
+SRFI-14 (Character-set library) has become a part of R7RS large,
+as @code{scheme.charset}.
+@xref{R7RS character sets}.
+@c JP
+SRFI-14(文字集合ライブラリ)はR7RS largeに採り入れられ、
+@code{scheme.charset}モジュールになりました。
+@ref{R7RS character sets}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-43
+@c EN
+Vector library (Legacy) - 
+this module is effectively superseded by R7RS and @code{srfi-133}.
+@xref{Vectors}, and @pxref{Vector library}.
+@c JP
+ベクタライブラリ(旧式) - 
+このモジュールは実効的に、R7RSと@code{srfi-133}に取って代わられています。
+@ref{Vectors}と@ref{Vector library}参照。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-60
+@c EN
+Integers as bits - this module is superseded by @code{srfi-151}.
+@xref{Bitwise operations}.
+@c JP
+整数に対するビット操作 - このモジュールは@code{srfi-151}に取って代わられています。
+@ref{Bitwise operations}参照。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-69
+@c EN
+Basic hash tables - this module is superseded by R7RS @code{scheme.hash-table}.
+@xref{R7RS hash tables}.
+@c JP
+基本的なハッシュテーブル - このモジュールはR7RSの@code{scheme.hash-table}に
+取って代わられています。
+@ref{R7RS hash tables}参照。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-111
+@c EN
+SRFI-111 (Boxes) has become a part of R7RS @code{scheme.box} module.
+@xref{R7RS boxes}.
+@c JP
+SRFI-111 (ボックス) はR7RS largeの@code{scheme.box}モジュールになりました。
+@ref{R7RS boxes}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-113
+@c EN
+SRFI-113 (Sets and bags) has become a part of R7RS @code{scheme.set}.
+@xref{R7RS sets}.
+@c JP
+SRFI-113(setとbag)はR7RS largeの@code{scheme.set}モジュールになりました。
+@ref{R7RS sets}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-114
+@c EN
+Comparators - R7RS favored srfi-128 over this srfi
+to make @code{scheme.comparator} (@ref{R7RS comparators}),
+so adoption of this srfi may not be as wide.
+
+Note that, in Gauche, a native comparator object can be used for
+srfi-114 procedures, and this module provides some useful additional
+utilities.  It's ok to use this module if portability isn't a big issue.
+@c JP
+比較器 - R7RSは@code{scheme.comparator} (@ref{R7RS comparators}参照)
+としてこれではなくsrfi-128を採用したので、将来このsrfiが広く採用されることは
+ないかもしれません。
+
+ただ、Gaucheでは組み込みの比較器オブジェクトをそのままsrfi-114の手続きにも
+使うことが出来るので、ポータビリティが重要でないコードではユーティリティライブラリとして
+このsrfiを使っても良いでしょう。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-117
+@c EN
+SRFI-117 has become R7RS's @code{scheme.list-queue}.
+@xref{R7RS list queues}.
+@c JP
+SRFI-117はR7RSの@code{scheme.list-queue}モジュールになりました。
+@ref{R7RS list queues}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-127
+@c EN
+SRFI-127 has become R7RS's @code{scheme.lseq}.
+@xref{R7RS lazy sequences}.
+@c JP
+SRFI-127はR7RSの@code{scheme.lseq}モジュールになりました。
+@ref{R7RS lazy sequences}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-132
+@mdindex srfi-132
+@c EN
+SRFI-132 has become R7RS's @code{scheme.sort}.
+@xref{R7RS sort}.
+@c JP
+SRFI-132はR7RSの@code{scheme.sort}モジュールになりました。
+@ref{R7RS sort}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Module} srfi-133
+@c EN
+SRFI-133 has become R7RS's @code{scheme.vector}.
+@xref{R7RS vectors}.
+@c JP
+SRFI-133はR7RSの@code{scheme.vector}モジュールになりました。
+@ref{R7RS vectors}を参照してください。
+@c COMMON
+@end deftp
 
 @c Local variables:
 @c mode: texinfo
