@@ -1009,3 +1009,12 @@ Note that many equivalent procedures are provided built-in
 なお、組み込みでも多くの手続きについては同等の手続きが提供されています
 (@ref{Basic bitwise operations}参照).
 
+
+srfi-152, srfi-152
+()
+
+String library (reduced)
+Supported by the module @code{srfi-152} (@pxref{String library (reduced)}).
+
+文字列ライブラリ(簡略版)
+モジュール@code{srfi-152}でサポートされます (@ref{String library (reduced)}参照)。

@@ -54,6 +54,7 @@ srfi N is supporeted by Gauche.)
 * Integer division::            srfi-141
 * Fixnums::                     srfi-143
 * Bitwise operations::          srfi-151
+* String library (reduced)::    srfi-152
 @end menu
 
 
@@ -489,14 +490,16 @@ Returns @code{#t} if @var{s} is an empty string, @code{""}.
 @end defun
 
 @defun string-every char/char-set/pred s :optional start end
+[SRFI-13]
+@c MOD srfi-13
 @c EN
-[SRFI-13] Sees if every character in @var{s} satisfies
+Sees if every character in @var{s} satisfies
 @var{char/char-set/pred}.  If so, @code{string-every} returns
 the value that is returned at the last application of @var{char/char-set/pred}.
 If any of the application returns @code{#f}, @code{string-every}
 returns @code{#f} immediately.
 @c JP
-[SRFI-13] @var{s}に含まれる全ての文字が@var{char/char-set/pred}を
+@var{s}に含まれる全ての文字が@var{char/char-set/pred}を
 満足するかを検査します。満足するならば、@code{string-every}は
 最後に適用された@var{char/char-set/pred}が返した値を戻り値とします。
 どの適用も@code{#f}を返した場合は、@code{string-every}はすぐに
@@ -5920,7 +5923,7 @@ srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Bitwise operations,  , Fixnums, Library modules - SRFIs
+@node Bitwise operations, String library (reduced), Fixnums, Library modules - SRFIs
 @section @code{srfi-151} - Bitwise operations
 @c NODE ビット演算, @code{srfi-151} - ビット演算
 
@@ -6256,6 +6259,192 @@ except that the generator created by it stops at the integer
 length of @code{n} (@pxref{Generators}).
 @end defun
 
+@c ----------------------------------------------------------------------
+@node String library (reduced),  , Bitwise operations, Library modules - SRFIs
+@section @code{srfi-152} - String library (reduced)
+@c NODE 文字列ライブラリ(簡略版), @code{srfi-152} - 文字列ライブラリ(簡略版)
+
+@deftp {Module} srfi-152
+@mdindex srfi-152
+This is a improved version of @code{srfi-13}.  The spec is actually smaller
+than srfi-13 (hence 'reduced' in the title) by removing bells and whistles.
+The consistency with recent srfis are also considered.
+
+The following are built-in.  @xref{Strings}, for the details.
+
+@example
+string?            make-string        string             string-length
+string->vector     string->list       vector->string     list->string
+string-ref         string-set!        substring          string-copy
+string=?           string<?           string<=?          string>?
+string>=?          string-append      string-join        string-split
+read-string        write-string       string-fill!
+@end example
+
+The following procedures are defined to use Unicode string case folding,
+and @code{gauche.unicode} module provides them.
+@xref{Full string case conversion}, for the details.
+Note that Gauche's
+built-in versions uses character-wise case folding, which differs
+from string case folding on some characters (German eszett, for example).
+
+@example
+string-ci=?   string-ci<?   string-ci<=?  string-ci>?   string-ci>=?
+@end example
+
+The following procedures are defined in srfi-13.  @xref{String library},
+for the details.  Note: Some of those procedures in srfi-13 that require
+predicate allows a char-set or a character to be passed instead
+(e.g. @code{string-filter}).  In srfi-152, only predicate is allowed.
+Our srfi-152 implementation shares the same procedure with srfi-13, so
+they accept the same arguments as srfi-13's, but such code won't be
+portable as srfi-152.
+
+@example
+string-null?       string-any         string-every       string-tabulate
+string-unfold      string-unfold-right      reverse-list->string
+string-take        string-drop        string-take-right  string-drop-right
+string-pad         string-pad-right   string-trim        string-trim-right
+string-trim-both   string-replace     string-prefix-length string-suffix-length
+string-prefix?     string-suffix?     string-innex       string-index-right
+string-skip        string-skip-right  string-contains    string-concatenate
+string-concatenate-reverse            string-fold        string-fold-right
+string-count       string-filter      string-copy!
+@end example
+
+The following procedures are the same with the ones in
+R7RS @code{scheme.base} module (@pxref{R7RS base library}).
+Note that srfi-13 defines different procedures with the same name.
+
+@example
+string-map         string-for-each
+@end example
+@end deftp
+
+We describe procedures unique to this module below.
+
+@defun string-remove pred string :optional start end
+[SRFI-152]
+@c MOD srfi-152
+Returns a substring of @var{string} between @var{start} and @var{end},
+except characters that satisfy @var{pred}.   In other words,
+it is @code{(string-filter (complement pred) string start end)}.
+
+This is called @var{string-delete} in @code{srfi-13}.  Being changed
+to take only a predicate (but not a character), it is renamed for
+the consistency of other srfi (e.g. @code{filter}, @code{remove} and
+@code{delete} in srfi-1.)
+@end defun
+
+@defun string-replicate string from to :optional start end
+[SRFI-152]
+@c MOD srfi-152
+Extended substring.  It is called @code{xsubstring} in srfi-13, but
+renamed for the consistency.
+
+Extract a substring of @var{string} between @var{start} and @var{end},
+and conceptually create a bidirectional infinite string by repeating
+the substring to both direction.  For example, suppose @var{string}
+is @code{"abcde"}, @var{start} is 1, and @var{end} is 4.  So we repeat
+the substring @code{"bcd"}, with one @code{b} falling on the index zero:
+
+@example
+... b  c  d  b  c  d  b  c  d  b  c  d  b ... 
+   -6 -5 -4 -3 -2 -1  0  1  2  3  4  5  6
+@end example
+
+Then we extract a substring between @var{from} and @var{to}
+out of this infinite string.
+
+@example
+(string-replicate "abcde" 2 10 1 4)
+  @result{} "dbcdbcdb"
+(string-replicate "abcde" -5 -3 1 4)
+  @result{} "cdbcdbcd"
+@end example
+@end defun
+
+@defun string-segment string k
+[SRFI-152]
+@c MOD srfi-152
+Splits @var{string} by every @var{k} characters and returns
+a list of those strings.  The last string may be shorter than @var{k}.
+
+@example
+(string-segment "abcdefghijklmn" 3)
+ @result{} ("abc" "def" "ghi" "jkl" "mn")
+@end example
+
+We have a similar procedure on lists, @code{slices}
+(@pxref{List accessors and modifiers}).
+@end defun
+
+@defun string-contains-right string1 string2 :optional start1 end1 start2 end2
+[SRFI-152]
+@c MOD srfi-152
+Like @code{string-contains}, looks for a needle @var{string2} from
+a haystack @var{string1}, but if it is found, returns the start index
+of the @emph{last} match, instead of the first match.  The returned index
+is in @var{string1}.  The optional arguments limit the range of a needle
+and a haystack.  If a needle isn't found, @var{#t} is returned.
+
+An edge case: If a needle is empty (e.g. @var{string2} is empty,
+or @var{start2} = @var{end2}), it always matches right after the haystack,
+so @var{end1} is returned.
+
+@example
+(string-contains-right "Little Lisper" "Li")
+  @result{} 7
+@end example
+@end defun
+
+@defun string-take-while string pred :optional start end
+@defunx string-take-while-right string pred :optional start end
+[SRFI-152]
+@c MOD srfi-152
+Returns the longest prefix or suffix of @var{string} in which all characters
+satisfy @var{pred}.
+
+Note: The order of @var{pred} and the source object is different from
+other @code{take-while}-style procedures, such as @code{take-while}
+(@ref{R7RS lists}), @code{ideque-take-while} (@ref{R7RS immutable deques}),
+and @code{lseq-take-while} (@ref{R7RS lazy sequences}).
+@end defun
+
+@defun string-drop-while string pred :optional start end
+@defunx string-drop-while-right string pred :optional start end
+[SRFI-152]
+@c MOD srfi-152
+Returns the longest prefix or suffix of @var{string} in which all characters
+does not satisfy @var{pred}.
+
+Note: The order of @var{pred} and the source object is different from
+other @code{drop-while}-style procedures, such as @code{drop-while}
+(@ref{R7RS lists}), @code{ideque-drop-while} (@ref{R7RS immutable deques}),
+and @code{lseq-drop-while} (@ref{R7RS lazy sequences}).
+@end defun
+
+@defun string-span string pred :optional start end
+@defunx string-break string pred :optional start end
+[SRFI-152]
+@c MOD srfi-152
+Find the longest prefix of @var{string} between @var{start} and @var{end}
+in which all characters satisy / do not satisfy @var{pred}, and returns
+the prefix and the rest of substring as two values.
+
+@example
+(string-break "foo@@example.com" (cut eqv? <> #\@@))
+ @result{} "foo" @r{and} "@@example.com"
+
+;; This is Gauche specific - a char-set can work as a predicate:
+(string-span "VAR_1 = $VAR_2" #[\w])
+ @result{} "VAR_1" @r{and} " = $VAR_2"
+@end example
+
+Note: The order of @var{pred} and the source object is different from
+@code{span} and @code{break} in @code{scheme.list}
+(@ref{R7RS lists}).
+@end defun
 
 @c Local variables:
 @c mode: texinfo
