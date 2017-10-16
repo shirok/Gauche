@@ -8711,8 +8711,8 @@ after @var{item}.  If @var{item} is not found, returns
 @end table
 @end defun
 
-@defun string-split string splitter &optional grammar limit start end
-@defunx string-split string splitter &optional limit start end
+@defun string-split string splitter :optional grammar limit start end
+@defunx string-split string splitter :optional limit start end
 @c EN
 Splits @var{string} by @var{splitter} and returns a list of strings.
 @var{splitter} can be a character, a character set, a string,
@@ -12497,7 +12497,7 @@ weak ベクタ @var{wvec}の大きさを返します。
 @c COMMON
 @end defun
 
-@defun weak-vector-ref wvec k &optional fallback
+@defun weak-vector-ref wvec k :optional fallback
 @c EN
 Returns @var{k}-th element of a weak vector @var{wvec}.
 
@@ -21648,7 +21648,7 @@ which is also in R7RS.
 @end defun
 
 
-@defun sys-setenv name value &optional overwrite
+@defun sys-setenv name value :optional overwrite
 @defunx sys-putenv name=value
 @c EN
 @var{sys-setenv} inserts an environment variable @var{name} with
