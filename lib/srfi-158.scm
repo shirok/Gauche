@@ -45,7 +45,7 @@
   (^v
    (if (eof-object? v)
      (finalizer knil)
-     (set! knil (kons v knil)))))
+     (begin (set! knil (kons v knil)) (undefined)))))
 
 (define (list-accumulator)
   (make-accumulator cons '() reverse))

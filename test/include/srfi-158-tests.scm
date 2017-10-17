@@ -1,10 +1,11 @@
-;; From chicken-test.scm in https://github.com/scheme-requests-for-implementation/srfi-158
-
-;; (use test)
-;; (use srfi-158)
-;; (use (only srfi-1 unfold))
-;; (use srfi-4)
-;; (include "r7rs-shim.scm")
+(cond-expand
+ (gauche) ;; use gauche-test instead of directly load this file
+ (else
+  (use test)
+  (use srfi-158)
+  (use (only srfi-1 unfold))
+  (use srfi-4)
+  (include "r7rs-shim.scm")))
 
 (test-group "generators"
   (test-group "generators/constructors"
@@ -95,10 +96,40 @@
           (generator->list (ggroup (generator 1 2 3 4 5 6 7 8) 3)))
     (test '((1 2 3) (4 5 6) (7 8 0))
           (generator->list (ggroup (generator 1 2 3 4 5 6 7 8) 3 0)))
+    (test '(1 2 3)
+          (generator->list (gmerge < (generator 1 2 3))))
     (test '(1 2 3 4 5 6)
           (generator->list (gmerge < (generator 1 2 3) (generator 4 5 6))))
+    (test '(1 2 3 4 4 5 6)
+          (generator->list (gmerge <
+                                   (generator 1 2 4 6)
+                                   (generator)
+                                   (generator 3 4 5))))
+    (test '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)
+          (generator->list (gmerge <
+                                   (generator 1 10 11)
+                                   (generator 2 9 12)
+                                   (generator 3 8 13)
+                                   (generator 4 7 14)
+                                   (generator 5 6 15))))
+    ;; check the tie-break rule
+    (test '((1 a) (1 e) (1 b) (1 c) (1 d))
+          (generator->list (gmerge (lambda (x y) (< (car x) (car y)))
+                                   (generator '(1 a) '(1 e))
+                                   (generator '(1 b))
+                                   (generator '(1 c) '(1 d)))))
+    
     (test '(-1 -2 -3 -4 -5)
           (generator->list (gmap - (generator 1 2 3 4 5))))
+    (test '(7 9 11 13)
+          (generator->list (gmap +
+                                 (generator 1 2 3 4 5)
+                                 (generator 6 7 8 9))))
+    (test '(54 140 264)
+          (generator->list (gmap *
+                                 (generator 1 2 3 4 5)
+                                 (generator 6 7 8)
+                                 (generator 9 10 11 12 13))))
     (test '(a c e g i)
           (generator->list
             (gstate-filter

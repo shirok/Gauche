@@ -1,3 +1,8 @@
+2017-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm (gmerge): Fixed to ensure that
+	  if elements ties, leftmost one is taken.
+
 2017-10-15  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modsrfi.scm: Document srfi-152.  For now, most procedures are

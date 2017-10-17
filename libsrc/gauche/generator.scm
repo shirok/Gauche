@@ -351,9 +351,9 @@
                   (begin0 e2 (set! e2 (gen2))))
                 (if (eof-object? e2)
                   (begin0 e1 (set! e1 (gen1)))
-                  (if (prec e1 e2)
-                    (begin0 e1 (set! e1 (gen1)))
-                    (begin0 e2 (set! e2 (gen2)))))))))]
+                  (if (prec e2 e1)
+                    (begin0 e2 (set! e2 (gen2)))
+                    (begin0 e1 (set! e1 (gen1)))))))))]
     [(prec . gens)
      (apply gmerge prec (map (cut apply gmerge prec <>) (slices gens 2)))]))
 
