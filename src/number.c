@@ -3566,11 +3566,14 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
 
         /* print the trailing zeros if necessary */
         if (digs <= point) {
-            for (;digs<point&&buflen>5;digs++) {
+            for (;digs<point && buflen>5; digs++) {
                 *buf++ = '0', buflen--;
             }
             *buf++ = '.';
-            if (precision != 0) *buf++ = '0';
+            if (precision <= 0) *buf++ = '0';
+        }
+        for (;(digs-point)<precision && buflen>5; digs++) {
+            *buf++ = '0';
         }
 
         /* prints exponent.  we shifted decimal point, so -1. */
