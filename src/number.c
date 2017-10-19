@@ -3415,175 +3415,174 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
 
     if (val < 0.0) *buf++ = '-', buflen--;
     else if (plus_sign) *buf++ = '+', buflen--;
-    {
-        /* variable names follows Burger&Dybvig paper. mp, mm for m+, m-.
-           note that m+ == m- for most cases, and m+ == 2*m- for the rest.
-           so we calculate m+ from m- for each iteration, using the flag
-           mp2 as   m+ = mp? m- : 2*m-. */
-        ScmObj r, s, mm;
-        int exp, sign;
-        int mp2 = FALSE, fixup = FALSE;
-        int fracdigs = -1;   /* Count digits below the decimal point.
-                                Initial value is -1.  Once we emit the decimal
-                                point it becomes 0, then we start counting. */
 
-        IEXPT10_INIT();
-        if (val < 0) val = -val;
+    /* variable names follows Burger&Dybvig paper. mp, mm for m+, m-.
+       note that m+ == m- for most cases, and m+ == 2*m- for the rest.
+       so we calculate m+ from m- for each iteration, using the flag
+       mp2 as   m+ = mp? m- : 2*m-. */
+    ScmObj r, s, mm;
+    int exp, sign;
+    int mp2 = FALSE, fixup = FALSE;
+    int fracdigs = -1;   /* Count digits below the decimal point.
+                            Initial value is -1.  Once we emit the decimal
+                            point it becomes 0, then we start counting. */
 
-        /* initialize r, s, m+ and m- */
-        ScmObj f = Scm_DecodeFlonum(val, &exp, &sign);
-        int round = !Scm_OddP(f);
-        if (exp >= 0) {
-            ScmObj be = Scm_Ash(SCM_MAKE_INT(1), exp);
-            if (Scm_NumCmp(f, SCM_2_52) != 0) {
-                r = Scm_Ash(f, exp+1);
-                s = SCM_MAKE_INT(2);
-                mp2= FALSE;
-                mm = be;
+    IEXPT10_INIT();
+    if (val < 0) val = -val;
+
+    /* initialize r, s, m+ and m- */
+    ScmObj f = Scm_DecodeFlonum(val, &exp, &sign);
+    int round = !Scm_OddP(f);
+    if (exp >= 0) {
+        ScmObj be = Scm_Ash(SCM_MAKE_INT(1), exp);
+        if (Scm_NumCmp(f, SCM_2_52) != 0) {
+            r = Scm_Ash(f, exp+1);
+            s = SCM_MAKE_INT(2);
+            mp2= FALSE;
+            mm = be;
+        } else {
+            r = Scm_Ash(f, exp+2);
+            s = SCM_MAKE_INT(4);
+            mp2 = TRUE;
+            mm = be;
+        }
+    } else {
+        if (exp == -1023 || Scm_NumCmp(f, SCM_2_52) != 0) {
+            r = Scm_Ash(f, 1);
+            s = Scm_Ash(SCM_MAKE_INT(1), -exp+1);
+            mp2 = FALSE;
+            mm = SCM_MAKE_INT(1);
+        } else {
+            r = Scm_Ash(f, 2);
+            s = Scm_Ash(SCM_MAKE_INT(1), -exp+2);
+            mp2 = TRUE;
+            mm = SCM_MAKE_INT(1);
+        }
+    }
+
+    /* estimate scale */
+    int est = (int)ceil(log10(val) - 0.1);
+    if (est >= 0) {
+        s = Scm_Mul(s, iexpt10(est));
+    } else {
+        ScmObj scale = iexpt10(-est);
+        r =  Scm_Mul(r, scale);
+        mm = Scm_Mul(mm, scale);
+    }
+
+    /* fixup.  avoid calculating m+ for obvious case. */
+    if (Scm_NumCmp(r, s) >= 0) {
+        fixup = TRUE;
+    } else {
+        ScmObj mp = (mp2? Scm_Ash(mm, 1) : mm);
+        if (round) {
+            fixup = (numcmp3(r, mp, s) >= 0);
+        } else {
+            fixup = (numcmp3(r, mp, s) > 0);
+        }
+    }
+    if (fixup) {
+        s = Scm_Mul(s, SCM_MAKE_INT(10));
+        est++;
+    }
+
+    /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
+       est, r, s, mp, mm); */
+
+    /* Determine position of decimal point.  we avoid exponential
+       notation if exponent is small, i.e. 0.9 and 30.0 instead of
+       9.0e-1 and 3.0e1.  */
+    int point;
+    if (est < exp_hi && est > exp_lo) { point = est; est = 1; }
+    else { point = 1; }
+
+    /* Now, we print XX.YYeZZ, where XX.YY is VAL*10^EST and
+       ZZ is EST.  If EST == 1 we omit exponent part.  POINT is
+       the number of digits in XX part; so POINT=1 for 1.23,
+       POINT=2 for 12.3 and so on.
+
+       If POINT <= 0, we need to emit preceding zeros. */
+    if (point <= 0) {
+        *buf++ = '0'; buflen--;
+        *buf++ = '.', buflen--, fracdigs++; 
+        for (int digs=point;digs<0 && buflen>5;digs++) {
+            *buf++ = '0'; buflen--; fracdigs++;
+        }
+    }
+
+    /* generate the digits */
+    int digs;
+    for (digs=1; buflen>5; digs++) {
+        ScmObj r10 = Scm_Mul(r, SCM_MAKE_INT(10));
+        ScmObj q = Scm_Quotient(r10, s, &r);
+        ScmObj mp;
+
+        if (precision >= 0 && fracdigs >= precision-1) {
+            mm = mp = Scm_Ash(s, -1);
+        } else {
+            mm = Scm_Mul(mm, SCM_MAKE_INT(10));
+            mp = (mp2? Scm_Ash(mm, 1) : mm);
+        }
+
+        /*Scm_Printf(SCM_CURERR, "q=%S, r=%S, s=%S mp=%S, mm=%S\n",
+          q, r, s, mp, mm);*/
+
+        SCM_ASSERT(SCM_INTP(q));
+        int tc1, tc2;
+        if (round) {
+            tc1 = (Scm_NumCmp(r, mm) <= 0);
+            tc2 = (numcmp3(r, mp, s) >= 0);
+        } else {
+            tc1 = (Scm_NumCmp(r, mm) < 0);
+            tc2 = (numcmp3(r, mp, s) > 0);
+        }
+        if (!tc1) {
+            if (!tc2) {
+                *buf++ = (char)SCM_INT_VALUE(q) + '0';
+                if (digs == point) *buf++ = '.', buflen--, fracdigs++;
+                if (digs > point) fracdigs++;
+                continue;
             } else {
-                r = Scm_Ash(f, exp+2);
-                s = SCM_MAKE_INT(4);
-                mp2 = TRUE;
-                mm = be;
+                *buf++ = (char)SCM_INT_VALUE(q) + '1';
+                break;
             }
         } else {
-            if (exp == -1023 || Scm_NumCmp(f, SCM_2_52) != 0) {
-                r = Scm_Ash(f, 1);
-                s = Scm_Ash(SCM_MAKE_INT(1), -exp+1);
-                mp2 = FALSE;
-                mm = SCM_MAKE_INT(1);
+            if (!tc2) {
+                SCM_ASSERT(SCM_INTP(q));
+                *buf++ = (char)SCM_INT_VALUE(q) + '0';
+                break;
             } else {
-                r = Scm_Ash(f, 2);
-                s = Scm_Ash(SCM_MAKE_INT(1), -exp+2);
-                mp2 = TRUE;
-                mm = SCM_MAKE_INT(1);
-            }
-        }
-
-        /* estimate scale */
-        int est = (int)ceil(log10(val) - 0.1);
-        if (est >= 0) {
-            s = Scm_Mul(s, iexpt10(est));
-        } else {
-            ScmObj scale = iexpt10(-est);
-            r =  Scm_Mul(r, scale);
-            mm = Scm_Mul(mm, scale);
-        }
-
-        /* fixup.  avoid calculating m+ for obvious case. */
-        if (Scm_NumCmp(r, s) >= 0) {
-            fixup = TRUE;
-        } else {
-            ScmObj mp = (mp2? Scm_Ash(mm, 1) : mm);
-            if (round) {
-                fixup = (numcmp3(r, mp, s) >= 0);
-            } else {
-                fixup = (numcmp3(r, mp, s) > 0);
-            }
-        }
-        if (fixup) {
-            s = Scm_Mul(s, SCM_MAKE_INT(10));
-            est++;
-        }
-
-        /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
-           est, r, s, mp, mm); */
-
-        /* Determine position of decimal point.  we avoid exponential
-           notation if exponent is small, i.e. 0.9 and 30.0 instead of
-           9.0e-1 and 3.0e1.  */
-        int point;
-        if (est < exp_hi && est > exp_lo) { point = est; est = 1; }
-        else { point = 1; }
-
-        /* Now, we print XX.YYeZZ, where XX.YY is VAL*10^EST and
-           ZZ is EST.  If EST == 1 we omit exponent part.  POINT is
-           the number of digits in XX part; so POINT=1 for 1.23,
-           POINT=2 for 12.3 and so on.
-
-           If POINT <= 0, we need to emit preceding zeros. */
-        if (point <= 0) {
-            *buf++ = '0'; buflen--;
-            *buf++ = '.', buflen--, fracdigs++; 
-            for (int digs=point;digs<0 && buflen>5;digs++) {
-                *buf++ = '0'; buflen--; fracdigs++;
-            }
-        }
-
-        /* generate the digits */
-        int digs;
-        for (digs=1; buflen>5; digs++) {
-            ScmObj r10 = Scm_Mul(r, SCM_MAKE_INT(10));
-            ScmObj q = Scm_Quotient(r10, s, &r);
-            ScmObj mp;
-
-            if (precision >= 0 && fracdigs >= precision-1) {
-                mm = mp = Scm_Ash(s, -1);
-            } else {
-                mm = Scm_Mul(mm, SCM_MAKE_INT(10));
-                mp = (mp2? Scm_Ash(mm, 1) : mm);
-            }
-
-            /*Scm_Printf(SCM_CURERR, "q=%S, r=%S, s=%S mp=%S, mm=%S\n",
-              q, r, s, mp, mm);*/
-
-            SCM_ASSERT(SCM_INTP(q));
-            int tc1, tc2;
-            if (round) {
-                tc1 = (Scm_NumCmp(r, mm) <= 0);
-                tc2 = (numcmp3(r, mp, s) >= 0);
-            } else {
-                tc1 = (Scm_NumCmp(r, mm) < 0);
-                tc2 = (numcmp3(r, mp, s) > 0);
-            }
-            if (!tc1) {
-                if (!tc2) {
+                int tc3 = numcmp3(r, r, s); /* r*2 <=> s */
+                if ((round && tc3 <= 0) || (!round && tc3 < 0)) {
                     *buf++ = (char)SCM_INT_VALUE(q) + '0';
-                    if (digs == point) *buf++ = '.', buflen--, fracdigs++;
-                    if (digs > point) fracdigs++;
-                    continue;
+                    break;
                 } else {
                     *buf++ = (char)SCM_INT_VALUE(q) + '1';
                     break;
                 }
-            } else {
-                if (!tc2) {
-                    SCM_ASSERT(SCM_INTP(q));
-                    *buf++ = (char)SCM_INT_VALUE(q) + '0';
-                    break;
-                } else {
-                    int tc3 = numcmp3(r, r, s); /* r*2 <=> s */
-                    if ((round && tc3 <= 0) || (!round && tc3 < 0)) {
-                        *buf++ = (char)SCM_INT_VALUE(q) + '0';
-                        break;
-                    } else {
-                        *buf++ = (char)SCM_INT_VALUE(q) + '1';
-                        break;
-                    }
-                }
             }
         }
+    }
 
-        /* print the trailing zeros if necessary */
-        if (digs <= point) {
-            for (;digs<point && buflen>5; digs++) {
-                *buf++ = '0', buflen--;
-            }
-            *buf++ = '.';
-            if (precision <= 0) *buf++ = '0';
+    /* print the trailing zeros if necessary */
+    if (digs <= point) {
+        for (;digs<point && buflen>5; digs++) {
+            *buf++ = '0', buflen--;
         }
-        for (;(digs-point)<precision && buflen>5; digs++) {
-            *buf++ = '0';
-        }
+        *buf++ = '.';
+        if (precision <= 0) *buf++ = '0';
+    }
+    for (;(digs-point)<precision && buflen>5; digs++) {
+        *buf++ = '0';
+    }
 
-        /* prints exponent.  we shifted decimal point, so -1. */
-        est--;
-        if (est != 0) {
-            *buf++ = 'e';
-            sprintf(buf, "%d", (int)est);
-        } else {
-            *buf++ = 0;
-        }
+    /* prints exponent.  we shifted decimal point, so -1. */
+    est--;
+    if (est != 0) {
+        *buf++ = 'e';
+        sprintf(buf, "%d", (int)est);
+    } else {
+        *buf++ = 0;
     }
 }
 
