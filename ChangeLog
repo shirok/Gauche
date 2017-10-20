@@ -1,3 +1,7 @@
+2017-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm (format): Support ~f directive.
+
 2017-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (print_double): Implement notational rounding mode.

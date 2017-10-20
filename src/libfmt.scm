@@ -52,6 +52,7 @@
 ;;         | (x flags mincol padchar commachar interval)
 ;;         | (R flags mincol padchar commachar interval)
 ;;         | (r flags mincol padchar commachar interval)
+;;         | (F flags width digits scale ovfchar padchar)
 ;;         | (* flags count)
 ;; flags : '() | (Cons #\@ flags) | (Cons #\: flags)
 
@@ -61,9 +62,9 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAdDbBoOxXrR*" c))
+    (define (directive? c) (string-scan "sSaAdDbBoOxXrR*fF" c))
     (define directive-param-spec ; (type max-#-of-params)
-      '((S 5) (A 5) (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5)))
+      '((S 5) (A 5) (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5)))
     (define (flag? c) (memv c '(#\@ #\:)))
     (define (next p)
       (rlet1 c (read-char p)
@@ -177,6 +178,7 @@
 ;;      | (O flags mincol padchar commachar interval)
 ;;      | (X flags mincol padchar commachar interval)
 ;;      | (x flags mincol padchar commachar interval)
+;;      | (F flags width digits scale ovfchar padchar)
 ;;      | (* flags count)
 ;;
 ;; argcnt : An integer if the formatter takes fixed number of arguments,
@@ -416,9 +418,34 @@
       (string-append (insert pre) (string point) post)
       (insert str))))
 
-;; ~R
+;; ~R (roman numerals)
 (define (make-format-r src flags upper)
   (^[argptr port ctrl] (error "not implemented yet")))
+
+;; ~F, ~E, ~G  ; we only support ~F for now
+;; kind is 'E 'F or 'G
+;; @ flag is used to force plus sign (CL)
+;; : flag is used for notational rounding (Gauche only)
+(define (make-format-flo fmtstr params flags kind)
+  ($ with-format-params ([width 0]
+                         [digits -1]
+                         [scale 0]
+                         [ovchar #f]
+                         [padchar #\space])
+     (let* ([arg (* (expt 10 scale) (fr-next-arg! fmtstr argptr))]
+            [s (number->string arg 10
+                               (cond-list
+                                [(has-@? flags) 'plus]
+                                [(has-:? flags) 'notational])
+                               digits)]
+            [l (string-length s)])
+       (if (< width l)
+         (if ovchar
+           (dotimes [width] (write-char ovchar port))
+           (display s port))
+         (begin
+           (dotimes [(- width l)] (write-char padchar port))
+           (display s port))))))
            
 ;; ~*
 (define (make-format-jump fmtstr params flags)
@@ -443,6 +470,7 @@
     [('O fs . ps) (make-format-num src ps fs 8 #f)]
     [('x fs . ps) (make-format-num src ps fs 16 #f)]
     [('X fs . ps) (make-format-num src ps fs 16 #t)]
+    [('F fs . ps) (make-format-flo src ps fs 'F)]
     [((or 'R 'r) fs . ps)
      (let ([upper (eq? (car tree) 'R)])
        (if (null? ps)
