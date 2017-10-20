@@ -746,6 +746,14 @@
 (test* "format ~x" "0000012345"  (format #f "~10,'0x" 74565))
 (test* "format ~x" "0000-12345"  (format #f "~10,'0x" -74565))
 
+(test* "format ~f" "1.2345"      (format #f "~f" 1.2345))
+(test* "format ~5,3f" "1.234"    (format #f "~5,3f" 1.2345))
+(test* "format ~5,3:f" "1.234"   (format #f "~5,3:f" 1.2345))
+(test* "format ~6,2f" "  1.23"   (format #f "~6,2f" 1.2345))
+(test* "format ~6,2f" "  5.01"   (format #f "~6,2f" 5.015))
+(test* "format ~6,2:f" "  5.02"  (format #f "~6,2:f" 5.015))
+(test* "format ~10f" "     abcde"      (format #f "~10,2f" 'abcde))
+
 (test* "format ~nr" "wud0up"  (format "~36r" 1985913745))
 (test* "format ~nr" "    wud0up"  (format "~36,10r" 1985913745))
 (test* "format ~nr" "****wud0up"  (format "~36,10,'*r" 1985913745))

@@ -427,25 +427,33 @@
 ;; @ flag is used to force plus sign (CL)
 ;; : flag is used for notational rounding (Gauche only)
 (define (make-format-flo fmtstr params flags kind)
+  (define (do-fmt n w d ovchar padchar flags port)
+    (let* ([s (number->string n 10
+                              (cond-list
+                               [(has-@? flags) 'plus]
+                               [(has-:? flags) 'notational])
+                              d)]
+           [l (string-length s)])
+      (if (< w l)
+        (if ovchar
+          (dotimes [w] (write-char ovchar port))
+          (display s port))
+        (begin
+          (dotimes [(- w l)] (write-char padchar port))
+          (display s port)))))
   ($ with-format-params ([width 0]
                          [digits -1]
                          [scale 0]
                          [ovchar #f]
                          [padchar #\space])
-     (let* ([arg (* (expt 10 scale) (fr-next-arg! fmtstr argptr))]
-            [s (number->string arg 10
-                               (cond-list
-                                [(has-@? flags) 'plus]
-                                [(has-:? flags) 'notational])
-                               digits)]
-            [l (string-length s)])
-       (if (< width l)
-         (if ovchar
-           (dotimes [width] (write-char ovchar port))
-           (display s port))
-         (begin
-           (dotimes [(- width l)] (write-char padchar port))
-           (display s port))))))
+     (let1 arg (fr-next-arg! fmtstr argptr)
+       (if (real? arg)
+         (do-fmt (* arg (expt 10 scale)) width digits ovchar padchar flags port)
+         (let1 sarg (write-to-string arg display)
+           (let1 len (string-length sarg)
+             (when (< len width)
+               (dotimes [(- width len)] (write-char padchar port)))
+             (display sarg port)))))))
            
 ;; ~*
 (define (make-format-jump fmtstr params flags)
