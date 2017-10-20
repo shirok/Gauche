@@ -3381,6 +3381,37 @@ static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
     }
 }
 
+/* Increment the given decimal number represented as a string.
+
+      /------------------ start
+      |             /---- end
+      v             v
+     |3 . 1 4 1 5 9         |
+
+   In this example, we add 1 to the 10000th ('9') and handle any carryovers.
+   If the carry over spills on the left, we shift entire string to right.
+   Returns TRUE if such a shift happens.  The caller guarantees at least
+   one room is on the right.
+ */
+static int notational_roundup(char *start, char *end)
+{
+    /* loop as long as we carry over */
+    char *p = end-1;
+    for (; start <= p; p--) {
+        if (*p == '.') continue;
+        if (*p == '9') { *p = '0'; continue; }
+        else { (*p)++; break; }
+    }
+    if (p < start && *start == '0') {
+        /* spill over */
+        for (p = end-1; start <= p; p--) p[1] = p[0];
+        *start = '1';
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
 /* The main routine to get string representation of double.
    Convert VAL to a string and store to BUF, which must have at least FLT_BUF
    bytes long.
@@ -3388,11 +3419,14 @@ static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
    EXP_LO and EXP_HI control when to switch exponential representation.
    We use n.nnne+zz representation when zz can be smaller than or equal
    to EXP_LO, or greater than or equal to EXP_HI.
-   Finally, PRECISION specifies the number of digits to be printed after
+   PRECISION specifies the number of digits to be printed after
    the decimal point; -1 means no limit.
+   NOTATIONAL flags changes how the rounding with precision is done; if it's
+   false, we choose closest decimal to the actual number represented by VAL.
+   If it's true, we first generate optimal decimal notation, then round.
    */
 static void print_double(char *buf, int buflen, double val, int plus_sign,
-                         int precision, int exp_lo, int exp_hi)
+                         int precision, int notational, int exp_lo, int exp_hi)
 {
     /* Handle a few special cases first. */
     if (val == 0.0) {
@@ -3415,6 +3449,8 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
 
     if (val < 0.0) *buf++ = '-', buflen--;
     else if (plus_sign) *buf++ = '+', buflen--;
+
+    char *numstart = buf;
 
     /* variable names follows Burger&Dybvig paper. mp, mm for m+, m-.
        note that m+ == m- for most cases, and m+ == 2*m- for the rest.
@@ -3517,7 +3553,7 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
         ScmObj q = Scm_Quotient(r10, s, &r);
         ScmObj mp;
 
-        if (precision >= 0 && fracdigs >= precision-1) {
+        if (!notational && precision >= 0 && fracdigs >= precision-1) {
             mm = mp = Scm_Ash(s, -1);
         } else {
             mm = Scm_Mul(mm, SCM_MAKE_INT(10));
@@ -3544,21 +3580,61 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
                 continue;
             } else {
                 *buf++ = (char)SCM_INT_VALUE(q) + '1';
+                fracdigs++;
                 break;
             }
         } else {
             if (!tc2) {
                 SCM_ASSERT(SCM_INTP(q));
                 *buf++ = (char)SCM_INT_VALUE(q) + '0';
+                fracdigs++;
                 break;
             } else {
                 int tc3 = numcmp3(r, r, s); /* r*2 <=> s */
                 if ((round && tc3 <= 0) || (!round && tc3 < 0)) {
                     *buf++ = (char)SCM_INT_VALUE(q) + '0';
+                    fracdigs++;
                     break;
                 } else {
                     *buf++ = (char)SCM_INT_VALUE(q) + '1';
+                    fracdigs++;
                     break;
+                }
+            }
+        }
+    }
+
+    /* notational rounding, if necessary */
+    if (notational && precision >= 0 && fracdigs > precision) {
+        char *p = numstart;
+        while (p < buf && *p != '.') p++;
+        p++;                    /* p is on tenths */
+        if (buf-p > precision) {
+            char c = *(p+precision);
+            if (c < '5') {
+                /* round down - we just truncate */
+                buflen += buf - (p+precision);
+                buf = p+precision;
+            } else if (c > '5' || (c == '5' && buf-p > precision+1)) {
+                /* round up */
+                buflen += buf - (p+precision);
+                buf = p+precision;
+                if (notational_roundup(numstart, buf)) {
+                    buf++; buflen--;
+                }
+            } else {
+                /* midpoint.  round to even. */
+                if (strchr(".02468", *(p+precision-1)) != NULL) {
+                    /* round down */
+                    buflen += buf - (p+precision);
+                    buf = p+precision;
+                } else {
+                    /* round up */
+                    buflen += buf - (p+precision);
+                    buf = p+precision;
+                    if (notational_roundup(numstart, buf)) {
+                        buf++; buflen--;
+                    }
                 }
             }
         }
@@ -3653,8 +3729,10 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         Scm_Puts(SCM_STRING(s), port);
         return nchars + SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(s));
     } else if (SCM_FLONUMP(obj)) {
-        print_double(buf, FLT_BUF, SCM_FLONUM_VALUE(obj),
-                     show_plus, fmt->precision, fmt->exp_lo, fmt->exp_hi);
+        print_double(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), show_plus,
+                     fmt->precision,
+                     fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
+                     fmt->exp_lo, fmt->exp_hi);
         Scm_Putz(buf, -1, port);
         return strlen(buf);
     } else if (SCM_RATNUMP(obj)) {
@@ -3666,12 +3744,16 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         nchars += print_number(port, SCM_RATNUM_DENOM(obj), flags2, fmt);
         return nchars;
     } else if (SCM_COMPNUMP(obj)) {
-        print_double(buf, FLT_BUF, SCM_COMPNUM_REAL(obj),
-                     show_plus, fmt->precision, fmt->exp_lo, fmt->exp_hi);
+        print_double(buf, FLT_BUF, SCM_COMPNUM_REAL(obj), show_plus,
+                     fmt->precision,
+                     fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
+                     fmt->exp_lo, fmt->exp_hi);
         Scm_Putz(buf, -1, port);
         nchars += strlen(buf);
-        print_double(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj),
-                     TRUE, fmt->precision, fmt->exp_lo, fmt->exp_hi);
+        print_double(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj), TRUE,
+                     fmt->precision,
+                     fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
+                     fmt->exp_lo, fmt->exp_hi);
         Scm_Putz(buf, -1, port);
         nchars += strlen(buf);
         Scm_Putc('i', port);
@@ -3728,7 +3810,9 @@ size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
     char buf[FLT_BUF];
     print_double(buf, FLT_BUF, d,
                  fmt->flags & SCM_NUMBER_FORMAT_SHOW_PLUS,
-                 fmt->precision, fmt->exp_lo, fmt->exp_hi);
+                 fmt->precision,
+                 fmt->flags & SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
+                 fmt->exp_lo, fmt->exp_hi);
     size_t nchars = strlen(buf);
     Scm_Putz(buf, (int)nchars, port);
     return nchars;

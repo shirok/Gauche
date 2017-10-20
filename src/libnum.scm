@@ -190,10 +190,13 @@
            (unless (SCM_FALSEP (Scm_Memq 'plus flags))
              (logior= f SCM_NUMBER_FORMAT_SHOW_PLUS))
            (unless (SCM_FALSEP (Scm_Memq 'radix flags))
-             (logior= f SCM_NUMBER_FORMAT_ALT_RADIX))]
+             (logior= f SCM_NUMBER_FORMAT_ALT_RADIX))
+           (unless (SCM_FALSEP (Scm_Memq 'notational flags))
+             (logior= f SCM_NUMBER_FORMAT_ROUND_NOTATIONAL))]
           [else
            (Scm_Error "flags argument must be a list of symbols (uppercase, \
-                       plus, radix) or a boolean, but got: %S" flags)])
+                       plus, radix, notational) or a boolean, but got: %S"
+                      flags)])
     (Scm_NumberFormatInit (& fmt))
     (set! (ref fmt radix) radix)
     (set! (ref fmt flags) f)

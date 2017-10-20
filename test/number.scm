@@ -506,6 +506,7 @@
                      '(#f #t (uppercase) (plus) (radix) (uppercase plus radix))))
             '(#xcafe #xcafebabedeadbeef 0 -14 10/11 1+i)))
 
+;; Precision
 (dolist [n '((0.123456789 "0.12346" "0.1235" "0.123" "0.12" "0.1")
              (1.23456789 "1.23457" "1.2346" "1.235" "1.23" "1.2")
              (12.3456789 "12.34568" "12.3457" "12.346" "12.35" "12.3")
@@ -518,10 +519,30 @@
              (1. "1.00000" "1.0000" "1.000" "1.00" "1.0")
              (1.1 "1.10000" "1.1000" "1.100" "1.10" "1.1")
              (1e100 "1.00000e100" "1.0000e100" "1.000e100" "1.00e100" "1.0e100"))]
-  (test* "number->string digits"
-         (cdr n)
-         (map (cut number->string (car n) 10 #f <>)
-              '(5 4 3 2 1))))
+  (define (runs flags)
+    (map (cut number->string (car n) 10 flags <>)
+         '(5 4 3 2 1)))
+  (test* "number->string digits (effective)" (cdr n) (runs #f))
+  (test* "number->string digits (notational)" (cdr n) (runs '(notational))))
+
+;; Difference between effective/notational rounding
+(dolist [data '((1.15 1 "1.1" "1.2")
+                (4.15 1 "4.2" "4.2"))]
+  (test* "effective / notational rounding"
+         (cddr data)
+         (list (number->string (car data) 10 #f (cadr data))
+               (number->string (car data) 10 '(notational) (cadr data)))))
+
+;; notational rounding carry propagation, round-to-even
+(dolist [data '((1.99999 (5 4 3 2 1) ("1.99999" "2.0000" "2.000" "2.00" "2.0"))
+                (-9.999 (4 3 2 1) ("-9.9990" "-9.999" "-10.00" "-10.0"))
+                (0.999 (4 3 2 1) ("0.9990" "0.999" "1.00" "1.0"))
+                (0.25 (1) ("0.2"))
+                (0.135 (2) ("0.14")))]
+  (test* "notational rounding carry over"
+         (caddr data)
+         (map (cut number->string (car data) 10 '(notational) <>)
+              (cadr data))))
 
 ;;==================================================================
 ;; Conversions
