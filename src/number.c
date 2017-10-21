@@ -3604,7 +3604,12 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
         }
     }
 
-    /* notational rounding, if necessary */
+    /* Notational rounding, if necessary
+       We're not sure whether we should use commercial rounding
+       (round half towards infinity) or banker's rounding.  Since
+       notational rounding is inherently taking convenience than
+       accuarcy, we'd probably better go with commercial rounding.
+     */
     if (notational && precision >= 0 && fracdigs > precision) {
         char *p = numstart;
         while (p < buf && *p != '.') p++;
@@ -3615,13 +3620,18 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
                 /* round down - we just truncate */
                 buflen += buf - (p+precision);
                 buf = p+precision;
+#if USE_BANKERS_ROUNDING_FOR_NOTATIONAL_ROUNDING
             } else if (c > '5' || (c == '5' && buf-p > precision+1)) {
+#else
+            } else {
+#endif
                 /* round up */
                 buflen += buf - (p+precision);
                 buf = p+precision;
                 if (notational_roundup(numstart, buf)) {
                     buf++; buflen--;
                 }
+#if USE_BANKERS_ROUNDING_FOR_NOTATIONAL_ROUNDING
             } else {
                 /* midpoint.  round to even. */
                 if (strchr(".02468", *(p+precision-1)) != NULL) {
@@ -3636,6 +3646,7 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
                         buf++; buflen--;
                     }
                 }
+#endif
             }
         }
     }

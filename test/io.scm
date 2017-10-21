@@ -748,7 +748,8 @@
 
 (test* "format ~f" "1.2345"      (format #f "~f" 1.2345))
 (test* "format ~5,3f" "1.234"    (format #f "~5,3f" 1.2345))
-(test* "format ~5,3:f" "1.234"   (format #f "~5,3:f" 1.2345))
+;(test* "format ~5,3:f" "1.234"   (format #f "~5,3:f" 1.2345)) ;banker's rounding
+(test* "format ~5,3:f" "1.235"   (format #f "~5,3:f" 1.2345)) ;commercial rounding
 (test* "format ~6,2f" "  1.23"   (format #f "~6,2f" 1.2345))
 (test* "format ~6,2f" "  5.01"   (format #f "~6,2f" 5.015))
 (test* "format ~6,2:f" "  5.02"  (format #f "~6,2:f" 5.015))
