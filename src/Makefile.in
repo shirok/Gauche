@@ -78,11 +78,11 @@ GAUCHE_ABI_VERSION = @GAUCHE_ABI_VERSION@
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 CCLD      = $(LINK_HELPER) $(CC)
-LINK      = TARGETLIB=`pwd` $(CCLD) $(CFLAGS) $(RPATH_TMP) -L. $(LDFLAGS)
-RELINK    = TARGETLIB=$(TARGETLIB) $(CCLD) $(CFLAGS) $(RPATH_REAL) -L. $(LDFLAGS)
+LINK      = TARGETLIB="`pwd`" $(CCLD) $(CFLAGS) $(RPATH_TMP) -L. $(LDFLAGS)
+RELINK    = TARGETLIB="$(TARGETLIB)" $(CCLD) $(CFLAGS) $(RPATH_REAL) -L. $(LDFLAGS)
 INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
-POSTBUILD   = TARGETLIB=`pwd` DESTDIR= $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
+POSTBUILD   = TARGETLIB="`pwd`" DESTDIR= $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT) ; \
               TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT); \
@@ -412,7 +412,7 @@ staticinit.c : all gen-staticinit.scm
 TESTFILES  = `cat ../test/TESTS`
 TEST2FILES = `cat ../test/TESTS2`
 
-TESTRECORD = $(top_builddir)/test.record
+TESTRECORD = "$(top_builddir)/test.record"
 
 check : test
 
@@ -460,7 +460,7 @@ test-arith.$(OBJEXT) : gauche/priv/arith.h
 install-check :
 	@rm -rf test.log
 	@for f in `cat ../test/TESTS ../test/TESTS2`; do \
-	  ${bindir}/gosh ../test/$$f install-check; \
+	  "${bindir}/gosh" ../test/$$f install-check; \
 	done
 
 # clean ------------------------------------------------
@@ -494,13 +494,13 @@ maintainer-clean : clean
 
 # install ----------------------------------------------
 
-INSTALL_DIRS = $(DESTDIR)$(HEADER_INSTALL_DIR) \
-	       $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche \
-	       $(DESTDIR)$(SCM_INSTALL_DIR) \
-	       $(DESTDIR)$(ARCH_INSTALL_DIR) \
-	       $(DESTDIR)$(BIN_INSTALL_DIR) \
-	       $(DESTDIR)$(SITE_SCM_DIR) \
-	       $(DESTDIR)$(SITE_ARCH_DIR)
+INSTALL_DIRS = "$(DESTDIR)$(HEADER_INSTALL_DIR)" \
+	       "$(DESTDIR)$(HEADER_INSTALL_DIR)/gauche" \
+	       "$(DESTDIR)$(SCM_INSTALL_DIR)" \
+	       "$(DESTDIR)$(ARCH_INSTALL_DIR)" \
+	       "$(DESTDIR)$(BIN_INSTALL_DIR)" \
+	       "$(DESTDIR)$(SITE_SCM_DIR)" \
+	       "$(DESTDIR)$(SITE_ARCH_DIR)"
 @CROSS_COMPILING_no@GAUCHE_CONFIG = ./gauche-config
 @CROSS_COMPILING_yes@GAUCHE_CONFIG = ./$(host)-gauche-config
 @CROSS_COMPILING_no@GAUCHE_INSTALL = ./gosh -ftest $(srcdir)/gauche-install.in
@@ -512,28 +512,28 @@ install-dirs :
 	$(MKINSTDIR) $(INSTALL_DIRS)
 
 install-aux : all install-dirs
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_HEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SUBHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
+	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" $(INSTALL_HEADERS) "$(DESTDIR)$(HEADER_INSTALL_DIR)"
+	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" $(INSTALL_SUBHEADERS) "$(DESTDIR)$(HEADER_INSTALL_DIR)/gauche"
+	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" $(INSTALL_SCMS) "$(DESTDIR)$(SCM_INSTALL_DIR)"
 
 install-relink : install-aux
 	$(MAKE) relink
 
 install-core : install-relink
-	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(LIB_INSTALL_DIR)
-	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(ARCH_INSTALL_DIR)
-	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(BIN_INSTALL_DIR)
-	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(ARCH_INSTALL_DIR)
+	$(INSTALL)        $(INSTALL_LIBS) "$(DESTDIR)$(LIB_INSTALL_DIR)"
+	$(INSTALL)        $(INSTALL_LIBS) "$(DESTDIR)$(ARCH_INSTALL_DIR)"
+	$(INSTALL) -m 555 $(INSTALL_BINS) "$(DESTDIR)$(BIN_INSTALL_DIR)"
+	$(INSTALL) -m 555 $(INSTALL_BINS) "$(DESTDIR)$(ARCH_INSTALL_DIR)"
 	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*|*-mingw*) \
-	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
+	  $(INSTALL) $(INSTALL_LIBS) "$(DESTDIR)$(BIN_INSTALL_DIR)";;\
 	esac
 	$(POSTINSTALL)
 
 uninstall :
 	$(PREUNINSTALL)
-	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
-	for f in $(INSTALL_LIBS); do rm -f $(LIB_INSTALL_DIR)/$$f; done
-	rm -rf $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@ $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@ $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@
+	for f in $(INSTALL_BINS); do rm -f "$(BIN_INSTALL_DIR)/$$f"; done
+	for f in $(INSTALL_LIBS); do rm -f "$(LIB_INSTALL_DIR)/$$f"; done
+	rm -rf "$(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@" "$(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@" "$(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@"
 
 pre-package : $(GENERATED)
 
@@ -551,5 +551,5 @@ gauche-package.exe : $(LIBGAUCHE).$(SOEXT)
 gauche-cesconv.exe : $(LIBGAUCHE).$(SOEXT)
 
 install-mingw:
-	$(INSTALL_DATA) $(INSTALL_MINGWHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
-	$(INSTALL_DATA) gauche-install.exe.manifest $(DESTDIR)$(BIN_INSTALL_DIR)
+	$(INSTALL_DATA) $(INSTALL_MINGWHEADERS) "$(DESTDIR)$(HEADER_INSTALL_DIR)/gauche"
+	$(INSTALL_DATA) gauche-install.exe.manifest "$(DESTDIR)$(BIN_INSTALL_DIR)"

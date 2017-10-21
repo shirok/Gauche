@@ -86,9 +86,9 @@ install-pkg:
 	cd lib; $(MAKE) install
 	cd ext; $(MAKE) install
 	cd src; $(MAKE) install
-	$(INSTALL_DATA) $(srcdir)/m4/gauche.m4 $(DESTDIR)$(GAUCHE_ACLOCAL_DIR)/aclocal.m4
-	$(MKINSTDIR) $(DESTDIR)$(datadir)/aclocal
-	$(INSTALL_DATA) $(srcdir)/m4/gauche.m4 $(DESTDIR)$(datadir)/aclocal/gauche.m4
+	$(INSTALL_DATA) "$(srcdir)/m4/gauche.m4" "$(DESTDIR)$(GAUCHE_ACLOCAL_DIR)/aclocal.m4"
+	$(MKINSTDIR) "$(DESTDIR)$(datadir)/aclocal"
+	$(INSTALL_DATA) "$(srcdir)/m4/gauche.m4" "$(DESTDIR)$(datadir)/aclocal/gauche.m4"
 
 slibcat-in-place:
 	cd lib; $(MAKE) slibcat-in-place

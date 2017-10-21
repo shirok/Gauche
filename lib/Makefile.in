@@ -128,13 +128,13 @@ check:
 
 install:
 	for d in $(SUBDIRS); do \
-	  $(MKINSTDIR) $(DESTDIR)$(SCM_INSTALL_DIR)/$$d; \
+	  $(MKINSTDIR) "$(DESTDIR)$(SCM_INSTALL_DIR)/$$d"; \
 	done
 	for p in $(SCMFILES); do \
-	  $(INSTALL_DATA) $$p $(DESTDIR)$(SCM_INSTALL_DIR)/$$p; \
+	  $(INSTALL_DATA) "$$p" "$(DESTDIR)$(SCM_INSTALL_DIR)/$$p"; \
 	done
 	if test -f slibcat; then \
-	  $(INSTALL_DATA) slibcat $(DESTDIR)$(SCM_INSTALL_DIR)/slibcat; \
+	  $(INSTALL_DATA) slibcat "$(DESTDIR)$(SCM_INSTALL_DIR)/slibcat"; \
 	fi
 
 uninstall:

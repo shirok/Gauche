@@ -48,7 +48,7 @@ LIB_VVV=$LIBGAUCHE.0.$MICRO_VERSION
 LIB_V=$LIBGAUCHE.0
 LIB_COMPAT=libgauche.so
 
-cd $DESTDIR$TARGETLIB
+cd "$DESTDIR$TARGETLIB"
 case "$mode" in
   create)
     # avoid re-running mkverslink.

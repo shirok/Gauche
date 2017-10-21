@@ -1,6 +1,8 @@
 2017-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (format): Support ~f directive.
+	* Makefiles: Make them work when install destination path contains
+	  whitespaces.
 
 2017-10-19  Shiro Kawai  <shiro@acm.org>
 

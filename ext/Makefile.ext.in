@@ -38,15 +38,15 @@ CCLD      = $(CC)
 LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS)
 MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 
-@CROSS_COMPILING_no@GOSH           = $(top_builddir)/src/gosh -ftest
-@CROSS_COMPILING_no@GAUCHE_CONFIG  = $(top_builddir)/src/gauche-config
+@CROSS_COMPILING_no@GOSH           = "$(top_builddir)/src/gosh" -ftest
+@CROSS_COMPILING_no@GAUCHE_CONFIG  = "$(top_builddir)/src/gauche-config"
 @CROSS_COMPILING_yes@GOSH           = gosh
-@CROSS_COMPILING_yes@GAUCHE_CONFIG  = $(top_builddir)/src/$(HOST)-gauche-config
-GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install.in -C
-PRECOMP        = $(GOSH) $(top_srcdir)/src/precomp
+@CROSS_COMPILING_yes@GAUCHE_CONFIG  = "$(top_builddir)/src/$(HOST)-gauche-config"
+GAUCHE_INSTALL = $(GOSH) "$(top_srcdir)/src/gauche-install.in" -C
+PRECOMP        = $(GOSH) "$(top_srcdir)/src/precomp"
 INSTALL_TYPE   = sys
 
-EXT_LIBGAUCHE  = -L$(top_builddir)/src @EXT_LIBGAUCHE@
+EXT_LIBGAUCHE  = -L"$(top_builddir)/src" @EXT_LIBGAUCHE@
 
 GAUCHE_INCDIR  = $(DESTDIR)$(libdir)/gauche-$(GAUCHE_ABI_VERSION)/$(GAUCHE_VERSION)/include
 GAUCHE_LIBDIR  = $(DESTDIR)$(datadir)/gauche-$(GAUCHE_ABI_VERSION)/$(GAUCHE_VERSION)/lib
@@ -58,7 +58,7 @@ DATA_INSTALL_DIR = @datadir@
 
 CLEANFILES = core *~ test.log test.out $(XCLEANFILES)
 
-TESTRECORD = $(top_builddir)/test.record
+TESTRECORD = "$(top_builddir)/test.record"
 
 .SUFFIXES:
 .SUFFIXES: .S .c .o .obj .s .stub
@@ -80,16 +80,16 @@ TESTRECORD = $(top_builddir)/test.record
 	$(COMPILE) -c $<
 
 .stub.c :
-	$(GOSH) $(top_srcdir)/src/genstub $<
+	$(GOSH) "$(top_srcdir)/src/genstub" $<
 
 default : all link
 
 check : all
 	@rm -f test.log
-	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I. -I$(srcdir) $(srcdir)/test.scm > test.log
+	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I. -I"$(srcdir)" "$(srcdir)/test.scm" > test.log
 
 install-check :
-	${bindir}/gosh $(srcdir)/test.scm
+	"${bindir}/gosh" "$(srcdir)/test.scm"
 
 clean : unlink
 	rm -rf $(CLEANFILES) *.$(OBJEXT) *.$(SOEXT)
@@ -112,21 +112,21 @@ pre-package-generate :
 	done
 
 install-std : all
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) -T $(GAUCHE_INCDIR) $(HDRFILES)
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) -T $(GAUCHE_LIBDIR)/$(SCM_CATEGORY) $(SCMFILES)
-	$(GAUCHE_INSTALL) -m 555 -T $(GAUCHE_ARCHDIR) $(LIBFILES)
+	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" -T "$(GAUCHE_INCDIR)" $(HDRFILES)
+	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" -T "$(GAUCHE_LIBDIR)/$(SCM_CATEGORY)" $(SCMFILES)
+	$(GAUCHE_INSTALL) -m 555 -T "$(GAUCHE_ARCHDIR)" $(LIBFILES)
 
 uninstall :
 
 link : all
-	-$(GOSH) $(top_srcdir)/ext/xlink -l -g "$(SCM_CATEGORY)" \
-	  -b $(top_builddir) -s $(srcdir) $(LIBFILES) $(SCMFILES)
+	-$(GOSH) "$(top_srcdir)/ext/xlink" -l -g "$(SCM_CATEGORY)" \
+	  -b "$(top_builddir)" -s $(srcdir) $(LIBFILES) $(SCMFILES)
 
 unlink :
-	-@$(GOSH) $(top_srcdir)/ext/xlink -u -g "$(SCM_CATEGORY)" \
-	  -b $(top_builddir) -s $(srcdir) $(LIBFILES) $(SCMFILES)
+	-@$(GOSH) "$(top_srcdir)/ext/xlink" -u -g "$(SCM_CATEGORY)" \
+	  -b "$(top_builddir)" -s $(srcdir) $(LIBFILES) $(SCMFILES)
 
 list-objects:
 	@if test "X$(OBJECTS)" != X; then \
-	   for o in $(OBJECTS); do echo `pwd`/$$o; done;\
+	   for o in $(OBJECTS); do echo "`pwd`/$$o"; done;\
 	fi

@@ -63,18 +63,18 @@ DESTDIR =
 all: info
 
 install: all
-	if test ! -d $(DESTDIR)$(mandir)/man1; then $(MKINSTDIR) $(DESTDIR)$(mandir)/man1; fi
-	$(INSTALL_DATA) $(MANPAGES) $(DESTDIR)$(mandir)/man1
-	if test ! -d $(DESTDIR)$(infodir); then $(MKINSTDIR) $(DESTDIR)$(infodir); fi
+	if test ! -d "$(DESTDIR)$(mandir)/man1"; then $(MKINSTDIR) "$(DESTDIR)$(mandir)/man1"; fi
+	$(INSTALL_DATA) $(MANPAGES) "$(DESTDIR)$(mandir)/man1"
+	if test ! -d "$(DESTDIR)$(infodir)"; then $(MKINSTDIR) "$(DESTDIR)$(infodir)"; fi
 	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
 	  for info in *.info*; do \
-	    $(INSTALL_DATA) $$info $(DESTDIR)$(infodir)/; \
+	    $(INSTALL_DATA) $$info "$(DESTDIR)$(infodir)/"; \
 	  done; \
 	fi
 
 uninstall:
-	(cd $(mandir)/man1; rm -f $(MANPAGES))
-	(cd $(infodir); \
+	(cd "$(mandir)/man1"; rm -f $(MANPAGES))
+	(cd "$(infodir)"; \
 	 if test -f gauche-refe.info -o -f gauche-refe.info.gz; \
 	   then rm -f gauche-refe.*; \
 	 fi; \

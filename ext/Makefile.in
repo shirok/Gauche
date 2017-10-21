@@ -63,12 +63,12 @@ check:
 
 install:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install) || exit 1; done
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(TEMPLATES) $(DESTDIR)$(TEMPLATE_INST_DIR)
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(TEMPLATES) "$(DESTDIR)$(TEMPLATE_INST_DIR)"
 
 uninstall:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
 	for f in $(TEMPLATES); do \
-	  rm -f $(DESTDIR)$(TEMPLATE_INST_DIR)/$$f; \
+	  rm -f "$(DESTDIR)$(TEMPLATE_INST_DIR)/$$f"; \
 	done
 
 clean:
