@@ -19178,7 +19178,8 @@ Procedures that deal with raw data.
 @item
 To output a character or a byte: @code{write-char}, @code{write-byte}.
 @item
-To output an array of binary data: @code{write-uvector}.
+To output a string or an array of binary data: @code{write-string},
+@code{write-uvector}.
 @item
 To flush the output buffer: @code{flush}, @code{flush-all-ports}.
 @end itemize
@@ -19189,7 +19190,8 @@ To flush the output buffer: @code{flush}, @code{flush-all-ports}.
 @item
 文字毎やバイト毎の出力: @code{write-char}, @code{write-byte}
 @item
-バイナリデータの配列の出力: @code{write-uvector}
+文字列やバイナリデータの配列の出力: @code{write-string},
+@code{write-uvector}
 @item
 出力バッファのフラッシュ: @code{flush}, @code{flush-all-ports}
 @end itemize
@@ -19949,6 +19951,113 @@ the @code{~D} directive.
   @result{} "0f7cf5a8"
 (format #f "~8,'0X" 259847592)
   @result{} "0F7CF5A8"
+@end example
+
+@item @b{~}@var{width},@var{digis},@var{scale},@var{ovfchar},@var{padchar}@b{F}
+@c EN
+Floating-number output.
+If the argument is a real number, it is formatted as a decimal floating number.
+The @var{width} parameter defines the width of the field; the number is
+written out right-justified, with the left room padded with @var{padchar},
+whose default is @code{#\space}.  When the formatted output can't fit
+in @var{width}, @var{ovfchar} is output @var{width} times if it is given,
+or the entire output is shown if @var{ovfchar} is omitted.
+@c JP
+浮動小数点数出力。
+引数が実数ならば、その十進小数表現が出力されます。
+@var{width}パラメータは出力幅を師弟します。もしフォーマット結果がその幅に足りなければ、
+左側に@var{padchar}が詰められます。@var{padchar}のデフォルトは@code{#\space}です。
+フォーマット結果が@var{width}を越える場合、@var{ovfchar}が指定されていれば、
+@var{width}個の@var{ovfchar}が出力され、指定されていなければ@var{width}を無視して
+必要なだけの桁数が出力されます。
+@c COMMON
+
+@example
+(format "~6f" 3.14)          @result{} "  3.14"
+(format "~6f" 3.141592)      @result{} "3.141592"
+(format "~6,,,'#f" 3.141592) @result{} "######"
+(format "~6,,,,'*f 3.14)     @result{} "**3.14"
+@end example
+
+@c EN
+The @var{digits} parameter specifies number of digits shown below the
+decimal point.  Must be nonnegative integer.  When omitted, enough digits
+to identify the flonum uniquely is generated (same as using
+@code{write} and @code{display}---when you read back the number, you'll
+get exactly the same flonum.)
+@c JP
+@var{digits}パラメータは小数点以下に表示される桁数を指定します。非負整数でなければなりません。
+省略された場合は、引数の浮動小数点数を一意に同定できる最小の精度で出力されます
+(@code{write}や@code{display}で出力した場合と同じです。その文字列を@code{read}すれば、
+全く同じ浮動小数点数が得られます)。
+@c COMMON
+
+@example
+(format "~6,3f" 3.141592)    @result{} " 3.142"
+(format "~6,0f" 3.141592)    @result{} "    3."
+(format "~10,4f" 355/113)    @result{} "    3.1416"
+(foramt "~10,4f" 3)          @result{} "    3.0000"
+@end example
+
+@c EN
+If the @var{scale} parameter is given, the argument is multiplied by
+@code{(expt 10 scale)} before printing.
+@c JP
+@var{scale}パラメータが与えられた場合、引数が表示前に@code{(expt 10 scale)}倍
+されます。
+@c COMMON
+
+@c EN
+If the @code{@@} flag is given, plus sign is printed before the non-negative
+number.
+@c JP
+@code{@@}フラグが与えられると、引数が非負の場合にプラス記号が出力されます。
+@c COMMON
+
+@example
+(format "~8,3@@f" 3.141592)   @result{} "  +3.142"
+@end example
+
+@c EN
+When @var{digits} is smaller than the digits required to represent
+the flonum unambiguously, we round at @var{digits}+1 position.  By default,
+it is done based on the value the flonum represents---that is, we choose
+the rounded value closer to the actual value of the flonum.
+It can sometimes lead to unintuitive results, however.  Suppose you want
+to round 1.15 at 100ths (that is, round to nearest 10ths).  Unlike
+elementary math class, it gives you 1.1.  That's because the flonum
+represented by 1.15 is actually tiny bit smaller than 1.15, so closer to
+1.1 than 1.2.  We show it as 1.15 since no other flonums are closer to
+1.15.
+@c JP
+@var{digits}が浮動小数点数を一意に同定するための桁数に足りない場合は、
+小数点以下@var{digits}桁に丸められます。デフォルトでは、この丸めは
+浮動小数点数の真の値に基づいて行われます。つまり、真の値に近い方の表現が選ばれます。
+これはたまに、非直感的な結果になることがあります。
+例えば1.15を1/100の位で丸めて(1/10単位にして)みると、
+小学校でやる算数と異なり、1.1が出力されます。
+この理由は、1.15と表記される浮動小数点数が実際には1.15よりわずかに小さく、従って
+1.1により近いからです。本当は1.15でないものを1.15と表示しているのは、
+1.15により近い浮動小数点数が他に無く、1.15が該当する浮動小数点数を一意に同定する
+最も短い表現だからです。
+@c COMMON
+
+@c EN
+But in casual applications, users may perplexed with this behavior.
+So we support another rounding mode, which we call notational rounding.
+It is based on the notation used for the flonum.  In that mode,
+rounding 1.15 to nearest 10ths yields 1.2.  You can get it by
+adding @code{:} flag.
+@c JP
+しかし日常的なアプリケーションでこういう振る舞いがあると、ユーザが混乱してしまうかもしれません。
+そこでもう一つ、表示に基づいた丸め(notational rounding)モードを用意しました。
+このモードでは、浮動小数点数の表示に基づいた丸めを行います。従って
+1.15を1/100の位で丸めると1.2になります。このモードは@code{:}フラグで指定できます。
+@c COMMON
+
+@example
+(format "~6,1f" 1.15)  @result{} "   1.1"
+(format "~6,1:f" 1.15) @result{} "   1.2"
 @end example
 
 @item @b{~}@var{count}@b{*}
