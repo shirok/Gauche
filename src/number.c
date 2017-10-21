@@ -3535,9 +3535,24 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
     /* Now, we print XX.YYeZZ, where XX.YY is VAL*10^EST and
        ZZ is EST.  If EST == 1 we omit exponent part.  POINT is
        the number of digits in XX part; so POINT=1 for 1.23,
-       POINT=2 for 12.3 and so on.
+       POINT=2 for 12.3 and so on. */
 
-       If POINT <= 0, we need to emit preceding zeros. */
+    /* If POINT <= 0, we need to emit preceding zeros.
+       We have to special case when POINT == 0 and PRECISION == 0,
+       in that case the digit of ones are affected by the rounding.
+     */
+    if (!notational && precision == 0 && point == 0) {
+        /* whether r/s is greater than 1/2 or not defines the digit of ones*/
+        ScmObj r2 = Scm_Ash(r, 1);
+        if (Scm_NumCmp(r2, s) > 0) {
+            *buf++ = '1'; *buf++ = '.'; buflen--;
+        } else {
+            *buf++ = '0'; *buf++ = '.'; buflen--;
+        }
+        /* no more digits. */
+        goto show_exponent;
+    }
+    
     if (point <= 0) {
         *buf++ = '0'; buflen--;
         *buf++ = '.', buflen--, fracdigs++; 
@@ -3553,7 +3568,13 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
         ScmObj q = Scm_Quotient(r10, s, &r);
         ScmObj mp;
 
-        if (!notational && precision >= 0 && fracdigs >= precision-1) {
+        /* if we round early, we should extend the boundary
+           _one digit before the rounded digit_.  It's a bit complicated
+           since when precision == 0 we have to do it before printing
+           decimal point. */
+        if (!notational
+            && ((precision == 0 && digs == point)
+                || (precision > 0 && fracdigs >= precision-1))) {
             mm = mp = Scm_Ash(s, -1);
         } else {
             mm = Scm_Mul(mm, SCM_MAKE_INT(10));
@@ -3580,24 +3601,24 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
                 continue;
             } else {
                 *buf++ = (char)SCM_INT_VALUE(q) + '1';
-                fracdigs++;
+                if (digs > point) fracdigs++;
                 break;
             }
         } else {
             if (!tc2) {
                 SCM_ASSERT(SCM_INTP(q));
                 *buf++ = (char)SCM_INT_VALUE(q) + '0';
-                fracdigs++;
+                if (digs > point) fracdigs++;
                 break;
             } else {
                 int tc3 = numcmp3(r, r, s); /* r*2 <=> s */
                 if ((round && tc3 <= 0) || (!round && tc3 < 0)) {
                     *buf++ = (char)SCM_INT_VALUE(q) + '0';
-                    fracdigs++;
+                    if (digs > point) fracdigs++;
                     break;
                 } else {
                     *buf++ = (char)SCM_INT_VALUE(q) + '1';
-                    fracdigs++;
+                    if (digs > point) fracdigs++;
                     break;
                 }
             }
@@ -3657,12 +3678,13 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
             *buf++ = '0', buflen--;
         }
         *buf++ = '.';
-        if (precision <= 0) *buf++ = '0';
+        if (precision < 0) *buf++ = '0';
     }
-    for (;(digs-point)<precision && buflen>5; digs++) {
+    for (;(digs-point) < precision && buflen>5; digs++) {
         *buf++ = '0';
     }
 
+ show_exponent:
     /* prints exponent.  we shifted decimal point, so -1. */
     est--;
     if (est != 0) {
