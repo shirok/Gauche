@@ -19982,7 +19982,7 @@ or the entire output is shown if @var{ovfchar} is omitted.
 (format "~6f" 3.14)          @result{} "  3.14"
 (format "~6f" 3.141592)      @result{} "3.141592"
 (format "~6,,,'#f" 3.141592) @result{} "######"
-(format "~6,,,,'*f 3.14)     @result{} "**3.14"
+(format "~6,,,,'*f" 3.14)    @result{} "**3.14"
 @end example
 
 @c EN
