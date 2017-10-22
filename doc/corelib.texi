@@ -19965,7 +19965,7 @@ or the entire output is shown if @var{ovfchar} is omitted.
 @c JP
 浮動小数点数出力。
 引数が実数ならば、その十進小数表現が出力されます。
-@var{width}パラメータは出力幅を師弟します。もしフォーマット結果がその幅に足りなければ、
+@var{width}パラメータは出力幅を指定します。もしフォーマット結果がその幅に足りなければ、
 左側に@var{padchar}が詰められます。@var{padchar}のデフォルトは@code{#\space}です。
 フォーマット結果が@var{width}を越える場合、@var{ovfchar}が指定されていれば、
 @var{width}個の@var{ovfchar}が出力され、指定されていなければ@var{width}を無視して
