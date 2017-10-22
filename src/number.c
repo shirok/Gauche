@@ -3835,8 +3835,8 @@ size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *fmt)
 /* API.  FMT can be NULL.  Utility to expose Burger&Dybvig algorithm. */
 size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
 {
+    ScmNumberFormat defaults;
     if (fmt == NULL) {
-        ScmNumberFormat defaults;
         Scm_NumberFormatInit(&defaults);
         fmt = &defaults;
     }
