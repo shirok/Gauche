@@ -822,8 +822,8 @@ if test "$try_rpath" = "yes"; then
     fi
   fi
   if test "$RPATH_FLAG" != ""; then
-    RPATH_TMP=$RPATH_FLAG'`pwd`'
-    RPATH_REAL=$RPATH_FLAG'$(ARCH_INSTALL_DIR)'
+    RPATH_TMP=$RPATH_FLAG'"`pwd`"'
+    RPATH_REAL=$RPATH_FLAG'"$(ARCH_INSTALL_DIR)"'
   fi
 fi
 AC_SUBST(RPATH_FLAG)
