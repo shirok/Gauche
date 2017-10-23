@@ -283,7 +283,7 @@ Schemeには等価性を判定する汎用的な述語が3つあります。
 This is the fastest and finest predicate.
 Returns @code{#t} if @var{obj1} and @var{obj2} are identical
 objects---that is, if they represents the same object on memory
-or in a register.  Notably, you can compare two symbols with
+or in a register.  Notably, you can compare two symbols or two keywords with
 @code{eq?} to check if they are the same or not.
 You can think @var{eq?} as a pointer comparison for
 any heap-allocated objects.
@@ -297,7 +297,7 @@ use @code{eqv?} below.
 最も高速で、細かい区別ができる述語です。
 @var{obj1}と@var{obj2}が同一(identical)のオブジェクト、
 すなわち、メモリ上の同じオブジェクトを表している場合に@code{#t}を返します。
-特に、二つのシンボルが同一かどうかを比較するのに@code{eq?}が使えます。
+特に、二つのシンボルもしくは二つのキーワードが同一かどうかを比較するのに@code{eq?}が使えます。
 ヒープアロケートされるオブジェクトに対しては、ポインタ比較と考えても良いでしょう。
 
 真偽値も@code{eq?}で比較できますが、文字と数値はたとえ値が同じオブジェクトであっても
