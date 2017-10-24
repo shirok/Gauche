@@ -5702,14 +5702,20 @@ b @result{} ((a . b) (c . d))
 @defunx assoc obj list :optional key=
 [R7RS base]
 @c EN
-Each element in @var{list} must be a pair.
+Each element in @var{list} should be a pair
+(Gauche ignores non-pair element in @var{list}, but other R7RS
+implementation may raise an error, so be aware of it when you're
+writing a portable code).
 These procedures search a pair whose car matches @var{obj}
 (in the sense of @code{eq?} for @code{assq},
 @code{eqv?} for @code{assv}, and @code{equal?} for @code{assoc})
 from left to right, and return the leftmost matched pair if any.
 If no pair matches, these return @code{#f}.
 @c JP
-@var{list}の各要素はペアでなければなりません。
+@var{list}の各要素はペアでなければなりません
+(Gaucheは@var{list}中のペアでない要素を単に無視しますが、
+他のR7RS処理系はエラーを投げるかもしれないので、
+ポータブルなコードを書いている時は注意してください)。
 これらの手続きは、@var{list}の要素であるペアのうち、そのcarが
 @var{obj}と一致するペアを左から探して行きます。もし見付かればそのペアが、
 見付からなければ@code{#f}が返されます。
