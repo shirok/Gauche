@@ -311,7 +311,7 @@ SCM_EXTERN ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
 typedef struct ScmDStringChunkRec {
     int bytes;                  /* actual bytes stored in this chunk.
                                    Note that this is set when the next
-                                   chunk is allocated. */
+                                   chunk is allocated, or by Scm_DStringSize.*/
     char data[SCM_DSTRING_INIT_CHUNK_SIZE]; /* variable length, indeed. */
 } ScmDStringChunk;
 
@@ -334,6 +334,7 @@ SCM_EXTERN void        Scm_DStringInit(ScmDString *dstr);
 SCM_EXTERN int         Scm_DStringSize(ScmDString *dstr);
 SCM_EXTERN ScmObj      Scm_DStringGet(ScmDString *dstr, int flags);
 SCM_EXTERN const char *Scm_DStringGetz(ScmDString *dstr);
+SCM_EXTERN void        Scm_DStringWeld(ScmDString *dstr);
 SCM_EXTERN const char *Scm_DStringPeek(ScmDString *dstr, int *size, int *len);
 SCM_EXTERN void        Scm_DStringPutz(ScmDString *dstr, const char *str,
                                        int siz);

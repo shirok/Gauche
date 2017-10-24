@@ -1611,6 +1611,13 @@ int Scm_DStringSize(ScmDString *dstr)
     return (int)size;
 }
 
+static ScmDStringChunk *newChunk(ScmSmallInt size)
+{
+    return SCM_NEW_ATOMIC2(ScmDStringChunk*,
+                           (sizeof(ScmDStringChunk)
+                            +size-SCM_DSTRING_INIT_CHUNK_SIZE));
+}
+
 void Scm__DStringRealloc(ScmDString *dstr, int minincr)
 {
     /* sets the byte count of the last chunk */
@@ -1630,11 +1637,8 @@ void Scm__DStringRealloc(ScmDString *dstr, int minincr)
         newsize = minincr;
     }
 
-    ScmDStringChunk *newchunk = SCM_NEW_ATOMIC2(
-        ScmDStringChunk*,
-        sizeof(ScmDStringChunk)+newsize-SCM_DSTRING_INIT_CHUNK_SIZE);
+    ScmDStringChunk *newchunk = newChunk(newsize);
     newchunk->bytes = 0;
-
     ScmDStringChain *newchain = SCM_NEW(ScmDStringChain);
 
     newchain->next = NULL;
@@ -1703,6 +1707,32 @@ const char *Scm_DStringGetz(ScmDString *dstr)
     return dstring_getz(dstr, &size, &len, FALSE);
 }
 
+/* Concatenate all chains in DString into one chunk.  Externally nothing
+   really changes, but this can be used to optimize allocation. */
+void Scm_DStringWeld(ScmDString *dstr)
+{
+    if (dstr->anchor == NULL) return; /* nothing to do */
+    ScmDStringChain *chain = dstr->anchor;
+    ScmSmallInt size = Scm_DStringSize(dstr);
+    ScmSmallInt bufsiz = size + (dstr->end - dstr->current);
+    ScmDStringChunk *newchunk = newChunk(bufsiz);
+    newchunk->bytes = size;
+    char *bptr = newchunk->data;
+    memcpy(bptr, dstr->init.data, dstr->init.bytes);
+    bptr += dstr->init.bytes;
+    for (; chain; chain = chain->next) {
+        memcpy(bptr, chain->chunk->data, chain->chunk->bytes);
+        bptr += chain->chunk->bytes;
+    }
+    dstr->init.bytes = 0;
+    dstr->anchor->chunk = newchunk;
+    dstr->anchor->next = NULL;
+    dstr->tail = dstr->anchor;
+    dstr->current = newchunk->data + size;
+    dstr->end = newchunk->data + bufsiz;
+    dstr->lastChunkSize = bufsiz;
+}
+
 /* Returns the current content of DString, along with byte size and character
    length. The returned pointer may not be NUL-terminated.
 
@@ -1712,7 +1742,17 @@ const char *Scm_DStringGetz(ScmDString *dstr)
    the returned content may be altered by further DString operation. */
 const char *Scm_DStringPeek(ScmDString *dstr, int *size, int *len)
 {
-    return dstring_getz(dstr, size, len, TRUE);
+    Scm_DStringWeld(dstr);
+    if (dstr->anchor == NULL) {
+        if (size) *size = dstr->current - dstr->init.data;
+        if (len)  *len = dstr->length;
+        return dstr->init.data;
+    } else {
+        Scm_DStringWeld(dstr);
+        if (size) *size = dstr->anchor->chunk->bytes;
+        if (len)  *len = dstr->length;
+        return dstr->anchor->chunk->data;
+    }
 }
 
 void Scm_DStringPutz(ScmDString *dstr, const char *str, int size)
