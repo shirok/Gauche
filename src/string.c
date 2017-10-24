@@ -1797,6 +1797,52 @@ void Scm_DStringPutc(ScmDString *ds, ScmChar ch)
     SCM_DSTRING_PUTC(ds, ch);
 }
 
+/* Truncate DString at the specified size.
+   Returns after-truncation size (it may be smaller than newsize if
+   the original DString isn't as large as newsize. */
+int Scm_DStringTruncate(ScmDString *dstr, int newsize)
+{
+    int origsize = 0;
+    
+    if (newsize < dstr->init.bytes) {
+        origsize = dstr->init.bytes;
+        dstr->init.bytes = newsize;
+        dstr->anchor = NULL;
+        dstr->tail = NULL;
+        dstr->current = dstr->init.data + newsize;
+        dstr->end = dstr->init.data + SCM_DSTRING_INIT_CHUNK_SIZE;
+    } else {
+        origsize = Scm_DStringSize(dstr);
+        if (newsize >= origsize) return origsize;
+        ScmDStringChain *chain = dstr->anchor;
+        int ss = dstr->init.bytes;
+        for (; chain; chain = chain->next) {
+            if (newsize < ss + chain->chunk->bytes) {
+                /* truncate this chunk */
+                if (chain == dstr->tail) {
+                    chain->chunk->bytes = newsize - ss;
+                    dstr->current = chain->chunk->data + newsize - ss;
+                } else {
+                    dstr->lastChunkSize = chain->chunk->bytes;
+                    dstr->end = chain->chunk->data + chain->chunk->bytes;
+                    chain->chunk->bytes = newsize - ss;
+                    chain->next = NULL;
+                    dstr->tail = chain;
+                    dstr->current = chain->chunk->data + newsize - ss;
+                }
+                break;
+            }
+            ss += chain->chunk->bytes;
+        }
+        SCM_ASSERT(chain != NULL);
+    }
+
+    /* If we accumulated only ASCII, we can adjust length as well. */
+    if (dstr->length == origsize) dstr->length = newsize;
+    else                          dstr->length = -1;
+    return newsize;
+}
+
 
 /* for debug */
 void Scm_DStringDump(FILE *out, ScmDString *dstr)

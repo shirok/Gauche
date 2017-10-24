@@ -341,6 +341,7 @@ SCM_EXTERN void        Scm_DStringPutz(ScmDString *dstr, const char *str,
 SCM_EXTERN void        Scm_DStringAdd(ScmDString *dstr, ScmString *str);
 SCM_EXTERN void        Scm_DStringPutb(ScmDString *dstr, char byte);
 SCM_EXTERN void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
+SCM_EXTERN int         Scm_DStringTruncate(ScmDString *dstr, int newsize);
 
 #define SCM_DSTRING_SIZE(dstr)    Scm_DStringSize(dstr);
 
