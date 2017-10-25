@@ -410,16 +410,20 @@ int Scm_StringCmp(ScmString *x, ScmString *y)
 {
     const ScmStringBody *xb = SCM_STRING_BODY(x);
     const ScmStringBody *yb = SCM_STRING_BODY(y);
-    if ((SCM_STRING_BODY_FLAGS(xb)^SCM_STRING_BODY_FLAGS(yb))&SCM_STRING_INCOMPLETE) {
-        Scm_Error("cannot compare incomplete vs complete string: %S, %S",
-                  SCM_OBJ(x), SCM_OBJ(y));
-    }
     ScmSmallInt sizx = SCM_STRING_BODY_SIZE(xb);
     ScmSmallInt sizy = SCM_STRING_BODY_SIZE(yb);
     ScmSmallInt siz = (sizx < sizy)? sizx : sizy;
     int r = memcmp(SCM_STRING_BODY_START(xb), SCM_STRING_BODY_START(yb), siz);
     if (r == 0) {
-        if (sizx == sizy) return 0;
+        if (sizx == sizy) {
+            if (SCM_STRING_BODY_INCOMPLETE_P(xb)) {
+                if (SCM_STRING_BODY_INCOMPLETE_P(yb)) return 0;
+                else                                  return 1;
+            } else {
+                if (SCM_STRING_BODY_INCOMPLETE_P(yb)) return -1;
+                else                                  return 0;
+            }
+        }
         if (sizx < sizy)  return -1;
         else              return 1;
     } else if (r < 0) {
