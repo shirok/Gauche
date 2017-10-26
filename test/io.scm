@@ -753,7 +753,7 @@
 (test* "format ~6,2f" "  1.23"   (format "~6,2f" 1.2345))
 (test* "format ~6,2f" "  5.01"   (format "~6,2f" 5.015))
 (test* "format ~6,2:f" "  5.02"  (format "~6,2:f" 5.015))
-(test* "foramt ~6,2:f" "-10.00"   (format "~6,2:f" -9.995))
+(test* "format ~6,2:f" "-10.00"   (format "~6,2:f" -9.995))
 (test* "format ~10f" "     abcde"  (format "~10,2f" 'abcde))
 
 (test* "format carry over ~,4f" "0.0100" (format "~,4f" 0.00999))
