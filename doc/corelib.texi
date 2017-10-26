@@ -8317,6 +8317,17 @@ Returns @code{#t} iff all arguments are strings with the same content.
 @c JP
 全ての引数が内容の等しい文字列であれば@code{#t}を返します。
 @c COMMON
+
+@c EN
+If any of arguments is incomplete string, it returns @code{#t} iff
+all argumnets are incomplete and have exactly the same content.
+In other words, a complete string and an incomplete string never equal
+to each other.
+@c JP
+もし引数に不完全文字列がひとつでもある場合、
+全ての文字列が不完全でありかつ内容が同じである場合に限り@code{#t}が返ります。
+言い換えれば、完全な文字列と不完全な文字列は決して等しくなりません。
+@c COMMON
 @end defun
 
 @defun string<? string1 string2 string3 @dots{}
@@ -8330,6 +8341,17 @@ all the arguments are ordered.
 @c JP
 文字列同士をコードポイントの順序で比較します。全ての引数が順序どおりであれば
 @code{#t}が、そうでなければ@code{#f}が返されます。
+@c COMMON
+
+@c EN
+Comparison between an incomplete string and a complete string, or between
+two incomplete strings, are done by octet-to-octet comparison.  If a
+complete string and an incomplete string have exactly the same binary
+representation of the content, a complete string is smaller.
+@c JP
+不完全文字列と完全文字列、もしくは不完全文字列同士の比較は、
+内容のオクテット同士の比較となります。内容のバイナリ表現が一致する
+完全文字列と不完全文字列を比較した場合は、完全文字列の方が小さいとみなされます。
 @c COMMON
 @end defun
 
