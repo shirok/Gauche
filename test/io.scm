@@ -753,7 +753,11 @@
 (test* "format ~6,2f" "  1.23"   (format #f "~6,2f" 1.2345))
 (test* "format ~6,2f" "  5.01"   (format #f "~6,2f" 5.015))
 (test* "format ~6,2:f" "  5.02"  (format #f "~6,2:f" 5.015))
-(test* "format ~10f" "     abcde"      (format #f "~10,2f" 'abcde))
+(test* "foramt ~6,2:f" "-10.00"   (format #f "~6,2:f" -9.995))
+(test* "format ~10f" "     abcde"  (format #f "~10,2f" 'abcde))
+
+(test* "format ~,1000f" (string-append "0.01" (make-string 998 #\0))
+       (format #f "~,1000f" 0.01))
 
 (test* "format ~nr" "wud0up"  (format "~36r" 1985913745))
 (test* "format ~nr" "    wud0up"  (format "~36,10r" 1985913745))
