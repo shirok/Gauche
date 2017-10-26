@@ -19783,14 +19783,18 @@ directive; usually they have no distinction, except noted.
 @c COMMON
 
 @table @asis
-@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}@b{A}
+@item @b{~A}
 @c EN
+Parameters: @var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}
+
 Ascii output.  The corresponding argument is printed by @code{display}.
 If an integer @var{mincol} is given, it specifies the minimum number
 of characters to be output; if the formatted result is shorter than
 @var{mincol}, a whitespace is padded to the right (i.e. the result
 is left justified).
 @c JP
+パラメータ: @var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}
+
 ASCII出力。対応する引数が@code{display}を使ってフォーマットされます。
 整数が@var{mincol}に与えられた場合、それは出力される最小の文字数を指定します。
 引数のフォーマット結果が@var{mincol}より短ければ、空白が右に追加されます(つまり、
@@ -19854,12 +19858,16 @@ a string ``@code{ ...}'' is attached after it.
   @result{} "|(abc de ...|"
 @end example
 
-@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}@b{S}
+@item @b{~S}
 @c EN
+Parameters: @var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}
+
 S-expression output.  The corresponding argument is printed
 by @code{write}.  The semantics of parameters and flags are the same
 as @code{~A} directive.
 @c JP
+パラメータ: @var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}
+
 S式出力。対応する引数が@code{write}を使ってフォーマットされます。
 パラメータの意味は@code{~A}指示子と同じです。
 @c COMMON
@@ -19879,13 +19887,17 @@ S式出力。対応する引数が@code{write}を使ってフォーマットさ�
 @c COMMON
 @end example
 
-@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{D}
+@item @b{~D}
 @c EN
+Parameters: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 Decimal output.  The argument is formatted as an decimal integer.
 If the argument is not an integer, all parameters are ignored
 (after processing `@code{v}' parameters) and
 it is formatted by @code{~A} directive.
 @c JP
+パラメータ: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 10進出力。対応する引数が10進数表記でフォーマットされます。もし引数が数値でなければ、
 全てのパラメータは(`@code{v}'パラメータの処理後に)無視され、
 引数は@code{~A}でフォーマットされます。
@@ -19937,29 +19949,39 @@ The default of @var{commachar} is `@code{,}', and the default of
   @result{} "|-1234_5678|"
 @end example
 
-@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{B}
+@item @b{~B}
 @c EN
+Parameters: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 Binary output.  The argument is formatted as a binary integer.
 The semantics of parameters and flags are the same as
 the @code{~D} directive.
 @c JP
+パラメータ: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 2進出力。対応する引数が2進数の整数としてフォーマットされます。
 パラメータの意味は@code{~D}と同じです。
 @c COMMON
 
-@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{O}
+@item @b{~O}
 @c EN
+Parameters: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 Octal output.  The argument is formatted as an octal integer.
 The semantics of parameters and flags are the same as
 the @code{~D} directive.
 @c JP
+パラメータ: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 8進出力。対応する引数が8進数の整数としてフォーマットされます。
 パラメータの意味は@code{~D}と同じです。
 @c COMMON
 
-@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{X}
-@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{x}
+@item @b{~X}
+@itemx @b{~x}
 @c EN
+Parameters: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 Hexadecimal output.
 The argument is formatted as a hexadecimal integer.
 If `@code{X}' is used, upper case alphabets are used for
@@ -19968,6 +19990,8 @@ alphabets are used.
 The semantics of parameters and flags are the same as
 the @code{~D} directive.
 @c JP
+パラメータ: @var{mincol},@var{padchar},@var{commachar},@var{interval}
+
 16進出力。対応する引数が16進数の整数としてフォーマットされます。
 フォーマット指示文字に `@code{X}' が与えられた場合は `@code{ABCDEF}' が桁文字として
 使われ、 `@code{x}' が与えられた場合は `@code{abcdef}' が桁文字として使われます。
@@ -19981,8 +20005,10 @@ the @code{~D} directive.
   @result{} "0F7CF5A8"
 @end example
 
-@item @b{~}@var{width},@var{digis},@var{scale},@var{ovfchar},@var{padchar}@b{F}
+@item @b{~F}
 @c EN
+Parameters: @var{width},@var{digis},@var{scale},@var{ovfchar},@var{padchar}
+
 Floating-number output.
 If the argument is a real number, it is formatted as a decimal floating number.
 The @var{width} parameter defines the width of the field; the number is
@@ -19991,6 +20017,8 @@ whose default is @code{#\space}.  When the formatted output can't fit
 in @var{width}, @var{ovfchar} is output @var{width} times if it is given,
 or the entire output is shown if @var{ovfchar} is omitted.
 @c JP
+パラメータ: @var{width},@var{digis},@var{scale},@var{ovfchar},@var{padchar}
+
 浮動小数点数出力。
 引数が実数ならば、その十進小数表現が出力されます。
 @var{width}パラメータは出力幅を指定します。もしフォーマット結果がその幅に足りなければ、
@@ -20054,7 +20082,7 @@ the rounded value closer to the actual value of the flonum.
 It can sometimes lead to unintuitive results, however.  Suppose you want
 to round 1.15 at 100ths (that is, round to nearest 10ths).  Unlike
 elementary math class, it gives you 1.1.  That's because the flonum
-represented by 1.15 is actually tiny bit smaller than 1.15, so closer to
+represented by 1.15 is actually tiny bit smaller than 1.15, so it's closer to
 1.1 than 1.2.  We show it as 1.15 since no other flonums are closer to
 1.15.
 @c JP
@@ -20088,8 +20116,10 @@ adding @code{:} flag.
 (format "~6,1:f" 1.15) @result{} "   1.2"
 @end example
 
-@item @b{~}@var{count}@b{*}
+@item @b{~*}
 @c EN
+Parameter: @var{count}
+
 Moves the argument counter @var{count} times forward, effectively skips
 next @var{count} arguments.  The default value of @var{count} is 1,
 hence skip the next argument.  If a colon-flag is given, moves the argument
@@ -20097,6 +20127,8 @@ counter backwards, e.g. @code{~:*} makes the next directive to process
 last argument again.  If an atmark-flag is given, @var{count} specifies
 absolute position of the arguments, starting from 0.
 @c JP
+パラメータ: @var{count}
+
 引数のカウンタを@var{count}だけ後方にずらします。つまり、@var{count}個の引数が
 無視されることになります。@var{count}のデフォルト値は1です。
 コロンフラグが与えられた場合は引数カウンタを前方に動かします。
@@ -20104,8 +20136,22 @@ absolute position of the arguments, starting from 0.
 アトマークフラグが与えられた場合は、@var{count}が引数の絶対位置を示します。
 0が最初の引数です。
 @c COMMON
-@end table
 
+@item @b{~~}
+@c EN
+Output a single tilda @code{~}.
+@c JP
+チルダ@code{~}を出力します。
+@c COMMON
+
+@item @b{~%}
+@c EN
+Output a newline character.
+@c JP
+改行文字を出力します。
+@c COMMON
+
+@end table
 @end defun
 
 
