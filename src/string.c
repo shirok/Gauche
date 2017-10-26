@@ -1607,7 +1607,7 @@ int Scm_DStringSize(ScmDString *dstr)
             size += chain->chunk->bytes;
         }
     } else {
-        size = dstr->current - dstr->init.data;
+        size = dstr->init.bytes = dstr->current - dstr->init.data;
     }
     if (size > SCM_STRING_MAX_SIZE) {
         Scm_Error("Scm_DStringSize: size exceeded the range: %ld", size);
@@ -1806,8 +1806,8 @@ void Scm_DStringPutc(ScmDString *ds, ScmChar ch)
    the original DString isn't as large as newsize. */
 int Scm_DStringTruncate(ScmDString *dstr, int newsize)
 {
-    int origsize = 0;
-    
+    int origsize = Scm_DStringSize(dstr);
+
     if (newsize < dstr->init.bytes) {
         origsize = dstr->init.bytes;
         dstr->init.bytes = newsize;
@@ -1816,7 +1816,6 @@ int Scm_DStringTruncate(ScmDString *dstr, int newsize)
         dstr->current = dstr->init.data + newsize;
         dstr->end = dstr->init.data + SCM_DSTRING_INIT_CHUNK_SIZE;
     } else {
-        origsize = Scm_DStringSize(dstr);
         if (newsize >= origsize) return origsize;
         ScmDStringChain *chain = dstr->anchor;
         int ss = dstr->init.bytes;
