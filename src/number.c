@@ -3444,6 +3444,23 @@ static void notational_rounding(ScmDString *ds, int numstart, int precision)
     }
 }
 
+/* Increment the last digit and handle all carryovers.
+   If we always emit highest precision, Burger&Dybvig algorithm strictly
+   emits digits forward, without backing up to handle carry over.
+   However, if we round the number before it, there can be a case that
+   the last digit gets rounded up and its carry-over propagates upward.
+   In such a case, this is called.  The last digit in DS is '9', and we
+   know we need to round it up.
+ */
+static void spill_fixup(ScmDString *ds, int numstart)
+{
+    int size;
+    const char *cbuf = Scm_DStringPeek(ds, &size, NULL);
+    char *nbuf = notational_roundup(cbuf, numstart, size);
+    Scm_DStringTruncate(ds, 0);
+    Scm_DStringPutz(ds, nbuf, -1);
+}
+
 /* The main routine to get string representation of double.
    Convert VAL to a string and store to BUF, which must have at least FLT_BUF
    bytes long.
@@ -3592,6 +3609,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     }
 
     /* generate the digits */
+    int spilled = FALSE;
     int digs;
     for (digs=1; ; digs++) {
         ScmObj r10 = Scm_Mul(r, SCM_MAKE_INT(10));
@@ -3632,6 +3650,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
                 continue;
             } else {
                 ScmChar c = (char)SCM_INT_VALUE(q) + '1';
+                if (c > '9') { spilled = TRUE; c = '9'; }
                 SCM_DSTRING_PUTC(ds, c);
                 if (digs > point) fracdigs++;
                 break;
@@ -3652,6 +3671,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
                     break;
                 } else {
                     ScmChar c = (char)SCM_INT_VALUE(q) + '1';
+                    if (c > '9') { spilled = TRUE; c = '9'; }
                     SCM_DSTRING_PUTC(ds, c);
                     if (digs > point) fracdigs++;
                     break;
@@ -3659,6 +3679,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
             }
         }
     }
+    if (spilled) spill_fixup(ds, numstart);
 
     /* Notational rounding, if necessary */
     if (notational && precision >= 0 && fracdigs > precision) {

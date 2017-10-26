@@ -756,6 +756,12 @@
 (test* "foramt ~6,2:f" "-10.00"   (format "~6,2:f" -9.995))
 (test* "format ~10f" "     abcde"  (format "~10,2f" 'abcde))
 
+(test* "format carry over ~,4f" "0.0100" (format "~,4f" 0.00999))
+(test* "format carry over across decimal point ~,1f" "124.0"
+       (format "~,1f" 123.95))
+(test* "format carry over across decimal point ~,2f" "-1000.00"
+       (format "~,2f" -999.995))
+
 (test* "format ~,1000f" (string-append "0.01" (make-string 998 #\0))
        (format "~,1000f" 0.01))
 
