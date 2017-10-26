@@ -1842,8 +1842,8 @@ int Scm_DStringTruncate(ScmDString *dstr, int newsize)
     }
 
     /* If we accumulated only ASCII, we can adjust length as well. */
-    if (dstr->length == origsize) dstr->length = newsize;
-    else                          dstr->length = -1;
+    if (dstr->length == origsize || newsize == 0) dstr->length = newsize;
+    else                                          dstr->length = -1;
     return newsize;
 }
 
