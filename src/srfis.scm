@@ -1018,3 +1018,18 @@ Supported by the module @code{srfi-152} (@pxref{String library (reduced)}).
 
 文字列ライブラリ(簡略版)
 モジュール@code{srfi-152}でサポートされます (@ref{String library (reduced)}参照)。
+
+
+srfi-158, srfi-158
+()
+
+Generators and accumulators
+Supported by the module @code{srfi-158}.
+Note that most of generator procedures are supported by @code{gauche.generator}
+(@pxref{Generators}).
+
+ジェネレータとアキュムレータ
+モジュール@code{srfi-158}でサポートされます。
+ジェネレータ手続きのほとんどは、@code{gauche.generator}でもサポートされています
+(@ref{Generators}参照)。
+

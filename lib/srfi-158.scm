@@ -13,7 +13,7 @@
           gcons* gappend gflatten ggroup gmerge gmap gcombine gfilter gremove
           gstate-filter
           gtake gdrop gtake-while gdrop-while
-          gdelete gdelete-neighbor-dups gindex gselect gpath
+          gdelete gdelete-neighbor-dups gindex gselect
           generator->list generator->reverse-list generator-map->list
           generator->vector generator->vector!  generator->string
           generator-fold generator-for-each generator-find
@@ -23,7 +23,7 @@
           make-accumulator count-accumulator list-accumulator
           reverse-list-accumulator vector-accumulator
           reverse-vector-accumulator vector-accumulator!
-          string-accumulator bytevector-accumulator
+          string-accumulator bytevector-accumulator bytevector-accumulator!
           sum-accumulator product-accumulator))
 (select-module srfi-158)
 
@@ -31,12 +31,6 @@
   (if (undefined? padding)
     (gslices gen k)
     (gslices gen k #t padding)))
-
-(define gpath
-  (case-lambda
-    [(gen) gen]
-    [(gen f) (f gen)]
-    [(gen f . more) (apply gpath (f gen) more)]))
 
 (define (generator-map->list proc gen . more)
   (generator->list (apply gmap proc gen more)))
@@ -77,6 +71,16 @@
   (make-accumulator (^[b p] (write-byte b p) p)
                     (open-output-string)
                     (^p (string->utf8 (get-output-string p)))))
+
+(define (bytevector-accumulator! vec at)
+  (assume-type vec <u8vector>)
+  (make-accumulator (^[v i]
+                      (when (>= i (uvector-length vec))
+                        (error "bytevector is full"))
+                      (u8vector-set! vec i v)
+                      (+ i 1))
+                    at
+                    (^_ vec)))
 
 (define (sum-accumulator)
   (make-accumulator + 0 identity))

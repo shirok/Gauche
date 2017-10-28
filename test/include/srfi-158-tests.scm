@@ -136,11 +136,6 @@
               (lambda (item state) (values (even? state) (+ 1 state)))
               0
               (generator 'a 'b 'c 'd 'e 'f 'g 'h 'i 'j))))
-    (test '("-1" "-2" "-3" "-4" "-5")
-               (generator->list
-                 (gpath (generator 1 2 3 4 5)
-                        (lambda (gen) (gmap - gen))
-                        (lambda (gen) (gmap number->string gen)))))
   ) ; end "generators/operators"
 
 
@@ -235,6 +230,14 @@
 
 (test #u8(1 2 4)
   (let ((a (bytevector-accumulator)))
+    (a 1)
+    (a 2)
+    (a 4)
+    (a (eof-object))))
+
+(test '#u8(0 0 1 2 4)
+  (let* ((v (bytevector 0 0 0 0 0))
+         (a (bytevector-accumulator! v 2)))
     (a 1)
     (a 2)
     (a 4)

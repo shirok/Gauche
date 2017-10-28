@@ -1,3 +1,7 @@
+2017-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-158.scm: Update to the final srfi.
+
 2017-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_StringCmp): Allow comparing complete string vs.
