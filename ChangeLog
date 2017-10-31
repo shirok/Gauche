@@ -1,3 +1,14 @@
+2017-10-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/vmcall.c, src/gauche/priv/vmP.h, src/main.c:
+	  Experimentally add call trace feature, proposed several years ago.
+	  For now, we make it available when env var GAUCHE_CALL_TRACE is set
+	  to a positive integer (the API is ugly, so we may change it later).
+	  This change incurs slight overhead for every call ever we don't use
+	  call traces.  We'll benchmark it and if it's a problem we might
+	  need more heavy changes (e.g. switch VM loop entirely with or without
+	  instrumentation.)
+
 2017-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-158.scm: Update to the final srfi.

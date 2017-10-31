@@ -44,12 +44,12 @@ typedef struct ScmCallTraceEntryRec {
 } ScmCallTraceEntry;
 
 struct ScmCallTraceRec {
-    int size;                     /* size of the array */
-    int top;                      /* index to the next entry */
+    u_long size;                  /* size of the array, must be 2^n */
+    u_long top;                   /* index to the next entry */
     ScmCallTraceEntry entries[1]; /* variable length */
 };
 
-ScmCallTrace *Scm__MakeCallTraceQueue(int size);
+ScmCallTrace *Scm__MakeCallTraceQueue(u_long size);
 
 SCM_DECL_END
 

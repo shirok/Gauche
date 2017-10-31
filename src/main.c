@@ -635,9 +635,12 @@ int main(int ac, char **av)
     int has_console = init_console();
 #endif /*defined(GAUCHE_WINDOWS)*/
 
-    /* Experimental */
-    if (getenv("GAUCHE_CALL_TRACE")) {
-        Scm_SetCallTraceSize(16);
+    /* Experimental.  This should be done before the first VM is created. */
+    {
+        const char *call_trace = getenv("GAUCHE_CALL_TRACE");
+        if (call_trace) {
+            Scm_SetCallTraceSize(strtoul(call_trace, NULL, 10));
+        }
     }
     
     GC_INIT();

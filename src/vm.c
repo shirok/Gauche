@@ -116,6 +116,8 @@ static void vm_unregister(ScmVM *vm);
 static u_long vm_numeric_id = 0;    /* used for Scm_VM->vmid */
 static ScmInternalMutex vm_id_mutex;
 
+#define CALL_TRACE_SIZE_MIN 512
+#define CALL_TRACE_SIZE_MAX 65535
 static u_long vm_call_trace_size = 0; /* global default */
 
 #ifdef GAUCHE_USE_PTHREADS
@@ -2727,9 +2729,16 @@ void Scm_SetCallTraceSize(u_long size)
     vm_call_trace_size = size;
 }
 
-ScmCallTrace *Scm__MakeCallTraceQueue(int size)
+ScmCallTrace *Scm__MakeCallTraceQueue(u_long size)
 {
-    SCM_ASSERT(size > 0);
+    if (size > CALL_TRACE_SIZE_MAX) size = CALL_TRACE_SIZE_MAX;
+    else if (size < CALL_TRACE_SIZE_MIN) size = CALL_TRACE_SIZE_MIN;
+    else {
+        u_long n = 1;
+        while (n < size) n <<= 1; /* never overflow as we check the size above */
+        size = n;
+    }
+    
     ScmCallTrace *ct = SCM_NEW2(ScmCallTrace*,
                                 sizeof(ScmCallTrace)
                                 + (size-1)*sizeof(ScmCallTraceEntry));

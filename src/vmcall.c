@@ -149,7 +149,7 @@
     if (vm->callTrace) {
         vm->callTrace->entries[vm->callTrace->top].base = BASE;
         vm->callTrace->entries[vm->callTrace->top].pc = PC;
-        vm->callTrace->top = (vm->callTrace->top + 1) % vm->callTrace->size;
+        vm->callTrace->top = (vm->callTrace->top+1) & (vm->callTrace->size-1);
     }
 
     /* object-apply hook.  shift args, and insert val0 into
