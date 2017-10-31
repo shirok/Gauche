@@ -43,10 +43,6 @@
 /* Finalizer queue size */
 #define SCM_VM_FINQ_SIZE       32
 
-/* EXPERIMENTAL: VM call trace queue size.  Set this to 0 to disable
-   call trace feature. */
-#define SCM_CALL_TRACE_SIZE    16
-
 #define SCM_PCTYPE ScmWord*
 
 #if (defined(ITIMER_PROF) && defined(SIGPROF)) || defined(GAUCHE_WINDOWS)
@@ -76,6 +72,9 @@ SCM_EXTERN void Scm_VMFlushFPStack(ScmVM *vm);
 
 /* Actual structure is defined in code.h */
 typedef struct ScmCompiledCodeRec ScmCompiledCode;
+
+/* Actual structure is defined in priv/vmP.h */
+typedef struct ScmCallTraceRec ScmCallTrace;
 
 /*
  * Environment frame
@@ -538,13 +537,7 @@ struct ScmVMRec {
                                    identify thread programtically.
                                    Set by vm_register. */
 
-#if SCM_CALL_TRACE_SIZE
-    int callTraceTop;
-    struct {
-        ScmCompiledCode *base;
-        SCM_PCTYPE pc;
-    } callTrace[SCM_CALL_TRACE_SIZE];
-#endif /*SCM_CALL_TRACE_SIZE*/
+    ScmCallTrace *callTrace;
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);

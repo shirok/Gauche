@@ -36,6 +36,7 @@
 #include "gauche/class.h"
 #include "gauche/exception.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/vmP.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"
@@ -114,6 +115,8 @@ static void vm_unregister(ScmVM *vm);
 
 static u_long vm_numeric_id = 0;    /* used for Scm_VM->vmid */
 static ScmInternalMutex vm_id_mutex;
+
+static u_long vm_call_trace_size = 0; /* global default */
 
 #ifdef GAUCHE_USE_PTHREADS
 static pthread_key_t vm_key;
@@ -256,16 +259,9 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->vmid = vm_numeric_id++;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(vm_id_mutex);
 
-#if SCM_CALL_TRACE_SIZE
-    v->callTraceTop = 0;
-    {
-        int i;
-        for (i=0; i<SCM_CALL_TRACE_SIZE; i++) {
-            v->callTrace[i].base = NULL;
-            v->callTrace[i].pc = NULL;
-        }
-    }
-#endif /*SCM_CALL_TRACE_SIZE*/
+    v->callTrace = (vm_call_trace_size
+                    ? Scm__MakeCallTraceQueue(vm_call_trace_size)
+                    : NULL);
 
     Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
     return v;
@@ -2723,23 +2719,45 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
     return stack;
 }
 
-#if SCM_CALL_TRACE_SIZE
+/*
+ * Call trace
+ */
+void Scm_SetCallTraceSize(u_long size)
+{
+    vm_call_trace_size = size;
+}
+
+ScmCallTrace *Scm__MakeCallTraceQueue(int size)
+{
+    SCM_ASSERT(size > 0);
+    ScmCallTrace *ct = SCM_NEW2(ScmCallTrace*,
+                                sizeof(ScmCallTrace)
+                                + (size-1)*sizeof(ScmCallTraceEntry));
+    ct->size = size;
+    ct->top = 0;
+    for (int i=0; i<size; i++) {
+        ct->entries[i].base = NULL;
+        ct->entries[i].pc = NULL;
+    }
+    return ct;
+}
+
 ScmObj Scm_VMGetCallTraceLite(ScmVM *vm)
 {
     ScmObj trace = SCM_NIL, tail = SCM_NIL;
-    ScmObj info;
-    int i, j;
+    ScmCallTrace *ct = vm->callTrace;
 
-    info = Scm_VMGetSourceInfo(vm->base, vm->pc);
-    if (!SCM_FALSEP(info)) SCM_APPEND1(trace, tail, info);
-    for (i = SCM_CALL_TRACE_SIZE-1; i >= 0; i--) {
-        j = (vm->callTraceTop + i) % SCM_CALL_TRACE_SIZE;
-        info = Scm_VMGetSourceInfo(vm->callTrace[j].base, vm->callTrace[j].pc);
+    if (ct) {
+        ScmObj info = Scm_VMGetSourceInfo(vm->base, vm->pc);
         if (!SCM_FALSEP(info)) SCM_APPEND1(trace, tail, info);
+        for (int i = ct->size - 1; i >= 0; i--) {
+            int j = (ct->top + i) % ct->size;
+            info = Scm_VMGetSourceInfo(ct->entries[j].base, ct->entries[j].pc);
+            if (!SCM_FALSEP(info)) SCM_APPEND1(trace, tail, info);
+        }
     }
     return trace;
 }
-#endif /*SCM_CALL_TRACE_SIZE*/
 
 #define DEFAULT_ENV_TABLE_SIZE  64
 

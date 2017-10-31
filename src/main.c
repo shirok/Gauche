@@ -635,6 +635,11 @@ int main(int ac, char **av)
     int has_console = init_console();
 #endif /*defined(GAUCHE_WINDOWS)*/
 
+    /* Experimental */
+    if (getenv("GAUCHE_CALL_TRACE")) {
+        Scm_SetCallTraceSize(16);
+    }
+    
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();

@@ -1792,6 +1792,8 @@ SCM_EXTERN void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
                                    int maxdepth, int skip, int offset,
                                    int format);
 
+SCM_EXTERN void Scm_SetCallTraceSize(u_long size);
+
 /* TRANSIENT: Scm_ReportErrr2 is to keep ABI compatibility.  Will be gone
    in 1.0.  */
 #if    GAUCHE_API_0_95
