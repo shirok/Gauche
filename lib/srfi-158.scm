@@ -11,7 +11,7 @@
           bytevector->generator
           make-for-each-generator make-unfold-generator
           gcons* gappend gflatten ggroup gmerge gmap gcombine gfilter gremove
-          gstate-filter
+          gstate-filter ggroup generator-map->list
           gtake gdrop gtake-while gdrop-while
           gdelete gdelete-neighbor-dups gindex gselect
           generator->list generator->reverse-list generator-map->list
@@ -26,14 +26,6 @@
           string-accumulator bytevector-accumulator bytevector-accumulator!
           sum-accumulator product-accumulator))
 (select-module srfi-158)
-
-(define (ggroup gen k :optional padding)
-  (if (undefined? padding)
-    (gslices gen k)
-    (gslices gen k #t padding)))
-
-(define (generator-map->list proc gen . more)
-  (generator->list (apply gmap proc gen more)))
 
 (define (make-accumulator kons knil finalizer)
   (^v

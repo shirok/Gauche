@@ -1,3 +1,9 @@
+2017-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm, lib/srfi-158.scm (ggroup)
+	  (genreator-map->list): Moved srfi-158 extra 2 generator procedures
+	  to gauche.generator.  Leave accumulators in srfi-158.
+
 2017-10-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/vmcall.c, src/gauche/priv/vmP.h, src/main.c:

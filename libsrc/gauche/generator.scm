@@ -50,10 +50,10 @@
           generator->uvector generator->uvector!
           generator->bytevector generator->bytevector!
           generator-any generator-every generator-unfold
-          generator-count
+          generator-count generator-map->list
 
           null-generator gcons* gappend gflatten
-          gconcatenate gmerge
+          gconcatenate gmerge ggroup
           circular-generator gunfold giota grange gindex gselect ginterval
           gmap gmap-accum gfilter gremove gdelete gdelete-neighbor-dups
           gfilter-map gstate-filter gbuffer-filter
@@ -752,6 +752,15 @@
   (generate (^[yield] (for-each yield coll))))
 (define (make-unfold-generator p f g seed) (gunfold p f g seed))
 (define (gcombine proc seed gen . gens) (apply gmap-accum proc seed gen gens))
+
+;; srfi-158 auxiliary procedures
+(define (ggroup gen k :optional padding)
+  (if (undefined? padding)
+    (gslices gen k)
+    (gslices gen k #t padding)))
+
+(define (generator-map->list proc gen . more)
+  (generator->list (apply gmap proc gen more)))
 
 ;; TODO:
 ;;  (gen-ec (: i ...) ...)
