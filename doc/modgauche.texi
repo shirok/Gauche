@@ -5516,12 +5516,18 @@ generators.  This module provides them.
 Srfi-121 (Generators) is a subset of this module.
 Since @code{gauche.generator} predates srfi-121, we have different
 names for some procedures; for the compatibility, we provide
-both names.
+both names.  Srfi-151 (Generators and accumulators) adds some more
+generator procedures, which is also included (but accumulator procedures
+are left to srfi-158. @xref{Generators and accumulators}).
 @c JP
-Srfi-121 (Generators) はこのモジュールのサブセットです。
+srfi-121 (Generators) はこのモジュールのサブセットです。
 @code{gauche.generator}はsrfi-121より前からあったので、
 いくつかの手続きについては異なる名前を使っていました。互換性のため、
 それらの手続きは両方の名前を定義しています。
+srfi-158 (Generators and accumulators)はさらに追加のジェネレータ手続きを
+定義していますが、それらもこのモジュールに含まれています
+(ただし、アキュムレータについてはsrfi-158モジュールに分けてあります。
+@ref{Generators and accumulators}参照)。
 @c COMMON
 @end deftp
 
@@ -6690,7 +6696,24 @@ to fill the rest.
 (generator->list (gslices (giota 7) 3 #t 'x))
   @result{} ((0 1 2) (3 4 5) (6 x x))
 @end example
+@end defun
 
+@defun ggroup gen k :optional padding
+[SRFI-158]
+@c MOD gauche.generator
+@c EN
+Returns a generator lists of @var{k} elements taken from @var{gen}.
+If @var{padding} is omitted, it works just as @code{(gslices gen k)}.
+If @var{padding} is given, it works just as @code{(gslices gen k #t padding)}.
+
+This is defined in srfi-158, and more portable than @code{gslices}.
+@c JP
+@var{gen}から@var{k}要素づつ取って作ったリストを次々と生成するジェネレータを返します。
+@var{padding}が省略された時は@code{(gslices gen k)}と同じ、
+@var{padding}が与えられた時は@code{(gslices gen k #t padding)}と同じになります。
+
+この手続きはsrfi-158で定義されたので、@code{gslices}よりポータブルでしょう。
+@c COMMON
 @end defun
 
 @defun grxmatch regexp gen
@@ -6872,6 +6895,30 @@ all the memory before crash.
 無限ジェネレータを渡す時は必ず@var{k}を指定しましょう。
 さもなくば、この手続きは制御を返さず、全てのメモリを食い尽して
 クラッシュするでしょう。
+@c COMMON
+@end defun
+
+@defun generator-map->list proc gen gen2 @dots{}
+[SRFI-158]
+@c MOD gauche.generator
+@c EN
+The @var{proc} argument must be a procedure that takes as many arguments
+as the number of given generators.
+
+Returns a list, each of whose element is created by applying @var{proc}
+on each element from given generators @var{gen} @var{gen2} @dots{}.
+The list ends when any of the generator is exhausted.
+
+Note that the list is created eagerly---if all of the generators are
+infinite, this procedure never returns.
+@c JP
+@var{proc}は与えられたジェネレータの数と同じだけの引数を取る手続きです。
+
+@var{gen} @var{gen2} @dots{}から要素をひとつづつ取ってそれらに@var{proc}を
+適用した結果のリストを作って返します。
+どれかのジェネレータが終端に達したらリストも終わります。
+
+リストは積極的に作られます。全てのジェネレータが無限だと、この手続きは戻ってきません。
 @c COMMON
 @end defun
 
