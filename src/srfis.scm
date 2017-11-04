@@ -1024,12 +1024,13 @@ srfi-158, srfi-158
 ()
 
 Generators and accumulators
-Supported by the module @code{srfi-158}.
+Supported by the module @code{srfi-158} (@pxref{Generators and accumulators}).
 Note that most of generator procedures are supported by @code{gauche.generator}
 (@pxref{Generators}).
 
 ジェネレータとアキュムレータ
-モジュール@code{srfi-158}でサポートされます。
+モジュール@code{srfi-158}でサポートされます
+ (@ref{Generators and accumulators}参照)。
 ジェネレータ手続きのほとんどは、@code{gauche.generator}でもサポートされています
 (@ref{Generators}参照)。
 

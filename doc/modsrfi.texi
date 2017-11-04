@@ -55,6 +55,7 @@ srfi N is supporeted by Gauche.)
 * Fixnums::                     srfi-143
 * Bitwise operations::          srfi-151
 * String library (reduced)::    srfi-152
+* Generators and accumulators:: srfi-158
 @end menu
 
 
@@ -6260,7 +6261,7 @@ length of @code{n} (@pxref{Generators}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node String library (reduced),  , Bitwise operations, Library modules - SRFIs
+@node String library (reduced), Generators and accumulators, Bitwise operations, Library modules - SRFIs
 @section @code{srfi-152} - String library (reduced)
 @c NODE 文字列ライブラリ(簡略版), @code{srfi-152} - 文字列ライブラリ(簡略版)
 
@@ -6444,6 +6445,136 @@ the prefix and the rest of substring as two values.
 Note: The order of @var{pred} and the source object is different from
 @code{span} and @code{break} in @code{scheme.list}
 (@ref{R7RS lists}).
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Generators and accumulators,  , String library (reduced), Library modules - SRFIs
+@section @code{srfi-158} - Generators and accumulators
+@c NODE ジェネレータとアキュムレータ, @code{srfi-158} - ジェネレータとアキュムレータ
+
+@deftp {Module} srfi-158
+@mdindex srfi-158
+This is an enhanced (and upward compatible)
+version of @code{srfi-121} Generators.
+In Gauche, all generator procedures are provided in @code{gauche.generator}.
+
+@example
+generator circular-generator make-iota-generator make-range-generator 
+make-coroutine-generator list->generator vector->generator
+reverse-vector->generator string->generator bytevector->generator
+make-for-each-generator make-unfold-generator
+gcons* gappend gflatten ggroup gmerge gmap gcombine gfilter gremove
+gstate-filter ggroup generator-map->list
+gtake gdrop gtake-while gdrop-while
+gdelete gdelete-neighbor-dups gindex gselect
+generator->list generator->reverse-list generator-map->list
+generator->vector generator->vector!  generator->string
+generator-fold generator-for-each generator-find
+generator-count generator-any generator-every generator-unfold
+@end example
+
+Accumulators are opposite of generators.  They are procedures
+that work as consumers.  An accumulator takes one argument.
+When non-eof value is given, the value is stored, and when EOF
+is given, the accumulated value is returned.
+How the values are accumulated depends on the accumulator.
+
+Once EOF is given, the accumulator is ``finalized''.  Subsequent
+EOF makes it return the same accumulated value.  It is undefined
+if other values are passed after EOF is passed.
+
+The accumulator can be used to parameterize procedures that yield
+aggregate objects.  Consider the following procedure, which
+takes items from two generators and accumulate them alternatively.
+
+@example
+(define (intertwine acc gen1 gen2)
+  (let loop ()
+    (glet* ([a (gen1)]
+            [b (gen2)])
+      (acc a)
+      (acc b)
+      (loop)))
+  (acc (eof-object)))
+@end example
+
+The procedure can return various type of collections, without
+knowing the actual type---the passed accumulator determines it.
+
+@example
+(intertwine (list-accumulator) (giota 5) (giota 5 100))
+  @result{} (0 100 1 101 2 102 3 103 4 104)
+(intertwine (vector-accumulator) (giota 5) (giota 5 100))
+  @result{} #(0 100 1 101 2 102 3 103 4 104)
+(intertwine (bytevector-accumulator) (giota 5) (giota 5 100))
+  @result{} #u8(0 100 1 101 2 102 3 103 4 104)
+@end example
+@end deftp
+
+@defun make-accumulator kons knil finalizer
+[SRFI-158]
+Returns an accumulator, with initial internal state @var{knil}.
+When non-EOF value @var{v} is passed to the accumulator,
+@var{kons} is called as @code{(kons v state)}, and its result
+becomes the new state value.  When EOF value is passed,
+@code{(finalizer state)} is called and its result becomes
+the result of accumulator.
+@end defun
+
+@defun list-accumulator
+@defunx reverse-list-accumulator
+[SRFI-158]
+Returns accumulators that return accumulated value
+as a list, in the accumulated order (@code{list-accumulator})
+or the reverse order (@code{reverse-list-accumulator}).
+@end defun
+
+@defun vector-accumulator
+@defunx reverse-vector-accumulator
+@defunx bytevector-accumulator
+[SRFI-158]
+Returns accumulators that return accumulated value
+as a fresh vector or bytevector (u8vector),
+in the accumulated order (@code{vector-accumulator},
+@code{bytevector-accumulator})
+or the reverse order (@code{reverse-vector-accumulator}).
+There's no @code{reverse-bytevector-accumulator}.
+@end defun
+
+@defun vector-accumulator! vec at
+@defunx bytevector-accumulator! bvec at
+[SRFI-158]
+The @var{vec} or @var{bvec} argument is a mutable vector or
+bytevector (u8vector), and is used as a buffer.
+
+Returns an accumlator that stores the accumulated values in the
+buffer, starting from the index @var{at}.
+It is an error if the accumulator gets more values after
+the buffer reaches at the end.
+
+Once EOF is passed to the accumulator, @var{vec} or @var{bvec}
+is returned, respectively.
+@end defun
+
+@defun string-accumulator
+[SRFI-158]
+Returns an accumulator that accepts characters and accumulates
+them to a string.
+@end defun
+
+@defun sum-accumulator
+@defunx product-accumulator
+@defunx count-accumulator
+[SRFI-158]
+Returns accumulators that yield a scala value.
+
+The accumulator created by @code{sum-accumulator} and
+@code{product-accumulator} accepts numbers,
+and keep adding or multiplying it with the accumulated value
+(the default value is 0 and 1, respectively).
+
+The accumulator created by @code{count-accumulator} accepts any
+objects and just counting it.
 @end defun
 
 @c Local variables:
