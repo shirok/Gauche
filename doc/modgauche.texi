@@ -5626,6 +5626,7 @@ An empty generator.  Returns just an EOF object when called.
 @end defun
 
 @defun circular-generator arg @dots{}
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns an infinite generator that repeats the given arguments.
@@ -5753,7 +5754,7 @@ it to @code{g}.
 @defunx string->generator str :optioanl start end
 @defunx uvector->generator uvec :optional start end
 @defunx bytevector->generator u8vector :optional start end
-[SRFI-121+]
+[SRFI-158+]
 @c MOD gauche.generator
 @c EN
 Returns a generator that yields each item in the given argument.
@@ -6024,10 +6025,10 @@ generate, and use @var{g} to update the seed value.
 @end example
 @end defun
 
-@subsubheading SRFI-121 compatible procedures
+@subsubheading SRFI-158 compatible procedures
 
 @defun generator item @dots{}
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns a generator that generates @var{item} @dots{}.
@@ -6037,7 +6038,7 @@ Returns a generator that generates @var{item} @dots{}.
 @end defun
 
 @defun make-iota-generator count :optional start step
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Same as @code{giota}, except that the @var{count} argument is
@@ -6048,7 +6049,7 @@ required.
 @end defun
 
 @defun make-range-generator start :optional end stop
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Same as @code{grange}.
@@ -6058,7 +6059,7 @@ Same as @code{grange}.
 @end defun
 
 @defun make-coroutine-generator proc
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Same as @code{generate}.
@@ -6067,29 +6068,17 @@ Same as @code{generate}.
 @c COMMON
 @end defun
 
-
-@defun make-bits-generator n
-[SRFI-121]
-@c MOD gauche.generator
-@c EN
-@code{(make-bits-generator n)} is the same as @code{(bits->generator n)}.
-This doesn't take optional start/end arguments, though.
-Srfi-121 doesn't have corresponding procedure for @code{reverse-bits->generator}.
-@c JP
-@code{(make-bits-generator n)}は@code{(bits->generator n)}と同じです。
-省略可能なstart/end引数は取りません。
-@code{reverse-bits->generator}に相当する手続きはsrfi-121にはありません。
-@c COMMON
-@end defun
-
 @defun make-for-each-generator for-each obj
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Given collection @var{obj} and walker @var{for-each}, creates a
 generator that retrieves one item at a time from the collection.
 Trivially defined as follows:
 @c JP
+コレクション@var{obj}と、それを一要素づつ処理する@var{for-each}手続きから、
+コレクションの要素を一つづつ生成するジェネレータを作って返します。
+次の定義を考えると良いでしょう。
 @c COMMON
 
 @example
@@ -6113,7 +6102,7 @@ EOFを返す前に@var{obj}を変更することは避けるのが賢明です�
 @end defun
 
 @defun make-unfold-generator stop? mapper successor seed
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 This is the same as @code{gunfold}, except it doesn't take
@@ -6137,7 +6126,7 @@ also accept any collection to @var{gen} and @var{gen2} parameters;
 if a collection is passed where a generator is expected,
 it is implicitly coerced into a generator.
 
-(NB: This is Gauche's extension.  For portable srfi-121 programs,
+(NB: This is Gauche's extension.  For portable srfi-121/srfi-158 programs,
 you shouldn't rely on this behavior; instead, explicitly convert
 collections to generators.)
 @c JP
@@ -6147,13 +6136,13 @@ collections to generators.)
 想定されているところにコレクションが渡されると、暗黙のうちにジェネレータ
 へと変換されるのです。
 
-(註：これはGauche独自の拡張です。ポータブルなsrfi-121プログラムは、
+(註：これはGauche独自の拡張です。ポータブルなsrfi-121/158プログラムは、
 この振る舞いに依存してはいけません。明示的にコレクションをジェネレータに
 変換してください。)
 @c COMMON
 
 @defun gcons* item @dots{} gen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns a generator that adds @var{item}s in front of @var{gen}.
@@ -6168,7 +6157,7 @@ Returns a generator that adds @var{item}s in front of @var{gen}.
 @end defun
 
 @defun gappend gen @dots{}
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns a generator that yields the items from the first given
@@ -6217,6 +6206,7 @@ number of generators.
 @end defun
 
 @defun gflatten gen
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 The argument @var{gen} is a generator that yields lists.
@@ -6283,6 +6273,7 @@ gflatten           :: Generator [a] -> Generator a
 @end defun
 
 @defun gmerge less-than gen gen2 @dots{}
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Creates a generator that yields elements out of input generators,
@@ -6317,6 +6308,7 @@ input to a generator).  In that case, @code{less-than} won't be called at all.
 @end defun
 
 @defun gmap proc gen gen2 @dots{}
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns a generator that yields a value returned by @var{proc}
@@ -6373,7 +6365,7 @@ NB: This is called @code{gcombine} in srfi-121.
 @end defun
 
 @defun gcombine proc seed gen gen2 @dots{}
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 An alias of @code{gmap-accum}, provided for the compatibility of srfi-121.
@@ -6384,7 +6376,7 @@ An alias of @code{gmap-accum}, provided for the compatibility of srfi-121.
 
 @defun gfilter pred gen
 @defunx gremove pred gen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns a generator that yields the items from the source generator
@@ -6406,7 +6398,7 @@ or those who makes @var{pred} answers a true value (@code{gremove})
 @end defun
 
 @defun gdelete item gen :optional =
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Return a generator that yields the items from the source generator
@@ -6427,7 +6419,7 @@ is done by the procedure passed to @var{=}, which defaults to @code{equal?}.
 @end defun
 
 @defun gdelete-neighbor-dups gen :optional =
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns a generator that yields the items from the source generator
@@ -6449,6 +6441,7 @@ is done by the procedure passed to @var{=}, which defaults to @code{equal?}.
 @end defun
 
 @defun gfilter-map proc gen gen2 @dots{}
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Works the same as @code{(gfilter values (gmap proc gen gen2 @dots{}))},
@@ -6460,6 +6453,7 @@ only slightly efficiently.
 @end defun
 
 @defun gstate-filter proc seed gen
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 This allows stateful filtering of a series.  The @var{proc} argument
@@ -6554,7 +6548,7 @@ the lines after such line continuations are taken care of.
 
 @defun gtake gen k :optional padding
 @defunx gdrop gen k
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns a generator that takes or drops initial @var{k} elements
@@ -6638,7 +6632,7 @@ is called @code{gtake}.  This is provided for the backward compatibility.
 
 @defun gtake-while pred gen
 @defunx gdrop-while pred gen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 The generator version of @code{take-while} and @code{drop-while}
@@ -6775,7 +6769,7 @@ but merely the rest of strings within the buffer.
 @end defun
 
 @defun gindex vgen igen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Both arguments are generators.  The @var{igen} generator must
@@ -6808,7 +6802,7 @@ conform the condition.
 @end defun
 
 @defun gselect vgen bgen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Both arguments are generators.  Creates and returns a
@@ -6869,7 +6863,7 @@ Some generator consumers are built-in.
 
 @defun generator->list generator :optional k
 @defunx generator->reverse-list generator :optional k
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Reads items from @var{generator} and returns a list of them
@@ -6924,7 +6918,7 @@ infinite, this procedure never returns.
 
 @defun generator->vector gen :optional k
 @defunx generator->string gen :optional k
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Extracts items from the generator @var{gen} up to @var{k} items
@@ -6950,6 +6944,7 @@ an error is reported.
 
 @defun generator->uvector gen :optional k class
 @defunx generator->bytevector gen :optional k
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Extracts items from the generator @var{gen} up to @var{k} items
@@ -6984,7 +6979,7 @@ element of the specified uvector; otherwise an error is signalled.
 @end defun
 
 @defun generator->vector! vector at gen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Fill @var{vector} from index @var{at} with the value yielded
@@ -7130,14 +7125,14 @@ but sometimes this macro makes the imperative code more readable:
 
 @defun generator-any pred gen
 @defunx generator-every pred gen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 Like @code{any} and @code{every} (@pxref{Walking over lists}), but
 works on a generator.
 @end defun
 
 @defun generator-count pred gen
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @c EN
 Returns the number of items in a generator @var{gen}
@@ -7150,7 +7145,7 @@ As a side effect, @var{gen} is exhausted.
 @end defun
 
 @defun generator-unfold gen unfold arg @dots{}
-[SRFI-121]
+[SRFI-158]
 @c MOD gauche.generator
 @end defun
 

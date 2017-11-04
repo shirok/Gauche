@@ -3,6 +3,9 @@
 	* libsrc/gauche/generator.scm, lib/srfi-158.scm (ggroup)
 	  (genreator-map->list): Moved srfi-158 extra 2 generator procedures
 	  to gauche.generator.  Leave accumulators in srfi-158.
+	  (make-bits-generator): Dropped.  This was in srfi-121 draft but
+	  didn't get in to final srfi, so shouldn't have been added.
+	  We have bits->generator.  Also srfi-151 has make-bitwise-generator.
 
 2017-10-31  Shiro Kawai  <shiro@acm.org>
 

@@ -63,7 +63,6 @@
           ;; srfi-121 compatibility
           generator make-iota-generator make-range-generator
           make-coroutine-generator bytevector->generator
-          make-bits-generator
           make-for-each-generator make-unfold-generator gcombine
           ))
 (select-module gauche.generator)
@@ -747,7 +746,6 @@
 (define (bytevector->generator bv :optional (start 0) (end (uvector-length bv)))
   (unless (u8vector? bv) (error "u8vector required, but got:" bv))
   (uvector->generator bv start end))
-(define (make-bits-generator n) (bits->generator n))
 (define (make-for-each-generator for-each coll)
   (generate (^[yield] (for-each yield coll))))
 (define (make-unfold-generator p f g seed) (gunfold p f g seed))
