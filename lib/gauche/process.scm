@@ -66,7 +66,7 @@
 (autoload gauche.charconv
           wrap-with-input-conversion wrap-with-output-conversion)
 (autoload gauche.uvector
-          write-block)
+          write-uvector)
 
 (define-class <process> ()
   ((pid       :init-value -1 :getter process-pid)
@@ -262,9 +262,9 @@
                       :null, integer file descriptor or file input port, \
                       but got ~s for file descriptor ~s"
                      a2 (cadr arg)))]
-      [(<<) (unless (string? a2)
-              (errorf "input redirection '<<' requires a string, but got ~s \
-                       for file descriptor ~s" a2 (cadr arg)))]
+      [(<<) (unless (or (string? a2) (uvector? a2))
+              (errorf "input redirection '<<' requires a string or a uvector, \
+                       but got ~s for file descriptor ~s" a2 (cadr arg)))]
       [(<<<) #t]                        ;anything is ok
       [(> >>)
        (unless (or (string? a2) (symbol? a2) (eq? a2 :null) (integer? a2)
@@ -389,7 +389,7 @@
          (letrec ([write-arg (^o (unwind-protect
                                      (cond [(eq? dir '<<<) (write arg o)]
                                            [(string? arg) (display arg o)]
-                                           [else (write-block arg o)])
+                                           [else (write-uvector arg o)])
                                    (close-output-port o)))])
            (cond-expand
             [gauche.sys.threads
