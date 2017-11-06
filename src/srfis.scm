@@ -572,7 +572,7 @@ Built-in.
 @xref{Hygienic macros}.
 
 基本的なsyntax-rulesの拡張
-これR7RS smallの一部となりました。
+これはR7RS smallの一部となりました。
 組み込みです。
 @xref{Hygienic macros}.
 
