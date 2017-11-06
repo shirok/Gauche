@@ -45,6 +45,7 @@
 ;; Directive = String
 ;;         | (S flags mincol colinc minpad padchar maxcol)
 ;;         | (A flags mincol colinc minpad padchar maxcol)
+;;         | (W flags)
 ;;         | (D flags mincol padchar commachar interval)
 ;;         | (B flags mincol padchar commachar interval)
 ;;         | (O flags mincol padchar commachar interval)
@@ -62,9 +63,10 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAdDbBoOxXrR*fF" c))
+    (define (directive? c) (string-scan "sSaAwWdDbBoOxXrR*fF" c))
     (define directive-param-spec ; (type max-#-of-params)
-      '((S 5) (A 5) (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5)))
+      '((S 5) (A 5) (W 0)
+        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5)))
     (define (flag? c) (memv c '(#\@ #\:)))
     (define (next p)
       (rlet1 c (read-char p)
@@ -173,6 +175,7 @@
 ;;      | (Seq Tree ...)
 ;;      | (S flags mincol colinc minpad padchar maxcol)
 ;;      | (A flags mincol colinc minpad padchar maxcol)
+;;      | (W flags)
 ;;      | (D flags mincol padchar commachar interval)
 ;;      | (B flags mincol padchar commachar interval)
 ;;      | (O flags mincol padchar commachar interval)
@@ -329,7 +332,8 @@
                ,@body))
            (^[argptr port ctrl] ,@body))))))
            
-;; ~S and ~A
+;; ~S, ~A, ~W
+;; NB: ~W doesn't take params, so justifying part won't be called for ~W.
 (define (make-format-expr fmtstr params flags printer)
   (if (null? params)
     (^[argptr port ctrl]
@@ -474,6 +478,7 @@
                       $ map (cut formatter-compile-rec src <>) rest)]
     [('S fs . ps) (make-format-expr src ps fs write)]
     [('A fs . ps) (make-format-expr src ps fs display)]
+    [('W fs . ps) (make-format-expr src ps fs write-shared)]
     [('D fs . ps) (make-format-num src ps fs 10 #f)]
     [('B fs . ps) (make-format-num src ps fs 2 #f)]
     [('O fs . ps) (make-format-num src ps fs 8 #f)]

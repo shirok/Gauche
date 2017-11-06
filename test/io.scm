@@ -677,6 +677,9 @@
 (test* "format ~a" "(abc def gh ..."
        (format "~10,,,'*,15@:a" '("abc" "def" "ghi" "jkl")))
 
+(test* "format ~w" "(#0=(1) #0#)"
+       (format "~w" (let1 x '(1) (list x x))))
+
 (test* "format ~d" "12345"       (format "~d" 12345))
 (test* "format ~d" "-12345"      (format "~d" -12345))
 (test* "format ~d" "+12345"      (format "~@d" 12345))
