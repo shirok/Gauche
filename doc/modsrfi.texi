@@ -6454,38 +6454,74 @@ Note: The order of @var{pred} and the source object is different from
 
 @deftp {Module} srfi-158
 @mdindex srfi-158
+@c EN
 This is an enhanced (and upward compatible)
 version of @code{srfi-121} Generators.
-In Gauche, all generator procedures are provided in @code{gauche.generator}.
+In Gauche, all generator procedures are the same as
+provided in @code{gauche.generator}
+(@pxref{Generators}).
+@c JP
+これは@code{srfi-121}ジェネレータの上位互換な拡張版です。
+Gaucheでは、以下に示す全てのジェネレータ手続きは
+@code{gauche.generator}で提供されるものと同じです
+(@ref{Generators}参照)。
+@c COMMON
 
 @example
-generator circular-generator make-iota-generator make-range-generator 
-make-coroutine-generator list->generator vector->generator
-reverse-vector->generator string->generator bytevector->generator
-make-for-each-generator make-unfold-generator
-gcons* gappend gflatten ggroup gmerge gmap gcombine gfilter gremove
-gstate-filter ggroup generator-map->list
-gtake gdrop gtake-while gdrop-while
-gdelete gdelete-neighbor-dups gindex gselect
-generator->list generator->reverse-list generator-map->list
-generator->vector generator->vector!  generator->string
-generator-fold generator-for-each generator-find
-generator-count generator-any generator-every generator-unfold
+generator                circular-generator       make-iota-generator
+make-range-generator     make-coroutine-generator
+list->generator          vector->generator        reverse-vector->generator
+string->generator        bytevector->generator
+make-for-each-generator  make-unfold-generator
+gcons*                   gappend                  gflatten
+ggroup                   gmerge                   gmap
+gcombine                 gfilter                  gremove
+gstate-filter            ggroup                   generator-map->list
+gtake                    gdrop                    gtake-while
+gdrop-while              gdelete                  gdelete-neighbor-dups
+gindex                   gselect                  generator->list
+generator->reverse-list  generator-map->list      generator->vector
+generator->vector!       generator->string        generator-fold
+generator-for-each       generator-find           generator-count
+generator-any            generator-every          generator-unfold
 @end example
 
+@c EN
 Accumulators are opposite of generators.  They are procedures
 that work as consumers.  An accumulator takes one argument.
 When non-eof value is given, the value is stored, and when EOF
 is given, the accumulated value is returned.
 How the values are accumulated depends on the accumulator.
+@c JP
+アキュムレータはジェネレータの反対で、値を消費する手続きと考えられます。
+アキュムレータは一つの引数を取ります。EOF以外の値が与えられた場合は、
+それが内部に何らかの形で蓄えられ、EOFが与えられた場合、
+蓄えられた値が返されます。
+どのように値が蓄えられるかは各アキュムレータに依存します。
+@c COMMON
 
+@c EN
 Once EOF is given, the accumulator is ``finalized''.  Subsequent
 EOF makes it return the same accumulated value.  It is undefined
 if other values are passed after EOF is passed.
+@c JP
+一度EOFが与えられると、アキュムレータは終了状態になります。
+その後何度EOFが与えられても同じ蓄積結果を返します。
+終了状態になったアキュムレータにEOF以外の値を与えた場合の動作は未定義です。
+@c COMMON
 
+@c EN
 The accumulator can be used to parameterize procedures that yield
 aggregate objects.  Consider the following procedure, which
 takes items from two generators and accumulate them alternatively.
+(Note that @code{glet*} is Gauche's procedure but not in srfi-158).
+@c JP
+アキュムレータは、複合的なオブジェクトを生成する手続きで、
+実際に生成される値の型をパラメタライズするのに使えます。
+次の手続きを見てみましょう。これは二つのジェネレータから交互に値を取り、
+それを蓄積して返す手続きです。
+(@code{glet*}はGaucheの手続きですがsrfi-158には含まれていません。)
+@c COMMON
 
 @example
 (define (intertwine acc gen1 gen2)
@@ -6498,8 +6534,13 @@ takes items from two generators and accumulate them alternatively.
   (acc (eof-object)))
 @end example
 
+@c EN
 The procedure can return various type of collections, without
 knowing the actual type---the passed accumulator determines it.
+@c JP
+この手続きは具体的に返される値が何かは関知しません。
+それは引数に与えられたアキュムレータにより決定されます。
+@c COMMON
 
 @example
 (intertwine (list-accumulator) (giota 5) (giota 5 100))
@@ -6509,6 +6550,22 @@ knowing the actual type---the passed accumulator determines it.
 (intertwine (bytevector-accumulator) (giota 5) (giota 5 100))
   @result{} #u8(0 100 1 101 2 102 3 103 4 104)
 @end example
+
+@c EN
+Note: In Gauche, you can also use classes to parameterize returned
+container types (e.g. @code{map-to}),
+for many collection classes support @emph{builder protocol}.
+@xref{Collection framework}, for the details.
+Accumulator has the flexibility that you can provide more than one
+ways to construct return value on the same type (e.g. forward and reverse
+list).
+@c JP
+註: Gaucheでは、クラスを使うことで戻り値となるコンテナの型をパラメタライズできます
+(例: @code{map-to})。これは多くのコレクションクラスが@emph{builderプロトコル}を
+サポートしているからです。詳しくは@ref{Collection framework}を見てください。
+アキュムレータの利点は、同じ型の戻り値についても、異なる値の蓄積方法
+(例えばリストを順に蓄積するか逆順に蓄積するか、等)を提供できることです。
+@c COMMON
 @end deftp
 
 @defun make-accumulator kons knil finalizer
