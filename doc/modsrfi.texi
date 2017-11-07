@@ -6570,37 +6570,66 @@ list).
 
 @defun make-accumulator kons knil finalizer
 [SRFI-158]
-Returns an accumulator, with initial internal state @var{knil}.
+@c MOD srfi-158
+@c EN
+Creates and returns an accumulator with a state,
+whose initial value is @var{knil}.
 When non-EOF value @var{v} is passed to the accumulator,
 @var{kons} is called as @code{(kons v state)}, and its result
 becomes the new state value.  When EOF value is passed,
 @code{(finalizer state)} is called and its result becomes
 the result of accumulator.
+@c JP
+内部状態をひとつ持つアキュムレータを作って返します。
+状態は@var{khil}で初期化されます。
+EOFでない値@var{v}がアキュムレータに与えられる度に、手続き@var{kons}が
+@code{(kons v state)}と呼ばれ、その戻り値が新たな状態となります。
+EOFがアキュムレータに渡されると、@code{(finalizer state)}が呼ばれ、
+その結果がアキュムレータの戻り値となります。
+@c COMMON
 @end defun
 
 @defun list-accumulator
 @defunx reverse-list-accumulator
 [SRFI-158]
-Returns accumulators that return accumulated value
+@c MOD srfi-158
+@c EN
+Creates and returns accumulators that return accumulated value
 as a list, in the accumulated order (@code{list-accumulator})
 or the reverse order (@code{reverse-list-accumulator}).
+@c JP
+蓄積された値をリストとして返すアキュムレータを作って返します。
+@code{list-accumulator}ではリストは与えられた順に、
+@code{reverse-list-accumulator}では逆順になります。
+@c COMMON
 @end defun
 
 @defun vector-accumulator
 @defunx reverse-vector-accumulator
 @defunx bytevector-accumulator
 [SRFI-158]
+@c MOD srfi-158
+@c EN
 Returns accumulators that return accumulated value
 as a fresh vector or bytevector (u8vector),
 in the accumulated order (@code{vector-accumulator},
 @code{bytevector-accumulator})
 or the reverse order (@code{reverse-vector-accumulator}).
 There's no @code{reverse-bytevector-accumulator}.
+@c JP
+蓄積された値をベクタあるいはバイトベクタ(u8vector)として返すアキュムレータを
+作って返します。@code{vector-accumulator}と
+@code{bytevector-accumulator}では値は先頭から順に、
+@code{reverse-vector-accumulator}ではベクタの最後から逆順に詰められます。
+@code{reverse-bytevector-accumulator}はありません。
+@c COMMON
 @end defun
 
 @defun vector-accumulator! vec at
 @defunx bytevector-accumulator! bvec at
 [SRFI-158]
+@c MOD srfi-158
+@c EN
 The @var{vec} or @var{bvec} argument is a mutable vector or
 bytevector (u8vector), and is used as a buffer.
 
@@ -6611,19 +6640,35 @@ the buffer reaches at the end.
 
 Once EOF is passed to the accumulator, @var{vec} or @var{bvec}
 is returned, respectively.
+@c JP
+@var{vec}と@var{bvec}はそれぞれ変更可能なベクタとバイトベクタ(u8vector)です。
+この引数はバッファとして使われます。
+
+与えられた値を、バッファのインデックス@var{at}から順に格納してゆくアキュムレータを
+作って返します。バッファの最後を越えて値を格納しようとした場合はエラーになります。
+
+EOFが与えられたら、@var{vec}または@var{bvec}をそのまま返します。
+@c COMMON
 @end defun
 
 @defun string-accumulator
 [SRFI-158]
+@c MOD srfi-158
+@c EN
 Returns an accumulator that accepts characters and accumulates
 them to a string.
+@c JP
+文字を受け取り、それを蓄積して最後に文字列として返すアキュムレータを生成して返します。
+@c COMMON
 @end defun
 
 @defun sum-accumulator
 @defunx product-accumulator
 @defunx count-accumulator
 [SRFI-158]
-Returns accumulators that yield a scala value.
+@c MOD srfi-158
+@c EN
+Returns accumulators that yield a scalar value.
 
 The accumulator created by @code{sum-accumulator} and
 @code{product-accumulator} accepts numbers,
@@ -6632,6 +6677,18 @@ and keep adding or multiplying it with the accumulated value
 
 The accumulator created by @code{count-accumulator} accepts any
 objects and just counting it.
+@c JP
+スカラー値を生成するアキュムレータを作って返します。
+
+@code{sum-accumulator}と@code{product-accumulator}で作られた
+アキュムレータはそれぞれ、
+数値を受け取り、それを蓄積された値に加算または乗算してゆきます。
+値の初期値はそれぞれ0と1です。
+
+@code{count-accumulator}で作られたアキュムレータは
+任意のオブジェクトを受け取ります。
+EOFを受け取ったらそれまで受け取ったオブジェクトの数を返します。
+@c COMMON
 @end defun
 
 @c Local variables:
