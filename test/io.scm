@@ -758,6 +758,8 @@
 (test* "format ~6,2:f" "  5.02"  (format "~6,2:f" 5.015))
 (test* "format ~6,2:f" "-10.00"   (format "~6,2:f" -9.995))
 (test* "format ~10f" "     abcde"  (format "~10,2f" 'abcde))
+(test* "format ~1,2f" "0.00"     (format "~1,2f" 0.003))
+(test* "format ~1,0f" "-1."      (format "~1,0f" -0.555))
 
 (test* "format carry over ~,4f" "0.0100" (format "~,4f" 0.00999))
 (test* "format carry over across decimal point ~,1f" "124.0"
