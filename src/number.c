@@ -3586,24 +3586,26 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
        the number of digits in XX part; so POINT=1 for 1.23,
        POINT=2 for 12.3 and so on. */
 
-    /* If POINT <= 0, we need to emit preceding zeros.
-       We have to special case when POINT == 0 and PRECISION == 0,
-       in that case the digit of ones are affected by the rounding.
-     */
-    if (!notational && precision == 0 && point == 0) {
-        /* whether r/s is greater than 1/2 or not defines the digit of ones*/
-        ScmObj r2 = Scm_Ash(r, 1);
-        if (Scm_NumCmp(r2, s) > 0) Scm_DStringPutz(ds, "1.", 2);
-        else                       Scm_DStringPutz(ds, "0.", 2);
-        /* no more digits. */
-        goto show_exponent;
-    }
-    
+    /* If POINT <= 0, we need to emit preceding zeros. */
     if (point <= 0) {
-        Scm_DStringPutz(ds, "0.", 2);
-        fracdigs++;
-        for (int digs=point; digs<0 ;digs++) {
+        for (int digs=point; digs<1 ;digs++) {
+            /* check the number of digits to be printed */
+            if (!notational && precision >= 0 && fracdigs >= precision-1) {
+                if (digs == 0) {
+                    /* whether r/s is greater than 1/2 or not defines the
+                       first number of significant digits */
+                    ScmObj r2 = Scm_Ash(r, 1);
+                    if (Scm_NumCmp(r2, s) > 0) SCM_DSTRING_PUTC(ds, '1');
+                    else                       SCM_DSTRING_PUTC(ds, '0');
+                } else {
+                    SCM_DSTRING_PUTC(ds, '0');
+                }
+                if (digs == point) SCM_DSTRING_PUTC(ds, '.');
+                /* no more digits. */
+                goto show_exponent;
+            }
             SCM_DSTRING_PUTC(ds, '0');
+            if (digs == point) SCM_DSTRING_PUTC(ds, '.');
             fracdigs++;
         }
     }
