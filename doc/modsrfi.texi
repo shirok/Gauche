@@ -6267,11 +6267,19 @@ length of @code{n} (@pxref{Generators}).
 
 @deftp {Module} srfi-152
 @mdindex srfi-152
+@c EN
 This is a improved version of @code{srfi-13}.  The spec is actually smaller
 than srfi-13 (hence 'reduced' in the title) by removing bells and whistles.
-The consistency with recent srfis are also considered.
+The consistency with R7RS and recent srfis are also considered.
 
 The following are built-in.  @xref{Strings}, for the details.
+@c JP
+これは@code{srfi-13}の改良版です。
+@code{srfi-13}から余分なものを取り除き、R7RSや最近のsrfiとの一貫性を
+改善したもので、実際は@code{srfi-13}より小さくなっています。
+
+以下に示す手続きは組み込みです。詳しくは@ref{Strings}を参照してください。
+@c COMMON
 
 @example
 string?            make-string        string             string-length
@@ -6282,17 +6290,27 @@ string>=?          string-append      string-join        string-split
 read-string        write-string       string-fill!
 @end example
 
+@c EN
 The following procedures are defined to use Unicode string case folding,
 and @code{gauche.unicode} module provides them.
 @xref{Full string case conversion}, for the details.
 Note that Gauche's
 built-in versions uses character-wise case folding, which differs
 from string case folding on some characters (German eszett, for example).
+@c JP
+以下に示す手続きはUnicodeの文字列の大文字小文字変換を使うように定義されていて、
+元は@code{gauche.unicode}で提供されています。
+説明は@ref{Full string case conversion}を参照してください。
+Gaucheの組み込みにも同名の手続きがありますが、それらは文字ごとに
+大文字小文字変換を行うので、文字列としての大文字小文字変換とは異なります
+(ドイツ語のエスツェット等)。
+@c COMMON
 
 @example
 string-ci=?   string-ci<?   string-ci<=?  string-ci>?   string-ci>=?
 @end example
 
+@c EN
 The following procedures are defined in srfi-13.  @xref{String library},
 for the details.  Note: Some of those procedures in srfi-13 that require
 predicate allows a char-set or a character to be passed instead
@@ -6300,6 +6318,15 @@ predicate allows a char-set or a character to be passed instead
 Our srfi-152 implementation shares the same procedure with srfi-13, so
 they accept the same arguments as srfi-13's, but such code won't be
 portable as srfi-152.
+@c JP
+以下に示す手続きはsrfi-13で定義されています。
+説明は@ref{String library}を参照してください。
+srfi-13ではこれらの手続きのいくつかは、述語引数として手続きだけでなく文字セットや
+文字を取ることができます(例: @code{string-filter})。
+srfi-152では手続きしか許していません。Gaucheの実装ではこれらの手続きは
+srfi-13のものと同じなのでsrfi-13のような使い方ができますが、
+srfi-152として移植性のあるコードを書く際には手続きだけを渡すように気をつけてください。
+@c COMMON
 
 @example
 string-null?       string-any         string-every       string-tabulate
@@ -6313,20 +6340,30 @@ string-concatenate-reverse            string-fold        string-fold-right
 string-count       string-filter      string-copy!
 @end example
 
+@c EN
 The following procedures are the same with the ones in
 R7RS @code{scheme.base} module (@pxref{R7RS base library}).
 Note that srfi-13 defines different procedures with the same name.
+@c JP
+次の手続きはR7RS @code{scheme.base}モジュールにあるものと同じです。
+srfi-13に同名の手続きがありますが異なるので注意してください。
+@c COMMON
 
 @example
 string-map         string-for-each
 @end example
 @end deftp
 
+@c EN
 We describe procedures unique to this module below.
+@c JP
+以降では、srfi-152特有の手続きについて説明します。
+@c COMMON
 
 @defun string-remove pred string :optional start end
 [SRFI-152]
 @c MOD srfi-152
+@c EN
 Returns a substring of @var{string} between @var{start} and @var{end},
 except characters that satisfy @var{pred}.   In other words,
 it is @code{(string-filter (complement pred) string start end)}.
@@ -6335,11 +6372,29 @@ This is called @var{string-delete} in @code{srfi-13}.  Being changed
 to take only a predicate (but not a character), it is renamed for
 the consistency of other srfi (e.g. @code{filter}, @code{remove} and
 @code{delete} in srfi-1.)
+@c JP
+@var{string}の@var{start}と@var{end}インデックス間から、
+述語@var{pred}を満たす文字を除いた部分文字列を返します。
+@code{(string-filter (complement pred) string start end)}と同じです。
+
+これは@code{srfi-13}で@var{string-delete}と呼ばれていた手続きに相当します。
+第一引数に述語手続きだけを取るようにし、また他のsrfiとの一貫性を重視して
+名前が変えられました(例えばsrfi-1の@code{filter}、@code{remove}、@code{delete}の
+関係を考えてください)。
+@c COMMON
+
+@example
+(string-remove char-whitespace?
+               "Quick fox jumps over the lazy dog"
+               3 22)
+ @result{} "ckfoxjumpsovert"
+@end example
 @end defun
 
 @defun string-replicate string from to :optional start end
 [SRFI-152]
 @c MOD srfi-152
+@c EN
 Extended substring.  It is called @code{xsubstring} in srfi-13, but
 renamed for the consistency.
 
@@ -6348,14 +6403,28 @@ and conceptually create a bidirectional infinite string by repeating
 the substring to both direction.  For example, suppose @var{string}
 is @code{"abcde"}, @var{start} is 1, and @var{end} is 4.  So we repeat
 the substring @code{"bcd"}, with one @code{b} falling on the index zero:
+@c JP
+拡張版substringです。srfi-13では@code{xsubstring}と呼ばれていましたが、
+一貫性のため名前が変えられました。
+
+@var{string}のインデックス@var{start}から@var{end}までの部分文字列をとり、
+それを両側に無限に繰り返した文字悦を考えます。
+例えば@var{string}が@code{"abcde"}であり、@var{start}が1、@var{end}が4なら、
+@code{"bcd"}が無限に繰り替えされた文字列を考えます。この文字列がソース文字列となります。
+@code{b}がインデックスの起点です。
+@c COMMON
 
 @example
 ... b  c  d  b  c  d  b  c  d  b  c  d  b ... 
    -6 -5 -4 -3 -2 -1  0  1  2  3  4  5  6
 @end example
 
+@c EN
 Then we extract a substring between @var{from} and @var{to}
 out of this infinite string.
+@c JP
+このソース文字列から、インデックス@var{from}と@var{to}の間の部分文字列を取り出し返します。
+@c COMMON
 
 @example
 (string-replicate "abcde" 2 10 1 4)
@@ -6368,30 +6437,53 @@ out of this infinite string.
 @defun string-segment string k
 [SRFI-152]
 @c MOD srfi-152
+@c EN
 Splits @var{string} by every @var{k} characters and returns
 a list of those strings.  The last string may be shorter than @var{k}.
+@c JP
+@var{string}を@var{k}文字ごとに分割して、そのリストを返します。
+最後の文字列は@var{k}文字より短いかもしれません。
+@c COMMON
 
 @example
 (string-segment "abcdefghijklmn" 3)
  @result{} ("abc" "def" "ghi" "jkl" "mn")
 @end example
 
+@c EN
 We have a similar procedure on lists, @code{slices}
 (@pxref{List accessors and modifiers}).
+@c JP
+類似の手続きとして、@code{slices}があります。
+(@ref{List accessors and modifiers}参照)。
+@c COMMON
 @end defun
 
 @defun string-contains-right string1 string2 :optional start1 end1 start2 end2
 [SRFI-152]
 @c MOD srfi-152
+@c EN
 Like @code{string-contains}, looks for a needle @var{string2} from
 a haystack @var{string1}, but if it is found, returns the start index
 of the @emph{last} match, instead of the first match.  The returned index
 is in @var{string1}.  The optional arguments limit the range of a needle
-and a haystack.  If a needle isn't found, @var{#t} is returned.
+and a haystack.  If a needle isn't found, @var{#f} is returned.
 
 An edge case: If a needle is empty (e.g. @var{string2} is empty,
 or @var{start2} = @var{end2}), it always matches right after the haystack,
 so @var{end1} is returned.
+@c JP
+@code{string-contains}と同様、
+ソース文字列@var{string1}から探索文字列@var{string2}を探しますが、
+見つかった場合は最初ではなく最後のマッチの開始インデックスを返します。
+開始インデックスは@var{string1}に対するものです。
+省略可能引数は@var{string1}、@var{string2}それぞれの対象とする文字列を制限します。
+探索文字列@var{string2}が見つからなかった場合は@var{#f}が返されます。
+
+エッジケースとして、探索文字列が空文字列の場合 (@var{string2}が空であるとか、
+@var{start2} = @var{end2}である場合)は、
+それは常にソース文字列の一番右端とマッチします。つまり@var{end1}が戻り値になります。
+@c COMMON
 
 @example
 (string-contains-right "Little Lisper" "Li")
@@ -6403,6 +6495,7 @@ so @var{end1} is returned.
 @defunx string-take-while-right string pred :optional start end
 [SRFI-152]
 @c MOD srfi-152
+@c EN
 Returns the longest prefix or suffix of @var{string} in which all characters
 satisfy @var{pred}.
 
@@ -6410,12 +6503,24 @@ Note: The order of @var{pred} and the source object is different from
 other @code{take-while}-style procedures, such as @code{take-while}
 (@ref{R7RS lists}), @code{ideque-take-while} (@ref{R7RS immutable deques}),
 and @code{lseq-take-while} (@ref{R7RS lazy sequences}).
+@c JP
+@var{string}から、全ての文字が述語@var{pred}を満たすような最長のプレフィクスまたは
+サフィックスを返します。
+
+註: @var{pred}引数と対象とするオブジェクトの順序が、
+他の@code{take-while}系手続き、
+@code{take-while}(@ref{R7RS lists})、
+@code{ideque-take-while} (@ref{R7RS immutable deques})、
+@code{lseq-take-while} (@ref{R7RS lazy sequences})等とは逆であることに
+注意してください。
+@c COMMON
 @end defun
 
 @defun string-drop-while string pred :optional start end
 @defunx string-drop-while-right string pred :optional start end
 [SRFI-152]
 @c MOD srfi-152
+@c EN
 Returns the longest prefix or suffix of @var{string} in which all characters
 does not satisfy @var{pred}.
 
@@ -6423,28 +6528,58 @@ Note: The order of @var{pred} and the source object is different from
 other @code{drop-while}-style procedures, such as @code{drop-while}
 (@ref{R7RS lists}), @code{ideque-drop-while} (@ref{R7RS immutable deques}),
 and @code{lseq-drop-while} (@ref{R7RS lazy sequences}).
+@c JP
+@var{string}から、全ての文字が述語@var{pred}を満たさないような最長のプレフィクスまたは
+サフィックスを返します。
+
+註: @var{pred}引数と対象とするオブジェクトの順序が、
+他の@code{drop-while}系手続き、
+@code{drop-while}(@ref{R7RS lists})、
+@code{ideque-drop-while} (@ref{R7RS immutable deques})、
+@code{lseq-drop-while} (@ref{R7RS lazy sequences})等とは逆であることに
+注意してください。
+@c COMMON
 @end defun
 
 @defun string-span string pred :optional start end
 @defunx string-break string pred :optional start end
 [SRFI-152]
 @c MOD srfi-152
+@c EN
 Find the longest prefix of @var{string} between @var{start} and @var{end}
 in which all characters satisy / do not satisfy @var{pred}, and returns
 the prefix and the rest of substring as two values.
+@c JP
+@var{string}の@var{start}から@var{end}までの範囲のうち、
+全ての文字が述語@var{pred}を満たす、あるいは満たさないような最長のプレフィクスをみつけ、
+そのプレフィクスと、残りの部分文字列を二つの値として返します。
+@c COMMON
 
 @example
 (string-break "foo@@example.com" (cut eqv? <> #\@@))
  @result{} "foo" @r{and} "@@example.com"
 
+(string-break "foo@@example.com" (cut eqv? <> #\@@) 1 10)
+ @result{} "oo" "@@exampl"
+
+@c EN
 ;; This is Gauche specific - a char-set can work as a predicate:
+@c JP
+;; Gaucheでは文字セットを述語手続きとしても使える
+@c COMMON
 (string-span "VAR_1 = $VAR_2" #[\w])
  @result{} "VAR_1" @r{and} " = $VAR_2"
 @end example
 
+@c EN
 Note: The order of @var{pred} and the source object is different from
 @code{span} and @code{break} in @code{scheme.list}
-(@ref{R7RS lists}).
+(@pxref{R7RS lists}).
+@c JP
+@var{pred}引数とソースオブジェクトの順が、
+@code{scheme.list}の@code{span}、@code{break}と逆であることに注意
+(@ref{R7RS lists}参照)。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------

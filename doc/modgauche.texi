@@ -5518,7 +5518,7 @@ Since @code{gauche.generator} predates srfi-121, we have different
 names for some procedures; for the compatibility, we provide
 both names.  Srfi-151 (Generators and accumulators) adds some more
 generator procedures, which is also included (but accumulator procedures
-are left to srfi-158. @xref{Generators and accumulators}).
+are left to srfi-158. @xref{Generators and accumulators}.)
 @c JP
 srfi-121 (Generators) はこのモジュールのサブセットです。
 @code{gauche.generator}はsrfi-121より前からあったので、
