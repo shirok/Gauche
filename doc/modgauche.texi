@@ -499,12 +499,15 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキン�
 Calls @var{proc} with every index of @var{array}.
 If no @var{index} argument is provided, @var{proc} is called
 as @code{(@var{proc} @var{i} @var{j} @var{k} @dots{})}, in which
-(@var{i}, @var{j},@var{k},@dots{}) walks over the index.
+(@var{i},@var{j},@var{k},@dots{}) walks over the index.
+It begins from the least index value of each dimension, and
+latter dimension is incremented faster.
 @c JP
 @var{array}の各インデックスに対して@var{proc}を呼びます。
 @var{index}引数が省略された場合は、
 @var{proc}はインデックス (@var{i}, @var{j},@var{k},@dots{}) に対して
 @code{(@var{proc} @var{i} @var{j} @var{k} @dots{})} のように呼ばれます。
+最初は各次元のインデックスの最小値から始まり、後の方の次元が優先的にインクリメントされます。
 @c COMMON
 
 @example
