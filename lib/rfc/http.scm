@@ -110,7 +110,6 @@
 (define http-proxy (make-parameter #f))
 
 ;; The default redirect handler
-;;
 (define http-default-redirect-handler
   (make-parameter
    (^[method code headers body]
@@ -265,10 +264,10 @@
   ;; body of 3xx reply.  This modifies reply headers if necessary.
   (define (redirect-headers body rep-headers)
     (if body
-      `(:content-length ,(string-size body)
-                        ,@(delete-keywords '(:content-length
-                                             :content-transfer-encoding)
-                                           rep-headers))
+      `(("content-length" ,(string-size body))
+        ,@(remove (^p (member (car p) '("content-length"
+                                        "content-transfer-encoding")))
+                  rep-headers))
       rep-headers))
 
   ;; returns either one of:
@@ -282,9 +281,11 @@
         (let* ([body (get-body in method code rep-headers
                                (http-string-receiver))]
                [verdict (consider-redirect method code rep-headers body)])
+          ;; consider-redirect returns either #f (don't redirect) or
+          ;; (METHOD . LOCATION).
           (if verdict
             `(redirect-to ,(car verdict) ,(cdr verdict))
-            (let1 hdrs (redirect-headers body rep-headers)
+            (let1 hdrs (redirect-headers body rep-headers) ;giving up
               `(reply ,code ,hdrs
                       ,(and body
                             (receive-body (open-input-string body) code

@@ -510,6 +510,9 @@
         (hash-table-put! ht "/redirect11"
                          '("HTTP/1.x 302 Moved Temporarily\n"
                            "Location: /redirect12\n\n"))
+        (hash-table-put! ht "/redirect21"
+                         '("HTTP/1.x 301 Moved Permanently\n"
+                           "Location: /redirect12\n\n"))
         (hash-table-put! ht "/loop1"
                          '("HTTP/1.x 302 Moved Temporarily\n"
                            "Location: /loop2\n\n"))
@@ -681,6 +684,12 @@
                          :redirect-handler (^[meth code hdrs body]
                                              `(HEAD . "/foofoo")))
          body))
+
+(test* "http-get (no-redirect 301 POST)" '("301" "/redirect12")
+       (receive (code headers body)
+           (http-request 'POST #"localhost:~*http-port*" "/redirect21"
+                         :sender (http-null-sender))
+         (list code (rfc822-header-ref headers "location"))))
 
 (test* "http-get (loop)" (test-error <http-error>)
        (http-request 'GET #"localhost:~*http-port*" "/loop1"))
