@@ -1008,6 +1008,68 @@ R7RSに対する拡張で、SRFI-149で定義されています。上記の例�
 R7RSの範囲外になります。
 @c COMMON
 
+@c EN
+Identifiers in a pattern is treated as pattern variables.  But sometimes
+you want to match a specific identifier in the input.  For example,
+the built-in @code{cond} and @code{case} detects an identifier @code{else}
+as a special identifier.  You can use @var{literal} @dots{} for that.
+See the followign example.
+@c JP
+パターン中に現れる識別子はパターン変数として扱われますが、
+特定の識別子そのものにマッチさせたい場合もあります。例えば組み込みの@code{cond}や
+@code{case}は、@code{else}という識別子を特別に認識します。
+@var{literal} @dots{}がその目的に使えます。次の例を見てください。
+@c COMMON
+
+@example
+(define-syntax if+
+  (syntax-rules (then else)
+    [(_ test then expr1 else expr2) (if test expr1 expr2)]))
+@end example
+
+@c EN
+The identifiers listed as the literals don't become pattern variables,
+but literally match the input.  If the input doesn't have the same identifier
+in the position, match fails.
+@c JP
+リテラルとして列挙された識別子はパターン変数にはならず、入力の識別子とそのままマッチします。
+もし入力の該当する位置に同じ識別子が置かれていなければ、マッチは失敗します。
+@c COMMON
+
+@example
+(if+ (even? x) then (/ x 2) else (/ (+ x 1) 2))
+ @r{expands into} (if (even? x) (/ x 2) (/ (+ x 1) 2))
+
+(if+ (even? x) foo (/ x 2) bar (/ (+ x 1) 2))
+ @result{} ERROR: malformed if+
+@end example
+
+@c EN
+We've been saying identifiers instead of symbols.  Roughly speaking,
+an identifier is a symbol with the surrounding syntactic environment,
+so that they can keep identity under renaming of hygiene macro.
+@c JP
+これまで、シンボルと呼ばずに識別子という言葉を使っていました。大まかに言うと、
+識別子とはシンボルに周囲の構文的環境をくっつけたもので、
+衛生的マクロによるリネームによっても同一性を失わないようになっています。
+@c COMMON
+
+@c EN
+The following example fails, because the @code{else} passed to the
+@code{if+} macro is the one locally bound by @code{let}, which is
+different from the global @code{else} when @code{if+} was defined,
+hence they don't match.
+@c JP
+次の例は失敗します。@code{if+}に渡されている@code{else}は@code{let}でローカルに
+束縛されており、それは@code{if+}が定義された時点でのグローバルな@code{elst}とは
+違うもので、したがってマッチしないからです。
+@c COMMON
+
+@example
+(let ((else #f))
+  (if+ (even? x) then (/ x 2) else (/ (+ x 1) 2))
+  @result{} ERROR: malformed if+
+@end example
 @end defspec
 
 @node Explicit-renaming macro transformer,  , Syntax-rules macro transformer, Hygienic macros
