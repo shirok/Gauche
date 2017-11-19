@@ -1419,13 +1419,13 @@
                         [binds (if (zero? ($receive-optarg iform))
                                  vars
                                  (apply list* vars))])
-                   `(receive ,vars ,(rec ($receive-expr iform))
+                   `(receive ,binds ,(rec ($receive-expr iform))
                       ,(rec ($receive-body iform))))]
      [($LAMBDA)  (let* ([vars (map get-lvar ($lambda-lvars iform))]
                         [formals (if (zero? ($lambda-optarg iform))
                                    vars
                                    (apply list* vars))])
-                   `(lambda ,vars ,(rec ($lambda-body iform))))]
+                   `(lambda ,formals ,(rec ($lambda-body iform))))]
      [($SEQ)    `(begin ,@(map rec ($seq-body iform)))]
      [($CALL)   `(,(rec ($call-proc iform)) ,@(map rec ($call-args iform)))]
      [($ASM)    `(asm ,($asm-insn iform)
