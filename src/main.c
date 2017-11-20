@@ -160,6 +160,12 @@ void usage(void)
             "  GAUCHE_TEST_RECORD\n"
             "      When set, it specifies a file name to accumulated test statistics.\n"
             "      See ``gauche.test'' manual entry for the details.\n"
+#if defined(GAUCHE_WINDOWS)
+            "  GAUCHE_WINDOWS_CONSOLE_RAW\n"
+            "      (Windows only) On Windows (MinGW), gosh in interactive mode wraps\n"
+            "      standard ports with character conversion ports that matches the\n"
+            "      the console's codepage by default.  Setting this variable suppresses it.\n"
+#endif /*defined(GAUCHE_WINDOWS)*/
             );
     exit(1);
 }
