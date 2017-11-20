@@ -217,37 +217,34 @@
     (values conv ces ces2 use-api)))
 
 ;; make a standard input conversion port
-(define (make-stdin-conv-port :optional (ces '#f) (use-api #f))
-  (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
-          (not (redirected-handle? (sys-get-std-handle STD_INPUT_HANDLE))))
-    (rlet1 vport (make <virtual-input-port>)
-      (port-attribute-set! vport 'windows-console-conversion #t)
-      (let1 proc (make-conv-getc (standard-input-port)
-                                 STD_INPUT_HANDLE ces use-api vport)
-        (set! (~ vport'getc) proc)))
-    #f))
+(define (make-stdin-conv-port :optional (ces #f) (use-api #f))
+  (and (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
+           (not (redirected-handle? (sys-get-std-handle STD_INPUT_HANDLE))))
+       (rlet1 vport (make <virtual-input-port>)
+         (port-attribute-set! vport 'windows-console-conversion #t)
+         (let1 proc (make-conv-getc (standard-input-port)
+                                    STD_INPUT_HANDLE ces use-api vport)
+           (set! (~ vport'getc) proc)))))
 ;; make a standard output conversion port
-(define (make-stdout-conv-port :optional (ces '#f) (use-api #f))
-  (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
-          (not (redirected-handle? (sys-get-std-handle STD_OUTPUT_HANDLE))))
-    (rlet1 vport (make <virtual-output-port>)
-      (port-attribute-set! vport 'windows-console-conversion #t)
-      (let1 proc (make-conv-puts (standard-output-port)
-                                 STD_OUTPUT_HANDLE ces use-api vport)
-        (set! (~ vport'putc) proc)
-        (set! (~ vport'puts) proc)))
-    #f))
+(define (make-stdout-conv-port :optional (ces #f) (use-api #f))
+  (and (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
+           (not (redirected-handle? (sys-get-std-handle STD_OUTPUT_HANDLE))))
+       (rlet1 vport (make <virtual-output-port>)
+         (port-attribute-set! vport 'windows-console-conversion #t)
+         (let1 proc (make-conv-puts (standard-output-port)
+                                    STD_OUTPUT_HANDLE ces use-api vport)
+           (set! (~ vport'putc) proc)
+           (set! (~ vport'puts) proc)))))
 ;; make a standard error conversion port
-(define (make-stderr-conv-port :optional (ces '#f) (use-api #f))
-  (if (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
-          (not (redirected-handle? (sys-get-std-handle STD_ERROR_HANDLE))))
-    (rlet1 vport (make <virtual-output-port>)
-      (port-attribute-set! vport 'windows-console-conversion #t)
-      (let1 proc (make-conv-puts (standard-error-port)
-                                 STD_ERROR_HANDLE ces use-api vport)
-        (set! (~ vport'putc) proc)
-        (set! (~ vport'puts) proc)))
-    #f))
+(define (make-stderr-conv-port :optional (ces #f) (use-api #f))
+  (and (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
+           (not (redirected-handle? (sys-get-std-handle STD_ERROR_HANDLE))))
+       (rlet1 vport (make <virtual-output-port>)
+         (port-attribute-set! vport 'windows-console-conversion #t)
+         (let1 proc (make-conv-puts (standard-error-port)
+                                    STD_ERROR_HANDLE ces use-api vport)
+           (set! (~ vport'putc) proc)
+           (set! (~ vport'puts) proc)))))
 
 ;; wrap windows console standard ports
 (define (wrap-windows-console-standard-ports :optional (ces '#f) (use-api #f))
