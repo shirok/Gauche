@@ -6,7 +6,7 @@
 In this chapter I describe a few Gauche's design concepts
 that help you to understand how Gauche works.
 @c JP
-本章では、Gauche動作の背景となるいくつかの概念を説明します。
+本章では、Gaucheの設計の背景となるいくつかの概念を説明します。
 Gaucheの動作を正確に理解する助けになると思います。
 @c COMMON
 
