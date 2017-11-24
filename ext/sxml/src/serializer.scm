@@ -845,14 +845,15 @@
                            (and (pair? node) (eq? (car node) '@))))
                         elem))))
                     (start-tag
-                     (if
-                      (or (not empty?)
-                          (and (eq? method 'html)
-                               (not elem-prefix)
-                               (srl:member-ci
-                                elem-local
-                                srl:void-elements)))
-                      '(">") '("/>")))
+                     (if (eq? method 'xml)
+                         (if empty? '("/>") '(">"))
+                         (if (or (not empty?)
+                                 (and (not elem-prefix)
+                                      (srl:member-ci
+                                       elem-local
+                                       srl:void-elements)))
+                             '(">")
+                             (list "></" (srl:qname->string elem-prefix elem-local) ">"))))
                     (ns-prefix-assig ns-prefix-assig)
                     (namespace-assoc namespace-assoc)
                     (declared-ns-prefixes
