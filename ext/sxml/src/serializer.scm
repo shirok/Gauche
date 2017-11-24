@@ -807,9 +807,9 @@
               )))))))))
 
 (define srl:void-elements
-  '("area" "base" "basefont" "br" "col"
-    "frame" "hr" "img" "input" "isindex"
-    "link" "meta" "param"))
+  '("area" "base" "basefont" "br" "col" "embed"
+    "frame" "hr" "img" "input" "isindex" "keygen"
+    "link" "meta" "param" "source" "track" "wbr"))
 
 ; Constructs start and end tags for an SXML element `elem'
 ; method ::= 'xml | 'html
