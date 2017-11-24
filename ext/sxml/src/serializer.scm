@@ -806,6 +806,11 @@
               #t  ; in any case, prefix declaration is required
               )))))))))
 
+(define srl:void-elements
+  '("area" "base" "basefont" "br" "col"
+    "frame" "hr" "img" "input" "isindex"
+    "link" "meta" "param"))
+
 ; Constructs start and end tags for an SXML element `elem'
 ; method ::= 'xml | 'html
 ; Returns: (values start-tag end-tag
@@ -846,11 +851,7 @@
                                (not elem-prefix)
                                (srl:member-ci
                                 elem-local
-                                ; ATTENTION: should probably move this list
-                                ; to a global const
-                                '("area" "base" "basefont" "br" "col"
-                                  "frame" "hr" "img" "input" "isindex"
-                                  "link" "meta" "param"))))
+                                srl:void-elements)))
                       '(">") '("/>")))
                     (ns-prefix-assig ns-prefix-assig)
                     (namespace-assoc namespace-assoc)
