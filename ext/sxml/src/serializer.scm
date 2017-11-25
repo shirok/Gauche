@@ -806,6 +806,11 @@
               #t  ; in any case, prefix declaration is required
               )))))))))
 
+(define srl:void-elements
+  '("area" "base" "basefont" "br" "col" "embed"
+    "frame" "hr" "img" "input" "isindex" "keygen"
+    "link" "meta" "param" "source" "track" "wbr"))
+
 ; Constructs start and end tags for an SXML element `elem'
 ; method ::= 'xml | 'html
 ; Returns: (values start-tag end-tag
@@ -840,18 +845,15 @@
                            (and (pair? node) (eq? (car node) '@))))
                         elem))))
                     (start-tag
-                     (if
-                      (or (not empty?)
-                          (and (eq? method 'html)
-                               (not elem-prefix)
-                               (srl:member-ci
-                                elem-local
-                                ; ATTENTION: should probably move this list
-                                ; to a global const
-                                '("area" "base" "basefont" "br" "col"
-                                  "frame" "hr" "img" "input" "isindex"
-                                  "link" "meta" "param"))))
-                      '(">") '("/>")))
+                     (if (eq? method 'xml)
+                         (if empty? '("/>") '(">"))
+                         (if (or (not empty?)
+                                 (and (not elem-prefix)
+                                      (srl:member-ci
+                                       elem-local
+                                       srl:void-elements)))
+                             '(">")
+                             (list "></" (srl:qname->string elem-prefix elem-local) ">"))))
                     (ns-prefix-assig ns-prefix-assig)
                     (namespace-assoc namespace-assoc)
                     (declared-ns-prefixes
