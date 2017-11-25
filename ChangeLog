@@ -1,3 +1,8 @@
+2017-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/src/serializer.scm: Adapt to HTML5, fix from @pclouds
+	  https://github.com/shirok/Gauche/pull/322
+
 2017-11-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-request): Fix a bug in the path where
