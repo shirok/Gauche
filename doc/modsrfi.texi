@@ -4570,24 +4570,52 @@ socket-input-port    socket-output-port
 @defun make-client-socket node service :optional ai-family ai-socktype ai-flags ai-protocol
 [SRFI-106]
 @c MOD srfi-106
-Returns a socket to
+@c EN
+Creates and returns a socket to
 communicate with the node @var{node} and @var{service}.
 If the socket type is connection-oriented (that is, @var{ai-socktype} is
 @code{*sock-stream*}, which is the default),
 the returned socket is already connected.
+@c JP
+ノード@var{node}のサービス@var{service}と通信するためのソケットを作って返します。
+ソケットの型がコネクション指向なら(つまり、@var{ai-socktype}が
+@code{*sock-stream*}なら、これはデフォルトですが)、
+返されるソケットは既にコネクトされた状態になっています。
+@c COMMON
 
+@c EN
 Both @var{node} and @var{service} must be strings.
+The @var{node} argument is passed to @code{getaddrinfo(3)} to resolve
+to the server IP address(es).
 A service name solely consists of decimal digits is interpreted as
 a port number.
+@c JP
+@var{node}と@var{service}は文字列でなければなりません。
+@var{node}は@code{getaddrinfo(3)}に渡されてサーバのIPアドレスに解決されます。
+@var{service}が数字のみで構成されていた場合はポート番号とみなされます。
+@c COMMON
 
+@c EN
 The default value of optional arguments are as follows:
-@code{*af-net*} for @var{ai-family},
-@code{*sock-stream} for @var{ai-socktype},
+@code{*af-inet*} for @var{ai-family},
+@code{*sock-stream*} for @var{ai-socktype},
 @code{(socket-merge-flags *ai-v4mapped* *ai-addrconfig*)} for
 @var{ai-flags}, and @code{*ipproto-ip*} for @var{ai-protocol}.
 See below for valid flag values.
+@c JP
+省略可能引数のデフォルト値は次の通りです:
+@var{ai-family}は@code{*af-inet*}、
+@var{ai-socktype}は@code{*sock-stream*}、
+@var{ai-flags}は@code{(socket-merge-flags *ai-v4mapped* *ai-addrconfig*)}、
+そして@var{ai-protocol}は@code{*ipproto-ip*}。
+有効なフラグの種類については下を参照してください。
+@c COMMON
 
+@c EN
 This API differs from @code{make-client-socket} in @code{gauche.net}.
+@c JP
+@code{gauche.net}の@code{make-client-socket}とはAPIが異なることに注意してください。
+@c COMMON
 
 @example
 (make-client-socket "127.0.0.1" "80")
@@ -4598,41 +4626,76 @@ This API differs from @code{make-client-socket} in @code{gauche.net}.
 @defun make-server-socket service :optional ai-family ai-socktype ai-protocol
 [SRFI-106]
 @c MOD srfi-106
-Creates and resturns a server socket that binds and listens at
+@c EN
+Creates and returns a server socket that binds and listens at
 the port specified by
 @var{service}, which must be a string.  A service name solely consists
 of decimal digits is interpreted as a port number.
+@c JP
+@var{serivce}で指定されるポートで待ち受けるサーバソケットを作って返します。
+@var{service}は文字列でなければなりません。@var{service}が全て数字で構成されていた
+場合はポート番号と解釈されます。
+@c COMMON
 
+@c EN
 The default value of optional arguments are as follows:
-@code{*af-net*} for @var{ai-family},
-@code{*sock-stream} for @var{ai-socktype},
+@code{*af-inet*} for @var{ai-family},
+@code{*sock-stream*} for @var{ai-socktype},
 and @code{*ipproto-ip*} for @var{ai-protocol}.
 See below for valid flag values.
+@c JP
+省略可能引数のデフォルト値は次の通りです:
+@var{ai-family}は@code{*af-inet*}、
+@var{ai-socktype}は@code{*sock-stream*}、
+@var{ai-protocol}は@code{*ipproto-ip*}。
+有効なフラグの種類については下を参照してください。
+@c COMMON
 
+@c EN
 This API differs from @code{make-server-socket} in @code{gauche.net}.
+@c JP
+@code{gauche.net}の@code{make-server-socket}とはAPIが異なることに注意してください。
+@c COMMON
 @end defun
 
 @defun socket? obj
 [SRFI-106]
 @c MOD srfi-106
+@c EN
 Equivalent to @code{(is-a? obj <socket>)}.
+@c JP
+@code{(is-a? obj <socket>)}と同じです。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Communication
+@c JP
+@subheading 通信
+@c COMMON
 
 @defun socket-send socket u8vector :optional flags
 [SRFI-106]
 @c MOD srfi-106
+@c EN
 Almost same as @code{socket-send} in @code{gauche.net}, except that
 this procedure only accepts a u8vector as the message.
 (The one in @code{gauche.net} can take a string as well.)
 
 Returns the number of octets that are actually sent.
+@c JP
+@code{gauche.net}の@code{socket-send}とほぼ同じですが、
+@code{gauche.net}のものが文字列も引数に取ることができるのに対し、
+こちらはu8vectorのみを受け付けます。
+
+実際に送られたオクテット数を返します。
+@c COMMON
 @end defun
 
 @defun socket-recv socket size :optional flags
 [SRFI-106]
 @c MOD srfi-106
+@c EN
 This is like @code{socket-recv} in @code{gauche.net}, except that
 this procedure returns the received data in u8vector,
 instead of a string.  If the peer has shut down the connection,
@@ -4640,24 +4703,50 @@ this procedure returns an empty u8vector, @code{#u8()}.
 
 The @var{size} argument specifies the maximum size of the receiving
 data.  The returned vector may be shorter if that much data is received.
+@c JP
+@code{gauche.net}の@code{socket-recv}に似ていますが、こちらは
+文字列ではなくu8vectorを返します。もし通信の相手がコネクションを閉じていた場合は、
+空のu8vector @code{#u8()}が返されます。
+
+@var{size}引数は受信データの最大のサイズを指定します。
+受信データがそれより小さい場合は返されるベクタもそれに合わせて短くなります。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Flags
+@c JP
+@subheading フラグ
+@c COMMON
 
+@c EN
 The srfi provides common names for constants of typical socket flags,
 as well as macros that map symbolic name(s) to the flags.
+@c JP
+このsrfiでは、典型的なソケットフラグを表す定数と、
+名前からフラグ値を求めるマクロも提供しています。
+@c COMMON
 
 @defun socket-merge-flags flag @dots{}
 [SRFI-106]
 @c MOD srfi-106
+@c EN
 Merge bitwise flags.  This is simply @code{logior} in Gauche.
+@c JP
+与えられた@var{flag} @dots{}をビット演算でマージします。
+Gauche組み込みの@code{logior}と実質的に同じです。
+@c COMMON
 @end defun
 
 @defun socket-purge-flags base-flag flag @dots{}
 [SRFI-106]
 @c MOD srfi-106
+@c EN
 Drop the bitwise flags in @var{base-flag} that are set
 in @var{flag} @dots{}.
+@c JP
+@var{base-flag}のビットのうち、@var{flag} @dots{}で示されるビットを0にします。
+@c COMMON
 @end defun
 
 @subsubheading Address family
@@ -4673,12 +4762,19 @@ in @var{flag} @dots{}.
 
 @defmac address-family name
 @c MOD srfi-106
+@c EN
 @var{Name} can be either one of symbols
 @code{inet}, @code{inet6}, or @code{unspec}, and
 the macro expands into the value of @code{*af-inet*},
 @code{*af-inet6*} or @code{*af-unspec*}, respectively.
 
 If @var{name} is other object, an error is signaled.
+@c JP
+@var{name}がシンボル@code{inet}、@code{inet6}、@code{unspec}のいずれかであれば、
+それぞれ@code{*af-inet*}、@code{*af-inet6*}、@code{*af-unspec*}の値へと展開されます。
+
+@var{name}がそれ以外のオブジェクトならエラーが報告されます。
+@c COMMON
 @end defmac
 
 
@@ -4693,12 +4789,19 @@ If @var{name} is other object, an error is signaled.
 
 @defmac socket-domain name
 @c MOD srfi-106
+@c EN
 @var{Name} can be either one of symbols
 @code{stream} or @code{datagram}, and the macro
 expands into the value of @code{*sock-stream*} and
 @code{*sock-dgram*}, respectively.
 
 If @var{name} is other object, an error is signaled.
+@c JP
+@var{name}がシンボル@code{stream}、@code{datagram}のいずれかであれば、
+それぞれ@code{*sock-stream*}、@code{*sock-dgram*}の値へと展開されます。
+
+@var{name}がそれ以外のオブジェクトならエラーが報告されます。
+@c COMMON
 @end defmac
 
 
@@ -4719,15 +4822,28 @@ If @var{name} is other object, an error is signaled.
 
 @defmac address-info name @dots{}
 @c MOD srfi-106
+@c EN
 Maps combination of names @code{canoname}, @code{numerichost},
 @code{v4mapped}, @code{all} and @code{addrconfig}
 to the combination of corresponding flags.
 
 An error is signaled if other symbols are passed.
 (Note: @code{canoname} for @code{*ai-canonname*}).
+@c JP
+シンボル@code{canoname}、@code{numerichost}、
+@code{v4mapped}、@code{all}、@code{addrconfig}の組み合わせを、
+対応するビットフラグの組み合わせへと展開します。
+
+他のシンボルが渡された場合はエラーが報告されます。
+(註: @code{*ai-canonname*}に対応するのは@code{canoname}です)。
+@c COMMON
 @end defmac
 
+@c EN
 @subsubheading Protocol
+@c JP
+@subsubheading プロトコル
+@c COMMON
 
 @multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
 @vindex *ipproto-ip*
@@ -4740,13 +4856,22 @@ An error is signaled if other symbols are passed.
 
 @defmac ip-protocol name
 @c MOD srfi-106
+@c EN
 Maps one of names @code{ip}, @code{tcp}, and @code{udp}
 to the corresponding flag value.  An error is signaled
 if other symbol is passed.
+@c JP
+シンボル@code{ip}、@code{tcp}、and @code{udp}を
+それぞれ対応するフラグの値へと展開します。
+他のシンボルが渡されたらエラーを報告します。
+@c COMMON
 @end defmac
 
-
+@c EN
 @subsubheading Message type
+@c JP
+@subsubheading メッセージタイプ
+@c COMMON
 
 @multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
 @vindex *msg-none*
@@ -4761,16 +4886,28 @@ if other symbol is passed.
 
 @defmac message-type name @dots{}
 @c MOD srfi-106
+@c EN
 Maps combination of names @code{none}, @code{peek},
 @code{oob} and @code{wait-all}
 to the combination of corresponding flags.
 
 An error is signaled if other symbols are passed.
 (Note: @code{wait-all} for @code{*msg-waitall*}).
+@c JP
+シンボル@code{none}、@code{peek}、
+@code{oob}、@code{wait-all}の組み合わせを、
+対応するビットフラグの組み合わせへと展開します。
+
+他のシンボルが渡された場合はエラーが報告されます。
+(註: @code{*msg-waitall*}に対応するのは@code{wait-all}です)。
+@c COMMON
 @end defmac
 
-
+@c EN
 @subsubheading Shutdown method
+@c JP
+@subsubheading シャットダウン
+@c COMMON
 
 @multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
 @vindex *shut-rd*
@@ -4783,10 +4920,16 @@ An error is signaled if other symbols are passed.
 
 @defmac shutdown-method name @dots{}
 @c MOD srfi-106
+@c EN
 Maps combination of names @code{read} and @code{write}
 to the combination of corresponding flags.
 
 An error is signaled if other symbols are passed.
+@c JP
+シンボル@code{code}と@code{write}の組み合わせを対応するビットマスクの値へと展開します。
+
+他のシンボルが渡された場合はエラーが報告されます。
+@c COMMON
 @end defmac
 
 
