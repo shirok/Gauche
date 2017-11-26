@@ -4535,6 +4535,9 @@ but the interface may differ.
 A socket object created by this srfi's API is an instance
 of Gauche's @code{<socket>}, so it can be passed to the API
 in @code{gauche.net} and vice versa.
+
+The following procedures are exactly the same as defined in @code{gauche.net}.
+@xref{Networking}, for the details.
 @c JP
 ポータブルなソケットインタフェースです。
 
@@ -4547,7 +4550,15 @@ Gaucheは@code{gauche.net}モジュールで包括的なネットワークAPIを
 
 このsrfiのAPIで作られるソケットオブジェクトはGaucheの@code{<socket>}オブジェクト
 そのものなので、@code{gauche.net}のAPIに渡したり、またその逆も可能です。
+
+以下にあげる手続きは@code{gauche.net}のものと全く同一です。
+説明は@ref{Networking}を参照してください。
 @c COMMON
+
+@example
+socket-accept        socket-shutdown       socket-close
+socket-input-port    socket-output-port
+@end example
 @end deftp
 
 @c EN
@@ -4602,22 +4613,12 @@ This API differs from @code{make-server-socket} in @code{gauche.net}.
 @end defun
 
 @defun socket? obj
-@c MOD srfi-106
 [SRFI-106]
+@c MOD srfi-106
 Equivalent to @code{(is-a? obj <socket>)}.
 @end defun
 
 @subheading Communication
-
-@defun socket-accept socket
-@defunx socket-shutdown socket how
-@defunx socket-input-port socket
-@defunx socket-output-port socket
-@defunx socket-close socket
-[SRFI-106]
-@c MOD srfi-106
-Same as the procedures provided in @code{gauche.net}.  @xref{Networking}.
-@end defun
 
 @defun socket-send socket u8vector :optional flags
 [SRFI-106]
