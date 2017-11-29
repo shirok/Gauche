@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016, Cameron Rich
+ * Copyright (c) 2007-2017, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -159,7 +159,7 @@ static int process_client_hello(SSL *ssl)
 
     offset += id_len;
     cs_len = (buf[offset]<<8) + buf[offset+1];
-    offset += 3;        /* add 1 due to all cipher suites being 8 bit */
+    offset += 2;
 
     PARANOIA_CHECK(pkt_size, offset + cs_len);
 
@@ -167,9 +167,13 @@ static int process_client_hello(SSL *ssl)
        the preference */
     for (i = 0; i < cs_len; i += 2)
     {
+        /* only support ciphersuites with the form (0x00, xxxx) */
+        if (buf[offset+i])
+            continue;
+
         for (j = 0; j < NUM_PROTOCOLS; j++)
         {
-            if (ssl_prot_prefs[j] == buf[offset+i])   /* got a match? */
+            if (ssl_prot_prefs[j] == buf[offset+i+1])   /* got a match? */
             {
                 ssl->cipher = ssl_prot_prefs[j];
                 goto do_compression;
