@@ -11203,7 +11203,7 @@ Gauche manages extra libraries and extension modules as @emph{packages}.
 
 Each package source tree has @file{package.scm} on top directory, which
 contains @code{define-gauche-package} form that provides metainformation
-about the package---the package name, veirson, author, dependencies, etc.
+about the package---the package name, version, author, dependencies, etc.
 
 When the package is installed, the standard installation process copies
 that information, with additional information such as the version of
