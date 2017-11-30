@@ -1,3 +1,7 @@
+2017-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Update to axTLS 2.1.4, by @qykth-git.
+
 2017-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/src/serializer.scm: Adapt to HTML5, fix from @pclouds
