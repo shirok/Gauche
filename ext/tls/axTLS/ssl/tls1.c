@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016, Cameron Rich
+ * Copyright (c) 2007-2017, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -2338,7 +2338,7 @@ void DISPLAY_ALERT(SSL *ssl, int alert)
             printf("bad record mac");
             break;
 
-        case SSL_ERROR_RECORD_OVERFLOW:
+        case SSL_ALERT_RECORD_OVERFLOW:
             printf("record overlow");
             break;
 

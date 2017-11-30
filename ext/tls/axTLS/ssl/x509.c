@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016, Cameron Rich
+ * Copyright (c) 2007-2017, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -274,6 +274,7 @@ static int x509_v3_basic_constraints(const uint8_t *cert, int offset,
         X509_CTX *x509_ctx)
 {
     int ret = X509_OK;
+    int lenSeq, l= 0;
 
     if ((offset = asn1_is_basic_constraints(cert, offset)) == 0)
         goto end_contraints;
@@ -282,13 +283,33 @@ static int x509_v3_basic_constraints(const uint8_t *cert, int offset,
     x509_ctx->basic_constraint_is_critical = 
                     asn1_is_critical_ext(cert, &offset);
 
-    if (asn1_next_obj(cert, &offset, ASN1_OCTET_STRING) < 0 ||
-    		asn1_next_obj(cert, &offset, ASN1_SEQUENCE) < 0 ||
-    		asn1_get_bool(cert, &offset, &x509_ctx->basic_constraint_cA) < 0 ||
-    		asn1_get_int(cert, &offset,
-    		                &x509_ctx->basic_constraint_pathLenConstraint) < 0)
+    /* Assign Defaults in case not specified
+    basic_constraint_cA will already by zero by virtue of the calloc */
+    x509_ctx->basic_constraint_cA = 0;
+    /* basic_constraint_pathLenConstraint is unlimited by default. 
+    10000 is just a large number (limits.h is not already included) */
+    x509_ctx->basic_constraint_pathLenConstraint = 10000;
+    
+    if ((asn1_next_obj(cert, &offset, ASN1_OCTET_STRING) < 0) ||
+            ((lenSeq = asn1_next_obj(cert, &offset, ASN1_SEQUENCE)) < 0))
     {
         ret = X509_NOT_OK;       
+    }
+    
+    /* If the Sequence Length is greater than zero, 
+    continue with the basic_constraint_cA */
+    if ((lenSeq>0)&&(asn1_get_bool(cert, &offset, 
+            &x509_ctx->basic_constraint_cA) < 0))
+    {
+        ret = X509_NOT_OK;
+    }
+    
+    /* If the Sequence Length is greater than 3, it has more content than 
+    the basic_constraint_cA bool, so grab the pathLenConstraint */
+    if ((lenSeq>3) && (asn1_get_int(cert, &offset, 
+            &x509_ctx->basic_constraint_pathLenConstraint) < 0))
+    {
+        ret = X509_NOT_OK;
     }
 
 end_contraints:
@@ -310,7 +331,7 @@ static int x509_v3_key_usage(const uint8_t *cert, int offset,
     x509_ctx->key_usage_is_critical = asn1_is_critical_ext(cert, &offset);
 
     if (asn1_next_obj(cert, &offset, ASN1_OCTET_STRING) < 0 ||
-    		asn1_get_bit_string_as_int(cert, &offset, &x509_ctx->key_usage))
+            asn1_get_bit_string_as_int(cert, &offset, &x509_ctx->key_usage))
     {
         ret = X509_NOT_OK;       
     }
@@ -461,29 +482,29 @@ int x509_verify(const CA_CERT_CTX *ca_cert_ctx, const X509_CTX *cert,
 
     if (cert->basic_constraint_present)
     {
-    	/* If the cA boolean is not asserted,
-    	   then the keyCertSign bit in the key usage extension MUST NOT be
-    	   asserted. */
-    	if (!cert->basic_constraint_cA &&
+        /* If the cA boolean is not asserted,
+           then the keyCertSign bit in the key usage extension MUST NOT be
+           asserted. */
+        if (!cert->basic_constraint_cA &&
                 IS_SET_KEY_USAGE_FLAG(cert, KEY_USAGE_KEY_CERT_SIGN))
-		{
-			ret = X509_VFY_ERROR_BASIC_CONSTRAINT;
-			goto end_verify;
-		}
+        {
+            ret = X509_VFY_ERROR_BASIC_CONSTRAINT;
+            goto end_verify;
+        }
 
         /* The pathLenConstraint field is meaningful only if the cA boolean is
            asserted and the key usage extension, if present, asserts the
            keyCertSign bit.  In this case, it gives the maximum number of 
            non-self-issued intermediate certificates that may follow this 
            certificate in a valid certification path. */
-		if (cert->basic_constraint_cA &&
+        if (cert->basic_constraint_cA &&
             (!cert->key_usage_present || 
                 IS_SET_KEY_USAGE_FLAG(cert, KEY_USAGE_KEY_CERT_SIGN)) &&
             (cert->basic_constraint_pathLenConstraint+1) < *pathLenConstraint)
-		{
-			ret = X509_VFY_ERROR_BASIC_CONSTRAINT;
-			goto end_verify;
-		}
+        {
+            ret = X509_VFY_ERROR_BASIC_CONSTRAINT;
+            goto end_verify;
+        }
     }
 
     next_cert = cert->next;
@@ -571,7 +592,7 @@ int x509_verify(const CA_CERT_CTX *ca_cert_ctx, const X509_CTX *cert,
     /* go down the certificate chain using recursion. */
     if (next_cert != NULL)
     {
-    	(*pathLenConstraint)++; /* don't include last certificate */
+        (*pathLenConstraint)++; /* don't include last certificate */
         ret = x509_verify(ca_cert_ctx, next_cert, pathLenConstraint);
     }
 
