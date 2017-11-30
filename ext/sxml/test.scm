@@ -39,7 +39,7 @@
     (t srl:sxml->xml-noindent
        "<foo a=\"b\" c=\"d&quot;e&apos;f\"><g>h<i>j<k/></i></g></foo>")
     (t srl:sxml->html
-       "<foo a=\"b\" c=\"d&quot;e&apos;f\">\n  <g>h<i>j<k/></i></g>\n</foo>")
+       "<foo a=\"b\" c=\"d&quot;e&apos;f\">\n  <g>h<i>j<k></k></i></g>\n</foo>")
     (t srl:sxml->html-noindent
        "<foo a=\"b\" c=\"d&quot;e&apos;f\"><g>h<i>j<k></k></i></g></foo>")
     ))
