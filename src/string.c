@@ -1808,7 +1808,6 @@ int Scm_DStringTruncate(ScmDString *dstr, int newsize)
     int origsize = Scm_DStringSize(dstr);
 
     if (newsize < dstr->init.bytes) {
-        origsize = dstr->init.bytes;
         dstr->init.bytes = newsize;
         dstr->anchor = NULL;
         dstr->tail = NULL;
