@@ -936,7 +936,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
         /* TODO: We should deal with the case when input contains \0 */
         Scm_Error("Invalid charset syntax [%s%s...",
                   complement? "^" : "",
-                  Scm_DStringPeek(&buf, NULL, NULL));
+                  Scm_DStringGetz(&buf));
     }
     return SCM_FALSE;
 }
