@@ -1752,7 +1752,6 @@ const char *Scm_DStringPeek(ScmDString *dstr, int *size, int *len)
         if (len)  *len = dstr->length;
         return dstr->init.data;
     } else {
-        Scm_DStringWeld(dstr);
         if (size) *size = dstr->anchor->chunk->bytes;
         if (len)  *len = dstr->length;
         return dstr->anchor->chunk->data;
