@@ -19600,6 +19600,63 @@ then writes a newline.
 @c COMMON
 @end defun
 
+@defun pprint obj :key port controls width length level
+@c EN
+Pretty prints @var{obj} to @var{port}, which is defaulted to the current
+output port.  The same effect is achieved by passing the @code{write} procedure
+a write control with @code{pretty} slot setting to @code{#t}
+(in fact, it is how @code{pprint} is implemented), but this procedure
+provides more convenient interface when you want to play with the
+pretty printer.
+
+To customize pretty printing, you can pass a write control object
+to the @var{controls} keyword argument (the @code{pretty} slot of
+@var{controls} is ignored; it'll always printed prettily).
+Furthermore, you can override @code{width}, @code{length} and @code{level}
+slots of @var{controls}.  If you omit @var{controls}, a reasonable default
+value is assumed.
+@xref{Output controls}, for the detail of write controls.
+@c JP
+@var{obj}を@var{port}に整形出力(prettyprint)します。
+@var{port}が省略された場合は現在の出力ポートが使われます。
+この手続きと同じ効果は、@code{write}手続きに@code{pretty}スロットを@code{#t}にした
+出力制御オブジェクトを渡すことでも得られます
+(実際、内部的には@code{pprint}はそうやって@code{write}を呼び出しているだけです)
+が、手軽に整形出力を試してみたい場合にこの手続きは便利です。
+
+出力の整形をカスタマイズするには、@var{controls}キーワード引数に出力制御オブジェクトを
+渡します(渡された制御オブジェクトの@code{pretty}スロットは無視されます;
+常に出力は整形されます)。さらに、出力制御オブジェクトの
+@code{width}、@code{length}、@code{level}スロットを、
+それぞれのキーワード引数でオーバライドできます。
+@var{controls}を省略した場合は適切なデフォルト値が使われます。
+出力制御の詳細については@ref{Output controls}を参照してください。
+@c COMMON
+
+@example
+(pprint (make-list 6 '(gauche droite)))
+ @result{} @r{prints}
+  ((gauche droite) (gauche droite) (gauche droite) (gauche droite)
+   (gauche droite) (gauche droite))
+
+(pprint (make-list 6 '(gauche droite)) :width 20)
+ @result{} @r{prints}
+  ((gauche droite)
+   (gauche droite)
+   (gauche droite)
+   (gauche droite)
+   (gauche droite)
+   (gauche droite))
+
+(pprint (make-list 6 '(gauche droite)) :length 3)
+ @result{} @r{prints}
+  ((gauche droite) (gauche droite) (gauche droite) ....)
+
+(pprint (make-list 6 '(gauche droite)) :level 1)
+ @result{} @r{prints}
+  (# # # # # #) 
+@end example
+@end defun
 
 @deffn {Method} write-object (obj <object>) port
 @c EN
