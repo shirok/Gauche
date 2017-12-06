@@ -728,6 +728,14 @@ int main(int ac, char **av)
     }
     Scm_AddCleanupHandler(cleanup_main, NULL);
 
+    /* experimental syntax-rules */
+    if (Scm_GetEnv("GAUCHE_EXP_SYNTAX_RULES") != NULL) {
+        if (!Scm_Require(SCM_MAKE_STR("srfi-149-mod"), 0, NULL)) {
+            Scm_EvalCString("(define syntax-rules (with-module srfi-149-mod syntax-rules))",
+                            SCM_OBJ(Scm_GaucheModule()), NULL);
+        }
+    }
+
 #if defined(GAUCHE_WINDOWS)
     /* auto wrap windows console standard ports */
     if (!test_mode && Scm_GetEnv("GAUCHE_WINDOWS_CONSOLE_RAW") == NULL) {

@@ -1025,10 +1025,18 @@
 (define (pass1/quote obj)
   ($const (unwrap-syntax obj)))
 
+(define (pass1/syntax-quote obj)
+  ($const obj))
+
 (define-pass1-syntax (quote form cenv) :null
   (match form
     [(_ obj) (pass1/quote obj)]
     [else (error "syntax-error: malformed quote:" form)]))
+
+(define-pass1-syntax (syntax-quote form cenv) :null
+  (match form
+    [(_ obj) (pass1/syntax-quote obj)]
+    [else (error "syntax-error: malformed syntax-quote:" form)]))
 
 (define-pass1-syntax (quasiquote form cenv) :null
   ;; We want to avoid unnecessary allocation as much as possible.
