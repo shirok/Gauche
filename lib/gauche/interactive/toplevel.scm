@@ -218,6 +218,7 @@
       [()
        (print "You're in REPL (read-eval-print-loop) of Gauche shell.")
        (print "Type a Scheme expression to evaluate.")
+       (print "Evaluate (exit) to exit REPL.")
        (print "A word preceded with comma has special meaning.  Type ,help <cmd> ")
        (print "to see the detailed help for <cmd>.")
        (print "Commands can be abbreviated as far as it is not ambiguous.")
