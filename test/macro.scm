@@ -6,6 +6,9 @@
 
 (test-start "macro")
 
+;; don't skip some tests
+(define *dont-skip* #f)
+
 ;; strip off syntactic information from identifiers in the macro output.
 (define (unident form)
   (cond
@@ -1011,34 +1014,36 @@
               [(_) x]))
           (foo))))
 
-'(test "internal define-syntax and scope 2" 'inner
-      (let ((x 'outer))
-        (lambda ()
-          (define-syntax foo
-            (syntax-rules ()
-              [(_) x]))
-          (define x 'inner)
-          (foo))))
+(when *dont-skip*
+  (test "internal define-syntax and scope 2" 'inner
+        (let ((x 'outer))
+          (lambda ()
+            (define-syntax foo
+              (syntax-rules ()
+                [(_) x]))
+            (define x 'inner)
+            (foo))))
 
-'(test "internal define-syntax and scope 3" '(inner inner)
-      (let ((x 'outer))
-        (lambda ()
-          (define-syntax def
-            (syntax-rules ()
-              [(_ v) (define v x)]))
-          (define x 'inner)
-          (def y)
-          (list x y))))
+  (test "internal define-syntax and scope 3" '(inner inner)
+        (let ((x 'outer))
+          (lambda ()
+            (define-syntax def
+              (syntax-rules ()
+                [(_ v) (define v x)]))
+            (define x 'inner)
+            (def y)
+            (list x y))))
 
-'(test "internal define-syntax and scope 3" '(inner inner)
-      (let ((x 'outer))
-        (lambda ()
-          (define-syntax def
-            (syntax-rules ()
-              [(_ v) (define v (lambda () x))]))
-          (def y)
-          (define x 'inner)
-          (list x (y)))))
+  (test "internal define-syntax and scope 4" '(inner inner)
+        (let ((x 'outer))
+          (lambda ()
+            (define-syntax def
+              (syntax-rules ()
+                [(_ v) (define v (lambda () x))]))
+            (def y)
+            (define x 'inner)
+            (list x (y)))))
+  )
 
 ;;----------------------------------------------------------------------
 ;; macro defining macros
@@ -1068,7 +1073,7 @@
 (test "define-syntax - let-syntax" '(1 . 0)
       (lambda () (mdm-foo2 cons 0)))
 
-(test "let-syntax - let-syntax" '(4 . 3)
+(test "let-syntax - let-syntax 1" '(4 . 3)
       (lambda ()
         (let-syntax ((mdm-foo3 (syntax-rules ()
                                  ((mdm-foo3 x y body)
@@ -1078,18 +1083,20 @@
           (mdm-foo3 list 3 (list 4)))))
 
 ;; this doesn't work for now, due to the bug of macro expander
-'(test "let-syntax - let-syntax" 3
-      (lambda ()
-        (let-syntax ((mdm-foo4
-                      (syntax-rules ()
-                        ((mdm-foo4 () n) n)
-                        ((mdm-foo4 (x . xs) n)
-                         (let-syntax ((mdm-foo5
-                                       (syntax-rules ()
-                                         ((mdm-foo5)
-                                          (mdm-foo4 xs (+ n 1))))))
-                           (mdm-foo5))))))
-          (mdm-foo4 (#f #f #f) 0))))
+(when *dont-skip*
+  (test "let-syntax - let-syntax 2" 3
+        (lambda ()
+          (let-syntax ((mdm-foo4
+                        (syntax-rules ()
+                          ((mdm-foo4 () n) n)
+                          ((mdm-foo4 (x . xs) n)
+                           (let-syntax ((mdm-foo5
+                                         (syntax-rules ()
+                                           ((mdm-foo5)
+                                            (mdm-foo4 xs (+ n 1))))))
+                             (mdm-foo5))))))
+            (mdm-foo4 (#f #f #f) 0))))
+  )
 
 (define-syntax mdm-foo3
   (syntax-rules ()
@@ -1591,27 +1598,30 @@
 ;; srfi-147 begin
 ;; (not yest supported)
 
-'(test-section "srfi-147 begin")
+#|
+(when *dont-skip*
+  (test-section "srfi-147 begin")
 
-'(test "srfi-147 begin (internal)"
-      '(yes no)
-      (lambda ()
-        (define-syntax foo
-          (begin (define-syntax bar if)
-                 (syntax-rules ()
-                   [(_ x y z) (bar z x y)])))
-        (list (foo 'yes 'no (zero? 0))
-              (foo 'yes 'no (zero? 1)))))
+  (test "srfi-147 begin (internal) 1"
+        '(yes no)
+        (lambda ()
+          (define-syntax foo
+            (begin (define-syntax bar if)
+                   (syntax-rules ()
+                     [(_ x y z) (bar z x y)])))
+          (list (foo 'yes 'no (zero? 0))
+                (foo 'yes 'no (zero? 1)))))
 
-'(test "srfi-147 begin (internal)"
-      11
-      (lambda ()
-        (let-syntax ([foo (syntax-rules ()
-                            [(_ a) (begin (define x (* a 2))
-                                          (syntax-rules ()
-                                            [(_ b) (+ b x)]))])])
-          (define-syntax bar (foo 3))
-          (bar 5))))
-      
+  (test "srfi-147 begin (internal) 2"
+        11
+        (lambda ()
+          (let-syntax ([foo (syntax-rules ()
+                              [(_ a) (begin (define x (* a 2))
+                                            (syntax-rules ()
+                                              [(_ b) (+ b x)]))])])
+            (define-syntax bar (foo 3))
+            (bar 5))))
+  )
+|#
 
 (test-end)

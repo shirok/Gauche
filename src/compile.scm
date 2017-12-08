@@ -358,7 +358,8 @@
  (define-cproc cenv-toplevel? (cenv)
    (SCM_ASSERT (SCM_VECTORP cenv))
    (dolist [fp (SCM_VECTOR_ELEMENT cenv 1)]
-     (if (== (SCM_CAR fp) '0) (return '#f)))
+     ;; check both lexical and syntax frames
+     (if (or (== (SCM_CAR fp) '0) (== (SCM_CAR fp) '1)) (return '#f)))
    (return '#t))
  )
 

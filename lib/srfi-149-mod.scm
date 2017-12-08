@@ -15,11 +15,9 @@
 
 (define (identifier->symbol-149 x)
   (cond
-   ((symbol? x)
-    x)
-   ((keyword? x)
-    ;(string->symbol (string-append ":" (keyword->string x))))
-    x)
+   ((symbol? x) x)
+   ((keyword? x) x)
+   ;((keyword? x) (string->symbol (string-append ":" (keyword->string x))))
    (else
     (identifier->symbol x))))
 
@@ -51,7 +49,9 @@
         i
         (loop (+ i 1) (cdr ls)))))))
 
-(define (cons-source-149 kar kdr source) (cons kar kdr))
+;(define (cons-source-149 kar kdr source) (cons kar kdr))
+(define (cons-source-149 kar kdr source)
+  (with-module gauche.internal (with-original-source (cons kar kdr) source)))
 
 (define %number->string-149 number->string)
 
