@@ -358,7 +358,8 @@
  (define-cproc cenv-toplevel? (cenv)
    (SCM_ASSERT (SCM_VECTORP cenv))
    (dolist [fp (SCM_VECTOR_ELEMENT cenv 1)]
-     (if (== (SCM_CAR fp) '0) (return '#f)))
+     ;; check both lexical and syntax frames
+     (if (or (== (SCM_CAR fp) '0) (== (SCM_CAR fp) '1)) (return '#f)))
    (return '#t))
  )
 
@@ -1536,12 +1537,18 @@
 
 ;; er-comparer :: (Sym-or-id, Sym-or-id, Env, Env) -> Bool
 (define (er-comparer a b uenv cenv)
-  (and (variable? a)
-       (variable? b)
-       (let ([a1 (cenv-lookup-variable uenv a)]
-             [b1 (cenv-lookup-variable uenv b)])
-         (or (eq? a1 b1)
-             (free-identifier=? a1 b1)))))
+  (cond
+   ;; consider keywords
+   ((and (keyword? a) (keyword? b))
+    (eq? a b))
+   (else
+    (and (variable? a)
+         (variable? b)
+         ;; recognize both variables and macros
+         (let ([a1 (cenv-lookup-syntax uenv a)]
+               [b1 (cenv-lookup-syntax uenv b)])
+           (or (eq? a1 b1)
+               (free-identifier=? a1 b1)))))))
 
 ;; xformer :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
 (define (%make-er-transformer xformer def-env)
