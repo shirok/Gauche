@@ -1077,18 +1077,17 @@
                                     body)))))
           (mdm-foo3 list 3 (list 4)))))
 
-;; this doesn't work for now, due to the bug of macro expander
-'(test "let-syntax - let-syntax" 3
+(test "letrec-syntax - let-syntax" 3
       (lambda ()
-        (let-syntax ((mdm-foo4
-                      (syntax-rules ()
-                        ((mdm-foo4 () n) n)
-                        ((mdm-foo4 (x . xs) n)
-                         (let-syntax ((mdm-foo5
-                                       (syntax-rules ()
-                                         ((mdm-foo5)
-                                          (mdm-foo4 xs (+ n 1))))))
-                           (mdm-foo5))))))
+        (letrec-syntax ((mdm-foo4
+                         (syntax-rules ()
+                           ((mdm-foo4 () n) n)
+                           ((mdm-foo4 (x . xs) n)
+                            (let-syntax ((mdm-foo5
+                                          (syntax-rules ()
+                                            ((mdm-foo5)
+                                             (mdm-foo4 xs (+ n 1))))))
+                              (mdm-foo5))))))
           (mdm-foo4 (#f #f #f) 0))))
 
 (define-syntax mdm-foo3
