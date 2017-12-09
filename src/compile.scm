@@ -113,14 +113,10 @@
 ;; Compile-time constants
 ;;
 
-;; used by env-lookup-int
-;; NB: We'll get rid of PATTERN variable lookup after we replace the
-;; macro system, then the distinction of LEXICAL/SYNTAX lookup can be
-;; specified by a boolean flag and we can drop these constants.
+;; Used by env-lookup-int.  the frame is marked as either LEXICAL or SYNTAX.
 (eval-when (:compile-toplevel)
   (define-constant LEXICAL 0)
-  (define-constant SYNTAX  1)
-  (define-constant PATTERN 2))
+  (define-constant SYNTAX  1))
 
 ;; Max # of argument passed *literally*.  This is limited by
 ;; VM stack size, for we need to expand args into stack.
@@ -273,12 +269,8 @@
 ;;
 ;;                <type>     <obj>
 ;;                ----------------------------------------------
-;;                0          <lvar>     ;; lexical binding
-;;                1          <macro>    ;; syntactic binding
-;;                2          <pvar>     ;; pattern variable
-;;
-;;                Constants LEXICAL, SYNTAX and PATTERN are defined
-;;                to represent <type> for the convenience.
+;;                LEXICAL    <lvar>     ;; lexical binding
+;;                SYNTAX     <macro>    ;; syntactic binding
 ;;
 ;;     exp-name - The "name" of the current expression, that is, the
 ;;                name of the variable the result of the current
@@ -350,16 +342,16 @@
                     (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
 
  ;; Check if Cenv is toplevel or not.
+ ;; Since R7RS let{rec}-syntax delimits scope, its body can't contain toplevel
+ ;; definitions.  Hence existence of any frame, LEXICAL or SYNTAX, makes
+ ;; CENV non-toplevel.
  ;;
  ;; (define (cenv-toplevel? cenv)
- ;;   (not (any (lambda (frame) (eqv? (car frame) LEXICAL))
- ;;             (cenv-frames cenv))))
+ ;;   (null? (cenv-frames cenv)))
  ;;
- (define-cproc cenv-toplevel? (cenv)
+ (define-cproc cenv-toplevel? (cenv) ::<boolean>
    (SCM_ASSERT (SCM_VECTORP cenv))
-   (dolist [fp (SCM_VECTOR_ELEMENT cenv 1)]
-     (if (== (SCM_CAR fp) '0) (return '#f)))
-   (return '#t))
+   (return (SCM_NULLP (SCM_VECTOR_ELEMENT cenv 1))))
  )
 
 (define-macro (cenv-copy-except cenv . kvs)

@@ -1,3 +1,12 @@
+2017-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Removed PATTERN frame - no longer used.  This opens
+	  up a new optimization for cenv-lookup-syntax (it doesn't need to
+	  check frame type at all), but we'll take care of it later.
+	  (cenv-toplevel?): Since R7RS let{rec}-syntax delimits scope, we 
+	  shouldn't treat <body> of outermost let{rec}-syntax as toplevel.
+	  That makes this procedure simpler; just check if the frames are empty.
+
 2017-11-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Update to axTLS 2.1.4, by @qykth-git.
