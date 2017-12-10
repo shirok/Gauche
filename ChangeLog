@@ -1,6 +1,9 @@
 2017-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmod.scm (bound-identifier=?): Added experimentally.
+	* src/libmac.scm (unravel-syntax): Added experimentally.
+	  (call-macro-expander): Use unravel-syntax to display macro input
+	  and output.
 
 2017-12-08  Shiro Kawai  <shiro@acm.org>
 

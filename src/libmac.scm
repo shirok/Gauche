@@ -52,7 +52,36 @@
 
 (select-module gauche)
 ;; API
+;; This strips all syntactic information (lossy)
 (define-cproc unwrap-syntax (form) Scm_UnwrapSyntax)
+
+;; API
+;; EXPERIMENTAL
+;; This preserves identity of local identifiers by suffixing it.
+;; The identity of toplevel identifiers are still not preserved across modules.
+(select-module gauche.internal)
+(define-in-module gauche (unravel-syntax form)
+  (define id->sym
+    (let1 tab (make-hash-table 'eq?)  ; identifier -> symbol
+      (^[id]
+        (or (hash-table-get tab id #f)
+            (let1 nam (unwrap-syntax id)
+              (if (global-identifier=? id (make-identifier nam
+                                                           (vm-current-module)
+                                                           '()))
+                (begin (hash-table-put! tab id nam) nam)
+                (let1 num ($ hash-table-fold tab
+                             (^[i _ c]
+                               (if (eq? (unwrap-syntax i) nam) (+ c 1) c))
+                             0)
+                  (rlet1 sym (symbol-append nam "." num)
+                    (hash-table-put! tab id sym)))))))))
+  (define (rec form)
+    (cond [(identifier? form) (id->sym form)]
+          [(pair? form) (cons (rec (car form)) (rec (cdr form)))]
+          [(vector? form) (vector-map rec form)]
+          [else form]))
+  (rec form))
 
 (select-module gauche.internal)
 (inline-stub
@@ -93,6 +122,11 @@
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
 (define-cproc macro-name (mac::<macro>) Scm_MacroName)
 
+(define (%dump-macro form port :optional (preamble #f))
+  (when preamble (display preamble port))
+  (pprint (unravel-syntax form) :port port)
+  (newline port))
+
 ;; Macro expand tracer (temporary)
 ;; *trace-macro* can be #f (default - no trace), #t (trace all macros),
 ;; or a list of symbols (trace macros whose name that matches one of the
@@ -103,9 +137,7 @@
   (when (and *trace-macro*
              (or (eq? *trace-macro* #t)
                  (memq (macro-name mac) *trace-macro*)))
-    (display "Macro input>>>\n" (current-error-port))
-    (write expr (current-error-port))
-    (newline (current-error-port)))
+    (%dump-macro expr (current-error-port) "Macro input>>>\n"))
   (let* ([r ((macro-transformer mac) expr cenv)]
          [out (if (and (pair? r) (not (eq? expr r)))
                 (rlet1 p (if (extended-pair? r)
@@ -116,9 +148,7 @@
     (when (and *trace-macro*
                (or (eq? *trace-macro* #t)
                    (memq (macro-name mac) *trace-macro*)))
-      (display "Macro output<<<\n" (current-error-port))
-      (write out (current-error-port))
-      (newline (current-error-port)))
+      (%dump-macro expr (current-error-port) "Macro output<<<\n"))
     out))
 
 (define-cproc make-syntax (name::<symbol> proc)
