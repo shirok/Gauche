@@ -1,3 +1,7 @@
+2017-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmod.scm (bound-identifier=?): Added experimentally.
+
 2017-12-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: Removed PATTERN frame - no longer used.  This opens

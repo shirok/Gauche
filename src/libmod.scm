@@ -362,3 +362,22 @@
        (identifier? id2)
        (or (eq? id1 id2)
            (deep-compare id1 id2))))
+
+(define (bound-identifier=? id1 id2)
+  (define (lookup id)
+    (env-lookup id (identifier-module id) (identifier-env id)))
+  (define (deep-compare id1 id2)
+    (let ([b1 (lookup id1)]
+          [b2 (lookup id2)])
+      (cond
+       [(or (lvar? b1) (macro? b1))
+        ;;must have the same local variable or syntactic binding
+        (eq? b1 b2)]
+       [(or (lvar? b2) (macro? b2)) #f]
+       [else (let ([g1 (id->bound-gloc id1)]
+                   [g2 (id->bound-gloc id2)])
+               (and g1 g2 (eq? g1 g2)))])))
+  (and (identifier? id1)
+       (identifier? id2)
+       (or (eq? id1 id2)
+           (deep-compare id1 id2))))
