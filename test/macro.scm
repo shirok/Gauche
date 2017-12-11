@@ -1225,12 +1225,11 @@
 (test-section "identifier comparison")
 
 ;; This is EXPERIMENTAL: may be changed in later release.
-
-(define-syntax hoge (syntax-rules () ((hoge foo ...) (cdr b))))
+(define-syntax expand-id-compare (syntax-rules () ((hoge foo ...) (cdr b))))
 (test "comparison of identifiers" '(cdr b)
-      (lambda () (macroexpand '(hoge bar))))
-(test "comparison of identifiers" (macroexpand '(hoge bar))
-      (lambda () (macroexpand '(hoge bar))))
+      (lambda () (macroexpand '(expand-id-compare bar))))
+(test "comparison of identifiers" (macroexpand '(expand-id-compare bar))
+      (lambda () (macroexpand '(expand-id-compare bar))))
 
 ;;----------------------------------------------------------------------
 ;; keyword and extended lambda list
