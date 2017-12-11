@@ -198,6 +198,7 @@ SCM_EXTERN ScmObj Scm_WrapIdentifier(ScmIdentifier *id);
 SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
                                            ScmObj env);
 SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
+SCM_EXTERN ScmObj Scm_IdentifierUnboundP(ScmIdentifier *id);
 
 SCM_EXTERN ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id);
 SCM_EXTERN ScmSymbol     *Scm_UnwrapIdentifier(ScmIdentifier *id);

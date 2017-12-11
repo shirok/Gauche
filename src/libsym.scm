@@ -168,3 +168,7 @@
     (if-let1 first-id (find identifier? args)
       (make-identifier r (identifier-module first-id) (identifier-env first-id))
       r)))
+
+(define-cproc identifier-unbound? (id::<identifier>)
+  Scm_IdentifierUnboundP)
+

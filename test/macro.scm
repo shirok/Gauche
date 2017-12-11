@@ -1011,7 +1011,7 @@
               [(_) x]))
           (foo))))
 
-'(test "internal define-syntax and scope 2" 'inner
+(test "internal define-syntax and scope 2" 'inner
       (let ((x 'outer))
         (lambda ()
           (define-syntax foo
@@ -1020,7 +1020,7 @@
           (define x 'inner)
           (foo))))
 
-'(test "internal define-syntax and scope 3" '(inner inner)
+(test "internal define-syntax and scope 3" '(inner inner)
       (let ((x 'outer))
         (lambda ()
           (define-syntax def
@@ -1030,7 +1030,7 @@
           (def y)
           (list x y))))
 
-'(test "internal define-syntax and scope 3" '(inner inner)
+(test "internal define-syntax and scope 4" '(inner inner)
       (let ((x 'outer))
         (lambda ()
           (define-syntax def
@@ -1591,7 +1591,7 @@
 
 '(test-section "srfi-147 begin")
 
-'(test "srfi-147 begin (internal)"
+'(test "srfi-147 begin (internal) 1"
       '(yes no)
       (lambda ()
         (define-syntax foo
@@ -1601,7 +1601,7 @@
         (list (foo 'yes 'no (zero? 0))
               (foo 'yes 'no (zero? 1)))))
 
-'(test "srfi-147 begin (internal)"
+'(test "srfi-147 begin (internal) 2"
       11
       (lambda ()
         (let-syntax ([foo (syntax-rules ()

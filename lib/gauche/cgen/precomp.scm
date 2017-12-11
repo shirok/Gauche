@@ -1022,7 +1022,7 @@
   ((id-name        :init-keyword :id-name)
    (module-literal :init-keyword :module-literal))
   (make (value)
-    (unless (null? (~ value'env))
+    (unless ((with-module gauche.internal identifier-unbound?) value)
       (error "identifier with compiler environment can't be compiled" value))
     (make <cgen-scheme-identifier> :value value
           :c-name (cgen-allocate-static-datum)
