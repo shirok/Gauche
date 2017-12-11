@@ -172,7 +172,13 @@ ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod, ScmObj env)
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
     id->name = name;
     id->module = mod? mod : SCM_CURRENT_MODULE();
-    id->env = (env == SCM_NIL)? SCM_NIL : get_binding_frame(SCM_OBJ(name), env);
+
+    /* we can't use get_binding_frame here because internal definition
+       and macro expansion might insert a same symbol into another
+       frame later (see pass1/body-rec). */
+    /* id->env = (env == SCM_NIL)? SCM_NIL : get_binding_frame(SCM_OBJ(name), env); */
+    id->env = env;
+
     return SCM_OBJ(id);
 }
 
@@ -201,8 +207,15 @@ ScmGloc *Scm_IdentifierGlobalBinding(ScmIdentifier *id)
 /* returns true if SYM has the same binding with ID in ENV. */
 int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
 {
-    ScmObj bf = get_binding_frame(SCM_OBJ(sym), env);
-    return (bf == id->env);
+    ScmObj ibf = get_binding_frame(SCM_OBJ(id->name), id->env);
+    ScmObj sbf = get_binding_frame(SCM_OBJ(sym), env);
+    return (ibf == sbf);
+}
+
+ScmObj Scm_IdentifierUnboundP(ScmIdentifier *id)
+{
+    ScmObj ibf = get_binding_frame(SCM_OBJ(id->name), id->env);
+    return SCM_NULLP(ibf) ? SCM_TRUE : SCM_FALSE;
 }
 
 ScmObj Scm_WrapIdentifier(ScmIdentifier *orig)
