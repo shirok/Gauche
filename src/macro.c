@@ -36,6 +36,7 @@
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/priv/macroP.h"
+#include "gauche/priv/identifierP.h"
 #include "gauche/priv/builtin-syms.h"
 
 /* avoid C++ reserved name conflict.

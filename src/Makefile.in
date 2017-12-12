@@ -174,8 +174,8 @@ PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 	          gauche/priv/dws_adapter.h \
 	          gauche/priv/builtin-syms.h gauche/priv/codeP.h \
 		  gauche/priv/classP.h gauche/priv/dispatchP.h \
-	          gauche/priv/macroP.h gauche/priv/moduleP.h \
-	          gauche/priv/portP.h \
+	          gauche/priv/identifierP.h gauche/priv/macroP.h \
+                  gauche/priv/moduleP.h gauche/priv/portP.h \
 	          gauche/priv/readerP.h gauche/priv/writerP.h
 
 # MinGW specific

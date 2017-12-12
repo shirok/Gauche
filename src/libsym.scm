@@ -33,7 +33,8 @@
 
 (select-module gauche.internal)
 (inline-stub
- (declcode (.include <gauche/vminsn.h>)))
+ (declcode (.include <gauche/vminsn.h>)
+           (.include <gauche/priv/identifierP.h>)))
 
 ;;;
 ;;; Symbols

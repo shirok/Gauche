@@ -179,12 +179,8 @@ SCM_EXTERN ScmObj Scm_MakeSyntacticClosure(ScmObj env,
  *   It shouldn't be used directly from applications.
  */
 
-typedef struct ScmIdentifierRec {
-    SCM_HEADER;
-    ScmObj name;          /* symbol or identifier */
-    ScmModule *module;
-    ScmObj frames;        /* opaque - see compaux.c for the details */
-} ScmIdentifier;
+/* The definition is in gauche/priv/identifierP.h (hidden) */
+typedef struct ScmIdentifierRec ScmIdentifier;
 
 SCM_CLASS_DECL(Scm_IdentifierClass);
 #define SCM_CLASS_IDENTIFIER    (&Scm_IdentifierClass)
