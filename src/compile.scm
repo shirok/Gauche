@@ -1531,8 +1531,8 @@
 (define (er-comparer a b uenv cenv)
   (if (and (variable? a)
            (variable? b))
-    (let ([a1 (cenv-lookup-variable uenv a)]
-          [b1 (cenv-lookup-variable uenv b)])
+    (let ([a1 (cenv-lookup-syntax uenv a)]
+          [b1 (cenv-lookup-syntax uenv b)])
       (or (eq? a1 b1)
           (free-identifier=? a1 b1)))
     ;; This path is for GAUCHE_KEYWORD_DISJOINT
