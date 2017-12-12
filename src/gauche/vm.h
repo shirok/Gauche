@@ -181,9 +181,9 @@ SCM_EXTERN ScmObj Scm_MakeSyntacticClosure(ScmObj env,
 
 typedef struct ScmIdentifierRec {
     SCM_HEADER;
-    ScmObj name;                /* symbol or identifier */
+    ScmObj name;          /* symbol or identifier */
     ScmModule *module;
-    ScmObj env;
+    ScmObj frames;        /* opaque - see compaux.c for the details */
 } ScmIdentifier;
 
 SCM_CLASS_DECL(Scm_IdentifierClass);
@@ -192,12 +192,22 @@ SCM_CLASS_DECL(Scm_IdentifierClass);
 #define SCM_IDENTIFIER(obj)     ((ScmIdentifier*)(obj))
 #define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
 
-SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod,
+/* Create an identifier.
+   NAME can be a symbol or an identifier.  
+   MOD is the toplevel module to close; can be NULL to use the current module.
+   ENV is the local local environment (list of frames) to close. */
+SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmObj name,
+                                     ScmModule *mod,
                                      ScmObj env);
+/* Returns the minimal local environment (list of frames) where this 
+   identifier is bound.  If the identifier isn't bound locally, it would be ().
+   The returned value may not be the same as ENV argument passed to the
+   constructor; we truncate irrelevant frames. */
+SCM_EXTERN ScmObj Scm_IdentifierEnv(ScmIdentifier *id);
 SCM_EXTERN ScmObj Scm_WrapIdentifier(ScmIdentifier *id);
-SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
+SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id,
+                                           ScmSymbol *sym,
                                            ScmObj env);
-SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
 
 SCM_EXTERN ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id);
 SCM_EXTERN ScmSymbol     *Scm_UnwrapIdentifier(ScmIdentifier *id);

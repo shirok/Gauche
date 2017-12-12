@@ -1,3 +1,16 @@
+2017-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/compaux.c (Scm_MakeIdentifier, Scm_IdentifierEnv): Delay the
+	  truncation of closed binding frames until needed.  This fixes a bug
+	  that local macro-inserted identifier fails to refer to the binding
+	  introduced in the same level of internal defines.  See the enabled
+	  tests in test/macro.scm for the concrete examples.
+	  Note: We changed the member name of ScmIdentifierRec (env -> frames)
+	  to detect code that touches the member directly.  Such code should
+	  use Scm_IdentifierEnv() instead.
+	  This fix is based on the patch provided by @Hamayama
+	  https://github.com/shirok/Gauche/pull/328
+
 2017-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmac.scm (unravel-syntax): Added experimentally.

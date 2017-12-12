@@ -152,7 +152,7 @@
 (define-cproc identifier-name (id::<identifier>)
   (return (SCM_OBJ (-> id name))))
 (define-cproc identifier-env (id::<identifier>)
-  (return (-> id env)))
+  (return (Scm_IdentifierEnv id)))
 
 (select-module gauche.internal)
 ;; EXPERIMENTAL
@@ -168,3 +168,6 @@
     (if-let1 first-id (find identifier? args)
       (make-identifier r (identifier-module first-id) (identifier-env first-id))
       r)))
+
+(define-cproc identifier-toplevel? (id::<identifier>) ::<boolean>
+  (return (SCM_NULLP (Scm_IdentifierEnv id))))

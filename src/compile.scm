@@ -314,7 +314,7 @@
        (if (SCM_IDENTIFIERP y)
          (let* ([inner (-> (SCM_IDENTIFIER y) name)])
            (unless (SCM_IDENTIFIERP inner)
-             (set! frames (-> (SCM_IDENTIFIER y) env)))
+             (set! frames (Scm_IdentifierEnv (SCM_IDENTIFIER y))))
            (set! y inner))
          (break))))
    ;; No local bindings.  Return an identifier.

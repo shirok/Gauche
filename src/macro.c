@@ -352,7 +352,7 @@ static int compare_ellipsis(ScmObj elli, ScmObj obj)
             static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
             SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
                           Scm_GaucheInternalModule());
-            if (!SCM_NULLP(SCM_IDENTIFIER(obj)->env)) return FALSE;
+            if (!SCM_NULLP(Scm_IdentifierEnv(SCM_IDENTIFIER(obj)))) return FALSE;
             return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
                                              elli, obj));
         } else {        

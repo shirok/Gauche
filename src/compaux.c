@@ -135,6 +135,24 @@ static ScmClassStaticSlotSpec synclo_slots[] = {
  * Identifier object
  */
 
+/* 
+ * About identifier's ENV slot.
+ * We close identifier's binding environment (list of frames), so that later 
+ * we can look up its bindings hygienically.  We truncate the frames up to
+ * where the binding occur, for the efficient lookup and comparison.
+ * Notably, the identifiers that are unbound or refer to toplevel variable 
+ * has () in its env.
+ * A caveat--we can't truncate frames at the time of consturction, since
+ * the entire frame structure may not be fixed while we're processing internal
+ * defines.  The identifier may refer to another identifier that will be 
+ * inserted later.  Thus, we delay the truncation operation until it is
+ * needed.
+ * The ENV slot itself now contains (<flag> . <frames>), where <flag> is #f
+ * if truncation hasn't be done, #t otherwise.  ENV should be treated as
+ * an opaque data for the others; you should always get it with 
+ * Scm_IdentifierEnv(), and never directly access ENV slot itself.
+ */
+
 static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmIdentifier *id = SCM_IDENTIFIER(obj);
@@ -151,6 +169,7 @@ static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
 
+/* Truncate local frames */
 static ScmObj get_binding_frame(ScmObj var, ScmObj env)
 {
     ScmObj frame, fp;
@@ -172,8 +191,21 @@ ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod, ScmObj env)
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
     id->name = name;
     id->module = mod? mod : SCM_CURRENT_MODULE();
-    id->env = (env == SCM_NIL)? SCM_NIL : get_binding_frame(SCM_OBJ(name), env);
+    id->frames = Scm_Cons(SCM_FALSE, env); /* see the above comment */
     return SCM_OBJ(id);
+}
+
+ScmObj Scm_IdentifierEnv(ScmIdentifier *id)
+{
+    SCM_ASSERT(SCM_PAIRP(id->frames));
+    if (SCM_FALSEP(SCM_CAR(id->frames))) {
+        /* MT safety: This operation is idempotent, so it's ok if more than
+           one thread execute here. */
+        ScmObj f = get_binding_frame(id->name, SCM_CDR(id->frames));
+        SCM_SET_CDR(id->frames, f);
+        SCM_SET_CAR(id->frames, SCM_TRUE);
+    }
+    return SCM_CDR(id->frames);
 }
 
 ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id)
@@ -201,8 +233,9 @@ ScmGloc *Scm_IdentifierGlobalBinding(ScmIdentifier *id)
 /* returns true if SYM has the same binding with ID in ENV. */
 int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
 {
-    ScmObj bf = get_binding_frame(SCM_OBJ(sym), env);
-    return (bf == id->env);
+    ScmObj env1 = Scm_IdentifierEnv(id);
+    ScmObj env2 = get_binding_frame(SCM_OBJ(sym), env);
+    return (env1 == env2);
 }
 
 ScmObj Scm_WrapIdentifier(ScmIdentifier *orig)
@@ -211,7 +244,7 @@ ScmObj Scm_WrapIdentifier(ScmIdentifier *orig)
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
     id->name = SCM_OBJ(orig);
     id->module = orig->module;
-    id->env = orig->env;
+    id->frames = orig->frames;
     return SCM_OBJ(id);
 }
 
@@ -243,15 +276,17 @@ static void   identifier_module_set(ScmObj obj, ScmObj val)
 
 static ScmObj identifier_env_get(ScmObj obj)
 {
-    return SCM_IDENTIFIER(obj)->env;
+    return Scm_IdentifierEnv(SCM_IDENTIFIER(obj));
 }
 
 static void   identifier_env_set(ScmObj obj, ScmObj val)
 {
+    /* NB: Should we have this? I feel this slot must be read-only.
+       But just for now... */
     if (!SCM_LISTP(val)) {
         Scm_Error("list required, but got %S", val);
     }
-    SCM_IDENTIFIER(obj)->env = val;
+    SCM_IDENTIFIER(obj)->frames = Scm_Cons(SCM_TRUE, val); /* trust the caller */
 }
 
 static ScmClassStaticSlotSpec identifier_slots[] = {
