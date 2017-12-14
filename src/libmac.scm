@@ -122,11 +122,6 @@
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
 (define-cproc macro-name (mac::<macro>) Scm_MacroName)
 
-(define (%dump-macro form port :optional (preamble #f))
-  (when preamble (display preamble port))
-  (pprint (unravel-syntax form) :port port)
-  (newline port))
-
 ;; Macro expand tracer (temporary)
 ;; *trace-macro* can be #f (default - no trace), #t (trace all macros),
 ;; or a list of symbols (trace macros whose name that matches one of the
@@ -134,10 +129,6 @@
 (define *trace-macro* #f)
 
 (define (call-macro-expander mac expr cenv)
-  (when (and *trace-macro*
-             (or (eq? *trace-macro* #t)
-                 (memq (macro-name mac) *trace-macro*)))
-    (%dump-macro expr (current-error-port) "Macro input>>>\n"))
   (let* ([r ((macro-transformer mac) expr cenv)]
          [out (if (and (pair? r) (not (eq? expr r)))
                 (rlet1 p (if (extended-pair? r)
@@ -148,7 +139,14 @@
     (when (and *trace-macro*
                (or (eq? *trace-macro* #t)
                    (memq (macro-name mac) *trace-macro*)))
-      (%dump-macro out (current-error-port) "Macro output<<<\n"))
+      ;; NB: We need to apply unravel-syntax on expr and out at once,
+      ;; so that we can correspond the identifiers from input and output.
+      (let1 unraveled (unravel-syntax (cons expr out))
+        (display "Macro input>>>\n")
+        (pprint (car unraveled) :port (current-error-port) :level #f :length #f)
+        (display "\nMacro output<<<\n")
+        (pprint (cdr unraveled) :port (current-error-port) :level #f :length #f)
+        (display "\n")))
     out))
 
 (define-cproc make-syntax (name::<symbol> proc)
