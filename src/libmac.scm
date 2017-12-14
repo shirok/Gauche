@@ -148,7 +148,7 @@
     (when (and *trace-macro*
                (or (eq? *trace-macro* #t)
                    (memq (macro-name mac) *trace-macro*)))
-      (%dump-macro expr (current-error-port) "Macro output<<<\n"))
+      (%dump-macro out (current-error-port) "Macro output<<<\n"))
     out))
 
 (define-cproc make-syntax (name::<symbol> proc)
