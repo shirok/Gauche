@@ -274,10 +274,12 @@ typedef struct {
     ScmObj form;                /* form being compiled (for error msg) */
     ScmObj literals;            /* list of literal identifiers */
     ScmObj pvars;               /* list of (pvar . pvref) */
+    ScmObj renames;             /* list of (var . identifier)  Keep mapping
+                                   of input symbol/identifier to fresh 
+                                   identifier */
     ScmObj ellipsis;            /* symbol/idendifier/keyword for ellipsis */
     int pvcnt;                  /* counter of pattern variables */
     int maxlev;                 /* maximum level */
-    ScmObj tvars;               /* list of identifies inserted in template */
     ScmModule *mod;             /* module where this macro is defined */
     ScmObj env;                 /* compiler env of this macro definition */
 } PatternContext;
@@ -399,12 +401,28 @@ static ScmObj preprocess_literals(ScmObj literals, ScmModule *mod, ScmObj env)
     return h;
 }
 
-/* compile a pattern or a template.
-   In a pattern, replace literal symbols for identifiers; leave
-   non-literal symbols (i.e. pattern variables) as they are, but
-   records it's presence in the context.   Also, when encounters
-   a repeatable subpattern, replace it with SyntaxPattern node.
-   In a template, replace symbols for identifiers except pattern variables.
+/* Renaming: Map input variable (symbol or identifier) to fresh identifier.
+   The same (eq?) variable must map to the same identifier. */
+static ScmObj rename_variable(PatternContext *ctx, ScmObj var)
+{
+    ScmObj id, p = Scm_Assq(var, ctx->renames);
+    if (SCM_PAIRP(p)) return SCM_CDR(p);
+    if (SCM_SYMBOLP(var)) {
+        id = Scm_MakeIdentifier(var, ctx->mod, ctx->env);
+    } else {
+        SCM_ASSERT(SCM_IDENTIFIERP(var));
+        id = Scm_WrapIdentifier(SCM_IDENTIFIER(var));
+    }
+    ctx->renames = Scm_Acons(var, id, ctx->renames);
+    return id;
+}
+
+
+/* Compile a pattern or a template.
+   Replace symbols for identifiers, and also if we're compiling a pattern,
+   record non-literal symbols (i.e. pattern variables) in the context.
+   When encounters a repeatable subpattern, replace it with 
+   SyntaxPattern node.
 */
 
 static ScmObj compile_rule1(ScmObj form,
@@ -513,36 +531,24 @@ static ScmObj compile_rule1(ScmObj form,
         ScmObj l = Scm_VectorToList(SCM_VECTOR(form), 0, -1);
         return Scm_ListToVector(compile_rule1(l, spat, ctx, patternp), 0, -1);
     }
-#if 0
-    else if (patternp && SCM_IDENTIFIERP(form)) {
-        /* this happens in a macro produced by another macro */
-        form = SCM_OBJ(SCM_IDENTIFIER(form)->name);
-    }
-#endif
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
         ScmObj q = id_memq(form, ctx->literals);
         if (!SCM_FALSEP(q)) return q; /* literal identifier */
         if (SCM_EQ(form, SCM_SYM_UNDERBAR)) return form; /* '_' */
 
+        /* renaming */
+        ScmObj id = rename_variable(ctx, form);
         if (patternp) {
-            return add_pvar(ctx, spat, form);
+            return add_pvar(ctx, spat, id);
         } else {
-            ScmObj id, pvref = pvar_to_pvref(ctx, spat, form);
-            if (pvref == form) {
-                /* form is not a pattern variable.  make it an identifier. */
-                if (!SCM_FALSEP(q = id_memq(form, ctx->tvars))) return q;
-                if (SCM_IDENTIFIERP(form)) {
-                    id = form;
-                } else {
-                    id = Scm_MakeIdentifier(form, ctx->mod, ctx->env);
-                }
-                ctx->tvars = Scm_Cons(id, ctx->tvars);
+            ScmObj pvref = pvar_to_pvref(ctx, spat, id);
+            if (pvref == id) {
                 return id;
             } else {
                 spat->vars = Scm_Cons(pvref, spat->vars);
+                return pvref;
             }
-            return pvref;
         }
     }
     return form;
@@ -569,6 +575,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     ctx.literals = preprocess_literals(literals, mod, env);
     ctx.mod = mod;
     ctx.env = env;
+    ctx.renames = SCM_NIL;
 
     /* Corner case when literal contains the same (free-identifer=?) symbol
        as ellipsis.  R7RS specifies the literal has precedence.
@@ -595,7 +602,6 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
         ScmSyntaxPattern *pat  = make_syntax_pattern(0, 0);
         ScmSyntaxPattern *tmpl = make_syntax_pattern(0, 0);
         ctx.pvars = SCM_NIL;
-        ctx.tvars = SCM_NIL;
         ctx.pvcnt = 0;
         ctx.maxlev = 0;
 
