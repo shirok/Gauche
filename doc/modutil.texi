@@ -4640,6 +4640,7 @@ Empties a sparse vector.
 @defun sparse-vector-inc! sv k delta :optional (fallback 0)
 @c MOD data.sparse
 @c EN
+@c EN
 This is a shortcut of the following.  It is especially efficient
 for numeric sparse vectors.
 
@@ -4681,26 +4682,47 @@ a sparse vector.  Works just like @code{hash-table-update!},
 @c COMMON
 @end defun
 
-
+@c EN
 The following procedures traverses a sparse vector.
 Note that elements are not visited in the order of index;
 it's just like hash table traversers.
+@c JP
+以下の手続きは疎なベクタの要素を横断します。
+要素は必ずしもインデックスの順に訪問されるわけではないことに注意してください。
+その点ではハッシュテーブルの横断と似ています。
+@c COMMON
 
+@c EN
 At this moment, if you want to walk a sparse vector with
 increasing/decreasing index order, you have to get a list
 of keys by @code{sparse-vector-keys}, sort it, then use
 it to retrieve values.
 We may add an option in future to @code{make-sparse-vector} so that
 those walk operation will be more convenient.
+@c JP
+今のところ、疎なベクタをインデックスの昇順/降順に処理したい場合は、
+@code{sparse-vector-keys}で全てのキーを得て、
+それをソートしたもので順に値を取り出してゆくしかありません。
+将来は、@code{make-sparse-vector}にオプションをつけて
+インデックスの順番による横断を簡単にするかもしれません。
+@c COMMON
 
 @defun sparse-vector-fold sv proc seed
 @c MOD data.sparse
+@c EN
 For each entry in @var{sv}, calls @var{proc} as
 @code{(proc @var{k_n} @var{v_n} @var{seed_n})}, where
 @var{k_n} is an index and @var{v_n} is a value for it,
 and @var{seed_n} is the returned value of the previous
-call to @code{proc} if @var{n} @code{>=} 1, and @var{seed} if @var{n} = 0.
-Returns the value of the last call of @code{proc}.
+call to @var{proc} if @var{n} @code{>=} 1, and @var{seed} if @var{n} = 0.
+Returns the value of the last call of @var{proc}.
+@c JP
+@var{sv}の各エントリに対し、手続き@var{proc}を
+@code{(proc @var{k_n} @var{v_n} @var{seed_n})}のように呼び出してゆきます。
+ここで@var{seed_n}は@var{n} @code{>=} 1の時は直前の@var{proc}の戻り値、
+@var{n} = 0の時は引数@var{seed}です。
+最後の@var{proc}の戻り値を返します。
+@c COMMON
 @end defun
 
 @defun sparse-vector-for-each sv proc
@@ -4716,7 +4738,11 @@ and gathered to a list and returned by @code{sparse-vector-map}.
 @defun sparse-vector-keys sv
 @defunx sparse-vector-values sv
 @c MOD data.sparse
+@c EN
 Returns a list of all keys and all values in @var{sv}, respectively.
+@c JP
+それぞれ、@var{sv}中の全てのキー、または全ての値をリストにして返します。
+@c COMMON
 @end defun
 
 @node Sparse matrixes, Sparse tables, Sparse vectors, Sparse data containers
