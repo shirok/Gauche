@@ -4,11 +4,6 @@
 
 ;; EXPERIMENTAL
 
-;; At this moment, libraries required by extensions need to be passed
-;; explicitly, e.g.
-;;   gosh statify script.scm scriptlib/foo.scm -lgdbm -lgdbm_compat -lz
-;;
-
 (use gauche.parseopt)
 (use gauche.parameter)
 (use gauche.config)
@@ -99,13 +94,13 @@
   (let* ([cc      (gauche-config "--cc")]
          [cflags  (gauche-config "-I")]
          [ldflags (gauche-config "-L")]
-         [libs    (regexp-replace* (gauche-config "-l") #/-lgauche-\d+\.\d+/ "")]
+         [libs    (regexp-replace* (gauche-config "--static-libs") #/-lgauche-\d+\.\d+/ "")]
          [links   (string-join linklibs " ")] ;; -lfoo ..
          [deffile (cond-expand
                    [gauche.os.windows
                     ""(path-swap-extension ofile "def")]
                    [else ""])]
-         [cmd #`",cc -g ,cflags -o ,ofile ,ldflags ,cfile libgauche-0.9.a ,deffile ,libs ,links"]
+         [cmd #`",cc -g ,cflags -o ,ofile ,ldflags ,cfile ,deffile ,libs ,links"]
          )
     (print cmd)
     (sys-system cmd)))
