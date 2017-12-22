@@ -45,12 +45,24 @@ If those are not in the installation location (especially
 libgauche-static-X.Y.a, which isn't installed by default),
 you need to tell the commane where to look for.
 
-  gosh build-standalone -I/path/to/headers -L/path/to/library \
+  gosh build-standalone \
+         --header-dir /path/to/headers \
+         --library-dir /path/to/library \
          -o command yourscript.scm
 
 The resulting binary doesn't depend on neither Gauche DSOs nor
 installed Gauche libraries.  You can copy just the binary onto
 the target platform.
+
+If your script depends on its own library files, you can compile
+eveything together.  Suppose yourscript.scm refers to lib/a.scm
+and lib/b.scm.  You can just list those files after yourscript.scm:
+
+  gosh build-standalone \
+         --header-dir /path/to/headers \
+         --library-dir /path/to/library \
+         -o command yourscript.scm lib/a.scm lib/b.scm
+
 
 Note: It still depends on the system libraries (e.g. -lpthread)
 and they are needed on the target platform.

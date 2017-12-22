@@ -25,6 +25,6 @@ sample-repl: sample-repl.scm
 	  echo "**********************************************"; \
 	  exit 1;\
 	fi
-	$(top_builddir)/src/gosh -ftest build-standalone -I $(top_srcdir)/src -L $(top_builddir)/src -o sample-repl sample-repl.scm
+	$(top_builddir)/src/gosh -ftest build-standalone --header-dir $(top_srcdir)/src --library-dir $(top_builddir)/src -o sample-repl sample-repl.scm
 
 

@@ -37,20 +37,25 @@
   (use gauche.parameter)
   (use gauche.process)
   (use srfi-13)
+  (use srfi-42)
   (use file.util)
   (export build-standalone)
   )
 (select-module gauche.cgen.standalone)
 
 (define (build-standalone srcfile :key (outfile #f)
+                                       (extra-files '())
                                        (include-dirs '())
+                                       (header-dirs '())
                                        (library-dirs '()))
-  (compile-c-file (generate-c-file srcfile)
+  (compile-c-file (generate-c-file srcfile 
+                                   (append include-dirs '("."))
+                                   extra-files)
                   (or outfile (path-sans-extension srcfile))
-                  (map (^d #"-I\"~|d|\"") include-dirs)
+                  (map (^d #"-I\"~|d|\"") header-dirs)
                   (map (^d #"-L\"~|d|\"") library-dirs)))
 
-(define (generate-c-file file)
+(define (generate-c-file file incdirs extras)
   (parameterize ([cgen-current-unit
                   (make <cgen-unit>
                     :name (path-sans-extension file)
@@ -61,8 +66,22 @@
                "#include <gauche/static.h>")
     (cgen-decl (format "const char *main_script = ~a;"
                        (cgen-safe-string (file->string file))))
-    (cgen-init "SCM_INIT_STATIC();"
-               "Scm_SimpleMain(argc, argv, main_script, 0);")
+    (cgen-decl "const char *extra_srcs[] = {")
+    (dolist [x extras]
+      (if-let1 f (find-file-in-paths x :paths incdirs 
+                                     :pred file-exists?)
+        (cgen-decl (c-safe-string-literal (file->string f)) ",")
+        (error "Can't find library file:" x)))
+    (cgen-decl "};")
+    (cgen-init "SCM_INIT_STATIC();")
+    (do-ec (: f (index i) extras)
+           (cgen-init "{"
+                      #" ScmObj s = SCM_MAKE_STR(extra_srcs[~|i|]);"
+                      " ScmObj p = Scm_MakeInputStringPort(SCM_STRING(s), TRUE);"
+                      " Scm_LoadFromPort(SCM_PORT(p), SCM_LOAD_PROPAGATE_ERROR, NULL);"
+                      #"  Scm_Provide(SCM_MAKE_STR(~(c-safe-string-literal (path-sans-extension f))));"
+                      "}"))
+    (cgen-init "Scm_SimpleMain(argc, argv, main_script, 0);")
     (cgen-emit-c (cgen-current-unit)))
   (path-swap-extension file "c"))
 

@@ -35,22 +35,39 @@
 (use gauche.parseopt)
 
 (define (usage)
-  (print "Usage: build-standalone [-o outfile][-I dir][-L dir] file.scm")
-  (print "  -o outfile  Specify output file name.")
-  (print "  -I dir      Specify extra include directory to find gauche.h etc.")
-  (print "  -L dir      Specify extra library directory to find libgauche-static.")
+  (print "Usage: build-standalone [-o outfile][-I dir][--header-dir dir][--library-dir dir] main.scm lib/library.scm ...")
+  (print)
+  (print "  -o outfile  Specify output file name.  When omitted, the basename of ")
+  (print "              the main source file is used.")
+  (print "  -I dir      Specify the search path of extra files (lib/library.scm ...)")
+  (print "              if they're not relative to the current directory.  This cann")
+  (print "              be given multiple times.")
+  (print "  --header-dir dir")
+  (print "              Alternative include directory to find gauche.h etc.  Specify")
+  (print "              this if you don't want to use installed Gauche header files.")
+  (print "  --library-dir dir")
+  (print "              Alternative library directory to find libgauche-static.  Specify")
+  (print "              this if you don't want to use installed Gauche library.")
+  (print)
+  (print "The file <main.scm> is the main script file; usually it contains 'main'")
+  (print "procedure.  Other files <lib/library.scm> ... are extra library files needed")
+  (print "by <main.scm>.  They are loaded before executing main.scm.")
   (exit 1))
 
 (define (main args)
+  (define incdirs '())
   (let-args (cdr args) ([outfile "o=s" #f]
-                        [incdirs "I=s" #f]
-                        [libdirs "L=s" #f]
+                        [_ "I=s" #f => (^[x] (push! incdirs x) #f)]
+                        [hdrdirs "header-dir=s" #f]
+                        [libdirs "library-dir=s" #f]
                         [else _ (usage)]
                         . files)
     (when (null? files) (usage))
     (build-standalone (car files)
                       :outfile outfile
-                      :include-dirs (if incdirs (list incdirs) '())
+                      :extra-files (cdr files)
+                      :include-dirs (reverse incdirs)
+                      :header-dirs (if hdrdirs (list hdrdirs) '())
                       :library-dirs (if libdirs (list libdirs) '())))
   0)
 
