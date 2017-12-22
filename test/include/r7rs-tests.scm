@@ -459,9 +459,6 @@
 (test '#((10 43) (31 41 51) (32 42 52) (63 77) ("rest:" . "tail"))
     (part-2x (10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77 . "tail")))
 
-(cond-expand
- [gauche] ; this is Gauche's bug
- [else
 ;; underscore
 (define-syntax count-to-2
   (syntax-rules ()
@@ -481,7 +478,6 @@
 (test '(2 0 fail fail)
     (list (count-to-2_ _ _) (count-to-2_)
           (count-to-2_ a b) (count-to-2_ a b c d)))
-])
 
 (define-syntax jabberwocky
   (syntax-rules ()
