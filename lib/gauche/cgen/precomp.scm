@@ -48,7 +48,8 @@
   (use util.match)
   (use util.toposort)
   (use text.tr)
-  (export cgen-precompile cgen-precompile-multi))
+  (export cgen-precompile cgen-precompile-multi
+          cgen-scm-path->c-file cgen-c-file->initfn))
 (select-module gauche.cgen.precomp)
 
 (autoload gauche.cgen.optimizer optimize-compiled-code)
@@ -168,9 +169,9 @@
                                     (single-sci-file #f)
                                     (extra-optimization #f))
   (define (precomp-1 main src)
-    (let* ([out.c ($ xlate-cfilename
-                     $ strip-prefix (path-swap-extension src "c") prefix)]
-           [initname (string-tr (path-sans-extension out.c) "-+." "___")])
+    (let* ([out.c (cgen-scm-path->c-file (strip-prefix src prefix))]
+           [initname (cgen-c-file->initfn out.c)])
+
       (%cgen-precompile src
                         :out.c out.c
                         :dso-name (or dso (basename-sans-extension main))
@@ -180,7 +181,7 @@
                         :extra-optimization extra-optimization
                         :ext-initializer (and (equal? src main)
                                               ext-initializer)
-                        :initializer-name #"Scm_Init_~initname")))
+                        :initializer-name initname)))
   (define (tweak-sci sci) ; for consolidating sci files. returns sexp list
     (if (not sci)
       '()
@@ -261,6 +262,22 @@
                (do-it))]))
     out.sci))
 
+;; Utility API to derive C filename and initfn name from
+;; Scheme path.
+;; e.g. "binary/io.scm" -> "binary--io.c"
+;;      "binary--io.c" -> "Scm_Init_binary__io"
+;; We expose these so that other tools will use consistent naming.
+(define (cgen-scm-path->c-file path)
+  ($ regexp-replace-all #/[\/\\]/
+     ($ path-swap-extension
+        (sys-normalize-pathname path :canonicalize #t)
+        "c")
+     "--"))
+
+(define (cgen-c-file->initfn c-name)
+  (let1 initfn (string-tr (path-sans-extension c-name) "-+." "___")
+    #"Scm_Init_~initfn"))
+
 ;;================================================================
 ;; Transient modules
 ;;
@@ -337,14 +354,14 @@
 ;;
 
 (define (get-unit src out.c predef-syms ext-init?)
-  (let* ([base (basename-sans-extension out.c)]
-         [safe-name (string-tr base "-+" "__")])
+  (let ([base (basename-sans-extension out.c)]
+        [initfn (cgen-c-file->initfn out.c)])
     (rlet1 u (make <cgen-stub-unit>
-               :name base :c-name-prefix safe-name
+               :name base :c-name-prefix (cgen-safe-name base)
                :preamble `(,#"/* Generated automatically from ~|src|.  DO NOT EDIT */")
-               :init-prologue (format "~avoid Scm_Init_~a() {"
+               :init-prologue (format "~avoid ~a() {"
                                       (if ext-init? "SCM_EXTENSION_ENTRY " "")
-                                      safe-name)
+                                      initfn)
                )
       (parameterize ([cgen-current-unit u])
         (for-each cgen-define predef-syms)
@@ -359,10 +376,6 @@
       (if (string-prefix? pre path)
         (string-drop path (string-length pre))
         path))]))
-
-(define (xlate-cfilename path)
-  (regexp-replace-all #/[\/\\]/ (sys-normalize-pathname path :canonicalize #t)
-                      "--"))
 
 (define (basename-sans-extension path)
   (path-sans-extension (sys-basename path)))
