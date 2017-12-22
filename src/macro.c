@@ -764,29 +764,6 @@ static inline void match_insert(ScmObj pvref, ScmObj matched, MatchVar *mvec)
     }
 }
 
-/* see if literal identifier ID in the pattern matches the given object */
-static inline int match_identifier(ScmIdentifier *id, ScmObj obj,
-                                   ScmObj mod, ScmObj env)
-{
-    if (SCM_SYMBOLP(obj)) {
-        /* This is temporary: We don't want to allocate identifier for
-           every bare symbol we want to match.  But this is the shortcut
-           to do the right thing (using free-identifier=? to comapre literals.
-           Let's think optimization later. */
-        SCM_ASSERT(SCM_MODULEP(mod));
-        obj = Scm_MakeIdentifier(obj, SCM_MODULE(mod), env);
-    }
-    if (SCM_IDENTIFIERP(obj)) {
-        /* free-identifier=? is defined in Scheme (libmod.scm)  */
-        static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
-        SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
-                      Scm_GaucheInternalModule());
-        return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
-                                         SCM_OBJ(id), obj));
-    }
-    return FALSE;
-}
-
 static inline int match_subpattern(ScmObj form, ScmSyntaxPattern *pat,
                                    ScmObj rest, ScmObj mod, ScmObj env,
                                    MatchVar *mvec)
