@@ -191,7 +191,7 @@
     (let* ([s (vector-length vec)]
            [rs (map (^i (fn (vector-ref vec i)))
                     (iota (min* s (rp-length c))))])
-      (if (<* s (rp-length c)) rs `(,@rs ,dots))))
+      (if (>=* s (rp-length c)) `(,@rs ,dots) rs)))
 
   ;; map+ :: (Obj -> Layouter), List -> Layouter
   ;; map considering dotted list, print-length, and shared structure
