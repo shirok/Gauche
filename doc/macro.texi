@@ -599,7 +599,7 @@ At this moment, only one of the following expressions are allowed:
 マクロ変換器はコンパイル時に実行されるため、他の式とは異なった段階で評価されます。
 そのためにいくらか制限があります。
 
-現在のところ、以下の上げる式しか許されていません。
+現在のところ、以下に挙げる式しか許されていません。
 @c COMMON
 
 @enumerate
@@ -1061,7 +1061,7 @@ different from the global @code{else} when @code{if+} was defined,
 hence they don't match.
 @c JP
 次の例は失敗します。@code{if+}に渡されている@code{else}は@code{let}でローカルに
-束縛されており、それは@code{if+}が定義された時点でのグローバルな@code{elst}とは
+束縛されており、それは@code{if+}が定義された時点でのグローバルな@code{else}とは
 違うもので、したがってマッチしないからです。
 @c COMMON
 
@@ -1339,7 +1339,7 @@ checks if both refer to the same binding.
 ;; the macro definition environment, so this if=> behaves like
 ;; ordinary if, instead of recognizing literal =>.
 @c JP
-;; 下の例ではマクロ呼び出しでの=>の束縛がマクロ使用時の束縛と違っているため、
+;; 下の例ではマクロ使用時の=>の束縛がマクロ定義時の束縛と違っているため、
 ;; => はリテラルと認識されず、if=> は通常のifとして振る舞う。
 @c COMMON
 (let ((=> 'oof)) (if=> 3 => list)) @result{} oof
