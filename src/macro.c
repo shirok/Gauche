@@ -391,6 +391,7 @@ static ScmObj rename_variable(PatternContext *ctx, ScmObj var)
         SCM_ASSERT(SCM_IDENTIFIERP(var));
         id = Scm_WrapIdentifier(SCM_IDENTIFIER(var));
     }
+    SCM_IDENTIFIER_FLAG_RENAMED_SET(id);
     ctx->renames = Scm_Acons(var, id, ctx->renames);
     return id;
 }
@@ -946,6 +947,11 @@ static ScmObj realize_template_rec(ScmObj template,
         if (SCM_PAIRP(p)) return SCM_CDR(p);
         else {
             ScmObj id = Scm_WrapIdentifier(SCM_IDENTIFIER(template));
+            if (SCM_IDENTIFIER_FLAG_RENAMED_P(template)) {
+                /* remove a temporary wrapping */
+                SCM_IDENTIFIER(id)->name = SCM_IDENTIFIER(template)->name;
+                SCM_IDENTIFIER_FLAG_RENAMED_RESET(id);
+            }
             *idlist = Scm_Acons(template, id, *idlist);
             return id;
         }

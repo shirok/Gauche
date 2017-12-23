@@ -1602,9 +1602,8 @@
 ;;----------------------------------------------------------------------
 ;; 'compare-literals-2' test should output the following error.
 ;;
-;; *** ERROR: malformed #<identifier user##<identifier user#lit-test-2.2d9c3c0>.2db85e0>:
-;; (#<identifier user##<identifier user#lit-test-2.2d9c3c0>.2db85e0>
-;;  #<identifier user##<identifier user#temp.2d9c6e0>.2db8600>)
+;; *** ERROR: malformed #<identifier user#lit-test-2.29d4060>:
+;; (#<identifier user#lit-test-2.29d4060> #<identifier user#temp.29d40c0>)
 ;; While compiling: (lit-test-2 temp 1)
 
 (test-section "compare literals")
@@ -1633,8 +1632,7 @@
 ;;----------------------------------------------------------------------
 ;; 'gen-underbar-1' test should output the following error.
 ;;
-;; *** ERROR: unbound variable:
-;; #<identifier user##<identifier user##<identifier user#_.2cacca0>.2cb7920>.2cb7720>
+;; *** ERROR: unbound variable: #<identifier user#_.2d4ac00>
 
 (test-section "generate underbar")
 

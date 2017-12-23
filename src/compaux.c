@@ -148,10 +148,9 @@ static ScmClassStaticSlotSpec synclo_slots[] = {
  * defines.  The identifier may refer to another identifier that will be 
  * inserted later.  Thus, we delay the truncation operation until it is
  * needed.
- * The ENV slot itself now contains (<flag> . <frames>), where <flag> is #f
- * if truncation hasn't be done, #t otherwise.  ENV should be treated as
- * an opaque data for the others; you should always get it with 
- * Scm_IdentifierEnv(), and never directly access ENV slot itself.
+ * Therefore, ENV should be treated as an opaque data for the others;
+ * you should always get it with Scm_IdentifierEnv(), and never directly
+ * access ENV slot itself.
  */
 
 static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -192,21 +191,22 @@ ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod, ScmObj env)
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
     id->name = name;
     id->module = mod? mod : SCM_CURRENT_MODULE();
-    id->frames = Scm_Cons(SCM_FALSE, env); /* see the above comment */
+    id->frames = env; /* see the above comment */
+    id->flags = 0;
+    SCM_IDENTIFIER_FLAG_DELAYED_SET(id);
     return SCM_OBJ(id);
 }
 
 ScmObj Scm_IdentifierEnv(ScmIdentifier *id)
 {
-    SCM_ASSERT(SCM_PAIRP(id->frames));
-    if (SCM_FALSEP(SCM_CAR(id->frames))) {
+    if (SCM_IDENTIFIER_FLAG_DELAYED_P(id)) {
         /* MT safety: This operation is idempotent, so it's ok if more than
            one thread execute here. */
-        ScmObj f = get_binding_frame(id->name, SCM_CDR(id->frames));
-        SCM_SET_CDR(id->frames, f);
-        SCM_SET_CAR(id->frames, SCM_TRUE);
+        ScmObj f = get_binding_frame(id->name, id->frames);
+        id->frames = f;
+        SCM_IDENTIFIER_FLAG_DELAYED_RESET(id);
     }
-    return SCM_CDR(id->frames);
+    return id->frames;
 }
 
 ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id)
@@ -246,6 +246,7 @@ ScmObj Scm_WrapIdentifier(ScmIdentifier *orig)
     id->name = SCM_OBJ(orig);
     id->module = orig->module;
     id->frames = orig->frames;
+    id->flags = orig->flags;
     return SCM_OBJ(id);
 }
 
