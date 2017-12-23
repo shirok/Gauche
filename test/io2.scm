@@ -637,50 +637,54 @@
 
     (t* (data1)
         "(Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor\
-       \n incididunt ut labore et dolore)")
+       \n incididunt ut labore et dolore)\n")
     (t* (data1 :width #f)
-        "(Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor incididunt ut labore et dolore)")
+        "(Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor incididunt ut labore et dolore)\n")
     (t* (data1 :width 40)
         "(Lorem ipsum dolor sit amet consectetur\
        \n adipisicing elit sed do eiusmod tempor\
-       \n incididunt ut labore et dolore)")
+       \n incididunt ut labore et dolore)\n")
     (t* (data1 :width 39)
         "(Lorem ipsum dolor sit amet consectetur\
        \n adipisicing elit sed do eiusmod tempor\
-       \n incididunt ut labore et dolore)")
+       \n incididunt ut labore et dolore)\n")
     (t* (data1 :width 38)
         "(Lorem ipsum dolor sit amet\
        \n consectetur adipisicing elit sed do\
        \n eiusmod tempor incididunt ut labore\
-       \n et dolore)")
+       \n et dolore)\n")
     (t* (data1 :length 5)
-        "(Lorem ipsum dolor sit amet ....)")
+        "(Lorem ipsum dolor sit amet ....)\n")
     (t* (data1 :length 1)
-        "(Lorem ....)")
+        "(Lorem ....)\n")
     (t* (data1 :length 0)
-        "(....)")
+        "(....)\n")
     (t* (data1 :level 1 :length 5)
-        "(Lorem ipsum dolor sit amet ....)")
+        "(Lorem ipsum dolor sit amet ....)\n")
     (t* (data1 :level 0 :length 5)
-        "#")
+        "#\n")
     (t* ('a :level 0)
-        "a")
+        "a\n")
 
     (t* (data2 :level 0)
-        "#")
+        "#\n")
     (t* (data2 :level 1)
-        "(Lorem #)")
+        "(Lorem #)\n")
     (t* (data2 :level 2)
-        "(Lorem (ipsum #))")
+        "(Lorem (ipsum #))\n")
     (t* (data2 :level 3)
-        "(Lorem (ipsum #(dolor #)))")
+        "(Lorem (ipsum #(dolor #)))\n")
     (t* (data2 :level 4)
-        "(Lorem (ipsum #(dolor (sit #))))")
+        "(Lorem (ipsum #(dolor (sit #))))\n")
     (t* (data2 :level 5)
-        "(Lorem (ipsum #(dolor (sit (amet . consectetur)))))")
+        "(Lorem (ipsum #(dolor (sit (amet . consectetur)))))\n")
     (t* (data2 :level 4 :width 30)
         "(Lorem\
-       \n (ipsum #(dolor (sit #))))")
+       \n (ipsum #(dolor (sit #))))\n")
     ))
+
+(test* "no newline" "(a\n a)"
+       (call-with-output-string 
+         (cut pprint '(a a) :width 3 :newline #f :port <>)))
 
 (test-end)

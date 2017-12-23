@@ -19600,7 +19600,7 @@ then writes a newline.
 @c COMMON
 @end defun
 
-@defun pprint obj :key port controls width length level
+@defun pprint obj :key port controls width length level newline
 @c EN
 Pretty prints @var{obj} to @var{port}, which is defaulted to the current
 output port.  The same effect is achieved by passing the @code{write} procedure
@@ -19608,6 +19608,10 @@ a write control with @code{pretty} slot setting to @code{#t}
 (in fact, it is how @code{pprint} is implemented), but this procedure
 provides more convenient interface when you want to play with the
 pretty printer.
+
+By default, @code{pprint} prints a newline after writing @var{obj}.
+You can suppress this newline by passing @code{#f} to @var{newline} keyword
+argument.
 
 To customize pretty printing, you can pass a write control object
 to the @var{controls} keyword argument (the @code{pretty} slot of
@@ -19623,6 +19627,9 @@ value is assumed.
 出力制御オブジェクトを渡すことでも得られます
 (実際、内部的には@code{pprint}はそうやって@code{write}を呼び出しているだけです)
 が、手軽に整形出力を試してみたい場合にこの手続きは便利です。
+
+デフォルトでは、@code{pprint}は@var{obj}を出力した後に改行します。
+この動作を抑制するには@var{newline}に@code{#f}を渡してください。
 
 出力の整形をカスタマイズするには、@var{controls}キーワード引数に出力制御オブジェクトを
 渡します(渡された制御オブジェクトの@code{pretty}スロットは無視されます;

@@ -1,3 +1,9 @@
+2017-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm (pprint): Change default print-length and
+	  print-level to #f, and add newline after printing by default.
+	  That behavior captures the most common use case.
+
 2017-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm

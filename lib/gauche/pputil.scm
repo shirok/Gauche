@@ -78,11 +78,6 @@
    [counter     :init-value 0]          ;shared label counter
    [controls    :init-keyword :controls]))
 
-(define *default-controls* (make-write-controls :length 40
-                                                :level 10
-                                                :width 79
-                                                :pretty #t))
-
 ;; for internal convenience
 (define-inline (rp-shared c) (~ c 'shared))
 (define-inline (rp-length c) (~ c 'controls 'length))
@@ -305,14 +300,22 @@
            [fstree (car (layouter (rp-width context) memo))])
       (render fstree 0 port))))
 
+;; Write controls used by pprint
+(define *default-controls* (make-write-controls :length #f
+                                                :level #f
+                                                :width 79
+                                                :pretty #t))
+
 ;; External API
 (define (pprint obj
                 :key (port (current-output-port))
                      (controls *default-controls*)
-                     width length level)
+                     width length level
+                     ((:newline nl) #t))
   (let1 controls (write-controls-copy controls
                                       :width width
                                       :length length
                                       :level level
                                       :pretty #t)
-    (write obj port controls)))
+    (write obj port controls)
+    (when nl (newline port))))
