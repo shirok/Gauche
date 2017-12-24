@@ -40,6 +40,7 @@ stamp-h1
 /src/libatomic_ops_pic.a
 /src/libgauche-*.so*
 /src/libgc_pic.a
+/src/libgauche-static-*.a
 /src/gosh
 
 # Unit test files
