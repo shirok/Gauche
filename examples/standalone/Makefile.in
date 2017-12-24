@@ -3,13 +3,14 @@ VPATH        = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-GENERATED = sample-repl sample-repl.c
+TARGET    = sample-repl sample-repl-nogdbm
+GENERATED = *.c
 CONFIG_GENERATED = Makefile
 
-all: sample-repl
+all: $(TARGET)
 
 clean:
-	rm -f core *~ $(GENERATED)
+	rm -f core *~ $(TARGET) $(GENERATED)
 
 distclean: clean
 	rm -f $(CONFIG_GENERATED)
@@ -18,13 +19,17 @@ maintainer-clean: clean
 	rm -f $(CONFIG_GENERATED)
 
 sample-repl: sample-repl.scm
-	@if [ ! -f $(top_builddir)/src/libgauche-static-0.9.a ]; then \
-	  echo "**********************************************"; \
-	  echo "*     Gauche static library is missing.      *"; \
-	  echo "*     Go to src and run 'make static'.       *"; \
-	  echo "**********************************************"; \
-	  exit 1;\
-	fi
-	$(top_builddir)/src/gosh -ftest build-standalone --header-dir $(top_srcdir)/src --library-dir $(top_builddir)/src -o sample-repl sample-repl.scm
+	$(top_builddir)/src/gosh -ftest build-standalone \
+             --header-dir $(top_srcdir)/src              \
+             --header-dir $(top_srcdir)/gc               \
+             --library-dir $(top_builddir)/src           \
+             -o sample-repl sample-repl.scm
 
+sample-repl-nogdbm: sample-repl.scm
+	$(top_builddir)/src/gosh -ftest build-standalone \
+             -D GAUCHE_STATIC_EXCLUDE_GDBM               \
+             --header-dir $(top_srcdir)/src              \
+             --header-dir $(top_srcdir)/gc               \
+             --library-dir $(top_builddir)/src           \
+             -o sample-repl-nogdbm sample-repl.scm
 
