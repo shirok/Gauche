@@ -51,7 +51,6 @@ while [ "$#" -gt 0 ]; do
     --with-installer) INSTALLER=yes; shift;;
     --specify-gauche) SPECIFY_GAUCHE=yes; shift;;
     --skip-config) SKIP_CONFIG=yes; shift;;
-    --skip-clean) SKIP_CLEAN=yes; shift;;
     -*)
      echo "Options:"
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
@@ -60,8 +59,7 @@ while [ "$#" -gt 0 ]; do
      echo "  --specify-gauche:  Specify Gauche for build by environment variable"
      echo "      GAUCHE_PATH_FOR_BUILD."
      echo "      (e.g.  export GAUCHE_PATH_FOR_BUILD='/c/Program Files/Gauche095' )"
-     echo "  --skip-config:  Skip 'configure' execution."
-     echo "  --skip-clean:   Skip cleanup of generated files."
+     echo "  --skip-config:  Skip cleanup and configuration."
      exit 1;;
   esac
 done
@@ -97,7 +95,7 @@ if [ "$SPECIFY_GAUCHE" = yes ]; then
 fi
 
 # build
-if [ "$SKIP_CLEAN" != yes ]; then
+if [ "$SKIP_CONFIG" != yes ]; then
   if [ -f Makefile ]; then make distclean; fi
   if [ -f examples/spigot/Makefile ]; then
     (cd examples/spigot; make maintainer-clean);
@@ -113,10 +111,8 @@ else
   distdir=`pwd`/../Gauche-mingw-dist/Gauche-${mingwarch}
 fi
 
-if [ "$SKIP_CLEAN" != yes ]; then
-  rm -rf $distdir
-fi
 if [ "$SKIP_CONFIG" != yes ]; then
+  rm -rf $distdir
   ./configure --prefix=$distdir --enable-threads=win32 \
               --enable-multibyte=utf8 --enable-ipv6=no \
               --with-dbm=ndbm,odbm $buildopt
