@@ -18,8 +18,20 @@
   (sys-normalize-pathname (or (sys-getenv "top_srcdir") "..")
                           :absolute #t :canonicalize #t))
 
-(define *executable-suffix*
-  (process-output->string '(gauche-config --executable-suffix)))
+(define *executable-suffix* (gauche-config "--executable-suffix"))
+
+(define (fix-path path)
+  (cond-expand
+   [gauche.os.windows (regexp-replace-all #/\\/ path "/")]
+   [else              path]))
+
+(define (wrap-with-test-directory thunk :optional (mkdir? #t))
+  (remove-files "test.o" "test1.o")
+  (when mkdir?
+    (make-directory* "test.o")
+    (make-directory* "test1.o"))
+  (unwind-protect (thunk)
+    (remove-files "test.o" "test1.o")))
 
 ;;=======================================================================
 (test-section "gosh")
@@ -261,83 +273,80 @@
   (run-process `("./gosh" "-ftest" ,*gauche-install-script* ,@args)
                :output *nulldev* :wait #t))
 
-(remove-files "test.o" "test1.o")
+(define (test-install)
+  (test* "-d" #t
+         (begin (run-install "-d" "test1.o/dest")
+                (file-is-directory? "test1.o/dest")))
 
-(test* "-d" #t
-       (begin (run-install "-d" "test1.o/dest")
-              (file-is-directory? "test1.o/dest")))
+  (create-directory-tree "."
+                         `(test.o ((bin ((command1 ,(make-string 20000))
+                                         (command2 ,(make-string 20000))))
+                                   (lib ((lib1 ,(make-string 1000000))
+                                         (lib2 ,(make-string 500000))))
+                                   (etc ((conf1 ,(make-string 1000)))))))
+  (test* "file -> file" #t
+         (begin (run-install "-m" "444" "test.o/lib/lib1" "test1.o/dest/lib1")
+                (and (file-is-regular? "test1.o/dest/lib1")
+                     (= (file-perm "test1.o/dest/lib1") #o444)
+                     (file-equal? "test.o/lib/lib1" "test1.o/dest/lib1"))))
 
-(create-directory-tree "."
-                       `(test.o ((bin ((command1 ,(make-string 20000))
-                                       (command2 ,(make-string 20000))))
-                                 (lib ((lib1 ,(make-string 1000000))
-                                       (lib2 ,(make-string 500000))))
-                                 (etc ((conf1 ,(make-string 1000)))))))
+  (remove-files "test1.o/dest/lib1")
+  (test* "files -> dir" #t
+         (begin (run-install "-m" "444" "test.o/lib/lib1" "test.o/lib/lib2"
+                             "test1.o/dest")
+                (and (file-is-regular? "test1.o/dest/lib1")
+                     (file-is-regular? "test1.o/dest/lib2")
+                     (= (file-perm "test1.o/dest/lib1")
+                        (file-perm "test1.o/dest/lib1")
+                        #o444)
+                     (file-equal? "test.o/lib/lib1" "test1.o/dest/lib1")
+                     (file-equal? "test.o/lib/lib2" "test1.o/dest/lib2"))))
 
-(test* "file -> file" #t
-       (begin (run-install "-m" "444" "test.o/lib/lib1" "test1.o/dest/lib1")
-              (and (file-is-regular? "test1.o/dest/lib1")
-                   (= (file-perm "test1.o/dest/lib1") #o444)
-                   (file-equal? "test.o/lib/lib1" "test1.o/dest/lib1"))))
+  (remove-files "test1.o/dest/lib1" "test1.o/dest/lib2")
+  (test* "-T" #t
+         (begin (run-install "-T" "test1.o/dest" "-m" "555"
+                             "test.o/bin/command1"
+                             "test.o/bin/command2")
+                (and (= (file-perm "test1.o/dest/test.o/bin/command1")
+                        (file-perm "test1.o/dest/test.o/bin/command2")
+                        (cond-expand
+                         [gauche.os.windows #o444]
+                         [else #o555]))
+                     (file-equal? "test.o/bin/command1"
+                                  "test1.o/dest/test.o/bin/command1")
+                     (file-equal? "test.o/bin/command2"
+                                  "test1.o/dest/test.o/bin/command2"))))
 
-(remove-files "test1.o/dest/lib1")
+  (test* "-U" #t
+         (begin (run-install "-U" "test1.o/dest" "-m" "555"
+                             "test.o/bin/command1"
+                             "test.o/bin/command2")
+                (and (not (file-exists? "test1.o/dest/test.o/bin/command1"))
+                     (not (file-exists? "test1.o/dest/test.o/bin/command2")))))
 
-(test* "files -> dir" #t
-       (begin (run-install "-m" "444" "test.o/lib/lib1" "test.o/lib/lib2"
-                           "test1.o/dest")
-              (and (file-is-regular? "test1.o/dest/lib1")
-                   (file-is-regular? "test1.o/dest/lib2")
-                   (= (file-perm "test1.o/dest/lib1")
-                      (file-perm "test1.o/dest/lib1")
-                      #o444)
-                   (file-equal? "test.o/lib/lib1" "test1.o/dest/lib1")
-                   (file-equal? "test.o/lib/lib2" "test1.o/dest/lib2"))))
+  (test* "-T -p" #t
+         (begin (run-install "-T" "test1.o/dest" "-m" "555" "-p" "test.o"
+                             "test.o/bin/command1"
+                             "test.o/bin/command2")
+                (and (= (file-perm "test1.o/dest/bin/command1")
+                        (file-perm "test1.o/dest/bin/command2")
+                        (cond-expand
+                         [gauche.os.windows #o444]
+                         [else #o555]))
+                     (file-equal? "test.o/bin/command1"
+                                  "test1.o/dest/bin/command1")
+                     (file-equal? "test.o/bin/command2"
+                                  "test1.o/dest/bin/command2"))))
 
-(remove-files "test1.o/dest/lib1" "test1.o/dest/lib2")
+  (test* "-U -p" #t
+         (begin (run-install "-U" "test1.o/dest" "-m" "555" "-p" "test.o"
+                             "test.o/bin/command1"
+                             "test.o/bin/command2")
+                (and (not (file-exists? "test1.o/dest/bin/command1"))
+                     (not (file-exists? "test1.o/dest/bin/command2")))))
+  )
 
-(test* "-T" #t
-       (begin (run-install "-T" "test1.o/dest" "-m" "555"
-                           "test.o/bin/command1"
-                           "test.o/bin/command2")
-              (and (= (file-perm "test1.o/dest/test.o/bin/command1")
-                      (file-perm "test1.o/dest/test.o/bin/command2")
-                      (cond-expand
-                       [gauche.os.windows #o444]
-                       [else #o555]))
-                   (file-equal? "test.o/bin/command1"
-                                "test1.o/dest/test.o/bin/command1")
-                   (file-equal? "test.o/bin/command2"
-                                "test1.o/dest/test.o/bin/command2"))))
-
-(test* "-U" #t
-       (begin (run-install "-U" "test1.o/dest" "-m" "555"
-                           "test.o/bin/command1"
-                           "test.o/bin/command2")
-              (and (not (file-exists? "test1.o/dest/test.o/bin/command1"))
-                   (not (file-exists? "test1.o/dest/test.o/bin/command2")))))
-
-(test* "-T -p" #t
-       (begin (run-install "-T" "test1.o/dest" "-m" "555" "-p" "test.o"
-                           "test.o/bin/command1"
-                           "test.o/bin/command2")
-              (and (= (file-perm "test1.o/dest/bin/command1")
-                      (file-perm "test1.o/dest/bin/command2")
-                      (cond-expand
-                       [gauche.os.windows #o444]
-                       [else #o555]))
-                   (file-equal? "test.o/bin/command1"
-                                "test1.o/dest/bin/command1")
-                   (file-equal? "test.o/bin/command2"
-                                "test1.o/dest/bin/command2"))))
-
-(test* "-U -p" #t
-       (begin (run-install "-U" "test1.o/dest" "-m" "555" "-p" "test.o"
-                           "test.o/bin/command1"
-                           "test.o/bin/command2")
-              (and (not (file-exists? "test1.o/dest/bin/command1"))
-                   (not (file-exists? "test1.o/dest/bin/command2")))))
-
-(remove-files "test.o" "test1.o")
+(wrap-with-test-directory test-install #f)
 
 ;;=======================================================================
 (test-section "gauche-package")
@@ -411,22 +420,10 @@
            (or (zero? (process-exit-status p)) o)))
   )
 
-(remove-files "test.o")
-(make-directory* "test.o")
-(unwind-protect (package-generate-tests)
-  (remove-directory* "test.o"))
+(wrap-with-test-directory package-generate-tests)
 
-
-(define (wrap-precomp-test thunk)
-  (remove-files "test.o")
-  (make-directory* "test.o")
-  (unwind-protect (thunk)
-    (remove-directory* "test.o")))
-
-(define (fix-path path)
-  (cond-expand
-   [gauche.os.windows (regexp-replace-all #/\\/ path "/")]
-   [else              path]))
+;;=======================================================================
+(test-section "precomp")
 
 (define (precomp-test-1)
   (do-process `("../../src/gosh" "-ftest"
@@ -486,7 +483,7 @@
          (file->string-list "test.o/foo.sci"))
   )
 
-(wrap-precomp-test precomp-test-1)
-(wrap-precomp-test precomp-test-2)
+(wrap-with-test-directory precomp-test-1)
+(wrap-with-test-directory precomp-test-2)
 
 (test-end)
