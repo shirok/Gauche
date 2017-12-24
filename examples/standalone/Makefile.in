@@ -21,7 +21,7 @@ maintainer-clean: clean
 sample-repl: sample-repl.scm
 	$(top_builddir)/src/gosh -ftest build-standalone \
              --header-dir $(top_srcdir)/src              \
-             --header-dir $(top_srcdir)/gc               \
+             --header-dir $(top_srcdir)/gc/include       \
              --library-dir $(top_builddir)/src           \
              -o sample-repl sample-repl.scm
 
@@ -29,7 +29,7 @@ sample-repl-nogdbm: sample-repl.scm
 	$(top_builddir)/src/gosh -ftest build-standalone \
              -D GAUCHE_STATIC_EXCLUDE_GDBM               \
              --header-dir $(top_srcdir)/src              \
-             --header-dir $(top_srcdir)/gc               \
+             --header-dir $(top_srcdir)/gc/include       \
              --library-dir $(top_builddir)/src           \
              -o sample-repl-nogdbm sample-repl.scm
 
