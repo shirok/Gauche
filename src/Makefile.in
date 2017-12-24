@@ -158,7 +158,7 @@ INSTALL_SUBHEADERS = \
 	gauche/vminsn.h gauche/weak.h gauche/win-compat.h gauche/writer.h \
 	gauche/wthread.h
 
-INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT)
+INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT) $(LIBGAUCHE_STATIC).a
 INSTALL_BINS = gosh$(EXEEXT)           \
 	       @ALTERNATIVE_GOSH@      \
 	       gauche-config$(EXEEXT)  \

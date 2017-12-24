@@ -38,6 +38,7 @@ TESTRECORD = ./test.record
 all:
 	if [ $(srcdir) != "." ]; then $(srcdir)/wirebuildlibs "$(srcdir)" "$(LN_S)"; fi
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) all) || exit 1; done
+	cd src; $(MAKE) -s static
 	@@CYGWIN_FIXDLL@
 
 test : check

@@ -1,5 +1,7 @@
 2017-12-23  Shiro Kawai  <shiro@acm.org>
 
+	* Makefile.in: Create static link library by default.
+
 	* src/gen-staticinit.scm: Split gdbm-related code to a separate C
 	  file.  This enables to generate a stand-alone binary without linking
 	  GPL code.
