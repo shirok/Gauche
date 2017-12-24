@@ -139,9 +139,11 @@
 ;; returns ((<module-name> <partial-path> <path-to-the-file>) ...)
 (define (find-scm-source p)
   (map (^[file] (let* ([dir (sys-dirname (car p))]
-                       [partial-path (if (equal? dir ".")
-                                       (sys-basename file)
-                                       (build-path dir (sys-basename file)))]
+                       [partial-path (string-tr
+                                      (if (equal? dir ".")
+                                        (sys-basename file)
+                                        (build-path dir (sys-basename file)))
+                                      "\\\\" "/")]
                        [modname ($ path->module-name
                                    $ path-sans-extension partial-path)])
                   (list modname partial-path file)))
