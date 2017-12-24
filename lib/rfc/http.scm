@@ -228,13 +228,18 @@
                            auth-user
                            auth-password
                            (proxy (http-proxy))
-                           extra-headers
                            (user-agent (http-user-agent))
                            (secure #f)
                            (receiver (http-string-receiver))
                            (sender #f)
                            ((:request-encoding enc) (gauche-character-encoding))
                       :allow-other-keys opts)
+
+  (define extra-headers
+    ($ concatenate $ reverse
+       $ rlet1 z '()
+       (doplist [(k v) opts]
+                (when v (push! z (list k v))))))
 
   (define conn (ensure-connection server auth-handler auth-user auth-password
                                   proxy secure extra-headers))
@@ -244,7 +249,6 @@
                          [(#t) (http-default-redirect-handler)]
                          [(#f) #f]
                          [else => identity])))
-  (define options `(:user-agent ,user-agent ,@(http-auth-headers conn) ,@opts))
   (define no-body-replies '("204" "304"))
 
   (define (get-body iport method code headers receiver)
@@ -258,7 +262,7 @@
                                         '(:proxy-connection keep-alive)
                                         '(:connection keep-alive))]
                [#t @ `(:host ,host :user-agent ,user-agent
-                       ,@(http-auth-headers conn) ,@opts)]))
+                       ,@(http-auth-headers conn) ,@extra-headers)]))
 
   ;; If we decide to give up redirection, we read from already-retrieved
   ;; body of 3xx reply.  This modifies reply headers if necessary.
@@ -316,6 +320,7 @@
              (loop (cons uri history)
                    (~ (redirect-connection! conn proto new-server)'server)
                    method path*))])))))
+
 ;;
 ;; Pre-defined receivers
 ;;
@@ -674,18 +679,6 @@
     [(? string?) request-uri]
     [(path n&v ...) (http-compose-query path n&v enc)]
     [_ (error "Invalid request-uri form for http request API:" request-uri)]))
-
-(define (canonical-body request-body extra-headers enc)
-  (cond [(not request-body) (values #f extra-headers)]
-        [(string? request-body) (values request-body extra-headers)]
-        [(list? request-body)
-         (receive (body boundary) (http-compose-form-data request-body #f enc)
-           (values body
-                   `(:mime-version "1.0"
-                     :content-type
-                     ,#"multipart/form-data; boundary=~boundary"
-                     ,@(delete-keyword! :content-type extra-headers))))]
-        [else (error "Invalid request-body format:" request-body)]))
 
 ;; Always returns a connection object.
 (define (ensure-connection server auth-handler auth-user auth-password
