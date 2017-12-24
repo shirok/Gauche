@@ -95,7 +95,7 @@
   (define gdbm-linked?
     (if (#/-lgdbm_compat/ (gauche-config "--static-libs"))
       (^m (memq m '(dbm.gdbm dbm.ndbm dbm.odbm)))
-      (^m (eq? m dbm.gdbm))))
+      (^m (eq? m 'dbm.gdbm))))
   (partition (^p (gdbm-linked? (cadr p))) dsos&mods))
 
 (define (generate-staticinit dsos&mods)
@@ -259,19 +259,23 @@
   (cgen-emit-c (cgen-current-unit)))
 
 (define (do-everything)
-  (let*-values ([(modules-to-exclude)
-                (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
-                  (map string->symbol (string-split x #[\s:,]))
-                  '())]
-                [(dsos&mods-gdbm dsos&mods-other)
-                 (classify-dsos (gather-dsos modules-to-exclude))]
-                [(scms-gdbm scms-other)
-                 (classify-scms (get-scheme-paths) dsos&mods-gdbm)])
-    (generate-c "staticinit" "Scm_InitPrelinked" #t 
-                scms-other dsos&mods-other)
-    (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" #f
-                scms-gdbm dsos&mods-gdbm)
-    ))
+  ;; TRANSIENT: Rewrite this using let*-values after 0.9.6 release.
+  ;; We need to avoid using it, since let*-values is moved from srfi-11
+  ;; to core in 0.9.6, and we can't refer to srfi-11 during building 0.9.6
+  ;; while using 0.9.5.
+  (let1 modules-to-exclude
+      (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
+        (map string->symbol (string-split x #[\s:,]))
+        '())
+    (receive (dsos&mods-gdbm dsos&mods-other)
+        (classify-dsos (gather-dsos modules-to-exclude))
+      (receive (scms-gdbm scms-other)
+          (classify-scms (get-scheme-paths) dsos&mods-gdbm)
+        (generate-c "staticinit" "Scm_InitPrelinked" #t 
+                    scms-other dsos&mods-other)
+        (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" #f
+                    scms-gdbm dsos&mods-gdbm)
+        ))))
 
 (define (main args)
   (match (cdr args)
