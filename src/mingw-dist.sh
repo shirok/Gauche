@@ -27,7 +27,7 @@ esac
 # Setting PATH to make sure the build process find right tools.
 # NB: We don't use CC=/path/to/gcc trick for ./configure, since
 # the gcc path embedded in gauche-config should be Windows path.
-PATH=$mingwdir/bin:$PATH
+export PATH=$mingwdir/bin:$PATH
 
 ## Build architecture
 #  Mingw-w64 automatically identifies this by default if you're in an
@@ -48,11 +48,13 @@ while [ "$#" -gt 0 ]; do
   case $1 in
     --with-gl)   WITH_GL=yes; shift;;
     --with-installer) INSTALLER=yes; shift;;
+    --skip-config) SKIP_CONFIG=yes; shift;;
     -*)
      echo "Options:"
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
      echo "  --with-installer:  Creates binary installer using Wix.  'candle.exe' and"
      echo "      'light.exe' must be visible in PATH."
+     echo "  --skip-config:  Skip cleanup and configuration."
      exit 1;;
   esac
 done
@@ -70,13 +72,24 @@ if [ "$INSTALLER" = yes ]; then
   fi
 fi
 
-# build
-if [ -f Makefile ]; then make distclean; fi
-if [ -f examples/spigot/Makefile ]; then
-  (cd examples/spigot; make maintainer-clean);
+# check gosh
+gosh_path=`which gosh.exe 2> /dev/null`
+if test -e "$gosh_path"; then
+  echo "Using $gosh_path: " `gosh -V`
+else
+  echo "Cannot find gosh.exe.  Aborting."
+  exit 1
 fi
-if [ -f examples/mqueue-cpp/Makefile ]; then
-  (cd examples/mqueue-cpp; make maintainer-clean);
+
+# build
+if [ "$SKIP_CONFIG" != yes ]; then
+  if [ -f Makefile ]; then make distclean; fi
+  if [ -f examples/spigot/Makefile ]; then
+    (cd examples/spigot; make maintainer-clean);
+  fi
+  if [ -f examples/mqueue-cpp/Makefile ]; then
+    (cd examples/mqueue-cpp; make maintainer-clean);
+  fi
 fi
 
 if [ "$INSTALLER" = yes ]; then
@@ -84,10 +97,13 @@ if [ "$INSTALLER" = yes ]; then
 else
   distdir=`pwd`/../Gauche-mingw-dist/Gauche-${mingwarch}
 fi
-rm -rf $distdir
-./configure --prefix=$distdir --enable-threads=win32 \
-            --enable-multibyte=utf8 --enable-ipv6=no \
-            --with-dbm=ndbm,odbm $buildopt
+
+if [ "$SKIP_CONFIG" != yes ]; then
+  rm -rf $distdir
+  ./configure --prefix=$distdir --enable-threads=win32 \
+              --enable-multibyte=utf8 --enable-ipv6=no \
+              --with-dbm=ndbm,odbm $buildopt
+fi
 make
 
 if [ $? -ne 0 ]; then
@@ -114,7 +130,6 @@ case "$MSYSTEM" in
 esac
 
 # Build GL
-# NB: 
 if [ "$WITH_GL" = "yes" ]; then
   PATH=$distdir/bin:$PATH
   (cd ../Gauche-gl; ./DIST gen; \
