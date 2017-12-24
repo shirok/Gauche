@@ -28,6 +28,7 @@ esac
 # NB: We don't use CC=/path/to/gcc trick for ./configure, since
 # the gcc path embedded in gauche-config should be Windows path.
 PATH=$mingwdir/bin:$PATH
+export PATH
 
 ## Build architecture
 #  Mingw-w64 automatically identifies this by default if you're in an
@@ -48,11 +49,19 @@ while [ "$#" -gt 0 ]; do
   case $1 in
     --with-gl)   WITH_GL=yes; shift;;
     --with-installer) INSTALLER=yes; shift;;
+    --specify-gauche) SPECIFY_GAUCHE=yes; shift;;
+    --skip-config) SKIP_CONFIG=yes; shift;;
+    --skip-clean) SKIP_CLEAN=yes; shift;;
     -*)
      echo "Options:"
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
      echo "  --with-installer:  Creates binary installer using Wix.  'candle.exe' and"
      echo "      'light.exe' must be visible in PATH."
+     echo "  --specify-gauche:  Specify Gauche for build by environment variable"
+     echo "      GAUCHE_PATH_FOR_BUILD."
+     echo "      (e.g.  export GAUCHE_PATH_FOR_BUILD='/c/Program Files/Gauche095' )"
+     echo "  --skip-config:  Skip 'configure' execution."
+     echo "  --skip-clean:   Skip cleanup of generated files."
      exit 1;;
   esac
 done
@@ -70,13 +79,32 @@ if [ "$INSTALLER" = yes ]; then
   fi
 fi
 
-# build
-if [ -f Makefile ]; then make distclean; fi
-if [ -f examples/spigot/Makefile ]; then
-  (cd examples/spigot; make maintainer-clean);
+if [ "$SPECIFY_GAUCHE" = yes ]; then
+  if [ -z "$GAUCHE_PATH_FOR_BUILD" ]; then
+    echo "--specify-gauche: environment variable GAUCHE_PATH_FOR_BUILD not found."
+    echo "Aborting."
+    exit 1
+  elif [ ! -f "$GAUCHE_PATH_FOR_BUILD/bin/gosh.exe" ]; then
+    echo "--specify-gauche: Specified Gauche not found.  Aborting."
+    exit 1
+  else
+    PATH=$GAUCHE_PATH_FOR_BUILD/bin:$PATH
+    export PATH
+    echo "Specified Gauche for build:"
+    which gosh.exe
+    gosh -V
+  fi
 fi
-if [ -f examples/mqueue-cpp/Makefile ]; then
-  (cd examples/mqueue-cpp; make maintainer-clean);
+
+# build
+if [ "$SKIP_CLEAN" != yes ]; then
+  if [ -f Makefile ]; then make distclean; fi
+  if [ -f examples/spigot/Makefile ]; then
+    (cd examples/spigot; make maintainer-clean);
+  fi
+  if [ -f examples/mqueue-cpp/Makefile ]; then
+    (cd examples/mqueue-cpp; make maintainer-clean);
+  fi
 fi
 
 if [ "$INSTALLER" = yes ]; then
@@ -84,10 +112,15 @@ if [ "$INSTALLER" = yes ]; then
 else
   distdir=`pwd`/../Gauche-mingw-dist/Gauche-${mingwarch}
 fi
-rm -rf $distdir
-./configure --prefix=$distdir --enable-threads=win32 \
-            --enable-multibyte=utf8 --enable-ipv6=no \
-            --with-dbm=ndbm,odbm $buildopt
+
+if [ "$SKIP_CLEAN" != yes ]; then
+  rm -rf $distdir
+fi
+if [ "$SKIP_CONFIG" != yes ]; then
+  ./configure --prefix=$distdir --enable-threads=win32 \
+              --enable-multibyte=utf8 --enable-ipv6=no \
+              --with-dbm=ndbm,odbm $buildopt
+fi
 make
 
 if [ $? -ne 0 ]; then
@@ -117,6 +150,7 @@ esac
 # NB: 
 if [ "$WITH_GL" = "yes" ]; then
   PATH=$distdir/bin:$PATH
+  export PATH
   (cd ../Gauche-gl; ./DIST gen; \
    ./configure --prefix=$distdir --with-glut=mingw-static $buildopt; \
    make clean; make; make install; make install-examples)
