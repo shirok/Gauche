@@ -82,8 +82,8 @@
            [: dso (get-dso-names subdir)]
            [if (not (string-null? dso))]
            ;; NB: This relies on the current DSO naming scheme.
-           [:let module-name (regexp-replace-all "--" dso ".")]
-           [if (not (and (any (cut string=? module-name <>) modules-to-exclude)
+           [:let module-name (string->symbol (regexp-replace-all "--" dso "."))]
+           [if (not (and (any (cut eq? module-name <>) modules-to-exclude)
                          (print "INFO: Skipping " dso)
                          #t))]
            (list dso module-name)))
@@ -94,8 +94,8 @@
 (define (classify-dsos dsos&mods)
   (define gdbm-linked?
     (if (#/-lgdbm_compat/ (gauche-config "--static-libs"))
-      (^m (member m '("dbm.gdbm" "dbm.ndbm" "dbm.odbm")))
-      (^m (equal? m "dbm.gdbm"))))
+      (^m (memq m '(dbm.gdbm dbm.ndbm dbm.odbm)))
+      (^m (eq? m dbm.gdbm))))
   (partition (^p (gdbm-linked? (cadr p))) dsos&mods))
 
 (define (generate-staticinit dsos&mods)
@@ -116,7 +116,8 @@
 ;; Gather *.scm and *.sci files
 ;;
 
-;; ((<partial-path> . <path-to-the-file>) ...)
+;; Returns ((<module-name> <partial-path> <path-to-the-file>) ...)
+;; <module-name>      : symbol
 ;; <partial-path>     : "parser/peg.sci" etc.
 ;; <path-to-the-file> : "../ext/peg/peg.sci" etc.
 (define (get-scheme-paths)
@@ -135,13 +136,27 @@
 
 ;; p : ((<partial-path> . <path-to-look-for>) ...)
 ;; expand glob pattern in the basename part
+;; returns ((<module-name> <partial-path> <path-to-the-file>) ...)
 (define (find-scm-source p)
-  (map (^[file] (let1 dir (sys-dirname (car p))
-                  (if (equal? dir ".")
-                    (cons (sys-basename file) file)
-                    (cons (build-path dir (sys-basename file)) file))))
-       (glob (list (build-path (top-srcdir) (cdr p))
-                   (build-path (top-builddir) (cdr p))))))
+  (map (^[file] (let* ([dir (sys-dirname (car p))]
+                       [partial-path (if (equal? dir ".")
+                                       (sys-basename file)
+                                       (build-path dir (sys-basename file)))]
+                       [modname ($ path->module-name
+                                   $ path-sans-extension partial-path)])
+                  (list modname partial-path file)))
+       (delete-duplicates
+        (glob (list (build-path (top-srcdir) (cdr p))
+                    (build-path (top-builddir) (cdr p)))))))
+
+;; Classify scheme files
+;; scms : ((module partial-path path) ...)
+;; dsos&mods-gdbm : ((dso module) ...)
+(define (classify-scms scms dsos&mods-gdbm)
+  (define gdbm-modules (map cadr dsos&mods-gdbm))
+  (define gdbm-file?
+    (^p (memq (car p) gdbm-modules)))
+  (partition gdbm-file? scms))
 
 (define (get-scm-content path)
   ;; NB: We can just do (file->string p), but the code below eliminates
@@ -172,8 +187,8 @@
                          (cons fn (lambda (_)
                                     (open-input-string content)))))))))))
 
-(define (embed-scm name dsos&mods)
-  ;; Table of module path -> source
+
+(define (embed-scm name scmfiles)
   (cgen-decl "static ScmHashTable *scmtab;")
   (cgen-init "scmtab = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 0));")
   (cgen-init "SCM_DEFINE(SCM_FIND_MODULE(\"gauche.internal\", 0),"
@@ -188,14 +203,10 @@
   (cgen-init "Scm_EvalCStringRec(embedded_load_hook,"
              "                SCM_OBJ(SCM_FIND_MODULE(\"gauche.internal\", 0))"
              "                );")
-  
-  ;; Hash table setup
-  (do-ec [: scmfile (get-scheme-paths)]
-         [:let module-name ($ x->string $ path->module-name
-                              $ path-sans-extension $ car scmfile)]
-         [if (any (^p (equal? module-name (cadr p))) dsos&mods)]
-         [:let name (cgen-literal (car scmfile))]
-         [:let lit  (cgen-literal (get-scm-content (cdr scmfile)))]
+
+  (do-ec [: scmfile scmfiles]
+         [:let name (cgen-literal (cadr scmfile))]
+         [:let lit  (cgen-literal (get-scm-content (caddr scmfile)))]
          (cgen-init (format "Scm_HashTableSet(scmtab, ~a, ~a, 0);"
                             (cgen-cexpr name)
                             (cgen-cexpr lit))))
@@ -232,7 +243,7 @@
   (cgen-body "}")
   (cgen-init "  populate_imp_pointers();"))
 
-(define (generate-c name initfn dsos&mods main?)
+(define (generate-c name initfn main? scmfiles dsos&mods)
   (cgen-current-unit (make <cgen-unit>
                        :name name
                        :init-prologue #"void ~initfn() {\n"
@@ -243,21 +254,24 @@
     (cond-expand
      [gauche.os.windows (generate-imp-stub "libgauche-0.9.dll")]
      [else]))
-  (embed-scm name dsos&mods)
+  (embed-scm name scmfiles)
   (generate-staticinit dsos&mods)
   (cgen-emit-c (cgen-current-unit)))
 
 (define (do-everything)
-  (define modules-to-exclude
-    (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
-      (string-split x #[\s:,])
-      '()))
-  (define dsos&mods (gather-dsos modules-to-exclude))
-
-  (receive [dsos&mods-gdbm dsos&mods-other] (classify-dsos dsos&mods)
-    (generate-c "staticinit" "Scm_InitPrelinked" dsos&mods-other #t)
-    (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" dsos&mods-gdbm #f))
-  )
+  (let*-values ([(modules-to-exclude)
+                (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
+                  (map string->symbol (string-split x #[\s:,]))
+                  '())]
+                [(dsos&mods-gdbm dsos&mods-other)
+                 (classify-dsos (gather-dsos modules-to-exclude))]
+                [(scms-gdbm scms-other)
+                 (classify-scms (get-scheme-paths) dsos&mods-gdbm)])
+    (generate-c "staticinit" "Scm_InitPrelinked" #t 
+                scms-other dsos&mods-other)
+    (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" #f
+                scms-gdbm dsos&mods-gdbm)
+    ))
 
 (define (main args)
   (match (cdr args)
