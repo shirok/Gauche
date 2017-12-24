@@ -46,12 +46,14 @@
 (define (build-standalone srcfile :key (outfile #f)
                                        (extra-files '())
                                        (include-dirs '())
+                                       (cpp-definitions '())
                                        (header-dirs '())
                                        (library-dirs '()))
   (compile-c-file (generate-c-file srcfile 
                                    (append include-dirs '("."))
                                    extra-files)
                   (or outfile (path-sans-extension srcfile))
+                  (map (^d #"-D\"~|d|\"") cpp-definitions)
                   (map (^d #"-I\"~|d|\"") header-dirs)
                   (map (^d #"-L\"~|d|\"") library-dirs)))
 
@@ -85,15 +87,16 @@
     (cgen-emit-c (cgen-current-unit)))
   (path-swap-extension file "c"))
 
-(define (compile-c-file c-file outfile xincdirs xlibdirs)
+(define (compile-c-file c-file outfile xdefs xincdirs xlibdirs)
   ;; TODO: We wish we could use gauche.package.compile, but currently it is
   ;; specialized to compile extension modules.  Eventually we will modify
   ;; the module so that this function can be just a one-liner
   (let ([cc (gauche-config "--cc")]
         [cflags (gauche-config "--so-cflags")]
+        [defs    (string-join xdefs " ")]
         [incdirs (string-join `(,@xincdirs ,(gauche-config "-I")) " ")]
         [libdirs (string-join `(,@xlibdirs ,(gauche-config "-L")) " ")]
         [libs    (gauche-config "--static-libs")])
-    (let1 cmd #"~cc ~cflags ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
+    (let1 cmd #"~cc ~cflags ~defs ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
       (print cmd)
       (sys-system cmd))))

@@ -42,6 +42,8 @@
   (print "  -I dir      Specify the search path of extra files (lib/library.scm ...)")
   (print "              if they're not relative to the current directory.  This cann")
   (print "              be given multiple times.")
+  (print "  -D var=val  Add C preprocessor definitions while compiling the generated")
+  (print "              C code.")
   (print "  --header-dir dir")
   (print "              Alternative include directory to find gauche.h etc.  Specify")
   (print "              this if you don't want to use installed Gauche header files.")
@@ -56,8 +58,10 @@
 
 (define (main args)
   (define incdirs '())
+  (define defs '())
   (let-args (cdr args) ([outfile "o=s" #f]
-                        [_ "I=s" #f => (^[x] (push! incdirs x) #f)]
+                        [#f "I=s" #f => (^x (push! incdirs x) #f)]
+                        [#f "D=s" #f => (^x (push! defs x) #f)]
                         [hdrdirs "header-dir=s" #f]
                         [libdirs "library-dir=s" #f]
                         [else _ (usage)]
@@ -67,6 +71,7 @@
                       :outfile outfile
                       :extra-files (cdr files)
                       :include-dirs (reverse incdirs)
+                      :cpp-definitions (reverse defs)
                       :header-dirs (if hdrdirs (list hdrdirs) '())
                       :library-dirs (if libdirs (list libdirs) '())))
   0)
