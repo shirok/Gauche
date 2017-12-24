@@ -1,6 +1,8 @@
 /*
  * gauche/static.h - API for statically linked libgauche
  *
+ * ***NOTE: This must be included before gauche.h***
+ *
  *   Copyright (c) 2014-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
@@ -31,13 +33,13 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * The main program that statically links Gauche needs to include this file
+ * _before_ gauche.h, otherwise it can't find Scm_Init().
+ */
+
 #ifndef GAUCHE_STATIC_H
 #define GAUCHE_STATIC_H
-
-SCM_DECL_BEGIN
-
-SCM_EXTERN void Scm_InitPrelinked(void);
-SCM_EXTERN void Scm_InitPrelinked_gdbm(void);
 
 /* A convenience initialization.  */
 
@@ -61,8 +63,20 @@ SCM_EXTERN void Scm_InitPrelinked_gdbm(void);
         Scm_InitPrelinked_gdbm();               \
     } while (0)
 #endif
-    
 
-SCM_DECL_END
+
+/* These two functions are directly linked, so do not use SCM_EXTERN. */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void Scm_InitPrelinked(void);
+extern void Scm_InitPrelinked_gdbm(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define LIBGAUCHE_BODY /* To refer to Scm_Init without declspec(dllexport) */
 
 #endif /*GAUCHE_STATIC_H*/

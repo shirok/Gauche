@@ -18,6 +18,7 @@
 
 (use gauche.generator)
 (use gauche.parameter)
+(use gauche.process)
 (use gauche.config)
 (use gauche.cgen.precomp)
 (use file.util)
@@ -200,13 +201,48 @@
                             (cgen-cexpr lit))))
   )
 
-(define (generate-c name initfn dsos&mods)
+;; MinGW specific stuff
+;; The extension modules are compiled to be linked against libgauche.dll,
+;; so they refer to use import stubs (e.g. the call to Scm_Cons is actually
+;; compiled to an indirect call via _imp_Scm_Cons).  We don't want to recompile
+;; extension modules again, so we fake those import entries.
+(define (generate-imp-stub libgauche.dll)
+  (define exptab (make-hash-table 'equal?))
+  (dolist [entry (process-output->string-list `("nm" ,libgauche.dll))]
+    (rxmatch-case entry
+      [#/[TD] (Scm\w+)/ (_ sym) (set! (~ exptab sym) #t)]))
+  (hash-table-for-each exptab (^[k v] (cgen-decl #"void *__imp_~|k|;")))
+  (cgen-body "static void unexported_procedure() {"
+             "  fprintf(stderr, \"[Gauche Internal Error] Unexported procedure is called.  It is likely that the code is calling obsoleted C API.\");"
+             "  exit(1);"
+             "}")
+  (cgen-body "static void *get_proc_addr(HMODULE m, const char *name) {"
+             "  void *p = (void*)GetProcAddress(m, name);"
+             "  if (p == NULL) p = unexported_procedure;"
+             "  return p;"
+             "}")
+  (cgen-body "static void populate_imp_pointers() {"
+             "  HMODULE m = GetModuleHandle(NULL);"
+             "  if (m == NULL) {"
+             "    printf(\"Couldn't get module handle.  Aborting.\");"
+             "    exit(1);"
+             "  }")
+  ($ hash-table-for-each exptab
+     (^[k v] (cgen-body #"  __imp_~|k| = get_proc_addr(m, \"~|k|\");")))
+  (cgen-body "}")
+  (cgen-init "  populate_imp_pointers();"))
+
+(define (generate-c name initfn dsos&mods main?)
   (cgen-current-unit (make <cgen-unit>
                        :name name
                        :init-prologue #"void ~initfn() {\n"
                        :init-epilogue "}\n"))
   (cgen-decl "#include <gauche.h>")
   (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*, const char *ns[], void (*fns[])(void));")
+  (when main?
+    (cond-expand
+     [gauche.os.windows (generate-imp-stub "libgauche-0.9.dll")]
+     [else]))
   (embed-scm name dsos&mods)
   (generate-staticinit dsos&mods)
   (cgen-emit-c (cgen-current-unit)))
@@ -219,8 +255,8 @@
   (define dsos&mods (gather-dsos modules-to-exclude))
 
   (receive [dsos&mods-gdbm dsos&mods-other] (classify-dsos dsos&mods)
-    (generate-c "staticinit" "Scm_InitPrelinked" dsos&mods-other)
-    (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" dsos&mods-gdbm))
+    (generate-c "staticinit" "Scm_InitPrelinked" dsos&mods-other #t)
+    (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" dsos&mods-gdbm #f))
   )
 
 (define (main args)
