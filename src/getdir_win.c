@@ -15,8 +15,11 @@ static int get_install_dir(char *buf, int buflen,
     TCHAR path[MAX_PATH];
     const TCHAR *libname = _T("libgauche-"GAUCHE_ABI_VERSION".dll");
 
-    if ((mod = GetModuleHandle(libname)) == NULL) {
-        errfn("GetModuleHandle failed");
+    /* We try libugauche.dll, then the process itself.  The latter is
+       for the case when gauche is statically linked. */
+    if ((mod = GetModuleHandle(libname)) == NULL
+	&& (mod = GetModuleHandle(NULL)) == NULL) {
+	errfn("GetModuleHandle failed");
     }
     if ((r = GetModuleFileName(mod, path, MAX_PATH)) == 0) {
         errfn("GetModuleFileName failed");
