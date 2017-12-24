@@ -7,8 +7,19 @@
 ;; modules into one DSO with multiple initfns for each module.
 ;; If we use that in modules under ext/*, we need to change this file.
 
+;; NB: We treat gdbm specially, for statically linking it causes
+;; the entire binary to be under GPL.  Here's what we do:
+;;   - We split initializer function for gdbm libs into separate file
+;;   - If the use defines GAUCHE_STATIC_LINK_GDBM before SCM_INIT_STATIC,
+;;     we don't call gdbm initializer function, which causes object files
+;;     related to gdbm would be excluded from the final executable.
+;; This is kinda ad-hockery but we expect we won't add more dependencies
+;; to GPL libs in the main distribution.
+
 (use gauche.generator)
 (use gauche.parameter)
+(use gauche.config)
+(use gauche.cgen.precomp)
 (use file.util)
 (use util.match)
 (use gauche.cgen)
@@ -18,11 +29,6 @@
 
 (define top-srcdir   (make-parameter ".."))
 (define top-builddir (make-parameter ".."))
-(define modules-to-exclude
-  (make-parameter
-   (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
-     (string-split x #[\s:,])
-     '())))
 
 (define (usage)
   (exit 1
@@ -69,23 +75,32 @@
   ($ map path-sans-extension
      $ mfvar-ref (build-path "ext" subdir "Makefile") "LIBFILES" '()))
 
-;; given shared library name, derive the init function name
-;; (see the comment above about consideration of multiple initfns).
-(define (initfn-name dso-name)
-  ;; NB: This is in sync with name transformatin in cgen.precomp.
-  (let1 n (string-tr dso-name "-+." "___")
-    #"Scm_Init_~n"))
+;; Returns ((<dso> <module-name>) ...)
+(define (gather-dsos modules-to-exclude)
+  (list-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
+           [: dso (get-dso-names subdir)]
+           [if (not (string-null? dso))]
+           ;; NB: This relies on the current DSO naming scheme.
+           [:let module-name (regexp-replace-all "--" dso ".")]
+           [if (not (and (any (cut string=? module-name <>) modules-to-exclude)
+                         (print "INFO: Skipping " dso)
+                         #t))]
+           (list dso module-name)))
 
-(define (generate-staticinit)
-  (do-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
-         [: dso (get-dso-names subdir)]
-         [if (not (string-null? dso))]
-         ;; NB: This relies on the current DSO naming scheme.
-         [:let module-name (regexp-replace-all "--" dso ".")]
-         [if (not (and (any (cut string=? module-name <>) (modules-to-exclude))
-                       (print "INFO: Skipping " dso)
-                       #t))]
-         (let ([initfn (initfn-name dso)]
+;; Classify dsos
+;; Caveat: If we use gdbm_compat, dbm.ndbm and dbm.odbm is likely to be
+;; linked with gdbm.
+(define (classify-dsos dsos&mods)
+  (define gdbm-linked?
+    (if (#/-lgdbm_compat/ (gauche-config "--static-libs"))
+      (^m (member m '("dbm.gdbm" "dbm.ndbm" "dbm.odbm")))
+      (^m (equal? m "dbm.gdbm"))))
+  (partition (^p (gdbm-linked? (cadr p))) dsos&mods))
+
+(define (generate-staticinit dsos&mods)
+  (do-ec [: dso&mod dsos&mods]
+         [:let dso (car dso&mod)]
+         (let ([initfn (cgen-c-file->initfn dso)]
                [str    (cgen-literal dso)])
            (cgen-decl #"extern void ~initfn(void);")
            (cgen-init
@@ -141,31 +156,32 @@
 ;; This code fragment is evaluated in Scm_InitPrelinked() to set up a load
 ;; hook so that the standard libraries would be load from memory instead of
 ;; files.  Be careful! This code shouldn't trigger any autoloads.
-(define *hook-source*
-  '(%add-load-path-hook!
+(define (hook-source tab)
+  `(%add-load-path-hook!
     (lambda (archive-file name suffixes)
       (and (equal? archive-file "")
            (let ([fn (any (lambda (sfx)
                             (let ([n (string-append name sfx)])
-                              (and (hash-table-exists? *embedded-scm-table* n)
+                              (and (hash-table-exists? ,tab n)
                                    n)))
                           suffixes)])
              (and fn
-                  (let ([content (hash-table-get *embedded-scm-table* fn)])
+                  (let ([content (hash-table-get ,tab fn)])
                     (and content
                          (cons fn (lambda (_)
                                     (open-input-string content)))))))))))
 
-(define (embed-scm)
+(define (embed-scm name dsos&mods)
   ;; Table of module path -> source
   (cgen-decl "static ScmHashTable *scmtab;")
   (cgen-init "scmtab = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 0));")
   (cgen-init "SCM_DEFINE(SCM_FIND_MODULE(\"gauche.internal\", 0),"
-             "           \"*embedded-scm-table*\","
+             #"           \"*embedded-scm-table-~|name|*\","
              "           SCM_OBJ(scmtab));")
   ;; Set up load hook
   (cgen-decl "static const char *embedded_load_hook = "
-             (cgen-safe-string (write-to-string *hook-source*))
+             ($ cgen-safe-string $ write-to-string 
+                $ hook-source $ symbol-append '*embedded-scm-table- name '*)
              ";")
   (cgen-init "Scm_AddLoadPath(\"\", FALSE);")
   (cgen-init "Scm_EvalCStringRec(embedded_load_hook,"
@@ -176,10 +192,7 @@
   (do-ec [: scmfile (get-scheme-paths)]
          [:let module-name ($ x->string $ path->module-name
                               $ path-sans-extension $ car scmfile)]
-         [if (not (and (any (cut string=? module-name <>)
-                            (modules-to-exclude))
-                       (print "INFO: Skipping " (car scmfile))
-                       #t))]
+         [if (any (^p (equal? module-name (cadr p))) dsos&mods)]
          [:let name (cgen-literal (car scmfile))]
          [:let lit  (cgen-literal (get-scm-content (cdr scmfile)))]
          (cgen-init (format "Scm_HashTableSet(scmtab, ~a, ~a, 0);"
@@ -187,17 +200,28 @@
                             (cgen-cexpr lit))))
   )
 
-(define (do-everything)
+(define (generate-c name initfn dsos&mods)
   (cgen-current-unit (make <cgen-unit>
-                       :name "staticinit"
-                       :init-prologue "void Scm_InitPrelinked() {\n"
+                       :name name
+                       :init-prologue #"void ~initfn() {\n"
                        :init-epilogue "}\n"))
   (cgen-decl "#include <gauche.h>")
   (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*, const char *ns[], void (*fns[])(void));")
-  (embed-scm)
-  (generate-staticinit)
+  (embed-scm name dsos&mods)
+  (generate-staticinit dsos&mods)
   (cgen-emit-c (cgen-current-unit)))
-  
+
+(define (do-everything)
+  (define modules-to-exclude
+    (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
+      (string-split x #[\s:,])
+      '()))
+  (define dsos&mods (gather-dsos modules-to-exclude))
+
+  (receive [dsos&mods-gdbm dsos&mods-other] (classify-dsos dsos&mods)
+    (generate-c "staticinit" "Scm_InitPrelinked" dsos&mods-other)
+    (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" dsos&mods-gdbm))
+  )
 
 (define (main args)
   (match (cdr args)

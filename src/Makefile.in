@@ -397,15 +397,15 @@ gauche-cesconv : gauche-cesconv.in
 
 static : $(LIBGAUCHE_STATIC).a
 
-$(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT)
+$(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT) staticinit_gdbm.$(OBJEXT)
 	rm -f $@
 	$(AR) -rc $@ $(libgauche_OBJECTS) \
             `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
             `if [ X$(libatomic_ops_pic_LIBRARY) != X ]; then echo $(libatomic_ops_pic_OBJECTS); fi` \
-            staticinit.$(OBJEXT) \
+            staticinit.$(OBJEXT) staticinit_gdbm.$(OBJEXT) \
             `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
 
-staticinit.c : all gen-staticinit.scm
+staticinit.c staticinit_gdbm.c : all gen-staticinit.scm
 	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
 
 # tests -----------------------------------------------
@@ -482,7 +482,8 @@ clean :
 	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
                *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
-	       gauche/config_threads.h gauche-config.in.c staticinit.c \
+	       gauche/config_threads.h gauche-config.in.c \
+	       staticinit.c staticinit_gdbm.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
 	       $(host)-gauche-config.c $(host)-gauche-config
 

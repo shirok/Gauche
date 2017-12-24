@@ -37,14 +37,30 @@
 SCM_DECL_BEGIN
 
 SCM_EXTERN void Scm_InitPrelinked(void);
+SCM_EXTERN void Scm_InitPrelinked_gdbm(void);
 
 /* A convenience initialization.  */
+
+/* Linking gdbm makes the generated binary to be under GPL.  If one only
+   wants BSD compatible license (and LGPL-dependency), define
+   GAUCHE_STATIC_EXCLUDE_GDBM before calling SCM_INIT_STATIC. */
+
+#ifdef GAUCHE_STATIC_EXCLUDE_GDBM
 #define SCM_INIT_STATIC()                       \
     do {                                        \
         GC_INIT();                              \
         Scm_Init(GAUCHE_SIGNATURE);             \
         Scm_InitPrelinked();                    \
     } while (0)
+#else  /*!GAUCHE_STATIC_EXCLUDE_GDBM*/
+#define SCM_INIT_STATIC()                       \
+    do {                                        \
+        GC_INIT();                              \
+        Scm_Init(GAUCHE_SIGNATURE);             \
+        Scm_InitPrelinked();                    \
+        Scm_InitPrelinked_gdbm();               \
+    } while (0)
+#endif
     
 
 SCM_DECL_END
