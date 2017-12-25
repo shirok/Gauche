@@ -129,12 +129,15 @@ case "$MSYSTEM" in
     ;;
 esac
 
+# Enable using freshly-built gosh for the subsequent operations.
+PATH=$distdir/bin:$PATH
+
 # Build GL
 if [ "$WITH_GL" = "yes" ]; then
-  PATH=$distdir/bin:$PATH
-  (cd ../Gauche-gl; ./DIST gen; \
-   ./configure --prefix=$distdir --with-glut=mingw-static $buildopt; \
-   make clean; make; make install; make install-examples)
+  if [ "$SKIP_CONFIG" != yes ]; then
+    (cd ../Gauche-gl; ./DIST gen; ./configure --prefix=$distdir --with-glut=mingw-static $buildopt)
+  fi
+  (cd ../Gauche-gl; make clean; make; make install install-examples)
 fi
 
 # Build installer
