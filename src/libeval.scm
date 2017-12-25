@@ -113,7 +113,7 @@
         [prev-read-context (current-read-context)])
 
     (define (setup-load-context)
-      (when (port-closed? port) (error "port alrady closed:" port))
+      (when (port-closed? port) (error "port already closed:" port))
       (%port-lock! port)
       (when environment (vm-set-current-module environment))
       (current-load-port port)
