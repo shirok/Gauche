@@ -65,7 +65,7 @@
 ;; C file.  Returns two names.
 (define (generate-c-file file incdirs extras)
   (define outname
-    (receive (oport name) (sys-mkstemp (path-sans-extension file))
+    (receive (oport name) (sys-mkstemp (path-sans-extension (sys-basename file)))
       (close-port oport)
       name))
   (parameterize ([cgen-current-unit
@@ -78,24 +78,26 @@
                "#include <gauche.h>")
     (cgen-decl (format "const char *main_script = ~a;"
                        (cgen-safe-string (file->string file))))
-    (cgen-decl "const char *extra_srcs[] = {")
-    (dolist [x extras]
-      (if-let1 f (find-file-in-paths x :paths incdirs 
-                                     :pred file-exists?)
-        (cgen-decl (c-safe-string-literal (file->string f)) ",")
-        (error "Can't find library file:" x)))
-    (cgen-decl "};")
     (cgen-init "SCM_INIT_STATIC();")
-    (do-ec (: f (index i) extras)
-           (cgen-init "{"
-                      #" ScmObj s = SCM_MAKE_STR(extra_srcs[~|i|]);"
-                      " ScmObj p = Scm_MakeInputStringPort(SCM_STRING(s), TRUE);"
-                      " Scm_LoadFromPort(SCM_PORT(p), SCM_LOAD_PROPAGATE_ERROR, NULL);"
-                      #"  Scm_Provide(SCM_MAKE_STR(~(c-safe-string-literal (path-sans-extension f))));"
-                      "}"))
+    (unless (null? extras)
+      (setup-library-table incdirs extras))
     (cgen-init "Scm_SimpleMain(argc, argv, main_script, 0);")
     (cgen-emit-c (cgen-current-unit)))
   (values outname (path-swap-extension outname "c")))
+
+(define (setup-library-table incdirs extras)
+  (define setup-code
+    `(let1 tab (make-hash-table 'equal?)
+       ,@(list-ec
+          [: x extras]
+          (if-let1 f (find-file-in-paths x :paths incdirs :pred file-exists?)
+            `(hash-table-put! tab ,x ,(file->string f))
+            (error "Can't find library file:" x)))
+       (add-embedded-code-loader! tab)))
+  (cgen-decl (format "const char *setup_libraries = ~a;"
+                     (cgen-safe-string (write-to-string setup-code))))
+  (cgen-init "Scm_EvalCString(setup_libraries, SCM_OBJ(Scm_GaucheModule()),"
+             "                NULL);"))
 
 (define (compile-c-file c-file outfile xdefs xincdirs xlibdirs)
   ;; TODO: We wish we could use gauche.package.compile, but currently it is
@@ -110,3 +112,4 @@
     (let1 cmd #"~cc ~cflags ~defs ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
       (print cmd)
       (sys-system cmd))))
+

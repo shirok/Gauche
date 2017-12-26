@@ -382,6 +382,11 @@ some_trick();
 (test-module 'gauche.cgen.precomp)
 
 ;;====================================================================
+(test-section "gauche.cgen.standalone")
+(use gauche.cgen.standalone)
+(test-module 'gauche.cgen.standalone)
+
+;;====================================================================
 (test-section "gauche.cgen")
 (use gauche.cgen)
 (test-module 'gauche.cgen)

@@ -171,47 +171,22 @@
   (with-output-to-string
     (cute for-each ($ write $ unwrap-syntax $) (file->sexp-list path))))
 
-;; This code fragment is evaluated in Scm_InitPrelinked() to set up a load
-;; hook so that the standard libraries would be load from memory instead of
-;; files.  Be careful! This code shouldn't trigger any autoloads.
-(define (hook-source tab)
-  `(%add-load-path-hook!
-    (lambda (archive-file name suffixes)
-      (and (equal? archive-file "")
-           (let ([fn (any (lambda (sfx)
-                            (let ([n (string-append name sfx)])
-                              (and (hash-table-exists? ,tab n)
-                                   n)))
-                          suffixes)])
-             (and fn
-                  (let ([content (hash-table-get ,tab fn)])
-                    (and content
-                         (cons fn (lambda (_)
-                                    (open-input-string content)))))))))))
-
-
 (define (embed-scm name scmfiles)
   (cgen-decl "static ScmHashTable *scmtab;")
   (cgen-init "scmtab = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 0));")
-  (cgen-init "SCM_DEFINE(SCM_FIND_MODULE(\"gauche.internal\", 0),"
-             #"           \"*embedded-scm-table-~|name|*\","
-             "           SCM_OBJ(scmtab));")
   ;; Set up load hook
-  (cgen-decl "static const char *embedded_load_hook = "
-             ($ cgen-safe-string $ write-to-string 
-                $ hook-source $ symbol-append '*embedded-scm-table- name '*)
-             ";")
-  (cgen-init "Scm_AddLoadPath(\"\", FALSE);")
-  (cgen-init "Scm_EvalCStringRec(embedded_load_hook,"
-             "                SCM_OBJ(SCM_FIND_MODULE(\"gauche.internal\", 0))"
-             "                );")
-
   (do-ec [: scmfile scmfiles]
          [:let name (cgen-literal (cadr scmfile))]
          [:let lit  (cgen-literal (get-scm-content (caddr scmfile)))]
          (cgen-init (format "Scm_HashTableSet(scmtab, ~a, ~a, 0);"
                             (cgen-cexpr name)
                             (cgen-cexpr lit))))
+  (cgen-init "static ScmObj add_embedded_code_loader = SCM_UNDEFINED;"
+             "SCM_BIND_PROC(add_embedded_code_loader,"
+             "              \"add-embedded-code-loader!\","
+             "              Scm_GaucheModule());"
+             "Scm_Apply(add_embedded_code_loader, SCM_LIST1(SCM_OBJ(scmtab)),"
+             "          NULL);")
   )
 
 ;; MinGW specific stuff
@@ -255,7 +230,8 @@
   (when main?
     (cond-expand
      [gauche.os.windows (generate-imp-stub "libgauche-0.9.dll")]
-     [else]))
+     [else])
+    (cgen-init "Scm_AddLoadPath(\"@\", FALSE);"))
   (embed-scm name scmfiles)
   (generate-staticinit dsos&mods)
   (cgen-emit-c (cgen-current-unit)))

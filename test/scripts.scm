@@ -17,6 +17,9 @@
 (define *top-srcdir*
   (sys-normalize-pathname (or (sys-getenv "top_srcdir") "..")
                           :absolute #t :canonicalize #t))
+(define *top-builddir*
+  (sys-normalize-pathname (or (sys-getenv "top_builddir") "..")
+                          :absolute #t :canonicalize #t))
 
 (define *executable-suffix* (gauche-config "--executable-suffix"))
 
@@ -485,5 +488,38 @@
 
 (wrap-with-test-directory precomp-test-1)
 (wrap-with-test-directory precomp-test-2)
+
+;;=======================================================================
+(test-section "build-standalone")
+
+(test-script
+ (build-path (or (sys-getenv "top_srcdir") "..") "src" "build-standalone"))
+
+(define (run-build-static opts args)
+  (do-process `("../../src/gosh" "-ftest"
+                ,#"-I=~|*top-srcdir*|/test/test-static"
+                ,(build-path *top-srcdir* "src/build-standalone")
+                ,#"--header-dir=~|*top-srcdir*|/src"
+                ,#"--header-dir=~|*top-builddir*|/src"
+                ,#"--header-dir=~|*top-srcdir*|/gc/include"
+                ,#"--library-dir=~|*top-builddir*|/src"
+                ,@opts
+                ,@args)
+              :directory "test.o"))
+
+(define (static-test-1)
+  (test* "static link test" #t
+         (run-build-static `("-o" "staticmain" 
+                             "-I" ,(build-path *top-srcdir* "test/test-static"))
+                           `(,(fix-path (build-path *top-srcdir* 
+                                                    "test/test-static/main.scm"))
+                             "foo/bar.scm" 
+                             "foo/bar-impl.scm"
+                             "foo/baz.scm")))
+  (test* "static link executable" "ARGS: (A b CdE)"
+         (process-output->string "test.o/staticmain A b CdE"))
+  )
+
+(wrap-with-test-directory static-test-1)
 
 (test-end)

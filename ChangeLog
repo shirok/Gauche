@@ -1,3 +1,10 @@
+2017-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (add-embedded-code-loader!): Added to support
+	  statically linked applications.
+	* lib/gauche/cgen/standalone.scm: Fixes library loading via
+	  relative paths.
+
 2017-12-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (find-load-file): Introduced an alternative way to

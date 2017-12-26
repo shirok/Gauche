@@ -259,13 +259,6 @@
                   path)])
     `',((with-module gauche.internal %add-load-path) path afterp)))
 
-;; Load path hooks
-(select-module gauche.internal)
-(define-cproc %add-load-path-hook! (proc :optional (after?::<boolean> #f))
-  ::<void> Scm_AddLoadPathHook)
-(define-cproc %delete-load-path-hook! (proc)
-  ::<void> Scm_DeleteLoadPathHook)
-
 ;; API: find-load-file
 ;;
 ;;   Core function to search specified file from the search path *PATH.
@@ -364,6 +357,46 @@
               (rxmatch #/^[a-zA-Z]:/ filename)) ; the wicked drive-letter
          (do-absolute filename)]
         [else (do-relative paths)]))
+
+;; Load path hooks
+(select-module gauche.internal)
+(define-cproc %add-load-path-hook! (proc :optional (after?::<boolean> #f))
+  ::<void> Scm_AddLoadPathHook)
+(define-cproc %delete-load-path-hook! (proc)
+  ::<void> Scm_DeleteLoadPathHook)
+
+;; Returns a procedure suitable for load path hook that searches the hashtable
+;; LIBTAB, that is keyed by partial pathname (e.g. foo/bar.scm) and has value
+;; which is the code as a string.
+;; NB: Be very careful not to call autoloaded procedures here.  The static linked
+;; version of libgauche depends on this to load Gauche standard libraries, so
+;; triggering autoload in it is a bad idea.
+(select-module gauche.internal)
+(define (make-embedded-code-loader libtab)
+  (^[archive-path name suffixes]
+    (and-let* ([prefix (and (not (equal? archive-path ""))
+                            (eqv? #\@ (string-ref archive-path 0))
+                            (string-copy archive-path 1))]
+               [path (if (equal? prefix "")
+                       name
+                       (string-append prefix "/" name))]
+               [fn (any (^[sfx]
+                          (let1 n (string-append path sfx)
+                            (and (hash-table-exists? libtab n) n)))
+                        suffixes)]
+               [content (hash-table-get libtab fn)])
+      (cons fn
+            (^_ (open-input-string content :name (string-append "@" fn)))))))
+
+;; This allows the caller to use the load path hook feature in a specific case
+;; (embedded code) without concerning its internals.
+;; LIBTAB is the same one as make-embedded-code-loader.
+;; Returns a thunk that deletes the added hook.
+(select-module gauche.internal)
+(define-in-module gauche (add-embedded-code-loader! libtab)
+  (let1 hook (make-embedded-code-loader libtab)
+    (%add-load-path-hook! hook)
+    (^[] (%delete-load-path-hook! hook))))
 
 ;;;
 ;;; Repl
