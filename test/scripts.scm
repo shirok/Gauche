@@ -517,7 +517,7 @@
                              "foo/bar-impl.scm"
                              "foo/baz.scm")))
   (test* "static link executable" "ARGS: (A b CdE)"
-         (process-output->string "test.o/staticmain A b CdE"))
+         (process-output->string '(test.o/staticmain A b CdE)))
   )
 
 (wrap-with-test-directory static-test-1)
