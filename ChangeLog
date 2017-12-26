@@ -1,3 +1,8 @@
+2017-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (open-input-string, open-output-string): Add name
+	  keyword argument to specify the name of created ports.
+
 2017-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* rfc.http (http-request): Do not include extra headers whose value

@@ -18106,7 +18106,7 @@ memory.
 文字列ポートは、メモリ上のデータと関連付けられたポートです。
 @c COMMON
 
-@defun open-input-string string
+@defun open-input-string string :key name
 [R7RS base][SRFI-6]
 @c EN
 Creates an input string port that has the content @var{string}.
@@ -18134,6 +18134,29 @@ rather than using @code{string-ref} with incremental index.
 (read-char p) @result{} #<eof>
 @end example
 @c COMMON
+
+@c EN
+The @var{name} keyword argument is a Gauche extension.
+By default, the created port is named as @code{(input string port)}.
+It is mainly used for debugging.  You can specify alternative name with
+this argument.
+As Gauche's convention, file ports has the source file path as its name,
+so port names for debugging information should be parenthesized
+not to be taken as pathnames.
+@c JP
+@var{name}キーワード引数はGaucheの拡張です。
+デフォルトでは、作られるポートの名前は@code{(input string port)}になります。
+ポートの名前は主にデバッグのために使われます。この引数で代わりの名前を指定できます。
+Gaucheの慣習として、ファイルポートは元ファイルのパス名を名前に持つので、
+ポート名にデバッグ用途の情報を載せる場合はパス名と区別しやすいよう括弧に入れるのが良いでしょう。
+@c COMMON
+
+@example
+gosh> (open-input-string "")
+#<iport (input string port) 0x215c0c0>
+gosh> (open-input-string "" :name "(user input)")
+#<iport (user input) 0x22a4e40>
+@end example
 @end defun
 
 @defun get-remaining-input-string port
@@ -18161,7 +18184,7 @@ If @var{port} has already reached to EOF, a null string is returned.
 @end defun
 
 
-@defun open-output-string
+@defun open-output-string :key name
 [R7RS base][SRFI-6]
 @c EN
 Creates an output string port.   Anything written to the
@@ -18177,6 +18200,29 @@ sequentially than pre-allocate a string and fill it with
 これは、順番に文字列を構成する方法として、あらかじめ文字列をアロケートして
 @code{string-set!}で埋めて行くよりもずっと効率の良い方法です。
 @c COMMON
+
+@c EN
+The @var{name} keyword argument is a Gauche extension.
+By default, the created port is named as @code{(output string port)}.
+It is mainly used for debugging.  You can specify alternative name with
+this argument.
+As Gauche's convention, file ports has the source file path as its name,
+so port names for debugging information should be parenthesized
+not to be taken as pathnames.
+@c JP
+@var{name}キーワード引数はGaucheの拡張です。
+デフォルトでは、作られるポートの名前は@code{(output string port)}になります。
+ポートの名前は主にデバッグのために使われます。この引数で代わりの名前を指定できます。
+Gaucheの慣習として、ファイルポートは元ファイルのパス名を名前に持つので、
+ポート名にデバッグ用途の情報を載せる場合はパス名と区別しやすいよう括弧に入れるのが良いでしょう。
+@c COMMON
+
+@example
+gosh> (open-output-string)
+#<oport (output string port) 0x22a4c00>
+gosh> (open-output-string :name "(temporary output)")
+#<oport (temporary output) 0x22a49c0>
+@end example
 @end defun
 
 @defun get-output-string port

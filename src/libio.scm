@@ -328,13 +328,30 @@
                                   TRUE (& bufrec)))))
 
 ;; String ports (srfi-6)
+;;   By default, string ports are named as "(input string port)" and
+;;   "(output string port)", which aren't very informative.  The caller
+;;   can specify alternative name with :name keyword argument. NB: Currently,
+;;   port name is assumed to be a pathname if it doesn't match #/^\(.*\)$/.
+;;   This convention may be replaced by more reliable mechanism to determine
+;;   port source path.  Until then, be careful to name the ports.
 (select-module gauche)
 
-(define-cproc open-input-string (string::<string> :key (private?::<boolean> #f))
-  Scm_MakeInputStringPort)
+(define-cproc open-input-string (string::<string> :key (private?::<boolean> #f)
+                                                       name)
+  (let* ([p (Scm_MakeInputStringPort string private?)])
+    ;; NB: We don't have an API to set port name in the constructor; but
+    ;; this is a bad manner.  Don't duplicate this.
+    (unless (SCM_UNBOUNDP name)
+      (set! (-> (SCM_PORT p) name) name))
+    (return p)))
 
-(define-cproc open-output-string (:key (private?::<boolean> #f))
-  Scm_MakeOutputStringPort)
+(define-cproc open-output-string (:key (private?::<boolean> #f) name)
+  (let* ([p (Scm_MakeOutputStringPort private?)])
+    ;; NB: We don't have an API to set port name in the constructor; but
+    ;; this is a bad manner.  Don't duplicate this.
+    (unless (SCM_UNBOUNDP name)
+      (set! (-> (SCM_PORT p) name) name))
+    (return p)))
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
   (return (Scm_GetOutputString oport 0)))
