@@ -1641,7 +1641,7 @@
                                        :allow-archive #t
                                        :relative-dot-path #t)
       (if (pair? (cddr path&rest)) ; archive hook is in effect.
-        ((caddr path&rest))
+        ((caddr path&rest) (car path&rest))
         (open-input-file (car path&rest) :encoding #t))
       (error "include file is not readable: " path))))
 
