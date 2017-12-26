@@ -99,6 +99,12 @@
   (cgen-init "Scm_EvalCString(setup_libraries, SCM_OBJ(Scm_GaucheModule()),"
              "                NULL);"))
 
+(define (get-libs xdefs)
+  (let1 libs (gauche-config "--static-libs")
+    (if (any #/^-D(=|\s*)\"?GAUCHE_STATIC_EXCLUDE_GDBM\"?/ xdefs)
+      (regexp-replace-all #/-lgdbm(_compat)?/ libs "")
+      libs)))
+
 (define (compile-c-file c-file outfile xdefs xincdirs xlibdirs)
   ;; TODO: We wish we could use gauche.package.compile, but currently it is
   ;; specialized to compile extension modules.  Eventually we will modify
@@ -108,7 +114,7 @@
         [defs    (string-join xdefs " ")]
         [incdirs (string-join `(,@xincdirs ,(gauche-config "-I")) " ")]
         [libdirs (string-join `(,@xlibdirs ,(gauche-config "-L")) " ")]
-        [libs    (gauche-config "--static-libs")])
+        [libs    (get-libs xdefs)])
     (let1 cmd #"~cc ~cflags ~defs ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
       (print cmd)
       (sys-system cmd))))
