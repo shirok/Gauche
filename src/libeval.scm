@@ -289,17 +289,27 @@
 ;;   The element in SUFFIXES is directly appended to the FILENAME;
 ;;   so usually it begins with dot.
 ;;
-;;   PATHs may contain a regular file, or an empty string "".
-;;   In which case, procedures chained to *load-path-hooks* are called
-;;   in turn.  It receives three arguments; the regular filename in PATHs
-;;   or "", the (partial) filename given to the find-load-file, and the
-;;   list of suffixes.  The hook is mainly intended to allow loading
+;;   PATHs may contain a regular file, or a path beginning with "@".
+;;   If find-load-file steps on such a path, it calls procedures chained
+;;   in *load-path-hooks* in turn.  The procedure receives three arguments:
+;;   The path (of a regular file, or beginning with "@"), the partial
+;;   filename given to the find-load-file, and the list of suffixes.
+;;   The hook is mainly intended to allow loading
 ;;   from archive files or from special location (e.g. prelinked in the
 ;;   executing binary).   If the hook procedure "finds"
 ;;   the searched file in the archive file, it should return a pair of
 ;;   the canonical filename (given filename plus suffix if applicable), and
-;;   a thunk that opens and returns a port to read the file.  If the hook
-;;   procedure doesn't find the searched file, it should return #f.
+;;   a procedure that opens and returns a port to read the file.  The procedure
+;;   receives the canonical filename.
+;;   If the hook procedure doesn't find the searched file, it should return #f.
+;;
+;;   NB: For the backward compatibility, we also call load-path-hook
+;;   if PATHS contain an empty path "".  Its use is deprecated.
+;;
+;;   NB: Prefixing path with '@' is also used in configure, to indicate
+;;   that the system path should be relative to the location of the binary.
+;;   That prefix is resolved implicitly when the code queries system
+;;   paths, so won't be confused with load paths.
 ;;
 ;;   NB: find-file-in-paths in file.util is similar to this, but this one
 ;;   captures the exact behavior of `load'.
@@ -331,7 +341,9 @@
         (list found (cdr ps))
         (do-relative (cdr ps)))]
      [(and allow-archive
-           (or (equal? (car ps) "") (file-is-regular? (car ps))))
+           (or (file-is-regular? (car ps))
+               (equal? (car ps) "")     ; DEPRECATED USE
+               (eqv? #\@ (string-ref (car ps) 0))))
       (if-let1 r (any (^p (p (car ps) filename suffixes)) *load-path-hooks*)
         (list (car r) (cdr ps) (cdr r))
         (do-relative (cdr ps)))]

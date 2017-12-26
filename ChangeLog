@@ -1,5 +1,12 @@
 2017-12-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/libeval.scm (find-load-file): Introduced an alternative way to
+	  trigger load hooks; if a path in load-path begins with "@", it will
+	  invoke load hooks.  With this, we can make the relative path loading
+	  from string ports work.  The previous way of using "" to trigger
+	  the load hooks is deprecated, for it can be achieved by just "@".
+	  See the comment of find-load-file for the details.
+
 	* src/libio.scm (open-input-string, open-output-string): Add name
 	  keyword argument to specify the name of created ports.
 
