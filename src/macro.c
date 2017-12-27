@@ -338,20 +338,20 @@ static inline ScmObj pvref_to_pvar(PatternContext *ctx, ScmObj pvref)
 }
 
 /* compare :: (Sym-or-id, Sym-or-id) -> Bool */
-static int compare(ScmObj obj1, ScmObj obj2, ScmModule *mod, ScmObj env)
+static int compare(ScmObj obj1, ScmObj obj2, ScmObj mod, ScmObj env)
 {
     /* er-comparer is defined in Scheme (compile.scm) */
     static ScmObj er_comparer_proc = SCM_UNDEFINED;
     SCM_BIND_PROC(er_comparer_proc, "er-comparer",
                   Scm_GaucheInternalModule());
     return !SCM_FALSEP(Scm_ApplyRec4(er_comparer_proc,
-                                     obj1, obj2, SCM_OBJ(mod), env));
+                                     obj1, obj2, mod, env));
 }
 
 static int isEllipsis(PatternContext *ctx, ScmObj obj)
 {
     if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */
-    return compare(ctx->ellipsis, obj, ctx->mod, ctx->env);
+    return compare(ctx->ellipsis, obj, SCM_OBJ(ctx->mod), ctx->env);
 }
 
 #define ELLIPSIS_FOLLOWING(Pat, Ctx)                                    \
@@ -361,7 +361,7 @@ static int isEllipsis(PatternContext *ctx, ScmObj obj)
     Scm_Error("Bad ellipsis usage in macro definition of %S: %S",       \
                Ctx->name, Ctx->form)
 
-static ScmObj preprocess_literals(ScmObj literals, ScmModule *mod, ScmObj env)
+static ScmObj preprocess_literals(ScmObj literals)
 {
     ScmObj lp, h = SCM_NIL, t = SCM_NIL;
     SCM_FOR_EACH(lp, literals) {
@@ -518,7 +518,7 @@ static ScmObj compile_rule1(ScmObj form,
             return rename_variable(ctx, form);
         }
         /* underbar */
-        if (patternp && compare(form, SCM_SYM_UNDERBAR, ctx->mod, ctx->env)) { 
+        if (patternp && compare(form, SCM_SYM_UNDERBAR, SCM_OBJ(ctx->mod), ctx->env)) { 
             return SCM_SYM_UNDERBAR;
         }
         if (patternp) {
@@ -557,7 +557,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
 
     ctx.name = name;
     ctx.ellipsis = ellipsis;
-    ctx.literals = preprocess_literals(literals, mod, env);
+    ctx.literals = preprocess_literals(literals);
     ctx.mod = mod;
     ctx.env = env;
     ctx.renames = SCM_NIL;
@@ -568,7 +568,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     if (!SCM_FALSEP(ellipsis)) {
         ScmObj cp;
         SCM_FOR_EACH(cp, ctx.literals) {
-            if (compare(ellipsis, SCM_CAR(cp), mod, env)) {
+            if (compare(ellipsis, SCM_CAR(cp), SCM_OBJ(mod), env)) {
                 ctx.ellipsis = SCM_FALSE;
                 break;
             }
@@ -802,7 +802,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
         return TRUE;            /* unconditional match */
     }
     if (SCM_IDENTIFIERP(pattern)) {
-        return compare(pattern, form, SCM_MODULE(mod), env);
+        return compare(pattern, form, mod, env);
     }
     if (SCM_SYNTAX_PATTERN_P(pattern)) {
         return match_subpattern(form, SCM_SYNTAX_PATTERN(pattern),

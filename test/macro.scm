@@ -1630,7 +1630,7 @@
        (eval '(lit-test-2 temp 1) (interaction-environment)))
 
 ;;----------------------------------------------------------------------
-;; 'gen-underbar-1' test should output the following error.
+;; 'generate-underbar-1' test should output the following error.
 ;;
 ;; *** ERROR: unbound variable: #<identifier user#_.2d4ac00>
 
@@ -1646,7 +1646,7 @@
               _))))
        (mac-sub1 'failed)))))
 
-(test* "gen-underbar-1"
+(test* "generate-underbar-1"
        (test-error <error> #/^unbound variable/)
        (gen-underbar))
 
