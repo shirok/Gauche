@@ -54,7 +54,7 @@
       (generate-c-file srcfile (append include-dirs '(".")) extra-files)
     (unwind-protect
         (compile-c-file out.c
-                        (or outfile (path-sans-extension srcfile))
+                        (or outfile (path-sans-extension (sys-basename srcfile)))
                         (map (^d #"-D\"~|d|\"") cpp-definitions)
                         (map (^d #"-I\"~|d|\"") header-dirs)
                         (map (^d #"-L\"~|d|\"") library-dirs))
