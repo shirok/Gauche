@@ -1600,6 +1600,45 @@
                 (interaction-environment)))))
 
 ;;----------------------------------------------------------------------
+;; 'compare-ellipsis-1' test should output the following error.
+;;
+;; *** ERROR: in definition of macro mac-sub1:
+;; template's ellipsis nesting is deeper than pattern's:
+;; (#<identifier user#list.2d80660> #<identifier user#x.2d80690>
+;;  #<identifier user#ooo.2d806f0>)
+;;
+;; 'compare-ellipsis-2' test should output the following error.
+;;
+;; *** ERROR: in definition of macro mac-sub1:
+;; template's ellipsis nesting is deeper than pattern's:
+;; (#<identifier user#list.2969870> #<identifier user#x.29698a0>
+;;  #<identifier user#ooo.2969900>)
+
+(test-section "compare ellipsis")
+
+(define-syntax ell-test
+  (syntax-rules (ooo)
+    ((_ zzz)
+     (let-syntax
+         ((mac-sub1
+           (syntax-rules ooo ()
+             ((_ x zzz)
+              (list x ooo)))))
+       (mac-sub1 1 2 3)))))
+
+(test* "compare-ellipsis-1"
+       (test-error <error> #/^in definition of macro/)
+       (eval
+        '(ell-test ooo)
+        (interaction-environment)))
+
+(test* "compare-ellipsis-2"
+       (test-error <error> #/^in definition of macro/)
+       (eval
+        '(let ((ooo 'yyy)) (ell-test ooo))
+        (interaction-environment)))
+
+;;----------------------------------------------------------------------
 ;; 'compare-literals-2' test should output the following error.
 ;;
 ;; *** ERROR: malformed #<identifier user#lit-test-2.29d4060>:

@@ -277,7 +277,9 @@ typedef struct {
     ScmObj renames;             /* list of (var . identifier)  Keep mapping
                                    of input symbol/identifier to fresh 
                                    identifier */
-    ScmObj ellipsis;            /* symbol/idendifier/keyword for ellipsis */
+    ScmObj ellipsis;            /* symbol/idendifier/keyword for ellipsis
+                                   SCM_TRUE means default ellipsis (...)
+                                   SCM_FALSE means disabled */
     int pvcnt;                  /* counter of pattern variables */
     int maxlev;                 /* maximum level */
     ScmModule *mod;             /* module where this macro is defined */
@@ -351,7 +353,13 @@ static int compare(ScmObj obj1, ScmObj obj2, ScmObj mod, ScmObj env)
 static int isEllipsis(PatternContext *ctx, ScmObj obj)
 {
     if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */
-    return compare(ctx->ellipsis, obj, SCM_OBJ(ctx->mod), ctx->env);
+    if (SCM_TRUEP(ctx->ellipsis)) {
+        /* default ellipsis (...) */
+        return compare(SCM_SYM_ELLIPSIS, obj, SCM_OBJ(ctx->mod), ctx->env);
+    } else {
+        /* specified ellipsis */
+        return SCM_EQ(ctx->ellipsis, obj);
+    }
 }
 
 #define ELLIPSIS_FOLLOWING(Pat, Ctx)                                    \
@@ -568,7 +576,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     if (!SCM_FALSEP(ellipsis)) {
         ScmObj cp;
         SCM_FOR_EACH(cp, ctx.literals) {
-            if (compare(ellipsis, SCM_CAR(cp), SCM_OBJ(mod), env)) {
+            if (isEllipsis(&ctx, SCM_CAR(cp))) {
                 ctx.ellipsis = SCM_FALSE;
                 break;
             }
