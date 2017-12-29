@@ -1,91 +1,32 @@
-This document explains how to build a statically-linked
-gauche binary, that can run stand-alone (that is, you don't need to
-install Gauche runtime separately---everything is in one executable).
+Building stand-alone executable is officially supported as of
+0.9.6.  The static library libgauche-static-0.9.a is built
+by default.  See "Building standalone executables" section
+of the manual for the details.
 
-This is still an experimental feature.  The building process isn't
-streamlined: You may need manual tweak depending on your configuration.
-Also there's no easy way yet to statically link external Gauche
-extensions such as Gauche-gl.  We'll gradually address these issues.
+This file describes some advanced technical details.
 
+* Stripping down the size of the executable
 
-[1. Build a static library]
+In order to create a static library that excludes certain
+modules, you can run "make static" under src/ directory
+with the evironment variable LIBGAUCHE_STATIC_EXCLUDES
+set to list modules to be excluded:
 
-Static library isn't built by default.
-After building Gauche in usual way (e.g. configure + make),
-go to $(TOP_SRCDIR)/src and run 'make static'.  It creates
-libgauche-static-X.Y.a  where X.Y is the ABI version.
-
-IMPORTANT: The static library includes all objects under ext/.
-If you enable dbm.gdbm module, there'll be object files that
-depends on gdbm, which will be covered by GPL.  On some systems
-(e.g. Linux), ndbm and odbm interface are also provided by gdbm
-package and falls under the same license.
-
-If you need the final binary GPL-free for some reason,
-run 'make static' with setting environment variable
-LIBGAUCHE_STATIC_EXCLUDES.  For example:
-
-  LIBGAUCHE_STATIC_EXCLUDES=dbm.gdbm,dbm.ndbm,dbm.odbm make static
-
-This still includes gdbm-related object files, but there's
-no dependency from the core features, so if you create final
-binary they'll be excluded.
+  $ LIBGAUCHE_STATIC_EXCLUDES=dbm.gdbm,os.windows make static
 
 
-[2. Bundle your script source]
 
-Copy the created libgauche-static-X.Y.a to your source directory,
-and run build-standalone subcommand:
-
-  gosh build-standalone -o command yourscript.scm 
-
-This looks header files (gauche.h etc.) and the static library
-file (libgauche-static-X.Y.a) from the installed Gauche's paths.
-If those are not in the installation location (especially
-libgauche-static-X.Y.a, which isn't installed by default),
-you need to tell the commane where to look for.
-
-  gosh build-standalone \
-         --header-dir /path/to/headers \
-         --library-dir /path/to/library \
-         -o command yourscript.scm
-
-The resulting binary doesn't depend on neither Gauche DSOs nor
-installed Gauche libraries.  You can copy just the binary onto
-the target platform.
-
-If your script depends on its own library files, you can compile
-eveything together.  Suppose yourscript.scm refers to lib/a.scm
-and lib/b.scm.  You can just list those files after yourscript.scm:
-
-  gosh build-standalone \
-         --header-dir /path/to/headers \
-         --library-dir /path/to/library \
-         -o command yourscript.scm lib/a.scm lib/b.scm
-
-
-Note: It still depends on the system libraries (e.g. -lpthread)
-and they are needed on the target platform.
-
-Since the result binary includes entire Gauche bundled libraries,
-it tends to be large (around 12MB on Linux/x86_64).
-
-The examples/standalone directory contains a sample script.
-After building the static library, run make there and you'll
-get sample-repl.
-
-
-[3. Using Gauche API from statically linked C applications]
+* Using Gauche API from statically linked C applications
 
 If you want to call Gauche API from statically linked C app,
 you need slightly different initialization than the usual.
 Instead of calling GC_INIT() and Scm_Init(), you should do
 the following:
 
-  (1) include gauche/static.h along gauche.h
+  (1) include gauche/static.h _before_ gauche.h
 
-    #include <gauche.h>
     #include <gauche/static.h>
+    #include <gauche.h>
 
   (2) call SCM_INIT_STATIC() from main(), instead of GC_INIT()
       and Scm_INIT().

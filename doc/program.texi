@@ -3,14 +3,15 @@
 @c NODE Gaucheでのプログラミング
 
 @menu
-* Invoking Gosh::               
-* Interactive development::     
-* Writing Scheme scripts::      
-* Debugging::                   
-* Platform-dependent features::  
-* Profiling and tuning::        
-* Writing Gauche modules::      
-* Using extension packages::    
+* Invoking Gosh::
+* Interactive development::
+* Writing Scheme scripts::
+* Debugging::
+* Platform-dependent features::
+* Profiling and tuning::
+* Writing Gauche modules::
+* Using extension packages::
+* Building standalone executables::
 @end menu
 
 @node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
@@ -683,7 +684,7 @@ internal character encodings.
 @c COMMON
 
 @menu
-* Working in REPL::             
+* Working in REPL::
 @end menu
 
 @node Working in REPL,  , Interactive development, Interactive development
@@ -1842,8 +1843,8 @@ the patterns Gauche can execute well.
 @c COMMON
 
 @menu
-* Using profiler::              
-* Performance tips::            
+* Using profiler::
+* Performance tips::
 @end menu
 
 @node Using profiler, Performance tips, Profiling and tuning, Profiling and tuning
@@ -2330,7 +2331,7 @@ module name.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Using extension packages,  , Writing Gauche modules, Programming in Gauche
+@node Using extension packages, Building standalone executables, Writing Gauche modules, Programming in Gauche
 @section Using extension packages
 @c NODE 拡張パッケージの使用
 
@@ -2568,6 +2569,183 @@ tarball が展開されるディレクトリ。もし、URL が与えられれ�
 @code{wget} プログラムへのパス
 @end table
 @c COMMON
+
+@c ----------------------------------------------------------------------
+@node Building standalone executables,  , Using extension packages, Programming in Gauche
+@section Building standalone executables
+@c NODE スタンドアロン実行可能ファイルの作成
+
+When you want to distribute your Gauche scripts or applications,
+the users need to install Gauche runtime on their machine.
+Although it is always the case for any language implementations---you need
+Java runtime to run Java applications, or C runtime to run
+C applciations---it may be an extra effort to ask users to install
+not-so-standard language runtimes.
+
+To ease distribution of Gauche applications, you can create a
+stand-alone executable.  It statically links entire Gauche system
+so that it runs by just copying the executable file.
+
+@subheading Quick recipe
+
+To generate a standalone executable, just give your script file
+to the @file{build-standalone} script, which is installed as a
+part of Gauche.
+
+@example
+gosh build-standalone yourscript.scm
+@end example
+
+It will create an executable file @code{yourscript} (or @code{yourscript.exe}
+on Windows) in the current directory.
+
+To specify the output name different from the script name,
+give @code{-o} option:
+
+@example
+gosh build-standalone -o yourcommand yourscript.scm
+@end example
+
+When your script needs supporting library files, you should list
+those files as well:
+
+@example
+gosh build-standalone yourscript.scm lib/library1.scm lib/library2.scm
+@end example
+
+The library file paths need to be relative to the respective load path.
+See the explanation of @code{-I} option below.
+
+@subheading Catches
+
+There are a few things you should be aware of.
+
+@itemize
+@item
+The size of the binary tend to be large, since it contains the entire
+Gauche system regardless of whether your application use it or not.
+You can strip down the size if you need to, but you need to rebuild
+Gauche library to do so.
+
+@item
+The generated binary still depends on external dynamically linked
+libraries, such as libpthread.  The exact dependency may differ
+how Gauche is configured, and can be checked
+by running system-provided tools, 
+such as @code{ldd} on most Unix systems and MinGW or @code{otool -L} on OSX,
+on the generated standalone binaries.
+You may want to ensure the users have requied libraries.
+
+@item
+Currently we don't yet have a convenient way to statically link
+extension libraries.  We're working on it.
+
+@item
+If Gauche is configured to use gdbm, it is linked to the standalone binary
+by default, hence the binary itself is covered by GPL.  In case if you
+need to distribute binaries under BSD license, you need to give
+@code{-D GAUCHE_STATIC_EXCLUDE_GDBM} flag to @code{build-standalone}.
+See below.
+@end itemize
+
+@subheading Using build-standalone
+
+@deftp {Program} gosh build-standalone [options] script-file [library-file @dots{}]
+Create a stand-alone binary to execute a Gauche program in @var{script-file}.
+It is executed as if it is run as @code{gosh script-file}, with a few
+differences.
+
+The main thing is that since @var{script-file} is no longer
+loaded from file, code that references paths relative to @var{script-file} won't
+work.  One example is @code{(add-load-path dir :relative)}
+(@pxref{Loading Scheme file}).  Auxiliary library files required by
+@var{script-file} must be listed as @var{library-file} @dots{}, so that
+they are bundled together into the executable.
+
+The following command-line options are recognized.
+@end deftp
+
+@deftp {Command Option} -o outfile
+Specifies output executable filename.  When omitted, the basename of
+@var{script-file} without extension is used.
+@end deftp
+
+@deftp {Command Option} -D var[=val]
+Add C preprocessor definitions while compiling the generated C code.
+An important use case of this option is to exclude gdbm dependency
+from the generated binaries, by specifing
+@code{-D GAUCHE_STATIC_EXCLUDE_GDBM}.  Note that you need a whitespace
+between @code{-D} and @var{var}.
+
+This option can be specified multiple times.
+@end deftp
+
+@deftp {Command Option} -I load-path
+Specifies the load path where @var{library-file} are searched.
+The names given to @var{library-file} must match how they are @code{load}ed
+or @code{use}d.  If such paths are not relative to the directory
+you run @code{build-standalone}, you have to tell where to find
+those libraries with this option.
+
+For example, suppose you have this structure:
+
+@example
+project/src/
+    +----- main.scm 
+    |          (use myscript.util)
+    +----- myscript/util.scm
+               (define-module myscript.util ...)
+@end example
+
+If you run @code{build-standalone} in the dirctory as @file{src},
+you can just say this:
+
+@example
+gosh build-standalone main.scm myscript/util.scm
+@end example
+
+But if you run it under @file{project}, you need to say this:
+
+@example
+gosh build-standalone -I src src/main.scm myscript/util.scm
+@end example
+
+Another example; you have a separate library directory:
+
+@example
+project/
+    +----- src/main.scm 
+    |          (use myscript.util)
+    +----- lib/myscript/util.scm
+               (define-module myscript.util ...)
+@end example
+
+If you run @code{build-standalone} in @file{src}, you say this:
+
+@example
+gosh build-standalone -I ../lib main.scm myscript/util.scm
+@end example
+
+Or, if you run it in @file{project}, you say this:
+
+@example
+gosh build-standalone -I lib src/main.scm myscript/util.scm
+@end example
+
+This option can be specified multiple times.
+Note that a whitespace is required between @code{-I} and @var{load-path}.
+@end deftp
+
+@deftp {Command Option} --header-dir dir
+@deftpx {Command Option} --library-dir dir
+These tells @code{build-standlone} where to find Gauche C headers
+and static libraries.
+
+If you've installed Gauche on your system, @code{build-standalone}
+automatically finds these from the installed directory and you don't
+need to worry about them.   Use these option only when
+you need to use Gauche runtime that's not installed.
+@end deftp
 
 @c Local variables:
 @c mode: texinfo
