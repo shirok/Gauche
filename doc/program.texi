@@ -2575,59 +2575,122 @@ tarball が展開されるディレクトリ。もし、URL が与えられれ�
 @section Building standalone executables
 @c NODE スタンドアロン実行可能ファイルの作成
 
+@c EN
 When you want to distribute your Gauche scripts or applications,
 the users need to install Gauche runtime on their machine.
 Although it is always the case for any language implementations---you need
 Java runtime to run Java applications, or C runtime to run
 C applciations---it may be an extra effort to ask users to install
 not-so-standard language runtimes.
+@c JP
+Gaucheで作ったスクリプトやアプリケーションを配布する場合、
+ユーザはGaucheのランタイムを手元のマシンにインストールする必要があります。
+これは原理的にはどんな言語でも同じことです--Javaアプリケーションを使うなら
+Javaランタイムが必要ですし、Cアプリケーションを使うならCランタイムが必要です。
+けれどもGaucheのようなマイナーな言語処理系のランタイムをインストールしてくれることを
+ユーザにお願いするのは、ややハードルが高いでしょう。
+@c COMMON
 
+@c EN
 To ease distribution of Gauche applications, you can create a
 stand-alone executable.  It statically links entire Gauche system
 so that it runs by just copying the executable file.
+@c JP
+Gaucheのアプリケーションの配布を簡単にするために、
+スタンドアロン実行ファイルを作ることができます。
+これは、Gaucheシステム全体をスタティックリンクし、
+ファイルひとつコピーすれば使えるような実行ファイルを生成します。
+@c COMMON
 
+@c EN
 @subheading Quick recipe
+@c JP
+@subheading 簡単な使い方
+@c COMMON
 
+@c EN
 To generate a standalone executable, just give your script file
 to the @file{build-standalone} script, which is installed as a
 part of Gauche.
+@c JP
+スタンドアロンな実行可能ファイルを作るには、Gaucheのインストール時に一緒に
+インストールされる@file{build-standalone}にスクリプトファイルを与えるだけです。
+@c COMMON
 
 @example
 gosh build-standalone yourscript.scm
 @end example
 
+@c EN
 It will create an executable file @code{yourscript} (or @code{yourscript.exe}
 on Windows) in the current directory.
+@c JP
+これで、実行可能ファイル@code{yourscript} (Windowsでは@code{yourscript.exe})
+がカレントディレクトリに作られます。
+@c COMMON
 
+@c EN
 To specify the output name different from the script name,
 give @code{-o} option:
+@c JP
+スクリプト名とは別に実行ファイル名を指定したい場合は@code{-o}オプションを使います。
+@c COMMON
 
 @example
 gosh build-standalone -o yourcommand yourscript.scm
 @end example
 
+@c EN
 When your script needs supporting library files, you should list
 those files as well:
+@c JP
+スクリプトが他のサポートライブラリコードを必要とする場合は、
+そのライブラリファイルも一緒に指定します。
+@c COMMON
 
 @example
 gosh build-standalone yourscript.scm lib/library1.scm lib/library2.scm
 @end example
 
+@c EN
 The library file paths need to be relative to the respective load path.
 See the explanation of @code{-I} option below.
+@c JP
+ライブラリファイルのパス名は、@code{load}がそのファイルを見つけられるような、
+ロードパスからの相対パスである必要があります。
+詳しくは下の@code{-I}オプションの説明を見てください。
+@c COMMON
 
+@c EN
 @subheading Catches
+@c JP
+@subheading 注意点
+@c COMMON
 
+@c EN
 There are a few things you should be aware of.
+@c JP
+いくつか、気をつけなければならないことがあります。
+@c COMMON
 
 @itemize
 @item
+@c EN
 The size of the binary tend to be large, since it contains the entire
 Gauche system regardless of whether your application use it or not.
 You can strip down the size if you need to, but you need to rebuild
-Gauche library to do so.
+Gauche library to do so.  See @file{doc/HOWTO-standalone.txt} in the
+source tree for the details.
+@c JP
+アプリケーションが使うかどうかに関わらず、バイナリにはGaucheシステム全てが含まれるので、
+バイナリのサイズはかなり大きくなります。
+サイズが問題になるなら使わないライブラリを削除することもできますが、
+それにはGaucheライブラリをリビルドしなければなりません。詳しくは
+ソースツリーにある@file{doc/HOWTO-standalone.txt}を参照してください。
+@c COMMON
 
 @item
+@c EN
 The generated binary still depends on external dynamically linked
 libraries, such as libpthread.  The exact dependency may differ
 how Gauche is configured, and can be checked
@@ -2635,20 +2698,45 @@ by running system-provided tools,
 such as @code{ldd} on most Unix systems and MinGW or @code{otool -L} on OSX,
 on the generated standalone binaries.
 You may want to ensure the users have requied libraries.
+@c JP
+作られたバイナリファイルは、libpthreadなど外部の動的ライブラリには依存します。
+具体的にどのライブラリに依存するかはプラットフォームとGaucheのコンフィグレーションによります。
+確かめるには、生成されたバイナリファイルに対してシステムのツール
+(多くのUnixやMinGWなら@code{ldd}、OSXなら@code{otool -L}など)を
+走らせて下さい。
+ユーザ環境にもそれらの動的ライブラリが入っている必要があります。
+@c COMMON
 
 @item
+@c EN
 Currently we don't yet have a convenient way to statically link
 extension libraries.  We're working on it.
+@c JP
+Gaucheの拡張ライブラリをスタティックリンクする機能についてはまだ開発中です。
+@c COMMON
 
 @item
+@c EN
 If Gauche is configured to use gdbm, it is linked to the standalone binary
 by default, hence the binary itself is covered by GPL.  In case if you
 need to distribute binaries under BSD license, you need to give
 @code{-D GAUCHE_STATIC_EXCLUDE_GDBM} flag to @code{build-standalone}.
-See below.
+It makes @code{build-standalone} not to link gdbm (and your script won't
+be able to use it).
+@c JP
+Gaucheがgdbmを使うようにコンフィグされていた場合、実行可能ファイルにもgdbmが
+スタティックリンクされるので、実行可能ファイルの配布ライセンスがGPLになります。
+もしGPLでなくBSDライセンスで配布したい場合は、@code{build-standalone}スクリプトに
+@code{-D GAUCHE_STATIC_EXCLUDE_GDBM}フラグを与えてください。
+そうするとgdbmはリンクされなくなります(当然、スクリプトからgdbmは使えません)。
+@c COMMON
 @end itemize
 
+@c EN
 @subheading Using build-standalone
+@c JP
+@subheading build-standaloneスクリプトを使う
+@c COMMON
 
 @deftp {Program} gosh build-standalone [options] script-file [library-file @dots{}]
 Create a stand-alone binary to execute a Gauche program in @var{script-file}.
