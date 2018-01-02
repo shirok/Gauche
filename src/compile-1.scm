@@ -817,19 +817,21 @@
 (define-pass1-syntax (syntax-rules form cenv) :null
   (match form
     [(_ (literal ...) rule ...)
-     ($const (compile-syntax-rules (cenv-exp-name cenv) form '... literal rule
+     ($const (compile-syntax-rules (cenv-exp-name cenv)
+                                   form
+                                   #t ; default ellipsis (...)
+                                   literal
+                                   rule
                                    (cenv-module cenv)
                                    (cenv-frames cenv)))]
     [(_ (? variable-or-keyword? elli) (literal ...) rule ...)
-     ;; NB: Stripping identifier from elli may be broken in macro-defining-macro.
-     ;; Fix it once we have proper low-level macro system.
      ;; NB: We allow keyword for ellipsis, so that something like ::: can be
      ;; used.
-     ($const (compile-syntax-rules (cenv-exp-name cenv) form
-                                   (if (identifier? elli)
-                                     (slot-ref elli 'name)
-                                     elli)
-                                   literal rule
+     ($const (compile-syntax-rules (cenv-exp-name cenv)
+                                   form
+                                   elli
+                                   literal
+                                   rule
                                    (cenv-module cenv)
                                    (cenv-frames cenv)))]
     [_ (error "syntax-error: malformed syntax-rules:" form)]))

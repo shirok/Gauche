@@ -1600,6 +1600,141 @@
                 (interaction-environment)))))
 
 ;;----------------------------------------------------------------------
+;; 'compare-ellipsis-1' test should output the following error.
+;;
+;; *** ERROR: in definition of macro mac-sub1:
+;; template's ellipsis nesting is deeper than pattern's:
+;; (#<identifier user#list.2d80660> #<identifier user#x.2d80690>
+;;  #<identifier user#ooo.2d806f0>)
+;;
+;; 'compare-ellipsis-2' test should output the following error.
+;;
+;; *** ERROR: in definition of macro mac-sub1:
+;; template's ellipsis nesting is deeper than pattern's:
+;; (#<identifier user#list.2969870> #<identifier user#x.29698a0>
+;;  #<identifier user#ooo.2969900>)
+
+(test-section "compare ellipsis")
+
+(define-syntax ell-test
+  (syntax-rules (ooo)
+    ((_ zzz)
+     (let-syntax
+         ((mac-sub1
+           (syntax-rules ooo ()
+             ((_ x zzz)
+              (list x ooo)))))
+       (mac-sub1 1 2 3)))))
+
+(test* "compare-ellipsis-1"
+       (test-error <error> #/^in definition of macro/)
+       (eval
+        '(ell-test ooo)
+        (interaction-environment)))
+
+(test* "compare-ellipsis-2"
+       (test-error <error> #/^in definition of macro/)
+       (eval
+        '(let ((ooo 'yyy)) (ell-test ooo))
+        (interaction-environment)))
+
+;;----------------------------------------------------------------------
+;; 'compare-literals-2' test should output the following error.
+;;
+;; *** ERROR: malformed #<identifier user#lit-test-2.29d4060>:
+;; (#<identifier user#lit-test-2.29d4060> #<identifier user#temp.29d40c0>)
+;; While compiling: (lit-test-2 temp 1)
+
+(test-section "compare literals")
+
+(define-syntax lit-test-1
+  (syntax-rules (temp)
+    ((_ temp x)
+     (lit-test-1 temp))
+    ((_ temp)
+     'passed)))
+
+(test* "compare-literals-1" 'passed (lit-test-1 temp 1))
+
+(define-syntax lit-test-2
+  (syntax-rules (temp)
+    ((_ temp x)
+     (let ((temp 100))
+       (lit-test-2 temp)))
+    ((_ temp)
+     'failed)))
+
+(test* "compare-literals-2"
+       (test-error <error> #/^malformed/)
+       (eval '(lit-test-2 temp 1) (interaction-environment)))
+
+;;----------------------------------------------------------------------
+;; 'generate-underbar-1' test should output the following error.
+;;
+;; *** ERROR: unbound variable: #<identifier user#_.2d4ac00>
+
+(test-section "generate underbar")
+
+(define-syntax gen-underbar
+  (syntax-rules (_)
+    ((gen-underbar)
+     (let-syntax
+         ((mac-sub1
+           (syntax-rules ()
+             ((mac-sub1 _)
+              _))))
+       (mac-sub1 'failed)))))
+
+(test* "generate-underbar-1"
+       (test-error <error> #/^unbound variable/)
+       (gen-underbar))
+
+;;----------------------------------------------------------------------
+;; 'pattern-variables-1' test should output the following error.
+;;
+;; *** ERROR: too many pattern variables in the macro definition of pat-vars
+;; While compiling: (syntax-rules () ((_ (z1 (x1 x2 x3 x4 x5 x6 x7 x8 x9 x10
+;; x11 x12 x13 x14 x15 x16 x17 x ...
+;; While compiling: (define-syntax pat-vars (syntax-rules () ((_ (z1 (x1 x2 x3
+;; x4 x5 x6 x7 x8 x9 x10 x11 x ...
+
+(test-section "pattern variables check")
+
+(test* "pattern-variables-1"
+       (test-error <error> #/^too many pattern variables/)
+       (eval
+        '(define-syntax pat-vars
+           (syntax-rules ()
+             ((_ (z1 (x1 x2 x3 x4 x5 x6 x7 x8 x9 x10
+                      x11 x12 x13 x14 x15 x16 x17 x18 x19 x20
+                      x21 x22 x23 x24 x25 x26 x27 x28 x29 x30
+                      x31 x32 x33 x34 x35 x36 x37 x38 x39 x40
+                      x41 x42 x43 x44 x45 x46 x47 x48 x49 x50
+                      x51 x52 x53 x54 x55 x56 x57 x58 x59 x60
+                      x61 x62 x63 x64 x65 x66 x67 x68 x69 x70
+                      x71 x72 x73 x74 x75 x76 x77 x78 x79 x80
+                      x81 x82 x83 x84 x85 x86 x87 x88 x89 x90
+                      x91 x92 x93 x94 x95 x96 x97 x98 x99 x100
+                      x101 x102 x103 x104 x105 x106 x107 x108 x109 x110
+                      x111 x112 x113 x114 x115 x116 x117 x118 x119 x120
+                      x121 x122 x123 x124 x125 x126 x127 x128 x129 x130
+                      x131 x132 x133 x134 x135 x136 x137 x138 x139 x140
+                      x141 x142 x143 x144 x145 x146 x147 x148 x149 x150
+                      x151 x152 x153 x154 x155 x156 x157 x158 x159 x160
+                      x161 x162 x163 x164 x165 x166 x167 x168 x169 x170
+                      x171 x172 x173 x174 x175 x176 x177 x178 x179 x180
+                      x181 x182 x183 x184 x185 x186 x187 x188 x189 x190
+                      x191 x192 x193 x194 x195 x196 x197 x198 x199 x200
+                      x201 x202 x203 x204 x205 x206 x207 x208 x209 x210
+                      x211 x212 x213 x214 x215 x216 x217 x218 x219 x220
+                      x221 x222 x223 x224 x225 x226 x227 x228 x229 x230
+                      x231 x232 x233 x234 x235 x236 x237 x238 x239 x240
+                      x241 x242 x243 x244 x245 x246 x247 x248 x249 x250
+                      x251 x252 x253 x254 x255 x256)))
+              (print z1 " " x255 " " x256))))
+        (interaction-environment)))
+
+;;----------------------------------------------------------------------
 ;; srfi-147 begin
 ;; (not yest supported)
 

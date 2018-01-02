@@ -41,8 +41,27 @@ struct ScmIdentifierRec {
     ScmObj name;          /* symbol or identifier */
     ScmModule *module;
     ScmObj frames;        /* opaque - see compaux.c for the details */
+    int flags;            /* see below */
 };
 
+/* contents of flags */
+#define SCM_IDENTIFIER_FLAG_DELAYED 0x01 /* for delaying frame truncation
+                                            (see compaux.c) */
+#define SCM_IDENTIFIER_FLAG_RENAMED 0x02 /* for renaming an identifier
+                                            (see macro.c) */
+
+#define SCM_IDENTIFIER_FLAG_DELAYED_P(id) \
+    (SCM_IDENTIFIER(id)->flags & SCM_IDENTIFIER_FLAG_DELAYED)
+#define SCM_IDENTIFIER_FLAG_DELAYED_SET(id) \
+    (SCM_IDENTIFIER(id)->flags |= SCM_IDENTIFIER_FLAG_DELAYED)
+#define SCM_IDENTIFIER_FLAG_DELAYED_RESET(id) \
+    (SCM_IDENTIFIER(id)->flags &= ~SCM_IDENTIFIER_FLAG_DELAYED)
+#define SCM_IDENTIFIER_FLAG_RENAMED_P(id) \
+    (SCM_IDENTIFIER(id)->flags & SCM_IDENTIFIER_FLAG_RENAMED)
+#define SCM_IDENTIFIER_FLAG_RENAMED_SET(id) \
+    (SCM_IDENTIFIER(id)->flags |= SCM_IDENTIFIER_FLAG_RENAMED)
+#define SCM_IDENTIFIER_FLAG_RENAMED_RESET(id) \
+    (SCM_IDENTIFIER(id)->flags &= ~SCM_IDENTIFIER_FLAG_RENAMED)
 
 SCM_DECL_END
 
