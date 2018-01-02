@@ -2728,7 +2728,7 @@ Gaucheがgdbmを使うようにコンフィグされていた場合、実行可�
 スタティックリンクされるので、実行可能ファイルの配布ライセンスがGPLになります。
 もしGPLでなくBSDライセンスで配布したい場合は、@code{build-standalone}スクリプトに
 @code{-D GAUCHE_STATIC_EXCLUDE_GDBM}フラグを与えてください。
-そうするとgdbmはリンクされなくなります(当然、スクリプトからgdbmは使えません)。
+そうするとgdbmはリンクされなくなります(その場合、スクリプトからgdbmは使えません)。
 @c COMMON
 @end itemize
 
@@ -2739,26 +2739,54 @@ Gaucheがgdbmを使うようにコンフィグされていた場合、実行可�
 @c COMMON
 
 @deftp {Program} gosh build-standalone [options] script-file [library-file @dots{}]
+@c EN
 Create a stand-alone binary to execute a Gauche program in @var{script-file}.
 It is executed as if it is run as @code{gosh script-file}, with a few
 differences.
+@c JP
+@var{script-file}に記されたGaucheプログラムを実行するスタンドアロンの
+バイナリ実行可能ファイルを生成します。作られた実行可能ファイルを実行すると、
+多少の違いを除いては、あたかも@code{gosh script-file}を実行したのと同じ動作になります。
+@c COMMON
 
+@c EN
 The main thing is that since @var{script-file} is no longer
 loaded from file, code that references paths relative to @var{script-file} won't
 work.  One example is @code{(add-load-path dir :relative)}
 (@pxref{Loading Scheme file}).  Auxiliary library files required by
-@var{script-file} must be listed as @var{library-file} @dots{}, so that
+@var{script-file} must be explicitly
+listed as @var{library-file} @dots{}, so that
 they are bundled together into the executable.
-
-The following command-line options are recognized.
+@c JP
+違いの重要な点は、実行可能ファイルでは@var{script-file}がファイルシステムからロード
+されないため、@var{script-file}のパスからの相対パスで何かを参照しているコードは
+動かなくなるということです。例えば@code{(add-load-path dir :relative)}
+(@pxref{Loading Scheme file})で補助ライブラリを参照しているような場合です。
+@var{script-file}に必要な補助ライブラリはコマンドラインの@var{library-file} @dots{}に
+明示的に与えられなければなりません。それらは実行可能ファイルに同梱されます。
+@c COMMON
 @end deftp
 
+@c EN
+The following command-line options are recognized.
+@c JP
+以下のコマンドラインオプションが使えます。
+@c COMMON
+
 @deftp {Command Option} -o outfile
+@c EN
 Specifies output executable filename.  When omitted, the basename of
 @var{script-file} without extension is used.
+(Or, on Windows, swapping extension with @code{.exe}).
+@c JP
+出力される実行可能ファイルの名前を指定します。省略された場合は@var{script-file}の
+basenameから拡張子を除いたものになります。
+(Windowsの場合は拡張子を@code{.exe}に変えたもの)
+@c COMMON
 @end deftp
 
 @deftp {Command Option} -D var[=val]
+@c EN
 Add C preprocessor definitions while compiling the generated C code.
 An important use case of this option is to exclude gdbm dependency
 from the generated binaries, by specifing
@@ -2766,16 +2794,36 @@ from the generated binaries, by specifing
 between @code{-D} and @var{var}.
 
 This option can be specified multiple times.
+@c JP
+中間で生成されるCコードをコンパイルする際に、Cプリプロセッサ定義を追加します。
+使用例のひとつは、@code{-D GAUCHE_STATIC_EXCLUDE_GDBM}を指定することで
+生成される実行可能ファイルからgdbmへの依存を取り除くというものです。
+@code{-D}と@var{var}の間に空白が必要なことに注意してください。
+
+このオプションは複数指定できます。
+@c COMMON
 @end deftp
 
 @deftp {Command Option} -I load-path
-Specifies the load path where @var{library-file} are searched.
+@c EN
+Specifies the load path where @var{library-file} @dots{} are searched.
 The names given to @var{library-file} must match how they are @code{load}ed
 or @code{use}d.  If such paths are not relative to the directory
 you run @code{build-standalone}, you have to tell where to find
 those libraries with this option.
 
 For example, suppose you have this structure:
+@c JP
+@var{library-file} @dots{}が検索されるロードパスを指定します。
+@var{library-file}に与えられるパス名は、それらをロードするために
+@code{load}や@code{use}に与えられるパス名と一致している必要があります。
+もし@code{build-standalone}を走らせるディレクトリから見て
+これらのファイルが置かれている相対パスが必要なものと違っていた場合、
+このオプションを指定してどのディレクトリからの相対でファイルを探すかを
+教えてやらないとなりません。
+
+例えばソースが次のとおり構成されていたとしましょう。
+@c COMMON
 
 @example
 project/src/
@@ -2785,20 +2833,33 @@ project/src/
                (define-module myscript.util ...)
 @end example
 
+@c EN
 If you run @code{build-standalone} in the dirctory as @file{src},
 you can just say this:
+@c JP
+@code{build-standalone}を@file{src}の下で実行する場合は、
+単に次のとおり実行すれば済みます。
+@c COMMON
 
 @example
 gosh build-standalone main.scm myscript/util.scm
 @end example
 
+@c EN
 But if you run it under @file{project}, you need to say this:
+@c JP
+しかし、@file{project}の下で実行する場合は次のようにしなければなりません。
+@c COMMON
 
 @example
 gosh build-standalone -I src src/main.scm myscript/util.scm
 @end example
 
+@c EN
 Another example; you have a separate library directory:
+@c JP
+別の例を挙げましょう。ライブラリのディレクトリが分かれている場合です。
+@c COMMON
 
 @example
 project/
@@ -2808,24 +2869,38 @@ project/
                (define-module myscript.util ...)
 @end example
 
+@c EN
 If you run @code{build-standalone} in @file{src}, you say this:
+@c JP
+@code{build-standalone}を@file{src}以下で走らせる場合は次のようにします。
+@c COMMIN
 
 @example
 gosh build-standalone -I ../lib main.scm myscript/util.scm
 @end example
 
+@c EN
 Or, if you run it in @file{project}, you say this:
+@c JP
+@file{project}以下で走らせる場合はこうなります。
+@c COMMON
 
 @example
 gosh build-standalone -I lib src/main.scm myscript/util.scm
 @end example
 
+@c EN
 This option can be specified multiple times.
 Note that a whitespace is required between @code{-I} and @var{load-path}.
+@c JP
+このオプションは複数指定できます。@code{-I}と@var{load-path}の間に空白が必要なことに
+注意してください。
+@c COMMON
 @end deftp
 
 @deftp {Command Option} --header-dir dir
 @deftpx {Command Option} --library-dir dir
+@c EN
 These tells @code{build-standlone} where to find Gauche C headers
 and static libraries.
 
@@ -2833,6 +2908,15 @@ If you've installed Gauche on your system, @code{build-standalone}
 automatically finds these from the installed directory and you don't
 need to worry about them.   Use these option only when
 you need to use Gauche runtime that's not installed.
+@c JP
+これらのオプションは@code{build-standalone}が必要なGaucheのCヘッダファイルや
+スタティックライブラリをどこから探すかを指定します。
+
+Gaucheが既にシステムにインストール済みであれば、@code{build-standalone}は
+インストールされたディレクトリから自動的に必要なファイルを探すので、
+このオプションを気にする必要はありません。インストールしていないGaucheのランタイムを
+利用したい場合のみこれらのオプションを指定してください。
+@c COMMON
 @end deftp
 
 @c Local variables:
