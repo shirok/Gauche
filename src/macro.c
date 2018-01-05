@@ -288,14 +288,23 @@ typedef struct {
 #define PVREF_LEVEL(pvref)     (int)SCM_PVREF_LEVEL(pvref)
 #define PVREF_COUNT(pvref)     (int)SCM_PVREF_COUNT(pvref)
 
+#define PVREF_LEVEL_MAX 0xff
+#define PVREF_COUNT_MAX 0xff
+
 /* add pattern variable pvar.  called when compiling a pattern */
 static inline ScmObj add_pvar(PatternContext *ctx,
                               ScmSyntaxPattern *pat,
                               ScmObj pvar)
 {
+    if (pat->level > PVREF_LEVEL_MAX) {
+        Scm_Error("Pattern levels too deeply nested in the macro definition of %S", ctx->name);
+    }
+    if (ctx->pvcnt > PVREF_COUNT_MAX) {
+        Scm_Error("Too many pattern variables in the macro definition of %S", ctx->name);
+    }
     ScmObj pvref = SCM_MAKE_PVREF(pat->level, ctx->pvcnt);
     if (!SCM_FALSEP(Scm_Assq(pvar, ctx->pvars))) {
-        Scm_Error("pattern variable %S appears more than once in the macro definition of %S: %S",
+        Scm_Error("Pattern variable %S appears more than once in the macro definition of %S: %S",
                   pvar, ctx->name, ctx->form);
     }
     ctx->pvcnt++;
