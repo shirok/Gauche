@@ -1600,31 +1600,95 @@
                 (interaction-environment)))))
 
 ;;----------------------------------------------------------------------
-;; srfi-147 begin
-;; (not yest supported)
+;; 'compare-ellipsis-1' test should output the following error.
+;;
+;; *** ERROR: in definition of macro mac-sub1:
+;; template's ellipsis nesting is deeper than pattern's:
+;; (#<identifier user#list.2d80660> #<identifier user#x.2d80690>
+;;  #<identifier user#ooo.2d806f0>)
+;;
+;; 'compare-ellipsis-2' test should output the following error.
+;;
+;; *** ERROR: in definition of macro mac-sub1:
+;; template's ellipsis nesting is deeper than pattern's:
+;; (#<identifier user#list.2969870> #<identifier user#x.29698a0>
+;;  #<identifier user#ooo.2969900>)
 
-'(test-section "srfi-147 begin")
+(test-section "compare ellipsis")
 
-'(test "srfi-147 begin (internal) 1"
-      '(yes no)
-      (lambda ()
-        (define-syntax foo
-          (begin (define-syntax bar if)
-                 (syntax-rules ()
-                   [(_ x y z) (bar z x y)])))
-        (list (foo 'yes 'no (zero? 0))
-              (foo 'yes 'no (zero? 1)))))
+(define-syntax ell-test
+  (syntax-rules (ooo)
+    ((_ zzz)
+     (let-syntax
+         ((mac-sub1
+           (syntax-rules ooo ()
+             ((_ x zzz)
+              (list x ooo)))))
+       (mac-sub1 1 2 3)))))
 
-'(test "srfi-147 begin (internal) 2"
-      11
-      (lambda ()
-        (let-syntax ([foo (syntax-rules ()
-                            [(_ a) (begin (define x (* a 2))
-                                          (syntax-rules ()
-                                            [(_ b) (+ b x)]))])])
-          (define-syntax bar (foo 3))
-          (bar 5))))
-      
+(test* "compare-ellipsis-1"
+       (test-error <error> #/^in definition of macro/)
+       (eval
+        '(ell-test ooo)
+        (interaction-environment)))
+
+(test* "compare-ellipsis-2"
+       (test-error <error> #/^in definition of macro/)
+       (eval
+        '(let ((ooo 'yyy)) (ell-test ooo))
+        (interaction-environment)))
+
+;;----------------------------------------------------------------------
+;; 'compare-literals-2' test should output the following error.
+;;
+;; *** ERROR: malformed #<identifier user#lit-test-2.29d4060>:
+;; (#<identifier user#lit-test-2.29d4060> #<identifier user#temp.29d40c0>)
+;; While compiling: (lit-test-2 temp 1)
+
+(test-section "compare literals")
+
+(define-syntax lit-test-1
+  (syntax-rules (temp)
+    ((_ temp x)
+     (lit-test-1 temp))
+    ((_ temp)
+     'passed)))
+
+(test* "compare-literals-1" 'passed (lit-test-1 temp 1))
+
+(define-syntax lit-test-2
+  (syntax-rules (temp)
+    ((_ temp x)
+     (let ((temp 100))
+       (lit-test-2 temp)))
+    ((_ temp)
+     'failed)))
+
+(test* "compare-literals-2"
+       (test-error <error> #/^malformed/)
+       (eval '(lit-test-2 temp 1) (interaction-environment)))
+
+;;----------------------------------------------------------------------
+;; 'generate-underbar-1' test should output the following error.
+;;
+;; *** ERROR: unbound variable: #<identifier user#_.2d4ac00>
+
+(test-section "generate underbar")
+
+(define-syntax gen-underbar
+  (syntax-rules (_)
+    ((gen-underbar)
+     (let-syntax
+         ((mac-sub1
+           (syntax-rules ()
+             ((mac-sub1 _)
+              _))))
+       (mac-sub1 'failed)))))
+
+(test* "generate-underbar-1"
+       (test-error <error> #/^unbound variable/)
+       (gen-underbar))
+
 ;;----------------------------------------------------------------------
 ;; 'pattern-variables-1' test should output the following error.
 ;;
@@ -1684,4 +1748,30 @@
           (build-deep-nested-pattern 256 'x)
           (interaction-environment))))
 
+;;----------------------------------------------------------------------
+;; srfi-147 begin
+;; (not yest supported)
+
+'(test-section "srfi-147 begin")
+
+'(test "srfi-147 begin (internal) 1"
+      '(yes no)
+      (lambda ()
+        (define-syntax foo
+          (begin (define-syntax bar if)
+                 (syntax-rules ()
+                   [(_ x y z) (bar z x y)])))
+        (list (foo 'yes 'no (zero? 0))
+              (foo 'yes 'no (zero? 1)))))
+
+'(test "srfi-147 begin (internal) 2"
+      11
+      (lambda ()
+        (let-syntax ([foo (syntax-rules ()
+                            [(_ a) (begin (define x (* a 2))
+                                          (syntax-rules ()
+                                            [(_ b) (+ b x)]))])])
+          (define-syntax bar (foo 3))
+          (bar 5))))
+      
 (test-end)

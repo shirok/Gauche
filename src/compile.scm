@@ -1527,12 +1527,12 @@
               (loop (+ i 1) vec dict))))))]
    [else (values form dict)]))
 
-;; er-comparer :: (Sym-or-id, Sym-or-id, Env, Env) -> Bool
-(define (er-comparer a b uenv cenv)
+;; er-comparer :: (Sym-or-id, Sym-or-id) -> Bool
+(define (er-comparer a b use-module use-frames)
   (if (and (variable? a)
            (variable? b))
-    (let ([a1 (cenv-lookup-syntax uenv a)]
-          [b1 (cenv-lookup-syntax uenv b)])
+    (let ([a1 (env-lookup a use-module use-frames)]
+          [b1 (env-lookup b use-module use-frames)])
       (or (eq? a1 b1)
           (free-identifier=? a1 b1)))
     ;; This path is for GAUCHE_KEYWORD_DISJOINT
@@ -1544,14 +1544,16 @@
 (define (%make-er-transformer xformer def-env)
   (define def-module (cenv-module def-env))
   (define def-frames (cenv-frames def-env))
-  (define (expand form uenv)
+  (define (expand form use-env)
+    (define use-module (cenv-module use-env))
+    (define use-frames (cenv-frames use-env))
     (let1 dict '()
       (xformer form
                (^[sym]
                  (receive [id dict_] (er-renamer sym dict def-module def-frames)
                    (set! dict dict_)
                    id))
-               (^[a b] (er-comparer a b uenv def-env)))))
+               (^[a b] (er-comparer a b use-module use-frames)))))
   (%make-macro-transformer (cenv-exp-name def-env) expand))
 
 ;; Call to this procedure can be inserted in the output of er-macro expander

@@ -272,12 +272,13 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 typedef struct {
     ScmObj name;                /* name of this macro (for error msg)*/
     ScmObj form;                /* form being compiled (for error msg) */
-    ScmObj literals;            /* list of literal identifiers */
+    ScmObj literals;            /* list of literals */
     ScmObj pvars;               /* list of (pvar . pvref) */
     ScmObj renames;             /* list of (var . identifier)  Keep mapping
                                    of input symbol/identifier to fresh 
                                    identifier */
-    ScmObj ellipsis;            /* symbol/idendifier/keyword for ellipsis */
+    ScmObj ellipsis;            /* symbol/idendifier/keyword for ellipsis
+                                   SCM_FALSE means disabled */
     int pvcnt;                  /* counter of pattern variables */
     int maxlev;                 /* maximum level */
     ScmModule *mod;             /* module where this macro is defined */
@@ -337,49 +338,27 @@ static inline ScmObj pvref_to_pvar(PatternContext *ctx, ScmObj pvref)
     return SCM_CAR(q);
 }
 
-/* search an identifier with name NAME from a list of identifiers */
-static ScmObj id_memq(ScmObj name, ScmObj list)
+/* compare :: (Sym-or-id, Sym-or-id) -> Bool */
+static int compare(ScmObj obj1, ScmObj obj2, ScmObj mod, ScmObj env)
 {
-    ScmObj n;
-    if (SCM_IDENTIFIERP(name)) {
-        n = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-    } else {
-        n = name;
-    }
-    ScmObj lp;
-    SCM_FOR_EACH(lp, list) {
-        if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == n)
-            return SCM_CAR(lp);
-    }
-    return SCM_FALSE;
-}
-
-/* Check if obj is ellipsis.  What we really need is free-identifier=?,
-   but we leave it for the new low-level macro subsystem.  This is a
-   hack to make it work in most of the time. */
-static int compare_ellipsis(ScmObj elli, ScmObj obj)
-{
-    if (SCM_IDENTIFIERP(obj)) {
-        if (SCM_IDENTIFIERP(elli)) {
-            static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
-            SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
-                          Scm_GaucheInternalModule());
-            if (!SCM_NULLP(Scm_IdentifierEnv(SCM_IDENTIFIER(obj)))) return FALSE;
-            return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
-                                             elli, obj));
-        } else {        
-            return SCM_EQ(elli,
-                          SCM_OBJ(Scm_UnwrapIdentifier(SCM_IDENTIFIER(obj))));
-        }
-    } else {
-        return SCM_EQ(elli, obj);
-    }
+    /* er-comparer is defined in Scheme (compile.scm) */
+    static ScmObj er_comparer_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(er_comparer_proc, "er-comparer",
+                  Scm_GaucheInternalModule());
+    return !SCM_FALSEP(Scm_ApplyRec4(er_comparer_proc,
+                                     obj1, obj2, mod, env));
 }
 
 static int isEllipsis(PatternContext *ctx, ScmObj obj)
 {
     if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */
-    return compare_ellipsis(ctx->ellipsis, obj);
+    if (SCM_TRUEP(ctx->ellipsis)) {
+        /* default ellipsis (...) */
+        return compare(SCM_SYM_ELLIPSIS, obj, SCM_OBJ(ctx->mod), ctx->env);
+    } else {
+        /* specified ellipsis */
+        return SCM_EQ(ctx->ellipsis, obj);
+    }
 }
 
 #define ELLIPSIS_FOLLOWING(Pat, Ctx)                                    \
@@ -390,15 +369,13 @@ static int isEllipsis(PatternContext *ctx, ScmObj obj)
                Ctx->name, Ctx->form)
 
 /* convert literal symbols into identifiers */
-static ScmObj preprocess_literals(ScmObj literals, ScmModule *mod, ScmObj env)
+static ScmObj preprocess_literals(ScmObj literals)
 {
     ScmObj lp, h = SCM_NIL, t = SCM_NIL;
     SCM_FOR_EACH(lp, literals) {
         ScmObj lit = SCM_CAR(lp);
-        if (SCM_IDENTIFIERP(lit))
+        if (SCM_SYMBOLP(lit) || SCM_IDENTIFIERP(lit))
             SCM_APPEND1(h, t, lit);
-        else if (SCM_SYMBOLP(lit))
-            SCM_APPEND1(h, t, Scm_MakeIdentifier(lit, mod, env));
         else if (SCM_KEYWORDP(lit))
             /* This branch is to allow r7rs-compliant code to go through
                with legacy mode.  If keyword-symbol integration is turned on,
@@ -542,18 +519,19 @@ static ScmObj compile_rule1(ScmObj form,
     }
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
-        ScmObj q = id_memq(form, ctx->literals);
-        if (!SCM_FALSEP(q)) return q; /* literal identifier */
-        if (SCM_EQ(form, SCM_SYM_UNDERBAR)) return form; /* '_' */
-
-        /* renaming */
-        ScmObj id = rename_variable(ctx, form);
+        if (!SCM_FALSEP(Scm_Memq(form, ctx->literals))) {
+            return rename_variable(ctx, form);
+        }
+        if (patternp && compare(form, SCM_SYM_UNDERBAR,
+                                SCM_OBJ(ctx->mod), ctx->env)) { 
+            return SCM_SYM_UNDERBAR;
+        }
         if (patternp) {
-            return add_pvar(ctx, spat, id);
+            return add_pvar(ctx, spat, form);
         } else {
-            ScmObj pvref = pvar_to_pvref(ctx, spat, id);
-            if (pvref == id) {
-                return id;
+            ScmObj pvref = pvar_to_pvref(ctx, spat, form);
+            if (pvref == form) {
+                return rename_variable(ctx, form);
             } else {
                 spat->vars = Scm_Cons(pvref, spat->vars);
                 return pvref;
@@ -581,7 +559,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
 
     ctx.name = name;
     ctx.ellipsis = ellipsis;
-    ctx.literals = preprocess_literals(literals, mod, env);
+    ctx.literals = preprocess_literals(literals);
     ctx.mod = mod;
     ctx.env = env;
     ctx.renames = SCM_NIL;
@@ -592,8 +570,8 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     if (!SCM_FALSEP(ellipsis)) {
         ScmObj cp;
         SCM_FOR_EACH(cp, ctx.literals) {
-            if (compare_ellipsis(ellipsis, SCM_CAR(cp))) {
-                ctx.ellipsis = FALSE;
+            if (isEllipsis(&ctx, SCM_CAR(cp))) {
+                ctx.ellipsis = SCM_FALSE;
                 break;
             }
         }
@@ -849,7 +827,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
         return TRUE;            /* unconditional match */
     }
     if (SCM_IDENTIFIERP(pattern)) {
-        return match_identifier(SCM_IDENTIFIER(pattern), form, mod, env);
+        return compare(pattern, form, mod, env);
     }
     if (SCM_SYNTAX_PATTERN_P(pattern)) {
         return match_subpattern(form, SCM_SYNTAX_PATTERN(pattern),

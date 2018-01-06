@@ -1,3 +1,12 @@
+2018-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (compare), src/compile.scm (er-comparer):
+	  Fix literal identifier comparison in syntax-rules macro, based
+	  on the patch by @Hamayama https://github.com/shirok/Gauche/pull/330
+	  We should employ the same semantics as er-comparer when we deal
+	  with literals, ellipses and underbar, while expanding syntax-rules
+	  macro.
+
 2017-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (add-embedded-code-loader!): Added to support
