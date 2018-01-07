@@ -105,6 +105,17 @@
       (regexp-replace-all #/-lgdbm(_compat)?/ libs "")
       libs)))
 
+;; Darwin's ld doesn't like that nonexistent directory is given to
+;; -L flag.  The warning message is annoying, so we filter out such flags.
+(define (exclude-nonexistent-dirs dir-flags)
+  (define (existing-dir? flag)
+    (if-let1 m (#/^-[IL]/ flag)
+      (and (file-exists? (rxmatch-after m)) flag)
+      flag))
+  ($ string-join
+     (filter-map existing-dir? (shell-tokenize-string dir-flags))
+     " "))
+
 (define (compile-c-file c-file outfile xdefs xincdirs xlibdirs)
   ;; TODO: We wish we could use gauche.package.compile, but currently it is
   ;; specialized to compile extension modules.  Eventually we will modify
@@ -112,8 +123,10 @@
   (let ([cc (gauche-config "--cc")]
         [cflags (gauche-config "--so-cflags")]
         [defs    (string-join xdefs " ")]
-        [incdirs (string-join `(,@xincdirs ,(gauche-config "-I")) " ")]
-        [libdirs (string-join `(,@xlibdirs ,(gauche-config "-L")) " ")]
+        [incdirs (exclude-nonexistent-dirs
+                  (string-join `(,@xincdirs ,(gauche-config "-I")) " "))]
+        [libdirs (exclude-nonexistent-dirs
+                  (string-join `(,@xlibdirs ,(gauche-config "-L")) " "))]
         [libs    (get-libs xdefs)])
     (let1 cmd #"~cc ~cflags ~defs ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
       (print cmd)
