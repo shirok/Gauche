@@ -520,6 +520,9 @@
                              "foo/baz.scm")))
   (test* "static link executable" "ARGS: (A b CdE)"
          (process-output->string '(test.o/staticmain A b CdE)))
+  (cond-expand
+   [gauche.os.windows (sys-sleep 1)]
+   [else])
   )
 
 (wrap-with-test-directory static-test-1)
