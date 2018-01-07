@@ -44,6 +44,7 @@
             <gauche/code.h>
             <gauche/vminsn.h>
             <gauche/priv/macroP.h>
+            <gauche/priv/moduleP.h>
             <gauche/priv/identifierP.h>
             <gauche/priv/builtin-syms.h>)))
 
@@ -1497,12 +1498,48 @@
 ;; Macro support basis
 ;;
 
-;; er-renamer :: (Form, [Id]) -> (Form, [Id])
+;; free-identifier=? id1 id2
+;; Returns #t iff id1 and id2 would resolve to the same binding
+;; (or both are free).
+
+(select-module gauche)
+(inline-stub
+ (define-cfn %free-identifier=? (id1 id2) ::int :static
+   ;; Eliminate trivial cases first
+   (unless (and (SCM_IDENTIFIERP id1) (SCM_IDENTIFIERP id2)) (return FALSE))
+   (when (SCM_EQ id1 id2) (return TRUE))
+   ;; Look at their binidngs
+   (let* ([b1 (env-lookup-int id1 (SCM_MAKE_INT 1) 
+                              (-> (SCM_IDENTIFIER id1) module)
+                              (Scm_IdentifierEnv (SCM_IDENTIFIER id1)))]
+          [b2 (env-lookup-int id2 (SCM_MAKE_INT 1) 
+                              (-> (SCM_IDENTIFIER id2) module)
+                              (Scm_IdentifierEnv (SCM_IDENTIFIER id2)))])
+     (if (and (SCM_IDENTIFIERP b1) (SCM_IDENTIFIERP b2))
+       (let* ([g1::ScmGloc* (Scm__IdentifierToBoundGloc (SCM_IDENTIFIER id1))]
+              [g2::ScmGloc* (Scm__IdentifierToBoundGloc (SCM_IDENTIFIER id2))])
+         ;; If both has bound in toplevel, they must refer to the
+         ;; same binding, hence (eq? g1 g2).  The name may differ,
+         ;; because of renaming on export/import.
+         ;; If at least either one is unbound, we just compare their names.
+         (if (and g1 g2)
+           (return (SCM_EQ g1 g2))
+           (return (SCM_EQ (Scm_UnwrapSyntax id1) (Scm_UnwrapSyntax id2)))))
+       ;; At least one of id1 and id2 is lvar or macro.
+       (return (SCM_EQ b1 b2)))))
+
+ (define-cproc free-identifier=? (id1 id2) ::<boolean> 
+   %free-identifier=?)
+ )
+
+(select-module gauche.internal)
+
+;; er-rename :: (Form, [Id]) -> (Form, [Id])
 ;; Where symbol or identifiers in the Form will be replaced with
 ;; fresh identifiers.   If Form has more than one occurence of a
 ;; specific symbol-or-id, the resulting Form has the same (eq?)
 ;; identifier for those occurrences.
-(define (er-renamer form dict module env)
+(define (er-rename form dict module env)
   (cond
    [(variable? form)
     (if-let1 id (assq-ref dict form)
@@ -1510,8 +1547,8 @@
       (let1 id (make-identifier form module env)
         (values id (acons form id dict))))]
    [(pair? form)
-    (receive (a dict) (er-renamer (car form) dict module env)
-      (receive (d dict) (er-renamer (cdr form) dict module env)
+    (receive (a dict) (er-rename (car form) dict module env)
+      (receive (d dict) (er-rename (cdr form) dict module env)
         (if (and (eq? a (car form)) (eq? d (cdr form)))
           (values form dict)
           (values (cons a d) dict))))]
@@ -1519,7 +1556,7 @@
     (let loop ([i 0] [vec #f] [dict dict])
       (if (= i (vector-length form))
         (values (or vec form) dict)
-        (receive (e dict) (er-renamer (vector-ref form i) dict module env)
+        (receive (e dict) (er-rename (vector-ref form i) dict module env)
           (if (eq? e (vector-ref form i))
             (loop (+ i 1) vec dict)
             (let1 vec (or vec (vector-copy form))
@@ -1527,18 +1564,27 @@
               (loop (+ i 1) vec dict))))))]
    [else (values form dict)]))
 
-;; er-comparer :: (Sym-or-id, Sym-or-id) -> Bool
-(define (er-comparer a b use-module use-frames)
-  (if (and (variable? a)
-           (variable? b))
-    (let ([a1 (env-lookup a use-module use-frames)]
-          [b1 (env-lookup b use-module use-frames)])
-      (or (eq? a1 b1)
-          (free-identifier=? a1 b1)))
-    ;; This path is for GAUCHE_KEYWORD_DISJOINT
-    (and (keyword? a)
-         (keyword? b)
-         (eq? a b))))
+;; er-compare :: (Obj, Obj, Module, Env) -> Bool
+;; Used for the 'compare' procedure in ER macro.  If two Objs refer
+;; to the same identifiers, return #t.
+;; We implement it in C for speed; it is also called from syntax-rules
+;; expander.
+(inline-stub
+ (define-cfn Scm__ERCompare (a b module::ScmModule* frames) ::int
+   (cond [(and (or (SCM_SYMBOLP a) (SCM_IDENTIFIERP a))
+               (or (SCM_SYMBOLP b) (SCM_IDENTIFIERP b)))
+          (let* [(a1 (env-lookup-int a (SCM_MAKE_INT 1) module frames))
+                 (b1 (env-lookup-int b (SCM_MAKE_INT 1) module frames))]
+            (when (SCM_EQ a1 b1) (return TRUE))
+            (unless (and (SCM_IDENTIFIERP a1) (SCM_IDENTIFIERP b1)) (return FALSE))
+            (return (%free-identifier=? a1 b1)))]
+         [(and (SCM_KEYWORDP a) (SCM_KEYWORDP b))
+          (return (SCM_EQ a b))]
+         [else (return FALSE)]))
+
+ (define-cproc er-compare (a b use-module::<module> use-frames) ::<boolean>
+   Scm__ERCompare)
+ )
 
 ;; xformer :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
 (define (%make-er-transformer xformer def-env)
@@ -1550,10 +1596,10 @@
     (let1 dict '()
       (xformer form
                (^[sym]
-                 (receive [id dict_] (er-renamer sym dict def-module def-frames)
+                 (receive [id dict_] (er-rename sym dict def-module def-frames)
                    (set! dict dict_)
                    id))
-               (^[a b] (er-comparer a b use-module use-frames)))))
+               (^[a b] (er-compare a b use-module use-frames)))))
   (%make-macro-transformer (cenv-exp-name def-env) expand))
 
 ;; Call to this procedure can be inserted in the output of er-macro expander

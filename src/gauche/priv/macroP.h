@@ -94,6 +94,17 @@ SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src,
 #define SCM_MAKE_PVREF(level, count)  \
     SCM_OBJ((SCM_WORD(level)<<24) | (SCM_WORD(count)<<16) | SCM_PVREF_TAG)
 
+
+/*
+ * Hygienic macro utilities
+ */
+
+/* 'compare' function used in er macro.
+   The definition is in compile.scm, for it needs to access internal
+   variable lookup routine. */
+SCM_EXTERN int     Scm__ERCompare(ScmObj, ScmObj, ScmModule*, ScmObj);
+
+
 SCM_DECL_END
 
 #endif /* GAUCHE_PRIV_MACROP_H */

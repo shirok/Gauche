@@ -317,12 +317,14 @@
 ;;              [ (gloc-bound? gloc) ])
 ;;     gloc))
 (inline-stub
- (define-cproc id->bound-gloc (id::<identifier>)
+ (define-cfn Scm__IdentifierToBoundGloc (id::ScmIdentifier*) ::ScmGloc*
    (let* ([gloc::ScmGloc* (Scm_IdentifierGlobalBinding id)])
      (if (and gloc (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc))))
-       (return (SCM_OBJ gloc))
-       (return SCM_FALSE))))
- )
+       (return gloc)
+       (return NULL))))
+
+ (define-cproc id->bound-gloc (id::<identifier>) ::<gloc>?
+   Scm__IdentifierToBoundGloc))
 
 ;; Returns #t if id1 and id2 both refer to the same existing global binding.
 ;; Like free-identifier=? but we know id1 and id2 are both toplevel and
@@ -333,33 +335,3 @@
              [g1 (id->bound-gloc id1)]
              [g2 (id->bound-gloc id2)])
     (eq? g1 g2)))
-
-;; Returns #t iff id1 and id2 would resolve to the same binding
-;; (or both are free).
-(define-in-module gauche (free-identifier=? id1 id2)
-  (define (lookup id)
-    (env-lookup id (identifier-module id) (identifier-env id)))
-  (define (deep-compare id1 id2)
-    (let ([b1 (lookup id1)]
-          [b2 (lookup id2)])
-      (cond
-       [(or (lvar? b1) (macro? b1))
-        ;;must have the same local variable or syntactic binding
-        (eq? b1 b2)]
-       [(or (lvar? b2) (macro? b2)) #f]
-       [else (let ([g1 (id->bound-gloc id1)]
-                   [g2 (id->bound-gloc id2)])
-               ;; If both has bound in toplevel, they must refer to the
-               ;; same binding, hence (eq? g1 g2).  The name may differ,
-               ;; because of renaming on export/import.
-               ;; If at least either one is unbound, we just compare their
-               ;; names.
-               (if (and g1 g2)
-                 (eq? g1 g2)
-                 (eq? (unwrap-syntax id1)
-                      (unwrap-syntax id2))))])))
-  (and (identifier? id1)
-       (identifier? id2)
-       (or (eq? id1 id2)
-           (deep-compare id1 id2))))
-

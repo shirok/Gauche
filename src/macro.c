@@ -338,23 +338,12 @@ static inline ScmObj pvref_to_pvar(PatternContext *ctx, ScmObj pvref)
     return SCM_CAR(q);
 }
 
-/* compare :: (Sym-or-id, Sym-or-id) -> Bool */
-static int compare(ScmObj obj1, ScmObj obj2, ScmObj mod, ScmObj env)
-{
-    /* er-comparer is defined in Scheme (compile.scm) */
-    static ScmObj er_comparer_proc = SCM_UNDEFINED;
-    SCM_BIND_PROC(er_comparer_proc, "er-comparer",
-                  Scm_GaucheInternalModule());
-    return !SCM_FALSEP(Scm_ApplyRec4(er_comparer_proc,
-                                     obj1, obj2, mod, env));
-}
-
 static int isEllipsis(PatternContext *ctx, ScmObj obj)
 {
     if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */
     if (SCM_TRUEP(ctx->ellipsis)) {
         /* default ellipsis (...) */
-        return compare(SCM_SYM_ELLIPSIS, obj, SCM_OBJ(ctx->mod), ctx->env);
+        return Scm__ERCompare(SCM_SYM_ELLIPSIS, obj, ctx->mod, ctx->env);
     } else {
         /* specified ellipsis */
         return SCM_EQ(ctx->ellipsis, obj);
@@ -522,8 +511,7 @@ static ScmObj compile_rule1(ScmObj form,
         if (!SCM_FALSEP(Scm_Memq(form, ctx->literals))) {
             return rename_variable(ctx, form);
         }
-        if (patternp && compare(form, SCM_SYM_UNDERBAR,
-                                SCM_OBJ(ctx->mod), ctx->env)) { 
+        if (patternp && Scm__ERCompare(form, SCM_SYM_UNDERBAR, ctx->mod, ctx->env)) { 
             return SCM_SYM_UNDERBAR;
         }
         if (patternp) {
@@ -827,7 +815,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
         return TRUE;            /* unconditional match */
     }
     if (SCM_IDENTIFIERP(pattern)) {
-        return compare(pattern, form, mod, env);
+        return Scm__ERCompare(pattern, form, SCM_MODULE(mod), env);
     }
     if (SCM_SYNTAX_PATTERN_P(pattern)) {
         return match_subpattern(form, SCM_SYNTAX_PATTERN(pattern),

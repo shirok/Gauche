@@ -40,4 +40,6 @@ SCM_EXTERN ScmModule *Scm__RequireBaseModule(void);
 
 SCM_EXTERN ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix);
 
+SCM_EXTERN ScmGloc   *Scm__IdentifierToBoundGloc(ScmIdentifier*);
+
 #endif /*GAUCHE_PRIV_MODULEP_H*/
