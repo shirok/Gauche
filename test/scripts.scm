@@ -9,11 +9,6 @@
 
 (test-start "utility scripts")
 
-(define *nulldev*
-  (cond-expand
-   [gauche.os.windows "NUL"]
-   [else "/dev/null"]))
-
 (define *top-srcdir*
   (sys-normalize-pathname (or (sys-getenv "top_srcdir") "..")
                           :absolute #t :canonicalize #t))
@@ -210,7 +205,7 @@
        (process-exit-status
         (run-with-parent-directory-in-paths
          `("../gosh" "-ftest" "./configure")
-         :output *nulldev* :wait #t :directory "test.o")))
+         :output :null :wait #t :directory "test.o")))
 (test* "Makefile substitution" '()
        (and (file-exists? "test.o/Makefile")
             (filter #/@\w+@/ (file->string-list "test.o/Makefile"))))
@@ -232,7 +227,7 @@
        (process-exit-status
         (run-with-parent-directory-in-paths
          `("../gosh" "-ftest" "../test.o/configure")
-         :output *nulldev* :wait #t :directory "test2.o")))
+         :output :null :wait #t :directory "test2.o")))
 
 (test* "Makefiles in proper builddir" '(#t #t)
        (list (file-exists? "test2.o/Makefile")
@@ -263,7 +258,7 @@
               (run-with-parent-directory-in-paths
                `("../gosh" "-ftest" "../test.o/configure"
                  "--with-local=/a/b:/c/d")
-               :output *nulldev* :wait #t :directory "test2.o")))
+               :output :null :wait #t :directory "test2.o")))
             (cadr (memv :configure
                         (car (file->sexp-list "test2.o/package.gpd"))))))
 
@@ -281,7 +276,7 @@
 
 (define (run-install . args)
   (run-process `("./gosh" "-ftest" ,*gauche-install-script* ,@args)
-               :output *nulldev* :wait #t))
+               :output :null :wait #t))
 
 (define (test-install)
   (test* "-d" #t
