@@ -34,7 +34,14 @@
     (make-directory* "test.o")
     (make-directory* "test1.o"))
   (unwind-protect (thunk)
-    (remove-files "test.o" "test1.o")))
+    ;; cleanup may fail due to the timing (exp. on mingw), so we retry
+    ;; with delay.
+    (let loop ([retry 0])
+      (unless (>= retry 3)
+        (or (guard (e [<system-error> #f])
+              (remove-files "test.o" "test1.o")
+              #t)
+            (begin (sys-sleep 1) (loop (+ retry 1))))))))
 
 ;;=======================================================================
 (test-section "gosh")
