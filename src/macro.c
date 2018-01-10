@@ -277,7 +277,8 @@ typedef struct {
     ScmObj renames;             /* list of (var . identifier)  Keep mapping
                                    of input symbol/identifier to fresh 
                                    identifier */
-    ScmObj ellipsis;            /* symbol/idendifier/keyword for ellipsis
+    ScmObj ellipsis;            /* symbol/identifier/keyword for ellipsis
+                                   SCM_TRUE means default (...)
                                    SCM_FALSE means disabled */
     int pvcnt;                  /* counter of pattern variables */
     int maxlev;                 /* maximum level */
@@ -357,7 +358,6 @@ static int isEllipsis(PatternContext *ctx, ScmObj obj)
     Scm_Error("Bad ellipsis usage in macro definition of %S: %S",       \
                Ctx->name, Ctx->form)
 
-/* convert literal symbols into identifiers */
 static ScmObj preprocess_literals(ScmObj literals)
 {
     ScmObj lp, h = SCM_NIL, t = SCM_NIL;
@@ -753,29 +753,6 @@ static inline void match_insert(ScmObj pvref, ScmObj matched, MatchVar *mvec)
     } else {
         mvec[count].branch = Scm_Cons(matched, mvec[count].branch);
     }
-}
-
-/* see if literal identifier ID in the pattern matches the given object */
-static inline int match_identifier(ScmIdentifier *id, ScmObj obj,
-                                   ScmObj mod, ScmObj env)
-{
-    if (SCM_SYMBOLP(obj)) {
-        /* This is temporary: We don't want to allocate identifier for
-           every bare symbol we want to match.  But this is the shortcut
-           to do the right thing (using free-identifier=? to comapre literals.
-           Let's think optimization later. */
-        SCM_ASSERT(SCM_MODULEP(mod));
-        obj = Scm_MakeIdentifier(obj, SCM_MODULE(mod), env);
-    }
-    if (SCM_IDENTIFIERP(obj)) {
-        /* free-identifier=? is defined in Scheme (libmod.scm)  */
-        static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
-        SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
-                      Scm_GaucheInternalModule());
-        return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
-                                         SCM_OBJ(id), obj));
-    }
-    return FALSE;
 }
 
 static inline int match_subpattern(ScmObj form, ScmSyntaxPattern *pat,
