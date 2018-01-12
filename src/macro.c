@@ -261,7 +261,6 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 
 /*-------------------------------------------------------------------
  * pattern language compiler
- *   - convert literals into identifiers
  *   - recognize repeatable subpatterns and replace it to SyntaxPattern node.
  *   - convert free symbols in the template into identifiers
  *   - convert pattern variables into LREF object.
@@ -358,7 +357,7 @@ static int isEllipsis(PatternContext *ctx, ScmObj obj)
     Scm_Error("Bad ellipsis usage in macro definition of %S: %S",       \
                Ctx->name, Ctx->form)
 
-static ScmObj preprocess_literals(ScmObj literals)
+static ScmObj check_literals(ScmObj literals)
 {
     ScmObj lp, h = SCM_NIL, t = SCM_NIL;
     SCM_FOR_EACH(lp, literals) {
@@ -511,7 +510,8 @@ static ScmObj compile_rule1(ScmObj form,
         if (!SCM_FALSEP(Scm_Memq(form, ctx->literals))) {
             return rename_variable(ctx, form);
         }
-        if (patternp && Scm__ERCompare(form, SCM_SYM_UNDERBAR, ctx->mod, ctx->env)) { 
+        if (patternp && Scm__ERCompare(form, SCM_SYM_UNDERBAR,
+                                       ctx->mod, ctx->env)) { 
             return SCM_SYM_UNDERBAR;
         }
         if (patternp) {
@@ -547,7 +547,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
 
     ctx.name = name;
     ctx.ellipsis = ellipsis;
-    ctx.literals = preprocess_literals(literals);
+    ctx.literals = check_literals(literals);
     ctx.mod = mod;
     ctx.env = env;
     ctx.renames = SCM_NIL;
