@@ -28,10 +28,11 @@ GC_INNER signed_word GC_bytes_found = 0;
                         /* on free lists which we had to drop.     */
 
 #if defined(PARALLEL_MARK)
-  GC_INNER word GC_fl_builder_count = 0;
+  GC_INNER signed_word GC_fl_builder_count = 0;
         /* Number of threads currently building free lists without      */
         /* holding GC lock.  It is not safe to collect if this is       */
-        /* nonzero.                                                     */
+        /* nonzero.  Also, together with the mark lock, it is used as   */
+        /* a semaphore during marker threads startup.                   */
 #endif /* PARALLEL_MARK */
 
 /* We defer printing of leaked objects until we're done with the GC     */
@@ -222,7 +223,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
   STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
                                        ptr_t list, signed_word *count)
   {
-    int bit_no = 0;
+    word bit_no = 0;
     word *p, *q, *plim;
     signed_word n_bytes_found = 0;
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
@@ -376,7 +377,6 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
     hdr * hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;  /* size of objects in current block     */
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
-    struct hblk ** rlh;
 
     if( sz > MAXOBJBYTES ) {  /* 1 big object */
         if( !mark_bit_from_hdr(hhdr, 0) ) {
@@ -439,9 +439,13 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           }
         } else if (GC_find_leak || !GC_block_nearly_full(hhdr)) {
           /* group of smaller objects, enqueue the real work */
-          rlh = &(ok -> ok_reclaim_list[BYTES_TO_GRANULES(sz)]);
-          hhdr -> hb_next = *rlh;
-          *rlh = hbp;
+          struct hblk **rlh = ok -> ok_reclaim_list;
+
+          if (rlh != NULL) {
+            rlh += BYTES_TO_GRANULES(sz);
+            hhdr -> hb_next = *rlh;
+            *rlh = hbp;
+          }
         } /* else not worth salvaging. */
         /* We used to do the nearly_full check later, but we    */
         /* already have the right cache context here.  Also     */
@@ -535,7 +539,7 @@ STATIC void GC_print_block_descr(struct hblk *h,
     size_t bytes = hhdr -> hb_sz;
     struct Print_stats *ps;
     unsigned n_marks = GC_n_set_marks(hhdr);
-    unsigned n_objs = HBLK_OBJS((unsigned)bytes);
+    unsigned n_objs = (unsigned)HBLK_OBJS(bytes);
 
     if (0 == n_objs) n_objs = 1;
     if (hhdr -> hb_n_marks != n_marks) {
@@ -565,17 +569,21 @@ void GC_print_block_list(void)
               (unsigned long)pstats.total_bytes);
 }
 
+#include "gc_inline.h" /* for GC_print_free_list prototype */
+
 /* Currently for debugger use only: */
-void GC_print_free_list(int kind, size_t sz_in_granules)
+GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
 {
-    struct obj_kind * ok = &GC_obj_kinds[kind];
-    ptr_t flh = ok -> ok_freelist[sz_in_granules];
+    ptr_t flh;
     int n;
 
+    GC_ASSERT(kind < MAXOBJKINDS);
+    GC_ASSERT(sz_in_granules <= MAXOBJGRANULES);
+    flh = GC_obj_kinds[kind].ok_freelist[sz_in_granules];
     for (n = 0; flh; n++) {
         struct hblk *block = HBLKPTR(flh);
         GC_printf("Free object in heap block %p [%d]: %p\n",
-                  (void *)block, n, flh);
+                  (void *)block, n, (void *)flh);
         flh = obj_link(flh);
     }
 }
@@ -616,16 +624,16 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
       GC_atomic_in_use = 0;
     /* Clear reclaim- and free-lists */
       for (kind = 0; kind < GC_n_kinds; kind++) {
-        void **fop;
-        void **lim;
         struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
         GC_bool should_clobber = (GC_obj_kinds[kind].ok_descriptor != 0);
 
         if (rlist == 0) continue;       /* This kind not used.  */
         if (!report_if_found) {
-            lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1]);
+            void **fop;
+            void **lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1]);
+
             for (fop = GC_obj_kinds[kind].ok_freelist;
-                 (word)fop < (word)lim; fop++) {
+                 (word)fop < (word)lim; (*(word **)&fop)++) {
               if (*fop != 0) {
                 if (should_clobber) {
                   GC_clear_fl_links(fop);
@@ -703,7 +711,6 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     struct hblk ** rlh;
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
-      CLOCK_TYPE done_time;
 
       if (GC_print_stats == VERBOSE)
         GET_TIME(start_time);
@@ -732,6 +739,8 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     }
 #   ifndef SMALL_CONFIG
       if (GC_print_stats == VERBOSE) {
+        CLOCK_TYPE done_time;
+
         GET_TIME(done_time);
         GC_verbose_log_printf("Disposing of reclaim lists took %lu msecs\n",
                               MS_TIME_DIFF(done_time,start_time));

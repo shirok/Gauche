@@ -70,16 +70,18 @@ extern "C" {
                     __LINE__ ); \
         exit( 1 ); }
 
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-# define ATTR_UNUSED __attribute__((__unused__))
-#else
-# define ATTR_UNUSED /* empty */
+#ifndef GC_ATTR_EXPLICIT
+# if (__cplusplus >= 201103L) || defined(CPPCHECK)
+#   define GC_ATTR_EXPLICIT explicit
+# else
+#   define GC_ATTR_EXPLICIT /* empty */
+# endif
 #endif
 
 class A {public:
     /* An uncollectible class. */
 
-    A( int iArg ): i( iArg ) {}
+    GC_ATTR_EXPLICIT A( int iArg ): i( iArg ) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
     int i;};
@@ -88,8 +90,8 @@ class A {public:
 class B: public GC_NS_QUALIFY(gc), public A { public:
     /* A collectible class. */
 
-    B( int j ): A( j ) {}
-    ~B() {
+    GC_ATTR_EXPLICIT B( int j ): A( j ) {}
+    virtual ~B() {
         my_assert( deleting );}
     static void Deleting( int on ) {
         deleting = on;}
@@ -101,7 +103,7 @@ int B::deleting = 0;
 class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
     /* A collectible class with cleanup and virtual multiple inheritance. */
 
-    C( int levelArg ): A( levelArg ), level( levelArg ) {
+    GC_ATTR_EXPLICIT C( int levelArg ): A( levelArg ), level( levelArg ) {
         nAllocated++;
         if (level > 0) {
             left = new C( level - 1 );
@@ -133,12 +135,12 @@ class D: public GC_NS_QUALIFY(gc) { public:
     /* A collectible class with a static member function to be used as
     an explicit clean-up function supplied to ::new. */
 
-    D( int iArg ): i( iArg ) {
+    GC_ATTR_EXPLICIT D( int iArg ): i( iArg ) {
         nAllocated++;}
     static void CleanUp( void* obj, void* data ) {
-        D* self = (D*) obj;
+        D* self = static_cast<D*>(obj);
         nFreed++;
-        my_assert( self->i == (int) (GC_word) data );}
+        my_assert( (GC_word)self->i == (GC_word)data );}
     static void Test() {
         my_assert( nFreed >= .8 * nAllocated );}
 
@@ -170,19 +172,25 @@ class F: public E {public:
     member with clean-up. */
 
     F() {
-        nAllocated++;}
+        nAllocatedF++;
+    }
+
     ~F() {
-        nFreed++;}
+        nFreedF++;
+    }
+
     static void Test() {
-        my_assert( nFreed >= .8 * nAllocated );
-        my_assert( 2 * nFreed == E::nFreed );}
+        my_assert(nFreedF >= .8 * nAllocatedF);
+        my_assert(2 * nFreedF == nFreed);
+    }
 
     E e;
-    static int nFreed;
-    static int nAllocated;};
+    static int nFreedF;
+    static int nAllocatedF;
+};
 
-int F::nFreed = 0;
-int F::nAllocated = 0;
+int F::nFreedF = 0;
+int F::nAllocatedF = 0;
 
 
 GC_word Disguise( void* p ) {
@@ -193,20 +201,48 @@ void* Undisguise( GC_word i ) {
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
-  int APIENTRY WinMain( HINSTANCE instance ATTR_UNUSED,
-                       HINSTANCE prev ATTR_UNUSED, LPSTR cmd,
-                       int cmdShow ATTR_UNUSED )
+  int APIENTRY WinMain( HINSTANCE /* instance */, HINSTANCE /* prev */,
+                       LPSTR cmd, int /* cmdShow */)
   {
     int argc = 0;
     char* argv[ 3 ];
 
+#   if defined(CPPCHECK)
+      GC_noop1((GC_word)&WinMain);
+#   endif
     if (cmd != 0)
       for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
-        argv[ argc ] = strtok( argc == 1 ? cmd : 0, " \t" );
-        if (0 == argv[ argc ]) break;}
+        // Parse the command-line string.  Non-reentrant strtok() is not used
+        // to avoid complains of static analysis tools.  (And, strtok_r() is
+        // not available on some platforms.)  The code is equivalent to:
+        //   if (!(argv[argc] = strtok(argc == 1 ? cmd : 0, " \t"))) break;
+        if (NULL == cmd) {
+          argv[argc] = NULL;
+          break;
+        }
+        argv[argc] = cmd;
+        for (; *cmd != '\0'; cmd++) {
+          if (*cmd != ' ' && *cmd != '\t')
+            break;
+        }
+        if ('\0' == *cmd) {
+          argv[argc] = NULL;
+          break;
+        }
+        argv[argc] = cmd;
+        while (*(++cmd) != '\0') {
+          if (*cmd == ' ' || *cmd == '\t')
+            break;
+        }
+        if (*cmd != '\0') {
+          *(cmd++) = '\0';
+        } else {
+          cmd = NULL;
+        }
+      }
 #elif defined(MACOS)
   int main() {
-    char* argv_[] = {"test_cpp", "10"}; // MacOS doesn't have a commandline
+    char* argv_[] = {"test_cpp", "10"}; // MacOS doesn't have a command line
     argv = argv_;
     argc = sizeof(argv_)/sizeof(argv_[0]);
 #else
@@ -237,9 +273,12 @@ void* Undisguise( GC_word i ) {
       *xptr = x;
       x = 0;
 #   endif
-    if (argc != 2 || (0 >= (n = atoi( argv[ 1 ] )))) {
-        GC_printf( "usage: test_cpp number-of-iterations\nAssuming 10 iters\n" );
-        n = 10;}
+    if (argc != 2
+        || (n = (int)COVERT_DATAFLOW(atoi(argv[1]))) <= 0) {
+      GC_printf("usage: test_cpp number-of-iterations\n"
+                "Assuming 10 iters\n");
+      n = 10;
+    }
 
     for (iters = 1; iters <= n; iters++) {
         GC_printf( "Starting iteration %d\n", iters );
@@ -263,7 +302,10 @@ void* Undisguise( GC_word i ) {
             d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
             (void)d;
             f = new F;
-            (void)f;
+            F** fa = new F*[1];
+            fa[0] = f;
+            (void)fa;
+            delete[] fa;
             if (0 == i % 10) delete c;}
 
             /* Allocate a very large number of collectible As and Bs and
@@ -288,10 +330,17 @@ void* Undisguise( GC_word i ) {
 
             /* Make sure the uncollectible As and Bs are still there. */
         for (i = 0; i < 1000; i++) {
-            A* a = (A*) Undisguise( as[ i ] );
-            B* b = (B*) Undisguise( bs[ i ] );
+            A* a = static_cast<A*>(Undisguise(as[i]));
+            B* b = static_cast<B*>(Undisguise(bs[i]));
             a->Test( i );
-            delete a;
+#           if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
+              // Workaround for ASan/MSan: the linker uses operator delete
+              // implementation from libclang_rt instead of gc_cpp (thus
+              // causing incompatible alloc/free).
+              GC_FREE(a);
+#           else
+              delete a;
+#           endif
             b->Test( i );
             B::Deleting( 1 );
             delete b;

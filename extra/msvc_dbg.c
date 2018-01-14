@@ -47,7 +47,7 @@ typedef GC_word word;
         typedef ULONG        ULONG_ADDR;
 #endif
 
-static HANDLE GetSymHandle()
+static HANDLE GetSymHandle(void)
 {
   static HANDLE symHandle = NULL;
   if (!symHandle) {
@@ -158,8 +158,8 @@ size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
 #elif defined(_M_ALPHA64)
   machineType                 = IMAGE_FILE_MACHINE_ALPHA64;
   stackFrame.AddrPC.Offset    = context->Fir;
-#else
-#error Unknown CPU
+#elif !defined(CPPCHECK)
+# error Unknown CPU
 #endif
   for (frameIndex = 0; frameIndex < maxFrames; ) {
     BOOL bRet = StackWalk(machineType, hProcess, hThread, &stackFrame,
@@ -308,7 +308,6 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   char*const begin = buffer;
   char*const end = buffer + size;
   size_t line_number = 0;
-  char   str[128];
 
   if (size) {
     *buffer = 0;
@@ -317,7 +316,9 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (line_number) {
-    wsprintf(str, "(%d) : ", line_number);
+    char str[128];
+
+    wsprintf(str, "(%d) : ", (int)line_number);
     if (size) {
       strncpy(buffer, str, size)[size - 1] = 0;
     }
@@ -341,8 +342,6 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetModuleNameFromAddress(address, buffer, size);
-  size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
-
   return buffer - begin;
 }
 
@@ -378,4 +377,9 @@ char** backtrace_symbols(void*const* addresses, int count)
   return symbols;
 }
 
-#endif /* !_M_AMD64 */
+#else
+
+  extern int GC_quiet;
+        /* ANSI C does not allow translation units to be empty. */
+
+#endif /* _M_AMD64 */

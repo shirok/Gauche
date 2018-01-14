@@ -25,7 +25,18 @@
 # include "config.h"
 #endif
 
+#undef GC_NO_THREAD_REDIRECTS
 #include "gc_disclaim.h"
+
+#ifdef LINT2
+  /* Avoid include gc_priv.h. */
+# ifndef GC_API_PRIV
+#   define GC_API_PRIV GC_API
+# endif
+  GC_API_PRIV long GC_random(void);
+# undef rand
+# define rand() (int)GC_random()
+#endif /* LINT2 */
 
 #define my_assert(e) \
     if (!(e)) { \
@@ -80,7 +91,7 @@ struct pair_s {
     pair_t cdr;
 };
 
-static const char *pair_magic = "PAIR_MAGIC_BYTES";
+static const char * const pair_magic = "PAIR_MAGIC_BYTES";
 
 int is_pair(pair_t p)
 {
@@ -165,7 +176,7 @@ pair_check_rec(pair_t p)
 #else
 #  define MUTATE_CNT 10000000
 #endif
-#define GROW_LIMIT 10000000
+#define GROW_LIMIT (MUTATE_CNT/10)
 
 void *test(void *data)
 {

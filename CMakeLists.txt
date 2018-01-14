@@ -25,6 +25,8 @@ SET(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
 
 PROJECT(gc)
 
+INCLUDE(CTest)
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 ADD_DEFINITIONS("-D_CRT_SECURE_NO_DEPRECATE
@@ -49,8 +51,7 @@ INCLUDE_DIRECTORIES(libatomic_ops/src)
 SET(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
         new_hblk.c dbg_mlc.c malloc.c stubborn.c dyn_load.c
-        typd_mlc.c ptr_chck.c gc_cpp.cc mallocx.c checksums.c
-        thread_local_alloc.c)
+        typd_mlc.c ptr_chck.c mallocx.c gc_cpp.cc)
 SET(LIBS)
 OPTION(enable_threads "TODO" NO)
 IF(enable_threads)
@@ -69,6 +70,7 @@ OPTION(enable_parallel_mark "Parallelize marking and free list construction" NO)
 #ENDIF(Threads_FOUND)
 
 IF(enable_parallel_mark)
+        ADD_DEFINITIONS("-DPARALLEL_MARK")
 ENDIF(enable_parallel_mark)
 
 OPTION(enable_cplusplus "install C++ support" NO)
@@ -85,10 +87,8 @@ IF(CMAKE_USE_PTHREADS_INIT)
         IF( HOST MATCHES x86-.*-linux.*|ia64-.*-linux.*|i586-.*-linux.*|i686-.*-linux.*|x86_64-.*-linux.*|alpha-.*-linux.*|sparc.*-.*-linux.*)
                 ADD_DEFINITIONS("-DGC_LINUX_THREADS")
                 ADD_DEFINITIONS("-D_REENTRANT")
-                IF (${enable_parallel_mark})
-                        ADD_DEFINITIONS("-DPARALLEL_MARK")
-                ENDIF()
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
+                SET(SRC ${SRC} thread_local_alloc.c)
                 MESSAGE("Explicit GC_INIT() calls may be required.")
         ENDIF()
         IF ( HOST MATCHES .*-.*-linux.*)
@@ -103,9 +103,6 @@ IF(CMAKE_USE_PTHREADS_INIT)
                 MESSAGE("Only HP/UX 11 POSIX threads are supported.")
                 ADD_DEFINITIONS("-DGC_HPUX_THREADS")
                 ADD_DEFINITIONS("-D_POSIX_C_SOURCE=199506L") #TODO test -DVAR=value. Alternative is COMPILE_DEFINITIONS property
-                IF (${enable_parallel_mark})
-                        ADD_DEFINITIONS("-DPARALLEL_MARK")
-                ENDIF()
                 MESSAGE("Explicit GC_INIT() calls may be required.")
                 ADD_DEFINITIONS("-D_REENTRANT") #TODO
         ENDIF()
@@ -122,16 +119,15 @@ IF(CMAKE_USE_PTHREADS_INIT)
         IF ( HOST MATCHES .*-.*-kfreebsd.*-gnu)
                 ADD_DEFINITIONS("-DGC_FREEBSD_THREADS")
                 ADD_DEFINITIONS("-D_REENTRANT")
-                IF (${enable_parallel_mark})
-                        ADD_DEFINITIONS("-DPARALLEL_MARK")
-                ENDIF()
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
                 ADD_DEFINITIONS("-DUSE_COMPILER_TLS")
+                SET(SRC ${SRC} thread_local_alloc.c)
         ENDIF()
         IF ( HOST MATCHES .*-.*-gnu.*)
                 ADD_DEFINITIONS("-DGC_GNU_THREADS")
                 ADD_DEFINITIONS("-D_REENTRANT")
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
+                SET(SRC ${SRC} thread_local_alloc.c)
         ENDIF()
         IF ( HOST MATCHES .*-.*-netbsd.*)
                 MESSAGE("Only on NetBSD 2.0 or later.")
@@ -142,6 +138,7 @@ IF(CMAKE_USE_PTHREADS_INIT)
         IF ( HOST MATCHES .*-.*-solaris.*)
                 ADD_DEFINITIONS("-DGC_SOLARIS_THREADS")
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
+                SET(SRC ${SRC} thread_local_alloc.c)
 #TODO
 #       if test "$GCC" != yes; then
 #          CFLAGS="$CFLAGS -O"
@@ -154,30 +151,22 @@ IF(CMAKE_USE_PTHREADS_INIT)
         ENDIF()
         IF ( HOST MATCHES .*-.*-cygwin.*)
                 ADD_DEFINITIONS("-DGC_THREADS")
-                IF (${enable_parallel_mark})
-                        ADD_DEFINITIONS("-DPARALLEL_MARK")
-                ENDIF()
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
-
-#TODO
-#       win32_threads=true
+                SET(SRC ${SRC} thread_local_alloc.c win32_threads.c)
         ENDIF()
         IF ( HOST MATCHES .*-.*-darwin.*)
                 ADD_DEFINITIONS("-DGC_DARWIN_THREADS")
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
                 MESSAGE("Explicit GC_INIT() calls may be required.")
-                SET(SRC ${SRC} darwin_stop_world.c)
-                IF (${enable_parallel_mark})
-                       ADD_DEFINITIONS("-DPARALLEL_MARK")
-                ENDIF()
+                SET(SRC ${SRC} darwin_stop_world.c thread_local_alloc.c)
                 #TODO
                 #darwin_threads=true
         ENDIF()
-        IF ( HOST MATCHES .*-.*-osf*)
+        IF ( HOST MATCHES .*-.*-osf.*)
                 ADD_DEFINITIONS("-DGC_OSF1_THREADS")
-                IF (${enable_parallel_mark})
-                        ADD_DEFINITIONS("-DPARALLEL_MARK")
+                IF(enable_parallel_mark)
                         ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
+                        SET(SRC ${SRC} thread_local_alloc.c)
                         MESSAGE("Explicit GC_INIT() calls may be required.")
                         # May want to enable it in other cases, too.
                         # Measurements haven't yet been done.
@@ -191,10 +180,9 @@ ENDIF(CMAKE_USE_PTHREADS_INIT)
 
 IF(CMAKE_USE_WIN32_THREADS_INIT)
         ADD_DEFINITIONS("-DGC_THREADS")
-        #win32_threads=true   TODO
-        IF (${enable_parallel_mark})
-                ADD_DEFINITIONS("-DPARALLEL_MARK")
+        IF(enable_parallel_mark)
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
+                SET(SRC ${SRC} thread_local_alloc.c)
         ENDIF()
         ADD_DEFINITIONS("-DEMPTY_GETENV_RESULTS") #TODO test
         SET(SRC ${SRC} win32_threads.c)
@@ -203,7 +191,10 @@ ENDIF(CMAKE_USE_WIN32_THREADS_INIT)
 OPTION(enable_gcj_support "Support for gcj" NO)
 IF(enable_gcj_support)
         ADD_DEFINITIONS("-DGC_GCJ_SUPPORT")
-        ADD_DEFINITIONS("-DGC_ENABLE_SUSPEND_THREAD")
+        IF(enable_threads)
+                ADD_DEFINITIONS("-DGC_ENABLE_SUSPEND_THREAD")
+        ENDIF(enable_threads)
+        SET(SRC ${SRC} gcj_mlc.c)
 ENDIF(enable_gcj_support)
 
 

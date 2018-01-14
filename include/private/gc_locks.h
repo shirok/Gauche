@@ -36,8 +36,12 @@
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
      GC_EXTERN PCR_Th_ML GC_allocate_ml;
-#    define DCL_LOCK_STATE \
+#    if defined(CPPCHECK)
+#      define DCL_LOCK_STATE /* empty */
+#    else
+#      define DCL_LOCK_STATE \
          PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mask
+#    endif
 #    define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
 #    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #  endif
@@ -133,8 +137,7 @@
                 AO_CLEAR(&GC_allocate_lock); }
 #     else
 #        define UNCOND_LOCK() \
-              { GC_ASSERT(I_DONT_HOLD_LOCK()); \
-                if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+              { if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
                   GC_lock(); }
 #        define UNCOND_UNLOCK() AO_CLEAR(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
@@ -154,11 +157,7 @@
                   pthread_mutex_unlock(&GC_allocate_ml); }
 #      else /* !GC_ASSERTIONS */
 #        if defined(NO_PTHREAD_TRYLOCK)
-#          ifdef USE_SPIN_LOCK
-#            define UNCOND_LOCK() GC_lock()
-#          else
-#            define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
-#          endif
+#          define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
 #        else
 #          define UNCOND_LOCK() \
               { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
@@ -183,15 +182,25 @@
                  || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
 #      endif
 #    endif /* GC_ASSERTIONS */
-     GC_EXTERN volatile GC_bool GC_collecting;
-#    define ENTER_GC() GC_collecting = 1;
-#    define EXIT_GC() GC_collecting = 0;
+#    ifndef GC_WIN32_THREADS
+       GC_EXTERN volatile GC_bool GC_collecting;
+#      define ENTER_GC() (void)(GC_collecting = TRUE)
+#      define EXIT_GC() (void)(GC_collecting = FALSE)
+#    endif
      GC_INNER void GC_lock(void);
 #  endif /* GC_PTHREADS */
-#  ifdef GC_ALWAYS_MULTITHREADED
+#  if defined(GC_ALWAYS_MULTITHREADED) \
+      && (defined(USE_PTHREAD_LOCKS) || defined(USE_SPIN_LOCK))
 #    define GC_need_to_lock TRUE
+#    define set_need_to_lock() (void)0
 #  else
+#    if defined(GC_ALWAYS_MULTITHREADED) && !defined(CPPCHECK)
+#      error Runtime initialization of GC lock is needed!
+#    endif
+#    undef GC_ALWAYS_MULTITHREADED
      GC_EXTERN GC_bool GC_need_to_lock;
+#       define set_need_to_lock() (void)(GC_need_to_lock = TRUE)
+                                        /* We are multi-threaded now.   */
 #  endif
 
 # else /* !THREADS */
@@ -207,7 +216,8 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
-# if defined(LINT2) || defined(GC_ALWAYS_MULTITHREADED)
+# if (defined(LINT2) && defined(USE_PTHREAD_LOCKS)) \
+     || defined(GC_ALWAYS_MULTITHREADED)
     /* Instruct code analysis tools not to care about GC_need_to_lock   */
     /* influence to LOCK/UNLOCK semantic.                               */
 #   define LOCK() UNCOND_LOCK()

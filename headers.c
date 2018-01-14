@@ -118,7 +118,7 @@ static ptr_t scratch_free_ptr = 0;
 GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 {
     ptr_t result = scratch_free_ptr;
-    word bytes_to_get;
+    size_t bytes_to_get;
 
     bytes = ROUNDUP_GRANULE_SIZE(bytes);
     for (;;) {
@@ -170,7 +170,7 @@ static hdr * alloc_hdr(void)
     register hdr * result;
 
     if (hdr_free_list == 0) {
-        result = (hdr *) GC_scratch_alloc((word)(sizeof(hdr)));
+        result = (hdr *)GC_scratch_alloc(sizeof(hdr));
     } else {
         result = hdr_free_list;
         hdr_free_list = (hdr *) (result -> hb_next);
@@ -194,7 +194,7 @@ GC_INNER void GC_init_headers(void)
 {
     register unsigned i;
 
-    GC_all_nils = (bottom_index *)GC_scratch_alloc((word)sizeof(bottom_index));
+    GC_all_nils = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
     if (GC_all_nils == NULL) {
       GC_err_printf("Insufficient memory for GC_all_nils\n");
       EXIT();
@@ -224,14 +224,14 @@ static GC_bool get_index(word addr)
           if (p -> key == hi) return(TRUE);
           p = p -> hash_link;
       }
-      r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
+      r = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
       if (r == 0) return(FALSE);
       BZERO(r, sizeof (bottom_index));
       r -> hash_link = old;
       GC_top_index[i] = r;
 #   else
       if (GC_top_index[hi] != GC_all_nils) return(TRUE);
-      r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
+      r = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
       if (r == 0) return(FALSE);
       GC_top_index[hi] = r;
       BZERO(r, sizeof (bottom_index));
@@ -277,14 +277,14 @@ GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
 GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
 {
     struct hblk * hbp;
-    word i;
 
     for (hbp = h; (word)hbp < (word)h + sz; hbp += BOTTOM_SZ) {
         if (!get_index((word) hbp)) return(FALSE);
     }
     if (!get_index((word)h + sz - 1)) return(FALSE);
     for (hbp = h + 1; (word)hbp < (word)h + sz; hbp += 1) {
-        i = HBLK_PTR_DIFF(hbp, h);
+        word i = HBLK_PTR_DIFF(hbp, h);
+
         SET_HDR(hbp, (hdr *)(i > MAX_JUMP? MAX_JUMP : i));
     }
     return(TRUE);

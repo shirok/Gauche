@@ -92,7 +92,9 @@ static int extract_conv_spec(CORD_pos source, char *buf,
             if (!saw_number) {
                 /* Zero fill flag; ignore */
                 break;
-            } /* otherwise fall through: */
+            }
+            current_number *= 10;
+            break;
           case '1':
           case '2':
           case '3':
@@ -171,6 +173,20 @@ static int extract_conv_spec(CORD_pos source, char *buf,
     buf[chars_so_far] = '\0';
     return(result);
 }
+
+#if defined(DJGPP) || defined(__STRICT_ANSI__)
+  /* vsnprintf is missing in DJGPP (v2.0.3) */
+# define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
+#elif defined(_MSC_VER)
+# ifdef MSWINCE
+    /* _vsnprintf is deprecated in WinCE */
+#   define GC_VSNPRINTF StringCchVPrintfA
+# else
+#   define GC_VSNPRINTF _vsnprintf
+# endif
+#else
+# define GC_VSNPRINTF vsnprintf
+#endif
 
 int CORD_vsprintf(CORD * out, CORD format, va_list args)
 {
@@ -272,16 +288,17 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     register char * buf;
                     va_list vsprintf_args;
                     int max_size = 0;
-                    int res;
-#                   ifdef __va_copy
+                    int res = 0;
+
+#                   if defined(CPPCHECK)
+                      va_copy(vsprintf_args, args);
+#                   elif defined(__va_copy)
                       __va_copy(vsprintf_args, args);
-#                   else
-#                     if defined(__GNUC__) && !defined(__DJGPP__) \
+#                   elif defined(__GNUC__) && !defined(__DJGPP__) \
                          && !defined(__EMX__) /* and probably in other cases */
-                        va_copy(vsprintf_args, args);
-#                     else
-                        vsprintf_args = args;
-#                     endif
+                      va_copy(vsprintf_args, args);
+#                   else
+                      vsprintf_args = args;
 #                   endif
                     if (width == VARIABLE) width = va_arg(args, int);
                     if (prec == VARIABLE) prec = va_arg(args, int);
@@ -308,7 +325,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         case 'c':
                             if (long_arg <= 0) {
                               (void) va_arg(args, int);
-                            } else if (long_arg > 0) {
+                            } else /* long_arg > 0 */ {
                               (void) va_arg(args, long);
                             }
                             break;
@@ -324,15 +341,12 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             (void) va_arg(args, double);
                             break;
                         default:
-#                           if defined(__va_copy) \
-                               || (defined(__GNUC__) && !defined(__DJGPP__) \
-                                   && !defined(__EMX__))
-                              va_end(vsprintf_args);
-#                           endif
-                            return(-1);
+                            res = -1;
                     }
-                    res = vsprintf(buf, conv_spec, vsprintf_args);
-#                   if defined(__va_copy) \
+                    if (0 == res)
+                      res = GC_VSNPRINTF(buf, max_size + 1, conv_spec,
+                                         vsprintf_args);
+#                   if defined(CPPCHECK) || defined(__va_copy) \
                        || (defined(__GNUC__) && !defined(__DJGPP__) \
                            && !defined(__EMX__))
                       va_end(vsprintf_args);
