@@ -96,8 +96,21 @@
 (define-cproc current-exception-handler ()
   (result (-> (Scm_VM) exceptionHandler)))
 
-(define-cproc with-exception-handler (handler thunk)
+(define-cproc %with-exception-handler (handler thunk)
   Scm_VMWithExceptionHandler)
+
+(define (with-exception-handler handler thunk)
+  (let* ((old (current-exception-handler))
+         (new (lambda (exc)
+                (%with-exception-handler
+                 old
+                 (lambda ()
+                   (if (condition-has-type? exc <serious-condition>)
+                     (begin
+                       (handler exc)
+                       (raise exc))
+                     (handler exc)))))))
+    (%with-exception-handler new thunk)))
 
 ;; The optional arg is to support r7rs semantics
 (select-module gauche.internal)

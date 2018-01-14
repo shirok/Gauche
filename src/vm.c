@@ -2172,6 +2172,8 @@ ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exception, u_long raise_flags)
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
         return vm->val0;
+#if 0
+    /* Disabled for R7RS's with-exception-handler */
     } else if (!SCM_SERIOUS_CONDITION_P(exception)) {
         /* The system's default handler does't care about
            continuable exception.  See if there's a user-defined
@@ -2181,6 +2183,7 @@ ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exception, u_long raise_flags)
                 return Scm_ApplyRec(ep->xhandler, SCM_LIST1(exception));
             }
         }
+#endif
     }
     Scm_VMDefaultExceptionHandler(exception);
     /* this never returns */

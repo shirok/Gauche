@@ -278,7 +278,8 @@
             (foo (lambda () (raise 'boo)))
             (push! aaa 'e))
            aaa))
-  (test* "unwind-protect (raise & continue)" '(e d c boo b a)
+;  (test* "unwind-protect (raise & continue)" '(e d c boo b a)
+  (test* "unwind-protect (raise-2)" '(boo d b a)
          (begin
            (set! aaa '())
            (with-exception-handler

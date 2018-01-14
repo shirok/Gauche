@@ -440,7 +440,8 @@
 ;;----------------------------------------------------------------
 (test-section "nesting exception/error handlers")
 
-(prim-test "propagating continuable exception" '(a b c)
+;(prim-test "propagating continuable exception 1" '(a b c)
+(prim-test "nesting exception/error handlers 1" '(a z)
       (lambda ()
         (let ((x '()))
           (with-exception-handler
@@ -454,7 +455,8 @@
                 (push! x 'c)))))
           (reverse x))))
 
-(prim-test "propagating continuable exception" '(a b c d e f g h)
+;(prim-test "propagating continuable exception 2" '(a b c d e f g h)
+(prim-test "nesting exception/error handlers 2" '(a b c f g h)
       (lambda ()
         (let ((x '()))
           (with-exception-handler
