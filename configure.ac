@@ -1,11 +1,11 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT([libatomic_ops],[7.6.0],bdwgc@lists.opendylan.org)
+AC_INIT([libatomic_ops],[7.6.2],https://github.com/ivmai/libatomic_ops/issues)
 
 AC_PREREQ(2.61)
 AC_CANONICAL_TARGET([])
 AC_CONFIG_SRCDIR(src/atomic_ops.c)
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
+AM_INIT_AUTOMAKE([foreign nostdinc])
 AM_MAINTAINER_MODE
 
 AC_CONFIG_HEADERS([src/config.h])
@@ -124,6 +124,11 @@ if test "$enable_gcov" = "yes"; then
   # Turn off code optimization to get accurate line numbers.
   CFLAGS=`echo "$CFLAGS" | sed -e 's/-O\(1\|2\|3\|4\|s\|fast\)\?//g'`
 fi
+
+AC_ARG_ENABLE(docs,
+        [AC_HELP_STRING([--disable-docs],
+                        [Do not build and install documentation])])
+AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
 AC_SUBST(PICFLAG)
 AC_SUBST(DEFS)

@@ -21,49 +21,60 @@
     && !defined(AO_DISABLE_GCC_ATOMICS)
 # define AO_GCC_ATOMIC_TEST_AND_SET
 
-/* TODO: Refine for newer clang releases. */
-# if defined(__clang__) \
-     && (!(defined(__x86_64__) || defined(__APPLE_CC__) \
-           || defined(__CYGWIN__) || defined(AO_PREFER_BUILTIN_ATOMICS)) \
-         || (defined(__x86_64__) && !defined(__ILP32__) \
-             && (!(AO_CLANG_PREREQ(3, 5) \
-                   || defined(AO_PREFER_BUILTIN_ATOMICS)) \
-                 || defined(AO_ADDRESS_SANITIZER))))
-    /* As of clang-3.8 i686 (NDK r11c), it requires -latomic for all    */
-    /* the double-wide operations.  Same for clang-3.4/x64.  For now,   */
-    /* we fall back to the non-intrinsic implementation by default.     */
-    /* As of clang-3.8, double-wide arguments are incorrectly passed to */
-    /* atomic intrinsic operations for x64 target if ASan is enabled.   */
-#   define AO_SKIPATOMIC_double_compare_and_swap_ANY
-#   define AO_SKIPATOMIC_double_load
-#   define AO_SKIPATOMIC_double_load_acquire
-#   define AO_SKIPATOMIC_double_store
-#   define AO_SKIPATOMIC_double_store_release
-# elif defined(__APPLE_CC__) && defined(__x86_64__)
-    /* As of Apple clang-600 (based on LLVM 3.5svn), it has some bug in */
-    /* double-wide CAS implementation for x64 target.                   */
-#   define AO_SKIPATOMIC_double_compare_and_swap_ANY
-# endif
-
 # if defined(__APPLE_CC__)
     /* OS X 10.7 clang-425 lacks __GCC_HAVE_SYNC_COMPARE_AND_SWAP_n     */
     /* predefined macro (unlike e.g. OS X 10.11 clang-703).             */
 #   define AO_GCC_FORCE_HAVE_CAS
-# endif
 
-# if !defined(__x86_64__) && defined(__APPLE__) && defined(__MACH__)
-    /* OS X 10.8 lacks __atomic_load/store symbols for arch i386 (even  */
-    /* with non-Apple clang).                                           */
-#   ifndef MAC_OS_X_VERSION_MIN_REQUIRED
-      /* Include this header just to import the version macro.  */
-#     include <AvailabilityMacros.h>
-#   endif
-#   if MAC_OS_X_VERSION_MIN_REQUIRED < 1090 /* MAC_OS_X_VERSION_10_9 */
-#     define AO_SKIPATOMIC_double_load
-#     define AO_SKIPATOMIC_double_load_acquire
-#     define AO_SKIPATOMIC_double_store
-#     define AO_SKIPATOMIC_double_store_release
-#   endif
+#   ifdef __x86_64__
+#     if !AO_CLANG_PREREQ(9, 0) /* < Apple clang-900 */
+        /* Older Apple clang (e.g., clang-600 based on LLVM 3.5svn) had */
+        /* some bug in the double word CAS implementation for x64.      */
+#       define AO_SKIPATOMIC_double_compare_and_swap_ANY
+#     endif
+
+#   elif defined(__MACH__)
+      /* OS X 10.8 lacks __atomic_load/store symbols for arch i386      */
+      /* (even with a non-Apple clang).                                 */
+#     ifndef MAC_OS_X_VERSION_MIN_REQUIRED
+        /* Include this header just to import the version macro. */
+#       include <AvailabilityMacros.h>
+#     endif
+#     if MAC_OS_X_VERSION_MIN_REQUIRED < 1090 /* MAC_OS_X_VERSION_10_9  */
+#       define AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
+#     endif
+#   endif /* __i386__ */
+
+# elif defined(__clang__)
+#   if !defined(__x86_64__)
+#     if !defined(AO_PREFER_BUILTIN_ATOMICS) && !defined(__CYGWIN__) \
+         && !AO_CLANG_PREREQ(5, 0)
+        /* At least clang-3.8/i686 (from NDK r11c) required to specify  */
+        /* -latomic in case of a double-word atomic operation use.      */
+#       define AO_SKIPATOMIC_double_compare_and_swap_ANY
+#       define AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
+#     endif /* !AO_PREFER_BUILTIN_ATOMICS */
+
+#   elif !defined(__ILP32__)
+#     if (!AO_CLANG_PREREQ(3, 5) && !defined(AO_PREFER_BUILTIN_ATOMICS)) \
+         || (!AO_CLANG_PREREQ(4, 0) && defined(AO_ADDRESS_SANITIZER)) \
+         || defined(AO_THREAD_SANITIZER)
+        /* clang-3.4/x64 required -latomic.  clang-3.9/x64 seems to     */
+        /* pass double-wide arguments to atomic operations incorrectly  */
+        /* in case of ASan/TSan.                                        */
+        /* TODO: As of clang-4.0, lock-free test_stack fails if TSan.   */
+#       define AO_SKIPATOMIC_double_compare_and_swap_ANY
+#       define AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
+#     endif
+#   endif /* __x86_64__ */
+# endif /* __clang__ */
+
+# ifdef AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
+#   define AO_SKIPATOMIC_double_load
+#   define AO_SKIPATOMIC_double_load_acquire
+#   define AO_SKIPATOMIC_double_store
+#   define AO_SKIPATOMIC_double_store_release
+#   undef AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
 # endif
 
 #else /* AO_DISABLE_GCC_ATOMICS */
@@ -292,7 +303,7 @@ AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
 
       __asm__ __volatile__ ("lock; cmpxchgb %3, %4"
                             : "=a" (fetched_val), "=m" (*addr)
-                            : "a" (old_val), "r" (new_val), "m" (*addr)
+                            : "a" (old_val), "q" (new_val), "m" (*addr)
                             : "memory");
       return fetched_val;
 #   endif
@@ -503,7 +514,8 @@ AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
 # define AO_HAVE_double_compare_and_swap_full
 
 #elif defined(AO_CMPXCHG16B_AVAILABLE) \
-      || defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)
+      || (defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16) \
+          && !defined(AO_THREAD_SANITIZER))
 # include "../standard_ao_double_t.h"
 
   /* The Intel and AMD Architecture Programmer Manuals state roughly    */
@@ -569,6 +581,7 @@ AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
 # include "generic.h"
 #endif
 
+#undef AO_GCC_FORCE_HAVE_CAS
 #undef AO_SKIPATOMIC_double_compare_and_swap_ANY
 #undef AO_SKIPATOMIC_double_load
 #undef AO_SKIPATOMIC_double_load_acquire

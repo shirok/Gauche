@@ -33,12 +33,20 @@
 
 #include "atomic_ops.h"
 
+#if !defined(AO_ATOMIC_OPS_H) && !defined(CPPCHECK)
+# error Wrong atomic_ops.h included.
+#endif
+
 #if (defined(_WIN32_WCE) || defined(__MINGW32CE__)) && !defined(AO_HAVE_abort)
 # define abort() _exit(-1) /* there is no abort() in WinCE */
 #endif
 
 #ifndef AO_PTRDIFF_T
 # define AO_PTRDIFF_T ptrdiff_t
+#endif
+
+#ifndef MAX_NTHREADS
+# define MAX_NTHREADS 100
 #endif
 
 typedef void * (* thr_func)(void *);
@@ -51,11 +59,11 @@ void * run_parallel(int nthreads, thr_func f1, test_func t, const char *name);
 void * run_parallel(int nthreads, thr_func f1, test_func t, const char *name)
 {
   pthread_attr_t attr;
-  pthread_t thr[100];
+  pthread_t thr[MAX_NTHREADS];
   int i;
 
   printf("Testing %s\n", name);
-  if (nthreads > 100)
+  if (nthreads > MAX_NTHREADS)
     {
       fprintf(stderr, "run_parallel: requested too many threads\n");
       abort();
@@ -107,11 +115,11 @@ void * run_parallel(int nthreads, thr_func f1, test_func t, const char *name)
 #ifdef USE_VXTHREADS
 void * run_parallel(int nthreads, thr_func f1, test_func t, const char *name)
 {
-  int thr[100];
+  int thr[MAX_NTHREADS];
   int i;
 
   printf("Testing %s\n", name);
-  if (nthreads > 100)
+  if (nthreads > MAX_NTHREADS)
     {
       fprintf(stderr, "run_parallel: requested too many threads\n");
       taskSuspend(0);
@@ -162,12 +170,12 @@ DWORD WINAPI tramp(LPVOID param)
 
 void * run_parallel(int nthreads, thr_func f1, test_func t, const char *name)
 {
-  HANDLE thr[100];
-  struct tramp_args args[100];
+  HANDLE thr[MAX_NTHREADS];
+  struct tramp_args args[MAX_NTHREADS];
   int i;
 
   printf("Testing %s\n", name);
-  if (nthreads > 100)
+  if (nthreads > MAX_NTHREADS)
     {
       fprintf(stderr, "run_parallel: requested too many threads\n");
       abort();

@@ -9,6 +9,19 @@
  * modified is included with the above copyright notice.
  */
 
+#if AO_CLANG_PREREQ(3, 9) && !defined(AO_DISABLE_GCC_ATOMICS)
+  /* Probably, it could be enabled for earlier clang versions as well.  */
+
+  /* As of clang-3.9, __GCC_HAVE_SYNC_COMPARE_AND_SWAP_n are missing.   */
+# define AO_GCC_FORCE_HAVE_CAS
+
+# define AO_GCC_HAVE_double_SYNC_CAS
+# include "../standard_ao_double_t.h"
+
+# include "generic.h"
+
+#else /* AO_DISABLE_GCC_ATOMICS */
+
 #include "../all_aligned_atomic_load_store.h"
 
 #include "../test_and_set_t_is_ao_t.h"
@@ -120,3 +133,8 @@ AO_fetch_compare_and_swap(volatile AO_t *addr, AO_t old_val, AO_t new_val)
 #define AO_HAVE_fetch_compare_and_swap
 
 #define AO_T_IS_INT
+
+#endif /* AO_DISABLE_GCC_ATOMICS */
+
+#undef AO_GCC_FORCE_HAVE_CAS
+#undef AO_GCC_HAVE_double_SYNC_CAS

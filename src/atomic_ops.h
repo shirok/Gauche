@@ -200,16 +200,35 @@
 # if __has_feature(memory_sanitizer)
 #   define AO_MEMORY_SANITIZER
 # endif
-#endif
+# if __has_feature(thread_sanitizer)
+#   define AO_THREAD_SANITIZER
+# endif
+#else
+# ifdef __SANITIZE_ADDRESS__
+    /* GCC v4.8+ */
+#   define AO_ADDRESS_SANITIZER
+# endif
+#endif /* !__has_feature */
 
 #ifndef AO_ATTR_NO_SANITIZE_MEMORY
-# if defined(AO_MEMORY_SANITIZER) \
-        && (!defined(__clang__) || AO_CLANG_PREREQ(3, 8))
+# ifndef AO_MEMORY_SANITIZER
+#   define AO_ATTR_NO_SANITIZE_MEMORY /* empty */
+# elif AO_CLANG_PREREQ(3, 8)
 #   define AO_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
 # else
-#   define AO_ATTR_NO_SANITIZE_MEMORY /* empty */
+#   define AO_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 # endif
 #endif /* !AO_ATTR_NO_SANITIZE_MEMORY */
+
+#ifndef AO_ATTR_NO_SANITIZE_THREAD
+# ifndef AO_THREAD_SANITIZER
+#   define AO_ATTR_NO_SANITIZE_THREAD /* empty */
+# elif AO_CLANG_PREREQ(3, 8)
+#   define AO_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize("thread")))
+# else
+#   define AO_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+# endif
+#endif /* !AO_ATTR_NO_SANITIZE_THREAD */
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 # define AO_compiler_barrier() __asm__ __volatile__("" : : : "memory")

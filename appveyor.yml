@@ -1,4 +1,4 @@
-version: 7.6.0-{build}
+version: 7.6.x-{build}
 
 clone_depth: 50
 

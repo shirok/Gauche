@@ -26,11 +26,13 @@
  * all zeroes, and the "set" value contains all ones typically.
  */
 
-#if defined(AO_GCC_ATOMIC_TEST_AND_SET) && !defined(AO_PREFER_GENERALIZED) \
-    && defined(__GCC_ATOMIC_TEST_AND_SET_TRUEVAL)
+#ifndef AO_GCC_ATOMIC_TEST_AND_SET
+# define AO_TS_SET_TRUEVAL 0xff
+#elif defined(__GCC_ATOMIC_TEST_AND_SET_TRUEVAL) \
+      && !defined(AO_PREFER_GENERALIZED)
 # define AO_TS_SET_TRUEVAL __GCC_ATOMIC_TEST_AND_SET_TRUEVAL
 #else
-# define AO_TS_SET_TRUEVAL 0xff
+# define AO_TS_SET_TRUEVAL 1 /* true */
 #endif
 
 typedef enum {
