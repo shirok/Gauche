@@ -379,13 +379,13 @@ static ScmObj check_literals(ScmObj literals)
    The same (eq?) variable must map to the same identifier. */
 static ScmObj rename_variable(ScmObj var,
                               ScmObj *id_alist, /* ((var . id) ...) */
-                              ScmModule *module,
+                              ScmModule *mod,
                               ScmObj env)
 {
     ScmObj id, p = Scm_Assq(var, *id_alist);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
     if (SCM_SYMBOLP(var)) {
-        id = Scm_MakeIdentifier(var, SCM_MODULE(module), env);
+        id = Scm_MakeIdentifier(var, mod, env);
     } else {
         SCM_ASSERT(SCM_IDENTIFIERP(var));
         id = Scm_WrapIdentifier(SCM_IDENTIFIER(var));
