@@ -377,28 +377,31 @@ static ScmObj check_literals(ScmObj literals)
 
 /* Renaming: Map input variable (symbol or identifier) to fresh identifier.
    The same (eq?) variable must map to the same identifier. */
-static ScmObj rename_variable(PatternContext *ctx, ScmObj var)
+static ScmObj rename_variable(ScmObj var,
+                              ScmObj *id_alist, /* ((var . id) ...) */
+                              ScmModule *module,
+                              ScmObj env)
 {
-    ScmObj id, p = Scm_Assq(var, ctx->renames);
+    ScmObj id, p = Scm_Assq(var, *id_alist);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
     if (SCM_SYMBOLP(var)) {
-        id = Scm_MakeIdentifier(var, ctx->mod, ctx->env);
+        id = Scm_MakeIdentifier(var, SCM_MODULE(module), env);
     } else {
         SCM_ASSERT(SCM_IDENTIFIERP(var));
         id = Scm_WrapIdentifier(SCM_IDENTIFIER(var));
     }
-    ctx->renames = Scm_Acons(var, id, ctx->renames);
+    *id_alist = Scm_Acons(var, id, *id_alist);
     return id;
 }
 
 
 /* Compile a pattern or a template.
-   Replace symbols for identifiers, and also if we're compiling a pattern,
-   record non-literal symbols (i.e. pattern variables) in the context.
+   In the pattern, we replace variables to identifiers.
+   We also recognize pattern variables, and replace them for PVARs in
+   the pattern, and for PVREFs in the template.
    When encounters a repeatable subpattern, replace it with 
    SyntaxPattern node.
 */
-
 static ScmObj compile_rule1(ScmObj form,
                             ScmSyntaxPattern *spat,
                             PatternContext *ctx,
@@ -508,7 +511,10 @@ static ScmObj compile_rule1(ScmObj form,
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
         if (!SCM_FALSEP(Scm_Memq(form, ctx->literals))) {
-            return rename_variable(ctx, form);
+            if (patternp)
+                return rename_variable(form, &ctx->renames, ctx->mod, ctx->env);
+            else        
+                return form;  /* template renaming is done in expansion time */
         }
         if (patternp && Scm__ERCompare(form, SCM_SYM_UNDERBAR,
                                        ctx->mod, ctx->env)) { 
@@ -519,7 +525,7 @@ static ScmObj compile_rule1(ScmObj form,
         } else {
             ScmObj pvref = pvar_to_pvref(ctx, spat, form);
             if (pvref == form) {
-                return rename_variable(ctx, form);
+                return form;
             } else {
                 spat->vars = Scm_Cons(pvref, spat->vars);
                 return pvref;
@@ -569,6 +575,8 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     sr->name = name;
     sr->numRules = numRules;
     sr->maxNumPvars = 0;
+    sr->mod = mod;
+    sr->env = env;
     ScmObj rp = rules;
     for (int i=0; i < numRules; i++, rp = SCM_CDR(rp)) {
         ScmObj rule = SCM_CAR(rp);
@@ -861,7 +869,8 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
  */
 
 /* If a pattern variable is exhausted, SCM_UNDEFINED is returned. */
-static ScmObj realize_template_rec(ScmObj template,
+static ScmObj realize_template_rec(ScmSyntaxRules *sr,
+                                   ScmObj template,
                                    MatchVar *mvec,
                                    int level,
                                    int *indices,
@@ -873,18 +882,18 @@ static ScmObj realize_template_rec(ScmObj template,
         while (SCM_PAIRP(template)) {
             ScmObj e = SCM_CAR(template);
             if (SCM_SYNTAX_PATTERN_P(e)) {
-                ScmObj r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(sr, e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND(h, t, r);
             } else {
-                ScmObj r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(sr, e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND1(h, t, r);
             }
             template = SCM_CDR(template);
         }
         if (!SCM_NULLP(template)) {
-            ScmObj r = realize_template_rec(template, mvec, level, indices, idlist, exlev);
+            ScmObj r = realize_template_rec(sr, template, mvec, level, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return r;
             if (SCM_NULLP(h)) return r; /* (a ... . b) and a ... is empty */
             SCM_APPEND(h, t, r);
@@ -899,7 +908,7 @@ static ScmObj realize_template_rec(ScmObj template,
         ScmObj h = SCM_NIL, t = SCM_NIL;
         indices[level+1] = 0;
         for (;;) {
-            ScmObj r = realize_template_rec(pat->pattern, mvec, level+1, indices, idlist, exlev);
+            ScmObj r = realize_template_rec(sr, pat->pattern, mvec, level+1, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return (*exlev < pat->level)? r : h;
             if (SCM_SYNTAX_PATTERN_P(pat->pattern)) {
                 SCM_APPEND(h, t, r);
@@ -916,37 +925,27 @@ static ScmObj realize_template_rec(ScmObj template,
 
         for (int i=0; i<len; i++, pe++) {
             if (SCM_SYNTAX_PATTERN_P(*pe)) {
-                ScmObj r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(sr, *pe, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND(h, t, r);
             } else {
-                ScmObj r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(sr, *pe, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND1(h, t, r);
             }
         }
         return Scm_ListToVector(h, 0, -1);
     }
-    if (SCM_IDENTIFIERP(template)) {
-        /* we wrap the identifier, so that the symbol bindings introduced
-           by recursive macro call won't interfere each other.
-           (e.g. the macro definitions of "letrec" and "do" shown in R5RS
-           use the fact that the symbol "newtemp" introduced in each
-           iteration of macro expansion are distinct. */
-        ScmObj p = Scm_Assq(template, *idlist);
-        if (SCM_PAIRP(p)) return SCM_CDR(p);
-        else {
-            ScmObj id = Scm_WrapIdentifier(SCM_IDENTIFIER(template));
-            *idlist = Scm_Acons(template, id, *idlist);
-            return id;
-        }
+    if (SCM_SYMBOLP(template) || SCM_IDENTIFIERP(template)) {
+        return rename_variable(template, idlist, sr->mod, sr->env);
     }
     return template;
 }
 
 #define DEFAULT_MAX_LEVEL  10
 
-static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
+static ScmObj realize_template(ScmSyntaxRules *sr,
+                               ScmSyntaxRuleBranch *branch,
                                MatchVar *mvec)
 {
     int index[DEFAULT_MAX_LEVEL], *indices = index;
@@ -956,7 +955,8 @@ static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
     if (branch->maxLevel > DEFAULT_MAX_LEVEL)
         indices = SCM_NEW_ATOMIC2(int*, (branch->maxLevel+1) * sizeof(int));
     for (int i=0; i<=branch->maxLevel; i++) indices[i] = 0;
-    return realize_template_rec(branch->template, mvec, 0, indices, &idlist, &exlev);
+    return realize_template_rec(sr, branch->template, mvec, 0,
+                                indices, &idlist, &exlev);
 }
 
 static ScmObj synrule_expand(ScmObj form, ScmObj mod, ScmObj env, ScmSyntaxRules *sr)
@@ -976,7 +976,7 @@ static ScmObj synrule_expand(ScmObj form, ScmObj mod, ScmObj env, ScmSyntaxRules
             Scm_Printf(SCM_CUROUT, "success #%d:\n", i);
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);
 #endif
-            ScmObj expanded = realize_template(&sr->rules[i], mvec);
+            ScmObj expanded = realize_template(sr, &sr->rules[i], mvec);
 #ifdef DEBUG_SYNRULE
             Scm_Printf(SCM_CUROUT, "result: %S\n", expanded);
 #endif

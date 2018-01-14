@@ -69,6 +69,11 @@ typedef struct ScmSyntaxRules {
     ScmObj name;                  /* name of the macro (for debug) */
     int numRules;                 /* # of rules */
     int maxNumPvars;              /* max # of pattern variables */
+    ScmModule *mod;               /* macro definition module */
+    ScmObj env;                   /* macro definition env (in fact, it is
+                                     list of frames passed to Scm_MakeIdentifier,
+                                     but the macro system should treat it
+                                     as an opaque object. */
     ScmSyntaxRuleBranch rules[1]; /* variable length */
 } ScmSyntaxRules;
 
