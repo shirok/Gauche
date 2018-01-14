@@ -32,8 +32,10 @@
 # include "config.h"
 #endif
 
-#if defined(__native_client__) && !defined(AO_USE_NO_SIGNALS) \
-    && !defined(AO_USE_NANOSLEEP)
+#if (defined(__hexagon__) || defined(__native_client__)) \
+    && !defined(AO_USE_NO_SIGNALS) && !defined(AO_USE_NANOSLEEP)
+  /* Hexagon QuRT does not have sigprocmask (but Hexagon does not need  */
+  /* emulation, so it is OK not to bother about signals blocking).      */
   /* Since NaCl is not recognized by configure yet, we do it here.      */
 # define AO_USE_NO_SIGNALS
 # define AO_USE_NANOSLEEP
@@ -257,7 +259,7 @@ void AO_pause(int n)
 
         tv.tv_sec = 0;
         tv.tv_usec = usec;
-        select(0, 0, 0, 0, &tv);
+        (void)select(0, 0, 0, 0, &tv);
 #     endif
     }
 }

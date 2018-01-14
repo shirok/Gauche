@@ -15,100 +15,106 @@
  *
  */
 
-#include "../standard_ao_double_t.h"
+/* As of clang-5.0 (and gcc-5.4), __atomic_thread_fence is always       */
+/* translated to DMB (which is inefficient for AO_nop_write).           */
+/* TODO: Update it for newer Clang and GCC releases. */
+#if !defined(AO_PREFER_BUILTIN_ATOMICS) && !defined(AO_THREAD_SANITIZER) \
+    && !defined(AO_UNIPROCESSOR)
+  AO_INLINE void
+  AO_nop_write(void)
+  {
+    __asm__ __volatile__("dmb ishst" : : : "memory");
+  }
+# define AO_HAVE_nop_write
+#endif
 
-#ifdef AO_PREFER_BUILTIN_ATOMICS
-  /* As of clang 3.6 (and gcc 5.0), load atomics for double word are    */
-  /* translated to incorrect code lacking STXP (see the note below).    */
-# define AO_SKIPATOMIC_double_load
-# define AO_SKIPATOMIC_double_load_acquire
-#else
+/* There were some bugs in the older clang releases (related to         */
+/* optimization of functions dealing with __int128 values, supposedly), */
+/* so even asm-based implementation did not work correctly.             */
+#if !defined(__clang__) || AO_CLANG_PREREQ(3, 9)
 
-  /* As of clang 3.6 (and gcc 4.9), __atomic_thread_fence is always     */
-  /* translated to DMB (which is inefficient for AO_nop_write).         */
-# ifndef AO_UNIPROCESSOR
-    AO_INLINE void
-    AO_nop_write(void)
+# include "../standard_ao_double_t.h"
+
+/* As of gcc-5.4, all built-in load/store and CAS atomics for double    */
+/* word require -latomic, are not lock-free and cause test_stack        */
+/* failure, so the asm-based implementation is used for now.            */
+/* TODO: Update it for newer GCC releases. */
+#if !defined(__clang__) || defined(AO_AARCH64_ASM_LOAD_STORE_CAS)
+
+# ifndef AO_PREFER_GENERALIZED
+    AO_INLINE AO_double_t
+    AO_double_load(const volatile AO_double_t *addr)
     {
-      __asm__ __volatile__("dmb ishst" : : : "memory");
+      AO_double_t result;
+      int status;
+
+      /* Note that STXP cannot be discarded because LD[A]XP is not      */
+      /* single-copy atomic (unlike LDREXD for 32-bit ARM).             */
+      do {
+        __asm__ __volatile__("//AO_double_load\n"
+        "       ldxp  %0, %1, %3\n"
+        "       stxp %w2, %0, %1, %3"
+        : "=&r" (result.AO_val1), "=&r" (result.AO_val2), "=&r" (status)
+        : "Q" (*addr));
+      } while (AO_EXPECT_FALSE(status));
+      return result;
     }
-#   define AO_HAVE_nop_write
-# endif
+#   define AO_HAVE_double_load
 
-  AO_INLINE AO_double_t
-  AO_double_load(const volatile AO_double_t *addr)
-  {
-    AO_double_t result;
-    int status;
+    AO_INLINE AO_double_t
+    AO_double_load_acquire(const volatile AO_double_t *addr)
+    {
+      AO_double_t result;
+      int status;
 
-    /* Note that STXP cannot be discarded because LD[A]XP is not        */
-    /* single-copy atomic (unlike LDREXD for 32-bit ARM).               */
-    do {
-      __asm__ __volatile__("//AO_double_load\n"
-      "       ldxp  %0, %1, %3\n"
-      "       stxp %w2, %0, %1, %3"
-      : "=&r" (result.AO_val1), "=&r" (result.AO_val2), "=&r" (status)
-      : "Q" (*addr));
-    } while (AO_EXPECT_FALSE(status));
-    return result;
-  }
-# define AO_HAVE_double_load
+      do {
+        __asm__ __volatile__("//AO_double_load_acquire\n"
+        "       ldaxp  %0, %1, %3\n"
+        "       stxp %w2, %0, %1, %3"
+        : "=&r" (result.AO_val1), "=&r" (result.AO_val2), "=&r" (status)
+        : "Q" (*addr));
+      } while (AO_EXPECT_FALSE(status));
+      return result;
+    }
+#   define AO_HAVE_double_load_acquire
 
-  AO_INLINE AO_double_t
-  AO_double_load_acquire(const volatile AO_double_t *addr)
-  {
-    AO_double_t result;
-    int status;
+    AO_INLINE void
+    AO_double_store(volatile AO_double_t *addr, AO_double_t value)
+    {
+      AO_double_t old_val;
+      int status;
 
-    do {
-      __asm__ __volatile__("//AO_double_load_acquire\n"
-      "       ldaxp  %0, %1, %3\n"
-      "       stxp %w2, %0, %1, %3"
-      : "=&r" (result.AO_val1), "=&r" (result.AO_val2), "=&r" (status)
-      : "Q" (*addr));
-    } while (AO_EXPECT_FALSE(status));
-    return result;
-  }
-# define AO_HAVE_double_load_acquire
+      do {
+        __asm__ __volatile__("//AO_double_store\n"
+        "       ldxp  %0, %1, %3\n"
+        "       stxp %w2, %4, %5, %3"
+        : "=&r" (old_val.AO_val1), "=&r" (old_val.AO_val2), "=&r" (status),
+          "=Q" (*addr)
+        : "r" (value.AO_val1), "r" (value.AO_val2));
+        /* Compared to the arm.h implementation, the 'cc' (flags) are   */
+        /* not clobbered because A64 has no concept of conditional      */
+        /* execution.                                                   */
+      } while (AO_EXPECT_FALSE(status));
+    }
+#   define AO_HAVE_double_store
 
-  /* As of gcc 5.0, all built-in store and CAS atomics for double       */
-  /* word require -latomic, so use asm-based implementation by default. */
+    AO_INLINE void
+    AO_double_store_release(volatile AO_double_t *addr, AO_double_t value)
+    {
+      AO_double_t old_val;
+      int status;
 
-  AO_INLINE void
-  AO_double_store(volatile AO_double_t *addr, AO_double_t value)
-  {
-    AO_double_t old_val;
-    int status;
-
-    do {
-      __asm__ __volatile__("//AO_double_store\n"
-      "       ldxp  %0, %1, %3\n"
-      "       stxp %w2, %4, %5, %3"
-      : "=&r" (old_val.AO_val1), "=&r" (old_val.AO_val2), "=&r" (status),
-        "=Q" (*addr)
-      : "r" (value.AO_val1), "r" (value.AO_val2));
-      /* Compared to the arm.h implementation, the 'cc' (flags) are not */
-      /* clobbered because A64 has no concept of conditional execution. */
-    } while (AO_EXPECT_FALSE(status));
-  }
-# define AO_HAVE_double_store
-
-  AO_INLINE void
-  AO_double_store_release(volatile AO_double_t *addr, AO_double_t value)
-  {
-    AO_double_t old_val;
-    int status;
-
-    do {
-      __asm__ __volatile__("//AO_double_store_release\n"
-      "       ldxp  %0, %1, %3\n"
-      "       stlxp %w2, %4, %5, %3"
-      : "=&r" (old_val.AO_val1), "=&r" (old_val.AO_val2), "=&r" (status),
-        "=Q" (*addr)
-      : "r" (value.AO_val1), "r" (value.AO_val2));
-    } while (AO_EXPECT_FALSE(status));
-  }
-# define AO_HAVE_double_store_release
+      do {
+        __asm__ __volatile__("//AO_double_store_release\n"
+        "       ldxp  %0, %1, %3\n"
+        "       stlxp %w2, %4, %5, %3"
+        : "=&r" (old_val.AO_val1), "=&r" (old_val.AO_val2), "=&r" (status),
+          "=Q" (*addr)
+        : "r" (value.AO_val1), "r" (value.AO_val2));
+      } while (AO_EXPECT_FALSE(status));
+    }
+#   define AO_HAVE_double_store_release
+# endif /* !AO_PREFER_GENERALIZED */
 
   AO_INLINE int
   AO_double_compare_and_swap(volatile AO_double_t *addr,
@@ -202,15 +208,20 @@
   }
 # define AO_HAVE_double_compare_and_swap_full
 
-#endif /* !AO_PREFER_BUILTIN_ATOMICS */
+#endif /* !__clang__ || AO_AARCH64_ASM_LOAD_STORE_CAS */
 
-#if defined(__clang__)
-  /* As of clang-3.6/arm64, __GCC_HAVE_SYNC_COMPARE_AND_SWAP_n are missing. */
-# define AO_GCC_FORCE_HAVE_CAS
+/* As of clang-5.0 and gcc-5.4, __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16     */
+/* macro is still missing (while the double-word CAS is available).     */
 # define AO_GCC_HAVE_double_SYNC_CAS
+
+#endif /* !__clang__ || AO_CLANG_PREREQ(3, 9) */
+
+#if (defined(__clang__) && !AO_CLANG_PREREQ(3, 8)) || defined(__APPLE_CC__)
+  /* __GCC_HAVE_SYNC_COMPARE_AND_SWAP_n macros are missing.     */
+# define AO_GCC_FORCE_HAVE_CAS
 #endif
 
 #include "generic.h"
 
-#undef AO_SKIPATOMIC_double_load
-#undef AO_SKIPATOMIC_double_load_acquire
+#undef AO_GCC_FORCE_HAVE_CAS
+#undef AO_GCC_HAVE_double_SYNC_CAS

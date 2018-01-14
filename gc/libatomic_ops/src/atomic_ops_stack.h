@@ -31,9 +31,12 @@
 
 #include "atomic_ops.h"
 
-#if !defined(AO_HAVE_compare_double_and_swap_double) \
-    && !defined(AO_HAVE_compare_double_and_swap) \
-    && defined(AO_HAVE_compare_and_swap)
+#ifdef AO_USE_ALMOST_LOCK_FREE
+  /* Use the almost-non-blocking implementation regardless of the       */
+  /* double-word CAS availability.                                      */
+#elif !defined(AO_HAVE_compare_double_and_swap_double) \
+      && !defined(AO_HAVE_compare_double_and_swap) \
+      && defined(AO_HAVE_compare_and_swap)
 # define AO_USE_ALMOST_LOCK_FREE
 #else
   /* If we have no compare-and-swap operation defined, we assume        */
@@ -98,7 +101,7 @@ typedef struct AO__stack_aux {
 /* link fields in nodes, and nothing about the rest of the      */
 /* stack elements.  Link fields hold an AO_t, which is not      */
 /* necessarily a real pointer.  This converts the AO_t to a     */
-/* real (AO_t *) which is either o, or points at the link       */
+/* real (AO_t *) which is either NULL, or points at the link    */
 /* field in the next node.                                      */
 #define AO_REAL_NEXT_PTR(x) (AO_t *)((x) & ~AO_BIT_MASK)
 

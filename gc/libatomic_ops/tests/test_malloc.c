@@ -15,19 +15,19 @@
 # include "config.h"
 #endif
 
+#ifdef DONT_USE_MMAP
+# undef HAVE_MMAP
+#endif
+
 #include "run_parallel.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include "atomic_ops_malloc.h"
 
-#ifndef MAX_NTHREADS
-# define MAX_NTHREADS 100
-#endif
-
 #ifndef DEFAULT_NTHREADS
 # ifdef HAVE_MMAP
-#   define DEFAULT_NTHREADS 10
+#   define DEFAULT_NTHREADS 16
 # else
 #   define DEFAULT_NTHREADS 3
 # endif
@@ -70,16 +70,17 @@ typedef struct list_node {
 
 ln *cons(int d, ln *tail)
 {
-  static size_t extra = 0;
-  size_t my_extra = extra;
+# ifdef AO_HAVE_fetch_and_add1
+    static volatile AO_t extra = 0;
+    size_t my_extra = (size_t)AO_fetch_and_add1(&extra) % 101;
+# else
+    static size_t extra = 0; /* data race in extra is OK */
+    size_t my_extra = (extra++) % 101;
+# endif
   ln *result;
   int * extras;
   unsigned i;
 
-  if (my_extra > 100)
-    extra = my_extra = 0;
-  else
-    ++extra;
   result = AO_malloc(sizeof(ln) + sizeof(int)*my_extra);
   if (result == 0)
     {
@@ -142,6 +143,15 @@ make_list(int m, int n)
   return cons(m, make_list(m+1, n));
 }
 
+void free_list(ln *x)
+{
+  while (x != NULL) {
+    ln *next = x -> next;
+    AO_free(x);
+    x = next;
+  }
+}
+
 /* Reverse list x, and concatenate it to y, deallocating no longer needed */
 /* nodes in x.                                                            */
 ln *
@@ -162,6 +172,8 @@ void * run_one_test(void * arg) {
   int i;
   char *p = AO_malloc(LARGE_OBJ_SIZE);
   char *q;
+  char a = 'a' + ((int)((AO_PTRDIFF_T)arg) * 2) % ('z' - 'a' + 1);
+  char b = a + 1;
 
   if (0 == p) {
 #   ifdef HAVE_MMAP
@@ -172,7 +184,7 @@ void * run_one_test(void * arg) {
               LARGE_OBJ_SIZE);
 #   endif
   } else {
-    p[0] = p[LARGE_OBJ_SIZE/2] = p[LARGE_OBJ_SIZE-1] = 'a';
+    p[0] = p[LARGE_OBJ_SIZE/2] = p[LARGE_OBJ_SIZE-1] = a;
     q = AO_malloc(LARGE_OBJ_SIZE);
     if (q == 0)
       {
@@ -180,15 +192,13 @@ void * run_one_test(void * arg) {
           /* Normal for more than about 10 threads without mmap? */
         exit(2);
       }
-    q[0] = q[LARGE_OBJ_SIZE/2] = q[LARGE_OBJ_SIZE-1] = 'b';
-    if (p[0] != 'a' || p[LARGE_OBJ_SIZE/2] != 'a'
-        || p[LARGE_OBJ_SIZE-1] != 'a') {
+    q[0] = q[LARGE_OBJ_SIZE/2] = q[LARGE_OBJ_SIZE-1] = b;
+    if (p[0] != a || p[LARGE_OBJ_SIZE/2] != a || p[LARGE_OBJ_SIZE-1] != a) {
       fprintf(stderr, "First large allocation smashed\n");
       abort();
     }
     AO_free(p);
-    if (q[0] != 'b' || q[LARGE_OBJ_SIZE/2] != 'b'
-        || q[LARGE_OBJ_SIZE-1] != 'b') {
+    if (q[0] != b || q[LARGE_OBJ_SIZE/2] != b || q[LARGE_OBJ_SIZE-1] != b) {
       fprintf(stderr, "Second large allocation smashed\n");
       abort();
     }
@@ -204,14 +214,22 @@ void * run_one_test(void * arg) {
     x = reverse(x, 0);
   }
   check_list(x, 1, LIST_LENGTH);
-  return arg; /* use arg to suppress compiler warning */
+  free_list(x);
+  return NULL;
 }
+
+#ifndef LOG_MAX_SIZE
+# define LOG_MAX_SIZE 16
+#endif
+
+#define CHUNK_SIZE (1 << LOG_MAX_SIZE)
 
 int main(int argc, char **argv) {
     int nthreads;
 
     if (1 == argc) {
       nthreads = DEFAULT_NTHREADS;
+      assert(nthreads <= MAX_NTHREADS);
     } else if (2 == argc) {
       nthreads = atoi(argv[1]);
       if (nthreads < 1 || nthreads > MAX_NTHREADS) {
@@ -225,6 +243,14 @@ int main(int argc, char **argv) {
     printf("Performing %d reversals of %d element lists in %d threads\n",
            N_REVERSALS, LIST_LENGTH, nthreads);
     AO_malloc_enable_mmap();
+
+    /* Test various corner cases. */
+    AO_free(NULL);
+    AO_free(AO_malloc(0));
+#   ifdef HAVE_MMAP
+      AO_free(AO_malloc(CHUNK_SIZE - (sizeof(AO_t)-1))); /* large alloc */
+#   endif
+
     run_parallel(nthreads, run_one_test, dummy_test, "AO_malloc/AO_free");
     return 0;
 }

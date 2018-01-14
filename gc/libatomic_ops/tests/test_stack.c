@@ -51,6 +51,10 @@
 # define MAX_NTHREADS 100
 #endif
 
+#ifndef DEFAULT_NTHREADS
+# define DEFAULT_NTHREADS 16 /* must be <= MAX_NTHREADS */
+#endif
+
 #ifdef NO_TIMES
 # define get_msecs() 0
 #elif (defined(USE_WINTHREADS) || defined(AO_USE_WIN32_PTHREADS)) \
@@ -220,7 +224,10 @@ int main(int argc, char **argv)
   int exper_n;
 
   if (1 == argc)
-    max_nthreads = 4;
+    {
+      max_nthreads = DEFAULT_NTHREADS;
+      assert(max_nthreads <= MAX_NTHREADS);
+    }
   else if (2 == argc)
     {
       max_nthreads = atoi(argv[1]);
