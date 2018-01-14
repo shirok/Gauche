@@ -36,7 +36,7 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
        /* The disclaim function may be passed fragments from the        */
        /* free-list, on which it should not run finalization.           */
        /* To recognize this case, we use the fact that the first word   */
-       /* on such fragments are always even (a link to the next         */
+       /* on such fragments is always multiple of 4 (a link to the next */
        /* fragment, or NULL).  If it is desirable to have a finalizer   */
        /* which does not use the first word for storing finalization    */
        /* info, GC_reclaim_with_finalization must be extended to clear  */
@@ -89,7 +89,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     word *op;
 
     GC_ASSERT(done_init);
-    op = GC_malloc_kind(lb + sizeof(word), GC_finalized_kind);
+    op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)), GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     *op = (word)fclos | FINALIZER_CLOSURE_FLAG;

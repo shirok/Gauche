@@ -44,10 +44,12 @@
 #include "gc.h"
 #include <new> // for placement new
 
-#if defined(__GNUC__)
-#  define GC_ATTR_UNUSED __attribute__((__unused__))
-#else
-#  define GC_ATTR_UNUSED
+#ifndef GC_ATTR_EXPLICIT
+# if (__cplusplus >= 201103L) || defined(CPPCHECK)
+#   define GC_ATTR_EXPLICIT explicit
+# else
+#   define GC_ATTR_EXPLICIT /* empty */
+# endif
 #endif
 
 /* First some helpers to allow us to dispatch on whether or not a type
@@ -116,7 +118,8 @@ public:
     gc_allocator(const gc_allocator&) throw() {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1> gc_allocator(const gc_allocator<GC_Tp1>&) throw() {}
+  template <class GC_Tp1> GC_ATTR_EXPLICIT
+    gc_allocator(const gc_allocator<GC_Tp1>&) throw() {}
 # endif
   ~gc_allocator() throw() {}
 
@@ -133,7 +136,7 @@ public:
   }
 
   // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type GC_ATTR_UNUSED GC_n)
+  void deallocate(pointer __p, size_type /* GC_n */)
     { GC_FREE(__p); }
 
   size_type max_size() const throw()
@@ -191,7 +194,7 @@ public:
     gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page&) throw() {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1>
+  template <class GC_Tp1> GC_ATTR_EXPLICIT
     gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page<GC_Tp1>&)
         throw() {}
 # endif
@@ -210,7 +213,7 @@ public:
   }
 
   // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type GC_ATTR_UNUSED GC_n)
+  void deallocate(pointer __p, size_type /* GC_n */)
     { GC_FREE(__p); }
 
   size_type max_size() const throw()
@@ -271,8 +274,8 @@ public:
     traceable_allocator(const traceable_allocator&) throw() {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1> traceable_allocator
-          (const traceable_allocator<GC_Tp1>&) throw() {}
+  template <class GC_Tp1> GC_ATTR_EXPLICIT
+    traceable_allocator(const traceable_allocator<GC_Tp1>&) throw() {}
 # endif
   ~traceable_allocator() throw() {}
 
@@ -286,7 +289,7 @@ public:
   }
 
   // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type GC_ATTR_UNUSED GC_n)
+  void deallocate(pointer __p, size_type /* GC_n */)
     { GC_FREE(__p); }
 
   size_type max_size() const throw()

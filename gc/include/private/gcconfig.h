@@ -32,6 +32,18 @@
 #   include <stddef.h>  /* For size_t etc. */
 # endif
 
+#ifdef LINT2
+  /* A macro (based on a tricky expression) to prevent false warnings   */
+  /* like "Array compared to 0", "Comparison of identical expressions", */
+  /* "Untrusted loop bound" output by some static code analysis tools.  */
+  /* The argument should not be a literal value.  The result is         */
+  /* converted to word type.  (Actually, GC_word is used instead of     */
+  /* word type as the latter might be undefined at the place of use.)   */
+# define COVERT_DATAFLOW(w) (~(GC_word)(w)^(~(GC_word)0))
+#else
+# define COVERT_DATAFLOW(w) ((GC_word)(w))
+#endif
+
 /* Machine dependent parameters.  Some tuning parameters can be found   */
 /* near the top of gc_private.h.                                        */
 
@@ -118,10 +130,10 @@
 #      define mach_type_known
 #    endif
 # endif
-# if defined(sun) && defined(mc68000)
+# if defined(sun) && defined(mc68000) && !defined(CPPCHECK)
 #    error SUNOS4 no longer supported
 # endif
-# if defined(hp9000s300)
+# if defined(hp9000s300) && !defined(CPPCHECK)
 #    error M68K based HP machines no longer supported.
 # endif
 # if defined(OPENBSD) && defined(m68k)
@@ -208,12 +220,12 @@
 #    define SEQUENT
 #    define mach_type_known
 # endif
-# if defined(sun) && (defined(i386) || defined(__i386__))
+# if (defined(sun) || defined(__sun)) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define SOLARIS
 #    define mach_type_known
 # endif
-# if defined(sun) && defined(__amd64)
+# if (defined(sun) || defined(__sun)) && defined(__amd64)
 #    define X86_64
 #    define SOLARIS
 #    define mach_type_known
@@ -223,19 +235,18 @@
 #    define OS2
 #    define mach_type_known
 # endif
-# if defined(ibm032)
+# if defined(ibm032) && !defined(CPPCHECK)
 #   error IBM PC/RT no longer supported.
 # endif
-# if defined(sun) && (defined(sparc) || defined(__sparc))
+# if (defined(sun) || defined(__sun)) && (defined(sparc) || defined(__sparc))
 #   define SPARC
     /* Test for SunOS 5.x */
-#     include <errno.h>
-#     define SOLARIS
+#   include <errno.h>
+#   define SOLARIS
 #   define mach_type_known
-# endif
-# if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__) && !defined(__NetBSD__) \
-     && !defined(__FreeBSD__) && !defined(__DragonFly__)
+# elif defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
+       && !defined(__OpenBSD__) && !defined(__NetBSD__) \
+       && !defined(__FreeBSD__) && !defined(__DragonFly__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -259,7 +270,7 @@
 #   endif
 #   define mach_type_known
 # endif
-# if defined(_AUX_SOURCE)
+# if defined(_AUX_SOURCE) && !defined(CPPCHECK)
 #   error A/UX no longer supported
 # endif
 # if defined(_PA_RISC1_0) || defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
@@ -525,7 +536,7 @@
 #   define UTS4
 #   define mach_type_known
 # endif
-# if defined(__pj__)
+# if defined(__pj__) && !defined(CPPCHECK)
 #   error PicoJava no longer supported
     /* The implementation had problems, and I haven't heard of users    */
     /* in ages.  If you want it resurrected, let me know.               */
@@ -600,7 +611,7 @@
 /* Macros such as LINUX, FREEBSD, etc. distinguish them.                */
 /* SYSV on an M68K actually means A/UX.                                 */
 /* The distinction in these cases is usually the stack starting address */
-# ifndef mach_type_known
+# if !defined(mach_type_known) && !defined(CPPCHECK)
 #   error "The collector has not been ported to this machine/OS combination."
 # endif
                     /* Mapping is: M68K       ==> Motorola 680X0        */
@@ -731,7 +742,7 @@
  *    the original main program.  The new main program would read something
  *    like (provided real_main() is not inlined by the compiler):
  *
- *              # include "gc_private.h"
+ *              #include "gc.h"
  *
  *              main(argc, argv, envp)
  *              int argc;
@@ -786,16 +797,16 @@
 #   define OS_TYPE "SYMBIAN"
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
-#   define DATASTART NULL
-#   define DATAEND NULL
+#   define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
+#   define DATAEND (ptr_t)ALIGNMENT
 # endif
 
 # ifdef __EMSCRIPTEN__
 #   define OS_TYPE "EMSCRIPTEN"
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
-#   define DATASTART NULL
-#   define DATAEND NULL
+#   define DATASTART (ptr_t)ALIGNMENT
+#   define DATAEND (ptr_t)ALIGNMENT
 #   define STACK_NOT_SCANNED
 # endif
 
@@ -1223,6 +1234,7 @@
         ptr_t GC_find_limit(ptr_t, GC_bool);
 #       define DATAEND GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
+#       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
@@ -1650,6 +1662,7 @@
 #        define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
                                    + ((word)(etext) & 0xffff)))
 #        define DATAEND ((ptr_t)(edata))
+#        define GC_HAVE_DATAREGION2
 #        define DATASTART2 (_DYNAMIC_LINKING \
                ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
                : (ptr_t)edata)
@@ -1901,6 +1914,7 @@
         ptr_t GC_find_limit(ptr_t, GC_bool);
 #       define DATAEND GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
+#       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
@@ -2574,7 +2588,7 @@
 #            endif
              extern int _end[];
 #            define DATAEND ((ptr_t)(_end))
-#       else
+#       elif !defined(CPPCHECK)
 #            error --> bad Hexagon Linux configuration
 #       endif
 #   else
@@ -2586,10 +2600,8 @@
 #   define CPP_WORDSZ 32
 #   define MACH_TYPE "TILEPro"
 #   define ALIGNMENT 4
-#   define ALIGN_DOUBLE
 #   define PREFETCH(x) __insn_prefetch(x)
 #   define CACHE_LINE_SIZE 64
-#   define USE_GENERIC_PUSH_REGS
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[];
@@ -2604,13 +2616,10 @@
 #   define MACH_TYPE "TILE-Gx"
 #   define ALIGNMENT __SIZEOF_POINTER__
 #   if CPP_WORDSZ < 64
-#     define ALIGN_DOUBLE /* Guarantee 64-bit alignment for allocations. */
-      /* Take advantage of 64-bit stores. */
 #     define CLEAR_DOUBLE(x) (*(long long *)(x) = 0)
 #   endif
 #   define PREFETCH(x) __insn_prefetch_l1(x)
 #   define CACHE_LINE_SIZE 64
-#   define USE_GENERIC_PUSH_REGS
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[];
@@ -2664,7 +2673,6 @@
     /* even with USE_PROC_FOR_LIBRARIES, we don't scan parts of stack   */
     /* segments that appear to be out of bounds.  Thus we actually      */
     /* do both, which seems to yield the best results.                  */
-
 #   define USE_PROC_FOR_LIBRARIES
 #endif
 
@@ -2695,14 +2703,6 @@
 # define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if defined(PLATFORM_ANDROID) && !defined(THREADS) \
-    && !defined(USE_GET_STACKBASE_FOR_MAIN)
-  /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
-  /* not needed to be specified manually) since GC_linux_main_stack_base */
-  /* causes app crash if invoked inside Dalvik VM.                       */
-# define USE_GET_STACKBASE_FOR_MAIN
-#endif
-
 #if (defined(SVR4) || defined(PLATFORM_ANDROID)) && !defined(GETPAGESIZE)
 # include <unistd.h>
 # define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
@@ -2716,9 +2716,11 @@
 # define GETPAGESIZE() (unsigned)getpagesize()
 #endif
 
-#if defined(PLATFORM_ANDROID) && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
-                        || defined(ARM32) || defined(I386) /* but not x32 */)
+#if defined(PLATFORM_ANDROID) && !(__ANDROID_API__ >= 23) \
+    && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
+        || defined(ARM32) || defined(I386) /* but not x32 */)
   /* tkill() exists only on arm32/mips(32)/x86. */
+  /* NDK r11+ deprecates tkill() but keeps it for Mono clients. */
 # define USE_TKILL_ON_ANDROID
 #endif
 
@@ -2778,11 +2780,16 @@
 # define UNIX_LIKE      /* Basic Unix-like system calls work.   */
 #endif
 
+#if defined(CPPCHECK)
+# undef CPP_WORDSZ
+# define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
+#endif
+
 #if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
 # error --> bad word size
 #endif
 
-#ifndef ALIGNMENT
+#if !defined(ALIGNMENT) && !defined(CPPCHECK)
 # error --> undefined ALIGNMENT
 #endif
 
@@ -2796,7 +2803,8 @@
 # define PCR_VDB
 #endif
 
-#if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS))
+#if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS)) \
+    && !defined(CPPCHECK)
 # error --> undefined STACKBOTTOM
 #endif
 
@@ -2856,6 +2864,10 @@
 #ifdef PROC_VDB
   /* Multi-VDB mode is not implemented. */
 # undef MPROTECT_VDB
+#endif
+
+#if defined(SIGBUS) && !defined(HAVE_SIGBUS) && !defined(CPPCHECK)
+# define HAVE_SIGBUS
 #endif
 
 #ifndef SA_SIGINFO
@@ -2930,6 +2942,10 @@
 # define DATASTART GC_data_start
 #endif
 
+#ifndef HEAP_START
+# define HEAP_START ((ptr_t)0)
+#endif
+
 #ifndef CLEAR_DOUBLE
 # define CLEAR_DOUBLE(x) (((word*)(x))[0] = 0, ((word*)(x))[1] = 0)
 #endif
@@ -2941,6 +2957,7 @@
 # define INCLUDE_LINUX_THREAD_DESCR
 #endif
 
+#if !defined(CPPCHECK)
 #if defined(GC_IRIX_THREADS) && !defined(IRIX5)
 # error --> inconsistent configuration
 #endif
@@ -2969,14 +2986,62 @@
     && !defined(MSWINCE)
 # error --> inconsistent configuration
 #endif
+#endif /* !CPPCHECK */
 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
     || defined(SN_TARGET_PS3)
 # define THREADS
 #endif
 
-#if defined(PARALLEL_MARK) && !defined(THREADS)
+#if defined(PARALLEL_MARK) && !defined(THREADS) && !defined(CPPCHECK)
 # error "invalid config - PARALLEL_MARK requires GC_THREADS"
+#endif
+
+#if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
+        || (defined(MSWIN32) && defined(I386)) /* for Win98 */ \
+        || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))) \
+     && !defined(NO_WRAP_MARK_SOME)
+  /* Under rare conditions, we may end up marking from nonexistent      */
+  /* memory.  Hence we need to be prepared to recover by running        */
+  /* GC_mark_some with a suitable handler in place.                     */
+  /* TODO: Probably replace __GNUC__ above with ndef GC_PTHREADS.       */
+  /* FIXME: Should we really need it for WinCE?  If yes then            */
+  /* WRAP_MARK_SOME should be also defined for CeGCC which requires     */
+  /* CPU/OS-specific code in mark_ex_handler and GC_mark_some (for      */
+  /* manual stack unwinding and exception handler installation).        */
+# define WRAP_MARK_SOME
+#endif
+
+#if defined(PARALLEL_MARK) && !defined(DEFAULT_STACK_MAYBE_SMALL) \
+    && (defined(HPUX) || defined(GC_DGUX386_THREADS) \
+        || defined(NO_GETCONTEXT) /* e.g. musl */)
+    /* TODO: Test default stack size in configure. */
+# define DEFAULT_STACK_MAYBE_SMALL
+#endif
+
+#ifdef PARALLEL_MARK
+# define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(word))
+#elif defined(THREADS)
+# define MIN_STACK_SIZE 65536
+#endif
+
+#if defined(PLATFORM_ANDROID) && !defined(THREADS) \
+    && !defined(USE_GET_STACKBASE_FOR_MAIN)
+  /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
+  /* not needed to be specified manually) since GC_linux_main_stack_base */
+  /* causes app crash if invoked inside Dalvik VM.                       */
+# define USE_GET_STACKBASE_FOR_MAIN
+#endif
+
+/* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
+#if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */ \
+     || defined(LINUX) || defined(NETBSD) || defined(PLATFORM_ANDROID)) \
+    && !defined(NO_PTHREAD_GETATTR_NP)
+# define HAVE_PTHREAD_GETATTR_NP 1
+#elif defined(FREEBSD) && !defined(__GLIBC__) \
+      && !defined(NO_PTHREAD_ATTR_GET_NP)
+# define HAVE_PTHREAD_NP_H 1 /* requires include pthread_np.h */
+# define HAVE_PTHREAD_ATTR_GET_NP 1
 #endif
 
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
@@ -3060,6 +3125,21 @@
 # endif
 #endif /* !GC_WORD_C */
 
+#if defined(__has_feature)
+  /* __has_feature() is supported.      */
+# if __has_feature(address_sanitizer) && !defined(ADDRESS_SANITIZER)
+#   define ADDRESS_SANITIZER
+# endif
+# if __has_feature(memory_sanitizer) && !defined(MEMORY_SANITIZER)
+#   define MEMORY_SANITIZER
+# endif
+#else
+# ifdef __SANITIZE_ADDRESS__
+    /* GCC v4.8+ */
+#   define ADDRESS_SANITIZER
+# endif
+#endif /* !__has_feature */
+
 #if defined(SPARC)
 # define ASM_CLEAR_CODE /* Stack clearing is crucial, and we    */
                         /* include assembly code to do it well. */
@@ -3095,7 +3175,7 @@
 # endif
 #endif
 #ifdef SAVE_CALL_CHAIN
-# ifndef SAVE_CALL_COUNT
+# if !defined(SAVE_CALL_COUNT) || defined(CPPCHECK)
 #   define NFRAMES 6    /* Number of frames to save. Even for   */
                         /* alignment reasons.                   */
 # else
@@ -3129,13 +3209,16 @@
 #endif
 
 #if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
-# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
+# if defined(CPPCHECK)
+#   define FIXUP_POINTER(p) (p = (p) << 4) /* e.g. */
+# else
+#   define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
+# endif
 #endif
 
 #if defined(FIXUP_POINTER)
-# define NEED_FIXUP_POINTER 1
+# define NEED_FIXUP_POINTER
 #else
-# define NEED_FIXUP_POINTER 0
 # define FIXUP_POINTER(p)
 #endif
 
@@ -3144,6 +3227,7 @@
 #endif
 
 /* Some static sanity tests.    */
+#if !defined(CPPCHECK)
 #if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
 # error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ.
 #endif
@@ -3159,6 +3243,7 @@
      && !defined(REDIRECT_MALLOC_IN_HEADER)
 # error "REDIRECT_MALLOC with THREADS works at most on Linux."
 #endif
+#endif /* !CPPCHECK */
 
 #ifdef GC_PRIVATE_H
         /* This relies on some type definitions from gc_priv.h, from    */
@@ -3169,7 +3254,8 @@
         /* usually makes it possible to merge consecutively allocated   */
         /* chunks.  It also avoids unintended recursion with            */
         /* REDIRECT_MALLOC macro defined.                               */
-        /* GET_MEM() returns a HLKSIZE aligned chunk.                   */
+        /* GET_MEM() argument should be of size_t type and have         */
+        /* no side-effect.  GET_MEM() returns HBLKSIZE-aligned chunk;   */
         /* 0 is taken to mean failure.                                  */
         /* In case of MMAP_SUPPORTED, the argument must also be         */
         /* a multiple of a physical page size.                          */
@@ -3179,45 +3265,52 @@
         struct hblk;    /* See gc_priv.h.       */
 # if defined(PCR)
     char * real_malloc(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)(bytes) + GC_page_size) \
+#   define GET_MEM(bytes) HBLKPTR(real_malloc(SIZET_SAT_ADD(bytes, \
+                                                            GC_page_size)) \
                                           + GC_page_size-1)
 # elif defined(OS2)
     void * os2_alloc(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)(bytes) \
-                                            + GC_page_size) + GC_page_size-1)
+#   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc( \
+                                            SIZET_SAT_ADD(bytes, \
+                                                          GC_page_size)) \
+                                  + GC_page_size-1)
 # elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) \
         || (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) \
         || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
         || defined(__CC_ARM)
 #   define GET_MEM(bytes) HBLKPTR((size_t)calloc(1, \
-                                            (size_t)(bytes) + GC_page_size) \
+                                            SIZET_SAT_ADD(bytes, \
+                                                          GC_page_size)) \
                                   + GC_page_size - 1)
 # elif defined(MSWIN32) || defined(CYGWIN32)
-    ptr_t GC_win32_get_mem(GC_word bytes);
+    ptr_t GC_win32_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
 # elif defined(MACOS)
 #   if defined(USE_TEMPORARY_MEMORY)
       Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory);
-#     define GET_MEM(bytes) HBLKPTR( \
-                        GC_MacTemporaryNewPtr((bytes) + GC_page_size, true) \
+#     define GET_MEM(bytes) HBLKPTR(GC_MacTemporaryNewPtr( \
+                                        SIZET_SAT_ADD(bytes, \
+                                                      GC_page_size), true) \
                         + GC_page_size-1)
 #   else
-#     define GET_MEM(bytes) HBLKPTR(NewPtrClear((bytes) + GC_page_size) \
+#     define GET_MEM(bytes) HBLKPTR(NewPtrClear(SIZET_SAT_ADD(bytes, \
+                                                              GC_page_size)) \
                                     + GC_page_size-1)
 #   endif
 # elif defined(MSWINCE)
-    ptr_t GC_wince_get_mem(GC_word bytes);
+    ptr_t GC_wince_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
 # elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
     void *GC_amiga_get_mem(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR((size_t) \
-                          GC_amiga_get_mem((size_t)(bytes) + GC_page_size) \
+#   define GET_MEM(bytes) HBLKPTR((size_t)GC_amiga_get_mem( \
+                                            SIZET_SAT_ADD(bytes, \
+                                                          GC_page_size)) \
                           + GC_page_size-1)
 # elif defined(SN_TARGET_PS3)
     void *ps3_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
 # else
-    ptr_t GC_unix_get_mem(GC_word bytes);
+    ptr_t GC_unix_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 # endif
 #endif /* GC_PRIVATE_H */

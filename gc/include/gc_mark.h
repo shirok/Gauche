@@ -101,10 +101,10 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                | (proc_index)) << GC_DS_TAG_BITS) | GC_DS_PROC)
 #define GC_DS_PER_OBJECT 3  /* The real descriptor is at the            */
                         /* byte displacement from the beginning of the  */
-                        /* object given by descr & ~DS_TAGS             */
+                        /* object given by descr & ~GC_DS_TAGS.         */
                         /* If the descriptor is negative, the real      */
                         /* descriptor is at (*<object_start>) -         */
-                        /* (descr & ~DS_TAGS) - GC_INDIR_PER_OBJ_BIAS   */
+                        /* (descr&~GC_DS_TAGS) - GC_INDIR_PER_OBJ_BIAS  */
                         /* The latter alternative can be used if each   */
                         /* object contains a type descriptor in the     */
                         /* first word.                                  */
@@ -304,6 +304,11 @@ typedef void (GC_CALLBACK *GC_reachable_object_proc)(void * /* obj */,
 GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
                                 GC_reachable_object_proc,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
+
+GC_API int GC_CALL GC_is_tmp_root(void *);
+
+GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);
+GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
 
 #ifdef __cplusplus
   } /* end of extern "C" */

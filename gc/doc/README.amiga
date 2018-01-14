@@ -48,7 +48,7 @@ WHATS NEW:
                  It is also the most important flag to set to prevent
                  GC from returning chip-mem. Beware that it slows down a lot
                  when a program is rapidly allocating/deallocating when
-                 theres either very little fast-memory left or verly little
+                 there's either very little fast-memory left or very little
                  chip-memory left. Its not a very common situation, but gctest
                  sometimes (very rare) use many minutes because of this.
 
@@ -62,7 +62,7 @@ WHATS NEW:
                          program, and prints out the info when the atexit-handler
                          is called.
 
-   My reccomendation is to set all this flags, except GC_AMIGA_PRINTSTATS and
+   My recommendation is to set all this flags, except GC_AMIGA_PRINTSTATS and
    GC_AMIGA_ONLYFAST.
 
    If your program demands high response-time, you should
@@ -70,7 +70,7 @@ WHATS NEW:
    GC_AMIGA_RETRY does not seem to slow down much.
 
    Also, when compiling up programs, and GC_AMIGA_FASTALLOC was not defined when
-   compilling gc, you can define GC_AMIGA_MAKINGLIB to avoid having these allocation-
+   compiling gc, you can define GC_AMIGA_MAKINGLIB to avoid having these allocation-
    functions wrapped. (see gc.h)
 
    Note that GC_realloc must not be called before any of
@@ -249,7 +249,7 @@ will not behave well with Amiga specific code. Especially not inter-
 process comms via messages, and setting up public structures like
 Intuition objects or anything else in the system lists. For the
 time being the use of this library is limited to single threaded
-ANSI/POSIX  compliant or near-complient code. (ie. Stick to stdio
+ANSI/POSIX  compliant or near-compliant code. (ie. Stick to stdio
 for now). Given this limitation there is currently no mechanism for
 allocating "CHIP" or "PUBLIC" memory under the garbage collector.
 I'll add this after giving it considerable thought. The major
@@ -260,7 +260,7 @@ If you allocate your own stack in client code, you will have to
 assign the pointer plus stack size to GC_stackbottom.
 
 The initial stack size of the target program can be compiled in by
-setting the __stack symbol (see SAS documentaion). It can be over-
+setting the __stack symbol (see SAS documentation). It can be over-
 ridden from the CLI by running the AmigaDOS "stack" program, or from
 the WorkBench by setting the stack size in the tool types window.
 
@@ -282,7 +282,7 @@ The library as it stands is compatible with the GigaMem commercial
 virtual memory software, and probably similar PD software.
 
 The performance of "gctest" on an Amiga 2630 (68030 @ 25Mhz)
-compares favourably with an HP9000 with similar architecture (a 325
+compares favorably with an HP9000 with similar architecture (a 325
 with a 68030 I think).
 
 -----------------------------------------------------------------------

@@ -153,7 +153,6 @@ int CORD_cmp(CORD x, CORD y)
 {
     CORD_pos xpos;
     CORD_pos ypos;
-    register size_t avail, yavail;
 
     if (y == CORD_EMPTY) return(x != CORD_EMPTY);
     if (x == CORD_EMPTY) return(-1);
@@ -161,6 +160,8 @@ int CORD_cmp(CORD x, CORD y)
     CORD_set_pos(xpos, x, 0);
     CORD_set_pos(ypos, y, 0);
     for(;;) {
+        size_t avail, yavail;
+
         if (!CORD_pos_valid(xpos)) {
             if (CORD_pos_valid(ypos)) {
                 return(-1);
@@ -171,8 +172,9 @@ int CORD_cmp(CORD x, CORD y)
         if (!CORD_pos_valid(ypos)) {
             return(1);
         }
-        if ((avail = CORD_pos_chars_left(xpos)) <= 0
-            || (yavail = CORD_pos_chars_left(ypos)) <= 0) {
+        avail = CORD_pos_chars_left(xpos);
+        if (avail == 0
+            || (yavail = CORD_pos_chars_left(ypos)) == 0) {
             register char xcurrent = CORD_pos_fetch(xpos);
             register char ycurrent = CORD_pos_fetch(ypos);
             if (xcurrent != ycurrent) return(xcurrent - ycurrent);
@@ -197,11 +199,12 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
     CORD_pos xpos;
     CORD_pos ypos;
     register size_t count;
-    register long avail, yavail;
 
     CORD_set_pos(xpos, x, x_start);
     CORD_set_pos(ypos, y, y_start);
     for(count = 0; count < len;) {
+        long avail, yavail;
+
         if (!CORD_pos_valid(xpos)) {
             if (CORD_pos_valid(ypos)) {
                 return(-1);
@@ -226,7 +229,8 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
 
             if (avail > yavail) avail = yavail;
             count += avail;
-            if (count > len) avail -= (count - len);
+            if (count > len)
+                avail -= (long)(count - len);
             result = strncmp(CORD_pos_cur_char_addr(xpos),
                          CORD_pos_cur_char_addr(ypos), (size_t)avail);
             if (result != 0) return(result);
@@ -344,7 +348,7 @@ size_t CORD_chr(CORD x, size_t i, int c)
     chr_data d;
 
     d.pos = i;
-    d.target = c;
+    d.target = (char)c;
     if (CORD_iter5(x, i, CORD_chr_proc, CORD_batched_chr_proc, &d)) {
         return(d.pos);
     } else {
@@ -357,7 +361,7 @@ size_t CORD_rchr(CORD x, size_t i, int c)
     chr_data d;
 
     d.pos = i;
-    d.target = c;
+    d.target = (char)c;
     if (CORD_riter4(x, i, CORD_rchr_proc, &d)) {
         return(d.pos);
     } else {
@@ -456,12 +460,12 @@ CORD CORD_chars(char c, size_t i)
 
 CORD CORD_from_file_eager(FILE * f)
 {
-    register int c;
     CORD_ec ecord;
 
     CORD_ec_init(ecord);
     for(;;) {
-        c = getc(f);
+        int c = getc(f);
+
         if (c == 0) {
           /* Append the right number of NULs                            */
           /* Note that any string of NULs is represented in 4 words,    */
@@ -473,7 +477,7 @@ CORD CORD_from_file_eager(FILE * f)
             ecord[0].ec_cord = CORD_cat(ecord[0].ec_cord, CORD_nul(count));
         }
         if (c == EOF) break;
-        CORD_ec_append(ecord, c);
+        CORD_ec_append(ecord, (char)c);
     }
     (void) fclose(f);
     return(CORD_balance(CORD_ec_to_cord(ecord)));
@@ -532,7 +536,7 @@ static char refill_cache(refill_data * client_data)
     cache_line * new_cache = client_data -> new_cache;
 
     if (line_start != state -> lf_current
-        && fseek(f, line_start, SEEK_SET) != 0) {
+        && fseek(f, (long)line_start, SEEK_SET) != 0) {
             ABORT("fseek failed");
     }
     if (fread(new_cache -> data, sizeof(char), LINE_SZ, f)
@@ -588,11 +592,10 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
         /* world is multi-threaded.                     */
         char buf[1];
 
-        if (fread(buf, 1, 1, f) > 1) {
-            /* Just to suppress "unused result" compiler warning.   */
-            ABORT("fread unexpected result");
+        if (fread(buf, 1, 1, f) > 1
+            || fseek(f, 0l, SEEK_SET) != 0) {
+            ABORT("Bad f argument or I/O failure");
         }
-        rewind(f);
     }
     state -> lf_file = f;
     for (i = 0; i < CACHE_SZ/LINE_SZ; i++) {
@@ -607,13 +610,11 @@ CORD CORD_from_file_lazy(FILE * f)
 {
     register long len;
 
-    if (fseek(f, 0l, SEEK_END) != 0) {
-        ABORT("Bad fd argument - fseek failed");
+    if (fseek(f, 0l, SEEK_END) != 0
+        || (len = ftell(f)) < 0
+        || fseek(f, 0l, SEEK_SET) != 0) {
+        ABORT("Bad f argument or I/O failure");
     }
-    if ((len = ftell(f)) < 0) {
-        ABORT("Bad fd argument - ftell failed");
-    }
-    rewind(f);
     return(CORD_from_file_lazy_inner(f, (size_t)len));
 }
 
@@ -623,13 +624,11 @@ CORD CORD_from_file(FILE * f)
 {
     register long len;
 
-    if (fseek(f, 0l, SEEK_END) != 0) {
-        ABORT("Bad fd argument - fseek failed");
+    if (fseek(f, 0l, SEEK_END) != 0
+        || (len = ftell(f)) < 0
+        || fseek(f, 0l, SEEK_SET) != 0) {
+        ABORT("Bad f argument or I/O failure");
     }
-    if ((len = ftell(f)) < 0) {
-        ABORT("Bad fd argument - ftell failed");
-    }
-    rewind(f);
     if (len < LAZY_THRESHOLD) {
         return(CORD_from_file_eager(f));
     } else {
