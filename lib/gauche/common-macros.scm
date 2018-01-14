@@ -60,7 +60,7 @@
                       f 'original #f)])
        (if original
          (raise (make-compound-condition
-                 (make-error (car args) (cdr args))
+                 (apply make-error (car args) (cdr args))
                  (make <compile-error-mixin> :expr original)))
          (apply error args))))))
 

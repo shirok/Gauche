@@ -1577,7 +1577,7 @@
 ;; Our purpose here is to make sure syntax-error preserves the offending macro
 ;; call (test-syntax-error ...).
 (test "syntax-error"
-      '("bad number of arguments (x y z)"
+      '("bad number of arguments x y z"
         (test-syntax-error x y z)
         (list (test-syntax-error x y z)))
       (lambda ()
