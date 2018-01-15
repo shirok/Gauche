@@ -152,12 +152,16 @@ STATIC int GC_register_disappearing_link_inner(
     struct disappearing_link * new_dl;
     DCL_LOCK_STATE;
 
+    if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
     LOCK();
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (dl_hashtbl -> log_size == -1
         || dl_hashtbl -> entries > ((word)1 << dl_hashtbl -> log_size)) {
         GC_grow_table((struct hash_chain_entry ***)&dl_hashtbl -> head,
                       &dl_hashtbl -> log_size);
+#       ifdef LINT2
+          if (dl_hashtbl->log_size < 0) ABORT("log_size is negative");
+#       endif
         GC_COND_LOG_PRINTF("Grew %s table to %u entries\n", tbl_log_name,
                            1 << (unsigned)dl_hashtbl -> log_size);
     }
@@ -229,8 +233,12 @@ GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
 {
     struct disappearing_link *curr_dl;
     struct disappearing_link *prev_dl = NULL;
-    size_t index = HASH2(link, dl_hashtbl->log_size);
+    size_t index;
 
+    if (dl_hashtbl->log_size == -1)
+        return NULL; /* prevent integer shift by a negative amount */
+
+    index = HASH2(link, dl_hashtbl->log_size);
     for (curr_dl = dl_hashtbl -> head[index]; curr_dl;
          curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
@@ -418,7 +426,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     int res = GC_SUCCESS;
     DCL_LOCK_STATE;
 
-    GC_ASSERT(obj != NULL);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(obj));
     LOCK();
     if (GC_toggleref_callback != 0) {
       if (!ensure_toggleref_capacity(1)) {
@@ -491,6 +499,9 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     size_t curr_index, new_index;
     word curr_hidden_link;
     word new_hidden_link;
+
+    if (dl_hashtbl->log_size == -1)
+        return GC_NOT_FOUND; /* prevent integer shift by a negative amount */
 
     /* Find current link.       */
     curr_index = HASH2(link, dl_hashtbl -> log_size);
@@ -589,7 +600,6 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     hdr * hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
     ptr_t q;
-    word r;
     ptr_t scan_limit;
     ptr_t target_limit = p + hhdr -> hb_sz - 1;
 
@@ -599,7 +609,8 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
        scan_limit = target_limit + 1 - sizeof(word);
     }
     for (q = p; (word)q <= (word)scan_limit; q += ALIGNMENT) {
-        r = *(word *)q;
+        word r = *(word *)q;
+
         if (r < (word)p || r > (word)target_limit) {
             GC_PUSH_ONE_HEAP(r, q, GC_mark_stack_top);
         }
@@ -631,37 +642,40 @@ STATIC void GC_register_finalizer_inner(void * obj,
                                         GC_finalization_proc *ofn, void **ocd,
                                         finalization_mark_proc mp)
 {
-    ptr_t base;
-    struct finalizable_object * curr_fo, * prev_fo;
+    struct finalizable_object * curr_fo;
     size_t index;
     struct finalizable_object *new_fo = 0;
     hdr *hhdr = NULL; /* initialized to prevent warning. */
-    GC_oom_func oom_fn;
     DCL_LOCK_STATE;
 
+    if (EXPECT(GC_find_leak, FALSE)) return;
     LOCK();
     if (log_fo_table_size == -1
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
                       &log_fo_table_size);
+#       ifdef LINT2
+          if (log_fo_table_size < 0) ABORT("log_size is negative");
+#       endif
         GC_COND_LOG_PRINTF("Grew fo table to %u entries\n",
                            1 << (unsigned)log_fo_table_size);
     }
     /* in the THREADS case we hold allocation lock.             */
-    base = (ptr_t)obj;
     for (;;) {
-      index = HASH2(base, log_fo_table_size);
-      prev_fo = 0;
+      struct finalizable_object *prev_fo = NULL;
+      GC_oom_func oom_fn;
+
+      index = HASH2(obj, log_fo_table_size);
       curr_fo = GC_fnlz_roots.fo_head[index];
       while (curr_fo != 0) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
-        if (curr_fo -> fo_hidden_base == GC_HIDE_POINTER(base)) {
+        if (curr_fo -> fo_hidden_base == GC_HIDE_POINTER(obj)) {
           /* Interruption by a signal in the middle of this     */
           /* should be safe.  The client may see only *ocd      */
           /* updated, but we'll declare that to be his problem. */
           if (ocd) *ocd = (void *) (curr_fo -> fo_client_data);
           if (ofn) *ofn = curr_fo -> fo_fn;
-          /* Delete the structure for base. */
+          /* Delete the structure for obj.      */
           if (prev_fo == 0) {
             GC_fnlz_roots.fo_head[index] = fo_next(curr_fo);
           } else {
@@ -700,7 +714,11 @@ STATIC void GC_register_finalizer_inner(void * obj,
         curr_fo = fo_next(curr_fo);
       }
       if (EXPECT(new_fo != 0, FALSE)) {
-        /* new_fo is returned by GC_oom_fn(), so fn != 0 and hhdr != 0. */
+        /* new_fo is returned by GC_oom_fn().   */
+        GC_ASSERT(fn != 0);
+#       ifdef LINT2
+          if (NULL == hhdr) ABORT("Bad hhdr in GC_register_finalizer_inner");
+#       endif
         break;
       }
       if (fn == 0) {
@@ -709,7 +727,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
         UNLOCK();
         return;
       }
-      GET_HDR(base, hhdr);
+      GET_HDR(obj, hhdr);
       if (EXPECT(0 == hhdr, FALSE)) {
         /* We won't collect it, hence finalizer wouldn't be run. */
         if (ocd) *ocd = 0;
@@ -737,7 +755,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
     if (ocd) *ocd = 0;
     if (ofn) *ofn = 0;
-    new_fo -> fo_hidden_base = GC_HIDE_POINTER(base);
+    new_fo -> fo_hidden_base = GC_HIDE_POINTER(obj);
     new_fo -> fo_fn = fn;
     new_fo -> fo_client_data = (ptr_t)cd;
     new_fo -> fo_object_size = hhdr -> hb_sz;
@@ -789,28 +807,29 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   STATIC void GC_dump_finalization_links(
                                 const struct dl_hashtbl_s *dl_hashtbl)
   {
-    struct disappearing_link *curr_dl;
-    ptr_t real_ptr, real_link;
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 :
                                 (size_t)1 << dl_hashtbl->log_size;
     size_t i;
 
     for (i = 0; i < dl_size; i++) {
+      struct disappearing_link *curr_dl;
+
       for (curr_dl = dl_hashtbl -> head[i]; curr_dl != 0;
            curr_dl = dl_next(curr_dl)) {
-        real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
-        real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
-        GC_printf("Object: %p, link: %p\n", real_ptr, real_link);
+        ptr_t real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+        ptr_t real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
+
+        GC_printf("Object: %p, link: %p\n",
+                  (void *)real_ptr, (void *)real_link);
       }
     }
   }
 
-  void GC_dump_finalization(void)
+  GC_API void GC_CALL GC_dump_finalization(void)
   {
     struct finalizable_object * curr_fo;
     size_t fo_size = log_fo_table_size == -1 ? 0 :
                                 (size_t)1 << log_fo_table_size;
-    ptr_t real_ptr;
     size_t i;
 
     GC_printf("Disappearing (short) links:\n");
@@ -823,8 +842,9 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
-        real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
-        GC_printf("Finalizable object: %p\n", real_ptr);
+        ptr_t real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+
+        GC_printf("Finalizable object: %p\n", (void *)real_ptr);
       }
     }
   }
@@ -871,8 +891,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 : \
                                 (size_t)1 << dl_hashtbl->log_size; \
     for (i = 0; i < dl_size; i++) { \
+      struct disappearing_link *prev_dl = NULL; \
       curr_dl = dl_hashtbl -> head[i]; \
-      prev_dl = NULL; \
       while (curr_dl) {
 
 #define ITERATE_DL_HASHTBL_END(curr_dl, prev_dl) \
@@ -899,12 +919,12 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 GC_INLINE void GC_make_disappearing_links_disappear(
                                 struct dl_hashtbl_s* dl_hashtbl)
 {
-    struct disappearing_link *curr, *prev, *next;
-    ptr_t real_ptr, real_link;
+    struct disappearing_link *curr, *next;
 
     ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        real_ptr = GC_REVEAL_POINTER(curr -> dl_hidden_obj);
-        real_link = GC_REVEAL_POINTER(curr -> dl_hidden_link);
+        ptr_t real_ptr = GC_REVEAL_POINTER(curr -> dl_hidden_obj);
+        ptr_t real_link = GC_REVEAL_POINTER(curr -> dl_hidden_link);
+
         if (!GC_is_marked(real_ptr)) {
             *(word *)real_link = 0;
             GC_clear_mark_bit(curr);
@@ -916,11 +936,11 @@ GC_INLINE void GC_make_disappearing_links_disappear(
 GC_INLINE void GC_remove_dangling_disappearing_links(
                                 struct dl_hashtbl_s* dl_hashtbl)
 {
-    struct disappearing_link *curr, *prev, *next;
-    ptr_t real_link;
+    struct disappearing_link *curr, *next;
 
     ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        real_link = GC_base(GC_REVEAL_POINTER(curr -> dl_hidden_link));
+        ptr_t real_link = GC_base(GC_REVEAL_POINTER(curr -> dl_hidden_link));
+
         if (NULL != real_link && !GC_is_marked(real_link)) {
             GC_clear_mark_bit(curr);
             DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
@@ -1031,6 +1051,10 @@ GC_INNER void GC_finalize(void)
        other finalizable objects */
       if (need_unreachable_finalization) {
         curr_fo = GC_fnlz_roots.finalize_now;
+#       if defined(GC_ASSERTIONS) || defined(LINT2)
+          if (curr_fo != NULL && log_fo_table_size < 0)
+            ABORT("log_size is negative");
+#       endif
         prev_fo = NULL;
         while (curr_fo != NULL) {
           next_fo = fo_next(curr_fo);
@@ -1087,29 +1111,22 @@ GC_INNER void GC_finalize(void)
   /* Enqueue all remaining finalizers to be run - Assumes lock is held. */
   STATIC void GC_enqueue_all_finalizers(void)
   {
-    struct finalizable_object * curr_fo, * prev_fo, * next_fo;
+    struct finalizable_object * curr_fo, * next_fo;
     ptr_t real_ptr;
-    register int i;
+    int i;
     int fo_size;
 
     fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
       curr_fo = GC_fnlz_roots.fo_head[i];
-      prev_fo = NULL;
+      GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
           real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
           GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
 
-          /* Delete from hash table */
           next_fo = fo_next(curr_fo);
-          if (prev_fo == 0) {
-            GC_fnlz_roots.fo_head[i] = next_fo;
-          } else {
-            fo_set_next(prev_fo, next_fo);
-          }
-          GC_fo_entries--;
 
           /* Add to list of objects awaiting finalization.      */
           fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
@@ -1124,6 +1141,7 @@ GC_INNER void GC_finalize(void)
           curr_fo = next_fo;
         }
     }
+    GC_fo_entries = 0;  /* all entries deleted from the hash table */
   }
 
   /* Invoke all remaining finalizers that haven't yet been run.
@@ -1172,12 +1190,13 @@ GC_API int GC_CALL GC_should_invoke_finalizers(void)
 /* Should be called without allocation lock.                            */
 GC_API int GC_CALL GC_invoke_finalizers(void)
 {
-    struct finalizable_object * curr_fo;
     int count = 0;
     word bytes_freed_before = 0; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
     while (GC_fnlz_roots.finalize_now != NULL) {
+        struct finalizable_object * curr_fo;
+
 #       ifdef THREADS
             LOCK();
 #       endif

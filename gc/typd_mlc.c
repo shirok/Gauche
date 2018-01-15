@@ -85,7 +85,7 @@ typedef union ComplexDescriptor {
         union ComplexDescriptor * sd_second;
     } sd;
 } complex_descriptor;
-#define TAG ld.ld_tag
+#define TAG ad.ad_tag
 
 STATIC ext_descr * GC_ext_descriptors = NULL;
                                         /* Points to array of extended  */
@@ -103,13 +103,11 @@ STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
 # include "atomic_ops.h"
 #endif
 
-STATIC
-# ifdef AO_HAVE_load_acquire
-    AO_t
-# else
-    GC_bool
-# endif
-  GC_explicit_typing_initialized = FALSE;
+#ifdef AO_HAVE_load_acquire
+  STATIC volatile AO_t GC_explicit_typing_initialized = FALSE;
+#else
+  STATIC GC_bool GC_explicit_typing_initialized = FALSE;
+#endif
 
 STATIC void GC_push_typed_structures_proc(void)
 {
@@ -199,7 +197,7 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 /* each of which can be described by a simple descriptor.       */
 /* We try to optimize some common cases.                        */
 /* If the result is COMPLEX, then a complex_descr* is returned  */
-/* in *complex_d.                                                       */
+/* in *complex_d.                                               */
 /* If the result is LEAF, then we built a LeafDescriptor in     */
 /* the structure pointed to by leaf.                            */
 /* The tag in the leaf structure is not set.                    */
@@ -376,7 +374,7 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
             FIXUP_POINTER(current);
             if (current >= (word)least_ha && current <= (word)greatest_ha) {
                 PUSH_CONTENTS((ptr_t)current, mark_stack_ptr,
-                              mark_stack_limit, (ptr_t)current_p, exit1);
+                              mark_stack_limit, (ptr_t)current_p);
             }
         }
     }
@@ -495,11 +493,20 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                                     mark_stack_ptr,
                                                     mark_stack_limit-1);
     if (new_mark_stack_ptr == 0) {
+        /* Explicitly instruct Clang Static Analyzer that ptr is non-null. */
+        if (NULL == mark_stack_ptr) ABORT("Bad mark_stack_ptr");
+
         /* Doesn't fit.  Conservatively push the whole array as a unit  */
         /* and request a mark stack expansion.                          */
         /* This cannot cause a mark stack overflow, since it replaces   */
         /* the original array entry.                                    */
-        GC_mark_stack_too_small = TRUE;
+#       ifdef PARALLEL_MARK
+            /* We might be using a local_mark_stack in parallel mode.   */
+            if (GC_mark_stack + GC_mark_stack_size == mark_stack_limit)
+#       endif
+        {
+            GC_mark_stack_too_small = TRUE;
+        }
         new_mark_stack_ptr = orig_mark_stack_ptr + 1;
         new_mark_stack_ptr -> mse_start = (ptr_t)addr;
         new_mark_stack_ptr -> mse_descr.w = sz | GC_DS_LENGTH;
@@ -516,34 +523,35 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;
-    signed_word i;
 #   define HIGH_BIT (((word)1) << (WORDSZ - 1))
     DCL_LOCK_STATE;
 
-#   if defined(THREADS) && defined(AO_HAVE_load_acquire)
-      if (!EXPECT(AO_load_acquire(
-                        (volatile AO_t *)&GC_explicit_typing_initialized),
-                  TRUE))
-#   endif
-    {
+#   if defined(AO_HAVE_load_acquire) && defined(AO_HAVE_store_release)
+      if (!EXPECT(AO_load_acquire(&GC_explicit_typing_initialized), TRUE)) {
+        LOCK();
+        if (!GC_explicit_typing_initialized) {
+          GC_init_explicit_typing();
+          AO_store_release(&GC_explicit_typing_initialized, TRUE);
+        }
+        UNLOCK();
+      }
+#   else
       LOCK();
-#     if defined(THREADS) && defined(AO_HAVE_load_acquire)
-        if (!GC_explicit_typing_initialized)
-#     else
-        if (!EXPECT(GC_explicit_typing_initialized, TRUE))
-#     endif
-      {
+      if (!EXPECT(GC_explicit_typing_initialized, TRUE)) {
         GC_init_explicit_typing();
         GC_explicit_typing_initialized = TRUE;
       }
       UNLOCK();
-    }
+#   endif
 
     while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit))
       last_set_bit--;
     if (last_set_bit < 0) return(0 /* no pointers */);
+
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
+      signed_word i;
+
       for (i = 0; i < last_set_bit; i++) {
         if (!GC_get_bit(bm, i)) {
           break;
@@ -556,6 +564,8 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
     }
 #   endif
     if ((word)last_set_bit < BITMAP_BITS) {
+        signed_word i;
+
         /* Hopefully the common case.                   */
         /* Build bitmap descriptor (with bits reversed) */
         result = HIGH_BIT;
@@ -581,11 +591,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     size_t lg;
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    lb += TYPD_EXTRA_BYTES;
+    lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     op = GC_malloc_kind(lb, GC_explicit_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    lg = SMALL_OBJ(lb) ? GC_size_map[lb] : BYTES_TO_GRANULES(GC_size(op));
+    /* It is not safe to use GC_size_map[lb] to compute lg here as the  */
+    /* the former might be updated asynchronously.                      */
+    lg = BYTES_TO_GRANULES(GC_size(op));
     op[GRANULES_TO_WORDS(lg) - 1] = d;
     return op;
 }
@@ -598,7 +610,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    lb += TYPD_EXTRA_BYTES;
+    lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
@@ -608,11 +620,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
             if (0 == op) return 0;
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
+            /* See the comment in GC_malloc_explicitly_typed.   */
+            lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
             GC_eobjfreelist[lg] = obj_link(op);
             obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
         }
         ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
@@ -639,51 +652,53 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     GC_ASSERT(GC_explicit_typing_initialized);
     descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
                                           &complex_descr, &leaf);
+    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial check */
+        && lb > 0 && n > GC_SIZE_MAX / lb)
+      return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
+    lb *= n;
     switch(descr_type) {
         case NO_MEM: return(0);
-        case SIMPLE: return(GC_malloc_explicitly_typed(n*lb, simple_descr));
+        case SIMPLE:
+            return GC_malloc_explicitly_typed(lb, simple_descr);
         case LEAF:
-            lb *= n;
-            lb += sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES;
+            lb = SIZET_SAT_ADD(lb,
+                        sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES);
             break;
         case COMPLEX:
-            lb *= n;
-            lb += TYPD_EXTRA_BYTES;
+            lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
             break;
     }
     op = GC_malloc_kind(lb, GC_array_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    lg = SMALL_OBJ(lb) ? GC_size_map[lb] : BYTES_TO_GRANULES(GC_size(op));
+    lg = BYTES_TO_GRANULES(GC_size(op));
     if (descr_type == LEAF) {
-       /* Set up the descriptor inside the object itself. */
-       volatile struct LeafDescriptor * lp =
-           (struct LeafDescriptor *)
-               (op + GRANULES_TO_WORDS(lg)
-                - (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
+        /* Set up the descriptor inside the object itself.      */
+        volatile struct LeafDescriptor * lp =
+            (struct LeafDescriptor *)
+                (op + GRANULES_TO_WORDS(lg)
+                    - (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
 
-       lp -> ld_tag = LEAF_TAG;
-       lp -> ld_size = leaf.ld_size;
-       lp -> ld_nelements = leaf.ld_nelements;
-       lp -> ld_descriptor = leaf.ld_descriptor;
-       ((volatile word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
-   } else {
-#    ifndef GC_NO_FINALIZATION
-       size_t lw = GRANULES_TO_WORDS(lg);
+        lp -> ld_tag = LEAF_TAG;
+        lp -> ld_size = leaf.ld_size;
+        lp -> ld_nelements = leaf.ld_nelements;
+        lp -> ld_descriptor = leaf.ld_descriptor;
+        ((volatile word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
+    } else {
+#     ifndef GC_NO_FINALIZATION
+        size_t lw = GRANULES_TO_WORDS(lg);
 
-       op[lw - 1] = (word)complex_descr;
-       /* Make sure the descriptor is cleared once there is any danger  */
-       /* it may have been collected.                                   */
-       if (EXPECT(GC_general_register_disappearing_link(
+        op[lw - 1] = (word)complex_descr;
+        /* Make sure the descriptor is cleared once there is any danger */
+        /* it may have been collected.                                  */
+        if (EXPECT(GC_general_register_disappearing_link(
                                                 (void **)(op + lw - 1), op)
                   == GC_NO_MEMORY, FALSE))
-#    endif
-       {
-           /* Couldn't register it due to lack of memory.  Punt.        */
-           /* This will probably fail too, but gives the recovery code  */
-           /* a chance.                                                 */
-           return(GC_malloc(n*lb));
-       }
-   }
-   return op;
+#     endif
+        {
+            /* Couldn't register it due to lack of memory.  Punt.       */
+            return (*GC_get_oom_fn())(lb);
+        }
+    }
+    return op;
 }

@@ -164,7 +164,6 @@ size_t line_pos(int i, int *c)
 {
     int j;
     size_t cur;
-    size_t next;
     line_map map = current_map;
 
     while (map -> line > i) map = map -> previous;
@@ -176,10 +175,11 @@ size_t line_pos(int i, int *c)
         if (++j > current_map -> line) add_map(j, cur);
     }
     if (c != 0) {
-        next = CORD_chr(current, cur, '\n');
+        size_t next = CORD_chr(current, cur, '\n');
+
         if (next == CORD_NOT_FOUND) next = current_len - 1;
         if (next < cur + *c) {
-            *c = next - cur;
+            *c = (int)(next - cur);
         }
         cur += *c;
     }
@@ -216,7 +216,6 @@ int screen_size = 0;
 /* terribly appropriate for tabs.                                                                       */
 void replace_line(int i, CORD s)
 {
-    register int c;
     CORD_pos p;
 #   if !defined(MACINTOSH)
         size_t len = CORD_len(s);
@@ -237,7 +236,8 @@ void replace_line(int i, CORD s)
         move(i, 0); clrtoeol(); move(i,0);
 
         CORD_FOR (p, s) {
-            c = CORD_pos_fetch(p) & 0x7f;
+            int c = CORD_pos_fetch(p) & 0x7f;
+
             if (iscntrl(c)) {
                 standout(); addch(c + 0x40); standend();
             } else {
@@ -347,7 +347,8 @@ void fix_pos(void)
 {
     int my_col = col;
 
-    if ((size_t)line > current_len) line = current_len;
+    if ((size_t)line > current_len)
+        line = (int)current_len;
     file_pos = line_pos(line, &my_col);
     if (file_pos == CORD_NOT_FOUND) {
         for (line = current_map -> line, file_pos = current_map -> pos;
@@ -428,7 +429,7 @@ void do_command(int c)
                 if (file_pos > new_pos) break;
                 line++;
             }
-            col = new_pos - line_pos(line, 0);
+            col = (int)(new_pos - line_pos(line, 0));
             file_pos = new_pos;
             fix_cursor();
         } else {
@@ -459,7 +460,8 @@ void do_command(int c)
             locate_mode = 1;
             break;
           case TOP:
-            line = col = file_pos = 0;
+            line = col = 0;
+            file_pos = 0;
             break;
           case UP:
             if (line != 0) {
@@ -490,7 +492,7 @@ void do_command(int c)
                 break;
             }
             col--; file_pos--;
-            /* fall through: */
+            /* FALLTHRU */
           case DEL:
             if (file_pos == current_len-1) break;
                 /* Can't delete trailing newline */
@@ -552,9 +554,11 @@ void generic_init(void)
     if ((f = fopen(arg_file_name, "rb")) == NULL) {
         initial = "\n";
     } else {
+        size_t len;
+
         initial = CORD_from_file(f);
-        if (initial == CORD_EMPTY
-            || CORD_fetch(initial, CORD_len(initial)-1) != '\n') {
+        len = CORD_len(initial);
+        if (0 == len || CORD_fetch(initial, len - 1) != '\n') {
             initial = CORD_cat(initial, "\n");
         }
     }

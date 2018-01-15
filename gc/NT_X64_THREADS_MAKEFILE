@@ -30,7 +30,7 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gc64.dll gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_DLL -DGC_THREADS -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4701
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_DLL -DGC_THREADS -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
 # Disable "may not be initialized" warnings.  They're too approximate.
 # Disable crt security warnings, since unfortunately they warn about all sorts # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
@@ -51,7 +51,7 @@ gc64.dll : $(OBJS)
 
 
 gctest.exe: tests\test.obj gc64_dll.lib
-#  This produces a "GUI" applications that opens no windows and writes to
+#  This produces a "GUI" application that opens no windows and writes to
 # the log file "gctest.gc.log".
 	$(link) $(ldebug) $(guiflags) -out:$*.exe tests\test.obj $(guilibs) gc64_dll.lib
 
@@ -80,8 +80,8 @@ test_cpp.cpp: tests\test_cpp.cc
 test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc64_dll.lib
 	$(link) $(ldebug) $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc64_dll.lib $(guilibs)
 
-AO_SCR_DIR:
+$(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz;
 
 clean:
-	del *.obj gc64_dll.lib gc64.dll
+	del *.exe *.log *.obj *.pdb cord\*.exe cord\*.exp cord\*.lib cord\*.obj cord\*.pdb cord\*.rbj cord\*.res cord\tests\*.obj extra\*.obj gc*.lib gc*.dll gc*.exp test_cpp.cpp tests\*.obj 2> nul

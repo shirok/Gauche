@@ -1,4 +1,46 @@
 
+== [7.6.2] 2017-12-24 ==
+
+* Allow to alter DEFAULT/MAX_NTHREADS values in test_malloc/stack
+* Allow to select almost-non-blocking stack implementation explicitly
+* Annotate AO_malloc with 'alloc_size' and 'malloc' attributes
+* Avoid misleading 'AO_t undefined' error if wrong atomic_ops.h included
+* Define AO_TS_SET to 1 (true) if GCC atomic_test_and_set is used
+* Disable workaround in stack_pop_acquire that was needed for ancient Clang
+* Do not define AO_GCC_FORCE_HAVE_CAS for Clang 3.8+ (Aarch64)
+* Do not disallow to define double_load using built-in atomics (Aarch64)
+* Do not expose AO_GCC_FORCE_HAVE_CAS macro to client code (GCC)
+* Do not install documentation if configure --disable-docs (new option)
+* Do not produce .tar.bz2 distribution file (configure)
+* Eliminate '-pedantic is not an option that controls warnings' GCC message
+* Eliminate data race in cons() of test_malloc
+* Eliminate GCC-5 ASan global-buffer-overflow false positive for AO_stack_bl
+* Fill in allocated memory with values depending on thread id (test_malloc)
+* Fix 'bad register name %sil' assembler error (GCC-4.4/x86)
+* Fix 'unknown attribute no_sanitize' compiler warning for GCC
+* Fix AO_malloc for sizes near CHUNK_SIZE
+* Fix memory leak in test_malloc
+* Fix test failures for Clang-3.8 and older (Aarch64)
+* Fix test_stack failure if AO_PREFER_BUILTIN_ATOMICS (GCC/Aarch64)
+* Fix typo in AO_REAL_NEXT_PTR comment
+* Increase the default number of threads to 16 in test_malloc/stack
+* Mark unallocated/freed memory as inaccessible using ASan functionality
+* New macro (DONT_USE_MMAP) to support testing as if mmap() is unavailable
+* New macro to select stack implementation based on CAS-double
+* Place no_sanitize attributes in a GCC-compliant way
+* Prevent too long run of test_atomic_generalized (especially with TSan)
+* Simplify '#if' expressions in gcc/x86.h (code refactoring)
+* Test smallest allocation of large type (test_malloc)
+* Use __builtin_expect in atomic_ops_malloc
+* Use built-in atomics for load/store/CAS for Clang by default (Aarch64)
+* Use double-word atomic intrinsics for recent Clang versions (gcc/x86.h)
+* Use GCC atomic intrinsics for Hexagon (clang 3.9+)
+* Use generalized double-wide load/store if AO_PREFER_GENERALIZED (Aarch64)
+* Workaround 'unused result' code defects in atomic_ops.c, list_atomic
+* Workaround Thread Sanitizer (TSan) false positive warnings
+Also, includes 7.4.8 changes
+
+
 == [7.6.0] 2017-05-19 ==
 
 * Add *_and/or/xor* and *_[fetch_]compare_and_swap* tests to test_atomic
@@ -65,6 +107,20 @@
 * Workaround a bug in double-wide intrinsics of Clang/x64 with ASan enabled
 * Workaround MSan warning about uninitialized data read by generalized store
 Also, includes 7.4.6 changes
+
+
+== [7.4.10] 2017-12-22 ==
+
+* Fix AO_malloc for sizes near CHUNK_SIZE
+* Fix memory leak in test_malloc
+* Fix typo in AO_REAL_NEXT_PTR comment
+
+
+== [7.4.8] 2017-10-18 ==
+
+* Fix 'missing select.h', 'undefined sigprocmask' compiler errors (Hexagon)
+* Update README about bugs reporting and new releases notification
+* Workaround misspelling in GCC to detect ARMv6KZ platform
 
 
 == [7.4.6] 2017-05-18 ==
@@ -254,6 +310,13 @@ Also, includes 7.2e changes
 * Turn off AO primitives inlining if AO_NO_INLINE defined
 * Use __builtin_expect in CAS failure loop condition checks (GCC only)
 Also, includes 7.2 changes
+
+
+== [7.2i] 2017-12-21 ==
+
+* Fix 'missing select.h', 'undefined sigprocmask' compiler errors (Hexagon)
+* Fix AO_malloc for sizes near CHUNK_SIZE
+* Fix typo in AO_REAL_NEXT_PTR comment
 
 
 == [7.2h] 2017-05-17 ==

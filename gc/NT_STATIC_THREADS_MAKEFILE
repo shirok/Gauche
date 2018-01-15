@@ -36,7 +36,7 @@ gc.lib: $(OBJS)
 gctest.exe: tests\test.obj gc.lib
 #	The following works for win32 debugging.  For win32s debugging use debugtype:coff
 #	and add mapsympe line.
-#  This produces a "GUI" applications that opens no windows and writes to the log file
+#  This produces a "GUI" application that opens no windows and writes to the log file
 #  "gctest.gc.log".  This is done to make the result runnable under win32s.
 	$(link) -debug -debugtype:cv $(guiflags) -stack:262144 -out:$*.exe tests\test.obj $(guilibs) gc.lib
 #	mapsympe -n -o gctest.sym gctest.exe
@@ -67,5 +67,5 @@ test_cpp.cpp: tests\test_cpp.cc
 test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
 	$(link) -debug -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
 
-AO_SCR_DIR:
+$(AO_SRC_DIR):
 	        tar xvfz $(AO_SRC_DIR).tar.gz;

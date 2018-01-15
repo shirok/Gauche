@@ -312,6 +312,7 @@
 #if defined(AO_HAVE_char_compare_and_swap_read) \
     && !defined(AO_HAVE_char_load_read)
 # define AO_char_CAS_BASED_LOAD_READ
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/char
   AO_char_load_read(const volatile unsigned/**/char *addr)
   {
@@ -342,6 +343,7 @@
 
 #if defined(AO_HAVE_char_compare_and_swap_full) \
     && !defined(AO_HAVE_char_load_full)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/char
   AO_char_load_full(const volatile unsigned/**/char *addr)
   {
@@ -359,6 +361,7 @@
 
 #if defined(AO_HAVE_char_compare_and_swap_acquire) \
     && !defined(AO_HAVE_char_load_acquire)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/char
   AO_char_load_acquire(const volatile unsigned/**/char *addr)
   {
@@ -375,6 +378,7 @@
 #endif
 
 #if defined(AO_HAVE_char_compare_and_swap) && !defined(AO_HAVE_char_load)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/char
   AO_char_load(const volatile unsigned/**/char *addr)
   {
@@ -447,9 +451,9 @@
 
 #if defined(AO_HAVE_char_compare_and_swap_write) \
     && !defined(AO_HAVE_char_store_write)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_char_store_write(volatile unsigned/**/char *addr, unsigned/**/char new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -477,9 +481,9 @@
 #endif
 
 #if defined(AO_HAVE_char_compare_and_swap) && !defined(AO_HAVE_char_store)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_char_store(volatile unsigned/**/char *addr, unsigned/**/char new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -493,9 +497,9 @@
 
 #if defined(AO_HAVE_char_compare_and_swap_release) \
     && !defined(AO_HAVE_char_store_release)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_char_store_release(volatile unsigned/**/char *addr, unsigned/**/char new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -509,9 +513,9 @@
 
 #if defined(AO_HAVE_char_compare_and_swap_full) \
     && !defined(AO_HAVE_char_store_full)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_char_store_full(volatile unsigned/**/char *addr, unsigned/**/char new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/char old_val;
 
@@ -836,6 +840,7 @@
 #if defined(AO_HAVE_short_compare_and_swap_read) \
     && !defined(AO_HAVE_short_load_read)
 # define AO_short_CAS_BASED_LOAD_READ
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/short
   AO_short_load_read(const volatile unsigned/**/short *addr)
   {
@@ -866,6 +871,7 @@
 
 #if defined(AO_HAVE_short_compare_and_swap_full) \
     && !defined(AO_HAVE_short_load_full)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/short
   AO_short_load_full(const volatile unsigned/**/short *addr)
   {
@@ -883,6 +889,7 @@
 
 #if defined(AO_HAVE_short_compare_and_swap_acquire) \
     && !defined(AO_HAVE_short_load_acquire)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/short
   AO_short_load_acquire(const volatile unsigned/**/short *addr)
   {
@@ -899,6 +906,7 @@
 #endif
 
 #if defined(AO_HAVE_short_compare_and_swap) && !defined(AO_HAVE_short_load)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned/**/short
   AO_short_load(const volatile unsigned/**/short *addr)
   {
@@ -971,9 +979,9 @@
 
 #if defined(AO_HAVE_short_compare_and_swap_write) \
     && !defined(AO_HAVE_short_store_write)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_short_store_write(volatile unsigned/**/short *addr, unsigned/**/short new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -1001,9 +1009,9 @@
 #endif
 
 #if defined(AO_HAVE_short_compare_and_swap) && !defined(AO_HAVE_short_store)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_short_store(volatile unsigned/**/short *addr, unsigned/**/short new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -1017,9 +1025,9 @@
 
 #if defined(AO_HAVE_short_compare_and_swap_release) \
     && !defined(AO_HAVE_short_store_release)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_short_store_release(volatile unsigned/**/short *addr, unsigned/**/short new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -1033,9 +1041,9 @@
 
 #if defined(AO_HAVE_short_compare_and_swap_full) \
     && !defined(AO_HAVE_short_store_full)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_short_store_full(volatile unsigned/**/short *addr, unsigned/**/short new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned/**/short old_val;
 
@@ -1360,6 +1368,7 @@
 #if defined(AO_HAVE_int_compare_and_swap_read) \
     && !defined(AO_HAVE_int_load_read)
 # define AO_int_CAS_BASED_LOAD_READ
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned
   AO_int_load_read(const volatile unsigned *addr)
   {
@@ -1390,6 +1399,7 @@
 
 #if defined(AO_HAVE_int_compare_and_swap_full) \
     && !defined(AO_HAVE_int_load_full)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned
   AO_int_load_full(const volatile unsigned *addr)
   {
@@ -1407,6 +1417,7 @@
 
 #if defined(AO_HAVE_int_compare_and_swap_acquire) \
     && !defined(AO_HAVE_int_load_acquire)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned
   AO_int_load_acquire(const volatile unsigned *addr)
   {
@@ -1423,6 +1434,7 @@
 #endif
 
 #if defined(AO_HAVE_int_compare_and_swap) && !defined(AO_HAVE_int_load)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE unsigned
   AO_int_load(const volatile unsigned *addr)
   {
@@ -1495,9 +1507,9 @@
 
 #if defined(AO_HAVE_int_compare_and_swap_write) \
     && !defined(AO_HAVE_int_store_write)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_int_store_write(volatile unsigned *addr, unsigned new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -1525,9 +1537,9 @@
 #endif
 
 #if defined(AO_HAVE_int_compare_and_swap) && !defined(AO_HAVE_int_store)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_int_store(volatile unsigned *addr, unsigned new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -1541,9 +1553,9 @@
 
 #if defined(AO_HAVE_int_compare_and_swap_release) \
     && !defined(AO_HAVE_int_store_release)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_int_store_release(volatile unsigned *addr, unsigned new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -1557,9 +1569,9 @@
 
 #if defined(AO_HAVE_int_compare_and_swap_full) \
     && !defined(AO_HAVE_int_store_full)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_int_store_full(volatile unsigned *addr, unsigned new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     unsigned old_val;
 
@@ -1884,6 +1896,7 @@
 #if defined(AO_HAVE_compare_and_swap_read) \
     && !defined(AO_HAVE_load_read)
 # define AO_CAS_BASED_LOAD_READ
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_t
   AO_load_read(const volatile AO_t *addr)
   {
@@ -1914,6 +1927,7 @@
 
 #if defined(AO_HAVE_compare_and_swap_full) \
     && !defined(AO_HAVE_load_full)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_t
   AO_load_full(const volatile AO_t *addr)
   {
@@ -1931,6 +1945,7 @@
 
 #if defined(AO_HAVE_compare_and_swap_acquire) \
     && !defined(AO_HAVE_load_acquire)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_t
   AO_load_acquire(const volatile AO_t *addr)
   {
@@ -1947,6 +1962,7 @@
 #endif
 
 #if defined(AO_HAVE_compare_and_swap) && !defined(AO_HAVE_load)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_t
   AO_load(const volatile AO_t *addr)
   {
@@ -2019,9 +2035,9 @@
 
 #if defined(AO_HAVE_compare_and_swap_write) \
     && !defined(AO_HAVE_store_write)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_store_write(volatile AO_t *addr, AO_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2049,9 +2065,9 @@
 #endif
 
 #if defined(AO_HAVE_compare_and_swap) && !defined(AO_HAVE_store)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_store(volatile AO_t *addr, AO_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2065,9 +2081,9 @@
 
 #if defined(AO_HAVE_compare_and_swap_release) \
     && !defined(AO_HAVE_store_release)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_store_release(volatile AO_t *addr, AO_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2081,9 +2097,9 @@
 
 #if defined(AO_HAVE_compare_and_swap_full) \
     && !defined(AO_HAVE_store_full)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_store_full(volatile AO_t *addr, AO_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_t old_val;
 
@@ -2408,6 +2424,7 @@
 #if defined(AO_HAVE_double_compare_and_swap_read) \
     && !defined(AO_HAVE_double_load_read)
 # define AO_double_CAS_BASED_LOAD_READ
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_double_t
   AO_double_load_read(const volatile AO_double_t *addr)
   {
@@ -2438,6 +2455,7 @@
 
 #if defined(AO_HAVE_double_compare_and_swap_full) \
     && !defined(AO_HAVE_double_load_full)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_double_t
   AO_double_load_full(const volatile AO_double_t *addr)
   {
@@ -2455,6 +2473,7 @@
 
 #if defined(AO_HAVE_double_compare_and_swap_acquire) \
     && !defined(AO_HAVE_double_load_acquire)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_double_t
   AO_double_load_acquire(const volatile AO_double_t *addr)
   {
@@ -2471,6 +2490,7 @@
 #endif
 
 #if defined(AO_HAVE_double_compare_and_swap) && !defined(AO_HAVE_double_load)
+  AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE AO_double_t
   AO_double_load(const volatile AO_double_t *addr)
   {
@@ -2543,9 +2563,9 @@
 
 #if defined(AO_HAVE_double_compare_and_swap_write) \
     && !defined(AO_HAVE_double_store_write)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_double_store_write(volatile AO_double_t *addr, AO_double_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 
@@ -2573,9 +2593,9 @@
 #endif
 
 #if defined(AO_HAVE_double_compare_and_swap) && !defined(AO_HAVE_double_store)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_double_store(volatile AO_double_t *addr, AO_double_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 
@@ -2589,9 +2609,9 @@
 
 #if defined(AO_HAVE_double_compare_and_swap_release) \
     && !defined(AO_HAVE_double_store_release)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_double_store_release(volatile AO_double_t *addr, AO_double_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 
@@ -2605,9 +2625,9 @@
 
 #if defined(AO_HAVE_double_compare_and_swap_full) \
     && !defined(AO_HAVE_double_store_full)
+  AO_ATTR_NO_SANITIZE_MEMORY AO_ATTR_NO_SANITIZE_THREAD
   AO_INLINE void
   AO_double_store_full(volatile AO_double_t *addr, AO_double_t new_val)
-                                                AO_ATTR_NO_SANITIZE_MEMORY
   {
     AO_double_t old_val;
 

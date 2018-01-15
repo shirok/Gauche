@@ -7,7 +7,7 @@
   <td><a href="http://www.hboehm.info/gc/04tutorial.pdf">Tutorial Slides</a></td>
   <td><a href="http://www.hboehm.info/gc/faq.html">FAQ</a></td>
   <td><a href="simple_example.html">Example</a></td>
-  <td><a href="http://www.hboehm.info/gc/gc_source/">Download</a></td>
+  <td><a href="https://github.com/ivmai/bdwgc/wiki/Download">Download</a></td>
   <td><a href="http://www.hboehm.info/gc/license.txt">License</a></td>
   </tr>
 </tbody></table>
@@ -27,11 +27,10 @@
 before that at
 <tt>http://reality.sgi.com/boehm/gc.html</tt>
 and before that at
-<a href="ftp://ftp.parc.xerox.com/pub/gc/gc.html">
-<tt>ftp://ftp.parc.xerox.com/pub/gc/gc.html</tt></a>. ]
+<tt>ftp://ftp.parc.xerox.com/pub/gc/gc.html</tt>. ]
 <p>
-The <a href="http://www.hboehm.info">Boehm</a>-<a href="http://www.cs.cornell.edu/annual_report/00-01/bios.htm#demers">Demers</a>-<a href="http://www-sul.stanford.edu/weiser/">Weiser</a>
-conservative garbage collector can
+The <a href="http://www.hboehm.info">Boehm</a>-<a href="http://www.cs.cornell.edu/annual_report/00-01/bios.htm#demers">Demers</a>-<a href="http://www.ubiq.com/hypertext/weiser/weiser.html">Weiser</a>
+conservative Garbage Collector (<b>BDWGC</b>) can
 be used as a garbage collecting
 replacement for C <tt>malloc</tt> or C++ <tt>new</tt>.
 It allows you to allocate memory basically as you normally would,
@@ -52,23 +51,14 @@ Alternatively, the garbage collector may be used as
 a <a href="leak.html">leak detector</a>
 for C or C++ programs, though that is not its primary goal.
 </p><p>
-Typically several versions will be available.
-Usually you should first try to use
-<a href="http://www.hboehm.info/gc/gc_source/gc.tar.gz"><tt>gc_source/gc.tar.gz</tt></a>,
-which is normally an older, more stable version.
-</p><p>
-If that fails, try the latest explicitly numbered version
-in <a href="http://www.hboehm.info/gc/gc_source/">
-<tt>gc_source/</tt></a>.
-Later versions may contain additional features, platform support,
-or bug fixes, but are likely to be less well tested.
-</p><p>
-A slightly older version of the garbage collector is now also
-included as part of the
-<a href="http://gcc.gnu.org/">GNU compiler</a>
-distribution.  The source
-code for that version is available for browsing
-<a href="http://gcc.gnu.org/cgi-bin/cvsweb.cgi/gcc/boehm-gc/">here</a>.
+Typically several versions are offered for
+<a href="https://github.com/ivmai/bdwgc/wiki/Download">downloading</a>:
+preview, stable, legacy.
+Usually you should use the one marked as the <i>latest stable</i> release.
+Preview versions may contain additional features, platform support,
+but are likely to be less well tested.
+The list of changes for each version is specified on the
+<a href="https://github.com/ivmai/bdwgc/releases">releases</a> page.
 </p><p>
 The arguments for and against conservative garbage collection
 in C and C++ are briefly
@@ -110,8 +100,7 @@ HP/UX 11 pthreads, Tru64 pthreads, and MacOS X threads are supported
 in recent versions.
 </p><h3>Separately distributed ports</h3>
 For MacOS 9/Classic use, Patrick Beard's latest port is available from
-<a href="http://homepage.mac.com/pcbeard/gc/">
-<tt>http://homepage.mac.com/pcbeard/gc/</tt></a>.
+<tt>http://homepage.mac.com/pcbeard/gc/</tt>.
 (Unfortunately, that's now quite dated.
 I'm not in a position to test under MacOS.  Although I try to
 incorporate changes, it is impossible for
@@ -124,7 +113,7 @@ Precompiled versions of the collector for NetBSD are available
 versions of the collector.
 </p><h2><a name="multiprocessors">Scalable multiprocessor versions</a></h2>
 Kenjiro Taura, Toshio Endo, and Akinori Yonezawa have made available
-a <a href="http://web.yl.is.s.u-tokyo.ac.jp/gc/">parallel collector</a>
+a <a href="http://ieeexplore.ieee.org/abstract/document/1592629/">parallel collector</a>
 based on this one.  Their collector takes advantage of multiple processors
 during a collection.  Starting with collector version 6.0alpha1
 we also do this, though with more modest processor scalability goals.
@@ -265,7 +254,7 @@ Proceedings of the ACM SIGPLAN '96 Conference on Programming Language Design
 and Implementation.
 </p><p>
 Boehm, H., and D. Chase, <a href="http://www.hboehm.info/gc/papers/boecha.ps.gz">"A Proposal for Garbage-Collector-Safe C Compilation"</a>,
-<i>Journal of C  Language Translation 4</i>, 2 (Decemeber 1992), pp. 126-141.
+<i>Journal of C  Language Translation 4</i>, 2 (December 1992), pp. 126-141.
 </p><p>
 <b>Other related information: </b>
 </p><p>
@@ -275,7 +264,9 @@ using programs written for malloc/free.
 </p><p>
 Joel Bartlett's <a href="ftp://gatekeeper.dec.com/pub/compaq/WRL/research-reports/WRL-TN-12.ps">mostly copying conservative garbage collector for C++</a>.
 </p><p>
-John Ellis and David Detlef's <a href="ftp://ftp.parc.xerox.com/pub/ellis/gc/gc.ps">Safe Efficient Garbage Collection for C++</a> proposal.
+John Ellis and David Detlef's
+<a href="http://dl.acm.org/citation.cfm?id=1267983">Safe Efficient Garbage Collection for C++</a>
+proposal.
 </p><p>
 Henry Baker's <a href="http://home.pipeline.com/%7Ehbaker1/">paper collection</a>.
 </p><p>
@@ -283,7 +274,8 @@ Slides for Hans Boehm's <a href="http://www.hboehm.info/gc/myths.ps">Allocation 
 </p><h1><a name="users">Current users:</a></h1>
 Known current users of some variant of this collector include:
 <p>
-The runtime system for <a href="http://gcc.gnu.org/java">GCJ</a>,
+The runtime system for
+<a href="https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/">GCJ</a>,
 the static GNU java compiler.
 </p><p>
 <a href="http://w3m.sourceforge.net/">W3m</a>, a text-based web browser.
@@ -335,11 +327,11 @@ research in algebraic geometry and commutative algebra.
 The <a href="http://www.vestasys.org/">Vesta</a> configuration management
 system.
 </p><p>
-<a href="http://www.visual-prolog.com/vip6">Visual Prolog 6</a>.
+<a href="http://www.visual-prolog.com/">Visual Prolog 6</a>.
 </p><p>
 <a href="http://asymptote.sf.net/">Asymptote LaTeX-compatible
 vector graphics language.</a>
-</p><h1><a name="collector">More collector information at this site</a></h1>
+</p><h1><a name="collector">More information on the BDWGC primary site</a></h1>
 <a href="simple_example.html">A simple illustration of how to build and
 use the collector</a>.
 <p>
@@ -362,8 +354,12 @@ garbage collector.</a>
 </p><p>
 <a href="scale.html">Scalability of the collector to multiprocessors.</a>
 </p><p>
-<a href="http://www.hboehm.info/gc/gc_source/">Directory containing garbage collector source</a>.
-</p><h1><a name="background">More background information at this site</a></h1>
+<a href="http://www.hboehm.info/gc/gc_source/">Directory</a> containing
+the distribution files of all garbage collector releases.
+It duplicates
+<a href="https://github.com/ivmai/bdwgc/wiki/Download">Download</a> page on
+GitHub.
+</p><h1><a name="background">More background information</a></h1>
 <a href="http://www.hboehm.info/gc/bounds.html">An attempt to establish a bound on space usage of
 conservative garbage collectors</a>.
 <p>
@@ -398,37 +394,38 @@ Technical Report version</a>).
 <a href="http://www.hboehm.info/gc/gctalk.ps">Slides for OOPSLA 98 garbage collection talk</a>.
 </p><p>
 <a href="http://www.hboehm.info/gc/papers/">Related papers</a>.
-</p><h1><a name="contacts">Contacts and Mailing List</a></h1>
-<a>We have recently set up two mailing list for collector announcements
-and discussions:
-</a><ul>
-<li><a href="mailto:bdwgc-announce@lists.opendylan.org">bdwgc-announce@lists.opendylan.org</a>
-is used for announcements of new versions.  Postings are restricted.
-We expect this to always remain a very low volume list.
-</li><li><a href="mailto:bdwgc@lists.opendylan.org">bdwgc@lists.opendylan.org</a>
-is used for discussions, bug reports, and the like.  Subscribers may post.
-On-topic posts by nonsubscribers will usually also be accepted, but
-it may take some time to review them.
-</li></ul>
-To subscribe to these lists, please visit
-<a href="https://lists.opendylan.org/mailman/listinfo/bdwgc-announce">lists.opendylan.org/mailman/listinfo/bdwgc-announce</a>
-and
-<a href="https://lists.opendylan.org/mailman/listinfo/bdwgc">lists.opendylan.org/mailman/listinfo/bdwgc</a>,
-respectively.
+</p><h1><a name="contacts">Contacts and new release announcements</a></h1>
+GitHub and Stack Overflow are the major two places for communication.
 <p>
-The archives for these lists appear
-<a href="https://lists.opendylan.org/pipermail/bdwgc-announce/">here</a> and
-<a href="https://lists.opendylan.org/pipermail/bdwgc/">here</a>,
-respectively.
+Technical questions (how to, how does it work, etc.) should be posted to
+<a href="https://stackoverflow.com/questions/tagged/boehm-gc">Stack Overflow</a>
+with "boehm-gc" tag.
+</p><p>
+To contribute, please rebase your code to the latest
+<a href="https://github.com/ivmai/bdwgc/tree/master/">master</a> and submit
+a <a href="https://github.com/ivmai/bdwgc/pulls">pull request</a> to GitHub.
+</p><p>
+To report a bug, or propose (request) a new feature, create
+a <a href="https://github.com/ivmai/bdwgc/issues">GitHub issue</a>.
+Please make sure it has not been reported yet by someone else.
+</p><p>
+To receive notifications on every release, please subscribe to
+<a href="https://github.com/ivmai/bdwgc/releases.atom">Releases RSS feed</a>.
+Notifications on all issues and pull requests are available by
+<a href="https://github.com/ivmai/bdwgc/watchers">watching</a> the project.
+</p><p>
+Mailing lists (bdwgc-announce@lists.opendylan.org, bdwgc@lists.opendylan.org,
+and the former gc-announce@linux.hpl.hp.com and gc@linux.hpl.hp.com) are not
+used at this moment.  Their content is available in
+<a href="https://github.com/ivmai/bdwgc/files/1037650/bdwgc-announce-mailing-list-archive-2014_02.tar.gz">bdwgc-announce</a>
+and
+<a href="https://github.com/ivmai/bdwgc/files/1038163/bdwgc-mailing-list-archive-2017_04.tar.gz">bdwgc</a>
+archive files, respectively.
 The gc list archive may also be read at
-<a href="http://dir.gmane.org/gmane.comp.programming.garbage-collection.boehmgc">gmane.org</a>.
+<a href="http://bdwgc.opendylan.narkive.com">Narkive</a>.
 </p><p>
 Some prior discussion of the collector has taken place on the gcc
 java mailing list, whose archives appear
 <a href="http://gcc.gnu.org/ml/java/">here</a>, and also on
 <a href="http://lists.tunes.org/mailman/listinfo/gclist">gclist@iecc.com</a>.
-</p><p>
-Comments and bug reports may also be sent to
-(<a href="mailto:boehm@acm.org">boehm@acm.org</a>), but the gc
-mailing list is usually preferred.
 </p></body></html>

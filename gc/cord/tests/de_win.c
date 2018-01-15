@@ -47,6 +47,9 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    HANDLE      hAccel;
 
    GC_INIT();
+#  if defined(CPPCHECK)
+     GC_noop1((GC_word)&WinMain);
+#  endif
 
    if (!hPrevInstance)
    {
@@ -62,11 +65,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
       wndclass.lpszClassName  = szAppName;
 
       if (RegisterClass (&wndclass) == 0) {
-          char buf[50];
-
-          sprintf(buf, "RegisterClass: error code: 0x%X",
-                  (unsigned)GetLastError());
-          de_error(buf);
+          de_error("RegisterClass error");
           return(0);
       }
    }
@@ -99,11 +98,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                         NULL,   /* Window class menu */
                         hInstance, NULL);
    if (hwnd == NULL) {
-        char buf[50];
-
-        sprintf(buf, "CreateWindow: error code: 0x%X",
-                (unsigned)GetLastError());
-        de_error(buf);
+        de_error("CreateWindow error");
         return(0);
    }
 
@@ -119,7 +114,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
          DispatchMessage (&msg);
       }
    }
-   return msg.wParam;
+   return (int)msg.wParam;
 }
 
 /* Return the argument with all control characters replaced by blanks.  */
@@ -164,7 +159,7 @@ int char_height;
 
 void get_line_rect(int line, int win_width, RECT * rectp)
 {
-    rectp -> top = line * char_height;
+    rectp -> top = line * (LONG)char_height;
     rectp -> bottom = rectp->top + char_height;
     rectp -> left = 0;
     rectp -> right = win_width;

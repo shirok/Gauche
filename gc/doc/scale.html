@@ -64,7 +64,7 @@ locking.  The thread-local free lists are refilled using
 <TT>GC_malloc_many</tt>.
 <P>
 An important side effect of this flag is to replace the default
-spin-then-sleep lock to be replace by a spin-then-queue based implementation.
+spin-then-sleep lock to be replaced by a spin-then-queue based implementation.
 This <I>reduces performance</i> for the standard allocation functions,
 though it usually improves performance when thread-local allocation is
 used heavily, and thus the number of short-duration lock acquisitions
@@ -134,7 +134,7 @@ Running with a thread-unsafe collector,  the benchmark ran in 9
 seconds.  With the simple thread-safe collector,
 built with <TT>-DLINUX_THREADS</tt>, the execution time
 increased to 10.3 seconds, or 23.5 elapsed seconds with two clients.
-(The times for the <TT>malloc</tt>/i<TT>free</tt> version
+(The times for the <TT>malloc</tt>/<TT>free</tt> version
 with glibc <TT>malloc</tt>
 are 10.51 (standard library, pthreads not linked),
 20.90 (one thread, pthreads linked),
@@ -156,7 +156,7 @@ avoided in time-critical code.
 directly for allocation locking would have been worse still, at
 least for older versions of linuxthreads.
 With THREAD_LOCAL_ALLOC, we first repeatedly try to acquire the
-lock with pthread_mutex_try_lock(), busy_waiting between attempts.
+lock with pthread_mutex_try_lock(), busy-waiting between attempts.
 After a fixed number of attempts, we use pthread_mutex_lock().)
 <P>
 These measurements do not use incremental collection, nor was prefetching

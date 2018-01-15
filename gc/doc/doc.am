@@ -11,8 +11,8 @@
 ## Process this file with automake to produce Makefile.in.
 
 # installed documentation
-#
-dist_pkgdata_DATA = \
+if ENABLE_DOCS
+dist_doc_DATA = \
         AUTHORS \
         README.md \
         doc/README.DGUX386 \
@@ -47,3 +47,4 @@ dist_pkgdata_DATA = \
         doc/scale.html \
         doc/simple_example.html \
         doc/tree.html
+endif
