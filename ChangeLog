@@ -1,3 +1,8 @@
+2018-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* gc: Bumped GC version to 7.6.2.  Patch from @qykth-git
+	  https://github.com/shirok/Gauche/pull/337
+
 2018-01-13  shiro  <shiro@acm.org>
 
 	* src/macro.c: Renaming identifiers in template only at the
