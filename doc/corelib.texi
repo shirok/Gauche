@@ -16134,41 +16134,37 @@ sets @var{handler} to the current exception handler and calls
 @var{handler}は1引数を取る手続きです。この手続きは、@var{handler}を
 現在の例外ハンドラにセットし、@var{thunk}を呼び出します。
 @c COMMON
-
-@c EN
-When an exception is raised in @var{thunk}, @var{handler} is invoked.
-@var{handler} is evaluated in the dynamic environment of the call to
-@var{handler}, except that the current exception handler is that in
-place for the call to @code{with-exception-handler}.
-@c JP
-@var{thunk}内で例外が発生すると、@var{handler}が呼び出されます。
-@var{handler}は、@var{handler}呼び出し時の動的環境で評価されます。
-ただし、@var{handler}内における例外ハンドラは、
-@code{with-exception-handler}呼び出し時の例外ハンドラになります。
-@c COMMON
-
-@c EN
-If the exception is not continuable, it is reraised after evaluating
-@var{handler} and handled by the exception handler in place for the
-call to @code{with-exception-handler}.
-If the exception is continuable, @var{handler} returns to the caller of
-@var{handler} and processing is continued.
-@c JP
-例外が継続不可能な場合、@var{handler}の評価後にさらに例外が発生し、それは
-@code{with-exception-handler}呼び出し時の例外ハンドラで処理されます。
-例外が継続可能な場合は、@var{handler}の呼び出し元に戻って処理を継続します。
-@c COMMON
-
-@c EN
-(Until Gauche 0.9.5, the exception handler in @var{handler} was
-@var{handler} itself. So if you raised an exception inside @var{handler},
-it was captured by @var{handler} again.)
-@c JP
-(Gauche 0.9.5 までは、@var{handler}内における例外ハンドラは、
-@var{handler}自身でした。したがって、@var{handler}内部で例外を発生させると、
-再度@var{handler}によって捕捉されていました。)
-@c COMMON
 @end defun
+
+@c EN
+Generally, if you want to handle non-continuable exception such as
+errors using this low-level mechanism,
+you have to transfer the control from the handler explicitly
+(See the explanation of @code{with-error-handler} above).
+@code{raise} detects if the handler returns on the
+non-continuable exceptions and reports an error using the
+default error handler mechanism, but it is just a safety net.
+@c JP
+一般的に、エラーのような継続不可能な例外をこの低レベルなメカニズムで
+扱いたい場合は、明示的にそのハンドラから制御を移さなければなりません
+(前述の@code{with-error-handler}の説明を参照して下さい)。
+@code{raise}は、ハンドラが継続不可能な例外を返したことを検知し、
+デフォルトのエラーハンドラメカニズムを使ってエラーを報告しますが、
+それは単に安全ネットにしか過ぎません。
+@c COMMON
+
+@c EN
+Note also that @var{handler} is called in the same dynamic environment
+of @code{raise}.  So if you raise an exception inside @var{handler},
+it is captured by @var{handler} again.   It is the programmer's
+responsibility to propagate the exception handling to the ``outer''
+exception handlers.
+@c JP
+@var{handler}は@code{raise}の動的な環境と同じ環境で呼ばれることにも
+注意して下さい。したがって、@var{handler}内部で例外を発生させると、
+再度@var{handler}によって捕捉されます。その例外処理を``外側''の例外
+ハンドラへ伝播させるのはプログラマの責任です。
+@c COMMON
 
 @c EN
 The behavior of those procedures can be explained in
