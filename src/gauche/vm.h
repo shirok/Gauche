@@ -288,6 +288,9 @@ typedef struct ScmEscapePointRec {
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
+    int guardReraised;          /* EXPERIMENTAL: if guard reraised exception,
+                                   this flag is set to TRUE and the exception
+                                   handler returns to the guard's body. */
 } ScmEscapePoint;
 
 /* Link management */
@@ -550,7 +553,7 @@ SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);
 SCM_EXTERN int    Scm_AttachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_DetachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
-SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj exc);
+SCM_EXTERN ScmObj Scm_VMDefaultExceptionHandler(ScmObj exc);
 /* TRANSIENT: Scm_VMThrowException2 is to keep ABI compatibility.  Will be
    gone in 1.0 */
 #if    GAUCHE_API_0_95

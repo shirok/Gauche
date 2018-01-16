@@ -483,6 +483,65 @@
               (lambda () (push! x 'h)))))
           (reverse x))))
 
+(prim-test "nesting exception/guard handlers 1"
+      "[d01][d02][d04][w01]1[d01][d03][d04]"
+      (lambda ()
+        (with-output-to-string
+          (lambda()
+           (with-exception-handler
+             (lambda (e) (display "[w01]") (display e))
+             (lambda ()
+               (guard (exc)
+                 (dynamic-wind
+                  (lambda () (display "[d01]"))
+                  (lambda ()
+                    (display "[d02]")
+                    (raise 1)
+                    (display "[d03]"))
+                  (lambda () (display "[d04]"))))))))))
+
+(prim-test "nesting exception/guard handlers 2"
+      "[d01][d02][d05][w01]1[d01][d03][w01]2[d04][d05]"
+      (lambda ()
+        (with-output-to-string
+          (lambda()
+            (with-exception-handler
+              (lambda (e) (display "[w01]") (display e))
+              (lambda ()
+                (guard (exc)
+                  (dynamic-wind
+                   (lambda () (display "[d01]"))
+                   (lambda ()
+                     (display "[d02]")
+                     (raise 1)
+                     (display "[d03]")
+                     (raise 2)
+                     (display "[d04]"))
+                   (lambda () (display "[d05]"))))))))))
+
+(prim-test "nesting exception/guard handlers 3"
+      "[d01][d02][d11][d12][d14][d04][w01]1[d01][d11][d13][d14][d03][d04]"
+      (lambda ()
+        (with-output-to-string
+          (lambda()
+            (with-exception-handler
+              (lambda (e) (display "[w01]") (display e))
+              (lambda ()
+                (guard (exc)
+                  (dynamic-wind
+                   (lambda () (display "[d01]"))
+                   (lambda ()
+                     (display "[d02]")
+                     (dynamic-wind
+                      (lambda () (display "[d11]"))
+                      (lambda ()
+                        (display "[d12]")
+                        (raise 1)
+                        (display "[d13]"))
+                      (lambda () (display "[d14]")))
+                     (display "[d03]"))
+                   (lambda () (display "[d04]"))))))))))
+
 ;;----------------------------------------------------------------
 (test-section "interaction with empty environment frame")
 

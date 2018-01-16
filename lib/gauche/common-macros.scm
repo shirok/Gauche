@@ -60,7 +60,7 @@
                       f 'original #f)])
        (if original
          (raise (make-compound-condition
-                 (make-error (car args) (cdr args))
+                 (apply make-error (car args) (cdr args))
                  (make <compile-error-mixin> :expr original)))
          (apply error args))))))
 
@@ -532,7 +532,7 @@
 (define-syntax %guard-rec
   (syntax-rules (else =>)
     [(%guard-rec var exc)
-     (raise exc)]
+     (%guard-reraise exc)]
     [(%guard-rec var exc (else . exprs))
      (begin . exprs)]
     [(%guard-rec var exc (test => proc) . more)
