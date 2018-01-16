@@ -2077,6 +2077,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
                 vm->handlers = SCM_CDR(SCM_CAR(p));
                 Scm_ApplyRec(proc, SCM_NIL);
             }
+            vm->handlers = vmhandlers;
             return result;
         }
 
