@@ -2074,10 +2074,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             ScmObj p;
             SCM_FOR_EACH(p, hrev) {
                 ScmObj proc = SCM_CAAR(SCM_CAR(p));
-                vm->handlers = SCM_CDR(SCM_CAR(p));
                 Scm_ApplyRec(proc, SCM_NIL);
             }
-            vm->handlers = vmhandlers;
             return result;
         }
 

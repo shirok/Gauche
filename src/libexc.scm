@@ -56,7 +56,6 @@
     (result (Scm_VMWithErrorHandler handler thunk))))
 
 ;; guard reraise
-(select-module gauche)
 (define-cproc %guard-reraise (exception)
   Scm_VMGuardReraise)
 
