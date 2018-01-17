@@ -267,33 +267,19 @@ static ScmObj identifier_module_get(ScmObj obj)
     return SCM_OBJ(SCM_IDENTIFIER(obj)->module);
 }
 
-static void   identifier_module_set(ScmObj obj, ScmObj val)
-{
-    if (!SCM_MODULEP(val)) {
-        Scm_Error("module required, but got %S", val);
-    }
-    SCM_IDENTIFIER(obj)->module = SCM_MODULE(val);
-}
-
 static ScmObj identifier_env_get(ScmObj obj)
 {
     return Scm_IdentifierEnv(SCM_IDENTIFIER(obj));
 }
 
-static void   identifier_env_set(ScmObj obj, ScmObj val)
-{
-    /* NB: Should we have this? I feel this slot must be read-only.
-       But just for now... */
-    if (!SCM_LISTP(val)) {
-        Scm_Error("list required, but got %S", val);
-    }
-    SCM_IDENTIFIER(obj)->frames = Scm_Cons(SCM_TRUE, val); /* trust the caller */
-}
-
+/* Identifier name can be mutated during macro expansion to avoid
+   conflicts on macro-inserted toplevel identifiers.  See
+   %rename-toplevel-identifier! in compiler pass1.
+   Other than that, identifiers must be treated as immutable objects. */
 static ScmClassStaticSlotSpec identifier_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", identifier_name_get, identifier_name_set),
-    SCM_CLASS_SLOT_SPEC("module", identifier_module_get, identifier_module_set),
-    SCM_CLASS_SLOT_SPEC("env", identifier_env_get, identifier_env_set),
+    SCM_CLASS_SLOT_SPEC("module", identifier_module_get, NULL),
+    SCM_CLASS_SLOT_SPEC("env", identifier_env_get, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
