@@ -53,7 +53,7 @@
      ($ format #t "~a\n" $ regexp-replace-all* line
         #/\.\.\/ssl\// srcpath-replace
         #/openssl /    kicker-replace
-        #/system/      "safe_system")))
+        #/system\s*\(/      "safe_system(")))
 
   (p "#include <errno.h>"
      "int safe_system(const char *commands)"
