@@ -2076,6 +2076,15 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
                 ScmObj proc = SCM_CAAR(SCM_CAR(p));
                 Scm_ApplyRec(proc, SCM_NIL);
             }
+
+            /* reraise and return */
+            vm->exceptionHandler = ep->xhandler;
+            vm->escapePoint = ep->prev;
+            SCM_VM_FLOATING_EP_SET(vm, ep);
+            result = Scm_VMThrowException2(vm, e, 0);
+            vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
+            vm->escapePoint = ep;
+            SCM_VM_FLOATING_EP_SET(vm, ep->floating);
             return result;
         }
 
@@ -2269,10 +2278,9 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
 
 ScmObj Scm_VMGuardReraise(ScmObj condition)
 {
-    ScmVM *vm = theVM;
-    ScmEscapePoint *ep = SCM_VM_FLOATING_EP(vm);
+    ScmEscapePoint *ep = SCM_VM_FLOATING_EP(theVM);
     if (ep) ep->guardReraised = TRUE;
-    return Scm_VMThrowException2(vm, condition, 0);
+    return SCM_UNDEFINED;
 }
 
 /*

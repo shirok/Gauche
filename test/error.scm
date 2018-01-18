@@ -484,7 +484,7 @@
           (reverse x))))
 
 (prim-test "nesting exception/guard handlers 1"
-      "[d01][d02][d04][w01]1[d01][d03][d04]"
+      "[d01][d02][d04][d01][w01]1[d03][d04]"
       (lambda ()
         (with-output-to-string
           (lambda()
@@ -501,7 +501,7 @@
                   (lambda () (display "[d04]"))))))))))
 
 (prim-test "nesting exception/guard handlers 2"
-      "[d01][d02][d05][w01]1[d01][d03][d05][w01]2[d01][d04][d05]"
+      "[d01][d02][d05][d01][w01]1[d03][d05][d01][w01]2[d04][d05]"
       (lambda ()
         (with-output-to-string
           (lambda()
@@ -520,7 +520,7 @@
                   (lambda () (display "[d05]"))))))))))
 
 (prim-test "nesting exception/guard handlers 3"
-      "[d01][d02][d11][d12][d14][d04][w01]1[d01][d11][d13][d14][d03][d04]"
+      "[d01][d02][d11][d12][d14][d04][d01][d11][w01]1[d13][d14][d03][d04]"
       (lambda ()
         (with-output-to-string
           (lambda()
