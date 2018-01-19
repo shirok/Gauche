@@ -271,7 +271,8 @@
             (foo (lambda () (error "boo")))
             (push! aaa 'e))
            aaa))
-  (test* "unwind-protect (raise)" '(boo d b a)
+;  (test* "unwind-protect (raise)" '(boo d b a)
+  (test* "unwind-protect (raise)" '(boo d a d b a)
          (guard (e (else (push! aaa e) aaa))
            (set! aaa '())
            (unwind-protect
@@ -279,7 +280,7 @@
             (push! aaa 'e))
            aaa))
 ;  (test* "unwind-protect (raise & continue)" '(e d c boo b a)
-  (test* "unwind-protect (raise-2)" '(boo d b a)
+  (test* "unwind-protect (raise & continue)" '(e d c boo a d b a)
          (begin
            (set! aaa '())
            (with-exception-handler

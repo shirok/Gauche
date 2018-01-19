@@ -2053,10 +2053,10 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         }
         SCM_END_PROTECT;
 
-        /* If guard reraised exception, the exception handler must return
-           to the guard's body. */
-        if (ep->guardReraised) {
-            ep->guardReraised = FALSE;
+        /* If exception is reraised, the exception handler can return
+           to the caller. */
+        if (ep->reraised) {
+            ep->reraised = FALSE;
 
             /* recover escape point */
             vm->escapePoint = ep;
@@ -2256,7 +2256,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
-    ep->guardReraised = FALSE;
+    ep->reraised = FALSE;
 
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
@@ -2276,10 +2276,10 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
     return with_error_handler(theVM, handler, thunk, TRUE);
 }
 
-ScmObj Scm_VMGuardReraise(ScmObj condition)
+ScmObj Scm_VMReraise(ScmObj condition)
 {
     ScmEscapePoint *ep = SCM_VM_FLOATING_EP(theVM);
-    if (ep) ep->guardReraised = TRUE;
+    if (ep) ep->reraised = TRUE;
     return SCM_UNDEFINED;
 }
 

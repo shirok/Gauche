@@ -288,9 +288,9 @@ typedef struct ScmEscapePointRec {
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
-    int guardReraised;          /* EXPERIMENTAL: if guard reraised exception,
+    int reraised;               /* EXPERIMENTAL: if exception is reraised,
                                    this flag is set to TRUE and the exception
-                                   handler returns to the guard's body. */
+                                   handler can return to the caller. */
 } ScmEscapePoint;
 
 /* Link management */
