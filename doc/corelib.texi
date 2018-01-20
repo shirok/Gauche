@@ -15208,7 +15208,7 @@ SRFI-35 で定義されていますが、これはちょっと冗長です。Gau
              (format #t "read error!")
              'read-error]
             [else 'other-error])
-  (read-from-string "(abc")))
+  (read-from-string "(abc"))
 @end example
 
 @c EN
@@ -15984,6 +15984,7 @@ installed, the following action is taken.
 @c COMMON
 
 @enumerate
+@c EN
 If an unhandled exception occurs within a thread other than the primordial
 one, it terminates the thread, and the thrown condition 
 is wrapped by @code{<uncaught-exception>} condition and stored in the
