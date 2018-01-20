@@ -99,4 +99,4 @@ install-check:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install-check); done
 
 list-objects:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) list-objects); done
+	@for d in $(SUBDIRS); do (cd $$d; $(MAKE) list-objects); done

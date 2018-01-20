@@ -403,7 +403,7 @@ $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT) staticinit_gdbm.$(OBJEXT)
             `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
             `if [ X$(libatomic_ops_pic_LIBRARY) != X ]; then echo $(libatomic_ops_pic_OBJECTS); fi` \
             staticinit.$(OBJEXT) staticinit_gdbm.$(OBJEXT) \
-            `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
+            `"$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 
 staticinit.c staticinit_gdbm.c : all gen-staticinit.scm
 	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
