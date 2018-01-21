@@ -123,7 +123,7 @@
 (define-method describe ((n <integer>))
   (describe-common n)
   (when (exact? n)
-    (format #t "  (#x~x" n)
+    (format #t "  (#x~,,'_,8:x" n)
     (when (<= 1000 n #e1e26) ; 10^26 is approx to 2^89
       (let loop ([nn n] [unit '(_ Ki Mi Gi Ti Pi Ei Zi Yi)])
         (cond [(null? unit)]
