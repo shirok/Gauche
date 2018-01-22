@@ -79,5 +79,6 @@
 ;; newline) and the complete sexp.
 (define (%input-complete? s)
   (and (not (equal? s ""))
-       (or (#/^\s*,/ s)
-           (complete-sexp? s))))
+       (if-let1 m (#/^\s*,(.*)/ s)
+         (not (#/^\s*$/ (m 1)))
+         (complete-sexp? s))))
