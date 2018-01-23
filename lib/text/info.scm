@@ -80,7 +80,7 @@
            (with-input-from-process #"~bzip2 -c -d ~|file|.bz2" thunk)]
           [else (error "can't find info file" file)]))
   (with-input-from-info
-   (lambda ()
+   (^[]
      (let loop ([c (skip-while (char-set-complement #[\u001f]))]
                 [r '()])
        (if (eof-object? c)
@@ -143,8 +143,8 @@
     [#/File: [^,]+,  Node: ([^,]+)(,  Next: ([^,]+))?,  Prev: ([^,]+),  Up: ([^,]+)/
      (#f node #f next prev up)
      (rlet1 info-node (make <info-node>
-                       :name node :next next :prev prev :up up :file info
-                       :content (cdr part))
+                        :name node :next next :prev prev :up up :file info
+                        :content (cdr part))
        (hash-table-put! (~ info 'node-table) node info-node))]
     [else #f]))
 
