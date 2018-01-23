@@ -680,6 +680,10 @@
 (test* "format ~w" "(#0=(1) #0#)"
        (format "~w" (let1 x '(1) (list x x))))
 
+(test* "format ~c" "|a|" (format "|~c|" #\a))
+(test* "format ~c" "|#\\a|" (format "|~@c|" #\a))
+(test* "format ~c" (test-error) (format "|~c|" 1))
+
 (test* "format ~d" "12345"       (format "~d" 12345))
 (test* "format ~d" "-12345"      (format "~d" -12345))
 (test* "format ~d" "+12345"      (format "~@d" 12345))

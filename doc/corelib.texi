@@ -19998,6 +19998,21 @@ S式出力。対応する引数が@code{write}を使ってフォーマットさ�
 @c COMMON
 @end example
 
+@item @b{~C}
+@c EN
+Parameters: None
+
+Character output.  The argument must be a character, or an error is
+signaled.  If no flags are given, the character is printed with @code{display}.
+If atmark-flag is given, the character is printed with @code{write}.
+@c JP
+パラメータ: なし
+
+文字出力。対応する引数は文字でなければなりません(そうでなければエラーが報告されます)。
+フラグが無ければ文字は@code{display}で表示されます。
+アトマークフラグが与えられた場合は@code{write}で表示されます。
+@c COMMON
+
 @item @b{~D}
 @c EN
 Parameters: @var{mincol},@var{padchar},@var{commachar},@var{interval}

@@ -45,6 +45,7 @@
 ;; Directive = String
 ;;         | (S flags mincol colinc minpad padchar maxcol)
 ;;         | (A flags mincol colinc minpad padchar maxcol)
+;;         | (C flags)
 ;;         | (W flags)
 ;;         | (D flags mincol padchar commachar interval)
 ;;         | (B flags mincol padchar commachar interval)
@@ -63,9 +64,9 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAwWdDbBoOxXrR*fF" c))
+    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*fF" c))
     (define directive-param-spec ; (type max-#-of-params)
-      '((S 5) (A 5) (W 0)
+      '((S 5) (A 5) (W 0) (C 0)
         (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5)))
     (define (flag? c) (memv c '(#\@ #\:)))
     (define (next p)
@@ -175,6 +176,7 @@
 ;;      | (Seq Tree ...)
 ;;      | (S flags mincol colinc minpad padchar maxcol)
 ;;      | (A flags mincol colinc minpad padchar maxcol)
+;;      | (C flags)
 ;;      | (W flags)
 ;;      | (D flags mincol padchar commachar interval)
 ;;      | (B flags mincol padchar commachar interval)
@@ -373,6 +375,17 @@
            (display " ..." port))
     (display (substring str 0 limit) port)))
 
+;; ~C
+;; The "spelling out" mode (~:C) isn't supported yet.
+(define (make-format-char fmtstr flags)
+  (define (char-formatter writer)
+    (^[argptr port ctrl]
+      (let1 c (fr-next-arg! fmtstr argptr)
+        (unless (char? c) 
+          (error "Character required for ~c format directive, but got:" c))
+        (writer c port))))
+  (char-formatter (if (has-@? flags) write display)))
+
 ;; ~D, ~B, ~O, ~X, ~nR
 (define (make-format-num fmtstr params flags radix upcase)
   (if (and (null? params) (no-flag? flags))
@@ -478,6 +491,7 @@
                       $ map (cut formatter-compile-rec src <>) rest)]
     [('S fs . ps) (make-format-expr src ps fs write)]
     [('A fs . ps) (make-format-expr src ps fs display)]
+    [('C fs . ps) (make-format-char src fs)]
     [('W fs . ps) (make-format-expr src ps fs write-shared)]
     [('D fs . ps) (make-format-num src ps fs 10 #f)]
     [('B fs . ps) (make-format-num src ps fs 2 #f)]
