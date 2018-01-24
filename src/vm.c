@@ -1988,7 +1988,7 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
  *  what with-error-handler installs as an exception handler.
  */
 
-void Scm_VMDefaultExceptionHandler(ScmObj e)
+ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 {
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = vm->escapePoint;
@@ -1996,6 +1996,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
     if (ep) {
         /* There's an escape point defined by with-error-handler. */
         ScmObj target, current;
+        ScmObj vmhandlers = vm->handlers;
         ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
         int numVals = 0;
 
@@ -2051,6 +2052,41 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
             SCM_NEXT_HANDLER;
         }
         SCM_END_PROTECT;
+
+        /* If exception is reraised, the exception handler can return
+           to the caller. */
+        if (ep->reraised) {
+            ep->reraised = FALSE;
+
+            /* recover escape point */
+            vm->escapePoint = ep;
+            SCM_VM_FLOATING_EP_SET(vm, ep->floating);
+            vm->handlers = vmhandlers;
+
+            /* reenter dynamic-winds */
+            target = ep->handlers;
+            current = vm->handlers;
+            ScmObj hrev = SCM_NIL;
+            for (ScmObj hp=current; SCM_PAIRP(hp) && (hp!=target);
+                 hp=SCM_CDR(hp)) {
+                hrev = Scm_Cons(hp, hrev);
+            }
+            ScmObj p;
+            SCM_FOR_EACH(p, hrev) {
+                ScmObj proc = SCM_CAAR(SCM_CAR(p));
+                Scm_ApplyRec(proc, SCM_NIL);
+            }
+
+            /* reraise and return */
+            vm->exceptionHandler = ep->xhandler;
+            vm->escapePoint = ep->prev;
+            SCM_VM_FLOATING_EP_SET(vm, ep);
+            result = Scm_VMThrowException2(vm, e, 0);
+            vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
+            vm->escapePoint = ep;
+            SCM_VM_FLOATING_EP_SET(vm, ep->floating);
+            return result;
+        }
 
         /* Install the continuation */
         for (int i=0; i<numVals; i++) vm->vals[i] = rvals[i];
@@ -2125,8 +2161,7 @@ static ScmObj default_exception_handler_body(ScmObj *argv,
                                              int argc, void *data)
 {
     SCM_ASSERT(argc == 1);
-    Scm_VMDefaultExceptionHandler(argv[0]);
-    return SCM_UNDEFINED;       /*NOTREACHED*/
+    return Scm_VMDefaultExceptionHandler(argv[0]);
 }
 
 static SCM_DEFINE_STRING_CONST(default_exception_handler_name,
@@ -2172,19 +2207,8 @@ ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exception, u_long raise_flags)
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
         return vm->val0;
-    } else if (!SCM_SERIOUS_CONDITION_P(exception)) {
-        /* The system's default handler does't care about
-           continuable exception.  See if there's a user-defined
-           exception handler in the chain.  */
-        for (; ep; ep = ep->prev) {
-            if (ep->xhandler != DEFAULT_EXCEPTION_HANDLER) {
-                return Scm_ApplyRec(ep->xhandler, SCM_LIST1(exception));
-            }
-        }
     }
-    Scm_VMDefaultExceptionHandler(exception);
-    /* this never returns */
-    return SCM_UNDEFINED;       /* dummy */
+    return Scm_VMDefaultExceptionHandler(exception);
 }
 
 /*
@@ -2232,6 +2256,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
+    ep->reraised = FALSE;
 
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
@@ -2251,6 +2276,12 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
     return with_error_handler(theVM, handler, thunk, TRUE);
 }
 
+ScmObj Scm_VMReraise(ScmObj condition)
+{
+    ScmEscapePoint *ep = SCM_VM_FLOATING_EP(theVM);
+    if (ep) ep->reraised = TRUE;
+    return SCM_UNDEFINED;
+}
 
 /*
  * with-exception-handler

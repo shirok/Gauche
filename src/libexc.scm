@@ -55,6 +55,8 @@
     (result (Scm_VMWithGuardHandler handler thunk))
     (result (Scm_VMWithErrorHandler handler thunk))))
 
+(define-cproc %reraise (exception) Scm_VMReraise)
+
 (define-cproc report-error (exception :optional port)
   ;; TRANSIENT: change this to Scm_ReportError when switching API to 0.95.
   Scm_ReportError2)
