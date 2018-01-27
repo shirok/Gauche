@@ -231,11 +231,18 @@ static ScmObj macro_autoload(ScmObj *argv, int argc, void *data)
     return Scm_CallMacroExpander(mac, form, env);
 }
 
+#define AUTOLOAD_MACRO_SUFFIX " (autoload)"
+
 ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 {
     ScmObj transformer = Scm_MakeSubr(macro_autoload, adata,
                                       2, 0, SCM_FALSE);
-    return Scm_MakeMacroFull(SCM_OBJ(name), transformer, SCM_FALSE, SCM_FALSE);
+    ScmObj name1 = Scm_StringAppendC(SCM_SYMBOL_NAME(name),
+                                     AUTOLOAD_MACRO_SUFFIX,
+                                     sizeof(AUTOLOAD_MACRO_SUFFIX)-1,
+                                     sizeof(AUTOLOAD_MACRO_SUFFIX)-1);
+    return Scm_MakeMacroFull(Scm_MakeSymbol(SCM_STRING(name1), FALSE),
+                             transformer, SCM_FALSE, SCM_FALSE);
 }
 
 /*===================================================================
