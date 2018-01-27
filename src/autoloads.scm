@@ -96,7 +96,7 @@
 (autoload "gauche/logical"
           logtest logbit? copy-bit bit-field copy-bit-field)
 
-(autoload "gauche/common-macros"
+(autoload gauche.common-macros
           (:macro syntax-error syntax-errorf)
           (:macro push! pop! inc! dec! update!)
           (:macro check-arg get-optional get-keyword*)

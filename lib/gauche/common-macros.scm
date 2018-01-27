@@ -38,7 +38,22 @@
 ;; on other autoloaded files, since it is easy to create circular
 ;; dependency.
 
-(select-module gauche)
+(define-module gauche.common-macros
+  (export syntax-error syntax-errorf
+          push! pop! inc! dec! update!
+          check-arg get-optional get-keyword*
+          ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n ^o ^p ^q
+          ^r ^s ^t ^u ^v ^w ^x ^y ^z $
+          let1 if-let1 and-let1 rlet1
+          let/cc begin0 fluid-let
+          let-values let*-values
+          values-ref values->list
+          ecase
+          dotimes doilst doplist while until
+          guard unwind-protect
+          cond-list
+          assume assume-type))
+(select-module gauche.common-macros)
 
 ;;; syntax-error msg arg ...
 ;;; syntax-errorf fmtstr arg ...
@@ -331,10 +346,17 @@
 ;;  ($ f a b $* g c d $*) => (lambda args (apply f a b (apply g c d args)))
 ;;  ($ f a b $ g c d $*) => (lambda args (f a b (apply g c d args)))
 
-(define-syntax $
+;; Kludge: We already have binding of '$' in gauche module, created for
+;; autoload.  Using (define-syntax $ ...) here makes a separate binding in
+;; gauche.common-macros, and that makes the literal comparison of '$'
+;; fail, since '$' in here refers to gauche.common-macros#$, while
+;; the macro use environment will refer to gauche#$.  We use very ugly
+;; hack here to workaround the issue; needs fundamental fix later.
+(define-syntax %$
   (syntax-rules ()
     [($ x . xs) (%$-split (x . xs) () ())]
     [($) (syntax-error "invalid $ form" ($))]))
+(set! $ %$) ; DON'T DO THIS.  Only works in the current version.
 
 ;; ($ a b $ c d $*) => ($* (c d) $ (a b))
 ;; ($ a b $ c d $* e f) => ((e f) $* (c d) $ (a b))
