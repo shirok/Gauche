@@ -16126,45 +16126,78 @@ Returns the current exception handler.
 @end defun
 
 @defun with-exception-handler handler thunk
-[R7RS base][SRFI-18]
+[SRFI-18]
 @c EN
 A procedure @var{handler} must take one argument.  This procedure
 sets @var{handler} to the current exception handler and calls
 @var{thunk}.
+(Note that this slightly differs from R7RS @code{with-exception-handler};
+we'll explain it below.)
 @c JP
 @var{handler}は1引数を取る手続きです。この手続きは、@var{handler}を
 現在の例外ハンドラにセットし、@var{thunk}を呼び出します。
+(この手続きはR7RSの@code{with-exception-handler}と微妙に異なります。)
 @c COMMON
 @end defun
 
 @c EN
-Generally, if you want to handle non-continuable exception such as
-errors using this low-level mechanism,
-you have to transfer the control from the handler explicitly
-(See the explanation of @code{with-error-handler} above).
-@code{raise} detects if the handler returns on the
-non-continuable exceptions and reports an error using the
-default error handler mechanism, but it is just a safety net.
+When an exception is raised by @code{raise} or @code{error},
+@var{handler} is called with the thrown condition in the
+exactly same dynamic environment of @code{raise} or @code{error}.
+It means the exception handler is also the same,
+so calling @code{raise} in @var{handler} reinvokes @var{handler} again.
+It also means that when @var{handler} returns, it returns from
+@var{raise}.
+
+The behavior is specified in SRFI-18, intending this procedure
+to be the most primitive building block of exception handling mechanism.
+If you need to switch handlers, you can do it by yourself.
+
+If you need the typical semantics where raising exception in
+the exception handler is handled by outer handler, you should use @code{guard}.
+Use this procedure only when you want to play with the most
+primitive layer of exception handling.
+
+R7RS has a procedure with the same name, but has one difference---it
+changes the active exception handler to the ``outer'' handler before
+calling @var{handler}.  @xref{R7RS base library}, for the description
+of R7RS's @code{with-exception-handler}.
 @c JP
-一般的に、エラーのような継続不可能な例外をこの低レベルなメカニズムで
-扱いたい場合は、明示的にそのハンドラから制御を移さなければなりません
-(前述の@code{with-error-handler}の説明を参照して下さい)。
-@code{raise}は、ハンドラが継続不可能な例外を返したことを検知し、
-デフォルトのエラーハンドラメカニズムを使ってエラーを報告しますが、
-それは単に安全ネットにしか過ぎません。
+例外が@code{raise}や@code{error}で通知されると、
+投げられたコンディションを引数として@var{handler}が
+呼び出し元と全く同じ動的環境で呼び出されます。
+つまり、@var{handler}中で@code{raise}を呼び出すと、再び@var{handler}が呼ばれます。
+また、@var{handler}から戻ると、制御は@code{raise}の呼び出し元に戻ります。
+
+この振る舞いはSRFI-18により定義されました。これは、この手続きが例外制御の
+最もプリミティブな構成要素になることを意図しています。
+例外処理中にアクティブなハンドラを切り替えたければ、自分でそう書く必要があります。
+
+通常、例外処理中に例外が発生したら、それは「外側の」ハンドラで処理したいでしょう。
+そういった典型的な使い方には、@code{guard}を使ってください。
+この手続きはあくまで、例外処理の最も低層にアクセスしたい時のみ使うとよいでしょう。
+
+R7RSにも同名の手続きがありますが、一つだけ違いがあります。
+R7RS版は@var{handler}を呼び出す前に現在の例外ハンドラを一つ「外側」の例外ハンドラに
+置き換えます。R7RSの@code{with-exception-handler}の説明は
+@ref{R7RS base library}を参照してください。
 @c COMMON
 
 @c EN
-Note also that @var{handler} is called in the same dynamic environment
-of @code{raise}.  So if you raise an exception inside @var{handler},
-it is captured by @var{handler} again.   It is the programmer's
-responsibility to propagate the exception handling to the ``outer''
-exception handlers.
+If an exception is raised by @code{error}, or the thrown condition
+inherits @code{<serious-condition>}, it is prohibited to return from
+@var{handler}.  If @var{handler} ever returns in such cases, another
+error is signaled, with replacing the current exception handler to the
+outer handler.  So the caller of @code{error}, or the caller of @code{raise}
+with @code{<serious-condition>}, can assume it never returns.
 @c JP
-@var{handler}は@code{raise}の動的な環境と同じ環境で呼ばれることにも
-注意して下さい。したがって、@var{handler}内部で例外を発生させると、
-再度@var{handler}によって捕捉されます。その例外処理を``外側''の例外
-ハンドラへ伝播させるのはプログラマの責任です。
+例外が@code{error}により投げられた場合、あるいは投げられたコンディションが
+@code{<serious-condition>}を継承していた場合、
+@var{handler}から戻ることは禁止されます。もし戻ってしまったら、
+ハンドラを外側のものに置き換えた上で別のエラーが投げられます。
+したがって、@code{error}の呼び出し元、あるいは@code{<serious-condition>}を
+引数とした@code{raise}の呼び出し元は、
+その呼び出しが決して戻らないと考えて構いません。
 @c COMMON
 
 @c EN

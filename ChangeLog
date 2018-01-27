@@ -1,5 +1,16 @@
 2018-01-26  Shiro Kawai  <shiro@acm.org>
 
+	Squash merge of @Hamayama's work on R7RS-compatible exception handling
+	https://github.com/shirok/Gauche/pull/335
+	* src/gauche/vm.h (ScmEscapePoint): Add reraised flag.
+	* src/vm.c (Scm_VMDefaultExceptionHandler): Allow to return from this
+	  if the exception is reraised.
+	  (Scm_VMReraise): API for reraise exception to return from the
+	  caller of raise.
+	* lib/gauche/common-macros.scm (guard): Adjust semantics to R7RS.
+	* lib/r7rs.scm (with-exception-handler): Added R7RS-compatible
+	  with-exception-handler.
+
 	* lib/gauche/common-macros.scm: Make it a separate module to hide
 	  auxiliary toplevel bindings.
 

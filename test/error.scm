@@ -440,7 +440,8 @@
 ;;----------------------------------------------------------------
 (test-section "nesting exception/error handlers")
 
-(prim-test "propagating continuable exception" '(a b c)
+;(prim-test "propagating continuable exception 1" '(a b c)
+(prim-test "nesting exception/error handlers 1" '(a z)
       (lambda ()
         (let ((x '()))
           (with-exception-handler
@@ -454,7 +455,8 @@
                 (push! x 'c)))))
           (reverse x))))
 
-(prim-test "propagating continuable exception" '(a b c d e f g h)
+;(prim-test "propagating continuable exception 2" '(a b c d e f g h)
+(prim-test "nesting exception/error handlers 2" '(a b c f g h)
       (lambda ()
         (let ((x '()))
           (with-exception-handler
@@ -480,6 +482,92 @@
                     (lambda () (push! x 'g))))))
               (lambda () (push! x 'h)))))
           (reverse x))))
+
+;;----------------------------------------------------------------
+(test-section "guard reraise")
+
+(prim-test "guard reraise 1"
+      "[d01][d02][d04][d01][w01]1[d03][d04]"
+      (lambda ()
+        (with-output-to-string
+          (lambda()
+            (with-exception-handler
+             (lambda (e) (display "[w01]") (display e))
+             (lambda ()
+               (guard (exc)
+                 (dynamic-wind
+                  (lambda () (display "[d01]"))
+                  (lambda ()
+                    (display "[d02]")
+                    (raise 1)
+                    (display "[d03]"))
+                  (lambda () (display "[d04]"))))))))))
+
+(prim-test "guard reraise 2 (reraise x 2)"
+      "[d01][d02][d05][d01][w01]1[d03][d05][d01][w01]2[d04][d05]"
+      (lambda ()
+        (with-output-to-string
+          (lambda()
+            (with-exception-handler
+             (lambda (e) (display "[w01]") (display e))
+             (lambda ()
+               (guard (exc)
+                 (dynamic-wind
+                  (lambda () (display "[d01]"))
+                  (lambda ()
+                    (display "[d02]")
+                    (raise 1)
+                    (display "[d03]")
+                    (raise 2)
+                    (display "[d04]"))
+                  (lambda () (display "[d05]"))))))))))
+
+(prim-test "guard reraise 3 (dynamic-wind x 2)"
+      "[d01][d02][d11][d12][d14][d04][d01][d11][w01]1[d13][d14][d03][d04]"
+      (lambda ()
+        (with-output-to-string
+          (lambda()
+            (with-exception-handler
+             (lambda (e) (display "[w01]") (display e))
+             (lambda ()
+               (guard (exc)
+                 (dynamic-wind
+                  (lambda () (display "[d01]"))
+                  (lambda ()
+                    (display "[d02]")
+                    (dynamic-wind
+                     (lambda () (display "[d11]"))
+                     (lambda ()
+                       (display "[d12]")
+                       (raise 1)
+                       (display "[d13]"))
+                     (lambda () (display "[d14]")))
+                    (display "[d03]"))
+                  (lambda () (display "[d04]"))))))))))
+
+(prim-test "guard reraise 4 (guard x 2)"
+      "[d01][d02][d11][d12][d14][d11][d14][d04][d01][d11][w01]1[d13][d14][d03][d04]"
+      (lambda ()
+        (with-output-to-string
+          (lambda()
+            (with-exception-handler
+             (lambda (e) (display "[w01]") (display e))
+             (lambda ()
+               (guard (exc)
+                 (dynamic-wind
+                  (lambda () (display "[d01]"))
+                  (lambda ()
+                    (display "[d02]")
+                    (guard (exc)
+                      (dynamic-wind
+                       (lambda () (display "[d11]"))
+                       (lambda ()
+                         (display "[d12]")
+                         (raise 1)
+                         (display "[d13]"))
+                       (lambda () (display "[d14]"))))
+                    (display "[d03]"))
+                  (lambda () (display "[d04]"))))))))))
 
 ;;----------------------------------------------------------------
 (test-section "interaction with empty environment frame")

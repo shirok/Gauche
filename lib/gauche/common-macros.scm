@@ -541,6 +541,8 @@
 ;;;-------------------------------------------------------------
 ;;; guard (srfi-34)
 
+(define %reraise (with-module gauche.internal %reraise))
+
 (define-syntax guard
   (syntax-rules ()
     [(guard (var . clauses) . body)
@@ -554,7 +556,8 @@
 (define-syntax %guard-rec
   (syntax-rules (else =>)
     [(%guard-rec var exc)
-     (raise exc)]
+     ;; exception handler can return to the caller
+     (%reraise exc)]
     [(%guard-rec var exc (else . exprs))
      (begin . exprs)]
     [(%guard-rec var exc (test => proc) . more)
@@ -594,12 +597,16 @@
        (with-error-handler
            (lambda (e)
              (exit-handler x)
-             (when (condition-has-type? e <serious-condition>)
-               (unless done (set! done #t) (h)))
-             ;; NB: We don't know E is thrown by r7rs#raise or
-             ;; r7rs#raise-continuable, but gauche#raise can handle both
-             ;; case.
-             (raise e))
+             (cond
+              [(condition-has-type? e <serious-condition>)
+               (unless done (set! done #t) (h))
+               ;; NB: We don't know E is thrown by r7rs#raise or
+               ;; r7rs#raise-continuable, but gauche#raise can handle both
+               ;; case.
+               (raise e)]
+              [else
+               ;; exception handler can return to the caller
+               (%reraise e)]))
          (lambda ()
            (receive r
                (dynamic-wind

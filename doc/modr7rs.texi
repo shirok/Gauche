@@ -1014,6 +1014,37 @@ the same way in both @code{srfi-13} and @code{scheme.base}.
 @c COMMON
 @end defun
 
+@defun with-exception-handler handler thunk
+[R7RS base]
+@c MOD scheme.base
+@c EN
+@var{handler} is evaluated in the dynamic environment of the call to
+@var{handler}, except that the current exception handler is that in
+place for the call to @code{with-exception-handler}.
+
+If the exception is not continuable, it is reraised after evaluating
+@var{handler} and handled by the exception handler in place for the
+call to @code{with-exception-handler}.
+@c JP
+@var{handler}は、@var{handler}呼び出し時の動的環境で評価されます。
+ただし、@var{handler}内における例外ハンドラは、
+@code{with-exception-handler}呼び出し時の例外ハンドラになります。
+
+例外が継続不可能な場合、@var{handler}の評価後にさらに例外が発生し、それは
+@code{with-exception-handler}呼び出し時の例外ハンドラで処理されます。
+@c COMMON
+
+@c EN
+This slightly differs from Gauche's built-in @code{with-exception-handler},
+which calls @var{handler} without replacing the current exception handler.
+@xref{Handling exceptions}, for the details.
+@c JP
+これはGaucheの組み込みの@code{with-exception-handler}と微妙に異なります。
+組み込みの方は、現在の例外ハンドラを置き換えずに@var{handler}を呼び出します。
+詳しくは@ref{Handling exceptions}を参照してください。
+@c COMMON
+@end defun
+
 @defun raise obj
 @defunx raise-continuable obj
 [R7RS base]

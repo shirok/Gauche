@@ -1761,9 +1761,6 @@
                  'negative))
           (raise v)))))))
 
-(cond-expand
- [gauche] ; this is Gauche's bug
- [else
 ;; From SRFI-34 "Examples" section - #5
 (let* ((out (open-output-string))
        (value (test-exception-handler-4 1 out)))
@@ -1779,7 +1776,6 @@
        (value (test-exception-handler-4 0 out)))
   (test "reraised 0!" (get-output-string out))
   (test 'zero value))
-])
 
 ;; From SRFI-34 "Examples" section - #8
 (test 42
