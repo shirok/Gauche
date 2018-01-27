@@ -40,7 +40,7 @@
 ;; will do.
 (dolist [m (all-modules)]
   (let1 n (module-name m)
-    (unless (memq n '(util.match gauche.interpolate))
+    (unless (memq n '(util.match gauche.interpolate gauche.common-macros))
       (provide (module-name->path n)))))
 
 ;; A trick to allow slot-ref to be used for compound condition.
