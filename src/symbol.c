@@ -157,8 +157,8 @@ static SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
 ScmObj Scm_Gensym(ScmString *prefix)
 {
     char numbuf[50];
-    /* We don't need mutex for this variable, since a race on it is
-       tolerated---multiple threads may be get the same name symbols,
+    /* We don't need mutex for this variable, since the race on it is
+       tolerated---multiple threads may get the same name symbols,
        but they are uninterned and never be eq? to each other. */
     static intptr_t gensym_count = 0;
 
