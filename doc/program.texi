@@ -117,6 +117,21 @@ Prints the @code{gosh} version and exits.
 @c COMMON
 @end deftp
 
+@deftp {Command Option} -v version
+@c EN
+If @var{version} is not the running @code{gosh}'s version, execute the 
+specified version of @code{gosh} instead if it is installed.
+This is useful when you want to invoke specific version of Gauche.
+Note that @var{version} must be 0.9.6 or later.
+@c JP
+@var{version}が実行された@code{gosh}のバージョンでなく、かつ指定されたバージョンの
+Gaucheがシステムにインストールされていた場合、指定バージョンの@code{gosh}をかわりに機動します。
+これは、Gaucheのバージョンを特定して実行したい場合に便利です。
+なお、この機能で指定できる@var{version}は0.9.6かそれ以降のみです。
+@c COMMON
+@end deftp
+
+
 @deftp {Command Option} -u module
 @c EN
 Use @var{module}.  Before starting execution of @var{scheme-file} or entering

@@ -1,3 +1,8 @@
+2018-02-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c, doc/program.texi: Document -v<version> option; make it
+	  official.
+
 2018-01-26  Shiro Kawai  <shiro@acm.org>
 
 	Squash merge of @Hamayama's work on R7RS-compatible exception handling
