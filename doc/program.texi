@@ -125,7 +125,7 @@ This is useful when you want to invoke specific version of Gauche.
 Note that @var{version} must be 0.9.6 or later.
 @c JP
 @var{version}が実行された@code{gosh}のバージョンでなく、かつ指定されたバージョンの
-Gaucheがシステムにインストールされていた場合、指定バージョンの@code{gosh}をかわりに機動します。
+Gaucheがシステムにインストールされていた場合、指定バージョンの@code{gosh}をかわりに起動します。
 これは、Gaucheのバージョンを特定して実行したい場合に便利です。
 なお、この機能で指定できる@var{version}は0.9.6かそれ以降のみです。
 @c COMMON
