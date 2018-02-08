@@ -3339,19 +3339,23 @@ returns the random seed value used to initialize the current random state.
 
 It can be used with generic setter, to reinitialize the random state
 with @var{seed-value}.
+
+Random seed value must be an exact integer.  Its lower 32bits are used.
 @c JP
 引数無しで@code{random-data-seed}を呼ぶと、現在の乱数状態を初期化した
 シード値が返されます。
 
 ジェネリックなセッターと一緒に使えば、乱数状態を@var{seed-value}をシードとして
 再初期化することができます。
+
+ランダムシード値は正確な整数でなければなりません。その下位32ビットが使われます。
 @c COMMON
 
 @example
-(random-data-seed)  @result{} @r{integer}
-
 ; @r{reinitialize the random state with a new random seed.}
-(set! (random-data-seed) 1) 
+(set! (random-data-seed) 1)
+
+(random-data-seed) @result{} 1
 @end example
 
 @c EN
