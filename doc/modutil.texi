@@ -60,6 +60,7 @@
 * Parsing input stream::        text.parse
 * Showing progress on text terminals::  text.progress
 * SQL parsing and construction::  text.sql
+* Simple template expander::    text.template
 * Transliterate characters::    text.tr
 * Lazy text construction::      text.tree
 * Combination library::         util.combinations
@@ -4380,9 +4381,9 @@ blocks'', you should definitely consider sparse tables.
 @c COMMON
 
 @menu
-* Sparse vectors::              
-* Sparse matrixes::             
-* Sparse tables::               
+* Sparse vectors::
+* Sparse matrixes::
+* Sparse tables::
 @end menu
 
 @node Sparse vectors, Sparse matrixes, Sparse data containers, Sparse data containers
@@ -5732,8 +5733,8 @@ APIを説明をします。すなわち特定の@code{dbd}ドライバを@code{d
 @c COMMON
 
 @menu
-* DBI user API::                
-* Writing drivers for DBI::     
+* DBI user API::
+* Writing drivers for DBI::
 @end menu
 
 @node DBI user API, Writing drivers for DBI, Database independent access layer, Database independent access layer
@@ -6805,12 +6806,12 @@ and @ref{Dictionary framework}, respectively).
 @c COMMON
 
 @menu
-* Opening and closing a dbm database::  
-* Accessing a dbm database::    
-* Iterating on a database::     
-* Managing dbm database instance::  
-* Dumping and restoring dbm database::  
-* Writing a dbm implementation::  
+* Opening and closing a dbm database::
+* Accessing a dbm database::
+* Iterating on a database::
+* Managing dbm database instance::
+* Dumping and restoring dbm database::
+* Writing a dbm implementation::
 @end menu
 
 @node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
@@ -8057,11 +8058,11 @@ Gaucheでは@emph{両方の}名前を提供することにしました。
 @c COMMON
 
 @menu
-* Directory utilities::         
-* Pathname utilities::          
-* File attribute utilities::    
-* File operations::             
-* Lock files::                  
+* Directory utilities::
+* Pathname utilities::
+* File attribute utilities::
+* File operations::
+* Lock files::
 @end menu
 
 @node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
@@ -10333,8 +10334,8 @@ is thrown.
 @end deftp
 
 @menu
-* Windows dialogs::             
-* Windows console API::         
+* Windows dialogs::
+* Windows console API::
 @end menu
 
 @node Windows dialogs, Windows console API, Windows support, Windows support
@@ -16239,10 +16240,10 @@ check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML
 
 @c ----------------------------------------------------------------------
 @menu
-* SSAX data types::             
-* SSAX low-level parsing code::  
-* SSAX higher-level parsers and scanners::  
-* SSAX Highest-level parsers - XML to SXML::  
+* SSAX data types::
+* SSAX low-level parsing code::
+* SSAX higher-level parsers and scanners::
+* SSAX Highest-level parsers - XML to SXML::
 @end menu
 
 @node SSAX data types, SSAX low-level parsing code, Functional XML parser, Functional XML parser
@@ -17858,9 +17859,9 @@ W3CのXPathコア関数ライブラリのSXML版を実装する拡張ライブ�
 
 @c ----------------------------------------------------------------------
 @menu
-* SXPath basic converters and applicators::  
-* SXPath query language::       
-* SXPath extension::            
+* SXPath basic converters and applicators::
+* SXPath query language::
+* SXPath extension::
 @end menu
 
 @node SXPath basic converters and applicators, SXPath query language, SXML Query Language, SXML Query Language
@@ -18891,11 +18892,11 @@ source code.
 
 @c ----------------------------------------------------------------------
 @menu
-* SXML predicates::             
-* SXML accessors::              
-* SXML modifiers::              
-* SXPath auxiliary utilities::  
-* SXML to markup conversion::   
+* SXML predicates::
+* SXML accessors::
+* SXML modifiers::
+* SXPath auxiliary utilities::
+* SXML to markup conversion::
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -19774,8 +19775,8 @@ sxml.toolsのsxml:sxml->xmlとsxml:sxml->htmlよりも強力です。
 
 @c ----------------------------------------------------------------------
 @menu
-* Simple SXML serializing::     
-* Custom SXML serializing::     
+* Simple SXML serializing::
+* Custom SXML serializing::
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -22121,7 +22122,7 @@ Here's a simple example, using customized numeric part:
 @end example
 
 @c ----------------------------------------------------------------------
-@node SQL parsing and construction, Transliterate characters, Showing progress on text terminals, Library modules - Utilities
+@node SQL parsing and construction, Simple template expander, Showing progress on text terminals, Library modules - Utilities
 @section @code{text.sql} - SQL parsing and construction
 @c NODE SQLのパーズと構築, @code{text.sql} - SQLのパーズと構築
 
@@ -22221,7 +22222,82 @@ Holds the source SQL string.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, Lazy text construction, SQL parsing and construction, Library modules - Utilities
+@node Simple template expander, Transliterate characters, SQL parsing and construction, Library modules - Utilities
+@section @code{text.template} - Simple template expander
+@c NODE 簡単なテンプレート拡張, @code{text.template} - 簡単なテンプレート拡張
+
+@deftp {Module} text.template
+@mdindex text.template
+This module lifts Gauche's built-in string interpolation feature
+to be more general template engine.
+
+Gauche's string interpolation syntax is expanded at read time and then
+handled by macro expanders, and 
+becomes a simple Scheme code fragment.  
+For example, if you have this:
+@example
+(let ([x 10])
+  #"The square of x is ~(* x x).")
+@end example
+
+It is eventually converted to this after macro expansion:
+@example
+(let ([x 10])
+  (string-append '"The square of x is " (x->string (* x.0 x.0)) '"."))
+@end example
+
+It is a kind of template expansion, but you have to have the template string
+as a literal, so it's restricted.  With this module, you can feed template
+string and the bindings of the value at the runtime:
+
+@example
+(define *template* "The square of x is ~(* x x).")
+
+(expand-template-string *template*
+  (make-template-environment :bindings '(x 10)))
+  @result{} "The square of x is 100."
+@end example
+
+The syntax of template strings is the same as string interpolation
+(@pxref{String interpolation}); that is, tokens following @code{~}
+is read as a Scheme expression.  In case if the token is a symbol
+and you need to delimit it from subsequent characters, you can use
+symbol escape by @code{|}.
+
+You also need to provide a @emph{template environment}, where the
+expressions in the template is evaluated.  Note that, 
+unlike string interpolation,
+those expressions can't refer to the local bindings.
+@end deftp
+
+@defun expand-template-string template env
+Expands a template string @var{template} with a template environment
+@var{env}, and returns the result string.
+@end defun
+
+@defun expand-template-file filename env :optional paths
+Reads a template string from a file named by @var{filename}, expands
+it with a template environment @var{env}, and returns the result string.
+
+If @var{filename} is not an absolute path, it is looked in the directories
+listed in @var{paths}. 
+@end defun
+
+@defun make-template-environment :key extends imports bindings
+Creates and returns a template environment.   A template environment
+is like a module (@xref{Modules}): It maps symbols to values, and
+it can import bindings from other modules, or extend other modules.
+
+The keyword arguments @var{extends} and @var{imports} must be a list
+of symbols; they specify names of modules to inherit from or to import from.
+
+The keyword arguments @var{bindings} must either be a dictionary
+(anything that inherits @code{<dictonary>}), or a key-value list.
+The mappings represented by it are incorporated to the environment.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Transliterate characters, Lazy text construction, Simple template expander, Library modules - Utilities
 @section @code{text.tr} - Transliterate characters
 @c NODE 文字変換, @code{text.tr} - 文字変換
 

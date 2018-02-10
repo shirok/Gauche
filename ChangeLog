@@ -1,3 +1,7 @@
+2018-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* doc/modutil.texi: Document text.template; make it official.
+
 2018-02-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c, doc/program.texi: Document -v<version> option; make it
