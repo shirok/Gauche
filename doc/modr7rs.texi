@@ -5698,7 +5698,7 @@ The results are discarded.
 
 @node R7RS comparators,  , R7RS list queues, R7RS large
 @subsection @code{scheme.comparator} - R7RS comparators
-@c NODE R7RS比較器, @code{scheme.box} - R7RS比較器
+@c NODE R7RS比較器, @code{scheme.comparator} - R7RS比較器
 
 @deftp {Module} scheme.comparator
 @mdindex scheme.comparator
