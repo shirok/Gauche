@@ -8741,12 +8741,16 @@ after @var{item}.  If @var{item} is not found, returns
 
 @defun string-split string splitter :optional grammar limit start end
 @defunx string-split string splitter :optional limit start end
+[SRFI-152+]
 @c EN
 Splits @var{string} by @var{splitter} and returns a list of strings.
 @var{splitter} can be a character, a character set, a string,
 a regexp, or a procedure.
 
-If @var{splitter} is a character, the character is used as a delimiter.
+If @var{splitter} is a character or a string, it is
+used as a delimiter.  Note that srfi-152's @code{string-split}
+only allows strings for @var{delimiter} (it also interprets the first
+optional argument as a grammer; see below for the compatibility note.)
 
 If @var{splitter} is a character set, any consecutive characters
 that are member of the character set are used as a delimiter.
@@ -8759,7 +8763,10 @@ character in @var{string}, and the consecutive characters that caused
 @var{splitter} には、文字、文字セット、文字列、正規表現、手続きが
 使えます。
 
-@var{splitter} が文字の場合、その文字がデリミタとして使われます。
+@var{splitter} が文字か文字列の場合、それがそのままデリミタとして使われます。
+なお、srfi-152の@code{string-split}はデリミタとして文字列しか許しません。
+(また、省略可能引数の最初のものは常に@var{grammar}として扱われます。
+後述する互換性への註を参照)。
 
 @var{splitter} が文字セットの場合は、その文字セットに含まれる文字の
 連続がデリミタとして使われます。
@@ -8829,15 +8836,22 @@ as is.
 @end example
 
 @c EN
+Compatibility note:
 The @var{grammar} argument is added for the consistency of srfis
-(srfi-130, srfi-152).  However, for the backward compatibility and
+(srfi-130, srfi-152, @pxref{String library (reduced)}).
+However, for the backward compatibility and
 the covenience, it also accepts @var{limit} without @var{grammar} argument;
 it is distinguishable since @var{grammar} is a symbol and
 @var{limit} is an integer.
+For the code that's compatible to srfi-152, use the first form that takes
+@var{grammar} argument.
 @c JP
-@var{grammar}引数はsrfi-130およびsrfi-152との一貫性のために追加されました。
+互換性への註:
+@var{grammar}引数はsrfi-130およびsrfi-152(@ref{String library (reduced)}参照)
+との一貫性のために追加されました。
 しかし、互換性および簡便性のため、@var{grammar}を省略して@var{limit}を与えることも
 できます。@var{grammar}はシンボルで@var{limit}は整数なので判別可能です。
+srfi-152と互換性のあるコードを書く場合は@var{grammar}引数を取る最初の形式を使ってください。
 @c COMMON
 
 @example

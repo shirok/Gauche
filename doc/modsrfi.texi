@@ -6519,7 +6519,7 @@ length of @code{n} (@pxref{Generators}).
 @deftp {Module} srfi-152
 @mdindex srfi-152
 @c EN
-This is a improved version of @code{srfi-13}.  The spec is actually smaller
+This is an improved version of @code{srfi-13}.  The spec is actually smaller
 than srfi-13 (hence 'reduced' in the title) by removing bells and whistles.
 The consistency with R7RS and recent srfis are also considered.
 
