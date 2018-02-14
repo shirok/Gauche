@@ -396,7 +396,10 @@ dnl for build from repo, we need preinstalled gosh
 dnl NB: The third arg is the value when we don't detect preinstalled gosh.
 dnl In such case, building from repo fails anyway; shall we use alternative
 dnl name or something to tell the builder that she needs preinstalled gosh?
-AC_PATH_PROG(BUILD_GOSH, gosh, gosh)
+AC_ARG_VAR(BUILD_GOSH, [gosh command used during build])
+if test -z ${BUILD_GOSH+z}; then
+  AC_PATH_PROG(BUILD_GOSH, gosh, gosh)
+fi
 
 dnl Safe default CFLAGS (usually -g -O2 if you're using gcc, empty otherwise).
 dnl If the user overrides CFLAGS during configure, which is recorded.

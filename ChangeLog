@@ -1,3 +1,16 @@
+2018-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: Make BUILD_GOSH precious variable.
+	* src/Makefile.in: Add BUILD_GOSH_FLAGS make variable so that
+	  the user can give extra flags to BUILD_GOSH during precompilation.
+	  (It only matters when building from scratch; building from tarball
+	  isn't affected.)
+	  This is useful when you want to build HEAD with the latest release
+	  of gosh, while you've already installed newer gosh.  After ./configure,
+	  run make BUILD_GOSH_FLAGS=-v0.9.5 will use 0.9.5 instead of
+	  the installed version. (You have had 0.9.5 installed, of course).
+	* ext/Makefile.ext.in: Use BUILD_GOSH when cross compiling.
+
 2018-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modutil.texi: Document text.template; make it official.

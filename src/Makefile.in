@@ -53,7 +53,7 @@ LN_S     = @LN_S@
 CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS  = @LDFLAGS@
-
+BUILD_GOSH_FLAGS =
 
 # These are set by configure
 ATOMIC_OPS_CFLAGS = @ATOMIC_OPS_CFLAGS@
@@ -110,9 +110,10 @@ BUILD_CFLAGS = -O2
 # when building from tarball.)
 # We clear GAUCHE_LOAD_PATH to make sure we won't read nonstandard stuff.
 BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
-              "@BUILD_GOSH@" -l$(srcdir)/preload \
-                             -I$(top_srcdir)/src -I$(top_srcdir)/lib \
-	                     -I$(top_builddir)/lib
+              "@BUILD_GOSH@" $(BUILD_GOSH_FLAGS) \
+              -l$(srcdir)/preload \
+              -I$(top_srcdir)/src -I$(top_srcdir)/lib \
+	      -I$(top_builddir)/lib
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@

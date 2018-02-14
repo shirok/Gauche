@@ -120,10 +120,11 @@ do_self_host_test () {
     else
 	makeopt=
     fi
+    makeopt_1="$makeopt BUILD_GOSH_FLAGS=$BUILD_GOSH_FLAGS"
     if [ -d $destdir/stage1 ]; then rm -rf $destdir; fi
     XPATH=$destdir/bin:$PATH
     mkdir -p $destdir/stage1
-    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt; make install)
+    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt_1; make install)
     mkdir -p $destdir/stage2
     (cd $destdir/stage2; PATH=$XPATH $srcdir/configure; PATH=$XPATH make $makeopt; PATH=$XPATH make -s check)
 }
