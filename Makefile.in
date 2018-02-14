@@ -23,6 +23,7 @@ INSTALL_DATA = @INSTALL_DATA@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
 GAUCHE_DATA_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@
 GAUCHE_ACLOCAL_DIR = $(GAUCHE_DATA_DIR)/$(GAUCHE_VERSION)/
+BUILD_GOSH_FLAGS =
 DESTDIR =
 
 GOSH = gosh
@@ -61,9 +62,9 @@ install-check:
 # the check of INSTALL.in is necessary for making pre-package target from
 # distribution tarball (in case for preprocessing winvc source tree).
 pre-package:
-	cd src; $(MAKE) GOSH=$(GOSH) pre-package
-	cd ext; $(MAKE) GOSH=$(GOSH) pre-package
-	cd doc; $(MAKE) GOSH=$(GOSH) pre-package
+	cd src; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
+	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
+	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	if [ -f $(srcdir)/INSTALL.in ]; then \
 	  $(GOSH) $(srcdir)/doc/extract -en -o INSTALL INSTALL.in; \
 	  $(GOSH) $(srcdir)/doc/extract -jp -o INSTALL.ja INSTALL.in; \

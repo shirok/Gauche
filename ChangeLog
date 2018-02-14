@@ -456,7 +456,7 @@
 	* libsrc/gauche/generator.scm (generator->uvector, generator->uvector!)
 	  (generator->bytevector, generator->bytevector!): Added.
 
-(2017-06-23  Shiro Kawai  <shiro@acm.org>
+2017-06-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-64.scm: Add integration to gauche.test.  When srfi-64 tests
 	  are executed during gauche.test tests, the behavior of default test
