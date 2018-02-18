@@ -60,6 +60,10 @@
   (cond-expand [gauche.os.windows `(".\\gosh" "-ftest" ".\\testc.o" ,@args)]
                [else args]))
 
+(define (cmd-in-subdir . args)
+  (cond-expand [gauche.os.windows `("..\\gosh" "-ftest" "..\\testc.o" ,@args)]
+               [else args]))
+
 (define (cmds . args)
   (let1 cmdlist (apply cmd args)
     (string-concatenate (apply append (map (^x `(,x " ")) cmdlist)))))
@@ -531,6 +535,16 @@
        (let ((r (process-output->string-list (cmd ls '-a)))
              (s (call-with-input-file "test.o" port->string-list)))
          (equal? r s)))
+
+(rmrf "test2.o")
+(sys-mkdir "test2.o" #o755)
+(with-output-to-file "test2.o/probe"
+  (^[] (display "Aloha!")))
+(test* "process-output->string (different directory)" "Aloha!"
+       (process-output->string (cmd-in-subdir cat "probe")
+                               :directory "test2.o"))
+
+(rmrf "test2.o")
 
 (rmrf "testc.o")
 

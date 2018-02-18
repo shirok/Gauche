@@ -569,13 +569,13 @@
 (define (open-input-process-port command :key (input *nulldev*)
                                  ((:error err) #f) (host #f)
                                  :allow-other-keys rest)
-  (let1 p (%apply-run-process command input :pipe err host)
+  (let1 p (%apply-run-process command input :pipe err host rest)
     (values (wrap-input-process-port p rest) p)))
 
 (define (call-with-input-process command proc :key (input *nulldev*)
                                  ((:error err) #f) (host #f) (on-abnormal-exit :error)
                                  :allow-other-keys rest)
-  (let* ((p (%apply-run-process command input :pipe err host))
+  (let* ((p (%apply-run-process command input :pipe err host rest))
          (i (wrap-input-process-port p rest)))
     (unwind-protect (proc i)
       (begin
@@ -591,14 +591,14 @@
 (define (open-output-process-port command :key (output *nulldev*)
                                   ((:error err) #f) (host #f)
                                   :allow-other-keys rest)
-  (let1 p (%apply-run-process command :pipe output err host)
+  (let1 p (%apply-run-process command :pipe output err host rest)
     (values (wrap-output-process-port p rest) p)))
 
 (define (call-with-output-process command proc :key (output *nulldev*)
                                   ((:error err) #f) (host #f)
                                   (on-abnormal-exit :error)
                                   :allow-other-keys rest)
-  (let* ((p (%apply-run-process command :pipe output err host))
+  (let* ((p (%apply-run-process command :pipe output err host rest))
          (o (wrap-output-process-port p rest)))
     (unwind-protect (proc o)
       (begin
@@ -614,7 +614,7 @@
 (define (call-with-process-io command proc :key ((:error err) #f)
                               (host #f) (on-abnormal-exit :error)
                               :allow-other-keys rest)
-  (let* ((p (%apply-run-process command :pipe :pipe err host))
+  (let* ((p (%apply-run-process command :pipe :pipe err host rest))
          (i (wrap-input-process-port p rest))
          (o (wrap-output-process-port p rest)))
     (unwind-protect (proc i o)
@@ -792,7 +792,7 @@
 ;; rule is too broken to use reliably.  Another possibility is to implement
 ;; much of high-level /bin/sh functionalities in Scheme, so that we can
 ;; provide consistent behavior.  Something to think about.
-(define (%apply-run-process command stdin stdout stderr host)
+(define (%apply-run-process command stdin stdout stderr host opts)
   (apply run-process
          (cond [(string? command)
                 (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
@@ -800,13 +800,14 @@
                [(list? command) command]
                [else (error "Bad command spec" command)])
          :input stdin :output stdout :host host
-         (cond [(string? stderr) `(:error ,stderr)]
-               [else '()])))
+         (cond [(string? stderr) `(:error ,stderr ,@opts)]
+               [else opts])))
 
 ;; Possibly wrap the process port by a conversion port
 (define (wrap-input-process-port process opts)
   (let-keywords opts ([encoding #f]
-                      [conversion-buffer-size 0])
+                      [conversion-buffer-size 0]
+                      . opts)
     (if encoding
       (wrap-with-input-conversion (process-output process) encoding
                                   :buffer-size conversion-buffer-size)
@@ -814,7 +815,8 @@
 
 (define (wrap-output-process-port process opts)
   (let-keywords opts ([encoding #f]
-                      [conversion-buffer-size 0])
+                      [conversion-buffer-size 0]
+                      . opts)
     (if encoding
       (wrap-with-output-conversion (process-input process) encoding
                                   :buffer-size conversion-buffer-size)
