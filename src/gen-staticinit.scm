@@ -202,7 +202,7 @@
       [#/[TD] (_?Scm\w+)/ (_ sym) (set! (~ exptab sym) #t)]))
   ($ hash-table-for-each exptab
      (^[k v]
-       (if (eqv? (string-ref k 0) #\_)
+       (if (string-prefix? "_" k)
          (cgen-decl #"void *_imp_~|k|;")
          (cgen-decl #"void *__imp_~|k|;"))))
   (cgen-body "static void unexported_procedure() {"
@@ -222,8 +222,8 @@
              "  }")
   ($ hash-table-for-each exptab
      (^[k v]
-       (if (eqv? (string-ref k 0) #\_)
-         (cgen-body #"  _imp_~|k| = get_proc_addr(m, \"~(string-copy k 1)\");")
+       (if (string-prefix? "_" k)
+         (cgen-body #"  _imp_~|k| = get_proc_addr(m, \"~(string-drop k 1)\");")
          (cgen-body #"  __imp_~|k| = get_proc_addr(m, \"~|k|\");"))))
   (cgen-body "}")
   (cgen-init "  populate_imp_pointers();"))
