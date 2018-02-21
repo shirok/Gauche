@@ -407,7 +407,7 @@ $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT) staticinit_gdbm.$(OBJEXT)
             `"$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 
 staticinit.c staticinit_gdbm.c : all gen-staticinit.scm
-	./gosh -ftest $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
+	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
 
 # tests -----------------------------------------------
 TESTFILES  = `cat ../test/TESTS`
