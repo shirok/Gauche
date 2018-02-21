@@ -198,8 +198,13 @@
   (define exptab (make-hash-table 'equal?))
   (dolist [entry (process-output->string-list `("nm" ,libgauche.dll))]
     (rxmatch-case entry
-      [#/[TD] (Scm\w+)/ (_ sym) (set! (~ exptab sym) #t)]))
-  (hash-table-for-each exptab (^[k v] (cgen-decl #"void *__imp_~|k|;")))
+      ;; NB: Symbols in 32bit dll have a leading underscore.
+      [#/[TD] (_?Scm\w+)/ (_ sym) (set! (~ exptab sym) #t)]))
+  ($ hash-table-for-each exptab
+     (^[k v]
+       (if (eqv? (string-ref k 0) #\_)
+         (cgen-decl #"void *_imp_~|k|;")
+         (cgen-decl #"void *__imp_~|k|;"))))
   (cgen-body "static void unexported_procedure() {"
              "  fprintf(stderr, \"[Gauche Internal Error] Unexported procedure is called.  It is likely that the code is calling obsoleted C API.\");"
              "  exit(1);"
@@ -216,7 +221,10 @@
              "    exit(1);"
              "  }")
   ($ hash-table-for-each exptab
-     (^[k v] (cgen-body #"  __imp_~|k| = get_proc_addr(m, \"~|k|\");")))
+     (^[k v]
+       (if (eqv? (string-ref k 0) #\_)
+         (cgen-body #"  _imp_~|k| = get_proc_addr(m, \"~(string-copy k 1)\");")
+         (cgen-body #"  __imp_~|k| = get_proc_addr(m, \"~|k|\");"))))
   (cgen-body "}")
   (cgen-init "  populate_imp_pointers();"))
 
