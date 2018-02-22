@@ -603,6 +603,23 @@ always work even if the regions of source and destination are overlapping.
 @var{target}と@var{s}に同じ文字列を渡しても構いません。コピー元とコピー先の
 領域が重なっていても、コピーは常に正しく行われます。
 @c COMMON
+
+@c EN
+Note that Gauche encourages you to treat strings as immutable objects.
+Internally, a string is an indirect pointer to a immutable entity, and 
+mutating a string means copying the original entity and creating a new one.
+It doesn't ``save allocations''.
+Always use the functional version @code{string-copy} unless you
+absolutely need to replace a string in-place.
+@xref{String utilities}.
+@c JP
+Gaucheでは、文字列を変更不可なオブジェクトとして扱うことを強く推奨しています。
+内部的に、文字列オブジェクトは変更不可な文字列の実体へのポインタとなっています。
+文字列を変更すると、新たな文字列実体がアロケートされそれが変更されるので、
+破壊的手続きを使えばメモリアロケーションが節約できるということはありません。
+どうしても文字列そのものを破壊的変更したい場合でない限りは、
+非破壊版の@code{string-copy}を使いましょう。@ref{String utilities}参照。
+@c COMMON
 @end defun
 
 @defun string-take s nchars
