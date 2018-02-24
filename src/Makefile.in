@@ -90,6 +90,11 @@ PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d 
 
 PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 
+# Gosh command used to build static library.  In case of cross compiling
+# we can't use freshly built gosh.
+@CROSS_COMPILING_no@STATIC_GOSH  = $(top_builddir)/src/gosh -ftest
+@CROSS_COMPILING_yes@STATIC_GOSH = $(BUILD_GOSH)
+
 # List files that may affect stub generation.  If any of these files are
 # touched, stub files in src/ need to be regenerated.  (NB: Regeneration of
 # those files requires installed Gauche.  So only list files that absolutely
@@ -407,7 +412,7 @@ $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT) staticinit_gdbm.$(OBJEXT)
             `"$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 
 staticinit.c staticinit_gdbm.c : all gen-staticinit.scm
-	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
+	$(STATIC_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
 
 # tests -----------------------------------------------
 TESTFILES  = `cat ../test/TESTS`
