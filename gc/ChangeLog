@@ -1,4 +1,23 @@
 
+== [7.6.4] 2018-01-26 ==
+
+* Add note of set_free_space_divisor, set_warn_proc ABI change after gc-7.1
+* Change compiler invocation example in gc.man to use dynamic libgc
+* Delete dont_ar_* build intermediate files on make clean (Makefile.direct)
+* Do not declare dl_iterate_phdr as weak for DragonFly
+* Fix 'cords' parallel build in Makefile.direct
+* Fix 'undeclared identifier USRSTACK' compiler error on OpenBSD-6.2
+* Fix error code in abort message if sem_wait failed in start_world (NetBSD)
+* Fix GC allocation mutex in child after a fork
+* Fix global operator delete definition for C++14 in gc_cpp
+* Fix last_reclaimed..gc_no interval comparison to threshold in unmap_old
+* Fix libgc version which was changed in linkage breaking way
+* Fix missing EOLn output in threadlibs tool
+* Fix threadlibs tool to output '-lpthread' for DragonFly
+* Prevent DATASTART redefinition for NaCl
+* Remove obsolete advice about linking with _DYNAMIC=0 (Linux)
+
+
 == [7.6.2] 2017-12-23 ==
 
 * Add assertion that no hb_n_marks underflow occurs
@@ -299,6 +318,12 @@ Also, includes 7.4.6 changes
 * Workaround 'unresolved __tls_get_addr' error for Android NDK Clang
 * Workaround a bug in winpthreads causing parallel marks deadlock (MinGW)
 Also, includes 7.4.4 changes
+
+
+== [7.4.10] 2018-01-22 ==
+
+* Fix error code in abort message if sem_wait failed in start_world (NetBSD)
+Also, includes 7.2j changes
 
 
 == [7.4.8] 2017-12-22 ==
@@ -738,6 +763,14 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2j] 2018-01-21 ==
+
+* Fix GC allocation mutex in child after a fork
+* Fix last_reclaimed..gc_no interval comparison to threshold in unmap_old
+* Fix libgc version which was changed in linkage breaking way
+* Fix missing EOLn output in threadlibs tool
 
 
 == [7.2i] 2017-12-21 ==
