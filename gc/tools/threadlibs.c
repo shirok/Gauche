@@ -42,10 +42,10 @@ int main(void)
 #       ifdef GC_USE_DLOPEN_WRAP
           printf("-ldl ");
 #       endif
-#       if (__FREEBSD_version >= 500000)
-          printf("-lpthread\n");
-#       else
+#       if (__FREEBSD_version < 500000)
           printf("-pthread\n");
+#       else /* __FREEBSD__ || __DragonFly__ */
+          printf("-lpthread\n");
 #       endif
 #   endif
 #   if defined(GC_NETBSD_THREADS)
@@ -71,7 +71,7 @@ int main(void)
 #      endif
 #   endif
 #   if defined(GC_OSF1_THREADS)
-        printf("-pthread -lrt"); /* DOB: must be -pthread, not -lpthread */
+        printf("-pthread -lrt\n"); /* DOB: must be -pthread, not -lpthread */
 #   endif
     /* You need GCC 3.0.3 to build this one!            */
     /* DG/UX native gcc doesn't know what "-pthread" is */

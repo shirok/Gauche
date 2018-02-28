@@ -140,25 +140,36 @@ dnl
 # found.
 AC_ARG_WITH([libatomic-ops],
     [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
-                    [Use a external libatomic_ops? (default: check)])],
+                    [Use an external libatomic_ops? (default: check)])],
     [], [with_libatomic_ops=check])
 
-# Check for an external libatomic_ops if the answer was yes or check.  If not
-# found, fail on yes, and convert check to no.
-# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
-# means Autotools pkg.m4 file was not found during aclocal.m4 generation.
+# Check for an external libatomic_ops if the above answer is "yes" or "check".
+# If not found, fail on "yes", and convert "check" to "no".
+# First, check that libatomic_ops usage is not disabled explicitly.
 missing_libatomic_ops=false
-AS_IF([test x"$with_libatomic_ops" != xno],
-  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
-                      [ missing_libatomic_ops=true ]) ])
-AS_IF([test x$missing_libatomic_ops = xtrue ],
+AS_IF([test x"$with_libatomic_ops" != xno -a x"$THREADS" != xnone],
+  [ missing_libatomic_ops=true ])
+
+# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
+# means Autotools pkg.m4 file was not found during aclocal.m4 generation;
+# in this case, most probably, you should run pkg-config once before running
+# autogen.sh (autoreconf); alternatively, comment out the following 3 lines.
+AS_IF([test x$missing_libatomic_ops = xtrue],
+  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
+    [ missing_libatomic_ops=false ], [ [] ]) ])
+
+# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
+AS_IF([test x$missing_libatomic_ops = xtrue],
+      [ AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false]) ])
+AS_IF([test x$missing_libatomic_ops = xtrue],
       [ AS_IF([test x"$with_libatomic_ops" != xcheck],
               [ AC_MSG_ERROR([An external libatomic_ops was not found]) ])
         with_libatomic_ops=no ])
 
 # If we have neither an external or an internal version, offer a useful hint
 # and exit.
-AS_IF([test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/gc/libatomic_ops"],
+AS_IF([test x"$with_libatomic_ops" = xno \
+            -a ! -e "$srcdir/gc/libatomic_ops/src/atomic_ops.h"],
   [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
                   your system, or fetch and unpack a recent version into the
                   source directory and link or rename it to libatomic_ops.]) ])
@@ -166,12 +177,12 @@ AS_IF([test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/gc/libatomic_ops"],
 # Finally, emit the definitions for bundled or external AO.
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
-  [ AC_MSG_RESULT([external]) ],
+  [ AS_IF([test x"$THREADS" != xnone],
+          [ AC_MSG_RESULT([external]) ], [ AC_MSG_RESULT([none]) ]) ],
   [ AC_MSG_RESULT([internal])
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/gc/libatomic_ops/src -I$(top_srcdir)/gc/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
     AC_SUBST([ATOMIC_OPS_CFLAGS])
-    AC_CONFIG_SUBDIRS([libatomic_ops])
   ])
 AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
     [test x$with_libatomic_ops = xno -a x"$THREADS" != xnone])
