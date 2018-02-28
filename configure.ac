@@ -183,7 +183,6 @@ AS_IF([test x"$with_libatomic_ops" != xno],
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/gc/libatomic_ops/src -I$(top_srcdir)/gc/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
     AC_SUBST([ATOMIC_OPS_CFLAGS])
-    AC_CONFIG_SUBDIRS([gc/libatomic_ops])
   ])
 AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
     [test x$with_libatomic_ops = xno -a x"$THREADS" != xnone])
