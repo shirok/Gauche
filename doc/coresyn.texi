@@ -3602,7 +3602,7 @@ is to be a procedure, it may inline the procedure where it is invoked.
 このフォームがトップレベルに現れた場合、それは@emph{インライン可能な}束縛をつくります。
 インライン可能な束縛とは、コンパイラに対してその束縛が変化しないことを約束するものです。
 ただし@code{define-constant}で導入される定数束縛と違って、@var{expression}の値が
-コンパイル時に経産可能とは限りません。
+コンパイル時に計算可能とは限りません。
 従って、コンパイラは@code{define-constant}で定義される束縛でやっている、
 @code{variable}の参照を無条件で@var{expression}のコンパイル時値に置き換えることは
 できません。
