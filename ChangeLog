@@ -1,3 +1,8 @@
+2018-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* gc/: Update to bdwgc 7.6.4
+	  Patch from @qykth-git https://github.com/shirok/Gauche/pull/342
+
 2018-02-17  Shiro Kawai  <shiro@acm.org>
 
 	* gauche.process: Fix a bug that prevented extra keyword arguments
