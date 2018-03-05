@@ -3549,21 +3549,55 @@ that is, you can mix @code{define-values} in internal defines.
 @defspecx define-constant (variable . formals) body @dots{}
 @c EN
 This form is only effective in toplevel.
-Like top-level @code{define}, but that the compiler assumes
-the value of @var{variable} won't change and generates
-optimized code.
+
+Like top-level @code{define}, it defines a top-level definition
+of @var{variable} with the value of @var{expression}, but additionally
+tells the compiler that (1) the binding won't change, and
+(2) the value of @var{expression} won't change from
+the one computed at the compile time.
+So the compiler can replace references of @var{variable} 
+with the compile-time value of @var{expression}.
 
 An error is signaled when you use @code{set!} to change the value
 of @var{variable}.   It is allowed to redefine @var{variable},
 but a warning is printed.
 @c JP
 このフォームはトップレベルでしか使えません。
-トップレベルの@code{define}と同じように動作しますが、
-コンパイラは@var{variable}の値が今後変更されないものとして
-最適化されたコードを生成します。
+
+トップレベルの@code{define}と同様に、トップレベルで@var{variable}を
+@var{expression}の値に束縛しますが、さらに次の情報をコンパイラに伝えます：
+(1)その束縛は変わらない (2)@var{expression}の値はコンパイル時に計算したものと変わらない。
+コンパイラは@var{variable}が参照されている箇所を
+コンパイル時に計算した@var{expression}の値で置き換えて構わないと考えて最適化を行います。
 
 @var{variable}の値を@code{set!}で変更しようとするとエラーとなります。
 @var{variable}を再定義することは許されますが、警告が表示されます。
+@c COMMON
+
+@c EN
+The difference from @code{define-inline} below is that the value of
+@var{expression} is computed at the compile time and treated as a literal.
+Suppose you define @var{x} as follows:
+@c JP
+下の@code{define-inline}との違いは、@var{expression}の値がコンパイル時に
+計算され、リテラルとして扱われることです。
+例えば@var{x}を次のとおり定義したとします:
+@c COMMON
+
+@example
+(define-constant x (vector 1 2 3))
+@end example
+
+@c EN
+Then, the code @code{(list x)} is compiled to the same code
+as @code{(list '#(1 2 3))}.
+
+This distinctino is especially important when you do AOT (ahead of time)
+compilation.
+@c JP
+すると、コード@code{(list x)}は@code{(list '#(1 2 3))}と同じコードにコンパイルされます。
+
+この違いは特にAOT (ahead of time)コンパイルをする場合に重要です。
 @c COMMON
 
 @c EN
