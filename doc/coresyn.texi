@@ -3576,6 +3576,148 @@ and optimize code accordingly, without a help of declarations.
 @c COMMON
 @end defspec
 
+@defspec define-inline variable expression
+@defspecx define-inline (variable . formals) body @dots{}
+@c EN
+The second form is a shorthand of @code{(define-inline variable (lambda formals body @dots{}))}.
+
+If this appears in the position of internal defines, it is the same
+as internal defines.
+
+If it appears in the toplevel, it defines an @emph{inlinable} binding.
+An inlinable binding promises the compiler that the binding won't
+change, but unlike constant bindings introduced by @code{define-constant},
+the actual value of @var{expression} may be computed at runtime.  
+Hence the compiler cannot
+simply replace the references of @var{variable} with the compile-time
+value of @var{expression}.
+
+However, if the compiler can determine that the value of @var{expression} 
+is to be a procedure, it may inline the procedure where it is invoked.
+@c JP
+2番目の形式は@code{(define-inline variable (lambda formals body @dots{}))}の略記です
+
+このフォームが内部defineの位置に現れた場合は、内部defineと全く同じです。
+
+このフォームがトップレベルに現れた場合、それは@emph{インライン可能な}束縛をつくります。
+インライン可能な束縛とは、コンパイラに対してその束縛が変化しないことを約束するものです。
+ただし@code{define-constant}で導入される定数束縛と違って、@var{expression}の値が
+コンパイル時に経産可能とは限りません。
+従って、コンパイラは@code{define-constant}で定義される束縛でやっている、
+@code{variable}の参照を無条件で@var{expression}のコンパイル時値に置き換えることは
+できません。
+
+しかし、コンパイラが@var{expression}の値が手続きになることを決定できれば、
+その手続きが呼び出される箇所に手続きの中身をインライン展開することができます。
+@c COMMON
+
+@c EN
+In the example below, the body of @code{dot3} is inlined where @code{dot3}
+is called.  Furthermore, since the second argument of @code{dot3} is
+a constant vector, you can see @code{vector-ref} on it is computed at
+compile time (e.g. @code{CONST -1.0} etc.)
+@c JP
+下の例では、@code{dot3}の本体が@code{dot3}を呼び出している箇所にインライン展開されています。
+さらに、@code{dot3}の呼び出しの第2引数が定数ベクタのため、それに対する@code{vector-ref}が
+コンパイル時に計算されていることがわかります (@code{CONST -1.0}など)。
+@c COMMON
+
+@example
+gosh> (define-inline (dot3 a b)
+        (+ (* (vector-ref a 0) (vector-ref b 0))
+           (* (vector-ref a 1) (vector-ref b 1))
+           (* (vector-ref a 2) (vector-ref b 2))))
+dot3
+gosh> (disasm (^[] (dot3 x '#(-1.0 -2.0 -3.0))))
+CLOSURE #<closure (#f)>
+=== main_code (name=#f, code=0x28524e0, size=26, const=4 stack=6):
+signatureInfo: ((#f))
+     0 GREF-PUSH #<identifier user#x.20d38e0>; x
+     2 LOCAL-ENV(1)             ; (dot3 x (quote #(-1.0 -2.0 -3.0)))
+     3 LREF0                    ; a
+     4 VEC-REFI(0)              ; (vector-ref a 0)
+     5 PUSH 
+     6 CONST -1.0
+     8 NUMMUL2                  ; (* (vector-ref a 0) (vector-ref b 0))
+     9 PUSH 
+    10 LREF0                    ; a
+    11 VEC-REFI(1)              ; (vector-ref a 1)
+    12 PUSH 
+    13 CONST -2.0
+    15 NUMMUL2                  ; (* (vector-ref a 1) (vector-ref b 1))
+    16 NUMADD2                  ; (+ (* (vector-ref a 0) (vector-ref b 0))
+    17 PUSH 
+    18 LREF0                    ; a
+    19 VEC-REFI(2)              ; (vector-ref a 2)
+    20 PUSH 
+    21 CONST -3.0
+    23 NUMMUL2                  ; (* (vector-ref a 2) (vector-ref b 2))
+    24 NUMADD2                  ; (+ (* (vector-ref a 0) (vector-ref b 0))
+    25 RET 
+@end example
+
+@c EN
+As an extreme case, if both arguments are compile-time constant,
+@code{dot3} is completely computed at compile time:
+@c JP
+最も極端なケースとして、両方の引数がコンパイル時定数であれば、
+@code{dot3}の呼び出し自体がコンパイル時に計算されます。
+@c COMMON
+
+@example
+gosh> (disasm (^[] (dot3 '#(1 2 3) '#(4 5 6))))
+CLOSURE #<closure (#f)>
+=== main_code (name=#f, code=0x2a2b8e0, size=2, const=0 stack=0):
+signatureInfo: ((#f))
+     0 CONSTI(32) 
+     1 RET 
+@end example
+
+@c EN
+The same inlining behavior may be achieved by making @code{dot3} a macro,
+but if you use @code{define-inline}, @code{dot3} can be used as procedures
+when needed:
+@c JP
+インライン展開と同様の効果は@code{dot3}をマクロにすることでも得られますが、
+@code{define-inline}を使っておくと@code{dot3}を通常の手続きとしても使うことができます。
+@c COMMON
+
+@example
+(map dot3 list-of-vectors1 list-of-vectors2)
+@end example
+
+@c EN
+If @code{dot3} is a macro you can't pass it as a higher-order procedure.
+@c JP
+@code{dot3}がマクロだと、上のように関数引数として@code{map}に渡すことはできないでしょう。
+@c COMMON
+
+@c EN
+The inline expansion pass is run top-to-bottom.  Inlinable procedure must
+be defined before used in order to be inlined.
+@c JP
+インライン展開パスはソースの上から下へと進みます。インライン展開されるためには、
+呼び出される前にそれが定義されていなければなりません。
+@c COMMON
+
+@c EN
+If you redefine an inlinable binding, Gauche warns you, since
+the redefinition won't affect already inlined call sites.  So it should
+be used with care---either use it internal to the module, or use it
+for procedures that won't change in future.  Inlining is effective for
+performance-critical parts.  If a procedure is called sparingly,
+there's no point to define it inlinable.
+@c JP
+インライン可能な束縛が再定義されるとGaucheは警告を出します。
+その再定義は既にインライン展開された呼び出し箇所には影響を及ぼさないからです。
+なのでこれは注意して使わなければなりません。モジュール内だけで使うか、
+あるいは将来に渡って変わらなさそうな手続きに使うか。
+インライン展開は性能に重大な影響を与える場所では効果的ですが、
+滅多に使われない手続きをインライン可能に定義する意味はありません。
+@c COMMON
+@end defspec
+
+
 @defspec define-in-module module variable expression
 @defspecx define-in-module module (variable . formals) body @dots{}
 @c EN
