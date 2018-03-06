@@ -3629,7 +3629,7 @@ value of @var{expression}.
 However, if the compiler can determine that the value of @var{expression} 
 is to be a procedure, it may inline the procedure where it is invoked.
 @c JP
-2番目の形式は@code{(define-inline variable (lambda formals body @dots{}))}の略記です
+2番目の形式は@code{(define-inline variable (lambda formals body @dots{}))}の略記です。
 
 このフォームが内部defineの位置に現れた場合は、内部defineと全く同じです。
 
