@@ -1693,9 +1693,9 @@
                          m))))))
 
   ((do-quadrants test-div) 3 2 =)
-  ((do-quadrants test-div) 3.0 2 (lambda (a b) (nearly=? 1e-10 a b)))
+  ((do-quadrants test-div) 3.0 2 (lambda (a b) (nearly=? 1e10 a b)))
   ((do-quadrants test-div) 123 10 =)
-  ((do-quadrants test-div) 123.0 10.0 (lambda (a b) (nearly=? 1e-10 a b)))
+  ((do-quadrants test-div) 123.0 10.0 (lambda (a b) (nearly=? 1e10 a b)))
   ((do-quadrants test-div) 123/7 10/7 =)
   ((do-quadrants test-div) 123/7 5 =)
   ((do-quadrants test-div) 123 5/7 =)
@@ -1703,8 +1703,8 @@
 
   ((do-quadrants test-div0) 123 10 =)
   ((do-quadrants test-div0) 129 10 =)
-  ((do-quadrants test-div0) 123.0 10.0 (lambda (a b) (nearly=? 1e-10 a b)))
-  ((do-quadrants test-div0) 129.0 10.0 (lambda (a b) (nearly=? 1e-10 a b)))
+  ((do-quadrants test-div0) 123.0 10.0 (lambda (a b) (nearly=? 1e10 a b)))
+  ((do-quadrants test-div0) 129.0 10.0 (lambda (a b) (nearly=? 1e10 a b)))
   ((do-quadrants test-div0) 123/7 10/7 =)
   ((do-quadrants test-div0) 129/7 10/7 =)
   ((do-quadrants test-div0) 121/7 5 =)
@@ -2218,21 +2218,21 @@
 ;;------------------------------------------------------------------
 (test-section "posix math functions")
 
-(test* "fmod" 0.25 (fmod 5.25 1) (^[x y] (nearly=? 1e-6 x y)))
-(test* "fmod" 2.3  (fmod 8.3 3)  (^[x y] (nearly=? 1e-6 x y)))
-(test* "fmod" 8.3  (fmod 8.3 33) (^[x y] (nearly=? 1e-6 x y)))
+(test* "fmod" 0.25 (fmod 5.25 1) (^[x y] (nearly=? 1e6 x y)))
+(test* "fmod" 2.3  (fmod 8.3 3)  (^[x y] (nearly=? 1e6 x y)))
+(test* "fmod" 8.3  (fmod 8.3 33) (^[x y] (nearly=? 1e6 x y)))
 
 (test* "frexp" '(0.785 2)
        (values->list (frexp 3.14))
-       (^[x y] (and (nearly=? 1e-6 (car x) (car y))
-                    (nearly=? 1e-6 (cadr x) (cadr y)))))
+       (^[x y] (and (nearly=? 1e6 (car x) (car y))
+                    (nearly=? 1e6 (cadr x) (cadr y)))))
 
-(test* "ldexp" 3.14 (ldexp 0.785 2) (^[x y] (nearly=? 1e-6 x y)))
+(test* "ldexp" 3.14 (ldexp 0.785 2) (^[x y] (nearly=? 1e6 x y)))
 
 (test* "modf" '(0.14 3.0)
        (values->list (modf 3.14))
-       (^[x y] (and (nearly=? 1e-6 (car x) (car y))
-                    (nearly=? 1e-6 (cadr x) (cadr y)))))
+       (^[x y] (and (nearly=? 1e6 (car x) (car y))
+                    (nearly=? 1e6 (cadr x) (cadr y)))))
 
 ;; This is to check alternative gamma implementation assuming we can use
 ;; system's tgamma and lgamma.
