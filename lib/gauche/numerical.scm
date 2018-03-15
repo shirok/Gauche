@@ -362,7 +362,13 @@
 ;; Nearly equal comparison
 ;;  (Unofficial yet; see how it works)
 
+;; DEPRECATED - almost=? should be used
 (define (nearly=? tolerance x y)
   (< (abs (- x y))
      (/ (max (abs x) (abs y)) tolerance)))
+
+(define (almost=? x y :optional (rel-tol 1e-9) (abs-tol 0))
+  (<= (abs (- x y))
+      (max (* (max (abs x) (abs y)) rel-tol)
+           abs-tol)))
 

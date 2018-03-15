@@ -580,7 +580,7 @@
 
 (test* "expt (coercion to inexact)" 1.4142135623730951
        (expt 2 1/2)
-       (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later
+       (lambda (x y) (almost=? x y 1.0e-6))) ;; NB: pa$ will be tested later
 
 (let ()
   (define (exact-expt-tester x y)
@@ -705,12 +705,12 @@
 (test* "expt (ratnum with large denom and numer) with inexact conversion 1"
        (expt 8/9 342.0)
        (exact->inexact (expt 8/9 342))
-       (lambda (x y) (nearly=? 10e12 x y)))
+       (lambda (x y) (almost=? x y 1.0e-11)))
 
 (test* "expt (ratnum with large denom and numer) with inexact conversion 2"
        (expt -8/9 343.0)
        (exact->inexact (expt -8/9 343))
-       (lambda (x y) (nearly=? 10e12 x y)))
+       (lambda (x y) (almost=? x y 1.0e-11)))
 
 ;; The following few tests covers RATNUM paths in Scm_GetDouble
 (test* "expt (ratnum with large denom and numer) with inexact conversion 3"
@@ -1454,15 +1454,15 @@
   (tests (test-error) #f)
   )
 
-(define (almost=? x y)
-  (define (flonum=? x y)
-    (let ((ax (abs x)) (ay (abs y)))
-      (< (abs (- x y)) (* (max ax ay) 0.0000000000001))))
-  (and (flonum=? (car x) (car y))
-       (flonum=? (cadr x) (cadr y))
-       (flonum=? (caddr x) (caddr y))
-       (flonum=? (cadddr x) (cadddr y))
-       (eq? (list-ref x 4) (list-ref y 4))))
+;(define (almost=? x y)
+;  (define (flonum=? x y)
+;    (let ((ax (abs x)) (ay (abs y)))
+;      (< (abs (- x y)) (* (max ax ay) 0.0000000000001))))
+;  (and (flonum=? (car x) (car y))
+;       (flonum=? (cadr x) (cadr y))
+;       (flonum=? (caddr x) (caddr y))
+;       (flonum=? (cadddr x) (cadddr y))
+;       (eq? (list-ref x 4) (list-ref y 4))))
 
 (define (d-result x exact?) (list x (- x) (- x) x exact?))
 (define (d-tester x y)
@@ -1693,9 +1693,9 @@
                          m))))))
 
   ((do-quadrants test-div) 3 2 =)
-  ((do-quadrants test-div) 3.0 2 (lambda (a b) (nearly=? 1e10 a b)))
+  ((do-quadrants test-div) 3.0 2 (lambda (a b) (almost=? a b 1e-10)))
   ((do-quadrants test-div) 123 10 =)
-  ((do-quadrants test-div) 123.0 10.0 (lambda (a b) (nearly=? 1e10 a b)))
+  ((do-quadrants test-div) 123.0 10.0 (lambda (a b) (almost=? a b 1e-10)))
   ((do-quadrants test-div) 123/7 10/7 =)
   ((do-quadrants test-div) 123/7 5 =)
   ((do-quadrants test-div) 123 5/7 =)
@@ -1703,8 +1703,8 @@
 
   ((do-quadrants test-div0) 123 10 =)
   ((do-quadrants test-div0) 129 10 =)
-  ((do-quadrants test-div0) 123.0 10.0 (lambda (a b) (nearly=? 1e10 a b)))
-  ((do-quadrants test-div0) 129.0 10.0 (lambda (a b) (nearly=? 1e10 a b)))
+  ((do-quadrants test-div0) 123.0 10.0 (lambda (a b) (almost=? a b 1e-10)))
+  ((do-quadrants test-div0) 129.0 10.0 (lambda (a b) (almost=? a b 1e-10)))
   ((do-quadrants test-div0) 123/7 10/7 =)
   ((do-quadrants test-div0) 129/7 10/7 =)
   ((do-quadrants test-div0) 121/7 5 =)
@@ -2218,21 +2218,21 @@
 ;;------------------------------------------------------------------
 (test-section "posix math functions")
 
-(test* "fmod" 0.25 (fmod 5.25 1) (^[x y] (nearly=? 1e6 x y)))
-(test* "fmod" 2.3  (fmod 8.3 3)  (^[x y] (nearly=? 1e6 x y)))
-(test* "fmod" 8.3  (fmod 8.3 33) (^[x y] (nearly=? 1e6 x y)))
+(test* "fmod" 0.25 (fmod 5.25 1) (^[x y] (almost=? x y 1e-6)))
+(test* "fmod" 2.3  (fmod 8.3 3)  (^[x y] (almost=? x y 1e-6)))
+(test* "fmod" 8.3  (fmod 8.3 33) (^[x y] (almost=? x y 1e-6)))
 
 (test* "frexp" '(0.785 2)
        (values->list (frexp 3.14))
-       (^[x y] (and (nearly=? 1e6 (car x) (car y))
-                    (nearly=? 1e6 (cadr x) (cadr y)))))
+       (^[x y] (and (almost=? (car x) (car y) 1e-6)
+                    (almost=? (cadr x) (cadr y) 1e-6))))
 
-(test* "ldexp" 3.14 (ldexp 0.785 2) (^[x y] (nearly=? 1e6 x y)))
+(test* "ldexp" 3.14 (ldexp 0.785 2) (^[x y] (almost=? x y 1e-6)))
 
 (test* "modf" '(0.14 3.0)
        (values->list (modf 3.14))
-       (^[x y] (and (nearly=? 1e6 (car x) (car y))
-                    (nearly=? 1e6 (cadr x) (cadr y)))))
+       (^[x y] (and (almost=? (car x) (car y) 1e-6)
+                    (almost=? (cadr x) (cadr y) 1e-6))))
 
 ;; This is to check alternative gamma implementation assuming we can use
 ;; system's tgamma and lgamma.
