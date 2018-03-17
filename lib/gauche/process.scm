@@ -42,7 +42,8 @@
   (use srfi-13)
   (use srfi-14)
   (export <process> <process-abnormal-exit>
-          run-process do-process process? process-alive? process-pid
+          run-process do-process do-process!
+          process? process-alive? process-pid
           process-command process-input process-output process-error
           process-upstreams
           process-wait process-wait-any process-exit-status
@@ -141,6 +142,12 @@
          [p (apply run-process command (delete-keyword :on-abnormal-exit args))])
     (process-wait p #f eflag)
     (zero? (process-exit-status p))))
+
+;; Similar to do-process, but raise an error on abnormal exit.
+;; This use case is typical, so we add a separate API.
+(define (do-process! command . args)
+  (apply do-process command :on-abnormal-exit :error 
+         (delete-keyword :on-abnormal-exit args)))
 
 ;; Note: I/O redirection
 ;;  'Redirects' keyword argument is a generic way to wire child's I/Os.
