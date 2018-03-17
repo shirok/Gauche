@@ -12617,6 +12617,8 @@ a convenient way to send/receive information to/from subprocesses.
 
 @defun do-process cmd/args :key redirects input output error @
                    fork directory host sigmask on-abnormal-exit
+@defunx do-process! cmd/args :key redirects input output error @
+                    fork directory host sigmask
 @defunx run-process cmd/args :key redirects input output error @
                    fork directory host sigmask wait
 @c MOD gauche.process
@@ -12654,6 +12656,21 @@ or raise an error if @code{:error} is passed to the keyword argument
 0の場合)に@code{#t}を返します。サブプロセスが異常終了した場合、
 デフォルトでは@code{#f}を返しますが、キーワード引数@code{on-abnormal-exit}に
 @code{:error}が与えられた場合はエラーを投げます。
+@c COMMON
+
+@c EN
+@code{Do-process!} is like @code{do-process} except that
+it raises @code{<process-abnormal-exit>} error when the process
+exists with non-zero status.  It's the same behavior as
+giving @code{:error} to the @code{on-abnormal-exit} keyword argument
+of @code{do-process}.  It is often more convenient to let the commands
+fail in shell-script type tasks.
+@c JP
+@code{do-process!}は@code{do-process}とほぼ同じですが、
+プロセスが0以外の終了ステータスを返した場合に@code{<process-abnormal-exit>}エラーを
+投げます。@code{do-process}の@code{on-abnormal-exit}に@code{:error}を
+渡した場合の振る舞いと同じです。シェルスクリプト的な仕事で、
+コマンドが失敗したらそこで終わってよいといった場合に便利です。
 @c COMMON
 
 @c EN
