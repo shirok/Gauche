@@ -726,32 +726,28 @@ to introspect module internals.
 @c NODE コンパイル
 
 @c EN
-Gauche is a Scheme interpreter, in the sense that it reads
-a Scheme form at a time and evaluates it.   Actually,
-Gauche compiles every toplevel form into an intermediate form
-before executing.
+By default, Gauche reads toplevel Scheme forms one at a time,
+compile it immediately to intermediate form and execute it on the VM.
+As long as you use Gauche interactively, it looks like an
+interpreter.
+(There's an experimental ahead-of-time compiler as well.
+See @file{HOWTO-precompile.txt} if you want to give a try.)
 @c JP
-Gaucheは、Schemeフォームをひとつづつ読み込んでは評価するという意味では
-インタプリタです。しかし内部では、Gaucheはひとつひとつのフォームを中間形式に
-コンパイルして仮想マシンで実行しています。
+デフォルトでは、GaucheはSchemeのトップレベルフォームをひとつづつ読み、
+直ちに中間コードへとコンパイルして仮想マシンで実行します。
+Gaucheをインタラクティブに使っている限りは、インタプリタのように思えるでしょう。
+(実験的なAOTコンパイラもあります。試してみたい方は
+@file{HOWTO-precompile.txt}を見てください。)
 @c COMMON
 
 @c EN
-Built-in syntaxes and macros are recognized and expanded
-at the compilation time.  Some built-in procedures are
-expanded in-line as far as the compiler can see the global
-binding is not altered at the time the form is compiled.
+The fact that we have separate compilation/execution phase, even
+interleaved, may lead a subtle surprise if you think Gauche as an interpreter.
+Here's a few points to keep in mind:
 @c JP
-組み込みの構文とマクロはコンパイル時に認識されて展開されます。
-よく使われる組み込み関数は、コンパイル時にグローバルな束縛が置き換わっていない場合に、
-インライン展開されます。
-@c COMMON
-
-@c EN
-This raises a few problems you should care.
-@c JP
-プログラマは通常、コンパイラの動作を気にする必要はほとんどありませんが、
-いくつかの点に注意する必要があります。
+コンパイルと実行のフェーズが分かれていることによって、
+Gaucheをインタプリタと考えていると少々驚くことがあるかもしれません。
+いくつか念頭に置いておくべき点をあげておきます。
 @c COMMON
 
 @table @emph
