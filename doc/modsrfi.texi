@@ -6355,37 +6355,65 @@ This is equivalent to Gauche's built-in @code{twos-exponent-factor}
 @defunx bit-field-every? n start end
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns @code{#t} iff any/all bits of @var{n} from @var{start} (inclusive)
 to @var{end} (exclusive) are set.
+@c JP
+@var{n}中の@var{start}ビット目(含む)から@var{end}ビット目(含まない)までの
+ビットフィールドのうち、一つでもビットが立っていた場合(@code{bit-field-any?})、
+あるいは全てのビットが立っていた場合(@code{bit-field-every?})に@code{#t}を、
+それ以外に@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun bit-field-clear n start end
 @defunx bit-field-set n start end
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns @var{n} with the bits from @var{start} (inclusive)
 to @var{end} (exclusive) are set to all @code{0}'s/@code{1}'s.
+@c JP
+@var{n}中の@var{start}ビット目(含む)から@var{end}ビット目(含まない)までの
+ビットを全て@code{0}あるいは@code{1}にした整数値を返します。
+@c COMMON
 @end defun
 
 @defun bit-field-replace dst src start end
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns @var{dst} with the bitfield from @var{start} to @var{end}
 are replaced with the least-significant (@var{end}-@var{start}) bits
 of @var{src.}
+@c JP
+@var{dst}中の@var{start}ビット目(含む)から@var{end}ビット目(含まない)までの
+ビットフィールドを、@var{src}中の下位(@var{end}-@var{start})ビットで置き換えた
+値を返します。
+@c COMMON
 
 @example
 (bit-field-replace #b101010 #b010 1 4) @result{} #b100100
 @end example
 
+@c EN
 Same as built-in @code{copy-bit-field} (@pxref{Basic bitwise operations}).
+@c JP
+組み込みの@code{copy-bit-field}と同じです(@ref{Basic bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun bit-field-replace-same dst src start end
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns @var{dst} with the bitfield from @var{start} to @var{end}
 are replaced with the @code{src}'s bitfield from @var{start} to @var{end}.
+@c JP
+@var{dst}中の@var{start}ビット目(含む)から@var{end}ビット目(含まない)までの
+ビットフィールドを、
+@var{src}中の同じ位置にあるビットフィールドに置き換えた値を返します。
+@c COMMON
 
 @example
 (bit-field-replace-same #b111111 #b100100 1 4) @result{} #b110101
@@ -6395,23 +6423,36 @@ are replaced with the @code{src}'s bitfield from @var{start} to @var{end}.
 @defun bit-field-rotate n count start end
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Rotate the region of @var{n} between @var{start}-th bit (inclusive) and
-@var{end}-th bit (exclusive) by @var{count} bits.
+@var{end}-th bit (exclusive) by @var{count} bits to the left.
+If @var{count} is negative, it rotates to the right by @var{-count}
+bits.
+@c JP
+@var{n}中の@var{start}ビット目(含む)から@var{end}ビット目(含まない)までの
+ビットフィールドを、@var{count}ビットだけ左にローテートした値を返します。
+@var{count}が負の場合は@var{-count}ビットだけ右にローテートします。
+@c COMMON
 
 @example
 (bit-field-rotate #b110100100010000 -1 5 9)
- @result{} 26768 ; #b110100010010000
+ @result{} 26768 ;#b110100010010000
 
 (bit-field-rotate #b110100100010000 1 5 9)
- @result{} 26672 ; #b110100000110000
+ @result{} 26672 ;#b110100000110000
 @end example
 @end defun
 
 @defun bit-field-reverse n start end
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Reverse the order of bits of @var{n} between @var{start}-th bit
 (inclusive) and @var{end}-th bit (exclusive).
+@c JP
+@var{n}中の@var{start}ビット目(含む)から@var{end}ビット目(含まない)までの
+ビットフィールドを逆順にしたものを返します。
+@c COMMON
 
 @example
 (bit-field-reverse #b10100111 0 8)
@@ -6419,7 +6460,11 @@ Reverse the order of bits of @var{n} between @var{start}-th bit
 @end example
 @end defun
 
+@c EN
 @subheading Bits conversion
+@c JP
+@subheading ビット変換
+@c COMMON
 
 @defun bits->list n :optional len
 @defunx bits->vector n :optional len
