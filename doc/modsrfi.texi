@@ -6562,7 +6562,7 @@ and the seed value, whose initial value
 is given by @var{knil}.  Returns the last result of @var{kons}.
 @c JP
 整数@var{n}のビットを、LSBから@code{(integer-length n)}ビット分、順に調べ、
-各ビットを真偽値とみないた値とシード値に@var{kons}を適用してゆきます。
+各ビットを真偽値とみなした値とシード値に@var{kons}を適用してゆきます。
 @var{kons}の戻り値が次のシード値となり、最後の@var{kons}の結果が返されます。
 @c COMMON
 
@@ -6606,7 +6606,7 @@ the next state value of the next iteration.
 返します。
 そうでなければ、@var{f}が現在の状態の値に適用され、
 その結果が真の値なら対応するビットが1に、偽なら0になります。
-次いで@var{g}が現在の状態の値に適用され、その結果が次の繰り返しにおける状態の値となしう。
+次いで@var{g}が現在の状態の値に適用され、その結果が次の繰り返しにおける状態の値となります。
 @c COMMON
 
 @c EN
