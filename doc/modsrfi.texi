@@ -6470,59 +6470,101 @@ Reverse the order of bits of @var{n} between @var{start}-th bit
 @defunx bits->vector n :optional len
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns a list/vector of booleans of length @var{len},
 corresponding to each bit in non-negative integer @var{n}, LSB-first.
 When @var{len} is omitted, @code{(integer-length n)} is used.
+@c JP
+非負整数@var{n}を、長さ@var{len}の真偽値からなるリストまたはベクタにして返します。
+ビットはLSBから順に取り出されます。@var{len}が省略された場合は
+@code{(integer-length n)}が使われます。
+@c COMMON
 
 @example
 (bits->vector #b101101110)
   @result{} #(#f #t #t #t #f #t #t #f #t)
 @end example
 
+@c EN
 Note: Srfi-60 has a similar @code{integer->list}, but the order of
 bits is reversed.
+@c JP
+註: srfi-60には@code{integer->list}という似た手続きがありますが、
+ビットの順番が逆です。
+@c COMMON
 @end defun
 
 @defun list->bits bool-list
 @defunx vector->bits bool-vector
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns an exact integer formed from boolean values in given list/vector,
 LSB first.  The result will never be negative.
+@c JP
+真偽値のリストまたはベクタを受け取り、
+LSBから対応するビットを詰めた正確な整数を返します。
+返り値は負になることはありません。
+@c COMMON
 
 @example
 (list->bits '(#f #t #t #t #f #t #t #f #t))
  @result{} #b101101110
 @end example
 
+@c EN
 Note: Srfi-60 has a similar @code{list->integer}, but the order of
 bits is reversed.
+@c JP
+註: srfi-60には@code{list->integer}という似た手続きがありますが、
+ビットの順番が逆です。
+@c COMMON
 @end defun
 
 @defun bits bool @dots{}
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns the integer coded by @var{bool}s, LSB first.
 The result will never be negative.
+@c JP
+真偽値@var{bool}の列をLSBから順にビットとして詰めた整数を返します。
+返り値は負になることはありません。
+@c COMMON
 
 @example
 (bits #f #t #t #t #f #t #t #f #t)
  @result{} #b101101110
 @end example
 
+@c EN
 Note: Srfi-60 has a similar @code{booleans->integer}, but the order of
 bits is reversed.
+@c JP
+註: srfi-60には@code{booleans->integer}という似た手続きがありますが、
+ビットの順番が逆です。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Fold, unfold and generate
+@c JP
+@subheading Foldとunfoldとgenerate
+@c COMMON
 
 @defun bitwise-fold kons knil n
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Traverse bits in integer @var{n} from LSB to the @code{(integer-length n)} bit,
 applying @code{kons} on the bit as boolean
 and the seed value, whose initial value
 is given by @var{knil}.  Returns the last result of @var{kons}.
+@c JP
+整数@var{n}のビットを、LSBから@code{(integer-length n)}ビット分、順に調べ、
+各ビットを真偽値とみないた値とシード値に@var{kons}を適用してゆきます。
+@var{kons}の戻り値が次のシード値となり、最後の@var{kons}の結果が返されます。
+@c COMMON
 
 @example
 (bitwise-fold cons '() #b10110111)
@@ -6533,14 +6575,22 @@ is given by @var{knil}.  Returns the last result of @var{kons}.
 @defun bitwise-for-each proc n
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Applies @var{proc} to the bit as boolean in @var{n}, from LSB to
 the @code{(integer-length n)} bit.  The result is discarded.
+@c JP
+整数@var{n}の各ビットを真偽値とみなした値に対して、
+LSBから順に@code{(integer-length n)}ビット分、@var{proc}を適用してゆきます。
+@var{proc}の結果は捨てられます。
+@c COMMON
 @end defun
 
 @defun bitwise-unfold p f g seed
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Generates a non-negative integer bit by bit, from LSB to MSB.
+The @var{seed} gives the initial state value.
 For each iteration, @var{p} is applied to the current state value,
 and if it returns a true value, the iteration ends and @code{bitwise-unfold}
 returns the accumulated bits as an integer.
@@ -6548,9 +6598,23 @@ Otherwise, @var{f} is applied to the current state value, and
 its result, coerced to a boolean value, determines the bit value.
 Then @var{g} is applied to the current state value to produce
 the next state value of the next iteration.
+@c JP
+非負整数をLSBから順に1ビットづつ生成します。
+@var{seed}は状態の値の初期値を与えます。
+各繰り返しにおいて、@var{p}が現在の状態の値に適用され、
+その結果が真ならば繰り返しは終了し@code{bitwise-unfold}は蓄積されたビットを整数として
+返します。
+そうでなければ、@var{f}が現在の状態の値に適用され、
+その結果が真の値なら対応するビットが1に、偽なら0になります。
+次いで@var{g}が現在の状態の値に適用され、その結果が次の繰り返しにおける状態の値となしう。
+@c COMMON
 
-The following expression produces a bitfield where n-th bit
+@c EN
+The following expression produces a bitfield of width 100, where n-th bit
 indicates whether n is prime or not:
+@c JP
+次の式は、nビット目が、nが素数なら1になっているような100ビット長の整数を返します。
+@c COMMON
 
 @example
 (use math.prime)
@@ -6564,13 +6628,22 @@ indicates whether n is prime or not:
 @defun make-bitwise-generator n
 [SRFI-151]
 @c MOD srfi-151
+@c EN
 Returns a generator that generates boolean values
 corresponding to the bits in @var{n}, LSB-first.  The returned generator
 is infinite.
 
 This is similar to @code{bits->generator} in @code{gauche.generator},
 except that the generator created by it stops at the integer
-length of @code{n} (@pxref{Generators}).
+length of @var{n} (@pxref{Generators}).
+@c JP
+整数nの各ビットをLSBから順に真偽値として生成するようなジェネレータを作って返します。
+返されるジェネレータは無限です。
+
+これは@code{gauche.integer}の@code{bits->generator}と似ていますが、
+@code{bits->generator}が作るジェネレータの方は@var{n}の@code{integer-length}で止まります。
+詳しくは@ref{Generators}を参照してください。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
