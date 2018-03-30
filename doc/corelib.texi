@@ -1733,7 +1733,8 @@ different types.  In fact, it is defined as follows:
 
 @example
 (define default-comparator
-  (make-comparator/compare #t equal? compare default-hash 'default-comparator))
+  (make-comparator/compare #t equal? compare default-hash
+                           'default-comparator))
 @end example
 
 @c EN
@@ -1750,8 +1751,8 @@ when two objects () are of different types.
 
 @c EN
 For objects of user-defined classes,
-those procedures calls generic functions
-@code{object-equal?}, @code{object-compare} and @code{object-hash},
+those procedures call generic functions
+@code{object-equal?}, @code{object-compare}, and @code{object-hash},
 respectively.   Defining methods for them automatically extended
 the domain of @code{default-comparator}.
 @c JP
