@@ -4,7 +4,7 @@
 
 *** Note: This is a feature still in development and very likely
     change over time.
-    Especially, we usually keep ABI compatibility among micro versions
+    Especially, we usually keep ABI compatibility across micro versions
     so that you don't need to recompile extensions for every new
     release, but we don't guarantee that for precompiled binary yet---
     if you precompile your library to distribute, let users know
@@ -65,10 +65,12 @@ Things to consider before precompiling
  3. The cond-expand macro is handy to switch architecture-dependent
     code.  Since it is a macro, it's expanded at the precompile time,
     so the features are selected based on the platform you're
-    precompiling, not the platform you actually run it.
-    That means you can't precompile a Scheme file and carry over
-    the generated C file to other platform, even the C code itself
-    is portable.
+    precompiling, not the platform you actually run the program on.
+    That means you can't simply precompile a Scheme file and carry over
+    the generated C file to other platform, if the Scheme file needs
+    to select architecture-dependent part with cond-expand.  C code
+    itself is portable, but the unportable selection is to be done
+    before C file is created.
 
     If you need to distribute generated C code and you need to use
     cond-expand, just extract the part that uses cond-expand into
