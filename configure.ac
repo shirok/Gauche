@@ -45,152 +45,6 @@ AS_CASE([$GAUCHE_CHAR_ENCODING],
   [sjis],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS])])
 
 dnl ----------------------------------------------------------
-dnl  with-slib
-dnl
-SLIB_DIR=/usr/local/slib
-AC_ARG_WITH(slib,
-  AS_HELP_STRING([--with-slib=PATH],
-                 [Configure Gauche's slib module to use Aubrey Jaffer's SLIB
-installed under PATH.  If PATH is not specified, or this option is omitted,
-Gauche still tries to find your slib installation from some typical places.]),
-  [
-    AS_CASE([$with_slib],
-      [no],  [search_slib=no],
-      [yes], [search_slib=yes],
-	     [search_slib=no; SLIB_DIR=$with_slib])
-  ], [ search_slib=yes ])
-
-AS_IF([test $search_slib = "yes"], [
-  AC_MSG_CHECKING(slib)
-  slib_found=no
-  for dir in /usr/share/slib /usr/local/slib /usr/local/lib/slib /usr/local/share/slib /usr/src/slib /opt/share/slib; do
-    AS_IF([test -f $dir/require.scm], [
-       SLIB_DIR=$dir
-       AC_MSG_RESULT($SLIB_DIR)
-       slib_found=yes
-       break
-    ])
-  done
-  AS_IF([test $slib_found = "no"], [
-    AC_MSG_RESULT([not found, using fallback $SLIB_DIR])
-  ])
-])
-AC_SUBST(SLIB_DIR)
-AC_DEFINE_UNQUOTED(SLIB_DIR, "$SLIB_DIR", [Slib installation path])
-
-dnl ----------------------------------------------------------
-dnl  with-local=PATH:...
-dnl
-AC_ARG_WITH(local,
-  AS_HELP_STRING([--with-local=PATH:PATH...],
-                 [For each PATH, add PATH/include to the include search
-paths and PATH/lib to the library search paths.  Useful if you have some
-libraries installed in non-standard places.  On MinGW/MSYS, use ';' as a
-separator instead of ':'.]),
-  [
-    case $with_local in
-      yes|no|"") ;;  #no effect
-      *) IFS_save=$IFS
-         case $host in *mingw*) IFS=";" ;; *) IFS=":" ;; esac
-         sep0=""
-         sep1=""
-         for p in $with_local; do
-           LOCAL_INC="${LOCAL_INC}${sep0}-I$p/include"
-           LOCAL_LIB="${LOCAL_LIB}${sep0}-L$p/lib"
-           LOCAL_INCDIRS="${LOCAL_INCDIRS}${sep1}$p/include"
-           LOCAL_LIBDIRS="${LOCAL_LIBDIRS}${sep1}$p/lib"
-           sep0=" "
-           sep1="$IFS"
-         done
-         IFS=$IFS_save ;;
-    esac
-  ])
-AC_SUBST(LOCAL_INC)
-AC_SUBST(LOCAL_LIB)
-AC_SUBST(LOCAL_INCDIRS)
-AC_SUBST(LOCAL_LIBDIRS)
-dnl need to add here, for it may be used by the tests below.
-INCLUDES="$INCLUDES $LOCAL_INC"
-CPPFLAGS="$CPPFLAGS $LOCAL_INC"
-LDFLAGS="$LDFLAGS $LOCAL_LIB"
-
-dnl ----------------------------------------------------------
-dnl   with-rpath=PATH:...
-dnl
-try_rpath=yes
-rpath=
-AC_ARG_WITH(rpath,
-  AS_HELP_STRING([--with-rpath=PATH:PATH...],
-                 [Use -rpath option while building dynamically loadable objects (experimental).]),
-  [
-    AS_CASE([$with_rpath],
-      [yes], [],
-      [no],  [try_rpath=no],
-             [rpath=`echo $with_rpath | sed -e 's/^/-Wl,-rpath=/ ; s/:/,-rpath=/g'`])
-  ])
-
-dnl ----------------------------------------------------------
-dnl   with-libatomic-ops[=yes|no|check]
-dnl
-dnl This code comes from "gc/configure.ac", and must be sync with that.
-dnl NB: Don't forget to update path name from "libatomic_ops" to
-dnl "gc/libatomic_ops".
-dnl
-# Do we want to use an external libatomic_ops?  By default use it if it's
-# found.
-AC_ARG_WITH([libatomic-ops],
-    [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
-                    [Use an external libatomic_ops? (default: check)])],
-    [], [with_libatomic_ops=check])
-
-# Check for an external libatomic_ops if the above answer is "yes" or "check".
-# If not found, fail on "yes", and convert "check" to "no".
-# First, check that libatomic_ops usage is not disabled explicitly.
-missing_libatomic_ops=false
-AS_IF([test x"$with_libatomic_ops" != xno -a x"$THREADS" != xnone],
-  [ missing_libatomic_ops=true ])
-
-# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
-# means Autotools pkg.m4 file was not found during aclocal.m4 generation;
-# in this case, most probably, you should run pkg-config once before running
-# autogen.sh (autoreconf); alternatively, comment out the following 3 lines.
-AS_IF([test x$missing_libatomic_ops = xtrue],
-  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
-    [ missing_libatomic_ops=false ], [ [] ]) ])
-
-# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
-AS_IF([test x$missing_libatomic_ops = xtrue],
-      [ AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false]) ])
-AS_IF([test x$missing_libatomic_ops = xtrue],
-      [ AS_IF([test x"$with_libatomic_ops" != xcheck],
-              [ AC_MSG_ERROR([An external libatomic_ops was not found]) ])
-        with_libatomic_ops=no ])
-
-# If we have neither an external or an internal version, offer a useful hint
-# and exit.
-AS_IF([test x"$with_libatomic_ops" = xno \
-            -a ! -e "$srcdir/gc/libatomic_ops/src/atomic_ops.h"],
-  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
-                  your system, or fetch and unpack a recent version into the
-                  source directory and link or rename it to libatomic_ops.]) ])
-
-# Finally, emit the definitions for bundled or external AO.
-AC_MSG_CHECKING([which libatomic_ops to use])
-AS_IF([test x"$with_libatomic_ops" != xno],
-  [ AS_IF([test x"$THREADS" != xnone],
-          [ AC_MSG_RESULT([external]) ], [ AC_MSG_RESULT([none]) ]) ],
-  [ AC_MSG_RESULT([internal])
-    ATOMIC_OPS_CFLAGS='-I$(top_builddir)/gc/libatomic_ops/src -I$(top_srcdir)/gc/libatomic_ops/src'
-    ATOMIC_OPS_LIBS=""
-    AC_SUBST([ATOMIC_OPS_CFLAGS])
-  ])
-AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
-    [test x$with_libatomic_ops = xno -a x"$THREADS" != xnone])
-AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
-    [test x$with_libatomic_ops = xno -a x$need_atomic_ops_asm = xtrue])
-
-
-dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
 dnl
 GAUCHE_THREAD_TYPE=default
@@ -320,6 +174,164 @@ esac
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
 AC_SUBST(GAUCHE_THREAD_TYPE)
+
+dnl ----------------------------------------------------------
+dnl  with-slib
+dnl
+SLIB_DIR=/usr/local/slib
+AC_ARG_WITH(slib,
+  AS_HELP_STRING([--with-slib=PATH],
+                 [Configure Gauche's slib module to use Aubrey Jaffer's SLIB
+installed under PATH.  If PATH is not specified, or this option is omitted,
+Gauche still tries to find your slib installation from some typical places.]),
+  [
+    AS_CASE([$with_slib],
+      [no],  [search_slib=no],
+      [yes], [search_slib=yes],
+	     [search_slib=no; SLIB_DIR=$with_slib])
+  ], [ search_slib=yes ])
+
+AS_IF([test $search_slib = "yes"], [
+  AC_MSG_CHECKING(slib)
+  slib_found=no
+  for dir in /usr/share/slib /usr/local/slib /usr/local/lib/slib /usr/local/share/slib /usr/src/slib /opt/share/slib; do
+    AS_IF([test -f $dir/require.scm], [
+       SLIB_DIR=$dir
+       AC_MSG_RESULT($SLIB_DIR)
+       slib_found=yes
+       break
+    ])
+  done
+  AS_IF([test $slib_found = "no"], [
+    AC_MSG_RESULT([not found, using fallback $SLIB_DIR])
+  ])
+])
+AC_SUBST(SLIB_DIR)
+AC_DEFINE_UNQUOTED(SLIB_DIR, "$SLIB_DIR", [Slib installation path])
+
+dnl ----------------------------------------------------------
+dnl  with-local=PATH:...
+dnl
+AC_ARG_WITH(local,
+  AS_HELP_STRING([--with-local=PATH:PATH...],
+                 [For each PATH, add PATH/include to the include search
+paths and PATH/lib to the library search paths.  Useful if you have some
+libraries installed in non-standard places.  On MinGW/MSYS, use ';' as a
+separator instead of ':'.]),
+  [
+    case $with_local in
+      yes|no|"") ;;  #no effect
+      *) IFS_save=$IFS
+         case $host in *mingw*) IFS=";" ;; *) IFS=":" ;; esac
+         sep0=""
+         sep1=""
+         for p in $with_local; do
+           LOCAL_INC="${LOCAL_INC}${sep0}-I$p/include"
+           LOCAL_LIB="${LOCAL_LIB}${sep0}-L$p/lib"
+           LOCAL_INCDIRS="${LOCAL_INCDIRS}${sep1}$p/include"
+           LOCAL_LIBDIRS="${LOCAL_LIBDIRS}${sep1}$p/lib"
+           sep0=" "
+           sep1="$IFS"
+         done
+         IFS=$IFS_save ;;
+    esac
+  ])
+AC_SUBST(LOCAL_INC)
+AC_SUBST(LOCAL_LIB)
+AC_SUBST(LOCAL_INCDIRS)
+AC_SUBST(LOCAL_LIBDIRS)
+dnl need to add here, for it may be used by the tests below.
+INCLUDES="$INCLUDES $LOCAL_INC"
+CPPFLAGS="$CPPFLAGS $LOCAL_INC"
+LDFLAGS="$LDFLAGS $LOCAL_LIB"
+
+dnl ----------------------------------------------------------
+dnl   with-rpath=PATH:...
+dnl
+try_rpath=yes
+rpath=
+AC_ARG_WITH(rpath,
+  AS_HELP_STRING([--with-rpath=PATH:PATH...],
+                 [Use -rpath option while building dynamically loadable objects (experimental).]),
+  [
+    AS_CASE([$with_rpath],
+      [yes], [],
+      [no],  [try_rpath=no],
+             [rpath=`echo $with_rpath | sed -e 's/^/-Wl,-rpath=/ ; s/:/,-rpath=/g'`])
+  ])
+
+dnl ----------------------------------------------------------
+dnl   with-libatomic-ops[=yes|no|check]
+dnl
+dnl This code comes from "gc/configure.ac", and must be sync with that.
+dnl NB: Don't forget to update path name from "libatomic_ops" to
+dnl "gc/libatomic_ops".
+dnl NB: This test must come after --enable-threads test, for it depends
+dnl on the value of GAUCHE_THREAD_TYPE.
+dnl
+# Do we want to use an external libatomic_ops?  By default use it if it's
+# found.
+AC_ARG_WITH([libatomic-ops],
+    [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
+                    [Use an external libatomic_ops? (default: check)])],
+    [], [with_libatomic_ops=check])
+
+# Check for an external libatomic_ops if the above answer is "yes" or "check".
+# If not found, fail on "yes", and convert "check" to "no".
+# First, check that libatomic_ops usage is not disabled explicitly.
+missing_libatomic_ops=false
+AS_IF([test x"$with_libatomic_ops" != xno -a x"$GAUCHE_THREAD_TYPE" != xnone],
+  [ missing_libatomic_ops=true ])
+
+# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
+# means Autotools pkg.m4 file was not found during aclocal.m4 generation;
+# in this case, most probably, you should run pkg-config once before running
+# autogen.sh (autoreconf); alternatively, comment out the following 3 lines.
+AS_IF([test x$missing_libatomic_ops = xtrue],
+  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
+    [ missing_libatomic_ops=false ], [ [] ]) ])
+
+# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
+AS_IF([test x$missing_libatomic_ops = xtrue],
+      [ AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false]) ])
+AS_IF([test x$missing_libatomic_ops = xtrue],
+      [ AS_IF([test x"$with_libatomic_ops" != xcheck],
+              [ AC_MSG_ERROR([An external libatomic_ops was not found]) ])
+        with_libatomic_ops=no ])
+
+# If we have neither an external or an internal version, offer a useful hint
+# and exit.
+AS_IF([test x"$with_libatomic_ops" = xno \
+            -a ! -e "$srcdir/gc/libatomic_ops/src/atomic_ops.h"],
+  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
+                  your system, or fetch and unpack a recent version into the
+                  source directory and link or rename it to libatomic_ops.]) ])
+
+# Finally, emit the definitions for bundled or external AO.
+# NB: This part differs from gc/configure.ac; we need ATOMIC_OPS_CFLAGS
+# even if we don't use libatomic_ops, since some of Gauche code still refers
+# to AO_t etc.
+need_atomic_ops_cflags=no
+AC_MSG_CHECKING([which libatomic_ops to use])
+AS_IF([test x"$with_libatomic_ops" != xno],
+  [ AS_IF([test x"$GAUCHE_THREAD_TYPE" != xnone],
+          [ AC_MSG_RESULT([external]) ],
+	  [ AC_MSG_RESULT([none]) ])
+	    need_atomic_ops_cflags=yes ],
+  [ AC_MSG_RESULT([internal])
+    need_atomic_ops_cflags=yes ])
+
+if test "$need_atomic_ops_cflags" = yes; then
+  ATOMIC_OPS_CFLAGS='-I$(top_builddir)/gc/libatomic_ops/src -I$(top_srcdir)/gc/libatomic_ops/src'
+  ATOMIC_OPS_LIBS=""
+  AC_SUBST([ATOMIC_OPS_CFLAGS])
+fi
+
+AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
+    [test x$with_libatomic_ops = xno -a x"$GAUCHE_THREAD_TYPE" != xnone])
+AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
+    [test x$with_libatomic_ops = xno -a x$need_atomic_ops_asm = xtrue])
+
 
 dnl ----------------------------------------------------------
 dnl   enable-framework
