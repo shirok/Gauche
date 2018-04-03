@@ -319,10 +319,10 @@
                   (simple-server ,sockargs)
                   0))))
     :if-exists :supersede)
-  (let1 p (run-process `("../../src/gosh" "-ftest" "./testserv.o")
-                       :output :pipe)
-    (let ((line (read-line (process-output p)))) ;; handshake
-      (not (string= line "failed.")))))
+  (let* ([p (run-process `("../../src/gosh" "-ftest" "./testserv.o")
+                         :output :pipe)]
+         [line (read-line (process-output p))]) ;; handshake
+    (and (not (string= line "failed.")) p)))
 
 ;; max size of the packet.  increase this to test robustness for
 ;; buffer overrun attack.  right now, Gauche can bear fairly large
@@ -380,7 +380,8 @@
 (sys-unlink "sock.o")
 
 (test* "inet server socket" #t
-       (run-simple-server `(make-server-sockets #f ,*inet-port* :reuse-addr? #t)))
+       (boolean (run-simple-server 
+                 `(make-server-sockets #f ,*inet-port* :reuse-addr? #t))))
 
 (test* "inet client socket" '("ABC" "XYZ")
        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
@@ -428,13 +429,13 @@
          '("localhost" "ip6-localhost" "ipv6-localhost" "::1")))
 
   ;; We need runtime check to see if ipv6 is really available.
-  (when (and-let* ([ (run-simple-server `(list (make-server-socket
-                                                (make <sockaddr-in6>
-                                                  :host :any :port ,*inet-port*)
-                                                :reuse-addr? #t))) ]
-                   [sock (get-ipv6-sock)])
-          (socket-close sock)
-          #t)
+  (when (and-let1 p (run-simple-server `(list (make-server-socket
+                                               (make <sockaddr-in6>
+                                                 :host :any :port ,*inet-port*)
+                                               :reuse-addr? #t)))
+          (if-let1 sock (get-ipv6-sock)
+            (begin (socket-close sock) #t) ;; ok, ipv6 available
+            (begin (process-kill p) #f)))  ;; nope.  clean up.
     (test* "inet client socket (ipv6)" #t
            (and-let* ((sock (get-ipv6-sock)))
              (call-with-client-socket sock
