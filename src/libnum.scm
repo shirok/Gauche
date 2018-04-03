@@ -37,6 +37,7 @@
  (declcode (.include <gauche/vminsn.h>
                      <gauche/bignum.h>
                      <stdlib.h>
+                     <float.h>
                      <math.h>))
  (when "!defined(M_PI)"
    (declcode "#define M_PI 3.1415926535897932384")))
@@ -96,6 +97,13 @@
 
 ;; default-endian is defined in Scm__InitNumber().
 (define-cproc native-endian () Scm_NativeEndian)
+
+;; DBL_EPSILON
+(define-cproc flonum-epsilon () 
+  (let* ([eps::(static ScmObj) SCM_UNBOUND])
+    (when (== eps SCM_UNBOUND)
+      (set! eps (Scm_MakeFlonum DBL_EPSILON)))
+    (return eps)))
 
 (select-module gauche.internal)
 (define-cproc %bignum-dump (obj) ::<void>

@@ -1,3 +1,7 @@
+2018-04-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (flonum-epsilon): Added.
+
 2018-03-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (do-process!): Added.
