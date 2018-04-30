@@ -495,8 +495,9 @@
 ;;
 ;; Debugging aid
 ;;
-(define (describe-fstruct-type fd)
+(define-method describe-slots ((fd ftype))
   (print "fstruct slots:")
+  (format #t " off slot      type\n")
   (dolist [slot (ftype:struct-slots fd)]
     (format #t " ~3d ~10a::~a~%"
             (ftype:slot-position (cdr slot))
