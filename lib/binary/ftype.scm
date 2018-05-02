@@ -83,8 +83,6 @@
    get-fobject put-fobject!
    read-fobject!/uv read-fobject write-fobject/uv write-fobject
    fobject-ref fobject-set! fobject-ref/uv fobject-set!/uv
-
-   describe-fstruct-type
    ))
 (select-module binary.ftype)
 
