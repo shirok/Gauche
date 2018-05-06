@@ -548,7 +548,7 @@ re-parsing the template.
 @c individual binary values.
 @end deftp
 
-@defun pack template list :key :output :to-string?
+@defun pack template list :key output to-string?
 @c MOD binary.pack
 @c EN
 Writes the values in @var{list} to the current output port, according
@@ -2019,31 +2019,55 @@ the same as @code{make-ttl-cache}.
 @c COMMON
 @end defun
 
-
+@c EN
 @subheading Common operations of caches
+@c JP
+@subheading キャッシュに共通の操作
+@c COMMON
 
+@c EN
 The following APIs are for the users of a cache.
+@c JP
+以下のAPIはキャッシュのユーザに向けたものです。
+@c COMMON
 
 @defun cache-lookup! cache key :optional default
 @c MOD data.cache
+@c EN
 Look for an entry with @var{key} in @var{cache}, and returns its
 value if it exists.  If there's no entry, the procedure returns @var{default}
 if it is provided, or throws an error otherwise.
 
 Some types of cache algorithms update @var{cache} by this operation, hence
 the bang is in the name.
+@c JP
+@var{cache}から@var{key}に結びつけられたエントリを探し、見つかれば返します。
+エントリが無い場合は、@var{default}が与えられていればそれを返し、
+与えられていなければエラーを投げます。
+
+キャッシュアルゴリズムによってはこの操作で@var{cache}がアップデートされる場合があるため、
+名前にエクスクラメーションマークがついています。
+@c COMMON
 @end defun
 
 @defun cache-through! cache key value-fn
 @c MOD data.cache
+@c EN
 Look for an entry with @var{key} in @var{cache}, and returns its
 value if it exists.  If there's no entry, a procedure @var{value-fn}
 is called with @var{key} as the argument, and its return value
 is inserted into @var{cache} and also returned.
+@c JP
+@var{cache}から@var{key}に結びつけられたエントリを探し、見つかれば返します。
+見つからなかった場合、@var{value-fn}が@var{key}を引数として呼び出され、
+その結果が@var{cache}に新たなエントリとして追加され、また@code{cache-through!}の
+戻り値として返されます。
+@c COMMON
 @end defun
 
 @deffn {Generic function} cache-write! cache key value
 @c MOD data.cache
+@c EN
 This inserts association of @var{key} and @var{value} into @var{cache}.
 If there's already an entry with @var{key}, it is overwritten.
 Otherwise a new entry is created.
@@ -2051,40 +2075,81 @@ Otherwise a new entry is created.
 The same effect can be achieved by calling @code{cache-evict!} then
 @code{cache-through!}, but cache algorithms may provide efficient
 way through this method.
+@c JP
+@var{cache}に、@var{key}と@var{value}の関係を追加します。既に@var{key}に
+結びつけられたエントリがあった場合は上書きされ、そうでなければ新たなエントリが作られます。
+
+同じ効果は、@code{cache-evict!}を呼んでから@code{cache-through!}を呼ぶことでも
+達成できますが、アルゴリズムによっては@code{cache-write!}に対して効率のよい
+実装を提供しているかもしれません。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} cache-evict! cache key
 @c MOD data.cache
+@c EN
 Removes an entry with @var{key} from @var{cache}, if it exists.
+@c JP
+@var{cache}から@var{key}に結びついたエントリを(もしあれば)削除します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} cache-clear! cache
 @c MOD data.cache
+@c EN
 Removes all entries from @var{cache}.
+@c JP
+@var{cache}内のエントリを全て取り除きます。
+@c COMMON
 @end deffn
 
-
+@c EN
 @subheading Implementing a cache algorithm
+@c JP
+@subheading キャッシュアルゴリズムの実装
+@c COMMON
 
+@c EN
 Each cache algorithm must define a class inheriting @code{<cache>},
 and implement the following two essential methods.
 The higher-level API calls them.
+@c JP
+新たなキャッシュアルゴリズムを提供するには、@code{<cache>}を継承したクラスを定義し、
+次の二つの必須メソッドを実装します。高レベルAPIはこれらの必須メソッドを呼び出します。
+@c COMMON
 
 @deffn {Generic function} cache-check! cache key
 @c MOD data.cache
+@c EN
 Looks for an entry with @var{key} in @var{cache}.
 If it exists, returns a pair of @var{key} and the associated value.
 Otherwise, returns @code{#f}.  It may update the cache,
 for example, the timestamp of the entry for being read.
+@c JP
+@var{cache}から@var{key}に結びついたエントリを探します。
+見つかれば、@var{key}とその値とのペアを、見つからなければ@code{#f}を返します。
+この時、必要ならばキャッシュを更新して構いません。
+例えば読み出されたエントリのタイムスタンプを更新するなどです。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} cache-register! cache key value
 @c MOD data.cache
+@c EN
 Add an entry with @var{key} and associated @var{value} into @var{cache}.
 This is called after @var{key} is confirmed not being in @var{cache}.
+@c JP
+@var{cache}に、@var{key}と対応する@var{value}を追加します。
+このメソッドは、@var{cache}に@var{key}に対応するエントリが無いことが確認された後で
+呼び出されます。
+@c COMMON
 @end deffn
 
+@c EN
 Additionally, the implementation should consider the following points.
+@c JP
+アルゴリズムの実装は、また以下の点を考慮しなければなりません。
+@c COMMON
 
 @itemize @bullet
 @item
