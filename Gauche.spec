@@ -18,7 +18,7 @@
 Summary: Scheme script engine with multibyte character handling
 Name: Gauche
 Version: %{version}
-Release: 1
+Release: 2
 Source: Gauche-%{version}.tgz
 License: revised BSD
 Group: Development/Languages
@@ -100,7 +100,7 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 
 %files common -f rpmfiles-common.txt
 %defattr(-,root,root)
-%doc COPYING ChangeLog INSTALL INSTALL.eucjp Gauche.spec
+%doc COPYING ChangeLog INSTALL.in Gauche.spec
 /usr/share/info/
 /usr/share/man/man1/
 /usr/share/gauche-0.9/site
@@ -115,13 +115,18 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 /usr/bin/gauche-package
 /usr/lib/libgauche-0.9.so
 /usr/lib/libgauche-0.9.so.0
-/usr/lib/libgauche-0.9.so.0.1
+/usr/lib/libgauche-0.9.so.0.*
 /usr/lib/gauche-0.9/site/
 
 %files gdbm-%{encoding} -f rpmfiles-gdbm.txt
 %defattr(-,root,root)
 
 %changelog
+* Mon May  7 2018 Takahiro Kudou - 0.9.5-2
+- Fixed the description of incorrect day names of week in the changelog section.
+- The description of files was modified to avoid the error of file not found.
+- The doc file list was updated to match the packaged files.
+
 * Sat Oct  8 2016 Shiro Kawai
 - Gauche release 0.9.5.
 
@@ -161,16 +166,16 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 * Wed Jan 17 2007 Shiro Kawai
 - Gauche release 0.8.9.
 
-* Tue Nov 11 2006 Shiro Kawai
+* Sat Nov 11 2006 Shiro Kawai
 - Gauche release 0.8.8.
 
-* Tue Apr 12 2006 Shiro Kawai
+* Wed Apr 12 2006 Shiro Kawai
 - Gauche release 0.8.7.
 
-* Tue Nov  4 2005 Shiro Kawai
+* Fri Nov  4 2005 Shiro Kawai
 - Gauche release 0.8.6.
 
-* Tue Jun 30 2005 Shiro Kawai
+* Thu Jun 30 2005 Shiro Kawai
 - Gauche release 0.8.5.
 
 * Tue May 31 2005 Shiro Kawai
@@ -182,16 +187,16 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 * Mon Nov 29 2004 Shiro Kawai
 - Gauche release 0.8.2.
 
-* Tue Aug  2 2004 Shiro Kawai
+* Mon Aug  2 2004 Shiro Kawai
 - Gauche release 0.8.1.
 
-* Tue May 22 2004 Shiro Kawai
+* Sat May 22 2004 Shiro Kawai
 - Gauche release 0.8.
 
-* Tue Feb 26 2004 Shiro Kawai
+* Thu Feb 26 2004 Shiro Kawai
 - Gauche release 0.7.4.2.
 
-* Tue Feb  4 2004 Shiro Kawai
+* Wed Feb  4 2004 Shiro Kawai
 - Gauche release 0.7.4.1.
 
 * Tue Feb  3 2004 Shiro Kawai
@@ -219,13 +224,13 @@ Splitted into common, encoding-dependent part, and gdbm package.
 * Sun Mar 30 2003 Shiro Kawai
 - Gauche release 0.6.8
 
-* Thu Feb  7 2003 Shiro Kawai
+* Fri Feb  7 2003 Shiro Kawai
 - Gauche release 0.6.7.1
 
 * Thu Feb  6 2003 Shiro Kawai
 - Gauche release 0.6.7
 
-* Fri Dec 14 2002 Shiro Kawai
+* Sat Dec 14 2002 Shiro Kawai
 - Gauche release 0.6.6
 
 * Fri Nov 15 2002 Shiro Kawai
@@ -234,13 +239,13 @@ Splitted into common, encoding-dependent part, and gdbm package.
 * Mon Oct 14 2002 Shiro Kawai
 - Gauche release 0.6.4
 
-* Thu Sep 22 2002 Shiro Kawai
+* Sun Sep 22 2002 Shiro Kawai
 - Gauche release 0.6.3
 
-* Thu Sep  2 2002 Shiro Kawai
+* Mon Sep  2 2002 Shiro Kawai
 - Gauche release 0.6.2
 
-* Thu Jul 31 2002 Shiro Kawai
+* Wed Jul 31 2002 Shiro Kawai
 - Gauche release 0.6.1
 
 * Thu Jul 18 2002 Shiro Kawai
@@ -255,12 +260,11 @@ Splitted into common, encoding-dependent part, and gdbm package.
 * Mon May 27 2002 Shiro Kawai
 - Gauche release 0.5.5
 
-* Sat May  5 2002 Shiro Kawai
+* Sun May  5 2002 Shiro Kawai
 - Gauche release 0.5.4
 
-* Thu Apr 15 2002 Shiro Kawai
+* Mon Apr 15 2002 Shiro Kawai
 - Gauche release 0.5.3
 
 * Thu Mar  7 2002 Shiro Kawai
 - first package release
-
