@@ -18,7 +18,7 @@
 Summary: Scheme script engine with multibyte character handling
 Name: Gauche
 Version: %{version}
-Release: 2
+Release: 3
 Source: Gauche-%{version}.tgz
 License: revised BSD
 Group: Development/Languages
@@ -64,6 +64,7 @@ Summary: gdbm binding for Gauche Scheme system
 Group: Development/Languages
 License: GPL
 Provides: Gauche-gdbm
+BuildRequires: gdbm-devel >= 1.8.0
 Requires: gdbm >= 1.8.0, Gauche-%{encoding}
 %description gdbm-%{encoding}
 This package adds gdbm binding to the Gauche Scheme system.
@@ -122,6 +123,9 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
+* Tue May  8 2018 Takahiro Kudou - 0.9.5-3
+- The package of gdbm-devel was assigned to be required for build.
+
 * Mon May  7 2018 Takahiro Kudou - 0.9.5-2
 - Fixed the description of incorrect day names of week in the changelog section.
 - The description of files was modified to avoid the error of file not found.
