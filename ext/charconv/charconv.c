@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <gauche.h>
 #include <gauche/extend.h>
+#include "gauche/priv/charP.h"
 #include "gauche/priv/portP.h"
 #include "charconv.h"
 

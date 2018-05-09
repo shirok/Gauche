@@ -375,9 +375,6 @@ SCM_EXTERN ScmChar Scm_CharDowncase(ScmChar ch);
 SCM_EXTERN ScmChar Scm_CharTitlecase(ScmChar ch);
 SCM_EXTERN ScmChar Scm_CharFoldcase(ScmChar ch);
 
-SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
-                                          int (*c2u)(ScmChar));
-
 #if   defined(GAUCHE_CHAR_ENCODING_EUC_JP)
 #include "gauche/char_euc_jp.h"
 #elif defined(GAUCHE_CHAR_ENCODING_UTF_8)

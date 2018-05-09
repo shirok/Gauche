@@ -35,6 +35,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/char_attr.h"
+#include "gauche/priv/charP.h"
 #include "gauche/priv/vectorP.h"
 
 #include "char_attr.c"          /* generated tables */
