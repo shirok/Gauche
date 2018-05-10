@@ -196,6 +196,167 @@ int Scm_CharToUcs(ScmChar ch)
 #endif /*!GAUCHE_CHAR_ENCODING_UTF_8*/
 }
 
+/*
+ * Charcter classification for lexical parsing
+ */
+
+/* Table of initial 128 bytes of ASCII characters to dispatch for
+   special meanings. */
+
+enum {
+    INITIAL          = 1<<0,      /* <initial> */
+    SUBSEQUENT       = 1<<1,      /* <subsequent> */
+    SIGN_SUBSEQUENT  = 1<<2,      /* <sign subsequent> */
+    DELIMITER        = 1<<3,      /* <delimiter> */
+    GAUCHE_DELIMITER = 1<<4,      /* Gauche-extended delimiter */
+};
+
+static const unsigned char ctypes[128] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    /*SPC*/  DELIMITER,
+    /* ! */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* " */  DELIMITER,
+    /* # */  0,
+    /* $ */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* % */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* & */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* ' */  GAUCHE_DELIMITER,
+    /* ( */  DELIMITER,
+    /* ) */  DELIMITER,
+    /* * */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* + */  SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* , */  GAUCHE_DELIMITER,
+    /* - */  SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* . */  SUBSEQUENT,
+    /* / */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+
+    /* 0 */  SUBSEQUENT,
+    /* 1 */  SUBSEQUENT,
+    /* 2 */  SUBSEQUENT,
+    /* 3 */  SUBSEQUENT,
+    /* 4 */  SUBSEQUENT,
+    /* 5 */  SUBSEQUENT,
+    /* 6 */  SUBSEQUENT,
+    /* 7 */  SUBSEQUENT,
+    /* 8 */  SUBSEQUENT,
+    /* 9 */  SUBSEQUENT,
+    /* : */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* ; */  DELIMITER,
+    /* < */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* = */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* > */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* ? */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+
+    /* @ */  SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* A */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* B */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* C */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* D */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* E */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* F */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* G */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* H */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* I */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* J */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* K */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* L */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* M */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* N */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* O */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+
+    /* P */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* Q */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* R */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* S */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* T */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* U */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* V */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* W */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* X */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* Y */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* Z */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* [ */  GAUCHE_DELIMITER,
+    /* \ */  0,
+    /* ] */  GAUCHE_DELIMITER,
+    /* ^ */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* _ */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+
+    /* ` */  GAUCHE_DELIMITER,
+    /* a */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* b */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* c */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* d */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* e */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* f */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* g */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* h */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* i */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* j */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* k */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* l */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* m */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* n */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* o */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+
+    /* p */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* q */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* r */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* s */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* t */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* u */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* v */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* w */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* x */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* y */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* z */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /* { */  GAUCHE_DELIMITER,
+    /* | */  DELIMITER,
+    /* } */  GAUCHE_DELIMITER,
+    /* ~ */  INITIAL|SUBSEQUENT|SIGN_SUBSEQUENT,
+    /*DEL*/  0,
+};
+
+int Scm_CharLexerCategoryP(ScmChar c, ScmCharLexerCategory category)
+{
+    if (c < 128) {
+        switch (category) {
+        case SCM_CHAR_INITIAL:    
+            return !!(ctypes[c] & INITIAL);
+        case SCM_CHAR_SUBSEQUENT:
+            return !!(ctypes[c] & SUBSEQUENT);
+        case SCM_CHAR_SIGN_SUBSEQUENT:
+            return !!(ctypes[c] & SIGN_SUBSEQUENT);
+        }
+    }
+    if (c == 0x200c || c == 0x200d) {
+        return (category == SCM_CHAR_SUBSEQUENT);
+    }
+    switch (Scm_CharGeneralCategory(c)) {
+    case SCM_CHAR_CATEGORY_Lu:
+    case SCM_CHAR_CATEGORY_Ll:
+    case SCM_CHAR_CATEGORY_Lt:
+    case SCM_CHAR_CATEGORY_Lm:
+    case SCM_CHAR_CATEGORY_Lo:
+    case SCM_CHAR_CATEGORY_Mn:
+    case SCM_CHAR_CATEGORY_Nl:
+    case SCM_CHAR_CATEGORY_No:
+    case SCM_CHAR_CATEGORY_Pd:
+    case SCM_CHAR_CATEGORY_Pc:
+    case SCM_CHAR_CATEGORY_Po:
+    case SCM_CHAR_CATEGORY_Sc:
+    case SCM_CHAR_CATEGORY_Sm:
+    case SCM_CHAR_CATEGORY_Sk:
+    case SCM_CHAR_CATEGORY_So:
+    case SCM_CHAR_CATEGORY_Co: return (category == SCM_CHAR_SUBSEQUENT);
+    case SCM_CHAR_CATEGORY_Nd:
+    case SCM_CHAR_CATEGORY_Mc:
+    case SCM_CHAR_CATEGORY_Me: return (category == SCM_CHAR_INITIAL);
+    default: return FALSE;
+    }
+}
+
+
 /*=======================================================================
  * Character set (cf. SRFI-14)
  */

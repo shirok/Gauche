@@ -1,3 +1,8 @@
+2018-05-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (Scm_CharLexerCategoryP) Common lexer predicate to be
+	  used in both symbol writer and symbol reader.
+
 2018-04-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (flonum-epsilon): Added.

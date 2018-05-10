@@ -385,6 +385,15 @@ SCM_EXTERN ScmChar Scm_CharFoldcase(ScmChar ch);
 #include "gauche/char_none.h"
 #endif
 
+/* Character lexer category.  See 7.1.1 of R7RS */
+typedef enum {
+    SCM_CHAR_INITIAL,
+    SCM_CHAR_SUBSEQUENT,
+    SCM_CHAR_SIGN_SUBSEQUENT,
+} ScmCharLexerCategory;
+
+SCM_EXTERN int Scm_CharLexerCategoryP(ScmChar c, ScmCharLexerCategory cat);
+
 /*
  * HEAP ALLOCATED OBJECTS
  *
