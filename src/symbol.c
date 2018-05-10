@@ -186,34 +186,66 @@ ScmObj Scm_SymbolSansPrefix(ScmSymbol *s, ScmSymbol *p)
                                                 SCM_STRING_IMMUTABLE)));
 }
 
-
-/* Print */
-
-/* table of special chars.
-   bit 0: bad char for symbol to begin with
-   bit 1: bad char for symbol to contain
-   bit 2: bad char for symbol, and should be written as \nnn
-   bit 3: bad char for symbol, and should be written as \c
-   bit 4: may be escaped when case fold mode
+/*
+ * Print
  */
-static const char special[] = {
- /* NUL .... */
-    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
- /* .... */
-    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
- /*    !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /  */
-    3, 0, 3, 3, 0, 0, 0, 3, 3, 3, 0, 1, 3, 1, 1, 0,
- /* 0  1  2  3  4  5  6  7  8  9  :  ;  <  =  >  ?  */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, 0, 0, 0, 0,
- /* @  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  */
-    1, 16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
- /* P  Q  R  S  T  U  V  W  X  Y  Z  [  \  ]  ^  _  */
-    16,16,16,16,16,16,16,16,16,16,16,3, 11,3, 0, 0,
- /* `  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  */
-    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- /* p  q  r  s  t  u  v  w  x  y  z  {  |  }  ~  ^? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 11,3, 0, 7
-};
+
+static int escape_required_p(const ScmStringBody *b, u_int flags, int casefold)
+{
+    int siz = SCM_STRING_BODY_SIZE(b);
+    if (siz == 0) return !(flags & SCM_SYMBOL_WRITER_NOESCAPE_EMPTY);
+    
+    const char *p = SCM_STRING_BODY_START(b);
+    const char *e = p + siz;
+    ScmChar ch;
+
+    if (flags & SCM_SYMBOL_WRITER_NOESCAPE_INITIAL) goto subsequent;
+
+    if (keyword_disjoint_p && *p == ':') return TRUE;
+
+    if (*p == '+' || *p == '-') {
+        p++;
+        if (p == e) return FALSE;
+        if (*p == '.') goto dot_subsequent;
+        /* detect special numeric constants */
+        if (siz == 2 && *p == 'i' || *p == 'I') return TRUE;
+        if (siz >= 6 && p[3] == '.' && p[4] == '0') {
+            if ((p[0] == 'n' || p[0] == 'N')
+                && (p[1] == 'a' || p[1] == 'A')
+                && (p[2] == 'n' || p[2] == 'N')) return TRUE;
+            if ((p[0] == 'i' || p[0] == 'I')
+                && (p[1] == 'n' || p[1] == 'N')
+                && (p[2] == 'f' || p[2] == 'F')) return TRUE;
+        }
+        SCM_CHAR_GET(p, ch);
+        if (!Scm_CharLexerCategoryP(ch, SCM_CHAR_SIGN_SUBSEQUENT)) return TRUE;
+        p += SCM_CHAR_NBYTES(ch);
+        goto subsequent;
+    }
+    if (*p == '.') {
+    dot_subsequent:
+        p++;
+        if (p == e) return TRUE;
+        SCM_CHAR_GET(p, ch);
+        if (ch != '.' && !Scm_CharLexerCategoryP(ch, SCM_CHAR_SIGN_SUBSEQUENT))
+            return TRUE;
+        p += SCM_CHAR_NBYTES(ch);
+        goto subsequent;
+    }
+    SCM_CHAR_GET(p, ch);
+    if (!Scm_CharLexerCategoryP(ch, SCM_CHAR_INITIAL)) return TRUE;
+    if (casefold && ch >= 'A' && ch <= 'Z') return TRUE;
+    p += SCM_CHAR_NBYTES(ch);
+
+ subsequent:
+    while (p < e) {
+        SCM_CHAR_GET(p, ch);
+        if (!Scm_CharLexerCategoryP(ch, SCM_CHAR_SUBSEQUENT)) return TRUE;
+        if (casefold && ch >= 'A' && ch <= 'Z') return TRUE;
+        p += SCM_CHAR_NBYTES(ch);
+    }
+    return FALSE;
+}
 
 /* internal function to write symbol name, with proper escaping */
 void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
@@ -225,8 +257,7 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
     const ScmStringBody *b = SCM_STRING_BODY(snam);
     const char *p = SCM_STRING_BODY_START(b);
     int siz = SCM_STRING_BODY_SIZE(b);
-    int escape = FALSE;
-    int spmask = (Scm_WriteContextCase(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02;
+    int casefold = (Scm_WriteContextCase(ctx) == SCM_WRITE_CASE_FOLD);
 
     if (siz == 0) {         /* special case */
         if (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_EMPTY)) {
@@ -234,39 +265,17 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
         }
         return;
     }
-    if (siz == 1 && (*p == '+' || *p == '-')) {
-        SCM_PUTC((unsigned)*p, port);
-        return;
-    }
-    if ((unsigned int)*p < 128
-        && ((special[(unsigned int)*p]&1)
-#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
-            || (keyword_disjoint_p && (*p == ':'))
-#endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
-            )
-        && (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_INITIAL))) {
-        escape = TRUE;
-    } else {
-        const char *q = p;
-        for (int i=0; i<siz; i++, q++) {
-            if ((unsigned int)*q < 128
-                && (special[(unsigned int)*q]&spmask)) {
-                escape = TRUE;
-                break;
-            }
-        }
-    }
-    if (escape) {
+    if (escape_required_p(b, flags, casefold)) {
         SCM_PUTC('|', port);
         for (const char *q=p; q<p+siz; ) {
             unsigned int ch;
             SCM_CHAR_GET(q, ch);
             q += SCM_CHAR_NBYTES(ch);
             if (ch < 128) {
-                if (special[ch] & 8) {
+                if (ch == '|' || ch == '\\') {
                     SCM_PUTC('\\', port);
                     SCM_PUTC(ch, port);
-                } else if (special[ch] & 4) {
+                } else if (ch < 0x20 || ch == 0x7f) {
                     Scm_Printf(port, "\\x%02x;", ch);
                 } else {
                     SCM_PUTC(ch, port);
@@ -276,7 +285,6 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
             }
         }
         SCM_PUTC('|', port);
-        return;
     } else {
         SCM_PUTS(snam, port);
     }

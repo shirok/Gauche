@@ -37,9 +37,35 @@
 (test* "symbol reader hex escaped" 'abc (read-from-string "|a\\x62;c|"))
 (test* "symbol reader hex escaped" 'abc (read-from-string "|a\\x0062;c|"))
 
-(test* "symbol writer" 'foo (read-from-string (write-to-string 'foo)))
-(test* "symbol writer" '|foo bar|
-       (read-from-string (write-to-string (string->symbol "foo bar"))))
+(define (writer-test name expected)
+  (test* (string-append "symbol writer: " name)
+         expected
+         (write-to-string (string->symbol name))))
+
+(writer-test "foo" "foo")
+(writer-test "foo bar" "|foo bar|")
+(writer-test "" "||")
+(writer-test " " "| |")
+(writer-test "\r" "|\\x0d;|")
+(writer-test "+i" "|+i|")
+(writer-test "+in" "+in")
+(writer-test "+inf" "+inf")
+(writer-test "+inf." "+inf.")
+(writer-test "+inf.0" "|+inf.0|")
+(writer-test "-i" "|-i|")
+(writer-test "-nan.0" "|-nan.0|")
+(writer-test "@abc" "|@abc|")
+(writer-test "ab@c" "ab@c")
+(writer-test "." "|.|")
+(writer-test ".." "..")
+(writer-test "..." "...")
+(writer-test "+" "+")
+(writer-test "-" "-")
+(writer-test "->" "->")
+(writer-test "-0." "|-0.|")
+(writer-test "-1a" "|-1a|")
+(writer-test "-.0" "|-.0|")
+(writer-test "-.a" "-.a")
 
 (test* "symbol reader uninterned" "foo"
        (let1 s (read-from-string "#:foo")

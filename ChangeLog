@@ -1,7 +1,10 @@
 2018-05-09  Shiro Kawai  <shiro@acm.org>
 
-	* src/char.c (Scm_CharLexerCategoryP) Common lexer predicate to be
+	* src/char.c (Scm_CharLexerCategoryP): Common lexer predicate to be
 	  used in both symbol writer and symbol reader.
+	* src/symbol.c (Scm_WriteSymbolName): Make symbol writer to avoid
+	  escaping iff the symbol name is a valid R7RS symbol name without
+	  escapes.
 
 2018-04-02  Shiro Kawai  <shiro@acm.org>
 
