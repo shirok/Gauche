@@ -73,7 +73,7 @@
             (values '() (list exc)))
         (let1 name (condition-type-name exc)
           (if (condition-has-type? exc <message-condition>)
-            (format out "*** ~a: ~a\n" name (~ exc'message))
+            (format out "*** ~a: ~,,,,200:a\n" name (~ exc'message))
             (format out "*** ~a\n" name)))
         (for-each (cut report-mixin-condition <> out) mixins)))))
 

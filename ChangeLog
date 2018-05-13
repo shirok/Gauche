@@ -1,3 +1,10 @@
+2018-05-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/libexc.scm (print-default-error-heading): Actually, limiting
+	  the length of error message is better to be done in the printing
+	  stage, instead of error object constructing stage.  Reverting the
+	  previous Scm_Error change and add the feature here.
+
 2018-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (Scm_Error etc.): Limit the length of error message
