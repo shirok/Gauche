@@ -1,3 +1,13 @@
+2018-05-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_Error etc.): Limit the length of error message
+	  header.  When error irritant is a huge structure, displaying the
+	  entire structure in the error header gets in way of debugging.
+	  It also makes Emacs slow when it happens in *scheme* buffer
+	  with font-locking on.
+	  NB: We need to do the similar thing in Scheme-side definition
+	  of error.
+
 2018-05-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c (Scm_CharLexerCategoryP): Common lexer predicate to be

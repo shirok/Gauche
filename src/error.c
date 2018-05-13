@@ -106,7 +106,7 @@ static ScmObj message_allocate(ScmClass *klass, ScmObj initargs)
 }
 
 /* See comment on gauche/exception.h about hack in 'message' slot.
-   TODO: Remove this hack on 1.0 release. */
+   TRANSIENT: Remove this hack on 1.0 release. */
 static ScmObj message_get(ScmMessageCondition *obj)
 {
     ScmObj msglist = obj->message;
@@ -653,6 +653,23 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
         SCM_PUTS(syserr, ostr);                         \
     } while (0)
 
+/* Returns formatted error message in OSTR.
+   If the error message in the output string port OSTR exceeds limit,
+   we truncate it */
+#define MAX_ERROR_MESSAGE_LEN 200
+
+static ScmObj get_error_message(ScmPort *ostr)
+{
+    ScmObj s = Scm_GetOutputString(ostr, TRUE);
+    const ScmStringBody *b = SCM_STRING_BODY(s);
+    if (SCM_STRING_BODY_LENGTH(b) > MAX_ERROR_MESSAGE_LEN) {
+        ScmObj t = Scm_Substring(SCM_STRING(s), 0, MAX_ERROR_MESSAGE_LEN, FALSE);
+        return Scm_StringAppendC(SCM_STRING(t), " ...", 4, 4);
+    } else {
+        return s;
+    }
+}
+
 /*
  * C-like interface
  */
@@ -662,7 +679,7 @@ void Scm_Error(const char *msg, ...)
     SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
     ScmObj ostr;
     SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
-    ScmObj e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr), 0));
+    ScmObj e = Scm_MakeError(get_error_message(SCM_PORT(ostr)));
     Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
@@ -734,7 +751,7 @@ void Scm_SysError(const char *msg, ...)
 
     ScmObj ostr;
     SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
-    ScmObj e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr), 0), en);
+    ScmObj e = Scm_MakeSystemError(get_error_message(SCM_PORT(ostr)), en);
     Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
@@ -769,7 +786,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
     ScmObj ostr;
     if (en != 0) SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
     else         SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
-    ScmObj smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
+    ScmObj smsg = get_error_message(SCM_PORT(ostr));
 
     ScmClass *peclass;
     switch (reason) {
