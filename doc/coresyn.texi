@@ -1968,6 +1968,33 @@ Use this form to inform the compiler and the reader your intention.
 @c COMMON
 @end defmac
 
+@defmac assume-type expr type
+@c EN
+Check if the value of expression @var{expr} has type @var{type}.
+If not, raises an error.
+@c JP
+@var{expr}の値が型@var{type}かどうかチェックし、
+そうでなければエラーを投げます。
+@c COMMON
+
+@example
+(assume-type expr type) @equiv{} (assume (is-a? expr type))
+@end example
+
+@c EN
+Note: Like @code{assume}, this form is advisory; it is not guaranteed
+that the check is performed, nor @var{expr} is evaluated.
+
+On the other hand, the type assumption may be used by the compiler
+future compilers for optimizations.
+@c JP
+註: @code{assume}と同様、このフォームも勧告として機能します。
+チェックがなされるか、@var{expr}が評価されるかどうかは保証されません。
+
+一方、このフォームによる情報は、将来のコンパイラで最適化に使われるかもしれません。
+@c COMMON
+@end defmac
+
 @node Binding constructs, Sequencing, Conditionals, Core syntax
 @section Binding constructs
 @c NODE 変数束縛
