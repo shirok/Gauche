@@ -35,6 +35,7 @@
   (use srfi-1)
   (use srfi-14)
   (use srfi-42)
+  (use util.match)
   (use math.const)
   (use math.mt-random)
   (use gauche.uvector)
@@ -48,6 +49,7 @@
           int8s uint8s int16s uint16s int32s uint32s int64s uint64s
           reals$ reals-between$ reals-normal$ reals-exponential$
           integers-geometric$ integers-poisson$
+          regular-strings$
 
           default-sizer
           samples-from pairs-of tuples-of lists-of vectors-of strings-of
@@ -265,6 +267,70 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
                                bins))
                     " ")))))
 |#
+
+;; API.
+;; Generate strings that is accepted with a regular expression regex
+;;
+;; We construct NFA from regex AST.  Each node is a closure that emits
+;; character(s), and optionally calls other node.
+
+(define (regular-strings$ regex)
+  (assume-type regex <regexp>)
+  (let1 nfa (%regex->nfa (regexp-ast regex))
+    (^[] (with-output-to-string (cut nfa #f)))))
+
+(define (%regex->nfa ast)
+  (define (%emit c case-fold)
+    (let1 cc (if (and case-fold (zero? (%rand-int 2)))
+               (cond [(char-lower-case? c) (char-upcase c)]
+                       [(char-upper-case? c) (char-downcase c)]
+                       [else c])
+               c)
+      (display cc))
+    #t)
+  (define (rec a)
+    (match a
+      [(? char?)     (cut %emit a <>)]
+      [(? char-set?) (let1 g (chars$ a) (cut %emit (g) <>))]
+      ['any          (let1 g (chars$ char-set:full) (cut %emit (g) <>))]
+      [(or 'bol 'wb 'nwb) (^[case-fold] #t)]
+      ['eol          (^[case-fold] #f)]
+      [('seq . as)   (let1 nodes (map rec as)
+                       (^[case-fold] (every (cut <> case-fold) nodes)))]
+      [('seq-uncase . as) (let1 nodes (map rec as)
+                            (^_ (every (cut <> #t) nodes)))]
+      [('seq-case . as)   (let1 nodes (map rec as)
+                            (^_ (every (cut <> #f) nodes)))]
+      [('alt . as)   (let1 choice-gen (samples$ (map rec as))
+                       (^[case-fold] ((choice-gen) case-fold)))]
+      [((or 'rep 'rep-min 'rep-while) m n . as)
+       (let1 nodes (map rec as)
+         (^[case-fold]
+           (let loop ([k 1])
+             (and (every (cut <> case-fold) nodes)
+                  (cond [(< k m) (loop (+ k 1))]
+                        [(or (not n) (< k n))
+                         (if (zero? (%rand-int 2))
+                           (loop (+ k 1))
+                           #t)]
+                        [else #t])))))]
+      [('comp . cs)  (let1 g (chars$ (char-set-complement cs))
+                       (cut %emit (g) <>))]
+      [('cpat _ _ _)
+       (error "Conditional regexp can't be used (yet) to generate strings:"
+              (regexp-unparse ast))]
+      [('once . as)  (let1 nodes (map rec as)
+                       (^[case-fold] (every (cut <> case-fold) nodes)))]
+      [((or 'assert 'nassert) . _)
+       (error "Lookahead/behind assertion can't be used (yet) to \
+               generate strings:" (regexp-unparse ast))]
+      [((? integer? n) _ . as) 
+       (let1 nodes (map rec as)
+         (^[case-fold] (every (cut <> case-fold) nodes)))]
+      [_ (error "Unsupported regexp to generate strings:" 
+                (regexp-unparse ast))]))
+
+  (rec ast))
 
 ;;;
 ;;; Generator combinators

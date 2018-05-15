@@ -1,3 +1,8 @@
+2018-05-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/random.scm (regular-string$): EXPERIMENTAL - a generator
+	  maker that generates strings that match the given regexp.
+
 2018-05-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm (print-default-error-heading): Actually, limiting
