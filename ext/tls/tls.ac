@@ -17,8 +17,9 @@ AC_ARG_ENABLE(tls,
     AS_CASE([$enableval],
       [no|none], [enable_tls=no],
       [axtls],   [enable_tls=axtls],
+      [mbedtls], [enable_tls=mbedtls],
 dnl      [openssl], [enable_tls=openssl],
-		 [echo "TLS type must be either one of 'axtls' or 'none'"])
+		 [echo "TLS type must be either one of 'axtls', 'mbedtls' or 'none'"])
   ], [enable_tls=axtls])
 
 AS_CASE([$enable_tls],
@@ -36,6 +37,10 @@ AS_CASE([$enable_tls],
 	   ])
 	   GAUCHE_TLS_SWITCH_NONE="@%:@"
 	   ],
+  [mbedtls], [
+	   AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
+	   GAUCHE_TLS_TYPE=mbedtls
+	  ],
 dnl [openssl], [
 dnl	   AC_DEFINE(GAUCHE_USE_OPENSSL, 1, [Define if you use openssl])
 dnl	   GAUCHE_TLS_TYPE=openssl
