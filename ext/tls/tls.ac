@@ -40,6 +40,10 @@ AS_CASE([$enable_tls],
   [mbedtls], [
 	   AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
 	   GAUCHE_TLS_TYPE=mbedtls
+	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
+	   GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
+	   GAUCHE_TLS_SWITCH_MBEDTLS=
+	   GAUCHE_TLS_SWITCH_NONE="@%:@"
 	  ],
 dnl [openssl], [
 dnl	   AC_DEFINE(GAUCHE_USE_OPENSSL, 1, [Define if you use openssl])
