@@ -35,6 +35,7 @@ AS_CASE([$enable_tls],
 	   ], [
 	     GAUCHE_TLS_SWITCH_AXTLS_TEST=
 	   ])
+	   GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
 	   GAUCHE_TLS_SWITCH_NONE="@%:@"
 	   ],
   [mbedtls], [
@@ -54,6 +55,7 @@ dnl	  ],
 	   GAUCHE_TLS_TYPE=none
 	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
 	   GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
+	   GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
 	   GAUCHE_TLS_SWITCH_NONE=
 	  ])
 
