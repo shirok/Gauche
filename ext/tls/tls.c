@@ -56,7 +56,12 @@ static void tls_finalize(ScmObj obj, void* data)
         t->ctx = NULL;
     }
 #elif defined(GAUCHE_USE_MBEDTLS)
-    
+    if (t->ctx) {
+        Scm_TLSClose(t);
+
+
+        t->ctx = NULL;
+    }
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
@@ -84,6 +89,8 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
     t->in_port = t->out_port = 0;
 #elif defined(GAUCHE_USE_MBEDTLS)
 
+    t->conn = NULL;
+    t->in_port = t->out_port = 0;
 #endif /*GAUCHE_USE_AXTLS*/
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
     return SCM_OBJ(t);
@@ -109,7 +116,12 @@ ScmObj Scm_TLSClose(ScmTLS* t)
         t->in_port = t->out_port = 0;
     }
 #elif defined(GAUCHE_USE_MBEDTLS)
+    if (t->ctx && t->conn) {
 
+
+        t->conn = 0;
+        t->in_port = t->out_port = 0;
+    }
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_TRUE;
 }
@@ -151,6 +163,7 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
     t->conn = ssl_server_new(t->ctx, fd);
 #elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "accept");
 
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
@@ -206,6 +219,9 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
 #elif defined(GAUCHE_USE_MBEDTLS)
     context_check(t, "write");
     close_check(t, "write");
+
+    u_int size;
+    const uint8_t* cmsg = get_message_body(msg, &size);
 
     return SCM_FALSE;
 #else  /*!GAUCHE_USE_AXTLS*/
