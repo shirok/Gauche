@@ -74,6 +74,9 @@
 /* Define to use NetBSD threads */
 #undef GC_NETBSD_THREADS
 
+/* Define to use OpenBSD threads */
+#undef GC_OPENBSD_THREADS
+
 /* Define to use pthreads */
 #undef GC_PTHREADS
 
@@ -317,6 +320,9 @@
 
 /* Define to 1 if you have the `srandom' function. */
 #undef HAVE_SRANDOM
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
