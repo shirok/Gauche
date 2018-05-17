@@ -43,6 +43,23 @@
 
 #if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
+#elif defined(GAUCHE_USE_MBEDTLS)
+#include <mbedtls/ssl.h>
+#include <mbedtls/net_sockets.h>
+#define SSL_CLIENT_AUTHENTICATION               0x00010000
+#define SSL_SERVER_VERIFY_LATER                 0x00020000
+#define SSL_NO_DEFAULT_KEY                      0x00040000
+#define SSL_DISPLAY_STATES                      0x00080000
+#define SSL_DISPLAY_BYTES                       0x00100000
+#define SSL_DISPLAY_CERTS                       0x00200000
+#define SSL_DISPLAY_RSA                         0x00400000
+#define SSL_CONNECT_IN_PARTS                    0x00800000
+#define SSL_OBJ_X509_CERT                       1
+#define SSL_OBJ_X509_CACERT                     2
+#define SSL_OBJ_RSA_KEY                         3
+#define SSL_OBJ_PKCS8                           4
+#define SSL_OBJ_PKCS12                          5
+
 #else /*!GAUCHE_USE_AXTLS*/
 #define SSL_CLIENT_AUTHENTICATION               0x00010000
 #define SSL_SERVER_VERIFY_LATER                 0x00020000
@@ -67,6 +84,10 @@ typedef struct ScmTLSRec {
   SSL_CTX* ctx;
   SSL* conn;
   ScmPort* in_port, * out_port;
+#elif defined(GAUCHE_USE_MBEDTLS)
+  mbedtls_ssl_context *ctx;
+  mbedtls_net_context *conn;
+  ScmPort *in_port, *out_port;
 #endif /*GAUCHE_USE_AXTLS*/
 } ScmTLS;
 

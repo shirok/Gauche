@@ -55,19 +55,21 @@ static void tls_finalize(ScmObj obj, void* data)
         ssl_ctx_free(t->ctx);
         t->ctx = NULL;
     }
+#elif defined(GAUCHE_USE_MBEDTLS)
+    
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 static void context_check(ScmTLS* tls, const char* op)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     if (!tls->ctx) Scm_Error("attempt to %s destroyed TLS: %S", op, tls);
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 static void close_check(ScmTLS* tls, const char* op)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     if (!tls->conn) Scm_Error("attempt to %s closed TLS: %S", op, tls);
 #endif /*GAUCHE_USE_AXTLS*/
 }
@@ -80,6 +82,8 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
     t->ctx = ssl_ctx_new(options, num_sessions);
     t->conn = NULL;
     t->in_port = t->out_port = 0;
+#elif defined(GAUCHE_USE_MBEDTLS)
+
 #endif /*GAUCHE_USE_AXTLS*/
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
     return SCM_OBJ(t);
@@ -90,7 +94,7 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
    up all fds, so explicit destruction is recommended whenever possible. */
 ScmObj Scm_TLSDestroy(ScmTLS* t)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     tls_finalize(SCM_OBJ(t), NULL);
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_TRUE;
@@ -104,6 +108,8 @@ ScmObj Scm_TLSClose(ScmTLS* t)
         t->conn = 0;
         t->in_port = t->out_port = 0;
     }
+#elif defined(GAUCHE_USE_MBEDTLS)
+
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_TRUE;
 }
@@ -115,6 +121,8 @@ ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
     uint32_t type = Scm_GetIntegerU32Clamp(obj_type, SCM_CLAMP_ERROR, NULL);
     if (ssl_obj_load(t->ctx, type, filename, password) == SSL_OK)
         return SCM_TRUE;
+#elif defined(GAUCHE_USE_MBEDTLS)
+
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_FALSE;
 }
@@ -129,6 +137,9 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     if (r != SSL_OK) {
         Scm_Error("TLS handshake failed: %d", r);
     }
+#elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "connect");
+
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
 }
@@ -139,6 +150,8 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     context_check(t, "accept");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
     t->conn = ssl_server_new(t->ctx, fd);
+#elif defined(GAUCHE_USE_MBEDTLS)
+
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
 }
@@ -152,12 +165,17 @@ ScmObj Scm_TLSRead(ScmTLS* t)
     while ((r = ssl_read(t->conn, &buf)) == SSL_OK);
     if (r < 0) Scm_SysError("ssl_read() failed");
     return Scm_MakeString((char*) buf, r, r, SCM_STRING_INCOMPLETE);
+#elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "read");
+    close_check(t, "read");
+
+    return SCM_FALSE;
 #else  /*!GAUCHE_USE_AXTLS*/
     return SCM_FALSE;
 #endif /*!GAUCHE_USE_AXTLS*/
 }
 
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
 static const uint8_t* get_message_body(ScmObj msg, u_int *size)
 {
     if (SCM_UVECTORP(msg)) {
@@ -185,6 +203,11 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
         Scm_SysError("ssl_write() failed");
     }
     return SCM_MAKE_INT(r);
+#elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "write");
+    close_check(t, "write");
+
+    return SCM_FALSE;
 #else  /*!GAUCHE_USE_AXTLS*/
     return SCM_FALSE;
 #endif /*!GAUCHE_USE_AXTLS*/
@@ -192,21 +215,25 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
 
 ScmObj Scm_TLSInputPort(ScmTLS* t)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     return SCM_OBJ(t->in_port);
+#else
+    return SCM_UNDEFINED;
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 ScmObj Scm_TLSOutputPort(ScmTLS* t)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     return SCM_OBJ(t->out_port);
+#else
+    return SCM_UNDEFINED;
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     t->in_port = SCM_PORT(port);
 #endif /*GAUCHE_USE_AXTLS*/
     return port;
@@ -214,7 +241,7 @@ ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port)
 
 ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     t->out_port = SCM_PORT(port);
 #endif /*GAUCHE_USE_AXTLS*/
     return port;

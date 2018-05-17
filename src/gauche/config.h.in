@@ -44,6 +44,9 @@
 /* Define if you use axTLS */
 #undef GAUCHE_USE_AXTLS
 
+/* Define if you use mbed TLS */
+#undef GAUCHE_USE_MBEDTLS
+
 /* Define if we use pthreads */
 #undef GAUCHE_USE_PTHREADS
 
