@@ -102,6 +102,13 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
 
     mbedtls_entropy_init(t->entropy);
 
+    if (mbedtls_ssl_config_defaults(t->conf,
+				    MBEDTLS_SSL_IS_CLIENT,
+				    MBEDTLS_SSL_TRANSPORT_STREAM,
+				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
+      Scm_SysError("mbedtls_ssl_config_defaults() failed");
+    }
+
     t->in_port = t->out_port = 0;
 #endif /*GAUCHE_USE_AXTLS*/
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
@@ -163,6 +170,10 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     }
 #elif defined(GAUCHE_USE_MBEDTLS)
     context_check(t, "connect");
+    if (t->conn->fd < 0) {
+      Scm_SysError("attempt to connect already-connected TLS %S", t);
+    }
+
 
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
