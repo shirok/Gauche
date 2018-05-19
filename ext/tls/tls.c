@@ -194,7 +194,7 @@ ScmObj Scm_TLSRead(ScmTLS* t)
     context_check(t, "read");
     close_check(t, "read");
 
-    uint8_t buf[1024];
+    uint8_t buf[1024] = {};
     int r;
     r = mbedtls_ssl_read(t->ctx, buf, sizeof(buf));
 
