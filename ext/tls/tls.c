@@ -170,7 +170,7 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     }
 #elif defined(GAUCHE_USE_MBEDTLS)
     context_check(t, "connect");
-    if (t->conn == NULL || t->conn->fd < 0) {
+    if (t->conn != NULL && t->conn->fd >= 0) {
       Scm_SysError("attempt to connect already-connected TLS %S", t);
     }
 
