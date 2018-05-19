@@ -173,7 +173,7 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     if (t->conn != NULL && t->conn->fd >= 0) {
       Scm_SysError("attempt to connect already-connected TLS %S", t);
     }
-
+    t->conn->fd = fd;
 
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
