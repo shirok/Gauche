@@ -200,7 +200,7 @@ ScmObj Scm_TLSRead(ScmTLS* t)
 
     if (r < 0) { Scm_SysError("mbedtls_ssl_read() failed"); }
 
-    return Scm_MakeString((char *)buf, r, r, SCM_STRING_INCOMPLETE);
+    return Scm_MakeString((char *)buf, r, r, SCM_STRING_INCOMPLETE | SCM_STRING_COPYING);
 #else  /*!GAUCHE_USE_AXTLS*/
     return SCM_FALSE;
 #endif /*!GAUCHE_USE_AXTLS*/
