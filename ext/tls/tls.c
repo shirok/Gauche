@@ -59,8 +59,14 @@ static void tls_finalize(ScmObj obj, void* data)
     if (t->ctx) {
         Scm_TLSClose(t);
 
-
+	mbedtls_ssl_free(t->ctx);
         t->ctx = NULL;
+	mbedtls_ssl_config_free(t->conf);
+	t->conf = NULL;
+	mbedtls_ctr_drbg_free(t->ctr_drbg);
+	t->ctr_drbg = NULL;
+	mbedtls_entropy_free(t->entropy);
+	t->entropy = NULL;
     }
 #endif /*GAUCHE_USE_AXTLS*/
 }
@@ -88,8 +94,14 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
     t->conn = NULL;
     t->in_port = t->out_port = 0;
 #elif defined(GAUCHE_USE_MBEDTLS)
+    mbedtls_ctr_drbg_init(t->ctr_drbg);
 
-    t->conn = NULL;
+    mbedtls_net_init(t->conn);
+    mbedtls_ssl_init(t->ctx);
+    mbedtls_ssl_config_init(t->conf);
+
+    mbedtls_entropy_init(t->entropy);
+
     t->in_port = t->out_port = 0;
 #endif /*GAUCHE_USE_AXTLS*/
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
@@ -117,10 +129,10 @@ ScmObj Scm_TLSClose(ScmTLS* t)
     }
 #elif defined(GAUCHE_USE_MBEDTLS)
     if (t->ctx && t->conn) {
-
-
-        t->conn = 0;
-        t->in_port = t->out_port = 0;
+	mbedtls_ssl_close_notify(t->ctx);
+	mbedtls_net_free(t->conn);
+	t->conn = NULL;
+	t->in_port = t->out_port = 0;
     }
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_TRUE;
