@@ -194,7 +194,13 @@ ScmObj Scm_TLSRead(ScmTLS* t)
     context_check(t, "read");
     close_check(t, "read");
 
-    return SCM_FALSE;
+    uint8_t buf[1024];
+    int r;
+    r = mbedtls_ssl_read(t->ctx, buf, sizeof(buf));
+
+    if (r < 0) { Scm_SysError("mbedtls_ssl_read() failed"); }
+
+    return Scm_MakeString((char *)buf, r, r, SCM_STRING_INCOMPLETE);
 #else  /*!GAUCHE_USE_AXTLS*/
     return SCM_FALSE;
 #endif /*!GAUCHE_USE_AXTLS*/
@@ -235,7 +241,10 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
     u_int size;
     const uint8_t* cmsg = get_message_body(msg, &size);
 
-    return SCM_FALSE;
+    int r;
+    r = mbedtls_ssl_write(t->ctx, cmsg, size);
+
+    return SCM_MAKE_INT(r);
 #else  /*!GAUCHE_USE_AXTLS*/
     return SCM_FALSE;
 #endif /*!GAUCHE_USE_AXTLS*/
