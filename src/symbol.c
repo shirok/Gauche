@@ -208,7 +208,7 @@ static int escape_required_p(const ScmStringBody *b, u_int flags, int casefold)
         if (p == e) return FALSE;
         if (*p == '.') goto dot_subsequent;
         /* detect special numeric constants */
-        if (siz == 2 && *p == 'i' || *p == 'I') return TRUE;
+        if (siz == 2 && (*p == 'i' || *p == 'I')) return TRUE;
         if (siz >= 6 && p[3] == '.' && p[4] == '0') {
             if ((p[0] == 'n' || p[0] == 'N')
                 && (p[1] == 'a' || p[1] == 'A')
