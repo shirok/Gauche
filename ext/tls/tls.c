@@ -174,7 +174,11 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
       Scm_SysError("attempt to connect already-connected TLS %S", t);
     }
     t->conn->fd = fd;
-
+    mbedtls_ssl_set_bio(t->ctx, t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
+    int r = mbedtls_ssl_handshake(t->ctx);
+    if (r != 0) {
+      Scm_Error("TLS handshake failed: %d", r);
+    }
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
 }
@@ -187,6 +191,9 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     t->conn = ssl_server_new(t->ctx, fd);
 #elif defined(GAUCHE_USE_MBEDTLS)
     context_check(t, "accept");
+    if (t->conn != NULL && t->conn->fd >= 0) {
+      Scm_SysError("attempt to connect already-connected TLS %S", t);
+    }
 
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
