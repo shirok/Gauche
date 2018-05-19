@@ -285,6 +285,9 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
 
     int r;
     r = mbedtls_ssl_write(&t->ctx, cmsg, size);
+    if (r < 0) {
+      Scm_SysError("mbedtls_ssl_write() failed");
+    }
 
     return SCM_MAKE_INT(r);
 #else  /*!GAUCHE_USE_AXTLS*/
