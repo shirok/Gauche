@@ -63,6 +63,7 @@ static void tls_finalize(ScmObj obj, void* data)
     mbedtls_ssl_config_free(&t->conf);
     mbedtls_ctr_drbg_free(&t->ctr_drbg);
     mbedtls_entropy_free(&t->entropy);
+    mbedtls_x509_crt_free(&t->ca);
 
 #endif /*GAUCHE_USE_AXTLS*/
 }
@@ -101,6 +102,7 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
     mbedtls_net_init(&t->conn);
     mbedtls_ssl_init(&t->ctx);
     mbedtls_ssl_config_init(&t->conf);
+    mbedtls_x509_crt_init(&t->ca);
 
     mbedtls_entropy_init(&t->entropy);
 

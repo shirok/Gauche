@@ -93,6 +93,7 @@ typedef struct ScmTLSRec {
   mbedtls_entropy_context entropy;
   mbedtls_ctr_drbg_context ctr_drbg;
   mbedtls_ssl_config conf;
+  mbedtls_x509_crt ca;
 
   ScmPort *in_port, *out_port;
 #endif /*GAUCHE_USE_AXTLS*/
