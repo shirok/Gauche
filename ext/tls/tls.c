@@ -205,6 +205,13 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     t->conn = ssl_server_new(t->ctx, fd);
 #elif defined(GAUCHE_USE_MBEDTLS)
     context_check(t, "accept");
+
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+			     (const unsigned char *)pers, strlen(pers)) != 0) {
+      Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
     if (t->conn.fd >= 0) {
       Scm_SysError("attempt to connect already-connected TLS %S", t);
     }
@@ -216,6 +223,8 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
 				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
       Scm_SysError("mbedtls_ssl_config_defaults() failed");
     }
+    mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
+
 
     if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
       Scm_SysError("mbedtls_ssl_setup() failed");
