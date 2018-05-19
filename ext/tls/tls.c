@@ -102,13 +102,6 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
 
     mbedtls_entropy_init(t->entropy);
 
-    if (mbedtls_ssl_config_defaults(t->conf,
-				    MBEDTLS_SSL_IS_CLIENT,
-				    MBEDTLS_SSL_TRANSPORT_STREAM,
-				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
-      Scm_SysError("mbedtls_ssl_config_defaults() failed");
-    }
-
     t->in_port = t->out_port = 0;
 #endif /*GAUCHE_USE_AXTLS*/
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
@@ -174,7 +167,20 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
       Scm_SysError("attempt to connect already-connected TLS %S", t);
     }
     t->conn->fd = fd;
+
+    if (mbedtls_ssl_config_defaults(t->conf,
+				    MBEDTLS_SSL_IS_CLIENT,
+				    MBEDTLS_SSL_TRANSPORT_STREAM,
+				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
+      Scm_SysError("mbedtls_ssl_config_defaults() failed");
+    }
+
+    if(mbedtls_ssl_setup(t->ctx, t->conf) != 0) {
+      Scm_SysError("mbedtls_ssl_setup() failed");
+    }
+
     mbedtls_ssl_set_bio(t->ctx, t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
+
     int r = mbedtls_ssl_handshake(t->ctx);
     if (r != 0) {
       Scm_Error("TLS handshake failed: %d", r);
