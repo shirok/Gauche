@@ -104,6 +104,12 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
 
     mbedtls_entropy_init(&t->entropy);
 
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+			     (const unsigned char *)pers, strlen(pers)) != 0) {
+      Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
     t->in_port = t->out_port = 0;
 #endif /*GAUCHE_USE_AXTLS*/
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
@@ -174,6 +180,7 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
 				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
       Scm_SysError("mbedtls_ssl_config_defaults() failed");
     }
+    mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
     if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
       Scm_SysError("mbedtls_ssl_setup() failed");
