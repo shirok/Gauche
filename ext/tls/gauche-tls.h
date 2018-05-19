@@ -88,11 +88,11 @@ typedef struct ScmTLSRec {
   SSL* conn;
   ScmPort* in_port, * out_port;
 #elif defined(GAUCHE_USE_MBEDTLS)
-  mbedtls_ssl_context *ctx;
-  mbedtls_net_context *conn;
-  mbedtls_entropy_context *entropy;
-  mbedtls_ctr_drbg_context *ctr_drbg;
-  mbedtls_ssl_config *conf;
+  mbedtls_ssl_context ctx;
+  mbedtls_net_context conn;
+  mbedtls_entropy_context entropy;
+  mbedtls_ctr_drbg_context ctr_drbg;
+  mbedtls_ssl_config conf;
 
   ScmPort *in_port, *out_port;
 #endif /*GAUCHE_USE_AXTLS*/
