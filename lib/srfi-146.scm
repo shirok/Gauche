@@ -268,7 +268,7 @@
                          (tree-map-put! m k v)
                          (values m o)))
                (^[o] (values m o)))     ;ignore
-      (success v
+      (success k v
                (^[k v o] (let1 m (tree-map-copy m) ;update
                            (tree-map-put! m k v)
                            (values m o)))

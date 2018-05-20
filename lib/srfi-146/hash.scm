@@ -228,7 +228,7 @@
                          (hash-table-put! m k v)
                          (values m o)))
                (^[o] (values m o)))     ;ignore
-      (success v
+      (success k v
                (^[k v o] (let1 m (hash-table-copy m) ;update
                            (hash-table-put! m k v)
                            (values m o)))

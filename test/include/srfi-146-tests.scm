@@ -162,7 +162,29 @@
 	  (list 2 'a 1)
 	  (receive (mapping key value)
 	      (mapping-pop mapping1)
-	    (list (mapping-size mapping) key value))))
+	    (list (mapping-size mapping) key value)))
+
+        (test-equal
+         '("success updated"
+           "failure ignored"
+           ((0 . "zero") (1 . "one") (2 . "two [seen]") (3 . "three")
+            (4 . "four") (5 . "five")))
+         (let ((m1 (mapping (make-default-comparator)
+                            1 "one"
+                            3 "three"
+                            0 "zero"
+                            4 "four"
+                            2 "two"
+                            5 "five")))
+           (define (f/ignore insert ignore)
+             (ignore "failure ignored"))
+           (define (s/update key val update remove)
+             (update key
+                     (string-append val " [seen]")
+                     "success updated"))
+           (let*-values (((m2 v2) (mapping-search m1 2 f/ignore s/update))
+                         ((m3 v3) (mapping-search m2 42 f/ignore s/update)))
+             (list v2 v3 (mapping->alist m3))))))
 
       (test-group "The whole mapping"
 	(define mapping0 (mapping comparator))

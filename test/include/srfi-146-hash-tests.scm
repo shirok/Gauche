@@ -1,8 +1,4 @@
-;; This is just a copy of srfi-146-tests.scm with replacing 'mapping'
-;; to 'hashmap', and removing irrrevant apis for hashmaps.
-;; Later, we should employ more sophisticated way to parameterize
-;; different apis so that we can consolidate tests.
-
+;; -*- coding:utf-8 -*-
 ;; Copyright (C) Marc Nieper-Wißkirchen (2016, 2017).  All Rights
 ;; Reserved.
 
@@ -32,11 +28,13 @@
 	  (srfi 1)
 	  (srfi 8)
 	  (srfi 64)
-	  (srfi 128)
-	  (srfi 146 hash))
+	  (srfi 146 hash)
+	  (srfi 128))
   (begin
+    (define comparator (make-default-comparator))
+
     (define (run-tests)
-      (test-begin "SRFI 146")
+      (test-begin "SRFI 146: Hashmaps")
 
       (test-group "Predicates"
 	(define hashmap0 (hashmap comparator))
@@ -162,11 +160,12 @@
 	  'empty
 	  (hashmap-pop hashmap0 (lambda () 'empty)))
 
-	(test-equal "hashmap-pop: non-empty hashmap"
-	  (list 0 'a 1)
-	  (receive (hashmap key value)
-	      (hashmap-pop (hashmap comparator 'a 1))
-	    (list (hashmap-size hashmap) key value))))
+	(test-assert "hashmap-pop: non-empty hashmap"
+	  (member
+           (receive (hashmap key value)
+               (hashmap-pop hashmap1)
+             (list (hashmap-size hashmap) key value))
+           '((2 a 1) (2 b 2) (2 c 3)))))
 
       (test-group "The whole hashmap"
 	(define hashmap0 (hashmap comparator))
@@ -329,12 +328,21 @@
 	  (define hashmap3 (hashmap comparator 'a 1 'c 3))
 	  (define hashmap4 (hashmap comparator 'a 1 'c 3 'd 4))
 	  (define hashmap5 (hashmap comparator 'a 1 'b 2 'c 6))
+	  (define hashmap6 (hashmap (make-comparator (comparator-type-test-predicate comparator)
+						     (comparator-equality-predicate comparator)
+						     (comparator-ordering-predicate comparator)
+						     (comparator-hash-function comparator))
+				    'a 1 'b 2 'c 3))
 
+          
 	  (test-assert "hashmap=?: equal hashmaps"
 	    (hashmap=? comparator hashmap1 hashmap2))
 
 	  (test-assert "hashmap=?: unequal hashmaps"
 	    (not (hashmap=? comparator hashmap1 hashmap4)))
+
+	  (test-assert "hashmap=?: different comparators"
+            (not (hashmap=? comparator hashmap1 hashmap6)))
 
 	  (test-assert "hashmap<?: proper subset"
 	    (hashmap<? comparator hashmap3 hashmap1))
@@ -405,7 +413,12 @@
 	  (define hashmap3 (hashmap comparator 'a 1 'b 2))
 	  (define hashmap4 (hashmap comparator 'a 1 'b 2 'c 4))
 	  (define hashmap5 (hashmap comparator 'a 1 'c 3))
-	  (define hashmap0 (hashmap comparator hashmap1 "a" hashmap2 "b" hashmap3 "c" hashmap4 "d" hashmap5 "e"))
+	  (define hashmap0 (hashmap comparator
+                                    hashmap1 "a"
+                                    hashmap2 "b"
+                                    hashmap3 "c"
+                                    hashmap4 "d"
+                                    hashmap5 "e"))
 
 	  (test-assert "hashmap-comparator"
 	    (comparator? hashmap-comparator))
@@ -416,18 +429,14 @@
 		  (hashmap-ref hashmap0 hashmap2)
 		  (hashmap-ref hashmap0 hashmap3)
 		  (hashmap-ref hashmap0 hashmap4)
-		  (hashmap-ref hashmap0 hashmap5)))
+		  (hashmap-ref hashmap0 hashmap5)
+                  ))
 	  
-	  (test-group "Eqiality comparators"
+	  (test-group "Ordering comparators"
 	    (test-assert "=?: equal hashmaps"
 	      (=? comparator hashmap1 hashmap2))
 
 	    (test-assert "=?: unequal hashmaps"
-	      (not (=? comparator hashmap1 hashmap4)))
-
-            )))
+	      (not (=? comparator hashmap1 hashmap4))))))
       
-      (test-end "SRFI 146"))
-
-    (define comparator (make-default-comparator)))
-)
+      (test-end "SRFI 146: Hashmaps"))))
