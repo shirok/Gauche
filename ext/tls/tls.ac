@@ -64,6 +64,18 @@ AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS_TEST)
 AC_SUBST(GAUCHE_TLS_SWITCH_MBEDTLS)
 AC_SUBST(GAUCHE_TLS_SWITCH_NONE)
 
+AC_ARG_ENABLE([tls-ca-file-path],
+  AS_HELP_STRING([--enable-tls-ca-file-path=/path/to/ca-cert.crt],
+		 [Specify CA certificate file path for TLS certificate validation. This file is required to use mbed TLS.]),
+  [
+    AS_CASE([$enable_tls_ca_file_path],
+	[yes|no], [X509_CA_FILE="ca-cert.crt"],
+                  [X509_CA_FILE=$enable_tls_ca_file_path]
+  )], [
+    X509_CA_FILE="ca-cert.crt"
+  ])
+AC_SUBST(X509_CA_FILE)
+
 dnl
 dnl Check openssl command; if available, we use it for axTLS tests.
 dnl This is needed even if we don't support libopenssl binding.
