@@ -185,7 +185,7 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
-    if(mbedtls_x509_crt_parse_file(&t->ca, "./certs/ca-certificates.crt") != 0) {
+    if(mbedtls_x509_crt_parse_file(&t->ca, X509_CA_FILE) != 0) {
       Scm_SysError("mbedtls_x509_crt_parse_file() failed");
     }
     mbedtls_ssl_conf_ca_chain(&t->conf, &t->ca, NULL);

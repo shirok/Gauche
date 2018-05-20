@@ -49,6 +49,8 @@
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
 
+#define X509_CA_FILE "./certs/ca-certificates.crt"
+
 #define SSL_CLIENT_AUTHENTICATION               0x00010000
 #define SSL_SERVER_VERIFY_LATER                 0x00020000
 #define SSL_NO_DEFAULT_KEY                      0x00040000
