@@ -2,6 +2,7 @@
  * gauche-tls.h - TLS secure connection interface
  *
  *   Copyright (c) 2011 Kirill Zorin <k.zorin@me.com>
+ *                 2018 YOKOTA Hiroshi
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
