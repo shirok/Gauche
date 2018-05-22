@@ -11,8 +11,8 @@ dnl   In future we may support 'openssl' as well.
 dnl
 AC_ARG_ENABLE(tls,
   AS_HELP_STRING([--enable-tls=TYPE], [enable TLS/SSL support.  TYPE can be
-  'axtls' (to use bundled source of Cameron Rich's axTLS), or 'none'
-  (disable TLS/SSL support)]),
+  'axtls' (to use bundled source of Cameron Rich's axTLS), 'mbedtls' (to use
+  mbed TLS), or 'none' (disable TLS/SSL support)]),
   [
     AS_CASE([$enableval],
       [no|none], [enable_tls=no],
