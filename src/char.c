@@ -330,7 +330,8 @@ int Scm_CharLexerCategoryP(ScmChar c, ScmCharLexerCategory category)
         }
     }
     if (c == 0x200c || c == 0x200d) {
-        return (category == SCM_CHAR_SUBSEQUENT);
+        /* can be INITIAL, SUBSEQUENT and SIGN_SUBSEQUENT */
+        return TRUE;
     }
     switch (Scm_CharGeneralCategory(c)) {
     case SCM_CHAR_CATEGORY_Lu:
@@ -348,10 +349,13 @@ int Scm_CharLexerCategoryP(ScmChar c, ScmCharLexerCategory category)
     case SCM_CHAR_CATEGORY_Sm:
     case SCM_CHAR_CATEGORY_Sk:
     case SCM_CHAR_CATEGORY_So:
-    case SCM_CHAR_CATEGORY_Co: return (category == SCM_CHAR_SUBSEQUENT);
+    case SCM_CHAR_CATEGORY_Co: 
+        /* can be INITIAL, SUBSEQUENT and SIGN_SUBSEQUENT */
+        return TRUE;
     case SCM_CHAR_CATEGORY_Nd:
     case SCM_CHAR_CATEGORY_Mc:
-    case SCM_CHAR_CATEGORY_Me: return (category == SCM_CHAR_INITIAL);
+    case SCM_CHAR_CATEGORY_Me:
+        return (category != SCM_CHAR_INITIAL);
     default: return FALSE;
     }
 }
