@@ -65,7 +65,7 @@ static void tls_finalize(ScmObj obj, void* data)
     mbedtls_entropy_free(&t->entropy);
     mbedtls_x509_crt_free(&t->ca);
 
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 }
 
 static void context_check(ScmTLS* tls, const char* op)
@@ -74,7 +74,7 @@ static void context_check(ScmTLS* tls, const char* op)
     if (!tls->ctx) Scm_Error("attempt to %s destroyed TLS: %S", op, tls);
 #elif  defined(GAUCHE_USE_MBEDTLS)
 
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 }
 
 static void close_check(ScmTLS* tls, const char* op)
@@ -85,7 +85,7 @@ static void close_check(ScmTLS* tls, const char* op)
     if (tls->conn.fd < 0) {
       Scm_Error("attempt to %s closed TLS: %S", op, tls);
     }
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 }
 
 ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
@@ -107,7 +107,7 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
     mbedtls_entropy_init(&t->entropy);
 
     t->in_port = t->out_port = 0;
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
     return SCM_OBJ(t);
 }
@@ -119,7 +119,7 @@ ScmObj Scm_TLSDestroy(ScmTLS* t)
 {
 #if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     tls_finalize(SCM_OBJ(t), NULL);
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return SCM_TRUE;
 }
 
@@ -136,7 +136,7 @@ ScmObj Scm_TLSClose(ScmTLS* t)
     mbedtls_ssl_close_notify(&t->ctx);
     mbedtls_net_free(&t->conn);
     t->in_port = t->out_port = 0;
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return SCM_TRUE;
 }
 
@@ -149,7 +149,7 @@ ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
         return SCM_TRUE;
 #elif defined(GAUCHE_USE_MBEDTLS)
 
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return SCM_FALSE;
 }
 
@@ -201,7 +201,7 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     if (r != 0) {
       Scm_Error("TLS handshake failed: %d", r);
     }
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return SCM_OBJ(t);
 }
 
@@ -244,7 +244,7 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     if (r != 0) {
       Scm_Error("TLS handshake failed: %d", r);
     }
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return SCM_OBJ(t);
 }
 
@@ -268,9 +268,9 @@ ScmObj Scm_TLSRead(ScmTLS* t)
     if (r < 0) { Scm_SysError("mbedtls_ssl_read() failed"); }
 
     return Scm_MakeString((char *)buf, r, r, SCM_STRING_INCOMPLETE | SCM_STRING_COPYING);
-#else  /*!GAUCHE_USE_AXTLS*/
+#else
     return SCM_FALSE;
-#endif /*!GAUCHE_USE_AXTLS*/
+#endif
 }
 
 #if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
@@ -287,7 +287,7 @@ static const uint8_t* get_message_body(ScmObj msg, u_int *size)
         return 0;
     }
 }
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 
 ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
 {
@@ -315,9 +315,9 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
     }
 
     return SCM_MAKE_INT(r);
-#else  /*!GAUCHE_USE_AXTLS*/
+#else
     return SCM_FALSE;
-#endif /*!GAUCHE_USE_AXTLS*/
+#endif
 }
 
 ScmObj Scm_TLSInputPort(ScmTLS* t)
@@ -326,7 +326,7 @@ ScmObj Scm_TLSInputPort(ScmTLS* t)
     return SCM_OBJ(t->in_port);
 #else
     return SCM_UNDEFINED;
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 }
 
 ScmObj Scm_TLSOutputPort(ScmTLS* t)
@@ -335,14 +335,14 @@ ScmObj Scm_TLSOutputPort(ScmTLS* t)
     return SCM_OBJ(t->out_port);
 #else
     return SCM_UNDEFINED;
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 }
 
 ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port)
 {
 #if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     t->in_port = SCM_PORT(port);
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return port;
 }
 
@@ -350,7 +350,7 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
 #if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     t->out_port = SCM_PORT(port);
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return port;
 }
 

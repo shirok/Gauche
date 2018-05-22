@@ -67,7 +67,7 @@
 #define SSL_OBJ_PKCS8                           4
 #define SSL_OBJ_PKCS12                          5
 
-#else /*!GAUCHE_USE_AXTLS*/
+#else
 #define SSL_CLIENT_AUTHENTICATION               0x00010000
 #define SSL_SERVER_VERIFY_LATER                 0x00020000
 #define SSL_NO_DEFAULT_KEY                      0x00040000
@@ -81,7 +81,7 @@
 #define SSL_OBJ_RSA_KEY                         3
 #define SSL_OBJ_PKCS8                           4
 #define SSL_OBJ_PKCS12                          5
-#endif /*!GAUCHE_USE_AXTLS*/
+#endif
 
 SCM_DECL_BEGIN
 
@@ -100,7 +100,7 @@ typedef struct ScmTLSRec {
   mbedtls_x509_crt ca;
 
   ScmPort *in_port, *out_port;
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 } ScmTLS;
 
 SCM_CLASS_DECL(Scm_TLSClass);
