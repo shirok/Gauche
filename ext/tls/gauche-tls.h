@@ -53,21 +53,10 @@
 #define X509_CA_FILE "ca-cert.crt"
 #endif
 
-#define SSL_CLIENT_AUTHENTICATION               0x00010000
-#define SSL_SERVER_VERIFY_LATER                 0x00020000
-#define SSL_NO_DEFAULT_KEY                      0x00040000
-#define SSL_DISPLAY_STATES                      0x00080000
-#define SSL_DISPLAY_BYTES                       0x00100000
-#define SSL_DISPLAY_CERTS                       0x00200000
-#define SSL_DISPLAY_RSA                         0x00400000
-#define SSL_CONNECT_IN_PARTS                    0x00800000
-#define SSL_OBJ_X509_CERT                       1
-#define SSL_OBJ_X509_CACERT                     2
-#define SSL_OBJ_RSA_KEY                         3
-#define SSL_OBJ_PKCS8                           4
-#define SSL_OBJ_PKCS12                          5
+#endif
 
-#else
+#ifndef GAUCHE_USE_AXTLS
+/* dummy symbols */
 #define SSL_CLIENT_AUTHENTICATION               0x00010000
 #define SSL_SERVER_VERIFY_LATER                 0x00020000
 #define SSL_NO_DEFAULT_KEY                      0x00040000
