@@ -1,3 +1,8 @@
+2018-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: Make srfi-146 support official, for it is
+	  finalized.
+
 2018-05-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/random.scm (regular-string$): EXPERIMENTAL - a generator

@@ -986,6 +986,16 @@ Built-in.  @xref{Conditionals}.
 組み込みです。@ref{Conditionals}参照。
 
 
+srfi-146
+()
+
+Mappings
+Supported by the module @code{srfi-146}.
+
+マッピング
+モジュール@code{srfi-146}でサポートされます。
+
+
 srfi-149
 (syntax-rules)
 
