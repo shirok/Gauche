@@ -114,6 +114,7 @@ case $GAUCHE_THREAD_TYPE in
       GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-openbsd*)
+      AC_MSG_WARN([Gauche with pthread on OpenBSD has unresolved issues.  We recommend you to build without threads (--disable-threads) unless you're trying to fix the issues.  See https://github.com/shirok/Gauche/issues/276 and https://github.com/shirok/Gauche/issues/334 .])
       AC_DEFINE(GC_OPENBSD_THREADS,1,[Define to use OpenBSD threads])
       THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread"
