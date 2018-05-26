@@ -1,4 +1,38 @@
 
+== [7.6.6] 2018-04-20 ==
+
+* Define GC_FREEBSD_THREADS and GC_ADD_CALLER macros for kFreeBSD
+* Eliminate 'boolean result used in bitwise operation' cppcheck warning
+* Eliminate 'there is pointer arithmetic with NULL' cppcheck warning
+* Explicitly unblock GC signals on GC initialization
+* Fix 'scope of var can be reduced' cppcheck err in enqueue_all_finalizers
+* Fix 'undefined reference to __builtin_unwind_init' linker error (ArmCC)
+* Fix arguments delimiter in pcr_interface.c (PCR)
+* Fix assertion violation in DllMain of win32_threads
+* Fix comment for debug_generic_malloc_inner[_ignore_off_page]
+* Fix data race during apply_to_each_object(reset_back_edge)
+* Fix dbg_mlc.c/o file name in documentation
+* Fix gctest with musl libc on s390x
+* Fix include gc_gcj.h in thread_local_alloc.c
+* Fix man section number (3)
+* Fix missing GC_generic_malloc_words_small implementation in new_gc_alloc.h
+* Fix missing new-line in ABORT_ARG<n> definition
+* Fix missing SIGBUS handler setup for kFreeBSD
+* Fix null dereference in print_callers on backtrace_symbols failure
+* Fix null pointer dereference in get_private_path_and_zero_file (Symbian)
+* Fix the collector hang when it is configured with --enable-gc-debug
+* Fix thread_suspend fail for threads registered from key destructor (OS X)
+* Fix type of local variables receiving result of PHT_HASH
+* Fix typo in AIX macro name
+* Fix typo in comment in specific.h
+* Fix unbounded heap growth in case of intensive disappearing links usage
+* Remove API symbols renaming in WCC_MAKEFILE
+* Support Haiku/amd64 and Haiku/x86 hosts
+* Support threads for DragonFly in configure
+* Workaround 'address of auto-variable returned' cppcheck error
+* Workaround gctest hang on kFreeBSD (if thread-local allocations are on)
+
+
 == [7.6.4] 2018-01-26 ==
 
 * Add note of set_free_space_divisor, set_warn_proc ABI change after gc-7.1
@@ -207,6 +241,7 @@
 * Workaround 'variable reassigned before old value used' cppcheck warnings
 * Workaround 'waiting while holding lock' code defect in stop_world (Unix)
 * Workaround false 'uninitialized var use' code defect (initsecondarythread)
+
 Also, includes 7.4.6 changes
 
 
@@ -317,7 +352,21 @@ Also, includes 7.4.6 changes
 * Workaround 'sa_sigaction member missing' compiler error (Android/x32)
 * Workaround 'unresolved __tls_get_addr' error for Android NDK Clang
 * Workaround a bug in winpthreads causing parallel marks deadlock (MinGW)
+
 Also, includes 7.4.4 changes
+
+
+== [7.4.12] 2018-04-19 ==
+
+* Define GC_FREEBSD_THREADS and GC_ADD_CALLER macros for kFreeBSD
+* Fix comment for debug_generic_malloc_inner[_ignore_off_page]
+* Fix gctest with musl libc on s390x
+* Fix missing new-line in ABORT_ARG<n> definition
+* Fix null pointer dereference in get_private_path_and_zero_file (Symbian)
+* Fix type of local variables receiving result of PHT_HASH
+* Remove API symbols renaming in WCC_MAKEFILE
+
+Also, includes 7.2k changes
 
 
 == [7.4.10] 2018-01-22 ==
@@ -763,6 +812,23 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2k] 2018-04-19 ==
+
+* Fix arguments delimiter in pcr_interface.c (PCR)
+* Fix assertion violation in DllMain of win32_threads
+* Fix data race during apply_to_each_object(reset_back_edge)
+* Fix dbg_mlc.c/o file name in documentation
+* Fix include gc_gcj.h in thread_local_alloc.c
+* Fix man section number (3)
+* Fix missing GC_generic_malloc_words_small implementation in new_gc_alloc.h
+* Fix missing SIGBUS handler setup for kFreeBSD
+* Fix null dereference in print_callers on backtrace_symbols failure
+* Fix the collector hang when it is configured with --enable-gc-debug
+* Fix thread_suspend fail for threads registered from key destructor (OS X)
+* Fix typo in AIX macro name
+* Fix typo in comment in specific.h
 
 
 == [7.2j] 2018-01-21 ==

@@ -12,7 +12,7 @@
 dnl Process this file with autoconf to produce configure.
 
 # Initialization
-AC_INIT(gc,7.6.4,https://github.com/ivmai/bdwgc/issues)
+AC_INIT(gc,7.6.6,https://github.com/ivmai/bdwgc/issues)
     ## version must conform to [0-9]+[.][0-9]+[.][0-9]+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
@@ -140,6 +140,7 @@ AH_TEMPLATE([GC_AIX_THREADS],       [Define to support IBM AIX threads.])
 AH_TEMPLATE([GC_DARWIN_THREADS],    [Define to support Darwin pthreads.])
 AH_TEMPLATE([GC_FREEBSD_THREADS],   [Define to support FreeBSD pthreads.])
 AH_TEMPLATE([GC_GNU_THREADS],       [Define to support GNU pthreads.])
+AH_TEMPLATE([GC_HAIKU_THREADS],     [Define to support Haiku pthreads.])
 AH_TEMPLATE([GC_HPUX_THREADS],      [Define to support HP/UX 11 pthreads.])
 AH_TEMPLATE([GC_IRIX_THREADS],      [Define to support Irix pthreads.])
 AH_TEMPLATE([GC_LINUX_THREADS],     [Define to support pthreads on Linux.])
@@ -201,6 +202,10 @@ case "$THREADS" in
         AC_DEFINE(GC_AIX_THREADS)
         AC_DEFINE(_REENTRANT)
         ;;
+     *-*-haiku*)
+        AC_DEFINE(GC_HAIKU_THREADS)
+        AC_DEFINE(_REENTRANT)
+        ;;
      *-*-hpux11*)
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
         AC_DEFINE(GC_HPUX_THREADS)
@@ -222,7 +227,7 @@ case "$THREADS" in
         THREADDLLIBS=-pthread
         AM_CFLAGS="$AM_CFLAGS -pthread"
         ;;
-     *-*-freebsd*)
+     *-*-dragonfly* | *-*-freebsd*)
         AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
         AC_DEFINE(GC_FREEBSD_THREADS)
         AM_CFLAGS="$AM_CFLAGS -pthread"
@@ -239,7 +244,11 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" = yes; then
           AC_DEFINE(PARALLEL_MARK)
         fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+        # FIXME: For a reason, gctest hangs up on kFreeBSD if both of
+        # THREAD_LOCAL_ALLOC and GC_ENABLE_SUSPEND_THREAD are defined.
+        if test x"$enable_gcj_support" = xno; then
+          AC_DEFINE(THREAD_LOCAL_ALLOC)
+        fi
         AC_DEFINE(USE_COMPILER_TLS)
         ;;
      *-*-gnu*)
