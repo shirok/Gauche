@@ -873,7 +873,8 @@ STATIC void GC_remove_all_threads_but_me(void)
 # define GC_get_nprocs() pthread_num_processors_np()
 
 #elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
-      || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS) \
+      || defined(GC_HAIKU_THREADS) || defined(GC_SOLARIS_THREADS) \
+      || defined(GC_GNU_THREADS) \
       || defined(PLATFORM_ANDROID) || defined(NACL)
   GC_INLINE int GC_get_nprocs(void)
   {
@@ -1689,6 +1690,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     } else if ((me -> flags & FINISHED) != 0) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
+#       ifdef GC_DARWIN_THREADS
+          /* Reinitialize mach_thread to avoid thread_suspend fail      */
+          /* with MACH_SEND_INVALID_DEST error.                         */
+          me -> stop_info.mach_thread = mach_thread_self();
+#       endif
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
 #       ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
@@ -1870,6 +1876,10 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */
         while (0 != sem_wait(&(si -> registered))) {
+#           if defined(GC_HAIKU_THREADS)
+              /* To workaround some bug in Haiku semaphores. */
+              if (EACCES == errno) continue;
+#           endif
             if (EINTR != errno) ABORT("sem_wait failed");
         }
         RESTORE_CANCEL(cancel_state);
