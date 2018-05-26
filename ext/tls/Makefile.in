@@ -53,7 +53,7 @@ SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
 
-@GAUCHE_TLS_SWITCH_MBEDTLS@LIBS     += -lmbedtls -lmbedx509 -lmbedcrypto
+@GAUCHE_TLS_SWITCH_MBEDTLS@XLIBS = -lmbedtls -lmbedx509 -lmbedcrypto
 
 GENERATED = Makefile kick_openssl.sh
 XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs

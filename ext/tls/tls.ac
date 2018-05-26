@@ -45,6 +45,8 @@ AS_CASE([$enable_tls],
 	   GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
 	   GAUCHE_TLS_SWITCH_MBEDTLS=
 	   GAUCHE_TLS_SWITCH_NONE="@%:@"
+
+	   EXT_LIBS="${EXT_LIBS} -lmbedtls -lmbedx509 -lmbedcrypto"
 	  ],
 dnl [openssl], [
 dnl	   AC_DEFINE(GAUCHE_USE_OPENSSL, 1, [Define if you use openssl])
