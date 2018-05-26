@@ -1,6 +1,6 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-This is version 7.6.4 of a conservative garbage
+This is version 7.6.6 of a conservative garbage
 collector for C and C++.
 
 
@@ -462,7 +462,7 @@ equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since pointers to
 objects with debugging information are really pointers to a displacement
 of 16 bytes form the object beginning, and some translation is necessary
 when finalization routines are invoked.  For details, about what's stored
-in the header, see the definition of the type oh in debug_malloc.c)
+in the header, see the definition of the type oh in dbg_mlc.c file.)
 
 
 ## Incremental/Generational Collection

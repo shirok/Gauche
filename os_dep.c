@@ -829,7 +829,7 @@ GC_INNER size_t GC_page_size = 0;
   }
 #endif /* !MSWIN32 */
 
-#ifdef BEOS
+#ifdef HAIKU
 # include <kernel/OS.h>
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
@@ -840,7 +840,7 @@ GC_INNER size_t GC_page_size = 0;
     return GC_SUCCESS;
   }
 # define HAVE_GET_STACK_BASE
-#endif /* BEOS */
+#endif /* HAIKU */
 
 #ifdef OS2
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
@@ -869,7 +869,8 @@ GC_INNER size_t GC_page_size = 0;
     typedef void (*GC_fault_handler_t)(int);
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-       || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
+       || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
+       || defined(NETBSD)
         static struct sigaction old_segv_act;
 #       if defined(_sigargs) /* !Irix6.x */ \
            || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
@@ -885,7 +886,8 @@ GC_INNER size_t GC_page_size = 0;
     GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t h)
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-            || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
+           || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
+           || defined(NETBSD)
           struct sigaction act;
 
           act.sa_handler = h;
@@ -949,7 +951,8 @@ GC_INNER size_t GC_page_size = 0;
     GC_INNER void GC_reset_fault_handler(void)
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-           || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
+           || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
+           || defined(NETBSD)
           (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #         if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
              || defined(HURD) || defined(NETBSD)
@@ -1190,7 +1193,7 @@ GC_INNER size_t GC_page_size = 0;
     return (ptr_t)GC_get_main_symbian_stack_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif !defined(BEOS) && !defined(AMIGA) && !defined(OS2) \
+#elif !defined(AMIGA) && !defined(HAIKU) && !defined(OS2) \
       && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
       && !defined(GC_OPENBSD_THREADS) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
@@ -1291,7 +1294,7 @@ GC_INNER size_t GC_page_size = 0;
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
+#endif /* !AMIGA, !HAIKU, !OPENBSD, !OS2, !Windows */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -1895,7 +1898,7 @@ void GC_register_data_segments(void)
 
 # else /* !OS2 && !Windows */
 
-# if (defined(SVR4) || defined(AUX) || defined(DGUX) \
+# if (defined(SVR4) || defined(AIX) || defined(DGUX) \
       || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
   ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   {
@@ -2102,7 +2105,7 @@ void GC_register_data_segments(void)
 #   define OPT_MAP_ANON MAP_ANON
 # endif
 #else
-  static int zero_fd;
+  static int zero_fd = -1;
 # define OPT_MAP_ANON 0
 #endif
 
@@ -2120,9 +2123,11 @@ STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
 
       if (!EXPECT(initialized, TRUE)) {
 #       ifdef SYMBIAN
-          char* path = GC_get_private_path_and_zero_file();
-          zero_fd = open(path, O_RDWR | O_CREAT, 0666);
-          free(path);
+          char *path = GC_get_private_path_and_zero_file();
+          if (path != NULL) {
+            zero_fd = open(path, O_RDWR | O_CREAT, 0666);
+            free(path);
+          }
 #       else
           zero_fd = open("/dev/zero", O_RDONLY);
 #       endif
@@ -2424,6 +2429,19 @@ void * os2_alloc(size_t bytes)
 # include "extra/AmigaOS.c"
 # undef GC_AMIGA_AM
 #endif
+
+#if defined(HAIKU)
+# include <stdlib.h>
+  ptr_t GC_haiku_get_mem(size_t bytes)
+  {
+    void* mem;
+
+    GC_ASSERT(GC_page_size != 0);
+    if (posix_memalign(&mem, GC_page_size, bytes) == 0)
+      return mem;
+    return NULL;
+  }
+#endif /* HAIKU */
 
 #ifdef USE_MUNMAP
 
@@ -3021,7 +3039,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
 #   include <signal.h>
-#   include <sys/syscall.h>
+#   if !defined(HAIKU)
+#     include <sys/syscall.h>
+#   endif
 
 #   define PROTECT(addr, len) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
@@ -3181,7 +3201,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
 #   elif defined(IRIX5)
 #     define CODE_OK (si -> si_code == EACCES)
-#   elif defined(HURD)
+#   elif defined(HAIKU) || defined(HURD)
 #     define CODE_OK TRUE
 #   elif defined(LINUX)
 #     define CODE_OK TRUE
@@ -3301,7 +3321,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         /* and then to have the thread stopping code set the dirty      */
         /* flag, if necessary.                                          */
         for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-            size_t index = PHT_HASH(h+i);
+            word index = PHT_HASH(h+i);
 
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
@@ -3355,7 +3375,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         return;
     }
     for (current = h_trunc; (word)current < (word)h_end; ++current) {
-        size_t index = PHT_HASH(current);
+        word index = PHT_HASH(current);
+
         if (!is_ptrfree || (word)current < (word)h
             || (word)current >= (word)(h + nblocks)) {
             async_set_pht_entry_from_index(GC_dirty_pages, index);
@@ -3411,7 +3432,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGSEGV handler\n");
       }
 #   if defined(HPUX) || defined(LINUX) || defined(HURD) \
-       || (defined(FREEBSD) && defined(SUNOS5SIGS))
+       || (defined(FREEBSD) && (defined(__GLIBC__) || defined(SUNOS5SIGS)))
       sigaction(SIGBUS, &act, &oldact);
       if ((oldact.sa_flags & SA_SIGINFO) != 0) {
         GC_old_bus_handler = oldact.sa_sigaction;
@@ -4350,7 +4371,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 
     UNPROTECT(h, GC_page_size);
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-      register int index = PHT_HASH(h+i);
+      word index = PHT_HASH(h+i);
       async_set_pht_entry_from_index(GC_dirty_pages, index);
     }
   } else if (GC_mprotect_state == GC_MP_DISCARDING) {
@@ -4505,6 +4526,12 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
     }
     GC_in_save_callers = TRUE;
 # endif
+
+  GC_ASSERT(I_HOLD_LOCK());
+                /* backtrace may call dl_iterate_phdr which is also     */
+                /* used by GC_register_dynamic_libraries, and           */
+                /* dl_iterate_phdr is not guaranteed to be reentrant.   */
+
   GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
   npcs = backtrace((void **)tmp_info, NFRAMES + IGNORE_FRAMES);
   BCOPY(tmp_info+IGNORE_FRAMES, info, (npcs - IGNORE_FRAMES) * sizeof(void *));
@@ -4610,18 +4637,22 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
             continue;
         }
         {
+          char buf[40];
+          char *name;
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
              && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
             char **sym_name =
               backtrace_symbols((void **)(&(info[i].ci_pc)), 1);
-            char *name = sym_name[0];
-#         else
-            char buf[40];
-            char *name = buf;
+            if (sym_name != NULL) {
+              name = sym_name[0];
+            } else
+#         endif
+          /* else */ {
             (void)snprintf(buf, sizeof(buf), "##PC##= 0x%lx",
                            (unsigned long)info[i].ci_pc);
             buf[sizeof(buf) - 1] = '\0';
-#         endif
+            name = buf;
+          }
 #         if defined(LINUX) && !defined(SMALL_CONFIG)
             /* Try for a line number. */
             {
@@ -4715,7 +4746,8 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
           GC_err_printf("\t\t%s\n", name);
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
              && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
-            free(sym_name);  /* May call GC_[debug_]free; that's OK */
+            if (sym_name != NULL)
+              free(sym_name);   /* May call GC_[debug_]free; that's OK  */
 #         endif
         }
     }
