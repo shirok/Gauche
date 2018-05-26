@@ -888,7 +888,7 @@ m4_include([ext/tls/tls.ac])
 dnl Setup STATIC_LIBS
 STATIC_LIBS=
 for lib in $EXT_LIBS $LIBS; do
-  if [ echo "$STATIC_LIBS" | grep -e $lib > /dev/null 2>&1 ]
+  if [ echo ":${STATIC_LIBS}:" | tr ' ' ':' | grep -e ":${lib}:" > /dev/null 2>&1 ]
   then
     : # lib is alreay in STATIC_LIBS.  do nothing
   else
