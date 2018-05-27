@@ -640,93 +640,89 @@ xhost=$host
 # On cygwin, we likely to need rebaseall to make dlls work with sys-fork.
 CYGWIN_FIXDLL=:
 
-case $host in
-  *freebsd2*)
+AS_CASE([$host],
+  [*freebsd2*], [
     SHLIB_SO_CFLAGS="-fpic -fPIC"
     SHLIB_SO_LDFLAGS="-v;ld -Bshareable -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
-    ;;
-  *-linux-gnu*|*-*-gnu*|*freebsd*|*dragonfly*)
+    ],
+  [*-linux-gnu*|*-*-gnu*|*freebsd*|*dragonfly*], [
     SHLIB_SO_CFLAGS="-fPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
-    ;;
-  *netbsd*|*openbsd*)
+    ],
+  [*netbsd*|*openbsd*], [
     SHLIB_SO_CFLAGS="-fPIC -DPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
-    ;;
-  *darwin*)
-    # -no-cpp-precomp is not related to shared library, but needed to
-    # get src/{vm.c,char.c} compiled -skimu
-    # [Shiro] Darwin 1.3 and later needs different flags
+    ],
+  [*darwin*], [
+    dnl -no-cpp-precomp is not related to shared library, but needed to
+    dnl get src/{vm.c,char.c} compiled -skimu
+    dnl [Shiro] Darwin 1.3 and later needs different flags
     CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
-    case $host_os in
-      darwin1.@<:@012@:>@) FLAT_NAMESPACE="" ;;
-      *)               FLAT_NAMESPACE="-flat_namespace" ;;
-    esac
-    case $host_os in
-      darwin9.8.*) ;;           dnl Leopard doesn't like -no_pie
-      *)           SHLIB_MAIN_LDFLAGS="-Wl,-no_pie";;
-    esac
+    AS_CASE([$host_os],
+      [darwin1.@<:@012@:>@], [FLAT_NAMESPACE=""],
+                             [FLAT_NAMESPACE="-flat_namespace"])
+    AS_CASE([$host_os],
+      [darwin9.8.*], [],           dnl Leopard doesn't like -no_pie
+                     [SHLIB_MAIN_LDFLAGS="-Wl,-no_pie"])
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_DYLIB_LDFLAGS='-framework CoreFoundation -dynamiclib -o'
-    if test "$ac_gauche_framework" = yes; then
+    AS_IF([test "$ac_gauche_framework" = yes], [
       AC_DEFINE(GAUCHE_MACOSX_FRAMEWORK, 1, [Define 1 if building framework on MacOSX])
       xhost="${host}-framework"
-    fi
+    ])
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
     SHLIB_OK=ok
     LINK_HELPER='$(srcdir)/link-dylib'
     ext_use_libgauche=no
     libgauche_version_link=no
-    ;;
-  mips-sgi-irix*)
-    if test "$GCC" = yes; then
-      SHLIB_SO_CFLAGS="-fPIC"
-    else
-      SHLIB_SO_CFLAGS="-KPIC"
-    fi
+    ],
+  [mips-sgi-irix*], [
+    AS_IF([test "$GCC" = yes],
+          [SHLIB_SO_CFLAGS="-fPIC"],
+          [SHLIB_SO_CFLAGS="-KPIC"])
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
-    ;;
-  *solaris*)
-    if test "$GCC" = yes; then
+    ],
+  [*solaris*], [
+    AS_IF([test "$GCC" = yes], [
       SHLIB_SO_CFLAGS="-fPIC"
       SHLIB_SO_LDFLAGS="-shared -o"
-    else
+    ], [
       SHLIB_SO_CFLAGS="-Kpic"
       SHLIB_SO_LDFLAGS="-G -o"
-    fi
+    ])
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
-    ;;
-  *hp*)
-    if test "$GCC" = yes; then
+    ],
+  [*hp*], [
+    AS_IF([test "$GCC" = yes], [
       SHLIB_SO_CFLAGS="-fPIC"
       SHLIB_SO_LDFLAGS="-shared -o"
-    else
+    ], [
       SHLIB_SO_CFLAGS="+z +Z"
       SHLIB_SO_LDFLAGS=";ld -b -o"
-    fi
+    ])
     SHLIB_SO_SUFFIX="sl"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     LINK_HELPER='$(srcdir)/link-hpux'
-    ;;
-  *cygwin*)
+    ],
+  [*cygwin*], [
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -shared -o'
     SHLIB_SO_SUFFIX="dll"
@@ -738,10 +734,10 @@ case $host in
     ext_use_libgauche=yes
     libgauche_version_link=no
     CYGWIN_FIXDLL='$(srcdir)/src/cygwin-fixdll.sh'
-    ;;
-  *mingw*)
-    # Kludge: We add -static-libgcc flag when creating dll, in order to avoid
-    # introducing dependency to libgcc_s_dw2-1.dll.
+    ],
+  [*mingw*], [
+    dnl Kludge: We add -static-libgcc flag when creating dll, in order to avoid
+    dnl introducing dependency to libgcc_s_dw2-1.dll.
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -static-libgcc -shared -o'
     SHLIB_SO_SUFFIX="dll"
@@ -752,41 +748,30 @@ case $host in
     ext_use_uvector=yes
     ext_use_libgauche=yes
     libgauche_version_link=no
-    ;;
-  *)
+    ],
+  [
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS=""
     SHLIB_SO_SUFFIX=""
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=unknown
-    ;;
-esac
-if test -z "$SHLIB_DYLIB_LDFLAGS"; then
-  SHLIB_DYLIB_LDFLAGS=$SHLIB_SO_LDFLAGS
-fi
-if test -z "$SHLIB_DYLIB_SUFFIX"; then
-  SHLIB_DYLIB_SUFFIX=$SHLIB_SO_SUFFIX
-fi
-if test "$SHLIB_OK" = ok; then
-  LIBGAUCHE_SO="$LIBGAUCHE.$SHLIB_DYLIB_SUFFIX"
-else
-  LIBGAUCHE_SO=
-fi
-if test "$ext_use_libgauche" = yes; then
-  EXT_LIBGAUCHE="-l$LINKGAUCHE"
-else
-  EXT_LIBGAUCHE=
-fi
-if test "$ext_use_uvector" = yes; then
-  EXT_UVECTOR='$(top_builddir)/ext/uvector/libgauche-uvector.$(SOEXT)'
-else
-  EXT_UVECTOR=
-fi
-if test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok; then
-  MAKEVERSLINK='$(SHELL) ./makeverslink'
-else
-  MAKEVERSLINK=:
-fi
+    ])
+AS_IF([test -z "$SHLIB_DYLIB_LDFLAGS"],
+      [SHLIB_DYLIB_LDFLAGS=$SHLIB_SO_LDFLAGS])
+AS_IF([test -z "$SHLIB_DYLIB_SUFFIX"],
+      [SHLIB_DYLIB_SUFFIX=$SHLIB_SO_SUFFIX])
+AS_IF([test "$SHLIB_OK" = ok],
+      [LIBGAUCHE_SO="$LIBGAUCHE.$SHLIB_DYLIB_SUFFIX"],
+      [LIBGAUCHE_SO=])
+AS_IF([test "$ext_use_libgauche" = yes],
+      [EXT_LIBGAUCHE="-l$LINKGAUCHE"],
+      [EXT_LIBGAUCHE=])
+AS_IF([test "$ext_use_uvector" = yes],
+      [EXT_UVECTOR='$(top_builddir)/ext/uvector/libgauche-uvector.$(SOEXT)'],
+      [EXT_UVECTOR=])
+AS_IF([test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok],
+      [MAKEVERSLINK='$(SHELL) ./makeverslink'],
+      [MAKEVERSLINK=:])
 
 AC_SUBST(xhost)
 AC_SUBST(SHLIB_SO_CFLAGS)
