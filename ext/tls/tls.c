@@ -238,7 +238,15 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
       Scm_SysError("mbedtls_ssl_setup() failed");
     }
 
-    mbedtls_ssl_set_bio(&t->ctx, &t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
+    mbedtls_net_context client_fd;
+    mbedtls_net_free(&client_fd);
+
+    mbedtls_ssl_session_reset(&t->ctx);
+
+    if(mbedtls_net_accept(&t->conn, &client_fd, NULL, 0, NULL) != 0) {
+      Scm_SysError("mbedtls_net_accept() failed");
+    }
+    mbedtls_ssl_set_bio(&t->ctx, &client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     int r = mbedtls_ssl_handshake(&t->ctx);
     if (r != 0) {
