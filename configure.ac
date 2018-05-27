@@ -220,22 +220,23 @@ paths and PATH/lib to the library search paths.  Useful if you have some
 libraries installed in non-standard places.  On MinGW/MSYS, use ';' as a
 separator instead of ':'.]),
   [
-    case $with_local in
-      yes|no|"") ;;  #no effect
-      *) IFS_save=$IFS
-         case $host in *mingw*) IFS=";" ;; *) IFS=":" ;; esac
-         sep0=""
-         sep1=""
-         for p in $with_local; do
-           LOCAL_INC="${LOCAL_INC}${sep0}-I$p/include"
-           LOCAL_LIB="${LOCAL_LIB}${sep0}-L$p/lib"
-           LOCAL_INCDIRS="${LOCAL_INCDIRS}${sep1}$p/include"
-           LOCAL_LIBDIRS="${LOCAL_LIBDIRS}${sep1}$p/lib"
-           sep0=" "
-           sep1="$IFS"
-         done
-         IFS=$IFS_save ;;
-    esac
+    AS_CASE([$with_local],
+            [yes|no|""], [], dnl no effect
+                         [IFS_save=$IFS
+                          AS_CASE([$host],
+                                  [*mingw*], [IFS=";"],
+                                             [IFS=":"])
+                          sep0=""
+                          sep1=""
+                          for p in $with_local; do
+                              LOCAL_INC="${LOCAL_INC}${sep0}-I$p/include"
+                              LOCAL_LIB="${LOCAL_LIB}${sep0}-L$p/lib"
+                              LOCAL_INCDIRS="${LOCAL_INCDIRS}${sep1}$p/include"
+                              LOCAL_LIBDIRS="${LOCAL_LIBDIRS}${sep1}$p/lib"
+                              sep0=" "
+                              sep1="$IFS"
+                          done
+                          IFS=$IFS_save ])
   ])
 AC_SUBST(LOCAL_INC)
 AC_SUBST(LOCAL_LIB)
@@ -342,13 +343,9 @@ AC_ARG_ENABLE(framework,
   AS_HELP_STRING([--enable-framework],
                  [On MacOSX, build Gauche as a framework.  This flag has no effect on other platforms.]),
   [
-    case $enableval in
-      no)
-      ;;
-      *)
-      ac_gauche_framework=yes
-      ;;
-    esac
+    AS_CASE([$enableval],
+            [no], [],
+                  [ac_gauche_framework=yes])
   ], [])
 
 dnl ===========================================================
