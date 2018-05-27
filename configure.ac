@@ -52,59 +52,57 @@ AC_ARG_ENABLE(threads,
   AS_HELP_STRING([--enable-threads=TYPE],
                  [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, and 'default' to choose system's suitable one (if any). ]),
   [
-    case $enableval in
-      pthreads)
-       GAUCHE_THREAD_TYPE=pthreads;;
-      win32)
-       GAUCHE_THREAD_TYPE=win32;;
-      no|none)
-       GAUCHE_THREAD_TYPE=none;;
-      default)
-       GAUCHE_THREAD_TYPE=default;;
-      *)
-       AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none, pthreads, win32, or default])
-      ;;
-    esac
+    AS_CASE([$enableval],
+      [pthreads],
+       [GAUCHE_THREAD_TYPE=pthreads],
+      [win32],
+       [GAUCHE_THREAD_TYPE=win32],
+      [no|none],
+       [GAUCHE_THREAD_TYPE=none],
+      [default],
+       [GAUCHE_THREAD_TYPE=default],
+
+       [AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none, pthreads, win32, or default)])])
   ], [])
 
 dnl Platform-dependent thread configuration.  This must be in sync
 dnl with gc's configure.ac.
-case $GAUCHE_THREAD_TYPE in
- pthreads|default)
-  case "$host" in
-    *-*-linux*)
+AS_CASE([$GAUCHE_THREAD_TYPE],
+ [pthreads|default],
+  [AS_CASE(["$host"],
+    [*-*-linux*], [
       AC_DEFINE(GC_LINUX_THREADS,1,[Define to use Linux threads])
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-hpux*)
+      ],
+    [*-*-hpux*], [
       AC_MSG_WARN("Only HP/UX 11 threads are supported.")
       AC_DEFINE(GC_HPUX_THREADS,1,[Define to use HP-UX threads])
       AC_DEFINE(_POSIX_C_SOURCE,199506L,[Define POSIX C version])
       THREADLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-*freebsd*|*-*-dragonfly*)
+      ],
+    [*-*-*freebsd*|*-*-dragonfly*], [
       AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"
       THREADLIBS="-pthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-kfreebsd*-gnu)
+      ],
+    [*-*-kfreebsd*-gnu], [
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"
       THREADDLLIBS=-pthread
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
-      ;;
-    *-*-gnu*)
+      ],
+    [*-*-gnu*], [
       AC_DEFINE(GC_GNU_THREADS,1,[Define to use GNU threads])
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-netbsd*)
+      ],
+    [*-*-netbsd*], [
       AC_MSG_WARN("Only on NetBSD 2.0 or later.")
       AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use NetBSD threads])
       AC_DEFINE(_REENTRANT, [], [Define to use reentrant libc])
@@ -112,65 +110,52 @@ case $GAUCHE_THREAD_TYPE in
       THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-openbsd*)
+      ],
+    [*-*-openbsd*], [
       AC_MSG_WARN([Gauche with pthread on OpenBSD has unresolved issues.  We recommend you to build without threads (--disable-threads) unless you're trying to fix the issues.  See https://github.com/shirok/Gauche/issues/276 and https://github.com/shirok/Gauche/issues/334 .])
       AC_DEFINE(GC_OPENBSD_THREADS,1,[Define to use OpenBSD threads])
       THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;      
-    *-*-solaris*)
+      ],
+    [*-*-solaris*], [
       AC_DEFINE(GC_SOLARIS_THREADS,1,[Define to use Solaris threads])
       AC_DEFINE(GC_SOLARIS_PTHREADS,1,[Define to use Solaris pthreads])
       AC_DEFINE(_POSIX_PTHREAD_SEMANTICS,1,[Define to use Solaris pthreads])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-irix*)
+      ],
+    [*-*-irix*], [
       AC_DEFINE(GC_IRIX_THREADS,1,[Define to use IRIX threads])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-cygwin*)
+      ],
+    [*-*-cygwin*], [
       AC_DEFINE(GC_WIN32_THREADS,1,[Define to use Win32 threads])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-darwin*)
+      ],
+    [*-*-darwin*], [
       AC_DEFINE(GC_DARWIN_THREADS,1,[Define to use Darwin threads])
       AC_DEFINE(GC_PTHREADS,1,[Define to use pthreads])
       INCLUDES="$INCLUDES -I/sw/include"
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-mingw*)
-      if test $GAUCHE_THREAD_TYPE = "pthreads"; then
-        AC_MSG_ERROR([pthread can't be used on Windows.  Use --enable-threads=win32 to enable threads])
-      else
-        GAUCHE_THREAD_TYPE=win32
-      fi
-      ;;
-    *)
-      if test $GAUCHE_THREAD_TYPE = "pthreads"; then
-        AC_MSG_ERROR([pthread is not supported on $host])
-      else
-        GAUCHE_THREAD_TYPE=none
-      fi
-      ;;
-  esac
- ;;
-esac
-case $GAUCHE_THREAD_TYPE in
-  pthreads)
-   AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
-   ;;
-  win32)
-   AC_DEFINE(GAUCHE_USE_WTHREADS,1,[Define if we use windows threads])
-   ;;
-  *)
-   ;;
-esac
+      ],
+    [*-*-mingw*], [
+      AS_IF([test $GAUCHE_THREAD_TYPE = "pthreads"],
+            [ AC_MSG_ERROR([pthread can't be used on Windows.  Use --enable-threads=win32 to enable threads]) ],
+            [ GAUCHE_THREAD_TYPE=win32 ])
+      ],
+    [
+      AS_IF([test $GAUCHE_THREAD_TYPE = "pthreads"],
+            [ AC_MSG_ERROR([pthread is not supported on $host]) ],
+            [ GAUCHE_THREAD_TYPE=none ])
+      ])])
+AS_CASE([$GAUCHE_THREAD_TYPE],
+  [pthreads], [ AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads]) ],
+  [win32],    [ AC_DEFINE(GAUCHE_USE_WTHREADS,1,[Define if we use windows threads]) ],
+              [])
 
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
