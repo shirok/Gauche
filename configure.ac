@@ -929,7 +929,7 @@ dnl Show some of the configuration results, for developer's
 dnl convenience.
 
 [OPTDBMS=`echo "$DBM_SCMFILES" | sed 's/\.sci//g'`]
-if test "$ac_cv_use_zlib" = yes; then OPTZLIB=" zlib"; else OPTZLIB=" "; fi
+AS_IF([test "$ac_cv_use_zlib" = yes], [OPTZLIB=" zlib"], [OPTZLIB=" "])
 
 AC_MSG_RESULT(
 [
