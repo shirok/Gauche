@@ -68,7 +68,7 @@ AC_ARG_ENABLE(threads,
   ], [])
 
 dnl Platform-dependent thread configuration.  This must be in sync
-dnl with gc's configure.in.
+dnl with gc's configure.ac.
 case $GAUCHE_THREAD_TYPE in
  pthreads|default)
   case "$host" in
