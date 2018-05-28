@@ -89,7 +89,7 @@ static void close_check(ScmTLS* tls, const char* op)
 #endif
 }
 
-ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
+ScmObj Scm_MakeTLS(uint32_t options, int num_sessions, ScmString* server_name)
 {
     ScmTLS* t = SCM_NEW(ScmTLS);
     SCM_SET_CLASS(t, SCM_CLASS_TLS);
@@ -107,6 +107,7 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
 
     mbedtls_entropy_init(&t->entropy);
 
+    t->server_name = server_name;
     t->in_port = t->out_port = 0;
 #endif
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
@@ -194,6 +195,11 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
 
     if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
       Scm_SysError("mbedtls_ssl_setup() failed");
+    }
+
+    const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
+    if(mbedtls_ssl_set_hostname(&t->ctx, hostname) != 0) {
+      Scm_SysError("mbedtls_ssl_set_hostname() failed");
     }
 
     mbedtls_ssl_set_bio(&t->ctx, &t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);

@@ -66,14 +66,14 @@
  (define-enum SSL_OBJ_PKCS8)
  (define-enum SSL_OBJ_PKCS12)
  
- (define-cproc make-tls (:optional flags (num-sessions::<int> 0))
+ (define-cproc make-tls (:optional flags (num-sessions::<int> 0) (server-name::<string>? #f))
    ;; NB: By default, we don't support certificate validation/trust.
    ;; Future work will have to take care of this if anyone cares about
    ;; it at the policy level.
    (let* ([f::uint32_t SSL_SERVER_VERIFY_LATER])
      (when (SCM_INTEGERP flags)
        (set! f (Scm_GetIntegerU32Clamp flags SCM_CLAMP_ERROR NULL)))
-     (return (Scm_MakeTLS f num-sessions))))
+     (return (Scm_MakeTLS f num-sessions server-name))))
  (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
  (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)

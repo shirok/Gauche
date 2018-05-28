@@ -89,6 +89,7 @@ typedef struct ScmTLSRec {
   mbedtls_ssl_config conf;
   mbedtls_x509_crt ca;
 
+  ScmString *server_name;
   ScmPort *in_port, *out_port;
 #endif
 } ScmTLS;
@@ -99,7 +100,7 @@ SCM_CLASS_DECL(Scm_TLSClass);
 #define SCM_TLS(obj)    ((ScmTLS*)obj)
 #define SCM_TLSP(obj)   SCM_XTYPEP(obj, SCM_CLASS_TLS)
 
-extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions);
+extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions, ScmString* server_name);
 extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                                 const char *filename,
