@@ -137,6 +137,7 @@ ScmObj Scm_TLSClose(ScmTLS* t)
 
     mbedtls_ssl_close_notify(&t->ctx);
     mbedtls_net_free(&t->conn);
+    t->server_name = NULL;
     t->in_port = t->out_port = NULL;
 #endif
     return SCM_TRUE;
