@@ -898,7 +898,7 @@
   (when (~ conn'secure-agent) (shutdown-secure-agent conn))
   (ecase (~ conn'secure)
     [(tls)
-     (let1 tls (make-tls 0 0 (~ conn'server))
+     (let1 tls (make-tls #f 0 (~ conn'server))
        (set! (~ conn'secure-agent) tls)
        (tls-connect tls (socket-fd (~ conn'socket))))]
     [(stunnel)
