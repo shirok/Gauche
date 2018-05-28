@@ -108,7 +108,7 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions, ScmString* server_name)
     mbedtls_entropy_init(&t->entropy);
 
     t->server_name = server_name;
-    t->in_port = t->out_port = 0;
+    t->in_port = t->out_port = NULL;
 #endif
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
     return SCM_OBJ(t);
@@ -137,7 +137,7 @@ ScmObj Scm_TLSClose(ScmTLS* t)
 
     mbedtls_ssl_close_notify(&t->ctx);
     mbedtls_net_free(&t->conn);
-    t->in_port = t->out_port = 0;
+    t->in_port = t->out_port = NULL;
 #endif
     return SCM_TRUE;
 }
