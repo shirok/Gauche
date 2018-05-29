@@ -39,7 +39,8 @@
 ;; A @emph{foreign type}, or @code{ftype}, refers to a way of representing
 ;; external data used outside the Scheme world.  Ftypes are first-class
 ;; objects in Gauche.  It can be used to extract or construct structured data
-;; from/in a plain bytevector (@code{u8vector}).
+;; from/in a plain bytevector (@code{u8vector}) and read from / write to
+;; ports.
 ;;
 ;; A @emph{foreign object} , or @code{fobject}, is a Scheme object
 ;; that packages a chunk of binary data (@emph{storage}) with ftype.
@@ -50,14 +51,17 @@
 ;; into an u8vector, then extract a part of it (e.g. image header)
 ;; as an fobject.  When you do so, the extracted fobject shares its storage
 ;; with the original u8vector; you can modify the header of the image
-;; content through the extracted fobject.
+;; content through the extracted fobject.  You may thing fobject as
+;; a typed reference to a certain memory.
 
 (define-module binary.ftype
   (use gauche.uvector)
   (use gauche.record)
+  (use gauche.sequence)
   (use srfi-1)
   (use srfi-13)
   (use binary.io)
+  (use util.match)
   (export
    ;; predefined primitive ftypes
    ftype:schar ftype:uchar  ftype:short ftype:ushort ftype:int ftype:uint
@@ -66,6 +70,8 @@
    ftype:int64 ftype:uint64
    ftype:float ftype:double
 
+   bitfield
+   
    ;; type metainformation
    ftype ftype-name ftype-size ftype-alignment ftype-endian
    ftype-getter ftype-putter
@@ -123,12 +129,6 @@
                                               ; overridden.
   )
 
-(define-record-type (ftype:bitfield ftype) %make-ftype:bitfield #t
-  type                                  ; ftype
-  bit-position                          ; start bit position
-  bit-width                             ; width
-  )
-
 ;; Auxiliary structure to keep each slot's info of ftype:struct.
 ;; This isn't a subtype of ftype.
 (define-record-type ftype:slot #t #t
@@ -136,6 +136,38 @@
   type              ; ftype
   position          ; byte offset
   )
+
+;; Auxiliary structure to keep bitfield slot in ftype:struct.
+;; When fstruct is defined, bitfield slot needs to be deginated with
+;; bit-width and signed/unsigned.  The initializer of fstruct fills
+;; bit-position.
+(define-record-type (ftype:bitfield ftype) %make-ftype:bitfield #t
+  bit-position                          ; start bit position
+  bit-width                             ; width
+  )
+
+(define (bitfield width)
+  (make-ftype:bitfield #f #f width 0))
+
+(define (make-ftype:bitfield name signed? bitwidth bitpos)
+  (let* ([octets (div (+ bitwidth 7) 8)]
+         [size (ash 1 (integer-length (- octets 1)))]
+         [align size]
+         [geti (if signed? get-sint get-uint)]
+         [puti (if signed? put-sint! put-uint!)])
+    (%make-ftype:bitfield name size align #f
+                          (^[uv pos endian]
+                            (bit-field (geti uv pos endian)
+                                       bitpos
+                                       (+ bitpos bitwidth)))
+                          (^[uv pos val endian]
+                            (puti uv pos 
+                                  (copy-bit-field (geti uv pos endian)
+                                                  val
+                                                  bitpos
+                                                  (+ bitpos bitwidth))))
+                          bitpos
+                          bitwidth)))
 
 ;;
 ;; Foreign object instance.
@@ -259,7 +291,7 @@
 
 ;; slots :: ((name type) ...)
 (define (make-fstruct-type name slots endian alignment)
-  (receive (size slot-descriptors) (compute-fstruct-slots slots alignment)
+  (receive [slot-descriptors size] (compute-fstruct-slots slots alignment)
     (rec ftype
       (%make-ftype:struct name size
                           (or alignment (compute-fstruct-alignment slots))
@@ -279,21 +311,37 @@
 (define (compute-fstruct-alignment slots)
   (apply max (map (^p (ftype-alignment (cadr p))) slots)))
 
+;; Returns <<[ftype:slot] size>>
 (define (compute-fstruct-slots slots alignment)
-  (let loop ([slots slots]
-             [pos 0]
-             [descs '()])
-    (if (null? slots)
-      (values pos (reverse descs))
-      (let* ([name (caar slots)]
-             [type (cadar slots)]
-             [align (if alignment
-                      (min alignment (ftype-alignment type))
-                      (ftype-alignment type))]
-             [pos (%round pos align)])
-        (loop (cdr slots)
-              (+ pos (ftype-size type))
-              (acons name (make-ftype:slot name type pos) descs))))))
+  (define (do-slot slots ss pos)
+    (match slots
+      [() (values (reverse ss) pos)]
+      [([name type] . slots)
+       (let* ([align (if alignment
+                       (min alignment (ftype-alignment type))
+                       (ftype-alignment type))]
+              [pos (%round pos align)])
+         (if (ftype:bitfield? type)
+           (do-bitfield name type slots ss pos 0)
+           (do-slot slots
+                    `((,name . ,(make-ftype:slot name type pos)) ,@ss)
+                    (+ pos (ftype-size type)))))]))
+  (define (do-bitfield name type slots ss pos bitpos)
+    (let* ([w (ftype:bitfield-bit-width type)]
+           [s `(,name
+                . ,(make-ftype:slot name
+                                    (make-ftype:bitfield `(bits ,w ,bitpos)
+                                                         #f
+                                                         bitpos
+                                                         w)
+                                    pos))])
+      (match slots
+        [() (do-slot slots (cons s ss) (+ pos (div (+ bitpos 7) 8)))]
+        [([name type] . rest)
+         (if (ftype:bitfield? type)
+           (do-bitfield name type rest (cons s ss) pos (+ bitpos w))
+           (do-slot slots (cons s ss) (+ pos (div (+ bitpos 7) 8))))])))
+  (do-slot slots '() 0))
 
 ;;
 ;; Generic accessors.
@@ -348,12 +396,14 @@
 (define (fobject-ref/uv ftd slot uvector pos)
   (let1 s (%get-slot-desc ftd slot)
     ((ftype-getter (ftype:slot-type s))
-     uvector (+ pos (ftype:slot-position s)))))
+     uvector (+ pos (ftype:slot-position s))
+     #f)))                              ;endian
 
 (define (fobject-set!/uv ftd slot uvector pos val)
   (let1 s (%get-slot-desc ftd slot)
     ((ftype-putter (ftype:slot-type s))
-     uvector (+ pos (ftype:slot-position s)) val)))
+     uvector (+ pos (ftype:slot-position s)) val
+     #f)))                              ;endian
 
 (define (fobject-ref obj slot)
   (fobject-ref/uv (fobject-type obj) slot

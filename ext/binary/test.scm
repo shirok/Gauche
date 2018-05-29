@@ -705,6 +705,14 @@
            (uvector-alias <u8vector> v 5)))
   )
 
+;; fstruct with bitfield
+(define-fstruct-type ft3 #t #t
+  ((a ftype:uchar)
+   (b0 (bitfield 3))
+   (b1 (bitfield 1))
+   (b2 (bitfield 6))
+   (c ftype:int32)))
+
 ;;----------------------------------------------------------
 (test-section "binary.pack")
 
