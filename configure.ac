@@ -19,6 +19,7 @@ dnl
 dnl ----------------------------------------------------------
 dnl   enable-multibyte
 dnl
+AC_MSG_CHECKING([multibyte encoding])
 GAUCHE_CHAR_ENCODING=utf8
 AC_ARG_ENABLE(multibyte,
   AS_HELP_STRING([--enable-multibyte=ENCODING],
@@ -43,6 +44,8 @@ AS_CASE([$GAUCHE_CHAR_ENCODING],
   [eucjp], [AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP])],
   [utf8],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8])],
   [sjis],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS])])
+AC_MSG_RESULT([$GAUCHE_CHAR_ENCODING])
+
 
 dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
