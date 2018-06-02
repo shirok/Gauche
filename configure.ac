@@ -47,6 +47,7 @@ AS_CASE([$GAUCHE_CHAR_ENCODING],
 dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
 dnl
+AC_MSG_CHECKING([thread type])
 GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
   AS_HELP_STRING([--enable-threads=TYPE],
@@ -160,6 +161,7 @@ AS_CASE([$GAUCHE_THREAD_TYPE],
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
 AC_SUBST(GAUCHE_THREAD_TYPE)
+AC_MSG_RESULT([$GAUCHE_THREAD_TYPE])
 
 dnl ----------------------------------------------------------
 dnl  with-slib
