@@ -518,6 +518,9 @@ init_cond_features()
 #if defined(GAUCHE_USE_AXTLS)
         { "gauche.net.tls", "rfc.tls" },
         { "gauche.net.tls.axtls", "rfc.tls" },
+#elif defined(GAUCHE_USE_MBEDTLS)
+        { "gauche.net.tls", "rfc.tls" },
+        { "gauche.net.tls.mbedtls", "rfc.tls" },
 #elif defined(GAUCHE_USE_OPENSSL)
         { "gauche.net.tls", "rfc.tls" },
         { "gauche.net.tls.openssl", "rfc.tls" },

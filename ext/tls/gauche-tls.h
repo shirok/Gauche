@@ -2,6 +2,7 @@
  * gauche-tls.h - TLS secure connection interface
  *
  *   Copyright (c) 2011 Kirill Zorin <k.zorin@me.com>
+ *                 2018 YOKOTA Hiroshi
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -43,7 +44,20 @@
 
 #if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
-#else /*!GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+#include <mbedtls/ssl.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
+
+#ifndef X509_CA_FILE
+#define X509_CA_FILE "ca-cert.crt"
+#endif
+
+#endif
+
+#ifndef GAUCHE_USE_AXTLS
+/* dummy symbols */
 #define SSL_CLIENT_AUTHENTICATION               0x00010000
 #define SSL_SERVER_VERIFY_LATER                 0x00020000
 #define SSL_NO_DEFAULT_KEY                      0x00040000
@@ -57,7 +71,7 @@
 #define SSL_OBJ_RSA_KEY                         3
 #define SSL_OBJ_PKCS8                           4
 #define SSL_OBJ_PKCS12                          5
-#endif /*!GAUCHE_USE_AXTLS*/
+#endif
 
 SCM_DECL_BEGIN
 
@@ -67,7 +81,17 @@ typedef struct ScmTLSRec {
   SSL_CTX* ctx;
   SSL* conn;
   ScmPort* in_port, * out_port;
-#endif /*GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+  mbedtls_ssl_context ctx;
+  mbedtls_net_context conn;
+  mbedtls_entropy_context entropy;
+  mbedtls_ctr_drbg_context ctr_drbg;
+  mbedtls_ssl_config conf;
+  mbedtls_x509_crt ca;
+
+  ScmString *server_name;
+  ScmPort *in_port, *out_port;
+#endif
 } ScmTLS;
 
 SCM_CLASS_DECL(Scm_TLSClass);
@@ -76,7 +100,7 @@ SCM_CLASS_DECL(Scm_TLSClass);
 #define SCM_TLS(obj)    ((ScmTLS*)obj)
 #define SCM_TLSP(obj)   SCM_XTYPEP(obj, SCM_CLASS_TLS)
 
-extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions);
+extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions, ScmString* server_name);
 extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                                 const char *filename,

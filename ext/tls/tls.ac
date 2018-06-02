@@ -11,14 +11,15 @@ dnl   In future we may support 'openssl' as well.
 dnl
 AC_ARG_ENABLE(tls,
   AS_HELP_STRING([--enable-tls=TYPE], [enable TLS/SSL support.  TYPE can be
-  'axtls' (to use bundled source of Cameron Rich's axTLS), or 'none'
-  (disable TLS/SSL support)]),
+  'axtls' (to use bundled source of Cameron Rich's axTLS), 'mbedtls' (to use
+  mbed TLS), or 'none' (disable TLS/SSL support)]),
   [
     AS_CASE([$enableval],
       [no|none], [enable_tls=no],
       [axtls],   [enable_tls=axtls],
+      [mbedtls], [enable_tls=mbedtls],
 dnl      [openssl], [enable_tls=openssl],
-		 [echo "TLS type must be either one of 'axtls' or 'none'"])
+		 [echo "TLS type must be either one of 'axtls', 'mbedtls' or 'none'"])
   ], [enable_tls=axtls])
 
 AS_CASE([$enable_tls],
@@ -34,8 +35,19 @@ AS_CASE([$enable_tls],
 	   ], [
 	     GAUCHE_TLS_SWITCH_AXTLS_TEST=
 	   ])
+	   GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
 	   GAUCHE_TLS_SWITCH_NONE="@%:@"
 	   ],
+  [mbedtls], [
+	   AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
+	   GAUCHE_TLS_TYPE=mbedTLS
+	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
+	   GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
+	   GAUCHE_TLS_SWITCH_MBEDTLS=
+	   GAUCHE_TLS_SWITCH_NONE="@%:@"
+
+	   EXT_LIBS="${EXT_LIBS} -lmbedtls -lmbedx509 -lmbedcrypto"
+	  ],
 dnl [openssl], [
 dnl	   AC_DEFINE(GAUCHE_USE_OPENSSL, 1, [Define if you use openssl])
 dnl	   GAUCHE_TLS_TYPE=openssl
@@ -45,12 +57,26 @@ dnl	  ],
 	   GAUCHE_TLS_TYPE=none
 	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
 	   GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
+	   GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
 	   GAUCHE_TLS_SWITCH_NONE=
 	  ])
 
 AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS)
 AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS_TEST)
+AC_SUBST(GAUCHE_TLS_SWITCH_MBEDTLS)
 AC_SUBST(GAUCHE_TLS_SWITCH_NONE)
+
+AC_ARG_ENABLE([tls-ca-file-path],
+  AS_HELP_STRING([--enable-tls-ca-file-path=/path/to/ca-cert.crt],
+		 [Specify CA certificate file path for TLS certificate validation. This file is required to use mbed TLS.]),
+  [
+    AS_CASE([$enable_tls_ca_file_path],
+	[yes|no], [AC_DEFINE([X509_CA_FILE], ["ca-cert.crt"])],
+                  [AC_DEFINE_UNQUOTED([X509_CA_FILE], ["$enable_tls_ca_file_path"], [CA file path])]
+     )
+  ], [
+    AC_DEFINE([X509_CA_FILE], ["ca-cert.crt"])
+  ])
 
 dnl
 dnl Check openssl command; if available, we use it for axTLS tests.

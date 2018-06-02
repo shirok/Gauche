@@ -2,6 +2,7 @@
  * tls.c - tls secure connection interface
  *
  *   Copyright (c) 2011 Kirill Zorin <k.zorin@me.com>
+ *                 2018 YOKOTA Hiroshi
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -55,24 +56,40 @@ static void tls_finalize(ScmObj obj, void* data)
         ssl_ctx_free(t->ctx);
         t->ctx = NULL;
     }
-#endif /*GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+
+    Scm_TLSClose(t);
+
+    mbedtls_ssl_free(&t->ctx);
+    mbedtls_ssl_config_free(&t->conf);
+    mbedtls_ctr_drbg_free(&t->ctr_drbg);
+    mbedtls_entropy_free(&t->entropy);
+    mbedtls_x509_crt_free(&t->ca);
+
+#endif
 }
 
 static void context_check(ScmTLS* tls, const char* op)
 {
 #if defined(GAUCHE_USE_AXTLS)
     if (!tls->ctx) Scm_Error("attempt to %s destroyed TLS: %S", op, tls);
-#endif /*GAUCHE_USE_AXTLS*/
+#elif  defined(GAUCHE_USE_MBEDTLS)
+
+#endif
 }
 
 static void close_check(ScmTLS* tls, const char* op)
 {
 #if defined(GAUCHE_USE_AXTLS)
     if (!tls->conn) Scm_Error("attempt to %s closed TLS: %S", op, tls);
-#endif /*GAUCHE_USE_AXTLS*/
+#elif  defined(GAUCHE_USE_MBEDTLS)
+    if (tls->conn.fd < 0) {
+      Scm_Error("attempt to %s closed TLS: %S", op, tls);
+    }
+#endif
 }
 
-ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
+ScmObj Scm_MakeTLS(uint32_t options, int num_sessions, ScmString* server_name)
 {
     ScmTLS* t = SCM_NEW(ScmTLS);
     SCM_SET_CLASS(t, SCM_CLASS_TLS);
@@ -80,7 +97,19 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
     t->ctx = ssl_ctx_new(options, num_sessions);
     t->conn = NULL;
     t->in_port = t->out_port = 0;
-#endif /*GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+    mbedtls_ctr_drbg_init(&t->ctr_drbg);
+
+    mbedtls_net_init(&t->conn);
+    mbedtls_ssl_init(&t->ctx);
+    mbedtls_ssl_config_init(&t->conf);
+    mbedtls_x509_crt_init(&t->ca);
+
+    mbedtls_entropy_init(&t->entropy);
+
+    t->server_name = server_name;
+    t->in_port = t->out_port = NULL;
+#endif
     Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, NULL);
     return SCM_OBJ(t);
 }
@@ -90,9 +119,9 @@ ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
    up all fds, so explicit destruction is recommended whenever possible. */
 ScmObj Scm_TLSDestroy(ScmTLS* t)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     tls_finalize(SCM_OBJ(t), NULL);
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return SCM_TRUE;
 }
 
@@ -104,7 +133,13 @@ ScmObj Scm_TLSClose(ScmTLS* t)
         t->conn = 0;
         t->in_port = t->out_port = 0;
     }
-#endif /*GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+
+    mbedtls_ssl_close_notify(&t->ctx);
+    mbedtls_net_free(&t->conn);
+    t->server_name = NULL;
+    t->in_port = t->out_port = NULL;
+#endif
     return SCM_TRUE;
 }
 
@@ -115,7 +150,9 @@ ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
     uint32_t type = Scm_GetIntegerU32Clamp(obj_type, SCM_CLAMP_ERROR, NULL);
     if (ssl_obj_load(t->ctx, type, filename, password) == SSL_OK)
         return SCM_TRUE;
-#endif /*GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+
+#endif
     return SCM_FALSE;
 }
 
@@ -129,7 +166,50 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     if (r != SSL_OK) {
         Scm_Error("TLS handshake failed: %d", r);
     }
-#endif /*GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "connect");
+
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+			     (const unsigned char *)pers, strlen(pers)) != 0) {
+      Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
+    if (t->conn.fd >= 0) {
+      Scm_SysError("attempt to connect already-connected TLS %S", t);
+    }
+    t->conn.fd = fd;
+
+    if (mbedtls_ssl_config_defaults(&t->conf,
+				    MBEDTLS_SSL_IS_CLIENT,
+				    MBEDTLS_SSL_TRANSPORT_STREAM,
+				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
+      Scm_SysError("mbedtls_ssl_config_defaults() failed");
+    }
+    mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
+
+    if(mbedtls_x509_crt_parse_file(&t->ca, X509_CA_FILE) != 0) {
+      Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%s", X509_CA_FILE);
+    }
+    mbedtls_ssl_conf_ca_chain(&t->conf, &t->ca, NULL);
+    mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+
+    if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
+      Scm_SysError("mbedtls_ssl_setup() failed");
+    }
+
+    const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
+    if(mbedtls_ssl_set_hostname(&t->ctx, hostname) != 0) {
+      Scm_SysError("mbedtls_ssl_set_hostname() failed");
+    }
+
+    mbedtls_ssl_set_bio(&t->ctx, &t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    int r = mbedtls_ssl_handshake(&t->ctx);
+    if (r != 0) {
+      Scm_Error("TLS handshake failed: %d", r);
+    }
+#endif
     return SCM_OBJ(t);
 }
 
@@ -139,7 +219,48 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     context_check(t, "accept");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
     t->conn = ssl_server_new(t->ctx, fd);
-#endif /*GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "accept");
+
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+			     (const unsigned char *)pers, strlen(pers)) != 0) {
+      Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
+    if (t->conn.fd >= 0) {
+      Scm_SysError("attempt to connect already-connected TLS %S", t);
+    }
+    t->conn.fd = fd;
+
+    if (mbedtls_ssl_config_defaults(&t->conf,
+				    MBEDTLS_SSL_IS_SERVER,
+				    MBEDTLS_SSL_TRANSPORT_STREAM,
+				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
+      Scm_SysError("mbedtls_ssl_config_defaults() failed");
+    }
+    mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
+
+
+    if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
+      Scm_SysError("mbedtls_ssl_setup() failed");
+    }
+
+    mbedtls_net_context client_fd;
+    mbedtls_net_free(&client_fd);
+
+    mbedtls_ssl_session_reset(&t->ctx);
+
+    if(mbedtls_net_accept(&t->conn, &client_fd, NULL, 0, NULL) != 0) {
+      Scm_SysError("mbedtls_net_accept() failed");
+    }
+    mbedtls_ssl_set_bio(&t->ctx, &client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    int r = mbedtls_ssl_handshake(&t->ctx);
+    if (r != 0) {
+      Scm_Error("TLS handshake failed: %d", r);
+    }
+#endif
     return SCM_OBJ(t);
 }
 
@@ -152,12 +273,23 @@ ScmObj Scm_TLSRead(ScmTLS* t)
     while ((r = ssl_read(t->conn, &buf)) == SSL_OK);
     if (r < 0) Scm_SysError("ssl_read() failed");
     return Scm_MakeString((char*) buf, r, r, SCM_STRING_INCOMPLETE);
-#else  /*!GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "read");
+    close_check(t, "read");
+
+    uint8_t buf[1024] = {};
+    int r;
+    r = mbedtls_ssl_read(&t->ctx, buf, sizeof(buf));
+
+    if (r < 0) { Scm_SysError("mbedtls_ssl_read() failed"); }
+
+    return Scm_MakeString((char *)buf, r, r, SCM_STRING_INCOMPLETE | SCM_STRING_COPYING);
+#else
     return SCM_FALSE;
-#endif /*!GAUCHE_USE_AXTLS*/
+#endif
 }
 
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
 static const uint8_t* get_message_body(ScmObj msg, u_int *size)
 {
     if (SCM_UVECTORP(msg)) {
@@ -171,7 +303,7 @@ static const uint8_t* get_message_body(ScmObj msg, u_int *size)
         return 0;
     }
 }
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
 
 ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
 {
@@ -185,38 +317,56 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
         Scm_SysError("ssl_write() failed");
     }
     return SCM_MAKE_INT(r);
-#else  /*!GAUCHE_USE_AXTLS*/
+#elif defined(GAUCHE_USE_MBEDTLS)
+    context_check(t, "write");
+    close_check(t, "write");
+
+    u_int size;
+    const uint8_t* cmsg = get_message_body(msg, &size);
+
+    int r;
+    r = mbedtls_ssl_write(&t->ctx, cmsg, size);
+    if (r < 0) {
+      Scm_SysError("mbedtls_ssl_write() failed");
+    }
+
+    return SCM_MAKE_INT(r);
+#else
     return SCM_FALSE;
-#endif /*!GAUCHE_USE_AXTLS*/
+#endif
 }
 
 ScmObj Scm_TLSInputPort(ScmTLS* t)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     return SCM_OBJ(t->in_port);
-#endif /*GAUCHE_USE_AXTLS*/
+#else
+    return SCM_UNDEFINED;
+#endif
 }
 
 ScmObj Scm_TLSOutputPort(ScmTLS* t)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     return SCM_OBJ(t->out_port);
-#endif /*GAUCHE_USE_AXTLS*/
+#else
+    return SCM_UNDEFINED;
+#endif
 }
 
 ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     t->in_port = SCM_PORT(port);
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return port;
 }
 
 ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
-#if defined(GAUCHE_USE_AXTLS)
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
     t->out_port = SCM_PORT(port);
-#endif /*GAUCHE_USE_AXTLS*/
+#endif
     return port;
 }
 
