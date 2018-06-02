@@ -44,6 +44,9 @@
 /* Define if you use axTLS */
 #undef GAUCHE_USE_AXTLS
 
+/* Define if you use mbed TLS */
+#undef GAUCHE_USE_MBEDTLS
+
 /* Define if we use pthreads */
 #undef GAUCHE_USE_PTHREADS
 
@@ -493,6 +496,9 @@
 #  undef WORDS_BIGENDIAN
 # endif
 #endif
+
+/* CA file path */
+#undef X509_CA_FILE
 
 /* Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE
