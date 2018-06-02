@@ -1,3 +1,11 @@
+2018-06-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Incorporated mbedTLS support by @qykth-git.
+	  (https://github.com/shirok/Gauche/pull/350)
+	  Note that the actual availability of proper version of mbedTLS
+	  isn't checked (yet).  We also wanto to make TLS subsystem switchable
+	  at runtime.  Until then, we consider this unofficial.
+
 2018-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfis.scm: Make srfi-146 support official, for it is
