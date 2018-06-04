@@ -39,6 +39,12 @@ AS_CASE([$enable_tls],
 	   GAUCHE_TLS_SWITCH_NONE="@%:@"
 	   ],
   [mbedtls], [
+	   AC_CHECK_HEADER([mbedtls/net_sockets.h],
+		[AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1, [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
+		[AC_CHECK_HEADER([mbedtls/net.h],
+				 [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
+				 [AC_MSG_ERROR([Required mbed TLS header file is missing])])])
+
 	   AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
 	   GAUCHE_TLS_TYPE=mbedTLS
 	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
