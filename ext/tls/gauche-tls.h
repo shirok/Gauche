@@ -46,9 +46,14 @@
 #include "axTLS/ssl/ssl.h"
 #elif defined(GAUCHE_USE_MBEDTLS)
 #include <mbedtls/ssl.h>
-#include <mbedtls/net_sockets.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
+
+#ifdef HAVE_MBEDTLS_NET_SOCKETS_H
+#include <mbedtls/net_sockets.h>
+#elif  HAVE_MBEDTLS_NET_H
+#include <mbedtls/net.h>
+#endif
 
 #ifndef X509_CA_FILE
 #define X509_CA_FILE "ca-cert.crt"

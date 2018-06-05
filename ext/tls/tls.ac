@@ -39,6 +39,21 @@ AS_CASE([$enable_tls],
 	   GAUCHE_TLS_SWITCH_NONE="@%:@"
 	   ],
   [mbedtls], [
+	   AC_CHECK_HEADER([mbedtls/net_sockets.h],
+		[AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1, [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
+		[AC_CHECK_HEADER([mbedtls/net.h],
+				 [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
+				 [AC_MSG_ERROR([Required mbed TLS header file is missing])])])
+
+	   MBEDTLS_LIBS=""
+	   AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto], [MBEDTLS_LIBS="-lmbedcrypto ${MBEDTLS_LIBS}"],
+			  [AC_MSG_ERROR([mbed TLS library not found])])
+	   AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509],   [MBEDTLS_LIBS="-lmbedx509   ${MBEDTLS_LIBS}"],
+			  [AC_MSG_ERROR([mbed TLS library not found])])
+	   AC_SEARCH_LIBS([mbedtls_ssl_init],      [mbedtls],    [MBEDTLS_LIBS="-lmbedtls    ${MBEDTLS_LIBS}"],
+			  [AC_MSG_ERROR([mbed TLS library not found])])
+	   AC_SUBST(MBEDTLS_LIBS)
+
 	   AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
 	   GAUCHE_TLS_TYPE=mbedTLS
 	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
@@ -46,7 +61,7 @@ AS_CASE([$enable_tls],
 	   GAUCHE_TLS_SWITCH_MBEDTLS=
 	   GAUCHE_TLS_SWITCH_NONE="@%:@"
 
-	   EXT_LIBS="${EXT_LIBS} -lmbedtls -lmbedx509 -lmbedcrypto"
+	   EXT_LIBS="${EXT_LIBS} ${MBEDTLS_LIBS}"
 	  ],
 dnl [openssl], [
 dnl	   AC_DEFINE(GAUCHE_USE_OPENSSL, 1, [Define if you use openssl])
