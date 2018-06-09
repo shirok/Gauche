@@ -19,6 +19,7 @@ dnl
 dnl ----------------------------------------------------------
 dnl   enable-multibyte
 dnl
+AC_MSG_CHECKING([multibyte encoding])
 GAUCHE_CHAR_ENCODING=utf8
 AC_ARG_ENABLE(multibyte,
   AS_HELP_STRING([--enable-multibyte=ENCODING],
@@ -43,68 +44,69 @@ AS_CASE([$GAUCHE_CHAR_ENCODING],
   [eucjp], [AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP])],
   [utf8],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8])],
   [sjis],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS])])
+AC_MSG_RESULT([$GAUCHE_CHAR_ENCODING])
+
 
 dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
 dnl
+AC_MSG_CHECKING([thread type])
 GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
   AS_HELP_STRING([--enable-threads=TYPE],
-                 [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, and 'default' to choose system's suitable one (if any). ]),
+                 [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, 'win32' to use Windows threads, and 'default' to choose system's suitable one (if any). ]),
   [
-    case $enableval in
-      pthreads)
-       GAUCHE_THREAD_TYPE=pthreads;;
-      win32)
-       GAUCHE_THREAD_TYPE=win32;;
-      no|none)
-       GAUCHE_THREAD_TYPE=none;;
-      default)
-       GAUCHE_THREAD_TYPE=default;;
-      *)
-       AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none, pthreads, win32, or default])
-      ;;
-    esac
+    AS_CASE([$enableval],
+      [pthreads],
+       [GAUCHE_THREAD_TYPE=pthreads],
+      [win32],
+       [GAUCHE_THREAD_TYPE=win32],
+      [no|none],
+       [GAUCHE_THREAD_TYPE=none],
+      [default],
+       [GAUCHE_THREAD_TYPE=default],
+
+       [AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none, pthreads, win32, or default)])])
   ], [])
 
 dnl Platform-dependent thread configuration.  This must be in sync
-dnl with gc's configure.in.
-case $GAUCHE_THREAD_TYPE in
- pthreads|default)
-  case "$host" in
-    *-*-linux*)
+dnl with gc's configure.ac.
+AS_CASE([$GAUCHE_THREAD_TYPE],
+ [pthreads|default],
+  [AS_CASE(["$host"],
+    [*-*-linux*], [
       AC_DEFINE(GC_LINUX_THREADS,1,[Define to use Linux threads])
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-hpux*)
+      ],
+    [*-*-hpux*], [
       AC_MSG_WARN("Only HP/UX 11 threads are supported.")
       AC_DEFINE(GC_HPUX_THREADS,1,[Define to use HP-UX threads])
       AC_DEFINE(_POSIX_C_SOURCE,199506L,[Define POSIX C version])
       THREADLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-*freebsd*|*-*-dragonfly*)
+      ],
+    [*-*-*freebsd*|*-*-dragonfly*], [
       AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"
       THREADLIBS="-pthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-kfreebsd*-gnu)
+      ],
+    [*-*-kfreebsd*-gnu], [
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"
       THREADDLLIBS=-pthread
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
-      ;;
-    *-*-gnu*)
+      ],
+    [*-*-gnu*], [
       AC_DEFINE(GC_GNU_THREADS,1,[Define to use GNU threads])
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-netbsd*)
+      ],
+    [*-*-netbsd*], [
       AC_MSG_WARN("Only on NetBSD 2.0 or later.")
       AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use NetBSD threads])
       AC_DEFINE(_REENTRANT, [], [Define to use reentrant libc])
@@ -112,69 +114,57 @@ case $GAUCHE_THREAD_TYPE in
       THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-openbsd*)
+      ],
+    [*-*-openbsd*], [
       AC_MSG_WARN([Gauche with pthread on OpenBSD has unresolved issues.  We recommend you to build without threads (--disable-threads) unless you're trying to fix the issues.  See https://github.com/shirok/Gauche/issues/276 and https://github.com/shirok/Gauche/issues/334 .])
       AC_DEFINE(GC_OPENBSD_THREADS,1,[Define to use OpenBSD threads])
       THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;      
-    *-*-solaris*)
+      ],
+    [*-*-solaris*], [
       AC_DEFINE(GC_SOLARIS_THREADS,1,[Define to use Solaris threads])
       AC_DEFINE(GC_SOLARIS_PTHREADS,1,[Define to use Solaris pthreads])
       AC_DEFINE(_POSIX_PTHREAD_SEMANTICS,1,[Define to use Solaris pthreads])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-irix*)
+      ],
+    [*-*-irix*], [
       AC_DEFINE(GC_IRIX_THREADS,1,[Define to use IRIX threads])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-cygwin*)
+      ],
+    [*-*-cygwin*], [
       AC_DEFINE(GC_WIN32_THREADS,1,[Define to use Win32 threads])
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-darwin*)
+      ],
+    [*-*-darwin*], [
       AC_DEFINE(GC_DARWIN_THREADS,1,[Define to use Darwin threads])
       AC_DEFINE(GC_PTHREADS,1,[Define to use pthreads])
       INCLUDES="$INCLUDES -I/sw/include"
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
-      ;;
-    *-*-mingw*)
-      if test $GAUCHE_THREAD_TYPE = "pthreads"; then
-        AC_MSG_ERROR([pthread can't be used on Windows.  Use --enable-threads=win32 to enable threads])
-      else
-        GAUCHE_THREAD_TYPE=win32
-      fi
-      ;;
-    *)
-      if test $GAUCHE_THREAD_TYPE = "pthreads"; then
-        AC_MSG_ERROR([pthread is not supported on $host])
-      else
-        GAUCHE_THREAD_TYPE=none
-      fi
-      ;;
-  esac
- ;;
-esac
-case $GAUCHE_THREAD_TYPE in
-  pthreads)
-   AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
-   ;;
-  win32)
-   AC_DEFINE(GAUCHE_USE_WTHREADS,1,[Define if we use windows threads])
-   ;;
-  *)
-   ;;
-esac
+      ],
+    [*-*-mingw*], [
+      AS_IF([test $GAUCHE_THREAD_TYPE = "pthreads"],
+            [ AC_MSG_ERROR([pthread can't be used on Windows.  Use --enable-threads=win32 to enable threads]) ],
+            [ GAUCHE_THREAD_TYPE=win32 ])
+      ],
+    [
+      AS_IF([test $GAUCHE_THREAD_TYPE = "pthreads"],
+            [ AC_MSG_ERROR([pthread is not supported on $host]) ],
+            [ GAUCHE_THREAD_TYPE=none ])
+      ])])
+AS_CASE([$GAUCHE_THREAD_TYPE],
+  [pthreads], [ AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads]) ],
+  [win32],    [ AC_DEFINE(GAUCHE_USE_WTHREADS,1,[Define if we use windows threads]) ],
+              [])
 
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
 AC_SUBST(GAUCHE_THREAD_TYPE)
+AC_MSG_RESULT([$GAUCHE_THREAD_TYPE])
 
 dnl ----------------------------------------------------------
 dnl  with-slib
@@ -220,22 +210,23 @@ paths and PATH/lib to the library search paths.  Useful if you have some
 libraries installed in non-standard places.  On MinGW/MSYS, use ';' as a
 separator instead of ':'.]),
   [
-    case $with_local in
-      yes|no|"") ;;  #no effect
-      *) IFS_save=$IFS
-         case $host in *mingw*) IFS=";" ;; *) IFS=":" ;; esac
-         sep0=""
-         sep1=""
-         for p in $with_local; do
-           LOCAL_INC="${LOCAL_INC}${sep0}-I$p/include"
-           LOCAL_LIB="${LOCAL_LIB}${sep0}-L$p/lib"
-           LOCAL_INCDIRS="${LOCAL_INCDIRS}${sep1}$p/include"
-           LOCAL_LIBDIRS="${LOCAL_LIBDIRS}${sep1}$p/lib"
-           sep0=" "
-           sep1="$IFS"
-         done
-         IFS=$IFS_save ;;
-    esac
+    AS_CASE([$with_local],
+            [yes|no|""], [], dnl no effect
+                         [IFS_save=$IFS
+                          AS_CASE([$host],
+                                  [*mingw*], [IFS=";"],
+                                             [IFS=":"])
+                          sep0=""
+                          sep1=""
+                          for p in $with_local; do
+                              LOCAL_INC="${LOCAL_INC}${sep0}-I$p/include"
+                              LOCAL_LIB="${LOCAL_LIB}${sep0}-L$p/lib"
+                              LOCAL_INCDIRS="${LOCAL_INCDIRS}${sep1}$p/include"
+                              LOCAL_LIBDIRS="${LOCAL_LIBDIRS}${sep1}$p/lib"
+                              sep0=" "
+                              sep1="$IFS"
+                          done
+                          IFS=$IFS_save ])
   ])
 AC_SUBST(LOCAL_INC)
 AC_SUBST(LOCAL_LIB)
@@ -342,13 +333,9 @@ AC_ARG_ENABLE(framework,
   AS_HELP_STRING([--enable-framework],
                  [On MacOSX, build Gauche as a framework.  This flag has no effect on other platforms.]),
   [
-    case $enableval in
-      no)
-      ;;
-      *)
-      ac_gauche_framework=yes
-      ;;
-    esac
+    AS_CASE([$enableval],
+            [no], [],
+                  [ac_gauche_framework=yes])
   ], [])
 
 dnl ===========================================================
@@ -658,93 +645,89 @@ xhost=$host
 # On cygwin, we likely to need rebaseall to make dlls work with sys-fork.
 CYGWIN_FIXDLL=:
 
-case $host in
-  *freebsd2*)
+AS_CASE([$host],
+  [*freebsd2*], [
     SHLIB_SO_CFLAGS="-fpic -fPIC"
     SHLIB_SO_LDFLAGS="-v;ld -Bshareable -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
-    ;;
-  *-linux-gnu*|*-*-gnu*|*freebsd*|*dragonfly*)
+    ],
+  [*-linux-gnu*|*-*-gnu*|*freebsd*|*dragonfly*], [
     SHLIB_SO_CFLAGS="-fPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
-    ;;
-  *netbsd*|*openbsd*)
+    ],
+  [*netbsd*|*openbsd*], [
     SHLIB_SO_CFLAGS="-fPIC -DPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
-    ;;
-  *darwin*)
-    # -no-cpp-precomp is not related to shared library, but needed to
-    # get src/{vm.c,char.c} compiled -skimu
-    # [Shiro] Darwin 1.3 and later needs different flags
+    ],
+  [*darwin*], [
+    dnl -no-cpp-precomp is not related to shared library, but needed to
+    dnl get src/{vm.c,char.c} compiled -skimu
+    dnl [Shiro] Darwin 1.3 and later needs different flags
     CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
-    case $host_os in
-      darwin1.@<:@012@:>@) FLAT_NAMESPACE="" ;;
-      *)               FLAT_NAMESPACE="-flat_namespace" ;;
-    esac
-    case $host_os in
-      darwin9.8.*) ;;           dnl Leopard doesn't like -no_pie
-      *)           SHLIB_MAIN_LDFLAGS="-Wl,-no_pie";;
-    esac
+    AS_CASE([$host_os],
+      [darwin1.@<:@012@:>@], [FLAT_NAMESPACE=""],
+                             [FLAT_NAMESPACE="-flat_namespace"])
+    AS_CASE([$host_os],
+      [darwin9.8.*], [],           dnl Leopard doesn't like -no_pie
+                     [SHLIB_MAIN_LDFLAGS="-Wl,-no_pie"])
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_DYLIB_LDFLAGS='-framework CoreFoundation -dynamiclib -o'
-    if test "$ac_gauche_framework" = yes; then
+    AS_IF([test "$ac_gauche_framework" = yes], [
       AC_DEFINE(GAUCHE_MACOSX_FRAMEWORK, 1, [Define 1 if building framework on MacOSX])
       xhost="${host}-framework"
-    fi
+    ])
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
     SHLIB_OK=ok
     LINK_HELPER='$(srcdir)/link-dylib'
     ext_use_libgauche=no
     libgauche_version_link=no
-    ;;
-  mips-sgi-irix*)
-    if test "$GCC" = yes; then
-      SHLIB_SO_CFLAGS="-fPIC"
-    else
-      SHLIB_SO_CFLAGS="-KPIC"
-    fi
+    ],
+  [mips-sgi-irix*], [
+    AS_IF([test "$GCC" = yes],
+          [SHLIB_SO_CFLAGS="-fPIC"],
+          [SHLIB_SO_CFLAGS="-KPIC"])
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
-    ;;
-  *solaris*)
-    if test "$GCC" = yes; then
+    ],
+  [*solaris*], [
+    AS_IF([test "$GCC" = yes], [
       SHLIB_SO_CFLAGS="-fPIC"
       SHLIB_SO_LDFLAGS="-shared -o"
-    else
+    ], [
       SHLIB_SO_CFLAGS="-Kpic"
       SHLIB_SO_LDFLAGS="-G -o"
-    fi
+    ])
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
-    ;;
-  *hp*)
-    if test "$GCC" = yes; then
+    ],
+  [*hp*], [
+    AS_IF([test "$GCC" = yes], [
       SHLIB_SO_CFLAGS="-fPIC"
       SHLIB_SO_LDFLAGS="-shared -o"
-    else
+    ], [
       SHLIB_SO_CFLAGS="+z +Z"
       SHLIB_SO_LDFLAGS=";ld -b -o"
-    fi
+    ])
     SHLIB_SO_SUFFIX="sl"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     LINK_HELPER='$(srcdir)/link-hpux'
-    ;;
-  *cygwin*)
+    ],
+  [*cygwin*], [
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -shared -o'
     SHLIB_SO_SUFFIX="dll"
@@ -756,10 +739,10 @@ case $host in
     ext_use_libgauche=yes
     libgauche_version_link=no
     CYGWIN_FIXDLL='$(srcdir)/src/cygwin-fixdll.sh'
-    ;;
-  *mingw*)
-    # Kludge: We add -static-libgcc flag when creating dll, in order to avoid
-    # introducing dependency to libgcc_s_dw2-1.dll.
+    ],
+  [*mingw*], [
+    dnl Kludge: We add -static-libgcc flag when creating dll, in order to avoid
+    dnl introducing dependency to libgcc_s_dw2-1.dll.
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -static-libgcc -shared -o'
     SHLIB_SO_SUFFIX="dll"
@@ -770,41 +753,30 @@ case $host in
     ext_use_uvector=yes
     ext_use_libgauche=yes
     libgauche_version_link=no
-    ;;
-  *)
+    ],
+  [
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS=""
     SHLIB_SO_SUFFIX=""
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=unknown
-    ;;
-esac
-if test -z "$SHLIB_DYLIB_LDFLAGS"; then
-  SHLIB_DYLIB_LDFLAGS=$SHLIB_SO_LDFLAGS
-fi
-if test -z "$SHLIB_DYLIB_SUFFIX"; then
-  SHLIB_DYLIB_SUFFIX=$SHLIB_SO_SUFFIX
-fi
-if test "$SHLIB_OK" = ok; then
-  LIBGAUCHE_SO="$LIBGAUCHE.$SHLIB_DYLIB_SUFFIX"
-else
-  LIBGAUCHE_SO=
-fi
-if test "$ext_use_libgauche" = yes; then
-  EXT_LIBGAUCHE="-l$LINKGAUCHE"
-else
-  EXT_LIBGAUCHE=
-fi
-if test "$ext_use_uvector" = yes; then
-  EXT_UVECTOR='$(top_builddir)/ext/uvector/libgauche-uvector.$(SOEXT)'
-else
-  EXT_UVECTOR=
-fi
-if test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok; then
-  MAKEVERSLINK='$(SHELL) ./makeverslink'
-else
-  MAKEVERSLINK=:
-fi
+    ])
+AS_IF([test -z "$SHLIB_DYLIB_LDFLAGS"],
+      [SHLIB_DYLIB_LDFLAGS=$SHLIB_SO_LDFLAGS])
+AS_IF([test -z "$SHLIB_DYLIB_SUFFIX"],
+      [SHLIB_DYLIB_SUFFIX=$SHLIB_SO_SUFFIX])
+AS_IF([test "$SHLIB_OK" = ok],
+      [LIBGAUCHE_SO="$LIBGAUCHE.$SHLIB_DYLIB_SUFFIX"],
+      [LIBGAUCHE_SO=])
+AS_IF([test "$ext_use_libgauche" = yes],
+      [EXT_LIBGAUCHE="-l$LINKGAUCHE"],
+      [EXT_LIBGAUCHE=])
+AS_IF([test "$ext_use_uvector" = yes],
+      [EXT_UVECTOR='$(top_builddir)/ext/uvector/libgauche-uvector.$(SOEXT)'],
+      [EXT_UVECTOR=])
+AS_IF([test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok],
+      [MAKEVERSLINK='$(SHELL) ./makeverslink'],
+      [MAKEVERSLINK=:])
 
 AC_SUBST(xhost)
 AC_SUBST(SHLIB_SO_CFLAGS)
@@ -962,7 +934,7 @@ dnl Show some of the configuration results, for developer's
 dnl convenience.
 
 [OPTDBMS=`echo "$DBM_SCMFILES" | sed 's/\.sci//g'`]
-if test "$ac_cv_use_zlib" = yes; then OPTZLIB=" zlib"; else OPTZLIB=" "; fi
+AS_IF([test "$ac_cv_use_zlib" = yes], [OPTZLIB=" zlib"], [OPTZLIB=" "])
 
 AC_MSG_RESULT(
 [
