@@ -54,7 +54,7 @@ AC_MSG_CHECKING([thread type])
 GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
   AS_HELP_STRING([--enable-threads=TYPE],
-                 [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, and 'default' to choose system's suitable one (if any). ]),
+                 [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, 'win32' to use Windows threads, and 'default' to choose system's suitable one (if any). ]),
   [
     AS_CASE([$enableval],
       [pthreads],
