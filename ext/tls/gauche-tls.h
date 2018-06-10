@@ -41,6 +41,7 @@
 #define LIBGAUCHE_EXT_BODY
 #endif
 #include <gauche/extern.h>
+#include <gauche/class.h>
 
 #if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
@@ -82,12 +83,24 @@ SCM_DECL_BEGIN
 
 /* Common structure */
 
-typedef struct ScmTLSRec {
+typedef struct ScmTLSRec ScmTLS;
+
+struct ScmTLSRec {
     SCM_HEADER;
+    ScmObj in_port;
+    ScmObj out_port;
+
+    ScmObj (*connect)(ScmTLS*, int);
+    ScmObj (*accept)(ScmTLS*, int);
+    ScmObj (*read)(ScmTLS*);
+    ScmObj (*write)(ScmTLS*, ScmObj);
+    ScmObj (*close)(ScmTLS*);
+    ScmObj (*loadObject)(ScmTLS*, ScmObj, const char*, const char*);
+    void   (*finalize)(ScmTLS*);
+
 #if defined(GAUCHE_USE_AXTLS)
     SSL_CTX* ctx;
     SSL* conn;
-    ScmPort* in_port, * out_port;
 #elif defined(GAUCHE_USE_MBEDTLS)
     mbedtls_ssl_context ctx;
     mbedtls_net_context conn;
@@ -97,17 +110,22 @@ typedef struct ScmTLSRec {
     mbedtls_x509_crt ca;
 
     ScmString *server_name;
-    ScmPort *in_port, *out_port;
 #endif
-} ScmTLS;
+};
 
 SCM_CLASS_DECL(Scm_TLSClass);
+#if defined(GAUCHE_USE_AXTLS)
+SCM_CLASS_DECL(Scm_AxTLSClass);
+#endif /*GAUCHE_USE_AXTLS*/
+#if defined(GAUCHE_USE_MBEDTLS)
+SCM_CLASS_DECL(Scm_MbedTLSClass);
+#endif /*GAUCHE_USE_MBEDTLS*/
 
 #define SCM_CLASS_TLS   (&Scm_TLSClass)
 #define SCM_TLS(obj)    ((ScmTLS*)obj)
-#define SCM_TLSP(obj)   SCM_XTYPEP(obj, SCM_CLASS_TLS)
+#define SCM_TLSP(obj)   SCM_ISA(obj, SCM_CLASS_TLS)
 
-extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions, ScmString* server_name);
+extern ScmObj Scm_MakeTLS(ScmObj);
 extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                                 const char *filename,
