@@ -35,6 +35,10 @@
 #include "gauche-tls.h"
 #include <gauche/extend.h>
 
+/*
+ * Class
+ */
+
 static void tls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_TLSClass, tls_print);
@@ -47,6 +51,15 @@ static void tls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx)
     Scm_Printf(port, ">");
 }
 
+/*
+ * Global stuff
+ */
+
+static ScmParameterLoc ca_certificate_path;
+
+/*
+ * Common operations
+ */
 static void tls_finalize(ScmObj obj, void* data)
 {
     ScmTLS* t = SCM_TLS(obj);
@@ -188,8 +201,14 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
-    if(mbedtls_x509_crt_parse_file(&t->ca, X509_CA_FILE) != 0) {
-      Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%s", X509_CA_FILE);
+    ScmObj s_ca_file = Scm_ParameterRef(Scm_VM(), &ca_certificate_path);
+    if (!SCM_STRINGP(s_ca_file)) {
+        Scm_Error("Parameter tls-ca-certificate-path must have a string value,"
+                  " but got: %S", s_ca_file);
+    }
+    const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
+    if(mbedtls_x509_crt_parse_file(&t->ca, ca_file) != 0) {
+      Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%S", s_ca_file);
     }
     mbedtls_ssl_conf_ca_chain(&t->conf, &t->ca, NULL);
     mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
@@ -373,4 +392,7 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 void Scm_Init_tls(ScmModule *mod)
 {
     Scm_InitStaticClass(&Scm_TLSClass, "<tls>", mod, NULL, 0);
+    Scm_DefinePrimitiveParameter(mod, "tls-ca-certificate-path",
+                                 SCM_MAKE_STR(X509_CA_FILE),
+                                 &ca_certificate_path);
 }

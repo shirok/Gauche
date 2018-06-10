@@ -1,3 +1,8 @@
+2018-06-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.c: Make ca cert path changeable at runtime, using
+	  a parameter tls-ca-certificate-path.
+
 2018-06-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Incorporated mbedTLS support by @qykth-git.

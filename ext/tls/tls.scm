@@ -38,6 +38,7 @@
   (export <tls> make-tls tls-destroy tls-connect tls-accept tls-close
           tls-load-object tls-read tls-write
           tls-input-port tls-output-port
+          tls-ca-certificate-path
 
           SSL_SERVER_VERIFY_LATER SSL_CLIENT_AUTHENTICATION
           SSL_DISPLAY_BYTES SSL_DISPLAY_STATES SSL_DISPLAY_CERTS
