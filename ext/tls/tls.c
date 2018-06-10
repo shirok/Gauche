@@ -185,11 +185,11 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     const char* pers = "Gauche";
     if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
 			     (const unsigned char *)pers, strlen(pers)) != 0) {
-      Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
     }
 
     if (t->conn.fd >= 0) {
-      Scm_SysError("attempt to connect already-connected TLS %S", t);
+        Scm_SysError("attempt to connect already-connected TLS %S", t);
     }
     t->conn.fd = fd;
 
@@ -197,7 +197,7 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
 				    MBEDTLS_SSL_IS_CLIENT,
 				    MBEDTLS_SSL_TRANSPORT_STREAM,
 				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
-      Scm_SysError("mbedtls_ssl_config_defaults() failed");
+        Scm_SysError("mbedtls_ssl_config_defaults() failed");
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
@@ -208,25 +208,25 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     }
     const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
     if(mbedtls_x509_crt_parse_file(&t->ca, ca_file) != 0) {
-      Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%S", s_ca_file);
+        Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%S", s_ca_file);
     }
     mbedtls_ssl_conf_ca_chain(&t->conf, &t->ca, NULL);
     mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 
     if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
-      Scm_SysError("mbedtls_ssl_setup() failed");
+        Scm_SysError("mbedtls_ssl_setup() failed");
     }
 
     const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
     if(mbedtls_ssl_set_hostname(&t->ctx, hostname) != 0) {
-      Scm_SysError("mbedtls_ssl_set_hostname() failed");
+        Scm_SysError("mbedtls_ssl_set_hostname() failed");
     }
 
     mbedtls_ssl_set_bio(&t->ctx, &t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     int r = mbedtls_ssl_handshake(&t->ctx);
     if (r != 0) {
-      Scm_Error("TLS handshake failed: %d", r);
+        Scm_Error("TLS handshake failed: %d", r);
     }
 #endif
     return SCM_OBJ(t);
@@ -244,11 +244,11 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     const char* pers = "Gauche";
     if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
 			     (const unsigned char *)pers, strlen(pers)) != 0) {
-      Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
     }
 
     if (t->conn.fd >= 0) {
-      Scm_SysError("attempt to connect already-connected TLS %S", t);
+        Scm_SysError("attempt to connect already-connected TLS %S", t);
     }
     t->conn.fd = fd;
 
@@ -256,13 +256,13 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
 				    MBEDTLS_SSL_IS_SERVER,
 				    MBEDTLS_SSL_TRANSPORT_STREAM,
 				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
-      Scm_SysError("mbedtls_ssl_config_defaults() failed");
+        Scm_SysError("mbedtls_ssl_config_defaults() failed");
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
 
     if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
-      Scm_SysError("mbedtls_ssl_setup() failed");
+        Scm_SysError("mbedtls_ssl_setup() failed");
     }
 
     mbedtls_net_context client_fd;
@@ -271,13 +271,13 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
     mbedtls_ssl_session_reset(&t->ctx);
 
     if(mbedtls_net_accept(&t->conn, &client_fd, NULL, 0, NULL) != 0) {
-      Scm_SysError("mbedtls_net_accept() failed");
+        Scm_SysError("mbedtls_net_accept() failed");
     }
     mbedtls_ssl_set_bio(&t->ctx, &client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     int r = mbedtls_ssl_handshake(&t->ctx);
     if (r != 0) {
-      Scm_Error("TLS handshake failed: %d", r);
+        Scm_Error("TLS handshake failed: %d", r);
     }
 #endif
     return SCM_OBJ(t);
@@ -346,7 +346,7 @@ ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
     int r;
     r = mbedtls_ssl_write(&t->ctx, cmsg, size);
     if (r < 0) {
-      Scm_SysError("mbedtls_ssl_write() failed");
+        Scm_SysError("mbedtls_ssl_write() failed");
     }
 
     return SCM_MAKE_INT(r);

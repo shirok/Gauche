@@ -80,22 +80,24 @@
 
 SCM_DECL_BEGIN
 
-typedef struct ScmTLSRec {
-  SCM_HEADER;
-#if defined(GAUCHE_USE_AXTLS)
-  SSL_CTX* ctx;
-  SSL* conn;
-  ScmPort* in_port, * out_port;
-#elif defined(GAUCHE_USE_MBEDTLS)
-  mbedtls_ssl_context ctx;
-  mbedtls_net_context conn;
-  mbedtls_entropy_context entropy;
-  mbedtls_ctr_drbg_context ctr_drbg;
-  mbedtls_ssl_config conf;
-  mbedtls_x509_crt ca;
+/* Common structure */
 
-  ScmString *server_name;
-  ScmPort *in_port, *out_port;
+typedef struct ScmTLSRec {
+    SCM_HEADER;
+#if defined(GAUCHE_USE_AXTLS)
+    SSL_CTX* ctx;
+    SSL* conn;
+    ScmPort* in_port, * out_port;
+#elif defined(GAUCHE_USE_MBEDTLS)
+    mbedtls_ssl_context ctx;
+    mbedtls_net_context conn;
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ssl_config conf;
+    mbedtls_x509_crt ca;
+
+    ScmString *server_name;
+    ScmPort *in_port, *out_port;
 #endif
 } ScmTLS;
 
