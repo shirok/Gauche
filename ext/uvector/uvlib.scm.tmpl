@@ -64,7 +64,7 @@
                 (set! p (Scm_Cons (aref elts i) p)))
            (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR p SCM_CLAMP_ERROR)))]))
 
-(define-cproc ${t}vector-length (v::<${t}vector>) ::<int> SCM_${T}VECTOR_SIZE)
+(define-cproc ${t}vector-length (v::<${t}vector>) ::<ulong> SCM_${T}VECTOR_SIZE)
 
 (define-cproc ${t}vector-copy
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))

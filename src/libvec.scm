@@ -284,7 +284,7 @@
   (setter uvector-set!)
   (return (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
                             i fallback)))
-(define-cproc uvector-length (v::<uvector>) ::<int> :constant
+(define-cproc uvector-length (v::<uvector>) ::<ulong> :constant
   SCM_UVECTOR_SIZE)
 (define-cproc uvector-immutable? (v::<uvector>) ::<boolean>
   SCM_UVECTOR_IMMUTABLE_P)

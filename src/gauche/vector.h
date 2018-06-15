@@ -80,7 +80,7 @@ typedef struct ScmUVectorRec {
     SCM_HEADER;
 #if !GAUCHE_API_0_95
     unsigned int immutable : 1;
-    int size : (SIZEOF_INT*CHAR_BIT-1);
+    u_int size : (SIZEOF_INT*CHAR_BIT-1);
 #else  /* GAUCHE_API_0_95 */
     ScmWord size_flags;         /* (len<<1)|immutable */
 #endif /* GAUCHE_API_0_95 */

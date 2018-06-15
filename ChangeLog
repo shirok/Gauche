@@ -1,3 +1,8 @@
+2018-06-14  Shiro Kawai <shiro@acm.org>
+
+	* src/gauche/vector.h, src/libvec.scm, ext/uvector/uvlib.scm.tmpl:
+	  Fix integer overflow of TAGvector-length.
+
 2018-06-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.c: Make ca cert path changeable at runtime, using
