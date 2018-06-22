@@ -990,10 +990,10 @@ srfi-146
 ()
 
 Mappings
-Supported by the module @code{srfi-146}.
+Supported by the module @code{srfi-146}.  @xref{Mappings and hashmaps}.
 
 マッピング
-モジュール@code{srfi-146}でサポートされます。
+モジュール@code{srfi-146}でサポートされます。 @ref{Mappings and hashmaps}参照。
 
 
 srfi-149

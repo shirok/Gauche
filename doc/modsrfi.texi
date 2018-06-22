@@ -53,9 +53,10 @@ srfi N is supporeted by Gauche.)
 * Vector library::              srfi-133
 * Integer division::            srfi-141
 * Fixnums::                     srfi-143
+* Mappings and hashmaps::       srfi-146
 * Bitwise operations::          srfi-151
 * String library (reduced)::    srfi-152
-* Generators and accumulators:: srfi-158
+* Generators and accumulators::  srfi-158
 @end menu
 
 
@@ -5774,7 +5775,7 @@ Balancedバージョンは@code{-abs(d/2) <= remainder < abs(d/2)}という
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Fixnums, Bitwise operations, Integer division, Library modules - SRFIs
+@node Fixnums, Mappings and hashmaps, Integer division, Library modules - SRFIs
 @section @code{srfi-143} - Fixnums
 @c NODE Fixnums, @code{srfi-143} - Fixnums
 
@@ -6085,7 +6086,183 @@ srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Bitwise operations, String library (reduced), Fixnums, Library modules - SRFIs
+@node Mappings and hashmaps, Bitwise operations, Fixnums, Library modules - SRFIs
+@section @code{srfi-146} - Mappings and hashmaps
+@c NODE mappingとhashmap, @code{srfi-146} - mappingとhashmap
+
+SRFI-146 defines a @emph{mapping} data structure, which is
+a conceptually immutable collection of associations of key and value.
+Mappings are assumed to be built on top of treemaps (and indeed,
+Gauche uses built-in @code{<tree-map>} as mappings) but the API
+abstracts the implementation.
+
+SRFI-146 also defines a submodlue @code{(srfi-146 hash)} which
+provides hashmaps,
+whose API is functionally almost identical to mappings but
+it assumes to be built on top of hashtables.
+
+``Conceptually immutable'' means that the mappings should be used
+as if they are immutable, but under a certain circumstance the
+APIs are allowed to mutate the mapping.  Such circumstance
+is marked as 
+
+
+@menu
+* Mappings::
+* Hashmaps::
+@end menu
+
+@node Mappings, Hashmaps, Mappings and hashmaps, Mappings and hashmaps
+@subsection Mappings
+@c NODE Mappings
+
+@deftp {Module} srfi-146
+@mdindex srfi-146
+This module provides treemap-based mappings API.
+On Gauche, an instance of @code{mapping} is just an instance
+of built-in @code{<tree-map>} (@pxref{Treemaps}).
+However, the API assumes a
+mapping to be treated as immutable data structure, except
+the ``linear update'' APIs, which is @emph{allowed} to
+mutate the mappings passed to the arguments, under assumption
+that the argument won't be used afterwards.
+
+@xref{Hashmaps}, which is a sibling of mappings but based
+on hashtables.
+@end deftp
+
+@deftp {Class} <mapping>
+@clindex mapping
+@c MOD srfi-146
+On Gauche, this is just an alias of @code{<tree-map>}.
+@end deftp
+
+@subsubheading Constructors
+
+@defun mapping comparator key value @dots{}
+[SRFI-146]
+@c MOD srfi-146
+Creates a new mapping with the given @var{comparator},
+whose initial content is
+provided by @var{key} @var{value} @dots{}.
+
+The @var{comparator} argument must be a comparator
+(@xref{Basic comparators}).
+
+The @var{key} @var{value} @dots{} arguments must be
+even length, alternating keys and values.
+
+@example
+(define m (mapping default-comparator 'a 1 'b 2))
+
+(mapping-ref m 'a) @result{} 1
+(mapping-ref m 'b) @result{} 2
+@end example
+@end defun
+
+@defun mapping-unfold p f g seed comparator
+[SRFI-146]
+@c MOD srfi-146
+Creates a new mapping, whose content is populated by
+three procedures, @var{p}, @var{f} and @var{g}, and
+a seed value @var{seed}, as follows.
+
+In each iteration, we have a current seed value, whose initial
+value is @var{seed}.
+
+First, @var{p}, a stop predicate, is applied to the current
+seed value. If it returns true, we stop iteration and returns
+the new mapping.
+
+Next, @var{f} is applied to the current seed value.  It must
+return two values.  The first one is for a key and the second
+one for the value.  We add this pair to the mapping.
+
+Then, @var{g} is applied to the current seed value.  The result
+becomes the seed value of the next iteration.  And we iterate.
+
+The following example creates a mapping that maps ASCII characters
+to their character codes:
+
+@example
+(mapping-unfold (cut >= <> 128)
+                (^c (values (integer->char c) c))
+                (cut + <> 1)
+                0
+                dfeault-comparator)
+@end example
+@end defun
+
+@defun mapping/ordered comparator key value @dots{}
+[SRFI-146]
+@c MOD srfi-146
+Similar to @code{mapping}, but keys are given in the ascending order
+w.r.t. the comparator.  An implentation may use more efficient algorithm
+than @code{mapping}.  In Gauche, this is the same as @code{mapping}
+at this moment.
+@end defun
+
+@defun mapping-unfold/ordered p f g seed comparator
+[SRFI-146]
+@c MOD srfi-146
+Similar to @code{mapping-unfold}, but keys are generated in the
+ascendnig order
+w.r.t. the comparator.  An implentation may use more efficient algorithm
+than @code{mapping-unfold}. 
+In Gauche, this is the same as @code{mapping-unfold} at this moment.
+@end defun
+
+@subsubheading Predicates
+
+@defun mapping? obj
+[SRFI-146]
+@c MOD srfi-146
+Returns @code{#t} iff @var{obj} is a mapping object.
+@end defun
+
+@defun mapping-empty? m
+[SRFI-146]
+@c MOD srfi-146
+@var{M} must be a mapping.
+Returns @code{#t} if @var{m} is empty, @code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-empty?}
+(@pxref{Treemaps}).
+@end defun
+
+@defun mapping-contains? m key
+[SRFI-146]
+@c MOD srfi-146
+@var{M} must be a mapping.
+Returns @code{#t} if if @var{m} has an entry with @var{key},
+@code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-exists?}
+(@pxref{Treemaps}).
+@end defun
+
+
+@node Hashmaps,  , Mappings, Mappings and hashmaps
+@subsection Hashmaps
+@c NODE Hashmaps
+
+@deftp {Module} srfi-146.hash
+@mdindex srfi-146.hash
+This module provides hashtable-based hashmap API.
+On Gauche, an instance of @code{hashmap} is just an instance
+of built-in @code{<hash-table>}.  However, the API assumes a
+hashmap to be treated as immutable data structure, except
+the ``linear update'' APIs, which is @emph{allowed} to
+mutate the hashmaps passed to the arguments, under assumption
+that the argument won't be used afterwards.
+
+@xref{Mappings}, which is a sibling of hashmaps but based
+on treemaps.
+@end deftp
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Bitwise operations, String library (reduced), Mappings and hashmaps, Library modules - SRFIs
 @section @code{srfi-151} - Bitwise operations
 @c NODE ビット演算, @code{srfi-151} - ビット演算
 
