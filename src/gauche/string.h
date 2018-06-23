@@ -197,14 +197,12 @@ SCM_EXTERN const char **Scm_ListToConstCStringArray(ScmObj lis,
                                                     int errp);
 SCM_EXTERN char **Scm_ListToCStringArray(ScmObj lis, int errp,
                                          void *(*alloc)(size_t));
-
-SCM_EXTERN ScmObj  Scm_StringCompleteToIncomplete(ScmString *str);
-SCM_EXTERN ScmObj  Scm_StringIncompleteToComplete(ScmString *str,
-                                                  int handling,
-                                                  ScmChar substitute);
-
 SCM_EXTERN ScmObj  Scm_StringToList(ScmString *str);
 SCM_EXTERN ScmObj  Scm_ListToString(ScmObj chars);
+
+/* OBSOLETED */
+SCM_EXTERN ScmObj  Scm_StringCompleteToIncomplete(ScmString *);
+SCM_EXTERN ScmObj  Scm_StringIncompleteToComplete(ScmString *, int, ScmChar);
 
 /*
  * Comparisons

@@ -321,10 +321,13 @@ ScmObj Scm_CopyStringWithFlags(ScmString *x, int flags, int mask)
     return SCM_OBJ(make_str(len, size, start, newflags));
 }
 
+/* OBSOLETED */
 ScmObj Scm_StringCompleteToIncomplete(ScmString *x)
 {
-    return Scm_CopyStringWithFlags(x, SCM_STRING_INCOMPLETE,
-                                   SCM_STRING_INCOMPLETE);
+    Scm_Warn("Obsoleted C API Scm_StringCompleteToIncomplete called");
+    ScmObj proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(proc, "string-complete->incomplete", Scm_GaucheModule());
+    return Scm_ApplyRec1(proc, SCM_OBJ(x));
 }
 
 /* OBSOLETED */
