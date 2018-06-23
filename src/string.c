@@ -327,62 +327,22 @@ ScmObj Scm_StringCompleteToIncomplete(ScmString *x)
                                    SCM_STRING_INCOMPLETE);
 }
 
+/* OBSOLETED */
 ScmObj Scm_StringIncompleteToComplete(ScmString *x,
                                       int handling,
                                       ScmChar substitute)
 {
-    ScmObj r = SCM_FALSE;
-
-    switch (handling) {
-    case SCM_ILLEGAL_CHAR_REJECT:
-    case SCM_ILLEGAL_CHAR_OMIT:
-    case SCM_ILLEGAL_CHAR_REPLACE:
-        break;
-    default:
-        Scm_Error("invalid 'handling' argument: %d", handling);
-        return SCM_UNDEFINED; /* dummy */
-    }
-
-    const ScmStringBody *b = SCM_STRING_BODY(x);
-    if (!SCM_STRING_BODY_INCOMPLETE_P(b)) {
-        /* we do simple copy */
-        r = Scm_CopyString(x);
+    Scm_Warn("Obsoleted C API Scm_StringIncompleteToComplete called");
+    ScmObj proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(proc, "string-incomplete->complete", Scm_GaucheModule());
+    ScmObj r;
+    if (handling == SCM_ILLEGAL_CHAR_REJECT) {
+        r = Scm_ApplyRec1(proc, SCM_OBJ(x));
+    } else if (handling == SCM_ILLEGAL_CHAR_OMIT) {
+        r = Scm_ApplyRec2(proc, SCM_OBJ(x), SCM_MAKE_KEYWORD("omit"));
     } else {
-        const char *s = SCM_STRING_BODY_START(b);
-        ScmSmallInt siz = SCM_STRING_BODY_SIZE(b);
-        ScmSmallInt len = count_length(s, siz);
-        if (len >= 0) {
-            r = Scm_MakeString(s, siz, len, 0);
-        } else if (handling == SCM_ILLEGAL_CHAR_REJECT) {
-            r = SCM_FALSE;
-        } else {
-            const char *p = s;
-
-            ScmDString ds;
-            Scm_DStringInit(&ds);
-
-            while (p < s+siz) {
-                ScmChar ch;
-                if (p + SCM_CHAR_NFOLLOWS(*p) >= s + siz) {
-                    ch = SCM_CHAR_INVALID;
-                } else {
-                    SCM_CHAR_GET(p, ch);
-                }
-
-                if (ch != SCM_CHAR_INVALID) {
-                    Scm_DStringPutc(&ds, ch);
-                    p += SCM_CHAR_NBYTES(ch);
-                } else if (handling == SCM_ILLEGAL_CHAR_OMIT) {
-                    p++;
-                } else {        /* SCM_ILLEGAL_CHAR_REPLACE */
-                    Scm_DStringPutc(&ds, substitute);
-                    p++;
-                }
-            }
-            r = Scm_DStringGet(&ds, 0);
-        }
+        r = Scm_ApplyRec2(proc, SCM_OBJ(x), SCM_MAKE_CHAR(substitute));
     }
-
     return r;
 }
 

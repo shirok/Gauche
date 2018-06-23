@@ -1181,9 +1181,9 @@ SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
  * CHARACTERS
  */
 
-/* Illegal character handling mode.  Used in some APIs that handles
-   character conversion, such as input ports and string-incomplete->complete.
-*/
+/* OBSOLETED */
+/* This kind of thing is now handled by string-incomplete->complete
+   in libstr.scm. */
 typedef enum {
     SCM_ILLEGAL_CHAR_REJECT,    /* Refuse to handle illegal chars.  For ports
                                    this means raising an error.  For string

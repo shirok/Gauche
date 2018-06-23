@@ -1,3 +1,10 @@
+2018-06-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libstr.scm (string-incomplete->complete): Add :escape mode
+	  to escape illegal bytes in lossless way.
+	* src/string.c (Scm_StringIncompleteToComplete): Obsolete this
+	  C API; for the function is now implented in libstr.scm.
+
 2018-06-14  Shiro Kawai <shiro@acm.org>
 
 	* src/gauche/vector.h, src/libvec.scm, ext/uvector/uvlib.scm.tmpl:

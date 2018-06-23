@@ -8920,12 +8920,12 @@ procedure:
 変換することができます。
 @c COMMON
 
-@defun string-incomplete->complete str :optional handling
+@defun string-incomplete->complete str :optional handling filler
 @c EN
 Reinterpret the content of an incomplete string @var{str}
 and returns a newly created complete string from it.
 @c JP
-不完全文字列@var{str}の内容を再解釈して、あらたに完全文字列を返す。
+不完全文字列@var{str}の内容を再解釈して、あらたに完全文字列を返します。
 @c COMMON
 @c EN
 The @var{handling} argument specifies how to handle the illegal
@@ -8944,25 +8944,69 @@ conversion and returns @code{#f}.  This is the default behavior.
 @c COMMON
 @item @code{:omit}
 @c EN
-Omit any illegal byte sequences.  Always returns a complete string.
+Omit any illegal byte sequences.
 @c JP
-不正なバイト列を捨てます。常に完全文字列を返します。
+不正なバイト列を捨てます。
 @c COMMON
 @c EN
-@item a character
-Replace each byte in illegal byte sequences by the given character.
-Always returns a complete string.
+@item @code{:replace}
+Replace each byte in illegal byte sequences by a character given
+in @var{filler} argument, defaulted to @code{?}.
 @c JP
 @item 1文字
-不正なバイト列中の各バイトを与えた文字で置き換えます。常に完全文字列を
-返します。
+不正なバイト列中の各バイトを、@var{filler}引数に与えられ文字で置き換えます。
+@var{filler}引数のデフォルトは@code{?}です。
+@c COMMON
+@item @code{:escape}
+Replace each byte in illegal byte sequences by a sequence of
+@var{filler} @code{<hexdigit>} @code{<hexdigit>}.
+Besides, the @var{filler} characters in the original string is replaced with
+@var{filler} @var{filler}.
+@c JP
+@item 1文字
+不正なバイト列中の各バイトを、@var{filler} @code{<hexdigit>} @code{<hexdigit>}
+の3文字で置き換えます。さらに、元文字列中に@var{filler}が登場した場合はそれぞれを
+@var{filler} @var{filler} で置き換えます。
 @c COMMON
 @end table
+
 @c EN
 If @var{str} is already a complete string, its copy is returned.
 @c JP
 @var{str}が完全文字列なら、そのコピーが返されます。
 @c COMMON
+
+@c EN
+The procedure always returns a complete string, except when
+the @var{handling} argument is @code{#f} (default) and the input is an
+incomplete string, in which case @code{#f} is returned.
+@c JP
+この手続きは、@var{handling}引数が@code{#f} (デフォルト) で入力が
+不完全文字列だった場合に@code{#f}を返す以外は、常に完全文字列を返します。
+@c COMMON
+
+@c EN
+When Gauche's internal encoding is utf-8, the procedure works as follows:
+@c JP
+Gaucheの内部エンコーディングがutf-8であれば、この手続きは次のとおり動作します。
+@c COMMON
+
+@example
+(string-incomplete->complete #*"_abc")
+  @result{} "_abc"     ; can be represented as a complete string
+
+(string-incomplete->complete #*"_ab\x80;c")
+  @result{} #f        ; can't be represetend as a complete string
+
+(string-incomplete->complete #*"_ab\x80;c" :omit)
+  @result{} "_abc"     ; omit the illegal bytes
+
+(string-incomplete->complete #*"_ab\x80;c" :replace #\_)
+  @result{} "_ab_c"    ; replace the illegal bytes
+
+(string-incomplete->complete #*"_ab\x80;c" :escape #\_)
+  @result{} "__ab_80c" ; escape the illegal bytes and escape char itself
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------

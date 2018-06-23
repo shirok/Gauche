@@ -152,18 +152,22 @@
       (lambda () (string-incomplete->complete #*"あいう\xe3\xe3" :omit)))
 (test "string-incomplete->complete (omit)" "あいう"
       (lambda () (string-incomplete->complete #*"あいう\xe3\x80" :omit)))
-(test "string-incomplete->complete (replace)" "あいふう"
-      (lambda () (string-incomplete->complete #*"あい\x80う" #\ふ)))
+(test "string-incomplete->complete (replace)" "あい?う"
+      (lambda () (string-incomplete->complete #*"あい\x80う" :replace)))
 (test "string-incomplete->complete (replace)" "ふあいう"
-      (lambda () (string-incomplete->complete #*"\x80あいう" #\ふ)))
+      (lambda () (string-incomplete->complete #*"\x80あいう" :replace #\ふ)))
 (test "string-incomplete->complete (replace)" "ふふあいう"
-      (lambda () (string-incomplete->complete #*"\x80\xe3あいう" #\ふ)))
+      (lambda () (string-incomplete->complete #*"\x80\xe3あいう" :replace #\ふ)))
 (test "string-incomplete->complete (replace)" "あいうふ"
-      (lambda () (string-incomplete->complete #*"あいう\xe3" #\ふ)))
+      (lambda () (string-incomplete->complete #*"あいう\xe3" :replace #\ふ)))
 (test "string-incomplete->complete (replace)" "あいうふふ"
-      (lambda () (string-incomplete->complete #*"あいう\xe3\xe3" #\ふ)))
+      (lambda () (string-incomplete->complete #*"あいう\xe3\xe3" :replace #\ふ)))
 (test "string-incomplete->complete (replace)" "あいうふふ"
-      (lambda () (string-incomplete->complete #*"あいう\xe3\x80" #\ふ)))
+      (lambda () (string-incomplete->complete #*"あいう\xe3\x80" :replace #\ふ)))
+(test "string-incomplete->complete (escape)" "あ??い?91う?80え"
+      (lambda () (string-incomplete->complete #*"あ?い\x91う\x80え" :escape)))
+(test "string-incomplete->complete (escape)" "あ__い_91う_80え"
+      (lambda () (string-incomplete->complete #*"あ_い\x91う\x80え" :escape #\_)))
 
 (test "string=?" #t (lambda () (string=? #*"あいう" #*"あいう")))
 

@@ -284,24 +284,74 @@
 ;; We allocate a new string and swap the body, in order to avoid MT-hazard.
 ;; (So it is _not_ allocation-free, and we no longer have reason to keep
 ;; this procedure.)
-(define-cproc string-incomplete->complete! (str::<string>)
-  (let* ([s (Scm_StringIncompleteToComplete str SCM_ILLEGAL_CHAR_REJECT
-                                            (SCM_CHAR 0))])
-    (unless (SCM_FALSEP s) (set! (-> str body) (SCM_STRING_BODY s)))
-    (return s)))
+(define (string-incomplete->complete! str)
+  (if-let1 s (string-incomplete->complete str)
+    ((with-module gauche.internal %string-replace-body!) str s))
+  str)
 
 (define-cproc string-complete->incomplete (str::<string>)
   Scm_StringCompleteToIncomplete)
 
+;; handling : #f | :omit | :replace | :escape
+;; filler   : #f | <char> | <string>
 (define-cproc string-incomplete->complete (str::<string>
-                                           :optional (handling #f))
-  (let* ([h::int 0] [sub::ScmChar (SCM_CHAR 0)])
-    (cond [(SCM_EQ handling ':omit) (set! h SCM_ILLEGAL_CHAR_OMIT)]
-          [(SCM_FALSEP handling)    (set! h SCM_ILLEGAL_CHAR_REJECT)]
-          [(SCM_CHARP handling)     (set! h SCM_ILLEGAL_CHAR_REPLACE
-                                          sub (SCM_CHAR_VALUE handling))]
-          [else (SCM_TYPE_ERROR handling ":omit, #f, or a character")])
-    (return (Scm_StringIncompleteToComplete str h sub))))
+                                           :optional (handling #f)
+                                                     (filler #f))
+  ;; backward compatibility
+  (when (SCM_CHARP handling)
+    (set! filler handling
+          handling ':replace))
+  ;; argument check
+  (unless (or (SCM_FALSEP handling)
+              (Scm_Memq handling '(:omit :replace :escape)))
+    (Scm_Error "Either #f, :omit, :replace or :escape required, \
+                but got:" handling))
+  (unless (or (SCM_FALSEP filler) (SCM_CHARP filler))
+    (Scm_Error "Either a character or #f required, but got:" filler))
+  (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY str)])
+    (unless (SCM_STRING_BODY_INCOMPLETE_P b)
+      ;; We do simple copy
+      (return (Scm_CopyString str)))
+    (let* ([s::(const char*) (SCM_STRING_BODY_START b)]
+           [siz::ScmSmallInt (SCM_STRING_BODY_SIZE b)]
+           [len::ScmSmallInt (Scm_MBLen s (+ s siz))])
+      (when (>= len 0)
+        ;; The body can be interpreted as a complete string.
+        (return (Scm_MakeString s siz len 0)))
+      (when (SCM_FALSEP handling)
+        ;; Return #f for string that can't be complete
+        (return SCM_FALSE))
+      (let* ([p::(const char*) s]
+             [ds::ScmDString]
+             [echar::ScmChar (?: (SCM_CHARP filler)
+                                 (SCM_CHAR_VALUE filler)
+                                 #\?)])
+        (Scm_DStringInit (& ds))
+        (while (< p (+ s siz))
+          (let* ([ch::ScmChar])
+            (if (>= (+ p (SCM_CHAR_NFOLLOWS (* p))) (+ s siz))
+              (set! ch SCM_CHAR_INVALID)
+              (SCM_CHAR_GET p ch))
+            (cond
+             [(and (SCM_EQ handling ':escape) ; escaping escape char
+                   (== ch echar))
+              (Scm_DStringPutc (& ds) ch)
+              (Scm_DStringPutc (& ds) ch)
+              (+= p (SCM_CHAR_NBYTES ch))]
+             [(!= ch SCM_CHAR_INVALID)  ; ok
+              (Scm_DStringPutc (& ds) ch)
+              (+= p (SCM_CHAR_NBYTES ch))]
+             [(SCM_EQ handling ':omit) (inc! p)] ;skip
+             [(SCM_EQ handling ':replace)        ;subs with echar
+              (Scm_DStringPutc (& ds) echar)
+              (inc! p)]
+             [(SCM_EQ handling ':escape)         ;escape
+              (let* ([octet::u_char (* p)])
+                (Scm_DStringPutc (& ds) echar)
+                (Scm_DStringPutc (& ds) (Scm_IntToDigit (>> octet 4) 16 0 0))
+                (Scm_DStringPutc (& ds) (Scm_IntToDigit (logand octet #xf) 16 0 0))
+                (inc! p))])))
+        (return (Scm_DStringGet (& ds) 0))))))
 
 (define-cproc make-byte-string (size::<int32> :optional (byte::<uint8> 0))
   (let* ([s::char*])
