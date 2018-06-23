@@ -6189,7 +6189,7 @@ to their character codes:
                 (^c (values (integer->char c) c))
                 (cut + <> 1)
                 0
-                dfeault-comparator)
+                default-comparator)
 @end example
 @end defun
 
@@ -6197,7 +6197,7 @@ to their character codes:
 [SRFI-146]
 @c MOD srfi-146
 Similar to @code{mapping}, but keys are given in the ascending order
-w.r.t. the comparator.  An implentation may use more efficient algorithm
+w.r.t. the comparator.  An implementation may use more efficient algorithm
 than @code{mapping}.  In Gauche, this is the same as @code{mapping}
 at this moment.
 @end defun
@@ -6207,7 +6207,7 @@ at this moment.
 @c MOD srfi-146
 Similar to @code{mapping-unfold}, but keys are generated in the
 ascendnig order
-w.r.t. the comparator.  An implentation may use more efficient algorithm
+w.r.t. the comparator.  An implementation may use more efficient algorithm
 than @code{mapping-unfold}. 
 In Gauche, this is the same as @code{mapping-unfold} at this moment.
 @end defun
@@ -6233,7 +6233,7 @@ In Gauche, this is same as @code{tree-map-empty?}
 [SRFI-146]
 @c MOD srfi-146
 @var{M} must be a mapping.
-Returns @code{#t} if if @var{m} has an entry with @var{key},
+Returns @code{#t} if @var{m} has an entry with @var{key},
 @code{#f} otherwise.
 In Gauche, this is same as @code{tree-map-exists?}
 (@pxref{Treemaps}).
