@@ -285,9 +285,9 @@
 ;; (So it is _not_ allocation-free, and we no longer have reason to keep
 ;; this procedure.)
 (define (string-incomplete->complete! str)
-  (if-let1 s (string-incomplete->complete str)
-    ((with-module gauche.internal %string-replace-body!) str s))
-  str)
+  (and-let1 s (string-incomplete->complete str)
+    ((with-module gauche.internal %string-replace-body!) str s)
+    s))
 
 (define-cproc string-complete->incomplete (str::<string>)
   Scm_StringCompleteToIncomplete)

@@ -212,7 +212,7 @@
              (chunks '()))
     (if (eof-object? elt)
       (let ((s (string-concatenate-reverse chunks)))
-        (or (string-incomplete->complete! s) s))
+        (or (string-incomplete->complete s) s))
       (loop (read-block 1024 port) (cons elt chunks)))))
 
 (define (dir-perm file-perm)

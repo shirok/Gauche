@@ -132,7 +132,7 @@
           (ref self 'error-port)
         (^[]
           (update! (ref self 'rbuf) (cut string-append <> chunk))
-          (string-incomplete->complete! (ref self 'rbuf))
+          (string-incomplete->complete (ref self 'rbuf))
           (guard (e [else
                      (set! (ref self 'rbuf) "")
                      (guard (e1 [else (abort e1)])
