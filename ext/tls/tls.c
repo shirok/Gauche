@@ -47,7 +47,7 @@ static ScmClass *tlsclass_cpa[] = {
     SCM_CLASS_STATIC_PTR(Scm_TLSClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
-} ;
+};
 
 #if defined(GAUCHE_USE_AXTLS)
 static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs);

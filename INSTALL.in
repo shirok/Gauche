@@ -241,18 +241,24 @@ TLS/SSL support
 ---------------------------------------------------
 
 @c JP
-Gaucheにはセキュアソケット通信のサポートが組み込まれています。デフォルトで
-この機能はONになっていますが、もしext/tlsのビルドがうまく行かないようなら、
-次のオプションで強制的にTLS/SSLサポートをoffにすることもできます。
+Gaucheにはセキュアソケット通信のサポートが組み込まれています。ひとつは
+バンドルされたaxTLSライブラリを使うもので、それは自動的に含まれます。
+もうひとつは外部のmbedTLSライブラリを使うもので、そちらはconfigure時に
+ライブラリがみつかればコンパイルされます。もしビルドに不都合が生じてどれかの
+ライブラリを外したい場合は、次のオプションで使うライブラリを選べます。
 @c EN
-Gauche includes secure socket connection support..  The build process
-tries to compile it by default, but if you have a problem during
-building ext/tls, you can turn off TLS/SSL support.
+Gauche includes secure socket connection support.  One uses
+bundled axTLS library, which is included automatically, and another
+uses external mbedTLS library, which is compiled when we detect it
+during configuration.  If you have a problem building those libraries,
+you can selectively turn off each of them.
 @c COMMON
 
-  --enable-tls=none     ;; do not include TLS/SSL support
-  --enable-tls=axtls    ;; (default) include TLS/SSL support using
-                           axTLS library (source is included in Gauche).
+  --with-tls=none          ;; do not include TLS/SSL support
+  --with-tls=axtls         ;; include only axTLS support
+  --with-tls=axtls,mbedtls ;; (default) include TLS/SSL support using
+                              axTLS library (source is included in Gauche),
+                              and mbedTLS library (installed on the system).
 
 @c JP
 SLIBの場所

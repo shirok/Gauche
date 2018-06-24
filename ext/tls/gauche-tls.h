@@ -45,7 +45,9 @@
 
 #if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
-#elif defined(GAUCHE_USE_MBEDTLS)
+#endif  /* GAUCHE_USE_MBEDTLS */
+
+#if defined(GAUCHE_USE_MBEDTLS)
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
@@ -60,7 +62,7 @@
 #define X509_CA_FILE "ca-cert.crt"
 #endif
 
-#endif
+#endif  /*GAUCHE_USE_MBEDTLS*/
 
 #ifndef GAUCHE_USE_AXTLS
 /* dummy symbols */
@@ -97,20 +99,6 @@ struct ScmTLSRec {
     ScmObj (*close)(ScmTLS*);
     ScmObj (*loadObject)(ScmTLS*, ScmObj, const char*, const char*);
     void   (*finalize)(ScmTLS*);
-
-#if defined(GAUCHE_USE_AXTLS)
-    SSL_CTX* ctx;
-    SSL* conn;
-#elif defined(GAUCHE_USE_MBEDTLS)
-    mbedtls_ssl_context ctx;
-    mbedtls_net_context conn;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_ssl_config conf;
-    mbedtls_x509_crt ca;
-
-    ScmString *server_name;
-#endif
 };
 
 SCM_CLASS_DECL(Scm_TLSClass);

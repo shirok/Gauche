@@ -1,3 +1,9 @@
+2018-06-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.ac: Allow to compile both axtls and mbedtls support.
+	  By default, axtls is automatically enabled, and mbedtls is enabled
+	  when it's available.
+
 2018-06-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/libstr.scm (string-incomplete->complete): Add :escape mode

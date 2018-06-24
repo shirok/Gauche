@@ -3,78 +3,96 @@ dnl Configure ext/tls
 dnl This file is included by the toplevel configure.ac
 dnl
 
+dnl with-tls option
 dnl
-dnl process --enable-tls[=TYPE]
+dnl   --with-tls=TYPE,TYPE,...    # include TLS library TYPE, ...
+dnl   --with-tls=no               # do not include any TLS library support
 dnl
-dnl   TYPE can be 'none' or 'axtls', defaults axtls
-dnl   In future we may support 'openssl' as well.
+dnl   We include all available (and supported) TLS libraries by defualt.
+dnl   This option is to _exclude_ some or all libraries that would be
+dnl   compiled otherwise.
 dnl
-AC_ARG_ENABLE(tls,
-  AS_HELP_STRING([--enable-tls=TYPE], [enable TLS/SSL support.  TYPE can be
-  'axtls' (to use bundled source of Cameron Rich's axTLS), 'mbedtls' (to use
-  mbed TLS), or 'none' (disable TLS/SSL support)]),
+
+TLSLIBS=axtls,mbedtls
+AC_ARG_WITH(tls,
+  AS_HELP_STRING([--with-tls=TLSLIB,...],
+  [Select which TLS libraries to be compiled.  Currently we support 'axtls'
+   (to use bundled souce of Cameron Rich's axTLS) and 'mbedtls' (to use mbed
+   TLS).  By default, available libraries are autodetected.  Specify this
+   option only when you want to exclude some of the libraries.
+   Specify --with-tls=no to disable tls support.]),
   [
+    AS_CASE([$with_tls],
+      [no|none], [TLSLIBS=""],
+      [yes],     [],            dnl Use the default
+                 [TLSLIBS="$with_tls"])
+  ])
+
+AC_ARG_ENABLE(tls,
+  AS_HELP_STRING([--enable-tls=TLSLIB,...],
+  [Obsoleted.  Same as --with-tls=TLSLIB,... for the compatibility.]),
+  [
+    AC_MSG_WARN([--enable-tls is obsoleted.  Use --with-tls.])
     AS_CASE([$enableval],
-      [no|none], [enable_tls=no],
-      [axtls],   [enable_tls=axtls],
-      [mbedtls], [enable_tls=mbedtls],
-dnl      [openssl], [enable_tls=openssl],
-		 [echo "TLS type must be either one of 'axtls', 'mbedtls' or 'none'"])
-  ], [enable_tls=axtls])
+      [no|none], [TLSLIBS=""],
+      [yes],     [],            dnl Use the default
+                 [TLSLIBS="$enableval"])
+  ])
 
-AS_CASE([$enable_tls],
-  [axtls], [
-	   AC_DEFINE(GAUCHE_USE_AXTLS, 1, [Define if you use axTLS])
-	   GAUCHE_TLS_TYPE=axTLS
-	   GAUCHE_TLS_SWITCH_AXTLS=
-	   dnl axtls test program requires thread support.  For the time being,
-	   dnl we turn off test program if the thread support is turned off
-	   dnl (which is not ideal).
-	   AS_IF([test "$GAUCHE_THREAD_TYPE" = 'none'], [
-	     GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
-	   ], [
-	     GAUCHE_TLS_SWITCH_AXTLS_TEST=
-	   ])
-	   GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
-	   GAUCHE_TLS_SWITCH_NONE="@%:@"
-	   ],
-  [mbedtls], [
-	   AC_CHECK_HEADER([mbedtls/net_sockets.h],
-		[AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1, [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
-		[AC_CHECK_HEADER([mbedtls/net.h],
-				 [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
-				 [AC_MSG_ERROR([Required mbed TLS header file is missing])])])
+dnl Check for tls library availability.
 
-	   MBEDTLS_LIBS=""
-	   AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto], [MBEDTLS_LIBS="-lmbedcrypto ${MBEDTLS_LIBS}"],
-			  [AC_MSG_ERROR([mbed TLS library not found])])
-	   AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509],   [MBEDTLS_LIBS="-lmbedx509   ${MBEDTLS_LIBS}"],
-			  [AC_MSG_ERROR([mbed TLS library not found])])
-	   AC_SEARCH_LIBS([mbedtls_ssl_init],      [mbedtls],    [MBEDTLS_LIBS="-lmbedtls    ${MBEDTLS_LIBS}"],
-			  [AC_MSG_ERROR([mbed TLS library not found])])
-	   AC_SUBST(MBEDTLS_LIBS)
+GAUCHE_TLS_SWITCH_AXTLS="@%:@"
+GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
+GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
+GAUCHE_TLS_SWITCH_NONE=
 
-	   AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
-	   GAUCHE_TLS_TYPE=mbedTLS
-	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
-	   GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
-	   GAUCHE_TLS_SWITCH_MBEDTLS=
-	   GAUCHE_TLS_SWITCH_NONE="@%:@"
+dnl We bundle axTLS so it's always available.
+AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q axtls], [
+  AC_DEFINE(GAUCHE_USE_AXTLS, 1, [Define if you use axTLS])
+  GAUCHE_TLS_SWITCH_AXTLS=
+  GAUCHE_TLS_SWITCH_NONE="@%:@"
+  GAUCHE_TLS_TYPES="axtls $GAUCHE_TLS_TYPES"
+  dnl axtls test program requires thread support.  For the time being,
+  dnl we turn off test program if the thread support is turned off
+  dnl (which is not ideal).
+  AS_IF([test "$GAUCHE_THREAD_TYPE" = 'none'], [
+    GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
+  ], [
+    GAUCHE_TLS_SWITCH_AXTLS_TEST=
+  ])
+])
 
-	   EXT_LIBS="${EXT_LIBS} ${MBEDTLS_LIBS}"
-	  ],
-dnl [openssl], [
-dnl	   AC_DEFINE(GAUCHE_USE_OPENSSL, 1, [Define if you use openssl])
-dnl	   GAUCHE_TLS_TYPE=openssl
-dnl	  ],
+dnl mbedtls
+AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
+  AC_CHECK_HEADER([mbedtls/net_sockets.h],
+    [AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1, 
+               [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
+    [AC_CHECK_HEADER([mbedtls/net.h],
+      [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
+      [mbedtls_unavailable=yes])])
 
-	  [
-	   GAUCHE_TLS_TYPE=none
-	   GAUCHE_TLS_SWITCH_AXTLS="@%:@"
-	   GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
-	   GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
-	   GAUCHE_TLS_SWITCH_NONE=
-	  ])
+  MBEDTLS_LIBS=""
+  AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto],
+   [MBEDTLS_LIBS="-lmbedcrypto ${MBEDTLS_LIBS}"],
+   [mbedtls_unavailable=yes])
+  AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509], 
+   [MBEDTLS_LIBS="-lmbedx509 ${MBEDTLS_LIBS}"],
+   [mbedtls_unavailable=yes])
+  AC_SEARCH_LIBS([mbedtls_ssl_init], [mbedtls], 
+   [MBEDTLS_LIBS="-lmbedtls ${MBEDTLS_LIBS}"],
+   [mbedtls_unavailable=yes])
+
+  AS_IF([test "$mbedtls_unavailable" = yes], [
+    AC_MSG_NOTICE([Can't find mbedtls headers and/or libraries.])
+    ],[
+      AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
+      AC_SUBST(MBEDTLS_LIBS)
+      GAUCHE_TLS_TYPES="mbedtls $GAUCHE_TLS_TYPES"
+      GAUCHE_TLS_SWITCH_MBEDTLS=
+      GAUCHE_TLS_SWITCH_NONE="@%:@"
+      EXT_LIBS="${EXT_LIBS} ${MBEDTLS_LIBS}"
+   ])
+  ])
 
 AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS)
 AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS_TEST)

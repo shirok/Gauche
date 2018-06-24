@@ -943,6 +943,6 @@ This Gauche has been configured with the following parameters:
          multibyte: $GAUCHE_CHAR_ENCODING
               slib: $SLIB_DIR
             thread: $GAUCHE_THREAD_TYPE
-           tls/ssl: $GAUCHE_TLS_TYPE
+           tls/ssl: $GAUCHE_TLS_TYPES
   optional modules: $OPTDBMS$OPTZLIB
 ])
