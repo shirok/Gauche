@@ -38,7 +38,8 @@
   (export <tls> make-tls tls-destroy tls-connect tls-accept tls-close
           tls-load-object tls-read tls-write
           tls-input-port tls-output-port
-          tls-ca-certificate-path
+          tls-ca-bundle-path
+          default-tls-class
 
           SSL_SERVER_VERIFY_LATER SSL_CLIENT_AUTHENTICATION
           SSL_DISPLAY_BYTES SSL_DISPLAY_STATES SSL_DISPLAY_CERTS
@@ -47,6 +48,7 @@
           SSL_OBJ_PKCS8 SSL_OBJ_PKCS12)
   )
 (select-module rfc.tls)
+(export-if-defined <ax-tls> <mbed-tls>)
 
 (inline-stub
  (declcode "#include \"gauche-tls.h\" ")

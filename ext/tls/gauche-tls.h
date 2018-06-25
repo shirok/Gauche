@@ -58,8 +58,8 @@
 #include <mbedtls/net.h>
 #endif
 
-#ifndef X509_CA_FILE
-#define X509_CA_FILE "ca-cert.crt"
+#ifndef GAUCHE_CA_BUNDLE
+#define GAUCHE_CA_BUNDLE "ca-cert.crt"
 #endif
 
 #endif  /*GAUCHE_USE_MBEDTLS*/

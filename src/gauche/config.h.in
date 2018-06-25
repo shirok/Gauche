@@ -503,8 +503,8 @@
 # endif
 #endif
 
-/* CA file path */
-#undef X509_CA_FILE
+/* CA bundle file path */
+#undef GAUCHE_CA_BUNDLE
 
 /* Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE

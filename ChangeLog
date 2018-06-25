@@ -3,6 +3,12 @@
 	* ext/tls/tls.ac: Allow to compile both axtls and mbedtls support.
 	  By default, axtls is automatically enabled, and mbedtls is enabled
 	  when it's available.
+	  Also changed --enable-tls-ca-file-path to --with-ca-bundle, following
+	  curl's configure option.
+	* ext/tls/tls.scm (tls-ca-bundle-path): Renamed from
+	  tls-ca-certificate-path.
+	  (default-tls-class): Make TLS class used by make-tls parameterized.
+	  (<ax-tls>, <mbed-tls>): Conditionally exported.
 
 2018-06-23  Shiro Kawai  <shiro@acm.org>
 

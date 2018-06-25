@@ -76,7 +76,8 @@ static void tls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx)
  * Global stuff
  */
 
-static ScmParameterLoc ca_certificate_path;
+static ScmParameterLoc ca_bundle_path;
+static ScmParameterLoc default_tls_class;
 static ScmObj k_options;
 static ScmObj k_num_sessions;
 static ScmObj k_server_name;
@@ -92,11 +93,12 @@ static void tls_finalize(ScmObj obj, void* data)
 
 ScmObj Scm_MakeTLS(ScmObj initargs)
 {
-#if defined(GAUCHE_USE_AXTLS)
-    return Scm_Allocate(&Scm_AxTLSClass, initargs);
-#elif defined(GAUCHE_USE_MBEDTLS)
-    return Scm_Allocate(&Scm_MbedTLSClass, initargs);
-#endif
+    ScmObj klass = Scm_ParameterRef(Scm_VM(), &default_tls_class);
+    if (!SCM_CLASSP(klass) || !Scm_SubtypeP(SCM_CLASS(klass), &Scm_TLSClass)) {
+        Scm_Error("default-tls-class needs to be a subclass of <tls>, "
+                  "but got: %S", klass);
+    }
+    return Scm_Allocate(SCM_CLASS(klass), initargs);
 }
 
 
@@ -169,9 +171,18 @@ void Scm_Init_tls(ScmModule *mod)
 #if defined(GAUCHE_USE_MBEDTLS)
     Scm_InitStaticClass(&Scm_MbedTLSClass, "<mbed-tls>", mod, NULL, 0);
 #endif
-    Scm_DefinePrimitiveParameter(mod, "tls-ca-certificate-path",
-                                 SCM_MAKE_STR(X509_CA_FILE),
-                                 &ca_certificate_path);
+    Scm_DefinePrimitiveParameter(mod, "default-tls-class",
+#if defined(GAUCHE_USE_AXTLS)
+                                 SCM_OBJ(&Scm_AxTLSClass),
+#elif defined(GAUCHE_USE_MBEDTLS)
+                                 SCM_OBJ(&Scm_MbedTLSClass),
+#else
+                                 SCM_FALSE,
+#endif
+                                 &default_tls_class);
+    Scm_DefinePrimitiveParameter(mod, "tls-ca-bundle-path",
+                                 SCM_MAKE_STR(GAUCHE_CA_BUNDLE),
+                                 &ca_bundle_path);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
     k_server_name = SCM_MAKE_KEYWORD("server-name");
@@ -374,7 +385,7 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
-    ScmObj s_ca_file = Scm_ParameterRef(Scm_VM(), &ca_certificate_path);
+    ScmObj s_ca_file = Scm_ParameterRef(Scm_VM(), &ca_bundle_path);
     if (!SCM_STRINGP(s_ca_file)) {
         Scm_Error("Parameter tls-ca-certificate-path must have a string value,"
                   " but got: %S", s_ca_file);
