@@ -188,18 +188,12 @@ void Scm_Init_tls(ScmModule *mod)
     k_server_name = SCM_MAKE_KEYWORD("server-name");
 }
 
-static const uint8_t* get_message_body(ScmObj msg, u_int *size)
+static const uint8_t* get_message_body(ScmObj msg, size_t *size)
 {
-    if (SCM_UVECTORP(msg)) {
-        *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(msg));
-        return (const uint8_t*) SCM_UVECTOR_ELEMENTS(msg);
-    } else if (SCM_STRINGP(msg)) {
-        return (const uint8_t*)Scm_GetStringContent(SCM_STRING(msg), size, 0, 0);
-    } else {
+    if (SCM_UVECTORP(msg) || SCM_STRINGP(msg)) {
         Scm_TypeError("TLS message", "uniform vector or string", msg);
-        *size = 0;
-        return 0;
     }
+    return Scm_GetBytes(msg, size);
 }
 
 /*=========================================================
@@ -262,7 +256,7 @@ static ScmObj ax_write(ScmTLS* tls, ScmObj msg)
     ax_context_check(t, "write");
     ax_close_check(t, "write");
     int r;
-    u_int size;
+    size_t size;
     const uint8_t* cmsg = get_message_body(msg, &size);
     if ((r = ssl_write(t->conn, cmsg, size)) < 0) {
         Scm_SysError("ssl_write() failed");
@@ -482,7 +476,7 @@ static ScmObj mbed_write(ScmTLS* tls, ScmObj msg)
     mbed_context_check(t, "write");
     mbed_close_check(t, "write");
 
-    u_int size;
+    size_t size;
     const uint8_t* cmsg = get_message_body(msg, &size);
 
     int r;

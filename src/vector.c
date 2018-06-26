@@ -708,3 +708,23 @@ DEF_CMP(U64, u64, ScmUInt64, uint64eqv, uint64lt)
 DEF_CMP(F16, f16, ScmHalfFloat, f16eqv, f16lt)
 DEF_CMP(F32, f32, float, common_eqv, common_lt)
 DEF_CMP(F64, f64, double, common_eqv, common_lt)
+
+/*=====================================================================
+ * Utility
+ */
+
+const uint8_t *Scm_GetBytes(ScmObj obj, size_t *size)
+{
+    if (SCM_UVECTORP(obj)) {
+        *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(obj));
+        return (const uint8_t*)SCM_UVECTOR_ELEMENTS(obj);
+    } else if (SCM_STRINGP(obj)) {
+        unsigned int s;
+        const char *z = Scm_GetStringContent(SCM_STRING(obj), &s, 0, 0);
+        *size = s;
+        return (const uint8_t*)z;
+    } else {
+        *size = 0;
+        return 0;
+    }
+}
