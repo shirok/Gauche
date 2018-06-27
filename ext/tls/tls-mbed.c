@@ -297,6 +297,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 void Scm_Init_rfc__tls__mbed()
 {
     ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("rfc.tls.mbed", 0));
+#if defined(GAUCHE_USE_MBEDTLS)
     ScmClass **cpa = SCM_NEW_ARRAY(ScmClass*, 3);
     cpa[0] = (ScmClass*)Scm_GlobalVariableRef(SCM_MODULE(SCM_FIND_MODULE("rfc.tls", 0)),
                                               SCM_SYMBOL(SCM_INTERN("<tls>")),
@@ -306,7 +307,6 @@ void Scm_Init_rfc__tls__mbed()
                                               0);
     cpa[2] = NULL;
     Scm_MbedTLSClass.cpa = cpa;
-#if defined(GAUCHE_USE_MBEDTLS)
     Scm_InitStaticClass(&Scm_MbedTLSClass, "<mbed-tls>", mod, NULL, 0);
     k_server_name = SCM_MAKE_KEYWORD("server-name");
 #else
