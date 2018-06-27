@@ -7,6 +7,9 @@
 
 (use rfc.tls)
 (test-module 'rfc.tls)
+(use rfc.tls.mbed)
+(test-module 'rfc.tls.mbed)
+
 
 (cond-expand
  ;; ssltest program needs thread support, so we don't build it if we don't
@@ -65,5 +68,7 @@
                        :wait #t)))
   ]
  [else])
+
+
 
 (test-end)

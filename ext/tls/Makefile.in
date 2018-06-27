@@ -8,12 +8,17 @@ include ../Makefile.ext
 
 SCM_CATEGORY = rfc
 
-LIBFILES = rfc--tls.$(SOEXT)
-SCMFILES = tls.sci
+LIBFILES = rfc--tls.$(SOEXT) rfc--tls--mbed.$(SOEXT)
+SCMFILES = tls.sci tls/mbed.scm
 
-OBJECTS = rfc--tls.$(OBJEXT) \
-          tls.$(OBJEXT)      \
-	  $(EXTRA_OBJECTS)
+OBJECTS = $(TLS_OBJECTS) $(MBED_OBJECTS)
+
+TLS_OBJECTS = rfc--tls.$(OBJEXT) \
+              tls.$(OBJEXT)      \
+              $(EXTRA_OBJECTS)
+
+MBED_OBJECTS = tls-mbed.$(OBJEXT)
+MBEDTLS_LIBS = @MBEDTLS_LIBS@
 
 AXTLS_INCLUDES = -I$(srcdir)/axTLS/crypto -I$(srcdir)/axTLS/ssl -I$(srcdir)/axTLS/config
 
@@ -61,11 +66,15 @@ XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GEN
 @CROSS_COMPILING_no@all : $(LIBFILES) $(EXTRA_TEST_BIN)
 @CROSS_COMPILING_yes@all : $(LIBFILES)
 
-rfc--tls.$(SOEXT) : $(OBJECTS)
-	$(MODLINK) rfc--tls.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+rfc--tls.$(SOEXT) : $(TLS_OBJECTS)
+	$(MODLINK) rfc--tls.$(SOEXT) $(TLS_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 tls.sci rfc--tls.c : tls.scm
 	$(PRECOMP) -e -P -o rfc--tls $(srcdir)/tls.scm
+
+rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS)
+	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(EXT_LIBGAUCHE) \
+	   $(MBEDTLS_LIBS)
 
 # For out-of-source-tree build
 axtls_dirs :

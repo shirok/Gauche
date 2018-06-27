@@ -1,5 +1,7 @@
 2018-06-26  Shiro Kawai  <shiro@acm.org>
 
+	* ext/tls: Split mbedTLS-dependent part to a separate DSO. Preparation
+	  to build static linked binary without depending libmbed.
 	* src/vector.c (Scm_GetBytes): Added.
 
 2018-06-24  Shiro Kawai  <shiro@acm.org>

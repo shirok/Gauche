@@ -98,7 +98,7 @@ struct ScmTLSRec {
     ScmObj (*write)(ScmTLS*, ScmObj);
     ScmObj (*close)(ScmTLS*);
     ScmObj (*loadObject)(ScmTLS*, ScmObj, const char*, const char*);
-    void   (*finalize)(ScmTLS*);
+    void   (*finalize)(ScmObj, void*);
 };
 
 SCM_CLASS_DECL(Scm_TLSClass);

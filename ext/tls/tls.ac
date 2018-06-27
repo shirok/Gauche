@@ -90,7 +90,6 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
       GAUCHE_TLS_TYPES="mbedtls $GAUCHE_TLS_TYPES"
       GAUCHE_TLS_SWITCH_MBEDTLS=
       GAUCHE_TLS_SWITCH_NONE="@%:@"
-      EXT_LIBS="${EXT_LIBS} ${MBEDTLS_LIBS}"
    ])
   ])
 
