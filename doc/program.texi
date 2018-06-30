@@ -2745,6 +2745,24 @@ Gaucheがgdbmを使うようにコンフィグされていた場合、実行可�
 @code{-D GAUCHE_STATIC_EXCLUDE_GDBM}フラグを与えてください。
 そうするとgdbmはリンクされなくなります(その場合、スクリプトからgdbmは使えません)。
 @c COMMON
+
+@item
+@c EN
+If you build Gauche with mbedTLS support (if you have libmbedtls on
+your machine, Gauche include its support by default), the resulting standalone
+binary also depends on libmbedtls DSO files.  If you're not sure mbedTLS
+DSO files are available on target machines, you can exclude 
+@code{rfc.tls.mbed} module by giving 
+@code{-D GAUCHE_STATIC_EXCLUDE_MBED} flag to @code{build-standalone}.
+@c JP
+もしGaucheがmbedTLSサポートつきでビルドされていた場合
+(libmbedtlsがシステムにインストールされていると、デフォルトでそのサポートはonになります)、
+作られるスタンドアローンバイナリはlibmbedtls DSOファイルに依存します。
+ターゲットマシンにmbedTLSがインストールされているとは限らない場合は、
+@code{build-standalone}に@code{-D GAUCHE_STATIC_EXCLUDE_MBED}フラグを与えることで、
+@code{rfc.tls.mbed}モジュールへの依存を除外することができます。
+@c COMMON
+
 @end itemize
 
 @c EN

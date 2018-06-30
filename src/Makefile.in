@@ -401,6 +401,10 @@ gauche-cesconv : gauche-cesconv.in
 # static link -----------------------------------------
 # can be called after everything was built
 
+STATICINIT_SRCS = staticinit.c      \
+                  staticinit_gdbm.c \
+                  staticinit_mbed.c
+
 STATICINIT_OBJS = staticinit.$(OBJEXT)      \
                   staticinit_gdbm.$(OBJEXT) \
                   staticinit_mbed.$(OBJEXT)
@@ -415,7 +419,7 @@ $(LIBGAUCHE_STATIC).a : all $(STATICINIT_OBJS)
             $(STATICINIT_OBJS) \
             `"$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 
-staticinit.c staticinit_gdbm.c : all gen-staticinit.scm
+$(STATICINIT_SRCS) : all gen-staticinit.scm
 	$(STATIC_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
 
 # tests -----------------------------------------------
