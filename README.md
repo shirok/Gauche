@@ -2,7 +2,7 @@
 
 IN NEW CODE, PLEASE USE C11 OR C++14 STANDARD ATOMICS INSTEAD OF THIS PACKAGE.
 
-This is version 7.6.2 of libatomic_ops.
+This is version 7.6.4 of libatomic_ops.
 
 
 ## Download

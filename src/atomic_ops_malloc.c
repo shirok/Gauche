@@ -145,8 +145,9 @@ static char *get_mmaped(size_t sz)
     if (zero_fd == -1)
       return 0;
 # endif
-  result = mmap(0, sz, PROT_READ | PROT_WRITE,
-                GC_MMAP_FLAGS | OPT_MAP_ANON, zero_fd, 0/* offset */);
+  result = (char *)mmap(0, sz, PROT_READ | PROT_WRITE,
+                        GC_MMAP_FLAGS | OPT_MAP_ANON,
+                        zero_fd, 0 /* offset */);
 # ifndef USE_MMAP_ANON
     close(zero_fd);
 # endif
@@ -361,7 +362,7 @@ AO_free(void *p)
             log_sz > LOG_MAX_SIZE ? (unsigned)log_sz : 1UL << log_sz);
 # endif
   if (AO_EXPECT_FALSE(log_sz > LOG_MAX_SIZE)) {
-    AO_free_large(p);
+    AO_free_large((char *)p);
   } else {
     ASAN_POISON_MEMORY_REGION(base + 1, ((size_t)1 << log_sz) - sizeof(AO_t));
     AO_stack_push(AO_free_list + log_sz, base);

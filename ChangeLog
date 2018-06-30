@@ -1,4 +1,16 @@
 
+== [7.6.4] 2018-03-27 ==
+
+* Add RISC-V support
+* Convert atomic_ops_malloc.c and tests to valid C++ code
+* Eliminate 'function is never used' cppcheck warning for load_before_cas
+* Eliminate 'using argument that points at uninitialized var' cppcheck error
+* Fix 'AO_pt_lock undefined' error if cross-compiling manually (MinGW)
+* Fix public headers inclusion from clients C++ code
+* Remove gcc/nios2.h file (include gcc/generic.h directly for nios2)
+* Support MIPS rel6
+
+
 == [7.6.2] 2017-12-24 ==
 
 * Allow to alter DEFAULT/MAX_NTHREADS values in test_malloc/stack

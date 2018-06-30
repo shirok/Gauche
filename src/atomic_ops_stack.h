@@ -31,6 +31,10 @@
 
 #include "atomic_ops.h"
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 #ifdef AO_USE_ALMOST_LOCK_FREE
   /* Use the almost-non-blocking implementation regardless of the       */
   /* double-word CAS availability.                                      */
@@ -154,7 +158,13 @@ AO_INLINE void AO_stack_init(AO_stack_t *list)
 #ifndef AO_HAVE_double_t
   /* Can happen if we're using CAS emulation, since we don't want to    */
   /* force that here, in case other atomic_ops clients don't want it.   */
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 # include "atomic_ops/sysdeps/standard_ao_double_t.h"
+# ifdef __cplusplus
+    extern "C" {
+# endif
 #endif
 
 typedef volatile AO_double_t AO_stack_t;
@@ -189,6 +199,10 @@ AO_t * AO_stack_pop_acquire(AO_stack_t *list);
 #if defined(AO_HAVE_stack_pop_acquire) && !defined(AO_HAVE_stack_pop)
 # define AO_stack_pop(l) AO_stack_pop_acquire(l)
 # define AO_HAVE_stack_pop
+#endif
+
+#ifdef __cplusplus
+  } /* extern "C" */
 #endif
 
 #endif /* !AO_STACK_H */

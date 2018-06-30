@@ -81,7 +81,7 @@ ln *cons(int d, ln *tail)
   int * extras;
   unsigned i;
 
-  result = AO_malloc(sizeof(ln) + sizeof(int)*my_extra);
+  result = (ln *)AO_malloc(sizeof(ln) + sizeof(int)*my_extra);
   if (result == 0)
     {
       fprintf(stderr, "Out of memory\n");
@@ -170,7 +170,7 @@ int dummy_test(void) { return 1; }
 void * run_one_test(void * arg) {
   ln * x = make_list(1, LIST_LENGTH);
   int i;
-  char *p = AO_malloc(LARGE_OBJ_SIZE);
+  char *p = (char *)AO_malloc(LARGE_OBJ_SIZE);
   char *q;
   char a = 'a' + ((int)((AO_PTRDIFF_T)arg) * 2) % ('z' - 'a' + 1);
   char b = a + 1;
@@ -185,7 +185,7 @@ void * run_one_test(void * arg) {
 #   endif
   } else {
     p[0] = p[LARGE_OBJ_SIZE/2] = p[LARGE_OBJ_SIZE-1] = a;
-    q = AO_malloc(LARGE_OBJ_SIZE);
+    q = (char *)AO_malloc(LARGE_OBJ_SIZE);
     if (q == 0)
       {
         fprintf(stderr, "Out of memory\n");

@@ -285,72 +285,56 @@
     /* it might require specifying additional options (like -march)     */
     /* or additional link libraries (if -march is not specified).       */
 #   include "atomic_ops/sysdeps/gcc/x86.h"
-# endif /* __i386__ */
-# if defined(__x86_64__)
+# elif defined(__x86_64__)
 #   if AO_GNUC_PREREQ(4, 2) && !defined(AO_USE_SYNC_CAS_BUILTIN)
       /* It is safe to use __sync CAS built-in on this architecture.    */
 #     define AO_USE_SYNC_CAS_BUILTIN
 #   endif
 #   include "atomic_ops/sysdeps/gcc/x86.h"
-# endif /* __x86_64__ */
-# if defined(__ia64__)
+# elif defined(__ia64__)
 #   include "atomic_ops/sysdeps/gcc/ia64.h"
 #   define AO_GENERALIZE_TWICE
-# endif /* __ia64__ */
-# if defined(__hppa__)
+# elif defined(__hppa__)
 #   include "atomic_ops/sysdeps/gcc/hppa.h"
 #   define AO_CAN_EMUL_CAS
-# endif /* __hppa__ */
-# if defined(__alpha__)
+# elif defined(__alpha__)
 #   include "atomic_ops/sysdeps/gcc/alpha.h"
 #   define AO_GENERALIZE_TWICE
-# endif /* __alpha__ */
-# if defined(__s390__)
+# elif defined(__s390__)
 #   include "atomic_ops/sysdeps/gcc/s390.h"
-# endif /* __s390__ */
-# if defined(__sparc__)
+# elif defined(__sparc__)
 #   include "atomic_ops/sysdeps/gcc/sparc.h"
 #   define AO_CAN_EMUL_CAS
-# endif /* __sparc__ */
-# if defined(__m68k__)
+# elif defined(__m68k__)
 #   include "atomic_ops/sysdeps/gcc/m68k.h"
-# endif /* __m68k__ */
-# if defined(__nios2__)
-#   include "atomic_ops/sysdeps/gcc/nios2.h"
-# endif /* __nios2__ */
-# if defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) \
-     || defined(__powerpc64__) || defined(__ppc64__) \
-     || defined(_ARCH_PPC)
+# elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) \
+       || defined(__powerpc64__) || defined(__ppc64__) || defined(_ARCH_PPC)
 #   include "atomic_ops/sysdeps/gcc/powerpc.h"
-# endif /* __powerpc__ */
-# if defined(__aarch64__)
+# elif defined(__aarch64__)
 #   include "atomic_ops/sysdeps/gcc/aarch64.h"
 #   define AO_CAN_EMUL_CAS
-# endif /* __aarch64__ */
-# if defined(__arm__)
+# elif defined(__arm__)
 #   include "atomic_ops/sysdeps/gcc/arm.h"
 #   define AO_CAN_EMUL_CAS
-# endif /* __arm__ */
-# if defined(__cris__) || defined(CRIS)
+# elif defined(__cris__) || defined(CRIS)
 #   include "atomic_ops/sysdeps/gcc/cris.h"
 #   define AO_CAN_EMUL_CAS
 #   define AO_GENERALIZE_TWICE
-# endif
-# if defined(__mips__)
+# elif defined(__mips__)
 #   include "atomic_ops/sysdeps/gcc/mips.h"
-# endif /* __mips__ */
-# if defined(__sh__) || defined(SH4)
+# elif defined(__sh__) || defined(SH4)
 #   include "atomic_ops/sysdeps/gcc/sh.h"
 #   define AO_CAN_EMUL_CAS
-# endif /* __sh__ */
-# if defined(__avr32__)
+# elif defined(__avr32__)
 #   include "atomic_ops/sysdeps/gcc/avr32.h"
-# endif
-# if defined(__hexagon__)
+# elif defined(__hexagon__)
 #   include "atomic_ops/sysdeps/gcc/hexagon.h"
-# endif
-# if defined(__tile__)
+# elif defined(__riscv)
+#   include "atomic_ops/sysdeps/gcc/riscv.h"
+# elif defined(__tile__)
 #   include "atomic_ops/sysdeps/gcc/tile.h"
+# else /* __nios2__, etc. */
+#   include "atomic_ops/sysdeps/gcc/generic.h"
 # endif
 #endif /* __GNUC__ && !AO_USE_PTHREAD_DEFS */
 
