@@ -100,10 +100,14 @@
              "                NULL);"))
 
 (define (get-libs xdefs)
-  (let1 libs (gauche-config "--static-libs")
-    (if (any #/^-D(=|\s*)\"?GAUCHE_STATIC_EXCLUDE_GDBM\"?/ xdefs)
-      (regexp-replace-all #/-lgdbm(_compat)?/ libs "")
-      libs)))
+  (let* ([libs (gauche-config "--static-libs")]
+         [libs (if (any #/^-D(=|\s*)\"?GAUCHE_STATIC_EXCLUDE_GDBM\"?/ xdefs)
+                 (regexp-replace-all #/-lgdbm(_compat)?/ libs "")
+                 libs)]
+         [libs (if (any #/^-D(=|\s*)\"?GAUCHE_STATIC_EXCLUDE_MBEDTLS\"?/ xdefs)
+                 (regexp-replace-all #/-lmbed\w*/ libs "")
+                 libs)])
+    libs))
 
 ;; Darwin's ld doesn't like that nonexistent directory is given to
 ;; -L flag.  The warning message is annoying, so we filter out such flags.

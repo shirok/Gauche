@@ -71,6 +71,8 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
       [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
       [mbedtls_unavailable=yes])])
 
+  dnl We don't want to include mbedtls libraris in generic LIBS
+  LIBS_SAVE=${LIBS}
   MBEDTLS_LIBS=""
   AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto],
    [MBEDTLS_LIBS="-lmbedcrypto ${MBEDTLS_LIBS}"],
@@ -81,6 +83,8 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
   AC_SEARCH_LIBS([mbedtls_ssl_init], [mbedtls], 
    [MBEDTLS_LIBS="-lmbedtls ${MBEDTLS_LIBS}"],
    [mbedtls_unavailable=yes])
+  LIBS=${LIBS_SAVE}
+  EXT_LIBS="$EXT_LIBS $MBEDTLS_LIBS"
 
   AS_IF([test "$mbedtls_unavailable" = yes], [
     AC_MSG_NOTICE([Can't find mbedtls headers and/or libraries.])

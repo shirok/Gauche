@@ -36,7 +36,7 @@ sample-repl-nogdbm: sample-repl.scm
 sample-repl-nombed: sample-repl.scm
 	$(top_builddir)/src/gosh -ftest build-standalone \
              -D GAUCHE_STATIC_EXCLUDE_GDBM               \
-             -D GAUCHE_STATIC_EXCLUDE_MBED               \
+             -D GAUCHE_STATIC_EXCLUDE_MBEDTLS            \
              --header-dir $(top_srcdir)/src              \
              --header-dir $(top_srcdir)/gc/include       \
              --library-dir $(top_builddir)/src           \
