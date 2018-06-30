@@ -3,7 +3,7 @@ VPATH        = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-TARGET    = sample-repl sample-repl-nogdbm
+TARGET    = sample-repl sample-repl-nogdbm sample-repl-nombed
 GENERATED = *.c
 CONFIG_GENERATED = Makefile
 
@@ -32,4 +32,13 @@ sample-repl-nogdbm: sample-repl.scm
              --header-dir $(top_srcdir)/gc/include       \
              --library-dir $(top_builddir)/src           \
              -o sample-repl-nogdbm sample-repl.scm
+
+sample-repl-nombed: sample-repl.scm
+	$(top_builddir)/src/gosh -ftest build-standalone \
+             -D GAUCHE_STATIC_EXCLUDE_GDBM               \
+             -D GAUCHE_STATIC_EXCLUDE_MBED               \
+             --header-dir $(top_srcdir)/src              \
+             --header-dir $(top_srcdir)/gc/include       \
+             --library-dir $(top_builddir)/src           \
+             -o sample-repl-nombed sample-repl.scm
 

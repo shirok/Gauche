@@ -10,11 +10,15 @@
 ;; NB: We treat gdbm specially, for statically linking it causes
 ;; the entire binary to be under GPL.  Here's what we do:
 ;;   - We split initializer function for gdbm libs into separate file
-;;   - If the use defines GAUCHE_STATIC_LINK_GDBM before SCM_INIT_STATIC,
+;;   - If the user defines GAUCHE_STATIC_EXCLUDE_GDBM before SCM_INIT_STATIC,
 ;;     we don't call gdbm initializer function, which causes object files
 ;;     related to gdbm would be excluded from the final executable.
 ;; This is kinda ad-hockery but we expect we won't add more dependencies
 ;; to GPL libs in the main distribution.
+
+;; NB: Similar case for rfc.tls.mbed.  The license of mbedTLS is 
+;; Apache 2.0, so it's not so much of a problem.  It's just that if
+;; you don't want the standalone binary to depend on libmbedtls DSO.
 
 (use gauche.generator)
 (use gauche.parameter)
@@ -89,6 +93,10 @@
            (list dso module-name)))
 
 ;; Classify dsos
+;; Returns a hashtable of the following keys:
+;;   #t   => ((dso module-name) ...)   ordinary modules
+;;   gdbm => ((dso module-name) ...)   gdbm linked modules
+;;   mbed => ((dso module-name) ...)   mbedTLS linked modules
 ;; Caveat: If we use gdbm_compat, dbm.ndbm and dbm.odbm is likely to be
 ;; linked with gdbm.
 (define (classify-dsos dsos&mods)
@@ -96,7 +104,15 @@
     (if (#/-lgdbm_compat/ (gauche-config "--static-libs"))
       (^m (memq m '(dbm.gdbm dbm.ndbm dbm.odbm)))
       (^m (eq? m 'dbm.gdbm))))
-  (partition (^p (gdbm-linked? (cadr p))) dsos&mods))
+  (define (mbed-linked? m) (eq? m 'rfc.tls.mbed))
+  (fold (^[dso&mod ht]
+          (cond [(gdbm-linked? (cadr dso&mod))
+                 (hash-table-push! ht 'gdbm dso&mod) ht]
+                [(mbed-linked? (cadr dso&mod))
+                 (hash-table-push! ht 'mbed dso&mod) ht]
+                [else
+                 (hash-table-push! ht #t dso&mod) ht]))
+        (make-hash-table 'eqv?) dsos&mods))
 
 (define (generate-staticinit dsos&mods)
   (do-ec [: dso&mod dsos&mods]
@@ -153,12 +169,23 @@
 
 ;; Classify scheme files
 ;; scms : ((module partial-path path) ...)
-;; dsos&mods-gdbm : ((dso module) ...)
-(define (classify-scms scms dsos&mods-gdbm)
-  (define gdbm-modules (map cadr dsos&mods-gdbm))
-  (define gdbm-file?
-    (^p (memq (car p) gdbm-modules)))
-  (partition gdbm-file? scms))
+;; dsos&mods-map : key => ((dso module) ...)
+;; returns key => ((module partial-path path) ...)
+(define (classify-scms scms dsos&mods-map)
+  (define mod-key  ; module => key
+    (hash-table-fold dsos&mods-map
+                     (^[k vs m]
+                       (dolist [v vs]
+                         (hash-table-put! m (cadr v) k))
+                       m)
+                     (make-hash-table 'eq?)))
+  (define (scm-key scm-entry) ; scm-entry : (module partial-path path)
+    (hash-table-get mod-key (car scm-entry) #t))
+  (fold (^[scm-entry m]
+          (hash-table-push! m (scm-key scm-entry) scm-entry)
+          m)
+        (make-hash-table 'eqv?)
+        scms))
 
 (define (get-scm-content path)
   ;; NB: We can just do (file->string p), but the code below eliminates
@@ -245,23 +272,24 @@
   (cgen-emit-c (cgen-current-unit)))
 
 (define (do-everything)
-  ;; TRANSIENT: Rewrite this using let*-values after 0.9.6 release.
-  ;; We need to avoid using it, since let*-values is moved from srfi-11
-  ;; to core in 0.9.6, and we can't refer to srfi-11 during building 0.9.6
-  ;; while using 0.9.5.
-  (let1 modules-to-exclude
-      (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
-        (map string->symbol (string-split x #[\s:,]))
-        '())
-    (receive (dsos&mods-gdbm dsos&mods-other)
-        (classify-dsos (gather-dsos modules-to-exclude))
-      (receive (scms-gdbm scms-other)
-          (classify-scms (get-scheme-paths) dsos&mods-gdbm)
-        (generate-c "staticinit" "Scm_InitPrelinked" #t 
-                    scms-other dsos&mods-other)
-        (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" #f
-                    scms-gdbm dsos&mods-gdbm)
-        ))))
+  (let* ([modules-to-exclude
+          (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
+            (map string->symbol (string-split x #[\s:,]))
+            '())]
+         ;; dso-map : key => ((dso mod-name) ...)
+         [dso-map (classify-dsos (gather-dsos modules-to-exclude))]
+         ;; scm-map : key => ((module partialpath path) ...)
+         [scm-map (classify-scms (get-scheme-paths) dso-map)])
+    (generate-c "staticinit" "Scm_InitPrelinked" #t 
+                (hash-table-get scm-map #t)
+                (hash-table-get dso-map #t))
+    (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" #f
+                (hash-table-get scm-map 'gdbm)
+                (hash-table-get dso-map 'gdbm))
+    (generate-c "staticinit_mbed" "Scm_InitPrelinked_mbed" #f
+                (hash-table-get scm-map 'mbed)
+                (hash-table-get dso-map 'mbed))
+    ))
 
 (define (main args)
   (match (cdr args)

@@ -46,32 +46,40 @@
 /* Linking gdbm makes the generated binary to be under GPL.  If one only
    wants BSD compatible license (and LGPL-dependency), define
    GAUCHE_STATIC_EXCLUDE_GDBM before calling SCM_INIT_STATIC. */
+/* Linking mbedTLS maks the generated binary to depend on libmbedtls.so.
+   It's Apache 2.0 license so it's not such a big issue like gdbm, but
+   if you want to eliminate runtime dependency, define
+   GAUCHE_STATIC_EXCLUDE_MBEDTLS before calling SCM_INIT_STATIC. */
 
 #ifdef GAUCHE_STATIC_EXCLUDE_GDBM
-#define SCM_INIT_STATIC()                       \
-    do {                                        \
-        GC_INIT();                              \
-        Scm_Init(GAUCHE_SIGNATURE);             \
-        Scm_InitPrelinked();                    \
-    } while (0)
-#else  /*!GAUCHE_STATIC_EXCLUDE_GDBM*/
-#define SCM_INIT_STATIC()                       \
-    do {                                        \
-        GC_INIT();                              \
-        Scm_Init(GAUCHE_SIGNATURE);             \
-        Scm_InitPrelinked();                    \
-        Scm_InitPrelinked_gdbm();               \
-    } while (0)
+#define GAUCHE__STATIC_INIT_GDBM /*empty*/
+#else
+#define GAUCHE__STATIC_INIT_GDBM Scm_InitPrelinked_gdbm()
 #endif
 
+#ifdef GAUCHE_STATIC_EXCLUDE_MBEDTLS
+#define GAUCHE__STATIC_INIT_MBED /*empty*/
+#else
+#define GAUCHE__STATIC_INIT_MBED Scm_InitPrelinked_mbed()
+#endif
 
-/* These two functions are directly linked, so do not use SCM_EXTERN. */
+#define SCM_INIT_STATIC()                       \
+    do {                                        \
+        GC_INIT();                              \
+        Scm_Init(GAUCHE_SIGNATURE);             \
+        Scm_InitPrelinked();                    \
+        GAUCHE__STATIC_INIT_GDBM;               \
+        GAUCHE__STATIC_INIT_MBED;               \
+    } while (0)
+
+/* These functions are directly linked, so do not use SCM_EXTERN. */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern void Scm_InitPrelinked(void);
 extern void Scm_InitPrelinked_gdbm(void);
+extern void Scm_InitPrelinked_mbed(void);
 
 #ifdef __cplusplus
 }
