@@ -41,14 +41,23 @@
 
 # if !defined(_ABI64) || _MIPS_SIM != _ABI64
 #   define AO_T_IS_INT
-#   define AO_MIPS_SET_ISA    "       .set mips2\n"
+#   if __mips_isa_rev >= 6
+      /* Encoding of ll/sc in mips rel6 differs from that of mips2/3. */
+#     define AO_MIPS_SET_ISA  ""
+#   else
+#     define AO_MIPS_SET_ISA  "       .set mips2\n"
+#   endif
 #   define AO_MIPS_LL_1(args) "       ll " args "\n"
 #   define AO_MIPS_SC(args)   "       sc " args "\n"
 # else
-#   define AO_MIPS_SET_ISA    "       .set mips3\n"
+#   if __mips_isa_rev >= 6
+#     define AO_MIPS_SET_ISA  ""
+#   else
+#     define AO_MIPS_SET_ISA  "       .set mips3\n"
+#   endif
 #   define AO_MIPS_LL_1(args) "       lld " args "\n"
 #   define AO_MIPS_SC(args)   "       scd " args "\n"
-# endif
+# endif /* _MIPS_SIM == _ABI64 */
 
 #ifdef AO_ICE9A1_LLSC_WAR
   /* ICE9 rev A1 chip (used in very few systems) is reported to */

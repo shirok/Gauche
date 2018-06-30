@@ -225,7 +225,9 @@ AO_stack_pop_explicit_aux_acquire(volatile AO_t *list, AO_stack_aux * a)
 
 /* The functionality is the same as of AO_load_next but the atomicity   */
 /* is not needed.  The usage is similar to that of store_before_cas.    */
-#ifdef AO_THREAD_SANITIZER
+#if defined(AO_THREAD_SANITIZER) \
+    && (defined(AO_HAVE_compare_and_swap_double) \
+        || defined(AO_HAVE_compare_double_and_swap_double))
   /* TODO: If compiled by Clang (as of clang-4.0) with -O3 flag,        */
   /* no_sanitize attribute is ignored unless the argument is volatile.  */
 # if defined(__clang__)

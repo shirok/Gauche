@@ -557,6 +557,10 @@ AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
 #elif defined(AO_WEAK_DOUBLE_CAS_EMULATION)
 # include "../standard_ao_double_t.h"
 
+# ifdef __cplusplus
+    extern "C" {
+# endif
+
   /* This one provides spinlock based emulation of CAS implemented in   */
   /* atomic_ops.c.  We probably do not want to do this here, since it   */
   /* is not atomic with respect to other kinds of updates of *addr.     */
@@ -565,6 +569,10 @@ AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
                                         volatile AO_double_t *addr,
                                         AO_t old_val1, AO_t old_val2,
                                         AO_t new_val1, AO_t new_val2);
+
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 
   AO_INLINE int
   AO_compare_double_and_swap_double_full(volatile AO_double_t *addr,
