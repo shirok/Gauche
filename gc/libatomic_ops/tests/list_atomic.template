@@ -33,7 +33,7 @@ void XSIZE_list_atomicXX(void)
     static XCTYPE newval /* = 0 */;
 # endif
 # if defined(AO_HAVE_test_and_setXX)
-    AO_TS_t ts;
+    AO_TS_t ts = AO_TS_INITIALIZER;
 # endif
 # if defined(AO_HAVE_XSIZE_fetch_and_addXX) || defined(AO_HAVE_XSIZE_andXX) \
      || defined(AO_HAVE_XSIZE_orXX) || defined(AO_HAVE_XSIZE_xorXX)

@@ -91,7 +91,7 @@ void add_elements(int n)
   list_element * le;
   if (n == 0) return;
   add_elements(n-1);
-  le = malloc(sizeof(list_element));
+  le = (list_element *)malloc(sizeof(list_element));
   if (le == 0)
     {
       fprintf(stderr, "Out of memory\n");

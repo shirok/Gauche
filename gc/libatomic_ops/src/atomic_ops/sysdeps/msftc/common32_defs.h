@@ -62,7 +62,7 @@
    LONG __cdecl _InterlockedCompareExchange(LONG volatile *,
                                         LONG /* Exchange */, LONG /* Comp */);
 #  ifdef __cplusplus
-     }
+     } /* extern "C" */
 #  endif
 # endif /* _MSC_VER < 1400 */
 

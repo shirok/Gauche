@@ -30,6 +30,10 @@
 
 #include <stddef.h> /* for size_t */
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 #ifdef AO_STACK_IS_LOCK_FREE
 # define AO_MALLOC_IS_LOCK_FREE
 #endif
@@ -69,5 +73,9 @@ void * AO_malloc(size_t);
 
 /* Allow use of mmap to grow the heap.  No-op on some platforms.        */
 void AO_malloc_enable_mmap(void);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif /* !AO_MALLOC_H */
