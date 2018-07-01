@@ -1,5 +1,6 @@
 ;;;
 ;;; rfc.tls.mbed - mbedTLS binding
+;;; This is autoloaded from rfc.tls.  Don't directly use this module.
 ;;;
 ;;;   Copyright (c) 2018 Shiro Kawai   <shiro@acm.org>
 ;;;

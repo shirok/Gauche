@@ -515,15 +515,21 @@ init_cond_features()
 
         /* TLS/SSL.  This nees to be in the core in order to switch
            code _before_ loading rfc.tls */
+#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
+        { "gauche.net.tls", "rfc.tls" },
+#endif
 #if defined(GAUCHE_USE_AXTLS)
-        { "gauche.net.tls", "rfc.tls" },
         { "gauche.net.tls.axtls", "rfc.tls" },
-#elif defined(GAUCHE_USE_MBEDTLS)
-        { "gauche.net.tls", "rfc.tls" },
-        { "gauche.net.tls.mbedtls", "rfc.tls" },
-#elif defined(GAUCHE_USE_OPENSSL)
-        { "gauche.net.tls", "rfc.tls" },
-        { "gauche.net.tls.openssl", "rfc.tls" },
+#endif
+#if defined(GAUCHE_USE_MBEDTLS)
+        /* NB: Kludge - mbedTLS is implemented in a separate module rfc.tls.mbed,
+           but we don't autoload it with cond-expand gauche.net.tls.mbedtls.
+           If the gauche is compiled with mbedTLS support but the target system
+           lacks mbed DSO, using rfc.tls.mbed causes runtime error.  We don't
+           want that merely by checking feature identifier.  We set autoload
+           in rfc.tls, so the runtime error only occur when the program actually
+           try to use <mbed-tls>. */
+        { "gauche.net.tls.mbedtls", NULL },
 #endif
         { NULL, NULL }
     };

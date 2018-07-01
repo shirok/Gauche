@@ -1,3 +1,10 @@
+2018-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.scm: Set rfc.tls.mbed autoloaded by referencing
+	  <mbed-tls>.  The user is no longer supposed to directly use
+	  rfc.tls.mbed; just (use rfc.tls) and refer to <mbed-tls> if
+	  you need it.
+
 2018-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Split mbedTLS-dependent part to a separate DSO. Preparation

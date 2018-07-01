@@ -48,7 +48,15 @@
           SSL_OBJ_PKCS8 SSL_OBJ_PKCS12)
   )
 (select-module rfc.tls)
-(export-if-defined <ax-tls> <mbed-tls>)
+
+(export-if-defined <ax-tls>)
+
+(without-precompiling
+ (cond-expand
+  [gauche.net.tls.mbedtls 
+   (autoload rfc.tls.mbed <mbed-tls>)
+   (export <mbed-tls>)]
+  [else]))
 
 (inline-stub
  (declcode "#include \"gauche-tls.h\" ")
