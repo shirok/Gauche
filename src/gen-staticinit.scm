@@ -284,11 +284,11 @@
                 (hash-table-get scm-map #t)
                 (hash-table-get dso-map #t))
     (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" #f
-                (hash-table-get scm-map 'gdbm)
-                (hash-table-get dso-map 'gdbm))
+                (hash-table-get scm-map 'gdbm '())
+                (hash-table-get dso-map 'gdbm '()))
     (generate-c "staticinit_mbed" "Scm_InitPrelinked_mbed" #f
-                (hash-table-get scm-map 'mbed)
-                (hash-table-get dso-map 'mbed))
+                (hash-table-get scm-map 'mbed '())
+                (hash-table-get dso-map 'mbed '()))
     ))
 
 (define (main args)
