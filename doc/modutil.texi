@@ -45,6 +45,7 @@
 * MIME message handling::       rfc.mime
 * Quoted-printable encoding/decoding::  rfc.quoted-printable
 * SHA message digest::          rfc.sha
+* Transport layer security::    rfc.tls
 * URI parsing and construction::  rfc.uri
 * Zlib compression library::    rfc.zlib
 * SLIB::                        slib
@@ -13339,8 +13340,12 @@ followings:
 @itemx tls
 @c EN
 The @code{rfc.tls} module is used for the secure connection.
+@xref{Transport layer security}, for the details---you might need to
+set CA certificate bundle path.
 @c JP
 @code{rfc.tls}モジュールを使ってセキュアな接続を行います。
+詳しくは@ref{Transport layer security}を参照してください。
+CA証明書のパスを設定する必要があるかもしれません。
 @c COMMON
 @item stunnel
 @c EN
@@ -14867,7 +14872,7 @@ Quoted-printableエンコードされた文字列@var{string}をデコードし�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SHA message digest, URI parsing and construction, Quoted-printable encoding/decoding, Library modules - Utilities
+@node SHA message digest, Transport layer security, Quoted-printable encoding/decoding, Library modules - Utilities
 @section @code{rfc.sha} - SHA message digest
 @c NODE SHAメッセージダイジェスト, @code{rfc.sha} - SHAメッセージダイジェスト
 
@@ -14976,7 +14981,79 @@ in an incomplete string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, Zlib compression library, SHA message digest, Library modules - Utilities
+@node Transport layer security, URI parsing and construction, SHA message digest, Library modules - Utilities
+@section @code{rfc.tls} - Transport layer security
+@c NODE トランスポート・レイヤ・セキュリティ, @code{rfc.tls} - トランスポート・レイヤ・セキュリティ
+
+@deftp {Module} rfc.tls
+@mdindex rfc.tls
+This module handles secure connection over TCP socket.
+This module is used by @code{rfc.http} (@pxref{HTTP}).
+
+We haven't yet got other use cases than https connections, 
+so we're not sure how API of this layer should look like.  At this
+moment, we document the minimal features you need to know to use
+the TLS layer with @code{rfc.http}.
+
+Gauche supports two TLS subsystems - one based on axTLS
+(@url{http://axtls.sourceforge.net/}), and the other based on
+mbedTLS (@url{https://tls.mbed.org/}).  Whether they're included
+depends on the configuration options.  By default, axTLS support
+is compiled in, and mbedTLS support is only included if the build
+platform has mbedTLS library installed.  And axTLS is set to be used
+by default.
+
+Whether the running Gauche has any of TLS support can be checked with
+a feature identifier @code{gauche.net.tls}.  Availability of each
+individual subsystems can be checked with feature identifiers
+@code{gauche.net.tls.axtls} and @code{gauche.net.tls.mbedtls}, respectively.
+@xref{Feature conditional}, for more about feature identifiers.
+
+In the current version, we don't verify certificates by default in axTLS,
+but we do in mbedTLS.  You need to specify the location of CA certificates
+explicitly when you want to verify, unless the CA certificate location
+is specified at the configuration time.  In future, we might set the
+default CA certificate file automatically so that users don't need
+to bother by default, but not now.
+@end deftp
+
+@deftp {Class} <ax-tls>
+@clindex ax-tls
+@c MOD rfc.tls
+A class that implements axTLS subsystem interface.
+@end deftp
+
+@deftp {Class} <mbed-tls>
+@clindex mbed-tls
+@c MOD rfc.tls
+A class that implements mbedTLS subsystem interface.
+@end deftp
+
+@deffn {Parameter} default-tls-class :optional class
+@c MOD rfc.tls
+Set/get the default TLS subsystem to be used.  Without arguments, it
+return a class (either @code{<ax-tls>} or @code{<mbed-tls>} to be used.
+With one argument, which must be either @code{<ax-tls>} or @code{<mbed-tls>},
+changes the default and returns the previous value.
+@end deffn
+
+@deffn {Parameter} tls-ca-bundle-path :optional path
+@c MOD rfc.tls
+Set/get the CA certificate bundle path to be used.  Without arguments, it
+returns the current path.  With one argument, a pathname to the CA bundle
+file, updates the parameter to the new value and returns the previous value.
+
+If you use mbedTLS, you need to set this value to the valid CA bundle
+file.  Unfortunately there's no globally agreed location for such file.
+If you need one, one choice is to fetch it from 
+@url{https://curl.haxx.se/ca/cacert.pem}, store it locally and set its path
+to @code{tls-ca-bundle-path}.  (We can't automatically do that, since
+we can't securely fetch the file before we get valid CA certs!)
+@end deffn
+
+
+@c ----------------------------------------------------------------------
+@node URI parsing and construction, Zlib compression library, Transport layer security, Library modules - Utilities
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 

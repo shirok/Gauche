@@ -4321,10 +4321,17 @@ encoding scheme.  @xref{Multibyte strings}, for the details.
 @c COMMON
 
 @item gauche.net.tls
+@itemx gauche.net.tls.axtls
+@itemx gauche.net.tls.mbedtls
 @c EN
 Defined if the runtime supports TLS in networking.
+The two sub feature identifiers, @code{gauche.net.tls.axtls} and
+@code{gauche.net.tls.mbedtls}, are defined if each subsystem
+@code{axTLS} and @code{mbedTLS} is supported, respectively.
 @c JP
-TLS/SSLサポートがあれば定義されます。
+TLS/SSLサポートがあれば定義されます。サブ機能識別子@code{gauche.net.tls.axtls}と
+@code{gauche.net.tls.mbedtls}は、それぞれサブシステム@code{axTLS}
+と@code{mbedTLS}がサポートされていれば定義されます。
 @c COMMON
 
 @item gauche.net.ipv6
