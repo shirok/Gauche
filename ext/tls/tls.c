@@ -100,7 +100,9 @@ ScmObj Scm_TLSDestroy(ScmTLS* t)
 
 ScmObj Scm_TLSClose(ScmTLS* t)
 {
-    return t->close(t);
+    /* Extra parenthesis to keep close() from being macro-expanded by
+       windows compatibility macro. */
+    return (t->close)(t);
 }
 
 ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
@@ -121,12 +123,16 @@ ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
 
 ScmObj Scm_TLSRead(ScmTLS* t)
 {
-    return t->read(t);
+    /* Extra parenthesis to keep read() from being macro-expanded by
+       windows compatibility macro. */
+    return (t->read)(t);
 }
 
 ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
 {
-    return t->write(t, msg);
+    /* Extra parenthesis to keep write() from being macro-expanded by
+       windows compatibility macro. */
+    return (t->write)(t, msg);
 }
 
 ScmObj Scm_TLSInputPort(ScmTLS* t)
