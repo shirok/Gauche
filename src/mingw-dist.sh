@@ -118,7 +118,7 @@ make install-examples
 rm -rf $distdir/lib/libgauche.dll*
 case "$MSYSTEM" in
   MINGW64|MINGW32)
-    for dll in libwinpthread-1.dll; do
+    for dll in libwinpthread-1.dll libmbedtls.dll libmbedcrypto.dll libmbedx509.dll; do
       if [ -f $mingwdir/bin/$dll ]; then
         cp $mingwdir/bin/$dll $distdir/bin
       fi

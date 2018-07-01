@@ -52,6 +52,7 @@ You need the following software:
 
    - mingw-w64-x86_64-zlib / mingw-w64-i686-zlib
    - mingw-w64-x86_64-libiconv / mingw-w64-i686-libiconv
+   - mingw-w64-x86_64-mbedtls / mingw-w64-i686-mbedtls
    - texinfo
 
    NOTE: pacman tries to install packages under c:/msys64/mingw64 etc,
