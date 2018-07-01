@@ -209,3 +209,4 @@ test.record
 /src/vminsn.c
 /src/staticinit.c
 /src/staticinit_gdbm.c
+/src/staticinit_mbed.c
