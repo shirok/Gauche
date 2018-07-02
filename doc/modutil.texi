@@ -18575,27 +18575,48 @@ to the following rewriting rules:
 @example
  (sxpath '()) -> (node-join)
  (sxpath '(path-component ...)) ->
-                (node-join (sxpath1 path-component) (sxpath '(...)))
- (sxpath1 '//) -> (node-or
+                (node-join (@i{sxpath1} path-component) (sxpath '(...)))
+ (@i{sxpath1} '//) -> (node-or
                      (node-self (ntype?? '*any*))
                      (node-closure (ntype?? '*any*)))
- (sxpath1 '(equal? x)) -> (select-kids (node-equal? x))
- (sxpath1 '(eq? x))    -> (select-kids (node-eq? x))
- (sxpath1 '(or@@ ...))  -> (select-kids (ntype-names??
+ (@i{sxpath1} '(equal? x)) -> (select-kids (node-equal? x))
+ (@i{sxpath1} '(eq? x))    -> (select-kids (node-eq? x))
+ (@i{sxpath1} '(or@@ ...))  -> (select-kids (ntype-names??
                                           (cdr '(or@@ ...))))
- (sxpath1 '(not@@ ...)) -> (select-kids (sxml:invert
+ (@i{sxpath1} '(not@@ ...)) -> (select-kids (sxml:invert
                                          (ntype-names??
                                           (cdr '(not@@ ...)))))
- (sxpath1 '(ns-id:* x)) -> (select-kids
+ (@i{sxpath1} '(ns-id:* x)) -> (select-kids
                                       (ntype-namespace-id?? x))
- (sxpath1 ?symbol)     -> (select-kids (ntype?? ?symbol))
- (sxpath1 ?string)     -> (txpath ?string)
- (sxpath1 procedure)   -> procedure
- (sxpath1 '(?symbol ...)) -> (sxpath1 '((?symbol) ...))
- (sxpath1 '(path reducer ...)) ->
-                (node-reduce (sxpath path) (sxpathr reducer) ...)
- (sxpathr number)      -> (node-pos number)
- (sxpathr path-filter) -> (filter (sxpath path-filter))
+ (@i{sxpath1} ?symbol)     -> (select-kids (ntype?? ?symbol))
+ (@i{sxpath1} ?string)     -> (@i{txpath} ?string)
+ (@i{sxpath1} procedure)   -> procedure
+ (@i{sxpath1} '(?symbol ...)) -> (@i{sxpath1} '((?symbol) ...))
+ (@i{sxpath1} '(path reducer ...)) ->
+                (node-reduce (sxpath path) (@i{sxpathr} reducer) ...)
+ (@i{sxpathr} number)      -> (node-pos number)
+ (@i{sxpathr} path-filter) -> (filter (sxpath path-filter))
+@end example
+
+@c EN
+Note that the above table is abstract rules to show how it works,
+and not the running code examples.  The nonterminals @i{sxpath1}
+and @i{sxpathr} don't exist as APIs.  The term @i{txpath} is an
+internal function that interprets XPath query given as a string.
+In the code, a string passed to @code{sxpath} is interpreted
+as a XPath query.
+@c JP
+上の表は@code{sxpath}の動作を抽象的な書き換えルールで示すもので、
+動作するコード例ではないことに注意してください。非終端記号@i{sxpath1}と
+@i{sxpathr}はAPIとしては存在しません。また@i{txpath}は
+文字列をXPathクエリとして解釈する内部関数です。
+コードで使う時は、@code{sxpath}に文字列を渡せばそれがXPathクエリとして解釈されます。
+@c COMMON
+
+@example
+;; select all <book> elements whose style attribute value is equal to
+;; the <bookstore> element's speciality attribute value.
+(sxpath "//book[/bookstore/@@specialty=@@style]")
 @end example
 @end defun
 
