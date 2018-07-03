@@ -11,7 +11,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.9.5
+%define version  0.9.6
 %define encoding utf8
 %define threads  pthreads
 
@@ -123,6 +123,9 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
+* Tue Jul  3 2018 Shiro Kawai
+- Gauche release 0.9.6
+
 * Tue May  8 2018 Takahiro Kudou - 0.9.5-3
 - The package of gdbm-devel was assigned to be required for build.
 
