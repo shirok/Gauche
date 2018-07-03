@@ -1,3 +1,4 @@
+;; -*- coding:utf-8 -*-
 ;;;
 ;;; srfi-154
 ;;;
@@ -8,7 +9,7 @@
 
 ;; Copyright notice of the reference implementation:
 ;;
-;; Copyright (C) Marc Nieper-Wiè©Œkirchen (2017).  All Rights Reserved.
+;; Copyright (C) Marc Nieper-Wi√ükirchen (2017).  All Rights Reserved.
 ;;
 ;; Permission is hereby granted, free of charge, to any person
 ;; obtaining a copy of this software and associated documentation

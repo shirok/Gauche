@@ -1,7 +1,7 @@
 ;;;
 ;;; extract - filter bilingual texinfo document
 ;;;
-;;;  Copyright (c) 2001-2017  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2001-2018  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
