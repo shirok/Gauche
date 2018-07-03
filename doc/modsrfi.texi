@@ -6239,6 +6239,341 @@ In Gauche, this is same as @code{tree-map-exists?}
 (@pxref{Treemaps}).
 @end defun
 
+@defun mapping-disjoint? m1 m2
+[SRFI-146]
+@c MOD srfi-146
+Returns @code{#t} iff two mappings @var{m1} and @var{m2} have no keys
+in common.  In other words, there's no such key K that
+satisfy both @code{(mapping-contains? m1 K)} and
+@code{(mapping-contains? m2 K)}.
+@end defun
+
+@subsubheading Accessors
+
+@defun mapping-ref m key :optional failure success
+[SRFI-146]
+@c MOD srfi-146
+Get the value from a mapping @var{m} associated with @var{key},
+and calls @var{success} on the value, and returns its result.
+If @var{m} doesn't have @var{key}, @var{failure} is invoked with no
+arguments and its result is returned.
+Both @var{success} and @var{failure} is called in tail context.
+
+When @var{failure} is omitted and @var{key} is not found, an error
+is signaled.  When @var{success} is omitted, @code{identity} is
+assumed.
+@end defun
+
+@defun mapping-ref/default m key default
+[SRFI-146]
+@c MOD srfi-146
+Returns the value associated to @var{key} from a mapping @var{m}.
+If @var{m} doesn't have @var{key}, @var{default} is returned.
+@end defun
+
+@defun mapping-key-comparator m
+[SRFI-146]
+@c MOD srfi-146
+Returns a comparator used to compare keys in a mapping @var{m}.
+@xref{Basic comparators}, for the details of comparators.
+@end defun
+
+@subsubheading Updaters
+
+Note that the basic premise of mappings srfi is to treat mappings 
+as immutable.  Each updating operation comes with a purely functional
+version (without bang) and a linear update version (with bang), but
+the linear update version may not require to destructively modiy
+the passed mapping; it's merely a hint that it may reuse the
+argument for the efficiency.  You always need to use the returned
+mapping as the result of update.  If you use linear update versions,
+you shouldn't use the passed mapping afterwards, for there's no guarantee
+how the state of the passed mapping is.
+
+@defun mapping-adjoin m arg @dots{}
+@defunx mapping-adjoin! m arg @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-set m arg @dots{}
+@defunx mapping-set! m arg @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-replace m key value
+@defunx mapping-replace! m key value
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+
+@defun mapping-delete m key @dots{}
+@defunx mapping-delete! m key @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-delete-all m key-list
+@defunx mapping-delete-all! m key-list
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+
+@defun mapping-intern m key failure
+@defunx mapping-intern! m key failure
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-update m key updater :optional failure success
+@defunx mapping-update! m key updater :optional failure success
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-update/default m key updater default
+@defunx mapping-update!/default m key updater default
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-pop m :optional failure
+@defunx mapping-pop! m :optional failure
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-search m k failure success
+@defunx mapping-search! m k failure success
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@subsubheading The whole mapping
+
+@defun mapping-size m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-find pred m failure
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-count pred m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-any? pred m
+@defunx mapping-every? pred m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-keys m
+@defunx mapping-values m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-entries m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@subsubsection Mapping and folding
+
+@defun mapping-map proc comparator m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-map/monotone proc comparator m
+@defunx mapping-map/monotone! proc comparator m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-for-each proc m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-fold kons knil m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-fold/reverse kons knil m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-map->list proc m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-filter pred m
+@defunx mapping-filter! pred m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-remove pred m
+@defunx mapping-remove! pred m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-partition pred m
+@defunx mapping-partition! pred m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@subsubheading Copying and conversion
+
+@defun mapping-copy m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping->alist m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun alist->mapping comparator alist
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun alist->mapping! m alist
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun alist->mapping/ordered comparator alist
+@defunx alist->mapping/ordered! m alist
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@subsubheading Submappings
+
+@defun mapping=? comparator m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping<? comparator m1 m2 @dots{}
+@defunx mapping<=? comparator m1 m2 @dots{}
+@defunx mapping>? comparator m1 m2 @dots{}
+@defunx mapping>=? comparator m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@subsubheading Set operations
+
+@defun mapping-union m1 m2 @dots{}
+@defunx mapping-union! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-intersection m1 m2 @dots{}
+@defunx mapping-intersection! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-difference m1 m2 @dots{}
+@defunx mapping-difference! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-xor m1 m2 @dots{}
+@defunx mapping-xor! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@subsubheading Mappings with ordered keys
+
+@defun mapping-min-key m
+@defunx mapping-max-key m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-min-value m
+@defunx mapping-max-value m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-min-entry m
+@defunx mapping-max-entry m
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-key-predecessor m obj failure
+@defunx mapping-key-successor m obj failure
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-range= m obj
+@defunx mapping-range< m obj
+@defunx mapping-range<= m obj
+@defunx mapping-range> m obj
+@defunx mapping-range>= m obj
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-range=! m obj
+@defunx mapping-range<! m obj
+@defunx mapping-range<=! m obj
+@defunx mapping-range>! m obj
+@defunx mapping-range>=! m obj
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-split m obj
+@defunx mapping-split! m obj
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defun mapping-catenate comparator m1 key value m2 
+@defunx mapping-catenate! m1 key value m2 
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@subsubheading Comparators
+
+@defun make-mapping-comparator comparator
+[SRFI-146]
+@c MOD srfi-146
+@end defun
+
+@defvar mapping-comparator
+[SRFI-146]
+@c MOD srfi-146
+@end defvar
+
 
 @node Hashmaps,  , Mappings, Mappings and hashmaps
 @subsection Hashmaps
@@ -6258,6 +6593,350 @@ that the argument won't be used afterwards.
 on treemaps.
 @end deftp
 
+@subsubheading Constructors
+
+@defun hashmap comparator key value @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+Creates a new hashmap with the given @var{comparator},
+whose initial content is
+provided by @var{key} @var{value} @dots{}.
+
+The @var{comparator} argument must be a comparator
+(@xref{Basic comparators}).
+
+The @var{key} @var{value} @dots{} arguments must be
+even length, alternating keys and values.
+
+@example
+(define m (hashmap default-comparator 'a 1 'b 2))
+
+(hashmap-ref m 'a) @result{} 1
+(hashmap-ref m 'b) @result{} 2
+@end example
+@end defun
+
+@defun hashmap-unfold p f g seed comparator
+[SRFI-146]
+@c MOD srfi-146.hash
+Creates a new hashmap, whose content is populated by
+three procedures, @var{p}, @var{f} and @var{g}, and
+a seed value @var{seed}, as follows.
+
+In each iteration, we have a current seed value, whose initial
+value is @var{seed}.
+
+First, @var{p}, a stop predicate, is applied to the current
+seed value. If it returns true, we stop iteration and returns
+the new hashmap.
+
+Next, @var{f} is applied to the current seed value.  It must
+return two values.  The first one is for a key and the second
+one for the value.  We add this pair to the hashmap.
+
+Then, @var{g} is applied to the current seed value.  The result
+becomes the seed value of the next iteration.  And we iterate.
+
+The following example creates a hashmap that maps ASCII characters
+to their character codes:
+
+@example
+(hashmap-unfold (cut >= <> 128)
+                (^c (values (integer->char c) c))
+                (cut + <> 1)
+                0
+                default-comparator)
+@end example
+@end defun
+
+@subsubheading Predicates
+
+@defun hashmap? obj
+[SRFI-146]
+@c MOD srfi-146.hash
+Returns @code{#t} iff @var{obj} is a hashmap object.
+@end defun
+
+@defun hashmap-empty? m
+[SRFI-146]
+@c MOD srfi-146.hash
+@var{M} must be a hashmap.
+Returns @code{#t} if @var{m} is empty, @code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-empty?}
+(@pxref{Treemaps}).
+@end defun
+
+@defun hashmap-contains? m key
+[SRFI-146]
+@c MOD srfi-146.hash
+@var{M} must be a hashmap.
+Returns @code{#t} if @var{m} has an entry with @var{key},
+@code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-exists?}
+(@pxref{Treemaps}).
+@end defun
+
+@defun hashmap-disjoint? m1 m2
+[SRFI-146]
+@c MOD srfi-146.hash
+Returns @code{#t} iff two hashmaps @var{m1} and @var{m2} have no keys
+in common.  In other words, there's no such key K that
+satisfy both @code{(hashmap-contains? m1 K)} and
+@code{(hashmap-contains? m2 K)}.
+@end defun
+
+@subsubheading Accessors
+
+@defun hashmap-ref m key :optional failure success
+[SRFI-146]
+@c MOD srfi-146.hash
+Get the value from a hashmap @var{m} associated with @var{key},
+and calls @var{success} on the value, and returns its result.
+If @var{m} doesn't have @var{key}, @var{failure} is invoked with no
+arguments and its result is returned.
+Both @var{success} and @var{failure} is called in tail context.
+
+When @var{failure} is omitted and @var{key} is not found, an error
+is signaled.  When @var{success} is omitted, @code{identity} is
+assumed.
+@end defun
+
+@defun hashmap-ref/default m key default
+[SRFI-146]
+@c MOD srfi-146.hash
+Returns the value associated to @var{key} from a hashmap @var{m}.
+If @var{m} doesn't have @var{key}, @var{default} is returned.
+@end defun
+
+@defun hashmap-key-comparator m
+[SRFI-146]
+@c MOD srfi-146.hash
+Returns a comparator used to compare keys in a hashmap @var{m}.
+@xref{Basic comparators}, for the details of comparators.
+@end defun
+
+@subsubheading Updaters
+
+Note that the basic premise of hashmaps srfi is to treat hashmaps 
+as immutable.  Each updating operation comes with a purely functional
+version (without bang) and a linear update version (with bang), but
+the linear update version may not require to destructively modiy
+the passed hashmap; it's merely a hint that it may reuse the
+argument for the efficiency.  You always need to use the returned
+hashmap as the result of update.  If you use linear update versions,
+you shouldn't use the passed hashmap afterwards, for there's no guarantee
+how the state of the passed hashmap is.
+
+@defun hashmap-adjoin m arg @dots{}
+@defunx hashmap-adjoin! m arg @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-set m arg @dots{}
+@defunx hashmap-set! m arg @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-replace m key value
+@defunx hashmap-replace! m key value
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+
+@defun hashmap-delete m key @dots{}
+@defunx hashmap-delete! m key @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-delete-all m key-list
+@defunx hashmap-delete-all! m key-list
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+
+@defun hashmap-intern m key failure
+@defunx hashmap-intern! m key failure
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-update m key updater :optional failure success
+@defunx hashmap-update! m key updater :optional failure success
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-update/default m key updater default
+@defunx hashmap-update!/default m key updater default
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-pop m :optional failure
+@defunx hashmap-pop! m :optional failure
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-search m k failure success
+@defunx hashmap-search! m k failure success
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@subsubheading The whole hashmap
+
+@defun hashmap-size m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-find pred m failure
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-count pred m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-any? pred m
+@defunx hashmap-every? pred m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-keys m
+@defunx hashmap-values m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-entries m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@subsubsection Mapping and folding
+
+@defun hashmap-map proc comparator m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-for-each proc m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-fold kons knil m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-map->list proc m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-filter pred m
+@defunx hashmap-filter! pred m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-remove pred m
+@defunx hashmap-remove! pred m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-partition pred m
+@defunx hashmap-partition! pred m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@subsubheading Copying and conversion
+
+@defun hashmap-copy m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap->alist m
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun alist->hashmap comparator alist
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun alist->hashmap! m alist
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@subsubheading Subhashmaps
+
+@defun hashmap=? comparator m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap<? comparator m1 m2 @dots{}
+@defunx hashmap<=? comparator m1 m2 @dots{}
+@defunx hashmap>? comparator m1 m2 @dots{}
+@defunx hashmap>=? comparator m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@subsubheading Set operations
+
+@defun hashmap-union m1 m2 @dots{}
+@defunx hashmap-union! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-intersection m1 m2 @dots{}
+@defunx hashmap-intersection! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-difference m1 m2 @dots{}
+@defunx hashmap-difference! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defun hashmap-xor m1 m2 @dots{}
+@defunx hashmap-xor! m1 m2 @dots{}
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@subsubheading Comparators
+
+@defun make-hashmap-comparator comparator
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defun
+
+@defvar hashmap-comparator
+[SRFI-146]
+@c MOD srfi-146.hash
+@end defvar
 
 
 
