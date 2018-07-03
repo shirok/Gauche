@@ -20,10 +20,6 @@ revised BSD license, except the following component:
    sufficient to rebuild gauche--charconv.dll itself with different
    versions of libiconv.
 
-* bin/libmbedcrypto.dll, bin/libmbedtls.dll, bin/libmbedx509.dll
-
-   These DLLs are licensed by ARM Limited under Apache-2.0 license.
-
 Here's the end of the summary.  The following is the actual copyright
 holders and the exact terms of license for various components of the software.
 

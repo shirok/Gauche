@@ -35,7 +35,6 @@ Gauche/COPYING.rtf : txt2rtf.scm $(COPYING)
 	cat intro-COPYING.txt > copying.tmp
 	sed '1,/^$$/ d' $(COPYING) >> copying.tmp
 	cat libiconv-COPYING.LIB >> copying.tmp
-	cat mbedtls-COPYING.txt >> copying.tmp
 	../../src/gosh -ftest ./txt2rtf.scm copying.tmp Gauche/COPYING.rtf
 
 Gauche/gauche-logo.ico : gauche-logo.ico
