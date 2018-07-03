@@ -22474,7 +22474,7 @@ listed in @var{paths}.
 
 @defun make-template-environment :key extends imports bindings
 Creates and returns a template environment.   A template environment
-is like a module (@xref{Modules}): It maps symbols to values, and
+is like a module (@pxref{Modules}): It maps symbols to values, and
 it can import bindings from other modules, or extend other modules.
 
 The keyword arguments @var{extends} and @var{imports} must be a list

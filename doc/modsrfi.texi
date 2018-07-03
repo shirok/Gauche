@@ -6147,7 +6147,7 @@ whose initial content is
 provided by @var{key} @var{value} @dots{}.
 
 The @var{comparator} argument must be a comparator
-(@xref{Basic comparators}).
+(@pxref{Basic comparators}).
 
 The @var{key} @var{value} @dots{} arguments must be
 even length, alternating keys and values.
@@ -6603,7 +6603,7 @@ whose initial content is
 provided by @var{key} @var{value} @dots{}.
 
 The @var{comparator} argument must be a comparator
-(@xref{Basic comparators}).
+(@pxref{Basic comparators}).
 
 The @var{key} @var{value} @dots{} arguments must be
 even length, alternating keys and values.
