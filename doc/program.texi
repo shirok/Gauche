@@ -2771,7 +2771,7 @@ DSO files are available on target machines, you can exclude
 @subheading build-standaloneスクリプトを使う
 @c COMMON
 
-@deftp {Program} gosh build-standalone [options] script-file [library-file @dots{}]
+@deftp {Program} {gosh build-standalone} [options] script-file [library-file @dots{}]
 @c EN
 Create a stand-alone binary to execute a Gauche program in @var{script-file}.
 It is executed as if it is run as @code{gosh script-file}, with a few
