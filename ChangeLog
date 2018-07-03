@@ -1,3 +1,7 @@
+2018-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* Document regular-string$.
+
 2018-07-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.scm: Set rfc.tls.mbed autoloaded by referencing

@@ -3657,6 +3657,32 @@ multiple generators for sampling.
 @end example
 @end defun
 
+@defun regular-string$ regexp
+@c MOD data.random
+@c EN
+Creates an infinite
+generator that generates random strings each of which matches the given
+@var{regexp}.  The @var{regexp} shouldn't include conditional patterns
+and lookahead/behind assertions.
+
+Note: It is hard to define how the distribution of the generated strings
+should look like.  For now, we build an NFA from regexp and put the
+same probability when there are multiple choices, but that may not be
+really useful for typical use cases (e.g. generate test data).
+Please assume the current implementation strategy a provisional one.
+@c JP
+与えられた@var{regexp}にマッチするランダムな文字列を生成し続けるジェネレータを
+作って返します。@var{regexp}には条件付きパターン、lookahead/lookbehindアサーションを
+含めないでください。
+
+註: 生成される文字列の分布をどうすべきかというのは難しい問題です。
+現在の実装は単純に、内部で正規表現からNFAを生成し、複数の選択肢がある場合は
+等しい重みでランダムに選択していますが、それが目的(例えばテストデータの生成)に
+ふさわしいかどうかはまだわかりません。
+現在の実装は暫定的なものと考えてください。
+@c COMMON
+@end defun
+
 @c EN
 @subheading Nonuniform distributions
 @c JP
