@@ -1933,6 +1933,11 @@ always satisfy @var{test-expr}.
 Currently, Gauche evaluates @var{test-expr}, and if it evaluates to false,
 an error is signalled.
 @c JP
+このフォームに続くコードパスにおいて、@var{test-expr}が常に満たされている、
+というプログラマの意図を宣言します。
+
+今のところ、Gaucheは@var{text-expr}を評価し、
+それが偽となった場合はエラーを報告します。
 @c COMMON
 
 @example
