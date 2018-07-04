@@ -90,8 +90,9 @@
   
 (define *pager* (or (and-let1 s (sys-getenv "PAGER")
                       (shell-tokenize-string s))
-                    (find-file-in-paths "less")
-                    (find-file-in-paths "more")))
+                    (and-let1 cmd (or (find-file-in-paths "less")
+                                      (find-file-in-paths "more"))
+                      (list cmd))))
 
 (define (viewer-pager s)
   (let1 p (run-process *pager* :input :pipe)
