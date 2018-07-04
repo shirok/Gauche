@@ -209,6 +209,20 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
     ScmAxTLS *t = (ScmAxTLS*)tls;
     ax_context_check(t, "connect");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
+
+    ScmObj ca_bundle_path = SCM_UNDEFINED;
+    SCM_BIND_PROC(ca_bundle_path, "tls-ca-bundle-path",
+                  SCM_FIND_MODULE("rfc.tls", 0));
+    ScmObj s_ca_file = Scm_ApplyRec0(ca_bundle_path);
+    if (!SCM_STRINGP(s_ca_file)) {
+        Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
+                  " but got: %S", s_ca_file);
+    }
+    const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
+    if (ssl_obj_load(t->ctx, SSL_OBJ_X509_CACERT, ca_file, NULL)) {
+        Scm_Error("CA bundle can't load: file=%S", s_ca_file);
+    }
+
     t->conn = ssl_client_new(t->ctx, fd, 0, 0, NULL);
     int r = ssl_handshake_status(t->conn);
     if (r != SSL_OK) {
