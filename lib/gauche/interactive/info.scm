@@ -88,7 +88,8 @@
 (define (entry-name e)
   (if-let1 m (#/ <\d+>$/ e) (rxmatch-before m) e))
   
-(define *pager* (or (sys-getenv "PAGER")
+(define *pager* (or (and-let1 s (sys-getenv "PAGER")
+                      (shell-tokenize-string s))
                     (find-file-in-paths "less")
                     (find-file-in-paths "more")))
 
