@@ -972,7 +972,7 @@ srfi-143, srfi-143
 Finxums
 Supported by the module @code{srfi-143}.  @xref{Fixnums}.
 
-Fixnumx
+Fixnums
 モジュール@code{srfi-143}でサポートされます。@ref{Fixnums}参照。
 
 
