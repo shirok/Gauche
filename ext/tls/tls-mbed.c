@@ -126,7 +126,7 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
                   SCM_FIND_MODULE("rfc.tls", 0));
     ScmObj s_ca_file = Scm_ApplyRec0(ca_bundle_path);
     if (!SCM_STRINGP(s_ca_file)) {
-        Scm_Error("Parameter tls-ca-certificate-path must have a string value,"
+        Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
                   " but got: %S", s_ca_file);
     }
     const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
