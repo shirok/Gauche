@@ -53,14 +53,6 @@
           symbol-hash number-hash hash-bound))
 (select-module gauche.hashutil)
 
-;; TRANSIENT: Precompiling with 0.9.5 doesn't load assume-type yet.
-;; Remove this after 0.9.6 release.
-(cond-expand
- [gauche-0.9.5 (define-syntax assume-type
-                 (syntax-rules ()
-                   [(_ x type) (check-arg (cut is-a? <> type) x)]))]
- [else])
-
 (define unique (cons #f #f))
 
 ;; vararg constructor 'hash-table' has conflicting API between

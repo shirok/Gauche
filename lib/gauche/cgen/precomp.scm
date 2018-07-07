@@ -1035,10 +1035,7 @@
   ((id-name        :init-keyword :id-name)
    (module-literal :init-keyword :module-literal))
   (make (value)
-    ;; TRANSIENT: After 0.9.6 release, we can directly call identifier-toplevel?
-    (unless (if (global-variable-bound? 'gauche.internal 'identifier-toplevel?)
-              ((with-module gauche.internal identifier-toplevel?) value)
-              (null? (~ value'env)))
+    (unless ((with-module gauche.internal identifier-toplevel?) value)
       (error "identifier with compiler environment can't be compiled" value))
     (make <cgen-scheme-identifier> :value value
           :c-name (cgen-allocate-static-datum)
