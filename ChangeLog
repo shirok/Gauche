@@ -1,10 +1,12 @@
 2018-07-09  Shiro Kawai <shiro@acm.org>
 
+	* ext/sxml/src/SSAX.scm: Fix whitespace handling.
+	  https://github.com/shirok/Gauche/pull/360
 	* ext/sxml/src/serializer.scm (srl:attribute->str-lst): Dropped
 	  special handling of boolean attributes indicated as attr='attr'.
 	  It is indistinguishable from a string attribute with the value
 	  being 'attr'.  It is harmless to render it as ordinary attributes.
-	  Patch by @pclouds https://github.com/shirok/Gauche/pull/359 
+	  Patch by @pclouds https://github.com/shirok/Gauche/pull/359
 
 2018-07-04  Shiro Kawai  <shiro@acm.org>
 
