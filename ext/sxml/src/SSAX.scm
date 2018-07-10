@@ -2559,6 +2559,17 @@
 		  (cons (string-concatenate/shared strs) result)))
 	      '() #t)))))))
 
+; call either ssax:reverse-collect-str or
+; ssax:reverse-collect-str-drop-ws depending the attribute
+; xml:space="preserve"
+(define (ssax:reverse-collect-str-optionally-drop-ws fragments attrs)
+  (let ((xml-space (find (lambda (attr)
+			   (eq? (car attr) 'xml:space))
+			 attrs)))
+    (if (and (list? xml-space) (string=? (cadr xml-space) "preserve"))
+	(ssax:reverse-collect-str fragments)
+	(ssax:reverse-collect-str-drop-ws fragments))))
+
 
 ; procedure: ssax:xml->sxml PORT NAMESPACE-PREFIX-ASSIG
 ;
@@ -2596,15 +2607,14 @@
    
 	     FINISH-ELEMENT
 	     (lambda (elem-gi attributes namespaces parent-seed seed)
-	       (let ((seed (ssax:reverse-collect-str-drop-ws seed))
-		     (attrs
-		      (attlist-fold
-		       (lambda (attr accum)
-			 (cons (list 
-				(if (symbol? (car attr)) (car attr)
-				    (RES-NAME->SXML (car attr)))
-				(cdr attr)) accum))
-		       '() attributes)))
+	       (let* ((attrs (attlist-fold
+			     (lambda (attr accum)
+			       (cons (list
+				      (if (symbol? (car attr)) (car attr)
+					  (RES-NAME->SXML (car attr)))
+				      (cdr attr)) accum))
+			     '() attributes))
+		      (seed (ssax:reverse-collect-str-optionally-drop-ws seed attrs)))
 		 (cons
 		  (cons 
 		   (if (symbol? elem-gi) elem-gi
@@ -2678,6 +2688,10 @@
 	  '(*TOP* (A (@ (xml:space "preserve") (HREF "URL"))
 		     "  link " (I (@ (xml:space "default"))
 				  "itlink ") " &amp;")))
+    (test "   <A HREF='URL' xml:space='preserve'>    </A>" '()
+	  '(*TOP* (A (@ (xml:space "preserve") (HREF "URL")) "    ")))
+    (test "   <A HREF='URL' xml:space='default'>    </A>" '()
+	  '(*TOP* (A (@ (xml:space "default") (HREF "URL")))))
     (test " <P><?pi1  p1 content ?>?<?pi2 pi2? content? ??></P>" '()
 	  '(*TOP* (P (*PI* pi1 "p1 content ") "?"
 		     (*PI* pi2 "pi2? content? ?"))))
