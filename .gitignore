@@ -159,6 +159,7 @@ test.record
 /lib/math/mt-random.scm
 /lib/os/
 /lib/rfc/sha1.scm
+/lib/rfc/tls/mbed.scm
 /lib/rfc/zlib.scm
 /lib/srfi/
 /lib/sxml/
