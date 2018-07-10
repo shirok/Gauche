@@ -637,9 +637,7 @@
                   srl:string->att-value) attval)
              "\""))
       ((eq? method 'html)
-       (if (string=? local-part attval)  ; boolean attribute
-           (list " " local-part)
-           (list " " local-part "=\"" (srl:string->html-att attval) "\"")))
+       (list " " local-part "=\"" (srl:string->html-att attval) "\""))
       (else  ; unprefixed attribute, XML output method
        (list " " local-part "=\"" (srl:string->att-value attval) "\"")))))
 
