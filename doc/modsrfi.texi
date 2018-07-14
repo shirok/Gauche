@@ -6358,19 +6358,57 @@ creates a new mapping.
 @defunx mapping-delete! m key @dots{}
 [SRFI-146]
 @c MOD srfi-146
+Returns a mapping that is the same as @var{m} except its entries with
+any of the given @var{key} @dots{} being removed.  Keys that are
+not in @var{m} are ignored.
+
+Linear update version @code{mapping-delete!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-delete}
+creates a new mapping.
 @end defun
 
 @defun mapping-delete-all m key-list
 @defunx mapping-delete-all! m key-list
 [SRFI-146]
 @c MOD srfi-146
+Returns a mapping that is the same as @var{m} except its entries with
+any of the given keys in @var{key-list} being removed.  Keys that are
+not in @var{m} are ignored.
+
+Linear update version @code{mapping-delete-all!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-delete-all}
+creates a new mapping.
 @end defun
 
 
-@defun mapping-intern m key failure
-@defunx mapping-intern! m key failure
+@defun mapping-intern m key make-value
+@defunx mapping-intern! m key make-value
 [SRFI-146]
 @c MOD srfi-146
+Looks up @var{key} in the mapping @var{m}, and returns two values,
+@var{m} and the associated value.  If @var{m} does not contain an entry
+with @var{key}, a thunk @var{make-value} is invoked, and creates a new
+mapping that contains all entries in @var{m} plus a new entry with
+@var{key} and the return value of @var{make-value}, then returns the
+new mapping and the return value of @var{make-value}.
+
+Linear update version @code{mapping-intern!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-intern}
+creates a new mapping.
+
+@example
+(mapping-intern (mapping default-comparator 'a 1) 'b (^[] 2))
+  @result{}
+  @r{mapping with @t{a} @arrow{} 1, @t{b} @arrow{} 2}
+  @r{and}
+  2
+
+(mapping-intern (mapping default-comparator 'a 1) 'a (^[] 2))
+  @result{}
+  @r{mapping with @t{a} @arrow{} 1}
+  @r{and}
+  1
+@end example
 @end defun
 
 @defun mapping-update m key updater :optional failure success
