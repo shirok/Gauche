@@ -151,11 +151,13 @@ ScmObj Scm_TLSOutputPort(ScmTLS* t)
 ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port)
 {
     t->in_port = port;
+    return SCM_UNDEFINED;
 }
 
 ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
     t->out_port = port;
+    return SCM_UNDEFINED;
 }
 
 void Scm_Init_tls(ScmModule *mod)
@@ -246,6 +248,8 @@ static ScmObj ax_accept(ScmTLS* tls, int fd)
     ax_context_check(t, "accept");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
     t->conn = ssl_server_new(t->ctx, fd);
+
+    return SCM_UNDEFINED;
 }
 
 static ScmObj ax_read(ScmTLS* tls)
@@ -288,6 +292,8 @@ static ScmObj ax_close(ScmTLS *tls)
         t->server_name = NULL;
         t->common.in_port = t->common.out_port = SCM_UNDEFINED;
     }
+
+    return SCM_UNDEFINED;
 }
 
 static ScmObj ax_loadObject(ScmTLS* tls, ScmObj obj_type,
