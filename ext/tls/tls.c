@@ -73,6 +73,9 @@ static ScmParameterLoc ca_bundle_path;
 static ScmParameterLoc default_tls_class;
 static ScmObj k_options;
 static ScmObj k_num_sessions;
+#if defined(GAUCHE_USE_AXTLS)
+static ScmObj k_server_name;
+#endif
 
 /*
  * Common operations
@@ -173,6 +176,7 @@ void Scm_Init_tls(ScmModule *mod)
                                  &ca_bundle_path);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
+    k_server_name = SCM_MAKE_KEYWORD("server-name");
 }
 
 static const uint8_t* get_message_body(ScmObj msg, size_t *size)
@@ -187,8 +191,6 @@ static const uint8_t* get_message_body(ScmObj msg, size_t *size)
  */
 
 #if defined(GAUCHE_USE_AXTLS)
-
-static ScmObj k_server_name;
 
 typedef struct ScmAxTLSRec {
     ScmTLS common;
