@@ -188,11 +188,14 @@ static const uint8_t* get_message_body(ScmObj msg, size_t *size)
 
 #if defined(GAUCHE_USE_AXTLS)
 
+static ScmObj k_server_name;
+
 typedef struct ScmAxTLSRec {
     ScmTLS common;
     SSL_CTX* ctx;
     SSL* conn;
     SSL_EXTENSIONS* extensions;
+    ScmString *server_name;
 } ScmAxTLS;
 
 static void ax_context_check(ScmAxTLS* t, const char* op)
@@ -224,7 +227,9 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
         Scm_Error("CA bundle can't load: file=%S", s_ca_file);
     }
 
-    t->conn = ssl_client_new(t->ctx, fd, 0, 0, NULL);
+    t->extensions->host_name = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
+
+    t->conn = ssl_client_new(t->ctx, fd, 0, 0, t->extensions);
     int r = ssl_handshake_status(t->conn);
     if (r != SSL_OK) {
         Scm_Error("TLS handshake failed: %d", r);
@@ -275,7 +280,9 @@ static ScmObj ax_close(ScmTLS *tls)
     ScmAxTLS *t = (ScmAxTLS*)tls;
     if (t->ctx && t->conn) {
         ssl_free(t->conn);
+        ssl_ext_free(t->extensions);
         t->conn = 0;
+        t->server_name = NULL;
         t->common.in_port = t->common.out_port = SCM_UNDEFINED;
     }
 }
@@ -316,10 +323,14 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     if (SCM_INTP(s_num_sessions)) {
         num_sessions = SCM_INT_VALUE(s_num_sessions);
     }
+    ScmObj server_name = Scm_GetKeyword(k_server_name, initargs, SCM_UNBOUND);
+    if (!SCM_STRINGP(server_name) && !SCM_FALSEP(server_name)) {
+        Scm_TypeError("mbed-tls server-name", "string or #f", server_name);
+    }
 
     t->ctx = ssl_ctx_new(options, num_sessions);
     t->conn = NULL;
-    t->extensions = NULL;
+    t->extensions = ssl_ext_new();
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
     t->common.connect = ax_connect;
