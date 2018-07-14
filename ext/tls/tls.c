@@ -282,8 +282,8 @@ static ScmObj ax_close(ScmTLS *tls)
     ScmAxTLS *t = (ScmAxTLS*)tls;
     if (t->ctx && t->conn) {
         ssl_free(t->conn);
-        ssl_ext_free(t->extensions);
         t->conn = 0;
+        ssl_ext_free(t->extensions);
         t->server_name = NULL;
         t->common.in_port = t->common.out_port = SCM_UNDEFINED;
     }
