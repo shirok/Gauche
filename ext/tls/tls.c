@@ -181,13 +181,6 @@ void Scm_Init_tls(ScmModule *mod)
     k_server_name = SCM_MAKE_KEYWORD("server-name");
 }
 
-static const uint8_t* get_message_body(ScmObj msg, size_t *size)
-{
-    if (SCM_UVECTORP(msg) || SCM_STRINGP(msg)) {
-    }
-    return Scm_GetBytes(msg, size);
-}
-
 /*=========================================================
  * axTLS
  */

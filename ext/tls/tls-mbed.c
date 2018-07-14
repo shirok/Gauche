@@ -71,21 +71,6 @@ typedef struct ScmMbedTLSRec {
     ScmString *server_name;
 } ScmMbedTLS;
 
-/* NB: This is a dupe from tls.c;  */
-static const uint8_t* get_message_body(ScmObj msg, u_int *size)
-{
-    if (SCM_UVECTORP(msg)) {
-        *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(msg));
-        return (const uint8_t*) SCM_UVECTOR_ELEMENTS(msg);
-    } else if (SCM_STRINGP(msg)) {
-        return (const uint8_t*)Scm_GetStringContent(SCM_STRING(msg), size, 0, 0);
-    } else {
-        Scm_TypeError("TLS message", "uniform vector or string", msg);
-        *size = 0;
-        return 0;
-    }
-}
-
 
 static void mbed_context_check(ScmMbedTLS* t, const char* op)
 {
