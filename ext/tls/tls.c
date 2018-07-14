@@ -325,7 +325,7 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     }
     ScmObj server_name = Scm_GetKeyword(k_server_name, initargs, SCM_UNBOUND);
     if (!SCM_STRINGP(server_name) && !SCM_FALSEP(server_name)) {
-        Scm_TypeError("mbed-tls server-name", "string or #f", server_name);
+        Scm_TypeError("ax-tls server-name", "string or #f", server_name);
     }
 
     t->ctx = ssl_ctx_new(options, num_sessions);
