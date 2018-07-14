@@ -304,7 +304,7 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmAxTLS* t = SCM_NEW_INSTANCE(ScmAxTLS, klass);
 
-    uint32_t options = SSL_SERVER_VERIFY_LATER;
+    uint32_t options = 0;
     ScmObj s_options = Scm_GetKeyword(k_options, initargs, SCM_UNDEFINED);
     if (SCM_INTEGERP(s_options)) {
         options = Scm_GetIntegerU32Clamp(s_options, SCM_CLAMP_ERROR, NULL);
