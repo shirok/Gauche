@@ -6294,18 +6294,63 @@ how the state of the passed mapping is.
 @defunx mapping-adjoin! m arg @dots{}
 [SRFI-146]
 @c MOD srfi-146
+The @var{arg} @dots{} are alternating between key and value.  Returns
+a mapping that contains all the entries in @var{m} plus given
+keys and values, with the same comparator as @var{m}.
+Linear update version @code{mapping-adjoin!} may destructively modify
+@var{m} to create the return value, while @code{mapping-adjoin}
+creates a new mapping.
+
+Argments are processed in order.
+If there's already an entry in @var{m} with the same key as given to
+@var{arg}, the original entry remains.
+
+@example
+(mapping-adjoin (mapping default-comparator 'a 1 'b 2) 'c 3 'a 4 'c 5)
+ @result{} @r{mapping with @t{a} @arrow{} 1, @t{b} @arrow{} 2, @t{c} @arrow{} 3}
+@end example
 @end defun
 
 @defun mapping-set m arg @dots{}
 @defunx mapping-set! m arg @dots{}
 [SRFI-146]
 @c MOD srfi-146
+The @var{arg} @dots{} are alternating between key and value.  Returns
+a mapping that contains all the entries in @var{m} plus given
+keys and values, with the same comparator as @var{m}.
+Linear update version @code{mapping-set!} may destructively modify
+@var{m} to create the return value, while @code{mapping-set}
+creates a new mapping.
+
+Argments are processed in order.
+If there's already an entry in @var{m} with the same key as given to
+@var{arg}, the new key-value pair supersedes the old one.
+
+@example
+(mapping-set (mapping default-comparator 'a 1 'b 2) 'c 3 'a 4 'c 5)
+ @result{} @r{mapping with @t{a} @arrow{} 4, @t{b} @arrow{} 2, @t{c} @arrow{} 5}
+@end example
 @end defun
 
 @defun mapping-replace m key value
 @defunx mapping-replace! m key value
 [SRFI-146]
 @c MOD srfi-146
+If the mapping @var{m} has an entry of @var{key}, return a mapping
+with the value of the entry replaced for @var{value}.  If @var{m} doesn't
+have an entry with @var{key}, @var{m} is returned unchanged.
+
+Linear update version @code{mapping-replace!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-replace}
+creates a new mapping.
+
+@example
+(mapping-replace (mapping default-comparator 'a 1 'b 2) 'a 3)
+ @result{} @r{mapping with @t{a} @arrow{} 3, @t{b} @arrow{} 2}
+
+(mapping-replace (mapping default-comparator 'a 1 'b 2) 'c 3)
+ @result{} @r{mapping with @t{a} @arrow{} 1, @t{b} @arrow{} 2}
+@end example
 @end defun
 
 
