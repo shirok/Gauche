@@ -333,6 +333,7 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     t->ctx = ssl_ctx_new(options, num_sessions);
     t->conn = NULL;
     t->extensions = ssl_ext_new();
+    t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
     t->common.connect = ax_connect;
