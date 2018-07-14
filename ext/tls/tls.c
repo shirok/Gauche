@@ -192,6 +192,7 @@ typedef struct ScmAxTLSRec {
     ScmTLS common;
     SSL_CTX* ctx;
     SSL* conn;
+    SSL_EXTENSIONS* extensions;
 } ScmAxTLS;
 
 static void ax_context_check(ScmAxTLS* t, const char* op)
@@ -318,6 +319,7 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
 
     t->ctx = ssl_ctx_new(options, num_sessions);
     t->conn = NULL;
+    t->extensions = NULL;
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
     t->common.connect = ax_connect;
