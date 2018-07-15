@@ -531,6 +531,12 @@ init_cond_features()
            try to use <mbed-tls>. */
         { "gauche.net.tls.mbedtls", NULL },
 #endif
+
+        /* zlib */
+#if defined(USE_ZLIB)
+        { "gauche.sys.zlib", "rfc.zlib" },
+#endif
+        
         { NULL, NULL }
     };
 

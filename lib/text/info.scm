@@ -37,7 +37,10 @@
   (use text.parse)
   (use gauche.process)
   (use file.util)
-  (use rfc.zlib)
+  (cond-expand
+   [gauche.sys.zlib 
+    (use rfc.zlib)]
+   [else])
   (export <info-file> <info-node>
           open-info-file info-get-node info-parse-menu
           info-extract-definition
@@ -65,6 +68,11 @@
 ;; Find bzip2 location
 (define bzip2  (find-file-in-paths "bzip2"))
 
+(cond-expand
+ [gauche.sys.zlib]
+ [else
+  (define gzip (find-file-in-paths "gzip"))])
+
 ;; Read an info file FILE, and returns a list of strings splitted by ^_ (#\u001f)
 ;; If FILE is not found, look for compressed one.
 (define (read-info-file-split file opts)
@@ -72,10 +80,14 @@
     (cond [(file-exists? file)
            (with-input-from-file file thunk)]
           [(file-exists? #"~|file|.gz")
-           (call-with-input-file #"~|file|.gz"
-             (^p (let1 zp (open-inflating-port p :window-bits 31) ;force gzip format
-                   (unwind-protect (with-input-from-port zp thunk)
-                     (close-input-port zp)))))]
+           (cond-expand
+            [gauche.sys.zlib
+             (call-with-input-file #"~|file|.gz"
+               (^p (let1 zp (open-inflating-port p :window-bits 31) ;force gzip format
+                     (unwind-protect (with-input-from-port zp thunk)
+                       (close-input-port zp)))))]
+            [else
+             (with-input-from-process #"~gzip -c -d ~|file|.gz" thunk)])]
           [(and bzip2 (file-exists? #"~|file|.bz2"))
            (with-input-from-process #"~bzip2 -c -d ~|file|.bz2" thunk)]
           [else (error "can't find info file" file)]))

@@ -1,3 +1,10 @@
+2018-07-15  Shiro Kawai <shiro@acm.org>
+
+	* src/core.c: Add feature identifier gauche.sys.zlib to detect
+	  whether rfc.zlib is available.  (The name of feature identifier
+	  is debatable; let's see how it sits.)
+	* lib/text/info.scm: Make it work even --without-zlib.
+
 2018-07-09  Shiro Kawai <shiro@acm.org>
 
 	* ext/sxml/src/SSAX.scm: Fix whitespace handling.
