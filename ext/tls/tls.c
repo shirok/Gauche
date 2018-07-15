@@ -229,7 +229,8 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
         Scm_Error("CA bundle can't load: file=%S", s_ca_file);
     }
 
-    t->extensions->host_name = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
+    const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
+    t->extensions->host_name = hostname;
 
     t->conn = ssl_client_new(t->ctx, fd, 0, 0, t->extensions);
     int r = ssl_handshake_status(t->conn);
