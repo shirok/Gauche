@@ -466,6 +466,31 @@
            (ma-s m 'ei)
            (slot-ref m 'a))))
 
+;; Another tricky interference between modules and implicit setter.
+;; The :accessor slot option may create the setter generic function
+;; with the weird name |setter of <getter-name>|.  The name isn't supposed
+;; to be visible from the user ever.  However, until 0.9.6, when the 
+;; MB.base below does not export the setter name, the derived class 
+;; couldn't find the setter gf and created a separate setter gf, making it
+;; incompatible with base class and derived class.
+(define-module MB.base
+  (export <mb-base> mb-a)
+  (define-class <mb-base> ()
+    ((a :accessor mb-a :init-value 0))))
+
+(define-module MB.derived
+  (import MB.base)
+  (export <mb-base> <mb-derived> mb-a)
+  (define-class <mb-defived> (<mb-base>) ()))
+
+(test* "module and implicit setter" 3
+       ;; This caused 'no applicable method for #<generic |setter of mb-a|>
+       ;; in 0.9.6 and before.
+       (with-module MB.derived
+         (let1 m (make <mb-base>)
+           (set! (mb-a m) 3)
+           (~ m 'a))))
+
 ;;----------------------------------------------------------------
 (test-section "class redefinition (part 1)")
 

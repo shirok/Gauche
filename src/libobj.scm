@@ -362,9 +362,10 @@
     (when %setter
       (make-setter (%ensure-generic-function %setter module)))
     (when %accessor
-      (let ([gf  (%ensure-generic-function %accessor module)]
-            [gfs (%ensure-generic-function (%make-setter-name %accessor)
-                                           module)])
+      (let* ([gf  (%ensure-generic-function %accessor module)]
+             [gfs (or (setter gf)
+                      (%ensure-generic-function (%make-setter-name %accessor)
+                                                module))])
         (make-getter gf)
         (make-setter gfs)
         (set! (setter gf) gfs)

@@ -1,5 +1,14 @@
 2018-07-15  Shiro Kawai <shiro@acm.org>
 
+	* src/libobj.scm (%make-accessor): Fix the confusing behavior regarding
+	  implicit setter gf visibility, reported in
+	  https://sourceforge.net/p/gauche/mailman/message/36363814/ .
+	  Now we try to find setter gf from the getter gf first, before
+	  creating our own |setter of ...|.  (Actually, we might get rid of
+	  |setter of ...| thing altogether by keeping setter gf anonymous,
+	  but there may be old code that depends on the existence of
+	  the named setter gf.)
+
 	* src/core.c: Add feature identifier gauche.sys.zlib to detect
 	  whether rfc.zlib is available.  (The name of feature identifier
 	  is debatable; let's see how it sits.)
