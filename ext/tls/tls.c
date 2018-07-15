@@ -219,7 +219,7 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
                   " but got: %S", s_ca_file);
     }
     const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
-    if (ssl_obj_load(t->ctx, SSL_OBJ_X509_CACERT, ca_file, NULL)) {
+    if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT), ca_file, NULL))) {
         Scm_Error("CA bundle can't load: file=%S", s_ca_file);
     }
 
