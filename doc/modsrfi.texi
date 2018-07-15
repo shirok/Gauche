@@ -6415,6 +6415,41 @@ creates a new mapping.
 @defunx mapping-update! m key updater :optional failure success
 [SRFI-146]
 @c MOD srfi-146
+Semantically equivalent to this:
+
+@example
+(mapping-set @var{m} @var{var}
+  (@var{updater} (mapping-ref @var{m} @var{key} @var{failure} @var{success})))
+@end example
+
+The @var{failure} and @var{success} optional arguments are procedures
+with zero and one arguments, respectively.  When omitted,
+@var{failure} defaults to a thunk that raises an error,
+and @var{success} defaults to @code{identity}.
+
+First, @var{key} is looked up in @var{m}.  If an entry is found,
+the associated value is passed to @var{success}; otherwise,
+@var{failure} is called with no arguments.  Either way, let the returned
+value be @var{v0}.
+
+Then, @var{v0} is passed to @var{updater}.  Let its result be @var{v1}.
+
+Finally, a mapping with the same entries as @var{m} except the value of
+@var{key} is altered to @var{v1} is returned.
+
+Linear update version @code{mapping-update!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-update}
+creates a new mapping.
+
+@example
+(mapping-update (mapping default-comparator 'a 1)
+                'a (pa$ + 1))
+ @result{} @r{mapping with @t{a} @arrow{} 2}
+
+(mapping-update (mapping default-comparator)
+                'a (pa$ + 1) (^[] 0))
+ @result{} @r{mapping with @t{a} @arrow{} 1}
+@end example
 @end defun
 
 @defun mapping-update/default m key updater default
