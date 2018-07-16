@@ -1,5 +1,5 @@
 ;;;
-;;; comppile-i.scm - Inliners of builtin procedures
+;;; compile-i.scm - Inliners of builtin procedures
 ;;;
 ;;;   Copyright (c) 2004-2018  Shiro Kawai  <shiro@acm.org>
 ;;;
