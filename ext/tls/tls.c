@@ -73,6 +73,9 @@ static ScmParameterLoc ca_bundle_path;
 static ScmParameterLoc default_tls_class;
 static ScmObj k_options;
 static ScmObj k_num_sessions;
+#if defined(GAUCHE_USE_AXTLS)
+static ScmObj k_server_name;
+#endif
 
 /*
  * Common operations
@@ -148,11 +151,13 @@ ScmObj Scm_TLSOutputPort(ScmTLS* t)
 ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port)
 {
     t->in_port = port;
+    return SCM_UNDEFINED;
 }
 
 ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
     t->out_port = port;
+    return SCM_UNDEFINED;
 }
 
 void Scm_Init_tls(ScmModule *mod)
@@ -173,13 +178,7 @@ void Scm_Init_tls(ScmModule *mod)
                                  &ca_bundle_path);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
-}
-
-static const uint8_t* get_message_body(ScmObj msg, size_t *size)
-{
-    if (SCM_UVECTORP(msg) || SCM_STRINGP(msg)) {
-    }
-    return Scm_GetBytes(msg, size);
+    k_server_name = SCM_MAKE_KEYWORD("server-name");
 }
 
 /*=========================================================
@@ -192,6 +191,8 @@ typedef struct ScmAxTLSRec {
     ScmTLS common;
     SSL_CTX* ctx;
     SSL* conn;
+    SSL_EXTENSIONS* extensions;
+    ScmString *server_name;
 } ScmAxTLS;
 
 static void ax_context_check(ScmAxTLS* t, const char* op)
@@ -209,7 +210,24 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
     ScmAxTLS *t = (ScmAxTLS*)tls;
     ax_context_check(t, "connect");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
-    t->conn = ssl_client_new(t->ctx, fd, 0, 0, NULL);
+
+    ScmObj ca_bundle_path = SCM_UNDEFINED;
+    SCM_BIND_PROC(ca_bundle_path, "tls-ca-bundle-path",
+                  SCM_FIND_MODULE("rfc.tls", 0));
+    ScmObj s_ca_file = Scm_ApplyRec0(ca_bundle_path);
+    if (!SCM_STRINGP(s_ca_file)) {
+        Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
+                  " but got: %S", s_ca_file);
+    }
+    const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
+    if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT), ca_file, NULL))) {
+        Scm_Error("CA bundle can't load: file=%S", s_ca_file);
+    }
+
+    const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
+    t->extensions->host_name = hostname;
+
+    t->conn = ssl_client_new(t->ctx, fd, 0, 0, t->extensions);
     int r = ssl_handshake_status(t->conn);
     if (r != SSL_OK) {
         Scm_Error("TLS handshake failed: %d", r);
@@ -223,6 +241,8 @@ static ScmObj ax_accept(ScmTLS* tls, int fd)
     ax_context_check(t, "accept");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
     t->conn = ssl_server_new(t->ctx, fd);
+
+    return SCM_UNDEFINED;
 }
 
 static ScmObj ax_read(ScmTLS* tls)
@@ -261,8 +281,12 @@ static ScmObj ax_close(ScmTLS *tls)
     if (t->ctx && t->conn) {
         ssl_free(t->conn);
         t->conn = 0;
+        t->extensions = NULL;
+        t->server_name = NULL;
         t->common.in_port = t->common.out_port = SCM_UNDEFINED;
     }
+
+    return SCM_UNDEFINED;
 }
 
 static ScmObj ax_loadObject(ScmTLS* tls, ScmObj obj_type,
@@ -290,7 +314,7 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmAxTLS* t = SCM_NEW_INSTANCE(ScmAxTLS, klass);
 
-    uint32_t options = SSL_SERVER_VERIFY_LATER;
+    uint32_t options = 0;
     ScmObj s_options = Scm_GetKeyword(k_options, initargs, SCM_UNDEFINED);
     if (SCM_INTEGERP(s_options)) {
         options = Scm_GetIntegerU32Clamp(s_options, SCM_CLAMP_ERROR, NULL);
@@ -301,9 +325,15 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     if (SCM_INTP(s_num_sessions)) {
         num_sessions = SCM_INT_VALUE(s_num_sessions);
     }
+    ScmObj server_name = Scm_GetKeyword(k_server_name, initargs, SCM_UNBOUND);
+    if (!SCM_STRINGP(server_name) && !SCM_FALSEP(server_name)) {
+        Scm_TypeError("ax-tls server-name", "string or #f", server_name);
+    }
 
     t->ctx = ssl_ctx_new(options, num_sessions);
     t->conn = NULL;
+    t->extensions = ssl_ext_new();
+    t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
     t->common.connect = ax_connect;

@@ -15035,8 +15035,8 @@ individual subsystems can be checked with feature identifiers
 @code{gauche.net.tls.axtls} and @code{gauche.net.tls.mbedtls}, respectively.
 @xref{Feature conditional}, for more about feature identifiers.
 
-In the current version, we don't verify certificates by default in axTLS,
-but we do in mbedTLS.  You need to specify the location of CA certificates
+In the current version, we verify certificates by default in axTLS
+and mbedTLS.  You need to specify the location of CA certificates
 explicitly when you want to verify, unless the CA certificate location
 is specified at the configuration time.  In future, we might set the
 default CA certificate file automatically so that users don't need
