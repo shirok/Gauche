@@ -109,11 +109,11 @@ AC_ARG_WITH([ca-bundle],
                   mbed TLS.]),
   [
     AS_CASE([$with_ca_bundle],
-	[yes|no], [AC_DEFINE([GAUCHE_CA_BUNDLE], ["ca-cert.crt"])],
-                  [AC_DEFINE_UNQUOTED([GAUCHE_CA_BUNDLE], ["$with_ca_bundle"], [CA file path])]
+	[no], [AC_DEFINE([GAUCHE_CA_BUNDLE], [NULL])],
+              [AC_DEFINE_UNQUOTED([GAUCHE_CA_BUNDLE], ["$with_ca_bundle"], [CA file path])]
      )
   ], [
-    AC_DEFINE([GAUCHE_CA_BUNDLE], ["ca-cert.crt"])
+    AC_DEFINE([GAUCHE_CA_BUNDLE], [NULL])
   ])
 
 dnl

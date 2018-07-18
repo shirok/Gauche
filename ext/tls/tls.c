@@ -174,7 +174,9 @@ void Scm_Init_tls(ScmModule *mod)
 #endif
                                  &default_tls_class);
     Scm_DefinePrimitiveParameter(mod, "tls-ca-bundle-path",
-                                 SCM_MAKE_STR(GAUCHE_CA_BUNDLE),
+                                 (GAUCHE_CA_BUNDLE
+                                  ? SCM_MAKE_STR(GAUCHE_CA_BUNDLE)
+                                  : SCM_FALSE),
                                  &ca_bundle_path);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
@@ -215,13 +217,20 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
     SCM_BIND_PROC(ca_bundle_path, "tls-ca-bundle-path",
                   SCM_FIND_MODULE("rfc.tls", 0));
     ScmObj s_ca_file = Scm_ApplyRec0(ca_bundle_path);
-    if (!SCM_STRINGP(s_ca_file)) {
-        Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
-                  " but got: %S", s_ca_file);
-    }
-    const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
-    if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT), ca_file, NULL))) {
-        Scm_Error("CA bundle can't load: file=%S", s_ca_file);
+    if (SCM_FALSEP(s_ca_file)) {
+        if (!(t->ctx->options & SSL_SERVER_VERIFY_LATER)) {
+            Scm_Error("axTLS: tls-ca-bundle-path must be set to validate server certs.");
+        }
+    } else {
+        if (!SCM_STRINGP(s_ca_file)) {
+            Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
+                      " but got: %S", s_ca_file);
+        }
+        const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
+        if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT),
+                                   ca_file, NULL))) {
+            Scm_Error("CA bundle can't load: file=%S", s_ca_file);
+        }
     }
 
     const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;

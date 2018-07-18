@@ -110,7 +110,10 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     SCM_BIND_PROC(ca_bundle_path, "tls-ca-bundle-path",
                   SCM_FIND_MODULE("rfc.tls", 0));
     ScmObj s_ca_file = Scm_ApplyRec0(ca_bundle_path);
-    if (!SCM_STRINGP(s_ca_file)) {
+    if (SCM_FALSEP(s_ca_file)) {
+        Scm_Error("mbedTLS: tls-ca-bundle-path isn't set. It is required to"
+                  " validate server certs.");
+    } if (!SCM_STRINGP(s_ca_file)) {
         Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
                   " but got: %S", s_ca_file);
     }

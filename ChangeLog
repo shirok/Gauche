@@ -1,3 +1,18 @@
+2018-07-17  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Support server cert validation in axTLS, too.
+	  https://github.com/shirok/Gauche/pull/362
+	* lib/rfc/http.scm (start-secure-agent)
+	  It is desirable to validate certs always.  However, for the backward
+	  compatiblity, we proceed the migration gradually.
+	  - If tls-ca-bundle-path isn't given at configuation time, we set its
+	    default value to #f.
+	  - If tls-ca-bundle-path is #f at the time of start-secure-agent,
+	    we use SSL_SERVER_VERIFY_LATER.  (It is ignored by <mbed-tls>).
+	  Next step is to issue warnings when we don't validate certs, then
+	  we switch the default to always validate unless user explicitly
+	  asks not to.
+
 2018-07-15  Shiro Kawai <shiro@acm.org>
 
 	* src/libobj.scm (%make-accessor): Fix the confusing behavior regarding
