@@ -180,7 +180,9 @@ void Scm_Init_tls(ScmModule *mod)
                                  &ca_bundle_path);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
+#if defined(GAUCHE_USE_AXTLS)
     k_server_name = SCM_MAKE_KEYWORD("server-name");
+#endif
 }
 
 /*=========================================================
