@@ -521,8 +521,10 @@ int x509_verify(const CA_CERT_CTX *ca_cert_ctx, const X509_CTX *cert,
                    asserted, then the certified public key MUST NOT be used 
                    to verify certificate signatures. */
                 if (cert->basic_constraint_present && 
-                        !ca_cert_ctx->cert[i]->basic_constraint_cA)
+                        !ca_cert_ctx->cert[i]->basic_constraint_cA) {
+                    i++;
                     continue;
+                }
                         
                 if (asn1_compare_dn(cert->ca_cert_dn,
                                             ca_cert_ctx->cert[i]->cert_dn) == 0)
