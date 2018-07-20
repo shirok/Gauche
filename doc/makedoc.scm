@@ -59,6 +59,7 @@
   (define info (path-swap-extension input "info"))
   (or (string-null? makeinfo)
       (string-null? gzip)
+      (not (check-makeinfo-version makeinfo "5.0"))
       (and (do-process (make-cmd `(,makeinfo ,input)))
            (begin (remove-files (glob #"~|info|*.gz"))
                   (do-process (make-cmd `(,gzip ,info ,@(glob #"~|info|-[0-9]*"))))))))
