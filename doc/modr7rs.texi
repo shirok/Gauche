@@ -1928,8 +1928,13 @@ with-input-from-file with-output-to-file write write-char zero?
 @section R7RS large
 @c NODE R7RS large
 
+@c EN
 R7RS large is still under development, and we're gradually
 adding support of the libraries that has been passed.
+@c JP
+R7RS largeはまだ策定途上ですが、既に決定したライブラリについては
+徐々にGaucheに追加してゆきます。
+@c COMMON
 
 @menu
 * R7RS lists::                  @code{scheme.list}
@@ -2553,12 +2558,21 @@ The cells in the first list argument may be reused to construct the result.
 
 @deftp {Module} scheme.vector
 @mdindex scheme.vector
+@c EN
 This module adds rich set of vector operations to the built-in / R7RS
 vector procedures.
+@c JP
+このモジュールは豊富なベクタ操作を提供します。
+@c COMMON
 
+@c EN
 The following procedures are built-in.
 @xref{Vectors}, for the description.  We only explain
 the procedures that are not built-in.
+@c JP
+以下の手続きはGaucheでは組み込みになっています。説明は@ref{Vectors}を参照してください。
+組み込みでない手続きについてのみ解説します。
+@c COMMON
 
 @example
 make-vector          vector               vector?
@@ -2569,21 +2583,35 @@ reverse-list->vector vector->string       string->vector
 vector-map           vector-map!          vector-for-each
 @end example
 
+@c EN
 This module is @code{srfi-133}, which supersedes @code{srfi-43}
 (@pxref{Vector library (Legacy)}).
 Note that the interface of following procedures in @code{srfi-43}
 are changed for the consistency:
+@c JP
+このモジュールは@code{srfi-133}として制定され、
+@code{srfi-43}(@ref{Vector library (Legacy)})を置き換えるものです。
+@code{srfi-43}の手続きのうち、以下のものは一貫性からインタフェースが
+変更されていることに注意してください。
+@c COMMON
 
 @example
 vector-map           vector-map!          vector-for-each
 vector-fold          vector-fold-right    vector-count
 @end example
 
+@c EN
 Some of the functionalities
 of @code{srfi-43} version is supported by built-in procedures
 (e.g. Built-in @code{vector-map-with-index} is the same as
 @code{srfi-43}'s @code{vector-map}).  So there's little point
 for new code to use @code{srfi-43}.
+@c JP
+@code{srfi-43}から削られた機能の一部は、
+Gaucheの組み込み手続きでサポートされています
+(例えば@code{srfi-43}の@code{vector-map}は組み込みの@code{vector-map-with-index}と
+同じです)。新しいコードで@code{srfi-43}を使う必要はほとんどないでしょう。
+@c COMMON
 @end deftp
 
 @c EN
