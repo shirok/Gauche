@@ -628,24 +628,6 @@ static const char *safe_basename(const char *path)
     return Scm_GetStringConst(SCM_STRING(bn));
 }
 
-/* Experimental: auto expand gc heap */
-static void auto_expand_gc_heap(GC_word hs_now1) {
-    static size_t hs_next = 0;
-    size_t hs_now = hs_now1;
-
-    if (hs_now > hs_next) {
-        if      (hs_now < 1024*1024*10)  { hs_next = 1024*1024*10; }
-        else if (hs_now < 1024*1024*50)  { hs_next = 1024*1024*50; }
-        else if (hs_now < 1024*1024*100) { hs_next = 1024*1024*100; }
-        else { hs_next = hs_now + 1024*1024*100 - (hs_now % (1024*1024*100)); }
-        if (hs_next - hs_now > 0) {
-            GC_set_on_heap_resize(NULL);
-            GC_expand_hp(hs_next - hs_now);
-            GC_set_on_heap_resize(auto_expand_gc_heap);
-        }
-    }
-}
-
 /*-----------------------------------------------------------------
  * MAIN
  */
@@ -673,7 +655,6 @@ int main(int ac, char **av)
     }
     
     GC_INIT();
-    GC_set_on_heap_resize(auto_expand_gc_heap);
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
 

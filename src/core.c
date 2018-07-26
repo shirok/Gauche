@@ -44,11 +44,30 @@ extern void GC_print_static_roots(void);
 /*
  * out-of-memory handler.  this will be called by GC.
  */
-
 static void *oom_handler(size_t bytes)
 {
     Scm_Panic("out of memory (%lu).  aborting...", bytes);
     return NULL;                /* dummy */
+}
+
+/*
+ * EXPERIMENTAL: auto expand GC heap
+ */
+static void auto_expand_gc_heap(GC_word hs_now1) {
+    static size_t hs_next = 0;
+    size_t hs_now = hs_now1;
+
+    if (hs_now > hs_next) {
+        if      (hs_now < 1024*1024*10)  { hs_next = 1024*1024*10; }
+        else if (hs_now < 1024*1024*50)  { hs_next = 1024*1024*50; }
+        else if (hs_now < 1024*1024*100) { hs_next = 1024*1024*100; }
+        else { hs_next = hs_now + 1024*1024*100 - (hs_now % (1024*1024*100)); }
+        if (hs_next - hs_now > 0) {
+            GC_set_on_heap_resize(NULL);
+            GC_expand_hp(hs_next - hs_now);
+            GC_set_on_heap_resize(auto_expand_gc_heap);
+        }
+    }
 }
 
 /*
@@ -147,6 +166,10 @@ void Scm_Init(const char *signature)
     GC_oom_fn = oom_handler;
     GC_finalize_on_demand = TRUE;
     GC_finalizer_notifier = finalizable;
+
+    /* EXPERIMENTAL: auto expand GC heap */
+    if (!getenv("GAUCHE_EXPAND_GC_HEAP_OFF"))
+        GC_set_on_heap_resize(auto_expand_gc_heap);
 
     (void)SCM_INTERNAL_MUTEX_INIT(cond_features.mutex);
 
