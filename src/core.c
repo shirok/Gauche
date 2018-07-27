@@ -54,14 +54,14 @@ static void *oom_handler(size_t bytes)
  * EXPERIMENTAL: auto expand GC heap
  */
 static ScmInternalMutex auto_expand_gc_heap_mutex;
-static int auto_expand_gc_heap_disabled = FALSE;
+static int auto_expand_gc_heap_counter = 0;
 int Scm_GC_expand_hp(size_t bytes) {
     SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    auto_expand_gc_heap_disabled = TRUE;
+    auto_expand_gc_heap_counter++;
     SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
     int ret = GC_expand_hp(bytes);
     SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    auto_expand_gc_heap_disabled = FALSE;
+    auto_expand_gc_heap_counter--;
     SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
     return ret;
 }
@@ -70,11 +70,11 @@ static void auto_expand_gc_heap_handler(GC_word hs_now1) {
     size_t hs_now = hs_now1;
 
     SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    if (auto_expand_gc_heap_disabled) {
+    if (auto_expand_gc_heap_counter > 0) {
         SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
         return;
     }
-    auto_expand_gc_heap_disabled = TRUE;
+    auto_expand_gc_heap_counter++;
     SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
 
     if (hs_now > hs_next) {
@@ -88,7 +88,7 @@ static void auto_expand_gc_heap_handler(GC_word hs_now1) {
     }
 
     SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    auto_expand_gc_heap_disabled = FALSE;
+    auto_expand_gc_heap_counter--;
     SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
 }
 
