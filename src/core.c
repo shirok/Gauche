@@ -53,9 +53,29 @@ static void *oom_handler(size_t bytes)
 /*
  * EXPERIMENTAL: auto expand GC heap
  */
-static void auto_expand_gc_heap(GC_word hs_now1) {
+static ScmInternalMutex auto_expand_gc_heap_mutex;
+static int auto_expand_gc_heap_disabled = FALSE;
+int Scm_GC_expand_hp(size_t bytes) {
+    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
+    auto_expand_gc_heap_disabled = TRUE;
+    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+    int ret = GC_expand_hp(bytes);
+    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
+    auto_expand_gc_heap_disabled = FALSE;
+    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+    return ret;
+}
+static void auto_expand_gc_heap_handler(GC_word hs_now1) {
     static size_t hs_next = 0;
     size_t hs_now = hs_now1;
+
+    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
+    if (auto_expand_gc_heap_disabled) {
+        SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+        return;
+    }
+    auto_expand_gc_heap_disabled = TRUE;
+    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
 
     if (hs_now > hs_next) {
         if      (hs_now < 1024*1024*10)  { hs_next = 1024*1024*10; }
@@ -63,11 +83,13 @@ static void auto_expand_gc_heap(GC_word hs_now1) {
         else if (hs_now < 1024*1024*100) { hs_next = 1024*1024*100; }
         else { hs_next = hs_now + 1024*1024*100 - (hs_now % (1024*1024*100)); }
         if (hs_next - hs_now > 0) {
-            GC_set_on_heap_resize(NULL);
             GC_expand_hp(hs_next - hs_now);
-            GC_set_on_heap_resize(auto_expand_gc_heap);
         }
     }
+
+    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
+    auto_expand_gc_heap_disabled = FALSE;
+    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
 }
 
 /*
@@ -168,8 +190,10 @@ void Scm_Init(const char *signature)
     GC_finalizer_notifier = finalizable;
 
     /* EXPERIMENTAL: auto expand GC heap */
-    if (!getenv("GAUCHE_EXPAND_GC_HEAP_OFF"))
-        GC_set_on_heap_resize(auto_expand_gc_heap);
+    SCM_INTERNAL_MUTEX_INIT(auto_expand_gc_heap_mutex);
+    if (!getenv("GAUCHE_AUTO_EXPAND_GC_HEAP_OFF")) {
+        GC_set_on_heap_resize(auto_expand_gc_heap_handler);
+    }
 
     (void)SCM_INTERNAL_MUTEX_INIT(cond_features.mutex);
 
