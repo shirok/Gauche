@@ -51,43 +51,76 @@ static void *oom_handler(size_t bytes)
 }
 
 /*
- * EXPERIMENTAL: auto expand GC heap
+ * EXPERIMENTAL: GC auto expand heap
  */
-static ScmInternalMutex auto_expand_gc_heap_mutex;
-static int auto_expand_gc_heap_counter = 0;
+static int gc_expand_heap_enabled = FALSE;
+static int gc_debug_info_enabled = FALSE;
+static int gc_expand_lock_counter = 0;
+static int gc_resize_heap_counter = 0;
+static int gc_collect_event_counter = 0;
+static ScmInternalMutex gc_expand_heap_mutex;
+static ScmInternalMutex gc_debug_info_mutex;
+/* alternative of GC_expand_hp API to avoid deadlock */
 int Scm_GC_expand_hp(size_t bytes) {
-    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    auto_expand_gc_heap_counter++;
-    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+    if (!gc_expand_heap_enabled) return GC_expand_hp(bytes);
+    SCM_INTERNAL_MUTEX_LOCK(gc_expand_heap_mutex);
+    gc_expand_lock_counter++;
+    SCM_INTERNAL_MUTEX_UNLOCK(gc_expand_heap_mutex);
     int ret = GC_expand_hp(bytes);
-    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    auto_expand_gc_heap_counter--;
-    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+    SCM_INTERNAL_MUTEX_LOCK(gc_expand_heap_mutex);
+    gc_expand_lock_counter--;
+    SCM_INTERNAL_MUTEX_UNLOCK(gc_expand_heap_mutex);
     return ret;
 }
-static void auto_expand_gc_heap_handler(GC_word hs_now1) {
+static void gc_resize_heap_handler(GC_word hs_now) {
+    SCM_INTERNAL_MUTEX_LOCK(gc_debug_info_mutex);
+    gc_resize_heap_counter++;
+    fprintf(stderr, "GC resized=%d collected=%d heap_size=%d\n",
+            gc_resize_heap_counter, gc_collect_event_counter, (int)hs_now);
+    fflush(stderr);
+    SCM_INTERNAL_MUTEX_UNLOCK(gc_debug_info_mutex);
+}
+static void gc_expand_heap_handler(GC_word hs_now1) {
     static size_t hs_last = 0;
     size_t hs_now = hs_now1;
     size_t hs_next;
 
-    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    if (auto_expand_gc_heap_counter > 0 || hs_now <= hs_last) {
-        SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+    if (gc_debug_info_enabled) gc_resize_heap_handler(hs_now1);
+
+    SCM_INTERNAL_MUTEX_LOCK(gc_expand_heap_mutex);
+    if (gc_expand_lock_counter > 0 || hs_now <= hs_last) {
+        SCM_INTERNAL_MUTEX_UNLOCK(gc_expand_heap_mutex);
         return;
     }
-    auto_expand_gc_heap_counter++;
-    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+    gc_expand_lock_counter++;
+    SCM_INTERNAL_MUTEX_UNLOCK(gc_expand_heap_mutex);
 
+    /* expand heap to a fixed size */
     if      (hs_now < 1024*1024*10)  { hs_next = 1024*1024*10; }
     else if (hs_now < 1024*1024*50)  { hs_next = 1024*1024*50; }
     else if (hs_now < 1024*1024*100) { hs_next = 1024*1024*100; }
     else { hs_next = hs_now + 1024*1024*100 - (hs_now % (1024*1024*100)); }
     if (hs_next - hs_now > 0) GC_expand_hp(hs_next - hs_now);
 
-    SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
+    SCM_INTERNAL_MUTEX_LOCK(gc_expand_heap_mutex);
     if (hs_next - hs_now > 0) hs_last = hs_next;
-    auto_expand_gc_heap_counter--;
-    SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
+    gc_expand_lock_counter--;
+    SCM_INTERNAL_MUTEX_UNLOCK(gc_expand_heap_mutex);
+}
+static void gc_collect_event_handler(GC_EventType type) {
+    if (type == GC_EVENT_END) {
+        SCM_INTERNAL_MUTEX_LOCK(gc_debug_info_mutex);
+        gc_collect_event_counter++;
+        SCM_INTERNAL_MUTEX_UNLOCK(gc_debug_info_mutex);
+    }
+}
+static void gc_debug_finish_handler(void *data) {
+    SCM_INTERNAL_MUTEX_LOCK(gc_debug_info_mutex);
+    fprintf(stderr, "GC total resized=%d\n", gc_resize_heap_counter);
+    fprintf(stderr, "GC total collected=%d\n", gc_collect_event_counter);
+    fprintf(stderr, "GC final heap_size=%d\n", (int)GC_get_heap_size());
+    fflush(stderr);
+    SCM_INTERNAL_MUTEX_UNLOCK(gc_debug_info_mutex);
 }
 
 /*
@@ -187,10 +220,20 @@ void Scm_Init(const char *signature)
     GC_finalize_on_demand = TRUE;
     GC_finalizer_notifier = finalizable;
 
-    /* EXPERIMENTAL: auto expand GC heap */
-    SCM_INTERNAL_MUTEX_INIT(auto_expand_gc_heap_mutex);
-    if (!getenv("GAUCHE_AUTO_EXPAND_GC_HEAP_OFF")) {
-        GC_set_on_heap_resize(auto_expand_gc_heap_handler);
+    /* EXPERIMENTAL: GC auto expand heap */
+    if (!getenv("GAUCHE_GC_AUTO_EXPAND_HEAP_OFF")) {
+        gc_expand_heap_enabled = TRUE;
+        SCM_INTERNAL_MUTEX_INIT(gc_expand_heap_mutex);
+        GC_set_on_heap_resize(gc_expand_heap_handler);
+    }
+    if (getenv("GAUCHE_GC_DEBUG_INFO")) {
+        gc_debug_info_enabled = TRUE;
+        SCM_INTERNAL_MUTEX_INIT(gc_debug_info_mutex);
+        GC_set_on_collection_event(gc_collect_event_handler);
+        if (!gc_expand_heap_enabled) {
+            GC_set_on_heap_resize(gc_resize_heap_handler);
+        }
+        Scm_AddCleanupHandler(gc_debug_finish_handler, NULL);
     }
 
     (void)SCM_INTERNAL_MUTEX_INIT(cond_features.mutex);
