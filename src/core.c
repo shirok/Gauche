@@ -66,28 +66,26 @@ int Scm_GC_expand_hp(size_t bytes) {
     return ret;
 }
 static void auto_expand_gc_heap_handler(GC_word hs_now1) {
-    static size_t hs_next = 0;
+    static size_t hs_last = 0;
     size_t hs_now = hs_now1;
+    size_t hs_next;
 
     SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
-    if (auto_expand_gc_heap_counter > 0) {
+    if (auto_expand_gc_heap_counter > 0 || hs_now <= hs_last) {
         SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
         return;
     }
     auto_expand_gc_heap_counter++;
     SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
 
-    if (hs_now > hs_next) {
-        if      (hs_now < 1024*1024*10)  { hs_next = 1024*1024*10; }
-        else if (hs_now < 1024*1024*50)  { hs_next = 1024*1024*50; }
-        else if (hs_now < 1024*1024*100) { hs_next = 1024*1024*100; }
-        else { hs_next = hs_now + 1024*1024*100 - (hs_now % (1024*1024*100)); }
-        if (hs_next - hs_now > 0) {
-            GC_expand_hp(hs_next - hs_now);
-        }
-    }
+    if      (hs_now < 1024*1024*10)  { hs_next = 1024*1024*10; }
+    else if (hs_now < 1024*1024*50)  { hs_next = 1024*1024*50; }
+    else if (hs_now < 1024*1024*100) { hs_next = 1024*1024*100; }
+    else { hs_next = hs_now + 1024*1024*100 - (hs_now % (1024*1024*100)); }
+    if (hs_next - hs_now > 0) GC_expand_hp(hs_next - hs_now);
 
     SCM_INTERNAL_MUTEX_LOCK(auto_expand_gc_heap_mutex);
+    if (hs_next - hs_now > 0) hs_last = hs_next;
     auto_expand_gc_heap_counter--;
     SCM_INTERNAL_MUTEX_UNLOCK(auto_expand_gc_heap_mutex);
 }
