@@ -1933,8 +1933,6 @@ SCM_EXTERN void Scm_PrintStaticRoots(void);
 SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
                                void *bss_start, void *bss_end);
 SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);
-/* alternative of GC_expand_hp API to avoid deadlock */
-SCM_EXTERN int  Scm_GC_expand_hp(size_t bytes);
 
 SCM_EXTERN ScmObj Scm_GetFeatures(void);
 SCM_EXTERN void   Scm_AddFeature(const char *feature, const char *mod);
