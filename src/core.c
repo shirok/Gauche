@@ -222,6 +222,7 @@ void Scm_Init(const char *signature)
     SCM_INTERNAL_MUTEX_INIT(gc_expand_heap_mutex);
     if (!getenv("GAUCHE_GC_AUTO_HEAP_OFF")) {
         gc_expand_heap_enabled = TRUE;
+        gc_heap_size_now = GC_get_heap_size();
     }
     if (getenv("GAUCHE_GC_DEBUG_INFO")) {
         gc_debug_info_enabled = TRUE;
