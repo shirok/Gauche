@@ -14381,7 +14381,7 @@ whose elements are calculated lazily.
 Internally we have a special type of pairs, whose @code{cdr}
 is evaluated on demand.
 However, in Scheme level, you'll never see a distinct
-``lazy-pair'' type.   As soon as you try to access the
+``lazy-pair'' type.   As soon as you try to access a
 lazy pair, Gauche automatically @emph{force} the delayed
 calculation, and the lazy pair turns into an ordinary pair.
 @c JP
@@ -14404,7 +14404,7 @@ procedures such as @code{car}, @code{cdr} or @code{map}.
 @c EN
 Look at the following example; @code{generator->lseq}
 takes a procedure that generates one value at a time, and
-returns a lazy sequence consists of those values.
+returns a lazy sequence that consists of those values.
 @c JP
 次の例を見てください。@code{generator->lseq}は、
 「呼ばれる度に次の値を返す」という手続きを取り、返される値からなる遅延シーケンス
@@ -14423,14 +14423,16 @@ returns a lazy sequence consists of those values.
 @c EN
 It returns the position of the first occurrence of
 character sequence ``car'' or ``cdr'' in the file @file{file}.
-Characters are read as needed, so once the sequence is
-found, the rest of the files won't be read.  If we do
-it eagerly, we would have to read entire file first no matter how
+The loop treats the lazy sequence just like an ordinary list, but
+characters are read as needed, so once the sequence is
+found, the rest of the file won't be read.  If we do
+it eagerly, we would have to read the entire file first no matter how
 big it is, or to give up using the mighty @code{match} macro and
 to write a basic state machine that reads one character one at a time.
 @c JP
 このコードは、ファイル@file{file}中に最初に出現する
 ``car''または``cdr''という文字列の場所を返します。
+ループは遅延シーケンスを通常のリストのように扱っていますが、
 文字は必要に応じて読まれ、目的の文字列が見つかれば残りは読まれません。
 これを遅延無しでやろうとすると、一旦全てのファイルを読み込んでリストに
 変換するか、あるいは便利な@code{match}マクロを使うのを諦めて
