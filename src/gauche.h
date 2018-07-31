@@ -1528,11 +1528,6 @@ struct ScmSubrRec {
 #define SCM_DEFINE_SUBRX(cvar, req, opt, cst, inf, flags, func, inliner, data) \
     SCM__DEFINE_SUBR_INT(cvar, req, opt, cst, inf, flags, func, inliner, data)
 
-/* TRANSIENT: old interface.  will be gone. */
-#define SCM_DEFINE_SUBRI(cvar, req, opt, inf, func, inliner, data) \
-    SCM__DEFINE_SUBR_INT(cvar, req, opt, 0, inf, SCM_SUBR_IMMEDIATE_ARG, \
-                         func, inliner, data)
-
 SCM_EXTERN ScmObj Scm_MakeSubr(ScmSubrProc *func,
                                void *data,
                                int required, int optional,

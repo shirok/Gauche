@@ -102,12 +102,6 @@ struct ScmCompiledCodeRec {
  *       Pass2 scans it when IForm is inlined into the caller site.
  */
 
-/* TRANSIENT: ***WARNING - NAMESPACE POLLUTION*** Certain versions of
-   0.9.5_pre1 precompiler emits C code that refers to the old name
-   ScmCompiledCode.argInfo.  This is a dirty workaround to allow compiling
-   such precompiled code.   Make sure to remove this after 0.9.5 release.  */
-#define argInfo  signatureInfo
-
 SCM_CLASS_DECL(Scm_CompiledCodeClass);
 #define SCM_CLASS_COMPILED_CODE   (&Scm_CompiledCodeClass)
 
