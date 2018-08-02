@@ -518,6 +518,28 @@ the return value of @code{sys-available-processors}.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_EDITOR
+@deftpx {Environment variable} EDITOR
+@c EN
+This is used by @code{ed} procedure in @code{gauche.interactive} module.
+@xref{Interactive session}, for the details.
+@c JP
+これは@code{gauche.interactive}モジュールの@code{ed}手続きで使われます。
+詳しくは@ref{Interactive session}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_READ_EDIT
+@c EN
+This is used by @code{gauche.interactive} module to enable line-editor
+on REPL prompt.  @xref{Interactive development}, for the details.
+@c JP
+これはREPLプロンプトで行編集機能を利用可能にするために
+@code{gauche.interactive}で使われます。
+詳しくは@ref{Interactive development}を参照してください。
+@c COMMON
+@end deftp
+
 @deftp {Environment variable} GAUCHE_KEYWORD_DISJOINT
 @deftpx {Environment variable} GAUCHE_KEYWORD_IS_SYMBOL
 @c EN
@@ -550,6 +572,32 @@ use only if you absolutely need to.
 @c JP
 システムの警告(@code{WARNING: ...})を抑止します。気軽に使うべきではありません。
 どうしても必要な場合のみ使ってください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_TEST_REPORT_ERROR
+@c EN
+This is used by @code{gauche.test} module (@pxref{Unit testing}).
+If defined, reports stack trace to stderr
+when the test thunk raises an error (even when it is expected).
+Useful for diagnosis of unexpected errors.
+@c JP
+@code{gauche.test}モジュールで使われます(@ref{Unit testing}参照)。
+定義されていた場合、テストのthunkがエラーを報告した場合に、
+スタックトレースを標準エラー出力に表示します
+(エラーがもともと期待されているテストでも出力されます)。
+予想外のエラー発生の原因を調べるのに便利です。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_TEST_RECORD_FILE
+@c EN
+This is used by @code{gauche.test} module (@pxref{Unit testing}).
+If defined, names a file the test processes
+keep the total statistics.
+@c JP
+@code{gauche.test}モジュールで使われます(@ref{Unit testing}参照)。
+定義されていた場合、その値を名前とするファイルにテストの統計が記録されます。
 @c COMMON
 @end deftp
 
