@@ -7,4 +7,4 @@
 
 top_builddir=$1
 
-${MAKE:=make} -C "${top_builddir}/ext" list-objects | grep $top_builddir | grep -v 'make\[.*\]: \(Entering\|Leaving\) directory'
+${MAKE:=make} -C "${top_builddir}/ext" -s list-objects
