@@ -130,5 +130,5 @@ unlink :
 
 list-objects:
 	@if test "X$(OBJECTS)" != X; then \
-	   for o in $(OBJECTS); do echo "`pwd`/$$o"; done;\
+	   for o in $(OBJECTS); do realpath "$$o"; done;\
 	fi
