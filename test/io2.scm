@@ -1,7 +1,7 @@
-;; test for write/ss and read/ss
+;; test for advanced read/write features
 ;;
-;; this test is splitted from io.scm, since this one uses util.isomorph,
-;; and has to be done after the test of util.* module.
+;; These test is splitted from io.scm, since they depend on other modules
+;; has to be done after their tests.
 
 (use gauche.test)
 (use srfi-1)
@@ -686,5 +686,14 @@
 (test* "no newline" "(a\n a)"
        (call-with-output-string 
          (cut pprint '(a a) :width 3 :newline #f :port <>)))
+
+;;===============================================================
+;; utf-8 with BOM
+;;
+
+(test* "utf-8 with BOM" "foo!"
+       (begin
+         (load "data/utf-8-bom.scm" :paths `(,(sys-dirname (current-load-path))))
+         (foo)))
 
 (test-end)

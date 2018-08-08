@@ -149,6 +149,10 @@
                       (restore-load-context)
                       (raise e2))])
       (setup-load-context)
+      ;; Discard BOM
+      (when (eq? (gauche-character-encoding) 'utf-8)
+        (when (eqv? (peek-char port) #\ufeff)
+          (read-char port)))
       (do ([s (read port) (read port)])
           [(eof-object? s)]
         (eval s #f)))
