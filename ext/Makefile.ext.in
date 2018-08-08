@@ -130,5 +130,5 @@ unlink :
 
 list-objects:
 	@if test "X$(OBJECTS)" != X; then \
-	   realpath $(OBJECTS); \
+	   echo $(realpath $(OBJECTS)); \
 	fi
