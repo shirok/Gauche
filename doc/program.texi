@@ -19,13 +19,13 @@
 @c NODE Gaucheを起動する
 
 @c EN
-Gauche can be used either as an independent Scheme interpreter
-or as an embedded Scheme library.   The interpreter
+Gauche can be used either as an independent Scheme scripting engine
+or as an embedded Scheme library.   An interactive interpreter
 which comes with Gauche distribution is a program named @code{gosh}.
 @c JP
-Gaucheは独立したSchemeインタプリタとしても、組み込みのSchemeライブラリとしても
+Gaucheは独立したSchemeスクリプティングエンジンとしても、組み込みのSchemeライブラリとしても
 使うことができます。Gaucheのディストリビューションには、@code{gosh}という
-インタプリタが附属しています。
+インタラクティブなインタプリタが附属しています。
 @c COMMON
 
 @deftp {Program} gosh [options] [scheme-file arg @dots{}]
@@ -638,19 +638,15 @@ Windowsネイティブ環境(mingw)では、インタプリタとしてふたつ
 The main purpose of @code{gosh-noconsole.exe} is for Windows
 scripting.   If a Scheme script were associated to @code{gosh.exe}
 and invoked from Explorer, it would always open a new
-console window.  However,
-this console would be of little use, since
-it would dissapear once the script exits, and the user wouldn't
-be likely to have enough time to look at it.
+console window, which is extremely annoying.
 If you associate Scheme scripts to @code{gosh-noconsole.exe} instead,
-you can avoid this annoying console from popping up.
+you can avoid console from popping up.
 @c JP
 @code{gosh-noconsole.exe}の目的は、Windows上でのスクリプティングです。
 Schemeスクリプトがもし@code{gosh.exe}に関連付けられていたとしたら、
-Explorerからそのスクリプトを起動するたびに、必ず新しいコンソールウィンドウが
-開くでしょう。そのコンソールはスクリプト終了時に消えてしまうので、
-多くの場合、ユーザには何が出力されているかを見る機会がなく、
-したがってほとんど役に立ちません。Schemeスクリプトを@code{gosh-noconsole.exe}に
+Explorerからそのスクリプトを起動するたびに、
+必ず新しいコンソールウィンドウが開くので非常に煩わしいです。
+Schemeスクリプトを@code{gosh-noconsole.exe}に
 関連づけておけば、この煩わしいコンソールの出現を抑制できます。
 @c COMMON
 
