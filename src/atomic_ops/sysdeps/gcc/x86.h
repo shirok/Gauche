@@ -2,7 +2,7 @@
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2003 by Hewlett-Packard Company. All rights reserved.
- *
+ * Copyright (c) 2008-2018 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -67,7 +67,15 @@
 #       define AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
 #     endif
 #   endif /* __x86_64__ */
-# endif /* __clang__ */
+
+# elif AO_GNUC_PREREQ(7, 0) && !defined(AO_PREFER_BUILTIN_ATOMICS) \
+       && !defined(AO_THREAD_SANITIZER) && !defined(__MINGW32__)
+    /* gcc-7.x/x64 (gcc-7.2, at least) requires -latomic flag in case   */
+    /* of double-word atomic operations use (but not in case of TSan).  */
+    /* TODO: Revise it for the future gcc-7 releases. */
+#   define AO_SKIPATOMIC_double_compare_and_swap_ANY
+#   define AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
+# endif /* __GNUC__ && !__clang__ */
 
 # ifdef AO_SKIPATOMIC_DOUBLE_LOAD_STORE_ANY
 #   define AO_SKIPATOMIC_double_load
