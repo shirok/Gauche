@@ -1,4 +1,13 @@
 
+== [7.6.6] 2018-08-07 ==
+
+* COPYING: sync with FSF's gpl-2.0.txt
+* Fix 'undefined reference to __atomic_load/store/cas_16' error (gcc-7/x64)
+* Fix a typo in the overview section of README
+* Fix comments style in configure.ac and Makefile.am
+* Update copyright information in README and some header files
+
+
 == [7.6.4] 2018-03-27 ==
 
 * Add RISC-V support

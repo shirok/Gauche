@@ -1,5 +1,18 @@
-# Process this file with autoconf to produce a configure script.
-AC_INIT([libatomic_ops],[7.6.4],https://github.com/ivmai/libatomic_ops/issues)
+# Copyright (c) 2005-2006 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2009-2018 Ivan Maidanski
+#
+# THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+# OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+#
+# Permission is hereby granted to use or copy this program
+# for any purpose,  provided the above notices are retained on all copies.
+# Permission to modify the code and to distribute modified code is granted,
+# provided the above notices are retained, and a notice that the code was
+# modified is included with the above copyright notice.
+
+dnl Process this file with autoconf to produce configure.
+
+AC_INIT([libatomic_ops],[7.6.6],https://github.com/ivmai/libatomic_ops/issues)
 
 AC_PREREQ(2.61)
 AC_CANONICAL_TARGET([])
@@ -10,12 +23,12 @@ AM_MAINTAINER_MODE
 
 AC_CONFIG_HEADERS([src/config.h])
 
-# Checks for programs.
+dnl Checks for programs.
 AM_PROG_CC_C_O
 AM_PROG_AS
 LT_INIT([disable-shared])
 
-# Checks for functions.
+dnl Checks for functions.
 AC_FUNC_MMAP
 
 # Determine PIC flag.
@@ -133,7 +146,7 @@ AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 AC_SUBST(PICFLAG)
 AC_SUBST(DEFS)
 
-# Extra user-defined C flags.
+dnl Extra user-defined C flags.
 AC_SUBST([CFLAGS_EXTRA])
 
 AH_TEMPLATE([_PTHREADS], [Indicates the use of pthreads (NetBSD).])
@@ -149,7 +162,7 @@ AH_TEMPLATE([AO_USE_WIN32_PTHREADS],
          are emulated)])
 AH_TEMPLATE([AO_TRACE_MALLOC], [Trace AO_malloc/free calls (for debug only)])
 
-# These macros are tested in public headers
+dnl These macros are tested in public headers.
 AH_TEMPLATE([AO_GENERALIZE_ASM_BOOL_CAS],
         [Force compare_and_swap definition via fetch_compare_and_swap])
 AH_TEMPLATE([AO_PREFER_GENERALIZED],
