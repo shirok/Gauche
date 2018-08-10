@@ -1,3 +1,8 @@
+2018-08-09  Shiro Kawai <shiro@acm.org>
+
+	* lib/text/html-lite.scm: Add HTML5 elements
+	  by @tabe https://github.com/shirok/Gauche/pull/363
+
 2018-08-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (load-from-port): If internal encoding is utf-8,
