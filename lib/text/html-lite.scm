@@ -165,10 +165,6 @@
 
 (define-html-elements body address div)
 
-;; SEMANTIC ELEMENT
-(define-html-elements header footer section article nav aside
-                      figure figcaption details summary mark time)
-
 ;; THE ANCHOR ELEMENT
 (define-html-elements a)
 
@@ -226,5 +222,23 @@
 ;; FRAMES
 (define-html-elements frameset frame noframes iframe)
 
-
-
+;; Elements available since HTML5, in the order they are defined in
+;; Section "4. The elements of HTML" of <https://www.w3.org/TR/html5/>.
+(define-html-elements article section nav aside
+                      header footer
+                      figure figcaption
+                      main
+                      ruby rb rt rtc rp
+                      data time
+                      mark bdi bdo
+                      wbr :empty
+                      picture source
+                      embed :empty
+                      video audio track :empty
+                      datalist
+                      output
+                      progress
+                      meter
+                      details summary dialog
+                      template
+                      canvas)
