@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_check_define.html
+#     https://www.gnu.org/software/autoconf-archive/ax_check_define.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -29,7 +29,7 @@
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -44,7 +44,7 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 8
+#serial 10
 
 AU_ALIAS([AC_CHECK_DEFINED], [AC_CHECK_DEFINE])
 AC_DEFUN([AC_CHECK_DEFINE],[
@@ -53,6 +53,7 @@ AC_CACHE_CHECK([for $1 defined], ac_var,
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   #ifdef $1
   int ok;
+  (void)ok;
   #else
   choke me
   #endif
@@ -68,6 +69,7 @@ AC_CACHE_CHECK([for $2 defined in $1], ac_var,
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <$1>]], [[
   #ifdef $2
   int ok;
+  (void)ok;
   #else
   choke me
   #endif
