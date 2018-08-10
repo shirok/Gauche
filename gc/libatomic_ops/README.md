@@ -2,7 +2,7 @@
 
 IN NEW CODE, PLEASE USE C11 OR C++14 STANDARD ATOMICS INSTEAD OF THIS PACKAGE.
 
-This is version 7.6.4 of libatomic_ops.
+This is version 7.6.6 of libatomic_ops.
 
 
 ## Download
@@ -18,7 +18,7 @@ Also, the latest bug fixes and new features are available in the
 ## Overview
 
 This package provides semi-portable access to hardware-provided
-atomic memory update operations on a number architectures.  These might
+atomic memory update operations on a number of architectures.  These might
 allow you to write code:
 
 * That does more interesting things in signal handlers.
@@ -96,4 +96,25 @@ GitHub.
 
 ## Copyright & Warranty
 
-See doc/LICENSING.txt file.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1999-2011 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2008-2018 Ivan Maidanski
+
+The file armcc/arm_v6.h is also
+
+ * Copyright (c) 2007 by NEC LE-IT.  All rights reserved.
+
+The file gcc/avr32.h is
+
+ * Copyright (c) 2009 Bradley Smith <brad@brad-smith.co.uk>
+
+The file gcc/mips.h is
+
+ * Copyright (c) 2005, 2007 Thiemo Seufer <ths@networkno.de>
+
+The file gcc/sh.h is
+
+ * Copyright (c) 2009 by Takashi YOSHII. All rights reserved.
+
+See doc/LICENSING.txt for the details.
