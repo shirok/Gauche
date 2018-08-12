@@ -1298,11 +1298,10 @@ static void alloc_mark_stack(size_t n)
         } else {
           WARN("Failed to grow mark stack to %" WARN_PRIdPTR " frames\n", n);
         }
+    } else if (NULL == new_stack) {
+        GC_err_printf("No space for mark stack\n");
+        EXIT();
     } else {
-        if (new_stack == 0) {
-            GC_err_printf("No space for mark stack\n");
-            EXIT();
-        }
         GC_mark_stack = new_stack;
         GC_mark_stack_size = n;
         GC_mark_stack_limit = new_stack + n;
@@ -1370,6 +1369,11 @@ GC_API void GC_CALL GC_push_all(char *bottom, char *top)
         return;
     }
     if ((*dirty_fn)(h-1)) {
+        if ((word)(GC_mark_stack_top - GC_mark_stack)
+            > 3 * GC_mark_stack_size / 4) {
+            GC_push_all(bottom, top);
+            return;
+        }
         GC_push_all(bottom, (ptr_t)h);
     }
 
@@ -1389,9 +1393,6 @@ GC_API void GC_CALL GC_push_all(char *bottom, char *top)
 
     if ((ptr_t)h != top && (*dirty_fn)(h)) {
        GC_push_all((ptr_t)h, top);
-    }
-    if ((word)GC_mark_stack_top >= (word)GC_mark_stack_limit) {
-        ABORT("Unexpected mark stack overflow");
     }
   }
 
@@ -1450,10 +1451,6 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     return mark_stack_ptr;
 }
 
-#if defined(MANUAL_VDB) && defined(THREADS)
-  void GC_dirty(ptr_t p);
-#endif
-
 /* Mark and push (i.e. gray) a single object p onto the main    */
 /* mark stack.  Consider p to be valid if it is an interior     */
 /* pointer.                                                     */
@@ -1484,10 +1481,10 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
         return;
     }
-#   if defined(MANUAL_VDB) && defined(THREADS)
+#   ifdef THREADS
       /* Pointer is on the stack.  We may have dirtied the object       */
-      /* it points to, but not yet have called GC_dirty();              */
-      GC_dirty(p);      /* Implicitly affects entire object.            */
+      /* it points to, but have not called GC_dirty yet.                */
+      GC_dirty(p); /* entire object */
 #   endif
     PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
                       source, hhdr, FALSE);
@@ -1862,6 +1859,8 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
          break;
 #     endif
 #    endif
+#   else
+     case 1: /* to suppress "switch statement contains no case" warning */
 #   endif
      default:
       GC_mark_stack_top_reg = GC_mark_stack_top;

@@ -2,6 +2,8 @@ This is an attempt to acknowledge contributions to the garbage collector.
 Early contributions also mentioned (duplicated) in ChangeLog file; details of
 later ones should be in "git log".
 
+Currently maintained by Ivan Maidanski.
+
 HISTORY -
 
   Early versions of this collector were developed as a part of research
@@ -184,6 +186,7 @@ James Dominy
 Jan Alexander Steffens <jan.steffens@gmail.com>
 Jan Wielemaker <J.Wielemaker@cs.vu.nl>
 Jani Kajala <jani@sumea.com>
+Jared McNeill <jmcneill@NetBSD.org>
 Jay Krell <jaykrell@microsoft.com>
 Jean-Baptiste Nivois
 Jean-Claude Beaudoin <jean.claude.beaudoin@gmail.com>
@@ -209,10 +212,12 @@ John Clements <clements@brinkerhoff.org>
 John Ellis <ellis@xerox.parc.com>
 John Merryweather Cooper <jmerry@mono-cvs.ximian.com>
 Jon Moore <jonm@apache.org>
+Jonas Echterhoff <jonas@unity3d.com>
 Jonathan Bachrach <jonathan@harlequin.com>
 Jonathan Chambers <jonathan@unity3d.com>
 Jonathan Clark
 Jonathan Pryor <jpryor@novell.com>
+Josh Peterson <petersonjm1@gmail.com>
 Joshua Richardson <jric@chegg.com>
 Juan Jose Garcia-Ripoll <juanjose.garciaripoll@googlemail.com>
 Kai Tietz <ktietz70@googlemail.com>
@@ -235,6 +240,7 @@ Kumar Srikantan
 Kurt Miller <kurt@intricatesoftware.com>
 Lars Farm <lars.farm@ite.mh.se>
 Laurent Morichetti <l_m@pacbell.net>
+Leonardo Taccari <iamleot@gmail.com>
 Linas Vepstas <linasvepstas@gmail.com>
 Loren J. Rittle <rittle@latour.labs.mot.com>
 Louis Zhuang <louis.zhuang@acm.org>
@@ -276,6 +282,7 @@ Mike McGaughey <mmcg@cs.monash.edu.au>
 Mike Stump <mrs@windriver.com>
 Mitch Harris <maharri@uiuc.edu>
 Mohan Embar <gnustuff@thisiscool.com>
+Naoyuki Sawa <sawa_naoyuki-1@yahoo.co.jp>
 Natanael Copa <ncopa@alpinelinux.org>
 Nathanael Nerode <neroden@twcny.rr.com>
 Neale Ferguson <neale@mono-cvs.ximian.com>

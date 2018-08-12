@@ -114,7 +114,8 @@
 # endif
 # if defined(__aarch64__)
 #    define AARCH64
-#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD)
+#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
+        && !defined(NETBSD)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -163,6 +164,10 @@
 # endif
 # if defined(NETBSD) && (defined(__arm32__) || defined(__arm__))
 #    define ARM32
+#    define mach_type_known
+# endif
+# if defined(NETBSD) && defined(__aarch64__)
+#    define AARCH64
 #    define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__sh__)
@@ -501,7 +506,9 @@
 #     else
 #       define I386
 #     endif
-#     define MSWIN32    /* or Win64 */
+#     ifndef MSWIN32
+#       define MSWIN32 /* or Win64 */
+#     endif
 #     define mach_type_known
 #   endif
 #   if defined(_MSC_VER) && defined(_M_IA64)
@@ -596,6 +603,10 @@
 #   else
 #     define TILEPRO
 #   endif
+#   define mach_type_known
+# endif
+# if defined(__riscv) && defined(LINUX)
+#   define RISCV
 #   define mach_type_known
 # endif
 
@@ -2197,6 +2208,14 @@
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
 #   endif
+#   ifdef NETBSD
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+      extern ptr_t GC_data_start;
+#     define DATASTART GC_data_start
+#     define ELF_CLASS ELFCLASS64
+#     define DYNAMIC_LOADING
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
       extern int __data_start[];
@@ -2666,6 +2685,19 @@
 #     define DYNAMIC_LOADING
 #   endif
 # endif
+
+# ifdef RISCV
+#   define MACH_TYPE "RISC-V"
+#   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
+#   define ALIGNMENT (CPP_WORDSZ/8)
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
+#   endif
+# endif /* RISCV */
 
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
