@@ -497,41 +497,41 @@ SCM_EXTERN void Scm_UnregisterFinalizer(ScmObj z);
 /* Safe coercer */
 #define SCM_OBJ_SAFE(obj)     ((obj)?SCM_OBJ(obj):SCM_UNDEFINED)
 
-typedef struct ScmVMRec        ScmVM;
-typedef struct ScmPairRec      ScmPair;
-typedef struct ScmExtendedPairRec ScmExtendedPair;
-typedef struct ScmLazyPairRec  ScmLazyPair;
-typedef struct ScmCharSetRec   ScmCharSet;
-typedef struct ScmStringRec    ScmString;
-typedef struct ScmDStringRec   ScmDString;
-typedef struct ScmVectorRec    ScmVector;
-typedef struct ScmBignumRec    ScmBignum;
-typedef struct ScmRatnumRec    ScmRatnum;
-typedef struct ScmCompnumRec   ScmCompnum;
-typedef struct ScmPortRec      ScmPort;
-typedef struct ScmHashTableRec ScmHashTable;
-typedef struct ScmTreeMapRec   ScmTreeMap;
-typedef struct ScmModuleRec    ScmModule;
-typedef struct ScmSymbolRec    ScmSymbol;
-typedef struct ScmGlocRec      ScmGloc;
-typedef struct ScmProcedureRec ScmProcedure;
-typedef struct ScmClosureRec   ScmClosure;
-typedef struct ScmSubrRec      ScmSubr;
-typedef struct ScmGenericRec   ScmGeneric;
-typedef struct ScmMethodRec    ScmMethod;
-typedef struct ScmNextMethodRec ScmNextMethod;
-typedef struct ScmSyntaxRec    ScmSyntax;
-typedef struct ScmMacroRec     ScmMacro;
-typedef struct ScmPromiseRec   ScmPromise;
-typedef struct ScmRegexpRec    ScmRegexp;
-typedef struct ScmRegMatchRec  ScmRegMatch;
+typedef struct ScmVMRec             ScmVM;
+typedef struct ScmPairRec           ScmPair;
+typedef struct ScmExtendedPairRec   ScmExtendedPair;
+typedef struct ScmLazyPairRec       ScmLazyPair;
+typedef struct ScmCharSetRec        ScmCharSet;
+typedef struct ScmStringRec         ScmString;
+typedef struct ScmDStringRec        ScmDString;
+typedef struct ScmVectorRec         ScmVector;
+typedef struct ScmBignumRec         ScmBignum;
+typedef struct ScmRatnumRec         ScmRatnum;
+typedef struct ScmCompnumRec        ScmCompnum;
+typedef struct ScmPortRec           ScmPort;
+typedef struct ScmHashTableRec      ScmHashTable;
+typedef struct ScmTreeMapRec        ScmTreeMap;
+typedef struct ScmModuleRec         ScmModule;
+typedef struct ScmSymbolRec         ScmSymbol;
+typedef struct ScmGlocRec           ScmGloc;
+typedef struct ScmProcedureRec      ScmProcedure;
+typedef struct ScmClosureRec        ScmClosure;
+typedef struct ScmSubrRec           ScmSubr;
+typedef struct ScmGenericRec        ScmGeneric;
+typedef struct ScmMethodRec         ScmMethod;
+typedef struct ScmNextMethodRec     ScmNextMethod;
+typedef struct ScmSyntaxRec         ScmSyntax;
+typedef struct ScmMacroRec          ScmMacro;
+typedef struct ScmPromiseRec        ScmPromise;
+typedef struct ScmRegexpRec         ScmRegexp;
+typedef struct ScmRegMatchRec       ScmRegMatch;
 typedef struct ScmWriteControlsRec  ScmWriteControls;  /* see writerP.h */
 typedef struct ScmWriteContextRec   ScmWriteContext;   /* see writerP.h */
 typedef struct ScmWriteStateRec     ScmWriteState;     /* see wrtierP.h */
-typedef struct ScmAutoloadRec  ScmAutoload;
-typedef struct ScmComparatorRec ScmComparator;
-typedef struct ScmDLObjRec     ScmDLObj;           /* see load.c */
-typedef struct ScmReadContextRec ScmReadContext;   /* see read.c */
+typedef struct ScmAutoloadRec       ScmAutoload;
+typedef struct ScmComparatorRec     ScmComparator;
+typedef struct ScmDLObjRec          ScmDLObj;          /* see load.c */
+typedef struct ScmReadContextRec    ScmReadContext;    /* see read.c */
 
 typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
 
