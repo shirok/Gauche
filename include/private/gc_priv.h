@@ -1739,6 +1739,9 @@ GC_INNER void GC_set_fl_marks(ptr_t p);
                                     /* set.  Abort if not.              */
 #endif
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
+#ifdef USE_PROC_FOR_LIBRARIES
+  GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
+#endif
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish);
 #if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
     || defined(CYGWIN32) || defined(PCR)
@@ -1899,6 +1902,13 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func f);
                                 /* completes successfully.              */
 #define GC_gcollect_inner() \
                 (void)GC_try_to_collect_inner(GC_never_stop_func)
+
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+  GC_EXTERN GC_bool GC_in_thread_creation;
+        /* We may currently be in thread creation or destruction.       */
+        /* Only set to TRUE while allocation lock is held.              */
+        /* When set, it is OK to run GC from unknown thread.            */
+#endif
 
 GC_EXTERN GC_bool GC_is_initialized; /* GC_init() has been run. */
 
@@ -2136,6 +2146,15 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* it is OK to be called again if the client invokes    */
                 /* GC_enable_incremental once more).                    */
 #endif /* !GC_DISABLE_INCREMENTAL */
+
+#ifdef MANUAL_VDB
+  GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
+# define GC_dirty(p) (GC_incremental ? GC_dirty_inner(p) : (void)0)
+# define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
+#else
+# define GC_dirty(p) (void)(p)
+# define REACHABLE_AFTER_DIRTY(p) (void)(p)
+#endif
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))

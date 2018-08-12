@@ -1,4 +1,6 @@
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
+# Copyright (c) 2005-2009 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2009-2018 Ivan Maidanski
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,9 +13,10 @@
 
 dnl Process this file with autoconf to produce configure.
 
-# Initialization
-AC_INIT(gc,7.6.6,https://github.com/ivmai/bdwgc/issues)
-    ## version must conform to [0-9]+[.][0-9]+[.][0-9]+
+dnl Initialization.
+AC_INIT(gc,7.6.8,https://github.com/ivmai/bdwgc/issues)
+dnl Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
@@ -31,8 +34,8 @@ AC_PROG_CXX
 AM_PROG_AS
 AC_PROG_INSTALL
 LT_INIT
-# Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED, or
-# AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
+dnl Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED, or
+dnl AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
 
 # Special CFLAGS to use when building
 gc_cflags=""
@@ -90,7 +93,7 @@ esac
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
 
-# Extra user-defined flags to pass both to C and C++ compilers.
+dnl Extra user-defined flags to pass both to C and C++ compilers.
 AC_SUBST([CFLAGS_EXTRA])
 
 AC_ARG_ENABLE(threads,
@@ -175,7 +178,7 @@ CFLAGS="$old_CFLAGS"
 
 THREADDLLIBS=
 need_atomic_ops_asm=false
-## Libraries needed to support dynamic loading and/or threads.
+# Libraries needed to support dynamic loading and/or threads.
 case "$THREADS" in
  no | none | single)
     THREADS=none
@@ -486,7 +489,7 @@ fi
 # Check for getcontext (uClibc can be configured without it, for example)
 AC_CHECK_FUNCS([getcontext])
 if test "$ac_cv_func_getcontext" = "no"; then
-  AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext()])
+  AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext function.])
 fi
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
@@ -521,7 +524,7 @@ AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 # Check for various headers.
 AC_CHECK_HEADERS([execinfo.h])
 if test "$ac_cv_header_execinfo_h" != "yes"; then
-  AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header])
+  AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header.])
 fi
 
 # extra LD Flags which are required for targets
@@ -676,13 +679,13 @@ AC_ARG_WITH(target-subdir,
 AC_ARG_WITH(cross-host,
 [  --with-cross-host=HOST  configuring with a cross compiler])
 
-# automake wants to see AC_EXEEXT.  But we don't need it.  And having
-# it is actually a problem, because the compiler we're passed can't
-# necessarily do a full link.  So we fool automake here.
+dnl automake wants to see AC_EXEEXT.  But we don't need it.  And having
+dnl it is actually a problem, because the compiler we're passed can't
+dnl necessarily do a full link.  So we fool automake here.
 if false; then
-  # autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
-  # to nothing, so nothing would remain between `then' and `fi' if it
-  # were not for the `:' below.
+  dnl autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
+  dnl to nothing, so nothing would remain between `then' and `fi' if it
+  dnl were not for the `:' below.
   :
   AC_EXEEXT
 fi
@@ -729,8 +732,7 @@ dnl
 dnl By default, make the library as general as possible.
 dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
-    [AC_HELP_STRING([--disable-gcj-support],
-        [Disable support for gcj.])])
+    [AC_HELP_STRING([--disable-gcj-support], [disable support for gcj])])
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
     AC_DEFINE([GC_ENABLE_SUSPEND_THREAD], 1,
@@ -740,7 +742,7 @@ fi
 dnl Interaction with other programs that might use signals.
 AC_ARG_ENABLE(sigrt-signals,
     [AC_HELP_STRING([--enable-sigrt-signals],
-        [Force GC to use SIGRTMIN-based signals for thread suspend/resume])])
+        [force GC to use SIGRTMIN-based signals for thread suspend/resume])])
 if test x"${enable_sigrt_signals}" = xyes; then
     AC_DEFINE([GC_USESIGRT_SIGNALS], 1,
               [Force the GC to use signals based on SIGRTMIN+k.])
@@ -816,7 +818,7 @@ ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,
 [ac_is_dgux=yes;])
 
-    ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
+dnl :GOTCHA: we do not check anything but sys/dg_sys_info.h
 if test $ac_is_dgux = yes; then
     dgux_spec_opts="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
     CFLAGS="$dgux_spec_opts $CFLAGS"
@@ -831,14 +833,14 @@ fi
 
 AC_ARG_ENABLE(java-finalization,
     [AC_HELP_STRING([--disable-java-finalization],
-        [Disable support for java finalization.])])
+                    [disable support for java finalization])])
 if test x"$enable_java_finalization" != xno; then
     AC_DEFINE([JAVA_FINALIZATION], 1, [See doc/README.macros.])
 fi
 
 AC_ARG_ENABLE(atomic-uncollectable,
     [AC_HELP_STRING([--disable-atomic-uncollectible],
-        [Disable support for atomic uncollectible allocation.])])
+                    [disable support for atomic uncollectible allocation])])
 if test x"$enable_atomic_uncollectible" != x"no"; then
     AC_DEFINE([GC_ATOMIC_UNCOLLECTABLE], 1,
         [Define to enable atomic uncollectible allocation.])
@@ -846,7 +848,7 @@ fi
 
 AC_ARG_ENABLE(redirect-malloc,
     [AC_HELP_STRING([--enable-redirect-malloc],
-        [Redirect malloc and friends to GC routines])])
+                    [redirect malloc and friends to GC routines])])
 
 if test "${enable_redirect_malloc}" = yes; then
     if test "${enable_gc_debug}" = yes; then
@@ -864,7 +866,7 @@ fi
 
 AC_ARG_ENABLE(disclaim,
     [AC_HELP_STRING([--disable-disclaim],
-        [Disable alternative (more efficient) finalization interface.])])
+        [disable alternative (more efficient) finalization interface])])
 if test x"$enable_disclaim" != xno; then
     AC_DEFINE(ENABLE_DISCLAIM, 1,
         [Define to enable alternative finalization interface.])
@@ -874,17 +876,16 @@ AM_CONDITIONAL(ENABLE_DISCLAIM,
 
 AC_ARG_ENABLE(large-config,
     [AC_HELP_STRING([--enable-large-config],
-        [Optimize for large (> 100 MB) heap or root set])])
-
+        [optimize for large (> 100 MB) heap or root set])])
 if test "${enable_large_config}" = yes; then
-    AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets.])
+    AC_DEFINE(LARGE_CONFIG, 1,
+              [Define to optimize for large heaps or root sets.])
 fi
 
 AC_ARG_ENABLE(handle-fork,
     [AC_HELP_STRING([--enable-handle-fork],
-        [Attempt to ensure a usable collector after fork() in multi-threaded
-         programs.])])
-
+        [attempt to ensure a usable collector after fork() in multi-threaded
+         programs])])
 if test "${enable_handle_fork}" = yes; then
     AC_DEFINE(HANDLE_FORK, 1,
               [Define to install pthread_atfork() handlers by default.])
@@ -913,7 +914,8 @@ AC_ARG_ENABLE(gc-assertions,
     [AC_HELP_STRING([--enable-gc-assertions],
         [collector-internal assertion checking])])
 if test "${enable_gc_assertions}" = yes; then
-    AC_DEFINE([GC_ASSERTIONS], 1, [Define to enable internal debug assertions.])
+    AC_DEFINE([GC_ASSERTIONS], 1,
+              [Define to enable internal debug assertions.])
 fi
 
 AC_ARG_ENABLE(munmap,
@@ -943,8 +945,9 @@ fi
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 
-AC_ARG_ENABLE(werror, [--enable-werror Pass -Werror to the C compiler],
-              werror_flag=$enableval, werror_flag=no)
+AC_ARG_ENABLE(werror,
+    [AS_HELP_STRING([--enable-werror], [pass -Werror to the C compiler])],
+    werror_flag=$enableval, werror_flag=no)
 if test x$werror_flag = xyes; then
     WERROR_CFLAGS="-Werror"
     case "$host" in
@@ -958,12 +961,12 @@ AC_SUBST([WERROR_CFLAGS])
 
 AC_ARG_ENABLE(single-obj-compilation,
    [AC_HELP_STRING([--enable-single-obj-compilation],
-                   [Compile all library .c files into single .o])],
+                   [compile all libgc source files into single .o])],
    [single_obj_compilation=yes])
 AM_CONDITIONAL([SINGLE_GC_OBJ], [test "$single_obj_compilation" = "yes"])
 
-AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
-                                   [Turn on code coverage analysis]))
+AC_ARG_ENABLE(gcov,
+    [AC_HELP_STRING([--enable-gcov], [turn on code coverage analysis])])
 if test "$enable_gcov" = "yes"; then
   CFLAGS="$CFLAGS --coverage"
   if test "${enable_shared}" = no; then
@@ -978,7 +981,7 @@ fi
 
 AC_ARG_ENABLE(docs,
         [AC_HELP_STRING([--disable-docs],
-                        [Do not build and install documentation])])
+                        [do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
 # Atomic Ops
@@ -998,15 +1001,15 @@ missing_libatomic_ops=false
 AS_IF([test x"$with_libatomic_ops" != xno -a x"$THREADS" != xnone],
   [ missing_libatomic_ops=true ])
 
-# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
-# means Autotools pkg.m4 file was not found during aclocal.m4 generation;
-# in this case, most probably, you should run pkg-config once before running
-# autogen.sh (autoreconf); alternatively, comment out the following 3 lines.
+dnl Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
+dnl means Autotools pkg.m4 file was not found during aclocal.m4 generation;
+dnl in this case, most probably, you should run pkg-config once before running
+dnl autogen.sh (autoreconf); alternatively, comment out the following 3 lines.
 AS_IF([test x$missing_libatomic_ops = xtrue],
   [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
     [ missing_libatomic_ops=false ], [ [] ]) ])
 
-# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
+dnl Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
 AS_IF([test x$missing_libatomic_ops = xtrue],
       [ AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false]) ])
 AS_IF([test x$missing_libatomic_ops = xtrue],

@@ -758,7 +758,13 @@ GC_API int GC_CALL GC_is_init_called(void)
   STATIC void GC_exit_check(void)
   {
     if (GC_find_leak) {
-      GC_gcollect();
+#     if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+        GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
+        GC_gcollect();
+        GC_in_thread_creation = FALSE;
+#     else
+        GC_gcollect();
+#     endif
     }
   }
 #endif
@@ -825,6 +831,11 @@ GC_API int GC_CALL GC_is_init_called(void)
 #   endif
   }
 #endif /* MSWIN32 */
+
+#if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
+  static void callee_saves_pushed_dummy_fn(ptr_t data GC_ATTR_UNUSED,
+                                           void * context GC_ATTR_UNUSED) {}
+#endif
 
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
@@ -1292,6 +1303,11 @@ GC_API void GC_CALL GC_init(void)
           GC_gcollect_inner();
 #       endif
       }
+#   if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
+      /* Ensure getcontext_works is set to avoid potential data race.   */
+      if (GC_dont_gc || GC_dont_precollect)
+        GC_with_callee_saves_pushed(callee_saves_pushed_dummy_fn, NULL);
+#   endif
 #   ifdef STUBBORN_ALLOC
         GC_stubborn_init();
 #   endif
@@ -2356,4 +2372,10 @@ GC_API void GC_CALL GC_set_force_unmap_on_gcollect(int value)
 GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void)
 {
     return (int)GC_force_unmap_on_gcollect;
+}
+
+GC_API void GC_CALL GC_abort_on_oom(void)
+{
+    GC_err_printf("Insufficient memory for the allocation\n");
+    EXIT();
 }

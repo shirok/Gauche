@@ -1,6 +1,6 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-This is version 7.6.6 of a conservative garbage
+This is version 7.6.8 of a conservative garbage
 collector for C and C++.
 
 
@@ -575,21 +575,31 @@ GitHub.
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2011 by Hewlett-Packard Development Company.
+ * Copyright (c) 2008-2018 Ivan Maidanski
 
-The files pthread_stop_world.c and pthread_support.c are also
+The files pthread_stop_world.c, pthread_support.c and some others are also
 
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 
-The files Makefile.am, and configure.in are
+The file gc.h is also
 
-* Copyright (c) 2001 by Red Hat Inc. All rights reserved.
+ * Copyright (c) 2007 Free Software Foundation, Inc
+
+The files Makefile.am and configure.ac are
+
+ * Copyright (c) 2001 by Red Hat Inc. All rights reserved.
+
+The files msvc_dbg.c and msvc_dbg.h are
+
+ * Copyright (c) 2004-2005 Andrei Polushin
+
+The file initsecondarythread.c is
+
+ * Copyright (c) 2011 Ludovic Courtes
 
 Several files supporting GNU-style builds are copyrighted by the Free
 Software Foundation, and carry a different license from that given
-below.  The files included in the libatomic_ops distribution (included
-here) use either the license below, or a similar MIT-style license,
-or, for some files not actually used by the garbage-collector library, the
-GPL.
+below.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -605,8 +615,3 @@ slightly different licenses, though they are all similar in spirit.  A few
 are GPL'ed, but with an exception that should cover all uses in the
 collector. (If you are concerned about such things, I recommend you look
 at the notice in config.guess or ltmain.sh.)
-
-The atomic_ops library contains some code that is covered by the GNU General
-Public License, but is not needed by, nor linked into the collector library.
-It is included here only because the atomic_ops distribution is, for
-simplicity, included in its entirety.

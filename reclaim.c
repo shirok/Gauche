@@ -387,7 +387,6 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 
 #             ifdef ENABLE_DISCLAIM
                 if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
-                  struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
                   if ((*ok->ok_disclaim_proc)(hbp)) {
                     /* Not disclaimed => resurrect the object. */
                     set_mark_bit_from_hdr(hhdr, 0);
@@ -527,7 +526,7 @@ int GC_n_set_marks(hdr *hhdr)
 #   else
       result += set_bits(hhdr -> hb_marks[n_mark_words - 1]);
 #   endif
-    return(result - 1);
+    return result; /* the number of set bits excluding the one past the end */
 }
 
 #endif /* !USE_MARK_BYTES  */
@@ -728,7 +727,8 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
                 }
                 hhdr = HDR(hbp);
                 *rlh = hhdr -> hb_next;
-                if (!ignore_old || hhdr -> hb_last_reclaimed == GC_gc_no - 1) {
+                if (!ignore_old
+                    || (word)hhdr->hb_last_reclaimed == GC_gc_no - 1) {
                     /* It's likely we'll need it this time, too */
                     /* It's been touched recently, so this      */
                     /* shouldn't trigger paging.                */
