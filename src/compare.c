@@ -353,12 +353,12 @@ void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn)
 static ScmObj sort_list_int(ScmObj objs, ScmObj fn, int destructive)
 {
     ScmObj starray[STATIC_SIZE];
-    int len = STATIC_SIZE;
+    ScmSize len = STATIC_SIZE;
     ScmObj *array = Scm_ListToArray(objs, &len, starray, TRUE);
     Scm_SortArray(array, len, fn);
     if (destructive) {
         ScmObj cp = objs;
-        for (int i=0; i<len; i++, cp = SCM_CDR(cp)) {
+        for (ScmSize i=0; i<len; i++, cp = SCM_CDR(cp)) {
             SCM_SET_CAR(cp, array[i]);
         }
         return objs;

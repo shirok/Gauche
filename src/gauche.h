@@ -75,6 +75,8 @@
 # endif
 #endif
 
+typedef ssize_t ScmSize;
+
 /* For Windows platforms, we need some compatibility tricks.
    This defines GAUCHE_WINDOWS preprocessor symbol.
    (This should come before including gc.h) */
@@ -1125,9 +1127,10 @@ SCM_EXTERN ScmObj Scm_List(ScmObj elt, ...);
 SCM_EXTERN ScmObj Scm_Conses(ScmObj elt, ...);
 SCM_EXTERN ScmObj Scm_VaList(va_list elts);
 SCM_EXTERN ScmObj Scm_VaCons(va_list elts);
-SCM_EXTERN ScmObj Scm_ArrayToList(ScmObj *elts, int nelts);
-SCM_EXTERN ScmObj Scm_ArrayToListWithTail(ScmObj *elts, int nelts, ScmObj tail);
-SCM_EXTERN ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store,
+SCM_EXTERN ScmObj Scm_ArrayToList(ScmObj *elts, ScmSize nelts);
+SCM_EXTERN ScmObj Scm_ArrayToListWithTail(ScmObj *elts, ScmSize nelts,
+                                          ScmObj tail);
+SCM_EXTERN ScmObj *Scm_ListToArray(ScmObj list, ScmSize *nelts, ScmObj *store,
                                    int alloc);
 
 SCM_EXTERN ScmObj Scm_Car(ScmObj obj);
@@ -1137,7 +1140,7 @@ SCM_EXTERN ScmObj Scm_Cadr(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cdar(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cddr(ScmObj obj);
 
-SCM_EXTERN int    Scm_Length(ScmObj obj);
+SCM_EXTERN ScmSize Scm_Length(ScmObj obj);
 SCM_EXTERN ScmObj Scm_CopyList(ScmObj list);
 SCM_EXTERN ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill);
 SCM_EXTERN ScmObj Scm_Append2X(ScmObj list, ScmObj obj);

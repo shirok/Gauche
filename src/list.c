@@ -136,24 +136,24 @@ ScmObj Scm_VaCons(va_list pvar)
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_ArrayToList(ScmObj *elts, int nelts)
+ScmObj Scm_ArrayToList(ScmObj *elts, ScmSize nelts)
 {
     return Scm_ArrayToListWithTail(elts, nelts, SCM_NIL);
 }
 
-ScmObj Scm_ArrayToListWithTail(ScmObj *elts, int nelts, ScmObj tail)
+ScmObj Scm_ArrayToListWithTail(ScmObj *elts, ScmSize nelts, ScmObj tail)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
     if (elts) {
-        for (int i=0; i<nelts; i++) SCM_APPEND1(h, t, *elts++);
+        for (ScmSize i=0; i<nelts; i++) SCM_APPEND1(h, t, *elts++);
     }
     if (!SCM_NULLP(tail)) SCM_APPEND(h, t, tail);
     return h;
 }
 
-ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
+ScmObj *Scm_ListToArray(ScmObj list, ScmSize *nelts, ScmObj *store, int alloc)
 {
-    int len = Scm_Length(list);
+    ScmSize len = Scm_Length(list);
     if (len < 0) Scm_Error("proper list required, but got %S", list);
 
     ScmObj *array;
@@ -168,7 +168,7 @@ ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
             array = store;
         }
     }
-    int i = 0;
+    ScmSize i = 0;
     for (ScmObj lp=list; i<len; i++, lp=SCM_CDR(lp)) {
         array[i] = SCM_CAR(lp);
     }
@@ -210,10 +210,10 @@ CXR(Scm_Cddr, "cddr", D D)
    If the argument is a dotted list, return -1.
    If the argument is a circular list, return -2. */
 
-int Scm_Length(ScmObj obj)
+ScmSize Scm_Length(ScmObj obj)
 {
     ScmObj slow = obj;
-    int len = 0;
+    ScmSize len = 0;
 
     for (;;) {
         if (SCM_NULLP(obj)) break;
