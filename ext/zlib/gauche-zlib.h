@@ -53,11 +53,11 @@ typedef struct ScmZlibInfoRec {
     int ownerp;
     int flush;
     int stream_endp;
-    int bufsiz;
+    ScmSize bufsiz;
     char *buf;
     char *ptr;
     unsigned char *dict;
-    int dictlen;
+    ScmSize dictlen;
     int level;
     int strategy;
     ScmObj dict_adler;
@@ -76,8 +76,8 @@ SCM_CLASS_DECL(Scm_InflatingPortClass);
 extern ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
                                     int window_bits, int memlevel,
                                     int strategy, ScmObj dict,
-                                    int bufsiz, int ownerp);
-extern ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
+                                    ScmSize bufsiz, int ownerp);
+extern ScmObj Scm_MakeInflatingPort(ScmPort *sink, ScmSize bufsiz,
                                     int window_bits, ScmObj dict,
                                     int ownerp);
 

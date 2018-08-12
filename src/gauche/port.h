@@ -79,10 +79,10 @@ typedef struct ScmPortBufferRec {
     char *buffer;       /* ptr to the buffer area */
     char *current;      /* current buffer position */
     char *end;          /* the end of the current valid data */
-    int  size;          /* buffer size */
+    ScmSize size;       /* buffer size */
     int  mode;          /* buffering mode (ScmPortBufferMode) & SIGPIPE flag */
-    int  (*filler)(ScmPort *p, int min);
-    int  (*flusher)(ScmPort *p, int cnt, int forcep);
+    ScmSize (*filler)(ScmPort *p, ScmSize min);
+    ScmSize (*flusher)(ScmPort *p, ScmSize cnt, int forcep);
     void (*closer)(ScmPort *p);
     int  (*ready)(ScmPort *p);
     int  (*filenum)(ScmPort *p);
@@ -103,17 +103,17 @@ typedef struct ScmPortBufferRec {
 /* The funtion table of procedural port. */
 
 typedef struct ScmPortVTableRec {
-    int    (*Getb)(ScmPort *p);
-    int    (*Getc)(ScmPort *p);
-    int    (*Getz)(char *buf, int buflen, ScmPort *p);
-    int    (*Ready)(ScmPort *p, int charp);
-    void   (*Putb)(ScmByte b, ScmPort *p);
-    void   (*Putc)(ScmChar c, ScmPort *p);
-    void   (*Putz)(const char *buf, int size, ScmPort *p);
-    void   (*Puts)(ScmString *s, ScmPort *p);
-    void   (*Flush)(ScmPort *p);
-    void   (*Close)(ScmPort *p);
-    off_t  (*Seek)(ScmPort *p, off_t off, int whence);
+    int     (*Getb)(ScmPort *p);
+    int     (*Getc)(ScmPort *p);
+    ScmSize (*Getz)(char *buf, ScmSize buflen, ScmPort *p);
+    int     (*Ready)(ScmPort *p, int charp);
+    void    (*Putb)(ScmByte b, ScmPort *p);
+    void    (*Putc)(ScmChar c, ScmPort *p);
+    void    (*Putz)(const char *buf, ScmSize size, ScmPort *p);
+    void    (*Puts)(ScmString *s, ScmPort *p);
+    void    (*Flush)(ScmPort *p);
+    void    (*Close)(ScmPort *p);
+    off_t   (*Seek)(ScmPort *p, off_t off, int whence);
     void    *data;
 } ScmPortVTable;
 

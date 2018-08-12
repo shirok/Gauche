@@ -152,7 +152,7 @@ static int vport_getc(ScmPort *p)
 /*------------------------------------------------------------
  * Vport Gets
  */
-static int vport_getz(char *buf, int buflen, ScmPort *p)
+static ScmSize vport_getz(char *buf, ScmSize buflen, ScmPort *p)
 {
     vport *data = (vport*)p->src.vt.data;
     SCM_ASSERT(data != NULL);
@@ -164,7 +164,7 @@ static int vport_getz(char *buf, int buflen, ScmPort *p)
         if (!SCM_STRINGP(s)) return EOF;
         const char *start = Scm_GetStringContent(SCM_STRING(s), &size,
                                                  NULL, NULL);
-        if ((int)size > buflen) {
+        if (size > buflen) {
             /* NB: should raise an exception? */
             memcpy(buf, start, buflen);
             return buflen;
@@ -173,7 +173,7 @@ static int vport_getz(char *buf, int buflen, ScmPort *p)
             return size;
         }
     } else {
-        int i = 0;
+        ScmSize i = 0;
         for (; i<buflen; i++) {
             int byte = vport_getb(p);
             if (byte == EOF) break;
@@ -254,7 +254,7 @@ static void vport_putc(ScmChar c, ScmPort *p)
 /*------------------------------------------------------------
  * Vport putz
  */
-static void vport_putz(const char *buf, int size, ScmPort *p)
+static void vport_putz(const char *buf, ScmSize size, ScmPort *p)
 {
     vport *data = (vport*)p->src.vt.data;
     SCM_ASSERT(data != NULL);
@@ -264,7 +264,7 @@ static void vport_putz(const char *buf, int size, ScmPort *p)
                      SCM_LIST1(Scm_MakeString(buf, size, -1,
                                               SCM_STRING_COPYING)));
     } else if (!SCM_FALSEP(data->putb_proc)) {
-        for (int i=0; i<size; i++) {
+        for (ScmSize i=0; i<size; i++) {
             unsigned char b = buf[i];
             Scm_ApplyRec(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(b)));
         }
@@ -499,15 +499,15 @@ typedef struct bport_rec {
 /*------------------------------------------------------------
  * Bport fill
  */
-static int bport_fill(ScmPort *p, int cnt)
+static ScmSize bport_fill(ScmPort *p, ScmSize cnt)
 {
     bport *data = (bport*)p->src.buf.data;
     SCM_ASSERT(data != NULL);
     if (SCM_FALSEP(data->fill_proc)) {
         return 0;               /* indicates EOF */
     }
-    ScmObj vec = Scm_MakeU8VectorFromArrayShared(
-        cnt, (unsigned char*)p->src.buf.buffer);
+    ScmObj vec =
+        Scm_MakeU8VectorFromArrayShared(cnt, (unsigned char*)p->src.buf.buffer);
     ScmObj r = Scm_ApplyRec(data->fill_proc, SCM_LIST1(vec));
     if (SCM_INTP(r)) return SCM_INT_VALUE(r);
     else if (SCM_EOFP(r)) return 0;
@@ -517,15 +517,15 @@ static int bport_fill(ScmPort *p, int cnt)
 /*------------------------------------------------------------
  * Bport flush
  */
-static int bport_flush(ScmPort *p, int cnt, int forcep)
+static ScmSize bport_flush(ScmPort *p, ScmSize cnt, int forcep)
 {
     bport *data = (bport*)p->src.buf.data;
     SCM_ASSERT(data != NULL);
     if (SCM_FALSEP(data->flush_proc)) {
         return cnt;             /* blackhole */
     }
-    ScmObj vec = Scm_MakeU8VectorFromArrayShared(
-        cnt, (unsigned char*)p->src.buf.buffer);
+    ScmObj vec = 
+        Scm_MakeU8VectorFromArrayShared(cnt, (unsigned char*)p->src.buf.buffer);
     ScmObj r = Scm_ApplyRec(data->flush_proc,
                             SCM_LIST2(vec, SCM_MAKE_BOOL(forcep)));
     if (SCM_INTP(r)) return SCM_INT_VALUE(r);

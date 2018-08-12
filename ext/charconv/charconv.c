@@ -146,7 +146,7 @@ static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *
  *  <-- Buffered port <--- filler <--(info->buf)--- getz(remote)
  */
 
-static int conv_input_filler(ScmPort *port, int mincnt)
+static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     const char *inbuf = info->buf;
@@ -157,8 +157,8 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     /* Fill the input buffer.  There may be some remaining bytes in the
        inbuf from the last conversion (insize), so we try to fill the
        rest. */
-    size_t insize = info->ptr - info->buf;
-    int nread = Scm_Getz(info->ptr, info->bufsiz - (int)insize, info->remote);
+    ScmSize insize = info->ptr - info->buf;
+    ScmSize nread = Scm_Getz(info->ptr, info->bufsiz - insize, info->remote);
     if (nread <= 0) {
         /* input reached EOF.  finish the output state */
         if (insize == 0) {
@@ -181,7 +181,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
             fprintf(stderr, "<= r=%d (reset), out(%p)%d\n",
                     result, outbuf, outroom);
 #endif
-            return (int)result;
+            return (ScmSize)result;
         }
     } else {
         insize += nread;
@@ -207,10 +207,10 @@ static int conv_input_filler(ScmPort *port, int mincnt)
            buffer. */
         memmove(info->buf, info->buf+insize-inroom, inroom);
         info->ptr = info->buf + inroom;
-        return info->bufsiz - (int)outroom;
+        return info->bufsiz - (ScmSize)outroom;
     } else if (result == ILLEGAL_SEQUENCE) {
         /* it's likely that the input contains invalid sequence. */
-        int cnt = inroom >= 6 ? 6 : (int)inroom;
+        ScmSize cnt = inroom >= 6 ? 6 : (ScmSize)inroom;
         ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
                                   SCM_STRING_COPYING|SCM_STRING_INCOMPLETE);
         Scm_Error("invalid character sequence in the input stream: %S ...", s);
@@ -222,10 +222,10 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     if (inroom > 0) {
         memmove(info->buf, info->buf+insize-inroom, inroom);
         info->ptr = info->buf + inroom;
-        return info->bufsiz - (int)outroom;
+        return info->bufsiz - (ScmSize)outroom;
     } else {
         info->ptr = info->buf;
-        return info->bufsiz - (int)outroom;
+        return info->bufsiz - (ScmSize)outroom;
     }
 }
 
@@ -243,11 +243,11 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                    const char *fromCode,
                                    const char *toCode,
                                    ScmObj handler,
-                                   int bufsiz,
+                                   ScmSize bufsiz,
                                    int ownerp)
 {
     char *inbuf = NULL;
-    int preread = 0;
+    ScmSize preread = 0;
 
     if (!SCM_IPORTP(fromPort))
         Scm_Error("input port required, but got %S", fromPort);
@@ -351,7 +351,7 @@ static void conv_output_closer(ScmPort *port)
         info->ptr = info->buf;
     }
     /* sends out the closing sequence, if any */
-    int r = (int)jconv_reset(info, info->buf, info->bufsiz);
+    size_t r = jconv_reset(info, info->buf, info->bufsiz);
 #ifdef JCONV_DEBUG
     fprintf(stderr, "<= r=%d(reset), buf(%p)\n",
             r, info->buf);
@@ -361,7 +361,7 @@ static void conv_output_closer(ScmPort *port)
                   info->fromCode, info->toCode);
     }
     if (r > 0) {
-        Scm_Putz(info->buf, r, info->remote);
+        Scm_Putz(info->buf, (ScmSize)r, info->remote);
     }
     /* flush remove port */
     Scm_Flush(info->remote);
@@ -372,7 +372,7 @@ static void conv_output_closer(ScmPort *port)
     jconv_close(info);
 }
 
-static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
+static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     size_t inroom = SCM_PORT_BUFFER_AVAIL(port);
@@ -403,14 +403,14 @@ static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
 #else
             /* See the above notes.  We always flush the output buffer
                here, so that we can avoid output buffer overrun. */
-            Scm_Putz(info->buf, (int)(outbuf - info->buf), info->remote);
+            Scm_Putz(info->buf, (ScmSize)(outbuf - info->buf), info->remote);
             info->ptr = info->buf;
 #endif
-            return (int)(len - inroom);
+            return (ScmSize)(len - inroom);
         } else if (result == OUTPUT_NOT_ENOUGH) {
             /* Output buffer got full.  Flush it, and continue
                conversion. */
-            Scm_Putz(info->buf, (int)(outbuf - info->buf), info->remote);
+            Scm_Putz(info->buf, (ScmSize)(outbuf - info->buf), info->remote);
             info->ptr = info->buf;
             continue;
         } else if (result == ILLEGAL_SEQUENCE) {
@@ -425,11 +425,11 @@ static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
 #else
             /* See the above notes.  We always flush the output buffer here,
                so that we can avoid output buffer overrun. */
-            Scm_Putz(info->buf, (int)(outbuf - info->buf), info->remote);
+            Scm_Putz(info->buf, (ScmSize)(outbuf - info->buf), info->remote);
             info->ptr = info->buf;
 #endif
             if (forcep && len - inroom != cnt) continue;
-            return (int)(len - inroom);
+            return len - inroom;
         }
     }
 }
@@ -437,7 +437,7 @@ static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
 ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
                                     const char *toCode,
                                     const char *fromCode,
-                                    int bufsiz, int ownerp)
+                                    ScmSize bufsiz, int ownerp)
 {
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
@@ -478,7 +478,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
 /*------------------------------------------------------------
  * Direct interface for code guessing
  */
-const char *Scm_GuessCES(const char *code, const char *buf, int buflen)
+const char *Scm_GuessCES(const char *code, const char *buf, ScmSize buflen)
 {
     conv_guess *guess = findGuessingProc(code);
     if (guess == NULL)

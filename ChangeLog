@@ -1,3 +1,15 @@
+2018-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmSize): Use ScmSize instead of int where it's
+	  appropriate.
+	  THIS IS C API COMPATIBILIY-BREAKING CHANGE.  Extenstions that
+	  do the following may be required to recompile and/or edit.
+	  - C code that defines custom port.  Buffer sizes and the amout
+	    of data trasferred are now ScmSize instead of int.  The ScmPort
+	    structure layout may change.
+	  - Scm_ListToArray: Now the # of elements is in ScmSize.  The
+	    second argument type is changed from int* to ScmSize*.
+
 2018-08-09  Shiro Kawai <shiro@acm.org>
 
 	* lib/text/html-lite.scm: Add HTML5 elements

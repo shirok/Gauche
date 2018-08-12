@@ -276,14 +276,14 @@
                                                 SCM_STRING_COPYING))))
        (Scm_ApplyRec1 scmflusher SCM_FALSE))))
 
- (define-cfn bufport-filler (p::ScmPort* cnt::int) ::int :static
+ (define-cfn bufport-filler (p::ScmPort* cnt::ScmSize) ::ScmSize :static
    (let* ([scmfiller (SCM_OBJ (ref (-> p src) buf data))]
           [r (Scm_ApplyRec1 scmfiller (Scm_MakeInteger cnt))])
      (cond [(or (SCM_EOFP r) (SCM_FALSEP r)) (return 0)]
            [(not (SCM_STRINGP r))
             (Scm_Error "buffered port callback procedure returned non-string: %S" r)])
      (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY r)]
-            [siz::int (SCM_STRING_BODY_SIZE b)])
+            [siz::ScmSize (SCM_STRING_BODY_SIZE b)])
        (when (> siz cnt) (set! siz cnt)) ; for safety
        (memcpy (ref (-> p src) buf end) (SCM_STRING_BODY_START b) siz)
        (return (SCM_STRING_BODY_SIZE b)))))
@@ -304,7 +304,8 @@
     (return (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_INPUT TRUE (& bufrec)))))
 
 (inline-stub
- (define-cfn bufport-flusher (p::ScmPort* cnt::int forcep::int) ::int :static
+ (define-cfn bufport-flusher (p::ScmPort* cnt::ScmSize forcep::int)
+   ::ScmSize :static
    (let* ([scmflusher (SCM_OBJ (ref (-> p src) buf data))]
           [s (Scm_MakeString (ref (-> p src) buf buffer) cnt cnt
                              (logior SCM_STRING_INCOMPLETE SCM_STRING_COPYING))])

@@ -64,7 +64,7 @@ static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void port_finalize(ScmObj obj, void* data);
 static void register_buffered_port(ScmPort *port);
 static void unregister_buffered_port(ScmPort *port);
-static void bufport_flush(ScmPort*, int, int);
+static void bufport_flush(ScmPort*, ScmSize, int);
 static void file_closer(ScmPort *p);
 static int  file_buffered_port_p(ScmPort *p);       /* for Scm_PortFdDup */
 static void file_buffered_port_set_fd(ScmPort *p, int fd); /* ditto */
@@ -576,10 +576,10 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
                             int ownerp,  /* owner flag*/
                             ScmPortBuffer *bufrec)
 {
-    int size = bufrec->size;
+    ScmSize size = bufrec->size;
     char *buf = bufrec->buffer;
 
-    if (size <= 0) size = SCM_PORT_DEFAULT_BUFSIZ;
+    if (size == 0) size = SCM_PORT_DEFAULT_BUFSIZ;
     if (buf == NULL) buf = SCM_NEW_ATOMIC2(char*, size);
     ScmPort *p = make_port(klass, dir, SCM_PORT_FILE);
     p->name = name;
@@ -706,13 +706,13 @@ ScmObj Scm_ReaderLexicalMode()
    cnt == 0 means all the available data.   Note that, unless forcep == TRUE,
    this function only does "best effort" to make room, but doesn't
    guarantee to output cnt bytes.  */
-static void bufport_flush(ScmPort *p, int cnt, int forcep)
+static void bufport_flush(ScmPort *p, ScmSize cnt, int forcep)
 {
-    int cursiz = SCM_PORT_BUFFER_AVAIL(p);
+    ScmSize cursiz = SCM_PORT_BUFFER_AVAIL(p);
 
     if (cursiz == 0) return;
     if (cnt <= 0)  { cnt = cursiz; }
-    int nwrote = p->src.buf.flusher(p, cnt, forcep);
+    ScmSize nwrote = p->src.buf.flusher(p, cnt, forcep);
     if (nwrote < 0) {
         p->src.buf.current = p->src.buf.buffer; /* for safety */
         p->error = TRUE;
@@ -732,10 +732,10 @@ static void bufport_flush(ScmPort *p, int cnt, int forcep)
 
 /* Writes siz bytes in src to the buffered port.  siz may be larger than
    the port's buffer.  Won't return until entire siz bytes are written. */
-static void bufport_write(ScmPort *p, const char *src, int siz)
+static void bufport_write(ScmPort *p, const char *src, ScmSize siz)
 {
     do {
-        int room = (int)(p->src.buf.end - p->src.buf.current);
+        ScmSize room = p->src.buf.end - p->src.buf.current;
         if (room >= siz) {
             memcpy(p->src.buf.current, src, siz);
             p->src.buf.current += siz;
@@ -747,7 +747,7 @@ static void bufport_write(ScmPort *p, const char *src, int siz)
             src += room;
             bufport_flush(p, 0, FALSE);
         }
-    } while (siz > 0);
+    } while (siz != 0);
 }
 
 /* Fills the buffer.  Reads at least MIN bytes (unless it reaches EOF).
@@ -755,10 +755,10 @@ static void bufport_write(ScmPort *p, const char *src, int siz)
  * data is read.
  * Returns the number of bytes actually read, or 0 if EOF, or -1 if error.
  */
-static int bufport_fill(ScmPort *p, int min, int allow_less)
+static ScmSize bufport_fill(ScmPort *p, ScmSize min, int allow_less)
 {
-    int cursiz = (int)(p->src.buf.end - p->src.buf.current);
-    int nread = 0, toread;
+    ScmSize cursiz = p->src.buf.end - p->src.buf.current;
+    ScmSize nread = 0, toread;
     if (cursiz > 0) {
         memmove(p->src.buf.buffer, p->src.buf.current, cursiz);
         p->src.buf.current = p->src.buf.buffer;
@@ -774,7 +774,7 @@ static int bufport_fill(ScmPort *p, int min, int allow_less)
     }
 
     do {
-        int r = p->src.buf.filler(p, toread-nread);
+        ScmSize r = p->src.buf.filler(p, toread-nread);
         if (r <= 0) break;
         nread += r;
         p->src.buf.end += r;
@@ -793,12 +793,12 @@ static int bufport_fill(ScmPort *p, int min, int allow_less)
  * and we need more bytes, we gotta be careful -- next call to the filler
  * procedure may or may not block.  So we need to check the ready procedure.
  */
-static int bufport_read(ScmPort *p, char *dst, int siz)
+static ScmSize bufport_read(ScmPort *p, char *dst, ScmSize siz)
 {
-    int nread = 0;
-    int avail = (int)(p->src.buf.end - p->src.buf.current);
+    ScmSize nread = 0;
+    ScmSize avail = p->src.buf.end - p->src.buf.current;
 
-    int req = MIN(siz, avail);
+    ScmSize req = MIN(siz, avail);
     if (req > 0) {
         memcpy(dst, p->src.buf.current, req);
         p->src.buf.current += req;
@@ -817,8 +817,8 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
             }
         }
 
-        int req = MIN(siz, p->src.buf.size);
-        int r = bufport_fill(p, req, TRUE);
+        ScmSize req = MIN(siz, p->src.buf.size);
+        ScmSize r = bufport_fill(p, req, TRUE);
         if (r <= 0) break; /* EOF or an error*/
         if (r >= siz) {
             memcpy(dst, p->src.buf.current, siz);
@@ -1050,14 +1050,14 @@ typedef struct file_port_data_rec {
 
 #define FILE_PORT_DATA(p) ((file_port_data*)(p->src.buf.data))
 
-static int file_filler(ScmPort *p, int cnt)
+static ScmSize file_filler(ScmPort *p, ScmSize cnt)
 {
-    int nread = 0;
+    ScmSize nread = 0;
     int fd = FILE_PORT_DATA(p)->fd;
     char *datptr = p->src.buf.end;
     SCM_ASSERT(fd >= 0);
     while (nread == 0) {
-        int r;
+        ScmSize r;
         errno = 0;
         SCM_SYSCALL(r, read(fd, datptr, cnt-nread));
         if (r < 0) {
@@ -1074,17 +1074,17 @@ static int file_filler(ScmPort *p, int cnt)
     return nread;
 }
 
-static int file_flusher(ScmPort *p, int cnt, int forcep)
+static ScmSize file_flusher(ScmPort *p, ScmSize cnt, int forcep)
 {
-    int nwrote = 0;
-    int datsiz = SCM_PORT_BUFFER_AVAIL(p);
+    ScmSize nwrote = 0;
+    ScmSize datsiz = SCM_PORT_BUFFER_AVAIL(p);
     int fd = FILE_PORT_DATA(p)->fd;
     char *datptr = p->src.buf.buffer;
 
     SCM_ASSERT(fd >= 0);
     while ((!forcep && nwrote == 0)
            || (forcep && nwrote < cnt)) {
-        int r;
+        ScmSize r;
         errno = 0;
         SCM_SYSCALL(r, write(fd, datptr, datsiz-nwrote));
         if (r < 0) {
@@ -1292,8 +1292,8 @@ ScmObj Scm__GetOutputStringUnsafeCompat(ScmPort *port)
 }
 
 
-static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
-                                             const char *p, int psiz,
+static ScmObj get_remaining_input_string_aux(const char *s, ScmSize ssiz,
+                                             const char *p, ScmSize psiz,
                                              int flags);
 
 ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
@@ -1319,8 +1319,8 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
             return Scm_MakeString(cp, (int)(ep-cp), -1, flags);
         } else {
             /* we need to copy */
-            return get_remaining_input_string_aux(cp, (int)(ep-cp), cbuf,
-                                                  nbytes, flags);
+            return get_remaining_input_string_aux(cp, ep-cp, 
+                                                  cbuf, nbytes, flags);
         }
     } else if (port->scrcnt > 0) {
         const char *sp = port->src.istr.start;
@@ -1330,7 +1330,7 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
             return Scm_MakeString(cp, (int)(ep-cp), -1, flags);
         } else {
             /* we need to copy */
-            return get_remaining_input_string_aux(cp, (int)(ep-cp),
+            return get_remaining_input_string_aux(cp, ep-cp,
                                                   port->scratch,
                                                   port->scrcnt, flags);
         }
@@ -1339,8 +1339,8 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
     }
 }
 
-static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
-                                             const char *p, int psiz,
+static ScmObj get_remaining_input_string_aux(const char *s, ScmSize ssiz,
+                                             const char *p, ScmSize psiz,
                                              int flags)
 {
     char *b = SCM_NEW_ATOMIC2(char *, psiz+ssiz+1);
@@ -1380,7 +1380,7 @@ static int null_getc(ScmPort *dummy)
     return SCM_CHAR_INVALID;
 }
 
-static int null_getz(char *buf, int buflen, ScmPort *dummy)
+static ScmSize null_getz(char *buf, ScmSize buflen, ScmPort *dummy)
     /*ARGSUSED*/
 {
     return 0;
@@ -1402,7 +1402,7 @@ static void null_putc(ScmChar c, ScmPort *dummy)
 {
 }
 
-static void null_putz(const char *str, int len, ScmPort *dummy)
+static void null_putz(const char *str, ScmSize len, ScmPort *dummy)
     /*ARGSUSED*/
 {
 }
@@ -1584,9 +1584,9 @@ static void coding_port_recognize_encoding(ScmPort *port,
     data->source = coding_aware_port_hook(data->source, encoding);
 }
 
-static int coding_filler(ScmPort *p, int cnt)
+static ScmSize coding_filler(ScmPort *p, ScmSize cnt)
 {
-    int nread = 0;
+    ScmSize nread = 0;
     coding_port_data *data = (coding_port_data*)p->src.buf.data;
     char *datptr = p->src.buf.end;
 
@@ -1864,7 +1864,7 @@ static void prepare_console_and_stdio(const char *devname, int flags,
 #undef ERR_SETSTDHANDLE
 }
 
-static int trapper_filler(ScmPort *p, int cnt)
+static ScmSize trapper_filler(ScmPort *p, ScmSize cnt)
 {
     static int initialized = FALSE;
     prepare_console_and_stdio("CONIN$",  _O_RDONLY | _O_BINARY,
@@ -1872,7 +1872,7 @@ static int trapper_filler(ScmPort *p, int cnt)
     return file_filler(p, cnt);
 }
 
-static int trapper_flusher1(ScmPort *p, int cnt, int forcep)
+static ScmSize trapper_flusher1(ScmPort *p, ScmSize cnt, int forcep)
 {
     static int initialized = FALSE;
     prepare_console_and_stdio("CONOUT$", _O_WRONLY | _O_BINARY,
@@ -1880,7 +1880,7 @@ static int trapper_flusher1(ScmPort *p, int cnt, int forcep)
     return file_flusher(p, cnt, forcep);
 }
 
-static int trapper_flusher2(ScmPort *p, int cnt, int forcep)
+static ScmSize trapper_flusher2(ScmPort *p, ScmSize cnt, int forcep)
 {
     static int initialized = FALSE;
     prepare_console_and_stdio("CONOUT$", _O_WRONLY | _O_BINARY,

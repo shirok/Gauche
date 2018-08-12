@@ -47,11 +47,11 @@ SCM_DECL_BEGIN
 
 struct ScmConvInfoRec;
 
-typedef size_t (*ScmConvProc)(struct ScmConvInfoRec*, const char*, size_t,
-                              char*, size_t, size_t*);
-typedef size_t (*ScmConvReset)(struct ScmConvInfoRec*, char*, size_t);
-typedef size_t (*ScmConvHandler)(struct ScmConvInfoRec*, const char **,
-                                 size_t*, char**, size_t*);
+typedef ScmSize (*ScmConvProc)(struct ScmConvInfoRec*, const char*, ScmSize,
+                               char*, ScmSize, ScmSize*);
+typedef ScmSize (*ScmConvReset)(struct ScmConvInfoRec*, char*, ScmSize);
+typedef ScmSize (*ScmConvHandler)(struct ScmConvInfoRec*, const char **,
+                                  ScmSize*, char**, ScmSize*);
 
 /* Packaging conversion context info.*/
 typedef struct ScmConvInfoRec {
@@ -67,7 +67,7 @@ typedef struct ScmConvInfoRec {
     ScmPort *remote;            /* source or drain port */
     int ownerp;                 /* do I own remote port? */
     int remoteClosed;           /* true if remore port is closed */
-    int bufsiz;                 /* size of conversion buffer */
+    ScmSize bufsiz;             /* size of conversion buffer */
     char *buf;                  /* internal conversion buffer */
     char *ptr;                  /* current ptr in the internal conv buf */
 } ScmConvInfo;
@@ -76,16 +76,16 @@ extern ScmObj Scm_MakeInputConversionPort(ScmPort *source,
                                           const char *fromCode,
                                           const char *toCode,
                                           ScmObj handler,
-                                          int bufsiz,
+                                          ScmSize bufsiz,
                                           int ownerp);
 extern ScmObj Scm_MakeOutputConversionPort(ScmPort *sink,
                                            const char *toCode,
                                            const char *fromCode,
-                                           int bufsiz,
+                                           ScmSize bufsiz,
                                            int ownerp);
 
 typedef const char *(*ScmCodeGuessingProc)(const char *buf,
-                                           int bufsiz,
+                                           ScmSize bufsiz,
                                            void *data);
 
 extern const char *Scm_GetCESName(ScmObj code, const char *argname);
@@ -97,7 +97,7 @@ extern void Scm_RegisterCodeGuessingProc(const char *code,
 
 extern const char *Scm_GuessCES(const char *code,
                                 const char *buf,
-                                int buflen);
+                                ScmSize buflen);
 
 /* jconv error code */
 #define ILLEGAL_SEQUENCE  ((size_t)-1)

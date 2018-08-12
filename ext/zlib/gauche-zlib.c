@@ -205,7 +205,7 @@ void Scm_ZlibPortError(ScmPort *port, int error_code, const char *msg, ...)
  * Common
  */
 
-static int fix_buffer_size(int siz)
+static ScmSize fix_buffer_size(ScmSize siz)
 {
     if (siz <= 0) return DEFAULT_BUFFER_SIZE;
     if (siz <= MINIMUM_BUFFER_SIZE) return MINIMUM_BUFFER_SIZE;
@@ -223,11 +223,11 @@ static ScmObj port_name(const char *type, ScmPort *source)
 /*================================================================
  * Deflating port
  */
-static int deflate_flusher(ScmPort *port, int cnt, int forcep)
+static ScmSize deflate_flusher(ScmPort *port, ScmSize cnt, int forcep)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
-    int total = 0;
+    ScmSize total = 0;
     unsigned char *inbuf = (unsigned char*)port->src.buf.buffer;
     unsigned char outbuf[CHUNK];
 
@@ -246,8 +246,8 @@ static int deflate_flusher(ScmPort *port, int cnt, int forcep)
         if (strm->avail_out != 0) {
             info->flush = Z_NO_FLUSH;
         }
-        int nread = strm->next_in - inbuf;
-        int nwrite = strm->next_out - outbuf;
+        ScmSize nread = strm->next_in - inbuf;
+        ScmSize nwrite = strm->next_out - outbuf;
         total += nread;
         if (nwrite > 0) {
             Scm_Putz((char*)outbuf, nwrite, info->remote);
@@ -300,7 +300,7 @@ static int zlib_fileno(ScmPort *port)
 ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
                              int window_bits, int memlevel,
                              int strategy, ScmObj dict,
-                             int bufsiz, int ownerp)
+                             ScmSize bufsiz, int ownerp)
 {
     ScmZlibInfo *info = SCM_NEW(ScmZlibInfo);
     z_streamp strm = SCM_NEW_ATOMIC2(z_streamp, sizeof(z_stream));
@@ -364,7 +364,7 @@ ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
  * Inflating port
  */
 
-static int inflate_filler(ScmPort *port, int mincnt)
+static ScmSize inflate_filler(ScmPort *port, ScmSize mincnt)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
@@ -373,9 +373,9 @@ static int inflate_filler(ScmPort *port, int mincnt)
 
     if (info->stream_endp) return 0;
 
-    int nread = Scm_Getz(info->ptr,
-                         info->bufsiz - (info->ptr - info->buf),
-                         info->remote);
+    ScmSize nread = Scm_Getz(info->ptr,
+                             info->bufsiz - (info->ptr - info->buf),
+                             info->remote);
 
     if (nread <= 0) {
         /* input reached EOF */
@@ -452,7 +452,7 @@ static int inflate_ready(ScmPort *port)
     return 0;
 }
 
-ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
+ScmObj Scm_MakeInflatingPort(ScmPort *sink, ScmSize bufsiz,
                              int window_bits, ScmObj dict,
                              int ownerp)
 {
