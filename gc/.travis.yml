@@ -124,11 +124,17 @@ matrix:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ"
+    - CONF_OPTIONS="--enable-gc-assertions"
   - os: linux
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-D NO_CLOCK -D POINTER_MASK=~0xf"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: linux
+    compiler: clang
+    env:
+    - CFLAGS_EXTRA="-D MANUAL_VDB"
+    - CONF_OPTIONS="--enable-gc-assertions --disable-parallel-mark"
   - os: linux
     compiler: gcc
     env:
@@ -177,7 +183,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
+    - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus --enable-gc-assertions --enable-static"
     - CFLAGS_EXTRA="-D LINT2"
   - os: linux
     addons:
@@ -223,21 +229,25 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-D ALL_INTERIOR_POINTERS -D CHECKSUMS -D DBG_HDRS_ALL -D DEBUG_THREADS -D ENABLE_TRACE -D GC_ALWAYS_MULTITHREADED -D GC_ASSERTIONS -D GC_ATOMIC_UNCOLLECTABLE -D GC_ENABLE_SUSPEND_THREAD -D GC_GCJ_SUPPORT -D GC_PRINT_BACK_HEIGHT -D GC_THREADS -D HANDLE_FORK -D JAVA_FINALIZATION -D KEEP_BACK_PTRS -D MAKE_BACK_GRAPH -D PARALLEL_MARK -D PRINT_BLACK_LIST -D THREAD_LOCAL_ALLOC -D USE_MMAP -D USE_MUNMAP"
   - os: linux
     env:
-    - CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c real_malloc.c extra/symbian.cpp"
+    - CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning -D __SIZEOF_POINTER__=8 -U CLOCKS_PER_SEC -U FIXUP_POINTER -U GC_EXTERN -U STACKBOTTOM extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c real_malloc.c extra/symbian.cpp"
     sudo: required
   - os: linux
     env:
-    - CPPCHECK_ENABLE="--enable=unusedFunction"
+    - CPPCHECK_ENABLE="--enable=performance,portability,style,warning extra/gc.c"
+    sudo: required
+  - os: linux
+    env:
+    - CPPCHECK_ENABLE="--enable=unusedFunction extra/gc.c"
     sudo: required
   - os: linux
     compiler: clang
@@ -266,13 +276,13 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
-    - CXX=clang++-4.0
+    - CXX=clang++-5.0
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus"
     - TESTS_CUSTOM_RUN=true
@@ -298,10 +308,10 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer -D NO_INCREMENTAL"
@@ -318,51 +328,51 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
-    - CXX=clang++-4.0
+    - CXX=clang++-5.0
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --enable-single-obj-compilation"
   - os: linux
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         - gcc-multilib
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
-    - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-munmap --enable-gc-assertions --enable-gc-debug"
   - os: linux
     addons:
       apt:
         packages:
-        - gcc-5
-        - g++-5
+        - gcc-8
+        - g++-8
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-5
+    compiler: gcc-8
     language: c
     env:
-    - CXX=g++-5
+    - CXX=g++-8
     - CONF_OPTIONS="--enable-munmap --enable-cplusplus --enable-gc-assertions"
   - os: linux
     addons:
       apt:
         packages:
-        - gcc-5
-        - gcc-5-multilib
+        - gcc-8
+        - gcc-8-multilib
         - gcc-multilib
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-5
+    compiler: gcc-8
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -O3"
@@ -371,12 +381,12 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-5
-        - gcc-5-multilib
+        - gcc-8
+        - gcc-8-multilib
         - gcc-multilib
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-5
+    compiler: gcc-8
     language: c
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2 -D NO_INCREMENTAL"
@@ -475,8 +485,7 @@ script:
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
     ~/cppcheck/cppcheck -q -f --error-exitcode=2 -U GC_API -U long -D CPPCHECK
         -I include -I libatomic_ops/src $CPPCHECK_ENABLE
-        *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c
-        extra/gc.c;
+        *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c;
   fi
 - if [[ "$TESTS_CUSTOM_RUN" == true ]]; then
     ASAN_OPTIONS="detect_leaks=1" UBSAN_OPTIONS="halt_on_error=1" make check;

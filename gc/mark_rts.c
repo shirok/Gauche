@@ -364,6 +364,103 @@ STATIC void GC_remove_tmp_roots(void)
   }
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
+#ifdef USE_PROC_FOR_LIBRARIES
+  /* Exchange the elements of the roots table.  Requires rebuild of     */
+  /* the roots index table after the swap.                              */
+  GC_INLINE void swap_static_roots(int i, int j)
+  {
+    ptr_t r_start = GC_static_roots[i].r_start;
+    ptr_t r_end = GC_static_roots[i].r_end;
+    GC_bool r_tmp = GC_static_roots[i].r_tmp;
+
+    GC_static_roots[i].r_start = GC_static_roots[j].r_start;
+    GC_static_roots[i].r_end = GC_static_roots[j].r_end;
+    GC_static_roots[i].r_tmp = GC_static_roots[j].r_tmp;
+    /* No need to swap r_next values.   */
+    GC_static_roots[j].r_start = r_start;
+    GC_static_roots[j].r_end = r_end;
+    GC_static_roots[j].r_tmp = r_tmp;
+  }
+
+  /* Remove given range from every static root which intersects with    */
+  /* the range.  It is assumed GC_remove_tmp_roots is called before     */
+  /* this function is called repeatedly by GC_register_map_entries.     */
+  GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e)
+  {
+    int i;
+    GC_bool rebuild = FALSE;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT((word)b % sizeof(word) == 0 && (word)e % sizeof(word) == 0);
+    for (i = 0; i < n_root_sets; i++) {
+      ptr_t r_start, r_end;
+
+      if (GC_static_roots[i].r_tmp) {
+        /* The remaining roots are skipped as they are all temporary. */
+#       ifdef GC_ASSERTIONS
+          int j;
+          for (j = i + 1; j < n_root_sets; j++) {
+            GC_ASSERT(GC_static_roots[j].r_tmp);
+          }
+#       endif
+        break;
+      }
+      r_start = GC_static_roots[i].r_start;
+      r_end = GC_static_roots[i].r_end;
+      if (!EXPECT((word)e <= (word)r_start || (word)r_end <= (word)b, TRUE)) {
+#       ifdef DEBUG_ADD_DEL_ROOTS
+          GC_log_printf("Removing %p .. %p from root section %d (%p .. %p)\n",
+                        (void *)b, (void *)e,
+                        i, (void *)r_start, (void *)r_end);
+#       endif
+        if ((word)r_start < (word)b) {
+          GC_root_size -= r_end - b;
+          GC_static_roots[i].r_end = b;
+          /* No need to rebuild as hash does not use r_end value. */
+          if ((word)e < (word)r_end) {
+            int j;
+
+            if (rebuild) {
+              GC_rebuild_root_index();
+              rebuild = FALSE;
+            }
+            GC_add_roots_inner(e, r_end, FALSE); /* updates n_root_sets */
+            for (j = i + 1; j < n_root_sets; j++)
+              if (GC_static_roots[j].r_tmp)
+                break;
+            if (j < n_root_sets-1 && !GC_static_roots[n_root_sets-1].r_tmp) {
+              /* Exchange the roots to have all temporary ones at the end. */
+              swap_static_roots(j, n_root_sets - 1);
+              rebuild = TRUE;
+            }
+          }
+        } else {
+          if ((word)e < (word)r_end) {
+            GC_root_size -= e - r_start;
+            GC_static_roots[i].r_start = e;
+          } else {
+            GC_remove_root_at_pos(i);
+            if (i < n_root_sets - 1 && GC_static_roots[i].r_tmp
+                && !GC_static_roots[i + 1].r_tmp) {
+              int j;
+
+              for (j = i + 2; j < n_root_sets; j++)
+                if (GC_static_roots[j].r_tmp)
+                  break;
+              /* Exchange the roots to have all temporary ones at the end. */
+              swap_static_roots(i, j - 1);
+            }
+            i--;
+          }
+          rebuild = TRUE;
+        }
+      }
+    }
+    if (rebuild)
+      GC_rebuild_root_index();
+  }
+#endif /* USE_PROC_FOR_LIBRARIES */
+
 #if !defined(NO_DEBUGGING)
   /* For the debugging purpose only.                                    */
   /* Workaround for the OS mapping and unmapping behind our back:       */
@@ -391,7 +488,8 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-#   if defined(CPPCHECK) || (__GNUC__ >= 4)
+#   if defined(CPPCHECK) || (__GNUC__ >= 4 \
+                             && !defined(STACK_NOT_SCANNED))
         sp = (word)__builtin_frame_address(0);
 #   else
         sp = (word)&sp;
