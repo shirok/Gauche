@@ -322,6 +322,6 @@ typedef ScmUVector ScmF64Vector;
  */
 
 /* Retrieves underlying byte array */
-const uint8_t *Scm_GetBytes(ScmObj str_or_uvec, size_t *size);
+const uint8_t *Scm_GetBytes(ScmObj str_or_uvec, ScmSize *size);
 
 #endif /*GAUCHE_VECTOR_H*/

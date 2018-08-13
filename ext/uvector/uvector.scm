@@ -209,7 +209,7 @@
 ;; uvector-alias
 (inline-stub
  (define-cproc uvector-alias
-   (klass::<class> v::<uvector> :optional (start::<int> 0) (end::<int> -1))
+   (klass::<class> v::<uvector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
    Scm_UVectorAlias)
  )
 
@@ -308,15 +308,7 @@
  (define-cproc uvector-copy (v::<uvector>
                              :optional (start::<fixnum> 0)
                                        (end::<fixnum> -1))
-   (let* ([len::int (SCM_UVECTOR_SIZE v)]
-          [klass::ScmClass* (Scm_ClassOf (SCM_OBJ v))]
-          [eltsize::int (Scm_UVectorElementSize klass)]
-          [src::(const char *) (cast (const char *) (SCM_UVECTOR_ELEMENTS v))])
-     (SCM_CHECK_START_END start end len)
-     (let* ([newsize::int (* (- end start) eltsize)]
-            [dst::char* (SCM_NEW_ATOMIC_ARRAY (char) newsize)])
-       (memcpy dst (+ src (* start eltsize)) newsize)
-       (return (Scm_MakeUVector klass (- end start) dst)))))
+   (return (Scm_UVectorCopy v start end)))
  )
 
 ;; search
@@ -437,7 +429,7 @@
        (return r)
        (begin
          (SCM_ASSERT (SCM_INTP r))
-         (let* ([n::long (SCM_INT_VALUE r)])
+         (let* ([n::ScmSmallInt (SCM_INT_VALUE r)])
            (SCM_ASSERT (and (<= n size) (<= 0 n)))
            ;; NB: If read size is a lot shorter than requested size, we may
            ;; want to copy it instead of just keeping the rest of vector
@@ -457,16 +449,16 @@
 ;; copy
 (inline-stub
  (define-cproc uvector-copy! (dest::<uvector> dstart::<int> src::<uvector>
-                              :optional (sstart::<int> 0)
-                                        (send::<int> -1))
+                              :optional (sstart::<fixnum> 0)
+                                        (send::<fixnum> -1))
    ::<void>
    (SCM_UVECTOR_CHECK_MUTABLE dest)
    (SCM_CHECK_START_END sstart send (SCM_UVECTOR_SIZE src))
    (let* ([deltsize::int (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ dest)))]
-          [doff::int (* dstart deltsize)]
+          [doff::ScmSmallInt (* dstart deltsize)]
           [seltsize::int (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ src)))]
-          [soff::int (* sstart seltsize)]
-          [size::int (- (* send seltsize) soff)])
+          [soff::ScmSmallInt (* sstart seltsize)]
+          [size::ScmSmallInt (- (* send seltsize) soff)])
      (memmove (+ (cast char* (SCM_UVECTOR_ELEMENTS dest)) doff)
               (+ (cast (const char*) (SCM_UVECTOR_ELEMENTS src)) soff)
               size)))
@@ -481,8 +473,8 @@
    [(_ (s start end sp ep) . body)
     (let ([sb (gensym)] [size (gensym)] [len (gensym)] [ss (gensym)])
       `(let* ([,sb :: (const ScmStringBody*) (SCM_STRING_BODY ,s)]
-              [,size :: u_int (SCM_STRING_BODY_SIZE ,sb)]
-              [,len :: u_int (SCM_STRING_BODY_LENGTH ,sb)]
+              [,size :: ScmSize (SCM_STRING_BODY_SIZE ,sb)]
+              [,len :: ScmSize (SCM_STRING_BODY_LENGTH ,sb)]
               [,ss :: (const char*) (SCM_STRING_BODY_START ,sb)])
          (SCM_CHECK_START_END ,start ,end (cast int ,len))
          (let* ([,sp :: (const char*)
@@ -495,8 +487,12 @@
                          (Scm_StringBodyPosition ,sb ,end))])
            ,@body)))])
  
- (define-cfn string->bytevector
-   (klass::ScmClass* s::ScmString* start::int end::int immutable::int) :static
+ (define-cfn string->bytevector (klass::ScmClass* 
+                                 s::ScmString* 
+                                 start::ScmSmallInt
+                                 end::ScmSmallInt
+                                 immutable::int)
+   :static
    (with-input-string-pointers (s start end sp ep)
      (let* ([buf::char* NULL])
        (if immutable
@@ -504,7 +500,7 @@
          (begin
            (set! buf (SCM_NEW_ATOMIC2 (char*) (- ep sp)))
            (memcpy buf sp (- ep sp))))
-       (return (Scm_MakeUVectorFull klass (cast int (- ep sp)) buf
+       (return (Scm_MakeUVectorFull klass (cast ScmSmallInt (- ep sp)) buf
                                     immutable NULL)))))
 
  (define-cproc string->s8vector
@@ -517,9 +513,13 @@
     :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
    (return (string->bytevector SCM_CLASS_U8VECTOR s start end immutable?)))
 
- (define-cfn string->bytevector!
-   (v::ScmUVector* tstart::int s::ScmString* start::int end::int) :static
-   (let* ([tlen::int (SCM_UVECTOR_SIZE v)])
+ (define-cfn string->bytevector! (v::ScmUVector* 
+                                  tstart::ScmSmallInt
+                                  s::ScmString*
+                                  start::ScmSmallInt 
+                                  end::ScmSmallInt)
+   :static
+   (let* ([tlen::ScmSmallInt (SCM_UVECTOR_SIZE v)])
      (when (and (>= tstart 0) (< tstart tlen))
        (SCM_UVECTOR_CHECK_MUTABLE v)
        (with-input-string-pointers (s start end sp ep)
@@ -530,22 +530,25 @@
      (return (SCM_OBJ v))))
 
  (define-cproc string->s8vector! (v::<s8vector>
-                                  tstart::<int>
+                                  tstart::<fixnum>
                                   s::<string>
                                   :optional (start::<fixnum> 0)
                                   (end::<fixnum> -1))
    (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
  (define-cproc string->u8vector! (v::<u8vector>
-                                  tstart::<int>
+                                  tstart::<fixnum>
                                   s::<string>
                                   :optional (start::<fixnum> 0)
                                   (end::<fixnum> -1))
    (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
- (define-cfn bytevector->string (v::ScmUVector* start::int end::int term)
+ (define-cfn bytevector->string (v::ScmUVector* 
+                                 start::ScmSmallInt 
+                                 end::ScmSmallInt
+                                 term)
    :static
-   (let* ([len::int (SCM_UVECTOR_SIZE v)])
+   (let* ([len::ScmSmallInt (SCM_UVECTOR_SIZE v)])
      ;; We automatically avoid copying the string contents when the
      ;; following conditions are met:
      ;; * The source vector is immutable
@@ -568,8 +571,8 @@
                             0
                             SCM_STRING_COPYING)])
        (when (SCM_INTP term)
-         (let* ([terminator::u_int (logand #xff (SCM_INT_VALUE term))]
-                [i::int])
+         (let* ([terminator::u_char (logand #xff (SCM_INT_VALUE term))]
+                [i::ScmSmallInt])
            (for [(set! i start) (< i end) (post++ i)]
              (when (== terminator
                        (aref (cast u_char* (SCM_UVECTOR_ELEMENTS v)) i))
@@ -590,12 +593,13 @@
                                            (terminator #f))
    (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
- (define-cfn string->wordvector
-   (klass::ScmClass* s::ScmString* start::int end::int) :static
+ (define-cfn string->wordvector (klass::ScmClass* s::ScmString*
+                                 start::ScmSmallInt end::ScmSmallInt)
+   :static
    (with-input-string-pointers (s start end sp ep)
      (let* ([v (Scm_MakeUVector klass (- end start) NULL)]
             [eltp::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))]
-            [i::int 0])
+            [i::ScmSmallInt 0])
        (for [() (< sp ep) (post++ i)]
          (let* ([ch::ScmChar])
            (SCM_CHAR_GET sp ch)
@@ -605,22 +609,26 @@
 
  (define-cproc string->s32vector (s::<string>
                                   :optional (start::<fixnum> 0)
-                                  (end::<fixnum> -1))
+                                            (end::<fixnum> -1))
    (return (string->wordvector SCM_CLASS_S32VECTOR s start end)))
 
  (define-cproc string->u32vector (s::<string>
                                   :optional (start::<fixnum> 0)
-                                  (end::<fixnum> -1))
+                                            (end::<fixnum> -1))
    (return (string->wordvector SCM_CLASS_U32VECTOR s start end)))
 
- (define-cfn string->wordvector!
-   (v::ScmUVector* tstart::int s::ScmString* start::int end::int) :static
-   (let* ([tlen::int (SCM_UVECTOR_SIZE v)])
+ (define-cfn string->wordvector! (v::ScmUVector*
+                                  tstart::ScmSmallInt
+                                  s::ScmString*
+                                  start::ScmSmallInt
+                                  end::ScmSmallInt)
+   :static
+   (let* ([tlen::ScmSmallInt (SCM_UVECTOR_SIZE v)])
      (when (and (>= tstart 0) (< tstart tlen))
        (SCM_UVECTOR_CHECK_MUTABLE v)
        (with-input-string-pointers (s start end sp ep)
          (let* ([buf::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))]
-                [i::int tstart])
+                [i::ScmSmallInt tstart])
            (for [() (and (< sp ep) (< i tlen)) (post++ i)]
              (let* ([ch::ScmChar])
                (SCM_CHAR_GET sp ch)
@@ -642,9 +650,12 @@
                                              (end::<fixnum> -1))
    (return (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
 
- (define-cfn wordvector->string (v::ScmUVector* start::int end::int term)
+ (define-cfn wordvector->string (v::ScmUVector* 
+                                 start::ScmSmallInt
+                                 end::ScmSmallInt
+                                 term)
    :static
-   (let* ([len::int (SCM_UVECTOR_SIZE v)]
+   (let* ([len::ScmSmallInt (SCM_UVECTOR_SIZE v)]
           [s (Scm_MakeOutputStringPort FALSE)])
      (SCM_CHECK_START_END start end len)
      (let* ([eltp::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))])

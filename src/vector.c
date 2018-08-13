@@ -311,12 +311,15 @@ ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
 {
     ScmUVectorType type = Scm_UVectorType(klass);
     if (type < 0) Scm_Error("uvector class required, but got: %S", klass);
-    ScmSmallInt length = Scm_Length(list);
+    ScmSize length = Scm_Length(list);
     if (length < 0) Scm_Error("improper list not allowed: %S", list);
+    if (length > SCM_SMALL_INT_MAX) Scm_Error("list is too long: %,,,,100S", list);
 
-    ScmUVector *v = (ScmUVector*)Scm_MakeUVector(klass, length, NULL);
+    ScmUVector *v = (ScmUVector*)Scm_MakeUVector(klass,
+                                                 (ScmSmallInt)length,
+                                                 NULL);
     ScmObj cp = list;
-    for (int i=0; i<length; i++, cp = SCM_CDR(cp)) {
+    for (ScmSize i=0; i<length; i++, cp = SCM_CDR(cp)) {
         switch (type) {
         case SCM_UVECTOR_S8:
             SCM_S8VECTOR_ELEMENTS(v)[i] =
@@ -713,7 +716,7 @@ DEF_CMP(F64, f64, double, common_eqv, common_lt)
  * Utility
  */
 
-const uint8_t *Scm_GetBytes(ScmObj obj, size_t *size)
+const uint8_t *Scm_GetBytes(ScmObj obj, ScmSize *size)
 {
     if (SCM_UVECTORP(obj)) {
         *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(obj));
