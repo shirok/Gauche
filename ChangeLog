@@ -1,3 +1,17 @@
+2018-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* various files: Further code cleanup.  The following C API
+	  has changed:
+	  - Scm_ReadDigitsAsLong : the last arg is ScmSize* now.
+	  - Scm_Putz : len arg is ScmSize now.
+	  - ScmCharSet : size member is ScmSize now.
+	* src/libio.scm (%open-input-file, %open-output-file): Check and
+	  honor element-type keyword arg (only makes sense on Windows,
+	  but we check its vailidity on Unix as well).
+
+	* gc/ : Bumped to bdwgc 7.6.8 (by @qykth-git)
+	  https://github.com/shirok/Gauche/pull/373
+
 2018-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (ScmSize): Use ScmSize instead of int where it's
