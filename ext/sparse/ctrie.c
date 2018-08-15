@@ -497,8 +497,8 @@ void CompactTrieDump(ScmPort *out, const CompactTrie *ct,
 }
 
 /* returns # of leaves under this subtree. */
-static int check_rec(Node *n, int level,
-                     void (*checker)(Leaf*, ScmObj), ScmObj obj)
+static u_int check_rec(Node *n, int level,
+                       void (*checker)(Leaf*, ScmObj), ScmObj obj)
 {
     int direct_leaves = 0, total_leaves = 0;
     int off = 0;
@@ -532,7 +532,7 @@ void CompactTrieCheck(const CompactTrie *ct, ScmObj obj,
                       obj, ct->numEntries);
         }
     } else {
-        int num_leaves = check_rec(ct->root, 0, checker, obj);
+        u_int num_leaves = check_rec(ct->root, 0, checker, obj);
         if (ct->numEntries != num_leaves) {
             Scm_Error("%S: # of leafs (%d) and numEntries (%d) don't agree",
                       obj, num_leaves, ct->numEntries);

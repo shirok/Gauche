@@ -50,7 +50,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SysFlockClass,
                          flock_allocate,
                          NULL);
 
-static ScmObj flock_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj flock_allocate(ScmClass *klass SCM_UNUSED,
+                             ScmObj initargs SCM_UNUSED)
 {
     ScmSysFlock *f = SCM_NEW(ScmSysFlock);
     SCM_SET_CLASS(f, SCM_CLASS_SYS_FLOCK);

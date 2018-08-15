@@ -2357,8 +2357,8 @@ static void rex_rec(const unsigned char *code,
                     const char *input,
                     struct match_ctx *ctx)
 {
-    register int param;
-    register ScmChar ch;
+    int param;
+    ScmChar ch;
     ScmCharSet *cset;
     const char *bpos;
 
@@ -2640,7 +2640,7 @@ static void rex_rec(const unsigned char *code,
                 if (ctx->stop < input + param) break;
                 const unsigned char *str = code;
                 const unsigned char *ip = (const unsigned char*)input;
-                for (unsigned int i = 0; i < param; i++) {
+                for (int i = 0; i < param; i++) {
                     if (*str++ != (unsigned char)*ip++) goto matchr_out;
                 }
                 input = (const char *)ip;

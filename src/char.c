@@ -451,7 +451,7 @@ static void charset_print(ScmObj obj, ScmPort *out,
 
     if (cs->flags & SCM_CHAR_SET_IMMUTABLE) {
         const uint32_t *v = cs->large.frozen.vec;
-        for (int i = 0; i < cs->large.frozen.size; i += 2) {
+        for (ScmSize i = 0; i < cs->large.frozen.size; i += 2) {
             charset_print_ch(out, (int)v[i], FALSE);
             if (v[i] != v[i+1]) {
                 if (v[i+1] - v[i] > 2) Scm_Printf(out, "-");
@@ -481,7 +481,7 @@ typedef struct cs_iter_rec {
     int end;
     union {
         ScmTreeIter ti;
-        size_t vi;
+        ScmSize vi;
     } iter;
 } cs_iter;
 
@@ -584,7 +584,7 @@ ScmObj Scm_CharSetCopy(ScmCharSet *src)
     if (SCM_CHAR_SET_IMMUTABLE_P(src)) {
         /* The destination is mutable */
         const uint32_t *vec = src->large.frozen.vec;
-        for (size_t k = 0; k < src->large.frozen.size; k += 2) {
+        for (ScmSize k = 0; k < src->large.frozen.size; k += 2) {
             ScmDictEntry *e = Scm_TreeCoreSearch(&dst->large.tree,
                                                  vec[k], SCM_DICT_CREATE);
             e->value = vec[k+1];
@@ -600,7 +600,7 @@ ScmObj Scm_CharSetCopy(ScmCharSet *src)
    The caller must provide uint32_t[2] buffer for ivec. */
 static uint32_t *char_set_freeze_vec(ScmCharSet *src,
                                      uint32_t *ivec,
-                                     size_t *size /*out*/)
+                                     ScmSize *size /*out*/)
 {
     SCM_ASSERT(!SCM_CHAR_SET_IMMUTABLE_P(src));
     size_t s = (size_t)Scm_TreeCoreNumEntries(&src->large.tree) * 2;
@@ -641,7 +641,7 @@ ScmObj Scm_CharSetFreezeX(ScmCharSet *src)
 {
     if (SCM_CHAR_SET_IMMUTABLE_P(src)) return SCM_OBJ(src);
     if (SCM_CHAR_SET_LARGE_P(src)) {
-        size_t s;
+        ScmSize s;
         uint32_t iv[2];
         uint32_t *v = char_set_freeze_vec(src, iv, &s);
         src->large.frozen.size = s;

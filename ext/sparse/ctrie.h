@@ -98,7 +98,8 @@ typedef struct LeafRec {
 #define LEAF_KEY_MASK   ((1UL<<LEAF_KEY_BITS)-1)
 
 /* managing key in the leaf */
-static u_long leaf_key(Leaf *leaf)
+
+static inline u_long leaf_key(Leaf *leaf)
 {
     return (((leaf->key1&LEAF_KEY_MASK) << LEAF_KEY_BITS)
             + (leaf->key0&LEAF_KEY_MASK));

@@ -494,7 +494,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
 {
 #if !GAUCHE_WINDOWS
     struct msghdr *msg;
-    int bufsiz = 0;
+    ScmSize bufsiz = 0;
     char *bufptr = 0;
 
     if (buf != NULL) {
@@ -502,7 +502,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         bufptr = (char*)SCM_UVECTOR_ELEMENTS(buf);
     }
 
-    if (bufsiz >= sizeof(struct msghdr)) {
+    if (bufsiz >= (ScmSize)sizeof(struct msghdr)) {
         msg = (struct msghdr*)bufptr;
         bufptr += sizeof(struct msghdr); bufsiz -= sizeof(struct msghdr);
     } else {
@@ -526,7 +526,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         } else {
             msg->msg_iov = SCM_NEW_ARRAY(struct iovec, msg->msg_iovlen);
         }
-        for (int i=0; i < msg->msg_iovlen; i++) {
+        for (ScmSize i=0; i < (ScmSize)msg->msg_iovlen; i++) {
             ScmObj elt = SCM_VECTOR_ELEMENT(iov, i);
             u_int iovlen;
             msg->msg_iov[i].iov_base = (char*)get_message_body(elt, &iovlen);

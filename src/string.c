@@ -162,7 +162,7 @@ static inline ScmSmallInt count_length(const char *str, ScmSmallInt size)
    If the string is incomplete, returns -1. */
 int Scm_MBLen(const char *str, const char *stop)
 {
-    ScmSmallInt size = (stop == NULL)? strlen(str) : (stop - str);
+    ScmSmallInt size = (stop == NULL)? (ScmSmallInt)strlen(str) : (stop - str);
     ScmSmallInt len = count_length(str, size);
     if (len > SCM_STRING_MAX_LENGTH) {
         Scm_Error("Scm_MBLen: length too big: %ld", len);

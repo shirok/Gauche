@@ -696,9 +696,13 @@
            (SCM_SYSCALL r (utime path NULL))]
           [else
            (set! (ref tim actime)
-                 (?: (SCM_FALSEP atime) (time NULL) (Scm_GetUInteger atime)))
+                 (?: (SCM_FALSEP atime) 
+                     (time NULL)
+                     (cast time_t (Scm_GetUInteger atime))))
            (set! (ref tim modtime)
-                 (?: (SCM_FALSEP mtime) (time NULL) (Scm_GetUInteger mtime)))
+                 (?: (SCM_FALSEP mtime) 
+                     (time NULL)
+                     (cast time_t (Scm_GetUInteger mtime))))
            (SCM_SYSCALL r (utime path (& tim)))])
     (when (< r 0) (Scm_SysError "utime failed on %s" path))))
 

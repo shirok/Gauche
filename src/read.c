@@ -832,10 +832,10 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, ScmObj mode,
 /* NB: Call for refactoring, using Scm_ParseDigitsAsLong  */
 long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch, int radix,
                           ScmChar *next, /*out*/
-                          int *numread /*out*/)
+                          ScmSize *numread /*out*/)
 {
-    u_long val = 0;
-    int nchars = 0;
+    long val = 0;
+    ScmSize nchars = 0;
     if (ch != SCM_CHAR_INVALID) {
         int v = Scm_DigitToInt(ch, radix, FALSE);
         if (v < 0) {
@@ -854,7 +854,7 @@ long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch, int radix,
             *numread = nchars;
             return val;
         }
-        if (val >= (u_long)(LONG_MAX/radix+1)) {
+        if (val >= (LONG_MAX/radix+1)) {
             /* we'll overflow */
             *next = ch;
             *numread = nchars;
@@ -867,18 +867,18 @@ long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch, int radix,
 
 /* Read long digits from BUF up to LEN.  BUF must only contain single-byte
    chars. */
-long Scm_ParseDigitsAsLong(const char *buf, size_t len, int radix,
-                           int *numread) /*out*/
+long Scm_ParseDigitsAsLong(const char *buf, ScmSize len, int radix,
+                           ScmSize *numread) /*out*/
 {
-    u_long val = 0;
-    int nchars = 0;
+    long val = 0;
+    ScmSize nchars = 0;
     for (; nchars < len; nchars++, buf++) {
         int v = Scm_DigitToInt((ScmChar)*buf, radix, FALSE);
         if (v < 0) {
             *numread = nchars;
             return val;
         }
-        if (val >= (u_long)(LONG_MAX/radix+1)) {
+        if (val >= (LONG_MAX/radix+1)) {
             /* we'll overflow */
             *numread = nchars;
             return -1;
@@ -886,7 +886,7 @@ long Scm_ParseDigitsAsLong(const char *buf, size_t len, int radix,
         val = val*radix+v;
     }
     *numread = nchars;
-    return (nchars == 0)? -1 : (long)val;
+    return (nchars == 0)? -1 : val;
 }
 
 /*----------------------------------------------------------------
@@ -1151,7 +1151,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
 
 static struct char_name {
     const char *name;
-    int size;
+    u_int size;
     ScmObj ch;
 } char_names[] = {
 #define DEFCHAR(name, char) \
@@ -1484,7 +1484,7 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 {
     ScmObj e = SCM_UNBOUND;
     ScmChar ch2;
-    int nread;
+    ScmSize nread;
     long prefix = Scm_ReadDigitsAsLong(port, ch, 10, &ch2, &nread);
 
     if (ch2 == EOF) Scm_ReadError(port, "unterminated reference form (#digits)");

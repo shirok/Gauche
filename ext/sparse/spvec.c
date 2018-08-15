@@ -310,7 +310,7 @@ static Leaf *u_allocate(void *data SCM_UNUSED)
     return (Leaf*)z;
 }
 
-static void u_clear(Leaf *leaf, void *data SCM_UNUSED)
+static void u_clear(Leaf *leaf SCM_UNUSED, void *data SCM_UNUSED)
 {
     /* nothing to do */
 }

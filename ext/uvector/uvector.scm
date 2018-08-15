@@ -331,7 +331,7 @@
                                                    (end   #f)
                                                    (skip  #f)
                                                    (rounding #f))
-   (let* ([len::size_t (SCM_UVECTOR_SIZE v)]
+   (let* ([len::ScmSize (SCM_UVECTOR_SIZE v)]
           [s::ScmSmallInt (get-fixnum-arg start 0 "start")]
           [e::ScmSmallInt (get-fixnum-arg end -1 "end")]
           [p::ScmSmallInt (get-fixnum-arg skip 0 "skip")])

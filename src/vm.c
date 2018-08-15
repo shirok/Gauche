@@ -2791,7 +2791,7 @@ ScmCallTrace *Scm__MakeCallTraceQueue(u_long size)
                                 + (size-1)*sizeof(ScmCallTraceEntry));
     ct->size = size;
     ct->top = 0;
-    for (int i=0; i<size; i++) {
+    for (u_long i=0; i<size; i++) {
         ct->entries[i].base = NULL;
         ct->entries[i].pc = NULL;
     }

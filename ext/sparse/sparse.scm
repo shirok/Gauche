@@ -337,6 +337,7 @@
    SparseVectorInc)
 
  (define-cfn sparse-vector-iter (args::ScmObj* nargs::int data::void*) :static
+   (cast void nargs)                    ; suppress unused var warning
    (let* ([iter::SparseVectorIter* (cast SparseVectorIter* data)]
           [r (SparseVectorIterNext iter)]
           [eofval (aref args 0)])
@@ -546,6 +547,7 @@
 
 (inline-stub
  (define-cfn sparse-matrix-iter (args::ScmObj* nargs::int data::void*) :static
+   (cast void nargs)                    ; suppress unused var warning
    (let* ([iter::SparseVectorIter* (cast SparseVectorIter* data)]
           [r (SparseVectorIterNext iter)]
           [eofval (aref args 0)])

@@ -4401,7 +4401,7 @@ static ScmObj read_number(const char *str, int len, int radix,
         case '5': case '6': case '7': case '8': case '9':
             if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             else {
-                int nread = 0;
+                ScmSize nread = 0;
                 long radix = Scm_ParseDigitsAsLong(--str, --len, 10, &nread);
                 if (radix <= 1 || radix > 36) return SCM_FALSE;
                 str += nread; len -= nread;
