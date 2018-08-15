@@ -354,13 +354,13 @@ SCM_EXTERN ScmObj Scm_PortAttrsUnsafe(ScmPort *port);
 SCM_EXTERN void   Scm_Putb(ScmByte b, ScmPort *port);
 SCM_EXTERN void   Scm_Putc(ScmChar c, ScmPort *port);
 SCM_EXTERN void   Scm_Puts(ScmString *s, ScmPort *port);
-SCM_EXTERN void   Scm_Putz(const char *s, int len, ScmPort *port);
+SCM_EXTERN void   Scm_Putz(const char *s, ScmSize len, ScmPort *port);
 SCM_EXTERN void   Scm_Flush(ScmPort *port);
 
 SCM_EXTERN void   Scm_PutbUnsafe(ScmByte b, ScmPort *port);
 SCM_EXTERN void   Scm_PutcUnsafe(ScmChar c, ScmPort *port);
 SCM_EXTERN void   Scm_PutsUnsafe(ScmString *s, ScmPort *port);
-SCM_EXTERN void   Scm_PutzUnsafe(const char *s, int len, ScmPort *port);
+SCM_EXTERN void   Scm_PutzUnsafe(const char *s, ScmSize len, ScmPort *port);
 SCM_EXTERN void   Scm_FlushUnsafe(ScmPort *port);
 
 SCM_EXTERN void   Scm_Ungetc(ScmChar ch, ScmPort *port);

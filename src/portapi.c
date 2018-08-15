@@ -248,9 +248,9 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
  */
 
 #ifdef SAFE_PORT_OP
-void Scm_Putz(const char *s, int siz, ScmPort *p)
+void Scm_Putz(const char *s, volatile ScmSize siz, ScmPort *p)
 #else
-void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
+void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
 #endif
 {
     VMDECL;
@@ -258,7 +258,7 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
-    if (siz < 0) siz = (int)strlen(s);
+    if (siz < 0) siz = (ScmSize)strlen(s);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         SAFE_CALL(p, bufport_write(p, s, siz));
@@ -266,7 +266,7 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
             const char *cp = p->src.buf.current;
             while (cp-- > p->src.buf.buffer) {
                 if (*cp == '\n') {
-                    SAFE_CALL(p, bufport_flush(p, (int)(cp - p->src.buf.current), FALSE));
+                    SAFE_CALL(p, bufport_flush(p, (cp - p->src.buf.current), FALSE));
                     break;
                 }
             }
@@ -561,7 +561,7 @@ static int getc_scratch_unsafe(ScmPort *p)
 
     memcpy(tbuf, p->scratch, curr);
     p->scrcnt = 0;
-    for (int i=curr; i<=nb; i++) {
+    for (volatile int i=curr; i<=nb; i++) {
         int r = EOF;
         SAFE_CALL(p, r = Scm_Getb(p));
         if (r == EOF) {
@@ -627,7 +627,7 @@ int Scm_GetcUnsafe(ScmPort *p)
                 /* The buffer doesn't have enough bytes to consist a char.
                    move the incomplete char to the scratch buffer and try
                    to fetch the rest of the char. */
-                int rest, filled = 0;
+                volatile int rest, filled = 0;
                 p->scrcnt = (unsigned char)(p->src.buf.end - p->src.buf.current + 1);
                 memcpy(p->scratch, p->src.buf.current-1, p->scrcnt);
                 p->src.buf.current = p->src.buf.end;
@@ -1152,8 +1152,8 @@ ScmObj Scm_PortAttrSet(ScmPort *p, ScmObj key, ScmObj val)
 ScmObj Scm_PortAttrSetUnsafe(ScmPort *p, ScmObj key, ScmObj val)
 #endif
 {
-    int err_readonly = FALSE;
-    int exists = FALSE;
+    volatile int err_readonly = FALSE;
+    volatile int exists = FALSE;
     VMDECL;
     SHORTCUT(p, return Scm_PortAttrSetUnsafe(p, key, val););
     LOCK(p);
