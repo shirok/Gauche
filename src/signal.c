@@ -89,7 +89,7 @@ static struct sigHandlersRec {
                                    for the system to handle.  These can be
                                    overridden by Scm_SetSignalHandler. */
     ScmInternalMutex mutex;
-} sigHandlers = {{NULL}};
+} sigHandlers;
 
 /* Maximum # of the same signals before it is processed by the VM loop.
    If any one of signals exceeds this count, Gauche exits with Scm_Abort.
@@ -242,7 +242,7 @@ static struct sigdesc {
 #ifdef SIGTHR
     SIGDEF(SIGTHR,  SIGDEF_NOHANDLE), /* Thread interrupt / AST (FreeBSD, OpenBSD) */
 #endif
-    { NULL, -1 }
+    { NULL, -1, 0 }
 };
 
 /*===============================================================
@@ -307,14 +307,15 @@ static ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs);
 SCM_DEFINE_BUILTIN_CLASS(Scm_SysSigsetClass, sigset_print,
                          NULL, NULL, sigset_allocate, SCM_CLASS_DEFAULT_CPL);
 
-void sigset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+void sigset_print(ScmObj obj, ScmPort *out, 
+                  ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(out, "#<sys-sigset [");
     display_sigset(&SCM_SYS_SIGSET(obj)->set, out);
     Scm_Printf(out, "]>");
 }
 
-ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs)
+ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmSysSigset *s = SCM_NEW_INSTANCE(ScmSysSigset, klass);
     sigemptyset(&s->set);
@@ -550,7 +551,7 @@ void Scm_SigCheck(ScmVM *vm)
  * Default Scheme-level handlers
  */
 /* For most signals, default handler raises an error. */
-static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
+static ScmObj default_sighandler(ScmObj *args, int nargs, void *data SCM_UNUSED)
 {
     SCM_ASSERT(nargs == 1 && SCM_INTP(args[0]));
     int signum = SCM_INT_VALUE(args[0]);
@@ -587,7 +588,9 @@ static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
 #define DEFAULT_SIGHANDLER    SCM_OBJ(&default_sighandler_stub)
 
 /* For some signals, exits. */
-static ScmObj exit_sighandler(ScmObj *args, int nargs, void *data)
+static ScmObj exit_sighandler(ScmObj *args SCM_UNUSED,
+                              int nargs SCM_UNUSED,
+                              void *data SCM_UNUSED)
 {
     Scm_Exit(0);
     return SCM_UNDEFINED;       /* dummy */
@@ -603,7 +606,9 @@ static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
 #define EXIT_SIGHANDLER    SCM_OBJ(&exit_sighandler_stub)
 
 /* For some signals, gauche does nothing */
-static ScmObj indifferent_sighandler(ScmObj *args, int nargs, void *data)
+static ScmObj indifferent_sighandler(ScmObj *args SCM_UNUSED,
+                                     int nargs SCM_UNUSED,
+                                     void *data SCM_UNUSED)
 {
     return SCM_UNDEFINED;
 }

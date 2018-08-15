@@ -101,7 +101,7 @@
  (define-cclass <queue>
    "Queue*" "QueueClass" ()
    ((length :type <uint> :c-name "len" :setter #f))
-   (allocator (return (makeq klass)))
+   (allocator (begin (cast void initargs) (return (makeq klass))))
    (printer (Scm_Printf port "#<queue %d @%p>" (%qlength (Q obj)) obj)))
 
  ;;

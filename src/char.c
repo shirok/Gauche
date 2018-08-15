@@ -421,7 +421,8 @@ static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
     }
 }
 
-static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+static void charset_print(ScmObj obj, ScmPort *out, 
+                          ScmWriteContext *ctx SCM_UNUSED)
 {
     int prev, code, first = TRUE;
     ScmCharSet *cs = SCM_CHAR_SET(obj);
@@ -531,7 +532,7 @@ static int cs_iter_next(cs_iter *ci,
 /*-----------------------------------------------------------------
  * Constructors
  */
-static int cmp(ScmTreeCore *tc, intptr_t a, intptr_t b)
+static int cmp(ScmTreeCore *tc SCM_UNUSED, intptr_t a, intptr_t b)
 {
     if (a > b) return 1;
     if (a < b) return -1;

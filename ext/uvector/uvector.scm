@@ -300,7 +300,7 @@
         (Scm_F64VectorFill (SCM_F64VECTOR v)
                            (Scm_GetDouble init)
                            0 -1)]
-       [else SCM_UNDEFINED]) ; can't happen
+       [else (SCM_ASSERT "Invalid uvector type")])
      (return v))))
 
 ;; generic copy

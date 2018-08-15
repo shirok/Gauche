@@ -63,7 +63,7 @@ static void weakvector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTC(')', port);
 }
 
-static void weakvector_finalize(ScmObj obj, void *data)
+static void weakvector_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmWeakVector *v = SCM_WEAK_VECTOR(obj);
     ScmObj *p = (ScmObj*)v->pointers;
@@ -219,7 +219,8 @@ void *Scm_WeakBoxRef(ScmWeakBox *wbox)
 #define MARK_GONE_ENTRY(ht, e)  (ht->goneEntries++)
 
 
-static void weakhash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void weakhash_print(ScmObj obj, ScmPort *port, 
+                           ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmWeakHashTable *ht = SCM_WEAK_HASH_TABLE(obj);
     char *type = "";

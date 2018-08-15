@@ -187,6 +187,7 @@
     (Scm_Printf port "#<gdbm-file %S>" (-> (SCM_GDBM_FILE obj) name))])
 
  (define-cfn gdbm_finalize (obj data::void*) ::void :static
+   (cast void data)                     ; suppress unused var warning
    (let* ((g :: ScmGdbmFile* (SCM_GDBM_FILE obj)))
      (when (-> g dbf)
        (gdbm_close (-> g dbf))

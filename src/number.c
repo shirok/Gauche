@@ -352,7 +352,9 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
  * Cf. IEEE 754 Reference
  * http://babbage.cs.qc.edu/courses/cs341/IEEE-754references.html
  */
-static inline void decode_double(double d, u_long *mant1, u_long *mant0,
+static inline void decode_double(double d, 
+                                 u_long *mant1 SCM_UNUSED,
+                                 u_long *mant0,
                                  int *exp, int *sign)
 {
     ScmIEEEDouble dd;
@@ -538,7 +540,8 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
    On 32bit architecture, mant1 is for lower 32bits of mantissa, and 
    lower 20bits of mant0 is used for higher bits.
  */
-double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int signbit)
+double Scm__EncodeDouble(u_long mant1 SCM_UNUSED,
+                         u_long mant0, int exp, int signbit)
 {
     ScmIEEEDouble dd;
 #ifdef DOUBLE_ARMENDIAN
@@ -1047,7 +1050,7 @@ uint32_t Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor)
             if (clamp & SCM_CLAMP_LO) return 0;
             goto err;
         }
-        if (r > 0xffffffffUL) {
+        if (r > 0xffffffffL) {
             if (clamp & SCM_CLAMP_HI) return 0xffffffffUL;
             goto err;
         }
@@ -3710,7 +3713,8 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     }
 }
 
-static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void number_print(ScmObj obj, ScmPort *port, 
+                         ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_PrintNumber(port, obj, NULL);
 }

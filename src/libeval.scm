@@ -209,6 +209,7 @@
 (define-cproc dynamic-load (file::<string>
                             :key (init-function #f)
                             (export-symbols #f)); for backward compatibility
+  (cast void export-symbols) ; suppress unused var warning
   (return (Scm_DynLoad file init_function 0)))
 
 ;; API

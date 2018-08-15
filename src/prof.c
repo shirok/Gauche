@@ -164,7 +164,7 @@ static void sampler_flush(ScmVM *vm)
 #if defined(GAUCHE_WINDOWS)
 static void sampler_sample(ScmVM *vm)
 #else  /* !GAUCHE_WINDOWS */
-static void sampler_sample(int sig)
+static void sampler_sample(int sig SCM_UNUSED)
 #endif /* !GAUCHE_WINDOWS */
 {
 #if !defined(GAUCHE_WINDOWS)

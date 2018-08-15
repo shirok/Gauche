@@ -205,7 +205,7 @@
                                  (if-does-not-exist :create)
                                  (mode::<fixnum> #o666)
                                  (buffering #f)
-                                 (element-type :character))
+                                 (element-type :character)) ; unused; for compatibility
   (let* ([ignerr-noexist::int FALSE]
          [ignerr-exist::int FALSE]
          [flags::int O_WRONLY])
@@ -306,6 +306,7 @@
 (inline-stub
  (define-cfn bufport-flusher (p::ScmPort* cnt::ScmSize forcep::int)
    ::ScmSize :static
+   (cast void forcep) ; suppress unused var warning
    (let* ([scmflusher (SCM_OBJ (ref (-> p src) buf data))]
           [s (Scm_MakeString (ref (-> p src) buf buffer) cnt cnt
                              (logior SCM_STRING_INCOMPLETE SCM_STRING_COPYING))])
@@ -415,10 +416,13 @@
 
 (inline-stub
  (define-cfn write_state_allocate (klass::ScmClass* initargs) :static
+   (cast void klass)                    ; suppress unused var warning
+   (cast void initargs)                 ; suppress unused var warning
    (return (SCM_OBJ (Scm_MakeWriteState NULL))))
 
  (define-cfn write_state_print (obj port::ScmPort* ctx::ScmWriteContext*)
    ::void :static
+   (cast void ctx)                      ; suppress unused var warning
    (Scm_Printf port "#<write-state %p>" obj))
 
  (define-cclass <write-state>
@@ -633,7 +637,8 @@
     (return (SCM_OBJ (Scm_CurrentReadContext)))
     (if (SCM_READ_CONTEXT_P ctx)
       (return (SCM_OBJ (Scm_SetCurrentReadContext (SCM_READ_CONTEXT ctx))))
-      (Scm_Error "<read-context> required, but got:" ctx))))
+      (begin (Scm_Error "<read-context> required, but got:" ctx)
+             (return SCM_UNDEFINED))))) ;dummy
 
 (define-cproc read-reference? (obj) ::<boolean> SCM_READ_REFERENCE_P)
 
@@ -813,6 +818,8 @@
 (select-module gauche)
 (inline-stub
  (define-cfn write_controls_allocate (klass::ScmClass* initargs) :static
+   (cast void klass)                    ; suppress unused var warning
+   (cast void initargs)                 ; suppress unused var warning
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
 
  ;; TODO: We want to treat <write-controls> as immutable structure, but

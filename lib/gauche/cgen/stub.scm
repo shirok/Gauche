@@ -1150,7 +1150,7 @@
   (p))
 
 (define-method cgen-emit-body ((cproc <cproc>))
-  (p "static ScmObj "(~ cproc'c-name)"(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)")
+  (p "static ScmObj "(~ cproc'c-name)"(ScmObj *SCM_FP SCM_UNUSED, int SCM_ARGCNT SCM_UNUSED, void *data_ SCM_UNUSED)")
   (p "{")
   ;; argument decl
   (for-each emit-arg-decl (~ cproc'args))
@@ -1419,7 +1419,7 @@
         ))))
 
 (define-method cgen-emit-body ((method <cmethod>))
-  (f "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
+  (f "static ScmObj ~a(ScmNextMethod *nm_ SCM_UNUSED, ScmObj *SCM_FP, int SCM_ARGCNT SCM_UNUSED, void *d_ SCM_UNUSED)"
      (~ method'c-name))
   (p "{")
   (for-each emit-arg-decl (~ method'args))
@@ -1632,7 +1632,7 @@
     (p "}")
     (p ""))
   (unless ((any-pred not c-literal?) (~ self'printer))
-    (p "static void "(c-printer-name self)"(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
+    (p "static void "(c-printer-name self)"(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)")
     (p "{")
     (p (c-code (~ self'printer)))
     (p "}")

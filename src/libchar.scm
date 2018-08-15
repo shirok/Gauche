@@ -188,7 +188,10 @@
     [(SCM_CHAR_CATEGORY_Cf) (return 'Cf)]
     [(SCM_CHAR_CATEGORY_Cs) (return 'Cs)]
     [(SCM_CHAR_CATEGORY_Co) (return 'Co)]
-    [(SCM_CHAR_CATEGORY_Cn) (return 'Cn)]))
+    [(SCM_CHAR_CATEGORY_Cn) (return 'Cn)]
+    [else (Scm_Panic "Scm_CharGeneralCategory returns unknown value \
+                      for character %d" c)
+          (return SCM_UNDEFINED)])) ; dummy
 
 
 ;;;

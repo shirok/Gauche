@@ -652,6 +652,9 @@
       (when (and (not restarg) (> (-> vm numVals) reqargs))
         ($vm-err "received more values than expected"))
       (set! argsize (+ reqargs (?: restarg 1 0)))
+      (cast void argsize) ; suppress unused variable warning
+      (cast void nextpc) ; suppress unused variable warning
+      (cast void size) ; suppress unused variable warning
       ,@stmts
       (cond [(> reqargs 0) (PUSH-ARG VAL0) (post++ i)]
             [(and restarg (> (-> vm numVals) 0))
@@ -721,7 +724,7 @@
 (define-insn VALUES-N 0 none #f
   (begin
     (VM-ASSERT ENV)
-    (let* ([nvals::int (cast int (-> ENV size))] [v])
+    (let* ([nvals::int (cast int (-> ENV size))])
       (set! (-> vm numVals) nvals)
       (for [() (> nvals 1) (post-- nvals)]
            (POP-ARG (aref (-> vm vals) (- nvals 1))))

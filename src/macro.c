@@ -50,7 +50,8 @@
  * Syntax object
  */
 
-static void syntax_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
+static void syntax_print(ScmObj obj, ScmPort *port, 
+                         ScmWriteContext *mode SCM_UNUSED)
 {
     ScmSymbol *name = SCM_SYNTAX(obj)->name;
     Scm_Printf(port, "#<syntax %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
@@ -130,7 +131,8 @@ SCM_CLASS_DECL(Scm_SyntaxPatternClass);
 #define SCM_SYNTAX_PATTERN(obj)   ((ScmSyntaxPattern*)(obj))
 #define SCM_SYNTAX_PATTERN_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_PATTERN)
 
-static void pattern_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void pattern_print(ScmObj obj, ScmPort *port, 
+                          ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<pattern:%d%S %S%s>",
                SCM_SYNTAX_PATTERN(obj)->level,
@@ -157,7 +159,8 @@ ScmSyntaxPattern *make_syntax_pattern(int level, int numFollowing)
  *   Internal object to construct pattern matcher
  */
 
-static void synrule_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
+static void synrule_print(ScmObj obj, ScmPort *port, 
+                          ScmWriteContext *mode SCM_UNUSED)
 {
     ScmSyntaxRules *r = SCM_SYNTAX_RULES(obj);
 
@@ -186,23 +189,11 @@ ScmSyntaxRules *make_syntax_rules(int nr)
  * Traditional Macro
  */
 
-/* TODO: how to retain debug info? */
-/* TODO: better error message on syntax error (macro invocation with
-   bad number of arguments) */
-
-static ScmObj macro_transform_old(ScmObj *argv, int argc, void *data)
-{
-    SCM_ASSERT(argc == 2);
-    ScmObj form = argv[0];      /* we ignore env (argv[1]) */
-    ScmObj proc = SCM_OBJ(data);
-    SCM_ASSERT(SCM_PAIRP(form));
-    return Scm_VMApply(proc, SCM_CDR(form));
-}
-
 /* TRANSIENT
    This used to be called via make-macro-transformer, but no longer.
    We leave stub here for ABI compatibility. */
-ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
+ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name SCM_UNUSED,
+                                   ScmProcedure *proc SCM_UNUSED)
 {
     Scm_Panic("Obsoleted Scm_MakeMacroTransformerOld called!  Something is wrong!");
 }
@@ -1028,7 +1019,9 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
    Now it's in compile.scm (%internal-macro-expand).  This is kept
    for ABI compatibility, but nobody is supposed to call this.
  */
-ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
+ScmObj Scm_VMMacroExpand(ScmObj expr SCM_UNUSED,
+                         ScmObj env SCM_UNUSED,
+                         int oncep SCM_UNUSED)
 {
     Scm_Error("Scm_VMMacroExpand is obsoleted.");
     return SCM_UNDEFINED;

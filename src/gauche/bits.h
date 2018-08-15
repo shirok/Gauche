@@ -75,7 +75,7 @@ SCM_EXTERN ScmBits *Scm_MakeBits(int numbits);
    the word boundary.  Assume 0 <= s < e' <= SCM_WORD_BITS, where e' = e
    for 1 <= e < SCM_WORD_BITS, and e' = SCM_WORD_BITS if e == 0. */
 #define SCM_BITS_MASK(s, e) \
-    (((e)? (1UL<<(e)) - 1 : -1) & ~((1UL<<(s)) - 1))
+    (((e)? (1UL<<(e)) - 1 : (u_long)-1) & ~((1UL<<(s)) - 1))
 
 /* works on the range of bits, from start (inclusive) to end (exclusive) */
 

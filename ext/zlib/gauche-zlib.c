@@ -93,14 +93,15 @@ SCM_DEFINE_BASE_CLASS(Scm_ZlibVersionErrorClass, ScmZlibVersionError,
                       message_print, NULL, NULL,
                       zliberror_allocate, zlib_error_cpl);
 
-static ScmObj zliberror_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj zliberror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmZlibError *e = SCM_NEW_INSTANCE(ScmZlibError, klass);
     e->message = SCM_FALSE;
     return SCM_OBJ(e);
 }
 
-static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void message_print(ScmObj obj, ScmPort *port, 
+                          ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);
     Scm_Printf(port, "#<%A \"%30.1A\">",
@@ -114,7 +115,7 @@ static ScmClassStaticSlotSpec zliberror_slots[] = {
 
 ScmObj Scm_MakeZlibError(ScmObj message, int error_code)
 {
-    ScmClass *klass;
+    ScmClass *klass = NULL;
     switch (error_code) {
     case Z_NEED_DICT:
         klass = SCM_CLASS_ZLIB_NEED_DICT_ERROR;
@@ -166,7 +167,7 @@ void Scm_ZlibError(int error_code, const char *msg, ...)
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
-static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmPortError *e = SCM_NEW_INSTANCE(ScmPortError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
@@ -364,7 +365,7 @@ ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
  * Inflating port
  */
 
-static ScmSize inflate_filler(ScmPort *port, ScmSize mincnt)
+static ScmSize inflate_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
@@ -447,7 +448,7 @@ static void inflate_closer(ScmPort *port)
     }
 }
 
-static int inflate_ready(ScmPort *port)
+static int inflate_ready(ScmPort *port SCM_UNUSED)
 {
     return 0;
 }

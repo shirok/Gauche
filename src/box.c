@@ -68,7 +68,8 @@
 /* NB: SRFI-111 leave equal? behavior implementation-dependent (except
    it must return #f if eqv? returns #f).  We compare the contents.
  */
-static void box_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void box_print(ScmObj obj, ScmPort *port,
+                      ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<box %S>", SCM_BOX_VALUE(obj));
 }

@@ -144,8 +144,10 @@
  *     JIS X 0213 to EUC-JP is a straightfoward conversion.
  */
 
-static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
-                        char *outptr, size_t outroom, size_t *outchars)
+static size_t sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
+                        const char *inptr, size_t inroom,
+                        char *outptr, size_t outroom, 
+                        size_t *outchars)
 {
     static const unsigned char cvt[] = { 0xa1, 0xa8, 0xa3, 0xa4, 0xa5, 0xac, 0xae, 0xad, 0xaf, 0xee };
 
@@ -286,8 +288,10 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
  *     s2 is mapped with the same rule above.
  */
 
-static size_t eucj2sjis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
-                        char *outptr, size_t outroom, size_t *outchars)
+static size_t eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
+                        const char *inptr, size_t inroom,
+                        char *outptr, size_t outroom,
+                        size_t *outchars)
 {
     unsigned char e1 = inptr[0];
     if (e1 <= 0x7f) {
@@ -459,7 +463,7 @@ static inline size_t utf2euc_emit_euc(unsigned short euc, size_t inchars, char *
 }
 
 /* handle 2-byte UTF8 sequence.  0xc0 <= u0 <= 0xdf */
-static inline size_t utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
+static inline size_t utf2euc_2(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
                                const char *inptr, size_t inroom,
                                char *outptr, size_t outroom, size_t *outchars)
 {
@@ -503,7 +507,7 @@ static inline size_t utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
 }
 
 /* handle 3-byte UTF8 sequence.  0xe0 <= u0 <= 0xef */
-static inline size_t utf2euc_3(ScmConvInfo *cinfo, unsigned char u0,
+static inline size_t utf2euc_3(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
                                const char *inptr, size_t inroom,
                                char *outptr, size_t outroom, size_t *outchars)
 {
@@ -552,7 +556,7 @@ static inline size_t utf2euc_3(ScmConvInfo *cinfo, unsigned char u0,
 }
 
 /* handle 4-byte UTF8 sequence.  u0 == 0xf0, 0xa0 <= u1 <= 0xaa */
-static inline size_t utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
+static inline size_t utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
                                const char *inptr, size_t inroom,
                                char *outptr, size_t outroom, size_t *outchars)
 {
@@ -721,7 +725,8 @@ static inline size_t eucj2utf_emit_utf(unsigned int ucs, size_t inchars,
     return inchars;
 }
 
-static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
+static size_t eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
+                       const char *inptr, size_t inroom,
                        char *outptr, size_t outroom, size_t *outchars)
 {
     unsigned char e0 = (unsigned char)inptr[0];
@@ -1087,8 +1092,12 @@ static size_t jis_reset(ScmConvInfo *cinfo, char *outptr, size_t outroom)
 
 /* EUC_JP is a pivot code, so we don't need to convert.  This function
    is just a placeholder. */
-static size_t pivot(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
-                    char *outptr, size_t outroom, size_t *outchars)
+static size_t pivot(ScmConvInfo *cinfo SCM_UNUSED,
+                    const char *inptr SCM_UNUSED,
+                    size_t inroom SCM_UNUSED,
+                    char *outptr SCM_UNUSED,
+                    size_t outroom SCM_UNUSED,
+                    size_t *outchars SCM_UNUSED)
 {
     return 0;
 }
@@ -1317,12 +1326,12 @@ static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
         return ILLEGAL_SEQUENCE;
     } else {
-        return (int)r;
+        return (size_t)r;
     }
 }
 
 /* reset routine for iconv */
-static size_t jconv_iconv_reset(ScmConvInfo *info, char *optr, size_t oroom)
+static ssize_t jconv_iconv_reset(ScmConvInfo *info, char *optr, size_t oroom)
 {
     size_t oroom_prev = oroom;
     if (info->ostate == JIS_ASCII) return 0;
@@ -1433,7 +1442,7 @@ size_t jconv(ScmConvInfo *info,
 /*------------------------------------------------------------------
  * JCONV_RESET - reset
  */
-size_t jconv_reset(ScmConvInfo *info, char *outptr, size_t outroom)
+ssize_t jconv_reset(ScmConvInfo *info, char *outptr, size_t outroom)
 {
     if (info->reset) {
         return info->reset(info, outptr, outroom);

@@ -151,7 +151,7 @@ const ScmWriteControls *Scm_GetWriteControls(ScmWriteContext *ctx,
 /* The class definition is in libio.scm  */
 
 /* NB: For the time being, proto argument is ignored. */
-ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto)
+ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto SCM_UNUSED)
 {
     ScmWriteState *z = SCM_NEW(ScmWriteState);
     SCM_SET_CLASS(z, SCM_CLASS_WRITE_STATE);
@@ -337,14 +337,16 @@ static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
    write-object.   We can't use VMApply here since this function can be
    called deep in the recursive stack of Scm_Write, so the control
    may not return to VM immediately. */
-static void write_object(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void write_object(ScmObj obj, ScmPort *port, 
+                         ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_ApplyRec(SCM_OBJ(&Scm_GenericWriteObject),
                  SCM_LIST2(obj, SCM_OBJ(port)));
 }
 
 /* Default method for write-object */
-static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
+static ScmObj write_object_fallback(ScmObj *args, int nargs,
+                                    ScmGeneric *gf SCM_UNUSED)
 {
     if (nargs != 2 || (nargs == 2 && !SCM_OPORTP(args[1]))) {
         Scm_Error("No applicable method for write-object with %S",
@@ -797,7 +799,10 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 /*OBSOLETED*/
 /*format is now in Scheme (libfmt.scm).*/
-void Scm_Format(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
+void Scm_Format(ScmPort *out SCM_UNUSED,
+                ScmString *fmt SCM_UNUSED,
+                ScmObj args SCM_UNUSED,
+                int sharedp SCM_UNUSED)
 {
     Scm_Error("Scm_Format is obsoleted");
 }
@@ -1105,7 +1110,8 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
 
 /* Public APIs */
 
-void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
+void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, 
+                 int sharedp SCM_UNUSED)
 {
     if (!SCM_OPORTP(out)) Scm_Error("output port required, but got %S", out);
 

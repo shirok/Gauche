@@ -290,7 +290,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_MersenneTwisterClass,
                          NULL, NULL, NULL, mt_allocate,
                          NULL);
 
-static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj mt_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
 {
     ScmObj seed = Scm_GetKeyword(key_seed, initargs, SCM_FALSE);
     ScmMersenneTwister *mt;

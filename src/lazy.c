@@ -84,7 +84,8 @@ typedef struct ScmPromiseContentRec {
  * class stuff
  */
 
-static void promise_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void promise_print(ScmObj obj, ScmPort *port,
+                          ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmPromise *p = (ScmPromise*)obj;
     const char *forced = p->content->forced? " (forced)" : "";
@@ -120,7 +121,9 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
  * force
  */
 
-static ScmObj release_promise(ScmObj *args, int nargs, void *data)
+static ScmObj release_promise(ScmObj *args SCM_UNUSED,
+                              int nargs SCM_UNUSED,
+                              void *data)
 {
     ScmPromise *p = SCM_PROMISE(data);
     p->content->owner = NULL;
@@ -467,7 +470,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
            Since generators are supposed to be called every time to yield
            a new value, so it is ambiguous what value should be returned
            if a generator calls itself recursively. */
-        if (lp->owner == SCM_WORD(vm)) {
+        if (SCM_WORD(lp->owner) == SCM_WORD(vm)) {
             /* NB: lp->owner will be reset by the original caller of
                the generator. */
             Scm_Error("Attempt to recursively force a lazy pair.");
@@ -487,7 +490,9 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
    but forced during execution of Scm_DecomposeLazyPair), returns its CAR
    and a generator that returns its CDR.
    Otherwise, returns FALSE.  */
-static ScmObj dummy_gen(ScmObj *args, int nargs, void *data)
+static ScmObj dummy_gen(ScmObj *args SCM_UNUSED,
+                        int nargs SCM_UNUSED,
+                        void *data)
 {
     ScmObj item;
     ScmObj generator;

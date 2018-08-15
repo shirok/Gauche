@@ -699,7 +699,7 @@ static ScmObj rc1_lex_minmax(regcomp_ctx *ctx)
     return SCM_MAKE_CHAR('{');
 }
 
-static ScmObj rc1_fold_alts(regcomp_ctx *ctx, ScmObj alts)
+static ScmObj rc1_fold_alts(regcomp_ctx *ctx SCM_UNUSED, ScmObj alts)
 {
     ScmObj r = SCM_NIL, ap;
     SCM_FOR_EACH(ap, alts) {
@@ -1304,7 +1304,7 @@ static void rc3_seq_rep(regcomp_ctx *ctx, ScmObj seq, int count, int lastp)
 }
 
 static void rc3_minmax(regcomp_ctx *ctx, ScmObj type, int count,
-                       ScmObj item, int lastp)
+                       ScmObj item, int lastp SCM_UNUSED)
 {
     /* (rep <n> . <x>)
                  TRY  #01

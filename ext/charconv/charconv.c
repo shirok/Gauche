@@ -51,18 +51,16 @@ typedef struct conv_guess_rec {
 
 /* anchor of the chain of conversion guessing procedures */
 static struct {
-    int dummy;                  /* trick to place this in .data section */
     conv_guess *procs;
     ScmInternalMutex mutex;
-} guess = { 1 };
+} guess;
 
 /* anchor of the conversion context used for UCS -> internal char routine */
 static struct {
-    int dummy;                  /* trick to place this in .data section */
     ScmConvInfo *ucs2char;
     ScmConvInfo *char2ucs;
     ScmInternalMutex mutex;
-} ucsconv = { 1 };
+} ucsconv;
 
 /*------------------------------------------------------------
  * Query
@@ -146,7 +144,7 @@ static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *
  *  <-- Buffered port <--- filler <--(info->buf)--- getz(remote)
  */
 
-static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt)
+static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     const char *inbuf = info->buf;
@@ -242,7 +240,7 @@ static void conv_input_closer(ScmPort *p)
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                    const char *fromCode,
                                    const char *toCode,
-                                   ScmObj handler,
+                                   ScmObj handler SCM_UNUSED, /* for now */
                                    ScmSize bufsiz,
                                    int ownerp)
 {
@@ -351,7 +349,7 @@ static void conv_output_closer(ScmPort *port)
         info->ptr = info->buf;
     }
     /* sends out the closing sequence, if any */
-    size_t r = jconv_reset(info, info->buf, info->bufsiz);
+    ssize_t r = jconv_reset(info, info->buf, info->bufsiz);
 #ifdef JCONV_DEBUG
     fprintf(stderr, "<= r=%d(reset), buf(%p)\n",
             r, info->buf);
@@ -595,7 +593,6 @@ extern void Scm_Init_convguess(void);
 SCM_EXTENSION_ENTRY void Scm_Init_gauche__charconv(void)
 {
     SCM_INIT_EXTENSION(gauche__charconv);
-    ScmModule *mod = SCM_FIND_MODULE("gauche.charconv", SCM_FIND_MODULE_CREATE);
     guess.procs = NULL;
     (void)SCM_INTERNAL_MUTEX_INIT(guess.mutex);
 #if   defined(GAUCHE_CHAR_ENCODING_UTF_8)

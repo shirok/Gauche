@@ -112,7 +112,8 @@
      [(SCM_VM_STOPPED)   (return 'stopped)]
      [(SCM_VM_TERMINATED)(return 'terminated)]
      [else (Scm_Error "[internal] thread state has invalid value: %d"
-                      (-> vm state))]))
+                      (-> vm state))
+           (return SCM_UNDEFINED)]))   ;dummy
 
  (define-cproc %make-thread (thunk::<procedure> name) Scm_MakeThread)
 

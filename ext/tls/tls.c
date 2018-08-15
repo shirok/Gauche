@@ -57,7 +57,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_AxTLSClass, tls_print, NULL,
                          NULL, ax_allocate, tlsclass_cpa);
 #endif /*GAUCHE_USE_AXTLS*/
 
-static void tls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx)
+static void tls_print(ScmObj obj, ScmPort* port, 
+                      ScmWriteContext* ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%A", Scm_ShortClassName(SCM_CLASS_OF(obj)));
     /* at the moment there's not much to print, so we leave this hole
@@ -273,7 +274,7 @@ static ScmObj ax_write(ScmTLS* tls, ScmObj msg)
     ax_context_check(t, "write");
     ax_close_check(t, "write");
 
-    size_t size;
+    ScmSize size;
     const uint8_t* cmsg = Scm_GetBytes(msg, &size);
     if (cmsg == NULL) {
         Scm_TypeError("TLS message", "uniform vector or string", msg);
@@ -311,7 +312,7 @@ static ScmObj ax_loadObject(ScmTLS* tls, ScmObj obj_type,
         return SCM_FALSE;
 }
 
-static void ax_finalize(ScmObj obj, void *data)
+static void ax_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmAxTLS *t = (ScmAxTLS*)obj;
     if (t->ctx) {

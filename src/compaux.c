@@ -92,7 +92,8 @@ void Scm_CompileFinish(ScmCompiledCode *cc)
  * Syntactic closure object
  */
 
-static void synclo_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void synclo_print(ScmObj obj, ScmPort *port,
+                         ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<syntactic-closure %S>",
                SCM_SYNTACTIC_CLOSURE(obj)->expr);
@@ -154,7 +155,8 @@ static ScmClassStaticSlotSpec synclo_slots[] = {
  * Scm_IdentifierEnv(), and never directly access ENV slot itself.
  */
 
-static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void identifier_print(ScmObj obj, ScmPort *port,
+                             ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmIdentifier *id = SCM_IDENTIFIER(obj);
     /* We may want to have an external identifier syntax, so that an

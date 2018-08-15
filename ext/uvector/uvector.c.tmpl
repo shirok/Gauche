@@ -164,7 +164,7 @@ static ArgType arg2_check(const char *name, ScmObj x, ScmObj y, int const_ok)
  * Converters
  */
 
-ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp)
+ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp SCM_UNUSED)
 {
     ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(size, 0);
     for (int i=0; i<size; i++) {
@@ -610,7 +610,10 @@ static inline ScmUInt64 u64num(ScmObj x, int *oor)
 ///(define *tmpl-numop* '(
 /* NB: s1 can be register flonum. */
 static void ${t}vector_${opname}(const char *name,
-                                 ScmObj d, ScmObj s0, ScmObj s1, int clamp)
+                                 ScmObj d, ScmObj s0, ScmObj s1, 
+                                 int clamp SCM_UNUSED)
+                                /* clamp appears in macro call below, but
+                                   the macro may not use it. */
 {
     int size = SCM_${T}VECTOR_SIZE(d), oor;
     ${ntype} r, v0, v1;

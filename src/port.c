@@ -173,7 +173,7 @@ static void port_cleanup(ScmPort *port)
 }
 
 /* called by GC */
-static void port_finalize(ScmObj obj, void* data)
+static void port_finalize(ScmObj obj, void* data SCM_UNUSED)
 {
     port_cleanup(SCM_PORT(obj));
 }
@@ -237,7 +237,7 @@ void Scm_ClosePort(ScmPort *port)
 /* OBSOLETED */
 /* C routines can use PORT_SAFE_CALL, so we reimplemented this in libio.scm.
    Kept here for ABI compatibility; will be gone by 1.0.  */
-ScmObj Scm_VMWithPortLocking(ScmPort *port, ScmObj closure)
+ScmObj Scm_VMWithPortLocking(ScmPort *port SCM_UNUSED, ScmObj closure)
 {
     static ScmObj with_port_locking_proc = SCM_UNDEFINED;
     SCM_BIND_PROC(with_port_locking_proc, "with-port-locking",
@@ -260,7 +260,8 @@ int Scm_PortLine(ScmPort *port)
     return port->line;
 }
 
-static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void port_print(ScmObj obj, ScmPort *port, 
+                       ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%s%sport%s %A %p>",
                (SCM_PORT_DIR(obj)&SCM_PORT_INPUT)? "i" : "",
@@ -861,10 +862,9 @@ static ScmSize bufport_read(ScmPort *p, char *dst, ScmSize siz)
 #define PORT_VECTOR_SIZE 256    /* need to be 2^n */
 
 static struct {
-    int dummy;
     ScmWeakVector   *ports;
     ScmInternalMutex mutex;
-} active_buffered_ports = { 1, NULL }; /* magic to put this in .data area */
+} active_buffered_ports;
 
 #define PORT_HASH(port)  \
     ((((SCM_WORD(port)>>3) * 2654435761UL)>>16) % PORT_VECTOR_SIZE)
@@ -1368,52 +1368,47 @@ ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port)
 */
 
 /* default dummy procedures */
-static int null_getb(ScmPort *dummy)
-    /*ARGSUSED*/
+static int null_getb(ScmPort *dummy SCM_UNUSED)
 {
     return SCM_CHAR_INVALID;
 }
 
-static int null_getc(ScmPort *dummy)
-    /*ARGSUSED*/
+static int null_getc(ScmPort *dummy SCM_UNUSED)
 {
     return SCM_CHAR_INVALID;
 }
 
-static ScmSize null_getz(char *buf, ScmSize buflen, ScmPort *dummy)
-    /*ARGSUSED*/
+static ScmSize null_getz(char *buf SCM_UNUSED,
+                         ScmSize buflen SCM_UNUSED,
+                         ScmPort *dummy SCM_UNUSED)
 {
     return 0;
 }
 
-static int null_ready(ScmPort *dummy, int charp)
-    /*ARGSUSED*/
+static int null_ready(ScmPort *dummy SCM_UNUSED, int charp SCM_UNUSED)
 {
     return TRUE;
 }
 
-static void null_putb(ScmByte b, ScmPort *dummy)
-    /*ARGSUSED*/
+static void null_putb(ScmByte b SCM_UNUSED, ScmPort *dummy SCM_UNUSED)
 {
 }
 
-static void null_putc(ScmChar c, ScmPort *dummy)
-    /*ARGSUSED*/
+static void null_putc(ScmChar c SCM_UNUSED, ScmPort *dummy SCM_UNUSED)
 {
 }
 
-static void null_putz(const char *str, ScmSize len, ScmPort *dummy)
-    /*ARGSUSED*/
+static void null_putz(const char *str SCM_UNUSED,
+                      ScmSize len SCM_UNUSED, 
+                      ScmPort *dummy SCM_UNUSED)
 {
 }
 
-static void null_puts(ScmString *s, ScmPort *dummy)
-    /*ARGSUSED*/
+static void null_puts(ScmString *s SCM_UNUSED, ScmPort *dummy SCM_UNUSED)
 {
 }
 
-static void null_flush(ScmPort *dummy)
-    /*ARGSUSED*/
+static void null_flush(ScmPort *dummy SCM_UNUSED)
 {
 }
 

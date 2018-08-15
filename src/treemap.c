@@ -322,7 +322,8 @@ void Scm_TreeCoreCheckConsistency(ScmTreeCore *tc)
  * ScmTreeMap
  */
 
-static void treemap_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void treemap_print(ScmObj obj, ScmPort *port, 
+                          ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmTreeMap *tm = SCM_TREE_MAP(obj);
     Scm_Printf(port, "#<tree-map %p (%d entries)>", tm,
@@ -378,7 +379,7 @@ ScmObj Scm_TreeMapSet(ScmTreeMap *tm, ScmObj key, ScmObj value, int flags)
     if (!e) return SCM_UNBOUND;
     ScmObj oldval = e->value? SCM_DICT_VALUE(e) : SCM_UNBOUND;
     if (!(flags&SCM_DICT_NO_OVERWRITE) || SCM_UNBOUNDP(oldval)) {
-        SCM_DICT_SET_VALUE(e, value);
+        (void)SCM_DICT_SET_VALUE(e, value);
     }
     return oldval;
 }

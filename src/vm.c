@@ -379,7 +379,7 @@ DWORD Scm_VMKey(void)
 
 /* Warn if VM is terminated by uncaught exception, and GC-ed without
    joining.  It is cleary an unexpected case and worth reporting. */
-static void vm_finalize(ScmObj obj, void *data)
+static void vm_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmVM *vm = SCM_VM(obj);
     ScmObj re = vm->resultException;
@@ -440,7 +440,7 @@ static void vm_unregister(ScmVM *vm)
 #ifdef PARANOIA
 #define CHECK_STACK_PARANOIA(n)  CHECK_STACK(n)
 #else
-#define CHECK_STACK_PARANOIA(n)  /*empty*/
+#define CHECK_STACK_PARANOIA(n)  (void)(n) /*dummy - avoid unused var warning*/
 #endif
 
 /* Hint for gcc -- at this moment, using __builtin_expect doesn't
@@ -784,7 +784,10 @@ static void vm_unregister(ScmVM *vm)
    Otherwise thie procedure won't return.
 */
 
-static void wna(ScmVM *vm, ScmObj proc, int ngiven, int foldlen)
+static void wna(ScmVM *vm SCM_UNUSED, 
+                ScmObj proc, 
+                int ngiven, 
+                int foldlen SCM_UNUSED)
 {
     int reqargs = SCM_PROCEDURE_REQUIRED(proc);
 #if 0
@@ -1373,7 +1376,9 @@ ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj a
     return proc;
 }
 
-static ScmObj eval_restore_env(ScmObj *args, int argc, void *data)
+static ScmObj eval_restore_env(ScmObj *args SCM_UNUSED,
+                               int argc SCM_UNUSED,
+                               void *data)
 {
     theVM->module = SCM_MODULE(data);
     return SCM_UNDEFINED;
@@ -1682,7 +1687,9 @@ static ScmObj safe_eval_handler(ScmObj *args,
     return SCM_UNDEFINED;
 }
 
-static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
+static ScmObj safe_eval_thunk(ScmObj *args SCM_UNUSED,
+                              int nargs SCM_UNUSED,
+                              void *data)
 {
     struct eval_packet_rec *epak = (struct eval_packet_rec*)data;
 
@@ -1699,7 +1706,9 @@ static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
     }
 }
 
-static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
+static ScmObj safe_eval_int(ScmObj *args SCM_UNUSED,
+                            int nargs SCM_UNUSED,
+                            void *data)
 {
     ScmObj thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
     ScmObj handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
@@ -1775,7 +1784,7 @@ int Scm_Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
  * assuming that such case is very rare.
  */
 
-int check_arglist_tail_for_apply(ScmVM *vm, ScmObj z)
+int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z)
 {
     int count = 0;
     static ScmObj length_proc = SCM_UNDEFINED;
@@ -1829,7 +1838,7 @@ ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
     return Scm_VMApply0(before);
 }
 
-static ScmObj dynwind_before_cc(ScmObj result, void **data)
+static ScmObj dynwind_before_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmObj before  = SCM_OBJ(data[0]);
     ScmObj body = SCM_OBJ(data[1]);
@@ -1864,7 +1873,7 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
     return Scm_VMApply0(after);
 }
 
-static ScmObj dynwind_after_cc(ScmObj result, void **data)
+static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmObj val0 = SCM_OBJ(data[0]);
     int nvals = (int)(intptr_t)data[1];
@@ -2158,7 +2167,8 @@ static void call_error_reporter(ScmObj e)
 }
 
 static ScmObj default_exception_handler_body(ScmObj *argv,
-                                             int argc, void *data)
+                                             int argc, 
+                                             void *data SCM_UNUSED)
 {
     SCM_ASSERT(argc == 1);
     return Scm_VMDefaultExceptionHandler(argv[0]);
@@ -2191,8 +2201,6 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
 ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exception, u_long raise_flags)
 #endif /*!GAUCHE_API_0_95*/
 {
-    ScmEscapePoint *ep = vm->escapePoint;
-
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
@@ -2214,7 +2222,9 @@ ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exception, u_long raise_flags)
 /*
  * with-error-handler
  */
-static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
+static ScmObj install_ehandler(ScmObj *args SCM_UNUSED, 
+                               int nargs SCM_UNUSED,
+                               void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
@@ -2224,7 +2234,9 @@ static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
     return SCM_UNDEFINED;
 }
 
-static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
+static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
+                               int nargs SCM_UNUSED,
+                               void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
     ScmVM *vm = theVM;
@@ -2290,7 +2302,9 @@ ScmObj Scm_VMReraise(ScmObj condition)
  *   dealing with exceptions.
  */
 
-static ScmObj install_xhandler(ScmObj *args, int nargs, void *data)
+static ScmObj install_xhandler(ScmObj *args SCM_UNUSED,
+                               int nargs SCM_UNUSED,
+                               void *data)
 {
     theVM->exceptionHandler = SCM_OBJ(data);
     return SCM_UNDEFINED;
@@ -2399,7 +2413,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     return SCM_CAR(args);
 }
 
-static ScmObj throw_cont_cc(ScmObj result, void **data)
+static ScmObj throw_cont_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmObj handlers = SCM_OBJ(data[0]);
     ScmEscapePoint *ep = (ScmEscapePoint *)data[1];
@@ -2408,7 +2422,8 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
 }
 
 /* Body of the continuation SUBR */
-static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
+static ScmObj throw_continuation(ScmObj *argframe, 
+                                 int nargs SCM_UNUSED, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmObj args = argframe[0];
@@ -2641,7 +2656,7 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1,
  * the current continuation.
  */
 
-static ScmObj process_queued_requests_cc(ScmObj result, void **data)
+static ScmObj process_queued_requests_cc(ScmObj result SCM_UNUSED, void **data)
 {
     /* restore the saved continuation of normal execution flow of VM */
     ScmVM *vm = theVM;
@@ -2834,7 +2849,7 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
 }
 #endif
 
-ScmObj Scm_VMGetStack(ScmVM *vm)
+ScmObj Scm_VMGetStack(ScmVM *vm SCM_UNUSED /* temporary*/)
 {
 #if 0 /* for now */
     ScmContFrame *c = vm->cont;

@@ -85,7 +85,7 @@ static struct {
                                      but we may change this design in future.
                                   */
     ScmInternalMutex dso_mutex;
-} ldinfo = { (ScmGloc*)&ldinfo, };  /* trick to put ldinfo in .data section */
+} ldinfo;
 
 /* keywords used for load and load-from-port surbs */
 static ScmObj key_error_if_not_found = SCM_UNBOUND;
@@ -433,7 +433,8 @@ struct ScmDLObjRec {
     ScmInternalCond  cv;
 };
 
-static void dlobj_print(ScmObj obj, ScmPort *sink, ScmWriteContext *mode)
+static void dlobj_print(ScmObj obj, ScmPort *sink, 
+                        ScmWriteContext *mode SCM_UNUSED)
 {
     Scm_Printf(sink, "#<dlobj \"%s\">", SCM_DLOBJ(obj)->path);
 }
@@ -632,7 +633,8 @@ static ScmObj find_prelinked(ScmString *dsoname)
    A DSO may contain multiple initialization functions (initfns), in
    which case each initfn is called at most once.
 */
-ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
+ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
+                   u_long flags SCM_UNUSED /*reserved*/)
 {
     ScmObj dsopath = find_prelinked(dsoname);
     if (SCM_FALSEP(dsopath)) {
@@ -936,7 +938,8 @@ int Scm_ProvidedP(ScmObj feature)
  * Autoload
  */
 
-static void autoload_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+static void autoload_print(ScmObj obj, ScmPort *out, 
+                           ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(out, "#<autoload %A::%A (%A)>",
                SCM_AUTOLOAD(obj)->module->name,
@@ -1002,7 +1005,7 @@ void Scm_DefineAutoload(ScmModule *where,
 }
 
 
-ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
+ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags SCM_UNUSED)
 {
     int circular = FALSE;
     ScmVM *vm = Scm_VM();
@@ -1143,8 +1146,10 @@ ScmObj Scm__RequireCompat(ScmObj feature)
 
 /* TRANSIENT: This is entirely moved to Scheme (libeval.scm).  The entry is
    kept only for the binary compatibility. */
-ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
-                          ScmObj env, int flags)
+ScmObj Scm_VMLoadFromPort(ScmPort *port SCM_UNUSED,
+                          ScmObj next_paths SCM_UNUSED,
+                          ScmObj env SCM_UNUSED,
+                          int flags SCM_UNUSED)
 {
     Scm_Error("[internal] Scm_VMLoadFromPort() is obsoleted; call load-from-port Scheme procedure.");
     return SCM_UNDEFINED;
@@ -1152,7 +1157,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
 
 /* TRANSIENT: Kept for the binary compatibility; the feature
    is in libeval.scm now. */
-void Scm__RecordLoadStart(ScmObj load_file_path/*ARGSUSED*/)
+void Scm__RecordLoadStart(ScmObj load_file_path SCM_UNUSED)
 {
 }
 

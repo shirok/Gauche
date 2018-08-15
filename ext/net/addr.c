@@ -64,7 +64,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrClass, sockaddr_print,
                          NULL, NULL, sockaddr_allocate,
                          NULL);
 
-void sockaddr_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+void sockaddr_print(ScmObj obj, ScmPort *port, 
+                    ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<sockaddr %S %S>",
                Scm_SockAddrFamily(SCM_SOCKADDR(obj)),
@@ -90,7 +91,8 @@ ScmObj Scm_SockAddrFamily(ScmSockAddr *addr)
 }
 
 /* Fallback of allocation method */
-static ScmObj sockaddr_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj sockaddr_allocate(ScmClass *klass SCM_UNUSED, 
+                                ScmObj initargs SCM_UNUSED)
 {
     Scm_Error("you can't directly instantiate the abstract class <sockaddr>");
     return SCM_UNDEFINED;       /* dummy */
@@ -129,7 +131,8 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
  * Unix domain socket
  */
 
-static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj sockaddr_un_allocate(ScmClass *klass SCM_UNUSED,
+                                   ScmObj initargs)
 {
     ScmObj path = Scm_GetKeyword(key_path, initargs, SCM_FALSE);
     if (!SCM_FALSEP(path) && !SCM_STRINGP(path)) {
@@ -180,7 +183,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrUnClass, sockaddr_print,
  * Inet domain socket
  */
 
-static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj sockaddr_in_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
 {
     ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
     ScmObj port = Scm_GetKeyword(key_port, initargs, SCM_MAKE_INT(0));
@@ -267,7 +270,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrInClass, sockaddr_print,
 
 #ifdef HAVE_IPV6
 
-static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj sockaddr_in6_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
 {
     ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
     ScmObj port = Scm_GetKeyword(key_port, initargs, SCM_MAKE_INT(0));

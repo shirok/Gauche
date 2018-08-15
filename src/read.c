@@ -213,7 +213,7 @@ ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto)
 }
 
 static void read_context_print(ScmObj obj, ScmPort *port,
-                               ScmWriteContext *ctx)
+                               ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<read-context %p>", obj);
 }
@@ -270,8 +270,8 @@ ScmObj Scm_MakeReadReference(void)
     return SCM_OBJ(a);
 }
 
-static void read_reference_print(ScmObj obj, ScmPort *port,
-                                 ScmWriteContext *ctx)
+static void read_reference_print(ScmObj obj SCM_UNUSED, ScmPort *port,
+                                 ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<read-reference>");
 }
@@ -410,7 +410,8 @@ static int char_is_delimiter(ScmChar ch)
             || SCM_CHAR_EXTRA_WHITESPACE(ch));
 }
 
-static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
+static void read_nested_comment(ScmPort *port, 
+                                ScmReadContext *ctx SCM_UNUSED)
 {
     int nesting = 0;
     int line = Scm_PortLine(port);
@@ -461,7 +462,7 @@ static void read_comment(ScmPort *port) /* leading semicolon is already read */
     }
 }
 
-static int skipws(ScmPort *port, ScmReadContext *ctx)
+static int skipws(ScmPort *port, ScmReadContext *ctx SCM_UNUSED)
 {
     for (;;) {
         int c = Scm_GetcUnsafe(port);
@@ -478,7 +479,9 @@ static int skipws(ScmPort *port, ScmReadContext *ctx)
     }
 }
 
-static void reject_in_r7(ScmPort *port, ScmReadContext *ctx, const char *token)
+static void reject_in_r7(ScmPort *port,
+                         ScmReadContext *ctx SCM_UNUSED,
+                         const char *token)
 {
     if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
         Scm_ReadError(port,
@@ -851,7 +854,7 @@ long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch, int radix,
             *numread = nchars;
             return val;
         }
-        if (val >= (LONG_MAX/radix+1)) {
+        if (val >= (u_long)(LONG_MAX/radix+1)) {
             /* we'll overflow */
             *next = ch;
             *numread = nchars;
@@ -875,7 +878,7 @@ long Scm_ParseDigitsAsLong(const char *buf, size_t len, int radix,
             *numread = nchars;
             return val;
         }
-        if (val >= (LONG_MAX/radix+1)) {
+        if (val >= (u_long)(LONG_MAX/radix+1)) {
             /* we'll overflow */
             *numread = nchars;
             return -1;
@@ -883,7 +886,7 @@ long Scm_ParseDigitsAsLong(const char *buf, size_t len, int radix,
         val = val*radix+v;
     }
     *numread = nchars;
-    return (nchars == 0)? -1 : val;
+    return (nchars == 0)? -1 : (long)val;
 }
 
 /*----------------------------------------------------------------
@@ -1037,7 +1040,7 @@ static void read_string_xdigits(ScmPort *port, int key,
 }
 
 static ScmObj read_string(ScmPort *port, int incompletep,
-                          ScmReadContext *ctx)
+                          ScmReadContext *ctx SCM_UNUSED)
 {
     int c = 0;
     ScmDString ds;
@@ -1261,7 +1264,8 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
    the read context setting.  INCLUDE_HASH_SIGN allows '#' to appear in
    the word.
 */
-static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
+static ScmObj read_word(ScmPort *port, ScmChar initial, 
+                        ScmReadContext *ctx SCM_UNUSED,
                         int temp_case_fold, int include_hash_sign)
 {
     int case_fold = temp_case_fold || SCM_PORT_CASE_FOLDING(port);
@@ -1375,7 +1379,7 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 }
 
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
-                                  ScmReadContext *ctx)
+                                  ScmReadContext *ctx SCM_UNUSED)
 {
     ScmDString ds;
     Scm_DStringInit(&ds);
@@ -1551,7 +1555,7 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
    For now, it is not used and the caller should pass SCM_FALSE. */
 
 ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher,
-                            ScmObj module /*reserved*/)
+                            ScmObj module SCM_UNUSED /*reserved*/)
 {
     if (!SCM_PROCEDUREP(proc)) {
         Scm_Error("procedure required, but got %S", proc);
@@ -1563,7 +1567,7 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher,
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_GetReaderCtor(ScmObj symbol, ScmObj module /*reserved*/)
+ScmObj Scm_GetReaderCtor(ScmObj symbol, ScmObj module SCM_UNUSED/*reserved*/)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
     ScmObj r = Scm_HashTableRef(readCtorData.table, symbol, SCM_FALSE);
@@ -1607,7 +1611,7 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
     return r;
 }
 
-static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
+static ScmObj reader_ctor(ScmObj *args, int nargs, void *data SCM_UNUSED)
 {
     ScmObj optarg = (nargs > 2? args[2] : SCM_FALSE);
     return Scm_DefineReaderCtor(args[0], args[1], optarg, SCM_FALSE);
@@ -1777,7 +1781,7 @@ static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
 /* OBSOLETED: gauche.uvector used to call this to set up reader pointer.
    Now it is read in src/vector.c.   We keep this entry for ABI compatibility.
    Remove on 1.0 release. */
-void Scm__InstallReadUvectorHook(ScmObj (*f)(ScmPort*, const char*, ScmReadContext *))
+void Scm__InstallReadUvectorHook(ScmObj (*f)(ScmPort*, const char*, ScmReadContext *) SCM_UNUSED)
 {
 }
 

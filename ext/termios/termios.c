@@ -50,7 +50,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SysTermiosClass,
                          termios_allocate,
                          NULL);
 
-static ScmObj termios_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj termios_allocate(ScmClass *klass SCM_UNUSED,
+                               ScmObj initargs SCM_UNUSED)
 {
     ScmSysTermios *t = SCM_NEW(ScmSysTermios);
     SCM_SET_CLASS(t, SCM_CLASS_SYS_TERMIOS);

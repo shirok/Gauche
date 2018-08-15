@@ -146,8 +146,8 @@
    ::<void>
    (let* ([info::ScmZlibInfo* (SCM_PORT_ZLIB_INFO port)]
           [strm::z_streamp (SCM_PORT_ZSTREAM port)]
-          [lv::int]
-          [st::int])
+          [lv::int 0]
+          [st::int 0])
      (cond
       [(SCM_FALSEP compression-level) (set! lv (-> info level))]
       [(SCM_INTP compression-level) (set! lv (SCM_INT_VALUE compression-level))]

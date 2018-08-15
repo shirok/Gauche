@@ -57,7 +57,7 @@ static void *oom_handler(size_t bytes)
 static struct {
     ScmObj alist;
     ScmInternalMutex mutex;
-} cond_features = { SCM_NIL };
+} cond_features = { SCM_NIL, SCM_INTERNAL_MUTEX_INITIALIZER };
 
 /*=============================================================
  * Program initialization
@@ -656,7 +656,7 @@ int main(void)
  */
 
 void Scm_SimpleMain(int argc, const char *argv[],
-                    const char *script, u_long flags)
+                    const char *script, u_long flags SCM_UNUSED)
 {
     SCM_ASSERT(argc > 0);
     ScmObj args = Scm_InitCommandLine(argc, argv);

@@ -563,22 +563,28 @@
            (cise-push-static-decl!
             (cise-render-to-string
              `(define-cfn ,tmp-cc (,rvar ,data :: void**) :static
-                (let* ,(map-with-index
-                        (^[i p]
-                          `(,(car p) :: ,(cdr p)
-                            (cast (,(cdr p)) (aref ,data ,i))))
-                        closed)
-                  ,@body))
+                ,(if (null? closed)
+                   `(begin (cast void ,data)
+                           ,@body)
+                   `(let* ,(map-with-index
+                            (^[i p]
+                              `(,(car p) :: ,(cdr p)
+                                (cast (,(cdr p)) (aref ,data ,i))))
+                            closed)
+                      ,@body)))
              'toplevel)))
          (for-each cise-push-static-decl-unique!
                    (reverse (~ amb'static-decls))))
-         
-       `(let* ([,data :: (.array void* (,(length closed)))])
-          ,@(map-with-index
-             (^[i p] `(set! (aref ,data ,i) (cast void* ,(car p))))
-             closed)
-          (Scm_VMPushCC ,tmp-cc ,data ,(length closed))
-          (return ,expr)))]))
+
+       (if (null? closed)
+         `(begin (Scm_VMPushCC ,tmp-cc NULL 0)
+                 (return ,expr))
+         `(let* ([,data :: (.array void* (,(length closed)))])
+            ,@(map-with-index
+               (^[i p] `(set! (aref ,data ,i) (cast void* ,(car p))))
+               closed)
+            (Scm_VMPushCC ,tmp-cc ,data ,(length closed))
+            (return ,expr))))]))
 
 ;;------------------------------------------------------------
 ;; Syntax
@@ -741,8 +747,10 @@
        (env-decl-add! env `(,tmp ScmObj))
        `("SCM_FOR_EACH(" ,(cise-render-identifier tmp) ","
          ,(render-rec list-expr eenv) ") {"
-         ,(render-rec `(let* ((,var :: ScmObj (SCM_CAR ,tmp)))
-                         ,@body) env)
+         ,(if (eq? var '_)
+            (render-rec `(begin ,@body) env)
+            (render-rec `(let* ((,var :: ScmObj (SCM_CAR ,tmp)))
+                           ,@body) env))
          "}")])))
 
 ;; [cise stmt] dolist [VAR EXPR] STMT ...

@@ -41,7 +41,8 @@
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs);
 
-static void mbedtls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx)
+static void mbedtls_print(ScmObj obj, ScmPort* port, 
+                          ScmWriteContext* ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%A", Scm_ShortClassName(SCM_CLASS_OF(obj)));
     /* at the moment there's not much to print, so we leave this hole
@@ -72,7 +73,8 @@ typedef struct ScmMbedTLSRec {
 } ScmMbedTLS;
 
 
-static void mbed_context_check(ScmMbedTLS* t, const char* op)
+static void mbed_context_check(ScmMbedTLS* t SCM_UNUSED,
+                               const char* op SCM_UNUSED)
 {
     /* nothing to do (for now) */
 }
@@ -209,7 +211,7 @@ static ScmObj mbed_write(ScmTLS* tls, ScmObj msg)
     mbed_context_check(t, "write");
     mbed_close_check(t, "write");
 
-    size_t size;
+    ScmSize size;
     const uint8_t* cmsg = Scm_GetBytes(msg, &size);
     
     if (cmsg == NULL) {
@@ -232,14 +234,16 @@ static ScmObj mbed_close(ScmTLS *tls)
     return SCM_TRUE;
 }
 
-static ScmObj mbed_loadObject(ScmTLS* tls, ScmObj obj_type,
-                            const char *filename, const char *password)
+static ScmObj mbed_loadObject(ScmTLS* tls SCM_UNUSED,
+                              ScmObj obj_type SCM_UNUSED,
+                              const char *filename SCM_UNUSED,
+                              const char *password SCM_UNUSED)
 {
     /* irrelevant */
     return SCM_FALSE;
 }
 
-static void mbed_finalize(ScmObj obj, void *data)
+static void mbed_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmTLS *t = (ScmTLS*)obj;
     mbed_close(t);

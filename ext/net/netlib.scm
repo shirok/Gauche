@@ -56,9 +56,11 @@
  (define-cgeneric sockaddr-port "Scm_GenericSockAddrPort" (extern))
 
  (define-cmethod sockaddr-name ((addr "Scm_SockAddrClass"))
+   (cast void addr)                     ; suppress unused var warning
    (return '"unknown"))
 
  (define-cmethod sockaddr-family ((addr "Scm_SockAddrClass"))
+   (cast void addr)                     ; suppress unused var warning
    (return 'unknown))
 
  (define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
@@ -67,9 +69,13 @@
         (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))
         (SCM_MAKE_STR ""))))
 
- (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass")) (return 'unix))
+ (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
+   (cast void addr)                     ; suppress unused var warning
+   (return 'unix))
 
- (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass")) (return 'inet))
+ (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass")) 
+   (cast void addr)                     ; suppress unused var warning
+   (return 'inet))
 
  (define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass")) ::<ulong>
    (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
@@ -81,6 +87,7 @@
 
  (when "defined HAVE_IPV6"
    (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
+     (cast void addr)                     ; suppress unused var warning
      (return 'inet6))
 
    (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))

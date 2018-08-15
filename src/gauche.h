@@ -121,6 +121,8 @@ SCM_DECL_BEGIN
 #define TRUE (!FALSE)
 #endif
 
+
+
 /* Define this to 0 to turn off fast flonum extension.  See the comment in
    gauche/number.h for the details. */
 #define GAUCHE_FFX 1
@@ -168,6 +170,14 @@ SCM_DECL_BEGIN
 #else  /*__GNUC__*/
 #define SCM_NORETURN  /*empty*/
 #endif /*__GNUC__*/
+
+/* 'unused' attribute */
+#ifdef __GNUC__
+#define SCM_UNUSED   __attribute__((__unused__))
+#else  /*__GNUC__*/
+#define SCM_UNUSED  /*empty*/
+#endif /*__GNUC__*/
+
 
 /*-------------------------------------------------------------
  * BASIC TYPES
@@ -921,6 +931,7 @@ extern ScmClass *Scm_ObjectCPL[];
         SCM_FALSE, /*redefined*/                 \
         SCM_INTERNAL_MUTEX_INITIALIZER,          \
         SCM_INTERNAL_COND_INITIALIZER,           \
+        NULL       /* data */                    \
     } SCM__CLASS_PTR_BODY(cname)
     
 /* Define built-in class statically -- full-featured version */
@@ -1474,7 +1485,7 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
 
 /* This is internal - should never be used directly */
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
-    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0,             \
+    { { klass, NULL }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0,       \
       (inf), SCM_FALSE, (inl) }
 
 SCM_EXTERN ScmObj Scm_CopyProcedure(ScmProcedure *proc);

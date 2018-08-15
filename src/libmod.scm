@@ -195,6 +195,7 @@
 (inline-stub
  (define-cfn module-print (obj port::ScmPort* ctx::ScmWriteContext*)
    ::void :static
+   (cast void ctx)                      ; suppress unused var warning
    (if (SCM_MODULEP (-> (SCM_MODULE obj) origin))
      (Scm_Printf port "#<module %A$%A @%p>"
                  (-> (SCM_MODULE obj) name)

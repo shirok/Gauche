@@ -37,12 +37,10 @@
 #define DATA_BUFSIZ  980
 
 static struct netdb_data_rec {
-    int dummy;                  /* dummy var to make sure this structure is
-                                   placed in data area. */
     ScmInternalMutex hostent_mutex;
     ScmInternalMutex protoent_mutex;
     ScmInternalMutex servent_mutex;
-} netdb_data = { 1 };
+} netdb_data;
 
 #define WITH_GLOBAL_LOCK(mutex, body)           \
     SCM_UNWIND_PROTECT {                        \
@@ -466,7 +464,7 @@ static ScmClassStaticSlotSpec servent_slots[] = {
 
 #ifdef HAVE_IPV6
 
-ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs)
+ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmSysAddrinfo *info = SCM_NEW_INSTANCE(ScmSysAddrinfo, klass);
     info->canonname = NULL;

@@ -192,6 +192,7 @@
     (Scm_Printf port "#<ndbm-file %S>" (-> (SCM_NDBM_FILE obj) name))])
 
  (define-cfn ndbm_finalize (obj data::void*) ::void :static
+   (cast void data)                     ; suppress unused var warning
    (let* ((n::ScmNdbmFile* (SCM_NDBM_FILE obj)))
      (when (-> n dbf)
        (dbm_close (-> n dbf))

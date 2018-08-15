@@ -908,8 +908,11 @@ static const void *my_memrchr(const void *s, int c, size_t n)
     return NULL;
 }
 
-static int string_search(const char *s1, ScmSmallInt siz1, ScmSmallInt len1,
-                         const char *s2, ScmSmallInt siz2, ScmSmallInt len2,
+/* NB: len1 and len2 only used in certain internal CES. */
+static int string_search(const char *s1, ScmSmallInt siz1,
+                         ScmSmallInt len1 SCM_UNUSED,
+                         const char *s2, ScmSmallInt siz2,
+                         ScmSmallInt len2 SCM_UNUSED,
                          ScmSmallInt *bi /* out */,
                          ScmSmallInt *ci /* out */)
 {
@@ -963,8 +966,11 @@ static int string_search(const char *s1, ScmSmallInt siz1, ScmSmallInt len1,
     return NOT_FOUND;
 }
 
-static int string_search_reverse(const char *s1, ScmSmallInt siz1, ScmSmallInt len1,
-                                 const char *s2, ScmSmallInt siz2, ScmSmallInt len2,
+/* NB: len2 is only used in some internal CES */
+static int string_search_reverse(const char *s1, ScmSmallInt siz1, 
+                                 ScmSmallInt len1,
+                                 const char *s2, ScmSmallInt siz2, 
+                                 ScmSmallInt len2 SCM_UNUSED,
                                  ScmSmallInt *bi /* out */,
                                  ScmSmallInt *ci /* out */)
 {

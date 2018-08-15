@@ -106,7 +106,7 @@ void Scm_VMExecuteToplevels(ScmCompiledCode *cs[])
     Scm_ApplyRec(proc, SCM_NIL);
 }
 
-static ScmObj execute_toplevels_cc(ScmObj result, void **data)
+static ScmObj execute_toplevels_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmCompiledCode **cs = (ScmCompiledCode **)data[0];
     if (cs[0] == NULL) return SCM_UNDEFINED;
@@ -118,7 +118,9 @@ static ScmObj execute_toplevels_cc(ScmObj result, void **data)
     return SCM_UNDEFINED;
 }
 
-static ScmObj execute_toplevels(ScmObj *args, int nargs, void *cv)
+static ScmObj execute_toplevels(ScmObj *args SCM_UNUSED,
+                                int nargs SCM_UNUSED,
+                                void *cv)
 {
     Scm_VMPushCC(execute_toplevels_cc, &cv, 1);
     return SCM_UNDEFINED;
@@ -280,7 +282,7 @@ static ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
     ScmIdentifier *id = Scm_OutermostIdentifier(SCM_IDENTIFIER(p[1]));
     if (SCM_SYMBOL_INTERNED(id->name)) return lifted;
 
-    for (int i=0; i < sizeof(gref_insns)/sizeof(ScmWord); i++) {
+    for (u_int i=0; i < sizeof(gref_insns)/sizeof(ScmWord); i++) {
         if (code == gref_insns[i]) {
             ScmObj g = Scm_GlobalVariableRef(id->module, SCM_SYMBOL(id->name),
                                              SCM_BINDING_STAY_IN_MODULE);
@@ -735,13 +737,13 @@ static inline void fill_current_insn(cc_builder *b, int code)
 static void finish_transition(cc_builder *b)
 {
     int i = b->currentState;
-    SCM_ASSERT(i >= 0 && i < sizeof(stn)/sizeof(struct stn_arc[1]));
+    SCM_ASSERT(i >= 0 && i < (int)(sizeof(stn)/sizeof(struct stn_arc[1])));
     for (;; i++) {
         if (stn[i].input < 0) {
             fill_current_insn(b, stn[i].next);
             break;
         }
-        SCM_ASSERT(i < sizeof(stn)/sizeof(struct stn_arc[1]));
+        SCM_ASSERT(i < (int)(sizeof(stn)/sizeof(struct stn_arc[1])));
     }
 }
 

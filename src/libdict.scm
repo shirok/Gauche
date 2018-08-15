@@ -305,6 +305,7 @@
 
 (inline-stub
  (define-cfn hash-table-iter (args::ScmObj* nargs::int data::void*) :static
+   (cast void nargs) ; suppress unused var warning
    (let* ([iter::ScmHashIter* (cast ScmHashIter* data)]
           [e::ScmDictEntry* (Scm_HashIterNext iter)]
           [eofval (aref args 0)])
@@ -322,6 +323,7 @@
 (select-module gauche)
 (define-cproc hash-table-copy (ht::<hash-table> :optional mutable?)
   ;; we don't have immutable hash table, and ignore mutable? argument (srfi-125)
+  (cast void mutable?) ; suppress unused var warning
   (return (Scm_HashTableCopy ht)))
 (define-cproc hash-table-keys (ht::<hash-table>)   Scm_HashTableKeys)
 (define-cproc hash-table-values (ht::<hash-table>) Scm_HashTableValues)
@@ -425,6 +427,7 @@
 
 (inline-stub
  (define-cfn tree-map-iter (args::ScmObj* nargs::int data::void*) :static
+   (cast void nargs) ; suppress unused var warning
    (let* ([iter::ScmTreeIter* (cast ScmTreeIter* data)]
           [e::ScmDictEntry*   (?: (SCM_FALSEP (aref args 1))
                                   (Scm_TreeIterNext iter)
@@ -459,18 +462,25 @@
  ;;
  (define-cise-stmt tree-map-closest-entry
    [(_ inclusive? lh make-result)
-    `(let* ([lo::ScmDictEntry* NULL]
-            [hi::ScmDictEntry* NULL]
-            [eq::ScmDictEntry*
-             (Scm_TreeCoreClosestEntries (SCM_TREE_MAP_CORE tm)
-                                         (cast intptr_t key)
-                                         (& lo) (& hi))])
-       (cond
-        ,@(if inclusive?
-            `([(!= eq NULL)  (,make-result (SCM_DICT_KEY eq) (SCM_DICT_VALUE eq))])
-            '())
-        [(!= ,lh NULL) (,make-result (SCM_DICT_KEY ,lh) (SCM_DICT_VALUE ,lh))]
-        [else          (,make-result key-fb val-fb)]))])
+    (if inclusive?
+      `(let* ([lo::ScmDictEntry* NULL]
+              [hi::ScmDictEntry* NULL]
+              [eq::ScmDictEntry*
+               (Scm_TreeCoreClosestEntries (SCM_TREE_MAP_CORE tm)
+                                           (cast intptr_t key)
+                                           (& lo) (& hi))])
+         (cond
+          [(!= eq NULL)  (,make-result (SCM_DICT_KEY eq) (SCM_DICT_VALUE eq))]
+          [(!= ,lh NULL) (,make-result (SCM_DICT_KEY ,lh) (SCM_DICT_VALUE ,lh))]
+          [else          (,make-result key-fb val-fb)]))
+      `(let* ([lo::ScmDictEntry* NULL]
+              [hi::ScmDictEntry* NULL])
+         (Scm_TreeCoreClosestEntries (SCM_TREE_MAP_CORE tm)
+                                     (cast intptr_t key)
+                                     (& lo) (& hi))
+         (if (!= ,lh NULL)
+           (,make-result (SCM_DICT_KEY ,lh) (SCM_DICT_VALUE ,lh))
+           (,make-result key-fb val-fb))))])
 
  (define-cise-stmt tree-map-closest-key-result [(_ k v) `(return ,k)])
  (define-cise-stmt tree-map-closest-val-result [(_ k v) `(return ,v)])

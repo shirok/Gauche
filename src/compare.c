@@ -326,12 +326,12 @@ static int cmp_scm(ScmObj x, ScmObj y, ScmObj fn)
         return 1;
 }
 
-static int cmp_int(ScmObj x, ScmObj y, ScmObj dummy)
+static int cmp_int(ScmObj x, ScmObj y, ScmObj dummy SCM_UNUSED)
 {
     return Scm_Compare(x, y);
 }
 
-void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn)
+void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn SCM_UNUSED)
 {
     int limit, i;
     if (nelts <= 1) return;

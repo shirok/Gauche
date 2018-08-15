@@ -409,7 +409,7 @@
              [else (SCM_TYPE_ERROR scode "char or fixnum")]))])
 
  (define-cproc gb-property (scode) ::<int>
-   (let* ([ch::int])
+   (let* ([ch::int SCM_CHAR_INVALID])
      (get-arg ch scode)
      (cond [(== ch #x0a) (return GB_LF)]
            [(== ch #x0d) (return GB_CR)]
@@ -425,7 +425,7 @@
            [else (return GB_Other)])))
 
  (define-cproc wb-property (scode) ::<int>
-   (let* ([ch::int])
+   (let* ([ch::int SCM_CHAR_INVALID])
      (get-arg ch scode) 
      (cond [(== ch #x0a) (return WB_LF)]
            [(== ch #x0d) (return WB_CR)]
@@ -443,7 +443,7 @@
            [else (return WB_Other)])))
 
  (define-cproc width-property (scode) ::<int>
-   (let* ([ch::int])
+   (let* ([ch::int SCM_CHAR_INVALID])
      (get-arg ch scode)
      (cond [(< ch #x20000)
             (let*([k::u_char (aref width_table (>> ch 8))])
@@ -896,7 +896,7 @@
  (define-cproc %char-xcase-extended (scode buf::<vector>
                                      kind::<int> charp::<boolean>)
    ::<int>
-   (let* ([ch::int]
+   (let* ([ch::int SCM_CHAR_INVALID]
           [cm::ScmCharCaseMap]
           [pcm::(const ScmCharCaseMap*)]
           [i::int 0])
@@ -908,7 +908,7 @@
        [(CHAR_UPCASE) (fill-result to_upper_full to_upper_simple)] ;toupper
        [(CHAR_DOWNCASE) (fill-result to_lower_full to_lower_simple)] ;tolower
        [(CHAR_TITLECASE) (fill-result to_title_full to_title_simple)] ;totitle
-       )))
+       [else (return 0)])))
 
  (define-enum SCM_CHAR_FULL_CASE_MAPPING_SIZE)
  )

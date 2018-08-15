@@ -128,7 +128,7 @@ static struct {
 
 /* Predefined modules - slots will be initialized by Scm__InitModule */
 #define DEFINE_STATIC_MODULE(cname) \
-    static ScmModule cname = { { NULL } }
+    static ScmModule cname;
 
 DEFINE_STATIC_MODULE(nullModule);     /* #<module null> */
 DEFINE_STATIC_MODULE(schemeModule);   /* #<module scheme> */
@@ -560,7 +560,7 @@ int Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
 ScmObj Scm_ImportModule(ScmModule *module,
                         ScmObj imported,
                         ScmObj prefix,
-                        u_long flags) /* reserved for future use */
+                        u_long flags SCM_UNUSED) /* reserved for future use */
 {
     if (module->sealed) err_sealed(SCM_OBJ(imported), module);
 

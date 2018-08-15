@@ -153,6 +153,7 @@
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)]
           [a (aref argv 0)]
           [b (aref argv 1)])
+     (cast void argc)                   ; suppress unused var warning
      (unless (logand (-> c flags) SCM_COMPARATOR_SRFI_128) (goto err))
      (when (SCM_FALSEP (-> c orderFn)) (goto err))
      (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
@@ -187,6 +188,7 @@
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)]
           [a (aref argv 0)]
           [b (aref argv 1)])
+     (cast void argc)                   ; suppress unused var warning
      (when (logand (-> c flags) SCM_COMPARATOR_SRFI_128) (goto err))
      (when (SCM_FALSEP (-> c compareFn)) (goto err))
      (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
@@ -211,6 +213,8 @@
 
 (inline-stub
  (define-cfn fallback-hash (argv::ScmObj* argc::int data::void*) :static
+   (cast void argv)                     ; suppress unsed var warning
+   (cast void argc)                     ; suppress unused var warning
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)])
      (Scm_Error "%S doesn't have hash function" (SCM_OBJ c))
      (return SCM_UNDEFINED)))           ;dummy
@@ -369,7 +373,7 @@
          (return (cmpr-ge-128 c b (SCM_CAR more) (SCM_CDR more)))
          (return SCM_FALSE)))
      (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
-       [c::ScmComparator* a b]
+       []
        (return (SCM_MAKE_BOOL (SCM_FALSEP r))))))
 
  (define-cfn cmpr-ge-114 (c::ScmComparator* a b more) :static

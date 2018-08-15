@@ -104,7 +104,7 @@
   (let* ([di::long dstart] [si::long sstart]
          [dlen::long (SCM_UVECTOR_SIZE dst)]
          [slen::long (SCM_UVECTOR_SIZE src)]
-         [c::long 0] [k::long]
+         [c::long 0]
          [cnt::long (?: (< count 0) LONG_MAX count)])
     (if (== ssize 1)
       ;; shortcut for optimization

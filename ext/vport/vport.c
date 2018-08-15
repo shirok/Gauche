@@ -350,7 +350,7 @@ static off_t vport_seek(ScmPort *p, off_t off, int whence)
  * Allocation & wiring
  */
 
-static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     vport *data = SCM_NEW(vport);
 
@@ -391,7 +391,8 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     return port;
 }
 
-static void vport_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void vport_print(ScmObj obj, ScmPort *port, 
+                        ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%A%s %A %p>",
                Scm_ShortClassName(Scm_ClassOf(obj)),

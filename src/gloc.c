@@ -38,7 +38,8 @@
  * GLOCs
  */
 
-static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void gloc_print(ScmObj obj, ScmPort *port,
+                       ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmGloc *g = SCM_GLOC(obj);
     Scm_Printf(port, "#<gloc %S#%S%s>", g->module->name,
@@ -68,7 +69,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 }
 
 /* special setters for const and inlinable bindings. */
-ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)
+ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val SCM_UNUSED)
 {
     Scm_Error("cannot change constant value of %S#%S",
               gloc->module->name, gloc->name);

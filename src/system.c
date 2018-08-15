@@ -793,7 +793,7 @@ ScmObj Scm_SysMkdtemp(ScmString *templat)
 #if defined(HAVE_MKDTEMP)
     {
       char *p = NULL;
-      SCM_SYSCALL(p, mkdtemp(name));
+      SCM_SYSCALL3(p, mkdtemp(name), (p == NULL));
       if (p == NULL) Scm_SysError("mkdtemp failed");
     }
 #else   /*!defined(HAVE_MKDTEMP)*/
@@ -807,7 +807,7 @@ ScmObj Scm_SysMkdtemp(ScmString *templat)
  * Stat (sys/stat.h)
  */
 
-static ScmObj stat_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj stat_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     return SCM_OBJ(SCM_NEW_INSTANCE(ScmSysStat, klass));
 }
@@ -895,7 +895,7 @@ static ScmClassStaticSlotSpec stat_slots[] = {
 
 /* <time> object */
 
-static ScmObj time_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj time_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmTime *t = SCM_NEW_INSTANCE(ScmTime, klass);
     t->type = SCM_SYM_TIME_UTC;
@@ -904,7 +904,8 @@ static ScmObj time_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(t);
 }
 
-static void time_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void time_print(ScmObj obj, ScmPort *port, 
+                       ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmTime *t = SCM_TIME(obj);
     ScmObj sec = Scm_MakeInteger64(t->sec);
@@ -1259,12 +1260,12 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
 
 /* <sys-tm> object */
 
-static ScmObj tm_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj tm_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     return SCM_OBJ(SCM_NEW_INSTANCE(ScmSysTm, klass));
 }
 
-static void tm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void tm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)
 {
 #define TM_BUFSIZ 50
     char buf[TM_BUFSIZ];
@@ -1395,7 +1396,7 @@ Scm_YieldCPU(void)
  * Groups (grp.h)
  */
 
-static void grp_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void grp_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<sys-group %S>",
                SCM_SYS_GROUP(obj)->name);
@@ -1464,7 +1465,8 @@ static ScmClassStaticSlotSpec grp_slots[] = {
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
  */
 
-static void pwd_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void pwd_print(ScmObj obj, ScmPort *port, 
+                      ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<sys-passwd %S>",
                SCM_SYS_PASSWD(obj)->name);
@@ -2194,7 +2196,7 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
  */
 
 #ifdef HAVE_SELECT
-static ScmObj fdset_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj fdset_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmSysFdset *set = SCM_NEW_INSTANCE(ScmSysFdset, klass);
     set->maxfd = -1;

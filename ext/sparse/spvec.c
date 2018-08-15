@@ -189,7 +189,7 @@ static ScmObj g_ref(Leaf *leaf, u_long index)
     return ((GLeaf*)leaf)->val[index&1];
 }
 
-static Leaf *g_allocate(void *data)
+static Leaf *g_allocate(void *data SCM_UNUSED)
 {
     GLeaf *z = SCM_NEW(GLeaf);
     z->val[0] = z->val[1] = SCM_UNBOUND;
@@ -210,13 +210,13 @@ static ScmObj g_delete(Leaf *leaf, u_long index)
     return v;
 }
 
-static void g_clear(Leaf *leaf, void *data)
+static void g_clear(Leaf *leaf, void *data SCM_UNUSED)
 {
     GLeaf *z = (GLeaf*)leaf;
     z->val[0] = z->val[1] = NULL;
 }
 
-static Leaf *g_copy(Leaf *leaf, void *data)
+static Leaf *g_copy(Leaf *leaf, void *data SCM_UNUSED)
 {
     GLeaf *dst = SCM_NEW(GLeaf);
     *dst = *(GLeaf*)leaf;
@@ -238,7 +238,7 @@ static ScmObj g_iter(Leaf *leaf, int *index)
     return SCM_UNBOUND;
 }
 
-static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
+static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data SCM_UNUSED)
 {
     GLeaf *z = (GLeaf*)leaf;
     for (int i=0; i<2; i++) {
@@ -303,19 +303,19 @@ typedef struct ULeafRec {
 #define U_SET_ENTRY(leaf, ind, mask) leaf_data_bit_set(leaf, (ind)&(mask))
 #define U_RESET_ENTRY(leaf, ind, mask) leaf_data_bit_reset(leaf, (ind)&(mask))
 
-static Leaf *u_allocate(void *data)
+static Leaf *u_allocate(void *data SCM_UNUSED)
 {
     ULeaf *z = SCM_NEW_ATOMIC(ULeaf);
     z->dummy[0] = z->dummy[1] = 0;
     return (Leaf*)z;
 }
 
-static void u_clear(Leaf *leaf, void *data)
+static void u_clear(Leaf *leaf, void *data SCM_UNUSED)
 {
     /* nothing to do */
 }
 
-static Leaf *u_copy(Leaf *leaf, void *data)
+static Leaf *u_copy(Leaf *leaf, void *data SCM_UNUSED)
 {
     ULeaf *z = SCM_NEW_ATOMIC(ULeaf);
     memcpy(z, leaf, sizeof(ULeaf));

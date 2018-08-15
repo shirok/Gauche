@@ -103,6 +103,7 @@
    ()
    [allocator
     (let* ([md5::ScmMd5Context* (SCM_NEW_INSTANCE ScmMd5Context klass)])
+      (cast void initargs)              ; suppress unused var warning
       (MD5_Init (& (-> md5 ctx)))
       (return (SCM_OBJ md5)))])
 

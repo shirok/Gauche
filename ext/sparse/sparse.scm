@@ -189,6 +189,7 @@
  (define-cproc sparse-table-copy (sv::<sparse-table>) SparseTableCopy)
 
  (define-cfn sparse-table-iter (args::ScmObj* nargs::int data::void*) :static
+   (cast void nargs)                    ; suppress unused var warning
    (let* ([iter::SparseTableIter* (cast SparseTableIter* data)]
           [r (SparseTableIterNext iter)]
           [eofval (aref args 0)])
@@ -261,6 +262,7 @@
    "SPARSE_VECTOR_BASE_P" "SPARSE_VECTOR")
 
  (define-cproc %make-sparse-vector (type default-value flags::<ulong>)
+   (cast void flags)                     ; suppress unused var warning
    (let* ([klass::ScmClass* NULL])
      (cond [(SCM_CLASSP type)  (set! klass (SCM_CLASS type))]
            [(SCM_FALSEP type)  (set! klass SCM_CLASS_SPARSE_VECTOR)]
@@ -301,8 +303,9 @@
      (when (not oor)
        (set! r (SparseVectorRef sv i fallback)))
      (if (SCM_UNBOUNDP r)
-       (if (SCM_UNDEFINEDP (-> sv defaultValue))
-         (Scm_Error "%S doesn't have an entry at index %S" (SCM_OBJ sv) index)
+       (begin
+         (when (SCM_UNDEFINEDP (-> sv defaultValue))
+           (Scm_Error "%S doesn't have an entry at index %S" (SCM_OBJ sv) index))
          (return (-> sv defaultValue)))
        (return r))))
 
@@ -508,9 +511,10 @@
     (when (not oor)
       (set! r (SparseVectorRef sv i fallback)))
     (if (SCM_UNBOUNDP r)
-      (if (SCM_UNDEFINEDP (-> sv defaultValue))
-        (Scm_Error "%S doesn't have an entry at index (%S %S)"
-                   (SCM_OBJ sv) x y)
+      (begin
+        (when (SCM_UNDEFINEDP (-> sv defaultValue))
+          (Scm_Error "%S doesn't have an entry at index (%S %S)"
+                     (SCM_OBJ sv) x y))
         (return (-> sv defaultValue)))
       (return r))))
 

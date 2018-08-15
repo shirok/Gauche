@@ -181,9 +181,7 @@ static struct {
     int               count;
     ScmInternalMutex  mutex;
     ScmInternalCond   cv;
-} class_redefinition_lock = { NULL, -1 }; /* we initialize other than zero,
-                                             to ensure this sturcture is
-                                             placed in the data area */
+} class_redefinition_lock;
 
 /* Imporant slots in <class> metaboject can be modified only when the
    class is in 'malleable' state.   Here's the check. */
@@ -381,7 +379,7 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
  */
 
 /* Allocate class structure.  klass is a metaclass. */
-static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj class_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmClass *instance = SCM_NEW_INSTANCE(ScmClass, klass);
     instance->allocate = NULL;  /* will be set when CPL is set */
@@ -409,7 +407,8 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(instance);
 }
 
-static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void class_print(ScmObj obj, ScmPort *port, 
+                        ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<class %A%s>",
                SCM_CLASS(obj)->name,
@@ -434,7 +433,10 @@ ScmObj Scm_Allocate(ScmClass *c, ScmObj initargs)
     return c->allocate(c, initargs);
 }
 
-static ScmObj allocate(ScmNextMethod *nm, ScmObj *argv, int argc, void *d)
+static ScmObj allocate(ScmNextMethod *nm SCM_UNUSED,
+                       ScmObj *argv, 
+                       int argc SCM_UNUSED, 
+                       void *d SCM_UNUSED)
 {
     return Scm_Allocate(SCM_CLASS(argv[0]), argv[1]);
 }
@@ -448,8 +450,10 @@ static SCM_DEFINE_METHOD(class_allocate_rec, &Scm_GenericAllocate,
 /*
  * (compute-cpl <class>)
  */
-static ScmObj class_compute_cpl(ScmNextMethod *nm, ScmObj *argv, int argc,
-                                void *d)
+static ScmObj class_compute_cpl(ScmNextMethod *nm SCM_UNUSED,
+                                ScmObj *argv,
+                                int argc SCM_UNUSED,
+                                void *d SCM_UNUSED)
 {
     ScmClass *c = SCM_CLASS(argv[0]);
     return Scm_ComputeCPL(c);
@@ -500,7 +504,7 @@ ScmClass *Scm_BaseClassOf(ScmClass *klass)
  * (class-of obj class)
  *   - if obj's class is redefined, first updates obj.
  */
-ScmObj class_of_cc(ScmObj result, void **data)
+ScmObj class_of_cc(ScmObj result, void **data SCM_UNUSED)
 {
     return Scm_VMClassOf(result);
 }
@@ -519,7 +523,7 @@ ScmObj Scm_VMClassOf(ScmObj obj)
  * (is-a? obj class)
  *   - if obj's class is redefined, first updates obj.
  */
-ScmObj is_a_cc(ScmObj result, void **data)
+ScmObj is_a_cc(ScmObj result SCM_UNUSED, void **data)
 {
     return Scm_VMIsA(SCM_OBJ(data[0]), SCM_CLASS(data[1]));
 }
@@ -1229,7 +1233,7 @@ ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
  */
 ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
                                           ScmObj *inits, int numInits,
-                                          u_long flags /*reserved*/)
+                                          u_long flags SCM_UNUSED /*reserved*/)
 {
     if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_BASE
         && SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
@@ -1395,7 +1399,7 @@ static ScmObj slot_ref_using_accessor_cc(ScmObj result, void **data)
 }
 
 static ScmObj slot_boundp_using_accessor_cc(ScmObj result,
-                                            void **data)
+                                            void **data SCM_UNUSED)
 {
     return SCM_FALSEP(result)? SCM_FALSE:SCM_TRUE;
 }
@@ -1447,7 +1451,7 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
  *         (%internal-slot-ref-using-accessor obj sa bound-check?)
  *         (slot-missing (class-of obj) obj slot))))
  */
-static ScmObj slot_ref_cc(ScmObj result, void **data)
+static ScmObj slot_ref_cc(ScmObj result SCM_UNUSED, void **data)
 {
     return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (int)(intptr_t)data[2]);
 }
@@ -1502,8 +1506,10 @@ ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, int boundp)
  *   and class is an old class, then it can access to the old instance's
  *   slot value.
  */
-static ScmObj slot_ref_using_class(ScmNextMethod *nm, ScmObj *argv,
-                                   int argc, void *d)
+static ScmObj slot_ref_using_class(ScmNextMethod *nm SCM_UNUSED,
+                                   ScmObj *argv,
+                                   int argc SCM_UNUSED,
+                                   void *d SCM_UNUSED)
 {
     ScmClass *klass = SCM_CLASS(argv[0]);
     ScmObj obj = argv[1];
@@ -1573,7 +1579,7 @@ static int slot_accessor_settable_p(ScmSlotAccessor *sa)
  *         (%internal-slot-set-using-accessor obj sa val)
  *         (slot-missing (class-of obj) obj slot val))))
  */
-static ScmObj slot_set_cc(ScmObj result, void **data)
+static ScmObj slot_set_cc(ScmObj result SCM_UNUSED, void **data)
 {
     return Scm_VMSlotSet(SCM_OBJ(data[0]), SCM_OBJ(data[1]), SCM_OBJ(data[2]));
 }
@@ -1627,8 +1633,10 @@ ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, ScmObj val)
  *   and class is an old class, then it can access to the old instance's
  *   slot value.
  */
-static ScmObj slot_set_using_class(ScmNextMethod *nm, ScmObj *argv,
-                                   int argc, void *d)
+static ScmObj slot_set_using_class(ScmNextMethod *nm SCM_UNUSED,
+                                   ScmObj *argv,
+                                   int argc SCM_UNUSED,
+                                   void *d SCM_UNUSED)
 {
     ScmClass *klass = SCM_CLASS(argv[0]);
     ScmObj obj = argv[1];
@@ -1660,7 +1668,7 @@ static SCM_DEFINE_METHOD(slot_set_using_class_rec,
  *   (%check-class-redefined (class-of obj))
  *   (slot-bound-using-class (class-of obj) obj slot))
  */
-static ScmObj slot_boundp_cc(ScmObj result, void **data)
+static ScmObj slot_boundp_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmObj obj = SCM_OBJ(data[0]);
     ScmObj slot = SCM_OBJ(data[1]);
@@ -1695,8 +1703,10 @@ ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot)
  *
  * - no redefinition check!
  */
-static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *argv,
-                                       int argc, void *data)
+static ScmObj slot_bound_using_class_p(ScmNextMethod *nm SCM_UNUSED,
+                                       ScmObj *argv,
+                                       int argc SCM_UNUSED,
+                                       void *data SCM_UNUSED)
 {
     ScmClass *klass = SCM_CLASS(argv[0]);
     ScmObj obj = argv[1];
@@ -1727,7 +1737,8 @@ static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
  * Scheme-defined objects will be initialized by object_initialize,
  * this method is called only for built-in classes.
  */
-static ScmObj builtin_initialize(ScmObj *argv, int argc, ScmGeneric *gf)
+static ScmObj builtin_initialize(ScmObj *argv, int argc, 
+                                 ScmGeneric *gf SCM_UNUSED)
 {
     SCM_ASSERT(argc == 2);
     ScmObj instance = argv[0];
@@ -1754,7 +1765,7 @@ static ScmObj builtin_initialize(ScmObj *argv, int argc, ScmGeneric *gf)
  */
 
 /* we initialize fields appropriately here. */
-static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmSlotAccessor *sa = SCM_NEW(ScmSlotAccessor);
 
@@ -1773,7 +1784,8 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(sa);
 }
 
-static void slot_accessor_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+static void slot_accessor_print(ScmObj obj, ScmPort *out,
+                                ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmSlotAccessor *sa = SCM_SLOT_ACCESSOR(obj);
 
@@ -1908,7 +1920,7 @@ static void slot_accessor_scheme_boundp_set(ScmSlotAccessor *sa, ScmObj p)
  * <object> class initialization
  */
 
-static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     return SCM_OBJ(SCM_NEW_INSTANCE(ScmInstance, klass));
 }
@@ -1938,7 +1950,7 @@ static ScmObj object_initialize1(ScmObj obj, ScmObj accs, ScmObj initargs)
                                              initargs);
 }
 
-static ScmObj object_initialize_cc(ScmObj result, void **data)
+static ScmObj object_initialize_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmObj obj = SCM_OBJ(data[0]);
     ScmObj accs = SCM_OBJ(data[1]);
@@ -1946,8 +1958,10 @@ static ScmObj object_initialize_cc(ScmObj result, void **data)
     return object_initialize1(obj, accs, initargs);
 }
 
-static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
-                                void *data)
+static ScmObj object_initialize(ScmNextMethod *nm SCM_UNUSED,
+                                ScmObj *argv, 
+                                int argc SCM_UNUSED,
+                                void *data SCM_UNUSED)
 {
     ScmObj obj = argv[0];
     ScmObj initargs = argv[1];
@@ -2001,7 +2015,7 @@ static ScmObj fallback_compare(ScmObj *argv, int argc, ScmGeneric *gf)
  * Generic function
  */
 
-static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmGeneric *gf = SCM_NEW_INSTANCE(ScmGeneric, klass);
     SCM_PROCEDURE_INIT(gf, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
@@ -2014,7 +2028,8 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(gf);
 }
 
-static void generic_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void generic_print(ScmObj obj, ScmPort *port, 
+                          ScmWriteContext *ctx SCM_UNUSED)
 {
 #if 0  /* enable this to show maxReqargs */
     Scm_Printf(port, "#<generic %S (%d:%d)>",
@@ -2090,13 +2105,15 @@ ScmObj Scm_NoNextMethod(ScmObj *argv, int argc, ScmGeneric *gf)
 }
 
 /* another handy "default method", which does nothing. */
-ScmObj Scm_NoOperation(ScmObj *argv, int argc, ScmGeneric *gf)
+ScmObj Scm_NoOperation(ScmObj *argv SCM_UNUSED,
+                       int argc SCM_UNUSED,
+                       ScmGeneric *gf SCM_UNUSED)
 {
     return SCM_UNDEFINED;
 }
 
 /* fallback of object-apply */
-ScmObj Scm_InvalidApply(ScmObj *argv, int argc, ScmGeneric *gf)
+ScmObj Scm_InvalidApply(ScmObj *argv, int argc, ScmGeneric *gf SCM_UNUSED)
 {
     Scm_Error("invalid application: %S", Scm_ArrayToList(argv, argc));
     return SCM_UNDEFINED;
@@ -2177,10 +2194,10 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
     }
 }
 
-static ScmObj compute_applicable_methods(ScmNextMethod *nm,
+static ScmObj compute_applicable_methods(ScmNextMethod *nm SCM_UNUSED,
                                          ScmObj *argv,
-                                         int argc,
-                                         void *data)
+                                         int argc SCM_UNUSED,
+                                         void *data SCM_UNUSED)
 {
     ScmGeneric *gf = SCM_GENERIC(argv[0]);
     ScmObj arglist = argv[1];
@@ -2201,7 +2218,7 @@ static SCM_DEFINE_METHOD(compute_applicable_methods_rec,
 
 /* method-more-specific? */
 static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
-                                       ScmClass **targv, int argc)
+                                       ScmClass **targv, int argc SCM_UNUSED)
 {
     ScmClass **xs = x->specializers;
     ScmClass **ys = y->specializers;
@@ -2230,8 +2247,10 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     else return FALSE;
 }
 
-static ScmObj method_more_specific_p(ScmNextMethod *nm, ScmObj *argv,
-                                     int argc, void *data)
+static ScmObj method_more_specific_p(ScmNextMethod *nm SCM_UNUSED,
+                                     ScmObj *argv,
+                                     int argc SCM_UNUSED,
+                                     void *data SCM_UNUSED)
 {
     ScmMethod *x = SCM_METHOD(argv[0]);
     ScmMethod *y = SCM_METHOD(argv[1]);
@@ -2348,7 +2367,7 @@ void Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port)
  * Method
  */
 
-static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj method_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmMethod *instance = SCM_NEW_INSTANCE(ScmMethod, klass);
     SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_METHOD, SCM_FALSE);
@@ -2358,7 +2377,8 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(instance);
 }
 
-static void method_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void method_print(ScmObj obj, ScmPort *port, 
+                         ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<method %S>", SCM_METHOD(obj)->common.info);
 }
@@ -2381,8 +2401,10 @@ static int method_leaf_p(ScmClosure *body)
  *    we can't call Scheme verison of initialize to initialize the
  *    "initialize" method (chicken-and-egg circularity).
  */
-static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
-                                void *data)
+static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
+                                ScmObj *argv, 
+                                int argc SCM_UNUSED,
+                                void *data SCM_UNUSED)
 {
     ScmMethod *m = SCM_METHOD(argv[0]);
     ScmObj initargs = argv[1];
@@ -2544,8 +2566,10 @@ ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *newc)
     return SCM_OBJ(m);
 }
 
-static ScmObj generic_updatedirectmethod(ScmNextMethod *nm, ScmObj *argv,
-                                         int argc, void *data)
+static ScmObj generic_updatedirectmethod(ScmNextMethod *nm SCM_UNUSED,
+                                         ScmObj *argv,
+                                         int argc SCM_UNUSED,
+                                         void *data SCM_UNUSED)
 {
     return Scm_UpdateDirectMethod(SCM_METHOD(argv[0]),
                                   SCM_CLASS(argv[1]),
@@ -2629,8 +2653,10 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
     return SCM_UNDEFINED;
 }
 
-static ScmObj generic_addmethod(ScmNextMethod *nm, ScmObj *argv, int argc,
-                                void *data)
+static ScmObj generic_addmethod(ScmNextMethod *nm SCM_UNUSED,
+                                ScmObj *argv, 
+                                int argc SCM_UNUSED,
+                                void *data SCM_UNUSED)
 {
     return Scm_AddMethod(SCM_GENERIC(argv[0]), SCM_METHOD(argv[1]));
 }
@@ -2682,8 +2708,10 @@ ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method)
     return SCM_UNDEFINED;
 }
 
-static ScmObj generic_deletemethod(ScmNextMethod *nm, ScmObj *argv, int argc,
-                                   void *data)
+static ScmObj generic_deletemethod(ScmNextMethod *nm SCM_UNUSED,
+                                   ScmObj *argv,
+                                   int argc SCM_UNUSED,
+                                   void *data SCM_UNUSED)
 {
     return Scm_DeleteMethod(SCM_GENERIC(argv[0]), SCM_METHOD(argv[1]));
 }
@@ -2720,7 +2748,8 @@ ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
     return SCM_OBJ(nm);
 }
 
-static void next_method_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+static void next_method_print(ScmObj obj, ScmPort *out, 
+                              ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmNextMethod *nm = SCM_NEXT_METHOD(obj);
     ScmObj args = Scm_ArrayToList(nm->argv, nm->argc);
@@ -2732,13 +2761,15 @@ static void next_method_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
  */
 
 static void accessor_method_print(ScmObj obj, ScmPort *port,
-                                  ScmWriteContext *ctx)
+                                  ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<accessor-method %S>", SCM_METHOD(obj)->common.info);
 }
 
-static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *argv, int argc,
-                                void *data)
+static ScmObj accessor_get_proc(ScmNextMethod *nm SCM_UNUSED,
+                                ScmObj *argv,
+                                int argc SCM_UNUSED,
+                                void *data SCM_UNUSED)
 {
     ScmObj obj = argv[0];
     ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
@@ -2755,8 +2786,10 @@ static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *argv, int argc,
     return slot_ref_using_accessor(obj, ca, FALSE);
 }
 
-static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *argv, int argc,
-                                void *data)
+static ScmObj accessor_set_proc(ScmNextMethod *nm SCM_UNUSED,
+                                ScmObj *argv, 
+                                int argc SCM_UNUSED,
+                                void *data SCM_UNUSED)
 {
     ScmObj obj = argv[0];
     ScmObj val = argv[1];
@@ -3135,7 +3168,7 @@ static void init_class(ScmClass *klass,
                        ScmModule *mod,
                        ScmObj supers,  /* SCM_FALSE if using default */
                        ScmClassStaticSlotSpec *specs,
-                       int flags)  /* reserved */
+                       int flags SCM_UNUSED)  /* reserved */
 {
     ScmObj slots = SCM_NIL, t = SCM_NIL, acc = SCM_NIL;
 

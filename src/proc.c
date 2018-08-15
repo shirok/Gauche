@@ -45,7 +45,8 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProcedureClass, proc_print);
 
-static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void proc_print(ScmObj obj, ScmPort *port, 
+                       ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmObj info = SCM_PROCEDURE_INFO(obj);
     if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
@@ -114,7 +115,9 @@ ScmObj Scm_MakeSubr(ScmSubrProc *func,
  */
 static ScmObj theNullProc = SCM_NIL;
 
-static ScmObj null_proc(ScmObj *args, int nargs, void *data)
+static ScmObj null_proc(ScmObj *args SCM_UNUSED,
+                        int nargs SCM_UNUSED,
+                        void *data SCM_UNUSED)
 {
     return SCM_UNDEFINED;
 }

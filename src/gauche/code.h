@@ -117,7 +117,7 @@ SCM_CLASS_DECL(Scm_CompiledCodeClass);
     { { SCM_CLASS_STATIC_TAG(Scm_CompiledCodeClass) },   \
       (code), NULL, (codesize), 0, (maxstack),           \
       (reqargs), (optargs), (name), (debuginfo), (signatureinfo),   \
-      (parent), (iform) }
+      (parent), (iform), NULL /*builder*/ }
 
 SCM_EXTERN void   Scm_CompiledCodeCopyX(ScmCompiledCode *dest,
                                         const ScmCompiledCode *src);

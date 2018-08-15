@@ -375,7 +375,7 @@ void test_paths_setup(void)
 }
 
 /* Cleanup */
-void cleanup_main(void *data)
+void cleanup_main(void *data SCM_UNUSED)
 {
     ScmVM *vm = Scm_VM();
 

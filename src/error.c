@@ -85,12 +85,13 @@ SCM_DEFINE_BASE_CLASS(Scm_SeriousConditionClass, ScmSeriousCondition,
                       NULL, NULL, NULL,
                       condition_allocate, condition_cpl);
 
-static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     return SCM_OBJ(SCM_NEW_INSTANCE(ScmCondition, klass));
 }
 
-static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void message_print(ScmObj obj, ScmPort *port, 
+                          ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);
     Scm_Printf(port, "#<%A \"%30.1A\">",
@@ -98,7 +99,7 @@ static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                SCM_ERROR_MESSAGE(obj));
 }
 
-static ScmObj message_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj message_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmError *e = SCM_NEW_INSTANCE(ScmError, klass);
     e->message = SCM_FALSE;     /* would be set by initialize */
@@ -216,7 +217,7 @@ SCM_DEFINE_BASE_CLASS(Scm_IOUnitErrorClass, ScmIOUnitError,
                       message_print, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 
-static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmSystemError *e = SCM_NEW_INSTANCE(ScmSystemError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
@@ -224,7 +225,7 @@ static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(e);
 }
 
-static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmUnhandledSignalError *e = SCM_NEW_INSTANCE(ScmUnhandledSignalError,
                                                   klass);
@@ -233,7 +234,7 @@ static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(e);
 }
 
-static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmReadError *e = SCM_NEW_INSTANCE(ScmReadError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
@@ -242,7 +243,7 @@ static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(e);
 }
 
-static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmPortError *e = SCM_NEW_INSTANCE(ScmPortError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
@@ -308,12 +309,13 @@ static void readerror_line_set(ScmReadError *obj, ScmObj val)
     obj->line = SCM_INT_VALUE(val);
 }
 
-static ScmObj readerror_dummy_get(ScmReadError *obj)
+static ScmObj readerror_dummy_get(ScmReadError *obj SCM_UNUSED)
 {
     return SCM_FALSE;
 }
 
-static void readerror_dummy_set(ScmReadError *obj, ScmObj val)
+static void readerror_dummy_set(ScmReadError *obj SCM_UNUSED,
+                                ScmObj val SCM_UNUSED)
 {
     /* nothing */
 }
@@ -366,7 +368,8 @@ static ScmClass *compound_cpl[] = {
     NULL
 };
 
-static void compound_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void compound_print(ScmObj obj, ScmPort *port, 
+                           ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);
     Scm_Printf(port, "#<%A", Scm_ShortClassName(k));
@@ -385,7 +388,7 @@ SCM_DEFINE_BASE_CLASS(Scm_SeriousCompoundConditionClass, ScmCompoundCondition,
                       compound_print, NULL, NULL,
                       compound_allocate, compound_cpl);
 
-static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmCompoundCondition *e = SCM_NEW_INSTANCE(ScmCompoundCondition, klass);
     e->conditions = SCM_NIL;
@@ -814,7 +817,7 @@ void Scm_Warn(const char *msg, ...)
 }
 
 /* OBSOLETED: 'warn' is now in Scheme. */
-void Scm_FWarn(ScmString *fmt, ScmObj args)
+void Scm_FWarn(ScmString *fmt SCM_UNUSED, ScmObj args SCM_UNUSED)
 {
     Scm_Error("Scm_FWarn is obsoleted");
 }
@@ -916,7 +919,8 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
  *   format   - SCM_STACK_TRACE_FORMAT_* enum value.  No longer used.
  */
 void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
-                        int maxdepth, int skip, int offset, int format)
+                        int maxdepth, int skip, int offset, 
+                        int format SCM_UNUSED)
 {
     static ScmObj show_stack_trace = SCM_UNDEFINED;
     SCM_BIND_PROC(show_stack_trace,

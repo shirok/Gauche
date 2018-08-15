@@ -40,8 +40,10 @@
 /* This has never been exposed in public header files, but it wasn't 'static'
    so it was visible.  To keep binary-level compatibility, we provide
    this stub---but nobody should've called this. */
-ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
-                  ScmObj printer, ScmObj prompter)
+ScmObj Scm_VMRepl(ScmObj reader SCM_UNUSED,
+                  ScmObj evaluator SCM_UNUSED,
+                  ScmObj printer SCM_UNUSED,
+                  ScmObj prompter SCM_UNUSED)
 {
     Scm_Panic("Scm_VMRepl is obsoleted.");
     return SCM_UNDEFINED;

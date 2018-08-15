@@ -66,7 +66,7 @@ static inline void leaf_mark_unchained(TLeaf *leaf)
     leaf_data_bit_reset(LEAF(leaf), 0);
 }
 
-static Leaf *leaf_allocate(void *data)
+static Leaf *leaf_allocate(void *data SCM_UNUSED)
 {
     TLeaf *z = SCM_NEW(TLeaf);
     z->entry.key = z->entry.value = SCM_UNBOUND;
@@ -97,7 +97,7 @@ static int string_cmp(ScmObj a, ScmObj b)
 }
 
 ScmObj MakeSparseTable(ScmHashType type, ScmComparator *comparator,
-                       u_long flags)
+                       u_long flags SCM_UNUSED)
 {
     SparseTable *v = SCM_NEW(SparseTable);
     SCM_SET_CLASS(v, SCM_CLASS_SPARSE_TABLE);
@@ -289,7 +289,7 @@ ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
     return retval;
 }
 
-static void clear_leaf(Leaf *f, void *data)
+static void clear_leaf(Leaf *f, void *data SCM_UNUSED)
 {
     TLeaf *z = (TLeaf*)f;
     z->entry.key = z->entry.value = NULL;
@@ -305,7 +305,7 @@ void SparseTableClear(SparseTable *st)
  * Copy
  */
 
-static Leaf *copy_leaf(Leaf *leaf, void *data)
+static Leaf *copy_leaf(Leaf *leaf, void *data SCM_UNUSED)
 {
     TLeaf *s = (TLeaf*)leaf;
     TLeaf *d = SCM_NEW(TLeaf);
@@ -369,7 +369,7 @@ ScmObj SparseTableIterNext(SparseTableIter *it)
  * Miscellaneous
  */
 
-static void leaf_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
+static void leaf_dump(ScmPort *out, Leaf *leaf, int indent, void *data SCM_UNUSED)
 {
     TLeaf *z = (TLeaf*)leaf;
 

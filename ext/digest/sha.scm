@@ -134,6 +134,7 @@
    ()
    [allocator
     (let* ([ctx :: ScmShaContext* (SCM_NEW_INSTANCE ScmShaContext klass)])
+      (cast void initargs)              ; suppress unused var warning
       (return (SCM_OBJ ctx)))])
 
  (define-cproc %sha1-init (ctx::<sha-context>) ::<void>

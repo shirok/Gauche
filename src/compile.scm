@@ -1746,6 +1746,7 @@
    (let* ([mod::ScmModule* (-> (SCM_IDENTIFIER id) module)]
           [gloc::ScmGloc* (Scm_IdentifierGlobalBinding (SCM_IDENTIFIER id))])
      (set! SCM_RESULT0 '#f SCM_RESULT1 '#f)
+     (cast void mod) ; suppress unused var warning
      (when gloc
        (let* ([gval (SCM_GLOC_GET gloc)])
          (cond [(SCM_MACROP gval)

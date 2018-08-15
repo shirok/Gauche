@@ -52,14 +52,14 @@ SCM_DEFINE_BASE_CLASS(Scm_MutexClass, ScmMutex,
                       mutex_print, NULL, NULL, mutex_allocate,
                       default_cpl);
 
-static void mutex_finalize(ScmObj obj, void* data)
+static void mutex_finalize(ScmObj obj, void* data SCM_UNUSED)
 {
     ScmMutex *mutex = SCM_MUTEX(obj);
     SCM_INTERNAL_MUTEX_DESTROY(mutex->mutex);
     SCM_INTERNAL_COND_DESTROY(mutex->cv);
 }
 
-static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmMutex *mutex = SCM_NEW_INSTANCE(ScmMutex, klass);
     SCM_INTERNAL_MUTEX_INIT(mutex->mutex);
@@ -73,7 +73,7 @@ static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(mutex);
 }
 
-static void mutex_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void mutex_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmMutex *mutex = SCM_MUTEX(obj);
 
@@ -171,8 +171,8 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 #ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
     ScmObj r = SCM_TRUE;
-    ScmVM *abandoned = NULL;
-    int intr = FALSE;
+    volatile ScmVM *abandoned = NULL;
+    volatile int intr = FALSE;
 
     ScmTimeSpec *pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
@@ -197,7 +197,9 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     if (intr) Scm_SigCheck(Scm_VM());
     if (abandoned) {
-        ScmObj exc = Scm_MakeThreadException(SCM_CLASS_ABANDONED_MUTEX_EXCEPTION, abandoned);
+        ScmObj exc
+            = Scm_MakeThreadException(SCM_CLASS_ABANDONED_MUTEX_EXCEPTION,
+                                      (ScmVM*)abandoned);
         SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(mutex);
         r = Scm_Raise(exc);
     }
@@ -209,10 +211,10 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 
 ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout)
 {
-    ScmObj r = SCM_TRUE;
+    volatile ScmObj r = SCM_TRUE;
 #ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
-    int intr = FALSE;
+    volatile int intr = FALSE;
 
     ScmTimeSpec *pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
@@ -234,7 +236,9 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
     return r;
 }
 
-static ScmObj mutex_locker(ScmObj *args, int argc, void *mutex)
+static ScmObj mutex_locker(ScmObj *args SCM_UNUSED,
+                           int argc SCM_UNUSED,
+                           void *mutex)
 {
     return Scm_MutexLock((ScmMutex*)mutex, SCM_FALSE, Scm_VM());
 }
@@ -251,7 +255,9 @@ ScmObj Scm_MutexLocker(ScmMutex *mutex)
     return p;
 }
 
-static ScmObj mutex_unlocker(ScmObj *args, int argc, void *mutex)
+static ScmObj mutex_unlocker(ScmObj *args SCM_UNUSED,
+                             int argc SCM_UNUSED,
+                             void *mutex)
 {
     return Scm_MutexUnlock((ScmMutex*)mutex, NULL, SCM_FALSE);
 }
@@ -278,13 +284,13 @@ SCM_DEFINE_BASE_CLASS(Scm_ConditionVariableClass, ScmConditionVariable,
                       cv_print, NULL, NULL, cv_allocate,
                       default_cpl);
 
-static void cv_finalize(ScmObj obj, void *data)
+static void cv_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmConditionVariable *cv = SCM_CONDITION_VARIABLE(obj);
     SCM_INTERNAL_COND_DESTROY(cv->cv);
 }
 
-static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmConditionVariable *cv = SCM_NEW_INSTANCE(ScmConditionVariable, klass);
     SCM_INTERNAL_COND_INIT(cv->cv);
@@ -294,7 +300,7 @@ static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(cv);
 }
 
-static void cv_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void cv_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmConditionVariable *cv = SCM_CONDITION_VARIABLE(obj);
     ScmObj name = cv->name;

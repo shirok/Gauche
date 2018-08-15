@@ -246,8 +246,6 @@ static mhash *mhash_insert(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 {
     u_long j = mhashfn(k, nargs) & (h->size - 1);
-    long free_slot = -1;
-    ScmObj tail = SCM_NIL;
     
     int i = 0;
     for (; i < h->size; i++) {

@@ -97,6 +97,8 @@
           cf-lang <c-language>
           cf-lang-program cf-lang-io-program cf-lang-call
           cf-try-compile cf-try-compile-and-link
+
+          ;cf-check-lib
           ))
 (select-module gauche.configure)
 
@@ -1113,3 +1115,9 @@
       (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name h)"))
              (when if-found (if-found h)))
       (when if-not-found (if-not-found h)))))
+
+;; Feature Test API
+;; Like AC_CHECK_LIB
+;(define (cf-check-lib lib fn
+;                      :key (other-libs '()) (if-found #f) (if-not-found #f))
+;  (cf-msg-checking ""

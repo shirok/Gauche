@@ -130,7 +130,7 @@ ScmObj Scm_VaList(va_list pvar)
 }
 
 
-ScmObj Scm_VaCons(va_list pvar)
+ScmObj Scm_VaCons(va_list pvar SCM_UNUSED)
 {
     Scm_Panic("Scm_VaCons: not implemented");
     return SCM_UNDEFINED;

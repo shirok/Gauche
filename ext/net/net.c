@@ -43,7 +43,7 @@ static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SocketClass, socket_print);
 
-static void socket_finalize(ScmObj obj, void *data)
+static void socket_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmSocket *sock = (ScmSocket*)obj;
     /* NB: at this point, sock->inPort and sock->outPort may already
@@ -61,7 +61,8 @@ static void socket_finalize(ScmObj obj, void *data)
     }
 }
 
-static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void socket_print(ScmObj obj, ScmPort *port, 
+                         ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmSocket *sock = SCM_SOCKET(obj);
     Scm_Printf(port, "#<socket");

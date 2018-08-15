@@ -506,14 +506,15 @@ static Entry *address_access(ScmHashCore *table,
     NOTFOUND(table, op, key, hashval, index);
 }
 
-static u_long address_hash(const ScmHashCore *ht, intptr_t obj)
+static u_long address_hash(const ScmHashCore *ht SCM_UNUSED, intptr_t obj)
 {
     u_long hashval;
     ADDRESS_HASH(hashval, obj);
     return hashval;
 }
 
-static int address_cmp(const ScmHashCore *ht, intptr_t key, intptr_t k2)
+static int address_cmp(const ScmHashCore *ht SCM_UNUSED, 
+                       intptr_t key, intptr_t k2)
 {
     return (key == k2);
 }
@@ -522,22 +523,22 @@ static int address_cmp(const ScmHashCore *ht, intptr_t key, intptr_t k2)
  * Accessor function for equal and eqv-hash.
  * We assume KEY is ScmObj.
  */
-static u_long eqv_hash(const ScmHashCore *table, intptr_t key)
+static u_long eqv_hash(const ScmHashCore *ht SCM_UNUSED, intptr_t key)
 {
     return Scm_EqvHash(SCM_OBJ(key));
 }
 
-static int eqv_cmp(const ScmHashCore *table, intptr_t key, intptr_t k2)
+static int eqv_cmp(const ScmHashCore *ht SCM_UNUSED, intptr_t key, intptr_t k2)
 {
     return Scm_EqvP(SCM_OBJ(key), SCM_OBJ(k2));
 }
 
-static u_long equal_hash(const ScmHashCore *table, intptr_t key)
+static u_long equal_hash(const ScmHashCore *ht SCM_UNUSED, intptr_t key)
 {
     return Scm_DefaultHash(SCM_OBJ(key));
 }
 
-static int equal_cmp(const ScmHashCore *table, intptr_t key, intptr_t k2)
+static int equal_cmp(const ScmHashCore *ht SCM_UNUSED, intptr_t key, intptr_t k2)
 {
     return Scm_EqualP(SCM_OBJ(key), SCM_OBJ(k2));
 }
@@ -572,12 +573,12 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
     NOTFOUND(table, op, k, hashval, index);
 }
 
-static u_long string_hash(const ScmHashCore *table, intptr_t key)
+static u_long string_hash(const ScmHashCore *ht SCM_UNUSED, intptr_t key)
 {
     return Scm_HashString(SCM_STRING(key), 0);
 }
 
-static int string_cmp(const ScmHashCore *table, intptr_t k1, intptr_t k2)
+static int string_cmp(const ScmHashCore *ht SCM_UNUSED, intptr_t k1, intptr_t k2)
 {
     const ScmStringBody *b1 = SCM_STRING_BODY(k1);
     const ScmStringBody *b2 = SCM_STRING_BODY(k2);
@@ -967,7 +968,8 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
  * Printer
  */
 
-static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void hash_print(ScmObj obj, ScmPort *port, 
+                       ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmHashTable *ht = (ScmHashTable*)obj;
     char *str = "";
@@ -1091,7 +1093,7 @@ ScmObj Scm_MakeHashTableMultiWord(int keysize, int initsize)
 
 /* Legacy constructor.  DEPRECATED.  Will go away soon. */
 ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
-                         ScmHashCompareProc *cmpfn,
+                         ScmHashCompareProc *cmpfn SCM_UNUSED,
                          unsigned int initSize)
 {
     if (hashfn == (ScmHashProc*)SCM_HASH_EQ) {

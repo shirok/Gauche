@@ -200,12 +200,12 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 }
 
 /* Thread join */
-ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
+ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, volatile ScmObj timeoutval)
 {
 #ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
-    ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
-    int intr = FALSE, tout = FALSE;
+    volatile ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
+    volatile int intr = FALSE, tout = FALSE;
 
     ScmTimeSpec *pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(target->vmlock);
@@ -468,7 +468,7 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
 /*
  * Initialization.
  */
-void Scm_Init_threads(ScmModule *mod)
+void Scm_Init_threads(ScmModule *mod SCM_UNUSED)
 {
 #ifdef GAUCHE_USE_PTHREADS
     sigfillset(&threadrec.defaultSigmask);
