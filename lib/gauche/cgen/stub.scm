@@ -428,22 +428,29 @@
    ;; - <string>: C variable name for unboxed value
    (scm-name)
    ;; - <string>: C variable name to hold boxed ScmObj value
-   (count    :init-keyword :count)
-   ;; - <integer>: This arg is count-th in the procedure
    (type     :init-keyword :type)
    ;; - <cgen-type>: Stub type of this arg
    (default  :init-keyword :default :init-value #f)
    ;; - #f or <cgen-literal> : default value for optional/keyword arg
    ))
 
+;; required, optional and optarray arg uses "count" slot, that indicates
+;; the arg is count-th argument in the procedure.
 ;; The opt-count is an integer, indicating the position of this optional
 ;; arg counted from the beginning of the optional arg
-(define-class <required-arg> (<arg>) ())
-(define-class <optional-arg> (<arg>) ((opt-count :init-keyword :opt-count)))
-(define-class <keyword-arg>  (<arg>) (keyword))
-(define-class <rest-arg>     (<arg>) ())
-(define-class <optarray-arg> (<arg>) ((count-var :init-keyword :count-var)
-                                      (max-count :init-keyword :max-count)))
+(define-class <required-arg> (<arg>)
+  ((count     :init-keyword :count)))
+(define-class <optional-arg> (<arg>)
+  ((count     :init-keyword :count)
+   (opt-count :init-keyword :opt-count)))
+(define-class <keyword-arg>  (<arg>)
+  (keyword))
+(define-class <rest-arg>     (<arg>)
+  ())
+(define-class <optarray-arg> (<arg>)
+  ((count     :init-keyword :count)
+   (count-var :init-keyword :count-var)
+   (max-count :init-keyword :max-count)))
 
 (define-method write-object ((self <arg>) out)
   (format out "#<~a ~a>" (class-of self) (~ self'name)))
@@ -535,8 +542,8 @@
    (num-reqargs       :initform 0   :init-keyword :num-reqargs)
       ;; # of required arguments.
    (num-optargs       :initform 0   :init-keyword :num-optargs)
-      ;; # of optional arguments.  including keyword-args.  rest-arg
-      ;; is counted as 1 if the procedure takes it.
+      ;; # of optional arguments.  keyword args and rest-args
+      ;; are counted as 1 if the procedure takes it.
    (have-rest-arg?    :initform #f  :init-keyword :have-rest-arg?)
       ;; true if the procedure takes a rest-arg.
    (allow-other-keys? :initform '() :init-keyword :allow-other-keys?)
@@ -743,7 +750,8 @@
    (let1 tmpvar (%insert-funcall-decls '.funcall/cps scheme-proc-name #f)
      (%expand-funcall-apply 'Scm_VMApply tmpvar arg))])
 
-;; create arg object.  used in cproc and cmethod
+;; create arg object.  used in cproc and cmethod 
+;; NB: count arg is ignored if class is <keyword-arg> or <rest-arg>
 (define (make-arg class argname count . rest)
   (define (grok-argname argname)
     (let1 namestr (symbol->string argname)
@@ -775,18 +783,18 @@
     (match specs
       [()                  (values (reverse args) '() nreqs 0 #f #f)]
       [(':optional . specs) (optional specs args nreqs 0)]
-      [(':rest . specs)     (rest specs args '() nreqs 0 #f)]
-      [(':key . specs)      (keyword specs args '() nreqs 0)]
+      [(':rest . specs)     (rest specs args '() nreqs 1 #f)]
+      [(':key . specs)      (keyword specs args '() nreqs 1)]
       [(':allow-other-kyes . specs)
        (errorf <cgen-stub-error>
                "misplaced :allow-other-key parameter: ~s in ~a" argspecs name)]
-      [(':optarray (var cnt max) . specs)
+      [(':optarray (var cnt maxcnt) . specs)
        (let1 args (cons (make-arg <optarray-arg> var nreqs
-                                  :count-var cnt :max-count max)
+                                  :count-var cnt :max-count maxcnt)
                         args)
          (match specs
-           [() (values (reverse args) '() nreqs max #f #f)]
-           [(':rest . specs) (rest specs args '() nreqs max #f)]
+           [() (values (reverse args) '() nreqs maxcnt #f #f)]
+           [(':rest . specs) (rest specs args '() nreqs (+ maxcnt 1) #f)]
            [_ (badarg specs)]))]
       [([? symbol? sym] . specs)
        (required specs
@@ -805,7 +813,7 @@
       [(':optarray . specs)
        (error <cgen-stub-error>
               ":optarray and :optional can't be used together in "name)]
-      [(':rest . specs)     (rest specs args '() nreqs nopts #f)]
+      [(':rest . specs)     (rest specs args '() nreqs (+ nopts 1) #f)]
       [(':allow-other-keys . specs)
        (error <cgen-stub-error>
               "misplaced :allow-other-keys parameter in "name)]
@@ -846,24 +854,24 @@
       [(':rest . specs)     (rest specs args keyargs nreqs nopts #f)]
       [([? symbol? sym] . specs)
        (keyword specs args
-                (cons (make-arg <keyword-arg> sym (+ nreqs nopts))
+                (cons (make-arg <keyword-arg> sym 0)
                       keyargs)
-                nreqs (+ nopts 1))]
+                nreqs nopts)]
       [(([? symbol? sym] default) . specs)
        (keyword specs args
-                (cons (make-arg <keyword-arg> sym (+ nreqs nopts)
+                (cons (make-arg <keyword-arg> sym 0
                                 :default (make-literal default))
                       keyargs)
-                nreqs (+ nopts 1))]
+                nreqs nopts)]
       [_ (badarg (car specs))]))
 
   (define (rest specs args keyargs nreqs nopts other-keys?)
     (match specs
       [() (values (reverse args) (reverse keyargs) nreqs nopts #t other-keys?)]
       [((? symbol? sym))
-       (values (reverse (cons (make-arg <rest-arg> sym (+ nreqs nopts)) args))
+       (values (reverse (cons (make-arg <rest-arg> sym 0) args))
                (reverse keyargs)
-               nreqs (+ nopts 1) #t other-keys?)]
+               nreqs nopts #t other-keys?)]
       [_ (badarg (car specs))]))
 
   (required (xlate-old-lambda-keywords argspecs) '() 0)
