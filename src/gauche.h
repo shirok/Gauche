@@ -1327,7 +1327,7 @@ struct ScmProcedureRec {
    and all excessive arguments are 'folded' in a list.
 
    This slot may have a value more than 1.  If it is N (>1), then up to N-1
-   optional arguments are passed wihtout being folded (that is, passed
+   optional arguments are passed without being folded (that is, passed
    'on the stack'.  Only when the given argument is more than or equal to
    N + reqargs, the excessive arguments are folded and passed in a list.
    Thus, such procedure may get between reqargs values and N+reqargs values
