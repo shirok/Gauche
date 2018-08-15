@@ -171,7 +171,7 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 #ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
     ScmObj r = SCM_TRUE;
-    volatile ScmVM *abandoned = NULL;
+    ScmVM * volatile abandoned = NULL;
     volatile int intr = FALSE;
 
     ScmTimeSpec *pts = Scm_GetTimeSpec(timeout, &ts);
