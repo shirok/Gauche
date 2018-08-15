@@ -17892,7 +17892,7 @@ The file is opened in "binary" mode.
 Note: This flag makes difference only on Windows-native platforms;
 On Unix, both mode are the same.
 @c JP
-註: このフラグで違いが出るのはindowsネイティブ版のみです。
+註: このフラグで違いが出るのはWindowsネイティブ版のみです。
 Unixでは両者に違いはありません。
 @c COMMON
 
