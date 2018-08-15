@@ -144,10 +144,10 @@
  *     JIS X 0213 to EUC-JP is a straightfoward conversion.
  */
 
-static size_t sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
-                        const char *inptr, size_t inroom,
-                        char *outptr, size_t outroom, 
-                        size_t *outchars)
+static ScmSize sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
+                         const char *inptr, ScmSize inroom,
+                         char *outptr, ScmSize outroom, 
+                         ScmSize *outchars)
 {
     static const unsigned char cvt[] = { 0xa1, 0xa8, 0xa3, 0xa4, 0xa5, 0xac, 0xae, 0xad, 0xaf, 0xee };
 
@@ -288,10 +288,10 @@ static size_t sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
  *     s2 is mapped with the same rule above.
  */
 
-static size_t eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
-                        const char *inptr, size_t inroom,
-                        char *outptr, size_t outroom,
-                        size_t *outchars)
+static ScmSize eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
+                         const char *inptr, ScmSize inroom,
+                         char *outptr, ScmSize outroom,
+                         ScmSize *outchars)
 {
     unsigned char e1 = inptr[0];
     if (e1 <= 0x7f) {
@@ -443,7 +443,11 @@ static size_t eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
 #include "ucs2eucj.c"
 
 /* Emit given euc char */
-static inline size_t utf2euc_emit_euc(unsigned short euc, size_t inchars, char *outptr, size_t outroom, size_t *outchars)
+static inline ScmSize utf2euc_emit_euc(unsigned short euc, 
+                                       ScmSize inchars,
+                                       char *outptr, 
+                                       ScmSize outroom,
+                                       ScmSize *outchars)
 {
     if (euc == 0) {
         EUCJ_SUBST;
@@ -463,9 +467,10 @@ static inline size_t utf2euc_emit_euc(unsigned short euc, size_t inchars, char *
 }
 
 /* handle 2-byte UTF8 sequence.  0xc0 <= u0 <= 0xdf */
-static inline size_t utf2euc_2(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
-                               const char *inptr, size_t inroom,
-                               char *outptr, size_t outroom, size_t *outchars)
+static inline ScmSize utf2euc_2(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
+                                const char *inptr, ScmSize inroom,
+                                char *outptr, ScmSize outroom, 
+                                ScmSize *outchars)
 {
     const unsigned short *etab = NULL;
 
@@ -507,9 +512,10 @@ static inline size_t utf2euc_2(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 }
 
 /* handle 3-byte UTF8 sequence.  0xe0 <= u0 <= 0xef */
-static inline size_t utf2euc_3(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
-                               const char *inptr, size_t inroom,
-                               char *outptr, size_t outroom, size_t *outchars)
+static inline ScmSize utf2euc_3(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
+                                const char *inptr, ScmSize inroom,
+                                char *outptr, ScmSize outroom, 
+                                ScmSize *outchars)
 {
     const unsigned char *tab1 = NULL;
     const unsigned short (*tab2)[64] = NULL;
@@ -556,9 +562,10 @@ static inline size_t utf2euc_3(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 }
 
 /* handle 4-byte UTF8 sequence.  u0 == 0xf0, 0xa0 <= u1 <= 0xaa */
-static inline size_t utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
-                               const char *inptr, size_t inroom,
-                               char *outptr, size_t outroom, size_t *outchars)
+static inline ScmSize utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
+                                const char *inptr, ScmSize inroom,
+                                char *outptr, ScmSize outroom,
+                                ScmSize *outchars)
 {
     const unsigned short *tab = NULL;
 
@@ -599,8 +606,10 @@ static inline size_t utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 }
 
 /* Body of UTF8 -> EUC_JP conversion */
-static size_t utf2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
-                       char *outptr, size_t outroom, size_t *outchars)
+static ScmSize utf2eucj(ScmConvInfo *cinfo,     
+                        const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom,
+                        ScmSize *outchars)
 {
     unsigned char u0 = (unsigned char)inptr[0];
 
@@ -700,9 +709,9 @@ void jconv_ucs4_to_utf8(unsigned int ucs, char *cp)
 /* Given 'encoded' ucs, emit utf8.  'Encoded' ucs is the entry of the
    conversion table.  If ucs >= 0x100000, it is composed by two UCS2
    character.  Otherwise, it is one UCS4 character. */
-static inline size_t eucj2utf_emit_utf(unsigned int ucs, size_t inchars,
-                                       char *outptr, size_t outroom,
-                                       size_t *outchars)
+static inline ScmSize eucj2utf_emit_utf(unsigned int ucs, ScmSize inchars,
+                                        char *outptr, ScmSize outroom,
+                                        ScmSize *outchars)
 {
     if (ucs == 0) {
         UTF8_SUBST;
@@ -725,9 +734,9 @@ static inline size_t eucj2utf_emit_utf(unsigned int ucs, size_t inchars,
     return inchars;
 }
 
-static size_t eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
-                       const char *inptr, size_t inroom,
-                       char *outptr, size_t outroom, size_t *outchars)
+static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
+                        const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom, ScmSize *outchars)
 {
     unsigned char e0 = (unsigned char)inptr[0];
     if (e0 < 0xa0) {
@@ -827,7 +836,7 @@ enum {
 /* deal with escape sequence.  escape byte itself is already consumed.
    returns # of input bytes consumed by the escape sequence,
    or an error code.  cinfo->istate is updated accordingly. */
-static size_t jis_esc(ScmConvInfo *cinfo, const char *inptr, size_t inroom)
+static ScmSize jis_esc(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom)
 {
     INCHK(2);
     unsigned char j1 = inptr[0];
@@ -886,16 +895,16 @@ static size_t jis_esc(ScmConvInfo *cinfo, const char *inptr, size_t inroom)
 }
 
 /* main routine for iso2022-jp -> euc_jp */
-static size_t jis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
-                       char *outptr, size_t outroom, size_t *outchars)
+static ScmSize jis2eucj(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom, ScmSize *outchars)
 {
-    size_t inoffset = 0;
+    ScmSize inoffset = 0;
 
     unsigned char j0 = inptr[inoffset];
     /* skip escape sequence */
     while (j0 == 0x1b) {
         inoffset++;
-        size_t r = jis_esc(cinfo, inptr+inoffset, inroom-inoffset);
+        ScmSize r = jis_esc(cinfo, inptr+inoffset, inroom-inoffset);
         if (ERRP(r)) return r;
         inoffset += r;
         if (inoffset >= inroom) {
@@ -982,11 +991,12 @@ static size_t jis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
 
 /* ensure the current state is newstate.  returns # of output chars.
    may return OUTPUT_NOT_ENOUGH. */
-static size_t jis_ensure_state(ScmConvInfo *cinfo, int newstate, size_t outbytes,
-                               char *outptr, size_t outroom)
+static ScmSize jis_ensure_state(ScmConvInfo *cinfo, int newstate, 
+                                ScmSize outbytes, 
+                                char *outptr, ScmSize outroom)
 {
     const char *escseq = NULL;
-    size_t esclen = 0;
+    ScmSize esclen = 0;
 
     if (cinfo->ostate == newstate) {
         OUTCHK(outbytes);
@@ -1014,12 +1024,12 @@ static size_t jis_ensure_state(ScmConvInfo *cinfo, int newstate, size_t outbytes
     return esclen;
 }
 
-static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
-                       char *outptr, size_t outroom, size_t *outchars)
+static ScmSize eucj2jis(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom, ScmSize *outchars)
 {
     unsigned char e0 = inptr[0];
     if (e0 < 0x80) {
-        size_t outoffset = jis_ensure_state(cinfo, JIS_ASCII, 1, outptr, outroom);
+        ScmSize outoffset = jis_ensure_state(cinfo, JIS_ASCII, 1, outptr, outroom);
         if (ERRP(outoffset)) return outoffset;
         outptr[outoffset] = e0;
         *outchars = outoffset+1;
@@ -1028,7 +1038,7 @@ static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         INCHK(2);
         unsigned char e1 = inptr[1];
         if (e1 > 0xa0 && e1 < 0xff) {
-            size_t outoffset = jis_ensure_state(cinfo, JIS_KANA, 1, outptr, outroom);
+            ScmSize outoffset = jis_ensure_state(cinfo, JIS_KANA, 1, outptr, outroom);
             if (ERRP(outoffset)) return outoffset;
             outptr[outoffset] = e1 - 0x80;
             *outchars = outoffset+1;
@@ -1047,7 +1057,7 @@ static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
             default:
                 if (e0 >= 0xee) newstate = JIS_0213_2;
             }
-            size_t outoffset = jis_ensure_state(cinfo, newstate, 2, outptr, outroom);
+            ScmSize outoffset = jis_ensure_state(cinfo, newstate, 2, outptr, outroom);
             outptr[outoffset] = e0 - 0x80;
             outptr[outoffset+1] = e1 - 0x80;
             *outchars = outoffset+1;
@@ -1057,7 +1067,7 @@ static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         INCHK(2);
         unsigned char e1 = inptr[1];
         if (e1 > 0xa0 && e1 < 0xff) {
-            size_t outoffset = jis_ensure_state(cinfo, JIS_0213_1, 2, outptr, outroom);
+            ScmSize outoffset = jis_ensure_state(cinfo, JIS_0213_1, 2, outptr, outroom);
             if (ERRP(outoffset)) return outoffset;
             outptr[outoffset] = e0 - 0x80;
             outptr[outoffset+1] = e1 - 0x80;
@@ -1069,7 +1079,7 @@ static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
 }
 
 /* reset proc */
-static size_t jis_reset(ScmConvInfo *cinfo, char *outptr, size_t outroom)
+static ScmSize jis_reset(ScmConvInfo *cinfo, char *outptr, ScmSize outroom)
 {
     if (outptr == NULL) {
         /* just reset */
@@ -1092,12 +1102,12 @@ static size_t jis_reset(ScmConvInfo *cinfo, char *outptr, size_t outroom)
 
 /* EUC_JP is a pivot code, so we don't need to convert.  This function
    is just a placeholder. */
-static size_t pivot(ScmConvInfo *cinfo SCM_UNUSED,
-                    const char *inptr SCM_UNUSED,
-                    size_t inroom SCM_UNUSED,
-                    char *outptr SCM_UNUSED,
-                    size_t outroom SCM_UNUSED,
-                    size_t *outchars SCM_UNUSED)
+static ScmSize pivot(ScmConvInfo *cinfo SCM_UNUSED,
+                     const char *inptr SCM_UNUSED,
+                     ScmSize inroom SCM_UNUSED,
+                     char *outptr SCM_UNUSED,
+                     ScmSize outroom SCM_UNUSED,
+                     ScmSize *outchars SCM_UNUSED)
 {
     return 0;
 }
@@ -1201,10 +1211,10 @@ static int conv_name_find(const char *name)
 */
 
 /* case (1) */
-static size_t jconv_ident(ScmConvInfo *info, const char **iptr,
-                          size_t *iroom, char **optr, size_t *oroom)
+static ScmSize jconv_ident(ScmConvInfo *info, const char **iptr,
+                           ScmSize *iroom, char **optr, ScmSize *oroom)
 {
-    size_t inroom = *iroom, outroom = *oroom;
+    ScmSize inroom = *iroom, outroom = *oroom;
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_ident %s->%s\n", info->fromCode, info->toCode);
 #endif
@@ -1226,22 +1236,22 @@ static size_t jconv_ident(ScmConvInfo *info, const char **iptr,
 }
 
 /* case (2) or (3) */
-static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
-                          size_t *iroom, char **optr, size_t *oroom)
+static ScmSize jconv_1tier(ScmConvInfo *info, const char **iptr,
+                           ScmSize *iroom, char **optr, ScmSize *oroom)
 {
     ScmConvProc cvt = info->convproc[0];
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
-    size_t converted = 0;
+    ScmSize converted = 0;
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_1tier %s->%s\n", info->fromCode, info->toCode);
 #endif
     SCM_ASSERT(cvt != NULL);
     while (inr > 0 && outr > 0) {
-        size_t outchars;
-        size_t inchars = cvt(info, inp, inr, outp, outr, &outchars);
+        ScmSize outchars;
+        ScmSize inchars = cvt(info, inp, inr, outp, outr, &outchars);
         if (ERRP(inchars)) {
             converted = inchars;
             break;
@@ -1262,8 +1272,8 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
 
 /* case (4) */
 #define INTBUFSIZ 20            /* intermediate buffer size */
-static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
-                          char **optr, size_t *oroom)
+static ScmSize jconv_2tier(ScmConvInfo *info, const char **iptr, ScmSize *iroom,
+                           char **optr, ScmSize *oroom)
 {
     char buf[INTBUFSIZ];
     ScmConvProc icvt = info->convproc[0];
@@ -1271,14 +1281,14 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
-    size_t converted = 0;
+    ScmSize converted = 0;
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_2tier %s->%s\n", info->fromCode, info->toCode);
 #endif
     while (inr > 0 && outr > 0) {
-        size_t outchars, bufchars;
-        size_t inchars = icvt(info, inp, inr, buf, INTBUFSIZ, &bufchars);
+        ScmSize outchars, bufchars;
+        ScmSize inchars = icvt(info, inp, inr, buf, INTBUFSIZ, &bufchars);
         if (ERRP(inchars)) {
             converted = inchars;
             break;
@@ -1313,35 +1323,39 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
  * reset sequence; the first call should emit the sequence, but the second
  * call shouldn't.
  */
-static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
-                          char **optr, size_t *oroom)
+static ScmSize jconv_iconv(ScmConvInfo *info, const char **iptr, ScmSize *iroom,
+                           char **optr, ScmSize *oroom)
 {
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_iconv %s->%s\n", info->fromCode, info->toCode);
 #endif
-    size_t r = iconv(info->handle, (char **)iptr, iroom, optr, oroom);
+    size_t ir = *iroom, or = *oroom;
+    size_t r = iconv(info->handle, (char **)iptr, &ir, optr, &or);
     info->ostate = JIS_UNKNOWN;
     if (r == (size_t)-1) {
         if (errno == EINVAL) return INPUT_NOT_ENOUGH;
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
         return ILLEGAL_SEQUENCE;
     } else {
-        return (size_t)r;
+        *iroom = ir;
+        *oroom = or;
+        return (ScmSize)r;
     }
 }
 
 /* reset routine for iconv */
-static ssize_t jconv_iconv_reset(ScmConvInfo *info, char *optr, size_t oroom)
+static ScmSize jconv_iconv_reset(ScmConvInfo *info, char *optr, ScmSize oroom)
 {
-    size_t oroom_prev = oroom;
+    ScmSize oroom_prev = oroom;
     if (info->ostate == JIS_ASCII) return 0;
-    size_t r = iconv(info->handle, NULL, 0, &optr, &oroom);
+    size_t or = oroom;
+    size_t r = iconv(info->handle, NULL, 0, &optr, &or);
     if (r == (size_t)-1) {
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
         Scm_Panic("jconv_iconv_reset: unknown error number %d\n", errno);
     }
     info->ostate = JIS_ASCII;
-    return oroom_prev - oroom;
+    return oroom_prev - (ScmSize)or;
 }
 #endif /*HAVE_ICONV_H*/
 
@@ -1431,9 +1445,9 @@ int jconv_close(ScmConvInfo *info)
 /*------------------------------------------------------------------
  * JCONV - main conversion routine
  */
-size_t jconv(ScmConvInfo *info,
-             const char **inptr, size_t *inroom,
-             char **outptr, size_t *outroom)
+ScmSize jconv(ScmConvInfo *info,
+              const char **inptr, ScmSize *inroom,
+              char **outptr, ScmSize *outroom)
 {
     SCM_ASSERT(info->jconv != NULL);
     return info->jconv(info, inptr, inroom, outptr, outroom);
@@ -1442,7 +1456,7 @@ size_t jconv(ScmConvInfo *info,
 /*------------------------------------------------------------------
  * JCONV_RESET - reset
  */
-ssize_t jconv_reset(ScmConvInfo *info, char *outptr, size_t outroom)
+ScmSize jconv_reset(ScmConvInfo *info, char *outptr, ScmSize outroom)
 {
     if (info->reset) {
         return info->reset(info, outptr, outroom);
