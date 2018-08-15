@@ -74,7 +74,7 @@
  ;;
  "typedef struct QueueRec {"
  "  SCM_INSTANCE_HEADER;"
- "  long len;"     ;; lazily calc'd.  -1 for 'to be calculated'
+ "  ScmSize len;"     ;; lazily calc'd.  -1 for 'to be calculated'
  "  ScmObj head;"
  "  ScmObj tail;"
  "} Queue;"
@@ -87,10 +87,10 @@
  "#define Q_LENGTH(obj)    (Q(obj)->len)"  ; can be -1; should use %qlength().
  "#define Q_EMPTY_P(obj)   (SCM_NULLP(Q_HEAD(obj)))"
 
- (define-cfn %qlength (q::Queue*) ::u_long  ; must be called with lock held
+ (define-cfn %qlength (q::Queue*) ::ScmSize  ; must be called with lock held
    (when (< (Q_LENGTH q) 0)
      (set! (Q_LENGTH q) (Scm_Length (Q_HEAD q))))
-   (return (cast u_long (Q_LENGTH q))))
+   (return (cast ScmSmallInt (Q_LENGTH q))))
 
  (define-cfn makeq (klass::ScmClass*)
    (let* ([z::Queue* (SCM_NEW_INSTANCE Queue klass)])
@@ -109,7 +109,7 @@
  ;;
  "typedef struct MtQueueReq {"
  "  Queue q;"
- "  int maxlen;"     ;negative if unlimited
+ "  ScmSmallInt maxlen;"     ;negative if unlimited
  "  ScmInternalMutex mutex;"
  "  ScmObj locker;"  ;thread holding the lock.  see the comment above.
  "  ScmInternalCond lockWait;"
@@ -144,7 +144,7 @@
      (return (SCM_OBJ z))))
 
  (define-cfn mtq-maxlen-get (mtq::MtQueue*)
-   (let* ([ml::int (MTQ_MAXLEN mtq)])
+   (let* ([ml::ScmSmallInt (MTQ_MAXLEN mtq)])
      (if (< ml 0) (return '#f) (return (SCM_MAKE_INT ml)))))
 
  (define-cfn mtq-maxlen-set (mtq::MtQueue* maxlen) ::void
@@ -334,7 +334,7 @@
 
  ;; API
  (define-cproc mtqueue-room (q::<mtqueue>) ::<number>
-   (let* ([room::int -1])
+   (let* ([room::ScmSmallInt -1])
      (with-mtq-light-lock q
        (when (>= (MTQ_MAXLEN q) 0)
          (set! room (- (MTQ_MAXLEN q) (%qlength (Q q))))))
@@ -392,7 +392,7 @@
 
 (inline-stub
  ;; internal enqueue - lock must be held.
- (define-cfn enqueue_int (q::Queue* cnt::u_int head tail) ::void
+ (define-cfn enqueue_int (q::Queue* cnt::ScmSmallInt head tail) ::void
    (when (>= (Q_LENGTH q) 0)
      (set! (Q_LENGTH q) (+ (Q_LENGTH q) cnt)))
    (cond [(Q_EMPTY_P q) (set! (Q_HEAD q) head (Q_TAIL q) tail)]
@@ -400,7 +400,7 @@
                         (set! (Q_TAIL q) tail)]))
 
  ;; to call internal enqueue from Scheme.  lock must be held.
- (define-cproc %enqueue! (q::<queue> cnt::<uint> head tail) ::<void>
+ (define-cproc %enqueue! (q::<queue> cnt::<fixnum> head tail) ::<void>
    (enqueue_int q cnt head tail))
 
  ;; (q-write-op OP Q CNT HEAD TAIL)
@@ -462,7 +462,7 @@
 
 (inline-stub
  ;; queue-push! - add item(s) to the head
- (define-cfn queue-push-int (q::Queue* cnt::u_int head tail) ::void
+ (define-cfn queue-push-int (q::Queue* cnt::ScmSmallInt head tail) ::void
    (SCM_SET_CDR tail (Q_HEAD q))
    (set! (Q_HEAD q) head
          (Q_TAIL q) (Scm_LastPair tail))
