@@ -186,15 +186,24 @@
                                 :key (if-does-not-exist :error)
                                 (buffering #f)
                                 (element-type :character))
-  (let* ([ignerr::int FALSE])
+  (let* ([ignerr::int FALSE]
+         [flags::int O_RDONLY])
     (cond [(SCM_FALSEP if-does-not-exist) (set! ignerr TRUE)]
           [(not (SCM_EQ if-does-not-exist ':error))
            (Scm_TypeError ":if-does-not-exist" ":error or #f"
                           if-does-not-exist)])
+    (unless (or (SCM_EQ element-type ':character)
+                (SCM_EQ element-type ':binary))
+      (Scm_Error "bad element-type argument: either :character or :binary \
+                  expected, but got %S" element-type))
+    (.if "defined(O_BINARY) && defined(O_TEXT)"
+         (if (SCM_EQ element-type ':character)
+           (logior= flags O_TEXT)
+           (logior= flags O_BINARY)))
     (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_INPUT
                                             SCM_PORT_BUFFER_FULL)]
            [o (Scm_OpenFilePort (Scm_GetStringConst path)
-                                O_RDONLY bufmode 0)])
+                                flags bufmode 0)])
       (when (and (SCM_FALSEP o) (not (%open/allow-noexist? ignerr)))
         (Scm_SysError "couldn't open input file: %S" path))
       (return o))))
@@ -205,10 +214,18 @@
                                  (if-does-not-exist :create)
                                  (mode::<fixnum> #o666)
                                  (buffering #f)
-                                 (element-type :character)) ; unused; for compatibility
+                                 (element-type :character))
   (let* ([ignerr-noexist::int FALSE]
          [ignerr-exist::int FALSE]
          [flags::int O_WRONLY])
+    (unless (or (SCM_EQ element-type ':character)
+                (SCM_EQ element-type ':binary))
+      (Scm_Error "bad element-type argument: either :character or :binary \
+                  expected, but got %S" element-type))
+    (.if "defined(O_BINARY) && defined(O_TEXT)"
+         (if (SCM_EQ element-type ':character)
+           (logior= flags O_TEXT)
+           (logior= flags O_BINARY)))
     ;; check if-exists flag
     (cond
      [(SCM_EQ if-exists ':append) (logior= flags O_APPEND)]

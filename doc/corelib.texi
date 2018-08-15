@@ -17889,11 +17889,11 @@ The file is opened in "binary" mode.
 @c COMMON
 @end table
 @c EN
-@emph{In the current version, this argument is ignored and all files
-are opened in binary mode.  It doesn't make difference in the Unix platforms.}
+Note: This flag makes difference only on Windows-native platforms;
+On Unix, both mode are the same.
 @c JP
-@emph{現在のバージョンでは、この引数は無視され、全てのファイルはバイナリモードで
-オープンされます。いずれにせよUnixプラットフォームでは違いはありません。}
+註: このフラグで違いが出るのはindowsネイティブ版のみです。
+Unixでは両者に違いはありません。
 @c COMMON
 
 @item :encoding
