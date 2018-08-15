@@ -108,7 +108,7 @@ extern ScmConvInfo *jconv_open(const char *toCode, const char *fromCode);
 extern int jconv_close(ScmConvInfo*);
 extern size_t jconv(ScmConvInfo*, const char **inptr, size_t *inroom,
                     char **outptr, size_t *outroom);
-extern size_t jconv_reset(ScmConvInfo *, char *outptr, size_t outroom);
+extern ssize_t jconv_reset(ScmConvInfo *, char *outptr, size_t outroom);
 
 /* Given UCS char, return # of bytes required for UTF8 encoding. */
 #define UCS2UTF_NBYTES(ucs)                      \
