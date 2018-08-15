@@ -160,8 +160,8 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
     if (nread <= 0) {
         /* input reached EOF.  finish the output state */
         if (insize == 0) {
-            size_t outroom = SCM_PORT_BUFFER_ROOM(port);
-            size_t result = jconv_reset(info, outbuf, outroom);
+            ScmSize outroom = SCM_PORT_BUFFER_ROOM(port);
+            ScmSize result = jconv_reset(info, outbuf, outroom);
             if (result == OUTPUT_NOT_ENOUGH) {
                 /* The port buffer doesn't have enough space to contain the
                    finishing sequence.  Its unusual, for the port buffer
@@ -186,13 +186,13 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
     }
 
     /* Conversion. */
-    size_t inroom = insize;
-    size_t outroom = SCM_PORT_BUFFER_ROOM(port);
+    ScmSize inroom = insize;
+    ScmSize outroom = SCM_PORT_BUFFER_ROOM(port);
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "=> in(%p)%d out(%p)%d\n", inbuf, insize, outbuf, outroom);
 #endif
-    size_t result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
+    ScmSize result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
 #ifdef JCONV_DEBUG
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
             result, inbuf, inroom, outbuf, outroom);
@@ -349,7 +349,7 @@ static void conv_output_closer(ScmPort *port)
         info->ptr = info->buf;
     }
     /* sends out the closing sequence, if any */
-    ssize_t r = jconv_reset(info, info->buf, info->bufsiz);
+    ScmSize r = jconv_reset(info, info->buf, info->bufsiz);
 #ifdef JCONV_DEBUG
     fprintf(stderr, "<= r=%d(reset), buf(%p)\n",
             r, info->buf);
@@ -373,20 +373,20 @@ static void conv_output_closer(ScmPort *port)
 static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
-    size_t inroom = SCM_PORT_BUFFER_AVAIL(port);
-    size_t len = inroom;
+    ScmSize inroom = SCM_PORT_BUFFER_AVAIL(port);
+    ScmSize len = inroom;
     const char *inbuf = port->src.buf.buffer;
 
     for (;;) {
         /* Conversion. */
         char *outbuf = info->ptr;
-        size_t outroom = info->bufsiz - (info->ptr - info->buf);
+        ScmSize outroom = info->bufsiz - (info->ptr - info->buf);
 #ifdef JCONV_DEBUG
         fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
                 inbuf, len, inroom,
                 info->buf, info->ptr, outroom);
 #endif
-        size_t result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
+        ScmSize result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
 #ifdef JCONV_DEBUG
         fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
                 result, inbuf, inroom, outbuf, outroom);
@@ -505,11 +505,11 @@ static ScmChar ucstochar(int ucs4)
     char *outb = outbuf;
 
     if (ucsconv.ucs2char == NULL) return SCM_CHAR_INVALID;
-    size_t inroom = UCS2UTF_NBYTES(ucs4);
-    size_t outroom = 6;
+    ScmSize inroom = UCS2UTF_NBYTES(ucs4);
+    ScmSize outroom = 6;
     jconv_ucs4_to_utf8(ucs4, inbuf);
     (void)SCM_INTERNAL_MUTEX_LOCK(ucsconv.mutex);
-    size_t r = jconv(ucsconv.ucs2char, &inb, &inroom, &outb, &outroom);
+    ScmSize r = jconv(ucsconv.ucs2char, &inb, &inroom, &outb, &outroom);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ucsconv.mutex);
     if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
         Scm_Error("can't convert UCS4 code %d to a character: implementation problem?", ucs4);
@@ -536,11 +536,11 @@ static int chartoucs(ScmChar ch)
 
     if (ch == SCM_CHAR_INVALID) return -1;
     if (ucsconv.char2ucs == NULL) return -1;
-    size_t inroom = SCM_CHAR_NBYTES(ch);
-    size_t outroom = 6;
+    ScmSize inroom = SCM_CHAR_NBYTES(ch);
+    ScmSize outroom = 6;
     SCM_CHAR_PUT(inbuf, ch);
     (void)SCM_INTERNAL_MUTEX_LOCK(ucsconv.mutex);
-    size_t r = jconv(ucsconv.char2ucs, &inb, &inroom, &outb, &outroom);
+    ScmSize r = jconv(ucsconv.char2ucs, &inb, &inroom, &outb, &outroom);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ucsconv.mutex);
     if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
         Scm_Error("can't convert character %u to UCS4 code: implementation problem?", ch);

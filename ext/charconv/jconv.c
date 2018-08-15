@@ -1211,7 +1211,7 @@ static int conv_name_find(const char *name)
 */
 
 /* case (1) */
-static ScmSize jconv_ident(ScmConvInfo *info, const char **iptr,
+static ScmSize jconv_ident(ScmConvInfo *info SCM_UNUSED, const char **iptr,
                            ScmSize *iroom, char **optr, ScmSize *oroom)
 {
     ScmSize inroom = *iroom, outroom = *oroom;

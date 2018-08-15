@@ -100,9 +100,9 @@ extern const char *Scm_GuessCES(const char *code,
                                 ScmSize buflen);
 
 /* jconv error code */
-#define ILLEGAL_SEQUENCE  ((size_t)-1)
-#define INPUT_NOT_ENOUGH  ((size_t)-2)
-#define OUTPUT_NOT_ENOUGH ((size_t)-3)
+#define ILLEGAL_SEQUENCE  (-1)
+#define INPUT_NOT_ENOUGH  (-2)
+#define OUTPUT_NOT_ENOUGH (-3)
 
 extern ScmConvInfo *jconv_open(const char *toCode, const char *fromCode);
 extern int jconv_close(ScmConvInfo*);
