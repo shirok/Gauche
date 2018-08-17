@@ -106,8 +106,17 @@
           (?: (SCM_FALSEP non-continuable?) 0 SCM_RAISE_NON_CONTINUABLE)])
     (result (Scm_Raise2 exception flags))))
 
-;; For r7rs compatible guard
-(define-cproc %reraise (exception) Scm_VMReraise)
+;; For r7rs compatible guard.
+;; %reraise must be called at the tail position of the error handler.
+;; What it does is to restore escape point and set ep->reraied flag, then
+;; return.  Subsequently the control returns from the error handler to
+;; Scm_VMDefaultExceptionHandler, which restores dynamic environment
+;; and returns to the original caller of raise.
+;; TRANSIENT: Code precompiled with 0.9.6 calls %reraise with one argument.
+;; for the compatibility we accept and ignore the argument.
+(define-cproc %reraise (:optional dummy)
+  (cast void dummy)
+  (return (Scm_VMReraise)))
 
 ;; srfi-18 raise
 (define-in-module gauche (raise c) (%raise c))

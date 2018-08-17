@@ -557,7 +557,7 @@
   (syntax-rules (else =>)
     [(%guard-rec var exc)
      ;; exception handler can return to the caller
-     (%reraise exc)]
+     (%reraise)]
     [(%guard-rec var exc (else . exprs))
      (begin . exprs)]
     [(%guard-rec var exc (test => proc) . more)
@@ -606,7 +606,7 @@
                (raise e)]
               [else
                ;; exception handler can return to the caller
-               (%reraise e)]))
+               (%reraise)]))
          (lambda ()
            (receive r
                (dynamic-wind

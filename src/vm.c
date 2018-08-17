@@ -2288,7 +2288,7 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
     return with_error_handler(theVM, handler, thunk, TRUE);
 }
 
-ScmObj Scm_VMReraise(ScmObj condition)
+ScmObj Scm_VMReraise()
 {
     ScmEscapePoint *ep = SCM_VM_FLOATING_EP(theVM);
     if (ep) ep->reraised = TRUE;

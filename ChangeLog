@@ -1,3 +1,10 @@
+2018-08-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/libexc.scm (%reraise), lib/gauche/commom-macros.scm (guard):
+	  The argument of %reraise isn't used, so we omit it.
+	  (For the backward compatibility, we allowed it but ignore).
+	  The C API Scm_VMReraise is changed.
+
 2018-08-14  Shiro Kawai  <shiro@acm.org>
 
 	* various files: Further code cleanup.  The following C API

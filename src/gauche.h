@@ -635,7 +635,7 @@ SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
-SCM_EXTERN ScmObj Scm_VMReraise(ScmObj condition);
+SCM_EXTERN ScmObj Scm_VMReraise();
 
 /* Miscellaneous stuff */
 SCM_EXTERN int    Scm_VMGetNumResults(ScmVM *vm);
