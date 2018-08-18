@@ -1,3 +1,12 @@
+2018-08-17  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($satisfy): Accept result argument that can modify
+	  the parse result.  The result argument, if given, is a procedure
+	  that takes two arg, the input datum and the result of predicate.
+	  By default, the input datum is returned as is.
+	  ($string, $string-ci, $char, $char-ci, $one-of): Allow input being
+	  not a character stream.  Useful if we have a separate tokenizer.
+
 2018-08-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm (%reraise), lib/gauche/commom-macros.scm (guard):

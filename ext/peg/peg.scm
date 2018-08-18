@@ -682,10 +682,27 @@
      s)))
 
 ;; API
-;; $satisfy
+;; $satisfy PRED EXPECT [RESULT])
+;;   - Returns a parser such that ...
+;;   - If the head of input stream satisfies PRED, 
+;;     call (RESULT head (PRED head)) and let its result
+;;     as the value of successulf parsing.
+;;   - Otherwise, returns failure with EXPECT as the expected input.
+;; This can be written simpler, but we use some redundancy to
+;; micro-optimize typical cases.
 (define-syntax $satisfy
   (syntax-rules (cut <>)
-    [(_ (cut p x <>) expect)            ;TODO: hygiene!
+    [(_ (cut p x <>) expect result)            ;TODO: hygiene!
+     (lambda (s)
+       (if-let1 v (and (pair? s) (p x (car s)))
+         (return-result (result (car s) v) (cdr s))
+         (return-failure/expect expect s)))]
+    [(_ pred expect result)
+     (lambda (s)
+       (if-let1 v (and (pair? s) (pred (car s)))
+         (return-result (result (car s) v) (cdr s))
+         (return-failure/expect expect s)))]
+    [(_ (cut p x <>) expect result)            ;TODO: hygiene!
      (lambda (s)
        (if (and (pair? s) (p x (car s)))
          (return-result (car s) (cdr s))
@@ -734,12 +751,14 @@
         (syntax-rules ()
           ((_ char=)
            (lambda (str)
+             (assume-type str <string>)
              (let1 lis (string->list str)
                (lambda (s0)
                  (let loop ((r '()) (s s0) (lis lis))
                    (if (null? lis)
                      (return-result (make-rope (reverse! r)) s)
                      (if (and (pair? s)
+                              (char? (car s))
                               (char= (car s) (car lis)))
                        (loop (cons (car s) r) (cdr s) (cdr lis))
                        (return-failure/expect str s0)))))))))])
@@ -747,14 +766,17 @@
             (expand char-ci=?))))
 
 (define ($char c)
-  ($satisfy (cut char=? c <>) c))
+  (assume-type c <char>) 
+  ($satisfy (cut eqv? c <>) c))
 
 (define ($char-ci c)
-  ($satisfy (cut char-ci=? c <>)
+  (assume-type c <char>) 
+  ($satisfy (^x (and (char? x) (char-ci=? c x)))
             (list->char-set c (char-upcase c) (char-downcase c))))
 
 (define ($one-of charset)
-  ($satisfy (cut char-set-contains? charset <>)
+  (assume-type charset <char-set>)
+  ($satisfy (^x (and (char? x) (char-set-contains? charset x)))
             charset))
 
 (define ($s x) ($string x))
