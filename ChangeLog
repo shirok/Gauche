@@ -1,3 +1,7 @@
+2018-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/mexpr.scm: Added.
+
 2018-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($satisfy): Accept result argument that can modify
