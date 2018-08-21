@@ -17875,25 +17875,40 @@ This argument specifies the type of the file.
 この引数はファイルのタイプを指定します。
 @c COMMON
 @table @code
+@item :binary
+@c EN
+The file is opened in "binary" mode. (This is the default)
+@c JP
+ファイルはバイナリモードでオープンされます。(これがデフォルトです。) 
+@c COMMON
 @item :character
 @c EN
 The file is opened in "character" (or "text") mode.
 @c JP
 ファイルはキャラクタモード(テキストモード)でオープンされます。
 @c COMMON
-@item :binary
-@c EN
-The file is opened in "binary" mode.
-@c JP
-ファイルはバイナリモードでオープンされます。
-@c COMMON
 @end table
 @c EN
-Note: This flag makes difference only on Windows-native platforms;
+Note: This flag makes difference only on Windows-native platforms,
+and only affect the treatment of line terminators.  In character
+mode, writing @code{#\newline} on the output causes CR + LF characters to be
+written, instead of just LF.  And reading CR + LF sequence returns
+just @code{#\newline}.
+
 On Unix, both mode are the same.
+
+Note that Gauche doesn't distinguish character (textual) port and
+binary port.  So this flag really matters only on Windows line
+terminators.
 @c JP
 註: このフラグで違いが出るのはWindowsネイティブ版のみです。
+キャラクタモードでは、@code{#\newline}文字をを出力するとCR + LFが書き出され、
+またCR + LFシーケンスは単一の@code{#\newline}として読まれます。
+
 Unixでは両者に違いはありません。
+
+なお、Gaucheにはテキストポートとバイナリポートの区別はありません。
+したがってこのフラグはWindowsの行終端文字の扱いのみのためにあります。
 @c COMMON
 
 @item :encoding
