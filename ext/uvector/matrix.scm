@@ -63,7 +63,7 @@
     (array-set! sh dim1 1 (array-ref sh dim2 1))
     (array-set! sh dim2 0 tmp0)
     (array-set! sh dim2 1 tmp1)
-    (rlet1 res (make-array sh)
+    (rlet1 res (copy-object a)
       (array-for-each-index a
         (^[vec1] (let* ([vec2 (vector-copy vec1)]
                         [tmp (vector-ref vec2 dim1)])
@@ -82,7 +82,7 @@
     (array-set! sh dim1 1 (array-ref sh dim2 1))
     (array-set! sh dim2 0 tmp0)
     (array-set! sh dim2 1 tmp1)
-    (rlet1 res (make-array sh)
+    (rlet1 res (copy-object a)
       (array-for-each-index a
         (^[vec1] (let* ([vec2 (vector-copy vec1)]
                         [tmp (vector-ref vec2 dim1)])
@@ -293,7 +293,7 @@
 (define (array-expt ar pow)
   (let loop ([a ar] [n pow])
     (case n
-      [(0) (identity-array (s32vector-length (start-vector-of a)))]
+      [(0) (identity-array (s32vector-length (start-vector-of a)) (class-of a))]
       [(1) a]
       [(2) (array-mul a a)]
       [(3) (array-mul (array-mul a a) a)]
