@@ -363,11 +363,13 @@
     (let* ([rank (s32vector-length Vb)]
            [Vb2 (make-s32vector rank 0)]
            [Ve2 (s32vector-sub Ve Vb)]
-           [new-shape (start/end-vector->shape Vb2 Ve2)])
-      (tabulate-array new-shape
-                      (^[ind] (array-ref ar (s32vector->vector
-                                             (s32vector-add Vb ind))))
-                      (make-vector rank)))))
+           [new-shape (start/end-vector->shape Vb2 Ve2)]
+           [res (make-array-internal (class-of ar) new-shape)])
+      (array-retabulate! res new-shape
+                         (^[ind] (array-ref ar (s32vector->vector
+                                                (s32vector-add Vb ind))))
+                         (make-vector rank))
+      res)))
 
 (define (array? obj)
   (is-a? obj <array-base>))

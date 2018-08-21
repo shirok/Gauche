@@ -2299,7 +2299,9 @@
   (< (abs (- x y)) (get-optional opt 0.0000001)))
 
 (define (array-approx-equal? a b)
-  (or (eq? a b) (array-equal? a b approx-equal?)))
+  (or (eq? a b)
+      (and (eq? (class-of a) (class-of b))
+           (array-equal? a b approx-equal?))))
 
 (let1 i 0
   (for-each
@@ -2307,7 +2309,7 @@
          (test* (format "array-inverse-~D" (inc! i)) inv
                 (array-inverse ar)
                 array-approx-equal?)
-         (when inv
+         (when (and inv (eq? (class-of ar) (class-of inv)))
            (test* (format "array-inverse-~D" (inc! i)) (array-normalize ar)
                   (array-inverse inv)
                   array-approx-equal?))
@@ -2333,6 +2335,18 @@
       #,(<array> (0 3 0 3) 1 -1 -1 -1.2 1.4 0.8 -0.4 0.8 0.6)
       5)
      (#,(<array> (0 2 0 2) 1 2 3 6))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      #,(<array>   (0 2 0 2) -2.0 1.0 1.5 -0.5)
+      -2)
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      #,(<array>    (0 2 0 2) -2.0 1.0 1.5 -0.5)
+      -2)
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
+      -2)
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
+      -2)
      )))
 
 (let ((i 0))
@@ -2353,8 +2367,151 @@
      (#,(<s16array> (3 4 1 9) 1 -2 3 -4 5 -6 7 -8)
       #,(<s16array> (3 11 5 6) 1 -2 3 -4 5 -6 7 -8)
       #,(<s16array> (0 1 0 1) 204))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) 4 3 2 1)
+      #,(<f32array> (0 2 0 2) 8 5 20 13))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) 4 3 2 1)
+      #,(<f64array> (0 2 0 2) 8 5 20 13))
      )))
 
+(let ((i 0))
+  (for-each
+   (^t (let-optionals* t (a pow b)
+         (test* (format "array-expt-~D" (inc! i)) b
+                (array-expt a pow)
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      0
+      #,(<array> (0 2 0 2) 1 0 0 1))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      0
+      #,(<u8array> (0 2 0 2) 1 0 0 1))
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      0
+      #,(<s16array> (0 2 0 2) 1 0 0 1))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      0
+      #,(<f32array> (0 2 0 2) 1 0 0 1))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      0
+      #,(<f64array> (0 2 0 2) 1 0 0 1))
+     (#,(<array> (0 2 0 2) 1 2 3 4)
+      2
+      #,(<array> (0 2 0 2) 7 10 15 22))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      2
+      #,(<u8array> (0 2 0 2) 7 10 15 22))
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      2
+      #,(<s16array> (0 2 0 2) 7 10 15 22))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      2
+      #,(<f32array> (0 2 0 2) 7 10 15 22))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      2
+      #,(<f64array> (0 2 0 2) 7 10 15 22))
+     )))
+
+(let ((i 0))
+  (for-each
+   (^t (let-optionals* t (a b c)
+         (test* (format "array-div-left-~D" (inc! i)) c
+                (array-div-left a b)
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) 5 6 7 8)
+      #,(<array> (0 2 0 2) 5 4 -4 -3))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      #,(<u8array> (0 2 0 2) 5 6 7 8)
+      #,(<array>   (0 2 0 2) 5 4 -4 -3))
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      #,(<s16array> (0 2 0 2) 5 6 7 8)
+      #,(<array>    (0 2 0 2) 5 4 -4 -3))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) 5 6 7 8)
+      #,(<f32array> (0 2 0 2) 5 4 -4 -3))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) 5 6 7 8)
+      #,(<f64array> (0 2 0 2) 5 4 -4 -3))
+     )))
+
+(let ((i 0))
+  (for-each
+   (^t (let-optionals* t (a b c)
+         (test* (format "array-div-right-~D" (inc! i)) c
+                (array-div-right a b)
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) 5 6 7 8)
+      #,(<array> (0 2 0 2) 3 -2 2 -1))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      #,(<u8array> (0 2 0 2) 5 6 7 8)
+      #,(<array>   (0 2 0 2) 3 -2 2 -1))
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      #,(<s16array> (0 2 0 2) 5 6 7 8)
+      #,(<array>    (0 2 0 2) 3 -2 2 -1))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) 5 6 7 8)
+      #,(<f32array> (0 2 0 2) 3 -2 2 -1))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) 5 6 7 8)
+      #,(<f64array> (0 2 0 2) 3 -2 2 -1))
+     )))
+
+(let ((i 0))
+  (for-each
+   (^t (let-optionals* t (a b)
+         (test* (format "array-transpose-~D" (inc! i)) b
+                (array-transpose a)
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) 1 3 2 4))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      #,(<u8array> (0 2 0 2) 1 3 2 4))
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      #,(<s16array> (0 2 0 2) 1 3 2 4))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) 1 3 2 4))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) 1 3 2 4))
+     )))
+
+(let ((i 0))
+  (for-each
+   (^t (let-optionals* t (a b)
+         (test* (format "array-rotate-90-~D" (inc! i)) b
+                (array-rotate-90 a)
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) 3 1 4 2))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      #,(<u8array> (0 2 0 2) 3 1 4 2))
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      #,(<s16array> (0 2 0 2) 3 1 4 2))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) 3 1 4 2))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) 3 1 4 2))
+     )))
+
+(let ((i 0))
+  (for-each
+   (^t (let-optionals* t (a b)
+         (test* (format "array-flip-~D" (inc! i)) b
+                (array-flip a)
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) 3 4 1 2))
+     (#,(<u8array> (0 2 0 2) 1 2 3 4)
+      #,(<u8array> (0 2 0 2) 3 4 1 2))
+     (#,(<s16array> (0 2 0 2) 1 2 3 4)
+      #,(<s16array> (0 2 0 2) 3 4 1 2))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) 3 4 1 2))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) 3 4 1 2))
+     )))
 
 ;;-------------------------------------------------------------------
 ;; NB: copy-port uses read-block! and write-block for block copy,
