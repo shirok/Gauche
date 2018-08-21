@@ -185,7 +185,7 @@
 (define-cproc %open-input-file (path::<string>
                                 :key (if-does-not-exist :error)
                                 (buffering #f)
-                                (element-type :character))
+                                (element-type :binary))
   (let* ([ignerr::int FALSE]
          [flags::int O_RDONLY])
     (cond [(SCM_FALSEP if-does-not-exist) (set! ignerr TRUE)]
@@ -214,7 +214,7 @@
                                  (if-does-not-exist :create)
                                  (mode::<fixnum> #o666)
                                  (buffering #f)
-                                 (element-type :character))
+                                 (element-type :binary))
   (let* ([ignerr-noexist::int FALSE]
          [ignerr-exist::int FALSE]
          [flags::int O_WRONLY])
