@@ -294,7 +294,7 @@
   (let loop ([a ar] [n pow])
     (case n
       [(0) (identity-array (s32vector-length (start-vector-of a)) (class-of a))]
-      [(1) a]
+      [(1) (copy-object a)]
       [(2) (array-mul a a)]
       [(3) (array-mul (array-mul a a) a)]
       [else
