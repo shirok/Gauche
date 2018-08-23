@@ -295,6 +295,16 @@ Like @code{make-array}, but creates and returns an uniform numeric array.
 @c COMMON
 @end defun
 
+@defun array-copy array
+@c MOD gauche.array
+@c EN
+Returns a copy of @var{array}, with the same class, shape and
+content.
+@c JP
+@var{array}と同じクラス、shape、内容を持つコピーを返します。
+@c COMMON
+@end defun
+
 @defun shape bound @dots{}
 [SRFI-25]
 @c MOD gauche.array

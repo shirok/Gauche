@@ -26,7 +26,7 @@
   (export <array-meta> <array>
           <u8array> <s8array> <u16array> <s16array> <u32array> <s32array>
           <u64array> <s64array> <f16array> <f32array> <f64array>
-          array? make-array shape array array-rank
+          array? make-array array-copy shape array array-rank
           array-start array-end array-ref array-set!
           share-array subarray array-equal?
           array-valid-index?  shape-valid-index?
@@ -184,26 +184,19 @@
   :backing-storage-setter f64vector-set!
   :backing-storage-length f64vector-length)
 
-(define-method copy-object ((self <array-base>))
-  (make (class-of self)
-    :start-vector (start-vector-of self)
-    :end-vector   (end-vector-of self)
-    :mapper       (mapper-of self)
-    :backing-storage (copy-object (backing-storage-of self))))
+;; internal
+(define-inline (%xvector-copy v)
+  (cond [(vector? v) (vector-copy v)]
+        [(uvector? v) (uvector-copy v)]
+        [else (error "Vector or uvector required, but got:" v)]))
 
-;; NB: these should be built-in; but here for now.
-(define-method copy-object ((self <vector>))    (vector-copy self))
-(define-method copy-object ((self <u8vector>))  (u8vector-copy self))
-(define-method copy-object ((self <s8vector>))  (s8vector-copy self))
-(define-method copy-object ((self <u16vector>)) (u16vector-copy self))
-(define-method copy-object ((self <s16vector>)) (s16vector-copy self))
-(define-method copy-object ((self <u32vector>)) (u32vector-copy self))
-(define-method copy-object ((self <s32vector>)) (s32vector-copy self))
-(define-method copy-object ((self <u64vector>)) (u64vector-copy self))
-(define-method copy-object ((self <s64vector>)) (s64vector-copy self))
-(define-method copy-object ((self <f16vector>)) (f16vector-copy self))
-(define-method copy-object ((self <f32vector>)) (f32vector-copy self))
-(define-method copy-object ((self <f64vector>)) (f64vector-copy self))
+(define (array-copy a)
+  (assume-type a <array-base>)
+  (make (class-of a)
+    :start-vector (start-vector-of a)
+    :end-vector   (end-vector-of a)
+    :mapper       (mapper-of a)
+    :backing-storage (%xvector-copy (backing-storage-of a))))
 
 ;;-------------------------------------------------------------
 ;; Affine mapper

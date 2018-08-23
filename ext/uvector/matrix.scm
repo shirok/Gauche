@@ -55,7 +55,7 @@
         c))))
 
 (define (array-transpose a :optional (dim1 0) (dim2 1))
-  (let* ([sh (copy-object (array-shape a))]
+  (let* ([sh (array-copy (array-shape a))]
          [rank (array-rank a)]
          [tmp0 (array-ref sh dim1 0)]
          [tmp1 (array-ref sh dim1 1)])
@@ -63,7 +63,7 @@
     (array-set! sh dim1 1 (array-ref sh dim2 1))
     (array-set! sh dim2 0 tmp0)
     (array-set! sh dim2 1 tmp1)
-    (rlet1 res (copy-object a)
+    (rlet1 res (array-copy a)
       (array-for-each-index a
         (^[vec1] (let* ([vec2 (vector-copy vec1)]
                         [tmp (vector-ref vec2 dim1)])
@@ -73,7 +73,7 @@
         (make-vector rank)))))
 
 (define (array-rotate-90 a :optional (dim1 0) (dim2 1))
-  (let* ([sh (copy-object (array-shape a))]
+  (let* ([sh (array-copy (array-shape a))]
          [rank (array-rank a)]
          [tmp0 (array-ref sh dim1 0)]
          [tmp1 (array-ref sh dim1 1)]
@@ -82,7 +82,7 @@
     (array-set! sh dim1 1 (array-ref sh dim2 1))
     (array-set! sh dim2 0 tmp0)
     (array-set! sh dim2 1 tmp1)
-    (rlet1 res (copy-object a)
+    (rlet1 res (array-copy a)
       (array-for-each-index a
         (^[vec1] (let* ([vec2 (vector-copy vec1)]
                         [tmp (vector-ref vec2 dim1)])
@@ -111,7 +111,7 @@
       (make-vector rank))))
 
 (define (array-flip a . args)
-  (rlet1 res (copy-object a)
+  (rlet1 res (array-copy a)
     (apply array-flip! res args)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -238,7 +238,7 @@
     (if (or (eq? class <f32array>)
             (eq? class <f64array>)
             (eq? class <array>))
-      (determinant! (copy-object a))
+      (determinant! (array-copy a))
       (let* ([rank (s32vector-length (start-vector-of a))]
              [b (tabulate-array (array-shape a)
                                 (^[ind] (array-ref a ind))
@@ -321,13 +321,13 @@
   (array-map! a (^i (+ b i)) a))
 
 (define-method array-add-elements! ((a <number>) (b <array-base>))
-  (array-map! (copy-object b) (^i (+ a i)) b))
+  (array-map! (array-copy b) (^i (+ a i)) b))
 
 (define-method array-add-elements! ((a <array-base>) (b <array-base>))
   (array-map! a (^[i j] (+ i j)) a b))
 
 (define (array-add-elements a . rest)
-  (rlet1 res (copy-object a)
+  (rlet1 res (array-copy a)
     (apply array-add-elements! res rest)))
 
 ;; sub
@@ -343,13 +343,13 @@
   (array-map! a (^i (- i b)) a))
 
 (define-method array-sub-elements! ((a <number>) (b <array-base>))
-  (array-map! (copy-object b) (^i (- a i)) b))
+  (array-map! (array-copy b) (^i (- a i)) b))
 
 (define-method array-sub-elements! ((a <array-base>) (b <array-base>))
   (array-map! a (^[i j] (- i j)) a b))
 
 (define (array-sub-elements a . rest)
-  (rlet1 res (copy-object a)
+  (rlet1 res (array-copy a)
     (apply array-sub-elements! res rest)))
 
 ;; mul
@@ -365,13 +365,13 @@
   (array-map! a (^i (* b i)) a))
 
 (define-method array-mul-elements! ((a <number>) (b <array-base>))
-  (array-map! (copy-object b) (^i (* a i)) b))
+  (array-map! (array-copy b) (^i (* a i)) b))
 
 (define-method array-mul-elements! ((a <array-base>) (b <array-base>))
   (array-map! a (^[i j] (* i j)) a b))
 
 (define (array-mul-elements a . rest)
-  (rlet1 res (copy-object a)
+  (rlet1 res (array-copy a)
     (apply array-mul-elements! res rest)))
 
 ;; div
@@ -387,13 +387,13 @@
   (array-map! a (^i (/ i b)) a))
 
 (define-method array-div-elements! ((a <number>) (b <array-base>))
-  (array-map! (copy-object b) (^i (/ a i)) b))
+  (array-map! (array-copy b) (^i (/ a i)) b))
 
 (define-method array-div-elements! ((a <array-base>) (b <array-base>))
   (array-map! a (^[i j] (/ i j)) a b))
 
 (define (array-div-elements a . rest)
-  (rlet1 res (copy-object a)
+  (rlet1 res (array-copy a)
     (apply array-div-elements! res rest)))
 
 

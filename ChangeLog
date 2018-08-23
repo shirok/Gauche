@@ -1,3 +1,10 @@
+2018-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/array.scm (array-copy): Added as a public API.
+	  NB: We remove copy-object generic function.  It is undocumented
+	  and only used internally in matrix.scm.  If we ever expose it,
+	  we need to support otehr types consistently.
+
 2018-08-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/mexpr.scm: Added.
