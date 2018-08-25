@@ -1613,7 +1613,9 @@ int win_process_active_child_p(ScmObj process)
 ScmObj *win_process_get_array(int *size /*out*/)
 {
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
-    ScmObj *r = Scm_ListToArray(process_mgr.children, size, NULL, TRUE);
+    ScmSize array_size;
+    ScmObj *r = Scm_ListToArray(process_mgr.children, &array_size, NULL, TRUE);
+    *size = (int)array_size;
     SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
     return r;
 }
