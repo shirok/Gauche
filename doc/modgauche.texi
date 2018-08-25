@@ -20964,11 +20964,11 @@ Gaucheでは、uvectorは@code{compare}で比較することができます。
 @findex f64vector-copy
 @c MOD gauche.uvector
 @c EN
-Copies the srfi-4 vector @var{vec}.
+Returns a fresh copy of uniform vector @var{vec}.
 If @var{start} and/or @var{end} are given, they limit the range of
 @var{vec} to be copied.
 @c JP
-ベクタ@var{vec}をコピーします。
+ベクタ@var{vec}の新たなコピーを返します。
 省略可能な引数@var{start}と@var{end}が与えられた場合、
 それらは取り出される要素の範囲を制限します。
 @c COMMON
@@ -21070,7 +21070,7 @@ argument order (@pxref{Octet vectors}).
 旧来のインタフェースも後方互換性のためにサポートされて
 いますが、これは廃止予定で、将来のリリースではサポートされなくなります。
 
-また、SRFI-66も@code{uvector-copy!}を提供していますが、
+また、SRFI-66も@code{u8vector-copy!}を提供していますが、
 引数の順序が異なります(@ref{Octet vectors}参照)。
 @c COMMON
 @end deftp
@@ -21256,9 +21256,11 @@ type of @var{source}.
 @c EN
 All arguments must be @var{TAG}vectors.  Returns a fresh vector
 whose contents are concatenation of the given vectors.
+(It returns a fresh vector even there's only one argument).
 @c JP
 引数はすべて@var{TAG}vectorでなければなりません。
 引数ベクタの内容を全てつなぎ合わせた新たなベクタを返します。
+(引数が一つだけの場合も、新たにアロケートされたベクタが返されます。)
 @c COMMON
 
 @example
@@ -21842,6 +21844,47 @@ alignment constraint.
 @node Uvector numeric operations, Uvector block I/O, Uvector conversion operations, Uniform vectors
 @subsection Uvector numeric operations
 @c NODE ユニフォームベクタの数値演算
+
+@c EN
+These are Gauche extension that allows faster arithmetic over uniform
+vectors, than extracting and calculating element-wise values.
+
+Most procedures comes with two flavors, a functional version (without @code{!}
+in the name) and a linear-update version (with @code{!} in the name).
+
+A functional version assumes the caller treats the arguments and
+results immutable objects; mutating them later could have unexpected
+consequences.  (Notably, the functional version may return one of its
+arguments as is, or returns a pre-computed value,
+so you shouldn't assume the return values are freshly
+allocated objects, unless it is noted so explicitly.)
+
+A linear update version may reuse the stoarge of the designated
+argumentt to produce the return value.  Gauche tries to reuse the
+argument as much as possible, but you should always use the return
+value and shouldn't assume the argument itself is modified in-place.
+In fact, after calling linear-updating procedure, you can't use
+the argument that may be modified, since you can't assume the state
+of the object after calling the procedure.
+@c JP
+ここに上げる手続きはGaucheの拡張で、
+ユニフォームベクタ全体に渡る演算を、要素ごとに計算するよりも速く行います。
+
+ほとんどの手続きには関数型バージョン(名前に@code{!}の無いもの)と
+線形更新バージョン(名前に@code{!}のついたもの)の二つが用意されています。
+
+関数型バージョンは、呼び出し元が引数と戻り値を変更不可なオブジェクトとして
+扱うことを期待します。後からそれらを変更することは予想外の結果を引き起こすかも
+しれません(特に、関数型バージョンでは引数に渡されたオブジェクトをそのまま
+返したり、既に計算済みの値を返したりする可能性もあるので、
+特に記述されてなければ、戻り値が常に新たにアロケートされたものであると考えてはいけません。)
+
+線形更新バージョンは、結果を作るために特定の引数のメモリを再利用する可能性が
+あります。Gaucheではアロケーションを最小化するようにできるだけメモリの再利用をしますが、
+引数がその場で変更されていることをあてにしてはいけません。必ず戻り値を利用するように
+してください。
+変更され得る引数については、呼び出し後にそれがどういう状態になっているかは定義されません。
+@c COMMON
 
 @deftp {Function} @var{TAG}vector-add @r{@var{vec} @var{val} :optional @var{clamp}}
 @deftpx {Function} @var{TAG}vector-add! @r{@var{vec} @var{val} :optional @var{clamp}}

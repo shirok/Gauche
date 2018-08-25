@@ -4014,12 +4014,31 @@ order (LSB first) (@pxref{Bitwise operations}).
 
 @deftp {Module} srfi-66
 @mdindex srfi-66
+@c EN
 This module defines procedures to deal with @code{u8vector}s; they are
 almost a subset of @code{srfi-4} and @code{gauche.uvector}
 (@pxref{Uniform vectors}, except one procedure, @code{u8vector-copy!},
 which has different argument orders (unfortunate historical artifacts).
+@c JP
+このモジュールは@code{u8vector}に特化した手続きを定義します。
+ほぼ@code{srfi-4}および@code{gauche.uvector}のサブセットです。
+(@pxref{Uniform vectors})。例外は@code{u8vector-copy!}で、
+これは不幸な歴史的事情から、@code{gauche.uvector}と引数順が異なります。
+@c cOMMON
 
+@c EN
+There's no reason to use this srfi except porting code that relies
+on @code{srfi-66}.
+@c JP
+@var{srfi-66}に依存するコードを移植するのでなければ、
+このモジュールを使う場面は無いでしょう。
+@c COMMON
+
+@c EN
 The following procedures are the same as @code{gauche.uvector}:
+@c JP
+以下の手続きは@code{gauche.uvector}と同じです。
+@c COMMON
 
 @example
 u8vector?       make-u8vector      u8vector
@@ -4032,23 +4051,44 @@ u8vector=?      u8vector-compare   u8vector-copy
 @defun u8vector-copy! src sstart target tstart n
 [SRFI-66]
 @c MOD srfi-66
+@c EN
 Copy the content of an u8vector @var{src}, starting from @var{sstart}
 for @var{n} octets, into an u8vector @var{target} beginning from
 @var{tstart}.  The @var{target} u8vector must be mutable.
+@c JP
+u8vectorである@var{src}の、インデックス@var{sstart}から@var{n}オクテットを、
+u8vector @var{target}のインデックス@var{tstart}からにコピーします。
+@var{target}は変更可能なu8vectorでなければなりません。
+@c COMMON
 
+@c EN
 Note that @code{gauche.uvector} has also @code{u8vector-copy!},
 but its argument order is as follows, where @var{send} 
 is @code{(+ @var{sstart} @var{n})}:
+@c JP
+@code{gauche.uvector}も@code{u8vector-copy!}を提供しますが、
+引数が異なります。@var{send}を@code{(+ @var{sstart} @var{n})}として、
+次のとおりです:
+@c COMMON
 
 @example
 (u8vector-copy! target tstart src sstart send)
 @end example
 
+@c EN
 Gauche's argument order is consistent with @code{vector-copy!} of
 R7RS, srfi-43 and srfi-133.
 
 We recommend to use @code{srfi-66} only for porting third-party
 libraries to avoid confusion.
+@c JP
+Gaucheの引数順は、R7RS、srfi-43およびsrfi-133の@var{vector-copy!}と
+一貫性があります。
+
+混乱を避けるため、
+@code{srfi-66}モジュールはサードパーティライブラリを移植する際に必要な場合に限り
+使うと良いでしょう。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
