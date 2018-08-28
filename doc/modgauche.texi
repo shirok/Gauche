@@ -21977,8 +21977,8 @@ If @var{val} is a @var{TAG}vector, its elements are
 added to, subtracted from, or multiplied by the corresponding
 elements of @var{vec}, respectively,
 and the results are gathered to a @var{TAG}vector
-and returned.  The destructive version (those have bang `!' in the name)
-reuses @var{vec} to store the result.
+and returned.  The linear-update version (those have bang `!' in the name)
+reuses @var{vec} to store the result, and also returns it.
 If the result of calculation goes out of the range of @var{TAG}vector's
 element, the behavior is specified by @var{clamp} optional argument.
 (For f32vector and f64vector, @var{clamp} argument is ignored and
@@ -21987,8 +21987,8 @@ the result may contain infinity).
 @var{val}が@var{TAG}vectorの場合、
 @var{vec}と対応する要素毎に加算、減算、乗算が行われ、
 結果が@var{TAG}vectorとして返されます。
-破壊的なバージョン(名前に`!'がついているもの)では、@var{vec}が
-結果を格納するために再利用されます。
+線形更新バージョン(名前に`!'がついているもの)では、@var{vec}が
+結果を格納するために再利用され、またそれが返されます。
 演算の結果が@var{TAG}vectorの要素の値域外になった場合の動作は
 省略可能な引数@var{clamp}によって指定されます。
 (f32vectorとf64vectorでは、値域外になった要素にはinfinityが格納され、
@@ -22101,7 +22101,8 @@ is calculated between each element in @var{vec} and the corresponding
 element of @var{val} (when @var{val} is a non-scalar value),
 or @var{val} itself (when @var{val} is an integer).
 The result is returned in a @var{TAG}vector.
-The destructive version reuses @var{vec} to store the result.
+The linear-update version reuses @var{vec} to store the result,
+and also returns it.
 @c JP
 要素毎の論理(ビット)演算です。
 これらの手続きは整数ベクタに対してのみ定義されています。
@@ -22110,8 +22111,8 @@ The destructive version reuses @var{vec} to store the result.
 (@var{val}が非スカラー値の場合)もしくは@var{val}自身
 (@var{val}が整数の場合)とのビット毎のand, inclusive orまたはexclusive or
 が計算され、結果が@var{TAG}vectorで返されます。
-破壊的なバージョン(名前に`!'がついているもの)では、@var{vec}が
-結果を格納するために再利用されます。
+線形更新バージョン(名前に`!'がついているもの)では、@var{vec}が
+結果を格納するために再利用され、またそれが返されます。
 @c COMMON
 @end deftp
 
