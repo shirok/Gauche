@@ -15145,7 +15145,7 @@ to name the desired parts.  The recognized symbos are as follows.
 
 @table @code
 @item scheme
-The scheme part, as string..
+The scheme part, as string.
 @item authority
 The authority part, as string.
 If URI doesn't have the part, @code{#f}.
