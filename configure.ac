@@ -415,6 +415,7 @@ fi
 dnl Safe default CFLAGS (usually -g -O2 if you're using gcc, empty otherwise).
 dnl If the user overrides CFLAGS during configure, which is recorded.
 dnl This information is used when configuring extensions.
+CFLAGS="$CFLAGS -Wall -Wextra -Wno-unused-label"
 DEFAULT_CFLAGS="$CFLAGS"
 AC_SUBST(DEFAULT_CFLAGS)
 
