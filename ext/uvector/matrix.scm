@@ -249,7 +249,73 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; matrix arithmetic
 
-(define (array-mul a b) ; NxM * MxP => NxP
+(define (array-mul2 a b) ; NxM * MxP => NxP
+  (let ([a-start (start-vector-of a)]
+        [a-end (end-vector-of a)]
+        [b-start (start-vector-of b)]
+        [b-end (end-vector-of b)])
+    (unless (= 2 (s32vector-length a-start) (s32vector-length b-start))
+      (error "array-mul matrices must be of rank 2"))
+    (let ([n (- (s32vector-ref a-end 0) (s32vector-ref a-start 0))]
+          [m (- (s32vector-ref a-end 1) (s32vector-ref a-start 1))]
+          [p (- (s32vector-ref b-end 1) (s32vector-ref b-start 1))]
+          [a-col-b-row-off (- (s32vector-ref a-start 1)
+                              (s32vector-ref b-start 0))])
+      (let1 res (make-minimal-backend-array (list a b) (shape 0 n 0 p))
+        (unless (= m (- (s32vector-ref b-end 0) (s32vector-ref b-start 0)))
+          (errorf "dimension mismatch: can't mul shapes ~S and ~S"
+                  (array-shape a) (array-shape b)))
+        (do ([i (s32vector-ref a-start 0) (+ i 1)])       ; for-each row of a
+            [(= i (s32vector-ref a-end 0)) res]
+          (do ([k (s32vector-ref b-start 1) (+ k 1)])     ; for-each col of b
+              [(= k (s32vector-ref b-end 1))]
+            (let1 tmp 0
+              (do ([j (s32vector-ref a-start 1) (+ j 1)]) ; for-each col of a & row of b
+                  [(= j (s32vector-ref a-end 1))]
+                (inc! tmp (* (array-ref a i j)
+                             (array-ref b (- j a-col-b-row-off) k))))
+              (array-set! res 
+                          (- i (s32vector-ref a-start 0))
+                          (- k (s32vector-ref b-start 1)) tmp))))))))
+
+(define (%array-mul r a b) ; NxM * MxP => NxP
+  (let ([a-start (start-vector-of a)]
+        [a-end (end-vector-of a)]
+        [b-start (start-vector-of b)]
+        [b-end (end-vector-of b)])
+    (unless (= 2 (s32vector-length a-start) (s32vector-length b-start))
+      (error "array-mul matrices must be of rank 2"))
+    (let ([a-start-row (s32vector-ref a-start 0)]
+          [a-end-row (s32vector-ref a-end 0)]
+          [a-start-col (s32vector-ref a-start 1)]
+          [a-end-col (s32vector-ref a-end 1)]
+          [b-start-col (s32vector-ref b-start 1)]
+          [b-end-col (s32vector-ref b-end 1)])
+      (let ([n (- a-end-row a-start-row)]
+            [m (- a-end-col a-start-col)]
+            [p (- b-end-col b-start-col)]
+            [a-col-b-row-off (- a-start-col (s32vector-ref b-start 0))])
+        (unless (= m (- (s32vector-ref b-end 0) (s32vector-ref b-start 0)))
+          (errorf "dimension mismatch: can't multiply shapes ~S and ~S"
+                  (array-shape a) (array-shape b)))
+        '(when (and r (not (and (= n (array-length r 0))
+                               (= p (array-length r 1)))))
+          (errof "result array can't hold the result of multiplication"))
+        (let1 res (or r (make-minimal-backend-array (list a b) (shape 0 n 0 p)))
+          (do ([i a-start-row (+ i 1)])       ; for-each row of a
+              [(= i a-end-row) res]
+            (do ([k b-start-col (+ k 1)])     ; for-each col of b
+                [(= k b-end-col)]
+              (let1 tmp 0
+                (do ([j a-start-col (+ j 1)]) ; for-each col of a & row of b
+                    [(= j a-end-col)]
+                  (inc! tmp (* (array-ref a i j) 
+                               (array-ref b (- j a-col-b-row-off) k))))
+                (array-set! res (- i a-start-row) (- k b-start-col) tmp)))))))))
+
+(define (array-mul a b) (%array-mul #f a b))
+
+(define (array-mul3 a b) ; NxM * MxP => NxP
   (let ([a-start (start-vector-of a)]
         [a-end (end-vector-of a)]
         [b-start (start-vector-of b)]
@@ -279,6 +345,8 @@
                 [(= j a-end-col)]
               (inc! tmp (* (array-ref a i j) (array-ref b (- j a-col-b-row-off) k))))
             (array-set! res (- i a-start-row) (- k b-start-col) tmp)))))))
+
+
 
 (define (array-div-left a b)
   (if-let1 b-1 (array-inverse b)

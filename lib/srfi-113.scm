@@ -882,12 +882,13 @@
 ;; being absent counts as a value of 0).  If any values aren't equal,
 ;; again they can't be equal.
 
+(define (sob-table-compare op ht1 ht2)
+  (and (op (hash-table-size ht1) (hash-table-size ht2))
+       (not ($ hash-table-find ht1
+               (^[k v] (not (op v (hash-table-ref/default ht2 k 0))))))))
+
 (define (dyadic-sob=? sob1 sob2)
-  (let ((ht1 (sob-hash-table sob1))
-        (ht2 (sob-hash-table sob2)))
-    (and (= (hash-table-size ht1) (hash-table-size ht2))
-         (not ($ hash-table-find ht1
-                 (^[k v] (not (= v (hash-table-ref/default ht2 k 0)))))))))
+  (sob-table-compare = (sob-hash-table sob1) (sob-hash-table sob2)))
 
 (define sob<=?
   (case-lambda
@@ -910,33 +911,7 @@
 ;; that we've traversed all the elements in either sob.
 
 (define (dyadic-sob<=? sob1 sob2)
-  (let ((ht1 (sob-hash-table sob1))
-        (ht2 (sob-hash-table sob2)))
-    (and (<= (hash-table-size ht1) (hash-table-size ht2))
-         (not ($ hash-table-find ht1
-                 (^[k v] (not (<= v (hash-table-ref/default ht2 k 0)))))))))
-
-(define sob>?
-  (case-lambda
-    ((sob) #t)
-    ((sob1 sob2) (dyadic-sob>? sob1 sob2))
-    ((sob1 sob2 . sobs)
-     (and (dyadic-sob>? sob1 sob2)
-          (apply sob>? sob2 sobs)))))
-
-(define (set>? . sets)
-  (check-all-sets sets)
-  (apply sob>? sets))
-
-(define (bag>? . bags)
-  (check-all-bags bags)
-  (apply sob>? bags))
-
-;; > is the negation of <=.  Note that this is only true at the dyadic
-;; level; we can't just replace sob>? with a negation of sob<=?.
-
-(define (dyadic-sob>? sob1 sob2)
-  (not (dyadic-sob<=? sob1 sob2)))
+  (sob-table-compare <= (sob-hash-table sob1) (sob-hash-table sob2)))
 
 (define sob<?
   (case-lambda
@@ -954,10 +929,35 @@
   (check-all-bags bags)
   (apply sob<? bags))
 
-;; < is the inverse of >.  Again, this is only true dyadically.
+
+;; < is a bit complicated - we can't just negate >=, since subset relationship
+;; is partial order.  Neither does it follow the same pattern as = and <=,
+;; The following code is the simple solution (but it scans tables twice).
 
 (define (dyadic-sob<? sob1 sob2)
-  (dyadic-sob>? sob2 sob1))
+  (and (sob-table-compare <= (sob-hash-table sob1) (sob-hash-table sob2))
+       (not (sob-table-compare = (sob-hash-table sob1) (sob-hash-table sob2)))))
+
+(define sob>?
+  (case-lambda
+    ((sob) #t)
+    ((sob1 sob2) (dyadic-sob>? sob1 sob2))
+    ((sob1 sob2 . sobs)
+     (and (dyadic-sob>? sob1 sob2)
+          (apply sob>? sob2 sobs)))))
+
+(define (set>? . sets)
+  (check-all-sets sets)
+  (apply sob>? sets))
+
+(define (bag>? . bags)
+  (check-all-bags bags)
+  (apply sob>? bags))
+
+;; > is the inverse of <.  this is only true dyadically.
+
+(define (dyadic-sob>? sob1 sob2)
+  (dyadic-sob<? sob2 sob1))
 
 (define sob>=?
   (case-lambda
@@ -975,10 +975,10 @@
   (check-all-bags bags)
   (apply sob>=? bags))
 
-;; Finally, >= is the negation of <.  Good thing we have tail recursion.
+;; Finally, >= is the inverse of <=.
 
 (define (dyadic-sob>=? sob1 sob2)
-  (not (dyadic-sob<? sob1 sob2)))
+  (dyadic-sob<=? sob2 sob1))
 
 
 ;;; Set theory operations

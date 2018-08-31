@@ -107,6 +107,7 @@
   (define other-set2 (set number-comparator 1 2))
   (define set3 (set number-comparator 1 2 3))
   (define set4 (set number-comparator 1 2 3 4))
+  (define sety (set number-comparator 1 2 4 5))
   (define setx (set number-comparator 10 20 30 40))
   (test-assert (set=? set2 other-set2))
   (test-assert (not (set=? set2 set3)))
@@ -119,6 +120,14 @@
   (test-assert (not (set>? set2 other-set2)))
   (test-assert (set>=? set3 other-set2 set2))
   (test-assert (not (set>=? other-set2 set3 set2)))
+  (test-assert (not (set<? set2 setx)))
+  (test-assert (not (set<=? set2 setx)))
+  (test-assert (not (set>? set2 setx)))
+  (test-assert (not (set>=? set2 setx)))
+  (test-assert (not (set<?  set3 sety)))
+  (test-assert (not (set<=? set3 sety)))
+  (test-assert (not (set>?  set3 sety)))
+  (test-assert (not (set>=? set3 sety)))
 ) ; end sets/subsets
 
 (test-group "sets/ops"

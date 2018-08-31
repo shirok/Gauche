@@ -1,3 +1,8 @@
+2018-08-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-113.scm (set<? etc.): The reference implementation assumed
+	  (set<? x y) == (not (set>=? x y)) but it is incorrect.
+
 2018-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/array.scm (array-copy): Added as a public API.
