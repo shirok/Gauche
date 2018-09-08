@@ -1,3 +1,7 @@
+2018-09-08  Shiro Kawai  <shiro@acm.org>
+
+	* doc/modutil.texi: Document compat.chibi-test.
+
 2018-08-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-113.scm (set<? etc.): The reference implementation assumed

@@ -7,6 +7,7 @@
 @menu
 * Binary I/O::                  binary.io
 * Packing Binary Data::         binary.pack
+* Running Chibi-scheme test suite:: compat.chibi-test
 * Rational-less arithmetic::    compat.norational
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
@@ -513,7 +514,7 @@ for brevity and for consistency with the uniform vectors.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Packing Binary Data, Rational-less arithmetic, Binary I/O, Library modules - Utilities
+@node Packing Binary Data, Running Chibi-scheme test suite, Binary I/O, Library modules - Utilities
 @section @code{binary.pack} - Packing Binary Data
 @c NODE バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
 
@@ -995,7 +996,86 @@ return #t if the template has variable length elements.
 
 @c ----------------------------------------------------------------------
 
-@node Rational-less arithmetic, A common job descriptor for control modules, Packing Binary Data, Library modules - Utilities
+@node Running Chibi-scheme test suite, Rational-less arithmetic, Packing Binary Data, Library modules - Utilities
+@section @code{compat.chibi-test} - Running Chibi-scheme test suite
+@c NODE Chibi schemeテストの実行, @code{compat.chibi-test} - Chibi schemeテストの実行
+
+@deftp {Module} compat.chibi-test
+@mdindex compat.chibi-test
+@c EN
+Quite a few srfis come with test suites that's to be run with
+Chibi Scheme test framework.  This module enables Gauche to run
+the test code as is.
+@c JP
+多くのsrfiには、Chibi Schemeのテストフレームワークで実行できるテストコードが
+付いてきます。このモジュールはGaucheでそのテストコードを実行できるようにします。
+@c COMMON
+@end deftp
+
+@defmac chibi-test code @dots{}
+@c EN
+Run @var{code} @dots{}, while translating Chibi test framework
+to Gauche's.
+@c JP
+ChibiのテストフレームワークをGaucheのそれに置き換えながら、
+@code{code} @dots{}を実行します。
+@c COMMON
+
+@c EN
+A typical usage is to write a wrapper that includes the original
+test code (suppose it's called @file{test-suite.scm}):
+@c JP
+典型的な使い方は、元のテストコード(@file{test-suite.scm}とします)を
+includeするラッパーを書くことです。
+@c COMMON
+
+@example
+(use gauche.test)
+(test-start "running test-suite.scm")
+(chibi-test
+  (include "test-suite.scm"))
+(test-end)
+@end example
+
+@c EN
+Chibi's test directives are translated to Gauche's test directives
+(@pxref{Unit testing}, for Gauche's test framework).
+@c JP
+Chibiのテストディレクティブは、Gaucheのテストフレームワークのテストディレクティブへと
+変換されます(@ref{Unit testing}参照)。
+@c COMMON
+
+@c EN
+The main thing is that Chibi allows expressions and definitions to
+be intermingled within a body, while Gauche only allows all definitions
+before expressions within a body.
+We expand such body into nested @code{let} by @code{chibi-test} macro.
+Chibi test macros (e.g. @code{test-assert}) are defined as local macros
+in @code{chibi-test} expansion, which expand into @code{gauche.test}
+macros.
+@c JP
+Chibiはボディ中に式と定義が交互に現れることを許していますが、Gaucheでは
+ボディ中で全ての定義が式に先立たねばなりません。そこで、@code{chibi-test}マクロは
+@code{code} @dots{}をネストした@code{let}に変換します。
+また、Chibiテストマクロ(@code{test-assert}等)は変換後のコードではローカルマクロとして
+定義され、そのローカルマクロは@code{gauche.test}マクロへと展開されます。
+@c COMMON
+
+@c EN
+Note that we ignore @code{use} forms inside @code{chibi-test}; we might
+want to use different modules that work better in Gauche.  Necessary
+modules need to be @code{use}'d before you call @code{chibi-test}.
+@c JP
+なお、@code{chibi-test}中の@code{use}フォームは無視されます。
+これは、Gaucheで実行するのに別のモジュールを使った方が良い場合があるからです。
+必要なモジュールは@code{chibi-test}を呼ぶ前に@code{use}しておいてください。
+@c COMMON
+@end defmac
+
+
+@c ----------------------------------------------------------------------
+
+@node Rational-less arithmetic, A common job descriptor for control modules, Running Chibi-scheme test suite, Library modules - Utilities
 @section @code{compat.norational} - Rational-less arithmetic
 @c NODE 有理数のない算術演算, @code{compat.norational} - 有理数のない算術演算
 
