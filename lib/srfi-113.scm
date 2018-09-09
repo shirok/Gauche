@@ -932,11 +932,21 @@
 
 ;; < is a bit complicated - we can't just negate >=, since subset relationship
 ;; is partial order.  Neither does it follow the same pattern as = and <=,
-;; The following code is the simple solution (but it scans tables twice).
 
 (define (dyadic-sob<? sob1 sob2)
-  (and (sob-table-compare <= (sob-hash-table sob1) (sob-hash-table sob2))
-       (not (sob-table-compare = (sob-hash-table sob1) (sob-hash-table sob2)))))
+  (let ([ht1 (sob-hash-table sob1)]
+        [ht2 (sob-hash-table sob2)])
+    (and-let* ([small-count 
+                (cond [(= (hash-table-size ht1) (hash-table-size ht2)) 0]
+                      [(< (hash-table-size ht1) (hash-table-size ht2)) 1]
+                      [else #f])]
+               [(not ($ hash-table-find ht1
+                        (^[k v]
+                          (let1 v2 (hash-table-ref/default ht2 k 0)
+                            (cond [(< v v2) (inc! small-count) #f]
+                                  [(> v v2) #t]
+                                  [else #f])))))])
+      (positive? small-count))))
 
 (define sob>?
   (case-lambda
