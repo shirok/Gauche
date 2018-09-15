@@ -159,7 +159,7 @@
 
 ;; modulus exponent
 (define (expt-mod n e m)  ; (modulo (expt n e) m)
-  (if (and (exact-integer? n) (exact-integer? e) (exact-integer? m) (> e 0))
+  (if (and (exact-integer? n) (exact-integer? e) (exact-integer? m) (>= e 0))
     (if (< (* (integer-length n) e) (fixnum-width))
       (modulo (expt n e) m) ; in fixnum range, it's fast enough
       (let loop ([b (ash 1 (- (integer-length e) 1))]
