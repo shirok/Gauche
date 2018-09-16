@@ -452,6 +452,11 @@
 ;;;
 (select-module gauche.internal)
 (define (%invoke-other-version version args)
+  ;; Catch a common mistake that the user run 'gosh -version' to
+  ;; see the version.
+  (when (equal? version "ersion")
+    (exit 1 "No such version `ersion'.  To display Gauche version, \
+             run 'gosh -V'.  To see all options, run 'gosh -h'."))
   ;; Note: We assume other versions of gauche is installed under the
   ;; same exec_prefix: $exec_prefix/lib/gauche-ABIVERSION/VERSION/ARCH/
   (let* ([prefix (sys-normalize-pathname
@@ -468,10 +473,8 @@
                        [(#/^-v/ (car args)) (loop (cdr args) r)]
                        [else (loop (cdr args) (cons (car args) r))]))])
     (unless (pair? goshes)
-      (format (current-error-port)
-              "No installed Gauche with version ~a under ~a.\n"
-              version prefix)
-      (exit 1))
+      (exit 1 "No installed Gauche with version ~a under ~a.\n"
+            version prefix))
     (sys-exec (car goshes) (cons (car goshes) args))))
 
 ;;;
