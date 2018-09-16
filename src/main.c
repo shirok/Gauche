@@ -203,7 +203,7 @@ void invoke_other_version(const char *version, int argc, char **argv)
               &epkt);
     /* %invoke-other-version won't return.  If we're here,
        we even failed to call it. */
-    Scm_Panic("Failed to call %invoke-other-version.  Installation problem?");
+    Scm_Panic("Failed to call %%invoke-other-version.  Installation problem?");
 }
 
 void further_options(const char *optarg)
