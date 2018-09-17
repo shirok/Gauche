@@ -1,5 +1,7 @@
 2018-09-17  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: 0.9.7_pre1
+
 	* src/gauche.h: Switched C API 0_95 by default - the following functions
 	  are affected:
 	  - Change Scm_Raise(e) to Scm_Raise(e, 0).
