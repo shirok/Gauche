@@ -251,7 +251,7 @@
                                            (not (SCM_FALSEP ownerP))))))
 
  (define-cproc ces-guess-from-string (string::<string> scheme::<string>)
-   (let* ([size::u_int]
+   (let* ([size::ScmSmallInt]
           [s::(const char*) (Scm_GetStringContent string (& size) NULL NULL)]
           [guessed::(const char*)
                     (Scm_GuessCES (Scm_GetStringConst scheme) s size)])

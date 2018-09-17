@@ -994,7 +994,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
     if (read_charset_syntax(input, bracket_syntax, &buf, &complement)) {
         int lastchar = -1, inrange = FALSE, moreset_complement = FALSE;
         ScmCharSet *set = SCM_CHAR_SET(Scm_MakeEmptyCharSet());
-        int size;
+        ScmSmallInt size;
         const char *cp = Scm_DStringPeek(&buf, &size, NULL);
         const char *end = cp + size;
 

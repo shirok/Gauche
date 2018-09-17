@@ -158,7 +158,7 @@ static ScmSize vport_getz(char *buf, ScmSize buflen, ScmPort *p)
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->gets_proc)) {
-        u_int size;
+        ScmSmallInt size;
         ScmObj s = Scm_ApplyRec(data->gets_proc,
                                 SCM_LIST1(SCM_MAKE_INT(buflen)));
         if (!SCM_STRINGP(s)) return EOF;

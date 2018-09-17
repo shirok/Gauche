@@ -498,7 +498,7 @@ static ScmObj rc1_lex_xdigits(ScmPort *port, int key)
                       key, key, bad);
         return SCM_UNDEFINED;   /* dummy */
     } else {
-        int size, len;
+        ScmSmallInt size, len;
         const char *chars = Scm_DStringPeek(&buf, &size, &len);
         if (len == 1) {
             ScmChar ch;

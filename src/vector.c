@@ -722,7 +722,7 @@ const uint8_t *Scm_GetBytes(ScmObj obj, ScmSize *size)
         *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(obj));
         return (const uint8_t*)SCM_UVECTOR_ELEMENTS(obj);
     } else if (SCM_STRINGP(obj)) {
-        unsigned int s;
+        ScmSmallInt s;
         const char *z = Scm_GetStringContent(SCM_STRING(obj), &s, 0, 0);
         *size = s;
         return (const uint8_t*)z;

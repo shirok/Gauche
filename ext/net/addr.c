@@ -147,10 +147,10 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass SCM_UNUSED,
 #endif
     addr->addr.sun_family = AF_UNIX;
     if (SCM_STRINGP(path)) {
-        u_int size;
+        ScmSmallInt size;
         const char *cpath = Scm_GetStringContent(SCM_STRING(path), &size,
                                                  NULL, NULL);
-        if (size >= sizeof(addr->addr.sun_path)-1) {
+        if ((size_t)size >= sizeof(addr->addr.sun_path)-1) {
             Scm_Error("path too long: %S", path);
         }
         memcpy(addr->addr.sun_path, cpath, size);

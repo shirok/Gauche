@@ -1240,7 +1240,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 {
     ScmPort *p = make_port(SCM_CLASS_PORT, SCM_PORT_INPUT, SCM_PORT_ISTR);
-    u_int size;
+    ScmSmallInt size;
     const char *s = Scm_GetStringContent(str, &size, NULL, NULL);
     p->src.istr.start = s;
     p->src.istr.current = s;

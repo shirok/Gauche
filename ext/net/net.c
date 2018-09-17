@@ -343,7 +343,7 @@ ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
     return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr*)&addrbuf, addrlen));
 }
 
-static const char *get_message_body(ScmObj msg, u_int *size)
+static const char *get_message_body(ScmObj msg, ScmSmallInt *size)
 {
     if (SCM_UVECTORP(msg)) {
         *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(msg));
@@ -360,7 +360,7 @@ static const char *get_message_body(ScmObj msg, u_int *size)
 ScmObj Scm_SocketSend(ScmSocket *sock, ScmObj msg, int flags)
 {
     int r;
-    u_int size;
+    ScmSmallInt size;
     CLOSE_CHECK(sock->fd, "send to", sock);
     const char *cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, send(sock->fd, cmsg, size, flags));
@@ -372,7 +372,7 @@ ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmObj msg, ScmSockAddr *to,
                         int flags)
 {
     int r;
-    u_int size;
+    ScmSmallInt size;
     CLOSE_CHECK(sock->fd, "send to", sock);
     const char *cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, sendto(sock->fd, cmsg, size, flags,
@@ -385,7 +385,7 @@ ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
 {
 #if !GAUCHE_WINDOWS
     int r;
-    u_int size;
+    ScmSmallInt size;
     CLOSE_CHECK(sock->fd, "send to", sock);
     const char *cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, sendmsg(sock->fd, (struct msghdr*)cmsg, flags));
@@ -528,7 +528,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         }
         for (ScmSize i=0; i < (ScmSize)msg->msg_iovlen; i++) {
             ScmObj elt = SCM_VECTOR_ELEMENT(iov, i);
-            u_int iovlen;
+            ScmSmallInt iovlen;
             msg->msg_iov[i].iov_base = (char*)get_message_body(elt, &iovlen);
             msg->msg_iov[i].iov_len  = iovlen;
         }
@@ -542,7 +542,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         int ctrllen = 0;
 
         SCM_FOR_EACH(cp, control) {
-            u_int clen;
+            ScmSmallInt clen;
             ScmObj c = SCM_CAR(cp);
             if (!(Scm_Length(c) == 3
                   && SCM_INTP(SCM_CAR(c))
@@ -562,7 +562,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         }
         struct cmsghdr *cmsg = CMSG_FIRSTHDR(msg);
         SCM_FOR_EACH(cp, control) {
-            u_int clen;
+            ScmSmallInt clen;
             ScmObj c = SCM_CAR(cp);
             const char *cdata = get_message_body(SCM_CAR(SCM_CDDR(c)), &clen);
             cmsg->cmsg_level = SCM_INT_VALUE(SCM_CAR(c));
@@ -596,7 +596,7 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
     int r = 0;
     CLOSE_CHECK(s->fd, "set a socket option of", s);
     if (SCM_STRINGP(value)) {
-        u_int size;
+        ScmSmallInt size;
         const char *cvalue = Scm_GetStringContent(SCM_STRING(value), &size,
                                                   NULL, NULL);
         SCM_SYSCALL(r, setsockopt(s->fd, level, option, cvalue, size));

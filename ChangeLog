@@ -1,3 +1,14 @@
+2018-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/string.h: INCOMPATIBLE CHANGE: Switched string length
+	  and size from int to ScmSmallInt.  Also the 'flags' argument becomes
+	  u_long.  Both ABI and C API are affected.
+	  For C code, callers of those APIs that receives string length and
+	  size and pointers needs to be modified: Scm_GetStringContent,
+	  Scm_CStringArrayToList and Scm_DStringPeek.
+	  Precompiled code includes static data of struct ScmStringRec,
+	  so they need to be recompiled.
+
 2018-09-08  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modutil.texi: Document compat.chibi-test.

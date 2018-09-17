@@ -804,7 +804,7 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, ScmObj mode,
         Scm_DStringPutc(&ds, ch);
     }
 
-    int numchars;
+    ScmSmallInt numchars;
     const char *chars = Scm_DStringPeek(&ds, &numchars, NULL);
     const char *next;
 
@@ -1199,7 +1199,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
             Scm_UngetcUnsafe(following, port);
         }
 
-        u_int namelen, namesize;
+        ScmSmallInt namelen, namesize;
         const char *cname = Scm_GetStringContent(name, &namesize, &namelen,
                                                  NULL);
         if (namelen == 1) {

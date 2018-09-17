@@ -210,7 +210,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
-        u_int size;
+        ScmSmallInt size;
         const char *ss = Scm_GetStringContent(s, &size, NULL, NULL);
         SAFE_CALL(p, bufport_write(p, ss, size));
 

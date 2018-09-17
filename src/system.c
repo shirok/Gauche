@@ -422,7 +422,7 @@ static const char *expand_tilde(ScmDString *dst,
 static void put_current_dir(ScmDString *dst)
 {
     ScmString *dir = SCM_STRING(Scm_GetCwd());
-    u_int size;
+    ScmSmallInt size;
     const char *sdir = Scm_GetStringContent(dir, &size, NULL, NULL);
 
     Scm_DStringAdd(dst, dir);
@@ -453,7 +453,7 @@ static void copy_win32_path(ScmDString *dst,
 
 ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
-    u_int size;
+    ScmSmallInt size;
     const char *str = Scm_GetStringContent(pathname, &size, NULL, NULL);
     const char *srcp = str;
     const char *endp = str + size;
@@ -614,7 +614,7 @@ ScmObj Scm_TmpDir(void)
 
 ScmObj Scm_BaseName(ScmString *filename)
 {
-    u_int size;
+    ScmSmallInt size;
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
 
 #if defined(GAUCHE_WINDOWS)
@@ -637,7 +637,7 @@ ScmObj Scm_BaseName(ScmString *filename)
 
 ScmObj Scm_DirName(ScmString *filename)
 {
-    u_int size;
+    ScmSmallInt size;
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
 #if defined(GAUCHE_WINDOWS)
     int drive_letter = -1;
@@ -719,7 +719,7 @@ static void emulate_mkxtemp(char *name, char *templat,
 #define MKXTEMP_PATH_MAX 1025  /* Geez, remove me */
 static void build_template(ScmString *templat, char *name)
 {
-    u_int siz;
+    ScmSmallInt siz;
     const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
     if (siz >= MKXTEMP_PATH_MAX-6) {
         Scm_Error("pathname too long: %S", templat);

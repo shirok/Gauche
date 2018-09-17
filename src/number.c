@@ -3425,7 +3425,7 @@ static char *notational_roundup(const char *src, int start, int end)
 static void notational_rounding(ScmDString *ds, int numstart, int precision)
 {
     Scm_DStringWeld(ds);
-    int size;
+    ScmSmallInt size;
     const char *cbuf = Scm_DStringPeek(ds, &size, NULL);
     const char *end = cbuf + size;
     const char *p = cbuf;
@@ -3457,7 +3457,7 @@ static void notational_rounding(ScmDString *ds, int numstart, int precision)
  */
 static void spill_fixup(ScmDString *ds, int numstart)
 {
-    int size;
+    ScmSmallInt size;
     const char *cbuf = Scm_DStringPeek(ds, &size, NULL);
     char *nbuf = notational_roundup(cbuf, numstart, size);
     Scm_DStringTruncate(ds, 0);
@@ -4495,7 +4495,7 @@ static ScmObj numread_error(const char *msg, struct numread_packet *context)
    flags are recognized for printing numbers. */
 ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
 {
-    u_int len, size;
+    ScmSmallInt len, size;
     const char *p = Scm_GetStringContent(str, &size, &len, NULL);
     if (size != len) {
         /* This can't be a proper number. */
