@@ -986,7 +986,9 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
    port, and #f for string port.  If it's output port, use it.  For any
    other objects, we use current error port.  This permissive behavior is
    intentional - report-error is usually called during error handling,
-   and raising an error there masks the original error.
+   and raising an error there masks the original error.  However, the
+   caller should explicitly pass SCM_OBJ(SCM_CURERR) if that's what it intends,
+   instead of relying on the permissive behavior.
 */
 #if GAUCHE_API_0_95
 ScmObj Scm_ReportError(ScmObj e, ScmObj out)
@@ -1012,7 +1014,7 @@ ScmObj Scm_ReportError2(ScmObj e, ScmObj out)
 #if !GAUCHE_API_0_95
 ScmObj Scm_ReportError(ScmObj e)
 {
-    return Scm_ReportError2(e, SCM_UNBOUND);
+    return Scm_ReportError2(e, SCM_CURERR);
 }
 #endif /*!GAUCHE_API_0_95*/
 

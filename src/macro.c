@@ -72,8 +72,13 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler)
  * Macro object
  */
 
+#if GAUCHE_API_0_95
+ScmObj Scm_MakeMacro(ScmObj name, ScmObj transformer,
+                     ScmObj src, ScmObj describer)
+#else
 ScmObj Scm_MakeMacroFull(ScmObj name, ScmObj transformer,
                          ScmObj src, ScmObj describer)
+#endif
 {
     ScmMacro *s = SCM_NEW(ScmMacro);
     SCM_SET_CLASS(s, SCM_CLASS_MACRO);
@@ -84,7 +89,7 @@ ScmObj Scm_MakeMacroFull(ScmObj name, ScmObj transformer,
     return SCM_OBJ(s);
 }
 
-#if GAUCHE_API_0_95
+#if !GAUCHE_API_0_95
 /* Kept for the backward compatibility */
 ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer)
 {

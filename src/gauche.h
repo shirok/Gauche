@@ -34,6 +34,10 @@
 #ifndef GAUCHE_H
 #define GAUCHE_H
 
+#ifndef GAUCEH_API_0_95
+#define GAUCHE_API_0_95 1
+#endif
+
 /* Read config.h _before_ other headers, for it may affect the behavior
    of system header files.  Currently the only known instance of it is
    sigwait() on Solaris---we need to define _POSIX_PTHREAD_SEMANTICS to
@@ -1810,10 +1814,11 @@ SCM_EXTERN void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
 
 SCM_EXTERN void Scm_SetCallTraceSize(u_long size);
 
-/* TRANSIENT: Scm_ReportErrr2 is to keep ABI compatibility.  Will be gone
+/* TRANSIENT: Scm_ReportError2 is to keep ABI compatibility.  Will be gone
    in 1.0.  */
 #if    GAUCHE_API_0_95
 SCM_EXTERN ScmObj Scm_ReportError(ScmObj e, ScmObj out);
+#define Scm_ReportError2(a, b) Scm_ReportError(a, b)
 #else  /*!GAUCHE_API_0_95*/
 SCM_EXTERN ScmObj Scm_ReportError(ScmObj e);
 SCM_EXTERN ScmObj Scm_ReportError2(ScmObj e, ScmObj out);

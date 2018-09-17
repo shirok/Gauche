@@ -1795,7 +1795,7 @@ int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z)
             ScmEvalPacket result;
             SCM_BIND_PROC(length_proc, "length", Scm_GaucheModule());
             int nres = Scm_Apply(length_proc, SCM_LIST1(z), &result);
-            if (nres == -1) Scm_Raise(result.exception);
+            if (nres == -1) Scm_Raise2(result.exception, 0);
             SCM_ASSERT(nres == 1);
             SCM_ASSERT(SCM_INTP(result.results[0]));
             count += SCM_INT_VALUE(result.results[0]);
@@ -2153,7 +2153,7 @@ static void call_error_reporter(ScmObj e)
         if (SCM_PROCEDUREP(vm->customErrorReporter)) {
             Scm_ApplyRec(vm->customErrorReporter, SCM_LIST1(e));
         } else {
-            Scm_ReportError(e);
+            Scm_ReportError2(e, SCM_OBJ(SCM_CURERR));
         }
     }
     SCM_WHEN_ERROR {

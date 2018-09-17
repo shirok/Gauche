@@ -248,7 +248,7 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
 
     ScmObj rerr = Scm_MakeReadError(Scm_GetOutputString(SCM_PORT(ostr), 0),
                                     port, line);
-    Scm_Raise(rerr);
+    Scm_Raise2(rerr, 0);
 }
 
 /*----------------------------------------------------------------

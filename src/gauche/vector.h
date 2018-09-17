@@ -98,12 +98,18 @@ SCM_CLASS_DECL(Scm_UVectorClass);
 #if !GAUCHE_API_0_95
 #define SCM_UVECTOR_SIZE(obj)     (SCM_UVECTOR(obj)->size)
 #define SCM_UVECTOR_IMMUTABLE_P(obj) (SCM_UVECTOR(obj)->immutable)
+#define SCM_UVECTOR_IMMUTABLE_SET(obj, flag) \
+    (SCM_UVECTOR(obj)->immutable = ((flag) != FALSE))
 #define SCM_UVECTOR_INITIALIZER(klass, size, elements, immutable, owner) \
     { { SCM_CLASS_STATIC_TAG(klass) }, (immutable), (size), \
       (owner), (elements) }
 #else  /* GAUCHE_API_0_95 */
 #define SCM_UVECTOR_SIZE(obj)     (SCM_UVECTOR(obj)->size_flags >> 1)
 #define SCM_UVECTOR_IMMUTABLE_P(obj) (SCM_UVECTOR(obj)->size_flags & 1)
+#define SCM_UVECTOR_IMMUTABLE_SET(obj, flag)    \
+    ((flag)                                     \
+     ? (SCM_UVECTOR(obj)->size_flags |= 1)      \
+     : (SCM_UVECTOR(obj)->size_flags &= ~1))
 #define SCM_UVECTOR_INITIALIZER(klass, size, elements, immutable, owner) \
     { { SCM_CLASS_STATIC_TAG(klass) }, (((size)<<1)|(immutable?1:0)),    \
       (owner), (elements) }

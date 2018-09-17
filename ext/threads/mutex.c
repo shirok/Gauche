@@ -201,7 +201,7 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
             = Scm_MakeThreadException(SCM_CLASS_ABANDONED_MUTEX_EXCEPTION,
                                       (ScmVM*)abandoned);
         SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(mutex);
-        r = Scm_Raise(exc);
+        r = Scm_Raise2(exc, 0);
     }
     return r;
 #else  /* !GAUCHE_HAS_THREADS */

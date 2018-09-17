@@ -552,7 +552,7 @@ ScmObj Scm_ReadUVector(ScmPort *port, const char *tag, ScmReadContext *ctx)
     
     /* If we are reading source file, let literal uvectors be immutable. */
     if (Scm_ReadContextLiteralImmutable(ctx)) {
-        SCM_UVECTOR_IMMUTABLE_P(uv) = TRUE;
+        SCM_UVECTOR_IMMUTABLE_SET(uv, TRUE);
     }
     return uv;
 }

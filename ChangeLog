@@ -1,3 +1,17 @@
+2018-09-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: Switched C API 0_95 by default - the following functions
+	  are affected:
+	  - Change Scm_Raise(e) to Scm_Raise(e, 0).
+	    Use Scm_Raise2(e, 0) to work both 0_9 and 0_95 API.
+	  - Change Scm_ReportError(e) to Scm_ReportError(e, SCM_OBJ(SCM_CURERR)).
+	    Use Scm_ReportError2(e, port) to work both 0_9 and 0_95 API.
+	  - Change Scm_MakeMacro(name, xformer) to
+	    Scm_MakeMacro(name, xformer, SCM_FALSE, SCM_FALSE)
+	    Use Scm_MakeMacroFull(e, x, s, d) to work both API.
+	  - Change Scm_VMThrowException(vm, exc) to
+	    Scm_VMThrowException(vm, exc, 0).
+
 2018-09-16  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Bumped up ABI version to 0.97, for we can't safely
