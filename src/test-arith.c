@@ -792,7 +792,7 @@ void test_f16(void)
 /*=============================================================
  * main
  */
-int main(int argc, char **argv)
+int main(int argc SCM_UNUSED, char **argv SCM_UNUSED)
 {
     const char *testmsg = "Testing integer arithmetic macros ... ";
 

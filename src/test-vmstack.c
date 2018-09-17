@@ -36,12 +36,14 @@ void test_eval(const char *msg, const char *sexp)
     }
 }
 
-ScmObj dummy_eproc(ScmObj *args, int nargs, void *data)
+ScmObj dummy_eproc(ScmObj *args SCM_UNUSED,
+                   int nargs SCM_UNUSED, 
+                   void *data SCM_UNUSED)
 {
     return SCM_UNDEFINED;
 }
 
-int main(int argc, char **argv)
+int main(int argc SCM_UNUSED, char **argv SCM_UNUSED)
 {
     ScmObj eproc;
     const char *testmsg = "Testing VM stack sanity... ";
