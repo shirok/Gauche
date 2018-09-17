@@ -2331,12 +2331,12 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
         int s1 = SCM_FLONUMP(arg1)? Scm_FlonumSign(SCM_FLONUM_VALUE(arg1)) : 1;
         double r =
             (r0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
-            : (r0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
-            : SCM_DBL_NAN;
+            : ((r0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+               : SCM_DBL_NAN);
         double i =
             (i0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
-            : (i0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
-            : SCM_DBL_NAN;
+            : ((i0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+               : SCM_DBL_NAN);
         return Scm_MakeComplex(r, i);
     }
   do_complex:

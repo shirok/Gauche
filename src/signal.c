@@ -527,6 +527,7 @@ void Scm_SigCheck(ScmVM *vm)
         ScmObj mask = SCM_CAR(SCM_CDDR(e));
         if (SCM_SYS_SIGSET_P(mask)) {
             sigset_t omask;
+            sigemptyset(&omask);
             SCM_UNWIND_PROTECT {
                 SIGPROCMASK(SIG_BLOCK, &SCM_SYS_SIGSET(mask)->set, &omask);
                 Scm_ApplyRec(handler, SCM_LIST1(num));

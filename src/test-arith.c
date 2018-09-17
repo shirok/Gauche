@@ -377,7 +377,7 @@ void test_umulov(void)
 
 void test_smulov(void)
 {
-    long r, c, x, y;
+    long r = 0, c, x, y;
     TEST_SECTION("SMULOV");
 
     /* 0 * 1 => 0 */

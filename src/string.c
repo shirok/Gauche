@@ -1058,7 +1058,7 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
                                           ScmSmallInt*, ScmSmallInt*),
                           ScmObj *secondval) /* out */
 {
-    ScmSmallInt bi, ci;
+    ScmSmallInt bi = 0, ci = 0;
     const ScmStringBody *sb = SCM_STRING_BODY(ss1);
     const char *s1 = SCM_STRING_BODY_START(sb);
     ScmSmallInt siz1 = SCM_STRING_BODY_SIZE(sb);
