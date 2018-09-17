@@ -15,7 +15,7 @@
  *
  * I believe that using gUSA, we could improve libatomic_ops
  * implementation for SH-4 (compare_and_swap, etc.).  But, those
- * are imcompatible to SH-4A, SMP machines.
+ * are incompatible to SH-4A, SMP machines.
  *
  * I believe that SH-4A, architecture wise, breaks SH-4 ABI already.
  * 
@@ -39,7 +39,7 @@
  * are so many variants in "ARM".
  *
  * For __ARMEL__ (which means ARM_ARCH_4T, in Debian), there is no 
- * hardware support for atomic operations, unfortunatelly.
+ * hardware support for atomic operations, unfortunately.
  *
  * NOTE:
  * It is ARMv6 which introduced LDREX/STREX (exclusives).
