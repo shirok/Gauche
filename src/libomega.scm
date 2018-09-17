@@ -212,35 +212,3 @@
   (and (equal? (hash-table-comparator a) (hash-table-comparator b))
        (subset? a b)
        (subset? b a)))
-
-;;; TEMPORARY for 0.9.x series
-;;; Remove this after 1.0 release!!!
-;;;
-;;; Add 0.9 directories, which doesn't follow the new directory structure,
-;;; to support the extension modules that are installed with 0.9.
-;;; A few extension packages installs files into the "sys" directory hierarchy
-;;; instead of "site" one.  It is banned after 0.9.1, but we need to add 0.9's
-;;; sys directories for the backward compatibility.
-;;; NB: we set! to *load-path* etc here, which is an emergency workaround.
-;;; Ordinary programs should never modify *load-path*/*dynamic-load-path*
-;;; directly.
-(select-module gauche)
-(let* ([archdir (gauche-architecture-directory)]
-       [m (rxmatch #/gauche-0\.9[\/\\]0\.9[^\/\\]*[\/\\]/ archdir)]
-       [oldsitedir (string-append (rxmatch-before m)
-                                  "gauche/site/0.9/"
-                                  (rxmatch-after m))]
-       [oldarchdir (string-append (rxmatch-before m)
-                                  "gauche/0.9/"
-                                  (rxmatch-after m))])
-  (set! *dynamic-load-path*
-        (append *dynamic-load-path* (list oldsitedir oldarchdir))))
-(let* ([libdir (gauche-library-directory)]
-       [m (rxmatch #/gauche-0\.9[\/\\]0\.9[^\/\\]*[\/\\]/ libdir)]
-       [oldsitedir (string-append (rxmatch-before m)
-                                  "gauche/site/"
-                                  (rxmatch-after m))]
-       [oldlibdir  (string-append (rxmatch-before m)
-                                  "gauche/0.9/"
-                                  (rxmatch-after m))])
-  (set! *load-path* (append *load-path* (list oldsitedir oldlibdir))))

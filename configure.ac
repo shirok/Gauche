@@ -10,7 +10,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 # ABI_VERSION is set to major.minor of Gauche version by default.
 # It can be overridden by uncommenting the following line.
 # (This may be useful for "prerelease", such as 0.99.x as pre-1.0)
-# GAUCHE_ABI_VERSION=X.Y
+GAUCHE_ABI_VERSION=0.97
 
 dnl ==========================================================
 dnl Process args given to configure

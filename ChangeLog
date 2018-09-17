@@ -1,5 +1,10 @@
 2018-09-16  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: Bumped up ABI version to 0.97, for we can't safely
+	  use extensions compiled with 0.9.6 or before.
+	* src/libomega.scm: Removed the compatibility code that searches
+	  extension modules compiled with 0.9.
+
 	* src/gauche/string.h: INCOMPATIBLE CHANGE: Switched string length
 	  and size from int to ScmSmallInt.  Also the 'flags' argument becomes
 	  u_long.  Both ABI and C API are affected.
