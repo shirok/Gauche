@@ -457,7 +457,7 @@ double Scm_BignumToDouble(const ScmBignum *b)
             if (dst[1] >= (1UL<<(52-32))) {
                 /* Overflow.  We mask the hidden bit, then shift. */
                 dst[1] &= ~(1UL<<(52-32));
-                dst[0] = (dst[0] >> 1) | (dst[1]&1 << 31);
+                dst[0] = (dst[0] >> 1) | ((u_long)(dst[1]&1) << 31);
                 dst[1] >>= 1;
                 exponent++;
             }
