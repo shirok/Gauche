@@ -1070,6 +1070,13 @@ modules need to be @code{use}'d before you call @code{chibi-test}.
 これは、Gaucheで実行するのに別のモジュールを使った方が良い場合があるからです。
 必要なモジュールは@code{chibi-test}を呼ぶ前に@code{use}しておいてください。
 @c COMMON
+
+@c EN
+You may want to check out @file{test/srfi.scm} in Gauche source tree
+for the use case.
+@c JP
+Gaucheのソースツリーの@file{test/srfi.scm}に実際の使用例を見ることができます。
+@c COMMON
 @end defmac
 
 
