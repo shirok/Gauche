@@ -23536,7 +23536,7 @@ of @code{<buffered-input-port>} above for the details.
 @c COMMON
 
 @c EN
-The following two procedures returns a buffered input/output port
+The following two procedures return a buffered input/output port
 backed up by a uniform vector.    The source or destination vector
 can be any type of uniform vector, but they will be aliased
 to @code{u8vector} (see @code{uvector-alias} in
