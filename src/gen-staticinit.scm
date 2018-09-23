@@ -34,10 +34,11 @@
 
 (define top-srcdir   (make-parameter ".."))
 (define top-builddir (make-parameter ".."))
+(define abi-version  (make-parameter ""))
 
 (define (usage)
   (exit 1
-   "Usage: gen-staticinit.scm $(top_srcdir) $(top_builddir)\n\
+   "Usage: gen-staticinit.scm $(top_srcdir) $(top_builddir) $(GAUCHE_ABI_VERSION)\n\
     Create statically linked version of libgauche, with all Scheme libraries\n\
     and extensions packaged in.  After building and installing Gauche as\n\
     usual, invoke this script via 'make static' in src directory.\n\
@@ -264,7 +265,7 @@
   (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*, const char *ns[], void (*fns[])(void));")
   (when main?
     (cond-expand
-     [gauche.os.windows (generate-imp-stub "libgauche-0.9.dll")]
+     [gauche.os.windows (generate-imp-stub #"libgauche-~(abi-version).dll")]
      [else])
     (cgen-init "Scm_AddLoadPath(\"@\", FALSE);"))
   (embed-scm name scmfiles)
@@ -293,9 +294,10 @@
 
 (define (main args)
   (match (cdr args)
-    [(%top-srcdir %top-builddir)
+    [(%top-srcdir %top-builddir %abi-version)
      (parameterize ([top-srcdir   %top-srcdir]
-                    [top-builddir %top-builddir])
+                    [top-builddir %top-builddir]
+                    [abi-version  %abi-version])
        (do-everything))]
     [_ (usage)])
   0)

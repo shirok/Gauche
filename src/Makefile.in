@@ -420,7 +420,7 @@ $(LIBGAUCHE_STATIC).a : all $(STATICINIT_OBJS)
             `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 
 $(STATICINIT_SRCS) : all gen-staticinit.scm
-	$(STATIC_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
+	$(STATIC_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir) $(GAUCHE_ABI_VERSION)
 
 # tests -----------------------------------------------
 TESTFILES  = `cat ../test/TESTS`
