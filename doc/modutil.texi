@@ -23175,10 +23175,11 @@ implement the following methods.
 @c MOD util.digest
 @c EN
 Takes the instance of massage-digest algorithm, and updates it
-with the data @var{data}, represented in a (possibly incomplete) string.
+with the data @var{data}, which can be either a u8vector
+or a (possibly incomplete) string.
 @c JP
 メッセージダイジェストアルゴリズムのインスタンスを取り、
-それを(不完全な可能性のある)文字列で表されるデータ@var{data}で
+それをu8vectorか(不完全な可能性のある)文字列のデータ@var{data}で
 更新します。
 @c COMMON
 @end deffn
@@ -23224,9 +23225,11 @@ and returns the digest result in an incomplete string.
 @c MOD util.digest
 @c EN
 An utility procedure.  Given the result of digest, @var{digest-result},
+which can be an u8vector or a (possibly incomplete) string,
 converts it to a hexified string.
 @c JP
-ユーティリティ手続きです。ダイジェストの結果、@var{digest-result}を
+ユーティリティ手続きです。ダイジェストの結果、@var{digest-result}
+(u8vectorか(不完全かもしれない)文字列)
 与えると、それを16進文字列に変換します。
 @c COMMON
 @end defun

@@ -36,11 +36,14 @@
 ;; rfc.md5 and rfc.sha1.
 
 (define-module util.digest
+  (use gauche.uvector)
   (export <message-digest-algorithm> <message-digest-algorithm-meta>
           digest-update! digest-final! digest digest-string
           digest-hexify)
   )
 (select-module util.digest)
+
+(autoload gauche.vport open-input-uvector)
 
 (define-class <message-digest-algorithm-meta> (<class>)
   ;; Block size (in bytes) used in HMAC, determined by each algorithm.
@@ -61,7 +64,16 @@
   (with-input-from-string string (cut digest class)))
 
 ;; utility
-(define (digest-hexify string)
-  (with-string-io string
-    (cut generator-for-each (cut format #t "~2,'0x" <>) read-byte)))
-
+(define (digest-hexify data)
+  (define (hexify)
+    (with-output-to-string
+      (cut generator-for-each (cut format #t "~2,'0x" <>) read-byte)))
+  
+  (cond
+   [(u8vector? data)
+    (let1 p (open-input-uvector data)
+      (with-input-from-port p hexify))]
+   [(string? data)
+    (with-input-from-string data hexify)]
+   [else
+    (error "data must be either u8vector or string, but got:" data)]))

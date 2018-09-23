@@ -1,3 +1,10 @@
+2018-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/digest.scm (digest-hexify): Accept u8vector as well, for
+	  the consistency.
+	* doc/modutil.texi: Make it clear that digester accepts both strings
+	  and u8vectors.
+
 2018-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: 0.9.7_pre1
