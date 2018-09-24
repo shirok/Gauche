@@ -10749,6 +10749,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @defivar {<win:input-record>} key.down
 @defivarx {<win:input-record>} key.repeat-count
 @defivarx {<win:input-record>} key.virtual-key-code
+@defivarx {<win:input-record>} key.virtual-scan-code
 @defivarx {<win:input-record>} key.unicode-char
 @defivarx {<win:input-record>} key.ascii-char
 @defivarx {<win:input-record>} key.control-key-state
@@ -10757,6 +10758,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @defivar {<win:input-record>} mouse.x
 @defivarx {<win:input-record>} mouse.y
 @defivarx {<win:input-record>} mouse.button-state
+@defivarx {<win:input-record>} mouse.control-key-state
 @defivarx {<win:input-record>} mouse.event-flags
 @end defivar
 
@@ -10828,7 +10830,27 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c MOD os.windows
 @end defun
 
+@defun sys-fill-console-output-character handle char len x y
+[Windows]
+@c MOD os.windows
+@end defun
+
+@defun sys-fill-console-output-attribute handle attr len x y
+[Windows]
+@c MOD os.windows
+@end defun
+
+@defun sys-flush-console-input-buffer handle
+[Windows]
+@c MOD os.windows
+@end defun
+
 @defun sys-get-console-title
+[Windows]
+@c MOD os.windows
+@end defun
+
+@defun sys-set-console-title string
 [Windows]
 @c MOD os.windows
 @end defun
