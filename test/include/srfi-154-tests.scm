@@ -1,3 +1,4 @@
+;; -*- coding:utf-8 -*-
 ;; Copyright (C) Marc Nieper-Wißkirchen (2017).  All Rights Reserved.
 
 ;; Permission is hereby granted, free of charge, to any person
@@ -46,10 +47,10 @@
 	     (lambda ()
 	       (x))))))
 
-      (test-equal "Closed procedures"
+      (test-equal "Dynamically closed procedures"
 	'a
 	(let* ((x (make-parameter 'a))
-	       (getter (closed-lambda () (x))))
+	       (getter (dynamic-lambda () (x))))
 	  (parameterize ((x 'b))
 	    (getter))))
 
@@ -70,5 +71,5 @@
 	  (with-dynamic-extent e2 (lambda ()
 				    (with-dynamic-extent e1 (lambda ()
 							      (x)))))))
-      
+
       (test-end "SRFI 154"))))

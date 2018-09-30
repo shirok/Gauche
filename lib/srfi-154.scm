@@ -35,7 +35,7 @@
   (export dynamic-extent?
           current-dynamic-extent
           with-dynamic-extent
-          closed-lambda))
+          dynamic-lambda))
 (select-module srfi-154)
 
 (define-class <dynamic-extent> ()
@@ -55,7 +55,7 @@
 (define (with-dynamic-extent dynamic-extent thunk)
   ((slot-ref dynamic-extent 'run) thunk))
 
-(define-syntax closed-lambda
+(define-syntax dynamic-lambda
   (syntax-rules ()
     [(_ formals body)
      (let1 dynamic-extent (current-dynamic-extent)
