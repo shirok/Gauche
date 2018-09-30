@@ -1,6 +1,7 @@
 2018-09-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-154.scm (dynamic-lambda): Updated to the final srfi-154.
+	  Make it official.
 
 2018-09-22  Shiro Kawai  <shiro@acm.org>
 

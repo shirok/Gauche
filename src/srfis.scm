@@ -1030,6 +1030,16 @@ Supported by the module @code{srfi-152} (@pxref{String library (reduced)}).
 モジュール@code{srfi-152}でサポートされます (@ref{String library (reduced)}参照)。
 
 
+srfi-154, srfi-154
+()
+
+First-class dynamic extents
+Suppored by the module @code{srfi-154}.
+
+第一級の動的エクステント
+モジュール@code{srfi-154}でサポートされます。
+
+
 srfi-158, srfi-158
 ()
 
