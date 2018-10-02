@@ -1,3 +1,9 @@
+2018-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-check-lib, with-cf-subst): Add support
+	  of cf-check-lib.  Auxiliary funciton with-cf-subst is also useful
+	  so we export it.
+
 2018-09-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-154.scm (dynamic-lambda): Updated to the final srfi-154.

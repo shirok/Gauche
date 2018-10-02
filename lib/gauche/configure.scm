@@ -88,6 +88,7 @@
           cf-echo
           cf-make-gpd
           cf-define cf-subst cf-arg-var cf-have-subst? cf-ref cf$
+          with-cf-subst
           cf-config-headers cf-output cf-show-substs
           cf-check-prog cf-path-prog cf-check-tool
           cf-prog-cxx
@@ -98,7 +99,7 @@
           cf-lang-program cf-lang-io-program cf-lang-call
           cf-try-compile cf-try-compile-and-link
 
-          ;cf-check-lib
+          cf-check-lib
           ))
 (select-module gauche.configure)
 
@@ -603,6 +604,20 @@
 ;; Like cf-ref, but returns empty string if undefined.
 (define (cf$ symbol) (cf-ref symbol ""))
 
+;; API
+;; Temporarily replace cf subst value
+(define-syntax with-cf-subst 
+  (syntax-rules ()
+    [(_ ((var val) ...) body ...)
+     (let ([saves (map (cut cf$ <>) '(var ...))])
+       (for-each (cut cf-subst <> <>)
+                 '(var ...)
+                 (list val ...))
+       (unwind-protect (begin body ...)
+         (for-each (cut cf-subst <> <>)
+                   '(var ...)
+                   saves)))]))
+
 ;;;
 ;;; Argument processing
 ;;;
@@ -904,6 +919,7 @@
   (define (clean)
     (remove-files (glob "conftest.err*")
                   #"conftest.~(cf-lang-ext)"
+                  #"conftest.~(cf$'OBJEXT)"
                   #"conftest~(cf$'EXEEXT)"))
   (define cmd
     (if (string? command)
@@ -1118,6 +1134,15 @@
 
 ;; Feature Test API
 ;; Like AC_CHECK_LIB
-;(define (cf-check-lib lib fn
-;                      :key (other-libs '()) (if-found #f) (if-not-found #f))
-;  (cf-msg-checking ""
+(define (cf-check-lib lib fn
+                      :key (other-libs '()) (if-found #f) (if-not-found #f))
+  (let1 includes (cf-includes-default)
+    (cf-msg-checking "for ~a in -l~a" fn lib)
+    (with-cf-subst
+     ([LIBS #"-l~|lib| ~(cf$'LIBS)"])
+     (rlet1 result (cf-try-compile-and-link includes
+                                            (format "extern void ~a(); ~a();"
+                                                    fn fn))
+       (cf-msg-result (if result "yes" "no"))))))
+
+   
