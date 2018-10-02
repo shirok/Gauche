@@ -71,6 +71,7 @@
 ;;     :homepage URI-STRING
 ;;     :repository URI-STRING
 ;;     :description STRING
+;;     :providing-modules (SYMBOL ..)     ; list of providing modules
 ;;
 ;;     ;; The following attributes are added when *.gpd file is generated.
 ;;     :gauche-version VERSION            ; Gauche version used to build
@@ -121,13 +122,13 @@
    (licenses       :init-keyword :licenses    :init-value '())
    (homepage       :init-keyword :homepage    :init-value #f)
    (repository     :init-keyword :repository  :init-value #f)
+   (providing-modules :init-keyword :providing-modules :init-value '())
    ;; The slots filled by cf-make-gpd
    (gauche-version :init-keyword :gauche-version :init-form (gauche-version))
    (configure      :init-keyword :configure   :init-value #f)
    ))
 
 ;; API
-;; Invalid key will be rejected by Gauche argument mechanism
 (define (make-gauche-package-description name
                                          :key (version "0.0")
                                               (description #f)
@@ -138,7 +139,12 @@
                                               (homepage #f)
                                               (repository #f)
                                               (gauche-version (gauche-version))
-                                              (configure #f))
+                                              (configure #f)
+                                              (providing-modules '())
+                                         :allow-other-keys unknown-keys)
+  (when (not (null? unknown-keys))
+    (warn "Package description has unrecognized key-value pairs: ~s\n"
+          unknown-keys))
   (check-require-syntax require)
   (check-string-list 'maintainers maintainers)
   (check-string-list 'authors authors)
@@ -146,11 +152,13 @@
   (check-maybe-string 'homepage homepage)
   (check-maybe-string 'repository repository)
   (check-maybe-string 'description description)
+  (check-symbol-list 'providing-modules providing-modules)
   (make <gauche-package-description>
     :name name :version version :require require :maintainers maintainers
     :authors authors :licenses licenses :homepage homepage
     :repository repository :description description
-    :gauche-version gauche-version :configure configure))
+    :gauche-version gauche-version :configure configure
+    :providing-modules providing-modules))
 
 (define (check-maybe-string key val)
   (unless (or (string? val) (not val))
@@ -159,6 +167,10 @@
 (define (check-string-list key val)
   (unless (every string? val)
     (errorf "String list is required for ~a, but got: ~s" key val)))
+
+(define (check-symbol-list key val)
+  (unless (every symbol? val)
+    (errorf "Symbol list is required for ~a, but got: ~s" key val)))
 
 (define (check-require-syntax req)
   (define (check-require-1 clause)

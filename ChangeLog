@@ -1,5 +1,11 @@
 2018-10-01  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/package.scm (make-gauche-package-description): Instead of
+	  rejecting unrecognized keywords, just issue warnings.  It is useful
+	  to update package.scm for the newer Gauche and still allowing
+	  it to work for older Gauche.
+	  Also added :providing-modules to gpd.
+
 	* lib/gauche/configure.scm (cf-check-lib, with-cf-subst): Add support
 	  of cf-check-lib.  Auxiliary funciton with-cf-subst is also useful
 	  so we export it.
