@@ -504,6 +504,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             switch (c1) {
             case EOF:
                 Scm_ReadError(port, "premature #-sequence at EOF");
+                return SCM_UNDEFINED; /* dummy */
             case 't':; case 'T': return read_sharp_word(port, 't', ctx);
             case 'f':; case 'F': return read_sharp_word(port, 'f', ctx);
             case 's':; case 'S': return read_sharp_word(port, 's', ctx);
@@ -574,6 +575,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     return SCM_EOF;
                 default:
                     Scm_ReadError(port, "unsupported #?-syntax: #?%C", c2);
+                    return SCM_UNDEFINED; /* dummy */
                 }
             }
             case '0': case '1': case '2': case '3': case '4':
@@ -587,6 +589,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 int c2 = Scm_GetcUnsafe(port);
                 if (c2 == '"') return read_string(port, TRUE, ctx);
                 Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
+                return SCM_UNDEFINED; /* dummy */
             }
             case ':': {
                 reject_in_r7(port, ctx, "#:");
@@ -604,6 +607,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             }
             default:
                 Scm_ReadError(port, "unsupported #-syntax: #%C", c1);
+                return SCM_UNDEFINED; /* dummy */
             }
         }
     case '\'': return read_quoted(port, SCM_SYM_QUOTE, ctx);
@@ -620,6 +624,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             int c1 = Scm_GetcUnsafe(port);
             if (c1 == EOF) {
                 Scm_ReadError(port, "unterminated unquote");
+                return SCM_UNDEFINED; /* dummy */
             } else if (c1 == '@') {
                 return read_quoted(port, SCM_SYM_UNQUOTE_SPLICING, ctx);
             } else {
@@ -667,6 +672,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
         return read_symbol_or_number(port, c, ctx);
     case ')':; case ']':; case '}':;
         Scm_ReadError(port, "extra close parenthesis `%c'", c);
+        return SCM_UNDEFINED;   /* dummy */
     case EOF:
         return SCM_EOF;
     default:
@@ -1109,8 +1115,8 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                     ACCUMULATE(c);
                     break;
                 }
-                /*FALLTHROUGH*/
             }
+                /*FALLTHROUGH*/
             cont_lf:
             case '\n': {
                 for (;;) {
@@ -1181,7 +1187,9 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 
     int c = Scm_GetcUnsafe(port);
     switch (c) {
-    case EOF: Scm_ReadError(port, "EOF encountered in character literal");
+    case EOF:
+        Scm_ReadError(port, "EOF encountered in character literal");
+        break;
     case '(':; case ')':; case '[':; case ']':; case '{':; case '}':;
     case '"':; case ' ':; case '\\':; case '|':; case ';':;
     case '#':;
@@ -1532,6 +1540,7 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         /* #digitR - radix */
         if (prefix < 2 || prefix > 36) {
             Scm_ReadError(port, "Radix prefix out of range: radix in #<radix>R must be between 2 and 36 inclusive, but got: %d", prefix);
+            return SCM_UNDEFINED; /* dummy */
         } else {
             int ch = Scm_GetcUnsafe(port);
             if (ch == EOF) {

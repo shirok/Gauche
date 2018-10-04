@@ -689,7 +689,8 @@
                              literals))
                     ,@(render-rec `(begin ,@clause
                                           ,@(if fallthrough? '() '((break))))
-                                  env)))
+                                  env)
+                    ,@(cond-list [fallthrough? '("/*FALLTHROUGH*/")])))
                 literalss clauses)
          "}")]
       )))
