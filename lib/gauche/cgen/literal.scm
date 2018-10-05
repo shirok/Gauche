@@ -153,6 +153,9 @@
         (dolist [dl dls] (emit-initializers dl))
         (print "};"))))
 
+  ;; NB: We add SCM_UNUSED in the static data, for it could be empty
+  ;; depending on cpp conditions, and we don't want the compiler warn
+  ;; about unused static var.
   (define (emit-struct-def category dls)
     (let1 name (static-data-c-struct-name category)
       (format #t "static ~astruct ~aRec {\n"
@@ -163,7 +166,7 @@
         (format #t "  ~a ~a[~a];\n" (~ dl'c-type) (~ dl'c-member-name)
                 (~ dl'count))
         (for-each (cut print "#endif /*"<>"*/") (~ dl'cpp-conditions)))
-      (format #t "} ~a = " name)))
+      (format #t "} ~a SCM_UNUSED = " name)))
 
   (define (emit-initializers dl)
     (for-each (cut print "#if "<>) (reverse (~ dl'cpp-conditions)))
