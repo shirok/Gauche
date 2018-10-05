@@ -62,7 +62,6 @@
                       (string-suffix? (module-name->path (module-name mod))
                                       absolute-file-sans-extension))
                     (lset-difference eq? (all-modules) preexisting-modules))])
-      (if (null? file-modules)
-        (test-module-common m file allow-undefined bypass-arity-check)
-        (dolist [m file-modules]
-          (test-module-common m file allow-undefined bypass-arity-check))))))
+      (test-module-common m allow-undefined bypass-arity-check)
+      (dolist [m file-modules]
+        (test-module-common m allow-undefined bypass-arity-check)))))

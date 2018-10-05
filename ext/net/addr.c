@@ -354,8 +354,6 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrIn6Class, sockaddr_print,
  * Parse internet addresses
  */
 
-#define S6_ADDR32(in6, offset) (*(uint32_t*)&(((in6).s6_addr)[(offset)*4]))
-
 ScmObj Scm_InetStringToAddress(const char *s,
                                int *proto,     /*out*/
                                ScmUVector *buf /*out*/)
@@ -370,7 +368,8 @@ ScmObj Scm_InetStringToAddress(const char *s,
             if (Scm_UVectorSizeInBytes(buf) < 4) {
                 Scm_Error("uniform vector buffer isn't big enough to hold IPv4 address: %S", buf);
             }
-            SCM_U32VECTOR_ELEMENTS(buf)[0] = in4.s_addr;
+            ScmU32Vector *u32 = (ScmU32Vector*)buf;
+            SCM_U32VECTOR_ELEMENTS(u32)[0] = in4.s_addr;
             return SCM_TRUE;
         } else {
             return Scm_MakeIntegerU(ntohl(in4.s_addr));
@@ -384,16 +383,16 @@ ScmObj Scm_InetStringToAddress(const char *s,
             if (Scm_UVectorSizeInBytes(buf) < 16) {
                 Scm_Error("uniform vector buffer isn't big enough to hold IPv6 address: %S", buf);
             }
-            SCM_U32VECTOR_ELEMENTS(buf)[0] = S6_ADDR32(in6, 0);
-            SCM_U32VECTOR_ELEMENTS(buf)[1] = S6_ADDR32(in6, 1);
-            SCM_U32VECTOR_ELEMENTS(buf)[2] = S6_ADDR32(in6, 2);
-            SCM_U32VECTOR_ELEMENTS(buf)[3] = S6_ADDR32(in6, 3);
+            ScmU8Vector *u8 = (ScmU8Vector*)buf;
+            for (int i=0; i<16; i++) {
+                SCM_U8VECTOR_ELEMENTS(u8)[i] = in6.s6_addr[i];
+            }
             return SCM_TRUE;
         } else {
             ScmObj s = SCM_MAKE_INT(0);
-            for (int i=0; i<4; i++) {
-                s = Scm_Add(Scm_Ash(s, 32),
-                            Scm_MakeIntegerU(ntohl(S6_ADDR32(in6, i))));
+            for (int i=0; i<16; i++) {
+                s = Scm_Add(Scm_Ash(s, 8),
+                            SCM_MAKE_INT(in6.s6_addr[i]));
             }
             return s;
         }
@@ -430,20 +429,20 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
         char buf[INET6_ADDRSTRLEN];
         struct in6_addr in6;
         if (SCM_INTEGERP(addr)) {
-            ScmObj mask = Scm_MakeIntegerU(0xffffffffUL);
-            for (int i=0; i<4; i++) {
+            ScmObj mask = SCM_MAKE_INT(0xff);
+            for (int i=0; i<16; i++) {
                 u_long a = Scm_GetIntegerU(Scm_LogAnd(addr, mask));
-                S6_ADDR32(in6, 3-i) = htonl(a);
-                addr = Scm_Ash(addr, -32);
+                in6.s6_addr[15-i] = a;
+                addr = Scm_Ash(addr, -8);
             }
         } else if (SCM_UVECTORP(addr)) {
             if (Scm_UVectorSizeInBytes(SCM_UVECTOR(addr)) < 16) {
                 Scm_Error("uvector too short for IPv6 address: %S", addr);
             }
-            S6_ADDR32(in6, 0) = SCM_U32VECTOR_ELEMENTS(addr)[0];
-            S6_ADDR32(in6, 1) = SCM_U32VECTOR_ELEMENTS(addr)[1];
-            S6_ADDR32(in6, 2) = SCM_U32VECTOR_ELEMENTS(addr)[2];
-            S6_ADDR32(in6, 3) = SCM_U32VECTOR_ELEMENTS(addr)[3];
+            ScmU8Vector *u8 = SCM_U8VECTOR(addr);
+            for (int i=0; i<16; i++) {
+                in6.s6_addr[i] = SCM_U8VECTOR_ELEMENTS(u8)[i];
+            }
         } else {
             Scm_TypeError("address", "integer or uvector", addr);
         }

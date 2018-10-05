@@ -1,3 +1,7 @@
+2018-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/addr.c: Avoid type punning to access ipv6 address fields.
+
 2018-10-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package.scm (make-gauche-package-description): Instead of

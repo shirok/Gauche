@@ -278,10 +278,10 @@
                    (error "test-module requires module or symbol, but got"
                           module)])
     (format #t "testing bindings in ~a ... " mod) (flush)
-    (test-module-common mod module allow-undefined bypass-arity-check)))
+    (test-module-common mod allow-undefined bypass-arity-check)))
 
 ;; Common op for test-module and test-script.
-(define (test-module-common mod name allow-undefined bypass-arity-check)
+(define (test-module-common mod allow-undefined bypass-arity-check)
   (define (code-location src-code)
     (let1 src-info (debug-source-info src-code)
       (string-append (if src-info (format "~a:" (cadr src-info)) "")
@@ -301,9 +301,9 @@
     ;; way, we can test renaming export (in which case, the exported name
     ;; doesn't correspond to the binding in MOD so we can't look up directly
     ;; in MOD.)
-    (when (pair? (module-exports mod))
+    (when (and (module-name mod) (pair? (module-exports mod)))
       (let ([m (make-module #f)])
-        (eval `(import ,name) m)
+        (eval `(import ,(module-name mod)) m)
         (eval `(extend) m)
         (for-each (lambda (sym)
                     (guard (_ [else (push! bad-export sym)])
@@ -357,7 +357,7 @@
      [else
       (let ([s (apply string-append report)])
         (format #t "ERROR: ~a\n" s)
-        (test-fail++ (format #f "bindings in ~a" name) '() s))])
+        (test-fail++ (format #f "bindings in ~a" mod) '() s))])
     ))
 
 
