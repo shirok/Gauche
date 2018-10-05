@@ -182,6 +182,13 @@ SCM_DECL_BEGIN
 #define SCM_UNUSED  /*empty*/
 #endif /*__GNUC__*/
 
+/* 'noinline' attribute */
+#ifdef __GNUC__
+#define SCM_NOINLINE __attribute__((__noinline__))
+#else  /*__GNUC__*/
+#define SCM_NOINLINE  /*empty*/
+#endif /*__GNUC__*/
+
 
 /*-------------------------------------------------------------
  * BASIC TYPES

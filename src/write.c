@@ -854,8 +854,12 @@ struct vprintf_ctx {
 /* Pass 1.  Pop vararg and make a list of arguments.
  * NB: If we're "walking" pass, and the argument is a Lisp object,
  * we recurse to it in this pass.
+ * NB: Without NOINLINE, gcc inlines this in Scm_Vprintf which causes warning
+ * of register variable clobbering by longjmp.
  */
-static ScmObj vprintf_pass1(ScmPort *out, const char *fmt, va_list ap)
+static ScmObj SCM_NOINLINE vprintf_pass1(ScmPort *out,
+                                         const char *fmt,
+                                         va_list ap)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
     const char *fmtp = fmt;

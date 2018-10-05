@@ -160,7 +160,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
-        int nb = SCM_CHAR_NBYTES(c);
+        volatile int nb = SCM_CHAR_NBYTES(c);
         if (p->src.buf.current+nb > p->src.buf.end) {
             SAFE_CALL(p, bufport_flush(p, p->src.buf.current - p->src.buf.buffer, FALSE));
         }
@@ -1026,7 +1026,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
 
     LOCK(p);
 
-    off_t pending = port_pending_bytes(p);
+    volatile off_t pending = port_pending_bytes(p);
     if (!is_telling) {
         /* Unless we're telling, we discard pending bytes. */
         p->scrcnt = 0;
