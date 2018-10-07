@@ -56,6 +56,7 @@ srfi N is supporeted by Gauche.)
 * Mappings and hashmaps::       srfi-146
 * Bitwise operations::          srfi-151
 * String library (reduced)::    srfi-152
+* First-class dynamic extents::  srfi-154
 * Generators and accumulators::  srfi-158
 @end menu
 
@@ -7661,7 +7662,7 @@ length of @var{n} (@pxref{Generators}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node String library (reduced), Generators and accumulators, Bitwise operations, Library modules - SRFIs
+@node String library (reduced), First-class dynamic extents, Bitwise operations, Library modules - SRFIs
 @section @code{srfi-152} - String library (reduced)
 @c NODE 文字列ライブラリ(簡略版), @code{srfi-152} - 文字列ライブラリ(簡略版)
 
@@ -7983,7 +7984,88 @@ Note: The order of @var{pred} and the source object is different from
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Generators and accumulators,  , String library (reduced), Library modules - SRFIs
+@node First-class dynamic extents, Generators and accumulators, String library (reduced), Library modules - SRFIs
+@section @code{srfi-154} - First-class dynamic extents
+@c NODE 第一級の動的エクステント, @code{srfi-154} - 第一級の動的エクステント
+
+@deftp {Module} srfi-154
+@mdindex srfi-154
+This module provides a convenent way to reify the dynamic environment.
+A continuation captured by @code{call/cc} includes the dynamic environment,
+as well as the control flow.  Sometimes you only want the dynamic enviornment
+part.  A dynamic extent is a reified dynamic environment.
+
+Let's see an example.  You want a procedure that prints out
+a message to the error port, so you wrote this @code{print-error}:
+
+@example
+(define print-error
+  (lambda (msg) (display msg (current-error-port))))
+@end example
+
+However, if @code{print-error} is called while the current error port
+is altered, it is affected.  It is supposed to be so, that's
+the point of @code{current-error-port}.
+
+@example
+(call-with-output-string
+  (^p (with-error-to-port p (^[] (print-error "abc\n")))))
+ @result{} "abc\n"
+@end example
+
+If you do want @code{print-error} to use the error port
+at the time it is defined, you have to extract the dynamic value
+at the moment.
+
+@example
+(define print-error
+  (let1 eport (current-error-port)
+    (lambda (msg) (display msg eport))))
+@end example
+
+This would be quickly cumbersome when you need to capture multiple
+dynamic values, or the original @code{print-error} is called indirectly
+and you can't modify it the way shown above.
+
+Using @code{dynamic-lambda} addresses this issue.  It not only captures
+the lexical environment, but also the dynamic environment when it
+is evaluated.  So the @code{current-error-port} in its body
+returns the current error port at the time of @code{print-error}
+being defined, not when it is called:
+
+@example
+(define print-error
+  (dynamic-lambda (msg) (display msg (current-error-port))))
+@end example
+@end deftp
+
+@defun current-dynamic-extent
+Returns a dynamic-extent object that reifies the current dynamic
+environment.
+@end defun
+
+@defun dynamic-extent? obj
+Returns @code{#t} iff @var{obj} is a dynamic-extent object.
+@end defun
+
+@defun with-dynamic-extent dynext thunk
+Calls the @var{thunk} in the dynamic extent @var{dynext}, and
+returns the values yielded by @var{thunk}.
+@end defun
+
+@defmac dynamic-lambda formals body @dots{}
+Like @code{lambda}, but this not only captures the lexical environment,
+but also the dynamic environment.  Yields a procedure.
+
+Note: Since @code{dynamic-lambda} needs to swap the dynamic environment
+after executing @var{body}, the last expression of @var{body} isn't
+called in the tail contenxt even if the procedure created by
+@code{dynamic-lambda} is called in tail context.
+@end defmac
+
+
+@c ----------------------------------------------------------------------
+@node Generators and accumulators,  , First-class dynamic extents, Library modules - SRFIs
 @section @code{srfi-158} - Generators and accumulators
 @c NODE ジェネレータとアキュムレータ, @code{srfi-158} - ジェネレータとアキュムレータ
 

@@ -1034,10 +1034,10 @@ srfi-154, srfi-154
 ()
 
 First-class dynamic extents
-Suppored by the module @code{srfi-154}.
+Suppored by the module @code{srfi-154}.  (@pxref{First-class dynamic extents}).
 
 第一級の動的エクステント
-モジュール@code{srfi-154}でサポートされます。
+モジュール@code{srfi-154}でサポートされます。(@ref{First-class dynamic extents}参照)。
 
 
 srfi-158, srfi-158
