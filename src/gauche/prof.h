@@ -117,7 +117,7 @@ struct ScmVMProfilerRec {
     HANDLE hObserverThread;     /* observer thread */
     HANDLE hTimerEvent;         /* sampling timer event */
     char *samplerFileName;      /* temporary file name to remove the file */
-#endif
+#endif /* GAUCHE_WINDOWS */
     ScmProfSample samples[SCM_PROF_SAMPLES_IN_BUFFER];
     ScmProfCount  counts[SCM_PROF_COUNTER_IN_BUFFER];
 };

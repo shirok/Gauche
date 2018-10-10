@@ -62,7 +62,7 @@ static unsigned __stdcall observer_thread(void *arg)
     ScmVM *vm = (ScmVM*)arg;
     CONTEXT ctx;
     DWORD sleep_time;
-    DWORD resume_result = 0;
+    int suspend_flag = 0;
 
     /* NB: We can't use Scm_SysError in this thread. */
     /* NB: GetThreadContext might be required to make the target thread
@@ -70,14 +70,17 @@ static unsigned __stdcall observer_thread(void *arg)
     sleep_time = SAMPLING_PERIOD / 1000;
     if (sleep_time <= 0) sleep_time = 1;
     do {
-        if (resume_result != -1) {
-            if (SuspendThread(vm->prof->hTargetThread) != -1) {
-                if (GetThreadContext(vm->prof->hTargetThread, &ctx)) {
-                    sampler_sample(vm);
-                }
-            }
+        if (!suspend_flag &&
+            SuspendThread(vm->prof->hTargetThread) != (DWORD)-1) {
+            ctx.ContextFlags = CONTEXT_CONTROL;
+            while (!GetThreadContext(vm->prof->hTargetThread, &ctx));
+            suspend_flag = 1;
+            sampler_sample(vm);
         }
-        resume_result = ResumeThread(vm->prof->hTargetThread);
+        if (suspend_flag &&
+            ResumeThread(vm->prof->hTargetThread) != (DWORD)-1) {
+            suspend_flag = 0;
+        }
     } while (WAIT_OBJECT_0 != WaitForSingleObject(vm->prof->hTimerEvent,
                                                   sleep_time));
     return 0;
@@ -91,9 +94,21 @@ static void ITIMER_START(void)
     if (vm->prof->hTimerEvent == NULL) {
         Scm_SysError("CreateEvent failed");
     }
-    vm->prof->hObserverThread = (HANDLE)_beginthreadex(NULL, 0, observer_thread,
+/* NB: Prevent to use GC_beginthreadex here. */
+#if defined(_beginthreadex)
+#define _beginthreadex_orig _beginthreadex
+#undef _beginthreadex
+#endif
+    vm->prof->hObserverThread = (HANDLE)_beginthreadex(NULL, 0,
+                                                       observer_thread,
                                                        (void*)vm, 0, NULL);
+#if defined(_beginthreadex_orig)
+#define _beginthreadex _beginthreadex_orig
+#undef _beginthreadex_orig
+#endif
     if (vm->prof->hObserverThread == NULL) {
+        CloseHandle(vm->prof->hTimerEvent);
+        vm->prof->hTimerEvent = NULL;
         Scm_SysError("_beginthreadex failed");
     }
 }
@@ -102,12 +117,18 @@ static void ITIMER_STOP(void)
 {
     ScmVM *vm = Scm_VM();
 
-    SetEvent(vm->prof->hTimerEvent);
-    WaitForSingleObject(vm->prof->hObserverThread, INFINITE);
-    CloseHandle(vm->prof->hObserverThread);
-    vm->prof->hObserverThread = NULL;
-    CloseHandle(vm->prof->hTimerEvent);
-    vm->prof->hTimerEvent = NULL;
+    if (vm->prof->hTimerEvent != NULL && vm->prof->hObserverThread !=NULL) {
+        SetEvent(vm->prof->hTimerEvent);
+        WaitForSingleObject(vm->prof->hObserverThread, INFINITE);
+    }
+    if (vm->prof->hObserverThread != NULL) {
+        CloseHandle(vm->prof->hObserverThread);
+        vm->prof->hObserverThread = NULL;
+    }
+    if (vm->prof->hTimerEvent != NULL) {
+        CloseHandle(vm->prof->hTimerEvent);
+        vm->prof->hTimerEvent = NULL;
+    }
 }
 
 #else  /* !GAUCHE_WINDOWS */
@@ -214,8 +235,7 @@ void collect_samples(ScmVMProfiler *prof)
                      prof->samples[i].func, prof->samples[i].func);
         } else {
             SCM_ASSERT(SCM_PAIRP(e));
-            int cnt = SCM_INT_VALUE(SCM_CDR(e)) + 1;
-            SCM_SET_CDR(e, SCM_MAKE_INT(cnt));
+            SCM_SET_CDR(e, Scm_Add(SCM_CDR(e), SCM_MAKE_INT(1)));
         }
     }
 }
@@ -243,7 +263,6 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
     int ncounts = vm->prof->currentCount;
     for (int i=0; i<ncounts; i++) {
         ScmObj e;
-        int cnt;
 
         ScmObj func = vm->prof->counts[i].func;
         if (SCM_METHODP(func) && SCM_METHOD(func)->func == NULL) {
@@ -253,16 +272,13 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
             func = SCM_OBJ(SCM_METHOD(func)->data);
         }
 
-        e = Scm_HashTableRef(vm->prof->statHash,
-                             vm->prof->counts[i].func,
-                             SCM_UNBOUND);
+        e = Scm_HashTableRef(vm->prof->statHash, func, SCM_UNBOUND);
         if (SCM_UNBOUNDP(e)) {
             e = Scm_Cons(SCM_MAKE_INT(0), SCM_MAKE_INT(0));
-            Scm_HashTableSet(vm->prof->statHash, vm->prof->counts[i].func, e, 0);
+            Scm_HashTableSet(vm->prof->statHash, func, e, 0);
         }
         SCM_ASSERT(SCM_PAIRP(e));
-        cnt = SCM_INT_VALUE(SCM_CAR(e)) + 1;
-        SCM_SET_CAR(e, SCM_MAKE_INT(cnt));
+        SCM_SET_CAR(e, Scm_Add(SCM_CAR(e), SCM_MAKE_INT(1)));
     }
     vm->prof->currentCount = 0;
 
@@ -343,8 +359,10 @@ int Scm_ProfilerStop(void)
     if (vm->prof->state != SCM_PROFILER_RUNNING) return 0;
     ITIMER_STOP();
 #if defined(GAUCHE_WINDOWS)
-    CloseHandle(vm->prof->hTargetThread);
-    vm->prof->hTargetThread = NULL;
+    if (vm->prof->hTargetThread != NULL) {
+        CloseHandle(vm->prof->hTargetThread);
+        vm->prof->hTargetThread = NULL;
+    }
 #endif /* GAUCHE_WINDOWS */
     vm->prof->state = SCM_PROFILER_PAUSING;
     vm->profilerRunning = FALSE;
