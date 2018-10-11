@@ -745,8 +745,9 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, u_long request, ScmObj data)
 
 /*==================================================================
  * Windows/MinGW compatibility layer
+ * Older MinGW lacks inet_pton/ntop.  
  */
-#if defined(GAUCHE_WINDOWS)
+#if defined(GAUCHE_WINDOWS) && !defined(InetNtopA)
 
 int inet_pton(int af, const char *src, void *dst)
 {
@@ -813,7 +814,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
     return dst;
 #undef ADDR_MAXLEN
 }
-#endif /*GAUCHE_WINDOWS*/
+#endif /*defined(GAUCHE_WINDOWS) && !defined(InetNtopA)*/
 
 /*==================================================================
  * Initialization

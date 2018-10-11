@@ -82,8 +82,13 @@ struct sockaddr_un {
     unsigned short sun_family;
     char sun_path[108];
 };
+
+#if !defined(InetNtopA)
+/* This is for older MinGW */
 int inet_pton(int af, const char *src, void *dst);
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+#endif /* !defined(InetNtopA) */
+
 #define MSG_WAITALL   0x8
 #ifdef HAVE_IPV6
 #define IPV6_V6ONLY   27
