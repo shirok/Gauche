@@ -163,10 +163,10 @@
     (file-filter (^[in out]
                    (dolist [line (port->string-list in)]
                      (display ($ regexp-replace-all* line #/@@/ ""
-                                 #/\(cf-output \"Makefile\"\)/
+                                 #/\(cf-output-default\)/
                                  "(cf-define 'HAVE_STDIO_H \"1\")\n\
                                   (cf-config-headers \"config.h\")\n\
-                                  (cf-output \"Makefile\" \"src/Makefile\")")
+                                  (cf-output-default)")
                               out)
                      (newline out)))
                  :input infile

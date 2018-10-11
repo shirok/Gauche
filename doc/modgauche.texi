@@ -4010,41 +4010,62 @@ familiar with this.
 
 @c EN
 The Gauche configure script is structurally similar to autoconf's
-@code{configure.in}, but you can use full power of Scheme.  Here's
-an abridged version of sample configure script:
+@code{configure.in}, but you can use full power of Scheme. 
+The following is the minimal configure script:
 @c JP
 Gaucheのconfigureスクリプトはautoconfの@code{configure.in}と
 似たような構造をとりますが、フルセットのSchemeの力を使うことができます。
-ごく簡単なconfigureスクリプトを示します。
+次は最小のconfigureスクリプトです:
 @c COMMON
 
 @example
 #!/usr/bin/env gosh
 (use gauche.configure)
-
-;; Argument declarations
-(cf-arg-with 'local
-             (cf-help-string
-              "--with-local=PATH:PATH..."
-              "For each PATH, add PATH/include to the include search
-  paths and PATH/lib to the library search paths.  Useful if you have some
-  libraries installed in non-standard places. ")
-             (^[with-local]
-               (unless (member with-local '("yes" "no" ""))
-                 (cf-subst 'LOCAL_PATHS with-local)))
-             (^[] (cf-subst 'LOCAL_PATHS "")))
-
-;; Initialization
-(cf-init)
-
-;; Tests & other parameter settings
-(cf-path-prog 'GOSH "gosh")
-
-;; Output
-(cf-make-gpd)
-(cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
-(cf-output "Makefile")
+(cf-init-gauche-extension)
+(cf-output-default)
 @end example
+
+@c EN
+This script does several common tasks.
+@c JP
+このスクリプトはいくつかの共通タスクを行います。
+@c EN
+The @code{cf-init-gauche-extension} does the following:
+@c JP
+@code{cf-init-gauche-extensino}の仕事は以下のとおりです。
+@c COMMON
+
+@itemize @bullet
+@item
+First, it handles command-line arguments given to @file{configure}.
+In the default settings, it recognizes standard configure
+arguments such as @code{--prefix}, and 
+@code{--with-local=PATH:PATH:...}
+which adds @code{PATH/include}s and @code{PATH/lib}s to
+the header and library search paths.You can handle more arguments by adding
+@code{cf-arg-with} and @code{cf-arg-enable} before 
+@code{cf-init-gauche-extension}.
+@item
+Then it reads @code{package.scm}.  Package name and version are taken
+from it.  Dependencies are also checked.
+@item
+It sets up global envionment to run other configure tests.
+@item
+It sets up default values for standard configure variables such as
+@code{@@prefix@@}.
+@end itemize
+
+And @code{cf-output-default} does the following:
+
+@itemize
+@item
+Generate gpd (Gauche package description) file.
+@item
+Writes package version to @code{VERSION} file.
+@item
+Scan @code{Makefile.in}'s in the source directory and process them
+to generate @code{Makefile}s.
+@end itemize
 
 @c EN
 Instead of writing the calls to @code{cf-*} APIs in the toplevel
@@ -4115,6 +4136,39 @@ including custom arguments in one pass.
 @c JP
 @subsubheading 初期化
 @c COMMON
+
+@defun cf-init-gauche-extension
+@c MOD gauche.configure
+This is a convenience API that packages several boilerplate @code{cf-*}
+function calls in one call.  This must be called exactly once in a
+configure script.
+
+Specifically, it calls @code{cf-arg-with} to process @code{--with-local},
+then @code{cf-init} to initialize, then sets the following configure
+variables:
+@table @code
+@item GOSH
+Path to @code{gosh}.
+@item GAUCHE_CONFIG
+Path to @code{gauche-config}.
+@item GAUCHE_PACKAGE
+Path to @code{gauche-package}.
+@item GAUCHE_INSTALL
+Path to @code{gauche-install}.
+@item GAUCHE_CESCONV
+Path to @code{gauche-cesconv}.
+@item GAUCHE_PKGINCDIR
+Result of @code{gauche-config --pkgincdir}
+@item GAUCHE_PKGLIBDIR
+Result of @code{gauche-config --pkglibdir}
+@item GAUCHE_PKGARCHDIR
+Result of @code{gauche-config --pkgarchdir}
+@end table
+
+If you don't like this default behavior, you can call individual
+@code{cf-*} functions.
+@end defun
+
 
 @defun cf-init :optional package-name package-version maintainer-email homepage-url
 @c MOD gauche.configure

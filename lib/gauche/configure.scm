@@ -48,19 +48,26 @@
 ;; to the source tree, and anyone who checks it out can directly run
 ;; ./configure, without worrying running autoconf (and free from headache
 ;; of autoconf version mismatch)
-
+;;
 ;; The core feature of gauche.configure is the ability to generate files
 ;; (e.g. Makefile) from templates (e.g. Makefile.in) with replacing
 ;; parameters.  We follow autoconf convention, so the replacement variables
 ;; in a template is written like @VAR@.
-
+;;
 ;; The API is roughly corresponds to autoconf's AC_* macros, while we use
 ;; 'cf-' suffix instead.
+;;
+;; The simplest configure scripts can be just the following 3 expressions:
+;;
+;;  (use gauche.configure)
+;;  (cf-init-gauche-extension)
+;;  (cf-output-default)
+;;
+;; It takes package name and version from package.scm file, sets several
+;; substitution variables, and creates Makefile from Makefile.in along
+;; the gpd (Gauche package description) file.
 
-;; NB: cf-define currently only suppors substituting DEFS; it doesn't
-;; handle config.h.
-
-;; TODO: Caching of test results
+;; TODO: Caching test results
 
 (define-module gauche.configure
   (use gauche.parameter)
@@ -81,7 +88,7 @@
   (use srfi-13)
   (use srfi-113) ; sets & bags
   (extend gauche.config)
-  (export cf-init
+  (export cf-init cf-init-gauche-extension
           cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
           cf-help-string
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
@@ -89,7 +96,7 @@
           cf-make-gpd
           cf-define cf-subst cf-arg-var cf-have-subst? cf-ref cf$
           with-cf-subst
-          cf-config-headers cf-output cf-show-substs
+          cf-config-headers cf-output cf-output-default cf-show-substs
           cf-check-prog cf-path-prog cf-check-tool
           cf-prog-cxx
 
@@ -191,6 +198,8 @@
 ;; has "package.scm".
 (define (cf-init :optional (package-name #f) (version #f)
                            (bug-report #f) (url #f))
+  (when (current-package)
+    (exit 1 "Incorrect configure script: cf-init is called more than once."))
   (let* ([gpd (and-let* ([srcdir (current-load-path)]
                          [pfile (build-path (sys-dirname srcdir) "package.scm")]
                          [ (file-exists? pfile) ])
@@ -555,6 +564,34 @@
   ;; TODO: explanation of VAR=VAL
   (exit 1))
 
+;; API
+;; cf-init-gauche-extension packages common stuff around cf-init.
+;;
+(define (cf-init-gauche-extension)
+  (cf-arg-with 'local
+               (cf-help-string
+                "--with-local=PATH:PATH..."
+                "For each PATH, add PATH/include to the include search
+  paths and PATH/lib to the library search paths.  Useful if you have some
+  libraries installed in non-standard places. ")
+               (^[with-local]
+                 (unless (member with-local '("yes" "no" ""))
+                   (cf-subst 'LOCAL_PATHS with-local)))
+               (^[] (cf-subst 'LOCAL_PATHS "")))
+  (cf-init)
+  (cf-path-prog 'GOSH            "gosh")
+  (cf-path-prog 'GAUCHE_CONFIG   "gauche-config")
+  (cf-path-prog 'GAUCHE_PACKAGE  "gauche-package")
+  (cf-path-prog 'GAUCHE_INSTALL  "gauche-install")
+  (cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
+
+  (cf-subst 'default_prefix (gauche-config "--prefix"))
+ 
+  (cf-subst 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
+  (cf-subst 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
+  (cf-subst 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
+  )
+
 ;;;
 ;;; Variables and substitutions
 ;;;
@@ -818,6 +855,19 @@
              $ map shell-escape-string $ cdr $ command-line))
     (with-output-to-file gpd-file
       (cut write-gauche-package-description gpd))))
+
+;; API
+;; Packages common output
+(define (cf-output-default . output-files)
+  (cf-make-gpd)
+  (cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
+  (let* ([pfx (cf$'srcdir)]
+         [outfiles (if (null? output-files)
+                     ($ map (^f (string-drop (string-drop-right f 3)
+                                             (+ (string-length pfx) 1)))
+                        $ glob #"~|pfx|/**/Makefile.in")
+                     output-files)])
+    (apply cf-output outfiles)))
 
 ;;;
 ;;; Target languages
