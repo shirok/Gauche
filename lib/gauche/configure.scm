@@ -106,7 +106,7 @@
           cf-lang-program cf-lang-io-program cf-lang-call
           cf-try-compile cf-try-compile-and-link
 
-          cf-check-lib
+          cf-check-lib cf-search-libs
           ))
 (select-module gauche.configure)
 
@@ -1189,10 +1189,36 @@
   (let1 includes (cf-includes-default)
     (cf-msg-checking "for ~a in -l~a" fn lib)
     (with-cf-subst
-     ([LIBS #"-l~|lib| ~(cf$'LIBS)"])
+     ([LIBS #"-l~|lib| ~(string-join other-libs \" \") ~(cf$'LIBS)"])
      (rlet1 result (cf-try-compile-and-link includes
                                             (format "extern void ~a(); ~a();"
                                                     fn fn))
-       (cf-msg-result (if result "yes" "no"))))))
+       (if result
+         (if if-found
+           (if-found lib)
+           (cf-msg-result "yes"))
+         (if if-not-found
+           (if-not-found lib)
+           (cf-msg-result "no")))))))
 
    
+;; Feature test API
+;; Like AC_CHECK_LIBS
+(define (cf-search-libs fn libs
+                        :key (other-libs '()) (if-found #f) (if-not-found #f))
+  (let ([includes (cf-includes-default)]
+        [xlibs #"~(string-join other-libs \" \") ~(cf$'LIBS)"])
+    (define (try lib)
+      (with-cf-subst 
+       ([LIBS (if (eq? lib 'none) xlibs #"-l~|lib| ~xlibs")])
+       (cf-try-compile-and-link includes
+                                (format "extern void ~a(); ~a();"
+                                        fn fn))))
+    (cf-msg-checking "for ~a" fn)
+    (if-let1 result (find try (cons 'none libs))
+      (if if-found
+        (if-found (if (eq? result 'none) #f result))
+        (cf-msg-result (if (eq? result 'none) "found" #"found in -l~result")))
+      (if if-not-found
+        (if-not-found (if (eq? result 'none) #f result))
+        (cf-msg-result "no")))))
