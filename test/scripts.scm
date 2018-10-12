@@ -264,6 +264,70 @@
 
 (remove-files "test.o" "test2.o")
 
+(make-directory* "test.o/src")
+(make-directory* "test2.o")
+(let ([extdir (build-path (or (sys-getenv "top_srcdir") "..") "ext")])
+  (define (filter-copy infile outfile)
+    (file-filter (^[in out]
+                   (dolist [line (port->string-list in)]
+                     (display ($ regexp-replace-all* line #/@@/ ""
+                                 #/\(cf-output-default\)/
+                                 "(cf-check-headers '(\"stdio.h\" \"stdlib.h\" \"no-such-header-should-exit.h\"))\n\
+                                  (cf-check-lib \"m\" \"sin\")\n\
+                                  (cf-check-lib \"no-such-library-should-exist\" \"sin\")\n\
+                                  (cf-config-headers \"config.h\")\n\
+                                  (cf-output-default)")
+                              out)
+                     (newline out)))
+                 :input infile
+                 :output outfile))
+  (filter-copy (build-path extdir "template.configure") "test.o/configure")
+  (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
+  (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
+
+  (with-output-to-file "test.o/src/Makefile.in"
+    (^[]
+      (print "LIBS = @LIBS@")))
+
+  (with-output-to-file "test.o/config.h.in"
+    (^[]
+      (print "/* Define to 1 if you have the <foo.h> header file */")
+      (print "#undef HAVE_STDIO_H")
+      (print)
+      (print "/* Define to 1 if you have the <foo.h> header file */")
+      (print "#undef HAVE_STDLIB_H")
+      (print)
+      (print "/* Define to 1 if you have the <no-such-header-should-exist.h> header file */")
+      (print "#undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H")
+      (print)
+      (print "/* Define to 1 if you have the libm */")
+      (print "#undef HAVE_LIBM")
+      (print)
+      (print "/* Define to 1 if you have the libno-such-library-should-exist */")
+      (print "#undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST")
+      ))
+  )
+
+(test* "running `configure' script with actual checks" 0
+       (process-exit-status
+        (run-with-parent-directory-in-paths
+         `("../gosh" "-ftest" "./configure")
+         :output :null :wait #t :directory "test.o")))
+
+(test* "cf-check-lib set LIBS" '("LIBS = -lm ")
+       (file->string-list "test.o/src/Makefile"))
+
+(test* "cf-check-headers and cf-check-lib to set defines"
+       '("#define HAVE_STDIO_H 1"
+         "#define HAVE_STDLIB_H 1"
+         "/* #undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H */"
+         "#define HAVE_LIBM 1"
+         "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
+       ($ filter #/HAVE_/
+          $ file->string-list "test.o/config.h"))
+
+(remove-files "test.o" "test2.o")
+
 ]) ; cond-expand except windows
 
 ;;=======================================================================

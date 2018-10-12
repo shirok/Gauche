@@ -1182,30 +1182,44 @@
              (when if-found (if-found h)))
       (when if-not-found (if-not-found h)))))
 
+(define (default-lib-found libname)
+  (when libname
+    (cf-subst 'LIBS #"-l~|libname| ~(cf$'LIBS)")
+    (cf-define (string->symbol #"HAVE_LIB~(safe-variable-name libname)")))
+  #t)
+
+(define (default-lib-not-found libname) #f)
+
 ;; Feature Test API
 ;; Like AC_CHECK_LIB
 (define (cf-check-lib lib fn
-                      :key (other-libs '()) (if-found #f) (if-not-found #f))
+                      :key (other-libs '()) 
+                           (if-found default-lib-found)
+                           (if-not-found default-lib-not-found))
   (let1 includes (cf-includes-default)
     (cf-msg-checking "for ~a in -l~a" fn lib)
-    (with-cf-subst
-     ([LIBS #"-l~|lib| ~(string-join other-libs \" \") ~(cf$'LIBS)"])
-     (rlet1 result (cf-try-compile-and-link includes
-                                            (format "extern void ~a(); ~a();"
-                                                    fn fn))
-       (if result
-         (if if-found
-           (if-found lib)
-           (cf-msg-result "yes"))
-         (if if-not-found
-           (if-not-found lib)
-           (cf-msg-result "no")))))))
+    (if (with-cf-subst
+         ([LIBS #"-l~|lib| ~(string-join other-libs \" \") ~(cf$'LIBS)"])
+         (cf-try-compile-and-link includes
+                                  (format "extern void ~a(); ~a();" fn fn)))
+      (begin
+        (cf-msg-result "yes")
+        (if-found lib))
+      (begin
+        (cf-msg-result "no")
+        (if-not-found lib)))))
 
+(define (default-lib-search-found libname)
+  (when libname
+    (cf-subst 'LIBS #"-l~|libname| ~(cf$'LIBS)"))
+  #t)
    
 ;; Feature test API
 ;; Like AC_CHECK_LIBS
 (define (cf-search-libs fn libs
-                        :key (other-libs '()) (if-found #f) (if-not-found #f))
+                        :key (other-libs '())
+                             (if-found default-lib-search-found) 
+                             (if-not-found default-lib-not-found))
   (let ([includes (cf-includes-default)]
         [xlibs #"~(string-join other-libs \" \") ~(cf$'LIBS)"])
     (define (try lib)
@@ -1215,10 +1229,10 @@
                                 (format "extern void ~a(); ~a();"
                                         fn fn))))
     (cf-msg-checking "for ~a" fn)
-    (if-let1 result (find try (cons 'none libs))
-      (if if-found
-        (if-found (if (eq? result 'none) #f result))
-        (cf-msg-result (if (eq? result 'none) "found" #"found in -l~result")))
-      (if if-not-found
-        (if-not-found (if (eq? result 'none) #f result))
-        (cf-msg-result "no")))))
+    (if-let1 lib (find try (cons 'none libs))
+      (begin
+        (cf-msg-result (if (eq? lib 'none) "found" #"found in -l~|lib|"))
+        (if-found (if (eq? lib 'none) #f lib)))
+      (begin
+        (cf-msg-result "no")
+        (if-not-found #f)))))
