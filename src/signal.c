@@ -649,7 +649,8 @@ int sigaction(int signum, const struct sigaction *act,
     }
 }
 
-int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset)
+int sigprocmask_win(int how SCM_UNUSED, const sigset_t *set SCM_UNUSED,
+                    sigset_t *oldset SCM_UNUSED)
 {
     return 0;
 }
@@ -663,12 +664,12 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
     sigset_t sigset;
     int badproc = FALSE, sigactionfailed = FALSE;
 
+    sigemptyset(&sigset);
     if (SCM_INTP(sigs)) {
         int signum = SCM_INT_VALUE(sigs);
         if (signum < 0 || signum >= SCM_NSIG) {
             Scm_Error("bad signal number: %d", signum);
         }
-        sigemptyset(&sigset);
         sigaddset(&sigset, signum);
     } else if (SCM_SYS_SIGSET_P(sigs)) {
         sigset = SCM_SYS_SIGSET(sigs)->set;
@@ -928,6 +929,7 @@ static void scm_sigsuspend(sigset_t *mask)
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
     SCM_SIGCHECK(vm);
 #else  /* GAUCHE_WINDOWS */
+    (void)mask; /* suppress unused var warning */
     Scm_Error("sigsuspend not supported on Windows port");
 #endif /* GAUCHE_WINDOWS */
 }
@@ -1036,6 +1038,7 @@ int Scm_SigWait(ScmSysSigset *mask)
     }
     return sig;
 #else  /* !HAVE_SIGWAIT */
+    (void)mask; /* suppress unused var warning */
     Scm_Error("sigwait not supported on this platform");
     return 0;
 #endif

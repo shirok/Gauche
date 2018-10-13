@@ -513,6 +513,7 @@
 ;; sys/loadavg.h
 
 (define-cproc sys-getloadavg (:optional (nsamples::<int> 3))
+  (cast void nsamples) ; suppress unused var warning
   (.if "defined HAVE_GETLOADAVG"
        (let* ([samples::(.array double [3])])
          (when (or (<= nsamples 0) (> nsamples 3))
@@ -525,7 +526,9 @@
                  (let* ([n (Scm_MakeFlonum (aref samples i))])
                    (SCM_APPEND1 h t n)))
                (return h)))))
-       (Scm_Error "sys-getloadavg isn't supported on this platform")))
+       (begin
+         (set! SCM_RESULT 0)
+         (Scm_Error "sys-getloadavg isn't supported on this platform"))))
 
 (inline-stub
  (initcode (.if "defined HAVE_GETLOADAVG"
@@ -757,7 +760,9 @@
 (define-cproc sys-wait-exit-status (status::<int>) ::<int> WEXITSTATUS)
 (define-cproc sys-wait-signaled? (status::<int>) ::<boolean> WIFSIGNALED)
 (define-cproc sys-wait-termsig (status::<int>) ::<int> WTERMSIG)
-(define-cproc sys-wait-stopped? (status::<int>) ::<boolean> WIFSTOPPED)
+(define-cproc sys-wait-stopped? (status::<int>) ::<boolean>
+  (cast void status) ; suppress unused var warning
+  (return (WIFSTOPPED status)))
 (define-cproc sys-wait-stopsig (status::<int>) ::<int> WSTOPSIG)
 
 ;;---------------------------------------------------------------------
@@ -874,6 +879,8 @@
 ;; chown
 (define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
   ::<int>
+  (cast void owner) ; suppress unused var warning
+  (cast void group) ; suppress unused var warning
   (.if "!defined(GAUCHE_WINDOWS)"
        (SCM_SYSCALL SCM_RESULT (chown path owner group))
        (set! SCM_RESULT 0))
@@ -1068,6 +1075,7 @@
 
 (define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>) ::<void>
   (let* ([r::int])
+    (cast void mode) ; suppress unused var warning
     (.if "!defined(GAUCHE_WINDOWS)"
          (SCM_SYSCALL r (mkdir pathname mode))
          (SCM_SYSCALL r (mkdir pathname)))
@@ -1089,6 +1097,7 @@
 (define-cproc sys-sleep (seconds::<fixnum>
                          :optional (no-retry::<boolean> #f))
   ::<int>
+  (cast void no-retry) ; suppress unused var warning
   (.if "defined(GAUCHE_WINDOWS)"
        (begin (Sleep (* seconds 1000)) (return 0))
        (let* ([k::u_int (cast (u_int) seconds)]
@@ -1323,6 +1332,7 @@
    (define-cfn handle-print (h p::ScmPort* c::ScmWriteContext*) ::void :static
      (let* ([type (Scm_ForeignPointerAttrGet (SCM_FOREIGN_POINTER h)
                                              'handle-type '#f)])
+       (cast void c) ; suppress unused var warning
        (cond
         [(SCM_EQ type 'process)
          (Scm_Printf p "#<win:handle process %d @%p>" (Scm_WinProcessPID h) h)]
@@ -1361,7 +1371,7 @@
      (return (Scm_WinHandleP obj 'process)))
 
    (define-cfn Scm_WinProcess (obj) ::HANDLE
-     (Scm_WinHandle obj 'process))
+     (return (Scm_WinHandle obj 'process)))
 
    (define-cproc sys-win-process? (obj) ::<boolean> Scm_WinProcessP)
    (define-cproc sys-win-process-pid (obj) ::<int> Scm_WinProcessPID)

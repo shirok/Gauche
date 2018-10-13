@@ -1249,7 +1249,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 
         struct char_name *cntab = char_names;
         while (cntab->name) {
-            if (cntab->size == namesize
+            if (cntab->size == (unsigned)namesize
                 && strncmp(cntab->name, cname, namesize) == 0) {
                 return cntab->ch;
             }
