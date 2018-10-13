@@ -94,7 +94,8 @@
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
           cf-make-gpd
-          cf-define cf-subst cf-arg-var cf-have-subst? cf-ref cf$
+          cf-define cf-subst cf-subst-append cf-subst-prepend
+          cf-arg-var cf-have-subst? cf-ref cf$
           with-cf-subst
           cf-config-headers cf-output cf-output-default cf-show-substs
           cf-check-prog cf-path-prog cf-check-tool
@@ -607,6 +608,20 @@
 (define (cf-subst symbol value)
   (assume-type symbol <symbol>)
   (dict-put! (~ (ensure-package)'substs) symbol value))
+
+;; API
+(define (cf-subst-prepend symbol value :optional (delim " ") (default ""))
+  (let1 v (cf-ref symbol default)
+    (if (equal? v "")
+      (cf-subst symbol value)
+      (cf-subst symbol #"~|value|~|delim|~|v|"))))
+
+;; API
+(define (cf-subst-append symbol value :optional (delim " ") (default ""))
+  (let1 v (cf-ref symbol default)
+    (if (equal? v "")
+      (cf-subst symbol value)
+      (cf-subst symbol #"~|v|~|delim|~|value|"))))
 
 ;; API
 (define (cf-have-subst? symbol)
@@ -1184,7 +1199,7 @@
 
 (define (default-lib-found libname)
   (when libname
-    (cf-subst 'LIBS #"-l~|libname| ~(cf$'LIBS)")
+    (cf-subst-prepend 'LIBS #"-l~|libname|")
     (cf-define (string->symbol #"HAVE_LIB~(safe-variable-name libname)")))
   #t)
 
@@ -1211,7 +1226,7 @@
 
 (define (default-lib-search-found libname)
   (when libname
-    (cf-subst 'LIBS #"-l~|libname| ~(cf$'LIBS)"))
+    (cf-subst-prepend 'LIBS #"-l~|libname|"))
   #t)
    
 ;; Feature test API

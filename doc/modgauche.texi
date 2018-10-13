@@ -4625,6 +4625,17 @@ This corresponds to autoconf's @code{AC_SUBST}, but we require
 the value (while autoconf can refer to the shell variable value as default).
 @end defun
 
+@defun cf-subst-prepend symbol vaule :optional delim default
+@defunx cf-subst-append symbol vaule :optional delim default
+@c MOD gauche.configure
+Prepend or append @var{value} to the substitution parameter @var{symbol},
+using delimiter @var{delim}.  If the substitution parameter isn't
+defined, @var{value} becomes the sole value of the parameter,
+except when @var{default} is given and not an empty string.
+If @var{delim} is omitted, single whitespace is used.
+@end defun
+
+
 @defun cf-have-subst? symbol
 @c MOD gauche.configure
 Returns true iff @code{symbol} is registered as a substitution parameter by
