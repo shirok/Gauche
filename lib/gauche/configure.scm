@@ -862,11 +862,11 @@
   (cf-make-gpd)
   (cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
   (let* ([pfx (cf$'srcdir)]
-         [outfiles (if (null? output-files)
-                     ($ map (^f (string-drop (string-drop-right f 3)
-                                             (+ (string-length pfx) 1)))
-                        $ glob #"~|pfx|/**/Makefile.in")
-                     output-files)])
+         [outfiles (append
+                    ($ map (^f (string-drop (string-drop-right f 3)
+                                            (+ (string-length pfx) 1)))
+                       $ glob #"~|pfx|/**/Makefile.in")
+                    output-files)])
     (apply cf-output outfiles)))
 
 ;;;
