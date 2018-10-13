@@ -3929,7 +3929,7 @@ as needed.
 @c EN
 The core feature of @code{gauche.configure} is the ability to generate files
 (e.g. @file{Makefile}) from templates (e.g. @file{Makefile.in}) with replacing
-parameters.  We follow autoconf convension, so the replacement parameters
+parameters.  We follow autoconf convension, so the substitution parameters
 in a template is written like @code{@@VAR@@}.  You should be able
 to reuse @file{Makefile.in} used for autoconf without changing them.
 @c JP
@@ -3959,13 +3959,13 @@ autoconfの@code{AC_*}マクロに対応する機能は、プレフィクスを@
 @c EN
 A @file{configure} script tests
 running system's properties to determine values of
-parameters, then read one or more template build files,
+substitution parameters, then read one or more template build files,
 and write out one output build file for each, replacing
-parameters for the assigned values.
+substutition parameters for the assigned values.
 @c JP
 @file{configure}スクリプトは、それを実行しているシステムの特性を調べて
-パラメータの値を決定し、ビルドファイルのテンプレート中のパラメータを
-置換してビルドファイルを生成します。
+置換パラメータの値を決定し、ビルドファイルのテンプレート中の置換パラメータを
+値に書き換えてビルドファイルを生成します。
 @c COMMON
 
 @c EN
@@ -3980,11 +3980,11 @@ For example, @code{Makefile.in} is a template that generates
 @c COMMON
 
 @c EN
-Templates may contain parameters, noted @code{@@PARAMETER_NAME@@}.
+Templates may contain substitution parameters, noted @code{@@PARAMETER_NAME@@}.
 This is a fragment of a typical Makefile template:
 @c JP
 テンプレートファイル中には@code{@@PARAMETER_NAME@@}という形式の
-パラメータを含めることができます。以下は典型的なMakefileのテンプレートです。
+置換パラメータを含めることができます。以下は典型的なMakefileのテンプレートです。
 @c COMMON
 
 @example
@@ -4037,45 +4037,90 @@ The @code{cf-init-gauche-extension} does the following:
 
 @itemize @bullet
 @item
+@c EN
 First, it handles command-line arguments given to @file{configure}.
 In the default settings, it recognizes standard configure
 arguments such as @code{--prefix}, and 
 @code{--with-local=PATH:PATH:...}
 which adds @code{PATH/include}s and @code{PATH/lib}s to
-the header and library search paths.You can handle more arguments by adding
+the header and library search paths.
+You can handle more arguments by adding
 @code{cf-arg-with} and @code{cf-arg-enable} before 
 @code{cf-init-gauche-extension}.
+@c JP
+まず、@file{configure}スクリプトに渡されたコマンドライン引数が処理されます。
+デフォルトの設定では、@code{--prefix}のようなconfigure標準の引数および、
+@code{--with-local=PATH:PATH:...}が認識されます。後者は
+@code{PATH/include}と@code{PATH/lib}をそれぞれヘッダとライブラリサーチパスに
+追加するものです。@code{cf-arg-with}や@code{cf-arg-enable}を
+@code{cf-init-gauche-extension}に使うことで、処理する引数を追加できます。
+@c COMMON
 @item
+@c EN
 Then it reads @code{package.scm}.  Package name and version are taken
 from it.  Dependencies are also checked.
+@c JP
+次に@code{package.scm}が読み込まれます。
+パッケージの名前とバージョンはそこから取られます。
+依存関係のチェックも行われます。
+@c COMMON
 @item
-It sets up global envionment to run other configure tests.
+@c EN
+It sets up global envionment to run other configure checks.
+@c JP
+configureのチェックのためのグローバルな環境が準備されます。
+@c COMMON
 @item
-It sets up default values for standard configure variables such as
+@c EN
+It sets up default values for standard substitution parameters such as
 @code{@@prefix@@}.
-@end itemize
-
-And @code{cf-output-default} does the following:
-
-@itemize
-@item
-Generate gpd (Gauche package description) file.
-@item
-Writes package version to @code{VERSION} file.
-@item
-Scan @code{Makefile.in}'s in the source directory and process them
-to generate @code{Makefile}s.
+@c JP
+@code{@@prefix@@}などの標準の置換パラメータのデフォルト値が設定されます。
+@c COMMON
 @end itemize
 
 @c EN
-Instead of writing the calls to @code{cf-*} APIs in the toplevel
-as shown above, you can organize operations in procedures if you like.
-No matter how you organize them,
-you have to execute the following four steps in the script:
+And @code{cf-output-default} does the following:
 @c JP
-@code{cf-*} APIの呼び出しを、このようにトップレベルに書くかわりに、
-関数としてまとめることもできます。コードのまとめかたは自由ですが、
-実際にスクリプトが実行される際に、以下のステップを踏む必要があります。
+@code{cf-output-default}は次の処理を行います。
+@c COMMON
+
+@itemize
+@item
+@c EN
+Generate gpd (Gauche package description) file.
+@c JP
+gpd (Gauche package description) ファイルを生成します。
+@c COMMON
+@item
+@c EN
+Writes package version to @code{VERSION} file.
+@c JP
+パッケージのバージョンを@code{VERSION}ファイルに書き出します。
+@c COMMON
+@item
+@c EN
+Scan @code{Makefile.in}'s in the source directory and its subdirectories,
+and process them
+to generate @code{Makefile}s.
+@c JP
+ソースディレクトリ以下にある@code{Makefile.in}を処理して@code{Makefile}を書き出します。
+@c COMMON
+@c EN
+If config header files (typically @code{config.h}) are specified by
+@code{cf-config-headers}, process input files
+(e.g. @code{config.h.in}) to generate the header files.
+@c JP
+もしconfigヘッダファイル(通常@code{config.h})が@code{cf-config-headers}により
+指定されていたなら、入力(通常@code{config.h.in})を処理してヘッダファイルを
+生成します。
+@c COMMON
+@end itemize
+
+@c EN
+In general, a @code{configure} script consists of the following parts:
+@c JP
+一般的に、@code{configure}スクリプトは以下のようなパーツから構成されます:
 @c COMMON
 
 @enumerate
@@ -4091,28 +4136,32 @@ and/or @code{--enable-FEATURE} options you want to handle, by
 @c COMMON
 @item
 @c EN
-Initialization.  Call to @code{cf-init} sets up global context and
+Initialization.  Call to @code{cf-init} or @code{cf-init-gauche-extension}
+sets up global context and
 parses command-line arguments passed to @code{configure}.
 It also process package metainformation in @file{package.scm}, if it exists.
 @c JP
-初期化。@code{cf-init}を呼ぶと、グローバルなコンテキストが設定され、
+初期化。@code{cf-init}か@code{cf-init-gauche-extension}を呼ぶと、
+グローバルなコンテキストが設定され、
 @code{configure}に与えられた引数がパーズされます。また、
 @file{package.scm}が存在していれば、そこからパッケージメタ情報が読み込まれます。
 @c COMMON
 @item
 @c EN
-Tests and other parameter settings (optional): Check system
+Tests and other substitution parameter settings (optional): Check system
 characteristics and sets up substitution parameters and/or
 C preprocessor definitions.
 @c JP
-テストとパラメータの設定 (省略可): システムの特性を調べ、
+テストと置換パラメータの設定 (省略可): システムの特性を調べ、
 置換すべきパラメータやCプリプロセッサ定義の値を設定します。
 @c COMMON
 @item
 @c EN
-Output generation.  Call @code{cf-output} to process template files.
+Output generation.  Call @code{cf-output} or @code{cf-output-default}
+to process template files.
 @c JP
-出力の生成。@code{cf-output}を呼び出し、テンプレートファイルを処理します。
+出力の生成。@code{cf-output}か@code{cf-output-default}を呼び出し、
+テンプレートファイルを処理します。
 @c COMMON
 @end enumerate
 
@@ -4139,45 +4188,126 @@ including custom arguments in one pass.
 
 @defun cf-init-gauche-extension
 @c MOD gauche.configure
+@c EN
 This is a convenience API that packages several boilerplate @code{cf-*}
 function calls in one call.  This must be called exactly once in a
 configure script.
+@c JP
+これはいくつかの定形の@code{cf-*}呼び出しをひとつにまとめた便利関数です。
+configureスクリプト中で1回だけ呼び出される必要があります。
+@c COMMON
 
+@c EN
 Specifically, it calls @code{cf-arg-with} to process @code{--with-local},
-then @code{cf-init} to initialize, then sets the following configure
-variables:
+then calls @code{cf-init} with no arguments to initialize,
+then sets the following substitution parameters:
+@c JP
+この関数はまず@code{cf-arg-with}関数で@code{--with-local}コマンドライン引数の
+処理を登録し、次に@code{cf-init}を引数なしで呼んで初期化し、
+さらに以下の置換パラメータをセットします:
+@c COMMON
 @table @code
 @item GOSH
+@c EN
 Path to @code{gosh}.
+@c JP
+@code{gosh}へのパス
+@c COMMON
 @item GAUCHE_CONFIG
+@c EN
 Path to @code{gauche-config}.
+@c JP
+@code{gauche-config}へのパス
+@c COMMON
 @item GAUCHE_PACKAGE
+@c EN
 Path to @code{gauche-package}.
+@c JP
+@code{gauche-package}へのパス
+@c COMMON
 @item GAUCHE_INSTALL
+@c EN
 Path to @code{gauche-install}.
+@c JP
+@code{gauche-install}へのパス
+@c COMMON
 @item GAUCHE_CESCONV
+@c EN
 Path to @code{gauche-cesconv}.
+@c JP
+@code{gauche-cesconv}へのパス
+@c COMMON
 @item GAUCHE_PKGINCDIR
+@c EN
 Result of @code{gauche-config --pkgincdir}
+@c JP
+@code{gauche-config --pkgincdir}の結果
+@c COMMON
 @item GAUCHE_PKGLIBDIR
+@c EN
 Result of @code{gauche-config --pkglibdir}
+@c JP
+@code{gauche-config --pkglibdir}の結果
+@c COMMON
 @item GAUCHE_PKGARCHDIR
+@c EN
 Result of @code{gauche-config --pkgarchdir}
+@c JP
+@code{gauche-config --pkgarchdir}の結果
+@c COMMON
 @end table
 
-If you don't like this default behavior, you can call individual
-@code{cf-*} functions.
+@c EN
+The @code{--with-local} command-line argument should take a parameter, which is
+a colon-separated list of paths.  It becomes a value of substitution parameter
+@code{LOCAL_PATHS}.  The default @code{Makefile.in} template passes
+its value to @code{gauche-package} via the @code{--local} argument.
+When the C extension is compiled and linked, the
+@code{include} and @code{lib} subdirectories of the given paths are
+searched for headers and libraries, respectively.
+For example, if the extension requires a library foo and you install
+it under @code{/opt/foo} (that is, headers in @code{/opt/foo/include}
+and library objects in @code{/opt/foo/lib}), then you can pass
+@code{--with-local=/opt/foo} to configure the extension.
+@c JP
+@code{--with-local}コマンドライン引数はコロン区切りのパス名をパラメータとして
+取ります。その値は置換パラメータ@code{LOCAL_PATHS}にセットされます。
+デフォルトの@code{Makefile.in}テンプレートを使っていれば、その値は
+@code{gauche-package}の@code{--local}引数に渡され、
+C拡張コードがコンパイル・リンクされる際のヘッダファイル、ライブラリオブジェクトが
+それぞれ指定されたパス以下の@code{include}、@code{lib}サブディレクトリから探されます。
+例えば拡張モジュールがfooライブラリに依存していて、あなたがそれを
+@code{/opt/foo}以下にインストールしていたとしましょう(つまり、
+ヘッダファイルが@code{/opt/foo/include}に、ライブラリオブジェクトが
+@code{/opt/foo/lib}にあります)。その場合、
+拡張モジュールをconfigureする際に@code{--with-local=/opt/foo}を渡せばうまくいきます。
+@c COMMON
+
+@c EN
+If you don't like these default behavior, you can call individual
+@code{cf-*} functions instead.  See @code{cf-init} below.
+@c JP
+デフォルトで行われるこれら余分な動作が邪魔な場合は、
+この関数を使わずに個々の@code{cf-*}関数を呼び出すこともできます。
+下の@code{cf-init}も参照してください。
+@c COMMON
 @end defun
 
 
 @defun cf-init :optional package-name package-version maintainer-email homepage-url
 @c MOD gauche.configure
 @c EN
-Initialize the configure system.  This must be called once in the
+Initialize the configure system.  Corresponds to autoconf's @code{AC_INIT}.
+This must be called once in the
 configure script, before any feature-test procedures.
+(If you call @code{cf-init-gauche-extension}, @code{cf-init} is called
+from it.)
 @c JP
-configureシステムを初期化します。これはconfigureスクリプト中で、
+configureシステムを初期化します。autoconfの@code{AC_INIT}に対応します。
+これはconfigureスクリプト中で、
 全ての機能テスト手続きに先立って必ず1回呼ばれなければなりません。
+(@code{cf-init-gauche-extension}を呼んだ場合、その中から@code{cf-init}が
+呼ばれています。)
 @c COMNON
 
 @c EN
@@ -4194,7 +4324,7 @@ contains package name, version, dependencies, etc.
 @c COMMON
 
 @c EN
-It then parse the command-line arguments, sets up the configure
+It then parses the command-line arguments, sets up the configure
 environment, and (if @file{package.scm} defines dependencies) check
 if the system has required packages.
 @c JP
@@ -4205,10 +4335,10 @@ if the system has required packages.
 
 @c EN
 The optional arguments are only supported for the backward compatibility
-if you don't have @file{package.scm}, you need at least 
+if you don't have @file{package.scm}.  You need at least 
 to provide @var{package-name} and @var{package-version} to tell
 what package you're configuring.  They are used as the value
-of configure variable @code{PACKAGE_NAME} and @code{PACKAGE_VERSION}.
+of substitution parameter @code{PACKAGE_NAME} and @code{PACKAGE_VERSION}.
 The other optional arguments, @var{maintainer-email} and 
 @var{homepage-url}, are used to initialize @code{PACKAGE_BUGREPORT} and
 @code{PACKAGE_URL}.  These arguments are compatible to autoconf's
@@ -4216,7 +4346,7 @@ The other optional arguments, @var{maintainer-email} and
 @c JP
 省略可能引数は以前のバージョンとの互換性のためのものです。@file{package.scm}が
 無い場合、少なくとも@var{package-name}と@var{package-version}を与える
-必要があります。これらはconfigure変数の@code{PACKAGE_NAME}と@code{PACKAGE_VERSION}
+必要があります。これらは置換パラメータの@code{PACKAGE_NAME}と@code{PACKAGE_VERSION}
 を置換するのに使われます。他の引数@var{maintainer-email}と
 @var{homepage-url}は@code{PACKAGE_BUGREPORT}と@code{PACKAGE_URL}に
 使われます。これらの引数はautoconfの@code{AC_INIT}マクロと互換です。
@@ -4243,13 +4373,25 @@ description.
 @c EN
 Note that if there's @file{package.scm} @emph{and} you provide
 the optional arguments, they must match, or @code{cf-init} raises an
-error.  It is to catch an error during transition in which you forgot
+error.  It is to catch errors during transition in which you forgot
 to update either one.
 @c JP
 もし@file{package.scm}が存在し、かつ@code{cf-init}に引数が与えられた場合、
 それぞれ対応する情報は一致していなければなりません。一致していなかった場合、
 @code{cf-init}はエラーを投げます。これは、@file{package.scm}への移行の途中で、
 どちらかの情報をアップデートし忘れたケースを捕まえるためです。
+@c COMMON
+
+@c EN
+This procedure sets up a bunch of standard substitution parameters
+such as @code{prefix}, @code{bindir} or @code{srcdir}.   To see what
+substitution parameters are set, you can call @code{cf-show-substs}
+after @code{cf-init}.
+@c JP
+この手続きはまた、@code{prefix}、@code{bindir}あるいは@code{srcdir}といった
+標準の置換パラメータをたくさん設定します。
+どの置換パラメータが設定されるか見たければ、@code{cf-init}の後に
+@code{cf-show-substs}を呼んでみてください。
 @c COMMON
 @end defun
 
@@ -4266,7 +4408,7 @@ Make the configure script accept feature selection argument and
 package selection argument, respectively.  The corresponding
 autoconf macros are @code{AC_ARG_ENABLE} and @code{AC_ARG_WITH}.
 
-Those procedures must be executed before calling @code{cf-init}.
+Those procedures must be called before calling @code{cf-init}.
 
 The @var{feature} and @var{package} arguments must be a symbol.
 
@@ -4331,7 +4473,12 @@ and the user has invoked the @code{configure} script with
 @code{--with-foofeature=full}, then @code{(cf-feature-ref 'foofeature)}
 returns @code{"full"}.   If the user hasn't given the command-line
 argument, @code{#f} is returned.
+
+If you add or change the value of features or packages,
+you can use generatlized @code{set!} as
+@code{(set! (cf-feature-ref 'NAME) VALUE)} etc.
 @end defun
+
 
 @c EN
 @subsubheading Messages
@@ -4351,7 +4498,8 @@ console messages align nicely visually.)
 @defun cf-msg-checking fmt arg @dots{}
 @c MOD gauche.configure
 Writes out ``checking XXX...'' message.  The @var{fmt} and @var{arg} @dots{}
-arguments are passed to @code{format} to produce the ``XXX'' part.
+arguments are passed to @code{format} to produce the ``XXX'' part
+(@pxref{Formatting output}).
 
 For the current output port, this does not emit the trailing newline,
 expecting @code{cf-msg-result} will be called subsequently.
@@ -4384,7 +4532,8 @@ This corresponds to autoconf's @code{AC_MSG_CHECKING}.
 @defun cf-msg-result fmt arg @dots{}
 @c MOD gauche.configure
 The @var{fmt} and @var{arg} @dots{} are passed to @code{format}, and
-the formatted message and newline is written out.
+the formatted message and newline is written out
+(@pxref{Formatting output}).
 For the log file, it records ``result: XXX'' where XXX is the
 formatted message.  Supposed to be used with @code{cf-msg-checking}.
 
@@ -4397,7 +4546,8 @@ This corresponds to autoconf's @code{AC_MSG_RESULT}.
 Produces ``Warning: XXX'' and
 ``Error: XXX'' messages, respectively.
 The @var{fmt} and @var{arg} @dots{} are passed to @code{format} to
-generate XXX part.  These corresponds to
+generate XXX part (@pxref{Formatting output}).
+These corresponds to
 autoconf's @code{AC_MSG_WARN} and @code{AC_MSG_ERROR}.
 @end defun
 
@@ -4424,26 +4574,50 @@ For the log file, the message is prefixed with ``Message:''.
 @subsubheading パラメータと定義
 @c COMMON
 
+@c EN
 The configure script maintains two global tables, definition tables
-and substitution tables.  Definition tables is used for C preprocessor
-definitions, and substitution tables are used for @code{@@PARAMETER@@}
-substitutions.
+and parameter tables.  Definition tables is used for C preprocessor
+definitions, and parameter tables are used for @code{@@PARAMETER@@}
+substitutions.  (Do not confuse substitution parameters with
+Scheme's parameter objects (@pxref{Parameters})).
+@c JP
+configureスクリプトは、定義テーブルと置換パラメータテーブルという
+二つのグローバルなテーブルを持っています。
+定義テーブルはCプリプロセッサの定義に使われ、置換パラメータテーブルは
+@code{@@PARAMETER@@}の置換に使われます。
+(置換パラメータをSchemeのパラメータオブジェクト(@ref{Parameters}参照)と
+混同しないように!)。
+@c COMMON
 
 @defun cf-define symbol :optional value
 @c MOD gauche.configure
+@c EN
 Registers C preprocessor definition of @var{symbol} with @var{value}.
 @var{Value} can be any Scheme objects, but it is emitted to a command
 line (in @code{-DSYMBOL=VALUE} form) or in @file{config.h}
 (in @code{#define SYMBOL VALUE} form) using @code{display}, so
 you want to avoid including funny characters.  If @var{value} is
 omitted, @code{1} is assumed.
+@c JP
+@var{symbol}を@var{value}とするCプリプロセッサ定義を登録します。
+@var{value}には任意のSchemeオブジェクトを渡せますが、
+その@code{display}表記がそのままコンパイラのコマンドライン
+(@code{-DSYMBOL=VALUE}という形式)あるいは@file{config.h}内の定義
+(@code{#define SYMBOL VALUE}という形式)に使われるので、
+妙な文字を入れない方が無難でしょう。@var{value}が省略された場合は
+@code{1}が使われます。
+@c COMMON
 
+@c EN
 This corresponds to autoconf's @code{AC_DEFINE}.
+@c JP
+これはautoconfの@code{AC_DEFINE}に相当します。
+@c COMMON
 @end defun
 
 @defun cf-subst symbol value
 @c MOD gauche.configure
-Registers substitution parameter @var{symbol} with @var{value}.
+Registers a substitution parameter @var{symbol} with @var{value}.
 @var{Value} can be any Scheme objects; it's @code{display} representation
 is used to substitute @var{@@SYMBOL@@} in the template.
 
@@ -4453,7 +4627,7 @@ the value (while autoconf can refer to the shell variable value as default).
 
 @defun cf-have-subst? symbol
 @c MOD gauche.configure
-Returns true iff @code{symbol} has a substitution registered by
+Returns true iff @code{symbol} is registered as a substitution parameter by
 @code{cf-subst}.
 @end defun
 
@@ -4483,7 +4657,7 @@ throws an error.
 @c MOD gauche.configure
 Looks up the value of the substitution parameter @var{cf-ref},
 but it returns empty string if it's unregistered.  Useful
-to use within string interpolation, e.g. @code{#"gosh ~(cf$ GOSHFLAGS)"}.
+to use within string interpolation, e.g. @code{#"gosh ~(cf$'GOSHFLAGS)"}.
 @end defun
 
 @c EN
@@ -4593,7 +4767,7 @@ if the header is usable, @code{#f} if not.
 This corresponds to autoconf's @code{AC_CHECK_HEADER}.
 
 If @var{header} requires other headers being included or
-preprocessor symbosl defined before it,
+preprocessor symbols defined before it,
 you can pass a list of strings to be emitted before the check
 in the @var{includes} keyword arguments.  The given strings 
 are just concatenated and used as a C program fragment.
@@ -4661,6 +4835,79 @@ Usually you don't need to call this explicitly.  Not giving the
 @code{cf-check-headers} will make @code{cf-includes-default}
 called implicitly.
 @end defun
+
+@defun cf-check-lib lib fn :key other-libs if-found if-not-found
+@c MOD gauche.configure
+See if a library @var{lib} can be linked and a function @var{fn} in it
+is callable.  This corresponds to autoconf's @code{AC_CHECK_LIB}.
+Give the name you pass after @code{-l} option to @var{lib};
+for example, if you want to check availability of @code{libm}, you can
+say as follows:
+
+@example
+(cf-check-lib "m" "sin")
+@end example
+
+This generates a C source that calls @var{fn} and try to compile and link
+it to generate executable.  If linking @var{lib} requires additional
+libraries, it should be listed in @var{other-libs}:
+
+@example
+(cf-check-lib "Xt" "XtDisplay" :other-libs '("-lX11" "-lSM" "-lICE"))
+@end example
+
+If compilation and linking succeeds, @var{if-found} is called at the
+tail position with
+the library name (@code{"m"} and @code{"Xt"} in the above examples,
+respectively) as the argument.  The default behavior is to add
+@code{-l@var{lib}} in the left of substitution parameter @code{LIBS},
+and set @code{HAVE_LIB@var{lib}} definition, then
+returns @code{#t}.
+
+If compilation or linking fails, @var{if-not-found} is called at
+the tail position with the library name.  The default behavior is
+to return @code{#f}.
+
+The default behavior of @var{if-found} and @var{if-not-found} allows
+@code{cf-check-lib} to be used as predicate as well.  For example,
+you can write like this:
+
+@example
+(unless (cf-check-lib "foo" "foo_fn)
+  ... do something if libfoo isn't available ...)
+@end example
+@end defun
+
+@defun cf-search-libs fn libs :key other-libs if-found if-not-found
+@c MOD gauche.configure
+Like @code{cf-check-lib}, but can be used if you're not sure which
+library contains desired function.
+This corresponds to autoconf's @code{AC_SEARCH_LIBS}.  Note that
+this takes function name first, while @code{cf-check-lib} takes
+function name second---blame autoconf for this inconsistency.
+
+First it tests if @var{fn} is available without any library in @var{libs}
+(that is, with the ones already in @code{LIBS} and specified in
+@var{other-libs}).  If not, it tests each library in @var{libs}
+in turn.
+
+If @var{fn} is found, @var{if-found} is called at the tail position,
+with the name of
+the library as an argument (if @var{fn} is available without any
+library, the argument is @code{#f}).  If omitted, and a library
+is required, then the library is
+added to the substitution parameter @code{LIBS}, and @code{HAVE_LIB@var{lib}}
+is defined.  The default procedure returns @code{#t}.
+
+If @var{fn} isn't found in any of the libraries, @var{if-not-found}
+is called at the tail position
+with @code{#f} as the argument.  The default procedure
+does nothing and just returns @code{#f}.
+
+The default behavior of @var{if-found} and @var{if-not-found} allows
+@code{cf-search-libs} to be used as predicate as well.
+@end defun
+
 
 @c EN
 @subsubheading Running compiler
@@ -4731,16 +4978,132 @@ success, or nonzero status on failure.
 @subsubheading 出力
 @c COMMON
 
-@defun cf-output file @dots{}
+@defun cf-output-default file @dots{}
 @c MOD gauche.configure
+A convenience routine to produce typical output.
+It does the following:
+
+@itemize @bullet
+@item
+Generate gpd (Gauche package description) file using
+@code{cf-make-gpd}.
+@item
+Generate @code{VERSION} file that contains the value of
+@code{PACKAGE_VERSION} substitution parameter.
+@item
+Search @code{Makefile.in}'s under the source directory
+(the value of substitution parameter @code{srcdir}),
+and process them to produce @code{Makefile}'s.
+If @var{file} @dots{} are given, @code{@var{file}.in} are also
+processed as well to produce @var{file}.
+
+See @code{cf-output} below for the details.
+@item
+If config header is registered by @code{cf-config-headers},
+process them as well.
+@end itemize
 @end defun
 
-@defun cf-show-variables :key formatter
+@defun cf-output file @dots{}
 @c MOD gauche.configure
+Generates @var{file}'s from the input templates.
+This corresponds to autoconf's @code{AC_OUTPUT}.
+
+For each @var{file}, a file named @file{@var{file}.in} is read
+as a template.  Within the file, @code{@@PARAMETER@@} is substituted
+with the value of @code{(cf$ 'PARAMETER)}.  If the named parameter
+isn't registetered, a warning is issued and the parameter is left
+unsubstited.
+
+If config headers are not registered via @code{cf-config-headers},
+a substitution parameter @code{DEFS} is replaced with
+all the definitions in the form of @code{-D...}.  For example,
+if you have checked header files @file{foo/bar.h} and
+@file{foo/baz.h}, @code{DEFS} gets the value
+@code{-DHAVE_FOO_BAR_H -DHAVE_FOO_BAZ_H}.
+
+If config header is registered by @code{cf-config-headers},
+they are processed as well.  In such case, the substitution
+parameter @code{DEFS} gets the value @code{-DHAVE_CONFIG_H}.
+@end defun
+
+@defun cf-config-headers header-or-headers
+@c MOD gauche.configure
+Sets up config header files to be processed.  Usually a config header
+file is named @file{config.h}, and contains definitions determined
+by feature tests.
+
+The @var{header-or-headers} argument may be a string header-spec
+or a list of string header-specs, where each header spec is
+a header file name (e.g. @code{"config.h"}) or a header name
+and a input file name concatenated with a colon
+(e.g. @code{"config.h:config.h.templ"}).  If it's just a header name,
+input file name is assumed to be the header file name with @code{".in"}
+appended.
+
+The input template of config header file contains a bunch of
+@code{#undef} directives, such as the following:
+
+@example
+/* Gauche ABI version string */
+#undef GAUCHE_ABI_VERSION
+
+/* Define if Gauche handles multi-byte character as EUC-JP */
+#undef GAUCHE_CHAR_ENCODING_EUC_JP
+
+/* Define if Gauche handles multi-byte character as Shift JIS */
+#undef GAUCHE_CHAR_ENCODING_SJIS
+
+/* Define if Gauche handles multi-byte character as UTF-8 */
+#undef GAUCHE_CHAR_ENCODING_UTF_8
+@end example
+
+Once processed, the generated header file has either
+@code{#undef} line is replaced with @code{#define}, or
+commented out, depending on the definitions determined by feature
+tests.
+
+@example
+/* Gauche ABI version string */
+#define GAUCHE_ABI_VERSION "0.97"
+
+/* Define if Gauche handles multi-byte character as EUC-JP */
+/* #undef GAUCHE_CHAR_ENCODING_EUC_JP */
+
+/* Define if Gauche handles multi-byte character as Shift JIS */
+/* #undef GAUCHE_CHAR_ENCODING_SJIS */
+
+/* Define if Gauche handles multi-byte character as UTF-8 */
+#define GAUCHE_CHAR_ENCODING_UTF_8 /**/
+@end example
+
+Note that the lines other than @code{#undef} are copied as they are.
+
+The substitution parameter @code{DEFS} behaves differently whether
+config header is specified or not.  If no config header is registered,
+The value of @code{DEFS} is a C command-line arguments for definitions,
+e.g. @code{-DGAUCHE_ABI_VERSION=0.97 -DGAUCHE_CHAR_ENCODING_UTF8}.
+If config header files are registered, the value of @code{DEFS} becomes
+simply @code{-DHAVE_CONFIG_H}.
+@end defun
+
+
+@defun cf-show-substs :key formatter
+@c MOD gauche.configure
+Print all substitution parameters; this is for debugging.
+
+For each substitution parameter name and value, 
+@var{formatter} is called with them; the default is
+@code{(^[k v] (format #t "~16s ~s" k v))}.
 @end defun
 
 @defun cf-make-gpd
 @c MOD gauche.configure
+Generate gpd (Gauche package description) file,
+@file{PACKAGE_NAME.gpd}, where @code{PACKAGE_NAME} is the
+package's name either taken form @file{package.scm} or
+the argument to @code{cf-init}.
+@xref{Package metainformation}, for the package description file format.
 @end defun
 
 
