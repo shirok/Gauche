@@ -122,11 +122,11 @@ Options:
                   : uses the same configure options as before
       --clean     : clean up the build directory after installation
   -S, --install-as=<user> : sudo to <user> when installing")
-  (let-args args ((dry-run "n|dry-run")
-                  (copts   "C|configure-options=s" #f)
-                  (reconf  "r|reconfigure")
-                  (clean   "clean")
-                  (sudo    "S|install-as=s" #f)
+  (let-args args ([dry-run "n|dry-run"]
+                  [copts   "C|configure-options=s" #f]
+                  [reconf  "r|reconfigure"]
+                  [clean   "clean"]
+                  [sudo    "S|install-as=s" #f]
                   . args)
     (unless (= (length args) 1) (usage-self))
     (gauche-package-build (car args)
@@ -151,9 +151,9 @@ Options:
                   : pass <options> to ./configure.  overrides -r.
   -r, --reconfigure
                   : uses the same configure options as before")
-  (let-args args ((dry-run "n|dry-run")
-                  (copts   "C|configure-options=s" #f)
-                  (reconf  "r|reconfigure")
+  (let-args args ([dry-run "n|dry-run"]
+                  [copts   "C|configure-options=s" #f]
+                  [reconf  "r|reconfigure"]
                   . args)
     (unless (= (length args) 1) (usage-self))
     (gauche-package-build (car args)
@@ -187,7 +187,7 @@ Options:
 Options:
   -a, --all    : shows all packages, even the ones that are installed for
                  other versions of Gauche.")
-  (let-args args ((all?  "a|all"))
+  (let-args args ([all?  "a|all"])
     (let1 gpds (map path->gauche-package-description
                     (gauche-package-description-paths :all-versions all?))
       (dolist (gpd (sort gpds
@@ -288,31 +288,31 @@ Options:
   --cflags=CFLAGS     : extra cc flags for compile
   --ldflags=LDFLAGS   : extra ld flags
   --libs=LIBS         : extra libraries")
-  (let-args args ((dry-run      "n|dry-run")
-                  (verbose      "v|verbose")
-                  (compile-only "c|compile")
-                  (output       "o|output=s")
-                  (clean        "clean")
-                  (gauche-builddir "gauche-builddir=s")
-                  (local        "l|local=s")
-                  (cc           "cc=s")
-                  (cppflags     "cppflags=s")
-                  (cflags       "cflags=s")
-                  (ldflags      "ldflags=s")
-                  (libs         "libs=s")
+  (let-args args ([dry-run      "n|dry-run"]
+                  [verbose      "v|verbose"]
+                  [compile-only "c|compile"]
+                  [output       "o|output=s"]
+                  [clean        "clean"]
+                  [gauche-builddir "gauche-builddir=s"]
+                  [local        "l|local=s"]
+                  [cc           "cc=s"]
+                  [cppflags     "cppflags=s"]
+                  [cflags       "cflags=s"]
+                  [ldflags      "ldflags=s"]
+                  [libs         "libs=s"]
                   . args)
     ;; process 'local' option
     ;; e.g. "/usr/local:/pkg:/Program Files"
     ;;   => "-I /usr/local/include -I /pkg/include -I '/Program Files/include'"
     ;; etc.
-    (define (local-paths prefix subdir)
+    [define (local-paths prefix subdir)
       (and local
            (not (string-null? local))
            (not (string-null? prefix))
            (string-join (map (lambda (path)
                                (shell-escape-string (build-path path subdir)))
                              (string-split local #\:))
-                        #" ~prefix" 'prefix)))
+                        #" ~prefix" 'prefix))]
     ;; preprocess parameters.
     ;; if parameter is not given, look at the named environment variable.
     (define (param given envname . additionals)
@@ -452,8 +452,8 @@ Options:
   -n, --dry-run       : just display commands to be executed.
   -v, --verbose       : reports package contents
   ")
-  (let-args args ((dry-run "n|dry-run")
-                  (verbose "v|verbose"))
+  (let-args args ([dry-run "n|dry-run"]
+                  [verbose "v|verbose"])
     (unless (or (file-exists? "configure")
                 (file-exists? "configure.ac"))
       (exit 1 "`gauche-package make-tarball' should be run in the top source directory."))
