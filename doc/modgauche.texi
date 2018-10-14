@@ -4598,6 +4598,9 @@ line (in @code{-DSYMBOL=VALUE} form) or in @file{config.h}
 (in @code{#define SYMBOL VALUE} form) using @code{display}, so
 you want to avoid including funny characters.  If @var{value} is
 omitted, @code{1} is assumed.
+
+NB: To @code{#define} a string value, e.g. @code{#define FOO "foo"},
+you have to call as @code{(cf-define 'FOO "\"foo\"")}.
 @c JP
 @var{symbol}を@var{value}とするCプリプロセッサ定義を登録します。
 @var{value}には任意のSchemeオブジェクトを渡せますが、
@@ -4606,6 +4609,9 @@ omitted, @code{1} is assumed.
 (@code{#define SYMBOL VALUE}という形式)に使われるので、
 妙な文字を入れない方が無難でしょう。@var{value}が省略された場合は
 @code{1}が使われます。
+
+註: 文字列を値とする定義、例えば @code{#define FOO "foo"} を生成するには、
+@code{(cf-define 'FOO "\"foo\"")} とする必要があります。
 @c COMMON
 
 @c EN

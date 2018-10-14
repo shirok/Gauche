@@ -287,6 +287,7 @@
 
 (define (initialize-default-definitions)
   (define p (current-package))
+  (define (S s) (and s (write-to-string s)))
   (cf-subst 'PACKAGE_NAME    (~ p'name))
   (cf-subst 'PACKAGE_TARNAME (string-tr (string-downcase (~ p'name))
                                         "a-z0-9_-" "_*" :complement #t))
@@ -294,6 +295,13 @@
   (cf-subst 'PACKAGE_STRING (~ p'string))
   (cf-subst 'PACKAGE_BUGREPORT (~ p'bug-report))
   (cf-subst 'PACKAGE_URL (~ p'url))
+  (cf-define 'PACKAGE_NAME    (S (~ p'name)))
+  (cf-define 'PACKAGE_TARNAME (S (string-tr (string-downcase (~ p'name))
+                                            "a-z0-9_-" "_*" :complement #t)))
+  (cf-define 'PACKAGE_VERSION (S (~ p'version)))
+  (cf-define 'PACKAGE_STRING (S (~ p'string)))
+  (cf-define 'PACKAGE_BUGREPORT (S (~ p'bug-report)))
+  (cf-define 'PACKAGE_URL (S (~ p'url)))
 
   (cf-subst 'SHELL (or (sys-getenv "CONFIG_SHELL") "/bin/sh"))
   (cf-subst 'LIBOBJS "")
