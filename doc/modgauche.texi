@@ -4847,6 +4847,78 @@ Usually you don't need to call this explicitly.  Not giving the
 called implicitly.
 @end defun
 
+@defun cf-check-type type :key includes
+@c MOD gauche.configure
+Tests if @var{type} is defined as a type name.  This can be used
+as predicate---it returns @code{#t} if @var{type} is defined,
+@code{#f} otherwise.   This corresponds to @code{AC_CHECK_TYPE}.
+
+A list of strings given to @var{includes} are emitted to the
+C source file before the inclusion of the testing header.  You can
+give necessary headers and/or C preprocessor definitions there;
+if omitted, @code{cf-includes-default} provides
+the default list of such headers.
+
+Other than returning the value, this procedure doesn't have side effects.
+@end defun
+
+@defun cf-check-types types :key includes if-found if-not-found
+@c MOD gauche.configure
+For each type in the list @var{types}, call @code{cf-check-type} to
+see it is defined as a type.  If it is,
+defines @code{HAVE_@var{type}}, and calls @var{if-found} with the
+type as an argument if provide.  If the type is not defined and
+@var{if-not-found} is provided, calls it with the type as an argument.
+This corresponds to autoconf's @code{AC_CHECK_TYPES}.
+
+The argument @var{includes} is passed to @code{cf-check-type}.
+
+@example
+;; May define HAVE_PTRDIFF_T and/or HAVE_UNSIGNED_LONG_LONG_INT
+;; depending on its availability:
+(cf-check-types '("ptrdiff_t" "unsigned long long int"))
+
+;; Example of using @var{includes} to add an extra header.
+(cf-check-types '("float_t") 
+                :includes `(,@@(cf-includes-default)
+                            "#include <math.h>\n"))
+@end example
+@end defun
+
+@defun cf-check-decl symbol :key includes
+@c MOD gauche.configure
+Tests if @var{symbol} is declared as a cpp macro, a variable,
+a constant, or a function.   This can be used
+as predicate---it returns @code{#t} if @var{type} is defined,
+@code{#f} otherwise.   This corresponds to autoconf's @code{AC_CHECK_DECL}.
+
+A list of strings given to @var{includes} are emitted to the
+C source file before the inclusion of the testing header.  You can
+give necessary headers and/or C preprocessor definitions there;
+if omitted, @code{cf-includes-default} provides
+the default list of such headers.
+
+Other than returning the value, this procedure doesn't have side effects.
+@end defun
+
+@defun cf-check-decls symbols :key includes if-found if-not-found
+@c MOD gauche.configure
+For each symbol in @var{symbols}, call @code{cf-check-decl} to see
+if it is declared.  If it is, define @code{HAVE_DECL_@var{symbol}} to
+1, and calls @var{if-found} with the symbol if provided.  
+If it is not declared, define @code{HAVE_DECL_@var{symbol}} to 0, 
+and calls @var{if-not-found} with the symbol if provided.
+This corresponds to autoconf's @code{AC_CHECK_DECLS}.
+
+The argument @var{includes} is passed to @code{cf-check-decl}.
+
+Note that, unlike other @code{cf-check-*} routines which leave
+@code{HAVE_*} macro undefined when the item isn't found, this one
+always defines the macro and differentiate the result with its value.
+This behavior is the same as @code{AC_CHECK_DECLS}.
+@end defun
+
+
 @defun cf-check-lib lib fn :key other-libs if-found if-not-found
 @c MOD gauche.configure
 See if a library @var{lib} can be linked and a function @var{fn} in it
