@@ -37,6 +37,7 @@
   (use gauche.process)
   (use gauche.parameter)
   (use gauche.termios)
+  (use gauche.package)
   (use util.match)
   (use file.util)
   (use srfi-13)
@@ -74,11 +75,17 @@
   (without-echoing #f read-line))
 
 ;; Determine package name and version heuristically
+;; - If we have package.scm, just use it.
 ;; - If we have autoconf configure.ac, look for AC_INIT.
 ;; - If we have Scheme configure script, look for cf-init.
 ;; - Otherwise, look at the current directory name and VERSION file.
 (define (find-package-name-and-version :key (top-srcdir "."))
-  (or (and-let* ([f (build-path top-srcdir "configure.ac")]
+  (or (and-let* ([f (build-path top-srcdir "package.scm")]
+                 [ (file-exists? f) ]
+                 [desc (path->gauche-package-description f)])
+        (list (~ desc 'name)
+              (~ desc 'version)))
+      (and-let* ([f (build-path top-srcdir "configure.ac")]
                  [ (file-exists? f) ]
                  [x (find #/^\s*AC_INIT\(/ (file->string-list f))])
         (rxmatch-case x
