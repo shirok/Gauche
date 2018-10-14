@@ -1,5 +1,13 @@
 2018-10-14  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/package/build.scm (gauche-package-tarball): Modernize
+	  tarball creation:
+	  - Reading package.scm for package name and version
+	  - Add operations what "DIST tgz" has bee doing---creating
+	    exclusion files.
+	  - Used with gauche.configure, this basically eliminates the need
+	    of DIST script.
+
 	* lib/gauche/configure.scm (cf-check-func, cf-check-funcs)
 	  (cf-msg-notice): Added.
 
