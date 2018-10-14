@@ -296,6 +296,7 @@
                                        "struct foo { int i; } e;\n"))
            (cf-check-members '("struct foo.a" "struct foo.b")
                              :includes '("struct foo { int b; };\n"))
+           (cf-check-funcs '("printf" "nonexistent_weird_function"))
            (cf-check-lib "m" "sin")
            (cf-check-lib "no-such-library-should-exist" "sin")
            (cf-config-headers "config.h")
@@ -322,6 +323,8 @@
       (print "#undef HAVE_DECL_F")
       (print "#undef HAVE_STRUCT_FOO_A")
       (print "#undef HAVE_STRUCT_FOO_B")
+      (print "#undef HAVE_PRINTF")
+      (print "#undef HAVE_NONEXISTENT_WEIRD_FUNCTION")
       (print "#undef HAVE_LIBM")
       (print "#undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST")
       ))
@@ -352,6 +355,8 @@
          "#define HAVE_DECL_F 0"
          "/* #undef HAVE_STRUCT_FOO_A */"
          "#define HAVE_STRUCT_FOO_B 1"
+         "#define HAVE_PRINTF 1"
+         "/* #undef HAVE_NONEXISTENT_WEIRD_FUNCTION */"
          "#define HAVE_LIBM 1"
          "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
        ($ filter #/HAVE_/

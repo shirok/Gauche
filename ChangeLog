@@ -1,3 +1,7 @@
+2018-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-check-func, cf-check-funcs): Added.
+
 2018-10-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm (cf-check-type, cf-check-types)

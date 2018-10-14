@@ -4956,6 +4956,28 @@ The @var{include} argument is passed to @code{cf-check-member}.
 @end example
 @end defun
 
+@defun cf-check-func func
+@c MOD gauche.configure
+See if a function @var{func} is available.  This emits C code
+to call @var{func} (with dummy declaration) and tries to compile and link,
+using current value of substitution parameter @code{LIBS}.
+
+This procedure is meant to be used as predicate; it returns @code{#t}
+if @var{func} is available, @code{#f} otherwise.
+
+This corresponds to autoconf's @code{AC_CHECK_FUNC}.
+@end defun
+
+@defun cf-check-funcs funcs :key if-found if-not-found
+@c MOD gauche.configure
+For each function name @var{func} in @var{funcs}, call @code{cf-check-func}
+to determine availabiltiy.  If it is available, define
+@code{HAVE_@var{func}}, and calls @code{if-found} with @var{func}
+if provided.  If it is not available, calls @code{if-not-found}
+with @var{func} if provided.
+This corresponds to autoconf's @code{AC_CHECK_FUNCS}.
+@end defun
+
 
 
 @defun cf-check-lib lib fn :key other-libs if-found if-not-found

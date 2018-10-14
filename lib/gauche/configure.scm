@@ -101,15 +101,16 @@
           cf-check-prog cf-path-prog cf-check-tool
           cf-prog-cxx
 
+          cf-lang <c-language>
+          cf-lang-program cf-lang-io-program cf-lang-call
+          cf-try-compile cf-try-compile-and-link
+
           cf-check-header cf-check-headers cf-includes-default
           cf-check-type cf-check-types
           cf-check-decl cf-check-decls
           cf-check-member cf-check-members
           
-          cf-lang <c-language>
-          cf-lang-program cf-lang-io-program cf-lang-call
-          cf-try-compile cf-try-compile-and-link
-
+          cf-check-func cf-check-funcs
           cf-check-lib cf-search-libs
           ))
 (select-module gauche.configure)
@@ -1275,6 +1276,7 @@
                                 #"if (sizeof ac_aggr.~|memb|) return 0;"))))))
 
 ;; Feature Test API
+;; Like AC_CHECK_MEMBERS
 (define (cf-check-members members :key (includes #f)
                                        (if-found identity)
                                        (if-not-found identity))
@@ -1283,6 +1285,38 @@
       (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name mem)"))
              (if-found mem))
       (if-not-found mem))))
+
+;; Feature Test API
+;; Like AC_CHECK_FUNC
+;; NB: autoconf has language-dependent methods (AC_LANG_FUNC_LINK_TRY)
+;; For now, we hardcode C.
+(define (cf-check-func func)
+  (let1 includes (cf-includes-default)
+    (cf-msg-checking #"for ~func")
+    (rlet1 result ($ cf-try-compile-and-link
+                     `(,#"#define ~func innocuous_~func\n"
+                       "#ifdef __STDC__\n"
+                       "# include <limits.h>\n"
+                       "#else\n"
+                       "# include <assert.h>\n"
+                       "#endif\n"
+                       ,#"#undef ~func\n"
+                       "#ifdef __cplusplus\n"
+                       "extern \"C\"\n"
+                       "#endif\n"
+                       ,#"char ~func ();\n")
+                     `(,#"return ~func ();"))
+      (cf-msg-result (if result "yes" "no")))))
+
+;; Feature Test API
+;; Like AC_CHECK_FUNCS
+(define (cf-check-funcs funcs :key (if-found identity) 
+                                   (if-not-found identity))
+  (dolist [f funcs]
+    (if (cf-check-func f)
+      (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name f)"))
+             (if-found f))
+      (if-not-found f))))
 
 
 (define (default-lib-found libname)
