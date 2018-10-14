@@ -4858,8 +4858,6 @@ C source file before the inclusion of the testing header.  You can
 give necessary headers and/or C preprocessor definitions there;
 if omitted, @code{cf-includes-default} provides
 the default list of such headers.
-
-Other than returning the value, this procedure doesn't have side effects.
 @end defun
 
 @defun cf-check-types types :key includes if-found if-not-found
@@ -4897,8 +4895,6 @@ C source file before the inclusion of the testing header.  You can
 give necessary headers and/or C preprocessor definitions there;
 if omitted, @code{cf-includes-default} provides
 the default list of such headers.
-
-Other than returning the value, this procedure doesn't have side effects.
 @end defun
 
 @defun cf-check-decls symbols :key includes if-found if-not-found
@@ -4917,6 +4913,49 @@ Note that, unlike other @code{cf-check-*} routines which leave
 always defines the macro and differentiate the result with its value.
 This behavior is the same as @code{AC_CHECK_DECLS}.
 @end defun
+
+@defun cf-check-member aggregate.member :key includes
+@c MOD gauche.configure
+The @var{aggregate.member} argument is a string of aggregate type name
+and its member concatenated by a dot, e.g. @code{"struct password.pw_gecos"}.
+It can also be a submember, e.g. @code{"struct foo.bar.baz"}.
+The @var{aggregate} part can be any type name (typedef-ed name is ok).
+
+This corresponds to autoconf's @code{AC_CHECK_MEMBER}.
+
+This test checks if @var{member} is a member of @var{aggrette}, and
+returns @code{#t} if so, or returns @code{#f} if not.
+This procedure is intended to be used as a predicate; it doesn't have
+side effects.
+
+A list of strings given to @var{includes} are emitted to the
+C source file before the inclusion of the testing header.  You can
+give necessary headers and/or C preprocessor definitions there;
+if omitted, @code{cf-includes-default} provides
+the default list of such headers.
+@end defun
+
+@defun cf-check-members members :key includes if-found if-not-found
+@c MOD gauche.configure
+For each @var{aggregate.member}
+in @var{members}, call @code{cf-check-member}.
+If the test passes, defines @code{HAVE_@var{aggregate}_@var{member}},
+and calls @var{if-found} with @var{aggregate.member} if provided.
+If the test fails, calls @var{if-not-found} with @var{aggregate.member}
+if provided.
+
+This corresponds to autoconf's @code{AC_CHECK_MEMBERS}.
+
+The @var{include} argument is passed to @code{cf-check-member}.
+
+@example
+;; Defines HAVE_STRUCT_ST_RDEV and/or HAVE_STRUCT_ST_BLKSIZE
+;; depending on their availability:
+(cf-check-members '("struct stat.st_rdev"
+                    "struct stat.st_blksize"))
+@end example
+@end defun
+
 
 
 @defun cf-check-lib lib fn :key other-libs if-found if-not-found

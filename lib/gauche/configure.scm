@@ -104,6 +104,7 @@
           cf-check-header cf-check-headers cf-includes-default
           cf-check-type cf-check-types
           cf-check-decl cf-check-decls
+          cf-check-member cf-check-members
           
           cf-lang <c-language>
           cf-lang-program cf-lang-io-program cf-lang-call
@@ -1255,6 +1256,33 @@
                (if-found symbol))
         (begin (cf-define nam 0)
                (if-not-found symbol))))))
+
+;; Feature Test API
+;; Like AC_CHECK_MEMBER
+;; Works as a predicate
+(define (cf-check-member aggregate.member :key (includes #f))
+  (receive (aggr memb) (string-scan aggregate.member #\. 'both)
+    (unless (and aggr memb)
+      (error "cf-check-member: argument doesn't contain a dot:"
+             aggregate.member))
+    (cf-msg-checking "`~a' is a mmember of `~a'" memb aggr)
+    (let1 includes (or includes (cf-includes-default))
+      (or (cf-try-compile (list includes)
+                          (list #"static ~aggr ac_aggr;\n"
+                                #"if (ac_aggr.~|memb|) return 0;"))
+          (cf-try-compile (list includes)
+                          (list #"static ~aggr ac_aggr;\n"
+                                #"if (sizeof ac_aggr.~|memb|) return 0;"))))))
+
+;; Feature Test API
+(define (cf-check-members members :key (includes #f)
+                                       (if-found identity)
+                                       (if-not-found identity))
+  (dolist [mem members]
+    (if (cf-check-member mem :includes includes)
+      (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name mem)"))
+             (if-found mem))
+      (if-not-found mem))))
 
 
 (define (default-lib-found libname)
