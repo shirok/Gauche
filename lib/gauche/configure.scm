@@ -102,6 +102,8 @@
           cf-prog-cxx
 
           cf-check-header cf-check-headers cf-includes-default
+          cf-check-type cf-check-types
+          cf-check-decl cf-check-decls
           
           cf-lang <c-language>
           cf-lang-program cf-lang-io-program cf-lang-call
@@ -1196,6 +1198,64 @@
       (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name h)"))
              (when if-found (if-found h)))
       (when if-not-found (if-not-found h)))))
+
+;; Feature Test API
+;; Like AC_CHECK_TYPE.
+;; Returns #t on success, #f on failure.
+;; If TYPE is a valid type, sizeof(TYPE) compiles and sizeof((TYPE)) fails.
+;; The second test is needed in case TYPE happens to be a variable.
+(define (cf-check-type type :key (includes #f))
+  (let1 includes (or includes (cf-includes-default))
+    (cf-msg-checking "for ~a" type)
+    (rlet1 result
+        (and (cf-try-compile (list includes)
+                             #"if (sizeof (~|type|)) return 0;")
+             (not (cf-try-compile (list includes)
+                                  #"if (sizeof ((~|type|))) return 0;")))
+      (cf-msg-result (if result "yes" "no")))))
+
+;; Feature Test API
+;; Like AC_CHECK_TYPES.
+;; For each type in types, run cf-check-type and define HAVE_type if found.
+(define (cf-check-types types :key (includes #f)
+                                   (if-found identity)
+                                   (if-not-found identity))
+  (dolist [type types]
+    (if (cf-check-type type :includes includes)
+      (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name type)"))
+             (if-found type))
+      (if-not-found type))))
+
+;; Feature Test API
+;; Like AC_CHECK_DECL
+;; Returns #t on success, #f on failure.
+;; Check SYMBOL is declared as a macro, a constant, a variable or a function.
+(define (cf-check-decl symbol :key (includes #f))
+  (let1 includes (or includes (cf-includes-default))
+    (cf-msg-checking "whether ~a is declared" symbol)
+    (rlet1 result
+        (cf-try-compile (list includes)
+                        (list #"#ifndef ~|symbol|\n"
+                              #" (void)~|symbol|;\n"
+                              #"#endif\n"
+                              "return 0;"))
+      (cf-msg-result (if result "yes" "no")))))
+
+;; Feature Test API
+;; Like AC_CHECK_DECLS
+;; For each symbol in symbols, run cf-check-decl and define HAVE_DECL_symbol
+;; to 1 (found) or 0 (not found).
+(define (cf-check-decls symbols :key (includes #f)
+                                     (if-found identity)
+                                     (if-not-found identity))
+  (dolist [symbol symbols]
+    (let1 nam (string->symbol #"HAVE_DECL_~(safe-variable-name symbol)")
+      (if (cf-check-decl symbol :includes includes)
+        (begin (cf-define nam 1)
+               (if-found symbol))
+        (begin (cf-define nam 0)
+               (if-not-found symbol))))))
+
 
 (define (default-lib-found libname)
   (when libname

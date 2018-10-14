@@ -270,20 +270,34 @@
   (define (filter-copy infile outfile)
     (file-filter (^[in out]
                    (dolist [line (port->string-list in)]
-                     (display ($ regexp-replace-all* line #/@@/ ""
-                                 #/\(cf-output-default\)/
-                                 "(cf-check-headers '(\"stdio.h\" \"stdlib.h\" \"no-such-header-should-exit.h\"))\n\
-                                  (cf-check-lib \"m\" \"sin\")\n\
-                                  (cf-check-lib \"no-such-library-should-exist\" \"sin\")\n\
-                                  (cf-config-headers \"config.h\")\n\
-                                  (cf-output-default)")
-                              out)
+                     (display ($ regexp-replace-all* line #/@@/ "") out)
                      (newline out)))
                  :input infile
                  :output outfile))
-  (filter-copy (build-path extdir "template.configure") "test.o/configure")
   (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
   (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
+
+  (with-output-to-file "test.o/configure"
+    (^[]
+      ($ for-each write
+         '((use gauche.configure)
+           (cf-init-gauche-extension)
+           (cf-check-headers '("stdio.h" "stdlib.h" 
+                               "no-such-header-should-exist.h"))
+           (cf-check-types '("a_t" "b_t" "struct c_t" "d_t")
+                           :includes '("typedef int a_t;\n"
+                                       "int b_t;\n"
+                                       "struct c_t { int i; };\n"))
+           (cf-check-decls '("a" "b" "c" "d" "e" "f")
+                           :includes '("#define a 1\n"
+                                       "int b;\n"
+                                       "const int c = 1;\n"
+                                       "extern int d();\n"
+                                       "struct foo { int i; } e;\n"))
+           (cf-check-lib "m" "sin")
+           (cf-check-lib "no-such-library-should-exist" "sin")
+           (cf-config-headers "config.h")
+           (cf-output-default)))))
 
   (with-output-to-file "test.o/src/Makefile.in"
     (^[]
@@ -291,19 +305,20 @@
 
   (with-output-to-file "test.o/config.h.in"
     (^[]
-      (print "/* Define to 1 if you have the <foo.h> header file */")
       (print "#undef HAVE_STDIO_H")
-      (print)
-      (print "/* Define to 1 if you have the <foo.h> header file */")
       (print "#undef HAVE_STDLIB_H")
-      (print)
-      (print "/* Define to 1 if you have the <no-such-header-should-exist.h> header file */")
       (print "#undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H")
-      (print)
-      (print "/* Define to 1 if you have the libm */")
+      (print "#undef HAVE_A_T")
+      (print "#undef HAVE_B_T")
+      (print "#undef HAVE_STRUCT_C_T")
+      (print "#undef HAVE_D_T")
+      (print "#undef HAVE_DECL_A")
+      (print "#undef HAVE_DECL_B")
+      (print "#undef HAVE_DECL_C")
+      (print "#undef HAVE_DECL_D")
+      (print "#undef HAVE_DECL_E")
+      (print "#undef HAVE_DECL_F")
       (print "#undef HAVE_LIBM")
-      (print)
-      (print "/* Define to 1 if you have the libno-such-library-should-exist */")
       (print "#undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST")
       ))
   )
@@ -321,6 +336,16 @@
        '("#define HAVE_STDIO_H 1"
          "#define HAVE_STDLIB_H 1"
          "/* #undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H */"
+         "#define HAVE_A_T 1"
+         "/* #undef HAVE_B_T */"
+         "#define HAVE_STRUCT_C_T 1"
+         "/* #undef HAVE_D_T */"
+         "#define HAVE_DECL_A 1"
+         "#define HAVE_DECL_B 1"
+         "#define HAVE_DECL_C 1"
+         "#define HAVE_DECL_D 1"
+         "#define HAVE_DECL_E 1"
+         "#define HAVE_DECL_F 0"
          "#define HAVE_LIBM 1"
          "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
        ($ filter #/HAVE_/

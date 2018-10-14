@@ -1,4 +1,9 @@
-2018-10-11  Shiro Kawai  <shiro@acm.org>
+2018-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-check-type, cf-check-types)
+	  (cf-check-decl, cf-check-decls): Added.
+
+(2018-10-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm (cf-init-gauche-extension),
 	  (cf-output-default): Simplify boilerplate script a lot
