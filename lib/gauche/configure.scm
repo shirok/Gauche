@@ -1266,14 +1266,16 @@
     (unless (and aggr memb)
       (error "cf-check-member: argument doesn't contain a dot:"
              aggregate.member))
-    (cf-msg-checking "`~a' is a mmember of `~a'" memb aggr)
+    (cf-msg-checking "`~a' is a member of `~a'" memb aggr)
     (let1 includes (or includes (cf-includes-default))
-      (or (cf-try-compile (list includes)
-                          (list #"static ~aggr ac_aggr;\n"
-                                #"if (ac_aggr.~|memb|) return 0;"))
-          (cf-try-compile (list includes)
-                          (list #"static ~aggr ac_aggr;\n"
-                                #"if (sizeof ac_aggr.~|memb|) return 0;"))))))
+      (rlet1 result
+          (or (cf-try-compile (list includes)
+                              (list #"static ~aggr ac_aggr;\n"
+                                    #"if (ac_aggr.~|memb|) return 0;"))
+              (cf-try-compile (list includes)
+                              (list #"static ~aggr ac_aggr;\n"
+                                    #"if (sizeof ac_aggr.~|memb|) return 0;")))
+        (cf-msg-result (if result "yes" "no"))))))
 
 ;; Feature Test API
 ;; Like AC_CHECK_MEMBERS
