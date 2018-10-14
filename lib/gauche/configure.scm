@@ -91,7 +91,7 @@
   (export cf-init cf-init-gauche-extension
           cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
           cf-help-string
-          cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
+          cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error cf-msg-notice
           cf-echo
           cf-make-gpd
           cf-define cf-subst cf-subst-append cf-subst-prepend
@@ -178,6 +178,8 @@
 (define (cf-msg-error fmt . args)
   (tee-msg #"Error: ~|fmt|\n" #"Error: ~fmt" args)
   (exit 1))
+(define (cf-msg-notice fmt . args)
+  (tee-msg #"~|fmt|\n" #"~|fmt|\n" args))
 
 ;; API
 ;; Convenience routine for substitute of shell's echo
@@ -850,6 +852,7 @@
         (error "Cannot read input file ~s" inf))
       (unless (file-is-directory? (sys-dirname f))
         (make-directory* (sys-dirname f)))
+      (cf-msg-notice "configure: creating ~a" f)
       (file-filter-for-each (make-replace-1 f) :input inf :output f
                             :temporary-file #t :leave-unchanged #t)))
   (dolist [h (~ pa'config.h)]
@@ -858,6 +861,7 @@
         (error "Cannot read input file ~s" inf))
       (unless (file-is-directory? (sys-dirname (car h)))
         (make-directory* (sys-dirname (car h))))
+      (cf-msg-notice "configure: creating ~a" (car h))
       (file-filter-for-each (make-config.h) :input inf :output (car h)
                             :temporary-file #t :leave-unchanged #t)))
   )

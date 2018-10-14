@@ -4540,6 +4540,12 @@ formatted message.  Supposed to be used with @code{cf-msg-checking}.
 This corresponds to autoconf's @code{AC_MSG_RESULT}.
 @end defun
 
+@defun cf-msg-notice fmt arg @dots{}
+@c MOD gauche.configure
+Produces formatted message to both console and log.  Newline is added.
+This corresponds to autoconf's @code{AC_MSG_NOTICE}.
+@end defun
+
 @defun cf-msg-warn fmt arg @dots{}
 @defunx cf-msg-error fmt arg @dots{}
 @c MOD gauche.configure
