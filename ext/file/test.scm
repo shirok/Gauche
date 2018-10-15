@@ -627,6 +627,40 @@
   )
 
 ;;
+;; temporary file/dir
+;;
+
+(test* "call-with-temporary-file" '(#t #t #f)
+       (unwind-protect
+           (begin
+             (remove-files '("test.o"))
+             (make-directory* "test.o")
+             (receive (exists name)
+                 (call-with-temporary-file 
+                  (^[oport name] (values (file-exists? name) name))
+                  :directory "test.o"
+                  :prefix "ooo")
+               (list exists
+                     (boolean (#/test.o\/ooo\w+$/ name))
+                     (file-exists? name))))
+         (remove-files '("test.o"))))
+
+(test* "call-with-temporary-directory" '(#t #t #f)
+       (unwind-protect
+           (begin
+             (remove-files '("test.o"))
+             (make-directory* "test.o")
+             (receive (exists name)
+                 (call-with-temporary-directory
+                  (^[name] (values (file-is-directory? name) name))
+                  :directory "test.o"
+                  :prefix "ooo")
+               (list exists
+                     (boolean (#/test.o\/ooo\w+$/ name))
+                     (file-exists? name))))
+         (remove-files '("test.o"))))
+
+;;
 ;; file->*
 ;;
 

@@ -1,3 +1,8 @@
+2018-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (call-with-temporary-file),
+	  (call-with-temporary-directory): Added.
+
 2018-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/build.scm (gauche-package-tarball): Modernize

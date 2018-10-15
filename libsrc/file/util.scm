@@ -47,6 +47,7 @@
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
           copy-directory*
+          call-with-temporary-file call-with-temporary-directory
           create-directory-tree check-directory-tree
           build-path resolve-path expand-path simplify-path decompose-path
           absolute-path? relative-path? find-file-in-paths
@@ -111,6 +112,21 @@
 
 (define temporary-directory
   (make-parameter (sys-tmpdir)))
+
+(define (call-with-temporary-file proc
+                                  :key (directory (temporary-directory))
+                                       (prefix "gtemp"))
+  (receive (oport name) (sys-mkstemp (build-path directory prefix))  
+    (unwind-protect (proc oport name)
+      (close-output-port oport)
+      (sys-unlink name))))
+
+(define (call-with-temporary-directory proc 
+                                       :key (directory (temporary-directory))
+                                            (prefix "gtemp"))
+  (let1 dir (sys-mkdtemp (build-path directory prefix))
+    (unwind-protect (proc dir)
+      (remove-directory* dir))))
 
 (define (null-device)
   (cond-expand

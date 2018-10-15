@@ -7,7 +7,7 @@
 @menu
 * Binary I/O::                  binary.io
 * Packing Binary Data::         binary.pack
-* Running Chibi-scheme test suite:: compat.chibi-test
+* Running Chibi-scheme test suite::  compat.chibi-test
 * Rational-less arithmetic::    compat.norational
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
@@ -8241,6 +8241,7 @@ Gaucheでは@emph{両方の}名前を提供することにしました。
 * Pathname utilities::
 * File attribute utilities::
 * File operations::
+* Temporary files and directories::
 * Lock files::
 @end menu
 
@@ -8290,26 +8291,6 @@ to query the current user's directory.
 Windowsネイティブ環境では、この関数はカレントユーザに対してのみ動作します。
 @c COMMON
 @end defun
-
-@deffn {Parameter} temporary-directory
-@c MOD file.util
-@c EN
-A parameter that keeps the name of the directory that can be used
-to create a temporary files.   The default value is
-the one returned from @code{sys-tmpdir} (@pxref{Pathnames}).
-The difference of @code{sys-tmpdir} is that, since this is a parameter,
-it can be overridden by application during execution.
-Libraries are recommended to use this instead of @code{sys-tmpdir}
-for greater flexibility.
-@c JP
-一時ファイルを作るのに適したディレクトリ名を保持しているパラメータです。
-デフォルトの値は@code{sys-tmpdir}の戻り値です (@ref{Pathnames}参照)。
-@code{sys-tmpdir}との違いは、これはパラメータなので
-アプリケーションが実行時に変更できることです。
-ライブラリは柔軟性を高めるためにできるだけ@code{sys-tmpdir}よりは
-こちらを利用するのが良いでしょう。
-@c COMMON
-@end deffn
 
 @defun directory-list path :key children? add-path? filter filter-add-path?
 @c MOD file.util
@@ -9172,7 +9153,7 @@ defined.
 @c COMMON
 @end deffn
 
-@node File operations, Lock files, File attribute utilities, Filesystem utilities
+@node File operations, Temporary files and directories, File attribute utilities, Filesystem utilities
 @subsection File operations
 @c NODE ファイル操作
 
@@ -9563,7 +9544,133 @@ and @code{sexp-list->file} uses
 @c COMMON
 @end defun
 
-@node Lock files,  , File operations, Filesystem utilities
+
+@node Temporary files and directories, Lock files, File operations, Filesystem utilities
+@subsection Temporary files and directories
+@c NODE 一時ファイルとディレクトリ
+
+@deffn {Parameter} temporary-directory
+@c MOD file.util
+@c EN
+A parameter that keeps the name of the directory that can be used
+to create a temporary files.   The default value is
+the one returned from @code{sys-tmpdir} (@pxref{Pathnames}).
+The difference of @code{sys-tmpdir} is that, since this is a parameter,
+it can be overridden by application during execution.
+Libraries are recommended to use this instead of @code{sys-tmpdir}
+for greater flexibility.
+@c JP
+一時ファイルを作るのに適したディレクトリ名を保持しているパラメータです。
+デフォルトの値は@code{sys-tmpdir}の戻り値です (@ref{Pathnames}参照)。
+@code{sys-tmpdir}との違いは、これはパラメータなので
+アプリケーションが実行時に変更できることです。
+ライブラリは柔軟性を高めるためにできるだけ@code{sys-tmpdir}よりは
+こちらを利用するのが良いでしょう。
+@c COMMON
+@end deffn
+
+@defun call-with-temporary-file proc :key directory prefix
+@c MOD file.util
+@c EN
+Creates a temporary file with unique name and opens it for output,
+then calls @var{proc} with the output port and the temporary file's name.
+The temporary file is removed after either @var{proc} returns
+or raises an uncaught error.
+Returns the value(s) @var{proc} returns.
+
+The temporary file is created in the directory @var{directory},
+with the name @var{prefix} follwed by several random alphanumeric characters.
+When omitted, the value of @code{(temporary-directory)} is used
+for @var{directory}, and @code{"gtemp"} for @var{prefix}.
+
+The name passed to @var{proc} consists of @var{directory} and
+the file's name.  So whether the name is absolute or relative pathname
+depends on the value of @var{directory}.
+
+@example
+(call-with-temporary-file (^[_ name] name)
+ @result{} @r{Something like "/tmp/gtemp4dSpMh"}
+@end example
+
+You can keep the output file by renaming it in @var{proc}.  But if doing so,
+make sure to specify @var{directory} so that the temporary file
+is created in the same directory as the final output; rename
+may not work across filesystems.
+
+Internally, it calls @code{sys-mkstemp} to create a unique file.
+@xref{Directory manipulation}, for the details.
+@c JP
+一意な名前を持つ一時ファイルを作成し、出力用にオープンして、
+その出力ポートと名前を引数として@var{proc}を呼びます。
+一時ファイルは、@var{proc}から戻った場合でも、@var{proc}がエラーを投げた場合でも、
+消去されます。
+@var{proc}の返す値(複数可)が@code{call-with-temporary-file}の戻り値となります。
+
+一時ファイルはディレクトリ@var{directory}以下に作られ、
+その名前は@var{prefix}の後にいくつかの英数字を付け加えたものになります。
+省略された場合、@code{(temporary-directory)}の値が@var{directory}に、
+@code{"gtemp"}が@var{prefix}に使われます。
+
+@var{proc}に渡される名前は@var{directory}とファイル名をつなげたパス名です。
+絶対パスになるか相対パスになるかは@var{directory}の値によります。
+
+@example
+(call-with-temporary-file (^[_ name] name)
+ @result{} @r{例えば "/tmp/gtemp4dSpMh"}
+@end example
+
+出力したファイルを取っておきたい場合は、@var{proc}の中でリネームしてください。
+その場合、最終的なファイルと同じディレクトリに一時ファイルを作るように、
+@var{directory}引数を指定するのを忘れないように。
+ファイルシステムをまたぐリネームはうまくいかない場合があります。
+
+内部的に、この手続きは@code{sys-mkstemp}を呼んで一意なファイルを作っています。
+@code{sys-mkstemp}については@ref{Directory manipulation}参照。
+@c COMMON
+@end defun
+
+@defun call-with-temporary-directory proc :key directory prefix
+@c MOD file.util
+@c EN
+Creates a temporary directory with unique name,
+then calls @var{proc} with the name.
+The temporary directory and its contents are removed
+after either @var{proc} returns
+or raises an uncaught error.
+Returns the value(s) @var{proc} returns.
+
+The temporary directory is created in the directory @var{directory},
+with the name @var{prefix} follwed by several random alphanumeric characters.
+When omitted, the value of @code{(temporary-directory)} is used
+for @var{directory}, and @code{"gtemp"} for @var{prefix}.
+
+The name passed to @var{proc} consists of @var{directory} and
+the directory name.  So whether the name is absolute or relative pathname
+depends on the value of @var{directory}.
+
+Internally, it calls @code{sys-mkdtemp} to create a unique file.
+@xref{Directory manipulation}, for the details.
+@c JP
+一意な名前を持つ一時ディレクトリを作成し、
+その名前を引数として@var{proc}を呼びます。
+一時ディレクトリは、@var{proc}から戻った場合でも、@var{proc}がエラーを投げた場合でも、
+消去されます。
+@var{proc}の返す値(複数可)が@code{call-with-temporary-directory}の戻り値となります。
+
+一時ディレクトリはディレクトリ@var{directory}以下に作られ、
+その名前は@var{prefix}の後にいくつかの英数字を付け加えたものになります。
+省略された場合、@code{(temporary-directory)}の値が@var{directory}に、
+@code{"gtemp"}が@var{prefix}に使われます。
+
+@var{proc}に渡される名前は@var{directory}とファイル名をつなげたパス名です。
+絶対パスになるか相対パスになるかは@var{directory}の値によります。
+
+内部的に、この手続きは@code{sys-mkdtemp}を呼んで一意なディレクトリを作っています。
+@code{sys-mkstemp}については@ref{Directory manipulation}参照。
+@c COMMON
+@end defun
+
+@node Lock files,  , Temporary files and directories, Filesystem utilities
 @subsection Lock files
 @c NODE ロックファイル
 
