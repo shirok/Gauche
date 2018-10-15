@@ -1,5 +1,14 @@
---- a/axTLS/ssl/x509.c	2017-08-30 16:02:31.000000000 -1000
-+++ b/axTLS/ssl/x509.c	2018-07-19 04:05:23.000000000 -1000
+--- a/axTLS/ssl/x509.c	2017-08-31 11:02:31 +0900
++++ b/axTLS/ssl/x509.c	2018-10-15 14:07:36 +0900
+@@ -274,7 +274,7 @@
+         X509_CTX *x509_ctx)
+ {
+     int ret = X509_OK;
+-    int lenSeq, l= 0;
++    int lenSeq = 0;
+ 
+     if ((offset = asn1_is_basic_constraints(cert, offset)) == 0)
+         goto end_contraints;
 @@ -521,8 +521,10 @@
                     asserted, then the certified public key MUST NOT be used 
                     to verify certificate signatures. */
@@ -12,8 +21,8 @@
                          
                  if (asn1_compare_dn(cert->ca_cert_dn,
                                              ca_cert_ctx->cert[i]->cert_dn) == 0)
---- a/axTLS/ssl/tls1.h	2017-06-27 10:28:19.000000000 -1000
-+++ b/axTLS/ssl/tls1.h	2017-11-30 12:11:48.000000000 -1000
+--- a/axTLS/ssl/tls1.h	2017-06-28 05:28:19 +0900
++++ b/axTLS/ssl/tls1.h	2018-10-13 13:01:54 +0900
 @@ -41,7 +41,7 @@
  #endif
  
@@ -23,8 +32,8 @@
  #include "os_int.h"
  #include "os_port.h"
  #include "crypto.h"
---- a/axTLS/ssl/test/ssltest.c	2016-12-30 10:01:13.000000000 -1000
-+++ b/axTLS/ssl/test/ssltest.c	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/ssl/test/ssltest.c	2016-12-31 05:01:13 +0900
++++ b/axTLS/ssl/test/ssltest.c	2018-10-13 13:01:54 +0900
 @@ -922,19 +922,23 @@
  static int client_socket_init(uint16_t port)
  {
@@ -147,21 +156,21 @@
  //    if (header_issue())
  //    {
  //        printf("Header tests failed\n"); TTY_FLUSH();
---- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 00:39:35.000000000 -1000
-+++ b/axTLS/ssl/test/killopenssl.sh	2016-08-19 17:26:48.000000000 -1000
+--- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 19:39:35 +0900
++++ b/axTLS/ssl/test/killopenssl.sh	2018-10-13 13:01:54 +0900
 @@ -1,2 +1,3 @@
  #!/bin/sh
 -ps -ef|grep openssl | /usr/bin/awk '{print $2}' |xargs kill -9
 +awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 +rm -f ../ssl/openssl.pid
---- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 00:39:35.000000000 -1000
-+++ b/axTLS/ssl/test/killgnutls.sh	2016-08-19 17:26:48.000000000 -1000
+--- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 19:39:35 +0900
++++ b/axTLS/ssl/test/killgnutls.sh	2018-10-13 13:01:54 +0900
 @@ -1,2 +1,2 @@
  #!/bin/sh
 -ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 +#ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
---- a/axTLS/ssl/os_port.h	2016-07-04 21:33:37.000000000 -1000
-+++ b/axTLS/ssl/os_port.h	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/ssl/os_port.h	2016-07-05 16:33:37 +0900
++++ b/axTLS/ssl/os_port.h	2018-10-15 16:33:30 +0900
 @@ -42,7 +42,7 @@
  #endif
  
@@ -235,8 +244,8 @@
  #ifndef be64toh
  #define be64toh(x) __be64_to_cpu(x)
  #endif
---- a/axTLS/ssl/os_port.c	2016-07-05 09:31:16.000000000 -1000
-+++ b/axTLS/ssl/os_port.c	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/ssl/os_port.c	2016-07-06 04:31:16 +0900
++++ b/axTLS/ssl/os_port.c	2018-10-13 13:01:54 +0900
 @@ -40,6 +40,7 @@
  #include "os_port.h"
  
@@ -252,8 +261,8 @@
 +#endif /*__MINGW32__*/
  #endif
  
---- a/axTLS/crypto/os_int.h	2017-02-18 11:15:20.000000000 -1000
-+++ b/axTLS/crypto/os_int.h	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/crypto/os_int.h	2017-02-19 06:15:20 +0900
++++ b/axTLS/crypto/os_int.h	2018-10-13 13:01:54 +0900
 @@ -41,7 +41,7 @@
  extern "C" {
  #endif
@@ -263,8 +272,8 @@
  typedef UINT8 uint8_t;
  typedef INT8 int8_t;
  typedef UINT16 uint16_t;
---- a/axTLS/crypto/crypto_misc.c	2016-07-05 09:49:47.000000000 -1000
-+++ b/axTLS/crypto/crypto_misc.c	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/crypto/crypto_misc.c	2016-07-06 04:49:47 +0900
++++ b/axTLS/crypto/crypto_misc.c	2018-10-15 14:19:17 +0900
 @@ -32,6 +32,20 @@
   * Some misc. routines to help things out
   */
@@ -353,7 +362,14 @@
  #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
      rng_fd = open("/dev/urandom", O_RDONLY);
  #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
-@@ -122,10 +181,14 @@
+@@ -116,16 +175,20 @@
+                        PROV_RSA_FULL, 
+                        CRYPT_NEWKEYSET))
+         {
+-            printf("CryptoLib: %x\n", unsupported_str, GetLastError());
++            printf("CryptoLib: %s(%lx)\n", unsupported_str, GetLastError());
+             exit(1);
+         }
      }
  #else
      /* start of with a stack to copy across */
@@ -415,8 +431,8 @@
      return 0;
  }
  
---- a/axTLS/crypto/crypto.h	2016-07-23 21:31:34.000000000 -1000
-+++ b/axTLS/crypto/crypto.h	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/crypto/crypto.h	2016-07-24 16:31:34 +0900
++++ b/axTLS/crypto/crypto.h	2018-10-13 13:01:54 +0900
 @@ -39,6 +39,7 @@
  extern "C" {
  #endif
@@ -425,8 +441,8 @@
  #include "bigint_impl.h"
  #include "bigint.h"
  
---- a/axTLS/crypto/bigint_impl.h	2016-06-12 00:39:34.000000000 -1000
-+++ b/axTLS/crypto/bigint_impl.h	2016-08-19 17:26:48.000000000 -1000
+--- a/axTLS/crypto/bigint_impl.h	2016-06-12 19:39:34 +0900
++++ b/axTLS/crypto/bigint_impl.h	2018-10-13 13:01:54 +0900
 @@ -61,7 +61,7 @@
  typedef uint32_t long_comp;     /**< A double precision component. */
  typedef int32_t slong_comp;     /**< A signed double precision component. */
@@ -436,8 +452,8 @@
  #define COMP_RADIX          4294967296i64         
  #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
  #else
---- a/axTLS/config/config.h	1969-12-31 14:00:00.000000000 -1000
-+++ b/axTLS/config/config.h	2018-07-19 03:51:30.000000000 -1000
+--- a/axTLS/config/config.h	1970-01-01 09:00:00 +0900
++++ b/axTLS/config/config.h	2018-10-13 13:01:54 +0900
 @@ -0,0 +1,149 @@
 +/*
 + * In original axTLS, this file is automatically generated.

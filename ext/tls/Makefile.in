@@ -6,6 +6,9 @@ abs_builddir = @abs_builddir@
 
 include ../Makefile.ext
 
+# suppress warning of axTLS
+CFLAGS += -Wno-unknown-pragmas -Wno-sign-compare -Wno-pointer-sign -Wno-unused-parameter
+
 SCM_CATEGORY = rfc
 
 LIBFILES = rfc--tls.$(SOEXT) rfc--tls--mbed.$(SOEXT)
