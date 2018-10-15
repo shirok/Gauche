@@ -228,8 +228,13 @@ typedef struct ScmSocketRec {
 #endif /*GAUCHE_WINDOWS*/
 } ScmSocket;
 
+#if defined(GAUCHE_WINDOWS)
+#define SOCKET_CLOSED(fd)  ((Socket)(fd) == INVALID_SOCKET)
+#define SOCKET_INVALID(fd) ((Socket)(fd) == INVALID_SOCKET)
+#else  /* !GAUCHE_WINDOWS */
 #define SOCKET_CLOSED(fd)  ((fd) == INVALID_SOCKET)
 #define SOCKET_INVALID(fd) ((fd) == INVALID_SOCKET)
+#endif /* !GAUCHE_WINDOWS */
 
 enum {
     SCM_SOCKET_STATUS_NONE,

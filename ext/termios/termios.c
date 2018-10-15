@@ -187,6 +187,7 @@ void Scm_Init_termios(void)
 {
     SCM_INIT_EXTENSION(gauche__termios);
     ScmModule *mod = SCM_FIND_MODULE("gauche.termios", SCM_FIND_MODULE_CREATE);
+    (void)mod; /* suppress unused var warning */
 
 #if !defined(GAUCHE_WINDOWS)
     Scm_InitStaticClass(&Scm_SysTermiosClass, "<sys-termios>", mod,

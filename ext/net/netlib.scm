@@ -65,7 +65,8 @@
 
  (define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
    (return
-    (?: (> (-> (cast ScmSockAddr* addr) addrlen) (sizeof (struct sockaddr)))
+    (?: (> (cast unsigned (-> (cast ScmSockAddr* addr) addrlen))
+           (sizeof (struct sockaddr)))
         (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))
         (SCM_MAKE_STR ""))))
 

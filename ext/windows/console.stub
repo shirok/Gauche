@@ -41,10 +41,10 @@
 (when "defined(GAUCHE_WINDOWS)"
 
 ;; ConsoleBufferHandle
-(define-cfn make_console_buffer (h::HANDLE) :static
-  (return (Scm_MakeWinHandle h 'console-buffer)))
-(define-cfn console_buffer (h) ::HANDLE :static
-  (return (Scm_WinHandle h 'console-buffer)))
+;(define-cfn make_console_buffer (h::HANDLE) :static
+;  (return (Scm_MakeWinHandle h 'console-buffer)))
+;(define-cfn console_buffer (h) ::HANDLE :static
+;  (return (Scm_WinHandle h 'console-buffer)))
 
 (define-cise-stmt handle
   [(_ type expr)
