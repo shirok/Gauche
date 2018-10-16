@@ -54,16 +54,14 @@
              (p "\"" (regexp-replace-all #/[\\\"]/ line "\\\\\\0") "\"")
              (loop (read-line))])))
 
-  (receive (out name)
-      (sys-mkstemp (build-path (temporary-directory) (sys-basename tmpl-file)))
-    (unwind-protect
-     (begin
-       (with-output-to-port out
-         (cut with-input-from-file tmpl-file
-              (cut translate)))
-       (close-output-port out)
-       (call-with-input-file name load-from-port))
-     (sys-unlink name))))
+  (call-with-temporary-file
+   (^[out name]
+     (with-output-to-port out
+       (cut with-input-from-file tmpl-file
+            (cut translate)))
+     (close-output-port out)
+     (call-with-input-file name load-from-port))
+   :prefix (sys-basename tmpl-file)))
 
 (define (getval rules key)
   (cond [(assq key rules) => cadr] [else #f]))

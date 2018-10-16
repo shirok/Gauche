@@ -45,13 +45,14 @@
   (and-let* ((input   (file->string-list+ path))
              (matched (find check-rx input)))
     (print "Rewriting " path "...")
-    (receive (out tmp) (sys-mkstemp path)
-      (for-each (lambda (line)
-                  (display (if (eq? line matched) (rewrite line) line) out)
-                  (newline out))
-                input)
-      (close-output-port out)
-      (replace-file path tmp))))
+    (call-with-temporary-file 
+     (^[out tmp]
+       (for-each (lambda (line)
+                   (display (if (eq? line matched) (rewrite line) line) out)
+                   (newline out))
+                 input)
+       (replace-file path tmp))
+     :directory (sys-dirname path))))
 
 (define (replace-file path tmp)
   (sys-chmod tmp (file-perm path))
