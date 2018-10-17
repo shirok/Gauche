@@ -527,8 +527,8 @@
                    (SCM_APPEND1 h t n)))
                (return h)))))
        (begin
-         (set! SCM_RESULT 0)
-         (Scm_Error "sys-getloadavg isn't supported on this platform"))))
+         (Scm_Error "sys-getloadavg isn't supported on this platform")
+         (return SCM_UNDEFINED))))      ;dummy
 
 (inline-stub
  (initcode (.if "defined HAVE_GETLOADAVG"
