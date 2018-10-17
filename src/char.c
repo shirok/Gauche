@@ -712,9 +712,9 @@ static int cs_contains_range(ScmCharSet *s, ScmChar lo, ScmChar hi)
         ye = Scm_BinarySearchU32(s->large.frozen.vec, s->large.frozen.size,
                                  (uint32_t)lo, 1, &yl, NULL);
         if (ye != (size_t)-1) { /* case 1 */
-            if (s->large.frozen.vec[ye+1] < hi) return FALSE;
+            if (s->large.frozen.vec[ye+1] < (unsigned)hi) return FALSE;
         } else if (yl != (size_t)-1) { /* case 2 */
-            if (s->large.frozen.vec[yl+1] < hi) return FALSE;
+            if (s->large.frozen.vec[yl+1] < (unsigned)hi) return FALSE;
         } else {
             return FALSE;
         }
@@ -891,7 +891,7 @@ int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
                                            (uint32_t)c,
                                            1, &lo, NULL);
             if ((k != (size_t)-1)
-                || (lo != (size_t)-1 && c <= cs->large.frozen.vec[lo+1]))
+                || (lo != (size_t)-1 && (unsigned)c <= cs->large.frozen.vec[lo+1]))
                 return TRUE;
             else
                 return FALSE;

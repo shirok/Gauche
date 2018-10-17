@@ -710,9 +710,9 @@ void Scm_HashCoreInitSimple(ScmHashCore *core,
                             unsigned int initSize,
                             void *data)
 {
-    SearchProc  *accessfn;
-    ScmHashProc *hashfn;
-    ScmHashCompareProc *cmpfn;
+    SearchProc  *accessfn = NULL;
+    ScmHashProc *hashfn = NULL;
+    ScmHashCompareProc *cmpfn = NULL;
 
     if (hash_core_predef_procs(type, &accessfn, &hashfn, &cmpfn) == FALSE) {
         Scm_Error("[internal error]: wrong TYPE argument passed to Scm_HashCoreInitSimple: %d", type);

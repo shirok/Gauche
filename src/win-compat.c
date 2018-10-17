@@ -27,6 +27,7 @@ static WCHAR *mbs2wcs(const char *s, int use_gc,
     if (use_gc) wb = SCM_NEW_ATOMIC_ARRAY(WCHAR, nc);
     else        wb = (WCHAR*)malloc(nc * sizeof(WCHAR));
 #else
+    (void)use_gc; /* suppress unused var warning */
     wb = (WCHAR*)malloc(nc * sizeof(WCHAR));
 #endif
     if (MultiByteToWideChar(CP_UTF8, 0, s, -1, wb, nc) == 0) {
@@ -47,6 +48,7 @@ static const char *wcs2mbs(const WCHAR *s, int use_gc,
     if (use_gc) mb = SCM_NEW_ATOMIC_ARRAY(char, nb);
     else        mb = (char*)malloc(nb);
 #else
+    (void)use_gc; /* suppress unused var warning */
     mb = (char*)malloc(nb);
 #endif
     if (WideCharToMultiByte(CP_UTF8, 0, s, -1, mb, nb, 0, 0) == 0) {

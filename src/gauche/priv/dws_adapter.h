@@ -15,10 +15,10 @@
  *
  *                      32bit platform           64bit platform
  *
- * dws32hash.c       Scm__DwSipDefaultHash          (none)
- *                   Scm__DwSipPortableHash
+ * dws32hash.c       Scm__DwSipDefaultHash
+ *                   Scm__DwSipPortableHash    Scm__DwSipPortableHash
  *
- * dwsiphash.c       Scm__DwSipPortableHash    Scm__DwSipDefaultHash
+ * dwsiphash.c            (none)               Scm__DwSipDefaultHash
  */
 
 #include <gauche/config.h>
@@ -55,6 +55,7 @@ uint32_t Scm__DwSipPortableHash(uint8_t *str, uint32_t len,
 #endif /* DwSH_BWIDTH == 64 */
 
 /* forward declaration to make these file-scope */
+#if (DwSH_BWIDTH == 32 || SIZEOF_LONG > 4)
 static void DwSip_round(DwSH_WORD *v0, DwSH_WORD *v1,
                         DwSH_WORD *v2, DwSH_WORD *v3);
 static void DwSip_ksetup(DwSH_WORD *k0, DwSH_WORD *k1,
@@ -63,6 +64,7 @@ static void DwSip_ksetup(DwSH_WORD *k0, DwSH_WORD *k1,
 static DwSH_WORD DwSip_getword(uint32_t *offset, uint8_t *str, uint32_t len);
 static DwSH_WORD DwSip_hash(uint8_t *str, uint32_t len,
                             DwSH_WORD k1, DwSH_WORD k2);
+#endif /* (DwSH_BWIDTH == 32 || SIZEOF_LONG > 4) */
 
 #if SIZEOF_LONG == 4
 

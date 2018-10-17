@@ -371,6 +371,7 @@ static const char *truncate_trailing_separators(const char *path,
     }
 }
 
+#if !defined(GAUCHE_WINDOWS)
 /* A utility for tilde expansion.  They are called only on
    Unix variants, so we only need to check '/'. */
 static void put_user_home(ScmDString *dst,
@@ -417,6 +418,7 @@ static const char *expand_tilde(ScmDString *dst,
         return skip_separators(sep, end);
     }
 }
+#endif /* !GAUCHE_WINDOWS */
 
 /* Put current dir to DST */
 static void put_current_dir(ScmDString *dst)
@@ -772,7 +774,7 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
 }
 
 #if !defined(HAVE_MKDTEMP)
-static int create_tmpdir(char *templat, void *arg)
+static int create_tmpdir(char *templat, void *arg SCM_UNUSED)
 {
     int r;
 
@@ -1270,7 +1272,11 @@ static void tm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)
 #define TM_BUFSIZ 50
     char buf[TM_BUFSIZ];
     ScmSysTm *st = SCM_SYS_TM(obj);
+#if !defined(GAUCHE_WINDOWS)
     strftime(buf, TM_BUFSIZ, "%a %b %e %T %Y", &st->tm);
+#else  /* GAUCHE_WINDOWS */
+    strftime(buf, TM_BUFSIZ, "%a %b %d %H:%M:%S %Y", &st->tm);
+#endif /* GAUCHE_WINDOWS */
     Scm_Printf(port, "#<sys-tm \"%s\">", buf);
 #undef TM_BUFSIZ
 }
@@ -1335,7 +1341,7 @@ int Scm_NanoSleep(const ScmTimeSpec *req, ScmTimeSpec *rem)
 
     /* It's very unlikely that we overflow msecs, but just in case... */
     if (req->tv_sec > 0 || (req->tv_sec == 0 && req->tv_nsec > 0)) {
-        if (req->tv_sec >= MSEC_OVERFLOW) {
+        if ((unsigned)req->tv_sec >= MSEC_OVERFLOW) {
             overflow = req->tv_sec / MSEC_OVERFLOW;
             sec = req->tv_sec % MSEC_OVERFLOW;
         } else {
@@ -1620,7 +1626,7 @@ ScmObj *win_process_get_array(int *size /*out*/)
     return r;
 }
 
-void win_process_cleanup(void *data)
+void win_process_cleanup(void *data SCM_UNUSED)
 {
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
     ScmObj cp;
@@ -1751,6 +1757,8 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
      * Windows path
      */
     const char *cdir = NULL;
+    (void)mask; /* suppress unused var warning */
+    (void)pid;  /* suppress unused var warning */
     if (dir != NULL) {
         /* we need full path for CreateProcess. */
         dir = SCM_STRING(Scm_NormalizePathname(dir, SCM_PATH_ABSOLUTE|SCM_PATH_CANONICALIZE));
@@ -2019,7 +2027,7 @@ void Scm_SysKill(ScmObj process, int signal)
     BOOL r;
     DWORD errcode;
     int pid_given = FALSE;
-    pid_t pid;
+    pid_t pid = 0;
 
     if (SCM_INTEGERP(process)) {
         pid_given = TRUE; pid = Scm_GetInteger(process);
@@ -2181,7 +2189,7 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
                                         0);
     if (r == WAIT_FAILED) return -1;
     if (r == WAIT_TIMEOUT) return -2;
-    if (r >= WAIT_OBJECT_0 && r < WAIT_OBJECT_0 + nhandles) {
+    if ((int)r >= (int)WAIT_OBJECT_0 && (int)r < (int)WAIT_OBJECT_0 + nhandles) {
         DWORD exitcode;
         int index = r - WAIT_OBJECT_0;
         r = GetExitCodeProcess(handles[index], &exitcode);
@@ -2518,6 +2526,7 @@ void Scm_UnsetEnv(const char *name)
     if (r < 0) Scm_SysError("unsetenv failed on %s", name);
     if (prev_mem != NULL) free(prev_mem);
 #else  /*!HAVE_UNSETENV*/
+    (void)name; /* suppress unused var warning */
     Scm_Error("sys-unsetenv is not supported on this platform.");
 #endif /*!HAVE_UNSETENV*/
 }
@@ -2619,7 +2628,7 @@ static ScmObj get_relative_processes(int childrenp)
 {
     HANDLE snapshot;
     PROCESSENTRY32 entry;
-    DWORD myid = GetCurrentProcessId(), parentid;
+    DWORD myid = GetCurrentProcessId(), parentid = 0;
     int found = FALSE;
     ScmObj h = SCM_NIL, t = SCM_NIL; /* children pids */
 
@@ -2707,7 +2716,7 @@ static void convert_user(const USER_INFO_2 *wuser, struct passwd *res)
 }
 
 /* Arrgh! thread unsafe!  just for the time being...*/
-static struct passwd pwbuf = { "dummy" };
+static struct passwd pwbuf = { "dummy", "", 0, 0, "", "", "", "" };
 
 struct passwd *getpwnam(const char *name)
 {
@@ -2721,7 +2730,7 @@ struct passwd *getpwnam(const char *name)
     return &pwbuf;
 }
 
-struct passwd *getpwuid(uid_t uid)
+struct passwd *getpwuid(uid_t uid SCM_UNUSED)
 {
     /* for the time being, we just ignore uid and returns the current
        user info. */
@@ -2741,12 +2750,12 @@ static struct group dummy_group = {
     NULL
 };
 
-struct group *getgrgid(gid_t gid)
+struct group *getgrgid(gid_t gid SCM_UNUSED)
 {
     return &dummy_group;
 }
 
-struct group *getgrnam(const char *name)
+struct group *getgrnam(const char *name SCM_UNUSED)
 {
     return &dummy_group;
 }
@@ -2872,10 +2881,12 @@ ScmObj Scm_WinGetPipeName(HANDLE h)
     return SCM_MAKE_STR_COPYING(SCM_WCS2MBS(info->FileName));
 }
 
-char *ttyname(int desc)
+char *ttyname(int desc SCM_UNUSED)
 {
     return NULL;
 }
+
+#ifndef __MINGW64_VERSION_MAJOR /* MinGW64 has truncate and ftruncate */
 
 static int win_truncate(HANDLE file, off_t len)
 {
@@ -2885,7 +2896,8 @@ static int win_truncate(HANDLE file, off_t len)
     static pSetEndOfFile_t pSetEndOfFile = NULL;
     static pSetFilePointer_t pSetFilePointer = NULL;
 
-    BOOL r;
+    DWORD r1;
+    BOOL  r2;
 
     if (pSetEndOfFile == NULL) {
         pSetEndOfFile = (pSetEndOfFile_t)get_api_entry(_T("kernel32.dll"),
@@ -2901,14 +2913,12 @@ static int win_truncate(HANDLE file, off_t len)
     }
 
     /* TODO: 64bit size support! */
-    r = pSetFilePointer(file, (LONG)len, NULL, FILE_BEGIN);
-    if (r == INVALID_SET_FILE_POINTER) return -1;
-    r = pSetEndOfFile(file);
-    if (r == 0) return -1;
+    r1 = pSetFilePointer(file, (LONG)len, NULL, FILE_BEGIN);
+    if (r1 == INVALID_SET_FILE_POINTER) return -1;
+    r2 = pSetEndOfFile(file);
+    if (r2 == 0) return -1;
     return 0;
 }
-
-#ifndef __MINGW64_VERSION_MAJOR /* MinGW64 has these */
 
 int truncate(const char *path, off_t len)
 {
@@ -2942,7 +2952,7 @@ int ftruncate(int fd, off_t len)
 
 #endif /* __MINGW64_VERSION_MAJOR */
 
-unsigned int alarm(unsigned int seconds)
+unsigned int alarm(unsigned int seconds SCM_UNUSED)
 {
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     Scm_SysError("alarm");
@@ -2997,7 +3007,7 @@ static void init_winsock(void)
     }
 }
 
-static void fini_winsock(void *data)
+static void fini_winsock(void *data SCM_UNUSED)
 {
     (void)WSACleanup();
 }

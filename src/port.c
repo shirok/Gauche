@@ -1951,6 +1951,9 @@ void Scm__SetupPortsForWindows(int has_console)
             Scm_VM()->curout = SCM_PORT(scm_stdout);
             Scm_VM()->curerr = SCM_PORT(scm_stderr);
         }
+        (void)orig_stdin;  /* suppress unused var warning */
+        (void)orig_stdout; /* suppress unused var warning */
+        (void)orig_stderr; /* suppress unused var warning */
     }
 }
 #endif /*defined(GAUCHE_WINDOWS)*/

@@ -366,6 +366,10 @@ static int process(const char *arg, int check)
 
 int main(int argc, char **argv)
 {
+#if (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE)
+    (void)&mbs2wcs; /* suppress unused function warning */
+#endif /* (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
+
     if (argc < 2) usage();
     if (strcmp(argv[1], "--fixup-extension") == 0) {
         fixup_extension(argc, argv);
