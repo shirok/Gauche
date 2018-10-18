@@ -591,8 +591,15 @@ case "$host" in
 esac
 
 dnl Checks if dlopen exists, and if it's in libc or libdl.
-AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN,1,[Define if the system has dlopen()]))
-
+dnl On MinGW, we call LoadLibrary so we don't need dlopen (see dl_win.c)
+case "$host" in
+   *mingw*)
+     : ;;
+   *)
+     AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN,1,[Define if the system has dlopen()]))
+     ;;
+esac
+     
 dnl Checks for sched_yield.
 AC_SEARCH_LIBS(sched_yield, rt, AC_DEFINE(HAVE_SCHED_YIELD,1,[Define if uses librt]))
 
