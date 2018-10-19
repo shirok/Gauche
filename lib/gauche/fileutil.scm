@@ -85,27 +85,28 @@
 
 (define sys-glob glob) ;; backward compatibility
 
-(define (glob-fold patterns proc seed . opts)
-  (fold (cut glob-fold-1 <> proc <> opts) seed
-        (fold glob-expand-braces '()
-              (if (list? patterns) patterns (list patterns)))))
+(define (glob-fold patterns proc seed :key (separator #[/])
+                                           (folder glob-fs-folder)
+                                           (sorter sort))
+  (let1 r (fold (cut glob-fold-1 <> proc <> separator folder) seed
+                (fold glob-expand-braces '()
+                      (if (list? patterns) patterns (list patterns))))
+    (if sorter (sorter r) r)))
 
 ;; NB: we avoid util.match due to the hairy dependency problem.
-(define (glob-fold-1 pattern proc seed opts)
-  (let-keywords opts ([separator #[/]]
-                      [folder glob-fs-folder])
-    (define (rec node matcher seed)
-      (cond [(null? matcher) seed]
-            [(eq? (car matcher) '**) (rec* node (cdr matcher) seed)]
-            [(null? (cdr matcher)) (folder proc seed node (car matcher) #f)]
-            [else (folder (^[node seed] (rec node (cdr matcher) seed))
-                          seed node (car matcher) #t)]))
-    (define (rec* node matcher seed)
-      (fold (cut rec* <> matcher <>)
-            (rec node matcher seed)
-            (folder cons '() node #/^[^.].*$/ #t)))
-    (let1 p (glob-prepare-pattern pattern separator)
-      (rec (car p) (cdr p) seed))))
+(define (glob-fold-1 pattern proc seed separator folder)
+  (define (rec node matcher seed)
+    (cond [(null? matcher) seed]
+          [(eq? (car matcher) '**) (rec* node (cdr matcher) seed)]
+          [(null? (cdr matcher)) (folder proc seed node (car matcher) #f)]
+          [else (folder (^[node seed] (rec node (cdr matcher) seed))
+                        seed node (car matcher) #t)]))
+  (define (rec* node matcher seed)
+    (fold (cut rec* <> matcher <>)
+          (rec node matcher seed)
+          (folder cons '() node #/^[^.].*$/ #t)))
+  (let1 p (glob-prepare-pattern pattern separator)
+    (rec (car p) (cdr p) seed)))
 
 (define (glob-prepare-pattern pattern separator)
   (define (f comp)

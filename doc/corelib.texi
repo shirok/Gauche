@@ -22257,8 +22257,8 @@ if @var{path} doesn't exists or is not a directory.
 @c COMMON
 @end defun
 
-@defun glob pattern :key separator folder
-@defunx sys-glob pattern :key separator folder
+@defun glob pattern :key separator folder sorter
+@defunx sys-glob pattern :key separator folder sorter
 @c EN
 Provides a traditional Unix glob(3) functionality;
 returns a list of pathnames that matches the given @var{pattern}.
@@ -22298,17 +22298,31 @@ Unixのユーザならglobの動作は馴染み深いものでしょう。
 
 @example
 gosh> (glob "*.scm")
-("test.scm" "ext.scm")
+("ext.scm" "test.scm")
 gosh> (glob "src/*.[ch]")
 ("src/ext.c" "src/ext.h")
 gosh> (glob '("*.scm" "src/*.c"))
-("src/ext.c" "test.scm" "ext.scm")
+("ext.scm" "src/ext.c" "test.scm")
 @end example
 
 @c EN
 Unlike shell's glob, if there's no matching pathnames, @code{()} is returned.
 @c JP
 シェルのグロブとはちがって、マッチするパス名がないときは、@code{()}が返ります。
+@c COMMON
+
+@c EN
+By default, the result is sorted using built-in @code{sort} procedure
+(@pxref{Sorting and merging}).  You can pass alternative procedure
+to @var{sorter} argument; it should be a procedure that takes single
+list, and returns a sorted list.  It can also be @code{#f}, in which
+case the result isn't sorted at all.
+@c JP
+デフォルトでは、結果は組み込みの@code{sort}手続きによりソートされて返されます
+(@ref{Sorting and merging}参照)。@var{sorter}キーワード引数で
+代わりのソート手続きを指定できます。@var{sorter}手続きはひとつのリストを受け取り、
+それをソートして返します。また、@var{sorter}引数に@code{#f}を渡すと、
+結果はソートされずに返されます。
 @c COMMON
 
 @c EN
@@ -22537,7 +22551,7 @@ the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
 @end table
 @end defun
 
-@defun glob-fold pattern proc seed :key separator folder
+@defun glob-fold pattern proc seed :key separator folder sorter
 @c EN
 This is actually a low-level construct of the glob function.
 Actually, @var{glob} is simply written like this:
@@ -22551,10 +22565,11 @@ Actually, @var{glob} is simply written like this:
 @end example
 
 @c EN
-The meaning of @var{pattern}, @var{separator} and @var{folder}
+The meaning of @var{pattern}, @var{separator}, @var{folder} and
+@var{sorter}
 is the same as explained above.
 @c JP
-@var{pattern}、@var{separator}および@var{folder}の意味を前述のものと同
+@var{pattern}、@var{separator}、@var{folder}および@var{sorter}の意味を前述のものと同
 じです。
 @c COMMON
 
