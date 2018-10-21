@@ -360,9 +360,8 @@
        (with-mtq-light-lock q (set! ok (queue-peek-both-int q (& h) (& t)))))
      (cond [ok (return h t)]
            [(SCM_UNBOUNDP fallback)
-            (set! SCM_RESULT0 0)
-            (set! SCM_RESULT1 0)
-            (Scm_Error "queue is empty: %S" q)]
+            (Scm_Error "queue is empty: %S" q)
+            (return SCM_UNDEFINED SCM_UNDEFINED)] ;dummy
            [else (return fallback fallback)])))
  )
 
