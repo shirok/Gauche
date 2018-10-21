@@ -4034,9 +4034,14 @@ anywhere.
 @c COMMON
 @item
 @c EN
-The file is searched from @code{*load-path*}.
+The file is searched from @code{*load-path*}, except when the
+file begins with @code{./} or @code{../}, in whcih case it is
+first tried relative to the current directory before being searched
+from @code{*load-path*}.
 @c JP
 ファイルは@code{*load-path*}から探されます。
+但しファイルが@code{./}か@code{../}で始まっていた場合は、
+まずカレントディレクトリ相対で探され、それから@code{*load-path*}が探されます。
 @c COMMON
 @item
 @c EN
