@@ -131,11 +131,13 @@ static SCM_INTERNAL_THREAD_PROC_RETTYPE thread_entry(void *data)
     return SCM_INTERNAL_THREAD_PROC_RETVAL;
 }
 
+#if defined(GAUCHE_USE_PTHREADS)
 /* The default signal mask on the thread creation */
 static struct threadRec {
     int dummy;                  /* required to place this in data area */
     sigset_t defaultSigmask;
 } threadrec = { 0 };
+#endif /* GAUCHE_USE_PTHREADS */
 #endif /* defined(GAUCHE_HAS_THREADS) */
 
 /* Start a thread.  If the VM is in "NEW" state, create a new thread and

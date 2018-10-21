@@ -91,6 +91,7 @@ ScmObj Scm_MakeSysFlock(void)
 /*
  * Fcntl bridge
  */
+#if !defined(GAUCHE_WINDOWS)
 static const char *flag_name(int flag)
 {
 #define FLAG_NAME(n) case n: return #n
@@ -128,6 +129,7 @@ static const char *flag_name(int flag)
     return "(unknown flag)";
 #undef FLAG_NAME
 }
+#endif /* !GAUCHE_WINDOWS */
 
 ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 {
@@ -190,6 +192,9 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
         return SCM_UNDEFINED;   /* dummy */
     }
 #else  /*GAUCHE_WINDOWS*/
+    (void)port_or_fd; /* suppress unused var warning */
+    (void)op;         /* suppress unused var warning */
+    (void)arg;        /* suppress unused var warning */
     Scm_Error("fcntl not supported on MinGW port");
     return SCM_UNDEFINED; /*dummy*/
 #endif /*GAUCHE_WINDOWS*/

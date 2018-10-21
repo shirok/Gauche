@@ -189,7 +189,7 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
         }
         infd = sock->cfd;
 #endif /*GAUCHE_WINDOWS*/
-        if (infd == INVALID_SOCKET) sockport_err(sock, "input");
+        if (SOCKET_INVALID(infd)) sockport_err(sock, "input");
 
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
@@ -219,7 +219,7 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
         }
         outfd = sock->cfd;
 #endif /*GAUCHE_WINDOWS*/
-        if (outfd == INVALID_SOCKET) sockport_err(sock, "output");
+        if (SOCKET_INVALID(outfd)) sockport_err(sock, "output");
 
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
@@ -285,7 +285,12 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
     ScmClass *addrClass = Scm_ClassOf(SCM_OBJ(sock->address));
 
     CLOSE_CHECK(sock->fd, "accept from", sock);
+#if defined(GAUCHE_WINDOWS)
+    SCM_SYSCALL3(newfd, accept(sock->fd, (struct sockaddr*)&addrbuf, &addrlen),
+                 SOCKET_INVALID(newfd));
+#else  /* !GAUCHE_WINDOWS */
     SCM_SYSCALL(newfd, accept(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
+#endif /* !GAUCHE_WINDOWS */
     if (SOCKET_INVALID(newfd)) {
         if (errno == EAGAIN) {
             return SCM_FALSE;
@@ -392,6 +397,9 @@ ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
     if (r < 0) Scm_SysError("sendmsg(2) failed");
     return SCM_MAKE_INT(r);
 #else  /*GAUCHE_WINDOWS*/
+    (void)sock;  /* suppress unused var warning */
+    (void)msg;   /* suppress unused var warning */
+    (void)flags; /* suppress unused var warning */
     Scm_Error("sendmsg is not implemented on this platform.");
     return SCM_UNDEFINED;       /* dummy */
 #endif /*GAUCHE_WINDOWS*/
@@ -580,6 +588,11 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
     if (buf != NULL) return SCM_OBJ(buf);
     else return Scm_MakeUVector(SCM_CLASS_U8VECTOR, sizeof(struct msghdr), msg);
 #else  /*GAUCHE_WINDOWS*/
+    (void)name;    /* suppress unused var warning */
+    (void)iov;     /* suppress unused var warning */
+    (void)control; /* suppress unused var warning */
+    (void)flags;   /* suppress unused var warning */
+    (void)buf;     /* suppress unused var warning */
     Scm_Error("buildmsg is not implemented on this platform.");
     return SCM_UNDEFINED;
 #endif /*GAUCHE_WINDOWS*/
@@ -738,6 +751,8 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, u_long request, ScmObj data)
         Scm_Error("unsupported ioctl operation: %d", request);
     }
 #else  /*!HAVE_STRUCT_IFREQ*/
+    (void)s;    /* suppress unused var warning */
+    (void)data; /* suppress unused var warning */
     Scm_Error("unsupported ioctl operation: %d", request);
 #endif /*!HAVE_STRUCT_IFREQ*/
     return SCM_UNDEFINED;       /* dummy */

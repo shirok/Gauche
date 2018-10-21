@@ -98,7 +98,7 @@
                                :optional (caption::<const-cstring>? #f)
                                          (type::<uint> 0))
   ::<int>
-  (let* ([h::HANDLE]
+  (let* ([h::HANDLE NULL]
          [wtext::(const TCHAR*) NULL]
          [wcaption::(const TCHAR*) NULL]
          [r::int 0])

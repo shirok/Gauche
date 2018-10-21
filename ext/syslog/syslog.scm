@@ -51,10 +51,17 @@
 
  (define-cproc sys-openlog
    (ident::<const-cstring> option::<fixnum> facility::<fixnum>) ::<void>
-   (.if "defined(HAVE_SYSLOG)" (openlog ident option facility)))
+   (.if "defined(HAVE_SYSLOG)"
+        (openlog ident option facility)
+        (begin (cast void ident)       ; suppress unused var warning
+               (cast void option)      ; suppress unused var warning
+               (cast void facility)))) ; suppress unused var warning
 
  (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>) ::<void>
-   (.if "defined(HAVE_SYSLOG)" (syslog prio "%s" message)))
+   (.if "defined(HAVE_SYSLOG)"
+        (syslog prio "%s" message)
+        (begin (cast void prio)       ; suppress unused var warning
+               (cast void message)))) ; suppress unused var warning
 
  (define-cproc sys-closelog () ::<void>
    (.if "defined(HAVE_SYSLOG)" (closelog)))
@@ -63,10 +70,16 @@
    (initcode "Scm_AddFeature(\"gauche.sys.syslog\", NULL);"))
 
  (define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
-   (.if "defined(HAVE_SETLOGMASK)" (return (LOG_MASK prio)) (return 0)))
+   (.if "defined(HAVE_SETLOGMASK)"
+        (return (LOG_MASK prio))
+        (begin (cast void prio) ; suppress unused var warning
+               (return 0))))
 
  (define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum>
-   (.if "defined(HAVE_SETLOGMASK)" (return (setlogmask mask)) (return 0)))
+   (.if "defined(HAVE_SETLOGMASK)"
+        (return (setlogmask mask))
+        (begin (cast void mask) ; suppress unused var warning
+               (return 0))))
 
  (when "defined(HAVE_SETLOGMASK)"
    (initcode "Scm_AddFeature(\"gauche.sys.setlogmask\", NULL);"))

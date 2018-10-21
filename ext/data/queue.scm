@@ -359,7 +359,10 @@
        (set! ok (queue-peek-both-int q (& h) (& t)))
        (with-mtq-light-lock q (set! ok (queue-peek-both-int q (& h) (& t)))))
      (cond [ok (return h t)]
-           [(SCM_UNBOUNDP fallback) (Scm_Error "queue is empty: %S" q)]
+           [(SCM_UNBOUNDP fallback)
+            (set! SCM_RESULT0 0)
+            (set! SCM_RESULT1 0)
+            (Scm_Error "queue is empty: %S" q)]
            [else (return fallback fallback)])))
  )
 
@@ -420,7 +423,7 @@
 
  ;; API
  (define-cproc enqueue! (q::<queue> obj :rest more-objs)
-   (let* ([head (Scm_Cons obj more-objs)] [tail] [cnt::u_int])
+   (let* ([head (Scm_Cons obj more-objs)] [tail] [cnt::ScmSmallInt])
      (if (SCM_NULLP more-objs)
        (set! tail head cnt 1)
        (set! tail (Scm_LastPair more-objs) cnt (Scm_Length head)))
@@ -470,7 +473,7 @@
      (set! (Q_LENGTH q) (+ (Q_LENGTH q) cnt))))
 
  (define-cproc queue-push! (q::<queue> obj :rest more-objs)
-   (let* ([objs (Scm_Cons obj more-objs)] [head] [tail] [cnt::u_int])
+   (let* ([objs (Scm_Cons obj more-objs)] [head] [tail] [cnt::ScmSmallInt])
      (if (SCM_NULLP more-objs)
        (set! head objs tail objs cnt 1)
        (set! head (Scm_ReverseX objs)
