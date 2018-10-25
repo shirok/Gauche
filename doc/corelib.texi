@@ -5863,6 +5863,130 @@ uses @code{eq?} and @code{eqv?}, respectively.
 @c COMMON
 @end defun
 
+@defun assoc-adjoin alist key val :optional eq-fn
+@c EN
+If @var{alist} contains an entry with @var{key}, returns a new associative list
+where the value of the @var{key} is replaced for @var{val}. The order
+of entries in @var{alist} is preserved.  If @var{alist} doesn't contain
+the entry, it returns @code{(acons @var{key} @var{val} @var{alist})}.
+
+The original @var{alist} is left unmodified.  The returned associative list may
+share a part of its tail with the original @var{alist}, however.
+
+The optional @var{eq-fn} argument is a procedure with two arguments
+to be used to compare the keys; the default is @code{equal?}.
+
+Note the order of arguments; we have @var{alist} first, just as @code{assoc-ref}
+and @code{assoc-set!}, and other @code{-adjoin} procedures.
+It is not the same as @code{alist-delete} and @code{assoc}, which takes
+the key first.
+@c JP
+@var{alist}が@var{key}をキーとするエントリを持っていた場合、その値を@var{val}に
+変えた新たな連想リストを作って返します。@var{alist}中のエントリの順序は保存されます。
+もし@var{alist}中に@var{key}をキーとするエントリが無い場合は、
+@code{(acons @var{key} @var{val} @var{alist})}が返されます。
+
+元の@var{alist}は変更されません。但し、返された連想リストは@var{alist}と末尾部分を
+共有するかもしれません。
+
+@var{eq-fn}引数は2引数を取る手続きで、キーの比較に使われます。
+省略された場合は@code{equal?}が使われます。
+
+引数の順序に注意: @code{assoc-ref}や@code{assoc-set!}、また他の@code{-adjoin}系
+関数と同じように、この手続きは連想リストを第一引数に取ります。
+一方、@code{alist-delete}や@code{assoc}はキーを第一引数に取ります。
+@c COMMON
+@end defun
+
+@defun assoc-update-in alist keys proc :optonal default eq-fn
+@c EN
+This procedure allows to update a nested associative list.
+The @var{alist} argument is a (possibly nested) associative list,
+@var{keys} are a list of keys, and @var{proc} is a procedure
+that takes one argument.  First, the keys are looked up
+recursively in @var{alist}; then its value is passed to @var{proc}.
+The return value is a new (nested) associative list where the value
+pointed by @var{keys} is replaced with the return value of @var{proc}.
+@c JP
+この手続きは、ネストした連想リストを更新するのに使えます。
+@var{alist}はネストした連想リストです。
+@var{keys}はキーのリストで、@var{proc}は1引数を取る手続きです。
+まず、@var{keys}にあるキーを順に使って、ネストした連想リストから
+値が取り出され、@var{proc}に渡されます。
+手続きの戻り値は新しいネストした連想リストで、該当するエントリの値が
+@var{proc}の戻り値に置き換えられたものとなります。
+@c COMMON
+
+@example
+(assoc-update-in '((a (b . 1) (c . 2))) '(a c) (cut + <> 1))
+  @result{} ((a (b . 1) (c . 3))
+@end example
+
+@c EN
+The order of entries are preserved.  The original @var{alist}
+is left unmodified, but the returned value may share a part of
+the structure with @var{alist}.
+@c JP
+エントリの順序は保存されます。元の@var{alist}は変更を受けませんが、
+戻り値と部分構造を共有するかもしれません。
+@c COMMON
+
+@c EN
+If @var{alist} doesn't have the entry specified by @var{keys},
+a new entry is added.  A new entry is added at the beginning of
+the sequence where specfied key didn't exist.
+@c JP
+@var{alist}が@var{keys}で指定されるエントリを持たない場合は新たなエントリが
+追加されます。新たなエントリは、キーが存在しないシーケンスの先頭に付け加えられます。
+@c COMMON
+
+@example
+(assoc-update-in '((a (b . 1) (c . 2))) '(a d e) (^_ 99))
+  @result{} ((a (d (e . 99)) (b . 1) (c . 3)))
+@end example
+
+@c EN
+The @var{default} argument is passed to @var{proc} when there's
+no entry with specified keys.  If ommitted, @code{#f} is assumed.
+@c JP
+@var{default}引数は、キーに対応するエントリが存在しなかった場合に@var{proc}に
+渡されます。省略値は@code{#f}です。
+@c COMMON
+
+@c EN
+The optional @var{eq-fn} argument is a procedure with two arguments
+to be used to compare the keys; the default is @code{equal?}.
+
+Note the order of arguments; we have @var{alist} first, just as @code{assoc-ref}
+and @code{assoc-set!}, and other @code{-adjoin} procedures.
+It is not the same as @code{alist-delete} and @code{assoc}, which takes
+the key first.
+@c JP
+@var{eq-fn}引数は2引数を取る手続きで、キーの比較に使われます。
+省略された場合は@code{equal?}が使われます。
+
+引数の順序に注意: @code{assoc-ref}や@code{assoc-set!}、また他の@code{-adjoin}系
+関数と同じように、この手続きは連想リストを第一引数に取ります。
+一方、@code{alist-delete}や@code{assoc}はキーを第一引数に取ります。
+@c COMMON
+
+@c EN
+Note: For destructively updating general nested aggregate structures,
+setter of @var{~} is handy (@pxref{Universal accessor}).  You can modify
+an entry in a hashtable in a vector in a list, for example.  Associative
+list is a bit special, since you can't distinguish it from lists
+(thus @code{~} can't be used), and it is mostly used in functional way.
+So we added a special update procedure.
+@c JP
+註: ネストした集合データ構造の一部を破壊的に更新するには、
+@var{~}のセッタが便利です(@ref{Universal accessor}参照)。
+例えばハッシュテーブルのベクタのリスト、から一番奥のハッシュテーブルのエントリを
+更新することが出来ます。しかし連想リストはちょっと特殊で、リストと型的に区別
+できないため、@code{~}が使えません。連想リストはまた、関数的に使われることも
+多いため、専用の更新手続きを用意しました。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Symbols, Keywords, Pairs and Lists, Core library

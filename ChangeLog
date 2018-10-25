@@ -1,3 +1,7 @@
+2018-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (assoc-adjoin, assoc-update-in): Added.
+
 2018-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/fileutil.scm (glob-fold): Let glob sort the result

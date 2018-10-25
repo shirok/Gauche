@@ -731,6 +731,31 @@
 (define assq-set!  (cut assoc-set! <> <> <> eq?))
 (define assv-set!  (cut assoc-set! <> <> <> eqv?))
 
+(define (assoc-adjoin alist key val :optional (eq equal?))
+  (define (rec alis)
+    (cond [(null? alis) '()]
+          [(eq key (caar alis)) (acons key val (cdr alis))]
+          [else (let1 tail (rec (cdr alis))
+                  (if (eq? tail (cdr alis))
+                    alis
+                    (cons (car alis) tail)))]))
+  (let1 r (rec alist)
+    (if (eq? r alist)
+      (acons key val alist)
+      r)))
+
+(define (assoc-update-in alist keys proc :optional (default #f) (eq equal?))
+  (define (rec alist key keys)
+    (if (null? keys)
+      (let1 val (assoc-ref alist key default eq)
+        (assoc-adjoin alist key (proc val) eq))
+      (let1 val (assoc-ref alist key '() eq)
+        (assoc-adjoin alist key (rec val (car keys) (cdr keys)) eq))))
+  (if (null? keys)
+    (error "nees at least one key in assoc-update")
+    (rec alist (car keys) (cdr keys))))
+
+
 ;;;
 ;;; Extended pairs
 ;;;

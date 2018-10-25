@@ -492,6 +492,55 @@
 (test* "assv-set!" '((9 . c) (3 . a) (5 . b))
        (assv-set! (list (cons 3 'a) (cons 5 'b)) 9 'c))
 
+(test* "assoc-adjoin" '((c . 3) (a . 1) (b . 2))
+       (assoc-adjoin '((a . 1) (b . 2)) 'c 3))
+(test* "assoc-adjoin" '((a . 4) (b . 2))
+       (assoc-adjoin '((a . 1) (b . 2)) 'a 4))
+(test* "assoc-adjoin" '((a . 1) (b . 5))
+       (assoc-adjoin '((a . 1) (b . 2)) 'b 5))
+(test* "assoc-adjoin" '((a . 1))
+       (assoc-adjoin '() 'a 1))
+
+(test* "assoc-update-in" '((a (aa . 1) (ab . 2))
+                           (b (ba . 3) (bb (bba . 104) (bbb . 5))))
+       (assoc-update-in '((a (aa . 1) (ab . 2))
+                          (b (ba . 3) (bb (bba . 4) (bbb . 5))))
+                        '(b bb bba)
+                        (lambda (x) (+ x 100))
+                        0
+                        eq?))
+(test* "assoc-update-in" '((a (aa . 1) (ab . 2))
+                           (b (ba . 3) (bb (bbc . 100) (bba . 4) (bbb . 5))))
+       (assoc-update-in '((a (aa . 1) (ab . 2))
+                          (b (ba . 3) (bb (bba . 4) (bbb . 5))))
+                        '(b bb bbc)
+                        (lambda (x) (+ x 100))
+                        0
+                        eq?))
+(test* "assoc-update-in" '((c (d (e . 100)))
+                           (a (aa . 1) (ab . 2))
+                           (b (ba . 3) (bb (bba . 4) (bbb . 5))))
+       (assoc-update-in '((a (aa . 1) (ab . 2))
+                          (b (ba . 3) (bb (bba . 4) (bbb . 5))))
+                        '(c d e)
+                        (lambda (x) (+ x 100))
+                        0
+                        eq?))
+(test* "assoc-update-in" '((a (aa . 1)))
+       (assoc-update-in '()
+                        '(a aa)
+                        -
+                        -1))
+(test* "assoc-update-in" '(("a" ("aa" . 101) ("ab" . 2))
+                           ("b" ("ba" . 3)
+                            ("bb" ("bba" . 4) ("bbb" . 5))))
+       (assoc-update-in '(("a" ("aa" . 1) ("ab" . 2))
+                          ("b" ("ba" . 3) ("bb" ("bba" . 4) ("bbb" . 5))))
+                        '("a" "aa")
+                        (lambda (x) (+ x 100))
+                        0
+                        string=?))
+
 ;;--------------------------------------------------------------------------
 
 (test-section "circular list and equality")
