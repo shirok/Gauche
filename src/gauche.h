@@ -1043,6 +1043,13 @@ SCM_EXTERN ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
 #include <gauche/collection.h>
 
 /*--------------------------------------------------------
+ * CONNECTION INTERFACE
+ */
+
+SCM_CLASS_DECL(Scm_ConnectionClass);
+#define SCM_CLASS_CONNECTION         (&Scm_ConnectionClass)
+
+/*--------------------------------------------------------
  * PAIR AND LIST
  */
 

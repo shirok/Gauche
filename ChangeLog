@@ -1,3 +1,8 @@
+2018-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, lib/gauche/connection.scm, ext/net/net.scm:
+	  Add <connection> interface.  Make <socket> implements connection.
+
 2018-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (assoc-adjoin, assoc-update-in): Added.

@@ -3372,6 +3372,9 @@ void Scm__InitClass(void)
     /* char.c */
     CINIT(SCM_CLASS_CHAR_SET,         "<char-set>");
 
+    /* connection.c */
+    BINIT(SCM_CLASS_CONNECTION, "<connection>", NULL);
+
     /* comparator.c */
     /* initialized in Scm__InitComparator */
 

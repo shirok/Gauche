@@ -54,7 +54,7 @@ SCMFILES = srfi-0.scm \
        slib.scm	 \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
-       gauche/time.scm \
+       gauche/time.scm gauche/connection.scm \
        gauche/redefutil.scm gauche/macroutil.scm gauche/stringutil.scm \
        gauche/vecutil.scm gauche/condutil.scm gauche/portutil.scm \
        gauche/hashutil.scm gauche/treeutil.scm gauche/computil.scm \

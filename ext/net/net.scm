@@ -38,6 +38,7 @@
   (use gauche.uvector)
   (use gauche.sequence)
   (use gauche.lazy)
+  (use gauche.connection)
   (export <socket> make-socket
           PF_UNSPEC PF_UNIX PF_INET AF_UNSPEC AF_UNIX AF_INET
           SOCK_STREAM SOCK_DGRAM SOCK_RAW
@@ -58,6 +59,11 @@
           sys-htonl sys-htons sys-ntohl sys-ntohs
           inet-checksum
           inet-string->address inet-string->address! inet-address->string
+
+          ;; connection protocol
+          connection-self-address connection-peer-address
+          connection-input-port connection-output-port
+          connection-shutdown connection-close
           )
   )
 
@@ -109,3 +115,19 @@
  sys-getnameinfo
  NI_NOFQDN NI_NUMERICHOST NI_NAMEREQD NI_NUMERICSERV NI_DGRAM)
 
+;; connection protocol
+(define-method connection-self-address ((s <socket>))
+  (socket-getsockname s))
+(define-method connection-peer-address ((s <socket>))
+  (socket-getpeername s))
+(define-method connection-input-port ((s <socket>))
+  (socket-input-port s))
+(define-method connection-output-port ((s <socket>))
+  (socket-output-port s))
+(define-method connection-shutdown ((s <socket>) how)
+  (socket-shutdown s (ecase how
+                       [(read)  SHUT_RD]
+                       [(write) SHUT_WR]
+                       [(both)  SHUT_RDWR])))
+(define-method connection-close ((s <socket>))
+  (socket-close s))

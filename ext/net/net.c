@@ -39,9 +39,16 @@
  * Socket
  */
 
+ScmClass *socket_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ConnectionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
 static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SocketClass, socket_print);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SocketClass, socket_print, NULL, NULL, NULL,
+                         socket_cpl);
 
 static void socket_finalize(ScmObj obj, void *data SCM_UNUSED)
 {

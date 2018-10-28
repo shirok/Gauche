@@ -205,7 +205,7 @@ test_extra_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 libgauche_LIBRARY = $(LIBGAUCHE).$(SOEXT)
 libgauche_OBJECTS = \
         box.$(OBJEXT) core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) \
-	macro.$(OBJEXT) \
+	macro.$(OBJEXT) connection.$(OBJEXT) \
 	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) dispatch.$(OBJEXT) \
         prof.$(OBJEXT) collection.$(OBJEXT) \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
