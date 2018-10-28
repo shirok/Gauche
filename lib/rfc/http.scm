@@ -54,6 +54,7 @@
   (use gauche.charconv)
   (use gauche.sequence)
   (use gauche.uvector)
+  (use gauche.connection)
   (use util.match)
   (use text.tree)
   (export <http-error>
@@ -903,7 +904,7 @@
                                     0
                                     SSL_SERVER_VERIFY_LATER))
        (set! (~ conn'secure-agent) tls)
-       (tls-connect tls (socket-fd (~ conn'socket))))]
+       (tls-connect tls (~ conn'socket)))]
     [(stunnel)
      (let* ([rhost      (or (~ conn'proxy) (~ conn'server))]
             [rhost:port (if (string-index rhost #\:) rhost #"~|rhost|:https")])

@@ -89,6 +89,7 @@ typedef struct ScmTLSRec ScmTLS;
 
 struct ScmTLSRec {
     SCM_HEADER;
+    ScmObj sock;                /* <socket> */
     ScmObj in_port;
     ScmObj out_port;
 
@@ -118,9 +119,10 @@ extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                                 const char *filename,
                                 const char *password);
-extern ScmObj Scm_TLSConnect(ScmTLS* t, int fd);
-extern ScmObj Scm_TLSAccept(ScmTLS* t, int fd);
+extern ScmObj Scm_TLSConnect(ScmTLS* t, ScmObj sock, int fd);
+extern ScmObj Scm_TLSAccept(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
+extern ScmObj Scm_TLSSocket(ScmTLS *t);
 
 /*
    KZ: presumably due to block sizes imposed by the crypto algorithms

@@ -35,6 +35,8 @@
 
 (define-module rfc.tls
   (use gauche.vport)
+  (use gauche.connection)
+  (use gauche.net)
   (export <tls> make-tls tls-destroy tls-connect tls-accept tls-close
           tls-load-object tls-read tls-write
           tls-input-port tls-output-port
@@ -45,7 +47,12 @@
           SSL_DISPLAY_BYTES SSL_DISPLAY_STATES SSL_DISPLAY_CERTS
           SSL_DISPLAY_RSA SSL_CONNECT_IN_PARTS SSL_NO_DEFAULT_KEY
           SSL_OBJ_X509_CERT SSL_OBJ_X509_CACERT SSL_OBJ_RSA_KEY
-          SSL_OBJ_PKCS8 SSL_OBJ_PKCS12)
+          SSL_OBJ_PKCS8 SSL_OBJ_PKCS12
+
+          ;; connection interface
+          connection-self-address connection-peer-address
+          connection-input-port connection-output-port
+          connection-shutdown connection-close)
   )
 (select-module rfc.tls)
 
@@ -81,13 +88,14 @@
  (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
  (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
- (define-cproc %tls-connect (tls::<tls> fd::<long>) Scm_TLSConnect)
- (define-cproc %tls-accept (tls::<tls> fd::<long>) Scm_TLSAccept)
+ (define-cproc %tls-connect (tls::<tls> sock fd::<long>) Scm_TLSConnect)
+ (define-cproc %tls-accept (tls::<tls> sock fd::<long>) Scm_TLSAccept)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
  (define-cproc tls-read (tls::<tls>) Scm_TLSRead)
  (define-cproc tls-write (tls::<tls> msg) Scm_TLSWrite)
  (define-cproc tls-input-port (tls::<tls>) Scm_TLSInputPort)
  (define-cproc tls-output-port (tls::<tls>) Scm_TLSOutputPort)
+ (define-cproc tls-socket (tls::<tls>) Scm_TLSSocket)
  ;; internal
  (define-cproc tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
  (define-cproc tls-output-port-set! (tls::<tls> port) Scm_TLSOutputPortSet)
@@ -97,15 +105,15 @@
  )
 
 ;; API
-(define (tls-connect tls fd)
-  (%tls-connect tls fd) ;; done before ports in case of connect failure.
+(define (tls-connect tls sock)
+  (%tls-connect tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)
 
 ;; API
-(define (tls-accept tls fd)
-  (%tls-accept tls fd) ;; done before ports in case of connect failure.
+(define (tls-accept tls sock)
+  (%tls-accept tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)
@@ -135,3 +143,19 @@
   (rlet1 op (make <virtual-output-port>)
     (set! (~ op'puts) (^[msg] (tls-write tls msg)))
     (set! (~ op'putb) (^[b] (tls-write tls (make-byte-string 1 b))))))
+
+;; Connection interface
+(define-method connection-self-address ((s <tls>))
+  (socket-getsockname (tls-socket s)))
+(define-method connection-peer-address ((s <tls>))
+  (socket-getpeername (tls-socket s)))
+(define-method connection-input-port ((s <tls>))
+  (tls-input-port s))
+(define-method connection-output-port ((s <tls>))
+  (tls-output-port s))
+(define-method connection-shutdown ((s <tls>))
+  (tls-close s))
+(define-method connection-close ((s <tls>))
+  (tls-destroy s))
+
+

@@ -1,5 +1,9 @@
 2018-10-27  Shiro Kawai  <shiro@acm.org>
 
+	* ext/tls: Adapted to <connection> interface.  INCOMPATIBLE CHANGE:
+	  Now tls-connect and tls-accept takes socket, not the fd.
+	  These procedures are undocumented.
+
 	* src/class.c, lib/gauche/connection.scm, ext/net/net.scm:
 	  Add <connection> interface.  Make <socket> implements connection.
 

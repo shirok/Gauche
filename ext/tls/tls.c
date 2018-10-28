@@ -42,13 +42,15 @@
 
 static void tls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx);
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_TLSClass, tls_print);
-
 static ScmClass *tlsclass_cpa[] = {
     SCM_CLASS_STATIC_PTR(Scm_TLSClass),
+    SCM_CLASS_STATIC_PTR(Scm_ConnectionClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_TLSClass, tls_print, NULL, NULL, NULL,
+                         tlsclass_cpa+1);
 
 #if defined(GAUCHE_USE_AXTLS)
 static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs);
@@ -115,13 +117,15 @@ ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
     return t->loadObject(t, obj_type, filename, password);
 }
 
-ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
+ScmObj Scm_TLSConnect(ScmTLS* t, ScmObj sock, int fd)
 {
+    t->sock = sock;
     return t->connect(t, fd);
 }
 
-ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
+ScmObj Scm_TLSAccept(ScmTLS* t, ScmObj sock, int fd)
 {
+    t->sock = sock;
     return t->accept(t, fd);
 }
 
@@ -159,6 +163,11 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
     t->out_port = port;
     return SCM_UNDEFINED;
+}
+
+ScmObj Scm_TLSSocket(ScmTLS* t)
+{
+    return t->sock;
 }
 
 void Scm_Init_tls(ScmModule *mod)
