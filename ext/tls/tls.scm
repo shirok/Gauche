@@ -87,7 +87,7 @@
  (define-cproc make-tls (:rest initargs) Scm_MakeTLS)
  (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
- (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
+ (define-cproc %tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls> sock fd::<long>) Scm_TLSConnect)
  (define-cproc %tls-accept (tls::<tls> sock fd::<long>) Scm_TLSAccept)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
@@ -124,7 +124,13 @@
     (close-input-port (tls-input-port t)))
   (when (output-port? (tls-output-port t))
     (close-output-port (tls-output-port t)))
-  (%tls-close t))
+  (%tls-close t)
+  (socket-shutdown (tls-socket t)))
+
+;; API
+(define (tls-destroy t)
+  (%tls-destroy t)
+  (socket-close (tls-socket t)))
 
 (define (make-tls-input-port tls)
   (rlet1 ip (make <virtual-input-port>)
@@ -153,7 +159,8 @@
   (tls-input-port s))
 (define-method connection-output-port ((s <tls>))
   (tls-output-port s))
-(define-method connection-shutdown ((s <tls>))
+(define-method connection-shutdown ((s <tls>) how)
+  ;; for now, we shutdown connection entirely regardless of HOW argument.
   (tls-close s))
 (define-method connection-close ((s <tls>))
   (tls-destroy s))
