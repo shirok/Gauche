@@ -38,6 +38,7 @@
 
 (define-module gauche.process
   (use gauche.generator)
+  (use gauche.connection)
   (use srfi-1)
   (use srfi-13)
   (use srfi-14)
@@ -60,6 +61,13 @@
           shell-escape-string shell-tokenize-string
           ;; deprecated
           run-process-pipeline
+
+          ;; connection interface (for process ports)
+          <process-connection> make-process-connection
+          connection-self-address connection-peer-address
+          connection-input-port connection-output-port
+          connection-shutdown connection-close
+          connection-address-name
           ))
 (select-module gauche.process)
 
@@ -789,7 +797,7 @@
   (ecase flavor
     [(windows) (tokenize-windows-cmd)]
     [(posix) (tokenize-posix)]))
-  
+
 ;;----------------------------------------------------------------------
 ;; Internal utilities for process ports
 ;;
@@ -836,3 +844,53 @@
     [else (unless (zero? (process-exit-status process))
             (on-abnormal-exit process))]))
 
+;;----------------------------------------------------------------------
+;; Process connection
+;;
+
+(define-class <process-connection> (<connection>)
+  ((process :init-keyword :process)))
+
+(define (make-process-connection process-or-spec)
+  (cond [(process? process-or-spec)
+         (make <process-connection> :process process-or-spec)]
+        [(list? process-or-spec)
+         (let1 p (run-process process-or-spec :input :pipe :output :pipe))]
+        [else
+         (error "A <process> or (cmd arg ...) is expected, but got:"
+                process-or-spec)]))
+
+(define-method connection-self-address ((c <process-connection>))
+  #"Process ~|*program-name*| ~(sys-getpid)")
+(define-method connection-peer-address ((c <process-connection>))
+  #"Process ~(~ c 'command) ~(~ c 'pid)")
+(define-method connection-input-port ((c <process-connection>))
+  (process-output (~ c'process)))
+(define-method connection-output-port ((c <process-connection>))
+  (process-input (~ c'process)))
+(define-method connection-shutdown ((c <process-connection>) how)
+  (ecase how
+    [(read)  (close-port (process-output (~ c'process)))]
+    [(write) (close-port (process-input (~ c'process)))]
+    [(both)  (close-port (process-input (~ c'process)))
+             (close-port (process-output (~ c'process)))]))
+;; Trick - we want to terminate the process gracefully.  In typical cases,
+;; the process exits when its input is closed.  So, we first close
+;; the port then polls the process exit status a few times.  If the process
+;; doesn't exit, we send SIGTERM and polls again.  If that doesn't work,
+;; we send SIGKILL.  The connection interface is high level enough that
+;; the process's exit status isn't supposed to matter.
+(define-method connection-close ((c <process-connection>))
+  (connection-shutdown c 'both)
+  (or (process-wait (~ c'process) #t)
+      (begin (sys-nanosleep #e50e6)     ; 50ms
+             (process-wait (~ c'process) #t))
+      (begin (sys-nanosleep #e100e6)    ; 100ms
+             (process-wait (~ c'process) #t))
+      (begin (process-send-signal (~ c'process) SIGTERM)
+             (process-wait (~ c'process) #t))
+      (begin (sys-nanosleep #e200e6)    ; 200ms
+             (process-wait (~ c'process) #t))
+      (begin (process-kill (~ c'process))
+             (process-wait (~ c'process)))))
+ 
