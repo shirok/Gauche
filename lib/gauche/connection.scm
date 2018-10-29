@@ -38,11 +38,36 @@
           connection-input-port
           connection-output-port
           connection-shutdown
-          connection-close)
+          connection-close
+          connection-address-name)
   )
 (select-module gauche.connection)
 
 ;; <connection> class is built-in.
+;; It defines a generic interface of a connection capable of
+;; bidirectional communication to another entity.
+;;
+;; The data communication is abstracted as a pair of input and
+;; ouptut ports.  They can be accessed by connection-input-port
+;; and connection-output-port.
+;;
+;; A connected connection has two endpoints; self and peer.  Each
+;; endpoint has an address.  We don't have any assumption on address,
+;; except that it must respond to connection-address-name method.
+;; For sockets, addresses are subclass of <sockaddr>.
+;; If the connection allows unconnected state, the endpoint
+;; addresses can be #f.
+;;
+;; Two methods to finish up the connection; connection-shutdown
+;; breaks the connection to the peer---you can shutdown just one
+;; of reading or writing channel, or both.  The connection-close
+;; method destroys the resources in our side (it implies shutting down
+;; the connection if it hasn't).
+;;
+;; We don't provide a generic interface of establishing connections;
+;; that would vary greatly depending on the actual underlying mechanism,
+;; and must be handled with such knowledge.  Connection interface
+;; is useful for generic code that deals with established connections.
 
 (define-generic connection-self-address)
 (define-generic connection-peer-address)
@@ -51,6 +76,5 @@
 (define-generic connection-shutdown)
 (define-generic connection-close)
 
-
-
-
+(define-generic connection-address-name)
+(define-method connection-address-name ((a <string>)) a)

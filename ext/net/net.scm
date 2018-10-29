@@ -64,6 +64,7 @@
           connection-self-address connection-peer-address
           connection-input-port connection-output-port
           connection-shutdown connection-close
+          connection-address-name
           )
   )
 
@@ -131,3 +132,5 @@
                        [(both)  SHUT_RDWR])))
 (define-method connection-close ((s <socket>))
   (socket-close s))
+(define-method connection-address-name ((a <sockaddr>))
+  (sockaddr-name a))
