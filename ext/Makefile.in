@@ -48,7 +48,7 @@ threads bcrypt sxml mt-random digest zlib termios windows: uvector
 
 vport: gauche uvector
 
-tls: vport
+tls: vport net
 
 bcrypt: mt-random
 
