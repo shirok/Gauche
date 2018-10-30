@@ -473,8 +473,12 @@
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.http")
+
+(use rfc.http.tunnel)
+(test-module 'rfc.http.tunnel)
 (use rfc.http)
 (test-module 'rfc.http)
+
 
 (use rfc.822)
 (use rfc.mime)
