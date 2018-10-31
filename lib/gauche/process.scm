@@ -848,14 +848,25 @@
 ;; Process connection
 ;;
 
-(define-class <process-connection> (<connection>)
-  ((process :init-keyword :process)))
+;; This allows to treat communication with external process as a connection.
+;; Unlike network communications in which servers are running independently
+;; from clients, a typical use case of process connection is to spawn a
+;; process and talk to it---so we want to make sure the process is terminated
+;; and cleaned up after we're done.  We do that by default, unless :detached
+;; is given to the constructor.
 
-(define (make-process-connection process-or-spec)
+(define-class <process-connection> (<connection>)
+  ((process  :init-keyword :process)
+   (detached :init-keyword :detached)))
+
+(define (make-process-connection process-or-spec :key (detached #f))
   (cond [(process? process-or-spec)
-         (make <process-connection> :process process-or-spec)]
+         (make <process-connection>
+           :process process-or-spec :detached detached)]
         [(list? process-or-spec)
-         (let1 p (run-process process-or-spec :input :pipe :output :pipe))]
+         (let1 p (run-process process-or-spec :input :pipe :output :pipe)
+           (make <process-connection>
+             :process p :detached detached))]
         [else
          (error "A <process> or (cmd arg ...) is expected, but got:"
                 process-or-spec)]))
@@ -882,15 +893,15 @@
 ;; the process's exit status isn't supposed to matter.
 (define-method connection-close ((c <process-connection>))
   (connection-shutdown c 'both)
-  (or (process-wait (~ c'process) #t)
-      (begin (sys-nanosleep #e50e6)     ; 50ms
-             (process-wait (~ c'process) #t))
-      (begin (sys-nanosleep #e100e6)    ; 100ms
-             (process-wait (~ c'process) #t))
-      (begin (process-send-signal (~ c'process) SIGTERM)
-             (process-wait (~ c'process) #t))
-      (begin (sys-nanosleep #e200e6)    ; 200ms
-             (process-wait (~ c'process) #t))
-      (begin (process-kill (~ c'process))
-             (process-wait (~ c'process)))))
- 
+  (unless (~ c'detached)
+    (or (process-wait (~ c'process) #t)
+        (begin (sys-nanosleep #e50e6)     ; 50ms
+               (process-wait (~ c'process) #t))
+        (begin (sys-nanosleep #e100e6)    ; 100ms
+               (process-wait (~ c'process) #t))
+        (begin (process-send-signal (~ c'process) SIGTERM)
+               (process-wait (~ c'process) #t))
+        (begin (sys-nanosleep #e200e6)    ; 200ms
+               (process-wait (~ c'process) #t))
+        (begin (process-kill (~ c'process))
+               (process-wait (~ c'process))))))

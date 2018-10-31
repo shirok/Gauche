@@ -61,8 +61,10 @@
 ;; Two methods to finish up the connection; connection-shutdown
 ;; breaks the connection to the peer---you can shutdown just one
 ;; of reading or writing channel, or both.  The connection-close
-;; method destroys the resources in our side (it implies shutting down
-;; the connection if it hasn't).
+;; method destroys the resources in our side.  Note that close doesn't
+;; imply shutdown---if you fork the process after establishing the
+;; connection, you might want to close the endpoint in one process
+;; but still want co keep communication from another process.
 ;;
 ;; We don't provide a generic interface of establishing connections;
 ;; that would vary greatly depending on the actual underlying mechanism,
