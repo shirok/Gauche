@@ -78,3 +78,7 @@
 
 (define-generic connection-address-name)
 (define-method connection-address-name ((a <string>)) a)
+
+;; for the convenience
+(define-method conenction-shutdown ((c <connection>))
+  (connection-shutdown c 'both))
