@@ -37,7 +37,7 @@
  (declcode (.include "gauche/class.h"
                      "gauche/priv/macroP.h")))
 
-(declare (keep-private-macro define-compiler-macro))
+(declare (keep-private-macro define-compiler-macro kwote))
 
 ;;;
 ;;; Macro expansion utilities
@@ -92,6 +92,8 @@
 ;; These are used in the compiler, and hidden inside gauche.internal.
 (define-cproc macro? (obj) ::<boolean> SCM_MACROP)
 (define-cproc syntax? (obj) ::<boolean> SCM_SYNTAXP)
+
+;; NB: quasirename is in libomega.scm due to the depenedency.
 
 ;;;
 ;;; Macro object

@@ -114,9 +114,6 @@
           (:macro assume-type)
           )
 
-(autoload gauche.macroutil
-          (:macro quasirename))
-
 (autoload gauche.regexp
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)
           regexp-unparse rxmatch-substrings rxmatch-positions)

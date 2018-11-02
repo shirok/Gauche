@@ -1,3 +1,8 @@
+2018-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/macroutil.scm, src/libomega.scm (quasirename): Move
+	  quasirename into core.
+
 2018-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Adapted to <connection> interface.  INCOMPATIBLE CHANGE:
