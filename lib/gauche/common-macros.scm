@@ -316,12 +316,10 @@
                               (^[a b] (if (null? a) '() (list (list a b))))
                               f f*))
                       formals formals*)])
-       ;; TRANSIENT: Avoid using quasirename until 0.9.6 release, for
-       ;; it autoloads macroutil.scm -> util/match.scm and create
-       ;; circular dependency.
-       `(,(r'let*-values) ,(map list formals* inits)
-         (,(r'let) ,rebinds
-          ,@body))))))
+       (quasirename r
+         (let*-values ,(map list formals* inits)
+           (let ,rebinds
+             ,@body)))))))
 
 ;;;-------------------------------------------------------------
 ;;; applications
