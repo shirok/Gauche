@@ -11,6 +11,7 @@
 * Collection framework::        gauche.collection
 * Configuration parameters::    gauche.config
 * Generating build files::      gauche.configure
+* Connection framework::        gauche.connection
 * Dictionary framework::        gauche.dictionary
 * Low-level file operations::   gauche.fcntl
 * Generators::                  gauche.generator
@@ -3861,7 +3862,7 @@ without any argument from the shell, to find out the valid options.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Generating build files, Dictionary framework, Configuration parameters, Library modules - Gauche extensions
+@node Generating build files, Connection framework, Configuration parameters, Library modules - Gauche extensions
 @section @code{gauche.configure} - Generating build files
 @c NODE ビルド用ファイルの生成, @code{gauche.configure} - ビルド用ファイルの生成
 
@@ -5264,7 +5265,140 @@ the argument to @code{cf-init}.
 
 
 @c ----------------------------------------------------------------------
-@node Dictionary framework, Low-level file operations, Generating build files, Library modules - Gauche extensions
+@node Connection framework, Dictionary framework, Generating build files, Library modules - Gauche extensions
+@section @code{gauche.connection} - Connection framework
+@c NODE コネクションフレームワーク, @code{gauche.connection} - コネクションフレームワーク
+
+@deftp {Module} gauche.connection
+@mdindex gauche.connection
+A connection is an abstract class to handle full-duplex
+communication channel.  The actual data I/O is done through
+Scheme ports; a channel provides an interface to retrieve those
+ports.  It also has interface to know endpoint names, and the
+way to shutdown the communication.
+
+The @code{<socket>} class, for example, implements the connection
+framework (@pxref{Networking}).  The @code{<tls>} class, which
+wraps a socket to provide TLS communication, also implements it.
+That means you can write a client code that works both plain
+socket connection and secure connection.
+You can also abstract communication to the external process
+as a connection (@pxref{Process connection}).
+
+Each of the connection endpoints (@emph{self} for our side,
+and @emph{peer} fo the other side) has @emph{addresses},
+some object that identifies the endpoint.  The framework
+doesn't specify the actual type of addresses; it only requires
+that addresses can be passed to @code{connection-address-name} method
+to get its string representation, so that can be used for logging
+and monitoring.  The concrete
+class can choose suitable address representation.  For example,
+@code{<socket>} uses @code{<sockaddr>} for the addresses.
+
+A concrete class must implement the following methods.
+
+@example
+connection-self-address (c <connection>)
+connection-peer-address (c <connection>)
+connection-input-port (c <connection>)
+connection-output-port (c <connection>)
+connection-shutdown (c <connection>) how
+connection-close (c <connection>)
+connection-address-name obj                ; optional
+@end example
+
+At this moment this framework doesn't provide a generic way to
+@emph{create} a connection, since the way to do it may greatly vary
+depending on the concreate implementation.  Each concrete implementation
+should provide its own procedure to create and return a new connection.
+@end deftp
+
+
+@deffn {Method} connection-self-address connection
+@deffnx {Method} connection-peer-address connection
+Returns the address of this @var{connection}'s endpoint and
+its peer's.  For sockets and @code{<tls>}, it is an instance
+of @code{<sockaddr>}.  For processes, it is a string
+describing the process.
+
+If @var{connection} is not connected, these methods can return @code{#f}.
+
+The returned value (other than @code{#f}) must be able to
+be passed to @code{connection-address-name} method.
+
+Currently addresses are only used for logging purpoes within
+the connection framework; however, we may enhance the framework
+to add ``connect'' operation, for example, so the concrete class
+is encouraged to use objects that can be used to create connections.
+@end deffn
+
+@deffn {Method} connection-address-name address
+This method returns a string representation of @var{address}, which is
+a returned value from @code{connection-self-address} and
+@code{connection-peer-address}.  The default method just uses
+@var{address}'s @code{display}-representation.  If a concrete
+class chooses aggregate objects to represent addresses, it should
+provide this method as well.
+@end deffn
+
+@deffn {Method} connection-input-port connection
+@deffnx {Method} connection-output-port connection
+Returns an input port and an output port to read from and write to
+the connection, respectively.
+
+If the connection is not connected, or already shutdown or closed,
+the return value of these methods are unspecified.
+@end deffn
+
+@deffn {Method} connection-shutdown connection :optional how
+Shutdown the connection.  You can either shutdown the connection
+entirely at once, or shutdown only read or write channel of it.
+
+Shutdown is about telling the peer to terminate the communication.
+Usually the peer will detect the termination by reading EOF from
+their input channel.  The port corresponding to the shutdown channel
+is closed so no further communication is possible.
+
+Note that merely closing the connection doesn't shutdown the
+connection---the process may fork after creating the connection,
+and in that case, one process may close the connection without
+shutting down.
+
+The @var{how} argument must be one of those symbols:
+@table @code
+@item read
+Shutdown read channel of the connection.
+@item write
+Shutdown write channel of the connection.
+@item both
+Shutdown both channels of the connection.
+@end table
+
+If omitted, @var{both} is assumed.
+
+Shutting down already shut down channel has no effect.
+
+Note: Some concrete implementation of connection may not allow
+to shutdown each channels independently.  In such case,
+the connection is shut down entirely regardless of @var{how} argument.
+
+The one-argument case is handled by the default method (it calls
+two-argument method with @code{both} as @var{how}).  So the
+concrete class only need to define two argument method.
+@end deffn
+
+@deffn {Method} connection-close connection
+Close the connection.  This destroys the connection and frees
+local resources.  Note that this does not shutdown the connection
+itself.  If this connection is the only endpoint of this side,
+the peer will get an error when it tries to communicate.
+
+See @code{connection-shutdown} for the details of shutting down
+a connection.
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Dictionary framework, Low-level file operations, Connection framework, Library modules - Gauche extensions
 @section @code{gauche.dictionary} - Dictionary framework
 @c NODE ディクショナリフレームワーク, @code{gauche.dictionary} - ディクショナリフレームワーク
 
@@ -10297,7 +10431,19 @@ returns those ports, respectively.
 それらを使って通信路にアクセスできます。
 @code{socket-input-port}と@code{socket-output-port}はそれぞれ
 入力用、出力用のポートを返します。
+@c COMMON
 
+@c EN
+The @code{<socket>} class implements @code{<connection>} interface.
+@xref{Connection framework}, for the details.
+The @code{connection-self-address}
+and @code{connection-peer-address} methods return
+a socket address object.
+@c JP
+@code{<socket>}クラスはまた、@code{<connection>}インタフェースを実装しています
+(詳しくは@ref{Connection framework}参照)。
+@code{connection-self-address}と@code{connection-peer-address}は
+ソケットアドレスオブジェクトを返します。
 @c COMMON
 @end deftp
 
@@ -13192,6 +13338,7 @@ a convenient way to send/receive information to/from subprocesses.
 * Running process pipeline::
 * Process object::
 * Process ports::
+* Process connection::
 @end menu
 
 @node Running subprocess, Running process pipeline, High Level Process Interface, High Level Process Interface
@@ -14562,7 +14709,7 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @c COMMON
 @end defun
 
-@node Process ports,  , Process object, High Level Process Interface
+@node Process ports, Process connection, Process object, High Level Process Interface
 @subsection Process ports
 
 @defun open-input-process-port command :key input error encoding conversion-buffer-size
@@ -14991,6 +15138,40 @@ in @var{str}.
   @result{} ("echo" "$foo")
 @end example
 @end defun
+
+@node Process connection,  , Process ports, High Level Process Interface
+@subsection Process connection
+
+@deftp {Class} <process-connection>
+A connection abstraction to communicate with an external processs.
+Inherits @code{<connection>}.
+@xref{Connection framework}, for the details of the connection interface.
+
+This is useful to give an external process to the code that expects
+connection.  For example, instead of direct network connection, you can
+insert a filter process between remote server and your client code.
+@end deftp
+
+@defun make-process-connection process-or-spec
+Run an external process and returns a connection that's connected
+to standard I/O of the process.
+
+You can pass a list of command and its arguments, or
+a @var{<process>} object, to the @var{process-or-spec} argument.
+If you it's a @code{<process>} object, it's stdin and stdout
+is connected to pipes.  If it is a list, it is passed to @code{run-process}
+to run a new process.
+
+Shutting down both channels of the connection terminates the process.
+Most processes that reads from stdin would exits after it reads EOF
+from input, so we just poll the process exit status for a short period of time.
+If the process doesn't exit, we send signals (first SIGTERM, then SIGKILL)
+to ensure the termination of the process.
+
+Merely closing the connection doesn't terminate the process, so that
+the forked process can keep talking to the process.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Record types, Reloading modules, High Level Process Interface, Library modules - Gauche extensions

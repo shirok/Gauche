@@ -79,7 +79,8 @@
 (define-generic connection-close)
 
 (define-generic connection-address-name)
-(define-method connection-address-name ((a <string>)) a)
+(define-method connection-address-name ((a <top>)) 
+  (write-to-string a display))
 
 ;; for the convenience
 (define-method connection-shutdown ((c <connection>))
