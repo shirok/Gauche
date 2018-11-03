@@ -95,8 +95,8 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
 		    CERT_PHYSICAL_STORE_AUTH_ROOT_NAME);
   CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL);
 
+  PCCERT_CONTEXT ctx = NULL;
   while(1) {
-    PCCERT_CONTEXT ctx = NULL;
     ctx = CertEnumCertificatesInStore(h, ctx);
 
     if (ctx == NULL) { break; }
