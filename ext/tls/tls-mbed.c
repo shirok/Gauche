@@ -108,6 +108,7 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
 
   return SCM_TRUE;
 #else
+    (void)t;
     return SCM_FALSE;
 #endif
 }
