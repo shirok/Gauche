@@ -849,59 +849,63 @@
 ;;
 
 ;; This allows to treat communication with external process as a connection.
-;; Unlike network communications in which servers are running independently
-;; from clients, a typical use case of process connection is to spawn a
-;; process and talk to it---so we want to make sure the process is terminated
-;; and cleaned up after we're done.  We do that by default, unless :detached
-;; is given to the constructor.
 
 (define-class <process-connection> (<connection>)
-  ((process  :init-keyword :process)
-   (detached :init-keyword :detached)))
+  ((process  :init-keyword :process)))
 
-(define (make-process-connection process-or-spec :key (detached #f))
+(define (make-process-connection process-or-spec)
   (cond [(process? process-or-spec)
-         (make <process-connection>
-           :process process-or-spec :detached detached)]
+         (make <process-connection> :process process-or-spec)]
         [(list? process-or-spec)
          (let1 p (run-process process-or-spec :input :pipe :output :pipe)
-           (make <process-connection>
-             :process p :detached detached))]
+           (make <process-connection> :process p))]
         [else
          (error "A <process> or (cmd arg ...) is expected, but got:"
                 process-or-spec)]))
 
 (define-method connection-self-address ((c <process-connection>))
-  #"Process ~|*program-name*| ~(sys-getpid)")
+  #"Process ~(car (command-line)) ~(sys-getpid)")
 (define-method connection-peer-address ((c <process-connection>))
-  #"Process ~(~ c 'command) ~(~ c 'pid)")
+  (let1 p (~ c'process)
+    #"Process ~(~ p 'command) ~(~ p 'pid)"))
 (define-method connection-input-port ((c <process-connection>))
   (process-output (~ c'process)))
 (define-method connection-output-port ((c <process-connection>))
   (process-input (~ c'process)))
-(define-method connection-shutdown ((c <process-connection>) how)
+
+(define (%close-ports p how)
   (ecase how
-    [(read)  (close-port (process-output (~ c'process)))]
-    [(write) (close-port (process-input (~ c'process)))]
-    [(both)  (close-port (process-input (~ c'process)))
-             (close-port (process-output (~ c'process)))]))
+    [(read)  (close-port (process-output p))]
+    [(write) (close-port (process-input p))]
+    [(both)  (close-port (process-input p))
+             (close-port (process-output p))]))
+
 ;; Trick - we want to terminate the process gracefully.  In typical cases,
 ;; the process exits when its input is closed.  So, we first close
 ;; the port then polls the process exit status a few times.  If the process
 ;; doesn't exit, we send SIGTERM and polls again.  If that doesn't work,
 ;; we send SIGKILL.  The connection interface is high level enough that
 ;; the process's exit status isn't supposed to matter.
+(define (%kill-process p)
+  (or (process-wait p #t)
+      (begin (sys-nanosleep #e50e6)     ; 50ms
+             (process-wait p #t))
+      (begin (sys-nanosleep #e100e6)    ; 100ms
+             (process-wait p #t))
+      (begin (process-send-signal p SIGTERM)
+             (process-wait p #t))
+      (begin (sys-nanosleep #e200e6)    ; 200ms
+             (process-wait p #t))
+      (begin (process-kill p)
+             (process-wait p))))
+
+(define-method connection-shutdown ((c <process-connection>) how)
+  (let1 p (~ c'process)
+    (%close-ports p how)
+    (when (and (port-closed? (process-input p))
+               (port-closed? (process-output p))
+               (not (process-exit-status p)))
+      (%kill-process p))))
+
 (define-method connection-close ((c <process-connection>))
-  (connection-shutdown c 'both)
-  (unless (~ c'detached)
-    (or (process-wait (~ c'process) #t)
-        (begin (sys-nanosleep #e50e6)     ; 50ms
-               (process-wait (~ c'process) #t))
-        (begin (sys-nanosleep #e100e6)    ; 100ms
-               (process-wait (~ c'process) #t))
-        (begin (process-send-signal (~ c'process) SIGTERM)
-               (process-wait (~ c'process) #t))
-        (begin (sys-nanosleep #e200e6)    ; 200ms
-               (process-wait (~ c'process) #t))
-        (begin (process-kill (~ c'process))
-               (process-wait (~ c'process))))))
+  (%close-ports (~ c'process) 'both))
