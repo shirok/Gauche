@@ -35,6 +35,12 @@
 #include <gauche/extend.h>
 
 #if defined(GAUCHE_USE_MBEDTLS)
+
+#ifdef HAVE_WINCRYPT_H
+#include <wincrypt.h>
+#endif
+
+
 /*
  * Class
  */
@@ -73,6 +79,15 @@ typedef struct ScmMbedTLSRec {
 } ScmMbedTLS;
 
 
+static inline ScmObj inject_cert(void)
+{
+#if 0
+#else
+    return SCM_TRUE;
+#endif
+}
+
+
 static void mbed_context_check(ScmMbedTLS* t SCM_UNUSED,
                                const char* op SCM_UNUSED)
 {
@@ -83,7 +98,7 @@ static void mbed_close_check(ScmMbedTLS* t, const char *op)
 {
     if (t->conn.fd < 0) Scm_Error("attempt to %s closed TLS: %S", op, t);
 }
-    
+
 static ScmObj mbed_connect(ScmTLS* tls, int fd)
 {
     ScmMbedTLS* t = (ScmMbedTLS*)tls;
@@ -113,8 +128,10 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
                   SCM_FIND_MODULE("rfc.tls", 0));
     ScmObj s_ca_file = Scm_ApplyRec0(ca_bundle_path);
     if (SCM_FALSEP(s_ca_file)) {
-        Scm_Error("mbedTLS: tls-ca-bundle-path isn't set. It is required to"
-                  " validate server certs.");
+        if (SCM_FALSEP(inject_cert())) {
+	    Scm_Error("mbedTLS: tls-ca-bundle-path isn't set. It is required to"
+		      " validate server certs.");
+        }
     } if (!SCM_STRINGP(s_ca_file)) {
         Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
                   " but got: %S", s_ca_file);
