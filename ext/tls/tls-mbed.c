@@ -81,9 +81,30 @@ typedef struct ScmMbedTLSRec {
 
 static inline ScmObj inject_cert(void)
 {
-#if 0
+#ifdef HAVE_WINCRYPT_H
+  HCERTSTORE h;
+
+  h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
+		    X509_ASN_ENCODING,
+		    NULL,
+		    (CERT_STORE_SHARE_STORE_FLAG |
+		     CERT_STORE_SHARE_CONTEXT_FLAG |
+		     CERT_STORE_OPEN_EXISTING_FLAG |
+		     CERT_STORE_MAXIMUM_ALLOWED_FLAG |
+		     CERT_SYSTEM_STORE_LOCAL_MACHINE),
+		    CERT_PHYSICAL_STORE_AUTH_ROOT_NAME);
+  CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL);
+
+  PCCERT_CONTEXT ctx = NULL;
+  do {
+    ctx = CertEnumCertificatesInStore(h, ctx);
+
+
+  } while(ctx != NULL);
+
+  return SCM_TRUE;
 #else
-    return SCM_TRUE;
+    return SCM_FALSE;
 #endif
 }
 
