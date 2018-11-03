@@ -53,10 +53,11 @@ void maybe_prepend_install_dir(const char *orig, char *buf, int buflen,
                                void (*errfn)(const char *, ...))
 {
     if (*orig == '@') {
-        int len = get_install_dir(buf, buflen, errfn);
-        if (len + (int)strlen(orig) > buflen) {
+        const char *d = get_install_dir(errfn);
+        if (strlen(d) + strlen(orig) > (size_t)buflen) {
             errfn("Pathname too long: %s", orig);
         }
+        strcpy(buf, d);
         strcat(buf, orig+1);
     } else {
         if ((int)strlen(orig) >= buflen-1) {
@@ -104,6 +105,10 @@ void Scm_GetSiteArchitectureDirectory(char *buf, int buflen,
 void Scm_GetRuntimeDirectory(char *buf, int buflen,
                              void (*errfn)(const char *, ...))
 {
-    get_install_dir(buf, buflen, errfn);
+    const char *d = get_install_dir(errfn);
+    if (strlen(d)+1 > (size_t)buflen) {
+        errfn("Runtime directory name too long");
+    }
+    strcpy(buf, d);
 }
 

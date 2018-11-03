@@ -1,12 +1,14 @@
 /*
  * getdir_win.c - get the library directory at runtime (fow windows)
  *  included from paths.c
+ *  This routine is shared between libgauche and gauche-config.c.
+ *  In libgauche, it returns GC_malloc-ed buffer.  In gauche-config.c,
+ *  it returns malloc-ed buffer.
  */
 
 #include <string.h>
 
-static int get_install_dir(char *buf, int buflen,
-                           void (*errfn)(const char *msg, ...))
+static const char *get_install_dir(void (*errfn)(const char *msg, ...))
 {
     HMODULE mod;
     DWORD r;
@@ -32,11 +34,5 @@ static int get_install_dir(char *buf, int buflen,
     if (!PathRemoveFileSpec(path)) {
         errfn("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
     }
-    mbpath = SCM_WCS2MBS(path);
-    len = (int)strlen(mbpath);
-    if (len >= buflen-1) {
-        errfn("Pathname too long: %s", mbpath);
-    }
-    strcpy(buf, mbpath);
-    return len;
+    return SCM_WCS2MBS(path);
 }

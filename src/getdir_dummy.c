@@ -3,10 +3,8 @@
  *  included from paths.c
  */
 
-static int get_install_dir(char *buf SCM_UNUSED,
-                           int buflen SCM_UNUSED,
-                           void (*errfn)(const char *, ...) SCM_UNUSED)
+static const char *get_install_dir(void (*errfn)(const char *, ...))
 {
     errfn("We can't obtain runtime pathname on this platform");
-    return 0;
+    return NULL;
 }

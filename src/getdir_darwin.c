@@ -17,8 +17,7 @@
 /* Subdirs appended to the bundle path */
 #define SUBDIR   "/Versions/Current/"
 
-static int get_install_dir(char *buf, int buflen,
-                           void (*errfn)(const char *, ...))
+static const char *get_install_dir(void (*errfn)(const char *, ...))
 {
     CFBundleRef bundle     = NULL;
     CFURLRef    bundleURL  = NULL;
@@ -37,7 +36,14 @@ static int get_install_dir(char *buf, int buflen,
            (thus, the framework hasn't been created).  For the time
            being, we just return a dummy directory. */
         CLEANUP;
-        goto error;
+#if defined(GAUCHE_H)
+        return ".";
+#else
+        /* must return malloc-ed memory */
+        char *d = (char*)malloc(2);
+        strncpy(d, ".", 2);
+        return d;
+#endif
     }
     /* Ownership of bundle follows the Get Rule of Core Foundation.
        ie. we must claim ownership (with the CFRetain function).
@@ -49,7 +55,6 @@ static int get_install_dir(char *buf, int buflen,
     if (bundleURL == NULL) {
         CLEANUP;
         errfn("CFBundleCopyBundleURL failed");
-        goto error;
     }
     /* Ownership of bundleURL follows the Create Rule of Core Foundation.
        ie. it is our responsibility to relinquish ownership (using CFRelease)
@@ -59,27 +64,29 @@ static int get_install_dir(char *buf, int buflen,
     if (bundlePath == NULL) {
         CLEANUP;
         errfn("CFURLCopyFileSystemPath failed");
-        goto error;
     }
     /* Ownership follows the Create Rule. */
 
-    if (!CFStringGetCString(bundlePath, buf, buflen, kCFStringEncodingUTF8)) {
+    /* Estimate string length in utf8.  This is provisional; we'll refine
+       the code later. */
+    size_t utf16len = (size_t)CFStringGetLength(bundlePath);
+    size_t maxlen = 3 * (utf16len+1)/2;
+    size_t bufsiz = maxlen + strlen(SUBDIR) + 1;
+#if defined(GAUCHE_H)
+    char* buf = SCM_NEW_ATOMIC_ARRAY(char, bufsiz);
+#else
+    char* buf = (char*)malloc(bufsiz);
+#endif
+
+    if (!CFStringGetCString(bundlePath, buf, maxlen, kCFStringEncodingUTF8)) {
+#if !defined(GAUCHE_H)
+        free(buf);
+#endif    
         CLEANUP;
         errfn("CFStringGetCString failed");
-        goto error;
     }
-    if (strlen(buf) + strlen(SUBDIR) + 1 >= buflen) {
-        CLEANUP;
-        errfn("pathname too long");
-        goto error;
-    }
-
     strcat(buf, SUBDIR);
     CLEANUP;
-    return strlen(buf);
- error:
-    /* For the time being, we just return a dummy directory. */
-    strcpy(buf, ".");
-    return 1;
+    return buf;
 }
 
