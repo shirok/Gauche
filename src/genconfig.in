@@ -182,12 +182,6 @@ static void usage (void) {
         "       Similar to '-l', but this includes the libraries that are used\\n"
         "       for extension modules, and also the static library itself,\\n"
         "       that is -lgauche-static-X.X.\\n"
-        "  --fixup-extension FILE [MODULE]\\n"
-        "       creates FILE_head.c and FILE_tail.c.  They are required for GC\\n"
-        "       to work properly on some platforms.  MODULE must be the extension\\n"
-        "       module's name, and has to match the name given to the\\n"
-        "       SCM_INIT_EXTENSION macro in the extension initialization code. \\n"
-        "       If MODULE is omitted, FILE is used as the module's name.\\n"
         ,stderr);
   exit(1);
 }
@@ -298,59 +292,6 @@ static void print_output(struct cmd_rec *cmd)
 #endif  /* __MINGW32__ || _MSC_VER */
 }
 
-static void fixup_extension(int argc, char **argv)
-{
-    const char *file, *module;
-    char *outfile, *m = NULL;
-    FILE *fp;
-
-    if (argc < 3) usage();
-    file = argv[2];
-    if (argc > 3) {
-        module = argv[3];
-    } else {
-        const char *f;
-        char *mm;
-        m = (char *)malloc(strlen(file)+1);
-        for (f = file, mm = m; *f; f++, mm++) {
-           if (isalnum(*f)) *mm = *f;
-           else *mm = '_';
-        }
-        *mm = '\\0';
-        module = m;
-    }
-
-    outfile = (char *)malloc(strlen(file) + sizeof("_head.c") + 1);
-    strcpy(outfile, file);
-    strcat(outfile, "_head.c");
-    fp = fopen(outfile, "w");
-    if (fp == NULL) {
-        fprintf(stderr, "gauche-config: couldn't create %s: %s",
-                outfile, strerror(errno));
-        exit(1);
-    }
-    fprintf(fp, "void *Scm__datastart_%s = (void*)&Scm__datastart_%s;\\n",
-            module, module);
-    fprintf(fp, "void *Scm__bssstart_%s;\\n", module);
-    fclose(fp);
-
-    strcpy(outfile, file);
-    strcat(outfile, "_tail.c");
-    fp = fopen(outfile, "w");
-    if (fp == NULL) {
-        fprintf(stderr, "gauche-config: couldn't create %s: %s",
-                outfile, strerror(errno));
-        exit(1);
-    }
-    fprintf(fp, "void *Scm__dataend_%s = (void*)&Scm__dataend_%s;\\n",
-            module, module);
-    fprintf(fp, "void *Scm__bssend_%s;\\n", module);
-    fclose(fp);
-
-    free(outfile);
-    if (m) free(m);
-}
-
 static int process(const char *arg, int check)
 {
     struct cmd_rec *cp = cmds;
@@ -372,7 +313,7 @@ int main(int argc, char **argv)
 
     if (argc < 2) usage();
     if (strcmp(argv[1], "--fixup-extension") == 0) {
-        fixup_extension(argc, argv);
+        fprintf(stderr, "(fixup-extension is no longer needed.)\n");
     } else {
         char **av;
         for (av = argv+1; *av; av++) {

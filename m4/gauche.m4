@@ -126,24 +126,8 @@ AC_SUBST(LDFLAGS)
 ])
 
 dnl AC_GAUCHE_EXT_FIXUP(FILE [, MODULE])
-dnl   [OBSOLETED: Use gauche-config --fixup-extension instead]
-dnl   Sets the shell command to generate 'FILE_head.c' and 'FILE_tail.c',
-dnl   needed by some platforms for GC.  MODULE must be the extension
-dnl   module's name, and has to match the name given to the SCM_INIT_EXTENSION
-dnl   macro in the extension initialization code.   If MODULE is omitted
-dnl   FILE is used as the module's name.
-AC_DEFUN([AC_GAUCHE_EXT_FIXUP],
-	 [AC_CONFIG_COMMANDS("$1_head_n_tail",
-			     [
-AS_IF([test "X$2" = X],
-	[ac_gauche_ext_fixup_name=`echo $1 | tr -c "\012A-Za-z0-9" "_"`],
-	[ac_gauche_ext_fixup_name="$2"])
-AC_MSG_NOTICE(generating $1_head.c and $1_tail.c);
-echo "void *Scm__datastart_$ac_gauche_ext_fixup_name = (void*)&Scm__datastart_$ac_gauche_ext_fixup_name;" > $1_head.c
-echo "void *Scm__bssstart_$ac_gauche_ext_fixup_name;" >> $1_head.c
-echo "void *Scm__dataend_$ac_gauche_ext_fixup_name = (void*)&Scm__dataend_$ac_gauche_ext_fixup_name;" > $1_tail.c
-echo "void *Scm__bssend_$ac_gauche_ext_fixup_name;" >> $1_tail.c
-])])
+dnl   OBSOLETED - used to generate a guard file for GC.  No longer needed.
+AC_DEFUN([AC_GAUCHE_EXT_FIXUP], [])
 
 dnl AC_GAUCHE_MAKE_GPD
 dnl   Creates a Gauche package description file.

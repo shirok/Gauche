@@ -1,3 +1,8 @@
+2018-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in, m4/gauche.m4: Drop support of fixup-extension.
+	  GC can already detects data section of DSO files.
+
 2018-11-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/macroutil.scm, src/libomega.scm (quasirename): Move
