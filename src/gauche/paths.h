@@ -33,13 +33,8 @@
 
 /* This is used by both gosh and gauche-config. */
 
-void Scm_GetLibraryDirectory(const char *buf, int buflen,
-                             void (*errfn)(const char *, ...));
-void Scm_GetArchitectureDirectory(const char *buf, int buflen,
-                                  void (*errfn)(const char *, ...));
-void Scm_GetSiteLibraryDirectory(const char *buf, int buflen,
-                                 void (*errfn)(const char *, ...));
-void Scm_GetSiteArchitectureDirectory(const char *buf, int buflen,
-                                      void (*errfn)(const char *, ...));
-void Scm_GetRuntimeDirectory(const char *buf, int buflen,
-                             void (*errfn)(const char *, ...));
+const char *Scm_GetLibraryDirectory(void (*errfn)(const char *, ...));
+const char *Scm_GetArchitectureDirectory(void (*errfn)(const char *, ...));
+const char *Scm_GetSiteLibraryDirectory(void (*errfn)(const char *, ...));
+const char *Scm_GetSiteArchitectureDirectory(void (*errfn)(const char *, ...));
+const char *Scm_GetRuntimeDirectory(void (*errfn)(const char *, ...));

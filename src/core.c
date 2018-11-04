@@ -545,17 +545,12 @@ init_cond_features()
     }
 }
 
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
-
 ScmObj Scm_LibraryDirectory(void)
 {
     static ScmObj dir = SCM_FALSE;
     if (SCM_FALSEP(dir)) {
-        char buf[PATH_MAX];
-        Scm_GetLibraryDirectory(buf, PATH_MAX, Scm_Error);
-        dir = Scm_MakeString(buf, -1, -1,
+        dir = Scm_MakeString(Scm_GetLibraryDirectory(Scm_Error),
+                             -1, -1,
                              SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
@@ -565,9 +560,8 @@ ScmObj Scm_ArchitectureDirectory(void)
 {
     static ScmObj dir = SCM_FALSE;
     if (SCM_FALSEP(dir)) {
-        char buf[PATH_MAX];
-        Scm_GetArchitectureDirectory(buf, PATH_MAX, Scm_Error);
-        dir = Scm_MakeString(buf, -1, -1,
+        dir = Scm_MakeString(Scm_GetArchitectureDirectory(Scm_Error),
+                             -1, -1,
                              SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
@@ -577,9 +571,8 @@ ScmObj Scm_SiteLibraryDirectory(void)
 {
     static ScmObj dir = SCM_FALSE;
     if (SCM_FALSEP(dir)) {
-        char buf[PATH_MAX];
-        Scm_GetSiteLibraryDirectory(buf, PATH_MAX, Scm_Error);
-        dir = Scm_MakeString(buf, -1, -1,
+        dir = Scm_MakeString(Scm_GetSiteLibraryDirectory(Scm_Error),
+                             -1, -1,
                              SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
@@ -589,9 +582,8 @@ ScmObj Scm_SiteArchitectureDirectory(void)
 {
     static ScmObj dir = SCM_FALSE;
     if (SCM_FALSEP(dir)) {
-        char buf[PATH_MAX];
-        Scm_GetSiteArchitectureDirectory(buf, PATH_MAX, Scm_Error);
-        dir = Scm_MakeString(buf, -1, -1,
+        dir = Scm_MakeString(Scm_GetSiteArchitectureDirectory(Scm_Error),
+                             -1, -1,
                              SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
@@ -612,9 +604,8 @@ ScmObj Scm__RuntimeDirectory(void)
 {
     static ScmObj dir = SCM_FALSE;
     if (SCM_FALSEP(dir)) {
-        char buf[PATH_MAX];
-        Scm_GetRuntimeDirectory(buf, PATH_MAX, Scm_Error);
-        dir = Scm_MakeString(buf, -1, -1,
+        dir = Scm_MakeString(Scm_GetRuntimeDirectory(Scm_Error), 
+                             -1, -1,
                              SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
