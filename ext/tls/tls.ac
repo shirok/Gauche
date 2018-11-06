@@ -86,6 +86,9 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
   LIBS=${LIBS_SAVE}
   EXT_LIBS="$EXT_LIBS $MBEDTLS_LIBS"
 
+  AC_CHECK_HEADERS([wincrypt.h])
+  AC_SEARCH_LIBS([CertOpenStore], [crypt32], [EXT_LIBS="${EXT_LIBS} -lcrypt32"])
+
   AS_IF([test "$mbedtls_unavailable" = yes], [
     AC_MSG_NOTICE([Can't find mbedtls headers and/or libraries.])
     ],[
