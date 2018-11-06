@@ -118,6 +118,7 @@ cat > gauche-config.c.tmp.$$ <<EOF
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <ctype.h>
 
@@ -239,6 +240,11 @@ static struct cmd_rec {
 #include "win-compat.c"
 #define MBS2WCS(s)   mbs2wcs(s, FALSE, errfn)
 #define WCS2MBS(s)   wcs2mbs(s, FALSE, errfn)
+#else  /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
+#define MBS2WCS(s)  (s)
+#define WCS2MBS(s)  (s)
+#endif /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
+
 static void errfn(const char *fmt, ...)
 {
     va_list ap;
@@ -246,50 +252,13 @@ static void errfn(const char *fmt, ...)
     vfprintf(stderr, fmt, ap);
     va_end(ap);
 }
-#else  /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
-#define MBS2WCS(s)  (s)
-#define WCS2MBS(s)  (s)
-#endif /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
+
+#define PATH_ALLOC(n) malloc(n)
+#include "paths.c"
 
 static void print_output(struct cmd_rec *cmd)
 {
-#if !defined(__MINGW32__) && !defined(_MSC_VER)
-    printf("%s\\n", cmd->value);
-#else   /* __MINGW32__ || _MSC_VER */
-    const char *dir_mark;
-
-    if ((dir_mark = strchr(cmd->value, '@')) == NULL) {
-	printf("%s\\n", cmd->value);
-    } else {
-	HMODULE mod;
-	DWORD r;
-	TCHAR path[MAX_PATH];
-
-	mod = GetModuleHandle(NULL);
-	if (mod == NULL) {
-	    fprintf(stderr, "GetModuleHandle failed");
-	    exit(1);
-	}
-	r = GetModuleFileName(mod, path, MAX_PATH);
-	if (r == 0) {
-	    fprintf(stderr, "GetModuleFileName failed");
-	    exit(1);
-	}
-	/* remove \\gauche-config.exe */
-	if (!PathRemoveFileSpec(path)) {
-	    fprintf(stderr, "PathRemoveFileSpec failed on %s", WCS2MBS(path));
-	    exit(1);
-	}
-	/* remobe \\bin */
-	if (!PathRemoveFileSpec(path)) {
-	    fprintf(stderr, "PathRemoveFileSpec failed on %s", WCS2MBS(path));
-	    exit(1);
-	}
-
-	fwrite(cmd->value, dir_mark - cmd->value, 1, stdout);
-	fprintf(stdout, "%s%s\\n", WCS2MBS(path), dir_mark+1);
-    }
-#endif  /* __MINGW32__ || _MSC_VER */
+    printf("%s\\n", replace_install_dir(cmd->value, errfn));
 }
 
 static int process(const char *arg, int check)
