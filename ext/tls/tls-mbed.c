@@ -107,9 +107,7 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
 
     if (ctx == NULL) { break; }
 
-    size_t size = ctx->cbCertEncoded;
-
-    if(mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, size) != 0) {
+    if(mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, ctx->cbCertEncoded) != 0) {
       break;
     }
   }
