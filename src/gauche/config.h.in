@@ -17,6 +17,9 @@
 /* Gauche ABI version string */
 #undef GAUCHE_ABI_VERSION
 
+/* CA file path */
+#undef GAUCHE_CA_BUNDLE
+
 /* Define if Gauche handles multi-byte character as EUC-JP */
 #undef GAUCHE_CHAR_ENCODING_EUC_JP
 
@@ -438,6 +441,9 @@
 /* Define to 1 if you have the <util.h> header file. */
 #undef HAVE_UTIL_H
 
+/* Define to 1 if you have the <wincrypt.h> header file. */
+#undef HAVE_WINCRYPT_H
+
 /* Define if you have zlib.h and want to use it */
 #undef HAVE_ZLIB_H
 
@@ -502,9 +508,6 @@
 #  undef WORDS_BIGENDIAN
 # endif
 #endif
-
-/* CA bundle file path */
-#undef GAUCHE_CA_BUNDLE
 
 /* Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE
