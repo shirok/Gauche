@@ -256,17 +256,12 @@ static void errfn(const char *fmt, ...)
 #define PATH_ALLOC(n) malloc(n)
 #include "paths.c"
 
-static void print_output(struct cmd_rec *cmd)
-{
-    printf("%s\\n", replace_install_dir(cmd->value, errfn));
-}
-
 static int process(const char *arg, int check)
 {
     struct cmd_rec *cp = cmds;
     while (cp->cmd != NULL) {
         if (strcmp(cp->cmd, arg) == 0) {
-            if (!check) print_output(cp);
+            if (!check) printf("%s\\n", replace_install_dir(cp->value, errfn));
             return 1;
         }
         cp++;
@@ -328,8 +323,7 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
 
 ;; Kludge: Replace '@' in pathnames based on the directory of the
 ;; executable.  We assume '@' only appears as this special prefix of
-;; pathnames.  Must be in sync with print_output in gauche-config.c
-;; generated above.
+;; pathnames.  Must be in sync with replace_install_dir in paths.c
 (define (canonicalize str)
   (cond-expand
     [gauche.os.windows
