@@ -86,7 +86,7 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
 
   h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
 		    X509_ASN_ENCODING,
-		    NULL,
+		    0,
 		    (CERT_STORE_SHARE_STORE_FLAG |
 		     CERT_STORE_SHARE_CONTEXT_FLAG |
 		     CERT_STORE_OPEN_EXISTING_FLAG |
