@@ -51,22 +51,20 @@
 #include "getdir_dummy.c"
 #endif
 
-/* The configure-generated path macros might have '@' at the beginning,
-   indicating the runtime directory. */
-const char *maybe_prepend_install_dir(const char *orig,
-                                      void (*errfn)(const char *, ...))
+#include "substitute_all.c"
+
+
+/* The configure-generated path may have '@' in the pathnames.  We replace
+   it with the installation directory. 
+
+   NB: This is a static function, but called from gauche-config.c (it includes
+   paths.c).
+*/
+static const char *replace_install_dir(const char *orig,
+                                       void (*errfn)(const char *, ...))
 {
-    if (*orig == '@') {
-        const char *d = get_install_dir(errfn);
-        size_t dlen = strlen(d);
-        size_t olen = strlen(orig);
-        char *buf = (char*)PATH_ALLOC(olen+dlen);
-        strncpy(buf, d, dlen);
-        strncpy(buf+dlen, orig+1, olen); /* includes terminator */
-        return buf;
-    } else {
-        return orig;
-    }
+    if (strstr(orig, "@") == NULL) return orig; /* no replace */
+    return substitute_all(orig, "@", get_install_dir(errfn));
 }
 
 /* External API */
@@ -78,22 +76,22 @@ const char *Scm_HostArchitecture(void)
 
 const char *Scm_GetLibraryDirectory(void (*errfn)(const char *, ...))
 {
-    return maybe_prepend_install_dir(gauche_lib_dir, errfn);
+    return replace_install_dir(gauche_lib_dir, errfn);
 }
 
 const char *Scm_GetArchitectureDirectory(void (*errfn)(const char *, ...))
 {
-    return maybe_prepend_install_dir(gauche_arch_dir, errfn);
+    return replace_install_dir(gauche_arch_dir, errfn);
 }
 
 const char *Scm_GetSiteLibraryDirectory(void (*errfn)(const char *, ...))
 {
-    return maybe_prepend_install_dir(gauche_site_lib_dir, errfn);
+    return replace_install_dir(gauche_site_lib_dir, errfn);
 }
 
 const char *Scm_GetSiteArchitectureDirectory(void (*errfn)(const char *, ...))
 {
-    return maybe_prepend_install_dir(gauche_site_arch_dir, errfn);
+    return replace_install_dir(gauche_site_arch_dir, errfn);
 }
 
 /* On windows and darwin, this returns the runtime's prefix directory

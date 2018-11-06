@@ -310,7 +310,7 @@ libstr.c   : libstr.scm $(PRECOMP_DEPENDENCY)
 libsym.c   : libsym.scm $(PRECOMP_DEPENDENCY)
 libsys.c   : libsys.scm $(PRECOMP_DEPENDENCY)
 libvec.c   : libvec.scm $(PRECOMP_DEPENDENCY)
-libextra.c : libextra.scm $(PRECOMP_DEPENDENCY)
+libextra.c : libextra.scm substitute_all.c $(PRECOMP_DEPENDENCY)
 
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
@@ -358,7 +358,7 @@ vm.$(OBJEXT) : vminsn.c vmstat.c vmcall.c
 
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 
-paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c
+paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c substitute_all.c
 
 $(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY)
 	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(GC_ATOMIC_OPS_LIBS) $(LIBS)

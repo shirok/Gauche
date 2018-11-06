@@ -45,6 +45,19 @@
                      SCM_FOREIGN_POINTER_MAP_NULL))
   ))
 
+;; Pathname replacement
+
+
+(inline-stub
+ "#define PATH_ALLOC(n) SCM_MALLOC(n)"
+ "#include \"substitute_all.c\""
+
+ (define-cproc substitute-all (input::<const-cstring>
+                               mark::<const-cstring>
+                               subst::<const-cstring>)
+   ::<const-cstring>
+   substitute_all))
+
 ;; Entry point
 
 (define (main args)

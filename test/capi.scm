@@ -48,6 +48,17 @@
 
   )
 
+(test-section "path substitution")
+
+(test* "substitute_all" "abcXYZdefXYZ@XYZghi"
+       (substitute-all "abc@^def@^@@^ghi"
+                       "@^"
+                       "XYZ"))
+(test* "substitute_all" "XYZ@@abcXYZ"
+       (substitute-all "@@@@@abc@@@"
+                       "@@@"
+                       "XYZ"))
+
 (test-end)
 
 
