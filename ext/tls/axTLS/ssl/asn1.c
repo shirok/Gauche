@@ -183,7 +183,7 @@ int asn1_get_int(const uint8_t *buf, int *offset, int32_t *val)
     int i;
 
     if ((len = asn1_next_obj(buf, offset, ASN1_INTEGER)) < 0 || 
-                len > sizeof(int32_t))
+                (size_t)len > sizeof(int32_t))
     {
         res = X509_NOT_OK;
         goto end_int;

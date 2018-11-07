@@ -1655,6 +1655,7 @@ int send_alert(SSL *ssl, int error_code)
  */
 int process_finished(SSL *ssl, uint8_t *buf, int hs_len)
 {
+    (void)hs_len;
     int ret = SSL_OK;
     int is_client = IS_SET_SSL_FLAG(SSL_IS_CLIENT);
     int resume = IS_SET_SSL_FLAG(SSL_SESSION_RESUME);

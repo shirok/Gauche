@@ -2078,7 +2078,7 @@ static int SSL_basic_test(void)
         }
 
         offset += size;
-    } while (offset < sizeof(basic_buf));
+    } while ((size_t)offset < sizeof(basic_buf));
 
     printf(ret == SSL_OK && offset == sizeof(basic_buf) ? 
                             "SSL basic test passed\n" :
@@ -2212,7 +2212,7 @@ static int SSL_unblocked_test(void)
         }
 
         offset += size;
-    } while (offset < sizeof(basic_buf));
+    } while ((size_t)offset < sizeof(basic_buf));
 
     printf(ret == SSL_OK && offset == sizeof(basic_buf) ? 
                             "SSL unblocked test passed\n" :

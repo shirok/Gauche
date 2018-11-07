@@ -160,7 +160,7 @@ void SHA512_Update(SHA512_CTX *ctx, const uint8_t * msg, int len)
     while (len > 0)
     {
         // The buffer can hold at most 128 bytes
-        size_t n = MIN(len, 128 - ctx->size);
+        size_t n = MIN((size_t)len, 128 - ctx->size);
  
         // Copy the data to the buffer
         memcpy(ctx->w_buf.buffer + ctx->size, msg, n);

@@ -98,7 +98,7 @@ static int rng_fd = -1;
 static HCRYPTPROV gCryptProv;
 #endif
 
-#if (!defined(CONFIG_USE_DEV_URANDOM) && !defined(CONFIG_WIN32_USE_CRYPTO_LIB)) || !defined(ENTROPY_POOL_SIZE) /* The last condition added to compile on MinGW */
+#if !((!defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)) || (defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)))
 /* change to processor registers as appropriate */
 #define ENTROPY_POOL_SIZE 32
 #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
@@ -196,6 +196,8 @@ EXP_FUNC void STDCALL RNG_initialize()
  */
 EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size)
 {
+    (void)seed_buf;
+    (void)size;
 #if defined(WIN32) || defined(CONFIG_WIN32_USE_CRYPTO_LIB)
     int i;
 

@@ -216,10 +216,10 @@ void SHA256_Update(SHA256_CTX *ctx, const uint8_t * msg, int len)
     ctx->total[0] += len;
     ctx->total[0] &= 0xFFFFFFFF;
 
-    if (ctx->total[0] < len)
+    if (ctx->total[0] < (size_t)len)
         ctx->total[1]++;
 
-    if (left && len >= fill)
+    if (left && (size_t)len >= fill)
     {
         memcpy((void *) (ctx->buffer + left), (void *)msg, fill);
         SHA256_Process(ctx->buffer, ctx);

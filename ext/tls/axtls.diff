@@ -1,5 +1,14 @@
 --- a/axTLS/ssl/x509.c	2017-08-30 16:02:31.000000000 -1000
-+++ b/axTLS/ssl/x509.c	2018-07-19 04:05:23.000000000 -1000
++++ b/axTLS/ssl/x509.c	2018-11-06 21:30:30.000000000 -1000
+@@ -274,7 +274,7 @@
+         X509_CTX *x509_ctx)
+ {
+     int ret = X509_OK;
+-    int lenSeq, l= 0;
++    int lenSeq = 0;
+ 
+     if ((offset = asn1_is_basic_constraints(cert, offset)) == 0)
+         goto end_contraints;
 @@ -521,8 +521,10 @@
                     asserted, then the certified public key MUST NOT be used 
                     to verify certificate signatures. */
@@ -23,8 +32,18 @@
  #include "os_int.h"
  #include "os_port.h"
  #include "crypto.h"
+--- a/axTLS/ssl/tls1.c	2017-08-30 16:43:17.000000000 -1000
++++ b/axTLS/ssl/tls1.c	2018-11-07 01:08:43.000000000 -1000
+@@ -1655,6 +1655,7 @@
+  */
+ int process_finished(SSL *ssl, uint8_t *buf, int hs_len)
+ {
++    (void)hs_len;
+     int ret = SSL_OK;
+     int is_client = IS_SET_SSL_FLAG(SSL_IS_CLIENT);
+     int resume = IS_SET_SSL_FLAG(SSL_SESSION_RESUME);
 --- a/axTLS/ssl/test/ssltest.c	2016-12-30 10:01:13.000000000 -1000
-+++ b/axTLS/ssl/test/ssltest.c	2017-04-13 22:07:25.000000000 -1000
++++ b/axTLS/ssl/test/ssltest.c	2018-11-06 22:23:46.000000000 -1000
 @@ -922,19 +922,23 @@
  static int client_socket_init(uint16_t port)
  {
@@ -101,6 +120,24 @@
      ret = 0;
  
  cleanup:
+@@ -2069,7 +2078,7 @@
+         }
+ 
+         offset += size;
+-    } while (offset < sizeof(basic_buf));
++    } while ((size_t)offset < sizeof(basic_buf));
+ 
+     printf(ret == SSL_OK && offset == sizeof(basic_buf) ? 
+                             "SSL basic test passed\n" :
+@@ -2203,7 +2212,7 @@
+         }
+ 
+         offset += size;
+-    } while (offset < sizeof(basic_buf));
++    } while ((size_t)offset < sizeof(basic_buf));
+ 
+     printf(ret == SSL_OK && offset == sizeof(basic_buf) ? 
+                             "SSL unblocked test passed\n" :
 @@ -2452,6 +2461,10 @@
      int ret = 1;
      BI_CTX *bi_ctx;
@@ -252,6 +289,53 @@
 +#endif /*__MINGW32__*/
  #endif
  
+--- a/axTLS/ssl/asn1.c	2017-02-18 11:17:02.000000000 -1000
++++ b/axTLS/ssl/asn1.c	2018-11-06 21:29:39.000000000 -1000
+@@ -183,7 +183,7 @@
+     int i;
+ 
+     if ((len = asn1_next_obj(buf, offset, ASN1_INTEGER)) < 0 || 
+-                len > sizeof(int32_t))
++                (size_t)len > sizeof(int32_t))
+     {
+         res = X509_NOT_OK;
+         goto end_int;
+--- a/axTLS/crypto/sha512.c	2016-06-12 00:39:34.000000000 -1000
++++ b/axTLS/crypto/sha512.c	2018-11-06 21:32:34.000000000 -1000
+@@ -160,7 +160,7 @@
+     while (len > 0)
+     {
+         // The buffer can hold at most 128 bytes
+-        size_t n = MIN(len, 128 - ctx->size);
++        size_t n = MIN((size_t)len, 128 - ctx->size);
+  
+         // Copy the data to the buffer
+         memcpy(ctx->w_buf.buffer + ctx->size, msg, n);
+--- a/axTLS/crypto/sha256.c	2016-06-12 00:39:34.000000000 -1000
++++ b/axTLS/crypto/sha256.c	2018-11-06 21:33:10.000000000 -1000
+@@ -216,10 +216,10 @@
+     ctx->total[0] += len;
+     ctx->total[0] &= 0xFFFFFFFF;
+ 
+-    if (ctx->total[0] < len)
++    if (ctx->total[0] < (size_t)len)
+         ctx->total[1]++;
+ 
+-    if (left && len >= fill)
++    if (left && (size_t)len >= fill)
+     {
+         memcpy((void *) (ctx->buffer + left), (void *)msg, fill);
+         SHA256_Process(ctx->buffer, ctx);
+--- a/axTLS/crypto/rc4.c	2016-08-18 09:52:29.000000000 -1000
++++ b/axTLS/crypto/rc4.c	2018-11-07 01:09:13.000000000 -1000
+@@ -74,6 +74,7 @@
+  */
+ void RC4_crypt(RC4_CTX *ctx, const uint8_t *msg, uint8_t *out, int length)
+ { 
++    (void)msg;
+     int i;
+     uint8_t *m, x, y, a, b;
+ 
 --- a/axTLS/crypto/os_int.h	2017-02-18 11:15:20.000000000 -1000
 +++ b/axTLS/crypto/os_int.h	2017-04-13 22:07:25.000000000 -1000
 @@ -41,7 +41,7 @@
@@ -264,7 +348,7 @@
  typedef INT8 int8_t;
  typedef UINT16 uint16_t;
 --- a/axTLS/crypto/crypto_misc.c	2016-07-05 09:49:47.000000000 -1000
-+++ b/axTLS/crypto/crypto_misc.c	2017-04-13 22:07:25.000000000 -1000
++++ b/axTLS/crypto/crypto_misc.c	2018-11-07 00:30:09.000000000 -1000
 @@ -32,6 +32,20 @@
   * Some misc. routines to help things out
   */
@@ -333,7 +417,7 @@
  #endif
  
 -#if (!defined(CONFIG_USE_DEV_URANDOM) && !defined(CONFIG_WIN32_USE_CRYPTO_LIB))
-+#if (!defined(CONFIG_USE_DEV_URANDOM) && !defined(CONFIG_WIN32_USE_CRYPTO_LIB)) || !defined(ENTROPY_POOL_SIZE) /* The last condition added to compile on MinGW */
++#if !((!defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)) || (defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)))
  /* change to processor registers as appropriate */
  #define ENTROPY_POOL_SIZE 32
  #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
@@ -370,7 +454,16 @@
  }
  
  /**
-@@ -146,22 +209,34 @@
+@@ -133,6 +196,8 @@
+  */
+ EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size)
+ {
++    (void)seed_buf;
++    (void)size;
+ #if defined(WIN32) || defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+     int i;
+ 
+@@ -146,22 +211,34 @@
   */
  EXP_FUNC void STDCALL RNG_terminate(void)
  {
@@ -407,7 +500,7 @@
  #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
      /* use Microsoft Crypto Libraries */
      CryptGenRandom(gCryptProv, num_rand_bytes, rand_data);
-@@ -199,6 +274,7 @@
+@@ -199,6 +276,7 @@
      /* insert the digest at the start of the entropy pool */
      memcpy(entropy_pool, digest, MD5_SIZE);
  #endif
@@ -436,6 +529,16 @@
  #define COMP_RADIX          4294967296i64         
  #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
  #else
+--- a/axTLS/crypto/bigint.c	2016-06-12 00:39:34.000000000 -1000
++++ b/axTLS/crypto/bigint.c	2018-11-06 21:30:44.000000000 -1000
+@@ -508,6 +508,7 @@
+  */
+ static bigint *bi_int_divide(BI_CTX *ctx, bigint *biR, comp denom)
+ {
++    (void)ctx;
+     int i = biR->size - 1;
+     long_comp r = 0;
+ 
 --- a/axTLS/config/config.h	1969-12-31 14:00:00.000000000 -1000
 +++ b/axTLS/config/config.h	2018-07-19 03:51:30.000000000 -1000
 @@ -0,0 +1,149 @@
