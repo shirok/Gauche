@@ -348,7 +348,7 @@
  typedef INT8 int8_t;
  typedef UINT16 uint16_t;
 --- a/axTLS/crypto/crypto_misc.c	2016-07-05 09:49:47.000000000 -1000
-+++ b/axTLS/crypto/crypto_misc.c	2018-11-07 00:30:09.000000000 -1000
++++ b/axTLS/crypto/crypto_misc.c	2018-11-07 07:55:50.000000000 -1000
 @@ -32,6 +32,20 @@
   * Some misc. routines to help things out
   */
@@ -437,7 +437,14 @@
  #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
      rng_fd = open("/dev/urandom", O_RDONLY);
  #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
-@@ -122,10 +181,14 @@
+@@ -116,16 +175,20 @@
+                        PROV_RSA_FULL, 
+                        CRYPT_NEWKEYSET))
+         {
+-            printf("CryptoLib: %x\n", unsupported_str, GetLastError());
++            printf("CryptoLib: %x(%lx)\n", unsupported_str, GetLastError());
+             exit(1);
+         }
      }
  #else
      /* start of with a stack to copy across */
