@@ -34,6 +34,8 @@
 /* This file is used by both libgauche (included from libeval.scm) and
  * gauche-config (included from gauche-config.c).  The latter
  * doesn't use ScmObj, so the function works on bare C strings.
+ * Note that this also included in libextra.scm for testing, so be careful
+ * not to put any public definitions here to avoid duplicate definitions.
  */
 
 #define LIBGAUCHE_BODY
@@ -51,7 +53,42 @@
 #include "getdir_dummy.c"
 #endif
 
-#include "substitute_all.c"
+#include <string.h>
+
+static const char *substitute_all(const char *input,
+                                  const char *mark,
+                                  const char *subst)
+{
+    size_t ilen = strlen(input);
+    size_t mlen = strlen(mark);
+    size_t slen = strlen(subst);
+        
+    int noccurs = 0;
+    const char *p = input;
+    const char *pend = p + ilen;
+    while (p < pend) {
+        const char *p1 = strstr(p, mark);
+        if (p1 == NULL) break;
+        noccurs++;
+        p = p1 + mlen;
+    }
+
+    if (noccurs == 0) return input;
+    size_t buflen = noccurs * mlen + ilen - noccurs;
+    char *buf = (char*)PATH_ALLOC(buflen+1);
+    char *q = buf;
+    for (p = input; noccurs > 0; noccurs--) {
+        const char *p1 = strstr(p, mark);
+        strncpy(q, p, p1-p);
+        q += p1-p;
+        strncpy(q, subst, slen);
+        q += slen;
+        p = p1 + mlen;
+    }
+    strncpy(q, p, pend-p);
+    buf[buflen] = '\0';
+    return buf;
+}
 
 
 /* The configure-generated path may have '@' in the pathnames.  We replace

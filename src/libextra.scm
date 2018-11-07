@@ -46,17 +46,15 @@
   ))
 
 ;; Pathname replacement
-
-
 (inline-stub
- "#define PATH_ALLOC(n) SCM_MALLOC(n)"
- "#include \"substitute_all.c\""
+ "#include \"paths.c\""
 
  (define-cproc substitute-all (input::<const-cstring>
                                mark::<const-cstring>
                                subst::<const-cstring>)
    ::<const-cstring>
-   substitute_all))
+   (cast void replace_install_dir) ; to avoid unused warning
+   (return (substitute_all input mark subst))))
 
 ;; Entry point
 

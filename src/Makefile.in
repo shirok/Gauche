@@ -292,7 +292,8 @@ libchar.c  : libchar.scm $(PRECOMP_DEPENDENCY)
 libcode.c  : libcode.scm $(PRECOMP_DEPENDENCY)
 libcmp.c   : libcmp.scm $(PRECOMP_DEPENDENCY)
 libdict.c  : libdict.scm $(PRECOMP_DEPENDENCY)
-libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY) getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c substitute_all.c
+libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY) \
+             getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c paths.c
 libexc.c   : libexc.scm $(PRECOMP_DEPENDENCY)
 libfmt.c   : libfmt.scm $(PRECOMP_DEPENDENCY)
 libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
@@ -310,7 +311,7 @@ libstr.c   : libstr.scm $(PRECOMP_DEPENDENCY)
 libsym.c   : libsym.scm $(PRECOMP_DEPENDENCY)
 libsys.c   : libsys.scm $(PRECOMP_DEPENDENCY)
 libvec.c   : libvec.scm $(PRECOMP_DEPENDENCY)
-libextra.c : libextra.scm substitute_all.c $(PRECOMP_DEPENDENCY)
+libextra.c : libextra.scm paths.c $(PRECOMP_DEPENDENCY)
 
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
