@@ -318,19 +318,10 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
 (select-module gauche.config)
 
 (define (gauche-config param)
-  (cond [(assoc param *configurations*) => (^p (canonicalize (cadr p)))]
+  (cond [(assoc param *configurations*) 
+         => (^p ((with-module gauche.internal %gauche-replace-runtime-directory)
+                 (cadr p)))]
         [else (error "unknown configuration parameter name" param)]))
-
-;; Kludge: Replace '@' in pathnames based on the directory of the
-;; executable.  We assume '@' only appears as this special prefix of
-;; pathnames.  Must be in sync with replace_install_dir in paths.c
-(define (canonicalize str)
-  (cond-expand
-    [gauche.os.windows
-     ;; NB: we pass closure in the 3rd arg, since the replacement string
-     ;; may contain backslashes and confuse regexp-replace-all.
-     (regexp-replace-all #/@/ str (^m (%gauche-runtime-directory)))]
-    [else str]))
 
 (define *configurations*
   (quote

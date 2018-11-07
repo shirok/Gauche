@@ -157,7 +157,7 @@ INSTALL_SUBHEADERS = \
 	gauche/float.h gauche/gloc.h \
 	gauche/hash.h gauche/int64.h gauche/load.h \
 	gauche/module.h gauche/number.h gauche/parameter.h \
-	gauche/paths.h gauche/port.h gauche/prof.h gauche/pthread.h \
+	gauche/port.h gauche/prof.h gauche/pthread.h \
 	gauche/reader.h gauche/regexp.h gauche/scmconst.h \
 	gauche/static.h gauche/string.h gauche/symbol.h gauche/system.h \
 	gauche/treemap.h gauche/uthread.h gauche/vector.h gauche/vm.h \
@@ -215,7 +215,7 @@ libgauche_OBJECTS = \
 	vector.$(OBJEXT) weak.$(OBJEXT) symbol.$(OBJEXT) \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \
-	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) paths.$(OBJEXT) \
+	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
@@ -292,7 +292,7 @@ libchar.c  : libchar.scm $(PRECOMP_DEPENDENCY)
 libcode.c  : libcode.scm $(PRECOMP_DEPENDENCY)
 libcmp.c   : libcmp.scm $(PRECOMP_DEPENDENCY)
 libdict.c  : libdict.scm $(PRECOMP_DEPENDENCY)
-libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY)
+libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY) getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c substitute_all.c
 libexc.c   : libexc.scm $(PRECOMP_DEPENDENCY)
 libfmt.c   : libfmt.scm $(PRECOMP_DEPENDENCY)
 libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
@@ -357,8 +357,6 @@ port.$(OBJEXT) : port.c portapi.c
 vm.$(OBJEXT) : vminsn.c vmstat.c vmcall.c
 
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
-
-paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c substitute_all.c
 
 $(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY)
 	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(GC_ATOMIC_OPS_LIBS) $(LIBS)

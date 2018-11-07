@@ -33,7 +33,6 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/paths.h"
 #include "gauche/priv/builtin-syms.h"
 
 /* GC_print_static_roots() is declared in private/gc_priv.h.  It is too much
@@ -545,70 +544,33 @@ init_cond_features()
     }
 }
 
-ScmObj Scm_LibraryDirectory(void)
+/* TRANSIENT: These used to be in paths.c but no longer needed.  We keep
+   the entries just for ABI compatibility.  These shouldn't be called.
+   Remove on 1.0 release.
+*/
+const char *Scm_GetLibraryDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 {
-    static ScmObj dir = SCM_FALSE;
-    if (SCM_FALSEP(dir)) {
-        dir = Scm_MakeString(Scm_GetLibraryDirectory(Scm_Error),
-                             -1, -1,
-                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
-    }
-    return dir;
+    Scm_Abort("Scm_GetLibraryDirectory is called (it shouldn't).");
 }
 
-ScmObj Scm_ArchitectureDirectory(void)
+const char *Scm_GetArchitectureDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 {
-    static ScmObj dir = SCM_FALSE;
-    if (SCM_FALSEP(dir)) {
-        dir = Scm_MakeString(Scm_GetArchitectureDirectory(Scm_Error),
-                             -1, -1,
-                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
-    }
-    return dir;
+    Scm_Abort("Scm_GetArchitectureDirectory is called (it shouldn't).");
 }
 
-ScmObj Scm_SiteLibraryDirectory(void)
+const char *Scm_GetSiteLibraryDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 {
-    static ScmObj dir = SCM_FALSE;
-    if (SCM_FALSEP(dir)) {
-        dir = Scm_MakeString(Scm_GetSiteLibraryDirectory(Scm_Error),
-                             -1, -1,
-                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
-    }
-    return dir;
+    Scm_Abort("Scm_GetSiteLibraryDirectory is called (it shouldn't).");
 }
 
-ScmObj Scm_SiteArchitectureDirectory(void)
+const char *Scm_GetSiteArchitectureDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 {
-    static ScmObj dir = SCM_FALSE;
-    if (SCM_FALSEP(dir)) {
-        dir = Scm_MakeString(Scm_GetSiteArchitectureDirectory(Scm_Error),
-                             -1, -1,
-                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
-    }
-    return dir;
+    Scm_Abort("Scm_GetSiteArchitectureDirectory is called (it shouldn't).");
 }
 
-/* Temporary hack - this only works on Windows native and Darwin.
-   Returns a pathname that can be replaced for '@' prefix in various
-   configuration paths.  Note that replacement is already done in
-   the returned values of other Scm_*Directory functions above.
-   This is needed to augument the returned values of gauche.config
-   module.  Some refactorization is needed in future.
-
-   Aside from the current purpose, it will be useful to have a procedure
-   to obtain the directory of the running executable.  This function
-   can eventually evlove to it.
- */
-ScmObj Scm__RuntimeDirectory(void)
+const char *Scm_GetRuntimeDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 {
-    static ScmObj dir = SCM_FALSE;
-    if (SCM_FALSEP(dir)) {
-        dir = Scm_MakeString(Scm_GetRuntimeDirectory(Scm_Error), 
-                             -1, -1,
-                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
-    }
-    return dir;
+    Scm_Abort("Scm_GetRuntimeDirectory is called (it shouldn't).");
 }
 
 /*=============================================================
