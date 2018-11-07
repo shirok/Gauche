@@ -175,7 +175,7 @@ EXP_FUNC void STDCALL RNG_initialize()
                        PROV_RSA_FULL, 
                        CRYPT_NEWKEYSET))
         {
-            printf("CryptoLib: %x\n", unsupported_str, GetLastError());
+            printf("CryptoLib: %x(%lx)\n", unsupported_str, GetLastError());
             exit(1);
         }
     }
