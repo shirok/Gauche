@@ -93,9 +93,13 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
 		     CERT_STORE_MAXIMUM_ALLOWED_FLAG |
 		     CERT_SYSTEM_STORE_LOCAL_MACHINE),
 		    CERT_PHYSICAL_STORE_AUTH_ROOT_NAME);
-  if (h == NULL) { return SCM_FALSE; }
+  if (h == NULL) {
+    Scm_Warn("Can't open certificate store");
+    return SCM_FALSE;
+  }
 
   if(!CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL)) {
+    Scm_Warn("Can't resync certificate store");
     CertCloseStore(h, 0);
     return SCM_FALSE;
   }
@@ -108,6 +112,7 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
     if (ctx == NULL) { break; }
 
     if(mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, ctx->cbCertEncoded) != 0) {
+      Scm_Warn("Certificate is not accepted");
       break;
     }
   }
