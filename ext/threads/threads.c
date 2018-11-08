@@ -134,9 +134,8 @@ static SCM_INTERNAL_THREAD_PROC_RETTYPE thread_entry(void *data)
 #if defined(GAUCHE_USE_PTHREADS)
 /* The default signal mask on the thread creation */
 static struct threadRec {
-    int dummy;                  /* required to place this in data area */
     sigset_t defaultSigmask;
-} threadrec = { 0 };
+} threadrec;
 #endif /* GAUCHE_USE_PTHREADS */
 #endif /* defined(GAUCHE_HAS_THREADS) */
 

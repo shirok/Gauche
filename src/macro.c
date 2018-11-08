@@ -333,14 +333,6 @@ static inline ScmObj pvar_to_pvref(PatternContext *ctx,
     return pvref;
 }
 
-static inline ScmObj pvref_to_pvar(PatternContext *ctx, ScmObj pvref)
-{
-    int count = PVREF_COUNT(pvref);
-    ScmObj q = Scm_ListRef(ctx->pvars, count, SCM_UNBOUND);
-    SCM_ASSERT(SCM_PAIRP(q));
-    return SCM_CAR(q);
-}
-
 static int isEllipsis(PatternContext *ctx, ScmObj obj)
 {
     if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */

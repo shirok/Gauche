@@ -79,13 +79,13 @@ static ScmObj read_sharp_word(ScmPort *port, char c, ScmReadContext *ctx);
 static struct {
     ScmHashTable *table;
     ScmInternalMutex mutex;
-} readCtorData = { NULL };
+} readCtorData;
 
 /* Table of hash-bang directive */
 static struct {
     ScmHashTable *table;
     ScmInternalMutex mutex;
-} hashBangData = { NULL };
+} hashBangData;
 
 /* Parameter location for default reader mode */
 ScmParameterLoc defaultReadContext;

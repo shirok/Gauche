@@ -84,7 +84,7 @@ struct ScmClassStaticSlotSpecRec {
               SCM_FALSE, SCM_FALSE, SCM_FALSE,                  \
              } }
 
-#define SCM_CLASS_SLOT_SPEC_END()   { NULL }
+#define SCM_CLASS_SLOT_SPEC_END()   SCM_CLASS_SLOT_SPEC(NULL, NULL, NULL)
 
 /*
  * AccessorMethod

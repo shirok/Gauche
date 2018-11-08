@@ -64,7 +64,7 @@ static ScmHashTable *obtable = NULL;
 static struct {
     ScmHashTable *table;
     ScmInternalMutex mutex;
-} keywords = { NULL };
+} keywords;
 
 static int keyword_disjoint_p = FALSE;
 #endif /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/

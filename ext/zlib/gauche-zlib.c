@@ -110,7 +110,7 @@ static void message_print(ScmObj obj, ScmPort *port,
 }
 
 static ScmClassStaticSlotSpec zliberror_slots[] = {
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 ScmObj Scm_MakeZlibError(ScmObj message, int error_code)

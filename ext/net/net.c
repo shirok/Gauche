@@ -674,7 +674,6 @@ static void ioctl_by_ifr_name(int fd, struct ifreq *ifr, ScmObj data,
 ScmObj Scm_SocketIoctl(ScmSocket *s, u_long request, ScmObj data)
 {
 #if HAVE_STRUCT_IFREQ
-    int r;
     struct ifreq ifreq_pkt;
 
     CLOSE_CHECK(s->fd, "ioctl on", s);
