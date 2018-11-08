@@ -92,7 +92,7 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
 		     CERT_STORE_OPEN_EXISTING_FLAG |
 		     CERT_STORE_MAXIMUM_ALLOWED_FLAG |
 		     CERT_SYSTEM_STORE_LOCAL_MACHINE),
-		    CERT_PHYSICAL_STORE_AUTH_ROOT_NAME);
+		    TEXT("Root"));
   if (h == NULL) {
     Scm_Warn("Can't open certificate store");
     return SCM_FALSE;
