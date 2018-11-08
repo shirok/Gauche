@@ -688,9 +688,11 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, u_long request, ScmObj data)
 #elif HAVE_STRUCT_IFREQ_IFR_INDEX
         ifreq_pkt.ifr_index = Scm_GetIntegerU(data);
 #endif /*HAVE_STRUCT_IFREQ_IFR_INDEX*/
-        SCM_SYSCALL(r, ioctl(s->fd, SIOCGIFNAME, &ifreq_pkt));
-        if (r < 0)
-            Scm_SysError("ioctl(SIOCGIFNAME) failed");
+        {
+            int r;
+            SCM_SYSCALL(r, ioctl(s->fd, SIOCGIFNAME, &ifreq_pkt));
+            if (r < 0) Scm_SysError("ioctl(SIOCGIFNAME) failed");
+        }
         return Scm_MakeString(ifreq_pkt.ifr_name, -1, -1, SCM_STRING_COPYING);
 #endif /*SIOCGIFNAME*/
 #if defined(SIOCGIFINDEX)
