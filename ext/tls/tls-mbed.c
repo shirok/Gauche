@@ -111,8 +111,9 @@ static inline ScmObj inject_cert(ScmMbedTLS *t)
 
     if (ctx == NULL) { break; }
 
-    if(mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, ctx->cbCertEncoded) != 0) {
-      Scm_Warn("Certificate is not accepted");
+    int st = mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, ctx->cbCertEncoded);
+    if(st != 0) {
+      Scm_Warn("Certificate is not accepted: %d", st);
     }
   }
 
