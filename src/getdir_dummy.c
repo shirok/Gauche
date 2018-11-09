@@ -6,5 +6,5 @@
 static const char *get_install_dir(void (*errfn)(const char *, ...))
 {
     errfn("We can't obtain runtime pathname on this platform");
-    return NULL;
+    return "/";                 /* dummy */
 }
