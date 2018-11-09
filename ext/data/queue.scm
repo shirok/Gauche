@@ -229,8 +229,10 @@
  ;;   TIMEOUT-VAL.  (DO-OK is supposed to set RETVAL in it).
  (define-cise-stmt do-with-timeout
    [(_ q retval timeout timeout-val cv-slot init wait-check do-ok)
-    (let ([ts (gensym)] [pts (gensym)] [status (gensym)] [inited (gensym)])
+    (let ([ts (gensym)] [pts (gensym)] [tv (gensym)]
+          [status (gensym)] [inited (gensym)])
       `(let* ([,ts :: (ScmTimeSpec)] [,status :: int 0]
+              [,tv :: (volatile ScmObj) ,timeout-val]
               [,pts :: (ScmTimeSpec*) (Scm_GetTimeSpec ,timeout (& ,ts))]
               [,inited :: int FALSE])
          (while TRUE
@@ -245,7 +247,7 @@
                (notify-lockers ,q)
                (break)))
            (case ,status
-             [(CW_TIMEDOUT) (set! ,retval ,timeout-val)]
+             [(CW_TIMEDOUT) (set! ,retval ,tv)]
              [(CW_INTR)     (Scm_SigCheck (Scm_VM)) (continue)]) ;restart op
            (break))))])
 
@@ -354,15 +356,15 @@
    (return TRUE))
 
  (define-cproc %queue-peek (q::<queue> :optional fallback) ::(<top> <top>)
-   (let* ([ok::int FALSE] [h] [t])
+   (let* ([ok::int FALSE] [fb::(volatile ScmObj) fallback] [h] [t])
      (if (not (MTQP q))
        (set! ok (queue-peek-both-int q (& h) (& t)))
        (with-mtq-light-lock q (set! ok (queue-peek-both-int q (& h) (& t)))))
      (cond [ok (return h t)]
-           [(SCM_UNBOUNDP fallback)
+           [(SCM_UNBOUNDP fb)
             (Scm_Error "queue is empty: %S" q)
             (return SCM_UNDEFINED SCM_UNDEFINED)] ;dummy
-           [else (return fallback fallback)])))
+           [else (return fb fb)])))
  )
 
 ;; APIs
@@ -525,14 +527,14 @@
             (return FALSE))]))
 
  (define-cproc dequeue! (q::<queue> :optional fallback)
-   (let* ([empty::int FALSE] [r SCM_UNDEFINED])
+   (let* ([empty::int FALSE] [fb::(volatile ScmObj) fallback] [r SCM_UNDEFINED])
      (if (not (MTQP q))
        (set! empty (dequeue-int q (& r)))
        (with-mtq-light-lock q (set! empty (dequeue-int q (& r)))))
      (if empty
-       (if (SCM_UNBOUNDP fallback)
+       (if (SCM_UNBOUNDP fb)
          (Scm_Error "queue is empty: %S" q)
-         (set! r fallback))
+         (set! r fb))
        (when (MTQP q) (notify-writers q)))
      (return r)))
 
