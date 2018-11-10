@@ -53,11 +53,7 @@ SCM_EXTERN void       *Scm_WeakBoxRef(ScmWeakBox *wbox);
 
 typedef struct ScmWeakVectorRec {
     SCM_HEADER;
-#if !GAUCHE_API_0_95
-    int size;
-#else  /*GAUCHE_API_0_95*/
     ScmSmallInt size;
-#endif /*GAUCHE_API_0_95*/
     void *pointers;  /* opaque */
 } ScmWeakVector;
 

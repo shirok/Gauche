@@ -78,12 +78,7 @@ SCM_EXTERN ScmObj Scm_VectorCopy(ScmVector *vec,
 
 typedef struct ScmUVectorRec {
     SCM_HEADER;
-#if !GAUCHE_API_0_95
-    unsigned int immutable : 1;
-    u_int size : (SIZEOF_INT*CHAR_BIT-1);
-#else  /* GAUCHE_API_0_95 */
     ScmWord size_flags;         /* (len<<1)|immutable */
-#endif /* GAUCHE_API_0_95 */
     void *owner;
     void *elements;
 } ScmUVector;
@@ -95,15 +90,6 @@ SCM_CLASS_DECL(Scm_UVectorClass);
 #define SCM_UVECTOR_OWNER(obj)    (SCM_UVECTOR(obj)->owner)
 #define SCM_UVECTOR_ELEMENTS(obj) (SCM_UVECTOR(obj)->elements)
 
-#if !GAUCHE_API_0_95
-#define SCM_UVECTOR_SIZE(obj)     (SCM_UVECTOR(obj)->size)
-#define SCM_UVECTOR_IMMUTABLE_P(obj) (SCM_UVECTOR(obj)->immutable)
-#define SCM_UVECTOR_IMMUTABLE_SET(obj, flag) \
-    (SCM_UVECTOR(obj)->immutable = ((flag) != FALSE))
-#define SCM_UVECTOR_INITIALIZER(klass, size, elements, immutable, owner) \
-    { { SCM_CLASS_STATIC_TAG(klass) }, (immutable), (size), \
-      (owner), (elements) }
-#else  /* GAUCHE_API_0_95 */
 #define SCM_UVECTOR_SIZE(obj)     (SCM_UVECTOR(obj)->size_flags >> 1)
 #define SCM_UVECTOR_IMMUTABLE_P(obj) (SCM_UVECTOR(obj)->size_flags & 1)
 #define SCM_UVECTOR_IMMUTABLE_SET(obj, flag)    \
@@ -113,8 +99,6 @@ SCM_CLASS_DECL(Scm_UVectorClass);
 #define SCM_UVECTOR_INITIALIZER(klass, size, elements, immutable, owner) \
     { { SCM_CLASS_STATIC_TAG(klass) }, (((size)<<1)|(immutable?1:0)),    \
       (owner), (elements) }
-#endif /* GAUCHE_API_0_95 */
-
 
 #define SCM_UVECTOR_CHECK_MUTABLE(obj)                 \
   do { if (SCM_UVECTOR_IMMUTABLE_P(obj)) {             \

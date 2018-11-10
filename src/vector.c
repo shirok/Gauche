@@ -292,12 +292,7 @@ ScmObj Scm_MakeUVectorFull(ScmClass *klass, ScmSmallInt size, void *init,
     } else {
         vec->elements = SCM_NEW_ATOMIC2(void*, size*eltsize);
     }
-#if GAUCHE_API_0_95
     vec->size_flags = (size << 1)|(immutable?1:0);
-#else  /*!GAUCHE_API_0_95*/
-    vec->size = size;
-    vec->immutable = immutable;
-#endif /*!GAUCHE_API_0_95*/
     vec->owner = owner;
     return SCM_OBJ(vec);
 }
