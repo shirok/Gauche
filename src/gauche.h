@@ -34,7 +34,7 @@
 #ifndef GAUCHE_H
 #define GAUCHE_H
 
-#ifndef GAUCEH_API_0_95
+#ifndef GAUCHE_API_0_95
 #define GAUCHE_API_0_95 1
 #endif
 
