@@ -19,6 +19,7 @@ TLS_OBJECTS = rfc--tls.$(OBJEXT) \
 
 MBED_OBJECTS = tls-mbed.$(OBJEXT)
 MBEDTLS_LIBS = @MBEDTLS_LIBS@
+SYSTEM_CERT_LIBS = @SYSTEM_CERT_LIBS@
 
 AXTLS_INCLUDES = -I$(srcdir)/axTLS/crypto -I$(srcdir)/axTLS/ssl -I$(srcdir)/axTLS/config
 
@@ -72,7 +73,7 @@ tls.sci rfc--tls.c : tls.scm
 
 rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS)
 	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(EXT_LIBGAUCHE) \
-	   $(MBEDTLS_LIBS)
+	   $(MBEDTLS_LIBS) $(SYSTEM_CERT_LIBS)
 
 # For out-of-source-tree build
 axtls_dirs :

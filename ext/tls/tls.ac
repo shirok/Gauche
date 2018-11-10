@@ -86,14 +86,19 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
   LIBS=${LIBS_SAVE}
   EXT_LIBS="$EXT_LIBS $MBEDTLS_LIBS"
 
+  LIBS_SAVE=${LIBS}
+  SYSTEM_CERT_LIBS=""
   AC_CHECK_HEADERS([wincrypt.h], [], [], [@%:@include<windows.h>])
-  AC_SEARCH_LIBS([CertOpenStore], [crypt32], [EXT_LIBS="${EXT_LIBS} -lcrypt32"])
+  AC_SEARCH_LIBS([CertOpenStore], [crypt32], [SYSTEM_CERT_LIBS="-lcrypt32 ${SYSTEM_CERT_LIBS}"])
+  LIBS=${LIBS_SAVE}
+  EXT_LIBS="$EXT_LIBS $SYSTEM_CERT_LIBS"
 
   AS_IF([test "$mbedtls_unavailable" = yes], [
     AC_MSG_NOTICE([Can't find mbedtls headers and/or libraries.])
     ],[
       AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
       AC_SUBST(MBEDTLS_LIBS)
+      AC_SUBST(SYSTEM_CERT_LIBS)
       GAUCHE_TLS_TYPES="mbedtls $GAUCHE_TLS_TYPES"
       GAUCHE_TLS_SWITCH_MBEDTLS=
       GAUCHE_TLS_SWITCH_NONE="@%:@"
