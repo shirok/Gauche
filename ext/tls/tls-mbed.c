@@ -82,17 +82,15 @@ typedef struct ScmMbedTLSRec {
 static inline ScmObj load_system_cert(ScmMbedTLS *t)
 {
 #ifdef HAVE_WINCRYPT_H
-  HCERTSTORE h;
-
-  h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
-		    X509_ASN_ENCODING,
-		    0,
-		    (CERT_STORE_SHARE_STORE_FLAG |
-		     CERT_STORE_SHARE_CONTEXT_FLAG |
-		     CERT_STORE_OPEN_EXISTING_FLAG |
-		     CERT_STORE_MAXIMUM_ALLOWED_FLAG |
-		     CERT_SYSTEM_STORE_LOCAL_MACHINE),
-		    TEXT("Root"));
+  const HCERTSTORE h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
+				     X509_ASN_ENCODING,
+				     0,
+				     (CERT_STORE_SHARE_STORE_FLAG |
+				      CERT_STORE_SHARE_CONTEXT_FLAG |
+				      CERT_STORE_OPEN_EXISTING_FLAG |
+				      CERT_STORE_MAXIMUM_ALLOWED_FLAG |
+				      CERT_SYSTEM_STORE_LOCAL_MACHINE),
+				     TEXT("Root"));
   if (h == NULL) {
     Scm_Warn("Can't open certificate store");
     return SCM_FALSE;
