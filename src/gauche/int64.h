@@ -135,7 +135,7 @@ typedef struct {
 #define SCM_INT64_CMP(op, a64, b64) ((a64) op (b64))
 #endif /*!SCM_EMULATE_INT64*/
 
-/* for backward compatibility */
+/* for the backward compatibility */
 #define SCM_INT64_TO_DOUBLE  Scm_Int64ToDouble
 /* TRANSIENT: New code should use [u]int32_t. */
 typedef int32_t  ScmInt32;

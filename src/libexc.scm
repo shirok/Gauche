@@ -56,7 +56,7 @@
     (result (Scm_VMWithErrorHandler handler thunk))))
 
 (define-cproc report-error (exception :optional (port (current-error-port)))
-  ;; TRANSIENT: change this to Scm_ReportError when switching API to 0.95.
+  ;; TRANSIENT: change this to Scm_ReportError when we drop !GAUCHE_API_0_95
   Scm_ReportError2)
 
 (define-cproc condition-type-name (c) Scm_ConditionTypeName)

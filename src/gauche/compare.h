@@ -38,7 +38,6 @@
 SCM_DECL_BEGIN
 
 /* srfi-114/srfi-128 comparator */
-/* TRANSIENT: Move orderFn up on 1.0 release */
 struct ScmComparatorRec {
     SCM_HEADER;
     ScmObj name;                /* debugging aid */
@@ -46,8 +45,8 @@ struct ScmComparatorRec {
     ScmObj eqFn;                /* proc */
     ScmObj compareFn;           /* proc */
     ScmObj hashFn;              /* proc */
-    u_long flags;
     ScmObj orderFn;             /* proc */
+    u_long flags;
 };
 
 /* Difference between srfi-114 and srfi-128:

@@ -520,11 +520,6 @@ struct ScmVMRec {
                                    it per thread.
                                  */
 
-    /* TRANSIENT: For the ABI compatibility.  Remove on 1.0 */
-    ScmObj dummy0;
-    ScmObj dummy1;
-    ScmObj dummy2;
-
     /* Program information */
     int    evalSituation;       /* eval situation (related to eval-when) */
 
