@@ -641,7 +641,7 @@
                   :directory "test.o"
                   :prefix "ooo")
                (list exists
-                     (boolean (#/test.o\/ooo\w+$/ name))
+                     (boolean (#/test.o[\/\\]ooo\w+$/ name))
                      (file-exists? name))))
          (remove-files '("test.o"))))
 
@@ -656,7 +656,7 @@
                   :directory "test.o"
                   :prefix "ooo")
                (list exists
-                     (boolean (#/test.o\/ooo\w+$/ name))
+                     (boolean (#/test.o[\/\\]ooo\w+$/ name))
                      (file-exists? name))))
          (remove-files '("test.o"))))
 
