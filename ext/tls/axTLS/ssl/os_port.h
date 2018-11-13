@@ -83,8 +83,8 @@ extern "C" {
 #undef dup2
 #undef unlink
 
-#define SOCKET_READ(A,B,C)      recv(A,B,C,0)
-#define SOCKET_WRITE(A,B,C)     send(A,B,C,0)
+#define SOCKET_READ(A,B,C)      recv(A,(char *)B,C,0)
+#define SOCKET_WRITE(A,B,C)     send(A,(const char *)B,C,0)
 #define SOCKET_CLOSE(A)         closesocket(A)
 #define srandom(A)              srand(A)
 #define random()                rand()
@@ -119,8 +119,10 @@ extern "C" {
 /*
  * automatically build some library dependencies.
  */
+#if defined(_MSC_VER)
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "AdvAPI32.lib")
+#endif /* _MSC_VER */
 
 typedef int socklen_t;
 

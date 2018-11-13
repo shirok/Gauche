@@ -1,5 +1,5 @@
---- a/axTLS/ssl/x509.c	2017-08-30 16:02:31.000000000 -1000
-+++ b/axTLS/ssl/x509.c	2018-11-06 21:30:30.000000000 -1000
+--- a/axTLS/ssl/x509.c	2017-08-31 11:02:31 +0900
++++ b/axTLS/ssl/x509.c	2018-11-12 10:39:16 +0900
 @@ -274,7 +274,7 @@
          X509_CTX *x509_ctx)
  {
@@ -21,8 +21,8 @@
                          
                  if (asn1_compare_dn(cert->ca_cert_dn,
                                              ca_cert_ctx->cert[i]->cert_dn) == 0)
---- a/axTLS/ssl/tls1.h	2017-06-27 10:28:19.000000000 -1000
-+++ b/axTLS/ssl/tls1.h	2017-11-30 12:11:48.000000000 -1000
+--- a/axTLS/ssl/tls1.h	2017-06-28 05:28:19 +0900
++++ b/axTLS/ssl/tls1.h	2018-11-12 10:39:16 +0900
 @@ -41,7 +41,7 @@
  #endif
  
@@ -32,8 +32,8 @@
  #include "os_int.h"
  #include "os_port.h"
  #include "crypto.h"
---- a/axTLS/ssl/tls1.c	2017-08-30 16:43:17.000000000 -1000
-+++ b/axTLS/ssl/tls1.c	2018-11-07 01:08:43.000000000 -1000
+--- a/axTLS/ssl/tls1.c	2017-08-31 11:43:17 +0900
++++ b/axTLS/ssl/tls1.c	2018-11-12 10:39:16 +0900
 @@ -1655,6 +1655,7 @@
   */
  int process_finished(SSL *ssl, uint8_t *buf, int hs_len)
@@ -42,8 +42,8 @@
      int ret = SSL_OK;
      int is_client = IS_SET_SSL_FLAG(SSL_IS_CLIENT);
      int resume = IS_SET_SSL_FLAG(SSL_SESSION_RESUME);
---- a/axTLS/ssl/test/ssltest.c	2016-12-30 10:01:13.000000000 -1000
-+++ b/axTLS/ssl/test/ssltest.c	2018-11-06 22:23:46.000000000 -1000
+--- a/axTLS/ssl/test/ssltest.c	2016-12-31 05:01:13 +0900
++++ b/axTLS/ssl/test/ssltest.c	2018-11-12 10:39:16 +0900
 @@ -922,19 +922,23 @@
  static int client_socket_init(uint16_t port)
  {
@@ -184,21 +184,21 @@
  //    if (header_issue())
  //    {
  //        printf("Header tests failed\n"); TTY_FLUSH();
---- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 00:39:35.000000000 -1000
-+++ b/axTLS/ssl/test/killopenssl.sh	2016-08-19 17:26:48.000000000 -1000
+--- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 19:39:35 +0900
++++ b/axTLS/ssl/test/killopenssl.sh	2018-11-12 10:39:16 +0900
 @@ -1,2 +1,3 @@
  #!/bin/sh
 -ps -ef|grep openssl | /usr/bin/awk '{print $2}' |xargs kill -9
 +awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 +rm -f ../ssl/openssl.pid
---- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 00:39:35.000000000 -1000
-+++ b/axTLS/ssl/test/killgnutls.sh	2016-08-19 17:26:48.000000000 -1000
+--- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 19:39:35 +0900
++++ b/axTLS/ssl/test/killgnutls.sh	2018-11-12 10:39:16 +0900
 @@ -1,2 +1,2 @@
  #!/bin/sh
 -ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 +#ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
---- a/axTLS/ssl/os_port.h	2016-07-04 21:33:37.000000000 -1000
-+++ b/axTLS/ssl/os_port.h	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/ssl/os_port.h	2016-07-05 16:33:37 +0900
++++ b/axTLS/ssl/os_port.h	2018-11-13 01:17:55 +0900
 @@ -42,7 +42,7 @@
  #endif
  
@@ -217,6 +217,17 @@
  /* Windows CE stuff */
  #if defined(_WIN32_WCE)
  #include <basetsd.h>
+@@ -81,8 +83,8 @@
+ #undef dup2
+ #undef unlink
+ 
+-#define SOCKET_READ(A,B,C)      recv(A,B,C,0)
+-#define SOCKET_WRITE(A,B,C)     send(A,B,C,0)
++#define SOCKET_READ(A,B,C)      recv(A,(char *)B,C,0)
++#define SOCKET_WRITE(A,B,C)     send(A,(const char *)B,C,0)
+ #define SOCKET_CLOSE(A)         closesocket(A)
+ #define srandom(A)              srand(A)
+ #define random()                rand()
 @@ -98,8 +100,12 @@
  #define usleep(A)               Sleep(A/1000)
  #define strdup(A)               _strdup(A)
@@ -230,7 +241,14 @@
  #ifndef lseek
  #define lseek(A,B,C)            _lseek(A,B,C)
  #endif
-@@ -118,9 +124,17 @@
+@@ -113,14 +119,24 @@
+ /*
+  * automatically build some library dependencies.
+  */
++#if defined(_MSC_VER)
+ #pragma comment(lib, "WS2_32.lib")
+ #pragma comment(lib, "AdvAPI32.lib")
++#endif /* _MSC_VER */
  
  typedef int socklen_t;
  
@@ -248,7 +266,7 @@
  
  #else   /* Not Win32 */
  
-@@ -136,13 +150,22 @@
+@@ -136,13 +152,22 @@
  #include <sys/wait.h>
  #include <netinet/in.h>
  #include <arpa/inet.h>
@@ -272,8 +290,8 @@
  #ifndef be64toh
  #define be64toh(x) __be64_to_cpu(x)
  #endif
---- a/axTLS/ssl/os_port.c	2016-07-05 09:31:16.000000000 -1000
-+++ b/axTLS/ssl/os_port.c	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/ssl/os_port.c	2016-07-06 04:31:16 +0900
++++ b/axTLS/ssl/os_port.c	2018-11-12 10:39:16 +0900
 @@ -40,6 +40,7 @@
  #include "os_port.h"
  
@@ -289,8 +307,8 @@
 +#endif /*__MINGW32__*/
  #endif
  
---- a/axTLS/ssl/asn1.c	2017-02-18 11:17:02.000000000 -1000
-+++ b/axTLS/ssl/asn1.c	2018-11-06 21:29:39.000000000 -1000
+--- a/axTLS/ssl/asn1.c	2017-02-19 06:17:02 +0900
++++ b/axTLS/ssl/asn1.c	2018-11-12 10:39:16 +0900
 @@ -183,7 +183,7 @@
      int i;
  
@@ -300,8 +318,8 @@
      {
          res = X509_NOT_OK;
          goto end_int;
---- a/axTLS/crypto/sha512.c	2016-06-12 00:39:34.000000000 -1000
-+++ b/axTLS/crypto/sha512.c	2018-11-06 21:32:34.000000000 -1000
+--- a/axTLS/crypto/sha512.c	2016-06-12 19:39:34 +0900
++++ b/axTLS/crypto/sha512.c	2018-11-12 10:39:16 +0900
 @@ -160,7 +160,7 @@
      while (len > 0)
      {
@@ -311,8 +329,8 @@
   
          // Copy the data to the buffer
          memcpy(ctx->w_buf.buffer + ctx->size, msg, n);
---- a/axTLS/crypto/sha256.c	2016-06-12 00:39:34.000000000 -1000
-+++ b/axTLS/crypto/sha256.c	2018-11-06 21:33:10.000000000 -1000
+--- a/axTLS/crypto/sha256.c	2016-06-12 19:39:34 +0900
++++ b/axTLS/crypto/sha256.c	2018-11-12 10:39:16 +0900
 @@ -216,10 +216,10 @@
      ctx->total[0] += len;
      ctx->total[0] &= 0xFFFFFFFF;
@@ -326,8 +344,8 @@
      {
          memcpy((void *) (ctx->buffer + left), (void *)msg, fill);
          SHA256_Process(ctx->buffer, ctx);
---- a/axTLS/crypto/rc4.c	2016-08-18 09:52:29.000000000 -1000
-+++ b/axTLS/crypto/rc4.c	2018-11-07 01:09:13.000000000 -1000
+--- a/axTLS/crypto/rc4.c	2016-08-19 04:52:29 +0900
++++ b/axTLS/crypto/rc4.c	2018-11-12 10:39:16 +0900
 @@ -74,6 +74,7 @@
   */
  void RC4_crypt(RC4_CTX *ctx, const uint8_t *msg, uint8_t *out, int length)
@@ -336,8 +354,8 @@
      int i;
      uint8_t *m, x, y, a, b;
  
---- a/axTLS/crypto/os_int.h	2017-02-18 11:15:20.000000000 -1000
-+++ b/axTLS/crypto/os_int.h	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/crypto/os_int.h	2017-02-19 06:15:20 +0900
++++ b/axTLS/crypto/os_int.h	2018-11-12 10:39:16 +0900
 @@ -41,7 +41,7 @@
  extern "C" {
  #endif
@@ -347,8 +365,8 @@
  typedef UINT8 uint8_t;
  typedef INT8 int8_t;
  typedef UINT16 uint16_t;
---- a/axTLS/crypto/crypto_misc.c	2016-07-05 09:49:47.000000000 -1000
-+++ b/axTLS/crypto/crypto_misc.c	2018-11-07 07:55:50.000000000 -1000
+--- a/axTLS/crypto/crypto_misc.c	2016-07-06 04:49:47 +0900
++++ b/axTLS/crypto/crypto_misc.c	2018-11-13 01:35:25 +0900
 @@ -32,6 +32,20 @@
   * Some misc. routines to help things out
   */
@@ -374,6 +392,7 @@
  #include "wincrypt.h"
  #endif
  
+-#ifndef WIN32
 +/* Make RNG thread-safe (Gauche specific) */
 +static ScmInternalMutex mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 +static u_long counter = 0;
@@ -410,9 +429,10 @@
 +#endif /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
 +#endif /* GAUCHE_WINDOWS */
 +
- #ifndef WIN32
++#if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
  static int rng_fd = -1;
- #elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+-#elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
++#elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
  static HCRYPTPROV gCryptProv;
  #endif
  
@@ -421,7 +441,7 @@
  /* change to processor registers as appropriate */
  #define ENTROPY_POOL_SIZE 32
  #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
-@@ -103,6 +153,15 @@
+@@ -103,29 +153,42 @@
   */
  EXP_FUNC void STDCALL RNG_initialize()
  {
@@ -437,12 +457,19 @@
  #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
      rng_fd = open("/dev/urandom", O_RDONLY);
  #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
-@@ -116,16 +175,20 @@
+     if (!CryptAcquireContext(&gCryptProv, 
+                       NULL, NULL, PROV_RSA_FULL, 0))
+     {
+-        if (GetLastError() == NTE_BAD_KEYSET &&
++        if (GetLastError() == (DWORD)NTE_BAD_KEYSET &&
+                 !CryptAcquireContext(&gCryptProv, 
+                        NULL, 
+                        NULL, 
                         PROV_RSA_FULL, 
                         CRYPT_NEWKEYSET))
          {
 -            printf("CryptoLib: %x\n", unsupported_str, GetLastError());
-+            printf("CryptoLib: %x(%lx)\n", unsupported_str, GetLastError());
++            printf("CryptoLib: %s(%lx)\n", unsupported_str, GetLastError());
              exit(1);
          }
      }
@@ -461,28 +488,32 @@
  }
  
  /**
-@@ -133,6 +196,8 @@
+@@ -133,7 +196,9 @@
   */
  EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size)
  {
+-#if defined(WIN32) || defined(CONFIG_WIN32_USE_CRYPTO_LIB)
 +    (void)seed_buf;
 +    (void)size;
- #if defined(WIN32) || defined(CONFIG_WIN32_USE_CRYPTO_LIB)
++#if !((!defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)) || (defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)))
      int i;
  
+     for (i = 0; i < ENTROPY_POOL_SIZE && i < size; i++)
 @@ -146,22 +211,34 @@
   */
  EXP_FUNC void STDCALL RNG_terminate(void)
  {
+-#ifndef WIN32
 +    SCM_INTERNAL_MUTEX_LOCK(mutex);
 +    if (--counter > 0) {
 +        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
 +        return;
 +    }
 +    
- #ifndef WIN32
++#if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
      close(rng_fd);
- #elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+-#elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
++#elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
      CryptReleaseContext(gCryptProv, 0);
  #endif
 +
@@ -515,8 +546,8 @@
      return 0;
  }
  
---- a/axTLS/crypto/crypto.h	2016-07-23 21:31:34.000000000 -1000
-+++ b/axTLS/crypto/crypto.h	2017-04-13 22:07:25.000000000 -1000
+--- a/axTLS/crypto/crypto.h	2016-07-24 16:31:34 +0900
++++ b/axTLS/crypto/crypto.h	2018-11-12 10:39:16 +0900
 @@ -39,6 +39,7 @@
  extern "C" {
  #endif
@@ -525,8 +556,8 @@
  #include "bigint_impl.h"
  #include "bigint.h"
  
---- a/axTLS/crypto/bigint_impl.h	2016-06-12 00:39:34.000000000 -1000
-+++ b/axTLS/crypto/bigint_impl.h	2016-08-19 17:26:48.000000000 -1000
+--- a/axTLS/crypto/bigint_impl.h	2016-06-12 19:39:34 +0900
++++ b/axTLS/crypto/bigint_impl.h	2018-11-12 10:39:16 +0900
 @@ -61,7 +61,7 @@
  typedef uint32_t long_comp;     /**< A double precision component. */
  typedef int32_t slong_comp;     /**< A signed double precision component. */
@@ -536,8 +567,8 @@
  #define COMP_RADIX          4294967296i64         
  #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
  #else
---- a/axTLS/crypto/bigint.c	2016-06-12 00:39:34.000000000 -1000
-+++ b/axTLS/crypto/bigint.c	2018-11-06 21:30:44.000000000 -1000
+--- a/axTLS/crypto/bigint.c	2016-06-12 19:39:34 +0900
++++ b/axTLS/crypto/bigint.c	2018-11-12 10:39:16 +0900
 @@ -508,6 +508,7 @@
   */
  static bigint *bi_int_divide(BI_CTX *ctx, bigint *biR, comp denom)
@@ -546,8 +577,8 @@
      int i = biR->size - 1;
      long_comp r = 0;
  
---- a/axTLS/config/config.h	1969-12-31 14:00:00.000000000 -1000
-+++ b/axTLS/config/config.h	2018-07-19 03:51:30.000000000 -1000
+--- a/axTLS/config/config.h	1970-01-01 09:00:00 +0900
++++ b/axTLS/config/config.h	2018-11-12 10:39:16 +0900
 @@ -0,0 +1,149 @@
 +/*
 + * In original axTLS, this file is automatically generated.
