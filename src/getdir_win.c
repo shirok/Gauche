@@ -8,6 +8,21 @@
 
 #include <string.h>
 
+#ifndef GAUCHE_CONFIG_C
+static inline const char *__wcs2mbs(const WCHAR *s)
+{
+  return SCM_WCS2MBS(s);
+}
+#else
+static void errfn(const char *fmt, ...);
+static const char *wcs2mbs(const WCHAR *s, int use_gc,
+                           void (*errfn)(const char*, ...));
+static inline const char *__wcs2mbs(const WCHAR *s)
+{
+  return wcs2mbs(s, FALSE, errfn);
+}
+#endif
+
 static const char *get_install_dir(void (*errfn)(const char *msg, ...))
 {
     HMODULE mod;
@@ -26,11 +41,11 @@ static const char *get_install_dir(void (*errfn)(const char *msg, ...))
     }
     /* remove \libgauche.dll */
     if (!PathRemoveFileSpec(path)) {
-        errfn("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
+        errfn("PathRemoveFileSpec failed on %s", __wcs2mbs(path));
     }
     /* remove \bin */
     if (!PathRemoveFileSpec(path)) {
-        errfn("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
+        errfn("PathRemoveFileSpec failed on %s", __wcs2mbs(path));
     }
-    return SCM_WCS2MBS(path);
+    return __wcs2mbs(path);
 }

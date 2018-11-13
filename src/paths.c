@@ -39,7 +39,9 @@
  */
 
 #define LIBGAUCHE_BODY
+#ifndef GAUCHE_CONFIG_C
 #include "gauche.h"
+#endif
 
 #if !defined(PATH_ALLOC)
 #define PATH_ALLOC(n)  SCM_MALLOC_ATOMIC(n)

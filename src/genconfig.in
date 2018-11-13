@@ -236,6 +236,7 @@ static struct cmd_rec {
     { NULL, NULL }
 };
 
+#define GAUCHE_CONFIG_C
 #if (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE)
 /* mbs <-> wcs stuff */
 #include "win-compat.c"
