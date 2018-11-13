@@ -1,3 +1,9 @@
+2018-11-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm: Reorder instructions for better understandability,
+	  and removed obsoleted instructions.  This break binary compatibiltiy.
+	  We break it anyways in 0.9.7, so let's do this now.
+
 2018-11-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in, m4/gauche.m4: Drop support of fixup-extension.

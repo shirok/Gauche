@@ -831,6 +831,8 @@
 (define-insn LREF21-PUSH 0 none  (LREF21 PUSH))
 (define-insn LREF30-PUSH 0 none  (LREF30 PUSH))
 
+(define-insn-lref* LREF-RET 0 none (LREF RET))
+
 ;; GREF <location>
 ;;  LOCATION may be a symbol or GLOC object.
 ;;  Retrieve global value in the current module.
@@ -850,10 +852,6 @@
 (define-insn PUSH-GREF   0 obj      (PUSH GREF))
 (define-insn PUSH-GREF-CALL 1 obj   (PUSH GREF CALL))
 (define-insn PUSH-GREF-TAIL-CALL 1 obj (PUSH GREF TAIL-CALL))
-
-(define-insn LREF0-PUSH-GREF 0 obj  (LREF0 PUSH GREF) #f :obsoleted)
-(define-insn LREF0-PUSH-GREF-CALL 1 obj (LREF0 PUSH GREF CALL) #f :obsoleted)
-(define-insn LREF0-PUSH-GREF-TAIL-CALL 1 obj (LREF0 PUSH GREF TAIL-CALL) #f :obsoleted)
 
 ;; PROMISE
 ;;  Delay syntax emits this instruction.  Wrap a procedure into a promise
@@ -1266,6 +1264,14 @@
              ($result:f (- (cast double imm) (SCM_FLONUM_VALUE arg)))]
             [else           ($result (Scm_Sub (SCM_MAKE_INT imm) arg))]))))
 
+
+(define-insn NUMMODI      1 none #f
+  (let* ([divisor::ScmSmallInt (SCM_VM_INSN_ARG code)])
+    ($w/argr arg ($result (Scm_Modulo arg (SCM_MAKE_INT divisor) FALSE)))))
+(define-insn NUMREMI      1 none #f
+  (let* ([divisor::ScmSmallInt (SCM_VM_INSN_ARG code)])
+    ($w/argr arg ($result (Scm_Modulo arg (SCM_MAKE_INT divisor) TRUE)))))
+
 (define-insn ASHI         1 none #f
   (let* ([cnt::ScmSmallInt (SCM_VM_INSN_ARG code)])
     ($w/argr arg ($result (Scm_Ash arg cnt)))))
@@ -1356,9 +1362,9 @@
       (SCM_FLONUM_ENSURE_MEM VAL0)
       ($result (Scm_VMSlotSet obj slot VAL0)))))
 
-;;;
-;;; Additional instructions
-;;;
+;;
+;; Dynamic handlers
+;;
 
 ;; PUSH-HANDLERS
 ;; POP-HANDLERS
@@ -1380,10 +1386,8 @@
     NEXT))
 
 ;;
-;; Experimental
+;; Environment
 ;;
-
-(define-insn-lref* LREF-RET 0 none (LREF RET))
 
 ;; if param == 0, VAL0 <- box(VAL0)
 ;; else if param > 0,  ENV[param-1] <- box(ENV[param-1])
@@ -1433,13 +1437,4 @@
   (begin
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     NEXT))
-
-;; TRANSIENT: These are better to be with ASHI; we put here to keep
-;; binary compatibility.  Should be moved on 1.0 release.
-(define-insn NUMMODI      1 none #f
-  (let* ([divisor::ScmSmallInt (SCM_VM_INSN_ARG code)])
-    ($w/argr arg ($result (Scm_Modulo arg (SCM_MAKE_INT divisor) FALSE)))))
-(define-insn NUMREMI      1 none #f
-  (let* ([divisor::ScmSmallInt (SCM_VM_INSN_ARG code)])
-    ($w/argr arg ($result (Scm_Modulo arg (SCM_MAKE_INT divisor) TRUE)))))
 

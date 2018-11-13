@@ -240,6 +240,10 @@
 ;; do not process combinations.  Addition for the root is ncessary since
 ;; the initial lookup of the state transition table is done by insn code,
 ;; so we need a placeholder for obsoleted insns.
+;; Note: We assume that combined insn is always added after the base
+;; insn is added (e.g. LREF_something should be added after LREF).  It
+;; keeps the invariance that the root node has insns in the same order
+;; as defined.
 ;; TODO: Would help if we have a mechanism to report an error if such
 ;; placeholder insn is actually kicked.
 (define (add-insn-to-state! root-state insn)
