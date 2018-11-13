@@ -74,7 +74,7 @@ static const char *substitute_all(const char *input,
     }
 
     if (noccurs == 0) return input;
-    size_t buflen = noccurs * mlen + ilen - noccurs;
+    size_t buflen = noccurs * slen + ilen - noccurs;
     char *buf = (char*)PATH_ALLOC(buflen+1);
     char *q = buf;
     for (p = input; noccurs > 0; noccurs--) {

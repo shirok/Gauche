@@ -111,6 +111,7 @@ cat > gauche-config.c.tmp.$$ <<EOF
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define _CRT_SECURE_NO_DEPRECATE 1
 #define _CRT_SECURE_NO_WARNINGS  1
+#include <winsock2.h>  /* MinGW needs this before windows.h */
 #include <windows.h>
 #include <shlwapi.h>
 #endif
@@ -238,11 +239,11 @@ static struct cmd_rec {
 #if (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE)
 /* mbs <-> wcs stuff */
 #include "win-compat.c"
-#define MBS2WCS(s)   mbs2wcs(s, FALSE, errfn)
-#define WCS2MBS(s)   wcs2mbs(s, FALSE, errfn)
+#define SCM_MBS2WCS(s)   mbs2wcs(s, FALSE, errfn)
+#define SCM_WCS2MBS(s)   wcs2mbs(s, FALSE, errfn)
 #else  /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
-#define MBS2WCS(s)  (s)
-#define WCS2MBS(s)  (s)
+#define SCM_MBS2WCS(s)  (s)
+#define SCM_WCS2MBS(s)  (s)
 #endif /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
 
 static void errfn(const char *fmt, ...)
@@ -251,6 +252,7 @@ static void errfn(const char *fmt, ...)
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
+    exit(1);
 }
 
 #define PATH_ALLOC(n) malloc(n)

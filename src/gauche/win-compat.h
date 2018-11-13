@@ -170,6 +170,7 @@ extern __declspec(dllimport) WCHAR *Scm_MBS2WCS(const char *s);
 extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #endif /*!LIBGAUCHE_BODY*/
 
+#if !defined(SCM_MBS2WCS)
 #if defined(UNICODE)
 #define SCM_MBS2WCS(s)  Scm_MBS2WCS(s)
 #define SCM_WCS2MBS(s)  Scm_WCS2MBS(s)
@@ -177,6 +178,7 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #define SCM_MBS2WCS(s)  (s)
 #define SCM_WCS2MBS(s)  (s)
 #endif /* !UNICODE */
+#endif /* !SCM_MBS2WCS */
 
 /* Replace some system calls with wide-char counterparts
    NB: Windows' mkdir() and _wmkdir() takes one argument.
