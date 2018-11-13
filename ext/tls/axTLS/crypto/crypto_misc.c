@@ -92,9 +92,9 @@ static void ensure_mutex_initialization()
 #endif /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
 #endif /* GAUCHE_WINDOWS */
 
-#ifndef WIN32
+#if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
 static int rng_fd = -1;
-#elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+#elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
 static HCRYPTPROV gCryptProv;
 #endif
 
@@ -168,7 +168,7 @@ EXP_FUNC void STDCALL RNG_initialize()
     if (!CryptAcquireContext(&gCryptProv, 
                       NULL, NULL, PROV_RSA_FULL, 0))
     {
-        if (GetLastError() == NTE_BAD_KEYSET &&
+        if (GetLastError() == (DWORD)NTE_BAD_KEYSET &&
                 !CryptAcquireContext(&gCryptProv, 
                        NULL, 
                        NULL, 
@@ -198,7 +198,7 @@ EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size)
 {
     (void)seed_buf;
     (void)size;
-#if defined(WIN32) || defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+#if !((!defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)) || (defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)))
     int i;
 
     for (i = 0; i < ENTROPY_POOL_SIZE && i < size; i++)
@@ -217,9 +217,9 @@ EXP_FUNC void STDCALL RNG_terminate(void)
         return;
     }
     
-#ifndef WIN32
+#if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
     close(rng_fd);
-#elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+#elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
     CryptReleaseContext(gCryptProv, 0);
 #endif
 
