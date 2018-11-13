@@ -12,8 +12,6 @@ static const char *get_install_dir(void (*errfn)(const char *msg, ...))
 {
     HMODULE mod;
     DWORD r;
-    int len;
-    const char *mbpath;
     TCHAR path[MAX_PATH];
     const TCHAR *libname = _T("libgauche-"GAUCHE_ABI_VERSION".dll");
 
