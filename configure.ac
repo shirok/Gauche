@@ -516,7 +516,8 @@ AC_CHECK_LIB(sunmath, isinf)
 dnl clock_gettime may be in librt
 AC_CHECK_LIB(rt, clock_gettime)
 
-dnl For Windows/MinGW, manually adds several libraries
+dnl For Windows/MinGW, manually adds several libraries.
+dnl For MinGW-w64, force static linking of pthread library.
 dnl Also adds -DUNICODE to CFLAGS enable Windows wchar API,
 dnl  if GAUCHE_CHAR_ENCODING is UTF_8.
 dnl Also adds -D__USE_MINGW_ANSI_STDIO to CFLAGS to support
@@ -524,6 +525,12 @@ dnl  C99 printf format string.
 dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
   *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi -lws2_32"
+           case "$host" in
+             *w64-mingw*)
+               case "`gcc -v 2>&1 > /dev/null | grep '^Thread model:'`" in
+                 *posix*) LIBS="$LIBS -Wl,-dn,-lpthread,-dy" ;;
+               esac ;;
+           esac
            ALTERNATIVE_GOSH="gosh-noconsole.exe"
            case "$GAUCHE_CHAR_ENCODING" in
              utf8) CFLAGS="$CFLAGS -DUNICODE" ;;
