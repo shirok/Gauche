@@ -166,21 +166,20 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     if (SCM_FALSEP(s_ca_file)) {
         Scm_Error("mbedTLS: tls-ca-bundle-path isn't set. It is required to"
                   " validate server certs.");
-    }
-    if (!SCM_STRINGP(s_ca_file)) {
-        Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
-                  " but got: %S", s_ca_file);
-    }
-    if(Scm_StringEqual(SCM_STRING(s_ca_file), SCM_STRING(SCM_MAKE_STR("@system")))) {
+    } else if(SCM_SYMBOLP(SCM_SYMBOL(s_ca_file))) {
         if(SCM_FALSEP(load_system_cert(t))) {
             Scm_SysError("Can't load certificates from system certificate store");
         }
-    } else {
+    } else if(SCM_STRINGP(s_ca_file)) {
         const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
         if(mbedtls_x509_crt_parse_file(&t->ca, ca_file) != 0) {
             Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%S", s_ca_file);
         }
+    } else {
+        Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
+                  " but got: %S", s_ca_file);
     }
+
     mbedtls_ssl_conf_ca_chain(&t->conf, &t->ca, NULL);
     mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 
