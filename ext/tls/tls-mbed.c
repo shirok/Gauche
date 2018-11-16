@@ -176,7 +176,7 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
             Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%S", s_ca_file);
         }
     } else {
-        Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
+        Scm_Error("Parameter tls-ca-bundle-path must have a string value or 'system,"
                   " but got: %S", s_ca_file);
     }
 
