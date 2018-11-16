@@ -175,7 +175,7 @@ static inline ScmObj default_ca_bundle(void)
 #if   defined GAUCHE_CA_BUNDLE_NONE
     return SCM_FALSE;
 #elif defined GAUCHE_CA_BUNDLE_SYSTEM
-    return Scm_MakeSymbol(SCM_MAKE_STR("system"), TRUE);
+    return Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("system")), TRUE);
 #elif defined GAUCHE_CA_BUNDLE_FILE
     return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
 #else
