@@ -3,7 +3,12 @@
 ;;
 
 ;; ssax test is derived from the original SSAX source.
-(include "./ssax-test.scm")
+;; We use 'load' instead of 'include'.  ssax-test.scm is a generated file
+;; and in case of out-of-tree build it resides in a build directory while
+;; this file (test.scm) is in a source directory, so 'include' can't
+;; find ssax-test.scm with a relative pathname.  OTOH, 'load' uses current
+;; directory for files starting with "./".
+(load "./ssax-test.scm")
 
 ;(load "./tree-trans-test.scm")
 ;(load "./to-html-test.scm")
