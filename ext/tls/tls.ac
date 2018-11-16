@@ -114,7 +114,7 @@ AC_ARG_WITH([ca-bundle],
   AS_HELP_STRING([--with-ca-bundle=/path/to/ca-bundle.crt],
 		 [Specify the default CA certificate bundle file path for 
                   TLS certificate validation. This file is required to use 
-                  mbed TLS.]),
+                  mbed TLS. If set "system", use system certificate store.]),
   [
     AS_CASE([$with_ca_bundle],
 	[no],     [AC_DEFINE([GAUCHE_CA_BUNDLE_NONE], 1, [Define if uses no CA])],
