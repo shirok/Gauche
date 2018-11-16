@@ -473,6 +473,7 @@ test-arith.$(OBJEXT) : gauche/priv/arith.h
 install-check :
 	@rm -rf test.log
 	@for f in `cat ../test/TESTS ../test/TESTS2`; do \
+	  top_srcdir=$(top_srcdir) \
 	  "${bindir}/gosh" ../test/$$f install-check; \
 	done
 
