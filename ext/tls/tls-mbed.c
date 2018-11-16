@@ -168,7 +168,7 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
                   " validate server certs.");
     } else if(SCM_SYMBOLP(SCM_SYMBOL(s_ca_file))) {
         if(SCM_FALSEP(load_system_cert(t))) {
-            Scm_SysError("Can't load certificates from system certificate store");
+            Scm_Error("Can't load certificates from system certificate store");
         }
     } else if(SCM_STRINGP(s_ca_file)) {
         const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
