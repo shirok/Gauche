@@ -172,7 +172,15 @@ ScmObj Scm_TLSSocket(ScmTLS* t)
 
 static inline ScmObj default_ca_bundle(void)
 {
-    return GAUCHE_CA_BUNDLE ? SCM_MAKE_STR(GAUCHE_CA_BUNDLE) : SCM_FALSE;
+#if   defined GAUCHE_CA_BUNDLE_NONE
+    return SCM_FALSE;
+#elif defined GAUCHE_CA_BUNDLE_SYSTEM
+    return Scm_MakeSymbol(SCM_MAKE_STR("system"), TRUE);
+#elif defined GAUCHE_CA_BUNDLE_FILE
+    return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
+#else
+#error Unknown CA bundle
+#endif
 }
 
 void Scm_Init_tls(ScmModule *mod)
