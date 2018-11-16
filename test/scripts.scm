@@ -105,9 +105,7 @@
 ;; See https://github.com/shirok/Gauche/issues/244
 (test* "proper error handling of 'main'" "ok"
        (unwind-protect
-           (let1 gauche.h (if-let1 top (sys-getenv "top_srcdir")
-                            (build-path top "src/gauche.h")
-                            "gauche.h")
+           (begin
              (delete-files "test.o")
              (with-output-to-file "test.o"
                (^[]
@@ -115,7 +113,7 @@
                   '(use gauche.partcont))
                  (write
                   `(define (main args)
-                     (reset (shift k (call-with-input-file ,gauche.h k)))
+                     (reset (shift k (call-with-input-file "test.o" k)))
                      (print 'ok)
                      0))))
              (process-output->string '("./gosh" "-ftest" "test.o")))
