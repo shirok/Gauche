@@ -73,12 +73,24 @@
     (build-path *builddir* "src" file)))
 
 (define (find-source file)
-  (if (equal? *srcdir* ".")
-    (build-path (sys-getcwd) file)
-    (let1 candidate (build-path *srcdir* file)
-      (if (file-exists? candidate)
-        candidate
-        (build-path (sys-getcwd) file)))))
+  (sys-normalize-pathname
+   (if (equal? *srcdir* ".")
+     (build-path (sys-getcwd) file)
+     (let ([candidate (build-path *srcdir* file)]
+           [prefix (make-source-prefix file)])
+       (if (file-exists? candidate)
+         (build-path prefix candidate)
+         (build-path (sys-getcwd) prefix file))))
+   :canonicalize #t))
+
+;; file="foo" => prefix="."
+;; file="foo/bar" => prefix="../."
+;; file="foo/bar/baz" => prefix="../../."
+(define (make-source-prefix file)
+  (if (equal? (sys-dirname file) ".")
+    "."
+    (build-path ".." (make-source-prefix (sys-dirname file)))))
+    
 
 (define (parse-args args)
   (cond [(null? args) '()]
