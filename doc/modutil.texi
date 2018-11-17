@@ -15285,8 +15285,13 @@ Set/get the CA certificate bundle path to be used.  Without arguments, it
 returns the current path.  With one argument, a pathname to the CA bundle
 file, updates the parameter to the new value and returns the previous value.
 
-If you use mbedTLS, you need to set this value to the valid CA bundle
-file.  Unfortunately there's no globally agreed location for such file.
+Some platform can load CA bundle from system certificate store.
+If you sets @code{path} to symbol @code{system} on such platform,
+use system certificate store as CA certificate bundle.
+
+If you use mbedTLS with CA bundle file, you need to set this value to the
+valid CA bundle file path.
+Unfortunately there's no globally agreed location for such file.
 If you need one, one choice is to fetch it from 
 @url{https://curl.haxx.se/ca/cacert.pem}, store it locally and set its path
 to @code{tls-ca-bundle-path}.  (We can't automatically do that, since
