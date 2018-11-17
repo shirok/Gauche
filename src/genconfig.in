@@ -255,6 +255,7 @@ static void errfn(const char *fmt, ...)
     exit(1);
 }
 
+#define GAUCHE_CONFIG_C
 #define PATH_ALLOC(n) malloc(n)
 #include "paths.c"
 
@@ -275,6 +276,7 @@ int main(int argc, char **argv)
 {
 #if (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE)
     (void)&mbs2wcs; /* suppress unused function warning */
+    (void)&wcs2mbs;
 #endif /* (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
 
     if (argc < 2) usage();
