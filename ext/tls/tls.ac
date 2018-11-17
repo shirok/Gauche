@@ -47,7 +47,7 @@ GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
 GAUCHE_TLS_SWITCH_NONE=
 
 dnl We bundle axTLS so it's always available.
-AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q axtls], [
+AS_IF([echo $TLSLIBS | grep -F -w -q axtls], [
   AC_DEFINE(GAUCHE_USE_AXTLS, 1, [Define if you use axTLS])
   GAUCHE_TLS_SWITCH_AXTLS=
   GAUCHE_TLS_SWITCH_NONE="@%:@"
@@ -63,7 +63,7 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q axtls], [
 ])
 
 dnl mbedtls
-AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
+AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
   AC_CHECK_HEADER([mbedtls/net_sockets.h],
     [AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1, 
                [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
