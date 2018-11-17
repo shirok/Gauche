@@ -117,9 +117,9 @@ AC_ARG_WITH([ca-bundle],
                   mbed TLS. If set "system", use system certificate store.]),
   [
     AS_CASE([$with_ca_bundle],
-	[no],     [AC_DEFINE([GAUCHE_CA_BUNDLE_NONE], 1, [Define if uses no CA])],
+	[no],     [AC_DEFINE([GAUCHE_CA_BUNDLE_NONE],   1, [Define if uses no CA])],
 	[system], [AC_DEFINE([GAUCHE_CA_BUNDLE_SYSTEM], 1, [Define if uses system CA])],
-                  [AC_DEFINE([GAUCHE_CA_BUNDLE_FILE], 1, [Define if file CA])
+                  [AC_DEFINE([GAUCHE_CA_BUNDLE_FILE],   1, [Define if file CA])
 	           AC_DEFINE_UNQUOTED([GAUCHE_CA_BUNDLE], ["$with_ca_bundle"], [CA file path])]
      )
   ], [
