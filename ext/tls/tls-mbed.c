@@ -88,7 +88,7 @@ static inline ScmObj load_system_cert(ScmMbedTLS *t)
 				     (CERT_STORE_SHARE_STORE_FLAG |
 				      CERT_STORE_SHARE_CONTEXT_FLAG |
 				      CERT_STORE_OPEN_EXISTING_FLAG |
-				      CERT_STORE_MAXIMUM_ALLOWED_FLAG |
+				      CERT_STORE_READONLY_FLAG |
 				      CERT_SYSTEM_STORE_LOCAL_MACHINE),
 				     TEXT("Root"));
   if (h == NULL) {
