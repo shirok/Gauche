@@ -106,7 +106,7 @@ PRECOMP_DEPENDENCY = precomp vminsn.scm ../lib/gauche/vm/insn.scm \
 
 # for cross build
 BUILD_CC     = @BUILD_CC@
-BUILD_CFLAGS = -O2 -I$(top_builddir)/src
+BUILD_CFLAGS = -O2 -I$(top_builddir)/src -I$(top_srcdir)/src
 
 # BUILD_GOSH is the gosh command used to generate some of the source files.
 # We need to 'preload' some libraries from the host's environment, for
