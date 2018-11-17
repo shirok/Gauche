@@ -955,5 +955,6 @@ This Gauche has been configured with the following parameters:
               slib: $SLIB_DIR
             thread: $GAUCHE_THREAD_TYPE
            tls/ssl: $GAUCHE_TLS_TYPES
+          CA store: $TLS_CA_TYPE $TLS_CA_PATH
   optional modules: $OPTDBMS$OPTZLIB
 ])
