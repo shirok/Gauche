@@ -47,7 +47,7 @@
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs);
 
-static void mbedtls_print(ScmObj obj, ScmPort* port, 
+static void mbedtls_print(ScmObj obj, ScmPort* port,
                           ScmWriteContext* ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%A", Scm_ShortClassName(SCM_CLASS_OF(obj)));
@@ -57,7 +57,7 @@ static void mbedtls_print(ScmObj obj, ScmPort* port,
 }
 
 /* NB: We avoid referring Scm_TLSClass statically, since it is in another
-   DSO module and some OS doesn't resolve inter-DSO static data.  We 
+   DSO module and some OS doesn't resolve inter-DSO static data.  We
    set the CPA field in init routine. */
 SCM_DEFINE_BUILTIN_CLASS(Scm_MbedTLSClass, mbedtls_print, NULL,
                          NULL, mbed_allocate, NULL);
@@ -82,41 +82,41 @@ typedef struct ScmMbedTLSRec {
 static inline ScmObj load_system_cert(ScmMbedTLS *t)
 {
 #ifdef HAVE_WINCRYPT_H
-  const HCERTSTORE h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
-				     X509_ASN_ENCODING,
-				     0,
-				     (CERT_STORE_SHARE_STORE_FLAG |
-				      CERT_STORE_SHARE_CONTEXT_FLAG |
-				      CERT_STORE_OPEN_EXISTING_FLAG |
-				      CERT_STORE_READONLY_FLAG |
-				      CERT_SYSTEM_STORE_LOCAL_MACHINE),
-				     TEXT("Root"));
-  if (h == NULL) {
-    Scm_Warn("Can't open certificate store");
-    return SCM_FALSE;
-  }
-
-  if(!CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL)) {
-    Scm_Warn("Can't resync certificate store");
-    CertCloseStore(h, 0);
-    return SCM_FALSE;
-  }
-
-
-  PCCERT_CONTEXT ctx = NULL;
-  while(1) {
-    ctx = CertEnumCertificatesInStore(h, ctx);
-
-    if (ctx == NULL) { break; }
-
-    int st = mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, ctx->cbCertEncoded);
-    if(st != 0) {
-      Scm_Warn("Certificate is not accepted: %d", st);
+    const HCERTSTORE h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
+                                       X509_ASN_ENCODING,
+                                       0,
+                                       (CERT_STORE_SHARE_STORE_FLAG |
+                                        CERT_STORE_SHARE_CONTEXT_FLAG |
+                                        CERT_STORE_OPEN_EXISTING_FLAG |
+                                        CERT_STORE_READONLY_FLAG |
+                                        CERT_SYSTEM_STORE_LOCAL_MACHINE),
+                                       TEXT("Root"));
+    if (h == NULL) {
+        Scm_Warn("Can't open certificate store");
+        return SCM_FALSE;
     }
-  }
 
-  CertCloseStore(h, 0);
-  return SCM_TRUE;
+    if(!CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL)) {
+        Scm_Warn("Can't resync certificate store");
+        CertCloseStore(h, 0);
+        return SCM_FALSE;
+    }
+
+
+    PCCERT_CONTEXT ctx = NULL;
+    while(1) {
+        ctx = CertEnumCertificatesInStore(h, ctx);
+
+        if (ctx == NULL) { break; }
+
+        int st = mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, ctx->cbCertEncoded);
+        if(st != 0) {
+            Scm_Warn("Certificate is not accepted: %d", st);
+        }
+    }
+
+    CertCloseStore(h, 0);
+    return SCM_TRUE;
 #else
     (void)t;
     return SCM_FALSE;
@@ -138,7 +138,7 @@ static void mbed_close_check(ScmMbedTLS* t, const char *op)
 static ScmObj mbed_connect(ScmTLS* tls, int fd)
 {
     ScmMbedTLS* t = (ScmMbedTLS*)tls;
-    
+
     mbed_context_check(t, "connect");
     const char* pers = "Gauche";
     if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
@@ -258,7 +258,7 @@ static ScmObj mbed_read(ScmTLS* tls)
 
     if (r < 0) { Scm_SysError("mbedtls_ssl_read() failed"); }
 
-    return Scm_MakeString((char *)buf, r, r, 
+    return Scm_MakeString((char *)buf, r, r,
                           SCM_STRING_INCOMPLETE | SCM_STRING_COPYING);
 }
 
@@ -270,7 +270,7 @@ static ScmObj mbed_write(ScmTLS* tls, ScmObj msg)
 
     ScmSize size;
     const uint8_t* cmsg = Scm_GetBytes(msg, &size);
-    
+
     if (cmsg == NULL) {
         Scm_TypeError("TLS message", "uniform vector or string", msg);
     }
@@ -362,4 +362,3 @@ void Scm_Init_rfc__tls__mbed()
     SCM_DEFINE(mod, "<mbed-tls>", SCM_FALSE);
 #endif /* defined(GAUCHE_USE_MBEDTLS) */
 }
-
