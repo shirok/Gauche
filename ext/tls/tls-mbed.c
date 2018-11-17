@@ -79,9 +79,9 @@ typedef struct ScmMbedTLSRec {
 } ScmMbedTLS;
 
 
+#ifdef HAVE_WINCRYPT_H
 static inline ScmObj load_system_cert(ScmMbedTLS *t)
 {
-#ifdef HAVE_WINCRYPT_H
     const HCERTSTORE h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
                                        X509_ASN_ENCODING,
                                        0,
@@ -117,11 +117,10 @@ static inline ScmObj load_system_cert(ScmMbedTLS *t)
 
     CertCloseStore(h, 0);
     return SCM_TRUE;
-#else
-    (void)t;
-    return SCM_FALSE;
-#endif
 }
+#else
+static inline ScmObj load_system_cert(ScmMbedTLS *t SCM_UNUSED) { return SCM_FALSE; }
+#endif
 
 
 static void mbed_context_check(ScmMbedTLS* t SCM_UNUSED,
