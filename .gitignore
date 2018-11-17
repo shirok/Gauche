@@ -168,10 +168,13 @@ test.record
 /src/char_attr.c
 /src/compile.c
 /src/gauche-cesconv
+/src/gauche-cesconv.in.c
 /src/gauche-config
 /src/gauche-config.c
 /src/gauche-install
+/src/gauche-install.in.c
 /src/gauche-package
+/src/gauche-package.in.c
 /src/gauche/config_threads.h
 /src/gauche/priv/builtin-syms.h
 /src/gauche/priv/unicode_attr.h
