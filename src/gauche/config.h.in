@@ -20,7 +20,7 @@
 /* CA file path */
 #undef GAUCHE_CA_BUNDLE
 
-/* Define if file CA */
+/* Define if uses file CA */
 #undef GAUCHE_CA_BUNDLE_FILE
 
 /* Define if uses no CA */
