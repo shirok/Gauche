@@ -125,7 +125,7 @@ AC_ARG_WITH([ca-bundle],
                    TLS_CA_TYPE=system
                    TLS_CA_PATH=
                   ],
-                  [AC_DEFINE([GAUCHE_CA_BUNDLE_FILE],   1, [Define if file CA])
+                  [AC_DEFINE([GAUCHE_CA_BUNDLE_FILE],   1, [Define if uses file CA])
                    AC_DEFINE_UNQUOTED([GAUCHE_CA_BUNDLE], ["$with_ca_bundle"], [CA file path])
                    TLS_CA_TYPE=file
                    TLS_CA_PATH=$with_ca_bundle
