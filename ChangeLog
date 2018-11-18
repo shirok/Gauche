@@ -1,3 +1,9 @@
+2018-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Support 'system CA store on Windows/mbed, that fetches
+	  CA certs from the system certificate store.  By @qykth-git
+	  https://github.com/shirok/Gauche/pull/395
+
 2018-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm: Reorder instructions for better understandability,
