@@ -47,7 +47,7 @@ GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
 GAUCHE_TLS_SWITCH_NONE=
 
 dnl We bundle axTLS so it's always available.
-AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q axtls], [
+AS_IF([echo $TLSLIBS | grep -F -w -q axtls], [
   AC_DEFINE(GAUCHE_USE_AXTLS, 1, [Define if you use axTLS])
   GAUCHE_TLS_SWITCH_AXTLS=
   GAUCHE_TLS_SWITCH_NONE="@%:@"
@@ -63,7 +63,7 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q axtls], [
 ])
 
 dnl mbedtls
-AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
+AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
   AC_CHECK_HEADER([mbedtls/net_sockets.h],
     [AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1, 
                [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
@@ -86,11 +86,19 @@ AS_IF([echo $TLSLIBS | tr "," "\012" | grep -q mbedtls], [
   LIBS=${LIBS_SAVE}
   EXT_LIBS="$EXT_LIBS $MBEDTLS_LIBS"
 
+  LIBS_SAVE=${LIBS}
+  SYSTEM_CERT_LIBS=""
+  AC_CHECK_HEADERS([wincrypt.h], [], [], [@%:@include<windows.h>])
+  AC_SEARCH_LIBS([CertOpenStore], [crypt32], [SYSTEM_CERT_LIBS="-lcrypt32 ${SYSTEM_CERT_LIBS}"])
+  LIBS=${LIBS_SAVE}
+  EXT_LIBS="$EXT_LIBS $SYSTEM_CERT_LIBS"
+
   AS_IF([test "$mbedtls_unavailable" = yes], [
     AC_MSG_NOTICE([Can't find mbedtls headers and/or libraries.])
     ],[
       AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
       AC_SUBST(MBEDTLS_LIBS)
+      AC_SUBST(SYSTEM_CERT_LIBS)
       GAUCHE_TLS_TYPES="mbedtls $GAUCHE_TLS_TYPES"
       GAUCHE_TLS_SWITCH_MBEDTLS=
       GAUCHE_TLS_SWITCH_NONE="@%:@"
@@ -106,14 +114,27 @@ AC_ARG_WITH([ca-bundle],
   AS_HELP_STRING([--with-ca-bundle=/path/to/ca-bundle.crt],
 		 [Specify the default CA certificate bundle file path for 
                   TLS certificate validation. This file is required to use 
-                  mbed TLS.]),
+                  mbed TLS. If set "system", use system certificate store.]),
   [
     AS_CASE([$with_ca_bundle],
-	[no], [AC_DEFINE([GAUCHE_CA_BUNDLE], [NULL])],
-              [AC_DEFINE_UNQUOTED([GAUCHE_CA_BUNDLE], ["$with_ca_bundle"], [CA file path])]
+        [no],     [AC_DEFINE([GAUCHE_CA_BUNDLE_NONE],   1, [Define if uses no CA])
+                   TLS_CA_TYPE=none
+                   TLS_CA_PATH=
+                  ],
+        [system], [AC_DEFINE([GAUCHE_CA_BUNDLE_SYSTEM], 1, [Define if uses system CA])
+                   TLS_CA_TYPE=system
+                   TLS_CA_PATH=
+                  ],
+                  [AC_DEFINE([GAUCHE_CA_BUNDLE_FILE],   1, [Define if file CA])
+                   AC_DEFINE_UNQUOTED([GAUCHE_CA_BUNDLE], ["$with_ca_bundle"], [CA file path])
+                   TLS_CA_TYPE=file
+                   TLS_CA_PATH=$with_ca_bundle
+                  ]
      )
   ], [
-    AC_DEFINE([GAUCHE_CA_BUNDLE], [NULL])
+    AC_DEFINE([GAUCHE_CA_BUNDLE_NONE], 1)
+    TLS_CA_TYPE=none
+    TLS_CA_PATH=
   ])
 
 dnl

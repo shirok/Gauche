@@ -170,6 +170,19 @@ ScmObj Scm_TLSSocket(ScmTLS* t)
     return t->sock;
 }
 
+static inline ScmObj default_ca_bundle(void)
+{
+#if   defined(GAUCHE_CA_BUNDLE_NONE)
+    return SCM_FALSE;
+#elif defined(GAUCHE_CA_BUNDLE_SYSTEM)
+    return Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("system")), TRUE);
+#elif defined(GAUCHE_CA_BUNDLE_FILE)
+    return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
+#else
+#error Unknown CA bundle
+#endif
+}
+
 void Scm_Init_tls(ScmModule *mod)
 {
     Scm_InitStaticClass(&Scm_TLSClass, "<tls>", mod, NULL, 0);
@@ -184,9 +197,7 @@ void Scm_Init_tls(ScmModule *mod)
 #endif
                                  &default_tls_class);
     Scm_DefinePrimitiveParameter(mod, "tls-ca-bundle-path",
-                                 (GAUCHE_CA_BUNDLE
-                                  ? SCM_MAKE_STR(GAUCHE_CA_BUNDLE)
-                                  : SCM_FALSE),
+                                 default_ca_bundle(),
                                  &ca_bundle_path);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
