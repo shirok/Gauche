@@ -2932,12 +2932,14 @@ the error bound @var{ebound}.
 
 Note that Gauche doesn't have inexact rational number, so if @var{x}
 and/or @var{ebound} is inexact, the result is coerced to
-floating point representation.
+floating point representation.  If you want an exact result,
+coerce the arguments to exact number first.
 @c JP
 実数@var{x}を、誤差@var{ebound}以内で近似した最も単純な有理数@var{q}を返します。
 
 Gaucheは不正確な有理数をサポートしないので、引数の少なくとも一方が不正確数だと
 結果の有理数が浮動小数点数へと変換され不正確数として返されることに注意してください。
+結果を正確数で得たい場合は、引数を正確数で渡してください。
 @c COMMON
 
 @example
@@ -3480,10 +3482,15 @@ R5RS実装の中には、非正確数を@code{exact->inexact}に渡したりす�
 Find the simplest rational representation of a finite real
 number @var{x} within the specified error bounds.  This is the low-level
 routine called by @code{rationalize} and @code{exact}.
+Typically you want to use @code{rationalize} (@pxref{Arithmetics})
+for this purpose.  Use @code{real->rational} only when you need finer
+control of error bounds.
 @c JP
 指定されたエラー範囲の中で、有限な実数@var{x}の正確な有理数表現のうち
 最も簡単なものを返します。@code{ratinalize}や@code{exact}はこの手続きを
-下請けとして呼び出しています。
+下請けとして呼び出しています。通常は@code{rationalize} (@ref{Arithmetics}参照)
+を使い、@code{real->rational}は誤差許容値をより細かく制御したい時のみ
+使うのが良いでしょう。
 @c COMMON
 
 @c EN
