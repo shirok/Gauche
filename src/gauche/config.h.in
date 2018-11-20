@@ -20,13 +20,13 @@
 /* CA file path */
 #undef GAUCHE_CA_BUNDLE
 
-/* Define if uses file CA */
+/* Define to use file CA */
 #undef GAUCHE_CA_BUNDLE_FILE
 
-/* Define if uses no CA */
+/* Define not to use CA */
 #undef GAUCHE_CA_BUNDLE_NONE
 
-/* Define if uses system CA */
+/* Define to use system CA */
 #undef GAUCHE_CA_BUNDLE_SYSTEM
 
 /* Define if Gauche handles multi-byte character as EUC-JP */

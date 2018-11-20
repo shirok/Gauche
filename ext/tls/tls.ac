@@ -71,7 +71,7 @@ AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
       [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
       [mbedtls_unavailable=yes])])
 
-  dnl We don't want to include mbedtls libraris in generic LIBS
+  dnl We don't want to include mbedtls libraries in generic LIBS
   LIBS_SAVE=${LIBS}
   MBEDTLS_LIBS=""
   AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto],
@@ -117,15 +117,15 @@ AC_ARG_WITH([ca-bundle],
                   mbed TLS. If set "system", use system certificate store.]),
   [
     AS_CASE([$with_ca_bundle],
-        [no],     [AC_DEFINE([GAUCHE_CA_BUNDLE_NONE],   1, [Define if uses no CA])
+        [no],     [AC_DEFINE([GAUCHE_CA_BUNDLE_NONE],   1, [Define not to use CA])
                    TLS_CA_TYPE=none
                    TLS_CA_PATH=
                   ],
-        [system], [AC_DEFINE([GAUCHE_CA_BUNDLE_SYSTEM], 1, [Define if uses system CA])
+        [system], [AC_DEFINE([GAUCHE_CA_BUNDLE_SYSTEM], 1, [Define to use system CA])
                    TLS_CA_TYPE=system
                    TLS_CA_PATH=
                   ],
-                  [AC_DEFINE([GAUCHE_CA_BUNDLE_FILE],   1, [Define if uses file CA])
+                  [AC_DEFINE([GAUCHE_CA_BUNDLE_FILE],   1, [Define to use file CA])
                    AC_DEFINE_UNQUOTED([GAUCHE_CA_BUNDLE], ["$with_ca_bundle"], [CA file path])
                    TLS_CA_TYPE=file
                    TLS_CA_PATH=$with_ca_bundle
