@@ -175,7 +175,7 @@ static inline ScmObj default_ca_bundle(void)
 #if   defined(GAUCHE_CA_BUNDLE_NONE)
     return SCM_FALSE;
 #elif defined(GAUCHE_CA_BUNDLE_SYSTEM)
-    return Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR(GAUCHE_CA_SYSTEM)), TRUE);
+    return SCM_INTERN(GAUCHE_CA_SYSTEM);
 #elif defined(GAUCHE_CA_BUNDLE_FILE)
     return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
 #else
@@ -293,7 +293,7 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
             Scm_Error("axTLS: tls-ca-bundle-path must be set to validate server certs.");
         }
     } else {
-      if(Scm_EqP(s_ca_file, Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR(GAUCHE_CA_SYSTEM)), TRUE))) {
+      if(Scm_EqP(s_ca_file, SCM_INTERN(GAUCHE_CA_SYSTEM))) {
           if(SCM_FALSEP(load_system_cert(t))) {
               Scm_Error("Can't load certificates from system certificate store");
           }
