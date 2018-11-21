@@ -212,6 +212,10 @@ void Scm_Init_tls(ScmModule *mod)
 
 #if defined(GAUCHE_USE_AXTLS)
 
+#ifdef HAVE_WINCRYPT_H
+#include <wincrypt.h>
+#endif
+
 typedef struct ScmAxTLSRec {
     ScmTLS common;
     SSL_CTX* ctx;
@@ -219,6 +223,50 @@ typedef struct ScmAxTLSRec {
     SSL_EXTENSIONS* extensions;
     ScmString *server_name;
 } ScmAxTLS;
+
+#ifdef HAVE_WINCRYPT_H
+static inline ScmObj load_system_cert(ScmAxTLS *t)
+{
+    const HCERTSTORE h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
+                                       X509_ASN_ENCODING,
+                                       0,
+                                       (CERT_STORE_SHARE_STORE_FLAG |
+                                        CERT_STORE_SHARE_CONTEXT_FLAG |
+                                        CERT_STORE_OPEN_EXISTING_FLAG |
+                                        CERT_STORE_READONLY_FLAG |
+                                        CERT_SYSTEM_STORE_LOCAL_MACHINE),
+                                       TEXT("Root"));
+    if (h == NULL) {
+        Scm_Warn("Can't open certificate store");
+        return SCM_FALSE;
+    }
+
+    if(!CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL)) {
+        Scm_Warn("Can't resync certificate store");
+        CertCloseStore(h, 0);
+        return SCM_FALSE;
+    }
+
+
+    PCCERT_CONTEXT ctx = NULL;
+    while(1) {
+        ctx = CertEnumCertificatesInStore(h, ctx);
+
+        if (ctx == NULL) { break; }
+
+        int st = ssl_obj_memory_load(t->ctx, SSL_OBJ_X509_CACERT, ctx->pbCertEncoded, ctx->cbCertEncoded, NULL);
+        if(st != SSL_OK) {
+            Scm_Warn("Certificate is not accepted: %d", st);
+        }
+    }
+
+    CertCloseStore(h, 0);
+    return SCM_TRUE;
+}
+#else
+static inline ScmObj load_system_cert(ScmAxTLS *t SCM_UNUSED) { return SCM_FALSE; }
+#endif
+
 
 static void ax_context_check(ScmAxTLS* t, const char* op)
 {
@@ -229,7 +277,7 @@ static void ax_close_check(ScmAxTLS* t, const char *op)
 {
     if (!t->conn) Scm_Error("attempt to %s closed TLS: %S", op, t);
 }
-    
+
 static ScmObj ax_connect(ScmTLS* tls, int fd)
 {
     ScmAxTLS *t = (ScmAxTLS*)tls;
@@ -245,15 +293,20 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
             Scm_Error("axTLS: tls-ca-bundle-path must be set to validate server certs.");
         }
     } else {
-        if (!SCM_STRINGP(s_ca_file)) {
-            Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
-                      " but got: %S", s_ca_file);
+      if(Scm_EqP(s_ca_file, Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("system")), TRUE))) {
+	if(SCM_FALSEP(load_system_cert(t))) {
+	  Scm_Error("Can't load certificates from system certificate store");
         }
-        const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
-        if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT),
-                                   ca_file, NULL))) {
-            Scm_Error("CA bundle can't load: file=%S", s_ca_file);
-        }
+      } else if (SCM_STRINGP(s_ca_file)) {
+	const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
+	if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT),
+				   ca_file, NULL))) {
+	  Scm_Error("CA bundle can't load: file=%S", s_ca_file);
+	}
+      } else {
+	Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
+		  " but got: %S", s_ca_file);
+      }
     }
 
     const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
