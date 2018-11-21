@@ -54,7 +54,7 @@ bcrypt: mt-random
 
 dbm : threads
 
-rfc: gauche util
+rfc: gauche srfi util
 
 test : check
 
