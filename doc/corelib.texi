@@ -3155,6 +3155,12 @@ where @var{z1} and @var{z2} are complex numbers.
 複素数@var{z1}, @var{z2}に対して、
 @var{z1}^@var{z2} (@var{z1}の@var{z2}乗)を返します。
 @c COMMON
+
+@c EN
+Scheme standard defines @code{(expt 0 0)} as 1 for convenience.
+@c JP
+Scheme標準では便宜上@code{(expt 0 0)}は1と定めています。
+@c COMMON
 @end defun
 
 @defun expt-mod base exponent mod
