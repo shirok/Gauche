@@ -1,3 +1,8 @@
+2018-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Support 'system CA store for axTLS as well. By @qykth-git
+	  https://github.com/shirok/Gauche/pull/398
+
 2018-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Support 'system CA store on Windows/mbed, that fetches
