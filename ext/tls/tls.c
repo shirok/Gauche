@@ -59,7 +59,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_AxTLSClass, tls_print, NULL,
                          NULL, ax_allocate, tlsclass_cpa);
 #endif /*GAUCHE_USE_AXTLS*/
 
-static void tls_print(ScmObj obj, ScmPort* port, 
+static void tls_print(ScmObj obj, ScmPort* port,
                       ScmWriteContext* ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%A", Scm_ShortClassName(SCM_CLASS_OF(obj)));
@@ -294,18 +294,18 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
         }
     } else {
       if(Scm_EqP(s_ca_file, Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("system")), TRUE))) {
-	if(SCM_FALSEP(load_system_cert(t))) {
-	  Scm_Error("Can't load certificates from system certificate store");
-        }
+          if(SCM_FALSEP(load_system_cert(t))) {
+              Scm_Error("Can't load certificates from system certificate store");
+          }
       } else if (SCM_STRINGP(s_ca_file)) {
-	const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
-	if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT),
-				   ca_file, NULL))) {
-	  Scm_Error("CA bundle can't load: file=%S", s_ca_file);
-	}
+          const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
+          if (!(t->common.loadObject(SCM_TLS(t), SCM_MAKE_INT(SSL_OBJ_X509_CACERT),
+                                     ca_file, NULL))) {
+              Scm_Error("CA bundle can't load: file=%S", s_ca_file);
+          }
       } else {
-	Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
-		  " but got: %S", s_ca_file);
+          Scm_Error("Parameter tls-ca-bundle-path must have a string value,"
+                    " but got: %S", s_ca_file);
       }
     }
 
@@ -433,4 +433,3 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
 }
 
 #endif /*GAUCHE_USE_AXTLS*/
-
