@@ -43,6 +43,10 @@
 #include <gauche/extern.h>
 #include <gauche/class.h>
 
+#ifndef GAUCHE_CA_BUNDLE
+#define GAUCHE_CA_BUNDLE "ca-cert.crt"
+#endif
+
 #if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
 #endif  /* GAUCHE_USE_MBEDTLS */
@@ -56,10 +60,6 @@
 #include <mbedtls/net_sockets.h>
 #elif  HAVE_MBEDTLS_NET_H
 #include <mbedtls/net.h>
-#endif
-
-#ifndef GAUCHE_CA_BUNDLE
-#define GAUCHE_CA_BUNDLE "ca-cert.crt"
 #endif
 
 #endif  /*GAUCHE_USE_MBEDTLS*/
