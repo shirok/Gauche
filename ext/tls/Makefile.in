@@ -66,7 +66,7 @@ XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GEN
 @CROSS_COMPILING_yes@all : $(LIBFILES)
 
 rfc--tls.$(SOEXT) : $(TLS_OBJECTS)
-	$(MODLINK) rfc--tls.$(SOEXT) $(TLS_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) rfc--tls.$(SOEXT) $(TLS_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS) $(SYSTEM_CERT_LIBS)
 
 tls.sci rfc--tls.c : tls.scm
 	$(PRECOMP) -e -P -o rfc--tls $(srcdir)/tls.scm

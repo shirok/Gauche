@@ -165,7 +165,7 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     if (SCM_FALSEP(s_ca_file)) {
         Scm_Error("mbedTLS: tls-ca-bundle-path isn't set. It is required to"
                   " validate server certs.");
-    } else if(Scm_EqP(s_ca_file, Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("system")), TRUE))) {
+    } else if(Scm_EqP(s_ca_file, Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR(GAUCHE_CA_SYSTEM)), TRUE))) {
         if(SCM_FALSEP(load_system_cert(t))) {
             Scm_Error("Can't load certificates from system certificate store");
         }
