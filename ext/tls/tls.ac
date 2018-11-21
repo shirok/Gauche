@@ -103,13 +103,15 @@ AC_SUBST(GAUCHE_TLS_SWITCH_MBEDTLS)
 AC_SUBST(GAUCHE_TLS_SWITCH_NONE)
 
 dnl Check system CA store support
-LIBS_SAVE=${LIBS}
-SYSTEM_CERT_LIBS=""
-AC_CHECK_HEADERS([wincrypt.h], [], [], [@%:@include<windows.h>])
-AC_SEARCH_LIBS([CertOpenStore], [crypt32], [SYSTEM_CERT_LIBS="-lcrypt32 ${SYSTEM_CERT_LIBS}"])
-LIBS=${LIBS_SAVE}
-EXT_LIBS="$EXT_LIBS $SYSTEM_CERT_LIBS"
-AC_SUBST(SYSTEM_CERT_LIBS)
+AS_IF([test -n "$TLSLIBS"], [
+  LIBS_SAVE=${LIBS}
+  SYSTEM_CERT_LIBS=""
+  AC_CHECK_HEADERS([wincrypt.h], [], [], [@%:@include<windows.h>])
+  AC_SEARCH_LIBS([CertOpenStore], [crypt32], [SYSTEM_CERT_LIBS="-lcrypt32 ${SYSTEM_CERT_LIBS}"])
+  LIBS=${LIBS_SAVE}
+  EXT_LIBS="$EXT_LIBS $SYSTEM_CERT_LIBS"
+  AC_SUBST(SYSTEM_CERT_LIBS)
+])
 
 
 AC_ARG_WITH([ca-bundle],
