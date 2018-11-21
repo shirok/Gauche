@@ -47,6 +47,8 @@
 #define GAUCHE_CA_BUNDLE "ca-cert.crt"
 #endif
 
+#define GAUCHE_CA_SYSTEM "system"
+
 #if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
 #endif  /* GAUCHE_USE_MBEDTLS */
