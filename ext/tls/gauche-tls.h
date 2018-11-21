@@ -43,10 +43,6 @@
 #include <gauche/extern.h>
 #include <gauche/class.h>
 
-#ifndef GAUCHE_CA_BUNDLE
-#define GAUCHE_CA_BUNDLE "ca-cert.crt"
-#endif
-
 #define GAUCHE_CA_SYSTEM "system"
 
 #if defined(GAUCHE_USE_AXTLS)
