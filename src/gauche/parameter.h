@@ -50,7 +50,7 @@
    object contains more stuff like filter procedures or hooks.
    Those extra stuff is not accessible from C API. */
 typedef struct ScmParameterLocRec {
-    int  index;
+    ScmSize  index;
     ScmObj initialValue;
 } ScmParameterLoc;
 
@@ -74,10 +74,8 @@ SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location /*o
 /* PRIVATE STUFF */
 
 typedef struct ScmVMParameterTableRec {
-    int size;
-    int dummy_;                 /* for ABI */
+    ScmSize size;
     ScmObj *vector;
-    void *dummy2_;              /* for ABI */
 } ScmVMParameterTable;
 
 SCM_EXTERN void Scm__VMParameterTableInit(ScmVMParameterTable *table,

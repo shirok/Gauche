@@ -1,3 +1,8 @@
+2018-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.h: Change parameter table rayout
+	  (ABI incompatible change - recompilation needed).
+
 2018-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Support 'system CA store for axTLS as well. By @qykth-git

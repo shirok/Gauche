@@ -66,7 +66,7 @@
 /* Every time a new parameter is created (in any thread), it is
  * given a unique index in the process.
  */
-static int next_parameter_index = 0;
+static ScmSize next_parameter_index = 0;
 ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
@@ -82,25 +82,25 @@ void Scm__VMParameterTableInit(ScmVMParameterTable *table,
            modified during copying. */
         table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.size);
         table->size = base->parameters.size;
-        for (int i=0; i<table->size; i++) {
+        for (ScmSize i=0; i<table->size; i++) {
             table->vector[i] = base->parameters.vector[i];
         }
     } else {
         table->vector = SCM_NEW_ARRAY(ScmObj, PARAMETER_INIT_SIZE);
         table->size = PARAMETER_INIT_SIZE;
-        for (int i=0; i<table->size; i++) {
+        for (ScmSize i=0; i<table->size; i++) {
             table->vector[i] = SCM_UNBOUND;
         }
     }
 }
 
-static void ensure_parameter_slot(ScmVMParameterTable *p, int index)
+static void ensure_parameter_slot(ScmVMParameterTable *p, ScmSize index)
 {
     if (index >= p->size) {
-        int newsiz = ((index+PARAMETER_GROW)/PARAMETER_GROW)*PARAMETER_GROW;
+        ScmSize newsiz = ((index+PARAMETER_GROW)/PARAMETER_GROW)*PARAMETER_GROW;
         ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
 
-        int i;
+        ScmSize i;
         for (i=0; i < p->size; i++) {
             newvec[i] = p->vector[i];
             p->vector[i] = SCM_FALSE; /*be friendly to GC*/
@@ -119,7 +119,7 @@ static void ensure_parameter_slot(ScmVMParameterTable *p, int index)
 void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
 {
     SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
-    int index = next_parameter_index++;
+    ScmSize index = next_parameter_index++;
     SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
 
     ensure_parameter_slot(&(vm->parameters), index);
