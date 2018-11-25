@@ -88,7 +88,7 @@ static struct {
 } hashBangData;
 
 /* Parameter location for default reader mode */
-ScmParameterLoc defaultReadContext;
+static ScmPrimitiveParameter *defaultReadContext;
 
 /*----------------------------------------------------------------
  * Entry points
@@ -185,14 +185,15 @@ ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 
 ScmReadContext *Scm_CurrentReadContext()
 {
-    ScmObj c = Scm_ParameterRef(Scm_VM(), &defaultReadContext);
+    ScmObj c = Scm_PrimitiveParameterRef(Scm_VM(), defaultReadContext);
     SCM_ASSERT(SCM_READ_CONTEXT_P(c));
     return SCM_READ_CONTEXT(c);
 }
 
 ScmReadContext *Scm_SetCurrentReadContext(ScmReadContext *ctx)
 {
-    ScmObj p = Scm_ParameterSet(Scm_VM(), &defaultReadContext, SCM_OBJ(ctx));
+    ScmObj p = Scm_PrimitiveParameterSet(Scm_VM(), defaultReadContext,
+                                         SCM_OBJ(ctx));
     SCM_ASSERT(SCM_READ_CONTEXT_P(p));
     return SCM_READ_CONTEXT(p);
 }
@@ -1813,6 +1814,8 @@ void Scm__InitRead(void)
         SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(hashBangData.mutex);
 
-    Scm_InitParameterLoc(Scm_VM(), &defaultReadContext,
-                         SCM_OBJ(make_read_context(NULL)));
+    defaultReadContext = 
+        Scm_MakePrimitiveParameter(Scm_VM(), SCM_FALSE,
+                                   SCM_OBJ(make_read_context(NULL)),
+                                   0);
 }

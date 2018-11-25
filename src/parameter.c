@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/priv/parameterP.h"
 
 /*
  * Parameters keep thread-local states.   When a thread is created,
@@ -73,17 +74,18 @@ ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
  * thread, base is the current thread (this must be called from the
  * creator thread).
  */
-void Scm__VMParameterTableInit(ScmVMParameterTable *table,
-                               ScmVM *base)
+ScmVMParameterTable *Scm__MakeVMParameterTable(ScmVM *base)
 {
+    ScmVMParameterTable *table = SCM_NEW(ScmVMParameterTable);
+
     if (base) {
         /* NB: In this case, the caller is the owner thread of BASE,
            so we don't need to worry about base->parameters being
            modified during copying. */
-        table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.size);
-        table->size = base->parameters.size;
+        table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters->size);
+        table->size = base->parameters->size;
         for (ScmSize i=0; i<table->size; i++) {
-            table->vector[i] = base->parameters.vector[i];
+            table->vector[i] = base->parameters->vector[i];
         }
     } else {
         table->vector = SCM_NEW_ARRAY(ScmObj, PARAMETER_INIT_SIZE);
@@ -92,6 +94,7 @@ void Scm__VMParameterTableInit(ScmVMParameterTable *table,
             table->vector[i] = SCM_UNBOUND;
         }
     }
+    return table;
 }
 
 static void ensure_parameter_slot(ScmVMParameterTable *p, ScmSize index)
@@ -113,101 +116,129 @@ static void ensure_parameter_slot(ScmVMParameterTable *p, ScmSize index)
     }
 }
 
-/*
- * Allocate new parameter slot and initializes LOCATION
+/* 
+ * Create primitive parameter, which is a SUBR
  */
-void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
+ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmVM *vm,
+                                                  ScmObj name,
+                                                  ScmObj initval,
+                                                  u_long flags)
 {
     SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
     ScmSize index = next_parameter_index++;
     SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
 
-    ensure_parameter_slot(&(vm->parameters), index);
-    location->index = index;
-    location->initialValue = initval;
+    ensure_parameter_slot(vm->parameters, index);
+    ScmPrimitiveParameter *p = SCM_NEW(ScmPrimitiveParameter);
+    p->name = name;
+    p->index = index;
+    p->initialValue = initval;
+    p->flags = flags;
+    return p;
 }
-
-/* TRANSIENT: This is for the backward binary compatibility.  */
-void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
-{
-    Scm_InitParameterLoc(vm, location, SCM_FALSE);
-}
-
 
 /*
  * Accessor & modifier
  */
-
-ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
+ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
-    ScmVMParameterTable *p = &(vm->parameters);
-
-    if (loc->index >= p->size) return loc->initialValue;
-    ScmObj v = p->vector[loc->index];
+    ScmVMParameterTable *t = vm->parameters;
+    if (p->index >= t->size) return p->initialValue;
+    ScmObj v = t->vector[p->index];
     if (SCM_UNBOUNDP(v)) {
-        v = p->vector[loc->index] = loc->initialValue;
+        v = t->vector[p->index] = p->initialValue;
     }
     return v;
 }
 
-ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *loc, ScmObj value)
+ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
+                                 ScmObj val)
 {
     ScmObj oldval;
-    ScmVMParameterTable *p = &(vm->parameters);
-
-    if (loc->index >= p->size) {
-        ensure_parameter_slot(p, loc->index);
-        oldval = loc->initialValue;
+    ScmVMParameterTable *t = vm->parameters;
+    if (p->index >= t->size) {
+        ensure_parameter_slot(t, p->index);
+        oldval = p->initialValue;
     } else {
-        oldval = p->vector[loc->index];
+        oldval = t->vector[p->index];
         if (SCM_UNBOUNDP(oldval)) {
-            oldval = loc->initialValue;
+            oldval = p->initialValue;
         }
     }
-    p->vector[loc->index] = value;
+    t->vector[p->index] = val;
     return oldval;
 }
 
-struct prim_data {
-    const char *name;
-    ScmParameterLoc loc;
-};
-
+/*
+ * To the Scheme world, we wrap ScmPrimitiveParameter with a SUBR.
+ */
 static ScmObj parameter_handler(ScmObj *args, int argc, void *data)
 {
-    struct prim_data *pd = (struct prim_data*)data;
+    ScmPrimitiveParameter *p = (ScmPrimitiveParameter*)data;
     ScmVM *vm = Scm_VM();
     SCM_ASSERT(argc == 1);
     if (SCM_NULLP(args[0])) {
-        return Scm_ParameterRef(vm, &pd->loc);
+        return Scm_PrimitiveParameterRef(vm, p);
     }
     SCM_ASSERT(SCM_PAIRP(args[0]));
     if (SCM_NULLP(SCM_CDR(args[0]))) {
-        return Scm_ParameterSet(vm, &pd->loc, SCM_CAR(args[0]));
+        return Scm_PrimitiveParameterSet(vm, p, SCM_CAR(args[0]));
     }
     else {
-        Scm_Error("Bad number of arguments for parameter %s", pd->name);
+        Scm_Error("Bad number of arguments for parameter %s", p->name);
         return SCM_UNDEFINED;   /* dummy */
     }
 }
 
-void Scm_DefinePrimitiveParameter(ScmModule *mod,
-                                  const char *name,
-                                  ScmObj initval,
-                                  ScmParameterLoc *location)
-{
-    struct prim_data *pd = SCM_NEW(struct prim_data);
-    ScmVM *vm = Scm_VM();
-    ScmObj sname = SCM_MAKE_STR_IMMUTABLE(name);
 
-    pd->name = name;
-    Scm_InitParameterLoc(vm, &pd->loc, initval);
-    ScmObj subr = Scm_MakeSubr(parameter_handler, pd, 0, 1, sname);
-    Scm_Define(mod, SCM_SYMBOL(Scm_Intern(SCM_STRING(sname))), subr);
-    *location = pd->loc;
+ScmObj Scm_MakePrimitiveParameterProc(ScmPrimitiveParameter *p)
+{
+    return Scm_MakeSubr(parameter_handler, p, 0, 1, p->name);
+}
+
+
+ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
+                                                    const char *name,
+                                                    ScmObj initval,
+                                                    u_long flags)
+{
+    ScmPrimitiveParameter *p = 
+        Scm_MakePrimitiveParameter(Scm_VM(), SCM_INTERN(name), initval, flags);
+    ScmObj subr = Scm_MakePrimitiveParameterProc(p);
+    Scm_Define(mod, SCM_SYMBOL(p->name), subr);
+    return p;
 }
 
 void Scm__InitParameter(void)
 {
     SCM_INTERNAL_MUTEX_INIT(parameter_mutex);
 }
+
+/* TRANSIENT: For the backward compatibility.  Remove by 1.0 */
+ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
+{
+    return Scm_PrimitiveParameterRef(vm, loc->p);
+}
+
+ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *loc, ScmObj value)
+{
+    return Scm_PrimitiveParameterSet(vm, loc->p, value);
+}
+
+void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
+{
+    ScmPrimitiveParameter *p = Scm_MakePrimitiveParameter(vm, SCM_FALSE, initval, 0);
+    location->p = p;
+}
+
+void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
+{
+    Scm_InitParameterLoc(vm, location, SCM_FALSE);
+}
+
+void Scm__VMParameterTableInit(void *dummy SCM_UNUSED,
+                               ScmVM *dummy2 SCM_UNUSED)
+{
+    Scm_Panic("Scm__VMParameterTableInit is obsoleted.  Shouldn't be called.");
+}
+

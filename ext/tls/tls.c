@@ -72,8 +72,8 @@ static void tls_print(ScmObj obj, ScmPort* port,
  * Global stuff
  */
 
-static ScmParameterLoc ca_bundle_path;
-static ScmParameterLoc default_tls_class;
+static ScmPrimitiveParameter *ca_bundle_path;
+static ScmPrimitiveParameter *default_tls_class;
 static ScmObj k_options;
 static ScmObj k_num_sessions;
 #if defined(GAUCHE_USE_AXTLS)
@@ -86,7 +86,7 @@ static ScmObj k_server_name;
 
 ScmObj Scm_MakeTLS(ScmObj initargs)
 {
-    ScmObj klass = Scm_ParameterRef(Scm_VM(), &default_tls_class);
+    ScmObj klass = Scm_PrimitiveParameterRef(Scm_VM(), default_tls_class);
     if (!SCM_CLASSP(klass) || !Scm_SubtypeP(SCM_CLASS(klass), &Scm_TLSClass)) {
         Scm_Error("default-tls-class needs to be a subclass of <tls>, "
                   "but got: %S", klass);
@@ -189,16 +189,17 @@ void Scm_Init_tls(ScmModule *mod)
 #if defined(GAUCHE_USE_AXTLS)
     Scm_InitStaticClass(&Scm_AxTLSClass, "<ax-tls>", mod, NULL, 0);
 #endif
-    Scm_DefinePrimitiveParameter(mod, "default-tls-class",
+    default_tls_class =
+        Scm_DefinePrimitiveParameter(mod, "default-tls-class",
 #if defined(GAUCHE_USE_AXTLS)
-                                 SCM_OBJ(&Scm_AxTLSClass),
+                                     SCM_OBJ(&Scm_AxTLSClass),
 #else
-                                 SCM_FALSE,
+                                     SCM_FALSE,
 #endif
-                                 &default_tls_class);
-    Scm_DefinePrimitiveParameter(mod, "tls-ca-bundle-path",
-                                 default_ca_bundle(),
-                                 &ca_bundle_path);
+                                     0);
+    ca_bundle_path =
+        Scm_DefinePrimitiveParameter(mod, "tls-ca-bundle-path",
+                                     default_ca_bundle(), 0);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
 #if defined(GAUCHE_USE_AXTLS)

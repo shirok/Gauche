@@ -78,17 +78,17 @@ static u_int round2up(unsigned int val);
    mechanism.
 */
 
-static ScmParameterLoc hash_salt; /* initialized by Scm__InitHash() */
+static ScmPrimitiveParameter *hash_salt; /* initialized by Scm__InitHash() */
 
 ScmSmallInt Scm_HashSaltRef()
 {
-    return SCM_INT_VALUE(Scm_ParameterRef(Scm_VM(), &hash_salt));
+    return SCM_INT_VALUE(Scm_PrimitiveParameterRef(Scm_VM(), hash_salt));
 }
 
 ScmSmallInt Scm_HashSaltSet(ScmSmallInt newval) /* returns old value */
 {
-    return SCM_INT_VALUE(Scm_ParameterSet(Scm_VM(), &hash_salt,
-                                          SCM_MAKE_INT(newval)));
+    return SCM_INT_VALUE(Scm_PrimitiveParameterSet(Scm_VM(), hash_salt,
+                                                   SCM_MAKE_INT(newval)));
 }
 
 /*============================================================
@@ -329,15 +329,15 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
 
 /* For recursive call to the current hash function - see call-object-hash
    and object-hash definitions in libomega.scm. */
-static ScmParameterLoc current_recursive_hash;
+static ScmPrimitiveParameter *current_recursive_hash;
 
 ScmObj Scm_CurrentRecursiveHash(ScmObj newval)
 {
-    ScmObj val = Scm_ParameterRef(Scm_VM(), &current_recursive_hash);
-    if (newval != SCM_UNBOUND) {
-        Scm_ParameterSet(Scm_VM(), &current_recursive_hash, newval);
+    if (newval == SCM_UNBOUND) {
+        return Scm_PrimitiveParameterRef(Scm_VM(), current_recursive_hash);
+    } else {
+        return Scm_PrimitiveParameterSet(Scm_VM(), current_recursive_hash, newval);
     }
-    return val;
 }
 
 /* 'Portable' general hash function.
@@ -1022,8 +1022,16 @@ void Scm__InitHash()
     u_long salt = ((u_long)getpid() * ((u_long)t.tv_sec^(u_long)t.tv_usec));
     ADDRESS_HASH(salt, salt);
     salt &= SCM_SMALL_INT_MAX;
-    Scm_InitParameterLoc(Scm_VM(), &hash_salt, Scm_MakeIntegerU(salt));
-    Scm_InitParameterLoc(Scm_VM(), &current_recursive_hash, SCM_FALSE);
+    /* 
+     * We can't use Scm_DefinePrimitiveParameter here, since symbol table
+     * is not initialized yet (symbol table uses hashtable!)
+     */
+    hash_salt = 
+        Scm_MakePrimitiveParameter(Scm_VM(), SCM_FALSE, 
+                                   Scm_MakeIntegerU(salt), 0);
+    current_recursive_hash = 
+        Scm_MakePrimitiveParameter(Scm_VM(), SCM_FALSE, 
+                                   SCM_FALSE, 0);
 }
 
 /*====================================================================

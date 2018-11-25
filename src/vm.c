@@ -38,6 +38,7 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/vmP.h"
 #include "gauche/priv/identifierP.h"
+#include "gauche/priv/parameterP.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"
@@ -197,7 +198,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
     v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
 
-    Scm__VMParameterTableInit(&(v->parameters), proto);
+    v->parameters = Scm__MakeVMParameterTable(proto);
 
     v->compilerFlags = proto? proto->compilerFlags : 0;
     v->runtimeFlags = proto? proto->runtimeFlags : 0;

@@ -253,7 +253,7 @@ void check_armendian()
 }
 #endif  /*DOUBLE_ARMENDIAN*/
 
-static ScmParameterLoc default_endian;
+static ScmPrimitiveParameter *default_endian;
 
 ScmObj Scm_NativeEndian()
 {
@@ -269,14 +269,14 @@ ScmObj Scm_NativeEndian()
 
 ScmObj Scm_DefaultEndian(void)
 {
-    return Scm_ParameterRef(Scm_VM(), &default_endian);
+    return Scm_PrimitiveParameterRef(Scm_VM(), default_endian);
 }
 
 void Scm_SetDefaultEndian(ScmObj endian)
 {
     /* We trust the caller passes one of symbols big-endian, little-endian
        or arm-little-endian. */
-    Scm_ParameterSet(Scm_VM(), &default_endian, endian);
+    Scm_PrimitiveParameterSet(Scm_VM(), default_endian, endian);
 }
 
 /*=====================================================================
@@ -4561,9 +4561,9 @@ void Scm__InitNumber(void)
     check_armendian();
 #endif /*DOUBLE_ARMENDIAN*/
 
-    Scm_DefinePrimitiveParameter(Scm_GaucheModule(), "default-endian",
-                                 SCM_OBJ(Scm_NativeEndian()),
-                                 &default_endian);
+    default_endian =
+        Scm_DefinePrimitiveParameter(Scm_GaucheModule(), "default-endian",
+                                     SCM_OBJ(Scm_NativeEndian()), 0);
 
 #ifdef COUNT_FLONUM_ALLOC
     Scm_AddCleanupHandler(report_flonum_count, NULL);

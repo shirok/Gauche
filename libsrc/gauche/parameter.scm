@@ -61,25 +61,24 @@
          [post-hook #f]
          [init-value (let1 v (get-keyword :init-value initargs #f)
                        (if filter (filter v) v))]
-         [index ((with-module gauche.internal %vm-make-parameter-slot))]
-         [%ref  (with-module gauche.internal %vm-parameter-ref)]
-         [%set! (with-module gauche.internal %vm-parameter-set!)])
-    (slot-set! self 'getter (^() (%ref index init-value)))
+         [prim ((with-module gauche.internal %make-primitive-parameter-proc)
+                #f init-value)])
+    (slot-set! self 'getter prim)
     (slot-set! self 'setter
                (if filter
                  (^(val) (let1 new (filter val)
-                           (rlet1 old (%ref index init-value)
+                           (rlet1 old (prim)
                              (when pre-hook (run-hook pre-hook old new))
-                             (%set! index init-value new)
+                             (prim new)
                              (when post-hook (run-hook post-hook old new)))))
-                 (^(val) (rlet1 old (%ref index init-value)
+                 (^(val) (rlet1 old (prim)
                            (when pre-hook (run-hook pre-hook old val))
-                           (%set! index init-value val)
+                           (prim val)
                            (when post-hook (run-hook post-hook old val))))))
     (slot-set! self 'restorer          ;bypass filter proc
-               (^(val) (rlet1 old (%ref index init-value)
+               (^(val) (rlet1 old (prim)
                          (when pre-hook (run-hook pre-hook old val))
-                         (%set! index init-value val)
+                         (prim val)
                          (when post-hook (run-hook post-hook old val)))))
     (let-syntax ([hook-ref
                   (syntax-rules ()

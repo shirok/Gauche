@@ -1,3 +1,12 @@
+2018-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c etc.: C API/ABI INCOMPATIBLE CHANGE: Revised
+	  low-level parameter handling.  Obsoleted ScmParameterLoc and
+	  introduced opaque ScmPrimitiveParameter.  Scm_InitParameterLoc,
+	  Scm_ParameterRef and Scm_ParameterSet still work but deprecated.
+	  Scm_DefinePrimitiveParameter API is incompatibly changed to return
+	  ScmPrimitiveParameter*.  Updated other components to use the new API.
+
 2018-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.h: Change parameter table rayout

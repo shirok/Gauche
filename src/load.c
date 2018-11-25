@@ -68,11 +68,11 @@ static struct {
 
     /* Dynamic enviornments kept during specific `load'.  They are
        thread-specific, and we use ScmParameter mechanism. */
-    ScmParameterLoc load_history;      /* history of the nested load */
-    ScmParameterLoc load_next;         /* list of the directories to be
-                                          searched. */
-    ScmParameterLoc load_port;         /* current port from which we are
-                                          loading */
+    ScmPrimitiveParameter *load_history; /* history of the nested load */
+    ScmPrimitiveParameter *load_next;    /* list of the directories to be
+                                            searched. */
+    ScmPrimitiveParameter *load_port;    /* current port from which we are
+                                            loading */
     
     /* Dynamic linking */
     ScmObj dso_suffixes;
@@ -94,7 +94,7 @@ static ScmObj key_ignore_coding      = SCM_UNBOUND;
 static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
 
-#define PARAM_REF(vm, loc)      Scm_ParameterRef(vm, &ldinfo.loc)
+#define PARAM_REF(vm, loc)      Scm_PrimitiveParameterRef(vm, ldinfo.loc)
 
 /*
  * ScmLoadPacket is the way to communicate to Scm_Load facility.
@@ -1223,7 +1223,7 @@ void Scm__InitLoad(void)
     ldinfo.dso_table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING,0));
     ldinfo.dso_prelinked = SCM_NIL;
 
-#define PARAM_INIT(var, name, val) Scm_DefinePrimitiveParameter(m, name, val, &ldinfo.var)
+#define PARAM_INIT(var, name, val) ldinfo.var = Scm_DefinePrimitiveParameter(m, name, val, 0)
     PARAM_INIT(load_history, "current-load-history", SCM_NIL);
     PARAM_INIT(load_next, "current-load-next", SCM_NIL);
     PARAM_INIT(load_port, "current-load-port", SCM_FALSE);

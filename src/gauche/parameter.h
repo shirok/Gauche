@@ -45,40 +45,50 @@
 #ifndef GAUCHE_PARAMETER_H
 #define GAUCHE_PARAMETER_H
 
-/* Parameter location, C-level "handle" to the parameter.
-   This is not a first-class object in Scheme; Scheme's <parameter>
-   object contains more stuff like filter procedures or hooks.
-   Those extra stuff is not accessible from C API. */
+/* ScmPrimitiveParameter is an opaque struct (Definition is
+   in priv/parameterP.h) that implements a simple thread-local
+   storage.  It is not a Scheme object.  It doesn't have extra
+   features such as filter procedure or hooks.  It is mainly
+   for the parameter that needs to be accessed from C as well.
+   For the Scheme world, ScmPrimitiveParameter is exposed by wrapped
+   in subr (Scm_MakePrimitiveParameterProc does the wrapping).
+   Scheme-level <parameter> object is built on top of such subr.
+*/
+typedef struct ScmPrimitiveParameterRec ScmPrimitiveParameter;
+
+SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmVM *vm,
+                                                             ScmObj name,
+                                                             ScmObj initval,
+                                                             u_long flags);
+SCM_EXTERN ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, 
+                                            const ScmPrimitiveParameter *p);
+SCM_EXTERN ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, 
+                                            const ScmPrimitiveParameter *p,
+                                            ScmObj val);
+SCM_EXTERN ScmObj Scm_MakePrimitiveParameterProc(ScmPrimitiveParameter *p);
+
+/* A convenience function to define a Scheme variable NAME in MOD,
+   bound to a SUBR that wraps a newly created parameter.  Returns
+   a newly created ScmPrimitiveParameter so that it is accessible
+   from C.  */
+SCM_EXTERN ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
+                                                               const char *name,
+                                                               ScmObj initval,
+                                                               u_long flags);
+
+/* TRANSIENT - exposed only for the backward compatiblity - will be gone by 1.0 */
 typedef struct ScmParameterLocRec {
-    ScmSize  index;
-    ScmObj initialValue;
+    ScmPrimitiveParameter *p;
 } ScmParameterLoc;
 
-
-SCM_EXTERN void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval);
+SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm,
+                                        ScmParameterLoc *location /*out*/);
+SCM_EXTERN void   Scm_InitParameterLoc(ScmVM *vm,
+                                       ScmParameterLoc *location, 
+                                       ScmObj initval);
 SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *location);
 SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,
                                    ScmObj value);
 
-/* A "primitive parameter" is a mere SUBR that acts like parameter
-   (except it doesn't have filters and hooks). */
-SCM_EXTERN void Scm_DefinePrimitiveParameter(ScmModule *mod,
-                                             const char *name,
-                                             ScmObj initval,
-                                             ScmParameterLoc *location /*out*/);
-
-/*OBSOLETED - exposed only for the backward compatiblity - will be gone by 1.0*/
-SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location /*out*/);
-
-
-/* PRIVATE STUFF */
-
-typedef struct ScmVMParameterTableRec {
-    ScmSize size;
-    ScmObj *vector;
-} ScmVMParameterTable;
-
-SCM_EXTERN void Scm__VMParameterTableInit(ScmVMParameterTable *table,
-                                          ScmVM *base);
 
 #endif /*GAUCHE_PARAMETER_H*/

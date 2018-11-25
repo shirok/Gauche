@@ -76,6 +76,9 @@ typedef struct ScmCompiledCodeRec ScmCompiledCode;
 /* Actual structure is defined in priv/vmP.h */
 typedef struct ScmCallTraceRec ScmCallTrace;
 
+/* Actual structure is defined in priv/parameterP.h */
+typedef struct ScmVMParameterTableRec ScmVMParameterTable;
+
 /*
  * Environment frame
  *
@@ -465,7 +468,7 @@ struct ScmVMRec {
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
     ScmPort *curerr;            /* current error port */
-    ScmVMParameterTable parameters; /* parameter table */
+    ScmVMParameterTable *parameters; /* parameter table */
 
     /* Registers */
     ScmCompiledCode *base;      /* Current executing closure's code packet. */
