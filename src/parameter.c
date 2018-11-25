@@ -68,7 +68,7 @@
  * given a unique index in the process.
  */
 static ScmSize next_parameter_index = 0;
-ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
+static ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
  * thread, base is the current thread (this must be called from the
