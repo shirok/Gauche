@@ -78,7 +78,8 @@
      (build-path (sys-getcwd) file)
      (let ([candidate (build-path *srcdir* file)]
            [prefix (make-source-prefix file)])
-       (if (file-exists? candidate)
+       (if (and (not (file-exists? file))
+                (file-exists? candidate))
          (build-path prefix candidate)
          (build-path (sys-getcwd) prefix file))))
    :canonicalize #t))
@@ -109,7 +110,19 @@
 
 ;; simpler versions of file.util procedures
 (define (build-path . args)
-  (string-join args "/" 'infix))
+  (if (null? args)
+    #f
+    (let ([pfx (car args)]
+          [sfx (apply build-path (cdr args))])
+      (if (string? sfx)
+        (cond [(and (>= (string-length sfx) 1)
+                    (eqv? (string-ref sfx 0) #\/))
+               ;; we allow absolute path appear in args; anything before
+               ;; is ignored
+               sfx]
+              [(string=? pfx "") sfx]
+              [else (string-append pfx "/" sfx)])
+        pfx))))
 
 (define (make-directory* dir)
   (let1 up (sys-dirname dir)
