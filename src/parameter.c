@@ -217,22 +217,26 @@ void Scm__InitParameter(void)
 /* TRANSIENT: For the backward compatibility.  Remove by 1.0 */
 ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
 {
+    Scm_Warn("Scm_ParameterRef is deprecated.");
     return Scm_PrimitiveParameterRef(vm, loc->p);
 }
 
 ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *loc, ScmObj value)
 {
+    Scm_Warn("Scm_ParameterSet is deprecated.");
     return Scm_PrimitiveParameterSet(vm, loc->p, value);
 }
 
 void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
 {
+    Scm_Warn("Scm_InitParameterLoc is deprecated.  Use Scm_MakePrimitiveParameter");
     ScmPrimitiveParameter *p = Scm_MakePrimitiveParameter(vm, SCM_FALSE, initval, 0);
     location->p = p;
 }
 
 void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
 {
+    Scm_Warn("Scm_MakeParameterSlot is deprecated.  Use Scm_MakePrimitiveParameter.");
     Scm_InitParameterLoc(vm, location, SCM_FALSE);
 }
 
