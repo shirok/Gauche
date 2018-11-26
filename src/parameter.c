@@ -143,12 +143,17 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmVM *vm,
 ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
     ScmVMParameterTable *t = vm->parameters;
-    if (p->index >= t->size) return p->initialValue;
-    ScmObj v = t->vector[p->index];
-    if (SCM_UNBOUNDP(v)) {
-        v = t->vector[p->index] = p->initialValue;
+    ScmObj result;
+    if (p->index >= t->size) {
+        result = p->initialValue;
+    } else {
+        result = t->vector[p->index];
+        if (SCM_UNBOUNDP(result)) {
+            result = t->vector[p->index] = p->initialValue;
+        }
     }
-    return v;
+    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(result);
+    else return result;
 }
 
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,

@@ -56,6 +56,11 @@
 */
 typedef struct ScmPrimitiveParameterRec ScmPrimitiveParameter;
 
+enum {
+    /* value may be a promise; dereference automaticlaly forces it */
+    SCM_PARAMETER_LAZY = (1UL << 0)
+};
+
 SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmVM *vm,
                                                              ScmObj name,
                                                              ScmObj initval,

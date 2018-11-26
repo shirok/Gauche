@@ -1,3 +1,10 @@
+2018-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c: Add 'lazy parameter' feature, that implicitly
+	  forces the parameter value when dereferenced.  For now, we have
+	  this feature available only from C API (use SCM_PARAMETER_LAZY flag
+	  upon creation of ScmPrimitiveParameter).
+
 2018-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c etc.: C API/ABI INCOMPATIBLE CHANGE: Revised
