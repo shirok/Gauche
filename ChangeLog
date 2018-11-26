@@ -4,6 +4,10 @@
 	  forces the parameter value when dereferenced.  For now, we have
 	  this feature available only from C API (use SCM_PARAMETER_LAZY flag
 	  upon creation of ScmPrimitiveParameter).
+	* ext/tls: Made default-tls-class a lazy parameter, and set its
+	  value to <mbed-tls> when mbedTLS is used but not axTLS.  We need it
+	  to be lazy so that rfc.tls.mbed won't be loaded during loading
+	  rfc.tls.
 
 2018-11-24  Shiro Kawai  <shiro@acm.org>
 

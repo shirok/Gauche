@@ -189,6 +189,7 @@ void Scm_Init_tls(ScmModule *mod)
 #if defined(GAUCHE_USE_AXTLS)
     Scm_InitStaticClass(&Scm_AxTLSClass, "<ax-tls>", mod, NULL, 0);
 #endif
+    /* Set default-tls-class to be lazy (see tls.scm for the reason) */
     default_tls_class =
         Scm_DefinePrimitiveParameter(mod, "default-tls-class",
 #if defined(GAUCHE_USE_AXTLS)
@@ -196,7 +197,7 @@ void Scm_Init_tls(ScmModule *mod)
 #else
                                      SCM_FALSE,
 #endif
-                                     0);
+                                     SCM_PARAMETER_LAZY);
     ca_bundle_path =
         Scm_DefinePrimitiveParameter(mod, "tls-ca-bundle-path",
                                      default_ca_bundle(), 0);

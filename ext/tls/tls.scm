@@ -60,9 +60,17 @@
 
 (without-precompiling
  (cond-expand
-  [gauche.net.tls.mbedtls 
+  [gauche.net.tls.mbedtls
+   ;; Set rfc.tls.mbed to be autoladed when <mbed-tls> is used.
    (autoload rfc.tls.mbed <mbed-tls>)
-   (export <mbed-tls>)]
+   (export <mbed-tls>)
+   ;; We also set default-tls-class to be <mbed-tls> if <ax-tls> isn't
+   ;; configured to be used.  Note that we can't directly refer to
+   ;; <mbed-tls> here, since it will trigger the autoload.  We set
+   ;; default-tls-class to be lazy parameter, so we can wrap the value
+   ;; with delay.
+   (unless (default-tls-class)
+     (default-tls-class (delay <mbed-tls>)))]
   [else]))
 
 (inline-stub
