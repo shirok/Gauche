@@ -1532,7 +1532,38 @@
    %free-identifier=?)
  )
 
+;; EXPERIMENTAL: datum->syntax
+(define datum->syntax
+  (with-module gauche.internal %datum->syntax))
+
 (select-module gauche.internal)
+
+(define (%datum->syntax id datum)
+  (cond
+   [(variable? datum)
+    (if (symbol? id)
+      datum
+      (er-rename datum
+                 (or (identifier-renames id) (list '()))
+                 (identifier-module id)
+                 (identifier-env id)))]
+   [(pair? datum)
+    (let* ([a (%datum->syntax id (car datum))]
+           [d (%datum->syntax id (cdr datum))])
+      (if (and (eq? a (car datum)) (eq? d (cdr datum)))
+        datum
+        (cons a d)))]
+   [(vector? datum)
+    (let loop ([i 0] [vec #f])
+      (if (= i (vector-length datum))
+        (or vec datum)
+        (let1 e (%datum->syntax id (vector-ref datum i))
+          (if (eq? e (vector-ref datum i))
+            (loop (+ i 1) vec)
+            (let1 vec (or vec (vector-copy datum))
+              (vector-set! vec i e)
+              (loop (+ i 1) vec))))))]
+   [else datum]))
 
 ;; er-rename :: (Form, [Id]) -> (Form, [Id])
 ;; Where symbol or identifiers in the Form will be replaced with
@@ -1542,27 +1573,29 @@
 (define (er-rename form dict module env)
   (cond
    [(variable? form)
-    (if-let1 id (assq-ref dict form)
-      (values id dict)
-      (let1 id (make-identifier form module env)
-        (values id (acons form id dict))))]
+    (or (assq-ref (car dict) form)
+        (let1 id (make-identifier form module env)
+          (set-car! dict (acons form id (car dict)))
+          ;; EXPERIMENTAL: for datum->syntax
+          (identifier-renames-set! id dict)
+          id))]
    [(pair? form)
-    (receive (a dict) (er-rename (car form) dict module env)
-      (receive (d dict) (er-rename (cdr form) dict module env)
-        (if (and (eq? a (car form)) (eq? d (cdr form)))
-          (values form dict)
-          (values (cons a d) dict))))]
+    (let* ([a (er-rename (car form) dict module env)]
+           [d (er-rename (cdr form) dict module env)])
+      (if (and (eq? a (car form)) (eq? d (cdr form)))
+        form
+        (cons a d)))]
    [(vector? form)
-    (let loop ([i 0] [vec #f] [dict dict])
+    (let loop ([i 0] [vec #f])
       (if (= i (vector-length form))
-        (values (or vec form) dict)
-        (receive (e dict) (er-rename (vector-ref form i) dict module env)
+        (or vec form)
+        (let1 e (er-rename (vector-ref form i) dict module env)
           (if (eq? e (vector-ref form i))
-            (loop (+ i 1) vec dict)
+            (loop (+ i 1) vec)
             (let1 vec (or vec (vector-copy form))
               (vector-set! vec i e)
-              (loop (+ i 1) vec dict))))))]
-   [else (values form dict)]))
+              (loop (+ i 1) vec))))))]
+   [else form]))
 
 ;; er-compare :: (Obj, Obj, Module, Env) -> Bool
 ;; Used for the 'compare' procedure in ER macro.  If two Objs refer
@@ -1593,12 +1626,9 @@
   (define (expand form use-env)
     (define use-module (cenv-module use-env))
     (define use-frames (cenv-frames use-env))
-    (let1 dict '()
+    (let1 dict (list '()) ; list of alist (((var . identifier) ...))
       (xformer form
-               (^[sym]
-                 (receive [id dict_] (er-rename sym dict def-module def-frames)
-                   (set! dict dict_)
-                   id))
+               (^[sym] (er-rename sym dict def-module def-frames))
                (^[a b] (er-compare a b use-module use-frames)))))
   (%make-macro-transformer (cenv-exp-name def-env) expand))
 

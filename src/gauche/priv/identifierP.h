@@ -41,6 +41,9 @@ struct ScmIdentifierRec {
     ScmObj name;          /* symbol or identifier */
     ScmModule *module;
     ScmObj frames;        /* opaque - see compaux.c for the details */
+    ScmObj renames;       /* EXPERIMENTAL: for datum->syntax */
+                          /*  list of alist (((var . identifier) ...)) */
+                          /*  or #f (default value) */
 };
 
 

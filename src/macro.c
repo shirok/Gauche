@@ -276,9 +276,9 @@ typedef struct {
     ScmObj form;                /* form being compiled (for error msg) */
     ScmObj literals;            /* list of literals */
     ScmObj pvars;               /* list of (pvar . pvref) */
-    ScmObj renames;             /* list of (var . identifier)  Keep mapping
-                                   of input symbol/identifier to fresh 
-                                   identifier */
+    ScmObj renames;             /* list of alist (((var . identifier) ...))
+                                   Keep mapping of input symbol/identifier
+                                   to fresh identifier */
     ScmObj ellipsis;            /* symbol/identifier/keyword for ellipsis
                                    SCM_TRUE means default (...)
                                    SCM_FALSE means disabled */
@@ -373,11 +373,11 @@ static ScmObj check_literals(ScmObj literals)
 /* Renaming: Map input variable (symbol or identifier) to fresh identifier.
    The same (eq?) variable must map to the same identifier. */
 static ScmObj rename_variable(ScmObj var,
-                              ScmObj *id_alist, /* ((var . id) ...) */
+                              ScmObj *id_alist, /* list of alist (((var . identifier) ...)) */
                               ScmModule *mod,
                               ScmObj env)
 {
-    ScmObj id, p = Scm_Assq(var, *id_alist);
+    ScmObj id, p = Scm_Assq(var, SCM_CAR(*id_alist));
     if (SCM_PAIRP(p)) return SCM_CDR(p);
     if (SCM_SYMBOLP(var)) {
         id = Scm_MakeIdentifier(var, mod, env);
@@ -385,7 +385,9 @@ static ScmObj rename_variable(ScmObj var,
         SCM_ASSERT(SCM_IDENTIFIERP(var));
         id = Scm_WrapIdentifier(SCM_IDENTIFIER(var));
     }
-    *id_alist = Scm_Acons(var, id, *id_alist);
+    SCM_SET_CAR(*id_alist, Scm_Acons(var, id, SCM_CAR(*id_alist)));
+    /* EXPERIMENTAL: for datum->syntax */
+    Scm_IdentifierRenamesSet(SCM_IDENTIFIER(id), *id_alist);
     return id;
 }
 
@@ -551,7 +553,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     ctx.literals = check_literals(literals);
     ctx.mod = mod;
     ctx.env = env;
-    ctx.renames = SCM_NIL;
+    ctx.renames = Scm_Cons(SCM_NIL, SCM_NIL);
 
     /* Corner case when literal contains the same (free-identifer=?) symbol
        as ellipsis.  R7RS specifies the literal has precedence.
@@ -945,7 +947,7 @@ static ScmObj realize_template(ScmSyntaxRules *sr,
 {
     int index[DEFAULT_MAX_LEVEL], *indices = index;
     int exlev = 0;
-    ScmObj idlist = SCM_NIL;
+    ScmObj idlist = Scm_Cons(SCM_NIL, SCM_NIL); /* list of alist (((var . identifier) ...)) */
 
     if (branch->maxLevel > DEFAULT_MAX_LEVEL)
         indices = SCM_NEW_ATOMIC2(int*, (branch->maxLevel+1) * sizeof(int));

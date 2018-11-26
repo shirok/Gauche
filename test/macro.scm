@@ -227,6 +227,46 @@
              '(1 3 2 4 3 4 #(x 3 y 4) 4 3)
              (foo 3 4)))))
 
+;; datum->syntax 1
+(define-syntax divide
+  (er-macro-transformer
+   (lambda (expr rename compare)
+     (let ((x (list-ref expr 1))
+           (y (list-ref expr 2))
+           (failure (datum->syntax (car expr) 'failure)))
+       `(,(rename 'if) (,(rename 'zero?) ,y)
+         (,failure)
+         (,(rename '/) ,x ,y))))))
+(define-syntax wrapper-1
+  (syntax-rules ()
+    ((_)
+     (let ((failure (lambda () "division by zero")))
+       (divide 1 0)))))
+(test* "datum->syntax 1" "division by zero" (let () (wrapper-1)))
+
+;; datum->syntax 2
+(define-syntax define-and-backup
+  (er-macro-transformer
+   (lambda (expr rename compare)
+     (let* ((name1 (list-ref expr 1))
+            (val   (list-ref expr 2))
+            (name2 (datum->syntax
+                    (car expr)
+                    (string->symbol
+                     (string-append (symbol->string (unwrap-syntax name1))
+                                    "-backup")))))
+       `(,(rename 'begin)
+         (,(rename 'define) ,name1 ,val)
+         (,(rename 'define) ,name2 ,val)
+         )))))
+(define-syntax wrapper-2
+  (syntax-rules ()
+    ((_)
+     (begin
+       (define-and-backup x 1000)
+       (list x x-backup)))))
+(test* "datum->syntax 2" '(1000 1000) (let () (wrapper-2)))
+
 ;;----------------------------------------------------------------------
 ;; basic tests
 

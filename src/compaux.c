@@ -195,6 +195,7 @@ ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod, ScmObj env)
     id->name = name;
     id->module = mod? mod : SCM_CURRENT_MODULE();
     id->frames = Scm_Cons(SCM_FALSE, env); /* see the above comment */
+    id->renames = SCM_FALSE;
     return SCM_OBJ(id);
 }
 
@@ -248,7 +249,13 @@ ScmObj Scm_WrapIdentifier(ScmIdentifier *orig)
     id->name = SCM_OBJ(orig);
     id->module = orig->module;
     id->frames = orig->frames;
+    id->renames = orig->renames;
     return SCM_OBJ(id);
+}
+
+void Scm_IdentifierRenamesSet(ScmIdentifier *id, ScmObj renames)
+{
+    id->renames = renames;
 }
 
 static ScmObj identifier_name_get(ScmObj obj)
@@ -274,6 +281,11 @@ static ScmObj identifier_env_get(ScmObj obj)
     return Scm_IdentifierEnv(SCM_IDENTIFIER(obj));
 }
 
+static ScmObj identifier_renames_get(ScmObj obj)
+{
+    return SCM_OBJ(SCM_IDENTIFIER(obj)->renames);
+}
+
 /* Identifier name can be mutated during macro expansion to avoid
    conflicts on macro-inserted toplevel identifiers.  See
    %rename-toplevel-identifier! in compiler pass1.
@@ -282,6 +294,7 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", identifier_name_get, identifier_name_set),
     SCM_CLASS_SLOT_SPEC("module", identifier_module_get, NULL),
     SCM_CLASS_SLOT_SPEC("env", identifier_env_get, NULL),
+    SCM_CLASS_SLOT_SPEC("renames", identifier_renames_get, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
 

@@ -154,6 +154,10 @@
   (return (SCM_OBJ (-> id name))))
 (define-cproc identifier-env (id::<identifier>)
   (return (Scm_IdentifierEnv id)))
+(define-cproc identifier-renames (id::<identifier>)
+  (return (SCM_OBJ (-> id renames))))
+(define-cproc identifier-renames-set! (id::<identifier> renames) ::<void>
+  (set! (-> id renames) renames))
 
 (select-module gauche.internal)
 ;; EXPERIMENTAL
