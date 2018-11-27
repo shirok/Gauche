@@ -255,7 +255,6 @@ static void errfn(const char *fmt, ...)
     exit(1);
 }
 
-#define GAUCHE_CONFIG_C
 #define PATH_ALLOC(n) malloc(n)
 #include "paths.c"
 
