@@ -1073,7 +1073,11 @@ static ScmObj rc2_optimize_seq(ScmObj seq, ScmObj rest)
            following sequence are distinct, like #/\s*foo/, the branch
            becomes deterministic (i.e. we don't need backtrack). */
         ScmObj repbody = rc2_optimize_seq(SCM_CDR(SCM_CDDR(elt)), rest);
-        SCM_ASSERT(SCM_PAIRP(repbody));
+        if (SCM_NULLP(repbody)) {
+            /* This is the case that an empy string (?:) is repeated. 
+               it always matches, so we collapse entire thing to (). */
+            return tail;
+        }
         if (SCM_NULLP(rest) || is_distinct(SCM_CAR(repbody), SCM_CAR(rest))) {
             ScmObj elt2 = Scm_Append2(SCM_LIST3(SCM_SYM_REP_WHILE, SCM_CADR(elt),
                                                 SCM_CAR(SCM_CDDR(elt))),

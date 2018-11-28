@@ -348,6 +348,11 @@
 (test-re #/a+@a+\.a+/ "aaaaaaaaaaa@aaaaaaaa@@a.aaaaa@aaaaa" '())
 (test-re #/a+@a+\.a+/ "aaaaaaaaaaa@aaaaaaaa@@a.aaaaa@aaaaa.a" '("aaaaa@aaaaa.a"))
  
+;; Repetition of empty string
+(test-re #/a(?:)*b/ "zabr" '("ab"))
+(test-re #/a(?:)?b/ "zabr" '("ab"))
+(test-re #/a(?:){2,5}b/ "zabr" '("ab"))
+
 ;;-------------------------------------------------------------------------
 (test-section "repetitions (non-greedy)")
 
