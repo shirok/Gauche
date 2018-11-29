@@ -185,16 +185,16 @@ However, usually you want to make one DSO per library, which may
 contain lots of source files.
 
 Suppose you have the following source code structure, and foo.scm
-uses sub files as foo.util1 and foo.util2.
+uses sub files as foo.boo and foo.woo.
 
    foo.scm
    foo/boo.scm
-   foo/boo.scm
+   foo/woo.scm
 
 You have to generate C file for each Scheme source, then compile and
 link all together.
 
-   $ gosh -I. precomp -e foo.scm foo/util1.scm foo/util2.scm
+   $ gosh -I. precomp -e foo.scm foo/boo.scm foo/woo.scm
    $ ls
    foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
    $ ls foo
@@ -238,7 +238,7 @@ directly 'use' the submodules, then you can consolidate those
 SCI files into single one.  Just give --single-interface
 option to precomp.
 
-   $ gosh -I. precomp -e --single-interface foo.scm foo/util1.scm foo/util2.scm
+   $ gosh -I. precomp -e --single-interface foo.scm foo/boo.scm foo/woo.scm
    $ ls
    foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
    $ ls foo
