@@ -2369,7 +2369,8 @@ static void rex_rec(const unsigned char *code,
     /* TODO: here we assume C-stack grows downward; need to check by
        configure */
     if ((char*)&cset < (char*)ctx->begin_stack - MAX_STACK_USAGE) {
-        Scm_Error("stack overrun during matching regexp %S", ctx->rx);
+        Scm_Error("Stack overrun during matching regexp %S. "
+                  "Too many retries?", ctx->rx);
     }
 
     for (;;) {
