@@ -9792,6 +9792,38 @@ in some other Scheme implementations.
 @c COMMON
 
 @c EN
+Internally, Gauche uses backtracking for regexp match.
+When regexp has multiple match possibilities, Gauche saves
+an intermediate result in a stack and try one choice, and if it fails
+try another.  Depending on regexp, the saved results may grow linear
+to the input.  Gauche allocates a fixed amount of memory for that,
+and if there are too many saved results, you'll get the following
+error:
+@c JP
+内部的に、Gaucheは正規表現のマッチにバックトラックを使っています。
+複数のマッチの可能性がある場合、その時点の状態をスタックにセーブして一つの可能性を試し、
+だめだったら戻ってもう一つの可能性を試します。正規表現によっては、
+セーブする状態が入力の大きさに比例してしまう場合があります。
+セーブする状態が大きくなりすぎると、次のエラーが投げられます。
+@c COMMON
+
+@example
+ERROR: Ran out of stack during matching regexp #/.../. Too many retries?
+@end example
+
+@c EN
+If you get this error, consider using hybrid parsing approach.
+Our regexp engine isn't made to do everything-in-one-shot parsing;
+in most cases, the effect of complex regexp can be achieved better
+with more powerful grammar than regular grammar.
+@c JP
+このエラーが起きた場合、他のパーズ手法を組み合わせることを検討してください。
+Gaucheの正規表現エンジンはそれ一つで何もかもやってしまうことを目的として作られては
+いません。多くの場合、複雑な正規表現を駆使するよりも、
+正規文法より強力な文法を使う方がうまくいきます。
+@c COMMON
+
+@c EN
 To apply the match repeatedly on the input string, or to match
 from the input stream (such as the data from the port),
 you may want to check @code{grxmatch} in @code{gauche.generator}
