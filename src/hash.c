@@ -751,6 +751,7 @@ void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src)
             e->key = s->key;
             e->value = s->value;
             e->next = NULL;
+            e->hashval = s->hashval;
             if (p) p->next = e;
             else   b[i] = e;
             p = e;

@@ -1,3 +1,10 @@
+2018-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashCoreCopy): Fix a bug that didn't copy
+	  entries' hashval.  It won't surface until the copied hashtable
+	  is rehashed, at that time the entries are chained in a wrong
+	  bucket.  The culprit of https://github.com/shirok/Gauche/issues/400
+
 2018-11-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c: Add 'lazy parameter' feature, that implicitly

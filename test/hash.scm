@@ -392,6 +392,18 @@
          (map (^p (hash-table-comparator (make-hash-table (car p)))) x)))
 
 ;;------------------------------------------------------------------
+(test-section "hash-table-copy & rehash")
+
+;; https://github.com/shirok/Gauche/issues/400
+
+(test* "hash-table-copy & rehash" #t 
+  (let1 h (fold (^[n h] (rlet1 h (hash-table-copy h)
+                          (hash-table-put! h n 1) h))
+                (make-hash-table 'eqv?)
+                (iota 20))
+    (every (cut hash-table-contains? h <> ) (iota 20))))
+
+;;------------------------------------------------------------------
 (test-section "iterators")
 
 (define h-it (hash-table-from-pairs 'eq?
