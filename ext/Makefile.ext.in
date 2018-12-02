@@ -41,9 +41,7 @@ LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS)
 MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 
 @CROSS_COMPILING_no@GOSH           = "$(top_builddir)/src/gosh" -ftest
-@CROSS_COMPILING_no@GAUCHE_CONFIG  = "$(top_builddir)/src/gauche-config"
 @CROSS_COMPILING_yes@GOSH           = "$(BUILD_GOSH)" $(BUILD_GOSH_ARGS)
-@CROSS_COMPILING_yes@GAUCHE_CONFIG  = "$(top_builddir)/src/$(HOST)-gauche-config"
 GAUCHE_INSTALL = $(GOSH) "$(top_srcdir)/src/gauche-install.in" -C
 PRECOMP        = $(GOSH) "$(top_srcdir)/src/precomp"
 INSTALL_TYPE   = sys

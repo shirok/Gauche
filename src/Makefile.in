@@ -242,7 +242,7 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
 @CROSS_COMPILING_no@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) test-extra$(EXEEXT)
-@CROSS_COMPILING_yes@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) $(host)-gauche-config
+@CROSS_COMPILING_yes@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
 
 gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
@@ -366,10 +366,6 @@ $(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_op
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
 	$(LINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
-
-# for cross build
-$(host)-gauche-config: gauche-config.c
-	$(BUILD_CC) $(BUILD_CFLAGS) $(DEFS) -o $@ gauche-config.c
 
 # we need thread settings in sync with gc.
 gauche/config_threads.h : $(top_builddir)/gc/include/config.h
@@ -499,8 +495,7 @@ clean :
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c \
 	       staticinit.c staticinit_gdbm.c staticinit_mbed.c \
-	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
-	       $(host)-gauche-config.c $(host)-gauche-config
+	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
@@ -517,8 +512,6 @@ INSTALL_DIRS = "$(DESTDIR)$(HEADER_INSTALL_DIR)" \
 	       "$(DESTDIR)$(BIN_INSTALL_DIR)" \
 	       "$(DESTDIR)$(SITE_SCM_DIR)" \
 	       "$(DESTDIR)$(SITE_ARCH_DIR)"
-@CROSS_COMPILING_no@GAUCHE_CONFIG = ./gauche-config
-@CROSS_COMPILING_yes@GAUCHE_CONFIG = ./$(host)-gauche-config
 @CROSS_COMPILING_no@GAUCHE_INSTALL = ./gosh -ftest $(srcdir)/gauche-install.in
 @CROSS_COMPILING_yes@GAUCHE_INSTALL = gosh $(srcdir)/gauche-install.in
 
@@ -540,7 +533,7 @@ install-core : install-relink
 	$(INSTALL)        $(INSTALL_LIBS) "$(DESTDIR)$(ARCH_INSTALL_DIR)"
 	$(INSTALL) -m 555 $(INSTALL_BINS) "$(DESTDIR)$(BIN_INSTALL_DIR)"
 	$(INSTALL) -m 555 $(INSTALL_BINS) "$(DESTDIR)$(ARCH_INSTALL_DIR)"
-	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*|*-mingw*) \
+	@case $(host) in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) "$(DESTDIR)$(BIN_INSTALL_DIR)";;\
 	esac
 	$(POSTINSTALL)
