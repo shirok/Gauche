@@ -78,9 +78,6 @@ clean:
 pre-package:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) GOSH=$(GOSH) pre-package); done
 
-pre-package-ext:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) GOSH=$(GOSH) GAUCHE_CONFIG=$(GAUCHE_CONFIG) pre-package-ext); done
-
 link :
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) link); done
 

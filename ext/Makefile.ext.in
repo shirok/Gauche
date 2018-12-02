@@ -67,7 +67,7 @@ TESTRECORD = "$(top_builddir)/test.record"
 
 .PHONY: default all check install install-check clean distclean \
         maintainer-clean install-std uninstall link unlink list-objects \
-	pre-package pre-package-ext
+	pre-package
 
 .c.obj:
 	$(COMPILE) -o `cygpath -w $@` -c `cygpath -w $<`
@@ -103,15 +103,6 @@ maintainer-clean : clean
 	rm -rf $(GENERATED)
 
 pre-package : $(PRE_PACKAGE_FILES)
-
-pre-package-ext : pre-package-generate link
-
-pre-package-generate :
-	for f in $(XCLEANFILES); do \
-	  if test X`echo $$f | sed s/\*//g` = X$$f; then \
-	    $(MAKE) GOSH=$(GOSH) GAUCHE_CONFIG=$(GAUCHE_CONFIG) $$f; \
-	  fi; \
-	done
 
 install-std : all
 	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" -T "$(GAUCHE_INCDIR)" $(HDRFILES)
