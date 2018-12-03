@@ -8,8 +8,9 @@ dnl
 dnl
 dnl process --enable-ipv6
 dnl
-dnl   Even if you specify --enable-ipv6, we'll check if they are
-dnl   really available later, and disable the support if not.
+dnl   We assume --enable-ipv6=yes by default.
+dnl   we'll check if they are really available later anyway.
+dnl   Use --enable-ipv6=no if you explicitly turn it off.
 dnl
 AC_ARG_ENABLE(ipv6,
   AS_HELP_STRING([--enable-ipv6], [enable IPv6 support]),

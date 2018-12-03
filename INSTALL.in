@@ -212,24 +212,12 @@ IPv6 support
 ---------------------------------------------------
 
 @c JP
-Gaucheは実験的にIPv6をサポートしています。デフォルトではこの機能はoffに
-なっていますが、次のconfigureオプションで有効にすることができます。
+GaucheはプラットフォームでIPv6がサポートされていればそれを使えるように
+コンパイルされますが、何らかの事情でIPv6を全く使わないバージョンが必要で
+あれば、--enable-ipv6=no を指定してください。
 @c EN
-Gauche has experimental support for IPv6.
-It is turned off by default,
-but you can include it by giving the following configure option.
-@c COMMON
-
-  --enable-ipv6
-
-@c JP
-もちろん、OSでIPv6がサポートされていなければなりません。
-現在の実装はFreeBSDおよびLinux上でテストされています。
-詳しい機能はリファレンスマニュアルのgauche.netの項を参照して下さい。
-@c EN
-Of course your OS has to have the support of IPv6.
-The current implementation is tested on FreeBSD and Linux.
-See the gauche.net section of the reference manual for details.
+Gauche includes IPv6 support if the platform has it.  If you
+don't want to include IPv6 support, give --enable-ipv6=no option.
 @c COMMON
 
 
