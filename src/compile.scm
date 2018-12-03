@@ -817,7 +817,10 @@
 ;;    every time it is used.
 ;;
 ;; Packed IForm is a vector, with the references are represented by indices.
-
+;;
+;; We also replace numeric tags of IForm for symbols.  The numeric value
+;; may change across Gauche versions, while the packed IForms are recorded
+;; in the precompiled source and survive across versions.
 (define (pack-iform iform)
 
   (define dict (make-hash-table 'eq?))
@@ -829,22 +832,33 @@
       (hash-table-put! dict iform head)
       (dolist [obj objs] (push! r obj) (inc! c))))
 
+  (define (put!-2ary iform tag-symbol) ; $CONS $APPEND $MEMV $EQ? $EQV?
+    (put! iform tag-symbol
+          ($*-src iform)
+          (get-ref ($*-arg0 iform))
+          (get-ref ($*-arg1 iform))))
+
+  (define (put!-nary iform tag-symbol) ; $VECTOR $LIST $LIST*
+    (put! iform tag-symbol
+          ($*-src iform)
+          (map get-ref ($*-args iform))))
+
   (define (get-ref iform)
     (or (hash-table-get dict iform #f) (pack-iform-rec iform)))
 
   (define (pack-iform-rec iform)
     (case/unquote
      (iform-tag iform)
-     [($DEFINE) (put! iform $DEFINE ($*-src iform)
+     [($DEFINE) (put! iform '$DEFINE ($*-src iform)
                       ($define-flags iform) ($define-id iform)
                       (get-ref ($define-expr iform)))]
-     [($LREF) (put! iform $LREF (get-ref ($lref-lvar iform)))]
-     [($LSET) (put! iform $LSET
+     [($LREF) (put! iform '$LREF (get-ref ($lref-lvar iform)))]
+     [($LSET) (put! iform '$LSET
                     (get-ref ($lset-lvar iform)) (get-ref ($lset-expr iform)))]
-     [($GREF) (put! iform $GREF ($gref-id iform))]
-     [($GSET) (put! iform $GSET ($gset-id iform) (get-ref ($gset-expr iform)))]
-     [($CONST)(put! iform $CONST ($const-value iform))]
-     [($IF)   (put! iform $IF ($*-src iform)
+     [($GREF) (put! iform '$GREF ($gref-id iform))]
+     [($GSET) (put! iform '$GSET ($gset-id iform) (get-ref ($gset-expr iform)))]
+     [($CONST)(put! iform '$CONST ($const-value iform))]
+     [($IF)   (put! iform '$IF ($*-src iform)
                     (get-ref ($if-test iform))
                     (get-ref ($if-then iform))
                     (get-ref ($if-else iform)))]
@@ -852,44 +866,42 @@
                     (map get-ref ($let-lvars iform))
                     (map get-ref ($let-inits iform))
                     (get-ref ($let-body iform)))]
-     [($RECEIVE) (put! iform $RECEIVE ($*-src iform)
+     [($RECEIVE) (put! iform '$RECEIVE ($*-src iform)
                        ($receive-reqargs iform) ($receive-optarg iform)
                        (map get-ref ($receive-lvars iform))
                        (get-ref ($receive-expr iform))
                        (get-ref ($receive-body iform)))]
-     [($LAMBDA) (put! iform $LAMBDA ($*-src iform)
+     [($LAMBDA) (put! iform '$LAMBDA ($*-src iform)
                       ($lambda-name iform) ($lambda-reqargs iform)
                       ($lambda-optarg iform)
                       (map get-ref ($lambda-lvars iform))
                       (get-ref ($lambda-body iform))
                       ($lambda-flag iform))]
-     [($LABEL)  (put! iform $LABEL ($*-src iform) #f
+     [($LABEL)  (put! iform '$LABEL ($*-src iform) #f
                       (get-ref ($label-body iform)))]
-     [($SEQ)    (put! iform $SEQ (map get-ref ($seq-body iform)))]
-     [($CALL)   (put! iform $CALL ($*-src iform)
+     [($SEQ)    (put! iform '$SEQ (map get-ref ($seq-body iform)))]
+     [($CALL)   (put! iform '$CALL ($*-src iform)
                       (get-ref ($call-proc iform))
                       (map get-ref ($call-args iform))
                       ($call-flag iform))]
-     [($ASM)    (put! iform $ASM ($*-src iform)
+     [($ASM)    (put! iform '$ASM ($*-src iform)
                       ($asm-insn iform)
                       (map get-ref ($asm-args iform)))]
-     [($IT)     (put! iform $IT)]
-     [($PROMISE)(put! iform $PROMISE ($*-src iform)
+     [($IT)     (put! iform '$IT)]
+     [($PROMISE)(put! iform '$PROMISE ($*-src iform)
                       (get-ref ($promise-expr iform)))]
-     [($CONS $APPEND $MEMV $EQ? $EQV?)
-      (put! iform (iform-tag iform) ($*-src iform)
-            (get-ref ($*-arg0 iform))
-            (get-ref ($*-arg1 iform)))]
-     [($VECTOR $LIST $LIST*)
-      (put! iform (iform-tag iform) ($*-src iform)
-            (map get-ref ($*-args iform)))]
-     [($LIST->VECTOR)
-      (put! iform (iform-tag iform) ($*-src iform)
-            (get-ref ($*-arg0 iform)))]
-     [('lvar)
-      (put! iform 'lvar (lvar-name iform))]
-     [else
-      (errorf "[internal-error] unknown IForm in pack-iform: ~S" iform)]
+     [($CONS)   (put!-2ary iform '$CONS)]
+     [($APPEND) (put!-2ary iform '$APPEND)]
+     [($MEMV)   (put!-2ary iform '$MEMV)]
+     [($EQ?)    (put!-2ary iform '$EQ?)]
+     [($EQV?)   (put!-2ary iform '$EQV?)]
+     [($VECTOR) (put!-nary iform '$VECTOR)]
+     [($LIST)   (put!-nary iform '$LIST)]
+     [($LIST*)  (put!-nary iform '$LIST*)]
+     [($LIST->VECTOR) (put! iform '$LIST->VECTOR ($*-src iform)
+                            (get-ref ($*-arg0 iform)))]
+     [('lvar)   (put! iform 'lvar (lvar-name iform))]
+     [else (errorf "[internal-error] unknown IForm in pack-iform: ~S" iform)]
      ))
 
   ;; main body of pack-iform
@@ -902,6 +914,11 @@
     (vector-set! vec 0 start)
     vec))
 
+;; Recover IForm from a vector.
+;; TRANSIENT: Until 0.9.6 we saved numeric IForm tag in the vector, but
+;; it was fragile if we change IForm enums.  Since 0.9.7 we use symbols.
+;; In 0.9.7 we need to read both, for 0.9.7 compiler includes packed IForms
+;; created by 0.9.6.   Remove numeric tag support after 0.9.7 release.
 (define (unpack-iform ivec)
   (let-syntax ([V (syntax-rules ()
                     [(V ix) (vector-ref ivec ix)]
@@ -914,37 +931,54 @@
     (define (unpack-body i)
       (case/unquote
        (V i)
-       [($DEFINE) ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
-       [($LREF)   ($lref (unpack-rec (V i 1)))]
-       [($LSET)   ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2)))]
-       [($GREF)   ($gref (V i 1))]
-       [($GSET)   ($gset (V i 1) (unpack-rec (V i 2)))]
-       [($CONST)  ($const (V i 1))]
-       [($IF)     ($if (V i 1) (unpack-rec (V i 2))
-                       (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
-       [($LET)    (rlet1 unpacked
-                      ($let (V i 1) (V i 2)
-                            (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
-                            (unpack-rec (V i 5)))
-                    (ifor-each2 (^(lv in) (lvar-initval-set! lv in))
-                                ($let-lvars unpacked) ($let-inits unpacked)))]
-       [($RECEIVE) ($receive (V i 1) (V i 2) (V i 3)
-                             (map unpack-rec (V i 4)) (unpack-rec (V i 5))
-                             (unpack-rec (V i 6)))]
-       [($LAMBDA)  ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
-                            (map unpack-rec (V i 5))
-                            (unpack-rec (V i 6)) (V i 7))]
-       [($LABEL)   ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
-       [($SEQ)     ($seq (map unpack-rec (V i 1)))]
-       [($CALL)    ($call (V i 1) (unpack-rec (V i 2))
-                          (map unpack-rec (V i 3)) (V i 4))]
-       [($ASM)     ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
-       [($PROMISE) ($promise (V i 1) (unpack-rec (V i 2)))]
-       [($IT) ($it)]
-       [($CONS $APPEND $MEMV $EQ? $EQV?)
-        (vector (V i) (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
-       [($VECTOR $LIST $LIST*) (vector (V i) (V i 1) (map unpack-rec (V i 2)))]
-       [($LIST->VECTOR) (vector (V i) (V i 1) (unpack-rec (V i 2)))]
+       [($DEFINE '$DEFINE)
+        ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
+       [($LREF '$LREF)   ($lref (unpack-rec (V i 1)))]
+       [($LSET '$LSET)   ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2)))]
+       [($GREF '$GREF)   ($gref (V i 1))]
+       [($GSET '$GSET)   ($gset (V i 1) (unpack-rec (V i 2)))]
+       [($CONST '$CONST) ($const (V i 1))]
+       [($IF '$IF)
+        ($if (V i 1) (unpack-rec (V i 2))
+             (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
+       [($LET '$LET)  
+        (rlet1 unpacked
+            ($let (V i 1) (V i 2)
+                  (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
+                  (unpack-rec (V i 5)))
+          (ifor-each2 (^(lv in) (lvar-initval-set! lv in))
+                      ($let-lvars unpacked) ($let-inits unpacked)))]
+       [($RECEIVE '$RECEIVE)
+        ($receive (V i 1) (V i 2) (V i 3)
+                  (map unpack-rec (V i 4)) (unpack-rec (V i 5))
+                  (unpack-rec (V i 6)))]
+       [($LAMBDA '$LAMBDA)
+        ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
+                 (map unpack-rec (V i 5))
+                 (unpack-rec (V i 6)) (V i 7))]
+       [($LABEL '$LABEL)   ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
+       [($SEQ '$SEQ)       ($seq (map unpack-rec (V i 1)))]
+       [($CALL '$CALL)   
+        ($call (V i 1) (unpack-rec (V i 2))
+               (map unpack-rec (V i 3)) (V i 4))]
+       [($ASM '$ASM)     ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
+       [($PROMISE '$PROMISE) ($promise (V i 1) (unpack-rec (V i 2)))]
+       [($IT '$IT)  ($it)]
+       [($CONS '$CONS)
+        ($cons (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($APPEND '$APPEND)
+        ($append (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($MEMV '$MEMV)
+        ($memv (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($EQ? '$EQ?)
+        ($eq? (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($EQV? '$EQV?)
+        ($eqv? (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($VECTOR '$VECTOR) ($vector (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST '$LIST)     ($list (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST* '$LIST*)   ($list* (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST->VECTOR '$LIST->VECTOR)
+        ($list->vector (V i 1) (unpack-rec (V i 2)))]
        [('lvar)    (make-lvar (V i 1))]
        [else (errorf "[internal error] unpack-iform: ivec broken at ~a: ~S"
                      i ivec)]))

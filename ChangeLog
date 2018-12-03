@@ -1,3 +1,9 @@
+2018-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pack-iform, unpack-iform): Save iform symbolic tags
+	  instead of numeric tags in packed iforms, so that we can change
+	  numeric tag values across versions.
+
 2018-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (Scm_HashCoreCopy): Fix a bug that didn't copy
