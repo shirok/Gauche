@@ -508,6 +508,68 @@ on top of the source tree.
 
 
 @c JP
+クロスコンパイル
+@c EN
+Cross compilation
+@c COMMON
+---------------------------------------------------
+
+@c JP
+Gaucheはautotool標準のクロスコンパイルをサポートしています。
+つまり、'configure'スクリプトに--buildと--hostオプションを与えて
+makeするだけです (クロス開発に必要なツールはもちろんインストールされているとします)。
+ただ、二つばかり気をつけることがあります。
+@c EN
+Gauche supports autotools-standard cross compilation, that is,
+you give --build and --host option to 'configure' script and
+just make (assuming you have appropriate cross development tools).
+There are a couple of caveats, though.
+@c COMMON
+
+@c JP
+- クロスコンパイルしようとしているのと同じバージョンのGaucheをビルドマシンに
+  インストールしておいてください。
+
+  通常のビルドでは、Gaucheは作ったばかりの'gosh'を使ってext/以下の拡張
+  ライブラリをビルドします。クロスコンパイル時には、作ったばかりの'gosh'は
+  ビルドマシンでは実行できないので、既にビルドマシンにインストールされている
+  goshを使うことになります。
+
+- ./configureに--with-libatomic-ops=no オプションが必要かもしれません。
+
+  このオプションをつけることで、システムにインストールされているlibatomic_ops
+  ではなく同梱されたソースを使うようになります。どうもconfigureスクリプトが
+  ビルドシステム用のlibatomic_opsをホスト用と誤認するケースがあるようです。
+@c EN
+- You have to have the same version of Gauche that you're trying to
+  cross-compile on the build machine.
+
+  In normal build, Gauche uses freshly built 'gosh' to compile
+  extension libraries (under ext/).  While cross compiling we can't run
+  freshly built 'gosh' on the build machine, so we rely on the 'gosh' already
+  installed on it.
+
+- You may need --with-libatomic-ops=no option for ./configure
+
+  The option forces Gauche to use bundled libatomic_ops source instead
+  of system provided one.  We noticed that ./configure may misunderstood
+  the build system's libatmic_ops as the host system's.
+@c COMMON
+
+@c JP
+例として、次のコマンドラインで、Windows (mingw-w64 32bit) 用バイナリを
+あなたのシステム上でクロスコンパイルできます:
+@c EN
+For example, the following command line is to cross build on your machine
+for Windows (mingw-w64 32bit):
+@c COMMON
+
+  $ ./configure --build=`./config.guess` \
+                --host=i686-w64-mingw32 \
+                --with-libatomic-ops=no \
+                --prefix=/usr/local
+
+@c JP
 機種依存の情報
 @c EN
 Machine-dependent information
