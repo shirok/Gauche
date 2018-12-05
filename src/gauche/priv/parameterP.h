@@ -34,18 +34,14 @@
 #ifndef GAUCHE_PRIV_PARAMETERP_H
 #define GAUCHE_PRIV_PARAMETERP_H
 
-/* Primitive parameter is not a Scheme object.  It is referred
-   from a SUBR that behaves like a parameter, but not having filters 
-   nor hooks.
-   We keep the actual struct private, so that we can extend it later.
-*/
+/* We keep the definition private, so that we can extend it later. */
 struct ScmPrimitiveParameterRec {
+    SCM_INSTANCE_HEADER;
     ScmObj name;                /* for debugging. #f or symbol. */
     ScmSize index;
     ScmObj initialValue;
     u_long flags;
 };
-
 
 /* Each VM has vector of parameter values.  vm->parameters points to this.
    The vector is extended on demand.

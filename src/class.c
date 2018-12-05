@@ -3410,6 +3410,9 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_RATIONAL,         "<rational>");
     CINIT(SCM_CLASS_INTEGER,          "<integer>");
 
+    /* parameter.c */
+    BINIT(SCM_CLASS_PRIMITIVE_PARAMETER, "<primitive-parameter>", NULL);
+    
     /* port.c */
     /* initialized in Scm__InitPort */
 

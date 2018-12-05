@@ -490,7 +490,8 @@
 
 (define-cproc %make-primitive-parameter-proc (name initval)
   (return (Scm_MakePrimitiveParameterProc
-           (Scm_MakePrimitiveParameter (Scm_VM) name initval 0))))
+           (Scm_MakePrimitiveParameter SCM_CLASS_PRIMITIVE_PARAMETER
+                                       name initval 0))))
 
 ;;;
 ;;; System termination

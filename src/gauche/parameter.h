@@ -47,21 +47,24 @@
 
 /* ScmPrimitiveParameter is an opaque struct (Definition is
    in priv/parameterP.h) that implements a simple thread-local
-   storage.  It is not a Scheme object.  It doesn't have extra
-   features such as filter procedure or hooks.  It is mainly
-   for the parameter that needs to be accessed from C as well.
-   For the Scheme world, ScmPrimitiveParameter is exposed by wrapped
-   in subr (Scm_MakePrimitiveParameterProc does the wrapping).
-   Scheme-level <parameter> object is built on top of such subr.
+   storage.  It doesn't have extra features such as filter
+   procedure or hooks.  It is useful for the parameter that needs
+   to be accessed from C as well.
+   Scheme-level <parameter> object is built on top of this.
 */
 typedef struct ScmPrimitiveParameterRec ScmPrimitiveParameter;
+
+SCM_CLASS_DECL(Scm_PrimitiveParameterClass);
+#define SCM_CLASS_PRIMITIVE_PARAMETER  (&Scm_PrimitiveParameterClass)
+#define SCM_PRIMITIVE_PARAMETER(obj)   ((ScmPrimitiveParameter*)obj)
+#define SCM_PRIMITIVE_PARAMETER_P(obj) SCM_ISA(obj,SCM_CLASS_PRIMITIVE_PARAMETER)
 
 enum {
     /* value may be a promise; dereference automaticlaly forces it */
     SCM_PARAMETER_LAZY = (1UL << 0)
 };
 
-SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmVM *vm,
+SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                              ScmObj name,
                                                              ScmObj initval,
                                                              u_long flags);

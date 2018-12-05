@@ -1815,7 +1815,7 @@ void Scm__InitRead(void)
     (void)SCM_INTERNAL_MUTEX_INIT(hashBangData.mutex);
 
     defaultReadContext = 
-        Scm_MakePrimitiveParameter(Scm_VM(), SCM_FALSE,
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE,
                                    SCM_OBJ(make_read_context(NULL)),
                                    0);
 }

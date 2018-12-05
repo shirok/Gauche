@@ -1028,10 +1028,10 @@ void Scm__InitHash()
      * is not initialized yet (symbol table uses hashtable!)
      */
     hash_salt = 
-        Scm_MakePrimitiveParameter(Scm_VM(), SCM_FALSE, 
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE, 
                                    Scm_MakeIntegerU(salt), 0);
     current_recursive_hash = 
-        Scm_MakePrimitiveParameter(Scm_VM(), SCM_FALSE, 
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE, 
                                    SCM_FALSE, 0);
 }
 

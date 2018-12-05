@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/class.h"
 #include "gauche/priv/parameterP.h"
 
 /*
@@ -70,6 +71,20 @@
 static ScmSize next_parameter_index = 0;
 static ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
+/* :name and :initial-value.  These keywords are set on-demand,
+   since at the time of Scm_InitParameter we haven't initialized
+   symbol subsystem yet.  */
+static ScmObj key_name = SCM_FALSE;
+static ScmObj key_initial_value = SCM_FALSE;
+
+/* Class stuff */
+static void pparam_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
+static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED);
+
+SCM_DEFINE_BASE_CLASS(Scm_PrimitiveParameterClass, ScmPrimitiveParameter,
+                      pparam_print, NULL, NULL, pparam_allocate,
+                      SCM_CLASS_OBJECT_CPL);
+
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
  * thread, base is the current thread (this must be called from the
  * creator thread).
@@ -97,6 +112,16 @@ ScmVMParameterTable *Scm__MakeVMParameterTable(ScmVM *base)
     return table;
 }
 
+static void pparam_print(ScmObj obj, 
+                         ScmPort *out,
+                         ScmWriteContext *ctx SCM_UNUSED)
+{
+    Scm_Printf(out, "#<%s %s @%p>",
+               Scm_ShortClassName(Scm_ClassOf(obj)),
+               SCM_PRIMITIVE_PARAMETER(obj)->name,
+               obj);
+}
+
 static void ensure_parameter_slot(ScmVMParameterTable *p, ScmSize index)
 {
     if (index >= p->size) {
@@ -116,10 +141,31 @@ static void ensure_parameter_slot(ScmVMParameterTable *p, ScmSize index)
     }
 }
 
+static void ensure_parameter_init_keywords()
+{
+    /* idempotency is ensured in SCM_MAKE_KEYWORD. */
+    if (SCM_FALSEP(key_name)) {
+        key_name = SCM_MAKE_KEYWORD("name");
+    }
+    if (SCM_FALSEP(key_initial_value)) {
+        key_initial_value = SCM_MAKE_KEYWORD("initial-value");
+    }
+}
+
+static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ensure_parameter_init_keywords();
+    ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
+    ScmObj initval = Scm_GetKeyword(key_initial_value, initargs, SCM_FALSE);
+    ScmPrimitiveParameter *p =
+        Scm_MakePrimitiveParameter(klass, name, initval, 0);
+    return SCM_OBJ(p);
+}
+
 /* 
  * Create primitive parameter, which is a SUBR
  */
-ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmVM *vm,
+ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                   ScmObj name,
                                                   ScmObj initval,
                                                   u_long flags)
@@ -127,9 +173,22 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmVM *vm,
     SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
     ScmSize index = next_parameter_index++;
     SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
+    ensure_parameter_slot(Scm_VM()->parameters, index);
 
-    ensure_parameter_slot(vm->parameters, index);
-    ScmPrimitiveParameter *p = SCM_NEW(ScmPrimitiveParameter);
+    /* This is called _before_ class stuff is initialized, in which case
+       we can't call SCM_NEW_INSTANCE.  We know such cases only happens
+       with klass == SCM_CLASS_PRIMITIVE_PARAMETER, so we hard-wire the
+       case.
+     */
+    
+    ScmPrimitiveParameter *p;
+    if (SCM_EQ(klass, SCM_CLASS_PRIMITIVE_PARAMETER)) {
+        p = SCM_NEW(ScmPrimitiveParameter);
+        SCM_SET_CLASS(p, SCM_CLASS_PRIMITIVE_PARAMETER);
+        SCM_INSTANCE(p)->slots = NULL;        /* no extra slots */
+    } else {
+        p = SCM_NEW_INSTANCE(ScmPrimitiveParameter, klass);
+    }
     p->name = name;
     p->index = index;
     p->initialValue = initval;
@@ -208,7 +267,8 @@ ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
                                                     u_long flags)
 {
     ScmPrimitiveParameter *p = 
-        Scm_MakePrimitiveParameter(Scm_VM(), SCM_INTERN(name), initval, flags);
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
+                                   SCM_INTERN(name), initval, flags);
     ScmObj subr = Scm_MakePrimitiveParameterProc(p);
     Scm_Define(mod, SCM_SYMBOL(p->name), subr);
     return p;
@@ -217,6 +277,9 @@ ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
 void Scm__InitParameter(void)
 {
     SCM_INTERNAL_MUTEX_INIT(parameter_mutex);
+    /* We don't initialize Scm_PrimitiveParameterClass yet, since class
+       stuff is not initialized yet.  The class is initialized in
+       class.c. */
 }
 
 /* TRANSIENT: For the backward compatibility.  Remove by 1.0 */
@@ -232,10 +295,14 @@ ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *loc, ScmObj value)
     return Scm_PrimitiveParameterSet(vm, loc->p, value);
 }
 
-void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
+void Scm_InitParameterLoc(ScmVM *vm SCM_UNUSED,
+                          ScmParameterLoc *location,
+                          ScmObj initval)
 {
     Scm_Warn("Scm_InitParameterLoc is deprecated.  Use Scm_MakePrimitiveParameter");
-    ScmPrimitiveParameter *p = Scm_MakePrimitiveParameter(vm, SCM_FALSE, initval, 0);
+    ScmPrimitiveParameter *p =
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, 
+                                   SCM_FALSE, initval, 0);
     location->p = p;
 }
 
