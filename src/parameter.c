@@ -116,7 +116,7 @@ static void pparam_print(ScmObj obj,
                          ScmPort *out,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
-    Scm_Printf(out, "#<%s %s @%p>",
+    Scm_Printf(out, "#<%A %S @%p>",
                Scm_ShortClassName(Scm_ClassOf(obj)),
                SCM_PRIMITIVE_PARAMETER(obj)->name,
                obj);
