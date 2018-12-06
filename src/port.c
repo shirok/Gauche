@@ -1735,8 +1735,8 @@ void Scm__InitPort(void)
 
     /* This must be done before *any* port is created. */
     readerLexicalMode =
-        Scm_DefinePrimitiveParameter(Scm_GaucheModule(), "reader-lexical-mode",
-                                     SCM_OBJ(SCM_SYM_PERMISSIVE), 0);
+        Scm_BindPrimitiveParameter(Scm_GaucheModule(), "reader-lexical-mode",
+                                   SCM_OBJ(SCM_SYM_PERMISSIVE), 0);
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(standard input)"),
                                     SCM_PORT_INPUT, 0,

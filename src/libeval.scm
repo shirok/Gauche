@@ -509,8 +509,8 @@
 (select-module gauche.internal)
 (inline-stub
  (initcode
-  (Scm_DefinePrimitiveParameter (Scm_GaucheModule) "exit-handler"
-                                SCM_FALSE 0)))
+  (Scm_BindPrimitiveParameter (Scm_GaucheModule) "exit-handler"
+                              SCM_FALSE 0)))
 (%primitive-parameter-set! exit-handler 
                            (^[code fmt args]
                              (when fmt
@@ -628,7 +628,7 @@
 (select-module gauche.internal)
 (inline-stub
  (initcode
-  (Scm_DefinePrimitiveParameter (Scm_GaucheModule) "command-line" SCM_NIL 0)))
+  (Scm_BindPrimitiveParameter (Scm_GaucheModule) "command-line" SCM_NIL 0)))
 
 ;;
 ;; External view of VM.

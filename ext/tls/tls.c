@@ -191,7 +191,7 @@ void Scm_Init_tls(ScmModule *mod)
 #endif
     /* Set default-tls-class to be lazy (see tls.scm for the reason) */
     default_tls_class =
-        Scm_DefinePrimitiveParameter(mod, "default-tls-class",
+        Scm_BindPrimitiveParameter(mod, "default-tls-class",
 #if defined(GAUCHE_USE_AXTLS)
                                      SCM_OBJ(&Scm_AxTLSClass),
 #else
@@ -199,8 +199,8 @@ void Scm_Init_tls(ScmModule *mod)
 #endif
                                      SCM_PARAMETER_LAZY);
     ca_bundle_path =
-        Scm_DefinePrimitiveParameter(mod, "tls-ca-bundle-path",
-                                     default_ca_bundle(), 0);
+        Scm_BindPrimitiveParameter(mod, "tls-ca-bundle-path",
+                                   default_ca_bundle(), 0);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
 #if defined(GAUCHE_USE_AXTLS)

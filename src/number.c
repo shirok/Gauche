@@ -4562,8 +4562,8 @@ void Scm__InitNumber(void)
 #endif /*DOUBLE_ARMENDIAN*/
 
     default_endian =
-        Scm_DefinePrimitiveParameter(Scm_GaucheModule(), "default-endian",
-                                     SCM_OBJ(Scm_NativeEndian()), 0);
+        Scm_BindPrimitiveParameter(Scm_GaucheModule(), "default-endian",
+                                   SCM_OBJ(Scm_NativeEndian()), 0);
 
 #ifdef COUNT_FLONUM_ALLOC
     Scm_AddCleanupHandler(report_flonum_count, NULL);

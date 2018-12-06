@@ -1024,7 +1024,7 @@ void Scm__InitHash()
     ADDRESS_HASH(salt, salt);
     salt &= SCM_SMALL_INT_MAX;
     /* 
-     * We can't use Scm_DefinePrimitiveParameter here, since symbol table
+     * We can't use Scm_BindPrimitiveParameter here, since symbol table
      * is not initialized yet (symbol table uses hashtable!)
      */
     hash_salt = 

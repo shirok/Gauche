@@ -74,14 +74,13 @@ SCM_EXTERN ScmObj Scm_PrimitiveParameterSet(ScmVM *vm,
                                             const ScmPrimitiveParameter *p,
                                             ScmObj val);
 
-/* A convenience function to define a Scheme variable NAME in MOD,
-   bound to a SUBR that wraps a newly created parameter.  Returns
-   a newly created ScmPrimitiveParameter so that it is accessible
-   from C.  */
-SCM_EXTERN ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
-                                                               const char *name,
-                                                               ScmObj initval,
-                                                               u_long flags);
+/* A convenience function to create a new ScmPrimitiveParameter
+   and bind it to NAME in MOD.  Returns a newly created primitive
+   parameter so that it is accessible from C.  */
+SCM_EXTERN ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
+                                                             const char *name,
+                                                             ScmObj initval,
+                                                             u_long flags);
 
 /* TRANSIENT - exposed only for the backward compatiblity - will be gone by 1.0 */
 typedef struct ScmParameterLocRec {

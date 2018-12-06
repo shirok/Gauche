@@ -1223,7 +1223,7 @@ void Scm__InitLoad(void)
     ldinfo.dso_table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING,0));
     ldinfo.dso_prelinked = SCM_NIL;
 
-#define PARAM_INIT(var, name, val) ldinfo.var = Scm_DefinePrimitiveParameter(m, name, val, 0)
+#define PARAM_INIT(var, name, val) ldinfo.var = Scm_BindPrimitiveParameter(m, name, val, 0)
     PARAM_INIT(load_history, "current-load-history", SCM_NIL);
     PARAM_INIT(load_next, "current-load-next", SCM_NIL);
     PARAM_INIT(load_port, "current-load-port", SCM_FALSE);

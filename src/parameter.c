@@ -235,10 +235,10 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
 
 /* Convenience function.  Create a primitive parameter and bind
    it to NAME in MOD. */
-ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
-                                                    const char *name,
-                                                    ScmObj initval,
-                                                    u_long flags)
+ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
+                                                  const char *name,
+                                                  ScmObj initval,
+                                                  u_long flags)
 {
     ScmPrimitiveParameter *p = 
         Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
