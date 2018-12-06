@@ -233,34 +233,8 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
     return oldval;
 }
 
-/*
- * To the Scheme world, we wrap ScmPrimitiveParameter with a SUBR.
- */
-static ScmObj parameter_handler(ScmObj *args, int argc, void *data)
-{
-    ScmPrimitiveParameter *p = (ScmPrimitiveParameter*)data;
-    ScmVM *vm = Scm_VM();
-    SCM_ASSERT(argc == 1);
-    if (SCM_NULLP(args[0])) {
-        return Scm_PrimitiveParameterRef(vm, p);
-    }
-    SCM_ASSERT(SCM_PAIRP(args[0]));
-    if (SCM_NULLP(SCM_CDR(args[0]))) {
-        return Scm_PrimitiveParameterSet(vm, p, SCM_CAR(args[0]));
-    }
-    else {
-        Scm_Error("Bad number of arguments for parameter %s", p->name);
-        return SCM_UNDEFINED;   /* dummy */
-    }
-}
-
-
-ScmObj Scm_MakePrimitiveParameterProc(ScmPrimitiveParameter *p)
-{
-    return Scm_MakeSubr(parameter_handler, p, 0, 1, p->name);
-}
-
-
+/* Convenience function.  Create a primitive parameter and bind
+   it to NAME in MOD. */
 ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
                                                     const char *name,
                                                     ScmObj initval,
@@ -269,8 +243,7 @@ ScmPrimitiveParameter *Scm_DefinePrimitiveParameter(ScmModule *mod,
     ScmPrimitiveParameter *p = 
         Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
                                    SCM_INTERN(name), initval, flags);
-    ScmObj subr = Scm_MakePrimitiveParameterProc(p);
-    Scm_Define(mod, SCM_SYMBOL(p->name), subr);
+    Scm_Define(mod, SCM_SYMBOL(p->name), SCM_OBJ(p));
     return p;
 }
 

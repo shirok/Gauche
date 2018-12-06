@@ -482,16 +482,14 @@
 ;;;
 
 ;; Parameter internal API
-;; These will be called by the public API in gauche.parameter.  The protocol
-;; is a bit weird, for the Scheme-level parameter has its own instance
-;; definition distinct from C-level ScmParameterLoc.  Eventually it would
-;; be nicer if we could merge two.
+;; These will be called by the public API in gauche.parameter.
 (select-module gauche.internal)
 
-(define-cproc %make-primitive-parameter-proc (name initval)
-  (return (Scm_MakePrimitiveParameterProc
-           (Scm_MakePrimitiveParameter SCM_CLASS_PRIMITIVE_PARAMETER
-                                       name initval 0))))
+(define-cproc %primitive-parameter-ref (p::<primitive-parameter>)
+  (return (Scm_PrimitiveParameterRef (Scm_VM) p)))
+(define-cproc %primitive-parameter-set! (p::<primitive-parameter> val)
+  (return (Scm_PrimitiveParameterSet (Scm_VM) p val)))
+
 
 ;;;
 ;;; System termination
@@ -509,13 +507,15 @@
 ;; API
 ;; exit handler.
 (select-module gauche.internal)
-(define-in-module gauche exit-handler
-  (%make-primitive-parameter-proc
-   'exit-handler
-   (^[code fmt args]
-     (when fmt
-       (apply format (standard-error-port) fmt args)
-       (newline (standard-error-port))))))
+(inline-stub
+ (initcode
+  (Scm_DefinePrimitiveParameter (Scm_GaucheModule) "exit-handler"
+                                SCM_FALSE 0)))
+(%primitive-parameter-set! exit-handler 
+                           (^[code fmt args]
+                             (when fmt
+                               (apply format (standard-error-port) fmt args)
+                               (newline (standard-error-port)))))
 
 ;; API
 (define-in-module gauche (exit :optional (code 0) (fmt #f) :rest args)
@@ -626,8 +626,9 @@
 ;; Command line - R7RS adds 'command-line' procedure.  We provide it as
 ;; a predefined parameter.
 (select-module gauche.internal)
-(define-in-module gauche command-line
-  (%make-primitive-parameter-proc 'command-line '()))
+(inline-stub
+ (initcode
+  (Scm_DefinePrimitiveParameter (Scm_GaucheModule) "command-line" SCM_NIL 0)))
 
 ;;
 ;; External view of VM.

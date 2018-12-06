@@ -56,37 +56,40 @@
 
 (define-method initialize ((self <parameter>) initargs)
   (next-method)
-  (let* ([filter (slot-ref self 'filter)]
-         [pre-hook #f]
+  (let* ([pre-hook #f]
          [post-hook #f]
+         [filter (get-keyword :filter initargs #f)]
          [init-value (let1 v (get-keyword :init-value initargs #f)
                        (if filter (filter v) v))]
-         [prim ((with-module gauche.internal %make-primitive-parameter-proc)
-                #f init-value)])
-    (slot-set! self 'getter prim)
+         [prim (make <primitive-parameter> :initial-value init-value)]
+         [get (^[] ((with-module gauche.internal %primitive-parameter-ref)
+                    prim))]
+         [set (^v ((with-module gauche.internal %primitive-parameter-set!)
+                   prim v))])
+    (slot-set! self 'getter get)
     (slot-set! self 'setter
                (if filter
                  (^(val) (let1 new (filter val)
-                           (rlet1 old (prim)
+                           (rlet1 old (get)
                              (when pre-hook (run-hook pre-hook old new))
-                             (prim new)
+                             (set new)
                              (when post-hook (run-hook post-hook old new)))))
-                 (^(val) (rlet1 old (prim)
+                 (^(val) (rlet1 old (get)
                            (when pre-hook (run-hook pre-hook old val))
-                           (prim val)
+                           (set val)
                            (when post-hook (run-hook post-hook old val))))))
     (slot-set! self 'restorer          ;bypass filter proc
-               (^(val) (rlet1 old (prim)
+               (^(val) (rlet1 old (get)
                          (when pre-hook (run-hook pre-hook old val))
-                         (prim val)
+                         (set val)
                          (when post-hook (run-hook post-hook old val)))))
-    (let-syntax ([hook-ref
-                  (syntax-rules ()
-                    [(_ var) (^() (or var (rlet1 h (make-hook 2)
-                                            (set! var h))))])])
-      (slot-set! self 'pre-observers (hook-ref pre-hook))
-      (slot-set! self 'post-observers (hook-ref post-hook)))
-    ))
+      (let-syntax ([hook-ref
+                    (syntax-rules ()
+                      [(_ var) (^() (or var (rlet1 h (make-hook 2)
+                                              (set! var h))))])])
+        (slot-set! self 'pre-observers (hook-ref pre-hook))
+        (slot-set! self 'post-observers (hook-ref post-hook)))
+      ))
 
 (define-method object-apply ((self <parameter>))
   ((slot-ref self 'getter)))
@@ -106,9 +109,12 @@
 ;; NB: For historical reasons, PARAMETERIZE may be used with paremeter-like
 ;; procedures.
 (define (%restore-parameter param prev-val)
-  (if (is-a? param <parameter>)
-    ((slot-ref param'restorer) prev-val)
-    (param prev-val)))
+  (cond
+   [(is-a? param <parameter>)
+    ((slot-ref param'restorer) prev-val)]
+   [(is-a? param <primitive-parameter>)
+    ((with-module gauche.internal %primitive-parameter-set!) param prev-val)]
+   [else (param prev-val)]))
 
 (define-syntax parameterize
   (syntax-rules ()

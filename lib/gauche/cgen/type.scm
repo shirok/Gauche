@@ -259,6 +259,8 @@
    (<foreign-pointer> "ScmForeignPointer*" "foreign pointer"
                       "SCM_FOREIGN_POINTER_P" "SCM_FOREIGN_POINTER")
    (<box>  "ScmBox*" "box" "SCM_BOXP" "SCM_BOX")
+   (<primitive-parameter> "ScmPrimitiveParameter*" "primitive parameter"
+                          "SCM_PRIMITIVE_PARAMETER_P" "SCM_PRIMITIVE_PARAMETER")
    ))
 
 ;;

@@ -815,6 +815,12 @@
 (define-method object-apply :locked ((type <condition-meta>) obj)
   (condition-has-type? obj type))
 
+;; Primitive parameters
+(define-method object-apply :locked ((p <primitive-parameter>) :optional val)
+  (if (undefined? val)
+    ((with-module gauche.internal %primitive-parameter-ref) p)
+    ((with-module gauche.internal %primitive-parameter-set!) p val)))
+
 ;; Regexp printer.  It doesn't need speed, and it's easier to write in Scheme.
 ;; This is defined here since we can only use it after define-method support.
 ;; NB: case-folding regexp is expressed by (?i:...) in regexp->string.

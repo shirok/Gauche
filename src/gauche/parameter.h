@@ -73,7 +73,6 @@ SCM_EXTERN ScmObj Scm_PrimitiveParameterRef(ScmVM *vm,
 SCM_EXTERN ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, 
                                             const ScmPrimitiveParameter *p,
                                             ScmObj val);
-SCM_EXTERN ScmObj Scm_MakePrimitiveParameterProc(ScmPrimitiveParameter *p);
 
 /* A convenience function to define a Scheme variable NAME in MOD,
    bound to a SUBR that wraps a newly created parameter.  Returns
