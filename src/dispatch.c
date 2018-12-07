@@ -385,6 +385,17 @@ ScmObj Scm__MethodDispatcherLookup(ScmMethodDispatcher *dis,
     }
 }
 
+ScmObj Scm__MethodDispatcherInfo(const ScmMethodDispatcher *dis)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    const mhash *mh = (const mhash*)AO_load(&dis->methodHash);
+    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("axis"));
+    SCM_APPEND1(h, t, SCM_MAKE_INT(dis->axis));
+    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-entries"));
+    SCM_APPEND1(h, t, SCM_MAKE_INT(mh->num_entries));
+    return h;
+}
+
 void Scm__MethodDispatcherDump(ScmMethodDispatcher *dis, ScmPort *port)
 {
     Scm_Printf(port, "MethodDispatcher axis=%d\n", dis->axis);

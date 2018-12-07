@@ -2353,6 +2353,16 @@ void Scm__GenericInvalidateDispatcher(ScmGeneric *gf)
 }
 
 /* Developer API */
+ScmObj Scm__GenericDispatcherInfo(ScmGeneric *gf)
+{
+    if (gf->dispatcher) {
+        return Scm__MethodDispatcherInfo(gf->dispatcher);
+    } else {
+        return SCM_FALSE;
+    }
+}
+
+/* Developer API */
 void Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port)
 {
     if (gf->dispatcher) {

@@ -666,8 +666,8 @@
 (define-cproc generic-build-dispatcher! (gf::<generic> axis::<fixnum>)
   Scm__GenericBuildDispatcher)
 
-(define-cproc generic-dispatcher-vector (gf::<generic>)
-  (return (-> gf dispatcher)))
+(define-cproc generic-dispatcher-info (gf::<generic>)
+  Scm__GenericDispatcherInfo)
 
 (define-cproc generic-invalidate-dispatcher! (gf::<generic>) ::<void>
   Scm__GenericInvalidateDispatcher)

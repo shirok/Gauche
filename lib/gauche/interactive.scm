@@ -162,6 +162,8 @@
               (if has-optional?
                 (append spnames '_) ; this works even spnames is ()
                 spnames))))
+  (and-let1 dis ((with-module gauche.object generic-dispatcher-info) g)
+    (format #t "dispatcher:\n  ~s\n" dis))
   (values))
 
 (define-method describe ((p <procedure>))
