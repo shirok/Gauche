@@ -43,6 +43,7 @@ SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
 /* Method dispatcher developer API */
 SCM_EXTERN ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis);
 SCM_EXTERN void   Scm__GenericInvalidateDispatcher(ScmGeneric *gf);
+SCM_EXTERN ScmObj Scm__GenericDispatcherInfo(ScmGeneric *gf);
 SCM_EXTERN void   Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port);
 
 #endif /*GAUCHE_PRIV_CLASSP_H*/

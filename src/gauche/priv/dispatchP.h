@@ -34,6 +34,9 @@
 #ifndef GAUCHE_PRIV_DISPATCHP_H
 #define GAUCHE_PRIV_DISPATCHP_H
 
+/* This file is only shared between class.c and dispatch.c.
+   Other parts must use Scm__Generic* API. */
+
 /* We might use fast dispatch table when args to gf is equal to or
    smaller than this */
 #define SCM_DISPATCHER_MAX_NARGS   4
@@ -46,6 +49,7 @@ void   Scm__MethodDispatcherAdd(ScmMethodDispatcher *dis, ScmMethod *m);
 void   Scm__MethodDispatcherDelete(ScmMethodDispatcher *dis, ScmMethod *m);
 ScmObj Scm__MethodDispatcherLookup(ScmMethodDispatcher *dis,
                                    ScmClass **typev, int argc);
+ScmObj Scm__MethodDispatcherInfo(const ScmMethodDispatcher *dis);
 void   Scm__MethodDispatcherDump(ScmMethodDispatcher *dis, ScmPort *port);
 
 #endif  /*GAUCHE_PRIV_DISPATCHP_H*/
