@@ -253,3 +253,16 @@
   (and (equal? (hash-table-comparator a) (hash-table-comparator b))
        (subset? a b)
        (subset? b a)))
+
+;;
+;; Turn on generic dispatcher on selected gfs.
+;; Eventually, we automate attaching dispacher whenever gf meets certain
+;; criteria.  The dispatcher is so effective, (e.g. ref <vector>
+;; gets 8x speedup) so we manually turn it on for soem gfs.
+;; In case if bug is found in dispatcher mechanism, use -fno-generic-dispatcher
+;; option to turn off dispatchers.
+;;
+(with-module gauche.object
+  (generic-build-dispatcher! ref 0)
+  (generic-build-dispatcher! object-apply 0)
+  )

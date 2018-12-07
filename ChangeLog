@@ -1,5 +1,9 @@
 2018-12-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/libomega.scm: Turn on generic dispatcher on a few popular
+	  gfs experimentally.  Env var GAUCHE_DISABLE_GENERIC_DISPATCHER
+	  turn off this feature in case if there's a serious bug.
+
 	* src/parameter.c: Rename Scm_DefinePrimitiveParameter to
 	  Scm_BindPrimitiveParameter; it's weird that Scm_Define* returns
 	  a value.

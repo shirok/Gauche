@@ -168,6 +168,11 @@ static ScmObj key_generic        = SCM_FALSE;
 static ScmObj key_specializers   = SCM_FALSE;
 static ScmObj key_body           = SCM_FALSE;
 
+/* TRANSIENT: Global flag to dispable generic dispatcher.  This is an escape
+   pod to fall back the default mechanism when we find a serious bug in
+   dispatch accelerator.  Can be turned on with a environment variable. */
+static int disable_generic_dispatcher = FALSE;
+
 /* A global lock to serialize class redefinition.  We need it since
    class redefinition is not a local effect---it propagates through
    its subclasses.  So it is pretty difficult to guarantee consistency
@@ -2334,7 +2339,8 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
  */
 ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis)
 {
-    if (axis >= 0 && axis < SCM_DISPATCHER_MAX_NARGS) {
+    if (!disable_generic_dispatcher
+        && axis >= 0 && axis < SCM_DISPATCHER_MAX_NARGS) {
         (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
         gf->dispatcher = Scm__BuildMethodDispatcher(gf->methods, axis);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
@@ -3345,6 +3351,10 @@ void Scm__InitClass(void)
 
     (void)SCM_INTERNAL_MUTEX_INIT(class_redefinition_lock.mutex);
     (void)SCM_INTERNAL_COND_INIT(class_redefinition_lock.cv);
+
+    if (Scm_GetEnv("GAUCHE_DISABLE_GENERIC_DISPATCHER") != NULL) {
+        disable_generic_dispatcher = TRUE;
+    }
 
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
