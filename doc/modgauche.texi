@@ -7939,7 +7939,7 @@ causes all the registered procedure to be invoked.
 @end deftp
 
 @defun make-hook :optional (arity 0)
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Creates a new hook object with given arity, which should be a
 non-negative integer.
@@ -7950,7 +7950,7 @@ non-negative integer.
 @end defun
 
 @defun hook? obj
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Returns true if @var{obj} is a hook object.
 @c JP
@@ -7959,7 +7959,7 @@ Returns true if @var{obj} is a hook object.
 @end defun
 
 @defun hook-empty? hook
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Returns true if @var{hook}'s procedure list is empty.
 @c JP
@@ -7968,7 +7968,7 @@ Returns true if @var{hook}'s procedure list is empty.
 @end defun
 
 @deffn {Method} add-hook! (hook <hook>) proc :optional (append? #f)
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Adds a procedure @var{proc} to @var{hook}.  If @var{append?}
 is given and true, @var{proc} is added at the end of the list.
@@ -7987,7 +7987,7 @@ at the @code{make-hook}.
 
 @deffn {Method} delete-hook! (hook <hook>) proc
 @deffnx {Method} remove-hook! (hook <hook>) proc
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Removes @var{proc} from the procedure list of @var{hook}.
 @code{Remove-hook!} is an alias of @code{delete-hook!} just for
@@ -8000,7 +8000,7 @@ Guileとの互換性のためだけに、@code{remove-hook!}が@code{delete-hook
 @end deffn
 
 @deffn {Method} reset-hook! (hook <hook>)
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Empties @var{hook}'s procedure list.
 @c JP
@@ -8009,7 +8009,7 @@ Empties @var{hook}'s procedure list.
 @end deffn
 
 @deffn {Method} hook->list (hook <hook>)
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Returns a copy of @var{hook}'s procedure list.
 @c JP
@@ -8018,7 +8018,7 @@ Returns a copy of @var{hook}'s procedure list.
 @end deffn
 
 @deffn {Method} run-hook (hook <hook>) arg @dots{}
-@c MOD gauche.generator
+@c MOD gauche.hook
 @c EN
 Calls @var{hook}'s procedures in order, with arguments @var{arg} @dots{}.
 The number of arguments must match the arity given at @code{make-hook}.
