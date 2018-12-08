@@ -2,7 +2,10 @@
 ;; Method dispatcher benchmark
 ;;
 
-;; NB: We assume dispatch accelerator isn't on by default.
+
+;; As of 0.9.7, dispatcher is on for 'ref' and 'object-apply'.
+;; It can be turned off by setting GAUCHE_DISABLE_GENERIC_DISPATCHER env var
+;; at the initialization.  Run this script with and without it 
 
 (use gauche.sequence)
 (use gauche.parameter)
@@ -43,6 +46,12 @@
 (define (do-param)
   (dotimes [1000] (unroll param)))
 
+(define proc (lambda () #f))
+
+(define (do-proc)
+  (dotimes [1000] (unroll proc)))
+
+
 (define (bench)
   (define v (make-vector 10))
   (define sv (make-sparse-vector #f :default 0))
@@ -53,16 +62,17 @@
                        (sv-specific  . ,(cut do-sparse sv))
                        (sv-ref       . ,(cut do-ref sv))
                        (sv-~         . ,(cut do-~ sv))
+                       (proc-call    . ,(cut do-proc))
                        (parameter    . ,(cut do-param))
                        ))
   )
 
 (define (main args)
-  (print "Before dispatcher")
+  (print "With dispatcher")
   (bench)
-  ((with-module gauche.object generic-build-dispatcher!) ref 0)
-  ((with-module gauche.object generic-build-dispatcher!) object-apply 0)
-  (print "After dispatcher")
+  ((with-module gauche.object generic-invalidate-dispatcher!) ref)
+  ((with-module gauche.object generic-invalidate-dispatcher!) object-apply)
+  (print "Without dispatcher")
   (bench)
   )
 
