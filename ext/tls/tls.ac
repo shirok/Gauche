@@ -112,7 +112,6 @@ AS_IF([test -n "$TLSLIBS"], [
        AC_DEFINE(HAVE_WINCRYPT_H, 1, [Define if you have wincrypt.h])
        SYSTEM_CERT_LIBS="-lcrypt32"
        ])
-  LIBS=${LIBS_SAVE}
   EXT_LIBS="$EXT_LIBS $SYSTEM_CERT_LIBS"
   AC_SUBST(SYSTEM_CERT_LIBS)
 ])
