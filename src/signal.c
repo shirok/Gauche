@@ -397,6 +397,11 @@ void Scm_SigFillSetMostly(sigset_t *set) /* out */
     int sig_restart = GC_get_thr_restart_signal();
     if (sig_restart >= 0) sigdelset(set, sig_restart);
 #endif /*GC_THREADS*/
+
+    /* Exclude SIGPROF when we're using gperftools profiler. */
+#if defined(HAVE_GPERFTOOLS_PROFILER_H)
+    sigdelset(set, SIGPROF);
+#endif /*WITHGPERFTOOLS*/
 }
 
 /*=============================================================

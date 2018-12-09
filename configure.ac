@@ -338,6 +338,23 @@ AC_ARG_ENABLE(framework,
                   [ac_gauche_framework=yes])
   ], [])
 
+dnl ----------------------------------------------------------
+dnl   with-gperftools
+dnl
+AC_ARG_WITH(gperftools,
+  AS_HELP_STRING([--with-gperftools],
+                 [Link with gperftools profiler.  When linked, and run with CPUPROFILE=FILE environment variable, sampling profiler is run and the result is dumped to FILE.  This is to profile Gauche system itself, not the programs written in Scheme (the latter is supported with gosh's -ptime runtime option).  It is not recommended to build production release with this option.]),
+  [
+    AS_CASE([$with_gperftools],
+            [no], [],
+                  [AC_CHECK_HEADERS(gperftools/profiler.h)
+                   AC_CHECK_LIB(profiler, ProfilerStart)
+                   AS_IF([test "x$ac_cv_header_gperftools_profiler_h" != xyes
+                            -o "x$ac_cv_lib_profiler_ProfilerStart" != xyes],
+                         [AC_MSG_ERROR([The --with-gperftools option requires gperftools, but it doesn't appear to be installed on this system.])])
+                   ])
+  ], [])
+
 dnl ===========================================================
 dnl Set up version-related macros
 GAUCHE_VERSION=$PACKAGE_VERSION

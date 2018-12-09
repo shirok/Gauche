@@ -1,3 +1,8 @@
+2018-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac (--with-gperftools), main.c, signal.c: Support linking
+	  with gperftools.
+
 2018-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libomega.scm: Turn on generic dispatcher on a few popular

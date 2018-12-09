@@ -207,6 +207,9 @@
 /* Define to 1 if you have the <glob.h> header file. */
 #undef HAVE_GLOB_H
 
+/* Define to 1 if you have the <gperftools/profiler.h> header file. */
+#undef HAVE_GPERFTOOLS_PROFILER_H
+
 /* Define if you have iconv.h and want to use it */
 #undef HAVE_ICONV_H
 

@@ -41,6 +41,10 @@
 #include <getopt.h>
 #endif
 
+#ifdef HAVE_GPERFTOOLS_PROFILER_H
+#include <gperftools/profiler.h>
+#endif
+
 /* options */
 int load_initfile = TRUE;       /* if false, not to load init files */
 int batch_mode = FALSE;         /* force batch mode */
@@ -747,6 +751,14 @@ int main(int ac, char **av)
         Scm_SelectModule(default_toplevel_module);
     }
 
+#if defined(HAVE_GPERFTOOLS_PROFILER_H)
+    /* If CPUPROFILE is defined, gperftools automatically start profiling,
+       but we need to have at least one API reference in libprofiler in order
+       to ensure the library is linked. */
+    const char *prof_out = Scm_GetEnv("CPUPROFILE");
+    if (prof_out != NULL) ProfilerStart(prof_out); 
+#endif /*defined(HAVE_GPERFTOOLS_PROFILER_H)*/
+
     /* Following is the main dish. */
     if (scriptfile != NULL) exit_code = execute_script(scriptfile, args);
 #if !defined(GAUCHE_WINDOWS_NOCONSOLE)
@@ -754,6 +766,10 @@ int main(int ac, char **av)
 #endif /*!defined(GAUCHE_WINDOWS_NOCONSOLE)*/
 
     /* All is done.  */
+#if defined(HAVE_GPERFTOOLS_PROFILER_H)
+    if (prof_out != NULL) ProfilerStop();
+#endif /*defined(HAVE_GPERFTOOLS_PROFILER_H)*/
+
     Scm_Exit(exit_code);
     return 0;                   /*NOTREACHED*/
 }
