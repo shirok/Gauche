@@ -114,7 +114,7 @@ SCMFILES = srfi-0.scm \
        scheme/generator.scm scheme/hash-table.scm scheme/ideque.scm \
        scheme/list-queue.scm scheme/list.scm scheme/lseq.scm \
        scheme/set.scm scheme/sort.scm scheme/vector.scm \
-       text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
+       text/csv.scm text/edn.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/mexpr.scm text/progress.scm \
        text/console.scm text/console/generic.scm text/console/windows.scm \

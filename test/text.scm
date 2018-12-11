@@ -169,6 +169,38 @@ fuga
        (with-output-to-string
          (lambda () (diff-report diff-a diff-b))))
 
+
+;;-------------------------------------------------------------------
+(test-section "edn")
+(use text.edn)
+(use srfi-13)
+(test-module 'text.edn)
+
+(let1 data `[(#t . "  true ")
+             (#f . "false")
+             (,edn-nil . "nil ")
+             (symbol . " symbol ")
+             (:keyword . ":keyword")
+             ("string" . "\"string\"")
+             ("weird \" characters \t\n\r\\" 
+              . "\"weird \\\" characters \\t\\n\\r\\\\\"")
+             (#\a . "\\a")
+             (#\newline . "\\newline")
+             (#\return . "\\return")
+             (#\space . "\\space")
+             (#\tab . "\\tab")
+             (() . "()")
+             ((a b c) . "(a b c)")
+             (#(a b c) . "[a b c]")
+             (#((a b) (a c) #(b c)) . "[(a b) (a c) [b c]]")]
+  (test* "parser basics" (map car data)
+         (map ($ parse-edn-string $ cdr $) data))
+  (test* "writer basics" (map ($ string-trim-both $ cdr $) data)
+         (map ($ construct-edn-string $ car $) data)))
+
+;; (let1 data '("{:a x, :b y, :c z}"
+;;              "{:a x, :b y, :c z}"
+
 ;;-------------------------------------------------------------------
 (test-section "gap-buffer")
 (use text.gap-buffer)
