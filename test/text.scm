@@ -181,6 +181,7 @@ fuga
              (#f . "false")
              (,edn-nil . "nil ")
              (symbol . " symbol ")
+             (namespace/name . " namespace/name")
              (:keyword . ":keyword")
              ("string" . "\"string\"")
              ("weird \" characters \t\n\r\\" 
@@ -216,12 +217,19 @@ fuga
 
 ;; other aggregates (round-trip is not guaranteed)
 (let1 data `(("{:a 1, :b 2, :c 3}" . ,(edn-map :a 1 :b 2 :c '3))
-             ("#{a b c d e}" . ,(edn-set 'a 'b 'c 'd 'e)))
+             ("#{a b c d e}" . ,(edn-set 'a 'b 'c 'd 'e))
+             ("#myobj{:a 1}" . ,(edn-object 'myobj :a 1)))
   (dolist [d data]
     (test* (format "parse ~s" d) (cdr d) (parse-edn-string (car d)) edn-equal?)
     (test* (format "write ~s" d) (parse-edn-string (car d))
            ($ parse-edn-string $ construct-edn-string
-              $ parse-edn-string $ car d))))
+              $ parse-edn-string $ car d)
+           edn-equal?)))
+
+;; invalid
+(let1 invalids '("foo/bar/baz" "/foo" "foo/")
+  (dolist [d invalids]
+    (test* (format "parse (invalid) ~s" d) (test-error) (parse-edn-string d))))
 
 ;;-------------------------------------------------------------------
 (test-section "gap-buffer")
