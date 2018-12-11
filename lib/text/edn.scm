@@ -55,7 +55,7 @@
 ;;; Comparison
 ;;;
 (define (edn-equal? a b)
-  (cond [(hash-table? a) (and (hash-table? b) (hash-table=? edn-equal? a b))]
+  (cond [(hash-table? a) (and (hash-table? b) (hash-table=? edn-comparator a b))]
         [(set? a) (and (set? b) (set=? a b))]
         [(edn-nil? a) (edn-nil? b)]
         [else (equal? a b)]))
@@ -78,14 +78,14 @@
 (define (edn-nil? obj) (eq? obj edn-nil))
 
 ;; EDN map is a hashtable with edn-comparator.
-(define (edn-map kv-list)
+(define (edn-map . kv-list)
   (rlet1 h (make-hash-table edn-comparator)
     (doplist [[k v] kv-list]
       ;; todo: duplicate key check
       (hash-table-put! h k v))))
 
 ;; EDN set is a set with edn-comparator.
-(define (edn-set vals)
+(define (edn-set . vals)
   (list->set edn-comparator vals))
 
 ;; EDN tagged object
@@ -131,10 +131,10 @@
   (define %vec
     ($between ($c #\[) ($lift list->vector ($many %term)) ($c #\])))
   (define %set
-    ($between ($s "#{") ($lift edn-set ($many %term)) ($c #\})))
+    ($between ($s "#{") ($lift ($ apply edn-set $) ($many %term)) ($c #\})))
   (define %map
-    ($between ($c #\{) ($lift edn-map ($many %term)) ($c #\})))
-  (define %word
+    ($between ($c #\{) ($lift ($ apply edn-map $) ($many %term)) ($c #\})))
+  (define %word ; intermediate - used by %atom and %char
     ($->string ($many1 ($one-of #[\w*!?$%&=<>:#+.-]))))
   (define %atom
     ($do [val %word]
@@ -142,7 +142,9 @@
           [(equal? val "true")  ($return #t)]
           [(equal? val "false") ($return #f)]
           [(equal? val "nil")   ($return edn-nil)]
-          [(string-prefix? ":" val) ($return (make-keyword (string-drop val 1)))]
+          [(string-prefix? ":" val) ($return 
+                                     (make-keyword (string-drop val 1)))]
+          [(%parse-num val) => $return]
           [else ($return (string->symbol val))])))
   (define %tagged
     ($do [ ($c #\#) ]
@@ -171,6 +173,15 @@
            [#/^.$/       (s) ($return (~ s 0))]
            [else ($fail (format "invalid char name: ~a" w))])))
   (peg-run-parser %term lseq))
+
+(define (%parse-num word)
+  (rxmatch-if (#/^([+-])?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?([MN])?$/ word)
+      [_ sign int frac exp sfx]
+    (* (if (equal? sign "-") -1 1)
+       (if (or frac exp (equal? sfx "M"))
+         (string->number (format "~a.~aE~a" int (or frac "0") (or exp "0")))
+         (string->number int)))
+    #f))
 
 (define (parse-edn :optional (iport (current-input-port)))
   (values-ref (parse (port->char-lseq iport)) 0))

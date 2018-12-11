@@ -176,6 +176,7 @@ fuga
 (use srfi-13)
 (test-module 'text.edn)
 
+;; simple stuff
 (let1 data `[(#t . "  true ")
              (#f . "false")
              (,edn-nil . "nil ")
@@ -189,6 +190,8 @@ fuga
              (#\return . "\\return")
              (#\space . "\\space")
              (#\tab . "\\tab")
+             (0 . "0")
+             (-1 . "-1")
              (() . "()")
              ((a b c) . "(a b c)")
              (#(a b c) . "[a b c]")
@@ -198,8 +201,27 @@ fuga
   (test* "writer basics" (map ($ string-trim-both $ cdr $) data)
          (map ($ construct-edn-string $ car $) data)))
 
-;; (let1 data '("{:a x, :b y, :c z}"
-;;              "{:a x, :b y, :c z}"
+;; numeric formats (round-trip is not guaranteed)
+(let1 data `[(1234 . "1234")
+             (-1234 . "-1234N")
+             (1234 . "+1234N")
+             (1234.0 . "1234M")
+             (1234.5678 . "1234.5678")
+             (12.34 . "1234e-2")
+             (-1234.5678 . "-12.345678e2")
+             (1234.5678 . "12.345678e+2")
+             (1234.5678 . "+12.345678E+2")]
+  (test* "parser numeric" (map car data)
+         (map ($ parse-edn-string $ cdr $) data)))
+
+;; other aggregates (round-trip is not guaranteed)
+(let1 data `(("{:a 1, :b 2, :c 3}" . ,(edn-map :a 1 :b 2 :c '3))
+             ("#{a b c d e}" . ,(edn-set 'a 'b 'c 'd 'e)))
+  (dolist [d data]
+    (test* (format "parse ~s" d) (cdr d) (parse-edn-string (car d)) edn-equal?)
+    (test* (format "write ~s" d) (parse-edn-string (car d))
+           ($ parse-edn-string $ construct-edn-string
+              $ parse-edn-string $ car d))))
 
 ;;-------------------------------------------------------------------
 (test-section "gap-buffer")
