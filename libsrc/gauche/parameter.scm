@@ -46,7 +46,6 @@
 
 (define-class <parameter> ()
   (;; all slots should be private
-   (filter :init-keyword :filter :init-value #f)
    (setter)
    (getter)
    (restorer)                           ;used to restore previous value
