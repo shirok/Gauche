@@ -164,7 +164,9 @@
 
 (define-condition-type <parse-error> <error> #f
   (position)                            ;stream position
-  (objects))                            ;offending object(s) or messages
+  (type)                                ;fail type
+  (objects)                             ;expecting/unexpecting items
+  (token))                              ;token that caused error
 
 (define-method write-object ((o <parse-error>) out)
   (format out "#<<parse-error> ~S>" (~ o 'message)))
@@ -202,11 +204,14 @@
                            [msgs @ msgs]))
                (format " at ~s" pos))))))
   (define (or-concat lis)
+    (define (rec lis)
+      (match lis
+        [(x y) `("(",x") or (",y")")]
+        [(x . more) `("(",x"), ",@(rec more))]))
     (match lis
       [() '()]
       [(x) `(,x)]
-      [(x y) `(,x " or " ,y)]
-      [(x . more) `(,x ", " ,@(or-concat more))]))
+      [xs (rec xs)]))
   (define (compound-exps exps)
     (match exps
       [(x) (format "expecting ~s" x)]
@@ -215,7 +220,7 @@
     (match unexps
       [(x) (format "not expecting ~s" x)]
       [(xs ...) (format "not expecting any of ~s" xs)]))
-  (define (message pos nexttok)
+  (define (message objs pos nexttok)
     (case type
       [(fail-message)  (format "~a at ~s" objs pos)] ;objs is a string message
       [(fail-expect)
@@ -226,14 +231,16 @@
        (if (char? objs)
          (format "expecting but ~s at ~a, and got ~s" objs pos nexttok)
          (format "expecting but ~a at ~a, and got ~s" objs pos nexttok))]
-      [(fail-compound)
-       (analyze-compound-error (flatten-compound-error objs) pos)]
+      [(fail-compound) (analyze-compound-error objs pos)]
       [else (format "unknown parser error at ~a: ~a" pos objs)]  ;for safety
       ))
-  (let1 nexttok (if (pair? seq) (car seq) (eof-object))
+  (let ([nexttok (if (pair? seq) (car seq) (eof-object))]
+        [objs (if (eq? type 'fail-compound)
+                (flatten-compound-error objs)
+                objs)])
     (make-condition <parse-error>
-                    'position pos 'objects objs
-                    'message (message pos nexttok))))
+                    'position pos 'type type 'objects objs 'token nexttok
+                    'message (message objs pos nexttok))))
 
 (define (construct-peg-parser-error r v s s1)
   (make-peg-parse-error r v
