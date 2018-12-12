@@ -42,7 +42,9 @@
   (use scheme.set)
   (use parser.peg)
 
-  (export edn-equal? edn-comparator
+  (export <edn-parse-error>
+
+          edn-equal? edn-comparator
           edn-nil edn-nil? edn-map edn-set
           <edn-object> edn-object? make-edn-object edn-object
           edn-object-tag edn-object-map
@@ -68,6 +70,20 @@
 
 (define edn-comparator 
   (make-comparator #t edn-equal? #f default-hash))
+
+;;;
+;;; Conditions
+;;;
+
+(define-condition-type <edn-parse-error> <error> #f
+  (position))
+
+(define (wrap-parser thunk)
+  (guard (e [(<parse-error> e)
+             (error <edn-parse-error>
+                    :position (~ e'position)
+                    :message (~ e'message))])
+    (thunk)))
 
 ;;;
 ;;; EDN-specific types
@@ -169,7 +185,7 @@
                                      (make-keyword (string-drop val 1)))]
           [(%parse-num val) => $return]
           [(edn-valid-symbol-name? val) ($return (string->symbol val))]
-          [else ($fail (format "invalid-token: ~s" val))])))
+          [else ($fail (format "invalid token: ~s" val))])))
   (define %tagged
     ($do [ ($c #\#) ]
          [tag %word]
@@ -198,7 +214,7 @@
                 ($return (ucs->char (string->number v 16)))]
            [#/^.$/       (s) ($return (~ s 0))]
            [else ($fail (format "invalid char name: ~a" w))])))
-  (peg-run-parser %term lseq))
+  (wrap-parser (cut peg-run-parser %term lseq)))
 
 (define (%parse-num word)
   (rxmatch-if (#/^([+-])?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?([MN])?$/ word)

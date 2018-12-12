@@ -229,7 +229,9 @@ fuga
 ;; invalid
 (let1 invalids '("foo/bar/baz" "/foo" "foo/")
   (dolist [d invalids]
-    (test* (format "parse (invalid) ~s" d) (test-error) (parse-edn-string d))))
+    (test* (format "parse (invalid) ~s" d) 
+           (test-error <edn-parse-error> #/invalid token/)
+           (parse-edn-string d))))
 
 ;;-------------------------------------------------------------------
 (test-section "gap-buffer")
