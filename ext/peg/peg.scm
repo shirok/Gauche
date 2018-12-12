@@ -194,15 +194,18 @@
   (define (analyze-compound-error objs pos)
     (let1 grps (map (^g (cons (caar g) (map cdr g)))
                     (group-collection objs :key car))
+      ;; If we have explicit $fail, we just use it.  Other info is
+      ;; preserved in objects slot.
       (let ([msgs (assoc-ref grps 'fail-message)]
             [exps (assoc-ref grps 'fail-expect)]
             [unexps (assoc-ref grps 'fail-unexpect)])
         (tree->string
-         (cons (or-concat (cond-list
-                           [exps (compound-exps exps)]
-                           [unexps (compound-unexps unexps)]
-                           [msgs @ msgs]))
-               (format " at ~s" pos))))))
+         (if msgs
+           (cons (or-concat msgs) (format " at ~s" pos))
+           (cons (or-concat (cond-list
+                             [exps (compound-exps exps)]
+                             [unexps (compound-unexps unexps)]))
+                 (format " at ~s" pos)))))))
   (define (or-concat lis)
     (define (rec lis)
       (match lis
