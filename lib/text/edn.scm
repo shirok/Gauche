@@ -46,8 +46,8 @@
 
           edn-equal? edn-comparator
           edn-nil edn-nil? edn-map edn-set
-          <edn-object> edn-object? make-edn-object edn-object
-          edn-object-tag edn-object-map
+          <edn-object> edn-object? make-edn-object
+          edn-object-tag edn-object-payload
           edn-symbol-prefix edn-symbol-name edn-valid-symbol-name?
 
           parse-edn parse-edn* parse-edn-string
@@ -64,8 +64,8 @@
         [(edn-object? a) (and (edn-object? b)
                               (edn-equal? (edn-object-tag a)
                                           (edn-object-tag b))
-                              (edn-equal? (edn-object-map a)
-                                          (edn-object-map b)))]
+                              (edn-equal? (edn-object-payload a)
+                                          (edn-object-payload b)))]
         [else (equal? a b)]))
 
 (define edn-comparator 
@@ -112,18 +112,13 @@
 
 ;; EDN tagged object
 (define-record-type <edn-object> make-edn-object edn-object?
-  (tag edn-object-tag)
-  (map edn-object-map))
-(define (edn-object tag . kv-list)
-  (make-edn-object tag (apply edn-map kv-list)))
+  (tag     edn-object-tag)
+  (payload edn-object-payload))
 
 (define-method write-object ((x <edn-object>) port)
-  (format port "#<edn-object ~s {~a}>" (edn-object-tag x)
-          ($ string-join
-             (append-map (^p (list (write-to-string (car p) edn-write)
-                                   (write-to-string (cdr p) edn-write)))
-                         (hash-table->alist (edn-object-map x)))
-             " ")))
+  (format port "#<edn-object #~s ~a>" 
+          (edn-object-tag x)
+          (write-to-string (edn-object-payload x) edn-write)))
 
 ;; EDN symbol is mapped to a symbol; we just treat prefix as a part
 ;; of symbol names.  We do provide a utility to extract prefix
@@ -189,7 +184,7 @@
   (define %tagged
     ($do [ ($c #\#) ]
          [tag %word]
-         [content %map]
+         [content %term]
          (if (edn-valid-symbol-name? tag)
            ($return (make-edn-object (string->symbol tag) content))
            ($fail (format "invalid tag: ~s" tag)))))
@@ -283,7 +278,8 @@
 (define-method edn-write ((x <edn-object>))
   (display "#")
   (edn-write (edn-object-tag x))
-  (edn-write (edn-object-map x)))
+  (display " ")
+  (edn-write (edn-object-payload x)))
 
 (define-method edn-write (obj)
   (errorf "Cannot render ~s in EDN" obj))

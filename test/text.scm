@@ -218,7 +218,11 @@ fuga
 ;; other aggregates (round-trip is not guaranteed)
 (let1 data `(("{:a 1, :b 2, :c 3}" . ,(edn-map :a 1 :b 2 :c '3))
              ("#{a b c d e}" . ,(edn-set 'a 'b 'c 'd 'e))
-             ("#myobj{:a 1}" . ,(edn-object 'myobj :a 1)))
+             ("#myobj{:a 1}" . ,(make-edn-object 'myobj (edn-map :a 1)))
+             ("#foo\"abc\"" .  ,(make-edn-object 'foo "abc"))
+             ("#bar[1 2 3]" .  ,(make-edn-object 'bar '#(1 2 3)))
+             ("#baz 2345" .    ,(make-edn-object 'baz 2345))
+             )
   (dolist [d data]
     (test* (format "parse ~s" d) (cdr d) (parse-edn-string (car d)) edn-equal?)
     (test* (format "write ~s" d) (parse-edn-string (car d))
