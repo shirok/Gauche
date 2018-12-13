@@ -34,13 +34,29 @@
 ;;; Spec:
 ;;;   https://github.com/edn-format/edn
 ;;;
+;;; Mapping:
+;;;     EDN          Gauche
+;;;     true         #t
+;;;     false        #f
+;;;     nil          nil       (symbol; but client must be aware that
+;;;                             it is not symbol in Clojure world)
+;;;     <number>     <real>
+;;;     <symbol>     <symbol>  (some restrictions in symbol names)
+;;;     <keyword>    <keyword> (Clojure symbol never begins with ':', so
+;;;                             it won't conflict with symbols)
+;;;     <list>       <list>    (no improper list)
+;;;     <vector>     <vector>
+;;;     <map>        <hash-table> with edn-comparator
+;;;     <set>        <set> with edn-comparator
+;;;     <taggged>    <edn-object>  (customizable)
+;;;
+;;;
 ;;; Customization:
 ;;;   - register-edn-object-handler! registers mapping from tagged object
 ;;;     to Scheme object
 ;;;   - edn-write method can be used to write Scheme object in edn
 
 (define-module text.edn
-  (use gauche.mop.singleton)
   (use gauche.record)
   (use gauche.lazy)
   (use gauche.generator)
@@ -52,7 +68,7 @@
   (export <edn-parse-error>
 
           edn-equal? edn-comparator
-          edn-nil edn-nil? edn-map edn-set
+          edn-map edn-set
           <edn-object> edn-object? make-edn-object
           edn-object-tag edn-object-payload
 
@@ -67,11 +83,11 @@
 ;;;
 ;;; Comparison
 ;;;
+
 (define (edn-equal? a b)
   (cond [(hash-table? a) (and (hash-table? b)
                               (hash-table=? edn-comparator a b))]
         [(set? a)        (and (set? b) (set=? a b))]
-        [(edn-nil? a)    (edn-nil? b)]
         [(edn-object? a) (and (edn-object? b)
                               (edn-equal? (edn-object-tag a)
                                           (edn-object-tag b))
@@ -99,16 +115,6 @@
 ;;;
 ;;; EDN-specific types
 ;;;
-
-;; nil is mapped to a singleton instance #<edn-nil>.
-(define-class <edn-nil> ()
-  ()
-  :metaclass <singleton-meta>)
-(define-method write-object ((obj <edn-nil>) port)
-  (format port "#<edn-nil>"))
-
-(define edn-nil (make <edn-nil>))
-(define (edn-nil? obj) (eq? obj edn-nil))
 
 ;; EDN map is a hashtable with edn-comparator.
 (define (edn-map . kv-list)
@@ -149,13 +155,6 @@
   (let1 s (string-split str "/" 'infix)
     (and (<= 1 (length s) 2)
          (every valid-component? s))))
-
-;; EDN keywords are mapped to Gauche keywords.  EDN symbols never
-;; begins with ':' so they won't conflict.
-;;
-;; EDN true and false map to #t and #f.
-;;
-;; EDN list and vector map to Gauche list and vector.
 
 ;;;
 ;;; Customization hook
@@ -204,7 +203,7 @@
          (cond
           [(equal? val "true")  ($return #t)]
           [(equal? val "false") ($return #f)]
-          [(equal? val "nil")   ($return edn-nil)]
+          [(equal? val "nil")   ($return 'nil)]
           [(string-prefix? ":" val) ($return 
                                      (make-keyword (string-drop val 1)))]
           [(%parse-num val) => $return]
@@ -276,7 +275,6 @@
 ;;;
 
 (define-method edn-write ((x <boolean>)) (display (if x 'true 'false)))
-(define-method edn-write ((x <edn-nil>)) (display 'nil))
 (define-method edn-write ((x <string>)) (write x))
 (define-method edn-write ((x <symbol>)) (write x))
 (define-method edn-write ((x <keyword>)) (write x))

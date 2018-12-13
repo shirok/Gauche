@@ -180,7 +180,7 @@ fuga
 ;; simple stuff
 (let1 data `[(#t . "  true ")
              (#f . "false")
-             (,edn-nil . "nil ")
+             (nil . "nil ")
              (symbol . " symbol ")
              (namespace/name . " namespace/name")
              (:keyword . ":keyword")
