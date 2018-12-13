@@ -203,6 +203,8 @@ fuga
          (map ($ construct-edn-string $ car $) data)))
 
 ;; numeric formats (round-trip is not guaranteed)
+;; NB: Edn page doesn't mention it, but Clojure reader also supports
+;; 0xNNNN (hexadecimal) and 0NNN (octal) representations.
 (let1 data `[(1234 . "1234")
              (-1234 . "-1234N")
              (1234 . "+1234N")
@@ -211,7 +213,11 @@ fuga
              (12.34 . "1234e-2")
              (-1234.5678 . "-12.345678e2")
              (1234.5678 . "12.345678e+2")
-             (1234.5678 . "+12.345678E+2")]
+             (1234.5678 . "+12.345678E+2")
+             (4660      . "0x1234")
+             (-4660      . "-0x1234")
+             (668        . "01234")
+             (-668       . "-01234")]
   (test* "parser numeric" (map car data)
          (map ($ parse-edn-string $ cdr $) data)))
 

@@ -212,13 +212,18 @@
   (wrap-parser (cut peg-run-parser %term lseq)))
 
 (define (%parse-num word)
-  (rxmatch-if (#/^([+-])?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?([MN])?$/ word)
-      [_ sign int frac exp sfx]
-    (* (if (equal? sign "-") -1 1)
-       (if (or frac exp (equal? sfx "M"))
-         (string->number (format "~a.~aE~a" int (or frac "0") (or exp "0")))
-         (string->number int)))
-    #f))
+  (rxmatch-case word
+    [#/^([+-])?0[xX]([0-9a-fA-F]+)$/ (_ sign digs)
+        (* (if (equal? sign "-") -1 1) (string->number digs 16))]
+    [#/^([+-])?0([0-7]+)$/ (_ sign digs)
+        (* (if (equal? sign "-") -1 1) (string->number digs 8))]
+    [#/^([+-])?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?([MN])?$/
+        (_ sign int frac exp sfx)
+        (* (if (equal? sign "-") -1 1)
+           (if (or frac exp (equal? sfx "M"))
+             (string->number (format "~a.~aE~a" int (or frac "0") (or exp "0")))
+             (string->number int)))]
+    [else #f]))
 
 (define (parse-edn :optional (iport (current-input-port)))
   (values-ref (parse (port->char-lseq iport)) 0))
