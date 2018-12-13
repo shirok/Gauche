@@ -174,6 +174,7 @@ fuga
 (test-section "edn")
 (use text.edn)
 (use srfi-13)
+(use gauche.uvector)
 (test-module 'text.edn)
 
 ;; simple stuff
@@ -235,6 +236,18 @@ fuga
            ($ parse-edn-string $ construct-edn-string
               $ parse-edn-string $ car d)
            edn-equal?)))
+
+;; custom object
+(register-edn-object-handler! 'u8vector 
+                              (^[tag vec] (vector->u8vector vec)))
+(define-method edn-write ((x <u8vector>))
+  (display "#u8vector")
+  (edn-write (u8vector->vector x)))
+(test* "custom parse" '#u8(1 2 3 4)
+       (parse-edn-string "#u8vector[1 2 3 4]"))
+(test* "custom writer" "#u8vector[1 2 3 4]"
+       (construct-edn-string '#u8(1 2 3 4)))
+
 
 ;; invalid
 (let1 invalids '("foo/bar/baz" "/foo" "foo/")

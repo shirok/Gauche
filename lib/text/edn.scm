@@ -31,13 +31,20 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; https://github.com/edn-format/edn
+;;; Spec:
+;;;   https://github.com/edn-format/edn
+;;;
+;;; Customization:
+;;;   - register-edn-object-handler! registers mapping from tagged object
+;;;     to Scheme object
+;;;   - edn-write method can be used to write Scheme object in edn
 
 (define-module text.edn
   (use gauche.mop.singleton)
   (use gauche.record)
   (use gauche.lazy)
   (use gauche.generator)
+  (use gauche.threads)
   (use srfi-13)
   (use scheme.set)
   (use parser.peg)
@@ -48,19 +55,23 @@
           edn-nil edn-nil? edn-map edn-set
           <edn-object> edn-object? make-edn-object
           edn-object-tag edn-object-payload
+
+          register-edn-object-handler! edn-object-handler
+          
           edn-symbol-prefix edn-symbol-name edn-valid-symbol-name?
 
           parse-edn parse-edn* parse-edn-string
-          construct-edn construct-edn-string))
+          construct-edn construct-edn-string edn-write))
 (select-module text.edn)
 
 ;;;
 ;;; Comparison
 ;;;
 (define (edn-equal? a b)
-  (cond [(hash-table? a) (and (hash-table? b) (hash-table=? edn-comparator a b))]
-        [(set? a) (and (set? b) (set=? a b))]
-        [(edn-nil? a) (edn-nil? b)]
+  (cond [(hash-table? a) (and (hash-table? b)
+                              (hash-table=? edn-comparator a b))]
+        [(set? a)        (and (set? b) (set=? a b))]
+        [(edn-nil? a)    (edn-nil? b)]
         [(edn-object? a) (and (edn-object? b)
                               (edn-equal? (edn-object-tag a)
                                           (edn-object-tag b))
@@ -147,6 +158,24 @@
 ;; EDN list and vector map to Gauche list and vector.
 
 ;;;
+;;; Customization hook
+;;;
+
+;; handler :: Symbol, EdnObject -> Obj
+
+(define *edn-handlers* (atom (make-hash-table 'string=?)))
+
+(define (register-edn-object-handler! tag handler)
+  (assume-type tag <symbol>)
+  (let1 s (symbol->string tag)
+    (assume (edn-valid-symbol-name? s))
+    (atomic *edn-handlers* (cut hash-table-put! <> s handler))))
+
+(define (edn-object-handler tag)
+  (let1 s (if (string? tag) tag (x->string tag))
+    (atomic *edn-handlers* (cut hash-table-get <> tag #f))))
+
+;;;
 ;;; Parser
 ;;;
 
@@ -186,7 +215,9 @@
          [tag %word]
          [content %term]
          (if (edn-valid-symbol-name? tag)
-           ($return (make-edn-object (string->symbol tag) content))
+           (if-let1 h (edn-object-handler tag)
+             ($return (h tag content))
+             ($return (make-edn-object (string->symbol tag) content)))
            ($fail (format "invalid tag: ~s" tag)))))
   (define %str 
     ($between ($c #\")
