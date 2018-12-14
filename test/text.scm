@@ -255,6 +255,9 @@ fuga
     (test* (format "parse (invalid) ~s" d) 
            (test-error <edn-parse-error> #/invalid token/)
            (parse-edn-string d))))
+(test* (format "valid symbol name") '(#f #f #f #f #t)
+       (map edn-valid-symbol-name? 
+            '("nil" "bar/nil" "true" "false" "nile")))
 
 ;;-------------------------------------------------------------------
 (test-section "gap-buffer")

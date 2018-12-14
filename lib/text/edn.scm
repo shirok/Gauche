@@ -74,7 +74,7 @@
 
           register-edn-object-handler! edn-object-handler
           
-          edn-symbol-prefix edn-symbol-name edn-valid-symbol-name?
+          edn-symbol-prefix edn-symbol-basename edn-valid-symbol-name?
 
           parse-edn parse-edn* parse-edn-string
           construct-edn construct-edn-string edn-write))
@@ -144,17 +144,18 @@
   (and-let1 p (string-scan (symbol->string sym) "/" 'before)
     (string->symbol p)))
 
-(define (edn-symbol-name sym)
+(define (edn-symbol-basename sym)
   (or (and-let1 p (string-scan (symbol->string sym) "/" 'after)
         (string->symbol p))
       sym))
 
 (define (edn-valid-symbol-name? str)
-  (define (valid-component? s)
-    (#/^([[:alpha:]*!_?$%*<>]|[+.-][[:alpha:]*!_?$%*<>:#+.-])[\w*!_?$%*<>:#+.-]*$/ s))
+  (define valid-component?
+    #/^([[:alpha:]*!_?$%*<>]|[+.-][[:alpha:]*!_?$%*<>:#+.-])[\w*!_?$%*<>:#+.-]*$/)
   (let1 s (string-split str "/" 'infix)
     (and (<= 1 (length s) 2)
-         (every valid-component? s))))
+         (every valid-component? s)
+         (not (member (last s) '("nil" "true" "false"))))))
 
 ;;;
 ;;; Customization hook
