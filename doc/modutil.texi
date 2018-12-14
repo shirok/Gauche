@@ -21444,7 +21444,7 @@ for data exchange.  This module provides utilities to read and write EDN
 format.  See @url{https://github.com/edn-format/edn} for the details of EDN.
 
 @multitable @columnfractions .2 .2 .6
-@item EDN @tab Gauche @tab note
+@item EDN @tab Gauche @tab Note
 @item @code{true} @tab @code{#t} @tab
 @item @code{false} @tab @code{#f} @tab
 @item @code{nil} @tab @code{nil}
@@ -21467,7 +21467,7 @@ no Clojure symbols begin with @code{:} so there won't be a conflict.
 @tab Clojure lists are Gauche lists.  Note that Clojure doesn't allow
 improper lists.
 @item vector @tab @code{<vector>}
-@tab Clojure vector are Gauche vectors.
+@tab Clojure vectors are Gauche vectors.
 @item map @tab @code{<hash-table>}
 @tab Clojure's map becomes Gauche's hashtable with @code{edn-comparator}
 for hashing and comparison.
@@ -21480,6 +21480,181 @@ You can customize the parser/writer to map tagged objects with a
 specific tag to a specific Gauche objects.
 @end multitable
 @end deftp
+
+@subheading Parsing
+
+@deftp {Condition Type} <edn-parse-error>
+When the parser encounters an error, this condition is thrown.
+Inherits @code{<error>}.
+@end deftp
+
+@defun parse-edn :optional iport
+Read one EDN representation from the given input port, and returns
+Gauche object created from it.  If @var{iport} is omitted,
+current input port is assumed.
+
+When the parser encounters unparsable sequence, 
+it raises @code{<edn-parse-error>}.
+
+Note that @var{iport} may be read ahead for characters. Suppose
+the input consists of @code{abc@{:a b@}}, i.e. a symbol immediately
+followed by a map.  The parser need to read @code{@{} to know the
+end of the symbol. The read-ahead brace isn't pushed back
+to the @var{iport}.  So it would be a problem if you keep reading
+more EDN subsequently.   Use @code{parse-edn*} if you want to read
+multiple objects.
+@end defun
+
+@defun parse-edn* :optional iport
+Read EDN representations repeatedly from the given input port
+and returns a list of them.  If @var{iport} is omitted,
+current input port is assumed.
+
+When the parser encounters unparsable sequence, 
+it raises @code{<edn-parse-error>}.
+@end defun
+
+@defun parse-edn-string str
+A convenience procedure to parse EDN representation in a string @var{str},
+and returns the read object.
+
+When the parser encounters unparsable sequence, 
+it raises @code{<edn-parse-error>}.
+@end defun
+
+@subheading Constructing
+
+@defun construct-edn obj :optional oport
+Wriet out an EDN representation of object @var{obj}
+to the output port @var{oport}.  If @var{oport} is omitted,
+current output port is assumed.
+@end defun
+
+@defun construct-edn-string obj
+Returns an EDN representation of @var{obj} in a string .
+@end defun
+
+@subheading Utilities
+
+@defun edn-equal? a b
+Test equality of two objects that are read from EDN representation.
+@end defun
+
+@defvar edn-comparator
+A comparator that uses @code{edn-equal?} for the equality predicate.
+EDN maps and sets become Gauche hash-tables and sets with this comparator.
+@end defvar
+
+@defun edn-map key value @dots{}
+@defunx edn-set item @dots{}
+Convenicne procedures to create hash-tables and sets compatible
+for EDN.
+@end defun
+
+@deftp {Class} <edn-object>
+@clindex edn-object
+EDN tagged object becomes an instance of this class by default.
+The instance has the following slots, both are immutable:
+
+@defivar <edn-object> tag
+Object's tag.  A symbol.
+@end defivar
+
+@defivar <edn-object> payload
+Object's payload.  Can be any object that can be representable in EDN.
+@end defivar
+
+For example, when you read @code{#myobject @{:a 1 :b 2@}},
+the tag is @code{myobject} and the payload is a hashtable
+containing mapping @code{@{:a 1 :b 2@}}.
+@end deftp
+
+@defun make-edn-object tag payload
+Returns a new @code{<edn-object>} instance.
+Note: Arguments are not checked.  It's caller's responsibility to
+pass valid arguments to gurantee it's serializable as EDN.
+@end defun
+
+@defun edn-object? obj
+Returns @code{#t} iff @var{obj} is an instance of @code{<edn-object>}.
+@end defun
+
+@defun edn-object-tag edn-object
+@defunx edn-object-payload edn-object
+Returns the tag and the payload of @var{edn-object}, respectively.
+@end defun
+
+@defun edn-symbol-prefix symbol
+@defunx edn-symbol-basename symbol
+Return prefix and basename part of the symbol, respectively.
+
+@example
+(edn-symbol-prefix 'foo/bar) @result{} foo
+(edn-symbol-basename 'foo/bar) @result{} bar
+
+(edn-symbol-prefix 'bar) @result{} #f
+(edn-symbol-basename 'bar) @result{} bar
+@end example
+@end defun
+
+@defun edn-valid-symbol-name? str
+Returns @code{#t} iff a string @var{str} can be a valid Clojure symbol name.
+It may have namespace prefix.
+@example
+@end example
+@end defun
+
+@subheading Customization
+
+You can map EDN tagged objects to other Gauche objects.
+
+@defun register-edn-object-handler! tag handler
+@var{Tag} is a symbol, and @var{handler} is @code{#f} or a procedure
+that takes a tag symbol and a payload object.
+
+@var{Tag} must have a name valid as Clojure symbol, or an error
+is signaled.
+
+After the parser reads a tagged object with a symbol @var{tag}
+and payload, it calls @var{handler}, and the returned object
+becomes the result of the parser, instead of @code{<edn-object>}.
+Registering @code{#f} removes the previously registered handler.
+
+This procedure is thread-safe.
+
+The following example makes EDN @code{#u8vector[1 2 3 4]} to be read
+as @code{#u8(1 2 3 4)}:
+
+@example
+(register-edn-object-handler! 'u8vector 
+                              (^[tag vec] (vector->u8vector vec)))
+@end example
+@end defun
+
+@defun edn-object-handler tag
+Returns a handler registered with a symbol @var{tag}.  If a handler
+is not registered for @var{tag}, @code{#f} is returned.
+This procedure is thread-safe.
+@end defun
+
+@deffn {Generic Function} edn-write obj
+Write EDN represenation of @var{obj} to the current output port.
+
+To write out a Gauche object as EDN tagged object, define a method to
+this generic function.   In the method you can call @code{edn-write}
+recursively to write out componends of the object.
+
+The following example writes @code{#u8(1 2 3 4)} as
+EDN @code{#u8vector[1 2 3 4]}:
+
+@example
+(define-method edn-write ((x <u8vector>))
+  (display "#u8vector")
+  (edn-write (u8vector->vector x)))
+@end example
+@end deffn
+
+
 
 
 @c ----------------------------------------------------------------------
