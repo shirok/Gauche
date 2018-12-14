@@ -39,10 +39,10 @@
 ;;;     true         #t
 ;;;     false        #f
 ;;;     nil          nil       (symbol; but client must be aware that
-;;;                             it is not symbol in Clojure world)
+;;;                             it is not a symbol in Clojure world)
 ;;;     <number>     <real>
 ;;;     <symbol>     <symbol>  (some restrictions in symbol names)
-;;;     <keyword>    <keyword> (Clojure symbol never begins with ':', so
+;;;     <keyword>    <keyword> (Clojure symbols never begin with ':', so
 ;;;                             it won't conflict with symbols)
 ;;;     <list>       <list>    (no improper list)
 ;;;     <vector>     <vector>

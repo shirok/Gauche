@@ -57,6 +57,7 @@
 * Text terminal control::       text.console
 * CSV tables::                  text.csv
 * Calculate difference of text streams::  text.diff
+* EDN parsing and construction:: text.edn
 * Localized messages::          text.gettext
 * Simple HTML document construction::  text.html-lite
 * Parsing input stream::        text.parse
@@ -21324,7 +21325,7 @@ See @code{cvs-rows->tuples} above for @var{header-slots} and
 
 
 @c ----------------------------------------------------------------------
-@node Calculate difference of text streams, Localized messages, CSV tables, Library modules - Utilities
+@node Calculate difference of text streams, EDN parsing and construction, CSV tables, Library modules - Utilities
 @section @code{text.diff} - Calculate difference of text streams
 @c NODE テキストストリームの相違点を計算する, @code{text.diff} - テキストストリームの相違点を計算する
 
@@ -21431,9 +21432,58 @@ displays:
 @end example
 @end defun
 
+@c ----------------------------------------------------------------------
+@node EDN parsing and construction, Localized messages, Calculate difference of text streams, Library modules - Utilities
+@section @code{text.edn} - EDN parsing and construction
+@c NODE EDNのパーズと構築, @code{text.edn} - EDNのパーズと構築
+
+@deftp {Module} text.edn
+@mdindex text.edn
+EDN (Extensible Data Notation) is a subset of Clojure literals
+for data exchange.  This module provides utilities to read and write EDN
+format.  See @url{https://github.com/edn-format/edn} for the details of EDN.
+
+@multitable @columnfractions .2 .2 .6
+@item EDN @tab Gauche @tab note
+@item @code{true} @tab @code{#t} @tab
+@item @code{false} @tab @code{#f} @tab
+@item @code{nil} @tab @code{nil}
+@tab Clojure's nil is not a symbol but a special value; since Clojure
+can't have a symbol named nil, we can map it to Gauche's symbol @code{nil}.
+@item number @tab @code{<real>}
+@tab Integers and floating point numbers.
+The @code{N} and @code{M} suffixes in Clojure are ignored.
+@item symbol @tab @code{<symbol>}
+@tab Clojure's symbol name has some restrictions, so not all Gauche symbols
+map to EDN symbols.
+Clojure's namespace-prefixed symbol, e.g. @code{foo/bar} simply maps to
+Gauche's symbol @code{foo/bar}; we provide utility procedure to extract
+namespace and basename parts.
+@item keyword @tab @code{<keyword>}
+@tab Clojure has keywords distinct from symbols.  They are mapped to Gauche's
+keywords.  Gauche's keywords can also be symbols, but
+no Clojure symbols begin with @code{:} so there won't be a conflict.
+@item list @tab @code{<list>}
+@tab Clojure lists are Gauche lists.  Note that Clojure doesn't allow
+improper lists.
+@item vector @tab @code{<vector>}
+@tab Clojure vector are Gauche vectors.
+@item map @tab @code{<hash-table>}
+@tab Clojure's map becomes Gauche's hashtable with @code{edn-comparator}
+for hashing and comparison.
+@item set @tab @code{<set>}
+@tab Clojure's set becomes Gauche's set with @code{edn-comparator}
+for comparison.  @xref{R7RS sets} for interface of sets.
+@item tagged object @tab @code{<edn-object>}
+@tab Tagged objects are mapped to @code{<edn-object>} by default. 
+You can customize the parser/writer to map tagged objects with a
+specific tag to a specific Gauche objects.
+@end multitable
+@end deftp
+
 
 @c ----------------------------------------------------------------------
-@node Localized messages, Simple HTML document construction, Calculate difference of text streams, Library modules - Utilities
+@node Localized messages, Simple HTML document construction, EDN parsing and construction, Library modules - Utilities
 @section @code{text.gettext} - Localized messages
 @c NODE 地域化メッセージ, @code{text.gettext} - 地域化メッセージ
 
