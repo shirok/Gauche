@@ -101,7 +101,7 @@ fi
 if [ "$SKIP_CONFIG" != yes ]; then
   rm -rf $distdir
   ./configure --prefix=$distdir --enable-threads=win32 \
-              --enable-multibyte=utf8 --enable-ipv6=no \
+              --enable-multibyte=utf8 --enable-ipv6=yes \
 	      --with-tls=axtls \
               --with-dbm=ndbm,odbm $buildopt
 fi
