@@ -61,13 +61,12 @@
           $not $many-till $chain-left $chain-right
           $lazy
 
+          $any $eos
+          
           $s $c $y
           $string $string-ci
           $char $one-of $none-of $many-chars
           $satisfy
-
-          anychar upper lower letter alphanum digit
-          hexdigit newline tab space spaces eof
 
           $->rope $->string $->symbol rope->string rope-finalize
           )
@@ -806,31 +805,13 @@
 (define ($none-of charset)
   ($one-of (char-set-complement charset)))
 
-(define (anychar s)
-  (if (pair? s)
-    (return-result (car s) (cdr s))
-    (return-failure/expect "character" s)))
+;; Anything except enf of stream.
+(define-inline ($any :optional (what "character"))
+  (^s (if (pair? s)
+        (return-result (car s) (cdr s))
+        (return-failure/expect what s))))
 
-(define-syntax define-char-parser
-  (syntax-rules ()
-    ((_ proc charset expect)
-     (define proc
-       ($expect ($one-of charset) expect)))))
-
-(define-char-parser upper    #[A-Z]         "upper case letter")
-(define-char-parser lower    #[a-z]         "lower case letter")
-(define-char-parser letter   #[A-Za-z]      "letter")
-(define-char-parser alphanum #[A-Za-z0-9]   "letter or digit")
-(define-char-parser digit    #[0-9]         "digit")
-(define-char-parser hexdigit #[0-9A-Fa-f]   "hexadecimal digit")
-(define-char-parser newline  #[\n]          "newline")
-(define-char-parser tab      #[\t]          "tab")
-(define-char-parser space    #[\s]          "space")
-
-(define spaces ($lift make-rope ($many space)))
-
-(define (eof s)
-  (if (pair? s)
-    (return-failure/expect "end of input" s)
-    (return-result (eof-object) s)))
-
+(define-inline ($eos)
+  (^s (if (pair? s)
+        (return-failure/expect "end of stream" s)
+        (return-result (eof-object) s))))

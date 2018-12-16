@@ -119,41 +119,6 @@
 (test-succ "$string-ci" "aBC" ($string-ci "abc") "aBCdef")
 (test-fail "$string-ci" '(0 "abc") ($string-ci "abc") "012")
 
-(define-syntax test-char
-  (syntax-rules ()
-    ((_ parse expin unexpin message)
-     (begin
-       (test-succ (symbol->string 'parse)
-                  (string-ref expin 0)
-                  parse expin)
-       (test-fail (symbol->string 'parse)
-                  '(0 message)
-                  parse unexpin)))))
-
-(test-char anychar  "a" "" "character")
-(test-char upper    "A" "a" "upper case letter")
-(test-char lower    "a" "A" "lower case letter")
-(test-char letter   "a" "." "letter")
-(test-char alphanum "0" "." "letter or digit")
-(test-char digit    "0" "." "digit")
-(test-char hexdigit "f" "." "hexadecimal digit")
-(test-char newline  "\n" "." "newline")
-(test-char tab      "\t" "." "tab")
-(test-char space    "\t" "." "space")
-
-(test-succ "spaces" " " spaces " ")
-(test-succ "spaces" " \n\t" spaces " \n\tj")
-
-(test-succ "$satisfy" #\0
-           ($satisfy char-numeric? "numeric")
-           "0")
-(test-fail "$satisfy" '(0 "numeric")
-           ($satisfy char-numeric? "numeric")
-           "a")
-
-(test-succ "eof" (eof-object) eof "")
-(test-fail "eof" '(0 "end of input") eof "a")
-
 ;;;============================================================
 ;;; Combinators
 ;;;
@@ -243,17 +208,17 @@
 
 ;; $lift and $lift*
 (test-succ "$lift" '(#\a . #\b)
-           ($lift cons anychar anychar)
+           ($lift cons ($any) ($any))
            "abc")
 (test-fail "$lift" '(1 #\z)
-           ($lift cons anychar ($char #\z))
+           ($lift cons ($any) ($char #\z))
            "abc")
 
 (test-succ "$lift*" "abc"
-           ($lift* list->string anychar anychar anychar)
+           ($lift* list->string ($any) ($any) ($any))
            "abc")
 (test-fail "$lift" '(2 #\z)
-           ($lift* list->string anychar anychar ($char #\z))
+           ($lift* list->string ($any) ($any) ($char #\z))
            "abc")
 
 ;; $fold-parsers and $fold-parsers-right
@@ -308,9 +273,9 @@
 
 ;; $repeat
 (test-succ "$repeat" '(#\a #\b #\a)
-           ($repeat anychar 3) "abab")
+           ($repeat ($any) 3) "abab")
 (test-fail "$repeat" '(2 "character")
-           ($repeat anychar 3) "ab")
+           ($repeat ($any) 3) "ab")
 
 ;; $optional
 (test-succ "$optional" #\a
@@ -409,7 +374,7 @@
 
 ;; $many-till
 (test-succ "$many-till" '(#\a #\b)
-           ($many-till alphanum digit)
+           ($many-till ($one-of #[[:alnum:]]) ($one-of #[\d]))
            "ab78")
 
 ;; $many-chars
@@ -431,7 +396,7 @@
 
 ;; $chain-left
 (let ([integer
-       ($do [v ($many digit 1)]
+       ($do [v ($many ($one-of #[\d])  1)]
             ($return (string->number (apply string v))))]
       [op
        ($or ($do [($char #\*)] ($return *))
@@ -442,13 +407,13 @@
   (test-succ "$chain-left" 3
              ($chain-left integer op)
              "1+2*")
-  (test-fail "$chain-left" '(0 "digit")
+  (test-fail "$chain-left" '(0 #[0-9])
              ($chain-left integer op)
              "abc"))
 
 ;; $chain-right
 (let ([integer
-       ($do [v ($many digit 1)]
+       ($do [v ($many ($one-of #[\d])  1)]
             ($return (string->number (apply string v))))]
       [op
        ($or ($do [($char #\*)] ($return *))
@@ -459,7 +424,7 @@
   (test-succ "$chain-right" 3
              ($chain-right integer op)
              "1+2*")
-  (test-fail "$chain-right" '(0 "digit")
+  (test-fail "$chain-right" '(0 #[0-9])
              ($chain-right integer op)
              "abc"))
 
@@ -504,7 +469,7 @@
 ;; compound error
 
 (let* ([p1 ($or ($char #\a) ($char #\b))]
-       [p2 ($seq anychar ($or ($char #\c) p1))])
+       [p2 ($seq ($any) ($or ($char #\c) p1))])
   (test* "nested compound error"
          (test-error <parse-error> "expecting one of (#\\c #\\a #\\b) at 1")
          (peg-parse-string p2 "dd")))
@@ -563,7 +528,7 @@
        (point    ($seq ($char #\.) ($many ($one-of #[\d]) 1)))
        (exponent ($seq ($one-of #[eE]) digits))
        (number?  ($seq digits ($optional point) ($optional exponent)))
-       (p        ($do [number?] [eof] ($return #t))))
+       (p        ($do [number?] [($eos)] ($return #t))))
   (define (%test str . fails?)
     (if (null? fails?)
       (test-succ #"number(1) \"~str\"" #t p str)
@@ -573,7 +538,7 @@
   (%test "+27.46") (%test "0.46")
   (%test ".46" '(0 #[0-9]))
   (%test "0..3" '(2 #[0-9]))
-  (%test "0.4.2" '(3 "end of input"))
+  (%test "0.4.2" '(3 "end of stream"))
   (%test "3e5")
   (%test "3.0e5")
   (%test "3.e5" '(2 #[0-9]))
@@ -591,7 +556,7 @@
   (define double-dquote ($do [($string "\"\"")] ($return #\")))
   (define quoted-body ($many ($or double-dquote ($one-of #[^\"]))))
   (define quoted ($between dquote quoted-body dquote))
-  (define unquoted ($many-till anychar ($or comma newline)))
+  (define unquoted ($many-till ($any) ($or comma ($char #\newline))))
   (define field ($or quoted unquoted))
   (define record ($sep-by ($->rope field) comma))
   (test-succ "CSV" '("a" "b" "c")
@@ -629,7 +594,9 @@
              records "\"a  \"\" \n\" , b  , c"))
 
 ;; Poor-man's XML parser
-(letrec ([open-tag ($->rope ($between ($char #\<) alphanum ($char #\>)))]
+(letrec ([open-tag ($->rope ($between ($char #\<)
+                                      ($one-of #[[:alnum:]])
+                                      ($char #\>)))]
          [close-tag (^[tagname]
                       ($seq ($string "</") ($string tagname) ($char #\>)))]
          [text ($->rope ($many ($none-of #[<])))]
@@ -648,7 +615,7 @@
              element "<a>foo<b>bar</b>baz</a>"))
 
 ;; Calculator
-(letrec ([integer ($do (v ($many digit 1))
+(letrec ([integer ($do (v ($many ($one-of #[\d]) 1))
                        ($return (string->number (apply string v))))]
          [mulop ($or ($seq ($char #\*) ($return *))
                      ($seq ($char #\/) ($return /)))]
@@ -662,6 +629,49 @@
   (test-succ "calculator" 36 expr "2/2+5*(3+4)")
   (test-succ "calculator" -1 expr "1-2"))
 
+;;;
+;;; deprecated
+;;;
+
+(test-section "deprecated")
+(load "peg/deprecated")
+(import parser.peg.deprecated)
+(test-module 'parser.peg.deprecated)
+
+(define-syntax test-char
+  (syntax-rules ()
+    ((_ parse expin unexpin message)
+     (begin
+       (test-succ (symbol->string 'parse)
+                  (string-ref expin 0)
+                  parse expin)
+       (test-fail (symbol->string 'parse)
+                  '(0 message)
+                  parse unexpin)))))
+
+(test-char anychar  "a" "" "character")
+(test-char upper    "A" "a" "upper case letter")
+(test-char lower    "a" "A" "lower case letter")
+(test-char letter   "a" "." "letter")
+(test-char alphanum "0" "." "letter or digit")
+(test-char digit    "0" "." "digit")
+(test-char hexdigit "f" "." "hexadecimal digit")
+(test-char newline  "\n" "." "newline")
+(test-char tab      "\t" "." "tab")
+(test-char space    "\t" "." "space")
+
+(test-succ "spaces" " " spaces " ")
+(test-succ "spaces" " \n\t" spaces " \n\tj")
+
+(test-succ "$satisfy" #\0
+           ($satisfy char-numeric? "numeric")
+           "0")
+(test-fail "$satisfy" '(0 "numeric")
+           ($satisfy char-numeric? "numeric")
+           "a")
+
+(test-succ "eof" (eof-object) eof "")
+(test-fail "eof" '(0 "end of input") eof "a")
 
 ;;;============================================================
 ;;; rfc.json
@@ -883,5 +893,7 @@
                                  ('T 'F)))
                  ((equal (car x) (car y)) (equal (cdr x) (cdr y)))
                  ('T 'F))))
+
+
 
 (test-end)

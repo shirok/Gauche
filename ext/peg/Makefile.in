@@ -7,7 +7,7 @@ SCM_CATEGORY = parser
 include ../Makefile.ext
 
 LIBFILES = parser--peg.$(SOEXT)
-SCMFILES = peg.sci
+SCMFILES = peg.sci peg/deprecated.scm
 
 OBJECTS = parser--peg.$(OBJEXT)
 

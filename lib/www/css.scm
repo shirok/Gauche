@@ -37,6 +37,7 @@
   (use gauche.generator)
   (use gauche.lazy)
   (use parser.peg)
+  (use parser.peg.deprecated)
   (use util.match)
   (use text.tree)
   (use srfi-1)

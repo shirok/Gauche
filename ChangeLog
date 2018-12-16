@@ -1,3 +1,15 @@
+2018-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg - Deprecate pre-defined character parsers: anychar,
+	  upper, lower, letter, alphanum, digit, hexdigit, newline,
+	  tab, space, spaces, and eof.  Those names are easy to conflict
+	  (esp. 'newline') yet not so much useful, for it's quite easy
+	  to define.  We added $any and $eos parser makers; with inlining
+	  there's no overhead from using predefined parsers.
+	  Although parser.peg is unofficial, they've been around for years
+	  and there might be code that depends on it, so we provide the
+	  deprecated APIs in a separate module, parser.peg.deprecated.
+
 2018-12-08  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac (--with-gperftools), main.c, signal.c: Support linking

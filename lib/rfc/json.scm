@@ -42,6 +42,7 @@
   (use gauche.sequence)
   (use gauche.generator)
   (use parser.peg)
+  (use parser.peg.deprecated)
   (use gauche.unicode)
   (use srfi-13)
   (use srfi-14)
