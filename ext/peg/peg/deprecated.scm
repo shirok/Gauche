@@ -7,7 +7,15 @@
 (define-module parser.peg.deprecated
   (extend parser.peg)
   (export anychar upper lower letter alphanum digit
-          hexdigit newline tab space spaces eof)
+          hexdigit newline tab space spaces eof
+
+          $s $c $y)
+
+  ;; for these two, use '$.'
+  (define ($s x) ($string x))
+  (define ($c x) ($char x))
+
+  (define ($y x) ($symbol x))
 
   (define (anychar s)
     (if (pair? s)

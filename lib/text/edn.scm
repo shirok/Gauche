@@ -185,20 +185,20 @@
                  ($or %list %vec %map %set
                       %tagged %atom %str %char))))
   (define %ws
-    ($or ($skip-many1 ($one-of #[\s,]))
-         ($seq ($c #\;)
-               ($skip-many ($one-of #[^\newline])))
-         ($seq ($s "#_") %term)))
+    ($or ($skip-many1 ($. #[\s,]))
+         ($seq ($. #\;)
+               ($skip-many ($. #[^\newline])))
+         ($seq ($. "#_") %term)))
   (define %list
-    ($between ($c #\() ($many %term) ($c #\))))
+    ($between ($. #\() ($many %term) ($. #\))))
   (define %vec
-    ($between ($c #\[) ($lift list->vector ($many %term)) ($c #\])))
+    ($between ($. #\[) ($lift list->vector ($many %term)) ($. #\])))
   (define %set
-    ($between ($s "#{") ($lift ($ apply edn-set $) ($many %term)) ($c #\})))
+    ($between ($. "#{") ($lift ($ apply edn-set $) ($many %term)) ($. #\})))
   (define %map
-    ($between ($c #\{) ($lift ($ apply edn-map $) ($many %term)) ($c #\})))
+    ($between ($. #\{) ($lift ($ apply edn-map $) ($many %term)) ($. #\})))
   (define %word ; intermediate - used by %atom, %char and %tagged
-    ($->string ($many1 ($one-of #[\w*!?$%&=<>:#/+.-]))))
+    ($->string ($many1 ($. #[\w*!?$%&=<>:#/+.-]))))
   (define %atom
     ($do [val %word]
          (cond
@@ -211,7 +211,7 @@
           [(edn-valid-symbol-name? val) ($return (string->symbol val))]
           [else ($fail (format "invalid token: ~s" val))])))
   (define %tagged
-    ($do [ ($c #\#) ]
+    ($do [ ($. #\#) ]
          [tag %word]
          [content %term]
          (if (edn-valid-symbol-name? tag)
@@ -220,17 +220,17 @@
              ($return (make-edn-object (string->symbol tag) content)))
            ($fail (format "invalid tag: ~s" tag)))))
   (define %str 
-    ($between ($c #\")
+    ($between ($. #\")
               ($->string
-               ($many ($or ($seq ($s "\\\"") ($return "\""))
-                           ($seq ($s "\\t") ($return "\t"))
-                           ($seq ($s "\\r") ($return "\r"))
-                           ($seq ($s "\\n") ($return "\n"))
-                           ($seq ($s "\\\\") ($return "\\"))
-                           ($one-of #[^\\\"]))))
-              ($c #\")))
+               ($many ($or ($seq ($. "\\\"") ($return "\""))
+                           ($seq ($. "\\t") ($return "\t"))
+                           ($seq ($. "\\r") ($return "\r"))
+                           ($seq ($. "\\n") ($return "\n"))
+                           ($seq ($. "\\\\") ($return "\\"))
+                           ($. #[^\\\"]))))
+              ($. #\")))
   (define %char
-    ($do [w ($seq ($c #\\) %word)] 
+    ($do [w ($seq ($. #\\) %word)] 
          (rxmatch-case w
            [#/^newline$/ (_) ($return #\newline)]
            [#/^return$/  (_) ($return #\return)]

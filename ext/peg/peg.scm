@@ -61,10 +61,9 @@
           $not $many-till $chain-left $chain-right
           $lazy
 
-          $any $eos
+          $any $eos $.
           
-          $s $c $y
-          $string $string-ci
+          $symbol $string $string-ci
           $char $one-of $none-of $many-chars
           $satisfy
 
@@ -788,11 +787,8 @@
   ($satisfy (^x (and (char? x) (char-set-contains? charset x)))
             charset))
 
-(define ($s x) ($string x))
-
-(define ($c x) ($char x))
-
-(define ($y x) ($lift ($ string->symbol $ rope->string $) ($s x)))
+(define ($symbol x) 
+  ($lift ($ string->symbol $ rope->string $) ($string x)))
 
 ;; ($many-chars charset [min [max]]) == ($many ($one-of charset) [min [max]])
 ;;   with possible optimization.
@@ -815,3 +811,12 @@
   (^s (if (pair? s)
         (return-failure/expect "end of stream" s)
         (return-result (eof-object) s))))
+
+;; Parse one item---a char, a string or a charset.
+(define-inline ($. item)
+  (cond
+   [(char-set? item) ($one-of item)]
+   [(char? item) ($char item)]
+   [(string? item) ($string item)]
+   [else (error "Bad item: $. requires a char, a char-set or a string,
+                 but got:" item)]))

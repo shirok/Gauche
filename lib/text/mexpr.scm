@@ -16,7 +16,7 @@
 ;;
 ;; Tokenizer
 ;;
-(define %ws ($skip-many ($one-of #[ \t\r\n])))
+(define %ws ($skip-many ($. #[ \t\r\n])))
 
 (define (make-word chars)
   (let1 s (list->string chars)
@@ -29,13 +29,13 @@
 (define %word ($lift make-word ($many-chars #[0-9a-zA-Z] 1)))
 
 ;; A few reserved word
-(define %lambda ($seq ($s "lambda") ($return 'lambda)))
-(define %label  ($seq ($s "label") ($return 'label)))
-(define %-> ($seq ($or ($s "->") ($c #\u2192)) ($return '->))) ; right arrow
+(define %lambda ($seq ($."lambda") ($return 'lambda)))
+(define %label  ($seq ($."label") ($return 'label)))
+(define %-> ($seq ($or ($."->") ($. #\u2192)) ($return '->))) ; right arrow
 
 (define %token
   ($between %ws
-            ($or %-> %lambda %label %word ($one-of #[\[\]\(\).\;=]))
+            ($or %-> %lambda %label %word ($. #[\[\]\(\).\;=]))
             %ws))
 
 (define (tokenize input)
@@ -57,15 +57,15 @@
 (define %datum ($lazy ($or %atom %number %list)))
 
 (define %list-tail
-  ($lazy ($or ($seq ($c #\)) ($return '()))
-              ($between ($c #\.) %datum ($c #\)))
+  ($lazy ($or ($seq ($. #\)) ($return '()))
+              ($between ($. #\.) %datum ($. #\)))
               ($do [x %datum]
                    [y %list-tail]
                    ($return (cons x y))))))
             
 (define %list
-  ($seq ($c #\()
-        ($or ($seq ($c #\)) ($return '()))
+  ($seq ($. #\()
+        ($or ($seq ($. #\)) ($return '()))
              ($do [x %datum]
                   [y %list-tail]
                   ($return (cons x y))))))
@@ -82,39 +82,39 @@
        ($return (list test expr))))
 
 (define %conditional
-  ($do [clauses ($between ($c #\[)
-                          ($sep-by %conditional-clause ($c #\;))
-                          ($c #\]))]
+  ($do [clauses ($between ($. #\[)
+                          ($sep-by %conditional-clause ($. #\;))
+                          ($. #\]))]
        ($return `(cond ,@clauses))))
 
 (define %function ($lazy ($or %lambda-form %label-form %identifier)))
 
 (define %lambda-form
   ($do [($satisfy (cut eq? 'lambda <>) 'lambda)]
-       [($c #\[)]
-       [args ($between ($c #\[)
-                       ($sep-by %identifier ($c #\;))
-                       ($c #\]))]
-       [($c #\;)]
+       [($. #\[)]
+       [args ($between ($. #\[)
+                       ($sep-by %identifier ($. #\;))
+                       ($. #\]))]
+       [($. #\;)]
        [body %form]
-       [($c #\])]
+       [($. #\])]
        ($return `(lambda ,args ,body))))
 
 (define %label-form
   ($do [($satisfy (cut eq? 'label <>) 'label)]
-       [($c #\[)]
+       [($. #\[)]
        [id %identifier]
-       [($c #\;)]
+       [($. #\;)]
        [f %function]
-       [($c #\])]
+       [($. #\])]
        ($return `(label ,id ,f))))
 
 (define %funcall-or-variable
   ($do [head %function]
-       [args ($optional ($between ($c #\[)
-                                  ($sep-by %form ($c #\;))
-                                  ($c #\])))]
-       [follow ($optional ($seq ($c #\=) %form))]
+       [args ($optional ($between ($. #\[)
+                                  ($sep-by %form ($. #\;))
+                                  ($. #\])))]
+       [follow ($optional ($seq ($. #\=) %form))]
        ($return (let1 pre (if args (cons head args) head)
                   (if follow
                     `(define ,pre ,follow)
