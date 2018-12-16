@@ -48,7 +48,7 @@
 
 ;; NB: ipv4 preference setting for the compatibility to old windows installer.
 ;; if #t, make-sockaddrs returns ipv4 socket addresses before ipv6 ones.
-(define ipv4-prefer (cond-expand [gauche.os.windows #t] [else #f]))
+(define ipv4-preferred (cond-expand [gauche.os.windows #t] [else #f]))
 
 ;; API
 (define (make-sys-addrinfo :key (flags 0) (family AF_UNSPEC)
@@ -252,7 +252,7 @@
            [port (x->string port)]
            [hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype)]
            [ss (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints))])
-      (if ipv4-prefer
+      (if ipv4-preferred
         (append (filter (^s (eq? (sockaddr-family s) 'inet)) ss)
                 (remove (^s (eq? (sockaddr-family s) 'inet)) ss))
         ss))
