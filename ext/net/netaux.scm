@@ -46,6 +46,10 @@
 ;; is not yet built.  So we use a bit of kludge here.
 (define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
 
+;; NB: ipv4 preference setting for the compatibility to old windows installer.
+;; if #t, make-sockaddrs returns ipv4 socket addresses before ipv6 ones.
+(define ipv4-prefer (cond-expand [gauche.os.windows #t] [else #f]))
+
 ;; API
 (define (make-sys-addrinfo :key (flags 0) (family AF_UNSPEC)
                                 (socktype 0) (protocol 0))
@@ -246,8 +250,12 @@
                        [(udp) SOCK_DGRAM]
                        [else (error "unsupported protocol:" proto)])]
            [port (x->string port)]
-           [hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype)])
-      (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints)))
+           [hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype)]
+           [ss (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints))])
+      (if ipv4-prefer
+        (append (filter (^s (eq? (sockaddr-family s) 'inet)) ss)
+                (remove (^s (eq? (sockaddr-family s) 'inet)) ss))
+        ss))
     (let1 port (cond [(number? port) port]
                      [(sys-getservbyname port (symbol->string proto))
                       => (cut slot-ref <> 'port)]
