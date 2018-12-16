@@ -42,7 +42,6 @@
   (use gauche.sequence)
   (use gauche.generator)
   (use parser.peg)
-  (use parser.peg.deprecated)
   (use gauche.unicode)
   (use srfi-13)
   (use srfi-14)
@@ -78,18 +77,18 @@
 ;;;============================================================
 ;;; Parser
 ;;;
-(define %ws ($skip-many ($one-of #[ \t\r\n])))
+(define %ws ($skip-many ($. #[ \t\r\n])))
 
-(define %begin-array     ($seq ($char #\[) %ws))
-(define %begin-object    ($seq ($char #\{) %ws))
-(define %end-array       ($seq ($char #\]) %ws))
-(define %end-object      ($seq ($char #\}) %ws))
-(define %name-separator  ($seq ($char #\:) %ws))
-(define %value-separator ($seq ($char #\,) %ws))
+(define %begin-array     ($seq ($. #\[) %ws))
+(define %begin-object    ($seq ($. #\{) %ws))
+(define %end-array       ($seq ($. #\]) %ws))
+(define %end-object      ($seq ($. #\}) %ws))
+(define %name-separator  ($seq ($. #\:) %ws))
+(define %value-separator ($seq ($. #\,) %ws))
 
 (define %special
   ($lift ($ build-special $ string->symbol $ rope-finalize $)
-         ($or ($string "false") ($string "true") ($string "null"))))
+         ($or ($. "false") ($. "true") ($. "null"))))
 
 (define %value
   ($lazy
@@ -100,15 +99,16 @@
          ($between %begin-array ($sep-by %value %value-separator) %end-array)))
 
 (define %number
-  (let* ([%sign ($or ($do [($char #\-)] ($return -1))
-                     ($do [($char #\+)] ($return 1))
+  (let* ([%sign ($or ($do [($. #\-)] ($return -1))
+                     ($do [($. #\+)] ($return 1))
                      ($return 1))]
-         [%digits ($lift ($ string->number $ list->string $) ($many digit 1))]
+         [%digits ($lift ($ string->number $ list->string $) 
+                         ($many ($. #[\d]) 1))]
          [%int %digits]
-         [%frac ($do [($char #\.)]
-                     [d ($many digit 1)]
+         [%frac ($do [($. #\.)]
+                     [d ($many ($. #[\d]) 1)]
                      ($return (string->number (apply string #\0 #\. d))))]
-         [%exp ($lift (^[_ s d] (* s d)) ($one-of #[eE]) %sign %digits)])
+         [%exp ($lift (^[_ s d] (* s d)) ($. #[eE]) %sign %digits)])
     ($lift (^[sign int frac exp]
              (let1 mantissa (+ int frac)
                (* sign (if exp (exact->inexact mantissa) mantissa)
@@ -117,7 +117,7 @@
 
 (define %unicode
   (let ([%hex4 ($lift (^s (string->number (list->string s) 16))
-                      ($many hexdigit 4 4))]
+                      ($many ($. #[\da-fA-F]) 4 4))]
         ;; NB: If we just $fail, the higher-level parser may conceal the
         ;; direct cause of the error by backtracking.  Unpaired surrogate
         ;; is an unrecoverable error, so we throw <json-parse-error> directly.
@@ -126,10 +126,10 @@
         [err (^c (errorf <json-parse-error>
                          :position #f :object c
                          "unpaired surrogate: \\u~4,'0x" c))])
-    ($do [($char #\u)]
+    ($do [($. #\u)]
          [c %hex4]
          (cond [(<= #xd800 c #xdbff)
-                ($or ($try ($do [($string "\\u")]
+                ($or ($try ($do [($. "\\u")]
                                 [c2 %hex4]
                                 (receive (cc x)
                                     (utf16->ucs4 `(,c ,c2) 'permissive)
@@ -148,18 +148,18 @@
                [else ($return (ucs->char c))]))))
 
 (define %string
-  (let* ([%dquote ($char #\")]
-         [%escape ($char #\\)]
+  (let* ([%dquote ($. #\")]
+         [%escape ($. #\\)]
          [%special-char
           ($do %escape
-               ($or ($char #\")
-                    ($char #\\)
-                    ($char #\/)
-                    ($do [($char #\b)] ($return #\x08))
-                    ($do [($char #\f)] ($return #\page))
-                    ($do [($char #\n)] ($return #\newline))
-                    ($do [($char #\r)] ($return #\return))
-                    ($do [($char #\t)] ($return #\tab))
+               ($or ($. #\")
+                    ($. #\\)
+                    ($. #\/)
+                    ($do [($. #\b)] ($return #\x08))
+                    ($do [($. #\f)] ($return #\page))
+                    ($do [($. #\n)] ($return #\newline))
+                    ($do [($. #\r)] ($return #\return))
+                    ($do [($. #\t)] ($return #\tab))
                     %unicode))]
          [%unescaped ($none-of #[\"])]
          [%body-char ($or %special-char %unescaped)]
@@ -176,7 +176,7 @@
                      ($sep-by %member %value-separator))
               %end-object)))
 
-(define json-parser ($seq %ws ($or eof %value)))
+(define json-parser ($seq %ws ($or ($eos) %value)))
 
 ;; entry point
 (define (parse-json :optional (port (current-input-port)))

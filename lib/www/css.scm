@@ -37,7 +37,6 @@
   (use gauche.generator)
   (use gauche.lazy)
   (use parser.peg)
-  (use parser.peg.deprecated)
   (use util.match)
   (use text.tree)
   (use srfi-1)
@@ -261,43 +260,43 @@
 
 (define %w ($skip-many ($one-of #[ \t\r\n\f])))
 (define %s ($skip-many1 ($one-of #[ \t\r\n\f])))
-(define %nl ($/ ($s "\n") ($s "\r\n") ($s "\n") ($s "\f")))
+(define %nl ($/ ($. "\n") ($. "\r\n") ($. "\n") ($. "\f")))
 ;; comment => vlid
 (define %comment
-  ($seq ($s "/*")
+  ($seq ($. "/*")
         ($skip-many ($none-of #[*]))
-        ($skip-many1 ($c #\*))
+        ($skip-many1 ($. #\*))
         ($skip-many ($seq ($none-of #[/*])
                           ($skip-many ($none-of #[*]))
-                          ($skip-many1 ($c #\*))))
-        ($c #\/)))
+                          ($skip-many1 ($. #\*))))
+        ($. #\/)))
 
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
-(define %unicode ($do [ ($c #\\) ]
+(define %unicode ($do [ ($. #\\) ]
                       [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
-                      [ ($optional ($/ ($s "\r\n") ($one-of #[ \n\r\t\f]))) ]
+                      [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ]
                       ($return ($ integer->char
                                   $ (cut string->number <> 16)
                                   $ list->string code))))
 ;; escape {unicode}|\\[^\n\r\f0-9a-f] => char
-(define %escape ($/ %unicode ($seq ($c #\\) ($none-of #[\n\r\f0-9a-f]))))
+(define %escape ($/ %unicode ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
 ;; nmstart [_a-z]|{nonascii}|{escape} => char
 (define %nmstart ($/ ($one-of #[_a-zA-Z]) %nonascii %escape))
   
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
-(define %unicode ($do [ ($c #\\) ]
+(define %unicode ($do [ ($. #\\) ]
                       [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
-                      [ ($optional ($/ ($s "\r\n") ($one-of #[ \n\r\t\f]))) ]
+                      [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ]
                       ($return ($ integer->char
                                   $ (cut string->number <> 16)
                                   $ list->string code))))
 ;; escape {unicode}|\\[^\n\r\f0-9a-f] => char
 (define %escape ($/ %unicode
-                    ($seq ($c #\\) ($none-of #[\n\r\f0-9a-f]))))
+                    ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
 
 ;; nmstart [_a-z]|{nonascii}|{escape} => char
 (define %nmstart ($/ ($one-of #[_a-zA-Z]) %nonascii %escape))
@@ -308,14 +307,14 @@
 (define %name ($->string ($many1 %nmchar)))
 
 ;; ident [-]?{nmstart}{nmchar}* => string
-(define %ident ($->symbol ($optional ($c #\-)) %nmstart ($many %nmchar)))
+(define %ident ($->symbol ($optional ($. #\-)) %nmstart ($many %nmchar)))
 
 (define %hexdigit ($one-of #[0-9a-fA-F]))
 
 ;; num [0-9]+|[0-9]*\.[0-9]+
 (define %num
   (let* ([digs ($many1 ($one-of #[0-9]))]
-         [frac ($->rope ($c #\.) digs)])
+         [frac ($->rope ($. #\.) digs)])
     ($lift ($ string->number $ rope->string $)
            ($/ ($->rope digs ($optional frac))
                ($->rope frac)))))
@@ -325,45 +324,45 @@
 ;; string2 \'([^\n\r\f\\']|\\{nl}|{escape})*\'
 (define %string
   ($->rope
-   ($/ ($between ($char #\")
+   ($/ ($between ($. #\")
                  ($many ($/ ($none-of #[\n\r\f\"\\])
-                            ($try ($seq ($char #\\) %nl))
+                            ($try ($seq ($. #\\) %nl))
                             %escape))
-                 ($or ($char #\") eof))
-       ($between ($char #\')
+                 ($or ($. #\") ($eos)))
+       ($between ($. #\')
                  ($many ($/ ($none-of #[\n\r\f\'\\])
-                            ($try ($seq ($char #\\) %nl))
+                            ($try ($seq ($. #\\) %nl))
                             %escape))
-                 ($or ($char #\') eof)))))
+                 ($or ($. #\') ($eos))))))
 
 (define %bad-string
-  ($/ ($seq ($char #\")
+  ($/ ($seq ($. #\")
             ($skip-many ($/ ($none-of #[\n\r\f\"])
-                            ($try ($seq ($char #\\) %nl))
+                            ($try ($seq ($. #\\) %nl))
                             %escape))
-            ($char #\newline))
-      ($seq ($char #\')
+            ($. #\newline))
+      ($seq ($. #\')
             ($skip-many ($/ ($none-of #[\n\r\f\'])
-                            ($try ($seq ($char #\\) %nl))
+                            ($try ($seq ($. #\\) %nl))
                             %escape))
-            ($char #\newline))))
+            ($. #\newline))))
 
 (define %url
   ($lift (^[_ _ r _ _] (rope->string r))
-         ($string "url(") %w
+         ($. "url(") %w
          ($->rope ($/ %string
                       ($many ($/ ($one-of #[!#$%&*-~])
                                  %nonascii
                                  %escape))))
-         %w ($char #\))))
+         %w ($. #\))))
 
 (define %unicode-range
   (letrec [(code (^[cs] (string->number (list->string cs) 16)))]
-    ($seq ($one-of #[Uu]) ($c #\+)
+    ($seq ($one-of #[Uu]) ($. #\+)
           ($/ ($lift (^[cs1 _ cs2] `(UNICODE-RANGE ,(code cs1) ,(code cs2)))
-                     ($many %hexdigit 1 6) ($c #\-) ($many %hexdigit 1 6))
+                     ($many %hexdigit 1 6) ($. #\-) ($many %hexdigit 1 6))
               ($do [ds ($many %hexdigit 1 5)]
-                   [ws ($many ($c #\?) 1 (- 6 (length ds)))]
+                   [ws ($many ($. #\?) 1 (- 6 (length ds)))]
                    ($return
                     `(UNICODE-RANGE ,(code (append ds (map (^_ #\0) ws)))
                                     ,(max (code (append ds (map (^_ #\f) ws)))
@@ -378,35 +377,35 @@
   ($/ ($seq %comment ($return :comment))
       ($seq %s ($return '(WHITESPACE)))
       %unicode-range
-      ($seq ($s "~=")   ($return '(INCLUDE-MATCH)))
-      ($seq ($s "|=")   ($return '(DASH-MATCH)))
-      ($seq ($s "^=")   ($return '(PREFIX-MATCH)))
-      ($seq ($s "$=")   ($return '(SUFFIX-MATCH)))
-      ($seq ($s "*=")   ($return '(SUBSTRING-MATCH)))
-      ($seq ($s "||")   ($return '(COLUMN)))
-      ($seq ($s "<!--") ($return '(CDO)))
-      ($seq ($s "-->")  ($return '(CDC)))
-      ($seq ($c #\:)    ($return '(COLON)))
-      ($seq ($c #\;)    ($return '(SEMICOLON)))
-      ($seq ($c #\,)    ($return '(COMMA)))
-      ($seq ($c #\[)    ($return '(OPEN-BRACKET)))
-      ($seq ($c #\])    ($return '(CLOSE-BRACKET)))
-      ($seq ($c #\()    ($return '(OPEN-PAREN)))
-      ($seq ($c #\))    ($return '(CLOSE-PAREN)))
-      ($seq ($c #\{)    ($return '(OPEN-BRACE)))
-      ($seq ($c #\})    ($return '(CLOSE-BRACE)))
+      ($seq ($. "~=")   ($return '(INCLUDE-MATCH)))
+      ($seq ($. "|=")   ($return '(DASH-MATCH)))
+      ($seq ($. "^=")   ($return '(PREFIX-MATCH)))
+      ($seq ($. "$=")   ($return '(SUFFIX-MATCH)))
+      ($seq ($. "*=")   ($return '(SUBSTRING-MATCH)))
+      ($seq ($. "||")   ($return '(COLUMN)))
+      ($seq ($. "<!--") ($return '(CDO)))
+      ($seq ($. "-->")  ($return '(CDC)))
+      ($seq ($. #\:)    ($return '(COLON)))
+      ($seq ($. #\;)    ($return '(SEMICOLON)))
+      ($seq ($. #\,)    ($return '(COMMA)))
+      ($seq ($. #\[)    ($return '(OPEN-BRACKET)))
+      ($seq ($. #\])    ($return '(CLOSE-BRACKET)))
+      ($seq ($. #\()    ($return '(OPEN-PAREN)))
+      ($seq ($. #\))    ($return '(CLOSE-PAREN)))
+      ($seq ($. #\{)    ($return '(OPEN-BRACE)))
+      ($seq ($. #\})    ($return '(CLOSE-BRACE)))
       ($lift (^[val] `(URL . ,val)) %url)
-      ($lift (^[ident _] `(FUNCTION . ,ident)) %ident ($c #\())
+      ($lift (^[ident _] `(FUNCTION . ,ident)) %ident ($. #\())
       ($lift (^[ident] `(IDENT . ,ident)) %ident)
-      ($lift (^[_ ident] `(AT-KEYWORD . ,ident)) ($c #\@) %ident)
-      ($lift (^[_ val] `(HASH ,val #t)) ($c #\#) %ident)
-      ($lift (^[_ val] `(HASH ,val #f)) ($c #\#) %name)
+      ($lift (^[_ ident] `(AT-KEYWORD . ,ident)) ($. #\@) %ident)
+      ($lift (^[_ val] `(HASH ,val #t)) ($. #\#) %ident)
+      ($lift (^[_ val] `(HASH ,val #f)) ($. #\#) %name)
       ($lift (^[val] `(STRING . ,val)) %string)
       ($lift (^[_] '(BAD-STRING)) %bad-string)
-      ($lift (^[val _] `(PERCENTAGE . ,val)) %num ($c #\%))
+      ($lift (^[val _] `(PERCENTAGE . ,val)) %num ($. #\%))
       ($lift (^[val unit] `(DIMENSION ,val ,unit)) %num %ident)
       ($lift (^[val] `(NUMBER . ,val)) %num)
-      ($do [c anychar] ($return `(DELIM . ,c)))))
+      ($do [c ($any)] ($return `(DELIM . ,c)))))
 
 (define (css-token-generator chars)
   (define cs chars)
