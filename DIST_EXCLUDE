@@ -5,3 +5,5 @@ INSTALL.in
 autom4te.cache
 lib/net
 .git
+gc/.deps
+gc/libatomic_ops/src/.deps
