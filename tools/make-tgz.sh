@@ -28,8 +28,8 @@ git archive --prefix="${name}/" HEAD | tar --extract --directory="${t}"
 #
 cd "${g_dir}"
 ./DIST gen
-./configure
-make GOSH=gosh pre-package
+./configure --enable-threads=pthreads --enable-multibyte=utf8 --disable-dependency-tracking
+make GOSH=gosh BUILD_GOSH_FLAGS=${BUILD_GOSH_FLAGS} pre-package
 make distclean
 
 #
