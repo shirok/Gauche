@@ -634,7 +634,10 @@
 ;;;
 
 (test-section "deprecated")
-(load "peg/deprecated")
+;; kludge - we can't say (use parser.peg.deprecated) until peg/deprecated.scm
+;; is installed in place.  
+(or (load "peg/deprecated" :error-if-not-found #f)
+    (load "parser/peg/deprecated" :error-if-not-found #f))
 (import parser.peg.deprecated)
 (test-module 'parser.peg.deprecated)
 
