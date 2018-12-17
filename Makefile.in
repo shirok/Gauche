@@ -53,9 +53,11 @@ check: all
 
 install-check:
 	@echo "Testing installed Gauche"
-	@rm -rf test.log
+	@rm -f test.log $(TESTRECORD)
 	@(cd src; $(MAKE) install-check) >> test.log
 	@(cd ext; $(MAKE) install-check) >> test.log
+	@cat $(TESTRECORD)
+	@cd src; $(MAKE) test-summary-check
 
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.

@@ -89,7 +89,7 @@ check : all
 	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I. -I"$(srcdir)" "$(srcdir)/test.scm" > test.log
 
 install-check :
-	"${bindir}/gosh" "$(srcdir)/test.scm"
+	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) "${bindir}/gosh" "$(srcdir)/test.scm"
 
 clean : unlink
 	rm -rf $(CLEANFILES) *.$(OBJEXT) *.$(SOEXT)
