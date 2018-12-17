@@ -622,6 +622,15 @@ esac
 dnl Checks for sched_yield.
 AC_SEARCH_LIBS(sched_yield, rt, AC_DEFINE(HAVE_SCHED_YIELD,1,[Define if uses librt]))
 
+dnl Use Resource file
+AS_CASE([$host],
+	[*mingw*], [USE_WIN_RESOURCE_yes=""
+		    USE_WIN_RESOURCE_no="@%:@"],
+		   [USE_WIN_RESOURCE_yes="@%:@"
+		    USE_WIN_RESOURCE_no=""])
+AC_SUBST(USE_WIN_RESOURCE_yes)
+AC_SUBST(USE_WIN_RESOURCE_no)
+
 dnl
 dnl Checks compiler options for dynamic link and thread support.
 dnl
