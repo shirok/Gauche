@@ -12,6 +12,8 @@ AC_CONFIG_MACRO_DIRS([m4])
 # (This may be useful for "prerelease", such as 0.99.x as pre-1.0)
 GAUCHE_ABI_VERSION=0.97
 
+AC_CHECK_TOOL(RC, windres, false)
+
 dnl ==========================================================
 dnl Process args given to configure
 dnl
