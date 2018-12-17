@@ -28,6 +28,9 @@
 .scm.c:
 	$(BUILD_GOSH) $(PRECOMP) $<
 
+.rc.o:
+	$(RC) --input=$< --output=$@
+
 SHELL       = @SHELL@
 prefix      = @prefix@
 exec_prefix = @exec_prefix@
