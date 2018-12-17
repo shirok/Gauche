@@ -58,4 +58,3 @@ Now, the following steps are to use Gauche inside iOS app:
    it's likely that there's no Gauche VM.  You should call
    Scm_AttachVM() within the thread (but that feature is way less
    tested; expect some rough road.)
-

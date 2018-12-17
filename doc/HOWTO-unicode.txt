@@ -94,8 +94,3 @@ There's a make rule for that.
     $ make UNICODEDIR=$UNICODEDIR char-data
 
 And it's done!
-
-
-
-
-

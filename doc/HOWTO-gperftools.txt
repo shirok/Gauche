@@ -52,8 +52,3 @@ Profile:
   And this shows samples per instruction:
 
     $ pprof --disasm=<function-name> gosh prof.out
-
-
-
-
-
