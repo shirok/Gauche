@@ -111,8 +111,8 @@ BUILD_CFLAGS = -O2 -I$(top_builddir)/src -I$(top_srcdir)/src
 # BUILD_GOSH is the gosh command used to generate some of the source files.
 # We need to 'preload' some libraries from the host's environment, for
 # the ones in the source tree may be incompatible with the host gosh.
-# (NB: BUILD_GOSH is only invoked building from CVS; it won't be called
-# when building from tarball.)
+# (NB: BUILD_GOSH is only invoked building from Git source tree; it won't
+# be called when building from tarball.)
 # We clear GAUCHE_LOAD_PATH to make sure we won't read nonstandard stuff.
 BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
               "@BUILD_GOSH@" $(BUILD_GOSH_FLAGS) \
