@@ -9,13 +9,13 @@ R. Kelsey, W. Clinger, J. Rees (eds.),
 Revised^5 Report on the Algorithmic Language Scheme,
 Higher-Order and Symbolic Computation, 11(1), September, 1998
 and ACM SIGPLAN Notices, 33(9), October, 1998. @*
-@url{http://www.schemers.org/Documents/Standards/R5RS/}.
+@url{https://www.schemers.org/Documents/Standards/R5RS/}.
 
 @anchor{r7rs}
 @item [R7RS]
 A. Shinn, J. Cowan, A. A. Greckler (eds.),
 Revised^7 Report on the Algorithmic Language Scheme@*
-@url{http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf}.
+@url{https://bitbucket.org/cowan/r7rs/raw/tip/rnrs/r7rs.pdf}.
 
 @anchor{onecont}
 @item [1CC]
@@ -41,180 +41,180 @@ Kim Barrett, Bob Cassels, Paul Haahr,
 David A. Moon, Keith Playford, P. Tucker Withington,
 A Monotonic Superclass Linearization for Dylan,
 in @i{Proceedings of OOPSLA 96}, October 1996.@*
-@url{http://dl.acm.org/citation.cfm?id=236343}.
+@url{https://dl.acm.org/citation.cfm?id=236343}.
 
 @anchor{fairthreads}
 @item [FairThreads]
 F. Boussinot, Java Fair Threads, @*
-@url{http://www-sop.inria.fr/mimosa/rp/FairThreads/html/FairThreads.html}.
+@url{https://www-sop.inria.fr/mimosa/rp/FairThreads/html/FairThreads.html}.
 
 @anchor{rfc1321}
 @item [RFC1321]
 R. Rivest,
 The MD5 Message-Digest Algorithm. @*
 April 1992. @*
-@url{http://www.ietf.org/rfc/rfc1321.txt}.
+@url{https://www.ietf.org/rfc/rfc1321.txt}.
 
 @anchor{rfc2045}
 @item [RFC2045]
 N. Freed, N. Borenstein: Multipurpose Internet Mail Extension
 (MIME) Part One: Format of Internet Message Bodies,
 November 1996. @*
-@url{http://www.ietf.org/rfc/rfc2045.txt}.
+@url{https://www.ietf.org/rfc/rfc2045.txt}.
 
 @anchor{rfc2396}
 @item [RFC2396]
 T. Berners-Lee, R. Fielding, L. Masinter,
 Uniform Resource Identifiers (URI): Generic Syntax,
 August 1998. @*
-@url{http://www.ietf.org/rfc/rfc2396.txt}.
+@url{https://www.ietf.org/rfc/rfc2396.txt}.
 
 @anchor{rfc2616}
 @item [RFC2616]
 R. Fielding et al, Hypertext Transfer Protocol -- HTTP/1.1, June 1999. @*
-@url{http://www.ietf.org/rfc/rfc2616.txt}.
+@url{https://www.ietf.org/rfc/rfc2616.txt}.
 
 @anchor{rfc2822}
 @item [RFC2822]
 P. Resnick (ed.), Internet Message Format, April 2001. @*
-@url{http://www.ietf.org/rfc/rfc2822.txt}.
+@url{https://www.ietf.org/rfc/rfc2822.txt}.
 
 @anchor{rfc2965}
 @item [RFC2965]
 D. Kristol, L. Montulli, HTTP State Management Mechanism,
 October 2000. @*
-@url{http://www.ietf.org/rfc/rfc2965.txt}.
+@url{https://www.ietf.org/rfc/rfc2965.txt}.
 
 @anchor{rfc3174}
 @item [RFC3174]
 D. Eastlake, 3rd and P. Jones,
 US Secure Hash Algorithm 1 (SHA1). @*
 September 2001. @*
-@url{http://www.ietf.org/rfc/rfc3174.txt}.
+@url{https://www.ietf.org/rfc/rfc3174.txt}.
 
 @anchor{rfc4648}
 @item [RFC4648]
 S. Josefsson, Ed.: The Base16, Base32, and Base64 Data Encodings
 October 2006. @*
-@url{http://www.ietf.org/rfc/rfc4648.txt}.
+@url{https://www.ietf.org/rfc/rfc4648.txt}.
 
 @anchor{srfi-0}
 @item [SRFI-0]
 Marc Feeley, Feature-based conditional expansion construct, May  1999.@*
-@url{http://srfi.schemers.org/srfi-0/srfi-0.html}.
+@url{https://srfi.schemers.org/srfi-0/srfi-0.html}.
 
 @anchor{srfi-1}
 @item [SRFI-1]
 Olin Shivers, List Library, October 1999. @*
-@url{http://srfi.schemers.org/srfi-1/srfi-1.html}.
+@url{https://srfi.schemers.org/srfi-1/srfi-1.html}.
 
 @anchor{srfi-2}
 @item [SRFI-2]
 Oleg Kiselyov, @code{AND-LET*}: an @code{AND} with local bindings, a guarded
 @code{LET*} special form, March 1998. @*
-@url{http://srfi.schemers.org/srfi-2/srfi-2.html}.
+@url{https://srfi.schemers.org/srfi-2/srfi-2.html}.
 
 @anchor{srfi-4}
 @item [SRFI-4]
 Marc Feeley, Homogeneous numeric vector types, May 1999.@*
-@url{http://srfi.schemers.org/srfi-4/srfi-4.html}.
+@url{https://srfi.schemers.org/srfi-4/srfi-4.html}.
 
 @anchor{srfi-6}
 @item [SRFI-6]
 William D Clinger, Basic String Ports, July 1999. @*
-@url{http://srfi.schemers.org/srfi-6/srfi-6.html}.
+@url{https://srfi.schemers.org/srfi-6/srfi-6.html}.
 
 @anchor{srfi-8}
 @item [SRFI-8]
 John David Stone, receive: Binding to multiple values, August 1999. @*
-@url{http://srfi.schemers.org/srfi-8/srfi-8.html}.
+@url{https://srfi.schemers.org/srfi-8/srfi-8.html}.
 
 @anchor{srfi-9}
 @item [SRFI-9]
 Richard Kelsey, Defining Record Types, September 1999.@*
-@url{http://srfi.schemers.org/srfi-9/srfi-9.html}.
+@url{https://srfi.schemers.org/srfi-9/srfi-9.html}.
 
 @anchor{srfi-10}
 @item [SRFI-10]
 Oleg Kiselyov, @code{#,} external form, January 2000.@*
-@url{http://srfi.schemers.org/srfi-10/srfi-10.html}.
+@url{https://srfi.schemers.org/srfi-10/srfi-10.html}.
 
 @anchor{srfi-11}
 @item [SRFI-11]
 Lars T Hansen, Syntax for receiving multiple values, March 2000. @*
-@url{http://srfi.schemers.org/srfi-11/srfi-11.html}.
+@url{https://srfi.schemers.org/srfi-11/srfi-11.html}.
 
 @anchor{srfi-13}
 @item [SRFI-13]
 Olin Shivers, String Libraries, December 2000. @*
-@url{http://srfi.schemers.org/srfi-13/srfi-13.html}.
+@url{https://srfi.schemers.org/srfi-13/srfi-13.html}.
 
 @anchor{srfi-14}
 @item [SRFI-14]
 Olin Shivers, Character-set Library, December 2000. @*
-@url{http://srfi.schemers.org/srfi-14/srfi-14.html}.
+@url{https://srfi.schemers.org/srfi-14/srfi-14.html}.
 
 @anchor{srfi-17}
 @item [SRFI-17]
 Per Bothner, Generalized @code{set!}, July 2000. @*
-@url{http://srfi.schemers.org/srfi-17/srfi-17.html}.
+@url{https://srfi.schemers.org/srfi-17/srfi-17.html}.
 
 @anchor{srfi-18}
 @item [SRFI-18]
 Marc Feeley, Multithreading Support, April 2000. @*
-@url{http://srfi.schemers.org/srfi-18/srfi-18.html}.
+@url{https://srfi.schemers.org/srfi-18/srfi-18.html}.
 
 @anchor{srfi-19}
 @item [SRFI-19]
 Will Fitzgerald, Time Data Types and Procedures, August 2000. @*
-@url{http://srfi.schemers.org/srfi-19/srfi-19.html}.
+@url{https://srfi.schemers.org/srfi-19/srfi-19.html}.
 
 @anchor{srfi-21}
 @item [SRFI-21]
 Marc Feeley, Readl-time Multithreading Support, April 2000. @*
-@url{http://srfi.schemers.org/srfi-21/srfi-21.html}.
+@url{https://srfi.schemers.org/srfi-21/srfi-21.html}.
 
 @anchor{srfi-22}
 @item [SRFI-22]
 Martin Gasbichler and Michael Sperber,
 Running Scheme Scripts on Unix, January 2002. @*
-@url{http://srfi.schemers.org/srfi-22/srfi-22.html}.
+@url{https://srfi.schemers.org/srfi-22/srfi-22.html}.
 
 @anchor{srfi-23}
 @item [SRFI-23]
 Stephan Housen, Error reporting mechanism, April 2001.@*
-@url{http://srfi.schemers.org/srfi-23/srfi-23.html}.
+@url{https://srfi.schemers.org/srfi-23/srfi-23.html}.
 
 @anchor{srfi-25}
 @item [SRFI-25]
 Jussi Piitulainen, Multi-dimensional Array Primitives, June 2002.@*
-@url{http://srfi.schemers.org/srfi-25/srfi-25.html}.
+@url{https://srfi.schemers.org/srfi-25/srfi-25.html}.
 
 @anchor{srfi-26}
 @item [SRFI-26]
 Sebastian Egner, Notation for Specializing Parameters without Currying, June 2002.@*
-@url{http://srfi.schemers.org/srfi-26/srfi-26.html}.
+@url{https://srfi.schemers.org/srfi-26/srfi-26.html}.
 
 @anchor{srfi-27}
 @item [SRFI-27]
 Sebastian Egner, Sources of Random Bits, June 2002.@*
-@url{http://srfi.schemers.org/srfi-27/srfi-27.html}.
+@url{https://srfi.schemers.org/srfi-27/srfi-27.html}.
 
 @anchor{srfi-28}
 @item [SRFI-28]
 Scott G. Miller, Basic Format Strings, June 2002.@*
-@url{http://srfi.schemers.org/srfi-28/srfi-28.html}.
+@url{https://srfi.schemers.org/srfi-28/srfi-28.html}.
 
 
 @anchor{srfi-37}
 @item [SRFI-37]
 Anthony Carrico, Args-fold: a program argument processor, Jan. 2003.@*
-@url{http://srfi.schemers.org/srfi-37/srfi-37.html}.
+@url{https://srfi.schemers.org/srfi-37/srfi-37.html}.
 
 @anchor{ssax}
 @item [SSAX]
 Oleg Kiselyov, XML and Scheme, @*
-@url{http://pobox.com/~oleg/ftp/Scheme/xml.html}.@*
+@url{http://okmij.org/ftp/Scheme/xml.html}.@*
 The SSAX distribution is also available at sourceforge:@*
 @url{http://ssax.sourceforge.net/}.
 
@@ -223,17 +223,17 @@ The SSAX distribution is also available at sourceforge:@*
 M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
 equidistributed uniform pseudorandom number generator", ACM Trans. on
 Modeling and Computer Simulation Vol. 8, No. 1, January pp.3-30 1998.@*
-@url{http://dl.acm.org/citation.cfm?id=272995}
+@url{https://dl.acm.org/citation.cfm?id=272995}
 
 @anchor{oleg1}
 @item [OLEG1]
 Oleg Kiselyov, Making sense of an input stream,@*
-@url{http://pobox.com/~oleg/ftp/Scheme/parsing.html}.
+@url{http://okmij.org/ftp/Scheme/parsing.html}.
 
 @anchor{oleg2}
 @item [OLEG2]
 Oleg Kiselyov, General ways to traverse collections,,@*
-@url{http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc.html}.
+@url{http://okmij.org/ftp/Scheme/enumerators-callcc.html}.
 2000.
 @end table
 

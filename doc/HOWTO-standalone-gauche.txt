@@ -36,7 +36,3 @@ the following:
       SCM_INIT_STATIC();
       :
     }
-
-
-
-
