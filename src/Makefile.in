@@ -196,12 +196,12 @@ INSTALL_MINGWHEADERS = gauche/win-compat.h
 
 GCLIB = ../gc/libgc.la
 
-@USE_WIN_RESOURCE_yes@ RSRC_OBJECTS = gosh-rsrc.o
-@USE_WIN_RESOURCE_no@  RSRC_OBJECTS =
+@USE_WIN_RESOURCE_yes@ gosh_RESOURCES = gosh-rsrc.o
+@USE_WIN_RESOURCE_no@  gosh_RESOURCES =
 
 gosh_SOURCES = main.c
-gosh_OBJECTS = main.$(OBJEXT) $(RSRC_OBJECTS)
-gosh_noconsole_OBJECTS = winmain.$(OBJEXT) $(RSRC_OBJECTS)
+gosh_OBJECTS = main.$(OBJEXT) $(gosh_RESOURCES)
+gosh_noconsole_OBJECTS = winmain.$(OBJEXT)
 gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
