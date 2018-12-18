@@ -561,9 +561,9 @@ pre-package : $(GENERATED)
 .in.exe:
 	$(SHELL) $(srcdir)/mingw-exify $< > $<.c
 	$(COMPILE) -c -o $<.o $<.c
-	$(LINK) $(gosh_LDFLAGS) -o $@ $<.o $(gosh_LDADD) $(LIBS)
+	$(LINK) $(gosh_LDFLAGS) -o $@ $<.o $(wildcard $(<:.in=-rsrc.o)) $(gosh_LDADD) $(LIBS)
 
-gauche-install.exe : $(LIBGAUCHE).$(SOEXT)
+gauche-install.exe : $(LIBGAUCHE).$(SOEXT) gauche-install-rsrc.o
 gauche-package.exe : $(LIBGAUCHE).$(SOEXT)
 gauche-cesconv.exe : $(LIBGAUCHE).$(SOEXT)
 
