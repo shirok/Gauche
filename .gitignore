@@ -158,6 +158,7 @@ test.record
 /lib/gauche/vport.scm
 /lib/math/mt-random.scm
 /lib/os/
+/lib/parser/
 /lib/rfc/sha1.scm
 /lib/rfc/tls/mbed.scm
 /lib/rfc/zlib.scm
