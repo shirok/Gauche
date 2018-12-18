@@ -62,7 +62,7 @@ On Windows
 The recommended way to build Gauche on Windows is mingw-w64 and
 MSYS2.  If you want to build from git source, you need Gauche
 of the latest release to be installed.  The easiest way is to
-grab the windows installer from http://practical-scheme.net/gauche.
+grab the windows installer from https://practical-scheme.net/gauche.
 For the details of build procedure, see doc/HOWTO-mingw.txt.
 
 You can build Gauche with cygwin; do it just like on Unix.
