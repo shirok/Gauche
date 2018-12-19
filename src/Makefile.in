@@ -8,7 +8,7 @@
 	clean distclean maintainer-clean install-check char-data
 
 .SUFFIXES:
-.SUFFIXES: .S .c .o .obj .s .scm .stub .in .exe
+.SUFFIXES: .S .c .o .obj .s .scm .stub .rc .in .exe
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
@@ -27,6 +27,9 @@
 
 .scm.c:
 	$(BUILD_GOSH) $(PRECOMP) $<
+
+.rc.o:
+	$(RC) --input=$< --output=$@
 
 SHELL       = @SHELL@
 prefix      = @prefix@
@@ -48,6 +51,7 @@ host  = @host@
 DESTDIR  =
 CC       = @CC@
 AR       = @AR@
+RC       = @RC@
 LIBS     = @LIBS@
 LN_S     = @LN_S@
 CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@
@@ -192,8 +196,11 @@ INSTALL_MINGWHEADERS = gauche/win-compat.h
 
 GCLIB = ../gc/libgc.la
 
+@USE_WIN_RESOURCE_yes@ gosh_RESOURCES = gosh-rsrc.o
+@USE_WIN_RESOURCE_no@  gosh_RESOURCES =
+
 gosh_SOURCES = main.c
-gosh_OBJECTS = main.$(OBJEXT)
+gosh_OBJECTS = main.$(OBJEXT) $(gosh_RESOURCES)
 gosh_noconsole_OBJECTS = winmain.$(OBJEXT)
 gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
