@@ -114,6 +114,8 @@ void usage(void)
             "           a main procedure in the different module.\n"
             "  -p<type> Turns on the profiler.  <Type> can be 'time' or 'load'.\n"
             "  -F<feature> Makes <feature> available in cond-expand forms\n"
+            "           If <feature> begins with '-', it removes the feature (without\n"
+            "           preceding minus) instead.\n"
             "  -v<version> If <version> is not the running Gauche's version, but\n"
             "           the specified version is installed in the system, execute\n"
             "           that version's gosh instead.  This is useful when you want\n"
@@ -311,7 +313,11 @@ void profiler_options(const char *optarg)
 
 void feature_options(const char *optarg)
 {
-    Scm_AddFeature(optarg, NULL);
+    if (optarg[0] == '-') {
+        Scm_DisableFeature(optarg+1);
+    } else {
+        Scm_AddFeature(optarg, NULL);
+    }
 }
 
 int parse_options(int argc, char *argv[])

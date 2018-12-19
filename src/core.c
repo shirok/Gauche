@@ -54,9 +54,10 @@ static void *oom_handler(size_t bytes)
  * Features list used by cond-expand macro
  */
 static struct {
-    ScmObj alist;
+    ScmObj alist;               /* list of (feature) or (feature module) */
+    ScmObj dlist;               /* list of disabled features */
     ScmInternalMutex mutex;
-} cond_features = { SCM_NIL, SCM_INTERNAL_MUTEX_INITIALIZER };
+} cond_features = { SCM_NIL, SCM_NIL, SCM_INTERNAL_MUTEX_INITIALIZER };
 
 /*=============================================================
  * Program initialization
@@ -433,8 +434,8 @@ Scm_GetFeatures()
 }
 
 /*
- * Append FEATURE to the cond-features alist.  Once added, the symbol FEATURE
- * will be recognized by cond-expand.
+ * Enables FEATURE.  Once added, the symbol FEATURE will be recognized
+ * by cond-expand.
  *
  *  (cond-expand (FEATURE body ...))
  *
@@ -442,24 +443,39 @@ Scm_GetFeatures()
  * such module name can be specified in MODULE argument.  It can be NULL
  * if the feature is built-in.
  *
+ * If FEATURE is already in the disabled list, it is not added.
+ *
  * This API is meant to expose configuration information to a Scheme
  * level.
  */
 void
 Scm_AddFeature(const char *feature, const char *module)
 {
-    ScmObj cell;
-
-    if (module) {
-        cell = SCM_LIST2(SCM_INTERN(feature), SCM_INTERN(module));
-    } else {
-        cell = SCM_LIST1(SCM_INTERN(feature));
-    }
+    ScmObj f = SCM_INTERN(feature);
+    ScmObj cell = module? SCM_LIST2(f, SCM_INTERN(module)): SCM_LIST1(f);
 
     (void)SCM_INTERNAL_MUTEX_LOCK(cond_features.mutex);
-    cond_features.alist = Scm_Cons(cell, cond_features.alist);
+    if (SCM_FALSEP(Scm_Memq(f, cond_features.dlist))) {
+        cond_features.alist = Scm_Cons(cell, cond_features.alist);
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(cond_features.mutex);
 }
+
+/*
+ * Disables FEATURE.  If FEATURE is already enabled, it is removed
+ * from the features alist.
+ * Mainly used by gosh's -F-feature command-line option.
+ */
+void
+Scm_DisableFeature(const char *feature)
+{
+    ScmObj f = SCM_INTERN(feature);
+    (void)SCM_INTERNAL_MUTEX_LOCK(cond_features.mutex);
+    cond_features.dlist = Scm_Cons(f, cond_features.dlist);
+    cond_features.alist = Scm_AssocDelete(f, cond_features.alist, SCM_CMP_EQ);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(cond_features.mutex);
+}
+
 
 static void
 init_cond_features()

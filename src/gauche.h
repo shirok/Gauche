@@ -1962,6 +1962,7 @@ SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);
 
 SCM_EXTERN ScmObj Scm_GetFeatures(void);
 SCM_EXTERN void   Scm_AddFeature(const char *feature, const char *mod);
+SCM_EXTERN void   Scm_DisableFeature(const char *feature);
 
 SCM_EXTERN void *Scm_AddCleanupHandler(void (*proc)(void *data), void *data);
 SCM_EXTERN void  Scm_DeleteCleanupHandler(void *handle);

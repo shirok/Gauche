@@ -1,3 +1,8 @@
+2018-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_DisableFeature), src/main.c (feature_options):
+	  Allow to disable a feature by -F-feature option.
+
 2018-12-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg - Deprecate pre-defined character parsers (anychar,
