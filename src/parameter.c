@@ -256,6 +256,14 @@ void Scm__InitParameter(void)
 }
 
 /* TRANSIENT: For the backward compatibility.  Remove by 1.0 */
+void Scm_DefinePrimitiveParameter(ScmModule *mod,
+                                  const char *name,
+                                  ScmObj initval,
+                                  ScmParameterLoc *location /*out*/)
+{
+    location->p = Scm_BindPrimitiveParameter(mod, name, initval, 0);
+}
+
 ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
 {
     Scm_Warn("Scm_ParameterRef is deprecated.");

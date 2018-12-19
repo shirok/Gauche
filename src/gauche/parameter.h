@@ -87,6 +87,10 @@ typedef struct ScmParameterLocRec {
     ScmPrimitiveParameter *p;
 } ScmParameterLoc;
 
+SCM_EXTERN void Scm_DefinePrimitiveParameter(ScmModule *mod,
+                                             const char *name,
+                                             ScmObj initval,
+                                             ScmParameterLoc *location /*out*/);
 SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm,
                                         ScmParameterLoc *location /*out*/);
 SCM_EXTERN void   Scm_InitParameterLoc(ScmVM *vm,
