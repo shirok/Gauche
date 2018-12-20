@@ -357,9 +357,9 @@
          "#define HAVE_STRUCT_FOO_B 1"
          "#define HAVE_PRINTF 1"
          "/* #undef HAVE_NONEXISTENT_WEIRD_FUNCTION */"
-         (if (#/darwin/ (gauche-architecture))
-           "/* #undef HAVE_LIBM */"
-           "#define HAVE_LIBM 1")
+         ,(if (#/darwin/ (gauche-architecture))
+            "/* #undef HAVE_LIBM */"
+            "#define HAVE_LIBM 1")
          "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
        ($ filter #/HAVE_/
           $ file->string-list "test.o/config.h"))
