@@ -336,7 +336,10 @@
          `("../gosh" "-ftest" "./configure")
          :output :null :wait #t :directory "test.o")))
 
-(test* "cf-check-lib set LIBS" '("LIBS = -lm")
+(test* "cf-check-lib set LIBS"
+       (if (#/darwin/ (gauche-architecture))
+         '("LIBS = ")
+         '("LIBS = -lm"))
        (file->string-list "test.o/src/Makefile"))
 
 (test* "cf-check-headers and cf-check-lib to set defines"
