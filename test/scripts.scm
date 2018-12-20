@@ -295,7 +295,9 @@
            (cf-check-members '("struct foo.a" "struct foo.b")
                              :includes '("struct foo { int b; };\n"))
            (cf-check-funcs '("printf" "nonexistent_weird_function"))
-           (cf-check-lib "m" "sin")
+           (unless (#/darwin/ (gauche-architecture))
+             ;; this test fails on OSX since 'sin' is recognized as built-in
+             (cf-check-lib "m" "sin"))
            (cf-check-lib "no-such-library-should-exist" "sin")
            (cf-config-headers "config.h")
            (cf-output-default)))))
@@ -338,7 +340,7 @@
        (file->string-list "test.o/src/Makefile"))
 
 (test* "cf-check-headers and cf-check-lib to set defines"
-       '("#define HAVE_STDIO_H 1"
+       `("#define HAVE_STDIO_H 1"
          "#define HAVE_STDLIB_H 1"
          "/* #undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H */"
          "#define HAVE_A_T 1"
@@ -355,7 +357,9 @@
          "#define HAVE_STRUCT_FOO_B 1"
          "#define HAVE_PRINTF 1"
          "/* #undef HAVE_NONEXISTENT_WEIRD_FUNCTION */"
-         "#define HAVE_LIBM 1"
+         (if (#/darwin/ (gauche-architecture))
+           "/* #undef HAVE_LIBM */"
+           "#define HAVE_LIBM 1")
          "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
        ($ filter #/HAVE_/
           $ file->string-list "test.o/config.h"))
