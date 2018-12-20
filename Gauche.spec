@@ -11,7 +11,8 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.9.6
+%define version  0.9.7_rc1
+%define abi_version 0.97
 %define encoding utf8
 %define threads  pthreads
 
@@ -24,7 +25,7 @@ License: revised BSD
 Group: Development/Languages
 Packager: Shiro Kawai (shiro@acm.org)
 Buildroot: %{_tmppath}/rpm
-URL: http://practical-scheme.net/gauche/
+URL: https://practical-scheme.net/gauche/
 #Prefix: /usr
 
 %description
@@ -84,8 +85,8 @@ make
 %install
 # These dirs are not cleared after rpm -ba --clean.   To ensure clean
 # install, we remove them.
-rm -rf ${RPM_BUILD_ROOT}/usr/lib/gauche-0.9
-rm -rf ${RPM_BUILD_ROOT}/usr/share/gauche-0.9
+rm -rf ${RPM_BUILD_ROOT}/usr/lib/gauche-%{abi_version}
+rm -rf ${RPM_BUILD_ROOT}/usr/share/gauche-%{abi_version}
 rm -rf ${RPM_BUILD_ROOT}/usr/share/man/man1
 mkdir -p ${RPM_BUILD_ROOT}/usr
 make DESTDIR=${RPM_BUILD_ROOT}/ install-pkg
@@ -104,7 +105,7 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %doc COPYING ChangeLog INSTALL.in Gauche.spec
 /usr/share/info/
 /usr/share/man/man1/
-/usr/share/gauche-0.9/site
+/usr/share/gauche-%{abi_version}/site
 /usr/share/aclocal/gauche.m4
 
 %files %{encoding} -f rpmfiles-encoding.txt
@@ -114,15 +115,18 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 /usr/bin/gauche-cesconv
 /usr/bin/gauche-install
 /usr/bin/gauche-package
-/usr/lib/libgauche-0.9.so
-/usr/lib/libgauche-0.9.so.0
-/usr/lib/libgauche-0.9.so.0.*
-/usr/lib/gauche-0.9/site/
+/usr/lib/libgauche-%{abi_version}.so
+/usr/lib/libgauche-%{abi_version}.so.0
+/usr/lib/libgauche-%{abi_version}.so.0.*
+/usr/lib/gauche-%{abi_version}/site/
 
 %files gdbm-%{encoding} -f rpmfiles-gdbm.txt
 %defattr(-,root,root)
 
 %changelog
+* Tue Dec 20 2018 Shiro Kawai
+- Gauche release 0.9.7
+
 * Tue Jul  3 2018 Shiro Kawai
 - Gauche release 0.9.6
 
