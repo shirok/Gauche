@@ -330,11 +330,14 @@
 #   include "atomic_ops/sysdeps/gcc/avr32.h"
 # elif defined(__hexagon__)
 #   include "atomic_ops/sysdeps/gcc/hexagon.h"
+# elif defined(__nios2__)
+#   include "atomic_ops/sysdeps/gcc/generic.h"
+#   define AO_CAN_EMUL_CAS
 # elif defined(__riscv)
 #   include "atomic_ops/sysdeps/gcc/riscv.h"
 # elif defined(__tile__)
 #   include "atomic_ops/sysdeps/gcc/tile.h"
-# else /* __nios2__, etc. */
+# else /* etc. */
 #   include "atomic_ops/sysdeps/gcc/generic.h"
 # endif
 #endif /* __GNUC__ && !AO_USE_PTHREAD_DEFS */
@@ -380,7 +383,7 @@
 
 #if defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
         || (defined(__WATCOMC__) && defined(__NT__))
-# if defined(_AMD64_) || defined(_M_X64)
+# if defined(_AMD64_) || defined(_M_X64) || defined(_M_ARM64)
 #   include "atomic_ops/sysdeps/msftc/x86_64.h"
 # elif defined(_M_IX86) || defined(x86)
 #   include "atomic_ops/sysdeps/msftc/x86.h"
