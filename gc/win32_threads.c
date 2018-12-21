@@ -361,7 +361,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
   return(result);
 }
 
-STATIC GC_bool GC_in_thread_creation = FALSE;
+GC_INNER GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
 GC_INLINE void GC_record_stack_base(GC_vthread me,
@@ -1022,12 +1022,14 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     STATIC void GC_remove_all_threads_but_me(void)
     {
       int hv;
-      GC_thread p, next, me = NULL;
+      GC_thread me = NULL;
       DWORD thread_id;
       pthread_t pthread_id = pthread_self(); /* same as in parent */
 
       GC_ASSERT(!GC_win32_dll_threads);
       for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+        GC_thread p, next;
+
         for (p = GC_threads[hv]; 0 != p; p = next) {
           next = p -> tm.next;
           if (THREAD_EQUAL(p -> pthread_id, pthread_id)
@@ -1179,15 +1181,7 @@ STATIC void GC_suspend(GC_thread t)
       return;
     }
 # endif
-# if defined(MPROTECT_VDB)
-    /* Acquire the spin lock we use to update dirty bits.       */
-    /* Threads shouldn't get stopped holding it.  But we may    */
-    /* acquire and release it in the UNPROTECT_THREAD call.     */
-    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
-      /* empty */
-    }
-# endif
-
+  GC_acquire_dirty_lock();
 # ifdef MSWINCE
     /* SuspendThread() will fail if thread is running kernel code.      */
     while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1)
@@ -1197,9 +1191,7 @@ STATIC void GC_suspend(GC_thread t)
       ABORT("SuspendThread failed");
 # endif /* !MSWINCE */
   t -> suspended = (unsigned char)TRUE;
-# if defined(MPROTECT_VDB)
-    AO_CLEAR(&GC_fault_handler_lock);
-# endif
+  GC_release_dirty_lock();
   if (GC_on_thread_event)
     GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
 }

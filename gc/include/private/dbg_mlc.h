@@ -22,8 +22,8 @@
  * included from header files that are frequently included by clients.
  */
 
-#ifndef _DBG_MLC_H
-#define _DBG_MLC_H
+#ifndef GC_DBG_MLC_H
+#define GC_DBG_MLC_H
 
 #include "gc_priv.h"
 #ifdef KEEP_BACK_PTRS
@@ -93,8 +93,8 @@ typedef struct {
       word oh_dummy;
 #   endif
 # endif
-  const char * oh_string;       /* object descriptor string     */
-  word oh_int;                  /* object descriptor integers   */
+  const char * oh_string;       /* object descriptor string (file name)    */
+  signed_word oh_int;           /* object descriptor integer (line number) */
 # ifdef NEED_CALLINFO
     struct callinfo oh_ci[NFRAMES];
 # endif
@@ -166,4 +166,4 @@ typedef struct {
 # define GC_HAS_DEBUG_INFO(p) (GC_has_other_debug_info(p) > 0)
 #endif
 
-#endif /* _DBG_MLC_H */
+#endif /* GC_DBG_MLC_H */

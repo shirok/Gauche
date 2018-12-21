@@ -39,7 +39,8 @@
 /* word require -latomic, are not lock-free and cause test_stack        */
 /* failure, so the asm-based implementation is used for now.            */
 /* TODO: Update it for newer GCC releases. */
-#if !defined(__clang__) || defined(AO_AARCH64_ASM_LOAD_STORE_CAS)
+#if (!defined(__ILP32__) && !defined(__clang__)) \
+    || defined(AO_AARCH64_ASM_LOAD_STORE_CAS)
 
 # ifndef AO_PREFER_GENERALIZED
     AO_INLINE AO_double_t
@@ -52,8 +53,13 @@
       /* single-copy atomic (unlike LDREXD for 32-bit ARM).             */
       do {
         __asm__ __volatile__("//AO_double_load\n"
-        "       ldxp  %0, %1, %3\n"
-        "       stxp %w2, %0, %1, %3"
+#       ifdef __ILP32__
+          "       ldxp  %w0, %w1, %3\n"
+          "       stxp %w2, %w0, %w1, %3"
+#       else
+          "       ldxp  %0, %1, %3\n"
+          "       stxp %w2, %0, %1, %3"
+#       endif
         : "=&r" (result.AO_val1), "=&r" (result.AO_val2), "=&r" (status)
         : "Q" (*addr));
       } while (AO_EXPECT_FALSE(status));
@@ -69,8 +75,13 @@
 
       do {
         __asm__ __volatile__("//AO_double_load_acquire\n"
-        "       ldaxp  %0, %1, %3\n"
-        "       stxp %w2, %0, %1, %3"
+#       ifdef __ILP32__
+          "       ldaxp  %w0, %w1, %3\n"
+          "       stxp %w2, %w0, %w1, %3"
+#       else
+          "       ldaxp  %0, %1, %3\n"
+          "       stxp %w2, %0, %1, %3"
+#       endif
         : "=&r" (result.AO_val1), "=&r" (result.AO_val2), "=&r" (status)
         : "Q" (*addr));
       } while (AO_EXPECT_FALSE(status));
@@ -86,8 +97,13 @@
 
       do {
         __asm__ __volatile__("//AO_double_store\n"
-        "       ldxp  %0, %1, %3\n"
-        "       stxp %w2, %4, %5, %3"
+#       ifdef __ILP32__
+          "       ldxp  %w0, %w1, %3\n"
+          "       stxp %w2, %w4, %w5, %3"
+#       else
+          "       ldxp  %0, %1, %3\n"
+          "       stxp %w2, %4, %5, %3"
+#       endif
         : "=&r" (old_val.AO_val1), "=&r" (old_val.AO_val2), "=&r" (status),
           "=Q" (*addr)
         : "r" (value.AO_val1), "r" (value.AO_val2));
@@ -106,8 +122,13 @@
 
       do {
         __asm__ __volatile__("//AO_double_store_release\n"
-        "       ldxp  %0, %1, %3\n"
-        "       stlxp %w2, %4, %5, %3"
+#       ifdef __ILP32__
+          "       ldxp  %w0, %w1, %3\n"
+          "       stlxp %w2, %w4, %w5, %3"
+#       else
+          "       ldxp  %0, %1, %3\n"
+          "       stlxp %w2, %4, %5, %3"
+#       endif
         : "=&r" (old_val.AO_val1), "=&r" (old_val.AO_val2), "=&r" (status),
           "=Q" (*addr)
         : "r" (value.AO_val1), "r" (value.AO_val2));
@@ -125,13 +146,21 @@
 
     do {
       __asm__ __volatile__("//AO_double_compare_and_swap\n"
-        "       ldxp  %0, %1, %2\n"
+#       ifdef __ILP32__
+          "       ldxp  %w0, %w1, %2\n"
+#       else
+          "       ldxp  %0, %1, %2\n"
+#       endif
         : "=&r" (tmp.AO_val1), "=&r" (tmp.AO_val2)
         : "Q" (*addr));
       if (tmp.AO_val1 != old_val.AO_val1 || tmp.AO_val2 != old_val.AO_val2)
         break;
       __asm__ __volatile__(
-        "       stxp %w0, %2, %3, %1\n"
+#       ifdef __ILP32__
+          "       stxp %w0, %w2, %w3, %1\n"
+#       else
+          "       stxp %w0, %2, %3, %1\n"
+#       endif
         : "=&r" (result), "=Q" (*addr)
         : "r" (new_val.AO_val1), "r" (new_val.AO_val2));
     } while (AO_EXPECT_FALSE(result));
@@ -148,13 +177,21 @@
 
     do {
       __asm__ __volatile__("//AO_double_compare_and_swap_acquire\n"
-        "       ldaxp  %0, %1, %2\n"
+#       ifdef __ILP32__
+          "       ldaxp  %w0, %w1, %2\n"
+#       else
+          "       ldaxp  %0, %1, %2\n"
+#       endif
         : "=&r" (tmp.AO_val1), "=&r" (tmp.AO_val2)
         : "Q" (*addr));
       if (tmp.AO_val1 != old_val.AO_val1 || tmp.AO_val2 != old_val.AO_val2)
         break;
       __asm__ __volatile__(
-        "       stxp %w0, %2, %3, %1\n"
+#       ifdef __ILP32__
+          "       stxp %w0, %w2, %w3, %1\n"
+#       else
+          "       stxp %w0, %2, %3, %1\n"
+#       endif
         : "=&r" (result), "=Q" (*addr)
         : "r" (new_val.AO_val1), "r" (new_val.AO_val2));
     } while (AO_EXPECT_FALSE(result));
@@ -171,13 +208,21 @@
 
     do {
       __asm__ __volatile__("//AO_double_compare_and_swap_release\n"
-        "       ldxp  %0, %1, %2\n"
+#       ifdef __ILP32__
+          "       ldxp  %w0, %w1, %2\n"
+#       else
+          "       ldxp  %0, %1, %2\n"
+#       endif
         : "=&r" (tmp.AO_val1), "=&r" (tmp.AO_val2)
         : "Q" (*addr));
       if (tmp.AO_val1 != old_val.AO_val1 || tmp.AO_val2 != old_val.AO_val2)
         break;
       __asm__ __volatile__(
-        "       stlxp %w0, %2, %3, %1\n"
+#       ifdef __ILP32__
+          "       stlxp %w0, %w2, %w3, %1\n"
+#       else
+          "       stlxp %w0, %2, %3, %1\n"
+#       endif
         : "=&r" (result), "=Q" (*addr)
         : "r" (new_val.AO_val1), "r" (new_val.AO_val2));
     } while (AO_EXPECT_FALSE(result));
@@ -194,13 +239,21 @@
 
     do {
       __asm__ __volatile__("//AO_double_compare_and_swap_full\n"
-        "       ldaxp  %0, %1, %2\n"
+#       ifdef __ILP32__
+          "       ldaxp  %w0, %w1, %2\n"
+#       else
+          "       ldaxp  %0, %1, %2\n"
+#       endif
         : "=&r" (tmp.AO_val1), "=&r" (tmp.AO_val2)
         : "Q" (*addr));
       if (tmp.AO_val1 != old_val.AO_val1 || tmp.AO_val2 != old_val.AO_val2)
         break;
       __asm__ __volatile__(
-        "       stlxp %w0, %2, %3, %1\n"
+#       ifdef __ILP32__
+          "       stlxp %w0, %w2, %w3, %1\n"
+#       else
+          "       stlxp %w0, %2, %3, %1\n"
+#       endif
         : "=&r" (result), "=Q" (*addr)
         : "r" (new_val.AO_val1), "r" (new_val.AO_val2));
     } while (AO_EXPECT_FALSE(result));
@@ -208,11 +261,13 @@
   }
 # define AO_HAVE_double_compare_and_swap_full
 
-#endif /* !__clang__ || AO_AARCH64_ASM_LOAD_STORE_CAS */
+#endif /* !__ILP32__ && !__clang__ || AO_AARCH64_ASM_LOAD_STORE_CAS */
 
-/* As of clang-5.0 and gcc-5.4, __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16     */
+/* As of clang-5.0 and gcc-8.1, __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16     */
 /* macro is still missing (while the double-word CAS is available).     */
-# define AO_GCC_HAVE_double_SYNC_CAS
+# ifndef __ILP32__
+#   define AO_GCC_HAVE_double_SYNC_CAS
+# endif
 
 #endif /* !__clang__ || AO_CLANG_PREREQ(3, 9) */
 

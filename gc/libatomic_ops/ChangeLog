@@ -1,4 +1,16 @@
 
+== [7.6.8] 2018-12-11 ==
+
+* Eliminate 'casting signed to bigger unsigned int' CSA warning (test_stack)
+* Eliminate 'redundant blank line at start/end of block' CodeFactor warning
+* Fix 'Cannot implement CAS_full on this architecture' build error (nios2)
+* Fix a typo in arm_v6.h
+* Support aarch64-ilp32 (GCC) and UWP/arm64 (MS VC) targets
+* Undefine AO_ARM_HAVE_* private macros after their usage
+* Use standalone private macro to guard against AO_GCC_BARRIER redefinition
+* Workaround 'condition my_chunk_ptr is always false' cppcheck false positive
+
+
 == [7.6.6] 2018-08-07 ==
 
 * COPYING: sync with FSF's gpl-2.0.txt
@@ -128,6 +140,15 @@ Also, includes 7.4.8 changes
 * Workaround a bug in double-wide intrinsics of Clang/x64 with ASan enabled
 * Workaround MSan warning about uninitialized data read by generalized store
 Also, includes 7.4.6 changes
+
+
+== [7.4.12] 2018-12-11 ==
+
+* COPYING: sync with FSF's gpl-2.0.txt
+* Fix a typo in arm_v6.h
+* Fix a typo in the overview section of README
+* Support ILP32 in AArch64 assembly routines (GCC)
+* Support UWP/arm64 target
 
 
 == [7.4.10] 2017-12-22 ==
@@ -331,6 +352,11 @@ Also, includes 7.2e changes
 * Turn off AO primitives inlining if AO_NO_INLINE defined
 * Use __builtin_expect in CAS failure loop condition checks (GCC only)
 Also, includes 7.2 changes
+
+
+== [7.2j] (not released yet) ==
+
+* Fix a typo in arm_v6.h
 
 
 == [7.2i] 2017-12-21 ==

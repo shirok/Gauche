@@ -101,7 +101,9 @@ GC_INNER void GC_print_all_errors(void)
     }
     for (i = 0; i < n_leaked; i++) {
         ptr_t p = leaked[i];
-        GC_print_heap_obj(p);
+#       ifndef SKIP_LEAKED_OBJECTS_PRINTING
+          GC_print_heap_obj(p);
+#       endif
         GC_free(p);
     }
 
@@ -236,6 +238,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     while ((word)p <= (word)plim) {
         int marked = mark_bit_from_hdr(hhdr, bit_no);
         if (!marked && (*disclaim)(p)) {
+            set_mark_bit_from_hdr(hhdr, bit_no);
             hhdr -> hb_n_marks++;
             marked = 1;
         }

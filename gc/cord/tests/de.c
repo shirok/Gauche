@@ -15,7 +15,7 @@
  * A really simple-minded text editor based on cords.
  * Things it does right:
  *      No size bounds.
- *      Inbounded undo.
+ *      Unbounded undo.
  *      Shouldn't crash no matter what file you invoke it on (e.g. /vmunix)
  *              (Make sure /vmunix is not writable before you try this.)
  *      Scrolls horizontally.
@@ -37,7 +37,8 @@
 #endif
 #include <ctype.h>
 
-#if (defined(__BORLANDC__) || defined(__CYGWIN__)) && !defined(WIN32)
+#if (defined(__BORLANDC__) || defined(__CYGWIN__) || defined(__MINGW32__) \
+     || defined(__NT__) || defined(_WIN32)) && !defined(WIN32)
     /* If this is DOS or win16, we'll fail anyway.      */
     /* Might as well assume win32.                      */
 #   define WIN32

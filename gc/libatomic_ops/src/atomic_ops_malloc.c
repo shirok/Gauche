@@ -230,17 +230,17 @@ get_chunk(void)
       }
 
     if (AO_EXPECT_FALSE(my_chunk_ptr - AO_initial_heap
-                        > AO_INITIAL_HEAP_SIZE - CHUNK_SIZE))
+                        > AO_INITIAL_HEAP_SIZE - CHUNK_SIZE)) {
+      /* We failed.  The initial heap is used up.       */
+      my_chunk_ptr = get_mmaped(CHUNK_SIZE);
+      assert(((AO_t)my_chunk_ptr & (ALIGNMENT-1)) == 0);
       break;
+    }
     if (AO_compare_and_swap(&initial_heap_ptr, (AO_t)my_chunk_ptr,
                             (AO_t)(my_chunk_ptr + CHUNK_SIZE))) {
-      return my_chunk_ptr;
+      break;
     }
   }
-
-  /* We failed.  The initial heap is used up.   */
-  my_chunk_ptr = get_mmaped(CHUNK_SIZE);
-  assert (!((AO_t)my_chunk_ptr & (ALIGNMENT-1)));
   return my_chunk_ptr;
 }
 

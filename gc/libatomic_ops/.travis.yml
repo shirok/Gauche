@@ -239,15 +239,21 @@ matrix:
     - REPORT_COVERAGE=true
     - CFLAGS_EXTRA="-march=native -D DEBUG_RUN_ONE_TEST -D VERBOSE"
   - os: linux
+    addons:
+      apt:
+        packages:
+        - cppcheck
     env:
     - CPPCHECK_ENABLE="-j16 -q --enable=information,performance,portability,style,warning"
     - MAKEFILE_TARGET=all
-    sudo: required
   - os: linux
+    addons:
+      apt:
+        packages:
+        - cppcheck
     env:
     - CPPCHECK_ENABLE="-q --enable=unusedFunction -D AO_TEST_EMULATION"
     - MAKEFILE_TARGET=all
-    sudo: required
   - os: linux
     addons:
       apt:
@@ -462,11 +468,6 @@ matrix:
     - NOLIBC_ARCH_ABI=tilegx-linux
 
 before_install:
-- if [[ "$CPPCHECK_ENABLE" != "" ]]; then
-    git clone --depth=3 https://github.com/danmar/cppcheck.git
-              ~/cppcheck -b master;
-    make --directory ~/cppcheck -j CXXFLAGS="-O3 -march=native -D NDEBUG";
-  fi
 - if [[ "$CROSS_GCC_VER" != "" ]]; then
     BUILD_ARCH=x86_64;
     TAR_FOLDER_URL=https://www.kernel.org/pub/tools/crosstool/files/bin/$BUILD_ARCH/$CROSS_GCC_VER;
@@ -479,19 +480,20 @@ before_install:
 - if [[ "$AUTOMAKE_VER" != "" || "$LIBTOOL_VER" != "" || "$M4_VER" != "" ]]; then
     GNUTOOLS_ROOT=`pwd`/../gnu-tools;
     export PATH=$GNUTOOLS_ROOT/bin:$PATH;
+    GNU_DOWNLOAD_SITE=https://ftp.gnu.org/gnu;
   fi
 - if [[ "$M4_VER" != "" ]]; then
-    M4_XZ_URL=https://ftp.gnu.org/gnu/m4/m4-$M4_VER.tar.xz;
+    M4_XZ_URL=$GNU_DOWNLOAD_SITE/m4/m4-$M4_VER.tar.xz;
     wget -O - $M4_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/m4-$M4_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j check && make install);
   fi
 - if [[ "$LIBTOOL_VER" != "" ]]; then
-    LIBTOOL_XZ_URL=https://ftp.gnu.org/gnu/libtool/libtool-$LIBTOOL_VER.tar.xz;
+    LIBTOOL_XZ_URL=$GNU_DOWNLOAD_SITE/libtool/libtool-$LIBTOOL_VER.tar.xz;
     wget -O - $LIBTOOL_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/libtool-$LIBTOOL_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
 - if [[ "$AUTOMAKE_VER" != "" ]]; then
-    AUTOMAKE_XZ_URL=https://ftp.gnu.org/gnu/automake/automake-$AUTOMAKE_VER.tar.xz;
+    AUTOMAKE_XZ_URL=$GNU_DOWNLOAD_SITE/automake/automake-$AUTOMAKE_VER.tar.xz;
     wget -O - $AUTOMAKE_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/automake-$AUTOMAKE_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
@@ -524,7 +526,7 @@ script:
           $CFLAGS_EXTRA tests/*.c src/*.c;
   fi
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
-    ~/cppcheck/cppcheck -f --error-exitcode=2 -U long -D CPPCHECK -I src
+    cppcheck -f --error-exitcode=2 -D CPPCHECK -I src
                         $CPPCHECK_ENABLE tests/*.c src/*.c;
   fi
 - if [[ "$TESTS_CUSTOM_RUN" == true ]]; then
