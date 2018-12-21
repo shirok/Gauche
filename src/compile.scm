@@ -862,7 +862,7 @@
                     (get-ref ($if-test iform))
                     (get-ref ($if-then iform))
                     (get-ref ($if-else iform)))]
-     [($LET)  (put! iform (iform-tag iform) ($*-src iform) ($let-type iform)
+     [($LET)  (put! iform '$LET ($*-src iform) ($let-type iform)
                     (map get-ref ($let-lvars iform))
                     (map get-ref ($let-inits iform))
                     (get-ref ($let-body iform)))]
