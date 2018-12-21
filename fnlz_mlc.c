@@ -18,6 +18,7 @@
 
 #include "gc_disclaim.h"
 #include "gc_inline.h" /* for GC_malloc_kind */
+#include "private/dbg_mlc.h" /* for oh type */
 
 STATIC int GC_finalized_kind = 0;
 
@@ -43,6 +44,7 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
        /* fragments so that the assumption holds for the selected word. */
         const struct GC_finalizer_closure *fc
                         = (void *)(fc_word & ~(word)FINALIZER_CLOSURE_FLAG);
+        GC_ASSERT(!GC_find_leak);
         (*fc->proc)((word *)obj + 1, fc->cd);
     }
     return 0;
@@ -69,6 +71,11 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     /* start of the user region.                                        */
     GC_register_displacement_inner(sizeof(word));
 
+    /* And, the pointer to the finalizer closure object itself is       */
+    /* displaced due to baking in this indicator.                       */
+    GC_register_displacement_inner(FINALIZER_CLOSURE_FLAG);
+    GC_register_displacement_inner(sizeof(oh) + FINALIZER_CLOSURE_FLAG);
+
     GC_finalized_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                           GC_DS_LENGTH, TRUE, TRUE);
     GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim, TRUE);
@@ -79,8 +86,11 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
                                               int mark_unconditionally)
 {
     GC_ASSERT((unsigned)kind < MAXOBJKINDS);
-    GC_obj_kinds[kind].ok_disclaim_proc = proc;
-    GC_obj_kinds[kind].ok_mark_unconditionally = (GC_bool)mark_unconditionally;
+    if (!EXPECT(GC_find_leak, FALSE)) {
+        GC_obj_kinds[kind].ok_disclaim_proc = proc;
+        GC_obj_kinds[kind].ok_mark_unconditionally =
+                                        (GC_bool)mark_unconditionally;
+    }
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
@@ -93,6 +103,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     *op = (word)fclos | FINALIZER_CLOSURE_FLAG;
+    GC_dirty(op);
+    REACHABLE_AFTER_DIRTY(fclos);
     return op + 1;
 }
 

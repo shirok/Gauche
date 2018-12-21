@@ -14,7 +14,7 @@
 dnl Process this file with autoconf to produce configure.
 
 dnl Initialization.
-AC_INIT(gc,7.6.8,https://github.com/ivmai/bdwgc/issues)
+AC_INIT(gc,7.6.10,https://github.com/ivmai/bdwgc/issues)
 dnl Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 AC_CONFIG_SRCDIR(gcj_mlc.c)
@@ -1029,8 +1029,13 @@ AS_IF([test x"$with_libatomic_ops" = xno \
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
   [ AS_IF([test x"$THREADS" != xnone],
-          [ AC_MSG_RESULT([external]) ], [ AC_MSG_RESULT([none]) ]) ],
+          [ AC_MSG_RESULT([external])
+            ATOMIC_OPS_LIBS="-latomic_ops"
+            AC_SUBST([ATOMIC_OPS_LIBS]) ],
+          [ AC_MSG_RESULT([none]) ])
+    AO_TRYLINK_CFLAGS="" ],
   [ AC_MSG_RESULT([internal])
+    AO_TRYLINK_CFLAGS="-I${srcdir}/libatomic_ops/src"
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
     AC_SUBST([ATOMIC_OPS_CFLAGS])
@@ -1040,6 +1045,22 @@ AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
     [test x$with_libatomic_ops = xno -a x"$THREADS" != xnone])
 AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
     [test x$with_libatomic_ops = xno -a x$need_atomic_ops_asm = xtrue])
+
+# Check whether particular AO primitives are emulated with locks.
+# The check below is based on the fact that linking with the libatomic_ops
+# binary file is not needed in case of absence of the emulation (except for
+# Solaris SPARC).
+AS_IF([test x"$THREADS" != xnone -a x$need_atomic_ops_asm != xtrue],
+    [ old_CFLAGS="$CFLAGS"
+      CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
+      AC_MSG_CHECKING([for lock-free AO_or primitive])
+      AC_TRY_LINK([#include "atomic_ops.h"],
+                  [AO_t x=0;AO_or(&x,1)],
+        [ AC_MSG_RESULT(yes)
+          AC_DEFINE([HAVE_LOCKFREE_AO_OR], [1],
+            [libatomic_ops AO_or primitive implementation is lock-free.]) ],
+        [ AC_MSG_RESULT(no) ])
+      CFLAGS="$old_CFLAGS" ])
 
 dnl Produce the Files
 dnl -----------------

@@ -655,6 +655,7 @@
                     /*             S390       ==> 390-like machine      */
                     /*                  running LINUX                   */
                     /*             AARCH64    ==> ARM AArch64           */
+                    /*                  (LP64 and ILP32 variants)       */
                     /*             ARM32      ==> Intel StrongARM       */
                     /*             IA64       ==> Intel IPF             */
                     /*                            (e.g. Itanium)        */
@@ -693,7 +694,7 @@
  *
  * DATASTART is the beginning of the data segment.
  * On some platforms SEARCH_FOR_DATA_START is defined.
- * SEARCH_FOR_DATASTART will cause GC_data_start to
+ * The latter will cause GC_data_start to
  * be set to an address determined by accessing data backwards from _end
  * until an unmapped page is found.  DATASTART will be defined to be
  * GC_data_start.
@@ -2487,13 +2488,18 @@
 #            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
+          /* A workaround for GCF (Google Cloud Function) which does    */
+          /* not support mmap() for "/dev/zero".  Should not cause any  */
+          /* harm to other targets.                                     */
+#         ifndef USE_MMAP
+#           define USE_MMAP
+#         endif
+#         define USE_MMAP_ANON
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
           /* FIXME: This seems to be fixed in GLibc v2.14.              */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
-#       endif
-#       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* Workaround lock elision implementation for some glibc.     */
 #         define GLIBC_2_19_TSX_BUG
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
