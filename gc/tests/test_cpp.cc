@@ -84,6 +84,7 @@ class A {public:
     GC_ATTR_EXPLICIT A( int iArg ): i( iArg ) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
+    virtual ~A() {}
     int i;};
 
 
@@ -152,7 +153,9 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
         left = right = 0;
         level = -123456;}
     static void Test() {
-        my_assert( nFreed <= nAllocated && nFreed >= .8 * nAllocated );}
+        my_assert(nFreed <= nAllocated);
+        my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+    }
 
     static int nFreed;
     static int nAllocated;
@@ -175,7 +178,8 @@ class D: public GC_NS_QUALIFY(gc) { public:
         nFreed++;
         my_assert( (GC_word)self->i == (GC_word)data );}
     static void Test() {
-        my_assert( nFreed >= .8 * nAllocated );}
+        my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+    }
 
     int i;
     static int nFreed;
@@ -213,7 +217,7 @@ class F: public E {public:
     }
 
     static void Test() {
-        my_assert(nFreedF >= .8 * nAllocatedF);
+        my_assert(nFreedF >= (nAllocatedF / 5) * 4 || GC_get_find_leak());
         my_assert(2 * nFreedF == nFreed);
     }
 

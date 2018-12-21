@@ -29,6 +29,15 @@ matrix:
     env:
     - MAKEFILE_TARGETS="dist"
   - os: linux
+    env:
+    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning -D __SIZEOF_POINTER__=8 -U CLOCKS_PER_SEC -U FIXUP_POINTER -U GC_EXTERN -U STACKBOTTOM *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c real_malloc.c extra/symbian.cpp"
+  - os: linux
+    env:
+    - CPPCHECK_ENABLE="--enable=performance,portability,style,warning extra/gc.c"
+  - os: linux
+    env:
+    - CPPCHECK_ENABLE="--enable=unusedFunction extra/gc.c *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c"
+  - os: linux
     addons:
       apt:
         packages:
@@ -138,6 +147,11 @@ matrix:
   - os: linux
     compiler: gcc
     env:
+    - CFLAGS_EXTRA="-D FIND_LEAK -D SKIP_LEAKED_OBJECTS_PRINTING"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
     - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
     - CONF_OPTIONS="--enable-cplusplus --disable-docs"
   - os: linux
@@ -238,18 +252,6 @@ matrix:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-D ALL_INTERIOR_POINTERS -D CHECKSUMS -D DBG_HDRS_ALL -D DEBUG_THREADS -D ENABLE_TRACE -D GC_ALWAYS_MULTITHREADED -D GC_ASSERTIONS -D GC_ATOMIC_UNCOLLECTABLE -D GC_ENABLE_SUSPEND_THREAD -D GC_GCJ_SUPPORT -D GC_PRINT_BACK_HEIGHT -D GC_THREADS -D HANDLE_FORK -D JAVA_FINALIZATION -D KEEP_BACK_PTRS -D MAKE_BACK_GRAPH -D PARALLEL_MARK -D PRINT_BLACK_LIST -D THREAD_LOCAL_ALLOC -D USE_MMAP -D USE_MUNMAP"
   - os: linux
-    env:
-    - CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning -D __SIZEOF_POINTER__=8 -U CLOCKS_PER_SEC -U FIXUP_POINTER -U GC_EXTERN -U STACKBOTTOM extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c real_malloc.c extra/symbian.cpp"
-    sudo: required
-  - os: linux
-    env:
-    - CPPCHECK_ENABLE="--enable=performance,portability,style,warning extra/gc.c"
-    sudo: required
-  - os: linux
-    env:
-    - CPPCHECK_ENABLE="--enable=unusedFunction extra/gc.c"
-    sudo: required
-  - os: linux
     compiler: clang
     env:
     - MAKEFILE_NAME=Makefile.direct
@@ -283,7 +285,7 @@ matrix:
     language: c
     env:
     - CXX=clang++-5.0
-    - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
+    - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer -D AO_NO_PTHREADS"
     - CONF_OPTIONS="--enable-cplusplus"
     - TESTS_CUSTOM_RUN=true
     sudo: required
@@ -417,27 +419,29 @@ matrix:
 
 before_install:
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
+    CPPCHECK_VER=1.85;
     git clone --depth=3 https://github.com/danmar/cppcheck.git
-            ~/cppcheck -b master;
+            ~/cppcheck -b $CPPCHECK_VER;
     make --directory ~/cppcheck -j CXXFLAGS="-O3 -march=native -D NDEBUG";
   fi
 - if [[ "$AUTOMAKE_VER" != "" || "$LIBTOOL_VER" != ""
         || "$M4_VER" != "" || "$PKG_CONFIG_VER" != "" ]]; then
     GNUTOOLS_ROOT=`pwd`/../gnu-tools;
     export PATH=$GNUTOOLS_ROOT/bin:$PATH;
+    GNU_DOWNLOAD_SITE=https://ftp.gnu.org/gnu;
   fi
 - if [[ "$M4_VER" != "" ]]; then
-    M4_XZ_URL=https://ftp.gnu.org/gnu/m4/m4-$M4_VER.tar.xz;
+    M4_XZ_URL=$GNU_DOWNLOAD_SITE/m4/m4-$M4_VER.tar.xz;
     wget -O - $M4_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/m4-$M4_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j check && make install);
   fi
 - if [[ "$LIBTOOL_VER" != "" ]]; then
-    LIBTOOL_XZ_URL=https://ftp.gnu.org/gnu/libtool/libtool-$LIBTOOL_VER.tar.xz;
+    LIBTOOL_XZ_URL=$GNU_DOWNLOAD_SITE/libtool/libtool-$LIBTOOL_VER.tar.xz;
     wget -O - $LIBTOOL_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/libtool-$LIBTOOL_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
 - if [[ "$AUTOMAKE_VER" != "" ]]; then
-    AUTOMAKE_XZ_URL=https://ftp.gnu.org/gnu/automake/automake-$AUTOMAKE_VER.tar.xz;
+    AUTOMAKE_XZ_URL=$GNU_DOWNLOAD_SITE/automake/automake-$AUTOMAKE_VER.tar.xz;
     wget -O - $AUTOMAKE_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/automake-$AUTOMAKE_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
@@ -483,9 +487,8 @@ script:
         extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c;
   fi
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
-    ~/cppcheck/cppcheck -q -f --error-exitcode=2 -U GC_API -U long -D CPPCHECK
-        -I include -I libatomic_ops/src $CPPCHECK_ENABLE
-        *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c;
+    ~/cppcheck/cppcheck --quiet --force --error-exitcode=2 -U GC_API
+        -D CPPCHECK -I include -I libatomic_ops/src $CPPCHECK_ENABLE;
   fi
 - if [[ "$TESTS_CUSTOM_RUN" == true ]]; then
     ASAN_OPTIONS="detect_leaks=1" UBSAN_OPTIONS="halt_on_error=1" make check;
