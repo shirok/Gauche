@@ -111,10 +111,7 @@
 ;; return.  Subsequently the control returns from the error handler to
 ;; Scm_VMDefaultExceptionHandler, which restores dynamic environment
 ;; and returns to the original caller of raise.
-;; TRANSIENT: Code precompiled with 0.9.6 calls %reraise with one argument.
-;; for the compatibility we accept and ignore the argument.
-(define-cproc %reraise (:optional dummy)
-  (cast void dummy)
+(define-cproc %reraise ()
   (return (Scm_VMReraise)))
 
 ;; srfi-18 raise

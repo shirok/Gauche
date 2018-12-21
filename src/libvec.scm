@@ -169,19 +169,6 @@
 ;; Most public uniform vector APIs are defined in gauche.uvector.
 ;; We provide a handful basic APIs here for the performance.
 
-(select-module gauche.internal)
-;; TRANSIENT: This is inserted by old compiler macro, expecting to be
-;; futher expanded into VM instruction UVEC-REF by the compiler.
-;; Now we directly expands TAGvector-ref into VM insn so this is no longer
-;; called.  We keep this only for the modules precompiled by older versions.
-;; Will remove on 1.0.
-(define-cproc %uvector-ref (v::<uvector> t::<int> k::<fixnum>
-                                         :optional fallback)
-  :constant
-  (unless (== (Scm_UVectorType (SCM_CLASS_OF v)) t)
-    (Scm_TypeError "vec" (Scm_UVectorTypeName t) (SCM_OBJ v)))
-  (return (Scm_VMUVectorRef v t k fallback)))
-
 (select-module gauche)
 
 (inline-stub

@@ -220,12 +220,6 @@
 
 (select-module gauche.internal)
 
-;; TRANSIENT: This is obsoleted, but may be referred from files precompiled
-;; by 0.9.5 and before.  Remove this after 1.0 release.
-;; proc :: Arg, ... -> Sexpr
-(define (make-macro-transformer name proc)
-  (%make-macro-transformer name (^[form env] (apply proc (cdr form))) #f #f))
-
 ;; TRANSIENT: This is only used via obsoleted define-compiler-macro.
 ;; Remove this when we remove define-compiler-macro.
 (define (%bind-inline-er-transformer module name er-xformer)

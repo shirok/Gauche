@@ -915,10 +915,6 @@
     vec))
 
 ;; Recover IForm from a vector.
-;; TRANSIENT: Until 0.9.6 we saved numeric IForm tag in the vector, but
-;; it was fragile if we change IForm enums.  Since 0.9.7 we use symbols.
-;; In 0.9.7 we need to read both, for 0.9.7 compiler includes packed IForms
-;; created by 0.9.6.   Remove numeric tag support after 0.9.7 release.
 (define (unpack-iform ivec)
   (let-syntax ([V (syntax-rules ()
                     [(V ix) (vector-ref ivec ix)]
@@ -929,59 +925,51 @@
             [else (rlet1 body (unpack-body ref)
                     (hash-table-put! dict ref body))]))
     (define (unpack-body i)
-      (case/unquote
-       (V i)
-       [($DEFINE '$DEFINE)
-        ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
-       [($LREF '$LREF)   ($lref (unpack-rec (V i 1)))]
-       [($LSET '$LSET)   ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2)))]
-       [($GREF '$GREF)   ($gref (V i 1))]
-       [($GSET '$GSET)   ($gset (V i 1) (unpack-rec (V i 2)))]
-       [($CONST '$CONST) ($const (V i 1))]
-       [($IF '$IF)
-        ($if (V i 1) (unpack-rec (V i 2))
-             (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
-       [($LET '$LET)  
-        (rlet1 unpacked
-            ($let (V i 1) (V i 2)
-                  (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
-                  (unpack-rec (V i 5)))
-          (ifor-each2 (^(lv in) (lvar-initval-set! lv in))
-                      ($let-lvars unpacked) ($let-inits unpacked)))]
-       [($RECEIVE '$RECEIVE)
-        ($receive (V i 1) (V i 2) (V i 3)
-                  (map unpack-rec (V i 4)) (unpack-rec (V i 5))
-                  (unpack-rec (V i 6)))]
-       [($LAMBDA '$LAMBDA)
-        ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
-                 (map unpack-rec (V i 5))
-                 (unpack-rec (V i 6)) (V i 7))]
-       [($LABEL '$LABEL)   ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
-       [($SEQ '$SEQ)       ($seq (map unpack-rec (V i 1)))]
-       [($CALL '$CALL)   
-        ($call (V i 1) (unpack-rec (V i 2))
-               (map unpack-rec (V i 3)) (V i 4))]
-       [($ASM '$ASM)     ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
-       [($PROMISE '$PROMISE) ($promise (V i 1) (unpack-rec (V i 2)))]
-       [($IT '$IT)  ($it)]
-       [($CONS '$CONS)
-        ($cons (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
-       [($APPEND '$APPEND)
-        ($append (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
-       [($MEMV '$MEMV)
-        ($memv (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
-       [($EQ? '$EQ?)
-        ($eq? (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
-       [($EQV? '$EQV?)
-        ($eqv? (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
-       [($VECTOR '$VECTOR) ($vector (V i 1) (map unpack-rec (V i 2)))]
-       [($LIST '$LIST)     ($list (V i 1) (map unpack-rec (V i 2)))]
-       [($LIST* '$LIST*)   ($list* (V i 1) (map unpack-rec (V i 2)))]
-       [($LIST->VECTOR '$LIST->VECTOR)
-        ($list->vector (V i 1) (unpack-rec (V i 2)))]
-       [('lvar)    (make-lvar (V i 1))]
-       [else (errorf "[internal error] unpack-iform: ivec broken at ~a: ~S"
-                     i ivec)]))
+      ;; NB: We dispatch by symbol, not the numeric tag value.
+      ;; TRANSIENT: Due to a bug, 0.9.7 precompiled IForm contains numeric
+      ;; tag 7 in place of $LET.  To keep binary compatibility, we have to
+      ;; support it until the next ABI bump.
+      (case (V i)
+       [($DEFINE) ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
+       [($LREF)   ($lref (unpack-rec (V i 1)))]
+       [($LSET)   ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2)))]
+       [($GREF)   ($gref (V i 1))]
+       [($GSET)   ($gset (V i 1) (unpack-rec (V i 2)))]
+       [($CONST)  ($const (V i 1))]
+       [($IF)  ($if (V i 1) (unpack-rec (V i 2))
+                    (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
+       [($LET 7) (rlet1 unpacked
+                     ($let (V i 1) (V i 2)
+                           (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
+                           (unpack-rec (V i 5)))
+                   (ifor-each2 (^(lv in) (lvar-initval-set! lv in))
+                               ($let-lvars unpacked) ($let-inits unpacked)))]
+       [($RECEIVE) ($receive (V i 1) (V i 2) (V i 3)
+                             (map unpack-rec (V i 4)) (unpack-rec (V i 5))
+                             (unpack-rec (V i 6)))]
+       [($LAMBDA) ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
+                           (map unpack-rec (V i 5))
+                           (unpack-rec (V i 6)) (V i 7))]
+       [($LABEL)  ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
+       [($SEQ)    ($seq (map unpack-rec (V i 1)))]
+       [($CALL)   ($call (V i 1) (unpack-rec (V i 2))
+                         (map unpack-rec (V i 3)) (V i 4))]
+       [($ASM)    ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
+       [($PROMISE)($promise (V i 1) (unpack-rec (V i 2)))]
+       [($IT)     ($it)]
+       [($CONS)   ($cons (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($APPEND) ($append (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($MEMV)   ($memv (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($EQ?)    ($eq? (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($EQV?)   ($eqv? (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($VECTOR) ($vector (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST)   ($list (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST*)  ($list* (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST->VECTOR) ($list->vector (V i 1) (unpack-rec (V i 2)))]
+       [(lvar)    (make-lvar (V i 1))]
+       [else 
+        (errorf "[internal error] unpack-iform: ivec broken at ~a (tag=~s): ~S"
+                i (V i) ivec)]))
 
     (unpack-rec (V 0))))
 
@@ -1641,26 +1629,6 @@
 ;; you're sure no existing precompiled code refers to this.
 (define (%make-er-transformer/toplevel xformer def-module def-name)
   (%make-er-transformer xformer (%make-cenv def-module '() def-name)))
-
-;; TRANSIENT: We no longer use these procedures, but reference to them
-;; might be inserted in the file precompiled by 0.9.5 compiler as the
-;; result of expansion of er macro.
-;; Remove this on 1.0 release.
-(define (%make-toplevel-cenv name) ;internal
-  (%make-cenv (vm-current-module) '() name))
-(define (%make-primitive-transformer xformer def-env)
-  (%make-macro-transformer (cenv-exp-name def-env)
-                           (^[form use-env] (xformer form def-env use-env))))
-(define (%expand-er-transformer form cenv)
-  (match form
-    [(_ xformer)
-     ;; See the discussion in primitive-macro-transformer above.
-     (let1 def-env-form (if (null? (cenv-frames cenv))
-                          `(,%make-toplevel-cenv. ',(cenv-exp-name cenv))
-                          cenv)
-       `(,%make-er-transformer. ,xformer ,def-env-form))]
-    [_ (error "Invalid er-macro-transformer form:" form)]))
-
 
 ;; EXPERIMENTAL
 ;; Returns an S-expr all macros in which are expanded.
