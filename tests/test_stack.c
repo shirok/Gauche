@@ -179,16 +179,16 @@ volatile AO_t ops_performed = 0;
 #endif
 {
   list_element * t[MAX_NTHREADS + 1];
-  int index = (int)(size_t)arg;
-  int i;
+  unsigned index = (unsigned)(size_t)arg;
+  unsigned i;
 # ifdef VERBOSE
-    int j = 0;
+    unsigned j = 0;
 
-    printf("starting thread %d\n", index);
+    printf("starting thread %u\n", index);
 # endif
   while (fetch_and_add(&ops_performed, index + 1) + index + 1 < LIMIT)
     {
-      for (i = 0; i < index + 1; ++i)
+      for (i = 0; i <= index; ++i)
         {
           t[i] = (list_element *)AO_stack_pop(&the_list);
           if (0 == t[i])
@@ -197,7 +197,7 @@ volatile AO_t ops_performed = 0;
               abort();
             }
         }
-      for (i = 0; i < index + 1; ++i)
+      for (i = 0; i <= index; ++i)
         {
           AO_stack_push(&the_list, (AO_t *)t[i]);
         }
@@ -206,7 +206,7 @@ volatile AO_t ops_performed = 0;
 #     endif
     }
 # ifdef VERBOSE
-    printf("finished thread %d: %d total ops\n", index, j);
+    printf("finished thread %u: %u total ops\n", index, j);
 # endif
   return 0;
 }
@@ -245,7 +245,7 @@ int main(int argc, char **argv)
   for (exper_n = 0; exper_n < N_EXPERIMENTS; ++ exper_n)
     for (nthreads = 1; nthreads <= max_nthreads; ++nthreads)
       {
-        int i;
+        unsigned i;
 #       ifdef USE_WINTHREADS
           DWORD thread_id;
           HANDLE thread[MAX_NTHREADS];
@@ -268,7 +268,7 @@ int main(int argc, char **argv)
 #       endif
         ops_performed = 0;
         start_time = get_msecs();
-        for (i = 1; i < nthreads; ++i) {
+        for (i = 1; (int)i < nthreads; ++i) {
           int code;
 
 #         ifdef USE_WINTHREADS
@@ -287,7 +287,7 @@ int main(int argc, char **argv)
         /* We use the main thread to run one test.  This allows gprof   */
         /* profiling to work, for example.                              */
         run_one_test(0);
-        for (i = 1; i < nthreads; ++i) {
+        for (i = 1; (int)i < nthreads; ++i) {
           int code;
 
 #         ifdef USE_WINTHREADS

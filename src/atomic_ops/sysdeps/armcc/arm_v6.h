@@ -52,8 +52,8 @@ AO_nop_full(void)
 {
 # ifndef AO_UNIPROCESSOR
     unsigned int dest=0;
-    /* issue an data memory barrier (keeps ordering of memory transactions */
-    /* before and after this operation)                                    */
+    /* Issue a data memory barrier (keeps ordering of memory transactions  */
+    /* before and after this operation).                                   */
     __asm {
             mcr p15,0,dest,c7,c10,5
             };
@@ -100,7 +100,6 @@ __asm {
 #ifndef AO_PREFER_GENERALIZED
 AO_INLINE AO_TS_VAL_t
 AO_test_and_set(volatile AO_TS_t *addr) {
-
         AO_TS_VAL_t oldval;
         unsigned long tmp;
         unsigned long one = 1;

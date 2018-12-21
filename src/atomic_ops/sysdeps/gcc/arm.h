@@ -719,6 +719,11 @@ AO_fetch_compare_and_swap(volatile AO_t *addr, AO_t old_val, AO_t new_val)
 
 #endif /* AO_GCC_ATOMIC_TEST_AND_SET */
 
+#undef AO_ARM_HAVE_DMB
+#undef AO_ARM_HAVE_LDREX
+#undef AO_ARM_HAVE_LDREXBH
+#undef AO_ARM_HAVE_LDREXD
+#undef AO_ARM_HAVE_SWP
 #undef AO_BR_ALIGN
 #undef AO_MASK_PTR
 #undef AO_SKIPATOMIC_ANY_and_ANY
