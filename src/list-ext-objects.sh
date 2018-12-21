@@ -7,5 +7,6 @@
 
 top_builddir=$1
 
-cd $top_builddir/ext; ${MAKE:=make} list-objects | grep $top_builddir | grep -v 'make\[.*\]: \(Entering\|Leaving\) directory'
+cd $top_builddir/ext; ${MAKE:=make} list-objects | grep '^/// ' | sed "sx/// xx"
+
 
