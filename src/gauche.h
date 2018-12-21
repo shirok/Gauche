@@ -1708,17 +1708,8 @@ SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler);
 SCM_CLASS_DECL(Scm_MacroClass);
 #define SCM_CLASS_MACRO            (&Scm_MacroClass)
 
-/* TRANSIENT: Scm_MakeMacroFull is to keep ABI compatibility.  Will be gone
-   in 1.0.  */
-#if GAUCHE_API_0_95
 SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name, ScmObj transformer,
                                 ScmObj src, ScmObj describer);
-#define Scm_MakeMacroFull(a,b,c,d) Scm_MakeMacro(a,b,c,d)
-#else
-SCM_EXTERN ScmObj Scm_MakeMacroFull(ScmObj name, ScmObj transformer,
-                                    ScmObj src, ScmObj describer);
-ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer);
-#endif
 SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
 SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 
@@ -1790,15 +1781,7 @@ SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, const char *msg, ...);
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);
 
-/* TRANSIENT: Scm_Raise2 is to keep ABI compatibility.  Will be gone
-   in 1.0.  */
-#if    GAUCHE_API_0_95
 SCM_EXTERN ScmObj Scm_Raise(ScmObj exception, u_long flags);
-#define Scm_Raise2(e, f)  Scm_Raise(e, f)
-#else  /*!GAUCHE_API_0_95*/
-SCM_EXTERN ScmObj Scm_Raise(ScmObj exception);
-SCM_EXTERN ScmObj Scm_Raise2(ScmObj exception, u_long flags);
-#endif /*!GAUCHE_API_0_95*/
 
 /* flags for Scm_Raise */
 enum {
@@ -1827,15 +1810,7 @@ SCM_EXTERN void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
 
 SCM_EXTERN void Scm_SetCallTraceSize(u_long size);
 
-/* TRANSIENT: Scm_ReportError2 is to keep ABI compatibility.  Will be gone
-   in 1.0.  */
-#if    GAUCHE_API_0_95
 SCM_EXTERN ScmObj Scm_ReportError(ScmObj e, ScmObj out);
-#define Scm_ReportError2(a, b) Scm_ReportError(a, b)
-#else  /*!GAUCHE_API_0_95*/
-SCM_EXTERN ScmObj Scm_ReportError(ScmObj e);
-SCM_EXTERN ScmObj Scm_ReportError2(ScmObj e, ScmObj out);
-#endif /*!GAUCHE_API_0_95*/
 
 /*--------------------------------------------------------
  * REGEXP

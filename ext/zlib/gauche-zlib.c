@@ -163,7 +163,7 @@ void Scm_ZlibError(int error_code, const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException2(vm, e, 0);
+    Scm_VMThrowException(vm, e, 0);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -198,7 +198,7 @@ void Scm_ZlibPortError(ScmPort *port, int error_code, const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException2(vm, e, 0);
+    Scm_VMThrowException(vm, e, 0);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 

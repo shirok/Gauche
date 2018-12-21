@@ -56,8 +56,7 @@
     (result (Scm_VMWithErrorHandler handler thunk))))
 
 (define-cproc report-error (exception :optional (port (current-error-port)))
-  ;; TRANSIENT: change this to Scm_ReportError when we drop !GAUCHE_API_0_95
-  Scm_ReportError2)
+  Scm_ReportError)
 
 (define-cproc condition-type-name (c) Scm_ConditionTypeName)
 
@@ -104,7 +103,7 @@
 (define-cproc %raise (exception :optional (non-continuable? #f))
   (let* ([flags::u_long
           (?: (SCM_FALSEP non-continuable?) 0 SCM_RAISE_NON_CONTINUABLE)])
-    (result (Scm_Raise2 exception flags))))
+    (result (Scm_Raise exception flags))))
 
 ;; For r7rs compatible guard.
 ;; %reraise must be called at the tail position of the error handler.

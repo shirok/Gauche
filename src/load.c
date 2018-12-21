@@ -819,7 +819,7 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
     load_packet_prepare(packet);
     if (!SCM_STRINGP(feature)) {
         ScmObj e = Scm_MakeError(Scm_Sprintf("require: string expected, but got %S\n", feature));
-        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise2(e, 0);
+        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(e, 0);
         else {
             if (packet) packet->exception = e;
             return -1;
@@ -860,7 +860,7 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
 
     if (loop) {
         ScmObj e = Scm_MakeError(Scm_Sprintf("a loop is detected in the require dependency involving feature %S", feature));
-        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise2(e, 0);
+        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(e, 0);
         else {
             if (packet) packet->exception = e;
             return -1;
@@ -883,7 +883,7 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
         ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
         (void)SCM_INTERNAL_COND_BROADCAST(ldinfo.prov_cv);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
-        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise2(xresult.exception, 0);
+        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(xresult.exception, 0);
         else return -1;
     }
 

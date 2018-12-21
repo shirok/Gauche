@@ -339,9 +339,6 @@ typedef struct ScmEscapePointRec {
 #define SCM_NSIG NSIG
 #endif /*!_SIG_MAXSIG*/
 
-/* The following #ifdef is to maintain binary compatibility during 0.9 series.
- */
-#if defined(GAUCHE_API_0_9)
 typedef struct ScmSignalQueueRec {
     union {
         unsigned char dummy[NSIG];
@@ -349,12 +346,6 @@ typedef struct ScmSignalQueueRec {
     };
     ScmObj pending;        /* pending signal handlers */
 } ScmSignalQueue;
-#else  /*!GAUCHE_API_0_9*/
-typedef union ScmSignalQueueRec {
-    unsigned char sigcounts[SCM_NSIG];
-    ScmObj pending;        /* pending signal handlers */
-} ScmSignalQueue;
-#endif /*!GAUCHE_API_0_9*/
 
 SCM_EXTERN void Scm_SignalQueueInit(ScmSignalQueue* q);
 SCM_EXTERN int  Scm_GetSignalPendingLimit(void);
@@ -552,15 +543,7 @@ SCM_EXTERN int    Scm_AttachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_DetachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMDefaultExceptionHandler(ScmObj exc);
-/* TRANSIENT: Scm_VMThrowException2 is to keep ABI compatibility.  Will be
-   gone in 1.0 */
-#if    GAUCHE_API_0_95
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc, u_long flags);
-#define Scm_VMThrowException2(v, e, f)  Scm_VMThrowException(v, e, f)
-#else  /*!GAUCHE_API_0_95*/
-SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc);
-SCM_EXTERN ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exc, u_long flags);
-#endif /*!GAUCHE_API_0_95*/
 SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN void   Scm_VMSetResult(ScmObj obj);

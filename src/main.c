@@ -616,7 +616,7 @@ void enter_repl()
     if (load_initfile) {
         ScmLoadPacket lpak;
         if (Scm_Require(SCM_MAKE_STR("gauche/interactive"), 0, &lpak) < 0) {
-            Scm_ReportError2(lpak.exception, SCM_OBJ(SCM_CURERR));
+            Scm_ReportError(lpak.exception, SCM_OBJ(SCM_CURERR));
             Scm_Warn("Encountered an error during loading gauche.interactive.  Falling back to basic REPL.");
         } else {
             Scm_ImportModule(SCM_CURRENT_MODULE(),

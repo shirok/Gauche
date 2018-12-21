@@ -285,4 +285,4 @@
 ;; proc :: Sexpr, Cenv -> Sexpr
 (define-cproc %make-macro-transformer (name transformer
                                        :optional (src #f) (describer #f))
-  Scm_MakeMacroFull)
+  Scm_MakeMacro)

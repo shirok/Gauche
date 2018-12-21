@@ -228,12 +228,12 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, volatile ScmObj timeoutval)
     if (tout) {
         if (SCM_UNBOUNDP(timeoutval)) {
             ScmObj e = Scm_MakeThreadException(SCM_CLASS_JOIN_TIMEOUT_EXCEPTION, target);
-            result = Scm_Raise2(e, 0);
+            result = Scm_Raise(e, 0);
         } else {
             result = timeoutval;
         }
     } else if (SCM_CONDITIONP(resultx)) {
-        result = Scm_Raise2(resultx, 0);
+        result = Scm_Raise(resultx, 0);
     }
     return result;
 #else  /*!GAUCHE_HAS_THREADS*/

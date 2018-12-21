@@ -446,9 +446,7 @@ void Scm_SignalQueueClear(ScmSignalQueue* q)
  */
 void Scm_SignalQueueInit(ScmSignalQueue* q)
 {
-#if defined(GAUCHE_API_0_9)
     q->sigcounts = SCM_NEW_ARRAY(unsigned char, SCM_NSIG);
-#endif /* GAUCHE_API_0_9 */
     Scm_SignalQueueClear(q);
     q->pending = SCM_NIL;
 }

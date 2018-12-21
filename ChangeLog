@@ -1,3 +1,7 @@
+2018-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/*.c: Remove pre-GAUCHE_API_0_95 entries.
+
 2018-12-20  Shiro Kawai  <shiro@acm.org>
 
 	* Release 0.9.7

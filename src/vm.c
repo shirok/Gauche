@@ -1796,7 +1796,7 @@ int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z)
             ScmEvalPacket result;
             SCM_BIND_PROC(length_proc, "length", Scm_GaucheModule());
             int nres = Scm_Apply(length_proc, SCM_LIST1(z), &result);
-            if (nres == -1) Scm_Raise2(result.exception, 0);
+            if (nres == -1) Scm_Raise(result.exception, 0);
             SCM_ASSERT(nres == 1);
             SCM_ASSERT(SCM_INTP(result.results[0]));
             count += SCM_INT_VALUE(result.results[0]);
@@ -2091,7 +2091,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             vm->exceptionHandler = ep->xhandler;
             vm->escapePoint = ep->prev;
             SCM_VM_FLOATING_EP_SET(vm, ep);
-            result = Scm_VMThrowException2(vm, e, 0);
+            result = Scm_VMThrowException(vm, e, 0);
             vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
             vm->escapePoint = ep;
             SCM_VM_FLOATING_EP_SET(vm, ep->floating);
@@ -2154,7 +2154,7 @@ static void call_error_reporter(ScmObj e)
         if (SCM_PROCEDUREP(vm->customErrorReporter)) {
             Scm_ApplyRec(vm->customErrorReporter, SCM_LIST1(e));
         } else {
-            Scm_ReportError2(e, SCM_OBJ(SCM_CURERR));
+            Scm_ReportError(e, SCM_OBJ(SCM_CURERR));
         }
     }
     SCM_WHEN_ERROR {
@@ -2192,15 +2192,7 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
  *  handler.
  *  Note that this function may return.
  */
-#if  GAUCHE_API_0_95
 ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
-#else  /*!GAUCHE_API_0_95*/
-ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
-{
-    return Scm_VMThrowException2(vm, exception, 0);
-}
-ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exception, u_long raise_flags)
-#endif /*!GAUCHE_API_0_95*/
 {
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
 

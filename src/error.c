@@ -619,14 +619,14 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
  * check that.  Ideally a common single API should handle it,   
  * but for the time being, we add the check at the beginning
  * of Scm_*Error APIs.
- * The SCM_ERROR_BEING_HANDLED flag is cleared in Scm_VMThrowException2().
+ * The SCM_ERROR_BEING_HANDLED flag is cleared in Scm_VMThrowException().
  */
 #define SCM_ERROR_DOUBLE_FAULT_CHECK(vm)                                \
     do {                                                                \
         if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_HANDLED)) {  \
             ScmObj e =                                                  \
                 Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler")); \
-            Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);    \
+            Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);     \
         }                                                               \
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);           \
     } while (0)
@@ -666,7 +666,7 @@ void Scm_Error(const char *msg, ...)
     ScmObj ostr;
     SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
     ScmObj e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr), TRUE));
-    Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
+    Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -738,7 +738,7 @@ void Scm_SysError(const char *msg, ...)
     ScmObj ostr;
     SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
     ScmObj e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr), TRUE), en);
-    Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
+    Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -797,7 +797,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
         e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeSystemError(smsg, en),
                                                 pe));
     }
-    Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
+    Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -827,22 +827,10 @@ void Scm_FWarn(ScmString *fmt SCM_UNUSED, ScmObj args SCM_UNUSED)
  */
 
 /* An external API to hide Scm_VMThrowException. */
-#if  GAUCHE_API_0_95
 ScmObj Scm_Raise(ScmObj condition, u_long flags)
 {
     return Scm_VMThrowException(Scm_VM(), condition, flags);
 }
-#else  /*!GAUCHE_API_0_95*/
-ScmObj Scm_Raise(ScmObj condition)
-{
-    return Scm_Raise2(condition, 0);
-}
-
-ScmObj Scm_Raise2(ScmObj condition, u_long flags)
-{
-    return Scm_VMThrowException2(Scm_VM(), condition, flags);
-}
-#endif /*!GAUCHE_API_0_95*/
 
 
 /* A convenient API---allows to call user-defined condition easily,
@@ -990,11 +978,7 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
    caller should explicitly pass SCM_OBJ(SCM_CURERR) if that's what it intends,
    instead of relying on the permissive behavior.
 */
-#if GAUCHE_API_0_95
 ScmObj Scm_ReportError(ScmObj e, ScmObj out)
-#else  /*!GAUCHE_API_0_95*/
-ScmObj Scm_ReportError2(ScmObj e, ScmObj out)
-#endif /*!GAUCHE_API_0_95*/
 {
     ScmVM *vm = Scm_VM();
     ScmPort *port = SCM_VM_CURRENT_ERROR_PORT(vm);
@@ -1010,13 +994,6 @@ ScmObj Scm_ReportError2(ScmObj e, ScmObj out)
     if (SCM_FALSEP(out)) return Scm_GetOutputString(SCM_PORT(port), 0);
     else return SCM_UNDEFINED;
 }
-
-#if !GAUCHE_API_0_95
-ScmObj Scm_ReportError(ScmObj e)
-{
-    return Scm_ReportError2(e, SCM_CURERR);
-}
-#endif /*!GAUCHE_API_0_95*/
 
 /*
  * Initialization
