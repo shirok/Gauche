@@ -5,13 +5,15 @@ top_srcdir   = @top_srcdir@
 build        = @build@
 host         = @host@
 
+BUILD_GOSH   = @BUILD_GOSH@
+
 MANPAGES = gosh.1 gauche-config.1 gauche-install.1 gauche-package.1 \
            gauche-cesconv.1
 EXTRACTED = gauche-refe.texi gauche-refj.texi \
 	    gauche-deve.texi gauche-devj.texi
 GENERATED = Makefile $(MANPAGES)
 @CROSS_COMPILING_no@GOSH = $(top_builddir)/src/gosh -q -ftest
-@CROSS_COMPILING_yes@GOSH = gosh -q
+@CROSS_COMPILING_yes@GOSH = $(BUILD_GOSH) -q
 INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 MKINSTDIR    = $(top_srcdir)/mkinstalldirs
