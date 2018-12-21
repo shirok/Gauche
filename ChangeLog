@@ -1,5 +1,8 @@
 2018-12-21  Shiro Kawai  <shiro@acm.org>
 
+	* gc/: Update to libgc 7.6.10 / libatomic_ops 7.6.8
+	  https://github.com/shirok/Gauche/pull/409
+
 	* src/*.c: Remove pre-GAUCHE_API_0_95 entries.
 
 2018-12-20  Shiro Kawai  <shiro@acm.org>
