@@ -467,7 +467,8 @@
          (socket-output-port s)))
 
 (test* "getsockname/getpeername" #t
-       (let* ([addr (make <sockaddr-in> :host :loopback :port *inet-port*)]
+       (let* ([addr (make <sockaddr-in> 
+                      :host :loopback :port *inet-port* :reuse-addr? #t)]
               [serv (make-server-socket addr :reuse-addr? #t)]
               [clnt (make-client-socket addr)])
          (begin0 (every (^[addr]
