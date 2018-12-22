@@ -3255,8 +3255,8 @@ is 0.
 
 @defun list-delete-neighbor-dups elt= lis
 @defunx list-delete-neighbor-dups! elt= lis
-@defunx vector-delete-neighbor-dups elt= vec :optional start end)
-@defunx vector-delete-neighbor-dups! elt= vec :optional start end)
+@defunx vector-delete-neighbor-dups elt= vec :optional start end
+@defunx vector-delete-neighbor-dups! elt= vec :optional start end
 [R7RS sort]
 @c MOD scheme.sort
 From the given list @var{lis} or vector @var{vec},
