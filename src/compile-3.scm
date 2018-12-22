@@ -188,10 +188,6 @@
     ($label-body-set! iform (pass3/rec ($label-body iform) labels)))
   iform)
 
-(define (pass3/$PROMISE iform labels)
-  ($promise-expr-set! iform (pass3/rec ($promise-expr iform) labels))
-  iform)
-
 ;; We may have a dead code in $SEQ as the result of pass2 main.
 ;; We eliminate if the value of subtree is not used, and it is
 ;; referentially transparent.

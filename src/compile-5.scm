@@ -841,10 +841,6 @@
       (rlet1 lab (compiled-code-new-label ccb)
         ($label-label-set! label-node lab))))
 
-(define (pass5/$PROMISE iform ccb renv ctx)
-  (rlet1 d (pass5/rec ($promise-expr iform) ccb renv (normal-context ctx))
-    (compiled-code-emit0i! ccb PROMISE ($*-src iform))))
-
 ;; $ASMs.  For some instructions, we may pick more specialized one
 ;; depending on its arguments.
 

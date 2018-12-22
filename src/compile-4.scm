@@ -176,7 +176,6 @@
                         (pass4/scan ($call-proc iform) bs fs t? labels))
                (pass4/scan* ($call-args iform) bs fs t? labels))]
   [($ASM)    (pass4/scan* ($asm-args iform) bs fs t? labels)]
-  [($PROMISE)(pass4/scan ($promise-expr iform) bs fs t? labels)]
   [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs t? labels)]
   [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs t? labels)]
   [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs t? labels)]
@@ -306,7 +305,6 @@
   [($CALL)   (pass4/subst*! ($call-args iform) labels)
              (pass4/subst! ($call-proc iform) labels)]
   [($ASM)    (pass4/subst*! ($asm-args iform) labels) iform]
-  [($PROMISE)(pass4/subst! ($promise-expr iform) labels)]
   [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/subst! ($*-arg0 iform) labels)
              (pass4/subst! ($*-arg1 iform) labels)]
   [($VECTOR $LIST $LIST*) (pass4/subst*! ($*-args iform) labels) iform]

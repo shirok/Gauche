@@ -495,10 +495,6 @@
   ;; to do it again.
   iform)
 
-(define (pass2/$PROMISE iform penv tail?)
-  ($promise-expr-set! iform (pass2/rec ($promise-expr iform) penv #f))
-  iform)
-
 (define (pass2/$SEQ iform penv tail?)
   (if (null? ($seq-body iform))
     iform
@@ -717,13 +713,13 @@
        (let1 tag (iform-tag val)
          (or (and (eqv? tag $LIST) (not (null? ($*-args val))))
              (and (eqv? tag $LIST*) (not (null? ($*-args val))))
-             (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$EQ? ,$EQV?
+             (memv tag `(,$LAMBDA ,$CONS ,$EQ? ,$EQV?
                                   ,$VECTOR ,$LIST->VECTOR))))))
 
 (define (initval-never-false? val)
   (and (vector? val)
        (let1 tag (iform-tag val)
-         (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$VECTOR
+         (memv tag `(,$LAMBDA ,$CONS ,$VECTOR
                      ,$LIST->VECTOR ,$LIST)))))
 
 (define (initval-always-pair? val)

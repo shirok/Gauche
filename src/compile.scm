@@ -153,7 +153,6 @@
   $RECEIVE
   $LAMBDA
   $LABEL
-  $PROMISE
   $SEQ
   $CALL
   $ASM
@@ -627,15 +626,6 @@
    args      ; list of IForms
    ))
 
-;; $promise <src> <expr>
-;;    OBSOLETED.  We keep $promise during 0.9.x releases since it
-;;    can appear in the packed IForm of the inlined procedures.
-;;    Will go in 1.0.
-(define-simple-struct $promise $PROMISE $promise
-  (src       ; original source for debugging
-   expr      ; IForm
-   ))
-
 ;; $it
 ;;   A special node.  See the explanation of $if above.
 (define $it (let ((c `#(,$IT))) (^[] c)))
@@ -786,9 +776,6 @@
             [else (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n))
                             ($asm-args iform))])
           (display ")"))]
-       [($PROMISE) (display "($promise ")
-        (rec (+ ind 10) ($promise-expr iform))
-        (display ")")]
        [($IT)      (display "($it)")]
        [($CONS $APPEND $MEMV $EQ? $EQV?)
         (let* ([s (format "(~a " (iform-tag-name (iform-tag iform)))]
@@ -888,8 +875,6 @@
                       ($asm-insn iform)
                       (map get-ref ($asm-args iform)))]
      [($IT)     (put! iform '$IT)]
-     [($PROMISE)(put! iform '$PROMISE ($*-src iform)
-                      (get-ref ($promise-expr iform)))]
      [($CONS)   (put!-2ary iform '$CONS)]
      [($APPEND) (put!-2ary iform '$APPEND)]
      [($MEMV)   (put!-2ary iform '$MEMV)]
@@ -955,7 +940,6 @@
        [($CALL)   ($call (V i 1) (unpack-rec (V i 2))
                          (map unpack-rec (V i 3)) (V i 4))]
        [($ASM)    ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
-       [($PROMISE)($promise (V i 1) (unpack-rec (V i 2)))]
        [($IT)     ($it)]
        [($CONS)   ($cons (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
        [($APPEND) ($append (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
@@ -1001,7 +985,6 @@
        [($SEQ)    (sum-items cnt (* ($seq-body iform)))]
        [($CALL) (sum-items (+ cnt 1) ($call-proc iform) (* ($call-args iform)))]
        [($ASM)    (sum-items (+ cnt 1) (* ($asm-args iform)))]
-       [($PROMISE)(sum-items (+ cnt 1) ($promise-expr iform))]
        [($CONS $APPEND $MEMV $EQ? $EQV?)
         (sum-items (+ cnt 1) ($*-arg0 iform) ($*-arg1 iform))]
        [($VECTOR $LIST $LIST*) (sum-items (+ cnt 1) (* ($*-args iform)))]
@@ -1089,8 +1072,6 @@
                                            ($lambda-calls target)))))]
    [($ASM) ($asm ($*-src iform) ($asm-insn iform)
                  (imap (cut iform-copy <> lv-alist) ($asm-args iform)))]
-   [($PROMISE)($promise ($*-src iform)
-                        (iform-copy ($promise-expr iform) lv-alist))]
    [($CONS)   ($cons ($*-src iform)
                      (iform-copy ($*-arg0 iform) lv-alist)
                      (iform-copy ($*-arg1 iform) lv-alist))]
@@ -1177,7 +1158,6 @@
                         (cons (ref (cdr target-insn-info)'code)
                               (cdr host-insn))
                         (imap rec ($asm-args iform))))]
-     [($PROMISE) ($promise ($*-src iform) (rec ($promise-expr iform)))]
      [($CONS)    ($cons ($*-src iform)
                         (rec ($*-arg0 iform))
                         (rec ($*-arg1 iform)))]
@@ -1232,7 +1212,6 @@
                    (everyc transparent?/rec ($call-args iform) labels))]
    [($ASM)    (and (side-effect-free-insn? ($asm-insn iform))
                    (everyc transparent?/rec ($asm-args iform) labels))]
-   [($PROMISE) #t]
    [($CONS $APPEND $MEMV $EQ? $EQV?)
     (and (transparent?/rec ($*-arg0 iform) labels)
          (transparent?/rec ($*-arg1 iform) labels))]
@@ -1279,7 +1258,6 @@
                (reset-lvars/rec ($call-proc iform) labels))
              (reset-lvars/rec* ($call-args iform) labels)]
   [($ASM)    (reset-lvars/rec* ($asm-args iform) labels)]
-  [($PROMISE)(reset-lvars/rec ($promise-expr iform) labels)]
   [($CONS $APPEND $MEMV $EQ? $EQV?)
              (reset-lvars/rec ($*-arg0 iform) labels)
              (reset-lvars/rec ($*-arg1 iform) labels)]
@@ -1377,8 +1355,6 @@
                        ($call-flag iform))]
      [($ASM)    ($asm ($*-src iform) ($asm-insn iform)
                       (imap (cut subst <> mapping dict) ($asm-args iform)))]
-     [($PROMISE)($promise ($*-src iform)
-                          (subst ($promise-expr iform) mapping dict))]
      [($CONS $APPEND $MEMV $EQ? $EQV?) (subst/2 iform mapping dict)]
      [($VECTOR $LIST $LIST*) (subst/* iform mapping dict)]
      [($LIST->VECTOR) ($list->vector ($*-src iform)
