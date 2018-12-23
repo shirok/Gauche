@@ -40,8 +40,6 @@
 ;; This file defines lower level layer of macro system.
 ;; Initialization of compile.scm depends on this file.
 
-(declare (keep-private-macro define-compiler-macro))
-
 ;;;
 ;;; Macro expansion utilities
 ;;;
@@ -186,13 +184,3 @@
                  (let1 ms (remove (cute memq <> sym) *trace-macro*)
                    (set! *trace-macro* (if (null? ms) #f ms))))])
   *trace-macro*)
-
-;;;
-;;; OBSOLETED - Tentative compiler macro 
-;;;
-
-(select-module gauche)
-
-;; TRANSIENT: Remove by 1.0
-(define-macro (define-compiler-macro name xformer-spec)
-  (error "define-compiler-macro is obsoleted.  Use define-inline/syntax."))

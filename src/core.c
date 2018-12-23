@@ -111,6 +111,7 @@ extern void Scm_Init_libsys(void);
 extern void Scm_Init_libvec(void);
 extern void Scm_Init_libmacbase(void);
 extern void Scm_Init_compile(void);
+extern void Scm_Init_libmacro(void);
 extern void Scm_Init_libomega(void);
 
 static void finalizable(void);
@@ -198,6 +199,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libvec();
     Scm_Init_libmacbase();
     Scm_Init_compile();
+    Scm_Init_libmacro();
     Scm_Init_libomega();
 
     Scm__InitCompaux();
