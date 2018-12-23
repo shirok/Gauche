@@ -7990,22 +7990,40 @@ Note: The order of @var{pred} and the source object is different from
 
 @deftp {Module} srfi-154
 @mdindex srfi-154
+@c EN
 This module provides a convenent way to reify the dynamic environment.
 A continuation captured by @code{call/cc} includes the dynamic environment,
 as well as the control flow.  Sometimes you only want the dynamic enviornment
 part.  A dynamic extent is a reified dynamic environment.
+@c JP
+このモジュールは、動的環境を簡単に取り出す手段を提供します。
+@code{call/cc}によって捕捉される継続は、制御フローと同時に動的環境を保持しますが、
+時には動的環境だけが欲しい場合があります。
+動的エクステントは、具象化された動的環境です。
+@c COMMON
 
+@c EN
 Let's see an example.  You want a procedure that prints out
 a message to the error port, so you wrote this @code{print-error}:
+@c JP
+例で見てみましょう。メッセージをエラー出力に出したいので、
+こんな@code{print-error}を書いたとします:
+@c COMMON
 
 @example
 (define print-error
   (lambda (msg) (display msg (current-error-port))))
 @end example
 
+@c EN
 However, if @code{print-error} is called while the current error port
 is altered, it is affected.  It is supposed to be so, that's
 the point of @code{current-error-port}.
+@c JP
+ところで、@code{print-error}が呼ばれた時点で現在のエラー出力ポートが置き換えられていたら、
+出力先は変わります。もちろん、そのための@code{current-error-port}なのですから、
+これは想定された動作です。
+@c COMMON
 
 @example
 (call-with-output-string
@@ -8013,9 +8031,15 @@ the point of @code{current-error-port}.
  @result{} "abc\n"
 @end example
 
+@c EN
 If you do want @code{print-error} to use the error port
 at the time it is defined, you have to extract the dynamic value
 at the moment.
+@c JP
+けれども、@code{print-error}が定義された時点でのエラー出力ポートを常に使いたい
+場合はどうすれば良いでしょうか。ひとつの方法は、定義時のエラー出力ポートの
+動的な値を保存しておくことです：
+@c COMMON
 
 @example
 (define print-error
@@ -8023,15 +8047,28 @@ at the moment.
     (lambda (msg) (display msg eport))))
 @end example
 
+@c EN
 This would be quickly cumbersome when you need to capture multiple
 dynamic values, or the original @code{print-error} is called indirectly
 and you can't modify it the way shown above.
+@c JP
+しかし、これは捕捉したい動的な値が増えればややこしくなりますし、
+@code{print-error}が自分の触れない箇所で定義されていて書き換えられない場合も
+面倒です。
+@c COMMON
 
+@c EN
 Using @code{dynamic-lambda} addresses this issue.  It not only captures
 the lexical environment, but also the dynamic environment when it
 is evaluated.  So the @code{current-error-port} in its body
 returns the current error port at the time of @code{print-error}
 being defined, not when it is called:
+@c JP
+@code{dynamic-lambda}は、レキシカルな環境だけでなくそれが評価された時点の
+動的環境をも捕捉することでこの問題を解決します。
+次の例では、@code{current-error-port}は@code{print-error}が定義された時点の
+値を返します：
+@c COMMON
 
 @example
 (define print-error
@@ -8040,20 +8077,34 @@ being defined, not when it is called:
 @end deftp
 
 @defun current-dynamic-extent
+@c EN
 Returns a dynamic-extent object that reifies the current dynamic
 environment.
+@c JP
+現在の動的環境を具象化した動的エクステントオブジェクトを返します。
+@c COMMON
 @end defun
 
 @defun dynamic-extent? obj
+@c EN
 Returns @code{#t} iff @var{obj} is a dynamic-extent object.
+@c JP
+@var{obj}が動的エクステントオブジェクトの時のみ@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun with-dynamic-extent dynext thunk
+@c EN
 Calls the @var{thunk} in the dynamic extent @var{dynext}, and
 returns the values yielded by @var{thunk}.
+@c JP
+動的環境を動的エクステント@var{dynext}で置き換えた状態で
+@var{thunk}を呼びます。@var{thunk}が返した値が戻り値となります。
+@c COMMON
 @end defun
 
 @defmac dynamic-lambda formals body @dots{}
+@c EN
 Like @code{lambda}, but this not only captures the lexical environment,
 but also the dynamic environment.  Yields a procedure.
 
@@ -8061,6 +8112,14 @@ Note: Since @code{dynamic-lambda} needs to swap the dynamic environment
 after executing @var{body}, the last expression of @var{body} isn't
 called in the tail contenxt even if the procedure created by
 @code{dynamic-lambda} is called in tail context.
+@c JP
+@code{lambda}のように振る舞いますが、レキシカルな環境だけでなく、
+評価時の動的環境も捕捉します。手続きを返します。
+
+註: @code{dynamic-lambda}は最後の@var{body}の実行が終わった後で動的環境を
+戻さなければならないので、@code{dynamic-lambda}で作られた手続きが末尾呼び出し
+されたとしても、@var{body}の末尾式は末尾呼び出しにはなりません。
+@c COMMON
 @end defmac
 
 
