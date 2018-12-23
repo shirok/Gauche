@@ -3,17 +3,20 @@
 
 (define (echo-client host port)
   (define s (make-client-socket host port))
+  (print "Type 'quit' or 'exit' to quit.")
   (let loop ()
     (display "> ")
     (flush)
     (let1 d (read-line)
       (cond
-       ((member d '("q" "quit" "e" "exit" "end"))
-        (socket-shutdown s))
-       (else
+       [(or (eof-object? d)
+            (member d '("quit" "exit")))
+        (socket-shutdown s)
+        (socket-close s)]
+       [else
         (socket-send s d)
-        (print (socket-recv s 1000))
-        (loop))))))
+        (print (socket-recv s (string-size d)))
+        (loop)]))))
 
 (define (main args)
   (define host "localhost")
