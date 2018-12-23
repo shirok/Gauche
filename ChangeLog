@@ -1,3 +1,8 @@
+2018-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmac.scm (define-compiler-macro): Drop support.  It now
+	  just triggers an error.
+
 2018-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* gc/: Update to libgc 7.6.10 / libatomic_ops 7.6.8
