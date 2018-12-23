@@ -1,5 +1,5 @@
 ;;;
-;;; libmac.scm - macro-related stuff
+;;; libmacbase.scm - macro basic staff
 ;;;
 ;;;   Copyright (c) 2000-2018  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -37,7 +37,10 @@
  (declcode (.include "gauche/class.h"
                      "gauche/priv/macroP.h")))
 
-(declare (keep-private-macro define-compiler-macro kwote))
+;; This file defines lower level layer of macro system.
+;; Initialization of compile.scm depends on this file.
+
+(declare (keep-private-macro define-compiler-macro))
 
 ;;;
 ;;; Macro expansion utilities

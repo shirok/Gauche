@@ -98,7 +98,6 @@ extern void Scm_Init_libfmt(void);
 extern void Scm_Init_libio(void);
 extern void Scm_Init_liblazy(void);
 extern void Scm_Init_liblist(void);
-extern void Scm_Init_libmac(void);
 extern void Scm_Init_libmisc(void);
 extern void Scm_Init_libmod(void);
 extern void Scm_Init_libnum(void);
@@ -110,6 +109,7 @@ extern void Scm_Init_libstr(void);
 extern void Scm_Init_libsym(void);
 extern void Scm_Init_libsys(void);
 extern void Scm_Init_libvec(void);
+extern void Scm_Init_libmacbase(void);
 extern void Scm_Init_compile(void);
 extern void Scm_Init_libomega(void);
 
@@ -185,7 +185,6 @@ void Scm_Init(const char *signature)
     Scm_Init_libio();
     Scm_Init_liblazy();
     Scm_Init_liblist();
-    Scm_Init_libmac();
     Scm_Init_libmisc();
     Scm_Init_libmod();
     Scm_Init_libnum();
@@ -197,6 +196,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libsym();
     Scm_Init_libsys();
     Scm_Init_libvec();
+    Scm_Init_libmacbase();
     Scm_Init_compile();
     Scm_Init_libomega();
 

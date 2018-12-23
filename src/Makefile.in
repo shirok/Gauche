@@ -229,7 +229,7 @@ libgauche_OBJECTS = \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
 	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
-	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmac.$(OBJEXT) \
+	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmacbase.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
@@ -294,31 +294,31 @@ libsrfis.scm : $(top_builddir)/lib/srfi/0.scm $(top_builddir)/doc/srfis.texi
 compile.c  : compile.scm compile-0.scm compile-1.scm compile-2.scm \
              compile-3.scm compile-4.scm compile-5.scm compile-i.scm \
              $(PRECOMP_DEPENDENCY)
-libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
-libbool.c  : libbool.scm $(PRECOMP_DEPENDENCY)
-libchar.c  : libchar.scm $(PRECOMP_DEPENDENCY)
-libcode.c  : libcode.scm $(PRECOMP_DEPENDENCY)
-libcmp.c   : libcmp.scm $(PRECOMP_DEPENDENCY)
-libdict.c  : libdict.scm $(PRECOMP_DEPENDENCY)
-libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY)
-libexc.c   : libexc.scm $(PRECOMP_DEPENDENCY)
-libfmt.c   : libfmt.scm $(PRECOMP_DEPENDENCY)
-libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
-liblazy.c  : liblazy.scm $(PRECOMP_DEPENDENCY)
-liblist.c  : liblist.scm $(PRECOMP_DEPENDENCY)
-libmac.c   : libmac.scm $(PRECOMP_DEPENDENCY)
-libmisc.c  : libmisc.scm $(PRECOMP_DEPENDENCY)
-libnum.c   : libnum.scm $(PRECOMP_DEPENDENCY)
-libobj.c   : libobj.scm $(PRECOMP_DEPENDENCY)
-libomega.c : libomega.scm $(PRECOMP_DEPENDENCY)
-libproc.c  : libproc.scm $(PRECOMP_DEPENDENCY)
-librx.c    : librx.scm $(PRECOMP_DEPENDENCY)
-libsrfis.c : libsrfis.scm $(PRECOMP_DEPENDENCY)
-libstr.c   : libstr.scm $(PRECOMP_DEPENDENCY)
-libsym.c   : libsym.scm $(PRECOMP_DEPENDENCY)
-libsys.c   : libsys.scm $(PRECOMP_DEPENDENCY)
-libvec.c   : libvec.scm $(PRECOMP_DEPENDENCY)
-libextra.c : libextra.scm $(PRECOMP_DEPENDENCY)
+libalpha.c   : libalpha.scm $(PRECOMP_DEPENDENCY)
+libbool.c    : libbool.scm $(PRECOMP_DEPENDENCY)
+libchar.c    : libchar.scm $(PRECOMP_DEPENDENCY)
+libcode.c    : libcode.scm $(PRECOMP_DEPENDENCY)
+libcmp.c     : libcmp.scm $(PRECOMP_DEPENDENCY)
+libdict.c    : libdict.scm $(PRECOMP_DEPENDENCY)
+libeval.c    : libeval.scm $(PRECOMP_DEPENDENCY)
+libexc.c     : libexc.scm $(PRECOMP_DEPENDENCY)
+libfmt.c     : libfmt.scm $(PRECOMP_DEPENDENCY)
+libio.c      : libio.scm $(PRECOMP_DEPENDENCY)
+liblazy.c    : liblazy.scm $(PRECOMP_DEPENDENCY)
+liblist.c    : liblist.scm $(PRECOMP_DEPENDENCY)
+libmacbase.c : libmacbase.scm $(PRECOMP_DEPENDENCY)
+libmisc.c    : libmisc.scm $(PRECOMP_DEPENDENCY)
+libnum.c     : libnum.scm $(PRECOMP_DEPENDENCY)
+libobj.c     : libobj.scm $(PRECOMP_DEPENDENCY)
+libomega.c   : libomega.scm $(PRECOMP_DEPENDENCY)
+libproc.c    : libproc.scm $(PRECOMP_DEPENDENCY)
+librx.c      : librx.scm $(PRECOMP_DEPENDENCY)
+libsrfis.c   : libsrfis.scm $(PRECOMP_DEPENDENCY)
+libstr.c     : libstr.scm $(PRECOMP_DEPENDENCY)
+libsym.c     : libsym.scm $(PRECOMP_DEPENDENCY)
+libsys.c     : libsys.scm $(PRECOMP_DEPENDENCY)
+libvec.c     : libvec.scm $(PRECOMP_DEPENDENCY)
+libextra.c   : libextra.scm $(PRECOMP_DEPENDENCY)
 
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
@@ -492,7 +492,8 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    char_attr.c gauche/priv/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
-	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmac.c \
+	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c \
+	    libmacbase.c \
 	    libmisc.c libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
