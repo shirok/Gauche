@@ -194,7 +194,8 @@ test.record
 /src/libio.c
 /src/liblazy.c
 /src/liblist.c
-/src/libmac.c
+/src/libmacbase.c
+/src/libmacro.c
 /src/libmisc.c
 /src/libmod.c
 /src/libnum.c
