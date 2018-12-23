@@ -33,9 +33,13 @@
 
 (select-module gauche)
 (use util.match)
-(declare (keep-private-macro quasirename define-compiler-macro))
+(declare (keep-private-macro quasirename 
+                             syntax-error syntax-errorf
+                             ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
+                             ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z
+                             define-compiler-macro))
 
-;; quasirename
+;;; quasirename
 (define-syntax quasirename
   (er-macro-transformer
    (^[f r c]
@@ -70,6 +74,60 @@
         `(,let. ((,tmp. ,rr))
            ,(rec ff))]
        [_ (error "malformed quasirename:" f)]))))
+
+;;; syntax-error msg arg ...
+;;; syntax-errorf fmtstr arg ...
+;;;   Signal an error at compile time.
+;;;   These are typically used as a result of expansion of syntax-rules
+;;;   macro; er-macro or legacy macro can directly call error/errorf so
+;;;   there's no point to use syntax-error.  Then, the 'original attribute
+;;;   of the form contains the macro input that caused syntax error.
+;;;   We extract that and throw a compound condition, so that the
+;;;   error message will include the macro input that directly caused
+;;;   this error.
+
+(define-syntax syntax-error
+  (er-macro-transformer
+   (^[f r c]
+     (let ([args (map unwrap-syntax (cdr f))]
+           [original ((with-module gauche.internal pair-attribute-get)
+                      f 'original #f)])
+       (if original
+         (raise (make-compound-condition
+                 (apply make-error (car args) (cdr args))
+                 (make <compile-error-mixin> :expr original)))
+         (apply error args))))))
+
+(define-syntax syntax-errorf
+  (er-macro-transformer
+   (^[f r c]
+     (let ([args (map unwrap-syntax (cdr f))]
+           [original ((with-module gauche.internal pair-attribute-get)
+                      f 'original #f)])
+       (if original
+         (raise (make-compound-condition
+                 (make-error (apply format/ss (car args) (cdr args)))
+                 (make <compile-error-mixin> :expr original)))
+         (apply errorf args))))))
+
+;;; ^ == lambda
+(define-syntax ^
+  (er-macro-transformer
+   (^[f r c] (quasirename r (lambda ,@(cdr f))))))
+
+;; (^x . body) == (lambda (x) . body) where x in #[a-z_]
+;; TODO: need to make 'lambda's hygineic!
+(define-macro (^-generator var)
+  (let ([name (string->symbol (string-append "^" (symbol->string var)))])
+    `(define-syntax ,name
+       (er-macro-transformer
+        (^[f r c]
+          `(,,'(r'lambda) (,',var) ,@,'(cdr f)))))))
+(define-macro (define-^x . vars)
+  `(begin ,@(map (lambda (x) `(^-generator ,x)) vars)))
+(define-^x _ a b c d e f g h i j k l m n o p q r s t u v w x y z)
+
+
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 
