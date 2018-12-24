@@ -37,6 +37,7 @@
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z
+                             push! pop! inc! dec! update!
                              define-compiler-macro))
 
 ;;; quasirename
@@ -127,7 +128,87 @@
   `(begin ,@(map (lambda (x) `(^-generator ,x)) vars)))
 (define-^x _ a b c d e f g h i j k l m n o p q r s t u v w x y z)
 
+;;; generalized set! family
 
+(define-syntax push!
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (proc arg ...) val)
+        (let1 vars (map (^_ (gensym)) arg)
+          (quasirename r
+            (let [(getter ,proc) ,@(map list vars arg)]
+              ((setter getter) ,@vars (cons ,val (getter ,@vars))))))]
+       [(_ loc val)
+        (quasirename r
+          (set! ,loc (cons ,val ,loc)))]
+       [_ (error "malformed push!:" f)]))))
+
+(define-syntax pop!
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (proc arg ...))
+        (let1 vars (map (^_ (gensym)) arg)
+          (quasirename r
+            (let ([getter ,proc] ,@(map list vars arg))
+              (let1 val (getter ,@vars)
+                ((setter getter) ,@vars (cdr val))
+                (car val)))))]
+       [(_ loc)
+        (quasirename r
+          (let1 val ,loc
+            (set! ,loc (cdr val))
+            (car val)))]
+       [_ (error "malformed pop!:" f)]))))
+
+(define-syntax inc!
+  (er-macro-transformer
+   (^[f r c]
+     (define (gen proc arg delta)
+       (let1 vars (map (^_ (gensym)) arg)
+         (quasirename r
+           (let ([getter ,proc] ,@(map list vars arg))
+             ((setter getter) ,@vars (+ (getter ,@vars) ,delta))))))
+     (match f
+       [(_ (proc arg ...) delta) (gen proc arg delta)]
+       [(_ (proc arg ...))       (gen proc arg 1)]
+       [(_ loc delta) (quasirename r
+                        (set! ,loc (+ ,loc ,delta)))]
+       [(_ loc)       (quasirename r
+                        (set! ,loc (+ ,loc 1)))]
+       [_ (error "malformed inc!:" f)]))))
+
+(define-syntax dec!
+  (er-macro-transformer
+   (^[f r c]
+     (define (gen proc arg delta)
+       (let1 vars (map (^_ (gensym)) arg)
+         (quasirename r
+           (let ([getter ,proc] ,@(map list vars arg))
+             ((setter getter) ,@vars (- (getter ,@vars) ,delta))))))
+     (match f
+       [(_ (proc arg ...) delta) (gen proc arg delta)]
+       [(_ (proc arg ...))       (gen proc arg 1)]
+       [(_ loc delta) (quasirename r
+                        (set! ,loc (- ,loc ,delta)))]
+       [(_ loc)       (quasirename r
+                        (set! ,loc (- ,loc 1)))]
+       [_ (error "malformed dec!:" f)]))))
+
+(define-syntax update!
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (proc arg ...) updater val ...)
+        (let1 vars (map (^_ (gensym)) arg)
+          (quasirename r
+            (let ([getter ,proc] ,@(map list vars arg))
+              ((setter getter) ,@vars (,updater ,@val (getter ,@vars))))))]
+       [(_ loc updater val ...)
+        (quasirename r
+          (set! ,loc (,updater ,@val ,loc)))]
+       [_ (error "malformed update!:" f)]))))
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 

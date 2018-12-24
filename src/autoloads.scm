@@ -97,7 +97,6 @@
           logtest logbit? copy-bit bit-field copy-bit-field)
 
 (autoload gauche.common-macros
-          (:macro push! pop! inc! dec! update!)
           (:macro check-arg get-optional get-keyword*)
           (:macro $)
           (:macro let1 if-let1 and-let1 rlet1)

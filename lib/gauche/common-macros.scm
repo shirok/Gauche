@@ -39,8 +39,7 @@
 ;; dependency.
 
 (define-module gauche.common-macros
-  (export push! pop! inc! dec! update!
-          check-arg get-optional get-keyword*
+  (export check-arg get-optional get-keyword*
           $
           let1 if-let1 and-let1 rlet1
           let/cc begin0 fluid-let
@@ -52,108 +51,6 @@
           cond-list
           assume assume-type))
 (select-module gauche.common-macros)
-
-;;;-------------------------------------------------------------
-;;; generalized set! family
-
-(define-syntax update!
-  (syntax-rules ()
-    [(_ "vars" ((var arg) ...) () proc updater val ...)
-     (let ((getter proc)
-           (var arg) ...)
-       ((setter getter) var ... (updater val ... (getter var ...))))]
-    [(_ "vars" ((var arg) ...) (arg0 arg1 ...) proc updater val ...)
-     (update! "vars"
-              ((var arg) ... (newvar arg0))
-              (arg1 ...)
-              proc updater val ...)]
-    [(_ (proc arg ...) updater val ...)
-     (update! "vars"
-              ()
-              (arg ...)
-              proc updater val ...)]
-    [(_ loc updater val ...)
-     (set! loc (updater val ... loc))]
-    [(_ . other)
-     (syntax-error "malformed update!" (update! . other))]))
-
-(define-syntax push!
-  (syntax-rules ()
-    [(_ "vars" ((var arg) ...) () proc val)
-     (let ((getter proc)
-           (var arg) ...)
-       ((setter getter) var ... (cons val (getter var ...))))]
-    [(_ "vars" ((var arg) ...) (arg0 arg1 ...) proc val)
-     (push! "vars" ((var arg) ... (newvar arg0)) (arg1 ...) proc val)]
-    [(_ (proc arg ...) val)
-     (push! "vars" () (arg ...) proc val)]
-    [(_ loc val)
-     (set! loc (cons val loc))]
-    [(_ . other)
-     (syntax-error "malformed push!" (push! . other))]))
-
-(define-syntax pop!
-  (syntax-rules ()
-    [(_ "vars" ((var arg) ...) () proc)
-     (let ((getter proc)
-           (var arg) ...)
-       (let ((val (getter var ...)))
-         ((setter getter) var ... (cdr val))
-         (car val)))]
-    [(_ "vars" ((var arg) ...) (arg0 arg1 ...) proc)
-     (pop! "vars" ((var arg) ... (newvar arg0)) (arg1 ...) proc)]
-    [(_ (proc arg ...))
-     (pop! "vars" () (arg ...) proc)]
-    [(_ loc)
-     (let ((val loc))
-       (set! loc (cdr val))
-       (car val))]
-    [(_ . other)
-     (syntax-error "malformed pop!" (pop! . other))]))
-
-(define-syntax inc!
-  (syntax-rules ()
-    [(_ "vars" ((var arg) ...) () proc num)
-     (let ((getter proc)
-           (delta num)
-           (var arg) ...)
-       (let ((val (getter var ...)))
-         ((setter getter) var ... (+ val delta))))]
-    [(_ "vars" ((var arg) ...) (arg0 arg1 ...) proc num)
-     (inc! "vars" ((var arg) ... (newvar arg0)) (arg1 ...) proc num)]
-    [(_ (proc arg ...) num)
-     (inc! "vars" () (arg ...) proc num)]
-    [(_ (proc arg ...))
-     (inc! "vars" () (arg ...) proc 1)]
-    [(_ loc num)
-     (let ((val loc))
-       (set! loc (+ val num)))]
-    [(_ loc)
-     (inc! loc 1)]
-    [(_ . other)
-     (syntax-error "malformed inc!" (inc! . other))]))
-
-(define-syntax dec!
-  (syntax-rules ()
-    [(_ "vars" ((var arg) ...) () proc num)
-     (let ((getter proc)
-           (delta num)
-           (var arg) ...)
-       (let ((val (getter var ...)))
-         ((setter getter) var ... (- val delta))))]
-    [(_ "vars" ((var arg) ...) (arg0 arg1 ...) proc num)
-     (dec! "vars" ((var arg) ... (newvar arg0)) (arg1 ...) proc num)]
-    [(_ (proc arg ...) num)
-     (dec! "vars" () (arg ...) proc num)]
-    [(_ (proc arg ...))
-     (dec! "vars" () (arg ...) proc 1)]
-    [(_ loc num)
-     (let ((val loc))
-       (set! loc (- val num)))]
-    [(_ loc)
-     (dec! loc 1)]
-    [(_ . other)
-     (syntax-error "malformed dec!" (dec! . other))]))
 
 ;;;-------------------------------------------------------------
 ;;; bind construct
