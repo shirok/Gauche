@@ -38,6 +38,8 @@
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z
                              push! pop! inc! dec! update!
+                             let1 if-let1 and-let1 let/cc begin0 rlet1
+                             let-values let*-values values-ref values->list
                              define-compiler-macro))
 
 ;;; quasirename
@@ -128,6 +130,133 @@
   `(begin ,@(map (lambda (x) `(^-generator ,x)) vars)))
 (define-^x _ a b c d e f g h i j k l m n o p q r s t u v w x y z)
 
+;;; bind construct
+
+(define-syntax let1                     ;single variable bind
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ var exp . body) (quasirename r
+                             (let ((,var ,exp)) ,@body))]
+       [_ (error "malformed let1:" f)]))))
+
+(define-syntax if-let1                  ;like aif in On Lisp, but explicit var
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ var exp then . else) (quasirename r
+                                  (let ((,var ,exp)) (if ,var ,then ,@else)))]
+       [_ (error "malformed if-let1:" f)]))))
+
+(define-syntax and-let1                 ;returns #f if test evaluates #f
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ var test exp . more) (quasirename r
+                                  (let ((,var ,test)) 
+                                    (and ,var (begin ,exp ,@more))))]
+       [_ (error "malformed and-let1:" f)]))))
+
+(define-syntax let/cc                   ;as in PLT
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ var . body) (quasirename r
+                         (call/cc (lambda (,var) ,@body)))]
+       [_ (error "malformed let/cc:" f)]))))
+
+(define-syntax begin0                   ;prog1 in Lisp
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ exp . more) (quasirename r
+                         (receive res ,exp ,@more (apply values res)))]
+       [_ (error "malformed begin0:" f)]))))
+
+(define-syntax rlet1                    ;begin0 + let1
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ var exp . body) (quasirename r
+                             (let ((,var ,exp)) ,@body ,var))]
+       [_ (error "malformed rlet1:" r)]))))
+
+(define-syntax let-values
+  (er-macro-transformer
+   (^[f r c]
+     ;; we rename all the formals and rebind
+     (match f
+       [(_ ((formals init) ...) . body)
+        (let* ([formals* (map (^f (map* (^x (gensym (x->string x)))
+                                     (^t (if (null? t) t (gensym (x->string t))))
+                                     f))
+                              formals)]
+               [rebinds (append-map
+                         (^[f f*]
+                           (map* list
+                                 (^[a b] (if (null? a) '() (list (list a b))))
+                                 f f*))
+                         formals formals*)])
+          (quasirename r
+            (let*-values ,(map list formals* init)
+              (let ,rebinds
+                ,@body))))]))))
+
+(define-syntax let*-values
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ () . body) (quasirename r
+                        (let () ,@body))]
+       [(_ ((formals init) . rest) . body)
+        (quasirename r
+          (receive ,formals ,init
+            (let*-values ,rest ,@body)))]))))
+
+(define-syntax values-ref
+  (er-macro-transformer
+   (^[f r c]
+     ;; we provide shortcut for common cases
+     (match f
+       [(_ mv-expr n)
+        (if (and (exact-integer? n) (<= n 5))
+          (let1 vars (map (^_ (gensym)) (iota (+ n 1)))
+            (quasirename r
+              (receive (,@vars . _) ,mv-expr ,(last vars))))
+          (quasirename r
+            (receive vals ,mv-expr (list-ref vals ,n))))]
+       [(_ mv-expr n m)
+        (if (and (exact-integer? n) (<= n 5)
+                 (exact-integer? m) (<= m 5))
+          (let* ([vars (map (^_ (gensym)) (iota (+ (max n m) 1)))]
+                 [vn (list-ref vars n)]
+                 [vm (list-ref vars m)])
+            (quasirename r
+              (receive (,@vars . _) ,mv-expr (values ,vn ,vm))))
+          (quasirename r
+            (receive vals ,mv-expr (values (list-ref vals ,n)
+                                           (list-ref vals ,m)))))]
+       [(_ mv-expr ns ...)
+        (if (null? ns)
+          (error "malformed values-ref:" f)
+          (if (and (every exact-integer? ns)
+                   (every (cut <= <> 5) ns))
+            (let* ([vars (map (^_ (gensym)) (iota (+ (apply max ns) 1)))]
+                   [rvars (map (^k (list-ref vars k)) ns)])
+              (quasirename r
+                (receive (,@vars . _) ,mv-expr (values ,@rvars))))
+            (quasirename r
+              (receive vals ,mv-expr
+                (apply values (map (^[i] (list-ref vals i)) 
+                                   (list ,@(cons n ns))))))))]))))
+
+(define-syntax values->list
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ mv-expr) (quasirename r
+                      (receive x ,mv-expr x))]))))
+        
 ;;; generalized set! family
 
 (define-syntax push!

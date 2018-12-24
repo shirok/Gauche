@@ -99,10 +99,7 @@
 (autoload gauche.common-macros
           (:macro check-arg get-optional get-keyword*)
           (:macro $)
-          (:macro let1 if-let1 and-let1 rlet1)
-          (:macro let/cc) (:macro begin0) (:macro fluid-let)
-          (:macro let-values) (:macro let*-values)
-          (:macro values-ref values->list)
+          (:macro fluid-let)
           (:macro ecase)
           (:macro dotimes dolist doplist while until)
           (:macro guard unwind-protect)

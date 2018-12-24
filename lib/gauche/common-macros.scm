@@ -41,10 +41,7 @@
 (define-module gauche.common-macros
   (export check-arg get-optional get-keyword*
           $
-          let1 if-let1 and-let1 rlet1
-          let/cc begin0 fluid-let
-          let-values let*-values
-          values-ref values->list
+          fluid-let
           ecase
           dotimes doilst doplist while until
           guard unwind-protect
@@ -54,62 +51,6 @@
 
 ;;;-------------------------------------------------------------
 ;;; bind construct
-
-(define-syntax let1                     ;single variable bind
-  (syntax-rules ()
-    [(let1 var exp . body)
-     (let ((var exp)) . body)]))
-
-(define-syntax if-let1                  ;like aif in On Lisp, but explicit var
-  (syntax-rules ()
-    [(if-let1 var exp then . else)
-     (let ((var exp)) (if var then . else))]))
-
-(define-syntax and-let1                 ;returns #f if test evaluates to #f
-  (syntax-rules ()
-    [(and-let1 var test exp exp2 ...)
-     (let ((var test)) (and var (begin exp exp2 ...)))]))
-
-(define-syntax let/cc                   ;as in PLT
-  (syntax-rules ()
-    [(let/cc var . body)
-     (call/cc (lambda (var) . body))]))
-
-(define-syntax begin0                   ;prog1 in Lisp.
-  (syntax-rules ()
-    [(begin0 exp exp2 ...)
-     (receive r exp exp2 ... (apply values r))]))
-
-(define-syntax rlet1                    ;begin0 + let1.  name is arguable.
-  (syntax-rules ()
-    [(rlet1 var exp body ...)
-     (let ((var exp)) body ... var)]))
-
-(define-syntax values-ref               ;nth-value in Lisp
-  (syntax-rules ()
-    ;; provide shortcut for common cases
-    [(_ mv-expr 0)
-     (receive (v . ignore) mv-expr v)]
-    [(_ mv-expr 1)
-     (receive (v0 v1 . ignore) mv-expr v1)]
-    [(_ mv-expr 2)
-     (receive (v0 v1 v2 . ignore) mv-expr v2)]
-    [(_ mv-expr n)
-     (receive v mv-expr (list-ref v n))]
-    ;; The following extension is experimental; do not rely on them.
-    [(_ mv-expr n m)
-     (receive v mv-expr (values (list-ref v n) (list-ref v m)))]
-    [(_ mv-expr n m l)
-     (receive v mv-expr (values (list-ref v n) (list-ref v m) (list-ref v l)))]
-    [(_ mv-expr n m l k ...)
-     (receive v mv-expr
-       (apply values
-              (map (lambda (i) (list-ref v i)) (list n m l k ...))))]
-    ))
-
-(define-syntax values->list             ;multilple-value-list in CL
-  (syntax-rules ()
-    [(_ mv-expr) (receive x mv-expr x)]))
 
 ;; fluid-let written by Dorai Sitaram
 ;; NB: all threads shares the state of fluid global vers.
@@ -132,38 +73,6 @@
                ,swap
                (lambda () ,@body)
                ,swap))))))
-
-;; srfi-11, r7rs
-(define-syntax let*-values
-  (syntax-rules ()
-    [(_ () . body)
-     (let () . body)]
-    [(_ ((formals init) . rest) . body)
-     (receive formals init
-       (let*-values rest . body))]))
-
-(define-syntax let-values
-  (er-macro-transformer
-   (^[f r c]
-     ;; we rename all the formals and rebind
-     (let* ([bindings (cadr f)]
-            [body (cddr f)]
-            [formals  (map car bindings)]
-            [inits    (map cadr bindings)]
-            [formals* (map (^f (map* (^x (gensym (x->string x)))
-                                     (^t (if (null? t) t (gensym (x->string t))))
-                                     f))
-                           formals)]
-            [rebinds (append-map
-                      (^[f f*]
-                        (map* list
-                              (^[a b] (if (null? a) '() (list (list a b))))
-                              f f*))
-                      formals formals*)])
-       (quasirename r
-         (let*-values ,(map list formals* inits)
-           (let ,rebinds
-             ,@body)))))))
 
 ;;;-------------------------------------------------------------
 ;;; applications
