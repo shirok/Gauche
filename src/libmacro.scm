@@ -40,6 +40,7 @@
                              push! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values values-ref values->list
+                             assume assume-type cond-list
                              define-compiler-macro))
 
 ;;; quasirename
@@ -338,6 +339,72 @@
         (quasirename r
           (set! ,loc (,updater ,@val ,loc)))]
        [_ (error "malformed update!:" f)]))))
+
+;;; assume (srfi-145) and co.
+
+;; We might add run-time optimization switch to expand assume to nothing.
+(define-syntax assume
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr . objs)
+        (quasirename r
+          (unless ,expr
+            (error (format "Invalid assumption: ~s" ',expr) ,@objs)))]))))
+
+(define-syntax assume-type
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr type)
+        (quasirename r
+          (let1 v ,expr
+            (unless (is-a? v ,type)
+              (type-error 'expr ,type v))))]))))
+
+;;; cond-list - a syntax to construct a list
+
+;;   (cond-list clause clause2 ...)
+;;
+;;   clause : (test expr ...)
+;;          | (test => proc)
+;;          | (test @ expr ...) ;; splice
+;;          | (test => @ proc)  ;; splice
+
+(define-syntax cond-list
+  (er-macro-transformer
+   (^[f r c]
+     (let ([=>. (r '=>)]
+           (@.  (r '@)))
+       (match f
+         [(_) '()]
+         [(_ (test) . rest)
+          (quasirename r
+            (let* ([tmp ,test]
+                   [r (cond-list ,@rest)])
+              (if tmp (cons tmp r) r)))]
+         [(_ (test (? (cut c <> =>.)) proc) . rest)
+          (quasirename r
+            (let* ([tmp ,test]
+                   [r (cond-list ,@rest)])
+              (if tmp (cons (,proc tmp) r) r)))]
+         [(_ (test (? (cut c <> =>.)) (? (cut c <> @.)) proc) . rest)
+          (quasirename r
+            (let* ([tmp ,test]
+                   [r (cond-list ,@rest)])
+              (if tmp (append (,proc tmp) r) r)))]
+         [(_ (test (? (cut c <> @.)) expr ...) . rest)
+          (quasirename r
+            (let* ([tmp ,test]
+                   [r (cond-list ,@rest)])
+              (if tmp (append (begin ,@expr) r) r)))]
+         [(_ (test expr ...) . rest)
+          (quasirename r
+            (let* ([tmp ,test]
+                   [r (cond-list ,@rest)])
+              (if tmp (cons (begin ,@expr) r) r)))]
+         )))))
+
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 

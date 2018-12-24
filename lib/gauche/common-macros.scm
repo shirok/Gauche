@@ -45,8 +45,7 @@
           ecase
           dotimes doilst doplist while until
           guard unwind-protect
-          cond-list
-          assume assume-type))
+          ))
 (select-module gauche.common-macros)
 
 ;;;-------------------------------------------------------------
@@ -376,63 +375,3 @@
          :rewind-before #t))]
     [(unwind-protect . other)
      (syntax-error "malformed unwind-protect" (unwind-protect . other))]))
-
-;;; ------------------------------------------------------------
-;;; conditionals
-;;;
-
-;; cond-list - a syntax to construct a list
-;;
-;;   (cond-list clause clause2 ...)
-;;
-;;   clause : (test expr ...)
-;;          | (test => proc)
-;;          | (test @ expr ...) ;; splice
-;;          | (test => @ proc)  ;; splice
-
-(define-syntax cond-list
-  (syntax-rules (=> @)
-    [(_) '()]
-    [(_ (test) . rest)
-     (let* ([tmp test]
-            [r (cond-list . rest)])
-       (if tmp (cons tmp r) r))]
-    [(_ (test => proc) . rest)
-     (let* ([tmp test]
-            [r (cond-list . rest)])
-       (if tmp (cons (proc tmp) r) r))]
-    [(_ (test => @ proc) . rest)
-     (let* ([tmp test]
-            [r (cond-list . rest)])
-       (if tmp (append (proc tmp) r) r))]
-    [(_ (test @ . expr) . rest)
-     (let* ([tmp test]
-            [r (cond-list . rest)])
-       (if tmp (append (begin . expr) r) r))]
-    [(_ (test . expr) . rest)
-     (let* ([tmp test]
-            [r (cond-list . rest)])
-       (if tmp (cons (begin . expr) r) r))]
-    ))
-
-;;;----------------------------------------------------------------
-;;; assume (srfi-145) and co.
-;;;
-
-;; We might add run-time optimization switch to expand assume to nothing.
-(define-syntax assume
-  (syntax-rules ()
-    [(_ expr)
-     (unless expr
-       (error (format "Invalid assumption: ~s" 'expr)))]
-    [(_ expr message ...)
-     (unless expr
-       (error (format "Invalid assumption: ~s:" 'expr) message ...))]))
-
-(define-syntax assume-type
-  (syntax-rules ()
-    [(_ expr type)
-     (let1 v expr
-       (unless (is-a? v type)
-         (type-error 'expr type v)))]
-    ))
