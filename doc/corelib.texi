@@ -14079,7 +14079,7 @@ reverted by @var{before}, such as manipulating error handler stack
 Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
 @code{receive} or @code{let-values}
-(@ref{Binding constructs}), or the R5Rs procedure
+(@ref{Binding constructs}), or the R7RS procedure
 @code{call-with-values} described below.
 @c JP
 @var{obj} @dots{} を多値として返します。
