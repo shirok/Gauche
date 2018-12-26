@@ -1025,6 +1025,19 @@
     [else (error "syntax-error: malformed quote:" form)]))
 
 (define-pass1-syntax (quasiquote form cenv) :null
+  (match form
+    [(_ obj) (quasi-expand obj cenv)]
+    [_ (error "syntax-error: malformed quasiquote:" form)]))
+
+(define-pass1-syntax (unquote form cenv) :null
+  (error "unquote appeared outside quasiquote:" form))
+
+(define-pass1-syntax (unquote-splicing form cenv) :null
+  (error "unquote-splicing appeared outside quasiquote:" form))
+
+;; quasiquote expander
+
+(define (quasi-expand obj cenv)
   ;; We want to avoid unnecessary allocation as much as possible.
   ;; Current code generates constants not only the obvious constant
   ;; case, e.g. `(a b c), but also folds constant variable references,
@@ -1032,10 +1045,10 @@
   ;; This extends as far as the pass-1 constant folding goes, so `(,(+ x 1))
   ;; also becomes '(4).
   ;; NB: The current code allocates lots of intermediate $const node.
-
   (define (quasiquote? v)       (global-eq? v quasiquote. cenv))
   (define (unquote? v)          (global-eq? v unquote. cenv))
   (define (unquote-splicing? v) (global-eq? v unquote-splicing. cenv))
+  (define (unquote*? v) (or (unquote? v) (unquote-splicing? v)))
 
   ;; In the context where there's no outer list to which we intersperse to.
   (define (quasi obj level)
@@ -1045,12 +1058,16 @@
          (if ($const? xx)
            ($const (list 'quasiquote ($const-value xx)))
            ($list obj (list ($const 'quasiquote) xx))))]
-      [((and (or (? unquote?) (? unquote-splicing?)) op) . xs)
+      [((? unquote?) x)
        (if (zero? level)
-         (if (and (unquote? op)
-                  (pair? xs) (null? (cdr xs)))
-           (pass1 (car xs) cenv)
-           (errorf "invalid ~a form in this context: ~s" op obj))
+         (pass1 x cenv)
+         (let1 xx (quasi x (- level 1))
+           (if ($const? xx)
+             ($const (list 'unquote ($const-value xx)))
+             ($list obj (list ($const 'unquote) xx)))))]
+      [((? unquote*? op) . xs) ;valid unquote is already handled
+       (if (zero? level)
+         (errorf "invalid ~a form in this context: ~s" op obj)
          (let1 xx (quasi* xs (- level 1))
            (if ($const? xx)
              ($const (cons op ($const-value xx)))
@@ -1065,7 +1082,7 @@
   (define (quasi* objs level)
     ;; NB: we already excluded toplevel quasiquote and unquote
     (match objs
-      [(((and (or (? unquote?) (? unquote-splicing?)) op) . xs) . ys)
+      [(((? unquote*? op) . xs) . ys)
        (let1 yy (quasi* ys level)
          (if (zero? level)
            ((if (unquote? op) build build@)
@@ -1074,7 +1091,7 @@
              (if (and ($const? xx) ($const? yy))
                ($const (acons op ($const-value xx) ($const-value yy)))
                ($cons objs ($cons (car objs) ($const op) xx) yy)))))]
-      [((or (? unquote?) (? unquote-splicing?)) . _) ;`(... . ,xs) `(... . ,@xs)
+      [((? unquote*?) . _) ;`(... . ,xs) `(... . ,@xs)
        (quasi objs level)]
       [((? vector? x) . ys) (quasi-cons objs quasi-vector x ys level)]
       [(x . ys)             (quasi-cons objs quasi x ys level)]
@@ -1126,16 +1143,9 @@
             [(and (pair? (vector-ref obj i))
                   (unquote-splicing? (car (vector-ref obj i))))]
             [else (loop (+ i 1))])))
+  
+  (quasi obj 0))
 
-  (match form
-    [(_ obj) (quasi obj 0)]
-    [_ (error "syntax-error: malformed quasiquote:" form)]))
-
-(define-pass1-syntax (unquote form cenv) :null
-  (error "unquote appeared outside quasiquote:" form))
-
-(define-pass1-syntax (unquote-splicing form cenv) :null
-  (error "unquote-splicing appeared outside quasiquote:" form))
 
 ;; Lambda family (binding constructs) ...................
 
