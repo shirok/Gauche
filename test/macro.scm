@@ -208,7 +208,6 @@
              (find-module 'er-macro-test-1)))
 
 ;; quasirename
-;; Note: currently quasirename depends on util.match, too.
 (let ((unquote list)
       (x 1)
       (y 2))
@@ -218,8 +217,8 @@
                              [b (caddr f)]
                              [all (cdr f)])
                          (quasirename r
-                           (list x ,a y ,b ,@all
-                                 '#(x ,a y ,b) ,@(reverse all))))))])
+                           `(list x ,a y ,b ,@all
+                                  '#(x ,a y ,b) ,@(reverse all))))))])
     (let ((list vector)
           (x 10)
           (y 20))

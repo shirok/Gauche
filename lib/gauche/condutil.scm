@@ -114,23 +114,24 @@
             [((field reader) . rest)
              (scan-specs rest (cons field slots)
                          (cons (quasirename r
-                                 (define (,reader obj)
-                                   (condition-ref obj ',field)))
+                                 `(define (,reader obj)
+                                    (condition-ref obj ',field)))
                                readers))]
             [_ (badfield-error (car specs))]))
         (define (emit-defs slots readers)
           (quasirename r
-            (begin
-              (define-class ,name (,super)
-                ,(map (^s (quasirename r (,s :init-keyword ',(make-keyword s))))
-                      slots)
-                :metaclass <condition-meta>)
-              ,@readers
-              ,@(if pred
-                  (quasirename r
-                    ((define (,pred obj)
-                       (condition-has-type? obj ,name))))
-                  '()))))
+            `(begin
+               (define-class ,name (,super)
+                 ,(map (^s (quasirename r 
+                             `(,s :init-keyword ',(make-keyword s))))
+                       slots)
+                 :metaclass <condition-meta>)
+               ,@readers
+               ,@(if pred
+                   (quasirename r
+                     `((define (,pred obj)
+                        (condition-has-type? obj ,name))))
+                   '()))))
         (scan-specs field-specs '() '())]
        ))))
 

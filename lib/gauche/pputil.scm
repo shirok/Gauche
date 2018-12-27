@@ -157,10 +157,10 @@
      (match f
        [(_ (w m) . body)
         (quasirename r
-          (rec (fn ,w ,m)
-            (or (hash-table-get ,m (cons ,w fn) #f)
-                (rlet1 p (begin ,@body)
-                  (hash-table-put! ,m (cons ,w fn) p)))))]))))
+          `(rec (fn ,w ,m)
+             (or (hash-table-get ,m (cons ,w fn) #f)
+                 (rlet1 p (begin ,@body)
+                   (hash-table-put! ,m (cons ,w fn) p)))))]))))
 
 (define (make-memo-hash)
   (make-hash-table

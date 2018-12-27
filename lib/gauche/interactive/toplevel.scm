@@ -133,10 +133,10 @@
           `(,(r'begin)
             ,@(map (^[key]
                      (quasirename r
-                       (toplevel-command-add! ',key ',parser ,help
-                        (let ([,'usage (toplevel-command-helper ',key)]
-                              [,'rename ,r])
-                          ,handler))))
+                       `(toplevel-command-add! ',key ',parser ,help
+                          (let ([,'usage (toplevel-command-helper ',key)]
+                                [,'rename ,r])
+                            ,handler))))
                    keys)))]))))
 
 ;; API
@@ -286,9 +286,9 @@
   (^[args]
     (match args
       [(word) (quasirename rename
-                (or (source-code ,word)
-                    (begin (print "No source code is available for: " ',word)
-                           (values))))]
+                `(or (source-code ,word)
+                     (begin (print "No source code is available for: " ',word)
+                            (values))))]
       [_ (usage)])))
 
 (define-toplevel-command (use u) :read
