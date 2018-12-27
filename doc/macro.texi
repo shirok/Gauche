@@ -1208,7 +1208,7 @@ the hygienic @code{when-not} as follows:
       (match form
         [(_ test expr1 expr ...)
          (quasirename rename
-           (if (not ,test) (begin ,expr1 ,@@expr)))]
+           `(if (not ,test) (begin ,expr1 ,@@expr)))]
         [_ (error "malformed when-not:" form)]))))
 @end example
 
@@ -1254,8 +1254,8 @@ If you use @code{quasirename}, you can write @code{,'it} to prevent
       (match form
         [(_ test expr1 expr ...)
          (quasirename rename
-           (let1 ,'it ,test
-             (begin ,expr1 ,@@expr)))]))))
+           `(let1 ,'it ,test
+              (begin ,expr1 ,@@expr)))]))))
 @end example
 
 @c EN
@@ -1306,10 +1306,10 @@ that is, it must refer to the same binding as in the macro definition.
         [(_ test a b)
          (if (id=? (rename '=>) a)
            (quasirename rename
-             (let ((t ,test))
-               (if t (,b t))))
+             `(let ((t ,test))
+                (if t (,b t))))
            (quasirename rename
-             (if ,test ,a ,b)))]))))
+             `(if ,test ,a ,b)))]))))
 @end example
 
 @c EN
@@ -1346,7 +1346,7 @@ checks if both refer to the same binding.
 @end example
 @end defspec
 
-@defmac quasirename renamer form
+@defmac quasirename renamer quasiquoted-form
 @c EN
 It works like quasiquote, except that the symbols and identifiers
 that appear in the ``literal'' portion of @var{form} (i.e. outside
@@ -1359,9 +1359,22 @@ by the result of applying @var{rename} on themselves.
 @c COMMON
 
 @c EN
+The @var{quasiquote-form} argumetn must be a quasiquoted form.
+The outermost quasiquote @code{`} is consumed by @code{quasirename} and 
+won't appear in the output.
+The reason we require it is to make nested quasiquotes/quasirenames work.
+@c JP
+@var{quasiquote-form}引数は、準クオートされたフォームです。
+最も外側の準クオート@code{`} 自体は@code{quasirename}によって消費され、
+出力には現れません。
+この形にしたのは、ネストした@code{quasiquote}/@code{quasirename}を
+正しく扱うためです。
+@c COMMON
+
+@c EN
 For example, a form:
 @example
-(quasirename r (a ,b c "d"))
+(quasirename r `(a ,b c "d"))
 @end example
 would be equivalent to write:
 @example
@@ -1370,7 +1383,7 @@ would be equivalent to write:
 @c JP
 例えば次のフォームは:
 @example
-(quasirename r (a ,b c "d"))
+(quasirename r `(a ,b c "d"))
 @end example
 次のとおり書くのと同じです:
 @example
@@ -1407,9 +1420,9 @@ in ER macros.  Compare the following two:
     (^[f r c]
       (match f
         [(_ a b) (quasirename r
-                   (let ((tmp ,a))
-                     (set! ,a ,b)
-                     (set! ,b tmp)))]))))
+                   `(let ((tmp ,a))
+                      (set! ,a ,b)
+                      (set! ,b tmp)))]))))
 
 ;; not using quasirename
 (define-syntax swap
@@ -1420,6 +1433,19 @@ in ER macros.  Compare the following two:
                      ((r'set!) ,a ,b)
                      ((r'set!) ,b (r'tmp)))]))))
 @end example
+
+@c EN
+Note: In Gauche 0.9.7 and before, @code{quasirename} didn't use
+quasiquoted form as the second argument; you can write
+@code{(quasirename r (form ...))} instead of
+@code{(quasirename r `(form ...))}.  For the backward compatibility,
+we support the form without quasiquote for a while.
+@c JP
+註: Gauche 0.9.7とそれ以前には、@code{quasirename}は第二引数に
+準クオートを必要としませんでした。つまり@code{(quasirename r `(form ...))}
+と書くかわりに@code{(quasirename r (form ...))}で良かったのです。
+互換性のため、しばらくは準クオート無しのフォームも受け付けられます。
+@c COMMON
 @end defmac
 
 

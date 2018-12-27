@@ -44,6 +44,12 @@
                              define-compiler-macro))
 
 ;;; quasirename
+
+;; NB: The walk code has the same structure as quasiquote expander; the
+;; output is different, however, and it's not so straightforward to refactor
+;; them.  We'll eventually make a generic walker, but for now we have
+;; two separately.
+
 (define-syntax quasirename
   (er-macro-transformer
    (^[f r c]
@@ -55,28 +61,110 @@
      (define (unquote-splicing? x)
        (and (or (symbol? x) (identifier? x))
             (c (r x) unquote-splicing.)))
+     (define (unquote*? x)
+       (and (or (symbol? x) (identifier? x))
+            (or (c (r x) unquote.)
+                (c (r x) unquote-splicing.))))
+     (define quasiquote. (r'quasiquote))
+     (define (quasiquote? x)
+       (and (or (symbol? x) (identifier? x))
+            (c (r x) quasiquote.)))
      (define cons. (r'cons))
+     (define list. (r'list))
      (define append. (r'append))
      (define vector. (r'vector))
+     (define list->vector. (r'list->vector))
      (define let. (r'let))
-     (define tmp. (r'tmp))
+     (define rename. (r'rename))
+
+     ;; In the context where there's no outer list to which we intersperse to.
+     (define (quasi obj level)
+       (match obj
+         [((? quasiquote?) x)
+          (let1 xx (quasi x (+ level 1))
+            (if (eq? x xx)
+              obj
+              `(,list. ,quasiquote. ,xx)))]
+         [((? unquote?) x)
+          (if (zero? level)
+            x
+            (let1 xx (quasi x (- level 1))
+              (if (eq? x xx)
+                obj
+                `(,list. ,unquote. ,xx))))]
+         [((? unquote*? op) . xs) ;valid unquote is already handled
+          (if (zero? level)
+            (errorf "invalid ~a form in this context: ~s" op obj)
+            (let1 xxs (quasi* xs (- level 1))
+              (if (eq? xs xxs)
+                obj
+                `(,cons. ,op ,xxs))))]
+         [(? pair?)       (quasi* obj level)]
+         [(? vector?)     (quasi-vector obj level)]
+         [(or (? symbol?) (? identifier?)) `(,rename. ',obj)]
+         [_  `',obj]))
+
+     ;; In the spliceable context.  objs is always a list.
+     ;; NB: we already excluded toplevel quasiquote and unquote
+     (define (quasi* objs level)
+       (match objs
+         [(((? unquote*? op) . xs) . ys)
+          (let1 yys (quasi* ys level)
+            (if (zero? level)
+              ((if (unquote? op) build build@) xs yys)
+              (let1 xxs (quasi* xs (- level 1))
+                (if (and (eq? xs xxs) (eq? ys yys))
+                  obj
+                  `(,cons. (,cons. ,op ,xxs) ,yys)))))]
+         [((? unquote*?) . _) ;`(... . ,xs) `(... . ,@xs)
+          (quasi objs level)]
+         [((? vector? x) . ys) (quasi-cons objs quasi-vector x ys level)]
+         [(x . ys)             (quasi-cons objs quasi x ys level)]
+         [_                    (quasi objs level)]))
+
+     (define (build objs rest)
+       (match objs
+         [() rest]
+         [(x . xs) `(,cons. ,x ,(build xs rest))]))
+
+     (define (build@ objs rest)
+       (match objs
+         [() rest]
+         [(x . xs) `(,append. ,x ,(build@ xs rest))]))
+
+     (define (quasi-cons objs quasi-car x ys level)
+       (let ([xx (quasi-car x level)]
+             [yys (quasi* ys level)])
+         (if (and (eq? x xx) (eq? ys yys))
+           objs
+           `(,cons. ,xx ,yys))))
+
+     (define (quasi-vector obj level)
+       (if (vector-has-splicing? obj)
+         `(,list->vector. ,(quasi* (vector->list obj) level))
+         (let* ([need-construct? #f]
+                [elts (map (^[elt] (rlet1 ee (quasi elt level)
+                                     (unless (eq? ee elt)
+                                       (set! need-construct? #t))))
+                           (vector->list obj))])
+           (if need-construct?
+             `(,vector. ,@elts)
+             obj))))
+
+     (define (vector-has-splicing? obj)
+       (let loop ((i 0))
+         (cond [(= i (vector-length obj)) #f]
+               [(and (pair? (vector-ref obj i))
+                     (unquote-splicing? (car (vector-ref obj i))))]
+               [else (loop (+ i 1))])))
+  
      (match f
-       [(_ rr ff)
-        (define (rec ff)
-          (match ff
-            [((? unquote?) x) x]
-            [(((? unquote-splicing?) x) . y)
-             (if (null? y)
-               x
-               `(,append. ,x ,(rec y)))]
-            [(x (? unquote?) y) `(,cons. ,(rec x) ,y)]
-            [(x . y) `(,cons. ,(rec x) ,(rec y))]
-            [(? symbol?) `(,tmp. ',ff)]
-            [(? identifier?) `(,tmp. ',ff)]
-            [(? vector?) (cons vector. (map rec (vector->list ff)))]
-            [_ ff]))
-        `(,let. ((,tmp. ,rr))
-           ,(rec ff))]
+       [(_ rr ((? quasiquote?) ff))
+        `(,let. ((,rename. ,rr))
+           ,(quasi ff 0))]
+       [(_ rr ff)                       ; old format
+        `(,let. ((,rename. ,rr))
+           ,(quasi ff 0))]
        [_ (error "malformed quasirename:" f)]))))
 
 ;;; syntax-error msg arg ...

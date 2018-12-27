@@ -94,8 +94,6 @@
 (define-cproc macro? (obj) ::<boolean> SCM_MACROP)
 (define-cproc syntax? (obj) ::<boolean> SCM_SYNTAXP)
 
-;; NB: quasirename is in libomega.scm due to the depenedency.
-
 ;;;
 ;;; Macro object
 ;;;

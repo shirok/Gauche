@@ -1,3 +1,10 @@
+2018-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (quasirename): Fixed to handle nested quasiX
+	  properly.  In order to work with nested quasiquotes, we now
+	  recognize (quasirename expr `form) as the proper form.  We'll
+	  support the old format (without quasiquote) for a while.
+
 2018-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmac.scm (define-compiler-macro): Drop support.  It now
