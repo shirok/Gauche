@@ -84,21 +84,21 @@
           (let1 xx (quasi x (+ level 1))
             (if (eq? x xx)
               obj
-              `(,list. ,quasiquote. ,xx)))]
+              `(,list. 'quasiquote ,xx)))]
          [((? unquote?) x)
           (if (zero? level)
             x
             (let1 xx (quasi x (- level 1))
               (if (eq? x xx)
                 obj
-                `(,list. ,unquote. ,xx))))]
+                `(,list. ','unquote ,xx))))]
          [((? unquote*? op) . xs) ;valid unquote is already handled
           (if (zero? level)
             (errorf "invalid ~a form in this context: ~s" op obj)
             (let1 xxs (quasi* xs (- level 1))
               (if (eq? xs xxs)
                 obj
-                `(,cons. ,op ,xxs))))]
+                `(,cons. ',op ,xxs))))]
          [(? pair?)       (quasi* obj level)]
          [(? vector?)     (quasi-vector obj level)]
          [(or (? symbol?) (? identifier?)) `(,rename. ',obj)]
@@ -115,7 +115,7 @@
               (let1 xxs (quasi* xs (- level 1))
                 (if (and (eq? xs xxs) (eq? ys yys))
                   obj
-                  `(,cons. (,cons. ,op ,xxs) ,yys)))))]
+                  `(,cons. (,cons. ',op ,xxs) ,yys)))))]
          [((? unquote*?) . _) ;`(... . ,xs) `(... . ,@xs)
           (quasi objs level)]
          [((? vector? x) . ys) (quasi-cons objs quasi-vector x ys level)]

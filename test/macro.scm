@@ -226,6 +226,21 @@
              '(1 3 2 4 3 4 #(x 3 y 4) 4 3)
              (foo 3 4)))))
 
+;; nested quasirename
+(let ()
+  (define (add-prefix p)
+    (^s (symbol-append p s)))
+  (define a 1)
+  (define b 2)
+  (define c 3)
+  (test* "nested quasirename"
+         '(p:quasirename p:x
+            `(p:a ,p:b ,(p:quote 3) ,d))
+         (unwrap-syntax
+          (quasirename (add-prefix 'p:)
+            `(quasirename x
+               `(a ,b ,',c ,,'d))))))
+
 ;;----------------------------------------------------------------------
 ;; basic tests
 
