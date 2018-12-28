@@ -435,6 +435,7 @@ struct ScmVMRec {
                                    is used only in compilation. */
     ScmCStack *cstack;          /* current escape point.  see the comment of
                                    "C stack rewinding" below. */
+    /* TRANSIENT: Change these flags to u_long in 1.0 */
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
     intptr_t attentionRequest;  /* Flag if VM needs to check signal queue,
