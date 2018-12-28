@@ -1,3 +1,9 @@
+2018-12-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (quasirename): Adjust behavior of quasirename
+	  by the environment variable GAUCHE_QUASIRENAME_MODE, to help
+	  the transition.
+
 2018-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (quasirename): Fixed to handle nested quasiX

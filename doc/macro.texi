@@ -1437,14 +1437,67 @@ in ER macros.  Compare the following two:
 @c EN
 Note: In Gauche 0.9.7 and before, @code{quasirename} didn't use
 quasiquoted form as the second argument; you can write
-@code{(quasirename r (form ...))} instead of
-@code{(quasirename r `(form ...))}.  For the backward compatibility,
-we support the form without quasiquote for a while.
+@code{(quasirename r form)} instead of
+@code{(quasirename r `form)}.
+
+For the backward compatibility,
+we support the form without quasiquote by default for a while.
+
+If you already have a quasirename form that does intend to produce
+a quasiquoted form, you have to rewrite it with double quasiquote:
+@code{(quasirename r ``form)}.
+
+To help transiation, the handling of quasiquote in of @code{quasirename}
+can be customized with the environment variable
+@code{GAUCHE_QUASIRENAME_MODE}.  It can have one of the following
+values:
+
+@table @code
+@item legacy
+@code{Quasirename} behaves the same way as
+0.9.7 and before; use this to run code for 0.9.7 without any change.
+@item compatible
+@code{Quasirename} behaves as described in this entry; if
+@var{form} lacks a quasiquote, it silently assumes one.
+Existing code should work, except the rare case when you intend
+to return a quasiquoted form.
+@item warn
+@code{Quasirename} behaves as described in this entry, but
+warns if @var{form} lacks a quasiquote.
+@item strict
+@code{Quasirename} raises an error if @var{form} lacks a quasiquote.
+This will be the default behavior in future.
+@end table
 @c JP
 註: Gauche 0.9.7とそれ以前には、@code{quasirename}は第二引数に
-準クオートを必要としませんでした。つまり@code{(quasirename r `(form ...))}
-と書くかわりに@code{(quasirename r (form ...))}で良かったのです。
+準クオートを必要としませんでした。つまり@code{(quasirename r `form)}
+と書くかわりに@code{(quasirename r form)}で良かったのです。
+
 互換性のため、しばらくは準クオート無しのフォームも受け付けられます。
+
+準クオートされたフォームを返すことを意図していた既存のコードについては、
+準クオートを@code{(quasirename r ``form)}のように重ねる必要があります。
+
+移行を容易にするため、@code{quasirename}中の準クオートの扱いを、
+環境変数@code{GAUCHE_QUASIRENAME_MODE}でカスタマイズできます。
+次に挙げる値を設定することができます。
+
+@table @code
+@item legacy
+@code{quasirename}は、0.9.7やそれ以前と全く同様に動きます。
+0.9.7用のコードを変更なしに動かす必要がある場合に使ってください。
+@item compatible
+@code{quasirename}はこのエントリで説明した通りに動きます。
+@var{form}が準クオートされていない場合、準クオートされているものと見なします。
+準クオートされたフォームを作り出すことを意図している稀なケース以外の
+既存のコードはこれで動かせるでしょう。
+@item warn
+@code{quasirename}はこのエントリで説明した通りに動きますが、
+@var{form}が準クオートされていなければ警告を出します。
+@item strict
+@code{quasirename}は@var{form}が準クオートされていることを要求し、
+そうでなければエラーを投げます。将来はこの動作がデフォルトになる予定です。
+@end table
 @c COMMON
 @end defmac
 
