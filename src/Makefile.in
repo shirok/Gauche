@@ -237,7 +237,7 @@ libgauche_OBJECTS = \
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 libgc_pic_OBJECTS = $(top_builddir)/gc/.libs/*.$(OBJEXT) \
-                    $(top_builddir)/gc/extra/.libs/*.$(OBJEXT)
+                    $(top_builddir)/gc/extra/.libs/gc.$(OBJEXT)
 libgc_pic_LIBRARY = libgc_pic.a
 
 libatomic_ops_pic_OBJECTS = $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT)
