@@ -255,6 +255,8 @@
 ;; more a procedure than a compiler syntax---any ideas?
 (select-module gauche)
 (define-macro (add-load-path path . args)
+  (unless (string? path)
+    (error "add-load-path requires a literal string as path, but got:" path))
   (let ([afterp (or (memq #t args) (memq :after args))]
         ;; If :relative is given, we trust the programmer to give a relative
         ;; pathname to PATH.
