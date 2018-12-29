@@ -20740,10 +20740,14 @@ described below, instead.
 @defspec add-load-path path flag @dots{}
 @c EN
 Adds a path @var{path} to the library load path list.
+@var{Path} must be a literal string, for load paths must be
+known at compilation time.
 If @var{path} is a relative path, it is resolved relative to
 the current working directory, unless @code{:relative} flag is given.
 @c JP
 パス@var{path}をライブラリロードパスのリストに加えます。
+ロードパスはコンパイル時に確定している必要があるので、
+@var{path}はリテラル文字列でなければなりません。
 @var{path}が相対パスの場合、@code{:relative}フラグが与えられて
 いなければ、プロセスの現在のワーキングディレクトリからの相対と解釈されます。
 @c COMMON
