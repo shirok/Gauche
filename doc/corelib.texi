@@ -20753,6 +20753,16 @@ the current working directory, unless @code{:relative} flag is given.
 @c COMMON
 
 @c EN
+@var{Path} doesn't need to exist; nonexisting paths in load path list
+are simply ignored.  However, if @var{path} does exist, @code{add-load-path}
+searches for architecture-dependent paths; see below.
+@c JP
+@var{path}は存在する必要はありません。ロードパスに存在しないディレクトリが含まれていても
+単に無視されるだけです。ただ、@var{path}が存在する場合、@code{add-load-path}は
+アーキテクチャ依存パスも探します。後で詳しく説明します。
+@c COMMON
+
+@c EN
 Each @var{flag} argument may be one of the followings.
 @c JP
 以下の値が@var{flag}引数として認識されます。
