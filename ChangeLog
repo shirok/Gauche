@@ -1,3 +1,8 @@
+2018-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (_, ...): Bind these two as syntaxes so that they
+	  can be exported from (scheme base).
+
 2018-12-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (quasirename): Adjust behavior of quasirename

@@ -1035,6 +1035,14 @@
 (define-pass1-syntax (unquote-splicing form cenv) :null
   (error "unquote-splicing appeared outside quasiquote:" form))
 
+;; We need these to be bound so that scheme.base can export them
+;; as specified in R7RS.
+(define-pass1-syntax (_ form cenv) :null
+  ($const-undef))
+
+(define-pass1-syntax (... form cenv) :null
+  ($const-undef))
+
 ;; quasiquote expander
 
 (define (quasi-expand obj cenv)

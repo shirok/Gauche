@@ -1683,9 +1683,9 @@
        (eval '(lit-test-2 temp 1) (interaction-environment)))
 
 ;;----------------------------------------------------------------------
-;; 'generate-underbar-1' test should output the following error.
-;;
-;; *** ERROR: unbound variable: #<identifier user#_.2d4ac00>
+;; 'generate-underbar-1' inserts global underbar into the macro output.
+;; It shouldn't be regarded as a pattern variable, so the underbar in
+;; the template refers to the global binding of '_'.
 
 (test-section "generate underbar")
 
@@ -1699,8 +1699,7 @@
               _))))
        (mac-sub1 'failed)))))
 
-(test* "generate-underbar-1"
-       (test-error <error> #/^unbound variable/)
+(test* "generate-underbar-1" _
        (gen-underbar))
 
 ;;----------------------------------------------------------------------

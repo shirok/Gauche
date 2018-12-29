@@ -202,7 +202,7 @@
   (require "srfi-43")
 
   (import r7rs.aux)
-  (export * + - ... / < <= = => > >= abs and append apply assoc assq
+  (export * + - ... / < <= = => > >= _ abs and append apply assoc assq
           assv begin binary-port?  boolean=?  boolean?  bytevector
           bytevector-append bytevector-copy bytevector-copy! bytevector-length
           bytevector-u8-ref bytevector-u8-set!  bytevector?  caar cadr
