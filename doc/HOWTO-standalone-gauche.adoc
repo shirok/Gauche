@@ -1,0 +1,47 @@
+Building stand-alone executable is officially supported as of
+0.9.6.  The static library `libgauche-static-0.9.a` is built
+by default.  See
+link:http://practical-scheme.net/gauche/man/?l=en&p=Building%20standalone%20executables[Building standalone executables]
+section of the manual for the details.
+
+This file describes some advanced technical details.
+
+== Stripping down the size of the executable
+
+In order to create a static library that excludes certain
+modules, you can run `make static` under `src/` directory
+with the evironment variable `LIBGAUCHE_STATIC_EXCLUDES`
+set to list modules to be excluded:
+
+[source,console]
+----
+$ LIBGAUCHE_STATIC_EXCLUDES=dbm.gdbm,os.windows make static
+----
+
+
+== Using Gauche API from statically linked C applications
+
+If you want to call Gauche API from statically linked C app,
+you need slightly different initialization than the usual.
+Instead of calling `GC_INIT()` and `Scm_Init()`, you should do
+the following:
+
+1. include `gauche/static.h` _before_ `gauche.h`
++
+[source,c]
+----
+#include <gauche/static.h>
+#include <gauche.h>
+----
+
+2. call `SCM_INIT_STATIC()` from `main()`, instead of `GC_INIT()`
+and `Scm_INIT()`.
++
+[source,c]
+----
+int main() {
+  :
+  SCM_INIT_STATIC();
+  :
+}
+----

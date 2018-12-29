@@ -3,8 +3,8 @@ programmers and system administrators to write small to large scripts quickly.
 
 Visit the project webpage https://practical-scheme.net/gauche/ for more details.
 
-If you're new to this project and want to try compiling from git repo, 
-check HACKING first.  If it is your first time to build Gauche, you should
+If you're new to this project and want to try compiling from git repo,
+check link:HACKING.adoc[] first.  If it is your first time to build Gauche, you should
 start from the release tarball instead of git clone; see
 https://practical-scheme.net/gauche/download.html on how to get the tarball.
-Once you get and untar the release tarball, see INSTALL in it for the instructions.
+Once you get and untar the release tarball, see link:INSTALL.adoc[] in it for the instructions.

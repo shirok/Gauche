@@ -1,4 +1,4 @@
-HOWTO: Updating character attributes to the latest Unicode standard
+= HOWTO: Updating character attributes to the latest Unicode standard
 
 Gauche uses some of character attributes defined in Unicode
 standard.  They are extraced from files provided as Unicode
@@ -8,6 +8,7 @@ the space efficiency.
 We use two stage build process for it:
 
 
+----
              [UCD data files]
                     |
                     |
@@ -17,80 +18,85 @@ We use two stage build process for it:
            [src/unicode-data.scm]
                     |
                     |
-                   make 
+                   make
                     |
                     v
              [src/char_attr.c]
       [src/gauche/priv/unicode_attr.h]
+----
 
-
-The first step reads UCD data files and generates src/unicode-data.scm,
+The first step reads UCD data files and generates `src/unicode-data.scm`,
 which only includes necessary information.
 This is only needed to be done when Unicode is updated; so we don't
-require developers to do it.  We check in src/unicode-data.scm to
+require developers to do it.  We check in `src/unicode-data.scm` to
 the repo.
 
 The second step is run when you build Gauche from the repository
 source tree.  When creating tarball, though, we pre-generate
-the final char_attr.c and unicode_attr.h so that those who build
-from the tarball won't need preinstalled gosh.
+the final `char_attr.c` and `unicode_attr.h` so that those who build
+from the tarball won't need preinstalled `gosh`.
 
 The rest of this document explains when you need to regenerate
-src/unicode-data.scm.
+`src/unicode-data.scm`.
 
 
-Preparing UCD data files
-------------------------
+== Preparing UCD data files
 
-You need to obtain the following files from the Unicode site
-( http://www.unicode.org/Public/UCD/latest/ucd/ )
+You need to obtain the following files from
+link:http://www.unicode.org/Public/UCD/latest/ucd/[the Unicode site].
 
-    UnicodeData.txt
-    SpecialCasing.txt
-    PropList.txt
-    EastAsianWidth.txt
-    auxiliary/GraphemeBreakProperty.txt
-    auxiliary/WordBreakProperty.txt
+----
+UnicodeData.txt
+SpecialCasing.txt
+PropList.txt
+EastAsianWidth.txt
+auxiliary/GraphemeBreakProperty.txt
+auxiliary/WordBreakProperty.txt
+----
 
-Save those files in some directory (we call it $UNICODEDIR).
-Note that you need to keep subdirectory (auxiliary/).
+Save those files in some directory (we call it `$UNICODEDIR`).
+Note that you need to keep subdirectory (`auxiliary/`).
 
 The list of files may grow in future versions of Gauche.
 
-For your convenience, the script src/gen-unicode.scm can download
+For your convenience, the script `src/gen-unicode.scm` can download
 those files:
 
-    $ gosh src/gen-unicode.scm --fetch $UNICODEDIR [$UNICODE_VERSION]
+[source,console]
+----
+$ gosh src/gen-unicode.scm --fetch $UNICODEDIR [$UNICODE_VERSION]
+----
 
-This downloads those files into $UNICODEDIR.  By default it downloads
+This downloads those files into `$UNICODEDIR`.  By default it downloads
 the latest version; however, if the changes in newer versions of Unicode
 trip build process, you can give version number in the second argument
 to download older versions of data files.
 
 
-Review the changes
-------------------
+== Review the changes
 
 Property values may be added in the newer Unicode version,
-so check src/gauche/char_attr.h and the beginning of
-src/gen-unicode.scm to see if we need to update.  We take advantage
+so check `src/gauche/char_attr.h` and the beginning of
+`src/gen-unicode.scm` to see if we need to update.  We take advantage
 of property value distribution over codepoints for space-efficient
 encoding (e.g. using flat tables on some ranges and binary trees
 on others).   You may need to tweak the code if new range of
 characters are added.
 
-Check changes in TR29 ( http://www.unicode.org/reports/tr29/ ).
-The state-transition table is hardcoded in ext/text/unicode.scm
+Check changes in link:http://www.unicode.org/reports/tr29/[TR29].
+The state-transition table is hardcoded in `ext/text/unicode.scm`
 (they can't be extracted from UCD files).  Any change in TR29
 must be manually reflected to the code.
 
 
-Generate unicode-data.scm
--------------------------
+== Generate `unicode-data.scm`
 
 There's a make rule for that.
 
-    $ cd src
-    $ make UNICODEDIR=$UNICODEDIR char-data
+[source,console]
+----
+$ cd src
+$ make UNICODEDIR=$UNICODEDIR char-data
+----
 
 And it's done!
