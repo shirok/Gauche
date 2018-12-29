@@ -13,8 +13,12 @@
 #ifdef GC_PTHREADS
 # include <pthread.h>
 #else
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
-#endif
+#endif /* !GC_PTHREADS */
 
 #include <stdio.h>
 
@@ -27,7 +31,7 @@
     int *p[10];
     int i;
     for (i = 0; i < 10; ++i) {
-        p[i] = malloc(sizeof(int)+i);
+        p[i] = (int *)malloc(sizeof(int) + i);
     }
     CHECK_LEAKS();
     for (i = 1; i < 10; ++i) {

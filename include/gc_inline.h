@@ -31,19 +31,32 @@
 #include "gc.h"
 #include "gc_tiny_fl.h"
 
-#if __GNUC__ >= 3
+#if GC_GNUC_PREREQ(3, 0)
 # define GC_EXPECT(expr, outcome) __builtin_expect(expr,outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
 # define GC_EXPECT(expr, outcome) (expr)
-#endif /* __GNUC__ */
+#endif
 
 #ifndef GC_ASSERT
-# define GC_ASSERT(expr) /* empty */
+# ifdef NDEBUG
+#   define GC_ASSERT(expr) /* empty */
+# else
+#   include <assert.h>
+#   define GC_ASSERT(expr) assert(expr)
+# endif
+#endif
+
+#ifdef __cplusplus
+  extern "C" {
 #endif
 
 #ifndef GC_PREFETCH_FOR_WRITE
-# define GC_PREFETCH_FOR_WRITE(x) (void)0
+# if GC_GNUC_PREREQ(3, 0) && !defined(GC_NO_PREFETCH_FOR_WRITE)
+#   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+# else
+#   define GC_PREFETCH_FOR_WRITE(x) (void)0
+# endif
 #endif
 
 /* Object kinds; must match PTRFREE, NORMAL in gc_priv.h.       */
@@ -68,6 +81,15 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_malloc_kind_global(size_t /* lb */, int /* k */);
 #else
 # define GC_malloc_kind_global GC_malloc_kind
+#endif
+
+/* An internal macro to update the free list pointer atomically (if     */
+/* the AO primitives are available) to avoid race with the marker.      */
+#if defined(GC_THREADS) && defined(AO_HAVE_store)
+# define GC_FAST_M_AO_STORE(my_fl, next) \
+                AO_store((volatile AO_t *)(my_fl), (AO_t)(next))
+#else
+# define GC_FAST_M_AO_STORE(my_fl, next) (void)(*(my_fl) = (next))
 #endif
 
 /* The ultimately general inline allocation macro.  Allocate an object  */
@@ -103,7 +125,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                           > (num_direct) + GC_TINY_FREELISTS + 1, 1)) { \
                 next = *(void **)(my_entry); \
                 result = (void *)my_entry; \
-                *my_fl = next; \
+                GC_FAST_M_AO_STORE(my_fl, next); \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
                 if ((kind) != GC_I_PTRFREE) { \
@@ -120,7 +142,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                     /* (GC_word)my_entry <= (num_direct) */ \
                     && my_entry != 0 /* NULL */) { \
                 /* Small counter value, not NULL */ \
-                *my_fl = (char *)my_entry + (granules) + 1; \
+                GC_FAST_M_AO_STORE(my_fl, (char *)my_entry \
+                                          + (granules) + 1); \
                 result = (default_expr); \
                 break; \
             } else { \
@@ -148,11 +171,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* the caller is responsible for supplying a cleared tiny_fl            */
 /* free list array.  For single-threaded applications, this may be      */
 /* a global array.                                                      */
-# define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,k,init) \
+# define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,kind,init) \
     do { \
-      size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-      GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, k, \
-                           GC_malloc_kind(grans * GC_GRANULE_BYTES, k), \
+      size_t granules = GC_WORDS_TO_WHOLE_GRANULES(n); \
+      GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, 0, kind, \
+                           GC_malloc_kind(granules*GC_GRANULE_BYTES, kind), \
                            init); \
     } while (0)
 
@@ -171,14 +194,16 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       GC_MALLOC_WORDS_KIND(result, 2, tiny_fl, GC_I_NORMAL, (void)0); \
       if ((result) != 0 /* NULL */) { \
         *(void **)(result) = l; \
-        ((void **)(result))[1] = r; \
-        GC_end_stubborn_change(result); \
+        GC_PTR_STORE_AND_DIRTY((void **)(result) + 1, r); \
         GC_reachable_here(l); \
-        GC_reachable_here(r); \
       } \
     } while (0)
 
 GC_API void GC_CALL GC_print_free_list(int /* kind */,
                                        size_t /* sz_in_granules */);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif /* !GC_INLINE_H */

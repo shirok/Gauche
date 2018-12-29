@@ -1,18 +1,17 @@
 
 #ifdef HAVE_CONFIG_H
-  /* For PARALLEL_MARK */
+  /* For GC_THREADS and PARALLEL_MARK */
 # include "config.h"
 #endif
 
-#ifndef GC_THREADS
-# define GC_THREADS
-#endif
-#include "gc.h"
+#ifdef GC_THREADS
+# include "gc.h"
 
-#ifdef PARALLEL_MARK
-# define AO_REQUIRE_CAS
-#endif
-#include "atomic_ops.h"
+# ifdef PARALLEL_MARK
+#   define AO_REQUIRE_CAS
+# endif
+# include "private/gc_atomic_ops.h"
+#endif /* GC_THREADS */
 
 #include <stdio.h>
 
@@ -21,8 +20,12 @@
 #ifdef GC_PTHREADS
 # include <pthread.h>
 #else
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
-#endif
+#endif /* !GC_PTHREADS */
 
 #if defined(__HAIKU__)
 # include <errno.h>
@@ -31,8 +34,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef NTHREADS
+# define NTHREADS 31 /* number of initial threads */
+#endif
+
 #ifndef MAX_SUBTHREAD_DEPTH
-# define INITIAL_THREAD_COUNT 31
 # define MAX_ALIVE_THREAD_COUNT 55
 # define MAX_SUBTHREAD_DEPTH 7
 # define MAX_SUBTHREAD_COUNT 200
@@ -96,16 +102,17 @@ volatile AO_t thread_ended_cnt = 0;
 
 int main(void)
 {
+#if NTHREADS > 0
     int i;
 # ifdef GC_PTHREADS
     int err;
-    pthread_t th[INITIAL_THREAD_COUNT];
+    pthread_t th[NTHREADS];
 # else
-    HANDLE th[INITIAL_THREAD_COUNT];
+    HANDLE th[NTHREADS];
 # endif
 
     GC_INIT();
-    for (i = 0; i < INITIAL_THREAD_COUNT; ++i) {
+    for (i = 0; i < NTHREADS; ++i) {
 #     ifdef GC_PTHREADS
         err = pthread_create(&th[i], NULL, entry, 0);
         if (err) {
@@ -123,7 +130,7 @@ int main(void)
 #     endif
     }
 
-    for (i = 0; i < INITIAL_THREAD_COUNT; ++i) {
+    for (i = 0; i < NTHREADS; ++i) {
 #     ifdef GC_PTHREADS
         void *res;
         err = pthread_join(th[i], &res);
@@ -147,6 +154,7 @@ int main(void)
         CloseHandle(th[i]);
 #     endif
     }
+#endif
   printf("subthread_create: created %d threads (%d ended)\n",
          (int)AO_load(&thread_created_cnt), (int)AO_load(&thread_ended_cnt));
   return 0;

@@ -125,9 +125,6 @@
                 RelativePath="..\..\blacklst.c">
             </File>
             <File
-                RelativePath="..\..\checksums.c">
-            </File>
-            <File
                 RelativePath="..\..\dbg_mlc.c">
             </File>
             <File
@@ -195,9 +192,6 @@
                         Name="VCCLCompilerTool"
                         UsePrecompiledHeader="1"/>
                 </FileConfiguration>
-            </File>
-            <File
-                RelativePath="..\..\stubborn.c">
             </File>
             <File
                 RelativePath="..\..\typd_mlc.c">

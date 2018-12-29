@@ -1,5 +1,6 @@
-/* Conditionally execute a command based if the file argv[1] doesn't exist */
-/* Except for execvp, we stick to ANSI C.                                  */
+/* Conditionally execute the command argv[2] based if the file argv[1]  */
+/* does not exist.  If the command is omitted (and the file does not    */
+/* exist) then just exit with a non-zero code.                          */
 
 # include "private/gc_priv.h"
 # include <stdio.h>
@@ -9,6 +10,12 @@
 #include <dirent.h>
 #endif /* __DJGPP__ */
 
+#ifdef __cplusplus
+# define EXECV_ARGV_T char**
+#else
+# define EXECV_ARGV_T void* /* see the comment in if_mach.c */
+#endif
+
 int main(int argc, char **argv)
 {
     FILE * f;
@@ -17,7 +24,8 @@ int main(int argc, char **argv)
 #endif /* __DJGPP__ */
     char *fname;
 
-    if (argc < 3) goto Usage;
+    if (argc < 2 || argc > 3)
+        goto Usage;
 
     fname = TRUSTED_STRING(argv[1]);
     f = fopen(fname, "rb");
@@ -38,10 +46,13 @@ int main(int argc, char **argv)
 #endif
     printf("^^^^Starting command^^^^\n");
     fflush(stdout);
-    execvp(TRUSTED_STRING(argv[2]), (void *)(argv + 2));
+    if (argc == 2)
+        return(2); /* the file does not exist but no command is given */
+
+    execvp(TRUSTED_STRING(argv[2]), (EXECV_ARGV_T)(argv + 2));
     exit(1);
 
 Usage:
-    fprintf(stderr, "Usage: %s file_name command\n", argv[0]);
+    fprintf(stderr, "Usage: %s file_name [command]\n", argv[0]);
     return(1);
 }

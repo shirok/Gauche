@@ -14,8 +14,8 @@
 # Info (current:revision:age) for the Libtool versioning system.
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
-LIBGC_VER_INFO = 4:5:3
-LIBGCCPP_VER_INFO = 4:2:3
+LIBGC_VER_INFO = 5:2:4
+LIBGCCPP_VER_INFO = 5:0:4
 
 ## FIXME: `make distcheck' in this directory will not currently work.
 ##     This is most likely to the explicit flags passed to submakes.
@@ -69,21 +69,20 @@ else
 
 EXTRA_DIST += extra/gc.c
 libgc_la_SOURCES = \
-    allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
+    allchblk.c alloc.c blacklst.c dbg_mlc.c \
     dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
     mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
-    obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
-    specific.c stubborn.c typd_mlc.c
+    obj_map.c os_dep.c ptr_chck.c reclaim.c specific.c typd_mlc.c
 
 # C Library: Architecture Dependent
 # ---------------------------------
 
 if WIN32_THREADS
-libgc_la_SOURCES += thread_local_alloc.c win32_threads.c
+libgc_la_SOURCES += win32_threads.c
 else
 if PTHREADS
 # Not Cygwin or MinGW.
-libgc_la_SOURCES += pthread_start.c pthread_support.c thread_local_alloc.c
+libgc_la_SOURCES += pthread_start.c pthread_support.c
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 else
@@ -92,12 +91,21 @@ endif
 endif
 endif
 
+if THREAD_LOCAL_ALLOC
+libgc_la_SOURCES += thread_local_alloc.c
+endif
+
 if MAKE_BACK_GRAPH
 libgc_la_SOURCES += backgraph.c
 endif
 
+if CHECKSUMS
+libgc_la_SOURCES += checksums.c
+endif
+
 if ENABLE_DISCLAIM
 libgc_la_SOURCES += fnlz_mlc.c
+pkginclude_HEADERS += include/gc_disclaim.h
 endif
 
 ## End of !SINGLE_GC_OBJ
@@ -125,7 +133,7 @@ if CPLUSPLUS
 # C++ Interface
 # -------------
 lib_LTLIBRARIES += libgccpp.la
-pkginclude_HEADERS += include/gc_cpp.h
+pkginclude_HEADERS += include/gc_allocator.h include/gc_cpp.h
 include_HEADERS += include/extra/gc_cpp.h
 libgccpp_la_SOURCES = gc_cpp.cc
 libgccpp_la_LIBADD = ./libgc.la
@@ -189,17 +197,17 @@ EXTRA_DIST += README.QUICK
 # other makefiles
 # :GOTCHA: deliberately we do not include 'Makefile'
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
-    OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE \
+    OS2_MAKEFILE PCR-Makefile digimars.mak \
     Makefile.direct SMakefile.amiga WCC_MAKEFILE autogen.sh \
     CMakeLists.txt tests/CMakeLists.txt
 
 # files used by makefiles other than Makefile.am
 #
-EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
-    tools/if_not_there.c tools/setjmp_t.c tools/threadlibs.c \
-    gc.mak extra/MacOS.c extra/AmigaOS.c \
+EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
+    tools/threadlibs.c gc.mak extra/MacOS.c extra/AmigaOS.c \
     extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
     extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
+    extra/pcr_interface.c extra/real_malloc.c \
     build/s60v3/bld.inf build/s60v3/libgc.mmp \
     extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
     extra/Mac_files/MacOS_config.h \
