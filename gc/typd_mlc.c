@@ -62,28 +62,35 @@ typedef struct {
 /* We may eventually need to add provisions for headers and     */
 /* trailers.  Hence we provide for tree structured descriptors, */
 /* though we don't really use them currently.                   */
-typedef union ComplexDescriptor {
+
     struct LeafDescriptor {     /* Describes simple array       */
         word ld_tag;
 #       define LEAF_TAG 1
-        size_t ld_size;         /* bytes per element    */
-                                /* multiple of ALIGNMENT        */
-        size_t ld_nelements;    /* Number of elements.  */
+        size_t ld_size;         /* bytes per element            */
+                                /* multiple of ALIGNMENT.       */
+        size_t ld_nelements;    /* Number of elements.          */
         GC_descr ld_descriptor; /* A simple length, bitmap,     */
                                 /* or procedure descriptor.     */
-    } ld;
+    };
+
     struct ComplexArrayDescriptor {
         word ad_tag;
 #       define ARRAY_TAG 2
         size_t ad_nelements;
         union ComplexDescriptor * ad_element_descr;
-    } ad;
+    };
+
     struct SequenceDescriptor {
         word sd_tag;
 #       define SEQUENCE_TAG 3
         union ComplexDescriptor * sd_first;
         union ComplexDescriptor * sd_second;
-    } sd;
+    };
+
+typedef union ComplexDescriptor {
+    struct LeafDescriptor ld;
+    struct ComplexArrayDescriptor ad;
+    struct SequenceDescriptor sd;
 } complex_descriptor;
 #define TAG ad.ad_tag
 
@@ -98,10 +105,6 @@ STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
 STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
-
-#if !defined(AO_HAVE_load_acquire) && defined(GC_FORCE_INCLUDE_ATOMIC_OPS)
-# include "atomic_ops.h"
-#endif
 
 #ifdef AO_HAVE_load_acquire
   STATIC volatile AO_t GC_explicit_typing_initialized = FALSE;
@@ -129,7 +132,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 
     LOCK();
     while (GC_avail_descr + nwords >= GC_ed_size) {
-        ext_descr * new;
+        ext_descr * newExtD;
         size_t new_size;
         word ed_size = GC_ed_size;
 
@@ -143,16 +146,17 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
             new_size = 2 * ed_size;
             if (new_size > MAX_ENV) return(-1);
         }
-        new = (ext_descr *) GC_malloc_atomic(new_size * sizeof(ext_descr));
-        if (new == 0) return(-1);
+        newExtD = (ext_descr *)GC_malloc_atomic(new_size * sizeof(ext_descr));
+        if (NULL == newExtD)
+            return -1;
         LOCK();
         if (ed_size == GC_ed_size) {
             if (GC_avail_descr != 0) {
-                BCOPY(GC_ext_descriptors, new,
+                BCOPY(GC_ext_descriptors, newExtD,
                       GC_avail_descr * sizeof(ext_descr));
             }
             GC_ed_size = new_size;
-            GC_ext_descriptors = new;
+            GC_ext_descriptors = newExtD;
         }  /* else another thread already resized it in the meantime */
     }
     result = GC_avail_descr;
@@ -366,8 +370,8 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
     word bm = GC_ext_descriptors[env].ed_bitmap;
     word * current_p = addr;
     word current;
-    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    ptr_t least_ha = GC_least_plausible_heap_addr;
+    ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     DECLARE_HDR_CACHE;
 
     INIT_HDR_CACHE;
@@ -422,15 +426,15 @@ STATIC word GC_descr_obj_size(complex_descriptor *d)
 STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
                                         mse *msp, mse *msl)
 {
-    register ptr_t current = (ptr_t) addr;
-    register word nelements;
-    register word sz;
-    register word i;
+    ptr_t current = (ptr_t)addr;
+    word nelements;
+    word sz;
+    word i;
 
     switch(d -> TAG) {
       case LEAF_TAG:
         {
-          register GC_descr descr = d -> ld.ld_descriptor;
+          GC_descr descr = d -> ld.ld_descriptor;
 
           nelements = d -> ld.ld_nelements;
           if (msl - msp <= (ptrdiff_t)nelements) return(0);
@@ -445,7 +449,7 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
         }
       case ARRAY_TAG:
         {
-          register complex_descriptor *descr = d -> ad.ad_element_descr;
+          complex_descriptor *descr = d -> ad.ad_element_descr;
 
           nelements = d -> ad.ad_nelements;
           sz = GC_descr_obj_size(descr);
@@ -479,8 +483,8 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                 word env GC_ATTR_UNUSED)
 {
     hdr * hhdr = HDR(addr);
-    size_t sz = hhdr -> hb_sz;
-    size_t nwords = BYTES_TO_WORDS(sz);
+    word sz = hhdr -> hb_sz;
+    word nwords = BYTES_TO_WORDS(sz);
     complex_descriptor * descr = (complex_descriptor *)(addr[nwords-1]);
     mse * orig_mark_stack_ptr = mark_stack_ptr;
     mse * new_mark_stack_ptr;
@@ -526,7 +530,6 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;
-#   define HIGH_BIT (((word)1) << (WORDSZ - 1))
     DCL_LOCK_STATE;
 
 #   if defined(AO_HAVE_load_acquire) && defined(AO_HAVE_store_release)
@@ -571,10 +574,10 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 
         /* Hopefully the common case.                   */
         /* Build bitmap descriptor (with bits reversed) */
-        result = HIGH_BIT;
+        result = SIGNB;
         for (i = last_set_bit - 1; i >= 0; i--) {
             result >>= 1;
-            if (GC_get_bit(bm, i)) result |= HIGH_BIT;
+            if (GC_get_bit(bm, i)) result |= SIGNB;
         }
         result |= GC_DS_BITMAP;
     } else {
@@ -595,7 +598,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
 
     GC_ASSERT(GC_explicit_typing_initialized);
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
-    op = GC_malloc_kind(lb, GC_explicit_kind);
+    op = (word *)GC_malloc_kind(lb, GC_explicit_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     /* It is not safe to use GC_size_map[lb] to compute lg here as the  */
@@ -606,6 +609,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     REACHABLE_AFTER_DIRTY(d);
     return op;
 }
+
+/* We make the GC_clear_stack() call a tail one, hoping to get more of  */
+/* the stack.                                                           */
+#define GENERAL_MALLOC_IOP(lb, k) \
+                GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
@@ -618,8 +626,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
-        lg = GC_size_map[lb];
         LOCK();
+        lg = GC_size_map[lb];
         op = GC_eobjfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
@@ -628,7 +636,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             /* See the comment in GC_malloc_explicitly_typed.   */
             lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
-            GC_eobjfreelist[lg] = obj_link(op);
+            GC_eobjfreelist[lg] = (ptr_t)obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
@@ -673,7 +681,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
             lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
             break;
     }
-    op = GC_malloc_kind(lb, GC_array_kind);
+    op = (word *)GC_malloc_kind(lb, GC_array_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     lg = BYTES_TO_GRANULES(GC_size(op));

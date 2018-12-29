@@ -113,10 +113,6 @@ SOURCE=..\..\blacklst.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\checksums.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\dbg_mlc.c
 # End Source File
 # Begin Source File
@@ -191,10 +187,6 @@ SOURCE=..\..\reclaim.c
 
 SOURCE=..\stdafx.c
 # ADD CPP /Yc"stdafx.h"
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\stubborn.c
 # End Source File
 # Begin Source File
 

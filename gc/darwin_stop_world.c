@@ -55,21 +55,26 @@ typedef struct StackFrame {
 
 GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 {
-  StackFrame *frame;
+  StackFrame *frame = (StackFrame *)stack_start;
 
-# ifdef POWERPC
-    if (stack_start == 0) {
+  if (stack_start == 0) {
+#   ifdef POWERPC
 #     if CPP_WORDSZ == 32
         __asm__ __volatile__ ("lwz %0,0(r1)" : "=r" (frame));
 #     else
         __asm__ __volatile__ ("ld %0,0(r1)" : "=r" (frame));
 #     endif
-    } else
-# else
-    GC_ASSERT(stack_start != 0); /* not implemented */
-# endif /* !POWERPC */
-  /* else */ {
-    frame = (StackFrame *)stack_start;
+#   elif defined(ARM32)
+        volatile ptr_t sp_reg;
+        __asm__ __volatile__ ("mov %0, r7\n" : "=r" (sp_reg));
+        frame = (StackFrame *)sp_reg;
+#   elif defined(AARCH64)
+        volatile ptr_t sp_reg;
+        __asm__ __volatile__ ("mov %0, x29\n" : "=r" (sp_reg));
+        frame = (StackFrame *)sp_reg;
+#   else
+      ABORT("GC_FindTopOfStack(0) is not implemented");
+#   endif
   }
 
 # ifdef DEBUG_THREADS_EXTRA
@@ -203,7 +208,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       ABORT("thread_get_state failed");
 
 #   if defined(I386)
-      lo = (void *)state.THREAD_FLD(esp);
+      lo = (ptr_t)state.THREAD_FLD(esp);
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(esp));
 #     endif
@@ -216,7 +221,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(ebp));
 
 #   elif defined(X86_64)
-      lo = (void *)state.THREAD_FLD(rsp);
+      lo = (ptr_t)state.THREAD_FLD(rsp);
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(rsp));
 #     endif
@@ -238,7 +243,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(r15));
 
 #   elif defined(POWERPC)
-      lo = (void *)(state.THREAD_FLD(r1) - PPC_RED_ZONE_SIZE);
+      lo = (ptr_t)(state.THREAD_FLD(r1) - PPC_RED_ZONE_SIZE);
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(r1));
 #     endif
@@ -275,24 +280,25 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(r31));
 
 #   elif defined(ARM32)
-      lo = (void *)state.THREAD_FLD(sp);
+      lo = (ptr_t)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
+        *phi = GC_FindTopOfStack(state.THREAD_FLD(r[7])); /* fp */
 #     endif
       {
         int j;
-        for (j = 0; j <= 12; j++) {
+        for (j = 0; j < 7; j++)
           GC_push_one(state.THREAD_FLD(r[j]));
-        }
+        j++; /* "r7" is skipped (iOS uses it as a frame pointer) */
+        for (; j <= 12; j++)
+          GC_push_one(state.THREAD_FLD(r[j]));
       }
-      /* "pc" and "sp" are skipped */
+      /* "cpsr", "pc" and "sp" are skipped */
       GC_push_one(state.THREAD_FLD(lr));
-      GC_push_one(state.THREAD_FLD(cpsr));
 
 #   elif defined(AARCH64)
-      lo = (void *)state.THREAD_FLD(sp);
+      lo = (ptr_t)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
+        *phi = GC_FindTopOfStack(state.THREAD_FLD(fp));
 #     endif
       {
         int j;
@@ -300,14 +306,13 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
           GC_push_one(state.THREAD_FLD(x[j]));
         }
       }
-      /* "cpsr", "pc" and "sp" are skipped */
-      GC_push_one(state.THREAD_FLD(fp));
+      /* "cpsr", "fp", "pc" and "sp" are skipped */
       GC_push_one(state.THREAD_FLD(lr));
 
 #   elif defined(CPPCHECK)
       lo = NULL;
 #   else
-#     error FIXME for non-x86 || ppc || arm architectures
+#     error FIXME for non-arm/ppc/x86 architectures
 #   endif
   } /* thread != my_thread */
 
@@ -631,7 +636,7 @@ GC_INNER void GC_stop_world(void)
   }
 
 # ifdef MPROTECT_VDB
-    if(GC_incremental) {
+    if (GC_auto_incremental) {
       GC_mprotect_stop();
     }
 # endif
@@ -679,7 +684,7 @@ GC_INNER void GC_start_world(void)
     GC_log_printf("World starting\n");
 # endif
 # ifdef MPROTECT_VDB
-    if(GC_incremental) {
+    if (GC_auto_incremental) {
       GC_mprotect_resume();
     }
 # endif

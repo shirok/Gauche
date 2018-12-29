@@ -37,6 +37,7 @@ Alexander Herz <alexander.herz@mytum.de>
 Alexandr Petrosian <paf@design.ru>
 Alexandr Shadchin <ShadchinAV@mail.ru>
 Alexandre Oliva <aoliva@redhat.com>
+Alexis Laferriere <alexis.laf@xymus.net>
 Alistair G. Crooks <agc@uts.amdahl.com>
 Allan Hsu <allan@counterpop.net>
 Andre Leiradella <andre@leiradella.com>
@@ -62,6 +63,7 @@ Ari Huttunen <Ari.Huttunen@hut.fi>
 Arrigo Triulzi <arrigo@ic.ac.uk>
 Ashley Bone <ashley.bone@nvl.army.mil>
 Assar Westerlund <assar@sics.se>
+Aurelien Larcher <aurelien.larcher@gmail.com>
 Barry DeFreese <bdefreese@debian.org>
 Baruch Siach <baruch@tkos.co.il>
 Ben A. Mesander <ben@piglet.cr.usgs.gov>
@@ -83,12 +85,13 @@ Brian Burton <bburton@users.sourceforge.net>
 Brian D. Carlstrom <bdc@clark.lcs.mit.edu>
 Brian F. Dennis <xjam@cork.cs.berkeley.edu>
 Brian Lewis <btlewis@eng.sun.com>
+Bruce A Henderson <woollybah@gmail.com>
 Bruce Hoult <bruce@hoult.org>
 Bruce Mitchener <bruce.mitchener@gmail.com>
 Bruno Haible <bruno@clisp.org>
 Bryce McKinlay <mckinlay@redhat.com>
 Burkhard Linke <blinke@cebitec.uni-bielefeld.de>
-Calvin Hill <calvin@hakobaito.co.uk>
+Calvin Buckley <calvin@openmailbox.org>
 Carlos J. Puga Medina <cpm@fbsd.es>
 Cesar Eduardo Barros <cesarb@nitnet.com.br>
 Charles Fiterman <cef@geode.geodesic.com>
@@ -222,6 +225,7 @@ Jonathan Pryor <jpryor@novell.com>
 Josh Peterson <petersonjm1@gmail.com>
 Joshua Richardson <jric@chegg.com>
 Juan Jose Garcia-Ripoll <juanjose.garciaripoll@googlemail.com>
+Jukka Jylanki <jujjyl@gmail.com>
 Kai Tietz <ktietz70@googlemail.com>
 Kaz Kojima <kkojima@rr.iij4u.or.jp>
 Kazu Hirata <kazu@codesourcery.com>
@@ -232,6 +236,7 @@ Kenneth Schalk <schalk@cadtls.hlo.dec.com>
 Kevin Kenny <kenny@m.cs.uiuc.edu>
 Kevin Tew <tewk@racket-lang.org>
 Kevin Warne <kevinw@direct.ca>
+Kimura Wataru <kimuraw@i.nifty.jp>
 Kjetil Matheussen <k.s.matheussen@notam02.no>
 Klaus Treichel <ktreichel@web.de>
 Klemens Zwischenbrugger <ka7@la-evento.com>
@@ -263,6 +268,7 @@ Mark Reichert <markr@sirs.com>
 Mark Sibly
 Mark Weiser <weiser@ubiq.com>
 Martin Hirzel <hirzel@cs.colorado.edu>
+Martin Koeppe <mkoeppe@gmx.de>
 Martin Tauchmann <martintauchmann@bigfoot.com>
 Matt Austern <austern@google.com>
 Matthew Flatt <mflatt@plt-scheme.org>
@@ -272,6 +278,7 @@ Maurizio Vairani <maurizio.vairani@cloverinformatica.it>
 Max Mouratov <mmouratov@gmail.com>
 Melissa O'Neill <oneill@cs.sfu.ca>
 Michael Arnoldus <chime@proinf.dk>
+Michael DeRoy <deroymichael@gmail.com>
 Michael Fox <mfox@cavium.com>
 Michael Smith <msmith@spinnakernet.com>
 Michael Spertus <mps@geodesic.com>
@@ -285,7 +292,6 @@ Mike Stump <mrs@windriver.com>
 Mitch Harris <maharri@uiuc.edu>
 Mohan Embar <gnustuff@thisiscool.com>
 Naoyuki Sawa <sawa_naoyuki-1@yahoo.co.jp>
-Natanael Copa <ncopa@alpinelinux.org>
 Nathanael Nerode <neroden@twcny.rr.com>
 Neale Ferguson <neale@mono-cvs.ximian.com>
 Neil Sharman <neil@cs.mu.oz.au>
@@ -354,6 +360,7 @@ Samuel Thibault <samuel.thibault@gnu.org>
 Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
 Scott Schwartz <schwartz@groucho.cse.psu.edu>
 Shawn Wagner <shawnw@speakeasy.org>
+Shea Levy <shea@shealevy.com>
 Shiro Kawai <shiro@lava.net>
 Simon Gornall <simon@gornall.net>
 Simon Posnjak <simon.posnjak@siol.net>
@@ -366,6 +373,7 @@ Sven Hartrumpf <Sven.Hartrumpf@fernuni-hagen.de>
 Sven Verdoolaege <skimo@kotnet.org>
 Takis Psarogiannakopoulos <takis@xfree86.org>
 Tatsuya Bizenn <bizenn@visha.org>
+Tautvydas Zilys <tautvydas.zilys@gmail.com>
 Terrell Russell <terrellrussell@gmail.com>
 Thiemo Seufer <ths@networkno.de>
 Thomas Funke <thf@zelator.in-berlin.de>

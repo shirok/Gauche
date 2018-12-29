@@ -90,7 +90,12 @@
   GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest)
   {
     if (GC_HAS_DEBUG_INFO(dest)) {
-      ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
+#     ifdef PARALLEL_MARK
+        AO_store((volatile AO_t *)&((oh *)dest)->oh_back_ptr,
+                 (AO_t)HIDE_BACK_PTR(source));
+#     else
+        ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
+#     endif
     }
   }
 
@@ -119,7 +124,7 @@
       if (!hdr) ABORT("Invalid GC_get_back_ptr_info argument");
 #   endif
     if (!GC_HAS_DEBUG_INFO((ptr_t) hdr)) return GC_NO_SPACE;
-    bp = GC_REVEAL_POINTER(hdr -> oh_back_ptr);
+    bp = (ptr_t)GC_REVEAL_POINTER(hdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
     if (MARKED_FROM_REGISTER == bp) return GC_REFD_FROM_REG;
     if (NOT_MARKED == bp) return GC_UNREFERENCED;
@@ -139,8 +144,8 @@
         }
       }
 #   endif
-    bp_base = GC_base(bp);
-    if (0 == bp_base) {
+    bp_base = (ptr_t)GC_base(bp);
+    if (NULL == bp_base) {
       *base_p = bp;
       *offset_p = 0;
       return GC_REFD_FROM_ROOT;
@@ -190,9 +195,9 @@
     ptr_t result;
     ptr_t base;
     do {
-      result = GC_generate_random_heap_address();
-      base = GC_base(result);
-    } while (base == 0 || !GC_is_marked(base));
+      result = (ptr_t)GC_generate_random_heap_address();
+      base = (ptr_t)GC_base(result);
+    } while (NULL == base || !GC_is_marked(base));
     return result;
   }
 
@@ -205,7 +210,7 @@
     size_t offset;
     void *base;
 
-    GC_print_heap_obj(GC_base(current));
+    GC_print_heap_obj((ptr_t)GC_base(current));
 
     for (i = 0; ; ++i) {
       source = GC_get_back_ptr_info(current, &base, &offset);
@@ -231,7 +236,7 @@
         case GC_REFD_FROM_HEAP:
           GC_err_printf("offset %ld in object:\n", (long)offset);
           /* Take GC_base(base) to get real base, i.e. header. */
-          GC_print_heap_obj(GC_base(base));
+          GC_print_heap_obj((ptr_t)GC_base(base));
           break;
         default:
           GC_err_printf("INTERNAL ERROR: UNEXPECTED SOURCE!!!!\n");
@@ -272,6 +277,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
 {
     word * result = (word *)((oh *)p + 1);
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
     GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK((ptr_t)p, sz)));
 #   ifdef KEEP_BACK_PTRS
@@ -288,7 +294,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
       ((word *)p)[BYTES_TO_WORDS(GC_size(p))-1] =
          result[SIMPLE_ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
 #   endif
-    return((ptr_t)result);
+    return result;
 }
 
 /* Check the allocation is successful, store debugging info into p,     */
@@ -328,11 +334,11 @@ static void *store_debug_info(void *p, size_t lb,
         return((ptr_t)(&(ohdr -> oh_sf)));
     }
     if (((word *)ohdr)[BYTES_TO_WORDS(gc_sz)-1] != (END_FLAG ^ (word)body)) {
-        return((ptr_t)((word *)ohdr + BYTES_TO_WORDS(gc_sz)-1));
+        return (ptr_t)(&((word *)ohdr)[BYTES_TO_WORDS(gc_sz)-1]);
     }
     if (((word *)body)[SIMPLE_ROUNDED_UP_WORDS(ohdr -> oh_sz)]
         != (END_FLAG ^ (word)body)) {
-        return((ptr_t)((word *)body + SIMPLE_ROUNDED_UP_WORDS(ohdr->oh_sz)));
+        return (ptr_t)(&((word *)body)[SIMPLE_ROUNDED_UP_WORDS(ohdr->oh_sz)]);
     }
     return(0);
   }
@@ -364,7 +370,7 @@ STATIC void GC_print_obj(ptr_t p)
     ptr_t q;
     hdr * hhdr;
     int kind;
-    char *kind_str;
+    const char *kind_str;
     char buffer[GC_TYPE_DESCR_LEN + 1];
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
@@ -400,9 +406,6 @@ STATIC void GC_print_obj(ptr_t p)
               kind_str = "ATOMIC_UNCOLLECTABLE";
               break;
 #         endif
-          case STUBBORN:
-            kind_str = "STUBBORN";
-            break;
           default:
             kind_str = NULL;
                 /* The alternative is to use snprintf(buffer) but it is */
@@ -441,7 +444,7 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
   /* Use GC_err_printf and friends to print a description of the object */
   /* whose client-visible address is p, and which was smashed at        */
   /* clobbered_addr.                                                    */
-  STATIC void GC_print_smashed_obj(const char *msg, ptr_t p,
+  STATIC void GC_print_smashed_obj(const char *msg, void *p,
                                    ptr_t clobbered_addr)
   {
     oh * ohdr = (oh *)GC_base(p);
@@ -454,11 +457,11 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
         || ohdr -> oh_string == 0) {
         GC_err_printf(
                 "%s %p in or near object at %p(<smashed>, appr. sz = %lu)\n",
-                msg, (void *)clobbered_addr, (void *)p,
+                msg, (void *)clobbered_addr, p,
                 (unsigned long)(GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
         GC_err_printf("%s %p in or near object at %p (%s:%d, sz=%lu)\n",
-                msg, (void *)clobbered_addr, (void *)p,
+                msg, (void *)clobbered_addr, p,
                 (word)(ohdr -> oh_string) < HBLKSIZE ? "(smashed string)" :
                 ohdr -> oh_string[0] == '\0' ? "EMPTY(smashed?)" :
                                                 ohdr -> oh_string,
@@ -570,13 +573,13 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   /* An allocation function for internal use.  Normally internally      */
   /* allocated objects do not have debug information.  But in this      */
   /* case, we need to make sure that all objects have debug headers.    */
-  /* We assume we already hold the GC lock.                             */
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
-    void * result = GC_generic_malloc_inner(
-                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void * result;
 
-    if (result == 0) {
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -591,10 +594,12 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
                                                                 int k)
   {
-    void * result = GC_generic_malloc_inner_ignore_off_page(
-                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void * result;
 
-    if (result == 0) {
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_generic_malloc_inner_ignore_off_page(
+                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -607,42 +612,13 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   }
 #endif /* DBG_HDRS_ALL */
 
-#ifdef STUBBORN_ALLOC
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
-                                                        GC_EXTRA_PARAMS)
-  {
-    void * result = GC_malloc_stubborn(SIZET_SAT_ADD(lb, DEBUG_BYTES));
-
-    return store_debug_info(result, lb, "GC_debug_malloc_stubborn",
-                            OPT_RA s, i);
-  }
-
-  GC_API void GC_CALL GC_debug_change_stubborn(const void *p)
-  {
-    const void * q = GC_base_C(p);
-    hdr * hhdr;
-
-    if (q == 0) {
-        ABORT_ARG1("GC_debug_change_stubborn: bad arg", ": %p", p);
-    }
-    hhdr = HDR(q);
-    if (hhdr -> hb_obj_kind != STUBBORN) {
-        ABORT_ARG1("GC_debug_change_stubborn: arg not stubborn", ": %p", p);
-    }
-    GC_change_stubborn(q);
-  }
-
-#else /* !STUBBORN_ALLOC */
-
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
-                                                        GC_EXTRA_PARAMS)
-  {
+GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+{
     return GC_debug_malloc(lb, OPT_RA s, i);
-  }
+}
 
-  GC_API void GC_CALL GC_debug_change_stubborn(
+GC_API void GC_CALL GC_debug_change_stubborn(
                                 const void * p GC_ATTR_UNUSED) {}
-#endif /* !STUBBORN_ALLOC */
 
 GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
 {
@@ -651,12 +627,14 @@ GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
     if (NULL == q) {
         ABORT_ARG1("GC_debug_end_stubborn_change: bad arg", ": %p", p);
     }
-# ifdef STUBBORN_ALLOC
-    if (HDR(q) -> hb_obj_kind != STUBBORN)
-        ABORT_ARG1("GC_debug_end_stubborn_change: arg not stubborn",
-                   ": %p", p);
-# endif
     GC_end_stubborn_change(q);
+}
+
+GC_API void GC_CALL GC_debug_ptr_store_and_dirty(void *p, const void *q)
+{
+    *(void **)GC_is_visible(p) = GC_is_valid_displacement((void *)q);
+    GC_debug_end_stubborn_change(p);
+    REACHABLE_AFTER_DIRTY(q);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_atomic(size_t lb,
@@ -680,7 +658,7 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strdup(const char *str,
   }
 
   lb = strlen(str) + 1;
-  copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
+  copy = (char *)GC_debug_malloc_atomic(lb, OPT_RA s, i);
   if (copy == NULL) {
 #   ifndef MSWINCE
       errno = ENOMEM;
@@ -698,14 +676,15 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strndup(const char *str,
   size_t len = strlen(str); /* str is expected to be non-NULL  */
   if (len > size)
     len = size;
-  copy = GC_debug_malloc_atomic(len + 1, OPT_RA s, i);
+  copy = (char *)GC_debug_malloc_atomic(len + 1, OPT_RA s, i);
   if (copy == NULL) {
 #   ifndef MSWINCE
       errno = ENOMEM;
 #   endif
     return NULL;
   }
-  BCOPY(str, copy, len);
+  if (len > 0)
+    BCOPY(str, copy, len);
   copy[len] = '\0';
   return copy;
 }
@@ -717,7 +696,7 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strndup(const char *str,
                                                           GC_EXTRA_PARAMS)
   {
     size_t lb = (wcslen(str) + 1) * sizeof(wchar_t);
-    wchar_t *copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
+    wchar_t *copy = (wchar_t *)GC_debug_malloc_atomic(lb, OPT_RA s, i);
     if (copy == NULL) {
 #     ifndef MSWINCE
         errno = ENOMEM;
@@ -765,8 +744,8 @@ GC_API void GC_CALL GC_debug_free(void * p)
     ptr_t base;
     if (0 == p) return;
 
-    base = GC_base(p);
-    if (base == 0) {
+    base = (ptr_t)GC_base(p);
+    if (NULL == base) {
 #     if defined(REDIRECT_MALLOC) \
          && ((defined(NEED_CALLINFO) && defined(GC_HAVE_BUILTIN_BACKTRACE)) \
              || defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS) \
@@ -778,6 +757,10 @@ GC_API void GC_CALL GC_debug_free(void * p)
       ABORT_ARG1("Invalid pointer passed to free()", ": %p", p);
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
+#     if defined(REDIRECT_FREE) && defined(USE_PROC_FOR_LIBRARIES)
+        /* TODO: Suppress the warning if free() caller is in libpthread */
+        /* or libdl.                                                    */
+#     endif
       GC_err_printf(
                "GC_debug_free called on pointer %p w/o debugging info\n", p);
     } else {
@@ -815,12 +798,18 @@ GC_API void GC_CALL GC_debug_free(void * p)
           ) {
         GC_free(base);
       } else {
-        size_t i;
-        size_t obj_sz = BYTES_TO_WORDS(hhdr -> hb_sz - sizeof(oh));
+        word i;
+        word sz = hhdr -> hb_sz;
+        word obj_sz = BYTES_TO_WORDS(sz - sizeof(oh));
 
         for (i = 0; i < obj_sz; ++i)
           ((word *)p)[i] = GC_FREED_MEM_MARKER;
-        GC_ASSERT((word *)p + i == (word *)(base + hhdr -> hb_sz));
+        GC_ASSERT((word *)p + i == (word *)(base + sz));
+        /* Update the counter even though the real deallocation */
+        /* is deferred.                                         */
+        LOCK();
+        GC_bytes_freed += sz;
+        UNLOCK();
       }
     } /* !GC_find_leak */
 }
@@ -829,7 +818,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
   /* Used internally; we assume it's called correctly.    */
   GC_INNER void GC_debug_free_inner(void * p)
   {
-    ptr_t base = GC_base(p);
+    ptr_t base = (ptr_t)GC_base(p);
     GC_ASSERT((ptr_t)p - (ptr_t)base == sizeof(oh));
 #   ifdef LINT2
       if (!base) ABORT("Invalid GC_debug_free_inner argument");
@@ -872,11 +861,6 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     }
     hhdr = HDR(base);
     switch (hhdr -> hb_obj_kind) {
-#    ifdef STUBBORN_ALLOC
-      case STUBBORN:
-        result = GC_debug_malloc_stubborn(lb, OPT_RA s, i);
-        break;
-#    endif
       case NORMAL:
         result = GC_debug_malloc(lb, OPT_RA s, i);
         break;
@@ -903,7 +887,8 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 #     else
         old_sz = ((oh *)base) -> oh_sz;
 #     endif
-      BCOPY(p, result, old_sz < lb ? old_sz : lb);
+      if (old_sz > 0)
+        BCOPY(p, result, old_sz < lb ? old_sz : lb);
       GC_debug_free(p);
     }
     return(result);
@@ -913,10 +898,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_debug_generic_or_special_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 {
     switch (knd) {
-#     ifdef STUBBORN_ALLOC
-        case STUBBORN:
-            return GC_debug_malloc_stubborn(lb, OPT_RA s, i);
-#     endif
         case PTRFREE:
             return GC_debug_malloc_atomic(lb, OPT_RA s, i);
         case NORMAL:
@@ -981,8 +962,8 @@ STATIC void GC_print_all_smashed_proc(void)
 STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
 {
     struct hblkhdr * hhdr = HDR(hbp);
-    size_t sz = hhdr -> hb_sz;
-    size_t bit_no;
+    word sz = hhdr -> hb_sz;
+    word bit_no;
     char *p, *plim;
 
     p = hbp->hb_body;
@@ -1013,8 +994,8 @@ STATIC void GC_check_heap_proc(void)
 
 GC_INNER GC_bool GC_check_leaked(ptr_t base)
 {
-  size_t i;
-  size_t obj_sz;
+  word i;
+  word obj_sz;
   word *p;
 
   if (
@@ -1104,8 +1085,8 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * obj,
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
-    ptr_t base = GC_base(obj);
-    if (0 == base) {
+    ptr_t base = (ptr_t)GC_base(obj);
+    if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */
         if (ocd) *ocd = 0;
         if (ofn) *ofn = 0;
@@ -1133,8 +1114,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_no_order
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
-    ptr_t base = GC_base(obj);
-    if (0 == base) {
+    ptr_t base = (ptr_t)GC_base(obj);
+    if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */
         if (ocd) *ocd = 0;
         if (ofn) *ofn = 0;
@@ -1162,8 +1143,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_unreachable
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
-    ptr_t base = GC_base(obj);
-    if (0 == base) {
+    ptr_t base = (ptr_t)GC_base(obj);
+    if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */
         if (ocd) *ocd = 0;
         if (ofn) *ofn = 0;
@@ -1191,8 +1172,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
-    ptr_t base = GC_base(obj);
-    if (0 == base) {
+    ptr_t base = (ptr_t)GC_base(obj);
+    if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */
         if (ocd) *ocd = 0;
         if (ofn) *ofn = 0;

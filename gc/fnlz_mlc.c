@@ -43,14 +43,13 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
        /* info, GC_reclaim_with_finalization must be extended to clear  */
        /* fragments so that the assumption holds for the selected word. */
         const struct GC_finalizer_closure *fc
-                        = (void *)(fc_word & ~(word)FINALIZER_CLOSURE_FLAG);
+                        = (struct GC_finalizer_closure *)(fc_word
+                                        & ~(word)FINALIZER_CLOSURE_FLAG);
         GC_ASSERT(!GC_find_leak);
         (*fc->proc)((word *)obj + 1, fc->cd);
     }
     return 0;
 }
-
-static GC_bool done_init = FALSE;
 
 GC_API void GC_CALL GC_init_finalized_malloc(void)
 {
@@ -58,11 +57,10 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
 
     GC_init();  /* In case it's not already done.       */
     LOCK();
-    if (done_init) {
+    if (GC_finalized_kind != 0) {
         UNLOCK();
         return;
     }
-    done_init = TRUE;
 
     /* The finalizer closure is placed in the first word in order to    */
     /* use the lower bits to distinguish live objects from objects on   */
@@ -78,6 +76,7 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
 
     GC_finalized_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                           GC_DS_LENGTH, TRUE, TRUE);
+    GC_ASSERT(GC_finalized_kind != 0);
     GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim, TRUE);
     UNLOCK();
 }
@@ -86,6 +85,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
                                               int mark_unconditionally)
 {
     GC_ASSERT((unsigned)kind < MAXOBJKINDS);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(proc));
     if (!EXPECT(GC_find_leak, FALSE)) {
         GC_obj_kinds[kind].ok_disclaim_proc = proc;
         GC_obj_kinds[kind].ok_mark_unconditionally =
@@ -98,8 +98,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
 {
     word *op;
 
-    GC_ASSERT(done_init);
-    op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)), GC_finalized_kind);
+    GC_ASSERT(GC_finalized_kind != 0);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
+    GC_ASSERT(((word)fclos & FINALIZER_CLOSURE_FLAG) == 0);
+    op = (word *)GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)),
+                                GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     *op = (word)fclos | FINALIZER_CLOSURE_FLAG;

@@ -149,7 +149,7 @@ void test_extras(void)
 {
 #   define FNAME1 "cordtst1.tmp" /* short name (8+3) for portability */
 #   define FNAME2 "cordtst2.tmp"
-    register int i;
+    int i;
     CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
     CORD x = "{}";
     CORD u, w, z;
@@ -309,6 +309,11 @@ int main(void)
         printf("cordtest:\n");
 #   endif
     GC_INIT();
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
+    if (GC_get_find_leak())
+        printf("This test program is not designed for leak detection mode\n");
     test_basics();
     test_extras();
     test_printf();

@@ -159,7 +159,7 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 
 #ifndef THREADS
 /* Could p be a stack address? */
-   STATIC GC_bool GC_on_stack(ptr_t p)
+   STATIC GC_bool GC_on_stack(void *p)
    {
 #    ifdef STACK_GROWS_DOWN
        if ((word)p >= (word)GC_approx_sp()

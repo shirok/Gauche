@@ -63,16 +63,17 @@ testobj_t testobj_new(int model)
     testobj_t obj;
     switch (model) {
         case 0:
-            obj = GC_MALLOC(sizeof(struct testobj_s));
+            obj = GC_NEW(struct testobj_s);
             if (obj != NULL)
               GC_REGISTER_FINALIZER_NO_ORDER(obj, testobj_finalize,
                                              &free_count, NULL, NULL);
             break;
         case 1:
-            obj = GC_finalized_malloc(sizeof(struct testobj_s), &fclos);
+            obj = (testobj_t)GC_finalized_malloc(sizeof(struct testobj_s),
+                                                 &fclos);
             break;
         case 2:
-            obj = GC_MALLOC(sizeof(struct testobj_s));
+            obj = GC_NEW(struct testobj_s);
             break;
         default:
             exit(-1);
@@ -120,8 +121,10 @@ int main(int argc, char **argv)
         model_min = 0;
         model_max = 2;
     }
+    if (GC_get_find_leak())
+        printf("This test program is not designed for leak detection mode\n");
 
-    keep_arr = GC_MALLOC(sizeof(void *) * KEEP_CNT);
+    keep_arr = (testobj_t *)GC_MALLOC(sizeof(void *) * KEEP_CNT);
     if (NULL == keep_arr) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);

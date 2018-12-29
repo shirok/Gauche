@@ -32,11 +32,15 @@
 # error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 #endif
 
+#include <stdlib.h>
+
+EXTERN_C_BEGIN
+
 #if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC) \
     && !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) \
     && !defined(USE_CUSTOM_SPECIFIC)
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-#   if defined(CYGWIN32) && (__GNUC__ >= 4)
+#   if defined(CYGWIN32) && GC_GNUC_PREREQ(4, 0)
 #     if defined(__clang__)
         /* As of Cygwin clang3.5.2, thread-local storage is unsupported.    */
 #       define USE_PTHREAD_SPECIFIC
@@ -49,12 +53,12 @@
 #     define USE_WIN32_COMPILER_TLS
 #   endif /* !GNU */
 # elif (defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
-         && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
-         && !(defined(__clang__) && defined(PLATFORM_ANDROID))) \
-       || (defined(PLATFORM_ANDROID) && !defined(__clang__) \
-            && defined(ARM32) \
-            && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)))
-          /* As of Android NDK r10e, Clang cannot find __tls_get_addr.  */
+         && GC_GNUC_PREREQ(3, 3) \
+         && !(defined(__clang__) && defined(HOST_ANDROID))) \
+       || (defined(FREEBSD) && defined(__GLIBC__) /* kFreeBSD */ \
+            && GC_GNUC_PREREQ(4, 4)) \
+       || (defined(HOST_ANDROID) && defined(ARM32) \
+            && (GC_GNUC_PREREQ(4, 6) || GC_CLANG_PREREQ_FULL(3, 8, 256229)))
 #   define USE_COMPILER_TLS
 # elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
        || defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
@@ -74,8 +78,6 @@
 # endif
 #endif
 
-#include <stdlib.h>
-
 #ifndef THREAD_FREELISTS_KINDS
 # ifdef ENABLE_DISCLAIM
 #   define THREAD_FREELISTS_KINDS (NORMAL+2)
@@ -93,7 +95,7 @@ typedef struct thread_local_freelists {
         /* Note: Preserve *_freelists names for some clients.   */
 # ifdef GC_GCJ_SUPPORT
     void * gcj_freelists[TINY_FREELISTS];
-#   define ERROR_FL ((void *)(word)-1)
+#   define ERROR_FL ((void *)GC_WORD_MAX)
         /* Value used for gcj_freelists[-1]; allocation is      */
         /* erroneous.                                           */
 # endif
@@ -135,7 +137,9 @@ typedef struct thread_local_freelists {
 #   define WIN32_LEAN_AND_MEAN 1
 # endif
 # define NOSERVICE
+  EXTERN_C_END
 # include <windows.h>
+  EXTERN_C_BEGIN
 # define GC_getspecific TlsGetValue
 # define GC_setspecific(key, v) !TlsSetValue(key, v)
         /* We assume 0 == success, msft does the opposite.      */
@@ -150,7 +154,9 @@ typedef struct thread_local_freelists {
 # define GC_remove_specific_after_fork(key, t) (void)0
   typedef DWORD GC_key_t;
 #elif defined(USE_CUSTOM_SPECIFIC)
+  EXTERN_C_END
 # include "private/specific.h"
+  EXTERN_C_BEGIN
 #else
 # error implement me
 #endif
@@ -170,6 +176,14 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
 
+#ifdef GC_ASSERTIONS
+  GC_bool GC_is_thread_tsd_valid(void *tsd);
+  void GC_check_tls_for(GC_tlfs p);
+# if defined(USE_CUSTOM_SPECIFIC)
+    void GC_check_tsd_marks(tsd *key);
+# endif
+#endif /* GC_ASSERTIONS */
+
 #ifndef GC_ATTR_TLS_FAST
 # define GC_ATTR_TLS_FAST /* empty */
 #endif
@@ -184,6 +198,8 @@ extern
 /* This is set up by the thread_local_alloc implementation.  No need    */
 /* for cleanup on thread exit.  But the thread support layer makes sure */
 /* that GC_thread_key is traced, if necessary.                          */
+
+EXTERN_C_END
 
 #endif /* THREAD_LOCAL_ALLOC */
 
