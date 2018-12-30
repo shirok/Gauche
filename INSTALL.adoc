@@ -299,7 +299,7 @@ it on your system.
 endif::lang-JP[]
 
 ifdef::lang-JP[]
-configureスクリプトは、 `/usr/local/slib` などいくつかの基本的なディレクトリ
+configureスクリプトは、 `/usr/local/slib` や `/usr/share/slib` などいくつかの基本的なディレクトリ
 からSLIBを自動的に探します。もしあなたのSLIBシステムが標準的ではない場所に
 インストールされていたら、次のオプションでその場所を指定してください。
 endif::lang-JP[]
