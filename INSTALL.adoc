@@ -593,17 +593,17 @@ endif::lang-JP[]
 ifndef::lang-JP[]
 - You have to have the same version of Gauche that you're trying to
   cross-compile on the build machine.
-
-  In normal build, Gauche uses freshly built `gosh` to compile
-  extension libraries (under `ext/`).  While cross compiling we can't run
-  freshly built 'gosh' on the build machine, so we rely on the 'gosh' already
-  installed on it.
++
+In normal build, Gauche uses freshly built `gosh` to compile
+extension libraries (under `ext/`).  While cross compiling we can't run
+freshly built 'gosh' on the build machine, so we rely on the 'gosh' already
+installed on it.
 
 - You may need `--with-libatomic-ops=no` option for `./configure`
-
-  The option forces Gauche to use bundled libatomic_ops source instead
-  of system provided one.  We noticed that `./configure` may misunderstood
-  the build system's libatmic_ops as the host system's.
++
+The option forces Gauche to use bundled libatomic_ops source instead
+of system provided one.  We noticed that `./configure` may misunderstood
+the build system's libatmic_ops as the host system's.
 endif::lang-JP[]
 
 ifdef::lang-JP[]
@@ -650,15 +650,16 @@ ifdef::lang-JP[]
 endif::lang-JP[]
 ifndef::lang-JP[]
 * MacOS X - For 10.2.x and earlier, you need to install the dlcompat
-       library (libdl) from Fink project ( http://fink.sourceforge.net )
-       before configuring Gauche.   You don't need it if you have OSX
-       10.3 or later.   If the dlcompat library is installed in non-standard
-       location, you have to tell configure the place by `--with-local`.
-       Besides, GC now requires pthreads on MacOS X, so you need
-       `--enable-threads=pthreads`.
 +
-       For example, if you have `dlfcn.h` in `$HOME/include` and `libdl.a`
-       in `$HOME/lib`, you should do:
+library (libdl) from Fink project ( http://fink.sourceforge.net )
+before configuring Gauche.   You don't need it if you have OSX
+10.3 or later.   If the dlcompat library is installed in non-standard
+location, you have to tell configure the place by `--with-local`.
+Besides, GC now requires pthreads on MacOS X, so you need
+`--enable-threads=pthreads`.
++
+For example, if you have `dlfcn.h` in `$HOME/include` and `libdl.a`
+in `$HOME/lib`, you should do:
 +
 [source,console]
 ----
@@ -668,14 +669,14 @@ endif::lang-JP[]
 
 ifdef::lang-JP[]
 * IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
-       したい場合は次のようにして下さい。
+  したい場合は次のようにして下さい。
 +
 [source,console]
 CC="cc -64" AS="as -64" ./configure
 endif::lang-JP[]
 ifndef::lang-JP[]
 * IRIX with 64bit binary - If you want to compile for 64bit ABI instead
-       of the default 32bit ABI, run configure like this:
+  of the default 32bit ABI, run configure like this:
 +
 [source,console]
 CC="cc -64" AS="as -64" ./configure
@@ -683,9 +684,9 @@ endif::lang-JP[]
 
 ifdef::lang-JP[]
 * Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
-       ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
-       でコンパイルに失敗するという報告がありました。
-       この場合は以下のように環境依存の最適化を無効にして下さい。
+  ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
+  でコンパイルに失敗するという報告がありました。
+  この場合は以下のように環境依存の最適化を無効にして下さい。
 +
 [source,console]
 ----
@@ -694,10 +695,10 @@ ifdef::lang-JP[]
 endif::lang-JP[]
 ifndef::lang-JP[]
 * Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks
-       TM5800 as i686-compatible, and compilation of Gauche fails at
-       gc where the i686's prefetch instruction is used.
-       If you want to disable this machine-dependent heuristic optimization,
-       run configure like this:
+  TM5800 as i686-compatible, and compilation of Gauche fails at
+  gc where the i686's prefetch instruction is used.
+  If you want to disable this machine-dependent heuristic optimization,
+  run configure like this:
 +
 [source,console]
 ----
