@@ -430,13 +430,13 @@ endif::lang-JP[]
 
 
 ifdef::lang-JP[]
---prefix オプションが指定されなければ、 /usr/local が指定されたものとみなされます。
---exec-prefix オプションが指定されなければ、EXEC_PREFIXはPREFIXと同じものに
+`--prefix` オプションが指定されなければ、 `/usr/local` が指定されたものとみなされます。
+`--exec-prefix` オプションが指定されなければ、 `EXEC_PREFIX` は `PREFIX` と同じものに
 なります。
 endif::lang-JP[]
 ifndef::lang-JP[]
-If --prefix option is omitted, /usr/local is assumed as PREFIX.
-If --exec-prefix option is omitted, EXEC_PREFIX is set the same as PREFIX.
+If `--prefix` option is omitted, `/usr/local` is assumed as PREFIX.
+If `--exec-prefix` option is omitted, `EXEC_PREFIX` is set the same as `PREFIX`.
 endif::lang-JP[]
 
 
