@@ -207,7 +207,7 @@ Gaucheのビルドに、標準でない場所にインストールされてい�
 場合は次のようにします。
 
 [source,console]
-  --with-local=/usr/local
+--with-local=/usr/local
 endif::lang-JP[]
 ifndef::lang-JP[]
 If you want to use some libraries installed in non-standard location
@@ -224,7 +224,7 @@ For example, if you want to use gdbm library in `/usr/local`,
 you can say:
 
 [source,console]
-  --with-local=/usr/local
+--with-local=/usr/local
 endif::lang-JP[]
 
 
