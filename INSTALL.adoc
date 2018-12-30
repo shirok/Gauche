@@ -14,7 +14,7 @@ ifndef::lang-JP[]
 NOTE: The Gauche system is a work in progress and frequently updated.
 Check out the latest information on the site:
 endif::lang-JP[]
-  http://practical-scheme.net/gauche/
+http://practical-scheme.net/gauche/
 
 
 ifdef::lang-JP[]
@@ -26,10 +26,10 @@ endif::lang-JP[]
 
 [source,console]
 ----
-   % ./configure
-   % make
-   % make check
-   % make install
+% ./configure
+% make
+% make check
+% make install
 ----
 
 ifdef::lang-JP[]
@@ -53,7 +53,7 @@ you can use the following command instead of 'configure'.
 endif::lang-JP[]
 
 [source,console]
-    % gauche-config --reconfigure | sh
+% gauche-config --reconfigure | sh
 
 ifdef::lang-JP[]
 `--reconfigure` オプションが与えられると、gauche-configは現在
@@ -114,9 +114,9 @@ endif::lang-JP[]
 
 [source,console]
 ----
-  --enable-threads=none     ;; turn off the thread support
-  --enable-threads=pthreads ;; turn on the thread support (pthread)
-  --enable-threads=win32    ;; turn on the thread support (windows)
+--enable-threads=none     ;; turn off the thread support
+--enable-threads=pthreads ;; turn on the thread support (pthread)
+--enable-threads=win32    ;; turn on the thread support (windows)
 ----
 
 
@@ -142,10 +142,10 @@ endif::lang-JP[]
 
 [source,console]
 ----
-  --enable-multibyte=utf-8   ;; UTF-8 (default)
-  --enable-multibyte=euc-jp  ;; EUC-JP
-  --enable-multibyte=sjis    ;; Shift JIS
-  --enable-multibyte=no      ;; No multibyte string
+--enable-multibyte=utf-8   ;; UTF-8 (default)
+--enable-multibyte=euc-jp  ;; EUC-JP
+--enable-multibyte=sjis    ;; Shift JIS
+--enable-multibyte=no      ;; No multibyte string
 ----
 
 
@@ -165,7 +165,7 @@ iconv library by `--with-iconv` option.
 endif::lang-JP[]
 
 [source,console]
-  --with-iconv=DIR
+--with-iconv=DIR
 
 
 ifdef::lang-JP[]
@@ -218,7 +218,7 @@ to build Gauche, you can use the following option to specify the
 locations.
 
 [source,console]
-  --with-local=PATH:PATH2:...
+--with-local=PATH:PATH2:...
 
 This addts `PATH/include`, `PATH2/include`, ... to the include paths,
 and `PATH/lib`, `PATH2/lib`, ... to the library search paths.
@@ -273,11 +273,11 @@ endif::lang-JP[]
 
 [source,console]
 ----
-  --with-tls=none          ;; do not include TLS/SSL support
-  --with-tls=axtls         ;; include only axTLS support
-  --with-tls=axtls,mbedtls ;; (default) include TLS/SSL support using
-                              axTLS library (source is included in Gauche),
-                              and mbedTLS library (installed on the system).
+--with-tls=none          ;; do not include TLS/SSL support
+--with-tls=axtls         ;; include only axTLS support
+--with-tls=axtls,mbedtls ;; (default) include TLS/SSL support using
+                            axTLS library (source is included in Gauche),
+                            and mbedTLS library (installed on the system).
 ----
 
 ifdef::lang-JP[]
@@ -312,7 +312,7 @@ endif::lang-JP[]
 
 [source,console]
 ----
-   ./configure --with-slib=PATH
+./configure --with-slib=PATH
 ----
 
 ifdef::lang-JP[]
@@ -353,8 +353,8 @@ endif::lang-JP[]
 
 [source,scheme]
 ----
-  (use slib)
-  (require 'logical)
+(use slib)
+(require 'logical)
 ----
 
 
@@ -426,7 +426,7 @@ Call configure with those parameters to specify where to install.
 endif::lang-JP[]
 
 [source,console]
-   % ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
+% ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
 
 
 ifdef::lang-JP[]
@@ -617,10 +617,10 @@ endif::lang-JP[]
 
 [source,console]
 ----
-  $ ./configure --build=`./config.guess` \
-                --host=i686-w64-mingw32 \
-                --with-libatomic-ops=no \
-                --prefix=/usr/local
+$ ./configure --build=`./config.guess` \
+              --host=i686-w64-mingw32 \
+              --with-libatomic-ops=no \
+              --prefix=/usr/local
 ----
 
 ifdef::lang-JP[]
@@ -633,13 +633,13 @@ endif::lang-JP[]
 
 ifdef::lang-JP[]
 * MacOS X - 10.2.x以前のバージョンでは、dlcompatライブラリ(libdl)が
-      インストールされていることが必要です。 http://fink.sourceforge.net から
-      ダウンロードできます。10.3以降では必要ありません。システム標準の
-      場所以外にdlcompatライブラリをインストールした場合は、configureの
-      `--with-local` オプションで場所を指定して下さい。
-      また、GCがpthreadsを要求するようになったので、`--enable-threads=pthreads`
-      も必要です。
-      (例：`$HOME/include` に `dlfcn.h` が、 `$HOME/lib` に `libdl.a` がある場合は
+  インストールされていることが必要です。 http://fink.sourceforge.net から
+  ダウンロードできます。10.3以降では必要ありません。システム標準の
+  場所以外にdlcompatライブラリをインストールした場合は、configureの
+  `--with-local` オプションで場所を指定して下さい。
+  また、GCがpthreadsを要求するようになったので、`--enable-threads=pthreads`
+  も必要です。
+  (例：`$HOME/include` に `dlfcn.h` が、 `$HOME/lib` に `libdl.a` がある場合は
 +
 [source,console]
 ----
