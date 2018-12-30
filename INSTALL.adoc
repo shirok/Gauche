@@ -521,7 +521,7 @@ options, just run 'make' as follows:
 endif::lang-JP[]
 
 [source,console]
-  make OPTFLAGS="--some-compiler-option --other-option"
+make OPTFLAGS="--some-compiler-option --other-option"
 
 
 ifdef::lang-JP[]
@@ -536,7 +536,7 @@ ifdef::lang-JP[]
 ディレクトリで
 
 [source,console]
-  make uninstall
+make uninstall
 
 として下さい。
 endif::lang-JP[]
@@ -544,7 +544,7 @@ ifndef::lang-JP[]
 You can remove installed Gauche software by running
 
 [source,console]
-  make uninstall
+make uninstall
 
 on top of the source tree.
 endif::lang-JP[]
