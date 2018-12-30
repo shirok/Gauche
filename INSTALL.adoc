@@ -70,13 +70,13 @@ endif::lang-JP[]
 
 ifdef::lang-JP[]
 注: gitレポジトリの開発版HEADをコンパイルする場合は、configureを
-走らせる前にいくつか準備が必要です。詳しくはHACKINGファイルを参照して
+走らせる前にいくつか準備が必要です。詳しくは link:HACKING.adoc[] ファイルを参照して
 ください。
 endif::lang-JP[]
 ifndef::lang-JP[]
 Note: If you are compiling from development HEAD cloned from
 git repository, you need extra steps before running configure.
-See the file HACKING for the details.
+See the file link:HACKING.adoc[] for the details.
 endif::lang-JP[]
 
 ifdef::lang-JP[]
