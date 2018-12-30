@@ -1,7 +1,7 @@
 This directory contains a Gauche interface to Mersenne Twister pseudo-
 random generator.  Mersenne Twister algorithm is developed by Makoto
 Matsumoto and Takuji Nishimura.  It is fast, has higher order of
-equidistribution, and has the period of 2^19937-1.
+equidistribution, and has the period of 2^19937^-1.
 See http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html for details.
 
 This implementation is derived from the 2002/1/26 version of mt19937ar,

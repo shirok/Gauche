@@ -9,7 +9,7 @@ original source, for speed is not our goal, and having an asm
 mean more support burden.
 
 The content of the original README follows:
-===================================================================
+-------------------------------------------------------------------
 
 This is an implementation of a password hashing method, provided via the
 crypt(3) and a reentrant interface.  It is fully compatible with
@@ -79,3 +79,4 @@ routines as well.
 Solar Designer <solar at openwall.com>
 
 $Owl: Owl/packages/glibc/crypt_blowfish/README,v 1.10 2014/07/07 15:19:04 solar Exp $
+-------------------------------------------------------------------
