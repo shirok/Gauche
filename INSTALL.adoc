@@ -5,6 +5,7 @@ endif::lang-JP[]
 ifndef::lang-JP[]
 = Compiling and Installing Gauche
 endif::lang-JP[]
+:source-highlighter: pygments
 
 ifdef::lang-JP[]
 NOTE: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
