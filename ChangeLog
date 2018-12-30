@@ -1,5 +1,7 @@
 2018-12-29  Shiro Kawai  <shiro@acm.org>
 
+	* gc/: Update to libgc 8. https://github.com/shirok/Gauche/pull/414
+
 	* src/compile-1.scm (_, ...): Bind these two as syntaxes so that they
 	  can be exported from (scheme base).
 
