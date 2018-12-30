@@ -171,7 +171,7 @@ endif::lang-JP[]
 ifdef::lang-JP[]
 例えば `--with-iconv=/usr/local` とすれば、Gaucheは `iconv.h` を `/usr/local/include`
 から、 `libiconv` を `/usr/local/lib` から探します。もしあなたのiconvライブラリが
-libiconv以外の名前 (libmyconvとか) だったとしたら、
+libiconv以外の名前 ( `libmyconv` とか) だったとしたら、
 `--with-iconv-lib=myconv` というオプションも指定して下さい。
 
 外部のiconvライブラリとしては、Bruno Haible氏のlibiconvが以下から入手可能です。
@@ -181,7 +181,7 @@ For example, if your say `--with-iconv=/usr/local`, Gauche looks
 for the header iconv.h from `/usr/local/include` and the library
 libiconv from `/usr/local/lib`.
 In case if your iconv library is named other than libiconv, say,
-libmyconv, you can also specify `--with-iconv-lib=myconv` to tell
+`libmyconv`, you can also specify `--with-iconv-lib=myconv` to tell
 Gauche to link against the library.
 
 You can obtain Bruno Haible's libiconv library from here:
@@ -316,10 +316,10 @@ endif::lang-JP[]
 ----
 
 ifdef::lang-JP[]
-ここで、PATHはSLIBがインストールされたパスです。
+ここで、`PATH` はSLIBがインストールされたパスです。
 endif::lang-JP[]
 ifndef::lang-JP[]
-where PATH is the path you installed your SLIB.
+where `PATH` is the path you installed your SLIB.
 endif::lang-JP[]
 
 ifdef::lang-JP[]
@@ -394,7 +394,7 @@ a problem that your build of Gauche depends on some dynamically
 loaded libraries that are installed in non-standard location.
 
 For example, suppose you install a new `libiconv.so` in `/home/yours/lib`
-on the ISP's server and compile Gauche with --with-iconv=/home/yours/lib.
+on the ISP's server and compile Gauche with `--with-iconv=/home/yours/lib`.
 You have set up correct environment variables such as `LD_LIBRARY_PATH`,
 so you can invoke Gauche interpreter `gosh` without a problem.  Now,
 you write a CGI script.   Unfortunately, the ISP's web server
@@ -578,17 +578,17 @@ endif::lang-JP[]
 ifdef::lang-JP[]
 - クロスコンパイルしようとしているのと同じバージョンのGaucheをビルドマシンに
   インストールしておいてください。
++
+通常のビルドでは、Gaucheは作ったばかりの `gosh` を使って `ext/` 以下の拡張
+ライブラリをビルドします。クロスコンパイル時には、作ったばかりの'gosh'は
+ビルドマシンでは実行できないので、既にビルドマシンにインストールされている
+`gosh` を使うことになります。
 
-  通常のビルドでは、Gaucheは作ったばかりの `gosh` を使って `ext/` 以下の拡張
-  ライブラリをビルドします。クロスコンパイル時には、作ったばかりの'gosh'は
-  ビルドマシンでは実行できないので、既にビルドマシンにインストールされている
-  goshを使うことになります。
-
-- ./configureに `--with-libatomic-ops=no` オプションが必要かもしれません。
-
-  このオプションをつけることで、システムにインストールされている `libatomic_ops`
-  ではなく同梱されたソースを使うようになります。どうもconfigureスクリプトが
-  ビルドシステム用の `libatomic_ops` をホスト用と誤認するケースがあるようです。
+- `./configure` に `--with-libatomic-ops=no` オプションが必要かもしれません。
++
+このオプションをつけることで、システムにインストールされている `libatomic_ops`
+ではなく同梱されたソースを使うようになります。どうもconfigureスクリプトが
+ビルドシステム用の `libatomic_ops` をホスト用と誤認するケースがあるようです。
 endif::lang-JP[]
 ifndef::lang-JP[]
 - You have to have the same version of Gauche that you're trying to
@@ -601,9 +601,9 @@ installed on it.
 
 - You may need `--with-libatomic-ops=no` option for `./configure`
 +
-The option forces Gauche to use bundled libatomic_ops source instead
+The option forces Gauche to use bundled `libatomic_ops` source instead
 of system provided one.  We noticed that `./configure` may misunderstood
-the build system's libatmic_ops as the host system's.
+the build system's `libatmic_ops` as the host system's.
 endif::lang-JP[]
 
 ifdef::lang-JP[]
