@@ -113,12 +113,10 @@ the following configure options to turn off or turn on the support
 explicitly.
 endif::lang-JP[]
 
-[source,console]
-----
---enable-threads=none     ;; turn off the thread support
---enable-threads=pthreads ;; turn on the thread support (pthread)
---enable-threads=win32    ;; turn on the thread support (windows)
-----
+[horizontal]
+`--enable-threads=none`     :: turn off the thread support
+`--enable-threads=pthreads` :: turn on the thread support (pthread)
+`--enable-threads=win32`    :: turn on the thread support (windows)
 
 
 ifdef::lang-JP[]
@@ -141,13 +139,11 @@ the program text, you have to specify no multibyte encoding, or
 Gauche takes such characters as the first byte of multibyte charaters.
 endif::lang-JP[]
 
-[source,console]
-----
---enable-multibyte=utf-8   ;; UTF-8 (default)
---enable-multibyte=euc-jp  ;; EUC-JP
---enable-multibyte=sjis    ;; Shift JIS
---enable-multibyte=no      ;; No multibyte string
-----
+[horizontal]
+`--enable-multibyte=utf-8`   :: UTF-8 (default)
+`--enable-multibyte=euc-jp`  :: EUC-JP
+`--enable-multibyte=sjis`    :: Shift JIS
+`--enable-multibyte=no`      :: No multibyte string
 
 
 ifdef::lang-JP[]
@@ -272,14 +268,12 @@ during configuration.  If you have a problem building those libraries,
 you can selectively turn off each of them.
 endif::lang-JP[]
 
-[source,console]
-----
---with-tls=none          ;; do not include TLS/SSL support
---with-tls=axtls         ;; include only axTLS support
---with-tls=axtls,mbedtls ;; (default) include TLS/SSL support using
+[horizontal]
+`--with-tls=none`          :: do not include TLS/SSL support
+`--with-tls=axtls`         :: include only axTLS support
+`--with-tls=axtls,mbedtls` :: (default) include TLS/SSL support using
                             axTLS library (source is included in Gauche),
                             and mbedTLS library (installed on the system).
-----
 
 ifdef::lang-JP[]
 == SLIBの場所
