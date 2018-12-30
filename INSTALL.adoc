@@ -299,13 +299,13 @@ it on your system.
 endif::lang-JP[]
 
 ifdef::lang-JP[]
-configureスクリプトは、/usr/local/slibなどいくつかの基本的なディレクトリ
+configureスクリプトは、 `/usr/local/slib` などいくつかの基本的なディレクトリ
 からSLIBを自動的に探します。もしあなたのSLIBシステムが標準的ではない場所に
 インストールされていたら、次のオプションでその場所を指定してください。
 endif::lang-JP[]
 ifndef::lang-JP[]
 The configure script tries to find where SLIB is installed.  It looks
-for some typical directories like /usr/local/slib or /usr/share/slib.
+for some typical directories like `/usr/local/slib` or `/usr/share/slib`.
 If you installed your SLIB in some non-standard location, you can tell
 it to the configure script as follows:
 endif::lang-JP[]
