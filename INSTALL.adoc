@@ -128,13 +128,13 @@ ifndef::lang-JP[]
 endif::lang-JP[]
 
 ifdef::lang-JP[]
-デフォルトでは、Gaucheは内部文字エンコーディングとして`utf-8`を使います。
+デフォルトでは、Gaucheは内部文字エンコーディングとして `utf-8` を使います。
 `--enable-multibyte=ENCODING` というオプションをconfigureに渡すことで、
 内部文字エンコーディングを変えることができます。
 endif::lang-JP[]
 ifndef::lang-JP[]
-By default, Gauche is compiled with utf-8 as a native character encoding.
-You can give a --enable-multibyte=ENCODING option to switch the native
+By default, Gauche is compiled with `utf-8` as a native character encoding.
+You can give a `--enable-multibyte=ENCODING` option to switch the native
 encoding.   Note that if you want to use ISO8859-1 GR characters in
 the program text, you have to specify no multibyte encoding, or
 Gauche takes such characters as the first byte of multibyte charaters.
@@ -154,7 +154,7 @@ Gaucheは代表的な日本語文字エンコーディングを認識し変換�
 できますが、それ以外のエンコーディングに関しては、iconvが利用可能で
 あればそれを利用して変換を行います。
 iconvが標準でインストールされていないシステムでは、
-`--with-iconv`オプションで外部のiconvライブラリを利用することができます。
+`--with-iconv` オプションで外部のiconvライブラリを利用することができます。
 endif::lang-JP[]
 ifndef::lang-JP[]
 Gauche can recognize and converts typical japanese character
@@ -169,19 +169,19 @@ endif::lang-JP[]
 
 
 ifdef::lang-JP[]
-例えば `--with-iconv=/usr/local` とすれば、Gaucheは`iconv.h`を`/usr/local/include`
-から、`libiconv`を`/usr/local/lib`から探します。もしあなたのiconvライブラリが
+例えば `--with-iconv=/usr/local` とすれば、Gaucheは `iconv.h` を `/usr/local/include`
+から、 `libiconv` を `/usr/local/lib` から探します。もしあなたのiconvライブラリが
 libiconv以外の名前 (libmyconvとか) だったとしたら、
---with-iconv-lib=myconv というオプションも指定して下さい。
+`--with-iconv-lib=myconv` というオプションも指定して下さい。
 
 外部のiconvライブラリとしては、Bruno Haible氏のlibiconvが以下から入手可能です。
 endif::lang-JP[]
 ifndef::lang-JP[]
-For example, if your say --with-iconv=/usr/local, Gauche looks
-for the header iconv.h from /usr/local/include and the library
-libiconv from /usr/local/lib.
+For example, if your say `--with-iconv=/usr/local`, Gauche looks
+for the header iconv.h from `/usr/local/include` and the library
+libiconv from `/usr/local/lib`.
 In case if your iconv library is named other than libiconv, say,
-libmyconv, you can also specify --with-iconv-lib=myconv to tell
+libmyconv, you can also specify `--with-iconv-lib=myconv` to tell
 Gauche to link against the library.
 
 You can obtain Bruno Haible's libiconv library from here:
@@ -203,10 +203,10 @@ Gaucheのビルドに、標準でない場所にインストールされてい�
 [source]
 --with-local=PATH:PATH2:...
 
-これで、PATH/include、PATH2/include、... がインクルードパスに、
-PATH/lib、PATH2/lib、... がライブラリサーチパスに追加されます。
+これで、`PATH/include` 、`PATH2/include` 、... がインクルードパスに、
+`PATH/lib` 、`PATH2/lib` 、... がライブラリサーチパスに追加されます。
 
-例えば、/usr/localにインストールされたgdbmライブラリを使用したい
+例えば、`/usr/local` にインストールされたgdbmライブラリを使用したい
 場合は次のようにします。
 
 [source]
@@ -220,10 +220,10 @@ locations.
 [source]
   --with-local=PATH:PATH2:...
 
-This addts PATH/include, PATH2/include, ... to the include paths,
-and PATH/lib, PATH2/lib, ... to the library search paths.
+This addts `PATH/include`, `PATH2/include`, ... to the include paths,
+and `PATH/lib`, `PATH2/lib`, ... to the library search paths.
 
-For example, if you want to use gdbm library in /usr/local,
+For example, if you want to use gdbm library in `/usr/local`,
 you can say:
 
 [source]
@@ -241,11 +241,11 @@ endif::lang-JP[]
 ifdef::lang-JP[]
 GaucheはプラットフォームでIPv6がサポートされていればそれを使えるように
 コンパイルされますが、何らかの事情でIPv6を全く使わないバージョンが必要で
-あれば、--enable-ipv6=no を指定してください。
+あれば、`--enable-ipv6=no` を指定してください。
 endif::lang-JP[]
 ifndef::lang-JP[]
 Gauche includes IPv6 support if the platform has it.  If you
-don't want to include IPv6 support, give --enable-ipv6=no option.
+don't want to include IPv6 support, give `--enable-ipv6=no` option.
 endif::lang-JP[]
 
 
@@ -311,7 +311,9 @@ it to the configure script as follows:
 endif::lang-JP[]
 
 [source,console]
+----
    ./configure --with-slib=PATH
+----
 
 ifdef::lang-JP[]
 ここで、PATHはSLIBがインストールされたパスです。
