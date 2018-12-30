@@ -4303,7 +4303,7 @@ Returns @code{#t} if the ring buffer @var{rb} is full,
 @c COMMON
 @end defun
 
-@defun ring-buffer-num-elements rb
+@defun ring-buffer-num-entries rb
 @c MOD data.ring-buffer
 @c EN
 Returns the number of current elements in the ring buffer @var{rb}.
