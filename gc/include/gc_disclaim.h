@@ -17,6 +17,10 @@
 
 #include "gc.h"
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /* This API is defined only if the library has been suitably compiled   */
 /* (i.e. with ENABLE_DISCLAIM defined).                                 */
 
@@ -38,8 +42,8 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 /* Calls to GC_free() will free its argument without inquiring "proc".  */
 /* No-op in the leak-finding mode.                                      */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
-                                              GC_disclaim_proc /*proc*/,
-                                              int /*mark_from_all*/);
+                                GC_disclaim_proc /*proc*/,
+                                int /*mark_from_all*/) GC_ATTR_NONNULL(2);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
@@ -61,6 +65,10 @@ struct GC_finalizer_closure {
 /* The disclaim procedure is not invoked in the leak-finding mode.      */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_finalized_malloc(size_t /*size*/,
-                            const struct GC_finalizer_closure * /*fc*/);
+                const struct GC_finalizer_closure * /*fc*/) GC_ATTR_NONNULL(2);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif

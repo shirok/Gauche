@@ -136,7 +136,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 /* rarely executed point at which it is safe to release the lock.       */
 /* We do this even where we could just call GC_INVOKE_FINALIZERS,       */
 /* since it's probably cheaper and certainly more uniform.              */
-/* FIXME - Consider doing the same elsewhere?                           */
+/* TODO: Consider doing the same elsewhere? */
 static void maybe_finalize(void)
 {
    static word last_finalized_no = 0;
@@ -166,9 +166,10 @@ static void maybe_finalize(void)
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
-        word lg = GC_size_map[lb];
+        word lg;
 
         LOCK();
+        lg = GC_size_map[lb];
         op = GC_gcjobjfreelist[lg];
         if(EXPECT(0 == op, FALSE)) {
             maybe_finalize();
@@ -179,7 +180,7 @@ static void maybe_finalize(void)
                 return((*oom_fn)(lb));
             }
         } else {
-            GC_gcjobjfreelist[lg] = obj_link(op);
+            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
         GC_ASSERT(((void **)op)[1] == 0);
@@ -242,9 +243,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
-        word lg = GC_size_map[lb];
+        word lg;
 
         LOCK();
+        lg = GC_size_map[lb];
         op = GC_gcjobjfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {
             maybe_finalize();
@@ -255,7 +257,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                 return((*oom_fn)(lb));
             }
         } else {
-            GC_gcjobjfreelist[lg] = obj_link(op);
+            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
     } else {

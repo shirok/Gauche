@@ -1,6 +1,6 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-This is version 7.6.10 of a conservative garbage
+This is version 8.0.2 of a conservative garbage
 collector for C and C++.
 
 
@@ -61,15 +61,15 @@ was part of version 8 UNIX (tm), but appears to not have received
 widespread use.
 
 Rudimentary tools for use of the collector as a
-[leak detector](http://www.hboehm.info/gc/leak.html) are included,
+[leak detector](doc/leak.md) are included,
 as is a fairly sophisticated string package "cord" that makes use of the
 collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 "Ropes: An Alternative to Strings", Software Practice and Experience 25, 12
 (December 1995), pp. 1315-1330.  This is very similar to the "rope" package
 in Xerox Cedar, or the "rope" package in the SGI STL or the g++ distribution.)
 
-Further collector documentation can be found
-in [overview.html](doc/overview.html).
+Further collector documentation can be found in the
+[overview](doc/overview.md).
 
 
 ## General Description
@@ -109,7 +109,7 @@ large objects to be disregarded, greatly reducing the probability of
 accidental retention of large objects.  For most purposes it seems
 best to compile with `ALL_INTERIOR_POINTERS` and to use
 `GC_malloc_ignore_off_page` if you get collector warnings from
-allocations of very large objects.  See doc/debugging.html for details.
+allocations of very large objects.  See [here](doc/debugging.md) for details.
 
 _WARNING_: pointers inside memory allocated by the standard `malloc` are not
 seen by the garbage collector.  Thus objects pointed to only from such a
@@ -174,8 +174,7 @@ simplest case), or with a classic makefile by itself (type
 
 Please note that the collector source repository does not contain configure
 and similar auto-generated files, thus the full procedure of autoconf-based
-build of `master` branch of the collector (using `master` branch of
-libatomic_ops source repository as well) could look like:
+build of `master` branch of the collector could look like:
 
     git clone git://github.com/ivmai/bdwgc.git
     cd bdwgc
@@ -185,9 +184,8 @@ libatomic_ops source repository as well) could look like:
     make -j
     make check
 
-If you are getting "syntax error near unexpected token ATOMIC_OPS" during
-configure execution, this means pkg.m4 cannot be found, most probably
-you should run `pkg-config` once before running `./autogen.sh` (autoreconf).
+Cloning of `libatomic_ops` is now optional provided the compiler supports
+atomic intrinsics.
 
 Below we focus on the collector build using classic makefile.
 For the Makefile.direct-based process, typing `make check` instead of `make`
@@ -256,7 +254,7 @@ or 64 bit addresses will require a major effort.  A port to plain MSDOS
 or win16 is hard.
 
 For machines not already mentioned, or for nonstandard compilers,
-some porting suggestions are provided in doc/porting.html.
+some porting suggestions are provided [here](doc/porting.md).
 
 
 ## The C Interface to the Allocator
@@ -492,34 +490,12 @@ of information:
    (other than read) be handled specially by client code.
    See os_dep.c for details.
 
-2. Information supplied by the programmer.  We define "stubborn"
-   objects to be objects that are rarely changed.  Such an object
-   can be allocated (and enabled for writing) with `GC_malloc_stubborn`.
-   Once it has been initialized, the collector should be informed with
-   a call to `GC_end_stubborn_change`.  Subsequent writes that store
-   pointers into the object must be preceded by a call to
-   `GC_change_stubborn`.
-
-This mechanism performs best for objects that are written only for
-initialization, and such that only one stubborn object is writable
-at once.  It is typically not worth using for short-lived
-objects.  Stubborn objects are treated less efficiently than pointer-free
-(atomic) objects.
-
-A rough rule of thumb is that, in the absence of VM information, garbage
-collection pauses are proportional to the amount of pointerful storage
-plus the amount of modified "stubborn" storage that is reachable during
-the collection.
-
-Initial allocation of stubborn objects takes longer than allocation
-of other objects, since other data structures need to be maintained.
-
-We recommend against random use of stubborn objects in client
-code, since bugs caused by inappropriate writes to stubborn objects
-are likely to be very infrequently observed and hard to trace.
-However, their use may be appropriate in a few carefully written
-library routines that do not make the objects themselves available
-for writing by client code.
+2. Information supplied by the programmer.  The object is considered dirty
+   after a call to `GC_end_stubborn_change` provided the library has been
+   compiled suitably. It is typically not worth using for short-lived objects.
+   Note that bugs caused by a missing `GC_end_stubborn_change` or
+   `GC_reachable_here` call are likely to be observed very infrequently and
+   hard to trace.
 
 
 ## Bugs
@@ -596,6 +572,10 @@ The files extra/msvc_dbg.c and include/private/msvc_dbg.h are
 The file tests/initsecondarythread.c is
 
  * Copyright (c) 2011 Ludovic Courtes
+
+The file tests/disclaim_weakmap_test.c is
+
+ * Copyright (c) 2018 Petter A. Urkedal
 
 Several files supporting GNU-style builds are copyrighted by the Free
 Software Foundation, and carry a different license from that given

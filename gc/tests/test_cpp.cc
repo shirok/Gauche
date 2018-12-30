@@ -28,6 +28,7 @@ few minutes to complete.
 
 #undef GC_BUILD
 
+#define GC_DONT_INCL_WINDOWS_H
 #include "gc_cpp.h"
 
 #include <stdio.h>
@@ -41,12 +42,12 @@ few minutes to complete.
 # include "new_gc_alloc.h"
 #endif
 
-extern "C" {
 # include "private/gcconfig.h"
 
 # ifndef GC_API_PRIV
 #   define GC_API_PRIV GC_API
 # endif
+extern "C" {
   GC_API_PRIV void GC_printf(const char * format, ...);
   /* Use GC private output to reach the same log file.  */
   /* Don't include gc_priv.h, since that may include Windows system     */
@@ -54,6 +55,10 @@ extern "C" {
 }
 
 #ifdef MSWIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
 #endif
 
@@ -236,6 +241,14 @@ GC_word Disguise( void* p ) {
 void* Undisguise( GC_word i ) {
     return (void*) ~ i;}
 
+#define GC_CHECKED_DELETE(p) \
+    { \
+      size_t freed_before = GC_get_expl_freed_bytes_since_gc(); \
+      delete p; /* the operator should invoke GC_FREE() */ \
+      size_t freed_after = GC_get_expl_freed_bytes_since_gc(); \
+      my_assert(freed_before != freed_after); \
+    }
+
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
   int APIENTRY WinMain( HINSTANCE /* instance */, HINSTANCE /* prev */,
@@ -257,7 +270,6 @@ void* Undisguise( GC_word i ) {
           argv[argc] = NULL;
           break;
         }
-        argv[argc] = cmd;
         for (; *cmd != '\0'; cmd++) {
           if (*cmd != ' ' && *cmd != '\t')
             break;
@@ -289,7 +301,15 @@ void* Undisguise( GC_word i ) {
     GC_set_all_interior_pointers(1);
                         /* needed due to C++ multiple inheritance used  */
 
+#   ifdef TEST_MANUAL_VDB
+      GC_set_manual_vdb_allowed(1);
+#   endif
     GC_INIT();
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
+    if (GC_get_find_leak())
+      GC_printf("This test program is not designed for leak detection mode\n");
 
     int i, iters, n;
 #   ifndef DONT_USE_STD_ALLOCATOR
@@ -307,9 +327,7 @@ void* Undisguise( GC_word i ) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
       }
-      *xptr = x;
-      GC_END_STUBBORN_CHANGE(xptr);
-      GC_reachable_here(x);
+      GC_PTR_STORE_AND_DIRTY(xptr, x);
       x = 0;
 #   endif
     if (argc != 2
@@ -345,7 +363,9 @@ void* Undisguise( GC_word i ) {
             fa[0] = f;
             (void)fa;
             delete[] fa;
-            if (0 == i % 10) delete c;}
+            if (0 == i % 10)
+                GC_CHECKED_DELETE(c);
+        }
 
             /* Allocate a very large number of collectible As and Bs and
             drop the references to them immediately, forcing many
@@ -360,7 +380,7 @@ void* Undisguise( GC_word i ) {
             b = new (USE_GC) B( i );
             if (0 == i % 10) {
                 B::Deleting( 1 );
-                delete b;
+                GC_CHECKED_DELETE(b);
                 B::Deleting( 0 );}
 #           ifdef FINALIZE_ON_DEMAND
               GC_invoke_finalizers();
@@ -378,11 +398,11 @@ void* Undisguise( GC_word i ) {
               // causing incompatible alloc/free).
               GC_FREE(a);
 #           else
-              delete a;
+              GC_CHECKED_DELETE(a);
 #           endif
             b->Test( i );
             B::Deleting( 1 );
-            delete b;
+            GC_CHECKED_DELETE(b);
             B::Deleting( 0 );
 #           ifdef FINALIZE_ON_DEMAND
                  GC_invoke_finalizers();

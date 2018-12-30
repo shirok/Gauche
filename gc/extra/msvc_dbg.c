@@ -28,7 +28,10 @@
 #include "private/msvc_dbg.h"
 #include "gc.h"
 
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#define NOSERVICE
 #include <windows.h>
 
 #pragma pack(push, 8)
@@ -209,6 +212,11 @@ size_t GetModuleNameFromStack(size_t skip, char* moduleName, size_t size)
   return 0;
 }
 
+union sym_namebuf_u {
+  IMAGEHLP_SYMBOL sym;
+  char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
+};
+
 size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
                                 size_t* offsetBytes)
 {
@@ -216,10 +224,8 @@ size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
   if (offsetBytes) *offsetBytes = 0;
   __try {
     ULONG_ADDR dwOffset = 0;
-    union {
-      IMAGEHLP_SYMBOL sym;
-      char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
-    } u;
+    union sym_namebuf_u u;
+
     u.sym.SizeOfStruct  = sizeof(u.sym);
     u.sym.MaxNameLength = sizeof(u.symNameBuffer) - sizeof(u.sym);
 
@@ -309,6 +315,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   char*const end = buffer + size;
   size_t line_number = 0;
 
+  (void)format;
   if (size) {
     *buffer = 0;
   }
@@ -329,7 +336,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   if (size) {
     strncpy(buffer, "at ", size)[size - 1] = 0;
   }
-  buffer += strlen("at ");
+  buffer += sizeof("at ") - 1;
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetSymbolNameFromAddress(address, buffer, size, NULL);
@@ -338,7 +345,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   if (size) {
     strncpy(buffer, " in ", size)[size - 1] = 0;
   }
-  buffer += strlen(" in ");
+  buffer += sizeof(" in ") - 1;
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetModuleNameFromAddress(address, buffer, size);
@@ -349,18 +356,18 @@ size_t GetDescriptionFromStack(void* const frames[], size_t count,
                                const char* format, char* description[],
                                size_t size)
 {
-  char*const begin = (char*)description;
-  char*const end = begin + size;
-  char* buffer = begin + (count + 1) * sizeof(char*);
+  const GC_ULONG_PTR begin = (GC_ULONG_PTR)description;
+  const GC_ULONG_PTR end = begin + size;
+  GC_ULONG_PTR buffer = begin + (count + 1) * sizeof(char*);
   size_t i;
-  (void)format;
+
   for (i = 0; i < count; ++i) {
-    if (size)
-      description[i] = buffer;
-    size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
-    buffer += 1 + GetDescriptionFromAddress(frames[i], NULL, buffer, size);
+    if (description)
+      description[i] = (char*)buffer;
+    buffer += 1 + GetDescriptionFromAddress(frames[i], format, (char*)buffer,
+                                            end < buffer ? 0 : end - buffer);
   }
-  if (size)
+  if (description)
     description[count] = NULL;
   return buffer - begin;
 }

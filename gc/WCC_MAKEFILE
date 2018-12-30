@@ -25,7 +25,7 @@ CPU=5
 OPTIM=-oneatx -s
 #OPTIM=-ohneatx -s
 
-DEFS=-DALL_INTERIOR_POINTERS #-DSMALL_CONFIG
+DEFS=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION #-DSMALL_CONFIG
 
 
 #####
@@ -48,6 +48,7 @@ SYSTEM=Unknown
 SYSFLAG=-DDOS4GW -bt=dos
 !else ifdef MSWIN32
 SYSFLAG=-DMSWIN32 -bt=nt
+DEFS=$(DEFS) -DUSE_MUNMAP
 !else ifdef OS2
 SYSFLAG=-DOS2 -bt=os2
 !else
@@ -74,8 +75,8 @@ TEST_CXXFLAGS= $(TEST_CFLAGS) -xs
 OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj &
       mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj &
       obj_map.obj blacklst.obj finalize.obj new_hblk.obj &
-      dbg_mlc.obj malloc.obj stubborn.obj dyn_load.obj &
-      typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj
+      dbg_mlc.obj malloc.obj dyn_load.obj &
+      typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj gcj_mlc.obj
 
 all: gc.lib gctest.exe test_cpp.exe
 

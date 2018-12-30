@@ -13,7 +13,9 @@ lib=	 $(bcbin)\tlib
 link=	 $(bcbin)\ilink32
 cflags=  -O2 -R -v- -vi -H -H=gc.csm -I$(bcinclude);$(gcinclude1) -L$(bclib) \
 	 -w-pro -w-aus -w-par -w-ccc -w-inl -w-rch -a4
-defines= -DALL_INTERIOR_POINTERS -DNO_GETENV -DJAVA_FINALIZATION -DGC_OPERATOR_NEW_ARRAY
+defines= -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION \
+     -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DJAVA_FINALIZATION \
+     -DGC_GCJ_SUPPORT -DGC_OPERATOR_NEW_ARRAY -DUSE_MUNMAP
 
 .c.obj:
 	$(cc) @&&|
@@ -31,9 +33,9 @@ defines= -DALL_INTERIOR_POINTERS -DNO_GETENV -DJAVA_FINALIZATION -DGC_OPERATOR_N
 XXXOBJS= XXXalloc.obj XXXreclaim.obj XXXallchblk.obj XXXmisc.obj \
     XXXmach_dep.obj XXXos_dep.obj XXXmark_rts.obj XXXheaders.obj XXXmark.obj \
     XXXobj_map.obj XXXblacklst.obj XXXfinalize.obj XXXnew_hblk.obj \
-    XXXdbg_mlc.obj XXXmalloc.obj XXXstubborn.obj XXXdyn_load.obj \
+    XXXdbg_mlc.obj XXXmalloc.obj XXXdyn_load.obj \
     XXXtypd_mlc.obj XXXptr_chck.obj XXXgc_cpp.obj XXXmallocx.obj \
-    XXXfnlz_mlc.obj
+    XXXfnlz_mlc.obj XXXgcj_mlc.obj
 
 OBJS= $(XXXOBJS:XXX=)
 

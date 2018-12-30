@@ -41,15 +41,13 @@ copy the appropriate makefile to MAKEFILE, read it, and type "nmake test".
 installed, and suitably configured.)
 Read the machine specific README.XXX in the doc directory if one exists.
 
-If you need thread support, you will need to follow the special
-platform-dependent instructions (win32), or define GC_THREADS
-as described in doc/README.macros, or possibly use
---enable-threads=posix when running the configure script.
+If you need thread support, you should define GC_THREADS as described in
+doc/README.macros (configure defines this implicitly unless --disable-threads
+option is given).
 
 If you wish to use the cord (structured string) library with the stand-alone
-Makefile.direct, type "make -f Makefile.direct cords".
-(This requires an ANSI C compiler.  You may
-need to redefine CC in the Makefile. The CORD_printf implementation in
+Makefile.direct, type "make -f Makefile.direct cords".  (You may need to
+override CC specified in the Makefile. The CORD_printf implementation in
 cordprnt.c is known to be less than perfectly portable.  The rest of the
 package should still work.)  See include/cord.h for the API.
 
@@ -69,7 +67,7 @@ instead of GC_MALLOC.
 Define GC_DEBUG before including gc.h for additional checking.
 
 More documentation on the collector interface can be found in README.md,
-doc/gcinterface.html, include/gc.h, and other files in the doc directory.
+doc/gcinterface.md, include/gc.h, and other files in the doc directory.
 
 WARNINGS:
 

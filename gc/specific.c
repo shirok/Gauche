@@ -27,11 +27,13 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 {
     int i;
     int ret;
-    tsd * result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
+    tsd * result;
 
+    GC_ASSERT(I_HOLD_LOCK());
     /* A quick alignment check, since we need atomic stores */
     GC_ASSERT((word)(&invalid_tse.next) % sizeof(tse *) == 0);
-    if (0 == result) return ENOMEM;
+    result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
+    if (NULL == result) return ENOMEM;
     ret = pthread_mutex_init(&result->lock, NULL);
     if (ret != 0) return ret;
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
@@ -63,14 +65,15 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     /* Could easily check for an existing entry here.   */
     entry -> next = key->hash[hash_val].p;
     entry -> thread = self;
-    entry -> value = value;
+    entry -> value = TS_HIDE_VALUE(value);
     GC_ASSERT(entry -> qtid == INVALID_QTID);
     /* There can only be one writer at a time, but this needs to be     */
     /* atomic with respect to concurrent readers.                       */
     AO_store_release(&key->hash[hash_val].ao, (AO_t)entry);
     GC_dirty((/* no volatile */ void *)entry);
     GC_dirty(key->hash + hash_val);
-    pthread_mutex_unlock(&(key -> lock));
+    if (pthread_mutex_unlock(&key->lock) != 0)
+      ABORT("pthread_mutex_unlock failed (setspecific)");
     return 0;
 }
 
@@ -91,7 +94,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
 #   endif
     pthread_mutex_lock(&(key -> lock));
     entry = key->hash[hash_val].p;
-    while (entry != NULL && entry -> thread != t) {
+    while (entry != NULL && !THREAD_EQUAL(entry->thread, t)) {
       prev = entry;
       entry = entry->next;
     }
@@ -126,7 +129,8 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
     /* With GC, we're done, since the pointers from the cache will      */
     /* be overwritten, all local pointers to the entries will be        */
     /* dropped, and the entry will then be reclaimed.                   */
-    pthread_mutex_unlock(&(key -> lock));
+    if (pthread_mutex_unlock(&key->lock) != 0)
+      ABORT("pthread_mutex_unlock failed (remove_specific after fork)");
 }
 
 /* Note that even the slow path doesn't lock.   */
@@ -138,7 +142,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
     tse *entry = key->hash[hash_val].p;
 
     GC_ASSERT(qtid != INVALID_QTID);
-    while (entry != NULL && entry -> thread != self) {
+    while (entry != NULL && !THREAD_EQUAL(entry->thread, self)) {
       entry = entry -> next;
     }
     if (entry == NULL) return NULL;
@@ -151,7 +155,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
     *cache_ptr = entry;
         /* Again this is safe since pointer assignments are     */
         /* presumed atomic, and either pointer is valid.        */
-    return entry -> value;
+    return TS_REVEAL_PTR(entry -> value);
 }
 
 #ifdef GC_ASSERTIONS

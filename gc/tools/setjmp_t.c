@@ -46,7 +46,12 @@ int getpagesize(void)
     return((int)(result[0]));
 }
 #elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
+
   int getpagesize(void)
   {
     SYSTEM_INFO sysinfo;
@@ -55,14 +60,14 @@ int getpagesize(void)
   }
 #endif
 
-struct {
+struct a_s {
   char a_a;
   char * a_b;
 } a;
 
 word nested_sp(void)
 {
-# if defined(__GNUC__) && (__GNUC__ >= 4)
+# if GC_GNUC_PREREQ(4, 0)
     return (word)__builtin_frame_address(0);
 # else
     volatile word sp;
@@ -80,7 +85,7 @@ int main(void)
 {
     volatile word sp;
     unsigned ps = GETPAGESIZE();
-    jmp_buf b;
+    JMP_BUF b;
     register int x = (int)strlen("a");  /* 1, slightly disguised */
     static volatile int y = 0;
 
@@ -112,7 +117,7 @@ int main(void)
     x = 2*x-1;
     printf("\n");
     x = 2*x-1;
-    setjmp(b);
+    (void)SETJMP(b);
     if (y == 1) {
       if (x == 2) {
         printf("Setjmp-based generic mark_regs code probably won't work.\n");
@@ -126,7 +131,7 @@ int main(void)
     }
     y++;
     x = 2;
-    if (y == 1) longjmp(b,1);
+    if (y == 1) LONGJMP(b, 1);
     printf("Some GC internal configuration stuff: \n");
     printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
            (unsigned long)WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);

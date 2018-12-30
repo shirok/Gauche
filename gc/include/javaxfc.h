@@ -59,7 +59,7 @@ GC_API void GC_CALL GC_finalize_all(void);
 #endif /* GC_THREADS */
 
 #ifdef __cplusplus
-  } /* end of extern "C" */
+  } /* extern "C" */
 #endif
 
 #endif /* GC_JAVAXFC_H */
