@@ -370,7 +370,7 @@ ifdef::lang-JP[]
 インストールしたとします。`--with-iconv=/home/yours/lib` としてconfigure
 すれば、Gaucheはあなたのiconvを使うようにコンパイルされます。実行時に適切
 な環境変数、例えば `LD_LIBRARY_PATH` などを設定しておけば、Gaucheの
-インタプリタgoshは `libiconv.so` を捜し出すことができます。しかし、
+インタプリタ `gosh` は `libiconv.so` を捜し出すことができます。しかし、
 CGIスクリプトはWeb serverによって起動され、Web serverは `LD_LIBRARY_PATH`
 を設定してくれないかもしれません。その場合、`gosh` は `libiconv.so` が見つけられずに
 起動に失敗するかもしれません。
@@ -378,7 +378,7 @@ CGIスクリプトはWeb serverによって起動され、Web serverは `LD_LIBR
 コンパイラによっては、プログラムが依存している共有ライブラリのパスをプログラム
 本体に書き込んでしまえるオプションを持っています。configureの `--with-rpath`
 オプションはそれを利用します。 `--with-rpath=DIR` とすると、実行時に `DIR` から
-共有ライブラリを探すような設定になります。このオプションは今のところgccでしか
+共有ライブラリを探すような設定になります。このオプションは今のところ `gcc` でしか
 動作しません。
 endif::lang-JP[]
 ifndef::lang-JP[]
@@ -401,7 +401,7 @@ Some compilers have an option that writes exact path of shared
 libraries that the binary depends on.  A configure option `--with-rpath`
 utilizes the feature.  When an option `--with-rpath=DIR` is given,
 configure sets up a build process so that the shared libraries
-are looked from `DIR`.   This works only on gcc, however.
+are looked from `DIR`.   This works only on `gcc`, however.
 endif::lang-JP[]
 
 
@@ -444,18 +444,18 @@ endif::lang-JP[]
 
   `$EXEC_PREFIX/bin/*`::
 ifdef::lang-JP[]
-     インタプリタ (gosh) とコンフィグレーションスクリプト (gauche-config)
+     インタプリタ (`gosh`) とコンフィグレーションスクリプト (`gauche-config`)
 endif::lang-JP[]
 ifndef::lang-JP[]
-     The interpreter (gosh) and configuration script (gauche-config).
+     The interpreter (`gosh`) and configuration script (`gauche-config`).
 endif::lang-JP[]
 
   `$EXEC_PREFIX/lib/*`::
 ifdef::lang-JP[]
-     ライブラリ (libgauche.a).
+     ライブラリ (`libgauche.a`).
 endif::lang-JP[]
 ifndef::lang-JP[]
-     Library (libgauche.a).
+     Library (`libgauche.a`).
 endif::lang-JP[]
 
   `$PREFIX/share/gauche/VERSION/include/*`::
@@ -484,10 +484,10 @@ endif::lang-JP[]
 
   `$EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*`::
 ifdef::lang-JP[]
-     マシンに依存するファイル (.so, gosh, gauche-config, libgauche.a)
+     マシンに依存するファイル (`.so`, `gosh`, `gauche-config`, `libgauche.a`)
 endif::lang-JP[]
 ifndef::lang-JP[]
-     Machine-dependent files (.so files, gosh, gauche-config, and libgauche.a)
+     Machine-dependent files (`.so` files, `gosh`, `gauche-config`, and `libgauche.a`)
 endif::lang-JP[]
 
   `$PREFIX/share/gauche/site/lib/*`::
@@ -510,13 +510,13 @@ endif::lang-JP[]
 
 
 ifdef::lang-JP[]
-Make時に、makeマクロOPTFLAGSを用いて追加のコンパイルオプションを指定すること
-ができます。configureが設定するOPTFLAGS以外のオプションを試したい場合は
-次のようにmakeを走らせて下さい。
+Make時に、 `make` マクロ `OPTFLAGS` を用いて追加のコンパイルオプションを指定すること
+ができます。configureが設定する `OPTFLAGS` 以外のオプションを試したい場合は
+次のように `make` を走らせて下さい。
 endif::lang-JP[]
 ifndef::lang-JP[]
-You can pass extra options at make time, using make macro OPTFLAGS.
-'Configure' sets a default, but if you want to explore different
+You can pass extra options at make time, using `make` macro `OPTFLAGS`.
+Configure' sets a default, but if you want to explore different
 options, just run 'make' as follows:
 endif::lang-JP[]
 
