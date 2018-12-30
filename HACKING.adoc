@@ -103,11 +103,11 @@ not to introduce undesirable dependencies.
   forms are expanded fully in precompilation.
 
 - `gencomp`, `genstub`, `geninsn` shouldn't depend on the extension
-  modules except the 'pre-loaded' ones in `HOSTGOSH`.
+  modules except the 'pre-loaded' ones in `BUILD_GOSH`.
 
 - An extension compiled by `gencomp` shouldn't depend on other
   extensions compiled by `gencomp`.  This is because `gencomp` is
-  run by `HOSTGOSH` and it may not be able to load the other
+  run by `BUILD_GOSH` and it may not be able to load the other
   extensions compiled for the target `gosh`.
 
 - `ext/xlink` shouldn't depend on anything that requires loading
