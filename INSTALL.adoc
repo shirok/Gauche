@@ -447,7 +447,7 @@ ifndef::lang-JP[]
 The files are installed in those locations:
 endif::lang-JP[]
 
-  $EXEC_PREFIX/bin/*
+  `$EXEC_PREFIX/bin/*`::
 ifdef::lang-JP[]
      インタプリタ (gosh) とコンフィグレーションスクリプト (gauche-config)
 endif::lang-JP[]
@@ -455,7 +455,7 @@ ifndef::lang-JP[]
      The interpreter (gosh) and configuration script (gauche-config).
 endif::lang-JP[]
 
-  $EXEC_PREFIX/lib/*
+  `$EXEC_PREFIX/lib/*`::
 ifdef::lang-JP[]
      ライブラリ (libgauche.a).
 endif::lang-JP[]
@@ -463,7 +463,7 @@ ifndef::lang-JP[]
      Library (libgauche.a).
 endif::lang-JP[]
 
-  $PREFIX/share/gauche/VERSION/include/*
+  `$PREFIX/share/gauche/VERSION/include/*`::
 ifdef::lang-JP[]
      libgaucheをリンクするアプリケーションに必要なヘッダーファイル
 endif::lang-JP[]
@@ -471,7 +471,7 @@ ifndef::lang-JP[]
      Header files required to create applications using libgauche.
 endif::lang-JP[]
 
-  $PREFIX/share/gauche/VERSION/lib/*
+  `$PREFIX/share/gauche/VERSION/lib/*`::
 ifdef::lang-JP[]
      マシンに依存しないSchemeファイル
 endif::lang-JP[]
@@ -479,7 +479,7 @@ ifndef::lang-JP[]
      Machine-independent Scheme files.
 endif::lang-JP[]
 
-  $PREFIX/share/info/*
+  `$PREFIX/share/info/*`::
 ifdef::lang-JP[]
      infoファイル
 endif::lang-JP[]
@@ -487,7 +487,7 @@ ifndef::lang-JP[]
      info files.
 endif::lang-JP[]
 
-  $EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*
+  `$EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*`::
 ifdef::lang-JP[]
      マシンに依存するファイル (.so, gosh, gauche-config, libgauche.a)
 endif::lang-JP[]
@@ -495,8 +495,8 @@ ifndef::lang-JP[]
      Machine-dependent files (.so files, gosh, gauche-config, and libgauche.a)
 endif::lang-JP[]
 
-  $PREFIX/share/gauche/site/lib/*
-  $EXEC_PREFIX/lib/gauche/site/VERSION/ARCHITECTURE/*
+  `$PREFIX/share/gauche/site/lib/*`::
+  `$EXEC_PREFIX/lib/gauche/site/VERSION/ARCHITECTURE/*`::
 ifdef::lang-JP[]
      ユーザが独自にインストールするマシン非依存／依存ファイルのデフォルトの置き場所。
 endif::lang-JP[]
