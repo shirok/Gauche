@@ -240,7 +240,7 @@ libgc_pic_OBJECTS = $(wildcard $(top_builddir)/gc/.libs/*.$(OBJEXT)) \
                     $(top_builddir)/gc/extra/.libs/gc.$(OBJEXT)
 libgc_pic_LIBRARY = libgc_pic.a
 
-libatomic_ops_pic_OBJECTS = $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT)
+libatomic_ops_pic_OBJECTS = $(wildcard $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT))
 @USE_INTERNAL_LIBATOMIC_OPS_TRUE@libatomic_ops_pic_LIBRARY = libatomic_ops_pic.a
 @USE_INTERNAL_LIBATOMIC_OPS_FALSE@libatomic_ops_pic_LIBRARY =
 GC_ATOMIC_OPS_LIBS = $(libatomic_ops_pic_LIBRARY) $(ATOMIC_OPS_LIBS)
