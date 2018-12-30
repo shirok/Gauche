@@ -127,12 +127,12 @@ ifndef::lang-JP[]
 endif::lang-JP[]
 
 ifdef::lang-JP[]
-デフォルトでは、Gaucheは内部文字エンコーディングとして `utf-8` を使います。
+デフォルトでは、Gaucheは内部文字エンコーディングとして UTF-8 を使います。
 `--enable-multibyte=ENCODING` というオプションをconfigureに渡すことで、
 内部文字エンコーディングを変えることができます。
 endif::lang-JP[]
 ifndef::lang-JP[]
-By default, Gauche is compiled with `utf-8` as a native character encoding.
+By default, Gauche is compiled with UTF-8 as a native character encoding.
 You can give a `--enable-multibyte=ENCODING` option to switch the native
 encoding.   Note that if you want to use ISO8859-1 GR characters in
 the program text, you have to specify no multibyte encoding, or
