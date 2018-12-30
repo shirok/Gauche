@@ -112,7 +112,7 @@ the following configure options to turn off or turn on the support
 explicitly.
 endif::lang-JP[]
 
-[source]
+[source,console]
 ----
   --enable-threads=none     ;; turn off the thread support
   --enable-threads=pthreads ;; turn on the thread support (pthread)
@@ -140,7 +140,7 @@ the program text, you have to specify no multibyte encoding, or
 Gauche takes such characters as the first byte of multibyte charaters.
 endif::lang-JP[]
 
-[source]
+[source,console]
 ----
   --enable-multibyte=utf-8   ;; UTF-8 (default)
   --enable-multibyte=euc-jp  ;; EUC-JP
@@ -164,7 +164,7 @@ you can specify the location of your external
 iconv library by `--with-iconv` option.
 endif::lang-JP[]
 
-[source]
+[source,console]
   --with-iconv=DIR
 
 
@@ -200,7 +200,7 @@ ifdef::lang-JP[]
 Gaucheのビルドに、標準でない場所にインストールされているライブラリを
 使用したい場合、次のオプションでその場所を指定することができます。
 
-[source]
+[source,console]
 --with-local=PATH:PATH2:...
 
 これで、`PATH/include` 、`PATH2/include` 、... がインクルードパスに、
@@ -209,7 +209,7 @@ Gaucheのビルドに、標準でない場所にインストールされてい�
 例えば、`/usr/local` にインストールされたgdbmライブラリを使用したい
 場合は次のようにします。
 
-[source]
+[source,console]
   --with-local=/usr/local
 endif::lang-JP[]
 ifndef::lang-JP[]
@@ -217,7 +217,7 @@ If you want to use some libraries installed in non-standard location
 to build Gauche, you can use the following option to specify the
 locations.
 
-[source]
+[source,console]
   --with-local=PATH:PATH2:...
 
 This addts `PATH/include`, `PATH2/include`, ... to the include paths,
@@ -226,7 +226,7 @@ and `PATH/lib`, `PATH2/lib`, ... to the library search paths.
 For example, if you want to use gdbm library in `/usr/local`,
 you can say:
 
-[source]
+[source,console]
   --with-local=/usr/local
 endif::lang-JP[]
 
@@ -271,7 +271,7 @@ during configuration.  If you have a problem building those libraries,
 you can selectively turn off each of them.
 endif::lang-JP[]
 
-[source]
+[source,console]
 ----
   --with-tls=none          ;; do not include TLS/SSL support
   --with-tls=axtls         ;; include only axTLS support
