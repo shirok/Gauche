@@ -369,18 +369,18 @@ ifdef::lang-JP[]
 もし、Gaucheが標準的でない場所にインストールされた共有ライブラリに依存し
 ている場合、それが問題となります。
 
-例えば、最新のlibiconv.soを自分でコンパイルして /home/yours/lib に
-インストールしたとします。--with-iconv=/home/yours/lib としてconfigure
+例えば、最新の `libiconv.so` を自分でコンパイルして `/home/yours/lib` に
+インストールしたとします。`--with-iconv=/home/yours/lib` としてconfigure
 すれば、Gaucheはあなたのiconvを使うようにコンパイルされます。実行時に適切
-な環境変数、例えばLD_LIBRARY_PATHなどを設定しておけば、Gaucheの
-インタプリタgoshはlibiconv.soを捜し出すことができます。しかし、
-CGIスクリプトはWeb serverによって起動され、Web serverはLD_LIBRARY_PATH
-を設定してくれないかもしれません。その場合、goshはlibiconv.soが見つけられずに
+な環境変数、例えば `LD_LIBRARY_PATH` などを設定しておけば、Gaucheの
+インタプリタgoshは `libiconv.so` を捜し出すことができます。しかし、
+CGIスクリプトはWeb serverによって起動され、Web serverは `LD_LIBRARY_PATH`
+を設定してくれないかもしれません。その場合、`gosh` は `libiconv.so` が見つけられずに
 起動に失敗するかもしれません。
 
 コンパイラによっては、プログラムが依存している共有ライブラリのパスをプログラム
-本体に書き込んでしまえるオプションを持っています。configureの --with-rpath
-オプションはそれを利用します。--with-rpath=DIRとすると、実行時にDIRから
+本体に書き込んでしまえるオプションを持っています。configureの `--with-rpath`
+オプションはそれを利用します。 `--with-rpath=DIR` とすると、実行時に `DIR` から
 共有ライブラリを探すような設定になります。このオプションは今のところgccでしか
 動作しません。
 endif::lang-JP[]
@@ -391,20 +391,20 @@ want to run CGI script on the ISP's machine.  It may become
 a problem that your build of Gauche depends on some dynamically
 loaded libraries that are installed in non-standard location.
 
-For example, suppose you install a new libiconv.so in /home/yours/lib
+For example, suppose you install a new `libiconv.so` in `/home/yours/lib`
 on the ISP's server and compile Gauche with --with-iconv=/home/yours/lib.
-You have set up correct environment variables such as LD_LIBRARY_PATH,
-so you can invoke Gauche interpreter gosh without a problem.  Now,
+You have set up correct environment variables such as `LD_LIBRARY_PATH`,
+so you can invoke Gauche interpreter `gosh` without a problem.  Now,
 you write a CGI script.   Unfortunately, the ISP's web server
-doesn't set LD_LIBRARY_PATH as you desired, and your script never
-runs on the server, for the interpreter can't find libiconv.so
+doesn't set `LD_LIBRARY_PATH` as you desired, and your script never
+runs on the server, for the interpreter can't find `libiconv.so`
 in the system default path.
 
 Some compilers have an option that writes exact path of shared
-libraries that the binary depends on.  A configure option --with-rpath
-utilizes the feature.  When an option --with-rpath=DIR is given,
+libraries that the binary depends on.  A configure option `--with-rpath`
+utilizes the feature.  When an option `--with-rpath=DIR` is given,
 configure sets up a build process so that the shared libraries
-are looked from DIR.   This works only on gcc, however.
+are looked from `DIR`.   This works only on gcc, however.
 endif::lang-JP[]
 
 
@@ -423,6 +423,7 @@ ifndef::lang-JP[]
 Call configure with those parameters to specify where to install.
 endif::lang-JP[]
 
+[source,console]
    % ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
 
 
@@ -561,13 +562,13 @@ endif::lang-JP[]
 
 ifdef::lang-JP[]
 Gaucheはautotool標準のクロスコンパイルをサポートしています。
-つまり、'configure'スクリプトに--buildと--hostオプションを与えて
+つまり、 `configure` スクリプトに `--build` と `--host` オプションを与えて
 makeするだけです (クロス開発に必要なツールはもちろんインストールされているとします)。
 ただ、二つばかり気をつけることがあります。
 endif::lang-JP[]
 ifndef::lang-JP[]
 Gauche supports autotools-standard cross compilation, that is,
-you give --build and --host option to 'configure' script and
+you give `--build` and `--host` option to `configure` script and
 just make (assuming you have appropriate cross development tools).
 There are a couple of caveats, though.
 endif::lang-JP[]
@@ -576,30 +577,30 @@ ifdef::lang-JP[]
 - クロスコンパイルしようとしているのと同じバージョンのGaucheをビルドマシンに
   インストールしておいてください。
 
-  通常のビルドでは、Gaucheは作ったばかりの'gosh'を使ってext/以下の拡張
+  通常のビルドでは、Gaucheは作ったばかりの `gosh` を使って `ext/` 以下の拡張
   ライブラリをビルドします。クロスコンパイル時には、作ったばかりの'gosh'は
   ビルドマシンでは実行できないので、既にビルドマシンにインストールされている
   goshを使うことになります。
 
-- ./configureに--with-libatomic-ops=no オプションが必要かもしれません。
+- ./configureに `--with-libatomic-ops=no` オプションが必要かもしれません。
 
-  このオプションをつけることで、システムにインストールされているlibatomic_ops
+  このオプションをつけることで、システムにインストールされている `libatomic_ops`
   ではなく同梱されたソースを使うようになります。どうもconfigureスクリプトが
-  ビルドシステム用のlibatomic_opsをホスト用と誤認するケースがあるようです。
+  ビルドシステム用の `libatomic_ops` をホスト用と誤認するケースがあるようです。
 endif::lang-JP[]
 ifndef::lang-JP[]
 - You have to have the same version of Gauche that you're trying to
   cross-compile on the build machine.
 
-  In normal build, Gauche uses freshly built 'gosh' to compile
-  extension libraries (under ext/).  While cross compiling we can't run
+  In normal build, Gauche uses freshly built `gosh` to compile
+  extension libraries (under `ext/`).  While cross compiling we can't run
   freshly built 'gosh' on the build machine, so we rely on the 'gosh' already
   installed on it.
 
-- You may need --with-libatomic-ops=no option for ./configure
+- You may need `--with-libatomic-ops=no` option for `./configure`
 
   The option forces Gauche to use bundled libatomic_ops source instead
-  of system provided one.  We noticed that ./configure may misunderstood
+  of system provided one.  We noticed that `./configure` may misunderstood
   the build system's libatmic_ops as the host system's.
 endif::lang-JP[]
 
@@ -630,16 +631,16 @@ endif::lang-JP[]
 
 ifdef::lang-JP[]
 * MacOS X - 10.2.x以前のバージョンでは、dlcompatライブラリ(libdl)が
-      インストールされていることが必要です。http://fink.sourceforge.netから
+      インストールされていることが必要です。 http://fink.sourceforge.net から
       ダウンロードできます。10.3以降では必要ありません。システム標準の
       場所以外にdlcompatライブラリをインストールした場合は、configureの
-      --with-localオプションで場所を指定して下さい。
-      また、GCがpthreadsを要求するようになったので、--enable-threads=pthreads
+      `--with-local` オプションで場所を指定して下さい。
+      また、GCがpthreadsを要求するようになったので、`--enable-threads=pthreads`
       も必要です。
-      (例：$HOME/include に dlfcn.h が、 $HOME/lib に libdl.aがある場合は
+      (例：`$HOME/include` に `dlfcn.h` が、 `$HOME/lib` に `libdl.a` がある場合は
 +
 [source,console]
----- 
+----
 ./configure --with-local=$HOME --enable-threads=pthreads
 ----
 +
@@ -647,15 +648,15 @@ ifdef::lang-JP[]
 endif::lang-JP[]
 ifndef::lang-JP[]
 * MacOS X - For 10.2.x and earlier, you need to install the dlcompat
-       library (libdl) from Fink project (http://fink.sourceforge.net)
+       library (libdl) from Fink project ( http://fink.sourceforge.net )
        before configuring Gauche.   You don't need it if you have OSX
        10.3 or later.   If the dlcompat library is installed in non-standard
-       location, you have to tell configure the place by --with-local.
+       location, you have to tell configure the place by `--with-local`.
        Besides, GC now requires pthreads on MacOS X, so you need
-       --enable-threads=pthreads.
+       `--enable-threads=pthreads`.
 +
-       For example, if you have dlfcn.h in $HOME/include and libdl.a
-       in $HOME/lib, you should do:
+       For example, if you have `dlfcn.h` in `$HOME/include` and `libdl.a`
+       in `$HOME/lib`, you should do:
 +
 [source,console]
 ----
@@ -668,18 +669,14 @@ ifdef::lang-JP[]
        したい場合は次のようにして下さい。
 +
 [source,console]
-----
 CC="cc -64" AS="as -64" ./configure
-----
 endif::lang-JP[]
 ifndef::lang-JP[]
 * IRIX with 64bit binary - If you want to compile for 64bit ABI instead
        of the default 32bit ABI, run configure like this:
 +
 [source,console]
-----
 CC="cc -64" AS="as -64" ./configure
-----
 endif::lang-JP[]
 
 ifdef::lang-JP[]
