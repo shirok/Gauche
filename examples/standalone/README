@@ -1,6 +1,0 @@
-This directory contains a sample source and Makefile to build
-stand-alone Gauche application (that is, a binary that doesn't
-depend on external Gauche runtime).
-
-See "Building standalone executables" section of the manual for 
-the details.
