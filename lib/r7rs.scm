@@ -597,6 +597,8 @@
           symbol->string symbol? tan truncate values vector vector->list
           vector-fill! vector-length vector-ref vector-set! vector?
           with-input-from-file with-output-to-file write write-char zero?
+          ;; R7RS Errata #22
+          syntax-rules else ... => _
           )
   (provide "scheme/r5rs")
   )
