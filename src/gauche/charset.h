@@ -52,12 +52,6 @@
  * Mutable char-set uses ScmTreeCore for the large characters.  Immutable
  * char-set uses flat u32vector, sorted by the key and accessed by binary
  * search.
- *
- * Immutable charset is a new addition.  Since we have to keep ABI
- * compatibility, the layout is a bit weird during 0.9 series;
- * the existing binary checks Scm_TreeCoreNumEntries(cs->large.tree) == 0
- * for SCM_CHAR_SET_SMALLP, so after we introduce immutable set, we have
- * to make sure immutable set 
  */
 
 #define SCM_CHAR_SET_SMALL_CHARS 128
