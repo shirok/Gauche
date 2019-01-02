@@ -245,15 +245,17 @@
                           (logand (~ vec 3) #x3f))])))
 
 (define (get-char/ces vec ces)
-  (utf8vec->ucs4
-   (string->u8vector
-    (ces-convert (u8vector->string vec) ces 'utf-8))))
+  (guard (e [else #f])
+    (utf8vec->ucs4
+     (string->u8vector
+      (ces-convert (u8vector->string vec) ces 'utf-8)))))
 
 (define (2b->u8vector code)
   (u8vector (ash code -8) (logand code #xff)))
 (define (3b->u8vector code)
   (u8vector (ash code -16) (logand (ash code -8) #xff) (logand code #xff)))
 
+;; can return #f
 (define (eucjp->ucs code)
   ;; NB: The codes in *jisx0213-extras* should be filtered before
   ;; calling this.
@@ -264,6 +266,7 @@
                       [else #f])])
     (get-char/ces v 'euc-jp)))
 
+;; can return #f
 (define (sjis->ucs code)
   ;; NB: The codes in *jisx0213-extras* should be filtered before
   ;; calling this.
@@ -313,17 +316,20 @@
                   (rlet1 e (make-ucd-entry cat '(#f #f #f) #f)
                     (when (eq? cat 'Ll) (set! (ucd-entry-lowercase e) #t))
                     (when (eq? cat 'Lo) (set! (ucd-entry-alphabetic e) #t)))))]
-        [else
-         (dict-get (unichar-db-table db) (->ucs code) #f)]))
+        [(->ucs code)
+         => (^c (dict-get (unichar-db-table db) c #f))]
+        [else #f]))
 
 ;; The following APIs are needed since we have to handle jisx0213 extra
 ;; characters.
 
 ;; API
+;; can return #f if CODE is 'hole' (unassigned)
 (define (eucjp->ucd-entry db code)
   (xxx->entry db code cadr eucjp->ucs))
 
 ;; API
+;; can return #f if CODE is 'hole' (unassigned)
 (define (sjis->ucd-entry db code)
   (xxx->entry db code car sjis->ucs))
 

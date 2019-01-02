@@ -1,3 +1,8 @@
+2019-01-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-unicode.scm, lib/text/unicode/codeset.scm: Generate static
+	  immutable char-sets corresponding to Unicode General Category.
+
 2018-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* gc/: Update to libgc 8. https://github.com/shirok/Gauche/pull/414

@@ -51,6 +51,7 @@
 ;; needs to load from source
 (add-load-path "../lib" :relative)
 (use text.unicode.ucd)
+(use text.unicode.codeset)
 
 ;; rfc.http is only required by '--fetch' operation.  We don't want to load
 ;; it during build process, so let's autoload it.
@@ -292,10 +293,11 @@
 (define (generate-category-tables db)
   (define (emit-entry e)
     (if e
-      (cond [(ucd-entry-uppercase e)  (format #t " U(~a)," (ucd-entry-category e))]
-            [(ucd-entry-lowercase e)  (format #t " L(~a)," (ucd-entry-category e))]
-            [(ucd-entry-alphabetic e) (format #t " A(~a)," (ucd-entry-category e))]
-            [else                 (format #t "    ~a," (ucd-entry-category e))])
+      (cond
+       [(ucd-entry-uppercase e)  (format #t " U(~a)," (ucd-entry-category e))]
+       [(ucd-entry-lowercase e)  (format #t " L(~a)," (ucd-entry-category e))]
+       [(ucd-entry-alphabetic e) (format #t " A(~a)," (ucd-entry-category e))]
+       [else                 (format #t "    ~a," (ucd-entry-category e))])
       (format #t "    Cn,")))
   (define (emit-columns start end p)
     (do-ec (:parallel (: k start end)
@@ -318,74 +320,92 @@
   (print "#define L(x) ((x)|SCM_CHAR_LOWERCASE_BITS)")
 
   ;; utf-8 ('none' is also here, for we treat it as latin-1.)
-  (print "#if !defined(GAUCHE_CHAR_ENCODING_EUC_JP) && !defined(GAUCHE_CHAR_ENCODING_SJIS)")
-  ;;   U+0000 - U+1ffff : direct table lookup
-  (display "static unsigned char ucs_general_category_00000[] = {")
-  (emit-columns 0 #x20000 (^i (emit-entry (ucs->entry i))))
-  (print "};")
-  ;;   Over U+20000 - binary search
-  (print)
-  (print "static unsigned char ucs_general_category_20000(ScmChar code)")
-  (print "{")
-  (print "  /*")
-  (for-each (^e (format #t "    ~6x ~a\n" (car e) (cdr e)))
-            (ucd-get-category-ranges db))
-  (print "  */")
-  (generate-bisect (coerce-to <vector> (ucd-get-category-ranges db))
-                   (^e (format "return ~a;"
-                               (case (cdr e)
-                                 [(Lo) "A(Lo)"]
-                                 [(#f) "Cn"]
-                                 [else => identity]))))
-  (print "}")
-  (print "#endif /*defined(GAUCHE_CHAR_ENCODING_UTF_8)*/")
-  (print)
+  (let ([code-sets (build-code-sets db 'utf8 (ucd-general-categories))])
+    (print "#if !defined(GAUCHE_CHAR_ENCODING_EUC_JP) && !defined(GAUCHE_CHAR_ENCODING_SJIS)")
+    ;;   U+0000 - U+1ffff : direct table lookup
+    (display "static unsigned char ucs_general_category_00000[] = {")
+    (emit-columns 0 #x20000 (^i (emit-entry (ucs->entry i))))
+    (print "};")
+    ;;   Over U+20000 - binary search
+    (print)
+    (print "static unsigned char ucs_general_category_20000(ScmChar code)")
+    (print "{")
+    (print "  /*")
+    (for-each (^e (format #t "    ~6x ~a\n" (car e) (cdr e)))
+              (ucd-get-category-ranges db))
+    (print "  */")
+    (generate-bisect (coerce-to <vector> (ucd-get-category-ranges db))
+                     (^e (format "return ~a;"
+                                 (case (cdr e)
+                                   [(Lo) "A(Lo)"]
+                                   [(#f) "Cn"]
+                                   [else => identity]))))
+    (print "}")
+    (dolist [cs code-sets]
+      (dump-code-set-in-C cs))
+    (print "#endif /*defined(GAUCHE_CHAR_ENCODING_UTF_8)*/")
+    (print))
 
   ;; euc-jp
-  (print "#if defined(GAUCHE_CHAR_ENCODING_EUC_JP)")
-  (display "static unsigned char eucjp_general_category_G0[] = {")
-  (emit-columns 0 #x80 (^i (emit-entry (eucjp->ucd-entry db i))))
-  (print "};")
-  (display "static unsigned char eucjp_general_category_G1[] = {")
-  (dotimes [z (- #xff #xa1)]
-    (emit-columns (+ (ash (+ z #xa1) 8) #xa1)
-                  (+ (ash (+ z #xa1) 8) #xff)
-                  (^i (emit-entry (eucjp->ucd-entry db i)))))
-  (print "};")
-  (display "static unsigned char eucjp_general_category_G2[] = {")
-  (emit-columns #x8ea1 #x8ee0 (^i (emit-entry (eucjp->ucd-entry db i))))
-  (print "};")
-  (display "static unsigned char eucjp_general_category_G3[] = {")
-  (dotimes [z (- #xff #xa1)]
-    (emit-columns (+ (ash (+ z #xa1) 8) #x8f00a1)
-                  (+ (ash (+ z #xa1) 8) #x8f00ff)
-                  (^i (emit-entry (eucjp->ucd-entry db i)))))
-  (print "};")
-  (print "#endif /*defined(GAUCHE_CHAR_ENCODING_EUC_JP)*/")
-  (print)
+  (let ([code-sets (build-code-sets db 'eucjp (ucd-general-categories))])
+    (print "#if defined(GAUCHE_CHAR_ENCODING_EUC_JP)")
+    (display "static unsigned char eucjp_general_category_G0[] = {")
+    (emit-columns 0 #x80 (^i (emit-entry (eucjp->ucd-entry db i))))
+    (print "};")
+    (display "static unsigned char eucjp_general_category_G1[] = {")
+    (dotimes [z (- #xff #xa1)]
+      (emit-columns (+ (ash (+ z #xa1) 8) #xa1)
+                    (+ (ash (+ z #xa1) 8) #xff)
+                    (^i (emit-entry (eucjp->ucd-entry db i)))))
+    (print "};")
+    (display "static unsigned char eucjp_general_category_G2[] = {")
+    (emit-columns #x8ea1 #x8ee0 (^i (emit-entry (eucjp->ucd-entry db i))))
+    (print "};")
+    (display "static unsigned char eucjp_general_category_G3[] = {")
+    (dotimes [z (- #xff #xa1)]
+      (emit-columns (+ (ash (+ z #xa1) 8) #x8f00a1)
+                    (+ (ash (+ z #xa1) 8) #x8f00ff)
+                    (^i (emit-entry (eucjp->ucd-entry db i)))))
+    (print "};")
+    (dolist [cs code-sets]
+      (dump-code-set-in-C cs))
+    (print "#endif /*defined(GAUCHE_CHAR_ENCODING_EUC_JP)*/")
+    (print))
 
   ;; sjis
-  (print "#if defined(GAUCHE_CHAR_ENCODING_SJIS)")
-  (display "static unsigned char sjis_general_category_00[] = {")
-  (emit-columns 0 #x80 (^i (emit-entry (sjis->ucd-entry db i))))
-  (print "};")
-  (display "static unsigned char sjis_general_category_a0[] = {")
-  (emit-columns #xa0 #xdf (^i (emit-entry (sjis->ucd-entry db i))))
-  (print "};")
-  (display "static unsigned char sjis_general_category_8000[] = {")
-  (do-ec (: z #x8000 #xa000 256)
-         (emit-columns (+ z #x40)
-                       (+ z #xfd)
-                       (^i (emit-entry (sjis->ucd-entry db i)))))
-  (print "};")
-  (display "static unsigned char sjis_general_category_e000[] = {")
-  (do-ec (: z #xe000 #x10000 256)
-         (emit-columns (+ z #x40)
-                       (+ z #xfd)
-                       (^i (emit-entry (sjis->ucd-entry db i)))))
-  (print "};")
-  (print "#endif /*defined(GAUCHE_CHAR_ENCODING_SJIS)*/")
-  (print)
+  (let ([code-sets (build-code-sets db 'sjis (ucd-general-categories))])
+    (print "#if defined(GAUCHE_CHAR_ENCODING_SJIS)")
+    (display "static unsigned char sjis_general_category_00[] = {")
+    (emit-columns 0 #x80 (^i (emit-entry (sjis->ucd-entry db i))))
+    (print "};")
+    (display "static unsigned char sjis_general_category_a0[] = {")
+    (emit-columns #xa0 #xdf (^i (emit-entry (sjis->ucd-entry db i))))
+    (print "};")
+    (display "static unsigned char sjis_general_category_8000[] = {")
+    (do-ec (: z #x8000 #xa000 256)
+           (emit-columns (+ z #x40)
+                         (+ z #xfd)
+                         (^i (emit-entry (sjis->ucd-entry db i)))))
+    (print "};")
+    (display "static unsigned char sjis_general_category_e000[] = {")
+    (do-ec (: z #xe000 #x10000 256)
+           (emit-columns (+ z #x40)
+                         (+ z #xfd)
+                         (^i (emit-entry (sjis->ucd-entry db i)))))
+    (print "};")
+    (dolist [cs code-sets]
+      (dump-code-set-in-C cs))
+    (print "#endif /*defined(GAUCHE_CHAR_ENCODING_SJIS)*/")
+    (print))
+
+  ;; bind predefined charset
+  (print "static void init_predefined_charsets() {")
+  (dolist [cat (ucd-general-categories)]
+    (print #"  Scm_Define(Scm_GaucheModule(),")
+    (print #"             SCM_SYMBOL(SCM_INTERN(\"char-set:~|cat|\")),")
+    (print #"             make_charset_~|cat|());")
+    )
+  (print "}")
 
   ;; Teardown
   (dolist [c (ucd-general-categories)]
@@ -531,6 +551,53 @@
                            (format "return (code - 0x~x);" (car e))
                            "return -1;")))
     (print "}")))
+
+;; Predefined character sets
+
+(define (for-each-char-code/none proc)
+  (dotimes [n 256] (proc n n)))
+
+(define (for-each-char-code/ucs proc)
+  (dotimes [n #x2ffff] (proc n n))
+  (proc #xe0000 #xe007f) ; Language tags; Cf
+  (proc #xe0100 #xe01ef) ; Variation selectors; Mn
+  (proc #xf0000 #xffffd) ; Private use; Co
+  (proc #x100000 #x10fffd) ; Private use; Co
+  )
+
+(define (for-each-char-code/euc-jp proc)
+  (dotimes [n 256] (proc n n))
+  (do-ec (: n #x8ea1 #x8eff) (proc n n))
+  (do-ec (: n #xa1a1 #xfeff) (proc n n))
+  (do-ec (: n #x8fa1a1 #x8ffef7) (proc n n)))
+
+(define (for-each-char-code/sjis proc)
+  (dotimes [n 128] (proc n n))
+  (do-ec (: n #xa0 #xe0) (proc n n))
+  (do-ec (: n #xfd #x100) (proc n n))
+  (do-ec (: n #x8140 #x9ffd) (proc n n))
+  (do-ec (: n #xe040 #xfcfd) (proc n n)))
+
+(define (build-code-sets db encoding categories)
+  (define sets (map (^c (make <char-code-set> :name c)) categories))
+  (define walker (ecase encoding
+                   [(none) for-each-char-code/none]
+                   [(utf8) for-each-char-code/ucs]
+                   [(eucjp) for-each-char-code/euc-jp]
+                   [(sjis) for-each-char-code/sjis]))
+  (define get-entry (ecase encoding
+                      [(none utf8) ucd-get-entry]
+                      [(eucjp) eucjp->ucd-entry]
+                      [(sjis) sjis->ucd-entry]))
+  (define (register set cat n m)
+    (and-let1 e (get-entry db n)
+      (if (eq? cat (ucd-entry-category e))
+        (if (= n m)
+          (add-char! set n)
+          (add-char-range-no-overlap! set n m)))))
+  (for-each (^[set cat] (walker (cut register set cat <> <>)))
+            sets categories)
+  sets)
 
 ;; Break property values
 ;; This goes to src/gauche/priv/unicode_attr.h

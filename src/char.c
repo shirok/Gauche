@@ -1455,6 +1455,8 @@ ScmObj Scm_GetStandardCharSet(int id)
 void Scm__InitChar(void)
 {
     SCM_INTERNAL_MUTEX_INIT(predef_charsets_mutex);
+    
+    init_predefined_charsets();
 
     /* Expose internal charset */
 #if defined(GAUCHE_CHAR_ENCODING_EUC_JP)
