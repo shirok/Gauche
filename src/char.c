@@ -559,8 +559,9 @@ ScmObj Scm_MakeImmutableCharSet(const ScmBits *small,
                                 const uint32_t *vec,
                                 size_t size)
 {
-    SCM_ASSERT(size > 0 && size % 2 == 0);
+    SCM_ASSERT(size % 2 == 0);
     ScmCharSet *cs = SCM_NEW(ScmCharSet);
+    SCM_SET_CLASS(cs, SCM_CLASS_CHARSET);
     cs->flags |= SCM_CHAR_SET_IMMUTABLE;
     memcpy(cs->small, small, sizeof(cs->small));
     if (vec != NULL) {
