@@ -755,47 +755,47 @@ fuga
 (use text.unicode.codeset)
 (test-module 'text.unicode.codeset)
 
-(let ((cs (make <char-code-set>)))
+(let ([cs (make <char-code-set>)])
   ;; testing overlapped ranges
-  (add-char-range! cs 64 127)
-  (add-char-range! cs 8 80)
-  (add-char-range! cs 100 1000)
-  (add-char-range! cs 200 210)   ; totally subsumed
-  (add-char-range! cs 1500 2000) ; independent
+  (add-code-range! cs 64 127)
+  (add-code-range! cs 8 80)
+  (add-code-range! cs 100 1000)
+  (add-code-range! cs 200 210)   ; totally subsumed
+  (add-code-range! cs 1500 2000) ; independent
 
-  (test* "add-char-range! (bitmap)"
+  (test* "add-code-range! (bitmap)"
          #xffff_ffff_ffff_ffff_ffff_ffff_ffff_ff00
          (~ cs'small-map))
 
-  (test* "add-char-range! (subsumed)"
+  (test* "add-code-range! (subsumed)"
          '((128 . 1000) (1500 . 2000))
          (tree-map->alist (~ cs'large-map)))
 
-  (add-char-range! cs 1800 2100) ; partially overlap
-  (add-char-range! cs 1400 1600)
-  (test* "add-char-range! (partially overlap)"
+  (add-code-range! cs 1800 2100) ; partially overlap
+  (add-code-range! cs 1400 1600)
+  (test* "add-code-range! (partially overlap)"
          '((128 . 1000) (1400 . 2100))
          (tree-map->alist (~ cs'large-map)))
 
-  (add-char-range! cs 1300 1400) ; adjacent
-  (add-char-range! cs 1000 1100) ; adjacent
-  (add-char-range! cs 2100 2200) ; adjacent
-  (test* "add-char-range! (adjacent)"
+  (add-code-range! cs 1300 1400) ; adjacent
+  (add-code-range! cs 1000 1100) ; adjacent
+  (add-code-range! cs 2100 2200) ; adjacent
+  (test* "add-code-range! (adjacent)"
          '((128 . 1100) (1300 . 2200))
          (tree-map->alist (~ cs'large-map)))
 
-  (add-char-range! cs 2500 2600)
-  (add-char-range! cs 2700 2800)
-  (add-char-range! cs 2900 3000)
-  (add-char-range! cs 3100 3200)
-  (add-char-range! cs 3300 3400)
-  (add-char-range! cs 2550 3050)
-  (test* "add-char-range! (multiple)"
+  (add-code-range! cs 2500 2600)
+  (add-code-range! cs 2700 2800)
+  (add-code-range! cs 2900 3000)
+  (add-code-range! cs 3100 3200)
+  (add-code-range! cs 3300 3400)
+  (add-code-range! cs 2550 3050)
+  (test* "add-code-range! (multiple)"
          '((128 . 1100) (1300 . 2200) (2500 . 3050) (3100 . 3200) (3300 . 3400))
          (tree-map->alist (~ cs'large-map)))
 
-  (add-char-range! cs 3090 3300)
-  (test* "add-char-range! (multiple)"
+  (add-code-range! cs 3090 3300)
+  (test* "add-code-range! (multiple)"
          '((128 . 1100) (1300 . 2200) (2500 . 3050) (3090 . 3400))
          (tree-map->alist (~ cs'large-map)))
   

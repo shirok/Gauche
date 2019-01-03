@@ -16,8 +16,8 @@
 
 (define-module text.unicode.codeset
   (export <char-code-set>
-          add-char!
-          add-char-range!
+          add-code!
+          add-code-range!
           dump-code-set-in-C))
 (select-module text.unicode.codeset)
 
@@ -46,7 +46,7 @@
   (dolist [r (tree-map->alist (~ cs'large-map))]
     (format out "\n~5,'0x-~5,'0x" (car r) (cdr r))))
 
-(define-method add-char! ((cs <char-code-set>) code)
+(define-method add-code! ((cs <char-code-set>) code)
   (if (< code SCM_CHAR_SET_SMALL_CHARS)
     (set! (~ cs'small-map) (copy-bit code (~ cs'small-map) #t))
     (receive (l0 h0) (tree-map-floor (~ cs'large-map) code)
@@ -67,7 +67,7 @@
                (tree-map-put! (~ cs'large-map) code code)])))))
 
 ;; START and END are both inclusive.
-(define-method add-char-range! ((cs <char-code-set>) start end)
+(define-method add-code-range! ((cs <char-code-set>) start end)
   (when (< start SCM_CHAR_SET_SMALL_CHARS)
     (let1 e (min end SCM_CHAR_SET_SMALL_CHARS)
       (update! (~ cs'small-map) (cut copy-bit-field <> -1 start e))))
