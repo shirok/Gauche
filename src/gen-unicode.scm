@@ -594,7 +594,7 @@
       (if (eq? cat (ucd-entry-category e))
         (if (= n m)
           (add-char! set n)
-          (add-char-range-no-overlap! set n m)))))
+          (add-char-range! set n m)))))
   (for-each (^[set cat] (walker (cut register set cat <> <>)))
             sets categories)
   sets)

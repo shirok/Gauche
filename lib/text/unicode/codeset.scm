@@ -17,7 +17,7 @@
 (define-module text.unicode.codeset
   (export <char-code-set>
           add-char!
-          add-char-range-no-overlap!
+          add-char-range!
           dump-code-set-in-C))
 (select-module text.unicode.codeset)
 
@@ -66,13 +66,38 @@
               [else                   ;; island
                (tree-map-put! (~ cs'large-map) code code)])))))
 
-;; Add character range that's known not to overlap the existing one.
-(define-method add-char-range-no-overlap! ((cs <char-code-set>) start end)
+;; START and END are both inclusive.
+(define-method add-char-range! ((cs <char-code-set>) start end)
   (when (< start SCM_CHAR_SET_SMALL_CHARS)
     (let1 e (min end SCM_CHAR_SET_SMALL_CHARS)
       (update! (~ cs'small-map) (cut copy-bit-field <> -1 start e))))
   (when (<= SCM_CHAR_SET_SMALL_CHARS end)
-    (tree-map-put! (~ cs'large-map) (max SCM_CHAR_SET_SMALL_CHARS start) end)))
+    (let1 start (max SCM_CHAR_SET_SMALL_CHARS start)
+      ;; search overlapping range
+      (receive (s0 e0) (tree-map-floor (~ cs'large-map) start)
+        (if (and s0 (<= start e0))
+          ;;       start<--------->end
+          ;;  s0<----------->e0
+          (let loop ([s s0]
+                     [e e0])
+            (tree-map-delete! (~ cs'large-map) s)
+            (receive (s1 e1) (tree-map-successor (~ cs'large-map) s)
+              (if (and s1 (<= s1 end))
+                (loop s1 (max e1 e))
+                (tree-map-put! (~ cs'large-map) s0 (max e end)))))
+          (receive (s0 e0) (tree-map-ceiling (~ cs'large-map) start)
+            (if (and s0 (<= s0 end))
+              ;;  start<---------------->end
+              ;;          s0<------------------>e0
+              (let loop ([s s0]
+                         [e e0])
+                (tree-map-delete! (~ cs'large-map) s)
+                (receive (s1 e1) (tree-map-successor (~ cs'large-map) s)
+                  (if (and s1 (<= s1 end))
+                    (loop s1 (max e1 e))
+                    (tree-map-put! (~ cs'large-map) start (max e end)))))
+              ;; no overlap
+              (tree-map-put! (~ cs'large-map) start end))))))))
 
 ;; Dump the set as static C code fragment to construct immutable charset.
 (define-method dump-code-set-in-C ((cs <char-code-set>))
