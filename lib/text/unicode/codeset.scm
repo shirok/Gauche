@@ -18,6 +18,7 @@
   (export <char-code-set>
           add-code!
           add-code-range!
+          code-set-union
           dump-code-set-in-C))
 (select-module text.unicode.codeset)
 
@@ -69,7 +70,7 @@
 ;; START and END are both inclusive.
 (define-method add-code-range! ((cs <char-code-set>) start end)
   (when (< start SCM_CHAR_SET_SMALL_CHARS)
-    (let1 e (min end SCM_CHAR_SET_SMALL_CHARS)
+    (let1 e (min (+ end 1) SCM_CHAR_SET_SMALL_CHARS)
       (update! (~ cs'small-map) (cut copy-bit-field <> -1 start e))))
   (when (<= SCM_CHAR_SET_SMALL_CHARS end)
     (let1 start (max SCM_CHAR_SET_SMALL_CHARS start)
@@ -98,6 +99,12 @@
                     (tree-map-put! (~ cs'large-map) start (max e end)))))
               ;; no overlap
               (tree-map-put! (~ cs'large-map) start end))))))))
+
+(define (code-set-union name cs1 cs2)
+  (rlet1 cs (make <char-code-set> :name name)
+    (set! (~ cs'small-map) (logior (~ cs1'small-map) (~ cs2'small-map)))
+    (tree-map-for-each (~ cs1'large-map) (cut add-code-range! cs <> <>))
+    (tree-map-for-each (~ cs2'large-map) (cut add-code-range! cs <> <>))))
 
 ;; Dump the set as static C code fragment to construct immutable charset.
 (define-method dump-code-set-in-C ((cs <char-code-set>))

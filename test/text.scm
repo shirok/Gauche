@@ -801,4 +801,32 @@ fuga
   
   )
 
+(let ([cs1 (make <char-code-set>)]
+      [cs2 (make <char-code-set>)])
+  (add-code-range! cs1 8 15)
+  (add-code-range! cs1 120 200)
+  (add-code-range! cs1 300 400)
+  (add-code! cs1 500)
+  (add-code! cs1 600)
+  (add-code-range! cs1 1000 2000)
+  (add-code-range! cs1 3000 4000)
+  (add-code-range! cs1 5000 6000)
+  (add-code-range! cs1 7000 8000)
+
+  (add-code-range! cs2 24 31)
+  (add-code-range! cs2 128 250)
+  (add-code-range! cs2 300 500)
+  (add-code-range! cs2 600 900)
+  (add-code-range! cs2 1100 5100)
+  (add-code-range! cs2 5800 9000)
+
+  (let1 cs (code-set-union #f cs1 cs2)
+    (test* "code-set-union (bitmap)"
+           #xff00_0000_0000_0000_0000_0000_ff00_ff00
+           (~ cs'small-map))
+    (test* "code-set-union (large-map"
+           '((128 . 250) (300 . 500) (600 . 900) (1000 . 9000))
+           (tree-map->alist (~ cs'large-map))))
+  )
+
 (test-end)
