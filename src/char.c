@@ -564,7 +564,7 @@ ScmObj Scm_MakeImmutableCharSet(const ScmBits *small,
     SCM_SET_CLASS(cs, SCM_CLASS_CHARSET);
     cs->flags |= SCM_CHAR_SET_IMMUTABLE;
     memcpy(cs->small, small, sizeof(cs->small));
-    if (vec != NULL) {
+    if (vec != NULL && size > 0) {
         set_large(cs, TRUE);
         if ((cs->large.frozen.size = size) == 2) {
             cs->large.frozen.ivec[0] = vec[0];
