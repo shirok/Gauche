@@ -475,7 +475,7 @@
                'constant 'ScmString
                (format "  SCM_STRING_CONST_INITIALIZER(~a, ~a, ~a)"
                        (cgen-safe-string value)
-                       (string-size value) (string-length value)))
+                       (string-length value) (string-size value)))
       :value value))
   )
 
