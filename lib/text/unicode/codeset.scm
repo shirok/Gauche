@@ -100,11 +100,16 @@
               ;; no overlap
               (tree-map-put! (~ cs'large-map) start end))))))))
 
-(define (code-set-union name cs1 cs2)
+(define (code-set-union-2 name cs1 cs2)
   (rlet1 cs (make <char-code-set> :name name)
     (set! (~ cs'small-map) (logior (~ cs1'small-map) (~ cs2'small-map)))
     (tree-map-for-each (~ cs1'large-map) (cut add-code-range! cs <> <>))
     (tree-map-for-each (~ cs2'large-map) (cut add-code-range! cs <> <>))))
+
+(define (code-set-union name cs1 cs2 . css)
+  (if (null? css)
+    (code-set-union-2 name cs1 cs2)
+    (apply code-set-union name (code-set-union-2 #f cs1 cs2) css)))
 
 ;; Dump the set as static C code fragment to construct immutable charset.
 (define-method dump-code-set-in-C ((cs <char-code-set>))
