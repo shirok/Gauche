@@ -16,25 +16,18 @@
 (define (ceiling/ n d)
   (receive (q r) (quotient&remainder n d)
     (if (>= n 0)
-      (if (> d 0)
+      (if (and (> d 0) (not (zero? r)))
         (values (+ q 1) (- r d))
         (values q r))
-      (if (> d 0)
+      (if (or (> d 0) (zero? r))
         (values q r)
         (values (+ q 1) (- r d))))))
 
 (define (ceiling-quotient n d)
-  (let1 q (quotient n d)
-    (if (>= n 0)
-      (if (> d 0) (+ q 1) q)
-      (if (> d 0) q (+ q 1)))))
+  (values-ref (ceiling/ n d) 0))
 
 (define (ceiling-remainder n d)
-  (let1 r (remainder n d)
-    (if (or (and (> n 0) (> d 0))
-            (and (< n 0) (< d 0)))
-      (- r d)
-      r)))
+  (values-ref (ceiling/ n d) 1))
 
 ;; euclidean is same as R6RS div/mod, except checks for integers.
 

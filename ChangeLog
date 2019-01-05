@@ -1,5 +1,9 @@
 2019-01-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/numerical.scm (floor/), lib/srfi-141.scm (ceiling/):
+	  Fix bugs that returns incorrect values when remainder is zero.
+	  https://github.com/shirok/Gauche/issues/420
+
 	* src/gen-unicode.scm, src/char.c: Replace predefined charsets
 	  for static immutable char-sets.  Note that SCM_CHAR_SET_x enums are
 	  changed.  Srfi-14's predefined charsets such as char-set:letter
