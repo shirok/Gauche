@@ -798,7 +798,38 @@ fuga
   (test* "add-code-range! (multiple)"
          '((128 . 1100) (1300 . 2200) (2500 . 3050) (3090 . 3400))
          (tree-map->alist (~ cs'large-map)))
-  
+
+  (add-code! cs 3401)
+  (add-code! cs 3089)
+  (test* "add-code! (next)"
+         '((128 . 1100) (1300 . 2200) (2500 . 3050) (3089 . 3401))
+         (tree-map->alist (~ cs'large-map)))
+
+  (add-code-range! cs 3402 3500)
+  (test* "add-code-range! (next)"
+         '((128 . 1100) (1300 . 2200) (2500 . 3050) (3089 . 3500))
+         (tree-map->alist (~ cs'large-map)))
+
+  (add-code-range! cs 3052 3088)
+  (test* "add-code-range! (next)"
+         '((128 . 1100) (1300 . 2200) (2500 . 3050) (3052 . 3500))
+         (tree-map->alist (~ cs'large-map)))
+
+  (add-code! cs 3051)
+  (test* "add-code! (fill)"
+         '((128 . 1100) (1300 . 2200) (2500 . 3500))
+         (tree-map->alist (~ cs'large-map)))
+
+  (add-code-range! cs 1101 1299)
+  (test* "add-code-range! (fill)"
+         '((128 . 2200) (2500 . 3500))
+         (tree-map->alist (~ cs'large-map)))
+
+  (add-code-range! cs 4000 4500)
+  (add-code-range! cs 2300 3999)
+  (test* "add-code-range! (fill)"
+         '((128 . 2200) (2300 . 4500))
+         (tree-map->alist (~ cs'large-map)))
   )
 
 (let ([cs1 (make <char-code-set>)]

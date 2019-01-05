@@ -76,25 +76,25 @@
     (let1 start (max SCM_CHAR_SET_SMALL_CHARS start)
       ;; search overlapping range
       (receive (s0 e0) (tree-map-floor (~ cs'large-map) start)
-        (if (and s0 (<= start e0))
+        (if (and s0 (<= start (+ e0 1)))
           ;;       start<--------->end
           ;;  s0<----------->e0
           (let loop ([s s0]
                      [e e0])
             (tree-map-delete! (~ cs'large-map) s)
             (receive (s1 e1) (tree-map-successor (~ cs'large-map) s)
-              (if (and s1 (<= s1 end))
+              (if (and s1 (<= s1 (+ end 1)))
                 (loop s1 (max e1 e))
                 (tree-map-put! (~ cs'large-map) s0 (max e end)))))
           (receive (s0 e0) (tree-map-ceiling (~ cs'large-map) start)
-            (if (and s0 (<= s0 end))
+            (if (and s0 (<= s0 (+ end 1)))
               ;;  start<---------------->end
               ;;          s0<------------------>e0
               (let loop ([s s0]
                          [e e0])
                 (tree-map-delete! (~ cs'large-map) s)
                 (receive (s1 e1) (tree-map-successor (~ cs'large-map) s)
-                  (if (and s1 (<= s1 end))
+                  (if (and s1 (<= s1 (+ end 1)))
                     (loop s1 (max e1 e))
                     (tree-map-put! (~ cs'large-map) start (max e end)))))
               ;; no overlap
