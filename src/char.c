@@ -38,6 +38,8 @@
 #include "gauche/priv/charP.h"
 #include "gauche/priv/vectorP.h"
 
+static ScmObj predef_sets[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
+
 #include "char_attr.c"          /* generated tables */
 
 /*=======================================================================
@@ -812,9 +814,18 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
     ScmDictEntry *e;
     Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
                     0, SCM_CHAR_SET_SMALL_CHARS);
-    Scm_TreeIterInit(&iter, &src->large.tree, NULL);
-    while ((e = Scm_TreeIterNext(&iter)) != NULL) {
-        Scm_CharSetAddRange(dst, SCM_CHAR(e->key), SCM_CHAR(e->value));
+    if (SCM_CHAR_SET_IMMUTABLE_P(src)) {
+        ScmSize k;
+        for (k = 0; k < src->large.frozen.size; k += 2) {
+            Scm_CharSetAddRange(dst,
+                                SCM_CHAR(src->large.frozen.vec[k]),
+                                SCM_CHAR(src->large.frozen.vec[k+1]));
+        }
+    } else {
+        Scm_TreeIterInit(&iter, &src->large.tree, NULL);
+        while ((e = Scm_TreeIterNext(&iter)) != NULL) {
+            Scm_CharSetAddRange(dst, SCM_CHAR(e->key), SCM_CHAR(e->value));
+        }
     }
     return SCM_OBJ(dst);
 }
@@ -1040,11 +1051,11 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                     break;
                 case 's':
                     moreset_complement = FALSE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
+                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
                     break;
                 case 'S':
                     moreset_complement = TRUE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
+                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
                     break;
                 case 'w':
                     moreset_complement = FALSE;
@@ -1176,29 +1187,29 @@ ScmObj read_predef_charset(const char **cp, int error_p)
             continue;
         }
         if (strncmp(name, ":alnum:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_ALNUM);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_LETTER_DIGIT);
         } else if (strncmp(name, ":alpha:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_ALPHA);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_LETTER);
         } else if (strncmp(name, ":blank:", 7) == 0) {
             return Scm_GetStandardCharSet(SCM_CHAR_SET_BLANK);
         } else if (strncmp(name, ":cntrl:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_CNTRL);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_ISO_CONTROL);
         } else if (strncmp(name, ":digit:", 7) == 0) {
             return Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
         } else if (strncmp(name, ":graph:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_GRAPH);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_GRAPHIC);
         } else if (strncmp(name, ":lower:", 7) == 0) {
             return Scm_GetStandardCharSet(SCM_CHAR_SET_LOWER);
         } else if (strncmp(name, ":print:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_PRINT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_PRINTING);
         } else if (strncmp(name, ":punct:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_PUNCT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_PUNCTUATION);
         } else if (strncmp(name, ":space:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
         } else if (strncmp(name, ":upper:", 7) == 0) {
             return Scm_GetStandardCharSet(SCM_CHAR_SET_UPPER);
         } else if (strncmp(name, ":xdigit:", 8) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_XDIGIT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_HEX_DIGIT);
         } else break;
     }
     /* here we got invalid charset name */
@@ -1407,56 +1418,75 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
  * ASCII range, that all character sets agree on.
  */
 
-static ScmCharSet *predef_charsets[SCM_CHAR_SET_NUM_PREDEFINED_SETS] = {NULL};
-static ScmInternalMutex predef_charsets_mutex;
-
-static void install_charsets(void)
-{
-    SCM_INTERNAL_MUTEX_LOCK(predef_charsets_mutex);
-
-#define CS(n)  predef_charsets[n]
-    for (int i = 0; i < SCM_CHAR_SET_NUM_PREDEFINED_SETS; i++) {
-        CS(i) = SCM_CHAR_SET(Scm_MakeEmptyCharSet());
-    }
-    for (int code = 0; code < SCM_CHAR_SET_SMALL_CHARS; code++) {
-        if (isalnum(code)) MASK_SET(CS(SCM_CHAR_SET_ALNUM), code);
-        if (isalpha(code)) MASK_SET(CS(SCM_CHAR_SET_ALPHA), code);
-        if (iscntrl(code)) MASK_SET(CS(SCM_CHAR_SET_CNTRL), code);
-        if (isdigit(code)) MASK_SET(CS(SCM_CHAR_SET_DIGIT), code);
-        if (isgraph(code)) MASK_SET(CS(SCM_CHAR_SET_GRAPH), code);
-        if (islower(code)) MASK_SET(CS(SCM_CHAR_SET_LOWER), code);
-        if (isprint(code)) MASK_SET(CS(SCM_CHAR_SET_PRINT), code);
-        if (ispunct(code)) MASK_SET(CS(SCM_CHAR_SET_PUNCT), code);
-        if (isspace(code)) MASK_SET(CS(SCM_CHAR_SET_SPACE), code);
-        if (isupper(code)) MASK_SET(CS(SCM_CHAR_SET_UPPER), code);
-        if (isxdigit(code)) MASK_SET(CS(SCM_CHAR_SET_XDIGIT), code);
-        /* Default word constituent chars #[\w].  NB: in future versions,
-           a parameter might be introduced to customize this set. */
-        if (isalnum(code)||code=='_')
-            MASK_SET(CS(SCM_CHAR_SET_WORD), code);
-        /* isblank() is not in posix.  for now, I hardcode it. */
-        if (code == ' ' || code == '\t')
-            MASK_SET(CS(SCM_CHAR_SET_BLANK), code);
-    }
-#undef CS
-    SCM_INTERNAL_MUTEX_UNLOCK(predef_charsets_mutex);
-}
-
 ScmObj Scm_GetStandardCharSet(int id)
 {
     if (id < 0 || id >= SCM_CHAR_SET_NUM_PREDEFINED_SETS)
         Scm_Error("bad id for predefined charset index: %d", id);
-    if (predef_charsets[id] == NULL) {
-        install_charsets();
-    }
-    return SCM_OBJ(predef_charsets[id]);
+    return SCM_OBJ(predef_sets[id]);
 }
 
 void Scm__InitChar(void)
 {
-    SCM_INTERNAL_MUTEX_INIT(predef_charsets_mutex);
-    
+    ScmModule *mod = Scm_GaucheModule();
+
     init_predefined_charsets();
+    predef_sets[SCM_CHAR_SET_LOWER] = predef_sets[SCM_CHAR_SET_Ll];
+    predef_sets[SCM_CHAR_SET_UPPER] = predef_sets[SCM_CHAR_SET_Lu];
+    predef_sets[SCM_CHAR_SET_TITLE] = predef_sets[SCM_CHAR_SET_Lt];
+    predef_sets[SCM_CHAR_SET_ISO_CONTROL] = predef_sets[SCM_CHAR_SET_Cc];
+    predef_sets[SCM_CHAR_SET_FULL] = Scm_CharSetComplement(make_charset());
+    
+#define DEFCS(name, id) \
+    Scm_Define(mod, SCM_SYMBOL(SCM_INTERN("char-set:" name)), predef_sets[SCM_CPP_CAT(SCM_CHAR_SET_, id)])
+
+    DEFCS("Lu", Lu);
+    DEFCS("Ll", Ll);
+    DEFCS("Lt", Lt);
+    DEFCS("Lm", Lm);
+    DEFCS("Lo", Lo);
+    DEFCS("Mn", Mn);
+    DEFCS("Mc", Mc);
+    DEFCS("Me", Me);
+    DEFCS("Nd", Nd);
+    DEFCS("Nl", Nl);
+    DEFCS("No", No);
+    DEFCS("Pc", Pc);
+    DEFCS("Pd", Pd);
+    DEFCS("Ps", Ps);
+    DEFCS("Pe", Pe);
+    DEFCS("Pi", Pi);
+    DEFCS("Pf", Pf);
+    DEFCS("Po", Po);
+    DEFCS("Sm", Sm);
+    DEFCS("Sc", Sc);
+    DEFCS("Sk", Sk);
+    DEFCS("So", So);
+    DEFCS("Zs", Zs);
+    DEFCS("Zl", Zl);
+    DEFCS("Zp", Zp);
+    DEFCS("Cc", Cc);
+    DEFCS("Cf", Cf);
+    DEFCS("Cs", Cs);
+    DEFCS("Co", Co);
+    DEFCS("Cn", Cn);
+
+    DEFCS("lower-case", LOWER);
+    DEFCS("upper-case", UPPER);
+    DEFCS("title-case", TITLE);
+    DEFCS("letter", LETTER);
+    DEFCS("digit", DIGIT);
+    DEFCS("letter+digit", LETTER_DIGIT);
+    DEFCS("graphic", GRAPHIC);
+    DEFCS("printing", PRINTING);
+    DEFCS("whitespace", WHITESPACE);
+    DEFCS("iso-control", ISO_CONTROL);
+    DEFCS("punctuation", PUNCTUATION);
+    DEFCS("symbol", SYMBOL);
+    DEFCS("hex-digit", HEX_DIGIT);
+    DEFCS("blank", BLANK);
+    DEFCS("ascii", ASCII);
+    DEFCS("empty", EMPTY);
+    DEFCS("full", FULL);
 
     /* Expose internal charset */
 #if defined(GAUCHE_CHAR_ENCODING_EUC_JP)

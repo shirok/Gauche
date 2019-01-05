@@ -442,11 +442,11 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return Scm_Cons(SCM_SYM_COMP, cs);
         case 's':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'S':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return Scm_Cons(SCM_SYM_COMP, cs);
         case '0': case '1': case '2': case '3': case '4':

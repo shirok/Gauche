@@ -97,28 +97,7 @@
 (define char-set-complement  (with-module gauche char-set-complement))
 (define char-set-complement! (with-module gauche char-set-complement!))
 
-;; Predefined charsets
-;;  NB: Should char-set:symbol be extended to full Unicode range?
-
-(define char-set:letter+digit (%char-set-predefined 0))  ; ALNUM
-(define char-set:letter      (%char-set-predefined 1))   ; ALPHA
-(define char-set:blank       (%char-set-predefined 2))   ; BLANK
-(define char-set:iso-control (%char-set-predefined 3))   ; CNTRL
-(define char-set:digit       (%char-set-predefined 4))   ; DIGIT
-(define char-set:graphic     (%char-set-predefined 5))   ; GRAPH
-(define char-set:lower-case  (%char-set-predefined 6))   ; LOWER
-(define char-set:printing    (%char-set-predefined 7))   ; PRINT
-(define char-set:punctuation (%char-set-predefined 8))   ; PUNCT
-(define char-set:whitespace  (%char-set-predefined 9))   ; SPACE
-(define char-set:upper-case  (%char-set-predefined 10))  ; UPPER
-(define char-set:title-case  (%char-set-predefined 10))  ; UPPER
-(define char-set:hex-digit   (%char-set-predefined 11))  ; XDIGITS
-
-(define char-set:symbol      (%char-set-add-chars! (char-set)
-                                                   (string->list "$+<=>^`|~")))
-(define char-set:ascii       (%char-set-add-range! (char-set) 0 128))
-(define char-set:empty       (char-set))
-(define char-set:full        (char-set-complement! (char-set)))
+;; Predefined charsets - built-in
 
 ;;-------------------------------------------------------------------
 ;; Comparison

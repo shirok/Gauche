@@ -113,19 +113,57 @@ SCM_EXTERN void   Scm_CharSetDump(ScmCharSet *cs, ScmPort *port);
 
 /* predefined character set API */
 enum {
-    SCM_CHAR_SET_ALNUM,
-    SCM_CHAR_SET_ALPHA,
-    SCM_CHAR_SET_BLANK,
-    SCM_CHAR_SET_CNTRL,
-    SCM_CHAR_SET_DIGIT,
-    SCM_CHAR_SET_GRAPH,
-    SCM_CHAR_SET_LOWER,
-    SCM_CHAR_SET_PRINT,
-    SCM_CHAR_SET_PUNCT,
-    SCM_CHAR_SET_SPACE,
-    SCM_CHAR_SET_UPPER,
-    SCM_CHAR_SET_XDIGIT,
-    SCM_CHAR_SET_WORD,           /* internal use: word constituent char. */
+    /* Unicode General Categories */
+    SCM_CHAR_SET_Lu,            /* Letter, uppercase */
+    SCM_CHAR_SET_Ll,            /* Letter, lowercase */
+    SCM_CHAR_SET_Lt,            /* Letter, titlecase */
+    SCM_CHAR_SET_Lm,            /* Letter, modifier */
+    SCM_CHAR_SET_Lo,            /* Letter, other */
+    SCM_CHAR_SET_Mn,            /* Mark, nonspacing */
+    SCM_CHAR_SET_Mc,            /* Mark, combining */
+    SCM_CHAR_SET_Me,            /* Mark, enclosing */
+    SCM_CHAR_SET_Nd,            /* Number, decimal digit */
+    SCM_CHAR_SET_Nl,            /* Number, letter */
+    SCM_CHAR_SET_No,            /* Number, other */
+    SCM_CHAR_SET_Pc,            /* Punctuation, connector */
+    SCM_CHAR_SET_Pd,            /* Punctuation, dash */
+    SCM_CHAR_SET_Ps,            /* Punctuation, open */
+    SCM_CHAR_SET_Pe,            /* Punctuation, close */
+    SCM_CHAR_SET_Pi,            /* Punctuation, initial quote */
+    SCM_CHAR_SET_Pf,            /* Punctuation, final quote */
+    SCM_CHAR_SET_Po,            /* Punctuation, other */
+    SCM_CHAR_SET_Sm,            /* Symbol, math */
+    SCM_CHAR_SET_Sc,            /* Symbol, currency */
+    SCM_CHAR_SET_Sk,            /* Symbol, modifier */
+    SCM_CHAR_SET_So,            /* Symbol, other */
+    SCM_CHAR_SET_Zs,            /* Separator, space */
+    SCM_CHAR_SET_Zl,            /* Separator, line */
+    SCM_CHAR_SET_Zp,            /* Separator, paragraph */
+    SCM_CHAR_SET_Cc,            /* Other, control */
+    SCM_CHAR_SET_Cf,            /* Other, format */
+    SCM_CHAR_SET_Cs,            /* Other, surrogate */
+    SCM_CHAR_SET_Co,            /* Other, private use */
+    SCM_CHAR_SET_Cn,            /* Other, not assigned */
+    /* SRFI-14 sets */
+    SCM_CHAR_SET_LOWER,         /* Ll */
+    SCM_CHAR_SET_UPPER,         /* Lu */
+    SCM_CHAR_SET_TITLE,         /* Lt */
+    SCM_CHAR_SET_LETTER,        /* Lu|Ll|Lt|Lm|Lo */
+    SCM_CHAR_SET_DIGIT,         /* Nd */
+    SCM_CHAR_SET_LETTER_DIGIT,  /* L*|Nd */
+    SCM_CHAR_SET_GRAPHIC,       /* L*|N*|P*|S* */
+    SCM_CHAR_SET_PRINTING,      /* L*|N*|P*|S*|Z* */
+    SCM_CHAR_SET_WHITESPACE,    /* Z*|\u0009-\u000d */
+    SCM_CHAR_SET_ISO_CONTROL,   /* Cc */
+    SCM_CHAR_SET_PUNCTUATION,   /* P* */
+    SCM_CHAR_SET_SYMBOL,        /* S* */
+    SCM_CHAR_SET_HEX_DIGIT,     /* 0-9A-Fa-f */
+    SCM_CHAR_SET_BLANK,         /* Zs|\u0009 */
+    SCM_CHAR_SET_ASCII,         /* \u0000-\u007f */
+    SCM_CHAR_SET_EMPTY,
+    SCM_CHAR_SET_FULL,
+    /* internal use: word constituent chars */
+    SCM_CHAR_SET_WORD,
     SCM_CHAR_SET_NUM_PREDEFINED_SETS
 };
 SCM_EXTERN ScmObj Scm_GetStandardCharSet(int id);

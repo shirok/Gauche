@@ -341,8 +341,7 @@
                                    [(#f) "Cn"]
                                    [else => identity]))))
     (print "}")
-    (dolist [cs code-sets]
-      (dump-code-set-in-C cs))
+    (hash-table-for-each code-sets (^[key cs] (dump-code-set-in-C cs)))
     (print "#endif /*defined(GAUCHE_CHAR_ENCODING_UTF_8)*/")
     (print))
 
@@ -367,8 +366,7 @@
                     (+ (ash (+ z #xa1) 8) #x8f00ff)
                     (^i (emit-entry (eucjp->ucd-entry db i)))))
     (print "};")
-    (dolist [cs code-sets]
-      (dump-code-set-in-C cs))
+    (hash-table-for-each code-sets (^[key cs] (dump-code-set-in-C cs)))
     (print "#endif /*defined(GAUCHE_CHAR_ENCODING_EUC_JP)*/")
     (print))
 
@@ -393,18 +391,18 @@
                          (+ z #xfd)
                          (^i (emit-entry (sjis->ucd-entry db i)))))
     (print "};")
-    (dolist [cs code-sets]
-      (dump-code-set-in-C cs))
+    (hash-table-for-each code-sets (^[key cs] (dump-code-set-in-C cs)))
     (print "#endif /*defined(GAUCHE_CHAR_ENCODING_SJIS)*/")
     (print))
 
   ;; bind predefined charset
   (print "static void init_predefined_charsets() {")
-  (dolist [cat (ucd-general-categories)]
-    (print #"  Scm_Define(Scm_GaucheModule(),")
-    (print #"             SCM_SYMBOL(SCM_INTERN(\"char-set:~|cat|\")),")
-    (print #"             make_charset_~|cat|());")
-    )
+  (dolist [cat (append (ucd-general-categories)
+                       '(LETTER DIGIT LETTER_DIGIT GRAPHIC PRINTING
+                         WHITESPACE BLANK PUNCTUATION SYMBOL HEX_DIGIT
+                         ASCII EMPTY WORD))]
+    (print #"  predef_sets[SCM_CHAR_SET_~|cat|] =")
+    (print #"      make_charset_~|cat|();"))
   (print "}")
 
   ;; Teardown
@@ -579,7 +577,7 @@
   (do-ec (: n #xe040 #xfcfd) (proc n n)))
 
 (define (build-code-sets db encoding categories)
-  (define sets (map (^c (make <char-code-set> :name c)) categories))
+  (define sets (make-hash-table 'eq?))
   (define walker (ecase encoding
                    [(none) for-each-char-code/none]
                    [(utf8) for-each-char-code/ucs]
@@ -595,8 +593,89 @@
         (if (= n m)
           (add-code! set n)
           (add-code-range! set n m)))))
-  (for-each (^[set cat] (walker (cut register set cat <> <>)))
-            sets categories)
+  (dolist [cat categories]
+    (let1 cs (make <char-code-set> :name cat)
+      (walker (cut register cs cat <> <>))
+      (hash-table-put! sets cat cs)))
+  ;; srfi-14 charsets
+  (hash-table-put! sets 'LETTER
+                   (code-set-union 'LETTER
+                                   (hash-table-ref sets 'Lu)
+                                   (hash-table-ref sets 'Ll)
+                                   (hash-table-ref sets 'Lt)
+                                   (hash-table-ref sets 'Lm)
+                                   (hash-table-ref sets 'Lo)))
+  (hash-table-put! sets 'DIGIT
+                   (rlet1 cs (make <char-code-set> :name 'DIGIT)
+                     (add-code-range! cs 
+                                      (char->integer #\0)
+                                      (char->integer #\9))))
+  (hash-table-put! sets 'LETTER_DIGIT
+                   (code-set-union 'LETTER_DIGIT
+                                   (hash-table-ref sets 'LETTER)
+                                   (hash-table-ref sets 'DIGIT)))
+  (hash-table-put! sets 'WHITESPACE
+                   (rlet1 cs (make <char-code-set> :name 'WHITESPACE)
+                     (add-code-range! cs 9 13) ;TAB,LF,LTAB,FF,CR
+                     (add-code! cs (char->integer #\space))))
+  (hash-table-put! sets 'BLANK
+                   (rlet1 cs (make <char-code-set> :name 'BLANK)
+                     (add-code! cs 9) ;TAB
+                     (add-code! cs (char->integer #\space))))
+  (hash-table-put! sets 'PUNCTUATION
+                   (code-set-union 'PUNCTUATION
+                                   (hash-table-ref sets 'Pc)
+                                   (hash-table-ref sets 'Pd)
+                                   (hash-table-ref sets 'Ps)
+                                   (hash-table-ref sets 'Pe)
+                                   (hash-table-ref sets 'Pi)
+                                   (hash-table-ref sets 'Pf)
+                                   (hash-table-ref sets 'Po)))
+  (hash-table-put! sets 'SYMBOL
+                   (code-set-union 'SYMBOL
+                                   (hash-table-ref sets 'Sm)
+                                   (hash-table-ref sets 'Sc)
+                                   (hash-table-ref sets 'Sk)
+                                   (hash-table-ref sets 'So)))
+  (hash-table-put! sets 'GRAPHIC
+                   (code-set-union 'GRAPHIC
+                                   (hash-table-ref sets 'LETTER)
+                                   (hash-table-ref sets 'Nd)
+                                   (hash-table-ref sets 'Nl)
+                                   (hash-table-ref sets 'No)
+                                   (hash-table-ref sets 'PUNCTUATION)
+                                   (hash-table-ref sets 'SYMBOL)))
+  (hash-table-put! sets 'PRINTING
+                   (code-set-union 'PRINTING
+                                   (hash-table-ref sets 'GRAPHIC)
+                                   (hash-table-ref sets 'WHITESPACE)))
+  (hash-table-put! sets 'HEX_DIGIT
+                   (rlet1 cs (make <char-code-set> :name 'HEX_DIGIT)
+                     (add-code-range! cs 
+                                      (char->integer #\0)
+                                      (char->integer #\9))
+                     (add-code-range! cs 
+                                      (char->integer #\A)
+                                      (char->integer #\F))
+                     (add-code-range! cs 
+                                      (char->integer #\a)
+                                      (char->integer #\f))))
+  (hash-table-put! sets 'ASCII
+                   (rlet1 cs (make <char-code-set> :name 'ASCII)
+                     (add-code-range! cs 0 127)))
+  (hash-table-put! sets 'WORD
+                   (rlet1 cs (make <char-code-set> :name 'WORD)
+                     (add-code-range! cs 
+                                      (char->integer #\0)
+                                      (char->integer #\9))
+                     (add-code-range! cs 
+                                      (char->integer #\A)
+                                      (char->integer #\Z))
+                     (add-code-range! cs 
+                                      (char->integer #\a)
+                                      (char->integer #\z))
+                     (add-code! cs (char->integer #\_))))
+  (hash-table-put! sets 'EMPTY (make <char-code-set> :name 'EMPTY))
   sets)
 
 ;; Break property values

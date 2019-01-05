@@ -1,3 +1,11 @@
+2019-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-unicode.scm, src/char.c: Replace predefined charsets
+	  for static immutable char-sets.  Note that SCM_CHAR_SET_x enums are
+	  changed.  Srfi-14's predefined charsets such as char-set:letter
+	  are now in gauche module.  In addition to srfi-14 sets, we have
+	  char-set:Lu etc., as well.
+
 2019-01-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gen-unicode.scm, lib/text/unicode/codeset.scm: Generate static
