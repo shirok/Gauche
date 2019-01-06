@@ -2,13 +2,24 @@ notifications:
   recipients:
     - gauche-travis@lists.sourceforge.net
 language: c
+os:
+  - linux
+  - osx
 compiler:
   - gcc
   - clang
-branches:
-  only:
-    - master
+addons:
+  apt:
+    packages:
+      - libgdbm-dev
+      - zlib1g-dev
+  homebrew:
+    packages:
+      - gdbm
+      - zlib
 before_install:
-  - curl https://raw.github.com/shirok/Gauche/master/test/setup-travis.sh | sh
-before_script:
-  - ./DIST gen
+  # sudo cannot find clang, so We install Gauche under $HOME without sudo
+  # https://github.com/travis-ci/travis-ci/issues/3088
+  - curl -o get-gauche.sh -f https://raw.githubusercontent.com/shirok/get-gauche/master/get-gauche.sh && chmod +x get-gauche.sh && ./get-gauche.sh --auto --home && ./DIST gen
+script:
+  - ./configure && make && make check
