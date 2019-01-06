@@ -36,6 +36,7 @@
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
                      <gauche/char_attr.h>
+                     <gauche/priv/charP.h>
                      <ctype.h>))
  )
 
