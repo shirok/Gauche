@@ -1,3 +1,8 @@
+2025-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/collection.scm (group-by-size, group-by-size-to):
+	  Added.
+
 2025-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* Dropped disjoint keyword type support.  Now keywords are symbols,

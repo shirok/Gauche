@@ -407,6 +407,16 @@
        (group-collection->alist '((3 "a") (2 "b") (1 "c") (3 "d") (1 "e"))
                                 :key car :value cadr))
 
+(test* "group-by-size" '((a b c) (d e f) (g h i) (j k))
+       (group-by-size '#(a b c d e f g h i j k) 3))
+(test* "group-by-size" '((#\a #\b #\c #\d #\e) (#\f #\g #\h #\i #\j))
+       (group-by-size "abcdefghij" 5))
+(test* "group-by-size (padding)" '((a b c d) (e z z z))
+       (group-by-size '#(a b c d e) 4 'z))
+
+(test* "group-by-size-to" '(#(a b c) #(d e))
+       (group-by-size-to <vector> '#(a b c d e) 3))
+
 (test-section "sequence operations")
 
 (test* "ref (list)" 3     (ref '(1 2 3 4 5) 2))

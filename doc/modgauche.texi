@@ -5568,7 +5568,8 @@ Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを�
 @code{find}, @code{find-min}, @code{find-max}, @code{find-min&max},
 @code{filter}, @code{filter-to},
 @code{remove}, @code{remove-to}, @code{partition}, @code{partition-to}
-@code{group-collection}
+@code{group-collection}, @code{group-collection->alist},
+@code{group-by-size}, @code{group-by-size-to}
 @c EN
 @item Conversion
 @c JP
@@ -6341,6 +6342,51 @@ in the collection.
 キーワード引数@var{key}および@var{value}の省略時の値は@code{identity}、
 キーの比較に使われる@var{test}の省略時の値は@code{eqv?}です。
 @c COMMON
+@end deffn
+
+@deffn {Generic function} group-by-size coll k :optional padding
+@deffnx {Generic function} group-by-size-to class coll k :optional padding
+@c MOD gauche.collection
+@c EN
+Rerurns a list of ``groups'', where a ``group'' is a list
+(or a collection of @var{class}) consisting of
+@var{k} items from the collection @var{coll}.
+This can be considered as a generalized version of @code{slices} for lists
+(@pxref{List accessors and modifiers}).
+
+If the number of elements of @var{coll}
+isn't multiples of @var{k}, the last group
+may have less elements than @var{k} if @var{padding} is not given
+If @var{padding} is given, however, it is added to make the size of
+the last group to be @var{k}.
+
+Internally, the default method calls @code{ggroup} of @code{gauche.generator}
+(@pxref{Generator operations}).  So if @var{coll} is a sequence,
+it is guaranteed to take every @var{k} elements from the beginning.
+@c JP
+@var{coll}の要素を@var{k}個づつの「グループ」に分割してそのリストを返します。
+各グループは要素のリストか、@var{class}クラスのコレクションです。
+これはリストに対する@code{slices}の一般化と考えることもできます
+(@ref{List accessors and modifiers}参照)。
+
+@var{coll}の要素数が@var{k}の倍数でない場合、@var{padding}与えられていなければ
+最後のグループは@var{k}個より少ない要素を持ちますが、
+@var{padding}が与えられていればそれが@var{k}個になるまで足されます。
+
+デフォルトメソッドは内部的に@code{gauche.generator}の@code{ggroup}を
+使っています(@ref{Generator operations}参照)。
+特に、@var{coll}がシーケンスであれば、最初から順に要素が取られることは
+保証されます。
+@c COMMON
+
+@example
+(group-by-size '#(a b c d e f g) 3)
+ @result{} ((a b c) (d e f) (g))
+(group-by-size-to <string> "abracadabra" 5)
+ @result{} ("abrac" "adabr" "a")
+(group-by-size-to <string> "abracadabra" 5 #\X)
+ @result{} ("abrac" "adabr" "aXXXX")
+@end example
 @end deffn
 
 

@@ -42,7 +42,8 @@
           find find-min find-max find-min&max
           filter filter-to remove remove-to partition partition-to
           size-of lazy-size-of coerce-to
-          group-collection group-collection->alist)
+          group-collection group-collection->alist
+          group-by-size group-by-size-to)
   )
 (select-module gauche.collection)
 
@@ -62,6 +63,8 @@
           c32vector-length
           c64vector-length
           c128vector-length)
+
+(autoload gauche.generator ggroup x->generator generator->list)
 
 ;; utility - we can't depend on data.queue, so this is a simple
 ;; alternative.
@@ -675,3 +678,15 @@
                                              ((:test test-proc) eqv?))
   (map (^p (cons (car p) (map value-proc (cdr p))))
        (%group-by col key-proc test-proc)))
+
+;; group-by-size, group-by-size-to ---------------------------------------
+;;  Make groups of specified K.
+;;  Corresponds to generator's ggroup.
+;;  Similar to list's slices.
+
+(define-method group-by-size ((col <collection>) k . padding)
+  (generator->list (apply ggroup (x->generator col) k padding)))
+
+(define-method group-by-size-to ((class <class>) (col <collection>) k . padding)
+  (generator-map (cut coerce-to class <>)
+                 (apply ggroup (x->generator col) k padding)))
