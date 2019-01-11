@@ -50,6 +50,15 @@
 #if defined(__ARMEL__)
 #define AO_USE_PTHREAD_DEFS 1
 #endif
+
+#if GC_BUILTIN_ATOMIC
+#include <stdatomic.h>
+#include "private/gc_atomic_ops.h"
+#define AO_store_full(loc, val)  atomic_store(loc, val)
+#define AO_compare_and_swap_full(loc, oldval, newval) \
+    atomic_compare_exchange_strong(loc, &oldval, newval)
+#else
 #include "atomic_ops.h"
+#endif
 
 #endif /*GAUCHE_PRIV_ATOMICP_H*/

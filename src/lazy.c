@@ -431,9 +431,10 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
     static const ScmTimeSpec req = {0, 1000000};
     ScmTimeSpec rem;
     ScmVM *vm = Scm_VM();
+    AO_t zero = 0;
 
     do {
-        if (AO_compare_and_swap_full(&lp->owner, 0, SCM_WORD(vm))) {
+        if (AO_compare_and_swap_full(&lp->owner, zero, SCM_WORD(vm))) {
             /* Here we own the lazy pair. */
             ScmObj item = lp->item;
             /* Calling generator might change VM state, so we protect
@@ -510,9 +511,10 @@ int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
         static const ScmTimeSpec req = {0, 1000000};
         ScmTimeSpec rem;
         ScmVM *vm = Scm_VM();
+        AO_t zero = 0;
 
         for (;;) {
-            if (AO_compare_and_swap_full(&lp->owner, 0, SCM_WORD(vm))) {
+            if (AO_compare_and_swap_full(&lp->owner, zero, SCM_WORD(vm))) {
                 *item = lp->item;
                 *generator = lp->generator;
                 AO_nop_full();

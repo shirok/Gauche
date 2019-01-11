@@ -60,8 +60,6 @@ LDFLAGS  = @LDFLAGS@
 BUILD_GOSH_FLAGS =
 
 # These are set by configure
-ATOMIC_OPS_CFLAGS = @ATOMIC_OPS_CFLAGS@
-ATOMIC_OPS_LIBS   = @ATOMIC_OPS_LIBS@
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
 INCLUDES = -I$(srcdir) -I. -I$(srcdir)/../gc/include -I../gc/include $(ATOMIC_OPS_CFLAGS) @LOCAL_INC@
@@ -79,6 +77,8 @@ GAUCHE_VERSION     = @GAUCHE_VERSION@
 GAUCHE_ABI_VERSION = @GAUCHE_ABI_VERSION@
 
 # Main definition of compilation commands
+ATOMIC_OPS_CFLAGS = `${srcdir}/get-atomic-ops-flags.sh ${top_builddir} --cflags`
+ATOMIC_OPS_LIBS = `${srcdir}/get-atomic-ops-flags.sh ${top_builddir} --libs`
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 CCLD      = $(LINK_HELPER) $(CC)
@@ -237,13 +237,9 @@ libgauche_OBJECTS = \
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 libgc_pic_OBJECTS = $(wildcard $(top_builddir)/gc/.libs/*.$(OBJEXT)) \
-                    $(top_builddir)/gc/extra/.libs/gc.$(OBJEXT)
+                    $(top_builddir)/gc/extra/.libs/gc.$(OBJEXT) \
+                    $(wildcard $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT))
 libgc_pic_LIBRARY = libgc_pic.a
-
-libatomic_ops_pic_OBJECTS = $(wildcard $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT))
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@libatomic_ops_pic_LIBRARY = libatomic_ops_pic.a
-@USE_INTERNAL_LIBATOMIC_OPS_FALSE@libatomic_ops_pic_LIBRARY =
-GC_ATOMIC_OPS_LIBS = $(libatomic_ops_pic_LIBRARY) $(ATOMIC_OPS_LIBS)
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
@@ -267,7 +263,7 @@ test-extra$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(test_extra_OBJECTS)
 # NB: relink target is only relevant where rpath matter.  notably, we don't
 # need to relink gosh-noconsole.exe (windows no-console version).
 relink :
-	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(GC_ATOMIC_OPS_LIBS) $(LIBS)
+	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(ATOMIC_OPS_LIBS) $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 	$(RELINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
 
@@ -333,11 +329,6 @@ $(libgc_pic_LIBRARY): $(GCLIB) $(libgc_pic_OBJECTS)
 	rm -f $@
 	$(AR) -rc $@ $(libgc_pic_OBJECTS)
 
-$(libatomic_ops_pic_LIBRARY): $(GCLIB) $(libatomic_ops_pic_OBJECTS)
-	rm -f $@
-	$(AR) -rc $@ $(libatomic_ops_pic_OBJECTS)
-
-
 # char_attr.c and gauche/priv/unicode_attr.h are automatically generated
 # by gen-unicode.scm, from unicode-data.scm.
 #
@@ -372,8 +363,8 @@ vm.$(OBJEXT) : vminsn.c vmstat.c vmcall.c
 
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 
-$(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY)
-	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(GC_ATOMIC_OPS_LIBS) $(LIBS)
+$(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(libgc_pic_LIBRARY)
+	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(ATOMIC_OPS_LIBS) $(LIBS)
 	$(POSTBUILD)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
@@ -423,7 +414,6 @@ $(LIBGAUCHE_STATIC).a : all $(STATICINIT_OBJS)
 	rm -f $@
 	$(AR) -rc $@ $(libgauche_OBJECTS) \
             `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
-            `if [ X$(libatomic_ops_pic_LIBRARY) != X ]; then echo $(libatomic_ops_pic_OBJECTS); fi` \
             $(STATICINIT_OBJS) \
             `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 

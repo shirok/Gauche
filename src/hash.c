@@ -33,9 +33,9 @@
 
 #define LIBGAUCHE_BODY
 #include <math.h>
-#include "atomic_ops.h"
 #include "gauche.h"
 #include "gauche/class.h"
+#include "gauche/priv/atomicP.h"
 
 /*============================================================
  * Internal structures

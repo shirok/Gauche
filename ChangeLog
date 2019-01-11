@@ -1,3 +1,10 @@
+2019-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/gauche/priv/atomicP.h: Drop duplicate check of
+	  libatomic_ops in configure.ac; instead, we rely on the check
+	  in gc/configure and take the result.  Also adapted to the
+	  intrinsic support of atomic operations.
+
 2019-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (floor/), lib/srfi-141.scm (ceiling/):
