@@ -6,6 +6,7 @@ environment:
   matrix:
     - TARGET: MINGW64
     - TARGET: MINGW32
+  GAUCHE_INFO_URL: https://practical-scheme.net/gauche/releases
 
 for:
   -
@@ -15,8 +16,8 @@ for:
     environment:
       MSYSTEM: MINGW64
       PATH: C:\msys64\mingw64\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin;%PATH%
-      GAUCHE_INSTALLER: Gauche-mingw-0.9.7-64bit.msi
-      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche/
+      GAUCHE_INSTALLER_BIT: 64bit
+      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: C:\Program Files\Gauche\bin
       RESULT_ZIP: Gauche-x86_64.zip
       RESULT_PATH: ..\Gauche-mingw-dist\Gauche-x86_64
@@ -27,8 +28,8 @@ for:
     environment:
       MSYSTEM: MINGW32
       PATH: C:\msys64\mingw32\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin;%PATH%
-      GAUCHE_INSTALLER: Gauche-mingw-0.9.7-32bit.msi
-      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche/
+      GAUCHE_INSTALLER_BIT: 32bit
+      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: C:\Program Files (x86)\Gauche\bin
       RESULT_ZIP: Gauche-i686.zip
       RESULT_PATH: ..\Gauche-mingw-dist\Gauche-i686
@@ -39,7 +40,11 @@ install:
 #  - echo %PATH%
 #  - cd
 #  - dir
-  - curl -f -L --progress-bar -o %GAUCHE_INSTALLER% %GAUCHE_INSTALLER_URL%%GAUCHE_INSTALLER%
+  - for /f "usebackq delims=" %%i in (`curl -f %GAUCHE_INFO_URL%/latest.txt 2^>nul`) do set GAUCHE_INSTALLER_VERSION=%%i
+  - echo %GAUCHE_INSTALLER_VERSION%
+  - set GAUCHE_INSTALLER=Gauche-mingw-%GAUCHE_INSTALLER_VERSION%-%GAUCHE_INSTALLER_BIT%.msi
+  - echo %GAUCHE_INSTALLER%
+  - curl -f -L --progress-bar -o %GAUCHE_INSTALLER% %GAUCHE_INSTALLER_URL%/%GAUCHE_INSTALLER%
   - msiexec /i %GAUCHE_INSTALLER% /quiet /qn /norestart
   - set PATH=%PATH%;%GAUCHE_PATH%
 #  - echo %PATH%
