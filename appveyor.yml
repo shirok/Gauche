@@ -7,6 +7,7 @@ environment:
     - TARGET: MINGW64
     - TARGET: MINGW32
   GAUCHE_INFO_URL: https://practical-scheme.net/gauche/releases
+  GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
 
 for:
   -
@@ -17,7 +18,6 @@ for:
       MSYSTEM: MINGW64
       PATH: C:\msys64\mingw64\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin;%PATH%
       GAUCHE_INSTALLER_BIT: 64bit
-      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: C:\Program Files\Gauche\bin
       RESULT_ZIP: Gauche-x86_64.zip
       RESULT_PATH: ..\Gauche-mingw-dist\Gauche-x86_64
@@ -29,7 +29,6 @@ for:
       MSYSTEM: MINGW32
       PATH: C:\msys64\mingw32\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin;%PATH%
       GAUCHE_INSTALLER_BIT: 32bit
-      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: C:\Program Files (x86)\Gauche\bin
       RESULT_ZIP: Gauche-i686.zip
       RESULT_PATH: ..\Gauche-mingw-dist\Gauche-i686
