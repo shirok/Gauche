@@ -405,13 +405,13 @@ struct ScmLazyPairRec {
     SCM_HEADER;
     ScmObj item;
     ScmObj generator;
-    AO_t owner;
+    ScmAtomicVar owner;
 };
 
 ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator)
 {
     ScmLazyPair *z = SCM_NEW(ScmLazyPair);
-    z->owner = (AO_t)0;
+    z->owner = (ScmAtomicWord)0;
     SCM_SET_CLASS(z, SCM_CLASS_LAZY_PAIR);
     z->generator = generator;
     z->item = item;
@@ -431,7 +431,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
     static const ScmTimeSpec req = {0, 1000000};
     ScmTimeSpec rem;
     ScmVM *vm = Scm_VM();
-    AO_t zero = 0;
+    ScmAtomicWord zero = 0;	/* Need to use C11 intrinsic */
 
     do {
         if (AO_compare_and_swap_full(&lp->owner, zero, SCM_WORD(vm))) {
@@ -456,9 +456,9 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
                 AO_nop_full();
                 SCM_SET_CAR(lp, item);
                 /* We don't need barrier here. */
-                lp->owner = (AO_t)1;
+                lp->owner = (ScmAtomicWord)1;
             } SCM_WHEN_ERROR {
-                lp->owner = (AO_t)0; /*NB: See above about error handling*/
+                lp->owner = (ScmAtomicWord)0; /*NB: See above about error handling*/
                 SCM_NEXT_HANDLER;
             } SCM_END_PROTECT;
             if (extra_frame_pushed) {
@@ -511,7 +511,7 @@ int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
         static const ScmTimeSpec req = {0, 1000000};
         ScmTimeSpec rem;
         ScmVM *vm = Scm_VM();
-        AO_t zero = 0;
+        ScmAtomicWord zero = 0;	/* Need to use C11 intrinsic */
 
         for (;;) {
             if (AO_compare_and_swap_full(&lp->owner, zero, SCM_WORD(vm))) {
@@ -521,7 +521,7 @@ int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
                 lp->owner = 0;
                 return TRUE;
             }
-            if (lp->owner == (AO_t)1) {
+            if (lp->owner == (ScmAtomicWord)1) {
                 /* Somebody else has forced OBJ.  In the typical cases
                    where we call this funtion for co-recursive lazy
                    algorithms, this situation rarely happens.   We fallthrough

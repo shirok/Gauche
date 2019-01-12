@@ -1,12 +1,39 @@
 /*
- * Adaptor for libatomic_opts
+ * Adaptor for atomic operations
  *
- * Sources that want to use libatomic_ops features must include this file
- * instead of libatomic_ops.h directly.
+ * If GC uses libatomic_ops, we also use it; otherwise, we use C11 intrinsics.
+ *
+ * Two typedefs are provided:
+ *
+ *  ScmAtomicWord - A type of a value that can be used for atomic operations.
+ *  ScmAtomicVar  - Location must be declared with this type to be operated
+ *                  on atomically.
  */
 
 #ifndef GAUCHE_PRIV_ATOMICP_H
 #define GAUCHE_PRIV_ATOMICP_H
+
+#if GC_BUILTIN_ATOMIC
+/* 
+ * C11 atomics
+ */
+#include <stdatomic.h>
+
+typedef ScmWord ScmAtomicWord;
+typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
+
+/* We disguise with AO_ operations for now.  */
+#define AO_store_full(loc, val)  atomic_store(loc, val)
+#define AO_store(loc, val)       atomic_store(loc, val)
+#define AO_load(loc)             atomic_load(loc)
+#define AO_compare_and_swap_full(loc, oldval, newval) \
+    atomic_compare_exchange_strong(loc, &oldval, newval)
+#define AO_nop_full()            atomic_thread_fence(__ATOMIC_SEQ_CST)
+
+#else
+/* 
+ * libatomic_ops
+ */
 
 /* Workaround for sh4 */
 /*
@@ -51,14 +78,11 @@
 #define AO_USE_PTHREAD_DEFS 1
 #endif
 
-#if GC_BUILTIN_ATOMIC
-#include <stdatomic.h>
-#include "private/gc_atomic_ops.h"
-#define AO_store_full(loc, val)  atomic_store(loc, val)
-#define AO_compare_and_swap_full(loc, oldval, newval) \
-    atomic_compare_exchange_strong(loc, &oldval, newval)
-#else
 #include "atomic_ops.h"
+
+typedef AO_t ScmAtomicWord;
+typedef volatile AO_t ScmAtomicVar;
+
 #endif
 
 #endif /*GAUCHE_PRIV_ATOMICP_H*/
