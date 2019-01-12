@@ -1,0 +1,62 @@
+#branches:
+#  only:
+#    - master
+
+environment:
+  matrix:
+    - TARGET: MINGW64
+    - TARGET: MINGW32
+
+for:
+  -
+    matrix:
+      only:
+        - TARGET: MINGW64
+    environment:
+      MSYSTEM: MINGW64
+      PATH: C:\msys64\mingw64\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin;%PATH%
+      GAUCHE_INSTALLER: Gauche-mingw-0.9.7-64bit.msi
+      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche/
+      GAUCHE_PATH: C:\Program Files\Gauche\bin
+      RESULT_ZIP: Gauche-x86_64.zip
+      RESULT_PATH: ..\Gauche-mingw-dist\Gauche-x86_64
+  -
+    matrix:
+      only:
+        - TARGET: MINGW32
+    environment:
+      MSYSTEM: MINGW32
+      PATH: C:\msys64\mingw32\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin;%PATH%
+      GAUCHE_INSTALLER: Gauche-mingw-0.9.7-32bit.msi
+      GAUCHE_INSTALLER_URL: http://prdownloads.sourceforge.net/gauche/
+      GAUCHE_PATH: C:\Program Files (x86)\Gauche\bin
+      RESULT_ZIP: Gauche-i686.zip
+      RESULT_PATH: ..\Gauche-mingw-dist\Gauche-i686
+
+install:
+#  - echo %TARGET%
+#  - echo %MSYSTEM%
+#  - echo %PATH%
+#  - cd
+#  - dir
+  - curl -f -L --progress-bar -o %GAUCHE_INSTALLER% %GAUCHE_INSTALLER_URL%%GAUCHE_INSTALLER%
+  - msiexec /i %GAUCHE_INSTALLER% /quiet /qn /norestart
+  - set PATH=%PATH%;%GAUCHE_PATH%
+#  - echo %PATH%
+  - gosh -V
+
+build_script:
+  - bash -lc "gcc -v"
+  - bash -lc "pwd"
+  - bash -lc "cd $APPVEYOR_BUILD_FOLDER && ./DIST gen"
+  - bash -lc "cd $APPVEYOR_BUILD_FOLDER && src/mingw-dist.sh"
+
+after_build:
+  - 7z a %RESULT_ZIP% %RESULT_PATH%
+
+test_script:
+  - bash -lc "cd $APPVEYOR_BUILD_FOLDER && make check"
+
+artifacts:
+  - path: Gauche-*.zip
+
