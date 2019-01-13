@@ -796,7 +796,7 @@
        `(let* ((,var :: int 0) (,n :: int ,expr))
           (for [() (< ,var ,n) (post++ ,var)] ,@body))])))
 
-;; [cise stmt] return EXPR
+;; [cise stmt] return [EXPR]
 ;;   Return statement.
 ;;   NB: While processing cproc body in stubs, return macro is overwritten
 ;;   to handle multiple value returns.  See cgen-stub-cise-ambient
@@ -849,6 +849,8 @@
        ,(render-rec stmt2 env) "\n"
        "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]))
 
+;; [cise stmt] .cond CLAUSE [CLAUSE]
+;;   c preprocessor if/elif/endif chain directive
 (define-cise-macro (.cond form env)
   (ensure-stmt-or-toplevel-ctx form env)
   (match form
@@ -863,11 +865,15 @@
                      '("#endif\n" |#reset-line|)
                      condition stmts))]))
 
+;; [cise stmt] .undef NAME
+;;   c preprocessor undefine directive
 (define-cise-macro (.undef form env)
   (ensure-stmt-or-toplevel-ctx form env)
   (match form
     [(_ name) `("#undef " ,(x->string name) "\n" |#reset-line|)]))
 
+;; [cise stmt] .include PATH
+;;   c preprocessor include directive
 (define-cise-macro (.include form env)
   (ensure-stmt-or-toplevel-ctx form env)
   (match form
@@ -1223,7 +1229,7 @@
         [else (cons elt seed)])]
      [else (cons elt seed)]))
 
-  (define (err decl) (error "invlaid variable declaration:" decl))
+  (define (err decl) (error "invalid variable declaration:" decl))
 
   (define (scan in r)
     (match in

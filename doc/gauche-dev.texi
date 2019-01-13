@@ -168,8 +168,8 @@ package name to the command-line argument (here we pick @code{trivial}).
 ls: trivial: No such file or directory
 % @b{gauche-package generate trivial}
 % @b{ls trivial}
-Makefile.in  test.scm	trivial.h    triviallib.stub
-configure    trivial.c	trivial.scm
+configure    package.scm  trivial.c  triviallib.stub
+Makefile.in  test.scm	  trivial.h  trivial.scm
 @end example
 
 The @code{gauche-package} command creates a directory @file{trivial},
@@ -187,7 +187,7 @@ an existing library, it is typical that you need small amount
 of auxiliary management code, such as initializing the library
 and allocating/freeing library-side data structures.
 
-@item Stub file (@file{trivial.stub})
+@item Stub file (@file{triviallib.stub})
 This file is the bridge between C world and Scheme world.
 You have to list C functions you want to make it visible from
 Scheme world.  Because of its nature, this file looks like
@@ -207,7 +207,7 @@ you can take a peek and maybe start trying it.  The detailed specification
 of this @emph{precompilation}, or ahead-of-time compilation, is still
 fluid and may be changed in incompatible way, though.)
 
-@item Module file (@file{trivail.scm})
+@item Module file (@file{trivial.scm})
 This file typically defines Gauche modules and sets exported
 symbols, and dynamically loads the compiled object code.
 You may put auxiliary Scheme code in it.
@@ -266,6 +266,7 @@ checking for gauche-package... /usr/bin/gauche-package
 checking for gauche-install... /usr/bin/gauche-install
 checking for gauche-cesconv... /usr/bin/gauche-cesconv
 configure: creating trivial.gpd
+configure: creating Makefile
 % @b{make}
 /usr/bin/gauche-package compile --verbose trivial trivial.c triviallib.stub
 @i{(... message truncated ...)}
@@ -288,7 +289,6 @@ module files.
 @example
 % @b{gosh -I.}
 gosh> @b{(use trivial)}
-#<undef>
 gosh> @b{(test-trivial)}
 "trivial is working"
 gosh>
@@ -677,6 +677,14 @@ Triggers full GC.
 
 @subsubheading Finalizers
 
+@deftypefun void Scm_RegisterFinalizer (ScmObj @var{obj}, ScmFinalizerProc @var{finalizer}, void *@var{data})
+Register the function @var{finalizer} to be called by the garbage
+collector when the object @var{obj} is destroyed. The function will
+be given two arguments, the object and @var{data}.
+@end deftypefun
+
+@deftypefun void Scm_UnregisterFinalizer (ScmObj @var{obj})
+@end deftypefun
 
 @node Booleans, Numbers, Memory allocation and GC, C API reference
 @section Booleans

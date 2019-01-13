@@ -1167,6 +1167,7 @@ only for the convenience of explanation.
 * Generating Scheme literals::  gauche.cgen.literals
 * Conversions between Scheme and C::  gauche.cgen.type
 * C in S expression::           gauche.cgen.cise
+* Stub generation::             gauche.cgen.stub
 @end menu
 
 @node Generating C source files, Generating Scheme literals, Generating C code, Generating C code
@@ -1756,7 +1757,7 @@ typechecks the @var{c-expr} according to the @var{cgen-type}.
 @end defun
 
 
-@node C in S expression,  , Conversions between Scheme and C, Generating C code
+@node C in S expression, Stub generation, Conversions between Scheme and C, Generating C code
 @subsection CiSE - C in S expression
 @c NODE S式で書くC, CiSE - S式で書くC
 
@@ -1776,7 +1777,7 @@ declarations.
 
 Currently, we don't do rigorous check for CiSE; you can pass a
 CiSE that yields invalid C code, which will cause the C compiler
-to emit errors.  The translater inserts line directives by default so the
+to emit errors.  The translator inserts line directives by default so the
 C compiler error message points to the location of original (CiSE) source
 instead of generated code; however, sometimes you need to look at
 the generated code to figure out what went wrong.  We hope this
@@ -1806,7 +1807,7 @@ translated to C code by @code{cise-render} to a C code fragment.
 Note that some translation may not be local, meaning it may
 want to emit forward declarations before other C code fragments.
 So, the full translation requires buffering---you process all
-the CiSE fragments and saves output, emit forward declarations,
+the CiSE fragments and save output, emit forward declarations,
 then emit the saved C code fragments.  We have a wrapper procedure,
 @code{cise-translate}, to take care of it, but for your purpose
 you may want to roll your own wrapper.
@@ -1824,6 +1825,164 @@ and also it keeps track of forward declarations.
 @node CiSE syntax, CiSE procedures, CiSE overview, C in S expression
 @subsubsection CiSE syntax
 
+
+@defspec begin STMT @dots{}
+Code grouping with @{ and @}
+@end defspec
+
+@defspec let* ((VAR [:: TYPE] [INIT-EXPR]) @dots{}) STMT @dots{}
+Declare and optionally assign initial values to local variables. If
+TYPE is omitted, the default type is ScmObj.
+@end defspec
+
+@defspec if TEST-EXPR THEN-STMT [ELSE-STMT]
+@defspecx when TEST-EXPR STMT @dots{}
+@defspecx unless TEST-EXPR STMT @dots{}
+@defspecx cond (COND STMT @dots{}) @dots{} [ (else STMT @dots{}) ]
+Conditional statements.
+@end defspec
+
+@defspec case EXPR ((VAL @dots{}) STMT @dots{}) @dots{} [ (else STMT @dots{}) ]
+@defspecx case/fallthrough EXPR ((VAL @dots{}) STMT @dots{}) @dots{} [ (else STMT @dots{}) ]
+Switch-case statement. 'case' does not fall through between 'case'
+blocks while 'case/fallthrough' does.
+@end defspec
+
+@defspec for (START-EXPR TEST-EXPR UPDATE-EXPR) STMT @dots{}
+@defspecx for () STMT @dots{}
+@defspecx loop STMT @dots{}
+@defspecx while test-expr body @dots{}
+Loop statements.
+@end defspec
+
+@defspec for-each (lambda (VAR) STMT @dots{}) EXPR
+@defspecx dolist [VAR EXPR] STMT @dots{}
+EXPR must yield a list. Traverse the list, binding each element to VAR
+and executing STMT @dots{}. The lambda form is a fake; you don't
+really create a closure.
+@end defspec
+
+@defspec pair-for-each (lambda (VAR) STMT @dots{}) EXPR
+Like for-each, but VAR is bound to each 'spine' cell instead of each
+element of the list.
+@end defspec
+
+@defspec dopairs [VAR EXPR] STMT @dots{}
+@end defspec
+
+@defspec dotimes (VAR EXPR) STMT @dots{}
+EXPR must yield an integer, N.  Repeat STMT ... by binding VAR from 0
+to (N-1).
+@end defspec
+
+@defspec return [EXPR]
+@defspecx break
+@defspecx continue
+Return, break and continue statements.
+@end defspec
+
+@defspec label NAME
+@defspecx goto NAME
+Label and goto statements. We always add a null statement after the
+label so that we can place (label NAME) at the end of a compound
+statement.
+@end defspec
+
+@defspec .if STRING STMT @dots{}
+@defspecx .cond CLAUSE @dots{}
+@defspecx .undef NAME
+@defspecx .include PATH
+Preprocessor directives.
+@end defspec
+
+@defspec + EXPR @dots{}
+@defspecx - EXPR @dots{}
+@defspecx * EXPR @dots{}
+@defspecx / EXPR @dots{}
+@defspecx % EXPR EXPR
+Arithmetic operations.
+@end defspec
+
+@defspec and EXPR @dots{}
+@defspecx or EXPR @dots{}
+@defspecx not EXPR
+Boolean operations.
+@end defspec
+
+@defspec logand EXPR EXPR @dots{}
+@defspecx logior EXPR EXPR @dots{}
+@defspecx logxor EXPR EXPR @dots{}
+@defspecx lognot EXPR
+@defspecx << EXPR EXPR
+@defspecx >> EXPR EXPR
+Bitwise operations.
+@end defspec
+
+@defspec * EXPR
+@defspecx -> EXPR EXPR @dots{}
+@defspecx ref EXPR EXPR @dots{}
+@defspecx aref EXPR EXPR @dots{}
+@defspecx & EXPR
+Dereference, reference and address operations. 'ref' is C's
+'.'. 'aref' is array reference.
+@end defspec
+
+@defspec pre++ EXPR
+@defspecx post++ EXPR
+@defspecx pre-- EXPR
+@defspecx post-- EXPR
+Pre/Post increment or decrement.
+@end defspec
+
+@defspec < EXPR EXPR
+@defspecx <= EXPR EXPR
+@defspecx > EXPR EXPR
+@defspecx >= EXPR EXPR
+@defspecx == EXPR EXPR
+@defspecx != EXPR EXPR
+Comparison
+@end defspec
+
+@defspec set! LVALUE EXPR LVALUE EXPR @dots{}
+@defspecx = LVALUE EXPR LVALUE EXPR @dots{}
+@defspecx += LVALUE EXPR
+@defspecx -= LVALUE EXPR
+@defspecx *= LVALUE EXPR
+@defspecx /= LVALUE EXPR
+@defspecx %= LVALUE EXPR
+@defspecx <<= LVALUE EXPR
+@defspecx >>= LVALUE EXPR
+@defspecx logand= LVALUE EXPR
+@defspecx logior= LVALUE EXPR
+@defspecx logxor= LVALUE EXPR
+Assignment statements.
+@end defspec
+
+@defspec cast TYPE EXPR
+Type casting.
+@end defspec
+
+@defspec ?: TEST-EXPR THEN-EXPR ELSE-EXPR
+Conditional expression.
+@end defspec
+
+@defspec .type TYPE
+Useful to  place a type name, e.g. an argument of sizeof operator.
+@end defspec
+
+@defspec define-cfn NAME (ARG @dots{}) [RET-TYPE [QUALIFIER @dots{}]] STMT @dots{}
+Define a C function. Supported qualifiers are :static and :inline.
+@end defspec
+
+@defspec .static-decls
+
+Produce declarations of static functions before function bodies.
+
+@end defspec
+
+@defspec .raw-c-code body @dots{}
+
+@end defspec
 
 @node CiSE procedures,  , CiSE syntax, C in S expression
 @subsubsection CiSE procedures
@@ -1885,6 +2044,241 @@ and also it keeps track of forward declarations.
 @c MOD gauche.cgen
 @end defmac
 
+@node Stub generation, , C in S expression, Generating C code
+
+@defspec define-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
+Register a new type to be recognized.  This is rather a declaration
+than definition; no C code will be generated directly by this form.
+@end defspec
+
+@defspec define-cproc name (ARGS @dots{}) [RET-TYPE] [FLAG @dots{}] [QUALIFIER @dots{}] BODY @dots{}
+Create Scheme procedure.
+
+@var{args} specifies arguments:
+@itemize
+@item
+@code{ARG @dots{} [:rest VAR]} :
+Each @var{arg} is variable name or @var{var::type}, specifies required
+argument. If @code{:rest} is given, list of excessive arguments are
+passed to @var{var}.
+
+@item
+@code{ARG @dots{} :optional SPEC @dots{} [:rest VAR]} :
+Optional arguments. @var{spec} is @var{arg} or (@var{arg}
+@var{default}). If no default is given, @var{arg} receives
+@code{SCM_UNBOUND}---if @var{arg} isn't a type of @code{ScmObj} it will
+raise an error.
+
+@item
+@code{ARG @dots{} :key SPEC @dots{} [:allow-other-keys [:rest VAR]]} :
+Keyword arguments. @var{spec} is @var{arg} or (@var{arg}
+@var{default}).  If no default is given, @var{arg} receives
+SCM_UNBOUND---if @var{arg} isn't a type of @code{ScmObj} it will raise
+an error.
+
+@item
+@code{ARG @dots{} :optarray (VAR CNT MAX) [:rest VAR]} :
+A special syntax to receive optional arguments as a C array.
+@var{var} is a C variable of type @code{ScmObj*}. @var{cnt} is a C
+variable of type @code{int}, which receives the number of optional
+argument in the ScmObj array.  @var{max} specifies the maximum number
+of optional arguments that can be passed in the array form.  If more
+than @var{max} args are given, a list of excessive arguments are
+passed to the rest @var{var} if it is specified
+@end itemize
+
+@var{ret-type} specifies the return type of function. It could be
+either @code{:: @var{typespec}} or @code{::@var{typespec}} where
+@var{typespec} is a valid stub type, or @code{(TYPE @dots{})} when
+multiple values are returned. When omitted, the procedure is assumed
+to return @code{<top>}.
+
+@var{flag} is a keyword to modify some aspects of the procedure.
+Supported flags are as follows:
+
+@itemize
+@item
+@code{:fast-flonum} - indicates that the procedure accepts flonum
+arguments and it won't retain the reference to them. The VM can pass
+flonums on VM registers to the procedure with this flag. (This
+improves floating-point number handling, but it's behavior is highly
+VM-specific; ordinary stub writers shouldn't need to care about this
+flag at all.)
+
+@item
+@code{:constant} - indicates that this procedure returns a constant
+value if all args are compile-time constants. The compiler may replace
+the call to this proc with the value, if it determines all arguments
+are known at the compile time. The resulting value should be
+serializable to the precompiled file.
+
+NB: Since this procedure may be called at compile time, a subr that
+may return a different value for batch/cross compilation shouldn't
+have this flag.
+@end itemize
+
+@var{qualifier} is a list to adds auxiliary information to the
+procedure. Currently the following qualifiers are officially
+supported.
+
+@itemize
+@item
+@code{(setter SETTER-NAME)} : specfy setter. @var{setter-name} should
+be a cproc name defined in the same stub file
+
+@item
+@code{(setter (ARGS @dots{}) BODY @dots{})} : specify setter
+anonymously.
+
+@item
+@code{(catch (DECL C-STMT @dots{}) @dots{})} : when writing a stub
+for C++ function that may throw an exception, use this spec to ensure
+the exception will be caught and converted to Gauche error condition.
+
+@item
+@code{(inliner INSN-NAME)} : only used in Gauche core procedures that
+can be inlined into an VM insturuction.
+@end itemize
+
+@var{stmt} is a cise expression.  Inside the expression, a cise macro
+@code{(result expr @dots{})} can be used to assign the value(s) to
+return from the cproc. As a special case, if @var{stmt} is a single
+symbol, it names a C function to be called with the same argument (mod
+unboxing) as the cproc.
+@end defspec
+
+@defspec define-cgeneric @var{name} @var{c-name} @var{property-clause} @dots{}
+Defines generic function. @var{c-name} specifies a C variable name
+that keeps the generic function structure. One or more of the
+following clauses can appear in @var{property-clause} @dots{}:
+
+@itemize
+@item
+@code{(extern)} : makes @var{c-name} visible from other file (i.e. do
+not define the structure as @code{static}).
+
+@item
+@code{(fallback "fallback")} : specifies the fallback function.
+
+@item
+@code{(setter . SETTER-SPEC)} : specifies the setter.
+@end itemize
+@end defspec
+
+@defspec define-cmethod @var{name} (@var{arg} @dots{}) @var{body} @dots{}
+@end defspec
+
+@defspec define-cclass @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type-name} @var{c-class-name} @var{cpa} (@var{slot-spec} @dots{}) @var{property} @dots{}
+Generates C stub for static class definition, slot accessors and
+initialization. Corresponding C struct has to be defined elsewhere.
+
+The following qualifiers are supported:
+@itemize
+@item
+@code{:base} generates a base class definition (inheritable from
+Scheme code).
+@item
+@code{:built-in} generates a built-in class definition (not
+inheritable from Scheme code). This is the default if neither
+@code{:base} nor @code{:built-in} are specified.
+@item
+@code{:private} - the class declaration and standard macro definitions
+are also generated (which needs to be in the separate header file if
+you want the C-level structure to be used from other C code. If the
+extension is small enough to be contained in one C file, this option
+is convenient.)
+@end itemize
+
+@var{cpa} lists ancestor classes in precedence order. They need to be
+C identifiers of Scheme class @code{Scm_*Class}, for the time being.
+@code{Scm_TopClass} is added at the end automatically.
+
+@var{slot-spec} is defined as @code{(@var{slot-name} [@var{qualifier}
+@dots{}])} or @code{@var{slot-name}}. The following qualifiers are
+supported:
+
+@itemize
+@item
+@code{:type @var{cgen-type}}
+@item
+@code{:c-name @var{c-name}} specifies the C field name if the
+autogenerated name from @var{slot-name} is not accurate.
+@item
+@code{:c-spec @var{c-spec}}
+@item
+@code{:getter @var{proc-spec}}
+specifies how to create the slot getter. @var{proc-spec} could be
+@itemize
+@item
+@code{#f} to omit the getter
+@item
+@code{#t} to generate a default one with type conversion according to
+@var{type}
+@item
+A string is interpreted as the C code to implement the getter
+@item
+@code{(c @var{c-name})} specifies the C function name that implements
+the getter, which is implemented elsewhere.
+@end itemize
+@item
+@code{:setter @var{proc-spec}}
+specifies how to create the slot setter. The syntax is the same as
+@code{:getter}.
+@end itemize
+
+The following @var{property} are supported:
+
+@itemize
+@item
+@code{(allocator @var{proc-spec})}
+@item
+@code{(printer @var{proc-spec})}
+@item
+@code{(comparer @var{proc-spec})}
+@item
+@code{(direct-supers @var{string} @dots{})}
+@end itemize
+
+@end defspec
+
+@defspec define-cptr @var{scheme-class-name} [@var{qualifier}] @var{c-type-name} @var{c-class-var} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
+@end defspec
+
+@defspec define-symbol @var{scheme-name} [@var{c-name}]
+Defines a Scheme symbol. No Scheme binding is created.
+When @var{c-name} is given, the named C variable points to the created
+@code{ScmSymbol}.
+@end defspec
+
+@defspec define-variable @var{scheme-name} @var{initializer}
+Defines a Scheme variable.
+@end defspec
+
+@defspec define-constant @var{scheme-name} @var{initializer}
+Defines a Scheme constant.
+@end defspec
+
+@defspec define-enum @var{name}
+A define-constant Specialized for enum values. This is useful for
+exporting C enums to Scheme.
+@end defspec
+
+@defspec define-enum-conditionally @var{name}
+Abbreviation of @code{(if "defined(name)" (define-enum name))}
+@end defspec
+
+@defspec define-cise-stmt @var{name} @var{clause} @dots{}
+@defspecx define-cise-expr @var{name} @var{clause} @dots{}
+Cise macro definitions (see @ref{C in S expression}).
+@end defspec
+
+@defspec initcode @var{c-code}
+Insert @var{c-code} literally in the initialization function
+@end defspec
+
+@defspec begin @var{form} @dots{}
+Treat each @var{form} as if they are toplevel stub forms.
+@end defspec
 
 @c ----------------------------------------------------------------------
 @node Character code conversion, Collection framework, Generating C code, Library modules - Gauche extensions
