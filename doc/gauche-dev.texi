@@ -682,10 +682,10 @@ Register the function @var{finalizer} to be called by the garbage
 collector after the object @var{obj} is determined as dead. The function will
 be given two arguments, the object and @var{data}.
 
-GC works as this: After sweeping phase it has unreachable objects.
-If an unreachable object has a finalizer, it is queued in ``to-be-finalized''
-list.  Gauche's VM checks the queue occasionally and processes them
-if it's not empty.
+GC works as this: After sweeping phase it has a set of unreachable objects.
+If an unreachable object has a finalizer, it queues the object
+in ``to-be-finalized'' list.  Gauche's VM checks the queue occasionally
+and processes them if it's not empty.
 
 You should consider a finalizer as an asynchronous callback, much like
 Scheme-level signal handlers.  It is guaranteed to be called when VM
@@ -693,28 +693,30 @@ state is consistent (thus you can call back Gauche API safely from
 the finalizer) and outside of GC (thus you can allocate inside
 the finalizer), but you can't assume much more.
 
-If @var{obj} points to another objects that's also be garbage collected,
+If @var{obj} points to another objects that's also being garbage collected,
 that objects might already be finalized when @var{obj}'s finalizer
 is called.  So you have to make finalizers set the objects to harmless
-state, and you also have to check objects referred from @var{obj} are
-in such state.
+state, and you also have to check the case
+objects referred from @var{obj} are in such state.
 
 You can't choose which thread will call the finalizer.  Any thread that
 allocates may call the finalizer.
 
 You can ressurrect @var{obj} by storing a pointer to it in some root set.
-GC won't immediately put back @var{obj} after the finalizer is run; basically
+GC doesn't immediately put back @var{obj} to a free memor pool
+after the finalizer is run; basically
 it leaves @var{obj}'s fate to the finalizer.  If the finalizer doesn't keep
-references to @var{obj}, then @var{obj} will be reclaimed in  @emph{next}
-GC cycle, for it won't be pointed from live objects.
-Note that GC removes regsitration of finalizer of @var{obj} when it
+references to @var{obj}, then @var{obj} will be reclaimed in @emph{next}
+GC cycle, for it isn't pointed from live objects.
+Note that GC unregisters finalizer of @var{obj} when it
 chains @var{obj} to ``to-be-finalized'' list.  So when the finalizer
 is called, @var{obj} no longer has a finalizer.
 
-Last but not least, there's no guarantee that the finalize is called
+Last but not least, there's no guarantee that the finalizer is called
 promptly after @var{obj} lost all live references, 
-or whether it is called at all;
-you should think finalizers as a safety-net, rather than a guaranteed clean-up
+or whether it is called at all.  There might be an indefinite delay
+between the point when @var{obj} becomes a garabe and the finalizer is run.
+You should think finalizers as a safety-net, rather than a guaranteed clean-up
 mechanism.  If your object requires explicit clean-up, ask users to do it
 explicitly (possibly wrapping it with @code{call-with-*} style procedure).
 Finalizers are for back up when the user fails to do so.
