@@ -193,6 +193,14 @@
   ] ; gauche.sys.pthreads
  [else])
 
+;;--------------------------------------------------------------------
+;; control.mapper
+;;
+(test-section "control.mapper")
+(use control.mapper)
+(test-module 'control.mapper)
+
+
 (test-end)
 
 
