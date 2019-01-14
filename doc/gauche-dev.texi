@@ -2125,15 +2125,15 @@ If @var{size} is negative, @var{array} is assumed to be @code{NULL}-terminated.
 The @var{flags} argument is passed to @code{Scm_MakeString} as is.
 @end deftypefun
 
-@deftypefun {const char **} Scm_ListToConstCStringArray (ScmObj @var{lis}, int @var{errp})
-Converts a list of Scheme strings @var{lis} into C const string array,
+@deftypefun {const char **} Scm_ListToConstCStringArray (ScmObj @var{list}, int @var{errp})
+Converts a list of Scheme strings @var{list} into C const string array,
 @code{NULL} terminated.  If @var{errp} is true, an error is
-signaled if @var{lis} contains other than Scheme strings.
+signaled if @var{list} contains other than Scheme strings.
 If @var{errp} is false, @code{NULL} is returned in such cases.
 @end deftypefun
 
-@deftypefun {char **} Scm_ListToCStringArray (ScmObj @var{lis}, int @var{errp}, void *@var{alloc}(size_t))
-Converts a list of Scheme strings @var{lis} into C string array,
+@deftypefun {char **} Scm_ListToCStringArray (ScmObj @var{list}, int @var{errp}, void *@var{alloc}(size_t))
+Converts a list of Scheme strings @var{list} into C string array,
 @code{NULL} terminated.  Unlike @code{Scm_ListToConstCStringArray},
 each C string is freshly allocated and mutable.  Furthermore,
 if @code{alloc} is provided, it is used to allocate C strings
@@ -2451,21 +2451,21 @@ Returns the @var{k}-th element of the vector.
 No boundary check is done.  Use @code{Scm_VectorRef} for safer access.
 @end deftypefn
 
-@deftypefun ScmObj Scm_MakeVector (int @var{size}, Scmobj @var{fill})
+@deftypefun ScmObj Scm_MakeVector (int @var{size}, ScmObj @var{fill})
 Returns a vector of @var{size} elements.  Each element is
 initialized by @var{fill}.
 @end deftypefun
 
-@deftypefun ScmObj Scm_ListToVector (ScmObj @var{lis}, int @var{start}, int @var{end})
-Creates a vector from @var{start}-th element (inculsive) to
-@var{end}-th element (exclusive) of a list @var{lis}.
-@var{End} can be @code{-1} to indicate the end of the list.
+@deftypefun ScmObj Scm_ListToVector (ScmObj @var{list}, int @var{start}, int @var{end})
+Creates a vector from @var{start}-th element (inclusive) to
+@var{end}-th element (exclusive) of a list @var{list}.
+@var{end} can be @code{-1} to indicate the end of the list.
 @end deftypefun
 
 @deftypefun ScmObj Scm_VectorToList (ScmVector *@var{vec}, int @var{start}, int @var{end})
-Creates a list from @var{start}-th element (inculsive) to
+Creates a list from @var{start}-th element (inclusive) to
 @var{end}-th element (exclusive) of a vector @var{vec}.
-@var{End} can be @code{-1} to indicate the end of the vector.
+@var{end} can be @code{-1} to indicate the end of the vector.
 @end deftypefun
 
 @deftypefun ScmObj Scm_VectorRef (ScmVector *@var{vec}, int @var{k}, ScmObj @var{fallback})
@@ -2487,11 +2487,11 @@ is done in the bridge stub.
 @deftypefun ScmObj Scm_VectorFill (ScmVector *@var{vec}, ScmObj @var{fill}, int @var{start}, int @var{end})
 Sets @var{start}-th element (inclusive) to @var{end}-th element
 (exclusive) of a vector @var{vec} by @var{fill}.
-@var{End} can be @code{-1} to indicate the end of the vector.
+@var{end} can be @code{-1} to indicate the end of the vector.
 @end deftypefun
 
 @deftypefun ScmObj Scm_VectorCopy (ScmVector *@var{vec}, int @var{start}, int @var{end}, ScmObj @var{fill})
-Create a new vector, whose content is the same
+Creates a new vector, whose content is the same
 as the content of @var{vec} beginning with @var{start}-th element
 and ending with (@var{end}-1)-th element.  If @var{end} is -1,
 it is taken as the length of @var{vec}.  Unlike other vector APIs,
@@ -2499,6 +2499,105 @@ it is taken as the length of @var{vec}.  Unlike other vector APIs,
 then length of @var{vec}; in such case, @var{vec} is regarded
 as if it has implicit elements in both directions, whose value
 is given by @var{fill}.
+@end deftypefun
+
+@deftypefn {Macro} int SCM_UVECTORP (ScmObj @var{obj})
+Type predicate.
+@end deftypefn
+
+@deftypefn {Macro} {ScmUVector *} SCM_UVECTOR (ScmObj @var{obj})
+Typecast.
+@end deftypefn
+
+@deftypefn {Macro} {void *} SCM_UVECTOR_OWNER (ScmObj @var{vec})
+Returns the owner pointer of the uniform vector @var{vec}.
+@end deftypefn
+
+@deftypefn {Macro} {void *} SCM_UVECTOR_ELEMENTS (ScmObj @var{vec})
+Returns the pointer to the array of the uniform vector contents.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_UVECTOR_SIZE (ScmObj @var{vec})
+Returns the number of elements of the uniform vector @var{vec}.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_UVECTOR_IMMUTABLE_P (ScmObj @var{vec})
+Returns non-zero if the uniform vector is immutable.
+@end deftypefn
+
+@deftypefn {Macro} void SCM_UVECTOR_IMMUTABLE_SET (ScmObj @var{vec}, @var{flags})
+Sets immutable state of the uniform vector @var{vec}.
+@end deftypefn
+
+@deftypefn {Macro} void SCM_UVECTOR_CHECK_MUTABLE (ScmObj @var{vec})
+Raise an error if the uniform vector @var{vec} is immutable.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_UVECTOR_SUBTYPE_P (ScmObj @var{vec}, ScmUVectorType @var{type})
+Returns true if the uniform vector @var{vec} is of type @var{type}.
+@end deftypefn
+
+@deftypefun ScmUVectorType Scm_UVectorType (ScmClass @var{klass})
+Returns the vector type of the uniform vector class @var{klass}.
+@end deftypefun
+
+@deftypefun {const char *} Scm_UVectorTypeName (int @var{type})
+Converts @var{type} (of type @code{ScmUVectorType} actually) to a
+string.
+@end deftypefun
+
+@deftypefun int Scm_UVectorElementSize (ScmClass @var{klass})
+Returns the element type in bytes of the uniform vector class
+@var{klass}.
+@end deftypefun
+
+@deftypefun int Scm_UVectorSizeInBytes (ScmUVector *@var{vec})
+Returns the size in bytes of the uniform vector @var{vec}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_MakeUVector (ScmClass *@var{klass}, ScmSmallInt @var{size}, void *@var{init})
+Returns a mutable uniform vector of type @var{klass}, @var{size}
+elements and no owner. The vector data is contained in @var{init},
+which must be properly prepared by the caller. This normally is
+allocated in heap. But it could also be from other sources, e.g. mmap.
+@end deftypefun
+
+@deftypefun ScmObj Scm_MakeUVectorFull (ScmClass *@var{klass}, ScmSmallInt @var{size}, void *@var{init}, int @var{immutablep}, void *@var{owner})
+Creates a new uniform vector. This is the extended version of
+@code{Scm_MakeUVector} that lets you control both owner and immutable
+state.
+@end deftypefun
+
+@deftypefun ScmObj Scm_ListToUVector (ScmClass *@var{klass}, ScmObj @var{list}, ScmSmallInt @var{start}, ScmSmallInt @var{end})
+Creates a uniform vector of class @var{klass} from @var{start}-th
+element (inclusive) to @var{end}-th element (exclusive) of a list
+@var{list}.  @var{end} can be @code{-1} to indicate the end of the
+list.
+@end deftypefun
+
+@deftypefun ScmObj Scm_UVectorSet (ScmUVector *@var{vec}, int @var{t}, int @var{k}, ScmObj @var{val}, int @var{clamp})
+Sets @var{k}-th element of a vector @var{vec} (of type @var{type}) by
+@var{val}. See @ref{Scheme number objects} for @var{clamp}.
+Always return @var{obj}.
+If @var{k} is out of range, no operation is performed and an error is
+signalled.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Make@var{tag}Vector (ScmSmallInt @var{size}, type @var{fill})
+@deftypefunx ScmObj Scm_Make@var{tag}VectorFromArray (ScmSmallInt @var{size}, const type @var{array}[])
+@deftypefunx ScmObj Scm_Make@var{tag}VectorFromArrayShared (ScmSmallInt @var{size}, type @var{array}[])
+For all supported uniform vector types, there are three functions each
+type to create a vector of the type in question.
+@itemize
+@item
+The first variant creates a mutable vector automatically allocated on
+heap.
+@item
+The second variant initializes heap allocated vector data with
+@var{array}.
+@item
+The third variant directly uses @var{array} as the vector data.
+@end itemize
 @end deftypefun
 
 
