@@ -279,6 +279,7 @@ Options:
                         and output file(s) that would be generated otherwise.
                         useful for 'make clean'.
   -k, --keep-c-files  : do not remove intermediate generated C files.
+      --no-line       : do not emit #line directive in generated C files.
   --gauche-buiddir=DIR : specify the top builddir of the Gauche when the
                         extensions should be compiled for /uninstalled/ Gauche.
   --local=PATH:PATH... : adds PATH/include to inlcude paths and PATH/lib to
@@ -295,6 +296,7 @@ Options:
                   [output       "o|output=s"]
                   [clean        "clean"]
                   [keep-c       "k|keep-c-files"]
+                  [no-line      "no-line"]
                   [gauche-builddir "gauche-builddir=s"]
                   [local        "l|local=s"]
                   [cc           "cc=s"]
@@ -340,7 +342,7 @@ Options:
         (gauche-package-compile (car args)
                                 :dry-run dry-run :verbose verbose
                                 :gauche-builddir gauche-builddir
-                                :keep-c keep-c
+                                :keep-c keep-c :no-line no-lien
                                 :output output :cc cc
                                 :cppflags cppflags :cflags cflags)]
        [else
@@ -348,7 +350,7 @@ Options:
         (gauche-package-compile-and-link (car args) (cdr args)
                                          :dry-run dry-run :verbose verbose
                                          :gauche-builddir gauche-builddir
-                                         :keep-c keep-c
+                                         :keep-c keep-c :no-line no-line
                                          :output output :cc cc :ld cc
                                          :cppflags cppflags :cflags cflags
                                          :ldflags ldflags :libs libs)]))

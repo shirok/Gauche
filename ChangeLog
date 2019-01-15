@@ -1,7 +1,8 @@
 2019-01-15  Shiro Kawai  <shiro@acm.org>
 
-	* src/gauche-package.in, lib/gauche/package/compile.scm: Add
-	  -k | --keep-c-files option for troubleshooting.
+	* src/gauche-package.in, lib/gauche/package/compile.scm:
+	  Add -k | --keep-c-files option.
+	  Add --no-line option to suppress #line directive.
 	  (cf: https://github.com/shirok/Gauche/issues/427)
 
 2019-01-13  Shiro Kawai  <shiro@acm.org>

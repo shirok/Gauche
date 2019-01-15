@@ -327,7 +327,8 @@
              [else
               (set! current-file file)
               (set! current-line line)
-              (format port "\n#line ~a ~s\n" line file)])]
+              (when (cise-emit-source-line)
+                (format port "\n#line ~a ~s\n" line file))])]
       ['|#reset-line| ; reset source info
        (set! current-file #f) (set! current-line 0)]
       [(x . y) (rec x) (rec y)]

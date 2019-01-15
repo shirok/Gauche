@@ -41,6 +41,7 @@
   (use gauche.package.util)
   (use gauche.config)
   (use gauche.parameter)
+  (use gauche.cgen.cise)
   (use gauche.cgen.stub)
   (use file.util)
   (export gauche-package-compile-and-link
@@ -68,6 +69,7 @@
                                           (cc #f)
                                           (gauche-builddir #f)
                                           (keep-c #f)
+                                          (no-line #f)
                                           (ld #f)      ; dummy
                                           (ldflags #f) ; dummy
                                           (libs #f)    ; dummy
@@ -75,7 +77,8 @@
                                           ((:verbose verb?) #f))
   (parameterize ([dry-run dry?]
                  [verbose-run verb?]
-                 [in-place-dir gauche-builddir])
+                 [in-place-dir gauche-builddir]
+                 [cise-emit-source-line (not no-line)])
     (let1 ofile (or output (sys-basename (path-swap-extension file OBJEXT)))
       (unless (and (file-exists? ofile)
                    (file-mtime>? ofile file))
@@ -97,6 +100,7 @@
                                                 (ld #f)
                                                 (gauche-builddir #f)
                                                 (keep-c #f)   ; dummy
+                                                (no-line #f)  ; dummy
                                                 (output #f)   ; dummy
                                                 (cppflags #f) ; dummy
                                                 (cflags #f)   ; dummy
