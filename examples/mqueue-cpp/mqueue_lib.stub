@@ -45,10 +45,10 @@
   ::<int>
   (expr "mq->pushMessage(message, urgency)"))
 
-(define-cproc mqueue-pop! (mq::<mqueue>) ::<const-cstring>
-  (expr "mq->popMessage().c_str()")
+(define-cproc mqueue-pop! (mq::<mqueue>)
   (catch ("MQueueException& e"
-          "Scm_Error(\"mqueue-pop!: %s\", e.reason.c_str());")))
+          "Scm_Error(\"mqueue-pop!: %s\", e.reason.c_str());"))
+  (return (SCM_MAKE_STR_COPYING (ref (-> mq (popMessage)) (c_str)))))
 
 ;; Local variables:
 ;; mode: scheme
