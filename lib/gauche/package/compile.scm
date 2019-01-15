@@ -67,6 +67,7 @@
                                           (cflags   #f)
                                           (cc #f)
                                           (gauche-builddir #f)
+                                          (keep-c #f)
                                           (ld #f)      ; dummy
                                           (ldflags #f) ; dummy
                                           (libs #f)    ; dummy
@@ -84,7 +85,7 @@
                 (begin (cgen-genstub file)
                        (do-compile (or cc CC) cfile ofile
                                    (or cppflags "") (or cflags "")))
-              (sys-unlink cfile)))
+              (unless keep-c (sys-unlink cfile))))
           (do-compile (or cc CC) file ofile
                       (or cppflags "") (or cflags "")))))))
 
@@ -95,6 +96,7 @@
                                                 (libs #f)
                                                 (ld #f)
                                                 (gauche-builddir #f)
+                                                (keep-c #f)   ; dummy
                                                 (output #f)   ; dummy
                                                 (cppflags #f) ; dummy
                                                 (cflags #f)   ; dummy
