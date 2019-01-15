@@ -130,10 +130,6 @@
 
 (define (gauche-package-clean module-name files :key (output #f))
   (when module-name
-    (sys-unlink #"~|module-name|_head.c")
-    (sys-unlink #"~|module-name|_tail.c")
-    (sys-unlink #"~|module-name|_head.~|OBJEXT|")
-    (sys-unlink #"~|module-name|_tail.~|OBJEXT|")
     (sys-unlink #"~|module-name|.~|SOEXT|"))
   (when output
     (sys-unlink output))
