@@ -21,7 +21,7 @@
   ;; NB: This will be recognized >= Gauche 0.9.7.
   ;; Example:
   ;;      :providing-modules (util.algorithm1 util.algorithm1.option)
-  ;:providing-modules ()
+  :providing-modules ()
   
   ;; List name and contact info of authors.
   ;; e.g. ("Eva Lu Ator <eval@example.com>"
