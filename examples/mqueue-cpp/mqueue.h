@@ -1,6 +1,6 @@
 // -*- mode: C++ -*-
 //
-// mqueue.h - a simple-mineded message queue with priority
+// mqueue.h - a simple-minded message queue with priority
 //
 //   The mqueue-cpp extension module to show how to embed external C++
 //   library in Gauche.
