@@ -103,7 +103,7 @@ wrapped in `ScmForeignPointer.`  'Unboxing' is to retrieve the {cpp}
 [source,c++]
 ----
 #define MQUEUE_P(obj)      SCM_XTYPEP(obj, MQueueClass)
-#define MQUEUE_UNBOX(obj)  ((MQueue*)(SCM_FOREIGN_POINTER_REF(obj)))
+#define MQUEUE_UNBOX(obj)  SCM_FOREIGN_POINTER_REF(MQueue*, obj)
 #define MQUEUE_BOX(ptr)    Scm_MakeForeignPointer(MQueueClass, ptr)
 ----
 
