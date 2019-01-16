@@ -2276,6 +2276,12 @@ Cise macro definitions (see @ref{C in S expression}).
 Insert @var{c-code} literally in the initialization function
 @end defspec
 
+@defspec declcode @var{stmt} @dots{}
+Inserts declaration code. @var{stmt} is usually @code{.include} or
+other preprocessor statements but it could also be a string which is
+treated as C fragments.
+@end defspec
+
 @defspec begin @var{form} @dots{}
 Treat each @var{form} as if they are toplevel stub forms.
 @end defspec

@@ -2,9 +2,8 @@
 ;;; @@extname@@lib.stub
 ;;;
 
-"
-#include \"@@extname@@.h\"
-"
+(declcode
+ (.include "@@extname@@.h"))
 
 ;; The following entry is a dummy one.
 ;; Replace it for your definitions.
