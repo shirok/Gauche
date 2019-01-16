@@ -1970,8 +1970,15 @@ Conditional expression.
 Useful to  place a type name, e.g. an argument of sizeof operator.
 @end defspec
 
-@defspec define-cfn NAME (ARG @dots{}) [RET-TYPE [QUALIFIER @dots{}]] STMT @dots{}
-Define a C function. Supported qualifiers are :static and :inline.
+@defspec define-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type} [@var{qualiter} @dots{}]] @var{stmt} @dots{}
+Defines a C function.
+
+If @var{type} or @var{ret-type} is omitted, the default type is
+@code{ScmObj}.
+
+Supported qualifiers are @code{:static}, @code{:inline} and
+@code{:extern}.  @code{:extern} is a special case for generating
+forward function declaration only and must have no @var{STMT}.
 @end defspec
 
 @defspec .static-decls

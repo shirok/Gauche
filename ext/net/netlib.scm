@@ -413,9 +413,9 @@
 ;; IPv6 routines
 
 (inline-stub 
-(declcode "extern ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs);")
+ (define-cfn addrinfo_allocate (klass::ScmClass* intargs) :extern)
 
-(if "defined HAVE_IPV6"
+ (if "defined HAVE_IPV6"
     (begin
       (define-type <sys-addrinfo> "ScmSysAddrinfo*" #f
         "SCM_SYS_ADDRINFO_P" "SCM_SYS_ADDRINFO")

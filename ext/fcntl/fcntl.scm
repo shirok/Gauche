@@ -108,5 +108,5 @@
 
 (inline-stub
  (define-cproc sys-fcntl (port-or-fd op::<fixnum> :optional arg) Scm_SysFcntl)
- (declcode "extern void Scm_Init_fcntl(void);")
+ (define-cfn Scm_Init_fcntl () ::void :extern)
  (initcode (Scm_Init_fcntl)))

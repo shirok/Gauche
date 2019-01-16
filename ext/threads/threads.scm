@@ -57,15 +57,15 @@
 (select-module gauche.threads)
 
 (inline-stub
- "#include \"threads.h\""
-
  (declcode
-  "extern void Scm_Init_mutex(ScmModule*);"
-  "extern void Scm_Init_threads(ScmModule*);")
+  (.include "threads.h"))
+
+ (define-cfn Scm_Init_mutex (mod::ScmModule*) ::void :extern)
+ (define-cfn Scm_Init_threads (mod::ScmModule*) ::void :extern)
 
  (initcode
-  "Scm_Init_threads(Scm_CurrentModule());"
-  "Scm_Init_mutex(Scm_CurrentModule());"))
+  (Scm_Init_threads (Scm_CurrentModule))
+  (Scm_Init_mutex (Scm_CurrentModule))))
 
 ;;===============================================================
 ;; System query
