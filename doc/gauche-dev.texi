@@ -399,6 +399,8 @@ or
 @node Real-life examples, C API reference, Fundamental concepts, Top
 @chapter Real-life examples
 
+To be written. Meanwhile have a look at @file{examples/mqueue-cpp/README.adoc}
+in the Gauche source tree.
 
 @c ======================================================================
 @node C API reference, Creating new Scheme datatypes, Real-life examples, Top
