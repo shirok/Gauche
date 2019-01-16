@@ -279,7 +279,7 @@ Options:
                         and output file(s) that would be generated otherwise.
                         useful for 'make clean'.
   -k, --keep-c-files  : do not remove intermediate generated C files.
-      --no-line       : do not emit #line directive in generated C files.
+      --no-line       : do not emit #line directives in generated C files.
   --gauche-buiddir=DIR : specify the top builddir of the Gauche when the
                         extensions should be compiled for /uninstalled/ Gauche.
   --local=PATH:PATH... : adds PATH/include to inlcude paths and PATH/lib to
