@@ -342,7 +342,7 @@ Options:
         (gauche-package-compile (car args)
                                 :dry-run dry-run :verbose verbose
                                 :gauche-builddir gauche-builddir
-                                :keep-c keep-c :no-line no-lien
+                                :keep-c keep-c :no-line no-line
                                 :output output :cc cc
                                 :cppflags cppflags :cflags cflags)]
        [else
