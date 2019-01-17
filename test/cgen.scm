@@ -127,6 +127,17 @@ some_trick();
   (c '(define-cvar foo :extern) "extern ScmObj foo;")
   (c '(define-cvar foo :static 10) "static ScmObj foo = 10;"))
 
+;; .define
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'toplevel)))
+
+  (c '(.define foo) "#define foo\n")
+  (c '(.define foo (+ 2 3)) "#define foo ((2)+(3))\n")
+  (c '(.define foo (bar) (+ 2 3)) "#define foo(bar) ((2)+(3))\n")
+  (c '(.define foo (a b) (+ a b)) "#define foo(a,b) ((a)+(b))\n"))
+
 ;; statement-level tests
 (parameterize ([cise-emit-source-line #f])
   (define (c form exp)
