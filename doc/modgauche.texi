@@ -2257,7 +2257,57 @@ The following @var{property} are supported:
 
 @end defspec
 
-@defspec define-cptr @var{scheme-class-name} [@var{qualifier}] @var{c-type-name} @var{c-class-var} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
+@defspec define-cptr @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type} @var{c-name} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
+Defines a new foreign pointer class based on
+@code{<foreign-pointer>}. It is suitable when the C structure is
+mostly passed around using pointers; most typically, when the foreign
+library allocates the structure and returns the pointer to the Scheme
+world.
+
+@var{scheme-name} is a Scheme variable name. This will be bound to a
+newly-created subclass of @code{<foreign-pointer>} to represent this
+C-ptr type.
+
+@var{c-type} is the type of the C pointer we wrap.
+
+@var{c-name} is the C variable name (of type @code{ScmClass *}).  In
+initialization code, an instance of a class (the same one bound to
+@var{scm-name} in the Scheme world) will be stored in this C variable.
+
+@var{c-pred} is a macro name to determine if a @code{ScmObj} is of
+this type.
+@var{c-boxer} is a macro name to wrap C pointer and return a
+@code{ScmObj}
+@var{c-unboxer} is a macro name to extract C pointer from a
+@code{ScmObj}
+
+The only supported qualifier is @code{:private}, which will generate
+@var{c-pred}, @var{c-boxer} and @var{c-unboxer} definitions
+automatically. Otherwise those definitions must be provided elsewhere.
+
+The two supported flags are
+@itemize
+@item
+@code{:keep-identity} (which is
+@code{SCM_FOREIGN_POINTER_KEEP_IDENTITY} in the C world) keeps a weak
+hash table that maps the wrapped C pointer to the wrapping
+@code{ScmObj}, so @code{Scm_MakeForeignPointer} (i.e. @var{c-boxer}
+when @code{:private} is used) returns eq? object if the same C pointer
+is given.
+
+This incurs some overhead, but cleanup procedure can safely free the
+foreign object without worrying if there's other ScmObj that's
+pointing to the same C pointer.
+
+Do not use this flag if the C pointer is also allocated by
+@code{GC_malloc}. The used hash table is only weak for its value, so
+the C pointer wouldn't be GCed.
+@item
+@code{:map-null} (which is @code{SCM_FOREIGN_POINTER_MAP_NULL} in the
+C world) makes @code{Scm_MakeForeignPointer} (i.e. @var{c-boxer} when
+@code{:private} is used) return @code{SCM_FALSE} when the C pointer is
+@code{NULL}.
+@end itemize
 @end defspec
 
 @defspec define-symbol @var{scheme-name} [@var{c-name}]
