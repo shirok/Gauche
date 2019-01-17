@@ -917,6 +917,24 @@
                      '("#endif\n" |#reset-line|)
                      condition stmts))]))
 
+;; [cise toplevel/stmt] .define NAME [EXPR]
+;; [cise toplevel/stmt] .define NAME (ARGS...) EXPR
+;;   c preprocessor define directive
+
+;; Note that "#define abc(a,b)" (i.e. no EXPR) cannot be generated
+;; because it's ambiguous with "#define abc a(b)".
+(define-cise-macro (.define form env)
+  (ensure-stmt-or-toplevel-ctx form env)
+  (match form
+    [(_ name) `("#define " ,(x->string name) "\n" |#reset-line|)]
+    [(_ name (args ...) expr) `("#define " ,(x->string name)
+                                "(" ,(intersperse "," (map x->string args)) ")"
+                                " (" ,(render-rec expr (expr-env env)) ")"
+                                "\n" |#reset-line|)]
+    [(_ name expr) `("#define " ,(x->string name)
+                     " (" ,(render-rec expr (expr-env env)) ")"
+                     "\n" |#reset-line|)]))
+
 ;; [cise toplevel/stmt] .undef NAME
 ;;   c preprocessor undefine directive
 (define-cise-macro (.undef form env)
