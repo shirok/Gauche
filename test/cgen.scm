@@ -104,6 +104,29 @@ some_trick();
   (c '(declare-cfn a () (return 0)) err))
 
 
+;; define-cvar
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'toplevel)))
+
+  (c '(define-cvar foo) " ScmObj foo;")
+  (c '(define-cvar foo::int) " int foo;")
+  (c '(define-cvar foo:: int) " int foo;")
+  (c '(define-cvar foo :: int) " int foo;")
+  (c '(define-cvar foo::(const char *)) " const char * foo;")
+  (c '(define-cvar foo:: (.array int (10))) " int foo[10];")
+
+  (c '(define-cvar foo 10) " ScmObj foo = 10;")
+  (c '(define-cvar foo::int 10) " int foo = 10;")
+  (c '(define-cvar foo:: int 10) " int foo = 10;")
+  (c '(define-cvar foo :: int 10) " int foo = 10;")
+  (c '(define-cvar foo::(const char *) NULL) " const char * foo = NULL;")
+  (c '(define-cvar foo::int (+ 2 3)) " int foo = (2)+(3);")
+
+  (c '(define-cvar foo :extern) "extern ScmObj foo;")
+  (c '(define-cvar foo :static 10) "static ScmObj foo = 10;"))
+
 ;; statement-level tests
 (parameterize ([cise-emit-source-line #f])
   (define (c form exp)

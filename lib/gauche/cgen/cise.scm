@@ -520,6 +520,57 @@
      (check-quals name '() (canonicalize-argdecl args) 'ScmObj body)]))
 
 ;;------------------------------------------------------------
+;; Global variable definition
+;;
+
+;; (define-cvar <name> [::<type>] [<qualifiers>...] [<init>])
+
+(define-cise-macro (define-cvar form env)
+  (define (gen-qualifiers quals)
+    (intersperse " "
+                 (map (^[qual] (ecase qual
+                                      [(:static) "static"]
+                                      [(:extern) "extern"]))
+                      (reverse quals))))
+
+  (define (gen-cvar var type quals has-init? init)
+    `(,@(gen-qualifiers quals) " "
+      ,(cise-render-typed-var type var env)
+      ,@(cond-list [has-init? `(" = ",(render-rec init (expr-env env)))])
+      ";"))
+
+  (define (check-quals var type quals init-and-quals)
+    (match init-and-quals
+      [(':static . init-and-quals)
+       (check-quals var type `(:static ,@quals) init-and-quals)]
+      [(':extern . init-and-quals)
+       (check-quals var type `(:extern ,@quals) init-and-quals)]
+      [((? keyword? z) . body)
+       (errorf "Invalid qualifier in define-cvar ~s: ~s" var z)]
+      [()
+       (gen-cvar var type quals #f #f)]
+      [(init)
+       (gen-cvar var type quals #t init)]
+      [else
+       (errorf "Invalid syntax in define-cvar ~s: ~s" var init-and-quals)]))
+
+  ;; Note, technically an extern declaration can appear in stmt scope
+  ;; too. But it's not worth supporting.
+  (ensure-toplevel-ctx form env)
+
+  (let* ([canon (car (canonicalize-vardecl (list (cdr form))))]
+         [var (car canon)]
+         [spec (cdr canon)])
+    (receive (type init-and-quals)
+        (match spec
+          [()         (values 'ScmObj '())]
+          [('::)      (errorf "invalid variable decl in let* form: (~s ~s)" var spec)]
+          [(':: type) (values type '())]
+          [(':: type . init-and-quals) (values type init-and-quals)]
+          [else (values 'ScmObj spec)])
+      (check-quals var type '() init-and-quals))))
+
+;;------------------------------------------------------------
 ;; CPS transformation
 ;;
 ;;  (define-cproc ...
