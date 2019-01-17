@@ -1976,10 +1976,15 @@ Defines a C function.
 If @var{type} or @var{ret-type} is omitted, the default type is
 @code{ScmObj}.
 
-Supported qualifiers are @code{:static}, @code{:inline} and
-@code{:extern}.  @code{:extern} is a special case for generating
-forward function declaration only and must have no @var{STMT}.
+Supported qualifiers are @code{:static} and @code{:inline}, corresponding
+to C's @code{static} and @code{inline} keywords.  If @code{:static} is
+specified, forward declaration is automatically generated.
 @end defspec
+
+@defspec declare-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type}
+Declares an external C function.
+@end defspec
+
 
 @defspec .static-decls
 

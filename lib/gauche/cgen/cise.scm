@@ -443,8 +443,14 @@
 ;;
 
 ;; (define-cfn <name> (<arg> ...) [<rettype> [<qualifier> ...]] <body>)
+;; (declare-cfn <name> (<arg> ...) [<rettype> [<qualifier> ...]])
 
 (define-cise-macro (define-cfn form env)
+  (expand-cfn form env #f))
+(define-cise-macro (declare-cfn form env)
+  (expand-cfn form env #t))
+
+(define (expand-cfn form env declaration?)
   (define (gen-args args env)
     (let1 eenv (expr-env env)
       ($ intersperse ","
@@ -487,24 +493,22 @@
        (check-quals name `(:static ,@quals) args ret-type body)]
       [(':inline . body)
        (check-quals name `(:inline ,@quals) args ret-type body)]
-      [(':extern . body)
-       (check-quals name `(:extern ,@quals) args ret-type body)]
       [((? keyword? z) . body)
        (errorf "Invalid qualifier in define-cfn ~s: ~s" name z)]
       [_
-       (if (memq :extern quals)
-           (begin
-             (unless (null? body)
-               (errorf "extern define-cfn ~s must not have a body" name))
-             (when (or (memq :static quals) (memq :inline quals))
-               (errorf "define-cfn ~s cannot have both extern and static/inline" name))
-             (record-static name quals args ret-type)
-             ;; no function implementation
-             '())
-           (begin
-             (when (memq :static quals)
-               (record-static name quals args ret-type))
-             (gen-cfn name quals args ret-type body)))]))
+       (if declaration?
+         (begin
+           (unless (null? body)
+             (errorf "declare-cfn ~s must not have a body" name))
+           (when (or (memq :static quals) (memq :inline quals))
+             (errorf "declare-cfn ~s cannot have qualifier(s)" name))
+           (record-static name '(:extern) args ret-type)
+           ;; no function implementation
+           '())
+         (begin
+           (when (memq :static quals)
+             (record-static name quals args ret-type))
+           (gen-cfn name quals args ret-type body)))]))
 
   (ensure-toplevel-ctx form env)
   (match form

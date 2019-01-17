@@ -413,7 +413,7 @@
 ;; IPv6 routines
 
 (inline-stub 
- (define-cfn addrinfo_allocate (klass::ScmClass* intargs) :extern)
+ (declare-cfn addrinfo_allocate (klass::ScmClass* intargs))
 
  (if "defined HAVE_IPV6"
     (begin

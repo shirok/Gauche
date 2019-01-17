@@ -60,8 +60,8 @@
  (declcode
   (.include "threads.h"))
 
- (define-cfn Scm_Init_mutex (mod::ScmModule*) ::void :extern)
- (define-cfn Scm_Init_threads (mod::ScmModule*) ::void :extern)
+ (declare-cfn Scm_Init_mutex (mod::ScmModule*) ::void)
+ (declare-cfn Scm_Init_threads (mod::ScmModule*) ::void)
 
  (initcode
   (Scm_Init_threads (Scm_CurrentModule))

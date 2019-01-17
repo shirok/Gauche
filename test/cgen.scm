@@ -94,13 +94,15 @@ some_trick();
   (c '(define-cfn a () :inline) "inline ScmObj a(){{}}")
   (c '(define-cfn a () :static :inline)
      "static inline ScmObj a(){{}}")
-  (c '(define-cfn a () :extern) "")
-  (c '(define-cfn a () :extern (return 0)) err)
   (c '(define-cfn a () :unknown) err)
   (c '(define-cfn a () ::foo) " foo a(){{}}")
   (c '(define-cfn a () ::(foo bar)) " foo bar a(){{}}")
   (c '(define-cfn a (b c::int))
-     " ScmObj a(ScmObj b,int c){{}}"))
+     " ScmObj a(ScmObj b,int c){{}}")
+
+  (c '(declare-cfn a ()) "")
+  (c '(declare-cfn a () (return 0)) err))
+
 
 ;; statement-level tests
 (parameterize ([cise-emit-source-line #f])

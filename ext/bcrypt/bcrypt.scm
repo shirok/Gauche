@@ -13,16 +13,14 @@
 (select-module crypt.bcrypt)
 
 (inline-stub
- (define-cfn crypt_ra (key::(const char *)
-                       setting::(const char *)
-                       data::void**
-                       size::int*)
-   ::char* :extern)
- (define-cfn crypt_gensalt_ra (prefix::(const char *)
-                               count::(unsigned long)
-                               input::(const char *)
-                               size::int)
-   ::char* :extern)
+ (declare-cfn crypt_ra (key::(const char *)
+                        setting::(const char *)
+                        data::void**
+                        size::int*) ::char*)
+ (declare-cfn crypt_gensalt_ra (prefix::(const char *)
+                                count::(unsigned long)
+                                input::(const char *)
+                                size::int) ::char*)
 
  (define-cproc crypt-ra (pass::<const-cstring> setting::<const-cstring>)
    (let* ([data::void* NULL] [size::int 0]

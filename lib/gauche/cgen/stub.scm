@@ -331,6 +331,11 @@
     (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel))
     (cgen-decl (cise-ambient-decl-strings (cise-ambient)))))
 
+(define-form-parser declare-cfn args
+  (parameterize ([cise-ambient (cise-ambient-copy (cise-ambient) '())])
+    (cgen-body (cise-render-to-string `(declare-cfn ,@args) 'toplevel))
+    (cgen-decl (cise-ambient-decl-strings (cise-ambient)))))
+
 ;; extra check of valid clauses
 (define (check-clauses directive name clauses valid-keys)
   (and-let1 bad (find (^c (or (not (pair? c))

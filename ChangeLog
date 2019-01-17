@@ -1,3 +1,8 @@
+2019-01-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (declare-cfn): Added.  See
+	  https://github.com/shirok/Gauche/pull/430
+
 2019-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in, lib/gauche/package/compile.scm:
