@@ -123,6 +123,35 @@ some_trick();
   (c '(define-cvar foo :extern) "extern ScmObj foo;")
   (c '(define-cvar foo :static 10) "static ScmObj foo = 10;"))
 
+;; define-crec
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form)
+           (apply string-append
+                  (map (cut string-append <> "\n") exp))
+           (cise-render-to-string form 'toplevel)))
+
+  (c '(define-crec foo (abc def) :: struct)
+     '("struct foo {" "ScmObj abc;" "ScmObj def;" "};"))
+  (c '(define-crec foo (abc::int def::char) ::struct)
+     '("struct foo {" "int abc;" "char def;" "};"))
+  (c '(define-crec foo (abc def) :: union)
+     '("union foo {" "ScmObj abc;" "ScmObj def;" "};"))
+  (c '(define-crec foo (abc::(.array int (10)) def) ::union)
+     '("union foo {" "int abc[10];" "ScmObj def;" "};"))
+  (c '(define-crec foo (abc def))
+     '("struct foo {" "ScmObj abc;" "ScmObj def;" "};"))
+  (c '(define-crec foo (abc def) :typedef :: struct)
+     '("typedef struct {" "ScmObj abc;" "ScmObj def;" "} foo;"))
+  (c '(define-crec foo (abc def) :typedef ::struct)
+     '("typedef struct {" "ScmObj abc;" "ScmObj def;" "} foo;"))
+  (c '(define-crec foo (abc def) :typedef :: union)
+     '("typedef union {" "ScmObj abc;" "ScmObj def;" "} foo;"))
+  (c '(define-crec foo (abc def) :typedef ::union)
+     '("typedef union {" "ScmObj abc;" "ScmObj def;" "} foo;"))
+  (c '(define-crec foo (abc def) :typedef)
+     '("typedef struct {" "ScmObj abc;" "ScmObj def;" "} foo;")))
+
 ;; .define
 (parameterize ([cise-emit-source-line #f])
   (define (c form exp)

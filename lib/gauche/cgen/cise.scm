@@ -554,6 +554,38 @@
       (check-quals var type '() init-and-quals))))
 
 ;;------------------------------------------------------------
+;; Global struct/union [typedef] definition
+;;
+
+;; (define-crec NAME (FIELDS ...) [:typedef] [::struct | ::union]
+(define-cise-macro (define-crec form env)
+  (define (gen-fields args env)
+    (let1 eenv (expr-env env)
+      (map (^.[(var . type)
+               `(,(cise-render-typed-var type var eenv) ";\n" |#reset-line|)])
+           (canonicalize-argdecl args))))
+
+  (define (gen-crec name fields typedef? type)
+    (if typedef?
+        `("typedef " ,(x->string type) " {\n" |#reset-line|
+          ,@(gen-fields fields env)
+          "} " ,(cise-render-identifier name) ";\n" |#reset-line|)
+        `(,(x->string type) " " ,(cise-render-identifier name) " {\n" |#reset-line|
+          ,@(gen-fields fields env)
+          "};\n" |#reset-line|)))
+
+  (ensure-stmt-or-toplevel-ctx form env)
+  (match form
+    [(_ name (fields ...) ':: type) (gen-crec name fields #f type)]
+    [(_ name (fields ...) '::struct) (gen-crec name fields #f 'struct)]
+    [(_ name (fields ...) '::union) (gen-crec name fields #f 'union)]
+    [(_ name (fields ...)) (gen-crec name fields #f 'struct)]
+    [(_ name (fields ...) ':typedef ':: type) (gen-crec name fields #t type)]
+    [(_ name (fields ...) ':typedef '::struct) (gen-crec name fields #t 'struct)]
+    [(_ name (fields ...) ':typedef '::union) (gen-crec name fields #t 'union)]
+    [(_ name (fields ...) ':typedef) (gen-crec name fields #t 'struct)]))
+
+;;------------------------------------------------------------
 ;; CPS transformation
 ;;
 ;;  (define-cproc ...
