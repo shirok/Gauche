@@ -446,11 +446,11 @@
 ;; (declare-cfn <name> (<arg> ...) [<rettype> [<qualifier> ...]])
 
 (define-cise-macro (define-cfn form env)
-  (expand-cfn form env #f))
+  (expand-cfn form env))
 (define-cise-macro (declare-cfn form env)
-  (expand-cfn form env #t))
+  (expand-cfn form env))
 
-(define (expand-cfn form env declaration?)
+(define (expand-cfn form env)
   (define (gen-args args env)
     (let1 eenv (expr-env env)
       ($ intersperse ","
@@ -496,19 +496,19 @@
       [((? keyword? z) . body)
        (errorf "Invalid qualifier in define-cfn ~s: ~s" name z)]
       [_
-       (if declaration?
-         (begin
-           (unless (null? body)
-             (errorf "declare-cfn ~s must not have a body" name))
-           (when (or (memq :static quals) (memq :inline quals))
-             (errorf "declare-cfn ~s cannot have qualifier(s)" name))
-           (record-static name '(:extern) args ret-type)
-           ;; no function implementation
-           '())
-         (begin
-           (when (memq :static quals)
-             (record-static name quals args ret-type))
-           (gen-cfn name quals args ret-type body)))]))
+       (case (car form)
+         [(define-cfn)
+          (when (memq :static quals)
+            (record-static name quals args ret-type))
+          (gen-cfn name quals args ret-type body)]
+         [(declare-cfn)
+          (unless (null? body)
+            (errorf "declare-cfn ~s must not have a body" name))
+          (when (or (memq :static quals) (memq :inline quals))
+            (errorf "declare-cfn ~s cannot have qualifier(s)" name))
+          (record-static name '(:extern) args ret-type)
+          ;; no function implementation
+          '()])]))
 
   (ensure-toplevel-ctx form env)
   (match form
@@ -584,7 +584,8 @@
     (receive (type init-and-quals)
         (match spec
           [()         (values 'ScmObj '())]
-          [('::)      (errorf "invalid variable decl in let* form: (~s ~s)" var spec)]
+          [('::)      (errorf "invalid variable decl in ~s: (~s ~s)" 
+                              (car form) var spec)]
           [(':: type) (values type '())]
           [(':: type . init-and-quals) (values type init-and-quals)]
           [else (values 'ScmObj spec)])
