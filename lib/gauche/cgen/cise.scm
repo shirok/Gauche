@@ -1276,7 +1276,7 @@
 ;; appear in the operator position of a valid expression.
 (define (type-decl-initial? sym)
   (or (memq sym '(const class enum struct volatile unsigned long
-                  char short int float double .array))
+                  char short int float double .array .struct .union))
       (and (symbol? sym)
            (#/.[*&]$/ (symbol->string sym)))))
 
@@ -1292,9 +1292,34 @@
        ,@(map (^.['* "[]"]
                  [x `("[" ,(render-rec x (expr-env env)) "]")])
               dim))]
+    [('.struct (fields ...))
+     (render-struct-or-union "struct" #f fields var env)]
+    [('.struct tag (fields ...))
+     (render-struct-or-union "struct" tag fields var env)]
+    [('.struct tag)
+     (render-struct-or-union "struct" tag #f var env)]
+    [('.union (fields ...))
+     (render-struct-or-union "union" #f fields var env)]
+    [('.union tag (fields ...))
+     (render-struct-or-union "union" tag fields var env)]
+    [('.union tag)
+     (render-struct-or-union "union" tag #f var env)]
     [(x ...) `(,(intersperse " " (map x->string x))
                " " ,(cise-render-identifier var))]
     [x       `(,(x->string x) " " ,(cise-render-identifier var))]))
+
+(define (render-struct-or-union struct/union tag fields var env)
+  `(,struct/union
+    ,@(cond-list [tag `(" " ,tag)]
+                 [fields 
+                  `(" { "
+                    ,@(map (^.[(member ':: type)
+                               `(,(cise-render-typed-var type member env)
+                                 "; ")])
+                           (canonicalize-vardecl fields))
+                    "} ")]
+                 [(not fields) '(" ")])
+    ,(cise-render-identifier var)))
 
 (define (cise-render-identifier sym)
   (cgen-safe-name-friendly (x->string sym)))

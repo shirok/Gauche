@@ -125,7 +125,21 @@ some_trick();
   (c '(define-cvar foo::int (+ 2 3)) " int foo = (2)+(3);")
 
   (c '(define-cvar foo :extern) "extern ScmObj foo;")
-  (c '(define-cvar foo :static 10) "static ScmObj foo = 10;"))
+  (c '(define-cvar foo :static 10) "static ScmObj foo = 10;")
+
+  (c '(define-cvar foo::(.struct (name::(const char *)
+                                  value::double)))
+     " struct { const char * name; double value; } foo;")
+  (c '(define-cvar foo::(.struct foostruct (name::(const char *)
+                                            value::(.struct (r::double
+                                                             i::double)))))
+     " struct foostruct { const char * name; struct { double r; double i; } value; } foo;")
+  (c '(define-cvar foo::(.union (d::double
+                                 l::long)))
+     " union { double d; long l; } foo;")
+  (c '(define-cvar foo::(.struct foostruct))
+     " struct foostruct foo;")
+  )
 
 ;; .define
 (parameterize ([cise-emit-source-line #f])
