@@ -1907,11 +1907,26 @@ label so that we can place (label NAME) at the end of a compound
 statement.
 @end defspec
 
-@defspec .if STRING STMT @dots{}
-@defspecx .cond CLAUSE @dots{}
-@defspecx .undef NAME
-@defspecx .include PATH
+@defspec .if @var{string} @var{stmt} @dots{}
+@defspecx .cond @var{clause} @dots{}
+@defspecx .define @var{name}[(@var{arg} @dots{})] [@var{expr}]
+@defspecx .undef @var{name}
+@defspecx .include @var{path}
 Preprocessor directives.
+
+Note that defining a macro function without value
+@example
+#define foo(abc)
+@end example
+is not supported because it's ambiguous with
+@example
+#define foo abc()
+@end example
+when written in CiSE syntax. @code{(.define foo (abc))} always
+generates the latter.
+
+@code{.include} could take a symbol. This is used for including system
+header files, e.g. @code{(.include <stdint.h>)}.
 @end defspec
 
 @defspec + EXPR @dots{}
