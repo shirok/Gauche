@@ -1797,7 +1797,7 @@
 ;;              subclass of <foreign-pointer> to represent this C-ptr type.
 ;;  c-type    : Name of the actual C type we wrap.
 ;;  c-name    : A C variable name (must have type ScmClass *).  If :private
-;;              qualifier is given, static definition of the varaible is
+;;              qualifier is given, the static definition of the variable is
 ;;              generated; otherwise, the definition & declaration must
 ;;              be provided elsewhere.  In initialization code, an instance
 ;;              of a class (the same one bound to scm-name in the Scheme

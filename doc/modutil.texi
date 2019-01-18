@@ -10997,7 +10997,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c that takes parsers and returns a combined parser.  One advantage of
 @c this approach is that you can freely mix ordinary Scheme code
 @c within the parser, that is, there's no special ``parser description
-@c language'' distinct from the base Scheme langauge, nor you need to
+@c language'' distinct from the base Scheme language, nor you need to
 @c run separate tools like parser generators to obtain a runnable parser code.
 
 @c Although PEG can directly parse the character string, the parser

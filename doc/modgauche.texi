@@ -1833,10 +1833,25 @@ Code grouping with @{ and @}
 @defspec let* ((@var{name} [:: @var{type}] [@var{init-expr}]) @dots{}) @var{stmt} @dots{}
 Declare and optionally assign initial values to local variables.
 
-If @var{type} is omitted, the default type is
-@code{ScmObj}. @var{type} of an array is in the form @code{(.array
-@var{elem-type} (@var{size} @dots{}))}. Note that array initialization
-is not supported yet.
+@var{type} could be
+
+@itemize
+@item
+A symbol, e.g. @code{int}
+@item
+A list of symbols, e.g. @code{(const char *)}
+@item
+An array type in the form @code{(.array @var{elem-type} (@var{size} @dots{}))}
+@item
+A struct type in the form
+@code{(.struct [@var{name}] [(@var{field-name}[::@var{type}] @dots{})])}
+@item
+A union type in the form
+@code{(.union [@var{name}] [(@var{field-name}[::@var{type}] @dots{})])}
+@end itemize
+
+If @var{type} is omitted, the default type is @code{ScmObj}. Note that
+array initialization is not supported yet.
 @end defspec
 
 @defspec if TEST-EXPR THEN-STMT [ELSE-STMT]
@@ -1892,11 +1907,26 @@ label so that we can place (label NAME) at the end of a compound
 statement.
 @end defspec
 
-@defspec .if STRING STMT @dots{}
-@defspecx .cond CLAUSE @dots{}
-@defspecx .undef NAME
-@defspecx .include PATH
+@defspec .if @var{string} @var{stmt} @dots{}
+@defspecx .cond @var{clause} @dots{}
+@defspecx .define @var{name}[(@var{arg} @dots{})] [@var{expr}]
+@defspecx .undef @var{name}
+@defspecx .include @var{path}
 Preprocessor directives.
+
+Note that defining a macro function without value
+@example
+#define foo(abc)
+@end example
+is not supported because it's ambiguous with
+@example
+#define foo abc()
+@end example
+when written in CiSE syntax. @code{(.define foo (abc))} always
+generates the latter.
+
+@code{.include} could take a symbol. This is used for including system
+header files, e.g. @code{(.include <stdint.h>)}.
 @end defspec
 
 @defspec + EXPR @dots{}
@@ -1985,8 +2015,18 @@ to C's @code{static} and @code{inline} keywords.  If @code{:static} is
 specified, forward declaration is automatically generated.
 @end defspec
 
+@defspec define-cvar @var{name} [:: @var{type}] [@var{qualifier} @dots{}] [@var{<init-expr>}]
+Defines a global C variable. Supported qualifier is
+@code{:static}. Note that array initialization is not supported yet.
+@end defspec
+
+@defspec define-ctype @var{name} [:: @var{type}]
+Defines a new type using @code{typedef}
+@end defspec
+
 @defspec declare-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type}
-Declares an external C function.
+@defspecx declare-cvar @var{name} [:: @var{type}]
+Declares an external C function or variable.
 @end defspec
 
 
@@ -2257,7 +2297,57 @@ The following @var{property} are supported:
 
 @end defspec
 
-@defspec define-cptr @var{scheme-class-name} [@var{qualifier}] @var{c-type-name} @var{c-class-var} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
+@defspec define-cptr @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type} @var{c-name} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
+Defines a new foreign pointer class based on
+@code{<foreign-pointer>}. It is suitable when the C structure is
+mostly passed around using pointers; most typically, when the foreign
+library allocates the structure and returns the pointer to the Scheme
+world.
+
+@var{scheme-name} is a Scheme variable name. This will be bound to a
+newly-created subclass of @code{<foreign-pointer>} to represent this
+C-ptr type.
+
+@var{c-type} is the type of the C pointer we wrap.
+
+@var{c-name} is the C variable name (of type @code{ScmClass *}).  In
+initialization code, an instance of a class (the same one bound to
+@var{scm-name} in the Scheme world) will be stored in this C variable.
+
+@var{c-pred} is a macro name to determine if a @code{ScmObj} is of
+this type.
+@var{c-boxer} is a macro name to wrap C pointer and return a
+@code{ScmObj}
+@var{c-unboxer} is a macro name to extract C pointer from a
+@code{ScmObj}
+
+The only supported qualifier is @code{:private}, which will generate
+@var{c-pred}, @var{c-boxer} and @var{c-unboxer} definitions
+automatically. Otherwise those definitions must be provided elsewhere.
+
+The two supported flags are
+@itemize
+@item
+@code{:keep-identity} (which is
+@code{SCM_FOREIGN_POINTER_KEEP_IDENTITY} in the C world) keeps a weak
+hash table that maps the wrapped C pointer to the wrapping
+@code{ScmObj}, so @code{Scm_MakeForeignPointer} (i.e. @var{c-boxer}
+when @code{:private} is used) returns eq? object if the same C pointer
+is given.
+
+This incurs some overhead, but cleanup procedure can safely free the
+foreign object without worrying if there's other ScmObj that's
+pointing to the same C pointer.
+
+Do not use this flag if the C pointer is also allocated by
+@code{GC_malloc}. The used hash table is only weak for its value, so
+the C pointer wouldn't be GCed.
+@item
+@code{:map-null} (which is @code{SCM_FOREIGN_POINTER_MAP_NULL} in the
+C world) makes @code{Scm_MakeForeignPointer} (i.e. @var{c-boxer} when
+@code{:private} is used) return @code{SCM_FALSE} when the C pointer is
+@code{NULL}.
+@end itemize
 @end defspec
 
 @defspec define-symbol @var{scheme-name} [@var{c-name}]
@@ -5054,8 +5144,8 @@ This corresponds to autoconf's @code{AC_SUBST}, but we require
 the value (while autoconf can refer to the shell variable value as default).
 @end defun
 
-@defun cf-subst-prepend symbol vaule :optional delim default
-@defunx cf-subst-append symbol vaule :optional delim default
+@defun cf-subst-prepend symbol value :optional delim default
+@defunx cf-subst-append symbol value :optional delim default
 @c MOD gauche.configure
 Prepend or append @var{value} to the substitution parameter @var{symbol},
 using delimiter @var{delim}.  If the substitution parameter isn't
@@ -5064,6 +5154,17 @@ except when @var{default} is given and not an empty string.
 If @var{delim} is omitted, single whitespace is used.
 @end defun
 
+@defspec with-cf-subst ((@var{symbol} @var{value}) @dots{}) @dots{}
+@c MOD gauche.configure
+Temporarily replace substitution parameters with new values. This
+could be useful for example to run some compilation tests with
+different parameters
+
+@example
+(with-cf-subst ((LIBS "-L<path> -l<lib>"))
+  (cf-try-compile-and-link @dots{}))
+@end example
+@end defspec
 
 @defun cf-have-subst? symbol
 @c MOD gauche.configure

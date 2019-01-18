@@ -252,7 +252,7 @@
 (test* "make-condition-variable" #t
        (condition-variable? (make-condition-variable)))
 
-(test* "condition-varaible-name" 'foo
+(test* "condition-variable-name" 'foo
        (condition-variable-name (make-condition-variable 'foo)))
 
 (test* "condition-variable-specific" "hello"

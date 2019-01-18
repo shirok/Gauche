@@ -122,7 +122,7 @@ typedef int ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl)   (0)
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl)  (0)
 
-/* ScmInternalCond - condition varaiable
+/* ScmInternalCond - condition variable
  *
  *  Pthreads-style condition variables.  SCM_INTERNAL_COND_INITIALIZER
  *  may be used for the placeholder of static variables (but the
