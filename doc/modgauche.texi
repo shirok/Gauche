@@ -2000,8 +2000,18 @@ to C's @code{static} and @code{inline} keywords.  If @code{:static} is
 specified, forward declaration is automatically generated.
 @end defspec
 
+@defspec define-cvar @var{name} [:: @var{type}] [@var{qualifier} @dots{}] [@var{<init-expr>}]
+Defines a global C variable. Supported qualifier is
+@code{:static}. Note that array initialization is not supported yet.
+@end defspec
+
+@defspec define-ctype @var{name} [:: @var{type}]
+Defines a new type using @code{typedef}
+@end defspec
+
 @defspec declare-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type}
-Declares an external C function.
+@defspecx declare-cvar @var{name} [:: @var{type}]
+Declares an external C function or variable.
 @end defspec
 
 
