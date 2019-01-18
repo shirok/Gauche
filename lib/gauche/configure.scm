@@ -914,7 +914,7 @@
   :metaclass <singleton-meta>)
 
 ;; API
-;; Parameter cf-lang holds a singleton instance of the current langauge.
+;; Parameter cf-lang holds a singleton instance of the current language.
 (define cf-lang (make-parameter (make <cf-language>)))
 
 (define (cf-lang-ext) (cf-lang-ext-m (cf-lang)))
