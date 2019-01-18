@@ -1833,10 +1833,25 @@ Code grouping with @{ and @}
 @defspec let* ((@var{name} [:: @var{type}] [@var{init-expr}]) @dots{}) @var{stmt} @dots{}
 Declare and optionally assign initial values to local variables.
 
-If @var{type} is omitted, the default type is
-@code{ScmObj}. @var{type} of an array is in the form @code{(.array
-@var{elem-type} (@var{size} @dots{}))}. Note that array initialization
-is not supported yet.
+@var{type} could be
+
+@itemize
+@item
+A symbol, e.g. @code{int}
+@item
+A list of symbols, e.g. @code{(const char *)}
+@item
+An array type in the form @code{(.array @var{elem-type} (@var{size} @dots{}))}
+@item
+A struct type in the form
+@code{(.struct [@var{name}] [(@var{field-name}[::@var{type}] @dots{})])}
+@item
+A union type in the form
+@code{(.union [@var{name}] [(@var{field-name}[::@var{type}] @dots{})])}
+@end itemize
+
+If @var{type} is omitted, the default type is @code{ScmObj}. Note that
+array initialization is not supported yet.
 @end defspec
 
 @defspec if TEST-EXPR THEN-STMT [ELSE-STMT]
