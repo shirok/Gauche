@@ -6,6 +6,7 @@
 	    (.struct (member::type ...))
 	    (.struct tag)
 	  and substituting .struct with .union.
+	  (declare-cvar): Added.
 
 2019-01-17  Shiro Kawai  <shiro@acm.org>
 

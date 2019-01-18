@@ -524,8 +524,14 @@
 ;;
 
 ;; (define-cvar <name> [::<type>] [<qualifiers>...] [<init>])
+;; (declare-cvar <name> [::<type>])
 
 (define-cise-macro (define-cvar form env)
+  (expand-cvar form env #f))
+(define-cise-macro (declare-cvar form env)
+  (expand-cvar form env #t))
+
+(define (expand-cvar form env declaration?)
   (define (gen-qualifiers quals)
     (intersperse " "
                  (map (^[qual] (ecase qual
@@ -543,16 +549,23 @@
     (match init-and-quals
       [(':static . init-and-quals)
        (check-quals var type `(:static ,@quals) init-and-quals)]
-      [(':extern . init-and-quals)
-       (check-quals var type `(:extern ,@quals) init-and-quals)]
       [((? keyword? z) . body)
        (errorf "Invalid qualifier in define-cvar ~s: ~s" var z)]
       [()
-       (gen-cvar var type quals #f #f)]
+       (if declaration?
+         (begin
+           (unless (null? quals)
+             (errorf "declare-cvar ~s cannot have qualifier(s)" var))
+           (gen-cvar var type '(:extern) #f #f))
+         (gen-cvar var type quals #f #f))]
       [(init)
+       (when declaration?
+         (errorf "declare-cvar ~s cannot have initializer" var))
        (gen-cvar var type quals #t init)]
       [else
-       (errorf "Invalid syntax in define-cvar ~s: ~s" var init-and-quals)]))
+       (errorf "Invalid syntax in ~s ~s: ~s"
+               (if declaration? 'declare-cvar 'define-cvar)
+               var init-and-quals)]))
 
   ;; Note, technically an extern declaration can appear in stmt scope
   ;; too. But it's not worth supporting.

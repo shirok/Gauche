@@ -124,7 +124,6 @@ some_trick();
   (c '(define-cvar foo::(const char *) NULL) " const char * foo = NULL;")
   (c '(define-cvar foo::int (+ 2 3)) " int foo = (2)+(3);")
 
-  (c '(define-cvar foo :extern) "extern ScmObj foo;")
   (c '(define-cvar foo :static 10) "static ScmObj foo = 10;")
 
   (c '(define-cvar foo::(.struct (name::(const char *)
@@ -139,6 +138,11 @@ some_trick();
      " union { double d; long l; } foo;")
   (c '(define-cvar foo::(.struct foostruct))
      " struct foostruct foo;")
+
+  (c '(declare-cvar foo) "extern ScmObj foo;")
+  (c '(declare-cvar foo::int) "extern int foo;")
+  (c '(declare-cvar foo::int 10) (test-error))
+  (c '(declare-cvar foo::int :static) (test-error))
   )
 
 ;; .define
