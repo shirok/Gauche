@@ -5114,6 +5114,17 @@ except when @var{default} is given and not an empty string.
 If @var{delim} is omitted, single whitespace is used.
 @end defun
 
+@defspec with-cf-subst ((@var{symbol} @var{value}) @dots{}) @dots{}
+@c MOD gauche.configure
+Temporarily replace substitution parameters with new values. This
+could be useful for example to run some compilation tests with
+different parameters
+
+@example
+(with-cf-subst ((LIBS "-L<path> -l<lib>"))
+  (cf-try-compile-and-link @dots{}))
+@end example
+@end defspec
 
 @defun cf-have-subst? symbol
 @c MOD gauche.configure
