@@ -143,6 +143,10 @@ some_trick();
   (c '(declare-cvar foo::int) "extern int foo;")
   (c '(declare-cvar foo::int 10) (test-error))
   (c '(declare-cvar foo::int :static) (test-error))
+
+  (c '(define-ctype foo::int) "typedef int foo;")
+  (c '(define-ctype foo::(.struct (tag::ScmWord value attr)))
+     "typedef struct { ScmWord tag; ScmObj value; ScmObj attr; } foo;")
   )
 
 ;; .define

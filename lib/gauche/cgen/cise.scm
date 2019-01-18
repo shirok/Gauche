@@ -520,23 +520,27 @@
      (check-quals name '() (canonicalize-argdecl args) 'ScmObj body)]))
 
 ;;------------------------------------------------------------
-;; Global variable definition
+;; Global variable definition and typedef
 ;;
 
 ;; (define-cvar <name> [::<type>] [<qualifiers>...] [<init>])
 ;; (declare-cvar <name> [::<type>])
+;; (define-ctype <name> [::<type>])
 
 (define-cise-macro (define-cvar form env)
-  (expand-cvar form env #f))
+  (expand-cvar form env))
 (define-cise-macro (declare-cvar form env)
-  (expand-cvar form env #t))
+  (expand-cvar form env))
+(define-cise-macro (define-ctype form env)
+  (expand-cvar form env))
 
-(define (expand-cvar form env declaration?)
+(define (expand-cvar form env)
   (define (gen-qualifiers quals)
     (intersperse " "
                  (map (^[qual] (ecase qual
                                       [(:static) "static"]
-                                      [(:extern) "extern"]))
+                                      [(:extern) "extern"]
+                                      [(:typedef) "typedef"]))
                       (reverse quals))))
 
   (define (gen-cvar var type quals has-init? init)
@@ -552,20 +556,23 @@
       [((? keyword? z) . body)
        (errorf "Invalid qualifier in define-cvar ~s: ~s" var z)]
       [()
-       (if declaration?
-         (begin
-           (unless (null? quals)
-             (errorf "declare-cvar ~s cannot have qualifier(s)" var))
-           (gen-cvar var type '(:extern) #f #f))
-         (gen-cvar var type quals #f #f))]
+       (case (car form)
+         [(define-cvar) (gen-cvar var type quals #f #f)]
+         [(declare-cvar)
+          (unless (null? quals)
+            (errorf "declare-cvar ~s cannot have qualifier(s)" var))
+          (gen-cvar var type '(:extern) #f #f)]
+         [(define-ctype)
+          (unless (null? quals)
+            (errorf "define-ctype ~s cannot have qualifier(s)" var))
+          (gen-cvar var type '(:typedef) #f #f)])]
       [(init)
-       (when declaration?
-         (errorf "declare-cvar ~s cannot have initializer" var))
-       (gen-cvar var type quals #t init)]
+       (if (eq? (car form) 'define-cvar)
+         (gen-cvar var type quals #t init)  
+         (errorf "declare-cvar ~s cannot have initializer" var))]
       [else
        (errorf "Invalid syntax in ~s ~s: ~s"
-               (if declaration? 'declare-cvar 'define-cvar)
-               var init-and-quals)]))
+               (car form) var init-and-quals)]))
 
   ;; Note, technically an extern declaration can appear in stmt scope
   ;; too. But it's not worth supporting.
