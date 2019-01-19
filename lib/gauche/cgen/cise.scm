@@ -967,10 +967,12 @@
     [(_ name) `("#define " ,(x->string name) "\n" |#reset-line|)]
     [(_ name (args ...) expr) `("#define " ,(x->string name)
                                 "(" ,(intersperse "," (map x->string args)) ")"
-                                " (" ,(render-rec expr (expr-env env)) ")"
+                                " (" ,(parameterize ([cise-emit-source-line #f])
+                                        (render-rec expr (expr-env env))) ")"
                                 "\n" |#reset-line|)]
     [(_ name expr) `("#define " ,(x->string name)
-                     " (" ,(render-rec expr (expr-env env)) ")"
+                     " (" ,(parameterize ([cise-emit-source-line #f])
+                             (render-rec expr (expr-env env))) ")"
                      "\n" |#reset-line|)]))
 
 ;; [cise toplevel/stmt] .undef NAME
