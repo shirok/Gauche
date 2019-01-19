@@ -1,3 +1,8 @@
+2019-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm: Support function type in the form:
+	  (.function (arg::type ...) ::rettype)
+
 2019-01-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm: Support struct and union types, in the

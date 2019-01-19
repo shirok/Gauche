@@ -143,6 +143,11 @@ some_trick();
   (c '(define-cvar foo::(volatile .struct (a) **))
      " volatile struct { ScmObj a; } ** foo;")
 
+  (c '(define-cvar foo::(.function (a::int b::char) ::long))
+     " long (foo)(int a, char b);")
+  (c '(define-cvar foo::(.function (a::int b::char) ::long *))
+     " long (* foo)(int a, char b);")
+
   (c '(declare-cvar foo) "extern ScmObj foo;")
   (c '(declare-cvar foo::int) "extern int foo;")
   (c '(declare-cvar foo::int 10) (test-error))

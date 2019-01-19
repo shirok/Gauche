@@ -1299,14 +1299,13 @@
 ;; appear in the operator position of a valid expression.
 (define (type-decl-initial? sym)
   (or (memq sym '(const class enum struct volatile unsigned long
-                  char short int float double .array .struct .union))
+                  char short int float double .array .struct .union .function))
       (and (symbol? sym)
            (#/.[*&]$/ (symbol->string sym)))))
 
 (define (type-decl-subsequent? sym)
   (or (memq sym '(* &))
       (type-decl-initial? sym)))
-
 
 (define (cise-render-typed-var typespec var env)
   (match typespec
@@ -1327,6 +1326,22 @@
      (render-struct-or-union "union" tag fields rest var env)]
     [('.union tag . rest)
      (render-struct-or-union "union" tag #f rest var env)]
+    [('.function (args ...) rettype . rest)
+     (let1 rt (let1 vv (canonicalize-vardecl `(_ ,rettype))
+                 (unless (null? (cdr vv))
+                  (errorf "Invalid return type in ~s" typespec))
+                (caddar vv))
+       `(,(cise-render-typed-var rt "" env)
+         "("
+         ,(if (null? rest)
+            (cise-render-identifier var)
+            (cise-render-typed-var rest var env))
+         ")"
+         "("
+         ,@($ intersperse ", "
+              $ map (^.[(arg ':: type) (cise-render-typed-var type arg env)])
+              $ canonicalize-vardecl args)
+         ")"))]
     [(x)
      `(,(x->string x) " " ,(cise-render-identifier var))]
     [(x xs ...) 
