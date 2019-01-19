@@ -68,7 +68,9 @@
  (define-type <inflating-port> "ScmPort*" "inflating port"
    "SCM_INFLATING_PORT_P" "SCM_PORT")
 
- "#define SCM_XFLATING_PORT_P(x) (SCM_INFLATING_PORT_P(x)||SCM_DEFLATING_PORT_P(x))"
+ (.define SCM_XFLATING_PORT_P (x) (or (SCM_INFLATING_PORT_P x)
+                                      (SCM_DEFLATING_PORT_P x)))
+
  ;; proxy type for shorter code.  <xflating-port> isn't really a Scheme class.
  (define-type <xflating-port> "ScmPort*" "inflating or deflating port"
    "SCM_XFLATING_PORT_P" "SCM_PORT")
