@@ -215,7 +215,7 @@ Gaucheのビルドに、標準でない場所にインストールされてい�
 例えば、`/usr/local` にインストールされたgdbmライブラリを使用したい
 場合は次のようにします。
 
-[source,console]
+[source,sh]
 --with-local=/usr/local
 endif::JA[]
 ifdef::EN[]
