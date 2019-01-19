@@ -73,20 +73,20 @@
  ;;
  ;; <queue>
  ;;
- "typedef struct QueueRec {"
- "  SCM_INSTANCE_HEADER;"
- "  ScmSize len;"     ;; lazily calc'd.  -1 for 'to be calculated'
- "  ScmObj head;"
- "  ScmObj tail;"
- "} Queue;"
+ (define-ctype Queue::(.struct
+                       (SCM_INSTANCE_HEADER :: ""
+                        len::ScmSize ;; lazily calc'd.  -1 for 'to be calculated'
+                        head
+                        tail)))
 
  "SCM_CLASS_DECL(QueueClass);"
- "#define QP(obj)          SCM_ISA(obj, &QueueClass)"
- "#define Q(obj)           ((Queue*)(obj))"
- "#define Q_HEAD(obj)      (Q(obj)->head)"
- "#define Q_TAIL(obj)      (Q(obj)->tail)"
- "#define Q_LENGTH(obj)    (Q(obj)->len)"  ; can be -1; should use %qlength().
- "#define Q_EMPTY_P(obj)   (SCM_NULLP(Q_HEAD(obj)))"
+
+ (.define QP (obj) (SCM_ISA obj (& QueueClass)))
+ (.define Q (obj) (cast Queue* obj))
+ (.define Q_HEAD (obj) (-> (Q obj) head))
+ (.define Q_TAIL (obj) (-> (Q obj) tail))
+ (.define Q_LENGTH (obj) (-> (Q obj) len)) ; can be -1; should use %qlength().
+ (.define Q_EMPTY_P (obj) (SCM_NULLP (Q_HEAD obj)))
 
  (define-cfn %qlength (q::Queue*) ::ScmSize  ; must be called with lock held
    (when (< (Q_LENGTH q) 0)
@@ -108,29 +108,28 @@
  ;;
  ;; <mtqueue>
  ;;
- "typedef struct MtQueueReq {"
- "  Queue q;"
- "  ScmSmallInt maxlen;"     ;negative if unlimited
- "  ScmInternalMutex mutex;"
- "  ScmObj locker;"  ;thread holding the lock.  see the comment above.
- "  ScmInternalCond lockWait;"
- "  ScmInternalCond readerWait;"
- "  ScmInternalCond writerWait;"
- "  int readerSem;" ;used by zero-length queue.  # of waiting reader
- "} MtQueue;"
+ (define-ctype MtQueue::(.struct
+                         (q::Queue
+                          maxlen::ScmSmallInt ; negative if unlimited
+                          mutex::ScmInternalMutex
+                          locker ; thread holding the lock.  see the comment above.
+                          lockWait::ScmInternalCond
+                          readerWait::ScmInternalCond
+                          writerWait::ScmInternalCond
+                          readerSem::int ; used by zero-length queue.  # of waiting reader
+                          )))
 
  "SCM_CLASS_DECL(MtQueueClass);"
- "#define MTQP(obj)       SCM_ISA(obj, &MtQueueClass)"
- "#define MTQ(obj)        ((MtQueue*)(obj))"
- "#define MTQ_MAXLEN(obj) (MTQ(obj)->maxlen)"
- "#define MTQ_MUTEX(obj)  (MTQ(obj)->mutex)"
- "#define MTQ_LOCKER(obj) (MTQ(obj)->locker)"
 
- "#define MTQ_LOCK(q)   (SCM_INTERNAL_MUTEX_LOCK (MTQ_MUTEX q))"
- "#define MTQ_UNLOCK(q) (SCM_INTERNAL_MUTEX_UNLOCK (MTQ_MUTEX q))"
- "#define MTQ_CV(q, kind) (MTQ(q)->kind)"
- "#define MTQ_READER_SEM(q) (MTQ(q)->readerSem)"
-
+ (.define MTQP (obj) (SCM_ISA obj (& MtQueueClass)))
+ (.define MTQ (obj) (cast MtQueue* obj))
+ (.define MTQ_MAXLEN (obj) (-> (MTQ obj) maxlen))
+ (.define MTQ_MUTEX (obj) (-> (MTQ obj) mutex))
+ (.define MTQ_LOCKER (obj) (-> (MTQ obj) locker))
+ (.define MTQ_LOCK (obj) (SCM_INTERNAL_MUTEX_LOCK "MTQ_MUTEX q"))
+ (.define MTQ_UNLOCK (obj) (SCM_INTERNAL_MUTEX_UNLOCK "MTQ_MUTEX q"))
+ (.define MTQ_CV (q kind) (-> (MTQ q) kind))
+ (.define MTQ_READER_SEM (q) (-> (MTQ q) readerSem))
 
  (define-cfn makemtq (klass::ScmClass* maxlen::int)
    (let* ([z::MtQueue* (SCM_NEW_INSTANCE MtQueue klass)])
@@ -198,8 +197,9 @@
  (define-cise-stmt notify-readers
    [(_ q) `(SCM_INTERNAL_COND_BROADCAST (MTQ_CV ,q readerWait))])
 
- "#define CW_TIMEDOUT 1"
- "#define CW_INTR     2"
+ (.define CW_TIMEDOUT 1)
+ (.define CW_INTR 2)
+
  ;; (wait-cv Q SLOT PTIMESPEC STATUS)
  ;;   Wait on Q's condition variable in SLOT.  PTIMESPEC is a pointer
  ;;   to ScmTimeSpec or NULL, specifies timeout.  Must be called
