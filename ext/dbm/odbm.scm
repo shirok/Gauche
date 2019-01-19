@@ -191,7 +191,7 @@
  ;; Original dbm allows to open only one file at a time.
  ;; The static variable odbm_opened tracks the status.
  ;; TODO: MT SAFENESS
- "static int odbm_opened = FALSE;"
+ (define-cvar odbm_opened::int :static FALSE)
 
  ;; bindings
  (define-cproc odbm-init (name::<string>) ::<int>

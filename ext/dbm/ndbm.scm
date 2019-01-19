@@ -176,11 +176,11 @@
    ["HAVE_GDBM_MINUS_NDBM_H" (.include <gdbm-ndbm.h>)])
   (.include "ndbm-suffixes.h"))
 
- "typedef struct ScmNdbmFileRec {"
- "  SCM_HEADER;"
- "  ScmObj name;"
- "  DBM *dbf;                   /* NULL if closed */"
- "} ScmNdbmFile;"
+ (define-ctype ScmNdbmFile::(.struct
+                             (SCM_HEADER :: ""
+                              name
+                              dbf::DBM* ; NULL if closed
+                              )))
 
  (define-cclass <ndbm-file> :private ScmNdbmFile* "Scm_NdbmFileClass" ()
    ()
