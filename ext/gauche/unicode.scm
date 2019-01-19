@@ -868,10 +868,11 @@
 
 (inline-stub
  (declcode
-  (.include <gauche/char_attr.h>))
- "#define CHAR_UPCASE 0"
- "#define CHAR_DOWNCASE 1"
- "#define CHAR_TITLECASE 2"
+  (.include <gauche/char_attr.h>)
+  (.define CHAR_UPCASE 0)
+  (.define CHAR_DOWNCASE 1)
+  (.define CHAR_TITLECASE 2))
+
  (define-enum CHAR_UPCASE)
  (define-enum CHAR_DOWNCASE)
  (define-enum CHAR_TITLECASE)
