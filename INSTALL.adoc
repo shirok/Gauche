@@ -1,4 +1,5 @@
 // -*- coding: utf-8 -*-
+:source-highlighter: pygments
 
 // Use English as the default language.
 // Use "--attribute=lang=ja" option for Japanese output.
@@ -17,7 +18,6 @@ endif::JA[]
 ifdef::EN[]
 = Compiling and Installing Gauche
 endif::EN[]
-:source-highlighter: pygments
 
 ifdef::JA[]
 NOTE: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
