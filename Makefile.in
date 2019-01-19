@@ -62,16 +62,10 @@ install-check:
 
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.
-# the check of INSTALL.adoc is necessary for making pre-package target from
-# distribution tarball (in case for preprocessing winvc source tree).
-pre-package:
+pre-package: INSTALL.html INSTALL.html.ja
 	cd src; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
-	if [ -f $(srcdir)/INSTALL.adoc ]; then \
-	  $(ASCIIDOC)                     --out-file=INSTALL.html    INSTALL.adoc ; \
-	  $(ASCIIDOC) --attribute=lang=ja --out-file=INSTALL.html.ja INSTALL.adoc ; \
-	fi
 
 %.html: %.adoc
 	$(ASCIIDOC) --out-file=$@ $<
