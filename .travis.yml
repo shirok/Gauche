@@ -2,24 +2,45 @@ notifications:
   recipients:
     - gauche-travis@lists.sourceforge.net
 language: c
-os:
-  - linux
-  - osx
-compiler:
-  - gcc
-  - clang
 addons:
   apt:
-    packages:
+    packages: &apt_packages
       - libgdbm-dev
       - zlib1g-dev
+      - texinfo
   homebrew:
     packages:
       - gdbm
       - zlib
+      - texinfo
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *apt_packages
+            - gcc-4.9
+            - g++-4.9
+      env:
+        - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    - os: linux
+      dist: trusty
+      compiler: clang
+    - os: linux
+      dist: xenial
+      compiler: gcc
+    - os: linux
+      dist: xenial
+      compiler: clang
+    - os: osx
 before_install:
+  - eval "${MATRIX_EVAL}"
   # sudo cannot find clang, so We install Gauche under $HOME without sudo
   # https://github.com/travis-ci/travis-ci/issues/3088
   - curl -o get-gauche.sh -f https://raw.githubusercontent.com/shirok/get-gauche/master/get-gauche.sh && chmod +x get-gauche.sh && ./get-gauche.sh --auto --home && ./DIST gen
 script:
-  - ./configure && make && make check
+  - ./configure && make -j4 && make check && cd doc && make
