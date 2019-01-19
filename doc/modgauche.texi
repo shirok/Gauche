@@ -2102,12 +2102,12 @@ Produce declarations of static functions before function bodies.
 
 @node Stub generation, , C in S expression, Generating C code
 
-@defspec define-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
+@deffn {Stub Form} define-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
 Register a new type to be recognized.  This is rather a declaration
 than definition; no C code will be generated directly by this form.
-@end defspec
+@end deffn
 
-@defspec define-cproc name (ARGS @dots{}) [RET-TYPE] [FLAG @dots{}] [QUALIFIER @dots{}] BODY @dots{}
+@deffn {Stub Form} define-cproc name (ARGS @dots{}) [RET-TYPE] [FLAG @dots{}] [QUALIFIER @dots{}] BODY @dots{}
 Create Scheme procedure.
 
 @var{args} specifies arguments:
@@ -2201,9 +2201,9 @@ can be inlined into an VM insturuction.
 return from the cproc. As a special case, if @var{stmt} is a single
 symbol, it names a C function to be called with the same argument (mod
 unboxing) as the cproc.
-@end defspec
+@end deffn
 
-@defspec define-cgeneric @var{name} @var{c-name} @var{property-clause} @dots{}
+@deffn {Stub Form} define-cgeneric @var{name} @var{c-name} @var{property-clause} @dots{}
 Defines generic function. @var{c-name} specifies a C variable name
 that keeps the generic function structure. One or more of the
 following clauses can appear in @var{property-clause} @dots{}:
@@ -2219,12 +2219,12 @@ not define the structure as @code{static}).
 @item
 @code{(setter . SETTER-SPEC)} : specifies the setter.
 @end itemize
-@end defspec
+@end deffn
 
-@defspec define-cmethod @var{name} (@var{arg} @dots{}) @var{body} @dots{}
-@end defspec
+@deffn {Stub Form} define-cmethod @var{name} (@var{arg} @dots{}) @var{body} @dots{}
+@end deffn
 
-@defspec define-cclass @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type-name} @var{c-class-name} @var{cpa} (@var{slot-spec} @dots{}) @var{property} @dots{}
+@deffn {Stub Form} define-cclass @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type-name} @var{c-class-name} @var{cpa} (@var{slot-spec} @dots{}) @var{property} @dots{}
 Generates C stub for static class definition, slot accessors and
 initialization. Corresponding C struct has to be defined elsewhere.
 
@@ -2295,9 +2295,9 @@ The following @var{property} are supported:
 @code{(direct-supers @var{string} @dots{})}
 @end itemize
 
-@end defspec
+@end deffn
 
-@defspec define-cptr @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type} @var{c-name} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
+@deffn {Stub Form} define-cptr @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type} @var{c-name} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
 Defines a new foreign pointer class based on
 @code{<foreign-pointer>}. It is suitable when the C structure is
 mostly passed around using pointers; most typically, when the foreign
@@ -2348,49 +2348,49 @@ C world) makes @code{Scm_MakeForeignPointer} (i.e. @var{c-boxer} when
 @code{:private} is used) return @code{SCM_FALSE} when the C pointer is
 @code{NULL}.
 @end itemize
-@end defspec
+@end deffn
 
-@defspec define-symbol @var{scheme-name} [@var{c-name}]
+@deffn {Stub Form} define-symbol @var{scheme-name} [@var{c-name}]
 Defines a Scheme symbol. No Scheme binding is created.
 When @var{c-name} is given, the named C variable points to the created
 @code{ScmSymbol}.
-@end defspec
+@end deffn
 
-@defspec define-variable @var{scheme-name} @var{initializer}
+@deffn {Stub Form} define-variable @var{scheme-name} @var{initializer}
 Defines a Scheme variable.
-@end defspec
+@end deffn
 
-@defspec define-constant @var{scheme-name} @var{initializer}
+@deffn {Stub Form} define-constant @var{scheme-name} @var{initializer}
 Defines a Scheme constant.
-@end defspec
+@end deffn
 
-@defspec define-enum @var{name}
+@deffn {Stub Form} define-enum @var{name}
 A define-constant Specialized for enum values. This is useful for
 exporting C enums to Scheme.
-@end defspec
+@end deffn
 
-@defspec define-enum-conditionally @var{name}
+@deffn {Stub Form} define-enum-conditionally @var{name}
 Abbreviation of @code{(if "defined(name)" (define-enum name))}
-@end defspec
+@end deffn
 
-@defspec define-cise-stmt @var{name} @var{clause} @dots{}
-@defspecx define-cise-expr @var{name} @var{clause} @dots{}
+@deffn {Stub Form} define-cise-stmt @var{name} @var{clause} @dots{}
+@deffnx {Stub Form} define-cise-expr @var{name} @var{clause} @dots{}
 Cise macro definitions (see @ref{C in S expression}).
-@end defspec
+@end deffn
 
-@defspec initcode @var{c-code}
+@deffn {Stub Form} initcode @var{c-code}
 Insert @var{c-code} literally in the initialization function
-@end defspec
+@end deffn
 
-@defspec declcode @var{stmt} @dots{}
+@deffn {Stub Form} declcode @var{stmt} @dots{}
 Inserts declaration code. @var{stmt} is usually @code{.include} or
 other preprocessor statements but it could also be a string which is
 treated as C fragments.
-@end defspec
+@end deffn
 
-@defspec begin @var{form} @dots{}
+@deffn {Stub Form} begin @var{form} @dots{}
 Treat each @var{form} as if they are toplevel stub forms.
-@end defspec
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node Character code conversion, Collection framework, Generating C code, Library modules - Gauche extensions
