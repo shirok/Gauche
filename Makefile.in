@@ -62,7 +62,7 @@ install-check:
 
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.
-pre-package: INSTALL.html INSTALL.html.ja
+pre-package: INSTALL.html INSTALL.ja.html
 	cd src; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
@@ -70,7 +70,7 @@ pre-package: INSTALL.html INSTALL.html.ja
 %.html: %.adoc
 	$(ASCIIDOC) --out-file=$@ $<
 
-%.html.ja: %.adoc
+%.ja.html: %.adoc
 	$(ASCIIDOC) --attribute=lang=ja --out-file=$@ $<
 
 install: install-pkg install-doc
@@ -127,7 +127,7 @@ maintainer-clean: clean
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
 	-(cd winnt/wix; $(MAKE) clean)
-	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.html INSTALL.html.ja DIST_EXCLUDE_X gc/configure gc/configure.gnu
+	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.html INSTALL.ja.html DIST_EXCLUDE_X gc/configure gc/configure.gnu
 
 # MacOSX Framework specific stuff
 framework: all

@@ -109,7 +109,7 @@ test :
 %.html: %.adoc
 	$(ASCIIDOC) --out-file=$@ $<
 
-%.html.ja: %.adoc
+%.ja.html: %.adoc
 	$(ASCIIDOC) --attribute=lang=ja --out-file=$@ $<
 
 # special rule to regenerate srfis.texi in case srfis.scm is modified.
