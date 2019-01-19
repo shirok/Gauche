@@ -170,7 +170,7 @@ you can specify the location of your external
 iconv library by `--with-iconv` option.
 endif::EN[]
 
-[source,console]
+[source,sh]
 --with-iconv=DIR
 
 
@@ -206,7 +206,7 @@ ifdef::JA[]
 Gaucheのビルドに、標準でない場所にインストールされているライブラリを
 使用したい場合、次のオプションでその場所を指定することができます。
 
-[source,console]
+[source,sh]
 --with-local=PATH:PATH2:...
 
 これで、`PATH/include` 、`PATH2/include` 、... がインクルードパスに、
@@ -223,7 +223,7 @@ If you want to use some libraries installed in non-standard location
 to build Gauche, you can use the following option to specify the
 locations.
 
-[source,console]
+[source,sh]
 --with-local=PATH:PATH2:...
 
 This addts `PATH/include`, `PATH2/include`, ... to the include paths,
@@ -232,7 +232,7 @@ and `PATH/lib`, `PATH2/lib`, ... to the library search paths.
 For example, if you want to use gdbm library in `/usr/local`,
 you can say:
 
-[source,console]
+[source,sh]
 --with-local=/usr/local
 endif::EN[]
 
@@ -314,7 +314,7 @@ If you installed your SLIB in some non-standard location, you can tell
 it to the configure script as follows:
 endif::EN[]
 
-[source,console]
+[source,sh]
 ----
 ./configure --with-slib=PATH
 ----
@@ -529,7 +529,7 @@ Configure' sets a default, but if you want to explore different
 options, just run 'make' as follows:
 endif::EN[]
 
-[source,console]
+[source,sh]
 make OPTFLAGS="--some-compiler-option --other-option"
 
 
@@ -544,7 +544,7 @@ ifdef::JA[]
 インストールされたGaucheソフトウェアを取り除くには、ソースツリーのトップ
 ディレクトリで
 
-[source,console]
+[source,sh]
 make uninstall
 
 として下さい。
@@ -552,7 +552,7 @@ endif::JA[]
 ifdef::EN[]
 You can remove installed Gauche software by running
 
-[source,console]
+[source,sh]
 make uninstall
 
 on top of the source tree.
@@ -645,7 +645,7 @@ ifdef::JA[]
   も必要です。
   (例：`$HOME/include` に `dlfcn.h` が、 `$HOME/lib` に `libdl.a` がある場合は
 +
-[source,console]
+[source,sh]
 ----
 ./configure --with-local=$HOME --enable-threads=pthreads
 ----
@@ -665,7 +665,7 @@ Besides, GC now requires pthreads on MacOS X, so you need
 For example, if you have `dlfcn.h` in `$HOME/include` and `libdl.a`
 in `$HOME/lib`, you should do:
 +
-[source,console]
+[source,sh]
 ----
 ./configure --with-local=$HOME --enable-threads=pthreads
 ----
@@ -675,14 +675,14 @@ ifdef::JA[]
 * IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
   したい場合は次のようにして下さい。
 +
-[source,console]
+[source,sh]
 CC="cc -64" AS="as -64" ./configure
 endif::JA[]
 ifdef::EN[]
 * IRIX with 64bit binary - If you want to compile for 64bit ABI instead
   of the default 32bit ABI, run configure like this:
 +
-[source,console]
+[source,sh]
 CC="cc -64" AS="as -64" ./configure
 endif::EN[]
 
@@ -692,7 +692,7 @@ ifdef::JA[]
   でコンパイルに失敗するという報告がありました。
   この場合は以下のように環境依存の最適化を無効にして下さい。
 +
-[source,console]
+[source,sh]
 ----
 ./configure --disable-heuristic-optimization
 ----
@@ -704,7 +704,7 @@ ifdef::EN[]
   If you want to disable this machine-dependent heuristic optimization,
   run configure like this:
 +
-[source,console]
+[source,sh]
 ----
 ./configure --disable-heuristic-optimization
 ----
