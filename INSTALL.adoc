@@ -24,7 +24,7 @@ ifdef::EN[]
 NOTE: The Gauche system is a work in progress and frequently updated.
 Check out the latest information on the site:
 endif::EN[]
-http://practical-scheme.net/gauche/
+https://practical-scheme.net/gauche/
 
 
 ifdef::JA[]
