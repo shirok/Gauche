@@ -2024,7 +2024,7 @@ Defines a global C variable. Supported qualifier is
 Defines a new type using @code{typedef}
 @end defspec
 
-@defspec declare-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type}
+@defspec declare-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type}]
 @defspecx declare-cvar @var{name} [:: @var{type}]
 Declares an external C function or variable.
 @end defspec
