@@ -126,10 +126,9 @@
   (.include <gauche/extern.h>)      ; fix SCM_EXTERN in SCM_CLASS_DECL
   )
 
- "typedef struct ScmShaContextRec {"
- " SCM_HEADER;"
- " SHA_CTX ctx;"
- "} ScmShaContext;"
+ (define-ctype ScmShaContext::(.struct
+                               (SCM_HEADER :: ""
+                                ctx::SHA_CTX)))
 
  (define-cclass <sha-context> :private
    ScmShaContext* "Scm_ShaContextClass" ()
