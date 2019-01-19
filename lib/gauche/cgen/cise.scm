@@ -1237,6 +1237,8 @@
 (define-cise-macro (.type form env)
   (match form
     [(_ typenames ...)
+     (when (null? typenames)
+       (errorf "empty .type form is not allowed: ~s" form))
      `(,(cise-render-typed-var typenames "" env))]))
 
 ;;------------------------------------------------------------
@@ -1313,23 +1315,26 @@
        ,@(map (^.['* "[]"]
                  [x `("[" ,(render-rec x (expr-env env)) "]")])
               dim))]
-    [('.struct (fields ...))
-     (render-struct-or-union "struct" #f fields var env)]
-    [('.struct tag (fields ...))
-     (render-struct-or-union "struct" tag fields var env)]
-    [('.struct tag)
-     (render-struct-or-union "struct" tag #f var env)]
-    [('.union (fields ...))
-     (render-struct-or-union "union" #f fields var env)]
-    [('.union tag (fields ...))
-     (render-struct-or-union "union" tag fields var env)]
-    [('.union tag)
-     (render-struct-or-union "union" tag #f var env)]
-    [(x ...) `(,(intersperse " " (map x->string x))
-               " " ,(cise-render-identifier var))]
-    [x       `(,(x->string x) " " ,(cise-render-identifier var))]))
+    [('.struct (fields ...) . rest)
+     (render-struct-or-union "struct" #f fields rest var env)]
+    [('.struct tag (fields ...) . rest)
+     (render-struct-or-union "struct" tag fields rest var env)]
+    [('.struct tag . rest)
+     (render-struct-or-union "struct" tag #f rest var env)]
+    [('.union (fields ...) . rest)
+     (render-struct-or-union "union" #f fields rest var env)]
+    [('.union tag (fields ...) . rest)
+     (render-struct-or-union "union" tag fields rest var env)]
+    [('.union tag . rest)
+     (render-struct-or-union "union" tag #f rest var env)]
+    [(x)
+     `(,(x->string x) " " ,(cise-render-identifier var))]
+    [(x xs ...) 
+     `(,(x->string x) " " ,(cise-render-typed-var xs var env))]
+    [x
+     `(,(x->string x) " " ,(cise-render-identifier var))]))
 
-(define (render-struct-or-union struct/union tag fields var env)
+(define (render-struct-or-union struct/union tag fields rest var env)
   `(,struct/union
     ,@(cond-list [tag `(" " ,tag)]
                  [fields 
@@ -1340,7 +1345,9 @@
                            (canonicalize-vardecl fields))
                     "} ")]
                  [(not fields) '(" ")])
-    ,(cise-render-identifier var)))
+    ,(if (null? rest)
+       (cise-render-identifier var)
+       (cise-render-typed-var rest var env))))
 
 (define (cise-render-identifier sym)
   (cgen-safe-name-friendly (x->string sym)))

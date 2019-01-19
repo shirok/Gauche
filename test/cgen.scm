@@ -138,6 +138,10 @@ some_trick();
      " union { double d; long l; } foo;")
   (c '(define-cvar foo::(.struct foostruct))
      " struct foostruct foo;")
+  (c '(define-cvar foo::(const .struct foostruct *))
+     " const struct foostruct * foo;")
+  (c '(define-cvar foo::(volatile .struct (a) **))
+     " volatile struct { ScmObj a; } ** foo;")
 
   (c '(declare-cvar foo) "extern ScmObj foo;")
   (c '(declare-cvar foo::int) "extern int foo;")
@@ -409,8 +413,7 @@ some_trick();
   (t 'aref err "(a)" "(a)[b]" "(a)[b][c]")
 
   (t 'cast err err "((a )(b))" err)
-  #;(t '.type err "a " "a b " "a b c ")
-  (t '.type " " "a " "a b " "a b c ")
+  (t '.type err "a " "a b " "a b c ")
 
   (t '?: err err err "((a)?(b):(c))")
   (c '(?: a b c d) err))
