@@ -640,7 +640,7 @@ endif::EN[]
 
 ifdef::JA[]
 * MacOS X - 10.2.x以前のバージョンでは、dlcompatライブラリ(libdl)が
-  インストールされていることが必要です。 http://fink.sourceforge.net から
+  インストールされていることが必要です。 http://www.finkproject.org/ から
   ダウンロードできます。10.3以降では必要ありません。システム標準の
   場所以外にdlcompatライブラリをインストールした場合は、configureの
   `--with-local` オプションで場所を指定して下さい。
@@ -658,7 +658,7 @@ endif::JA[]
 ifdef::EN[]
 * MacOS X - For 10.2.x and earlier, you need to install the `dlcompat`
 +
-library (libdl) from Fink project ( http://fink.sourceforge.net )
+library (libdl) from Fink project ( http://www.finkproject.org/ )
 before configuring Gauche.   You don't need it if you have OSX
 10.3 or later.   If the dlcompat library is installed in non-standard
 location, you have to tell configure the place by `--with-local`.
