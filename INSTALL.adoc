@@ -1,4 +1,7 @@
 // -*- coding: utf-8 -*-
+
+// Use English as the default language.
+// Use "--attribute=lang=ja" option for Japanese output.
 :lang: en
 
 ifeval::["{lang}" == "en"]
