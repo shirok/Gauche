@@ -72,6 +72,12 @@ pre-package:
 	  asciidoc --attribute=lang=ja --out-file=INSTALL.html.ja INSTALL.adoc ; \
 	fi
 
+%.html: %.adoc
+	asciidoc --out-file=$@ $<
+
+%.html.ja: %.adoc
+	asciidoc --attribute=lang=ja --out-file=$@ $<
+
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat
 
