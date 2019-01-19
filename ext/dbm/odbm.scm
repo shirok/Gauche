@@ -161,14 +161,12 @@
 ;;;
 
 (inline-stub
- "#include \"dbmconf.h\""
- "#if HAVE_DBM_H"
- "#include <dbm.h>"
- "#elif HAVE_GDBM_SLASH_DBM_H"
- "#include <gdbm/dbm.h>"
- "#elif HAVE_GDBM_MINUS_DBM_H"
- "#include <gdbm-dbm.h>"
- "#endif"
+ (declcode
+  (.include "dbmconf.h")
+  (.cond
+   ["HAVE_DBM_H" (.include <dbm.h>)]
+   ["HAVE_GDBM_SLASH_DBM_H" (.include <gdbm/dbm.h>)]
+   ["HAVE_GDBM_MINUS_DBM_H" (.include <gdbm-dbm.h>)]))
 
  ;; data conversion macros
  (define-cise-stmt TO_DATUM

@@ -172,8 +172,9 @@
 ;;;
 
 (inline-stub
- "#include <gdbm.h>"
- "#include <stdlib.h>"
+ (declcode
+  (.include <gdbm.h>)
+  (.include <stdlib.h>))
 
  "typedef struct ScmGdbmFileRec {
     SCM_HEADER;

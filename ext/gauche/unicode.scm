@@ -390,7 +390,8 @@
 ;;
 
 (inline-stub
- "#include \"gauche/priv/unicode_attr.h\""
+ (declcode
+  (.include "gauche/priv/unicode_attr.h"))
 
  (initcode "init_GB_symbols(Scm_CurrentModule());")
  (initcode "init_WB_symbols(Scm_CurrentModule());")
@@ -866,7 +867,8 @@
 ;;;
 
 (inline-stub
- "#include <gauche/char_attr.h>"
+ (declcode
+  (.include <gauche/char_attr.h>))
  "#define CHAR_UPCASE 0"
  "#define CHAR_DOWNCASE 1"
  "#define CHAR_TITLECASE 2"

@@ -40,10 +40,9 @@
 
 (inline-stub
  (declcode
-  "#include <gauche/extend.h>"
-  "#ifdef HAVE_SYSLOG_H"
-  "#include <syslog.h>"
-  "#endif")
+  (.include <gauche/extend.h>)
+  (.if "defined(HAVE_SYSLOG_H)"
+       (.include <syslog.h>)))
 
  ;; On the platforms which don't have syslog facility, should we raise
  ;; a "not implemented" error, or simply discard the requests?  I tend to

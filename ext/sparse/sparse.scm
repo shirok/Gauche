@@ -75,11 +75,11 @@
 (select-module data.sparse)
 
 (inline-stub
- (declcode "#include \"ctrie.h\""
-           "#include \"spvec.h\""
-           "#include \"sptab.h\""
-           "#include <gauche/bits_inline.h>")
- )
+ (declcode
+  (.include "ctrie.h")
+  (.include "spvec.h")
+  (.include "sptab.h")
+  (.include <gauche/bits_inline.h>)))
 
 (define-macro (define-stuff type class iter ref set)
   (let ([x-fold     (string->symbol #"~|type|-fold")]

@@ -35,9 +35,10 @@
 
 (inline-stub
 
- (declcode "#include \"gauche-net.h\"")
- (declcode "#include <gauche/class.h>")
- (declcode "#include <gauche/bignum.h>")
+ (declcode
+  (.include "gauche-net.h")
+  (.include <gauche/class.h>)
+  (.include <gauche/bignum.h>))
 
  (define-type <socket-address> "ScmSockAddr*" "socket address"
    "Scm_SockAddrP" "SCM_SOCKADDR")

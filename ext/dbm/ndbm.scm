@@ -167,18 +167,14 @@
 ;;;
 
 (inline-stub
- "#include <fcntl.h>"
- "#include \"dbmconf.h\""
-
- "#if HAVE_NDBM_H"
- "#include <ndbm.h>"
- "#elif HAVE_GDBM_SLASH_NDBM_H"
- "#include <gdbm/ndbm.h>"
- "#elif HAVE_GDBM_MINUS_NDBM_H"
- "#include <gdbm-ndbm.h>"
- "#endif"
-
- "#include \"ndbm-suffixes.h\""
+ (declcode
+  (.include <fcntl.h>)
+  (.include "dbmconf.h")
+  (.cond
+   ["HAVE_NDBM_H" (.include <ndbm.h>)]
+   ["HAVE_GDBM_SLASH_NDBM_H" (.include <gdbm/ndbm.h>)]
+   ["HAVE_GDBM_MINUS_NDBM_H" (.include <gdbm-ndbm.h>)])
+  (.include "ndbm-suffixes.h"))
 
  "typedef struct ScmNdbmFileRec {"
  "  SCM_HEADER;"

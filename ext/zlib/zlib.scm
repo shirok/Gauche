@@ -59,7 +59,8 @@
 (select-module rfc.zlib)
 
 (inline-stub
- (declcode "#include \"gauche-zlib.h\"")
+ (declcode
+  (.include "gauche-zlib.h"))
  (initcode (Scm_Init_zlib))
 
  (define-type <deflating-port> "ScmPort*" "deflating port"

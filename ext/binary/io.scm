@@ -229,7 +229,8 @@
 ;;;
 
 (inline-stub
- "#include \"binary.h\""
+ (declcode
+  (.include "binary.h"))
  
  (define-cproc read-u8
    (:optional (port::<input-port>? #f) (endian::<symbol>? #f))
