@@ -365,6 +365,7 @@ AC_CHECK_PROGS(AR, ar gar)
 AC_CHECK_PROGS(AS, as gas)
 AC_CHECK_PROGS(MAKEINFO, makeinfo)
 AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
+AC_CHECK_PROGS(ASCIIDOC, asciidoc asciidoctor)
 
 dnl for cross build
 AC_CHECK_PROGS(BUILD_CC, ${build}-gcc ${build_alias}-gcc gcc cc)

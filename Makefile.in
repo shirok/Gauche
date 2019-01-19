@@ -28,6 +28,7 @@ DESTDIR =
 
 GOSH = gosh
 LN_S = @LN_S@
+ASCIIDOC = @ASCIIDOC@
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 	           libtool configure.lineno autom4* gc/autom4* \
@@ -68,15 +69,15 @@ pre-package:
 	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	if [ -f $(srcdir)/INSTALL.adoc ]; then \
-	  asciidoc                     --out-file=INSTALL.html    INSTALL.adoc ; \
-	  asciidoc --attribute=lang=ja --out-file=INSTALL.html.ja INSTALL.adoc ; \
+	  $(ASCIIDOC)                     --out-file=INSTALL.html    INSTALL.adoc ; \
+	  $(ASCIIDOC) --attribute=lang=ja --out-file=INSTALL.html.ja INSTALL.adoc ; \
 	fi
 
 %.html: %.adoc
-	asciidoc --out-file=$@ $<
+	$(ASCIIDOC) --out-file=$@ $<
 
 %.html.ja: %.adoc
-	asciidoc --attribute=lang=ja --out-file=$@ $<
+	$(ASCIIDOC) --attribute=lang=ja --out-file=$@ $<
 
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat
