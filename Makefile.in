@@ -61,15 +61,15 @@ install-check:
 
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.
-# the check of INSTALL.in is necessary for making pre-package target from
+# the check of INSTALL.adoc is necessary for making pre-package target from
 # distribution tarball (in case for preprocessing winvc source tree).
 pre-package:
 	cd src; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
-	if [ -f $(srcdir)/INSTALL.in ]; then \
-	  $(GOSH) $(srcdir)/doc/extract -en -o INSTALL INSTALL.in; \
-	  $(GOSH) $(srcdir)/doc/extract -jp -o INSTALL.ja INSTALL.in; \
+	if [ -f $(srcdir)/INSTALL.adoc ]; then \
+	  asciidoc                     --out-file=INSTALL.html    INSTALL.adoc ; \
+	  asciidoc --attribute=lang=ja --out-file=INSTALL-ja.html INSTALL.adoc ; \
 	fi
 
 install: install-pkg install-doc
@@ -126,7 +126,7 @@ maintainer-clean: clean
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
 	-(cd winnt/wix; $(MAKE) clean)
-	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.ja DIST_EXCLUDE_X gc/configure gc/configure.gnu
+	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.html INSTALL-ja.html DIST_EXCLUDE_X gc/configure gc/configure.gnu
 
 # MacOSX Framework specific stuff
 framework: all
