@@ -334,8 +334,18 @@
 (define-form-parser define-cise-expr args
   (eval `(define-cise-expr ,@args) (current-module)))
 
-(export-toplevel-cise-form define-cfn)
+;; toplevel CiSE forms
 (export-toplevel-cise-form declare-cfn)
+(export-toplevel-cise-form declare-cvar)
+(export-toplevel-cise-form define-cfn)
+(export-toplevel-cise-form define-ctype)
+(export-toplevel-cise-form define-cvar)
+
+; CiSE forms .if, .cond and .include are not exported because there
+; are stub parsers include, if and when that do the same thing but
+; also recognize stub forms.
+(export-toplevel-cise-form .define)
+(export-toplevel-cise-form .undef)
 
 ;; extra check of valid clauses
 (define (check-clauses directive name clauses valid-keys)
