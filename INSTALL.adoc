@@ -195,7 +195,7 @@ Gauche to link against the library.
 
 You can obtain Bruno Haible's libiconv library from here:
 endif::EN[]
-http://www.gnu.org/software/libiconv/
+https://www.gnu.org/software/libiconv/
 
 
 ifdef::JA[]
