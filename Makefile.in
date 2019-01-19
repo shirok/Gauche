@@ -69,7 +69,7 @@ pre-package:
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	if [ -f $(srcdir)/INSTALL.adoc ]; then \
 	  asciidoc                     --out-file=INSTALL.html    INSTALL.adoc ; \
-	  asciidoc --attribute=lang=ja --out-file=INSTALL-ja.html INSTALL.adoc ; \
+	  asciidoc --attribute=lang=ja --out-file=INSTALL.html.ja INSTALL.adoc ; \
 	fi
 
 install: install-pkg install-doc
@@ -126,7 +126,7 @@ maintainer-clean: clean
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
 	-(cd winnt/wix; $(MAKE) clean)
-	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.html INSTALL-ja.html DIST_EXCLUDE_X gc/configure gc/configure.gnu
+	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.html INSTALL.html.ja DIST_EXCLUDE_X gc/configure gc/configure.gnu
 
 # MacOSX Framework specific stuff
 framework: all

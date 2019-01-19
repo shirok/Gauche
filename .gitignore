@@ -60,7 +60,7 @@ test.record
 # Precomp and etc.
 /DIST_EXCLUDE_X
 /INSTALL.html
-/INSTALL-ja.html
+/INSTALL.html.ja
 .deps
 .dirstamp
 /src/features.c
