@@ -1826,11 +1826,11 @@ and also it keeps track of forward declarations.
 @subsubsection CiSE syntax
 
 
-@defspec begin STMT @dots{}
-Code grouping with @{ and @}
-@end defspec
+@deffn {CiSE Statement} begin stmt @dots{}
+Code grouping with @code{@{} and @code{@}}
+@end deffn
 
-@defspec let* ((@var{name} [:: @var{type}] [@var{init-expr}]) @dots{}) @var{stmt} @dots{}
+@deffn {CiSE Statement} let* ((name [@code{::} type] [init-expr]) @dots{}) stmt @dots{}
 Declare and optionally assign initial values to local variables.
 
 @var{type} could be
@@ -1852,66 +1852,66 @@ A union type in the form
 
 If @var{type} is omitted, the default type is @code{ScmObj}. Note that
 array initialization is not supported yet.
-@end defspec
+@end deffn
 
-@defspec if TEST-EXPR THEN-STMT [ELSE-STMT]
-@defspecx when TEST-EXPR STMT @dots{}
-@defspecx unless TEST-EXPR STMT @dots{}
-@defspecx cond (COND STMT @dots{}) @dots{} [ (else STMT @dots{}) ]
+@deffn {CiSE Statement} if test-expr then-stmt [else-stmt]
+@deffnx {CiSE Statement} when test-expr stmt @dots{}
+@deffnx {CiSE Statement} unless test-expr stmt @dots{}
+@deffnx {CiSE Statement} cond (cond1 stmt1 @dots{}) @dots{} [ (@code{else} else-stmt @dots{}) ]
 Conditional statements.
-@end defspec
+@end deffn
 
-@defspec case EXPR ((VAL @dots{}) STMT @dots{}) @dots{} [ (else STMT @dots{}) ]
-@defspecx case/fallthrough EXPR ((VAL @dots{}) STMT @dots{}) @dots{} [ (else STMT @dots{}) ]
-Switch-case statement. 'case' does not fall through between 'case'
-blocks while 'case/fallthrough' does.
-@end defspec
+@deffn {CiSE Statement} case expr ((val1 @dots{}) stmt1 @dots{}) @dots{} [ (@code{else} else-stmt @dots{}) ]
+@deffnx {CiSE Statement} case/fallthrough expr ((val1 @dots{}) stmt1 @dots{}) @dots{} [ (@code{else} else-stmt @dots{}) ]
+Switch-case statement. @code{case} does not fall through between 'case'
+blocks while @code{case/fallthrough} does.
+@end deffn
 
-@defspec for (START-EXPR TEST-EXPR UPDATE-EXPR) STMT @dots{}
-@defspecx for () STMT @dots{}
-@defspecx loop STMT @dots{}
-@defspecx while test-expr body @dots{}
+@deffn {CiSE Statement} for (start-expr test-expr update-expr) stmt @dots{}
+@deffnx {CiSE Statement} for () stmt @dots{}
+@deffnx {CiSE Statement} loop stmt @dots{}
+@deffnx {CiSE Statement} while test-expr body @dots{}
 Loop statements.
-@end defspec
+@end deffn
 
-@defspec for-each (lambda (VAR) STMT @dots{}) EXPR
-@defspecx dolist [VAR EXPR] STMT @dots{}
-EXPR must yield a list. Traverse the list, binding each element to VAR
-and executing STMT @dots{}. The lambda form is a fake; you don't
+@deffn {CiSE Statement} for-each (@code{lambda} (var) stmt @dots{}) expr
+@deffnx {CiSE Statement} dolist [var expr] stmt @dots{}
+@var{expr} must yield a list. Traverse the list, binding each element to @var{var}
+and executing @var{stmt} @dots{}. The lambda form is a fake; you don't
 really create a closure.
-@end defspec
+@end deffn
 
-@defspec pair-for-each (lambda (VAR) STMT @dots{}) EXPR
-Like for-each, but VAR is bound to each 'spine' cell instead of each
+@deffn {CiSE Statement} pair-for-each (@code{lambda} (var) stmt @dots{}) expr
+Like @code{for-each}, but @var{var} is bound to each 'spine' cell instead of each
 element of the list.
-@end defspec
+@end deffn
 
-@defspec dopairs [VAR EXPR] STMT @dots{}
-@end defspec
+@deffn {CiSE Statement} dopairs [var expr] stmt @dots{}
+@end deffn
 
-@defspec dotimes (VAR EXPR) STMT @dots{}
-EXPR must yield an integer, N.  Repeat STMT ... by binding VAR from 0
-to (N-1).
-@end defspec
+@deffn {CiSE Statement} dotimes (var expr) stmt @dots{}
+@var{expr} must yield an integer, @var{n}.  Repeat @var{stmt} @dots{} by binding @var{var} from 0
+to (@var{n}-1).
+@end deffn
 
-@defspec return [EXPR]
-@defspecx break
-@defspecx continue
+@deffn {CiSE Statement} return [expr]
+@deffnx {CiSE Statement} break
+@deffnx {CiSE Statement} continue
 Return, break and continue statements.
-@end defspec
+@end deffn
 
-@defspec label NAME
-@defspecx goto NAME
+@deffn {CiSE Statement} label name
+@deffnx {CiSE Statement} goto name
 Label and goto statements. We always add a null statement after the
-label so that we can place (label NAME) at the end of a compound
+label so that we can place @code{(label @var{name})} at the end of a compound
 statement.
-@end defspec
+@end deffn
 
-@defspec .if @var{string} @var{stmt} @dots{}
-@defspecx .cond @var{clause} @dots{}
-@defspecx .define @var{name}[(@var{arg} @dots{})] [@var{expr}]
-@defspecx .undef @var{name}
-@defspecx .include @var{path}
+@deffn {CiSE Statement} .if @var{string} @var{stmt} @dots{}
+@deffnx {CiSE Statement} .cond @var{clause} @dots{}
+@deffnx {CiSE Statement} .define @var{name}[(@var{arg} @dots{})] [@var{expr}]
+@deffnx {CiSE Statement} .undef @var{name}
+@deffnx {CiSE Statement} .include @var{path}
 Preprocessor directives.
 
 Note that defining a macro function without value
@@ -1927,84 +1927,84 @@ generates the latter.
 
 @code{.include} could take a symbol. This is used for including system
 header files, e.g. @code{(.include <stdint.h>)}.
-@end defspec
+@end deffn
 
-@defspec + EXPR @dots{}
-@defspecx - EXPR @dots{}
-@defspecx * EXPR @dots{}
-@defspecx / EXPR @dots{}
-@defspecx % EXPR EXPR
+@deffn {CiSE Expression} + expr @dots{}
+@deffnx {CiSE Expression} - expr @dots{}
+@deffnx {CiSE Expression} * expr @dots{}
+@deffnx {CiSE Expression} / expr @dots{}
+@deffnx {CiSE Expression} % expr1 expr2
 Arithmetic operations.
-@end defspec
+@end deffn
 
-@defspec and EXPR @dots{}
-@defspecx or EXPR @dots{}
-@defspecx not EXPR
+@deffn {CiSE Expression} and expr @dots{}
+@deffnx {CiSE Expression} or expr @dots{}
+@deffnx {CiSE Expression} not expr
 Boolean operations.
-@end defspec
+@end deffn
 
-@defspec logand EXPR EXPR @dots{}
-@defspecx logior EXPR EXPR @dots{}
-@defspecx logxor EXPR EXPR @dots{}
-@defspecx lognot EXPR
-@defspecx << EXPR EXPR
-@defspecx >> EXPR EXPR
+@deffn {CiSE Expression} logand expr1 expr2 @dots{}
+@deffnx {CiSE Expression} logior expr1 expr2 @dots{}
+@deffnx {CiSE Expression} logxor expr1 expr2 @dots{}
+@deffnx {CiSE Expression} lognot expr
+@deffnx {CiSE Expression} << expr1 expr2
+@deffnx {CiSE Expression} >> expr1 expr2
 Bitwise operations.
-@end defspec
+@end deffn
 
-@defspec * EXPR
-@defspecx -> EXPR EXPR @dots{}
-@defspecx ref EXPR EXPR @dots{}
-@defspecx aref EXPR EXPR @dots{}
-@defspecx & EXPR
-Dereference, reference and address operations. 'ref' is C's
-'.'. 'aref' is array reference.
-@end defspec
+@deffn {CiSE Expression} * expr
+@deffnx {CiSE Expression} -> expr1 expr2 @dots{}
+@deffnx {CiSE Expression} ref expr1 expr2 @dots{}
+@deffnx {CiSE Expression} aref expr1 expr2 @dots{}
+@deffnx {CiSE Expression} & expr
+Dereference, reference and address operations. @code{ref} is C's
+@code{.}. @code{aref} is array reference.
+@end deffn
 
-@defspec pre++ EXPR
-@defspecx post++ EXPR
-@defspecx pre-- EXPR
-@defspecx post-- EXPR
+@deffn {CiSE Expression} pre++ expr
+@deffnx {CiSE Expression} post++ expr
+@deffnx {CiSE Expression} pre-- expr
+@deffnx {CiSE Expression} post-- expr
 Pre/Post increment or decrement.
-@end defspec
+@end deffn
 
-@defspec < EXPR EXPR
-@defspecx <= EXPR EXPR
-@defspecx > EXPR EXPR
-@defspecx >= EXPR EXPR
-@defspecx == EXPR EXPR
-@defspecx != EXPR EXPR
-Comparison
-@end defspec
+@deffn {CiSE Expression} < expr1 expr2
+@deffnx {CiSE Expression} <= expr1 expr2
+@deffnx {CiSE Expression} > expr1 expr2
+@deffnx {CiSE Expression} >= expr1 expr2
+@deffnx {CiSE Expression} == expr1 expr2
+@deffnx {CiSE Expression} != expr1 expr2
+Comparison.
+@end deffn
 
-@defspec set! LVALUE EXPR LVALUE EXPR @dots{}
-@defspecx = LVALUE EXPR LVALUE EXPR @dots{}
-@defspecx += LVALUE EXPR
-@defspecx -= LVALUE EXPR
-@defspecx *= LVALUE EXPR
-@defspecx /= LVALUE EXPR
-@defspecx %= LVALUE EXPR
-@defspecx <<= LVALUE EXPR
-@defspecx >>= LVALUE EXPR
-@defspecx logand= LVALUE EXPR
-@defspecx logior= LVALUE EXPR
-@defspecx logxor= LVALUE EXPR
-Assignment statements.
-@end defspec
+@deffn {CiSE Expression} set! lvalue1 expr1 lvalue2 expr2 @dots{}
+@deffnx {CiSE Expression} = lvalue1 expr1 lvalue2 expr2 @dots{}
+@deffnx {CiSE Expression} += lvalue expr
+@deffnx {CiSE Expression} -= lvalue expr
+@deffnx {CiSE Expression} *= lvalue expr
+@deffnx {CiSE Expression} /= lvalue expr
+@deffnx {CiSE Expression} %= lvalue expr
+@deffnx {CiSE Expression} <<= lvalue expr
+@deffnx {CiSE Expression} >>= lvalue expr
+@deffnx {CiSE Expression} logand= lvalue expr
+@deffnx {CiSE Expression} logior= lvalue expr
+@deffnx {CiSE Expression} logxor= lvalue expr
+Assignment expressions.
+@end deffn
 
-@defspec cast TYPE EXPR
+@deffn {CiSE Expression} cast type expr
 Type casting.
-@end defspec
+@end deffn
 
-@defspec ?: TEST-EXPR THEN-EXPR ELSE-EXPR
+@deffn {CiSE Expression} ?: test-expr then-expr else-expr
 Conditional expression.
-@end defspec
+@end deffn
 
-@defspec .type TYPE
+@deffn {CiSE Expression} .type type
 Useful to  place a type name, e.g. an argument of sizeof operator.
-@end defspec
+@end deffn
 
-@defspec define-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type} [@var{qualiter} @dots{}]] @var{stmt} @dots{}
+@deffn {CiSE Statement} define-cfn name (arg [@code{::} type] @dots{}) [ret-type [qualiter @dots{}]] stmt @dots{}
 Defines a C function.
 
 If @var{type} or @var{ret-type} is omitted, the default type is
@@ -2013,32 +2013,32 @@ If @var{type} or @var{ret-type} is omitted, the default type is
 Supported qualifiers are @code{:static} and @code{:inline}, corresponding
 to C's @code{static} and @code{inline} keywords.  If @code{:static} is
 specified, forward declaration is automatically generated.
-@end defspec
+@end deffn
 
-@defspec define-cvar @var{name} [:: @var{type}] [@var{qualifier} @dots{}] [@var{<init-expr>}]
+@deffn {CiSE Statement} define-cvar name [@code{::} type] [qualifier @dots{}] [<init-expr>]
 Defines a global C variable. Supported qualifier is
 @code{:static}. Note that array initialization is not supported yet.
-@end defspec
+@end deffn
 
-@defspec define-ctype @var{name} [:: @var{type}]
+@deffn {CiSE Statement} define-ctype name [@code{::} type]
 Defines a new type using @code{typedef}
-@end defspec
+@end deffn
 
-@defspec declare-cfn @var{name} (@var{arg} [:: @var{type}] @dots{}) [@var{ret-type}]
-@defspecx declare-cvar @var{name} [:: @var{type}]
+@deffn {CiSE Statement} declare-cfn name (arg [@code{::} type] @dots{}) [ret-type]
+@deffnx {CiSE Statement} declare-cvar name [@code{::} type]
 Declares an external C function or variable.
-@end defspec
+@end deffn
 
 
-@defspec .static-decls
+@deffn {CiSE Statement} .static-decls
 
 Produce declarations of static functions before function bodies.
 
-@end defspec
+@end deffn
 
-@defspec .raw-c-code body @dots{}
+@deffn {CiSE Statement} .raw-c-code body @dots{}
 
-@end defspec
+@end deffn
 
 @node CiSE procedures,  , CiSE syntax, C in S expression
 @subsubsection CiSE procedures
@@ -2102,50 +2102,50 @@ Produce declarations of static functions before function bodies.
 
 @node Stub generation, , C in S expression, Generating C code
 
-@defspec define-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
+@deffn {Stub Form} define-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
 Register a new type to be recognized.  This is rather a declaration
 than definition; no C code will be generated directly by this form.
-@end defspec
+@end deffn
 
-@defspec define-cproc name (ARGS @dots{}) [RET-TYPE] [FLAG @dots{}] [QUALIFIER @dots{}] BODY @dots{}
+@deffn {Stub Form} define-cproc name (args @dots{}) [ret-type] [flag @dots{}] [qualifier @dots{}] body @dots{}
 Create Scheme procedure.
 
 @var{args} specifies arguments:
 @itemize
 @item
-@code{ARG @dots{} [:rest VAR]} :
+@code{@var{arg} @dots{} [:rest @var{var}]} :
 Each @var{arg} is variable name or @var{var::type}, specifies required
 argument. If @code{:rest} is given, list of excessive arguments are
 passed to @var{var}.
 
 @item
-@code{ARG @dots{} :optional SPEC @dots{} [:rest VAR]} :
-Optional arguments. @var{spec} is @var{arg} or (@var{arg}
-@var{default}). If no default is given, @var{arg} receives
-@code{SCM_UNBOUND}---if @var{arg} isn't a type of @code{ScmObj} it will
+@code{@var{arg} @dots{} :optional @var{spec} @dots{} [:rest @var{rest-var}]} :
+Optional arguments. @var{spec} is @var{var} or (@var{var}
+@var{default}). If no @var{default} is given, @var{var} receives
+@code{SCM_UNBOUND}---if @var{var} isn't a type of @code{ScmObj} it will
 raise an error.
 
 @item
-@code{ARG @dots{} :key SPEC @dots{} [:allow-other-keys [:rest VAR]]} :
-Keyword arguments. @var{spec} is @var{arg} or (@var{arg}
-@var{default}).  If no default is given, @var{arg} receives
-SCM_UNBOUND---if @var{arg} isn't a type of @code{ScmObj} it will raise
+@code{ARG @dots{} :key @var{spec} @dots{} [:allow-other-keys [:rest @var{rest-var}]]} :
+Keyword arguments. @var{spec} is @var{var} or (@var{var}
+@var{default}).  If no @var{default} is given, @var{var} receives
+@code{SCM_UNBOUND}---if @var{var} isn't a type of @code{ScmObj} it will raise
 an error.
 
 @item
-@code{ARG @dots{} :optarray (VAR CNT MAX) [:rest VAR]} :
+@code{arg @dots{} :optarray (@var{var} @var{cnt} @var{max}) [:rest @var{rest-var}]} :
 A special syntax to receive optional arguments as a C array.
 @var{var} is a C variable of type @code{ScmObj*}. @var{cnt} is a C
 variable of type @code{int}, which receives the number of optional
 argument in the ScmObj array.  @var{max} specifies the maximum number
 of optional arguments that can be passed in the array form.  If more
 than @var{max} args are given, a list of excessive arguments are
-passed to the rest @var{var} if it is specified
+passed to the @var{rest-var} if it is specified
 @end itemize
 
 @var{ret-type} specifies the return type of function. It could be
 either @code{:: @var{typespec}} or @code{::@var{typespec}} where
-@var{typespec} is a valid stub type, or @code{(TYPE @dots{})} when
+@var{typespec} is a valid stub type, or @code{(@var{type} @dots{})} when
 multiple values are returned. When omitted, the procedure is assumed
 to return @code{<top>}.
 
@@ -2179,20 +2179,20 @@ supported.
 
 @itemize
 @item
-@code{(setter SETTER-NAME)} : specfy setter. @var{setter-name} should
+@code{(setter @var{setter-name})} : specfy setter. @var{setter-name} should
 be a cproc name defined in the same stub file
 
 @item
-@code{(setter (ARGS @dots{}) BODY @dots{})} : specify setter
+@code{(setter (@var{args} @dots{}) @var{body} @dots{})} : specify setter
 anonymously.
 
 @item
-@code{(catch (DECL C-STMT @dots{}) @dots{})} : when writing a stub
+@code{(catch (@var{decl} @var{c-stmt} @dots{}) @dots{})} : when writing a stub
 for C++ function that may throw an exception, use this spec to ensure
 the exception will be caught and converted to Gauche error condition.
 
 @item
-@code{(inliner INSN-NAME)} : only used in Gauche core procedures that
+@code{(inliner @var{insn-name})} : only used in Gauche core procedures that
 can be inlined into an VM insturuction.
 @end itemize
 
@@ -2201,9 +2201,9 @@ can be inlined into an VM insturuction.
 return from the cproc. As a special case, if @var{stmt} is a single
 symbol, it names a C function to be called with the same argument (mod
 unboxing) as the cproc.
-@end defspec
+@end deffn
 
-@defspec define-cgeneric @var{name} @var{c-name} @var{property-clause} @dots{}
+@deffn {Stub Form} define-cgeneric @var{name} @var{c-name} @var{property-clause} @dots{}
 Defines generic function. @var{c-name} specifies a C variable name
 that keeps the generic function structure. One or more of the
 following clauses can appear in @var{property-clause} @dots{}:
@@ -2217,14 +2217,14 @@ not define the structure as @code{static}).
 @code{(fallback "fallback")} : specifies the fallback function.
 
 @item
-@code{(setter . SETTER-SPEC)} : specifies the setter.
+@code{(setter . @var{setter-spec})} : specifies the setter.
 @end itemize
-@end defspec
+@end deffn
 
-@defspec define-cmethod @var{name} (@var{arg} @dots{}) @var{body} @dots{}
-@end defspec
+@deffn {Stub Form} define-cmethod @var{name} (@var{arg} @dots{}) @var{body} @dots{}
+@end deffn
 
-@defspec define-cclass @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type-name} @var{c-class-name} @var{cpa} (@var{slot-spec} @dots{}) @var{property} @dots{}
+@deffn {Stub Form} define-cclass @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type-name} @var{c-class-name} @var{cpa} (@var{slot-spec} @dots{}) @var{property} @dots{}
 Generates C stub for static class definition, slot accessors and
 initialization. Corresponding C struct has to be defined elsewhere.
 
@@ -2295,9 +2295,9 @@ The following @var{property} are supported:
 @code{(direct-supers @var{string} @dots{})}
 @end itemize
 
-@end defspec
+@end deffn
 
-@defspec define-cptr @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type} @var{c-name} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
+@deffn {Stub Form} define-cptr @var{scheme-name} [@var{qualifier} @dots{}] @var{c-type} @var{c-name} @var{c-pred} @var{c-boxer} @var{c-unboxer} [(flags @var{flag} @dots{})] [(print @var{print-proc})] [(cleanup @var{cleanup-proc})]
 Defines a new foreign pointer class based on
 @code{<foreign-pointer>}. It is suitable when the C structure is
 mostly passed around using pointers; most typically, when the foreign
@@ -2348,49 +2348,49 @@ C world) makes @code{Scm_MakeForeignPointer} (i.e. @var{c-boxer} when
 @code{:private} is used) return @code{SCM_FALSE} when the C pointer is
 @code{NULL}.
 @end itemize
-@end defspec
+@end deffn
 
-@defspec define-symbol @var{scheme-name} [@var{c-name}]
+@deffn {Stub Form} define-symbol @var{scheme-name} [@var{c-name}]
 Defines a Scheme symbol. No Scheme binding is created.
 When @var{c-name} is given, the named C variable points to the created
 @code{ScmSymbol}.
-@end defspec
+@end deffn
 
-@defspec define-variable @var{scheme-name} @var{initializer}
+@deffn {Stub Form} define-variable @var{scheme-name} @var{initializer}
 Defines a Scheme variable.
-@end defspec
+@end deffn
 
-@defspec define-constant @var{scheme-name} @var{initializer}
+@deffn {Stub Form} define-constant @var{scheme-name} @var{initializer}
 Defines a Scheme constant.
-@end defspec
+@end deffn
 
-@defspec define-enum @var{name}
-A define-constant Specialized for enum values. This is useful for
+@deffn {Stub Form} define-enum @var{name}
+A @code{define-constant} specialized for enum values. This is useful for
 exporting C enums to Scheme.
-@end defspec
+@end deffn
 
-@defspec define-enum-conditionally @var{name}
+@deffn {Stub Form} define-enum-conditionally @var{name}
 Abbreviation of @code{(if "defined(name)" (define-enum name))}
-@end defspec
+@end deffn
 
-@defspec define-cise-stmt @var{name} @var{clause} @dots{}
-@defspecx define-cise-expr @var{name} @var{clause} @dots{}
+@deffn {Stub Form} define-cise-stmt @var{name} @var{clause} @dots{}
+@deffnx {Stub Form} define-cise-expr @var{name} @var{clause} @dots{}
 Cise macro definitions (see @ref{C in S expression}).
-@end defspec
+@end deffn
 
-@defspec initcode @var{c-code}
+@deffn {Stub Form} initcode @var{c-code}
 Insert @var{c-code} literally in the initialization function
-@end defspec
+@end deffn
 
-@defspec declcode @var{stmt} @dots{}
+@deffn {Stub Form} declcode @var{stmt} @dots{}
 Inserts declaration code. @var{stmt} is usually @code{.include} or
 other preprocessor statements but it could also be a string which is
 treated as C fragments.
-@end defspec
+@end deffn
 
-@defspec begin @var{form} @dots{}
+@deffn {Stub Form} begin @var{form} @dots{}
 Treat each @var{form} as if they are toplevel stub forms.
-@end defspec
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node Character code conversion, Collection framework, Generating C code, Library modules - Gauche extensions
