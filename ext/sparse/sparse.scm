@@ -409,8 +409,8 @@
   (define-type <sparse-matrix> "SparseVector*" "sparse matrix"
     "SPARSE_MATRIX_BASE_P" "SPARSE_MATRIX")
 
-  "#define X_OOR  1"
-  "#define Y_OOR  2"
+  (.define X_OOR 1)
+  (.define Y_OOR 2)
 
   (define-cise-stmt oor-check
     [(_ oor which oorval)
@@ -426,8 +426,8 @@
   ;; 2 or 4 bits in 32bit/64bit integer.  Also, if key is distributed
   ;; enough, we wonder if there's much sense aligning to the node boundary.
   ;; So we adopt 4 bits interleaving instead.
-  "#define INTERLEAVE_SHIFT 4"
-  "#define INTERLEAVE_MASK ((1UL<<INTERLEAVE_SHIFT)-1)"
+  (.define INTERLEAVE_SHIFT 4)
+  (.define INTERLEAVE_MASK (- (<< 1UL INTERLEAVE_SHIFT) 1))
   
   (define-cfn index-combine-2d (x y oor::int*)
     ::u_long :static
