@@ -1776,7 +1776,8 @@ some support to overcome C quirks, such as preparing forward
 declarations.
 
 Currently, we don't do rigorous check for CiSE; you can pass a
-CiSE that yields invalid C code, which will cause the C compiler
+CiSE expression to the translator that yields invalid C code, which will
+cause the C compiler
 to emit errors.  The translator inserts line directives by default so the
 C compiler error message points to the location of original (CiSE) source
 instead of generated code; however, sometimes you need to look at
@@ -1803,8 +1804,8 @@ some basic concepts.
 
 A @emph{CiSE fragment} is an S-expression that follows
 CiSE syntax (@pxref{CiSE syntax}).  A CiSE fragment can be
-translated to C code by @code{cise-render} to a C code fragment.
-Note that some translation may not be local, meaning it may
+translated to a C code fragment by @code{cise-render}.
+Note that some translation may not be local, e.g. it may
 want to emit forward declarations before other C code fragments.
 So, the full translation requires buffering---you process all
 the CiSE fragments and save output, emit forward declarations,
@@ -1825,6 +1826,56 @@ and also it keeps track of forward declarations.
 @node CiSE syntax, CiSE procedures, CiSE overview, C in S expression
 @subsubsection CiSE syntax
 
+In this section, we lists basic CiSE syntax.  They are just data from
+the viewpoint of Gauche---so you can build and manipulate them like
+any S-expression (quasiquote comes pretty handy).
+
+@subsubheading CiSE types
+
+C types can be written either as a symbol (e.g. @code{int}) or
+a list (e.g. @code{(const char *)}.  When used in definition, it is
+preceded by @code{::}.  The following example shows typess
+are used in local variable definitions:
+
+@example
+(let* ([a :: int 0]
+       [b :: (const char *) "abc"])
+  ...)
+@end example
+
+For the convenience and readability, you can write the variable name,
+separting double-colon and type name concatenated.  You can also concatenate
+point suffixes (@code{char*} instead of @code{char *} in the following example):
+
+@example
+(let* ([a::int 0]
+       [b::(const char*) "abc"])
+  ...)
+@end example
+
+CiSE translater first breaks up these concatenated forms, then
+deal with types.
+
+At this moment, CiSE does @emph{not} check if type is valid C type.
+It just pass along whatever given.
+
+There are a few special type notations for more complex types.
+These can appear in middle of the type; for example, you can write
+@code{(const .struct x (a::int b::double) *)} to produce
+@code{const struct x @{int a; double b;@} *}.
+
+@deffn {CiSE Type} .array elt-type (dim @dots{})
+@end deffn
+
+@deffn {CiSE Type} .struct [tag] [(field-spec @dots{})]
+@deffnx {CiSE Type} .union [tag] [(field-spec @dots{})]
+@end deffn
+
+@deffn {CiSE Type} .function (arg-spec @dots{}) ret-type
+@end deffn
+
+
+@subsubheading CiSE statements
 
 @deffn {CiSE Statement} begin stmt @dots{}
 Code grouping with @code{@{} and @code{@}}
@@ -1833,23 +1884,7 @@ Code grouping with @code{@{} and @code{@}}
 @deffn {CiSE Statement} let* ((name [@code{::} type] [init-expr]) @dots{}) stmt @dots{}
 Declare and optionally assign initial values to local variables.
 
-@var{type} could be
-
-@itemize
-@item
-A symbol, e.g. @code{int}
-@item
-A list of symbols, e.g. @code{(const char *)}
-@item
-An array type in the form @code{(.array @var{elem-type} (@var{size} @dots{}))}
-@item
-A struct type in the form
-@code{(.struct [@var{name}] [(@var{field-name}[::@var{type}] @dots{})])}
-@item
-A union type in the form
-@code{(.union [@var{name}] [(@var{field-name}[::@var{type}] @dots{})])}
-@end itemize
-
+@var{type} should be a CiSE type.
 If @var{type} is omitted, the default type is @code{ScmObj}. Note that
 array initialization is not supported yet.
 @end deffn
@@ -1929,6 +1964,44 @@ generates the latter.
 header files, e.g. @code{(.include <stdint.h>)}.
 @end deffn
 
+@deffn {CiSE Statement} define-cfn name (arg [@code{::} type] @dots{}) [ret-type [qualiter @dots{}]] stmt @dots{}
+Defines a C function.
+
+If @var{type} or @var{ret-type} is omitted, the default type is
+@code{ScmObj}.
+
+Supported qualifiers are @code{:static} and @code{:inline}, corresponding
+to C's @code{static} and @code{inline} keywords.  If @code{:static} is
+specified, forward declaration is automatically generated.
+@end deffn
+
+@deffn {CiSE Statement} define-cvar name [@code{::} type] [qualifier @dots{}] [<init-expr>]
+Defines a global C variable. Supported qualifier is
+@code{:static}. Note that array initialization is not supported yet.
+@end deffn
+
+@deffn {CiSE Statement} define-ctype name [@code{::} type]
+Defines a new type using @code{typedef}
+@end deffn
+
+@deffn {CiSE Statement} declare-cfn name (arg [@code{::} type] @dots{}) [ret-type]
+@deffnx {CiSE Statement} declare-cvar name [@code{::} type]
+Declares an external C function or variable.
+@end deffn
+
+
+@deffn {CiSE Statement} .static-decls
+
+Produce declarations of static functions before function bodies.
+
+@end deffn
+
+@deffn {CiSE Statement} .raw-c-code body @dots{}
+
+@end deffn
+
+@subsubheading CiSE expressions
+
 @deffn {CiSE Expression} + expr @dots{}
 @deffnx {CiSE Expression} - expr @dots{}
 @deffnx {CiSE Expression} * expr @dots{}
@@ -2004,41 +2077,6 @@ Conditional expression.
 Useful to  place a type name, e.g. an argument of sizeof operator.
 @end deffn
 
-@deffn {CiSE Statement} define-cfn name (arg [@code{::} type] @dots{}) [ret-type [qualiter @dots{}]] stmt @dots{}
-Defines a C function.
-
-If @var{type} or @var{ret-type} is omitted, the default type is
-@code{ScmObj}.
-
-Supported qualifiers are @code{:static} and @code{:inline}, corresponding
-to C's @code{static} and @code{inline} keywords.  If @code{:static} is
-specified, forward declaration is automatically generated.
-@end deffn
-
-@deffn {CiSE Statement} define-cvar name [@code{::} type] [qualifier @dots{}] [<init-expr>]
-Defines a global C variable. Supported qualifier is
-@code{:static}. Note that array initialization is not supported yet.
-@end deffn
-
-@deffn {CiSE Statement} define-ctype name [@code{::} type]
-Defines a new type using @code{typedef}
-@end deffn
-
-@deffn {CiSE Statement} declare-cfn name (arg [@code{::} type] @dots{}) [ret-type]
-@deffnx {CiSE Statement} declare-cvar name [@code{::} type]
-Declares an external C function or variable.
-@end deffn
-
-
-@deffn {CiSE Statement} .static-decls
-
-Produce declarations of static functions before function bodies.
-
-@end deffn
-
-@deffn {CiSE Statement} .raw-c-code body @dots{}
-
-@end deffn
 
 @node CiSE procedures,  , CiSE syntax, C in S expression
 @subsubsection CiSE procedures
