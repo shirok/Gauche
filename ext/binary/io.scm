@@ -517,20 +517,20 @@
 ;;;
 
 (inline-stub
- (define-cvar short_align::(.struct (b::char s::short)))
- (define-cvar int_align::(.struct (b::char s::int)))
- (define-cvar long_align::(.struct (b::char s::long)))
- (define-cvar float_align::(.struct (b::char s::float)))
- (define-cvar double_align::(.struct (b::char s::double)))
- (define-cvar int8_align::(.struct (b::char s::int8_t)))
- (define-cvar int16_align::(.struct (b::char s::int16_t)))
- (define-cvar int32_align::(.struct (b::char s::int32_t)))
- (define-cvar int64_align::(.struct (b::char s::ScmInt64)))
+ (define-cvar short_align::(.struct (b::char s::short)) :static)
+ (define-cvar int_align::(.struct (b::char s::int)) :static)
+ (define-cvar long_align::(.struct (b::char s::long)) :static)
+ (define-cvar float_align::(.struct (b::char s::float)) :static)
+ (define-cvar double_align::(.struct (b::char s::double)) :static)
+ (define-cvar int8_align::(.struct (b::char s::int8_t)) :static)
+ (define-cvar int16_align::(.struct (b::char s::int16_t)) :static)
+ (define-cvar int32_align::(.struct (b::char s::int32_t)) :static)
+ (define-cvar int64_align::(.struct (b::char s::ScmInt64)) :static)
 
  (if (defined HAVE_LONG_LONG)
      (define-ctype long_long_::(long long))
      (define-ctype long_long_::long))
- (define-cvar long_long_align::(.struct (b::char s::long_long_)))
+ (define-cvar long_long_align::(.struct (b::char s::long_long_)) :static)
 
  (.define alignof (str) (- (cast intptr_t (& (ref str s)))
                            (cast intptr_t (& (ref str b)))))
