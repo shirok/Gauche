@@ -13,8 +13,9 @@ Gauche installed on your machine, for it is required to generate
 some C files.   If you don't have one, grab the release tarball
 and install it.
 
-You also need autoconf (>= 2.69), automake (>= 1.14.1),
-libtool (>= 2.4.2) and pkg-config (>= 0.26).
+You also need a C compiler supporting C11, e.g. gcc (>= 4.9) or clang (>= 3.3),
+autoconf (>= 2.69), automake (>= 1.14.1),
+libtool (>= 2.4.2), and pkg-config (>= 0.26).
 (Note on macOS users: Xcode now only includes subset
 of autotools.  You have to install full set either manually
 or thru MacPorts or Homebrew.  Xcode's libtool *does not work*).
