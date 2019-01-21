@@ -292,6 +292,14 @@
   `(make <form-parser> :name ',name :args ',args
          :handler (^ (&whole ,@args) ,@body)))
 
+(define-syntax export-toplevel-cise-form
+  (syntax-rules ()
+    [(_ name)
+     (define-form-parser name args
+       (parameterize ([cise-ambient (cise-ambient-copy (cise-ambient) '())])
+         (cgen-body (cise-render-to-string `(name ,@args) 'toplevel))
+         (cgen-decl (cise-ambient-decl-strings (cise-ambient)))))]))
+
 (define-method invoke ((self <form-parser>) form)
   (define (badform)
     (errorf <cgen-stub-error> "stub: malformed ~a: ~s" (~ self'name) form))
@@ -326,15 +334,18 @@
 (define-form-parser define-cise-expr args
   (eval `(define-cise-expr ,@args) (current-module)))
 
-(define-form-parser define-cfn args
-  (parameterize ([cise-ambient (cise-ambient-copy (cise-ambient) '())])
-    (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel))
-    (cgen-decl (cise-ambient-decl-strings (cise-ambient)))))
+;; toplevel CiSE forms
+(export-toplevel-cise-form declare-cfn)
+(export-toplevel-cise-form declare-cvar)
+(export-toplevel-cise-form define-cfn)
+(export-toplevel-cise-form define-ctype)
+(export-toplevel-cise-form define-cvar)
 
-(define-form-parser declare-cfn args
-  (parameterize ([cise-ambient (cise-ambient-copy (cise-ambient) '())])
-    (cgen-body (cise-render-to-string `(declare-cfn ,@args) 'toplevel))
-    (cgen-decl (cise-ambient-decl-strings (cise-ambient)))))
+; CiSE forms .if, .cond and .include are not exported because there
+; are stub parsers include, if and when that do the same thing but
+; also recognize stub forms.
+(export-toplevel-cise-form .define)
+(export-toplevel-cise-form .undef)
 
 ;; extra check of valid clauses
 (define (check-clauses directive name clauses valid-keys)

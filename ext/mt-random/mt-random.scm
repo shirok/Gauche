@@ -47,7 +47,8 @@
 (select-module math.mt-random)
 
 (inline-stub
- (declcode "#include \"mt-random.h\"")
+ (declcode
+  (.include "mt-random.h"))
  (initcode (Scm_Init_mt_random))
  
  (define-type <mersenne-twister> "ScmMersenneTwister*")

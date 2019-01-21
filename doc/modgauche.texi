@@ -2413,6 +2413,13 @@ Abbreviation of @code{(if "defined(name)" (define-enum name))}
 
 @deffn {Stub Form} define-cise-stmt @var{name} @var{clause} @dots{}
 @deffnx {Stub Form} define-cise-expr @var{name} @var{clause} @dots{}
+@deffnx {Stub Form} define-cfn @dots{}
+@deffnx {Stub Form} declare-cfn @dots{}
+@deffnx {Stub Form} define-cvar @dots{}
+@deffnx {Stub Form} declare-cvar @dots{}
+@deffnx {Stub Form} define-ctype @dots{}
+@deffnx {Stub Form} .define @dots{}
+@deffnx {Stub Form} .undef @dots{}
 Cise macro definitions (see @ref{C in S expression}).
 @end deffn
 
@@ -2429,6 +2436,37 @@ treated as C fragments.
 @deffn {Stub Form} begin @var{form} @dots{}
 Treat each @var{form} as if they are toplevel stub forms.
 @end deffn
+
+@deffn {Stub Form} if @var{test} @var{then-stmt} [@var{else-stmt}]
+@deffnx {Stub Form} when @var{test} @var{stmt}
+Generate @code{#if @var{test}} preprocessor code. @var{test} could be
+a string, a symbol, a number or one of the following forms:
+@itemize
+@item
+@code{(defined @var{c})}
+@item
+@code{(not @var{c})}
+@item
+@code{(and @var{c})}
+@item
+@code{(or @var{c})}
+@item
+@code{(@var{op} @var{c} @dots{})} where @var{op} is either @code{+} or
+@code{*}.
+@item
+@code{(@var{op} @var{c} @var{c} @dots{})} where @var{op} is either
+@code{-} or @code{/}.
+@item
+@code{(@var{op} @var{c} @var{c})} where @var{op} is either @code{>},
+@code{>=}, @code{==}, @code{<}, @code{<=}, @code{!=}, @code{logand},
+@code{logior}, @code{lognot}, @code{<<} or @code{>>}.
+@end itemize
+@end deffn
+
+@deffn {Stub Form} include @var{file}
+Include and evaluate another stub file.
+@end deffn
+
 
 @c ----------------------------------------------------------------------
 @node Character code conversion, Collection framework, Generating C code, Library modules - Gauche extensions

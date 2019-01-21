@@ -87,16 +87,17 @@
 ;;;
 
 (inline-stub
- "#include <gauche/class.h>"
- "#include \"md5.h\""
+ (declcode
+  (.include <gauche/class.h>)
+  (.include "md5.h")
 
- "#define LIBGAUCHE_EXT_BODY"
- "#include <gauche/extern.h>  /* fix SCM_EXTERN in SCM_CLASS_DECL */"
+  (.define LIBGAUCHE_EXT_BODY)
+  (.include <gauche/extern.h>)      ; fix SCM_EXTERN in SCM_CLASS_DECL
+  )
 
- "typedef struct ScmMd5ContextRec {"
- "  SCM_HEADER;"
- "  MD5_CTX ctx;"
- "} ScmMd5Context;"
+ (define-ctype ScmMd5Context::(.struct
+                               (SCM_HEADER :: ""
+                                ctx::MD5_CTX)))
 
  (define-cclass <md5-context> :private
    ScmMd5Context* "Scm_Md5ContextClass" ()

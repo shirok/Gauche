@@ -47,7 +47,8 @@
 (select-module gauche.fcntl)
 
 (inline-stub
- (declcode "#include \"gauche/fcntl.h\"")
+ (declcode
+  (.include "gauche/fcntl.h"))
  
  (define-enum F_DUPFD)
  (define-enum F_GETFD)

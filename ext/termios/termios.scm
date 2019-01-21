@@ -38,7 +38,8 @@
 (select-module gauche.termios)
 
 (inline-stub
- "#include \"gauche-termios.h\""
+ (declcode
+  (.include "gauche-termios.h"))
 
  ;;---------------------------------------------------------------------
  ;; termios.h

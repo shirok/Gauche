@@ -167,24 +167,20 @@
 ;;;
 
 (inline-stub
- "#include <fcntl.h>"
- "#include \"dbmconf.h\""
+ (declcode
+  (.include <fcntl.h>)
+  (.include "dbmconf.h")
+  (.cond
+   ["HAVE_NDBM_H" (.include <ndbm.h>)]
+   ["HAVE_GDBM_SLASH_NDBM_H" (.include <gdbm/ndbm.h>)]
+   ["HAVE_GDBM_MINUS_NDBM_H" (.include <gdbm-ndbm.h>)])
+  (.include "ndbm-suffixes.h"))
 
- "#if HAVE_NDBM_H"
- "#include <ndbm.h>"
- "#elif HAVE_GDBM_SLASH_NDBM_H"
- "#include <gdbm/ndbm.h>"
- "#elif HAVE_GDBM_MINUS_NDBM_H"
- "#include <gdbm-ndbm.h>"
- "#endif"
-
- "#include \"ndbm-suffixes.h\""
-
- "typedef struct ScmNdbmFileRec {"
- "  SCM_HEADER;"
- "  ScmObj name;"
- "  DBM *dbf;                   /* NULL if closed */"
- "} ScmNdbmFile;"
+ (define-ctype ScmNdbmFile::(.struct
+                             (SCM_HEADER :: ""
+                              name
+                              dbf::DBM* ; NULL if closed
+                              )))
 
  (define-cclass <ndbm-file> :private ScmNdbmFile* "Scm_NdbmFileClass" ()
    ()

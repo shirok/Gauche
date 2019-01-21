@@ -40,10 +40,9 @@
 
 (inline-stub
  (declcode
-  "#include <gauche/extend.h>"
-  "#ifdef HAVE_SYSLOG_H"
-  "#include <syslog.h>"
-  "#endif")
+  (.include <gauche/extend.h>)
+  (.if "defined(HAVE_SYSLOG_H)"
+       (.include <syslog.h>)))
 
  ;; On the platforms which don't have syslog facility, should we raise
  ;; a "not implemented" error, or simply discard the requests?  I tend to
@@ -87,15 +86,9 @@
  ;; We need to define at least these three logging option constants,
  ;; for they are referenced in gauche.logger.  The actual value doesn't matter.
  (declcode
-  "#ifndef LOG_PID"
-  "#define LOG_PID 0"
-  "#endif"
-  "#ifndef LOG_INFO"
-  "#define LOG_INFO 1"
-  "#endif"
-  "#ifndef LOG_USER"
-  "#define LOG_USER 2"
-  "#endif")
+  (.if "!defined(LOG_PID)" (.define LOG_PID 0))
+  (.if "!defined(LOG_INFO)" (.define LOG_INFO 1))
+  (.if "!defined(LOG_USER)" (.define LOG_USER 2)))
 
  ;; openlog options
  (define-enum-conditionally LOG_CONS)

@@ -229,7 +229,8 @@
 ;;;
 
 (inline-stub
- "#include \"binary.h\""
+ (declcode
+  (.include "binary.h"))
  
  (define-cproc read-u8
    (:optional (port::<input-port>? #f) (endian::<symbol>? #f))
@@ -516,25 +517,23 @@
 ;;;
 
 (inline-stub
- "struct { char b; short s; }    short_align;"
- "struct { char b; int s; }      int_align;"
- "struct { char b; long s; }     long_align;"
- "struct { char b; float s; }    float_align;"
- "struct { char b; double s; }   double_align;"
- "struct { char b; int8_t s; }   int8_align;"
- "struct { char b; int16_t s; }  int16_align;"
- "struct { char b; int32_t s; }  int32_align;"
- "struct { char b; ScmInt64 s; } int64_align;"
+ (define-cvar short_align::(.struct (b::char s::short)) :static)
+ (define-cvar int_align::(.struct (b::char s::int)) :static)
+ (define-cvar long_align::(.struct (b::char s::long)) :static)
+ (define-cvar float_align::(.struct (b::char s::float)) :static)
+ (define-cvar double_align::(.struct (b::char s::double)) :static)
+ (define-cvar int8_align::(.struct (b::char s::int8_t)) :static)
+ (define-cvar int16_align::(.struct (b::char s::int16_t)) :static)
+ (define-cvar int32_align::(.struct (b::char s::int32_t)) :static)
+ (define-cvar int64_align::(.struct (b::char s::ScmInt64)) :static)
 
- "#ifdef HAVE_LONG_LONG"
- "typedef long long long_long_;"
- "struct { char b; long long s; } long_long_align;"
- "#else"
- "typedef long long_long_;"
- "struct { char b; long s; }      long_long_align;"
- "#endif"
+ (if (defined HAVE_LONG_LONG)
+     (define-ctype long_long_::(long long))
+     (define-ctype long_long_::long))
+ (define-cvar long_long_align::(.struct (b::char s::long_long_)) :static)
 
- "#define alignof(str) ((intptr_t)&((str).s) - (intptr_t)&((str).b))"
+ (.define alignof (str) (- (cast intptr_t (& (ref str s)))
+                           (cast intptr_t (& (ref str b)))))
 
  (define-cproc %primitive-type-info ()
    (return

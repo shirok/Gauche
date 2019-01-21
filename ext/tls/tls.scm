@@ -74,7 +74,8 @@
   [else]))
 
 (inline-stub
- (declcode "#include \"gauche-tls.h\" ")
+ (declcode
+  (.include "gauche-tls.h"))
 
  (define-type <tls> "ScmTLS*")
 

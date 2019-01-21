@@ -221,7 +221,8 @@
 ;;
 
 (inline-stub
- "#include \"charconv.h\""
+ (declcode
+  (.include "charconv.h"))
 
  (define-cproc ces-conversion-supported? (from to) ::<boolean>
    (let* ([cfrom::(const char*) (Scm_GetCESName from "from-code")]

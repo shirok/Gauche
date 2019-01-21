@@ -172,14 +172,15 @@
 ;;;
 
 (inline-stub
- "#include <gdbm.h>"
- "#include <stdlib.h>"
+ (declcode
+  (.include <gdbm.h>)
+  (.include <stdlib.h>))
 
- "typedef struct ScmGdbmFileRec {
-    SCM_HEADER;
-    ScmObj name;
-    GDBM_FILE dbf;              /* NULL if closed */
-  } ScmGdbmFile;"
+ (define-ctype ScmGdbmFile::(.struct
+                             (SCM_HEADER :: ""
+                              name
+                              dbf::GDBM_FILE ; NULL if closed
+                              )))
 
  (define-cclass <gdbm-file> :private ScmGdbmFile* "Scm_GdbmFileClass" ()
    ()
@@ -215,21 +216,11 @@
     `(unless (-> ,g dbf) (Scm_Error "gdbm file already closed: %S" ,g))])
 
  ;; Those symbols may not be defined in the older gdbm
- "#ifndef GDBM_SYNC"
- "#define GDBM_SYNC 0"
- "#endif"
- "#ifndef GDBM_NOLOCK"
- "#define GDBM_NOLOCK 0"
- "#endif"
- "#ifndef GDBM_SYNCMODE"
- "#define GDBM_SYNCMODE 0"
- "#endif"
- "#ifndef GDBM_CENTFREE"
- "#define GDBM_CENTFREE 0"
- "#endif"
- "#ifndef GDBM_COALESCEBLKS"
- "#define GDBM_COALESCEBLKS 0"
- "#endif"
+ (when (not (defined GDBM_SYNC)) (.define GDBM_SYNC 0))
+ (when (not (defined GDBM_NOLOCK)) (.define GDBM_NOLOCK 0))
+ (when (not (defined GDBM_SYNCMODE)) (.define GDBM_SYNCMODE 0))
+ (when (not (defined GDBM_CENTFREE)) (.define GDBM_CENTFREE 0))
+ (when (not (defined GDBM_COALESCEBLKS)) (.define GDBM_COALESCEBLKS 0))
 
  (define-cproc gdbm-open
    (name::<string> :optional (size::<fixnum> 0)

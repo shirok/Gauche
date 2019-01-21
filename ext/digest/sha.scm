@@ -116,18 +116,19 @@
 ;;;
 
 (inline-stub
- "#include <gauche/class.h>"
- ;; customization for sha2.h
- "#define SHA2_USE_INTTYPES_H" ; use uintXX_t
- "#include \"sha2.h\""
+ (declcode
+  (.include <gauche/class.h>)
+  ;; customization for sha2.h
+  (.define SHA2_USE_INTTYPES_H)         ; use uintXX_t
+  (.include "sha2.h")
 
- "#define LIBGAUCHE_EXT_BODY"
- "#include <gauche/extern.h>  /* fix SCM_EXTERN in SCM_CLASS_DECL */"
+  (.define LIBGAUCHE_EXT_BODY)
+  (.include <gauche/extern.h>)      ; fix SCM_EXTERN in SCM_CLASS_DECL
+  )
 
- "typedef struct ScmShaContextRec {"
- " SCM_HEADER;"
- " SHA_CTX ctx;"
- "} ScmShaContext;"
+ (define-ctype ScmShaContext::(.struct
+                               (SCM_HEADER :: ""
+                                ctx::SHA_CTX)))
 
  (define-cclass <sha-context> :private
    ScmShaContext* "Scm_ShaContextClass" ()
