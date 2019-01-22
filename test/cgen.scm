@@ -23,14 +23,14 @@ static void foo() { ... }
 void Scm__Init_tmp_2eo(void)
 {
 foo();
-#if ((defined FOO))||((defined BAR))
+#if (defined(FOO))||(defined(BAR))
 init_foo_bar();
-#endif /* ((defined FOO))||((defined BAR)) */
-#if ((defined FOO))||((defined BAR))
-#if ((>= BAR_VERSION 3))&&((== FOO_VERSION 2))
+#endif /* (defined(FOO))||(defined(BAR)) */
+#if (defined(FOO))||(defined(BAR))
+#if ((BAR_VERSION)>=(3))&&((FOO_VERSION)==(2))
 some_trick();
-#endif /* ((>= BAR_VERSION 3))&&((== FOO_VERSION 2)) */
-#endif /* ((defined FOO))||((defined BAR)) */
+#endif /* ((BAR_VERSION)>=(3))&&((FOO_VERSION)==(2)) */
+#endif /* (defined(FOO))||(defined(BAR)) */
 }
 "
        (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])

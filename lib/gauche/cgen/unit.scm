@@ -186,9 +186,9 @@
        (binary op c0 c1)]
       [_ (error "Invalid C preprocessor condition expression:" condition)]))
   (define (n-ary op cs)
-    (string-concatenate (intersperse (x->string op) (map (^c #"(~c)") cs))))
+    (string-concatenate (intersperse (x->string op) (map (^c #"(~(rec c))") cs))))
   (define (binary op c0 c1)
-    #"(~(rec c0)~|op|(~(rec c1))")
+    #"(~(rec c0))~|op|(~(rec c1))")
   (rec condition))
 
 ;; fallback methods
