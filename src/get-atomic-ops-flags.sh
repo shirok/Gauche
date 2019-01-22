@@ -15,12 +15,12 @@ fi
 case $option in
     --cflags)
         cflags=`sed -n -e 's@ATOMIC_OPS_CFLAGS =\(.*\)@\1@p' $gc_makefile`
-        sed_text1='s@$(top_builddir)@'
-        sed_text2="${top_builddir}/gc@"
-        cflags=`echo "$cflags" | sed -e "$sed_text1$sed_text2"`
-        sed_text1='s@$(top_srcdir)@'
-        sed_text2="${top_srcdir}/gc@"
-        cflags=`echo "$cflags" | sed -e "$sed_text1$sed_text2"`
+        sed_text1='$(top_builddir)'
+        sed_text2=`echo "${top_builddir}/gc" | sed -e 's/[\@&]/\\&/g'`
+        cflags=`echo "$cflags" | sed -e "s@$sed_text1@$sed_text2@"`
+        sed_text1='$(top_srcdir)'
+        sed_text2=`echo "${top_srcdir}/gc" | sed -e 's/[\@&]/\\&/g'`
+        cflags=`echo "$cflags" | sed -e "s@$sed_text1@$sed_text2@"`
         if grep 'define GC_BUILTIN_ATOMIC' $gc_config > /dev/null; then
             cflags="-DGC_BUILTIN_ATOMIC $cflags"
         fi
