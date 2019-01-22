@@ -928,16 +928,16 @@
   (match form
     [(_ condition stmt1)
      `("\n" |#reset-line|               ;make sure we start from the fresh line
-       "#if " ,(x->string condition) "\n" |#reset-line|
+       "#if " ,(cpp-condition->string condition) "\n" |#reset-line|
        ,(render-rec stmt1 env) "\n"
-       "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]
+       "#endif /* " ,(cpp-condition->string condition) " */\n" |#reset-line|)]
     [(_ condition stmt1 stmt2)
      `("\n" |#reset-line|               ;make sure we start from the fresh line
-       "#if " ,(x->string condition) "\n" |#reset-line|
+       "#if " ,(cpp-condition->string condition) "\n" |#reset-line|
        ,(render-rec stmt1 env) "\n"
-       "#else  /* !",(x->string condition) " */\n" |#reset-line|
+       "#else /* !",(cpp-condition->string condition) " */\n" |#reset-line|
        ,(render-rec stmt2 env) "\n"
-       "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]))
+       "#endif /* " ,(cpp-condition->string condition) " */\n" |#reset-line|)]))
 
 ;; [cise toplevel/stmt] .cond CLAUSE [CLAUSE]
 ;;   c preprocessor if/elif/endif chain directive
@@ -948,7 +948,7 @@
      `("\n#if 0 /*dummy*/\n" |#reset-line|
        ,@(fold-right (lambda (c ss seed)
                        `(,(cond [(eq? c 'else) '("#else")]
-                                [else `("#elif " ,(x->string c))])
+                                [else `("#elif " ,(cpp-condition->string c))])
                          "\n" |#reset-line|
                          ,(map (cut render-rec <> env) ss) "\n"
                          ,@seed))

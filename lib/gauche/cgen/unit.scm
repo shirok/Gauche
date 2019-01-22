@@ -46,7 +46,7 @@
           <cgen-node> cgen-with-cpp-condition cgen-cpp-conditions cgen-emit
           cgen-emit-xtrn cgen-emit-decl cgen-emit-body cgen-emit-init
           cgen-extern cgen-decl cgen-body cgen-init
-          cgen-include cgen-define
+          cgen-include cgen-define cpp-condition->string
 
           cgen-safe-name cgen-safe-name-friendly
           cgen-safe-string cgen-safe-comment
