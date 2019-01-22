@@ -939,6 +939,28 @@
        ,(render-rec stmt2 env) "\n"
        "#endif /* " ,(cpp-condition->string condition) " */\n" |#reset-line|)]))
 
+;; [cise toplevel/stmt] .when STRING STMT [STMT]
+;;   c preprocessor directive
+(define-cise-macro (.when form env)
+  (ensure-stmt-or-toplevel-ctx form env)
+  (match form
+    [(_ condition stmt ...)
+     `("\n" |#reset-line|               ;make sure we start from the fresh line
+       "#if " ,(cpp-condition->string condition) "\n" |#reset-line|
+       ,(intersperse "\n" (map (cut render-rec <> env) stmt)) "\n"
+       "#endif /* " ,(cpp-condition->string condition) " */\n" |#reset-line|)]))
+
+;; [cise toplevel/stmt] .unless STRING STMT [STMT]
+;;   c preprocessor directive
+(define-cise-macro (.unless form env)
+  (ensure-stmt-or-toplevel-ctx form env)
+  (match form
+    [(_ condition stmt ...)
+     `("\n" |#reset-line|               ;make sure we start from the fresh line
+       "#if !(" ,(cpp-condition->string condition) ")\n" |#reset-line|
+       ,(intersperse "\n" (map (cut render-rec <> env) stmt)) "\n"
+       "#endif /* ! " ,(cpp-condition->string condition) " */\n" |#reset-line|)]))
+
 ;; [cise toplevel/stmt] .cond CLAUSE [CLAUSE]
 ;;   c preprocessor if/elif/endif chain directive
 (define-cise-macro (.cond form env)

@@ -1943,6 +1943,8 @@ statement.
 @end deffn
 
 @deffn {CiSE Statement} .if @var{expr} @var{stmt} [@var{stmt}]
+@deffnx {CiSE Statement} .when @var{expr} @var{stmt} @dots{}
+@deffnx {CiSE Statement} .unless @var{expr} @var{stmt} @dots{}
 @deffnx {CiSE Statement} .cond @var{clause} @dots{}
 @deffnx {CiSE Statement} .define @var{name}[(@var{arg} @dots{})] [@var{expr}]
 @deffnx {CiSE Statement} .undef @var{name}

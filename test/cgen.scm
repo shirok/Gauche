@@ -169,7 +169,7 @@ some_trick();
   (c '(.define foo (bar) (+ 2 3)) "#define foo(bar) ((2)+(3))\n")
   (c '(.define foo (a b) (+ a b)) "#define foo(a,b) ((a)+(b))\n"))
 
-;; .if .cond
+;; .if .cond .when .unless
 (parameterize ([cise-emit-source-line #f])
   (define (c form exp)
     (test* (format "cise transform: ~a" form)
@@ -197,6 +197,18 @@ some_trick();
        "#if ((1)+(2))&&(((3)-((4)<<(2)))||(4))"
        "then;"
        "#endif /* ((1)+(2))&&(((3)-((4)<<(2)))||(4)) */"))
+  (c '(.when 1 foo bar)
+     '(""
+       "#if 1"
+       "foo;"
+       "bar;"
+       "#endif /* 1 */"))
+  (c '(.unless (defined haha) foo bar)
+     '(""
+       "#if !(defined(haha))"
+       "foo;"
+       "bar;"
+       "#endif /* ! defined(haha) */"))
 
   (c '(.cond [(and foo bar) one]
              [(defined xyz) two]
