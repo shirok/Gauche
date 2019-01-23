@@ -87,7 +87,7 @@
    (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
      (return (ntohs (ref (-> a addr) sin_port)))))
 
- (when "defined HAVE_IPV6"
+ (.when (defined HAVE_IPV6)
    (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
      (cast void addr)                     ; suppress unused var warning
      (return 'inet6))
@@ -205,7 +205,9 @@
     (return (Scm_SocketOutputPort sock bufmode))))
 
 (inline-stub 
- (if "defined(SHUT_RD) && defined(SHUD_WR) && defined(SHUT_RDWR)"
+ (.if (and (defined SHUT_RD)
+           (defined SHUT_WR)
+           (defined SHUT_RDWR))
    (begin
      (define-enum SHUT_RD)
      (define-enum SHUT_WR)
@@ -416,7 +418,7 @@
 (inline-stub 
  (declare-cfn addrinfo_allocate (klass::ScmClass* intargs))
 
- (if "defined HAVE_IPV6"
+ (.if (defined HAVE_IPV6)
     (begin
       (define-type <sys-addrinfo> "ScmSysAddrinfo*" #f
         "SCM_SYS_ADDRINFO_P" "SCM_SYS_ADDRINFO")
@@ -500,7 +502,7 @@
       (Scm_Error "uniform vector buffer too short: %S" buf))
     (for [() (> size 0) (-= size 2)]
          (when (== size 1)
-           (.if "WORDS_BIGENDIAN"
+           (.if WORDS_BIGENDIAN
                 (+= sum (<< (* (cast u_char* wp)) 8))
                 (+= sum (* (cast u_char* wp))))
            (break))
@@ -508,7 +510,7 @@
     (set! sum (+ (>> sum 16) (logand sum #xffff)))
     (+= sum (>> sum 16))
     (set! result (cast uint16_t (lognot sum)))  ;truncate to 16bit
-    (.if "!WORDS_BIGENDIAN"
+    (.unless WORDS_BIGENDIAN
          (set! result (logior (>> result 8) (<< result 8))))
     (return result)))
 

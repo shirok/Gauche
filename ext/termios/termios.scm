@@ -47,7 +47,7 @@
  (define-type <sys-termios> "ScmSysTermios*")
  (define-type <sys-sigset>  "ScmSysSigset*")
 
- (when "!defined(GAUCHE_WINDOWS)"
+ (.unless (defined GAUCHE_WINDOWS)
 
    (define-enum TCSANOW)
    (define-enum TCSADRAIN)
@@ -142,11 +142,11 @@
        (return (SCM_OBJ dest))))
 
    ;; pty interface
-   (when "defined(HAVE_OPENPTY)"
+   (.when (defined HAVE_OPENPTY)
      (define-cproc sys-openpty (:optional term) Scm_Openpty)
      (initcode "Scm_AddFeature(\"gauche.sys.openpty\", NULL);")
      )
-   (when "defined(HAVE_FORKPTY)"
+   (.when (defined HAVE_FORKPTY)
      (define-cproc sys-forkpty (:optional term) Scm_Forkpty)
      (define-cproc sys-forkpty-and-exec (program::<string> args::<list>
                                          :key (iomap ()) 

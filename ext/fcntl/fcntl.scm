@@ -86,7 +86,7 @@
  (define-enum O_TRUNC)
 
  ;; Linux specific F_NOTIFY flags (not available yet, w/o _GNU_SOURCE)
- (if "defined(F_NOTIFY)"
+ (.if (defined F_NOTIFY)
    (begin
      (define-enum DN_ACCESS)
      (define-enum DN_MODIFY)

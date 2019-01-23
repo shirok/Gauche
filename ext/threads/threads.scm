@@ -75,8 +75,8 @@
 ;; it should return 'pthreads' instead of 'pthread' on pthreads platform.
 (inline-stub
  (define-cproc gauche-thread-type ()
-   (.cond ["defined(GAUCHE_USE_PTHREADS)" (return 'pthread)]
-          ["defined(GAUCHE_USE_WTHREADS)" (return 'win32)]
+   (.cond [(defined GAUCHE_USE_PTHREADS) (return 'pthread)]
+          [(defined GAUCHE_USE_WTHREADS) (return 'win32)]
           [else (return 'none)])))
 
 ;;===============================================================

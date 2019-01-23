@@ -436,7 +436,7 @@
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                          (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if "defined(GAUCHE_HAS_THREADS)"
+     (.if (defined GAUCHE_HAS_THREADS)
           (do-with-timeout q retval timeout timeout-val writerWait
                            (begin)
                            (?: (!= (MTQ_MAXLEN q) 0)
@@ -487,7 +487,7 @@
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                             (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if "defined(GAUCHE_HAS_THREADS)"
+     (.if (defined GAUCHE_HAS_THREADS)
           (do-with-timeout q retval timeout timeout-val writerWait
                            (begin)
                            (?: (!= (MTQ_MAXLEN q) 0)
@@ -542,7 +542,7 @@
  (define-cproc dequeue/wait! (q::<mtqueue> :optional (timeout #f)
                                                      (timeout-val #f))
    (let* ([retval SCM_UNDEFINED])
-     (.if "defined(GAUCHE_HAS_THREADS)"
+     (.if (defined GAUCHE_HAS_THREADS)
           (do-with-timeout q retval timeout timeout-val readerWait
                            (begin (post++ (MTQ_READER_SEM q))
                                   (notify-writers (Q q)))

@@ -41,7 +41,7 @@
 (inline-stub
  (declcode
   (.include <gauche/extend.h>)
-  (.if "defined(HAVE_SYSLOG_H)"
+  (.if (defined HAVE_SYSLOG_H)
        (.include <syslog.h>)))
 
  ;; On the platforms which don't have syslog facility, should we raise
@@ -50,45 +50,45 @@
 
  (define-cproc sys-openlog
    (ident::<const-cstring> option::<fixnum> facility::<fixnum>) ::<void>
-   (.if "defined(HAVE_SYSLOG)"
+   (.if (defined HAVE_SYSLOG)
         (openlog ident option facility)
         (begin (cast void ident)       ; suppress unused var warning
                (cast void option)      ; suppress unused var warning
                (cast void facility)))) ; suppress unused var warning
 
  (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>) ::<void>
-   (.if "defined(HAVE_SYSLOG)"
+   (.if (defined HAVE_SYSLOG)
         (syslog prio "%s" message)
         (begin (cast void prio)       ; suppress unused var warning
                (cast void message)))) ; suppress unused var warning
 
  (define-cproc sys-closelog () ::<void>
-   (.if "defined(HAVE_SYSLOG)" (closelog)))
+   (.if (defined HAVE_SYSLOG) (closelog)))
 
- (when "defined(HAVE_SYSLOG)"
+ (.when (defined HAVE_SYSLOG)
    (initcode "Scm_AddFeature(\"gauche.sys.syslog\", NULL);"))
 
  (define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
-   (.if "defined(HAVE_SETLOGMASK)"
+   (.if (defined HAVE_SETLOGMASK)
         (return (LOG_MASK prio))
         (begin (cast void prio) ; suppress unused var warning
                (return 0))))
 
  (define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum>
-   (.if "defined(HAVE_SETLOGMASK)"
+   (.if (defined HAVE_SETLOGMASK)
         (return (setlogmask mask))
         (begin (cast void mask) ; suppress unused var warning
                (return 0))))
 
- (when "defined(HAVE_SETLOGMASK)"
+ (.when (defined HAVE_SETLOGMASK)
    (initcode "Scm_AddFeature(\"gauche.sys.setlogmask\", NULL);"))
 
  ;; We need to define at least these three logging option constants,
  ;; for they are referenced in gauche.logger.  The actual value doesn't matter.
  (declcode
-  (.if "!defined(LOG_PID)" (.define LOG_PID 0))
-  (.if "!defined(LOG_INFO)" (.define LOG_INFO 1))
-  (.if "!defined(LOG_USER)" (.define LOG_USER 2)))
+  (.unless (defined LOG_PID) (.define LOG_PID 0))
+  (.unless (defined LOG_INFO) (.define LOG_INFO 1))
+  (.unless (defined LOG_USER) (.define LOG_USER 2)))
 
  ;; openlog options
  (define-enum-conditionally LOG_CONS)
