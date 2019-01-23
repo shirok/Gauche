@@ -216,11 +216,11 @@
     `(unless (-> ,g dbf) (Scm_Error "gdbm file already closed: %S" ,g))])
 
  ;; Those symbols may not be defined in the older gdbm
- (when (not (defined GDBM_SYNC)) (.define GDBM_SYNC 0))
- (when (not (defined GDBM_NOLOCK)) (.define GDBM_NOLOCK 0))
- (when (not (defined GDBM_SYNCMODE)) (.define GDBM_SYNCMODE 0))
- (when (not (defined GDBM_CENTFREE)) (.define GDBM_CENTFREE 0))
- (when (not (defined GDBM_COALESCEBLKS)) (.define GDBM_COALESCEBLKS 0))
+ (.unless (defined GDBM_SYNC) (.define GDBM_SYNC 0))
+ (.unless (defined GDBM_NOLOCK) (.define GDBM_NOLOCK 0))
+ (.unless (defined GDBM_SYNCMODE) (.define GDBM_SYNCMODE 0))
+ (.unless (defined GDBM_CENTFREE) (.define GDBM_CENTFREE 0))
+ (.unless (defined GDBM_COALESCEBLKS) (.define GDBM_COALESCEBLKS 0))
 
  (define-cproc gdbm-open
    (name::<string> :optional (size::<fixnum> 0)

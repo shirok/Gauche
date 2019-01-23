@@ -527,9 +527,9 @@
  (define-cvar int32_align::(.struct (b::char s::int32_t)) :static)
  (define-cvar int64_align::(.struct (b::char s::ScmInt64)) :static)
 
- (if (defined HAVE_LONG_LONG)
-     (define-ctype long_long_::(long long))
-     (define-ctype long_long_::long))
+ (.if (defined HAVE_LONG_LONG)
+      (define-ctype long_long_::(long long))
+      (define-ctype long_long_::long))
  (define-cvar long_long_align::(.struct (b::char s::long_long_)) :static)
 
  (.define alignof (str) (- (cast intptr_t (& (ref str s)))
