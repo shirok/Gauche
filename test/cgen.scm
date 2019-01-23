@@ -23,14 +23,14 @@ static void foo() { ... }
 void Scm__Init_tmp_2eo(void)
 {
 foo();
-#if ((defined FOO))||((defined BAR))
+#if (defined(FOO))||(defined(BAR))
 init_foo_bar();
-#endif /* ((defined FOO))||((defined BAR)) */
-#if ((defined FOO))||((defined BAR))
-#if ((>= BAR_VERSION 3))&&((== FOO_VERSION 2))
+#endif /* (defined(FOO))||(defined(BAR)) */
+#if (defined(FOO))||(defined(BAR))
+#if ((BAR_VERSION)>=(3))&&((FOO_VERSION)==(2))
 some_trick();
-#endif /* ((>= BAR_VERSION 3))&&((== FOO_VERSION 2)) */
-#endif /* ((defined FOO))||((defined BAR)) */
+#endif /* ((BAR_VERSION)>=(3))&&((FOO_VERSION)==(2)) */
+#endif /* (defined(FOO))||(defined(BAR)) */
 }
 "
        (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])
@@ -169,6 +169,60 @@ some_trick();
   (c '(.define foo (bar) (+ 2 3)) "#define foo(bar) ((2)+(3))\n")
   (c '(.define foo (a b) (+ a b)) "#define foo(a,b) ((a)+(b))\n"))
 
+;; .if .cond .when .unless
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form)
+           (apply string-append (map (cut string-append <> "\n") exp))
+           (cise-render-to-string form 'toplevel)))
+
+  (c '(.if foo then) '(""
+                       "#if foo"
+                       "then;"
+                       "#endif /* foo */"))
+  (c '(.if foo then else)
+     '(""
+       "#if foo"
+       "then;"
+       "#else /* !foo */"
+       "else;"
+       "#endif /* foo */"))
+  (c '(.if (not (defined foo)) then)
+     '(""
+       "#if !(defined(foo))"
+       "then;"
+       "#endif /* !(defined(foo)) */"))
+  (c '(.if (and (+ 1 2) (or (- 3 (<< 4 2)) 4)) then)
+     '(""
+       "#if ((1)+(2))&&(((3)-((4)<<(2)))||(4))"
+       "then;"
+       "#endif /* ((1)+(2))&&(((3)-((4)<<(2)))||(4)) */"))
+  (c '(.when 1 foo bar)
+     '(""
+       "#if 1"
+       "foo;"
+       "bar;"
+       "#endif /* 1 */"))
+  (c '(.unless (defined haha) foo bar)
+     '(""
+       "#if !(defined(haha))"
+       "foo;"
+       "bar;"
+       "#endif /* ! defined(haha) */"))
+
+  (c '(.cond [(and foo bar) one]
+             [(defined xyz) two]
+             [else three])
+     '(""
+       "#if 0 /*dummy*/"
+       "#elif (foo)&&(bar)"
+       "one;"
+       "#elif defined(xyz)"
+       "two;"
+       "#else"
+       "three;"
+       "#endif")))
+
 ;; statement-level tests
 (parameterize ([cise-emit-source-line #f])
   (define (c form exp)
@@ -199,7 +253,7 @@ some_trick();
   ;; NB. all directives should start with "\n"
   (t '.if err err
      "\n#if a\nb;\n#endif /* a */\n"
-     "\n#if a\nb;\n#else  /* !a */\nc;\n#endif /* a */\n")
+     "\n#if a\nb;\n#else /* !a */\nc;\n#endif /* a */\n")
   (c '(.if a b c d) err)
   (t '.undef err "#undef a\n" err err)
   ;; (.include) should probably error out

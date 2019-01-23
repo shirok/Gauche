@@ -46,7 +46,7 @@
           <cgen-node> cgen-with-cpp-condition cgen-cpp-conditions cgen-emit
           cgen-emit-xtrn cgen-emit-decl cgen-emit-body cgen-emit-init
           cgen-extern cgen-decl cgen-body cgen-init
-          cgen-include cgen-define
+          cgen-include cgen-define cpp-condition->string
 
           cgen-safe-name cgen-safe-name-friendly
           cgen-safe-string cgen-safe-comment
@@ -186,9 +186,9 @@
        (binary op c0 c1)]
       [_ (error "Invalid C preprocessor condition expression:" condition)]))
   (define (n-ary op cs)
-    (string-concatenate (intersperse (x->string op) (map (^c #"(~c)") cs))))
+    (string-concatenate (intersperse (x->string op) (map (^c #"(~(rec c))") cs))))
   (define (binary op c0 c1)
-    #"(~(rec c0)~|op|(~(rec c1))")
+    #"(~(rec c0))~|op|(~(rec c1))")
   (rec condition))
 
 ;; fallback methods
