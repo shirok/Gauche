@@ -14,6 +14,8 @@
 #define GAUCHE_PRIV_ATOMICP_H
 
 #if GC_BUILTIN_ATOMIC
+
+#  if HAVE_STDATOMIC_H
 /* 
  * C11 atomics
  */
@@ -30,10 +32,29 @@ typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
     atomic_compare_exchange_strong(loc, &oldval, newval)
 #define AO_nop_full()            atomic_thread_fence(__ATOMIC_SEQ_CST)
 
-#else
-/* 
- * libatomic_ops
+#  else /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
+/*
+ * If GC_BUILTIN_ATOMIC, we know __atomic_* primitives are available
  */
+
+typedef ScmWord ScmAtomicWord;
+typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
+
+#define AO_store_full(loc, val)  __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
+#define AO_store(loc, val)       __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
+#define AO_load(loc)             __atomic_load_n(loc, __ATOMIC_SEQ_CST)
+#define AO_compare_and_swap_full(loc, oldval, newval) \
+    __atomic_compare_exchange_n(loc, &oldval, newval, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define AO_nop_full()            __atomic_thread_fence(__ATOMIC_SEQ_CST)
+
+
+#  endif /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
+
+#else /* !GC_BUILTIN_ATOMIC */
+/* 
+ * Use libatomic_ops
+ */
+
 
 /* Workaround for sh4 */
 /*

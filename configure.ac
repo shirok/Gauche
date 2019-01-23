@@ -266,7 +266,13 @@ dnl     4. Intrinsic - use compiler intrinsic support.
 dnl   Among these cases, only 3 needs a special care, where we have to know
 dnl   the compiler and library flags.  It is set in ATOMIC_OPS_CFLAGS and
 dnl   ATOMIC_OPS_LIBS inside gc/Makefile, and we extract them at compile time.
-dnl   
+dnl
+dnl   Caveat: There's a case that the compiler supports intrinsic atomic ops
+dnl   yet not having C11 stdatomic.h (gcc 4.8).
+dnl   The following test is to catch it.  See src/gauche/priv/atomicP.h for
+dnl   how we handle it.
+
+AC_CHECK_HEADERS(stdatomic.h)
 
 dnl ----------------------------------------------------------
 dnl   enable-framework
