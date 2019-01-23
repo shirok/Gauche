@@ -4,7 +4,13 @@ AC_INIT([Gauche],[0.9.7],[shiro@acm.org],,[https://practical-scheme.net/gauche/]
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AC_CONFIG_HEADER([src/gauche/config.h])
+AC_CONFIG_HEADERS([src/gauche/config.h],
+		[sed -i~ -e '/PACKAGE_@<:@A-Z@:>@/ d' src/gauche/config.h])
+AC_CONFIG_HEADERS([src/gauche/priv/configP.h],
+		[],
+		[sed -n -e '1 i /* generated file */' \
+			-e '/PACKAGE_@<:@A-Z@:>@/ p' \
+		     src/gauche/config.h.in > src/gauche/priv/configP.h.in])
 AC_CONFIG_MACRO_DIRS([m4])
 
 # ABI_VERSION is set to major.minor of Gauche version by default.

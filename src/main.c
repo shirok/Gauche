@@ -32,6 +32,7 @@
  */
 
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 
 #include <signal.h>
 #include <ctype.h>
