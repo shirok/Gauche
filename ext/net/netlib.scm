@@ -205,7 +205,7 @@
     (return (Scm_SocketOutputPort sock bufmode))))
 
 (inline-stub 
- (if "defined(SHUT_RD) && defined(SHUD_WR) && defined(SHUT_RDWR)"
+ (if "defined(SHUT_RD) && defined(SHUT_WR) && defined(SHUT_RDWR)"
    (begin
      (define-enum SHUT_RD)
      (define-enum SHUT_WR)
