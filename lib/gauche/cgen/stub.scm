@@ -341,10 +341,10 @@
 (export-toplevel-cise-form define-ctype)
 (export-toplevel-cise-form define-cvar)
 
-; CiSE forms .if, .cond and .include are not exported because there
-; are stub parsers include, if and when that do the same thing but
-; also recognize stub forms.
+; CiSE forms .if, .cond, .when and .unless are not exported because
+; there are (or will be) stub replacements of the same name.
 (export-toplevel-cise-form .define)
+(export-toplevel-cise-form .include)
 (export-toplevel-cise-form .undef)
 
 ;; extra check of valid clauses
@@ -1914,7 +1914,15 @@
 ;; Main parsers
 ;;
 
+;; deprecated
 (define-form-parser if (test then . maybe-else)
+  (cgen-with-cpp-condition test
+    (cgen-stub-parse-form then))
+  (unless (null? maybe-else)
+    (cgen-with-cpp-condition `(not ,test)
+      (cgen-stub-parse-form (car maybe-else)))))
+
+(define-form-parser .if (test then . maybe-else)
   (cgen-with-cpp-condition test
     (cgen-stub-parse-form then))
   (unless (null? maybe-else)
@@ -1924,8 +1932,17 @@
 (define-form-parser begin forms
   (for-each cgen-stub-parse-form forms))
 
+;; deprecated
 (define-form-parser when (test . forms)
   (cgen-with-cpp-condition test
+    (for-each cgen-stub-parse-form forms)))
+
+(define-form-parser .when (test . forms)
+  (cgen-with-cpp-condition test
+    (for-each cgen-stub-parse-form forms)))
+
+(define-form-parser .unless (test . forms)
+  (cgen-with-cpp-condition `(not ,test)
     (for-each cgen-stub-parse-form forms)))
 
 (define-form-parser include (file)
