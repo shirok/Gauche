@@ -278,6 +278,9 @@ builtin-syms.c gauche/priv/builtin-syms.h : builtin-syms.scm
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(BUILD_GOSH) geninsn $(srcdir)/vminsn.scm
 
+features.c features.flags : gen-features.sh gauche/config.h
+	$(srcdir)/gen-features.sh $(top_srcdir) $(top_builddir)
+
 # NB: libsrfis.scm, lib/srfi/*.scm and doc/srfis.texi are all generated
 # by srfis.scm.  However, if we don't have srfi/0.scm but have libsrfis.scm,
 # we fail to regenerate srfi/0.scm since nothing depends on it.  So
@@ -320,6 +323,8 @@ libextra.c   : libextra.scm $(PRECOMP_DEPENDENCY)
 
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
+
+core.$(OBJEXT): core.c features.c
 
 libeval.$(OBJEXT) : libeval.c \
              getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c paths.c
@@ -482,6 +487,7 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
 	    char_attr.c gauche/priv/unicode_attr.h \
+	    features.c features.flags \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c \

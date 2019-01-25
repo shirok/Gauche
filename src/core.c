@@ -553,6 +553,8 @@ init_cond_features()
 #if defined(USE_ZLIB)
         { "gauche.sys.zlib", "rfc.zlib" },
 #endif
+
+#include "features.c"
         
         { NULL, NULL }
     };

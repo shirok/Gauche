@@ -1,3 +1,8 @@
+2019-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-features.sh: Generate Scm_AddFeatures code by scanning
+	  config.h instead of relying C preprocessor.
+
 2019-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm: Support function type in the form:

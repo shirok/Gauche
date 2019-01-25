@@ -363,10 +363,6 @@
 
 (define-cproc sys-sigwait (mask::<sys-sigset>) ::<int> Scm_SigWait)
 
-(inline-stub
- (initcode (.if "defined HAVE_SIGWAIT"
-                (Scm_AddFeature "gauche.sys.sigwait" NULL))))
-
 (define (sys-sigset . signals)
   (if (null? signals)
     (make <sys-sigset>)
@@ -469,15 +465,6 @@
 (define-cproc sys-unsetenv (name::<const-cstring>) ::<void> Scm_UnsetEnv)
 (define-cproc sys-clearenv () ::<void> Scm_ClearEnv)
 
-(inline-stub
- (initcode
-  (.if "defined(HAVE_PUTENV) || defined(HAVE_SETENV)"
-       (Scm_AddFeature "gauche.sys.setenv" NULL))
-  (.if "defined HAVE_UNSETENV"
-       (Scm_AddFeature "gauche.sys.unsetenv" NULL))
-  (.if "defined HAVE_CLEARENV"
-       (Scm_AddFeature "gauche.sys.clearenv" NULL))))
-
 (define (sys-environ->alist :optional (envlist (sys-environ)))
   (map (^[envstr] (receive (pre post) (string-scan envstr #\= 'both)
                     (if pre (cons pre post) (cons envstr ""))))
@@ -530,10 +517,6 @@
          (Scm_Error "sys-getloadavg isn't supported on this platform")
          (return SCM_UNDEFINED))))      ;dummy
 
-(inline-stub
- (initcode (.if "defined HAVE_GETLOADAVG"
-                (Scm_AddFeature "gauche.sys.getloadavg" NULL))))
-
 ;;---------------------------------------------------------------------
 ;; sys/resource.h
 
@@ -570,8 +553,6 @@
               (SCM_TYPE_ERROR max "non-negative integer or #f")])
        (SCM_SYSCALL ret (setrlimit rsrc (& limit)))
        (when (< ret 0) (Scm_SysError "setrlimit failed"))))
-
-   (initcode (Scm_AddFeature "gauche.sys.getrlimit" NULL))
 
    (define-constant RLIM_INFINITY (c "MAKERLIMIT(RLIM_INFINITY)"))
    (define-enum-conditionally RLIMIT_AS)
@@ -893,7 +874,6 @@
      ::<int>
      (SCM_SYSCALL SCM_RESULT (lchown path owner group))
      (when (< SCM_RESULT 0) (Scm_SysError "lchown failed on %S" path)))
-   (initcode (Scm_AddFeature "gauche.sys.lchown" NULL))
    )
  )
 
@@ -978,7 +958,6 @@
      (define-cproc sys-getpgid (pid::<int>) ::<int>
        (SCM_SYSCALL SCM_RESULT (cast int (getpgid pid)))
        (when (< SCM_RESULT 0) (Scm_SysError "getpgid failed")))
-     (initcode (Scm_AddFeature "gauche.sys.getpgid" NULL))
      )
 
    (define-cproc sys-getpgrp () ::<int>
@@ -1027,8 +1006,7 @@
                    gids)
          (SCM_SYSCALL r (setgroups ngid glist))
          (when (< r 0)
-           (Scm_SysError "setgroups failed with %S" gids))))
-     (initcode (Scm_AddFeature "gauche.sys.setgroups" NULL)))
+           (Scm_SysError "setgroups failed with %S" gids)))))
    ) ;; !defined(GAUCHE_WINDOWS)
  )
 
@@ -1142,7 +1120,6 @@
        (if (and (== (ref rem tv_sec) 0) (== (ref rem tv_nsec) 0))
          (return '#f)
          (return (Scm_MakeTime '#f (ref rem tv_sec) (ref rem tv_nsec))))))
-   (initcode (Scm_AddFeature "gauche.sys.nanosleep" NULL))
    ) ; defined(HAVE_NANOSLEEP)||defined(GAUCHE_WINDOWS)
  )
 
@@ -1187,7 +1164,6 @@
  (when "defined(HAVE_CRYPT)"
    (define-cproc sys-crypt (key::<const-cstring> salt::<const-cstring>)
      ::<const-cstring> (return (cast (const char *) (crypt key salt))))
-   (initcode (Scm_AddFeature "gauche.sys.crypt" NULL))
    )
  )
 
@@ -1229,7 +1205,6 @@
        (SCM_SYSCALL r (symlink existing newpath))
        (when (< r 0)
          (Scm_SysError "symlink from %s to %s failed" newpath existing))))
-   (initcode (Scm_AddFeature "gauche.sys.symlink" NULL))
    )
 
  (when "defined(HAVE_READLINK)"
@@ -1240,7 +1215,6 @@
        (when (< n 0) (Scm_SysError "readlink failed on %s" path))
        (when (== n 1024) (Scm_Error "readlink result too long on %s" path))
        (return (Scm_MakeString buf n -1 SCM_STRING_COPYING))))
-   (initcode (Scm_AddFeature "gauche.sys.readlink" NULL))
    )
  )
 
@@ -1304,7 +1278,6 @@
    (define-cproc sys-select! (rfds wfds efds :optional (timeout #f))
      Scm_SysSelectX)
 
-   (initcode (Scm_AddFeature "gauche.sys.select" NULL))
    ) ;; when defined(HAVE_SELECT)
  )
 
