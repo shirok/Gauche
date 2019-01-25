@@ -544,6 +544,9 @@ case "$host" in
     ;;
 esac
 
+dnl Check for fcntl
+AC_CHECK_FUNCS(fcntl)
+
 dnl Checks if crypt() exists and whether it's in libc or libcrypt.
 dnl Note: on cygwin, libcrypt is only available as a static library,
 dnl and prevents libgauche.dll from building.   We explicitly excludes it.

@@ -91,7 +91,7 @@ ScmObj Scm_MakeSysFlock(void)
 /*
  * Fcntl bridge
  */
-#if !defined(GAUCHE_WINDOWS)
+#if defined(HAVE_FCNTL)
 static const char *flag_name(int flag)
 {
 #define FLAG_NAME(n) case n: return #n
@@ -129,11 +129,11 @@ static const char *flag_name(int flag)
     return "(unknown flag)";
 #undef FLAG_NAME
 }
-#endif /* !GAUCHE_WINDOWS */
+#endif /* HAVE_FCNTL */
 
 ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 {
-#if !defined(GAUCHE_WINDOWS)
+#if defined(HAVE_FCNTL)
     int fd = Scm_GetPortFd(port_or_fd, TRUE), r;
 
     switch (op) {
@@ -191,30 +191,26 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
         Scm_Error("unknown operation code (%d) for fcntl", op);
         return SCM_UNDEFINED;   /* dummy */
     }
-#else  /*GAUCHE_WINDOWS*/
+#else  /*!HAVE_FCNTL*/
     (void)port_or_fd; /* suppress unused var warning */
     (void)op;         /* suppress unused var warning */
     (void)arg;        /* suppress unused var warning */
     Scm_Error("fcntl not supported on MinGW port");
     return SCM_UNDEFINED; /*dummy*/
-#endif /*GAUCHE_WINDOWS*/
+#endif /*!HAVE_FCNTL*/
 }
 
 /*
  * Initialization
  */
 
-//extern void Scm_Init_fcntlib(ScmModule *mod);
-
 void Scm_Init_fcntl(void)
 {
-    //SCM_INIT_EXTENSION(gauche__fcntl);
     ScmModule *mod = SCM_FIND_MODULE("gauche.fcntl", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_SysFlockClass, "<sys-flock>",
                         mod, flock_slots, 0);
-    //    Scm_Init_fcntlib(mod);
 
-#ifndef GAUCHE_WINDOWS
+#if defined(HAVE_FCNTL)
     Scm_AddFeature("gauche.sys.fcntl", NULL);
 #endif
 }

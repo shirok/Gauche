@@ -162,6 +162,9 @@
 /* Define if the system has dlopen() */
 #undef HAVE_DLOPEN
 
+/* Define if you have fcntl */
+#undef HAVE_FCNTL
+
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
 
