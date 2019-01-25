@@ -487,7 +487,6 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
 	    char_attr.c gauche/priv/unicode_attr.h \
-	    features.c features.flags \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c \
@@ -503,6 +502,7 @@ clean :
 	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
                *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
+	       features.c features.flags \
 	       gauche/config_threads.h gauche-config.in.c \
 	       staticinit.c staticinit_gdbm.c staticinit_mbed.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c
