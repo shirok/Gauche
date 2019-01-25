@@ -63,6 +63,8 @@ test.record
 /INSTALL.ja
 .deps
 .dirstamp
+/src/features.c
+/src/features.flags
 /ext/Makefile.ext
 /ext/bcrypt/crypt--bcrypt.c
 /ext/binary/binary--io.c
