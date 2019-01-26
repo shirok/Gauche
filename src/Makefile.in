@@ -326,8 +326,6 @@ libextra.c   : libextra.scm $(PRECOMP_DEPENDENCY)
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
 
-core.$(OBJEXT): core.c features.c
-
 libeval.$(OBJEXT) : libeval.c \
              getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c paths.c
 libextra.$(OBJEXT): libextra.c paths.c
@@ -356,15 +354,15 @@ char-data : gen-unicode.scm
 	@if test "$(UNICODEDATA)" = ""; then echo "Set UNICODEDATA to the path to the UnicodeData directory."; exit 1; fi
 	$(BUILD_GOSH) $(srcdir)/gen-unicode.scm --import $(UNICODEDATA) unicode-data.scm
 
-char.$(OBJEXT) : char.c char_attr.c
+char.$(OBJEXT) : char_attr.c
 
-core.$(OBJEXT) : core.c
+core.$(OBJEXT) : features.c
 
 winmain.$(OBJEXT) : main.c $(HEADERS)
 
 symbol.$(OBJEXT) : builtin-syms.c
 
-port.$(OBJEXT) : port.c portapi.c
+port.$(OBJEXT) : portapi.c
 
 vm.$(OBJEXT) : vminsn.c vmstat.c vmcall.c
 
