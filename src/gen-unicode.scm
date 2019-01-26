@@ -341,7 +341,9 @@
                                    [(#f) "Cn"]
                                    [else => identity]))))
     (print "}")
-    (hash-table-for-each code-sets (^[key cs] (dump-code-set-in-C cs)))
+    (for-each
+     (^s (dump-code-set-in-C (cdr s)))
+     (sort (hash-table->alist code-sets) string<? (^x (x->string (car x)))))
     (print "#endif /*defined(GAUCHE_CHAR_ENCODING_UTF_8)*/")
     (print))
 
@@ -366,7 +368,9 @@
                     (+ (ash (+ z #xa1) 8) #x8f00ff)
                     (^i (emit-entry (eucjp->ucd-entry db i)))))
     (print "};")
-    (hash-table-for-each code-sets (^[key cs] (dump-code-set-in-C cs)))
+    (for-each
+     (^s (dump-code-set-in-C (cdr s)))
+     (sort (hash-table->alist code-sets) string<? (^x (x->string (car x)))))
     (print "#endif /*defined(GAUCHE_CHAR_ENCODING_EUC_JP)*/")
     (print))
 
@@ -391,7 +395,9 @@
                          (+ z #xfd)
                          (^i (emit-entry (sjis->ucd-entry db i)))))
     (print "};")
-    (hash-table-for-each code-sets (^[key cs] (dump-code-set-in-C cs)))
+    (for-each
+     (^s (dump-code-set-in-C (cdr s)))
+     (sort (hash-table->alist code-sets) string<? (^x (x->string (car x)))))
     (print "#endif /*defined(GAUCHE_CHAR_ENCODING_SJIS)*/")
     (print))
 
@@ -583,10 +589,22 @@
                    [(utf8) for-each-char-code/ucs]
                    [(eucjp) for-each-char-code/euc-jp]
                    [(sjis) for-each-char-code/sjis]))
-  (define get-entry (ecase encoding
-                      [(none utf8) ucd-get-entry]
-                      [(eucjp) eucjp->ucd-entry]
-                      [(sjis) sjis->ucd-entry]))
+  (define get-entry
+    (let ([eucjp-entry-cache (make-hash-table 'eqv?)]
+          [sjis-entry-cache (make-hash-table 'eqv?)])
+      (ecase encoding
+        [(none utf8) ucd-get-entry]
+        [(eucjp) (^[db n]
+                   (if-let1 e (hash-table-get eucjp-entry-cache n #f)
+                     (if (eq? e 'nothing) #f e)
+                     (rlet1 e (eucjp->ucd-entry db n)
+                       (hash-table-put! eucjp-entry-cache n (or e 'nothing)))))]
+        [(sjis) (^[db n]
+                  (if-let1 e (hash-table-get sjis-entry-cache n #f)
+                    (if (eq? e 'nothing) #f e)
+                    (rlet1 e (sjis->ucd-entry db n)
+                      (hash-table-put! sjis-entry-cache n (or e 'nothing)))))]
+        )))
   (define (register set cat n m)
     (and-let1 e (get-entry db n)
       (if (eq? cat (ucd-entry-category e))
