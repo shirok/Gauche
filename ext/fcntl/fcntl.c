@@ -209,8 +209,4 @@ void Scm_Init_fcntl(void)
     ScmModule *mod = SCM_FIND_MODULE("gauche.fcntl", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_SysFlockClass, "<sys-flock>",
                         mod, flock_slots, 0);
-
-#if defined(HAVE_FCNTL)
-    Scm_AddFeature("gauche.sys.fcntl", NULL);
-#endif
 }

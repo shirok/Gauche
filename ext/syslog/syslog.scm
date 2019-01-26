@@ -65,9 +65,6 @@
  (define-cproc sys-closelog () ::<void>
    (.if (defined HAVE_SYSLOG) (closelog)))
 
- (.when (defined HAVE_SYSLOG)
-   (initcode "Scm_AddFeature(\"gauche.sys.syslog\", NULL);"))
-
  (define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
    (.if (defined HAVE_SETLOGMASK)
         (return (LOG_MASK prio))
@@ -79,9 +76,6 @@
         (return (setlogmask mask))
         (begin (cast void mask) ; suppress unused var warning
                (return 0))))
-
- (.when (defined HAVE_SETLOGMASK)
-   (initcode "Scm_AddFeature(\"gauche.sys.setlogmask\", NULL);"))
 
  ;; We need to define at least these three logging option constants,
  ;; for they are referenced in gauche.logger.  The actual value doesn't matter.

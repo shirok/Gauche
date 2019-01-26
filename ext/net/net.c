@@ -855,9 +855,6 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__net(void)
 {
     SCM_INIT_EXTENSION(gauche__net);
     ScmModule *mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
-#ifdef HAVE_IPV6
-    Scm_AddFeature("gauche.net.ipv6", NULL);
-#endif
     Scm_InitStaticClass(&Scm_SocketClass, "<socket>", mod, NULL, 0);
     Scm_Init_NetAddr(mod);
     Scm_Init_NetDB(mod);

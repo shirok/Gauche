@@ -144,7 +144,6 @@
    ;; pty interface
    (.when (defined HAVE_OPENPTY)
      (define-cproc sys-openpty (:optional term) Scm_Openpty)
-     (initcode "Scm_AddFeature(\"gauche.sys.openpty\", NULL);")
      )
    (.when (defined HAVE_FORKPTY)
      (define-cproc sys-forkpty (:optional term) Scm_Forkpty)
@@ -153,7 +152,6 @@
                                               term 
                                               (sigmask::<sys-sigset>? #f))
        Scm_ForkptyAndExec)
-     (initcode "Scm_AddFeature(\"gauche.sys.forkpty\", NULL);")
      )
 
    ) ;; !defined(GAUCHE_WINDOWS)
