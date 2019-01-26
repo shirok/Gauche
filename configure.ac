@@ -879,6 +879,8 @@ dnl Create output files
 AC_CONFIG_COMMANDS([VERSION],
 	[echo "${GAUCHE_VERSION}" > VERSION],
 	[GAUCHE_VERSION="${GAUCHE_VERSION}"])
+AC_CONFIG_COMMANDS([src/features],
+                   [src/gen-features.sh ${ac_srcdir} ${ac_builddir}])
 AC_CONFIG_FILES([
           Makefile
           src/Makefile src/genconfig src/makeverslink

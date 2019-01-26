@@ -37,6 +37,7 @@ exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
 srcdir      = @srcdir@
+builddir    = @builddir@
 datadir     = @datadir@
 datarootdir = @datarootdir@
 VPATH       = $(srcdir)
@@ -122,7 +123,8 @@ BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
               "@BUILD_GOSH@" $(BUILD_GOSH_FLAGS) \
               -l$(srcdir)/preload \
               -I$(top_srcdir)/src -I$(top_srcdir)/lib \
-	      -I$(top_builddir)/lib
+	      -I$(top_builddir)/lib \
+	      `cat $(builddir)/features.flags`
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
@@ -493,7 +495,8 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    libmacbase.c libmacro.c \
 	    libmisc.c libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
-CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
+CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
+	           features.c features.flags
 
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
@@ -502,7 +505,6 @@ clean :
 	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
                *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
-	       features.c features.flags \
 	       gauche/config_threads.h gauche-config.in.c \
 	       staticinit.c staticinit_gdbm.c staticinit_mbed.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c
