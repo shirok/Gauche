@@ -1,7 +1,6 @@
 DIST
 DIST_EXCLUDE
 DIST_EXCLUDE_X
-INSTALL.adoc
 autom4te.cache
 lib/net
 .git
