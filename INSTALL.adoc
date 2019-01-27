@@ -658,7 +658,6 @@ ifdef::JA[]
 endif::JA[]
 ifdef::EN[]
 * MacOS X - For 10.2.x and earlier, you need to install the `dlcompat`
-+
 library (libdl) from The Fink project ( http://www.finkproject.org/ )
 before configuring Gauche.   You don't need it if you have OSX
 10.3 or later.   If the dlcompat library is installed in non-standard
