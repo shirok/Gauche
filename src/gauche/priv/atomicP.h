@@ -38,7 +38,7 @@ typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
  */
 
 typedef ScmWord ScmAtomicWord;
-typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
+typedef volatile ScmAtomicWord ScmAtomicVar;
 
 #define AO_store_full(loc, val)  __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
 #define AO_store(loc, val)       __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
