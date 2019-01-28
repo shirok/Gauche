@@ -5,6 +5,7 @@
 (use gauche.test)
 (use srfi-1)
 (use srfi-13)
+(use gauche.uvector)
 
 ;; Note: test/object.scm contains extra tests of hashtables using
 ;; object-equal? and object-hash overload.
@@ -55,6 +56,15 @@
          (map (^p (list (car p)
                         (portable-hash (car p) 0)
                         (hash (car p))))
+              data)))
+
+;; u8vector hash support
+(let ([data '((#u8(0)     241632508)
+              (#u8(255)   1279917403)
+              (#u8(1 2 3) 3864380406))])
+  (test* "portable hash u8vector" data
+         (map (^p (list (car p)
+                        (portable-hash (car p) 0)))
               data)))
 
 ;;------------------------------------------------------------------
@@ -293,8 +303,15 @@
          (hash-table-put! h-equal (vector (cons 'a 'b) 3+3i) 61)
          (length (hash-table-keys h-equal))))
 
+;; u8vector hash support
+(test* "equal? test" 9
+       (begin
+         (hash-table-put! h-equal (u8vector (char->integer #\d)) 70)
+         (hash-table-put! h-equal (u8vector (char->integer #\d)) 71)
+         (length (hash-table-keys h-equal))))
+
 (test* "hash-table-values(3)" #t
-       (lset= equal? (hash-table-values h-equal) '(8 "b" #\c -1 "E" 5 7 61)))
+       (lset= equal? (hash-table-values h-equal) '(8 "b" #\c -1 "E" 5 7 61 71)))
 
 (test* "delete!" #f
        (begin
