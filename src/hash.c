@@ -230,6 +230,20 @@ static u_long internal_string_hash(ScmString *str, u_long salt, int portable)
     }
 }
 
+/* u8vector hash support */
+static u_long internal_u8vector_hash(ScmUVector *u, u_long salt, int portable)
+{
+    if (portable) {
+        return (u_long)Scm__DwSipPortableHash(SCM_U8VECTOR_ELEMENTS(u),
+                                              (uint32_t)SCM_U8VECTOR_SIZE(u),
+                                              salt, salt);
+    } else {
+        return Scm__DwSipDefaultHash(SCM_U8VECTOR_ELEMENTS(u),
+                                     (uint32_t)SCM_U8VECTOR_SIZE(u),
+                                     salt, salt);
+    }
+}
+
 /* equal-hash, which satisfies
      forall x, y: equal(x,y) => hash(x) = hash(y)
   
@@ -263,6 +277,10 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
             h = COMBINE(h, h2);
         }
         return h;
+    /* u8vector hash support */
+    } else if (SCM_UVECTORP(obj) &&
+               Scm_UVectorType(Scm_ClassOf(obj)) == SCM_UVECTOR_U8) {
+        return internal_u8vector_hash(SCM_UVECTOR(obj), salt, portable);
 #if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
     } else if (SCM_KEYWORDP(obj)) {
         if (portable) {
