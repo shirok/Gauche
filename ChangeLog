@@ -1,3 +1,9 @@
+2019-01-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c: Support uniform vector hashing
+	  Patch by @Hamayama: https://github.com/shirok/Gauche/pull/440
+	  Plus enabling default-hash work on every uvector types.
+
 2019-01-26  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Generate features.{c|flags} at configuration time.

@@ -230,16 +230,38 @@ static u_long internal_string_hash(ScmString *str, u_long salt, int portable)
     }
 }
 
-/* u8vector hash support */
-static u_long internal_u8vector_hash(ScmUVector *u, u_long salt, int portable)
+static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
 {
     if (portable) {
-        return (u_long)Scm__DwSipPortableHash(SCM_U8VECTOR_ELEMENTS(u),
-                                              (uint32_t)SCM_U8VECTOR_SIZE(u),
-                                              salt, salt);
+        switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(u)))) {
+        case SCM_UVECTOR_S8:
+        case SCM_UVECTOR_U8:
+            /* We can use siphash if u is u8vector or s8vector. */ 
+            return Scm__DwSipPortableHash((uint8_t*)SCM_UVECTOR_ELEMENTS(u),
+                                          (uint32_t)Scm_UVectorSizeInBytes(u),
+                                          salt, salt);
+        case SCM_UVECTOR_S16:
+        case SCM_UVECTOR_U16:
+        case SCM_UVECTOR_F16:
+        case SCM_UVECTOR_S32:
+        case SCM_UVECTOR_U32:
+        case SCM_UVECTOR_F32:
+        case SCM_UVECTOR_S64:
+        case SCM_UVECTOR_U64:
+        case SCM_UVECTOR_F64:
+            /* We need to avoid depending on endianness of multibyte numbers.
+               Since once we officially support portable-hash for these vectors
+               we can't change it, so let us think some more...
+             */
+            Scm_Error("[internal] portable-hash on uniform vectors except u8vector and s8vector isn't supported (yet).");
+            break;
+        case SCM_UVECTOR_INVALID:
+            Scm_Panic("invalid uvector class.");
+        }
+        return 0;           /* dummy */
     } else {
-        return Scm__DwSipDefaultHash(SCM_U8VECTOR_ELEMENTS(u),
-                                     (uint32_t)SCM_U8VECTOR_SIZE(u),
+        return Scm__DwSipDefaultHash((uint8_t*)SCM_UVECTOR_ELEMENTS(u),
+                                     (uint32_t)Scm_UVectorSizeInBytes(u),
                                      salt, salt);
     }
 }
@@ -277,10 +299,9 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
             h = COMBINE(h, h2);
         }
         return h;
-    /* u8vector hash support */
-    } else if (SCM_UVECTORP(obj) &&
-               Scm_UVectorType(Scm_ClassOf(obj)) == SCM_UVECTOR_U8) {
-        return internal_u8vector_hash(SCM_UVECTOR(obj), salt, portable);
+    /* uvector hash support */
+    } else if (SCM_UVECTORP(obj)) {
+        return internal_uvector_hash(SCM_UVECTOR(obj), salt, portable);
 #if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
     } else if (SCM_KEYWORDP(obj)) {
         if (portable) {

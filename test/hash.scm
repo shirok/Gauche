@@ -58,11 +58,12 @@
                         (hash (car p))))
               data)))
 
-;; u8vector hash support
+;; uvector hash support
 (let ([data '((#u8(0)     241632508)
               (#u8(255)   1279917403)
-              (#u8(1 2 3) 3864380406))])
-  (test* "portable hash u8vector" data
+              (#u8(1 2 3) 3864380406)
+              (#s8(1 2 3) 3864380406))])
+  (test* "portable hash [us]8vector" data
          (map (^p (list (car p)
                         (portable-hash (car p) 0)))
               data)))
