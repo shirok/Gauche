@@ -69,10 +69,10 @@
 ;; more inefficient than eq-comparator and eqv-comparator, and they can't
 ;; be used to hash mutable objects based on their identity.
 (define make-eq-comparator            ; srfi-128
-  (let1 c (make-comparator/compare #t eq? eq-compare hash) ; singleton
+  (let1 c (make-comparator/compare #t eq? eq-compare default-hash) ; singleton
     (^[] c)))
 (define make-eqv-comparator           ; srfi-128
-  (let1 c (make-comparator/compare #t eqv? #f hash) ; singleton
+  (let1 c (make-comparator/compare #t eqv? #f default-hash) ; singleton
     (^[] c)))
 
 ;; srfi-114 type-specific comparators
@@ -114,13 +114,14 @@
 (define number-comparator complex-comparator)
 
 (define pair-comparator
-  (make-comparator/compare pair? #t compare hash 'pair-comparator))
+  (make-comparator/compare pair? #t compare default-hash 'pair-comparator))
 (define list-comparator
-  (make-comparator/compare list? #t compare hash 'list-comparator))
+  (make-comparator/compare list? #t compare default-hash 'list-comparator))
 (define vector-comparator
-  (make-comparator/compare vector? #t compare hash 'vector-comparator))
+  (make-comparator/compare vector? #t compare default-hash 'vector-comparator))
 (define uvector-comparator
-  (make-comparator/compare uvector? equal? compare hash 'uvector-comparator))
+  (make-comparator/compare uvector? equal? compare default-hash
+                           'uvector-comparator))
 (define bytevector-comparator
   ;; u8vector hash support
   (make-comparator/compare (cut is-a? <> <u8vector>) equal? compare default-hash
