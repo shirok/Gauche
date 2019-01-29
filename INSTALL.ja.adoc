@@ -1,0 +1,2 @@
+:lang: ja
+include::INSTALL.adoc[]

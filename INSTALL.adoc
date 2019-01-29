@@ -3,7 +3,7 @@
 
 // Use English as the default language.
 // Use "--attribute=lang=ja" option for Japanese output.
-:lang: en
+ifndef::lang[:lang: en]
 
 ifeval::["{lang}" == "en"]
 :EN:

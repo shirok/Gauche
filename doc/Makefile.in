@@ -19,7 +19,7 @@ INSTALL_DATA = @INSTALL_DATA@
 MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 MAKEINFO     = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
-ASCIIDOC     = @ASCIIDOC@
+A2X          = @A2X@
 VERSION_INFO = @PACKAGE_STRING@
 
 MAKEDOC = $(GOSH) $(srcdir)/makedoc.scm
@@ -106,11 +106,8 @@ test :
 %.dvi : %.texi
 	$(MAKEDOC) dvi $< "$(MAKEINFO)"
 
-%.html: %.adoc
-	$(ASCIIDOC) --out-file=$@ $<
-
-%.ja.html: %.adoc
-	$(ASCIIDOC) --attribute=lang=ja --out-file=$@ $<
+%.text: %.adoc
+	$(A2X) --format=text $<
 
 # special rule to regenerate srfis.texi in case srfis.scm is modified.
 srfis.texi : $(top_builddir)/src/srfis.scm
