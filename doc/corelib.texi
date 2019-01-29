@@ -792,7 +792,7 @@ In R7RS, this is defined in @code{scheme.comparator} (originally
 in @code{srfi-128}).
 
 If @var{obj} is either a number, a boolean, a character,
-a symbol, a keyword, a string, a list or a vector,
+a symbol, a keyword, a string, a list, a vector or a uniform vector,
 internal hash function is used to calculate the hash value.
 If @var{obj} is other than that,
 a generic function @code{object-hash} is called to calculate the hash value
@@ -806,7 +806,7 @@ R7RSでは、@code{scheme.comparator}ライブラリで定義されています
 (元は@code{srfi-128})。
 
 @var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
-ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
+ベクタ、ユニフォームベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
 使います。
 @var{obj} が、それ以外であれば、 @code{hash} は総称関数 @code{object-hash}
 を呼んで、そのハッシュ値を計算します。
@@ -840,7 +840,7 @@ in the hash function.  You have to use the same salt to get consistent
 results.
 
 If @var{obj} is other than a number, a boolean, a character,
-a symbol, a keyword, a string, a list or a vector,
+a symbol, a keyword, a string, a list, a vector, or a uniform vector,
 this procedure calls 
 a generic function @code{object-hash} is called to calculate the hash value
 (see below).
@@ -865,7 +865,7 @@ a generic function @code{object-hash} is called to calculate the hash value
 得るには同じソルト値を使わなければなりません。
 
 @var{obj}が数値、真理値、文字、シンボル、キーワード、文字列、リスト、
-ベクタのいずれでもない場合、ハッシュ値を計算するのに
+ベクタ、ユニフォームベクタのいずれでもない場合、ハッシュ値を計算するのに
 総称関数 @code{object-hash}が呼ばれます。
 @c COMMON
 @end defun
