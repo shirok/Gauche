@@ -1,2 +1,4 @@
+// "a2x" can't specify output file name.
+// Use this trampoline file to specify another output file name.
 :lang: ja
 include::INSTALL.adoc[]
