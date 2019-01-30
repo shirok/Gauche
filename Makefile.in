@@ -68,7 +68,7 @@ pre-package: INSTALL.text INSTALL.ja.text
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 
 %.text: %.adoc
-	$(A2X) --format=text $<
+	$(A2X) --conf-file=$(srcdir)/tools/a2x.conf --format=text $<
 
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat
