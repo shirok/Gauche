@@ -134,7 +134,8 @@ maintainer-clean: clean
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
 	-(cd winnt/wix; $(MAKE) clean)
-	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.en.adoc INSTALL.en.text INSTALL.ja.adoc INSTALL.ja.text DIST_EXCLUDE_X gc/configure gc/configure.gnu
+	rm -rf $(AUTOCONF_GENERATED) VERSION DIST_EXCLUDE_X gc/configure gc/configure.gnu \
+	    INSTALL.en.adoc INSTALL.en.text INSTALL.ja.adoc INSTALL.ja.text
 
 # MacOSX Framework specific stuff
 framework: all
