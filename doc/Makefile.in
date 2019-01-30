@@ -107,7 +107,7 @@ test :
 	$(MAKEDOC) dvi $< "$(MAKEINFO)"
 
 %.text: %.adoc
-	$(A2X) --conf-file=$(top_srcdir)/tools/a2x.conf --format=text $<
+	$(A2X) --conf-file=$(top_srcdir)/tools/asciidoc/a2x.conf --format=text $<
 
 # special rule to regenerate srfis.texi in case srfis.scm is modified.
 srfis.texi : $(top_builddir)/src/srfis.scm
