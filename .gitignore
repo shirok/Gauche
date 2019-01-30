@@ -59,7 +59,9 @@ test.record
 
 # Precomp and etc.
 /DIST_EXCLUDE_X
-/INSTALL.text
+/INSTALL.en.adoc
+/INSTALL.en.text
+/INSTALL.ja.adoc
 /INSTALL.ja.text
 .deps
 .dirstamp
