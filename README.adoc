@@ -1,10 +1,19 @@
-Gauche is a Scheme scripting engine aiming at being a handy tool that helps
-programmers and system administrators to write small to large scripts quickly.
+= Gauche- Scheme Scripting Engine
+
+Gauche is an R7RS Scheme scripting engine aiming at being a handy tool
+that helps programmers and system administrators to write small to large 
+scripts quickly.
 
 Visit the project webpage https://practical-scheme.net/gauche/ for more details.
 
+Reference manuals are available online: http://practical-scheme.net/gauche/man/gauche-refe/index.html
+
 If you're new to this project and want to try compiling from git repo,
-check link:HACKING.adoc[] first.  If it is your first time to build Gauche, you should
-start from the release tarball instead of git clone; see
+check link:HACKING.adoc[] first.  If it is your first time to build Gauche, 
+you should start from the release tarball instead of git clone; see
 https://practical-scheme.net/gauche/download.html on how to get the tarball.
-Once you get and untar the release tarball, see link:INSTALL.adoc[] in it for the instructions.
+Once you get and untar the release tarball, see link:INSTALL.adoc[]
+for the instructions.  (If you're reading this in text editor,
+INSTALL.en.adoc or INSTALL.ja.adoc are English-only and Japanese-only
+version easier to read.)
+
