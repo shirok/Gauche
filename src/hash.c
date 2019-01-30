@@ -245,11 +245,13 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
                                           (uint32_t)Scm_UVectorSizeInBytes(u),
                                           salt, salt^uvtype);
             /* We need to avoid depending on endianness of multibyte numbers.
-               Using siphash after canonicalizing byte order can be expensive
-               (unless we directly access siphash setup/round function
+               Using siphash after canonicalizing byte order can be expensive,
+               for we need to allocate a buffer.
+               (Unless we directly access siphash setup/round function
                and feed one word at a time--which is tedious.)
-               This may not be ideal, but just as good as our other primitive
-               portable hash functions. */
+               The current code may not be ideal, but just as good as our 
+               other primitive portable hash functions. */
+
             /* Initial hash value.  The seed value for each uvector type
                is just a random value I generated. */
 #define INIT_R(r, seed) SMALL_INT_HASH(r, seed^salt)
@@ -299,7 +301,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
             {
                 INIT_R(r, seed);
                 for (size_t i=0; i<s; i++) {
-                    ScmUInt64 e = SCM_U32VECTOR_ELEMENT(u, i);
+                    ScmUInt64 e = SCM_U64VECTOR_ELEMENT(u, i);
 #if SCM_EMULATE_INT64
                     u_long z = e.hi ^ e.lo;
 #else
@@ -316,7 +318,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
             seed = 2350294565ul;
             INIT_R(r, seed);
             for (size_t i=0; i<s; i++) {
-                double e = SCM_U64VECTOR_ELEMENT(u, i);
+                double e = SCM_F64VECTOR_ELEMENT(u, i);
                 r = COMBINE(r, flonum_hash(e, salt, TRUE));
             }
             return r;
