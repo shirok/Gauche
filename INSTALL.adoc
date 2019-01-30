@@ -2,6 +2,9 @@
 :source-highlighter: pygments
 
 //@start header
+// This is a source document from which INSTALL.en.adoc (English) and
+// INSTALL.ja.adoc (Japanese) are generated.  If you're reading this in
+// an un-tarred source tree, check out one of the generated adoc files.
 
 // Use English as the default language.
 // Use "--attribute=lang=ja" option for Japanese output.
