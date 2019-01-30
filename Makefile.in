@@ -13,11 +13,12 @@ libdir      = @libdir@
 srcdir      = @srcdir@
 datadir     = @datadir@
 datarootdir = @datarootdir@
+top_srcdir  = @top_srcdir@
 
 SUBDIRS = gc src lib ext doc examples
 SRIDBUS = examples doc ext lib src gc
 LIBATOMICDIR = gc/libatomic_ops
-MKINSTDIR    = @top_srcdir@/mkinstalldirs
+MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
@@ -74,10 +75,10 @@ INSTALL.ja.adoc: INSTALL.adoc
 	sed -e '/^ifdef::EN/,/^endif::EN/d ; /^ifdef::JA/d ; /^endif::JA/d ; /^\/\/@start header/,/^\/\/@end header/d' $< > $@
 
 %.en.text: %.en.adoc
-	$(A2X) --conf-file=$(srcdir)/tools/a2x.conf --attribute=lang=en --format=text $<
+	$(A2X) --conf-file=$(top_srcdir)/tools/a2x.conf --attribute=lang=en --format=text $<
 
 %.ja.text: %.ja.adoc
-	$(A2X) --conf-file=$(srcdir)/tools/a2x.conf --attribute=lang=ja --format=text $<
+	$(A2X) --conf-file=$(top_srcdir)/tools/a2x.conf --attribute=lang=ja --format=text $<
 
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat
