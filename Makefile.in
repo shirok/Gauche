@@ -13,11 +13,12 @@ libdir      = @libdir@
 srcdir      = @srcdir@
 datadir     = @datadir@
 datarootdir = @datarootdir@
+top_srcdir  = @top_srcdir@
 
 SUBDIRS = gc src lib ext doc examples
 SRIDBUS = examples doc ext lib src gc
 LIBATOMICDIR = gc/libatomic_ops
-MKINSTDIR    = @top_srcdir@/mkinstalldirs
+MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
@@ -28,6 +29,7 @@ DESTDIR =
 
 GOSH = gosh
 LN_S = @LN_S@
+A2X  = @A2X@
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 	           libtool configure.lineno autom4* gc/autom4* \
@@ -61,16 +63,22 @@ install-check:
 
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.
-# the check of INSTALL.in is necessary for making pre-package target from
-# distribution tarball (in case for preprocessing winvc source tree).
-pre-package:
+pre-package: INSTALL.en.adoc INSTALL.en.text INSTALL.ja.adoc INSTALL.ja.text
 	cd src; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
-	if [ -f $(srcdir)/INSTALL.in ]; then \
-	  $(GOSH) $(srcdir)/doc/extract -en -o INSTALL INSTALL.in; \
-	  $(GOSH) $(srcdir)/doc/extract -jp -o INSTALL.ja INSTALL.in; \
-	fi
+
+INSTALL.en.adoc: INSTALL.adoc
+	sed -e '/^ifdef::JA/,/^endif::JA/d ; /^ifdef::EN/d ; /^endif::EN/d ; /^\/\/@start header/,/^\/\/@end header/d' $< > $@
+
+INSTALL.ja.adoc: INSTALL.adoc
+	sed -e '/^ifdef::EN/,/^endif::EN/d ; /^ifdef::JA/d ; /^endif::JA/d ; /^\/\/@start header/,/^\/\/@end header/d' $< > $@
+
+%.en.text: %.en.adoc
+	$(A2X) --conf-file=$(top_srcdir)/tools/asciidoc/a2x.conf --asciidoc-opts="--conf-file=$(top_srcdir)/tools/asciidoc/text.conf" --format=text --attribute=lang=en $<
+
+%.ja.text: %.ja.adoc
+	$(A2X) --conf-file=$(top_srcdir)/tools/asciidoc/a2x.conf --asciidoc-opts="--conf-file=$(top_srcdir)/tools/asciidoc/text.conf" --format=text --attribute=lang=ja $<
 
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat
@@ -126,7 +134,8 @@ maintainer-clean: clean
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
 	-(cd winnt/wix; $(MAKE) clean)
-	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.ja DIST_EXCLUDE_X gc/configure gc/configure.gnu
+	rm -rf $(AUTOCONF_GENERATED) VERSION DIST_EXCLUDE_X gc/configure gc/configure.gnu \
+	    INSTALL.en.adoc INSTALL.en.text INSTALL.ja.adoc INSTALL.ja.text
 
 # MacOSX Framework specific stuff
 framework: all

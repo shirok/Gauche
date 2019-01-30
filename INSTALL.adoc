@@ -1,0 +1,742 @@
+// -*- coding: utf-8 -*-
+:source-highlighter: pygments
+
+//@start header
+
+// Use English as the default language.
+// Use "--attribute=lang=ja" option for Japanese output.
+ifndef::lang[:lang: en]
+
+ifeval::["{lang}" == "en"]
+:EN:
+endif::[]
+ifeval::["{lang}" == "ja"]
+:JA:
+endif::[]
+
+//@end header
+
+ifdef::JA[]
+= Gaucheのコンパイルとインストール
+endif::JA[]
+ifdef::EN[]
+= Compiling and Installing Gauche
+endif::EN[]
+
+ifdef::JA[]
+NOTE: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
+情報が得られます:
+endif::JA[]
+ifdef::EN[]
+NOTE: The Gauche system is a work in progress and frequently updated.
+Check out the latest information on the site:
+endif::EN[]
+https://practical-scheme.net/gauche/
+
+
+ifdef::JA[]
+== 簡単な方法
+endif::JA[]
+ifdef::EN[]
+== Quick Start
+endif::EN[]
+
+[source,console]
+----
+% ./configure
+% make
+% make check
+% make install
+----
+
+ifdef::JA[]
+これで、Gaucheシステムが `/usr/local/bin`, `/usr/local/lib/gauche` 及び
+`/usr/local/share/gauche` 以下にインストールされます。
+endif::JA[]
+ifdef::EN[]
+Things will be installed under `/usr/local/bin`, `/usr/local/lib/gauche`,
+and `/usr/local/share/gauche`.
+endif::EN[]
+
+ifdef::JA[]
+既にGaucheがインストールされているシステムで、
+全く同じconfigurationオプションで新しいバージョンのGaucheをインストール
+する場合、configure の代わりに次のコマンドを使うこともできます。
+endif::JA[]
+ifdef::EN[]
+If you have installed Gauche before, and want to install
+new version of Gauche with the same configuration option,
+you can use the following command instead of 'configure'.
+endif::EN[]
+
+[source,console]
+----
+% gauche-config --reconfigure | sh
+----
+
+ifdef::JA[]
+`--reconfigure` オプションが与えられると、gauche-configは現在
+インストールされているGaucheがconfigureされた時のコマンドラインを
+標準出力に書き出します。それをシェルに評価させれば、同じオプションで
+configureすることができます。Gaucheをアップデートする場合に便利です。
+endif::JA[]
+ifdef::EN[]
+When the option `--reconfigure` is given, Gauche-config prints out
+the command line when it is configured.   Pass the output to
+shell and you can reconfigure with the same options.  It is a
+convenient way to update Gauche.
+endif::EN[]
+
+ifdef::JA[]
+注: gitレポジトリの開発版HEADをコンパイルする場合は、configureを
+走らせる前にいくつか準備が必要です。詳しくは link:HACKING.adoc[] ファイルを参照して
+ください。
+endif::JA[]
+ifdef::EN[]
+Note: If you are compiling from development HEAD cloned from
+git repository, you need extra steps before running configure.
+See the file link:HACKING.adoc[] for the details.
+endif::EN[]
+
+ifdef::JA[]
+== スレッドサポート
+endif::JA[]
+ifdef::EN[]
+== Thread Support
+endif::EN[]
+
+ifdef::JA[]
+主要なプラットフォームの多くで、Gaucheはネイティブスレッドをサポートします。
+スレッドが使用可能かどうかはconfigure時に自動判定されます。
+スレッドサポートが有効かどうかはconfigureスクリプトの出力の最後に表示されます。
+endif::JA[]
+ifdef::EN[]
+On most popular platforms, Gauche supports native threads.
+The configure script tries to determine automatically whether thread
+support can be enabled or not.  It shows at the end of the output
+whether the support is enabled.
+endif::EN[]
+
+ifdef::JA[]
+何らかの理由で、スレッドサポートが可能なプラットフォームでそれを無効にしたい場合、
+あるいは本来可能であるはずなのにconfigureスクリプトが判定を間違えて有効になっていない
+場合には、次のconfigureオプションで強制的にスレッドサポートの有効/無効を
+切り替えることができます。
+endif::JA[]
+ifdef::EN[]
+If you want to turn off the thread support even when the platform
+allows it for some reason, or if the configure script misrecognizes the
+platform and does not enable the support when it should be, you can use
+the following configure options to turn off or turn on the support
+explicitly.
+endif::EN[]
+
+[horizontal]
+`--enable-threads=none`     :: turn off the thread support
+`--enable-threads=pthreads` :: turn on the thread support (pthread)
+`--enable-threads=win32`    :: turn on the thread support (windows)
+
+
+ifdef::JA[]
+== 文字エンコーディングの選択
+endif::JA[]
+ifdef::EN[]
+== Choosing Character Encoding
+endif::EN[]
+
+ifdef::JA[]
+デフォルトでは、Gaucheは内部文字エンコーディングとして UTF-8 を使います。
+`--enable-multibyte=ENCODING` というオプションをconfigureに渡すことで、
+内部文字エンコーディングを変えることができます。
+endif::JA[]
+ifdef::EN[]
+By default, Gauche is compiled with UTF-8 as a native character encoding.
+You can give a `--enable-multibyte=ENCODING` option to switch the native
+encoding.   Note that if you want to use ISO8859-1 GR characters in
+the program text, you have to specify no multibyte encoding, or
+Gauche takes such characters as the first byte of multibyte charaters.
+endif::EN[]
+
+[horizontal]
+`--enable-multibyte=utf-8`   :: UTF-8 (default)
+`--enable-multibyte=euc-jp`  :: EUC-JP
+`--enable-multibyte=sjis`    :: Shift JIS
+`--enable-multibyte=no`      :: No multibyte string
+
+
+ifdef::JA[]
+Gaucheは代表的な日本語文字エンコーディングを認識し変換することが
+できますが、それ以外のエンコーディングに関しては、iconvが利用可能で
+あればそれを利用して変換を行います。
+iconvが標準でインストールされていないシステムでは、
+`--with-iconv` オプションで外部のiconvライブラリを利用することができます。
+endif::JA[]
+ifdef::EN[]
+Gauche can recognize and converts typical japanese character
+encodings, but delegates other conversion work to iconv library
+(when available).   If your system does not have iconv installed,
+you can specify the location of your external
+iconv library by `--with-iconv` option.
+endif::EN[]
+
+[source,sh]
+----
+--with-iconv=DIR
+----
+
+
+ifdef::JA[]
+例えば `--with-iconv=/usr/local` とすれば、Gaucheは `iconv.h` を `/usr/local/include`
+から、 `libiconv` を `/usr/local/lib` から探します。もしあなたのiconvライブラリが
+libiconv以外の名前 ( `libmyconv` とか) だったとしたら、
+`--with-iconv-lib=myconv` というオプションも指定して下さい。
+
+外部のiconvライブラリとしては、Bruno Haible氏のlibiconvが以下から入手可能です。
+endif::JA[]
+ifdef::EN[]
+For example, if your say `--with-iconv=/usr/local`, Gauche looks
+for the header iconv.h from `/usr/local/include` and the library
+libiconv from `/usr/local/lib`.
+In case if your iconv library is named other than libiconv, say,
+`libmyconv`, you can also specify `--with-iconv-lib=myconv` to tell
+Gauche to link against the library.
+
+You can obtain Bruno Haible's libiconv library from here:
+endif::EN[]
+https://www.gnu.org/software/libiconv/
+
+
+ifdef::JA[]
+== ローカルライブラリパス
+endif::JA[]
+ifdef::EN[]
+== Local library paths
+endif::EN[]
+
+ifdef::JA[]
+Gaucheのビルドに、標準でない場所にインストールされているライブラリを
+使用したい場合、次のオプションでその場所を指定することができます。
+
+[source,sh]
+----
+--with-local=PATH:PATH2:...
+----
+
+これで、`PATH/include` 、`PATH2/include` 、... がインクルードパスに、
+`PATH/lib` 、`PATH2/lib` 、... がライブラリサーチパスに追加されます。
+
+例えば、`/usr/local` にインストールされたgdbmライブラリを使用したい
+場合は次のようにします。
+
+[source,sh]
+----
+--with-local=/usr/local
+----
+endif::JA[]
+ifdef::EN[]
+If you want to use some libraries installed in non-standard location
+to build Gauche, you can use the following option to specify the
+locations.
+
+[source,sh]
+----
+--with-local=PATH:PATH2:...
+----
+
+This addts `PATH/include`, `PATH2/include`, ... to the include paths,
+and `PATH/lib`, `PATH2/lib`, ... to the library search paths.
+
+For example, if you want to use gdbm library in `/usr/local`,
+you can say:
+
+[source,sh]
+----
+--with-local=/usr/local
+----
+endif::EN[]
+
+
+ifdef::JA[]
+== IPv6サポート
+endif::JA[]
+ifdef::EN[]
+== IPv6 support
+endif::EN[]
+
+ifdef::JA[]
+GaucheはプラットフォームでIPv6がサポートされていればそれを使えるように
+コンパイルされますが、何らかの事情でIPv6を全く使わないバージョンが必要で
+あれば、`--enable-ipv6=no` を指定してください。
+endif::JA[]
+ifdef::EN[]
+Gauche includes IPv6 support if the platform has it.  If you
+don't want to include IPv6 support, give `--enable-ipv6=no` option.
+endif::EN[]
+
+
+ifdef::JA[]
+== TLS/SSL のサポート
+endif::JA[]
+ifdef::EN[]
+== TLS/SSL support
+endif::EN[]
+
+ifdef::JA[]
+Gaucheにはセキュアソケット通信のサポートが組み込まれています。ひとつは
+バンドルされたaxTLSライブラリを使うもので、それは自動的に含まれます。
+もうひとつは外部のmbedTLSライブラリを使うもので、そちらはconfigure時に
+ライブラリがみつかればコンパイルされます。もしビルドに不都合が生じてどれかの
+ライブラリを外したい場合は、次のオプションで使うライブラリを選べます。
+endif::JA[]
+ifdef::EN[]
+Gauche includes secure socket connection support.  One uses
+bundled axTLS library, which is included automatically, and another
+uses external mbedTLS library, which is compiled when we detect it
+during configuration.  If you have a problem building those libraries,
+you can selectively turn off each of them.
+endif::EN[]
+
+[horizontal]
+`--with-tls=none`          :: do not include TLS/SSL support
+`--with-tls=axtls`         :: include only axTLS support
+`--with-tls=axtls,mbedtls` :: (default) include TLS/SSL support using
+                            axTLS library (source is included in Gauche),
+                            and mbedTLS library (installed on the system).
+
+ifdef::JA[]
+== SLIBの場所
+endif::JA[]
+ifdef::EN[]
+== Selecting SLIB location
+endif::EN[]
+
+ifdef::JA[]
+SLIBは、ポータブルなSchemeライブラリで、いろいろ便利な機能が
+完全にSchemeで書かれています。GaucheはSLIBがインストールされていれば
+その機能を利用することができます。
+endif::JA[]
+ifdef::EN[]
+SLIB is a portable Scheme library containing various useful functions,
+entirely written in Scheme.  Gauche can use SLIB features if you have
+it on your system.
+endif::EN[]
+
+ifdef::JA[]
+configureスクリプトは、 `/usr/local/slib` や `/usr/share/slib` などいくつかの基本的なディレクトリ
+からSLIBを自動的に探します。もしあなたのSLIBシステムが標準的ではない場所に
+インストールされていたら、次のオプションでその場所を指定してください。
+endif::JA[]
+ifdef::EN[]
+The configure script tries to find where SLIB is installed.  It looks
+for some typical directories like `/usr/local/slib` or `/usr/share/slib`.
+If you installed your SLIB in some non-standard location, you can tell
+it to the configure script as follows:
+endif::EN[]
+
+[source,sh]
+----
+./configure --with-slib=PATH
+----
+
+ifdef::JA[]
+ここで、`PATH` はSLIBがインストールされたパスです。
+endif::JA[]
+ifdef::EN[]
+where `PATH` is the path you installed your SLIB.
+endif::EN[]
+
+ifdef::JA[]
+GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
+気にしなくてよいです。
+endif::JA[]
+ifdef::EN[]
+Gauche works without SLIB, anyway.  If you're not interested, you
+don't need to care about this.
+endif::EN[]
+
+ifdef::JA[]
+SLIBは最初に使う前にGaucheのライブラリディレクトリにカタログファイルを
+作成します。Gaucheのインストール時に既にSLIBが存在すればインストール
+スクリプトがカタログファイルを作成しますが、Gaucheインストール後にSLIB
+がインストールされた場合、最初にSLIBを使おうとした時点でカタログファイルが
+作成されます。この時、Gauche使用者がライブラリディレクトリに書き込み権限を
+持っていないとエラーとなります。書き込み権限を持つユーザが `gosh` を起動して
+例えば次のような式を評価すればカタログファイルが正しく作られます。
+endif::JA[]
+ifdef::EN[]
+SLIB needs a catalog file to be created in the Gauche library
+directory before use.  If Gauche finds SLIB during installation,
+the install procedure creates the catalog file.
+If you install slib after installing Gauche, it tries to create
+the catalog file when you use slib first time, and you may get
+an error if you don't have a permission to write into the
+Gauche library directory.   Run `gosh` in the right permission
+and evaluate something like the following will solve the problem.
+endif::EN[]
+
+[source,scheme]
+----
+(use slib)
+(require 'logical)
+----
+
+
+ifdef::JA[]
+== 実行時のライブラリパス
+endif::JA[]
+ifdef::EN[]
+== Run-time library path
+endif::EN[]
+
+ifdef::JA[]
+しばしば、環境のコントロールができない箇所でGaucheを走らせなければならない
+場合があります。例えばCGIスクリプトをISPのサーバーで走らせる場合などです。
+もし、Gaucheが標準的でない場所にインストールされた共有ライブラリに依存し
+ている場合、それが問題となります。
+
+例えば、最新の `libiconv.so` を自分でコンパイルして `/home/yours/lib` に
+インストールしたとします。`--with-iconv=/home/yours/lib` としてconfigure
+すれば、Gaucheはあなたのiconvを使うようにコンパイルされます。実行時に適切
+な環境変数、例えば `LD_LIBRARY_PATH` などを設定しておけば、Gaucheの
+インタプリタ `gosh` は `libiconv.so` を捜し出すことができます。しかし、
+CGIスクリプトはWeb serverによって起動され、Web serverは `LD_LIBRARY_PATH`
+を設定してくれないかもしれません。その場合、`gosh` は `libiconv.so` が見つけられずに
+起動に失敗するかもしれません。
+
+コンパイラによっては、プログラムが依存している共有ライブラリのパスをプログラム
+本体に書き込んでしまえるオプションを持っています。configureの `--with-rpath`
+オプションはそれを利用します。 `--with-rpath=DIR` とすると、実行時に `DIR` から
+共有ライブラリを探すような設定になります。このオプションは今のところ `gcc` でしか
+動作しません。
+endif::JA[]
+ifdef::EN[]
+In some cases, your have to run Gauche under the environment
+you don't have much control.  One of such cases is when you
+want to run CGI script on the ISP's machine.  It may become
+a problem that your build of Gauche depends on some dynamically
+loaded libraries that are installed in non-standard location.
+
+For example, suppose you install a new `libiconv.so` in `/home/yours/lib`
+on the ISP's server and compile Gauche with `--with-iconv=/home/yours/lib`.
+You have set up correct environment variables such as `LD_LIBRARY_PATH`,
+so you can invoke Gauche interpreter `gosh` without a problem.  Now,
+you write a CGI script.   Unfortunately, the ISP's web server
+doesn't set `LD_LIBRARY_PATH` as you desired, and your script never
+runs on the server, for the interpreter can't find `libiconv.so`
+in the system default path.
+
+Some compilers have an option that writes exact path of shared
+libraries that the binary depends on.  A configure option `--with-rpath`
+utilizes the feature.  When an option `--with-rpath=DIR` is given,
+configure sets up a build process so that the shared libraries
+are looked from `DIR`.   This works only on `gcc`, however.
+endif::EN[]
+
+
+ifdef::JA[]
+== インストール先の指定
+endif::JA[]
+ifdef::EN[]
+== Customizing install location
+endif::EN[]
+
+ifdef::JA[]
+次のようにconfigureスクリプトを起動することにより、インストール先の
+ディレクトリを指定できます。
+endif::JA[]
+ifdef::EN[]
+Call configure with those parameters to specify where to install.
+endif::EN[]
+
+[source,console]
+----
+% ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
+----
+
+
+ifdef::JA[]
+`--prefix` オプションが指定されなければ、 `/usr/local` が指定されたものとみなされます。
+`--exec-prefix` オプションが指定されなければ、 `EXEC_PREFIX` は `PREFIX` と同じものに
+なります。
+endif::JA[]
+ifdef::EN[]
+If `--prefix` option is omitted, `/usr/local` is assumed as `PREFIX`.
+If `--exec-prefix` option is omitted, `EXEC_PREFIX` is set the same as `PREFIX`.
+endif::EN[]
+
+
+ifdef::JA[]
+インストールされるファイルの内訳は以下の通りです。
+endif::JA[]
+ifdef::EN[]
+The files are installed in those locations:
+endif::EN[]
+
+  `$EXEC_PREFIX/bin/*`::
+ifdef::JA[]
+     インタプリタ (`gosh`) とコンフィグレーションスクリプト (`gauche-config`)
+endif::JA[]
+ifdef::EN[]
+     The interpreter (`gosh`) and configuration script (`gauche-config`).
+endif::EN[]
+
+  `$EXEC_PREFIX/lib/*`::
+ifdef::JA[]
+     ライブラリ (`libgauche.a`).
+endif::JA[]
+ifdef::EN[]
+     Library (`libgauche.a`).
+endif::EN[]
+
+  `$PREFIX/share/gauche/VERSION/include/*`::
+ifdef::JA[]
+     libgaucheをリンクするアプリケーションに必要なヘッダーファイル
+endif::JA[]
+ifdef::EN[]
+     Header files required to create applications using libgauche.
+endif::EN[]
+
+  `$PREFIX/share/gauche/VERSION/lib/*`::
+ifdef::JA[]
+     マシンに依存しないSchemeファイル
+endif::JA[]
+ifdef::EN[]
+     Machine-independent Scheme files.
+endif::EN[]
+
+  `$PREFIX/share/info/*`::
+ifdef::JA[]
+     infoファイル
+endif::JA[]
+ifdef::EN[]
+     info files.
+endif::EN[]
+
+  `$EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*`::
+ifdef::JA[]
+     マシンに依存するファイル (`.so`, `gosh`, `gauche-config`, `libgauche.a`)
+endif::JA[]
+ifdef::EN[]
+     Machine-dependent files (`.so` files, `gosh`, `gauche-config`, and `libgauche.a`)
+endif::EN[]
+
+  `$PREFIX/share/gauche/site/lib/*`::
+  `$EXEC_PREFIX/lib/gauche/site/VERSION/ARCHITECTURE/*`::
+ifdef::JA[]
+     ユーザが独自にインストールするマシン非依存／依存ファイルのデフォルトの置き場所。
+endif::JA[]
+ifdef::EN[]
+     These are default locations where user installed machine-indenpedent/
+     dependent files will go.
+endif::EN[]
+
+
+ifdef::JA[]
+== 最適化オプション
+endif::JA[]
+ifdef::EN[]
+== Optimization options
+endif::EN[]
+
+
+ifdef::JA[]
+Make時に、 `make` マクロ `OPTFLAGS` を用いて追加のコンパイルオプションを指定すること
+ができます。configureが設定する `OPTFLAGS` 以外のオプションを試したい場合は
+次のように `make` を走らせて下さい。
+endif::JA[]
+ifdef::EN[]
+You can pass extra options at make time, using `make` macro `OPTFLAGS`.
+Configure' sets a default, but if you want to explore different
+options, just run 'make' as follows:
+endif::EN[]
+
+[source,sh]
+----
+make OPTFLAGS="--some-compiler-option --other-option"
+----
+
+
+ifdef::JA[]
+== アンインストール
+endif::JA[]
+ifdef::EN[]
+== Uninstallation
+endif::EN[]
+
+ifdef::JA[]
+インストールされたGaucheソフトウェアを取り除くには、ソースツリーのトップ
+ディレクトリで
+
+[source,sh]
+----
+make uninstall
+----
+
+として下さい。
+endif::JA[]
+ifdef::EN[]
+You can remove installed Gauche software by running
+
+[source,sh]
+----
+make uninstall
+----
+
+on top of the source tree.
+endif::EN[]
+
+
+ifdef::JA[]
+== クロスコンパイル
+endif::JA[]
+ifdef::EN[]
+== Cross compilation
+endif::EN[]
+
+ifdef::JA[]
+Gaucheはautotool標準のクロスコンパイルをサポートしています。
+つまり、 `configure` スクリプトに `--build` と `--host` オプションを与えて
+makeするだけです (クロス開発に必要なツールはもちろんインストールされているとします)。
+ただ、二つばかり気をつけることがあります。
+endif::JA[]
+ifdef::EN[]
+Gauche supports autotools-standard cross compilation, that is,
+you give `--build` and `--host` option to `configure` script and
+just make (assuming you have appropriate cross development tools).
+There are a couple of caveats, though.
+endif::EN[]
+
+ifdef::JA[]
+- クロスコンパイルしようとしているのと同じバージョンのGaucheをビルドマシンに
+  インストールしておいてください。
++
+通常のビルドでは、Gaucheは作ったばかりの `gosh` を使って `ext/` 以下の拡張
+ライブラリをビルドします。クロスコンパイル時には、作ったばかりの `gosh` は
+ビルドマシンでは実行できないので、既にビルドマシンにインストールされている
+`gosh` を使うことになります。
+
+- `./configure` に `--with-libatomic-ops=no` オプションが必要かもしれません。
++
+このオプションをつけることで、システムにインストールされている `libatomic_ops`
+ではなく同梱されたソースを使うようになります。どうもconfigureスクリプトが
+ビルドシステム用の `libatomic_ops` をホスト用と誤認するケースがあるようです。
+endif::JA[]
+ifdef::EN[]
+- You have to have the same version of Gauche that you're trying to
+  cross-compile on the build machine.
++
+In normal build, Gauche uses freshly built `gosh` to compile
+extension libraries (under `ext/`).  While cross compiling we can't run
+freshly built `gosh` on the build machine, so we rely on the `gosh` already
+installed on it.
+
+- You may need `--with-libatomic-ops=no` option for `./configure`
++
+The option forces Gauche to use bundled `libatomic_ops` source instead
+of system provided one.  We noticed that `./configure` may misunderstood
+the build system's `libatmic_ops` as the host system's.
+endif::EN[]
+
+ifdef::JA[]
+例として、次のコマンドラインで、Windows (mingw-w64 32bit) 用バイナリを
+あなたのシステム上でクロスコンパイルできます:
+endif::JA[]
+ifdef::EN[]
+For example, the following command line is to cross build on your machine
+for Windows (mingw-w64 32bit):
+endif::EN[]
+
+[source,console]
+----
+$ ./configure --build=`./config.guess` \
+              --host=i686-w64-mingw32 \
+              --with-libatomic-ops=no \
+              --prefix=/usr/local
+----
+
+ifdef::JA[]
+== 機種依存の情報
+endif::JA[]
+ifdef::EN[]
+== Machine-dependent information
+endif::EN[]
+
+
+ifdef::JA[]
+* MacOS X - 10.2.x以前のバージョンでは、dlcompatライブラリ(libdl)が
+  インストールされていることが必要です。 Fink プロジェクト
+  ( http://www.finkproject.org/ ) から
+  ダウンロードできます。10.3以降では必要ありません。システム標準の
+  場所以外にdlcompatライブラリをインストールした場合は、configureの
+  `--with-local` オプションで場所を指定して下さい。
+  また、GCがpthreadsを要求するようになったので、`--enable-threads=pthreads`
+  も必要です。
+  (例：`$HOME/include` に `dlfcn.h` が、 `$HOME/lib` に `libdl.a` がある場合は
++
+[source,sh]
+----
+./configure --with-local=$HOME --enable-threads=pthreads
+----
++
+とする)
+endif::JA[]
+ifdef::EN[]
+* MacOS X - For 10.2.x and earlier, you need to install the `dlcompat`
+library (libdl) from The Fink project ( http://www.finkproject.org/ )
+before configuring Gauche.   You don't need it if you have OSX
+10.3 or later.   If the dlcompat library is installed in non-standard
+location, you have to tell configure the place by `--with-local`.
+Besides, GC now requires pthreads on MacOS X, so you need
+`--enable-threads=pthreads`.
++
+For example, if you have `dlfcn.h` in `$HOME/include` and `libdl.a`
+in `$HOME/lib`, you should do:
++
+[source,sh]
+----
+./configure --with-local=$HOME --enable-threads=pthreads
+----
+endif::EN[]
+
+ifdef::JA[]
+* IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
+  したい場合は次のようにして下さい。
++
+[source,sh]
+----
+CC="cc -64" AS="as -64" ./configure
+----
+endif::JA[]
+ifdef::EN[]
+* IRIX with 64bit binary - If you want to compile for 64bit ABI instead
+  of the default 32bit ABI, run configure like this:
++
+[source,sh]
+----
+CC="cc -64" AS="as -64" ./configure
+----
+endif::EN[]
+
+ifdef::JA[]
+* Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
+  ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
+  でコンパイルに失敗するという報告がありました。
+  この場合は以下のように環境依存の最適化を無効にして下さい。
++
+[source,sh]
+----
+./configure --disable-heuristic-optimization
+----
+endif::JA[]
+ifdef::EN[]
+* Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks
+  TM5800 as i686-compatible, and compilation of Gauche fails at
+  gc where the i686's prefetch instruction is used.
+  If you want to disable this machine-dependent heuristic optimization,
+  run configure like this:
++
+[source,sh]
+----
+./configure --disable-heuristic-optimization
+----
+endif::EN[]
