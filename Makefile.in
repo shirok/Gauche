@@ -75,10 +75,10 @@ INSTALL.ja.adoc: INSTALL.adoc
 	sed -e '/^ifdef::EN/,/^endif::EN/d ; /^ifdef::JA/d ; /^endif::JA/d ; /^\/\/@start header/,/^\/\/@end header/d' $< > $@
 
 %.en.text: %.en.adoc
-	$(A2X) --conf-file=$(top_srcdir)/tools/a2x.conf --attribute=lang=en --format=text $<
+	$(A2X) --conf-file=$(top_srcdir)/tools/a2x.conf --attribute=lang=en --format=text --asciidoc-opts="--conf-file=$(top_srcdir)/tools/text.conf" $<
 
 %.ja.text: %.ja.adoc
-	$(A2X) --conf-file=$(top_srcdir)/tools/a2x.conf --attribute=lang=ja --format=text $<
+	$(A2X) --conf-file=$(top_srcdir)/tools/a2x.conf --attribute=lang=ja --format=text --asciidoc-opts="--conf-file=$(top_srcdir)/tools/text.conf" $<
 
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat

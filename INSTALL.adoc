@@ -70,7 +70,9 @@ you can use the following command instead of 'configure'.
 endif::EN[]
 
 [source,console]
+----
 % gauche-config --reconfigure | sh
+----
 
 ifdef::JA[]
 `--reconfigure` オプションが与えられると、gauche-configは現在
@@ -178,7 +180,9 @@ iconv library by `--with-iconv` option.
 endif::EN[]
 
 [source,sh]
+----
 --with-iconv=DIR
+----
 
 
 ifdef::JA[]
@@ -214,7 +218,9 @@ Gaucheのビルドに、標準でない場所にインストールされてい�
 使用したい場合、次のオプションでその場所を指定することができます。
 
 [source,sh]
+----
 --with-local=PATH:PATH2:...
+----
 
 これで、`PATH/include` 、`PATH2/include` 、... がインクルードパスに、
 `PATH/lib` 、`PATH2/lib` 、... がライブラリサーチパスに追加されます。
@@ -223,7 +229,9 @@ Gaucheのビルドに、標準でない場所にインストールされてい�
 場合は次のようにします。
 
 [source,sh]
+----
 --with-local=/usr/local
+----
 endif::JA[]
 ifdef::EN[]
 If you want to use some libraries installed in non-standard location
@@ -231,7 +239,9 @@ to build Gauche, you can use the following option to specify the
 locations.
 
 [source,sh]
+----
 --with-local=PATH:PATH2:...
+----
 
 This addts `PATH/include`, `PATH2/include`, ... to the include paths,
 and `PATH/lib`, `PATH2/lib`, ... to the library search paths.
@@ -240,7 +250,9 @@ For example, if you want to use gdbm library in `/usr/local`,
 you can say:
 
 [source,sh]
+----
 --with-local=/usr/local
+----
 endif::EN[]
 
 
@@ -437,7 +449,9 @@ Call configure with those parameters to specify where to install.
 endif::EN[]
 
 [source,console]
+----
 % ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
+----
 
 
 ifdef::JA[]
@@ -537,7 +551,9 @@ options, just run 'make' as follows:
 endif::EN[]
 
 [source,sh]
+----
 make OPTFLAGS="--some-compiler-option --other-option"
+----
 
 
 ifdef::JA[]
@@ -552,7 +568,9 @@ ifdef::JA[]
 ディレクトリで
 
 [source,sh]
+----
 make uninstall
+----
 
 として下さい。
 endif::JA[]
@@ -560,7 +578,9 @@ ifdef::EN[]
 You can remove installed Gauche software by running
 
 [source,sh]
+----
 make uninstall
+----
 
 on top of the source tree.
 endif::EN[]
@@ -683,14 +703,18 @@ ifdef::JA[]
   したい場合は次のようにして下さい。
 +
 [source,sh]
+----
 CC="cc -64" AS="as -64" ./configure
+----
 endif::JA[]
 ifdef::EN[]
 * IRIX with 64bit binary - If you want to compile for 64bit ABI instead
   of the default 32bit ABI, run configure like this:
 +
 [source,sh]
+----
 CC="cc -64" AS="as -64" ./configure
+----
 endif::EN[]
 
 ifdef::JA[]
