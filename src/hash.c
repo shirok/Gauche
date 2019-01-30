@@ -233,28 +233,95 @@ static u_long internal_string_hash(ScmString *str, u_long salt, int portable)
 static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
 {
     if (portable) {
-        switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(u)))) {
+        ScmUVectorType uvtype = Scm_UVectorType(Scm_ClassOf(SCM_OBJ(u)));
+        u_long r, seed;
+        size_t s = SCM_UVECTOR_SIZE(u);
+
+        switch (uvtype) {
+            /* We can use siphash if u is u8vector or s8vector. */ 
         case SCM_UVECTOR_S8:
         case SCM_UVECTOR_U8:
-            /* We can use siphash if u is u8vector or s8vector. */ 
             return Scm__DwSipPortableHash((uint8_t*)SCM_UVECTOR_ELEMENTS(u),
                                           (uint32_t)Scm_UVectorSizeInBytes(u),
-                                          salt, salt);
-        case SCM_UVECTOR_S16:
-        case SCM_UVECTOR_U16:
-        case SCM_UVECTOR_F16:
-        case SCM_UVECTOR_S32:
-        case SCM_UVECTOR_U32:
-        case SCM_UVECTOR_F32:
-        case SCM_UVECTOR_S64:
-        case SCM_UVECTOR_U64:
-        case SCM_UVECTOR_F64:
+                                          salt, salt^uvtype);
             /* We need to avoid depending on endianness of multibyte numbers.
-               Since once we officially support portable-hash for these vectors
-               we can't change it, so let us think some more...
-             */
-            Scm_Error("[internal] portable-hash on uniform vectors except u8vector and s8vector isn't supported (yet).");
-            break;
+               Using siphash after canonicalizing byte order can be expensive
+               (unless we directly access siphash setup/round function
+               and feed one word at a time--which is tedious.)
+               This may not be ideal, but just as good as our other primitive
+               portable hash functions. */
+            /* Initial hash value.  The seed value for each uvector type
+               is just a random value I generated. */
+#define INIT_R(r, seed) SMALL_INT_HASH(r, seed^salt)
+                                                         
+        case SCM_UVECTOR_S16:
+            seed = 3499211612ul;
+            goto do16;
+        case SCM_UVECTOR_U16:
+            seed = 3890346734ul;
+            goto do16;
+        case SCM_UVECTOR_F16:
+            seed = 545404204ul;
+            do16:
+            {
+                INIT_R(r, seed);
+                for (size_t i=0; i<s; i++) {
+                    u_long e = SCM_U16VECTOR_ELEMENT(u, i);
+                    SMALL_INT_HASH(e, e);
+                    r = COMBINE(r, e);
+                }
+                return r;
+            }
+        case SCM_UVECTOR_S32:
+            seed = 4161255391ul;
+            goto do32;
+        case SCM_UVECTOR_U32:
+            seed = 3922919429ul;
+            goto do32;
+        case SCM_UVECTOR_F32:
+            seed = 949333985ul;
+            do32:
+            {
+                INIT_R(r, seed);
+                for (size_t i=0; i<s; i++) {
+                    u_long e = SCM_U32VECTOR_ELEMENT(u, i);
+                    SMALL_INT_HASH(e, e);
+                    r = COMBINE(r, e);
+                }
+                return r;
+            }
+        case SCM_UVECTOR_S64:
+            seed = 2715962298ul;
+            goto do64;
+        case SCM_UVECTOR_U64:
+            seed = 1323567403ul;
+            do64: 
+            {
+                INIT_R(r, seed);
+                for (size_t i=0; i<s; i++) {
+                    ScmUInt64 e = SCM_U32VECTOR_ELEMENT(u, i);
+#if SCM_EMULATE_INT64
+                    u_long z = e.hi ^ e.lo;
+#else
+                    u_long z = (e >> 32) ^ e;
+#endif
+                    SMALL_INT_HASH(z, z);
+                    r = COMBINE(r, z);
+                }
+                return r;
+            }
+        case SCM_UVECTOR_F64: {
+            /* We can't reinterpret f64 as u64, since ARM mixed-endian would
+               yield nonportable result. */
+            seed = 2350294565ul;
+            INIT_R(r, seed);
+            for (size_t i=0; i<s; i++) {
+                double e = SCM_U64VECTOR_ELEMENT(u, i);
+                r = COMBINE(r, flonum_hash(e, salt, TRUE));
+            }
+            return r;
+        }
+#undef INIT_R            
         case SCM_UVECTOR_INVALID:
             Scm_Panic("invalid uvector class.");
         }
