@@ -63,7 +63,7 @@ install-check:
 
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.
-pre-package: INSTALL.en.text INSTALL.ja.text
+pre-package: INSTALL.en.adoc INSTALL.en.text INSTALL.ja.adoc INSTALL.ja.text
 	cd src; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
@@ -134,7 +134,7 @@ maintainer-clean: clean
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
 	-(cd winnt/wix; $(MAKE) clean)
-	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.en.text INSTALL.ja.text DIST_EXCLUDE_X gc/configure gc/configure.gnu
+	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL.en.adoc INSTALL.en.text INSTALL.ja.adoc INSTALL.ja.text DIST_EXCLUDE_X gc/configure gc/configure.gnu
 
 # MacOSX Framework specific stuff
 framework: all
