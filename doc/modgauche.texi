@@ -19963,6 +19963,40 @@ if given, or raises @code{<join-timeout-exception>}.
 @subsection Synchronization primitives
 @c NODE 同期プリミティブ
 
+@c EN
+Mutexes and condition variables are the low-level synchronization devices.
+Defined in srfi-18 and srfi-21, they are portable across Scheme implementations
+that supports one of those srfis.  However, in most cases you want to
+use following higher-level synchronization utilities:
+
+@table @asis
+@item Atoms
+An atom is a wrapper of arbitrary Scheme object, and allows synchronized
+access to it somewhat like Java's @code{synchroized} blocks.  Atoms are
+explained in this section.
+@item MT-Queues
+Thread-safe queues (@code{<mtqueue>}) are provided in @code{data.queue} module
+(@pxref{Queue}), which works as a synchronized channel and
+suitable to implement producer-consumer pattern. 
+@end table
+@c JP
+mutexと条件変数が低レベルの同期デバイスとして提供されます。
+これらはsrfi-18とsrfi-21で定義されているので、サポートしているScheme実装間では
+ポータブルです。しかし多くの場合、次のような高レベルの同期ユーティリティを使った方が
+良いです。
+
+@table @asis
+@item アトム
+アトムは任意のSchemeオブジェクトをラップして、Javaの@code{synchronized}ブロックに
+似た形で同期アクセスを提供します。アトムについては本節で説明します。
+@item MT-Queue
+スレッドセーフなキュー(@code{<mtqueue>})が@code{data.queue}モジュールで
+提供されます(@ref{Queue}参照)。これは同期チャネルとして動作し、
+生産者-消費者パターンを実装するのに適しています。
+@end table
+@c COMMON
+
+
 @subsubheading Mutex
 
 @deftp {Builtin Class} <mutex>
@@ -19979,7 +20013,7 @@ A mutex becomes unlocked either by @code{mutex-unlock!} or the owner
 thread terminates.  In the former case, a mutex becomes unlocked/not-abandoned
 state.  In the latter case, a mutex becomes unlocked/abandoned state.
 @c JP
-同期のための基本的デバイスです。次の4つの状態のいずれかを持ちます:
+同期のためのプリミティブなデバイスです。次の4つの状態のいずれかを持ちます:
 locked/owned、locked/not-owned、unlocked/abandoned、unlocked/not-abandoned。
 Mutexは、それがunlocked(ロックされていない状態)であるときのみ、
 (@code{mutex-lock!}により)ロックされます。
