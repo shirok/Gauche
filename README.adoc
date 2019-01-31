@@ -4,7 +4,7 @@ Gauche is an R7RS Scheme scripting engine aiming at being a handy tool
 that helps programmers and system administrators to write small to large 
 scripts quickly.
 
-Visit the project webpage https://practical-scheme.net/gauche/ for more details.
+Visit link:https://practical-scheme.net/gauche/[the project webpage] for more details.
 
 Reference manuals are available online: http://practical-scheme.net/gauche/man/gauche-refe/index.html
 
