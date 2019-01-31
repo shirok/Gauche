@@ -1,1 +1,1 @@
-See info manual in "doc/" directory.
+See info manual in link:doc/[] directory.
