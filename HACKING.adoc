@@ -29,8 +29,7 @@ $ ./DIST gen
 ----
 
 Afterwards, you just do the usual `./configure` + `make`.  For
-configure options, see the link:INSTALL.adoc[] file in the distribution
-tarball (it is a generated file, so it's not in the repo).
+configure options, see the link:INSTALL.adoc[].
 
 In case if the latest release of Gauche can't be built on your
 target machine but the fix is already in the HEAD, you need to
