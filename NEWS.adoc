@@ -1,1 +1,0 @@
-See info manual in link:doc/[] directory.
