@@ -241,6 +241,24 @@
             `(quasirename x
                `(a ,b ,',c ,,'d))))))
 
+(let-syntax ([def (er-macro-transformer
+                   (^[f r c]
+                     (quasirename r
+                       `(define-syntax ,(cadr f)
+                          (er-macro-transformer
+                           ;; we need to protect ff from being renamed,
+                           ;; for we have to refer to it inside quote
+                           ;; in (cadr ff).
+                           (^[,'ff rr cc]
+                             (quasirename rr
+                               `(define ,',(caddr f) ,,'(cadr ff)))))))))])
+  (test* "nested quasirename" 4
+         (let ()
+           (def foo bar)
+           (let ()
+             (foo 4)
+             bar))))
+
 ;;----------------------------------------------------------------------
 ;; basic tests
 
