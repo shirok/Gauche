@@ -1,4 +1,6 @@
-This file is for those who wants to hack the cutting-edge
+= How to hack the cutting-edge Gauche
+
+NOTE: This file is for those who wants to hack the cutting-edge
 Gauche sources from the git repository.  If you just want to
 compile from the distribution, you don't need to read any further.
 
