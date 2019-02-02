@@ -73,7 +73,7 @@ of the latest release to be installed.  The easiest way is to
 grab the windows installer from https://practical-scheme.net/gauche.
 For the details of build procedure, see link:doc/HOWTO-mingw.adoc[].
 
-You can build Gauche with cygwin; do it just like on Unix.
+You can build Gauche with Cygwin; do it just like on Unix.
 
 Some effort was made to build Gauche with MSVC.  You can find
 project files under winnt.  Unfortunatley though, it is so
