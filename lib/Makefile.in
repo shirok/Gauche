@@ -117,7 +117,7 @@ SCMFILES = srfi-0.scm \
        scheme/set.scm scheme/sort.scm scheme/vector.scm \
        text/csv.scm text/edn.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
-       text/mexpr.scm text/progress.scm \
+       text/progress.scm \
        text/console.scm text/console/generic.scm text/console/windows.scm \
        text/gap-buffer.scm text/line-edit.scm text/template.scm \
        text/unicode.scm text/unicode/ucd.scm text/unicode/codeset.scm \
