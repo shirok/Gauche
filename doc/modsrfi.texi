@@ -10,7 +10,7 @@ of supported SRFIs.
 
 (Even if a srfi is not listed here, you can still say
 @code{(use srfi-N)} or @code{(import (srfi N))}, as far as
-srfi N is supporeted by Gauche.)
+srfi N is supported by Gauche.)
 @c JP
 この章ではSRFIの機能を提供するモジュールをリストします。
 一部のSRFIはGaucheのコアに組み込まれており、
