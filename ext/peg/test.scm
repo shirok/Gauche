@@ -857,3 +857,5 @@
 (test* "generalized object" (test-one-of "{\"a\":1,\"b\":2}"
                                          "{\"b\":2,\"a\":1}")
        (construct-json-string (hash-table 'eq? '(a . 1) '(b . 2))))
+
+(test-end)
