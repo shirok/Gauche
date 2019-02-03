@@ -530,11 +530,11 @@
 (define-cise-macro (define-cvar form env)
   (expand-cvar form env #t))
 (define-cise-macro (declare-cvar form env)
-  (expand-cvar form env #t))
+  (expand-cvar form env #f))
 (define-cise-macro (define-ctype form env)
   (expand-cvar form env #f))
 
-(define (expand-cvar form env ensure-toplevel?)
+(define (expand-cvar form env toplevel-only?)
   (define (gen-qualifiers quals)
     (intersperse " "
                  (map (^[qual] (ecase qual
@@ -574,10 +574,11 @@
        (errorf "Invalid syntax in ~s ~s: ~s"
                (car form) var init-and-quals)]))
 
-  ;; Note, technically an extern declaration can appear in stmt scope
-  ;; too. But it's not worth supporting.
-  (when ensure-toplevel?
-    (ensure-toplevel-ctx form env))
+  ;; We allow define-cvar only on toplevel, but declare-cvar and
+  ;; define-ctype can appear in stmts.
+  (if toplevel-only?
+    (ensure-toplevel-ctx form env)
+    (ensure-stmt-or-toplevel-ctx form env))
 
   (let* ([canon (car (canonicalize-vardecl (list (cdr form))))]
          [var (car canon)]
