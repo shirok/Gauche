@@ -116,7 +116,7 @@
 ;;;
 
 
-;;;  In this module, we provide various consturctors of PARSERs,
+;;;  In this module, we provide various constructors of PARSERs,
 ;;;  and DRIVER procedures.
 ;;;
 ;;;  A PARSER is merely a closure that takes a list of input (most
