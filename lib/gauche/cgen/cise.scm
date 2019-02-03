@@ -528,13 +528,13 @@
 ;; (define-ctype <name> [::<type>])
 
 (define-cise-macro (define-cvar form env)
-  (expand-cvar form env))
+  (expand-cvar form env #t))
 (define-cise-macro (declare-cvar form env)
-  (expand-cvar form env))
+  (expand-cvar form env #t))
 (define-cise-macro (define-ctype form env)
-  (expand-cvar form env))
+  (expand-cvar form env #f))
 
-(define (expand-cvar form env)
+(define (expand-cvar form env ensure-toplevel?)
   (define (gen-qualifiers quals)
     (intersperse " "
                  (map (^[qual] (ecase qual
@@ -576,7 +576,8 @@
 
   ;; Note, technically an extern declaration can appear in stmt scope
   ;; too. But it's not worth supporting.
-  (ensure-toplevel-ctx form env)
+  (when ensure-toplevel?
+    (ensure-toplevel-ctx form env))
 
   (let* ([canon (car (canonicalize-vardecl (list (cdr form))))]
          [var (car canon)]
