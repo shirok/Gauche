@@ -504,7 +504,7 @@
   (.if "defined HAVE_GETLOADAVG"
        (let* ([samples::(.array double [3])])
          (when (or (<= nsamples 0) (> nsamples 3))
-           (Scm_Error "sys-getloadavg: argument out of range: %d" samples))
+           (Scm_Error "sys-getloadavg: argument out of range: %d" nsamples))
          (let* ([count::int (getloadavg samples nsamples)])
            (if (< count 0)
              (return '#f)
