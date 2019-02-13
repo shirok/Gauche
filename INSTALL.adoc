@@ -64,12 +64,12 @@ endif::EN[]
 ifdef::JA[]
 既にGaucheがインストールされているシステムで、
 全く同じconfigurationオプションで新しいバージョンのGaucheをインストール
-する場合、configure の代わりに次のコマンドを使うこともできます。
+する場合、`configure` の代わりに次のコマンドを使うこともできます。
 endif::JA[]
 ifdef::EN[]
 If you have installed Gauche before, and want to install
 new version of Gauche with the same configuration option,
-you can use the following command instead of 'configure'.
+you can use the following command instead of `configure`.
 endif::EN[]
 
 [source,console]
@@ -78,26 +78,26 @@ endif::EN[]
 ----
 
 ifdef::JA[]
-`--reconfigure` オプションが与えられると、gauche-configは現在
+`--reconfigure` オプションが与えられると、 `gauche-config` は現在
 インストールされているGaucheがconfigureされた時のコマンドラインを
 標準出力に書き出します。それをシェルに評価させれば、同じオプションで
 configureすることができます。Gaucheをアップデートする場合に便利です。
 endif::JA[]
 ifdef::EN[]
-When the option `--reconfigure` is given, Gauche-config prints out
+When the option `--reconfigure` is given, `gauche-config` prints out
 the command line when it is configured.   Pass the output to
 shell and you can reconfigure with the same options.  It is a
 convenient way to update Gauche.
 endif::EN[]
 
 ifdef::JA[]
-注: gitレポジトリの開発版HEADをコンパイルする場合は、configureを
+注: gitレポジトリの開発版HEADをコンパイルする場合は、 `configure` を
 走らせる前にいくつか準備が必要です。詳しくは link:HACKING.adoc[] ファイルを参照して
 ください。
 endif::JA[]
 ifdef::EN[]
 Note: If you are compiling from development HEAD cloned from
-git repository, you need extra steps before running configure.
+git repository, you need extra steps before running `configure`.
 See the file link:HACKING.adoc[] for the details.
 endif::EN[]
 
@@ -407,7 +407,7 @@ CGIスクリプトはWeb serverによって起動され、Web serverは `LD_LIBR
 起動に失敗するかもしれません。
 
 コンパイラによっては、プログラムが依存している共有ライブラリのパスをプログラム
-本体に書き込んでしまえるオプションを持っています。configureの `--with-rpath`
+本体に書き込んでしまえるオプションを持っています。 `configure` の `--with-rpath`
 オプションはそれを利用します。 `--with-rpath=DIR` とすると、実行時に `DIR` から
 共有ライブラリを探すような設定になります。このオプションは今のところ `gcc` でしか
 動作しません。
@@ -429,7 +429,7 @@ runs on the server, for the interpreter can't find `libiconv.so`
 in the system default path.
 
 Some compilers have an option that writes exact path of shared
-libraries that the binary depends on.  A configure option `--with-rpath`
+libraries that the binary depends on.  A `configure` option `--with-rpath`
 utilizes the feature.  When an option `--with-rpath=DIR` is given,
 configure sets up a build process so that the shared libraries
 are looked from `DIR`.   This works only on `gcc`, however.
