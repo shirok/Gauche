@@ -99,13 +99,13 @@ have to run `./DIST gen` first to generate configure scripts.
 Once configure scripts are in place, run the `mingw-dist.sh` on the
 MSYS shell as follows:
 
-[source,console]
+[source,sh]
 ----
 # For x86_64 build:
-$ MSYSTEM=MINGW64 src/mingw-dist.sh
+MSYSTEM=MINGW64 src/mingw-dist.sh
 
 # For i686 build:
-$ MSYSTEM=MINGW32 src/mingw-dist.sh
+MSYSTEM=MINGW32 src/mingw-dist.sh
 ----
 
 The compiled binaries are in `../Gauche-mingw-dist/Gauche-x86_64` or
@@ -120,9 +120,9 @@ If you have Gauche-gl source tree aside of Gauche source tree
 (that is, from Gauche's `$top_srcdir`, you have `../Gauche-gl`),
 you can build Gauche-gl as well.  Give `--with-gl` option:
 
-[source,console]
+[source,sh]
 ----
-$ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
+MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
 ----
 
 
@@ -132,9 +132,9 @@ Make sure `candle.exe` and `light.exe` (WiX toolset) are in the `PATH`.
 
 Run `src/mingw-dist.sh` with `--with-installer` option, for example:
 
-[source,console]
+[source,sh]
 ----
-$ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
+MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
 ----
 
 This creates installer file `../Gauche-mingw-X.X.X-{32|64}bit.msi`.
