@@ -116,7 +116,8 @@ to whatever machine you like.
 
 == Build with Gauche-gl
 
-If you have Gauche-gl source tree aside of Gauche source tree
+If you have link:https://github.com/shirok/Gauche-gl[Gauche-gl] source
+tree aside of Gauche source tree
 (that is, from Gauche's `$top_srcdir`, you have `../Gauche-gl`),
 you can build Gauche-gl as well.  Give `--with-gl` option:
 
