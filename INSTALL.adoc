@@ -649,12 +649,12 @@ For example, the following command line is to cross build on your machine
 for Windows (mingw-w64 32bit):
 endif::EN[]
 
-[source,console]
+[source,sh]
 ----
-$ ./configure --build=`./config.guess` \
-              --host=i686-w64-mingw32 \
-              --with-libatomic-ops=no \
-              --prefix=/usr/local
+./configure --build=`./config.guess` \
+            --host=i686-w64-mingw32 \
+            --with-libatomic-ops=no \
+            --prefix=/usr/local
 ----
 
 ifdef::JA[]
