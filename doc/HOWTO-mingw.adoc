@@ -35,6 +35,7 @@ in the above site to update packages.
 Once MSYS2 is in place, you can get mingw-w64 toolchain using
 `pacman`.  Fire MSYS2 shell and type `+pacman -S <package> ...+`.
 For +mingw-w64-***+ packages, choose suitable architecture.
+
 NOTE: If you want to build x86_64 and i686 binary installers
 on x86_64 machine, you have to install both architecture versions.
 
@@ -55,7 +56,9 @@ without them, but some features will not be available.
 - mingw-w64-x86_64-mbedtls / mingw-w64-i686-mbedtls
 - texinfo
 
-+NOTE:+ `pacman` tries to install packages under `C:/msys64/mingw64` etc,
+[NOTE]
+====
+`pacman` tries to install packages under `C:/msys64/mingw64` etc,
 but sometimes the first attempt fails saying:
 
 ----
@@ -66,7 +69,7 @@ error: failed to commit transaction (conflicting files)
 There is `/mingw64.exe` and `/mingw64.bat` (in msys2 filesystem) and
 the installer gets confused.  Manually creating directory `/mingw64`
 will solve the problem.
-
+====
 
 === Gauche
 
