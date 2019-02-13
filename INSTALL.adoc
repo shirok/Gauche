@@ -314,12 +314,14 @@ ifdef::EN[]
 endif::EN[]
 
 ifdef::JA[]
-SLIBは、ポータブルなSchemeライブラリで、いろいろ便利な機能が
+link:http://people.csail.mit.edu/jaffer/SLIB[SLIB]は、
+ポータブルなSchemeライブラリで、いろいろ便利な機能が
 完全にSchemeで書かれています。GaucheはSLIBがインストールされていれば
 その機能を利用することができます。
 endif::JA[]
 ifdef::EN[]
-SLIB is a portable Scheme library containing various useful functions,
+link:http://people.csail.mit.edu/jaffer/SLIB[SLIB]
+is a portable Scheme library containing various useful functions,
 entirely written in Scheme.  Gauche can use SLIB features if you have
 it on your system.
 endif::EN[]
