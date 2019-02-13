@@ -8,12 +8,12 @@ with Gauche that may surprise you.)
 Because of the difference of the underlying system, not all
 system-related procedures are available on MinGW port.
 The reference manual tells whether a particular procedure
-is supported on "Windows native".
+is supported on "`Windows native`".
 
 As of 0.9.5, the official Windows binaries are built with
 mingw-w64 (see link:http://mingw-w64.org/[]).  It may still be
 built with the original MinGW, but our support efforts are
-prioritized in favor of mingw-w64.  By 'MinGW version' in
+prioritized in favor of mingw-w64.  By '`MinGW version`' in
 the following sections, we mean Gauche built with mingw-w64.
 
 If you just want to use Gauche on Windows, you can use the binary
