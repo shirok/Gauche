@@ -529,7 +529,7 @@ ifdef::JA[]
      ユーザが独自にインストールするマシン非依存／依存ファイルのデフォルトの置き場所。
 endif::JA[]
 ifdef::EN[]
-     These are default locations where user installed machine-indenpedent/
+     These are default locations where user installed machine-independent/
      dependent files will go.
 endif::EN[]
 
