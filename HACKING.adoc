@@ -52,7 +52,7 @@ have to generate tarball on other machines.  Find a Linux box
 $ ./DIST tgz
 ----
 +
-This creates a tarball `Gauche-$VERSION.tgz` in the parent
+This creates a tarball `Gauche-_$VERSION_.tgz` in the parent
 directory of the source tree.
 
 4. Copy the created tarball to your target machine, untar,
