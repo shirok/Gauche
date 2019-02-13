@@ -1,3 +1,5 @@
+= README
+
 This directory contains a source of texinfo document of Gauche
 reference manual.   The info file is not built by default.
 

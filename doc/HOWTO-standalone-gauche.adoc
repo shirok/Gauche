@@ -1,3 +1,5 @@
+= How to build stand-alone Gauche executable
+
 Building stand-alone executable is officially supported as of
 0.9.6.  The static library `libgauche-static-0.9.a` is built
 by default.  See
