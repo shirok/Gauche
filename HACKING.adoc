@@ -105,7 +105,7 @@ not to introduce undesirable dependencies.
   forms are expanded fully in precompilation.
 
 - `gencomp`, `genstub`, `geninsn` shouldn't depend on the extension
-  modules except the 'pre-loaded' ones in `BUILD_GOSH`.
+  modules except the '`pre-loaded`' ones in `BUILD_GOSH`.
 
 - An extension compiled by `gencomp` shouldn't depend on other
   extensions compiled by `gencomp`.  This is because `gencomp` is
@@ -121,8 +121,8 @@ not to introduce undesirable dependencies.
 
 We have link:ChangeLog[] file to record changes of new features, APIs, or
 internal changes large enough so that other developers need to be
-aware of.  Small changes like 'quick fix of the bug introduced
-in the last commit', or documentation additions, don't need to
+aware of.  Small changes like '`quick fix of the bug introduced
+in the last commit`', or documentation additions, don't need to
 be recorded.
 
 In the age of distributed development, ChangeLog seems becoming
