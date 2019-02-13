@@ -119,7 +119,7 @@ not to introduce undesirable dependencies.
 
 == CHANGELOGS
 
-We have ChangeLog file to record changes of new features, APIs, or
+We have link:ChangeLog[] file to record changes of new features, APIs, or
 internal changes large enough so that other developers need to be
 aware of.  Small changes like 'quick fix of the bug introduced
 in the last commit', or documentation additions, don't need to
