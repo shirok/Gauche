@@ -544,13 +544,13 @@ endif::EN[]
 
 ifdef::JA[]
 Make時に、 `make` マクロ `OPTFLAGS` を用いて追加のコンパイルオプションを指定すること
-ができます。configureが設定する `OPTFLAGS` 以外のオプションを試したい場合は
+ができます。 `configure` が設定する `OPTFLAGS` 以外のオプションを試したい場合は
 次のように `make` を走らせて下さい。
 endif::JA[]
 ifdef::EN[]
 You can pass extra options at make time, using `make` macro `OPTFLAGS`.
-Configure' sets a default, but if you want to explore different
-options, just run 'make' as follows:
+`configure` sets a default, but if you want to explore different
+options, just run `make` as follows:
 endif::EN[]
 
 [source,sh]
