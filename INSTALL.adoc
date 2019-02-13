@@ -286,15 +286,19 @@ endif::EN[]
 
 ifdef::JA[]
 Gaucheにはセキュアソケット通信のサポートが組み込まれています。ひとつは
-バンドルされたaxTLSライブラリを使うもので、それは自動的に含まれます。
-もうひとつは外部のmbedTLSライブラリを使うもので、そちらはconfigure時に
+バンドルされた link:http://axtls.sourceforge.net/[axTLS]
+ライブラリを使うもので、それは自動的に含まれます。
+もうひとつは外部の link:https://tls.mbed.org/[mbedTLS]
+ライブラリを使うもので、そちらはconfigure時に
 ライブラリがみつかればコンパイルされます。もしビルドに不都合が生じてどれかの
 ライブラリを外したい場合は、次のオプションで使うライブラリを選べます。
 endif::JA[]
 ifdef::EN[]
 Gauche includes secure socket connection support.  One uses
-bundled axTLS library, which is included automatically, and another
-uses external mbedTLS library, which is compiled when we detect it
+bundled link:http://axtls.sourceforge.net/[axTLS] library,
+which is included automatically, and another
+uses external link:https://tls.mbed.org/[mbedTLS] library,
+which is compiled when we detect it
 during configuration.  If you have a problem building those libraries,
 you can selectively turn off each of them.
 endif::EN[]
