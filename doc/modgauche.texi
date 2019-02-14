@@ -10176,13 +10176,14 @@ are @code{LOG_PID}, @code{LOG_USER} and @code{LOG_INFO}, respectively.
 Sets the destination of the default log message to the path @var{path}.
 It can be a string or a boolean, as described above.
 You can also set prefix and program name by corresponding keyword
-arguments.
+arguments.  See the @code{<log-drain>} above for those parameters.
 @c JP
 デフォルトのログの行き先を@var{path}に指定します。
 @var{path}は文字列かboolean値あるいはシンボル@code{syslog}で、
 上の@code{path}スロットで述べたものと
 おなじ意味を持ちます。またプレフィクスとプログラム名をキーワード引数で
 指定することもできます。
+これらのパラメータの意味については上の@code{<log-drain>}の項を参照して下さい。
 @c COMMON
 
 @c EN
