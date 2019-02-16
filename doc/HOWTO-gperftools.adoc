@@ -1,3 +1,5 @@
+= How to monitor and tune Gauche runtime and VM
+
 In order to monitor and tune Gauche runtime and VM, we support to link
 link:https://github.com/gperftools/gperftools[gperftools] to Gauche.
 

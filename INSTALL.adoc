@@ -64,12 +64,12 @@ endif::EN[]
 ifdef::JA[]
 既にGaucheがインストールされているシステムで、
 全く同じconfigurationオプションで新しいバージョンのGaucheをインストール
-する場合、configure の代わりに次のコマンドを使うこともできます。
+する場合、`configure` の代わりに次のコマンドを使うこともできます。
 endif::JA[]
 ifdef::EN[]
 If you have installed Gauche before, and want to install
 new version of Gauche with the same configuration option,
-you can use the following command instead of 'configure'.
+you can use the following command instead of `configure`.
 endif::EN[]
 
 [source,console]
@@ -78,26 +78,26 @@ endif::EN[]
 ----
 
 ifdef::JA[]
-`--reconfigure` オプションが与えられると、gauche-configは現在
+`--reconfigure` オプションが与えられると、 `gauche-config` は現在
 インストールされているGaucheがconfigureされた時のコマンドラインを
 標準出力に書き出します。それをシェルに評価させれば、同じオプションで
 configureすることができます。Gaucheをアップデートする場合に便利です。
 endif::JA[]
 ifdef::EN[]
-When the option `--reconfigure` is given, Gauche-config prints out
+When the option `--reconfigure` is given, `gauche-config` prints out
 the command line when it is configured.   Pass the output to
 shell and you can reconfigure with the same options.  It is a
 convenient way to update Gauche.
 endif::EN[]
 
 ifdef::JA[]
-注: gitレポジトリの開発版HEADをコンパイルする場合は、configureを
+注: gitレポジトリの開発版HEADをコンパイルする場合は、 `configure` を
 走らせる前にいくつか準備が必要です。詳しくは link:HACKING.adoc[] ファイルを参照して
 ください。
 endif::JA[]
 ifdef::EN[]
 Note: If you are compiling from development HEAD cloned from
-git repository, you need extra steps before running configure.
+git repository, you need extra steps before running `configure`.
 See the file link:HACKING.adoc[] for the details.
 endif::EN[]
 
@@ -286,15 +286,19 @@ endif::EN[]
 
 ifdef::JA[]
 Gaucheにはセキュアソケット通信のサポートが組み込まれています。ひとつは
-バンドルされたaxTLSライブラリを使うもので、それは自動的に含まれます。
-もうひとつは外部のmbedTLSライブラリを使うもので、そちらはconfigure時に
+バンドルされた link:http://axtls.sourceforge.net/[axTLS]
+ライブラリを使うもので、それは自動的に含まれます。
+もうひとつは外部の link:https://tls.mbed.org/[mbedTLS]
+ライブラリを使うもので、そちらはconfigure時に
 ライブラリがみつかればコンパイルされます。もしビルドに不都合が生じてどれかの
 ライブラリを外したい場合は、次のオプションで使うライブラリを選べます。
 endif::JA[]
 ifdef::EN[]
 Gauche includes secure socket connection support.  One uses
-bundled axTLS library, which is included automatically, and another
-uses external mbedTLS library, which is compiled when we detect it
+bundled link:http://axtls.sourceforge.net/[axTLS] library,
+which is included automatically, and another
+uses external link:https://tls.mbed.org/[mbedTLS] library,
+which is compiled when we detect it
 during configuration.  If you have a problem building those libraries,
 you can selectively turn off each of them.
 endif::EN[]
@@ -314,12 +318,14 @@ ifdef::EN[]
 endif::EN[]
 
 ifdef::JA[]
-SLIBは、ポータブルなSchemeライブラリで、いろいろ便利な機能が
+link:http://people.csail.mit.edu/jaffer/SLIB[SLIB]は、
+ポータブルなSchemeライブラリで、いろいろ便利な機能が
 完全にSchemeで書かれています。GaucheはSLIBがインストールされていれば
 その機能を利用することができます。
 endif::JA[]
 ifdef::EN[]
-SLIB is a portable Scheme library containing various useful functions,
+link:http://people.csail.mit.edu/jaffer/SLIB[SLIB]
+is a portable Scheme library containing various useful functions,
 entirely written in Scheme.  Gauche can use SLIB features if you have
 it on your system.
 endif::EN[]
@@ -407,7 +413,7 @@ CGIスクリプトはWeb serverによって起動され、Web serverは `LD_LIBR
 起動に失敗するかもしれません。
 
 コンパイラによっては、プログラムが依存している共有ライブラリのパスをプログラム
-本体に書き込んでしまえるオプションを持っています。configureの `--with-rpath`
+本体に書き込んでしまえるオプションを持っています。 `configure` の `--with-rpath`
 オプションはそれを利用します。 `--with-rpath=DIR` とすると、実行時に `DIR` から
 共有ライブラリを探すような設定になります。このオプションは今のところ `gcc` でしか
 動作しません。
@@ -429,7 +435,7 @@ runs on the server, for the interpreter can't find `libiconv.so`
 in the system default path.
 
 Some compilers have an option that writes exact path of shared
-libraries that the binary depends on.  A configure option `--with-rpath`
+libraries that the binary depends on.  A `configure` option `--with-rpath`
 utilizes the feature.  When an option `--with-rpath=DIR` is given,
 configure sets up a build process so that the shared libraries
 are looked from `DIR`.   This works only on `gcc`, however.
@@ -529,8 +535,8 @@ ifdef::JA[]
      ユーザが独自にインストールするマシン非依存／依存ファイルのデフォルトの置き場所。
 endif::JA[]
 ifdef::EN[]
-     These are default locations where user installed machine-indenpedent/
-     dependent files will go.
+     These are default locations where user installed
+     machine-independent/dependent files will go.
 endif::EN[]
 
 
@@ -544,13 +550,13 @@ endif::EN[]
 
 ifdef::JA[]
 Make時に、 `make` マクロ `OPTFLAGS` を用いて追加のコンパイルオプションを指定すること
-ができます。configureが設定する `OPTFLAGS` 以外のオプションを試したい場合は
+ができます。 `configure` が設定する `OPTFLAGS` 以外のオプションを試したい場合は
 次のように `make` を走らせて下さい。
 endif::JA[]
 ifdef::EN[]
 You can pass extra options at make time, using `make` macro `OPTFLAGS`.
-Configure' sets a default, but if you want to explore different
-options, just run 'make' as follows:
+`configure` sets a default, but if you want to explore different
+options, just run `make` as follows:
 endif::EN[]
 
 [source,sh]
@@ -649,12 +655,12 @@ For example, the following command line is to cross build on your machine
 for Windows (mingw-w64 32bit):
 endif::EN[]
 
-[source,console]
+[source,sh]
 ----
-$ ./configure --build=`./config.guess` \
-              --host=i686-w64-mingw32 \
-              --with-libatomic-ops=no \
-              --prefix=/usr/local
+./configure --build=`./config.guess` \
+            --host=i686-w64-mingw32 \
+            --with-libatomic-ops=no \
+            --prefix=/usr/local
 ----
 
 ifdef::JA[]

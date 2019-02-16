@@ -8,12 +8,12 @@ with Gauche that may surprise you.)
 Because of the difference of the underlying system, not all
 system-related procedures are available on MinGW port.
 The reference manual tells whether a particular procedure
-is supported on "Windows native".
+is supported on "`Windows native`".
 
 As of 0.9.5, the official Windows binaries are built with
 mingw-w64 (see link:http://mingw-w64.org/[]).  It may still be
 built with the original MinGW, but our support efforts are
-prioritized in favor of mingw-w64.  By 'MinGW version' in
+prioritized in favor of mingw-w64.  By '`MinGW version`' in
 the following sections, we mean Gauche built with mingw-w64.
 
 If you just want to use Gauche on Windows, you can use the binary
@@ -35,6 +35,7 @@ in the above site to update packages.
 Once MSYS2 is in place, you can get mingw-w64 toolchain using
 `pacman`.  Fire MSYS2 shell and type `+pacman -S <package> ...+`.
 For +mingw-w64-***+ packages, choose suitable architecture.
+
 NOTE: If you want to build x86_64 and i686 binary installers
 on x86_64 machine, you have to install both architecture versions.
 
@@ -55,7 +56,9 @@ without them, but some features will not be available.
 - mingw-w64-x86_64-mbedtls / mingw-w64-i686-mbedtls
 - texinfo
 
-+NOTE:+ `pacman` tries to install packages under `C:/msys64/mingw64` etc,
+[NOTE]
+====
+`pacman` tries to install packages under `C:/msys64/mingw64` etc,
 but sometimes the first attempt fails saying:
 
 ----
@@ -66,7 +69,7 @@ error: failed to commit transaction (conflicting files)
 There is `/mingw64.exe` and `/mingw64.bat` (in msys2 filesystem) and
 the installer gets confused.  Manually creating directory `/mingw64`
 will solve the problem.
-
+====
 
 === Gauche
 
@@ -96,13 +99,13 @@ have to run `./DIST gen` first to generate configure scripts.
 Once configure scripts are in place, run the `mingw-dist.sh` on the
 MSYS shell as follows:
 
-[source,console]
+[source,sh]
 ----
 # For x86_64 build:
-$ MSYSTEM=MINGW64 src/mingw-dist.sh
+MSYSTEM=MINGW64 src/mingw-dist.sh
 
 # For i686 build:
-$ MSYSTEM=MINGW32 src/mingw-dist.sh
+MSYSTEM=MINGW32 src/mingw-dist.sh
 ----
 
 The compiled binaries are in `../Gauche-mingw-dist/Gauche-x86_64` or
@@ -113,13 +116,14 @@ to whatever machine you like.
 
 == Build with Gauche-gl
 
-If you have Gauche-gl source tree aside of Gauche source tree
+If you have link:https://github.com/shirok/Gauche-gl[Gauche-gl] source
+tree aside of Gauche source tree
 (that is, from Gauche's `$top_srcdir`, you have `../Gauche-gl`),
 you can build Gauche-gl as well.  Give `--with-gl` option:
 
-[source,console]
+[source,sh]
 ----
-$ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
+MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
 ----
 
 
@@ -129,9 +133,9 @@ Make sure `candle.exe` and `light.exe` (WiX toolset) are in the `PATH`.
 
 Run `src/mingw-dist.sh` with `--with-installer` option, for example:
 
-[source,console]
+[source,sh]
 ----
-$ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
+MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
 ----
 
 This creates installer file `../Gauche-mingw-X.X.X-{32|64}bit.msi`.
