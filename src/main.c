@@ -615,7 +615,7 @@ void enter_repl()
     /* Load gauche.interactive, for we're not executing a script. */
     if (load_initfile) {
         ScmLoadPacket lpak;
-        if (Scm_Require(SCM_MAKE_STR("gauche/interactive"), 0, &lpak) < 0) {
+        if (Scm_Require(SCM_MAKE_STR("gauche/interactive/init"), 0, &lpak) < 0) {
             Scm_ReportError(lpak.exception, SCM_OBJ(SCM_CURERR));
             Scm_Warn("Encountered an error during loading gauche.interactive.  Falling back to basic REPL.");
         } else {

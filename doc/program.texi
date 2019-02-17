@@ -686,10 +686,11 @@ or evaluate @code{(exit)}.
 @c COMMON
 
 @c EN
-In the interactive session, @code{gosh} loads @code{gauche.interactive}
-module (@pxref{Interactive session}) for the
-convenience.  The module also loads a file @file{.gaucherc} under
-the user's home directory if it exists.
+In the interactive session, @code{gosh} loads and
+imports @code{gauche.interactive}
+module (@pxref{Interactive session}) into @code{user} module, for the
+convenience.  Also, if there's a file @file{.gaucherc} under
+the user's home directory.
 You may put settings there that would help interactive debugging.
 (As of Gauche release 0.7.3,
 @file{.gaucherc} is no longer loaded when @code{gosh} is run
@@ -701,10 +702,10 @@ itself is a Gauche-specific feature, so you don't need to consider
 portability in it.
 @c JP
 インタラクティブセッションでは、@code{gosh}は
-@code{gauche.interactive}モジュールをロードします
+@code{gauche.interactive}モジュールをロードして@code{user}モジュールにインポートします
 (@ref{Interactive session}参照)。
-このモジュールはまた、ユーザーのホームディレクトリに@file{.gaucherc}という
-ファイルがあればそれをロードします。
+また、ユーザーのホームディレクトリに@file{.gaucherc}という
+ファイルがあればそれもロードされます。
 インタラクティブデバッグに便利な設定をそこに書いておくことができます。
 (Gauche release 0.7.3から、@file{.gaucherc}はgoshがスクリプトモードで
 起動された時は読まれなくなりました。)

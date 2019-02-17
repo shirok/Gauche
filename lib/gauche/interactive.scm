@@ -308,7 +308,7 @@
      reader evaluator printer prompter)))
 
 ;;;
-;;; for windows console
+;;; Misc. setup
 ;;;
 
 ;; EXPERIMENTAL: windows console code page support for text.line-edit
@@ -339,10 +339,6 @@
          (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 4)])))]
  [else])
 
-;;;
-;;; Misc. setup
-;;;
-
 ;; Autoload online info viewer
 (autoload gauche.interactive.info info info-page info-search)
 
@@ -359,23 +355,6 @@
 ;; See (describe <symbol>) above
 (autoload gauche.modutil describe-symbol-bindings)
 
-;; Load user-specific default settings from ~/.gaucherc, if there's any.
-;; It is evaluated in the user module.
-(let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
-  (when (sys-access dotfile F_OK)
-    (load dotfile :environment (find-module 'user))))
-
 ;; This might help first time users
 (define-in-module user help "Type ,help (comma and help) for help")
-
-;; If gosh is invoked with R7RS mode, import r7rs-small libraries
-;; into user module for the convenience.
-(when (global-variable-ref (find-module 'user) '*r7rs-mode* #f)
-  (eval '(import (scheme base) (scheme case-lambda) (scheme char)
-                 (scheme complex) (scheme cxr) (scheme eval)
-                 (scheme file) (scheme inexact) (scheme lazy)
-                 (scheme load) (scheme process-context) (scheme read)
-                 (scheme repl) (scheme time) (scheme write)
-                 (only (gauche base) *1 *1+ *2 *2+ *3 *3+ *e *history))
-        (find-module 'r7rs.user)))
 

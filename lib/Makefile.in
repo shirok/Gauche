@@ -68,6 +68,7 @@ SCMFILES = srfi-0.scm \
        gauche/pputil.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
+       gauche/interactive/init.scm \
        gauche/interactive/ed.scm gauche/interactive/toplevel.scm \
        gauche/interactive/editable-reader.scm \
        gauche/selector.scm gauche/logger.scm \

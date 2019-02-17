@@ -1,3 +1,13 @@
+2019-02-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm, src/main.c: Instead of loading
+	  gauche.interactive, main.c loads gauche/interactive/init.scm,
+	  which in turn 'use' gauche.interactive.  This is to exclude
+	  side-effect causing expressions from gauche.interactive module,
+	  so that it can be used as an ordinary module.  Notably, the code
+	  to load .gaucherc is done in gauche/interactive/init.scm.
+	  Cf. https://github.com/shirok/Gauche/issues/448
+
 2019-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* INSTALL.adoc: Converted to asciidoc by @qykth-git
