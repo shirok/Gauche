@@ -6,7 +6,7 @@ scripts quickly.
 
 Visit link:https://practical-scheme.net/gauche/[the project webpage] for more details.
 
-Reference manuals are available online: http://practical-scheme.net/gauche/man/gauche-refe/index.html
+Reference manuals are available online: https://practical-scheme.net/gauche/man/gauche-refe/index.html
 
 If you're new to this project and want to try compiling from git repo,
 check link:HACKING.adoc[] first.  If it is your first time to build Gauche, 
