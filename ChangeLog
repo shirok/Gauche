@@ -1,3 +1,11 @@
+2019-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/libmisc.scm, lib/libomega.scm (identity): Attach compiler macro
+	  to identity so that it can be optimized away when used literally.
+	  It is useful for macro---identity inserted by macro expansion will
+	  cost nothing.  We need to move the definition to libomega, though,
+	  for define-inline/syntax requires the compiler to be booted up.
+
 2019-02-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm, src/main.c: Instead of loading

@@ -43,8 +43,6 @@
 
 (define-cproc has-setter? (proc) ::<boolean> Scm_HasSetter)
 
-(define-cproc identity (val) :constant (return val))   ;sometimes useful
-
 (define-cproc undefined () (inliner CONSTU) (return SCM_UNDEFINED))
 (define-cproc undefined? (obj) ::<boolean> :constant SCM_UNDEFINEDP)
 

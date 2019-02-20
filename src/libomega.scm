@@ -154,6 +154,16 @@
     (comparator-hash c a)
     (errorf "Object ~s is not hashable" a)))
 
+;; 'values' could be used, but sometimes handy to be explicit that
+;; we're dealing with a single value.  Besides, if it is used directly,
+;; we can optimize it away (useful when used as a default value in macro).
+;; This needs to be here, after compiler and macro system has been booted.
+(select-module gauche)
+(define-inline/syntax identity 
+  (let ([identity (^[val] val)]) ; to attach name to the clojure
+    identity)
+  (er-macro-transformer (^[f r c] (cadr f))))
+
 ;; Recursive hash function
 ;; This is here instead of in libdict.scm, for we need the rest of
 ;; the runtime to be initialized.
