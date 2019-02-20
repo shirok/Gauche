@@ -24480,7 +24480,6 @@ pat : @var{patvar}                       ;; anything, and binds pattern var
     | @var{string}                       ;; a string
     | @var{number}                       ;; a number
     | @var{character}                    ;; a character
-    | @var{keyword}                      ;; a keyword (*)
     | '@var{sexp}                        ;; an s-expression
     | '@var{symbol}                      ;; a symbol (special case of s-expr)
     | (@var{pat1} ... @var{patN})              ;; list of n elements
@@ -24628,6 +24627,20 @@ You can use a quoted symbol to match the symbol itself.
 @c JP
 クウォートされた式は(@code{equal?} という意味で)同じ式とマッチします。
 クウォートされたシンボルをそれ自身とマッチさせるのに使えます。
+@c COMMON
+
+@item
+@c EN
+A keyword, without a quote, used to match the same keyword object.
+Since we're in the process of unifying keywords and symbols, the user is 
+recommended to write keywords with a quote in a pattern in order to match
+the keyword in the input.  @xref{Keyword and symbol integration}, for
+the details.
+@c JP
+キーワードは、以前はクオート無しで同じキーワードにマッチしていました。
+しかし現在は、キーワードとシンボルの統合に移行中なので、キーワードにマッチさせるために
+パターンにキーワードを含める際には常にクオートしてください。
+詳しくは@ref{Keyword and symbol integration}参照。
 @c COMMON
 
 @item
