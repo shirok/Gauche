@@ -696,29 +696,13 @@
 ;;     call (RESULT head (PRED head)) and let its result
 ;;     as the value of successulf parsing.
 ;;   - Otherwise, returns failure with EXPECT as the expected input.
-;; This can be written simpler, but we use some redundancy to
-;; micro-optimize typical cases.
 (define-syntax $satisfy
-  (syntax-rules (cut <>)
-    [(_ (cut p x <>) expect result)            ;TODO: hygiene!
-     (lambda (s)
-       (if-let1 v (and (pair? s) (p x (car s)))
-         (return-result (result (car s) v) (cdr s))
-         (return-failure/expect expect s)))]
+  (syntax-rules ()
+    [(_ pred expect) ($satisfy pred expect identity)]
     [(_ pred expect result)
      (lambda (s)
        (if-let1 v (and (pair? s) (pred (car s)))
          (return-result (result (car s) v) (cdr s))
-         (return-failure/expect expect s)))]
-    [(_ (cut p x <>) expect result)            ;TODO: hygiene!
-     (lambda (s)
-       (if (and (pair? s) (p x (car s)))
-         (return-result (car s) (cdr s))
-         (return-failure/expect expect s)))]
-    [(_ pred expect)
-     (lambda (s)
-       (if (and (pair? s) (pred (car s)))
-         (return-result (car s) (cdr s))
          (return-failure/expect expect s)))]))
 
 ;;;============================================================
