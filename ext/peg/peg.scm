@@ -65,7 +65,7 @@
           
           $symbol $string $string-ci
           $char $one-of $none-of $many-chars
-          $satisfy
+          $satisfy $match
 
           $->rope $->string $->symbol rope->string rope-finalize
           )
@@ -704,6 +704,41 @@
        (if-let1 v (and (pair? s) (pred (car s)))
          (return-result (result (car s) v) (cdr s))
          (return-failure/expect expect s)))]))
+
+;; API
+;; $match PATTERN [RESULT]
+;;   - Run util.match#match against the input stream.
+;;   - $match1 takes one item from stream and see if it matches with PATTERN.
+;;     $match applys PATTERN on the entire input stream.
+;;   - If matched, RESULT is evaluated in the envionment where pattern variables
+;;     in PATTERN are bound, and its result becomes the result value of the
+;;     parser.
+;;   - If RESULT is omitted, the matched item is returned.
+;;   - The item may be consumed even the parser fails.
+
+(define-syntax $match
+  (syntax-rules ()
+    [(_ (pat ...) result)
+     (lambda (s)
+       (match s
+         [(pat ... . rest) (return-result result rest)]
+         [_ (return-failure/expect (write-to-string '(pat ...)) s)]))]
+    [(_ (pat ... . rest) result)
+     (lambda (s)
+       (match s
+         [(pat ... . rest) (return-result result '())] ;rest consumes all
+         [_ (return-failure/expect (write-to-string '(pat ... . rest)) s)]))]
+    [(_ (pat ...))
+     (lambda (s)
+       (match s
+         [(pat ... . rest) (return-result (take s (length '(pat ...))) rest)]
+         [_ (return-faiulre/expect (write-to-string '(pat ...)) s)]))]
+    [(_ (pat ... . rest))
+     (lambda (s)
+       (match s
+         [(pat ... . rest) (return-result s '())]
+         [_ (return-faiulre/expect (write-to-string '(pat ... . rest)) s)]))]))
+
 
 ;;;============================================================
 ;;; Intermediate structure constructor

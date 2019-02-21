@@ -673,6 +673,22 @@
            ($satisfy char-numeric? "numeric")
            "a")
 
+(test-succ "$match" #\a
+           ($match (#\c x #\r) x)
+           "car foo")
+(test-succ "$match" #\d
+           ($match (#\c x #\r) x)
+           "cdr foo")
+(test-succ "$match" '(#\a (#\space #\f #\o #\o))
+           ($match (#\c x #\r . t) (list x t))
+           "car foo")
+(test-succ "$match (no result arg)" '(#\c #\u #\r)
+           ($match (#\c x #\r))
+           "cur foo")
+(test-fail "$match" '(0 "(#\\c x #\\r)")
+           ($match (#\c x #\r) x)
+           "zxy foo")
+
 (test-succ "eof" (eof-object) eof "")
 (test-fail "eof" '(0 "end of input") eof "a")
 

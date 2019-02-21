@@ -1,3 +1,7 @@
+2019-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($match): Added experimentally.
+
 2019-02-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/libmisc.scm, lib/libomega.scm (identity): Attach compiler macro
