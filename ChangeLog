@@ -1,3 +1,8 @@
+2019-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm: Let trigonometric functions return exact value
+	  when the arg is exact zero.
+
 2019-02-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($match): Added experimentally.

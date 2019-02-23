@@ -585,7 +585,7 @@
 
 (select-module gauche)
 (define-in-module scheme (cos z)
-  (cond [(real? z) (%cos z)]
+  (cond [(real? z) (if (eqv? 0 z) 1 (%cos z))]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -594,7 +594,7 @@
         [else (error "number required, but got" z)]))
 
 (define (cosh z)
-  (cond [(real? z) (%cosh z)]
+  (cond [(real? z) (if (eqv? z 0) 1 (%cosh z))]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -603,7 +603,7 @@
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (sin z)
-  (cond [(real? z) (%sin z)]
+  (cond [(real? z) (if (eqv? 0 z) 0 (%sin z))]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -612,7 +612,7 @@
         [else (error "number required, but got" z)]))
 
 (define (sinh z)
-  (cond [(real? z) (%sinh z)]
+  (cond [(real? z) (if (eqv? 0 z) 0 (%sinh z))]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -621,7 +621,7 @@
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (tan z)
-  (cond [(real? z) (%tan z)]
+  (cond [(real? z) (if (eqv? 0 z) 0 (%tan z))]
         [(number? z)
          (let1 iz (* +i z)
            (* -i
@@ -630,14 +630,14 @@
         [else (error "number required, but got" z)]))
 
 (define (tanh z)
-  (cond [(real? z) (%tanh z)]
+  (cond [(real? z) (if (eqv? 0 z) 0 (%tanh z))]
         [(number? z)
          (/ (- (exp z) (exp (- z)))
             (+ (exp z) (exp (- z))))]
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (asin z)
-  (cond [(real? z) (%asin z)]
+  (cond [(real? z) (if (eqv? z 0) 0 (%asin z))]
         [(number? z)
          ;; The definition of asin is
          ;;   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))
@@ -654,13 +654,15 @@
         [else (error "number required, but got" z)]))
 
 (define (asinh z)
-  (let1 zz (+ z (sqrt (+ (* z z) 1)))
-    (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
-      (make-rectangular +nan.0 +nan.0)
-      (log (+ z (sqrt (+ (* z z) 1)))))))
+  (if (eqv? z 0)
+    0
+    (let1 zz (+ z (sqrt (+ (* z z) 1)))
+      (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
+        (make-rectangular +nan.0 +nan.0)
+        (log (+ z (sqrt (+ (* z z) 1))))))))
 
 (define-in-module scheme (acos z)
-  (cond [(real? z) (%acos z)]
+  (cond [(real? z) (if (eqv? z 1) 0 (%acos z))]
         [(number? z)
          ;; The definition of acos is
          ;;  (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
@@ -671,23 +673,29 @@
         [else (error "number required, but got" z)]))
 
 (define (acosh z)
-  ;; See the discussion of CLtL2, pp. 313-314
-  (* 2 (log (+ (sqrt (/ (+ z 1) 2))
-               (sqrt (/ (- z 1) 2))))))
+  (if (eqv? z 1)
+    0
+    ;; See the discussion of CLtL2, pp. 313-314
+    (* 2 (log (+ (sqrt (/ (+ z 1) 2))
+                 (sqrt (/ (- z 1) 2)))))))
 
 (define-in-module scheme (atan z . x)
-  (if (null? x)
-    (cond [(real? z) (%atan z)]
-          [(number? z)
-           (let1 iz (* z +i)
-             (/ (- (log (+ 1 iz))
-                   (log (- 1 iz)))
-                +2i))]
-          [else (error "number required, but got" z)])
-    (%atan z (car x))))
+  (if (eq? z 0)
+    0
+    (if (null? x)
+      (cond [(real? z) (%atan z)]
+            [(number? z)
+             (let1 iz (* z +i)
+               (/ (- (log (+ 1 iz))
+                     (log (- 1 iz)))
+                  +2i))]
+            [else (error "number required, but got" z)])
+      (%atan z (car x)))))
 
 (define (atanh z)
-  (/ (- (log (+ 1 z)) (log (- 1 z))) 2))
+  (if (eq? z 0)
+    0
+    (/ (- (log (+ 1 z)) (log (- 1 z))) 2)))
 
 
 (select-module gauche)

@@ -2273,7 +2273,21 @@
        (list (log +inf.0) (log -inf.0)))
 
 ;;------------------------------------------------------------------
-(test-section "sinpi, cospi, tanpi")
+(test-section "trigonometric functions")
+
+;; Exactness
+(let ()
+  (define (check msg fn %fn val)
+    (test* msg (exact (%fn val)) (fn val) eqv?))
+  (check "exact (sin 0)" sin %sin 0)
+  (check "exact (cos 0)" cos %cos 0)
+  (check "exact (tan 0)" tan %tan 0)
+  (check "exact (sinh 0)" sinh %sinh 0)
+  (check "exact (cosh 0)" cosh %cosh 0)
+  (check "exact (tanh 0)" tanh %tanh 0)
+  (check "exact (asin 0)" asin %asin 0)
+  (check "exact (acos 1)" acos %acos 1)
+  (check "exact (atan 0)" atan %atan 0))
 
 (let ()
   (define (check trig trig-pi)
