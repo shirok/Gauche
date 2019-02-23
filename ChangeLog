@@ -1,5 +1,9 @@
 2019-02-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/symbol.c: Make GAUCHE_KEYWORD_IS_SYMBOL default.  It's been
+	  4.5 yrs since its introduction.  To get the old behavior, a user
+	  can set GAUCHE_KEYWORD_DISJOINT env var.
+
 	* src/libnum.scm: Let trigonometric functions return exact value
 	  when the arg is exact zero.
 

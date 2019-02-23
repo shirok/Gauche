@@ -486,7 +486,7 @@ void Scm__InitSymbol(void)
     } else if (issymbol != NULL) {
         keyword_disjoint_p = FALSE;
     } else {
-        keyword_disjoint_p = TRUE; /* This determines the default */
+        keyword_disjoint_p = FALSE; /* This determines the default */
     }
     if (keyword_disjoint_p) {
         Scm_KeywordClass.cpa = &(keyword_cpl[1]);
