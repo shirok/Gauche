@@ -2,4 +2,4 @@
 
 #define IDI_LOGO 100
 
-IDI_LOGO ICON "../winnt/wix/gauche-logo.ico"
+IDI_LOGO ICON "../icons/gauche_logo.ico"
