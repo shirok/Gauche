@@ -5624,7 +5624,7 @@ all the bindings of @code{gauche} module is imported.
 @mdindex gauche.keyword
 @mdindex keyword
 @c EN
-When Gauche is running with @code{GAUCHE_KEYWORD_IS_SYMBOL} mode
+When Gauche is running with @code{GAUCHE_KEYWORD_IS_SYMBOL} mode (default)
 keywords (symbols beginning with @code{:}) is automatically bound
 to itself in these modules.
 (@pxref{Keywords}, for the details.)
@@ -5643,7 +5643,7 @@ and libraries would require either @code{(import (gauche keyword))}
 or @code{(import (gauche base))} (the latter inherits
 @code{gauche.keyword}), or you have to quote all keywords.
 @c JP
-Gaucheが@code{GAUCHE_KEYWORD_IS_SYMBOL}モードで実行されている時は、
+Gaucheがデフォルトの@code{GAUCHE_KEYWORD_IS_SYMBOL}モードで実行されている時は、
 キーワード (@code{:}で始まるシンボル) が自動的にこれらのモジュールの中で
 自分自身に束縛されます。(詳しくは@ref{Keywords}を参照してください。)
 
@@ -5679,15 +5679,15 @@ Gaucheの組み込みの識別子とともに自己束縛されたキーワー�
 
 @c EN
 If you use more sophisitcated import tricks, however, keep in mind
-that keywords are just imported symbols if
-@code{GAUCHE_KEYWORD_IS_SYMBOL} is set.  The following code imports
+that keywords are just imported symbols by default.
+The following code imports
 Gauche builtin identifiers with prefix @code{gauche/}.  That causes
 keywords, imported via inheritance, also get the same prefix; if
 you don't want to bother adding prefix to all keywords or
 quote them, import @code{gauche.keyword} separately.
 @c JP
-ただ、もうちょっと凝ったインポートをする場合は、
-@code{GAUCHE_KEYWORD_IS_SYMBOL}がセットされている状態ではキーワードも
+ただ、もうちょっと凝ったインポートをする場合、
+デフォルトではキーワードも
 単なるインポートされるシンボルにすぎないということを覚えておいてください。
 例えば次のコードではGaucheの組み込み識別子を@code{gauche/}というプレフィクス
 つきでインポートしています。この場合、@code{gauche.base}の継承経由で

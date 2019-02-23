@@ -38,32 +38,14 @@ Gaucheは、次に説明する少しの例外を除き、オプショナルな�
 @item
 @c EN
 Gauche has a keyword object, expressed as a name prefixed by a colon
-(e.g. @code{:key}).  It evaluates to itself, and used extensively when
+(e.g. @code{:key}).  It is a subtype of symbols that
+automatically bound to itself, 
+and used extensively when
 passing so-called keyword arguments (@pxref{Making Procedures}).
-
-R7RS requires names starting with colon to be read as a symbol.
-In the current version of Gauche, keywords aren't symbols by default;
-they are of disjoint types.  With an enviornment variable
-@code{GAUCHE_KEYWORD_IS_SYMBOL} being set, you can
-make Gauche treat keywords and symbols the same.
-@xref{Keywords}, for the details.  The plan is that we move to
-fully R7RS compliant in future, but this change could break existing
-code, so we have migration period.  We recommend setting the environment
-variable now for newly written code.
 @c JP
 Gaucheには、コロンで始まる名前(例:@code{:key})を持つ、キーワードオブジェクトがあります。
-キーワードはそれ自身に評価され、キーワード引数を渡すときにいつも使われます
-(@ref{Making Procedures}参照)。
-
-R7RSではコロンで始まる名前はシンボルとして読まれることになっています。
-現在のGaucheでは、デフォルトで、キーワードはシンボルではなく、それぞれ独立した型に属します。
-環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}が設定されていた場合は、
-Gaucheはキーワードをシンボルとして扱います。
-詳しくは@ref{Keywords}を参照してください。
-将来はR7RSに完全準拠するモードの方をデフォルトにする予定ですが、
-この変更は既存のコードを壊す可能性があるために、現在は移行期間と位置づけています。
-これからプログラムを書く場合は、常に@code{GAUCHE_KEYWORD_IS_SYMBOL}を
-セットしておくことをお勧めします。
+キーワードはシンボルのサブタイプで、自動的に自分自身に束縛され、
+キーワード引数を渡すときにいつも使われます(@ref{Making Procedures}参照)。
 @c COMMON
 
 @item
