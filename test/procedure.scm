@@ -457,6 +457,21 @@
                (1 ,(undefined) ,(undefined) 0 1 ())
                ,(test-error)))
 
+;; If keyword is symbol, we should allow them as formals.
+(test-section "rnrs lambda formals")
+
+(define-syntax rnrs-lambda (with-module null lambda))
+(when (symbol? :a)
+  (test* "rnrs lambda formals" '(x y)
+         ((rnrs-lambda (:a :b) (list :a :b)) 'x 'y))
+  (test* "rnrs lambda formals" '(x z)
+         ((rnrs-lambda (a :key b) (list a b)) 'x 'y 'z))
+  (test* "rnrs lambda formals" '(x (z))
+         ((rnrs-lambda (a :optional . b) (list a b)) 'x 'y 'z))
+  (test* "rnrs lambda formals" '(x y z)
+         ((rnrs-lambda :rest :rest) 'x 'y 'z))
+  )
+
 ;;-----------------------------------------------------------------------
 ;; case-lambda
 (test-section "case-lambda")
