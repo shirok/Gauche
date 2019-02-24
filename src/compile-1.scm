@@ -1160,13 +1160,31 @@
 (define-pass1-syntax (lambda form cenv) :null
   (match form
     [(_ formals . body)
-     (pass1/lambda (add-arg-info form formals) formals body cenv #f)]
+     (receive (reqs rest) 
+         (let loop ((xs formals) (ys '()))
+           (cond [(null? xs) (values (reverse ys) #f)]
+                 [(pair? xs) (loop (cdr xs) (cons (car xs) ys))]
+                 [else (values (reverse ys) xs)]))
+       (pass1/vanilla-lambda (add-arg-info form formals) 
+                             (if rest (append reqs (list rest)) reqs)
+                             (length reqs)
+                             (if rest 1 0)
+                             body cenv))]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
 (define-pass1-syntax (lambda form cenv) :gauche
   (match form
     [(_ formals . body)
-     (pass1/lambda (add-arg-info form formals) formals body cenv #t)]
+     (receive (args nreqs nopts kargs) (parse-lambda-args formals)
+       (if (null? kargs)
+         (pass1/vanilla-lambda form args nreqs nopts body cenv)
+         ;; Convert extended lambda into vanilla lambda
+         (let1 restarg (gensym "rest")
+           (pass1/vanilla-lambda form (append args (list restarg))
+                                 nreqs 1
+                                 (pass1/extended-lambda-body form cenv restarg
+                                                             kargs body)
+                                 cenv))))]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
 ;; Add formals list as 'arg-info attributes of the source form
@@ -1176,24 +1194,13 @@
                  (extended-cons (car form) (cdr form)))
     (pair-attribute-set! xform 'arg-info formals)))
 
-(define (pass1/lambda form formals body cenv extended?)
-  (receive (args reqargs optarg kargs) (parse-lambda-args formals)
-    (cond [(null? kargs)
-           (let* ([lvars (imap make-lvar+ args)]
-                  [intform ($lambda form (cenv-exp-name cenv)
-                                    reqargs optarg lvars #f #f)]
-                  [newenv (cenv-extend/proc cenv (%map-cons args lvars)
-                                            LEXICAL intform)])
-             (vector-set! intform 6 (pass1/body body newenv))
-             intform)]
-          [(not extended?)
-           (error "syntax-error: extended formals aren't allowed in R5RS \
-                   lambda:" form)]
-          [else
-           (let1 g (gensym)
-             (pass1/lambda form (append args g)
-                           (pass1/extended-lambda form cenv g kargs body)
-                           cenv #f))])))
+(define (pass1/vanilla-lambda form formals nreqs nopts body cenv) ; R7RS lambda
+  (let* ([lvars (imap make-lvar+ formals)]
+         [intform ($lambda form (cenv-exp-name cenv) nreqs nopts lvars #f #f)]
+         [newenv (cenv-extend/proc cenv (%map-cons formals lvars)
+                                   LEXICAL intform)])
+    (vector-set! intform 6 (pass1/body body newenv))
+    intform))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
@@ -1220,7 +1227,7 @@
 
 ;; Handles extended lambda list.  garg is a gensymed var that receives
 ;; restarg.
-(define (pass1/extended-lambda form cenv garg kargs body)
+(define (pass1/extended-lambda-body form cenv garg kargs body)
   (define (collect-args xs r)
     (match xs
       [() (values (reverse r) '())]
