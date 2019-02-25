@@ -171,6 +171,9 @@
 (define match-define.  (%match-id 'match-define))
 (define match:length>=?. (%match-id 'match:length>=?))
 
+(define lambda.        ((with-module gauche.internal make-identifier) 'lambda
+                        (find-module 'null) '()))
+
 (define-inline (match:length>=? n) (cut length>=? <> n))
 
 ;;; [SK] End of black magic
@@ -234,7 +237,7 @@
                               (bv2 (if fail (cons fail bv) bv))
                               (body (if fail (cddr c) (cdr c))))
                          (set! blist
-                               (cons `(,code (lambda ,bv2 ,@body))
+                               (cons `(,code (,lambda. ,bv2 ,@body))
                                      (append bindings blist)))
                          (list p code bv (and fail (gensym)) #f)))
                      clauses))
@@ -257,7 +260,7 @@
     (unreachable plist match-expr)
     `(letrec (,@(map (lambda (v) `(,v #f)) bv)
               (,x ,exp)
-              (,code (lambda ,gs
+              (,code (,lambda. ,gs
                        ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
                        ,@body))
               ,@bindings
@@ -278,7 +281,7 @@
     (unreachable plist match-expr)
     `(begin ,@(map (lambda (v) `(define ,v #f)) bv)
             (let ((,x ,exp)
-                  (,code (lambda ,gs
+                  (,code (,lambda. ,gs
                            ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
                            (cond (#f #f))))
                   ,@bindings
@@ -315,7 +318,7 @@
    ((eq? match:error-control 'match)
     (let ((errf (gensym))
           (arg (gensym)))
-      (cons `((,errf (lambda (,arg)
+      (cons `((,errf (,lambda. (,arg)
                        (,match:error. ,arg ',match-expr))))
             (lambda (x) `(,errf ,x)))))
    (else (match:syntax-err
@@ -623,11 +626,11 @@
                         (if fail-sym
                           (let ((ap `(,code ,fail-sym ,@(map val bv))))
                             `(call-with-current-continuation
-                              (lambda (,fail-sym)
+                              (,lambda. (,fail-sym)
                                 (let ((,fail-sym
-                                       (lambda ()
+                                       (,lambda. ()
                                          (call-with-values
-                                             (lambda () ,(fail sf))
+                                             (,lambda. () ,(fail sf))
                                            ,fail-sym))))
                                   ,ap))))
                           `(,code ,@(map val bv)))))))
@@ -734,7 +737,7 @@
                                                         (eq? eta (cadr ptst))
                                                         (null? (cddr ptst)))
                                                  (car ptst)
-                                                 `(lambda (,eta) ,ptst))))
+                                                 `(,lambda. (,eta) ,ptst))))
                                      (assm `(match:every ,tst ,e)
                                            (kf sf)
                                            (ks sf))))
@@ -921,7 +924,7 @@
          (equal? (car s) 'call-with-current-continuation)
          (pair? (cdr s))
          (pair? (cadr s))
-         (equal? (caadr s) 'lambda)
+         (equal? (caadr s) lambda.)
          (pair? (cdadr s))
          (pair? (cadadr s))
          (null? (cdr (cadadr s)))
@@ -933,7 +936,7 @@
          (pair? (caadar (cddadr s)))
          (pair? (cdr (caadar (cddadr s))))
          (pair? (cadr (caadar (cddadr s))))
-         (equal? (caadr (caadar (cddadr s))) 'lambda)
+         (equal? (caadr (caadar (cddadr s))) lambda.)
          (pair? (cdadr (caadar (cddadr s))))
          (null? (cadadr (caadar (cddadr s))))
          (pair? (cddadr (caadar (cddadr s))))
@@ -941,7 +944,7 @@
          (equal? (caar (cddadr (caadar (cddadr s)))) 'call-with-values)
          (pair? (cdar (cddadr (caadar (cddadr s)))))
          (pair? (cadar (cddadr (caadar (cddadr s)))))
-         (equal? (caadar (cddadr (caadar (cddadr s)))) 'lambda)
+         (equal? (caadar (cddadr (caadar (cddadr s)))) lambda.)
          (pair? (cdadar (cddadr (caadar (cddadr s)))))
          (null? (car (cdadar (cddadr (caadar (cddadr s))))))
          (pair? (cdr (cdadar (cddadr (caadar (cddadr s))))))
@@ -961,7 +964,7 @@
           (s2 (caddar (cddadr s))))
       `(call-with-current-continuation
         (lambda (,k)
-          (let ((,fail (lambda () (call-with-values (lambda () ,f) ,k))))
+          (let ((,fail (,lambda. () (call-with-values (,lambda. () ,f) ,k))))
             ,(assm tst `(,fail) s2))))))
    ((and #f
          (pair? s)
@@ -983,7 +986,7 @@
          (equal? (caddar (cdaadr s)) f))
     (let ((fail (caaadr s))
           (s2 (caddr s)))
-      `(let ((,fail (lambda () ,f)))
+      `(let ((,fail (,lambda. () ,f)))
          ,(assm tst `(,fail) s2))))
    (else `(if ,tst ,s ,f))))
 
@@ -1135,7 +1138,7 @@
                    #f))
              args))
       ((lambda ()
-         (let ((e (gensym))) `(lambda (,e) (,match. ,e ,@args)))))
+         (let ((e (gensym))) `(,lambda. (,e) (,match. ,e ,@args)))))
       ((lambda ()
          (match:syntax-err
            `(match-lambda ,@args)
@@ -1150,7 +1153,7 @@
                    #f))
              args))
       ((lambda ()
-         (let ((e (gensym))) `(lambda ,e (,match. ,e ,@args)))))
+         (let ((e (gensym))) `(,lambda. ,e (,match. ,e ,@args)))))
       ((lambda ()
          (match:syntax-err
            `(match-lambda* ,@args)

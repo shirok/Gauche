@@ -314,4 +314,14 @@
 
 (test* "match in hygienic macro" 1 (gen-match))
 
+;;--------------------------------------------------------------
+
+(when (symbol? :a)
+  (test* "ensure we're using RnRS lambda" 1
+         (match '(1)
+           [(:a) :a]))
+  (test* "ensure we're using RnRS lambda" '(1)
+         (match '(1)
+           [:a :a])))
+
 (test-end)
