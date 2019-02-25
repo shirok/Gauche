@@ -1157,14 +1157,18 @@
 
 ;; Lambda family (binding constructs) ...................
 
-(define-pass1-syntax (lambda form cenv) :null
+(define-pass1-syntax (lambda form cenv) :null ;RnRS lambda
   (match form
     [(_ formals . body)
      (receive (reqs rest) 
          (let loop ((xs formals) (ys '()))
            (cond [(null? xs) (values (reverse ys) #f)]
-                 [(pair? xs) (loop (cdr xs) (cons (car xs) ys))]
-                 [else (values (reverse ys) xs)]))
+                 [(symbol? xs) (values (reverse ys) xs)]
+                 [(pair? xs) 
+                  (unless (symbol? (car xs))
+                    (error "Invalid formal parameter:" (car xs)))
+                  (loop (cdr xs) (cons (car xs) ys))]
+                 [else (error "Invalid formal parameter:" formals)]))
        (pass1/vanilla-lambda (add-arg-info form formals) 
                              (if rest (append reqs (list rest)) reqs)
                              (length reqs)
@@ -1172,10 +1176,10 @@
                              body cenv))]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
-(define-pass1-syntax (lambda form cenv) :gauche
+(define-pass1-syntax (lambda form cenv) :gauche ;Extended lambda
   (match form
     [(_ formals . body)
-     (receive (args nreqs nopts kargs) (parse-lambda-args formals)
+     (receive (args nreqs nopts kargs) (parse-extended-lambda-args formals)
        (if (null? kargs)
          (pass1/vanilla-lambda form args nreqs nopts body cenv)
          ;; Convert extended lambda into vanilla lambda
@@ -1205,19 +1209,19 @@
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
     [(_ formals expr body ...)
-     (receive (args reqargs optarg kargs) (parse-lambda-args formals)
+     (receive (args nreqs nopts kargs) (parse-extended-lambda-args formals)
        (unless (null? kargs)
          (error "syntax-error: extended lambda list isn't allowed in receive:"
                 form))
        (let* ([lvars (imap make-lvar+ args)]
               [newenv (cenv-extend cenv (%map-cons args lvars) LEXICAL)])
-         ($receive form reqargs optarg lvars (pass1 expr cenv)
+         ($receive form nreqs nopts lvars (pass1 expr cenv)
                    (pass1/body body newenv))))]
     [_ (error "syntax-error: malformed receive:" form)]))
 
 ;; Returns <list of args>, <# of reqargs>, <has optarg?>, <kargs>
 ;; <kargs> is like (:optional (x #f) (y #f) :rest k) etc.
-(define (parse-lambda-args formals)
+(define (parse-extended-lambda-args formals)
   (let loop ([formals formals] [args '()] [n 0])
     (match formals
       [()      (values (reverse args) n 0 '())]
