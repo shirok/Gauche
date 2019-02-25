@@ -1165,7 +1165,7 @@
            (cond [(null? xs) (values (reverse ys) #f)]
                  [(symbol? xs) (values (reverse ys) xs)]
                  [(pair? xs) 
-                  (unless (symbol? (car xs))
+                  (unless (variable? (car xs))
                     (error "Invalid formal parameter:" (car xs)))
                   (loop (cdr xs) (cons (car xs) ys))]
                  [else (error "Invalid formal parameter:" formals)]))
