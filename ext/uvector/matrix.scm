@@ -63,7 +63,7 @@
     (array-set! sh dim1 1 (array-ref sh dim2 1))
     (array-set! sh dim2 0 tmp0)
     (array-set! sh dim2 1 tmp1)
-    (rlet1 res (array-copy a)
+    (rlet1 res (make-array-internal (class-of a) sh)
       (array-for-each-index a
         (^[vec1] (let* ([vec2 (vector-copy vec1)]
                         [tmp (vector-ref vec2 dim1)])
@@ -82,7 +82,7 @@
     (array-set! sh dim1 1 (array-ref sh dim2 1))
     (array-set! sh dim2 0 tmp0)
     (array-set! sh dim2 1 tmp1)
-    (rlet1 res (array-copy a)
+    (rlet1 res (make-array-internal (class-of a) sh)
       (array-for-each-index a
         (^[vec1] (let* ([vec2 (vector-copy vec1)]
                         [tmp (vector-ref vec2 dim1)])
