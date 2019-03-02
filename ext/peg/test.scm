@@ -689,6 +689,10 @@
            ($match (#\c x #\r) x)
            "zxy foo")
 
+(test-succ "$match1" #\a ($match1 #\a) "abc")
+(test-succ "$match1" #\0 ($match1 (and (? #[0-9] d)) d) "0ab")
+(test-fail "$match1" '(0 "#\\a") ($match1 #\a 'yo) "0ab")
+
 (test-succ "eof" (eof-object) eof "")
 (test-fail "eof" '(0 "end of input") eof "a")
 
