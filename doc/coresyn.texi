@@ -2781,7 +2781,7 @@ or the current element in the list (in @code{dolist}).
 
 @example
 (dotimes (n 5) (write n))
- @result{} @r{writes "12345"}
+ @result{} @r{writes "01234"}
 
 (dolist (v '(a b c d e)) (write v))
  @result{} @r{writes "abcde"}
