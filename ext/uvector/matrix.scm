@@ -399,13 +399,14 @@
   a)
 
 (define (array-add-elements a . rest)
-  (let1 res (array-copy a)
-    (apply array-add-elements! res rest)))
+  (if (null? rest)
+    (begin (assume (array? a)) a)
+    (apply array-add-elements! (array-copy a) rest)))
 
 ;; sub
 
-(define-method array-sub-elements! ((a <array-base>))
-  (array-sub-elements! 0 a))
+(define-method array-sub-elements! ((a <array-base>)) a)
+
 
 (define-method array-sub-elements! ((a <array-base>) b c . rest)
   (array-sub-elements! a b)
@@ -424,8 +425,12 @@
   a)
 
 (define (array-sub-elements a . rest)
-  (let1 res (array-copy a)
-    (apply array-sub-elements! res rest)))
+  (if (null? rest)
+    (begin (assume (array? a)) a)
+    (apply array-sub-elements! (array-copy a) rest)))
+
+(define (array-negate-elements! a) (array-sub-elements! 0 a))
+(define (array-negate-elements a) (array-sub-elements! 0 (array-copy a)))
 
 ;; mul
 
@@ -449,8 +454,9 @@
   a)
 
 (define (array-mul-elements a . rest)
-  (let1 res (array-copy a)
-    (apply array-mul-elements! res rest)))
+  (if (null? rest)
+    (begin (assume (array? a)) a)
+    (apply array-mul-elements! (array-copy a) rest)))
 
 ;; div
 
@@ -459,7 +465,7 @@
   (apply array-div-elements! a c rest))
 
 (define-method array-div-elements! ((a <array-base>))
-  (array-div-elements! 1 a))
+  a)
 
 (define-method array-div-elements! ((a <array-base>) (b <number>))
   (array-map! a (^i (/ i b)) a)
@@ -474,9 +480,12 @@
   a)
 
 (define (array-div-elements a . rest)
-  (let1 res (array-copy a)
-    (apply array-div-elements! res rest)))
+  (if (null? rest)
+    (begin (assume (array? a)) a)
+    (apply array-div-elements! (array-copy a) rest)))
 
+(define (array-reciprocate-elements! a) (array-div-elements! 1 a))
+(define (array-reciprocate-elements a) (array-div-elements! 1 (array-copy a)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; utilities

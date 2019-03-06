@@ -41,20 +41,32 @@
           make-f16array make-f32array make-f64array
           u8array s8array u16array s16array u32array s32array
           u64array s64array f16array f32array f64array
-          array-concatenate array-transpose array-rotate-90 array-flip array-flip!
-          identity-array array-inverse determinant determinant! array-mul array-expt
-          array-div-left array-div-right array-add-elements array-add-elements!
-          array-sub-elements array-sub-elements! array-mul-elements array-mul-elements!
-          array-div-elements array-div-elements! pretty-print-array
+          array-concatenate array-transpose array-rotate-90
+          array-flip array-flip!
+          identity-array array-inverse determinant determinant! 
+          array-mul array-expt
+          array-div-left array-div-right 
+          array-add-elements array-add-elements!
+          array-sub-elements array-sub-elements!
+          array-negate-elements array-negate-elements!
+          array-mul-elements array-mul-elements!
+          array-div-elements array-div-elements! 
+          array-reciprocate-elements array-reciprocate-elements!
+          pretty-print-array
           ))
 (select-module gauche.array)
 
 (autoload "gauche/matrix"
   array-concatenate array-transpose array-rotate-90 array-flip array-flip!
   identity-array array-inverse determinant determinant! array-mul array-expt
-  array-div-left array-div-right array-add-elements array-add-elements!
-  array-sub-elements array-sub-elements! array-mul-elements array-mul-elements!
-  array-div-elements array-div-elements! pretty-print-array)
+  array-div-left array-div-right 
+  array-add-elements array-add-elements!
+  array-sub-elements array-sub-elements! 
+  array-negate-elements array-negate-elements!
+  array-mul-elements array-mul-elements!
+  array-div-elements array-div-elements!
+  array-reciprocate-elements array-reciprocate-elements!
+  pretty-print-array)
 
 (define-class <array-meta> (<class>)
   ((backing-storage-creator :init-keyword :backing-storage-creator

@@ -983,6 +983,13 @@ value instead of counting on the side effects.
 @end example
 
 @c EN
+If only one argument is passed, these procedures
+returns the argument itself.
+@c JP
+ひとつだけ引数が渡された場合は、これらの手続きはその引数をそのまま返します。
+@c COMMON
+
+@c EN
 You can mix different types of arrays as long as their shapes are
 the same.  The result is the same type as the first argument.
 @c JP
@@ -994,6 +1001,41 @@ the same.  The result is the same type as the first argument.
 (array-mul-elements (make-u8array (shape 0 2 0 2) 3)
                     (array (shape 0 2 0 2) 1 3 5 7))
  @result{} #,(<u8array> (0 2 0 2) 3 9 15 21)
+@end example
+@end defun
+
+
+@defun array-negate-elements array
+@defunx array-negate-elements! array
+@c EN
+Returns an array with the same type of the shape of @var{array},
+but each element is a negation of the corresponding
+elements in the original array.
+@c JP
+@var{array}と同じ型、shapeだけれども各要素の符号が元の配列から反転されているような
+配列を返します。
+@c COMMON
+
+@example
+(array-negate-elements (array (shape 0 2 0 2) 1 2 3 4))
+  @result{} #,(<array> (0 2 0 2) -1 -2 -3 -4)
+@end example
+@end defun
+
+@defun array-reciprocate-elements array
+@defunx array-reciprocate-elements! array
+@c EN
+Returns an array with the same type of the shape of @var{array},
+but each element is a reciprocal of the corresponding
+elements in the original array.
+@c JP
+@var{array}と同じ型、shapeだけれども各要素が元の配列の要素の逆数になっているような
+配列を返します。
+@c COMMON
+
+@example
+(array-reciprocate-elements (array (shape 0 2 0 2) 1 2 3 4))
+  @result{} #,(<array> (0 2 0 2) 1 1/2 1/3 1/4)
 @end example
 @end defun
 

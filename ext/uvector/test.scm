@@ -2515,7 +2515,7 @@
    '((#,(<array> (0 2 0 2) -3 -1 1 3)
       #,(<array> (0 2 0 2) 1 2 3 4)
       #,(<array> (0 2 0 2) 4 3 2 1))
-     (#,(<array> (1 3 1 3) -1 -2 -3 -4)
+     (#,(<array> (1 3 1 3) 1 2 3 4)
       #,(<array> (1 3 1 3) 1 2 3 4))
      (#,(<u8array> (3 5 7 9) 1 6 7 0)
       #,(<u8array> (3 5 7 9) 2 7 8 1)
@@ -2591,7 +2591,7 @@
    '((#,(<array> (0 2 0 2) 1/4 2/3 3/2 4/1)
       #,(<array> (0 2 0 2) 1 2 3 4)
       #,(<array> (0 2 0 2) 4 3 2 1))
-     (#,(<array> (1 3 1 3) 1/1 1/2 1/3 1/4)
+     (#,(<array> (1 3 1 3) 1 2 3 4)
       #,(<array> (1 3 1 3) 1 2 3 4))
      (#,(<u8array> (3 5 7 9) 2/10 7/10 8/10 1/10)
       #,(<u8array> (3 5 7 9) 2 7 8 1)
@@ -2673,6 +2673,38 @@
       #,(<f32array> (0 2 0 2) 3 4 1 2))
      (#,(<f64array> (0 2 0 2) 1 2 3 4)
       #,(<f64array> (0 2 0 2) 3 4 1 2))
+     )))
+
+(let ((i1 0) (i2 0))
+  (for-each
+   (^t (let-optionals* t (a b)
+         (test* (format "array-negate-elements-~D" (inc! i1)) b
+                (array-negate-elements a)
+                array-approx-equal?)
+         (test* (format "array-negate-elements!-~D" (inc! i2)) b
+                (array-negate-elements! (array-copy a))
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) -1 -2 -3 -4))
+     (#,(<s8array> (0 2 0 2) 1 2 3 4)
+      #,(<s8array> (0 2 0 2) -1 -2 -3 -4))
+     (#,(<f32array> (0 2 0 2) 1 2 3 4)
+      #,(<f32array> (0 2 0 2) -1 -2 -3 -4))
+     )))
+
+(let ((i1 0) (i2 0))
+  (for-each
+   (^t (let-optionals* t (a b)
+         (test* (format "array-reciprocate-elements~D" (inc! i1)) b
+                (array-reciprocate-elements a)
+                array-approx-equal?)
+         (test* (format "array-reciprocate-elements!-~D" (inc! i2)) b
+                (array-reciprocate-elements! (array-copy a))
+                array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) 1 1/2 1/3 1/4))
+     (#,(<f64array> (0 2 0 2) 1 2 3 4)
+      #,(<f64array> (0 2 0 2) 1 1/2 1/3 1/4))
      )))
 
 ;;-------------------------------------------------------------------

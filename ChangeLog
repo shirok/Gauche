@@ -1,3 +1,9 @@
+2019-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/matrix.scm: Added array-negate-elements! and
+	  array-reciprocate-elements!.
+	  See also @Hayamaya's fix https://github.com/shirok/Gauche/pull/456.
+
 2019-03-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($match1): Added experimentally.
