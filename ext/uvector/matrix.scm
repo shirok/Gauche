@@ -108,7 +108,8 @@
             (vector-set! vec2 dimension j)
             (array-set! a vec1 (array-ref a vec2))
             (array-set! a vec2 tmp))))
-      (make-vector rank))))
+      (make-vector rank))
+    a))
 
 (define (array-flip a . args)
   (rlet1 res (array-copy a)
@@ -386,38 +387,44 @@
   a)
 
 (define-method array-add-elements! ((a <array-base>) (b <number>))
-  (array-map! a (^i (+ b i)) a))
+  (array-map! a (^i (+ b i)) a)
+  a)
 
 (define-method array-add-elements! ((a <number>) (b <array-base>))
-  (array-map! (array-copy b) (^i (+ a i)) b))
+  (rlet1 res (array-copy b)
+    (array-map! res (^i (+ a i)) b)))
 
 (define-method array-add-elements! ((a <array-base>) (b <array-base>))
-  (array-map! a (^[i j] (+ i j)) a b))
+  (array-map! a (^[i j] (+ i j)) a b)
+  a)
 
 (define (array-add-elements a . rest)
-  (rlet1 res (array-copy a)
+  (let1 res (array-copy a)
     (apply array-add-elements! res rest)))
 
 ;; sub
 
 (define-method array-sub-elements! ((a <array-base>))
-  (array-sub-elements! 1 a))
+  (array-sub-elements! 0 a))
 
 (define-method array-sub-elements! ((a <array-base>) b c . rest)
   (array-sub-elements! a b)
   (apply array-sub-elements! a c rest))
 
 (define-method array-sub-elements! ((a <array-base>) (b <number>))
-  (array-map! a (^i (- i b)) a))
+  (array-map! a (^i (- i b)) a)
+  a)
 
 (define-method array-sub-elements! ((a <number>) (b <array-base>))
-  (array-map! (array-copy b) (^i (- a i)) b))
+  (rlet1 res (array-copy b)
+    (array-map! res (^i (- a i)) b)))
 
 (define-method array-sub-elements! ((a <array-base>) (b <array-base>))
-  (array-map! a (^[i j] (- i j)) a b))
+  (array-map! a (^[i j] (- i j)) a b)
+  a)
 
 (define (array-sub-elements a . rest)
-  (rlet1 res (array-copy a)
+  (let1 res (array-copy a)
     (apply array-sub-elements! res rest)))
 
 ;; mul
@@ -430,16 +437,19 @@
   a)
 
 (define-method array-mul-elements! ((a <array-base>) (b <number>))
-  (array-map! a (^i (* b i)) a))
+  (array-map! a (^i (* b i)) a)
+  a)
 
 (define-method array-mul-elements! ((a <number>) (b <array-base>))
-  (array-map! (array-copy b) (^i (* a i)) b))
+  (rlet1 res (array-copy b)
+    (array-map! res (^i (* a i)) b)))
 
 (define-method array-mul-elements! ((a <array-base>) (b <array-base>))
-  (array-map! a (^[i j] (* i j)) a b))
+  (array-map! a (^[i j] (* i j)) a b)
+  a)
 
 (define (array-mul-elements a . rest)
-  (rlet1 res (array-copy a)
+  (let1 res (array-copy a)
     (apply array-mul-elements! res rest)))
 
 ;; div
@@ -449,19 +459,22 @@
   (apply array-div-elements! a c rest))
 
 (define-method array-div-elements! ((a <array-base>))
-  a)
+  (array-div-elements! 1 a))
 
 (define-method array-div-elements! ((a <array-base>) (b <number>))
-  (array-map! a (^i (/ i b)) a))
+  (array-map! a (^i (/ i b)) a)
+  a)
 
 (define-method array-div-elements! ((a <number>) (b <array-base>))
-  (array-map! (array-copy b) (^i (/ a i)) b))
+  (rlet1 res (array-copy b)
+    (array-map! res (^i (/ a i)) b)))
 
 (define-method array-div-elements! ((a <array-base>) (b <array-base>))
-  (array-map! a (^[i j] (/ i j)) a b))
+  (array-map! a (^[i j] (/ i j)) a b)
+  a)
 
 (define (array-div-elements a . rest)
-  (rlet1 res (array-copy a)
+  (let1 res (array-copy a)
     (apply array-div-elements! res rest)))
 
 
