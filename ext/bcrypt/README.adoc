@@ -2,7 +2,7 @@ This extension is based on the crypt_browfish 1.3 by
 by Solar Designer <solar at openwall.com>.
 
 The source of the original package is available at:
-http://www.openwall.com/crypt/
+https://www.openwall.com/crypt/
 
 We dropped x86 assembler implementation that comes with the
 original source, for speed is not our goal, and having an asm
