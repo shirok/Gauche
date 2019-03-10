@@ -1347,8 +1347,8 @@ EXTERN_C_BEGIN
 #       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND GC_find_limit(DATASTART, TRUE)
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
@@ -2055,8 +2055,8 @@ EXTERN_C_BEGIN
 #       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND GC_find_limit(DATASTART, TRUE)
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
@@ -2286,9 +2286,13 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
-      extern int __data_start[];
+#     if defined(HOST_ANDROID)
+#       define SEARCH_FOR_DATA_START
+#     else
+        extern int __data_start[];
+#       define DATASTART ((ptr_t)__data_start)
+#     endif
       extern int _end[];
-#     define DATASTART ((ptr_t)__data_start)
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
@@ -2953,7 +2957,8 @@ EXTERN_C_BEGIN
 /* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */
 /* not provide correct _end symbol.  Unfortunately, alternate __end__   */
 /* symbol is provided only by NDK "bfd" linker.                         */
-#if defined(HOST_ANDROID) && defined(__clang__)
+#if defined(HOST_ANDROID) && defined(__clang__) \
+    && !defined(BROKEN_UUENDUU_SYM)
 # undef DATAEND
 # pragma weak __end__
   extern int __end__[];
