@@ -27,7 +27,7 @@
 
 #ifndef DEFAULT_NTHREADS
 # ifdef HAVE_MMAP
-#   define DEFAULT_NTHREADS 16
+#   define DEFAULT_NTHREADS 16 /* must be <= MAX_NTHREADS */
 # else
 #   define DEFAULT_NTHREADS 3
 # endif
@@ -229,7 +229,6 @@ int main(int argc, char **argv) {
 
     if (1 == argc) {
       nthreads = DEFAULT_NTHREADS;
-      assert(nthreads <= MAX_NTHREADS);
     } else if (2 == argc) {
       nthreads = atoi(argv[1]);
       if (nthreads < 1 || nthreads > MAX_NTHREADS) {
