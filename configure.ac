@@ -14,7 +14,7 @@
 dnl Process this file with autoconf to produce configure.
 
 dnl Initialization.
-AC_INIT(gc,8.0.2,https://github.com/ivmai/bdwgc/issues)
+AC_INIT(gc,8.0.4,https://github.com/ivmai/bdwgc/issues)
 dnl Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 AC_CONFIG_SRCDIR(gcj_mlc.c)
@@ -963,6 +963,8 @@ AC_ARG_ENABLE(docs,
         [AC_HELP_STRING([--disable-docs],
                         [do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
+
+AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
 
 # Atomic Ops
 # ----------
