@@ -62,6 +62,14 @@
 
 static int g_port = 19001;
 
+#ifndef WIN32
+typedef void* ax_thread_status;
+#define AX_THREAD_RETURN NULL
+#else
+typedef DWORD ax_thread_status;
+#define AX_THREAD_RETURN 0
+#endif
+
 /**************************************************************************
  * AES tests 
  * 
@@ -958,7 +966,7 @@ typedef struct
     const char *openssl_option;
 } client_t;
 
-static void do_client(client_t *clnt)
+static ax_thread_status do_client(client_t *clnt)
 {
     char openssl_buf[2048];
     usleep(200000);           /* allow server to start */
@@ -993,6 +1001,8 @@ static void do_client(client_t *clnt)
 
 //printf("CLIENT %s\n", openssl_buf);
     SYSTEM(openssl_buf);
+
+    return AX_THREAD_RETURN;
 }
 
 static int SSL_server_test(
@@ -1546,7 +1556,7 @@ typedef struct
     int do_gnutls;
 } server_t;
 
-static void do_server(server_t *svr)
+static ax_thread_status do_server(server_t *svr)
 {
     char openssl_buf[2048];
 #ifndef WIN32
@@ -1569,6 +1579,8 @@ static void do_server(server_t *svr)
     }
 //printf("SERVER %s\n", openssl_buf);
     SYSTEM(openssl_buf);
+
+    return AX_THREAD_RETURN;
 }
 
 static int SSL_client_test(
