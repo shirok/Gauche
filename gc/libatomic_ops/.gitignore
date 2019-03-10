@@ -23,6 +23,8 @@ Makefile
 *.obj
 *.so
 
+/out/
+
 /src/.deps/
 /src/.dirstamp
 /src/.libs/

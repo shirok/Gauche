@@ -12,7 +12,7 @@
 
 dnl Process this file with autoconf to produce configure.
 
-AC_INIT([libatomic_ops],[7.6.8],https://github.com/ivmai/libatomic_ops/issues)
+AC_INIT([libatomic_ops],[7.6.10],https://github.com/ivmai/libatomic_ops/issues)
 
 AC_PREREQ(2.61)
 AC_CANONICAL_TARGET([])
@@ -233,6 +233,7 @@ else
 fi
 AC_SUBST(THREADDLLIBS)
 
+AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
 AM_CONDITIONAL(HAVE_PTHREAD_H, test x$have_pthreads = xtrue)
 AM_CONDITIONAL(NEED_ASM, test x$need_asm = xtrue)
 

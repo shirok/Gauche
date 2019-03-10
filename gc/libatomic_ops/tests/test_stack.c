@@ -226,7 +226,6 @@ int main(int argc, char **argv)
   if (1 == argc)
     {
       max_nthreads = DEFAULT_NTHREADS;
-      assert(max_nthreads <= MAX_NTHREADS);
     }
   else if (2 == argc)
     {
