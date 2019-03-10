@@ -64,9 +64,11 @@ static int g_port = 19001;
 
 #ifndef WIN32
 typedef void* ax_thread_status;
+typedef void* ax_thread_param;
 #define AX_THREAD_RETURN NULL
 #else
-typedef DWORD ax_thread_status;
+typedef DWORD  ax_thread_status;
+typedef LPVOID ax_thread_param;
 #define AX_THREAD_RETURN 0
 #endif
 
@@ -966,8 +968,9 @@ typedef struct
     const char *openssl_option;
 } client_t;
 
-static ax_thread_status do_client(client_t *clnt)
+static ax_thread_status do_client(ax_thread_param ptr)
 {
+    client_t *clnt = ptr;
     char openssl_buf[2048];
     usleep(200000);           /* allow server to start */
 
@@ -1081,12 +1084,10 @@ static int SSL_server_test(
     }
 
 #ifndef WIN32
-    pthread_create(&thread, NULL, 
-                (void *(*)(void *))do_client, (void *)&client_data);
+    pthread_create(&thread, NULL, do_client, &client_data);
     pthread_detach(thread);
 #else
-    CreateThread(NULL, 1024, (LPTHREAD_START_ROUTINE)do_client, 
-            (LPVOID)&client_data, 0, NULL);
+    CreateThread(NULL, 1024, do_client, &client_data, 0, NULL);
 #endif
 
     for (;;)
@@ -1556,8 +1557,9 @@ typedef struct
     int do_gnutls;
 } server_t;
 
-static ax_thread_status do_server(server_t *svr)
+static ax_thread_status do_server(ax_thread_param ptr)
 {
+    server_t *svr = ptr;
     char openssl_buf[2048];
 #ifndef WIN32
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
@@ -1610,12 +1612,10 @@ static int SSL_client_test(
         server_data.openssl_option = openssl_option;
 
 #ifndef WIN32
-        pthread_create(&thread, NULL, 
-                (void *(*)(void *))do_server, (void *)&server_data);
+        pthread_create(&thread, NULL, do_server, &server_data);
         pthread_detach(thread);
 #else
-        CreateThread(NULL, 1024, (LPTHREAD_START_ROUTINE)do_server, 
-            (LPVOID)&server_data, 0, NULL);
+        CreateThread(NULL, 1024, do_server, &server_data, 0, NULL);
 #endif
     }
     
