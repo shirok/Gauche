@@ -429,14 +429,17 @@ EXTERN_C_END
 # undef GET_TIME
 # undef MS_TIME_DIFF
 # define CLOCK_TYPE struct timeval
+# define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # define GET_TIME(x) \
                 do { \
                   struct rusage rusage; \
                   getrusage(RUSAGE_SELF, &rusage); \
                   x = rusage.ru_utime; \
                 } while (0)
-# define MS_TIME_DIFF(a,b) ((unsigned long)(a.tv_sec - b.tv_sec) * 1000 \
-                            + (unsigned long)(a.tv_usec - b.tv_usec) / 1000)
+# define MS_TIME_DIFF(a,b) ((unsigned long)((long)(a.tv_sec-b.tv_sec) * 1000 \
+                                    + (long)(a.tv_usec-b.tv_usec) / 1000))
+                            /* "a" time is expected to be not earlier than  */
+                            /* "b" one; the result has unsigned long type.  */
 #elif defined(MSWIN32) || defined(MSWINCE)
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
@@ -450,7 +453,7 @@ EXTERN_C_END
 # else
 #   define GET_TIME(x) (void)(x = GetTickCount())
 # endif
-# define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
+# define MS_TIME_DIFF(a,b) ((unsigned long)((a)-(b)))
 #elif defined(NN_PLATFORM_CTR)
 # define CLOCK_TYPE long long
   EXTERN_C_BEGIN
@@ -458,7 +461,7 @@ EXTERN_C_END
   CLOCK_TYPE n3ds_convert_tick_to_ms(CLOCK_TYPE tick);
   EXTERN_C_END
 # define GET_TIME(x) (void)(x = n3ds_get_system_tick())
-# define MS_TIME_DIFF(a,b) ((long)n3ds_convert_tick_to_ms((a)-(b)))
+# define MS_TIME_DIFF(a,b) ((unsigned long)n3ds_convert_tick_to_ms((a)-(b)))
 #else /* !BSD_TIME && !NN_PLATFORM_CTR && !MSWIN32 && !MSWINCE */
 # include <time.h>
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
@@ -485,6 +488,11 @@ EXTERN_C_END
   /* Avoid using double type since some targets (like ARM) might        */
   /* require -lm option for double-to-long conversion.                  */
 #endif /* !BSD_TIME && !MSWIN32 */
+# ifndef CLOCK_TYPE_INITIALIZER
+    /* This is used to initialize CLOCK_TYPE variables (to some value)  */
+    /* to avoid "variable might be uninitialized" compiler warnings.    */
+#   define CLOCK_TYPE_INITIALIZER 0
+# endif
 #endif /* !NO_CLOCK */
 
 /* We use bzero and bcopy internally.  They may not be available.       */
@@ -2450,12 +2458,12 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #ifdef SEARCH_FOR_DATA_START
   GC_INNER void GC_init_linux_data_start(void);
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 #endif
 
 #if defined(NETBSD) && defined(__ELF__)
   GC_INNER void GC_init_netbsd_elf(void);
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 #endif
 
 #ifdef UNIX_LIKE

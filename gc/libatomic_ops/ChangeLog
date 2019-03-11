@@ -1,4 +1,12 @@
 
+== [7.6.10] 2019-03-01 ==
+
+* Eliminate 'my_chunk_ptr-AO_initial_heap out of bounds' cppcheck warning
+* Fix 'AO_*_TS_T is not defined' compiler warnings (GCC-8)
+* Fix 'duplicate symbol' error for test_malloc/stack with static libs (OS X)
+* Workaround 'argument to function assert is always 1' cppcheck warnings
+
+
 == [7.6.8] 2018-12-11 ==
 
 * Eliminate 'casting signed to bigger unsigned int' CSA warning (test_stack)
@@ -140,6 +148,11 @@ Also, includes 7.4.8 changes
 * Workaround a bug in double-wide intrinsics of Clang/x64 with ASan enabled
 * Workaround MSan warning about uninitialized data read by generalized store
 Also, includes 7.4.6 changes
+
+
+== [7.4.14] 2019-03-01 ==
+
+* Fix 'AO_*_TS_T is not defined' compiler warnings (GCC-8)
 
 
 == [7.4.12] 2018-12-11 ==

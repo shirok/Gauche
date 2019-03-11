@@ -421,11 +421,11 @@
 
 /* The most common way to clear a test-and-set location         */
 /* at the end of a critical section.                            */
-#if AO_AO_TS_T && !defined(AO_HAVE_CLEAR)
+#if defined(AO_AO_TS_T) && !defined(AO_HAVE_CLEAR)
 # define AO_CLEAR(addr) AO_store_release((AO_TS_t *)(addr), AO_TS_CLEAR)
 # define AO_HAVE_CLEAR
 #endif
-#if AO_CHAR_TS_T && !defined(AO_HAVE_CLEAR)
+#if defined(AO_CHAR_TS_T) && !defined(AO_HAVE_CLEAR)
 # define AO_CLEAR(addr) AO_char_store_release((AO_TS_t *)(addr), AO_TS_CLEAR)
 # define AO_HAVE_CLEAR
 #endif

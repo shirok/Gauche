@@ -38,13 +38,18 @@ test_atomic_generalized_LDADD=$(test_atomic_LDADD)
 
 test_stack_SOURCES=test_stack.c
 test_stack_LDADD = $(THREADDLLIBS) \
-        $(top_builddir)/src/libatomic_ops_gpl.la \
-        $(top_builddir)/src/libatomic_ops.la
+        $(top_builddir)/src/libatomic_ops_gpl.la
 
 test_malloc_SOURCES=test_malloc.c
 test_malloc_LDADD = $(THREADDLLIBS) \
-        $(top_builddir)/src/libatomic_ops_gpl.la \
-        $(top_builddir)/src/libatomic_ops.la
+        $(top_builddir)/src/libatomic_ops_gpl.la
+
+## In case of static libraries build, libatomic_ops.a is already referenced
+## in dependency_libs attribute of libatomic_ops_gpl.la file.
+if ENABLE_SHARED
+test_malloc_LDADD += $(top_builddir)/src/libatomic_ops.la
+test_stack_LDADD += $(top_builddir)/src/libatomic_ops.la
+endif
 
 # Run the tests directly (without test-driver):
 .PHONY: check-without-test-driver
