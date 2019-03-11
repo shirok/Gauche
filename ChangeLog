@@ -1,3 +1,8 @@
+2019-03-10  Shiro Kawai  <shiro@acm.org>
+
+	* gc: Bumped bdwgc 8.0.4 and libatomic_ops 7.6.10
+	  by @qykth-git https://github.com/shirok/Gauche/pull/457
+
 2019-03-06  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/matrix.scm: Added array-negate-elements! and
