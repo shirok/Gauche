@@ -136,7 +136,6 @@
 (autoload srfi-0  (:macro cond-expand))
 (autoload srfi-7  (:macro program))
 (autoload srfi-26 (:macro cut cute))
-(autoload srfi-31 (:macro rec))
 (autoload srfi-55 (:macro require-extension))
 
 (autoload gauche.interpolate string-interpolate

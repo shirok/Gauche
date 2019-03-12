@@ -1,3 +1,7 @@
+2019-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (rec), lib/srfi-31.scm: Make 'rec' built-in.
+
 2019-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* gc: Bumped bdwgc 8.0.4 and libatomic_ops 7.6.10

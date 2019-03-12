@@ -36,12 +36,15 @@
 (declare (keep-private-macro quasirename 
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
-                             ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z
+                             ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z rec
                              push! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values values-ref values->list
                              assume assume-type cond-list
                              define-compiler-macro))
+
+;; This file defines built-in macros.
+;; We need the compiler to be initialized at this stage.
 
 ;;; quasirename
 
@@ -249,6 +252,20 @@
 (define-macro (define-^x . vars)
   `(begin ,@(map (lambda (x) `(^-generator ,x)) vars)))
 (define-^x _ a b c d e f g h i j k l m n o p q r s t u v w x y z)
+
+;;; rec (srfi-31)
+
+(define-syntax rec
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (name . formals) . body)
+        (quasirename r
+          (letrec ((,name (lambda ,formals ,@body))) ,name))]
+       [(_ name expr)
+        (quasirename r
+          (letrec ((,name ,expr)) ,name))]
+       [_ (error "malformed rec:" f)]))))
 
 ;;; bind construct
 

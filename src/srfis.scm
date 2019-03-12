@@ -431,11 +431,11 @@ Supported by the native reader.  @xref{Lexical structure}.
 srfi-31, srfi-31
 ()
 
-A special form rec for recursive evaluation
-Defined as an autoloaded macro.  @xref{Binding constructs}.
+A special form rec for recursive evaluation.  Built-in.
+@xref{Binding constructs}.
 
-再帰評価用の特殊フォーム rec
-オートロードされるマクロとして定義されています。@ref{Binding constructs}参照。
+再帰評価用の特殊フォーム@code{rec}. 組み込みです。
+@ref{Binding constructs}参照。
 
 
 srfi-34
