@@ -1,5 +1,5 @@
---- a/axTLS/ssl/x509.c	2017-08-31 11:02:31 +0900
-+++ b/axTLS/ssl/x509.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/ssl/x509.c	2017-08-31 11:02:31.000000000 +0900
++++ b/axTLS/ssl/x509.c	2018-12-22 09:55:14.044561625 +0900
 @@ -274,7 +274,7 @@
          X509_CTX *x509_ctx)
  {
@@ -21,8 +21,8 @@
                          
                  if (asn1_compare_dn(cert->ca_cert_dn,
                                              ca_cert_ctx->cert[i]->cert_dn) == 0)
---- a/axTLS/ssl/tls1.h	2017-06-28 05:28:19 +0900
-+++ b/axTLS/ssl/tls1.h	2018-11-12 10:39:16 +0900
+--- a/axTLS/ssl/tls1.h	2017-06-28 05:28:19.000000000 +0900
++++ b/axTLS/ssl/tls1.h	2018-01-14 22:05:41.200842354 +0900
 @@ -41,7 +41,7 @@
  #endif
  
@@ -32,8 +32,8 @@
  #include "os_int.h"
  #include "os_port.h"
  #include "crypto.h"
---- a/axTLS/ssl/tls1.c	2017-08-31 11:43:17 +0900
-+++ b/axTLS/ssl/tls1.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/ssl/tls1.c	2017-08-31 11:43:17.000000000 +0900
++++ b/axTLS/ssl/tls1.c	2018-12-22 09:55:14.044561625 +0900
 @@ -1655,6 +1655,7 @@
   */
  int process_finished(SSL *ssl, uint8_t *buf, int hs_len)
@@ -42,9 +42,26 @@
      int ret = SSL_OK;
      int is_client = IS_SET_SSL_FLAG(SSL_IS_CLIENT);
      int resume = IS_SET_SSL_FLAG(SSL_SESSION_RESUME);
---- a/axTLS/ssl/test/ssltest.c	2016-12-31 05:01:13 +0900
-+++ b/axTLS/ssl/test/ssltest.c	2018-11-12 10:39:16 +0900
-@@ -922,19 +922,23 @@
+--- a/axTLS/ssl/test/ssltest.c	2016-12-31 05:01:13.000000000 +0900
++++ b/axTLS/ssl/test/ssltest.c	2019-03-13 07:53:53.933067040 +0900
+@@ -62,6 +62,16 @@
+ 
+ static int g_port = 19001;
+ 
++#ifndef WIN32
++typedef void* ax_thread_status;
++typedef void* ax_thread_param;
++#define AX_THREAD_RETURN NULL
++#else
++typedef DWORD  ax_thread_status;
++typedef LPVOID ax_thread_param;
++#define AX_THREAD_RETURN 0
++#endif
++
+ /**************************************************************************
+  * AES tests 
+  * 
+@@ -922,19 +932,23 @@
  static int client_socket_init(uint16_t port)
  {
      struct sockaddr_in address;
@@ -76,7 +93,42 @@
      return client_fd;
  }
  
-@@ -1483,6 +1487,7 @@
+@@ -954,8 +968,9 @@
+     const char *openssl_option;
+ } client_t;
+ 
+-static void do_client(client_t *clnt)
++static ax_thread_status do_client(ax_thread_param ptr)
+ {
++    client_t *clnt = ptr;
+     char openssl_buf[2048];
+     usleep(200000);           /* allow server to start */
+ 
+@@ -989,6 +1004,8 @@
+ 
+ //printf("CLIENT %s\n", openssl_buf);
+     SYSTEM(openssl_buf);
++
++    return AX_THREAD_RETURN;
+ }
+ 
+ static int SSL_server_test(
+@@ -1067,12 +1084,10 @@
+     }
+ 
+ #ifndef WIN32
+-    pthread_create(&thread, NULL, 
+-                (void *(*)(void *))do_client, (void *)&client_data);
++    pthread_create(&thread, NULL, do_client, &client_data);
+     pthread_detach(thread);
+ #else
+-    CreateThread(NULL, 1024, (LPTHREAD_START_ROUTINE)do_client, 
+-            (LPVOID)&client_data, 0, NULL);
++    CreateThread(NULL, 1024, do_client, &client_data, 0, NULL);
+ #endif
+ 
+     for (;;)
+@@ -1483,6 +1498,7 @@
                  NULL, "abcd", DEFAULT_SVR_OPTION)))
          goto cleanup;
  
@@ -84,7 +136,7 @@
      /* 
       * GNUTLS
       */
-@@ -1501,6 +1506,7 @@
+@@ -1501,6 +1517,7 @@
                      "../ssl/test/axTLS.ca_x509.cer", NULL, 
                      DEFAULT_SVR_OPTION|SSL_CLIENT_AUTHENTICATION)))
          goto cleanup;
@@ -92,7 +144,42 @@
      ret = 0;
  
  cleanup:
-@@ -1775,7 +1781,9 @@
+@@ -1540,8 +1557,9 @@
+     int do_gnutls;
+ } server_t;
+ 
+-static void do_server(server_t *svr)
++static ax_thread_status do_server(ax_thread_param ptr)
+ {
++    server_t *svr = ptr;
+     char openssl_buf[2048];
+ #ifndef WIN32
+     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+@@ -1563,6 +1581,8 @@
+     }
+ //printf("SERVER %s\n", openssl_buf);
+     SYSTEM(openssl_buf);
++
++    return AX_THREAD_RETURN;
+ }
+ 
+ static int SSL_client_test(
+@@ -1592,12 +1612,10 @@
+         server_data.openssl_option = openssl_option;
+ 
+ #ifndef WIN32
+-        pthread_create(&thread, NULL, 
+-                (void *(*)(void *))do_server, (void *)&server_data);
++        pthread_create(&thread, NULL, do_server, &server_data);
+         pthread_detach(thread);
+ #else
+-        CreateThread(NULL, 1024, (LPTHREAD_START_ROUTINE)do_server, 
+-            (LPVOID)&server_data, 0, NULL);
++        CreateThread(NULL, 1024, do_server, &server_data, 0, NULL);
+ #endif
+     }
+     
+@@ -1775,7 +1793,9 @@
      if ((ret = SSL_client_test("Client renegotiation", 
                      &ssl_ctx, NULL, &sess_resume, 
                      DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
@@ -103,7 +190,7 @@
      sess_resume.do_reneg = 0;
  
      sess_resume.stop_server = 1;
-@@ -1925,6 +1933,7 @@
+@@ -1925,6 +1945,7 @@
  
      printf("SSL client test \"Invalid certificate type\" passed\n"); */
  
@@ -111,7 +198,7 @@
      if ((ret = SSL_client_test("GNUTLS client", 
                      &ssl_ctx,
                      "--x509certfile ../ssl/test/axTLS.x509_1024.pem "
-@@ -1944,7 +1953,7 @@
+@@ -1944,7 +1965,7 @@
                      "../ssl/test/axTLS.key_1024.pem", NULL,
                      "../ssl/test/axTLS.x509_1024.pem"))) 
          goto cleanup;
@@ -120,7 +207,7 @@
      ret = 0;
  
  cleanup:
-@@ -2069,7 +2078,7 @@
+@@ -2069,7 +2090,7 @@
          }
  
          offset += size;
@@ -129,7 +216,7 @@
  
      printf(ret == SSL_OK && offset == sizeof(basic_buf) ? 
                              "SSL basic test passed\n" :
-@@ -2203,7 +2212,7 @@
+@@ -2203,7 +2224,7 @@
          }
  
          offset += size;
@@ -138,7 +225,7 @@
  
      printf(ret == SSL_OK && offset == sizeof(basic_buf) ? 
                              "SSL unblocked test passed\n" :
-@@ -2452,6 +2461,10 @@
+@@ -2452,6 +2473,10 @@
      int ret = 1;
      BI_CTX *bi_ctx;
      int fd;
@@ -149,7 +236,7 @@
  
  #ifdef WIN32
      WSADATA wsaData;
-@@ -2465,6 +2478,12 @@
+@@ -2465,6 +2490,12 @@
      dup2(fd, 2);
  #endif
  
@@ -162,7 +249,7 @@
      /* can't do testing in this mode */
  #if defined CONFIG_SSL_GENERATE_X509_CERT
      printf("Error: Must compile with default key/certificates\n");
-@@ -2560,6 +2579,10 @@
+@@ -2560,6 +2591,10 @@
  
      SYSTEM("sh ../ssl/test/killopenssl.sh");
  
@@ -173,7 +260,7 @@
      if (SSL_client_tests())
          goto cleanup;
  
-@@ -2571,6 +2594,10 @@
+@@ -2571,6 +2606,10 @@
  
      SYSTEM("sh ../ssl/test/killopenssl.sh");
  
@@ -184,21 +271,21 @@
  //    if (header_issue())
  //    {
  //        printf("Header tests failed\n"); TTY_FLUSH();
---- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 19:39:35 +0900
-+++ b/axTLS/ssl/test/killopenssl.sh	2018-11-12 10:39:16 +0900
+--- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 19:39:35.000000000 +0900
++++ b/axTLS/ssl/test/killopenssl.sh	2018-01-14 22:05:41.200842354 +0900
 @@ -1,2 +1,3 @@
  #!/bin/sh
 -ps -ef|grep openssl | /usr/bin/awk '{print $2}' |xargs kill -9
 +awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 +rm -f ../ssl/openssl.pid
---- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 19:39:35 +0900
-+++ b/axTLS/ssl/test/killgnutls.sh	2018-11-12 10:39:16 +0900
+--- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 19:39:35.000000000 +0900
++++ b/axTLS/ssl/test/killgnutls.sh	2018-01-14 22:05:41.200842354 +0900
 @@ -1,2 +1,2 @@
  #!/bin/sh
 -ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 +#ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
---- a/axTLS/ssl/os_port.h	2016-07-05 16:33:37 +0900
-+++ b/axTLS/ssl/os_port.h	2018-11-13 01:17:55 +0900
+--- a/axTLS/ssl/os_port.h	2016-07-05 16:33:37.000000000 +0900
++++ b/axTLS/ssl/os_port.h	2018-12-22 09:55:14.044561625 +0900
 @@ -42,7 +42,7 @@
  #endif
  
@@ -290,8 +377,8 @@
  #ifndef be64toh
  #define be64toh(x) __be64_to_cpu(x)
  #endif
---- a/axTLS/ssl/os_port.c	2016-07-06 04:31:16 +0900
-+++ b/axTLS/ssl/os_port.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/ssl/os_port.c	2016-07-06 04:31:16.000000000 +0900
++++ b/axTLS/ssl/os_port.c	2018-01-14 22:05:41.196842386 +0900
 @@ -40,6 +40,7 @@
  #include "os_port.h"
  
@@ -307,8 +394,8 @@
 +#endif /*__MINGW32__*/
  #endif
  
---- a/axTLS/ssl/asn1.c	2017-02-19 06:17:02 +0900
-+++ b/axTLS/ssl/asn1.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/ssl/asn1.c	2017-02-19 06:17:02.000000000 +0900
++++ b/axTLS/ssl/asn1.c	2018-12-22 09:55:14.044561625 +0900
 @@ -183,7 +183,7 @@
      int i;
  
@@ -318,8 +405,8 @@
      {
          res = X509_NOT_OK;
          goto end_int;
---- a/axTLS/crypto/sha512.c	2016-06-12 19:39:34 +0900
-+++ b/axTLS/crypto/sha512.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/crypto/sha512.c	2016-06-12 19:39:34.000000000 +0900
++++ b/axTLS/crypto/sha512.c	2018-12-22 09:55:14.044561625 +0900
 @@ -160,7 +160,7 @@
      while (len > 0)
      {
@@ -329,8 +416,8 @@
   
          // Copy the data to the buffer
          memcpy(ctx->w_buf.buffer + ctx->size, msg, n);
---- a/axTLS/crypto/sha256.c	2016-06-12 19:39:34 +0900
-+++ b/axTLS/crypto/sha256.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/crypto/sha256.c	2016-06-12 19:39:34.000000000 +0900
++++ b/axTLS/crypto/sha256.c	2018-12-22 09:55:14.044561625 +0900
 @@ -216,10 +216,10 @@
      ctx->total[0] += len;
      ctx->total[0] &= 0xFFFFFFFF;
@@ -344,8 +431,8 @@
      {
          memcpy((void *) (ctx->buffer + left), (void *)msg, fill);
          SHA256_Process(ctx->buffer, ctx);
---- a/axTLS/crypto/rc4.c	2016-08-19 04:52:29 +0900
-+++ b/axTLS/crypto/rc4.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/crypto/rc4.c	2016-08-19 04:52:29.000000000 +0900
++++ b/axTLS/crypto/rc4.c	2018-12-22 09:55:14.044561625 +0900
 @@ -74,6 +74,7 @@
   */
  void RC4_crypt(RC4_CTX *ctx, const uint8_t *msg, uint8_t *out, int length)
@@ -354,8 +441,8 @@
      int i;
      uint8_t *m, x, y, a, b;
  
---- a/axTLS/crypto/os_int.h	2017-02-19 06:15:20 +0900
-+++ b/axTLS/crypto/os_int.h	2018-11-12 10:39:16 +0900
+--- a/axTLS/crypto/os_int.h	2017-02-19 06:15:20.000000000 +0900
++++ b/axTLS/crypto/os_int.h	2018-01-14 22:05:41.192842418 +0900
 @@ -41,7 +41,7 @@
  extern "C" {
  #endif
@@ -365,8 +452,8 @@
  typedef UINT8 uint8_t;
  typedef INT8 int8_t;
  typedef UINT16 uint16_t;
---- a/axTLS/crypto/crypto_misc.c	2016-07-06 04:49:47 +0900
-+++ b/axTLS/crypto/crypto_misc.c	2018-11-13 01:35:25 +0900
+--- a/axTLS/crypto/crypto_misc.c	2016-07-06 04:49:47.000000000 +0900
++++ b/axTLS/crypto/crypto_misc.c	2018-12-22 09:55:14.044561625 +0900
 @@ -32,6 +32,20 @@
   * Some misc. routines to help things out
   */
@@ -546,8 +633,8 @@
      return 0;
  }
  
---- a/axTLS/crypto/crypto.h	2016-07-24 16:31:34 +0900
-+++ b/axTLS/crypto/crypto.h	2018-11-12 10:39:16 +0900
+--- a/axTLS/crypto/crypto.h	2016-07-24 16:31:34.000000000 +0900
++++ b/axTLS/crypto/crypto.h	2018-01-14 22:05:41.192842418 +0900
 @@ -39,6 +39,7 @@
  extern "C" {
  #endif
@@ -556,8 +643,8 @@
  #include "bigint_impl.h"
  #include "bigint.h"
  
---- a/axTLS/crypto/bigint_impl.h	2016-06-12 19:39:34 +0900
-+++ b/axTLS/crypto/bigint_impl.h	2018-11-12 10:39:16 +0900
+--- a/axTLS/crypto/bigint_impl.h	2016-06-12 19:39:34.000000000 +0900
++++ b/axTLS/crypto/bigint_impl.h	2018-01-14 22:05:41.192842418 +0900
 @@ -61,7 +61,7 @@
  typedef uint32_t long_comp;     /**< A double precision component. */
  typedef int32_t slong_comp;     /**< A signed double precision component. */
@@ -567,8 +654,8 @@
  #define COMP_RADIX          4294967296i64         
  #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
  #else
---- a/axTLS/crypto/bigint.c	2016-06-12 19:39:34 +0900
-+++ b/axTLS/crypto/bigint.c	2018-11-12 10:39:16 +0900
+--- a/axTLS/crypto/bigint.c	2016-06-12 19:39:34.000000000 +0900
++++ b/axTLS/crypto/bigint.c	2018-12-22 09:55:14.044561625 +0900
 @@ -508,6 +508,7 @@
   */
  static bigint *bi_int_divide(BI_CTX *ctx, bigint *biR, comp denom)
@@ -577,8 +664,8 @@
      int i = biR->size - 1;
      long_comp r = 0;
  
---- a/axTLS/config/config.h	1970-01-01 09:00:00 +0900
-+++ b/axTLS/config/config.h	2018-11-12 10:39:16 +0900
+--- a/axTLS/config/config.h	1970-01-01 09:00:00.000000000 +0900
++++ b/axTLS/config/config.h	2018-11-14 03:23:58.372305922 +0900
 @@ -0,0 +1,149 @@
 +/*
 + * In original axTLS, this file is automatically generated.
