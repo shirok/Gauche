@@ -1,3 +1,8 @@
+2019-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (cond-expand), lib/srfi-0.sm: Make cond-expand
+	  built-in.
+
 2019-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (rec), lib/srfi-31.scm: Make 'rec' built-in.

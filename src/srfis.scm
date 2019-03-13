@@ -135,7 +135,7 @@
 ;; follows.
 
 srfi-0
-()
+(cond-expand)
 
 Feature-based conditional expansion construct.
 This has become a part of R7RS small.  Gauche supports this as
@@ -428,8 +428,8 @@ Supported by the native reader.  @xref{Lexical structure}.
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 
 
-srfi-31, srfi-31
-()
+srfi-31
+(rec)
 
 A special form rec for recursive evaluation.  Built-in.
 @xref{Binding constructs}.

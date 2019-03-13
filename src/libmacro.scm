@@ -33,7 +33,7 @@
 
 (select-module gauche)
 (use util.match)
-(declare (keep-private-macro quasirename 
+(declare (keep-private-macro cond-expand quasirename 
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z rec
@@ -45,6 +45,73 @@
 
 ;; This file defines built-in macros.
 ;; We need the compiler to be initialized at this stage.
+
+;;; cond-expand
+
+(define-syntax cond-expand
+  (er-macro-transformer
+   (^[f r c]
+     (define features ((with-module gauche.internal cond-features)))
+     (define use. (r 'use))
+     (define begin. (r 'begin))
+     (define else. (r 'else))
+
+     ;; Check feature requirement.  Returns #f if requirement is not
+     ;; satisfied.  Returns a list of features to be use'd if requirement
+     ;; is satisfied (it can be an emptylist, if the requirement is fulfilled
+     ;; by Gauche built-in features).
+     (define (fulfill? req seed)
+       (cond
+        [(identifier? req) (fulfill? (identifier->symbol req) seed)]
+        [(symbol? req)
+         (and-let1 p (assq req features)
+           (if (null? (cdr p)) seed (cons (cadr p) seed)))]
+        [(not (pair? req)) (error "Invalid cond-expand feature-id:" req)]
+        [else
+         (case (unwrap-syntax (car req))
+           [(and) (fulfill-and (cdr req) seed)]
+           [(or)  (fulfill-or  (cdr req) seed)]
+           [(not) (fulfill-not (cadr req) seed)]
+           [(library) (fulfill-library (cdr req) seed)]
+           [else (error "Invalid cond-expand feature expression:" req)])]))
+
+     (define (fulfill-and reqs seed)
+       (if (null? reqs)
+         seed
+         (and-let1 c1 (fulfill? (car reqs) seed)
+           (fulfill-and (cdr reqs) c1))))
+
+     (define (fulfill-or reqs seed)
+       (if (null? reqs)
+         #f
+         (or (fulfill? (car reqs) seed)
+             (fulfill-or (cdr reqs) seed))))
+
+     (define (fulfill-not req seed)
+       (if (fulfill? req '()) #f seed))
+
+     (define (fulfill-library rest seed)
+       (unless (null? (cdr rest))
+         (error "Invalid feature requirement:" `(library ,@rest)))
+       (let1 modname (library-name->module-name (car rest))
+         (and (library-exists? modname) seed)))
+
+     (define (rec cls)
+       (cond
+        [(null? cls) (error "Unfulfilled cond-expand:" cls)]
+        [(not (pair? (car cls)))
+         (error "Bad clause in cond-expand:" (car cls))]
+        [(c (r (caar cls)) else.)
+         (if (null? (cdr cls))
+           `(,begin. ,@(cdar cls))
+           (error "Misplaced else clause in cond-expand:" (car cls)))]
+        [(fulfill? (caar cls) '())
+         => (^[uses]
+              `(,begin. ,@(map (^[mod] `(,use. ,mod)) uses)
+                        ,@(cdar cls)))]
+        [else (rec (cdr cls))]))
+
+     (rec (cdr f)))))
 
 ;;; quasirename
 
