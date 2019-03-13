@@ -22863,27 +22863,48 @@ Holds the source SQL string.
 
 @deftp {Module} text.template
 @mdindex text.template
+@c EN
 This module lifts Gauche's built-in string interpolation feature
 to be more general template engine.
+@c JP
+このモジュールは、Gauche組み込みの文字列補間機能をより一般的なテンプレートエンジンとして
+使えるようにするものです。
+@c cOMMON
 
+@c EN
 Gauche's string interpolation syntax is expanded at read time and then
 handled by macro expanders, and 
 becomes a simple Scheme code fragment.  
 For example, if you have this:
+@c JP
+Gaucheの文字列補間構文はソース読み込み時にマクロ呼び出しへと展開され、
+さらにマクロ展開器により展開されて単純なSchemeコード片となります。
+例えば、次のソースコードがある場合:
+@c COMMON
 @example
 (let ([x 10])
   #"The square of x is ~(* x x).")
 @end example
 
+@c EN
 It is eventually converted to this after macro expansion:
+@c JP
+マクロ展開後の最終形は次のコードになります:
+@c COMMON
 @example
 (let ([x 10])
   (string-append '"The square of x is " (x->string (* x.0 x.0)) '"."))
 @end example
 
+@c EN
 It is a kind of template expansion, but you have to have the template string
 as a literal, so it's restricted.  With this module, you can feed template
 string and the bindings of the value at the runtime:
+@c JP
+これも一種のテンプレート展開と言えるのですが、文字列補間ではテンプレート文字列が
+文字列リテラルとしてソースコード上に現れていなければならないという制限があります。
+このモジュールでは、文字列と束縛を実行時に与えることができます:
+@c COMMON
 
 @example
 (define *template* "The square of x is ~(* x x).")
@@ -22893,42 +22914,84 @@ string and the bindings of the value at the runtime:
   @result{} "The square of x is 100."
 @end example
 
+@c EN
 The syntax of template strings is the same as string interpolation
 (@pxref{String interpolation}); that is, tokens following @code{~}
 is read as a Scheme expression.  In case if the token is a symbol
 and you need to delimit it from subsequent characters, you can use
 symbol escape by @code{|}.
+@c JP
+テンプレート文字列の構文は文字列補間のそれと同じです(@ref{String interpolation}参照)。
+すなわち、@code{~}に続くトークンがScheme式として呼ばれます。もしトークンがシンボルで、
+その後の続く文字から区切る必要がある場合は、@code{|}によるシンボルエスケープが使えます。
+@c COMMON
 
+@c EN
 You also need to provide a @emph{template environment}, where the
 expressions in the template is evaluated.  Note that, 
 unlike string interpolation,
 those expressions can't refer to the local bindings.
+@c JP
+また、テンプレート展開時には、テンプレート中の式を評価するための
+@emph{テンプレート環境}を与える必要があります。
+文字列補間と違って、テンプレート中の式がローカル束縛を参照することはできません。
+@c COMMON
 @end deftp
 
 @defun expand-template-string template env
+@c EN
 Expands a template string @var{template} with a template environment
 @var{env}, and returns the result string.
+@c JP
+テンプレート文字列@var{template}を、テンプレート環境@var{env}のもとで展開し、
+結果の文字列を返します。
+@c COMMON
 @end defun
 
 @defun expand-template-file filename env :optional paths
+@c EN
 Reads a template string from a file named by @var{filename}, expands
 it with a template environment @var{env}, and returns the result string.
 
 If @var{filename} is not an absolute path, it is looked in the directories
-listed in @var{paths}. 
+listed in @var{paths}.
+@c JP
+テンプレート文字列を@var{filename}で指定されるファイルから読み込み、
+テンプレート環境@var{env}のもとでそれを展開し、結果の文字列を返します。
+
+@var{filename}が絶対パスでない場合は、@var{paths}中のディレクトリからの相対パスで
+探されます。
+@c COMMON
 @end defun
 
 @defun make-template-environment :key extends imports bindings
+@c EN
 Creates and returns a template environment.   A template environment
 is like a module (@pxref{Modules}): It maps symbols to values, and
 it can import bindings from other modules, or extend other modules.
+@c JP
+テンプレート環境を作成して返します。テンプレート環境はモジュールのようなものです
+(@ref{Modules}参照)。それはシンボルを値にマップし、
+また他のモジュールから束縛をインポートしたり、他のモジュールをextendしたりできます。
+@c COMMON
 
+@c EN
 The keyword arguments @var{extends} and @var{imports} must be a list
 of symbols; they specify names of modules to inherit from or to import from.
+@c JP
+キーワード引数@var{extends}と@var{imports}はシンボルのリストを取り、
+それぞれ継承元のモジュール、あるいはインポート元のモジュールを指定します。
+@c COMMON
 
+@c EN
 The keyword arguments @var{bindings} must either be a dictionary
 (anything that inherits @code{<dictonary>}), or a key-value list.
 The mappings represented by it are incorporated to the environment.
+@c JP
+キーワード引数@var{bindings}はディクショナリ(@code{<dictionary>}のサブクラスの
+インスタンス)か、key-valueリストでなければなりません。
+それにより表される束縛が環境に取り込まれます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
