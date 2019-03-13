@@ -378,13 +378,13 @@ void test_paths_setup(void)
        from lib, and we want to test the one in lib. */
     if (access("../src/gauche/config.h", R_OK) == 0
         && access("../libsrc/srfi-1.scm", R_OK) == 0
-        && access("../lib/srfi-0.scm", R_OK) == 0) {
+        && access("../lib/r7rs.scm", R_OK) == 0) {
         Scm_AddLoadPath("../src", FALSE);
         Scm_AddLoadPath("../libsrc", FALSE);
         Scm_AddLoadPath("../lib", FALSE);
     } else if (access("../../src/gauche/config.h", R_OK) == 0
                && access("../../libsrc/srfi-1.scm", R_OK) == 0
-               && access("../../lib/srfi-0.scm", R_OK) == 0) {
+               && access("../../lib/r7rs.scm", R_OK) == 0) {
         Scm_AddLoadPath("../../src", FALSE);
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
