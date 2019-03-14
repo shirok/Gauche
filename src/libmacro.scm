@@ -513,7 +513,7 @@
              (quasirename r
                (define ,v (receive ,tmp ,expr ,tmp))))])]))))
 
-(define-syntax set-values!
+(define-syntax set!-values
   (er-macro-transformer
    (^[f r c]
      (match f
@@ -521,7 +521,7 @@
         (let1 tmps (map (^_ (gensym)) var)
           (quasirename r
             (receive ,tmps ,expr
-              ,(map (^[v t] (quasirename r (set! ,v ,t))) var tmps)
+              ,@(map (^[v t] (quasirename r (set! ,v ,t))) var tmps)
               (undefined))))]
        [_ (error "Malformed set!-values:" f)]))))
 
