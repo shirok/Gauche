@@ -1,3 +1,8 @@
+2019-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (cut, cute), lib/srfi-26.scm: Make cut and cute
+	  built-in.
+
 2019-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (cond-expand), lib/srfi-0.sm: Make cond-expand

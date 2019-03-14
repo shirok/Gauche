@@ -372,14 +372,14 @@ superset of SRFI-25.  @xref{Arrays}.
 なっています。@ref{Arrays}参照。
 
 
-srfi-26, srfi-26
-()
+srfi-26
+(cut cute)
 
 Notation for specializing parameters without currying.
-As an autoloaded macro.  @xref{Making Procedures}.
+Built-in.  @xref{Making Procedures}.
 
-カリー化をともなわないパラメータの特殊化記法
-オートロードされるマクロとして定義されています。@ref{Making Procedures}参照。
+カリー化をともなわないパラメータの特殊化記法。組み込みです。
+@ref{Making Procedures}参照。
 
 
 srfi-27, srfi-27

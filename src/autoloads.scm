@@ -134,7 +134,6 @@
           profiler-show profiler-show-load-stats with-profiler)
 
 (autoload srfi-7  (:macro program))
-(autoload srfi-26 (:macro cut cute))
 (autoload srfi-55 (:macro require-extension))
 
 (autoload gauche.interpolate string-interpolate

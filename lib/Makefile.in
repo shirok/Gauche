@@ -42,7 +42,7 @@ SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
 SCMFILES = \
        srfi-4.scm srfi-5.scm srfi-7.scm srfi-9.scm srfi-11.scm \
        srfi-14.scm srfi-14/query.scm srfi-14/set.scm srfi-18.scm \
-       srfi-25.scm srfi-26.scm srfi-27.scm \
+       srfi-25.scm srfi-27.scm \
        srfi-29.scm srfi-29/bundle.scm srfi-29/format.scm \
        srfi-37.scm srfi-39.scm srfi-42.scm srfi-55.scm srfi-60.scm srfi-64.scm \
        srfi-66.scm srfi-69.scm srfi-74.scm srfi-78.scm srfi-96.scm srfi-98.scm \

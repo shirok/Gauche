@@ -36,7 +36,7 @@
 (declare (keep-private-macro cond-expand quasirename 
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
-                             ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z rec
+                             ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z cut cute rec
                              push! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values values-ref values->list
@@ -319,6 +319,60 @@
 (define-macro (define-^x . vars)
   `(begin ,@(map (lambda (x) `(^-generator ,x)) vars)))
 (define-^x _ a b c d e f g h i j k l m n o p q r s t u v w x y z)
+
+;;; cut, cute (srfi-26)
+
+(define-syntax cut
+  (er-macro-transformer
+   (^[f r c]
+     (define <>. (r '<>))
+     (define <...>. (r '<...>))
+     ;; returns list of tmp args and list of original items in which
+     ;; placeholders are replaced with tmp vars
+     (define (scan args tmps elts)
+       (cond [(null? args) (values (reverse tmps) (reverse elts))]
+             [(not (pair? args)) (error "Malformed cut:" f)]
+             [(c (car args) <...>.)
+              (if (null? (cdr args))
+                (let1 restarg (gensym)
+                  (values (reverse tmps restarg) 
+                          (cons (r'apply) (reverse elts (list restarg)))))
+                (error "Malformed cut:" f))]
+             [(c (car args) <>.)
+              (let1 t (gensym)
+                (scan (cdr args) (cons t tmps) (cons t elts)))]
+             [else
+              (scan (cdr args) tmps (cons (car args) elts))]))
+     (receive (tmps elts) (scan (cdr f) '() '())
+       `(,(r'lambda) ,tmps ,elts)))))
+
+(define-syntax cute
+  (er-macro-transformer
+   (^[f r c]
+     (define <>. (r '<>))
+     (define <...>. (r '<...>))
+     ;; returns three lists: list of tmp args, list of bindings
+     ;; and list of all tmp vars
+     (define (scan args tmps binds elts)
+       (cond [(null? args)
+              (values (reverse tmps) (reverse binds) (reverse elts))]
+             [(not (pair? args)) (error "Malformed cute:" f)]
+             [(c (car args) <...>.)
+              (if (null? (cdr args))
+                (let1 restarg (gensym)
+                  (values (reverse tmps restarg)
+                          (reverse binds)
+                          (cons (r'apply) (reverse elts (list restarg)))))
+                (error "Malformed cute:" f))]
+             [(c (car args) <>.)
+              (let1 t (gensym)
+                (scan (cdr args) (cons t tmps) binds (cons t elts)))]
+             [else
+              (let1 t (gensym)
+                (scan (cdr args) tmps `((,t ,(car args)) ,@binds) (cons t elts)))]))
+     (receive (tmps binds elts) (scan (cdr f) '() '() '())
+       `(,(r'letrec) ,binds
+         (,(r'lambda) ,tmps ,elts))))))
 
 ;;; rec (srfi-31)
 
