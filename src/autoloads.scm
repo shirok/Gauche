@@ -142,8 +142,6 @@
 (autoload "gauche/sysutil"
           sys-realpath sys-fdset list->sys-fdset sys-fdset->list)
 
-(autoload gauche.defvalues (:macro define-values set!-values))
-
 (autoload gauche.stringutil string-split)
 
 (autoload gauche.vecutil

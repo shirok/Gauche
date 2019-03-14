@@ -39,7 +39,8 @@
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z cut cute rec
                              push! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
-                             let-values let*-values values-ref values->list
+                             let-values let*-values define-values set!-values
+                             values-ref values->list
                              assume assume-type cond-list
                              define-compiler-macro))
 
@@ -470,6 +471,59 @@
         (quasirename r
           (receive ,formals ,init
             (let*-values ,rest ,@body)))]))))
+
+(define-syntax define-values
+  (er-macro-transformer
+   (^[f r c]
+     ;; (define-values (a b ... z) expr)
+     ;; => (begin (define a (undefined))
+     ;;           ...
+     ;;           (define z (receive (a' ... z') expr
+     ;;             (set! a a') ...
+     ;;             z')
+     (match f
+       [(_ formals expr)
+        (match formals
+          [()  ; allowed in r7rs
+           (quasirename r 
+             (define ,(gensym) (receive ,(gensym) ,expr #f)))]
+          [(v) ; trivial case
+           (quasirename r
+             (define ,v ,expr))]
+          [(_ ...)
+           (let ([vs (drop-right formals 1)]
+                 [tmps (map (^_ (gensym)) formals)])
+             `(,(r'begin)
+               ,@(map (^v `(,(r'define) ,v (,(r'undefined)))) vs)
+               (,(r'define) ,(last formals)
+                (,(r'receive) ,tmps ,expr
+                 ,@(map (^[v t] `(,(r'set!) ,v ,t)) vs tmps)
+                 ,(last tmps)))))]
+          [(? pair?) ; improper list
+           (let* ([vs (drop-right formals 0)]
+                  [tmps (map* (^_ (gensym)) (^_ (gensym)) formals)])
+             `(,(r'begin)
+               ,@(map (^v `(,(r'define) ,v (,(r'undefined)))) vs)
+               (,(r'define) ,(cdr (last-pair formals))
+                (,(r'receive) ,tmps ,expr
+                 ,@(map (^[v t] `(,(r'set!) ,v ,t)) vs tmps)
+                 ,(cdr (last-pair tmps))))))]
+          [v   ; single variable
+           (let1 tmp (gensym)
+             (quasirename r
+               (define ,v (receive ,tmp ,expr ,tmp))))])]))))
+
+(define-syntax set-values!
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (var ...) expr)
+        (let1 tmps (map (^_ (gensym)) var)
+          (quasirename r
+            (receive ,tmps ,expr
+              ,(map (^[v t] (quasirename r (set! ,v ,t))) var tmps)
+              (undefined))))]
+       [_ (error "Malformed set!-values:" f)]))))
 
 (define-syntax values-ref
   (er-macro-transformer

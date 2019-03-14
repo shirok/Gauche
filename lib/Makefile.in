@@ -74,7 +74,7 @@ SCMFILES = \
        gauche/selector.scm gauche/logger.scm \
        gauche/common-macros.scm gauche/singleton.scm gauche/validator.scm \
        gauche/version.scm gauche/partcont.scm gauche/lazy.scm gauche/base.scm \
-       gauche/interpolate.scm gauche/defvalues.scm gauche/listener.scm \
+       gauche/interpolate.scm gauche/listener.scm \
        gauche/config.scm gauche/configure.scm gauche/reload.scm \
        gauche/mop/bound-slot.scm \
        gauche/mop/instance-pool.scm gauche/mop/validator.scm \

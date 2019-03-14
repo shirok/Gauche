@@ -1,6 +1,7 @@
 2019-03-13  Shiro Kawai  <shiro@acm.org>
 
-	* src/libmacro.scm (cut, cute), lib/srfi-26.scm: Make cut and cute
+	* src/libmacro.scm (cut, cute, define-values, set!-values),
+	  lib/srfi-26.scm, lib/gauche/defvalues.scm: Make these macros
 	  built-in.
 
 2019-03-12  Shiro Kawai  <shiro@acm.org>
