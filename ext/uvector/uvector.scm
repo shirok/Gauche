@@ -186,6 +186,7 @@
           bytevector bytevector? make-bytevector
           bytevector-length bytevector-u8-ref bytevector-u8-set!
           bytevector-copy bytevector-copy! bytevector-append
+          bytevector=? ; not in (scheme base), but bonus
           ))
 (select-module gauche.uvector)
 
@@ -814,3 +815,4 @@
 (define-inline bytevector-copy    u8vector-copy)
 (define-inline bytevector-copy!   u8vector-copy!)
 (define-inline bytevector-append  u8vector-append)
+(define-inline bytevector=?       u8vector=?)

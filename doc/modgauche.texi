@@ -23992,6 +23992,7 @@ R7RSのバイトベクタの基本的な手続きはこのモジュールで提�
 
 @defun bytevector byte @dots{}
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{u8vector}.  Returns a fresh bytevector (u8vector) with
 @var{byte} @dots{} as its elements.
@@ -24003,6 +24004,7 @@ Alias of @code{u8vector}.  Returns a fresh bytevector (u8vector) with
 
 @defun bytevector? obj
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{u8vector?}.  Returns true iff @var{obj} is 
 a bytevector (u8vector).
@@ -24014,6 +24016,7 @@ a bytevector (u8vector).
 
 @defun make-bytevector len :optional byte
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{make-u8vector}.  Returns a fresh bytevector (u8vector)
 of length @var{len}.  All elements are initialized by @var{byte}
@@ -24026,6 +24029,7 @@ if given.
 
 @defun bytevector-length bv
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{u8vector-length}.  Returns the length of the
 bytevector (u8vector) @var{bv}.
@@ -24037,6 +24041,7 @@ bytevector (u8vector) @var{bv}.
 @defun bytevector-u8-ref bv k
 @defunx bytevector-u8-set! bv k byte
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{u8vector-ref} and @code{u8vector-set!}.
 Read and write @var{k}-th element of a bytevector (u8vector) @var{bv}.
@@ -24062,6 +24067,7 @@ Gaucheの拡張として、@code{(setter bytevector-u8-ref)} は
 
 @defun bytevector-copy bv :optional start end
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{u8vector-copy}.  Returns a fresh copy of a 
 bytevector (u8vector) @var{bv}.  Optionally you can restrict the
@@ -24077,6 +24083,7 @@ and @var{end} (exclusive).
 
 @defun bytevector-copy! target tstart source :optional sstart send
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{u8vector-copy!}.  Both @var{target} and @var{source}
 muse be bytevectors (u8vectors), and @var{target} must be mutable.
@@ -24093,6 +24100,7 @@ into @var{target} starting at the index @var{tstart}.
 
 @defun bytevector-append bv @dots{}
 @c MOD gauche.uvector
+[R7RS base]
 @c EN
 Alias of @code{u8vector-append}.  All arguments must be bytevectors
 (u8vectors).  Returns a fresh bytevector whose elements are
@@ -24101,6 +24109,18 @@ the concatenation of elements of @var{bv} @dots{}.
 @code{u8vector-append}の別名です。
 全ての引数はバイトベクタ(u8vector)でなければなりません。
 引数の全ての要素をつなげた新たなバイトベクタを作って返します。
+@c COMMON
+@end defun
+
+@defun bytevector=? bv1 bv2
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector=?}.  All arguments must be bytevectors
+(u8vectors).  Returns @code{#t} iff all bytevectors are of the same
+size and content.
+@c JP
+@code{u8vector=?}の別名です。全ての引数はバイトベクタ(u8vector)でなければなりません。
+引数の大きさと内容が一致している時に限り@code{#t}を返します。
 @c COMMON
 @end defun
 
