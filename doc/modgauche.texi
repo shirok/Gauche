@@ -2205,7 +2205,9 @@ Useful to  place a type name, e.g. an argument of sizeof operator.
 @c MOD gauche.cgen
 @end defmac
 
-@node Stub generation, , C in S expression, Generating C code
+@node Stub generation,  , C in S expression, Generating C code
+@subsection Stub generation
+@c NODE スタブの生成
 
 @deffn {Stub Form} define-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
 Register a new type to be recognized.  This is rather a declaration
@@ -21914,6 +21916,7 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 * Uvector conversion operations::
 * Uvector numeric operations::
 * Uvector block I/O::
+* Bytevector compatibility::
 @end menu
 
 @node Uvector basic operations, Uvector conversion operations, Uniform vectors, Uniform vectors
@@ -23714,7 +23717,7 @@ Both return the clamped vector.
 @end example
 @end deftp
 
-@node Uvector block I/O,  , Uvector numeric operations, Uniform vectors
+@node Uvector block I/O, Bytevector compatibility, Uvector numeric operations, Uniform vectors
 @subsection Uvector block I/O
 @c NODE ユニフォームベクタのブロック入出力
 
@@ -23963,6 +23966,141 @@ compatibility, but new code should use @code{write-uvector}.
 @c JP
 @code{write-uvector}の古い名前です。互換性のためサポートされていますが、
 新しいコードでは@code{write-uvector}を使ってください。
+@c COMMON
+@end defun
+
+
+@node Bytevector compatibility,  , Uvector block I/O, Uniform vectors
+@subsection Bytevector compatibility
+@c NODE バイトベクタ互換性
+
+@c EN
+R7RS-small includes bytevectors in its core (@code{scheme.base}).
+In Gauche, bytevectors are the same as u8vectors.
+
+The basic R7RS bytevector procedures are provided in this module.
+Conversion between bytevectors and strings are provided in
+@code{gauche.unicode} (@pxref{Unicode transfer encodings}).
+@c JP
+R7RS-smallはコア(@code{scheme.base})にバイトベクタを含んでいます。
+Gaucheでは、バイトベクタはu8vectorと同じです。
+
+R7RSのバイトベクタの基本的な手続きはこのモジュールで提供されます。
+ただし、文字列とバイトベクタの変換手続きは
+@code{gauche.unicode}にあります(@ref{Unicode transfer encodings}参照)。
+@c COMMON
+
+@defun bytevector byte @dots{}
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector}.  Returns a fresh bytevector (u8vector) with
+@var{byte} @dots{} as its elements.
+@c JP
+@code{u8vector}の別名です。@var{byte} @dots{}を要素とするバイトベクタ(u8vector)を
+新たに作って返します。
+@c COMMON
+@end defun
+
+@defun bytevector? obj
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector?}.  Returns true iff @var{obj} is 
+a bytevector (u8vector).
+@c JP
+@code{u8vector?}の別名です。@var{obj}がバイトベクタ(u8vector)なら
+@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun make-bytevector len :optional byte
+@c MOD gauche.uvector
+@c EN
+Alias of @code{make-u8vector}.  Returns a fresh bytevector (u8vector)
+of length @var{len}.  All elements are initialized by @var{byte}
+if given.
+@c JP
+@code{make-u8vector}の別名です。長さ@var{len}の新たなバイトベクタ(u8vector)
+を作って返します。@var{byte}が与えられていれば、全ての要素をそれで初期化します。
+@c COMMON
+@end defun
+
+@defun bytevector-length bv
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector-length}.  Returns the length of the
+bytevector (u8vector) @var{bv}.
+@c JP
+@code{u8vector-length}の別名です。バイトベクタ(u8vector) @var{bv}の長さを返します。
+@c COMMON
+@end defun
+
+@defun bytevector-u8-ref bv k
+@defunx bytevector-u8-set! bv k byte
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector-ref} and @code{u8vector-set!}.
+Read and write @var{k}-th element of a bytevector (u8vector) @var{bv}.
+
+It is an error to give out-of-bound index.
+
+The return value of @code{bytevector-u8-set!} is unspecified.
+
+As Gauche's extension, @code{(setter bytevector-u8-ref)} is
+@code{bytevector-u8-set!}.
+@c JP
+@code{u8vector-ref}と@code{u8vector-set!}の別名です。
+バイトベクタ(u8vector) @var{bv} の@var{k}番目の要素を返す/セットします。
+
+@var{k}が領域外ならエラーが投げられます。
+
+@code{bytevector-u8-set!}の戻り値は規定されていません。
+
+Gaucheの拡張として、@code{(setter bytevector-u8-ref)} は
+@code{bytevector-u8-set!}になっています。
+@c COMMON
+@end defun
+
+@defun bytevector-copy bv :optional start end
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector-copy}.  Returns a fresh copy of a 
+bytevector (u8vector) @var{bv}.  Optionally you can restrict the
+range of the source vector by indices @var{start} (inclusive)
+and @var{end} (exclusive).
+@c JP
+@code{u8vector-copy}の別名です。
+バイトベクタ(u8vector) @var{bv} の新たなコピーを作って返します。
+インデックス@var{start}と@var{end}でコピーする範囲を限定することができます
+(@var{start}は含まれ、@var{end}は含まれない)。
+@c COMMON
+@end defun
+
+@defun bytevector-copy! target tstart source :optional sstart send
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector-copy!}.  Both @var{target} and @var{source}
+muse be bytevectors (u8vectors), and @var{target} must be mutable.
+Copy the content of @var{source} (optionally restricting the range
+between indices @var{start} (inclusive) and @var{end} (exclusive))
+into @var{target} starting at the index @var{tstart}.
+@c JP
+@code{u8vector-copy!}の別名です。
+@var{target}と@var{source}はバイトベクタ(u8vector)で、@var{target}は
+変更可能でなければなりません。@var{source}の内容 (@var{start}と@var{end}で
+範囲を限定することもできます) を@var{target}の@var{tstart}以降へとコピーします。
+@c COMMON
+@end defun
+
+@defun bytevector-append bv @dots{}
+@c MOD gauche.uvector
+@c EN
+Alias of @code{u8vector-append}.  All arguments must be bytevectors
+(u8vectors).  Returns a fresh bytevector whose elements are
+the concatenation of elements of @var{bv} @dots{}.
+@c JP
+@code{u8vector-append}の別名です。
+全ての引数はバイトベクタ(u8vector)でなければなりません。
+引数の全ての要素をつなげた新たなバイトベクタを作って返します。
 @c COMMON
 @end defun
 

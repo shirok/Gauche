@@ -180,7 +180,13 @@
           vector->s8vector vector->u16vector vector->u32vector
           vector->u64vector vector->u8vector
 
-          write-block write-uvector))
+          write-block write-uvector
+
+          ;; R7RS compatibility
+          bytevector bytevector? make-bytevector
+          bytevector-length bytevector-u8-ref bytevector-u8-set!
+          bytevector-copy bytevector-copy! bytevector-append
+          ))
 (select-module gauche.uvector)
 
 ;; gauche.vport is used by port->uvector.  Technically it's on top
@@ -795,3 +801,16 @@
 (define-method coerce-to ((dst <s32vector-meta>) (src <string>))
   (string->s32vector src))
 
+;;-------------------------------------------------------------
+;; Bytevector aliases (R7RS compatibility)
+;;
+
+(define-inline bytevector         u8vector)
+(define-inline bytevector?        u8vector?)
+(define-inline make-bytevector    make-u8vector)
+(define-inline bytevector-length  u8vector-length)
+(define-inline bytevector-u8-ref  u8vector-ref)
+(define-inline bytevector-u8-set! u8vector-set!)
+(define-inline bytevector-copy    u8vector-copy)
+(define-inline bytevector-copy!   u8vector-copy!)
+(define-inline bytevector-append  u8vector-append)

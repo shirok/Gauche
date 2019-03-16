@@ -309,15 +309,6 @@
   ;; vector-copy vector-copy! vector-append vector-fill!
 
   ;; 6.9 Bytevectors
-  (define-inline bytevector         u8vector)
-  (define-inline bytevector?        u8vector?)
-  (define-inline make-bytevector    make-u8vector)
-  (define-inline bytevector-length  u8vector-length)
-  (define-inline bytevector-u8-ref  u8vector-ref)
-  (define-inline bytevector-u8-set! u8vector-set!)
-  (define-inline bytevector-copy    u8vector-copy)
-  (define-inline bytevector-copy!   u8vector-copy!)
-  (define-inline bytevector-append  u8vector-append)
   (define+ utf8->string  gauche.unicode)
   (define+ string->utf8  gauche.unicode)
 

@@ -942,47 +942,34 @@ newline write-char
 @subheading バイトベクタユーティリティ
 @c COMMON
 
-@defun bytevector n @dots{}
-@defunx bytevector? obj
-@defunx make-bytevector size :optional byte
-@defunx bytevector-length bv
-@defunx bytevector-u8-ref bv index
-@defunx bytevector-u8-set! bv index byte
-@defunx bytevector-copy bv :optional start end
-@defunx bytevector-copy! to at from :optional start end
-@defunx bytevector-append bv @dots{}
-[R7RS base]
-@c MOD scheme.base
 @c EN
-R7RS's bytevector is Gauche's u8vector.
+R7RS's bytevectors are the same as Gauche's u8vectors.
 
-These are equivalent to @code{gauche.uvector}'s
-@code{u8vector}, @code{u8vector?},
-@code{make-u8vector}, @code{u8vector-length}, @code{u8vector-ref},
-@code{u8vector-set!}, @code{u8vector-copy}, @code{u8vector-copy!}, and
-@code{u8vector-append}, respectively.  (@pxref{Uniform vectors}).
+The following procedures are the same as @code{gauche.uvector}'s
+(@pxref{Bytevector compatibility}).
 @c JP
-R7RSのbytevectorはGaucheのu8vectorです。
+R7RSのバイトベクタはGaucheのu8vectorと同じです。
 
-これらの手続きは@code{gauche.uvector}の
-@code{u8vector}、@code{u8vector?}、
-@code{make-u8vector}、@code{u8vector-length}、@code{u8vector-ref}、
-@code{u8vector-set!}、@code{u8vector-copy}、@code{u8vector-copy!}、
-@code{u8vector-append}とそれぞれ同じです。
-(@ref{Uniform vectors}参照)。
-@c COMMON
-@end defun
-
-@c EN
-These two procedures are the same as the ones in @code{gauche.unicode}
-module (@pxref{Unicode transfer encodings}):
-@c JP
-以下の二つの手続きは@code{gauche.unicode}モジュールの同名の手続きと同じです。
-(@ref{Unicode transfer encodings}参照):
+以下の手続きは@code{gauche.uvector}のものと同じです。
+(@ref{Bytevector compatibility}参照)。
 @c COMMON
 
 @example
-utf8->string string->utf8
+bytevector         bytevector?       make-bytevector
+bytevector-length  bytevector-u8-ref bytevector-u8-set!
+bytevector-copy    bytevector-copy!  bytevector-append
+@end example
+
+@c EN
+And the following procedures are the same as @code{gauche.unicode}'s
+(@pxref{Unicode transfer encodings}).
+@c JP
+そして以下の手続きは@code{gauche.unicode}のものと同じです。
+(@ref{Unicode transfer encodings}参照)。
+@c COMMON
+
+@example
+utf8->string       string->utf8
 @end example
 
 @c EN
