@@ -21439,56 +21439,123 @@ displays:
 
 @deftp {Module} text.edn
 @mdindex text.edn
+@c EN
 EDN (Extensible Data Notation) is a subset of Clojure literals
 for data exchange.  This module provides utilities to read and write EDN
 format.  See @url{https://github.com/edn-format/edn} for the details of EDN.
+@c JP
+EDN (Extensible Data Notation)はデータ交換用に定められた、
+Clojureのリテラル構文のサブセットです。このモジュールはEDNの読み書きをする
+ユーティリティを提供します。EDNの詳細については
+@url{https://github.com/edn-format/edn}を参照してください。
+@c COMMON
 
 @multitable @columnfractions .2 .2 .6
 @item EDN @tab Gauche @tab Note
 @item @code{true} @tab @code{#t} @tab
 @item @code{false} @tab @code{#f} @tab
 @item @code{nil} @tab @code{nil}
+@c EN
 @tab Clojure's nil is not a symbol but a special value; since Clojure
 can't have a symbol named nil, we can map it to Gauche's symbol @code{nil}.
+@c JP
+@tab Clojureのnilはシンボルではなく特殊な値ですが、
+Clojureにはnilというシンボルは存在できないので、
+Gaucheのシンボル@code{nil}に対応させています。
+@c COMMON
 @item number @tab @code{<real>}
+@c EN
 @tab Integers and floating point numbers.
 The @code{N} and @code{M} suffixes in Clojure are ignored.
+@c JP
+@tab 整数と浮動小数点数。
+Clojureの@code{N}と@code{M}サフィックスは無視されます。
+@c COMMON
 @item symbol @tab @code{<symbol>}
+@c EN
 @tab Clojure's symbol name has some restrictions, so not all Gauche symbols
 map to EDN symbols.
 Clojure's namespace-prefixed symbol, e.g. @code{foo/bar} simply maps to
 Gauche's symbol @code{foo/bar}; we provide utility procedure to extract
 namespace and basename parts.
+@c JP
+@tab Clojureのシンボル名には制約があるので、
+全てのGaucheのシンボルがEDNシンボルとして使えるわけではありません。
+Clojureの名前空間つきシンボル(例: @code{foo/bar}) はGauche側では
+単に@code{foo/bar}という名前を持つシンボルの扱いになります。
+この名前から名前空間とシンボル名を取り出すユーティリティが提供されます。
+@c COMMON
 @item keyword @tab @code{<keyword>}
+@c EN
 @tab Clojure has keywords distinct from symbols.  They are mapped to Gauche's
-keywords.  Gauche's keywords can also be symbols, but
+keywords (which is a subtype of symbols).
+Gauche's keywords can also be symbols, but
 no Clojure symbols begin with @code{:} so there won't be a conflict.
+@c JP
+@tab Clojureはキーワードとシンボルを別の型にしています。
+ClojureキーワードはGaucheキーワード(シンボルのサブタイプ)に対応します。
+Clojureのシンボルは@code{:}で始まることはないので、混同が起きることはありません。
+@c COMMON
 @item list @tab @code{<list>}
+@c EN
 @tab Clojure lists are Gauche lists.  Note that Clojure doesn't allow
 improper lists.
+@c JP
+@tab ClojureのリストはGaucheのリストになります。
+Clojureにはドットリスト(improper list)が無いことに注意してください。
+@c COMMON
 @item vector @tab @code{<vector>}
+@c EN
 @tab Clojure vectors are Gauche vectors.
+@c JP
+@tab ClojureのベクタはGaucheのベクタになります。
+@c COMMON
 @item map @tab @code{<hash-table>}
+@c EN
 @tab Clojure's map becomes Gauche's hashtable with @code{edn-comparator}
 for hashing and comparison.
+@c JP
+@tab Clojureのマップは、Gaucheでは@code{edn-comparator}をハッシュ関数と比較に
+使うハッシュテーブルになります。
+@c COMMON
 @item set @tab @code{<set>}
+@c EN
 @tab Clojure's set becomes Gauche's set with @code{edn-comparator}
 for comparison.  @xref{R7RS sets} for interface of sets.
+@c JP
+@tab Clojureのセットは、Gaucheでは@code{edn-comparator}を比較に使う
+@code{<set>}オブジェクトになります。@code{<set>}については@xref{R7RS sets}参照。
+@c COMMON
 @item tagged object @tab @code{<edn-object>}
+@c EN
 @tab Tagged objects are mapped to @code{<edn-object>} by default. 
 You can customize the parser/writer to map tagged objects with a
 specific tag to a specific Gauche objects.
+@c JP
+@tab タグつきオブジェクトはデフォルトで@code{<edn-object>}のインスタンスになります。
+タグつくオブジェクトの解釈をカスタマイズして、特定のGaucheオブジェクトに結びつけることも
+できます。
+@c COMMON
 @end multitable
 @end deftp
 
+@c EN
 @subheading Parsing
+@c JP
+@subheading パーザ
+@c COMMON
 
 @deftp {Condition Type} <edn-parse-error>
+@c EN
 When the parser encounters an error, this condition is thrown.
 Inherits @code{<error>}.
+@c JP
+パーザのエラーはこのコンディションで通知されます。@code{<error>}を継承しています。
+@c COMMON
 @end deftp
 
 @defun parse-edn :optional iport
+@c EN
 Read one EDN representation from the given input port, and returns
 Gauche object created from it.  If @var{iport} is omitted,
 current input port is assumed.
@@ -21503,90 +21570,213 @@ end of the symbol. The read-ahead brace isn't pushed back
 to the @var{iport}.  So it would be a problem if you keep reading
 more EDN subsequently.   Use @code{parse-edn*} if you want to read
 multiple objects.
+@c JP
+EDN表現を与えられた入力ポートから読み込み、パーズ結果をGaucheオブジェクトとして
+返します。@var{iport}が省略された場合は現在の入力ポートが使われます。
+
+パーズが失敗した場合は@code{<edn-parse-error>}が投げられます。
+
+@var{iport}から文字が先読みされる可能性があることに注意してください。
+例えば入力が@code{abc@{:a b@}}、つまりシンボルの直後にマップが来ていたとします。
+パーザは@code{@{}まで読んでシンボルの終了を知り、シンボル@code{abc}を返しますが、
+その時点で読まれていた@code{@{}はポートに戻されないので、
+続けて@var{iport}からEDNを読む場合に問題となります。
+複数のEDNオブジェクトを読み込む場合は@code{parse-edn*}を使ってください。
+@c COMMON
 @end defun
 
 @defun parse-edn* :optional iport
+@c EN
 Read EDN representations repeatedly from the given input port
 and returns a list of them.  If @var{iport} is omitted,
 current input port is assumed.
 
 When the parser encounters unparsable sequence, 
 it raises @code{<edn-parse-error>}.
+@c JP
+与えられた入力ポートから、EOFに達するまでEDN表現を読み込み、結果のGaucheオブジェクトの
+リストを返します。@var{iport}が省略された場合は現在の入力ポートが使われます。
+
+パーズが失敗した場合は@code{<edn-parse-error>}が投げられます。
+@c COMMON
 @end defun
 
 @defun parse-edn-string str
+@c EN
 A convenience procedure to parse EDN representation in a string @var{str},
 and returns the read object.
 
 When the parser encounters unparsable sequence, 
 it raises @code{<edn-parse-error>}.
+@c JP
+EDN表現を文字列から読み込む便利手続きです。
+
+パーズが失敗した場合は@code{<edn-parse-error>}が投げられます。
+@c COMMON
+
+@example
+(parse-edn-string "[1 2 (3 4) @{:a 5@}]")
+ @result{} #(1 2 (3 4) #<hash-table general 0x1f05780>)
+@end example
 @end defun
 
+@c EN
 @subheading Constructing
+@c JP
+@subheading 構築
+@c COMMON
 
 @defun construct-edn obj :optional oport
-Wriet out an EDN representation of object @var{obj}
+@c EN
+Write out an EDN representation of object @var{obj}
 to the output port @var{oport}.  If @var{oport} is omitted,
 current output port is assumed.
+
+If @var{obj} contains an object that doesn't have a defined
+EDN representation, a generic function @var{edn-write} is called
+on it.  See Customization heading below.  If no method is defined for
+the object, an error is signaled.
+@c JP
+オブジェクト@var{obj}のEDN表現を出力ポート@var{oport}に書き出します。
+@var{oport}が省略された場合は現在の出力ポートが使われます。
+
+@var{obj}中にEDNで表現できないオブジェクトがあった場合、
+ジェネリック関数@var{edn-write}が呼ばれます。下のカスタマイズの項を参照してください。
+適切なメソッドが定義されていなけばエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun construct-edn-string obj
-Returns an EDN representation of @var{obj} in a string .
+@c EN
+Returns an EDN representation of @var{obj} in a string.
+
+If @var{obj} contains an object that doesn't have a defined
+EDN representation, a generic function @var{edn-write} is called
+on it.  See Customization heading below.  If no method is defined for
+the object, an error is signaled.
+@c JP
+@var{obj}のEDN表現を文字列で返します。
+
+@var{obj}中にEDNで表現できないオブジェクトがあった場合、
+ジェネリック関数@var{edn-write}が呼ばれます。下のカスタマイズの項を参照してください。
+適切なメソッドが定義されていなけばエラーが投げられます。
+@c COMMON
+
+@example
+@end example
+(construct-edn-string '#(1 2 "abc"))
+ @result{} "[1 2 \"abc\"]"
 @end defun
 
+@c EN
 @subheading Utilities
+@c JP
+@subheading ユーティリティ
+@c COMMON
 
 @defun edn-equal? a b
+@c EN
 Test equality of two objects that are read from EDN representation.
+@c JP
+EDN表現から読まれた二つのオブジェクトが、EDNのセマンティクスで等しいかどうかを調べます。
+@c COMMON
 @end defun
 
 @defvar edn-comparator
+@c EN
 A comparator that uses @code{edn-equal?} for the equality predicate.
+Corresponding has function is also included.
 EDN maps and sets become Gauche hash-tables and sets with this comparator.
+@c JP
+@code{edn-equal?}で等価性を判定する比較器です。ハッシュ関数も含まれます。
+EDNのマップとセットは、この比較器を使うGaucheのハッシュテーブルとセットになります。
+@c COMMON
 @end defvar
 
 @defun edn-map key value @dots{}
 @defunx edn-set item @dots{}
+@c EN
 Convenicne procedures to create hash-tables and sets compatible
 for EDN.
+@c JP
+EDNに使えるハッシュテーブルとセットを構築する便利手続きです。
+@c COMMON
 @end defun
 
 @deftp {Class} <edn-object>
 @clindex edn-object
+@c EN
 EDN tagged object becomes an instance of this class by default.
 The instance has the following slots, both are immutable:
+@c JP
+EDNのタグつきオブジェクトは、デフォルトではこの暮らすのインスタンスになります。
+以下のスロットがあります。どちらも変更不可です。
+@c COMMON
 
 @defivar <edn-object> tag
+@c EN
 Object's tag.  A symbol.
+@c JP
+シンボル。オブジェクトのタグです。
+@c COMMON
 @end defivar
 
 @defivar <edn-object> payload
+@c EN
 Object's payload.  Can be any object that can be representable in EDN.
+@c JP
+オブジェクトの内容です。EDNで表現可能なオブジェクト。
+@c COMMON
 @end defivar
 
+@c EN
 For example, when you read @code{#myobject @{:a 1 :b 2@}},
 the tag is @code{myobject} and the payload is a hashtable
 containing mapping @code{@{:a 1 :b 2@}}.
+@c JP
+例えば、@code{#myobject @{:a 1 :b 2@}}を読んだ場合、
+タグは@code{myobject}、内容は@code{@{:a 1 :b 2@}}を読んだ結果のハッシュテーブルに
+なります。
+@c COMMON
 @end deftp
 
 @defun make-edn-object tag payload
+@c EN
 Returns a new @code{<edn-object>} instance.
 Note: Arguments are not checked.  It's caller's responsibility to
 pass valid arguments to gurantee it's serializable as EDN.
+@c JP
+新たな@code{<edn-object>}のインスタンスを作って返します。
+引数がEDN表現可能かどうかのチェックはされません。
+呼び出し側が有効な引数を渡す必要があります。
+@c COMMON
 @end defun
 
 @defun edn-object? obj
+@c EN
 Returns @code{#t} iff @var{obj} is an instance of @code{<edn-object>}.
+@c JP
+@var{obj}が@code{<edn-object>}のインスタンスなら@code{#t}を、そうでなければ
+@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun edn-object-tag edn-object
 @defunx edn-object-payload edn-object
+@c EN
 Returns the tag and the payload of @var{edn-object}, respectively.
+@c JP
+@var{edn-object}のタグと内容をそれぞれ返します。
+@c COMMON
 @end defun
 
 @defun edn-symbol-prefix symbol
 @defunx edn-symbol-basename symbol
+@c EN
 Return prefix and basename part of the symbol, respectively.
+@c JP
+シンボルの、プリフィクスとベース名をそれぞれ返します。
+@c COMMON
 
 @example
 (edn-symbol-prefix 'foo/bar) @result{} foo
@@ -21598,17 +21788,29 @@ Return prefix and basename part of the symbol, respectively.
 @end defun
 
 @defun edn-valid-symbol-name? str
+@c EN
 Returns @code{#t} iff a string @var{str} can be a valid Clojure symbol name.
 It may have namespace prefix.
-@example
-@end example
+@c JP
+文字列@var{str}がClojureのシンボル名として有効なら@code{#t}を、そうでなければ
+@code{#f}を返します。@var{str}には名前空間を含めることもできます。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Customization
+@c JP
+@subheading カスタマイズ
+@c COMMON
 
+@c EN
 You can map EDN tagged objects to other Gauche objects.
+@c JP
+EDNのタグつきオブジェクトを、他のGaucheオブジェクトへとマップすることが出来ます。
+@c COMMON
 
 @defun register-edn-object-handler! tag handler
+@c EN
 @var{Tag} is a symbol, and @var{handler} is @code{#f} or a procedure
 that takes a tag symbol and a payload object.
 
@@ -21624,6 +21826,23 @@ This procedure is thread-safe.
 
 The following example makes EDN @code{#u8vector[1 2 3 4]} to be read
 as @code{#u8(1 2 3 4)}:
+@c JP
+@var{tag}はシンボル、@var{handler}は@code{#f}もしくは
+タグと内容を引数に取る手続きです。
+
+@var{tag}はClojureのシンボルとして有効な名前でなければなりません。
+さもなくばエラーが投げられます。
+
+パーザが@var{tag}をタグに持つタグつきオブジェクトを読んだら、
+そのタグと内容を引数にして@var{handler}を呼び出し、返り値を
+パーズ結果とします。@var{handler}に@code{#f}を渡した場合は
+既に登録されたハンドラを(もしあれば)削除します。
+
+この手続きはスレッドセーフです。
+
+以下の例はEDNの@code{#u8vector[1 2 3 4]}を
+@code{#u8(1 2 3 4)}として読み込みます。
+@c COMMON
 
 @example
 (register-edn-object-handler! 'u8vector 
@@ -21632,13 +21851,20 @@ as @code{#u8(1 2 3 4)}:
 @end defun
 
 @defun edn-object-handler tag
+@c EN
 Returns a handler registered with a symbol @var{tag}.  If a handler
 is not registered for @var{tag}, @code{#f} is returned.
 This procedure is thread-safe.
+@c JP
+@var{tag}に登録されたハンドラを返します。ハンドラが登録されていなければ@code{#f}を返します。
+この手続きはスレッドセーフです。
+@c COMMON
 @end defun
 
 @deffn {Generic Function} edn-write obj
+@c EN
 Write EDN represenation of @var{obj} to the current output port.
+The @code{construct-edn} procedure calls this internally.
 
 To write out a Gauche object as EDN tagged object, define a method to
 this generic function.   In the method you can call @code{edn-write}
@@ -21646,6 +21872,17 @@ recursively to write out componends of the object.
 
 The following example writes @code{#u8(1 2 3 4)} as
 EDN @code{#u8vector[1 2 3 4]}:
+@c JP
+@var{obj}のEDN表現を現在の出力ポートに書き出します。
+@code{construct-edn}は内部的にこれを呼んでいます。
+
+GaucheオブジェクトをEDNタグつきオブジェクトとして書き出したい場合に、
+このジェネリック関数にメソッドを定義します。メソッド中で、オブジェクトの要素を
+再帰的に書き出す場合はそれぞれに@code{edn-write}を呼び出してください。
+
+以下の例は、@code{#u8(1 2 3 4)}をEDNの@code{#u8vector[1 2 3 4]}として
+書き出します。
+@c COMMON
 
 @example
 (define-method edn-write ((x <u8vector>))
