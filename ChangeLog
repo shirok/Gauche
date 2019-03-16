@@ -1,3 +1,13 @@
+2019-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme: Add aliases for R7RS-large Tangerine Edition:
+	scheme.mapping -> srfi-146
+	scheme.mapping.hash -> srfi-146.hash
+	scheme.generator -> srfi-158 (change from srfi-121)
+	scheme.division -> srfi-141
+	scheme.bitwise -> srfi-151
+	scheme.fixnum -> srfi-143
+
 2019-03-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (cut, cute, define-values, set!-values),
