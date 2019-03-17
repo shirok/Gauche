@@ -25,13 +25,16 @@ Gaucheの動作を正確に理解する助けになると思います。
 @c NODE 標準への準拠
 
 @c EN
-Gauche conforms "Revised^7 Report of Algorithmic Language Scheme,"
+Gauche conforms ``Revised^7 Report of Algorithmic Language Scheme,''
 (R7RS)
-including optional syntax and procedures, with a few exceptions
-explained below.
+including optional syntax and procedures.  We cover R7RS small language
+(@pxref{R7RS small language}), as well as part of R7RS large libraries
+(@pxref{R7RS large}).
 @c JP
-Gaucheは、次に説明する少しの例外を除き、オプショナルな構文や手続きも含め
-"Revised^7 Report of Algorithmic Language Scheme" (R7RS) に準拠しています。
+Gaucheは、オプショナルな構文や手続きも含め
+``Revised^7 Report of Algorithmic Language Scheme'' (R7RS) に準拠しています。
+``R7RS small'' と呼ばれるコア言語(@ref{R7RS small language}参照)に加え、
+``R7RS large'' ライブラリの一部をサポートします(@ref{R7RS large}参照)。
 @c COMMON
 
 @itemize @bullet
