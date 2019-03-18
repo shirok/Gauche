@@ -1936,6 +1936,7 @@ R7RS largeはまだ策定途上ですが、既に決定したライブラリに�
 * R7RS boxes::                  @code{scheme.box}
 * R7RS list queues::            @code{scheme.list-queue}
 * R7RS comparators::            @code{scheme.comparator}
+* R7RS mappings::
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large, R7RS large
@@ -5711,7 +5712,7 @@ The results are discarded.
 @c COMMON
 @end defun
 
-@node R7RS comparators,  , R7RS list queues, R7RS large
+@node R7RS comparators, R7RS mappings, R7RS list queues, R7RS large
 @subsection @code{scheme.comparator} - R7RS comparators
 @c NODE R7RS比較器, @code{scheme.comparator} - R7RS比較器
 
@@ -5745,6 +5746,958 @@ comparator-test-type comparator-check-type comparator-hash
 =? <? >? <=? >=? comparator-if<=>
 @end example
 @end deftp
+
+@node R7RS mappings,  , R7RS comparators, R7RS large
+@subsection @code{scheme.mapping} - R7RS mappings
+@c NODE R7RSマップ, @code{scheme.mapping} - R7RSマップ
+
+@deftp {Module} scheme.mapping
+@deftpx {Module} scheme.mapping.hash
+@mdindex scheme.mapping
+@mdindex scheme.mapping.hash
+This module defines immutable mappings from keys to values.
+Originally called @code{srfi-146} and @code{srfi-146.hash}.
+
+The @code{scheme.mapping} module provides @emph{mapping} objects,
+where keys have total order.  The @code{scheme.mapping.hash} module
+provides @code{hashmap} objects, where keys can be hashed.
+
+Currently, Gauche uses built-in @code{<tree-map>} for the mapping object,
+and built-in @code{<hash-table>} for the hashmap object.
+The actual implementation
+may be changed in future versions, so the user must not rely on the
+underlying implementations.
+
+The caller must treat mappings and hashmaps as immutable object.
+The modules also provide ``linear update'' APIs, which is @emph{allowed}
+to mutate the mappings passed to the arguments, under assumption
+that the argument won't be used afterwards.  The linear update APIs
+are maked with @code{!} at the end of the name.
+@end deftp
+
+@menu
+* Mappings::
+* Hashmaps::
+@end menu
+
+
+@node Mappings, Hashmaps, R7RS mappings, R7RS mappings
+@subsubsection Mappings
+@c NODE Mappings
+
+@deftp {Class} <mapping>
+@clindex mapping
+@c MOD scheme.mapping
+On Gauche, this is just an alias of @code{<tree-map>}.
+@end deftp
+
+@subsubheading Constructors
+
+@defun mapping comparator key value @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+Creates a new mapping with the given @var{comparator},
+whose initial content is
+provided by @var{key} @var{value} @dots{}.
+
+The @var{comparator} argument must be a comparator
+(@pxref{Basic comparators}).
+
+The @var{key} @var{value} @dots{} arguments must be
+even length, alternating keys and values.
+
+@example
+(define m (mapping default-comparator 'a 1 'b 2))
+
+(mapping-ref m 'a) @result{} 1
+(mapping-ref m 'b) @result{} 2
+@end example
+@end defun
+
+@defun mapping-unfold p f g seed comparator
+[R7RS mapping]
+@c MOD scheme.mapping
+Creates a new mapping, whose content is populated by
+three procedures, @var{p}, @var{f} and @var{g}, and
+a seed value @var{seed}, as follows.
+
+In each iteration, we have a current seed value, whose initial
+value is @var{seed}.
+
+First, @var{p}, a stop predicate, is applied to the current
+seed value. If it returns true, we stop iteration and returns
+the new mapping.
+
+Next, @var{f} is applied to the current seed value.  It must
+return two values.  The first one is for a key and the second
+one for the value.  We add this pair to the mapping.
+
+Then, @var{g} is applied to the current seed value.  The result
+becomes the seed value of the next iteration.  And we iterate.
+
+The following example creates a mapping that maps ASCII characters
+to their character codes:
+
+@example
+(mapping-unfold (cut >= <> 128)
+                (^c (values (integer->char c) c))
+                (cut + <> 1)
+                0
+                default-comparator)
+@end example
+@end defun
+
+@defun mapping/ordered comparator key value @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+Similar to @code{mapping}, but keys are given in the ascending order
+w.r.t. the comparator.  An implementation may use more efficient algorithm
+than @code{mapping}.  In Gauche, this is the same as @code{mapping}
+at this moment.
+@end defun
+
+@defun mapping-unfold/ordered p f g seed comparator
+[R7RS mapping]
+@c MOD scheme.mapping
+Similar to @code{mapping-unfold}, but keys are generated in the
+ascendnig order
+w.r.t. the comparator.  An implementation may use more efficient algorithm
+than @code{mapping-unfold}. 
+In Gauche, this is the same as @code{mapping-unfold} at this moment.
+@end defun
+
+@subsubheading Predicates
+
+@defun mapping? obj
+[R7RS mapping]
+@c MOD scheme.mapping
+Returns @code{#t} iff @var{obj} is a mapping object.
+@end defun
+
+@defun mapping-empty? m
+[R7RS mapping]
+@c MOD scheme.mapping
+@var{M} must be a mapping.
+Returns @code{#t} if @var{m} is empty, @code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-empty?}
+(@pxref{Treemaps}).
+@end defun
+
+@defun mapping-contains? m key
+[R7RS mapping]
+@c MOD scheme.mapping
+@var{M} must be a mapping.
+Returns @code{#t} if @var{m} has an entry with @var{key},
+@code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-exists?}
+(@pxref{Treemaps}).
+@end defun
+
+@defun mapping-disjoint? m1 m2
+[R7RS mapping]
+@c MOD scheme.mapping
+Returns @code{#t} iff two mappings @var{m1} and @var{m2} have no keys
+in common.  In other words, there's no such key K that
+satisfy both @code{(mapping-contains? m1 K)} and
+@code{(mapping-contains? m2 K)}.
+@end defun
+
+@subsubheading Accessors
+
+@defun mapping-ref m key :optional failure success
+[R7RS mapping]
+@c MOD scheme.mapping
+Get the value from a mapping @var{m} associated with @var{key},
+and calls @var{success} on the value, and returns its result.
+If @var{m} doesn't have @var{key}, @var{failure} is invoked with no
+arguments and its result is returned.
+Both @var{success} and @var{failure} is called in tail context.
+
+When @var{failure} is omitted and @var{key} is not found, an error
+is signaled.  When @var{success} is omitted, @code{identity} is
+assumed.
+@end defun
+
+@defun mapping-ref/default m key default
+[R7RS mapping]
+@c MOD scheme.mapping
+Returns the value associated to @var{key} from a mapping @var{m}.
+If @var{m} doesn't have @var{key}, @var{default} is returned.
+@end defun
+
+@defun mapping-key-comparator m
+[R7RS mapping]
+@c MOD scheme.mapping
+Returns a comparator used to compare keys in a mapping @var{m}.
+@xref{Basic comparators}, for the details of comparators.
+@end defun
+
+@subsubheading Updaters
+
+Note that the basic premise of mappings srfi is to treat mappings 
+as immutable.  Each updating operation comes with a purely functional
+version (without bang) and a linear update version (with bang), but
+the linear update version may not require to destructively modiy
+the passed mapping; it's merely a hint that it may reuse the
+argument for the efficiency.  You always need to use the returned
+mapping as the result of update.  If you use linear update versions,
+you shouldn't use the passed mapping afterwards, for there's no guarantee
+how the state of the passed mapping is.
+
+@defun mapping-adjoin m arg @dots{}
+@defunx mapping-adjoin! m arg @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+The @var{arg} @dots{} are alternating between key and value.  Returns
+a mapping that contains all the entries in @var{m} plus given
+keys and values, with the same comparator as @var{m}.
+Linear update version @code{mapping-adjoin!} may destructively modify
+@var{m} to create the return value, while @code{mapping-adjoin}
+creates a new mapping.
+
+Argments are processed in order.
+If there's already an entry in @var{m} with the same key as given to
+@var{arg}, the original entry remains.
+
+@example
+(mapping-adjoin (mapping default-comparator 'a 1 'b 2) 'c 3 'a 4 'c 5)
+ @result{} @r{mapping with @t{a} @arrow{} 1, @t{b} @arrow{} 2, @t{c} @arrow{} 3}
+@end example
+@end defun
+
+@defun mapping-set m arg @dots{}
+@defunx mapping-set! m arg @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+The @var{arg} @dots{} are alternating between key and value.  Returns
+a mapping that contains all the entries in @var{m} plus given
+keys and values, with the same comparator as @var{m}.
+Linear update version @code{mapping-set!} may destructively modify
+@var{m} to create the return value, while @code{mapping-set}
+creates a new mapping.
+
+Argments are processed in order.
+If there's already an entry in @var{m} with the same key as given to
+@var{arg}, the new key-value pair supersedes the old one.
+
+@example
+(mapping-set (mapping default-comparator 'a 1 'b 2) 'c 3 'a 4 'c 5)
+ @result{} @r{mapping with @t{a} @arrow{} 4, @t{b} @arrow{} 2, @t{c} @arrow{} 5}
+@end example
+@end defun
+
+@defun mapping-replace m key value
+@defunx mapping-replace! m key value
+[R7RS mapping]
+@c MOD scheme.mapping
+If the mapping @var{m} has an entry of @var{key}, return a mapping
+with the value of the entry replaced for @var{value}.  If @var{m} doesn't
+have an entry with @var{key}, @var{m} is returned unchanged.
+
+Linear update version @code{mapping-replace!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-replace}
+creates a new mapping.
+
+@example
+(mapping-replace (mapping default-comparator 'a 1 'b 2) 'a 3)
+ @result{} @r{mapping with @t{a} @arrow{} 3, @t{b} @arrow{} 2}
+
+(mapping-replace (mapping default-comparator 'a 1 'b 2) 'c 3)
+ @result{} @r{mapping with @t{a} @arrow{} 1, @t{b} @arrow{} 2}
+@end example
+@end defun
+
+
+@defun mapping-delete m key @dots{}
+@defunx mapping-delete! m key @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+Returns a mapping that is the same as @var{m} except its entries with
+any of the given @var{key} @dots{} being removed.  Keys that are
+not in @var{m} are ignored.
+
+Linear update version @code{mapping-delete!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-delete}
+creates a new mapping.
+@end defun
+
+@defun mapping-delete-all m key-list
+@defunx mapping-delete-all! m key-list
+[R7RS mapping]
+@c MOD scheme.mapping
+Returns a mapping that is the same as @var{m} except its entries with
+any of the given keys in @var{key-list} being removed.  Keys that are
+not in @var{m} are ignored.
+
+Linear update version @code{mapping-delete-all!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-delete-all}
+creates a new mapping.
+@end defun
+
+
+@defun mapping-intern m key make-value
+@defunx mapping-intern! m key make-value
+[R7RS mapping]
+@c MOD scheme.mapping
+Looks up @var{key} in the mapping @var{m}, and returns two values,
+@var{m} and the associated value.  If @var{m} does not contain an entry
+with @var{key}, a thunk @var{make-value} is invoked, and creates a new
+mapping that contains all entries in @var{m} plus a new entry with
+@var{key} and the return value of @var{make-value}, then returns the
+new mapping and the return value of @var{make-value}.
+
+Linear update version @code{mapping-intern!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-intern}
+creates a new mapping.
+
+@example
+(mapping-intern (mapping default-comparator 'a 1) 'b (^[] 2))
+  @result{}
+  @r{mapping with @t{a} @arrow{} 1, @t{b} @arrow{} 2}
+  @r{and}
+  2
+
+(mapping-intern (mapping default-comparator 'a 1) 'a (^[] 2))
+  @result{}
+  @r{mapping with @t{a} @arrow{} 1}
+  @r{and}
+  1
+@end example
+@end defun
+
+@defun mapping-update m key updater :optional failure success
+@defunx mapping-update! m key updater :optional failure success
+[R7RS mapping]
+@c MOD scheme.mapping
+Semantically equivalent to this:
+
+@example
+(mapping-set @var{m} @var{var}
+  (@var{updater} (mapping-ref @var{m} @var{key} @var{failure} @var{success})))
+@end example
+
+The @var{failure} and @var{success} optional arguments are procedures
+with zero and one arguments, respectively.  When omitted,
+@var{failure} defaults to a thunk that raises an error,
+and @var{success} defaults to @code{identity}.
+
+First, @var{key} is looked up in @var{m}.  If an entry is found,
+the associated value is passed to @var{success}; otherwise,
+@var{failure} is called with no arguments.  Either way, let the returned
+value be @var{v0}.
+
+Then, @var{v0} is passed to @var{updater}.  Let its result be @var{v1}.
+
+Finally, a mapping with the same entries as @var{m} except the value of
+@var{key} is altered to @var{v1} is returned.
+
+Linear update version @code{mapping-update!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-update}
+creates a new mapping.
+
+@example
+(mapping-update (mapping default-comparator 'a 1)
+                'a (pa$ + 1))
+ @result{} @r{mapping with @t{a} @arrow{} 2}
+
+(mapping-update (mapping default-comparator)
+                'a (pa$ + 1) (^[] 0))
+ @result{} @r{mapping with @t{a} @arrow{} 1}
+@end example
+@end defun
+
+@defun mapping-update/default m key updater default
+@defunx mapping-update!/default m key updater default
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-pop m :optional failure
+@defunx mapping-pop! m :optional failure
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-search m k failure success
+@defunx mapping-search! m k failure success
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@subsubheading The whole mapping
+
+@defun mapping-size m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-find pred m failure
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-count pred m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-any? pred m
+@defunx mapping-every? pred m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-keys m
+@defunx mapping-values m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-entries m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@subsubheading Mapping and folding
+
+@defun mapping-map proc comparator m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-map/monotone proc comparator m
+@defunx mapping-map/monotone! proc comparator m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-for-each proc m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-fold kons knil m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-fold/reverse kons knil m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-map->list proc m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-filter pred m
+@defunx mapping-filter! pred m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-remove pred m
+@defunx mapping-remove! pred m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-partition pred m
+@defunx mapping-partition! pred m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@subsubheading Copying and conversion
+
+@defun mapping-copy m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping->alist m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun alist->mapping comparator alist
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun alist->mapping! m alist
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun alist->mapping/ordered comparator alist
+@defunx alist->mapping/ordered! m alist
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@subsubheading Submappings
+
+@defun mapping=? comparator m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping<? comparator m1 m2 @dots{}
+@defunx mapping<=? comparator m1 m2 @dots{}
+@defunx mapping>? comparator m1 m2 @dots{}
+@defunx mapping>=? comparator m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@subsubheading Set operations
+
+@defun mapping-union m1 m2 @dots{}
+@defunx mapping-union! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-intersection m1 m2 @dots{}
+@defunx mapping-intersection! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-difference m1 m2 @dots{}
+@defunx mapping-difference! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-xor m1 m2 @dots{}
+@defunx mapping-xor! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@subsubheading Mappings with ordered keys
+
+@defun mapping-min-key m
+@defunx mapping-max-key m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-min-value m
+@defunx mapping-max-value m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-min-entry m
+@defunx mapping-max-entry m
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-key-predecessor m obj failure
+@defunx mapping-key-successor m obj failure
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-range= m obj
+@defunx mapping-range< m obj
+@defunx mapping-range<= m obj
+@defunx mapping-range> m obj
+@defunx mapping-range>= m obj
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-range=! m obj
+@defunx mapping-range<! m obj
+@defunx mapping-range<=! m obj
+@defunx mapping-range>! m obj
+@defunx mapping-range>=! m obj
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-split m obj
+@defunx mapping-split! m obj
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defun mapping-catenate comparator m1 key value m2 
+@defunx mapping-catenate! m1 key value m2 
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@subsubheading Comparators
+
+@defun make-mapping-comparator comparator
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defun
+
+@defvar mapping-comparator
+[R7RS mapping]
+@c MOD scheme.mapping
+@end defvar
+
+
+@node Hashmaps,  , Mappings, R7RS mappings
+@subsubsection Hashmaps
+@c NODE Hashmaps
+
+@subsubheading Constructors
+
+@defun hashmap comparator key value @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+Creates a new hashmap with the given @var{comparator},
+whose initial content is
+provided by @var{key} @var{value} @dots{}.
+
+The @var{comparator} argument must be a comparator
+(@pxref{Basic comparators}).
+
+The @var{key} @var{value} @dots{} arguments must be
+even length, alternating keys and values.
+
+@example
+(define m (hashmap default-comparator 'a 1 'b 2))
+
+(hashmap-ref m 'a) @result{} 1
+(hashmap-ref m 'b) @result{} 2
+@end example
+@end defun
+
+@defun hashmap-unfold p f g seed comparator
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+Creates a new hashmap, whose content is populated by
+three procedures, @var{p}, @var{f} and @var{g}, and
+a seed value @var{seed}, as follows.
+
+In each iteration, we have a current seed value, whose initial
+value is @var{seed}.
+
+First, @var{p}, a stop predicate, is applied to the current
+seed value. If it returns true, we stop iteration and returns
+the new hashmap.
+
+Next, @var{f} is applied to the current seed value.  It must
+return two values.  The first one is for a key and the second
+one for the value.  We add this pair to the hashmap.
+
+Then, @var{g} is applied to the current seed value.  The result
+becomes the seed value of the next iteration.  And we iterate.
+
+The following example creates a hashmap that maps ASCII characters
+to their character codes:
+
+@example
+(hashmap-unfold (cut >= <> 128)
+                (^c (values (integer->char c) c))
+                (cut + <> 1)
+                0
+                default-comparator)
+@end example
+@end defun
+
+@subsubheading Predicates
+
+@defun hashmap? obj
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+Returns @code{#t} iff @var{obj} is a hashmap object.
+@end defun
+
+@defun hashmap-empty? m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@var{M} must be a hashmap.
+Returns @code{#t} if @var{m} is empty, @code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-empty?}
+(@pxref{Treemaps}).
+@end defun
+
+@defun hashmap-contains? m key
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@var{M} must be a hashmap.
+Returns @code{#t} if @var{m} has an entry with @var{key},
+@code{#f} otherwise.
+In Gauche, this is same as @code{tree-map-exists?}
+(@pxref{Treemaps}).
+@end defun
+
+@defun hashmap-disjoint? m1 m2
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+Returns @code{#t} iff two hashmaps @var{m1} and @var{m2} have no keys
+in common.  In other words, there's no such key K that
+satisfy both @code{(hashmap-contains? m1 K)} and
+@code{(hashmap-contains? m2 K)}.
+@end defun
+
+@subsubheading Accessors
+
+@defun hashmap-ref m key :optional failure success
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+Get the value from a hashmap @var{m} associated with @var{key},
+and calls @var{success} on the value, and returns its result.
+If @var{m} doesn't have @var{key}, @var{failure} is invoked with no
+arguments and its result is returned.
+Both @var{success} and @var{failure} is called in tail context.
+
+When @var{failure} is omitted and @var{key} is not found, an error
+is signaled.  When @var{success} is omitted, @code{identity} is
+assumed.
+@end defun
+
+@defun hashmap-ref/default m key default
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+Returns the value associated to @var{key} from a hashmap @var{m}.
+If @var{m} doesn't have @var{key}, @var{default} is returned.
+@end defun
+
+@defun hashmap-key-comparator m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+Returns a comparator used to compare keys in a hashmap @var{m}.
+@xref{Basic comparators}, for the details of comparators.
+@end defun
+
+@subsubheading Updaters
+
+Note that the basic premise of hashmaps srfi is to treat hashmaps 
+as immutable.  Each updating operation comes with a purely functional
+version (without bang) and a linear update version (with bang), but
+the linear update version may not require to destructively modiy
+the passed hashmap; it's merely a hint that it may reuse the
+argument for the efficiency.  You always need to use the returned
+hashmap as the result of update.  If you use linear update versions,
+you shouldn't use the passed hashmap afterwards, for there's no guarantee
+how the state of the passed hashmap is.
+
+@defun hashmap-adjoin m arg @dots{}
+@defunx hashmap-adjoin! m arg @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-set m arg @dots{}
+@defunx hashmap-set! m arg @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-replace m key value
+@defunx hashmap-replace! m key value
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+
+@defun hashmap-delete m key @dots{}
+@defunx hashmap-delete! m key @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-delete-all m key-list
+@defunx hashmap-delete-all! m key-list
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+
+@defun hashmap-intern m key failure
+@defunx hashmap-intern! m key failure
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-update m key updater :optional failure success
+@defunx hashmap-update! m key updater :optional failure success
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-update/default m key updater default
+@defunx hashmap-update!/default m key updater default
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-pop m :optional failure
+@defunx hashmap-pop! m :optional failure
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-search m k failure success
+@defunx hashmap-search! m k failure success
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@subsubheading The whole hashmap
+
+@defun hashmap-size m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-find pred m failure
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-count pred m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-any? pred m
+@defunx hashmap-every? pred m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-keys m
+@defunx hashmap-values m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-entries m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@subsubheading Mapping and folding
+
+@defun hashmap-map proc comparator m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-for-each proc m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-fold kons knil m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-map->list proc m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-filter pred m
+@defunx hashmap-filter! pred m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-remove pred m
+@defunx hashmap-remove! pred m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-partition pred m
+@defunx hashmap-partition! pred m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@subsubheading Copying and conversion
+
+@defun hashmap-copy m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap->alist m
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun alist->hashmap comparator alist
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun alist->hashmap! m alist
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@subsubheading Subhashmaps
+
+@defun hashmap=? comparator m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap<? comparator m1 m2 @dots{}
+@defunx hashmap<=? comparator m1 m2 @dots{}
+@defunx hashmap>? comparator m1 m2 @dots{}
+@defunx hashmap>=? comparator m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@subsubheading Set operations
+
+@defun hashmap-union m1 m2 @dots{}
+@defunx hashmap-union! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-intersection m1 m2 @dots{}
+@defunx hashmap-intersection! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-difference m1 m2 @dots{}
+@defunx hashmap-difference! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defun hashmap-xor m1 m2 @dots{}
+@defunx hashmap-xor! m1 m2 @dots{}
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@subsubheading Comparators
+
+@defun make-hashmap-comparator comparator
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defun
+
+@defvar hashmap-comparator
+[R7RS mapping]
+@c MOD scheme.mapping.hash
+@end defvar
+
+
+
 
 @c Local variables:
 @c mode: texinfo
