@@ -3658,13 +3658,11 @@ GaucheはSLIBの元々の``logical''モジュールに合わせました。
 @c COMMON
 
 @c EN
-SRFI-151 (@pxref{Bitwise operations}) defines both names, and also
-some additional procedures.  If you're porting libraries written
-for other Scheme, you might want to check it.
+R7RS bitwise library
+(@pxref{R7RS bitwise operations}) provides additional bitwise operations.
 @c JP
-SRFI-151 (@pxref{Bitwise operations}) は両方の流儀の名前を定義しており、
-さらにいくつかの追加の手続きも用意しています。他のScheme向けに書かれた
-コードをGaucheに移植する際には有用でしょう。
+R7RSビット演算ライブラリ(@pxref{R7RS bitwise operations})
+は追加のビット演算を提供しています。
 @c COMMON
 
 @defun ash n count
@@ -3730,7 +3728,7 @@ Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
 @end defun
 
 @defun bit-field n start end
-[SRFI-151]
+[R7RS bitwise]
 @c EN
 Extracts @var{start}-th bit (inclusive) to @var{end}-th bit (exclusive) from
 an exact integer @var{n}, where @var{start} < @var{end}.
@@ -3741,7 +3739,7 @@ an exact integer @var{n}, where @var{start} < @var{end}.
 @end defun
 
 @defun copy-bit index n bit
-[SRFI-151]
+[R7RS bitwise]
 @c EN
 If @var{bit} is true, sets @var{index}-th bit of an exact integer @var{n}.
 If @var{bit} is false, resets @var{index}-th bit of an exact integer @var{n}.
@@ -3849,7 +3847,7 @@ representation of @var{n}.
 @end defun
 
 @defun integer-length n
-[SRFI-151]
+[R7RS bitwise]
 @c EN
 Returns the minimum number of bits required to represent an
 exact integer @var{n}.  Negative integer is assumed to be in
