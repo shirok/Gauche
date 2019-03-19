@@ -960,20 +960,24 @@ srfi-141, srfi-141
 
 
 Integer division
-Supported by the module @code{srfi-141}.  @xref{Integer division}.
+This has become a part of R7RS large.
+Supported by the module @code{scheme.division}.  @xref{R7RS integer division}.
 
 整数除算
-モジュール@code{srfi-141}でサポートされます。@ref{Integer division}参照。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.division}でサポートされます。@ref{R7RS integer division}参照。
 
 
 srfi-143, srfi-143
 ()
 
 Finxums
-Supported by the module @code{srfi-143}.  @xref{Fixnums}.
+This has become a part of R7RS large.
+Supported by the module @code{scheme.fixnum}.  @xref{R7RS fixnum}.
 
 Fixnums
-モジュール@code{srfi-143}でサポートされます。@ref{Fixnums}参照。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.fixnum}でサポートされます。@ref{R7RS fixnum}参照。
 
 
 srfi-145
@@ -990,10 +994,14 @@ srfi-146
 ()
 
 Mappings
-Supported by the module @code{srfi-146}.  @xref{Mappings and hashmaps}.
+This has become a part of R7RS large.
+Supported by the module @code{scheme.mapping}.
+@xref{R7RS mappings}.
 
 マッピング
-モジュール@code{srfi-146}でサポートされます。 @ref{Mappings and hashmaps}参照。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.mapping}でサポートされます。
+@ref{R7RS mappings}参照。
 
 
 srfi-149
@@ -1044,13 +1052,16 @@ srfi-158, srfi-158
 ()
 
 Generators and accumulators
-Supported by the module @code{srfi-158} (@pxref{Generators and accumulators}).
+This has become a part of R7RS large.
+Supported by the module @code{scheme.generator}
+(@pxref{R7RS generators}).
 Note that most of generator procedures are supported by @code{gauche.generator}
 (@pxref{Generators}).
 
 ジェネレータとアキュムレータ
-モジュール@code{srfi-158}でサポートされます
- (@ref{Generators and accumulators}参照)。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.generator}でサポートされます
+ (@ref{R7RS generators}参照)。
 ジェネレータ手続きのほとんどは、@code{gauche.generator}でもサポートされています
 (@ref{Generators}参照)。
 
