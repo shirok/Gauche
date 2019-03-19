@@ -5037,35 +5037,143 @@ Returns an ideque with the given elements.
 
 @deftp {Module} scheme.generator
 @mdindex scheme.generator
-A generator is a thunk to generate a sequence of values, potentially
-terminated by EOF.  The interface was first defined in srfi-121, then
+@c EN
+This module provides generators and accumulators.
+They were first defined in srfi-121,
+then enhanced in srfi-158, and finally
 incorporated R7RS large as @code{(scheme generator)}.
+@c JP
+このモジュールは、ジェネレータとアキュムレータを提供します。
+これらは最初にsrfi-121で定義され、srfi-158で拡張された後、
+@code{(scheme generator)}としてR7RS largeに取り込まれました。
+@c COMMON
 
-Gauche provides a generator library
-@code{gauche.generator}, which is a superset of @code{scheme.generator}.
+@c EN
+A generator is a thunk to generate a sequence of values, potentially
+terminated by EOF.  Procedures to deal with generators are
+provided by @code{gauche.generator}, which is a superset of srfi-121.
 @xref{Generators}, for the details.
+@c JP
+ジェネレータは引数と取らない手続きで、呼ばれる度に値を次々に返し、
+EOFを以って終端を示すものです。ジェネレータを扱う手続きは
+srfi-121のスーパーセットである@code{gauche.generator}で提供されています。
+詳しくは@ref{Generators}を参照してください。
+@c COMMON
 
-The following procedures are defined in this module.  Please see the
-respective manual section for each entry.
+@c EN
+An accumulator is an opposite of generators.
+They are procedures
+that work as consumers.  An accumulator takes one argument.
+When non-eof value is given, the value is stored, and when EOF
+is given, the accumulated value is returned.
+How the values are accumulated depends on the accumulator.
+@c JP
+アキュムレータはジェネレータの反対で、値を消費する手続きと考えられます。
+アキュムレータは一つの引数を取ります。EOF以外の値が与えられた場合は、
+それが内部に何らかの形で蓄えられ、EOFが与えられた場合、
+蓄えられた値が返されます。
+どのように値が蓄えられるかは各アキュムレータに依存します。
+@c COMMON
+
+@c EN
+Once EOF is given, the accumulator is ``finalized''.  Subsequent
+EOF makes it return the same accumulated value.  It is undefined
+if other values are passed after EOF is passed.
+@c JP
+一度EOFが与えられると、アキュムレータは終了状態になります。
+その後何度EOFが与えられても同じ蓄積結果を返します。
+終了状態になったアキュムレータにEOF以外の値を与えた場合の動作は未定義です。
+@c COMMON
+
+@c EN
+The accumulator can be used to parameterize procedures that yield
+aggregate objects.  Consider the following procedure, which
+takes items from two generators and accumulate them alternatively.
+(Note that @code{glet*} is Gauche's procedure but not in srfi-158).
+@c JP
+アキュムレータは、複合的なオブジェクトを生成する手続きで、
+実際に生成される値の型をパラメタライズするのに使えます。
+次の手続きを見てみましょう。これは二つのジェネレータから交互に値を取り、
+それを蓄積して返す手続きです。
+(@code{glet*}はGaucheの手続きですがsrfi-158には含まれていません。)
+@c COMMON
+
+@example
+(define (intertwine acc gen1 gen2)
+  (let loop ()
+    (glet* ([a (gen1)]
+            [b (gen2)])
+      (acc a)
+      (acc b)
+      (loop)))
+  (acc (eof-object)))
+@end example
+
+@c EN
+The procedure can return various type of collections, without
+knowing the actual type---the passed accumulator determines it.
+@c JP
+この手続きは具体的に返される値が何かは関知しません。
+それは引数に与えられたアキュムレータにより決定されます。
+@c COMMON
+
+@example
+(intertwine (list-accumulator) (giota 5) (giota 5 100))
+  @result{} (0 100 1 101 2 102 3 103 4 104)
+(intertwine (vector-accumulator) (giota 5) (giota 5 100))
+  @result{} #(0 100 1 101 2 102 3 103 4 104)
+(intertwine (bytevector-accumulator) (giota 5) (giota 5 100))
+  @result{} #u8(0 100 1 101 2 102 3 103 4 104)
+@end example
+
+@c EN
+Note: In Gauche, you can also use classes to parameterize returned
+container types (e.g. @code{map-to}),
+for many collection classes support @emph{builder protocol}.
+@xref{Collection framework}, for the details.
+Accumulator has the flexibility that you can provide more than one
+ways to construct return value on the same type (e.g. forward and reverse
+list).
+@c JP
+註: Gaucheでは、クラスを使うことで戻り値となるコンテナの型をパラメタライズできます
+(例: @code{map-to})。これは多くのコレクションクラスが@emph{builderプロトコル}を
+サポートしているからです。詳しくは@ref{Collection framework}を見てください。
+アキュムレータの利点は、同じ型の戻り値についても、異なる値の蓄積方法
+(例えばリストを順に蓄積するか逆順に蓄積するか、等)を提供できることです。
+@c COMMON
+@end deftp
+
+@c EN
+The following generator procedures are explained in
+@code{gauche.generator} section (@pxref{Generators}):
+@c JP
+以下のジェネレータ手続きは、@code{gauche.generator}のセクションで
+解説してあります(@ref{Generators}参照)。
+@c COMMON
 
 @itemize
 @item @ref{Generator constructors}:
 @example
-generator                  make-iota-generator      make-range-generator
-make-coroutine-generator   make-bits-geneartor      make-for-each-generator
-make-unfold-generator      list->generator          vector->generator
-reverse-vector->generator  string->generator
+generator                  circular-generator       make-iota-generator
+make-range-generator       make-coroutine-generator
+make-unfold-generator      make-for-each-generator
+list->generator            vector->generator        reverse-vector->generator
+string->generator          bytevector->generator
 @end example
 @item @ref{Generator operations}:
 @example
-gcons*      gappend     gcombine    gfilter     gremove
-gtake       gdrop       gtake-while gdrop-while gdelete
-gdelete-neighbor-dups   gindex      gselect
+gcons*                   gappend                  gflatten
+ggroup                   gmerge                   gmap
+gcombine                 gfilter                  gremove
+gstate-filter            ggroup
+gtake                    gdrop                    gtake-while
+gdrop-while              gdelete                  gdelete-neighbor-dups
+gindex                   gselect
 @end example
 @item @ref{Generator consumers}:
 @example
-generator->list         generator->reverse-list   generator->vector
-generator->vector!      generator->string
+generator->list         generator->reverse-list   generator-map->list
+generator->vector       generator->vector!        generator->string
 generator-count         generator-any             genreator-every
 generator-unfold
 @end example
@@ -5074,7 +5182,136 @@ generator-unfold
 generator-fold          generator-for-each        generator-find
 @end example
 @end itemize
-@end deftp
+
+@c EN
+The following are accumulator procedures:
+@c JP
+以下はアキュムレータ手続きです。
+@c COMMON
+
+@defun make-accumulator kons knil finalizer
+[R7RS generator]
+@c MOD scheme.generator
+@c EN
+Creates and returns an accumulator with a state,
+whose initial value is @var{knil}.
+When non-EOF value @var{v} is passed to the accumulator,
+@var{kons} is called as @code{(kons v state)}, and its result
+becomes the new state value.  When EOF value is passed,
+@code{(finalizer state)} is called and its result becomes
+the result of accumulator.
+@c JP
+内部状態をひとつ持つアキュムレータを作って返します。
+状態は@var{khil}で初期化されます。
+EOFでない値@var{v}がアキュムレータに与えられる度に、手続き@var{kons}が
+@code{(kons v state)}と呼ばれ、その戻り値が新たな状態となります。
+EOFがアキュムレータに渡されると、@code{(finalizer state)}が呼ばれ、
+その結果がアキュムレータの戻り値となります。
+@c COMMON
+@end defun
+
+@defun list-accumulator
+@defunx reverse-list-accumulator
+[R7RS generator]
+@c MOD scheme.generator
+@c EN
+Creates and returns accumulators that return accumulated value
+as a list, in the accumulated order (@code{list-accumulator})
+or the reverse order (@code{reverse-list-accumulator}).
+@c JP
+蓄積された値をリストとして返すアキュムレータを作って返します。
+@code{list-accumulator}ではリストは与えられた順に、
+@code{reverse-list-accumulator}では逆順になります。
+@c COMMON
+@end defun
+
+@defun vector-accumulator
+@defunx reverse-vector-accumulator
+@defunx bytevector-accumulator
+[R7RS generator]
+@c MOD scheme.generator
+@c EN
+Returns accumulators that return accumulated value
+as a fresh vector or bytevector (u8vector),
+in the accumulated order (@code{vector-accumulator},
+@code{bytevector-accumulator})
+or the reverse order (@code{reverse-vector-accumulator}).
+There's no @code{reverse-bytevector-accumulator}.
+@c JP
+蓄積された値をベクタあるいはバイトベクタ(u8vector)として返すアキュムレータを
+作って返します。@code{vector-accumulator}と
+@code{bytevector-accumulator}では値は先頭から順に、
+@code{reverse-vector-accumulator}ではベクタの最後から逆順に詰められます。
+@code{reverse-bytevector-accumulator}はありません。
+@c COMMON
+@end defun
+
+@defun vector-accumulator! vec at
+@defunx bytevector-accumulator! bvec at
+[R7RS generator]
+@c MOD scheme.generator
+@c EN
+The @var{vec} or @var{bvec} argument is a mutable vector or
+bytevector (u8vector), and is used as a buffer.
+
+Returns an accumlator that stores the accumulated values in the
+buffer, starting from the index @var{at}.
+It is an error if the accumulator gets more values after
+the buffer reaches at the end.
+
+Once EOF is passed to the accumulator, @var{vec} or @var{bvec}
+is returned, respectively.
+@c JP
+@var{vec}と@var{bvec}はそれぞれ変更可能なベクタとバイトベクタ(u8vector)です。
+この引数はバッファとして使われます。
+
+与えられた値を、バッファのインデックス@var{at}から順に格納してゆくアキュムレータを
+作って返します。バッファの最後を越えて値を格納しようとした場合はエラーになります。
+
+EOFが与えられたら、@var{vec}または@var{bvec}をそのまま返します。
+@c COMMON
+@end defun
+
+@defun string-accumulator
+[R7RS generator]
+@c MOD scheme.generator
+@c EN
+Returns an accumulator that accepts characters and accumulates
+them to a string.
+@c JP
+文字を受け取り、それを蓄積して最後に文字列として返すアキュムレータを生成して返します。
+@c COMMON
+@end defun
+
+@defun sum-accumulator
+@defunx product-accumulator
+@defunx count-accumulator
+[R7RS generator]
+@c MOD scheme.generator
+@c EN
+Returns accumulators that yield a scalar value.
+
+The accumulator created by @code{sum-accumulator} and
+@code{product-accumulator} accepts numbers,
+and keep adding or multiplying it with the accumulated value
+(the default value is 0 and 1, respectively).
+
+The accumulator created by @code{count-accumulator} accepts any
+objects and just counting it.
+@c JP
+スカラー値を生成するアキュムレータを作って返します。
+
+@code{sum-accumulator}と@code{product-accumulator}で作られた
+アキュムレータはそれぞれ、
+数値を受け取り、それを蓄積された値に加算または乗算してゆきます。
+値の初期値はそれぞれ0と1です。
+
+@code{count-accumulator}で作られたアキュムレータは
+任意のオブジェクトを受け取ります。
+EOFを受け取ったらそれまで受け取ったオブジェクトの数を返します。
+@c COMMON
+@end defun
+
 
 @node R7RS lazy sequences, R7RS boxes, R7RS generators, R7RS large
 @subsection @code{scheme.lseq} - R7RS lazy sequences
