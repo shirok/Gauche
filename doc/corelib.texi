@@ -2858,11 +2858,13 @@ abs(r) < abs(d)
 @end example
 
 @c EN
-SRFI-141 introduces other variation of integer divisions
-(@pxref{Integer division}).
+R7RS division library (@code{scheme.division}) introduces
+other variation of integer divisions
+(@pxref{R7RS integer division}).
 @c JP
-SRFI-141では、他の整数除算のバリエーションが定義されています。
-(@ref{Integer division}参照)。
+R7RS除算ライブラリ(@code{scheme.divison})では、
+他の整数除算のバリエーションが定義されています。
+(@ref{R7RS integer division}参照)。
 @c COMMON
 @end defun
 
