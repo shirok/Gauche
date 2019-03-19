@@ -1923,6 +1923,30 @@ R7RS largeはまだ策定途上ですが、既に決定したライブラリに�
 徐々にGaucheに追加してゆきます。
 @c COMMON
 
+@c EN
+Currently R7RS-large has two editions (Red and Tangerine).
+Among the libraries in those editions,
+the following are @emph{not} supported yet:
+@c JP
+現在、R7RS-largeには2つのエディション (RedとTangerine) が
+制定されています。その中に定義されているライブラリのうち、
+以下のものは@emph{まだ}サポートされていません:
+@c COMMON
+
+@example
+scheme.ilist      scheme.rlist        scheme.text
+scheme.stream     scheme.ephemeron    scheme.regex
+scheme.flonum     scheme.bytevector   scheme.vector.TAG
+scheme.show
+@end example
+
+@c EN
+The following are supported libraries:
+@c JP
+以下のライブラリがサポートされているものです:
+@c COMMON
+
+
 @menu
 * R7RS lists::                  @code{scheme.list}
 * R7RS vectors::                @code{scheme.vector}
@@ -1936,7 +1960,7 @@ R7RS largeはまだ策定途上ですが、既に決定したライブラリに�
 * R7RS boxes::                  @code{scheme.box}
 * R7RS list queues::            @code{scheme.list-queue}
 * R7RS comparators::            @code{scheme.comparator}
-* R7RS mappings::
+* R7RS mappings::               @code{scheme.mapping}
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large, R7RS large
