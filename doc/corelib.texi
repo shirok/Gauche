@@ -3380,47 +3380,47 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 @end example
 @end defun
 
-@defun logb x
-@defunx ilogb x
-[POSIX]
-@c EN
-These procedure returns exponent of flonum @var{x}.  The return value
-of @code{logb} is a flonum, whereas the return value of @code{ilogb} is
-an exact integer.
+@c @defun logb x
+@c @defunx ilogb x
+@c [POSIX]
+@c @c EN
+@c These procedure returns exponent of flonum @var{x}.  The return value
+@c of @code{logb} is a flonum, whereas the return value of @code{ilogb} is
+@c an exact integer.
 
-If @var{x} is 0, infinity, or NaN, @code{logb} returns @code{-inf.0},
-@code{+inf.0} and @code{+nan.0}, respectively.  What @code{ilogb} returns
-in those cases are platform-dependent, but it's consistent in one platform,
-@c JP
-浮動小数点数@var{x}の指数部を返します。@code{logb}の戻り値は浮動小数点数、
-@code{ilogb}の戻り値は正確な整数です。
+@c If @var{x} is 0, infinity, or NaN, @code{logb} returns @code{-inf.0},
+@c @code{+inf.0} and @code{+nan.0}, respectively.  What @code{ilogb} returns
+@c in those cases are platform-dependent, but it's consistent in one platform,
+@c @c JP
+@c 浮動小数点数@var{x}の指数部を返します。@code{logb}の戻り値は浮動小数点数、
+@c @code{ilogb}の戻り値は正確な整数です。
 
-@var{x}が0、±無限大、NaNの場合、@code{logb}はそれぞれ@code{-inf.0}、
-@code{+inf.0}、@code{+nan.0}を返します。これらの場合に@code{ilogb}が返す値は
-プラットフォームに依存しますが、一つのプラットフォームの上では一貫しています。
-@c COMMON
+@c @var{x}が0、±無限大、NaNの場合、@code{logb}はそれぞれ@code{-inf.0}、
+@c @code{+inf.0}、@code{+nan.0}を返します。これらの場合に@code{ilogb}が返す値は
+@c プラットフォームに依存しますが、一つのプラットフォームの上では一貫しています。
+@c @c COMMON
 
-@example
-(logb 1)  @result{} 0.0
-(ilogb 1) @result{} 0
+@c @example
+@c (logb 1)  @result{} 0.0
+@c (ilogb 1) @result{} 0
 
-(logb  2) @result{} 1.0
-(logb -2) @result{} 1.0
-(logb -0.5) @result{} -1.0
+@c (logb  2) @result{} 1.0
+@c (logb -2) @result{} 1.0
+@c (logb -0.5) @result{} -1.0
 
-(logb 5.0e-324) @result{} -1074.0
-(logb 1.7976931348623157e308) @result{} 1023.0
+@c (logb 5.0e-324) @result{} -1074.0
+@c (logb 1.7976931348623157e308) @result{} 1023.0
 
-(logb 0) @result{} -inf.0
-(logb +inf.0) @result{} +inf.0
-(logb -inf.0) @result{} +inf.0
-(logb +nan.0) @result{} +nan.0
+@c (logb 0) @result{} -inf.0
+@c (logb +inf.0) @result{} +inf.0
+@c (logb -inf.0) @result{} +inf.0
+@c (logb +nan.0) @result{} +nan.0
 
-(ilogb 0) @result{} -2147483648 ;; platform dependent
-(ilogb +inf.0) @result{} 2147483647 ;; platform dependent
-(ilogb +nan.0) @result{} -2147483648 ;; platform dependent
-@end example
-@end defun
+@c (ilogb 0) @result{} -2147483648 ;; platform dependent
+@c (ilogb +inf.0) @result{} 2147483647 ;; platform dependent
+@c (ilogb +nan.0) @result{} -2147483648 ;; platform dependent
+@c @end example
+@c @end defun
 
 
 @defun exact z

@@ -254,10 +254,6 @@
 
 (define-cproc log10 (x::<real>) ::<real> log10)
 
-(define-cproc logb (x::<real>) ::<real> logb)
-
-(define-cproc ilogb (x::<real>) ::<int> ilogb)
-
 ;; NB: Alternative implemenation of gamma and log-abs-gamma functions are
 ;; provided in Scheme (lib/gauche/numerical.scm).
 (select-module gauche.internal)
