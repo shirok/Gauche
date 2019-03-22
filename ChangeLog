@@ -1,6 +1,6 @@
-2019-03-20  Shiro Kawai  <shiro@acm.org>
+2019-03-21  Shiro Kawai  <shiro@acm.org>
 
-	* src/libnum.scm (logb, ilogb): Added.
+	* ext/srfi/srfi-144.scm: Start adding srfi-144.
 
 2019-03-16  Shiro Kawai  <shiro@acm.org>
 

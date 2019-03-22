@@ -1398,4 +1398,14 @@
 (chibi-test
  (include "vectors-test.scm"))
 
+;;
+;; Test srfi-144
+;;
+
+(test-section "srfi-144")
+
+(use srfi-144)
+(test-module 'srfi-144)
+
+
 (test-end)
