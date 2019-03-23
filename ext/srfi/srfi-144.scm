@@ -45,14 +45,14 @@
           fl-greatest fl-least fl-epsilon fl-fast-fl+*
           fl-integer-exponent-zero fl-integer-exponent-nan
 
-          flonum #;fladjacent flcopysign make-flonum
+          flonum fladjacent flcopysign make-flonum
 
           flinteger-fraction flexponent flinteger-exponent
           flnormalized-fraction-exponent flsign-bit
 
-          ;; flonum? fl=? fl<? fl>? fl<=? fl>=?
-          ;; flunordered? flinteger? flzero? flpositive? flnegative?
-          ;; flodd? fleven? flfinite? flinfinite? flnan?
+          flonum? fl=? fl<? fl>? fl<=? fl>=?
+          flunordered? flinteger? flzero? flpositive? flnegative?
+          flodd? fleven? flfinite? flinfinite? flnan?
           ;; flnormalized? fldenormalized?
 
           ;; flmax flmin fl+ fl* fl+* fl- fl/ flabs flabsdiff
@@ -74,9 +74,6 @@
 
 (inline-stub
  (.include <math.h>))
-
-(define-cproc logb (x::<real>) ::<real> logb)
-(define-cproc ilogb (x::<real>) ::<int> ilogb)
 
 ;;;
 ;;; Constants
@@ -125,33 +122,78 @@
 (define-constant fl-least     (encode-float '#(1 -1074 1)))
 (define-constant fl-epsilon   (flonum-epsilon))
 (define-constant fl-fast-fl+* #t)
+
+;; these two needs to be 'define-inline', for ilogb can't be used
+;; before loading this module.
 (define-inline fl-integer-exponent-zero (ilogb 0))
 (define-inline fl-integer-exponent-nan (ilogb +nan.0))
 
 ;;;
 ;;; constructors
 ;;;
-(define-inline (flonum n) 
-  (assume (real? n))
-  (inexact n))
 
-;; (fladjacent x y)
+;; See post-finalization note in srfi about returning +nan.0
+(define-inline (flonum n) (if (real? n) (inexact n) +nan.0))
 
-(define (flcopysign x y)
-  (assume (flonum? x))
-  (assume (flonum? y))
-  (let ([vx (decode-float x)]
-        [vy (decode-float y)])
-    (encode-float `#(,(~ vx 0) ,(~ vx 1) ,(~ vy 2)))))
+(define-cproc fladjacent (x::<real> y::<real>)
+  ::<real> :constant :fast-flonum 
+  (return (nextafter x y)))
 
+(define-cproc flcopysign (x::<real> y::<real>)
+  ::<real> :constant :fast-flonum
+  (return (copysign x y)))
+  
 (define-inline (make-flonum x n) (ldexp x n))
 
 ;;;
 ;;; accessors
 ;;;
 
+(define-cproc logb (x::<real>) ::<real> logb)
+(define-cproc ilogb (x::<real>) ::<int> ilogb)
+
 (define-inline (flinteger-fraction x) (modf x))
 (define-inline (flexponent x) (logb x))
 (define-inline (flinteger-exponent x) (ilogb 0))
 (define-inline (flnormalized-fraction-exponent x) (frexp x))
 (define-cproc flsign-bit (x::<real>) ::<int> signbit)
+
+;;;
+;;; predicates
+;;;
+
+;; flonum? - built-in
+
+;; we don't check types of arguments in these; the point of flonum-specific
+;; ops is speed, so it's less useful if these ones are slower than the
+;; generic version.
+(define-inline/syntax fl=?
+  (^ args (apply = args))
+  (er-macro-transformer (^[f r c] (quasirename r `(= ,@(cdr f))))))
+(define-inline/syntax fl<?
+  (^ args (apply < args))
+  (er-macro-transformer (^[f r c] (quasirename r `(< ,@(cdr f))))))
+(define-inline/syntax fl<=?
+  (^ args (apply <= args))
+  (er-macro-transformer (^[f r c] (quasirename r `(<= ,@(cdr f))))))
+(define-inline/syntax fl>?
+  (^ args (apply > args))
+  (er-macro-transformer (^[f r c] (quasirename r `(> ,@(cdr f))))))
+(define-inline/syntax fl>=?
+  (^ args (apply >= args))
+  (er-macro-transformer (^[f r c] (quasirename r `(>= ,@(cdr f))))))
+
+(define-inline (flunordered? x y) (and (not (nan? x)) (not (nan? y))))
+(define-inline (flinteger? x) (and (flonum? x) (integer? x)))
+(define-inline (flzero? x) (and (flonum? x) (zero? x)))
+(define-inline (flpositive? x) (and (flonum? x) (positive? x)))
+(define-inline (flnegative? x) (and (flonum? x) (negative? x)))
+(define-inline (flodd? x) (and (flonum? x) (odd? x)))
+(define-inline (fleven? x) (and (flonum? x) (even? x)))
+(define-inline (flfinite? x) (finite? x))
+(define-inline (flinfinite? x) (infinite? x))
+(define-inline (flnan? x) (nan? x))
+
+
+
+
