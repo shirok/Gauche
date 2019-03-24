@@ -53,9 +53,9 @@
           flonum? fl=? fl<? fl>? fl<=? fl>=?
           flunordered? flinteger? flzero? flpositive? flnegative?
           flodd? fleven? flfinite? flinfinite? flnan?
-          ;; flnormalized? fldenormalized?
+          flnormalized? fldenormalized?
 
-          ;; flmax flmin fl+ fl* fl+* fl- fl/ flabs flabsdiff
+          flmax flmin ;; fl+ fl* fl+* fl- fl/ flabs flabsdiff
           ;; flposdiff flsign flnumerator fldenominator 
           ;; flfloor flceiling flround fltruncate
 
@@ -149,14 +149,14 @@
 ;;; accessors
 ;;;
 
-(define-cproc logb (x::<real>) ::<real> logb)
-(define-cproc ilogb (x::<real>) ::<int> ilogb)
+(define-cproc logb (x::<real>) ::<real> :constant :fast-flonum logb)
+(define-cproc ilogb (x::<real>) ::<int> :constant :fast-flonum ilogb)
 
 (define-inline (flinteger-fraction x) (modf x))
 (define-inline (flexponent x) (logb x))
 (define-inline (flinteger-exponent x) (ilogb 0))
 (define-inline (flnormalized-fraction-exponent x) (frexp x))
-(define-cproc flsign-bit (x::<real>) ::<int> signbit)
+(define-cproc flsign-bit (x::<real>) ::<int> :constant :fast-flonum signbit)
 
 ;;;
 ;;; predicates
@@ -194,6 +194,32 @@
 (define-inline (flinfinite? x) (infinite? x))
 (define-inline (flnan? x) (nan? x))
 
+(define-cproc flnormalized? (x::<real>) ::<boolean> :constant :fast-flonum
+  (return (== (fpclassify x) FP_NORMAL)))
+(define-cproc fldenormalized? (x::<real>) ::<boolean> :constant :fast-flonum
+  (return (== (fpclassify x) FP_SUBNORMAL)))
 
+;;;
+;;; Arithmetic
+;;;
+
+;; Again, we don't check the argument types for the sake of the speed.
+
+(define-inline/syntax flmax
+  (case-lambda
+    ([] -inf.0)
+    (args (apply max args)))
+  (er-macro-transformer (^[f r c]
+                          (if (null? (cdr f))
+                            -inf.0
+                            (quasirename r `(max ,@(cdr f)))))))
+(define-inline/syntax flmin
+  (case-lambda
+    ([] +inf.0)
+    (args (apply min args)))
+  (er-macro-transformer (^[f r c]
+                          (if (null? (cdr f))
+                            +inf.0
+                            (quasirename r `(min ,@(cdr f)))))))
 
 
