@@ -249,6 +249,9 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "no-lambda-lifting-pass") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NO_LIFTING);
     }
+    else if (strcmp(optarg, "no-dissolve-apply") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NODISSOLVE_APPLY);
+    }
     else if (strcmp(optarg, "no-source-info") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOSOURCE);
     }
@@ -290,7 +293,7 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-inline-setters, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-dissolve-apply -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-inline-setters, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
         exit(1);
     }
 }

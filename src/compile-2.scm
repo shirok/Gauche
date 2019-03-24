@@ -614,9 +614,82 @@
 (define (pass2/self-recursing? node penv)
   (find (cut eq? node <>) penv))
 
+;; Recognize the pattern like:
+;;   ($let ([args ($LIST x y z ...)])
+;;      ...
+;;      ($asm (TAIL-APPLY n) proc ... a ... args))
+;; We can replace $asm node with a simple $CALL:
+;;      ($call proc a ... x y z ...)
+;; This pattern typically appears after inline expansion.
+;;
+;; We only do this transformation if every x y z ... is either $lref
+;; or $const.  If there's more complex expression, we can't change the order
+;; of evaluation, so we'd have to modify the outer $let form---which isn't 
+;; trivial.
+;;
+;; IForm must be an $ASM node.  ARGS is pass2-translated ($iform-args iform).
+;; Returns (potentially updated) iform.
+(define (pass2/dissolve-apply iform args)
+  ;; Returns a list of arguments as list of IForms, or #f if the arguments
+  ;; isn't a proper list.  We follow immutable local bindings.
+  (define (expand-restarg rarg)
+    (cond [($const? rarg)
+           (and (list? ($const-value rarg))
+                (imap (^v ($const v)) ($const-value rarg)))]
+          [($lref? rarg)
+           (and-let* ([lvar ($lref-lvar rarg)]
+                      [val (lvar-const-value lvar)]
+                      [r (expand-restarg val)])
+             ;; Record lvar.  If we decide to inline, we need to adjust
+             ;; refcount of lvar later. (We can't do it now, for we may abandon
+             ;; inlining later.
+             (push! freed-lvars lvar)
+             r)]
+          [(has-tag? rarg $LIST) (check-safe ($list-args rarg))]
+          [(has-tag? rarg $CONS)
+           (and-let* ([ (safe? ($cons-arg0 rarg)) ]
+                      [z (expand-restarg ($cons-arg1 rarg))])
+             (cons ($cons-arg0 rarg) z))]
+          [(has-tag? rarg $LIST*)
+           (and-let* ([z (expand-restarg (last ($list*-args rarg)))]
+                      [y (check-safe (drop-right ($list*-args rarg) 1))])
+             (append y z))]
+          [(has-tag? rarg $ASM)
+           (case/unquote 
+            (car ($asm-insn rarg))
+            [(LIST) (check-safe ($asm-args rarg))]
+            [(LIST-STAR) 
+             (and-let* ([z (expand-restarg (last ($asm-args rarg)))]
+                        [y (check-safe (drop-right ($asm-args rarg) 1))])
+               (append y z))]
+            [else #f])]
+          [else #f]))
+  (define freed-lvars '())
+  (define (safe? x) (or ($lref? x) ($const? x)))
+  (define (check-safe xs) ;; returns xs or #f
+    (cond [(null? xs) xs]
+          [(safe? (car xs)) (and-let1 z (check-safe (cdr xs))
+                              (cons (car xs) z))]
+          [else #f]))
+
+  (assume (length>=? args 2))
+  (if (vm-compiler-flag-is-set? SCM_COMPILE_NODISSOLVE_APPLY)
+    iform
+    (or (and-let1 iargs (expand-restarg (last args))
+          (ifor-each lvar-ref--! freed-lvars)
+          (ifor-each (^x (when ($lref? x) (lvar-ref++! ($lref-lvar x)))) iargs)
+          ($call ($*-src iform) (car args)
+                 (append (drop-right (cdr args) 1) iargs)))
+        iform)))
+
 (define (pass2/$ASM iform penv tail?)
-  (let1 args (imap (cut pass2/rec <> penv #f) ($asm-args iform))
-    (pass2/check-constant-asm iform args)))
+  (let* ([args (imap (cut pass2/rec <> penv #f) ($asm-args iform))]
+         [iform (if (eqv? (car ($asm-insn iform)) TAIL-APPLY)
+                  (pass2/dissolve-apply iform args)
+                  iform)])
+    (if (has-tag? iform $ASM)
+      (pass2/check-constant-asm iform args)
+      iform)))
 
 (define (pass2/check-constant-asm iform args)
   (or (and (every $const? args)

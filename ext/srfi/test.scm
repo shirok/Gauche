@@ -14,8 +14,10 @@
 (use srfi-1)
 (test-module 'srfi-1)
 
+(define Apply apply)                    ;avoic inline expansion
+
 (test* "xcons" '(a . b) (xcons 'b 'a))
-(test* "cons*" (test-error) (apply cons* '())) ; use apply to avoid compile error during inlining
+(test* "cons*" (test-error) (Apply cons* '())) ; use apply to avoid compile error during inlining
 (test* "cons*" 'o  (cons* 'o))
 (test* "cons*" '(1 2 3 . 4) (cons* 1 2 3 4))
 (test* "make-list" 5 (length (make-list 5)))

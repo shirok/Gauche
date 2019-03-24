@@ -1921,6 +1921,8 @@
  (define-enum SCM_COMPILE_NO_LIFTING)
  (define-enum SCM_COMPILE_INCLUDE_VERBOSE)
  (define-enum SCM_COMPILE_ENABLE_CEXPR)
+ (define-enum SCM_COMPILE_NOINLINE_SETTERS)
+ (define-enum SCM_COMPILE_NODISSOLVE_APPLY)
 
  ;; Set/get VM's current module info. (temporary)
  (define-cproc vm-current-module () (return (SCM_OBJ (-> (Scm_VM) module))))

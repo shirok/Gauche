@@ -50,6 +50,24 @@
          (or (any (^x (equal? (car x) '(GREF-TAIL-CALL 2))) xs)
              xs))) ;return xs in case of failure for easier diag
 
+;; pass2/inline-tail-apply
+(test* "inlining apply" '(((LREF0-PUSH)) ((LREF1)) ((CONS)) ((RET)))
+       (proc->insn/split (^[a b] (let1 xs `(,b ,a) (apply cons xs)))))
+(test* "inlining apply" '(((LREF0-NUMADDI 1)) ((RET)))
+       (proc->insn/split (^[a] (let1 xs `(,a) (apply + 1 xs)))))
+(test* "inlining apply" '(((CONSTI-PUSH 1)) ((CONSTI 2)) ((CONS)) ((RET)))
+       (proc->insn/split (^[] (let1 xs '(1 2) (apply cons xs)))))
+(test* "inlining apply" '(((CONST-PUSH) :a) ((CONSTI 2)) ((CONS)) ((RET)))
+       (proc->insn/split (^[] (let1 xs '(2) (apply cons :a xs)))))
+
+(define-inline (apply-inline-1 . args) (apply + args))
+
+(test* "inlining apply" '(((LREF2))
+                          ((LREF-VAL0-NUMADD2 0 1))
+                          ((LREF-VAL0-NUMADD2 0 0))
+                          ((RET)))
+       (proc->insn/split (^[a b c] (apply-inline-1 a b c))))
+
 ;; pass3/late-inline
 (define-inline (late-inline-test-1 ref) (cut ref <> 0))
 

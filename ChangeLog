@@ -1,3 +1,14 @@
+2019-03-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-2.scm (pass2/dissolve-apply): Optimize away TAIL-APPLY
+	  if we know all the arguments.  It often happens after inline expansion.
+	  Note: As the result of this optimination, merely 'apply'-ing
+	  procedure to a list of argument won't suppress further inlining,
+	  e.g. (apply + '(1 2)) will become constant 3.  Needed to tweak
+	  tests so that we can ensure the tested procedures are called.
+	* src/compile.scm, src/main.c: Add -fnodissolve-apply option to
+	  disable above optimization.
+
 2019-03-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (SCM_NUMMUL2): Fix: finite inexact number multiplied

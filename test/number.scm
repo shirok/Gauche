@@ -12,6 +12,8 @@
 (define (fermat n)                      ;Fermat's number
   (+ (expt 2 (expt 2 n)) 1))
 
+(define Apply apply)  ; avoid inline expansion
+
 (test-start "numbers")
 
 ;;==================================================================
@@ -907,9 +909,9 @@
      (test* (format "NaN ~a (inlined)" ',op) '(#f #f #f)
             (list (,op +nan.0 +nan.0) (,op +nan.0 0) (,op 0 +nan.0)))
      (test* (format "NaN ~a (applied)" ',op) '(#f #f #f)
-            (list (apply ,op '(+nan.0 +nan.0))
-                  (apply ,op '(+nan.0 0))
-                  (apply ,op '(0 +nan.0))))))
+            (list (Apply ,op '(+nan.0 +nan.0))
+                  (Apply ,op '(+nan.0 0))
+                  (Apply ,op '(0 +nan.0))))))
 (test-nan-cmp =)
 (test-nan-cmp <)
 (test-nan-cmp <=)
@@ -951,7 +953,7 @@
     (define (test4 op opname rev results)
       (for-each (lambda (result comb args)
                   (test* #"~msg ~(if rev 'rev \"\") ~opname(~comb)" result
-                         (apply op (if rev (reverse args) args))))
+                         (Apply op (if rev (reverse args) args))))
                 results '(++ +- -+ --) (list pp pm mp mm)))
     (test4 =  '=  #f (list eq #f #f eq))
     (test4 =  '=  #t (list eq #f #f eq))
@@ -985,17 +987,17 @@
 (numcmp-test "ratnum vs flonum ne" #f 8/9 0.6)
 (numcmp-test "ratnum vs bignum ne" #f (/ (+ (expt 2 64) 1) 2) (expt 2 63))
 
-(test* "numcmp -inf vs bignum" #t (apply > (list (expt 2 64) -inf.0)))
+(test* "numcmp -inf vs bignum" #t (Apply > (list (expt 2 64) -inf.0)))
 
 ;; This tests variable number of arguments.  The current stub code accepts
 ;; up to 4 args in stack and the rest by list, so we want to test the
 ;; boundary case.
 (define (numcmp-multiarg-test lis eq lt le gt ge)
-  (test* #"=~lis" eq (apply = lis))
-  (test* #"<~lis" lt (apply < lis))
-  (test* #"<=~lis" le (apply <= lis))
-  (test* #">~lis" gt (apply > lis))
-  (test* #">=~lis" ge (apply >= lis)))
+  (test* #"=~lis" eq (Apply = lis))
+  (test* #"<~lis" lt (Apply < lis))
+  (test* #"<=~lis" le (Apply <= lis))
+  (test* #">~lis" gt (Apply > lis))
+  (test* #">=~lis" ge (Apply >= lis)))
 
 ;;                                      =  <  <= >  >=
 (numcmp-multiarg-test '(1 2 3 4)        #f #t #t #f #f)
@@ -1034,7 +1036,7 @@
   (define (test-minmax mi ma data)
     (test* (format "min, max ~s" data)
            (list mi ma)
-           (list (apply min data) (apply max data))))
+           (list (Apply min data) (Apply max data))))
   (test-minmax 0 10 '(3 10 2 0 5))
   (test-minmax -1/3 99/5 '(2 6 99/5 0 -1/6 -1/3))
   (test-minmax -10.0 10.0 '(3 10 2.0 -10 5))
@@ -1095,15 +1097,15 @@
 ;; This test a possible shortcut in Scm_Add etc.  We use apply
 ;; to avoid operators from being inlined.
 (test* "0 + bignum" (list x x)
-       (list (apply + (list 0 x)) (apply + (list x 0))))
+       (list (Apply + (list 0 x)) (Apply + (list x 0))))
 (test* "0 - bignum" (list (- x) x)
-       (list (apply - (list 0 x)) (apply - (list x 0))))
+       (list (Apply - (list 0 x)) (Apply - (list x 0))))
 (test* "0 * bignum" (list 0 0)
-       (list (apply * (list 0 x)) (apply * (list x 0))))
+       (list (Apply * (list 0 x)) (Apply * (list x 0))))
 (test* "1 * bignum" (list x x)
-       (list (apply * (list 1 x)) (apply * (list x 1))))
+       (list (Apply * (list 1 x)) (Apply * (list x 1))))
 (test* "bignum / 1" x
-       (apply / (list x 1)))
+       (Apply / (list x 1)))
 
 ;;------------------------------------------------------------------
 (test-section "small immediate integer constants")
@@ -1230,15 +1232,15 @@
 
 ;; tests possible shortcut in Scm_Add etc.
 (test* "ratnum + 0" (list 11/13 11/13)
-       (list (apply + '(0 11/13)) (apply + '(11/13 0))))
+       (list (Apply + '(0 11/13)) (Apply + '(11/13 0))))
 (test* "ratnum - 0" (list -11/13 11/13)
-       (list (apply - '(0 11/13)) (apply - '(11/13 0))))
+       (list (Apply - '(0 11/13)) (Apply - '(11/13 0))))
 (test* "ratnum * 0" (list 0 0)
-       (list (apply * '(0 11/13)) (apply * '(11/13 0))))
+       (list (Apply * '(0 11/13)) (Apply * '(11/13 0))))
 (test* "ratnum * 1" (list 11/13 11/13)
-       (list (apply * '(1 11/13)) (apply * '(11/13 1))))
+       (list (Apply * '(1 11/13)) (Apply * '(11/13 1))))
 (test* "ratnum / 1" 11/13
-       (apply / '(11/13 1)))
+       (Apply / '(11/13 1)))
  
 ;;------------------------------------------------------------------
 (test-section "promotions in addition")
@@ -1247,7 +1249,7 @@
   (syntax-rules ()
     ((_ (+ . args))
      (let ((inline (+ . args))
-           (other  (apply + 'args)))
+           (other  (Apply + 'args)))
        (and (= inline other)
             (list inline (exact? inline)))))))
 
@@ -1278,8 +1280,8 @@
 (define (m-result x) (list x (- x) (- x) x x (- x) (- x) x))
 (define (m-tester x y)
   (list (* x y) (* (- x) y) (* x (- y)) (* (- x) (- y))
-        (apply * (list x y)) (apply * (list (- x) y))
-        (apply * (list x (- y))) (apply * (list (- x) (- y)))))
+        (Apply * (list x y)) (Apply * (list (- x) y))
+        (Apply * (list x (- y))) (Apply * (list (- x) (- y)))))
 
 (test* "fix*fix->big[1]" (m-result 727836879)
       (m-tester 41943 17353))
@@ -1334,36 +1336,36 @@
 ;; these test shortcut in Scm_Mul
 ;; note the difference of 0 and 0.0
 (let1 big 100000000000000000000
-  (test* "bignum * 0"  0 (apply * `(,big 0)) eqv?)
-  (test* "0 * bignum"  0 (apply * `(0 ,big)) eqv?)
-  (test* "bignum * 1"  big (apply * `(,big 1)) eqv?)
-  (test* "1 * bignum"  big (apply * `(1 ,big)) eqv?)
+  (test* "bignum * 0"  0 (Apply * `(,big 0)) eqv?)
+  (test* "0 * bignum"  0 (Apply * `(0 ,big)) eqv?)
+  (test* "bignum * 1"  big (Apply * `(,big 1)) eqv?)
+  (test* "1 * bignum"  big (Apply * `(1 ,big)) eqv?)
 
-  (test* "bignum * 0.0"  0.0 (apply * `(,big 0.0)) eqv?)
-  (test* "0.0 * bignum"  0.0 (apply * `(0.0 ,big)) eqv?)
-  (test* "bignum * 1.0"  1.0e20 (apply * `(,big 1.0)) eqv?)
-  (test* "1.0 * bignum"  1.0e20 (apply * `(1.0 ,big)) eqv?)
+  (test* "bignum * 0.0"  0.0 (Apply * `(,big 0.0)) eqv?)
+  (test* "0.0 * bignum"  0.0 (Apply * `(0.0 ,big)) eqv?)
+  (test* "bignum * 1.0"  1.0e20 (Apply * `(,big 1.0)) eqv?)
+  (test* "1.0 * bignum"  1.0e20 (Apply * `(1.0 ,big)) eqv?)
   )
 
-(test* "ratnum * 0"  0 (apply * '(1/2 0)) eqv?)
-(test* "0 * ratnum"  0 (apply * '(0 1/2)) eqv?)
-(test* "ratnum * 1"  1/2 (apply * '(1/2 1)) eqv?)
-(test* "1 * ratnum"  1/2 (apply * '(1 1/2)) eqv?)
+(test* "ratnum * 0"  0 (Apply * '(1/2 0)) eqv?)
+(test* "0 * ratnum"  0 (Apply * '(0 1/2)) eqv?)
+(test* "ratnum * 1"  1/2 (Apply * '(1/2 1)) eqv?)
+(test* "1 * ratnum"  1/2 (Apply * '(1 1/2)) eqv?)
 
-(test* "ratnum * 0.0"  0.0 (apply * '(1/2 0.0)) eqv?)
-(test* "0.0 * ratnum"  0.0 (apply * '(0.0 1/2)) eqv?)
-(test* "ratnum * 1.0"  0.5 (apply * '(1/2 1.0)) eqv?)
-(test* "1.0 * ratnum"  0.5 (apply * '(1.0 1/2)) eqv?)
+(test* "ratnum * 0.0"  0.0 (Apply * '(1/2 0.0)) eqv?)
+(test* "0.0 * ratnum"  0.0 (Apply * '(0.0 1/2)) eqv?)
+(test* "ratnum * 1.0"  0.5 (Apply * '(1/2 1.0)) eqv?)
+(test* "1.0 * ratnum"  0.5 (Apply * '(1.0 1/2)) eqv?)
 
-(test* "flonum * 0"  0 (apply * '(3.0 0)) eqv?)
-(test* "0 * flonum"  0 (apply * '(0 3.0)) eqv?)
-(test* "flonum * 1"  3.0 (apply * '(3.0 1)) eqv?)
-(test* "1 * flonum"  3.0 (apply * '(1 3.0)) eqv?)
+(test* "flonum * 0"  0 (Apply * '(3.0 0)) eqv?)
+(test* "0 * flonum"  0 (Apply * '(0 3.0)) eqv?)
+(test* "flonum * 1"  3.0 (Apply * '(3.0 1)) eqv?)
+(test* "1 * flonum"  3.0 (Apply * '(1 3.0)) eqv?)
 
-(test* "flonum * 0.0"  0.0 (apply * '(3.0 0.0)) eqv?)
-(test* "0.0 * flonum"  0.0 (apply * '(0.0 3.0)) eqv?)
-(test* "flonum * 1.0"  3.0 (apply * '(3.0 1.0)) eqv?)
-(test* "1.0 * flonum"  3.0 (apply * '(1.0 3.0)) eqv?)
+(test* "flonum * 0.0"  0.0 (Apply * '(3.0 0.0)) eqv?)
+(test* "0.0 * flonum"  0.0 (Apply * '(0.0 3.0)) eqv?)
+(test* "flonum * 1.0"  3.0 (Apply * '(3.0 1.0)) eqv?)
+(test* "1.0 * flonum"  3.0 (Apply * '(1.0 3.0)) eqv?)
 
 (test* "compnum * 0" 0 (* 0 +i) eqv?)
 (test* "0 * compnum" 0 (* +i 0) eqv?)
@@ -1396,10 +1398,10 @@
 
 ;; avoid inlining
 (define (divide . args)
-  (apply / args))
+  (Apply / args))
 
 (define (divide. . args)
-  (apply /. args))
+  (Apply /. args))
 
 (test* "division by zero" (test-error) (divide 0))
 (test* "division by zero" (test-error) (divide 0 0))
@@ -2115,7 +2117,7 @@
     [(_ msg exp (op . args))
      (begin
        (test* (string-append msg " inlined") exp (op . args))
-       (test* (string-append msg " applied") exp (apply op (list . args))))]))
+       (test* (string-append msg " applied") exp (Apply op (list . args))))]))
 
 (inexact-arith-test "+. (0)" 0.0 (+.))
 (inexact-arith-test "+. (1)" 1.0 (+. 1))

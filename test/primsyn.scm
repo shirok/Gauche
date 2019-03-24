@@ -96,26 +96,28 @@
 ;;----------------------------------------------------------------
 (test-section "application")
 
-(prim-test "apply" '(1 2 3) (lambda ()  (apply list '(1 2 3))))
-(prim-test "apply" '(2 3 4) (lambda ()  (apply list 2 '(3 4))))
-(prim-test "apply" '(3 4 5) (lambda ()  (apply list 3 4 '(5))))
-(prim-test "apply" '(4 5 6) (lambda ()  (apply list 4 5 6 '())))
+(define Apply apply) ; avoid inline expansion
 
-(prim-test "apply^2" '() (lambda () (apply apply list '() '())))
-(prim-test "apply^2" '() (lambda () (apply apply list '(()))))
-(prim-test "apply^2" '(1 . 2) (lambda () (apply apply cons '((1 2)))))
-(prim-test "apply^2" '(3 . 4) (lambda () (apply apply cons 3 '((4)))))
-(prim-test "apply^2" '(5 . 6) (lambda () (apply apply (list cons 5 '(6)))))
+(prim-test "apply" '(1 2 3) (lambda ()  (Apply list '(1 2 3))))
+(prim-test "apply" '(2 3 4) (lambda ()  (Apply list 2 '(3 4))))
+(prim-test "apply" '(3 4 5) (lambda ()  (Apply list 3 4 '(5))))
+(prim-test "apply" '(4 5 6) (lambda ()  (Apply list 4 5 6 '())))
+
+(prim-test "apply^2" '() (lambda () (Apply Apply list '() '())))
+(prim-test "Apply^2" '() (lambda () (Apply Apply list '(()))))
+(prim-test "apply^2" '(1 . 2) (lambda () (Apply Apply cons '((1 2)))))
+(prim-test "apply^2" '(3 . 4) (lambda () (Apply Apply cons 3 '((4)))))
+(prim-test "apply^2" '(5 . 6) (lambda () (Apply Apply (list cons 5 '(6)))))
                                           
 
-(prim-test "apply" '(6 7 8) (lambda ()  (apply apply (list list 6 7 '(8)))))
+(prim-test "apply" '(6 7 8) (lambda ()  (Apply Apply (list list 6 7 '(8)))))
 
 
 ;; This tests 'unfolding' path in ADJUST_ARGUMENT_FRAME.
 (prim-test "apply, copying args" '(1 2 3)
            (lambda ()
              (let ((orig (list 1 2 3)))
-               (let ((new (apply list orig)))
+               (let ((new (Apply list orig)))
                  (set-car! (cdr new) '100)
                  orig))))
 
@@ -123,7 +125,7 @@
 (prim-test "apply, copying args" '(2 3)
            (lambda ()
              (let ((orig (list 2 3)))
-               (let ((new (apply list 1 orig)))
+               (let ((new (Apply list 1 orig)))
                  (set-car! (cdr new) '100)
                  orig))))
 
@@ -133,8 +135,8 @@
     (define (a . args)
       (receive x args
         (cons x x)
-        (apply values x))
-      (apply format args))
+        (Apply values x))
+      (Apply format args))
     (define (b bar)
       (a "~a" bar))
     (b 1)
@@ -360,7 +362,7 @@
         (with-error-handler
             (lambda (e) foo)
           (lambda ()
-            (eval '(apply car foo '()) (find-module 'primsyn.test))))))
+            (eval '(Apply car foo '()) (find-module 'primsyn.test))))))
 
 ;;----------------------------------------------------------------
 (test-section "max literal arguments")
