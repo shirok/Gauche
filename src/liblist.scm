@@ -260,7 +260,7 @@
           [(<= c 0) r]))
     ;; for inexact numbers, we use multiplication to avoid error accumulation.
     (do ([c count (- c 1)]
-         [r '() (cons (+ start (* (- c 1) step)) r)])
+         [r '() (cons (+ start (*. (- c 1) step)) r)])
         [(<= c 0) r])))
 
 (select-module gauche.internal)

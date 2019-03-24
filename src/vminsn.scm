@@ -1199,10 +1199,25 @@
     ;; we take a shortcut if either one is flonum and the
     ;; other is real.  (if both are integers, the overflow check
     ;; would be cumbersome so we just call Scm_Mul).
-    (if (or (and (SCM_FLONUMP arg) (SCM_REALP VAL0))
-            (and (SCM_FLONUMP VAL0) (SCM_REALP arg)))
-      ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
-      ($result (Scm_Mul arg VAL0)))))
+    ;; NB: If one arg is inexact real and another arg is exact zero,
+    ;; the result should be an exact zero.
+    (if (SCM_FLONUMP arg)
+      (cond [(and (== (SCM_MAKE_INT 0) VAL0)
+                  (not (SCM_IS_INF (SCM_FLONUM_VALUE arg)))
+                  (not (SCM_IS_NAN (SCM_FLONUM_VALUE arg))))
+             ($result (SCM_MAKE_INT 0))]
+            [(SCM_REALP VAL0)
+             ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))]
+            [else ($result (Scm_Mul arg VAL0))])
+      (if (SCM_FLONUMP VAL0)
+        (cond [(and (== (SCM_MAKE_INT 0) arg) 
+                    (not (SCM_IS_INF (SCM_FLONUM_VALUE VAL0)))
+                    (not (SCM_IS_NAN (SCM_FLONUM_VALUE VAL0))))
+               ($result (SCM_MAKE_INT 0))]
+              [(SCM_REALP arg)
+               ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))]
+              [else ($result (Scm_Mul arg VAL0))])
+        ($result (Scm_Mul arg VAL0))))))
 
 (define-insn NUMDIV2 0 none #f          ; / (binary)
   ($w/argp arg

@@ -1,3 +1,12 @@
+2019-03-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm (SCM_NUMMUL2): Fix: finite inexact number multiplied
+	  by an exact zero should yield an exact zero (consistency with
+	  Scm_Mul).
+	* src/liblist.scm (iota): Fix: make sure inexact step calculation
+	  uses inexact multiplication (because of above fix, normal
+	  multiplication can yield exact zero).
+
 2019-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-144.scm: Start adding srfi-144.
