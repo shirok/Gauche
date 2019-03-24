@@ -39,6 +39,8 @@
 #ifndef GAUCHE_FLOAT_H
 #define GAUCHE_FLOAT_H
 
+#include <math.h>
+
 #if defined(HAVE_FPU_CONTROL_H)
 #include <fpu_control.h>
 #endif
@@ -86,6 +88,19 @@ typedef double          ScmLongDouble;
 
 #ifndef SCM_DBL_NAN
 #define SCM_DBL_NAN           (0.0/0.0)
+#endif
+
+#ifdef HAVE_ISNAN
+#define SCM_IS_NAN(x)  isnan(x)
+#else
+#define SCM_IS_NAN(x)  (!((x)==(x)))
+#endif
+
+#ifdef HAVE_ISINF
+#define SCM_IS_INF(x)  isinf(x)
+#else
+#define SCM_IS_INF(x)  Scm_IsInf(x)
+SCM_EXTERN int Scm_IsInf(double x);
 #endif
 
 /*

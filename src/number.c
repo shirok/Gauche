@@ -56,16 +56,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#ifdef HAVE_ISNAN
-#define SCM_IS_NAN(x)  isnan(x)
-#else
-#define SCM_IS_NAN(x)  (!((x)==(x)))
-#endif
-
-#ifdef HAVE_ISINF
-#define SCM_IS_INF(x)  isinf(x)
-#else
-#define SCM_IS_INF(x)  Scm_IsInf(x)
+#ifndef HAVE_ISINF
 /* NB: If we inline this, some version of gcc incorrectly assumes
    the condition would never be satisfied and optimize it away. */
 int Scm_IsInf(double x)
