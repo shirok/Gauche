@@ -1187,49 +1187,48 @@
 ;; won't change even if we move iform to a different place in the subtree.
 ;; NB: This may be called after pass2, so $LABEL node may have circular
 ;; reference.  We have to be careful not to diverge.
-;; TODO: we lift transparent?/rec manually to avoid closure allocation
-;; because of the unsophisticated compiler.  Fix this in future.
-(define (transparent? iform) (transparent?/rec iform (make-label-dic #f)))
-(define (transparent?/rec iform labels)
-  (case/unquote
-   (iform-tag iform)
-   [($LREF)   (lvar-immutable? ($lref-lvar iform))]
-   [($GREF)   (gref-inlinable-gloc iform)]
-   [($CONST)  #t]
-   [($IF)     (and (transparent?/rec ($if-test iform) labels)
-                   (transparent?/rec ($if-then iform) labels)
-                   (transparent?/rec ($if-else iform) labels))]
-   [($LET)    (and (everyc transparent?/rec ($let-inits iform) labels)
-                   (transparent?/rec ($let-body iform) labels))]
-   [($RECEIVE)(and (transparent?/rec ($receive-expr iform) labels)
-                   (transparent?/rec ($receive-body iform) labels))]
-   [($LAMBDA) #t]
-   [($LABEL)  (or (label-seen? labels iform)
-                  (begin (label-push! labels iform)
-                         (transparent?/rec ($label-body iform) labels)))]
-   [($SEQ)    (everyc transparent?/rec ($seq-body iform) labels)]
-   [($CALL)   (and (side-effect-free-proc? ($call-proc iform))
-                   (everyc transparent?/rec ($call-args iform) labels))]
-   [($ASM)    (and (side-effect-free-insn? ($asm-insn iform))
-                   (everyc transparent?/rec ($asm-args iform) labels))]
-   [($CONS $APPEND $MEMV $EQ? $EQV?)
-    (and (transparent?/rec ($*-arg0 iform) labels)
-         (transparent?/rec ($*-arg1 iform) labels))]
-   [($VECTOR $LIST $LIST*) (everyc transparent?/rec ($*-args iform) labels)]
-   [($LIST->VECTOR) (transparent?/rec ($*-arg0 iform) labels)]
-   [($IT) #t] ; this branch is only executed when $if-test of the parent is
-              ; transparent, thus this node is also transparent.
-   [else #f]))
+(define (transparent? iform) 
+  (define (side-effect-free-proc? iform) #f) ;for now
 
-(define (side-effect-free-proc? iform) #f) ;for now
+  ;; This is used when eliminating dead $ASM node.  We don't need to consider
+  ;; combined insns, which won't be introduced until pass5.
+  (define (side-effect-free-insn? insn)
+    (memq (car insn) `(,EQ ,EQV ,CONS ,LIST ,LIST-STAR
+                       ,NULLP ,PAIRP ,CHARP ,EOFP ,STRINGP ,SYMBOLP
+                       ,VECTORP ,IDENTIFIERP ,NUMBERP ,REALP
+                       ,VEC)))
 
-;; This is used when eliminating dead $ASM node.  We don't need to consider
-;; combined insns, which won't be introduced until pass5.
-(define (side-effect-free-insn? insn)
-  (memq (car insn) `(,EQ ,EQV ,CONS ,LIST ,LIST-STAR
-                     ,NULLP ,PAIRP ,CHARP ,EOFP ,STRINGP ,SYMBOLP
-                     ,VECTORP ,IDENTIFIERP ,NUMBERP ,REALP
-                     ,VEC)))
+  (define (rec iform labels)
+    (case/unquote
+     (iform-tag iform)
+     [($LREF)   (lvar-immutable? ($lref-lvar iform))]
+     [($GREF)   (gref-inlinable-gloc iform)]
+     [($CONST)  #t]
+     [($IF)     (and (rec ($if-test iform) labels)
+                     (rec ($if-then iform) labels)
+                     (rec ($if-else iform) labels))]
+     [($LET)    (and (everyc rec ($let-inits iform) labels)
+                     (rec ($let-body iform) labels))]
+     [($RECEIVE)(and (rec ($receive-expr iform) labels)
+                     (rec ($receive-body iform) labels))]
+     [($LAMBDA) #t]
+     [($LABEL)  (or (label-seen? labels iform)
+                    (begin (label-push! labels iform)
+                           (rec ($label-body iform) labels)))]
+     [($SEQ)    (everyc rec ($seq-body iform) labels)]
+     [($CALL)   (and (side-effect-free-proc? ($call-proc iform))
+                     (everyc rec ($call-args iform) labels))]
+     [($ASM)    (and (side-effect-free-insn? ($asm-insn iform))
+                     (everyc rec ($asm-args iform) labels))]
+     [($CONS $APPEND $MEMV $EQ? $EQV?)
+      (and (rec ($*-arg0 iform) labels)
+           (rec ($*-arg1 iform) labels))]
+     [($VECTOR $LIST $LIST*) (everyc rec ($*-args iform) labels)]
+     [($LIST->VECTOR) (rec ($*-arg0 iform) labels)]
+     [($IT) #t] ; this branch is only executed when $if-test of the parent is
+                                        ; transparent, thus this node is also transparent.
+     [else #f]))
+  (rec iform (make-label-dic #f)))
 
 ;; Reset lvar reference count.  This is called in pass3,
 ;; when a subgraph of IForm is eliminated.
