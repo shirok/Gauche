@@ -264,6 +264,9 @@
  (if "defined(HAVE_LGAMMA)"
    (define-cproc %lgamma (x::<real>) ::<real> :fast-flonum :constant
      lgamma)))
+;; Returns the HalfFloat representation as integer.  For now,
+;; we keep it in gauche.internal.
+(define-cproc flonum->f16bits (x::<real>) ::<int> Scm_DoubleToHalf)
 
 ;;
 ;; Arithmetics
