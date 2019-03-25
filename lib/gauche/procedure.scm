@@ -218,7 +218,12 @@
                  (dump (closure-code proc)))]
              info)))
   (cond
-   [(closure? proc) (print "CLOSURE " proc) (dump (closure-code proc))]
+   [(closure? proc) (print "CLOSURE " proc)
+    (dump (closure-code proc))
+    (dolist [e ((with-module gauche.internal %closure-env->list) proc)]
+      (when (closure? e)
+        (print "LIFTED CLOSURE " e)
+        (dump (closure-code e))))]
    [(is-a? proc <method>)
     (print "METHOD " proc)
     (cond [(method-code proc) => dump]

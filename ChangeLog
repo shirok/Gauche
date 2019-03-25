@@ -1,5 +1,8 @@
 2019-03-24  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procedure.scm (disasm): Show lifted closure (the one
+	  that's only referenced thru closed env).
+
 	* src/compile.scm (transparent?): Recognize some $ASM node transparent.
 	* src/compile-3.scm (pass3/$SEQ): Let empty $seq at the last of
 	  sequence prevent the previous constant expression from being
