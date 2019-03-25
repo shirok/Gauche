@@ -720,7 +720,7 @@
       (print (uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
       (dotimes [i (uvector-length value)]
         ($ uvector-class-emit-elt class
-           $ (with-module gauche.internal %uvector-ref)
+           $ (with-module gauche.internal uvector-ref)
              value (uvector-class->type-enum class) i))
       (print  "};"))]
   [static (self) #f]
