@@ -1,5 +1,10 @@
 2019-03-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (transparent?): Recognize some $ASM node transparent.
+	* src/compile-3.scm (pass3/$SEQ): Let empty $seq at the last of
+	  sequence prevent the previous constant expression from being
+	  optimized away.
+
 	* src/compile-2.scm (pass2/dissolve-apply): Optimize away TAIL-APPLY
 	  if we know all the arguments.  It often happens after inline expansion.
 	  Note: As the result of this optimination, merely 'apply'-ing

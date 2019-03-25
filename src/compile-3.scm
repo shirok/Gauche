@@ -202,8 +202,14 @@
                       ($seq-body-set! iform
                                       (reverse! (cons (pass3/rec x labels) r)))
                       iform])]
-          [(x . xs) (let1 x. (pass3/rec x labels)
-                      (loop (if (transparent? x.) r (cons x. r)) xs))])))))
+          [(x . (and (y . ys) xs))
+           ;; Skip empty $seq if it immediately follows x.
+           ;; This prevents the constant expression follwed by empty $seq as
+           ;; the last expression from being removed as the dead code.
+           (if (and (has-tag? y $SEQ) (null? ($seq-body y)))
+             (loop r (cons x ys))
+             (let1 x. (pass3/rec x labels)
+               (loop (if (transparent? x.) r (cons x. r)) xs)))])))))
 
 ;; Some extra optimization on $CALL.  We need to run this here, since
 ;; $CALL classifications needs to be done by the surrounding $LET.

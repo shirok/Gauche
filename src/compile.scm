@@ -1223,7 +1223,13 @@
 
 (define (side-effect-free-proc? iform) #f) ;for now
 
-(define (side-effect-free-insn? insn)  #f) ;for now
+;; This is used when eliminating dead $ASM node.  We don't need to consider
+;; combined insns, which won't be introduced until pass5.
+(define (side-effect-free-insn? insn)
+  (memq (car insn) `(,EQ ,EQV ,CONS ,LIST ,LIST-STAR
+                     ,NULLP ,PAIRP ,CHARP ,EOFP ,STRINGP ,SYMBOLP
+                     ,VECTORP ,IDENTIFIERP ,NUMBERP ,REALP
+                     ,VEC)))
 
 ;; Reset lvar reference count.  This is called in pass3,
 ;; when a subgraph of IForm is eliminated.
