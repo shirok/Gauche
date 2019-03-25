@@ -587,7 +587,7 @@
            "(select-module foo.bar1)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
            "(provide \"foo/bar1\")"
-           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master))"
+           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master foo-literals))"
            "(select-module foo)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
          (file->string-list "test.o/foo.sci"))
