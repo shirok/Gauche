@@ -627,9 +627,9 @@
 ;; of evaluation, so we'd have to modify the outer $let form---which isn't 
 ;; trivial.
 ;;
-;; IForm must be an $ASM node.  ARGS is pass2-translated ($iform-args iform).
+;; IForm must be an $ASM node.
 ;; Returns (potentially updated) iform.
-(define (pass2/dissolve-apply iform args)
+(define (pass2/dissolve-apply iform penv tail?)
   ;; Returns a list of arguments as list of IForms, or #f if the arguments
   ;; isn't a proper list.  We follow immutable local bindings.
   (define (expand-restarg rarg)
@@ -671,25 +671,28 @@
           [(safe? (car xs)) (and-let1 z (check-safe (cdr xs))
                               (cons (car xs) z))]
           [else #f]))
-
+  (define args ($asm-args iform))
   (assume (length>=? args 2))
   (if (vm-compiler-flag-is-set? SCM_COMPILE_NODISSOLVE_APPLY)
     iform
     (or (and-let1 iargs (expand-restarg (last args))
           (ifor-each lvar-ref--! freed-lvars)
           (ifor-each (^x (when ($lref? x) (lvar-ref++! ($lref-lvar x)))) iargs)
-          ($call ($*-src iform) (car args)
-                 (append (drop-right (cdr args) 1) iargs)))
+          (pass2/rec ($call ($*-src iform) (car args)
+                            (append (drop-right (cdr args) 1) iargs))
+                     penv tail?))
         iform)))
 
 (define (pass2/$ASM iform penv tail?)
-  (let* ([args (imap (cut pass2/rec <> penv #f) ($asm-args iform))]
-         [iform (if (eqv? (car ($asm-insn iform)) TAIL-APPLY)
-                  (pass2/dissolve-apply iform args)
-                  iform)])
-    (if (has-tag? iform $ASM)
-      (pass2/check-constant-asm iform args)
-      iform)))
+  (define (do-asm)
+    ($ pass2/check-constant-asm iform
+       (imap (cut pass2/rec <> penv #f) ($asm-args iform))))
+  (if (eqv? (car ($asm-insn iform)) TAIL-APPLY)
+    (let1 iform2 (pass2/dissolve-apply iform penv tail?)
+      (if (eq? iform iform2) ; didn't resolve
+        (do-asm)
+        iform2))
+    (do-asm)))
 
 (define (pass2/check-constant-asm iform args)
   (or (and (every $const? args)

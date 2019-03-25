@@ -60,13 +60,28 @@
 (test* "inlining apply" '(((CONST-PUSH) :a) ((CONSTI 2)) ((CONS)) ((RET)))
        (proc->insn/split (^[] (let1 xs '(2) (apply cons :a xs)))))
 
-(define-inline (apply-inline-1 . args) (apply + args))
+(define-inline (apply-inline-1 . args) (apply + 3 args))
 
-(test* "inlining apply" '(((LREF2))
+(test* "inlining apply" '(((LREF2-NUMADDI 3))
                           ((LREF-VAL0-NUMADD2 0 1))
                           ((LREF-VAL0-NUMADD2 0 0))
                           ((RET)))
        (proc->insn/split (^[a b c] (apply-inline-1 a b c))))
+
+(test* "inlining apply (later stage)" '(((CONSTI-PUSH 5))
+                                        ((LREF2))
+                                        ((NUMMUL2))
+                                        ((PUSH)) 
+                                        ((LREF1))
+                                        ((NUMMUL2))
+                                        ((PUSH))
+                                        ((LREF0))
+                                        ((NUMMUL2))
+                                        ((RET)))
+        (proc->insn/split (^[a b c]
+                            (define (f . args) (apply * 5 args))
+                            (define xs (list a b c))
+                            (apply f xs))))
 
 ;; pass3/late-inline
 (define-inline (late-inline-test-1 ref) (cut ref <> 0))
