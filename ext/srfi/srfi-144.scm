@@ -167,21 +167,11 @@
 ;; we don't check types of arguments in these; the point of flonum-specific
 ;; ops is speed, so it's less useful if these ones are slower than the
 ;; generic version.
-(define-inline/syntax fl=?
-  (^ args (apply = args))
-  (er-macro-transformer (^[f r c] (quasirename r `(= ,@(cdr f))))))
-(define-inline/syntax fl<?
-  (^ args (apply < args))
-  (er-macro-transformer (^[f r c] (quasirename r `(< ,@(cdr f))))))
-(define-inline/syntax fl<=?
-  (^ args (apply <= args))
-  (er-macro-transformer (^[f r c] (quasirename r `(<= ,@(cdr f))))))
-(define-inline/syntax fl>?
-  (^ args (apply > args))
-  (er-macro-transformer (^[f r c] (quasirename r `(> ,@(cdr f))))))
-(define-inline/syntax fl>=?
-  (^ args (apply >= args))
-  (er-macro-transformer (^[f r c] (quasirename r `(>= ,@(cdr f))))))
+(define-inline (fl=? . args)  (apply = args))
+(define-inline (fl<? . args)  (apply < args))
+(define-inline (fl<=? . args) (apply <= args))
+(define-inline (fl>? . args)  (apply > args))
+(define-inline (fl>=? . args) (apply >= args))
 
 (define-inline (flunordered? x y) (and (not (nan? x)) (not (nan? y))))
 (define-inline (flinteger? x) (and (flonum? x) (integer? x)))
@@ -205,21 +195,5 @@
 
 ;; Again, we don't check the argument types for the sake of the speed.
 
-(define-inline/syntax flmax
-  (case-lambda
-    ([] -inf.0)
-    (args (apply max args)))
-  (er-macro-transformer (^[f r c]
-                          (if (null? (cdr f))
-                            -inf.0
-                            (quasirename r `(max ,@(cdr f)))))))
-(define-inline/syntax flmin
-  (case-lambda
-    ([] +inf.0)
-    (args (apply min args)))
-  (er-macro-transformer (^[f r c]
-                          (if (null? (cdr f))
-                            +inf.0
-                            (quasirename r `(min ,@(cdr f)))))))
-
-
+(define-inline (flmax . args) (if (null? args) -inf.0 (apply max args)))
+(define-inline (flmin . args) (if (null? args) +inf.0 (apply min args)))
