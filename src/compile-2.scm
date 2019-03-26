@@ -640,7 +640,7 @@
            (and-let* ([lvar ($lref-lvar rarg)]
                       [val (lvar-const-value lvar)]
                       [r (expand-restarg val)])
-             ;; Record lvar.  If we decide to inline, we need to adjust
+             ;; Record lvar.  If we decide to dissolve, we need to adjust
              ;; refcount of lvar later. (We can't do it now, for we may abandon
              ;; inlining later.
              (push! freed-lvars lvar)
