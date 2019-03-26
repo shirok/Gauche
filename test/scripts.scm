@@ -621,7 +621,7 @@
            (do-process! `("../../src/gosh" "-ftest"
                           ,(build-path *top-srcdir* "src/gauche-package.in")
                           "compile"
-                          ,#"--cppflags=-I~(build-path *top-srcdir* \"src\") -I~(build-path *top-srcdir* \"gc\")"
+                          ,#"--cppflags=-I~(build-path *top-srcdir* \"src\") -I~(build-path *top-srcdir* \"gc/include\")"
                           "foo"
                           "foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")
                         :directory "test.o")
