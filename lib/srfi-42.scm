@@ -32,6 +32,7 @@
 ;     mentioned after the definition with a heading.
 
 (define-module srfi-42
+  (use gauche.uvector)
   (export-all))
 (select-module srfi-42)
 
@@ -119,6 +120,7 @@
            ((:list)        (rename 'srfi-42-list))
            ((:string)      (rename 'srfi-42-string))
            ((:vector)      (rename 'srfi-42-vector))
+           ((:uvector)     (rename 'srfi-42-uvector))
            ((:integers)    (rename 'srfi-42-integers))
            ((:range)       (rename 'srfi-42-range))
            ((:real-range)  (rename 'srfi-42-real-range))
@@ -543,28 +545,37 @@
 ;   be used for :string. However, it is less interesting as the
 ;   overhead of string-append is much less than for 'vector-append'.
 
-
 (define-syntax srfi-42-vector
+  (syntax-rules ()
+    [(_ . args) (srfi-42-*vector vector-length vector-ref . args)]))
+
+(define-syntax srfi-42-uvector
+  (syntax-rules ()
+    [(_ . args) (srfi-42-*vector uvector-length uvector-ref . args)]))
+
+(define-syntax srfi-42-*vector
   (syntax-rules (index)
-    ((_ cc var arg)
-     (srfi-42-vector cc var (index i) arg) )
-    ((_ cc var (index i) arg)
+    ((_ *len *ref cc var arg)
+     (srfi-42-*vector *len *ref cc var (index i) arg) )
+    ((_ *len *ref cc var (index i) arg)
      (srfi-42-do cc
           (let ((vec arg) (len 0))
-            (set! len (vector-length vec)))
+            (set! len (*len vec)))
           ((i 0))
           (< i len)
-          (let ((var (vector-ref vec i))))
+          (let ((var (*ref vec i))))
           #t
           ((+ i 1)) ))
 
-    ((_ cc var (index i) arg1 arg2 arg ...)
-     (srfi-42-parallel cc (srfi-42-vector cc var arg1 arg2 arg ...) (srfi-42-integers i)) )
-    ((_ cc var arg1 arg2 arg ...)
+    ((_ *len *ref cc var (index i) arg1 arg2 arg ...)
+     (srfi-42-parallel cc 
+                       (srfi-42-*vector *len *ref cc var arg1 arg2 arg ...)
+                       (srfi-42-integers i)) )
+    ((_ *len *ref cc var arg1 arg2 arg ...)
      (srfi-42-do cc
           (let ((vec #f)
                 (len 0)
-                (vecs (ec-:vector-filter (list arg1 arg2 arg ...))) ))
+                (vecs (ec-:vector-filter *len (list arg1 arg2 arg ...))) ))
           ((k 0))
           (if (< k len)
               #t
@@ -572,19 +583,19 @@
                   #f
                   (begin (set! vec (car vecs))
                          (set! vecs (cdr vecs))
-                         (set! len (vector-length vec))
+                         (set! len (*len vec))
                          (set! k 0)
                          #t )))
-          (let ((var (vector-ref vec k))))
+          (let ((var (*ref vec k))))
           #t
           ((+ k 1)) ))))
 
-(define (ec-:vector-filter vecs)
+(define (ec-:vector-filter *len vecs)
   (if (null? vecs)
       '()
-      (if (zero? (vector-length (car vecs)))
-          (ec-:vector-filter (cdr vecs))
-          (cons (car vecs) (ec-:vector-filter (cdr vecs))) )))
+      (if (zero? (*len (car vecs)))
+          (ec-:vector-filter *len (cdr vecs))
+          (cons (car vecs) (ec-:vector-filter *len (cdr vecs))) )))
 
 ; Alternative: A simpler implementation for :vector uses vector->list
 ;   append and :list in the multi-argument case. Please refer to the
@@ -877,6 +888,8 @@
                (srfi-42-generator-proc (srfi-42-string a1))]
               [(vector? a1)
                (srfi-42-generator-proc (srfi-42-vector a1))]
+              [(uvector? a1)
+               (srfi-42-generator-proc (srfi-42-uvector a1))]
               [(and (integer? a1) (exact? a1))
                (srfi-42-generator-proc (srfi-42-range a1))]
               [(real? a1)
@@ -894,6 +907,8 @@
                (srfi-42-generator-proc (srfi-42-string a1 a2)) ]
               [(and (vector? a1) (vector? a2))
                (srfi-42-generator-proc (srfi-42-vector a1 a2)) ]
+              [(and (uvector? a1) (uvector? a2))
+               (srfi-42-generator-proc (srfi-42-uvector a1 a2)) ]
               [(and (integer? a1) (exact? a1) (integer? a2) (exact? a2))
                (srfi-42-generator-proc (srfi-42-range a1 a2)) ]
               [(and (real? a1) (real? a2))
@@ -911,6 +926,8 @@
                (srfi-42-generator-proc (srfi-42-string a1 a2 a3)) ]
               [(and (vector? a1) (vector? a2) (vector? a3))
                (srfi-42-generator-proc (srfi-42-vector a1 a2 a3)) ]
+              [(and (uvector? a1) (uvector? a2) (uvector? a3))
+               (srfi-42-generator-proc (srfi-42-uvector a1 a2 a3)) ]
               [(and (integer? a1) (exact? a1)
                     (integer? a2) (exact? a2)
                     (integer? a3) (exact? a3))
@@ -924,7 +941,9 @@
              [(every string? args)
               (srfi-42-generator-proc (srfi-42-string (apply string-append args)))]
              [(every vector? args)
-              (srfi-42-generator-proc (srfi-42-list (apply append (map vector->list args))))]
+              (srfi-42-generator-proc (srfi-42-vector (apply vector-append args)))]
+             [(every uvector? args)
+              (srfi-42-generator-proc (srfi-42-list (apply append (map uvector->list args))))]
              [else #f])])))
 
 (define srfi-42--dispatch

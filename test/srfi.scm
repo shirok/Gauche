@@ -994,6 +994,17 @@
 (test* ":vector" '(1 2 3)
        (list-ec (:vector x (vector 1) (vector 2) (vector 3)) x))
 
+(test* ":uvector" '()
+       (list-ec (:uvector x '#u8()) x))
+(test* ":uvector" '(1)
+       (list-ec (:uvector x '#s8(1)) x))
+(test* ":uvector" '(1 2 3)
+       (list-ec (:uvector x '#u16(1 2 3)) x))
+(test* ":uvector" '(1 2)
+       (list-ec (:uvector x '#s16(1) '#s16(2)) x))
+(test* ":uvector" '(1.0 2.0 3.0)
+       (list-ec (:uvector x '#f16(1) '#f16(2) '#f16(3)) x))
+
 (test* ":range" '()
        (list-ec (:range x -2) x))
 (test* ":range" '()
@@ -1126,6 +1137,10 @@
 
 (test* ": vector" '(a b)   (list-ec (: c (vector 'a 'b)) c))
 (test* ": vector" '(a b c) (list-ec (: c (vector 'a 'b) (vector 'c)) c))
+
+(test* ": uvector" '(1 2 3) (list-ec (: c '#u8(1 2) '#u8(3)) c))
+(test* ": uvector" '(1 -1 2 -2)
+       (list-ec (: c '#s8(1) '#s8(-1) '#s8() '#s8(2) '#s8(-2)) c))
 
 (test* ": range" '()  (list-ec (: i 0) i))
 (test* ": range" '(0) (list-ec (: i 1) i))

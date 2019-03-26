@@ -3400,15 +3400,20 @@ types of @var{arg1} @var{args} @dots{}.
 
 @deffn {EC Qualifier} :list vars arg1 args @dots{}
 @deffnx {EC Qualifier} :vector vars arg1 args @dots{}
+@deffnx {EC Qualifier} :uvector vars arg1 args @dots{}
 @deffnx {EC Qualifier} :string vars arg1 args @dots{}
 @c EN
-@var{Arg1} @var{args} @dots{} should be all lists, vectors, or strings,
+@var{Arg1} @var{args} @dots{} should be all lists, vectors, uniform vectors
+or strings,
 respectively.  Repeats the subsequent clauses while binding
 each element from those args bound to @var{vars}.
+(The @code{:uvector} qualifier is Gauche's extension.)
 @c JP
 それぞれのフォームにおいて、
-@var{arg1} @var{args} @dots{}は全てリスト、ベクタ、文字列でなければなりません。
+@var{arg1} @var{args} @dots{}は全てリスト、ベクタ、ユニフォームベクタ、
+あるいは文字列でなければなりません。
 各要素を@var{vars}に束縛して続く節を繰り返します。
+(@code{:uvector}はGaucheの独自拡張です。)
 @c COMMON
 
 @example
@@ -3417,9 +3422,9 @@ each element from those args bound to @var{vars}.
 
 @c EN
 If the arguments given to the generic qualifier @code{:} are
-all lists, vectors or strings, then these qualifiers are used.
+all lists, vectors, uniform vectors or strings, then these qualifiers are used.
 @c JP
-汎用qualifier@code{:}に渡された引数が全てリスト、ベクタ、あるいは文字列
+汎用qualifier@code{:}に渡された引数が全てリスト、ベクタ、ユニフォームベクタあるいは文字列
 であった場合は、これらのqualifierが使われます。
 @c COMMON
 @end deffn

@@ -1,5 +1,7 @@
 2019-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-42.scm (srfi-42-uvector): Support uvector as well.
+
 	* ext/uvector/uvector.scm: (uvector->list, uvector->vector):
 	  Add generic version.
 
