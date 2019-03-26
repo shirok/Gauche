@@ -1,3 +1,8 @@
+2019-03-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm: (uvector->list, uvector->vector):
+	  Add generic version.
+
 2019-03-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (-zero?): Added experimentally.  Could be better

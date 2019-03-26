@@ -22907,6 +22907,20 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
+@defun uvector->list uvec :optional start end
+@c MOD gauche.uvector
+@c EN
+This is a generic version of @code{@var{TAG}vector->list}.  
+It can take any kind of uvector as @var{uvec}.  The meaning of
+optional arguments are the same as @code{@var{TAG}vector->list}.
+@c JP
+これは@code{@var{TAG}vector->list}の汎用バージョンで、
+ユニフォームベクタなら何であれ@var{uvec}に取ることができます。
+省略可能引数の意味は@code{@var{TAG}vector->list}と同じです。
+@c COMMON
+@end defun
+
+
 @deftp {Function} @var{TAG}vector->vector @r{@var{vec} :optional @var{start} @var{end}}
 @findex s8vector->vector
 @findex u8vector->vector
@@ -22943,6 +22957,19 @@ if you import @code{gauche.collection}.
 (coerce-to <vector> '#f32(9.3 2.2 5.5)) @result{} #(9.3 2.2 5.5)
 @end example
 @end deftp
+
+@defun uvector->vector uvec :optional start end
+@c MOD gauche.uvector
+@c EN
+This is a generic version of @code{@var{TAG}vector->vector}.  
+It can take any kind of uvector as @var{uvec}.  The meaning of
+optional arguments are the same as @code{@var{TAG}vector->vector}.
+@c JP
+これは@code{@var{TAG}vector->vector}の汎用バージョンで、
+ユニフォームベクタなら何であれ@var{uvec}に取ることができます。
+省略可能引数の意味は@code{@var{TAG}vector->vector}と同じです。
+@c COMMON
+@end defun
 
 @deftp {Function} list->@var{TAG}vector @r{@var{list} :optional @var{clamp}}
 @findex list->s8vector

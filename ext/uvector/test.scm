@@ -220,8 +220,10 @@
          [vec (->vec  uvec)]
          [uv3 (vec->  vec)])
     (and (equal? lis nums)
+         (equal? (uvector->list uvec) nums)
          (equal? uv2 uvec)
          (equal? vec (list->vector nums))
+         (equal? (uvector->vector uvec) (list->vector nums))
          (equal? uv3 uvec))))
 
 (test* "s8vector conversion" #t

@@ -173,7 +173,7 @@
 
           uvector-alias uvector-binary-search uvector-class-element-size
           uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
-          uvector-swap-bytes uvector-swap-bytes!
+          uvector->list uvector->vector uvector-swap-bytes uvector-swap-bytes!
 
           vector->f16vector vector->f32vector vector->f64vector
           vector->s16vector vector->s32vector vector->s64vector
@@ -255,6 +255,66 @@
        (Scm_Error "A class of uvector is required, but got: %S" c))
      (return r)))
  )
+
+;; uvector->list
+;; uvector->vector
+(inline-stub
+ (define-cproc uvector->list (v::<uvector> 
+                              :optional (start::<fixnum> 0)
+                                        (end::<fixnum> -1))
+   (case (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
+     [(SCM_UVECTOR_S8) (return (Scm_S8VectorToList (SCM_S8VECTOR v)
+                                                   start end))]
+     [(SCM_UVECTOR_U8) (return (Scm_U8VectorToList (SCM_U8VECTOR v)
+                                                   start end))]
+     [(SCM_UVECTOR_S16) (return (Scm_S16VectorToList (SCM_S16VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_U16) (return (Scm_U16VectorToList (SCM_U16VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_S32) (return (Scm_S32VectorToList (SCM_S32VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_U32) (return (Scm_U32VectorToList (SCM_U32VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_S64) (return (Scm_S64VectorToList (SCM_S64VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_U64) (return (Scm_U64VectorToList (SCM_U64VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_F16) (return (Scm_F16VectorToList (SCM_F16VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_F32) (return (Scm_F32VectorToList (SCM_F32VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_F64) (return (Scm_F64VectorToList (SCM_F64VECTOR v)
+                                                     start end))]
+     [else (SCM_ASSERT "Invalid uvector type")
+           (return SCM_UNDEFINED)]))
+ (define-cproc uvector->vector (v::<uvector> 
+                                :optional (start::<fixnum> 0)
+                                          (end::<fixnum> -1))
+   (case (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
+     [(SCM_UVECTOR_S8) (return (Scm_S8VectorToVector (SCM_S8VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_U8) (return (Scm_U8VectorToVector (SCM_U8VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_S16) (return (Scm_S16VectorToVector (SCM_S16VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_U16) (return (Scm_U16VectorToVector (SCM_U16VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_S32) (return (Scm_S32VectorToVector (SCM_S32VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_U32) (return (Scm_U32VectorToVector (SCM_U32VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_S64) (return (Scm_S64VectorToVector (SCM_S64VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_U64) (return (Scm_U64VectorToVector (SCM_U64VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_F16) (return (Scm_F16VectorToVector (SCM_F16VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_F32) (return (Scm_F32VectorToVector (SCM_F32VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_F64) (return (Scm_F64VectorToVector (SCM_F64VECTOR v)
+                                                       start end))]
+     [else (SCM_ASSERT "Invalid uvector type")
+           (return SCM_UNDEFINED)])))   
 
 ;; allocation by class
 (inline-stub
