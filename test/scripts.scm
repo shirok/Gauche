@@ -555,7 +555,30 @@
          (sort (map fix-path (directory-fold "test.o" cons '()))))
   )
 
+
+(add-load-path "test.o")
+(use srfi-42)
+(use scheme.vector :only (vector-every))
+
 (define (precomp-test-2)
+  (define (literal=? x y)
+    (cond [(pair? x) (and (pair? y)
+                          (literal=? (car x) (car y))
+                          (literal=? (cdr x) (cdr y)))]
+          [(vector? x) (and (vector? y)
+                            (= (vector-length x) (vector-length y))
+                            (vector-every literal=? x y))]
+          [(uvector? x) (and (eqv? (class-of x) (class-of y))
+                             (= (uvector-length x) (uvector-length y))
+                             (every?-ec (:parallel (: ex x) (: ey y))
+                                        (literal=? ex ey)))]
+          [(number? x)
+           (and (number? y)
+                (cond [(nan? x) (nan? y)]
+                      [(-zero? x) (-zero? y)]
+                      [else (= x y)]))]
+          [else (equal? x y)]))
+
   (do-process `("../../src/gosh" "-ftest"
                 ,#"-I~|*top-srcdir*|/test/test-precomp"
                 ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
@@ -591,6 +614,20 @@
            "(select-module foo)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
          (file->string-list "test.o/foo.sci"))
+
+  (test* "compile and dynload" 
+         (include "test-precomp/literals.scm")
+         (begin
+           (do-process! `("../../src/gosh" "-ftest"
+                          ,(build-path *top-srcdir* "src/gauche-package.in")
+                          "compile"
+                          ,#"--cppflags=-I~(build-path *top-srcdir* \"src\")"
+                          "foo"
+                          "foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")
+                        :directory "test.o")
+           (load "foo" :paths '("./test.o"))
+           ((global-variable-ref 'foo 'foo-literals)))
+         literal=?)
   )
 
 (wrap-with-test-directory precomp-test-1)

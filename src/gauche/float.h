@@ -90,6 +90,20 @@ typedef double          ScmLongDouble;
 #define SCM_DBL_NAN           (0.0/0.0)
 #endif
 
+#ifndef SCM_FLT_POSITIVE_INFINITY
+#define SCM_FLT_POSITIVE_INFINITY  (1.0f/0.0f)
+#endif
+
+#ifndef SCM_FTL_NEGATIVE_INFINITY
+#define SCM_FLT_NEGATIVE_INFINITY  (-1.0f/0.0f)
+#endif
+
+#ifndef SCM_FTL_NAN
+#define SCM_FLT_NAN           (0.0f/0.0f)
+#endif
+
+
+
 #ifdef HAVE_ISNAN
 #define SCM_IS_NAN(x)  isnan(x)
 #else

@@ -720,8 +720,7 @@
       (print (uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
       (dotimes [i (uvector-length value)]
         ($ uvector-class-emit-elt class
-           $ (with-module gauche.internal uvector-ref)
-             value (uvector-class->type-enum class) i))
+           $ (with-module gauche.internal uvector-ref) value i))
       (print  "};"))]
   [static (self) #f]
   )
@@ -762,7 +761,7 @@
    [(eq? class <s64vector>)
     (print "#if SIZEOF_LONG == 8")
     (format #t "~dl,\n" v)
-    (print "#else if SCM_EMULATE_INT64")
+    (print "#elif SCM_EMULATE_INT64")
     (print "#ifdef WORDS_BIGENDIAN")
     (print "#else  /*!WORDS_BIGENDIAN*/")
     (print "#endif /*!WORDS_BIGENDIAN*/")
@@ -773,7 +772,7 @@
    [(eq? class <u64vector>)
     (print "#if SIZEOF_LONG == 8")
     (format #t "~dlu,\n" v)
-    (print "#else if SCM_EMULATE_INT64")
+    (print "#elif SCM_EMULATE_INT64")
     (print "#ifdef WORDS_BIGENDIAN")
     (print "#else  /*!WORDS_BIGENDIAN*/")
     (print "#endif /*!WORDS_BIGENDIAN*/")
@@ -781,10 +780,22 @@
     (format #t " (((int64_t)~dlu << 32)|~dlu),\n"
             (ash v -32) (logand v (- (%expt 2 32) 1)))
     (print "#endif /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")]
-   [(eq? class <f16vector>)
-    (error "gauche.cgen.literal: literal f16vector isn't supported yet")]
-   [(eq? class <f32vector>) (format #t "~sf,\n" v)]
-   [(eq? class <f64vector>) (format #t "~s,\n" v)]
+   [(eq? class <f16vector>) 
+    (format #t "0x~4,'0x,\n" ((with-module gauche.internal flonum->f16bits) v))]
+   [(eq? class <f32vector>) 
+    (cond [(nan? v) (print "SCM_FLT_NAN,")]
+          [(infinite? v) (print (if (> v 0)
+                                  "SCM_FLT_POSITIVE_INFINITY,"
+                                  "SCM_FLT_NEGATIVE_INFINITY,"))]
+          [(-zero? v) (print "-0.0f,")]
+          [else (format #t "~sf,\n" v)])]
+   [(eq? class <f64vector>)
+    (cond [(nan? v) (print "SCM_DBL_NAN,")]
+          [(infinite? v) (print (if (> v 0)
+                                  "SCM_DBL_POSITIVE_INFINITY,"
+                                  "SCM_DBL_NEGATIVE_INFINITY,"))]
+          [(-zero? v) (print "-0.0,")]
+          [else (format #t "~s,\n" v)])]
    ))
 
 ;; char-set -----------------------------------------------------

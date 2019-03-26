@@ -1,5 +1,8 @@
 2019-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/literal.scm: Fix uniform vector literal generation.
+	  We have to handle infinity, NaN, and minus zero properly.
+
 	* lib/srfi-42.scm (srfi-42-uvector): Support uvector as well.
 
 	* ext/uvector/uvector.scm: (uvector->list, uvector->vector):
