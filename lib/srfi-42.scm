@@ -32,9 +32,10 @@
 ;     mentioned after the definition with a heading.
 
 (define-module srfi-42
-  (use gauche.uvector)
   (export-all))
 (select-module srfi-42)
+
+(autoload gauche.uvector uvector->list)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
