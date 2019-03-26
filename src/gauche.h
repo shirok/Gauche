@@ -67,7 +67,6 @@
 #include <errno.h>
 #include <stdint.h>
 #include <gauche/int64.h>
-#include <gauche/float.h>
 
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -88,6 +87,9 @@ typedef ssize_t ScmSize;
 #if defined(__MINGW32__) || defined(MSVC)
 #include <gauche/win-compat.h>
 #endif /* MINGW32 || WINDOWS */
+
+/* Defines SCM_EXTERN magic. */
+#include <gauche/extern.h>
 
 #if defined(LIBGAUCHE_BODY)
 #if !defined(GC_DLL)
@@ -115,8 +117,8 @@ SCM_DECL_BEGIN
 #include <unistd.h>
 #endif /*HAVE_UNISTD_H*/
 
-/* Defines SCM_EXTERN magic. */
-#include <gauche/extern.h>
+/* This must come after gauche/extern.h */
+#include <gauche/float.h>
 
 /* Some useful macros */
 #ifndef FALSE
