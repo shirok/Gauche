@@ -1004,34 +1004,30 @@
   ;;
   ;; where N = SCMVM_INSN_ARG(code)-2.
   ;; rest contains a list of "all the rest arguments".
+  ;; We just push VAL0 onto stack, and move ARGP 
   ;; We "rotate" the stack and VAL0 and jump to the
-  ;; TAIL-CALL processing.  (The unfolding of rest
+  ;; tail_apply_entry.  (The unfolding of rest
   ;; argument will be done in ADJUST_ARGUMENT_FRAME later,
   ;; if necessary.)
   ;;
   ;;   SP  >|      |
-  ;;        | rest |
+  ;;        | rest |< original SP position
   ;;        | argN |
   ;;        |   :  |
   ;;   ARGP>| arg0 |        VAL0=proc
-  ;;
+  ;;        | proc |< original ARGP postiion (proc unused) 
   (let* ([rest VAL0]
          [rargc::int (check_arglist_tail_for_apply vm rest)]
          [nargc::int (- (SCM_VM_INSN_ARG code) 2)]
          [proc (* (- SP nargc 1))])
     (when (< rargc 0) ($vm-err "improper list not allowed: %S" rest))
-    (while (> nargc 0)
-      (set! (* (- SP nargc 1)) (* (- SP nargc)))
-      (post-- nargc))
+    (set! VAL0 proc)
+    (post++ ARGP)
     ;; a micro-optimization: if VAL0 is (), we just omit it and
     ;; pretend this is a normal TAIL-CALL.
-    (when (== rargc 0)
-      (post-- SP)
-      (set! VAL0 proc)
-      ($goto-insn TAIL-CALL))
+    (when (== rargc 0) ($goto-insn TAIL-CALL))
     ;; normal path
-    (set! (* (- SP 1)) rest)
-    (set! VAL0 proc)
+    (set! (* (post++ SP)) rest)
     (DISCARD-ENV)
     (goto tail_apply_entry)))
 

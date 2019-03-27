@@ -877,13 +877,14 @@
      [(SLOT-SET)
       (pass5/asm-slot-set info (car args) (cadr args) (caddr args) ccb renv ctx)]
      [(TAIL-APPLY)
+      ;; TAIL-APPLY pushes restarg onto stack, thus +1.
       (if (tail-context? ctx)
-        (pass5/asm-generic ccb insn args info renv)
+        (+ 1 (pass5/asm-generic ccb insn args info renv))
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit0oi! ccb PRE-CALL merge-label info)
           (let1 d (pass5/asm-generic ccb insn args info renv)
             (compiled-code-set-label! ccb merge-label)
-            (+ CONT_FRAME_SIZE d))))]
+            (+ CONT_FRAME_SIZE d 1))))]
      [else
       (pass5/asm-generic ccb insn args info renv)])))
 
