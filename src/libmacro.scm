@@ -754,12 +754,18 @@
    (^[f r c]
      (match f
        [(_ body handlers ...)
-        (let1 sinfo (debug-source-info f)
-          (quasirename r
-            (%unwind-protect (lambda () ,body) (lambda () ,@handlers)
-                             :source-info ',sinfo)))]
+        ;; Some trick to hide %unwind-protect in gauche.internal
+        (let* ([sinfo (debug-source-info f)]
+               [lambda. (r 'lambda)]
+               [%unwind-protect. ((with-module gauche.internal make-identifier)
+                                  '%unwind-protect 
+                                  (find-module 'gauche.internal)
+                                  '())])
+          `(,%unwind-protect. (,lambda. () ,body) (,lambda. () ,@handlers)
+                              ':source-info ',sinfo))]
        [_ (error "Malformed unwind-protect:" f)]))))
 
+(select-module gauche.internal)
 (define (%unwind-protect thunk handlers :key (source-info #f))
   (let ([x (exit-handler)]
         [done #f])
@@ -792,6 +798,8 @@
           (cleanup)
           (apply values r)))
       :rewind-before #t)))
+
+(select-module gauche)
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 
