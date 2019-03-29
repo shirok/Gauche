@@ -16137,47 +16137,27 @@ Gaucheの例外を投げたときにのみ呼びだされます。上述の例�
 
 @c EN
 You can go back to the body @var{expr}
-from outside of @code{unwind-protect}
-as long as @var{cleanup} hasn't been executed.  Once @var{cleanup} is
-executed (more precisely, once execution of @var{cleanup} is started),
-returning back to the body is prohibited---attempting to do so will
-raise an error.
-In the above example, once you stop a motor, you can't restart
-@code{drill-a-hole}.  Reasonable, right?
+from outside of @code{unwind-protect} by invoking continuations
+captured within @var{expr}.
 
-The following example shows what happens if you try to reenter
-the body after cleanup is executed:
+However, keep in mind that once @var{cleanup} are executed,
+some resouces might not be available in @var{expr}.
+We still allow it since the reexecuted part of @var{expr} may not
+depend on the resources cleaned up with @var{cleanup}.
+
+Even if @var{expr} returns (normally or abnormally),
+@var{cleanup} only executed once, in the first time.
 @c JP
-@var{cleanup}が実行されない限り、@code{unwind-protect}の本体の@var{expr}へ
-外側から戻ることは可能です。けれども、ひとたび@var{cleanup}が
-実行されてしまったら (より正確には、@var{cleanup}の実行が始まってしまったら)、
-本体へ戻ることは禁止されます。戻ろうとするとエラーが投げられます。
-上記の例で言えば、一度モーターを止めてしまったら、
-@code{drill-a-hole}へは戻れないということです。そりゃそうですよね。
+@var{expr}内で捕捉された継続を@code{unwind-protect}の外側で起動することで、
+@var{expr}内に再び戻ることは可能です。
 
-次の例は、@var{cleanup}が実行された後で本体に戻ろうとした時にどうなるかを
-示します:
+ただ、ひとたび@var{cleanup}が実行されてしまったら、それによってクリーンアップ
+されたリソースは@var{expr}内から使えなくなっているという可能性に留意してください。
+そういったリソースに依存しない計算なら再実行できるので、再起動自体は禁止されていません。
+
+@var{expr}から複数回戻った場合(通常の評価でもエラーでも)、@var{cleanup}が
+実行されるのは最初の時のみです。
 @c COMMON
-
-@example
-gosh> (define k #f)
-k
-gosh> (unwind-protect
-         (begin (let/cc c (set! k c))
-                (print "body"))
-       (print "cleanup"))
-body
-cleanup
-#<undef>
-gosh> (k 0)
-*** ERROR: Attempt to reenter obsoleted dynamic environment
-Stack Trace:
-_______________________________________
-  0  (error "Attempt to reenter obsoleted dynamic environment")
-        [unknown location]
-  1  (eval expr env)
-        at "../lib/gauche/interactive.scm":282
-@end example
 
 @c EN
 The name of this form is taken from Common Lisp.  Some Scheme

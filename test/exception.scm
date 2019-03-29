@@ -279,7 +279,6 @@
             (foo (lambda () (raise 'boo)))
             (push! aaa 'e))
            aaa))
-;  (test* "unwind-protect (raise & continue)" '(e d c boo b a)
   (test* "unwind-protect (raise & continue)" '(e d c boo a d b a)
          (begin
            (set! aaa '())
@@ -303,7 +302,11 @@
              (when k (let ((k0 k)) (set! k #f) (k0 0))))
            aaa))
 
-  (test* "unwind-protect (reenter)" (test-error #f #/Attempt to reenter/)
+  ;; We no longer make this an error.  there're legit cases that you want
+  ;; to reenter into BODY even HANDLERs are already called. We just don't
+  ;; execute HANDLERs more than once.
+  (test* "unwind-protect (reenter)"
+         (reverse '(a b z c d e a c d))
          (begin
            (set! aaa '())
            (let ((k #f))

@@ -102,7 +102,7 @@
           (:macro fluid-let)
           (:macro ecase)
           (:macro dotimes dolist doplist while until)
-          (:macro guard unwind-protect))
+          (:macro guard))
 
 (autoload gauche.regexp
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)

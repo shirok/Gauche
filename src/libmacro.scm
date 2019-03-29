@@ -41,7 +41,7 @@
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
-                             assume assume-type cond-list
+                             assume assume-type cond-list unwind-protect
                              define-compiler-macro))
 
 ;; This file defines built-in macros.
@@ -716,6 +716,82 @@
               (if tmp (cons (begin ,@expr) r) r)))]
          )))))
 
+;;; unwind-protect
+
+;; HANDLERS are called when BODY exits, either normally or abnormally.  This
+;; is convenient if you have cleanup tasks you want to execute after BODY.
+;;
+;; Note that we don't call HANDLERS if control jumps out from BODY by
+;; calling a continuation captured outside of unwind-protect; in such case
+;; the control may return into BODY later.
+;;
+;; Once HANDLERS are executed, the resources needed in BODY may no longer
+;; available.  However, we don't prohibit reentering BODY again, since
+;; there may be a delimited continuation that can be reexecuted within
+;; the dynamic environment of BODY.   If the control falls out from BODY
+;; (either normally or abnormally) second time or later, HANDLERS will
+;; no longer be executed.
+;;
+;; We also tweak exit-handler parameter inside the dyanmic scope of BODY
+;; to ensure HANDLERS are executed even if BODY calls exit.
+;; (An alternative idea is to treat exit as if it's another kind of a 
+;; condition, so that guard clauses are invoked.  We tried it, but the
+;; problem is how to deal with "ignore-errors" idiom, 
+;; e.g. (guard (e [else #f]) body).  The exit condition shouldn't be 
+;; stopped in such a way.)
+;;
+;; TODO: Current definition doesn't work when unwind-protect is used
+;; within a thread that is terminated; thread termination isn't a condition
+;; either.
+
+;; The source-info argument isn't used now, but could be useful for
+;; troubleshooting.  We use keyword arguments so that we can enhance
+;; %unwind-protect later without breaking existing precompiled code
+;; that alreay has call to %unwind-protect embedded as the result of
+;; expansion.
+(define-syntax unwind-protect
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ body handlers ...)
+        (let1 sinfo (debug-source-info f)
+          (quasirename r
+            (%unwind-protect (lambda () ,body) (lambda () ,@handlers)
+                             :source-info ',sinfo)))]
+       [_ (error "Malformed unwind-protect:" f)]))))
+
+(define (%unwind-protect thunk handlers :key (source-info #f))
+  (let ([x (exit-handler)]
+        [done #f])
+    (define (cleanup)
+      (unless done
+        (set! done #t)
+        (handlers)))
+    (with-error-handler
+        (lambda (e)
+          (exit-handler x)
+          (cond
+           [(condition-has-type? e <serious-condition>)
+            (cleanup)
+            ;; NB: We don't know E is thrown by r7rs#raise or
+            ;; r7rs#raise-continuable, but gauche#raise can handle both
+            ;; case.
+            (raise e)]
+           [else
+            ;; exception handler can return to the caller
+            ((with-module gauche.internal %reraise))]))
+      (lambda ()
+        (receive r
+            (dynamic-wind
+              (lambda ()
+                (exit-handler (lambda (code fmt args)
+                                (cleanup)
+                                (x code fmt args))))
+              thunk
+              (lambda () (exit-handler x)))
+          (cleanup)
+          (apply values r)))
+      :rewind-before #t)))
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 

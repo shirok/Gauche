@@ -1,3 +1,16 @@
+2019-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (unwind-protect): Moved here from common-macros.scm,
+	  and removed the restriction that prevents from reentering to BODY
+	  once HANDLERS are executed.  There are useful cases to reenter to
+	  BODY even after HANDLERS are done (such as calculations captured
+	  in a delimited continuations within BODY and that doesn't depend
+	  on resources cleaned up by HANDLERS).
+	  See the comment for other implementation details.  Be aware that
+	  unwined-protect now expands to the call of %unwind-protect, and
+	  that persists across Gauche versions so we can't change the interface
+	  of %unwind-protect casually.
+
 2019-03-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm: Fix uniform vector literal generation.

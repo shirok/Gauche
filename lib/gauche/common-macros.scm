@@ -44,7 +44,7 @@
           fluid-let
           ecase
           dotimes doilst doplist while until
-          guard unwind-protect
+          guard
           ))
 (select-module gauche.common-macros)
 
@@ -322,56 +322,3 @@
     [(%guard-rec var exc other . more)
      (syntax-error "malformed guard clause" other)]))
 
-;;;-------------------------------------------------------------
-;;; unwind-protect
-;;;
-
-;; We set up exit-handler in the dynamic extent of BODY (but not in HANDLER),
-;; since if BODY calls exit, the error handlers won't be called---the dynamic
-;; environment is rewound upon exit, but that merely reset the error handlers.
-;;
-;; An alternative idea is to treat exit as if it's another kind of a condition,
-;; so that guard clauses are invoked.  We tried it, but the problem is how to
-;; deal with "ignore-errors" idiom, e.g. (guard (e [else #f]) body).  The exit
-;; condition shouldn't be stopped in such a way.
-;;
-;; TODO: Current definition doesn't work when unwind-protect is used
-;; within a thread that is terminated; thread termination isn't a condition
-;; either.
-(define-syntax unwind-protect
-  (syntax-rules ()
-    [(unwind-protect body handler ...)
-     (let ([x (exit-handler)]
-           [h (lambda () handler ...)]
-           [done #f])
-       (with-error-handler
-           (lambda (e)
-             (exit-handler x)
-             (cond
-              [(condition-has-type? e <serious-condition>)
-               (unless done (set! done #t) (h))
-               ;; NB: We don't know E is thrown by r7rs#raise or
-               ;; r7rs#raise-continuable, but gauche#raise can handle both
-               ;; case.
-               (raise e)]
-              [else
-               ;; exception handler can return to the caller
-               (%reraise)]))
-         (lambda ()
-           (receive r
-               (dynamic-wind
-                 (lambda ()
-                   (when done
-                     (error "Attempt to reenter obsoleted dynamic environment"))
-                   (exit-handler (lambda (code fmt args)
-                                   (set! done #t)
-                                   (h)
-                                   (x code fmt args))))
-                 (lambda () body)
-                 (lambda () (exit-handler x)))
-             (set! done #t)
-             (h)
-             (apply values r)))
-         :rewind-before #t))]
-    [(unwind-protect . other)
-     (syntax-error "malformed unwind-protect" (unwind-protect . other))]))
