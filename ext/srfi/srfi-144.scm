@@ -56,10 +56,10 @@
           flnormalized? fldenormalized?
 
           flmax flmin fl+ fl* fl+* fl- fl/ flabs flabsdiff
-          flposdiff flsign flnumerator fldenominator 
+          flposdiff flsgn flnumerator fldenominator 
           flfloor flceiling flround fltruncate
 
-          flexp flexp2 flexp-1 flsquare flcbrt flhypot flexpt fllog
+          flexp flexp2 flexp-1 flsquare flsqrt flcbrt flhypot flexpt fllog
           fllog1+ fllog2 fllog10 make-fllog-base
 
           flsin flcos fltan flasin flacos flatan
@@ -212,7 +212,7 @@
   (return (fabs (- x y))))
 (define-cproc flposdiff (x::<real> y::<real>) ::<real> :fast-flonum :constant
   (return (?: (> x y) (- x y) 0.0)))
-(define-cproc flsign  (x::<real>) ::<real> :fast-flonum :constant
+(define-cproc flsgn  (x::<real>) ::<real> :fast-flonum :constant
   (return (?: (signbit x) 1.0 -1.0)))
 
 (define (flnumerator x)
