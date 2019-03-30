@@ -63,12 +63,12 @@
           fllog1+ fllog2 fllog10 make-fllog-base
 
           flsin flcos fltan flasin flacos flatan
-          flsinh flcosh fltanh ;; flasinh flacosh flatanh
+          flsinh flcosh fltanh flasinh flacosh flatanh
 
-          ;; flquotient flremainder flremquo 
+          flquotient flremainder flremquo 
 
-          ;; flgamma flloggamma flfirst-bessel flsecond-bessel
-          ;; flerf flerfc
+          flgamma flloggamma flfirst-bessel flsecond-bessel
+          flerf flerfc
           ))
 (select-module srfi-144)
 
@@ -253,7 +253,30 @@
 (define-inline (flsinh x) (%sinh x))
 (define-inline (flcosh x) (%cosh x))
 (define-inline (fltanh x) (%tanh x))
+(define-cproc flasinh (x::<real>) ::<real> :fast-flonum :constant asinh)
+(define-cproc flacosh (x::<real>) ::<real> :fast-flonum :constant acosh)
+(define-cproc flatanh (x::<real>) ::<real> :fast-flonum :constant atanh)
 
+(define (flquotient x y) (fltruncate (/. x y)))
+(define (flremainder x y) (-. x (*. y (flquotient x y))))
+(define-cproc flremquo (x::<real> y::<real>) ::(<real> <int>)
+  (let* ([quo::int]
+         [rem::double (remquo x y (& quo))])
+    (result rem quo)))
 
+(define-inline (flgamma x) (gamma x))
+(define-inline (flloggamma x) (lgamma x))
+(define-cproc flfirst-bessel (n::<int> x::<real>)
+  ::<real> :fast-flonum :constant
+  jn)
+(define-cproc flsecond-bessel (n::<int> x::<real>) 
+  ::<real> :fast-flonum :constant
+  yn)
 
-  
+(define-cproc flerf (x::<real>)
+  ::<real> :fast-flonum :constant
+  erf)
+(define-cproc flerfc (x::<real>)
+  ::<real> :fast-flonum :constant
+  erfc)
+    
