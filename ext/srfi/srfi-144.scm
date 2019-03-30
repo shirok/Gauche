@@ -55,15 +55,15 @@
           flodd? fleven? flfinite? flinfinite? flnan?
           flnormalized? fldenormalized?
 
-          flmax flmin ;; fl+ fl* fl+* fl- fl/ flabs flabsdiff
-          ;; flposdiff flsign flnumerator fldenominator 
-          ;; flfloor flceiling flround fltruncate
+          flmax flmin fl+ fl* fl+* fl- fl/ flabs flabsdiff
+          flposdiff flsign flnumerator fldenominator 
+          flfloor flceiling flround fltruncate
 
-          ;; flexp flexp2 flexp-1 flsquare flcbrt flhypot flexpt fllog
-          ;; fllog1+ fllog2 fllog10 make-fllog-base
+          flexp flexp2 flexp-1 flsquare flcbrt flhypot flexpt fllog
+          fllog1+ fllog2 fllog10 make-fllog-base
 
-          ;; flsin flcos fltan flasin flacos flatan
-          ;; flsinh flcosh fltanh flasinh flacosh flatanh
+          flsin flcos fltan flasin flacos flatan
+          flsinh flcosh fltanh ;; flasinh flacosh flatanh
 
           ;; flquotient flremainder flremquo 
 
@@ -197,3 +197,63 @@
 
 (define-inline (flmax . args) (if (null? args) -inf.0 (apply max args)))
 (define-inline (flmin . args) (if (null? args) +inf.0 (apply min args)))
+
+(define-inline (fl+ . args) (apply +. args))
+(define-inline (fl* . args) (apply *. args))
+(define-cproc fl+* (x::<real> y::<real> z::<real>) 
+  ::<real> :fast-flonum :constant
+  (return (fma x y z)))
+
+(define-inline (fl- x . args) (apply -. x args))
+(define-inline (fl/ x . args) (apply /. x args))
+
+(define-cproc flabs (x::<real>) ::<real> :fast-flonum :constant fabs)
+(define-cproc flabsdiff (x::<real> y::<real>) ::<real> :fast-flonum :constant
+  (return (fabs (- x y))))
+(define-cproc flposdiff (x::<real> y::<real>) ::<real> :fast-flonum :constant
+  (return (?: (> x y) (- x y) 0.0)))
+(define-cproc flsign  (x::<real>) ::<real> :fast-flonum :constant
+  (return (?: (signbit x) 1.0 -1.0)))
+
+(define (flnumerator x)
+  (if (or (infinite? x) (nan? x) (zero? x))
+    x ; -0.0 is handled here
+    (inexact (numerator (exact x)))))
+
+(define (fldenominator x)
+  (if (or (infinite? x) (nan? x) (zero? x))
+    1
+    (inexact (denominator (exact x)))))
+  
+(define-cproc flfloor (x::<real>) ::<real> :fast-flonum :constant floor)
+(define-cproc flceiling (x::<real>) ::<real> :fast-flonum :constant ceil)
+(define (flround x) (assume (flonum? x)) (round x))
+(define-cproc fltruncate (x::<real>) ::<real> :fast-flonum :constant trunc)
+
+(define-inline (flexp x) (%exp x))
+(define-inline (flexp2 x) (%expt 2.0 x))
+(define-cproc flexp-1 (x::<real>) ::<real> :fast-flonum :constant expm1)
+(define-inline (flsquare x) (*. x x))
+(define-inline (flsqrt x) (%sqrt x))
+(define-inline (flcbrt x) (%expt x 1/3))
+(define-cproc flhypot (x::<real> y::<real>) ::<real> :fast-flonum :constant hypot)
+(define-inline (flexpt x y) (%expt x y))
+(define-inline (fllog x) (%log x))
+(define-cproc fllog1+ (x::<real>) ::<real> :fast-flonum :constant log1p)
+(define-cproc fllog2 (x::<real>) ::<real> :fast-flonum :constant log2)
+(define-cproc fllog10 (x::<real>) ::<real> :fast-flonum :constant log10)
+(define (make-fllog-base base) (^x (/. (%log x) (%log base))))
+
+(define-inline (flsin x) (%sin x))
+(define-inline (flcos x) (%cos x))
+(define-inline (fltan x) (%tan x))
+(define-inline (flasin x) (%asin x))
+(define-inline (flacos x) (%acos x))
+(define-inline (flatan y . x) (apply %atan y x))
+(define-inline (flsinh x) (%sinh x))
+(define-inline (flcosh x) (%cosh x))
+(define-inline (fltanh x) (%tanh x))
+
+
+
+  
