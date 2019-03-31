@@ -23,20 +23,20 @@
    [gauche.os.windows (regexp-replace-all #/\\/ path "/")]
    [else              path]))
 
-(define (wrap-with-test-directory thunk :optional (mkdir? #t))
-  (remove-files "test.o" "test1.o")
-  (when mkdir?
-    (make-directory* "test.o")
-    (make-directory* "test1.o"))
-  (unwind-protect (thunk)
-    ;; cleanup may fail due to the timing (exp. on mingw), so we retry
-    ;; with delay.
+(define (wrap-with-test-directory thunk dirs :optional (mkdir? #t))
+  ;; cleanup may fail due to the timing (exp. on mingw), so we retry
+  ;; with delay.
+  (define (remove-dirs dirs)
     (let loop ([retry 0])
-      (unless (>= retry 3)
+      (if (< retry 3)
         (or (guard (e [<system-error> #f])
-              (remove-files "test.o" "test1.o")
+              (apply remove-files dirs)
               #t)
-            (begin (sys-sleep 1) (loop (+ retry 1))))))))
+            (begin (sys-sleep 1) (loop (+ retry 1))))
+        (apply remove-files dirs))))
+  (remove-dirs dirs)
+  (when mkdir? (for-each make-directory* dirs))
+  (unwind-protect (thunk) (remove-dirs dirs)))
 
 ;;=======================================================================
 (test-section "gosh")
@@ -145,231 +145,232 @@
 (use gauche.configure)
 (test-module 'gauche.configure)
 
-;; NB: At this moment, running env.exe via run-process doesn't work,
-;; if gosh is runnung under MSYS shell.  (It is ok if gosh is running
-;; under cmd.)
-;; So we skip this test on MinGW.
-(cond-expand
- [gauche.os.windows]
- [else
-
-(remove-files "test.o" "test2.o")
-(make-directory* "test.o/src")
-(make-directory* "test2.o")
-(let ([extdir (build-path (or (sys-getenv "top_srcdir") "..") "ext")])
-  (define (filter-copy infile outfile)
-    (file-filter (^[in out]
-                   (dolist [line (port->string-list in)]
-                     (display ($ regexp-replace-all* line #/@@/ ""
-                                 #/\(cf-output-default\)/
-                                 "(cf-define 'HAVE_STDIO_H \"1\")\n\
-                                  (cf-config-headers \"config.h\")\n\
-                                  (cf-output-default)")
-                              out)
-                     (newline out)))
-                 :input infile
-                 :output outfile))
-  (filter-copy (build-path extdir "template.configure") "test.o/configure")
-  (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
-  (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
-
-  (with-output-to-file "test.o/src/Makefile.in"
-    (^[]
-      (print "srcdir = @srcdir@")
-      (print "top_srcdir = @top_srcdir@")
-      (print "builddir = @builddir@")
-      (print "top_builddir = @top_builddir@")))
-
-  (with-output-to-file "test.o/config.h.in"
-    (^[]
-      (print "/* Define to 1 if you have the <foo.h> header file */")
-      (print "#undef HAVE_FOO_H")
-      (print)
-      (print "this is literal line")
-      (print "/* Define to 1 if you have the <stdio.h> header file */")
-      (print "#undef HAVE_STDIO_H")
-      ))
-  )
-
 ;; When we run configure, we need to include directories of gosh and
 ;; other scripts in PATH.  Before installing Gauche, where we find them
 ;; is "..".
 (define (run-with-parent-directory-in-paths cmd . args)
   (let* ([separ (cond-expand [gauche.os.windows ";"] [else ":"])]
-         [paths #"..~|separ|~(sys-getenv \"PATH\")"])
-    (apply run-process `("env" ,#"PATH=~paths" ,@cmd) args)))
+         [paths-old (sys-getenv "PATH")]
+         [paths-new #"..~|separ|~|paths-old|"])
+    (cond-expand
+     [gauche.os.windows
+      (sys-setenv "PATH" paths-new #t)
+      (unwind-protect (apply run-process cmd args)
+        (sys-setenv "PATH" paths-old #t))]
+     [else
+      (apply run-process `("env" ,#"PATH=~|paths-new|" ,@cmd) args)])))
 
-(test* "running `configure' script" 0
-       (process-exit-status
-        (run-with-parent-directory-in-paths
-         `("../gosh" "-ftest" "./configure")
-         :output :null :wait #t :directory "test.o")))
-(test* "Makefile substitution" '()
-       (and (file-exists? "test.o/Makefile")
-            (filter #/@\w+@/ (file->string-list "test.o/Makefile"))))
-(test* "VERSION generation" "1.0\n"
-       (and (file-exists? "test.o/VERSION")
-            (file->string "test.o/VERSION")))
-(test* "srcdir etc."
-       '("srcdir = ." "top_srcdir = .." "builddir = ." "top_builddir = ..")
-       (file->string-list "test.o/src/Makefile"))
+(define (configure-test-1)
+  (make-directory* "test.o/src")
+  (make-directory* "test2.o")
+  (let ([extdir (build-path (or (sys-getenv "top_srcdir") "..") "ext")])
+    (define (filter-copy infile outfile)
+      (file-filter (^[in out]
+                     (dolist [line (port->string-list in)]
+                       (display ($ regexp-replace-all* line #/@@/ ""
+                                   #/\(cf-output-default\)/
+                                   "(cf-define 'HAVE_STDIO_H \"1\")\n\
+                                    (cf-config-headers \"config.h\")\n\
+                                    (cf-output-default)")
+                                out)
+                       (newline out)))
+                   :input infile
+                   :output outfile))
+    (filter-copy (build-path extdir "template.configure") "test.o/configure")
+    (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
+    (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
 
-(test* "configure --version" "package configure 1.0"
-       (read-line
-        (process-output
-         (run-with-parent-directory-in-paths
-          `("../gosh" "-ftest" "./configure" "--version")
-          :output :pipe :directory "test.o"))))
+    (with-output-to-file "test.o/src/Makefile.in"
+      (^[]
+        (print "srcdir = @srcdir@")
+        (print "top_srcdir = @top_srcdir@")
+        (print "builddir = @builddir@")
+        (print "top_builddir = @top_builddir@")))
 
-(test* "running `configure' script in different directory" 0
-       (process-exit-status
-        (run-with-parent-directory-in-paths
-         `("../gosh" "-ftest" "../test.o/configure")
-         :output :null :wait #t :directory "test2.o")))
+    (with-output-to-file "test.o/config.h.in"
+      (^[]
+        (print "/* Define to 1 if you have the <foo.h> header file */")
+        (print "#undef HAVE_FOO_H")
+        (print)
+        (print "this is literal line")
+        (print "/* Define to 1 if you have the <stdio.h> header file */")
+        (print "#undef HAVE_STDIO_H")
+        ))
+    )
 
-(test* "Makefiles in proper builddir" '(#t #t)
-       (list (file-exists? "test2.o/Makefile")
-             (file-exists? "test2.o/src/Makefile")))
+  (test* "running `configure' script" 0
+         (process-exit-status
+          (run-with-parent-directory-in-paths
+           `("../gosh" "-ftest" "./configure")
+           :output :null :wait #t :directory "test.o")))
+  (test* "Makefile substitution" '()
+         (and (file-exists? "test.o/Makefile")
+              (filter #/@\w+@/ (file->string-list "test.o/Makefile"))))
+  (test* "VERSION generation" "1.0\n"
+         (and (file-exists? "test.o/VERSION")
+              (file->string "test.o/VERSION")))
+  (test* "srcdir etc."
+         '("srcdir = ." "top_srcdir = .." "builddir = ." "top_builddir = ..")
+         (file->string-list "test.o/src/Makefile"))
 
-(test* "srcdir etc."
-       '("srcdir = ../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ..")
-       (file->string-list "test2.o/src/Makefile"))
+  (test* "configure --version" "package configure 1.0"
+         (read-line
+          (process-output
+           (run-with-parent-directory-in-paths
+            `("../gosh" "-ftest" "./configure" "--version")
+            :output :pipe :directory "test.o"))))
 
-(dolist [d '("test.o" "test2.o")]
-  (let1 config.h (build-path d "config.h")
-    (test* config.h
-           '("/* Define to 1 if you have the <foo.h> header file */"
-             "/* #undef HAVE_FOO_H */"
-             ""
-             "this is literal line"
-             "/* Define to 1 if you have the <stdio.h> header file */"
-             "#define HAVE_STDIO_H 1")
-           (and (file-exists? config.h)
-                (file->string-list config.h)))))
+  (test* "running `configure' script in different directory" 0
+         (process-exit-status
+          (run-with-parent-directory-in-paths
+           `("../gosh" "-ftest" "../test.o/configure")
+           :output :null :wait #t :directory "test2.o")))
 
-(remove-files "test2.o/package.gpd")
+  (test* "Makefiles in proper builddir" '(#t #t)
+         (list (file-exists? "test2.o/Makefile")
+               (file-exists? "test2.o/src/Makefile")))
 
-(test* "gpd"
-       "./configure --with-local=/a/b:/c/d"
-       (and (zero?
-             (process-exit-status
-              (run-with-parent-directory-in-paths
-               `("../gosh" "-ftest" "../test.o/configure"
-                 "--with-local=/a/b:/c/d")
-               :output :null :wait #t :directory "test2.o")))
-            (cadr (memv :configure
-                        (car (file->sexp-list "test2.o/package.gpd"))))))
+  (test* "srcdir etc."
+         '("srcdir = ../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ..")
+         (file->string-list "test2.o/src/Makefile"))
 
-(remove-files "test.o" "test2.o")
+  (dolist [d '("test.o" "test2.o")]
+    (let1 config.h (build-path d "config.h")
+      (test* config.h
+             '("/* Define to 1 if you have the <foo.h> header file */"
+               "/* #undef HAVE_FOO_H */"
+               ""
+               "this is literal line"
+               "/* Define to 1 if you have the <stdio.h> header file */"
+               "#define HAVE_STDIO_H 1")
+             (and (file-exists? config.h)
+                  (file->string-list config.h)))))
 
-(make-directory* "test.o/src")
-(make-directory* "test2.o")
-(let ([extdir (build-path (or (sys-getenv "top_srcdir") "..") "ext")])
-  (define (filter-copy infile outfile)
-    (file-filter (^[in out]
-                   (dolist [line (port->string-list in)]
-                     (display ($ regexp-replace-all* line #/@@/ "") out)
-                     (newline out)))
-                 :input infile
-                 :output outfile))
-  (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
-  (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
+  (remove-files "test2.o/package.gpd")
 
-  (with-output-to-file "test.o/configure"
-    (^[]
-      ($ for-each write
-         '((use gauche.configure)
-           (cf-init-gauche-extension)
-           (cf-check-headers '("stdio.h" "stdlib.h" 
-                               "no-such-header-should-exist.h"))
-           (cf-check-types '("a_t" "b_t" "struct c_t" "d_t")
-                           :includes '("typedef int a_t;\n"
-                                       "int b_t;\n"
-                                       "struct c_t { int i; };\n"))
-           (cf-check-decls '("a" "b" "c" "d" "e" "f")
-                           :includes '("#define a 1\n"
-                                       "int b;\n"
-                                       "const int c = 1;\n"
-                                       "extern int d();\n"
-                                       "struct foo { int i; } e;\n"))
-           (cf-check-members '("struct foo.a" "struct foo.b")
-                             :includes '("struct foo { int b; };\n"))
-           (cf-check-funcs '("printf" "nonexistent_weird_function"))
-           (unless (#/darwin/ (gauche-architecture))
-             ;; this test fails on OSX since 'sin' is recognized as built-in
-             (cf-check-lib "m" "sin"))
-           (cf-check-lib "no-such-library-should-exist" "sin")
-           (cf-config-headers "config.h")
-           (cf-output-default)))))
-
-  (with-output-to-file "test.o/src/Makefile.in"
-    (^[]
-      (print "LIBS = @LIBS@")))
-
-  (with-output-to-file "test.o/config.h.in"
-    (^[]
-      (print "#undef HAVE_STDIO_H")
-      (print "#undef HAVE_STDLIB_H")
-      (print "#undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H")
-      (print "#undef HAVE_A_T")
-      (print "#undef HAVE_B_T")
-      (print "#undef HAVE_STRUCT_C_T")
-      (print "#undef HAVE_D_T")
-      (print "#undef HAVE_DECL_A")
-      (print "#undef HAVE_DECL_B")
-      (print "#undef HAVE_DECL_C")
-      (print "#undef HAVE_DECL_D")
-      (print "#undef HAVE_DECL_E")
-      (print "#undef HAVE_DECL_F")
-      (print "#undef HAVE_STRUCT_FOO_A")
-      (print "#undef HAVE_STRUCT_FOO_B")
-      (print "#undef HAVE_PRINTF")
-      (print "#undef HAVE_NONEXISTENT_WEIRD_FUNCTION")
-      (print "#undef HAVE_LIBM")
-      (print "#undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST")
-      ))
+  (test* "gpd"
+         (cond-expand
+          [gauche.os.windows "./configure \"--with-local=/a/b:/c/d\""]
+          [else              "./configure --with-local=/a/b:/c/d"])
+         (and (zero?
+               (process-exit-status
+                (run-with-parent-directory-in-paths
+                 `("../gosh" "-ftest" "../test.o/configure"
+                   "--with-local=/a/b:/c/d")
+                 :output :null :wait #t :directory "test2.o")))
+              (cadr (memv :configure
+                          (car (file->sexp-list "test2.o/package.gpd"))))))
   )
 
-(test* "running `configure' script with actual checks" 0
-       (process-exit-status
-        (run-with-parent-directory-in-paths
-         `("../gosh" "-ftest" "./configure")
-         :output :null :wait #t :directory "test.o")))
+(define (configure-test-2)
+  (make-directory* "test.o/src")
+  (make-directory* "test2.o")
+  (let ([extdir (build-path (or (sys-getenv "top_srcdir") "..") "ext")])
+    (define (filter-copy infile outfile)
+      (file-filter (^[in out]
+                     (dolist [line (port->string-list in)]
+                       (display ($ regexp-replace-all* line #/@@/ "") out)
+                       (newline out)))
+                   :input infile
+                   :output outfile))
+    (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
+    (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
 
-(test* "cf-check-lib set LIBS"
-       (if (#/darwin/ (gauche-architecture))
-         '("LIBS = ")
-         '("LIBS = -lm"))
-       (file->string-list "test.o/src/Makefile"))
+    (with-output-to-file "test.o/configure"
+      (^[]
+        ($ for-each write
+           '((use gauche.configure)
+             (cf-init-gauche-extension)
+             (cf-check-headers '("stdio.h" "stdlib.h" 
+                                 "no-such-header-should-exist.h"))
+             (cf-check-types '("a_t" "b_t" "struct c_t" "d_t")
+                             :includes '("typedef int a_t;\n"
+                                         "int b_t;\n"
+                                         "struct c_t { int i; };\n"))
+             (cf-check-decls '("a" "b" "c" "d" "e" "f")
+                             :includes '("#define a 1\n"
+                                         "int b;\n"
+                                         "const int c = 1;\n"
+                                         "extern int d();\n"
+                                         "struct foo { int i; } e;\n"))
+             (cf-check-members '("struct foo.a" "struct foo.b")
+                               :includes '("struct foo { int b; };\n"))
+             (cf-check-funcs '("printf" "nonexistent_weird_function"))
+             (unless (#/darwin/ (gauche-architecture))
+               ;; this test fails on OSX since 'sin' is recognized as built-in
+               (cf-check-lib "m" "sin"))
+             (cf-check-lib "no-such-library-should-exist" "sin")
+             (cf-config-headers "config.h")
+             (cf-output-default)))))
 
-(test* "cf-check-headers and cf-check-lib to set defines"
-       `("#define HAVE_STDIO_H 1"
-         "#define HAVE_STDLIB_H 1"
-         "/* #undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H */"
-         "#define HAVE_A_T 1"
-         "/* #undef HAVE_B_T */"
-         "#define HAVE_STRUCT_C_T 1"
-         "/* #undef HAVE_D_T */"
-         "#define HAVE_DECL_A 1"
-         "#define HAVE_DECL_B 1"
-         "#define HAVE_DECL_C 1"
-         "#define HAVE_DECL_D 1"
-         "#define HAVE_DECL_E 1"
-         "#define HAVE_DECL_F 0"
-         "/* #undef HAVE_STRUCT_FOO_A */"
-         "#define HAVE_STRUCT_FOO_B 1"
-         "#define HAVE_PRINTF 1"
-         "/* #undef HAVE_NONEXISTENT_WEIRD_FUNCTION */"
-         ,(if (#/darwin/ (gauche-architecture))
-            "/* #undef HAVE_LIBM */"
-            "#define HAVE_LIBM 1")
-         "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
-       ($ filter #/HAVE_/
-          $ file->string-list "test.o/config.h"))
+    (with-output-to-file "test.o/src/Makefile.in"
+      (^[]
+        (print "LIBS = @LIBS@")))
 
-(remove-files "test.o" "test2.o")
+    (with-output-to-file "test.o/config.h.in"
+      (^[]
+        (print "#undef HAVE_STDIO_H")
+        (print "#undef HAVE_STDLIB_H")
+        (print "#undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H")
+        (print "#undef HAVE_A_T")
+        (print "#undef HAVE_B_T")
+        (print "#undef HAVE_STRUCT_C_T")
+        (print "#undef HAVE_D_T")
+        (print "#undef HAVE_DECL_A")
+        (print "#undef HAVE_DECL_B")
+        (print "#undef HAVE_DECL_C")
+        (print "#undef HAVE_DECL_D")
+        (print "#undef HAVE_DECL_E")
+        (print "#undef HAVE_DECL_F")
+        (print "#undef HAVE_STRUCT_FOO_A")
+        (print "#undef HAVE_STRUCT_FOO_B")
+        (print "#undef HAVE_PRINTF")
+        (print "#undef HAVE_NONEXISTENT_WEIRD_FUNCTION")
+        (print "#undef HAVE_LIBM")
+        (print "#undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST")
+        ))
+    )
 
-]) ; cond-expand except windows
+  (test* "running `configure' script with actual checks" 0
+         (process-exit-status
+          (run-with-parent-directory-in-paths
+           `("../gosh" "-ftest" "./configure")
+           :output :null :wait #t :directory "test.o")))
+
+  (test* "cf-check-lib set LIBS"
+         (if (#/darwin/ (gauche-architecture))
+           '("LIBS = ")
+           '("LIBS = -lm"))
+         (file->string-list "test.o/src/Makefile"))
+
+  (test* "cf-check-headers and cf-check-lib to set defines"
+         `("#define HAVE_STDIO_H 1"
+           "#define HAVE_STDLIB_H 1"
+           "/* #undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H */"
+           "#define HAVE_A_T 1"
+           "/* #undef HAVE_B_T */"
+           "#define HAVE_STRUCT_C_T 1"
+           "/* #undef HAVE_D_T */"
+           "#define HAVE_DECL_A 1"
+           "#define HAVE_DECL_B 1"
+           "#define HAVE_DECL_C 1"
+           "#define HAVE_DECL_D 1"
+           "#define HAVE_DECL_E 1"
+           "#define HAVE_DECL_F 0"
+           "/* #undef HAVE_STRUCT_FOO_A */"
+           "#define HAVE_STRUCT_FOO_B 1"
+           "#define HAVE_PRINTF 1"
+           "/* #undef HAVE_NONEXISTENT_WEIRD_FUNCTION */"
+           ,(if (#/darwin/ (gauche-architecture))
+              "/* #undef HAVE_LIBM */"
+              "#define HAVE_LIBM 1")
+           "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
+         ($ filter #/HAVE_/
+            $ file->string-list "test.o/config.h"))
+  )
+
+(wrap-with-test-directory configure-test-1 '("test.o" "test2.o") #f)
+(wrap-with-test-directory configure-test-2 '("test.o" "test2.o") #f)
 
 ;;=======================================================================
 (test-section "gauche-install")
@@ -456,7 +457,7 @@
                      (not (file-exists? "test1.o/dest/bin/command2")))))
   )
 
-(wrap-with-test-directory test-install #f)
+(wrap-with-test-directory test-install '("test.o" "test1.o") #f)
 
 ;;=======================================================================
 (test-section "gauche-package")
@@ -530,7 +531,7 @@
            (or (zero? (process-exit-status p)) o)))
   )
 
-(wrap-with-test-directory package-generate-tests)
+(wrap-with-test-directory package-generate-tests '("test.o"))
 
 ;;=======================================================================
 (test-section "precomp")
@@ -621,17 +622,36 @@
            (do-process! `("../../src/gosh" "-ftest"
                           ,(build-path *top-srcdir* "src/gauche-package.in")
                           "compile"
-                          ,#"--cppflags=-I~(build-path *top-srcdir* \"src\") -I~(build-path *top-srcdir* \"gc/include\") -I~(build-path *top-builddir* \"src\") -I~(build-path *top-builddir* \"gc/include\")"
+                          ,#"--cppflags=-I~(fix-path (build-path *top-srcdir* \"src\")) \
+                                        -I~(fix-path (build-path *top-srcdir* \"gc/include\")) \
+                                        -I~(fix-path (build-path *top-builddir* \"src\")) \
+                                        -I~(fix-path (build-path *top-builddir* \"gc/include\"))"
+                          ,#"--ldflags=-L~(fix-path (build-path *top-srcdir* \"src\")) \
+                                       -L~(fix-path (build-path *top-builddir* \"src\"))"
                           "foo"
                           "foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")
                         :directory "test.o")
-           (load "foo" :paths '("./test.o"))
-           ((global-variable-ref 'foo 'foo-literals)))
+           (cond-expand
+            [gauche.os.windows
+             ;; On Windows, foo.dll can't be removed if process using it exists.
+             (let* ([p (run-process '("../../src/gosh" "-ftest"
+                                      "-e(begin \
+                                           (add-load-path \".\") \
+                                           (load \"foo\") \
+                                           (write ((global-variable-ref 'foo 'foo-literals))) \
+                                           (exit 0))")
+                                    :output :pipe :directory "test.o")]
+                    [ret (read (process-output p))])
+               (process-wait p)
+               ret)]
+            [else
+             (load "foo" :paths '("./test.o"))
+             ((global-variable-ref 'foo 'foo-literals))]))
          literal=?)
   )
 
-(wrap-with-test-directory precomp-test-1)
-(wrap-with-test-directory precomp-test-2)
+(wrap-with-test-directory precomp-test-1 '("test.o"))
+(wrap-with-test-directory precomp-test-2 '("test.o"))
 
 ;;=======================================================================
 (test-section "build-standalone")
@@ -664,6 +684,6 @@
          (process-output->string '(test.o/staticmain A b CdE)))
   )
 
-(wrap-with-test-directory static-test-1)
+(wrap-with-test-directory static-test-1 '("test.o"))
 
 (test-end)

@@ -392,12 +392,12 @@
       (case dir
         [(< > >>)
          (cond [(string? arg) (do-file dir fd arg)]
+               [(eq? arg :null) (do-file dir fd *nulldev*)]
                [(symbol? arg)
                 (receive (in out) (sys-pipe)
                   (if (eq? dir '<)
                     (do-pipe fd arg #t in out)
                     (do-pipe fd arg #f out in)))]
-               [(eq? arg :null) (do-file dir fd *nulldev*)]
                [(or (port? arg) (integer? arg)) (push! iomap `(,fd . ,arg))]
                [else (error "invalid entry in process redirection" r)])]
         [(<< <<<)
