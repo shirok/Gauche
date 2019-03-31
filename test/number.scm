@@ -1420,6 +1420,8 @@
 (test* "division by zero" #t (nan? (divide. 0.0 0)))
 (test* "division by zero" #t (nan? (divide. 0 0.0)))
 (test* "division by zero" #t (nan? (divide. 0.0 0.0)))
+(test* "division by zero" #t (nan? (divide. +nan.0 0)))
+(test* "division by zero" #t (nan? (divide. +nan.0 0.0)))
 (test* "division by zero" +inf.0 (divide. 0.5 0))
 
 (test* "division by zero" +inf.0+inf.0i (/ 1+2i 0.0))

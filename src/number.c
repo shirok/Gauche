@@ -2234,6 +2234,7 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
     }
     if (SCM_FLONUMP(arg0)) {
         if (SCM_INTP(arg1)) {
+            if (SCM_IS_NAN(SCM_FLONUM_VALUE(arg0))) return SCM_NAN;
             if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
             RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/SCM_INT_VALUE(arg1));
@@ -2242,6 +2243,7 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
             RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/Scm_GetDouble(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
+            if (SCM_IS_NAN(SCM_FLONUM_VALUE(arg0))) return SCM_NAN;
             if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal;
             RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
         }
@@ -2339,13 +2341,15 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
         double i0 = SCM_COMPNUM_IMAG(arg0);
         int s1 = SCM_FLONUMP(arg1)? Scm_FlonumSign(SCM_FLONUM_VALUE(arg1)) : 1;
         double r =
-            (r0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
-            : ((r0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
-               : SCM_DBL_NAN);
+            SCM_IS_NAN(r0) ? SCM_DBL_NAN
+            : ((r0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
+               : ((r0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+                  : SCM_DBL_NAN));
         double i =
-            (i0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
-            : ((i0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
-               : SCM_DBL_NAN);
+            SCM_IS_NAN(i0) ? SCM_DBL_NAN
+            : ((i0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
+               : ((i0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+                  : SCM_DBL_NAN));
         return Scm_MakeComplex(r, i);
     }
   do_complex:

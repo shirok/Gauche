@@ -1,3 +1,7 @@
+2019-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (scm_div): Fix bug that yiels infinity in (/. +nan.0 0).
+
 2019-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (approx=?): Added.
