@@ -152,9 +152,10 @@
 (define-cproc logb (x::<real>) ::<real> :constant :fast-flonum logb)
 (define-cproc ilogb (x::<real>) ::<int> :constant :fast-flonum ilogb)
 
-(define-inline (flinteger-fraction x) (modf x))
+(define-inline (flinteger-fraction x) 
+  (receive (r q) (modf x) (values q r)))
 (define-inline (flexponent x) (logb x))
-(define-inline (flinteger-exponent x) (ilogb 0))
+(define-inline (flinteger-exponent x) (ilogb x))
 (define-inline (flnormalized-fraction-exponent x) (frexp x))
 (define-cproc flsign-bit (x::<real>) ::<int> :constant :fast-flonum signbit)
 
@@ -173,7 +174,7 @@
 (define-inline (fl>? . args)  (apply > args))
 (define-inline (fl>=? . args) (apply >= args))
 
-(define-inline (flunordered? x y) (and (not (nan? x)) (not (nan? y))))
+(define-inline (flunordered? x y) (or (nan? x) (nan? y)))
 (define-inline (flinteger? x) (and (flonum? x) (integer? x)))
 (define-inline (flzero? x) (and (flonum? x) (zero? x)))
 (define-inline (flpositive? x) (and (flonum? x) (positive? x)))
@@ -213,7 +214,7 @@
 (define-cproc flposdiff (x::<real> y::<real>) ::<real> :fast-flonum :constant
   (return (?: (> x y) (- x y) 0.0)))
 (define-cproc flsgn  (x::<real>) ::<real> :fast-flonum :constant
-  (return (?: (signbit x) 1.0 -1.0)))
+  (return (?: (signbit x) -1.0 1.0)))
 
 (define (flnumerator x)
   (if (or (infinite? x) (nan? x) (zero? x))
@@ -221,9 +222,9 @@
     (inexact (numerator (exact x)))))
 
 (define (fldenominator x)
-  (if (or (infinite? x) (nan? x) (zero? x))
-    1
-    (inexact (denominator (exact x)))))
+  (cond [(or (infinite? x) (zero? x)) 1.0]
+        [(nan? x) x]
+        [else (inexact (denominator (exact x)))]))
   
 (define-cproc flfloor (x::<real>) ::<real> :fast-flonum :constant floor)
 (define-cproc flceiling (x::<real>) ::<real> :fast-flonum :constant ceil)
@@ -235,7 +236,19 @@
 (define-cproc flexp-1 (x::<real>) ::<real> :fast-flonum :constant expm1)
 (define-inline (flsquare x) (*. x x))
 (define-inline (flsqrt x) (%sqrt x))
-(define-inline (flcbrt x) (%expt x 1/3))
+(define (flcbrt x)
+  (assume (real? x))
+  ;; (%expt x 1/3) may give us a complex root, so we roll our own.
+  (if (or (nan? x) (infinite? x))
+    x
+    (let loop ([r (flcopysign (magnitude (%expt x 1/3)) x)])
+      (if (zero? r)
+        r
+        (let1 r+ (- r (/ (- (* r r r) x)
+                         (* 3 r r)))
+          (if (= r r+)
+            r
+            (loop r+)))))))
 (define-cproc flhypot (x::<real> y::<real>) ::<real> :fast-flonum :constant hypot)
 (define-inline (flexpt x y) (%expt x y))
 (define-inline (fllog x) (%log x))
@@ -265,7 +278,13 @@
     (result rem quo)))
 
 (define-inline (flgamma x) (gamma x))
-(define-inline (flloggamma x) (lgamma x))
+(define (flloggamma x)
+  (values (lgamma x)
+          (cond [(<= 0 x) 1.0]
+                [(infinite? x) +nan.0] ; sign of gamma(-inf.0) undecidable
+                [(odd? (floor x)) -1.0]
+                [else 1.0])))
+                  
 (define-cproc flfirst-bessel (n::<int> x::<real>)
   ::<real> :fast-flonum :constant
   jn)
