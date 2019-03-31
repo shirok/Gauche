@@ -402,7 +402,6 @@ ScmUInt64 Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
 }
 #endif /* SIZEOF_LONG == 4 */
 
-
 extern double Scm__EncodeDouble(u_long, u_long, int, int);
 
 /* Converts a bignum b to a double.  b must be normalized.
@@ -440,7 +439,7 @@ double Scm_BignumToDouble(const ScmBignum *b)
         }
     }
     if (exponent > 2046) return Scm__EncodeDouble(0, 0, 2047, (b->sign < 0));
-    else return Scm__EncodeDouble(0, dst[0], exponent, (b->sign < 0));
+    else return Scm__EncodeDouble(dst[0], 0, exponent, (b->sign < 0));
 #else  /*SIZEOF_LONG == 4 */
     dst[0] = dst[1] = 0;
     if (maxbit < 53) {

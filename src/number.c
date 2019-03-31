@@ -330,19 +330,10 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
     return Scm_MakeFlonum(d);
 }
 
-/* Decompose flonum D into an integer mantissa F and exponent E, where
- *   -1022 <= E <= 1023,
- *    0 <= abs(F) < 2^53
- *    D = F * 2^(E - 53)
- * Some special cases:
- *    F = 0, E = 0 if D = 0.0 or -0.0
- *    F = #t if D is infinity (positive or negative)
- *    F = #f if D is NaN.
- * If D is normalized number, F >= 2^52.
- *
- * Cf. IEEE 754 Reference
- * http://babbage.cs.qc.edu/courses/cs341/IEEE-754references.html
- */
+/*
+ * Flonum decomposition
+ */ 
+
 static inline void decode_double(double d, 
                                  u_long *mant1 SCM_UNUSED,
                                  u_long *mant0,
@@ -374,6 +365,19 @@ static inline void decode_double(double d,
 #endif /* SIZEOF_LONG == 4 */
 }
 
+/* Decompose flonum D into an integer mantissa F and exponent E, where
+ *   -1074 <= E <= 971
+ *    0 <= abs(F) < 2^53
+ *    D = F * 2^E
+ * Some special cases:
+ *    F = 0, E = 0 if D = 0.0 or -0.0
+ *    F = #t if D is infinity (positive or negative)
+ *    F = #f if D is NaN.
+ * If D is normalized number (e.g. E > -1074), F >= 2^52.
+ * If D is denormalized number, E == -1074 and F < 2^52
+ * Cf. IEEE 754 Reference
+ * http://babbage.cs.qc.edu/courses/cs341/IEEE-754references.html
+ */
 ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
 {
     ScmObj f;
@@ -523,16 +527,16 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
     return (ScmHalfFloat)((sign0? 0x8000 : 0x0000)|(e << 10)|(m & 0x3ff));
 }
 
-/* Construct a double directly from the given bit patterns.  Usually
-   user program don't need this; but it is useful if the rounding of
-   the last bit really matters.
+/* Construct a double directly from the given bit patterns.¡¡¡¡This is
+   an internal procedure; external procedure should use Scm_EncodeFlonum.
 
-   On 64bit architecture, only mant0 is used for mantissa.
+   On 64bit architecture, only mant1 is used for mantissa.
    On 32bit architecture, mant1 is for lower 32bits of mantissa, and 
    lower 20bits of mant0 is used for higher bits.
  */
-double Scm__EncodeDouble(u_long mant1 SCM_UNUSED,
-                         u_long mant0, int exp, int signbit)
+double Scm__EncodeDouble(u_long mant1,
+                         u_long mant0 SCM_UNUSED, 
+                         int exp, int signbit)
 {
     ScmIEEEDouble dd;
 #ifdef DOUBLE_ARMENDIAN
@@ -549,7 +553,7 @@ double Scm__EncodeDouble(u_long mant1 SCM_UNUSED,
     dd.components.exp = exp;
     dd.components.sign = signbit;
 #if SIZEOF_LONG >= 8
-    dd.components.mant = mant0;
+    dd.components.mant = mant1;
 #else  /*SIZEOF_LONG==4*/
     dd.components.mant1 = mant1;
     dd.components.mant0 = mant0;
@@ -557,31 +561,45 @@ double Scm__EncodeDouble(u_long mant1 SCM_UNUSED,
     return dd.d;
 }
 
-/* More user-friendly flonum construction.  This is inverse of DecodeFlonum,
-   and returns the double representation of sign * mant * 2^exp.
-   If exp is too small for normalized range, this returns denormalized number,
-   and the bits that don't fit in the mantissa are just discarded.  (We don't
-   round them, for it will cause double-rounding.  We assume that the caller
-   knows what it is doing when passing very small exp.)
+/* Inverse of Scm_DecodeFlonum.
+   Returns the double representation of S * F * 2^E,
+   where S = 1 | -1,
+         -1074 <= E <= 971
+         2^52 <= F < 2^53 (if E > -1074)
+         or 0 <= F < 2^52 (if E = -1074)
+   NB: If E < -1074, we scale F accordingly until E becomes -1074.
 */
 double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
 {
-    ScmUInt64 mant64 = Scm_GetIntegerU64Clamp(mant, SCM_CLAMP_ERROR, NULL);
-    int signbit = sign < 0? 1 : 0;
-    int expfield = exp + 0x3ff + 52;
-    if (expfield <= 0) {
-        /* denormalized range. */
-        int shift = -expfield+1;
-#if SCM_EMULATE_INT64
-        mant64.lo = (mant.lo >> shift) | (mant.hi << (WORD_BITS - shift));
-        mant64.hi >>= shift;
-#else
-        mant64 >>= shift;
-#endif
-        expfield = 0;
+    if (SCM_FALSEP(mant)) return SCM_DBL_NAN;
+    if (SCM_TRUEP(mant)) {
+        if (sign < 0) return SCM_DBL_NEGATIVE_INFINITY;
+        else return SCM_DBL_POSITIVE_INFINITY;
     }
+
+    int signbit = sign < 0? 1 : 0;
+    if (exp < -1074) {
+        /* scale mantissa */
+        int shift = -1074 - exp;
+        mant = Scm_Ash(mant, -shift);
+        exp = -1074;
+    } else if (exp > 971) {
+        Scm_Error("flonum exponent out of range: %d", exp);
+    }
+
+    ScmUInt64 mant64 = Scm_GetIntegerU64Clamp(mant, SCM_CLAMP_ERROR, NULL);
+    if (!Scm_NumLT(mant, SCM_2_53)) {
+        Scm_Error("flonum mantissa out of range: %S", mant);
+    }
+    if (exp == -1074 && Scm_NumLT(mant, SCM_2_52)) {
+        exp -= 1;               /* denormalized range */
+    } else if (Scm_NumLT(mant, SCM_2_52)) {
+        Scm_Error("flonum mantissa out of range: %S", mant);
+    }
+
+    int expfield = exp + 0x3ff + 52;
 #if SIZEOF_LONG >= 8
-    return Scm__EncodeDouble(0, mant64, expfield, signbit);
+    return Scm__EncodeDouble(mant64, 0, expfield, signbit);
 #elif SCM_EMULATE_INT64
     return Scm__EncodeDouble(mant64.lo, mant64.hi, expfield, signbit);
 #else

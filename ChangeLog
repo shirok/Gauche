@@ -1,3 +1,11 @@
+2019-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_EncodeFlonum): Clean up the code; make it
+	  truly inverse of Scm_DecodeFlonum.
+	  (Scm__EncodeDouble): Switched argument order for the consistency.
+	  This is internal function and shouldn't be used from other than
+	  number.c and binum.c.
+
 2019-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (unwind-protect): Moved here from common-macros.scm,
