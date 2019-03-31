@@ -102,12 +102,25 @@
 ;; default-endian is defined in Scm__InitNumber().
 (define-cproc native-endian () Scm_NativeEndian)
 
-;; DBL_EPSILON
+;; DBL_EPSILON, etc.
 (define-cproc flonum-epsilon () 
-  (let* ([eps::(static ScmObj) SCM_UNBOUND])
-    (when (== eps SCM_UNBOUND)
-      (set! eps (Scm_MakeFlonum DBL_EPSILON)))
-    (return eps)))
+  (let* ([x::(static ScmObj) SCM_UNBOUND])
+    (when (== x SCM_UNBOUND)
+      (set! x (Scm_MakeFlonum DBL_EPSILON)))
+    (return x)))
+(define-cproc flonum-min-normalized () 
+  (let* ([x::(static ScmObj) SCM_UNBOUND])
+    (when (== x SCM_UNBOUND)
+      (set! x (Scm_MakeFlonum DBL_MIN)))
+    (return x)))
+(define-cproc flonum-min-denormalized ()
+  (let* ([x::(static ScmObj) SCM_UNBOUND])
+    (when (== x SCM_UNBOUND)
+      (let* ([m::double (Scm_EncodeFlonum (SCM_MAKE_INT 1) -1074 1)])
+        (if (== m 0.0) ; architecture doesn't support denormalized number
+          (set! x (Scm_MakeFlonum DBL_MIN))
+          (set! x (Scm_MakeFlonum m)))))
+    (return x)))
 
 (select-module gauche.internal)
 (define-cproc %bignum-dump (obj) ::<void>

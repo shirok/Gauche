@@ -1,5 +1,8 @@
 2019-03-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/libnum.scm (flonum-min-normalized, flonum-min-denormalized):
+	  Added.
+
 	* src/number.c (Scm_EncodeFlonum): Clean up the code; make it
 	  truly inverse of Scm_DecodeFlonum.
 	  (Scm__EncodeDouble): Switched argument order for the consistency.
