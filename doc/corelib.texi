@@ -2477,6 +2477,101 @@ See also @code{find-min&max} in
 @c COMMON
 @end defun
 
+@defun approx=? x y :optional relative-tolerance absolute-tolerance
+@c EN
+Returns @code{#t} iff two numbers are approximately equal within
+the given error tolerance.
+
+@itemize @bullet
+@item
+If at least one of @var{x} or @var{y} is NaN, returns @code{#f}.
+@item
+If either one is infinity, returns @code{#t} iff the other one is also
+infinity of the same sign.
+@item
+Otherwise, return a boolean value computed as follows:
+@example
+(<= (abs (- x y))
+    (max (* (max (abs x) (abs y)) relative-tolerance)
+         absolute-tolerance))
+@end example
+@end itemize
+
+If at least one of @var{x} or @var{y} are non-real complex
+number, @code{magnitude} is used in place of @code{abs}.
+
+When omitted, @var{relative-tolerance} is assumed to be
+@code{(flonum-epsilon)}, and @var{absolute-tolerance} is
+@code{(flonum-min-denormalized)}.
+That is, by default, @code{approx=?} tolerates
+1 ULP (unit in the last place) error.
+
+The @var{absolute-tolerance} argument is useful when arguments are
+close to zero, in which case relative tolerance becomes too small.
+@c JP
+二つの数値が与えられたエラー許容範囲内で等しいとみなせる場合に@code{#t}を、
+そうでなければ@code{#f}を返します。
+
+@itemize @bullet
+@item
+@var{x}と@var{y}の少なくとも一方がNaNであれば、常に@code{#f}を返します。
+@item
+一方が無限大である場合、もう一方も同じ符号の無限大である場合のみ@code{#t}を、
+そうでなければ@code{#f}を返します。
+@item
+そうでない場合、次の式により一致が判定されます。
+@example
+(<= (abs (- x y))
+    (max (* (max (abs x) (abs y)) relative-tolerance)
+         absolute-tolerance))
+@end example
+@end itemize
+
+@var{x}か@var{y}の少なくとも一方が非実数の複素数である場合は、
+@code{abs}のかわりに@code{magnitude}が使われます。
+
+省略された場合、@code{relative-tolerance}には
+@code{(flonum-epsilon)}の値が、@var{absolute-tolerance}には
+@code{(flonum-min-denormalized)}の値が使われます。
+すなわち、デフォルトでは@code{approx=?}は
+1 ULP (unit in the last place)のエラーを許容するということです。
+
+@var{absolute-tolerance}引数は、引数がともにゼロに近く、
+相対許容範囲が小さくなりすぎる場合に便利です。
+@c COMMON
+@end defun
+
+@defun flonum-epsilon
+@defunx flonum-min-normalized
+@defunx flonum-min-denormalized
+@c EN
+Returns flonums with the following characteristics, respectively:
+@table @code
+@item flonum-epsilon
+Returns the least positive flonum e such that, for a normalized
+flonum @code{x}, @code{x} and @code{(* x (+ 1.0 e))} are distinguishable.
+@item flonum-min-normalized
+Returns the least positive flonum representable as normalized floating-point
+number.
+@item flonum-min-denormalized
+Returns the least positive flonum representable as denormalized floating-point
+number.
+@end table
+@c JP
+それぞれ次の性質を持つ浮動小数点数を返します:
+@table @code
+@item flonum-epsilon
+正規化浮動小数点数@code{x}に対し、@code{x}と@code{(* x (+ 1.0 e))}が
+異なる値となるような最小の正の浮動小数点数。
+@item flonum-min-normalized
+最小の正の正規化浮動小数点数。
+@item flonum-min-denormalized
+最小の正の非正規化浮動小数点数。
+@end table
+@c COMMON
+@end defun
+
+
 @node Arithmetics, Numerical conversions, Numerical comparison, Numbers
 @subsection Arithmetics
 @c NODE 数値の演算
