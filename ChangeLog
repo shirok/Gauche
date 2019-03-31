@@ -1,5 +1,7 @@
 2019-03-30  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/numerical.scm (approx=?): Added.
+
 	* src/libnum.scm (flonum-min-normalized, flonum-min-denormalized):
 	  Added.
 

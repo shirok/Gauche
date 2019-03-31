@@ -348,17 +348,27 @@
               min-exponent max-exponent exponent))
     (case mantissa
       [(#f) +nan.0]
-      [(#t) (if (< (vector-ref vec 2) 0) -inf.0 +inf.0)]
+      [(#t) (if (< sign 0) -inf.0 +inf.0)]
       [else
        (unless (<= 0 mantissa max-mantissa)
          (error "Mantissa is out of range (must be between 0 and 2^53-1):"
                 mantissa))
-       (* (vector-ref vec 2) (ldexp mantissa (vector-ref vec 1)))])))
+       (* sign (ldexp mantissa exponent))])))
 
 ;; Nearly equal comparison
 ;;  (Unofficial yet; see how it works)
 
+(define (approx=? x y :optional (relative-tolerance (flonum-epsilon))
+                                (absolute-tolerance (flonum-min-denormalized)))
+  (cond [(eqv? x y) #t]
+        [(or (not (finite? x)) (not (finite? y))) #f]
+        [else
+         (<= (abs (- x y))
+             (max (* (max (abs x) (abs y)) relative-tolerance)
+                  absolute-tolerance))]))
+
 (define (nearly=? tolerance x y)
+  (warn "nearly=? is deprecated; use approx=?")
   (< (abs (- x y))
      (/ (max (abs x) (abs y)) tolerance)))
 

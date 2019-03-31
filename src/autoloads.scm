@@ -77,7 +77,7 @@
           floor/ floor-quotient floor-remainder
           truncate/ truncate-quotient truncate-remainder
           square encode-float
-          nearly=?)
+          approx=? nearly=?)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition
