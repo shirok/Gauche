@@ -1405,9 +1405,49 @@
 ;;
 
 (test-section "srfi-144")
-
 (use srfi-144)
 (test-module 'srfi-144)
 
+(define-module srfi-144-test
+
+  (define-module srfi.144 (extend srfi-144))
+  (define-module tests.scheme.test
+    (use gauche.test)
+    (export test test/unspec-or-exn test/approx test/approx-1ulp)
+    (define (f=? a b)
+      (cond [(flonum? a)
+             (and (flonum? b)
+                  (cond [(nan? a) (nan? b)]
+                        [(-zero? a) (-zero? b)]
+                        [else (eqv? a b)]))]
+            [(list? a)
+             (and (list? b) (= (length a) (length b))
+                  (every f=? a b))]
+            [else (equal? a b)]))
+    (define-syntax test
+      (syntax-rules ()
+        [(_ expr expected)
+         (test* #"~'expr" expected expr f=?)]))
+    (define-syntax test/unspec-or-exn
+      (syntax-rules ()
+        [(_ expr _)
+         (test* #"~'expr (error)" (test-error) expr)]))
+    (define-syntax test/approx-1ulp
+      (syntax-rules ()
+        [(_ expr expected)
+         (test* #"~'expr (approx 1ulp)" expected expr
+                (^[x y]
+                  (if (list? x)
+                    (and (list? y) (every approx=? x y))
+                    (approx=? x y))))]))
+    (define-syntax test/approx
+      (syntax-rules ()
+        [(_ expr expected)
+         (test* #"~'expr (approx)" expected expr
+                (cut approx=? <> <> 1e-9 1e-15))])))
+  (use r7rs)
+  (include "../../test/include/srfi-144-tests.scm")
+  (with-module tests.scheme.flonum
+    (run-flonum-tests)))
 
 (test-end)
