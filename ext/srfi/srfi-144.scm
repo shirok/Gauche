@@ -80,16 +80,16 @@
 ;;;
 (define-constant fl-e const:e)
 (define-constant fl-1/e (/ const:e))
-(define-constant fl-e-2 (* const:e  const:e))
+(define-constant fl-e-2 7.38905609893065) ; e*e yields 1ulp error
 (define-constant fl-e-pi/4 (%exp (/ const:pi 4)))
-(define-constant fl-log2-e (/ (%log const:e) (%log 2)))
-(define-constant fl-log10-e (/ (%log const:e) (%log 10)))
+(define-constant fl-log2-e (/ (%log 2)))
+(define-constant fl-log10-e 0.4342944819032518); (/ (%log 10)) yiels 1ulp error
 (define-constant fl-log-2 (%log 2))
 (define-constant fl-1/log-2 (/ (%log 2)))
 (define-constant fl-log-3 (%log 3))
 (define-constant fl-log-pi (%log const:pi))
 (define-constant fl-log-10 (%log 10))
-(define-constant fl-1/log-10 (/ (%log 10)))
+(define-constant fl-1/log-10 0.4342944819032518); (/ (%log 10)) yiels 1ulp error
 (define-constant fl-pi const:pi)
 (define-constant fl-1/pi (/ const:pi))
 (define-constant fl-2pi (* const:pi 2))
@@ -109,13 +109,13 @@
 (define-constant fl-4thrt-2 (%expt 2 1/4))
 (define-constant fl-phi (/ (+ 1 (%sqrt 5)) 2))
 (define-constant fl-log-phi (%log fl-phi))
-(define-constant fl-1/log-phi (/ fl-log-phi))
+(define-constant fl-1/log-phi 2.07808692123502753); (/ fl-log-phi) yields 1ulp error
 (define-constant fl-euler 0.5772156649015329)
 (define-constant fl-e-euler (exp fl-euler))
 (define-constant fl-sin-1 (%sin 1))
 (define-constant fl-cos-1 (%cos 1))
 (define-constant fl-gamma-1/2 (gamma 1/2))
-(define-constant fl-gamma-1/3 (gamma 1/3))
+(define-constant fl-gamma-1/3 2.67893853470774763); (gamma 1/3) yields 1ulp error
 (define-constant fl-gamma-2/3 (gamma 2/3))
 
 (define-constant fl-greatest  (encode-float `#(,(- (expt 2 53) 1) 971 1)))
@@ -282,6 +282,7 @@
   (values (lgamma x)
           (cond [(<= 0 x) 1.0]
                 [(infinite? x) +nan.0] ; sign of gamma(-inf.0) undecidable
+                [(nan? x) +nan.0]
                 [(odd? (floor x)) -1.0]
                 [else 1.0])))
                   
