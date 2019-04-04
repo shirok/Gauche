@@ -980,6 +980,18 @@ Fixnums
 モジュール@code{scheme.fixnum}でサポートされます。@ref{R7RS fixnum}参照。
 
 
+srfi-144, srfi-144
+()
+
+Flonums
+This has become a part of R7RS large.
+Supported by the module @code{scheme.flonum}.  @xref{R7RS flonum}.
+
+Flonums
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.flonum}でサポートされます。@ref{R7RS flonum}参照。
+
+
 srfi-145
 (assume)
 

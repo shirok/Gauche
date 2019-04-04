@@ -1936,8 +1936,7 @@ the following are @emph{not} supported yet:
 @example
 scheme.ilist      scheme.rlist        scheme.text
 scheme.stream     scheme.ephemeron    scheme.regex
-scheme.flonum     scheme.bytevector   scheme.vector.TAG
-scheme.show
+scheme.bytevector   scheme.vector.TAG scheme.show
 @end example
 
 @c EN
@@ -1964,6 +1963,7 @@ The following are supported libraries:
 * R7RS integer division::       @code{scheme.division}
 * R7RS bitwise operations::     @code{scheme.bitwise}
 * R7RS fixnum::                 @code{scheme.fixnum}
+* R7RS flonum::                 @code{scheme.flonum}
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large, R7RS large
@@ -7645,7 +7645,7 @@ length of @var{n} (@pxref{Generators}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node R7RS fixnum,  , R7RS bitwise operations, R7RS large
+@node R7RS fixnum, R7RS flonum, R7RS bitwise operations, R7RS large
 @subsection @code{scheme.fixnum} - R7RS fixnums
 @c NODE R7RS fixnum, @code{scheme.fixnum} - R7RS fixnum
 
@@ -7958,6 +7958,84 @@ srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
 @end defun
 
 
+@c ----------------------------------------------------------------------
+@node R7RS flonum,  , R7RS fixnum, R7RS large
+@subsection @code{scheme.flonum} - R7RS flonum
+@c NODE R7RS flonum, @code{scheme.flonum} - R7RS flonum
+
+@deftp {Module} scheme.flonum
+@mdindex scheme.flonum
+@c EN
+This module provides a set of flonum-specific operations.
+Originally defined as srfi-144.
+
+In Gauche, a flonum is IEEE 754 double-precision floating point numebrs.
+@c JP
+このモジュールはflonumに特化した操作を提供します。
+srfi-144として制定されました。
+
+Gaucheでは、flonumはIEEE754倍精度浮動小数点数です。
+@c COMMON
+
+@c EN
+Note that these procedures are defined only to work on flonums,
+but it is not enforced.  If you pass non-flonum arguments,
+the result is undefined.
+Consider these procedures as the way to
+tell your intentions to the compiler for potential optimizations.
+@c JP
+このモジュールの手続きはflonumの範囲でしか動作を定義されていませんが、
+それを強制するのではないことに注意してください。flonumでない引数を
+渡した場合の動作は未定義です。これらの手続きは、プログラマがその意図を
+コンパイラに伝えて最適化を期待するためのものと考えると良いでしょう。
+@c COMMON
+
+@c EN
+In the current Gauche architecture,
+generic numeric operators are just as efficient, 
+so most procedures provided in this module are aliases to corresponding
+operators.   However, we might employ some optimizations in future
+versions.
+@c JP
+現在のGaucheのアーキテクチャでは一般的な数値計算が効率よく実行できるようになっているので、
+これらの手続きは対応する手続きの単なる別名になっています。
+将来は、flonum特有の最適化を導入するかもしれません。
+@c COMMON
+
+@c EN
+The procedure @code{flonum?} is built-in, and
+not explaned here.  @xref{Numerical predicates}.
+@c JP
+手続き@code{flonum?}は組み込みなのでここでは説明しません。
+@ref{Numerical predicates}を参照してください。
+@c COMMON
+@end deftp
+
+@c EN
+@subheading Constants
+@c JP
+@subheading 定数
+@c COMMON
+
+We also have a few constants in @code{math.const} module
+(@pxref{Mathematic constants}).
+
+@defvr {Constant} fl-e
+e.
+@end defvr
+
+@defvr {Constant} fl-1/e
+@code{(/ e)}.
+@end defvr
+
+
+@defvr {Constant} fl-e-2
+@code{(square e)}.
+@end defvr
+
+@defvr {Constant} fl-e-pi/4
+@code{(expt e (/ pi 4))}.
+@end defvr
 
 
 
