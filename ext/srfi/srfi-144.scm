@@ -114,7 +114,7 @@
 (define-constant fl-e-euler (exp fl-euler))
 (define-constant fl-sin-1 (%sin 1))
 (define-constant fl-cos-1 (%cos 1))
-(define-constant fl-gamma-1/2 (gamma 1/2))
+(define-constant fl-gamma-1/2 1.77245385090551603); (gamma 1/2) yields 1ulp error on MinGW
 (define-constant fl-gamma-1/3 2.67893853470774763); (gamma 1/3) yields 1ulp error
 (define-constant fl-gamma-2/3 (gamma 2/3))
 
