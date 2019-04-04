@@ -2555,7 +2555,8 @@ Returns the least positive flonum representable as normalized floating-point
 number.
 @item flonum-min-denormalized
 Returns the least positive flonum representable as denormalized floating-point
-number.
+number.  If the platform doesn't support denormalized flonum,
+it returns the least positive normalized floating number.
 @end table
 @c JP
 それぞれ次の性質を持つ浮動小数点数を返します:
@@ -2566,7 +2567,8 @@ number.
 @item flonum-min-normalized
 最小の正の正規化浮動小数点数。
 @item flonum-min-denormalized
-最小の正の非正規化浮動小数点数。
+最小の正の非正規化浮動小数点数。但しプラットフォームが非正規化浮動小数点数を
+サポートしない場合は、最小の正の正規化浮動小数点数。
 @end table
 @c COMMON
 @end defun
