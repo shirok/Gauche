@@ -2389,19 +2389,41 @@ respectively.  It is an error to pass a non-integral number.
 
 @defun fixnum? n
 @defunx bignum? n
+[R7RS fixnum]
 @c EN
 Returns @code{#t} iff @var{n} is an exact integer whose internal
-representation is @var{fixnum} and @var{bignum}, respectively.
+representation is @emph{fixnum} and @emph{bignum}, respectively.
+R7RS-large defines @code{fixnum?} in @code{scheme.fixnum} library;
+@code{bignum?} is Gauche's extension.
 Portable Scheme programs don't need to care about the internal
 representation of integer.   These are for certain low-level
 routines that does particular optimization.
 @c JP
-@var{n}が正確な整数で、かつ内部的にそれぞれ@var{fixnum}もしくは@var{bignum}
-で表現されているときに@code{#t}を返します。
+@var{n}が正確な整数で、かつ内部的にそれぞれ@emph{fixnum}もしくは@emph{bignum}
+で表現されているときに@code{#t}を返します。R7RS-largeは
+@code{scheme.fixnum}ライブラリで@code{fixnum?}を定義しています。
+@code{bignum?}はGauche拡張です。
 通常のSchemeプログラムは整数の内部表現を気にする必要はありません。
 これらの手続きは、ある種の最適化を行う低レベル手続きのために用意されています。
 @c COMMON
 @end defun
+
+@defun flonum? x
+[R7RS flonum]
+@c EN
+Returns @code{#t} if @var{x} is a number represented by a floating-point
+number, @code{#f} otherwise.  In Gauche, inexact real numbers
+are flonums.
+
+@xref{R7RS flonum}, for comprehesive flonum library.
+@c JP
+@var{x}が浮動小数点数で表現される数値の場合に@code{#t}を、それ以外の場合に
+@code{#f}を返します。Gaucheでは、不正確な実数がflonumです。
+
+flonumを扱う包括的なライブラリは@ref{R7RS flonum}を参照してください。
+@c COMMON
+@end defun
+
 
 @node Numerical comparison, Arithmetics, Numerical predicates, Numbers
 @subsection Numerical comparison

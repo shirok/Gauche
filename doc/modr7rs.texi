@@ -8432,6 +8432,83 @@ and 1 if it is negative (including @code{-0.0}).
 @code{(flsign-bit +nan.0)} is implementation-dependent.
 @end defun
 
+@c EN
+@subheading Predicates
+@c JP
+@subheading 述語
+@c COMMON
+
+(Note: @code{flonum?} is built-in; @pxref{Numerical predicates}).
+
+@defun fl=? x y z @dots{}
+@defunx fl<? x y z @dots{}
+@defunx fl>? x y z @dots{}
+@defunx fl<=? x y z @dots{}
+@defunx fl>=? x y z @dots{}
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum specific version of numerical comparison predicates
+@code{=}, @code{<}, @code{>}, @code{<=} and @code{>=}, respectively.
+
+Currently these are just an alias of the generic numerical comparison
+predicates; hence they don't reject when you pass non-flonum
+arguments, but doing so is not portable.  These are to give
+compilers hints that you are passing flonums so that it can optimize.
+
+Note that @code{-0.0} and @code{0.0} are the same in terms of
+these predicates, e.g. @code{(fl<? -0.0 0.0)} is @code{#f}.
+
+If a NaN is passed to any of the arguments, these predicates returns
+@code{#f}.
+@end defun
+
+@defun flunordered? x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{#t} iff at least one of @var{x} or @var{y} is
+a NaN.
+@end defun
+
+@defun flinteger? x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{#t} if @var{x} is an integral flonum,
+@var{#f} otherwise.
+@end defun
+
+@defun flzero? x
+@defunx flpositive? x
+@defunx flnevative? x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{zero?}, @code{positive?} and @code{negative?}.
+Note that @code{(flnegative? -0.0)} is @code{#f}.
+@end defun
+
+@defun flodd? x
+@defunx fleven? x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{odd?} and @code{even?}.  An error is thrown
+if @var{x} is not an integer.
+@end defun
+
+@defun flfinite? x
+@defunx flinfinite? x
+@defunx flnan? x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{finite?}, @code{infinite?} and
+@code{nan?} (@pxref{Numerical predicates}).
+@end defun
+
+@defun flnormalized? x
+@defunx fldenormalized? x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{#t} iff @var{x} is a normalized/denormalized flonum,
+respectively.
+@end defun
 
 
 
