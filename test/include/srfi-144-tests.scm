@@ -651,17 +651,33 @@
            (ten11 (flonum (expt 10 11)))
            (ten12 (flonum (expt 10 12))))
        (test (fl+* four five three) x23)
-       (test (fl+* ten11 ten12 one)
-             (flonum (+ (* (exact ten11) (exact ten12)) (exact one))))
-       (test (fl+* ten11 ten12 (fl- one))
-             (flonum (+ (* (exact ten11) (exact ten12)) (exact (fl- one)))))
+       (cond-expand
+        [gauche.os.windows
+         ;; [SK] MinGW's fma yields 1ulp error
+         (begin
+           (test/approx-1ulp (fl+* ten11 ten12 one)
+                             (flonum (+ (* (exact ten11) (exact ten12))
+                                        (exact one))))
+           (test/approx-1ulp (fl+* ten11 ten12 (fl- one))
+                             (flonum (+ (* (exact ten11) (exact ten12))
+                                        (exact (fl- one))))))]
+        [else
+         (begin
+           (test (fl+* ten11 ten12 one)
+                 (flonum (+ (* (exact ten11) (exact ten12)) (exact one))))
+           (test (fl+* ten11 ten12 (fl- one))
+                 (flonum (+ (* (exact ten11) (exact ten12)) (exact (fl- one)))))
+           )])
 
        ;; FIXME: the following test assumes IEEE double precision,
        ;; in which (expt 10 23) lies exactly halfway between the
        ;; two nearest flonums.
-
-       (test-deny (fl=? (fl+* ten11 ten12 one)
-                        (fl+* ten11 ten12 (fl- one)))))
+       ;; [SK] MinGW's fma doesn't handle it corectly.
+       (cond-expand
+        [gauche.os.windows]
+        [else
+         (test-deny (fl=? (fl+* ten11 ten12 one)
+                          (fl+* ten11 ten12 (fl- one))))]))
 
      (test-assert (flnan? (fl+* zero posinf one)))
      (test-assert (flnan? (fl+* zero neginf one)))
