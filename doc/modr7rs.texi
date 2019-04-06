@@ -1,5 +1,6 @@
 @node Library modules - R7RS standard libraries, Library modules - SRFIs, Library modules - Gauche extensions, Top
 @chapter Library modules - R7RS standard libraries
+
 @c NODE ライブラリモジュール - R7RS標準ライブラリ
 
 @c EN
@@ -8021,87 +8022,129 @@ We also have a few constants in @code{math.const} module
 (@pxref{Mathematic constants}).
 
 @defvr {Constant} fl-e
+[R7RS flonum]
+@c MOD scheme.flonum
 e.
 @end defvr
 
 @defvr {Constant} fl-1/e
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ e)}.
 @end defvr
 
 
 @defvr {Constant} fl-e-2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(square e)}.
 @end defvr
 
 @defvr {Constant} fl-e-pi/4
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(expt e (/ pi 4))}.
 @end defvr
 
 @defvr {Constant} fl-log2-e
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(log2 e)}.  (Same as @code{(/ (log 2))}).
 @end defvr
 
 @defvr {Constant} fl-log10-e
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(log10 e)}.  (Same as @code{(/ (log 10))}).
 @end defvr
 
 @defvr {Constant} fl-log-2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(log 2)}.
 @end defvr
 
 @defvr {Constant} fl-1/log-2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ (log 2))}.  (Same as @code{(log2 e)}).
 @end defvr
 
 @defvr {Constant} fl-log-3
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(log 3)}.
 @end defvr
 
 @defvr {Constant} fl-log-pi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(log pi)}.
 @end defvr
 
 @defvr {Constant} fl-log-10
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(log 10)}.
 @end defvr
 
 @defvr {Constant} fl-1/log-10
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ (log 10))}.  (Same as @code{(log10 e)}).
 @end defvr
 
 @defvr {Constant} fl-pi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{pi}.
 @end defvr
 
 @defvr {Constant} fl-1/pi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ pi)}.
 @end defvr
 
 @defvr {Constant} fl-2pi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(* 2 pi)}.
 @end defvr
 
 @defvr {Constant} fl-pi/2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ pi 2)}.
 @end defvr
 
 @defvr {Constant} fl-pi/4
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ pi 4)}.
 @end defvr
 
 @defvr {Constant} fl-pi-squared
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(square pi)}.
 @end defvr
 
 @defvr {Constant} fl-degree
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ pi 180)}.
 @end defvr
 
 @defvr {Constant} fl-2/pi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ 2 pi)}.
 @end defvr
 
 @defvr {Constant} fl-2/sqrt-pi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ 2 (sqrt pi))}.
 @end defvr
 
@@ -8110,79 +8153,117 @@ e.
 @end defvr
 
 @defvr {Constant} fl-sqrt-3
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(sqrt 3)}.
 @end defvr
 
 @defvr {Constant} fl-sqrt-5
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(sqrt 5)}.
 @end defvr
 
 @defvr {Constant} fl-sqrt-10
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(sqrt 10)}.
 @end defvr
 
 @defvr {Constant} fl-1/sqrt-2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ (sqrt 2))}.
 @end defvr
 
 @defvr {Constant} fl-cbrt-2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(expt 2 1/3)}.
 @end defvr
 
 @defvr {Constant} fl-cbrt-3
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(expt 3 1/3)}.
 @end defvr
 
 @defvr {Constant} fl-4thrt-2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(expt 2 1/4)}.
 @end defvr
 
 @defvr {Constant} fl-phi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ (+ 1 (sqrt 5)) 2)}.
 @end defvr
 
 @defvr {Constant} fl-log-phi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(log fl-phi)}.
 @end defvr
 
 @defvr {Constant} fl-1/log-phi
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(/ (log fl-phi))}.
 @end defvr
 
 @defvr {Constant} fl-euler
+[R7RS flonum]
+@c MOD scheme.flonum
 Euler's constant.
 @end defvr
 
 @defvr {Constant} fl-e-euler
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(exp fl-euler)}
 @end defvr
 
 @defvr {Constant} fl-sin-1
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(sin 1)}
 @end defvr
 
 @defvr {Constant} fl-cos-1
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(cos 1)}
 @end defvr
 
 @defvr {Constant} fl-gamma-1/2
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(gamma 1/2)}
 @end defvr
 
 @defvr {Constant} fl-gamma-1/3
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(gamma 1/3)}
 @end defvr
 
 @defvr {Constant} fl-gamma-2/3
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(gamma 2/3)}
 @end defvr
 
 @defvr {Constant} fl-gamma-1/3
+[R7RS flonum]
+@c MOD scheme.flonum
 @code{(gamma 1/3)}
 @end defvr
 
 @defvr {Constant} fl-greatest
 @defvrx {Constant} fl-least
+[R7RS flonum]
+@c MOD scheme.flonum
 Bound to the largest/smallest positive finite flonum.
 
 The latter is the same as @code{(flonum-min-denormalized)} in Gauche
@@ -8190,9 +8271,167 @@ The latter is the same as @code{(flonum-min-denormalized)} in Gauche
 @end defvr
 
 @defvr {Constant} fl-epsilon
+[R7RS flonum]
+@c MOD scheme.flonum
 The same as @code{(flonum-epsilon)} in Gauche
 (@pxref{Numerical comparison}).
 @end defvr
+
+@defvr {Constant} fl-fast-fl+*
+[R7RS flonum]
+@c MOD scheme.flonum
+If this is @code{#t}, @code{(fl+* x y z)} executes as fast as,
+or faster than, @code{(fl+ (fl* x y) z)}.  If not, @code{#f}.
+@end defvr
+
+@defvr {Constant} fl-integer-exponent-zero
+@defvrx {Constant} fl-integer-exponent-nan
+[R7RS flonum]
+@c MOD scheme.flonum
+These are exact integer values returned in special occasion
+from @code{flinteger-exponent}.  The values themselves don't mean
+much; they're to be compared with the result of @code{flinteger-exponent}.
+
+If its argument is 0, @code{flinteger-exponent} returns
+@code{fl-integer-exponent-zero}.  If its argument is @code{+nan.0},
+@code{flinteger-exponent} returns @code{fl-integer-exponent-nan}.
+@end defvr
+
+@c EN
+@subheading Constructors
+@c JP
+@subheading コンストラクタ
+@c COMMON
+
+@defun flonum number
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns a flonum that's equal to or (if there's no equivalent flnoum)
+the closest to @var{number}.
+
+If @var{number} is not a real number,
+@code{+nan.0} is returned.  (Note: srfi-144 recommends it, but
+a conformant implementation may signal an error in such case.
+Portable code shouldn't rely on this behavior.)
+@end defun
+
+@defun fladjacent x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns a flonum adjacent to @var{x} in the direction of @var{y}.
+If @var{x} = @var{y}, @var{x} is returned.
+
+@example
+(fladjacent 1.0 2.0) @result{} 1.0000000000000002
+(fladjacent 1.0 0.0) @result{} 0.9999999999999999
+@end example
+@end defun
+
+@defun flcopysign x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns a flonum whose absolute value is @code{(abs x)} and whose
+sign is the sign of @var{y}.
+@end defun
+
+
+@defun make-flonum x n
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns a flonum @code{(* @var{x} (expt 2 @var{n}))}.  It is the same
+as @code{ldexp} (@pxref{Numerical conversions}).
+@end defun
+
+@c EN
+@subheading Accessors
+@c JP
+@subheading アクセサ
+@c COMMON
+
+@defun flinteger-fraction x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns two flnoums, the integral part of @var{x} and the fractional
+part of @var{x}.  Same as @code{modf} (@pxref{Numerical conversions}).
+
+If @var{x} is @code{+inf.0}, @code{+inf.0} and @code{0.0} is returned.
+If @var{x} is @code{-inf.0}, @code{-inf.0} and @code{-0.0} is returned.
+If @var{x} is @code{+nan.0}, @code{+nan.0} and @code{+nan.0} is returned.
+(These corner cases are not explicit in srfi-144, but follows 
+the POSIX specification of @code{modf}.)
+
+@example
+(flinteger-fraction fl-pi)
+ @result{} 3.0 @r{and} 0.14159265358979312
+@end example
+@end defun
+
+@defun flexponent x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns the exponent part of @var{x} as a flnoum.  If @var{x} is
+a non-zero finite value, the result is an integer.
+
+If @var{x} is zero, @code{-inf.0} is returned.
+If @var{x} is @var{+inf.0} or @code{-inf.0}, @code{+inf.0} is returned.
+
+@example
+(flexponent 1.0)    @result{} 0.0
+(flexponent 1024.0) @result{} 10.0
+(flexponent 0.01)   @result{} -7.0
+(flexponent fl-least) @result{} -1074.0
+@end example
+@end defun
+
+@defun flinteger-exponent x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns the same as @code{flexponent} but as an exact integer.
+
+If @var{x} is zero, the value of @code{fl-integer-exponent-zero} is
+returned.
+If @var{x} is @var{+inf.0} or @code{-inf.0}, a large
+implementation-dependent exact integer (usually it's so large that
+@code{(ldexp 1 (flinteger-exponent +inf.0))} becomes @code{+inf.0})
+is returned.
+If @var{x} is @code{+nan.0}, the value of
+@code{fl-integer-exponent-nan} is returned.
+@end defun
+
+@defun flnormalized-fraction-exponent x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns two flonums, a normalized mantissa of @var{x} with the same sign
+as @var{x}, and an exact integer exponent of @var{x}.  If it returns
+a value @var{y} and @var{n}, @code{x = (* y (expt 2 n))} and
+@code{x = (ldexp y n)}.
+This is the same as @code{frexp}
+(@pxref{Numerical conversions}).
+
+If @var{x} is non-zero finite value, the first value
+falls between 0.5 (inclusive) and 1.0 (exclusive).
+The corner cases are not explicit in srfi-144, but Gauche follows
+@code{frexp}: If @var{x} is (minus) zero, it returns
+(minus) zero and 0; if @var{x} is infinity, it returns
+infinity (of the same sign) and 0; if @var{x} is NaN,
+it returns NaN and 0.
+
+@example
+(flnormalized-fraction-exponent 12345.6789)
+  @result{} 0.7535204406738282 @r{and} 14
+(make-flonum 0.7535204406738282 14)
+  @result{} 12345.6789
+@end example
+@end defun
+
+@defun flsign-bit x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns 0 if @var{x} is positive or @var{0.0},
+and 1 if it is negative (including @code{-0.0}).
+@code{(flsign-bit +nan.0)} is implementation-dependent.
+@end defun
+
 
 
 
