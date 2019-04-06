@@ -1440,11 +1440,17 @@
                   (if (list? x)
                     (and (list? y) (every approx=? x y))
                     (approx=? x y))))]))
+    ;; NB: MinGW's bessel function jn has greater errors and we need
+    ;; to relax approx check.
+    (define rel-tolerance
+      (cond-expand
+       [gauche.os.windows 5e-7]
+       [else 1e-9]))
     (define-syntax test/approx
       (syntax-rules ()
         [(_ expr expected)
          (test* #"~'expr (approx)" expected expr
-                (cut approx=? <> <> 1e-9 1e-15))])))
+                (cut approx=? <> <> rel-tolerance 1e-15))])))
   (use r7rs)
   (include "../../test/include/srfi-144-tests.scm")
   (with-module tests.scheme.flonum
