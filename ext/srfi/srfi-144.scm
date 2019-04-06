@@ -291,7 +291,13 @@
   jn)
 (define-cproc flsecond-bessel (n::<int> x::<real>) 
   ::<real> :fast-flonum :constant
-  yn)
+  ;; As of 2019, NB: MinGW's yn returns NaN if x = 0, as opposed to the 
+  ;; POSIX definition that says -HUGE_VAL.
+  (.if (defined GAUCHE_WINDOWS)
+       (if (== x 0.0)
+         (return SCM_DBL_NEGATIVE_INFINITY)
+         (return (yn n x)))
+       (return (yn n x))))
 
 (define-cproc flerf (x::<real>)
   ::<real> :fast-flonum :constant
