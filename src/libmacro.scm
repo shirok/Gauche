@@ -761,8 +761,10 @@
                                   '%unwind-protect 
                                   (find-module 'gauche.internal)
                                   '())])
-          `(,%unwind-protect. (,lambda. () ,body) (,lambda. () ,@handlers)
-                              ':source-info ',sinfo))]
+          (if sinfo
+            `(,%unwind-protect. (,lambda. () ,body) (,lambda. () ,@handlers)
+                                ':source-info ',sinfo)
+            `(,%unwind-protect. (,lambda. () ,body) (,lambda. () ,@handlers))))]
        [_ (error "Malformed unwind-protect:" f)]))))
 
 (select-module gauche.internal)
