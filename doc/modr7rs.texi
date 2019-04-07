@@ -8510,6 +8510,123 @@ Returns @code{#t} iff @var{x} is a normalized/denormalized flonum,
 respectively.
 @end defun
 
+@c EN
+@subheading Arithmetic
+@c JP
+@subheading 演算
+@c COMMON
+
+@defun flmax x @dots{}
+@defunx flmin x @dots{}
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{min} and @code{max}, except that
+these can take no arguments, in which case @code{-inf.0}
+and @code{+inf.0} are returned, respectively.
+
+Note that we don't check whether the arguments are flonums or not,
+but passing non-flonums are not portable.
+@end defun
+
+@defun fl+ x @dots{}
+@defunx fl* x @dots{}
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{+.} and @code{*.}
+(@pxref{Arithmetics}).
+
+Note that we don't check whether the arguments are flonums or not,
+but passing non-flonums is not portable.
+@end defun
+
+@defun fl+* x y z
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(+ (* x y) z)}, but (potentially) faster, and more accurately.
+It calls C99 @code{fma} function internally.  (``More accurately'' means
+that calculation is done in a single step, with rounding once at the end.)
+
+Note: As of release of 0.9.8, MinGW imlementation of @code{fma} seems
+to produce slightly off value occasionally, as if it is calculated
+with the two steps (rounding after multiplication).
+@end defun
+
+@defun fl- x y @dots{}
+@defunx fl- x y @dots{}
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{-.} and @code{/.}
+(@pxref{Arithmetics}).
+
+Note that we don't check whether the arguments are flonums or not,
+but passing non-flonums is not portable.
+@end defun
+
+@defun flabs x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{abs} 
+(@pxref{Arithmetics}).
+
+Note that we don't check whether the argument is a flonum or not,
+but passing non-flonum is not portable.
+@end defun
+
+@defun flabsdiff x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(abs (- x y))}.
+
+Note that we don't check whether the arguments are flonums or not,
+but passing non-flonum is not portable.
+@end defun
+
+@defun flposdiff
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(max (- x y) 0)}.
+
+Note that we don't check whether the arguments are flonums or not,
+but passing non-flonum is not portable.
+@end defun
+
+@defun flsgn x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{1.0} if @var{x}'s sign bit is 0 (zero or positive),
+@code{-1.0} if it's 1 (negative).  Same as @code{(flcopysign 1.0 x)}.
+Note that @code{(flsgn 0.0)} is @code{1.0}, while
+@code{(flsgn -0.0)} is @code{-1.0}.  The result of
+passing @code{+nan.0} is implementation-dependent, reflecting
+the sign bit of underlying representation; it returns either @code{1.0} or
+@code{-1.0} but you can't count on which.
+@end defun
+
+@defun flnumerator x
+@defunx fldenominator x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{numerator} and @code{denominator}
+(@pxref{Arithmetics}).
+
+For infinity and zero, denominator is 1.0.
+@end defun
+
+@defun flfloor x
+@defunx flceiling x
+@defunx flround x
+@defunx fltruncate x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{floor}, @code{ceiling},
+@code{round} and @code{truncate}
+(@pxref{Arithmetics}).
+
+Note that we don't check whether the arguments are flonums or not,
+but passing non-flonum is not portable.
+@end defun
+
+
 
 
 @c Local variables:
