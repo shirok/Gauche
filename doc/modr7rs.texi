@@ -8626,6 +8626,94 @@ Note that we don't check whether the arguments are flonums or not,
 but passing non-flonum is not portable.
 @end defun
 
+@c EN
+@subheading Exponents and logarithms
+@c JP
+@subheading 指数対数関数
+@c COMMON
+
+@defun flexp x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{exp} (@pxref{Arithmetics}).
+Returns @code{(expt fl-e x)}.
+@end defun
+
+@defun flexp2 x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(expt 2 x)}
+@end defun
+
+@defun flexp-1 x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(- 1 (expt fl-e x))}, but is much more accureate
+when @var{x} is small.  We all C's @code{expm1} internally.
+@end defun
+
+@defun flsquare x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(*. x x)} (@pxref{Arithmetics})
+@end defun
+
+@defun flsqrt x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-speicific verison of @code{sqrt}.
+@end defun
+
+@defun flcbrt x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns cubic root of a flonum @var{x}.
+@end defun
+
+@defun flhypot x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Calculates @code{(sqrt (* x x) (* y y))}, with avoiding
+overflow or underflow during the intermediate steps.
+@end defun
+
+@defun flexpt x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{expt} (@pxref{Arithmetics}).
+@end defun
+
+@defun fllog x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{log} (@pxref{Arithmetics}).
+@end defun
+
+@defun fllog1+ x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(log (+ x 1))}, but is more accurate than @code{log}
+when @code{x} is near zero.
+@end defun
+
+@defun fllog2 x
+@defunx fllog10 x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns base-2 and base-10 logarithm of a flonum @var{x}, respectively.
+@end defun
+
+@defun make-fllog-base x
+[R7RS flonum]
+Returns a procedure that calculates base-@var{x} logarithm.
+An error is signalled if @var{x} isn't a rela number greater than 1.0.
+@c MOD scheme.flonum
+@end defun
+
+
+
+
+
 
 
 
