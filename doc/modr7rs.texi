@@ -8705,12 +8705,40 @@ Returns base-2 and base-10 logarithm of a flonum @var{x}, respectively.
 
 @defun make-fllog-base x
 [R7RS flonum]
+@c MOD scheme.flonum
 Returns a procedure that calculates base-@var{x} logarithm.
 An error is signalled if @var{x} isn't a rela number greater than 1.0.
-@c MOD scheme.flonum
 @end defun
 
+@c EN
+@subheading Trigonometric functions
+@c JP
+@subheading 三角関数
+@c COMMON
 
+@defun flsin x
+@defunx flcos x
+@defunx fltan x
+@defunx flasin x
+@defunx flacos x
+@defunx flatan x
+@defunx flatan y x
+@defunx flsinh x
+@defunx flcosh x
+@defunx fltanh x
+@defunx flasinh x
+@defunx flacosh x
+@defunx flatanh x
+[R7RS flonum]
+@c MOD scheme.flonum
+Flonum-specific version of @code{sin}, @code{cos}, @code{tan},
+@code{asin}, @code{acos}, @code{sinh}, @code{cosh}, @code{tanh},
+@code{asinh}, @code{acosh}, and @code{atanh}, respectively
+(@pxref{Arithmetics}).
+
+Note that @code{flatan} can take one or two arguments; if two arguments
+are passed, it calculates @code{(atan (/ y x)}.
+@end defun
 
 
 
