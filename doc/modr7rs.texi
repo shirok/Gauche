@@ -8740,10 +8740,111 @@ Note that @code{flatan} can take one or two arguments; if two arguments
 are passed, it calculates @code{(atan (/ y x)}.
 @end defun
 
+@c EN
+@subheading Integer division
+@c JP
+@subheading 整数除算
+@c COMMON
+
+@defun flquotient x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(fltruncate (fl/ x y))}.
+The result is always integer flonum, but @var{x} and @var{y} doesn't
+need to be integers.
+
+@example
+(flquotient 14.0 4.0)  @result{} 3.0
+(flquotient -14.0 4.0) @result{} -3.0
+(flquotient 14.0 2.5)  @result{} 5.0
+(flquotient -14.2 2.8) @result{} -5.0
+@end example
+@end defun
+
+@defun flremainder x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns @code{(- x (* y (flquotient x y)))}.
+
+@example
+(flquotient 14.0 4.0)  @result{} 2.0
+(flquotient -14.0 4.0) @result{} -2.0
+(flquotient 14.0 2.5)  @result{} 1.5
+(flquotient -14.2 2.8) @result{} -0.1999999999999993 ; inexact calculation
+@end example
+@end defun
+
+@defun flremquo x y
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns two values:
+@itemize @bullet
+@item
+Remainder of @code{x}/@code{y}.
+(Same as @code{(flremainder x y)}, but we calculate it in different
+routines so the result may differ in a few ulp.
+@item
+Integer quotient of @var{x}/@var{y}, modulo 2^@var{n} (@var{n} >= 3), as
+an exact integer.  Its sign is the same as @var{x}/@var{y}.
+@end itemize
+
+This corresponds to C99's @var{remquo}.
+
+This function is useful to reduce the input for the periodic functions
+with symmetries.
+@end defun
 
 
+@c EN
+@subheading Special functions
+@c JP
+@subheading 特殊関数
+@c COMMON
 
+@defun flgamma x
+[R7RS flonum]
+@c MOD scheme.flonum
+Computes the value of gamma function for @var{x}.
+When @var{x} is integer, it is the same as the factorial of @var{x}-1.
 
+This is same as Gauche's built-in @code{gamma} (@pxref{Arithmetics}).
+@end defun
+
+@defun flloggamma x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns two values, @code{(log (abs (flgamma x)))} and the sign of
+@code{(flgamma x)} as 1.0 if it is postiive and -1.0 if it is negative.
+
+The first value is calculated by Gauche's built-in @code{lgamma}
+(@pxref{Arithmetics}).  It's more accurate than using @code{gamma} then
+calling @code{log}.  The second value is @code{+nan.0} when
+@var{x} is @code{-inf.0} or @code{+nan.0}.
+@end defun
+
+@defun flfirst-bessel n x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns the @var{n}-th order Bessel fucntion of the first kind.
+@end defun
+
+@defun flsecond-bessel n x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns the @var{n}-th order Bessel fucntion of the second kind.
+@end defun
+
+@defun flerf x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns the error function erf(@var{x}).
+@end defun
+
+@defun flerfc x
+[R7RS flonum]
+@c MOD scheme.flonum
+Returns the complementary error function, 1 - erf(@var{x}).
+@end defun
 
 @c Local variables:
 @c mode: texinfo
