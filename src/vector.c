@@ -35,6 +35,17 @@
 #include "gauche.h"
 #include "gauche/priv/writerP.h"
 
+/* Catch integer overflow.
+   NB: If total size is too big, GC_malloc aborts.  But we have to prevent
+   total size from being overflow before passed to GC_malloc.
+ */
+static void check_size(ScmSmallInt size, int eltsize)
+{
+    if (size > (ScmSmallInt)(LONG_MAX/eltsize - 1)) {
+        Scm_Error("Size too big: %ld", size);
+    }
+}
+
 /*=====================================================================
  * Generic vectors
  */
@@ -81,6 +92,7 @@ SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_VectorClass, vector_print, vector_compare,
 
 static ScmVector *make_vector(ScmSmallInt size)
 {
+    check_size(size, sizeof(ScmObj));
     ScmVector *v = SCM_NEW2(ScmVector *,
                             sizeof(ScmVector) + sizeof(ScmObj)*(size-1));
     SCM_SET_CLASS(v, SCM_CLASS_VECTOR);
@@ -290,6 +302,7 @@ ScmObj Scm_MakeUVectorFull(ScmClass *klass, ScmSmallInt size, void *init,
     if (init) {
         vec->elements = init;   /* trust the caller */
     } else {
+        check_size(size, eltsize);
         vec->elements = SCM_NEW_ATOMIC2(void*, size*eltsize);
     }
     vec->size_flags = (size << 1)|(immutable?1:0);
@@ -468,6 +481,7 @@ ScmObj SCM_CPP_CAT3(Scm_Make,tag,Vector)(ScmSmallInt size, T fill)      \
 ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArray)(ScmSmallInt size,     \
                                                   const T array[])      \
 {                                                                       \
+    check_size(size, sizeof(T));                                        \
     T *z = SCM_NEW_ATOMIC_ARRAY(T, size);                               \
     memcpy(z, array, size*sizeof(T));                                   \
     return Scm_MakeUVector(SCM_CPP_CAT3(SCM_CLASS_,tag,VECTOR),         \
