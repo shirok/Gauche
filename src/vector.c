@@ -37,7 +37,7 @@
 
 /* Catch integer overflow.
    NB: If total size is too big, GC_malloc aborts.  But we have to prevent
-   total size from being overflow before passed to GC_malloc.
+   total size from overflowing before passed to GC_malloc.
  */
 static void check_size(ScmSmallInt size, int eltsize)
 {
