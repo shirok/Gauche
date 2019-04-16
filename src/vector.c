@@ -38,10 +38,19 @@
 /* Catch integer overflow.
    NB: If total size is too big, GC_malloc aborts.  But we have to prevent
    total size from overflowing before passed to GC_malloc.
+
+   We'll try to allocate size*eltsize (+ up to two words of header).
+   The GC's malloc routine first round it up to GC allocation unit boundary
+   (8 or 16 bytes).  If there's not enough heap, then it tries to expand
+   the heap by the size rounded up to the pagesize.  We don't want the final
+   value overflows signed long.
+   (In reality, expanding heap with close to LONG_MAX surely fails, so it  
+   should suffice to avoid overflow before calling GC_MALLOC. But it won't
+   harm to have a bit of margin here...)
  */
 static void check_size(ScmSmallInt size, int eltsize)
 {
-    if (size > (ScmSmallInt)(LONG_MAX/eltsize - 1)) {
+    if (size >= (ScmSmallInt)((LONG_MAX - 0x400000)/eltsize)) {
         Scm_Error("Size too big: %ld", size);
     }
 }
