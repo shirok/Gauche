@@ -84,7 +84,7 @@
 (define-cproc -zero?    (x::<number>) ::<boolean> :fast-flonum :constant
   (return (and (SCM_FLONUMP x)          ;only flonums have -0.0
                (== (SCM_FLONUM_VALUE x) 0.0)
-               (== (signbit (SCM_FLONUM_VALUE x)) 1))))
+               (!= (signbit (SCM_FLONUM_VALUE x)) 0))))
 
 (define-cproc exact-integer? (obj) ::<boolean> :fast-flonum :constant
   SCM_INTEGERP)

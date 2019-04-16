@@ -430,6 +430,16 @@ int Scm_FlonumSign(double d)
     return signbit(d)? -1 : 1;
 }
 
+/* On MinGW 32bit, fpclassify function is broken. */
+int Scm_FlonumClassify(double d)
+{
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+    return __builtin_fpclassify(FP_INFINITE, FP_NAN, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, d);
+#else
+    return fpclassify(d);
+#endif
+}
+
 /* Half float support */
 
 double Scm_HalfToDouble(ScmHalfFloat v)

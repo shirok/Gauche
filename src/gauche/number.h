@@ -249,6 +249,7 @@ SCM_EXTERN double Scm_GetDouble(ScmObj obj);
 SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
 SCM_EXTERN double Scm_EncodeFlonum(ScmObj mant, int exp, int sign);
 SCM_EXTERN int    Scm_FlonumSign(double d);
+SCM_EXTERN int    Scm_FlonumClassify(double d);
 SCM_EXTERN ScmObj Scm_MakeFlonumToNumber(double d, int exactp);
 SCM_EXTERN double       Scm_HalfToDouble(ScmHalfFloat v);
 SCM_EXTERN ScmHalfFloat Scm_DoubleToHalf(double v);
