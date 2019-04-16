@@ -157,7 +157,8 @@
 (define-inline (flexponent x) (logb x))
 (define-inline (flinteger-exponent x) (ilogb x))
 (define-inline (flnormalized-fraction-exponent x) (frexp x))
-(define-cproc flsign-bit (x::<real>) ::<int> :constant :fast-flonum signbit)
+(define-cproc flsign-bit (x::<real>) ::<int> :constant :fast-flonum
+  (return (?: (signbit x) 1 0)))
 
 ;;;
 ;;; predicates
@@ -186,9 +187,9 @@
 (define-inline (flnan? x) (nan? x))
 
 (define-cproc flnormalized? (x::<real>) ::<boolean> :constant :fast-flonum
-  (return (== (fpclassify x) FP_NORMAL)))
+  (return (== (Scm_FlonumClassify x) FP_NORMAL)))
 (define-cproc fldenormalized? (x::<real>) ::<boolean> :constant :fast-flonum
-  (return (== (fpclassify x) FP_SUBNORMAL)))
+  (return (== (Scm_FlonumClassify x) FP_SUBNORMAL)))
 
 ;;;
 ;;; Arithmetic
