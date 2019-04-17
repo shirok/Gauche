@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2015, Cameron Rich
+ * Copyright (c) 2007-2019, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -181,7 +181,7 @@ EXP_FUNC void STDCALL RNG_initialize()
     }
 #else
     /* start of with a stack to copy across */
-    /* int i; */
+    /* int i = rand(); */
     /* memcpy(entropy_pool, &i, ENTROPY_POOL_SIZE); */
     uint8_t arr[ENTROPY_POOL_SIZE];
     memcpy(entropy_pool, arr, ENTROPY_POOL_SIZE);

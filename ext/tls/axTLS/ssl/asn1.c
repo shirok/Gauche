@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016, Cameron Rich
+ * Copyright (c) 2007-2019, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -317,14 +317,14 @@ int asn1_get_private_key(const uint8_t *buf, int len, RSA_CTX **rsa_ctx)
 }
 
 /**
- * Get the time of a certificate. Ignore hours/minutes/seconds.
+ * Get the time of a certificate. 
  */
 static int asn1_get_utc_time(const uint8_t *buf, int *offset, time_t *t)
 {
     int ret = X509_NOT_OK, len, t_offset, abs_year;
     struct tm tm;
 
-    /* see http://tools.ietf.org/html/rfc5280#section-4.1.2.5 */
+    /* see http://tools.ietf.org/html/rfc5280#section-4.1.2.5.1 */
     if (buf[*offset] == ASN1_UTC_TIME)
     {
         (*offset)++;
@@ -335,7 +335,7 @@ static int asn1_get_utc_time(const uint8_t *buf, int *offset, time_t *t)
         memset(&tm, 0, sizeof(struct tm));
         tm.tm_year = (buf[t_offset] - '0')*10 + (buf[t_offset+1] - '0');
 
-        if (tm.tm_year < 50)    /* 1951-2050 thing */
+        /*if (tm.tm_year < 50) */  /* ignore 1951-2050 part of spec */
         {
             tm.tm_year += 100;
         }
