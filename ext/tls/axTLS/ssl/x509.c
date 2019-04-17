@@ -220,7 +220,7 @@ static int x509_v3_subject_alt_name(const uint8_t *cert, int offset,
                 while (offset < endalt)
                 {
                     int type = cert[offset++];
-                    int dnslen = get_asn1_length(cert, &offset);
+                    size_t dnslen = get_asn1_length(cert, &offset);
 
                     if (type == ASN1_CONTEXT_DNSNAME)
                     {
