@@ -161,7 +161,7 @@ EXP_FUNC void STDCALL RNG_initialize()
         SCM_INTERNAL_MUTEX_UNLOCK(mutex);
         return;
     }
-    
+
 #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
     rng_fd = open("/dev/urandom", O_RDONLY);
 #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
