@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017, Cameron Rich
+ * Copyright (c) 2007-2019, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -1086,7 +1086,6 @@ static int send_raw_packet(SSL *ssl, uint8_t protocol)
         }
     }
 
-    SET_SSL_FLAG(SSL_NEED_RECORD);  /* reset for next time */
     ssl->bm_index = 0;
 
     if (protocol != PT_APP_PROTOCOL_DATA)  
@@ -1347,6 +1346,7 @@ int basic_read(SSL *ssl, uint8_t **in_data)
         /* do we violate the spec with the message size?  */
         if (ssl->need_bytes > RT_MAX_PLAIN_LENGTH+RT_EXTRA-BM_RECORD_OFFSET)
         {
+            ssl->need_bytes = SSL_RECORD_SIZE;
             ret = SSL_ERROR_RECORD_OVERFLOW;              
             goto error;
         }
@@ -2416,8 +2416,9 @@ EXP_FUNC void STDCALL ssl_display_error(int error_code) {}
 
 #ifdef CONFIG_BINDINGS
 #if !defined(CONFIG_SSL_ENABLE_CLIENT)
-EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
-        uint8_t *session_id, uint8_t sess_id_size)
+EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, 
+        const uint8_t *session_id, uint8_t sess_id_size, 
+        SSL_EXTENSIONS* ssl_ext)
 {
     printf("%s", unsupported_str);
     return NULL;
