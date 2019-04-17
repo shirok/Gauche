@@ -186,10 +186,19 @@
 (define-inline (flinfinite? x) (infinite? x))
 (define-inline (flnan? x) (nan? x))
 
+(inline-stub
+ ;; On MinGW 32bit, fpclassify is broken.
+ ;; cf. https://github.com/shirok/Gauche/pull/465
+ (define-cfn flonum_classify (d::double) ::int :static 
+   (.if (and (defined __MINGW32__) (not (defined __MIGW64__)))
+        (return (__builtin_fpclassify FP_INFINITE FP_NAN FP_NORMAL FP_SUBNORMAL
+                                      FP_ZERO d))
+        (return (fpclassify d)))))
+
 (define-cproc flnormalized? (x::<real>) ::<boolean> :constant :fast-flonum
-  (return (== (Scm_FlonumClassify x) FP_NORMAL)))
+  (return (== (flonum_classify x) FP_NORMAL)))
 (define-cproc fldenormalized? (x::<real>) ::<boolean> :constant :fast-flonum
-  (return (== (Scm_FlonumClassify x) FP_SUBNORMAL)))
+  (return (== (flonum_classify x) FP_SUBNORMAL)))
 
 ;;;
 ;;; Arithmetic
