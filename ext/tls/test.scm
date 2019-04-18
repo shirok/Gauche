@@ -51,13 +51,27 @@
     ;; kick_openssl.sh is called from ssltest to run openssl command;
     ;; It records process id of the invoked command so that it can be
     ;; killed later by killopenssh.sh.
-    (with-output-to-file "kick_openssl.sh"
-      (^[]
-        (print "#!/bin/sh")
-        (print "set -e")
-        (print #"echo \"$$\" \"~|openssl-cmd|\" >> openssl.pid")
-        (print #"exec \"~|openssl-cmd|\" \"$@\"")))
-    (sys-chmod "kick_openssl.sh" #o755))
+
+    ;; Caveat: 
+    ;;  axTLS test uses 1024bit keys.  Recent Debian sets openssl SECLEVEL to
+    ;;  2 by default, which disables 1024bit keys and make tests fail.
+    ;;  We ensure SECLEVEL=1 with the command line.
+    ;;  Note that -cipher option isn't supported in openssl 1.0.x.
+    ;;  https://sourceforge.net/p/gauche/mailman/gauche-devel/thread/87tvew1hri.fsf%40karme.de/
+
+    (let* ([openssl-version ($ rxmatch->string #/OpenSSL\s+(\d+\.\d+)/
+                               (process-output->string '(openssl version))
+                               1)]
+           [cipher-opt (if (version>=? openssl-version "1.1")
+                         "-cipher DEFAULT@SECLEVEL=1"
+                         "")])
+      (with-output-to-file "kick_openssl.sh"
+        (^[]
+          (print "#!/bin/sh")
+          (print "set -e")
+          (print #"echo \"$$\" \"~|openssl-cmd|\" >> openssl.pid")
+          (print #"exec \"~|openssl-cmd|\" \"$@\" ~cipher-opt")))
+      (sys-chmod "kick_openssl.sh" #o755)))
 
   (test* "ssltest" 0
          (process-exit-status
