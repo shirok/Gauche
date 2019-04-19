@@ -46,24 +46,41 @@
      (define srcpath-replace #"~|srcpath|/")
      (define kicker-replace  #"~kicker ")
      ])
-  (define add-seclevel
+  ;; Caveat: 
+  ;;  Some axTLS tests use 1024bit keys.  Recent Debian sets openssl SECLEVEL to
+  ;;  2 by default, which disables 1024bit keys and make tests fail.
+  ;;  We ensure SECLEVEL=1 with the command line.
+  ;;  Note that -cipher option isn't supported in openssl 1.0.x.
+  ;;  https://sourceforge.net/p/gauche/mailman/gauche-devel/thread/87tvew1hri.fsf%40karme.de/
+  (define openssl-1.1>=?
     (let1 openssl-version ($ rxmatch->string #/OpenSSL\s+(\d+\.\d+)/
                              (process-output->string '(openssl version))
                              1)
-      (if (version>=? openssl-version "1.1")
-        (^m #"~(m 0)@SECLEVEL=1")
-        (^m (m 0)))))
+      (version>=? openssl-version "1.1")))
+
+  (define add-seclevel-client
+    (if openssl-1.1>=?
+      (^m #"~(m 0)@SECLEVEL=1")
+      (^m (m 0))))
+  (define add-seclevel-server
+    (if openssl-1.1>=?
+      (^m #"~(m 0) -cipher DEFAULT@SECLEVEL=1")
+      (^m (m 0))))
 
   (p "/* This is generated file. Don't edit! */"
      "static int safe_system(const char *);")
 
   (file-filter-for-each
    (^[line seed]
+     ;; The order of replacement is sensitive - add-seclevel-server must come
+     ;; before kicker-replace.
      ($ format #t "~a\n" $ regexp-replace-all* line
+        #/-cipher [\w-]+/ add-seclevel-client
+        #/openssl s_server/ add-seclevel-server
         #/\.\.\/ssl\// srcpath-replace
         #/openssl /    kicker-replace
         #/system\s*\(/      "safe_system("
-        #/-cipher [\w-]+/ add-seclevel)))
+        )))
 
   (p "#include <errno.h>"
      "int safe_system(const char *commands)"
