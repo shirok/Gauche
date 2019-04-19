@@ -13,6 +13,8 @@
 ;;  Read input data from stdin, write modified data to stdout.
 ;;  $ gosh ssltest-mod.scm SRCDIR BUILDDIR < ssltest.c > ssltest.mod.c
 
+(use gauche.process)
+(use gauche.version)
 (use file.util)
 (use file.filter)
 (use util.match)
@@ -44,6 +46,13 @@
      (define srcpath-replace #"~|srcpath|/")
      (define kicker-replace  #"~kicker ")
      ])
+  (define add-seclevel
+    (let1 openssl-version ($ rxmatch->string #/OpenSSL\s+(\d+\.\d+)/
+                             (process-output->string '(openssl version))
+                             1)
+      (if (version>=? openssl-version "1.1")
+        (^m #"~(m 0)@SECLEVEL=1")
+        (^m (m 0)))))
 
   (p "/* This is generated file. Don't edit! */"
      "static int safe_system(const char *);")
@@ -53,7 +62,8 @@
      ($ format #t "~a\n" $ regexp-replace-all* line
         #/\.\.\/ssl\// srcpath-replace
         #/openssl /    kicker-replace
-        #/system\s*\(/      "safe_system(")))
+        #/system\s*\(/      "safe_system("
+        #/-cipher [\w-]+/ add-seclevel)))
 
   (p "#include <errno.h>"
      "int safe_system(const char *commands)"
