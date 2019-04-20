@@ -1,3 +1,11 @@
+2019-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/test/unicode.scm (utf8-length): Fix behavior of permissive and
+	  ignore strictness for the consistency; these shoudn't throw error if
+	  octet is in [0..255], but does throw error if octet is out of range.
+	  Within the range, permissive strictness returns 1 for invalid octet,
+	  while ignore strictness returns 0 for them.
+
 2019-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (scm_div): Fix bug that yiels infinity in (/. +nan.0 0).

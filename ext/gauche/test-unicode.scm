@@ -59,9 +59,11 @@
     ((p)     =  #x4000000 (#xfc #x84 #x80 #x80 #x80 #x80) error)
     ((s)     <  error     (#xfd #xbf #xbf #xbf #xbf #xbf) error)
     ((p)     =  #x7fffffff(#xfd #xbf #xbf #xbf #xbf #xbf) error)
-    ((s p)   <  error     (#xfe #x80 #x80 #x80 #x80 #x80) error)
+    ((s)     <  error     (#xfe #x80 #x80 #x80 #x80 #x80) error)
+    ((p)     <  #xfe      (#xfe)                          error)
     ((i)     <  #x01      (#xfe #x80 #x80 #x80 #x80 #x80 #x01) error)
-    ((s p)   <  error     (#xff #x80 #x80 #x80 #x80 #x80) error)
+    ((s)     <  error     (#xff #x80 #x80 #x80 #x80 #x80) error)
+    ((p)     <  #xff      (#xff)                          error)
     ((i)     <  #x01      (#xff #x80 #x80 #x80 #x80 #x80 #x01) error)
     ;; redundant encodings
     ((s)     <  error     (#xc0 #x80)                  -)
@@ -83,7 +85,8 @@
     ((p)     <  #xffff    (#xf0 #x8f #xbf #xbf)        -)
     ((i)     <  #x01      (#xf0 #x8f #xbf #xbf #x01)   -)
     ;; invalid encodings
-    ((s p)   <  error     (#x80)                       -)
+    ((s)     <  error     (#x80)                       -)
+    ((p)     <  #x80      (#x80)                       -)
     ((i)     <  #x01      (#x80 #x01)                  -)
     ((i)     <  #x02      (#x80 #xbf #x02)             -)
     ((s p)   <  error     (#xc2 #x01)                  -)

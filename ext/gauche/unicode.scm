@@ -133,23 +133,26 @@
         ))
 
 (define (utf8-length octet :optional (strictness 'strict))
+  (define (err-oob octet)
+    (errorf "Argument out of range as an octet: ~s" octet))
   (define (err-illegal octet)
     (errorf "Illegal utf-8 octet: ~2,'0x" octet))
-  (cond [(< octet 0) (err-illegal octet)]
+  (cond [(< octet 0) (err-oob octet)]
         [(< octet #x80) 1]
         [(< octet #xc0) (ecase strictness
-                          [(strict permissive) (err-illegal octet)]
+                          [(strict) (err-illegal octet)]
+                          [(permissive) 1]
                           [(ignore) 0])]
         [(< octet #xe0) 2]
         [(< octet #xf0) 3]
         [(< octet #xf8) 4]
-        [(> octet #xff) (err-illegal octet)]
+        [(> octet #xff) (err-oob octet)]
         [else (ecase strictness
                 [(strict) (err-illegal octet)]
                 [(ignore) 0]
                 [(permissive) (cond [(< octet #xfc) 5]
                                     [(< octet #xfe) 6]
-                                    [else (err-illegal octet)])])]))
+                                    [else 1])])]))
 
 ;; decoding utf8
 ;;  To avoid code redundancy and runtime overhead, we generate
