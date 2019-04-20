@@ -21360,42 +21360,78 @@ Gaucheが@code{utf-8}でコンパイルされている場合、コードポイ�
 @node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
 @subsection Unicode transfer encodings
 
+@c EN
 The procedures in this group operate on codepoints represented as integers.
 In the following descriptions, `octets' refers to an integer
 between 0 to 255, inclusive.
+@c JP
+このグループの手続きは、整数で表現されたコードポイントを扱います。
+以下の説明で「オクテット」は0から255までの整数です。
+@c COMMON
 
+@c EN
 They take optional @var{strictness} argument.  It specifies
 what to do when the procedure encounters a datum outside
 of the defined domain.  Its value can be either one of the
 following symbols:
+@c JP
+これらの手続きは省略可能な@var{strictness}引数を取ります。
+この引数は、定義域外の入力が来たときの振る舞いを指定します。
+指定できる値は次のいずれかです。
+@c COMMON
 
 @table @code
 @item strict
+@c EN
 Raises an error when the procedure encounters such input.
 This is the default behavior.
+@c JP
+定義域外の入力が来たらエラーを投げます。これがデフォルトの振る舞いです。
+@c COMMON
 @item permissive
+@c EN
 Whenever possible, treat the date as if it is a valid value.
 For example, codepoint value beyond @code{#x10ffff} is invalid
 in Unicode standard, but it may be useful for some other purpose
 that just want to use UTF-8 as an encoding scheme of binary data.
+@c JP
+可能な限り、入力を有効な値であるかのように扱います。
+例えば@code{#x10ffff}を越えるコードポイント値はUnicode標準では不正な値ですが、
+utf-8の規則を拡張することでエンコード可能であり、文字列以外のバイナリデータを単にutf-8風に
+エンコードしたいだけの場合などには便利かもしれません。
+@c COMMON
 @item ignore
+@c EN
 Whenver possible, treat the invalid input as if they do not exist.
+@c JP
+可能であれば、不正な入力は無視します。
+@c COMMON
 @end table
 
+@c EN
 The procedure may still raise an error in @code{permissive} or
 @code{ignore} strictness mode, if there can't be a sensible
 way to handle the input data.
+@c JP
+@var{strictness}が@code{permissive}や@code{ignore}であっても、
+入力データの妥当な解釈ができない場合はエラーが投げられる可能性があります。
+@c COMMON
 
 @defun ucs4->utf8 codepoint :optional strictness
 @c MOD gauche.unicode
+@c EN
 Takes an integer codepoint and returns a list of octets that
 encodes the input in UTF-8.
+@c JP
+整数のコードポイント値を受け取り、utf-8でエンコードされたオクテットのリストを返します。
+@c COMMON
 
 @example
 (ucs4->utf8 #x3bb)  @result{} (206 187)
 (ucs4->utf8 #x3042) @result{} (227 129 130)
 @end example
 
+@c EN
 If @var{strictness} is @code{strict} (default), input codepoint
 between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
 are rejected.  If @var{strictness} is @code{permissive}, it accepts
@@ -21403,33 +21439,84 @@ input between @code{0} and @code{#x7fffffff}, inclusive; it may produce
 5 or 6 octets if the input is large (as the original UTF-8 definition).
 If @var{strictness} is @code{ignore}, it returns an empty list
 for invalid codepoints.
+@c JP
+@var{strictness}が@code{strict}の場合(デフォルト)、
+入力が@code{#xd800}と@code{#xdfff}の間か、@code{#x110000}以上の場合は
+エラーを投げます。
+@var{strictness}が@code{permissive}の場合は、
+@code{0}から@code{#x7fffffff}までの入力が許されます。
+入力が大きい場合はエンコードされた出力は5〜6オクテットになるでしょう
+(初期のutf-8の定義通り)。
+@var{strictness}が@code{ignore}の場合は、
+Unicodeとして不正なコードポイントに対しては空リストが返されます。
+@c COMMON
 @end defun
 
 @defun utf8-length octet :optional strictness
 @c MOD gauche.unicode
+@c EN
 Takes @var{octet} as the first octet of UTF-8 sequence, and
 returns the number of total octets requried to decode
 the codepoint.
+@c JP
+@var{octet}をutf-8シーケンスの最初のオクテットとみなし、
+そこからひとつのコードポイントをデコードするのに全部で何オクテット必要かを返します。
+@c COMMON
 
+@c EN
+If @var{octet} is not an exact integer between 0 and 255 (inclusive),
+an error is thrown, regardless of @var{strictness} argument.
+@c JP
+@var{octet}引数が0から255の間の正確な整数でなければ、
+@var{strictness}引数の値にかかわらず、エラーが投げられます。
+@c COMMON
+
+@c EN
 If @var{strictness} is @code{strict} (default), this
 procedure returns either 1, 2, 3 or 4.   An error is
 thrown if @var{octet} cannot be a leading octet of
 a proper UTF-8 encoded Unicode codepoint.
+@c JP
+@var{strictness}が@code{strict}の場合(デフォルト)、
+戻り値は1,2,3,4のいずれかです。@var{octet}がutf-8でエンコードされた
+Unicodeコードポイントの最初のオクテットとしてありえない値であれば
+エラーが投げられます。
+@c COMMON
 
+@c EN
 If @var{strictness} is @code{permissive}, this procedure
 may return an integer between 0 and 6, inclusive.
-It allows the codepoint range @code{#x110000} to
-@code{#x7fffffff} as the original utf-8 spec, so
-the maximum number of octets can be up to 6.
-If the input is in the range between @code{#xc0}
-and @code{#xdf}, inclusive, this procedure returns
-1--it's up to the application how to treat these illegal
-octets.  For other values, it returns @code{0}.
+If the input is from @code{#xf8} to @code{#xfd}, inclusive,
+this returns 5 or 6, according to the original utf-8 spec
+(these values corresponds to the codepoint 
+range @code{#x110000} to
+@code{#x7fffffff}).
+If the input is in the range between @code{#x80}
+and @code{#xbf}, inclusive, or @var{#xfe} or @code{#xff},
+this procedure returns 1--it's up to the application how to treat these illegal
+octets.
+@c JP
+@var{strictness}が@code{permissive}の場合、
+この手続きは0から6までの整数を返します。
+入力が@code{#xf8}から@code{#xfd}の間の値(両端含む)の場合は
+元々のutf-8仕様に基づいて5か6を返します
+(これらのオクテットはコードポイントが@code{#x110000}から
+@code{#x7fffffff}になるような値に相当します)。
+引数が@code{#x80}から@code{#xbf}までの値、および@code{#xfe}と@code{#xff}の場合は、
+utf-8の先頭バイトになり得ませんが、アプリケーションがこの不正なバイトだけを
+適切に処理することを前提にして、1が返されます。
+@c COMMON
 
-If @var{strictness} is @var{ignore}, this procedure
+@c EN
+If @var{strictness} is @code{ignore}, this procedure
 returns @code{0} when it would raise an error if
 @var{strictness} is @code{strict}.  Other than that,
 it works the same as the default case.
+@c JP
+@var{strictness}が@code{ignore}の場合、この手続きは
+@code{strict}でエラーが投げられる入力値について@code{0}を返します。
+それ以外は@code{strict}の動作と同じです。
+@c COMMON
 @end defun
 
 @defun utf8->ucs4 octet-list :optional strictness
