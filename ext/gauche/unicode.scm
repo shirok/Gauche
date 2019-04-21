@@ -265,22 +265,24 @@
   )
 
 (define (ucs4->utf16 code :optional (strictness 'strict))
-  (cond [(< code #xd800) `(,code)]
-        [(< code #xe000)
-         (ecase strictness
-           [(strict)     (errorf "Converting codepoint ~x to utf-16 \
+  (define (error-oob strictness)
+    (ecase strictness
+      [(strict permissive)
+       (errorf "Input outside of Unicode codepoint range: #x~x" code)]
+      [(ignore) '()]))
+  (cond  [(< code 0) (error-oob strictness)]
+         [(< code #xd800) `(,code)]
+         [(< code #xe000)
+          (ecase strictness
+            [(strict)     (errorf "Converting codepoint ~x to utf-16 \
                                   will lose information" code)]
-           [(ignore)     '()]
-           [(permissive) `(,code)])]
-        [(< code #x10000) `(,code)]
-        [(< code #x110000) (let1 code (- code #x10000)
-                             `(,(logior (ash code -10) #xd800)
-                               ,(logior (logand code #x3ff) #xdc00)))]
-        [else
-         (ecase strictness
-           [(strict permissive)
-            (errorf "Input outside of Unicode codepoint range: #x~x" code)]
-           [(ignore) '()])]))
+            [(ignore)     '()]
+            [(permissive) `(,code)])]
+         [(< code #x10000) `(,code)]
+         [(< code #x110000) (let1 code (- code #x10000)
+                              `(,(logior (ash code -10) #xd800)
+                                ,(logior (logand code #x3ff) #xdc00)))]
+         [else (error-oob strictness)]))
 
 (define (utf16-length word :optional (strictness 'strict))
   (cond [(<= #xd800 word #xdbff) 2]
