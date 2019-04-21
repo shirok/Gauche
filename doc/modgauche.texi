@@ -21521,10 +21521,25 @@ it works the same as the default case.
 
 @defun utf8->ucs4 octet-list :optional strictness
 @c MOD gauche.unicode
+@c EN
 Takes a list of octets, and decodes it as a utf-8 sequence.
 Returns two values: The decoded ucs4 codepoint, and the
 rest of the input list.
+@c JP
+オクテットのリストを取り、それをutf-8のシーケンスとして解釈して、
+デコードされたコードポイント及び残りのリストの2つの値を返します。
+@c COMMON
 
+@c EN
+If it finds a value other than exact integer
+between 0 and 255 in the input list, an error is thrown
+regardless of the value of @var{strictness}.
+@c JP
+もし処理中に、0から255の間の正確な整数以外の値が入力に見つかったら、
+@var{strictness}の設定に関わらずエラーが投げられます。
+@c COMMON
+
+@c EN
 An invalid utf8 sequence causes an error if @var{strictness}
 is @code{strict}, or skipped if it is @code{ignore}.
 If @var{strictness} is @code{permissive}, the procedure accepts
@@ -21532,48 +21547,122 @@ the original utf-8 sequence which can produce surrogated pair
 range (between @code{#xd800} and @code{#dfff}) and the range
 between @code{#x110000} to @code{#x7fffffff}.  The invalid
 octet sequence is still an error with @code{permissive} mode.
+@c JP
+それ以外の不正なutf-8シーケンスは、@var{strictness}が@code{strict}であれば
+エラーに、@code{ignore}であればスキップされます。
+@var{strictness}が@code{permissive}の場合は、
+最初のutf-8仕様で許されていた全てのコードポイント、すなわち
+サロゲートペア領域(@code{#xd800}から@code{#dfff}まで)及び
+@code{#x110000}以上@code{#x7fffffff}以下のコードポイントも認識されます。
+それ以外の不正なコードポイントは@code{permissive}であってもエラーになります。
+@c COMMON
 @end defun
 
 @defun utf8->string u8vector :optional start end
 [R7RS base]
 @c MOD gauche.unicode
+@c EN
 Converts a sequence of utf8 octets in @var{u8vector} to a string.
 Optional @var{start} and/or @var{end} argument(s) will limit the
 range of the input.
+@c JP
+@var{u8vector}の、インデックス@var{start}(含む)から@var{end}(含まない)までに
+格納された値をutf-8オクテット列と見なし、文字列に変換して返します。
+@var{start}、@var{end}が省略された場合はそれぞれベクタの最初と最後が指定されたものと
+解釈します。
+@c COMMON
 
+@c EN
 If Gauche's native encoding is utf8, 
 @code{u8vector->string} (@pxref{Uvector conversion operations})
 will do the job faster; but this routine can be used regardless
 of Gauche's native encoding, and it raises an error if @var{u8vector}
 contains octet sequences illegal as utf8.
+@c JP
+もしGaucheのネイティブエンコーディングがutf8であれば、
+@code{u8vector->string}の方が高速です
+(@ref{Uvector conversion operations}参照)。
+一方、この手続きはGaucheのネイティブエンコーディングが何であれ動作し、
+@var{u8vector}がutf8として不正なシーケンスを含んでいた場合にエラーを投げます。
+@c COMMON
 @end defun
 
 @defun string->utf8 string :optional start end
 [R7RS base]
 @c MOD gauche.unicode
+@c EN
 Converts a string to a u8vector of utf8 octets.
 Optional @var{start} and/or @var{end} argument(s) will limit the
 range of the input.
+@c JP
+文字列をutf8オクテットの並びにエンコードしてu8vectorとして返します。
+省略可能な@var{start}と@var{end}引数は対象とする文字列の範囲を指定します。
+@c COMMON
 
+@c EN
 If Gauche's native encoding is utf8, 
 @code{string->u8vector} (@pxref{Uvector conversion operations})
 will do the job faster; but this routine can be used regardless
 of Gauche's native encoding.
+@c JP
+Gaucheのネイティブエンコーディングがutf8であれば、
+@code{string->u8vector}の方が高速です
+(@ref{Uvector conversion operations}参照)。
+一方、この手続きはGaucheのネイティブエンコーディングが何であれ動作します。
+@c COMMON
 @end defun
 
 @defun ucs4->utf16 codepoint :optional strictness
 @c MOD gauche.unicode
-Takes an integer codepont and returns a list of integers
-that encodes the input in UTF-16.  The output is either
-one integer or two integers, and each integer is in the
-range between 0 and 65535 (inclusive).
+@c EN
+Takes an integer codepoint and returns a list of integers
+that encodes the input in UTF-16.
+@c JP
+整数で与えられたコードポイントをutf-16にエンコードして整数のリストとして返します。
+@c COMMON
 
-If @var{strictness} is @code{strict} (default), input codepoint
-between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
-are rejected.  If @var{strictness} is @code{permissive}, it accepts
+@c EN
+If @var{strictness} is @code{strict} (default),
+the input must be either
+between @code{0} and @code{#xd7ff} or between @code{#xe000} and
+@code{#x10ffff}.  An error is thrown otherwise.  The 'hole' is the
+codepoint reserved for surrogates, and there's no valid
+mapping from them to utf-16 is defined.
+@c JP
+@var{strictness}が@code{strict}の場合(デフォルト)、
+入力値は@code{0}から@code{#xd7ff}までの間か、
+@code{#xe000}から@code{#x10ffff}までの間でなければなりません。
+それ以外の場合はエラーが投げられます。
+開いている部分はサロゲートに予約されているコードで、
+この領域をutf-16にエンコードする方法は定義されていません。
+@c COMMON
+
+@c EN
+If @var{strictness} is @code{permissive}, it accepts
 high surrogates and low surrogates, in which case the result is
-single element list of input.  If @var{strictness} is @code{ignore},
+single element list of input.  An error is still thrown for
+negative input and input greater than or equal to @code{#x110000}.
+@c JP
+@var{strictness}が@code{permissive}の場合、サロゲート領域の入力は
+エラーにならず、その値を唯一の要素とするリストが返されます。
+負の値および@code{#x110000}の値についてはやはりエラーにあんります。
+@c COMMON
+
+@c EN
+If @var{strictness} is @code{ignore},
 an empty list is returned for an invalid codepoint (including surrogates).
+@c JP
+@var{strictness}が@code{ignore}の場合は、不正なコードポイント(サロゲート領域含む)
+については空リストが返されます。
+@c COMMON
+
+@c EN
+Note: We can encode values larger than @code{#x10ffff} in utf-8
+in the permissive mode, but not in utf-16.
+@c JP
+註: permissiveモードでは@code{#x10ffff}より大きな値をutf-8にはエンコードできますが、
+utf-16にはエンコードできません。
+@c COMMON
 @end defun
 
 @defun utf16-length code :optional strictness
