@@ -21667,30 +21667,60 @@ utf-16にはエンコードできません。
 
 @defun utf16-length code :optional strictness
 @c MOD gauche.unicode
-@var{Code} must be an integer between 0 and 65535, inclusive.
+@c EN
+@var{Code} must be an exact integer between 0 and 65535, inclusive.
 Returns 1 if @var{code} is BMP character codepoint, or
-2 if @var{code} is high surrogate codepoint.
+2 if @var{code} is a high surrogate.
+@c JP
+@var{code}は0から65535までの正確な整数でなければなりません。
+@code{code}がBMPのコードポイントなら1を、utf-16の上位サロゲートであれば2を返します。
+@c COMMON
 
+@c EN
 If @var{strictness} is @code{strict} (default), an error is
 signalled if @var{code} is a low surrogate, or it is out of range.
 If @var{strictness} is @code{permissive}, 1 is returned
 for low surrogates, but an error is signalled for out of range arguments.
 If @var{strictness} is @code{ignore}, 0 is returned
 for low surrogates and out of range arguments.
+@c JP
+@var{strictness}が@code{strict}の場合(デフォルト)、@var{code}が
+下位サロゲートであったり、定義外の値であればエラーが投げられます。
+@var{strictness}が@code{permissive}の場合は、
+やはり定義外の値であればエラーが投げられますが、
+下位サロゲートの場合には1が返されます。
+@var{strictness}が@code{ignore}の場合、
+定義域外および下位サロゲートに対しては0が返されます。
+@c COMMON
 @end defun
 
 @defun utf16->ucs4 code-list :optional strictness
 @c MOD gauche.unicode
-Takes a list of integers and decodes it as a utf-16 sequence.
+@c EN
+Takes a list of exact integers and decodes it as a utf-16 sequence.
 Returns two values: The decoded ucs4 codepoint, and the rest of
 input list.
+@c JP
+正確な整数のリストを取り、それをutf-16の並びとして解釈します。
+デコードされたucs4コードポイントおよび、残りのリストの二つの値を返します。
+@c COMMON
 
+@c EN
 If @var{strictness} is @code{strict} (default), an invalid utf-16
 sequence and out-of-range integer raise an error.  If @var{strictness}
 is @code{permissive}, an out-of-range integer causes an error, but
 a lone surrogate is allowed and returned as is.  If @var{strictness}
 is @code{ignore}, lone surrogates and out-of-range integers are just
 ignored.
+@c JP
+@var{strictness}が@code{strict}の場合(デフォルト)、不正なutf-16の並びや
+定義域外の値に出会ったらエラーが投げられます。
+@var{strictness}が@code{permissive}の場合は、
+やはり定義外の値であればエラーが投げられますが、
+片方だけのサロゲートの場合にはそれがそのまま(コードポイントとして)返されます。
+@var{strictness}が@code{ignore}の場合、
+定義域外および片方だけのサロゲートは無視されます。
+@c COMMON
 @end defun
 
 @node Unicode text segmentation, Full string case conversion, Unicode transfer encodings, Unicode utilities
