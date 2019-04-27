@@ -5091,7 +5091,7 @@ It is equivalent to @code{(car (last-pair pair))}.
 @c COMMON
 
 @example
-(last '(1 2 3))        @result{} 3
+(last '(1 2 3))   @result{} 3
 (last '(1 2 . 3)) @result{} 2
 @end example
 @end defun
