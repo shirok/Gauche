@@ -22,7 +22,7 @@
 (define (p . args) (for-each print args))
 
 (define (usage)
-  (p #"Usage: ,*program-name* $srcdir $builddir < ssltest.c > ssltest.mod.c"
+  (p #"Usage: ~*program-name* $srcdir $builddir < ssltest.c > ssltest.mod.c"
      "  Transforms axTLS's ssltest.c to the suitable form."
      "  Give absolute pathname of $srcdir and $builddir.")
   (exit 1))
@@ -54,7 +54,11 @@
   ;;  https://sourceforge.net/p/gauche/mailman/gauche-devel/thread/87tvew1hri.fsf%40karme.de/
   (define openssl-1.1>=?
     (let1 openssl-version ($ rxmatch->string #/OpenSSL\s+(\d+\.\d+)/
-                             (process-output->string '(openssl version))
+                             (process-output->string
+                              (cond-expand [gauche.os.windows
+                                            '("cmd.exe" "/c" openssl version)]
+                                           [else
+                                            '(openssl version)]))
                              1)
       (version>=? openssl-version "1.1")))
 
