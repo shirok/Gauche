@@ -56,6 +56,9 @@
     (let1 openssl-version ($ rxmatch->string #/OpenSSL\s+(\d+\.\d+)/
                              (process-output->string
                               (cond-expand [gauche.os.windows
+                                            ;; Running openssl directly fails
+                                            ;; deep in mingw runtime.
+                                            ;; https://github.com/shirok/Gauche/pull/467
                                             '("cmd.exe" "/c" openssl version)]
                                            [else
                                             '(openssl version)]))
