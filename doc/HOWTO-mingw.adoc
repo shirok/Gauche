@@ -56,6 +56,13 @@ without them, but some features will not be available.
 - mingw-w64-x86_64-mbedtls / mingw-w64-i686-mbedtls
 - texinfo
 
+The following packages are only used for testing (`make check`).  You
+don't need them just to build and use Gauche:
+
+- openssl
+- winpty
+
+
 [NOTE]
 ====
 `pacman` tries to install packages under `C:/msys64/mingw64` etc,
