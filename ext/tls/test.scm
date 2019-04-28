@@ -53,7 +53,24 @@
         (print "#!/bin/sh")
         (print "set -e")
         (print #"echo \"$$\" \"~|openssl-cmd|\" >> openssl.pid")
-        (print #"exec \"~|openssl-cmd|\" \"$@\"")))
+        (cond-expand
+         [gauche.os.windows
+          ;; MinGW's openssl.exe needs winpty only when stdin is terminal.
+          ;; (MSYS's openssl.exe doesn't need this workaround.)
+          (print  "mingw_workaround=no")
+          (print  "case \"$MSYSTEM\" in")
+          (print  "    MINGW64|MINGW32)")
+          (print #"        if echo `/usr/bin/which \"~|openssl-cmd|\" || :` | grep -q -E \"/mingw(64|32)\"; then")
+          (print  "            mingw_workaround=yes")
+          (print  "        fi;;")
+          (print  "esac")
+          (print  "if [ \"$mingw_workaround\" = yes -a -t 0 ]; then")
+          (print #"    exec winpty -Xallow-non-tty -Xplain \"~|openssl-cmd|\" \"$@\"")
+          (print  "else")
+          (print #"    exec \"~|openssl-cmd|\" \"$@\"")
+          (print  "fi")]
+         [else
+          (print #"exec \"~|openssl-cmd|\" \"$@\"")])))
     (sys-chmod "kick_openssl.sh" #o755))
 
   (test* "ssltest" 0
@@ -63,6 +80,12 @@
                        :directory "axTLS/ssl"
                        :output "ssltest.log"
                        :wait #t)))
+
+  ;; On MSYS (mintty), winpty with '-Xallow-non-tty' option changes tty
+  ;; setting, so that we should reset it.
+  (cond-expand
+   [gauche.os.windows (sys-system "stty sane")]
+   [else])
   ]
  [else])
 

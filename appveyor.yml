@@ -1,7 +1,3 @@
-#branches:
-#  only:
-#    - master
-
 environment:
   matrix:
     - TARGET: MINGW64
@@ -37,8 +33,7 @@ install:
 #  - echo %TARGET%
 #  - echo %MSYSTEM%
 #  - echo %PATH%
-#  - cd
-#  - dir
+  - cd
   - for /f "usebackq delims=" %%i in (`curl -f %GAUCHE_INFO_URL%/latest.txt 2^>nul`) do set GAUCHE_INSTALLER_VERSION=%%i
   - echo %GAUCHE_INSTALLER_VERSION%
   - set GAUCHE_INSTALLER=Gauche-mingw-%GAUCHE_INSTALLER_VERSION%-%GAUCHE_INSTALLER_BIT%.msi
@@ -48,10 +43,13 @@ install:
   - set PATH=%PATH%;%GAUCHE_PATH%
 #  - echo %PATH%
   - gosh -V
+  - bash -lc "pacman -S --noconfirm msys/winpty"
+  - bash -lc "winpty --version"
 
 build_script:
-  - bash -lc "gcc -v"
   - bash -lc "pwd"
+  - bash -lc "echo $APPVEYOR_BUILD_FOLDER"
+  - bash -lc "gcc -v"
   - bash -lc "cd $APPVEYOR_BUILD_FOLDER && ./DIST gen"
   - bash -lc "cd $APPVEYOR_BUILD_FOLDER && src/mingw-dist.sh"
 
@@ -63,4 +61,5 @@ test_script:
 
 artifacts:
   - path: Gauche-*.zip
+#  - path: ext/tls/ssltest.log
 
