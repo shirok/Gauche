@@ -82,7 +82,7 @@
                        :wait #t)))
 
   ;; On MSYS (mintty), winpty with '-Xallow-non-tty' option changes tty
-  ;; setting so that we should reset it.
+  ;; setting, so that we should reset it.
   (cond-expand
    [gauche.os.windows (sys-system "stty sane")]
    [else])
