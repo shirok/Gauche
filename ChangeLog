@@ -1,3 +1,8 @@
+2019-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-unicode.scm: Update Unicode database to 12.1.0, thanks to
+	  @qykth-git. https://github.com/shirok/Gauche/pull/471
+
 2019-04-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/test/unicode.scm (utf8-length): Fix behavior of permissive and
