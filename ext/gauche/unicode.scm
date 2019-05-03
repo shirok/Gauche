@@ -432,7 +432,7 @@
 
  (define-cproc wb-property (scode) ::<int>
    (let* ([ch::int SCM_CHAR_INVALID])
-     (get-arg ch scode) 
+     (get-arg ch scode)
      (cond [(== ch #x0a) (return WB_LF)]
            [(== ch #x0d) (return WB_CR)]
            [(== ch #x22) (return WB_Double_Quote)]
@@ -546,7 +546,7 @@
                       [_ (list p)]))
                 alist))
   (let ([default-next-state* (expand-or default-next-state)]
-        [input-index-size 
+        [input-index-size
          (+ (dict-fold input-index-map (^[k v s] (max v s)) 0) 1)]
         [state-size (length state-desc)]
         [states (map (^s (cons (car s) (expand-or (cdr s)))) state-desc)]
@@ -681,7 +681,7 @@
     (:other
      (:else               -> #t :default))       ; WB14
     ))
-  
+
 (define *word-break-fa*
   (compile-state-transition-description *word-break-states*
                                         *word-break-default-next-states*
