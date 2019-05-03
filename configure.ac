@@ -913,8 +913,8 @@ AC_CONFIG_FILES([
           gc/configure.gnu-gauche:tools/gc-configure.gnu-gauche.in
          ])
 AC_CONFIG_COMMANDS([VERSION],
-	[echo "${GAUCHE_VERSION}" > VERSION],
-	[GAUCHE_VERSION="${GAUCHE_VERSION}"])
+                   [echo "${GAUCHE_VERSION}" > VERSION],
+                   [GAUCHE_VERSION="${GAUCHE_VERSION}"])
 AC_CONFIG_COMMANDS([src/features],
                    [${srcdir}/src/gen-features.sh ${ac_srcdir} ${ac_builddir}])
 AC_OUTPUT
