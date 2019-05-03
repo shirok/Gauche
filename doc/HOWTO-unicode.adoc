@@ -96,7 +96,7 @@ There's a make rule for that.
 [source,console]
 ----
 $ cd src
-$ make UNICODEDIR=$UNICODEDIR char-data
+$ make UNICODEDATA=$UNICODEDIR char-data
 ----
 
 And it's done!
