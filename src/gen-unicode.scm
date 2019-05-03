@@ -178,7 +178,9 @@
 ;;              9    MidNumLet
 ;;              a    Numeric
 ;;              b    ExtendNumLet
-;;              c    Other
+;;              c    WSegSpace
+;;              d    ZWJ
+;;              e    Other
 ;;    bit3-0:  Graphene_Break property
 ;;             10    CR (not stored in the table)
 ;;             11    LF (not stored in the table)
@@ -192,7 +194,8 @@
 ;;              7    T
 ;;              8    LV
 ;;              9    LVT
-;;              a    Other
+;;              a    ZWJ
+;;              b    Other
 ;;
 ;;   Codepoints below U+20000 are looked up by two-staged tables.
 ;;   First, look up this table with (codepoint >> 8).

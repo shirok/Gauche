@@ -219,11 +219,11 @@
 ;; in the table.  The '#f' in the list marks boundary of these propetries.
 (define (ucd-grapheme-break-properties)
   '(Control Extend Regional_Indicator Prepend SpacingMark
-    L V T LV LVT Other #f CR LF))
+    L V T LV LVT ZWJ Other #f CR LF))
 
 (define (ucd-word-break-properties)
   '(Newline Extend Regional_Indicator Format Katakana Hebrew_Letter ALetter
-    MidLetter MidNum MidNumLet Numeric ExtendNumLet Other
+    MidLetter MidNum MidNumLet Numeric ExtendNumLet WSegSpace ZWJ Other
     #f CR LF Single_Quote Double_Quote))
 
 ;;
