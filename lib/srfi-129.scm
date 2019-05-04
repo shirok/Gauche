@@ -9,7 +9,9 @@
   (export char-title-case?
           char-titlecase
           string-titlecase)
-  ;; Create a binding of string-titlecase in this module.
+  ;; NB: This is a temporary workaround of a bug regarding inherited modules
+  ;; and transitive exports.
+  ;; See the discussion of https://github.com/shirok/Gauche/issues/472
   (define string-titlecase (with-module gauche.unicode string-titlecase))
   )
 
