@@ -1163,7 +1163,7 @@
      (receive (reqs rest) 
          (let loop ((xs formals) (ys '()))
            (cond [(null? xs) (values (reverse ys) #f)]
-                 [(symbol? xs) (values (reverse ys) xs)]
+                 [(variable? xs) (values (reverse ys) xs)]
                  [(pair? xs) 
                   (unless (variable? (car xs))
                     (error "Invalid formal parameter:" (car xs)))
