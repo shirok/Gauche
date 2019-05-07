@@ -93,7 +93,7 @@ SCMFILES = \
        control/job.scm control/mapper.scm control/thread-pool.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        data/cache.scm data/heap.scm \
-       data/ideque.scm data/imap.scm data/random.scm \
+       data/ideque.scm data/imap.scm data/priority-map.scm data/random.scm \
        data/ring-buffer.scm data/trie.scm \
        lang/asm/x86_64.scm \
        math/const.scm math/prime.scm \

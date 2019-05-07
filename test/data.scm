@@ -560,6 +560,12 @@
   )
 
 ;;;========================================================================
+(test-section "data.priority-map")
+(use data.priority-map)
+(test-module 'data.priority-map)
+
+
+;;;========================================================================
 ;; ring-buffer
 (test-section "data.ring-buffer")
 (use data.ring-buffer)
