@@ -1,3 +1,8 @@
+2019-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (PUSH_ARG): Fix a bug that had stepped on UB.  Surfaced
+	  depending on optimization.
+
 2019-05-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/gen-unicode.scm: Update Unicode database to 12.1.0, thanks to

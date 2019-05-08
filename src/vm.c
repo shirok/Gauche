@@ -460,8 +460,10 @@ static void vm_unregister(ScmVM *vm)
    shortcuts are taken. */
 #define TAIL_POS()         (*PC == SCM_VM_INSN(SCM_VM_RET))
 
-/* push OBJ to the top of the stack */
-#define PUSH_ARG(obj)      (*SP++ = (obj))
+/* push OBJ to the top of the stack
+   The evaluation of OBJ may require to refer SP, so we can't
+   just say *SP++ = (obj). */
+#define PUSH_ARG(obj)      (*SP = (obj), SP++)
 
 /* pop the top object of the stack and store it to VAR */
 #define POP_ARG(var)       ((var) = *--SP)
