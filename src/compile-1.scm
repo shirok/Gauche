@@ -530,7 +530,7 @@
 ;;
 ;;   Processing define-inline involves two actions.
 ;;   (1) Process the lambda node to be inlined.  A packed IForm should be
-;;       attached, and if the lambda node closes enviornment, some code
+;;       attached, and if the lambda node closes environment, some code
 ;;       transformation is required.
 ;;   (2) Bind the resulting node to the global name, and mark the binding
 ;;       'inlinable'.

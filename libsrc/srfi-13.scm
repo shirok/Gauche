@@ -72,7 +72,7 @@
 
           ;; Gauche supports the following functions natively, but
           ;; we re-export them so that they will be available by
-          ;; importing srfi-13 into vanilla enviornment.
+          ;; importing srfi-13 into vanilla environment.
           string? make-string string string->list list->string
           string-join string-length string-ref string-copy
           string-set! string-fill!

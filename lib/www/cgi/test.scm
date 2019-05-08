@@ -69,7 +69,7 @@
 ;; Runs CGI script under specified environments.
 ;; Calls proc with a port connected to cgi process's stdout.
 (define (call-with-cgi-script script proc :key (environment '()) (parameters #f))
-  ;; set up enviornment
+  ;; set up environment
   (let1 envtab (make-hash-table 'string=?)
     (hash-table-for-each *cgi-test-env*
                          (cut hash-table-put! envtab <> <>))

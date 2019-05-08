@@ -6102,7 +6102,7 @@ Note: The order of @var{pred} and the source object is different from
 @c EN
 This module provides a convenent way to reify the dynamic environment.
 A continuation captured by @code{call/cc} includes the dynamic environment,
-as well as the control flow.  Sometimes you only want the dynamic enviornment
+as well as the control flow.  Sometimes you only want the dynamic environment
 part.  A dynamic extent is a reified dynamic environment.
 @c JP
 このモジュールは、動的環境を簡単に取り出す手段を提供します。

@@ -376,7 +376,7 @@
                           ENOSPC ENOTBLK ENOTDIR ENOTEMPTY ENXIO
                           EPERM EPIPE ESPIPE ESTALE ETXTBSY EXDEV)))))
 
-  ;; 6.12 Enviornments and evaluation
+  ;; 6.12 Environments and evaluation
   ;; scheme-report-environment null-environment
 
   ;; 6.13 Input and output
