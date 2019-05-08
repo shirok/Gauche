@@ -564,6 +564,27 @@
 (use data.priority-map)
 (test-module 'data.priority-map)
 
+(let1 data '((a . 5) (b . 2) (c . 9) (d . -1) (e . -59) (f . 0) (g . 9))
+  (define (make-populated)
+    (rlet1 m (make-priority-map)
+      (dolist [p data] (dict-put! m (car p) (cdr p)))))
+  (define (compare-minmax-result a b)
+    (and (lset= eq? (car a) (car b))
+         (= (cdr a) (cdr b))))
+
+  (let1 m (make-populated)
+    (test* "get" (map cdr data)
+           (map (^p (dict-get m (car p))) data))
+    (test* "min" '((e) . -59)
+           (priority-map-min m)
+           compare-minmax-result)
+    (test* "max" '((c g) . 9)
+           (priority-map-max m)
+           compare-minmax-result)
+    (test* "delete" (remove (^p (eq? (car p) 'c)) data)
+           (begin (dict-delete! m 'c)
+                  (sort-by (dict->alist m) car))))
+  )
 
 ;;;========================================================================
 ;; ring-buffer

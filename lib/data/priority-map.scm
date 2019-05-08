@@ -38,6 +38,7 @@
 (define-module data.priority-map
   (use gauche.dictionary)
   (export <priority-map>
+          make-priority-map
           priority-map-min
           priority-map-max
           priority-map-pop-min!
@@ -72,25 +73,26 @@
 
 (define-method dict-put! ((pmap <priority-map>) key value)
   (let ([kmap (~ pmap 'key-map)]
-        [kcmp (~ pmap 'key-comparator)]
+        [kcmp (~ pmap 'key-cmpr)]
         [vmap (~ pmap 'value-map)]
-        [vcmp (~ pmap 'value-comparator)])
+        [vcmp (~ pmap 'value-cmpr)])
     (and-let* ([v (hash-table-get kmap key #f)]
                [ (not (comparator-equal? vcmp v value)) ])
       ($ tree-map-update! vmap v
          (cute remove key <> (comparator-equality-predicate kcmp)) '()))
     (tree-map-push! vmap value key)
-    (hash-table-put! pmap key value)))
+    (hash-table-put! kmap key value)))
 
 (define-method dict-delete! ((pmap <priority-map>) key)
   (let ([kmap (~ pmap 'key-map)]
-        [kcmp (~ pmap 'key-comparator)]
+        [kcmp (~ pmap 'key-cmpr)]
         [vmap (~ pmap 'value-map)]
-        [vcmp (~ pmap 'value-comparator)])
-    (if-let1 v (hash-table-get km key #f)
+        [vcmp (~ pmap 'value-cmpr)])
+    (and-let1 v (hash-table-get kmap key #f)
       ($ tree-map-update! vmap v
-         (cute remove key <> (comparator-equality-predicate kcmp)) '()))
-    (hash-table-delete! pmap key)))
+         (^[ks] (remove (cut =? kcmp key <>) ks))
+         '()))
+    (hash-table-delete! kmap key)))
 
 (define-method dict-clear! ((pmap <priority-map>))
   (dict-clear! (~ pmap'key-map))
