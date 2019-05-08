@@ -18572,7 +18572,7 @@ and this environment variable is ignored.
 @c MOD gauche.test
 @c EN
 If the test record file is set (either by @code{test-record-file} or
-the enviornment variable @code{GAUCHE_TEST_RECORD_FILE}), read it,
+the environment variable @code{GAUCHE_TEST_RECORD_FILE}), read it,
 and then exit with status 1 if the record has nonzero failure
 count and/or nonzero abort count.  If the test record file isn't
 set, this procedure does nothing.

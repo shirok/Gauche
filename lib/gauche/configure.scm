@@ -1076,7 +1076,7 @@
 ;; API
 ;; Common feature for AC_CHECK_PROG, AC_PATH_PROG etc.
 ;; Search one of programs listed in PROGS within PATHS.
-;; PATHS can be #f - then we use PATH enviornment variable.
+;; PATHS can be #f - then we use PATH environment variable.
 ;; For each found program, FILTER is called with full path of the program;
 ;; it may return #f if the caller wants to exclude the program for some reason.
 ;; If a program found, and FILTER returns true, then this procedure returns

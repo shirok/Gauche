@@ -27406,7 +27406,7 @@ pathname).
 @mdindex www.cgi.test
 @c EN
 This module defines a useful procedures to test CGI script.
-The test actually runs the named script, with specified enviornment
+The test actually runs the named script, with specified environment
 variable settings, and retrieve the output.  Your test procedure
 then examine whether the output is as expected or not.
 @c JP
@@ -27417,11 +27417,11 @@ CGIスクリプトをテストするための便利な手続きを定義して�
 @c COMMON
 @end deftp
 
-@defun cgi-test-enviornment-ref envvar-name
-@defunx {(setter cgi-test-enviornment-ref)} envvar-name value
+@defun cgi-test-environment-ref envvar-name
+@defunx {(setter cgi-test-environment-ref)} envvar-name value
 @c MOD www.cgi.test
 @c EN
-The module keeps a table of default values of enviornment variables
+The module keeps a table of default values of environment variables
 with which the cgi script will be run.  These procedures allow
 the programmer to get/set those default values.
 
@@ -27464,7 +27464,7 @@ The following environment variables are set by default.
 @defun call-with-cgi-script script proc :key (environment ()) (parameters #f)
 @c MOD www.cgi.test
 @c EN
-Runs a script with given enviornment, and calls @var{proc} with
+Runs a script with given environment, and calls @var{proc} with
 one argument, an input port which is connected to the pipe of script's
 standard output.
 @c JP
@@ -27481,13 +27481,13 @@ passed to @code{x->string} first to stringify.
 @code{x->string}に渡されます。
 
 @c EN
-The script is run under the enviornment given by @var{enviornment}
+The script is run under the environment given by @var{environment}
 variable and the default test environment described above.
 The @var{environment} argument must be an associative list, in which each
-key (@code{car}) is the name of the enviornment variable and
+key (@code{car}) is the name of the environment variable and
 its @code{cdr} is the value.  Both are passed to @code{x->string} first.
 If the same environment variable appears in @var{environment} and
-the default test enviornment, the one in @var{environment} is used.
+the default test environment, the one in @var{environment} is used.
 @c JP
 スクリプトは、変数 @var{environment} で与えられる環境と、上述した
 デフォルトのテスト環境の下で実行されます。
@@ -27510,7 +27510,7 @@ is set to @code{application/x-www-form-urlencoded} and
 @code{CONTENT_LENGTH} are set to the length of @code{QUERY_STRING}
 automatically.  If @code{REQUEST_METHOD} is other values,
 @var{parameters} is ignored.
-You can bypass this mechanism and set up enviornment variable
+You can bypass this mechanism and set up environment variable
 @code{QUERY_STRING} directly, if you wish.
 @c JP
 さらに、引数 @var{parameters} に連想リストが渡された場合、そこから

@@ -1282,7 +1282,7 @@
 ;; h is defined.   A straight transplantation of IForm wouldn't work, since
 ;; the $LAMBDA node for the closure bound to 'h' refers to the outer
 ;; environment.
-;; What we do is to eliminate the reference to the outer enviornment by
+;; What we do is to eliminate the reference to the outer environment by
 ;; beta-substitution at the time of definition of 'h', as follows:
 ;;
 ;;  (define-inline h (f (g) 4))

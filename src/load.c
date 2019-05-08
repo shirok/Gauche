@@ -66,7 +66,7 @@ static struct {
     ScmInternalMutex prov_mutex;
     ScmInternalCond  prov_cv;
 
-    /* Dynamic enviornments kept during specific `load'.  They are
+    /* Dynamic environments kept during specific `load'.  They are
        thread-specific, and we use ScmParameter mechanism. */
     ScmPrimitiveParameter *load_history; /* history of the nested load */
     ScmPrimitiveParameter *load_next;    /* list of the directories to be
