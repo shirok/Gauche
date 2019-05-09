@@ -1,5 +1,8 @@
 2019-05-08  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/generator.scm: Add specialized methods for
+	(x->generator <hash-table>) and (x->generator <tree-map>)
+
 	* src/vm.c (PUSH_ARG): Fix a bug that had stepped on UB.  Surfaced
 	  depending on optimization.
 

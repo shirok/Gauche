@@ -163,7 +163,19 @@
 (define-method x->generator ((obj <vector>)) (vector->generator obj))
 (define-method x->generator ((obj <string>)) (string->generator obj))
 (define-method x->generator ((obj <integer>)) (bits->generator obj))
-
+(define %marker (cons #f #f))
+(define-method x->generator ((obj <hash-table>))
+  (let1 iter ((with-module gauche.internal %hash-table-iter) obj)
+    (^[] (receive (k v) (iter %marker)
+           (if (eq? k %marker)
+             (eof-object)
+             (cons k v))))))
+(define-method x->generator ((obj <tree-map>))
+  (let1 iter ((with-module gauche.internal %tree-map-iter) obj)
+    (^[] (receive (k v) (iter %marker #f)
+           (if (eq? k %marker)
+             (eof-object)
+             (cons k v))))))
 (define-method x->generator ((obj <collection>))
   (generate
    (^[yield]

@@ -141,13 +141,39 @@
                   (^[yield] (let loop ([i 0]) (yield i) (loop (+ i 1))))))
   )
 
-;; test x->generator <collection>.  this needs to be tested after
-;; the test of 'generate'.
-(test* "x->generator <collection>" '((0 . a) (1 . b) (2 . c))
+(test* "x->generator <hash-table>" '((0 . a) (1 . b) (2 . c))
        (sort-by (generator->list (x->generator (hash-table 'eqv?
                                                            '(0 . a)
                                                            '(1 . b)
                                                            '(2 . c))))
+                car))
+(test* "x->generator <tree-map>" '((0 . a) (1 . b) (2 . c))
+       (generator->list (x->generator (alist->tree-map 
+                                       '((0 . a)
+                                         (1 . b)
+                                         (2 . c))
+                                       = <))))
+(test* "x->generator <tree-map>" '((2 . c) (1 . b) (0 . a))
+       (generator->list (x->generator (alist->tree-map 
+                                       '((0 . a)
+                                         (1 . b)
+                                         (2 . c))
+                                       = >))))
+
+;; test x->generator <collection>.  this needs to be tested after
+;; the test of 'generate'.
+(define-class <mycoll> (<collection>)
+  ((elts :init-value '() :init-keyword :elts)) ;list
+  )
+(define-method call-with-iterator ((coll <mycoll>) proc)
+  (define z (~ coll 'elts))
+  (proc (cut eq? z '())
+        (^[] (pop! z))))
+(test* "x->generator <collection>" '((0 . a) (1 . b) (2 . c))
+       (sort-by (generator->list (x->generator (make <mycoll>
+                                                 :elts '((0 . a)
+                                                         (1 . b)
+                                                         (2 . c)))))
                 car))
 
 (test* "gappend" '(0 1 2 3 a b c d A B C D)
