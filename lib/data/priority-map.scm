@@ -36,7 +36,9 @@
 ;; Priority map is useful when you also need a quick lookup based on key.
 
 (define-module data.priority-map
+  (use gauche.sequence)
   (use gauche.dictionary)
+  (use util.match)
   (export <priority-map>
           make-priority-map
           priority-map-min
@@ -62,6 +64,26 @@
     :value-map  (make-tree-map value-comparator)
     :value-cmpr value-comparator))
 
+;; Sequence protocol
+;; Iterator iterates increasing order of values
+(define-method size-of ((pm <priority-map>))
+  (hash-table-size (~ pm'key-map)))
+
+(define-method call-with-iterator ((coll <priority-map>) proc :allow-other-keys)
+  (define gen (x->generator (~ coll'value-map)))
+  (define keys '())
+  (define val #f)
+  (define (get1)
+    (let1 buf (gen)
+      (if (eof-object? buf)
+        (set!-values (keys val) (values buf buf))
+        (set!-values (keys val) (values (car buf) (cdr buf))))))
+  (get1)
+  (proc (cut eof-object? keys)
+        (^[] (rlet1 p (cons (pop! keys) val)
+               (when (null? keys)
+                 (get1))))))
+
 ;; Dictionary protocol
 (define-method dict-get ((pmap <priority-map>) key :optional default)
   (if (undefined? default)
@@ -85,14 +107,14 @@
 
 (define-method dict-delete! ((pmap <priority-map>) key)
   (let ([kmap (~ pmap 'key-map)]
-        [kcmp (~ pmap 'key-cmpr)]
-        [vmap (~ pmap 'value-map)]
-        [vcmp (~ pmap 'value-cmpr)])
-    (and-let1 v (hash-table-get kmap key #f)
-      ($ tree-map-update! vmap v
-         (^[ks] (remove (cut =? kcmp key <>) ks))
-         '()))
-    (hash-table-delete! kmap key)))
+        [kcmp (~ pmap'key-cmpr)]
+        [vmap (~ pmap 'value-map)])
+    (and-let1 val (hash-table-get kmap key #f)
+      (let1 ks (tree-map-get vmap val)
+        (if (null? (cdr ks))
+          (tree-map-delete! vmap val)
+          (tree-map-put! vmap val (remove (cut =? kcmp key <>) ks)))))
+      (hash-table-delete! kmap key)))
 
 (define-method dict-clear! ((pmap <priority-map>))
   (dict-clear! (~ pmap'key-map))
@@ -121,12 +143,29 @@
     (cons (cdr p) (car p))))
 
 (define (priority-map-pop-min! pmap)
-  (and-let* ([p (tree-map-pop-min! (~ pmap'value-map))])
-    (cons (cdr p) (car p))))
+  (let ([kmap (~ pmap 'key-map)]
+        [vmap (~ pmap 'value-map)])
+    (match (tree-map-min vmap)
+      [(val . (key . keys))
+       (if (null? keys)
+         (tree-map-delete! vmap val)
+         (tree-map-put! vmap val keys))
+       (hash-table-delete! kmap key)
+       (cons key val)]
+      [#f #f])))
 
 (define (priority-map-pop-max! pmap)
-  (and-let* ([p (tree-map-pop-max! (~ pmap'value-map))])
-    (cons (cdr p) (car p))))
+  (let ([kmap (~ pmap 'key-map)]
+        [vmap (~ pmap 'value-map)])
+    (match (tree-map-max vmap)
+      [(val . (key . keys))
+       (if (null? keys)
+         (tree-map-delete! vmap val)
+         (tree-map-put! vmap val keys))
+       (hash-table-delete! kmap key)
+       (cons key val)]
+      [#f #f])))
+
 
                           
 

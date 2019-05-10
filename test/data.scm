@@ -564,13 +564,19 @@
 (use data.priority-map)
 (test-module 'data.priority-map)
 
-(let1 data '((a . 5) (b . 2) (c . 9) (d . -1) (e . -59) (f . 0) (g . 9))
+(let* ([data '((a . 5) (b . 2) (c . 9) (d . -1) (e . -59) (f . 0) (g . 9))])
   (define (make-populated)
     (rlet1 m (make-priority-map)
       (dolist [p data] (dict-put! m (car p) (cdr p)))))
   (define (compare-minmax-result a b)
     (and (lset= eq? (car a) (car b))
          (= (cdr a) (cdr b))))
+  (define (stabilize seq)
+    ;; if there's consecutive items in seq whose cdr is the same,
+    ;; sort them with their cars' order.  don't change other items orders.
+    ($ apply append
+       $ map (^[items] (sort-by items car))
+       $ group-sequence seq :key cdr))
 
   (let1 m (make-populated)
     (test* "get" (map cdr data)
@@ -584,6 +590,23 @@
     (test* "delete" (remove (^p (eq? (car p) 'c)) data)
            (begin (dict-delete! m 'c)
                   (sort-by (dict->alist m) car))))
+
+  (let1 m (make-populated)
+    (test* "pop, increasing" (stabilize (sort-by data cdr))
+           (stabilize ((rec (pop m)
+                         (if (zero? (size-of m))
+                           '()
+                           (let1 z (priority-map-pop-min! m)
+                             (cons z (pop m)))))
+                       m))))
+  (let1 m (make-populated)
+    (test* "pop, decreasing" (stabilize (sort-by data cdr >))
+           (stabilize ((rec (pop m)
+                         (if (zero? (size-of m))
+                           '()
+                           (let1 z (priority-map-pop-max! m)
+                             (cons z (pop m)))))
+                       m))))
   )
 
 ;;;========================================================================
