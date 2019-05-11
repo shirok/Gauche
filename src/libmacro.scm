@@ -94,8 +94,16 @@
      (define (fulfill-library rest seed)
        (unless (null? (cdr rest))
          (error "Invalid feature requirement:" `(library ,@rest)))
-       (let1 modname (library-name->module-name (car rest))
-         (and (library-exists? modname) seed)))
+       (let* ([libname (car rest)]
+              [modname (cond
+                        [(identifier? libname) (identifier->symbol libname)]
+                        [(symbol? libname) libname]
+                        [(list? libname) (library-name->module-name libname)]
+                        [else (error "Invalid library name in 'library' clause \
+                                      of cond-expand:" libname)])])
+         ;; NB: R7RS doesn't say we load the library implicitly.
+         (and (library-exists? modname)
+              seed)))
 
      (define (rec cls)
        (cond
