@@ -1002,7 +1002,7 @@ Built-in.  @xref{Conditionals}.
 組み込みです。@ref{Conditionals}参照。
 
 
-srfi-146
+srfi-146, srfi-146
 ()
 
 Mappings
