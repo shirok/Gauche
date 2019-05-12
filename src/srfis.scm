@@ -295,11 +295,11 @@ srfi-16
 
 Syntax for procedures of variable arity (case-lambda)
 This has become a part of R7RS small.
-Built-in.  @xref{Making Procedures}.
+Built-in.  @xref{Making procedures}.
 
 可変長引数手続き構文 (case-lambda)
 これはR7RS smallの一部になりました。
-組み込みです。@ref{Making Procedures}参照。
+組み込みです。@ref{Making procedures}参照。
 
 
 srfi-17
@@ -376,10 +376,10 @@ srfi-26
 (cut cute)
 
 Notation for specializing parameters without currying.
-Built-in.  @xref{Making Procedures}.
+Built-in.  @xref{Making procedures}.
 
 カリー化をともなわないパラメータの特殊化記法。組み込みです。
-@ref{Making Procedures}参照。
+@ref{Making procedures}参照。
 
 
 srfi-27, srfi-27

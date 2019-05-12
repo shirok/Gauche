@@ -15,7 +15,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 * Multibyte strings::
 * Multibyte scripts::
 * Case-sensitivity::
-* Integrated Object System::
+* Integrated object system::
 * Module system::
 * Compilation::
 @end menu
@@ -41,14 +41,17 @@ Gaucheは、オプショナルな構文や手続きも含め
 @item
 @c EN
 Gauche has a keyword object, expressed as a name prefixed by a colon
-(e.g. @code{:key}).  It is a subtype of symbols that
-automatically bound to itself, 
-and used extensively when
-passing so-called keyword arguments (@pxref{Making Procedures}).
+(e.g. @code{:key}).
+It is a subtype of symbols that
+automatically bound to itself.
+@xref{Keywords}, for the details.
+Keywords are used extensively when
+passing so-called keyword arguments (@pxref{Making procedures}).
 @c JP
 Gaucheには、コロンで始まる名前(例:@code{:key})を持つ、キーワードオブジェクトがあります。
-キーワードはシンボルのサブタイプで、自動的に自分自身に束縛され、
-キーワード引数を渡すときにいつも使われます(@ref{Making Procedures}参照)。
+キーワードはシンボルのサブタイプで、自動的に自分自身に束縛されます。
+詳しくは@ref{Keywords}を参照してください。
+主にキーワード引数を渡すときに使われます(@ref{Making procedures}参照)。
 @c COMMON
 
 @item
@@ -347,7 +350,7 @@ this feature.
 @ref{Loading Scheme file}を参照して下さい。
 @c COMMON
 
-@node Case-sensitivity, Integrated Object System, Multibyte scripts, Concepts
+@node Case-sensitivity, Integrated object system, Multibyte scripts, Concepts
 @section Case-sensitivity
 @c NODE 大文字小文字の区別
 
@@ -415,8 +418,8 @@ out using |-escape (@pxref{Symbols}).
 @end table
 
 
-@node Integrated Object System, Module system, Case-sensitivity, Concepts
-@section Integrated Object System
+@node Integrated object system, Module system, Case-sensitivity, Concepts
+@section Integrated object system
 @c NODE 統合されたオブジェクトシステム
 
 @c EN
@@ -603,7 +606,7 @@ Gaucheでは、名前空間はオブジェクトシステムとは直交する�
 
 @end table
 
-@node Module system, Compilation, Integrated Object System, Concepts
+@node Module system, Compilation, Integrated object system, Concepts
 @section Module system
 @c NODE モジュールシステム
 

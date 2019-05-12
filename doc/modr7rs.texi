@@ -1279,7 +1279,7 @@ those bindings are available by @code{(import (scheme case-lambda))}.
 
 The only binding exported from this module is @code{case-lambda},
 and it is the same as Gauche's built-in @code{case-lambda};
-@pxref{Making Procedures} for the details.
+@pxref{Making procedures} for the details.
 @c JP
 R7RSの@code{(scheme case-lambda)}ライブラリの束縛をエクスポートします。
 R7RSプログラムからは、エクスポートされた束縛は
@@ -1287,7 +1287,7 @@ R7RSプログラムからは、エクスポートされた束縛は
 
 このモジュールからエクスポートされるのは@code{case-lambda}だけで、
 Gauche組み込みの@code{case-lambda}そのものです。
-詳しくは@ref{Making Procedures}を参照してください。
+詳しくは@ref{Making procedures}を参照してください。
 @c COMMON
 @end deftp
 
@@ -1876,7 +1876,7 @@ This module is to provide R5RS environment in R7RS programs.
 The following bindings are exported.  Note that @code{lambda}
 is @code{scheme#lambda}, without the support of
 extended formals (@code{:optional} etc.)
-@xref{Making Procedures}, for the details of extended formals.
+@xref{Making procedures}, for the details of extended formals.
 
 @example
 * + - / < <= = > >= abs acos and angle append apply asin assoc assq
@@ -1981,13 +1981,13 @@ Note that Gauche supports quite a few @code{scheme.list}
 procedures as built-in.
 The following procedures can be used
 without loading @code{scheme.list} module.  For the manual entries of
-these procedures, @ref{Pairs and Lists}.
+these procedures, @ref{Pairs and lists}.
 @c JP
 このモジュールは、豊富なリスト操作手続きのコレクションです (srfi-1と同じです)。
 
 Gaucheは@code{scheme.list}の手続きの多くを組み込みで提供しています。
 以下に挙げる手続きは@code{scheme.list}モジュールをロードしなくても使えます。
-これらの手続きの説明は、@ref{Pairs and Lists}を参照してください。
+これらの手続きの説明は、@ref{Pairs and lists}を参照してください。
 @c COMMON
 
 @example

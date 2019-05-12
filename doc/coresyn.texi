@@ -6,7 +6,7 @@
 @menu
 * Lexical structure::           
 * Literals::                    
-* Making Procedures::           
+* Making procedures::           
 * Assignments::                 
 * Conditionals::                
 * Binding constructs::          
@@ -644,7 +644,7 @@ compatible to Gauche 0.9.3 and before.
 @end table
 
 @c ----------------------------------------------------------------------
-@node Literals, Making Procedures, Lexical structure, Core syntax
+@node Literals, Making procedures, Lexical structure, Core syntax
 @section Literals
 @c NODE リテラル
 
@@ -694,8 +694,8 @@ if you try to alter a constant string.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Making Procedures, Assignments, Literals, Core syntax
-@section Making Procedures
+@node Making procedures, Assignments, Literals, Core syntax
+@section Making procedures
 @c NODE  手続きを作る
 
 @defspec lambda formals body @dots{}
@@ -1354,7 +1354,7 @@ arguments, so in the following example @code{g2} never returns @code{(one ...)}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Assignments, Conditionals, Making Procedures, Core syntax
+@node Assignments, Conditionals, Making procedures, Core syntax
 @section Assignments
 @c NODE  代入
 

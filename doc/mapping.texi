@@ -474,10 +474,10 @@ Not directly supported, but you can use @code{port-fd-dup!}.
 @itemx execvp
 @c EN
 Gauche @code{sys-exec}.  @xref{Process management}.
-For higher level interface, @ref{High Level Process Interface}.
+For higher level interface, @ref{High-level process interface}.
 @c JP
 Gauche の @code{sys-exec}。@ref{Process management} 参照。
-より高水準のインタフェースについては @ref{High Level Process Interface} 参照。
+より高水準のインタフェースについては @ref{High-level process interface} 参照。
 @c COMMON
 @item exit
 @item _exit
@@ -1649,10 +1649,10 @@ Not supported yet.
 @c EN
 Gauche's @code{sys-system}.   @xref{Process management}.
 It is generally recommended to use the process library
-(@ref{High Level Process Interface}).
+(@ref{High-level process interface}).
 @c JP
 Gauche の @code{sys-system}。@ref{Process management}参照。
-一般的にはプロセスライブラリ(@ref{High Level Process Interface})
+一般的にはプロセスライブラリ(@ref{High-level process interface})
 を使うことを推奨します。
 @c COMMON
 @item tan

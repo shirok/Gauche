@@ -2959,7 +2959,7 @@ the ``rest'' argument, for it is always bound to a list.
 
 You can use extended argument specifications such as
 @code{:optional}, @code{:key} and @code{:rest} as well.
-(@xref{Making Procedures}, for the explanation of extended
+(@xref{Making procedures}, for the explanation of extended
 argument specifications).  Those extended arguments are treated
 as if a single ``rest'' argument in terms of dispatching; they
 aren't used for method dispatch, and you can't specify classes for
@@ -2979,7 +2979,7 @@ rest arguments or not.
 型を指定することはできません。それは常にリストに束縛されるからです。
 
 @code{:optional}、@code{:key}、@code{:rest}等の拡張引数指定を使うことも
-できます。(拡張引数指定については@ref{Making Procedures}を参照してください)。
+できます。(拡張引数指定については@ref{Making procedures}を参照してください)。
 拡張引数指定は、メソッドディスパッチに関しては rest引数と同様に扱われます。
 すなわち、省略可能引数やキーワード引数にクラスを指定することはできません。
 

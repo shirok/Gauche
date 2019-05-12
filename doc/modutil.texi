@@ -6,7 +6,7 @@
 @c ----------------------------------------------------------------------
 @menu
 * Binary I/O::                  binary.io
-* Packing Binary Data::         binary.pack
+* Packing binary data::         binary.pack
 * Running Chibi-scheme test suite::  compat.chibi-test
 * Rational-less arithmetic::    compat.norational
 * A common job descriptor for control modules::  control.job
@@ -51,7 +51,7 @@
 * Zlib compression library::    rfc.zlib
 * SLIB::                        slib
 * Functional XML parser::       sxml.ssax
-* SXML Query Language::         sxml.sxpath
+* SXML query language::         sxml.sxpath
 * Manipulating SXML structure::  sxml.tools
 * Serializing XML and HTML from SXML::  sxml.serializer
 * Text terminal control::       text.console
@@ -78,13 +78,13 @@
 * Stream library::              util.stream
 * Topological sort::            util.toposort
 * Unification::                 util.unification
-* CGI Utility::                 www.cgi
+* CGI utility::                 www.cgi
 * CGI testing::                 www.cgi.test
 * CSS parsing and construction::  www.css
 @end menu
 
 @c ----------------------------------------------------------------------
-@node Binary I/O, Packing Binary Data, Library modules - Utilities, Library modules - Utilities
+@node Binary I/O, Packing binary data, Library modules - Utilities, Library modules - Utilities
 @section @code{binary.io} - Binary I/O
 @c NODE バイナリI/O, @code{binary.io} - バイナリI/O
 
@@ -96,7 +96,7 @@ of numeric data.  Each datum can be read from or written to a port,
 and got from or put to a uniform vector (see @ref{Uniform vectors}).
 For structured binary data I/O,
 more convenient @code{pack} utility is implemented
-on top of this module (see @ref{Packing Binary Data}).
+on top of this module (see @ref{Packing binary data}).
 You might want to use this module directly if you need
 speed or want a flexible control of endianness.
 
@@ -108,7 +108,7 @@ See also @ref{Uniform vectors}, which provides binary block I/O.
 できます。
 構造をもつバイナリデータの入出力については、便利な
 @code{pack}ユーティリティがこのモジュールを使って実装されています
-(@ref{Packing Binary Data}を参照してください)。
+(@ref{Packing binary data}を参照してください)。
 スピードあるいはエンディアンの柔軟な制御などをやりたいときにこのモジュー
 ルが使えます。
 
@@ -515,8 +515,8 @@ for brevity and for consistency with the uniform vectors.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Packing Binary Data, Running Chibi-scheme test suite, Binary I/O, Library modules - Utilities
-@section @code{binary.pack} - Packing Binary Data
+@node Packing binary data, Running Chibi-scheme test suite, Binary I/O, Library modules - Utilities
+@section @code{binary.pack} - Packing binary data
 @c NODE バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
 
 @deftp {Module} binary.pack
@@ -997,7 +997,7 @@ return #t if the template has variable length elements.
 
 @c ----------------------------------------------------------------------
 
-@node Running Chibi-scheme test suite, Rational-less arithmetic, Packing Binary Data, Library modules - Utilities
+@node Running Chibi-scheme test suite, Rational-less arithmetic, Packing binary data, Library modules - Utilities
 @section @code{compat.chibi-test} - Running Chibi-scheme test suite
 @c NODE Chibi schemeテストの実行, @code{compat.chibi-test} - Chibi schemeテストの実行
 
@@ -16532,7 +16532,7 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node Functional XML parser, SXML Query Language, SLIB, Library modules - Utilities
+@node Functional XML parser, SXML query language, SLIB, Library modules - Utilities
 @section @code{sxml.ssax} - Functional XML parser
 @c NODE 関数的なXMLパーザ, @code{sxml.ssax} - 関数的なXMLパーザ
 
@@ -18177,8 +18177,8 @@ XMLドキュメントのSXML表現を返します。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML Query Language, Manipulating SXML structure, Functional XML parser, Library modules - Utilities
-@section @code{sxml.sxpath} - SXML Query Language
+@node SXML query language, Manipulating SXML structure, Functional XML parser, Library modules - Utilities
+@section @code{sxml.sxpath} - SXML query language
 @c NODE SXMLクエリ言語, @code{sxml.sxpath} - SXMLクエリ言語
 
 @deftp {Module} sxml.sxpath
@@ -18254,7 +18254,7 @@ W3CのXPathコア関数ライブラリのSXML版を実装する拡張ライブ�
 * SXPath extension::
 @end menu
 
-@node SXPath basic converters and applicators, SXPath query language, SXML Query Language, SXML Query Language
+@node SXPath basic converters and applicators, SXPath query language, SXML query language, SXML query language
 @subsection SXPath basic converters and applicators
 @c NODE SXPathの基本的なコンバータとアプリケータ
 
@@ -18800,7 +18800,7 @@ can be stopped.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXPath query language, SXPath extension, SXPath basic converters and applicators, SXML Query Language
+@node SXPath query language, SXPath extension, SXPath basic converters and applicators, SXML query language
 @subsection SXPath query language
 @c NODE SXPathクエリ言語
 
@@ -18921,7 +18921,7 @@ node.  @var{lpaths} are location paths for attributes of type ID.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXPath extension,  , SXPath query language, SXML Query Language
+@node SXPath extension,  , SXPath query language, SXML query language
 @subsection SXPath extension
 @c NODE SXPathの拡張
 
@@ -19279,7 +19279,7 @@ Popular shortcuts:
 
 
 @c ----------------------------------------------------------------------
-@node Manipulating SXML structure, Serializing XML and HTML from SXML, SXML Query Language, Library modules - Utilities
+@node Manipulating SXML structure, Serializing XML and HTML from SXML, SXML query language, Library modules - Utilities
 @section @code{sxml.tools} - Manipulating SXML structure
 @c NODE SXML構造を操作する, @code{sxml.tools} - SXML構造を操作する
 
@@ -26421,7 +26421,7 @@ If the graph contains circular reference, an error is signaled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Unification, CGI Utility, Topological sort, Library modules - Utilities
+@node Unification, CGI utility, Topological sort, Library modules - Utilities
 @section @code{util.unification} - Unification
 @c NODE ユニフィケーション, @code{util.unification} - ユニフィケーション
 
@@ -26614,7 +26614,7 @@ If two trees can't be unified, @code{#f} is returned.
 
 
 @c ----------------------------------------------------------------------
-@node CGI Utility, CGI testing, Unification, Library modules - Utilities
+@node CGI utility, CGI testing, Unification, Library modules - Utilities
 @section @code{www.cgi} - CGI utility
 @c NODE CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
 
@@ -27398,7 +27398,7 @@ pathname).
 
 
 @c ----------------------------------------------------------------------
-@node CGI testing, CSS parsing and construction, CGI Utility, Library modules - Utilities
+@node CGI testing, CSS parsing and construction, CGI utility, Library modules - Utilities
 @section @code{www.cgi.test} - CGI testing
 @c NODE CGIのテスト, @code{www.cgi.test} - CGIのテスト
 

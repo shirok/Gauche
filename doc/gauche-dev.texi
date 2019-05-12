@@ -417,7 +417,7 @@ a new Scheme datatype requires dedicated chapter,
 * Memory allocation and GC::
 * Booleans::
 * Numbers::
-* Pairs and Lists::
+* Pairs and lists::
 * Symbols::
 * Glocs::
 * Modules::
@@ -795,7 +795,7 @@ Compare using @code{equal?}
 
 
 
-@node Numbers, Pairs and Lists, Booleans, C API reference
+@node Numbers, Pairs and lists, Booleans, C API reference
 @section Numbers
 
 @menu
@@ -1498,10 +1498,10 @@ Returns a (possibly denormalized) compnum, whose real part is
 
 
 
-@node Pairs and Lists, Symbols, Numbers, C API reference
-@section Pairs and Lists
+@node Pairs and lists, Symbols, Numbers, C API reference
+@section Pairs and lists
 
-@node Symbols, Glocs, Pairs and Lists, C API reference
+@node Symbols, Glocs, Pairs and lists, C API reference
 @section Symbols
 
 @deftp {Scheme Object} ScmSymbol

@@ -9,7 +9,7 @@
 * Numbers::
 * Booleans::
 * Undefined values::
-* Pairs and Lists::
+* Pairs and lists::
 * Symbols::
 * Keywords::
 * Identifiers::
@@ -4233,7 +4233,7 @@ values are the same, @code{#f} otherwise.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Undefined values, Pairs and Lists, Booleans, Core library
+@node Undefined values, Pairs and lists, Booleans, Core library
 @section Undefined values
 @c NODE 未定義値
 
@@ -4274,7 +4274,7 @@ However, @code{#<undef>} may be used in certain
 occasions to indicate that a value is not provided for
 the variable.  For example, an optional procedure parameter
 without default value is bound to @code{#<undef>} if an
-actual argument is not given (@pxref{Making Procedures}).
+actual argument is not given (@pxref{Making procedures}).
 Note that it cannot be distinguished from the case
 a value is actually provided, and the value just happens
 to be @code{#<undef>}.  If you get an @code{#<undef>},
@@ -4284,7 +4284,7 @@ You shouldn't let it carry too much meanings.
 しかし、場合によっては、変数に特定の値が提供されていないことを
 示すのに@code{#<undef>}が使われることもあります。
 例えば、既定値をもたない省略可能引数に実引数が提供されなかった
-場合、引数の値は@code{#<undef>}となります (@ref{Making Procedures}参照)。
+場合、引数の値は@code{#<undef>}となります (@ref{Making procedures}参照)。
 これは実際に@code{#<undef>}が引数として渡された場合と区別がつかない
 ことに注意してください。@code{#<undef>}を受け取ってわかることは、
 せいぜいその値にたいした意味がないということくらいです。
@@ -4316,8 +4316,8 @@ Returns an undefined value.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Pairs and Lists, Symbols, Undefined values, Core library
-@section Pairs and Lists
+@node Pairs and lists, Symbols, Undefined values, Core library
+@section Pairs and lists
 @c NODE ペアとリスト
 
 @c EN
@@ -4352,7 +4352,7 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 * Association lists::
 @end menu
 
-@node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
+@node Pair and null class, List predicates, Pairs and lists, Pairs and lists
 @subsection Pair and null class
 @c NODE pairクラスとnullクラス
 
@@ -4397,7 +4397,7 @@ A class of pairs.
 @c COMMON
 @end deftp
 
-@node List predicates, List constructors, Pair and null class, Pairs and Lists
+@node List predicates, List constructors, Pair and null class, Pairs and lists
 @subsection List predicates
 @c NODE リストに関する述語
 
@@ -4485,7 +4485,7 @@ which are considered to be dotted lists of length 0.
 @end defun
 
 
-@node List constructors, List accessors and modifiers, List predicates, Pairs and Lists
+@node List constructors, List accessors and modifiers, List predicates, Pairs and lists
 @subsection List constructors
 @c NODE リストの作成
 
@@ -4663,7 +4663,7 @@ the resulting list, like unquote-splicing.
 @end defmac
 
 
-@node List accessors and modifiers, Walking over lists, List constructors, Pairs and Lists
+@node List accessors and modifiers, Walking over lists, List constructors, Pairs and lists
 @subsection List accessors and modifiers
 @c NODE リストへのアクセスと変更
 
@@ -5174,7 +5174,7 @@ Inserts @var{item} between elements in the @var{list}.
 @end example
 @end defun
 
-@node Walking over lists, Other list procedures, List accessors and modifiers, Pairs and Lists
+@node Walking over lists, Other list procedures, List accessors and modifiers, Pairs and lists
 @subsection Walking over lists
 @c NODE リストをたどる手続き
 
@@ -5680,7 +5680,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @c COMMON
 @end defun
 
-@node Other list procedures, Association lists, Walking over lists, Pairs and Lists
+@node Other list procedures, Association lists, Walking over lists, Pairs and lists
 @subsection Other list procedures
 @c NODE 他のリスト手続き
 
@@ -5827,7 +5827,7 @@ instead of @code{equal?}.
 @end example
 @end defun
 
-@node Association lists,  , Other list procedures, Pairs and Lists
+@node Association lists,  , Other list procedures, Pairs and lists
 @subsection Association lists
 @c NODE 連想リスト
 
@@ -6164,7 +6164,7 @@ So we added a special update procedure.
 
 
 @c ----------------------------------------------------------------------
-@node Symbols, Keywords, Pairs and Lists, Core library
+@node Symbols, Keywords, Pairs and lists, Core library
 @section Symbols
 @c NODE シンボル
 
@@ -6434,7 +6434,7 @@ to itself.
 It is extensively used in named arguments (keyword arguments),
 and keyword-value list.
 
-See @ref{Making Procedures} for how Gauche supports keyword
+See @ref{Making procedures} for how Gauche supports keyword
 arguments, and @code{let-keywords} macro (@ref{Optional argument parsing})
 for parsing keyword-value list manually.
 
@@ -6466,7 +6466,7 @@ default mode.
 名前つき引数(キーワード引数)や、キーワード-値のリストで広く使われて
 います。
 
-Gaucheにおけるキーワード引数のサポートについては@ref{Making Procedures}を、
+Gaucheにおけるキーワード引数のサポートについては@ref{Making procedures}を、
 また独自にキーワード-値リストをパーズする方法については
 @code{let-keywords} マクロ(@ref{Optional argument parsing}) も参照して下さい。
 
@@ -12974,7 +12974,7 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します
 
 @c EN
 In Scheme, @emph{procedures} are fundamental blocks to build
-a program (@pxref{Making Procedures}).
+a program (@pxref{Making procedures}).
 A procedure represents a certain computation,
 possibly parameterized, and can be @emph{applied} to the actual
 arguments to execute the computation.  Scheme also provides
@@ -12982,7 +12982,7 @@ the means to extract the continuation of the current computation
 and wraps it in a procedure (@pxref{Continuations}).
 @c JP
 Schemeでは、プログラムを組み立てる最も基本となるブロックが@emph{手続き}です
-(@ref{Making Procedures}も参照)。
+(@ref{Making procedures}も参照)。
 手続きは、特定の計算を表現します。引数を取ることも出来ます。
 そして、実引数に@emph{適用}されると、その計算を実行します。
 Schemeはまた、現在の計算の継続を取り出して手続きにラップして返す手段を
@@ -13370,11 +13370,11 @@ called with arguments @var{m} @dots{}, it is equivalent to call
 @c EN
 Macros @code{cut} and @code{cute} defined in SRFI-26 provide
 a similar abstraction, with a bit more flexible but less compact
-notation.  @xref{Making Procedures}.
+notation.  @xref{Making procedures}.
 @c JP
 SRFI-26で定義されているマクロ@code{cut}と@code{cute}も似たような抽象化の
 方法を提供しますが、@code{pa$}より多少柔軟性が高く、その分やや冗長です。
-@ref{Making Procedures}を参照して下さい。
+@ref{Making procedures}を参照して下さい。
 @c COMMON
 @end defun
 
@@ -13561,12 +13561,12 @@ returns @code{#f} without calling further @var{pred}s.
 
 @c EN
 Gauche supports optional and keyword arguments in extended
-lambda syntax (@pxref{Making Procedures}).  However, you can
+lambda syntax (@pxref{Making procedures}).  However, you can
 also use the following macros to parse optional and keyword
 arguments, without relying Gauche's extension.
 @c JP
 Gaucheは省略可能引数やキーワード引数を拡張lambda構文で
-サポートしています (@ref{Making Procedures}参照)。
+サポートしています (@ref{Making procedures}参照)。
 けれども、Gauche拡張に頼らずに、以下のマクロを使って独自にこれらの引数を
 パーズすることもできます。
 @c COMMON
@@ -25654,11 +25654,11 @@ timeオブジェクトと秒数(POSIX時間)を変換します。
 @c EN
 The following procedures provide pretty raw, direct interface
 to the system calls.
-See also @ref{High Level Process Interface}, which provides
+See also @ref{High-level process interface}, which provides
 more convenient process handling on top of these primitives.
 @c JP
 以下の手続きは、システムコールに対する直接的なインタフェースを提供します。
-@ref{High Level Process Interface}も合わせて参照して下さい。
+@ref{High-level process interface}も合わせて参照して下さい。
 より高レベルの便利な手続きが定義されています。
 @c COMMON
 

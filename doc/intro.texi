@@ -402,37 +402,37 @@ Indicates zero or more arguments.
 @c EN
 Indicates it may take up to three optional arguments.
 The second form specifies default values to @var{x} and @var{y}.
-This is Gauche's enhancement to Scheme; see @ref{Making Procedures}
+This is Gauche's enhancement to Scheme; see @ref{Making procedures}
 for the definition of complete argument list syntax.
 @c JP
 省略可能な引数の表記。この例では3つまでの省略可能な引数が取られることを示します。
 2番目の形式では@var{x}と@var{y}について省略された場合の既定値も示しています。
 この形式の引数表記は、Schemeに対するGaucheの独自拡張です。
-完全な仕様については@ref{Making Procedures}を参照してください。
+完全な仕様については@ref{Making procedures}を参照してください。
 @c COMMON
 @item :key @var{x} @var{y} @var{z}
 @itemx :key (@var{x} @var{x-default}) (@var{y} @var{y-default}) @var{z}
 @c EN
 Indicates it may take keyword arguments @var{x}, @var{y} and @var{z.}
 The second form shows the default values for @var{x} and @var{y}.
-This is also Gauche's enhancement to Scheme; see @ref{Making Procedures}
+This is also Gauche's enhancement to Scheme; see @ref{Making procedures}
 for the definition of complete argument list syntax.
 @c JP
 キーワード引数の表記。この例では@var{x}、@var{y}、@var{z}の3つのキーワード引数を
 取ることが示されます。2番目の形式では@var{x}と@var{y}について省略された場合の
 既定値も示しています。
 この形式の引数表記も、Schemeに対するGaucheの独自拡張です。
-完全な仕様については@ref{Making Procedures}を参照してください。
+完全な仕様については@ref{Making procedures}を参照してください。
 @c COMMON
 @item :rest @var{args}
 @c EN
 Indicates it may take rest arguments.
-This is also Gauche's enhancement to Scheme; see @ref{Making Procedures}
+This is also Gauche's enhancement to Scheme; see @ref{Making procedures}
 for the definition of complete argument list syntax.
 @c JP
 残りの引数全てがリストになって@var{args}に束縛されることを示します。
 この形式の引数表記も、Schemeに対するGaucheの独自拡張です。
-完全な仕様については@ref{Making Procedures}を参照してください。
+完全な仕様については@ref{Making procedures}を参照してください。
 @c COMMON
 @end table
 

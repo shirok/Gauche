@@ -28,7 +28,7 @@
 * Parameters::                  gauche.parameter
 * Parsing command-line options::  gauche.parseopt
 * Partial continuations::       gauche.partcont
-* High Level Process Interface::  gauche.process
+* High-level process interface::  gauche.process
 * Record types::                gauche.record
 * Reloading modules::           gauche.reload
 * Simple dispatcher::           gauche.selector
@@ -12573,7 +12573,7 @@ between @emph{network} byte order (@code{n}) and @emph{host} byte order
 Scheme API to the netdb interface calls those byte order conversion
 functions internally, so you don't usually need them so much as in C
 programs.  However, it may be useful when you're constructing or
-analyzing binary packets.  See also @ref{Packing Binary Data} to handle
+analyzing binary packets.  See also @ref{Packing binary data} to handle
 binary data.
 @c JP
 16bit (@code{s})もしくは32bit (@code{l}) の整数を
@@ -12584,7 +12584,7 @@ netdbインタフェースのScheme APIは必要な箇所ではこれらの関�
 呼んでいるので、Cでプログラミングしている時ほどこれらの関数を必要とする
 ことはないでしょう。ただ、バイナリデータパケットを構築したり解析したり
 する際は便利かもしれません。バイナリデータの扱いについては
-@ref{Packing Binary Data}も参照して下さい。
+@ref{Packing binary data}も参照して下さい。
 @c COMMON
 @end defun
 
@@ -13521,7 +13521,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Partial continuations, High Level Process Interface, Parsing command-line options, Library modules - Gauche extensions
+@node Partial continuations, High-level process interface, Parsing command-line options, Library modules - Gauche extensions
 @section @code{gauche.partcont} - Partial continuations
 @c NODE 部分継続, @code{gauche.partcont} - 部分継続
 
@@ -13981,8 +13981,8 @@ gosh> (next)
 
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Record types, Partial continuations, Library modules - Gauche extensions
-@section @code{gauche.process} - High Level Process Interface
+@node High-level process interface, Record types, Partial continuations, Library modules - Gauche extensions
+@section @code{gauche.process} - High-level process interface
 @c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
 @deftp {Module} gauche.process
@@ -14008,7 +14008,7 @@ a convenient way to send/receive information to/from subprocesses.
 * Process connection::
 @end menu
 
-@node Running subprocess, Running process pipeline, High Level Process Interface, High Level Process Interface
+@node Running subprocess, Running process pipeline, High-level process interface, High-level process interface
 @subsection Running subprocess
 @c NODE サブプロセスの実行
 
@@ -14826,7 +14826,7 @@ the remote machine and copies its content into the local file
 @end example
 @end deftp
 
-@node Running process pipeline, Process object, Running subprocess, High Level Process Interface
+@node Running process pipeline, Process object, Running subprocess, High-level process interface
 @subsection Running process pipeline
 @c NODE プロセスパイプラインの実行
 
@@ -14971,7 +14971,7 @@ to move to @code{run-pipeline} as soon as possible.
 @end defun
 
 
-@node Process object, Process ports, Running process pipeline, High Level Process Interface
+@node Process object, Process ports, Running process pipeline, High-level process interface
 @subsection Process object
 
 @deftp {Class} <process>
@@ -15376,7 +15376,7 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @c COMMON
 @end defun
 
-@node Process ports, Process connection, Process object, High Level Process Interface
+@node Process ports, Process connection, Process object, High-level process interface
 @subsection Process ports
 
 @defun open-input-process-port command :key input error encoding conversion-buffer-size
@@ -15806,7 +15806,7 @@ in @var{str}.
 @end example
 @end defun
 
-@node Process connection,  , Process ports, High Level Process Interface
+@node Process connection,  , Process ports, High-level process interface
 @subsection Process connection
 
 @deftp {Class} <process-connection>
@@ -15841,7 +15841,7 @@ the forked process can keep talking to the process.
 
 
 @c ----------------------------------------------------------------------
-@node Record types, Reloading modules, High Level Process Interface, Library modules - Gauche extensions
+@node Record types, Reloading modules, High-level process interface, Library modules - Gauche extensions
 @section @code{gauche.record} - Record types
 @c NODE レコード型, @code{gauche.record} - レコード型
 
@@ -25395,13 +25395,13 @@ to @code{u8vector} (see @code{uvector-alias} in
 
 @c EN
 If used together with @code{pack}/@code{unpack}
-(see @ref{Packing Binary Data}), it is useful to parse
+(see @ref{Packing binary data}), it is useful to parse
 or construct binary data structure.  It is also an
 example of using virtual ports; read @file{gauche/vport.scm}
 (or @file{ext/vport/vport.scm} in the source tree) if you're
 curious about the implementation.
 @c JP
-@code{pack}/@code{unpack}(@ref{Packing Binary Data}参照) と一緒に使うと
+@code{pack}/@code{unpack}(@ref{Packing binary data}参照) と一緒に使うと
 バイナリのデータ構造をパースしたり、構築したりするのに便利です。
 また、仮想ポートの使い方の例でもあります。実装法に興味があれば、
 ソースツリーの @file{gauche/vport.scm}(あるいは @file{ext/vport/vport.scm})

@@ -275,7 +275,7 @@ to construct and traverse collections/sequences in concise code.
 @itemize @bullet
 @item
 @emph{List} - the universal data structure.  You want to check
-@ref{Pairs and Lists} and @ref{R7RS lists}
+@ref{Pairs and lists} and @ref{R7RS lists}
 @item
 @emph{Vector} - a one-dimensional array of arbitrary Scheme values.
 See @ref{Vectors} and @ref{Vector library}.
@@ -340,7 +340,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @itemize @bullet
 @item
 @emph{リスト} - もっともよく使うデータ構造。
-@ref{Pairs and Lists}と@ref{R7RS lists}をチェックしましょう。
+@ref{Pairs and lists}と@ref{R7RS lists}をチェックしましょう。
 @item
 @emph{ベクタ} - 任意のSchemeの値を格納する一次元配列。@ref{Vectors}お
 よび@ref{Vector library}を見ましょう。
@@ -550,7 +550,7 @@ Module @code{sxml.ssax} (@ref{Functional XML parser})
 implements SAX XML parser, with which you
 can parse XML and process them on the fly, or convert it to
 SXML, S-expression XML.  You can query SXML using
-SXPath, an XPath counterparts of S-expression (@ref{SXML Query Language}).
+SXPath, an XPath counterparts of S-expression (@ref{SXML query language}).
 You can output all kinds of XML and HTML using the SXML serializer
 (@ref{Serializing XML and HTML from SXML}).
 @c JP
@@ -561,7 +561,7 @@ You can output all kinds of XML and HTML using the SXML serializer
 @code{sxml.ssax}モジュール(@ref{Functional XML parser})はSAX XMLパーザ
 の実装です。これを使えば、おてがるにXMLをパーズしたり処理したり、ある
 いはまた、SXML(S式XML)に変換することもできます。SXPath(XPathに対応する
-S式(@ref{SXML Query Language}))を使ってSXMLクエリを発行することもでき
+S式(@ref{SXML query language}))を使ってSXMLクエリを発行することもでき
 ます。SXMLシリアライザを使えば、すべての種類のXMLやHTMLをはきだすこと
 もできます(@ref{Serializing XML and HTML from SXML})。
 @c COMMON
@@ -634,11 +634,11 @@ Process-related routines also come in two levels.
 
 @c EN
 The @code{gauche.process} module provides
-high-level routines (@ref{High Level Process Interface});
+high-level routines (@ref{High-level process interface});
 you can pipe the data into and out of child processes easily, for example.
 @c JP
 @code{gauche.process}モジュールは高レベルのルーチン
-(@ref{High Level Process Interface})を提供しています。これを使えば、た
+(@ref{High-level process interface})を提供しています。これを使えば、た
 とえば、データを子プロセスとの間でパイプすることが簡単にできます。
 @c COMMON
 
@@ -758,10 +758,10 @@ with optional endian specification.
 
 @c EN
 And as the top level, the module @code{binary.pack}
-(@ref{Packing Binary Data}) allows packing and unpacking structured
+(@ref{Packing binary data}) allows packing and unpacking structured
 binary data, a la Perl's @code{pack}/@code{unpack}.
 @c JP
-そして最上層としては、@code{binary.pack}(@ref{Packing Binary Data})
+そして最上層としては、@code{binary.pack}(@ref{Packing binary data})
 モジュールがあって、構造をもつバイナリデータのパック、アンパックを可能
 にしています。Perlでいう@code{pack}/@code{unpack}です。
 @c COMMON
