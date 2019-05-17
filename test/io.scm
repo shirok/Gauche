@@ -104,6 +104,34 @@
            (call-with-input-file "tmp2.o" read)))
 
 ;;-------------------------------------------------------------------
+(test-section "common port operations")
+
+(let ([p-in  (open-input-string "abcde")]
+      [p-out (open-output-string)])
+  (unwind-protect
+      (begin
+        (test* "port? 1" #t (port? p-in))
+        (test* "port? 2" #f (port? 'not-port))
+        (test* "input-port? 1" #t (input-port? p-in))
+        (test* "input-port? 2" #f (input-port? p-out))
+        (test* "output-port? 1" #t (output-port? p-out))
+        (test* "output-port? 2" #f (output-port? p-in))
+        (test* "port-closed?" #f (port-closed? p-in))
+        (test* "port-type" 'string (port-type p-in))
+        (test* "port-name 1" "(input string port)"  (port-name p-in))
+        (test* "port-name 2" "(output string port)" (port-name p-out))
+        (test* "port-name 3" "12345" 
+               (begin (set! (port-name p-in) "12345") (port-name p-in)))
+        (test* "port-buffering 1" #f (port-buffering p-in))
+        (test* "port-buffering 2" (test-error)
+               (set! (port-buffering p-out) :line))
+        (test* "port-current-line" 1 (port-current-line p-in))
+        (test* "port-file-number" #f (port-file-number p-in))
+        )
+    (close-port p-in)
+    (close-port p-out)))
+
+;;-------------------------------------------------------------------
 (test-section "port-attributes")
 
 (let ([p (open-output-file "tmp.o" :if-exists :supersede)])

@@ -17801,6 +17801,7 @@ Returns the type of @var{port} in one of the symbols @code{file},
 @end defun
 
 @defun port-name port
+@defunx {(setter port-name)} port name
 @c EN
 Returns the name of @var{port}.  If the port is associated to a file,
 it is the name of the file.   Otherwise, it is some description of the port.

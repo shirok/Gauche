@@ -103,7 +103,13 @@
 
 (select-module gauche)
 
-(define-cproc port-name (port::<port>) Scm_PortName)
+(define-cproc port-name (port::<port>)
+  (setter (port::<port> name) ::<void>
+          (unless (or (SCM_STRINGP name) (SCM_FALSEP name))
+            (Scm_TypeError "name" "string or #f" name))
+          (Scm_SetPortName port name))
+  (return (Scm_PortName port)))
+
 (define-cproc port-current-line (port::<port>) ::<fixnum> Scm_PortLine)
 
 (define-cproc port-file-number (port::<port>)

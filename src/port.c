@@ -74,6 +74,14 @@ static ScmObj get_port_name(ScmPort *port)
     return Scm_PortName(port);
 }
 
+static void set_port_name(ScmPort *port, ScmObj name)
+{
+    if (!SCM_STRINGP(name) && !SCM_FALSEP(name)) {
+        Scm_TypeError("name", "string or #f", name);
+    }
+    Scm_SetPortName(port, name);
+}
+
 static ScmObj get_port_current_line(ScmPort *port)
 {
     return SCM_MAKE_INT(Scm_PortLine(port));
@@ -103,7 +111,7 @@ static void set_port_sigpipe_sensitive(ScmPort *port, ScmObj val)
 }
 
 static ScmClassStaticSlotSpec port_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name", get_port_name, NULL),
+    SCM_CLASS_SLOT_SPEC("name", get_port_name, set_port_name),
     SCM_CLASS_SLOT_SPEC("buffering", get_port_buffering,
                         set_port_buffering),
     SCM_CLASS_SLOT_SPEC("sigpipe-sensitive?", get_port_sigpipe_sensitive,
@@ -253,6 +261,11 @@ ScmObj Scm_VMWithPortLocking(ScmPort *port SCM_UNUSED, ScmObj closure)
 ScmObj Scm_PortName(ScmPort *port)
 {
     return port->name;
+}
+
+void Scm_SetPortName(ScmPort *port, ScmObj name)
+{
+    port->name = name;
 }
 
 int Scm_PortLine(ScmPort *port)

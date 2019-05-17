@@ -322,6 +322,7 @@ SCM_EXTERN void   Scm_SetPortReaderLexicalMode(ScmPort *port, ScmObj obj);
 SCM_EXTERN void   Scm_FlushAllPorts(int exitting);
 
 SCM_EXTERN ScmObj Scm_PortName(ScmPort *port);
+SCM_EXTERN void   Scm_SetPortName(ScmPort *port, ScmObj name);
 SCM_EXTERN int    Scm_PortLine(ScmPort *port);
 SCM_EXTERN ScmObj Scm_PortSeek(ScmPort *port, ScmObj off, int whence);
 SCM_EXTERN ScmObj Scm_PortSeekUnsafe(ScmPort *port, ScmObj off, int whence);
