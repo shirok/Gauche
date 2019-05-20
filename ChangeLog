@@ -1,3 +1,7 @@
+2019-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm (layout-misc): Fixed pprint on uvector.
+
 2019-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (cond-expand): Let 'library' clause accept

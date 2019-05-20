@@ -188,6 +188,13 @@
                     (iota (min* s (rp-length c))))])
       (if (>=* s (rp-length c)) `(,@rs ,dots) rs)))
 
+  ;; mapu :: (Obj -> Layouter), UVector -> Layouter
+  (define (mapu fn vec)
+    (let* ([s (uvector-length vec)]
+           [rs (map (^i (fn (uvector-ref vec i)))
+                    (iota (min* s (rp-length c))))])
+      (if (>=* s (rp-length c)) `(,@rs ,dots) rs)))
+  
   ;; map+ :: (Obj -> Layouter), List -> Layouter
   ;; map considering dotted list, print-length, and shared structure
   (define (map+ fn lis)
@@ -208,7 +215,7 @@
         [(is-a? obj <uvector>)
          (let1 tag (rxmatch-substring
                      (#/[suf]\d+/ (x->string (class-name (class-of obj)))))
-           (layout-list (sprefix obj (format "#~a(" tag) c) (mapi rec obj) c))]
+           (layout-list (sprefix obj (format "#~a(" tag) c) (mapu rec obj) c))]
         [else
          (layout-simple (sprefix obj (write-to-string obj (rec-writer c)) c))]))
 
