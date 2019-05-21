@@ -83,10 +83,10 @@
 (define write-permission-message
   (cond-expand
    [gauche.os.windows
-    "\nNote:\
-\n  Administrator rights might be required. If you want to force execution,\
-\n  right-click the shortcut of shell and select 'Run as administrator' menu,\
-\n  and then retry commands."]
+    "\nNote:\n\
+    Administrator privilege is required. If you want to force installation,\n\
+    right-click the shortcut of shell and select 'Run as administrator' menu,\n\
+    and then retry the command."]
    [else ""]))
 
 (define verbose (make-parameter #f))
