@@ -39,6 +39,9 @@
 
 #undef close    /* windows black magic */
 
+static ScmObj key_bufsize = SCM_FALSE; /* :buffer-size */
+static ScmObj key_name = SCM_FALSE;    /* :name */
+
 /*================================================================
  * <virtual-port>
  */
@@ -350,7 +353,7 @@ static off_t vport_seek(ScmPort *p, off_t off, int whence)
  * Allocation & wiring
  */
 
-static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
+static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
 {
     vport *data = SCM_NEW(vport);
 
@@ -388,6 +391,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     }
     ScmObj port = Scm_MakeVirtualPort(klass, dir, &vtab);
     SCM_PORT(port)->src.vt.data = data;
+    SCM_PORT(port)->name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     return port;
 }
 
@@ -482,7 +486,6 @@ SCM_DEFINE_BASE_CLASS(Scm_BufferedOutputPortClass, ScmPort,
                       vport_print, NULL, NULL,
                       bport_allocate, vport_cpa);
 
-static ScmObj key_bufsize = SCM_FALSE; /* :buffer-size */
 
 /*
  * Scheme handlers.  They are visible from Scheme as instance slots.
@@ -644,6 +647,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Panic("bport_allocate: implementaion error (class wiring screwed?)");
     }
     ScmObj port = Scm_MakeBufferedPort(klass, SCM_FALSE, dir, TRUE, &buf);
+    SCM_PORT(port)->name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     return port;
 }
 
@@ -710,4 +714,5 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
                         "<buffered-output-port>", mod, boport_slots, 0);
 
     key_bufsize = SCM_MAKE_KEYWORD("buffer-size");
+    key_name = SCM_MAKE_KEYWORD("name");
 }

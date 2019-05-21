@@ -1,5 +1,8 @@
 2019-05-20  Shiro Kawai  <shiro@acm.org>
 
+	* ext/vport/vport.c: Accept :name initarg to set port names
+	  when a virtual port is constructed.
+
 	* lib/gauche/pputil.scm (layout-misc): Fixed pprint on uvector.
 
 2019-05-10  Shiro Kawai  <shiro@acm.org>
