@@ -47,6 +47,9 @@
 (use util.list)
 (use util.match)
 
+(define (error-exit fmtstr . args)
+  (apply exit 1 #"gauche-install: ~fmtstr" args))
+
 (define (p . args) (for-each print args))
 
 (define (usage)
@@ -77,22 +80,52 @@
      )
   (exit 0))
 
+(define write-permission-message
+  (cond-expand
+   [gauche.os.windows
+    "\nNote:\
+\n  Administrator rights might be required. If you want to force execution,\
+\n  right-click the shortcut of shell and select 'Run as administrator' menu,\
+\n  and then retry commands."]
+   [else ""]))
+
 (define verbose (make-parameter #f))
 (define dry-run (make-parameter #f))
 
 (define-syntax do-it
   (syntax-rules ()
     [(_ mesg . actions)
-     (begin (when (and (verbose) mesg) (print mesg))
+     (begin (when (and (verbose) mesg) (print mesg) (flush))
             (unless (dry-run) . actions))]))
+
+(define check-write-permission
+  (cond-expand
+   [gauche.os.windows
+    (define path-cache (make-hash-table 'equal?))
+    (^[path]
+      (do-it #"check write permission of ~path"
+             (unless (file-is-directory? path)
+               (error-exit "non-directory file gets in my way: ~s" path))
+             (unless (hash-table-get path-cache path #f)
+               (guard (e [else (error-exit "no write permission of ~s~a"
+                                           path
+                                           write-permission-message)])
+                 (receive (out name) (sys-mkstemp (build-path path "checkwp"))
+                   (close-output-port out)
+                   (sys-unlink name)
+                   (hash-table-put! path-cache path #t))))))]
+   [else
+    (^[path])]))
 
 (define (ensure-directory path :optional (mode #f) (owner #f) (group #f))
   (if (file-exists? path)
-    (unless (file-is-directory? path)
-      (exit 1 "gauche-install: non-directory file gets in my way: ~s" path))
+    (if (file-is-directory? path)
+      (check-write-permission path)
+      (error-exit "non-directory file gets in my way: ~s" path))
     (do-it #"creating directory ~path"
-           (guard (e [else (exit 1 "can't create directory: ~s"
-                                 (ref e 'message))])
+           (guard (e [else (error-exit "can't create directory: ~s~a"
+                                       (ref e 'message)
+                                       write-permission-message)])
              (when (make-directory* path)
                (when mode (sys-chmod path mode))
                (when (or owner group)
@@ -106,7 +139,7 @@
   (cond [(not arg) -1]
         [(integer? arg) arg]
         [(and (string? arg) (str->id arg))]
-        [else (exit 1 "bad ~a name: ~a" type arg)]))
+        [else (error-exit "bad ~a name: ~a" type arg)]))
 
 ;; find source path
 (define (ensure-src file srcdir)
@@ -180,8 +213,11 @@
                  (install (ensure-src src srcdir)
                           (build-path target (strip-dir sprefix src))
                           shebang mode owner group csfx))]
-       [utarget (dolist [src args]
-                  (sys-unlink (build-path utarget (strip-dir sprefix src))))]
+       [utarget (guard (e [else (error-exit "can't remove file: ~s~a"
+                                            (ref e 'message)
+                                            write-permission-message)])
+                  (dolist [src args]
+                    (sys-unlink (build-path utarget (strip-dir sprefix src)))))]
        [else
         (match args
           [() (usage)]
