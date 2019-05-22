@@ -1,7 +1,7 @@
 ;;;
 ;;; os.windows.console.codepage - windows console code page support
 ;;;
-;;;   Copyright (c) 2017  Hamayama  https://github.com/Hamayama
+;;;   Copyright (c) 2017-2019  Hamayama  https://github.com/Hamayama
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -40,6 +40,9 @@
   (export wrap-windows-console-standard-ports
           auto-wrap-windows-console-standard-ports))
 (select-module os.windows.console.codepage)
+
+;; a character indicating conversion error
+(define *conv-err-char* #\?)
 
 ;; check a standard handle redirection
 (define (redirected-handle? hdl)
@@ -80,7 +83,7 @@
                        ;; a character is incomplete
                        (if (< i2 maxbytes)
                          (loop i2 (+ i2 readbytes))
-                         #\null)])
+                         *conv-err-char*)])
               ;; a character is complete
               (let1 chr (string-ref str 0)
                 (cond
@@ -102,7 +105,7 @@
                        ;; a character is incomplete
                        (if (< i2 maxbytes)
                          (loop i2 (+ i2 readbytes))
-                         #\null)])
+                         *conv-err-char*)])
               ;; a character is complete
               (string-ref str 0))))))))
 
@@ -220,7 +223,8 @@
 (define (make-stdin-conv-port :optional (ces #f) (use-api #f))
   (and (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
            (not (redirected-handle? (sys-get-std-handle STD_INPUT_HANDLE))))
-       (rlet1 vport (make <virtual-input-port>)
+       (rlet1 vport (make <virtual-input-port>
+                      :name "(windows console standard input)")
          (port-attribute-set! vport 'windows-console-conversion #t)
          (let1 proc (make-conv-getc (standard-input-port)
                                     STD_INPUT_HANDLE ces use-api vport)
@@ -229,7 +233,8 @@
 (define (make-stdout-conv-port :optional (ces #f) (use-api #f))
   (and (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
            (not (redirected-handle? (sys-get-std-handle STD_OUTPUT_HANDLE))))
-       (rlet1 vport (make <virtual-output-port>)
+       (rlet1 vport (make <virtual-output-port>
+                      :name "(windows console standard output)")
          (port-attribute-set! vport 'windows-console-conversion #t)
          (let1 proc (make-conv-puts (standard-output-port)
                                     STD_OUTPUT_HANDLE ces use-api vport)
@@ -239,7 +244,8 @@
 (define (make-stderr-conv-port :optional (ces #f) (use-api #f))
   (and (or (= (sys-get-console-cp) 0) ; for gosh-noconsole
            (not (redirected-handle? (sys-get-std-handle STD_ERROR_HANDLE))))
-       (rlet1 vport (make <virtual-output-port>)
+       (rlet1 vport (make <virtual-output-port>
+                      :name "(windows console standard error output)")
          (port-attribute-set! vport 'windows-console-conversion #t)
          (let1 proc (make-conv-puts (standard-error-port)
                                     STD_ERROR_HANDLE ces use-api vport)
@@ -247,7 +253,7 @@
            (set! (~ vport'puts) proc)))))
 
 ;; wrap windows console standard ports
-(define (wrap-windows-console-standard-ports :optional (ces '#f) (use-api #f))
+(define (wrap-windows-console-standard-ports :optional (ces #f) (use-api #f))
   (if-let1 port (make-stdin-conv-port  ces use-api) (current-input-port  port))
   (if-let1 port (make-stdout-conv-port ces use-api) (current-output-port port))
   (if-let1 port (make-stderr-conv-port ces use-api) (current-error-port  port))
