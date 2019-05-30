@@ -21433,6 +21433,8 @@ You can also use glob-like metacharacters '@code{*}' and
 である場合にはモジュール名(たとえば、@code{foo.bar})を指定します。
 文字列である場合にはライブラリの部分パス(たとえば、@code{"foo/bar"})を
 指定します。これはライブラリサーチパス以下で検索されます。
+@var{pattern}にはグロブのメタ文字として '@code{*}' と '@code{?}' を
+使うことができます。
 @c COMMON
 
 @defun library-fold pattern proc seed :key paths strict? allow-duplicates?
