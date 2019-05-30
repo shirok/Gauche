@@ -21423,8 +21423,8 @@ a module name (e.g. @code{foo.bar}).  If it is
 a string, it specifies a partial pathname of the library
 (e.g. @code{"foo/bar"}), which will be searched under
 library search paths.
-You can also use glob-like metacharacters '@code{*}' and
-'@code{?}' in @var{pattern}.
+You can also use glob-like metacharacters @code{*} and
+@code{?} in @var{pattern}.
 @c JP
 ある特定のライブラリおよび/あるいはモジュールがシステムにインストールされ
 ているかどうかをチェックするための手続きがいくつかあります。
@@ -21433,8 +21433,8 @@ You can also use glob-like metacharacters '@code{*}' and
 である場合にはモジュール名(たとえば、@code{foo.bar})を指定します。
 文字列である場合にはライブラリの部分パス(たとえば、@code{"foo/bar"})を
 指定します。これはライブラリサーチパス以下で検索されます。
-@var{pattern}にはグロブのメタ文字として '@code{*}' と '@code{?}' を
-使うことができます。
+@var{pattern}には@code{glob}のメタ文字と同じ意味で @code{*} と @code{?} を
+使うこともできます。
 @c COMMON
 
 @defun library-fold pattern proc seed :key paths strict? allow-duplicates?
