@@ -1,3 +1,9 @@
+2019-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm: (Experimental): Turn on prettyprinting
+	  on REPL by default. It can be turned off by setting env var
+	  GAUCHE_REPL_NO_PPRINT.
+
 2019-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/vport/vport.c: Accept :name initarg to set port names
