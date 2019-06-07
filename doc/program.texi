@@ -1231,39 +1231,38 @@ to fully redisplay the previous result without omission.
 @c COMMON
 
 @c EN
-For deeply nested structures, you may want it to be @emph{pretty printed},
-that is, with newlines and indentations to show the tree structure.
-Type @code{,pm pretty #t} (or @code{,print-mode pretty #t}) to turn on
-pretty printing.
+By default, REPL prints out the result using @emph{pretty print}:
 @c JP
-深くネストした構造には、適切に改行やインデントを挿入してみやすくしてくれる
-プリティプリント機能が欲しくなるかもしれません。
-@code{,pm pretty #t} (もしくは@code{,print-mode pretty #t}) 
-でプリティプリントをONにできます。
+デフォルトでは、REPLはネストした構造を@emph{プリティプリント}します:
 @c COMMON
 
 @example
-gosh> ,pm pretty #t length 5
-Current print mode:
-  length :   5
-   level :  10
-  pretty :  #t
-   width :  #f
-    base :  10
-   radix :  #f
-gosh> (call-with-input-file "Info.plist" (cut ssax:xml->sxml <> '()))
+gosh> ,u sxml.ssax
+gosh> (call-with-input-file "src/Info.plist" (cut ssax:xml->sxml <> '()))
 (*TOP*
  (*PI* xml "version=\"1.0\" encoding=\"UTF-8\"")
  (plist
-  (|@@|
-   (version "1.0"))
-  (dict
-   (key "CFBundleDevelopmentRegion")
-   (string "English")
-   (key "CFBundleExecutable")
-   (string "Gauche")
-   ....)))
+  (|@| (version "1.0"))
+  (dict (key "CFBundleDevelopmentRegion") (string "English")
+   (key "CFBundleExecutable") (string "Gauche") (key "CFBundleIconFile")
+   (string) (key "CFBundleIdentifier") (string "com.schemearts.gauche")
+   (key "CFBundleInfoDictionaryVersion") (string "6.0")
+   (key "CFBundlePackageType") (string "FMWK") (key "CFBundleSignature")
+   (string "????") (key "CFBundleVersion") (string "1.0")
+   (key "NSPrincipalClass") (string))))
 @end example
+
+@c EN
+If you want to turn off pretty printing for some reason,
+type @code{,pm pretty #f} (or @code{,print-mode pretty #f}) on the
+toplevel prompt, or start @code{gosh} with the environment variable
+@code{GAUCHE_REPL_NO_PPRINT} set.
+@c JP
+何らかの理由でプリティプリントをoffにしたい場合は、
+トップレベルプロンプトで@code{,pm pretty #f}
+(あるいは@code{,print-mode pretty #f})と打つか、
+環境変数@code{GAUCHE_REPL_NO_PPRINT}をセットして@code{gosh}を起動してください。
+@c COMMON
 
 @c EN
 Type @code{,pm default} to make print mode back to default.
