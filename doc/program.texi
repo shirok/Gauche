@@ -457,44 +457,6 @@ The following environment variables are recognized:
 以下の環境変数を認識します。
 @c COMMON
 
-@deftp {Environment variable} GAUCHE_LOAD_PATH
-@c EN
-You can specify additional load paths by this environment
-variable, delimiting the paths by '@code{:}'.
-The paths are appended before the system default load paths.
-
-@xref{Loading Scheme file}, for the details of how Gauche finds
-files to load.
-@c JP
-この環境変数によって、追加するロードパスを指定できます。
-パスは '@code{:}' で区切ります。
-この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
-連結されます。
-
-GaucheがロードするSchemeファイルを見つける方法について詳しくは
-@ref{Loading Scheme file}を参照してください。
-@c COMMON
-@end deftp
-
-@deftp {Environment variable} GAUCHE_DYNLOAD_PATH
-@c EN
-You can specify additional load paths for dynamically loaded
-objects by this environment variable, delimiting the paths by '@code{:}'.
-The paths are appended before the system default load paths.
-
-@xref{Loading dynamic library}, for the details of how Gauche
-finds dynamically loadable objects.
-@c JP
-この変数によって、動的にロードするオブジェクト用の追加ロードパスを
-指定できます。パスは '@code{:}' で区切ります。
-この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
-連結されます。
-
-Gaucheが動的にロードするオブジェクトファイルを探す方法については
-@ref{Loading dynamic library}を参照してください。
-@c COMMON
-@end deftp
-
 @deftp {Environment variable} GAUCHE_AVAILABLE_PROCESSORS
 @c EN
 You can get the number of system's processors by
@@ -518,6 +480,25 @@ the return value of @code{sys-available-processors}.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_DYNLOAD_PATH
+@c EN
+You can specify additional load paths for dynamically loaded
+objects by this environment variable, delimiting the paths by '@code{:}'.
+The paths are appended before the system default load paths.
+
+@xref{Loading dynamic library}, for the details of how Gauche
+finds dynamically loadable objects.
+@c JP
+この変数によって、動的にロードするオブジェクト用の追加ロードパスを
+指定できます。パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
+
+Gaucheが動的にロードするオブジェクトファイルを探す方法については
+@ref{Loading dynamic library}を参照してください。
+@c COMMON
+@end deftp
+
 @deftp {Environment variable} GAUCHE_EDITOR
 @deftpx {Environment variable} EDITOR
 @c EN
@@ -526,17 +507,6 @@ This is used by @code{ed} procedure in @code{gauche.interactive} module.
 @c JP
 これは@code{gauche.interactive}モジュールの@code{ed}手続きで使われます。
 詳しくは@ref{Interactive session}を参照してください。
-@c COMMON
-@end deftp
-
-@deftp {Environment variable} GAUCHE_READ_EDIT
-@c EN
-This is used by @code{gauche.interactive} module to enable line-editor
-on REPL prompt.  @xref{Interactive development}, for the details.
-@c JP
-これはREPLプロンプトで行編集機能を利用可能にするために
-@code{gauche.interactive}で使われます。
-詳しくは@ref{Interactive development}を参照してください。
 @c COMMON
 @end deftp
 
@@ -551,17 +521,58 @@ as symbols or not.  @xref{Keywords}, for the details.
 @c COMMON
 @end deftp
 
-@deftp {Environment variable} TMP
-@deftpx {Environment variable} TMPDIR
-@deftpx {Environment variable} TEMP
-@deftpx {Environment variable} USERPROFILE
+@deftp {Environment variable} GAUCHE_LOAD_PATH
 @c EN
-These may affect the return value of @code{sys-tmpdir}.
-Different environment variables may be used on different platforms.
-@xref{Pathnames}, for the details.
+You can specify additional load paths by this environment
+variable, delimiting the paths by '@code{:}'.
+The paths are appended before the system default load paths.
+
+@xref{Loading Scheme file}, for the details of how Gauche finds
+files to load.
 @c JP
-これらは@code{sys-tmpdir}の返り値に影響を与えます。プラットフォームによって
-参照される環境変数は異なります。@ref{Pathnames}を参照してください。
+この環境変数によって、追加するロードパスを指定できます。
+パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
+
+GaucheがロードするSchemeファイルを見つける方法について詳しくは
+@ref{Loading Scheme file}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_QUASIRENAME_MODE
+@c EN
+This affects @code{quasirename} behavior, to keep the backward
+compatibility with 0.9.7 and before.
+@xref{Explicit-renaming macro transformer}, for the details.
+@c JP
+これは@code{quasirename}の振る舞いに影響を与え、
+0.9.7以前との互換性のために使われます。詳しくは
+@ref{Explicit-renaming macro transformer}を参照してください。
+@c COMMON
+@end deftp
+
+
+@deftp {Environment variable} GAUCHE_READ_EDIT
+@c EN
+This is used by @code{gauche.interactive} module to enable line-editor
+on REPL prompt.  @xref{Interactive development}, for the details.
+@c JP
+これはREPLプロンプトで行編集機能を利用可能にするために
+@code{gauche.interactive}で使われます。
+詳しくは@ref{Interactive development}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_REPL_NO_PPRINT
+@c EN
+This is used by @code{gauche.interactive} module to suppress
+pretty-printing on REPL prompt.
+@xref{Interactive development}, for the details.
+@c JP
+これはREPLプロンプトでプリティプリントを抑制するために
+@code{gauche.interactive}で使われます。
+詳しくは@ref{Interactive development}を参照してください。
 @c COMMON
 @end deftp
 
@@ -572,6 +583,17 @@ use only if you absolutely need to.
 @c JP
 システムの警告(@code{WARNING: ...})を抑止します。気軽に使うべきではありません。
 どうしても必要な場合のみ使ってください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_TEST_RECORD_FILE
+@c EN
+This is used by @code{gauche.test} module (@pxref{Unit testing}).
+If defined, names a file the test processes
+keep the total statistics.
+@c JP
+@code{gauche.test}モジュールで使われます(@ref{Unit testing}参照)。
+定義されていた場合、その値を名前とするファイルにテストの統計が記録されます。
 @c COMMON
 @end deftp
 
@@ -590,14 +612,18 @@ Useful for diagnosis of unexpected errors.
 @c COMMON
 @end deftp
 
-@deftp {Environment variable} GAUCHE_TEST_RECORD_FILE
+
+@deftp {Environment variable} TMP
+@deftpx {Environment variable} TMPDIR
+@deftpx {Environment variable} TEMP
+@deftpx {Environment variable} USERPROFILE
 @c EN
-This is used by @code{gauche.test} module (@pxref{Unit testing}).
-If defined, names a file the test processes
-keep the total statistics.
+These may affect the return value of @code{sys-tmpdir}.
+Different environment variables may be used on different platforms.
+@xref{Pathnames}, for the details.
 @c JP
-@code{gauche.test}モジュールで使われます(@ref{Unit testing}参照)。
-定義されていた場合、その値を名前とするファイルにテストの統計が記録されます。
+これらは@code{sys-tmpdir}の返り値に影響を与えます。プラットフォームによって
+参照される環境変数は異なります。@ref{Pathnames}を参照してください。
 @c COMMON
 @end deftp
 
