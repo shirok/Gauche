@@ -897,7 +897,7 @@ static int server_socket_init(int *port)
     char yes = 1;
 
     /* Create socket for incoming connections */
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    if (IS_SOCKET_INVALID(server_fd = socket(AF_INET, SOCK_STREAM, 0)))
     {
         return -1;
     }
@@ -1032,7 +1032,7 @@ static int SSL_server_test(
     client_data.testname = testname;
     client_data.openssl_option = openssl_option;
 
-    if ((server_fd = server_socket_init(&g_port)) < 0)
+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
         goto error;
 
     if (private_key)
@@ -1096,8 +1096,7 @@ static int SSL_server_test(
         SSL *ssl;
 
         /* Wait for a client to connect */
-        if ((client_fd = accept(server_fd, 
-                        (struct sockaddr *)&client_addr, &clnt_len)) < 0)
+        if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &clnt_len)))
         {
             ret = SSL_ERROR_SOCK_SETUP_FAILURE;
             goto error;
@@ -1675,7 +1674,7 @@ static int SSL_client_test(
         session_id = sess_resume->session_id;
     }
 
-    if ((client_fd = client_socket_init(g_port)) < 0)
+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(g_port)))
     {
         printf("could not start socket on %d\n", g_port); TTY_FLUSH();
         goto client_test_exit;
@@ -2000,7 +1999,7 @@ static void do_basic(void)
                             DEFAULT_CLNT_OPTION, SSL_DEFAULT_CLNT_SESS);
     usleep(200000);           /* allow server to start */
 
-    if ((client_fd = client_socket_init(g_port)) < 0)
+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(g_port)))
         goto error;
 
     if (ssl_obj_load(ssl_clnt_ctx, SSL_OBJ_X509_CACERT, 
@@ -2040,7 +2039,7 @@ static int SSL_basic_test(void)
     memset(basic_buf, 0xA5, sizeof(basic_buf)/2);
     memset(&basic_buf[sizeof(basic_buf)/2], 0x5A, sizeof(basic_buf)/2);
 
-    if ((server_fd = server_socket_init(&g_port)) < 0)
+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
         goto error;
 
     ssl_svr_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
@@ -2060,8 +2059,7 @@ static int SSL_basic_test(void)
 #endif
 
     /* Wait for a client to connect */
-    if ((client_fd = accept(server_fd, 
-                    (struct sockaddr *) &client_addr, &clnt_len)) < 0)
+    if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
     {
         ret = SSL_ERROR_SOCK_SETUP_FAILURE;
         goto error;
@@ -2120,7 +2118,7 @@ static void do_unblocked(void)
                             SSL_CONNECT_IN_PARTS);
     usleep(200000);           /* allow server to start */
 
-    if ((client_fd = client_socket_init(g_port)) < 0)
+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(g_port)))
         goto error;
 
     {
@@ -2172,7 +2170,7 @@ static int SSL_unblocked_test(void)
     memset(basic_buf, 0xA5, sizeof(basic_buf)/2);
     memset(&basic_buf[sizeof(basic_buf)/2], 0x5A, sizeof(basic_buf)/2);
 
-    if ((server_fd = server_socket_init(&g_port)) < 0)
+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
         goto error;
 
     ssl_svr_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
@@ -2194,8 +2192,7 @@ static int SSL_unblocked_test(void)
 #endif
 
     /* Wait for a client to connect */
-    if ((client_fd = accept(server_fd, 
-                    (struct sockaddr *) &client_addr, &clnt_len)) < 0)
+    if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
     {
         ret = SSL_ERROR_SOCK_SETUP_FAILURE;
         goto error;
@@ -2260,7 +2257,7 @@ void do_multi_clnt(multi_t *multi_data)
     SSL *ssl = NULL;
     char tmp[5];
 
-    if ((client_fd = client_socket_init(multi_data->port)) < 0)
+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(multi_data->port)))
         goto client_test_exit;
 
     usleep(200000);
@@ -2348,7 +2345,7 @@ int multi_thread_test(void)
                                         "../ssl/test/axTLS.ca_x509.cer", NULL))
         goto error;
 
-    if ((server_fd = server_socket_init(&g_port)) < 0)
+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
         goto error;
 
     for (i = 0; i < NUM_THREADS; i++)
@@ -2368,7 +2365,7 @@ int multi_thread_test(void)
         int client_fd = accept(server_fd, 
                       (struct sockaddr *)&client_addr, &clnt_len);
 
-        if (client_fd < 0)
+        if (IS_SOCKET_INVALID(client_fd))
             goto error;
 
         ssl_svr = ssl_server_new(ssl_server_ctx, client_fd);
@@ -2427,7 +2424,7 @@ error:
 //    pthread_t thread;
 //#endif
 //
-//    if (f == NULL || (server_fd = server_socket_init(&g_port)) < 0)
+//    if (f == NULL || IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
 //        goto error;
 //
 //#ifndef WIN32
@@ -2438,8 +2435,7 @@ error:
 //    CreateThread(NULL, 1024, (LPTHREAD_START_ROUTINE)do_header_issue, 
 //                NULL, 0, NULL);
 //#endif
-//    if ((client_fd = accept(server_fd, 
-//                    (struct sockaddr *) &client_addr, &clnt_len)) < 0)
+//    if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
 //    {
 //        ret = SSL_ERROR_SOCK_SETUP_FAILURE;
 //        goto error;
