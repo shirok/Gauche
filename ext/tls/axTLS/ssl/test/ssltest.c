@@ -65,11 +65,15 @@ static int g_port = 19001;
 #ifndef WIN32
 typedef void* ax_thread_status;
 typedef void* ax_thread_param;
-#define AX_THREAD_RETURN NULL
+#define AX_THREAD_RETURN        NULL
+#define AX_INVALID_SOCKET       ((int)-1)
+#define AX_INVALID_SOCKET_P(fd) ((fd) < 0)
 #else
 typedef DWORD  ax_thread_status;
 typedef LPVOID ax_thread_param;
-#define AX_THREAD_RETURN 0
+#define AX_THREAD_RETURN        0
+#define AX_INVALID_SOCKET       ((int)INVALID_SOCKET)
+#define AX_INVALID_SOCKET_P(fd) ((fd) == AX_INVALID_SOCKET)
 #endif
 
 /**************************************************************************

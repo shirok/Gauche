@@ -83,8 +83,6 @@ extern "C" {
 #undef dup2
 #undef unlink
 
-#define AX_INVALID_SOCKET       ((int)INVALID_SOCKET)
-#define AX_INVALID_SOCKET_P(fd) ((fd) == AX_INVALID_SOCKET)
 #define SOCKET_READ(A,B,C)      recv(A,(char *)B,C,0)
 #define SOCKET_WRITE(A,B,C)     send(A,(const char *)B,C,0)
 #define SOCKET_CLOSE(A)         closesocket(A)
@@ -155,8 +153,6 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define AX_INVALID_SOCKET       ((int)-1)
-#define AX_INVALID_SOCKET_P(fd) ((fd) < 0)
 #define SOCKET_READ(A,B,C)      read(A,B,C)
 #define SOCKET_WRITE(A,B,C)     write(A,B,C)
 #define SOCKET_CLOSE(A)         if (A >= 0) close(A)
