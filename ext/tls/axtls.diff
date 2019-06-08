@@ -31,7 +31,7 @@
      int is_client = IS_SET_SSL_FLAG(SSL_IS_CLIENT);
      int resume = IS_SET_SSL_FLAG(SSL_SESSION_RESUME);
 --- a/axTLS/ssl/test/ssltest.c	2016-12-31 05:01:13.000000000 +0900
-+++ b/axTLS/ssl/test/ssltest.c	2019-06-08 16:02:32.831860300 +0900
++++ b/axTLS/ssl/test/ssltest.c	2019-06-08 20:55:07.085117600 +0900
 @@ -62,6 +62,16 @@
  
  static int g_port = 19001;
@@ -49,21 +49,33 @@
  /**************************************************************************
   * AES tests 
   * 
-@@ -887,7 +897,7 @@
+@@ -887,9 +897,9 @@
      char yes = 1;
  
      /* Create socket for incoming connections */
 -    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-+    if (IS_SOCKET_INVALID(server_fd = socket(AF_INET, SOCK_STREAM, 0)))
++    if (AX_INVALID_SOCKET_P(server_fd = socket(AF_INET, SOCK_STREAM, 0)))
      {
-         return -1;
+-        return -1;
++        return AX_INVALID_SOCKET;
      }
+       
+     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+@@ -910,7 +920,7 @@
+     /* Mark the socket so it will listen for incoming connections */
+     if (listen(server_fd, 3000) < 0)
+     {
+-        return -1;
++        return AX_INVALID_SOCKET;
+     }
+ 
+     return server_fd;
 @@ -922,19 +932,23 @@
  static int client_socket_init(uint16_t port)
  {
      struct sockaddr_in address;
 -    int client_fd;
-+    int client_fd = -1;
++    int client_fd = AX_INVALID_SOCKET;
 +    int i;
  
 -    address.sin_family = AF_INET;
@@ -82,7 +94,8 @@
 +        if (connect(client_fd, (struct sockaddr *)&address, sizeof(address)) == 0) break;
          perror("socket");
          SOCKET_CLOSE(client_fd);
-         client_fd = -1;
+-        client_fd = -1;
++        client_fd = AX_INVALID_SOCKET;
 +        sleep(2);
      }
 -
@@ -115,7 +128,7 @@
      client_data.openssl_option = openssl_option;
  
 -    if ((server_fd = server_socket_init(&g_port)) < 0)
-+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
++    if (AX_INVALID_SOCKET_P(server_fd = server_socket_init(&g_port)))
          goto error;
  
      if (private_key)
@@ -140,7 +153,7 @@
          /* Wait for a client to connect */
 -        if ((client_fd = accept(server_fd, 
 -                        (struct sockaddr *)&client_addr, &clnt_len)) < 0)
-+        if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &clnt_len)))
++        if (AX_INVALID_SOCKET_P(client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &clnt_len)))
          {
              ret = SSL_ERROR_SOCK_SETUP_FAILURE;
              goto error;
@@ -180,6 +193,15 @@
  }
  
  static int SSL_client_test(
+@@ -1577,7 +1596,7 @@
+ {
+     server_t server_data;
+     SSL *ssl = NULL;
+-    int client_fd = -1;
++    int client_fd = AX_INVALID_SOCKET;
+     uint8_t *session_id = NULL;
+     int ret = 1;
+ #ifndef WIN32
 @@ -1592,12 +1611,10 @@
          server_data.openssl_option = openssl_option;
  
@@ -200,7 +222,7 @@
      }
  
 -    if ((client_fd = client_socket_init(g_port)) < 0)
-+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(g_port)))
++    if (AX_INVALID_SOCKET_P(client_fd = client_socket_init(g_port)))
      {
          printf("could not start socket on %d\n", g_port); TTY_FLUSH();
          goto client_test_exit;
@@ -237,7 +259,7 @@
      usleep(200000);           /* allow server to start */
  
 -    if ((client_fd = client_socket_init(g_port)) < 0)
-+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(g_port)))
++    if (AX_INVALID_SOCKET_P(client_fd = client_socket_init(g_port)))
          goto error;
  
      if (ssl_obj_load(ssl_clnt_ctx, SSL_OBJ_X509_CACERT, 
@@ -246,7 +268,7 @@
      memset(&basic_buf[sizeof(basic_buf)/2], 0x5A, sizeof(basic_buf)/2);
  
 -    if ((server_fd = server_socket_init(&g_port)) < 0)
-+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
++    if (AX_INVALID_SOCKET_P(server_fd = server_socket_init(&g_port)))
          goto error;
  
      ssl_svr_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
@@ -256,7 +278,7 @@
      /* Wait for a client to connect */
 -    if ((client_fd = accept(server_fd, 
 -                    (struct sockaddr *) &client_addr, &clnt_len)) < 0)
-+    if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
++    if (AX_INVALID_SOCKET_P(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
      {
          ret = SSL_ERROR_SOCK_SETUP_FAILURE;
          goto error;
@@ -274,7 +296,7 @@
      usleep(200000);           /* allow server to start */
  
 -    if ((client_fd = client_socket_init(g_port)) < 0)
-+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(g_port)))
++    if (AX_INVALID_SOCKET_P(client_fd = client_socket_init(g_port)))
          goto error;
  
      {
@@ -283,7 +305,7 @@
      memset(&basic_buf[sizeof(basic_buf)/2], 0x5A, sizeof(basic_buf)/2);
  
 -    if ((server_fd = server_socket_init(&g_port)) < 0)
-+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
++    if (AX_INVALID_SOCKET_P(server_fd = server_socket_init(&g_port)))
          goto error;
  
      ssl_svr_ctx = ssl_ctx_new(DEFAULT_SVR_OPTION, SSL_DEFAULT_SVR_SESS);
@@ -293,7 +315,7 @@
      /* Wait for a client to connect */
 -    if ((client_fd = accept(server_fd, 
 -                    (struct sockaddr *) &client_addr, &clnt_len)) < 0)
-+    if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
++    if (AX_INVALID_SOCKET_P(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
      {
          ret = SSL_ERROR_SOCK_SETUP_FAILURE;
          goto error;
@@ -311,16 +333,25 @@
      char tmp[5];
  
 -    if ((client_fd = client_socket_init(multi_data->port)) < 0)
-+    if (IS_SOCKET_INVALID(client_fd = client_socket_init(multi_data->port)))
++    if (AX_INVALID_SOCKET_P(client_fd = client_socket_init(multi_data->port)))
          goto client_test_exit;
  
      usleep(200000);
+@@ -2302,7 +2320,7 @@
+ 
+ int multi_thread_test(void)
+ {
+-    int server_fd = -1;
++    int server_fd = AX_INVALID_SOCKET;
+     SSL_CTX *ssl_server_ctx;
+     SSL_CTX *ssl_clnt_ctx;
+     pthread_t clnt_threads[NUM_THREADS];
 @@ -2327,7 +2345,7 @@
                                          "../ssl/test/axTLS.ca_x509.cer", NULL))
          goto error;
  
 -    if ((server_fd = server_socket_init(&g_port)) < 0)
-+    if (IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
++    if (AX_INVALID_SOCKET_P(server_fd = server_socket_init(&g_port)))
          goto error;
  
      for (i = 0; i < NUM_THREADS; i++)
@@ -329,16 +360,25 @@
                        (struct sockaddr *)&client_addr, &clnt_len);
  
 -        if (client_fd < 0)
-+        if (IS_SOCKET_INVALID(client_fd))
++        if (AX_INVALID_SOCKET_P(client_fd))
              goto error;
  
          ssl_svr = ssl_server_new(ssl_server_ctx, client_fd);
+@@ -2397,7 +2415,7 @@
+ //static int header_issue(void)
+ //{
+ //    FILE *f = fopen("../ssl/test/header_issue.dat", "r");
+-//    int server_fd = -1, client_fd = -1, ret = 1;
++//    int server_fd = AX_INVALID_SOCKET, client_fd = AX_INVALID_SOCKET, ret = 1;
+ //    uint8_t buf[2048];
+ //    int size = 0;
+ //    struct sockaddr_in client_addr;
 @@ -2406,7 +2424,7 @@
  //    pthread_t thread;
  //#endif
  //
 -//    if (f == NULL || (server_fd = server_socket_init(&g_port)) < 0)
-+//    if (f == NULL || IS_SOCKET_INVALID(server_fd = server_socket_init(&g_port)))
++//    if (f == NULL || AX_INVALID_SOCKET_P(server_fd = server_socket_init(&g_port)))
  //        goto error;
  //
  //#ifndef WIN32
@@ -348,7 +388,7 @@
  //#endif
 -//    if ((client_fd = accept(server_fd, 
 -//                    (struct sockaddr *) &client_addr, &clnt_len)) < 0)
-+//    if (IS_SOCKET_INVALID(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
++//    if (AX_INVALID_SOCKET_P(client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &clnt_len)))
  //    {
  //        ret = SSL_ERROR_SOCK_SETUP_FAILURE;
  //        goto error;
@@ -412,7 +452,7 @@
 -ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 +#ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 --- a/axTLS/ssl/os_port.h	2016-07-05 16:33:37.000000000 +0900
-+++ b/axTLS/ssl/os_port.h	2019-06-08 15:58:03.737727800 +0900
++++ b/axTLS/ssl/os_port.h	2019-06-08 20:52:20.928355500 +0900
 @@ -42,7 +42,7 @@
  #endif
  
@@ -431,19 +471,20 @@
  /* Windows CE stuff */
  #if defined(_WIN32_WCE)
  #include <basetsd.h>
-@@ -81,8 +83,9 @@
+@@ -81,8 +83,10 @@
  #undef dup2
  #undef unlink
  
 -#define SOCKET_READ(A,B,C)      recv(A,B,C,0)
 -#define SOCKET_WRITE(A,B,C)     send(A,B,C,0)
-+#define IS_SOCKET_INVALID(fd)   ((SOCKET)(fd) == INVALID_SOCKET)
++#define AX_INVALID_SOCKET       ((int)INVALID_SOCKET)
++#define AX_INVALID_SOCKET_P(fd) ((fd) == AX_INVALID_SOCKET)
 +#define SOCKET_READ(A,B,C)      recv(A,(char *)B,C,0)
 +#define SOCKET_WRITE(A,B,C)     send(A,(const char *)B,C,0)
  #define SOCKET_CLOSE(A)         closesocket(A)
  #define srandom(A)              srand(A)
  #define random()                rand()
-@@ -98,8 +101,12 @@
+@@ -98,8 +102,12 @@
  #define usleep(A)               Sleep(A/1000)
  #define strdup(A)               _strdup(A)
  #define chroot(A)               _chdir(A)
@@ -456,7 +497,7 @@
  #ifndef lseek
  #define lseek(A,B,C)            _lseek(A,B,C)
  #endif
-@@ -113,14 +120,24 @@
+@@ -113,14 +121,24 @@
  /*
   * automatically build some library dependencies.
   */
@@ -481,13 +522,14 @@
  
  #else   /* Not Win32 */
  
-@@ -136,13 +153,23 @@
+@@ -136,13 +154,24 @@
  #include <sys/wait.h>
  #include <netinet/in.h>
  #include <arpa/inet.h>
 -#include <asm/byteorder.h>
  
-+#define IS_SOCKET_INVALID(fd)   ((fd) < 0)
++#define AX_INVALID_SOCKET       ((int)-1)
++#define AX_INVALID_SOCKET_P(fd) ((fd) < 0)
  #define SOCKET_READ(A,B,C)      read(A,B,C)
  #define SOCKET_WRITE(A,B,C)     write(A,B,C)
  #define SOCKET_CLOSE(A)         if (A >= 0) close(A)
