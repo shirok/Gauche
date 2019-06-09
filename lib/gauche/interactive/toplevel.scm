@@ -128,8 +128,10 @@
        [(_ keys parser-spec help handler)
         (let* ([keys (if (list? keys) keys (list keys))]
                [parser (get-arg-parser parser-spec)]
-               [help (string-append (string-join (map x->string keys) "|")
-                                    help)])
+               [help `(,(r'string-append)
+                       (,(r'string-join)
+                        (,(r'map) ,(r'x->string) ',keys) "|")
+                       ,help)])
           `(,(r'begin)
             ,@(map (^[key]
                      (quasirename r
