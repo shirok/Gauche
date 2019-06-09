@@ -214,11 +214,11 @@
       [(x) `(,x)]
       [xs (rec xs)]))
   (define (compound-exps exps)
-    (match exps
+    (match (delete-duplicates exps equal?)
       [(x) (format "expecting ~s" x)]
       [(xs ...) (format "expecting one of ~s" xs)]))
   (define (compound-unexps unexps)
-    (match unexps
+    (match (delete-duplicates unexps equal?)
       [(x) (format "not expecting ~s" x)]
       [(xs ...) (format "not expecting any of ~s" xs)]))
   (define (message objs pos nexttok)
