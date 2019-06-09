@@ -323,24 +323,26 @@
       [(file) `(,(rename 'load) ,(x->string file))]
       [_ (usage)])))
 
+(define-constant default-pm (print-mode))
+
 (define-toplevel-command (print-mode pm) :read
-  " default | [key value ...]\
+  #" default | [key value ...]\
   \nView/set print-mode of REPL.\
   \nWithout arguments, it shows the current print mode.\
   \nWith a single argument, 'default', resets the print mode to the default.\
   \nOtherwise, the arguments must be a key-value list where keys are symbols,\
   \nand values are either integers or booleans.\
   \nThe following keys are recognized.\
-  \n  pretty <boolean>    - Use pretty printer [default: #f]\
+  \n  pretty <boolean>    - Use pretty printer [default: ~(~ default-pm'pretty)]\
   \n  length <integer>|#f - Max # of items shown in list/vector before abbreviated.\
-  \n                        #f for unlimited.  [default: 50]\
+  \n                        #f for unlimited.  [default: ~(~ default-pm'length)]\
   \n  level <integer>|#f  - Max # of nestings shown before abbreviated.\
-  \n                        #f for unlimited.  [default: 50]\
+  \n                        #f for unlimited.  [default: ~(~ default-pm'level)]\
   \n  width <integer>|#f  - Column width before line is wrapped.  Only used in\
-  \n                        the pretty printer.  #f for unlimited.  [default: 79]\
-  \n  base <integer>      - Base radix of showing whole numbers.  [default: 10]\
+  \n                        the pretty printer.  #f for unlimited.  [default: ~(~ default-pm'width)]\
+  \n  base <integer>      - Base radix of showing whole numbers.  [default: ~(~ default-pm'base)]\
   \n  radix <boolean>     - Add radix prefix ('#x' etc.) befors whole numbers.\
-  \n                        [default: #f]"
+  \n                        [default: ~(~ default-pm'radix)]"
   (^[args]
     (match args
       [() #f]
