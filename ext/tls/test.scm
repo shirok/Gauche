@@ -35,16 +35,10 @@
       (and-let1 msystem (sys-getenv "MSYSTEM")
         (boolean (#/MINGW(64|32)/ msystem)))]
      [else #f]))
-  (define openssl-path
-    (and mingw-detected
-         openssl-cmd
-         (guard (e [(<process-abnormal-exit> e) #f])
-           (process-output->string
-            `("cmd.exe" "/c" "which" ,openssl-cmd)))))
   (define winpty-needed
     (and mingw-detected
-         openssl-path
-         (boolean (#/\/mingw(64|32)/ openssl-path))))
+         openssl-cmd
+         (boolean (#/\/mingw(64|32)/ openssl-cmd))))
 
   (sys-unlink "axTLS/ssl/openssl.pid")
   (sys-unlink "kick_openssl.sh")
@@ -52,7 +46,7 @@
   (cond
    [(not openssl-cmd)
     (no-openssl "openssl command not available")]
-   [(and mingw-detected (not openssl-path))
+   [(and mingw-detected (not openssl-cmd))
     (no-openssl "couldn't get openssl command path")]
    [(and winpty-needed
          (not (find-file-in-paths "winpty" :extensions '("exe"))))
