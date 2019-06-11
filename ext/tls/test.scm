@@ -29,21 +29,22 @@
 
   ;; MinGW's openssl command needs winpty.
   ;; (MSYS's openssl command doesn't need it.)
-  (define openssl-path openssl-cmd)
-  (define winpty-needed
+  (define mingw-detected
     (cond-expand
      [gauche.os.windows
-      (and-let* ([msystem (sys-getenv "MSYSTEM")]
-                 [(#/MINGW(64|32)/ msystem)]
-                 [openssl-cmd])
-        ;; We need openssl command path but config.status doesn't have it.
-        (set! openssl-path
-              (guard (e [(<process-abnormal-exit> e) #f])
-                (process-output->string
-                 `("cmd.exe" "/c" "which" ,openssl-cmd))))
-        (and openssl-path
-             (boolean (#/\/mingw(64|32)/ openssl-path))))]
+      (and-let1 msystem (sys-getenv "MSYSTEM")
+        (boolean (#/MINGW(64|32)/ msystem)))]
      [else #f]))
+  (define openssl-path
+    (and mingw-detected
+         openssl-cmd
+         (guard (e [(<process-abnormal-exit> e) #f])
+           (process-output->string
+            `("cmd.exe" "/c" "which" ,openssl-cmd)))))
+  (define winpty-needed
+    (and mingw-detected
+         openssl-path
+         (boolean (#/\/mingw(64|32)/ openssl-path))))
 
   (sys-unlink "axTLS/ssl/openssl.pid")
   (sys-unlink "kick_openssl.sh")
@@ -51,7 +52,7 @@
   (cond
    [(not openssl-cmd)
     (no-openssl "openssl command not available")]
-   [(not openssl-path)
+   [(and mingw-detected (not openssl-path))
     (no-openssl "couldn't get openssl command path")]
    [(and winpty-needed
          (not (find-file-in-paths "winpty" :extensions '("exe"))))
