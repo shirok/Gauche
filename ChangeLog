@@ -1,3 +1,9 @@
+2019-06-10  Shiro Kawai  <shiro@acm.org>
+
+	* test/include/srfi-144-tests.scm: Change one flexp-1 test to use
+	  test/approx.
+	  http://chaton.practical-scheme.net/gauche/a/2019/06/10#entry-5cfe669c-c4805
+
 2019-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm: (Experimental): Turn on prettyprinting

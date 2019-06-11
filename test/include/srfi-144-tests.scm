@@ -803,7 +803,7 @@
 
      (test (fl+ one (flexp-1 negzero)) one)
      (test (fl+ one (flexp-1 zero)) one)
-     (test (fl+ one (flexp-1 one)) fl-e)
+     (test/approx (fl+ one (flexp-1 one)) fl-e)
      (test/approx (fl+ one (flexp-1 (fl- one))) fl-1/e)
      (test/approx (fl+ one (flexp-1 two)) fl-e-2)
      (test/approx (fl+ one (flexp-1 fl-pi/4)) fl-e-pi/4)
