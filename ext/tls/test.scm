@@ -27,11 +27,37 @@
     (warn #"~|msg|: some tests are skipped.\n")
     (set! openssl-cmd #f))
 
+  ;; MinGW's openssl command needs winpty.
+  ;; (MSYS's openssl command doesn't need it.)
+  (define mingw-detected
+    (cond-expand
+     [gauche.os.windows
+      (and-let1 msystem (sys-getenv "MSYSTEM")
+        (boolean (#/MINGW(64|32)/ msystem)))]
+     [else #f]))
+  (define openssl-path
+    (and mingw-detected
+         openssl-cmd
+         (guard (e [(<process-abnormal-exit> e) #f])
+           (process-output->string
+            `("cmd.exe" "/c" "which" ,openssl-cmd)))))
+  (define winpty-needed
+    (and mingw-detected
+         openssl-path
+         (boolean (#/\/mingw(64|32)/ openssl-path))))
+
   (sys-unlink "axTLS/ssl/openssl.pid")
   (sys-unlink "kick_openssl.sh")
 
-  (if (not openssl-cmd)
-    (no-openssl "openssl command not available")
+  (cond
+   [(not openssl-cmd)
+    (no-openssl "openssl command not available")]
+   [(and mingw-detected (not openssl-path))
+    (no-openssl "couldn't get openssl command path")]
+   [(and winpty-needed
+         (not (find-file-in-paths "winpty" :extensions '("exe"))))
+    (no-openssl "winpty not found. (MinGW's openssl command needs it.)")]
+   [else
     ;; Check openssl version.  OSX and MinGW32 ship with old openssl
     ;; that's unusable.
     (guard (e [(<process-abnormal-exit> e)
@@ -45,7 +71,7 @@
         (let1 vers (m 1)
           (unless (version>=? vers "1.0.1")
             (no-openssl #"openssl version is too old (~vers)")))
-        (no-openssl "couldn't get openssl version"))))
+        (no-openssl "couldn't get openssl version")))])
 
   (when openssl-cmd
     (with-output-to-file "kick_openssl.sh"
@@ -53,18 +79,11 @@
         (print "#!/bin/sh")
         (print "set -e")
         (print #"echo \"$$\" \"~|openssl-cmd|\" >> openssl.pid")
-        (cond-expand
-         [gauche.os.windows
-          ;; MinGW's openssl.exe needs winpty only when stdin is terminal.
-          ;; (MSYS's openssl.exe doesn't need this workaround.)
-          (print  "mingw_workaround=no")
-          (print  "case \"$MSYSTEM\" in")
-          (print  "    MINGW64|MINGW32)")
-          (print #"        if echo `/usr/bin/which \"~|openssl-cmd|\" || :` | grep -q -E \"/mingw(64|32)\"; then")
-          (print  "            mingw_workaround=yes")
-          (print  "        fi;;")
-          (print  "esac")
-          (print  "if [ \"$mingw_workaround\" = yes -a -t 0 ]; then")
+        (cond
+         [winpty-needed
+          ;; MinGW's openssl command needs winpty only when stdin is terminal.
+          ;; (MSYS's openssl command doesn't need this workaround.)
+          (print  "if [ -t 0 ]; then")
           (print #"    exec winpty -Xallow-non-tty -Xplain \"~|openssl-cmd|\" \"$@\"")
           (print  "else")
           (print #"    exec \"~|openssl-cmd|\" \"$@\"")
@@ -83,9 +102,8 @@
 
   ;; On MSYS (mintty), winpty with '-Xallow-non-tty' option changes tty
   ;; setting, so that we should reset it.
-  (cond-expand
-   [gauche.os.windows (sys-system "stty sane")]
-   [else])
+  (when (and openssl-cmd winpty-needed)
+    (sys-system "stty sane"))
   ]
  [else])
 

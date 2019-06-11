@@ -45,6 +45,8 @@ install:
   - gosh -V
   - bash -lc "pacman -S --noconfirm msys/winpty"
   - bash -lc "winpty --version"
+  - bash -lc "where openssl"
+  - bash -lc "openssl version"
 
 build_script:
   - bash -lc "pwd"
@@ -61,5 +63,6 @@ test_script:
 
 artifacts:
   - path: Gauche-*.zip
+#  - path: ext/tls/kick_openssl.sh
 #  - path: ext/tls/ssltest.log
 
