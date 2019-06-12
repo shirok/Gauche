@@ -148,7 +148,6 @@ dnl Check openssl command; if available, we use it for axTLS tests.
 dnl This is needed even if we don't support libopenssl binding.
 dnl
 AC_CHECK_PROGS(OPENSSL, openssl)
-AC_PATH_PROGS(OPENSSL_PATH, openssl)
 
 dnl Local variables:
 dnl mode: autoconf

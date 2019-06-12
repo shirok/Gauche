@@ -19,12 +19,10 @@
   ;; Some tests requires openssl command.  We've checked its availability
   ;; in toplevel configure.
   ;; NB: We assume we're running in $top_builddir/ext/tls.
-  (define config-list (file->string-list "../../config.status"))
-  (define (get-config-var name)
-    (let1 r (string->regexp #"S\\[\"~|name|\"\\]=\"(.+)\"")
-      (and-let1 m (any (cut rxmatch r <>) config-list)
-        (m 1))))
-  (define openssl-cmd (get-config-var "OPENSSL"))
+  (define openssl-cmd
+    (and-let1 m (any #/S\["OPENSSL"\]=\"(.+)\"/
+                     (file->string-list "../../config.status"))
+      (m 1)))
   (define (no-openssl msg)
     (warn #"~|msg|: some tests are skipped.\n")
     (set! openssl-cmd #f))
@@ -37,11 +35,13 @@
       (and-let1 msystem (sys-getenv "MSYSTEM")
         (boolean (#/MINGW(64|32)/ msystem)))]
      [else #f]))
-  (define openssl-path (get-config-var "OPENSSL_PATH"))
+  (define openssl-path
+    (and mingw-detected
+         (find-file-in-paths "openssl" :extensions '("exe"))))
   (define winpty-needed
     (and mingw-detected
          openssl-path
-         (boolean (#/\/mingw(64|32)/ openssl-path))))
+         (boolean (#/mingw(64|32)/ openssl-path))))
 
   (sys-unlink "axTLS/ssl/openssl.pid")
   (sys-unlink "kick_openssl.sh")
