@@ -81,7 +81,7 @@
      (^t ($ map (^[grp] (cons (map car grp) (cdar grp)))
             $ group-collection
             ($ map (^p (cons (car p) (caddr p))) $ trie->list t)
-            :key cdr))))
+            :key cdr :test equal?))))
 
 ;; A handler return value that does nothing
 (define *no-value* `(,(with-module gauche values)))
