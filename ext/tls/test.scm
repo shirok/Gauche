@@ -37,7 +37,8 @@
      [else #f]))
   (define openssl-path
     (and mingw-detected
-         (find-file-in-paths "openssl" :extensions '("exe"))))
+         openssl-cmd
+         (find-file-in-paths openssl-cmd :extensions '("exe"))))
   (define winpty-needed
     (and mingw-detected
          openssl-path
