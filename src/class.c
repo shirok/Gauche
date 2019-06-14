@@ -1296,13 +1296,27 @@ static inline void scheme_slot_set(ScmObj obj, ScmSmallInt number, ScmObj val)
     SCM_INSTANCE_SLOTS(obj)[number] = val;
 }
 
-/* These two are exposed to Scheme to do some nasty things.
+/* These three are exposed to Scheme to do some nasty things.
    We shoudn't do class redefinition check here, since the slot number
    is calculated based on the old class, if the class is ever redefined.
 */
+/* OBSOLETED, for the backward compatibility */
 ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt number)
 {
     return scheme_slot_ref(obj, number);
+}
+
+/* TRANSIENT: we'll rename this to Scm_InstanceSlotRef() in 1.0. */
+ScmObj Scm_InstanceSlotRef3(ScmObj obj, ScmSmallInt number, ScmObj fallback)
+{
+    ScmObj v = scheme_slot_ref(obj, number);
+    if (SCM_UNBOUNDP(v)) {
+        if (SCM_UNBOUNDP(fallback)) {
+            Scm_Error("Slot #%d of object %S is unbound.", number, obj);
+        }
+        return fallback;
+    }
+    return v;
 }
 
 void Scm_InstanceSlotSet(ScmObj obj, ScmSmallInt number, ScmObj val)

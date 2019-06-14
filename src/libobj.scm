@@ -542,13 +542,7 @@
 
 ;; Internal API - undocumented
 (define-cproc instance-slot-ref (obj num::<fixnum> :optional fallback)
-  (let* ([v (Scm_InstanceSlotRef obj num)])
-    (if (SCM_UNBOUNDP v)
-      (begin
-        (when (SCM_UNBOUNDP fallback)
-          (Scm_Error "Slot #%d of object %S is unbound." num obj))
-        (return fallback))
-      (return v))))
+  (return (Scm_InstanceSlotRef3 obj num fallback)))
 ;; Internal API - undocumented
 (define-cproc instance-slot-set! (obj num::<fixnum> value) ::<void>
   Scm_InstanceSlotSet)
@@ -576,7 +570,7 @@
 (define-cproc %record-ref (klass::<class> obj k::<fixnum>)
   (unless (SCM_ISA obj klass)
     (Scm_Error "record-ref: instance of %S expected, got %S" klass obj))
-  (return (Scm_InstanceSlotRef obj k)))
+  (return (Scm_InstanceSlotRef3 obj k SCM_UNBOUND)))
 
 (define-cproc %record-set! (klass::<class> obj k::<fixnum> val) ::<void>
   (unless (SCM_ISA obj klass)

@@ -160,6 +160,7 @@ SCM_EXTERN ScmObj Scm_VMClassOf(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass);
 
 SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt k);
+SCM_EXTERN ScmObj Scm_InstanceSlotRef3(ScmObj obj, ScmSmallInt k, ScmObj fallback);
 SCM_EXTERN void   Scm_InstanceSlotSet(ScmObj obj, ScmSmallInt k, ScmObj val);
 
 SCM_EXTERN void   Scm_StartClassRedefinition(ScmClass *klass);

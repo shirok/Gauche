@@ -1,3 +1,13 @@
+2019-06-13  Shiro Kawai  <shiro@acm.org>
+
+	* libobj.scm (%record-ref): Check unbound slot.  #<unbound> should never
+	  be leaked to Scheme world.
+	* class.c (Scm_InstanceSlotRef3): New API that checks slot unbound
+	  situation.  This one follows the standard *Ref() API.  The old
+	  Scm_InstanceSlotRef should be considered as obsoleted.  We'll
+	  rename *Ref3() version to *Ref() in 1.0 release.
+	* libobj.scm (instance-slot-ref): Rewrite using Scm_InstanceSlotRef3.
+
 2019-06-10  Shiro Kawai  <shiro@acm.org>
 
 	* test/include/srfi-144-tests.scm: Change one flexp-1 test to use
