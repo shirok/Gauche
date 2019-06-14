@@ -133,7 +133,8 @@
   (%test-runner-fail-list! runner '())
   (%test-runner-skip-save! runner '())
   (%test-runner-fail-save! runner '())
-  (test-runner-group-stack! runner '()))
+  (test-runner-group-stack! runner '())
+  (test-runner-aux-value! runner #f))
 
 (define (test-runner-group-path runner)
   (reverse (test-runner-group-stack runner)))
@@ -553,7 +554,7 @@
 (define-syntax %test-evaluate-with-catch
   (syntax-rules ()
     ((%test-evaluate-with-catch test-expression)
-     (guard (err (else #f)) test-expression))))
+     (guard (err (else (print err) #f)) test-expression))))
 	    
 (define (%test-source-line2 form) ; can be something - later
   '())
