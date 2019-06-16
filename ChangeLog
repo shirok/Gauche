@@ -1,3 +1,7 @@
+2019-06-15  Shiro Kawai  <shiro@acm.org>
+
+	* Release 0.9.8
+
 2019-06-13  Shiro Kawai  <shiro@acm.org>
 
 	* libobj.scm (%record-ref): Check unbound slot.  #<unbound> should never
