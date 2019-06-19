@@ -63,7 +63,8 @@
                                            [else
                                             '(openssl version)]))
                              1)
-      (version>=? openssl-version "1.1")))
+      (and openssl-version
+           (version>=? openssl-version "1.1"))))
 
   (define add-seclevel-client
     (if openssl-1.1>=?
