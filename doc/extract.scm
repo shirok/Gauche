@@ -18,6 +18,7 @@
 (use gauche.parameter)
 (use srfi-13)
 (use file.util)
+(use util.levenshtein)
 
 (define *version*
   (string-trim-both (file->string (or (find (cut sys-access <> R_OK)
@@ -52,6 +53,9 @@
      read-line)))
 
 (define (filter pattern-in pattern-out)
+  ;; This regexp picks potential typo of extract directives.
+  (define suspicious
+    #/^@c ([A-Za-z]{2,7}(?![A-Za-z:', -])([^A-Za-z:', -])?)/)
   (define (in line)
     (rxmatch-case line
       [test eof-object?]
@@ -73,6 +77,7 @@
       [#/^@c MOD\s+(\S+)$/ (#f module)
              (display #"@{@t{~|module|}@}\n")
              (in (read-line))]
+      [suspicious (#f word) (check-typo word line) (in (read-line))]
       [test (^_ (eq? (lang) 'en))
             (display (regexp-replace-all #/@VERSION@/ line *version*))
             (newline) (in (read-line))]
@@ -96,9 +101,22 @@
       [test eof-object?]
       [pattern-in ()  (in (read-line))]
       [#/^@c COMMON$/ () (in (read-line))]
+      [suspicious (#f word) (check-typo word line) (out (read-line))]
       [else (out (read-line))]))
 
   (in (read-line)))
+
+;; Detect potential typo of extract directives.
+;; Some words (TODO etc.) are not directives, but we include here to avoid
+;; false positives.
+(define (check-typo word line)
+  (when (and (string-any char-upper-case? word)
+             (let1 ds (re-distances word '("EN" "JP" "COMMON" "NODE" "MOD"
+                                           "TODO" "NOTE" "NB"))
+               (<= 1 (apply min ds) 2)))
+    (warn "Suspicious extract directive ~s at or near ~s:~d\n"
+          word (port-name (current-input-port))
+          (port-current-line (current-input-port)))))
 
 ;; We search relative to the current directory first, then
 ;; relative to $srcdir; for FILE may be the generated one.
