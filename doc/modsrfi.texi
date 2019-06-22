@@ -4030,7 +4030,7 @@ which has different argument orders (unfortunate historical artifacts).
 ほぼ@code{srfi-4}および@code{gauche.uvector}のサブセットです。
 (@pxref{Uniform vectors})。例外は@code{u8vector-copy!}で、
 これは不幸な歴史的事情から、@code{gauche.uvector}と引数順が異なります。
-@c cOMMON
+@c COMMON
 
 @c EN
 There's no reason to use this srfi except porting code that relies

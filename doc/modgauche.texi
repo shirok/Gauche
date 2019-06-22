@@ -4943,7 +4943,7 @@ configureシステムを初期化します。autoconfの@code{AC_INIT}に対応�
 全ての機能テスト手続きに先立って必ず1回呼ばれなければなりません。
 (@code{cf-init-gauche-extension}を呼んだ場合、その中から@code{cf-init}が
 呼ばれています。)
-@c COMNON
+@c COMMON
 
 @c EN
 First, it checks if a file named @file{package.scm} is
@@ -15754,7 +15754,7 @@ bypass the shell.)
 Split a string @var{str} into arguments as the shell does.
 @c JP
 シェルがやるように、文字列@var{str}を引数リストに分割します。
-@c COMMOM
+@c COMMON
 
 @example
 (shell-tokenize-string "grep -n -e \"foo bar\" log")
@@ -17780,7 +17780,7 @@ these constants.
 
 これらの定数の詳しい説明については、システムの openlog(3) の
 マニュアル・ページを見てください。
-@c COMMO
+@c COMMON
 @end defun
 
 @defun sys-syslog priority message

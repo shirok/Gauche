@@ -269,7 +269,7 @@ to construct and traverse collections/sequences in concise code.
 @subsubheading Container implementations
 @c JP
 @subsubheading コンテナの実装
-@c COMMENT
+@c COMMON
 
 @c EN
 @itemize @bullet

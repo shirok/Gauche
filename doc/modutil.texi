@@ -12637,7 +12637,7 @@ format depends on the server.
 によく似ています。文字列のリストが返り、それぞれの文字列はサーバーのリ
 プライの行に対応します。正確なフォーマットについてはサーバーに依存しま
 す。
-@c CoMMON
+@c COMMON
 @end defun
 
 @defun ftp-name-list conn :optional path
@@ -20392,7 +20392,7 @@ prefixes.
 @code{ns-prefix-assig} - @code{(cons prefix namespace-uri)}のリスト。
 各@code{prefix}はシンボルで、@code{namespace-uri}は文字列。
 対応する接頭辞をつけて与えられた名前空間をシリアライズする。
-@c COMMENT
+@c COMMON
 
 @c EN
 ATTENTION: If a parameter name is unexpected or a parameter value is
@@ -22716,7 +22716,7 @@ on a text terminal, using characters to display bar chart.
 @c JP
 このモジュールはバーチャートを文字を用いて表示し、テキスト端末上に処理
 の進行状況を出すためのユーティリティです。
-@c COMMENT
+@c COMMON
 
 @c EN
 The generic format of a progress bar consists of a single line
@@ -23123,7 +23123,7 @@ to be more general template engine.
 @c JP
 このモジュールは、Gauche組み込みの文字列補間機能をより一般的なテンプレートエンジンとして
 使えるようにするものです。
-@c cOMMON
+@c COMMON
 
 @c EN
 Gauche's string interpolation syntax is expanded at read time and then
@@ -26033,7 +26033,7 @@ an infinite stream.
 @var{n}個の要素をもつ新しいストリームを生成します。@var{k}-番目の要素
 は @var{init-proc} を @var{k} に適用して得られます。@var{n}を負の値にする
 と無限ストリームが生成されます。
-@c COMMENT
+@c COMMON
 @end defun
 
 @defun stream-iota count :optional start step

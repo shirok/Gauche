@@ -11993,7 +11993,7 @@ This is called @code{hash-table-pop!} in R7RS, and so as in
 
 R7RSではこれが@code{hash-table-pop!}と呼ばれていて、
 @code{scheme.hash-table}でもその名前で提供されます。
-@c COMMO
+@c COMMON
 @end defun
 
 @defun hash-table-update! ht key proc :optional default
@@ -14716,7 +14716,7 @@ Returns @code{#t} iff @var{obj} is a promise object.
 @subsubheading Introduction
 @c JP
 @subsubheading イントロダクション
-@c COMMO
+@c COMMON
 
 @c EN
 A lazy sequence is a list-like structure
@@ -15229,7 +15229,7 @@ dynamic extent where the lazy sequence is used.
 ポート自体はクローズされないことに注意してください。ポートの管理は、
 遅延シーケンスを使う部分全体を囲むような大きな動的エクステントで
 行う必要があります。
-@c cOMMON
+@c COMMON
 
 @c EN
 You can also convert input data into various lists by
@@ -17136,12 +17136,12 @@ A procedural version to create a new condition type.
 @c EN
 Creates a new condition of condition-type @var{type}, and
 initializes its fields as specified by @code{field-name} and @code{value}
-pairs
+pairs.
 @c JP
 コンディションタイプ @var{type} のコンディションを生成し、
 @code{field-name} および @code{value} のペアで指定されたように
 フィールドを初期化します。
-@c COMMON.
+@c COMMON
 @end defun
 
 @defun condition? obj

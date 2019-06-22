@@ -3002,7 +3002,7 @@ project/
 If you run @code{build-standalone} in @file{src}, you say this:
 @c JP
 @code{build-standalone}を@file{src}以下で走らせる場合は次のようにします。
-@c COMMIN
+@c COMMON
 
 @example
 gosh build-standalone -I ../lib main.scm myscript/util.scm

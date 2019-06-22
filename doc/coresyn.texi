@@ -4429,7 +4429,7 @@ number.
 Using IEEE floating-point number internally.
 @c JP
 内部的にIEEE浮動小数点数を使っていることを示します。
-@c COMMN
+@c COMMON
 
 @item full-unicode
 @c EN
