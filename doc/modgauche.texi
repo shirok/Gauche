@@ -7651,10 +7651,10 @@ Haskell風の型表記を使うと、これら似た手続きの違いをわか�
 @c COMMON
 
 @example
-gappend            :: (Generator a, Generator a, ...) -> Generator a
-(pa$ apply append) :: [(Generator a)] -> Generator a
-gconcatenate       :: Generator Generator a -> Generator a
-gflatten           :: Generator [a] -> Generator a
+gappend             :: (Generator a, Generator a, ...) -> Generator a
+(pa$ apply gappend) :: [(Generator a)] -> Generator a
+gconcatenate        :: Generator Generator a -> Generator a
+gflatten            :: Generator [a] -> Generator a
 @end example
 @end defun
 
