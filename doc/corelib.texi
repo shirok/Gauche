@@ -25945,7 +25945,7 @@ the caller process currently belongs to.
 It is a part of the common idioms to start a daemon process.
 
 On Unix platforms, besides the executed process gets its own session
-by @code{setsid(2)}, it performs extra @code{fork(3)} to make its
+by @code{setsid(2)}, it performs extra @code{fork(2)} to make its
 parent be the @code{init} process (pid=1).
 (Note: It means the running process is actually a grandchild of the
 calling process, although that relationship isn't preserved.
