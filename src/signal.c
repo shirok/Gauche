@@ -496,9 +496,7 @@ void Scm_SigCheck(ScmVM *vm)
     }
 #endif  /* defined(GAUCHE_USE_PTHREADS) && defined(GAUCHE_PTHREAD_SIGNAL) */
 
-    /* Now, prepare queued signal handlers
-       If an error is thrown in this loop, the queued signals will be
-       lost---it doesn't look like so, but I may overlook something. */
+    /* Now, queue the signal handlers */
     ScmObj tail = q->pending;
     if (!SCM_NULLP(tail)) tail = Scm_LastPair(tail);
     for (int i=0; i<SCM_NSIG; i++) {
