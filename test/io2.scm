@@ -687,6 +687,11 @@
        (call-with-output-string 
          (cut pprint '(a a) :width 3 :newline #f :port <>)))
 
+(test* "label (issue #484)" "#0=(a #1=(b #0# #1#))\n"
+       (call-with-output-string
+         (cut pprint '#0=(a #1=(b #0# #1#)) :port <>)))
+       
+
 ;;===============================================================
 ;; utf-8 with BOM
 ;;

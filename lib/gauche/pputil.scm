@@ -125,9 +125,7 @@
                (rec (vector-ref obj i) (+ level 1) 0))]))))
 
 (define (need-label? obj c) (> (hash-table-get (rp-shared c) obj 0) 1))
-(define (obj-label obj c)
-  (let1 n (hash-table-get (rp-shared c) obj 1)
-    (and (<= n 0) (- n))))
+(define (has-label? obj c) (<= (hash-table-get (rp-shared c) obj 1) 0))
 (define (add-label! obj c)
   (rlet1 n (~ c'counter)
     (hash-table-put! (rp-shared c) obj (- n))
@@ -173,7 +171,7 @@
 
 ;; layout :: (Obj, Integer, Context) -> Layouter
 (define (layout obj level c)
-  (cond [(obj-label obj c) (layout-ref obj c)]
+  (cond [(has-label? obj c) (layout-ref obj c)]
         [(simple-obj? obj) (layout-simple (write-to-string obj (rec-writer c)))]
         [(>=* level (rp-level c)) (layout-simple "#")]
         [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
@@ -205,7 +203,7 @@
          (if (>=* len (rp-length c))
            (reverse `(,dots ,@rs))
            (let1 r (fn l)
-             (if (obj-label lis c)
+             (if (has-label? lis c)
                (reverse `(,(layout-ref lis c) ,dot ,r ,@rs))
                (loop lis (+ len 1) (cons r rs)))))]
         [x (reverse `(,(fn x) ,dot ,@rs))])))
@@ -228,7 +226,7 @@
 
 ;; layout-ref :: Object -> Layouter
 (define (layout-ref obj c)
-  (layout-simple (format "#~d#" (hash-table-get (rp-shared c) obj))))
+  (layout-simple (format "#~d#" (- (hash-table-get (rp-shared c) obj)))))
 
 ;; layout-list :: (String, [Layouter], Context) -> Layouter
 (define (layout-list prefix elts c)

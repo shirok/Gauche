@@ -1,3 +1,8 @@
+2019-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm: Fixes a bug that emits lables in negative
+	  numbers https://github.com/shirok/Gauche/issues/484
+
 2019-06-15  Shiro Kawai  <shiro@acm.org>
 
 	* Release 0.9.8
