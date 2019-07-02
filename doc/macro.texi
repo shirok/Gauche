@@ -1359,7 +1359,7 @@ by the result of applying @var{rename} on themselves.
 @c COMMON
 
 @c EN
-The @var{quasiquote-form} argumetn must be a quasiquoted form.
+The @var{quasiquote-form} argument must be a quasiquoted form.
 The outermost quasiquote @code{`} is consumed by @code{quasirename} and 
 won't appear in the output.
 The reason we require it is to make nested quasiquotes/quasirenames work.

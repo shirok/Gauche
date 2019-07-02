@@ -3014,7 +3014,7 @@ optional:     #t
 
 @c EN
 If you define a method on @var{name} whose specializer list,
-and whether it takes rest argumetns,
+and whether it takes rest arguments,
 match with one in the generic function's methods,
 then the existing method is
 replaced by the newly defined one, unless the original method is locked.

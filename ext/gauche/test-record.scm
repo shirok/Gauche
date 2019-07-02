@@ -239,7 +239,7 @@
        (let1 t (%triple 1 2 3)
          (map (cut slot-ref t <>) '(x y z))))
 
-;; constructor argumetns
+;; constructor arguments
 (define-record-type r0
   (make-r0 b)
   r0?
