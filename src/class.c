@@ -2461,7 +2461,8 @@ static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
     if (!SCM_NULLP(lp)) opt++;
 
     if (SCM_PROCEDURE_REQUIRED(body) != req + opt + 1)
-        Scm_Error("body doesn't match with lambda list: %S", body);
+        Scm_Error("method body %S doesn't match with lambda list %S", 
+                  body, llist);
     if (speclen != req)
         Scm_Error("specializer list doesn't match with lambda list: %S",specs);
 
