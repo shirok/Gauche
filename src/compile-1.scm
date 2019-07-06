@@ -1181,10 +1181,12 @@
     [(_ formals . body)
      (receive (args nreqs nopts kargs) (parse-extended-lambda-args formals)
        (if (null? kargs)
-         (pass1/vanilla-lambda form args nreqs nopts body cenv)
+         (pass1/vanilla-lambda (add-arg-info form formals)
+                               args nreqs nopts body cenv)
          ;; Convert extended lambda into vanilla lambda
          (let1 restarg (gensym "rest")
-           (pass1/vanilla-lambda form (append args (list restarg))
+           (pass1/vanilla-lambda (add-arg-info form formals)
+                                 (append args (list restarg))
                                  nreqs 1
                                  (pass1/extended-lambda-body form cenv restarg
                                                              kargs body)

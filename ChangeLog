@@ -1,3 +1,8 @@
+2019-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (lambda): Attach formal parameter info to
+	  extended lambdas as well (it's been missing for a while).
+
 2019-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/pputil.scm: Fixes a bug that emits lables in negative
