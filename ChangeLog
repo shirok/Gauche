@@ -1,6 +1,6 @@
 2019-07-06  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/test/script.scm (test-script): Add wrap-script option
+	* lib/gauche/test/script.scm (test-script): Add compile-only option
 	  to prevent toplevel forms in the script to be executed.
 
 2019-07-05  Shiro Kawai  <shiro@acm.org>

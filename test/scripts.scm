@@ -689,15 +689,20 @@
 ;;=======================================================================
 (test-section "test-script")
 
-;; Test wrap-script option - which wraps entire 
+;; Test compile-only option
 
 (define (test-script-test-1)
   (with-output-to-file "test.o/script"
     (^[] 
       (write `(use gauche.uvector))
-      (write `(with-output-to-file "test.o/out.o"
-                (cut print (u8vector 1 2 3 4 5))))))
-  (test-script "test.o/script" :wrap-script #t)
+      (write `(print "bar"))
+      (write `(define (bar) (foo) (foo)))
+      (write `(print "foo"))
+      (write `(define (foo)
+                (with-output-to-file "test.o/out.o"
+                  (cut print (u8vector 1 2 3 4 5)))))
+      (write `(bar))))
+  (test-script "test.o/script" :compile-only #t)
   (test* "not executed" #f (file-exists? "test.o/out.o"))
 
   (test-script "test.o/script")

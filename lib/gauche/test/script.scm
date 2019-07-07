@@ -44,7 +44,7 @@
 ;; doesn't have its own module.
 (define (test-script file :key (allow-undefined '()) 
                                (bypass-arity-check '())
-                               (wrap-script #f))
+                               (compile-only #f))
   (define file-abs-path 
     (if (relative-path? file)
       (simplify-path (build-path (current-directory) file))
@@ -57,8 +57,9 @@
     ;; but we'll load the script in a temporary module, so we fake them.
     (eval `(define *program-name* ',file) m)
     (eval `(define *argv* '()) m)
-    (if wrap-script
-      (eval `(define (,(gensym "main")) (include ,file-abs-path)) m)
+    (if compile-only
+      (dolist [f (file->sexp-list file-abs-path)]
+        ((with-module gauche.internal compile) f m))
       (load file :environment m))
     (let* ([file-modules
             (filter (^[mod]
