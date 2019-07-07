@@ -252,8 +252,8 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
 
 static void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc)
 {
-    Scm_Printf(SCM_CUROUT, "=== %s%A (name=%S, code=%p, size=%d, const=%d stack=%d):\n",
-               prefix, name, cc->name, cc->code,
+    Scm_Printf(SCM_CUROUT, "=== %s%A (name=%S, cc=%p, codevec=%p, size=%d, const=%d stack=%d):\n",
+               prefix, name, cc->name, cc, cc->code,
                cc->codeSize, cc->constantSize, cc->maxstack);
 }
 

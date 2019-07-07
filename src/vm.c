@@ -2923,6 +2923,17 @@ static void dump_env(ScmEnvFrame *env, ScmPort *out)
     Scm_Printf(out, " ]\n");
 }
 
+/* Show offset of given PC w.r.t to the beginning of the code of
+   the current base.  Note that PC may not point to the code of the
+   base.  */
+static void dump_pc_offset(ScmWord *pc, ScmCompiledCode *base, ScmPort *out) 
+{
+    if (base && base->code <= pc && pc < base->code + base->codeSize) {
+        Scm_Printf(out, " [%5u(%p)]", (u_long)(pc - base->code), base->code);
+    }
+}
+
+
 void Scm_VMDump(ScmVM *vm)
 {
     ScmPort *out = vm->curerr;
@@ -2932,10 +2943,11 @@ void Scm_VMDump(ScmVM *vm)
     ScmEscapePoint *ep = vm->escapePoint;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
-    Scm_Printf(out, "   pc: %p ", vm->pc);
-    Scm_Printf(out, "(%08x)\n", *vm->pc);
-    Scm_Printf(out, "   sp: %p  base: %p  [%p-%p]\n", vm->sp, vm->stackBase,
-               vm->stack, vm->stackEnd);
+    Scm_Printf(out, "   pc: %p", vm->pc);
+    dump_pc_offset(vm->pc, vm->base, out);
+    Scm_Printf(out, " (%08x)\n", *vm->pc);
+    Scm_Printf(out, "   sp: %p  [%p-%p-%p]\n", vm->sp,
+               vm->stack, vm->stackBase, vm->stackEnd);
     Scm_Printf(out, " argp: %p\n", vm->argp);
     Scm_Printf(out, " val0: %#65.1S\n", vm->val0);
 
@@ -2951,8 +2963,9 @@ void Scm_VMDump(ScmVM *vm)
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             size = %d\n", cont->size);
         if (!C_CONTINUATION_P(cont)) {
-            Scm_Printf(out, "               pc = %p ", cont->pc);
-            Scm_Printf(out, "(%08x)\n", *cont->pc);
+            Scm_Printf(out, "               pc = %p", cont->pc);
+            dump_pc_offset(cont->pc, cont->base, out);
+            Scm_Printf(out, " (%08x)\n", *cont->pc);
         } else {
             Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
         }
