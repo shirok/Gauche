@@ -1,3 +1,8 @@
+2019-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test/script.scm (test-script): Add wrap-script option
+	  to prevent toplevel forms in the script to be executed.
+
 2019-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (lambda): Attach formal parameter info to

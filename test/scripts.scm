@@ -686,4 +686,23 @@
 
 (wrap-with-test-directory static-test-1 '("test.o"))
 
+;;=======================================================================
+(test-section "test-script")
+
+;; Test wrap-script option - which wraps entire 
+
+(define (test-script-test-1)
+  (with-output-to-file "test.o/script"
+    (^[] 
+      (write `(use gauche.uvector))
+      (write `(with-output-to-file "test.o/out.o"
+                (cut print (u8vector 1 2 3 4 5))))))
+  (test-script "test.o/script" :wrap-script #t)
+  (test* "not executed" #f (file-exists? "test.o/out.o"))
+
+  (test-script "test.o/script")
+  (test* "executed" #t (file-exists? "test.o/out.o")))
+
+(wrap-with-test-directory test-script-test-1 '("test.o") #t)
+
 (test-end)

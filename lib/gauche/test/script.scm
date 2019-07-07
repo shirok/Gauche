@@ -42,7 +42,13 @@
 ;; own modules, but they usually don't have.  For this test, we load the
 ;; script file into an anonymous module then use test-module on it if it
 ;; doesn't have its own module.
-(define (test-script file :key (allow-undefined '()) (bypass-arity-check '()))
+(define (test-script file :key (allow-undefined '()) 
+                               (bypass-arity-check '())
+                               (wrap-script #f))
+  (define file-abs-path 
+    (if (relative-path? file)
+      (simplify-path (build-path (current-directory) file))
+      file))
   (test-count++)
   (let ([m (make-module #f)]
         [preexisting-modules (all-modules)])
@@ -51,16 +57,13 @@
     ;; but we'll load the script in a temporary module, so we fake them.
     (eval `(define *program-name* ',file) m)
     (eval `(define *argv* '()) m)
-    (load file :environment m)
-    (let* ([absolute-file-sans-extension
-            (path-sans-extension
-             (if (relative-path? file)
-               (simplify-path (build-path (current-directory) file))
-               file))]
-           [file-modules
+    (if wrap-script
+      (eval `(define (,(gensym "main")) (include ,file-abs-path)) m)
+      (load file :environment m))
+    (let* ([file-modules
             (filter (^[mod]
                       (string-suffix? (module-name->path (module-name mod))
-                                      absolute-file-sans-extension))
+                                      (path-sans-extension file-abs-path)))
                     (lset-difference eq? (all-modules) preexisting-modules))])
       (test-module-common m allow-undefined bypass-arity-check)
       (dolist [m file-modules]

@@ -19037,7 +19037,7 @@ keyword arguments.
 @c COMMON
 @end defun
 
-@defun test-script filename :key allow-undefined bypass-arity-check
+@defun test-script filename :key allow-undefined bypass-arity-check wrap-script
 @c MOD gauche.test
 @c EN
 Loads the script named by @var{filename}
@@ -19079,6 +19079,21 @@ module.
 @c JP
 スクリプトが@code{user}モジュールにロードされることに依存して書かれている場合も、
 この手続きではうまくいきません。
+@c COMMON
+
+@c EN
+If you need to test a script with toplevel side-effecting forms and
+you can't change it, you may want to try
+@code{test-script} with @code{wrap-script} option.  Then it
+wraps the entire script inside a dummy procedure definition.
+This doesn't always work, however, if you have forms that should be
+evaluated at the toplevel.
+@c JP
+もしスクリプトに副作用があるトップレベルフォームが書かれていて、それを
+変更することができないなら、@code{test-script}に@code{wrap-script}オプション
+を与えてみる手はあります。すると、@code{test-script}はスクリプトのコード全体を
+ダミーの手続き定義にくるんで評価します。
+これはこれで、トップレベルで評価しなければならないフォームがある場合にはうまくいきませんが。
 @c COMMON
 @end defun
 
