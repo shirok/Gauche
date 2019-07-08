@@ -702,10 +702,10 @@
                 (with-output-to-file "test.o/out.o"
                   (cut print (u8vector 1 2 3 4 5)))))
       (write `(bar))))
-  (test-script "test.o/script" :compile-only #t)
+  (test-script "./test.o/script" :compile-only #t)
   (test* "not executed" #f (file-exists? "test.o/out.o"))
 
-  (test-script "test.o/script")
+  (test-script "./test.o/script")
   (test* "executed" #t (file-exists? "test.o/out.o")))
 
 (wrap-with-test-directory test-script-test-1 '("test.o") #t)
