@@ -42,6 +42,7 @@
 (define-module gauche.vm.insn-core
   (use util.match)
   (export <vm-insn-info> vm-find-insn-info vm-build-insn
+          VM_INSN_CODE_BITS VM_INSN_ARG0_BITS VM_INSN_ARG1_BITS VM_INSN_ARG_BITS
           ;; utilities
           vm-insn-size))
 (select-module gauche.vm.insn-core)
@@ -91,6 +92,16 @@
 (define-method vm-insn-size ((mnemonic <symbol>))
   (vm-insn-size (vm-find-insn-info mnemonic)))
 
+;; These constant must match with the definitions in gauche/code.h
+(define-constant VM_INSN_CODE_BITS 12)
+(define-constant VM_INSN_ARG0_BITS 10)
+(define-constant VM_INSN_ARG1_BITS 10)
+(define-constant VM_INSN_ARG_BITS (+ VM_INSN_ARG0_BITS VM_INSN_ARG1_BITS))
+
+(define-constant *insn-arg-mask* (- (ash 1 VM_INSN_ARG_BITS) 1))
+(define-constant *insn-arg0-mask* (- (ash 1 VM_INSN_ARG0_BITS) 1))
+(define-constant *insn-arg1-mask* (- (ash 1 VM_INSN_ARG1_BITS) 1))
+
 ;; API
 ;; INSN is a list of opcode and parameters, e.g. (PUSH) or (LREF 3 2)
 ;; Returns an exact integer of encoded VM instruction code.
@@ -108,12 +119,14 @@
          [() (check insn info 0) (ref info 'code)]
          [(arg0)
           (check insn info 1)
-          (logior (ash (logand arg0 #xfffff) 12)
+          (logior (ash (logand arg0 *insn-arg-mask*) VM_INSN_CODE_BITS)
                   (~ info 'code))]
          [(arg0 arg1)
           (check insn info 2)
-          (logior (ash (logand arg1 #x3ff) 22)
-                  (ash (logand arg0 #x3ff) 12)
+          (logior (ash (logand arg1 *insn-arg1-mask*) 
+                       (+ VM_INSN_ARG0_BITS VM_INSN_CODE_BITS))
+                  (ash (logand arg0 *insn-arg0-mask*)
+                       VM_INSN_CODE_BITS)
                   (~ info 'code))]
          [else (error "vm-build-insn: bad insn:" insn)]))]
     [else (error "vm-build-insn: bad insn:" insn)]))
