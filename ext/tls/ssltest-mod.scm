@@ -61,7 +61,8 @@
                                             ;; https://github.com/shirok/Gauche/pull/467
                                             '("cmd.exe" "/c" openssl version)]
                                            [else
-                                            '(openssl version)]))
+                                            '(openssl version)])
+                              :on-abnormal-exit :ignore)
                              1)
       (and openssl-version
            (version>=? openssl-version "1.1"))))
