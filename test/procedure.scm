@@ -582,4 +582,44 @@
                                              (cut read x) (cut read y)))
                  (^_ r)))
 
+;;-----------------------------------------------------------------------
+;; large env frame
+;; https://github.com/shirok/Gauche/issues/487
+(test-section "large env frame")
+
+(define-macro (biglet n)
+  (let1 syms (map (^_ (gensym)) (iota n))
+    `(let (,@(map (^s `(,s #f)) syms))
+       ,@(map (^[s i] `(set! ,s ,i)) syms (iota n))
+       (list ,@syms))))
+
+(test* "bigenv 1030" (iota 1030)
+       (biglet 1030))
+
+;; Test LREF-VAL0-NUMADD2 path
+(define-macro (bigsum n)
+  (let1 syms (map (^_ (gensym)) (iota n))
+    `(lambda ,syms (+ ,@syms))))
+
+(define bigsum-proc (bigsum 1029))
+
+(test* "bigsum 1029" (apply + (iota 1029))
+       (apply bigsum-proc (iota 1029)))
+
+;; Test LREF-VAL0-BNGT etc. path
+(define-macro (bigcond op n)
+  (let1 syms (map (^_ (gensym)) (iota n))
+    `(lambda (k ,@syms)
+       (cond ,@(map (^s `((,op k ,s) ,s)) syms)))))
+
+(define bigcond<-proc (bigcond < 1028))
+
+(test* "bigcond< 1028" 1025
+       (apply bigcond<-proc 1024 (iota 1028)))
+
+(define bigcond=-proc (bigcond = 1028))
+
+(test* "bigcond= 1028" 1027
+       (apply bigcond=-proc 1027 (iota 1028)))
+
 (test-end)

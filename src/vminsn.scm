@@ -305,10 +305,47 @@
 (define-cise-stmt $include
   [(_ var) `("\n" |#reset-line| "#include " ,(write-to-string var) "\n")])
 
+;; ($lref depth offset)
+;;   Common code in LREF and XLREF.
+(define-cise-stmt $lref
+  [(_ depth offset)
+   (let ([dep (gensym)]
+         [off (gensym)]
+         [e (gensym)])
+     `(let* ([,dep ::int ,depth]
+             [,off ::int ,offset]
+             [,e ::ScmEnvFrame* ENV])
+        (for [() (> ,dep 0) (post-- ,dep)]
+          (set! ,e (-> ,e up)))
+        ($result (ENV-DATA ,e ,off))))])
+
+;; ($lset depth offset)
+;;   Common code in LSETL and XLSET.
+(define-cise-stmt $lset
+  [(_ depth offset)
+   (let ([dep (gensym)]
+         [off (gensym)]
+         [e (gensym)]
+         [box (gensym)])
+     `(let* ([,dep ::int ,depth]
+             [,off ::int ,offset]
+             [,e ::ScmEnvFrame* ENV])
+        (for [() (> ,dep 0) (post-- ,dep)]
+          (VM-ASSERT (!= ,e NULL))
+          (set! ,e (-> ,e up)))
+        (VM-ASSERT (!= ,e NULL))
+        (VM-ASSERT (> (-> ,e size) ,off))
+        (SCM_FLONUM_ENSURE_MEM VAL0)
+        (let* ([,box (ENV-DATA ,e ,off)])
+          (VM_ASSERT (SCM_BOXP ,box))
+          (SCM_BOX_SET ,box VAL0))
+        (set! (-> vm numVals) 1)
+        NEXT))])
+
 ;;
 ;; ($lrefNN depth offset)
 ;;   Generate an expr to refer to the local variable, starting from ENV.
-;;
+;;   DEPTH *must* be a literal integer.  We unroll the loop.
 (define-cise-stmt $lrefNN
   [(_ depth offset)
    (let1 v (gensym)
@@ -735,20 +772,8 @@
 ;;  Local set
 ;;
 (define-insn LSET        2 none #f
-  (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
-         [off::int (SCM_VM_INSN_ARG1 code)]
-         [e::ScmEnvFrame* ENV])
-    (for [() (> dep 0) (post-- dep)]
-         (VM-ASSERT (!= e NULL))
-         (set! e (-> e up)))
-    (VM-ASSERT (!= e NULL))
-    (VM-ASSERT (> (-> e size) off))
-    (SCM_FLONUM_ENSURE_MEM VAL0)
-    (let* ([box (ENV-DATA e off)])
-      (VM_ASSERT (SCM_BOXP box))
-      (SCM_BOX_SET box VAL0))
-    (set! (-> vm numVals) 1)
-    NEXT))
+  ($lset (SCM_VM_INSN_ARG0 code)        ; depth
+         (SCM_VM_INSN_ARG1 code)))      ; offset
 
 ;; GSET <location>
 ;;  LOCATION may be a symbol or gloc
@@ -793,12 +818,8 @@
 ;;  Retrieve local value.
 ;;
 (define-insn LREF        2 none #f
-  (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
-         [off::int (SCM_VM_INSN_ARG1 code)]
-         [e::ScmEnvFrame* ENV])
-    (for [() (> dep 0) (post-- dep)]
-         (set! e (-> e up)))
-    ($result (ENV-DATA e off))))
+  ($lref (SCM_VM_INSN_ARG0 code)   ; depth
+         (SCM_VM_INSN_ARG1 code))) ; offset 
 
 ;; Shortcut for the frequent depth/offset.
 ;; From statistics, we found that the following depth/offset combinations
@@ -1449,3 +1470,22 @@
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     NEXT))
 
+;; TRANSIENT: TODO: Move these up below LREF on 1.0 release
+
+;; XLREF(offset) depth
+;;   LREF, but used when depth and/or offset can't fit in the params field.
+(define-insn XLREF 1 obj #f
+  (let* ([dep_s])
+    (FETCH-OPERAND dep_s)
+    INCR-PC
+    ($lref (SCM_INT_VALUE dep_s)          ;depth
+           (SCM_VM_INSN_ARG code))))      ;offset
+
+;; XLSET(offset) depth
+;;   LSET, but used when depth and/or offset can't fit in the params field.
+(define-insn XLSET 1 obj #f
+  (let* ([dep_s])
+    (FETCH-OPERAND dep_s)
+    INCR-PC
+    ($lset (SCM_INT_VALUE dep_s)        ; depth
+           (SCM_VM_INSN_ARG code))))    ; offset

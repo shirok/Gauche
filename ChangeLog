@@ -1,3 +1,11 @@
+2019-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm (XLREF, XLSET), src/compile-5.scm: Support large env
+	  frames---the offset exceeds 1023.  Now we can support up to
+	  2^20-1.  There are other instructions (e.g. BOX, ENV-SET) that uses
+	  the same range for frame offset so this is the reasonable limit.
+	  https://github.com/shirok/Gauche/issues/487
+
 2019-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test/script.scm (test-script): Add compile-only option

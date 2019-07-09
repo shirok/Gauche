@@ -80,6 +80,11 @@
   (if (bottom-context? prev-ctx) 'stmt/bottom 'stmt/top))
 (define-inline (tail-context prev-ctx) 'tail)
 
+;; whether we can use LREF/LSET
+(define-inline (small-env? depth offset)
+  (and (<= 0 depth  (- (ash 1 VM_INSN_ARG0_BITS) 1))
+       (<= 0 offset (- (ash 1 VM_INSN_ARG1_BITS) 1))))
+
 ;; Dispatch pass5 handler.
 ;; *pass5-dispatch-table* is defined below, after all handlers are defined.
 (define-inline (pass5/rec iform ccb renv ctx)
@@ -109,8 +114,11 @@
 
 (define (pass5/$LREF iform ccb renv ctx)
   (receive (depth offset) (renv-lookup renv ($lref-lvar iform))
-    (compiled-code-emit2i! ccb LREF depth offset
-                           (lvar-name ($lref-lvar iform)))
+    (if (small-env? depth offset)
+      (compiled-code-emit2i! ccb LREF depth offset
+                             (lvar-name ($lref-lvar iform)))
+      (compiled-code-emit1oi! ccb XLREF offset depth
+                              (lvar-name ($lref-lvar iform))))
     (unless (lvar-immutable? ($lref-lvar iform))
       (compiled-code-emit0! ccb UNBOX))
     0))
@@ -118,8 +126,11 @@
 (define (pass5/$LSET iform ccb renv ctx)
   (receive (depth offset) (renv-lookup renv ($lset-lvar iform))
     (rlet1 d (pass5/rec ($lset-expr iform) ccb renv (normal-context ctx))
-      (compiled-code-emit2i! ccb LSET depth offset
-                             (lvar-name ($lset-lvar iform))))))
+      (if (small-env? depth offset)
+        (compiled-code-emit2i! ccb LSET depth offset
+                               (lvar-name ($lset-lvar iform)))
+        (compiled-code-emit1oi! ccb XLSET offset depth
+                                (lvar-name ($lset-lvar iform)))))))
 
 (define (pass5/$GREF iform ccb renv ctx)
   (let1 id ($gref-id iform)
@@ -250,16 +261,20 @@
                            info ccb renv ctx))
       (and ($lref? x)
            (lvar-immutable? ($lref-lvar x))
-           (pass5/if-final iform #f LREF-VAL0-BNUMNE
-                           (pass5/if-numcmp-lrefarg x renv)
-                           (pass5/rec y ccb renv (normal-context ctx))
-                           info ccb renv ctx))
+           (receive (depth offset) (renv-lookup renv ($lref-lvar x))
+             (and (small-env? depth offset)
+                  (pass5/if-final iform #f LREF-VAL0-BNUMNE
+                                  (pass5/if-numcmp-lrefarg x renv)
+                                  (pass5/rec y ccb renv (normal-context ctx))
+                                  info ccb renv ctx))))
       (and ($lref? y)
            (lvar-immutable? ($lref-lvar y))
-           (pass5/if-final iform #f LREF-VAL0-BNUMNE
-                           (pass5/if-numcmp-lrefarg y renv)
-                           (pass5/rec x ccb renv (normal-context ctx))
-                           info ccb renv ctx))
+           (receive (depth offset) (renv-lookup renv ($lref-lvar y))
+             (and (small-env? depth offset)
+                  (pass5/if-final iform #f LREF-VAL0-BNUMNE
+                                  (pass5/if-numcmp-lrefarg y renv)
+                                  (pass5/rec x ccb renv (normal-context ctx))
+                                  info ccb renv ctx))))
       (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
         (compiled-code-emit-PUSH! ccb)
         (pass5/if-final iform #f BNUMNE 0
@@ -273,16 +288,20 @@
                   (,BNGT . ,LREF-VAL0-BNLT) (,BNGE . ,LREF-VAL0-BNLE)))
   (or (and ($lref? x)
            (lvar-immutable? ($lref-lvar x))
-           (pass5/if-final iform #f (cdr (assv insn .fwd.))
-                           (pass5/if-numcmp-lrefarg x renv)
-                           (pass5/rec y ccb renv (normal-context ctx))
-                           info ccb renv ctx))
+           (receive (depth offset) (renv-lookup renv ($lref-lvar x))
+             (and (small-env? depth offset)
+                  (pass5/if-final iform #f (cdr (assv insn .fwd.))
+                                  (pass5/if-numcmp-lrefarg x renv)
+                                  (pass5/rec y ccb renv (normal-context ctx))
+                                  info ccb renv ctx))))
       (and ($lref? y)
            (lvar-immutable? ($lref-lvar y))
-           (pass5/if-final iform #f (cdr (assv insn .rev.))
-                           (pass5/if-numcmp-lrefarg y renv)
-                           (pass5/rec x ccb renv (normal-context ctx))
-                           info ccb renv ctx))
+           (receive (depth offset) (renv-lookup renv ($lref-lvar y))
+             (and (small-env? depth offset)
+                  (pass5/if-final iform #f (cdr (assv insn .rev.))
+                                  (pass5/if-numcmp-lrefarg y renv)
+                                  (pass5/rec x ccb renv (normal-context ctx))
+                                  info ccb renv ctx))))
       (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
         (compiled-code-emit-PUSH! ccb)
         (pass5/if-final iform #f insn 0
@@ -1012,13 +1031,15 @@
       (and ($lref? y)
            (lvar-immutable? ($lref-lvar y))
            (receive (depth offset) (renv-lookup renv ($lref-lvar y))
-             (pass5/builtin-onearg info LREF-VAL0-NUMADD2
-                                   (+ (ash offset 10) depth) x)))
+             (and (small-env? depth offset)
+                  (pass5/builtin-onearg info LREF-VAL0-NUMADD2
+                                        (+ (ash offset 10) depth) x))))
       (and ($lref? x)
            (lvar-immutable? ($lref-lvar x))
            (receive (depth offset) (renv-lookup renv ($lref-lvar x))
-             (pass5/builtin-onearg info LREF-VAL0-NUMADD2
-                                   (+ (ash offset 10) depth) y)))
+             (and (small-env? depth offset)
+                  (pass5/builtin-onearg info LREF-VAL0-NUMADD2
+                                        (+ (ash offset 10) depth) y))))
       (pass5/builtin-twoargs info NUMADD2 0 x y)))
 
 (define (pass5/asm-numsub2 info x y ccb renv ctx)
