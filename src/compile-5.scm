@@ -428,6 +428,9 @@
         [merge-label (if (bottom-context? ctx)
                        #f
                        (compiled-code-new-label ccb))])
+    (when (> (length lvars) (- (ash 1 VM_INSN_ARG_BITS) 1))
+      (errorf "[internal] Local frame size (~a) exceeded compiler limitation (~a)."
+              (length lvars) (- (ash 1 VM_INSN_ARG_BITS) 1)))
     (let1 nlocals (length lvars)
       (case ($let-type iform)
         [(let)
