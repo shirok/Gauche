@@ -5977,7 +5977,7 @@ Like @code{string-contains}, looks for a needle @var{string2} from
 a haystack @var{string1}, but if it is found, returns the start index
 of the @emph{last} match, instead of the first match.  The returned index
 is in @var{string1}.  The optional arguments limit the range of a needle
-and a haystack.  If a needle isn't found, @var{#f} is returned.
+and a haystack.  If a needle isn't found, @code{#f} is returned.
 
 An edge case: If a needle is empty (e.g. @var{string2} is empty,
 or @var{start2} = @var{end2}), it always matches right after the haystack,
@@ -5988,7 +5988,7 @@ so @var{end1} is returned.
 見つかった場合は最初ではなく最後のマッチの開始インデックスを返します。
 開始インデックスは@var{string1}に対するものです。
 省略可能引数は@var{string1}、@var{string2}それぞれの対象とする文字列を制限します。
-探索文字列@var{string2}が見つからなかった場合は@var{#f}が返されます。
+探索文字列@var{string2}が見つからなかった場合は@code{#f}が返されます。
 
 エッジケースとして、探索文字列が空文字列の場合 (@var{string2}が空であるとか、
 @var{start2} = @var{end2}である場合)は、

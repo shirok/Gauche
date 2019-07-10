@@ -1407,7 +1407,7 @@ used for ordering.
 @c EN
 The @var{hash} argument must be either @code{#f}, or
 a procedure taking one argument and returning nonnegative exact
-integer.  If @var{#f} is given, it indicates the comparator
+integer.  If @code{#f} is given, it indicates the comparator
 can't hash objects; the predefined procedure just throws an error.
 @c JP
 @var{hash}引数は@code{#f}か、一つの引数を取り非負の正確な整数をハッシュ値と
@@ -3882,7 +3882,7 @@ Returns bitwise not of an integer @var{n}.
 [SRFI-60]
 @c EN
 Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
-@var{#f} otherwise.
+@code{#f} otherwise.
 @c JP
 整数@var{n}の@var{index}目のビットが1ならば@code{#t}を、0ならば@code{#f}を
 返します。
@@ -4423,7 +4423,7 @@ Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 [SRFI-1]
 @c EN
 Returns @code{#t} if @var{obj} is an empty list,
-@var{#f} if @code{obj} is a pair.  If @var{obj} is neither
+@code{#f} if @var{obj} is a pair.  If @var{obj} is neither
 a pair nor an empty list, an error is signaled.
 
 This can be used instead of @code{null?} to check the end-of-list
@@ -4447,7 +4447,7 @@ See also @code{proper-list?}, @code{circular-list?} and
 @code{dotted-list?} below.
 @c JP
 @var{obj}が正しいリストなら@code{#t}を、そうでなければ@code{#f}を返します。
-この手続きは@var{obj}がドットリストや循環リストなら@var{#f}を返します。
+この手続きは@var{obj}がドットリストや循環リストなら@code{#f}を返します。
 
 下に説明する、
 @code{proper-list?}、@code{circular-list?}、@code{dotted-list?}
@@ -10957,7 +10957,7 @@ R7RSはバイトベクタを定義しています。Gaucheではそれは単に
 @c EN
 Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @c JP
-@var{obj}がベクタなら@code{#t}を、そうでなければ@var{#f}を返します。
+@var{obj}がベクタなら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -23054,7 +23054,7 @@ Creates a hard link named @var{new} to the existing file @var{existing}.
 @c EN
 Removes @var{pathname}.  It can't be a directory.
 Returns @code{#t} if it is successfully removed, or
-@var{#f} if @var{pathname} doesn't exist.
+@code{#f} if @var{pathname} doesn't exist.
 An error is signaled otherwise.
 @c JP
 @var{pathname}で示されるファイルを消去します。

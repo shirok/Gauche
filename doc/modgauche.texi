@@ -242,10 +242,10 @@ and content, so it is @code{equal?} to the original array.
 [SRFI-25]
 @c MOD gauche.array
 @c EN
-Returns @code{#t} if @var{obj} is an array, @var{#f} otherwise.
+Returns @code{#t} if @var{obj} is an array, @code{#f} otherwise.
 It is equivalent to @code{(is-a? obj <array-base>)}.
 @c JP
-@var{obj}が配列であれば@var{#t}が、そうでなければ@var{#f}が返されます。
+@var{obj}が配列であれば@code{#t}が、そうでなければ@code{#f}が返されます。
 @code{(is-a? obj <array-base>)}と等価です。
 @c COMMON
 @end defun
@@ -2690,7 +2690,7 @@ It is upper-compatible to any CES, and any CES is upper-compatible to
 @c JP
 CES @var{ces-b}でエンコードされた文字列が、システムの知る限りで
 変換無しに@var{ces-a}でエンコードされたものと見倣せる場合に@code{#t}を
-返します。見倣せない場合は@var{#f}を返します。
+返します。見倣せない場合は@code{#f}を返します。
 システムが判断できない場合は@var{unknown-value}に与えられた
 値を返します。そのデフォルトは@code{#f}です。
 
@@ -3776,7 +3776,7 @@ applied in order.  Otherwise the order of application is undefined.
 @example
 (find char-upper-case? "abcDe") @result{} #\D
 (find even? '#(1 3 4 6)) @result{} 4
-(find even? '(1 3 5 7))  @result{} #F
+(find even? '(1 3 5 7))  @result{} #f
 @end example
 @end deffn
 
@@ -22573,7 +22573,7 @@ if they are given.
 @c MOD gauche.uvector
 @c EN
 Both arguments must be a @var{TAG}vector.  Returns @code{#t} if
-@var{vec1} and @var{vec2} are equal to each other, @var{#f} otherwise.
+@var{vec1} and @var{vec2} are equal to each other, @code{#f} otherwise.
 
 Note that you can compare uvectors with @code{equal?} in Gauche.
 These are provided because SRFI-66 defines @code{u8vector=?}.
@@ -23886,7 +23886,7 @@ that is out of range is returned.
 @var{min}が@code{#f}の場合、最小値はマイナス無限大と考えられます。
 @var{max}が@code{#f}の場合、最大値はプラス無限大と考えられます。
 
-@var{vec}の全ての要素が範囲内であった場合は@var{#f}が返されます。
+@var{vec}の全ての要素が範囲内であった場合は@code{#f}が返されます。
 そうでなければ、範囲を外れた要素のうちもっとも左のものの@var{vec}内での
 インデックスが返されます。
 @c COMMON
