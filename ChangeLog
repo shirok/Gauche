@@ -1,3 +1,8 @@
+2019-07-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-4.scm (pass4): Avoid generating large local frame
+	  for lifted lambdas in toplevel $seq node.
+
 2019-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (XLREF, XLSET), src/compile-5.scm: Support large env

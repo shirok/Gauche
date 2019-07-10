@@ -88,9 +88,19 @@
   (if (or (memq lvar bound) (memq lvar free)) free (cons lvar free)))
 
 ;; Pass 4 entry point.  Returns IForm and list of lifted lvars
+;; NB: If the toplevel iform is $seq, we process each form of its body
+;; separately.  Sometimes such toplevel $seq is a result of macro expansion,
+;; and can have large number of $define nodes.  If we process such $seq
+;; at once, it may yield a huge environment frame to hold all lifted closures.
+
 (define (pass4 iform module)
   (if (vm-compiler-flag-no-lifting?)
     iform
+    (pass4/top iform module)))
+
+(define (pass4/top iform module)
+  (if (has-tag? iform $SEQ)
+    ($seq (imap (cut pass4/top <> module) ($seq-body iform)))
     (let1 dic (make-label-dic '())
       (pass4/scan iform '() '() #t dic) ; Mark free variables
       (let1 lambda-nodes (label-dic-info dic)
@@ -103,14 +113,9 @@
               iform                       ;shortcut
               (let1 iform. (pass4/subst iform (make-label-dic '()))
                 ($let #f 'rec
-                      (map (^[x] ($lambda-lifted-var x)) lifted)
+                      (imap (^[x] ($lambda-lifted-var x)) lifted)
                       lifted
-                      iform.)))))))))
-
-(define (pass4/lifted-define lambda-node)
-  ($define ($lambda-src lambda-node) '(const)
-           ($lambda-lifted-var lambda-node)
-           lambda-node))
+                      iform.)))))))))    
 
 ;; Pass4 step1 - scan
 ;;   bs - List of lvars whose binding is introduced in the current scope.
