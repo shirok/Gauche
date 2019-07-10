@@ -18865,6 +18865,33 @@ as a XPath query.
 ;; select all <book> elements whose style attribute value is equal to
 ;; the <bookstore> element's speciality attribute value.
 (sxpath "//book[/bookstore/@@specialty=@@style]")
+
+;; select all <bookstore> elements that are inside top-level <book>
+;; element
+(sxpath '(book bookstore))
+;; select all <bookstore> elements from anywhere
+(sxpath '(// bookstore))
+;; select attribute "name" in the top-level <book> element
+(sxpath '(book @@ name))
+;; select all <bookstore> and <bookshop> elements that are inside
+;; top-level <book> element
+(sxpath '(book (or@@ bookstore bookshop)))
+;; select all elements except <movie> that are inside top-level <book>
+;; element
+(sxpath '(book (not@@ movie @@)))
+;; select the attribute "name" of the second <bookstore> element
+(sxpath '(book (bookstore 2) @@ name))
+;; select the attribute "name" of all <bookstore> elements that has
+;; attribute "recommended"
+(sxpath '(book (bookstore (@@ recommended)) @@ name))
+;; select the attribute "name" of all <bookstore> elements whose
+;; "rating" attribute is 3
+(sxpath '(book (bookstore (@@ rating (eq? 3))) @@ name))
+;; select the attribute "name" of all <bookstore> elements whose
+;; "rating" attribute is greater than 3
+(let ([greater (lambda (parent full-tree something)
+                 (> (string->number (sxml:string-value (car parent))) 3))])
+  (sxpath `(book (bookstore (@@ rating ,greater)) @@ name)))
 @end example
 @end defun
 
