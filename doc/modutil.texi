@@ -5372,7 +5372,7 @@ passing a seed value, whose initial value is @var{seed}.
 That is, @var{proc} has a type of @code{(index, node, seed) -> seed}.
 Should return the last result of @var{proc}.
 @item tab-empty? @var{tab}
-Returns @code{#t} if @var{tab} is empty, @var{#f} otherwise.
+Returns @code{#t} if @var{tab} is empty, @code{#f} otherwise.
 You can omit or pass @code{#f} to this procedure; then we use
 @code{tab-fold} to check if @var{tab} is empty, which can be expensive.
 @end table
@@ -5543,7 +5543,7 @@ not equal to @var{seq} but @var{seq} matches its prefix.   Note that
 @var{seq} may or may not a key of @var{trie}; see the example below.
 @c JP
 @var{trie}の中に少なくともひとつ、@var{seq}と同じではないが@var{seq}を
-プリフィクスとするようなキーがあれば@var{#t}を返します。
+プリフィクスとするようなキーがあれば@code{#t}を返します。
 @var{seq}と一致するキーが他にあるかないかは結果には影響を及ぼしません。
 下の例を見てください。
 @c COMMON
@@ -8667,7 +8667,7 @@ whose content is @var{path}.
 @c MOD file.util
 @c EN
 Checks if a directory hierarchy according to @var{spec} exists
-under @var{dir}.  Returns @code{#t} if it exists, or @var{#f} otherwise.
+under @var{dir}.  Returns @code{#t} if it exists, or @code{#f} otherwise.
 
 The format of @var{spec} is the same
 as @code{create-directory-tree} described above.
@@ -15512,11 +15512,11 @@ uris with different stages.
 @c EN
 @code{uri-scheme&specific} takes a URI @var{uri}, and
 returns two values, its scheme part and its scheme-specific part.
-If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
+If @var{uri} doesn't have a scheme part, @code{#f} is returned for it.
 @c JP
 @code{uri-scheme&specific} は URI @var{uri} を引数に取り、
 スキーム部分と、そのスキーム特有の部分を表す2つの値を返します。
-@var{uri} がスキーム部分を持たない場合、@var{#f} を返します。
+@var{uri} がスキーム部分を持たない場合、@code{#f} を返します。
 @c COMMON
 @example
 (uri-scheme&specific "mailto:sclaus@@north.pole")
@@ -18300,10 +18300,10 @@ If @var{x} is a nodeset - returns it as is, otherwise wrap it in a list.
 @defun sxml:element? obj
 @c MOD sxml.sxpath
 @c EN
-Predicate which returns @var{#t}
-if @var{obj} is SXML element, otherwise returns @var{#f}.
+Predicate which returns @code{#t}
+if @var{obj} is SXML element, otherwise returns @code{#f}.
 @c JP
-@var{obj}がSXMLの要素であれば@var{#t}を返し、そうでなければ@var{#f}を
+@var{obj}がSXMLの要素であれば@code{#t}を返し、そうでなければ@code{#f}を
 返す述語です。
 @c COMMON
 @end defun
@@ -18510,7 +18510,7 @@ or nil result meaning failure.
 @c EN
 Given a converter-predicate and a nodeset, apply the predicate to
 each element of the nodeset, until the predicate yields anything but
-@var{#f} or nil. Return the elements of the input nodeset that have
+@code{#f} or nil. Return the elements of the input nodeset that have
 been processed
 till that moment (that is, which fail the predicate).
 @code{take-until} is a variation of the filter above:
@@ -18523,7 +18523,7 @@ to be more precise, a prefix -- of the nodeset returned by
 @c JP
 述語としてのコンバータとノードセットが与えられると、
 ノードセットの各要素に述語を適用し、
-述語が@var{#f}あるいはnil以外を返すと、
+述語が@code{#f}あるいはnil以外を返すと、
 (その述語が失敗した)その時点までに処理された要素を返します。
 @code{take-until}は、上のフィルタのバリエーションの1つです。
 @code{take-until}は、その述語を満足する最初の要素(それ自体は含まない)まで、
@@ -19318,13 +19318,13 @@ source code.
 @defun sxml:empty-element? obj
 @c MOD sxml.tools
 @c EN
-A predicate which returns @var{#t} if given element @var{obj} is empty.
+A predicate which returns @code{#t} if given element @var{obj} is empty.
 Empty element has no nested elements, text nodes, @code{PI}s,
 Comments or entities
 but it may contain attributes or namespace-id.
 It is a SXML counterpart of XML @code{empty-element}.
 @c JP
-与えられた要素@var{obj}が空なら@var{#t}を返す述語です。
+与えられた要素@var{obj}が空なら@code{#t}を返す述語です。
 空要素は、ネストした要素、テキストノード、@code{PI}、コメントや実体を
 持ちませんが、属性や名前空間IDは持つかもしれません。
 それは、XMLの@code{empty-element}のSXML版です。
@@ -19437,10 +19437,10 @@ SXMLの名前はシンボルですが、この関数は文字列を返すこと�
 @defun sxml:name->ns-id sxml-name
 @c MOD sxml.tools
 @c EN
-Returns namespace-id part of given name, or @var{#f} if it's LocalName
+Returns namespace-id part of given name, or @code{#f} if it's LocalName
 @c JP
 与えられた名前の名前空間ID部分を返します。与えられた名前がLocalNameの
-場合は@var{#f}を返します。
+場合は@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -19637,11 +19637,11 @@ Accessor for an attribute @var{attr-name} of
 given SXML element @var{obj}.
 It returns:
 the value of the attribute if the attribute is present, or
-@var{#f} if there is no such an attribute in the given element.
+@code{#f} if there is no such an attribute in the given element.
 @c JP
 与えられたSXML要素@var{obj}の@var{attr-name}という属性へのアクセッサです。
 戻り値は、その属性が存在すればその属性の値、与えられた要素に
-そのような属性がなければ@var{#f}です。
+そのような属性がなければ@code{#f}です。
 @c COMMON
 @end defun
 

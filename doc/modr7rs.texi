@@ -8473,7 +8473,7 @@ a NaN.
 [R7RS flonum]
 @c MOD scheme.flonum
 Returns @code{#t} if @var{x} is an integral flonum,
-@var{#f} otherwise.
+@code{#f} otherwise.
 @end defun
 
 @defun flzero? x
