@@ -285,7 +285,7 @@ Returns @code{#t} if @var{obj1} and @var{obj2} are identical
 objects---that is, if they represents the same object on memory
 or in a register.  Notably, you can compare two symbols or two keywords with
 @code{eq?} to check if they are the same or not.
-You can think @var{eq?} as a pointer comparison for
+You can think @code{eq?} as a pointer comparison for
 any heap-allocated objects.
 
 Booleans can be compared with @code{eq?}, but you can't
@@ -302,7 +302,7 @@ use @code{eqv?} below.
 
 真偽値も@code{eq?}で比較できますが、文字と数値はたとえ値が同じオブジェクトであっても
 互いに@code{eq?}になるかどうかはわかりません。
-同一性比較で文字や数値も扱う必要がある場合は、下の@var{eqv?}を使いましょう。
+同一性比較で文字や数値も扱う必要がある場合は、下の@code{eqv?}を使いましょう。
 @c COMMON
 
 @example
@@ -321,9 +321,9 @@ use @code{eqv?} below.
 @c EN
 When @var{obj1} and @var{obj2} are both exact or both inexact numbers
 (except NaN),
-@var{eqv?} returns @code{#t} iff @code{(= @var{obj1} @var{obj2})} is true.
+@code{eqv?} returns @code{#t} iff @code{(= @var{obj1} @var{obj2})} is true.
 When @var{obj1} and @var{obj2} are both characters,
-@var{eqv?} returns @code{#t} iff @code{(char=? @var{obj1} @var{obj2})} is true.
+@code{eqv?} returns @code{#t} iff @code{(char=? @var{obj1} @var{obj2})} is true.
 Otherwise, @code{eqv?} is the same as @code{eq?} on Gauche.
 @c JP
 @var{obj1}と@var{obj2}がともに正確な数値、もしくはともに(NaN以外の)不正確な数値である場合、
@@ -476,7 +476,7 @@ it accidentally.
 項目を見てください。
 
 註: もし、このメソッドと全く同じスペシャライザを
-指定して@var{object-equal?}メソッドを定義すると、それはこのメソッドを
+指定して@code{object-equal?}メソッドを定義すると、それはこのメソッドを
 置き換えることになり、@code{default-comparator}の動作が壊れることになります。
 将来のGaucheのバージョンではそのような再定義は禁止される予定です。
 うっかりそういう再定義を行わないように気をつけてください。
@@ -700,7 +700,7 @@ it accidentally.
 項目を見てください。
 
 註: もし、このメソッドと全く同じスペシャライザを
-指定して@var{object-compare}メソッドを定義すると、それはこのメソッドを
+指定して@code{object-compare}メソッドを定義すると、それはこのメソッドを
 置き換えることになり、@code{default-comparator}の動作が壊れることになります。
 将来のGaucheのバージョンではそのような再定義は禁止される予定です。
 うっかりそういう再定義を行わないように気をつけてください。
@@ -835,7 +835,7 @@ This means objects without read/write invariance, such as
 ports, can't be handled with @code{portable-hash}.  It is caller's
 responsibility that @var{obj} won't contain such objects.
 
-The @code{salt} argument is a nonnegative fixnum and gives variations
+The @var{salt} argument is a nonnegative fixnum and gives variations
 in the hash function.  You have to use the same salt to get consistent
 results.
 
@@ -861,7 +861,7 @@ a generic function @code{object-hash} is called to calculate the hash value
 では扱えません。@var{obj}がそのようなオブジェクトを含まないことは
 呼び出し側で保証する必要があります。
 
-@code{salt}は非負のfixnumで、ハッシュ関数に変化をつけます。一貫した結果を
+@var{salt}は非負のfixnumで、ハッシュ関数に変化をつけます。一貫した結果を
 得るには同じソルト値を使わなければなりません。
 
 @var{obj}が数値、真理値、文字、シンボル、キーワード、文字列、リスト、
@@ -946,9 +946,9 @@ or state of the process, if @var{obj} is a portable object
 (see @code{portable-hash} above for what is portable.)
 
 If the method needs to get hash value of @var{obj}'s elements,
-it has to call @code{rec-hash} on them.  It guarantees that
+it has to call @var{rec-hash} on them.  It guarantees that
 the proper hash function is called recursively.  So you can
-count on @code{rec-hash} to calculate a portable hash value
+count on @var{rec-hash} to calculate a portable hash value
 when @code{object-hash} itself is called from @code{portable-hash}.
 
 If @var{obj} has several elements,
@@ -962,7 +962,7 @@ hash values.
 メソッドは正確な非負整数を返さなければなりません。また、
 互いに@code{equal?}であるオブジェクト同士に対しては同じハッシュ値を
 返さなければなりません。
-さらに、@code{obj}がポータブル(「ポータブル」の意味については
+さらに、@var{obj}がポータブル(「ポータブル」の意味については
 上の@code{portable-hash}の説明を参照)の場合には、
 ハッシュ値は実行中のプラットフォームやプロセスの状態に依存してはなりません。
 
@@ -1026,7 +1026,7 @@ This is useful to write user-defined @code{object-hash} method.
 @c EN
 This function is deprecated.
 
-Calculate a hash value of @code{obj} suitable for @code{equal?} hash.
+Calculate a hash value of @var{obj} suitable for @code{equal?} hash.
 By default, it returns the same value as @code{legacy-hash}.  However,
 if this is called from @code{default-hash} or @code{portable-hash}
 (via @code{object-hash} method), it recurses to the calling hash
@@ -1656,7 +1656,7 @@ comparator must be ordered.
 
 In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
-比較器@code{cmpr}を使ってオブジェクトを比較します。
+比較器@var{cmpr}を使ってオブジェクトを比較します。
 @var{obj}, @var{obj2}, @var{obj3} @dots{}は全て@code{cmpr}の
 型検査述語を満たさなければなりません。
 3つ以上のオブジェクトが渡された場合、比較の順番は規定されていません。
@@ -3091,16 +3091,16 @@ The argument @var{x} must be a real number.
 @code{Floor} and @code{ceiling} return a maximum integer that
 isn't greater than @var{x} and a minimum integer that isn't less
 than @var{x}, respectively.
-@var{Truncate} returns an integer that truncates
-@var{x} towards zero.  @var{Round} returns an integer that is closest
-to @var{x}.  If fractional part of @var{x} is exactly 0.5, @var{round}
+@code{Truncate} returns an integer that truncates
+@var{x} towards zero.  @code{Round} returns an integer that is closest
+to @var{x}.  If fractional part of @var{x} is exactly 0.5, @code{round}
 returns the closest even integer.
 @c JP
 引数@var{x}は実数でなければなりません。@code{floor}と@code{ceiling}はそれぞれ
 @var{x}を越えない最大の整数と、@var{x}を下回らない最小の整数を返します。
-@var{truncate}は@var{x}の小数部をゼロの方向に向かって切捨てた整数を返します。
-@var{round}は@var{x}に最も近い整数を返します。@var{x}の
-小数部が0.5ぴったりだった場合は@var{round}は最も近い偶数を返します。
+@code{truncate}は@var{x}の小数部をゼロの方向に向かって切捨てた整数を返します。
+@code{round}は@var{x}に最も近い整数を返します。@var{x}の
+小数部が0.5ぴったりだった場合は@code{round}は最も近い偶数を返します。
 @c COMMON
 
 @c EN
@@ -3768,7 +3768,7 @@ can't be a number, @code{#f} is returned.
 Generic coercion functions.  Returns `natural' interpretation of @var{obj}
 as a number or an exact integer, respectively.
 The default methods are defined for numbers and strings; a string is
-interpreted by @var{string->number}, and if the string can't be
+interpreted by @code{string->number}, and if the string can't be
 interpreted as a number, 0 is returned.
 Other @var{obj} is simply converted to 0.
 If @var{obj} is naturally interpreted
@@ -3780,7 +3780,7 @@ Other class may provide a method to customize the behavior.
 数値への強制型変換手続きです。
 @var{obj}をそれぞれ数値もしくは正確な整数と解釈して返します。
 数値と文字列に対してのメソッドは定義されています
-(文字列は@var{string->number}を使って変換されます。
+(文字列は@code{string->number}を使って変換されます。
 数値として解釈できない文字列に関しては0が返されます)。
 その他の@var{obj}については単に0が返されます。
 @code{x->integer}は、@var{obj}が数値として表現できるけれど正確な整数では
@@ -4990,13 +4990,13 @@ The result still shares the @var{list}.
 @defunx drop-right! lis k
 [R7RS list]
 @c EN
-Linear update variants of @var{take} and @var{drop-right}.
+Linear update variants of @code{take} and @code{drop-right}.
 Those procedures may destructively modifies @var{lis}.
 
 If @var{lis} is circular, @code{take!} may return a list
 shorter than expected.
 @c JP
-@var{take} および @var{drop-right} の
+@code{take} および @code{drop-right} の
 その場で更新されるバージョンです。これらの
 手続きは @var{lis} を破壊的に変更するかもしれません。
 
@@ -5122,10 +5122,10 @@ modifies @var{x} to produce the result.
 @defun split-at* list k :optional (fill? #f) (padding #f)
 @c EN
 More tolerant version of @code{split-at}.
-Returns the results of @code{take*} and @var{drop*}.
+Returns the results of @code{take*} and @code{drop*}.
 @c JP
 SRFI-1 (R7RS @code{(scheme list)})の@code{split-at}の寛容なバージョンです。
-@code{take*}と@var{drop*}の結果を返します。
+@code{take*}と@code{drop*}の結果を返します。
 @c COMMON
 
 @example
@@ -5747,10 +5747,10 @@ on top of already existing results.
 @c JP
 @var{list}の要素を逆順に並べたリストを返します。
 @code{reverse}は常に新たにリストをアロケートしますが、
-@var{reverse!}は結果を作るために@var{list}のセルを再利用するかもしれません。
-但し、@var{list}の先頭のセルが@var{reverse!}の結果でも先頭になるとは
+@code{reverse!}は結果を作るために@var{list}のセルを再利用するかもしれません。
+但し、@var{list}の先頭のセルが@code{reverse!}の結果でも先頭になるとは
 限らないので、@var{list}が変更されることを当てにするのではなく、
-@var{reverse!}の戻り値を利用する必要があります。
+@code{reverse!}の戻り値を利用する必要があります。
 
 省略可能引数@var{tail}が与えられた場合、それは結果のリストの末尾に
 付け足されます (@var{tail}部分はコピーされません)。
@@ -5895,8 +5895,8 @@ If no pair matches, these return @code{#f}.
 これらの手続きは、@var{list}の要素であるペアのうち、そのcarが
 @var{obj}と一致するペアを左から探して行きます。もし見付かればそのペアが、
 見付からなければ@code{#f}が返されます。
-@code{assq}は比較関数に@code{eq?}を、@code{assv}は@var{eqv?}を、
-@code{assoc}は@var{equal?}をそれぞれ用います。
+@code{assq}は比較関数に@code{eq?}を、@code{assv}は@code{eqv?}を、
+@code{assoc}は@code{equal?}をそれぞれ用います。
 @c COMMON
 
 @c EN
@@ -5936,13 +5936,13 @@ Reverse associations---given @var{key} is matched to the @emph{cdr}
 of each element in @var{alist}, instead of the @emph{car}.
 Handy to realize bidirectional associative list.
 @code{Rassoc} takes an optional comparison function, whose default is
-@code{equal?}.  @code{Rassq} and @code{rassv} uses @var{eq?} and @var{eqv?}.
+@code{equal?}.  @code{Rassq} and @code{rassv} uses @code{eq?} and @code{eqv?}.
 @c JP
 与えられる@var{key}が@var{alist}のそれぞれの要素で、@emph{car}の代わりに
 @emph{cdr}にマッチするような逆になった連想リストです。
 両方向の連想リストと理解すると簡単です。
 @code{rassoc}は、そのデフォルトが@code{equal?}である、オプションの
-比較関数を取ります。@code{rassq}は@var{eq?}、@code{rassv}は@var{eqv?}を
+比較関数を取ります。@code{rassq}は@code{eq?}、@code{rassv}は@code{eqv?}を
 使います。
 @c COMMON
 @end defun
@@ -6147,14 +6147,14 @@ the key first.
 
 @c EN
 Note: For destructively updating general nested aggregate structures,
-setter of @var{~} is handy (@pxref{Universal accessor}).  You can modify
+setter of @code{~} is handy (@pxref{Universal accessor}).  You can modify
 an entry in a hashtable in a vector in a list, for example.  Associative
 list is a bit special, since you can't distinguish it from lists
 (thus @code{~} can't be used), and it is mostly used in functional way.
 So we added a special update procedure.
 @c JP
 註: ネストした集合データ構造の一部を破壊的に更新するには、
-@var{~}のセッタが便利です(@ref{Universal accessor}参照)。
+@code{~}のセッタが便利です(@ref{Universal accessor}参照)。
 例えばハッシュテーブルのベクタのリスト、から一番奥のハッシュテーブルのエントリを
 更新することが出来ます。しかし連想リストはちょっと特殊で、リストと型的に区別
 できないため、@code{~}が使えません。連想リストはまた、関数的に使われることも
@@ -8792,12 +8792,12 @@ You can give an optional start/end indexes to @code{string->list}.
 @c COMMON
 
 @c EN
-For @var{list->string}, every elements of @var{list} must be
+For @code{list->string}, every elements of @var{list} must be
 a character, or an error is signaled.  If you want to build
 a string out of a mixed list of strings and characters, you
 may want to use @code{tree->string} in @ref{Lazy text construction}.
 @c JP
-@var{list->string}では@var{list}の要素はすべて文字でなければなりません。
+@code{list->string}では@var{list}の要素はすべて文字でなければなりません。
 そうでなければ、エラーシグナルがあがります。文字列や文字がまざったリス
 トから文字列を構成したい場合には@ref{Lazy text construction}にある
 @code{tree->string}が使えます。
@@ -11386,7 +11386,7 @@ This is equivalent to SRFI-43's @code{vector-for-each}.
 @code{vector-for-each}と似ていますが、@var{proc}の第1引数に
 現在のインデックスが渡されます。
 
-この手続きはSRFI-43の@var{vector-for-each}と等価です。
+この手続きはSRFI-43の@code{vector-for-each}と等価です。
 @ref{Vector library (Legacy)}参照。
 @c COMMON
 @end defun
@@ -11830,7 +11830,7 @@ odd number of arguments.
 @c JP
 これが、ハッシュテーブルに新たなエントリを追加するR7RS式のインタフェースです。
 @var{args} @dots{}にはキーと値を交互に並べたリストを指定します。
-Gaucheの@var{hash-table-put!}と違い、いくつものエントリを一度に追加することができます。
+Gaucheの@code{hash-table-put!}と違い、いくつものエントリを一度に追加することができます。
 @var{args} @dots{}が偶数要素でなければエラーです。
 @c COMMON
 
@@ -12174,7 +12174,7 @@ of the comparators).  Otherwise, an error is signaled.
 
 Two elements of the set are equal to each other iff their keys match
 with the equality predicate of the key comparator, and their values
-match with @var{value=?} procedure.  If omitted, @var{equal?} is
+match with @var{value=?} procedure.  If omitted, @code{equal?} is
 used for @var{value=?}
 @c JP
 ハッシュテーブルは、キーと値の組を要素とする集合とみなすことができます。
@@ -12556,7 +12556,7 @@ If @var{tree-map} is empty, @code{#f} is returned.
 Iterate over elements in @var{tree-map}, applying
 @var{proc} which has a type @code{(key, value, seed) -> seed}.
 The difference of @code{tree-map-fold} and @code{tree-map-fold-right}
-is the associative order of applying @code{proc},
+is the associative order of applying @var{proc},
 just like the difference between @code{fold} and @code{fold-right}.
 @c JP
 @var{tree-map}の各要素に対し、@code{(key, value, seed) -> seed} の型を持つ
@@ -13692,13 +13692,13 @@ The extra values are simply ignored in the first form.
 
 @defmac get-optional restargs default
 @c EN
-This is a short version of @var{let-optionals*} where you have only
+This is a short version of @code{let-optionals*} where you have only
 one optional argument.  Given the optional argument list @var{restargs},
 this macro returns the value of optional argument if one is given,
 or the result of @var{default} otherwise.  @var{Default} is not
 evaluated unless @var{restargs} is an empty list.
 @c JP
-これは@var{let-optionals*}の短いバージョンで、オプショナル引数が
+これは@code{let-optionals*}の短いバージョンで、オプショナル引数が
 1つしかないときに使います。オプショナル引数のリストとして@var{restargs}が
 与えらると、このマクロはオプショナル引数が与えられていればその値を返し、
 そうでなければ@var{default}の結果を返します。@var{default}は@var{restargs}が
@@ -14189,7 +14189,7 @@ scope of @code{dynamic-wind}, @var{before} is called.
 (@var{body}の中でエラーが起こった場合などが考えられます)、
 @var{after}が呼ばれます。
 
-もし、@var{body}の中で捕捉された継続が@var{dynamic-wind}のダイナミックスコープの
+もし、@var{body}の中で捕捉された継続が@code{dynamic-wind}のダイナミックスコープの
 外で呼ばれることにより制御が@var{body}の中へ飛び込んだ場合、
 @var{before}が呼ばれます。
 @c COMMON
@@ -17185,15 +17185,15 @@ has precedence.
 @c COMMON
 
 @c EN
-You can use @var{slot-ref} and/or @var{ref} to access to the field
+You can use @code{slot-ref} and/or @code{ref} to access to the field
 of conditions; compound conditions define a @code{slot-missing} method
-so that @var{slot-ref} behaves as if the compound conditions have all the
+so that @code{slot-ref} behaves as if the compound conditions have all the
 slots of the original conditions.  Using @code{condition-ref} increases
 portability, though.
 @c JP
-コンディションのフィールドにアクセスするには、@var{slot-ref} および
-@var{ref} の両方あるいはどちらかを使えます。合成コンディションでは、
-@code{slot-missing} メソッドが定義されますので、@var{slot-ref} は
+コンディションのフィールドにアクセスするには、@code{slot-ref} および
+@code{ref} の両方あるいはどちらかを使えます。合成コンディションでは、
+@code{slot-missing} メソッドが定義されますので、@code{slot-ref} は
 あたかも、合成コンディションが元になったコンディションの全てのスロットを
 もつかのように振舞います。しかしながら、@code{condition-ref} を
 使う方が可搬性が増します。
@@ -25277,7 +25277,7 @@ RLIMIT_OFILE
 a system error number.  This function returns a string describing
 the error.
 @c JP
-@var{error}はシステムエラー番号を表現する非負正確整数でなければなりま
+@var{errno}はシステムエラー番号を表現する非負正確整数でなければなりま
 せん。この関数はエラーを説明する文字列を返します。
 @c COMMON
 

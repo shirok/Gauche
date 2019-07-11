@@ -1072,10 +1072,10 @@ R7RSの仕様範囲内で省略可能引数、キーワード引数を受け取�
 @findex ^z
 @c EN
 A shorthand notation of @code{(lambda (@var{c}) @var{body} @dots{})}.
-where @code{c} can be any character in @code{#[_a-z]}.
+where @var{c} can be any character in @code{#[_a-z]}.
 @c JP
 @code{(lambda (@var{c}) @var{body} @dots{})}の短縮表記です。
-@code{c}には@code{#[_a-z]}に含まれる任意の一文字が使えます。
+@var{c}には@code{#[_a-z]}に含まれる任意の一文字が使えます。
 @c COMMON
 
 @example
@@ -1140,10 +1140,10 @@ to the call of @var{expr-or-slot}.  See the fourth example below.
 @end example
 
 @c EN
-@code{Cute} is a variation of @code{cut} that evaluates @code{expr-or-slot}s
+@code{Cute} is a variation of @code{cut} that evaluates @var{expr-or-slot}s
 before creating the procedure.
 @c JP
-@code{cute}は@code{cut}とほぼ同じですが、@code{expr-or-slot}に与えられた
+@code{cute}は@code{cut}とほぼ同じですが、@var{expr-or-slot}に与えられた
 フォームが手続きを作る前に評価される点が異なります。
 @c COMMON
 
@@ -1573,8 +1573,8 @@ Perlのpushオペレータの動作が必要ならQueueが使えます (@ref{Que
 
 @defmac pop! place
 @c EN
-Retrieves the value of @var{place}, sets its cdr back to @var{place}
-and returns its car.
+Retrieves the value of @var{place}, sets its @code{cdr} back to @var{place}
+and returns its @code{car}.
 @c JP
 @var{place}の値を取り出し、その@code{cdr}を@var{place}にセットします。
 元の値の@code{car}を返します。
@@ -1677,7 +1677,7 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
 @defspec cond clause1 clause2 @dots{}
 [R7RS+ base][SRFI-61]
 @c EN
-Each @code{clause} must be the form
+Each @var{clause} must be the form
 @example
 (@var{test} @var{expr} @dots{})
 (@var{test} => @var{expr})
@@ -1708,7 +1708,7 @@ If the last clause is else clause and all tests are failed,
 @var{expr}s in the else clause are evaluated, and its last
 @var{expr}'s result(s) is(are) returned.
 @c JP
-各@code{clause}節は次のいずれかの形式でなければなりません。
+各@var{clause}節は次のいずれかの形式でなければなりません。
 @example
 (@var{test} @var{expr} @dots{})
 (@var{test} => @var{expr})
