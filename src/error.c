@@ -621,11 +621,15 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
  * of Scm_*Error APIs.
  * The SCM_ERROR_BEING_HANDLED flag is cleared in Scm_VMThrowException().
  */
-#define SCM_ERROR_DOUBLE_FAULT_CHECK(vm)                                \
+#define SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg)                           \
     do {                                                                \
         if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_HANDLED)) {  \
-            ScmObj e =                                                  \
-                Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler")); \
+            ScmDString ds;                                              \
+            Scm_DStringInit(&ds);                                       \
+            Scm_DStringPutz(&ds, "Error occurred in error handler (", -1); \
+            Scm_DStringPutz(&ds, msg, -1);                              \
+            Scm_DStringPutz(&ds, ")", -1);                              \
+            ScmObj e = Scm_MakeError(Scm_DStringGet(&ds, 0));           \
             Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);     \
         }                                                               \
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);           \
@@ -662,7 +666,7 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
 void Scm_Error(const char *msg, ...)
 {
     ScmVM *vm = Scm_VM();
-    SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg);
     ScmObj ostr;
     SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
     ScmObj e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr), TRUE));
@@ -733,7 +737,7 @@ void Scm_SysError(const char *msg, ...)
 {
     int en = get_errno();       /* must take this before Scm_VM() */
     ScmVM *vm = Scm_VM();
-    SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg);
 
     ScmObj ostr;
     SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
@@ -767,7 +771,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 {
     int en = get_errno();       /* must take this before Scm_VM() */
     ScmVM *vm = Scm_VM();
-    SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg);
 
     ScmObj ostr;
     if (en != 0) SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
