@@ -315,7 +315,7 @@
 ;;; ^ == lambda
 (define-syntax ^
   (er-macro-transformer
-   (^[f r c] (quasirename r (lambda ,@(cdr f))))))
+   (^[f r c] (quasirename r `(lambda ,@(cdr f))))))
 
 ;; (^x . body) == (lambda (x) . body) where x in #[a-z_]
 ;; TODO: need to make 'lambda's hygineic!
@@ -391,10 +391,10 @@
      (match f
        [(_ (name . formals) . body)
         (quasirename r
-          (letrec ((,name (lambda ,formals ,@body))) ,name))]
+          `(letrec ((,name (lambda ,formals ,@body))) ,name))]
        [(_ name expr)
         (quasirename r
-          (letrec ((,name ,expr)) ,name))]
+          `(letrec ((,name ,expr)) ,name))]
        [_ (error "malformed rec:" f)]))))
 
 ;;; bind construct
@@ -404,7 +404,7 @@
    (^[f r c]
      (match f
        [(_ var exp . body) (quasirename r
-                             (let ((,var ,exp)) ,@body))]
+                             `(let ((,var ,exp)) ,@body))]
        [_ (error "malformed let1:" f)]))))
 
 (define-syntax if-let1                  ;like aif in On Lisp, but explicit var
@@ -412,7 +412,7 @@
    (^[f r c]
      (match f
        [(_ var exp then . else) (quasirename r
-                                  (let ((,var ,exp)) (if ,var ,then ,@else)))]
+                                  `(let ((,var ,exp)) (if ,var ,then ,@else)))]
        [_ (error "malformed if-let1:" f)]))))
 
 (define-syntax and-let1                 ;returns #f if test evaluates #f
@@ -420,8 +420,8 @@
    (^[f r c]
      (match f
        [(_ var test exp . more) (quasirename r
-                                  (let ((,var ,test)) 
-                                    (and ,var (begin ,exp ,@more))))]
+                                  `(let ((,var ,test)) 
+                                     (and ,var (begin ,exp ,@more))))]
        [_ (error "malformed and-let1:" f)]))))
 
 (define-syntax let/cc                   ;as in PLT
@@ -429,7 +429,7 @@
    (^[f r c]
      (match f
        [(_ var . body) (quasirename r
-                         (call/cc (lambda (,var) ,@body)))]
+                         `(call/cc (lambda (,var) ,@body)))]
        [_ (error "malformed let/cc:" f)]))))
 
 (define-syntax begin0                   ;prog1 in Lisp
@@ -437,7 +437,7 @@
    (^[f r c]
      (match f
        [(_ exp . more) (quasirename r
-                         (receive res ,exp ,@more (apply values res)))]
+                         `(receive res ,exp ,@more (apply values res)))]
        [_ (error "malformed begin0:" f)]))))
 
 (define-syntax rlet1                    ;begin0 + let1
@@ -445,7 +445,7 @@
    (^[f r c]
      (match f
        [(_ var exp . body) (quasirename r
-                             (let ((,var ,exp)) ,@body ,var))]
+                             `(let ((,var ,exp)) ,@body ,var))]
        [_ (error "malformed rlet1:" r)]))))
 
 (define-syntax let-values
@@ -465,20 +465,20 @@
                                  f f*))
                          formals formals*)])
           (quasirename r
-            (let*-values ,(map list formals* init)
-              (let ,rebinds
-                ,@body))))]))))
+            `(let*-values ,(map list formals* init)
+               (let ,rebinds
+                 ,@body))))]))))
 
 (define-syntax let*-values
   (er-macro-transformer
    (^[f r c]
      (match f
        [(_ () . body) (quasirename r
-                        (let () ,@body))]
+                        `(let () ,@body))]
        [(_ ((formals init) . rest) . body)
         (quasirename r
-          (receive ,formals ,init
-            (let*-values ,rest ,@body)))]))))
+          `(receive ,formals ,init
+             (let*-values ,rest ,@body)))]))))
 
 (define-syntax define-values
   (er-macro-transformer
@@ -494,10 +494,10 @@
         (match formals
           [()  ; allowed in r7rs
            (quasirename r 
-             (define ,(gensym) (receive ,(gensym) ,expr #f)))]
+             `(define ,(gensym) (receive ,(gensym) ,expr #f)))]
           [(v) ; trivial case
            (quasirename r
-             (define ,v ,expr))]
+             `(define ,v ,expr))]
           [(_ ...)
            (let ([vs (drop-right formals 1)]
                  [tmps (map (^_ (gensym)) formals)])
@@ -519,7 +519,7 @@
           [v   ; single variable
            (let1 tmp (gensym)
              (quasirename r
-               (define ,v (receive ,tmp ,expr ,tmp))))])]))))
+               `(define ,v (receive ,tmp ,expr ,tmp))))])]))))
 
 (define-syntax set!-values
   (er-macro-transformer
@@ -528,9 +528,9 @@
        [(_ (var ...) expr)
         (let1 tmps (map (^_ (gensym)) var)
           (quasirename r
-            (receive ,tmps ,expr
-              ,@(map (^[v t] (quasirename r (set! ,v ,t))) var tmps)
-              (undefined))))]
+            `(receive ,tmps ,expr
+               ,@(map (^[v t] (quasirename r `(set! ,v ,t))) var tmps)
+               (undefined))))]
        [_ (error "Malformed set!-values:" f)]))))
 
 (define-syntax values-ref
@@ -542,9 +542,9 @@
         (if (and (exact-integer? n) (<= n 5))
           (let1 vars (map (^_ (gensym)) (iota (+ n 1)))
             (quasirename r
-              (receive (,@vars . _) ,mv-expr ,(last vars))))
+              `(receive (,@vars . _) ,mv-expr ,(last vars))))
           (quasirename r
-            (receive vals ,mv-expr (list-ref vals ,n))))]
+            `(receive vals ,mv-expr (list-ref vals ,n))))]
        [(_ mv-expr n m)
         (if (and (exact-integer? n) (<= n 5)
                  (exact-integer? m) (<= m 5))
@@ -552,9 +552,9 @@
                  [vn (list-ref vars n)]
                  [vm (list-ref vars m)])
             (quasirename r
-              (receive (,@vars . _) ,mv-expr (values ,vn ,vm))))
+              `(receive (,@vars . _) ,mv-expr (values ,vn ,vm))))
           (quasirename r
-            (receive vals ,mv-expr (values (list-ref vals ,n)
+            `(receive vals ,mv-expr (values (list-ref vals ,n)
                                            (list-ref vals ,m)))))]
        [(_ mv-expr ns ...)
         (if (null? ns)
@@ -564,18 +564,18 @@
             (let* ([vars (map (^_ (gensym)) (iota (+ (apply max ns) 1)))]
                    [rvars (map (^k (list-ref vars k)) ns)])
               (quasirename r
-                (receive (,@vars . _) ,mv-expr (values ,@rvars))))
+                `(receive (,@vars . _) ,mv-expr (values ,@rvars))))
             (quasirename r
-              (receive vals ,mv-expr
-                (apply values (map (^[i] (list-ref vals i)) 
-                                   (list ,@(cons n ns))))))))]))))
+              `(receive vals ,mv-expr
+                 (apply values (map (^[i] (list-ref vals i)) 
+                                    (list ,@(cons n ns))))))))]))))
 
 (define-syntax values->list
   (er-macro-transformer
    (^[f r c]
      (match f
        [(_ mv-expr) (quasirename r
-                      (receive x ,mv-expr x))]))))
+                      `(receive x ,mv-expr x))]))))
         
 ;;; generalized set! family
 
@@ -586,11 +586,11 @@
        [(_ (proc arg ...) val)
         (let1 vars (map (^_ (gensym)) arg)
           (quasirename r
-            (let [(getter ,proc) ,@(map list vars arg)]
-              ((setter getter) ,@vars (cons ,val (getter ,@vars))))))]
+            `(let [(getter ,proc) ,@(map list vars arg)]
+               ((setter getter) ,@vars (cons ,val (getter ,@vars))))))]
        [(_ loc val)
         (quasirename r
-          (set! ,loc (cons ,val ,loc)))]
+          `(set! ,loc (cons ,val ,loc)))]
        [_ (error "malformed push!:" f)]))))
 
 (define-syntax pop!
@@ -600,15 +600,15 @@
        [(_ (proc arg ...))
         (let1 vars (map (^_ (gensym)) arg)
           (quasirename r
-            (let ([getter ,proc] ,@(map list vars arg))
-              (let1 val (getter ,@vars)
-                ((setter getter) ,@vars (cdr val))
-                (car val)))))]
+            `(let ([getter ,proc] ,@(map list vars arg))
+               (let1 val (getter ,@vars)
+                 ((setter getter) ,@vars (cdr val))
+                 (car val)))))]
        [(_ loc)
         (quasirename r
-          (let1 val ,loc
-            (set! ,loc (cdr val))
-            (car val)))]
+          `(let1 val ,loc
+             (set! ,loc (cdr val))
+             (car val)))]
        [_ (error "malformed pop!:" f)]))))
 
 (define-syntax inc!
@@ -617,15 +617,15 @@
      (define (gen proc arg delta)
        (let1 vars (map (^_ (gensym)) arg)
          (quasirename r
-           (let ([getter ,proc] ,@(map list vars arg))
-             ((setter getter) ,@vars (+ (getter ,@vars) ,delta))))))
+           `(let ([getter ,proc] ,@(map list vars arg))
+              ((setter getter) ,@vars (+ (getter ,@vars) ,delta))))))
      (match f
        [(_ (proc arg ...) delta) (gen proc arg delta)]
        [(_ (proc arg ...))       (gen proc arg 1)]
        [(_ loc delta) (quasirename r
-                        (set! ,loc (+ ,loc ,delta)))]
+                        `(set! ,loc (+ ,loc ,delta)))]
        [(_ loc)       (quasirename r
-                        (set! ,loc (+ ,loc 1)))]
+                        `(set! ,loc (+ ,loc 1)))]
        [_ (error "malformed inc!:" f)]))))
 
 (define-syntax dec!
@@ -634,15 +634,15 @@
      (define (gen proc arg delta)
        (let1 vars (map (^_ (gensym)) arg)
          (quasirename r
-           (let ([getter ,proc] ,@(map list vars arg))
-             ((setter getter) ,@vars (- (getter ,@vars) ,delta))))))
+           `(let ([getter ,proc] ,@(map list vars arg))
+              ((setter getter) ,@vars (- (getter ,@vars) ,delta))))))
      (match f
        [(_ (proc arg ...) delta) (gen proc arg delta)]
        [(_ (proc arg ...))       (gen proc arg 1)]
        [(_ loc delta) (quasirename r
-                        (set! ,loc (- ,loc ,delta)))]
+                        `(set! ,loc (- ,loc ,delta)))]
        [(_ loc)       (quasirename r
-                        (set! ,loc (- ,loc 1)))]
+                        `(set! ,loc (- ,loc 1)))]
        [_ (error "malformed dec!:" f)]))))
 
 (define-syntax update!
@@ -652,11 +652,11 @@
        [(_ (proc arg ...) updater val ...)
         (let1 vars (map (^_ (gensym)) arg)
           (quasirename r
-            (let ([getter ,proc] ,@(map list vars arg))
-              ((setter getter) ,@vars (,updater ,@val (getter ,@vars))))))]
+            `(let ([getter ,proc] ,@(map list vars arg))
+               ((setter getter) ,@vars (,updater ,@val (getter ,@vars))))))]
        [(_ loc updater val ...)
         (quasirename r
-          (set! ,loc (,updater ,@val ,loc)))]
+          `(set! ,loc (,updater ,@val ,loc)))]
        [_ (error "malformed update!:" f)]))))
 
 ;;; assume (srfi-145) and co.
@@ -668,8 +668,8 @@
      (match f
        [(_ expr . objs)
         (quasirename r
-          (unless ,expr
-            (error (format "Invalid assumption: ~s" ',expr) ,@objs)))]))))
+          `(unless ,expr
+             (error (format "Invalid assumption: ~s" ',expr) ,@objs)))]))))
 
 (define-syntax assume-type
   (er-macro-transformer
@@ -677,9 +677,9 @@
      (match f
        [(_ expr type)
         (quasirename r
-          (let1 v ,expr
-            (unless (is-a? v ,type)
-              (type-error 'expr ,type v))))]))))
+          `(let1 v ,expr
+             (unless (is-a? v ,type)
+               (type-error 'expr ,type v))))]))))
 
 ;;; cond-list - a syntax to construct a list
 
@@ -699,29 +699,29 @@
          [(_) '()]
          [(_ (test) . rest)
           (quasirename r
-            (let* ([tmp ,test]
-                   [r (cond-list ,@rest)])
-              (if tmp (cons tmp r) r)))]
+            `(let* ([tmp ,test]
+                    [r (cond-list ,@rest)])
+               (if tmp (cons tmp r) r)))]
          [(_ (test (? (cut c <> =>.)) proc) . rest)
           (quasirename r
-            (let* ([tmp ,test]
-                   [r (cond-list ,@rest)])
-              (if tmp (cons (,proc tmp) r) r)))]
+            `(let* ([tmp ,test]
+                    [r (cond-list ,@rest)])
+               (if tmp (cons (,proc tmp) r) r)))]
          [(_ (test (? (cut c <> =>.)) (? (cut c <> @.)) proc) . rest)
           (quasirename r
-            (let* ([tmp ,test]
-                   [r (cond-list ,@rest)])
-              (if tmp (append (,proc tmp) r) r)))]
+            `(let* ([tmp ,test]
+                    [r (cond-list ,@rest)])
+               (if tmp (append (,proc tmp) r) r)))]
          [(_ (test (? (cut c <> @.)) expr ...) . rest)
           (quasirename r
-            (let* ([tmp ,test]
-                   [r (cond-list ,@rest)])
-              (if tmp (append (begin ,@expr) r) r)))]
+            `(let* ([tmp ,test]
+                    [r (cond-list ,@rest)])
+               (if tmp (append (begin ,@expr) r) r)))]
          [(_ (test expr ...) . rest)
           (quasirename r
-            (let* ([tmp ,test]
-                   [r (cond-list ,@rest)])
-              (if tmp (cons (begin ,@expr) r) r)))]
+            `(let* ([tmp ,test]
+                    [r (cond-list ,@rest)])
+               (if tmp (cons (begin ,@expr) r) r)))]
          )))))
 
 ;;; unwind-protect

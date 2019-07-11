@@ -94,12 +94,12 @@
           [other (delete-keyword :class opts)])
       (if getter-name
         (quasirename %id
-          (define ,true-name
-            (rlet1 ,true-name (make ,class ':name ',true-name ,@other)
-              (set! (setter ,getter-name) ,true-name))))
+          `(define ,true-name
+             (rlet1 ,true-name (make ,class ':name ',true-name ,@other)
+               (set! (setter ,getter-name) ,true-name))))
         (quasirename %id
-          (define ,true-name
-            (make ,class ':name ',true-name ,@other)))))))
+          `(define ,true-name
+             (make ,class ':name ',true-name ,@other)))))))
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
@@ -147,24 +147,24 @@
                            `(,@reqargs next-method))]
            [real-body (if opts
                         (quasirename %id
-                          (lambda ,real-args
-                            (apply (lambda ,opts ,@body) ,rest)))
+                          `(lambda ,real-args
+                             (apply (lambda ,opts ,@body) ,rest)))
                         (quasirename %id
-                          (lambda ,real-args ,@body)))])
+                          `(lambda ,real-args ,@body)))])
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym)
           (quasirename %id
-            (rlet1 ,gf (%ensure-generic-function ',true-name (current-module))
-              (add-method! ,gf (make <method>
-                                 ':generic ,gf
-                                 ':specializers (list ,@specializers)
-                                 ':lambda-list ',lambda-list
-                                 ':method-locked (boolean (memq ':locked ',quals))
-                                 ':body ,real-body))
-              ,@(cond-list [getter-name
-                            (quasirename %id
-                              (unless (has-setter? ,getter-name)
-                                (set! (setter ,getter-name) ,gf)))]))))))))
+            `(rlet1 ,gf (%ensure-generic-function ',true-name (current-module))
+               (add-method! ,gf (make <method>
+                                  ':generic ,gf
+                                  ':specializers (list ,@specializers)
+                                  ':lambda-list ',lambda-list
+                                  ':method-locked (boolean (memq ':locked ',quals))
+                                  ':body ,real-body))
+               ,@(cond-list [getter-name
+                             (quasirename %id
+                               `(unless (has-setter? ,getter-name)
+                                  (set! (setter ,getter-name) ,gf)))]))))))))
 
 (inline-stub
  ;; internal for %ensure-generic-function
@@ -223,27 +223,27 @@
 (define (%expand-define-class name supers slots options)
   (let* ([metaclass (or (get-keyword :metaclass options #f)
                         (quasirename %id
-                          (%get-default-metaclass (list ,@supers))))]
+                          `(%get-default-metaclass (list ,@supers))))]
          [slot-defs (map %process-slot-definition slots)]
          [class     (gensym)]
          [slot      (gensym)])
     (quasirename %id
-      (define ,name
-        (rlet1 ,class (make ,metaclass
-                        ':name ',name ':supers (list ,@supers)
-                        ':slots (list ,@slot-defs)
-                        ':defined-modules (list (current-module))
-                        ,@options)
-          (when (%check-class-binding ',name (current-module))
-            (redefine-class! ,name ,class))
-          (for-each (lambda (,slot)
-                      (%make-accessor ,class ,slot (current-module)))
-                    (class-slots ,class)))))))
+      `(define ,name
+         (rlet1 ,class (make ,metaclass
+                         ':name ',name ':supers (list ,@supers)
+                         ':slots (list ,@slot-defs)
+                         ':defined-modules (list (current-module))
+                         ,@options)
+           (when (%check-class-binding ',name (current-module))
+             (redefine-class! ,name ,class))
+           (for-each (lambda (,slot)
+                       (%make-accessor ,class ,slot (current-module)))
+                     (class-slots ,class)))))))
 
 (define (%process-slot-definition sdef)
   (if (pair? sdef)
     (let loop ([opts (cdr sdef)] [r '()])
-      (cond [(null? opts) (quasirename %id (list ',(car sdef) ,@(reverse! r)))]
+      (cond [(null? opts) (quasirename %id `(list ',(car sdef) ,@(reverse! r)))]
             [(not (and (pair? opts) (pair? (cdr opts))))
              (error "bad slot specification:" sdef)]
             [else
@@ -253,14 +253,14 @@
                [(:initform :init-form)
                 (loop (cddr opts)
                       (quasirename %id
-                        ((lambda () ,(cadr opts)) ':init-thunk ,@r)))]
+                        `((lambda () ,(cadr opts)) ':init-thunk ,@r)))]
                [(:getter :setter :accessor)
                 (loop (cddr opts)
-                      (quasirename %id (',(cadr opts) ',(car opts) ,@r)))]
+                      (quasirename %id `(',(cadr opts) ',(car opts) ,@r)))]
                [else
                 (loop (cddr opts)
-                      (quasirename %id (,(cadr opts) ',(car opts) ,@r)))])]))
-    (quasirename %id '(,sdef))))
+                      (quasirename %id `(,(cadr opts) ',(car opts) ,@r)))])]))
+    (quasirename %id `'(,sdef))))
 
 ;; Determine default metaclass, that is a class inheriting all the metaclasses
 ;; of supers.  The idea is taken from stklos.  The difference is that
