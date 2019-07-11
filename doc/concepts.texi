@@ -650,17 +650,17 @@ convenient when used together.
 The @code{use} mechanism is not transitive; that is,
 if a module B uses a module A, and a module C uses the module B,
 C doesn't see the bindings in A.  It is because B and A is not in the
-@var{is-a} relationship.
+@code{is-a} relationship.
 Suppose the module A implements a low-level functionality and
 the module B implements a high-level abstraction; if C is using
 B, what C wants to see is just a high-level abstraction, and
 doesn't concern how B implements such functionality.  If C wants
-to access low-level stuff, C has to @var{use} A explicitly.
+to access low-level stuff, C has to @code{use} A explicitly.
 @c JP
 @code{use}メカニズムは非遷移的です。すなわち、
 モジュールBがモジュールAを'use'し、さらにモジュールCがモジュールBを
 'use'している場合、モジュールCからはモジュールA内の束縛は見えません。
-BとAは@var{is-a}関係ではないためです。
+BとAは@code{is-a}関係ではないためです。
 例えばモジュールAが低レベルの操作を実装し、
 モジュールBがその上に高レベルの抽象的なインタフェースを実装しているとしましょう。
 モジュールCがモジュールBを'use'しているということは、
@@ -679,7 +679,7 @@ and realized by @code{extend} form.
 @c JP
 しかし、別の形の関係が必要な場合もあります。例えば既存のモジュールAに
 ちょっと新しいインタフェースを付け加えたモジュールBをAの拡張として
-提供したいという場合です。この時、BとAは@var{is-a}関係であり、Bを'use'
+提供したいという場合です。この時、BとAは@code{is-a}関係であり、Bを'use'
 しているモジュールからA内の束縛も見えるのが自然です。
 Gaucheでは、これをモジュールの継承と呼び、
 @code{extend}フォームにより実現しています。
