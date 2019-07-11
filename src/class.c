@@ -1312,7 +1312,8 @@ ScmObj Scm_InstanceSlotRef3(ScmObj obj, ScmSmallInt number, ScmObj fallback)
     ScmObj v = scheme_slot_ref(obj, number);
     if (SCM_UNBOUNDP(v)) {
         if (SCM_UNBOUNDP(fallback)) {
-            Scm_Error("Slot #%d of object %S is unbound.", number, obj);
+            Scm_Error("Slot #%d of object of class %S is unbound.",
+                      number, SCM_OBJ(Scm_ClassOf(obj)));
         }
         return fallback;
     }
