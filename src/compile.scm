@@ -422,7 +422,6 @@
 ;;    #($lambda <src> <name> <reqarg> <optarg> (<lvar> ...) <iform> <flag>)
 ;;                           ;; closure
 ;;    #($label <src> <label> <iform>) ;; merge point of local call.  see below.
-;;    #($promise <src> <expr>) ;; promise
 ;;    #($seq (<iform> ...))   ;; sequencing
 ;;    #($call <src> <proc-expr> (<arg-expr> ...) <flag>) ;; procedure call
 ;;    #($asm <src> <insn> (<arg> ...)) ;; inline assembler
