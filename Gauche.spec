@@ -11,7 +11,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.9.7_rc1
+%define version  0.9.8
 %define abi_version 0.97
 %define encoding utf8
 %define threads  pthreads
@@ -124,6 +124,9 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
+* Tue Jun 15 2019 Shiro Kawai
+- Gauche release 0.9.8
+
 * Tue Dec 20 2018 Shiro Kawai
 - Gauche release 0.9.7
 
