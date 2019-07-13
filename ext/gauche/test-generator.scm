@@ -50,6 +50,13 @@
 (test* "grange + generator->list" '(1.0 1.5 2.0 2.5)
        (generator->list (grange 1.0 3 1/2)))
 
+(test* "grange + generator->list" '()
+       (generator->list (grange 5 0)))
+(test* "grange + generator->list" '(5 4 3 2 1)
+       (generator->list (grange 5 0 -1)))
+(test* "grange + generator->list" '(5.0 4.0 3.0 2.0 1.0)
+       (generator->list (grange 5 0 -1.0)))
+
 ;; converters
 (let-syntax ((t (syntax-rules ()
                   [(t dir fn cv data)

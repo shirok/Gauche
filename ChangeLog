@@ -1,3 +1,7 @@
+2019-07-13  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm (grange): Support negative step.
+
 2019-07-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-4.scm (pass4): Avoid generating large local frame
