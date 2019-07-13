@@ -170,7 +170,7 @@ void usage(void)
             "      to search scheme files to load.\n"
             "  GAUCHE_QUASIRENAME_MODE\n"
             "      Customize quasirename compatibility mode.  See 'Explicit-renaming\n"
-            "      macro transformer' section of the manual for the details."
+            "      macro transformer' section of the manual for the details.\n"
             "  GAUCHE_READ_EDIT\n"
             "      If set, and the terminal is capable, turn on the experimental\n"
             "      line-editing feature in REPL.\n"
