@@ -18806,19 +18806,25 @@ can be stopped.
 
 @defun sxpath abbrpath . ns-binding
 @c MOD sxml.sxpath
-Evaluates an abbreviated SXPath
+Evaluates an abbreviated SXPath. Returns a procedure that when applied
+on a node or nodeset will return a nodeset matching the given path.
 
 @example
  sxpath:: AbbrPath -> Converter, or
  sxpath:: AbbrPath -> Node|Nodeset -> Nodeset
 @end example
 
-@c EN
-@var{AbbrPath} is a list. It is translated to the full SXPath according
-to the following rewriting rules:
-@c JP
-@var{AbbrPath}はリストです。これは、以下の書き換えルールに従って
-完全なSXPathに変換されます。
+@c COMMON
+@var{AbbrPath} is a list or a string. If it is a list, it is
+translated to the full SXPath according to the following rewriting
+rules. More informal explanation follows shortly. If it is a string,
+it is an XPath query.
+
+Note that these are abstract rules to show how it works, and not the
+running code examples. The nonterminals @i{sxpath1} and @i{sxpathr}
+don't exist as APIs. The term @i{txpath} is an internal function that
+interprets XPath query given as a string.
+
 @c COMMON
 @example
  (sxpath '()) -> (node-join)
@@ -18846,25 +18852,86 @@ to the following rewriting rules:
  (@i{sxpathr} path-filter) -> (filter (sxpath path-filter))
 @end example
 
-@c EN
-Note that the above table is abstract rules to show how it works,
-and not the running code examples.  The nonterminals @i{sxpath1}
-and @i{sxpathr} don't exist as APIs.  The term @i{txpath} is an
-internal function that interprets XPath query given as a string.
-In the code, a string passed to @code{sxpath} is interpreted
-as a XPath query.
-@c JP
-上の表は@code{sxpath}の動作を抽象的な書き換えルールで示すもので、
-動作するコード例ではないことに注意してください。非終端記号@i{sxpath1}と
-@i{sxpathr}はAPIとしては存在しません。また@i{txpath}は
-文字列をXPathクエリとして解釈する内部関数です。
-コードで使う時は、@code{sxpath}に文字列を渡せばそれがXPathクエリとして解釈されます。
+@c COMMON
+
+SXPath in its simplest form is a list of path components. The result
+procedure will follow the same path and return the matching node
+list. For example @code{(one two three)} will find element @code{one}
+then @code{two} inside it and @code{three} inside element
+@code{two}. The equivalent XPath would be @code{one/two/three}.
+
+There are a few special path components (see @code{ntype??} for the
+complete list):
+
+@table @code
+@item *
+matches an element node.
+@item //
+matches any one or many consecutive path components.
+@item *text*
+matches a text node (@code{text()} in XPath).
+@item *data*
+matches any data node (e.g. text, number, boolean, etc.,
+but not pair).
+@item @@
+selects the attribute list node.
+@end table
+
+A path component could be a list in one of these forms:
+
+@table @code
+@item (equal? x)
+matches if the node under examination matches @var{x} using
+@code{node-equal?}
+@item (eq? x)
+matches if the node under examination matches @var{x} using
+@code{node-eq?}
+@item (or@@ ...)
+matches if the element name is one of the specified symbols.
+@item (not@@ ...)
+matches if the element name is not one of the specified symbols.
+@item (ns-id:* x)
+matches the node if it's with namespace @var{x}
+@item (<path> n)
+matches the @var{n}-th node matching same path component. @var{n}
+starts from 1. Negative numbers start from the end of the node list
+backward. This is @code{path[n]} syntax in XPath.
+@item (<path> (<predicate>...))
+matches a path component @var{path} and @code{(sxpath (<predicate>...))}
+on those nodes are not empty. This is @code{path[predicate...]} syntax
+in XPath.
+@end table
+
+If the path component is a string, it is interpreted as an XPath query
+string.
+
+If the path component is a procedure, the procedure takes three
+arguments: the nodeset being examined, the root node and the variable
+bindings.
+
+The root node is usually the entire sxml being applied. However if you
+apply the result sxpath procedure with two arguments, root-node will
+be the second argument.
+
+When applied with three arguments, the variable bindings are the third
+one. This lets you pass arguments to the procedure.
+
 @c COMMON
 
 @example
 ;; select all <book> elements whose style attribute value is equal to
 ;; the <bookstore> element's speciality attribute value.
 (sxpath "//book[/bookstore/@@specialty=@@style]")
+;; a similar query but this time make sure specialty of _all_
+;; bookstores is matched
+(let ([match-specialty (lambda (node root var-binding)
+                         (let ([style (car ((sxpath '(@@ style *text*)) node))]
+                               [all-specialty ((sxpath '(bookstore @@ specialty *text*)) node)])
+                           (fold (lambda (specialty last-result)
+                                   (and last-result (string=? style specialty)))
+                                 #t
+                                 all-specialty)))])
+  (sxpath `(// (book (,match-specialty)))))
 
 ;; select all <bookstore> elements that are inside top-level <book>
 ;; element
@@ -18887,11 +18954,14 @@ as a XPath query.
 ;; select the attribute "name" of all <bookstore> elements whose
 ;; "rating" attribute is 3
 (sxpath '(book (bookstore (@@ rating (eq? 3))) @@ name))
-;; select the attribute "name" of all <bookstore> elements whose
-;; "rating" attribute is greater than 3
-(let ([greater (lambda (parent full-tree something)
-                 (> (string->number (sxml:string-value (car parent))) 3))])
-  (sxpath `(book (bookstore (@@ rating ,greater)) @@ name)))
+;; select the attribute "rating" whose value is greater than 3 from
+;; all <bookstore> elements
+(let ([greater (lambda (nodeset root-node var-binding)
+                 (filter (lambda (node)
+                           (> (string->number (sxml:string-value node))
+                              3))
+                         nodeset))])
+  (sxpath `(book bookstore @@ rating ,greater)))
 @end example
 @end defun
 
