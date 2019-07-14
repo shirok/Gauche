@@ -100,30 +100,27 @@
 
 ;; For convenience.
 (define-in-module gauche (lrange start :optional (end +inf.0) (step 1))
-  ;; Exact numbers.  Fast way.
-  (define (gen-exacts)
-    (set! start (+ start step))
-    (if (if (> step 0)
-          (< start end)
-          (> start end))
-      start
-      (eof-object)))
-  ;; Inexact numbers.  We use multiplication to avoid accumulating errors
-  (define c 0)
-  (define (gen-inexacts)
-    (set! c (+ c 1))
-    (let1 r (+ start (* c step))
-      (if (if (> step 0)
-            (< r end)
-            (> r end))
-        r
-        (eof-object))))
-
   (cond [(or (and (> step 0) (>= start end))
              (and (< step 0) (<= start end))) '()]
         [(= step 0) (generator->lseq (^[] start))]
-        [(and (exact? start) (exact? step)) (generator->lseq start gen-exacts)]
-        [else (generator->lseq (inexact start) gen-inexacts)]))
+        [(and (exact? start) (exact? step))
+         (generator->lseq start 
+                          (if (> step 0)
+                            (^[] (inc! start step)
+                              (if (< start end) start (eof-object)))
+                            (^[] (inc! start step)
+                              (if (> start end) start (eof-object)))))]
+        [else
+         (generator->lseq (inexact start)
+                          (let1 c 0
+                            (if (> step 0)
+                              (^[] (inc! c)
+                                (let1 r (+ start (* c step))
+                                  (if (< r end) r (eof-object))))
+                              (^[] (inc! c)
+                                (let1 r (+ start (* c step))
+                                  (if (> r end) r (eof-object))))
+                              )))]))
 
 (define-in-module gauche (liota :optional (count +inf.0) (start 0) (step 1))
   (let1 count (if (< count 0) +inf.0 count) ; like stream-iota
