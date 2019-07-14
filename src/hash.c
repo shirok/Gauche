@@ -324,6 +324,11 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
             return r;
         }
 #undef INIT_R            
+        case SCM_UVECTOR_RESERVED1:
+        case SCM_UVECTOR_C32:
+        case SCM_UVECTOR_C64:
+        case SCM_UVECTOR_C128:
+        case SCM_UVECTOR_RESERVED2:
         case SCM_UVECTOR_INVALID:
             Scm_Panic("invalid uvector class.");
         }

@@ -123,6 +123,11 @@ typedef enum {
     SCM_UVECTOR_F16,
     SCM_UVECTOR_F32,
     SCM_UVECTOR_F64,
+    SCM_UVECTOR_RESERVED1,      /* reserved for f128*/
+    SCM_UVECTOR_C32,
+    SCM_UVECTOR_C64,
+    SCM_UVECTOR_C128,
+    SCM_UVECTOR_RESERVED2,      /* reserved for c256 */
     SCM_UVECTOR_INVALID = -1
 } ScmUVectorType;
 
