@@ -1901,6 +1901,57 @@
                (generator->vector! v 3 g))))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-124")
+(use srfi-124)
+(test-module 'srfi-124)
+
+(define-module srfi-124-test
+  (import srfi-124)
+  (import gauche.test)
+
+  (define k0 (list 'key0))
+  (define k1 (list 'key1))
+  (define d0 (list 'datum0))
+  (define d1 (list 'datum2))
+  (define ds (make-weak-vector 2))
+  (weak-vector-set! ds 0 d0)
+  (weak-vector-set! ds 1 d1)
+  (define e0 (make-ephemeron k0 d0))
+  (define e1 (make-ephemeron k1 d1))
+
+  (test* "ephemeron?" #t (ephemeron? e0))
+  (test* "ephemeron-key" #t
+         (and (eq? (ephemeron-key e0) k0)
+              (eq? (ephemeron-key e1) k1)))
+  (test* "ephemeron-datum" #t
+         (and (eq? (ephemeron-datum e0) d0)
+              (eq? (ephemeron-datum e1) d1)))
+
+  (set! d0 #f)
+  (set! d1 #f)
+
+  (gc)
+  (gc)
+
+  (test* "ephemeron-broken?" #f
+         (or (ephemeron-broken? e0) (ephemeron-broken? e1)))
+
+  (set! k0 #f)
+
+  (gc)
+  (gc)
+
+  (test* "ephemeron-broken? e0" #t (ephemeron-broken? e0))
+  (test* "ephemeron-broken? e1" #f (ephemeron-broken? e1))
+  
+  (gc)
+  (gc)
+
+  (test* "d0 collected" #f (weak-vector-ref ds 0 #f))
+  (test* "d1 not collected" #f (not (weak-vector-ref ds 1 #f)))
+  )
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-125")
 (use srfi-125)
 (test-module 'srfi-125)

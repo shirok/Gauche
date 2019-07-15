@@ -48,8 +48,9 @@ SCMFILES = \
        srfi-37.scm srfi-39.scm srfi-42.scm srfi-55.scm srfi-60.scm srfi-64.scm \
        srfi-66.scm srfi-69.scm srfi-74.scm srfi-78.scm srfi-96.scm srfi-98.scm \
        srfi-99.scm srfi-106.scm srfi-112.scm srfi-113.scm srfi-114.scm \
-       srfi-117.scm srfi-118.scm srfi-121.scm srfi-125.scm srfi-127.scm \
-       srfi-128.scm srfi-129.scm srfi-131.scm srfi-132.scm srfi-134.scm \
+       srfi-117.scm srfi-118.scm srfi-121.scm srfi-124.scm srfi-125.scm \
+       srfi-127.scm srfi-128.scm srfi-129.scm \
+       srfi-131.scm srfi-132.scm srfi-134.scm \
        srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
        srfi-151.scm srfi-152.scm srfi-154.scm srfi-155.scm srfi-158.scm \
        srfi/*.scm \
@@ -111,8 +112,8 @@ SCMFILES = \
        scheme/base.scm scheme/box.scm scheme/bitwise.scm \
        scheme/case-lambda.scm scheme/char.scm scheme/charset.scm \
        scheme/comparator.scm scheme/complex.scm scheme/cxr.scm \
-       scheme/division.scm scheme/eval.scm scheme/file.scm \
-       scheme/fixnum.scm scheme/flonum.scm \
+       scheme/division.scm scheme/ephemeron.scm scheme/eval.scm \
+       scheme/file.scm scheme/fixnum.scm scheme/flonum.scm \
        scheme/generator.scm scheme/hash-table.scm scheme/ideque.scm \
        scheme/inexact.scm scheme/lazy.scm \
        scheme/list-queue.scm scheme/list.scm scheme/load.scm \
