@@ -1,7 +1,7 @@
 /*
  * gauche/bytes_inline.h - Some speed-sensitive byte-swapping routines
  *
- *   Copyright (c) 2009-2018  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2009-2019  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions

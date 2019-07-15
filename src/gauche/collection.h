@@ -1,7 +1,7 @@
 /*
  * collection.h - Common interface for collection, sequence, and dictionary.
  *
- *   Copyright (c) 2007-2018  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2007-2019  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions

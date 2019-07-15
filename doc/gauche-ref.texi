@@ -44,7 +44,7 @@
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2001-2017 Shiro Kawai (shiro@@acm.org)
+Copyright @copyright{} 2001-2019 Shiro Kawai (shiro@@acm.org)
 
 @end titlepage
 
