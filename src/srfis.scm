@@ -843,6 +843,22 @@ Gaucheの@code{gauche.generator}がsrfi-121のスーパーセットになって�
 (@ref{Generators}参照)
 
 
+srfi-124, srfi-124
+()
+
+Ephemerons
+This has become a part of R7RS large.
+Supported by @code{scheme.ephemeron}.
+Note: Current Gauche's implementation isn't optimal.
+@xref{R7RS ephemerons}.
+
+Ephemeron
+これはR7RS largeの一部となりました。
+@code{scheme.ephemeron}モジュールでサポートされます
+(註: 現在のGaucheでの実装は理想的ではありません。)
+@ref{R7RS ephemerons}参照。
+
+
 srfi-125, srfi-125
 ()
 

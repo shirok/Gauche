@@ -1936,8 +1936,8 @@ the following are @emph{not} supported yet:
 
 @example
 scheme.ilist      scheme.rlist        scheme.text
-scheme.stream     scheme.ephemeron    scheme.regex
-scheme.bytevector   scheme.vector.TAG scheme.show
+scheme.stream     scheme.regex        scheme.bytevector
+scheme.vector.TAG scheme.show
 @end example
 
 @c EN
@@ -1959,6 +1959,7 @@ The following are supported libraries:
 * R7RS lazy sequences::         @code{scheme.lseq}
 * R7RS boxes::                  @code{scheme.box}
 * R7RS list queues::            @code{scheme.list-queue}
+* R7RS ephemerons::             @code{scheme.ephemeron}
 * R7RS comparators::            @code{scheme.comparator}
 * R7RS mappings::               @code{scheme.mapping}
 * R7RS integer division::       @code{scheme.division}
@@ -5552,7 +5553,7 @@ Returns @var{box}'s content.
 Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
 @end defun
 
-@node R7RS list queues, R7RS comparators, R7RS boxes, R7RS large
+@node R7RS list queues, R7RS ephemerons, R7RS boxes, R7RS large
 @subsection @code{scheme.list-queue} - R7RS list queues
 @c NODE R7RSリストキュー, @code{scheme.list-queue} - R7RSリストキュー
 
@@ -5977,7 +5978,118 @@ The results are discarded.
 @c COMMON
 @end defun
 
-@node R7RS comparators, R7RS mappings, R7RS list queues, R7RS large
+@node R7RS ephemerons, R7RS comparators, R7RS list queues, R7RS large
+@subsection @code{scheme.ephemeron} - R7RS ephemeron
+@c NODE R7RS Ephemeron, @code{scheme.ephemeron} - R7RS Ephemeron
+
+@deftp {Module} scheme.ephemeron
+@mdindex scheme.ephemeron
+This module defined @emph{emephemerons}, a weak reference
+structure to hold key-value association.  This is originally
+defined as srfi-142.
+
+Gauche supports weak pointers in the form of weak vectors
+(@pxref{Weak pointers}), but it is known that a simple weak
+pointer (a single pointer that doesn't prevent the pointed
+object from being collected) isn't enough to implement
+weak key-value association such as mappings.
+
+An ephemeron is a record that points to a key and an associated
+datum, with the following characteristics:
+
+@enumerate
+@item
+Reference to the key is weak; it doesn't prevent the key from
+being collected if there's no strong reference to the key,
+@emph{except from the associated datum}.
+
+@item
+Refernece to the datum is weak; it doesn't prevent the datum
+from being collected if there's no strong reference to the datum,
+@emph{and there's no strong reference to the associated key}.
+Note that the datum is retained as long as the key is retained,
+even there's no strong reference to the datum itself.
+@end enumerate
+
+Implementing the proper ephemeron requires deep integration with
+the GC.  At this moment, Gauche's ephemeron is implemented separately
+from GC, and has the following limitations:
+
+@itemize @bullet
+@item
+If the datum has a strong reference to the associated key, the
+key won't be collected even if there's no other strong reference to it.
+
+@item
+After the key is collected and there's no strong reference to
+the datum, @code{ephemeron-broken?} needs to be called in order
+to trigger the collection of the datum.
+@end itemize
+
+Since the timing of collection isn't specified in the spec,
+Gauche's implementation still conforms srfi-142, but in practice
+you need to be aware of these limitations.  Eventually we want
+to support full ephemeron integrated with GC.
+
+Once the key and/or the datum is collected (we call such ephemeron
+``broken''), referencing them returns a bogus value.  The proper
+way to use an ephemeron @var{e} is the following pattern:
+
+@example
+(let ([k (ephemeron-key e)]
+      [d (ephemeron-datum e)])
+  (if (ephemeron-broken? e)
+    (... k and d are invalid ...)
+    (... k and d are valid ...)))
+@end example
+
+You should take values, then check if the ephemeron isn't broken yet.
+If you call @code{ephemeron-broken?} first, there's a chance
+that the ephemeron is broken between the check and the time
+you reference it.
+@end deftp
+
+@defun make-ephemeron key datum
+[R7RS ephemeron]
+@c MOD scheme.ephemeron
+Create a new ephemeron associating the @var{key} to the @var{datum}.
+@end defun
+
+@defun ephemeron? obj
+[R7RS ephemeron]
+@c MOD scheme.ephemeron
+Returns @code{#t} iff @var{obj} is an ephemeron.
+@end defun
+
+
+@defun ephemeron-key ephemeron
+@defunx ephemeron-datum ephemeron
+[R7RS ephemeron]
+@c MOD scheme.ephemeron
+Returns the key and the datum of @var{ephemeron}.
+If the ephemeron is already broken, there's no guarantee
+on what is returned. Thus you should always call @code{ephemeron-broken?}
+@emph{after} calling these procedure to ensure the values are
+meaningful.  See the @code{scheme.ephemeron} entry for the details.
+@end defun
+
+@defun ephemeron-broken? ephemeron
+[R7RS ephemeron]
+@c MOD scheme.ephemeron
+Returns @code{#t} iff @var{ephemeron} has been broken, that is,
+its key and/or datum may be collected and cannot be reliably retrieved.
+See the @code{scheme.ephemeron} entry for the details.
+@end defun
+
+@defun reference-barrier key
+[R7RS ephemeron]
+@c MOD scheme.ephemeron
+This procedure does nothing, but guarantees @var{key} is strongly reference
+until returning from this procedure.
+@end defun
+
+
+@node R7RS comparators, R7RS mappings, R7RS ephemerons, R7RS large
 @subsection @code{scheme.comparator} - R7RS comparators
 @c NODE R7RS比較器, @code{scheme.comparator} - R7RS比較器
 
