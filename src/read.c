@@ -510,6 +510,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case 'f':; case 'F': return read_sharp_word(port, 'f', ctx);
             case 's':; case 'S': return read_sharp_word(port, 's', ctx);
             case 'u':; case 'U': return read_sharp_word(port, 'u', ctx);
+            case 'c':; case 'C': return read_sharp_word(port, 'c', ctx);
             case '(':
                 return read_vector(port, ')', ctx);
             case '\\':
@@ -1743,6 +1744,13 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
     const char *tag = NULL;
 
     switch (ch) {
+    case 'c':
+        if (strcmp(w, "c32") == 0
+            || strcmp(w, "c64") == 0
+            || strcmp(w, "c128") == 0) {
+            tag = w;
+        } 
+        break;
     case 'f':
         if (strcmp(w, "f16") == 0
             || strcmp(w, "f32") == 0

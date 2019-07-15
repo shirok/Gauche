@@ -212,7 +212,7 @@
         [(vector? obj) (layout-list (sprefix obj "#(" c) (mapi rec obj) c)]
         [(is-a? obj <uvector>)
          (let1 tag (rxmatch-substring
-                     (#/[suf]\d+/ (x->string (class-name (class-of obj)))))
+                     (#/[csuf]\d+/ (x->string (class-name (class-of obj)))))
            (layout-list (sprefix obj (format "#~a(" tag) c) (mapu rec obj) c))]
         [else
          (layout-simple (sprefix obj (write-to-string obj (rec-writer c)) c))]))

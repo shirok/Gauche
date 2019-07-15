@@ -246,40 +246,49 @@ DEF_UVCLASS(U64, u64)
 DEF_UVCLASS(F16, f16)
 DEF_UVCLASS(F32, f32)
 DEF_UVCLASS(F64, f64)
+DEF_UVCLASS(C32, c32)
+DEF_UVCLASS(C64, c64)
+DEF_UVCLASS(C128, c128)
 
 /*
  * Some generic APIs
  */
 ScmUVectorType Scm_UVectorType(ScmClass *klass)
 {
-    if (SCM_EQ(klass, SCM_CLASS_S8VECTOR))  return SCM_UVECTOR_S8;
-    if (SCM_EQ(klass, SCM_CLASS_U8VECTOR))  return SCM_UVECTOR_U8;
-    if (SCM_EQ(klass, SCM_CLASS_S16VECTOR)) return SCM_UVECTOR_S16;
-    if (SCM_EQ(klass, SCM_CLASS_U16VECTOR)) return SCM_UVECTOR_U16;
-    if (SCM_EQ(klass, SCM_CLASS_S32VECTOR)) return SCM_UVECTOR_S32;
-    if (SCM_EQ(klass, SCM_CLASS_U32VECTOR)) return SCM_UVECTOR_U32;
-    if (SCM_EQ(klass, SCM_CLASS_S64VECTOR)) return SCM_UVECTOR_S64;
-    if (SCM_EQ(klass, SCM_CLASS_U64VECTOR)) return SCM_UVECTOR_U64;
-    if (SCM_EQ(klass, SCM_CLASS_F16VECTOR)) return SCM_UVECTOR_F16;
-    if (SCM_EQ(klass, SCM_CLASS_F32VECTOR)) return SCM_UVECTOR_F32;
-    if (SCM_EQ(klass, SCM_CLASS_F64VECTOR)) return SCM_UVECTOR_F64;
+    if (SCM_EQ(klass, SCM_CLASS_S8VECTOR))   return SCM_UVECTOR_S8;
+    if (SCM_EQ(klass, SCM_CLASS_U8VECTOR))   return SCM_UVECTOR_U8;
+    if (SCM_EQ(klass, SCM_CLASS_S16VECTOR))  return SCM_UVECTOR_S16;
+    if (SCM_EQ(klass, SCM_CLASS_U16VECTOR))  return SCM_UVECTOR_U16;
+    if (SCM_EQ(klass, SCM_CLASS_S32VECTOR))  return SCM_UVECTOR_S32;
+    if (SCM_EQ(klass, SCM_CLASS_U32VECTOR))  return SCM_UVECTOR_U32;
+    if (SCM_EQ(klass, SCM_CLASS_S64VECTOR))  return SCM_UVECTOR_S64;
+    if (SCM_EQ(klass, SCM_CLASS_U64VECTOR))  return SCM_UVECTOR_U64;
+    if (SCM_EQ(klass, SCM_CLASS_F16VECTOR))  return SCM_UVECTOR_F16;
+    if (SCM_EQ(klass, SCM_CLASS_F32VECTOR))  return SCM_UVECTOR_F32;
+    if (SCM_EQ(klass, SCM_CLASS_F64VECTOR))  return SCM_UVECTOR_F64;
+    if (SCM_EQ(klass, SCM_CLASS_C32VECTOR))  return SCM_UVECTOR_C32;
+    if (SCM_EQ(klass, SCM_CLASS_C64VECTOR))  return SCM_UVECTOR_C64;
+    if (SCM_EQ(klass, SCM_CLASS_C128VECTOR)) return SCM_UVECTOR_C128;
     else return SCM_UVECTOR_INVALID;
 }
 
 const char *Scm_UVectorTypeName(int type) /* for error msgs etc. */
 {
     switch (type) {
-    case SCM_UVECTOR_S8:  return "s8vector";
-    case SCM_UVECTOR_U8:  return "u8vector";
-    case SCM_UVECTOR_S16: return "s16vector";
-    case SCM_UVECTOR_U16: return "u16vector";
-    case SCM_UVECTOR_S32: return "s32vector";
-    case SCM_UVECTOR_U32: return "u32vector";
-    case SCM_UVECTOR_S64: return "s64vector";
-    case SCM_UVECTOR_U64: return "u64vector";
-    case SCM_UVECTOR_F16: return "f16vector";
-    case SCM_UVECTOR_F32: return "f32vector";
-    case SCM_UVECTOR_F64: return "f64vector";
+    case SCM_UVECTOR_S8:   return "s8vector";
+    case SCM_UVECTOR_U8:   return "u8vector";
+    case SCM_UVECTOR_S16:  return "s16vector";
+    case SCM_UVECTOR_U16:  return "u16vector";
+    case SCM_UVECTOR_S32:  return "s32vector";
+    case SCM_UVECTOR_U32:  return "u32vector";
+    case SCM_UVECTOR_S64:  return "s64vector";
+    case SCM_UVECTOR_U64:  return "u64vector";
+    case SCM_UVECTOR_F16:  return "f16vector";
+    case SCM_UVECTOR_F32:  return "f32vector";
+    case SCM_UVECTOR_F64:  return "f64vector";
+    case SCM_UVECTOR_C32:  return "c32vector";
+    case SCM_UVECTOR_C64:  return "c64vector";
+    case SCM_UVECTOR_C128: return "c128vector";
     default: return "invalid type of uvector (possibly implementation error)";
     }
 }
@@ -288,7 +297,11 @@ const char *Scm_UVectorTypeName(int type) /* for error msgs etc. */
 int Scm_UVectorElementSize(ScmClass *klass)
 {
     static const int sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8,
-                                 2, sizeof(float), sizeof(double) };
+                                 2, sizeof(float), sizeof(double), -1,
+                                 sizeof(ScmHalfComplex),
+                                 sizeof(complex float),
+                                 sizeof(complex double),
+                                 -1 };
     int ind = (int)Scm_UVectorType(klass);
     if (ind >= 0) return sizes[ind];
     return -1;
@@ -379,8 +392,16 @@ ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
                 (float)Scm_GetDouble(SCM_CAR(cp));
             break;
         case SCM_UVECTOR_F64:
-            SCM_F64VECTOR_ELEMENTS(v)[i] =
-                Scm_GetDouble(SCM_CAR(cp));
+            SCM_F64VECTOR_ELEMENTS(v)[i] = Scm_GetDouble(SCM_CAR(cp));
+            break;
+        case SCM_UVECTOR_C32:
+            SCM_C32VECTOR_ELEMENTS(v)[i] = Scm_GetHalfComplex(SCM_CAR(cp));
+            break;
+        case SCM_UVECTOR_C64:
+            SCM_C64VECTOR_ELEMENTS(v)[i] = Scm_GetFloatComplex(SCM_CAR(cp));
+            break;
+        case SCM_UVECTOR_C128:
+            SCM_C128VECTOR_ELEMENTS(v)[i] = Scm_GetDoubleComplex(SCM_CAR(cp));
             break;
         default:
             Scm_Error("[internal error] unknown uvector type given to Scm_ListToUVector");
@@ -418,6 +439,12 @@ ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, ScmSmallInt k, ScmObj fallback)
         return Scm_VMReturnFlonum((double)(SCM_F32VECTOR_ELEMENT(v, k)));
     case SCM_UVECTOR_F64:
         return Scm_VMReturnFlonum(SCM_F64VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_C32:
+        return Scm_HalfComplexToComplex(SCM_C32VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_C64:
+        return Scm_FloatComplexToComplex(SCM_C64VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_C128:
+        return Scm_DoubleComplexToComplex(SCM_C128VECTOR_ELEMENT(v, k));
     default:
         Scm_Error("[internal error] unknown uvector type given to Scm_VMUVectorRef");
         return SCM_UNDEFINED;   /* dummy */
@@ -465,6 +492,15 @@ ScmObj Scm_UVectorSet(ScmUVector *v, int t, ScmSmallInt k, ScmObj val, int clamp
         break;
     case SCM_UVECTOR_F64:
         SCM_F64VECTOR_ELEMENTS(v)[k] = Scm_GetDouble(val);
+        break;
+    case SCM_UVECTOR_C32:
+        SCM_C32VECTOR_ELEMENTS(v)[k] = Scm_GetHalfComplex(val);
+        break;
+    case SCM_UVECTOR_C64:
+        SCM_C64VECTOR_ELEMENTS(v)[k] = Scm_GetFloatComplex(val);
+        break;
+    case SCM_UVECTOR_C128:
+        SCM_C128VECTOR_ELEMENTS(v)[k] = Scm_GetDoubleComplex(val);
         break;
     default:
         Scm_Error("[internal error] unknown uvector type given to Scm_VMUVectorRef");
@@ -530,6 +566,9 @@ DEF_UVCTOR_FILL(U64, ScmUInt64)
 DEF_UVCTOR_FILL(F16, ScmHalfFloat)
 DEF_UVCTOR_FILL(F32, float)
 DEF_UVCTOR_FILL(F64, double)
+DEF_UVCTOR_FILL(C32, ScmHalfComplex)
+DEF_UVCTOR_FILL(C64, complex float)
+DEF_UVCTOR_FILL(C128,complex double)
 
 DEF_UVCTOR_ARRAY(S8,  int8_t)
 DEF_UVCTOR_ARRAY(U8,  uint8_t)
@@ -542,6 +581,9 @@ DEF_UVCTOR_ARRAY(U64, ScmUInt64)
 DEF_UVCTOR_ARRAY(F16, ScmHalfFloat)
 DEF_UVCTOR_ARRAY(F32, float)
 DEF_UVCTOR_ARRAY(F64, double)
+DEF_UVCTOR_ARRAY(C32, ScmHalfComplex)
+DEF_UVCTOR_ARRAY(C64, complex float)
+DEF_UVCTOR_ARRAY(C128,complex double)
 
 /*
  * Reader
@@ -553,17 +595,20 @@ ScmObj Scm_ReadUVector(ScmPort *port, const char *tag, ScmReadContext *ctx)
     if (c != '(') Scm_Error("bad uniform vector syntax for %s", tag);
     ScmObj list = Scm_ReadList(SCM_OBJ(port), ')');
     ScmClass *klass = NULL;
-    if (strcmp(tag, "s8") == 0)       klass = SCM_CLASS_S8VECTOR;
-    else if (strcmp(tag, "u8") == 0)  klass = SCM_CLASS_U8VECTOR;
-    else if (strcmp(tag, "s16") == 0) klass = SCM_CLASS_S16VECTOR;
-    else if (strcmp(tag, "u16") == 0) klass = SCM_CLASS_U16VECTOR;
-    else if (strcmp(tag, "s32") == 0) klass = SCM_CLASS_S32VECTOR;
-    else if (strcmp(tag, "u32") == 0) klass = SCM_CLASS_U32VECTOR;
-    else if (strcmp(tag, "s64") == 0) klass = SCM_CLASS_S64VECTOR;
-    else if (strcmp(tag, "u64") == 0) klass = SCM_CLASS_U64VECTOR;
-    else if (strcmp(tag, "f16") == 0) klass = SCM_CLASS_F16VECTOR;
-    else if (strcmp(tag, "f32") == 0) klass = SCM_CLASS_F32VECTOR;
-    else if (strcmp(tag, "f64") == 0) klass = SCM_CLASS_F64VECTOR;
+    if (strcmp(tag, "s8") == 0)        klass = SCM_CLASS_S8VECTOR;
+    else if (strcmp(tag, "u8") == 0)   klass = SCM_CLASS_U8VECTOR;
+    else if (strcmp(tag, "s16") == 0)  klass = SCM_CLASS_S16VECTOR;
+    else if (strcmp(tag, "u16") == 0)  klass = SCM_CLASS_U16VECTOR;
+    else if (strcmp(tag, "s32") == 0)  klass = SCM_CLASS_S32VECTOR;
+    else if (strcmp(tag, "u32") == 0)  klass = SCM_CLASS_U32VECTOR;
+    else if (strcmp(tag, "s64") == 0)  klass = SCM_CLASS_S64VECTOR;
+    else if (strcmp(tag, "u64") == 0)  klass = SCM_CLASS_U64VECTOR;
+    else if (strcmp(tag, "f16") == 0)  klass = SCM_CLASS_F16VECTOR;
+    else if (strcmp(tag, "f32") == 0)  klass = SCM_CLASS_F32VECTOR;
+    else if (strcmp(tag, "f64") == 0)  klass = SCM_CLASS_F64VECTOR;
+    else if (strcmp(tag, "c32") == 0)  klass = SCM_CLASS_C32VECTOR;
+    else if (strcmp(tag, "c64") == 0)  klass = SCM_CLASS_C64VECTOR;
+    else if (strcmp(tag, "c128") == 0) klass = SCM_CLASS_C128VECTOR;
     else Scm_Error("invalid unform vector tag: %s", tag);
 
     ScmObj uv = Scm_ListToUVector(klass, list, 0);
@@ -604,6 +649,28 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
 #define spr(out, elt) Scm_Printf(out, "%d", elt)
 #define upr(out, elt) Scm_Printf(out, "%u", elt)
 #define fpr(out, elt) Scm_PrintDouble(out, (double)elt, 0)
+#define c32pr(out, elt)                                                 \
+    do {                                                                \
+        Scm_PrintDouble(out, Scm_HalfToDouble(SCM_HALF_COMPLEX_REAL(elt)), 0); \
+        Scm_Putz("+", 1, out);                                          \
+        Scm_PrintDouble(out, Scm_HalfToDouble(SCM_HALF_COMPLEX_IMAG(elt)), 0); \
+        Scm_Putz("i", 1, out);                                          \
+    } while (0)
+#define c64pr(out, elt)                                 \
+    do {                                                \
+        Scm_PrintDouble(out, (double)crealf(elt), 0);   \
+        Scm_Putz("+", 1, out);                          \
+        Scm_PrintDouble(out, (double)cimagf(elt), 0);   \
+        Scm_Putz("i", 1, out);                          \
+    } while (0)
+#define c128pr(out, elt)                        \
+    do {                                        \
+        Scm_PrintDouble(out, creal(elt), 0);    \
+        Scm_Putz("+", 1, out);                  \
+        Scm_PrintDouble(out, cimag(elt), 0);    \
+        Scm_Putz("i", 1, out);                  \
+    } while (0)
+    
 
 static inline void s64pr(ScmPort *out, ScmInt64 elt)
 {
@@ -647,6 +714,9 @@ DEF_PRINT(U64, u64, ScmUInt64, u64pr)
 DEF_PRINT(F16, f16, ScmHalfFloat, f16pr)
 DEF_PRINT(F32, f32, float, fpr)
 DEF_PRINT(F64, f64, double, fpr)
+DEF_PRINT(C32, c32, ScmHalfComplex, c32pr)
+DEF_PRINT(C64, c64, complex float, c64pr)
+DEF_PRINT(C128, c128, complex double, c128pr)
 
 
 /* comparer */
@@ -718,6 +788,34 @@ static inline int uint64lt(ScmUInt64 x, ScmUInt64 y)
 #define f16eqv(a, b) SCM_HALF_FLOAT_CMP(==, a, b)
 #define f16lt(a, b)  SCM_HALF_FLOAT_CMP(<, a, b)
 
+static inline int c32eqv(ScmHalfComplex x, ScmHalfComplex y)
+{
+    return (SCM_HALF_FLOAT_CMP(==, x.r, y.r)
+            && SCM_HALF_FLOAT_CMP(==, x.i, y.i));
+}
+
+static inline int c32lt(ScmHalfComplex x, ScmHalfComplex y)
+{
+    return (SCM_HALF_FLOAT_CMP(<, x.r, y.r)
+            || (SCM_HALF_FLOAT_CMP(==, x.r, y.r)
+                && SCM_HALF_FLOAT_CMP(<, x.i, y.i)));
+}
+
+static inline int c64lt(complex float x, complex float y)
+{
+    return (crealf(x) < crealf(y)
+            || (crealf(x) == crealf(y)
+                && cimagf(x) < cimagf(y)));
+}
+
+static inline int c128lt(complex double x, complex double y)
+{
+    return (creal(x) < creal(y)
+            || (creal(x) == creal(y)
+                && cimag(x) < cimag(y)));
+}
+
+
 DEF_CMP(S8, s8,   int8_t, common_eqv, common_lt)
 DEF_CMP(U8, u8,   uint8_t, common_eqv, common_lt)
 DEF_CMP(S16, s16, int16_t, common_eqv, common_lt)
@@ -729,6 +827,9 @@ DEF_CMP(U64, u64, ScmUInt64, uint64eqv, uint64lt)
 DEF_CMP(F16, f16, ScmHalfFloat, f16eqv, f16lt)
 DEF_CMP(F32, f32, float, common_eqv, common_lt)
 DEF_CMP(F64, f64, double, common_eqv, common_lt)
+DEF_CMP(C32, c32, ScmHalfComplex, c32eqv, c32lt)
+DEF_CMP(C64, c64, complex float, common_eqv, c64lt)
+DEF_CMP(C128, c128, complex double, common_eqv, c128lt)
 
 /*=====================================================================
  * Utility

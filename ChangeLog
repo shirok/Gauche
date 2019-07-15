@@ -1,5 +1,8 @@
 2019-07-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/vector.c, src/class.c, src/read.c: Core support of complex
+	  uniform vectors (for srfi-160).
+
 	* src/gauche/float.h, src/gauche/number.h, src/number.c:
 	  Support of native complex numbers (ScmHalfComplex, complex float
 	  and complex double).

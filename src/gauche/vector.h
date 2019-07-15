@@ -297,6 +297,45 @@ SCM_EXTERN ScmObj Scm_MakeF64VectorFromArray(ScmSmallInt size,
 SCM_EXTERN ScmObj Scm_MakeF64VectorFromArrayShared(ScmSmallInt size,
                                                    double array[]);
 
+SCM_CLASS_DECL(Scm_C32VectorClass);
+#define SCM_CLASS_C32VECTOR         (&Scm_C32VectorClass)
+#define SCM_C32VECTOR(obj)          SCM_UVECTOR(obj)
+#define SCM_C32VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_C32VECTOR)
+#define SCM_C32VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
+#define SCM_C32VECTOR_ELEMENTS(obj) ((ScmHalfComplex*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_C32VECTOR_ELEMENT(obj,k) SCM_C32VECTOR_ELEMENTS(obj)[k]
+SCM_EXTERN ScmObj Scm_MakeC32Vector(ScmSmallInt size, ScmHalfComplex fill);
+SCM_EXTERN ScmObj Scm_MakeC32VectorFromArray(ScmSmallInt size,
+                                             const ScmHalfComplex array[]);
+SCM_EXTERN ScmObj Scm_MakeC32VectorFromArrayShared(ScmSmallInt size,
+                                                   ScmHalfComplex array[]);
+
+SCM_CLASS_DECL(Scm_C64VectorClass);
+#define SCM_CLASS_C64VECTOR         (&Scm_C64VectorClass)
+#define SCM_C64VECTOR(obj)          SCM_UVECTOR(obj)
+#define SCM_C64VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_C64VECTOR)
+#define SCM_C64VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
+#define SCM_C64VECTOR_ELEMENTS(obj) ((complex float*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_C64VECTOR_ELEMENT(obj,k) SCM_C64VECTOR_ELEMENTS(obj)[k]
+SCM_EXTERN ScmObj Scm_MakeC64Vector(ScmSmallInt size, complex float fill);
+SCM_EXTERN ScmObj Scm_MakeC64VectorFromArray(ScmSmallInt size,
+                                             const complex float array[]);
+SCM_EXTERN ScmObj Scm_MakeC64VectorFromArrayShared(ScmSmallInt size,
+                                                   complex float array[]);
+
+SCM_CLASS_DECL(Scm_C128VectorClass);
+#define SCM_CLASS_C128VECTOR         (&Scm_C128VectorClass)
+#define SCM_C128VECTOR(obj)          SCM_UVECTOR(obj)
+#define SCM_C128VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_C128VECTOR)
+#define SCM_C128VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
+#define SCM_C128VECTOR_ELEMENTS(obj) ((complex double*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_C128VECTOR_ELEMENT(obj,k) SCM_C128VECTOR_ELEMENTS(obj)[k]
+SCM_EXTERN ScmObj Scm_MakeC128Vector(ScmSmallInt size, complex double fill);
+SCM_EXTERN ScmObj Scm_MakeC128VectorFromArray(ScmSmallInt size,
+                                             const complex double array[]);
+SCM_EXTERN ScmObj Scm_MakeC128VectorFromArrayShared(ScmSmallInt size,
+                                                   complex double array[]);
+
 
 /* For the backward compatibility */
 typedef ScmUVector ScmS8Vector;
@@ -310,7 +349,6 @@ typedef ScmUVector ScmU64Vector;
 typedef ScmUVector ScmF16Vector;
 typedef ScmUVector ScmF32Vector;
 typedef ScmUVector ScmF64Vector;
-
 
 /* 
  * String/uvector common utility
