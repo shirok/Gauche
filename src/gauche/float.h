@@ -40,6 +40,8 @@
 #define GAUCHE_FLOAT_H
 
 #include <math.h>
+#include <complex.h>
+#undef I                        /* avoid unintentional conflict */
 
 #if defined(HAVE_FPU_CONTROL_H)
 #include <fpu_control.h>
@@ -65,6 +67,14 @@ typedef unsigned short  ScmHalfFloat;
     (!SCM_HALF_FLOAT_IS_NAN(hf1)                \
      && !SCM_HALF_FLOAT_IS_NAN(hf2)             \
      && ((hf1) op (hf2)))
+
+typedef struct {
+    ScmHalfFloat r;
+    ScmHalfFloat i;
+} ScmHalfComplex;
+
+#define SCM_HALF_COMPLEX_REAL(hc)  ((hc).r)
+#define SCM_HALF_COMPLEX_IMAG(hc)  ((hc).i)
 
 /*
  * Long double support

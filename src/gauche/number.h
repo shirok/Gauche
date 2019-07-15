@@ -256,6 +256,12 @@ SCM_EXTERN ScmHalfFloat Scm_DoubleToHalf(double v);
 SCM_EXTERN ScmObj Scm_MakeCompnum(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
+SCM_EXTERN ScmHalfComplex Scm_GetHalfComplex(ScmObj obj);
+SCM_EXTERN complex float  Scm_GetFloatComplex(ScmObj obj);
+SCM_EXTERN complex double Scm_GetDoubleComplex(ScmObj obj);
+SCM_EXTERN ScmObj Scm_HalfComplexToComplex(const ScmHalfComplex c);
+SCM_EXTERN ScmObj Scm_FloatComplexToComplex(const complex float c);
+SCM_EXTERN ScmObj Scm_DoubleComplexToComplex(const complex double c);
 
 SCM_EXTERN int    Scm_IntegerP(ScmObj obj);
 SCM_EXTERN int    Scm_OddP(ScmObj obj);

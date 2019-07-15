@@ -832,6 +832,66 @@ double Scm_ImagPart(ScmObj z)
     return 0.0;
 }
 
+ScmHalfComplex Scm_GetHalfComplex(ScmObj z)
+{
+    ScmHalfComplex c;
+    if (SCM_COMPNUMP(z)) {
+        c.r = Scm_DoubleToHalf(SCM_COMPNUM_REAL(z));
+        c.i = Scm_DoubleToHalf(SCM_COMPNUM_IMAG(z));
+    } else if (SCM_REALP(z)) {
+        c.r = Scm_DoubleToHalf(Scm_GetDouble(z));
+        c.i = 0;
+    } else {
+        Scm_Error("number required, but got %S", z);
+    }
+    return c;
+}
+
+complex float Scm_GetFloatComplex(ScmObj z)
+{
+    complex float c = 0.0f;
+    if (SCM_COMPNUMP(z)) {
+        c = (float)SCM_COMPNUM_REAL(z) 
+            + (float)SCM_COMPNUM_IMAG(z) * _Complex_I;
+    } else if (SCM_REALP(z)) {
+        c = (float)Scm_GetDouble(z);
+    } else {
+        Scm_Error("number required, but got %S", z);
+    }
+    return c;
+}
+
+complex double Scm_GetDoubleComplex(ScmObj z)
+{
+    complex double c = 0.0f;
+    if (SCM_COMPNUMP(z)) {
+        c = SCM_COMPNUM_REAL(z) 
+            + SCM_COMPNUM_IMAG(z) * _Complex_I;
+    } else if (SCM_REALP(z)) {
+        c = Scm_GetDouble(z);
+    } else {
+        Scm_Error("number required, but got %S", z);
+    }
+    return c;
+}
+
+ScmObj Scm_HalfComplexToComplex(ScmHalfComplex z)
+{
+    return Scm_MakeComplex(Scm_HalfToDouble(z.r),
+                           Scm_HalfToDouble(z.i));
+}
+
+ScmObj Scm_FloatComplexToComplex(complex float z)
+{
+    return Scm_MakeComplex((double)crealf(z), (double)cimagf(z));
+}
+
+ScmObj Scm_DoubleComplexToComplex(complex double z)
+{
+    return Scm_MakeComplex(creal(z), cimag(z));
+}
+
+
 /* NB: This isn't called by Scheme's magnitude; see libnum.scm */
 double Scm_Magnitude(ScmObj z)
 {
