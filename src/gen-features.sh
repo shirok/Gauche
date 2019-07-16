@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Generate feature.{c|flags}
 #
