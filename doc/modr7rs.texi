@@ -5984,56 +5984,113 @@ The results are discarded.
 
 @deftp {Module} scheme.ephemeron
 @mdindex scheme.ephemeron
-This module defined @emph{emephemerons}, a weak reference
+@c EN
+This module defined @emph{ephemerons}, a weak reference
 structure to hold key-value association.  This is originally
 defined as srfi-142.
+@c JP
+このモジュールは@emph{ephemeron}と呼ばれる、
+キーとそれに関連づけられたデータについて弱参照を保持する構造を提供します。
+元々はsrfi-142で定義されました。
+@c COMMON
 
+@c EN
 Gauche supports weak pointers in the form of weak vectors
 (@pxref{Weak pointers}), but it is known that a simple weak
 pointer (a single pointer that doesn't prevent the pointed
 object from being collected) isn't enough to implement
 weak key-value association such as mappings.
+@c JP
+Gaucheはweak vectorとして弱参照を提供しています
+(@ref{Weak pointers}参照)が、単なるweak pointer (それに指されている
+オブジェクトの回収を許す) だけでは、mappingのようなキーと値を関連付ける
+データ構造で弱参照を実現するには不十分なことが知られています。
+@c COMMON
 
+@c EN
 An ephemeron is a record that points to a key and an associated
 datum, with the following characteristics:
+@c JP
+ephemeronはキーとデータへの参照を保持するレコードで、以下の性質を持ちます。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 Reference to the key is weak; it doesn't prevent the key from
 being collected if there's no strong reference to the key,
-@emph{except from the associated datum}.
+@emph{except from the datum associated by the ephemeron}.
+@c JP
+キーへの参照はweakです。もし、キーへの強参照が、
+@emph{ephemeronを通じて対応しているデータからのものを除いて}
+存在しない場合、キーは回収されます。
+@c COMMON
 
 @item
-Refernece to the datum is weak; it doesn't prevent the datum
+@c EN
+Refernece to the datum is also a kind of weak; it doesn't prevent the datum
 from being collected if there's no strong reference to the datum,
 @emph{and there's no strong reference to the associated key}.
 Note that the datum is retained as long as the key is retained,
 even there's no strong reference to the datum itself.
+@c JP
+データへの参照もある意味weakです。
+データへの強参照が存在せず、@emph{かつ対応するキーへの強参照が無い場合}、
+データは回収されます。
+データへの強参照が無くても、キーが生きていればデータは保持されるという点がポイントです。
+@c COMMON
 @end enumerate
 
+@c EN
 Implementing the proper ephemeron requires deep integration with
 the GC.  At this moment, Gauche's ephemeron is implemented separately
 from GC, and has the following limitations:
+@c JP
+ephemeronを完全に実装するには、GCとの統合が必要になります。
+今のところ、GaucheのephemeronはGCとは独立に実装されており、
+以下の制限があります:
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 If the datum has a strong reference to the associated key, the
 key won't be collected even if there's no other strong reference to it.
+@c JP
+データからキーへの強参照があると、キーは回収されません。
+@c COMMON
 
 @item
+@c EN
 After the key is collected and there's no strong reference to
 the datum, @code{ephemeron-broken?} needs to be called in order
 to trigger the collection of the datum.
+@c JP
+キーが回収され、データへの強参照が無い状態になってから、データが回収されるには
+@code{ephemeron-broken?}が呼ばれる必要があります。
+@c COMMON
 @end itemize
 
+@c EN
 Since the timing of collection isn't specified in the spec,
 Gauche's implementation still conforms srfi-142, but in practice
 you need to be aware of these limitations.  Eventually we want
 to support full ephemeron integrated with GC.
+@c JP
+いつ回収されるかについての規定は仕様にないので、Gaucheの現在の実装もsrfi-142の
+仕様は満たしているのですが、実際に使うにあたっては上記の制限を意識する必要があるでしょう。
+将来的にはGCと統合されたephemeronをサポートしたいと思っています。
+@c COMMON
 
+@c EN
 Once the key and/or the datum is collected (we call such ephemeron
 ``broken''), referencing them returns a bogus value.  The proper
 way to use an ephemeron @var{e} is the following pattern:
+@c JP
+キーあるいはデータが回収された後は (この状態のephemeronを ``broken'' と呼びます)、
+キーやデータを取り出そうとしても意味のある値は得られません。
+ephemeron @var{e}を使う正しい手順は次のパターンです:
+@c COMMON
 
 @example
 (let ([k (ephemeron-key e)]
@@ -6043,22 +6100,36 @@ way to use an ephemeron @var{e} is the following pattern:
     (... k and d are valid ...)))
 @end example
 
+@c EN
 You should take values, then check if the ephemeron isn't broken yet.
 If you call @code{ephemeron-broken?} first, there's a chance
 that the ephemeron is broken between the check and the time
 you reference it.
+@c JP
+つまり、値を取り出した後でephemeronがbrokenかどうかを調べます。
+先に@code{ephemeron-broken?}を呼んでしまうと、その呼び出しから
+値を取り出すまでの間にGCが走ってキーやデータが回収されてしまう可能性があります。
+@c COMMON
 @end deftp
 
 @defun make-ephemeron key datum
 [R7RS ephemeron]
 @c MOD scheme.ephemeron
+@c EN
 Create a new ephemeron associating the @var{key} to the @var{datum}.
+@c JP
+@var{key}を@var{datum}に関連づけるephemeronを作って返します。
+@c COMMON
 @end defun
 
 @defun ephemeron? obj
 [R7RS ephemeron]
 @c MOD scheme.ephemeron
+@c EN
 Returns @code{#t} iff @var{obj} is an ephemeron.
+@c JP
+@var{obj}がephemeronであれば@code{#t}を、そうでなければ@var{#f}を返します。
+@c COMMON
 @end defun
 
 
@@ -6066,26 +6137,46 @@ Returns @code{#t} iff @var{obj} is an ephemeron.
 @defunx ephemeron-datum ephemeron
 [R7RS ephemeron]
 @c MOD scheme.ephemeron
-Returns the key and the datum of @var{ephemeron}.
+@c EN
+Returns the key and the datum of @var{ephemeron}, respectively.
 If the ephemeron is already broken, there's no guarantee
 on what is returned. Thus you should always call @code{ephemeron-broken?}
 @emph{after} calling these procedure to ensure the values are
 meaningful.  See the @code{scheme.ephemeron} entry for the details.
+@c JP
+それぞれ、@var{ephemeron}のキーとデータを返します。
+ephemeronが既にbrokenだと、何が返されるかはわかりません。
+なので常に、これらの手続きで値を取り出した@emph{後で} @code{ephemeron-broken?}
+を呼んで値が有効かどうかチェックする必要があります。
+詳しくは上の@code{scheme.ephemeron}のエントリを参照してください。
+@c COMMON
 @end defun
 
 @defun ephemeron-broken? ephemeron
 [R7RS ephemeron]
 @c MOD scheme.ephemeron
+@c EN
 Returns @code{#t} iff @var{ephemeron} has been broken, that is,
 its key and/or datum may be collected and cannot be reliably retrieved.
 See the @code{scheme.ephemeron} entry for the details.
+@c JP
+@var{ephemeron}がbrokenであれば@code{#t}を、そうでなければ@code{#f}を返します。
+brokenであるとは、キーや値が既に回収されてしまって取り出せないことを意味します。
+詳しくは@code{scheme.ephemeron}のエントリを参照してください。
+@c COMMON
 @end defun
 
 @defun reference-barrier key
 [R7RS ephemeron]
 @c MOD scheme.ephemeron
-This procedure does nothing, but guarantees @var{key} is strongly reference
+@c EN
+This procedure does nothing by itself,
+but guarantees @var{key} is strongly reference
 until returning from this procedure.
+@c JP
+この手続きはそれ自体は何もしませんが、
+この手続きが戻るまで@var{key}への参照が保持されることを保証します。
+@c COMMON
 @end defun
 
 
