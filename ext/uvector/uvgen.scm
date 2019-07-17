@@ -70,7 +70,7 @@
 ;; rules :: ((<string> <string-or-proc>) ...)
 (define (substitute line rules)
   (define (sub key . args)
-    (cond [(getval rules key)
+    (cond [(any (cut getval rules <>) (cons key (compatible-keys key)))
            => (^v (if (string? v)
                     (display v)
                     (display (apply v args))))]
@@ -86,6 +86,39 @@
                  [else
                   (write-char ch)
                   (loop (read-char))])))))
+
+(define (compatible-keys key)
+  (case key
+    [(ntype) '(etype)]
+    [(NUNBOX) '(UNBOX)]
+    [(VMBOX) '(BOX)]
+    [(NBOX) '(BOX)]
+    [(VMNBOX) '(NBOX BOX)]
+    [else '()]))
+
+;; keys ------------------------------------------------------------
+;;
+;;  t           : lowercase tag, e.g. "s16"
+;;  T           : uppercase tag, e.g. "S16"
+;;  etype       : element C type, e.g. int16_t for s16vector
+;;  ntype       : natural C type to operate on each element. (optional)
+;;                e.g. long for s16vector
+;;  (REF_NTYPE v i) 
+;;              : Reference v[i] as ntype
+;;  (CAST_N2E exp)
+;;              : Cast etype's expression exp to ntype (optional)
+;;  (UNBOX dst src clamp)
+;;              : etype dst = unbox(ScmObj src, clamp)
+;;  (NUNBOX dst src clamp)
+;;              : ntype dst = unbox(ScmObj src, clamp)  (optional)
+;;  (BOX dst src)
+;;              : ScmObj dst = box(etype src)
+;;  (NBOX dst src)
+;;              : ScmObj dst = box(ntype src)   (optional)
+;;  (VMBOX dst src)
+;;              : ScmObj dst = box(etype src) // dst is VM register (optional)
+;;  (NVMBOX dst src)
+;;              : ScmObj dst = box(ntype src) // dst is VM register (optional)
 
 ;; substitution rules ----------------------------------------------
 
@@ -112,7 +145,8 @@
   (let* ([stag  (symbol->string tag)]
          [STAG  (string-upcase stag)])
     `((t   ,stag)
-      (T   ,STAG))))
+      (T   ,STAG)
+      (CAST_N2E ,identity))))
 
 (define (make-s8rules)
   `((etype     "int8_t")
@@ -124,9 +158,7 @@
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger8Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
     ,@(common-rules 's8)))
 
 (define (make-u8rules)
@@ -139,9 +171,7 @@
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU8Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
     ,@(common-rules 'u8)))
 
 (define (make-s16rules)
@@ -154,9 +184,7 @@
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger16Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
     ,@(common-rules 's16)))
 
 (define (make-u16rules)
@@ -169,9 +197,7 @@
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU16Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
     ,@(common-rules 'u16)))
 
 (define (make-s32rules)
@@ -184,9 +210,6 @@
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger32Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
     ,@(common-rules 's32)))
 
 (define (make-u32rules)
@@ -199,39 +222,22 @@
     (NUNBOX    ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU32Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
     ,@(common-rules 'u32)))
 
 (define (make-s64rules)
   `((etype     "ScmInt64")
-    (ntype     "ScmInt64")
     (REF_NTYPE ,(^[v i] #"SCM_S64VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,identity)
     (UNBOX     ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger64Clamp(~src, ~clamp, NULL)"))
-    (NUNBOX    ,(^[dst src clamp]
-                  #"~dst = Scm_GetInteger64Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
-    (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
     ,@(common-rules 's64)))
 
 (define (make-u64rules)
   `((etype     "ScmUInt64")
-    (ntype     "ScmUInt64")
     (REF_NTYPE ,(^[v i] #"SCM_U64VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,identity)
     (UNBOX     ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU64Clamp(~src, ~clamp, NULL)"))
-    (NUNBOX    ,(^[dst src clamp]
-                  #"~dst = Scm_GetIntegerU64Clamp(~src, ~clamp, NULL)"))
     (BOX       ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
-    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
-    (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
-    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
     ,@(common-rules 'u64)))
 
 (define (make-f16rules)
@@ -264,15 +270,10 @@
 
 (define (make-f64rules)
   `((etype     "double")
-    (ntype     "double")
     (REF_NTYPE ,(^[v i] #"SCM_F64VECTOR_ELEMENTS(~v)[~i]"))
-    (CAST_N2E  ,identity)
     (UNBOX     ,(^[dst src clamp] #"~dst = Scm_GetDouble(~src)"))
-    (NUNBOX    ,(^[dst src clamp] #"~dst = Scm_GetDouble(~src)"))
     (BOX       ,(^[dst src]       #"~dst = Scm_MakeFlonum(~src)"))
     (VMBOX     ,(^[dst src]       #"~dst = Scm_VMReturnFlonum(~src)"))
-    (NBOX      ,(^[dst src]       #"~dst = Scm_MakeFlonum(~src)"))
-    (VMNBOX    ,(^[dst src]       #"~dst = Scm_VMReturnFlonum(~src)"))
     ,@(common-rules 'f64)))
 
 (define (dummy . _) "/* not implemented */")
