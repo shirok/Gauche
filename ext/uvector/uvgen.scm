@@ -127,8 +127,6 @@
     (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (EQ        ,(^[x y]     #"(~x == ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 's8)))
 
 (define (make-u8rules)
@@ -144,8 +142,6 @@
     (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (EQ        ,(^[x y]     #"(~x == ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 'u8)))
 
 (define (make-s16rules)
@@ -161,8 +157,6 @@
     (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (EQ        ,(^[x y]     #"(~x == ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 's16)))
 
 (define (make-u16rules)
@@ -178,8 +172,6 @@
     (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (EQ        ,(^[x y]     #"(~x == ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 'u16)))
 
 (define (make-s32rules)
@@ -195,8 +187,6 @@
     (VMBOX     ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
-    (EQ        ,(^[x y]     #"(~x == ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 's32)))
 
 (define (make-u32rules)
@@ -212,8 +202,6 @@
     (VMBOX     ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
-    (EQ        ,(^[x y]     #"(~x == ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%u\", ~elt)"))
     ,@(common-rules 'u32)))
 
 (define (make-s64rules)
@@ -229,8 +217,6 @@
     (VMBOX     ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
-    (EQ        ,(^[x y]     #"int64eqv(~x, ~y)"))
-    (PRINT     ,(^[out elt] #"int64print(~out, ~elt)"))
     ,@(common-rules 's64)))
 
 (define (make-u64rules)
@@ -246,8 +232,6 @@
     (VMBOX     ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
-    (EQ        ,(^[x y]     #"uint64eqv(~x, ~y)"))
-    (PRINT     ,(^[out elt] #"uint64print(~out, ~elt)"))
     ,@(common-rules 'u64)))
 
 (define (make-f16rules)
@@ -263,8 +247,6 @@
     (VMBOX     ,(^[dst src] #"~dst = Scm_VMReturnFlonum(Scm_HalfToDouble(~src))"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeFlonum(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_VMReturnFlonum(~src)"))
-    (EQ        ,(^[x y]     #"SCM_HALF_FLOAT_CMP(==, ~x, ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_PrintDouble(~out, Scm_HalfToDouble(~elt), 0)"))
     ,@(common-rules 'f16)))
 
 (define (make-f32rules)
@@ -278,8 +260,6 @@
     (VMBOX     ,(^[dst src] #"~dst = Scm_VMReturnFlonum((double)~src)"))
     (NBOX      ,(^[dst src] #"~dst = Scm_MakeFlonum(~src)"))
     (VMNBOX    ,(^[dst src] #"~dst = Scm_VMReturnFlonum(~src)"))
-    (EQ        ,(^[x y]     #"(~x == ~y)"))
-    (PRINT     ,(^[out elt] #"Scm_PrintDouble(~out, (double)~elt, 0)"))
     ,@(common-rules 'f32)))
 
 (define (make-f64rules)
@@ -293,8 +273,6 @@
     (VMBOX     ,(^[dst src]       #"~dst = Scm_VMReturnFlonum(~src)"))
     (NBOX      ,(^[dst src]       #"~dst = Scm_MakeFlonum(~src)"))
     (VMNBOX    ,(^[dst src]       #"~dst = Scm_VMReturnFlonum(~src)"))
-    (EQ        ,(^[x y]           #"(~x == ~y)"))
-    (PRINT     ,(^[out elt]  #"Scm_PrintDouble(~out, (double)~elt, 0)"))
     ,@(common-rules 'f64)))
 
 (define (dummy . _) "/* not implemented */")
