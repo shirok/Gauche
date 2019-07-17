@@ -53,19 +53,19 @@
   ;;  Note that @SECLEVEL thing isn't supported in openssl 1.0.x.
   ;;  https://sourceforge.net/p/gauche/mailman/gauche-devel/thread/87tvew1hri.fsf%40karme.de/
   (define openssl-1.1>=?
-    (let1 openssl-version ($ rxmatch->string #/OpenSSL\s+(\d+\.\d+)/
-                             (process-output->string
-                              (cond-expand [gauche.os.windows
-                                            ;; Running openssl directly fails
-                                            ;; deep in mingw runtime.
-                                            ;; https://github.com/shirok/Gauche/pull/467
-                                            '("cmd.exe" "/c" openssl version)]
-                                           [else
-                                            '(openssl version)])
-                              :on-abnormal-exit :ignore)
-                             1)
-      (and openssl-version
-           (version>=? openssl-version "1.1"))))
+    (let1 ssl-version ($ rxmatch-substrings
+                         $ rxmatch #/(\w+)\s+([\d\.]+)/
+                         $ process-output->string
+                         (cond-expand [gauche.os.windows
+                                       ;; Running openssl directly fails
+                                       ;; deep in mingw runtime.
+                                       ;; https://github.com/shirok/Gauche/pull/467
+                                       '("cmd.exe" "/c" openssl version)]
+                                      [else
+                                       '(openssl version)]))
+      (and (list? ssl-version)
+           (string=? (~ ssl-version 1) "OpenSSL")
+           (version>=? (~ ssl-version 2) "1.1"))))
 
   (define add-seclevel-client
     (if openssl-1.1>=?
