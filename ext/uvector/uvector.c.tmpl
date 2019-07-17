@@ -462,7 +462,7 @@ static inline int64_t s64g_add(int64_t x, int64_t y, int clamp)
 #endif
 }
 
-static inline int64_ s64g_sub(int64_ x, int64_t y, int clamp)
+static inline int64_t s64g_sub(int64_t x, int64_t y, int clamp)
 {
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeInteger64(x);
