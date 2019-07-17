@@ -272,8 +272,8 @@ typedef struct ULeafRec {
         uint16_t       u16[SIZEOF_LONG];
         int32_t        s32[SIZEOF_LONG/2];
         uint32_t       u32[SIZEOF_LONG/2];
-        ScmInt64       s64[SIZEOF_LONG/4];
-        ScmUInt64      u64[SIZEOF_LONG/4];
+        int64_t        s64[SIZEOF_LONG/4];
+        uint64_t       u64[SIZEOF_LONG/4];
         ScmHalfFloat   f16[SIZEOF_LONG];
         float          f32[SIZEOF_LONG/2];
         double         f64[SIZEOF_LONG/4];

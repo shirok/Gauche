@@ -121,7 +121,7 @@ int  WSAAPI getnameinfo(const struct sockaddr*, socklen_t, char*, DWORD, char*, 
    of sockaddr_storage.  Only the size and alignment matters. */
 
 #define _SS_MAXSIZE    128
-#define _SS_ALIGNSIZE  (sizeof (ScmInt64))
+#define _SS_ALIGNSIZE  (sizeof(int64_t))
 
 #define _SS_PAD1SIZE   (_SS_ALIGNSIZE - sizeof(sa_family_t))
 #define _SS_PAD2SIZE   (_SS_MAXSIZE - (sizeof(sa_family_t) + \
@@ -130,7 +130,7 @@ int  WSAAPI getnameinfo(const struct sockaddr*, socklen_t, char*, DWORD, char*, 
 struct sockaddr_storage {
     sa_family_t  ss_family;
     char      __ss_pad1[_SS_PAD1SIZE];
-    ScmInt64  __ss_align;     /* force alignment */
+    int64_t   __ss_align;     /* force alignment */
     char      __ss_pad2[_SS_PAD2SIZE];
 };
 

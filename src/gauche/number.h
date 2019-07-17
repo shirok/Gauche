@@ -207,10 +207,10 @@ SCM_EXTERN u_long Scm_GetIntegerUMod(ScmObj obj);
 
 /* 64bit integer stuff */
 #if SIZEOF_LONG == 4
-SCM_EXTERN ScmObj Scm_MakeInteger64(ScmInt64 i);
-SCM_EXTERN ScmObj Scm_MakeIntegerU64(ScmUInt64 i);
-SCM_EXTERN ScmInt64  Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor);
-SCM_EXTERN ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN ScmObj Scm_MakeInteger64(int64_t i);
+SCM_EXTERN ScmObj Scm_MakeIntegerU64(uint64_t i);
+SCM_EXTERN int64_t  Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor);
 #else  /* SIZEOF_LONG >= 8 */
 #define Scm_MakeInteger64      Scm_MakeInteger
 #define Scm_MakeIntegerU64     Scm_MakeIntegerU

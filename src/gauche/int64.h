@@ -61,9 +61,9 @@ typedef uint64_t ScmUInt64;
 /* for the backward compatibility */
 #define SCM_INT64_TO_DOUBLE  Scm_Int64ToDouble
 
-double    Scm_Int64ToDouble(ScmInt64 v);
-double    Scm_UInt64ToDouble(ScmUInt64 v);
-ScmInt64  Scm_DoubleToInt64(double v);
-ScmUInt64 Scm_DoubleToUInt64(double v);
+double    Scm_Int64ToDouble(int64_t v);
+double    Scm_UInt64ToDouble(uint64_t v);
+int64_t   Scm_DoubleToInt64(double v);
+uint64_t  Scm_DoubleToUInt64(double v);
 
 #endif /*GAUCHE_INT64_H*/

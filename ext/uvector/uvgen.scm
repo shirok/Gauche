@@ -225,7 +225,7 @@
     ,@(common-rules 'u32)))
 
 (define (make-s64rules)
-  `((etype     "ScmInt64")
+  `((etype     "int64_t")
     (REF_NTYPE ,(^[v i] #"SCM_S64VECTOR_ELEMENTS(~v)[~i]"))
     (UNBOX     ,(^[dst src clamp]
                   #"~dst = Scm_GetInteger64Clamp(~src, ~clamp, NULL)"))
@@ -233,7 +233,7 @@
     ,@(common-rules 's64)))
 
 (define (make-u64rules)
-  `((etype     "ScmUInt64")
+  `((etype     "uint64_t")
     (REF_NTYPE ,(^[v i] #"SCM_U64VECTOR_ELEMENTS(~v)[~i]"))
     (UNBOX     ,(^[dst src clamp]
                   #"~dst = Scm_GetIntegerU64Clamp(~src, ~clamp, NULL)"))

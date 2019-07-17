@@ -525,7 +525,7 @@
  (define-cvar int8_align::(.struct (b::char s::int8_t)) :static)
  (define-cvar int16_align::(.struct (b::char s::int16_t)) :static)
  (define-cvar int32_align::(.struct (b::char s::int32_t)) :static)
- (define-cvar int64_align::(.struct (b::char s::ScmInt64)) :static)
+ (define-cvar int64_align::(.struct (b::char s::int64_t)) :static)
 
  (.if (defined HAVE_LONG_LONG)
       (define-ctype long_long_::(long long))
@@ -569,7 +569,7 @@
                 (SCM_MAKE_INT (sizeof (int32_t)))
                 (SCM_MAKE_INT (alignof int32_align)))
      (SCM_LIST3 'int64
-                (SCM_MAKE_INT (sizeof (ScmInt64)))
+                (SCM_MAKE_INT (sizeof (int64_t)))
                 (SCM_MAKE_INT (alignof int64_align)))
      NULL)))
  )

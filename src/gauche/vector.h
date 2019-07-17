@@ -237,26 +237,26 @@ SCM_CLASS_DECL(Scm_S64VectorClass);
 #define SCM_S64VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_S64VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_S64VECTOR)
 #define SCM_S64VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_S64VECTOR_ELEMENTS(obj) ((ScmInt64*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_S64VECTOR_ELEMENTS(obj) ((int64_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_S64VECTOR_ELEMENT(obj,k) SCM_S64VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeS64Vector(ScmSmallInt size, ScmInt64 fill);
+SCM_EXTERN ScmObj Scm_MakeS64Vector(ScmSmallInt size, int64_t fill);
 SCM_EXTERN ScmObj Scm_MakeS64VectorFromArray(ScmSmallInt size,
-                                             const ScmInt64 array[]);
+                                             const int64_t array[]);
 SCM_EXTERN ScmObj Scm_MakeS64VectorFromArrayShared(ScmSmallInt size,
-                                                   ScmInt64 array[]);
+                                                   int64_t array[]);
 
 SCM_CLASS_DECL(Scm_U64VectorClass);
 #define SCM_CLASS_U64VECTOR         (&Scm_U64VectorClass)
 #define SCM_U64VECTOR(obj)          SCM_UVECTOR(obj)
 #define SCM_U64VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_U64VECTOR)
 #define SCM_U64VECTOR_SIZE(obj)     SCM_UVECTOR_SIZE(obj)
-#define SCM_U64VECTOR_ELEMENTS(obj) ((ScmUInt64*)SCM_UVECTOR_ELEMENTS(obj))
+#define SCM_U64VECTOR_ELEMENTS(obj) ((uint64_t*)SCM_UVECTOR_ELEMENTS(obj))
 #define SCM_U64VECTOR_ELEMENT(obj,k) SCM_U64VECTOR_ELEMENTS(obj)[k]
-SCM_EXTERN ScmObj Scm_MakeU64Vector(ScmSmallInt size, ScmUInt64 fill);
+SCM_EXTERN ScmObj Scm_MakeU64Vector(ScmSmallInt size, uint64_t fill);
 SCM_EXTERN ScmObj Scm_MakeU64VectorFromArray(ScmSmallInt size,
-                                             const ScmUInt64 array[]);
+                                             const uint64_t array[]);
 SCM_EXTERN ScmObj Scm_MakeU64VectorFromArrayShared(ScmSmallInt size,
-                                                   ScmUInt64 array[]);
+                                                   uint64_t array[]);
 
 SCM_CLASS_DECL(Scm_F16VectorClass);
 #define SCM_CLASS_F16VECTOR         (&Scm_F16VectorClass)

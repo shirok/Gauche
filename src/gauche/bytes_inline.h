@@ -61,8 +61,8 @@ typedef union { char buf[2]; int16_t val; }      swap_s16_t;
 typedef union { char buf[2]; uint16_t val; }     swap_u16_t;
 typedef union { char buf[4]; int32_t val; }      swap_s32_t;
 typedef union { char buf[4]; uint32_t val; }     swap_u32_t;
-typedef union { char buf[8]; ScmInt64 val; }     swap_s64_t;
-typedef union { char buf[8]; ScmUInt64 val; }    swap_u64_t;
+typedef union { char buf[8]; int64_t val; }      swap_s64_t;
+typedef union { char buf[8]; uint64_t val; }     swap_u64_t;
 
 typedef union { char buf[2]; ScmHalfFloat val; } swap_f16_t;
 typedef union { char buf[4]; float val; }        swap_f32_t;

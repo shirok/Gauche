@@ -78,9 +78,9 @@ size_t Scm_BinarySearchS32(const int32_t vec[], size_t len, int32_t key,
                            u_int skip, size_t *floor, size_t *ceil);
 size_t Scm_BinarySearchU32(const uint32_t vec[], size_t len, uint32_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchS64(const ScmInt64 vec[], size_t len, int64_t key,
+size_t Scm_BinarySearchS64(const int64_t vec[], size_t len, int64_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchU64(const ScmUInt64 vec[], size_t len, uint64_t key,
+size_t Scm_BinarySearchU64(const uint64_t vec[], size_t len, uint64_t key,
                            u_int skip, size_t *floor, size_t *ceil);
 size_t Scm_BinarySearchF16(const ScmHalfFloat vec[], size_t len, ScmHalfFloat key,
                            u_int skip, size_t *floor, size_t *ceil);

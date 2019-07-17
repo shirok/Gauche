@@ -377,11 +377,11 @@ ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
             break;
         case SCM_UVECTOR_S64:
             SCM_S64VECTOR_ELEMENTS(v)[i] =
-                (ScmInt64)Scm_GetInteger64Clamp(SCM_CAR(cp), clamp, NULL);
+                (int64_t)Scm_GetInteger64Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_U64:
             SCM_U64VECTOR_ELEMENTS(v)[i] =
-                (ScmUInt64)Scm_GetIntegerU64Clamp(SCM_CAR(cp), clamp, NULL);
+                (uint64_t)Scm_GetIntegerU64Clamp(SCM_CAR(cp), clamp, NULL);
             break;
         case SCM_UVECTOR_F16:
             SCM_F16VECTOR_ELEMENTS(v)[i] =
@@ -561,8 +561,8 @@ DEF_UVCTOR_FILL(S16, int16_t)
 DEF_UVCTOR_FILL(U16, uint16_t)
 DEF_UVCTOR_FILL(S32, int32_t)
 DEF_UVCTOR_FILL(U32, uint32_t)
-DEF_UVCTOR_FILL(S64, ScmInt64)
-DEF_UVCTOR_FILL(U64, ScmUInt64)
+DEF_UVCTOR_FILL(S64, int64_t)
+DEF_UVCTOR_FILL(U64, uint64_t)
 DEF_UVCTOR_FILL(F16, ScmHalfFloat)
 DEF_UVCTOR_FILL(F32, float)
 DEF_UVCTOR_FILL(F64, double)
@@ -576,8 +576,8 @@ DEF_UVCTOR_ARRAY(S16, int16_t)
 DEF_UVCTOR_ARRAY(U16, uint16_t)
 DEF_UVCTOR_ARRAY(S32, int32_t)
 DEF_UVCTOR_ARRAY(U32, uint32_t)
-DEF_UVCTOR_ARRAY(S64, ScmInt64)
-DEF_UVCTOR_ARRAY(U64, ScmUInt64)
+DEF_UVCTOR_ARRAY(S64, int64_t)
+DEF_UVCTOR_ARRAY(U64, uint64_t)
 DEF_UVCTOR_ARRAY(F16, ScmHalfFloat)
 DEF_UVCTOR_ARRAY(F32, float)
 DEF_UVCTOR_ARRAY(F64, double)
@@ -672,7 +672,7 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
     } while (0)
     
 
-static inline void s64pr(ScmPort *out, ScmInt64 elt)
+static inline void s64pr(ScmPort *out, int64_t elt)
 {
 #if SIZEOF_LONG == 4
     char buf[50];
@@ -683,7 +683,7 @@ static inline void s64pr(ScmPort *out, ScmInt64 elt)
 #endif
 }
 
-static inline void u64pr(ScmPort *out, ScmUInt64 elt)
+static inline void u64pr(ScmPort *out, uint64_t elt)
 {
 #if SIZEOF_LONG == 4
     char buf[50];
@@ -705,8 +705,8 @@ DEF_PRINT(S16, s16, int16_t, spr)
 DEF_PRINT(U16, u16, uint16_t, upr)
 DEF_PRINT(S32, s32, int32_t, spr)
 DEF_PRINT(U32, u32, uint32_t, upr)
-DEF_PRINT(S64, s64, ScmInt64, s64pr)
-DEF_PRINT(U64, u64, ScmUInt64, u64pr)
+DEF_PRINT(S64, s64, int64_t, s64pr)
+DEF_PRINT(U64, u64, uint64_t, u64pr)
 DEF_PRINT(F16, f16, ScmHalfFloat, f16pr)
 DEF_PRINT(F32, f32, float, fpr)
 DEF_PRINT(F64, f64, double, fpr)
@@ -745,26 +745,6 @@ static int SCM_CPP_CAT3(compare_,tag,vector)(ScmObj x, ScmObj y, int equalp) \
 #define common_eqv(x, y)  ((x)==(y))
 #define common_lt(x, y)   ((x)<(y))
 
-static inline int int64eqv(ScmInt64 x, ScmInt64 y)
-{
-    return x == y;
-}
-
-static inline int uint64eqv(ScmUInt64 x, ScmUInt64 y)
-{
-    return x == y;
-}
-
-static inline int int64lt(ScmInt64 x, ScmInt64 y)
-{
-    return x < y;
-}
-
-static inline int uint64lt(ScmUInt64 x, ScmUInt64 y)
-{
-    return x < y;
-}
-
 #define f16eqv(a, b) SCM_HALF_FLOAT_CMP(==, a, b)
 #define f16lt(a, b)  SCM_HALF_FLOAT_CMP(<, a, b)
 
@@ -802,8 +782,8 @@ DEF_CMP(S16, s16, int16_t, common_eqv, common_lt)
 DEF_CMP(U16, u16, uint16_t, common_eqv, common_lt)
 DEF_CMP(S32, s32, int32_t, common_eqv, common_lt)
 DEF_CMP(U32, u32, uint32_t, common_eqv, common_lt)
-DEF_CMP(S64, s64, ScmInt64, int64eqv, int64lt)
-DEF_CMP(U64, u64, ScmUInt64, uint64eqv, uint64lt)
+DEF_CMP(S64, s64, int64_t, common_eqv, common_lt)
+DEF_CMP(U64, u64, uint64_t, common_eqv, common_lt)
 DEF_CMP(F16, f16, ScmHalfFloat, f16eqv, f16lt)
 DEF_CMP(F32, f32, float, common_eqv, common_lt)
 DEF_CMP(F64, f64, double, common_eqv, common_lt)

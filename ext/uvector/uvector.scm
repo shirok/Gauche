@@ -441,12 +441,12 @@
             (set! r (Scm_BinarySearchU32 (+ (SCM_U32VECTOR_ELEMENTS v) s)
                                          (- e s) k p (& lb) (& ub))))]
          [(SCM_UVECTOR_S64)
-          (let* ([k::ScmInt64
+          (let* ([k::int64_t
                   (Scm_GetInteger64Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchS64 (+ (SCM_S64VECTOR_ELEMENTS v) s)
                                          (- e s) k p (& lb) (& ub))))]
          [(SCM_UVECTOR_U64)
-          (let* ([k::ScmUInt64
+          (let* ([k::uint64_t
                   (Scm_GetIntegerU64Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchU64 (+ (SCM_U64VECTOR_ELEMENTS v) s)
                                          (- e s) k p (& lb) (& ub))))]

@@ -446,7 +446,7 @@ static inline u_long u32_mul_safe(u_long x, u_long y, int clamp)
 #define s64s64_sub(x, y, clamp)  s64g_sub(x, y, clamp)
 #define s64s64_mul(x, y, clamp)  s64g_mul(x, y, clamp)
 
-static inline ScmInt64 s64g_add(ScmInt64 x, ScmInt64 y, int clamp)
+static inline int64_t s64g_add(int64_t x, int64_t y, int clamp)
 {
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeInteger64(x);
@@ -462,7 +462,7 @@ static inline ScmInt64 s64g_add(ScmInt64 x, ScmInt64 y, int clamp)
 #endif
 }
 
-static inline ScmInt64 s64g_sub(ScmInt64 x, ScmInt64 y, int clamp)
+static inline int64_ s64g_sub(int64_ x, int64_t y, int clamp)
 {
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeInteger64(x);
@@ -478,7 +478,7 @@ static inline ScmInt64 s64g_sub(ScmInt64 x, ScmInt64 y, int clamp)
 #endif
 }
 
-static inline ScmInt64 s64g_mul(ScmInt64 x, ScmInt64 y, int clamp)
+static inline int64_t s64g_mul(int64_t x, int64_t y, int clamp)
 {
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeInteger64(x);
@@ -498,7 +498,7 @@ static inline ScmInt64 s64g_mul(ScmInt64 x, ScmInt64 y, int clamp)
 #define u64u64_sub(x, y, clamp)  u64g_sub(x, y, clamp)
 #define u64u64_mul(x, y, clamp)  u64g_mul(x, y, clamp)
 
-static inline ScmUInt64 u64g_add(ScmUInt64 x, ScmUInt64 y, int clamp)
+static inline uint64_t u64g_add(uint64_t x, uint64_t y, int clamp)
 {
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeIntegerU64(x);
@@ -513,7 +513,7 @@ static inline ScmUInt64 u64g_add(ScmUInt64 x, ScmUInt64 y, int clamp)
 #endif
 }
 
-static inline ScmUInt64 u64g_sub(ScmUInt64 x, ScmUInt64 y, int clamp)
+static inline uint64_t u64g_sub(uint64_t x, uint64_t y, int clamp)
 {
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeIntegerU64(x);
@@ -528,7 +528,7 @@ static inline ScmUInt64 u64g_sub(ScmUInt64 x, ScmUInt64 y, int clamp)
 #endif
 }
 
-static inline ScmUInt64 u64g_mul(ScmUInt64 x, ScmUInt64 y, int clamp)
+static inline uint64_t u64g_mul(uint64_t x, uint64_t y, int clamp)
 {
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeIntegerU64(x);
@@ -592,12 +592,12 @@ static inline u_long u8num(ScmObj x, int *oor)
 #define u16num(x, oor)           u8num(x, oor)
 #define u32num(x, oor)           u8num(x, oor)
 
-static inline ScmInt64 s64num(ScmObj x, int *oor)
+static inline int64_t s64num(ScmObj x, int *oor)
 {
     return Scm_GetInteger64Clamp(x, SCM_CLAMP_NONE, oor);
 }
 
-static inline ScmUInt64 u64num(ScmObj x, int *oor)
+static inline uint64_t u64num(ScmObj x, int *oor)
 {
     return Scm_GetIntegerU64Clamp(x, SCM_CLAMP_NONE, oor);
 }
@@ -711,20 +711,20 @@ static inline u_long bitext(ScmObj x)
     return 0;
 }
 
-static inline ScmUInt64 bitext64(ScmObj x)
+static inline uint64_t bitext64(ScmObj x)
 {
 #if SCM_EMULATE_INT64
-    ScmUInt64 r = {0, 0};
+    uint64_t r = {0, 0};
     if (SCM_INTP(x)) r.lo = SCM_INT_VALUE(x);
     else if (SCM_BIGNUMP(x)) {
         ScmObj xx = Scm_LogAnd(x, SCM_2_64_MINUS_1);
-        ScmUInt64 ii = Scm_GetIntegerU64(xx);
+        uint64_t ii = Scm_GetIntegerU64(xx);
         r.lo = ii.lo;
         r.hi = ii.hi;
     }
     else goto type_err;
 #else
-    ScmUInt64 r = 0;
+    uint64_t r = 0;
     if (SCM_INTP(x)) r = SCM_INT_VALUE(x);
     else if (SCM_BIGNUMP(x)) {
         ScmObj xx = Scm_LogAnd(x, SCM_2_64_MINUS_1);
@@ -845,7 +845,7 @@ static inline long s32muladd(long x, long y, long acc, ScmObj *sacc)
 }
 
 #if SIZEOF_LONG == 4
-static inline ScmInt64 s64muladd(ScmInt64 x, ScmInt64 y, ScmInt64 acc, ScmObj *sacc)
+static inline int64_t s64muladd(int64_t x, int64_t y, int64_t acc, ScmObj *sacc)
 {
     /* we don't use acc, and operate only on sacc. */
     *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeInteger64(x),
@@ -891,7 +891,7 @@ static inline u_long u32muladd(u_long x, u_long y, u_long acc, ScmObj *sacc)
 }
 
 #if SIZEOF_LONG == 4
-static inline ScmUInt64 u64muladd(ScmUInt64 x, ScmUInt64 y, ScmUInt64 acc, ScmObj *sacc)
+static inline uint64_t u64muladd(uint64_t x, uint64_t y, uint64_t acc, ScmObj *sacc)
 {
     /* we don't use acc, and operate only on sacc. */
     *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeIntegerU64(x),
@@ -1367,21 +1367,21 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
             switch (swap_type) {
             case SWAPB_STD:
                 for (ScmSmallInt i=start; i<end; i++) {
-                    d.val = ((ScmUInt64*)v->elements)[i];
+                    d.val = ((uint64_t*)v->elements)[i];
                     SWAP_8(d);
                     Scm_Putz((const char*)d.buf, 8, port);
                 }
                 break;
             case SWAPB_ARM_LE:
                 for (ScmSmallInt i=start; i<end; i++) {
-                    d.val = ((ScmUInt64*)v->elements)[i];
+                    d.val = ((uint64_t*)v->elements)[i];
                     SWAP_ARM2LE(d);
                     Scm_Putz((const char*)d.buf, 8, port);
                 }
                 break;
             case SWAPB_ARM_BE:
                 for (ScmSmallInt i=start; i<end; i++) {
-                    d.val = ((ScmUInt64*)v->elements)[i];
+                    d.val = ((uint64_t*)v->elements)[i];
                     SWAP_ARM2BE(d);
                     Scm_Putz((const char*)d.buf, 8, port);
                 }

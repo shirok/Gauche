@@ -136,7 +136,7 @@ SCM_EXTERN int  Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec);
 typedef struct ScmTimeRec {
     SCM_HEADER;
     ScmObj type;       /* 'time-utc by default.  see SRFI-19 */
-    ScmInt64 sec;      /* seconds */
+    int64_t sec;       /* seconds */
     long nsec;         /* nanoseconds */
 } ScmTime;
 
@@ -147,9 +147,9 @@ SCM_CLASS_DECL(Scm_TimeClass);
 
 SCM_EXTERN ScmObj Scm_CurrentTime(void);
 SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec);
-SCM_EXTERN ScmObj Scm_MakeTime64(ScmObj type, ScmInt64 sec, long nsec);
+SCM_EXTERN ScmObj Scm_MakeTime64(ScmObj type, int64_t sec, long nsec);
 SCM_EXTERN ScmObj Scm_IntSecondsToTime(long sec);
-SCM_EXTERN ScmObj Scm_Int64SecondsToTime(ScmInt64 sec);
+SCM_EXTERN ScmObj Scm_Int64SecondsToTime(int64_t sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 

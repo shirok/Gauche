@@ -587,7 +587,7 @@ double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
         Scm_Error("flonum exponent out of range: %d", exp);
     }
 
-    ScmUInt64 mant64 = Scm_GetIntegerU64Clamp(mant, SCM_CLAMP_ERROR, NULL);
+    uint64_t mant64 = Scm_GetIntegerU64Clamp(mant, SCM_CLAMP_ERROR, NULL);
     if (!Scm_NumLT(mant, SCM_2_53)) {
         Scm_Error("flonum mantissa out of range: %S", mant);
     }
@@ -1160,7 +1160,7 @@ u_long Scm_GetIntegerUMod(ScmObj obj)
 
 #if SIZEOF_LONG == 4
 /* we need special routines */
-ScmObj Scm_MakeInteger64(ScmInt64 i)
+ScmObj Scm_MakeInteger64(int64_t i)
 {
     u_long val[2];
     val[0] = (u_long)((uint64_t)i & ULONG_MAX);
@@ -1169,7 +1169,7 @@ ScmObj Scm_MakeInteger64(ScmInt64 i)
     return Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(0, val, 2)));
 }
 
-ScmObj Scm_MakeIntegerU64(ScmUInt64 i)
+ScmObj Scm_MakeIntegerU64(uint64_t i)
 {
     u_long val[2];
     val[0] = (u_long)((uint64_t)i & ULONG_MAX);
@@ -1178,11 +1178,11 @@ ScmObj Scm_MakeIntegerU64(ScmUInt64 i)
     return Scm_MakeBignumFromUIArray(1, val, 2);
 }
 
-ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
+int64_t Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
 {
-    ScmInt64 r = 0;
+    int64_t r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
-    if (SCM_INTP(obj)) return (ScmInt64)SCM_INT_VALUE(obj);
+    if (SCM_INTP(obj)) return (int64_t)SCM_INT_VALUE(obj);
     if (SCM_BIGNUMP(obj)) {
         return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
     }
@@ -1204,7 +1204,7 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
             if (!(clamp&SCM_CLAMP_LO)) goto err;
             return minval;
         } else {
-            return (ScmInt64)v;
+            return (int64_t)v;
         }
     }
   err:
@@ -1212,9 +1212,9 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
     return r;
 }
 
-ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
+uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 {
-    ScmUInt64 r = 0;
+    uint64_t r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
@@ -1222,7 +1222,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
             if (!(clamp&SCM_CLAMP_LO)) goto err;
             return 0;
         } else {
-            return (ScmUInt64)v;
+            return (uint64_t)v;
         }
     }
     if (SCM_BIGNUMP(obj)) {
@@ -1234,7 +1234,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
     }
     if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
-        ScmUInt64 maxval;
+        uint64_t maxval;
 
         if (v < 0) {
             if (!(clamp&SCM_CLAMP_LO)) goto err;
@@ -1245,7 +1245,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
             if (!(clamp&SCM_CLAMP_HI)) goto err;
             return maxval;
         } else {
-            return (ScmUInt64)v;
+            return (uint64_t)v;
         }
     }
   err:
@@ -1255,22 +1255,22 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 
 #endif /* SIZEOF_LONG == 4 */
 
-ScmInt64 Scm_DoubleToInt64(double v)
+int64_t Scm_DoubleToInt64(double v)
 {
     return (int64_t)v;
 }
 
-ScmUInt64 Scm_DoubleToUInt64(double v)
+uint64_t Scm_DoubleToUInt64(double v)
 {
     return (uint64_t)v;
 }
 
-double Scm_Int64ToDouble(ScmInt64 v)
+double Scm_Int64ToDouble(int64_t v)
 {
     return (double)v;
 }
 
-double Scm_UInt64ToDouble(ScmUInt64 v)
+double Scm_UInt64ToDouble(uint64_t v)
 {
     return (double)v;
 }

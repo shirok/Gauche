@@ -356,21 +356,21 @@
                                   ceil::size_t*)
    ::size_t (%binary-search uint32_t))
 
- (define-cfn Scm_BinarySearchS64 (vec::(const ScmInt64*)
+ (define-cfn Scm_BinarySearchS64 (vec::(const int64_t*)
                                   len::size_t
-                                  key::ScmInt64
+                                  key::int64_t
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search ScmInt64))
+   ::size_t (%binary-search int64_t))
 
- (define-cfn Scm_BinarySearchU64 (vec::(const ScmUInt64*)
+ (define-cfn Scm_BinarySearchU64 (vec::(const uint64_t*)
                                   len::size_t
-                                  key::ScmUInt64
+                                  key::uint64_t
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search ScmUInt64))
+   ::size_t (%binary-search uint64_t))
  
  (define-cfn Scm_BinarySearchF16 (vec::(const ScmHalfFloat*)
                                   len::size_t

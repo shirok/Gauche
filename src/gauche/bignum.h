@@ -50,8 +50,8 @@ SCM_EXTERN ScmObj Scm_BignumToString(const ScmBignum *b, int radix,
 SCM_EXTERN long   Scm_BignumToSI(const ScmBignum *b, int clamp, int* oor);
 SCM_EXTERN u_long Scm_BignumToUI(const ScmBignum *b, int clamp, int* oor);
 #if SIZEOF_LONG == 4
-SCM_EXTERN ScmInt64  Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor);
-SCM_EXTERN ScmUInt64 Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor);
+SCM_EXTERN int64_t  Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor);
+SCM_EXTERN uint64_t Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor);
 #else  /* SIZEOF_LONG >= 8 */
 #define Scm_BignumToSI64       Scm_BignumToSI
 #define Scm_BignumToUI64       Scm_BignumToUI

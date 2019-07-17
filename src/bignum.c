@@ -300,7 +300,7 @@ u_long Scm_BignumToUI(const ScmBignum *b, int clamp, int *oor)
 
 #if SIZEOF_LONG == 4
 /* we need special routines for int64 */
-ScmInt64 Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
+int64_t Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
 {
     int64_t r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
@@ -333,7 +333,7 @@ ScmInt64 Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
     return r;
 }
 
-ScmUInt64 Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
+uint64_t Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
 {
     uint64_t r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;

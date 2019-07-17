@@ -117,7 +117,7 @@ ScmObj Scm_OffsetToInteger(off_t off)
 #if SIZEOF_OFF_T == SIZEOF_LONG
     return Scm_MakeInteger(off);
 #elif SIZEOF_OFF_T == 8
-    return Scm_MakeInteger64((ScmInt64)off);
+    return Scm_MakeInteger64((int64_t)off);
 #else
 # error "off_t size on this platform is not suported."
 #endif
@@ -964,12 +964,12 @@ static ScmTime *make_time_int(ScmObj type)
 ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
 {
     ScmTime *t = make_time_int(type);
-    t->sec = (ScmInt64)sec;
+    t->sec = (int64_t)sec;
     t->nsec = nsec;
     return SCM_OBJ(t);
 }
 
-ScmObj Scm_MakeTime64(ScmObj type, ScmInt64 sec, long nsec)
+ScmObj Scm_MakeTime64(ScmObj type, int64_t sec, long nsec)
 {
     ScmTime *t = make_time_int(type);
     t->sec = sec;
@@ -1096,7 +1096,7 @@ ScmObj Scm_IntSecondsToTime(long sec)
     return Scm_MakeTime(SCM_SYM_TIME_UTC, sec, 0);
 }
 
-ScmObj Scm_Int64SecondsToTime(ScmInt64 sec)
+ScmObj Scm_Int64SecondsToTime(int64_t sec)
 {
     return Scm_MakeTime64(SCM_SYM_TIME_UTC, sec, 0);
 }
@@ -1105,7 +1105,7 @@ ScmObj Scm_RealSecondsToTime(double sec)
 {
     double s;
     double frac = modf(sec, &s);
-    ScmInt64 secs = Scm_DoubleToInt64(s);
+    int64_t secs = Scm_DoubleToInt64(s);
     return Scm_MakeTime64(SCM_SYM_TIME_UTC, secs, (long)(frac * 1.0e9));
 }
 
