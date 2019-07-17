@@ -674,9 +674,7 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
 
 static inline void s64pr(ScmPort *out, ScmInt64 elt)
 {
-#if SCM_EMULATE_INT64
-    Scm_Printf(out, "%S", Scm_MakeInteger64(elt));
-#elif SIZEOF_LONG == 4
+#if SIZEOF_LONG == 4
     char buf[50];
     snprintf(buf, 50, "%lld", elt);
     Scm_Printf(out, "%s", buf);
@@ -687,9 +685,7 @@ static inline void s64pr(ScmPort *out, ScmInt64 elt)
 
 static inline void u64pr(ScmPort *out, ScmUInt64 elt)
 {
-#if SCM_EMULATE_INT64
-    Scm_Printf(out, "%S", Scm_MakeIntegerU64(elt));
-#elif SIZEOF_LONG == 4
+#if SIZEOF_LONG == 4
     char buf[50];
     snprintf(buf, 50, "%llu", elt);
     Scm_Printf(out, "%s", buf);
@@ -751,38 +747,22 @@ static int SCM_CPP_CAT3(compare_,tag,vector)(ScmObj x, ScmObj y, int equalp) \
 
 static inline int int64eqv(ScmInt64 x, ScmInt64 y)
 {
-#if SCM_EMULATE_INT64
-    return (x.hi == y.hi && x.lo == y.lo);
-#else
     return x == y;
-#endif
 }
 
 static inline int uint64eqv(ScmUInt64 x, ScmUInt64 y)
 {
-#if SCM_EMULATE_INT64
-    return (x.hi == y.hi && x.lo == y.lo);
-#else
     return x == y;
-#endif
 }
 
 static inline int int64lt(ScmInt64 x, ScmInt64 y)
 {
-#if SCM_EMULATE_INT64
-    return (x.hi < y.hi || (x.hi == y.hi && x.lo < y.lo));
-#else
     return x < y;
-#endif
 }
 
 static inline int uint64lt(ScmUInt64 x, ScmUInt64 y)
 {
-#if SCM_EMULATE_INT64
-    return (x.hi < y.hi || (x.hi == y.hi && x.lo < y.lo));
-#else
     return x < y;
-#endif
 }
 
 #define f16eqv(a, b) SCM_HALF_FLOAT_CMP(==, a, b)

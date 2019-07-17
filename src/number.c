@@ -600,8 +600,6 @@ double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
     int expfield = exp + 0x3ff + 52;
 #if SIZEOF_LONG >= 8
     return Scm__EncodeDouble(mant64, 0, expfield, signbit);
-#elif SCM_EMULATE_INT64
-    return Scm__EncodeDouble(mant64.lo, mant64.hi, expfield, signbit);
 #else
     u_long hi = (mant64 >> 32);
     u_long lo = (u_long)(mant64 & ULONG_MAX);
@@ -1164,71 +1162,24 @@ u_long Scm_GetIntegerUMod(ScmObj obj)
 /* we need special routines */
 ScmObj Scm_MakeInteger64(ScmInt64 i)
 {
-#if SCM_EMULATE_INT64
-    u_long val[2];
-    if (i.hi == 0) return Scm_MakeInteger(i.lo);
-    val[0] = i.lo;
-    val[1] = i.hi;
-    return Scm_MakeBignumFromUIArray(0, val, 2); /* bignum checks sign */
-#else /*SCM_EMULATE_INT64*/
     u_long val[2];
     val[0] = (u_long)((uint64_t)i & ULONG_MAX);
     val[1] = (u_long)((uint64_t)i >> 32);
     if (val[1] == 0 && val[0] <= LONG_MAX) return Scm_MakeInteger(val[0]);
     return Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(0, val, 2)));
-#endif
 }
 
 ScmObj Scm_MakeIntegerU64(ScmUInt64 i)
 {
-#if SCM_EMULATE_INT64
-    u_long val[2];
-    if (i.hi == 0) return Scm_MakeIntegerU(i.lo);
-    val[0] = i.lo;
-    val[1] = i.hi;
-    return Scm_MakeBignumFromUIArray(1, val, 2);
-#else /*SCM_EMULATE_INT64*/
     u_long val[2];
     val[0] = (u_long)((uint64_t)i & ULONG_MAX);
     val[1] = (u_long)((uint64_t)i >> 32);
     if (val[1] == 0) return Scm_MakeIntegerU(val[0]);
     return Scm_MakeBignumFromUIArray(1, val, 2);
-#endif
 }
 
 ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
 {
-#if SCM_EMULATE_INT64
-    ScmInt64 r = {0, 0};
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
-    if (SCM_INTP(obj)) {
-        long v = SCM_INT_VALUE(obj);
-        r.lo = v;
-        if (v < 0) r.hi = ULONG_MAX;
-        return r;
-    }
-    if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
-    }
-    if (SCM_RATNUMP(obj)) {
-        obj = Scm_Inexact(obj);
-        /* FALLTHROUGH */
-    }
-    if (SCM_FLONUMP(obj)) {
-        if (Scm_NumCmp(obj, SCM_2_63) >= 0) {
-            if (!(clamp&SCM_CLAMP_HI)) goto err;
-            SCM_SET_INT64_MAX(r);
-            return r;
-        } else if (Scm_NumCmp(obj, SCM_MINUS_2_63) < 0) {
-            if (!(clamp&SCM_CLAMP_LO)) goto err;
-            SCM_SET_INT64_MIN(r);
-            return r;
-        } else {
-            ScmObj b = Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(obj));
-            return Scm_BignumToSI64(SCM_BIGNUM(b), clamp, oor);
-        }
-    }
-#else /*!SCM_EMULATE_INT64*/
     ScmInt64 r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) return (ScmInt64)SCM_INT_VALUE(obj);
@@ -1256,7 +1207,6 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
             return (ScmInt64)v;
         }
     }
-#endif /*!SCM_EMULATE_INT64*/
   err:
     range_error(obj, clamp, oor);
     return r;
@@ -1264,39 +1214,6 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
 
 ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 {
-#if SCM_EMULATE_INT64
-    ScmUInt64 r = {0, 0};
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
-    if (SCM_INTP(obj)) {
-        long v = SCM_INT_VALUE(obj);
-        if (v < 0) {
-            if (!(clamp&SCM_CLAMP_LO)) goto err;
-        } else {
-            r.lo = v;
-        }
-        return r;
-    }
-    if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamp, oor);
-    }
-    if (SCM_RATNUMP(obj)) {
-        obj = Scm_Inexact(obj);
-        /* FALLTHROUGH */
-    }
-    if (SCM_FLONUMP(obj)) {
-        if (Scm_NumCmp(obj, SCM_2_64) >= 0) {
-            if (!(clamp&SCM_CLAMP_HI)) goto err;
-            SCM_SET_UINT64_MAX(r);
-            return r;
-        } else if (SCM_FLONUM_VALUE(obj) < 0) {
-            if (!(clamp&SCM_CLAMP_LO)) goto err;
-            return r;
-        } else {
-            ScmObj b = Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(obj));
-            return Scm_BignumToUI64(SCM_BIGNUM(b), clamp, oor);
-        }
-    }
-#else /*!SCM_EMULATE_INT64*/
     ScmUInt64 r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
@@ -1331,7 +1248,6 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
             return (ScmUInt64)v;
         }
     }
-#endif
   err:
     range_error(obj, clamp, oor);
     return r;
@@ -1341,60 +1257,22 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 
 ScmInt64 Scm_DoubleToInt64(double v)
 {
-#if SIZEOF_LONG == 4
-# if SCM_EMULATE_INT64
-    ScmInt64 i;
-    double hi, lo;
-    lo = modf(v/4294967296.0, &hi);
-    i.hi = (long)hi;
-    i.lo = (long)(lo * 4294967296.0);
-    return i;
-# else  /*!SCM_EMULATE_INT64*/
     return (int64_t)v;
-# endif /*!SCM_EMULATE_INT64*/
-#else  /*SIZEOF_LONG == 8*/
-    return (long)v;
-#endif /*SIZEOF_LONG == 8*/
 }
 
 ScmUInt64 Scm_DoubleToUInt64(double v)
 {
-#if SIZEOF_LONG == 4
-# if SCM_EMULATE_INT64
-    ScmUInt64 i;
-    double hi, lo;
-    if (v < 0) {
-        SCM_SET_INT64_ZERO(i);
-    } else {
-        lo = modf(v/4294967296.0, &hi);
-        i.hi = (u_long)hi;
-        i.lo = (u_long)(lo * 4294967296.0);
-    }
-    return i;
-# else  /*!SCM_EMULATE_INT64*/
     return (uint64_t)v;
-# endif /*!SCM_EMULATE_INT64*/
-#else  /*SIZEOF_LONG == 8*/
-    return (u_long)v;
-#endif /*SIZEOF_LONG == 8*/
 }
 
 double Scm_Int64ToDouble(ScmInt64 v)
 {
-#if SCM_EMULATE_INT64
-    return ((v64.hi)*4294967296.0 + (double)(v64.lo));
-#else
     return (double)v;
-#endif
 }
 
 double Scm_UInt64ToDouble(ScmUInt64 v)
 {
-#if SCM_EMULATE_INT64
-    return ((v64.hi)*4294967296.0 + (double)(v64.lo));
-#else
     return (double)v;
-#endif
 }
 
 double Scm_GetDouble(ScmObj obj)

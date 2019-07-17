@@ -31,115 +31,35 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Some Scheme API needs to deal with 64bit signed/unsigned integer
-   (such as srfi-4 vectors and binary I/O routines.)
-   This file defines some macros to help writing code without
-   concerning about how the hardware/compiler supports int64.
+/* TRANSIENT: This header is obsolete, for we now assume C99
+   thus [u]int64_t is available.  We keep this until 1.0 release
+   for API compatibility.  */
 
-   This header defines the following types and macros.
-
-   [type] ScmInt64     64-bit signed integer.
-   [type] ScmUInt64    64-bit unsigned integer.
-   [type] ScmInt32     32-bit signed integer.
-   [type] ScmUInt32    32-bit signed integer.
-
-   Based on these types, gauche.h declares some conversion functions
-   that can be used regardless of the representation of 64bit integer
-   on the target machine.
-
-   To box 64bit integer as ScmObj, use Scm_MakeInteger64 and
-   Scm_MakeIntegerU64.
-
-   To unbox 64bit integer from ScmObj, use Scm_GetInteger64 and
-   Scm_GetIntegerU64.
-*/
 
 #ifndef GAUCHE_INT64_H
 #define GAUCHE_INT64_H
 
 /* assuming gauche/config.h is read. */
 
-#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
-#endif
 
-/* typedefs ScmInt64 and ScmUInt64 to appropriate type */
-
-#if defined(HAVE_INT64_T) && defined(HAVE_UINT64_T)
-/* If the system has int64_t, it is the best way to use it.
-   Even some of ILP32 systems have int64_t. */
+typedef int32_t  ScmInt32;
+typedef uint32_t ScmUInt32;
 typedef int64_t  ScmInt64;
 typedef uint64_t ScmUInt64;
-#elif SIZEOF_LONG >= 8
-/* NB: this would fail if sizeof(long) becomes 16; but such newer systems
-   are likely to have int64_t defined. */
-typedef long   ScmInt64;
-typedef u_long ScmUInt64;
-#else  /* SIZEOF_LONG == 4 */
-/* This is the fallback. */
-#define SCM_EMULATE_INT64 1
-#ifdef WORDS_BIGENDIAN
-typedef struct {
-    unsigned long hi;
-    unsigned long lo;
-} ScmInt64, ScmUInt64;
-#else  /* !WORDS_BIGENDIAN */
-typedef struct {
-    unsigned long lo;
-    unsigned long hi;
-} ScmInt64, ScmUInt64;
-#endif /* !WORDS_BIGENDIAN */
-#endif /* SIZEOF_LONG == 4 */
 
-/* Used internally to set up 64bit integer values */
-#if SIZEOF_LONG == 4
-#if SCM_EMULATE_INT64
-#define SCM_SET_INT64_MAX(v64)  \
-    ((v64).hi = LONG_MAX, (v64).lo = ULONG_MAX)
-#define SCM_SET_INT64_MIN(v64)  \
-    ((v64).hi = (u_long)LONG_MAX + 1, (v64).lo = 0)
-#define SCM_SET_UINT64_MAX(v64) \
-    ((v64).hi = ULONG_MAX, (v64).lo = ULONG_MAX)
-#define SCM_SET_INT64_ZERO(v64) \
-    ((v64).hi = (v64).lo = 0)
-#define SCM_SET_INT64_BY_LONG(v64, val) \
-    ((v64).hi = 0, (v64).lo = (val))
-#else  /* !SCM_EMULATE_INT64 */
-#define SCM_SET_INT64_MAX(v64)  \
-    ((v64) = ((((int64_t)LONG_MAX)<<32) + (int64_t)ULONG_MAX))
-#define SCM_SET_INT64_MIN(v64)  \
-    ((v64) = (((int64_t)LONG_MAX + 1) << 32))
-#define SCM_SET_UINT64_MAX(v64) \
-    ((v64) = ((((uint64_t)ULONG_MAX) << 32) + (uint64_t)ULONG_MAX))
-#define SCM_SET_INT64_ZERO(v64)           ((v64) = 0)
-#define SCM_SET_INT64_BY_LONG(v64, val)   ((v64) = (int64_t)(val))
-#define SCM_SET_INT64_BY_DOUBLE(v64, val) ((v64) = (int64_t)(val))
-#endif /* !SCM_EMULATE_INT64 */
-#elif  SIZEOF_LONG == 8
 #define SCM_SET_INT64_MAX(v64)    ((v64) = LONG_MAX)
 #define SCM_SET_INT64_MIN(v64)    ((v64) = LONG_MIN)
 #define SCM_SET_UINT64_MAX(v64)   ((v64) = ULONG_MAX)
 #define SCM_SET_INT64_ZERO(v64)   ((v64) = 0)
 #define SCM_SET_INT64_BY_LONG(v64, val)   ((v64) = (val))
 #define SCM_SET_INT64_BY_DOUBLE(v64, val) ((v64) = (long)(val))
-#endif /* SIZEOF_LONG == 4 or 8 */
 
-/* Compare 64bit values */
-#if SCM_EMULATE_INT64
-#define SCM_INT64_EQV(a64, b64) ((a64).hi == (b64).hi && (a64).lo == (b64).lo)
-#define SCM_INT64_CMP(op, a64, b64) \
-    (((a64).hi op (b64).hi)         \
-     || ((a64).hi == (b64).hi && (a64).lo op (b64).lo))
-#else  /*!SCM_EMULATE_INT64*/
 #define SCM_INT64_EQV(a64, b64)     ((a64) == (b64))
-#define SCM_INT64_CMP(op, a64, b64) ((a64) op (b64))
-#endif /*!SCM_EMULATE_INT64*/
+#define SCM_INT64_CMP(op, a64, b64)     ((a64) op (b64))
 
 /* for the backward compatibility */
 #define SCM_INT64_TO_DOUBLE  Scm_Int64ToDouble
-/* TRANSIENT: New code should use [u]int32_t. */
-typedef int32_t  ScmInt32;
-typedef uint32_t ScmUInt32;
 
 double    Scm_Int64ToDouble(ScmInt64 v);
 double    Scm_UInt64ToDouble(ScmUInt64 v);

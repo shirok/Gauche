@@ -1,3 +1,8 @@
+2019-07-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/int64.h etc.: Removed [u]int64 emulation code.  Now we
+	  assume C99, [u]int64_t types are available.
+
 2019-07-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-124.scm, lib/scheme/ephemeron.scm: Added.

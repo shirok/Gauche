@@ -101,7 +101,7 @@ off_t Scm_IntegerToOffset(ScmObj i)
     } else if (SCM_BIGNUMP(i)) {
 #if SIZEOF_OFF_T == SIZEOF_LONG
         return (off_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
-#elif SIZEOF_OFF_T == 8 && !SCM_EMULATE_INT64
+#elif SIZEOF_OFF_T == 8
         return (off_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
 #else
         /* I don't think there's such an architecture. */
@@ -116,7 +116,7 @@ ScmObj Scm_OffsetToInteger(off_t off)
 {
 #if SIZEOF_OFF_T == SIZEOF_LONG
     return Scm_MakeInteger(off);
-#elif SIZEOF_OFF_T == 8 && !SCM_EMULATE_INT64
+#elif SIZEOF_OFF_T == 8
     return Scm_MakeInteger64((ScmInt64)off);
 #else
 # error "off_t size on this platform is not suported."
@@ -901,7 +901,7 @@ static ScmObj time_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmTime *t = SCM_NEW_INSTANCE(ScmTime, klass);
     t->type = SCM_SYM_TIME_UTC;
-    SCM_SET_INT64_ZERO(t->sec);
+    t->sec = 0;
     t->nsec = 0;
     return SCM_OBJ(t);
 }
@@ -929,7 +929,7 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
 
     if (equalp) {
         if (SCM_EQ(tx->type, ty->type)
-            && SCM_INT64_EQV(tx->sec, ty->sec)
+            && tx->sec == ty->sec
             && tx->nsec == ty->nsec) {
             return 0;
         } else {
@@ -939,8 +939,8 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
         if (!SCM_EQ(tx->type, ty->type)) {
             Scm_Error("cannot compare different types of time objects: %S vs %S", x, y);
         }
-        if (SCM_INT64_CMP(<, tx->sec, ty->sec)) return -1;
-        if (SCM_INT64_EQV(tx->sec, ty->sec)) {
+        if (tx->sec < ty->sec) return -1;
+        if (tx->sec == ty->sec) {
             if (tx->nsec < ty->nsec) return -1;
             if (tx->nsec == ty->nsec) return 0;
             else return 1;
@@ -964,7 +964,7 @@ static ScmTime *make_time_int(ScmObj type)
 ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
 {
     ScmTime *t = make_time_int(type);
-    SCM_SET_INT64_BY_LONG(t->sec, sec);
+    t->sec = (ScmInt64)sec;
     t->nsec = nsec;
     return SCM_OBJ(t);
 }
@@ -1180,16 +1180,7 @@ time_t Scm_GetSysTime(ScmObj val)
 {
     if (SCM_TIMEP(val)) {
 #ifdef INTEGRAL_TIME_T
-        /* NB: If time_t is 64bit, we assume ScmUInt64 is int64_t.
-           So if we're emulating int64 then we reject conversion over 32bits*/
-#  if SCM_EMULATE_INT64
-        if (SCM_TIME(val)->sec.hi > 0) {
-            Scm_Error("time object is out of range for Unix time: %S", val);
-        }
-        return (time_t)(SCM_TIME(val)->sec.lo);
-#  else
         return (time_t)SCM_TIME(val)->sec;
-#  endif
 #else
         return (time_t)(Scm_Int64ToDouble(SCM_TIME(val)->sec) +
                         (double)SCM_TIME(val)->nsec/1.0e9);
@@ -1220,28 +1211,13 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
 {
     if (SCM_FALSEP(t)) return NULL;
     if (SCM_TIMEP(t)) {
-#if SCM_EMULATE_INT64
-        /* if we don't have int64_t, it's very likely that timespec can't
-           handle 64bit time. */
-        if (SCM_TIME(t)->sec.hi > 0) {
-            Scm_Error("cannot convert Scheme time to struct timespec: out of range: %S", t);
-        }
-        spec->tv_sec = SCM_TIME(t)->sec.lo;
-
-#else  /*!SCM_EMULATE_INT64*/
-        /* TODO: we might want to check if tv_sec can handle 64bit integer */
         spec->tv_sec = SCM_TIME(t)->sec;
-#endif /*!SCM_EMULATE_INT64*/
         spec->tv_nsec = SCM_TIME(t)->nsec;
     } else if (!SCM_REALP(t)) {
         Scm_Error("bad timeout spec: <time> object or real number is required, but got %S", t);
     } else {
         ScmTime *ct = SCM_TIME(Scm_CurrentTime());
-#if SCM_EMULATE_INT64
-        spec->tv_sec = ct->sec.lo;  /* TODO: 2038 */
-#else  /*!SCM_EMULATE_INT64*/
         spec->tv_sec = ct->sec;
-#endif /*!SCM_EMULATE_INT64*/
         spec->tv_nsec = ct->nsec;
         if (SCM_INTP(t)) {
             spec->tv_sec += Scm_GetUInteger(t);

@@ -391,7 +391,7 @@ dnl   for some tests needs it.
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS(time.h sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h)
-AC_CHECK_HEADERS(unistd.h inttypes.h rpc/types.h malloc.h)
+AC_CHECK_HEADERS(unistd.h rpc/types.h malloc.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
 AC_CHECK_HEADERS(pty.h util.h bsd/libutil.h libutil.h sys/loadavg.h sys/resource.h)
 
@@ -431,7 +431,7 @@ AC_STRUCT_TM
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
-AC_CHECK_TYPES([uint16_t, int32_t, uint32_t, int64_t, uint64_t, long long, long double])
+AC_CHECK_TYPES([long long, long double])
 AC_CHECK_TYPES([struct timespec])
 
 if test "$GAUCHE_THREAD_TYPE" = pthreads; then

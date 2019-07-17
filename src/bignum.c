@@ -302,30 +302,6 @@ u_long Scm_BignumToUI(const ScmBignum *b, int clamp, int *oor)
 /* we need special routines for int64 */
 ScmInt64 Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
 {
-#if SCM_EMULATE_INT64
-    ScmInt64 r = {0, 0};
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
-    if (b->sign > 0) {
-        if (b->size > 2 || b->values[1] > LONG_MAX) {
-            if (!(clamp & SCM_CLAMP_HI)) goto err;
-            SCM_SET_INT64_MAX(r);
-        } else {
-            r.lo = b->values[0];
-            if (b->size == 2) r.hi = b->values[1];
-        }
-    } else if (b->sign < 0) {
-        if (b->size > 2 || b->values[1] > (u_long)LONG_MAX + 1) {
-            if (!(clamp&SCM_CLAMP_LO)) goto err;
-            SCM_SET_INT64_MIN(r);
-        } else {
-            b = SCM_BIGNUM(Scm_BignumComplement(b));
-            r.lo = b->values[0];
-            if (b->size == 2) r.hi = b->values[1];
-            else              r.hi = -1;
-        }
-    }
-    return r;
-#else  /*!SCM_EMULATE_INT64*/
     int64_t r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign > 0) {
@@ -348,7 +324,6 @@ ScmInt64 Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
         }
     }
     return r;
-#endif /*!SCM_EMULATE_INT64*/
   err:
     if (clamp == SCM_CLAMP_NONE && oor != NULL) {
         *oor = TRUE;
@@ -360,22 +335,6 @@ ScmInt64 Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
 
 ScmUInt64 Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
 {
-#if SCM_EMULATE_INT64
-    ScmInt64 r = {0, 0};
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
-    if (b->sign > 0) {
-        if (b->size > 2) {
-            if (!(clamp&SCM_CLAMP_HI)) goto err;
-            SCM_SET_UINT64_MAX(r);
-        } else {
-            r.lo = b->values[0];
-            if (b->size == 2) r.hi = b->values[1];
-        }
-    } else if (b->sign < 0) {
-        if (!(clamp&SCM_CLAMP_LO)) goto err;
-    }
-    return r;
-#else  /*!SCM_EMULATE_INT64*/
     uint64_t r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign > 0) {
@@ -391,7 +350,6 @@ ScmUInt64 Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
         if (!(clamp&SCM_CLAMP_LO)) goto err;
     }
     return r;
-#endif /*!SCM_EMULATE_INT64*/
   err:
     if (clamp == SCM_CLAMP_NONE && oor != NULL) {
         *oor = TRUE;

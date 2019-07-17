@@ -302,11 +302,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
                 INIT_R(r, seed);
                 for (size_t i=0; i<s; i++) {
                     ScmUInt64 e = SCM_U64VECTOR_ELEMENT(u, i);
-#if SCM_EMULATE_INT64
-                    u_long z = e.hi ^ e.lo;
-#else
                     u_long z = (e >> 32) ^ e;
-#endif
                     SMALL_INT_HASH(z, z);
                     r = COMBINE(r, z);
                 }

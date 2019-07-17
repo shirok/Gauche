@@ -328,22 +328,13 @@
 (define (generate-dotop)
   (dolist [rule (make-rules)]
     (let1 tag (string->symbol (getval rule 't))
-      (define (ZERO r)
-        (case tag
-          [(s64 u64) #"SCM_SET_INT64_ZERO(~r)"]
-          [else #"~r = 0"]))
-      (for-each (cute substitute <> `((ZERO  ,ZERO) ,@rule))
-                *tmpl-dotop*))))
+      (for-each (cute substitute <> rule) *tmpl-dotop*))))
 
 (define (generate-rangeop)
   (dolist [rule (make-rules)]
     (let ([tag (string->symbol (getval rule 't))]
           [TAG (getval rule 'T)]
           [cast (getval rule 'CAST_N2E)])
-      (define (ZERO r)
-        (case tag
-          [(s64 u64) #"SCM_SET_INT64_ZERO(~r)"]
-          [else #"~r = 0"]))
       (define (GETLIM r dc v)
         (let1 getter
             (case tag
@@ -378,7 +369,6 @@
                       "SCM_OBJ(x)")
                      )]
         (for-each (cute substitute <> `((GETLIM  ,GETLIM)
-                                        (ZERO  ,ZERO)
                                         (LT  ,LT)
                                         (opname   ,(ref ops 0))
                                         (Opname   ,(ref ops 1))

@@ -914,7 +914,7 @@ static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
     ${ntype} r, vx, vy;
     ScmObj rr = SCM_MAKE_INT(0), vvy, vvx;
 
-    ${ZERO r};
+    r = 0;
     switch (arg2_check("${t}vector-dot", SCM_OBJ(x), y, FALSE)) {
     case ARGTYPE_UVECTOR:
         for (int i=0; i<size; i++) {
@@ -1003,8 +1003,8 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
     ScmObj vv;
     ${dstdecl};
 
-    ${ZERO minval};             /* make compiler happy */
-    ${ZERO maxval};             /* dittox */
+    minval = 0;             /* make compiler happy */
+    maxval = 0;             /* dittox */
 
     /* size check */
     if (SCM_FALSEP(min)) mintype = ARGTYPE_CONST;

@@ -761,25 +761,17 @@
    [(eq? class <s64vector>)
     (print "#if SIZEOF_LONG == 8")
     (format #t "~dl,\n" v)
-    (print "#elif SCM_EMULATE_INT64")
-    (print "#ifdef WORDS_BIGENDIAN")
-    (print "#else  /*!WORDS_BIGENDIAN*/")
-    (print "#endif /*!WORDS_BIGENDIAN*/")
-    (print "#else  /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")
+    (print "#else  /*SIZEOF_LONG == 4*/")
     (format #t " (((int64_t)~dl << 32)|~dl),\n"
             (ash v -32) (logand v (- (%expt 2 32) 1)))
-    (print "#endif /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")]
+    (print "#endif /*SIZEOF_LONG == 4*/")]
    [(eq? class <u64vector>)
     (print "#if SIZEOF_LONG == 8")
     (format #t "~dlu,\n" v)
-    (print "#elif SCM_EMULATE_INT64")
-    (print "#ifdef WORDS_BIGENDIAN")
-    (print "#else  /*!WORDS_BIGENDIAN*/")
-    (print "#endif /*!WORDS_BIGENDIAN*/")
-    (print "#else  /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")
+    (print "#else  /*SIZEOF_LONG == 4*/")
     (format #t " (((int64_t)~dlu << 32)|~dlu),\n"
             (ash v -32) (logand v (- (%expt 2 32) 1)))
-    (print "#endif /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")]
+    (print "#endif /*SIZEOF_LONG == 4*/")]
    [(eq? class <f16vector>) 
     (format #t "0x~4,'0x,\n" ((with-module gauche.internal flonum->f16bits) v))]
    [(eq? class <f32vector>) 

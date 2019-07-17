@@ -40,15 +40,9 @@
 #include <gauche/config.h>
 #include "renaming.h"
 
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
-#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
-#endif
-#if defined(HAVE_UINT32_T) && defined(HAVE_UINT64_T)
 #define SHA2_USE_INTTYPES_H
-#endif
 
 /* gauche/config.h provides WORDS_BIGENDIAN. */
 #undef BYTE_ORDER

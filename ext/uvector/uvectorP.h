@@ -174,28 +174,28 @@ static inline long clamp_u32(u_long val, int clamp)
 static inline ScmInt64 range_s64hi(ScmInt64 val, int clamp)
 {
     if (!(clamp & SCM_CLAMP_HI)) range_error("s64", Scm_MakeInteger64(val));
-    SCM_SET_INT64_MAX(val);
+    val = INT64_MAX;
     return val;
 }
 
 static inline ScmInt64 range_s64lo(ScmInt64 val, int clamp)
 {
     if (!(clamp & SCM_CLAMP_LO)) range_error("s64", Scm_MakeInteger64(val));
-    SCM_SET_INT64_MIN(val);
+    val = INT64_MIN;
     return val;
 }
 
 static inline ScmUInt64 range_u64hi(ScmUInt64 val, int clamp)
 {
     if (!(clamp & SCM_CLAMP_HI)) range_error("u64", Scm_MakeIntegerU64(val));
-    SCM_SET_UINT64_MAX(val);
+    val = UINT64_MAX;
     return val;
 }
 
 static inline ScmUInt64 range_u64lo(ScmUInt64 val, int clamp)
 {
     if (!(clamp & SCM_CLAMP_LO)) range_error("u64", Scm_MakeIntegerU64(val));
-    SCM_SET_INT64_ZERO(val);
+    val = 0;
     return val;
 }
 
