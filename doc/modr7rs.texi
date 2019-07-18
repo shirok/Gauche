@@ -4203,7 +4203,8 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
-Creates 
+Creates a character set containing every character whose ISO/IEC 10646
+UCS-4 code lies in the half-open range [@var{lower},@var{upper}).
 @c JP
 @c COMMON
 @end defun
@@ -4485,6 +4486,7 @@ Returns a character set that adds @var{char1} @dots{} to
 
 @defvar char-set:digit
 @defvarx char-set:hex-digit
+@defvarx char-set:letter+digit
 [R7RS charset]
 @c MOD scheme.charset
 @end defvar

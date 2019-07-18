@@ -960,4 +960,231 @@
                                               (seq #\a #\b)))
                         "abc"))
 
+;;-------------------------------------------------------------------------
+(test-section "SRE to AST transformation")
+
+(use gauche.regexp.sre)
+
+(define-syntax test-ast
+  (syntax-rules ()
+    [(_ expected regexp)
+     (test* 'regexp
+            '(0 #f expected)
+            (regexp-parse-sre 'regexp))]))
+
+(define-syntax test-cset
+  (syntax-rules ()
+    [(_ expected regexp)
+     (test* 'regexp
+            (list 0 #f expected)
+            (regexp-parse-sre 'regexp))]))
+
+(test-ast (seq #\s #\t #\r) "str")
+
+(test-ast any any)
+(test-ast bol bol)
+(test-ast eol eol)
+(test-ast bow bow)
+(test-ast eow eow)
+(test-ast nwb nwb)
+
+(test-cset char-set:ascii ascii)
+(test-cset (string->char-set "abc") ("abc"))
+(test-cset (ucs-range->char-set (char->integer #\A)
+                                (char->integer #\D))
+           (/ "AC"))
+(test-cset (ucs-range->char-set (char->integer #\A)
+                                (char->integer #\D))
+           (char-range "AC"))
+(test-cset (ucs-range->char-set (char->integer #\A)
+                                (char->integer #\D))
+           (/ "A" #\C))
+(test-cset (string->char-set "ab") (or #\a #\b))
+(test-cset (string->char-set "a") (and ascii #\a))
+(test-cset (string->char-set "b") (- (or #\a #\b) #\a))
+(test-cset `(comp . ,(string->char-set "a")) (complement #\a))
+(test-cset `(comp . ,(string->char-set "ab")) (~ #\a #\b))
+(test-cset (string->char-set "bc") (and ("abc") (~ #\a)))
+
+(test-ast (rep 0 #f #\a) (* #\a))
+(test-ast (rep 0 #f #\a) (zero-or-more #\a))
+
+(test-ast (rep 1 #f #\a) (+ #\a))
+(test-ast (rep 1 #f #\a) (one-or-more #\a))
+
+(test-ast (rep 0 1 #\a) (? #\a))
+(test-ast (rep 0 1 #\a) (optional #\a))
+
+(test-ast (rep 3 3 #\a) (= 3 #\a))
+(test-ast (rep 3 3 #\a) (exactly 3 #\a))
+
+(test-ast (rep 3 #f #\a) (>= 3 #\a))
+(test-ast (rep 3 #f #\a) (at-least 3 #\a))
+
+(test-ast (rep 3 5 #\a) (** 3 5 #\a))
+(test-ast (rep 3 5 #\a) (repeated 3 5 #\a))
+
+(test-ast (alt (seq #\a #\b) (seq #\c #\d))
+          (|\|| "ab" "cd"))
+(test-ast (alt (seq #\a #\b) (seq #\c #\d))
+          (or "ab" "cd"))
+
+(test-ast (seq (seq #\a #\b) (seq #\c #\d))
+          (: "ab" "cd"))
+(test-ast (seq (seq #\a #\b) (seq #\c #\d))
+          (seq "ab" "cd"))
+
+(test-ast (1 #f
+	     (2 #f (seq #\a #\b #\c))
+	     (3 #f (seq #\d #\e #\f))
+	     (seq #\g #\h #\i))
+          ($ ($ "abc") ($ "def") "ghi"))
+
+(test-ast (1 result (seq #\a #\b #\c)) (-> result "abc"))
+
+(test-ast (seq (seq (seq (seq #\a #\b #\c))
+		    (seq (seq #\d #\e #\f))
+		    (seq #\g #\h #\i)))
+          (w/nocapture ($ ($ "abc") ($ "def") "ghi")))
+
+(test-ast (seq (seq #\a #\b)) (w/case "ab"))
+(test-cset `(seq (seq ,(string->char-set "Aa")
+		      ,(string->char-set "Bb")))
+	   (w/nocase "ab"))
+(test-ast (seq (seq (seq #\a #\b))) (w/nocase (w/case "ab")))
+
+
+(test-ast #\a #\a)
+(test-ast (seq #\a #\b #\c) "abc")
+
+;;-------------------------------------------------------------------------
+(test-section "SRE")		    ; based on chibi's regexp-test.sld
+
+(define (test-sre expected sre input)
+  (test* sre
+         expected
+         (let ([result (rxmatch (regexp-compile-sre sre) input)])
+           (and result
+                (map (cut result <>)
+                     (iota (rxmatch-num-matches result)))))))
+
+(define (test-sre-named expected sre input)
+  (test* sre
+         expected
+         (let ([result (rxmatch (regexp-compile-sre sre) input)])
+           (and result (rxmatch-named-groups result)))))
+
+(test-sre '("ababc" "abab")
+          '(: ($ (* "ab")) "c")
+          "ababc")
+
+(test-sre '("y") '(: "y") "xy")
+
+(test-sre #f
+          '(: (* any) ($ "foo" (* any)) ($ "bar" (* any)))
+          "fooxbafba")
+
+(test-sre '("fooxbarfbar" "fooxbarf" "bar")
+          '(: (* any) ($ "foo" (* any)) ($ "bar" (* any)))
+          "fooxbarfbar")
+
+(test-sre '("abcd" "abcd")
+          '($ (* (or "ab" "cd")))
+          "abcd")
+
+(test* '(or (-> foo "ab") (-> foo "cd"))
+       "ab"
+       ((rxmatch
+         (regexp-compile-sre
+          '(or (-> foo "ab") (-> foo "cd")))
+         "ab")
+        'foo))
+
+(test* '(or (-> foo "ab") (-> foo "cd"))
+       "cd"
+       ((rxmatch
+         (regexp-compile-sre
+          '(or (-> foo "ab") (-> foo "cd")))
+         "cd")
+        'foo))
+
+(test-sre '("ababc" "abab")
+          '(: bol ($ (* "ab")) "c")
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: ($ (* "ab")) "c" eol)
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: bol ($ (* "ab")) "c" eol)
+          "ababc")
+(test-sre #f
+          '(: bol ($ (* "ab")) eol "c")
+          "ababc")
+(test-sre #f
+          '(: ($ (* "ab")) bol "c" eol)
+          "ababc")
+
+(test-sre '("ababc" "abab")
+          '(: bow ($ (* "ab")) "c")
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: ($ (* "ab")) "c" eow)
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: bow ($ (* "ab")) "c" eow)
+          "ababc")
+(test-sre #f
+          '(: bow ($ (* "ab")) eow "c")
+          "ababc")
+(test-sre #f
+          '(: ($ (* "ab")) bow "c" eow)
+          "ababc")
+(test-sre '("  abc  " "abc")
+          '(: (* space) bow ($ (* alpha)) eow (* space))
+          "  abc  ")
+
+(test-sre '("abc  " "abc")
+          '(: ($ (* alpha)) (* any))
+          "abc  ")
+(test-sre '("<em>Hello World</em>" "em>Hello World</em")
+          '(: "<" ($ (* any)) ">" (* any))
+          "<em>Hello World</em>")
+
+(test-sre '("foo") '(: "foo") " foo ")
+(test-sre #f '(: nwb "foo" nwb) " foo ")
+(test-sre '("foo") '(: nwb "foo" nwb) "xfoox")
+
+(test-sre '("beef")
+          '(* (/"af"))
+          "beef")
+
+(test-sre '("12345beef" "beef")
+          '(: (* digit) ($ (* (/"af"))))
+          "12345beef")
+
+(let ((number '($ (+ digit))))
+  (test-sre '("555-867-5309" "555" "867" "5309")
+            `(: ,number "-" ,number "-" ,number)
+            "555-867-5309")
+
+  (test-sre '("555-867-5309" "555" "5309")
+            `(: ,number "-" (w/nocapture ,number) "-" ,number)
+            "555-867-5309"))
+
+(test-sre '("12345BeeF" "BeeF")
+          '(: (* digit) (w/nocase ($ (* (/ "af")))))
+          "12345BeeF")
+
+(test-sre #f '(: bol (* lower) eol) "abcD")
+(test-sre '("abcD") '(w/nocase (* lower)) "abcD")
+(test-sre '("σζ") '(* lower) "σζ")
+(test-sre '("Σ") '(* upper) "Σ")
+(test-sre '("\x01C5;") '(* title) "\x01C5;")
+
+(test-sre '("кириллица") '(* alpha) "кириллица")
+(test-sre '("") '(w/ascii (* alpha)) "кириллица")
+(test-sre '("кириллица") '(w/nocase "КИРИЛЛИЦА") "кириллица")
+
+(test-sre '("") '(w/ascii (* digit)) "１２３４５")
+
 (test-end)

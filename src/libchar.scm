@@ -269,5 +269,7 @@
 (define-cproc %char-set-ranges (cs::<char-set>) Scm_CharSetRanges)
 (define-cproc %char-set-predefined (num::<fixnum>) Scm_GetStandardCharSet)
 
+(define-cproc %char-set-case-fold! (cs::<char-set>) Scm_CharSetCaseFold)
+
 (define-cproc %char-set-dump (cs::<char-set>) ::<void>
   (Scm_CharSetDump cs SCM_CUROUT))

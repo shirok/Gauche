@@ -222,6 +222,8 @@
           [(eq? n 'bol)  (disp #\^)]
           [(eq? n 'eol)  (disp #\$)]
           [(eq? n 'wb)   (disp "\\b")]
+          [(eq? n 'bow)  (disp "\\b(?=\\w)")] ; unsupported pcre syntax
+          [(eq? n 'eow)  (disp "\\b(?<=\\w)")] ; unsupported pcre syntax
           [(eq? n 'nwb)  (disp "\\B")]
           [(not (pair? n)) (err "invalid AST node" n)]
           [else (case (car n)
