@@ -1413,9 +1413,18 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
 /*-----------------------------------------------------------------
  * Pre-defined charset
  */
-/* TODO: We need different definitions of character classes for different
- * character sets.  For now, I prepare the predefined table only for
- * ASCII range, that all character sets agree on.
+
+/* NB: The predefined character sets covers full Unicode range,
+   except DIGIT, LETTER_DIGIT, HEX_DIGIT, WHITESPACE, BLANK and WORD.
+   (You can find the code that determines the exact membership of these
+   sets in src/gen-unicode.scm (build-code-sets)).
+
+   This is mostly for the backward compatibility of \d, \s and \w of
+   the regexp.  Those have been extensively used for input validation
+   and changing them can have unexpected consequences.
+
+   The current plan is to retain \d, \s and \w in regexp by adding
+   ASCII_DIGIT class etc, and extend DIGIT etc. to Unicode range.
  */
 
 ScmObj Scm_GetStandardCharSet(int id)
