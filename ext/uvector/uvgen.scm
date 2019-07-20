@@ -1,5 +1,5 @@
 ;;
-;; Generates uvect.c from uvect.c.tmpl
+;; Generates uvector.c, uvector.h and uvlib.scm the corresponding *.tmpl file
 ;;
 
 (use srfi-13)
