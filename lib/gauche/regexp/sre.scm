@@ -48,7 +48,7 @@
       [(upper upper-case) char-set:upper-case]
       [(title title-case) char-set:title-case]
       [(alpha alphabetic) char-set:letter]
-      [(num numeric digit) char-set:digit]
+      [(num numeric) char-set:digit]
       [(alnum alphanum alphanumeric) char-set:letter+digit]
       [(punct punctuation) char-set:punctuation]
       [(symbol) char-set:symbol]

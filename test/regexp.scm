@@ -1159,10 +1159,10 @@
           "beef")
 
 (test-sre '("12345beef" "beef")
-          '(: (* digit) ($ (* (/"af"))))
+          '(: (* numeric) ($ (* (/"af"))))
           "12345beef")
 
-(let ((number '($ (+ digit))))
+(let ((number '($ (+ numeric))))
   (test-sre '("555-867-5309" "555" "867" "5309")
             `(: ,number "-" ,number "-" ,number)
             "555-867-5309")
@@ -1172,7 +1172,7 @@
             "555-867-5309"))
 
 (test-sre '("12345BeeF" "BeeF")
-          '(: (* digit) (w/nocase ($ (* (/ "af")))))
+          '(: (* numeric) (w/nocase ($ (* (/ "af")))))
           "12345BeeF")
 
 (test-sre #f '(: bol (* lower) eol) "abcD")
@@ -1185,6 +1185,6 @@
 (test-sre '("") '(w/ascii (* alpha)) "кириллица")
 (test-sre '("кириллица") '(w/nocase "КИРИЛЛИЦА") "кириллица")
 
-(test-sre '("") '(w/ascii (* digit)) "１２３４５")
+(test-sre '("") '(w/ascii (* numeric)) "１２３４５")
 
 (test-end)
