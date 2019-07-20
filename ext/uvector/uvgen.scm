@@ -103,6 +103,7 @@
 ;;  etype       : element C type, e.g. int16_t for s16vector
 ;;  ntype       : natural C type to operate on each element. (optional)
 ;;                e.g. long for s16vector
+;;  ZERO        : 'zero' value of etype (optional)
 ;;  (REF_NTYPE v i) 
 ;;              : Reference v[i] as ntype
 ;;  (CAST_N2E exp)
@@ -137,8 +138,16 @@
         (make-f32rules)
         (make-f64rules)))
 
-(define (make-rules)
+(define (make-complex-rules)
+  (list (make-c32rules)
+        (make-c64rules)
+        (make-c128rules)))
+
+(define (make-scalar-rules)
   (append (make-integer-rules) (make-flonum-rules)))
+
+(define (make-rules)
+  (append (make-integer-rules) (make-flonum-rules) (make-complex-rules)))
 
 ;; common stuff
 (define (common-rules tag)
@@ -146,7 +155,8 @@
          [STAG  (string-upcase stag)])
     `((t   ,stag)
       (T   ,STAG)
-      (CAST_N2E ,identity))))
+      (CAST_N2E ,identity)
+      (ZERO  "0"))))
 
 (define (make-s8rules)
   `((etype     "int8_t")
@@ -276,6 +286,28 @@
     (VMBOX     ,(^[dst src]       #"~dst = Scm_VMReturnFlonum(~src)"))
     ,@(common-rules 'f64)))
 
+(define (make-c32rules)
+  `((etype     "ScmHalfComplex")
+    (REF_NTYPE ,(^[v i] #"SCM_C32VECTOR_ELEMENTS(~v)[~i]"))
+    (UNBOX     ,(^[dst src clamp] #"~dst = Scm_GetHalfComplex(~src)"))
+    (BOX       ,(^[dst src]       #"~dst = Scm_HalfComplexToComplex(~src)"))
+    (ZERO      "(ScmHalfComplex){0, 0}")
+    ,@(common-rules 'c32)))
+
+(define (make-c64rules)
+  `((etype     "complex float")
+    (REF_NTYPE ,(^[v i] #"SCM_C64VECTOR_ELEMENTS(~v)[~i]"))
+    (UNBOX     ,(^[dst src clamp] #"~dst = Scm_GetFloatComplex(~src)"))
+    (BOX       ,(^[dst src]       #"~dst = Scm_FloatComplexToComplex(~src)"))
+    ,@(common-rules 'c64)))
+
+(define (make-c128rules)
+  `((etype     "complex double")
+    (REF_NTYPE ,(^[v i] #"SCM_C128VECTOR_ELEMENTS(~v)[~i]"))
+    (UNBOX     ,(^[dst src clamp] #"~dst = Scm_GetDoubleComplex(~src)"))
+    (BOX       ,(^[dst src]       #"~dst = Scm_DoubleComplexToComplex(~src)"))
+    ,@(common-rules 'c128)))
+
 (define (dummy . _) "/* not implemented */")
 
 ;;===============================================================
@@ -293,7 +325,7 @@
             '("add" "sub" "mul")
             '("Add" "Sub" "Mul")
             '("Add" "Sub" "Mul"))
-  (dolist [rule (make-flonum-rules)]
+  (dolist [rule (append (make-flonum-rules) (make-complex-rules))]
     (for-each (cute substitute <> `((opname  "div")
                                     (Opname  "Div")
                                     (Sopname  "Div")
@@ -327,11 +359,10 @@
 
 (define (generate-dotop)
   (dolist [rule (make-rules)]
-    (let1 tag (string->symbol (getval rule 't))
-      (for-each (cute substitute <> rule) *tmpl-dotop*))))
+    (for-each (cute substitute <> rule) *tmpl-dotop*)))
 
 (define (generate-rangeop)
-  (dolist [rule (make-rules)]
+  (dolist [rule (make-scalar-rules)]
     (let ([tag (string->symbol (getval rule 't))]
           [TAG (getval rule 'T)]
           [cast (getval rule 'CAST_N2E)])
@@ -379,7 +410,7 @@
                   *tmpl-rangeop*)))))
 
 (define (generate-swapb)
-  (dolist [rule (make-rules)]
+  (dolist [rule (make-scalar-rules)]
     (let1 tag (string->symbol (getval rule 't))
       (define (SWAPB)
         (case tag

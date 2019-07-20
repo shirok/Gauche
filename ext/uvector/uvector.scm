@@ -45,7 +45,40 @@
   (use gauche.collection)
   (use gauche.sequence)
   (use data.queue)
-  (export f16vector f16vector->list f16vector->vector
+  (export c32vector c32vector->list c32vector->vector
+          c32vector-add c32vector-add! c32vector-append
+          c32vector-compare
+          c32vector-copy c32vector-copy! c32vector-div c32vector-div!
+          c32vector-dot c32vector-fill! c32vector-length
+          c32vector-mul c32vector-mul!
+          c32vector-multi-copy!
+          c32vector-ref c32vector-set! c32vector-sub c32vector-sub!
+          ;c32vector-swap-bytes c32vector-swap-bytes!
+          c32vector=? c32vector?
+
+          c64vector c64vector->list c64vector->vector
+          c64vector-add c64vector-add! c64vector-append
+          c64vector-compare
+          c64vector-copy c64vector-copy! c64vector-div c64vector-div!
+          c64vector-dot c64vector-fill! c64vector-length
+          c64vector-mul c64vector-mul!
+          c64vector-multi-copy!
+          c64vector-ref c64vector-set! c64vector-sub c64vector-sub!
+          ;c64vector-swap-bytes c64vector-swap-bytes!
+          c64vector=? c64vector?
+
+          c128vector c128vector->list c128vector->vector
+          c128vector-add c128vector-add! c128vector-append
+          c128vector-compare
+          c128vector-copy c128vector-copy! c128vector-div c128vector-div!
+          c128vector-dot c128vector-fill! c128vector-length
+          c128vector-mul c128vector-mul!
+          c128vector-multi-copy!
+          c128vector-ref c128vector-set! c128vector-sub c128vector-sub!
+          ;c128vector-swap-bytes c128vector-swap-bytes!
+          c128vector=? c128vector?          
+
+          f16vector f16vector->list f16vector->vector
           f16vector-add f16vector-add! f16vector-append
           f16vector-clamp f16vector-clamp! f16vector-compare
           f16vector-copy f16vector-copy! f16vector-div f16vector-div!
@@ -78,11 +111,12 @@
 
           get-output-uvector
 
-          list->f16vector list->f32vector
-          list->f64vector list->s16vector list->s32vector list->s64vector
-          list->s8vector list->u16vector list->u32vector list->u64vector
-          list->u8vector
+          list->c32vector list->c64vector list->c128vector
+          list->f16vector list->f32vector list->f64vector
+          list->s8vector list->s16vector list->s32vector list->s64vector
+          list->u8vector list->u16vector list->u32vector list->u64vector
 
+          make-c32vector make-c64vector make-c128vector
           make-f16vector make-f32vector make-f64vector
           make-s16vector make-s32vector make-s64vector make-s8vector
           make-u16vector make-u32vector make-u64vector make-u8vector
@@ -175,6 +209,7 @@
           uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
           uvector->list uvector->vector uvector-swap-bytes uvector-swap-bytes!
 
+          vector->c32vector vector->c64vector vector->c128vector
           vector->f16vector vector->f32vector vector->f64vector
           vector->s16vector vector->s32vector vector->s64vector
           vector->s8vector vector->u16vector vector->u32vector
@@ -285,7 +320,13 @@
                                                      start end))]
      [(SCM_UVECTOR_F64) (return (Scm_F64VectorToList (SCM_F64VECTOR v)
                                                      start end))]
-     [else (SCM_ASSERT "Invalid uvector type")
+     [(SCM_UVECTOR_C32) (return (Scm_C32VectorToList (SCM_C32VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_C64) (return (Scm_C64VectorToList (SCM_C64VECTOR v)
+                                                     start end))]
+     [(SCM_UVECTOR_C128) (return (Scm_C128VectorToList (SCM_C128VECTOR v)
+                                                       start end))]
+     [else (Scm_Error "[internal] Invalid uvector type: %S" v)
            (return SCM_UNDEFINED)]))
  (define-cproc uvector->vector (v::<uvector> 
                                 :optional (start::<fixnum> 0)
@@ -313,7 +354,13 @@
                                                        start end))]
      [(SCM_UVECTOR_F64) (return (Scm_F64VectorToVector (SCM_F64VECTOR v)
                                                        start end))]
-     [else (SCM_ASSERT "Invalid uvector type")
+     [(SCM_UVECTOR_C32) (return (Scm_C32VectorToVector (SCM_C32VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_C64) (return (Scm_C64VectorToVector (SCM_C64VECTOR v)
+                                                       start end))]
+     [(SCM_UVECTOR_C128) (return (Scm_C128VectorToVector (SCM_C128VECTOR v)
+                                                         start end))]
+     [else (Scm_Error "[internal] Invalid uvector type: %S" v)
            (return SCM_UNDEFINED)])))   
 
 ;; allocation by class
@@ -367,7 +414,14 @@
         (Scm_F64VectorFill (SCM_F64VECTOR v)
                            (Scm_GetDouble init)
                            0 -1)]
-       [else (SCM_ASSERT "Invalid uvector type")])
+       [(SCM_UVECTOR_C32)
+        (Scm_C32VectorFill (SCM_C32VECTOR v) (Scm_GetHalfComplex init) 0 -1)]
+       [(SCM_UVECTOR_C64)
+        (Scm_C64VectorFill (SCM_C64VECTOR v) (Scm_GetFloatComplex init) 0 -1)]
+       [(SCM_UVECTOR_C128)
+        (Scm_C128VectorFill (SCM_C128VECTOR v) 
+                            (Scm_GetDoubleComplex init) 0 -1)]
+       [else (Scm_Error "[internal] Invalid uvector class: %S" klass)])
      (return v))))
 
 ;; generic copy
@@ -462,7 +516,19 @@
           (let* ([k::double (Scm_GetDouble key)])
             (set! r (Scm_BinarySearchF64 (+ (SCM_F64VECTOR_ELEMENTS v) s)
                                          (- e s) k p (& lb) (& ub))))]
-         [else (SCM_ASSERT "Invalid uvector type")]
+         [(SCM_UVECTOR_C32)
+          (let* ([k::ScmHalfComplex (Scm_GetHalfComplex key)])
+            (set! r (Scm_BinarySearchC32 (+ (SCM_C32VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]         
+         [(SCM_UVECTOR_C64)
+          (let* ([k::(complex float) (Scm_GetFloatComplex key)])
+            (set! r (Scm_BinarySearchC64 (+ (SCM_C64VECTOR_ELEMENTS v) s)
+                                         (- e s) k p (& lb) (& ub))))]         
+         [(SCM_UVECTOR_C128)
+          (let* ([k::(complex double) (Scm_GetDoubleComplex key)])
+            (set! r (Scm_BinarySearchC128 (+ (SCM_C128VECTOR_ELEMENTS v) s)
+                                          (- e s) k p (& lb) (& ub))))] 
+         [else (Scm_Error "[internal] Invalid uvector type: %S" v)]
          )
        (when (== r (cast (size_t) -1))
          (cond
@@ -789,6 +855,9 @@
 (define-appender f16)
 (define-appender f32)
 (define-appender f64)
+(define-appender c32)
+(define-appender c64)
+(define-appender c128)
 
 ;;-------------------------------------------------------------
 ;; Sequence protocol implementation
@@ -843,6 +912,9 @@
 (%define-srfi-4-collection-interface f16)
 (%define-srfi-4-collection-interface f32)
 (%define-srfi-4-collection-interface f64)
+(%define-srfi-4-collection-interface c32)
+(%define-srfi-4-collection-interface c64)
+(%define-srfi-4-collection-interface c128)
 
 ;; some special cases
 (define-method coerce-to ((dst <string-meta>) (src <u8vector>))

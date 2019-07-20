@@ -1,3 +1,8 @@
+2019-07-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector: Added almost full support of c32, c64 and c128 uvectors
+	  (except byte swapping).
+
 2019-07-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/int64.h etc.: Removed [u]int64 emulation code.  Now we

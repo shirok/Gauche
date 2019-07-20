@@ -35,6 +35,12 @@
 (test* "#f32()" #f (f32vector? '#(0.0 1.0 2.0 3.0 4.0)))
 (test* "#f64()" #t (f64vector? '#f64(0.0 1.0 2.0 3.0 4.0)))
 (test* "#f64()" #f (f64vector? '#(0.0 1.0 2.0 3.0 4.0)))
+(test* "#c32()" #t (c32vector? '#c32(1+i 1-i 2+2i 2-2i)))
+(test* "#c32()" #f (c32vector? '#(1+i 1-i 2+2i 2-2i)))
+(test* "#c64()" #t (c64vector? '#c64(1+i 1-i 2+2i 2-2i)))
+(test* "#c64()" #f (c64vector? '#(1+i 1-i 2+2i 2-2i)))
+(test* "#c128()" #t (c128vector? '#c128(1+i 1-i 2+2i 2-2i)))
+(test* "#c128()" #f (c128vector? '#(1+i 1-i 2+2i 2-2i)))
 
 ;;-------------------------------------------------------------------
 (test-section "writer syntax")
@@ -72,6 +78,15 @@
 (test* "#f64()" "#f64()"
        (with-output-to-string
          (^[] (write (f64vector)))))
+(test* "#c32()" "#c32()"
+       (with-output-to-string
+         (^[] (write (c32vector)))))
+(test* "#c64()" "#c64()"
+       (with-output-to-string
+         (^[] (write (c64vector)))))
+(test* "#c128()" "#c128()"
+       (with-output-to-string
+         (^[] (write (c128vector)))))
 
 ;;-------------------------------------------------------------------
 (test-section "constructors")
@@ -98,6 +113,9 @@
 (uvmaketester <f16vector> make-f16vector '(0 1.0 -1.0)) 
 (uvmaketester <f32vector> make-f32vector '(0 1.0 -1.0)) 
 (uvmaketester <f64vector> make-f64vector '(0 1.0 -1.0)) 
+(uvmaketester <c32vector> make-c32vector '(0 1.0+i -1.0-i)) 
+(uvmaketester <c64vector> make-c64vector '(0 1.0+i -1.0-i)) 
+(uvmaketester <c128vector> make-c128vector '(0 1.0+i -1.0-i)) 
 
 ;;-------------------------------------------------------------------
 (test-section "ref and set")
@@ -159,6 +177,22 @@
        (uvrefset-tester make-f64vector f64vector-ref f64vector-set!
                         '(0.0 -1.0 1.0)
                         '#f64(0.0 -1.0 1.0)))
+
+(test* "c32vector-ref|set!" #t
+       (uvrefset-tester make-c32vector c32vector-ref c32vector-set!
+                        '(0.0 -1-i 1+i)
+                        '#c32(0.0 -1-i 1+i)))
+
+(test* "c64vector-ref|set!" #t
+       (uvrefset-tester make-c64vector c64vector-ref c64vector-set!
+                        '(0.0 -1-i 1+i)
+                        '#c64(0.0 -1-i 1+i)))
+
+(test* "c128vector-ref|set!" #t
+       (uvrefset-tester make-c128vector c128vector-ref c128vector-set!
+                        '(0.0 -1-i 1+i)
+                        '#c128(0.0 -1-i 1+i)))
+
 
 (define (uvset-clamp-tester make ref set value)
   (let1 v (make 1)
@@ -277,6 +311,21 @@
                       f64vector->vector vector->f64vector
                       '#f64(0.0 -1.0 1.0)
                       '(0.0 -1.0 1.0)))
+(test* "c32vector conversion" #t
+       (uvconv-tester c32vector->list list->c32vector
+                      c32vector->vector vector->c32vector
+                      '#c32(0.0 -1.0+i 1.0-i)
+                      '(0.0 -1.0+i 1.0-i)))
+(test* "c64vector conversion" #t
+       (uvconv-tester c64vector->list list->c64vector
+                      c64vector->vector vector->c64vector
+                      '#c64(0.0 -1.0+i 1.0-i)
+                      '(0.0 -1.0+i 1.0-i)))
+(test* "c128vector conversion" #t
+       (uvconv-tester c128vector->list list->c128vector
+                      c128vector->vector vector->c128vector
+                      '#c128(0.0 -1.0+i 1.0-i)
+                      '(0.0 -1.0+i 1.0-i)))
 
 ;;-------------------------------------------------------------------
 (test-section "comparison")
@@ -370,7 +419,19 @@
 (test* "f64vector copy|fill!" #t
        (uvcopy-tester f64vector-copy f64vector-copy! f64vector-fill!
                       f64vector->list list->f64vector
-                      '#f64(0 -1.0 1.0) 1.0e64))
+                      '#f64(0 -1.0 1.0) 1.0))
+(test* "c32vector copy|fill!" #t
+       (uvcopy-tester c32vector-copy c32vector-copy! c32vector-fill!
+                      c32vector->list list->c32vector
+                      '#c32(0+i -1.0-i 1.0) 1.0))
+(test* "c64vector copy|fill!" #t
+       (uvcopy-tester c64vector-copy c64vector-copy! c64vector-fill!
+                      c64vector->list list->c64vector
+                      '#c64(0+i -1.0-i 1.0) 1.0))
+(test* "c128vector copy|fill!" #t
+       (uvcopy-tester c128vector-copy c128vector-copy! c128vector-fill!
+                      c128vector->list list->c128vector
+                      '#c128(0+i -1.0-i 1.0) 1.0))
 
 (define (uvcopy-startend-test msg make copy fill)
   (test* msg (list (make 1 2 3) (make 1 2) (make 0 9 9 3))
@@ -395,6 +456,12 @@
                       s64vector s64vector-copy s64vector-fill!)
 (uvcopy-startend-test "uvcopy-startend u64vector"
                       u64vector u64vector-copy u64vector-fill!)
+(uvcopy-startend-test "uvcopy-startend c32vector"
+                      c32vector c32vector-copy c32vector-fill!)
+(uvcopy-startend-test "uvcopy-startend c64vector"
+                      c64vector c64vector-copy c64vector-fill!)
+(uvcopy-startend-test "uvcopy-startend c128vector"
+                      c128vector c128vector-copy c128vector-fill!)
 
 (define (uvcopy!-newapi-test msg make copy!)
   (test* #"~msg /tstart" (make 0 7 8 9)
@@ -418,6 +485,9 @@
 (uvcopy!-newapi-test "f16vector-copy! newapi" f16vector f16vector-copy!)
 (uvcopy!-newapi-test "f32vector-copy! newapi" f32vector f32vector-copy!)
 (uvcopy!-newapi-test "f64vector-copy! newapi" f64vector f64vector-copy!)
+(uvcopy!-newapi-test "c32vector-copy! newapi" c32vector c32vector-copy!)
+(uvcopy!-newapi-test "c64vector-copy! newapi" c64vector c64vector-copy!)
+(uvcopy!-newapi-test "c128vector-copy! newapi" c128vector c128vector-copy!)
 
 (test* "uvector-copy! (generic)" '#u16(0 0 1 2 65535 0)
        (rlet1 v (make-u16vector 6 0)
@@ -464,6 +534,9 @@
 (uv-multicopy!-test "f16vector-multi-copy!" make-f16vector f16vector f16vector-multi-copy!)
 (uv-multicopy!-test "f32vector-multi-copy!" make-f32vector f32vector f32vector-multi-copy!)
 (uv-multicopy!-test "f64vector-multi-copy!" make-f64vector f64vector f64vector-multi-copy!)
+(uv-multicopy!-test "c32vector-multi-copy!" make-c32vector c32vector c32vector-multi-copy!)
+(uv-multicopy!-test "c64vector-multi-copy!" make-c64vector c64vector c64vector-multi-copy!)
+(uv-multicopy!-test "c128vector-multi-copy!" make-c128vector c128vector c128vector-multi-copy!)
 
 (define (uv-append-test msg ctor append)
   (test* #"~msg base" (ctor) (append))
@@ -482,6 +555,9 @@
 (uv-append-test "f16vector-append" f16vector f16vector-append)
 (uv-append-test "f32vector-append" f32vector f32vector-append)
 (uv-append-test "f64vector-append" f64vector f64vector-append)
+(uv-append-test "c32vector-append" c32vector c32vector-append)
+(uv-append-test "c64vector-append" c64vector c64vector-append)
+(uv-append-test "c128vector-append" c128vector c128vector-append)
 
 ;;-------------------------------------------------------------------
 (test-section "swapping bytes")
@@ -567,6 +643,12 @@
        (collection-tester <f32vector> (f32vector 1 2 3 4)))
 (test* "f64vector collection interface" #t
        (collection-tester <f64vector> (f64vector 1 2 3 4)))
+(test* "c32vector collection interface" #t
+       (collection-tester <c32vector> (c32vector 1 2 3 4)))
+(test* "c64vector collection interface" #t
+       (collection-tester <c64vector> (c64vector 1 2 3 4)))
+(test* "c128vector collection interface" #t
+       (collection-tester <c128vector> (c128vector 1 2 3 4)))
 
 ;;-------------------------------------------------------------------
 (test-section "arithmetic operations")
@@ -789,6 +871,9 @@
 (flonum-arith-test-generate f16)
 (flonum-arith-test-generate f32)
 (flonum-arith-test-generate f64)
+(flonum-arith-test-generate c32)
+(flonum-arith-test-generate c64)
+(flonum-arith-test-generate c128)
 
 ;;-------------------------------------------------------------------
 (test-section "bitwise operations")

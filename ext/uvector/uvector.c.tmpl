@@ -166,7 +166,7 @@ static ArgType arg2_check(const char *name, ScmObj x, ScmObj y, int const_ok)
 
 ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp SCM_UNUSED)
 {
-    ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(size, 0);
+    ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(size, ${ZERO});
     for (int i=0; i<size; i++) {
         ${etype} elt;
         ScmObj obj = arr[i];
@@ -188,7 +188,7 @@ ScmObj Scm_VectorTo${T}Vector(ScmVector *ivec, int start, int end, int clamp)
  * Accessors and modifiers
  */
 
-ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int start, int end)
+ScmObj Scm_${T}VectorFill(ScmUVector *vec, ${etype} fill, int start, int end)
 {
     int size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
@@ -197,7 +197,7 @@ ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int start, int end)
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
+ScmObj Scm_${T}VectorToList(ScmUVector *vec, int start, int end)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL;
     int size = SCM_${T}VECTOR_SIZE(vec);
@@ -211,7 +211,7 @@ ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
     return head;
 }
 
-ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end)
+ScmObj Scm_${T}VectorToVector(ScmUVector *vec, int start, int end)
 {
     int size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
@@ -225,7 +225,7 @@ ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end)
     return ovec;
 }
 
-ScmObj Scm_${T}VectorCopy(Scm${T}Vector *vec, ScmSmallInt start, ScmSmallInt end)
+ScmObj Scm_${T}VectorCopy(ScmUVector *vec, ScmSmallInt start, ScmSmallInt end)
 {
     ScmSmallInt size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
@@ -233,9 +233,9 @@ ScmObj Scm_${T}VectorCopy(Scm${T}Vector *vec, ScmSmallInt start, ScmSmallInt end
                                      SCM_${T}VECTOR_ELEMENTS(vec)+start);
 }
 
-ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst,
+ScmObj Scm_${T}VectorCopyX(ScmUVector *dst,
                            ScmSmallInt dstart,
-                           Scm${T}Vector *src,
+                           ScmUVector *src,
                            ScmSmallInt sstart,
                            ScmSmallInt send)
 {
@@ -573,6 +573,82 @@ static inline uint64_t u64g_mul(uint64_t x, uint64_t y, int clamp)
 #define f64g_mul(x, y, clamp)   (x*y)
 #define f64g_div(x, y, clamp)   (x/y)
 
+static inline complex double complex_half_to_double(ScmHalfComplex x)
+{
+    return (complex double)(Scm_HalfToDouble(x.r)
+                            + Scm_HalfToDouble(x.i) * _Complex_I);
+}
+
+static inline ScmHalfComplex complex_double_to_half(complex double x)
+{
+    return (ScmHalfComplex){Scm_DoubleToHalf(creal(x)),
+                            Scm_DoubleToHalf(cimag(x))};
+}
+
+
+static inline ScmHalfComplex c32c32_add(ScmHalfComplex x,
+                                        ScmHalfComplex y,
+                                        int clamp SCM_UNUSED)
+{
+    complex double cx = complex_half_to_double(x);
+    complex double cy = complex_half_to_double(y);
+    return complex_double_to_half(cx+cy);
+}
+
+static inline ScmHalfComplex c32c32_sub(ScmHalfComplex x,
+                                        ScmHalfComplex y,
+                                        int clamp SCM_UNUSED)
+{
+    complex double cx = complex_half_to_double(x);
+    complex double cy = complex_half_to_double(y);
+    return complex_double_to_half(cx-cy);
+}
+
+static inline ScmHalfComplex c32c32_mul(ScmHalfComplex x,
+                                        ScmHalfComplex y,
+                                        int clamp SCM_UNUSED)
+{
+    complex double cx = complex_half_to_double(x);
+    complex double cy = complex_half_to_double(y);
+    return complex_double_to_half(cx*cy);
+}
+
+static inline ScmHalfComplex c32c32_div(ScmHalfComplex x,
+                                        ScmHalfComplex y,
+                                        int clamp SCM_UNUSED)
+{
+    complex double cx = complex_half_to_double(x);
+    complex double cy = complex_half_to_double(y);
+    return complex_double_to_half(cx/cy);
+}
+
+
+#define c32g_add(x, y, clamp)   c32c32_add(x, y, clamp)
+#define c32g_sub(x, y, clamp)   c32c32_sub(x, y, clamp)
+#define c32g_mul(x, y, clamp)   c32c32_mul(x, y, clamp)
+#define c32g_div(x, y, clamp)   c32c32_div(x, y, clamp)
+
+#define c64c64_add(x, y, clamp) (x+y)
+#define c64c64_sub(x, y, clamp) (x-y)
+#define c64c64_mul(x, y, clamp) (x*y)
+#define c64c64_div(x, y, clamp) (x/y)
+
+#define c64g_add(x, y, clamp)   (x+y)
+#define c64g_sub(x, y, clamp)   (x-y)
+#define c64g_mul(x, y, clamp)   (x*y)
+#define c64g_div(x, y, clamp)   (x/y)
+
+#define c128c128_add(x, y, clamp) (x+y)
+#define c128c128_sub(x, y, clamp) (x-y)
+#define c128c128_mul(x, y, clamp) (x*y)
+#define c128c128_div(x, y, clamp) (x/y)
+
+#define c128g_add(x, y, clamp)   (x+y)
+#define c128g_sub(x, y, clamp)   (x-y)
+#define c128g_mul(x, y, clamp)   (x*y)
+#define c128g_div(x, y, clamp)   (x/y)
+
+
 /****** Number extraction *****/
 /* like unbox, but not as strict.  sets *oor = TRUE if x is out of range. */
 
@@ -605,10 +681,15 @@ static inline uint64_t u64num(ScmObj x, int *oor)
 #define f16num(x, oor) ((*oor = FALSE), Scm_GetDouble(x))
 #define f32num(x, oor) ((*oor = FALSE),((float)Scm_GetDouble(x)))
 #define f64num(x, oor) ((*oor = FALSE), Scm_GetDouble(x))
+
+#define c32num(x, oor) ((*oor = FALSE), Scm_GetHalfComplex(x))
+#define c64num(x, oor) ((*oor = FALSE), Scm_GetFloatComplex(x))
+#define c128num(x, oor) ((*oor = FALSE), Scm_GetDoubleComplex(x))
+
 ///))
 
 ///(define *tmpl-numop* '(
-/* NB: s1 can be register flonum. */
+/* NB: s1 can be a register flonum. */
 static void ${t}vector_${opname}(const char *name,
                                  ScmObj d, ScmObj s0, ScmObj s1, 
                                  int clamp SCM_UNUSED)
@@ -674,7 +755,7 @@ static void ${t}vector_${opname}(const char *name,
     }
 }
 
-ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *s0, ScmObj s1, int clamp)
+ScmObj Scm_${T}Vector${Opname}(ScmUVector *s0, ScmObj s1, int clamp)
 {
     ScmObj d = Scm_MakeUVector(SCM_CLASS_${T}VECTOR,
                                SCM_${T}VECTOR_SIZE(s0),
@@ -683,7 +764,7 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *s0, ScmObj s1, int clamp)
     return d;
 }
 
-ScmObj Scm_${T}Vector${Opname}X(Scm${T}Vector *s0, ScmObj s1, int clamp)
+ScmObj Scm_${T}Vector${Opname}X(ScmUVector *s0, ScmObj s1, int clamp)
 {
     ${t}vector_${opname}("${t}vector-${opname}!", SCM_OBJ(s0), SCM_OBJ(s0), s1, clamp);
     return SCM_OBJ(s0);
@@ -713,36 +794,19 @@ static inline u_long bitext(ScmObj x)
 
 static inline uint64_t bitext64(ScmObj x)
 {
-#if SCM_EMULATE_INT64
-    uint64_t r = {0, 0};
-    if (SCM_INTP(x)) r.lo = SCM_INT_VALUE(x);
-    else if (SCM_BIGNUMP(x)) {
-        ScmObj xx = Scm_LogAnd(x, SCM_2_64_MINUS_1);
-        uint64_t ii = Scm_GetIntegerU64(xx);
-        r.lo = ii.lo;
-        r.hi = ii.hi;
-    }
-    else goto type_err;
-#else
     uint64_t r = 0;
     if (SCM_INTP(x)) r = SCM_INT_VALUE(x);
     else if (SCM_BIGNUMP(x)) {
         ScmObj xx = Scm_LogAnd(x, SCM_2_64_MINUS_1);
         r = Scm_GetIntegerU64(xx);
     }
-    else goto type_err;
-#endif
+    else {
+        Scm_Error("integer required, but got %S", x);
+    }
     return r;
-  type_err:
-    Scm_Error("integer required, but got %S", x);
-    return r;                   /* dummy */
 }
 
-#if SCM_EMULATE_INT64
-#define INT64BITOP(r, x, op, y)  ((r.lo = x.lo op y.lo), (r.hi = x.hi op y.hi))
-#else
 #define INT64BITOP(r, x, op, y)  (r = x op y)
-#endif
 ///))
 ///(define *tmpl-bitop* '(
 static void ${t}vector_${opname}(const char *name,
@@ -789,7 +853,7 @@ static void ${t}vector_${opname}(const char *name,
     }
 }
 
-ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *s0, ScmObj s1)
+ScmObj Scm_${T}Vector${Opname}(ScmUVector *s0, ScmObj s1)
 {
     ScmObj d = Scm_MakeUVector(SCM_CLASS_${T}VECTOR,
                                SCM_${T}VECTOR_SIZE(s0),
@@ -798,7 +862,7 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *s0, ScmObj s1)
     return d;
 }
 
-ScmObj Scm_${T}Vector${Opname}X(Scm${T}Vector *s0, ScmObj s1)
+ScmObj Scm_${T}Vector${Opname}X(ScmUVector *s0, ScmObj s1)
 {
     ${t}vector_${opname}("${t}vector-${opname}!", SCM_OBJ(s0), SCM_OBJ(s0), s1);
     return SCM_OBJ(s0);
@@ -905,16 +969,21 @@ static inline uint64_t u64muladd(uint64_t x, uint64_t y, uint64_t acc, ScmObj *s
 #define f16muladd(x, y, acc, sacc)  (acc + x*y)
 #define f32muladd(x, y, acc, sacc)  (acc + x*y)
 #define f64muladd(x, y, acc, sacc)  (acc + x*y)
+
+#define c32muladd(x, y, acc, sacc) \
+    (ScmHalfComplex){acc.r + x.r*y.r - x.i*y.i, acc.i + x.i*y.r + x.r*y.i} 
+#define c64muladd(x, y, acc, sacc)  (acc + x*y)
+#define c128muladd(x, y, acc, sacc)  (acc + x*y)
 ///))
 
 ///(define *tmpl-dotop* '(
-static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
+static ScmObj ${T}VectorDotProd(ScmUVector *x, ScmObj y, int vmp)
 {
     int size = SCM_${T}VECTOR_SIZE(x), oor;
     ${ntype} r, vx, vy;
     ScmObj rr = SCM_MAKE_INT(0), vvy, vvx;
 
-    r = 0;
+    r = ${ZERO};
     switch (arg2_check("${t}vector-dot", SCM_OBJ(x), y, FALSE)) {
     case ARGTYPE_UVECTOR:
         for (int i=0; i<size; i++) {
@@ -970,12 +1039,12 @@ static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
     return rr;
 }
 
-ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
+ScmObj Scm_${T}VectorDotProd(ScmUVector *x, ScmObj y)
 {
     return ${T}VectorDotProd(x, y, FALSE);
 }
 
-ScmObj Scm_VM${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
+ScmObj Scm_VM${T}VectorDotProd(ScmUVector *x, ScmObj y)
 {
     return ${T}VectorDotProd(x, y, TRUE);
 }
@@ -994,7 +1063,7 @@ ScmObj Scm_VM${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
 ///))
 ///(define *tmpl-rangeop* '(
 
-ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
+ScmObj Scm_${T}Vector${Opname}(ScmUVector *x, ScmObj min, ScmObj max)
 {
     int size = SCM_${T}VECTOR_SIZE(x);
     ArgType mintype, maxtype;
@@ -1129,7 +1198,7 @@ ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v)
 
 ///(define *tmpl-swapb* '(
 
-static void ${t}vector_swapb(Scm${T}Vector *v)
+static void ${t}vector_swapb(ScmUVector *v)
 {
     int len = SCM_UVECTOR_SIZE(v);
     ${etype} *d = SCM_${T}VECTOR_ELEMENTS(v);
@@ -1141,14 +1210,14 @@ static void ${t}vector_swapb(Scm${T}Vector *v)
     }
 }
 
-ScmObj Scm_${T}VectorSwapBytes(Scm${T}Vector *v)
+ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v)
 {
     ScmObj d = Scm_${T}VectorCopy(v, 0, -1);
     ${t}vector_swapb(SCM_${T}VECTOR(d));
     return d;
 }
 
-ScmObj Scm_${T}VectorSwapBytesX(Scm${T}Vector *v)
+ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v)
 {
     SCM_UVECTOR_CHECK_MUTABLE(v);
     ${t}vector_swapb(v);
@@ -1190,6 +1259,9 @@ ScmObj Scm_UVectorCopy(ScmUVector *v, ScmSmallInt start, ScmSmallInt end)
     case SCM_UVECTOR_F16: return Scm_F16VectorCopy(v, start, end);
     case SCM_UVECTOR_F32: return Scm_F32VectorCopy(v, start, end);
     case SCM_UVECTOR_F64: return Scm_F64VectorCopy(v, start, end);
+    case SCM_UVECTOR_C32: return Scm_C32VectorCopy(v, start, end);
+    case SCM_UVECTOR_C64: return Scm_C64VectorCopy(v, start, end);
+    case SCM_UVECTOR_C128: return Scm_C128VectorCopy(v, start, end);
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }

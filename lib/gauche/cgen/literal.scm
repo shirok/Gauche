@@ -750,9 +750,28 @@
     [(eq? class <f16vector>) "ScmHalfFloat"]
     [(eq? class <f32vector>) "float"]
     [(eq? class <f64vector>) "double"]
+    [(eq? class <c32vector>) "ScmHalfComplex"]
+    [(eq? class <c64vector>) "complex float"]
+    [(eq? class <c128vector>) "complex double"]
     ))
 
 (define (uvector-class-emit-elt class v)
+  (define (pr-half-float v)
+    (format #t "0x~4,'0x" ((with-module gauche.internal flonum->f16bits) v)))
+  (define (pr-float v)
+    (cond [(nan? v) (display "SCM_FLT_NAN")]
+          [(infinite? v) (display (if (> v 0)
+                                    "SCM_FLT_POSITIVE_INFINITY"
+                                    "SCM_FLT_NEGATIVE_INFINITY"))]
+          [(-zero? v) (display "-0.0f")]
+          [else (format #t "~sf" v)]))
+  (define (pr-double v)
+    (cond [(nan? v) (display "SCM_DBL_NAN")]
+          [(infinite? v) (display (if (> v 0)
+                                    "SCM_DBL_POSITIVE_INFINITY"
+                                    "SCM_DBL_NEGATIVE_INFINITY"))]
+          [(-zero? v) (display "-0.0")]
+          [else (format #t "~s" v)]))    
   (cond
    [(memq class `(,<s8vector> ,<s16vector> ,<s32vector>))
     (format #t "~d,\n" v)]
@@ -772,22 +791,18 @@
     (format #t " (((int64_t)~dlu << 32)|~dlu),\n"
             (ash v -32) (logand v (- (%expt 2 32) 1)))
     (print "#endif /*SIZEOF_LONG == 4*/")]
-   [(eq? class <f16vector>) 
-    (format #t "0x~4,'0x,\n" ((with-module gauche.internal flonum->f16bits) v))]
-   [(eq? class <f32vector>) 
-    (cond [(nan? v) (print "SCM_FLT_NAN,")]
-          [(infinite? v) (print (if (> v 0)
-                                  "SCM_FLT_POSITIVE_INFINITY,"
-                                  "SCM_FLT_NEGATIVE_INFINITY,"))]
-          [(-zero? v) (print "-0.0f,")]
-          [else (format #t "~sf,\n" v)])]
-   [(eq? class <f64vector>)
-    (cond [(nan? v) (print "SCM_DBL_NAN,")]
-          [(infinite? v) (print (if (> v 0)
-                                  "SCM_DBL_POSITIVE_INFINITY,"
-                                  "SCM_DBL_NEGATIVE_INFINITY,"))]
-          [(-zero? v) (print "-0.0,")]
-          [else (format #t "~s,\n" v)])]
+   [(eq? class <f16vector>) (pr-half-float v) (print ",")]
+   [(eq? class <f32vector>) (pr-float v) (print ",")]
+   [(eq? class <f64vector>) (pr-double v) (print ",")]
+   [(eq? class <c32vector>)
+    (display "{ ") (pr-half-float (real-part v))
+    (display ", ") (pr-half-float (imag-part v)) (print "},")]
+   [(eq? class <c64vector>)
+    (pr-float (real-part v)) (display " + ") 
+    (pr-float (imag-part v)) (print " * _Complex_I,")]
+   [(eq? class <c128vector>)
+    (pr-double (real-part v)) (display " + ") 
+    (pr-double (imag-part v)) (print " * _Complex_I,")]
    ))
 
 ;; char-set -----------------------------------------------------

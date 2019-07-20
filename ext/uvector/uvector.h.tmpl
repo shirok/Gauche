@@ -75,43 +75,43 @@ SCM_EXTERN ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
 ///(define *tmpl-body* '(
 /* ${T}Vector */
 
-SCM_EXTERN ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int, int);
-SCM_EXTERN ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end);
-SCM_EXTERN ScmObj Scm_${T}VectorCopy(Scm${T}Vector *vec,
+SCM_EXTERN ScmObj Scm_${T}VectorFill(ScmUVector *vec, ${etype} fill, int, int);
+SCM_EXTERN ScmObj Scm_${T}VectorSet(ScmUVector *vec, int index, ScmObj val, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorToList(ScmUVector *vec, int start, int end);
+SCM_EXTERN ScmObj Scm_${T}VectorCopy(ScmUVector *vec,
                                      ScmSmallInt start, ScmSmallInt end);
-SCM_EXTERN ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst, ScmSmallInt dstart,
-                                      Scm${T}Vector *src, ScmSmallInt sstart,
+SCM_EXTERN ScmObj Scm_${T}VectorCopyX(ScmUVector *dst, ScmSmallInt dstart,
+                                      ScmUVector *src, ScmSmallInt sstart,
                                       ScmSmallInt send);
 SCM_EXTERN ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end);
+SCM_EXTERN ScmObj Scm_${T}VectorToVector(ScmUVector *vec, int start, int end);
 SCM_EXTERN ScmObj Scm_VectorTo${T}Vector(ScmVector *vec, int start, int end, int clamp);
 
 /* arithmetics */
-SCM_EXTERN ScmObj Scm_${T}VectorAdd(Scm${T}Vector *s0, ScmObj s1, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorAddX(Scm${T}Vector *s0, ScmObj s1, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorSub(Scm${T}Vector *s0, ScmObj s1, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorSubX(Scm${T}Vector *s0, ScmObj s1, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorMul(Scm${T}Vector *s0, ScmObj s1, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorMulX(Scm${T}Vector *s0, ScmObj s1, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorDiv(Scm${T}Vector *s0, ScmObj s1, int clamp);
-SCM_EXTERN ScmObj Scm_${T}VectorDivX(Scm${T}Vector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorAdd(ScmUVector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorAddX(ScmUVector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorSub(ScmUVector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorSubX(ScmUVector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorMul(ScmUVector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorMulX(ScmUVector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorDiv(ScmUVector *s0, ScmObj s1, int clamp);
+SCM_EXTERN ScmObj Scm_${T}VectorDivX(ScmUVector *s0, ScmObj s1, int clamp);
 
-SCM_EXTERN ScmObj Scm_${T}VectorAnd(Scm${T}Vector *s0, ScmObj s1);
-SCM_EXTERN ScmObj Scm_${T}VectorAndX(Scm${T}Vector *s0, ScmObj s1);
-SCM_EXTERN ScmObj Scm_${T}VectorIor(Scm${T}Vector *s0, ScmObj s1);
-SCM_EXTERN ScmObj Scm_${T}VectorIorX(Scm${T}Vector *s0, ScmObj s1);
-SCM_EXTERN ScmObj Scm_${T}VectorXor(Scm${T}Vector *s0, ScmObj s1);
-SCM_EXTERN ScmObj Scm_${T}VectorXorX(Scm${T}Vector *s0, ScmObj s1);
+SCM_EXTERN ScmObj Scm_${T}VectorAnd(ScmUVector *s0, ScmObj s1);
+SCM_EXTERN ScmObj Scm_${T}VectorAndX(ScmUVector *s0, ScmObj s1);
+SCM_EXTERN ScmObj Scm_${T}VectorIor(ScmUVector *s0, ScmObj s1);
+SCM_EXTERN ScmObj Scm_${T}VectorIorX(ScmUVector *s0, ScmObj s1);
+SCM_EXTERN ScmObj Scm_${T}VectorXor(ScmUVector *s0, ScmObj s1);
+SCM_EXTERN ScmObj Scm_${T}VectorXorX(ScmUVector *s0, ScmObj s1);
 
-SCM_EXTERN ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *v0, ScmObj v1);
-SCM_EXTERN ScmObj Scm_VM${T}VectorDotProd(Scm${T}Vector *v0, ScmObj v1);
-SCM_EXTERN ScmObj Scm_${T}VectorRangeCheck(Scm${T}Vector *v0, ScmObj min, ScmObj max);
-SCM_EXTERN ScmObj Scm_${T}VectorClamp(Scm${T}Vector *v0, ScmObj min, ScmObj max);
-SCM_EXTERN ScmObj Scm_${T}VectorClampX(Scm${T}Vector *v0, ScmObj min, ScmObj max);
+SCM_EXTERN ScmObj Scm_${T}VectorDotProd(ScmUVector *v0, ScmObj v1);
+SCM_EXTERN ScmObj Scm_VM${T}VectorDotProd(ScmUVector *v0, ScmObj v1);
+SCM_EXTERN ScmObj Scm_${T}VectorRangeCheck(ScmUVector *v0, ScmObj min, ScmObj max);
+SCM_EXTERN ScmObj Scm_${T}VectorClamp(ScmUVector *v0, ScmObj min, ScmObj max);
+SCM_EXTERN ScmObj Scm_${T}VectorClampX(ScmUVector *v0, ScmObj min, ScmObj max);
 
-SCM_EXTERN ScmObj Scm_${T}VectorSwapBytes(Scm${T}Vector *v0);
-SCM_EXTERN ScmObj Scm_${T}VectorSwapBytesX(Scm${T}Vector *v0);
+SCM_EXTERN ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v0);
+SCM_EXTERN ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v0);
 
 ///)) ;; tmpl-body
 
