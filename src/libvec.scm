@@ -262,6 +262,27 @@
   (setter f64vector-set!)
   (return (Scm_VMUVectorRef v SCM_UVECTOR_F64 i fallback)))
 
+(define-cproc c32vector-set! (v::<c32vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_C32 i val (Scm_ClampMode clamp))))
+(define-cproc c32vector-ref (v::<c32vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter c32vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_C32 i fallback)))
+
+(define-cproc c64vector-set! (v::<c64vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_C64 i val (Scm_ClampMode clamp))))
+(define-cproc c64vector-ref (v::<c64vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter c64vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_C64 i fallback)))
+
+(define-cproc c128vector-set! (v::<c128vector> i::<fixnum> val :optional clamp)
+  (return (Scm_UVectorSet v SCM_UVECTOR_C128 i val (Scm_ClampMode clamp))))
+(define-cproc c128vector-ref (v::<c128vector> i::<fixnum> :optional fallback)
+  :fast-flonum
+  (setter c128vector-set!)
+  (return (Scm_VMUVectorRef v SCM_UVECTOR_C128 i fallback)))
+
 (define-cproc uvector-set! (v::<uvector> i::<fixnum> val :optional clamp)
   ::<void> :fast-flonum 
   (Scm_UVectorSet v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v))) i val
