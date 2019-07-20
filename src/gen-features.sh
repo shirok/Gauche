@@ -23,14 +23,7 @@ clean () {
     rm -f ${features_flags_tmp}
 }
 
-realclean () {
-    clean
-    rm -f ${features_c}
-    rm -f ${features_flags}
-}
-
 trap clean EXIT
-trap realclean ERR
 
 # check feature_name definition ...
 check () {
