@@ -1,3 +1,9 @@
+2019-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/ifgen.scm: Generate interface modules such as
+	  gauche.uvector.u8 etc.  They are to be used as scheme.vector.u8 etc.
+	  later.
+
 2019-07-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector: Added almost full support of c32, c64 and c128 uvectors

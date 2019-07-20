@@ -6,14 +6,21 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
+GEN_SCMFILES = \
+           uvector/u8.scm uvector/s8.scm uvector/u16.scm uvector/s16.scm \
+           uvector/u32.scm uvector/s32.scm uvector/u64.scm uvector/s64.scm \
+           uvector/f16.scm uvector/f32.scm uvector/f64.scm \
+           uvector/c32.scm uvector/c64.scm uvector/c128.scm
+
 LIBFILES = gauche--uvector.$(SOEXT)
-SCMFILES = array.scm uvector.sci matrix.scm
+SCMFILES = array.scm uvector.sci matrix.scm $(GEN_SCMFILES)
 HDRFILES = gauche/uvector.h
 
 GENERATED = Makefile
-XCLEANFILES =  uvlib.scm uvector.c gauche--uvector.c gauche/uvector.h uvector.sci
+XCLEANFILES =  uvlib.scm uvector.c gauche--uvector.c gauche/uvector.h \
+	  uvector.sci $(GEN_SCMFILES)
 
-all : $(LIBFILES)
+all : $(LIBFILES) $(GEN_SCMFILES)
 
 OBJECTS = uvector.$(OBJEXT)      \
           gauche--uvector.$(OBJEXT)
@@ -39,6 +46,48 @@ uvlib.scm : uvlib.scm.tmpl
 	rm -rf uvlib.scm
 	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvlib.scm.tmpl
 
+uvector/u8.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm u8
+uvector/s8.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm s8
+uvector/u16.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm u16
+uvector/s16.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm s16
+uvector/u32.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm u32
+uvector/s32.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm s32
+uvector/u64.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm u64
+uvector/s64.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm s64
+uvector/f16.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm f16
+uvector/f32.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm f32
+uvector/f64.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm f64
+uvector/c32.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm c32
+uvector/c64.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm c64
+uvector/c128.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm c128
 
 install : install-std
 
