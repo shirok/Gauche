@@ -979,6 +979,13 @@
             (list 0 #f expected)
             (regexp-parse-sre 'regexp))]))
 
+(define-syntax test-ast-error
+  (syntax-rules ()
+    [(_ regexp)
+     (test* 'regexp
+            (test-error)
+            (regexp-parse-sre 'regexp))]))
+
 (test-ast (seq #\s #\t #\r) "str")
 
 (test-ast any any)
@@ -1005,6 +1012,15 @@
 (test-cset `(comp . ,(string->char-set "a")) (complement #\a))
 (test-cset `(comp . ,(string->char-set "ab")) (~ #\a #\b))
 (test-cset (string->char-set "bc") (and ("abc") (~ #\a)))
+
+(test-cset (string->char-set "BC") (& ("ABC") (w/case ("aBC"))))
+(test-ast-error (& ("ABC") (w/case ("aBC") "def")))
+(test-cset (string->char-set "ABC") (& ("ABC") (w/nocase ("aBC"))))
+(test-ast-error (& ("ABC") (w/nocase ("aBC") "def")))
+(test-cset (string->char-set "BC") (& ("ABC") (w/unicode ("aBC"))))
+(test-ast-error (& ("ABC") (w/unicode ("aBC") "def")))
+(test-cset (string->char-set "BC") (& ("ABC") (w/ascii ("кириллица aBC"))))
+(test-ast-error (& ("ABC") (w/ascii ("кириллица aBC") "def")))
 
 (test-ast (rep 0 #f #\a) (* #\a))
 (test-ast (rep 0 #f #\a) (zero-or-more #\a))

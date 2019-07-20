@@ -67,7 +67,11 @@
            (apply proc
                   (map ->cset csets)))))
 
-  ;; FIXME: w/* still missing
+  (define (cset-sre-1 sre)
+    (and (pair? sre)
+         (null? (cdr sre))
+         (cset-sre (car sre))))
+
   (define (cset-list sym rest)
     (case sym
       [(char-set) (if (and (string? (car rest))
@@ -89,6 +93,18 @@
       ;; delay calling char-set-complement until absolutely needed by
       ;; complex char-set algebra
       [(~ complement) (cons 'comp (apply-char-set char-set-union rest))]
+      ;; note that w/* also appear in <sre> syntax, which has
+      ;; different semantics. Accept (w/* <cset-sre>) form (i.e. one
+      ;; <cset-sre>). Return #f on all other w/* forms and let the
+      ;; <sre> parser deal with them.
+      [(w/case) (cset-sre-1 rest)]
+      [(w/nocase) (let ([cset (cset-sre-1 rest)])
+                    (and cset
+                         ((with-module gauche.internal %char-set-case-fold!)
+                          (char-set-copy (->cset cset)))))]
+      [(w/unicode) (cset-sre-1 rest)]
+      [(w/ascii) (let1 cset (cset-sre-1 rest)
+                   (and cset (cset-sre `(and ascii ,cset))))]
       [else #f]))
 
   (cond
