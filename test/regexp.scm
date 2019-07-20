@@ -995,6 +995,8 @@
 (test-ast eow eow)
 (test-ast nwb nwb)
 
+(test-cset (string->char-set "abc") (char-set "abc"))
+(test-ast-error (char-set "abc" "def"))
 (test-cset char-set:ascii ascii)
 (test-cset (string->char-set "abc") ("abc"))
 (test-cset (ucs-range->char-set (char->integer #\A)

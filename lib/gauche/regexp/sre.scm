@@ -76,7 +76,7 @@
     (case sym
       [(char-set) (if (and (string? (car rest))
                            (null? (cdr rest)))
-                      (string->char-set sym)
+                      (string->char-set (car rest))
                       (error "invalid sre, expected (char-set <string>)" (cons sym rest)))]
       [(/ char-range) (apply char-set-union
                              (map (lambda (x)
