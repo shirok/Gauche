@@ -304,8 +304,24 @@
 ;;;
 
 (inline-stub
+ (.define common_eqv (a b) (== a b))
+ (.define common_lt  (a b) (< a b))
+
+ (.define hc_eqv (a b) (and (== (ref a r) (ref b r))
+                            (== (ref a i) (ref b i))))
+ (.define hc_lt (a b) (or (< (ref a r) (ref b r))
+                          (and (== (ref a r) (ref b r))
+                               (< (ref a i) (ref b i)))))
+
+ (.define fc_lt (a b) (or (< (crealf a) (crealf b))
+                          (and (== (crealf a) (crealf b))
+                               (< (cimagf a) (cimagf b)))))
+ (.define dc_lt (a b) (or (< (creal a) (creal b))
+                          (and (== (creal a) (creal b))
+                               (< (cimag a) (cimag b)))))
+ 
  (define-cise-stmt %binary-search
-   [(_ elttype)
+   [(_ elttype eq lt)
     `(let* ([esize::u_int  (+ skip 1)]
             [nume::size_t (/ len esize)]
             [k::size_t (/ nume 2)]
@@ -313,8 +329,8 @@
             [lo::size_t 0])
        (while (< lo hi)
          (let* ([v:: ,elttype (aref vec (* k esize))])
-           (cond [(== v key) (return (* k esize))]
-                 [(< v key)
+           (cond [(,eq v key) (return (* k esize))]
+                 [(,lt v key)
                   (set! lo k) (set! k (+ lo (/ (- hi lo) 2)))
                   (when (== lo k) (break))]
                  [else
@@ -335,7 +351,7 @@
                                  skip::u_int
                                  floor::size_t*
                                  ceil::size_t*)
-   ::size_t (%binary-search int8_t))
+   ::size_t (%binary-search int8_t common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchU8 (vec::(const uint8_t*)
                                  len::size_t
@@ -343,7 +359,7 @@
                                  skip::u_int
                                  floor::size_t*
                                  ceil::size_t*)
-   ::size_t (%binary-search uint8_t))
+   ::size_t (%binary-search uint8_t common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchS16 (vec::(const int16_t*)
                                   len::size_t
@@ -351,7 +367,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search int16_t))
+   ::size_t (%binary-search int16_t common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchU16 (vec::(const uint16_t*)
                                   len::size_t
@@ -359,7 +375,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search uint16_t))
+   ::size_t (%binary-search uint16_t common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchS32 (vec::(const int32_t*)
                                   len::size_t
@@ -367,7 +383,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search int32_t))
+   ::size_t (%binary-search int32_t common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchU32 (vec::(const uint32_t*)
                                   len::size_t
@@ -375,7 +391,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search uint32_t))
+   ::size_t (%binary-search uint32_t common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchS64 (vec::(const int64_t*)
                                   len::size_t
@@ -383,7 +399,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search int64_t))
+   ::size_t (%binary-search int64_t common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchU64 (vec::(const uint64_t*)
                                   len::size_t
@@ -391,7 +407,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search uint64_t))
+   ::size_t (%binary-search uint64_t common-eqv common-lt))
  
  (define-cfn Scm_BinarySearchF16 (vec::(const ScmHalfFloat*)
                                   len::size_t
@@ -399,7 +415,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search ScmHalfFloat))
+   ::size_t (%binary-search ScmHalfFloat common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchF32 (vec::(const float*)
                                   len::size_t
@@ -407,7 +423,7 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search float))
+   ::size_t (%binary-search float common-eqv common-lt))
 
  (define-cfn Scm_BinarySearchF64 (vec::(const double*)
                                   len::size_t
@@ -415,5 +431,29 @@
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search double))
+   ::size_t (%binary-search double common-eqv common-lt))
+
+ (define-cfn Scm_BinarySearchC32 (vec::(const ScmHalfComplex*)
+                                  len::size_t
+                                  key::ScmHalfComplex
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search ScmHalfComplex hc-eqv hc-lt))
+ 
+ (define-cfn Scm_BinarySearchC64 (vec::(const complex float*)
+                                  len::size_t
+                                  key::(complex float)
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
+   ::size_t (%binary-search (complex float) common-eqv fc-lt))
+
+ (define-cfn Scm_BinarySearchC128 (vec::(const complex double*)
+                                   len::size_t
+                                   key::(complex double)
+                                   skip::u_int
+                                   floor::size_t*
+                                   ceil::size_t*)
+   ::size_t (%binary-search (complex double) common-eqv dc-lt))
  )
