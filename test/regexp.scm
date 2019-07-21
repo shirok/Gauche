@@ -1105,6 +1105,15 @@
 (test-ast eow eow)
 (test-ast nwb nwb)
 
+(test-ast (rep-min 0 1 #\a) (?? #\a))
+(test-ast (rep-min 0 1 #\a) (non-greedy-optional #\a))
+
+(test-ast (rep-min 0 #f #\a) (*? #\a))
+(test-ast (rep-min 0 #f #\a) (non-greedy-zero-or-more #\a))
+
+(test-ast (rep-min 3 5 #\a) (**? 3 5 #\a))
+(test-ast (rep-min 3 5 #\a) (non-greedy-repeated 3 5 #\a))
+
 (test-ast #\a #\a)
 (test-ast (seq #\a #\b #\c) "abc")
 
@@ -1197,8 +1206,14 @@
 (test-sre '("abc  " "abc")
           '(: ($ (* alpha)) (* any))
           "abc  ")
+(test-sre '("abc  " "")
+          '(: ($ (*? alpha)) (* any))
+          "abc  ")
 (test-sre '("<em>Hello World</em>" "em>Hello World</em")
           '(: "<" ($ (* any)) ">" (* any))
+          "<em>Hello World</em>")
+(test-sre '("<em>Hello World</em>" "em")
+          '(: "<" ($ (*? any)) ">" (* any))
           "<em>Hello World</em>")
 
 (test-sre '("foo") '(: "foo") " foo ")

@@ -176,6 +176,11 @@
         [(w/ascii) (seq-loop rest nocapture casefold #t)]
         [(w/unicode) (seq-loop rest nocapture casefold #f)]
         [(w/nocapture) (seq-loop rest #t)]
+        [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop))]
+        [(*? non-greedy-zero-or-more) `(rep-min 0 #f ,@(loop))]
+        [(**? non-greedy-repeated) `(rep-min ,(car rest)
+                                             ,(cadr rest)
+                                             ,@(loop (cddr rest)))]
         [(backref) (begin
                      (if (null? (cdr rest))
                          (if (symbol? (car rest))
