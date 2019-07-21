@@ -10785,7 +10785,8 @@ not by the engine).
 
 Parses @var{sre} as a Scheme Regular Expression as described in
 SRFI-115 and returns its AST. Only a subset of SRE is supported at the
-moment.
+moment. The following syntax is not supported: @code{bos}, @code{eos},
+@code{bog}, @code{eog} and @code{grapheme}.
 
 @end defun
 
