@@ -255,8 +255,10 @@
              (call-with-output-file out.sci
                (^p (display ";; generated automatically.  DO NOT EDIT\n" p)
                    (display "#!no-fold-case\n" p)
-                   (parameterize ([ext-module-file p])
-                     (do-it))))]
+                   (parameterize ([ext-module-file p]
+                                  [ext-module-forms '()])
+                     (do-it)
+                     (flush-ext-module))))]
             [else
              (parameterize ([ext-module-file #f])
                (do-it))]))
@@ -319,6 +321,10 @@
 ;; NB: we insert (dynamic-load ...) just after select-module in the ext-module
 ;; file, assuming the source file has standard layout.
 (define ext-module-file (make-parameter #f))
+
+;; The forms to be written out to ext-module file (sci) are pushed
+;; on this parameter.
+(define ext-module-forms (make-parameter '()))
 
 ;; list of private macros that should be included in the output.
 ;; (--keep-private-macro=name,name,...)
@@ -426,7 +432,12 @@
 ;; code to *.sci as a transient measure and eventually we should have a way
 ;; to serialize Scheme code, including indentifier info, to the file.
 (define (write-ext-module form)
-  (cond [(ext-module-file) => (^_ (write (unwrap-syntax form) _) (newline _))]))
+  (push! (ext-module-forms) (unwrap-syntax form)))
+
+(define (flush-ext-module)
+  (cond [(ext-module-file) =>
+         (^p (dolist [f (reverse (ext-module-forms))]
+               (write f p) (newline p)))]))
 
 (define (setup ext-init? subinits)
   (cgen-decl "#include <gauche/code.h>")
@@ -741,8 +752,8 @@
                `((with-module gauche.internal %insert-syntax-binding)
                  (current-module) ',name
                  (let ((,name ,xformer-spec)) ,name))) ; attach name to closure
-             (write-ext-module `(define-syntax . ,form))
-             #f)))]
+             (begin (write-ext-module `(define-syntax . ,form))
+                    #f))))]
     [_ (error "Malformed define-syntax" form)]))
 
 (define (handle-define-inline/syntax form)
