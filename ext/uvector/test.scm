@@ -10,6 +10,19 @@
 (use gauche.uvector)
 (test-module 'gauche.uvector)
 
+(define-macro (expand-uvec tags body)
+  (define (subst tag str)
+    (regexp-replace-all #/@/ str (symbol->string tag)))
+  (define (expand tag body)
+    (cond [(symbol? body) (string->symbol (subst tag (symbol->string body)))]
+          [(string? body) (subst tag body)]
+          [(pair? body) (cons (expand tag (car body))
+                              (expand tag (cdr body)))]
+          [else body]))
+  (if (list? tags)
+    `(begin ,@(map (cut expand <> body) tags))
+    (expand tags body)))
+
 ;;-------------------------------------------------------------------
 (test-section "reader syntax")
 
@@ -91,241 +104,157 @@
 ;;-------------------------------------------------------------------
 (test-section "constructors")
 
-(define (uvmaketester class specific inits)
-  ;; zero length
-  (test* (format "make ~a 0" (class-name class))
-         (make-uvector class 0)
-         (specific 0))
-  ;; some content
-  (dolist [init inits]
-    (test* (format "make ~a 10 ~a" (class-name class) init)
-           (make-uvector class 10 init)
-           (specific 10 init))))
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (define (uvmaketest-@ inits)
+   ;; zero length
+   (test* "make @ 0"
+          (make-uvector <@vector> 0)
+          (make-@vector 0))
+   ;; some content
+   (dolist [init inits]
+     (test* (format "make @ 10 ~a" init)
+            (make-uvector <@vector> 10 init)
+            (make-@vector 10 init)))))
 
-(uvmaketester <s8vector> make-s8vector '(0 10 -4))
-(uvmaketester <u8vector> make-u8vector '(0 4 255))
-(uvmaketester <s16vector> make-s16vector '(0 -32768 32767))
-(uvmaketester <u16vector> make-u16vector '(0 65535))
-(uvmaketester <s32vector> make-s32vector '(0))
-(uvmaketester <u32vector> make-u32vector '(0))
-(uvmaketester <s64vector> make-s64vector '(0))
-(uvmaketester <u64vector> make-u64vector '(0))
-(uvmaketester <f16vector> make-f16vector '(0 1.0 -1.0)) 
-(uvmaketester <f32vector> make-f32vector '(0 1.0 -1.0)) 
-(uvmaketester <f64vector> make-f64vector '(0 1.0 -1.0)) 
-(uvmaketester <c32vector> make-c32vector '(0 1.0+i -1.0-i)) 
-(uvmaketester <c64vector> make-c64vector '(0 1.0+i -1.0-i)) 
-(uvmaketester <c128vector> make-c128vector '(0 1.0+i -1.0-i)) 
+(uvmaketest-s8 '(0 10 -4))
+(uvmaketest-u8 '(0 4 255))
+(uvmaketest-s16 '(0 -32768 32767))
+(uvmaketest-u16 '(0 65535))
+(uvmaketest-s32 '(0))
+(uvmaketest-u32 '(0))
+(uvmaketest-s64 '(0))
+(uvmaketest-u64 '(0))
+(uvmaketest-f16 '(0 1.0 -1.0)) 
+(uvmaketest-f32 '(0 1.0 -1.0)) 
+(uvmaketest-f64 '(0 1.0 -1.0)) 
+(uvmaketest-c32 '(0 1.0+i -1.0-i)) 
+(uvmaketest-c64 '(0 1.0+i -1.0-i)) 
+(uvmaketest-c128 '(0 1.0+i -1.0-i)) 
 
 ;;-------------------------------------------------------------------
 (test-section "ref and set")
 
-(define (uvrefset-tester make ref set numlist expvec)
-  (let ([vec (make (length numlist))]
-        [seq (iota (length numlist))])
-    (for-each (^[n i] (set vec i n)) numlist seq)
-    (and (equal? expvec vec)
-         (equal? numlist (map (^i (ref vec i)) seq))
-         (equal? numlist (map (^i (uvector-ref vec i)) seq))
-         (begin (uvector-set! vec 0 (ref expvec 1))
-                (equal? (ref expvec 1) (ref vec 0)))
-         (begin (set! (uvector-ref vec 1) (ref expvec 2))
-                (equal? (ref expvec 2) (ref vec 1))))))
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (define (uvrefset-test-@ numlist expvec)
+   (test* "@vector-ref|set!" #t
+          (let ([vec (make-@vector (length numlist))]
+                [seq (iota (length numlist))])
+            (for-each (^[n i] (@vector-set! vec i n)) numlist seq)
+            (and (equal? expvec vec)
+                 (equal? numlist (map (^i (@vector-ref vec i)) seq))
+                 (equal? numlist (map (^i (uvector-ref vec i)) seq))
+                 (begin 
+                   (uvector-set! vec 0 (@vector-ref expvec 1))
+                   (equal? (@vector-ref expvec 1) (@vector-ref vec 0)))
+                 (begin
+                   (set! (uvector-ref vec 1) (@vector-ref expvec 2))
+                   (equal? (@vector-ref expvec 2) (@vector-ref vec 1))))))))
+
+(uvrefset-test-s8 '(0 -1 1 -128 127)
+                  '#s8(0 -1 1 -128 127))
+(uvrefset-test-u8 '(0 1 2 3 255)
+                  '#u8(0 1 2 3 255))
+(uvrefset-test-s16 '(0 -1 1 -32768 32767)
+                   '#s16(0 -1 1 -32768 32767))
+(uvrefset-test-u16 '(0 1 2 3 65535)
+                   '#u16(0 1 2 3 65535))
+(uvrefset-test-s32 '(0 -1 1 #x-80000000 #x7fffffff)
+                   '#s32(0 -1 1 #x-80000000 #x7fffffff))
+(uvrefset-test-u32 '(0 1 2 #xffffffff)
+                   '#u32(0 1 2 #xffffffff))
+(uvrefset-test-s64 '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
+                   '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff))
+(uvrefset-test-u64 '(0 1 2 #xffffffffffffffff)
+                   '#u64(0 1 2 #xffffffffffffffff))
+(uvrefset-test-f16 '(0.0 -1.0 1.0)
+                   '#f16(0.0 -1.0 1.0))
+(uvrefset-test-f32 '(0.0 -1.0 1.0)
+                   '#f32(0.0 -1.0 1.0))
+(uvrefset-test-f64 '(0.0 -1.0 1.0)
+                   '#f64(0.0 -1.0 1.0))
+(uvrefset-test-c32 '(0.0 -1-i 1+i)
+                   '#c32(0.0 -1-i 1+i))
+(uvrefset-test-c64 '(0.0 -1-i 1+i)
+                   '#c64(0.0 -1-i 1+i))
+(uvrefset-test-c128 '(0.0 -1-i 1+i)
+                    '#c128(0.0 -1-i 1+i))
+
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64)
+ (define (uvset-clamp-test-@ expect value)
+   (test* "@vector-set! clamp" expect
+          (let1 v (make-@vector 1)
+            (list (with-error-handler (^e 'error)
+                    (^[] (@vector-set! v 0 value) (@vector-ref v 0)))
+                  (with-error-handler (^e 'error)
+                    (^[] (@vector-set! v 0 value 'low) (@vector-ref v 0)))
+                  (with-error-handler (^e 'error)
+                    (^[] (@vector-set! v 0 value 'high) (@vector-ref v 0)))
+                  (with-error-handler (^e 'error)
+                    (^[] (@vector-set! v 0 value 'both) (@vector-ref v 0))))))))
+
+(uvset-clamp-test-s8 '(error -128 error -128) -129)
+(uvset-clamp-test-s8 '(error error 127 127) 128)
+(uvset-clamp-test-u8 '(error 0 error 0) -1)
+(uvset-clamp-test-u8 '(error error 255 255) 256)
+
+(uvset-clamp-test-s16 '(error -32768 error -32768) -32769)
+(uvset-clamp-test-s16 '(error error 32767 32767) 32768)
+(uvset-clamp-test-u16 '(error 0 error 0) -1)
+(uvset-clamp-test-u16 '(error error 65535 65535) 65536)
+
+(uvset-clamp-test-s32 '(error -2147483648 error -2147483648) -2147483649)
+(uvset-clamp-test-s32 '(error error 2147483647 2147483647) 2147483648)
+(uvset-clamp-test-u32 '(error 0 error 0) -1)
+(uvset-clamp-test-u32 '(error error 4294967295 4294967295) 4294967296)
 
 
-(test* "s8vector-ref|set!" #t
-       (uvrefset-tester make-s8vector s8vector-ref s8vector-set!
-                        '(0 -1 1 -128 127)
-                        '#s8(0 -1 1 -128 127)))
-(test* "u8vector-ref|set!" #t
-       (uvrefset-tester make-u8vector u8vector-ref u8vector-set!
-                        '(0 1 2 3 255)
-                        '#u8(0 1 2 3 255)))
-(test* "s16vector-ref|set!" #t
-       (uvrefset-tester make-s16vector s16vector-ref s16vector-set!
-                        '(0 -1 1 -32768 32767)
-                        '#s16(0 -1 1 -32768 32767)))
-(test* "u16vector-ref|set!" #t
-       (uvrefset-tester make-u16vector u16vector-ref u16vector-set!
-                        '(0 1 2 3 65535)
-                        '#u16(0 1 2 3 65535)))
-(test* "s32vector-ref|set!" #t
-       (uvrefset-tester make-s32vector s32vector-ref s32vector-set!
-                        '(0 -1 1 #x-80000000 #x7fffffff)
-                        '#s32(0 -1 1 #x-80000000 #x7fffffff)))
-(test* "u32vector-ref|set!" #t
-       (uvrefset-tester make-u32vector u32vector-ref u32vector-set!
-                        '(0 1 2 #xffffffff)
-                        '#u32(0 1 2 #xffffffff)))
-(test* "s64vector-ref|set!" #t
-       (uvrefset-tester make-s64vector s64vector-ref s64vector-set!
-                        '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
-                        '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)))
-(test* "u64vector-ref|set!" #t
-       (uvrefset-tester make-u64vector u64vector-ref u64vector-set!
-                        '(0 1 2 #xffffffffffffffff)
-                        '#u64(0 1 2 #xffffffffffffffff)))
-(test* "f16vector-ref|set!" #t
-       (uvrefset-tester make-f16vector f16vector-ref f16vector-set!
-                        '(0.0 -1.0 1.0)
-                        '#f16(0.0 -1.0 1.0)))
-(test* "f32vector-ref|set!" #t
-       (uvrefset-tester make-f32vector f32vector-ref f32vector-set!
-                        '(0.0 -1.0 1.0)
-                        '#f32(0.0 -1.0 1.0)))
-(test* "f64vector-ref|set!" #t
-       (uvrefset-tester make-f64vector f64vector-ref f64vector-set!
-                        '(0.0 -1.0 1.0)
-                        '#f64(0.0 -1.0 1.0)))
-
-(test* "c32vector-ref|set!" #t
-       (uvrefset-tester make-c32vector c32vector-ref c32vector-set!
-                        '(0.0 -1-i 1+i)
-                        '#c32(0.0 -1-i 1+i)))
-
-(test* "c64vector-ref|set!" #t
-       (uvrefset-tester make-c64vector c64vector-ref c64vector-set!
-                        '(0.0 -1-i 1+i)
-                        '#c64(0.0 -1-i 1+i)))
-
-(test* "c128vector-ref|set!" #t
-       (uvrefset-tester make-c128vector c128vector-ref c128vector-set!
-                        '(0.0 -1-i 1+i)
-                        '#c128(0.0 -1-i 1+i)))
-
-
-(define (uvset-clamp-tester make ref set value)
-  (let1 v (make 1)
-    (list (with-error-handler (^e 'error)
-            (^[] (set v 0 value) (ref v 0)))
-          (with-error-handler (^e 'error)
-            (^[] (set v 0 value 'low) (ref v 0)))
-          (with-error-handler (^e 'error)
-            (^[] (set v 0 value 'high) (ref v 0)))
-          (with-error-handler (^e 'error)
-            (^[] (set v 0 value 'both) (ref v 0))))))
-
-(test* "s8vector-set! clamp" '(error -128 error -128)
-       (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! -129))
-(test* "s8vector-set! clamp" '(error error 127 127)
-       (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! 128))
-
-(test* "u8vector-set! clamp" '(error 0 error 0)
-       (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! -1))
-(test* "u8vector-set! clamp" '(error error 255 255)
-       (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! 256))
-
-(test* "s16vector-set! clamp" '(error -32768 error -32768)
-       (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! -32769))
-(test* "s16vector-set! clamp" '(error error 32767 32767)
-       (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! 32768))
-
-(test* "u16vector-set! clamp" '(error 0 error 0)
-       (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! -1))
-(test* "u16vector-set! clamp" '(error error 65535 65535)
-       (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! 65536))
-
-(test* "s32vector-set! clamp" '(error -2147483648 error -2147483648)
-       (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! -2147483649))
-(test* "s32vector-set! clamp" '(error error 2147483647 2147483647)
-       (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! 2147483648))
-
-(test* "u32vector-set! clamp" '(error 0 error 0)
-       (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! -1))
-(test* "u32vector-set! clamp" '(error error 4294967295 4294967295)
-       (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! 4294967296))
-
-(test* "s64vector-set! clamp" '(error -9223372036854775808 error -9223372036854775808)
-       (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! -9223372036854775809))
-(test* "s64vector-set! clamp" '(error error 9223372036854775807 9223372036854775807)
-       (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! 9223372036854775808))
-
-(test* "u64vector-set! clamp" '(error 0 error 0)
-       (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! -1))
-(test* "u64vector-set! clamp" '(error error 18446744073709551615 18446744073709551615)
-       (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! 18446744073709551616))
+(uvset-clamp-test-s64 '(error -9223372036854775808 error -9223372036854775808)
+                      -9223372036854775809)
+(uvset-clamp-test-s64 '(error error 9223372036854775807 9223372036854775807)
+                      9223372036854775808)
+(uvset-clamp-test-u64 '(error 0 error 0) -1)
+(uvset-clamp-test-u64 '(error error 18446744073709551615 18446744073709551615)
+                      18446744073709551616)
 
 ;;-------------------------------------------------------------------
 (test-section "conversions")
 
-(define (uvconv-tester ->list list-> ->vec vec-> uvec nums)
-  (let* ([lis (->list uvec)]
-         [uv2 (list-> lis)]
-         [vec (->vec  uvec)]
-         [uv3 (vec->  vec)])
-    (and (equal? lis nums)
-         (equal? (uvector->list uvec) nums)
-         (equal? uv2 uvec)
-         (equal? vec (list->vector nums))
-         (equal? (uvector->vector uvec) (list->vector nums))
-         (equal? uv3 uvec))))
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (define (uvconv-test-@ uvec nums)
+   (test* "@vector conversion" #t
+          (let* ([lis (@vector->list uvec)]
+                 [uv2 (list->@vector lis)]
+                 [vec (@vector->vector  uvec)]
+                 [uv3 (vector->@vector  vec)])
+            (and (equal? lis nums)
+                 (equal? (uvector->list uvec) nums)
+                 (equal? uv2 uvec)
+                 (equal? vec (list->vector nums))
+                 (equal? (uvector->vector uvec) (list->vector nums))
+                 (equal? uv3 uvec))))))
 
-(test* "s8vector conversion" #t
-       (uvconv-tester s8vector->list list->s8vector
-                      s8vector->vector vector->s8vector
-                      '#s8(0 -1 1 -128 127) '(0 -1 1 -128 127)))
-(test* "u8vector conversion" #t
-       (uvconv-tester u8vector->list list->u8vector
-                      u8vector->vector vector->u8vector
-                      '#u8(0 1 254 255) '(0 1 254 255)))
-(test* "s16vector conversion" #t
-       (uvconv-tester s16vector->list list->s16vector
-                      s16vector->vector vector->s16vector
-                      '#s16(0 -1 1 -32768 32767) '(0 -1 1 -32768 32767)))
-(test* "u16vector conversion" #t
-       (uvconv-tester u16vector->list list->u16vector
-                      u16vector->vector vector->u16vector
-                      '#u16(0 1 65534 65535) '(0 1 65534 65535)))
-(test* "s32vector conversion" #t
-       (uvconv-tester s32vector->list list->s32vector
-                      s32vector->vector vector->s32vector
-                      '#s32(0 -1 1 #x-80000000 #x7fffffff)
-                      '(0 -1 1 #x-80000000 #x7fffffff)))
-(test* "u32vector conversion" #t
-       (uvconv-tester u32vector->list list->u32vector
-                      u32vector->vector vector->u32vector
-                      '#u32(0 1 #xfffffffe #xffffffff)
-                      '(0 1 #xfffffffe #xffffffff)))
-(test* "s64vector conversion" #t
-       (uvconv-tester s64vector->list list->s64vector
-                      s64vector->vector vector->s64vector
-                      '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
-                      '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)))
-(test* "u64vector conversion" #t
-       (uvconv-tester u64vector->list list->u64vector
-                      u64vector->vector vector->u64vector
-                      '#u64(0 1 #xffffffffffffffff)
-                      '(0 1 #xffffffffffffffff)))
-(test* "f16vector conversion" #t
-       (uvconv-tester f16vector->list list->f16vector
-                      f16vector->vector vector->f16vector
-                      '#f16(0.0 -1.0 1.0)
-                      '(0.0 -1.0 1.0)))
-(test* "f32vector conversion" #t
-       (uvconv-tester f32vector->list list->f32vector
-                      f32vector->vector vector->f32vector
-                      '#f32(0.0 -1.0 1.0)
-                      '(0.0 -1.0 1.0)))
-(test* "f64vector conversion" #t
-       (uvconv-tester f64vector->list list->f64vector
-                      f64vector->vector vector->f64vector
-                      '#f64(0.0 -1.0 1.0)
-                      '(0.0 -1.0 1.0)))
-(test* "c32vector conversion" #t
-       (uvconv-tester c32vector->list list->c32vector
-                      c32vector->vector vector->c32vector
-                      '#c32(0.0 -1.0+i 1.0-i)
-                      '(0.0 -1.0+i 1.0-i)))
-(test* "c64vector conversion" #t
-       (uvconv-tester c64vector->list list->c64vector
-                      c64vector->vector vector->c64vector
-                      '#c64(0.0 -1.0+i 1.0-i)
-                      '(0.0 -1.0+i 1.0-i)))
-(test* "c128vector conversion" #t
-       (uvconv-tester c128vector->list list->c128vector
-                      c128vector->vector vector->c128vector
-                      '#c128(0.0 -1.0+i 1.0-i)
-                      '(0.0 -1.0+i 1.0-i)))
+(uvconv-test-s8 '#s8(0 -1 1 -128 127) '(0 -1 1 -128 127))
+(uvconv-test-u8 '#u8(0 1 254 255) '(0 1 254 255))
+(uvconv-test-s16 '#s16(0 -1 1 -32768 32767) '(0 -1 1 -32768 32767))
+(uvconv-test-u16 '#u16(0 1 65534 65535) '(0 1 65534 65535))
+(uvconv-test-s32 '#s32(0 -1 1 #x-80000000 #x7fffffff)
+                 '(0 -1 1 #x-80000000 #x7fffffff))
+(uvconv-test-u32 '#u32(0 1 #xfffffffe #xffffffff)
+                 '(0 1 #xfffffffe #xffffffff))
+(uvconv-test-s64 '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
+                 '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff))
+(uvconv-test-u64 '#u64(0 1 #xffffffffffffffff)
+                 '(0 1 #xffffffffffffffff))
+(uvconv-test-f16 '#f16(0.0 -1.0 1.0) '(0.0 -1.0 1.0))
+(uvconv-test-f32 '#f32(0.0 -1.0 1.0) '(0.0 -1.0 1.0))
+(uvconv-test-f64 '#f64(0.0 -1.0 1.0) '(0.0 -1.0 1.0))
+(uvconv-test-c32 '#c32(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
+(uvconv-test-c64 '#c64(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
+(uvconv-test-c128 '#c128(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
 
 ;;-------------------------------------------------------------------
 (test-section "comparison")
@@ -362,132 +291,57 @@
 ;;-------------------------------------------------------------------
 (test-section "copying and filling")
 
-(define (uvcopy-tester copy copy! fill! ->list list-> uvec filler)
-  (let* ([c0 (list-> (->list uvec))]
-         [c1 (copy uvec)]
-         [c2 (uvector-copy uvec)])
-    (and (equal? c1 uvec)
-         (equal? c2 uvec)
-         (begin (fill! c1 filler)
-                (and (equal? c0 uvec)
-                     (every (^n (= n filler))  (->list c1))
-                     (begin (copy! c1 uvec)
-                            (equal? c1 c0)))))))
+(expand-uvec 
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (define (uvcopy-test-@ uvec filler)
+   (test* "@vector-copy|fill!" #t
+          (let* ([c0 (list->@vector (@vector->list uvec))]
+                 [c1 (@vector-copy uvec)]
+                 [c2 (uvector-copy uvec)])
+            (and (equal? c1 uvec)
+                 (equal? c2 uvec)
+                 (begin (@vector-fill! c1 filler)
+                        (and (equal? c0 uvec)
+                             (every (^n (= n filler))  (@vector->list c1))
+                             (begin (@vector-copy! c1 uvec)
+                                    (equal? c1 c0)))))))))
 
-(test* "s8vector copy|fill!" #t
-       (uvcopy-tester s8vector-copy s8vector-copy! s8vector-fill!
-                      s8vector->list list->s8vector
-                      '#s8(0 -1 1 -128 127) -128))
-(test* "u8vector copy|fill!" #t
-       (uvcopy-tester u8vector-copy u8vector-copy! u8vector-fill!
-                      u8vector->list list->u8vector
-                      '#u8(0 1 255) 255))
-(test* "s16vector copy|fill!" #t
-       (uvcopy-tester s16vector-copy s16vector-copy! s16vector-fill!
-                      s16vector->list list->s16vector
-                      '#s16(0 -1 1 -32768 32767) -32768))
-(test* "u16vector copy|fill!" #t
-       (uvcopy-tester u16vector-copy u16vector-copy! u16vector-fill!
-                      u16vector->list list->u16vector
-                      '#u16(0 1 65535) 32768))
-(test* "s32vector copy|fill!" #t
-       (uvcopy-tester s32vector-copy s32vector-copy! s32vector-fill!
-                      s32vector->list list->s32vector
-                      '#s32(0 -1 1 #x-80000000 #x7fffffff) #x7fffffff))
-(test* "u32vector copy|fill!" #t
-       (uvcopy-tester u32vector-copy u32vector-copy! u32vector-fill!
-                      u32vector->list list->u32vector
-                      '#u32(0 1 #xffffffff) #x80000000))
-(test* "s64vector copy|fill!" #t
-       (uvcopy-tester s64vector-copy s64vector-copy! s64vector-fill!
-                      s64vector->list list->s64vector
-                      '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
-                      #x7fffffffffffffff))
-(test* "u64vector copy|fill!" #t
-       (uvcopy-tester u64vector-copy u64vector-copy! u64vector-fill!
-                      u64vector->list list->u64vector
-                      '#u64(0 1 #xffffffffffffffff) #x8000000000000000))
+(uvcopy-test-s8 '#s8(0 -1 1 -128 127) -128)
+(uvcopy-test-u8 '#u8(0 1 255) 255)
+(uvcopy-test-s16 '#s16(0 -1 1 -32768 32767) -32768)
+(uvcopy-test-u16 '#u16(0 1 65535) 32768)
+(uvcopy-test-s32 '#s32(0 -1 1 #x-80000000 #x7fffffff) #x7fffffff)
+(uvcopy-test-u32 '#u32(0 1 #xffffffff) #x80000000)
+(uvcopy-test-s64 '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
+                 #x7fffffffffffffff)
+(uvcopy-test-u64 '#u64(0 1 #xffffffffffffffff) #x8000000000000000)
+(uvcopy-test-f16 '#f16(0 -1.0 1.0) 1.0)
+(uvcopy-test-f32 '#f32(0 -1.0 1.0) 1.0)
+(uvcopy-test-f64 '#f64(0 -1.0 1.0) 1.0)
+(uvcopy-test-c32 '#c32(0+i -1.0-i 1.0) 1.0)
+(uvcopy-test-c64 '#c64(0+i -1.0-i 1.0) 1.0)
+(uvcopy-test-c128 '#c128(0+i -1.0-i 1.0) 1.0)
 
-(test* "f16vector copy|fill!" #t
-       (uvcopy-tester f16vector-copy f16vector-copy! f16vector-fill!
-                      f16vector->list list->f16vector
-                      '#f16(0 -1.0 1.0) 1.0))
-(test* "f32vector copy|fill!" #t
-       (uvcopy-tester f32vector-copy f32vector-copy! f32vector-fill!
-                      f32vector->list list->f32vector
-                      '#f32(0 -1.0 1.0) 1.0))
-(test* "f64vector copy|fill!" #t
-       (uvcopy-tester f64vector-copy f64vector-copy! f64vector-fill!
-                      f64vector->list list->f64vector
-                      '#f64(0 -1.0 1.0) 1.0))
-(test* "c32vector copy|fill!" #t
-       (uvcopy-tester c32vector-copy c32vector-copy! c32vector-fill!
-                      c32vector->list list->c32vector
-                      '#c32(0+i -1.0-i 1.0) 1.0))
-(test* "c64vector copy|fill!" #t
-       (uvcopy-tester c64vector-copy c64vector-copy! c64vector-fill!
-                      c64vector->list list->c64vector
-                      '#c64(0+i -1.0-i 1.0) 1.0))
-(test* "c128vector copy|fill!" #t
-       (uvcopy-tester c128vector-copy c128vector-copy! c128vector-fill!
-                      c128vector->list list->c128vector
-                      '#c128(0+i -1.0-i 1.0) 1.0))
+(expand-uvec 
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (test* "uvcopy-startend @vector" 
+        (list (@vector 1 2 3) (@vector 1 2) (@vector 0 9 9 3))
+        (let1 v (@vector 0 1 2 3)
+          (list (@vector-copy v 1)
+                (@vector-copy v 1 3)
+                (@vector-fill! v 9 1 3)))))
 
-(define (uvcopy-startend-test msg make copy fill)
-  (test* msg (list (make 1 2 3) (make 1 2) (make 0 9 9 3))
-         (let1 v (make 0 1 2 3)
-           (list (copy v 1)
-                 (copy v 1 3)
-                 (fill v 9 1 3)))))
-
-(uvcopy-startend-test "uvcopy-startend s8vector"
-                      s8vector s8vector-copy s8vector-fill!)
-(uvcopy-startend-test "uvcopy-startend u8vector"
-                      u8vector u8vector-copy u8vector-fill!)
-(uvcopy-startend-test "uvcopy-startend s16vector"
-                      s16vector s16vector-copy s16vector-fill!)
-(uvcopy-startend-test "uvcopy-startend u16vector"
-                      u16vector u16vector-copy u16vector-fill!)
-(uvcopy-startend-test "uvcopy-startend s32vector"
-                      s32vector s32vector-copy s32vector-fill!)
-(uvcopy-startend-test "uvcopy-startend u32vector"
-                      u32vector u32vector-copy u32vector-fill!)
-(uvcopy-startend-test "uvcopy-startend s64vector"
-                      s64vector s64vector-copy s64vector-fill!)
-(uvcopy-startend-test "uvcopy-startend u64vector"
-                      u64vector u64vector-copy u64vector-fill!)
-(uvcopy-startend-test "uvcopy-startend c32vector"
-                      c32vector c32vector-copy c32vector-fill!)
-(uvcopy-startend-test "uvcopy-startend c64vector"
-                      c64vector c64vector-copy c64vector-fill!)
-(uvcopy-startend-test "uvcopy-startend c128vector"
-                      c128vector c128vector-copy c128vector-fill!)
-
-(define (uvcopy!-newapi-test msg make copy!)
-  (test* #"~msg /tstart" (make 0 7 8 9)
-         (copy! (make 0 1 2 3) 1 (make 7 8 9 10)))
-  (test* #"~msg /tstart(over)" (make 0 1 2 3)
-         (copy! (make 0 1 2 3) 4 (make 7 8 9 10)))
-  (test* #"~msg /tstart,sstart" (make 0 9 10 3)
-         (copy! (make 0 1 2 3) 1 (make 7 8 9 10) 2))
-  (test* #"~msg /tstart,sstart,send" (make 0 1 2 9)
-         (copy! (make 0 1 2 3) 3 (make 7 8 9 10) 2 3))
-  )
-
-(uvcopy!-newapi-test "s8vector-copy! newapi" s8vector s8vector-copy!)
-(uvcopy!-newapi-test "u8vector-copy! newapi" u8vector u8vector-copy!)
-(uvcopy!-newapi-test "s16vector-copy! newapi" s16vector s16vector-copy!)
-(uvcopy!-newapi-test "u16vector-copy! newapi" u16vector u16vector-copy!)
-(uvcopy!-newapi-test "s32vector-copy! newapi" s32vector s32vector-copy!)
-(uvcopy!-newapi-test "u32vector-copy! newapi" u32vector u32vector-copy!)
-(uvcopy!-newapi-test "s64vector-copy! newapi" s64vector s64vector-copy!)
-(uvcopy!-newapi-test "u64vector-copy! newapi" u64vector u64vector-copy!)
-(uvcopy!-newapi-test "f16vector-copy! newapi" f16vector f16vector-copy!)
-(uvcopy!-newapi-test "f32vector-copy! newapi" f32vector f32vector-copy!)
-(uvcopy!-newapi-test "f64vector-copy! newapi" f64vector f64vector-copy!)
-(uvcopy!-newapi-test "c32vector-copy! newapi" c32vector c32vector-copy!)
-(uvcopy!-newapi-test "c64vector-copy! newapi" c64vector c64vector-copy!)
-(uvcopy!-newapi-test "c128vector-copy! newapi" c128vector c128vector-copy!)
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (begin
+   (test* #"@vector-copy! newapi /tstart" (@vector 0 7 8 9)
+          (@vector-copy! (@vector 0 1 2 3) 1 (@vector 7 8 9 10)))
+   (test* #"@vector-copy! newapi /tstart(over)" (@vector 0 1 2 3)
+          (@vector-copy! (@vector 0 1 2 3) 4 (@vector 7 8 9 10)))
+   (test* #"@vector-copy! newapi /tstart,sstart" (@vector 0 9 10 3)
+          (@vector-copy! (@vector 0 1 2 3) 1 (@vector 7 8 9 10) 2))
+   (test* #"@vector-copy! newapi /tstart,sstart,send" (@vector 0 1 2 9)
+          (@vector-copy! (@vector 0 1 2 3) 3 (@vector 7 8 9 10) 2 3))))
 
 (test* "uvector-copy! (generic)" '#u16(0 0 1 2 65535 0)
        (rlet1 v (make-u16vector 6 0)
@@ -502,62 +356,37 @@
        (rlet1 v (make-u16vector 4 0)
          (uvector-copy! v 2 '#u8(1 1))))
 
-(define (uv-multicopy!-test msg make ctor copy!)
-  (test* #"~msg generic" (ctor 0 1 2 3 0 1 2 3 0 1 2)
-         (rlet1 dst (make 11 0)
-           (copy! dst 1 4 (ctor 1 2 3))))
-  (test* #"~msg ssize" (ctor 0 1 2 3 0 0 4 5 6 0 0 7)
-         (rlet1 dst (make 12 0)
-           (copy! dst 1 5 (ctor 1 2 3 4 5 6 7 8 9) 0 3)))
-  (test* #"~msg sstart, ssize" (ctor 0 5 6 7 0 0 8 9 0 0 0 0)
-         (rlet1 dst (make 12 0)
-           (copy! dst 1 5 (ctor 1 2 3 4 5 6 7 8 9) 4 3)))
-  (test* #"~msg ssize, sstride" (ctor 1 2 3 0 2 3 4 0 3 4 5 0)
-         (rlet1 dst (make 12 0)
-           (copy! dst 0 4 (ctor 1 2 3 4 5 6 7 8 9) 0 3 1)))
-  (test* #"~msg count" (ctor 1 2 3 0 2 3 4 0 0 0 0 0)
-         (rlet1 dst (make 12 0)
-           (copy! dst 0 4 (ctor 1 2 3 4 5 6 7 8 9) 0 3 1 2)))
-  (test* #"~msg single item" (ctor 1 0 1 0 1 0 1 0 1 0)
-         (rlet1 dst (make 10 0)
-           (copy! dst 0 2 (ctor 1))))
-  )
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (begin
+  (test* #"@vector-multi-copy! generic" (@vector 0 1 2 3 0 1 2 3 0 1 2)
+         (rlet1 dst (make-@vector 11 0)
+           (@vector-multi-copy! dst 1 4 (@vector 1 2 3))))
+  (test* #"@vector-multi-copy! ssize" (@vector 0 1 2 3 0 0 4 5 6 0 0 7)
+         (rlet1 dst (make-@vector 12 0)
+           (@vector-multi-copy! dst 1 5 (@vector 1 2 3 4 5 6 7 8 9) 0 3)))
+  (test* #"@vector-multi-copy! sstart, ssize" (@vector 0 5 6 7 0 0 8 9 0 0 0 0)
+         (rlet1 dst (make-@vector 12 0)
+           (@vector-multi-copy! dst 1 5 (@vector 1 2 3 4 5 6 7 8 9) 4 3)))
+  (test* #"@vector-multi-copy! ssize, sstride" (@vector 1 2 3 0 2 3 4 0 3 4 5 0)
+         (rlet1 dst (make-@vector 12 0)
+           (@vector-multi-copy! dst 0 4 (@vector 1 2 3 4 5 6 7 8 9) 0 3 1)))
+  (test* #"@vector-multi-copy! count" (@vector 1 2 3 0 2 3 4 0 0 0 0 0)
+         (rlet1 dst (make-@vector 12 0)
+           (@vector-multi-copy! dst 0 4 (@vector 1 2 3 4 5 6 7 8 9) 0 3 1 2)))
+  (test* #"@vector-multi-copy! single item" (@vector 1 0 1 0 1 0 1 0 1 0)
+         (rlet1 dst (make-@vector 10 0)
+           (@vector-multi-copy! dst 0 2 (@vector 1))))))
 
-(uv-multicopy!-test "s8vector-multi-copy!" make-s8vector s8vector s8vector-multi-copy!)
-(uv-multicopy!-test "u8vector-multi-copy!" make-u8vector u8vector u8vector-multi-copy!)
-(uv-multicopy!-test "s16vector-multi-copy!" make-s16vector s16vector s16vector-multi-copy!)
-(uv-multicopy!-test "u16vector-multi-copy!" make-u16vector u16vector u16vector-multi-copy!)
-(uv-multicopy!-test "s32vector-multi-copy!" make-s32vector s32vector s32vector-multi-copy!)
-(uv-multicopy!-test "u32vector-multi-copy!" make-u32vector u32vector u32vector-multi-copy!)
-(uv-multicopy!-test "s64vector-multi-copy!" make-s64vector s64vector s64vector-multi-copy!)
-(uv-multicopy!-test "u64vector-multi-copy!" make-u64vector u64vector u64vector-multi-copy!)
-(uv-multicopy!-test "f16vector-multi-copy!" make-f16vector f16vector f16vector-multi-copy!)
-(uv-multicopy!-test "f32vector-multi-copy!" make-f32vector f32vector f32vector-multi-copy!)
-(uv-multicopy!-test "f64vector-multi-copy!" make-f64vector f64vector f64vector-multi-copy!)
-(uv-multicopy!-test "c32vector-multi-copy!" make-c32vector c32vector c32vector-multi-copy!)
-(uv-multicopy!-test "c64vector-multi-copy!" make-c64vector c64vector c64vector-multi-copy!)
-(uv-multicopy!-test "c128vector-multi-copy!" make-c128vector c128vector c128vector-multi-copy!)
-
-(define (uv-append-test msg ctor append)
-  (test* #"~msg base" (ctor) (append))
-  (test* #"~msg unit" (ctor 1 2 3 ) (append (ctor 1 2 3)))
-  (test* #"~msg" (ctor 1 2 3 4 5 6 7 8)
-         (append (ctor 1 2 3) (ctor) (ctor 4 5) (ctor 6 7 8))))
-
-(uv-append-test "s8vector-append" s8vector s8vector-append)
-(uv-append-test "u8vector-append" u8vector u8vector-append)
-(uv-append-test "s16vector-append" s16vector s16vector-append)
-(uv-append-test "u16vector-append" u16vector u16vector-append)
-(uv-append-test "s32vector-append" s32vector s32vector-append)
-(uv-append-test "u32vector-append" u32vector u32vector-append)
-(uv-append-test "s64vector-append" s64vector s64vector-append)
-(uv-append-test "u64vector-append" u64vector u64vector-append)
-(uv-append-test "f16vector-append" f16vector f16vector-append)
-(uv-append-test "f32vector-append" f32vector f32vector-append)
-(uv-append-test "f64vector-append" f64vector f64vector-append)
-(uv-append-test "c32vector-append" c32vector c32vector-append)
-(uv-append-test "c64vector-append" c64vector c64vector-append)
-(uv-append-test "c128vector-append" c128vector c128vector-append)
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (begin
+  (test* #"@vector-append base" (@vector) (@vector-append))
+  (test* #"@vector-append unit" (@vector 1 2 3 )
+         (@vector-append (@vector 1 2 3)))
+  (test* #"@vector-append" (@vector 1 2 3 4 5 6 7 8)
+         (@vector-append (@vector 1 2 3)
+                         (@vector) (@vector 4 5) (@vector 6 7 8)))))
 
 ;;-------------------------------------------------------------------
 (test-section "swapping bytes")
@@ -610,45 +439,19 @@
              #f)]
         [else (equal? l1 l2)]))
 
-(define (collection-tester class vec)
-  (and (=      (fold + 0 vec) 10)
-       (num-equal? (map identity vec) '(1 2 3 4))
-       (=      (find (^e (= e 2)) vec) 2)
-       (equal? (coerce-to class '(1 2 3 4)) vec)
-       (=      (ref vec 2) 3)
-       (num-equal? (begin (set! (ref vec 1) 0)
-                          (coerce-to <list> vec))
-                   '(1 0 3 4))
-       (num-equal? (coerce-to <vector> (subseq vec 1 3)) '#(0 3))))
-
-(test* "s8vector collection interface" #t
-       (collection-tester <s8vector> (s8vector 1 2 3 4)))
-(test* "u8vector collection interface" #t
-       (collection-tester <u8vector> (u8vector 1 2 3 4)))
-(test* "s16vector collection interface" #t
-       (collection-tester <s16vector> (s16vector 1 2 3 4)))
-(test* "u16vector collection interface" #t
-       (collection-tester <u16vector> (u16vector 1 2 3 4)))
-(test* "s32vector collection interface" #t
-       (collection-tester <s32vector> (s32vector 1 2 3 4)))
-(test* "u32vector collection interface" #t
-       (collection-tester <u32vector> (u32vector 1 2 3 4)))
-(test* "s64vector collection interface" #t
-       (collection-tester <s64vector> (s64vector 1 2 3 4)))
-(test* "u64vector collection interface" #t
-       (collection-tester <u64vector> (u64vector 1 2 3 4)))
-(test* "f16vector collection interface" #t
-       (collection-tester <f16vector> (f16vector 1 2 3 4)))
-(test* "f32vector collection interface" #t
-       (collection-tester <f32vector> (f32vector 1 2 3 4)))
-(test* "f64vector collection interface" #t
-       (collection-tester <f64vector> (f64vector 1 2 3 4)))
-(test* "c32vector collection interface" #t
-       (collection-tester <c32vector> (c32vector 1 2 3 4)))
-(test* "c64vector collection interface" #t
-       (collection-tester <c64vector> (c64vector 1 2 3 4)))
-(test* "c128vector collection interface" #t
-       (collection-tester <c128vector> (c128vector 1 2 3 4)))
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+ (test* "@vector collection interface" #t
+        (let1 vec (@vector 1 2 3 4)
+          (and (=      (fold + 0 vec) 10)
+               (num-equal? (map identity vec) '(1 2 3 4))
+               (=      (find (^e (= e 2)) vec) 2)
+               (equal? (coerce-to <@vector> '(1 2 3 4)) vec)
+               (=      (ref vec 2) 3)
+               (num-equal? (begin (set! (ref vec 1) 0)
+                                  (coerce-to <list> vec))
+                           '(1 0 3 4))
+               (num-equal? (coerce-to <vector> (subseq vec 1 3)) '#(0 3))))))
 
 ;;-------------------------------------------------------------------
 (test-section "arithmetic operations")
@@ -681,13 +484,6 @@
 
 (define (tag->min tag) (cadr  (assq tag *bounds*)))
 (define (tag->max tag) (caddr (assq tag *bounds*)))
-
-(define-macro (arith-test-generate tag)
-  `(arith-test ',tag ,(tag->min tag) ,(tag->max tag)
-               ,(string->symbol #"~|tag|vector")
-               ,(string->symbol #"~|tag|vector-add")
-               ,(string->symbol #"~|tag|vector-sub")
-               ,(string->symbol #"~|tag|vector-mul")))
 
 (define (arith-test tag min max make add sub mul)
   (define v0 (make 0 1 2 3))
@@ -822,58 +618,40 @@
         (gen-tester mul v0 (- big32)))
   )
 
-(arith-test-generate s8)
-(arith-test-generate u8)
-(arith-test-generate s16)
-(arith-test-generate u16)
-(arith-test-generate s32)
-(arith-test-generate u32)
-(arith-test-generate s64)
-(arith-test-generate u64)
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64)
+ (arith-test '@ (tag->min '@) (tag->max '@)
+             @vector @vector-add @vector-sub @vector-mul))
 
 ;; flonum vectors; no clamping, so it's a bit simple
-(define-macro (flonum-arith-test-generate tag)
-  `(flonum-arith-test ',tag
-                      ,(string->symbol #"~|tag|vector")
-                      ,(string->symbol #"~|tag|vector-add")
-                      ,(string->symbol #"~|tag|vector-sub")
-                      ,(string->symbol #"~|tag|vector-mul")
-                      ,(string->symbol #"~|tag|vector-div")
-                      ))
-
-(define (flonum-arith-test tag make add sub mul div)
-  (test* (format #f "~svector-add (v+v)" tag)
-         (make 4.0 6.0 8.0 10.0)
-         (add (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0)))
-  (test* (format #f "~svector-add (v+s)" tag)
-         (make 4.0 5.0 6.0 7.0)
-         (add (make 0.0 1.0 2.0 3.0) 4.0))
-  (test* (format #f "~svector-sub (v-v)" tag)
-         (make -4.0 -4.0 -4.0 -4.0)
-         (sub (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0)))
-  (test* (format #f "~svector-sub (v-s)" tag)
-         (make -4.0 -3.0 -2.0 -1.0)
-         (sub (make 0.0 1.0 2.0 3.0) 4.0))
-  (test* (format #f "~svector-mul (v*v)" tag)
-         (make 0.0 5.0 12.0 21.0)
-         (mul (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0)))
-  (test* (format #f "~svector-mul (v*s)" tag)
-         (make 0.0 5.0 10.0 15.0)
-         (mul (make 0.0 1.0 2.0 3.0) 5.0))
-  (test* (format #f "~svector-div (v/v)" tag)
-         (make 0.0 0.5 0.5 0.375)
-         (div (make 0.0 1.0 2.0 3.0) (make 1.0 2.0 4.0 8.0)))
-  (test* (format #f "~svector-div (v/v)" tag)
-         (make 0.0 0.5 1.0 1.5)
-         (div (make 0.0 1.0 2.0 3.0) 2.0))
-  )
-
-(flonum-arith-test-generate f16)
-(flonum-arith-test-generate f32)
-(flonum-arith-test-generate f64)
-(flonum-arith-test-generate c32)
-(flonum-arith-test-generate c64)
-(flonum-arith-test-generate c128)
+(expand-uvec
+ (f16 f32 f64 c32 c64 c128)
+ (begin
+   (test* "@vector-add (v+v)"
+          (@vector 4.0 6.0 8.0 10.0)
+          (@vector-add (@vector 0.0 1.0 2.0 3.0) (@vector 4.0 5.0 6.0 7.0)))
+   (test* "@vector-add (v+s)"
+          (@vector 4.0 5.0 6.0 7.0)
+          (@vector-add (@vector 0.0 1.0 2.0 3.0) 4.0))
+   (test* "@vector-sub (v-v)"
+          (@vector -4.0 -4.0 -4.0 -4.0)
+          (@vector-sub (@vector 0.0 1.0 2.0 3.0) (@vector 4.0 5.0 6.0 7.0)))
+   (test* "@vector-sub (v-s)"
+          (@vector -4.0 -3.0 -2.0 -1.0)
+          (@vector-sub (@vector 0.0 1.0 2.0 3.0) 4.0))
+   (test* "@vector-mul (v*v)"
+          (@vector 0.0 5.0 12.0 21.0)
+          (@vector-mul (@vector 0.0 1.0 2.0 3.0) (@vector 4.0 5.0 6.0 7.0)))
+   (test* "@vector-mul (v*s)"
+          (@vector 0.0 5.0 10.0 15.0)
+          (@vector-mul (@vector 0.0 1.0 2.0 3.0) 5.0))
+   (test* "@vector-div (v/v)"
+          (@vector 0.0 0.5 0.5 0.375)
+          (@vector-div (@vector 0.0 1.0 2.0 3.0) (@vector 1.0 2.0 4.0 8.0)))
+   (test* "@vector-div (v/v)"
+          (@vector 0.0 0.5 1.0 1.5)
+          (@vector-div (@vector 0.0 1.0 2.0 3.0) 2.0))
+   ))
 
 ;;-------------------------------------------------------------------
 (test-section "bitwise operations")
@@ -893,58 +671,52 @@
   (tests 'ior ior logior)
   (tests 'xor xor logxor))
 
-(define-macro (bit-test-generate tag v0 v1 s0 s1)
-  `(bit-test ',tag ',v0 ',v1 ,s0 ,s1
-             ,(string->symbol #"~|tag|vector->list")
-             ,(string->symbol #"list->~|tag|vector")
-             ,(string->symbol #"~|tag|vector-and")
-             ,(string->symbol #"~|tag|vector-ior")
-             ,(string->symbol #"~|tag|vector-xor")))
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64)
+ (define (bit-test-@ v0 v1 s0 s1)
+   (bit-test '@ v0 v1 s0 s1 
+                @vector->list
+                list->@vector
+                @vector-and
+                @vector-ior
+                @vector-xor)))
 
-(bit-test-generate s8
-                   #s8(#x0f #x70 #x-0f #x-70)
-                   #s8(#x55 #x2a #x-55 #x-2a)
-                   #x55
-                   #x-55)
-(bit-test-generate u8
-                   #u8(#x0f #x70 #xf0 #xcc)
-                   #u8(#x55 #xaa #x5a #xa5)
-                   #x55
-                   #xaa)
-(bit-test-generate s16
-                   #s16(#x0fff #x7070 #x-0fff #x-7070)
-                   #s16(#x3c3c #x-43c3 #x43c3 #x-3c3c)
-                   #x55aa
-                   #x-55aa)
-(bit-test-generate u16
-                   #u16(#x0fff #x7070 #xff00 #xc0c0)
-                   #u16(#x3c3c #xc3c3 #x55aa #xaa55)
-                   #x55aa
-                   #x9696)
-(bit-test-generate s32
-                   #s32(#x0fffffff #x70707070 #x-0fffffff #x-70707070)
-                   #s32(#x3c3c3c3c #x-43c3c3c3 #x43c3c3c3 #x-3c3c3c3c)
-                   #x55aa55aa
-                   #x-55aa55aa)
-(bit-test-generate u32
-                   #u32(#x0fffffff #x70707070 #xff00ff00 #xc0c0c0c0)
-                   #u32(#x3c3c3c3c #xc3c3c3c3 #x55aa55aa #xaa55aa55)
-                   #x55aa55aa
-                   #x96966969)
-(bit-test-generate s64
-                   #s64(#x0fffffffffffffff #x7070707007070707
-                                           #x-0fffffffffffffff #x-7070707007070707)
-                   #s64(#x3c3c3c3cc3c3c3c3 #x-43c3c3c33c3c3c3c
-                                           #x43c3c3c3c3c3c3c3 #x-3c3c3c3c3c3c3c3c)
-                   #x55aa55aa55aa55aa
-                   #x-55aa55aa55aa55aa)
-(bit-test-generate u64
-                   #u64(#x0fffffffffffffff #x70707070f0f0f0f0
-                                           #xff00ff00ff00ff00 #xc0c0c0c003030303)
-                   #u64(#x3c3c3c3c3c3c3c3c #xc3c3c3c3c3c3c3c3
-                                           #x55aa55aa55aa55aa #xaa55aa55aa55aa55)
-                   #x55aa55aa5a5a5a5a
-                   #x9696696988778877)
+(bit-test-s8 #s8(#x0f #x70 #x-0f #x-70)
+             #s8(#x55 #x2a #x-55 #x-2a)
+             #x55
+             #x-55)
+(bit-test-u8 #u8(#x0f #x70 #xf0 #xcc)
+             #u8(#x55 #xaa #x5a #xa5)
+             #x55
+             #xaa)
+(bit-test-s16 #s16(#x0fff #x7070 #x-0fff #x-7070)
+              #s16(#x3c3c #x-43c3 #x43c3 #x-3c3c)
+              #x55aa
+              #x-55aa)
+(bit-test-u16 #u16(#x0fff #x7070 #xff00 #xc0c0)
+              #u16(#x3c3c #xc3c3 #x55aa #xaa55)
+              #x55aa
+              #x9696)
+(bit-test-s32 #s32(#x0fffffff #x70707070 #x-0fffffff #x-70707070)
+              #s32(#x3c3c3c3c #x-43c3c3c3 #x43c3c3c3 #x-3c3c3c3c)
+              #x55aa55aa
+              #x-55aa55aa)
+(bit-test-u32 #u32(#x0fffffff #x70707070 #xff00ff00 #xc0c0c0c0)
+              #u32(#x3c3c3c3c #xc3c3c3c3 #x55aa55aa #xaa55aa55)
+              #x55aa55aa
+              #x96966969)
+(bit-test-s64 #s64(#x0fffffffffffffff #x7070707007070707
+                  #x-0fffffffffffffff #x-7070707007070707)
+              #s64(#x3c3c3c3cc3c3c3c3 #x-43c3c3c33c3c3c3c
+                   #x43c3c3c3c3c3c3c3 #x-3c3c3c3c3c3c3c3c)
+              #x55aa55aa55aa55aa
+              #x-55aa55aa55aa55aa)
+(bit-test-u64 #u64(#x0fffffffffffffff #x70707070f0f0f0f0
+                   #xff00ff00ff00ff00 #xc0c0c0c003030303)
+              #u64(#x3c3c3c3c3c3c3c3c #xc3c3c3c3c3c3c3c3
+                   #x55aa55aa55aa55aa #xaa55aa55aa55aa55)
+              #x55aa55aa5a5a5a5a
+              #x9696696988778877)
 
 ;;-------------------------------------------------------------------
 (test-section "dot product")
@@ -965,297 +737,297 @@
            (dot v0 (coerce-to <vector> v1)))
     ))
 
-(define-macro (dotprod-test-generate tag v0 v1)
-  `(dotprod-test ',tag ',v0 ',v1
-                 ,(string->symbol #"~|tag|vector-dot")))
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64)
+ (define (dotprod-test-@ v0 v1)
+   (dotprod-test '@ v0 v1 @vector-dot)))
 
-(dotprod-test-generate s8 #s8() #s8())
-(dotprod-test-generate s8 #s8(0 1 2 3) #s8(4 5 6 7))
-(dotprod-test-generate s8 #s8(0 -1 2 -3) #s8(-4 5 -6 7))
-(dotprod-test-generate s8 #s8(127 127 127 127 127) #s8(127 127 127 127 127))
-(dotprod-test-generate s8
-                       #s8(-128 -128 -128 -128 -128)
-                       #s8(127 127 127 127 127))
-(dotprod-test-generate u8 #u8(0 1 2 3) #u8(4 5 6 7))
-(dotprod-test-generate u8 #u8(255 255 255 255 255) #u8(255 255 255 255 255))
+(dotprod-test-s8 #s8() #s8())
+(dotprod-test-s8 #s8(0 1 2 3) #s8(4 5 6 7))
+(dotprod-test-s8 #s8(0 -1 2 -3) #s8(-4 5 -6 7))
+(dotprod-test-s8 #s8(127 127 127 127 127) #s8(127 127 127 127 127))
+(dotprod-test-s8
+ #s8(-128 -128 -128 -128 -128)
+ #s8(127 127 127 127 127))
+(dotprod-test-u8 #u8(0 1 2 3) #u8(4 5 6 7))
+(dotprod-test-u8 #u8(255 255 255 255 255) #u8(255 255 255 255 255))
 
-(dotprod-test-generate s16 #s16(0 1 2 3) #s16(4 5 6 7))
-(dotprod-test-generate s16 #s16(0 -1 2 -3) #s16(-4 5 -6 7))
-(dotprod-test-generate s16 #s16(16384 16384 16384 16384 16384)
-                       #s16(16384 16384 16384 16384 16384))
-(dotprod-test-generate s16 #s16(16384 -16384 16384 -16384 16384)
-                       #s16(16384 -16384 16384 -16384 16384))
-(dotprod-test-generate s16 #s16(32767 32767 32767 32767 32767)
-                       #s16(32767 32767 32767 32767 32767))
-(dotprod-test-generate s16 #s16(32767 1 2 3 4)
-                       #s16(32767 1 2 3 4))
-(dotprod-test-generate s16 #s16(1 2 3 4 32767)
-                       #s16(1 2 3 4 32767))
-(dotprod-test-generate s16 #s16(32767 -32767 32767 -32767 32767)
-                       #s16(32767 32767 32767 32767 32767))
-(dotprod-test-generate s16 #s16(-32768 -32768 -32768 -32768 -32768)
-                       #s16(32767 32767 32767 32767 32767))
-(dotprod-test-generate u16 #u16(0 1 2 3) #u16(4 5 6 7))
-(dotprod-test-generate u16 #u16(16384 16384 16384 16384 16384)
-                       #u16(16384 16384 16384 16384 16384))
-(dotprod-test-generate u16 #u16(65535 65535 65535 65535 65535)
-                       #u16(65535 65535 65535 65535 65535))
-(dotprod-test-generate u16 #u16(32767 1 2 3 4)
-                       #u16(32767 1 2 3 4))
-(dotprod-test-generate u16 #u16(1 2 3 4 32767)
-                       #u16(1 2 3 4 32767))
+(dotprod-test-s16 #s16(0 1 2 3) #s16(4 5 6 7))
+(dotprod-test-s16 #s16(0 -1 2 -3) #s16(-4 5 -6 7))
+(dotprod-test-s16 #s16(16384 16384 16384 16384 16384)
+                  #s16(16384 16384 16384 16384 16384))
+(dotprod-test-s16 #s16(16384 -16384 16384 -16384 16384)
+                  #s16(16384 -16384 16384 -16384 16384))
+(dotprod-test-s16 #s16(32767 32767 32767 32767 32767)
+                  #s16(32767 32767 32767 32767 32767))
+(dotprod-test-s16 #s16(32767 1 2 3 4)
+                  #s16(32767 1 2 3 4))
+(dotprod-test-s16 #s16(1 2 3 4 32767)
+                  #s16(1 2 3 4 32767))
+(dotprod-test-s16 #s16(32767 -32767 32767 -32767 32767)
+                  #s16(32767 32767 32767 32767 32767))
+(dotprod-test-s16 #s16(-32768 -32768 -32768 -32768 -32768)
+                  #s16(32767 32767 32767 32767 32767))
+(dotprod-test-u16 #u16(0 1 2 3) #u16(4 5 6 7))
+(dotprod-test-u16 #u16(16384 16384 16384 16384 16384)
+                  #u16(16384 16384 16384 16384 16384))
+(dotprod-test-u16 #u16(65535 65535 65535 65535 65535)
+                  #u16(65535 65535 65535 65535 65535))
+(dotprod-test-u16 #u16(32767 1 2 3 4)
+                  #u16(32767 1 2 3 4))
+(dotprod-test-u16 #u16(1 2 3 4 32767)
+                  #u16(1 2 3 4 32767))
 
-(dotprod-test-generate s32 #s32(0 1 2 3) #s32(4 5 6 7))
-(dotprod-test-generate s32 #s32(0 -1 2 -3) #s32(-4 5 -6 7))
-(dotprod-test-generate s32 #s32(16384 16384 16384 16384 16384)
-                       #s32(16384 16384 16384 16384 16384))
-(dotprod-test-generate s32 #s32(16384 -16384 16384 -16384 16384)
-                       #s32(16384 -16384 16384 -16384 16384))
-(dotprod-test-generate s32 #s32(32767 32767 32767 32767 32767)
-                       #s32(32767 32767 32767 32767 32767))
-(dotprod-test-generate s32 #s32(214748367 214748367 214748367 214748367 214748367)
-                       #s32(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate s32 #s32(214748367 1 2 3 4)
-                       #s32(214748367 1 2 3 4))
-(dotprod-test-generate s32 #s32(1 2 3 4 214748367)
-                       #s32(1 2 3 4 214748367))
-(dotprod-test-generate s32 #s32(32767 -32767 32767 -32767 32767)
-                       #s32(32767 32767 32767 32767 32767))
-(dotprod-test-generate s32 #s32(214748367 -214748367 214748367 -214748367 214748367)
-                       #s32(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate s32 #s32(-214748368 -214748368 -214748368 -214748368 -214748368)
-                       #s32(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate u32 #u32(0 1 2 3) #u32(4 5 6 7))
-(dotprod-test-generate u32 #u32(16384 16384 16384 16384 16384)
-                       #u32(16384 16384 16384 16384 16384))
-(dotprod-test-generate u32 #u32(4294967295 4294967295 4294967295 4294967295 4294967295)
-                       #u32(4294967295 4294967295 4294967295 4294967295 4294967295))
-(dotprod-test-generate u32 #u32(4294967295 1 2 3 4)
-                       #u32(4294967295 1 2 3 4))
-(dotprod-test-generate u32 #u32(1 2 3 4 4294967295)
-                       #u32(1 2 3 4 4294967295))
+(dotprod-test-s32 #s32(0 1 2 3) #s32(4 5 6 7))
+(dotprod-test-s32 #s32(0 -1 2 -3) #s32(-4 5 -6 7))
+(dotprod-test-s32 #s32(16384 16384 16384 16384 16384)
+                  #s32(16384 16384 16384 16384 16384))
+(dotprod-test-s32 #s32(16384 -16384 16384 -16384 16384)
+                  #s32(16384 -16384 16384 -16384 16384))
+(dotprod-test-s32 #s32(32767 32767 32767 32767 32767)
+                  #s32(32767 32767 32767 32767 32767))
+(dotprod-test-s32 #s32(214748367 214748367 214748367 214748367 214748367)
+                  #s32(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-s32 #s32(214748367 1 2 3 4)
+                  #s32(214748367 1 2 3 4))
+(dotprod-test-s32 #s32(1 2 3 4 214748367)
+                  #s32(1 2 3 4 214748367))
+(dotprod-test-s32 #s32(32767 -32767 32767 -32767 32767)
+                  #s32(32767 32767 32767 32767 32767))
+(dotprod-test-s32 #s32(214748367 -214748367 214748367 -214748367 214748367)
+                  #s32(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-s32 #s32(-214748368 -214748368 -214748368 -214748368 -214748368)
+                  #s32(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-u32 #u32(0 1 2 3) #u32(4 5 6 7))
+(dotprod-test-u32 #u32(16384 16384 16384 16384 16384)
+                  #u32(16384 16384 16384 16384 16384))
+(dotprod-test-u32 #u32(4294967295 4294967295 4294967295 4294967295 4294967295)
+                  #u32(4294967295 4294967295 4294967295 4294967295 4294967295))
+(dotprod-test-u32 #u32(4294967295 1 2 3 4)
+                  #u32(4294967295 1 2 3 4))
+(dotprod-test-u32 #u32(1 2 3 4 4294967295)
+                  #u32(1 2 3 4 4294967295))
 
-(dotprod-test-generate s64 #s64(0 1 2 3) #s64(4 5 6 7))
-(dotprod-test-generate s64 #s64(0 -1 2 -3) #s64(-4 5 -6 7))
-(dotprod-test-generate s64 #s64(16384 16384 16384 16384 16384)
-                       #s64(16384 16384 16384 16384 16384))
-(dotprod-test-generate s64 #s64(16384 -16384 16384 -16384 16384)
-                       #s64(16384 -16384 16384 -16384 16384))
-(dotprod-test-generate s64 #s64(32767 32767 32767 32767 32767)
-                       #s64(32767 32767 32767 32767 32767))
-(dotprod-test-generate s64 #s64(214748367 214748367 214748367 214748367 214748367)
-                       #s64(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate s64 #s64(9223372036854775807 1 2 3 4)
-                       #s64(9223372036854775807 1 2 3 4))
-(dotprod-test-generate s64 #s64(1 2 3 4 9223372036854775807 1)
-                       #s64(1 2 3 4 9223372036854775807 1))
-(dotprod-test-generate s64 #s64(32767 -32767 32767 -32767 32767)
-                       #s64(32767 -32767 32767 -32767 32767))
-(dotprod-test-generate s64 #s64(214748367 -214748367 214748367 -214748367 214748367)
-                       #s64(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate s64 #s64(-214748368 -214748368 -214748368 -214748368 -214748368)
-                       #s64(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate s64 #s64(9223372036854775807 -9223372036854775807 9223372036854775807 -9223372036854775807 9223372036854775807)
-                       #s64(9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807))
-(dotprod-test-generate s64 #s64(-9223372036854775808 -9223372036854775808 -9223372036854775808 -9223372036854775808 -9223372036854775808)
-                       #s64(9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807))
-(dotprod-test-generate u64 #u64(0 1 2 3) #u64(4 5 6 7))
-(dotprod-test-generate u64 #u64(16384 16384 16384 16384 16384)
-                       #u64(16384 16384 16384 16384 16384))
-(dotprod-test-generate u64 #u64(18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615)
-                       #u64(18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615))
-(dotprod-test-generate u64 #u64(18446744073709551615 1 2 3 4)
-                       #u64(18446744073709551615 1 2 3 4))
-(dotprod-test-generate u64 #u64(1 2 3 4 18446744073709551615)
-                       #u64(1 2 3 4 18446744073709551615))
+(dotprod-test-s64 #s64(0 1 2 3) #s64(4 5 6 7))
+(dotprod-test-s64 #s64(0 -1 2 -3) #s64(-4 5 -6 7))
+(dotprod-test-s64 #s64(16384 16384 16384 16384 16384)
+                  #s64(16384 16384 16384 16384 16384))
+(dotprod-test-s64 #s64(16384 -16384 16384 -16384 16384)
+                  #s64(16384 -16384 16384 -16384 16384))
+(dotprod-test-s64 #s64(32767 32767 32767 32767 32767)
+                  #s64(32767 32767 32767 32767 32767))
+(dotprod-test-s64 #s64(214748367 214748367 214748367 214748367 214748367)
+                  #s64(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-s64 #s64(9223372036854775807 1 2 3 4)
+                  #s64(9223372036854775807 1 2 3 4))
+(dotprod-test-s64 #s64(1 2 3 4 9223372036854775807 1)
+                  #s64(1 2 3 4 9223372036854775807 1))
+(dotprod-test-s64 #s64(32767 -32767 32767 -32767 32767)
+                  #s64(32767 -32767 32767 -32767 32767))
+(dotprod-test-s64 #s64(214748367 -214748367 214748367 -214748367 214748367)
+                  #s64(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-s64 #s64(-214748368 -214748368 -214748368 -214748368 -214748368)
+                  #s64(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-s64 #s64(9223372036854775807 -9223372036854775807 9223372036854775807 -9223372036854775807 9223372036854775807)
+                  #s64(9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807))
+(dotprod-test-s64 #s64(-9223372036854775808 -9223372036854775808 -9223372036854775808 -9223372036854775808 -9223372036854775808)
+                  #s64(9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807))
+(dotprod-test-u64 #u64(0 1 2 3) #u64(4 5 6 7))
+(dotprod-test-u64 #u64(16384 16384 16384 16384 16384)
+                  #u64(16384 16384 16384 16384 16384))
+(dotprod-test-u64 #u64(18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615)
+                  #u64(18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615 18446744073709551615))
+(dotprod-test-u64 #u64(18446744073709551615 1 2 3 4)
+                  #u64(18446744073709551615 1 2 3 4))
+(dotprod-test-u64 #u64(1 2 3 4 18446744073709551615)
+                  #u64(1 2 3 4 18446744073709551615))
 
-(dotprod-test-generate f16 #f16(0 1 2 3) #f16(4 5 6 7))
-(dotprod-test-generate f16 #f16(0 -1 2 -3) #f16(-4 5 -6 7))
-(dotprod-test-generate f16 #f16(16384 16384 16384 16384 16384)
-                       #f16(16384 16384 16384 16384 16384))
-(dotprod-test-generate f16 #f16(16384 -16384 16384 -16384 16384)
-                       #f16(16384 -16384 16384 -16384 16384))
-(dotprod-test-generate f16 #f16(32767 32767 32767 32767 32767)
-                       #f16(32767 32767 32767 32767 32767))
-(dotprod-test-generate f16 #f16(214748367 214748367 214748367 214748367 214748367)
-                       #f16(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate f16 #f16(9223372036854775807 1 2 3 4)
-                       #f16(9223372036854775807 1 2 3 4))
-(dotprod-test-generate f16 #f16(1 2 3 4 9223372036854775807 1)
-                       #f16(1 2 3 4 9223372036854775807 1))
-(dotprod-test-generate f16 #f16(32767 -32767 32767 -32767 32767)
-                       #f16(32767 -32767 32767 -32767 32767))
+(dotprod-test-f16 #f16(0 1 2 3) #f16(4 5 6 7))
+(dotprod-test-f16 #f16(0 -1 2 -3) #f16(-4 5 -6 7))
+(dotprod-test-f16 #f16(16384 16384 16384 16384 16384)
+                  #f16(16384 16384 16384 16384 16384))
+(dotprod-test-f16 #f16(16384 -16384 16384 -16384 16384)
+                  #f16(16384 -16384 16384 -16384 16384))
+(dotprod-test-f16 #f16(32767 32767 32767 32767 32767)
+                  #f16(32767 32767 32767 32767 32767))
+(dotprod-test-f16 #f16(214748367 214748367 214748367 214748367 214748367)
+                  #f16(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-f16 #f16(9223372036854775807 1 2 3 4)
+                  #f16(9223372036854775807 1 2 3 4))
+(dotprod-test-f16 #f16(1 2 3 4 9223372036854775807 1)
+                  #f16(1 2 3 4 9223372036854775807 1))
+(dotprod-test-f16 #f16(32767 -32767 32767 -32767 32767)
+                  #f16(32767 -32767 32767 -32767 32767))
 
-(dotprod-test-generate f32 #f32(0 1 2 3) #f32(4 5 6 7))
-(dotprod-test-generate f32 #f32(0 -1 2 -3) #f32(-4 5 -6 7))
-(dotprod-test-generate f32 #f32(16384 16384 16384 16384 16384)
-                       #f32(16384 16384 16384 16384 16384))
-(dotprod-test-generate f32 #f32(16384 -16384 16384 -16384 16384)
-                       #f32(16384 -16384 16384 -16384 16384))
-(dotprod-test-generate f32 #f32(32767 32767 32767 32767 32767)
-                       #f32(32767 32767 32767 32767 32767))
-(dotprod-test-generate f32 #f32(214748367 214748367 214748367 214748367 214748367)
-                       #f32(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate f32 #f32(9223372036854775807 1 2 3 4)
-                       #f32(9223372036854775807 1 2 3 4))
-(dotprod-test-generate f32 #f32(1 2 3 4 9223372036854775807 1)
-                       #f32(1 2 3 4 9223372036854775807 1))
-(dotprod-test-generate f32 #f32(32767 -32767 32767 -32767 32767)
-                       #f32(32767 -32767 32767 -32767 32767))
+(dotprod-test-f32 #f32(0 1 2 3) #f32(4 5 6 7))
+(dotprod-test-f32 #f32(0 -1 2 -3) #f32(-4 5 -6 7))
+(dotprod-test-f32 #f32(16384 16384 16384 16384 16384)
+                  #f32(16384 16384 16384 16384 16384))
+(dotprod-test-f32 #f32(16384 -16384 16384 -16384 16384)
+                  #f32(16384 -16384 16384 -16384 16384))
+(dotprod-test-f32 #f32(32767 32767 32767 32767 32767)
+                  #f32(32767 32767 32767 32767 32767))
+(dotprod-test-f32 #f32(214748367 214748367 214748367 214748367 214748367)
+                  #f32(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-f32 #f32(9223372036854775807 1 2 3 4)
+                  #f32(9223372036854775807 1 2 3 4))
+(dotprod-test-f32 #f32(1 2 3 4 9223372036854775807 1)
+                  #f32(1 2 3 4 9223372036854775807 1))
+(dotprod-test-f32 #f32(32767 -32767 32767 -32767 32767)
+                  #f32(32767 -32767 32767 -32767 32767))
 
-(dotprod-test-generate f64 #f64(0 1 2 3) #f64(4 5 6 7))
-(dotprod-test-generate f64 #f64(0 -1 2 -3) #f64(-4 5 -6 7))
-(dotprod-test-generate f64 #f64(16384 16384 16384 16384 16384)
-                       #f64(16384 16384 16384 16384 16384))
-(dotprod-test-generate f64 #f64(16384 -16384 16384 -16384 16384)
-                       #f64(16384 -16384 16384 -16384 16384))
-(dotprod-test-generate f64 #f64(32767 32767 32767 32767 32767)
-                       #f64(32767 32767 32767 32767 32767))
-(dotprod-test-generate f64 #f64(214748367 214748367 214748367 214748367 214748367)
-                       #f64(214748367 214748367 214748367 214748367 214748367))
-(dotprod-test-generate f64 #f64(9223372036854775807 1 2 3 4)
-                       #f64(9223372036854775807 1 2 3 4))
-(dotprod-test-generate f64 #f64(1 2 3 4 9223372036854775807 1)
-                       #f64(1 2 3 4 9223372036854775807 1))
-(dotprod-test-generate f64 #f64(32767 -32767 32767 -32767 32767)
-                       #f64(32767 -32767 32767 -32767 32767))
+(dotprod-test-f64 #f64(0 1 2 3) #f64(4 5 6 7))
+(dotprod-test-f64 #f64(0 -1 2 -3) #f64(-4 5 -6 7))
+(dotprod-test-f64 #f64(16384 16384 16384 16384 16384)
+                  #f64(16384 16384 16384 16384 16384))
+(dotprod-test-f64 #f64(16384 -16384 16384 -16384 16384)
+                  #f64(16384 -16384 16384 -16384 16384))
+(dotprod-test-f64 #f64(32767 32767 32767 32767 32767)
+                  #f64(32767 32767 32767 32767 32767))
+(dotprod-test-f64 #f64(214748367 214748367 214748367 214748367 214748367)
+                  #f64(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-f64 #f64(9223372036854775807 1 2 3 4)
+                  #f64(9223372036854775807 1 2 3 4))
+(dotprod-test-f64 #f64(1 2 3 4 9223372036854775807 1)
+                  #f64(1 2 3 4 9223372036854775807 1))
+(dotprod-test-f64 #f64(32767 -32767 32767 -32767 32767)
+                  #f64(32767 -32767 32767 -32767 32767))
 
 ;;-------------------------------------------------------------------
 (test-section "range-check")
 
-(define-macro (range-test-generate tag v min max result)
-  `(test (format #f "~svector-range-check" ',tag) ,result
-         (^[]
-           (,(string->symbol #"~|tag|vector-range-check") ',v ',min ',max)))
-  )
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64)
+ (define (range-test-@ v min max result)
+   (test* "@vector-range-check" result (@vector-range-check v min max))))
 
-(range-test-generate s8 #s8(-4 -2 0 2 4) #f #f #f)
-(range-test-generate s8 #s8(-4 -2 0 2 4) -4 4 #f)
-(range-test-generate s8 #s8(-4 -2 0 2 4) -4 3 4)
-(range-test-generate s8 #s8(-4 -2 0 2 4) -4 0 3)
-(range-test-generate s8 #s8(-4 -2 0 2 4) -3 4 0)
-(range-test-generate s8 #s8(-4 -2 0 2 4) 0 4 0)
-(range-test-generate s8 #s8(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
-(range-test-generate s8 #s8(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
-(range-test-generate s8 #s8(-4 -2 0 2 4) #xffffffffffffffff #f  0)
-(range-test-generate s8 #s8(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
-(range-test-generate s8 #s8(-4 -2 0 2 4) #s8(-4 -3 -2 -1 0) #s8(0 1 2 3 4) #f)
-(range-test-generate s8 #s8(-4 -2 0 2 4) #s8(-4 -1 -2 -1 0) #s8(0 1 2 3 4) 1)
-(range-test-generate s8 #s8(-4 -2 0 2 4) #s8(-4 -3 -2 -1 0) #s8(0 1 -1 3 4) 2)
+(range-test-s8 #s8(-4 -2 0 2 4) #f #f #f)
+(range-test-s8 #s8(-4 -2 0 2 4) -4 4 #f)
+(range-test-s8 #s8(-4 -2 0 2 4) -4 3 4)
+(range-test-s8 #s8(-4 -2 0 2 4) -4 0 3)
+(range-test-s8 #s8(-4 -2 0 2 4) -3 4 0)
+(range-test-s8 #s8(-4 -2 0 2 4) 0 4 0)
+(range-test-s8 #s8(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
+(range-test-s8 #s8(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
+(range-test-s8 #s8(-4 -2 0 2 4) #xffffffffffffffff #f  0)
+(range-test-s8 #s8(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
+(range-test-s8 #s8(-4 -2 0 2 4) #s8(-4 -3 -2 -1 0) #s8(0 1 2 3 4) #f)
+(range-test-s8 #s8(-4 -2 0 2 4) #s8(-4 -1 -2 -1 0) #s8(0 1 2 3 4) 1)
+(range-test-s8 #s8(-4 -2 0 2 4) #s8(-4 -3 -2 -1 0) #s8(0 1 -1 3 4) 2)
 
-(range-test-generate u8 #u8(0 2 4 6 9) #f #f #f)
-(range-test-generate u8 #u8(0 2 4 6 9) -4 9 #f)
-(range-test-generate u8 #u8(0 2 4 6 9) -4 8 4)
-(range-test-generate u8 #u8(0 2 4 6 9) -4 4 3)
-(range-test-generate u8 #u8(0 2 4 6 9) 3 4 0)
-(range-test-generate u8 #u8(0 2 4 6 9) #x-ffffffffffffffff #f #f)
-(range-test-generate u8 #u8(0 2 4 6 9) #f #xffffffffffffffff  #f)
-(range-test-generate u8 #u8(0 2 4 6 9) #xffffffffffffffff #f  0)
-(range-test-generate u8 #u8(0 2 4 6 9) #f #x-ffffffffffffffff 1)
-(range-test-generate u8 #u8(0 2 4 6 9) #u8(0 1 2 3 4) #u8(5 6 7 8 9) #f)
-(range-test-generate u8 #u8(0 2 4 6 9) #u8(0 1 5 3 4) #u8(5 6 7 8 9) 2)
-(range-test-generate u8 #u8(0 2 4 6 9) #u8(0 1 2 3 4) #u8(5 6 7 5 6) 3)
+(range-test-u8 #u8(0 2 4 6 9) #f #f #f)
+(range-test-u8 #u8(0 2 4 6 9) -4 9 #f)
+(range-test-u8 #u8(0 2 4 6 9) -4 8 4)
+(range-test-u8 #u8(0 2 4 6 9) -4 4 3)
+(range-test-u8 #u8(0 2 4 6 9) 3 4 0)
+(range-test-u8 #u8(0 2 4 6 9) #x-ffffffffffffffff #f #f)
+(range-test-u8 #u8(0 2 4 6 9) #f #xffffffffffffffff  #f)
+(range-test-u8 #u8(0 2 4 6 9) #xffffffffffffffff #f  0)
+(range-test-u8 #u8(0 2 4 6 9) #f #x-ffffffffffffffff 1)
+(range-test-u8 #u8(0 2 4 6 9) #u8(0 1 2 3 4) #u8(5 6 7 8 9) #f)
+(range-test-u8 #u8(0 2 4 6 9) #u8(0 1 5 3 4) #u8(5 6 7 8 9) 2)
+(range-test-u8 #u8(0 2 4 6 9) #u8(0 1 2 3 4) #u8(5 6 7 5 6) 3)
 
-(range-test-generate s16 #s16(-4 -2 0 2 4) #f #f #f)
-(range-test-generate s16 #s16(-4 -2 0 2 4) -4 4 #f)
-(range-test-generate s16 #s16(-4 -2 0 2 4) -4 3 4)
-(range-test-generate s16 #s16(-4 -2 0 2 4) -4 0 3)
-(range-test-generate s16 #s16(-4 -2 0 2 4) -3 4 0)
-(range-test-generate s16 #s16(-4 -2 0 2 4) 0 4 0)
-(range-test-generate s16 #s16(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
-(range-test-generate s16 #s16(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
-(range-test-generate s16 #s16(-4 -2 0 2 4) #xffffffffffffffff #f  0)
-(range-test-generate s16 #s16(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
-(range-test-generate s16 #s16(-4 -2 0 2 4) #s16(-4 -3 -2 -1 0) #s16(0 1 2 3 4) #f)
-(range-test-generate s16 #s16(-4 -2 0 2 4) #s16(-4 -1 -2 -1 0) #s16(0 1 2 3 4) 1)
-(range-test-generate s16 #s16(-4 -2 0 2 4) #s16(-4 -3 -2 -1 0) #s16(0 1 -1 3 4) 2)
+(range-test-s16 #s16(-4 -2 0 2 4) #f #f #f)
+(range-test-s16 #s16(-4 -2 0 2 4) -4 4 #f)
+(range-test-s16 #s16(-4 -2 0 2 4) -4 3 4)
+(range-test-s16 #s16(-4 -2 0 2 4) -4 0 3)
+(range-test-s16 #s16(-4 -2 0 2 4) -3 4 0)
+(range-test-s16 #s16(-4 -2 0 2 4) 0 4 0)
+(range-test-s16 #s16(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
+(range-test-s16 #s16(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
+(range-test-s16 #s16(-4 -2 0 2 4) #xffffffffffffffff #f  0)
+(range-test-s16 #s16(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
+(range-test-s16 #s16(-4 -2 0 2 4) #s16(-4 -3 -2 -1 0) #s16(0 1 2 3 4) #f)
+(range-test-s16 #s16(-4 -2 0 2 4) #s16(-4 -1 -2 -1 0) #s16(0 1 2 3 4) 1)
+(range-test-s16 #s16(-4 -2 0 2 4) #s16(-4 -3 -2 -1 0) #s16(0 1 -1 3 4) 2)
 
-(range-test-generate u16 #u16(0 2 4 6 9) #f #f #f)
-(range-test-generate u16 #u16(0 2 4 6 9) -4 9 #f)
-(range-test-generate u16 #u16(0 2 4 6 9) -4 8 4)
-(range-test-generate u16 #u16(0 2 4 6 9) -4 4 3)
-(range-test-generate u16 #u16(0 2 4 6 9) 3 4 0)
-(range-test-generate u16 #u16(0 2 4 6 9) #x-ffffffffffffffff #f #f)
-(range-test-generate u16 #u16(0 2 4 6 9) #f #xffffffffffffffff  #f)
-(range-test-generate u16 #u16(0 2 4 6 9) #xffffffffffffffff #f  0)
-(range-test-generate u16 #u16(0 2 4 6 9) #f #x-ffffffffffffffff 1)
-(range-test-generate u16 #u16(0 2 4 6 9) #u16(0 1 2 3 4) #u16(5 6 7 8 9) #f)
-(range-test-generate u16 #u16(0 2 4 6 9) #u16(0 1 5 3 4) #u16(5 6 7 8 9) 2)
-(range-test-generate u16 #u16(0 2 4 6 9) #u16(0 1 2 3 4) #u16(5 6 7 5 6) 3)
+(range-test-u16 #u16(0 2 4 6 9) #f #f #f)
+(range-test-u16 #u16(0 2 4 6 9) -4 9 #f)
+(range-test-u16 #u16(0 2 4 6 9) -4 8 4)
+(range-test-u16 #u16(0 2 4 6 9) -4 4 3)
+(range-test-u16 #u16(0 2 4 6 9) 3 4 0)
+(range-test-u16 #u16(0 2 4 6 9) #x-ffffffffffffffff #f #f)
+(range-test-u16 #u16(0 2 4 6 9) #f #xffffffffffffffff  #f)
+(range-test-u16 #u16(0 2 4 6 9) #xffffffffffffffff #f  0)
+(range-test-u16 #u16(0 2 4 6 9) #f #x-ffffffffffffffff 1)
+(range-test-u16 #u16(0 2 4 6 9) #u16(0 1 2 3 4) #u16(5 6 7 8 9) #f)
+(range-test-u16 #u16(0 2 4 6 9) #u16(0 1 5 3 4) #u16(5 6 7 8 9) 2)
+(range-test-u16 #u16(0 2 4 6 9) #u16(0 1 2 3 4) #u16(5 6 7 5 6) 3)
 
-(range-test-generate s32 #s32(-4 -2 0 2 4) #f #f #f)
-(range-test-generate s32 #s32(-4 -2 0 2 4) -4 4 #f)
-(range-test-generate s32 #s32(-4 -2 0 2 4) -4 3 4)
-(range-test-generate s32 #s32(-4 -2 0 2 4) -4 0 3)
-(range-test-generate s32 #s32(-4 -2 0 2 4) -3 4 0)
-(range-test-generate s32 #s32(-4 -2 0 2 4) 0 4 0)
-(range-test-generate s32 #s32(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
-(range-test-generate s32 #s32(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
-(range-test-generate s32 #s32(-4 -2 0 2 4) #xffffffffffffffff #f  0)
-(range-test-generate s32 #s32(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
-(range-test-generate s32 #s32(-4 -2 0 2 4) #s32(-4 -3 -2 -1 0) #s32(0 1 2 3 4) #f)
-(range-test-generate s32 #s32(-4 -2 0 2 4) #s32(-4 -1 -2 -1 0) #s32(0 1 2 3 4) 1)
-(range-test-generate s32 #s32(-4 -2 0 2 4) #s32(-4 -3 -2 -1 0) #s32(0 1 -1 3 4) 2)
+(range-test-s32 #s32(-4 -2 0 2 4) #f #f #f)
+(range-test-s32 #s32(-4 -2 0 2 4) -4 4 #f)
+(range-test-s32 #s32(-4 -2 0 2 4) -4 3 4)
+(range-test-s32 #s32(-4 -2 0 2 4) -4 0 3)
+(range-test-s32 #s32(-4 -2 0 2 4) -3 4 0)
+(range-test-s32 #s32(-4 -2 0 2 4) 0 4 0)
+(range-test-s32 #s32(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
+(range-test-s32 #s32(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
+(range-test-s32 #s32(-4 -2 0 2 4) #xffffffffffffffff #f  0)
+(range-test-s32 #s32(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
+(range-test-s32 #s32(-4 -2 0 2 4) #s32(-4 -3 -2 -1 0) #s32(0 1 2 3 4) #f)
+(range-test-s32 #s32(-4 -2 0 2 4) #s32(-4 -1 -2 -1 0) #s32(0 1 2 3 4) 1)
+(range-test-s32 #s32(-4 -2 0 2 4) #s32(-4 -3 -2 -1 0) #s32(0 1 -1 3 4) 2)
 
-(range-test-generate u32 #u32(0 2 4 6 9) #f #f #f)
-(range-test-generate u32 #u32(0 2 4 6 9) -4 9 #f)
-(range-test-generate u32 #u32(0 2 4 6 9) -4 8 4)
-(range-test-generate u32 #u32(0 2 4 6 9) -4 4 3)
-(range-test-generate u32 #u32(0 2 4 6 9) 3 4 0)
-(range-test-generate u32 #u32(0 2 4 6 9) #x-ffffffffffffffff #f #f)
-(range-test-generate u32 #u32(0 2 4 6 9) #f #xffffffffffffffff  #f)
-(range-test-generate u32 #u32(0 2 4 6 9) #xffffffffffffffff #f  0)
-(range-test-generate u32 #u32(0 2 4 6 9) #f #x-ffffffffffffffff 1)
-(range-test-generate u32 #u32(0 2 4 6 9) #u32(0 1 2 3 4) #u32(5 6 7 8 9) #f)
-(range-test-generate u32 #u32(0 2 4 6 9) #u32(0 1 5 3 4) #u32(5 6 7 8 9) 2)
-(range-test-generate u32 #u32(0 2 4 6 9) #u32(0 1 2 3 4) #u32(5 6 7 5 6) 3)
+(range-test-u32 #u32(0 2 4 6 9) #f #f #f)
+(range-test-u32 #u32(0 2 4 6 9) -4 9 #f)
+(range-test-u32 #u32(0 2 4 6 9) -4 8 4)
+(range-test-u32 #u32(0 2 4 6 9) -4 4 3)
+(range-test-u32 #u32(0 2 4 6 9) 3 4 0)
+(range-test-u32 #u32(0 2 4 6 9) #x-ffffffffffffffff #f #f)
+(range-test-u32 #u32(0 2 4 6 9) #f #xffffffffffffffff  #f)
+(range-test-u32 #u32(0 2 4 6 9) #xffffffffffffffff #f  0)
+(range-test-u32 #u32(0 2 4 6 9) #f #x-ffffffffffffffff 1)
+(range-test-u32 #u32(0 2 4 6 9) #u32(0 1 2 3 4) #u32(5 6 7 8 9) #f)
+(range-test-u32 #u32(0 2 4 6 9) #u32(0 1 5 3 4) #u32(5 6 7 8 9) 2)
+(range-test-u32 #u32(0 2 4 6 9) #u32(0 1 2 3 4) #u32(5 6 7 5 6) 3)
 
-(range-test-generate s64 #s64(-4 -2 0 2 4) #f #f #f)
-(range-test-generate s64 #s64(-4 -2 0 2 4) -4 4 #f)
-(range-test-generate s64 #s64(-4 -2 0 2 4) -4 3 4)
-(range-test-generate s64 #s64(-4 -2 0 2 4) -4 0 3)
-(range-test-generate s64 #s64(-4 -2 0 2 4) -3 4 0)
-(range-test-generate s64 #s64(-4 -2 0 2 4) 0 4 0)
-(range-test-generate s64 #s64(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
-(range-test-generate s64 #s64(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
-(range-test-generate s64 #s64(-4 -2 0 2 4) #xffffffffffffffff #f  0)
-(range-test-generate s64 #s64(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
-(range-test-generate s64 #s64(-4 -2 0 2 4) #s64(-4 -3 -2 -1 0) #s64(0 1 2 3 4) #f)
-(range-test-generate s64 #s64(-4 -2 0 2 4) #s64(-4 -1 -2 -1 0) #s64(0 1 2 3 4) 1)
-(range-test-generate s64 #s64(-4 -2 0 2 4) #s64(-4 -3 -2 -1 0) #s64(0 1 -1 3 4) 2)
+(range-test-s64 #s64(-4 -2 0 2 4) #f #f #f)
+(range-test-s64 #s64(-4 -2 0 2 4) -4 4 #f)
+(range-test-s64 #s64(-4 -2 0 2 4) -4 3 4)
+(range-test-s64 #s64(-4 -2 0 2 4) -4 0 3)
+(range-test-s64 #s64(-4 -2 0 2 4) -3 4 0)
+(range-test-s64 #s64(-4 -2 0 2 4) 0 4 0)
+(range-test-s64 #s64(-4 -2 0 2 4) #x-ffffffffffffffff #f #f)
+(range-test-s64 #s64(-4 -2 0 2 4) #f #xffffffffffffffff  #f)
+(range-test-s64 #s64(-4 -2 0 2 4) #xffffffffffffffff #f  0)
+(range-test-s64 #s64(-4 -2 0 2 4) #f #x-ffffffffffffffff 0)
+(range-test-s64 #s64(-4 -2 0 2 4) #s64(-4 -3 -2 -1 0) #s64(0 1 2 3 4) #f)
+(range-test-s64 #s64(-4 -2 0 2 4) #s64(-4 -1 -2 -1 0) #s64(0 1 2 3 4) 1)
+(range-test-s64 #s64(-4 -2 0 2 4) #s64(-4 -3 -2 -1 0) #s64(0 1 -1 3 4) 2)
 
-(range-test-generate u64 #u64(0 2 4 6 9) #f #f #f)
-(range-test-generate u64 #u64(0 2 4 6 9) -4 9 #f)
-(range-test-generate u64 #u64(0 2 4 6 9) -4 8 4)
-(range-test-generate u64 #u64(0 2 4 6 9) -4 4 3)
-(range-test-generate u64 #u64(0 2 4 6 9) 3 4 0)
-(range-test-generate u64 #u64(0 2 4 6 9) #x-ffffffffffffffff #f #f)
-(range-test-generate u64 #u64(0 2 4 6 9) #f #xffffffffffffffff  #f)
-(range-test-generate u64 #u64(0 2 4 6 9) #xffffffffffffffff #f  0)
-(range-test-generate u64 #u64(0 2 4 6 9) #f #x-ffffffffffffffff 1)
-(range-test-generate u64 #u64(0 2 4 6 9) #u64(0 1 2 3 4) #u64(5 6 7 8 9) #f)
-(range-test-generate u64 #u64(0 2 4 6 9) #u64(0 1 5 3 4) #u64(5 6 7 8 9) 2)
-(range-test-generate u64 #u64(0 2 4 6 9) #u64(0 1 2 3 4) #u64(5 6 7 5 6) 3)
+(range-test-u64 #u64(0 2 4 6 9) #f #f #f)
+(range-test-u64 #u64(0 2 4 6 9) -4 9 #f)
+(range-test-u64 #u64(0 2 4 6 9) -4 8 4)
+(range-test-u64 #u64(0 2 4 6 9) -4 4 3)
+(range-test-u64 #u64(0 2 4 6 9) 3 4 0)
+(range-test-u64 #u64(0 2 4 6 9) #x-ffffffffffffffff #f #f)
+(range-test-u64 #u64(0 2 4 6 9) #f #xffffffffffffffff  #f)
+(range-test-u64 #u64(0 2 4 6 9) #xffffffffffffffff #f  0)
+(range-test-u64 #u64(0 2 4 6 9) #f #x-ffffffffffffffff 1)
+(range-test-u64 #u64(0 2 4 6 9) #u64(0 1 2 3 4) #u64(5 6 7 8 9) #f)
+(range-test-u64 #u64(0 2 4 6 9) #u64(0 1 5 3 4) #u64(5 6 7 8 9) 2)
+(range-test-u64 #u64(0 2 4 6 9) #u64(0 1 2 3 4) #u64(5 6 7 5 6) 3)
 
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f #f #f)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -4.0 4.0 #f)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -4.0 3.0 4)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -4.0 0.0 3)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -3.0 4.0 0)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) 0.0 4.0 0)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f32(-4.0 -3.0 -2.0 -1.0 0.0) #f32(0.0 1.0 2.0 3.0 4.0) #f)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f32(-4.0 -1.0 -2.0 -1.0 0.0) #f32(0.0 1.0 2.0 3.0 4.0) 1)
-(range-test-generate f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f32(-4.0 -3.0 -2.0 -1.0 0.0) #f32(0.0 1.0 -1.0 3.0 4.0) 2)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f #f #f)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -4.0 4.0 #f)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -4.0 3.0 4)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -4.0 0.0 3)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) -3.0 4.0 0)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) 0.0 4.0 0)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f32(-4.0 -3.0 -2.0 -1.0 0.0) #f32(0.0 1.0 2.0 3.0 4.0) #f)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f32(-4.0 -1.0 -2.0 -1.0 0.0) #f32(0.0 1.0 2.0 3.0 4.0) 1)
+(range-test-f32 #f32(-4.0 -2.0 0.0 2.0 4.0) #f32(-4.0 -3.0 -2.0 -1.0 0.0) #f32(0.0 1.0 -1.0 3.0 4.0) 2)
 
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f #f #f)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -4.0 4.0 #f)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -4.0 3.0 4)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -4.0 0.0 3)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -3.0 4.0 0)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) 0.0 4.0 0)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f64(-4.0 -3.0 -2.0 -1.0 0.0) #f64(0.0 1.0 2.0 3.0 4.0) #f)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f64(-4.0 -1.0 -2.0 -1.0 0.0) #f64(0.0 1.0 2.0 3.0 4.0) 1)
-(range-test-generate f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f64(-4.0 -3.0 -2.0 -1.0 0.0) #f64(0.0 1.0 -1.0 3.0 4.0) 2)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f #f #f)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -4.0 4.0 #f)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -4.0 3.0 4)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -4.0 0.0 3)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) -3.0 4.0 0)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) 0.0 4.0 0)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f64(-4.0 -3.0 -2.0 -1.0 0.0) #f64(0.0 1.0 2.0 3.0 4.0) #f)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f64(-4.0 -1.0 -2.0 -1.0 0.0) #f64(0.0 1.0 2.0 3.0 4.0) 1)
+(range-test-f64 #f64(-4.0 -2.0 0.0 2.0 4.0) #f64(-4.0 -3.0 -2.0 -1.0 0.0) #f64(0.0 1.0 -1.0 3.0 4.0) 2)
 
 ;;-------------------------------------------------------------------
 (test-section "clamp")
@@ -1300,129 +1072,127 @@
       )
     ))
 
-(define-macro (clamp-test-generate tag v minv maxv)
-  `(clamp-test ',tag ,(string->symbol #"<~|tag|vector>")
-               ,(string->symbol #"~|tag|vector?")
-               ,(string->symbol #"~|tag|vector-ref")
-               ,(string->symbol #"~|tag|vector-length")
-               ,(string->symbol #"~|tag|vector-clamp")
-               ',v ',minv ',maxv))
+(expand-uvec
+ (u8 s8 u16 s16 u32 s32 u64 s64)
+ (define (clamp-test-@ v minv maxv)
+   (clamp-test '@ <@vector> @vector? @vector-ref @vector-length
+                  @vector-clamp v minv maxv)))
 
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) #f #f)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) -8 #f)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) 0 #f)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) 8 #f)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) #f -8)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) #f 0)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) #f 8)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127) -1 1)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate s8 #s8(0 -127 -4 4 127)
-                     #s8(-3 -4 -6 -8 -19) #s8(3 7 9 2 4))
+(clamp-test-s8 #s8(0 -127 -4 4 127) #f #f)
+(clamp-test-s8 #s8(0 -127 -4 4 127) -8 #f)
+(clamp-test-s8 #s8(0 -127 -4 4 127) 0 #f)
+(clamp-test-s8 #s8(0 -127 -4 4 127) 8 #f)
+(clamp-test-s8 #s8(0 -127 -4 4 127) #f -8)
+(clamp-test-s8 #s8(0 -127 -4 4 127) #f 0)
+(clamp-test-s8 #s8(0 -127 -4 4 127) #f 8)
+(clamp-test-s8 #s8(0 -127 -4 4 127) -1 1)
+(clamp-test-s8 #s8(0 -127 -4 4 127)
+               #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-s8 #s8(0 -127 -4 4 127)
+               0 #xffffffffffffffffffffffffffffff)
+(clamp-test-s8 #s8(0 -127 -4 4 127)
+               #s8(-3 -4 -6 -8 -19) #s8(3 7 9 2 4))
 
-(clamp-test-generate u8 #u8(127 0 4 200 255) #f #f)
-(clamp-test-generate u8 #u8(127 0 4 200 255) -4 #f)
-(clamp-test-generate u8 #u8(127 0 4 200 255) 0 #f)
-(clamp-test-generate u8 #u8(127 0 4 200 255) 199 #f)
-(clamp-test-generate u8 #u8(127 0 4 200 255) #f -4)
-(clamp-test-generate u8 #u8(127 0 4 200 255) #f 0)
-(clamp-test-generate u8 #u8(127 0 4 200 255) #f 199)
-(clamp-test-generate u8 #u8(127 0 4 200 255)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate u8 #u8(127 0 4 200 255)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate u8 #u8(127 0 4 200 255)
-                     #u8(3 3 3 3 3) #u8(199 199 199 199 199))
+(clamp-test-u8 #u8(127 0 4 200 255) #f #f)
+(clamp-test-u8 #u8(127 0 4 200 255) -4 #f)
+(clamp-test-u8 #u8(127 0 4 200 255) 0 #f)
+(clamp-test-u8 #u8(127 0 4 200 255) 199 #f)
+(clamp-test-u8 #u8(127 0 4 200 255) #f -4)
+(clamp-test-u8 #u8(127 0 4 200 255) #f 0)
+(clamp-test-u8 #u8(127 0 4 200 255) #f 199)
+(clamp-test-u8 #u8(127 0 4 200 255)
+               #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-u8 #u8(127 0 4 200 255)
+               0 #xffffffffffffffffffffffffffffff)
+(clamp-test-u8 #u8(127 0 4 200 255)
+               #u8(3 3 3 3 3) #u8(199 199 199 199 199))
 
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) #f #f)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) -8 #f)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) 0 #f)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) 8 #f)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) #f -8)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) #f 0)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) #f 8)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127) -1 1)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate s16 #s16(0 -127 -4 4 127)
-                     #s16(-3 -4 -6 -8 -19) #s16(3 7 9 2 4))
+(clamp-test-s16 #s16(0 -127 -4 4 127) #f #f)
+(clamp-test-s16 #s16(0 -127 -4 4 127) -8 #f)
+(clamp-test-s16 #s16(0 -127 -4 4 127) 0 #f)
+(clamp-test-s16 #s16(0 -127 -4 4 127) 8 #f)
+(clamp-test-s16 #s16(0 -127 -4 4 127) #f -8)
+(clamp-test-s16 #s16(0 -127 -4 4 127) #f 0)
+(clamp-test-s16 #s16(0 -127 -4 4 127) #f 8)
+(clamp-test-s16 #s16(0 -127 -4 4 127) -1 1)
+(clamp-test-s16 #s16(0 -127 -4 4 127)
+                #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-s16 #s16(0 -127 -4 4 127)
+                0 #xffffffffffffffffffffffffffffff)
+(clamp-test-s16 #s16(0 -127 -4 4 127)
+                #s16(-3 -4 -6 -8 -19) #s16(3 7 9 2 4))
 
-(clamp-test-generate u16 #u16(127 0 4 200 255) #f #f)
-(clamp-test-generate u16 #u16(127 0 4 200 255) -4 #f)
-(clamp-test-generate u16 #u16(127 0 4 200 255) 0 #f)
-(clamp-test-generate u16 #u16(127 0 4 200 255) 199 #f)
-(clamp-test-generate u16 #u16(127 0 4 200 255) #f -4)
-(clamp-test-generate u16 #u16(127 0 4 200 255) #f 0)
-(clamp-test-generate u16 #u16(127 0 4 200 255) #f 199)
-(clamp-test-generate u16 #u16(127 0 4 200 255)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate u16 #u16(127 0 4 200 255)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate u16 #u16(127 0 4 200 255)
-                     #u16(3 3 3 3 3) #u16(199 199 199 199 199))
+(clamp-test-u16 #u16(127 0 4 200 255) #f #f)
+(clamp-test-u16 #u16(127 0 4 200 255) -4 #f)
+(clamp-test-u16 #u16(127 0 4 200 255) 0 #f)
+(clamp-test-u16 #u16(127 0 4 200 255) 199 #f)
+(clamp-test-u16 #u16(127 0 4 200 255) #f -4)
+(clamp-test-u16 #u16(127 0 4 200 255) #f 0)
+(clamp-test-u16 #u16(127 0 4 200 255) #f 199)
+(clamp-test-u16 #u16(127 0 4 200 255)
+                #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-u16 #u16(127 0 4 200 255)
+                0 #xffffffffffffffffffffffffffffff)
+(clamp-test-u16 #u16(127 0 4 200 255)
+                #u16(3 3 3 3 3) #u16(199 199 199 199 199))
 
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) #f #f)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) -8 #f)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) 0 #f)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) 8 #f)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) #f -8)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) #f 0)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) #f 8)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127) -1 1)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate s32 #s32(0 -127 -4 4 127)
-                     #s32(-3 -4 -6 -8 -19) #s32(3 7 9 2 4))
+(clamp-test-s32 #s32(0 -127 -4 4 127) #f #f)
+(clamp-test-s32 #s32(0 -127 -4 4 127) -8 #f)
+(clamp-test-s32 #s32(0 -127 -4 4 127) 0 #f)
+(clamp-test-s32 #s32(0 -127 -4 4 127) 8 #f)
+(clamp-test-s32 #s32(0 -127 -4 4 127) #f -8)
+(clamp-test-s32 #s32(0 -127 -4 4 127) #f 0)
+(clamp-test-s32 #s32(0 -127 -4 4 127) #f 8)
+(clamp-test-s32 #s32(0 -127 -4 4 127) -1 1)
+(clamp-test-s32 #s32(0 -127 -4 4 127)
+                #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-s32 #s32(0 -127 -4 4 127)
+                0 #xffffffffffffffffffffffffffffff)
+(clamp-test-s32 #s32(0 -127 -4 4 127)
+                #s32(-3 -4 -6 -8 -19) #s32(3 7 9 2 4))
 
-(clamp-test-generate u32 #u32(127 0 4 200 255) #f #f)
-(clamp-test-generate u32 #u32(127 0 4 200 255) -4 #f)
-(clamp-test-generate u32 #u32(127 0 4 200 255) 0 #f)
-(clamp-test-generate u32 #u32(127 0 4 200 255) 199 #f)
-(clamp-test-generate u32 #u32(127 0 4 200 255) #f -4)
-(clamp-test-generate u32 #u32(127 0 4 200 255) #f 0)
-(clamp-test-generate u32 #u32(127 0 4 200 255) #f 199)
-(clamp-test-generate u32 #u32(127 0 4 200 255)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate u32 #u32(127 0 4 200 255)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate u32 #u32(127 0 4 200 255)
-                     #u32(3 3 3 3 3) #u32(199 199 199 199 199))
+(clamp-test-u32 #u32(127 0 4 200 255) #f #f)
+(clamp-test-u32 #u32(127 0 4 200 255) -4 #f)
+(clamp-test-u32 #u32(127 0 4 200 255) 0 #f)
+(clamp-test-u32 #u32(127 0 4 200 255) 199 #f)
+(clamp-test-u32 #u32(127 0 4 200 255) #f -4)
+(clamp-test-u32 #u32(127 0 4 200 255) #f 0)
+(clamp-test-u32 #u32(127 0 4 200 255) #f 199)
+(clamp-test-u32 #u32(127 0 4 200 255)
+                #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-u32 #u32(127 0 4 200 255)
+                0 #xffffffffffffffffffffffffffffff)
+(clamp-test-u32 #u32(127 0 4 200 255)
+                #u32(3 3 3 3 3) #u32(199 199 199 199 199))
 
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) #f #f)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) -8 #f)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) 0 #f)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) 8 #f)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) #f -8)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) #f 0)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) #f 8)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127) -1 1)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate s64 #s64(0 -127 -4 4 127)
-                     #s64(-3 -4 -6 -8 -19) #s64(3 7 9 2 4))
+(clamp-test-s64 #s64(0 -127 -4 4 127) #f #f)
+(clamp-test-s64 #s64(0 -127 -4 4 127) -8 #f)
+(clamp-test-s64 #s64(0 -127 -4 4 127) 0 #f)
+(clamp-test-s64 #s64(0 -127 -4 4 127) 8 #f)
+(clamp-test-s64 #s64(0 -127 -4 4 127) #f -8)
+(clamp-test-s64 #s64(0 -127 -4 4 127) #f 0)
+(clamp-test-s64 #s64(0 -127 -4 4 127) #f 8)
+(clamp-test-s64 #s64(0 -127 -4 4 127) -1 1)
+(clamp-test-s64 #s64(0 -127 -4 4 127)
+                #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-s64 #s64(0 -127 -4 4 127)
+                0 #xffffffffffffffffffffffffffffff)
+(clamp-test-s64 #s64(0 -127 -4 4 127)
+                #s64(-3 -4 -6 -8 -19) #s64(3 7 9 2 4))
 
-(clamp-test-generate u64 #u64(127 0 4 200 255) #f #f)
-(clamp-test-generate u64 #u64(127 0 4 200 255) -4 #f)
-(clamp-test-generate u64 #u64(127 0 4 200 255) 0 #f)
-(clamp-test-generate u64 #u64(127 0 4 200 255) 199 #f)
-(clamp-test-generate u64 #u64(127 0 4 200 255) #f -4)
-(clamp-test-generate u64 #u64(127 0 4 200 255) #f 0)
-(clamp-test-generate u64 #u64(127 0 4 200 255) #f 199)
-(clamp-test-generate u64 #u64(127 0 4 200 255)
-                     #x-ffffffffffffffffffffffffffffff 0)
-(clamp-test-generate u64 #u64(127 0 4 200 255)
-                     0 #xffffffffffffffffffffffffffffff)
-(clamp-test-generate u64 #u64(127 0 4 200 255)
-                     #u64(3 3 3 3 3) #u64(199 199 199 199 199))
+(clamp-test-u64 #u64(127 0 4 200 255) #f #f)
+(clamp-test-u64 #u64(127 0 4 200 255) -4 #f)
+(clamp-test-u64 #u64(127 0 4 200 255) 0 #f)
+(clamp-test-u64 #u64(127 0 4 200 255) 199 #f)
+(clamp-test-u64 #u64(127 0 4 200 255) #f -4)
+(clamp-test-u64 #u64(127 0 4 200 255) #f 0)
+(clamp-test-u64 #u64(127 0 4 200 255) #f 199)
+(clamp-test-u64 #u64(127 0 4 200 255)
+                #x-ffffffffffffffffffffffffffffff 0)
+(clamp-test-u64 #u64(127 0 4 200 255)
+                0 #xffffffffffffffffffffffffffffff)
+(clamp-test-u64 #u64(127 0 4 200 255)
+                #u64(3 3 3 3 3) #u64(199 199 199 199 199))
 
 ;;-------------------------------------------------------------------
 (test-section "block i/o")
@@ -2918,5 +2688,37 @@
        (let1 vec (make-s32vector 10 -1)
          (list (generator->uvector! vec 3 (circular-generator 0 1 2 3))
                vec)))
+
+;;-------------------------------------------------------------------
+;; (test-section "srfi-160 interface")
+
+;; (use gauche.uvector.u8)
+;; (test-module 'gauche.uvector.u8)
+;; (use gauche.uvector.s8)
+;; (test-module 'gauche.uvector.s8)
+;; (use gauche.uvector.u16)
+;; (test-module 'gauche.uvector.u16)
+;; (use gauche.uvector.s16)
+;; (test-module 'gauche.uvector.s16)
+;; (use gauche.uvector.u32)
+;; (test-module 'gauche.uvector.u32)
+;; (use gauche.uvector.s32)
+;; (test-module 'gauche.uvector.s32)
+;; (use gauche.uvector.u64)
+;; (test-module 'gauche.uvector.u64)
+;; (use gauche.uvector.s64)
+;; (test-module 'gauche.uvector.s64)
+;; (use gauche.uvector.f16)
+;; (test-module 'gauche.uvector.f16)
+;; (use gauche.uvector.f32)
+;; (test-module 'gauche.uvector.f32)
+;; (use gauche.uvector.f64)
+;; (test-module 'gauche.uvector.f64)
+;; (use gauche.uvector.c32)
+;; (test-module 'gauche.uvector.c32)
+;; (use gauche.uvector.c64)
+;; (test-module 'gauche.uvector.c64)
+;; (use gauche.uvector.c128)
+;; (test-module 'gauche.uvector.c128)
 
 (test-end)
