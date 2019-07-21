@@ -181,6 +181,10 @@
         [(**? non-greedy-repeated) `(rep-min ,(car rest)
                                              ,(cadr rest)
                                              ,@(loop (cddr rest)))]
+        [(look-ahead) `(assert ,@(loop))]
+        [(look-behind) `(assert (lookbehind ,@(loop)))]
+        [(neg-look-ahead) `(nassert ,@(loop))]
+        [(neg-look-behind) `(nassert (lookbehind ,@(loop)))]
         [(backref) (begin
                      (if (null? (cdr rest))
                          (if (symbol? (car rest))

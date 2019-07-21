@@ -1114,6 +1114,12 @@
 (test-ast (rep-min 3 5 #\a) (**? 3 5 #\a))
 (test-ast (rep-min 3 5 #\a) (non-greedy-repeated 3 5 #\a))
 
+(test-ast (assert #\a #\b #\c) (look-ahead #\a #\b #\c))
+(test-ast (assert (lookbehind #\a #\b #\c)) (look-behind #\a #\b #\c))
+
+(test-ast (nassert #\a #\b #\c) (neg-look-ahead #\a #\b #\c))
+(test-ast (nassert (lookbehind #\a #\b #\c)) (neg-look-behind #\a #\b #\c))
+
 (test-ast #\a #\a)
 (test-ast (seq #\a #\b #\c) "abc")
 
