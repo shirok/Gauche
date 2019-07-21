@@ -129,13 +129,14 @@
 (define (regexp-parse-sre sre)
   (define id 0)
 
-  (define (sre-sym sre)
-    (case sre
-      [(bol eol bow eow nwb) sre]
-      [else (error "invalid sre, not supported" sre)]))
-
   (define (%sre->ast sre nocapture casefold ascii)
-    ;; FIXME: missing (w/* ...), (word* ...), ?? *? **?
+    (define (sre-sym sre)
+      (case sre
+        [(bol eol bow eow nwb) sre]
+        [(word) (%sre->ast '(word+ any) nocapture casefold ascii)]
+        [else (error "invalid sre, not supported" sre)]))
+
+    ;; FIXME: missing bos, eos, bog, eog, grapheme
     (define (sre-list sym rest)
       (define (loop :optional (rest rest))
         (map (cut %sre->ast <> nocapture casefold ascii) rest))
@@ -176,6 +177,11 @@
         [(w/ascii) (seq-loop rest nocapture casefold #t)]
         [(w/unicode) (seq-loop rest nocapture casefold #f)]
         [(w/nocapture) (seq-loop rest #t)]
+        [(word) (%sre->ast `(: bow ,@rest eow)
+                           nocapture casefold ascii)]
+        [(word+) (%sre->ast `(word (+ (and (or "_" alphanumeric)
+                                           (or ,@rest))))
+                            nocapture casefold ascii)]
         [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop))]
         [(*? non-greedy-zero-or-more) `(rep-min 0 #f ,@(loop))]
         [(**? non-greedy-repeated) `(rep-min ,(car rest)

@@ -1105,6 +1105,15 @@
 (test-ast eow eow)
 (test-ast nwb nwb)
 
+(test-ast (seq bow (seq #\a #\b #\c) eow) (word "abc"))
+(test-ast (seq bow (rep 1 #f #[a-c]) eow) (word+ ("a**bc")))
+(test-cset `(seq bow
+                 (rep 1 #f
+                      ,(char-set-union char-set:letter+digit
+                                       (string->char-set "_")))
+                 eow)
+           word)
+
 (test-ast (rep-min 0 1 #\a) (?? #\a))
 (test-ast (rep-min 0 1 #\a) (non-greedy-optional #\a))
 
