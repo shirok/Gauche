@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/vmP.h"    /* for ScmVMUndefinedBool() */
 
 int Scm_EqP(ScmObj x, ScmObj y)
 {
@@ -212,4 +213,20 @@ int Scm_EqualM(ScmObj x, ScmObj y, int mode)
         return Scm_EqualP(x, y);
     }
     return FALSE;
+}
+
+/*
+ * This is called from BF and BT instructions, right after we found
+ * #<undef> is used in boolean expression.
+ */
+
+extern void Scm_DumpStackTrace(ScmVM*, ScmPort*);
+
+int Scm_VMUndefinedBool(ScmVM *vm)
+{
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CHECK_UNDEFINED_TEST)) {
+        Scm_Warn("#<undef> is used in boolean context.\n");
+        Scm_DumpStackTrace(vm, SCM_CURERR);
+    }
+    return FALSE; /* must return FALSE (meaning 'undefined is not #f') */
 }

@@ -1,3 +1,17 @@
+2019-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/vmP.h, src/boolean.c, src/gauche/vminsin.scm:
+	  EXPERIMENTAL: Add a check if #<undef> appear in the test of
+	  conditional expression.  It can be turned on by the environment
+	  variable GAUCHE_CHECK_UNDEFINED_TEST.  The expression returning
+	  #<undef> means the value doesn't matter.  It leads to an assumption
+	  that you can change the value without affecting other parts of the
+	  program.  But such change breaks if the value is used in
+	  conditional tests.
+	  It turned out Gauche internal code has plenty of such cases,
+	  so we keep it unofficial until we fix out code first.  Eventually
+	  we'd like to prohibit #<undef> from being used in conditional tests.
+
 2019-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/ifgen.scm: Generate interface modules such as

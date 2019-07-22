@@ -51,6 +51,15 @@ struct ScmCallTraceRec {
 
 ScmCallTrace *Scm__MakeCallTraceQueue(u_long size);
 
+
+/* For BF and BT instructions, we check for #<undef>. 
+   This macro assumes to the local variable VM holding ScmVM*.
+ */
+#define SCM_CHECKED_FALSEP(obj) \
+    (SCM_FALSEP(obj) || (SCM_UNDEFINEDP(obj)&&Scm_VMUndefinedBool(vm)))
+SCM_EXTERN int Scm_VMUndefinedBool(ScmVM*); /* in boolean.c */
+
+
 SCM_DECL_END
 
 #endif /*GAUCHE_PRIV_VMP_H*/

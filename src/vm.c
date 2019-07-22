@@ -3077,4 +3077,8 @@ void Scm__InitVM(void)
 #ifdef COUNT_FLUSH_FPSTACK
     Scm_AddCleanupHandler(print_flush_fpstack_count, NULL);
 #endif
+
+    if (Scm_GetEnv("GAUCHE_CHECK_UNDEFINED_TEST") != NULL) {
+        SCM_VM_RUNTIME_FLAG_SET(rootVM, SCM_CHECK_UNDEFINED_TEST);
+    }
 }

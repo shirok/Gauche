@@ -50,7 +50,6 @@
 #define GAUCHE_PROFILE
 #endif /* (defined(ITIMER_PROF) && defined(SIGPROF)) || defined(GAUCHE_WINDOWS) */
 
-
 #ifdef __GNUC__
 /* in GNUC, we inline Scm_VMReturnFlonum using statement expressions. */
 # if GAUCHE_FFX
@@ -68,7 +67,6 @@ SCM_EXTERN void Scm_VMFlushFPStack(ScmVM *vm);
 #else  /* !__GNUC__ */
 #   define Scm_VMReturnFlonum(val)  Scm_MakeFlonum(val)
 #endif /* !__GNUC__ */
-
 
 /* Actual structure is defined in code.h */
 typedef struct ScmCompiledCodeRec ScmCompiledCode;
@@ -662,8 +660,10 @@ enum {
                                            module */
     SCM_COLLECT_VM_STATS     = (1L<<5), /* enable statistics collection
                                            (incurs runtime overhead) */
-    SCM_COLLECT_LOAD_STATS   = (1L<<6)  /* log the stats of file load
+    SCM_COLLECT_LOAD_STATS   = (1L<<6), /* log the stats of file load
                                            timings (incurs runtime overhead) */
+    SCM_CHECK_UNDEFINED_TEST = (1L<<7)  /* check if #<undef> appears as
+                                           the test value in branch */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))

@@ -620,8 +620,8 @@
 ;;   Conditional branches.
 ;;   The combined operations leave the boolean value of the test result
 ;;   in VAL0.
-(define-insn BF      0 addr #f ($branch (SCM_FALSEP VAL0)))
-(define-insn BT      0 addr #f ($branch (not (SCM_FALSEP VAL0))))
+(define-insn BF      0 addr #f ($branch (SCM_CHECKED_FALSEP VAL0)))
+(define-insn BT      0 addr #f ($branch (not (SCM_CHECKED_FALSEP VAL0))))
 (define-insn BNEQ    0 addr #f ($w/argp z ($branch* (not (SCM_EQ VAL0 z)))))
 (define-insn BNEQV   0 addr #f ($w/argp z ($branch* (not (Scm_EqvP VAL0 z)))))
 (define-insn BNNULL  0 addr #f ($branch* (not (SCM_NULLP VAL0))))
@@ -667,8 +667,8 @@
 ;; RNEQ
 ;; RNEQV
 ;;   Conditional returns.
-(define-insn RF          0 none #f ($retc (SCM_FALSEP VAL0)))
-(define-insn RT          0 none #f ($retc (not (SCM_FALSEP VAL0))))
+(define-insn RF          0 none #f ($retc (SCM_CHECKED_FALSEP VAL0)))
+(define-insn RT          0 none #f ($retc (not (SCM_CHECKED_FALSEP VAL0))))
 (define-insn RNEQ        0 none #f ($w/argp v
                                      ($retc* (not (SCM_EQ VAL0 v)))))
 (define-insn RNEQV       0 none #f ($w/argp v
@@ -992,7 +992,7 @@
        (set! cp (Scm_Append args))])
     ($result cp)))
 
-(define-insn NOT      0 none #f ($w/argr v ($result:b (SCM_FALSEP v))))
+(define-insn NOT      0 none #f ($w/argr v ($result:b (SCM_CHECKED_FALSEP v))))
 (define-insn REVERSE  0 none #f ($w/argr v ($result (Scm_Reverse v))))
 
 (define-insn APPLY       1 none #f
