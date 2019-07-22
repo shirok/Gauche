@@ -126,12 +126,12 @@
            (guard (e [else (error-exit "can't create directory: ~s~a"
                                        (ref e 'message)
                                        write-permission-message)])
-             (when (make-directory* path)
-               (when mode (sys-chmod path mode))
-               (when (or owner group)
-                 (sys-chown path
-                            (->ugid sys-user-name->uid owner "user")
-                            (->ugid sys-group-name->gid group "group")))))
+             (make-directory* path)
+             (when mode (sys-chmod path mode))
+             (when (or owner group)
+               (sys-chown path
+                          (->ugid sys-user-name->uid owner "user")
+                          (->ugid sys-group-name->gid group "group"))))
            )))
 
 ;; user/group -> uid/gid
@@ -164,8 +164,8 @@
   (ensure-directory (sys-dirname dest))
   (do-it #"installing ~src to ~dest"
          (and (cp src dest prelude)
-              (sys-chmod dest mode)
               (begin
+                (sys-chmod dest mode)
                 (when (or owner group)
                   (sys-chown dest
                              (->ugid sys-user-name->uid owner "user")

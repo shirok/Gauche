@@ -277,8 +277,8 @@
     (update! (cdr node)
              (^[terminals]
                (remove (^p (and (eq? (class-of (car p)) c)
-                                (dec! (slot-ref trie 'size))
-                                #t))
+                                (begin (dec! (slot-ref trie 'size))
+                                       #t)))
                        terminals))))
   (undefined))
 
@@ -331,7 +331,7 @@
 
 (define (trie-common-prefix-for-each trie prefix proc)
   (trie-common-prefix-fold trie prefix
-                           (^[k v s] (proc k v))
+                           (^[k v s] (proc k v) #f)
                            #f)
   (undefined))
 

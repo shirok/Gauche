@@ -200,14 +200,14 @@
 ;;
 ;;   Slots:
 ;;     name  - name of the variable (symbol)
-;;     initval   - initialized value
+;;     initval   - initialized value (Maybe IForm)
 ;;     ref-count - in how many places this variable is referefnced?
 ;;     set-count - in how many places this variable is set!
 ;;
 
 (define-simple-struct lvar 'lvar make-lvar
   (name
-   (initval (undefined))
+   (initval #f)
    (ref-count 0)
    (set-count 0)))
 
@@ -247,7 +247,7 @@
        (let* ([v (Scm_MakeVector LVAR_SIZE '0)])
          (set! (SCM_VECTOR_ELEMENT v LVAR_OFFSET_TAG) 'lvar
                (SCM_VECTOR_ELEMENT v LVAR_OFFSET_NAME) name
-               (SCM_VECTOR_ELEMENT v LVAR_OFFSET_INITVAL) SCM_UNDEFINED)
+               (SCM_VECTOR_ELEMENT v LVAR_OFFSET_INITVAL) SCM_FALSE)
          (SCM_APPEND1 h t v)))
      (return h)))
 

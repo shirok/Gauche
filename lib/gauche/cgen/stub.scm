@@ -1247,7 +1247,8 @@
     [(? symbol? x)
      (or (and-let* ([setter (find (^z (eq? (~ z'scheme-name) x))
                                   (get-stubs <stub>))])
-           (emit (c-stub-name setter)))
+           (emit (c-stub-name setter))
+           #t)
          (errorf <cgen-stub-error>
                  "unknown setter name '~a' is used in the definition of '~a'"
                  x (~ cproc'scheme-name)))]

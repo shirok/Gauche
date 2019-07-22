@@ -901,7 +901,7 @@
     (case type
       [(file)
        (with-output-to-file path
-         (^() (print (sys-getpid)) (sys-chmod path perms))
+         (^() (print (sys-getpid)) (sys-chmod path perms) #t)
          :if-exists #f)]
       [(directory)
        (guard (e [(and (<system-error> e) (eqv? (~ e'errno) EEXIST)) #f])

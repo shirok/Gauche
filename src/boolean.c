@@ -221,12 +221,15 @@ int Scm_EqualM(ScmObj x, ScmObj y, int mode)
  */
 
 extern void Scm_DumpStackTrace(ScmVM*, ScmPort*);
+extern void Scm_VMDump(ScmVM*);
 
 int Scm_VMUndefinedBool(ScmVM *vm)
 {
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CHECK_UNDEFINED_TEST)) {
         Scm_Warn("#<undef> is used in boolean context.\n");
         Scm_DumpStackTrace(vm, SCM_CURERR);
+        //Too verbose, but can be useful to track into precomp'd code
+        //Scm_VMDump(vm);
     }
     return FALSE; /* must return FALSE (meaning 'undefined is not #f') */
 }

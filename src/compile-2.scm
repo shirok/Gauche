@@ -432,7 +432,8 @@
       ($call-flag-set! (car call) 'local))
     ;; We clear the calls list, just in case if the lambda-node is
     ;; traversed more than once.
-    ($lambda-calls-set! lambda-node '())))
+    ($lambda-calls-set! lambda-node '())
+    #t))
 
 ;; Called when the local function (lambda-node) isn't needed to be a closure
 ;; and can be embedded.
@@ -454,7 +455,8 @@
         ($call-args-set! jcall (adjust-arglist nreqs nopts ($call-args jcall)
                                                name))
         ($call-proc-set! jcall call)
-        ($call-flag-set! jcall 'jump)))))
+        ($call-flag-set! jcall 'jump)))
+    #t))
 
 ;; Called when the local function (lambda-node) doesn't have recursive
 ;; calls, can be inlined, and called from multiple places.
@@ -475,7 +477,8 @@
   ($lambda-flag-set! lambda-node 'dissolved)
   (let loop ([calls calls])
     (cond [(null? (cdr calls))
-           (inline-it (car calls) lambda-node)]
+           (inline-it (car calls) lambda-node)
+           #t]
           [else
            (inline-it (car calls) (iform-copy lambda-node '()))
            (loop (cdr calls))])))
