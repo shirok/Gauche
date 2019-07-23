@@ -505,6 +505,7 @@
 (define-global-pred =export?          export)
 (define-global-pred =export-all?      export-all)
 (define-global-pred =export-if-defined? export-if-defined)
+(define-global-pred =extend?          extend)
 (define-global-pred =provide?         provide)
 (define-global-pred =lambda?          lambda)
 (define-global-pred =begin?           begin)
@@ -526,9 +527,13 @@
     (match form
       ;; Module related stuff
       [((? =define-module?) mod . body)
-       (write-ext-module form)
-       (with-tmodule mod
-         (fold compile-toplevel-form seed body))]
+       (receive (seed extforms)
+           (parameterize ((ext-module-forms '()))
+             (let1 seed (with-tmodule mod
+                          (fold compile-toplevel-form seed body))
+               (values seed (ext-module-forms))))
+         (write-ext-module `(define-module ,mod ,@(reverse extforms)))
+         seed)]
       [((? =select-module?) mod)
        (write-ext-module form)
        (match (dso-name)
@@ -539,25 +544,31 @@
          [_ #f])
        (select-tmodule mod)
        seed]
-      [((? =use?) mod)
-       (eval-in-current-tmodule `(use ,mod)) seed]
+      [((? =use?) . _)
+       (write-ext-module form)
+       (eval-in-current-tmodule form)
+       seed]
       [((? =export?) . syms)
        (when (list? (compile-module-exports))
          (compile-module-exports
           (lset-union eq? syms (compile-module-exports))))
        (eval-in-current-tmodule `(export ,@syms))
-       (unless (ext-module-file)
-         ;; If generate .sci file, 'export' form will be in it (as a part of
-         ;; define-module form).  Otherwise we need to do export during
-         ;; initialization.
+       ;; If generate .sci file, 'export' form will be in it.
+       ;; Otherwise we need to do export during initialization.
+       (if (ext-module-file)
+         (write-ext-module form)
          (let1 exp-specs (cgen-literal syms)
            (cgen-init
             (format "  (void)Scm_ExportSymbols(Scm_CurrentModule(), ~a);"
                     (cgen-cexpr exp-specs)))))
        seed]
-      [((? =export-all?)) (compile-module-exports #t)]
+      [((? =export-all?)) (write-ext-module form) (compile-module-exports #t)]
       [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
+      [((? =extend?) . _) 
+       (write-ext-module form)
+       (eval-in-current-tmodule form)
+       seed]
       [((? =begin?) . forms) (fold compile-toplevel-form seed forms)]
       ;; Finally, ordinary expressions.
       [else
