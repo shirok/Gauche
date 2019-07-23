@@ -40,7 +40,7 @@ uvector.c : uvector.c.tmpl uvgen.scm
 	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvector.c.tmpl
 
 gauche--uvector.c : uvector.scm uvlib.scm exports.scm
-	$(PRECOMP) -e -P -o gauche--uvector $(srcdir)/uvector.scm
+	$(GOSH) -I. "$(top_srcdir)/src/precomp" -e -P -o gauche--uvector $(srcdir)/uvector.scm
 
 uvlib.scm : uvlib.scm.tmpl
 	rm -rf uvlib.scm
