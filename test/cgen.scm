@@ -498,6 +498,17 @@ some_trick();
 (use gauche.cgen.stub)
 (test-module 'gauche.cgen.stub)
 
+(let ([c (lambda (form exp)
+           (test* (format "cise transform: ~a" form) exp
+                  (cise-render-to-string form 'stmt)))])
+  (parameterize ([cise-emit-source-line #f]
+                 [cise-ambient (cgen-stub-cise-ambient (cise-ambient))])
+    (c '(return) "goto SCM_STUB_RETURN;")
+    (c '(return e) "{SCM_RESULT=(e);goto SCM_STUB_RETURN;}")
+    (c '(return e0 e1) "{SCM_RESULT0=(e0);SCM_RESULT1=(e1);goto SCM_STUB_RETURN;}")
+    (c '(return e0 e1 e2) "{SCM_RESULT0=(e0);SCM_RESULT1=(e1);SCM_RESULT2=(e2);goto SCM_STUB_RETURN;}")
+    (c '(return e0 e1 e2 e3) "{SCM_RESULT0=(e0),SCM_RESULT1=(e1),SCM_RESULT2=(e2),SCM_RESULT3=(e3);goto SCM_STUB_RETURN;}")))
+
 ;;====================================================================
 (test-section "gauche.cgen.precomp")
 (use gauche.cgen.precomp)
