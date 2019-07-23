@@ -1,7 +1,7 @@
 2019-07-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (compile-toplevel-form): Handle toplevel
-	  begin.
+	  begin and include.
 
 2019-07-21  Shiro Kawai  <shiro@acm.org>
 

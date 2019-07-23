@@ -1,7 +1,8 @@
 (define-module foo
   (use foo.bar1)
   (use foo.bar3)
-  (export foo-master foo-literals foo-begin1 foo-begin2))
+  (export foo-master foo-literals foo-begin1 foo-begin2)
+  (include "include/inc1"))
 (select-module foo)
 
 (define (foo-master x)

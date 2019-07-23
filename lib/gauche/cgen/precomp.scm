@@ -508,6 +508,7 @@
 (define-global-pred =extend?          extend)
 (define-global-pred =provide?         provide)
 (define-global-pred =lambda?          lambda)
+(define-global-pred =include?         include)
 (define-global-pred =begin?           begin)
 
 ;; A parameter that holds the list of 'omitted' #<compiled-code> - for
@@ -570,6 +571,7 @@
        (eval-in-current-tmodule form)
        seed]
       [((? =begin?) . forms) (fold compile-toplevel-form seed forms)]
+      [((? =include?) . filenames) (compile-includes filenames #f seed)]
       ;; Finally, ordinary expressions.
       [else
        (let* ([compiled-code (compile-in-current-tmodule form)]
@@ -639,6 +641,23 @@
 
   (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
   )
+
+;; Handle include.  Ideally this whole routine should be shared with
+;; src/compile-1.scm.
+(define (compile-includes filenames case-fold? seed)
+  (define (do-include filename seed)
+    (unless (string? filename)
+      (error "include requires literal string, but got:" filename))
+    (with-input-from-port
+        ($ (with-module gauche.internal pass1/open-include-file)
+           filename 
+           (sys-dirname (port-name (current-input-port))))
+      (^[]
+        (port-case-fold-set! (current-input-port) case-fold?)
+        (unwind-protect
+            (generator-fold compile-toplevel-form seed read)
+          (close-port (current-input-port))))))
+  (fold do-include seed filenames))
 
 ;;================================================================
 ;; Special form handlers
