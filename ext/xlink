@@ -81,7 +81,7 @@
        (if (and (not (file-exists? file))
                 (file-exists? candidate))
          (build-path prefix candidate)
-         (build-path (sys-getcwd) prefix file))))
+         (build-path (sys-getcwd) file))))
    :canonicalize #t))
 
 ;; file="foo" => prefix="."
