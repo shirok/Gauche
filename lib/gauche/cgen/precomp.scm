@@ -507,6 +507,7 @@
 (define-global-pred =export-if-defined? export-if-defined)
 (define-global-pred =provide?         provide)
 (define-global-pred =lambda?          lambda)
+(define-global-pred =begin?           begin)
 
 ;; A parameter that holds the list of 'omitted' #<compiled-code> - for
 ;; example, the cliche of (CLOSURE #<compiled-code> DEFINE #<identifier> RET)
@@ -557,6 +558,7 @@
       [((? =export-all?)) (compile-module-exports #t)]
       [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
+      [((? =begin?) . forms) (fold compile-toplevel-form seed forms)]
       ;; Finally, ordinary expressions.
       [else
        (let* ([compiled-code (compile-in-current-tmodule form)]

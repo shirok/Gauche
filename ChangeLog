@@ -1,3 +1,8 @@
+2019-07-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (compile-toplevel-form): Handle toplevel
+	  begin.
+
 2019-07-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/vmP.h, src/boolean.c, src/gauche/vminsin.scm:

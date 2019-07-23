@@ -611,13 +611,15 @@
            "(select-module foo.bar1)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
            "(provide \"foo/bar1\")"
-           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master foo-literals))"
+           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master foo-literals foo-begin1 foo-begin2))"
            "(select-module foo)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
          (file->string-list "test.o/foo.sci"))
 
   (test* "compile and dynload" 
-         (include "test-precomp/literals.scm")
+         (list (include "test-precomp/literals.scm")
+               'begin1
+               'begin2)
          (begin
            (do-process! `("../../src/gosh" "-ftest"
                           ,(build-path *top-srcdir* "src/gauche-package.in")
@@ -639,14 +641,20 @@
                                            (add-load-path \".\") \
                                            (load \"foo\") \
                                            (write ((global-variable-ref 'foo 'foo-literals))) \
+                                           (write ((global-variable-ref 'foo 'foo-begin1))) \
+                                           (write ((global-variable-ref 'foo 'foo-begin2))) \
                                            (exit 0))")
                                     :output :pipe :directory "test.o")]
-                    [ret (read (process-output p))])
+                    [ret1 (read (process-output p))]
+                    [ret2 (read (process-output p))]
+                    [ret3 (read (process-output p))])
                (process-wait p)
-               ret)]
+               (list ret1 ret2 ret3))]
             [else
              (load "foo" :paths '("./test.o"))
-             ((global-variable-ref 'foo 'foo-literals))]))
+             (list ((global-variable-ref 'foo 'foo-literals))
+                   ((global-variable-ref 'foo 'foo-begin1))
+                   ((global-variable-ref 'foo 'foo-begin2)))]))
          literal=?)
   )
 
