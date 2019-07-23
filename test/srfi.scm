@@ -508,6 +508,17 @@
 (test* "char-set object-apply" '(#t #f)
        (list (#[a-z] #\a) (#[a-z] #\A)))
 
+;; https://github.com/shirok/Gauche/pull/500
+(test* "CharSetAdd large flag bug" #t
+       (char-set= (char-set-intersection
+                   (char-set-union (string->char-set "_")
+                                   char-set:letter+digit)
+                   char-set:full)
+                  (char-set-intersection
+                   (char-set-union char-set:letter+digit
+                                   (string->char-set "_"))
+                   char-set:full)))
+
 ;;-----------------------------------------------------------------------
 ;; srfi-16 case-lambda : moved to procedure.scm (builtin)
 
