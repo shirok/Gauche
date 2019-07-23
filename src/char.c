@@ -808,7 +808,9 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 
     if (dst == src) return SCM_OBJ(dst);  /* precaution */
 
-    set_large(dst, SCM_CHAR_SET_LARGE_P(src));
+    if (SCM_CHAR_SET_LARGE_P(src)) {
+        set_large(dst, TRUE);
+    }
     
     ScmTreeIter iter;
     ScmDictEntry *e;
