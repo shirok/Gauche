@@ -619,7 +619,12 @@
                                  (set! SCM_RESULT1 ,e1)
                                  (set! SCM_RESULT2 ,e2)
                                  (goto SCM_STUB_RETURN))]
-           [_ (error "Too many values to return")]))
+           [(_ xs ...) `(begin (set!
+                                ,@(concatenate
+                                   (map-with-index
+                                    (^[i x] `(,(string->symbol #"SCM_RESULT~i") ,x))
+                                    xs)))
+                               (goto SCM_STUB_RETURN))]))
        ctx)))
 
 (define-syntax with-cise-ambient
