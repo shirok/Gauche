@@ -54,7 +54,7 @@
        ,(read-from-string (cadr entry-line))   ; list of exported symbols
        ,doc-en ,doc-ja)]
     [else
-     (error "Invalid entry for ~a" (car ps))]))
+     (error "Invalid entry for " (car ps))]))
 
 ;; "srfi-N, module" -> (N "module")
 ;; "srfi-N"  -> (N #f)
@@ -1093,3 +1093,18 @@ Note that most of generator procedures are supported by @code{gauche.generator}
 ジェネレータ手続きのほとんどは、@code{gauche.generator}でもサポートされています
 (@ref{Generators}参照)。
 
+
+srfi-160, srfi-160
+()
+
+Homogeneous numeric vector libraries
+Provided by the module @code{srfi-160}.  In fact,
+all procedures of srfi-160 is supported by @code{gauche.uvector}
+(@pxref{Uniform vectors}).
+This module just exports srfi-160 procedures.
+
+一様な数値ベクタライブラリ
+モジュール@code{srfi-160}で提供されます。
+実のところ、srfi-160の全ての手続きは@code{gauche.uvector}でサポートされています
+(@ref{Uniform vectors}参照)。
+このモジュールはsrfi-160の手続きだけをエクスポートするものです。

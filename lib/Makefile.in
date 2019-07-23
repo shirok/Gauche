@@ -53,7 +53,7 @@ SCMFILES = \
        srfi-131.scm srfi-132.scm srfi-134.scm \
        srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
        srfi-151.scm srfi-152.scm srfi-154.scm srfi-155.scm srfi-158.scm \
-       srfi/*.scm \
+       srfi-160.scm srfi/*.scm \
        slib.scm	 \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
