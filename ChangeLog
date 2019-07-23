@@ -1,3 +1,7 @@
+2019-07-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector - Added support of srfi-160 procedures.
+
 2019-07-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (compile-toplevel-form): Handle toplevel

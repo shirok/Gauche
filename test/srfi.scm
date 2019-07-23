@@ -2242,4 +2242,10 @@
   (chibi-test
    (include "include/srfi-158-tests.scm")))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-160")
+(use srfi-160)
+(test-module 'srfi-160)
+
+
 (test-end)

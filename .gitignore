@@ -126,10 +126,12 @@ test.record
 /ext/tls/kick_openssl.sh
 /ext/tls/rfc--tls.c
 /ext/util/util--match.c
+/ext/uvector/exports.scm
 /ext/uvector/gauche/
+/ext/uvector/gauche--uvector.c
 /ext/uvector/uvector.c
 /ext/uvector/uvlib.scm
-/ext/uvector/gauche--uvector.c
+/ext/uvector/uvector/
 /ext/vport/vportlib.c
 /ext/windows/console.c
 /ext/windows/windows.c
@@ -152,11 +154,13 @@ test.record
 /lib/binary/io.scm
 /lib/gauche/array.scm
 /lib/gauche/charconv.scm
+/lib/gauche/exports.scm
 /lib/gauche/fcntl.scm
 /lib/gauche/matrix.scm
 /lib/gauche/net.scm
 /lib/gauche/termios.scm
 /lib/gauche/uvector.scm
+/lib/gauche/uvector/
 /lib/gauche/vm/insn.scm
 /lib/gauche/vport.scm
 /lib/math/mt-random.scm

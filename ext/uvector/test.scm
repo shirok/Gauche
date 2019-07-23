@@ -297,14 +297,25 @@
    (test* "@vector-copy|fill!" #t
           (let* ([c0 (list->@vector (@vector->list uvec))]
                  [c1 (@vector-copy uvec)]
-                 [c2 (uvector-copy uvec)])
+                 [c2 (uvector-copy uvec)]
+                 [cr (@vector-reverse-copy uvec)]
+                 [len (@vector-length uvec)]
+                 [cb (make-@vector (* len  2) filler)])
             (and (equal? c1 uvec)
                  (equal? c2 uvec)
+                 (equal? (@vector->list cr)
+                         (reverse (@vector->list uvec)))
                  (begin (@vector-fill! c1 filler)
                         (and (equal? c0 uvec)
                              (every (^n (= n filler))  (@vector->list c1))
                              (begin (@vector-copy! c1 uvec)
-                                    (equal? c1 c0)))))))))
+                                    (equal? c1 c0))))
+                 (begin (@vector-reverse-copy! cb 1 cr 1)
+                        (and (equal? (@vector-ref cb 0) filler)
+                             (equal? (@vector-copy cb 1 len)
+                                     (@vector-copy uvec 0 (- len 1)))
+                             (equal? (@vector-ref cb len) filler))))))))
+
 
 (uvcopy-test-s8 '#s8(0 -1 1 -128 127) -128)
 (uvcopy-test-u8 '#u8(0 1 255) 255)
