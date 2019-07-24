@@ -601,6 +601,28 @@
 ;; This parameter holds <procstub> during processing the body.
 (define current-procstub (make-parameter #f))
 
+;; Contains a list of return type objects the current cise expression
+;; supposed to generate.  This may differ from (~ (current-procstub)'rettype),
+;; for the cise expression may call a C routine that generates multiple
+;; values directly on VM.  In that case, this parameter contains
+;; just (#<type top>).   () means no return value.  #f means no information.
+(define cise-return-types (make-parameter #f))
+
+;; Given rettype : #f | symbol | (symbol ...),
+;; bind cise-return-types with (Type ...)
+(define-syntax with-return-types
+  (syntax-rules ()
+    [(_ rettype body ...)
+     (parameterize ([cise-return-types
+                     (match rettype
+                       [#f `(,*scm-type*)]
+                       ['<void> '()]
+                       [(? symbol?) `(,(name->type rettype))]
+                       [(? list?) (map name->type rettype)]
+                       [_ (error <cgen-stub-error>
+                                 "invalid cproc return type:" rettype)])])
+       body ...)]))
+
 ;; API
 ;; We use customized cise context while generating stubs
 (define (cgen-stub-cise-ambient :optional (orig-ambient (cise-ambient)))
@@ -608,6 +630,12 @@
     ;; Override "return"
     ($ cise-register-macro! 'return
        (^[form env]
+         (when (and (cise-return-types)
+                    (not (= (length (cdr form)) 
+                            (length (cise-return-types)))))
+           (errorf <cgen-stub-error> 
+                   "return macro got wrong number of return values (expecting ~s): ~s" 
+                   (length (cise-return-types)) form))
          (match form
            [(_)         `(goto SCM_STUB_RETURN)]
            [(_ e0)       `(begin (set! SCM_RESULT ,e0)
@@ -629,6 +657,7 @@
        body ...
        (push! (~ procstub'forward-decls)
               (cise-ambient-decl-strings (cise-ambient))))]))
+
 
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)
@@ -1099,20 +1128,16 @@
                       [else (cgen-return-stmt
                              #`"Scm_Values(Scm_List(,results,, NULL))")]))
         )))
-  ($ with-cise-ambient cproc
-     (match rettype
-       [#f             ; the default case; we assume it is <top>.
-        (typed-result *scm-type* body)]
-       ['<void>        ; no results
+  ($ with-return-types rettype
+     $ with-cise-ambient cproc
+     (match (cise-return-types)
+       [()
         (for-each expand-stmt body)
         (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
         (push-stmt! cproc "SCM_STUB_RETURN:") ; label
         (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-       [[? symbol? t]  ; single result
-        (typed-result (name->type t) body)]
-       [[? list? ts]   ; multiple values
-        (typed-results (map name->type ts) body)]
-       [_ (error <cgen-stub-error> "invalid cproc return type:" rettype)])))
+       [(type) (typed-result type body)]
+       [[types ...] (typed-results types body)])))
 
 (define-method assign-proc-info! ((proc <cproc>))
   (define (arginfo arg) (~ arg'name))

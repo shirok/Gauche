@@ -1,7 +1,9 @@
-2019-07-23  shiro  <shiro@acm.org>
+2019-07-23  Shiro Kawai <shiro@acm.org>
 
 	* src/regexp.c, lib/gauche/regexp/sre.scm: Added support of SRE by
 	  @pclouds https://github.com/shirok/Gauche/pull/495
+	* lib/gauche/cgen/stub.scm: Added # of return values check in
+	  'return' macro.
 
 2019-07-23  Shiro Kawai  <shiro@acm.org>
 
