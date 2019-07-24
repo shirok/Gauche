@@ -1255,7 +1255,7 @@
           "12345BeeF")
 
 (cond-expand
- [gauche.ces.utf8 (include "regexp-sre-utf8")]
+ [gauche.ces.utf8 (include "include/regexp-sre-utf8")]
  [else])
 
 (test-end)
