@@ -179,7 +179,7 @@
         [(w/nocapture) (seq-loop rest #t)]
         [(word) (%sre->ast `(: bow ,@rest eow)
                            nocapture casefold ascii)]
-        [(word+) (%sre->ast `(word (+ (and (or "_" alphanumeric)
+        [(word+) (%sre->ast `(word (+ (and (or alphanumeric "_")
                                            (or ,@rest))))
                             nocapture casefold ascii)]
         [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop))]
