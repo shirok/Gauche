@@ -52,7 +52,15 @@
            [test-assert
             (syntax-rules ()
               [(_ expr)
-               (,(r'test*) 'expr #t (,(r'boolean) expr))])]
+               (,(r'test*) 'expr #t (,(r'boolean) expr))]
+              [(_ name expr)
+               (,(r'test*) name #t (,(r'boolean) expr))])]
+           [test-not
+            (syntax-rules ()
+              [(_ expr)
+               (,(r'test*) 'expr #f (,(r'boolean) expr))]
+              [(_ name expr)
+               (,(r'test*) name #f (,(r'boolean) expr))])]
            [test-error
             (syntax-rules ()
               [(_ expr)
