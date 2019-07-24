@@ -34,7 +34,7 @@
 ;; Basic operators are built in the Gauche kernel.  This module
 ;; defines auxiliary procedures.
 ;;
-;; Some of the procedures are implemented with no optimizaiton
+;; Some of the procedures are implemented with no optimization
 ;; effort.   I included them just for completeness.
 ;; If you think you need faster operation, please optimize it and
 ;; send me a patch.

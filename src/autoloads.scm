@@ -108,6 +108,9 @@
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)
           regexp-unparse rxmatch-substrings rxmatch-positions)
 
+(autoload gauche.regexp.sre
+          regexp-parse-sre regexp-compile-sre)
+
 (autoload gauche.procedure
           compose .$ complement pa$ map$ for-each$ apply$
           count$ fold$ fold-right$ reduce$ reduce-right$

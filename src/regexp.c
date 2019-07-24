@@ -125,7 +125,9 @@ enum {
     RE_END_RL,
     RE_BOL,                     /* beginning of line assertion */
     RE_EOL,                     /* end of line assertion */
-    RE_WB,                      /* word boundary assertion */
+    RE_WB,                      /* RE_BOW + RE_EOW */
+    RE_BOW,                     /* begin-of-word boundary assertion */
+    RE_EOW,                     /* end-of-word boundary assertion */
     RE_NWB,                     /* negative word boundary assertion */
     RE_BACKREF,                 /* followed by group #. */
     RE_BACKREF_RL,
@@ -186,7 +188,7 @@ enum {
  *         | (comp . <char-set>) ; matches complement of char set
  *         | any          ; matches any char
  *         | bol | eol    ; beginning/end of line assertion
- *         | wb | nwb     ; word-boundary/negative word boundary assertion
+ *         | bow | eow | wb | nwb ; word-boundary/negative word boundary assertion
  *
  *  <clause> : (seq . <ast>)       ; sequence
  *         | (seq-uncase . <ast>)  ; sequence (case insensitive match)
@@ -1447,6 +1449,14 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
                 rc3_emit(ctx, RE_WB);
                 return;
             }
+            if (SCM_EQ(ast, SCM_SYM_BOW)) {
+                rc3_emit(ctx, RE_BOW);
+                return;
+            }
+            if (SCM_EQ(ast, SCM_SYM_EOW)) {
+                rc3_emit(ctx, RE_EOW);
+                return;
+            }
             if (SCM_EQ(ast, SCM_SYM_NWB)) {
                 rc3_emit(ctx, RE_NWB);
                 return;
@@ -2023,6 +2033,12 @@ void Scm_RegDump(ScmRegexp *rx)
         case RE_WB:
             Scm_Printf(SCM_CUROUT, "%4d  WB\n", codep);
             continue;
+        case RE_BOW:
+            Scm_Printf(SCM_CUROUT, "%4d  BOW\n", codep);
+            continue;
+        case RE_EOW:
+            Scm_Printf(SCM_CUROUT, "%4d  EOW\n", codep);
+            continue;
         case RE_NWB:
             Scm_Printf(SCM_CUROUT, "%4d  NWB\n", codep);
             continue;
@@ -2139,6 +2155,7 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
         }
         if (SCM_EQ(ast, SCM_SYM_BOL) || SCM_EQ(ast, SCM_SYM_EOL)
             || SCM_EQ(ast, SCM_SYM_WB) || SCM_EQ(ast, SCM_SYM_NWB)
+            || SCM_EQ(ast, SCM_SYM_BOW) || SCM_EQ(ast, SCM_SYM_EOW)
             || SCM_EQ(ast, SCM_SYM_ANY)) {
             return ast;
         }
@@ -2342,7 +2359,7 @@ static int is_word_constituent(unsigned char b)
     return FALSE;
 }
 
-static int is_word_boundary(struct match_ctx *ctx, const char *input)
+static int is_word_boundary(struct match_ctx *ctx, const char *input, unsigned int code)
 {
     const char *prevp;
 
@@ -2351,8 +2368,12 @@ static int is_word_boundary(struct match_ctx *ctx, const char *input)
     SCM_CHAR_BACKWARD(input, ctx->input, prevp);
     SCM_ASSERT(prevp != NULL);
     unsigned char prevb = (unsigned char)*prevp;
-    if ((is_word_constituent(nextb) && !is_word_constituent(prevb))
-        || (!is_word_constituent(nextb) && is_word_constituent(prevb))) {
+    if ((code == RE_BOW || code == RE_WB)
+        && is_word_constituent(nextb) && !is_word_constituent(prevb)) {
+        return TRUE;
+    }
+    if ((code == RE_EOW || code == RE_WB)
+        && !is_word_constituent(nextb) && is_word_constituent(prevb)) {
         return TRUE;
     }
     return FALSE;
@@ -2539,11 +2560,11 @@ static void rex_rec(const unsigned char *code,
         case RE_EOL:
             if (input != ctx->stop) return;
             continue;
-        case RE_WB:
-            if (!is_word_boundary(ctx, input)) return;
+        case RE_WB: case RE_BOW: case RE_EOW:
+            if (!is_word_boundary(ctx, input, code[-1])) return;
             continue;
         case RE_NWB:
-            if (is_word_boundary(ctx, input)) return;
+            if (is_word_boundary(ctx, input, RE_WB)) return;
             continue;
         case RE_SUCCESS:
             ctx->last = input;

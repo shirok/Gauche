@@ -10781,6 +10781,15 @@ not by the engine).
 @c COMMON
 @end defun
 
+@defun regexp-parse-sre sre
+
+Parses @var{sre} as a Scheme Regular Expression as described in
+SRFI-115 and returns its AST. Only a subset of SRE is supported at the
+moment. The following syntax is not supported: @code{bos}, @code{eos},
+@code{bog}, @code{eog} and @code{grapheme}.
+
+@end defun
+
 @defun regexp-optimize ast
 @c EN
 Performs some rudimental optimization on the regexp AST,
@@ -10797,7 +10806,7 @@ to make it cleverer in future.
 
 @defun regexp-compile ast
 @c EN
-Takes a regexp AST and returns a regexp object.
+Takes a regexp @var{ast} and returns a regexp object.
 Currently the outermost form of @var{ast} must be
 the zero-th capturing group.  (That is, @var{ast}
 should have the form @code{(0 #f @var{x} @dots{})}.)
@@ -10827,6 +10836,13 @@ incomprehensible.  So, don't use this procedure as a AST validness checker.)
 そのエラーメッセージからどこがおかしいかを判断するのが難しい場合があります。
 この手続きをASTが有効であるかどうかのチェッカーとして使うのは避けましょう。)
 @c COMMON
+@end defun
+
+@defun regexp-compile-sre sre
+
+Takes a scheme regexp @var{sre} and returns a regexp object. The
+zero-th group is always captured.
+
 @end defun
 
 @defun regexp-ast regexp
@@ -10877,7 +10893,7 @@ to convert it to this AST back and forth.   Contributions are welcome.
        | (comp . <char-set>) ; matches complement of char set
        | any          ; matches any char
        | bol | eol    ; beginning/end of line assertion
-       | wb | nwb     ; word-boundary/negative word boundary assertion
+       | bow | eow | wb | nwb ; word-boundary/negative word boundary assertion
 
 <clause> : (seq <ast> ...)       ; sequence
        | (seq-uncase <ast> ...)  ; sequence (case insensitive match)
