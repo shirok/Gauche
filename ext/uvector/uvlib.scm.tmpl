@@ -216,7 +216,7 @@
   (let1 rvec (make-${t}vector len)
     (do ([i (- len 1) (- i 1)]
          [seed (f seed) (f seed)])
-        [(= i 0) rvec]
+        [(< i 0) rvec]
       (${t}vector-set! rvec i seed))))
 
 (define (${t}vector-concatenate vs)
@@ -242,7 +242,7 @@
           (Scm_Error "<${t}vector> expected, but got: %S" v))
         (unless (SCM_INTP s)
           (Scm_Error "fixnum expected for start, but got: %S" s))
-        (unless (SCM_INTP v)
+        (unless (SCM_INTP e)
           (Scm_Error "fixnum expected for end, but got: %S" e))
         (let* ([start::ScmSmallInt (SCM_INT_VALUE s)]
                [end::ScmSmallInt (SCM_INT_VALUE e)]
@@ -252,19 +252,21 @@
         (set! lis (SCM_CDR (SCM_CDDR lis)))))
     ;; Second path - fill it
     (let* ([r (Scm_Make${T}Vector total (C: "${ZERO}"))]
-           [i::ScmSmallInt i]
+           [i::ScmSmallInt 0]
            [lis args])
-      (let* ([v (SCM_CAR lis)]
-             [start::ScmSmallInt (SCM_INT_VALUE (SCM_CADR lis))]
-             [end::ScmSmallInt   (SCM_INT_VALUE (SCM_CAR (SCM_CDDR lis)))]
-             [len::ScmSmallInt   (SCM_${T}VECTOR_SIZE v)])
-        (SCM_CHECK_START_END start end len)
-        (let* ([j::ScmSmallInt start])
-          (while (< start end)
-            (set! (SCM_${T}VECTOR_ELEMENT r i)
-                  (SCM_${T}VECTOR_ELEMENT v j))
-            (pre++ i)
-            (pre++ j))))
+      (while (SCM_PAIRP lis)
+        (let* ([v (SCM_CAR lis)]
+               [start::ScmSmallInt (SCM_INT_VALUE (SCM_CADR lis))]
+               [end::ScmSmallInt   (SCM_INT_VALUE (SCM_CAR (SCM_CDDR lis)))]
+               [len::ScmSmallInt   (SCM_${T}VECTOR_SIZE v)])
+          (SCM_CHECK_START_END start end len)
+          (let* ([j::ScmSmallInt start])
+            (while (< j end)
+              (set! (SCM_${T}VECTOR_ELEMENT r i)
+                    (SCM_${T}VECTOR_ELEMENT v j))
+              (pre++ i)
+              (pre++ j))))
+        (set! lis (SCM_CDR (SCM_CDDR lis))))
       (return r))))
 
 ;; Iteration
@@ -290,13 +292,13 @@
 (define (${t}vector-fold kons knil vec)
   (let1 len (${t}vector-length vec)
     (do ([i 0 (+ i 1)]
-         [seed knil (kons (${t}vector-ref vec i) seed)])
+         [seed knil (kons seed (${t}vector-ref vec i))])
         [(= i len) seed])))
 (define (${t}vector-fold-right kons knil vec)
   (let1 len (${t}vector-length vec)
     (do ([i (- len 1) (- i 1)]
          [seed knil (kons (${t}vector-ref vec i) seed)])
-        [(= i 0) seed])))
+        [(< i 0) seed])))
 (define (${t}vector-map proc vec)
   ;; we need intermediate list to be restart-safe
   (let1 len (${t}vector-length vec)
@@ -322,10 +324,11 @@
   (let* ([len (${t}vector-length vec)]
          [rvec (make-${t}vector len)])
     (do ([i 0 (+ i 1)]
-         [seed (proc knil) (proc seed)])
-        [(= i len) rvec]
-      (${t}vector-set! rvec i seed))))
-
+         [seed knil
+               (rlet1 seed (proc seed (${t}vector-ref vec i))
+                 (${t}vector-set! rvec i seed))])
+        [(= i len) rvec])))
+  
 ;; Searching
 
 (define (${t}vector-take-while pred vec)
@@ -340,7 +343,7 @@
 (define (${t}vector-take-while-right pred vec)
   (let1 len (${t}vector-length vec)
     (let loop ([i (- len 1)] [r '()])
-      (if (= i 0)
+      (if (< i 0)
         (list->${t}vector r)
         (let1 e (${t}vector-ref vec i)
           (if (pred e)
@@ -348,22 +351,22 @@
             (list->${t}vector r)))))))
 (define (${t}vector-drop-while pred vec)
   (let1 len (${t}vector-length vec)
-    (let loop ([i 0] [r '()])
+    (let loop ([i 0])
       (if (= i len)
-        (list->${t}vector (reverse r))
+        (make-${t}vector 0)
         (let1 e (${t}vector-ref vec i)
           (if (pred e)
-            (list->${t}vector (reverse r))
-            (loop (+ i 1) (cons e r))))))))
+            (loop (+ i 1))
+            (${t}vector-copy vec i)))))))
 (define (${t}vector-drop-while-right pred vec)
   (let1 len (${t}vector-length vec)
-    (let loop ([i (- len 1)] [r '()])
-      (if (= i 0)
-        (list->${t}vector r)
+    (let loop ([i (- len 1)])
+      (if (< i 0)
+        (make-${t}vector 0)
         (let1 e (${t}vector-ref vec i)
           (if (pred e)
-            (list->${t}vector r)
-            (loop (- i 1) (cons e r))))))))
+            (loop (- i 1))
+            (${t}vector-copy vec 0 (+ i 1))))))))
 
 (define (${t}vector-index pred vec)
   (let1 len (${t}vector-length vec)
@@ -374,7 +377,7 @@
 (define (${t}vector-index-right pred vec)
   (let1 len (${t}vector-length vec)
     (let loop ([i (- len 1)])
-      (cond [(= i 0) #f]
+      (cond [(< i 0) #f]
             [(pred (${t}vector-ref vec i)) i]
             [else (loop (- i 1))]))))
 (define (${t}vector-skip pred vec)
@@ -386,7 +389,7 @@
 (define (${t}vector-skip-right pred vec)
   (let1 len (${t}vector-length vec)
     (let loop ([i (- len 1)])
-      (cond [(= i 0) #f]
+      (cond [(< i 0) #f]
             [(pred (${t}vector-ref vec i)) (loop (- i 1))]
             [else i]))))
 
@@ -458,11 +461,12 @@
     (let* ([i::ScmSmallInt start]
            [j::ScmSmallInt (- end 1)]
            [e::(${etype})])
-      (while (< i end)
-        (unless (= i j)
-          (set! e (SCM_${T}VECTOR_ELEMENT v i))
-          (set! (SCM_${T}VECTOR_ELEMENT v i) (SCM_${T}VECTOR_ELEMENT v j))
-          (set! (SCM_${T}VECTOR_ELEMENT v j) e))))
+      (while (< i j)
+        (set! e (SCM_${T}VECTOR_ELEMENT v i))
+        (set! (SCM_${T}VECTOR_ELEMENT v i) (SCM_${T}VECTOR_ELEMENT v j))
+        (set! (SCM_${T}VECTOR_ELEMENT v j) e)
+        (pre++ i)
+        (pre-- j)))
     (return (SCM_OBJ v))))
 
 ;; Generators
