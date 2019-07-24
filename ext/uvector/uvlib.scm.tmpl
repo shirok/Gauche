@@ -219,6 +219,15 @@
         [(= i 0) rvec]
       (${t}vector-set! rvec i seed))))
 
+(define (${t}vector-concatenate vs)
+  (let* ([size (fold (^[v l] (+ (${t}vector-length v) l)) 0 vs)]
+         [dst  (make-${t}vector size)])
+    (do ([vs vs (cdr vs)]
+         [k  0  (+ k (${t}vector-length (car vs)))])
+        [(null? vs) dst]
+      (${t}vector-copy! dst k (car vs)))))
+(define (${t}vector-append . vs) (${t}vector-concatenate vs))
+
 (define-cproc ${t}vector-append-subvectors (:rest args)
   ;; first path - check args and lengths
   (unless (== (% (Scm_Length args) 3) 0)
@@ -467,6 +476,41 @@
 (define (write-${t}vector vec :optional (port (current-output-port)))
   (assume-type vec <${t}vector>)
   (write vec port))
+
+;;;
+;;; Sequence protocol implementation
+;;;
+
+(define-method call-with-iterator ((v <${t}vector>) proc :key (start #f))
+  (let* ([len (${t}vector-length v)] [i (or start 0)])
+    (proc (^[] (>= i len))
+          (^[] (rlet1 r (${t}vector-ref v i) (inc! i))))))
+(define-method call-with-builder ((v <${t}vector-meta>) proc :key (size #f))
+  (if size
+    (let ([v (make-${t}vector size)] [i 0])
+      (proc (^[item] (${t}vector-set! v i item) (inc! i))
+            (^[] v)))
+    (let1 q '()
+      (proc (^[item] (push! q item))
+            (^[] (reverse-list->${t}vector q))))
+    ))
+
+(define-method referencer ((v <${t}vector>)) ${t}vector-ref)
+(define-method modifier   ((v <${t}vector>)) ${t}vector-set!)
+(define-method size-of    ((v <${t}vector>)) (${t}vector-length v))
+(define-method coerce-to  ((c <list-meta>) (v <${t}vector>))
+  (${t}vector->list v))
+(define-method coerce-to  ((c <${t}vector-meta>) (v <list>))
+  (list->${t}vector v))
+(define-method coerce-to  ((c <vector-meta>) (v <${t}vector>))
+  (${t}vector->vector v))
+(define-method coerce-to  ((c <${t}vector-meta>) (v <vector>))
+  (vector->${t}vector v))
+(define-method coerce-to  ((c <${t}vector-meta>) (v <${t}vector>))
+  (${t}vector-copy v))
+(define-method subseq ((v <${t}vector>) . args)
+  (apply ${t}vector-copy v args))
+
 
 ///)) ;; end of tmpl-body
 
