@@ -1015,8 +1015,6 @@
 (test-ast-error (& ("ABC") (w/nocase ("aBC") "def")))
 (test-cset (string->char-set "BC") (& ("ABC") (w/unicode ("aBC"))))
 (test-ast-error (& ("ABC") (w/unicode ("aBC") "def")))
-(test-cset (string->char-set "BC") (& ("ABC") (w/ascii ("кириллица aBC"))))
-(test-ast-error (& ("ABC") (w/ascii ("кириллица aBC") "def")))
 
 (test-cset char-set:ascii ascii)
 (test-ast any any)
@@ -1256,16 +1254,8 @@
           '(: (* numeric) (w/nocase ($ (* (/ "af")))))
           "12345BeeF")
 
-(test-sre #f '(: bol (* lower) eol) "abcD")
-(test-sre '("abcD") '(w/nocase (* lower)) "abcD")
-(test-sre '("σζ") '(* lower) "σζ")
-(test-sre '("Σ") '(* upper) "Σ")
-(test-sre '("\x01C5;") '(* title) "\x01C5;")
-
-(test-sre '("кириллица") '(* alpha) "кириллица")
-(test-sre '("") '(w/ascii (* alpha)) "кириллица")
-(test-sre '("кириллица") '(w/nocase "КИРИЛЛИЦА") "кириллица")
-
-(test-sre '("") '(w/ascii (* numeric)) "１２３４５")
+(cond-expand
+ [gauche.ces.utf8 (include "regexp-sre-utf8")]
+ [else])
 
 (test-end)
