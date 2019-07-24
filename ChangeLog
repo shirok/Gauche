@@ -1,5 +1,9 @@
 2019-07-23  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (process-body-inner): Support more than
+	  3 return values
+	  Patch by @pclouds https://github.com/shirok/Gauche/pull/499
+
 	* src/char.c (Scm_CharSetAdd): Fix a bug when adding ASCII char
 	  to a large char set inadvertently cleared the large flag.
 	  Patch by @pclouds https://github.com/shirok/Gauche/pull/500

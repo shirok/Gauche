@@ -1277,6 +1277,8 @@
 (define-cise-expr C:
   [(_ stuff) (list (x->string stuff))])
 
+;; DEPRECATED: cgen-stub-cise-ambient overrides 'return' macro.
+;; Use it instead.
 (define-cise-expr result
   [(_) (error "cise: result form needs at least one value'")]
   [(_ e) `(set! SCM_RESULT ,e)]

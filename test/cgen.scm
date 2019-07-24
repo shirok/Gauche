@@ -505,8 +505,8 @@ some_trick();
                  [cise-ambient (cgen-stub-cise-ambient (cise-ambient))])
     (c '(return) "goto SCM_STUB_RETURN;")
     (c '(return e) "{SCM_RESULT=(e);goto SCM_STUB_RETURN;}")
-    (c '(return e0 e1) "{SCM_RESULT0=(e0);SCM_RESULT1=(e1);goto SCM_STUB_RETURN;}")
-    (c '(return e0 e1 e2) "{SCM_RESULT0=(e0);SCM_RESULT1=(e1);SCM_RESULT2=(e2);goto SCM_STUB_RETURN;}")
+    (c '(return e0 e1) "{SCM_RESULT0=(e0),SCM_RESULT1=(e1);goto SCM_STUB_RETURN;}")
+    (c '(return e0 e1 e2) "{SCM_RESULT0=(e0),SCM_RESULT1=(e1),SCM_RESULT2=(e2);goto SCM_STUB_RETURN;}")
     (c '(return e0 e1 e2 e3) "{SCM_RESULT0=(e0),SCM_RESULT1=(e1),SCM_RESULT2=(e2),SCM_RESULT3=(e3);goto SCM_STUB_RETURN;}")))
 
 ;;====================================================================
