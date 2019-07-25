@@ -549,6 +549,52 @@
   )
 
 ;;------------------------------------------------------------------
+;; transitive export issue
+;; https://github.com/shirok/Gauche/issues/472
+
+(define-module tre1-A
+  (export a)
+  (define a 1))
+(define-module tre1-B
+  (import tre1-A)
+  (export a))
+(define-module tre1-C
+  (extend tre1-B))
+
+(test* "transitive export with only" 1
+       (let1 m (make-module #f)
+         (eval '(import (tre1-C :only (a))) m)
+         (eval 'a m)))
+
+(define-module tre2-A
+  (export a)
+  (define a 1))
+(define-module tre2-B
+  (import tre2-A)
+  (export (rename a aaa)))
+(define-module tre2-C
+  (extend tre2-B))
+
+(test* "transitive export with only" 1
+       (let1 m (make-module #f)
+         (eval '(import (tre2-C :only (aaa))) m)
+         (eval 'aaa m)))
+
+(define-module tre3-A
+  (export a)
+  (define a 1))
+(define-module tre3-B
+  (import tre3-A)
+  (export a))
+(define-module tre3-C
+  (extend tre3-B))
+
+(test* "transitive export with only" 1
+       (let1 m (make-module #f)
+         (eval '(import (tre3-C :rename ((a aaa)))) m)
+         (eval 'aaa m)))
+
+;;------------------------------------------------------------------
 ;; creates modules on-the-fly
 
 (test "make-module" #t

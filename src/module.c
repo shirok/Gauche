@@ -162,6 +162,12 @@ static void init_module(ScmModule *m, ScmObj name, ScmHashTable *internal)
     m->external = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     m->origin = m->prefix = SCM_FALSE;
     m->sealed = FALSE;
+
+    if (name == SCM_INTERN("A") || name == SCM_INTERN("B")
+        || name == SCM_INTERN("C")) {
+        Scm_Printf(SCM_CURERR, "making %S\n", name);
+    }
+    
 }
 
 /* Internal */
@@ -381,10 +387,12 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
         }
         ScmObj v = Scm_HashTableRef(external_only?m->external:m->internal,
                                     SCM_OBJ(symbol), SCM_FALSE);
+
         if (SCM_GLOCP(v)) {
             if (SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
+                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */                ScmGloc *g = search_binding(m, symbol, FALSE, FALSE, TRUE);
+                if (g) return g;
                 external_only = FALSE; /* See above comment */
-                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */
             } else {
                 return SCM_GLOC(v);
             }

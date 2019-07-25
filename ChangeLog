@@ -1,3 +1,9 @@
+2019-07-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (search_binding): Fix transitive export and only/rename
+	  import combination
+	  https://github.com/shirok/Gauche/issues/472
+
 2019-07-23  Shiro Kawai <shiro@acm.org>
 
 	* src/regexp.c, lib/gauche/regexp/sre.scm: Added support of SRE by
