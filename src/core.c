@@ -554,6 +554,11 @@ init_cond_features()
         { "gauche.sys.zlib", "rfc.zlib" },
 #endif
 
+        { "regexp-non-greedy", "srfi.115" },
+        { "regexp-look-around", "srfi.115" },
+        { "regexp-backrefs", "srfi.115" },
+        { "regexp-unicode", "srfi.115" },
+
 #include "features.c"
         
         { NULL, NULL }
