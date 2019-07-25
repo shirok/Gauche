@@ -1119,6 +1119,8 @@
 		      ,(string->char-set "Bb")))
 	   (w/nocase "ab"))
 (test-ast (seq (seq (seq #\a #\b))) (w/nocase (w/case "ab")))
+(test-ast (seq (seq #[Aa] #[Bb]) (seq (seq #\c #\d)) (seq #[Ee] #[Ff]))
+          (w/nocase "ab" (w/case "cd") "ef"))
 
 (test-ast bol bol)
 (test-ast eol eol)
@@ -1152,6 +1154,39 @@
 
 (test-ast #\a #\a)
 (test-ast (seq #\a #\b #\c) "abc")
+
+;;-------------------------------------------------------------------------
+(test-section "regexp-unparse-sre")
+
+(define (test-regexp-unparse-sre src)
+  (let1 ast (regexp-optimize (regexp-parse-sre src))
+    (test* (format "regexp-unparse-sre ~s" src) ast
+           (regexp-optimize (regexp-parse-sre (regexp-unparse-sre ast)))
+           equal?)))
+
+(for-each test-regexp-unparse-sre
+          '(;; simple ones
+            "" "a" "ab" (: #\a #\b) (* #\a) (+ "a") (? "a") (: "a" (* "b"))
+            (: "a" (+ "b")) (: "a" (? "b")) (: (* "a") "b") (: (+ "a") "b")
+            (: (? "a") "b") (= 3 "a") (** 2 4 "a") (>= 3 #\a) (or "a" "b")
+            (or "a" "b" "c") (: bol "ab") (: bol (or #\a #\b)) (or (: bol "a") "b")
+            (: bol (or "a" "b") eol) any #\. (: (* #\\) #\*) (seq bow "foo" eow)
+            ;; charset
+            (/ "az") (~ (/ #\a #\z)) (+ (/ "az")) ("a^ef-") ("a") (".")
+            ;; grouping
+            (: ($ "a") ($ "b")) (: ($ (or "a" "b")) "c" ($ "d"))
+            (: ($ "a" ($ "b" ($ (or "c" "d")) "e")) "f")
+            (* (w/nocapture (: "abc")))
+            (w/nocase "ab" (w/case "cd") "ef")
+            ;; backref
+            (: ($ "a") "bc" (backref 1))
+            (: "ab" (-> foo "c") ($ "d") (backref foo))
+            ($ ($ ".") (backref 2))
+            ;; lookahead, lookbehind
+            (look-ahead (: (* "a") (* #\b) "c"))
+            (neg-look-ahead (* #\a) (* #\b) #\c)
+            (look-behind #\a ("bc"))
+            (neg-look-behind #\a ("bc"))))
 
 ;;-------------------------------------------------------------------------
 (test-section "SRE")		    ; based on chibi's regexp-test.sld
