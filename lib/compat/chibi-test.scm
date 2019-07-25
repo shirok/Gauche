@@ -34,6 +34,10 @@
             ;; are supposed to be already used in the includer.
             (syntax-rules ()
               [(_ . args) (begin)])]
+           [import
+            ;; So as import 
+            (syntax-rules ()
+              [(_ . args) (begin)])]
            [include
             (syntax-rules ()
               [(_ file) (,(r'chibi-test:include) file)])]
