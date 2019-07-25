@@ -89,3 +89,9 @@
          (unwind-protect
              `(,(r 'chibi-test:expand) ,(port->sexp-list iport))
            (close-port iport)))))))
+
+;; A hack to make Gauche think it has loaded chibi.test so that it won't
+;; tripped by (import (chibi test)) in the test code.
+(define-module chibi.test (extend compat.chibi-test))
+(provide "chibi/test")
+(provide "compat/chibi-test")
