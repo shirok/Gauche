@@ -10791,7 +10791,7 @@ not by the engine).
 
 Parses @var{sre} as a Scheme Regular Expression as described in
 SRFI-115 and returns its AST. Only a subset of SRE is supported at the
-moment. The following syntax is not supported: @code{bos}, @code{eos},
+moment. The following syntax is not supported:
 @code{bog}, @code{eog} and @code{grapheme}.
 
 @end defun
@@ -10902,6 +10902,7 @@ to convert it to this AST back and forth.   Contributions are welcome.
        | <char-set>   ; matches char set
        | (comp . <char-set>) ; matches complement of char set
        | any          ; matches any char
+       | bos | eos    ; beginning/end of string assertion
        | bol | eol    ; beginning/end of line assertion
        | bow | eow | wb | nwb ; word-boundary/negative word boundary assertion
 

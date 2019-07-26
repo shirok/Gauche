@@ -159,6 +159,8 @@
     (rep-min                   SCM_SYM_REP_MIN)
     (rep-while                 SCM_SYM_REP_WHILE)
     (any                       SCM_SYM_ANY)
+    (bos                       SCM_SYM_BOS)
+    (eos                       SCM_SYM_EOS)
     (bol                       SCM_SYM_BOL)
     (eol                       SCM_SYM_EOL)
     (wb                        SCM_SYM_WB)

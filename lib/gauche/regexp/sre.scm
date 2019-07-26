@@ -132,7 +132,7 @@
   (define (%sre->ast sre nocapture casefold ascii)
     (define (sre-sym sre)
       (case sre
-        [(bol eol bow eow nwb) sre]
+        [(bos eos bol eol bow eow nwb) sre]
         [(word) (%sre->ast '(word+ any) nocapture casefold ascii)]
         [else (error "invalid sre, not supported" sre)]))
 

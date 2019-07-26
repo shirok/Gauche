@@ -1188,6 +1188,22 @@
         'foo))
 
 (test-sre '("ababc" "abab")
+          '(: bos ($ (* "ab")) "c")
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: ($ (* "ab")) "c" eos)
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: bos ($ (* "ab")) "c" eos)
+          "ababc")
+(test-sre #f
+          '(: bos ($ (* "ab")) eos "c")
+          "ababc")
+(test-sre #f
+          '(: ($ (* "ab")) bos "c" eos)
+          "ababc")
+
+(test-sre '("ababc" "abab")
           '(: bol ($ (* "ab")) "c")
           "ababc")
 (test-sre '("ababc" "abab")

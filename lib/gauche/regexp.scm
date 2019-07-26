@@ -219,6 +219,8 @@
                                [else (disp n)])]
           [(char-set? n) (disp (substring (write-to-string n) 1 -1))]
           [(eq? n 'any)  (disp #\.)]
+          [(eq? n 'bos)  (disp "^^")]   ; made up syntax for reporting only
+          [(eq? n 'eos)  (disp "$$")]   ; made up syntax for reporting only
           [(eq? n 'bol)  (disp #\^)]
           [(eq? n 'eol)  (disp #\$)]
           [(eq? n 'wb)   (disp "\\b")]
