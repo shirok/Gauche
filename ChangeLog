@@ -3,6 +3,7 @@
 	* src/module.c (search_binding): Fix transitive export and only/rename
 	  import combination
 	  https://github.com/shirok/Gauche/issues/472
+	* lib/scheme/vector/*: Added scheme.vector.@ files (R7RS tangerine).
 
 2019-07-23  Shiro Kawai <shiro@acm.org>
 
