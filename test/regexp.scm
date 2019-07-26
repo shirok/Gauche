@@ -1202,15 +1202,18 @@
 (test-sre #f
           '(: ($ (* "ab")) bol "c" eol)
           "ababc")
-(test-sre '("\nabc\n" "abc")
-          '(: (* #\newline) bol ($ (* alpha)) eol (* #\newline))
-          "\nabc\n")
+(test-sre '(".\nabc\n" "abc")
+          '(: #\. (* #\newline) bol ($ (* alpha)) eol (* #\newline))
+          ".\nabc\n")
+;; note that chibi scheme has similar tests, but due to the
+;; non-tracking nature (?) of chibi regex engine, the results are both
+;; false (without the literal dot) instead of matching here.
 (test-sre #f
-          '(: (* #\newline) bol ($ (* alpha)) eol (* #\newline))
-          "\n'abc\n")
-(test-sre #f
-          '(: (* #\newline) bol ($ (* alpha)) eol (* #\newline))
-          "\nabc.\n")
+          '(: #\. (* #\newline) bol ($ (* alpha)) eol (* #\newline))
+          ".\n'abc\n")
+(test-sre '(".\n" "\n" "")
+          '(: #\. ($ (* #\newline)) bol ($ (* alpha)) eol (* #\newline))
+          ".\nabc.\n")
 
 (test-sre '("ababc" "abab")
           '(: bow ($ (* "ab")) "c")
