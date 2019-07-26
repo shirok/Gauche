@@ -229,8 +229,6 @@
 
   `(0 #f ,(%sre->ast sre #f #f #f)))
 
-(define (regexp-compile-sre re)
-  ($ regexp-compile
-     $ regexp-optimize
-     $ regexp-parse-sre re))
-
+(define (regexp-compile-sre re :key (multi-line #t))
+  (regexp-compile (regexp-optimize (regexp-parse-sre re))
+                  :multi-line multi-line))

@@ -1437,7 +1437,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
                 return;
             }
             if (SCM_EQ(ast, SCM_SYM_EOL)) {
-                if (lastp) {
+                if (lastp || (ctx->rx->flags & SCM_REGEXP_MULTI_LINE)) {
                     rc3_emit(ctx, RE_EOL);
                 } else {
                     rc3_emit(ctx, ctx->lookbehindp? RE_MATCH1_RL:RE_MATCH1);
@@ -1895,7 +1895,9 @@ static ScmObj calculate_lasetn(ScmObj ast)
 static ScmObj rc3(regcomp_ctx *ctx, ScmObj ast)
 {
     /* set flags and laset */
-    if (is_bol_anchored(ast)) ctx->rx->flags |= SCM_REGEXP_BOL_ANCHORED;
+    if (!(ctx->rx->flags & SCM_REGEXP_MULTI_LINE) && is_bol_anchored(ast)) {
+        ctx->rx->flags |= SCM_REGEXP_BOL_ANCHORED;
+    }
     else if (is_simple_prefixed(ast)) ctx->rx->flags |= SCM_REGEXP_SIMPLE_PREFIX;
     ctx->rx->laset = calculate_laset(ast, SCM_NIL);
 
@@ -2270,6 +2272,7 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     rc_ctx_init(&cctx, rx, pattern);
     cctx.casefoldp = flags & SCM_REGEXP_CASE_FOLD;
     rx->flags |= (flags & SCM_REGEXP_CASE_FOLD);
+    rx->flags |= (flags & SCM_REGEXP_MULTI_LINE);
 
     /* pass 1 : parse regexp spec */
     ScmObj ast = rc1(&cctx);
@@ -2284,11 +2287,12 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
 }
 
 /* alternative entry that compiles from AST */
-ScmObj Scm_RegCompFromAST(ScmObj ast)
+ScmObj Scm_RegCompFromAST(ScmObj ast, int flags)
 {
     ScmRegexp *rx = make_regexp();
     regcomp_ctx cctx;
     rc_ctx_init(&cctx, rx, NULL);
+    rx->flags |= (flags & SCM_REGEXP_MULTI_LINE);
 
     /* prepare some context */
     if (!SCM_PAIRP(ast) || !SCM_INTP(SCM_CAR(ast))) {
@@ -2377,6 +2381,32 @@ static int is_word_boundary(struct match_ctx *ctx, const char *input, unsigned i
         && !is_word_constituent(nextb) && is_word_constituent(prevb)) {
         return TRUE;
     }
+    return FALSE;
+}
+
+static int is_beginning_of_line(struct match_ctx *ctx, const char *input)
+{
+    if (input == ctx->input) return TRUE;
+    if (!(ctx->rx->flags & SCM_REGEXP_MULTI_LINE)) return FALSE;
+
+    const char *prevp;
+    SCM_CHAR_BACKWARD(input, ctx->input, prevp);
+    SCM_ASSERT(prevp != NULL);
+
+    unsigned char prevb = (unsigned char)*prevp;
+    if (prevb == '\n' || prevb == '\r') return TRUE;
+
+    return FALSE;
+}
+
+static int is_end_of_line(struct match_ctx *ctx, const char *input)
+{
+    if (input == ctx->stop) return TRUE;
+    if (!(ctx->rx->flags & SCM_REGEXP_MULTI_LINE)) return FALSE;
+
+    unsigned char nextb = (unsigned char)*input;
+    if (nextb == '\n' || nextb == '\r') return TRUE;
+
     return FALSE;
 }
 
@@ -2556,10 +2586,10 @@ static void rex_rec(const unsigned char *code,
             continue;
         }
         case RE_BOL:
-            if (input != ctx->input) return;
+            if (!is_beginning_of_line(ctx, input)) return;
             continue;
         case RE_EOL:
-            if (input != ctx->stop) return;
+            if (!is_end_of_line(ctx, input)) return;
             continue;
         case RE_WB: case RE_BOW: case RE_EOW:
             if (!is_word_boundary(ctx, input, code[-1])) return;

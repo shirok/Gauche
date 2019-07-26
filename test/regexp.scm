@@ -277,7 +277,13 @@
 (test-re #/a(^bc|def)/ "a^bcdef" '("a^bc" "^bc"))
 (test-re #/a(^bc|def)/ "abcdef" '())
 (test-re #/^/          "hoge" '(""))
+(test-re (string->regexp "^a" :multi-line #t)
+         "def\nabc\nghi"
+         '("a"))
 (test-re #/$/          "hoge" '(""))
+(test-re (string->regexp "c$" :multi-line #t)
+         "def\nabc\nghi"
+         '("c"))
 (test-re #/abc$/       "bcabc" '("abc"))
 (test-re #/abc$/       "abcab" '())
 (test-re #/^abc$/      "abc" '("abc"))
@@ -1196,6 +1202,15 @@
 (test-sre #f
           '(: ($ (* "ab")) bol "c" eol)
           "ababc")
+(test-sre '("\nabc\n" "abc")
+          '(: (* #\newline) bol ($ (* alpha)) eol (* #\newline))
+          "\nabc\n")
+(test-sre #f
+          '(: (* #\newline) bol ($ (* alpha)) eol (* #\newline))
+          "\n'abc\n")
+(test-sre #f
+          '(: (* #\newline) bol ($ (* alpha)) eol (* #\newline))
+          "\nabc.\n")
 
 (test-sre '("ababc" "abab")
           '(: bow ($ (* "ab")) "c")
