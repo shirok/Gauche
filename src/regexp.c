@@ -2363,7 +2363,8 @@ static int is_word_boundary(struct match_ctx *ctx, const char *input, unsigned i
 {
     const char *prevp;
 
-    if (input == ctx->input || input == ctx->stop) return TRUE;
+    if ((code == RE_BOW || code == RE_WB) && input == ctx->input) return TRUE;
+    if ((code == RE_EOW || code == RE_WB) && input == ctx->stop) return TRUE;
     unsigned char nextb = (unsigned char)*input;
     SCM_CHAR_BACKWARD(input, ctx->input, prevp);
     SCM_ASSERT(prevp != NULL);
