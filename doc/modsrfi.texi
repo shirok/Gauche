@@ -58,6 +58,7 @@ srfi N is supported by Gauche.)
 * String library (reduced)::    srfi-152
 * First-class dynamic extents::  srfi-154
 * Generators and accumulators::  srfi-158
+* Homogeneous numeric vector libraries:: srfi-160
 @end menu
 
 
@@ -6233,7 +6234,7 @@ called in the tail contenxt even if the procedure created by
 
 
 @c ----------------------------------------------------------------------
-@node Generators and accumulators,  , First-class dynamic extents, Library modules - SRFIs
+@node Generators and accumulators, Homogeneous numeric vector libraries, First-class dynamic extents, Library modules - SRFIs
 @section @code{srfi-158} - Generators and accumulators
 @c NODE ジェネレータとアキュムレータ, @code{srfi-158} - ジェネレータとアキュムレータ
 
@@ -6246,6 +6247,24 @@ SRFI-158 has become a part of R7RS large.
 SRFI-158はR7RS largeに採り入れられました。
 @ref{R7RS generators}を参照してください。
 @c COMMON
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Homogeneous numeric vector libraries,  , Generators and accumulators, Library modules - SRFIs
+@section @code{srfi-160} - Homogeneous numeric vector libraries
+@c NODE 均質な数値ベクタライブラリ, @code{srfi-160} - 均質な数値ベクタライブラリ
+
+@deftp {Module} srfi-160
+@mdindex srfi-160
+This is an enhancement of srfi-4, Homogeneous vectors
+(@pxref{Homogeneous vectors}), and then become a part
+of R7RS-large (@pxref{R7RS uniform vectors}).
+
+In Gauche, all the procedures in this module are provided
+as a part of @code{gauche.uvector} module
+(@pxref{Uniform vectors}, and described there.
+
+This module only exports the procedures defined in @code{srfi-160}.
 @end deftp
 
 
