@@ -208,7 +208,8 @@ enum {
  *                                 ; capturing group.  <symbol> may be #f.
  *         | (cpat <condition> <ast> <ast>)
  *                                 ; conditional expression
- *         | (backref . <integer>) ; backreference
+ *         | (backref . <integer>) ; backreference by group number
+ *         | (backref . <symbol>)  ; backreference by name
  *         | (once . <ast>)        ; standalone pattern.  no backtrack
  *         | (assert . <asst>)     ; positive lookahead assertion
  *         | (nassert . <asst>)    ; negative lookahead assertion

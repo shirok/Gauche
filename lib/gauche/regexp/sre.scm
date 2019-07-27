@@ -192,11 +192,11 @@
         [(neg-look-ahead) `(nassert ,@(loop))]
         [(neg-look-behind) `(nassert (lookbehind ,@(loop)))]
         [(backref) (begin
-                     (if (null? (cdr rest))
-                         (if (symbol? (car rest))
-                             (error "invalid sre, (backref <name>) not supported yet")
-                             `(backref . ,(car rest)))
-                         (error "invalid sre, expected (backref <integer>)" (cons sym rest))))]
+                     (if (and (null? (cdr rest))
+                              (or (number? (car rest))
+                                  (symbol? (car rest))))
+                         `(backref . ,(car rest))
+                         (error "expected (backref <integer/symbol>)" (cons sym rest))))]
         [else (error "invalid sre" sym)]))
 
     (define (fold-case cset)
