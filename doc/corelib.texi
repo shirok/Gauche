@@ -9950,7 +9950,7 @@ Note that the order of groups in the alist isn't fixed.
 @subsubheading マッチを試みる
 @c COMMON
 
-@defun rxmatch regexp string
+@defun rxmatch regexp string :optional start end
 @c EN
 @var{Regexp} is a regular expression object.
 A string @var{string} is matched by
@@ -9961,6 +9961,9 @@ object.  Otherwise it returns @code{#f}.
 探します。一致が見付かった場合は@code{<regmatch>}オブジェクトを返し、
 見付からなかった場合は@code{#f}を返します。
 @c COMMON
+
+If @var{start} and/or @var{end} are given, only the substring between
+@var{start} (inclusive) and @var{end} (exclusive) is searched.
 
 @c EN
 This is called @code{match}, @code{regexp-search} or @code{string-match}

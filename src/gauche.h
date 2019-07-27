@@ -1835,7 +1835,7 @@ SCM_CLASS_DECL(Scm_RegexpClass);
 SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern, int flags);
 SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast, int flags);
 SCM_EXTERN ScmObj Scm_RegOptimizeAST(ScmObj ast);
-SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input);
+SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input, ScmObj start, ScmObj end);
 SCM_EXTERN void Scm_RegDump(ScmRegexp *rx);
 
 SCM_CLASS_DECL(Scm_RegMatchClass);

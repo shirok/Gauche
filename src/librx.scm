@@ -61,13 +61,13 @@
 (define-cproc regexp-named-groups (regexp::<regexp>)
   (return (-> regexp grpNames)))
 
-(define-cproc rxmatch (regexp str::<string>)
+(define-cproc rxmatch (regexp str::<string> :optional start end)
   (let* ([rx::ScmRegexp* NULL])
     (cond [(SCM_STRINGP regexp) (set! rx (SCM_REGEXP (Scm_RegComp
                                                       (SCM_STRING regexp) 0)))]
           [(SCM_REGEXPP regexp) (set! rx (SCM_REGEXP regexp))]
           [else (SCM_TYPE_ERROR regexp "regexp")])
-    (return (Scm_RegExec rx str))))
+    (return (Scm_RegExec rx str start end))))
 
 (inline-stub
  (define-cise-stmt rxmatchop

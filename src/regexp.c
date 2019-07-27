@@ -2869,6 +2869,7 @@ static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
 }
 
 static ScmObj rex(ScmRegexp *rx, ScmString *orig,
+                  const char *orig_start,
                   const char *start, const char *end)
 {
     struct match_ctx ctx;
@@ -2876,7 +2877,7 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
 
     ctx.rx = rx;
     ctx.codehead = rx->code;
-    ctx.input = SCM_STRING_BODY_START(SCM_STRING_BODY(orig));
+    ctx.input = orig_start;
     ctx.stop = end;
     ctx.begin_stack = (void*)&ctx;
     ctx.cont = &cont;
@@ -2919,18 +2920,51 @@ static inline const char *skip_input(const char *start, const char *limit,
 /*----------------------------------------------------------------------
  * entry point
  */
-ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
+ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str, ScmObj start_scm, ScmObj end_scm)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
-    const char *start = SCM_STRING_BODY_START(b);
-    const char *end = start + SCM_STRING_BODY_SIZE(b);
+    const char *orig_start = SCM_STRING_BODY_START(b);
+    const char *start;
+    const char *end;
     const ScmStringBody *mb = rx->mustMatch? SCM_STRING_BODY(rx->mustMatch) : NULL;
     int mustMatchLen = mb? SCM_STRING_BODY_SIZE(mb) : 0;
-    const char *start_limit = end - mustMatchLen;
+    const char *start_limit;
 
     if (SCM_STRING_INCOMPLETE_P(str)) {
         Scm_Error("incomplete string is not allowed: %S", str);
     }
+    if (!SCM_UNBOUNDP(start_scm) && !SCM_UNDEFINEDP(start_scm)) {
+        if (!SCM_INTEGERP(start_scm)) {
+            Scm_TypeError("start", "exact integer required but got %S", start_scm);
+        }
+        int value = Scm_GetInteger(start_scm);
+        if (value < 0 || value >= SCM_STRING_BODY_LENGTH(b)) {
+            Scm_Error("invalid start parameter: %S", start_scm);
+        }
+        while (value--) {
+            orig_start += SCM_CHAR_NFOLLOWS(*orig_start) + 1;
+        }
+    }
+    start = orig_start;
+    end = SCM_STRING_BODY_START(b);
+    if (!SCM_UNBOUNDP(end_scm) && !SCM_UNDEFINEDP(end_scm)) {
+        if (!SCM_INTEGERP(end_scm)) {
+            Scm_TypeError("end", "exact integer required but got %S", end_scm);
+        }
+        int value = Scm_GetInteger(end_scm);
+        if (value < 0 || value > SCM_STRING_BODY_LENGTH(b)) {
+            Scm_Error("invalid end parameter: %S", end_scm);
+        }
+        while (value--) {
+            end += SCM_CHAR_NFOLLOWS(*end) + 1;
+        }
+        if (end < start) {
+            Scm_Error("invalid end parameter: %S", end_scm);
+        }
+    } else {
+        end += SCM_STRING_BODY_SIZE(b);
+    }
+    start_limit = end - mustMatchLen;
 #if 0
     /* Disabled for now; we need to use more heuristics to determine
        when we should apply mustMatch.  For example, if the regexp
@@ -2948,14 +2982,14 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
     /* short cut : if rx matches only at the beginning of the string,
        we only run from the beginning of the string */
     if (rx->flags & SCM_REGEXP_BOL_ANCHORED) {
-        return rex(rx, str, start, end);
+        return rex(rx, str, orig_start, start, end);
     }
 
     /* if we have lookahead-set, we may be able to skip input efficiently. */
     if (!SCM_FALSEP(rx->laset)) {
         if (rx->flags & SCM_REGEXP_SIMPLE_PREFIX) {
             while (start <= start_limit) {
-                ScmObj r = rex(rx, str, start, end);
+                ScmObj r = rex(rx, str, orig_start, start, end);
                 if (!SCM_FALSEP(r)) return r;
                 const char *next = skip_input(start, start_limit, rx->laset,
                                               TRUE);
@@ -2965,7 +2999,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
         } else {
             while (start <= start_limit) {
                 start = skip_input(start, start_limit, rx->laset, FALSE);
-                ScmObj r = rex(rx, str, start, end);
+                ScmObj r = rex(rx, str, orig_start, start, end);
                 if (!SCM_FALSEP(r)) return r;
                 start += SCM_CHAR_NFOLLOWS(*start)+1;
             }
@@ -2975,7 +3009,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
 
     /* normal matching */
     while (start <= start_limit) {
-        ScmObj r = rex(rx, str, start, end);
+        ScmObj r = rex(rx, str, orig_start, start, end);
         if (!SCM_FALSEP(r)) return r;
         start += SCM_CHAR_NFOLLOWS(*start)+1;
     }

@@ -693,6 +693,23 @@
 (test-parse "()(?(1)b|c|d)" (test-error))
 
 ;;-------------------------------------------------------------------------
+(test-section "rxmatch with start/end")
+
+(define (rxmatch->full-match re str :optional start end)
+  (let ([match (rxmatch re str start end)])
+    (and match
+         (list (rxmatch-start match)
+               (rxmatch-end match)
+               (match 0)))))
+
+(test* "abc" '(0 3 "abc") (rxmatch->full-match "abc" "abc"))
+(test* "abc" '(0 3 "abc") (rxmatch->full-match "abc" "abc" 0 3))
+(test* "abc" '(2 5 "abc") (rxmatch->full-match "abc" "zzabczz" 2))
+(test* "abc" '(2 5 "abc") (rxmatch->full-match "^abc" "zzabczz" 2 6))
+(test* "abc" '(3 6 "abc") (rxmatch->full-match "abc$" "zzzabczz" 2 6))
+(test* "abc" '(5 8 "abc") (rxmatch->full-match "abc" "abczzabczz" 4))
+
+;;-------------------------------------------------------------------------
 (test-section "regexp macros")
 
 (use gauche.regexp)
