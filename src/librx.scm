@@ -39,17 +39,21 @@
 (define-cproc regexp? (obj)   ::<boolean> :constant SCM_REGEXPP)
 (define-cproc regmatch? (obj) ::<boolean> SCM_REGMATCHP)
 
-(define-cproc string->regexp (str::<string> :key (case-fold #f))
-  (let* ([flags::int (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)])
-    (return (Scm_RegComp str flags))))
+(define-cproc string->regexp (str::<string> :key (case-fold #f) (multi-line #f))
+  (return (Scm_RegComp str
+                       (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
+                               (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)))))
 (define-cproc regexp-ast (regexp::<regexp>) (return (-> regexp ast)))
 (define-cproc regexp-case-fold? (regexp::<regexp>) ::<boolean>
   (return (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
 
-(define-cproc regexp-parse (str::<string> :key (case-fold #f))
-  (let* ([flags::int (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)])
-    (return (Scm_RegComp str (logior flags SCM_REGEXP_PARSE_ONLY)))))
-(define-cproc regexp-compile (ast)  Scm_RegCompFromAST)
+(define-cproc regexp-parse (str::<string> :key (case-fold #f) (multi-line #f))
+  (return (Scm_RegComp str
+                       (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
+                               (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)
+                               SCM_REGEXP_PARSE_ONLY))))
+(define-cproc regexp-compile (ast :key (multi-line #f))
+  (return (Scm_RegCompFromAST ast (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0))))
 (define-cproc regexp-optimize (ast) Scm_RegOptimizeAST)
 
 (define-cproc regexp-num-groups (regexp::<regexp>) ::<int>
@@ -57,13 +61,13 @@
 (define-cproc regexp-named-groups (regexp::<regexp>)
   (return (-> regexp grpNames)))
 
-(define-cproc rxmatch (regexp str::<string>)
+(define-cproc rxmatch (regexp str::<string> :optional start end)
   (let* ([rx::ScmRegexp* NULL])
     (cond [(SCM_STRINGP regexp) (set! rx (SCM_REGEXP (Scm_RegComp
                                                       (SCM_STRING regexp) 0)))]
           [(SCM_REGEXPP regexp) (set! rx (SCM_REGEXP regexp))]
           [else (SCM_TYPE_ERROR regexp "regexp")])
-    (return (Scm_RegExec rx str))))
+    (return (Scm_RegExec rx str start end))))
 
 (inline-stub
  (define-cise-stmt rxmatchop

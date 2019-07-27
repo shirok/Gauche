@@ -123,6 +123,8 @@ enum {
     RE_END,                     /* followed by a group number.  end the
                                    group. */
     RE_END_RL,
+    RE_BOS,                     /* beginning of string assertion */
+    RE_EOS,                     /* end of string assertion */
     RE_BOL,                     /* beginning of line assertion */
     RE_EOL,                     /* end of line assertion */
     RE_WB,                      /* RE_BOW + RE_EOW */
@@ -187,6 +189,7 @@ enum {
  *         | <char-set>   ; matches char set
  *         | (comp . <char-set>) ; matches complement of char set
  *         | any          ; matches any char
+ *         | bos | eos    ; beginning/end of string assertion
  *         | bol | eol    ; beginning/end of line assertion
  *         | bow | eow | wb | nwb ; word-boundary/negative word boundary assertion
  *
@@ -205,7 +208,8 @@ enum {
  *                                 ; capturing group.  <symbol> may be #f.
  *         | (cpat <condition> <ast> <ast>)
  *                                 ; conditional expression
- *         | (backref . <integer>) ; backreference
+ *         | (backref . <integer>) ; backreference by group number
+ *         | (backref . <symbol>)  ; backreference by name
  *         | (once . <ast>)        ; standalone pattern.  no backtrack
  *         | (assert . <asst>)     ; positive lookahead assertion
  *         | (nassert . <asst>)    ; negative lookahead assertion
@@ -1432,12 +1436,20 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
                 rc3_emit(ctx, ctx->lookbehindp?RE_ANY_RL:RE_ANY);
                 return;
             }
+            if (SCM_EQ(ast, SCM_SYM_BOS)) {
+                rc3_emit(ctx, RE_BOS);
+                return;
+            }
+            if (SCM_EQ(ast, SCM_SYM_EOS)) {
+                rc3_emit(ctx, RE_EOS);
+                return;
+            }
             if (SCM_EQ(ast, SCM_SYM_BOL)) {
                 rc3_emit(ctx, RE_BOL);
                 return;
             }
             if (SCM_EQ(ast, SCM_SYM_EOL)) {
-                if (lastp) {
+                if (lastp || (ctx->rx->flags & SCM_REGEXP_MULTI_LINE)) {
                     rc3_emit(ctx, RE_EOL);
                 } else {
                     rc3_emit(ctx, ctx->lookbehindp? RE_MATCH1_RL:RE_MATCH1);
@@ -1749,26 +1761,26 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
     Scm_Error("internal error in regexp compilation: bad node: %S", ast);
 }
 
-static int is_bol_anchored(ScmObj ast)
+static int is_atom_anchored(ScmObj ast, ScmObj atom)
 {
     if (!SCM_PAIRP(ast)) {
-        if (SCM_EQ(ast, SCM_SYM_BOL)) return TRUE;
+        if (SCM_EQ(ast, atom)) return TRUE;
         else return FALSE;
     }
     ScmObj type = SCM_CAR(ast);
     if (SCM_INTP(type)) {
         if (!SCM_PAIRP(SCM_CDDR(ast))) return FALSE;
-        return is_bol_anchored(SCM_CAR(SCM_CDDR(ast)));
+        return is_atom_anchored(SCM_CAR(SCM_CDDR(ast)), atom);
     } else if (SCM_EQ(type, SCM_SYM_SEQ)
                || SCM_EQ(type, SCM_SYM_SEQ_UNCASE)
                || SCM_EQ(type, SCM_SYM_SEQ_CASE)) {
         if (!SCM_PAIRP(SCM_CDR(ast))) return FALSE;
-        return is_bol_anchored(SCM_CADR(ast));
+        return is_atom_anchored(SCM_CADR(ast), atom);
     }
     if (SCM_EQ(type, SCM_SYM_ALT)) {
         ScmObj ap;
         SCM_FOR_EACH(ap, SCM_CDR(ast)) {
-            if (!is_bol_anchored(SCM_CAR(ap))) return FALSE;
+            if (!is_atom_anchored(SCM_CAR(ap), atom)) return FALSE;
         }
         return TRUE;
     }
@@ -1895,7 +1907,11 @@ static ScmObj calculate_lasetn(ScmObj ast)
 static ScmObj rc3(regcomp_ctx *ctx, ScmObj ast)
 {
     /* set flags and laset */
-    if (is_bol_anchored(ast)) ctx->rx->flags |= SCM_REGEXP_BOL_ANCHORED;
+    if (is_atom_anchored(ast, SCM_SYM_BOS)
+        || (!(ctx->rx->flags & SCM_REGEXP_MULTI_LINE)
+            && is_atom_anchored(ast, SCM_SYM_BOL))) {
+        ctx->rx->flags |= SCM_REGEXP_BOL_ANCHORED;
+    }
     else if (is_simple_prefixed(ast)) ctx->rx->flags |= SCM_REGEXP_SIMPLE_PREFIX;
     ctx->rx->laset = calculate_laset(ast, SCM_NIL);
 
@@ -2023,6 +2039,12 @@ void Scm_RegDump(ScmRegexp *rx)
             Scm_Printf(SCM_CUROUT, "%4d  %s %d\n", codep-1,
                        code==RE_END?"END":"END_RL",
                        rx->code[codep]);
+            continue;
+        case RE_BOS:
+            Scm_Printf(SCM_CUROUT, "%4d  BOS\n", codep);
+            continue;
+        case RE_EOS:
+            Scm_Printf(SCM_CUROUT, "%4d  EOS\n", codep);
             continue;
         case RE_BOL:
             Scm_Printf(SCM_CUROUT, "%4d  BOL\n", codep);
@@ -2153,7 +2175,8 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
             rc_register_charset(ctx, SCM_CHAR_SET(ast));
             return ast;
         }
-        if (SCM_EQ(ast, SCM_SYM_BOL) || SCM_EQ(ast, SCM_SYM_EOL)
+        if (SCM_EQ(ast, SCM_SYM_BOS) || SCM_EQ(ast, SCM_SYM_EOS)
+            || SCM_EQ(ast, SCM_SYM_BOL) || SCM_EQ(ast, SCM_SYM_EOL)
             || SCM_EQ(ast, SCM_SYM_WB) || SCM_EQ(ast, SCM_SYM_NWB)
             || SCM_EQ(ast, SCM_SYM_BOW) || SCM_EQ(ast, SCM_SYM_EOW)
             || SCM_EQ(ast, SCM_SYM_ANY)) {
@@ -2270,6 +2293,7 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     rc_ctx_init(&cctx, rx, pattern);
     cctx.casefoldp = flags & SCM_REGEXP_CASE_FOLD;
     rx->flags |= (flags & SCM_REGEXP_CASE_FOLD);
+    rx->flags |= (flags & SCM_REGEXP_MULTI_LINE);
 
     /* pass 1 : parse regexp spec */
     ScmObj ast = rc1(&cctx);
@@ -2284,11 +2308,12 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
 }
 
 /* alternative entry that compiles from AST */
-ScmObj Scm_RegCompFromAST(ScmObj ast)
+ScmObj Scm_RegCompFromAST(ScmObj ast, int flags)
 {
     ScmRegexp *rx = make_regexp();
     regcomp_ctx cctx;
     rc_ctx_init(&cctx, rx, NULL);
+    rx->flags |= (flags & SCM_REGEXP_MULTI_LINE);
 
     /* prepare some context */
     if (!SCM_PAIRP(ast) || !SCM_INTP(SCM_CAR(ast))) {
@@ -2363,7 +2388,8 @@ static int is_word_boundary(struct match_ctx *ctx, const char *input, unsigned i
 {
     const char *prevp;
 
-    if (input == ctx->input || input == ctx->stop) return TRUE;
+    if ((code == RE_BOW || code == RE_WB) && input == ctx->input) return TRUE;
+    if ((code == RE_EOW || code == RE_WB) && input == ctx->stop) return TRUE;
     unsigned char nextb = (unsigned char)*input;
     SCM_CHAR_BACKWARD(input, ctx->input, prevp);
     SCM_ASSERT(prevp != NULL);
@@ -2376,6 +2402,32 @@ static int is_word_boundary(struct match_ctx *ctx, const char *input, unsigned i
         && !is_word_constituent(nextb) && is_word_constituent(prevb)) {
         return TRUE;
     }
+    return FALSE;
+}
+
+static int is_beginning_of_line(struct match_ctx *ctx, const char *input)
+{
+    if (input == ctx->input) return TRUE;
+    if (!(ctx->rx->flags & SCM_REGEXP_MULTI_LINE)) return FALSE;
+
+    const char *prevp;
+    SCM_CHAR_BACKWARD(input, ctx->input, prevp);
+    SCM_ASSERT(prevp != NULL);
+
+    unsigned char prevb = (unsigned char)*prevp;
+    if (prevb == '\n' || prevb == '\r') return TRUE;
+
+    return FALSE;
+}
+
+static int is_end_of_line(struct match_ctx *ctx, const char *input)
+{
+    if (input == ctx->stop) return TRUE;
+    if (!(ctx->rx->flags & SCM_REGEXP_MULTI_LINE)) return FALSE;
+
+    unsigned char nextb = (unsigned char)*input;
+    if (nextb == '\n' || nextb == '\r') return TRUE;
+
     return FALSE;
 }
 
@@ -2554,11 +2606,17 @@ static void rex_rec(const unsigned char *code,
             ctx->matches[grpno]->startp = input;
             continue;
         }
-        case RE_BOL:
+        case RE_BOS:
             if (input != ctx->input) return;
             continue;
-        case RE_EOL:
+        case RE_EOS:
             if (input != ctx->stop) return;
+            continue;
+        case RE_BOL:
+            if (!is_beginning_of_line(ctx, input)) return;
+            continue;
+        case RE_EOL:
+            if (!is_end_of_line(ctx, input)) return;
             continue;
         case RE_WB: case RE_BOW: case RE_EOW:
             if (!is_word_boundary(ctx, input, code[-1])) return;
@@ -2812,6 +2870,7 @@ static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
 }
 
 static ScmObj rex(ScmRegexp *rx, ScmString *orig,
+                  const char *orig_start,
                   const char *start, const char *end)
 {
     struct match_ctx ctx;
@@ -2819,7 +2878,7 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
 
     ctx.rx = rx;
     ctx.codehead = rx->code;
-    ctx.input = SCM_STRING_BODY_START(SCM_STRING_BODY(orig));
+    ctx.input = orig_start;
     ctx.stop = end;
     ctx.begin_stack = (void*)&ctx;
     ctx.cont = &cont;
@@ -2862,18 +2921,51 @@ static inline const char *skip_input(const char *start, const char *limit,
 /*----------------------------------------------------------------------
  * entry point
  */
-ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
+ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str, ScmObj start_scm, ScmObj end_scm)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
-    const char *start = SCM_STRING_BODY_START(b);
-    const char *end = start + SCM_STRING_BODY_SIZE(b);
+    const char *orig_start = SCM_STRING_BODY_START(b);
+    const char *start;
+    const char *end;
     const ScmStringBody *mb = rx->mustMatch? SCM_STRING_BODY(rx->mustMatch) : NULL;
     int mustMatchLen = mb? SCM_STRING_BODY_SIZE(mb) : 0;
-    const char *start_limit = end - mustMatchLen;
+    const char *start_limit;
 
     if (SCM_STRING_INCOMPLETE_P(str)) {
         Scm_Error("incomplete string is not allowed: %S", str);
     }
+    if (!SCM_UNBOUNDP(start_scm) && !SCM_UNDEFINEDP(start_scm)) {
+        if (!SCM_INTEGERP(start_scm)) {
+            Scm_TypeError("start", "exact integer required but got %S", start_scm);
+        }
+        int value = Scm_GetInteger(start_scm);
+        if (value < 0 || value >= SCM_STRING_BODY_LENGTH(b)) {
+            Scm_Error("invalid start parameter: %S", start_scm);
+        }
+        while (value--) {
+            orig_start += SCM_CHAR_NFOLLOWS(*orig_start) + 1;
+        }
+    }
+    start = orig_start;
+    end = SCM_STRING_BODY_START(b);
+    if (!SCM_UNBOUNDP(end_scm) && !SCM_UNDEFINEDP(end_scm)) {
+        if (!SCM_INTEGERP(end_scm)) {
+            Scm_TypeError("end", "exact integer required but got %S", end_scm);
+        }
+        int value = Scm_GetInteger(end_scm);
+        if (value < 0 || value > SCM_STRING_BODY_LENGTH(b)) {
+            Scm_Error("invalid end parameter: %S", end_scm);
+        }
+        while (value--) {
+            end += SCM_CHAR_NFOLLOWS(*end) + 1;
+        }
+        if (end < start) {
+            Scm_Error("invalid end parameter: %S", end_scm);
+        }
+    } else {
+        end += SCM_STRING_BODY_SIZE(b);
+    }
+    start_limit = end - mustMatchLen;
 #if 0
     /* Disabled for now; we need to use more heuristics to determine
        when we should apply mustMatch.  For example, if the regexp
@@ -2891,14 +2983,14 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
     /* short cut : if rx matches only at the beginning of the string,
        we only run from the beginning of the string */
     if (rx->flags & SCM_REGEXP_BOL_ANCHORED) {
-        return rex(rx, str, start, end);
+        return rex(rx, str, orig_start, start, end);
     }
 
     /* if we have lookahead-set, we may be able to skip input efficiently. */
     if (!SCM_FALSEP(rx->laset)) {
         if (rx->flags & SCM_REGEXP_SIMPLE_PREFIX) {
             while (start <= start_limit) {
-                ScmObj r = rex(rx, str, start, end);
+                ScmObj r = rex(rx, str, orig_start, start, end);
                 if (!SCM_FALSEP(r)) return r;
                 const char *next = skip_input(start, start_limit, rx->laset,
                                               TRUE);
@@ -2908,7 +3000,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
         } else {
             while (start <= start_limit) {
                 start = skip_input(start, start_limit, rx->laset, FALSE);
-                ScmObj r = rex(rx, str, start, end);
+                ScmObj r = rex(rx, str, orig_start, start, end);
                 if (!SCM_FALSEP(r)) return r;
                 start += SCM_CHAR_NFOLLOWS(*start)+1;
             }
@@ -2918,7 +3010,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
 
     /* normal matching */
     while (start <= start_limit) {
-        ScmObj r = rex(rx, str, start, end);
+        ScmObj r = rex(rx, str, orig_start, start, end);
         if (!SCM_FALSEP(r)) return r;
         start += SCM_CHAR_NFOLLOWS(*start)+1;
     }

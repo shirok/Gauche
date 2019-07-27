@@ -277,7 +277,13 @@
 (test-re #/a(^bc|def)/ "a^bcdef" '("a^bc" "^bc"))
 (test-re #/a(^bc|def)/ "abcdef" '())
 (test-re #/^/          "hoge" '(""))
+(test-re (string->regexp "^a" :multi-line #t)
+         "def\nabc\nghi"
+         '("a"))
 (test-re #/$/          "hoge" '(""))
+(test-re (string->regexp "c$" :multi-line #t)
+         "def\nabc\nghi"
+         '("c"))
 (test-re #/abc$/       "bcabc" '("abc"))
 (test-re #/abc$/       "abcab" '())
 (test-re #/^abc$/      "abc" '("abc"))
@@ -685,6 +691,23 @@
 (test-parse "()(?(" (test-error))
 (test-parse "()(?(1" (test-error))
 (test-parse "()(?(1)b|c|d)" (test-error))
+
+;;-------------------------------------------------------------------------
+(test-section "rxmatch with start/end")
+
+(define (rxmatch->full-match re str :optional start end)
+  (let ([match (rxmatch re str start end)])
+    (and match
+         (list (rxmatch-start match)
+               (rxmatch-end match)
+               (match 0)))))
+
+(test* "abc" '(0 3 "abc") (rxmatch->full-match "abc" "abc"))
+(test* "abc" '(0 3 "abc") (rxmatch->full-match "abc" "abc" 0 3))
+(test* "abc" '(2 5 "abc") (rxmatch->full-match "abc" "zzabczz" 2))
+(test* "abc" '(2 5 "abc") (rxmatch->full-match "^abc" "zzabczz" 2 6))
+(test* "abc" '(3 6 "abc") (rxmatch->full-match "abc$" "zzzabczz" 2 6))
+(test* "abc" '(5 8 "abc") (rxmatch->full-match "abc" "abczzabczz" 4))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp macros")
@@ -1096,6 +1119,8 @@
 		      ,(string->char-set "Bb")))
 	   (w/nocase "ab"))
 (test-ast (seq (seq (seq #\a #\b))) (w/nocase (w/case "ab")))
+(test-ast (seq (seq #[Aa] #[Bb]) (seq (seq #\c #\d)) (seq #[Ee] #[Ff]))
+          (w/nocase "ab" (w/case "cd") "ef"))
 
 (test-ast bol bol)
 (test-ast eol eol)
@@ -1129,6 +1154,39 @@
 
 (test-ast #\a #\a)
 (test-ast (seq #\a #\b #\c) "abc")
+
+;;-------------------------------------------------------------------------
+(test-section "regexp-unparse-sre")
+
+(define (test-regexp-unparse-sre src)
+  (let1 ast (regexp-optimize (regexp-parse-sre src))
+    (test* (format "regexp-unparse-sre ~s" src) ast
+           (regexp-optimize (regexp-parse-sre (regexp-unparse-sre ast)))
+           equal?)))
+
+(for-each test-regexp-unparse-sre
+          '(;; simple ones
+            "" "a" "ab" (: #\a #\b) (* #\a) (+ "a") (? "a") (: "a" (* "b"))
+            (: "a" (+ "b")) (: "a" (? "b")) (: (* "a") "b") (: (+ "a") "b")
+            (: (? "a") "b") (= 3 "a") (** 2 4 "a") (>= 3 #\a) (or "a" "b")
+            (or "a" "b" "c") (: bol "ab") (: bol (or #\a #\b)) (or (: bol "a") "b")
+            (: bol (or "a" "b") eol) any #\. (: (* #\\) #\*) (seq bow "foo" eow)
+            ;; charset
+            (/ "az") (~ (/ #\a #\z)) (+ (/ "az")) ("a^ef-") ("a") (".")
+            ;; grouping
+            (: ($ "a") ($ "b")) (: ($ (or "a" "b")) "c" ($ "d"))
+            (: ($ "a" ($ "b" ($ (or "c" "d")) "e")) "f")
+            (* (w/nocapture (: "abc")))
+            (w/nocase "ab" (w/case "cd") "ef")
+            ;; backref
+            (: ($ "a") "bc" (backref 1))
+            (: "ab" (-> foo "c") ($ "d") (backref foo))
+            ($ ($ ".") (backref 2))
+            ;; lookahead, lookbehind
+            (look-ahead (: (* "a") (* #\b) "c"))
+            (neg-look-ahead (* #\a) (* #\b) #\c)
+            (look-behind #\a ("bc"))
+            (neg-look-behind #\a ("bc"))))
 
 ;;-------------------------------------------------------------------------
 (test-section "SRE")		    ; based on chibi's regexp-test.sld
@@ -1182,6 +1240,22 @@
         'foo))
 
 (test-sre '("ababc" "abab")
+          '(: bos ($ (* "ab")) "c")
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: ($ (* "ab")) "c" eos)
+          "ababc")
+(test-sre '("ababc" "abab")
+          '(: bos ($ (* "ab")) "c" eos)
+          "ababc")
+(test-sre #f
+          '(: bos ($ (* "ab")) eos "c")
+          "ababc")
+(test-sre #f
+          '(: ($ (* "ab")) bos "c" eos)
+          "ababc")
+
+(test-sre '("ababc" "abab")
           '(: bol ($ (* "ab")) "c")
           "ababc")
 (test-sre '("ababc" "abab")
@@ -1196,6 +1270,18 @@
 (test-sre #f
           '(: ($ (* "ab")) bol "c" eol)
           "ababc")
+(test-sre '(".\nabc\n" "abc")
+          '(: #\. (* #\newline) bol ($ (* alpha)) eol (* #\newline))
+          ".\nabc\n")
+;; note that chibi scheme has similar tests, but due to the
+;; non-tracking nature (?) of chibi regex engine, the results are both
+;; false (without the literal dot) instead of matching here.
+(test-sre #f
+          '(: #\. (* #\newline) bol ($ (* alpha)) eol (* #\newline))
+          ".\n'abc\n")
+(test-sre '(".\n" "\n" "")
+          '(: #\. ($ (* #\newline)) bol ($ (* alpha)) eol (* #\newline))
+          ".\nabc.\n")
 
 (test-sre '("ababc" "abab")
           '(: bow ($ (* "ab")) "c")

@@ -1829,11 +1829,13 @@ SCM_CLASS_DECL(Scm_RegexpClass);
 /* flags */
 #define SCM_REGEXP_CASE_FOLD      (1L<<0)
 #define SCM_REGEXP_PARSE_ONLY     (1L<<1)
+/* bits 2 and 3 are used internally */
+#define SCM_REGEXP_MULTI_LINE     (1L<<4)
 
 SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern, int flags);
-SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast);
+SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast, int flags);
 SCM_EXTERN ScmObj Scm_RegOptimizeAST(ScmObj ast);
-SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input);
+SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input, ScmObj start, ScmObj end);
 SCM_EXTERN void Scm_RegDump(ScmRegexp *rx);
 
 SCM_CLASS_DECL(Scm_RegMatchClass);

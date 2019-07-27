@@ -9625,8 +9625,9 @@ Matches the complement character set of @code{\s}, @code{\d} and
 
 @item ^, $
 @c EN
-Beginning and end of string assertion,
-when appears at the beginning or end of the pattern.
+Beginning and end of string assertion, when appears at the beginning
+or end of the pattern, or optionally, beginning and end of line in
+multi-line mode.
 @c JP
 それぞれ、パターンの最初または最後に指定された場合、
 文字列の最初か最後にマッチします。
@@ -9865,7 +9866,7 @@ regmatchオブジェクトはマッチの内部状態を保持しており、
 @c COMMON
 @end deftp
 
-@defun string->regexp string :key case-fold
+@defun string->regexp string :key case-fold multi-line
 @c EN
 Takes @var{string} as a regexp specification, and constructs
 an instance of @code{<regexp>} object.
@@ -9883,6 +9884,11 @@ the created regexp object becomes case-folding regexp.
 大文字小文字を区別しないものとなります。
 (大文字小文字を区別しない正規表現に関しては上の説明を参照して下さい)。
 @c COMMON
+
+If a true value is given to the keyword argument @var{multi-line},
+@code{^} and @code{$} will assert the beginning and end of line in
+addition to beginning and end of string. Popular line terminators (LF
+only, CRLF and CR only) are recognized.
 @end defun
 
 @defun regexp? @var{obj}
@@ -9944,7 +9950,7 @@ Note that the order of groups in the alist isn't fixed.
 @subsubheading マッチを試みる
 @c COMMON
 
-@defun rxmatch regexp string
+@defun rxmatch regexp string :optional start end
 @c EN
 @var{Regexp} is a regular expression object.
 A string @var{string} is matched by
@@ -9955,6 +9961,9 @@ object.  Otherwise it returns @code{#f}.
 探します。一致が見付かった場合は@code{<regmatch>}オブジェクトを返し、
 見付からなかった場合は@code{#f}を返します。
 @c COMMON
+
+If @var{start} and/or @var{end} are given, only the substring between
+@var{start} (inclusive) and @var{end} (exclusive) is searched.
 
 @c EN
 This is called @code{match}, @code{regexp-search} or @code{string-match}
@@ -10758,7 +10767,7 @@ manipulate an AST than a string representation.
 ASTの方が扱いやすいでしょう。
 @c COMMON
 
-@defun regexp-parse string :key case-fold
+@defun regexp-parse string :key case-fold multi-line
 @c EN
 Parses a string specification of regexp in @var{string}
 and returns its AST, represented in S-expression.
@@ -10785,7 +10794,7 @@ not by the engine).
 
 Parses @var{sre} as a Scheme Regular Expression as described in
 SRFI-115 and returns its AST. Only a subset of SRE is supported at the
-moment. The following syntax is not supported: @code{bos}, @code{eos},
+moment. The following syntax is not supported:
 @code{bog}, @code{eog} and @code{grapheme}.
 
 @end defun
@@ -10804,7 +10813,7 @@ to make it cleverer in future.
 @c COMMON
 @end defun
 
-@defun regexp-compile ast
+@defun regexp-compile ast :key multi-line
 @c EN
 Takes a regexp @var{ast} and returns a regexp object.
 Currently the outermost form of @var{ast} must be
@@ -10838,10 +10847,14 @@ incomprehensible.  So, don't use this procedure as a AST validness checker.)
 @c COMMON
 @end defun
 
-@defun regexp-compile-sre sre
+@defun regexp-compile-sre sre :key multi-line
 
 Takes a scheme regexp @var{sre} and returns a regexp object. The
 zero-th group is always captured.
+
+If a false value is given to the keyword argument @var{multi-line},
+@code{bol} and @code{eol} behave like @code{bos} and @code{eos}
+(i.e. only match at the beginning or end of string).
 
 @end defun
 
@@ -10892,6 +10905,7 @@ to convert it to this AST back and forth.   Contributions are welcome.
        | <char-set>   ; matches char set
        | (comp . <char-set>) ; matches complement of char set
        | any          ; matches any char
+       | bos | eos    ; beginning/end of string assertion
        | bol | eol    ; beginning/end of line assertion
        | bow | eow | wb | nwb ; word-boundary/negative word boundary assertion
 
@@ -10910,7 +10924,8 @@ to convert it to this AST back and forth.   Contributions are welcome.
                                ; capturing group.  <symbol> may be #f.
        | (cpat <condition> <ast> <ast>)
                                ; conditional expression
-       | (backref . <integer>) ; backreference
+       | (backref . <integer>) ; backreference by group number
+       | (backref . <symbol>)  ; backreference by name
        | (once <ast> ...)      ; standalone pattern.  no backtrack
        | (assert . <asst>)     ; positive lookahead assertion
        | (nassert . <asst>)    ; negative lookahead assertion

@@ -2,18 +2,25 @@
   (use scheme.base)
   (use scheme.list)
   (use scheme.charset)
-  (export regexp-parse-sre regexp-compile-sre))
+  (export regexp-parse-sre regexp-unparse-sre regexp-compile-sre
+          <regexp-invalid-sre>))
 (select-module gauche.regexp.sre)
+
+(define-condition-type <regexp-invalid-sre> <error> #f
+  (offending-item))
+
+(define (err msg item)
+  (error <regexp-invalid-sre> :offending-item item msg item))
 
 (define (->cset x)
   (cond
    [(pair? x) (if (eq? (car x) 'comp)
                   (char-set-complement (->cset (cdr x)))
-                  (error "internal error, invalid AST" x))]
+                  (err "invalid SRE AST" x))]
    [(eq? x 'any) char-set:full]
    [(char? x) (->char-set x)]
    [(char-set? x) x]
-   [else (error "internal error, invalid AST" x)]))
+   [else (err "invalid SRE AST" x)]))
 
 ;; parse <cset-sre>. Possible return values
 ;;
@@ -28,7 +35,7 @@
                                   (cond
                                    [(string? x) (string->list x)]
                                    [(char? x) (list x)]
-                                   [else (error "invalid sre, invalid <range-spec>" x)]))
+                                   [else (err "invalid <range-spec>" x)]))
                                 sre)]
                [res '()])
       (cond
@@ -37,7 +44,7 @@
                                 (cons (cons (car lst)
                                             (cadr lst))
                                       res))]
-       [else (error "invalid sre, uneven range" (list->string lst))])))
+       [else (err "uneven range" (list->string lst))])))
 
   (define (named-cset sym)
     (case sym
@@ -77,7 +84,7 @@
       [(char-set) (if (and (string? (car rest))
                            (null? (cdr rest)))
                       (string->char-set (car rest))
-                      (error "invalid sre, expected (char-set <string>)" (cons sym rest)))]
+                      (err "expected (char-set <string>)" (cons sym rest)))]
       [(/ char-range) (apply char-set-union
                              (map (lambda (x)
                                     (ucs-range->char-set (char->integer (car x))
@@ -120,7 +127,7 @@
        [(null? (cdr sre))
         (string->char-set (car sre))]
        [else
-        (error "invalid sre, expected (<string>)" sre)])]
+        (err "expected (<string>)" sre)])]
      [(symbol? (car sre))
       (cset-list (car sre) (cdr sre))]
      [else #f])]
@@ -132,9 +139,9 @@
   (define (%sre->ast sre nocapture casefold ascii)
     (define (sre-sym sre)
       (case sre
-        [(bol eol bow eow nwb) sre]
+        [(bos eos bol eol bow eow nwb) sre]
         [(word) (%sre->ast '(word+ any) nocapture casefold ascii)]
-        [else (error "invalid sre, not supported" sre)]))
+        [else (err "not supported" sre)]))
 
     ;; FIXME: missing bos, eos, bog, eog, grapheme
     (define (sre-list sym rest)
@@ -179,7 +186,7 @@
         [(w/nocapture) (seq-loop rest #t)]
         [(word) (%sre->ast `(: bow ,@rest eow)
                            nocapture casefold ascii)]
-        [(word+) (%sre->ast `(word (+ (and (or "_" alphanumeric)
+        [(word+) (%sre->ast `(word (+ (and (or alphanumeric "_")
                                            (or ,@rest))))
                             nocapture casefold ascii)]
         [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop))]
@@ -192,12 +199,12 @@
         [(neg-look-ahead) `(nassert ,@(loop))]
         [(neg-look-behind) `(nassert (lookbehind ,@(loop)))]
         [(backref) (begin
-                     (if (null? (cdr rest))
-                         (if (symbol? (car rest))
-                             (error "invalid sre, (backref <name>) not supported yet")
-                             `(backref . ,(car rest)))
-                         (error "invalid sre, expected (backref <integer>)" (cons sym rest))))]
-        [else (error "invalid sre" sym)]))
+                     (if (and (null? (cdr rest))
+                              (or (number? (car rest))
+                                  (symbol? (car rest))))
+                         `(backref . ,(car rest))
+                         (err "expected (backref <integer/symbol>)" (cons sym rest))))]
+        [else (err "invalid SRE" sym)]))
 
     (define (fold-case cset)
       (cond
@@ -225,12 +232,70 @@
      [(cset-sre sre) => (cut finalize-cset <>)]
      [(symbol? sre) (sre-sym sre)]
      [(pair? sre) (sre-list (car sre) (cdr sre))]
-     [else (error "invalid sre" sre)]))
+     [else (err "invalid SRE" sre)]))
 
   `(0 #f ,(%sre->ast sre #f #f #f)))
 
-(define (regexp-compile-sre re)
-  ($ regexp-compile
-     $ regexp-optimize
-     $ regexp-parse-sre re))
 
+(define (regexp-compile-sre re :key (multi-line #t))
+  (regexp-compile (regexp-optimize (regexp-parse-sre re))
+                  :multi-line multi-line))
+
+(define (regexp-unparse-sre ast)
+  (define (unparse ast)
+    (cond
+     [(char? ast) ast]
+     [(char-set? ast) ast]
+     [(eq? ast 'wb) '(or bow eow)]
+     [(symbol? ast) ast]
+     [(pair? ast)
+      (let ([sym (car ast)]
+            [rest (cdr ast)])
+        (case sym
+          [(comp) `(~ ,(unparse rest))]
+          [(seq) `(seq ,@(map unparse rest))]
+          [(seq-uncase seq-case)
+           (error "intermediate forms that are not generated by SRE" ast)]
+          [(alt) `(or ,@(map unparse rest))]
+          [(rep rep-while) (let ([m (car rest)]
+                                 [n (cadr rest)]
+                                 [rest (cddr rest)])
+                             (if n
+                                 `(** ,m ,n ,@(map unparse rest))
+                                 `(>= ,m ,@(map unparse rest))))]
+          [(rep-min) (let ([m (car rest)]
+                           [n (cadr rest)]
+                           [rest (cddr rest)])
+                       (cond
+                        [n `(**? ,m ,n ,@(map unparse rest))]
+                        [(zero? m) `(*? ,(map unparse rest))]
+                        [else ; there's no >=? syntax
+                         `(: (**? ,m ,m ,@(map unparse rest))
+                             (*? ,(map unparse rest)))]))]
+          [(assert) (if (and (pair? rest)
+                             (pair? (car rest))
+                             (eq? (caar rest) 'lookbehind))
+                        `(look-behind ,@(map unparse (cdar rest)))
+                        `(look-ahead ,@(map unparse rest)))]
+          [(nassert) (if (and (pair? rest)
+                             (pair? (car rest))
+                             (eq? (caar rest) 'lookbehind))
+                         `(neg-look-behind ,@(map unparse (cdar rest)))
+                         `(neg-look-ahead ,@(map unparse rest)))]
+          [(backref) `(backref ,rest)]
+          [else
+           (cond
+            ;; group number is ignored, which should be ok
+            ;; if we walk ast the same way we walk sre?
+            [(number? sym) (let ([sym (car rest)]
+                                 [rest (cdr rest)])
+                             (if sym
+                                 `(submatch-named ,sym ,@(map unparse rest))
+                                 `(submatch ,@(map unparse rest))))]
+            [else (error "unsupported AST" ast)])]))]
+     [else (error "unsupported AST" ast)]))
+
+  (if (and (pair? ast) (zero? (car ast))
+           (pair? (cdr ast)) (not (cadr ast)))
+      (unparse (cons 'seq (cddr ast)))
+      (unparse ast)))

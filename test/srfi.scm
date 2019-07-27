@@ -1868,6 +1868,95 @@
        (cut srfi-1:lset= eq? <> <>))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-115")
+(use srfi-115)
+(test-module 'srfi-115)
+
+(test* "rx" "abc" (((rx "ab" #\c) "abc") 0))
+(test* "regexp" "abc" (((regexp '(:"ab" #\c)) "abc") 0))
+(test* "regexp->sre"
+       '(seq #\a #\b #\c)
+       (regexp->sre (regexp '(:"ab" #\c))))
+(test* "char-set->sre" '("cba") (char-set->sre #[abc]))
+(test* "valid-sre? returns true" #t (valid-sre? '(seq #\a #\b)))
+(test* "valid-sre? returns false" #f (valid-sre? '(seq or)))
+
+(test* "regexp-matches?" #t (regexp-matches? "abc" "abc"))
+(test* "regexp-matches?" #f (regexp-matches? "abc" "abcd"))
+(test* "regexp-matches?" #f (regexp-matches? "abc" "zabc"))
+(test* "regexp-matches?" #t (regexp-matches? "abc" "zabc" 1))
+(test* "regexp-matches?" #t (regexp-matches? "abc" "zabcd" 1 4))
+
+(test* "regexp-fold"
+       '((9 "abc" 12 15)
+         (3 "abc" 6 9)
+         (0 "abc" 0 3))
+       (regexp-fold "abc"
+                    (lambda (i match str acc)
+                      (cons (if match
+                                (list i
+                                      (match 0)
+                                      (rxmatch-start match)
+                                      (rxmatch-end match))
+                                #f)
+                            acc))
+                    '()
+                    "abc x abc z abc"))
+
+(test* "regexp-fold"
+       '((0 "abc" 0 3)
+         (3 "abc" 6 9)
+         (9 "abc" 12 15))
+       (regexp-fold "abc"
+                    (lambda (i match str acc)
+                      (cons (if match
+                                (list i
+                                      (match 0)
+                                      (rxmatch-start match)
+                                      (rxmatch-end match))
+                                #f)
+                            acc))
+                    '()
+                    "abc x abc z abc"
+                    (lambda (i match str acc)
+                      (reverse acc))))
+
+(test* "regexp-extract"
+       '("192" "168" "0" "1")
+       (regexp-extract '(+ numeric) "192.168.0.1"))
+(test* "regexp-extract"
+       '("123" "456" "789")
+       (regexp-extract '(+ numeric) "abc123def456ghi789"))
+(test* "regexp-extract"
+       '("123" "456" "789")
+       (regexp-extract '(* numeric) "abc123def456ghi789"))
+
+(test* "regexp-split"
+       '("abc" "def" "ghi" "")
+       (regexp-split '(+ numeric) "abc123def456ghi789"))
+(test* "regexp-split"
+       '("abc" "def" "ghi" "")
+       (regexp-split '(* numeric) "abc123def456ghi789"))
+(test* "regexp-split"
+       '("a" "b") (regexp-split '(+ whitespace) "a b"))
+(test* "regexp-split"
+       '("a" "" "b")
+       (regexp-split '(",;") "a,,b"))
+(test* "regexp-split"
+       '("a" "" "b" "")
+       (regexp-split '(",;") "a,,b,"))
+
+(test* "regexp-partition"
+       '("")
+       (regexp-partition '(* numeric) ""))
+(test* "regexp-partition"
+       '("abc" "123" "def" "456" "ghi")
+       (regexp-partition '(* numeric) "abc123def456ghi"))
+(test* "regexp-partition"
+       '("abc" "123" "def" "456" "ghi" "789")
+       (regexp-partition '(* numeric) "abc123def456ghi789"))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-117")
 (use srfi-117)
 (test-module 'srfi-117)
