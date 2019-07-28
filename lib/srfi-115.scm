@@ -176,8 +176,22 @@
                   start
                   end))))
 
-(define regexp-replace #f)
-(define regexp-replace-all #f)
+(define (regexp-replace rx str sub :optional
+                        (start 0)
+                        (end #f)
+                        (count 0))
+  ((with-module gauche.internal %regexp-replace)
+   (regexp rx)
+   str start end
+   (if (string? sub) (list sub) sub) count 1))
+
+(define (regexp-replace-all rx str sub :optional
+                            (start 0)
+                            (end #f))
+  ((with-module gauche.internal %regexp-replace)
+   (regexp rx)
+   str start end
+   (if (string? sub) (list sub) sub) 0 #f))
 
 (define regexp-match? regmatch?)
 (define regexp-match-count rxmatch-num-matches)

@@ -133,42 +133,68 @@
                        [else (loop2 (rxmatch-substring m 3))]))]
             [else (reverse (cons sub r))]))]
    [(procedure? sub) sub]
-   [else (error "string or procedure required, but got" sub)]))
+   [else (error "string, procedure or list required, but got" sub)]))
 
-;; internal loop
-(define (%regexp-replace-rec match subpat rec)
-  (display (rxmatch-before match))
-  (if (procedure? subpat)
-    (display (subpat match))
-    (dolist [pat subpat]
-      (display (if (or (number? pat) (symbol? pat))
-                 (rxmatch-substring match pat)
-                 pat))))
-  (rec (rxmatch-after match)))
+;; Skip the first subskip matches, then start replacing only up to
+;; subcount times (or infinite if subcount is #f).
+(define (%regexp-replace-rec rx string subpat subskip subcount)
+  (if (or (and subcount (zero? subcount))
+          (equal? string ""))
+    (display string)
+    (let1 match (rxmatch rx string)
+      (cond
+       [(not match)
+        (display string)]
+       [(> subskip 0)
+        (when (= (rxmatch-start match) (rxmatch-end match))
+          (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
+        (display (rxmatch-before match))
+        (display (rxmatch-substring match))
+        (%regexp-replace-rec rx
+                             (rxmatch-after match)
+                             subpat
+                             (- subskip 1)
+                             subcount)]
+       [else
+        (when (= (rxmatch-start match) (rxmatch-end match))
+          (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
+        (display (rxmatch-before match))
+        (if (procedure? subpat)
+            (display (subpat match))
+            (dolist [pat subpat]
+              (display (cond
+                        [(eq? pat 'pre)
+                         (rxmatch-before match)]
+                        [(eq? pat 'post)
+                         (rxmatch-after match)]
+                        [(or (number? pat) (symbol? pat))
+                         (rxmatch-substring match pat)]
+                        [else
+                         pat]))))
+        (%regexp-replace-rec rx
+                             (rxmatch-after match)
+                             subpat
+                             subskip
+                             (and subcount (- subcount 1)))]))))
+
+(define (%regexp-replace rx string start end subpat subskip subcount)
+  (if (not end)
+    (%regexp-replace rx string start (string-length string) subpat subskip subcount)
+    (with-output-to-string
+      (^[]
+        (unless (zero? start)
+          (display (substring string 0 start)))
+        (%regexp-replace-rec rx (substring string start end) subpat subskip subcount)
+        (unless (= (string-length string) end)
+          (display (substring string end (string-length string))))))))
 
 (define-in-module gauche (regexp-replace rx string sub)
-  (let ([subpat (%regexp-parse-subpattern sub)]
-        [match  (rxmatch rx string)])
-    (if match
-      (with-output-to-string (cut %regexp-replace-rec match subpat display))
-      string)))
+  (%regexp-replace rx string 0 #f
+                   (%regexp-parse-subpattern sub) 0 1))
 
 (define-in-module gauche (regexp-replace-all rx string sub)
-  (let ([subpat (%regexp-parse-subpattern sub)]
-        [match  (rxmatch rx string)])
-    (if match
-      (with-output-to-string
-        (^[]
-          (define (loop str)
-            (unless (equal? str "")
-              (cond [(rxmatch rx str)
-                     => (^[match]
-                          (when (= (rxmatch-start match) (rxmatch-end match))
-                            (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
-                          (%regexp-replace-rec match subpat loop))]
-                    [else (display str)])))
-          (%regexp-replace-rec match subpat loop)))
-      string)))
+  (%regexp-replace rx string 0 #f
+                   (%regexp-parse-subpattern sub) 0 #f))
 
 (define (regexp-replace-driver name func-1)
   (^[string rx sub . more]
