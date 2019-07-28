@@ -114,11 +114,6 @@ Oleg Kiselyov, @code{AND-LET*}: an @code{AND} with local bindings, a guarded
 @code{LET*} special form, March 1998. @*
 @url{https://srfi.schemers.org/srfi-2/srfi-2.html}.
 
-@anchor{srfi-4}
-@item [SRFI-4]
-Marc Feeley, Homogeneous numeric vector types, May 1999.@*
-@url{https://srfi.schemers.org/srfi-4/srfi-4.html}.
-
 @anchor{srfi-6}
 @item [SRFI-6]
 William D Clinger, Basic String Ports, July 1999. @*

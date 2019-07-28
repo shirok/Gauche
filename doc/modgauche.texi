@@ -1735,6 +1735,9 @@ Stub type    Scheme       C           Notes
 <f16vector>  <f16vector>  ScmF16Vector*
 <f32vector>  <f32vector>  ScmF32Vector*
 <f64vector>  <f64vector>  ScmF64Vector*
+<c32vector>  <c32vector>  ScmC32Vector*
+<c64vector>  <c64vector>  ScmC64Vector*
+<c128vector> <c128vector> ScmC128Vector*
 
 <hash-table> <hash-table> ScmHashTable*
 <tree-map>   <tree-map>   ScmTreeMap*
@@ -3335,11 +3338,11 @@ A collection.  Each element is a pair of a key and a value.
 @c COMMON
 @item <s8vector>, <u8vector>, @dots{} <f64vector>
 @c EN
-A sequence (methods defined in @code{srfi-4} module,
-@pxref{Homogeneous vectors}).
+A sequence (methods defined in @code{gauche.uvector} module,
+@pxref{Uniform vectors}).
 @c JP
-シーケンス。メソッドは@code{srfi-4}モジュール内で定義されます。
-@ref{Homogeneous vectors}参照。
+シーケンス。メソッドは@code{gauche.uvector}モジュール内で定義されます。
+@ref{Uniform vectors}参照。
 @c COMMON
 @end table
 
@@ -16711,7 +16714,7 @@ All the collection generic operations can be applied to a sequence as well.
 @c EN
 Among Gauche builtin class, lists, vectors and strings are sequences
 and the specialized methods are defined for them.   Other extension
-types, such as SRFI-4 uniform vector, have the methods as well.
+types, such as uniform vectors, have the methods as well.
 @c JP
 Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
 シーケンスであり、このモジュールでメソッドが定義されます。
@@ -21936,139 +21939,175 @@ The meaning of this property is explained in Unicode standard annex #11,
 @deftp {Module} gauche.uvector
 @mdindex gauche.uvector
 @c EN
-Provides vectors whose elements are of the same numeric type,
-as defined in SRFI-4 (@ref{srfi-4,,SRFI-4}).
-
-Gauche's implementation is a superset of SRFI-4 in a few ways:
-@itemize @bullet
-@item
-Some routines takes optional parameters: @code{@var{TAG}vector->list}
-takes optional start and end indices, and @code{@var{TAG}vector-ref}
-takes optional fallback value.
-@item
-Additional functions: copy procedures (@code{@var{TAG}vector-copy},
-@code{@var{TAG}vector-copy!}) and
-@code{@var{TAG}vector-multi-copy!}), conversion procedures
-(@code{@var{TAG}vector->vector} and @code{vector->@var{TAG}vector}),
-and some arithmetic functions (@code{@var{TAG}vector-add}, etc.)
-@item
-Implements the collection framework (@pxref{Collection framework})
-and the sequence framework (@pxref{Sequence framework}).  So the
-methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
-can be used on the SRFI-4 vector types.
-@item
-Support of @code{f16vector}, a vector of 16-bit floating point number
-as used in high-dynamic range image format (1 sign bit, 5 exponent bits,
-and 10 mantissa bits).
-@end itemize
+Provides procedures that work on vectors
+whose elements are of the same numeric type,
+as defined in srfi-160 (formerly srfi-4),
+which has become R7RS large (as @code{scheme.vector.TAG}.
 @c JP
-SRFI-4(@ref{srfi-4,,SRFI-4})に定義されている、
-要素が同一の数値型であるようなベクタを提供します。
-
-Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
-@itemize @bullet
-@item
-いくつかの手続きはSRFI-4に無い省略可能な引数を取ります。
-@code{@var{TAG}vector->list}は省略可能なstartとendのインデックスを取り、
-@code{@var{TAG}vector-ref}は省略可能なデフォルト値を取ります。
-@item
-追加の手続き： コピー(@code{@var{TAG}vector-copy},
-@code{@var{TAG}vector-copy!}),
-@code{@var{TAG}vector-multi-copy!})、
-変換 (@code{@var{TAG}vector->vector}, @code{vector->@var{TAG}vector})、
-及び各種算術演算(@code{@var{TAG}vector-add}等)。
-@item
-コレクションフレームワーク (@ref{Collection framework}参照)と
-シーケンスフレームワーク (@ref{Sequence framework}参照)の実装。
-例えば @code{map}, @code{for-each}, @code{ref}, @code{subseq}等の
-メソッドがSRFI-4ベクタに対して使えます。
-@item
-16ビット浮動小数点数のベクタ@code{f16vector}のサポート。
-フォーマットはハイダイナミックレンジイメージ等に使われている、
-1符号ビット、5指数ビット、10仮数ビットです。
-@end itemize
+srfi-160 (元srfi-4) に規定されている、
+要素が同一の数値型であるようなベクタに作用する手続きを提供します。
+srfi-160はR7RS largeの一部(@code{scheme.vector.TAG})になりました。
 @c COMMON
 
 @c EN
-There are some advantages of using SRFI-4 vectors over normal
+The type of elements are indicated by one of the following prefix:
+@c JP
+要素の型は以下のプレフィクスのひとつによって示されます：
+@c COMMON
+
+@table @code
+@item u8
+@c EN
+Unsigned 8-bit integer - an exact integer between 0 and 255.
+@c JP
+8ビット符号無し整数 - 0から255までの正確な整数。
+@c COMMON
+@item s8
+@c EN
+Signed 8-bit integer - an exact integer between -128 and 127.
+@c JP
+8ビット符号つき整数 - -128から127までの正確な整数。
+@c COMMON
+@item u16
+@c EN
+Unsigned 16-bit integer - an exact integer between 0 and 65535.
+@c JP
+16ビット符号無し整数 - 0から65535までの正確な整数。
+@c COMMON
+@item s16
+@c EN
+Signed 16-bit integer - an exact integer between -32678 and 32767.
+@c JP
+16ビット符号つき整数 - -32768から32767までの正確な整数。
+@c COMMON
+@item u32
+@c EN
+Unsigned 32-bit integer - an exact integer between 0 and 2^32 - 1.
+@c JP
+32ビット符号無し整数 - 0から 2^32 - 1 までの正確な整数。
+@c COMMON
+@item s32
+@c EN
+Signed 32-bit integer - an exact integer between -(2^31) and 2^31 - 1.
+@c JP
+32ビット符号つき整数 - -(2^31) から 2^31 - 1 までの正確な整数。
+@c COMMON
+@item u64
+@c EN
+Unsigned 64-bit integer - an exact integer between 0 and 2^64 - 1.
+@c JP
+64ビット符号無し整数 - 0から 2^64 - 1 までの正確な整数。
+@c COMMON
+@item s64
+@c EN
+Signed 64-bit integer - an exact integer between -(2^63) and 2^63 - 1.
+@c JP
+64ビット符号つき整数 - -(2^63) から 2^63 - 1 までの正確な整数。
+@c COMMON
+@item f16
+@c EN
+16-bit floating point number (10-bit mantissa and 5-bit exponent),
+as inexact real.
+@c JP
+16ビット浮動小数点数(仮数部10ビット、指数部5ビット)で表される不正確な実数
+@c COMMON
+@item f32
+@c EN
+IEEE single-precision floating point number
+as inexact real.
+@c JP
+IEEE単精度浮動小数点数で表される不正確な実数
+@c COMMON
+@item f64
+@c EN
+IEEE double-precision floating point number
+as inexact real.
+@c JP
+IEEE倍精度浮動小数点数で表される不正確な実数
+@c COMMON
+@item c32
+@c EN
+Inexact complex, consists of a pair of 16-bit floating point numbers.
+@c JP
+2つの16ビット浮動小数点数で表される不正確な複素数
+@c COMMON
+@item c64
+@c EN
+Inexact complex, consists of a pair of IEEE single-precision floating
+point numbers.
+@c JP
+2つのIEEE単精度浮動小数点数で表される不正確な複素数
+@c COMMON
+@item c128
+@c EN
+Inexact complex, consists of a pair of IEEE double-precision floating
+point numbers.
+@c JP
+2つのIEEE倍精度浮動小数点数で表される不正確な複素数
+@c COMMON
+@end table
+
+@c EN
+There are some advantages of using uniform vectors over normal
 (heterogeneous) vectors.  It may be more compact than the normal
 vectors.  Some operations (especially Gauche's extension of vector
 arithmetic operations) can bypass type check and conversion of
 individual elements, thus be more efficient.  And it is much easier
 and efficient to communicate with external libraries that require
 homogeneous array of numbers; for example, OpenGL binding of Gauche
-uses SRFI-4 vectors extensively.
+uses uniform vectors extensively.
 @c JP
-通常のベクタではなくSRFI-4ベクタを使うことにより得られる利点がいくつかあります。
-まず、SRFI-4ベクタは通常のベクタよりもコンパクトです。
+通常のベクタではなくユニフォームベクタを使うことにより得られる利点がいくつかあります。
+まず、ユニフォームベクタは通常のベクタよりもコンパクトです。
 いくつかのオペレーション(特に、Gaucheの拡張仕様であるベクタ上の数値演算)では、
 型検査と型変換を個々の要素に対して行わなくても良いため、
 極めて効率の良い演算が可能です。さらに、
 数値の配列を扱う外部のライブラリとのインタフェースが容易です。
-例えば、GaucheのOpenGLバインディングではSRFI-4ベクタを多用しています。
+例えば、GaucheのOpenGLバインディングではユニフォームベクタを多用しています。
 @c COMMON
 @end deftp
+
 @c EN
-The following eleven types of vectors are defined.
-@table @emph
-@item s8vector
-Elements are exact integers in the range between -2^7 and 2^7-1
-@item u8vector
-Elements are exact integers in the range between 0 and 2^8-1
-@item s16vector
-Elements are exact integers in the range between -2^15 and 2^15-1
-@item u16vector
-Elements are exact integers in the range between 0 and 2^16-1
-@item s32vector
-Elements are exact integers in the range between -2^31 and 2^31-1
-@item u32vector
-Elements are exact integers in the range between 0 and 2^32-1
-@item s64vector
-Elements are exact integers in the range between -2^63 and 2^63-1
-@item u64vector
-Elements are exact integers in the range between 0 and 2^64-1
-@item f16vector
-Elements are inexact real numbers representable in 16bits float
-(a.k.a half float)
-@item f32vector
-Elements are inexact real numbers representable in the @code{float} of
-C compiler that compiles Gauche.  Usually it is a single precision
-IEEE floating point number.
-@item f64vector
-Elements are inexact real numbers representable in the @code{double} of
-C compiler that compiles Gauche.  Usually it is a double precision
-IEEE floating point number.
-@end table
+Gauche's implementation is a superset of srfi-160 in a few ways:
 @c JP
-以下の11タイプのベクタが定義されます。
-@table @emph
-@item s8vector
-要素が -2^7 から 2^7-1 の間の正確な整数であるベクタ
-@item u8vector
-要素が 0 から 2^8-1 の間の正確な整数であるベクタ
-@item s16vector
-要素が -2^15 から 2^15-1 の間の正確な整数であるベクタ
-@item u16vector
-要素が 0 から 2^16-1 の間の正確な整数であるベクタ
-@item s32vector
-要素が -2^31 から 2^31-1 の間の正確な整数であるベクタ
-@item u32vector
-要素が 0 から 2^32-1 の間の正確な整数であるベクタ
-@item s64vector
-要素が -2^63 から 2^63-1 の間の正確な整数であるベクタ
-@item u64vector
-要素が 0 から 2^64-1 の間の正確な整数であるベクタ
-@item f16vector
-要素が、16ビット浮動小数点数(half floatとしても知られている)で表現
-し得るような不正確な実数であるベクタ
-@item f32vector
-要素が、GaucheをコンパイルしたCコンパイラの@code{float}で表現し得るような
-不正確な実数(通常IEEE単精度浮動少数点数)であるベクタ
-@item f64vector
-要素が、GaucheをコンパイルしたCコンパイラの@code{double}で表現し得るような
-不正確な実数(通常IEEE倍精度浮動少数点数)であるベクタ
-@end table
+Gaucheの実装はsrfi-160のスーパーセットで、次の機能が追加されています：
 @c COMMON
+@itemize @bullet
+@item
+@c EN
+Support of @code{f16vector} and @code{c32vector}, using 16-bit floating 
+point numbers as used in high-dynamic range image format.
+@c JP
+HDR画像フォーマットなどで使われる、16ビット浮動小数点数を使った
+@code{f16vector}と@code{c32vector}のサポート。
+@c COMMON
+@item
+@c EN
+Effcient element-wise arithmetic procedures, e.g. @code{@var{TAG}vector-add}.
+@c JP
+@code{@var{TAG}vector-add}など、効率の良い要素単位の演算手続き。
+@c COMMON
+@item
+@c EN
+Implements the collection framework (@pxref{Collection framework})
+and the sequence framework (@pxref{Sequence framework}).  So the
+methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
+can be used.
+@c JP
+コレクションフレームワーク (@ref{Collection framework}参照)と
+シーケンスフレームワーク (@ref{Sequence framework}参照)の実装。
+例えば @code{map}, @code{for-each}, @code{ref}, @code{subseq}等の
+メソッドが使えます。
+@c COMMON
+@item
+@c EN
+Some routines takes optional parameters: @code{@var{TAG}vector-ref}
+takes optional fallback value.
+@c JP
+いくつかの手続きはsrfi-160に無い省略可能な引数を取ります。
+例えば@code{@var{TAG}vector-ref}は省略可能なデフォルト値を取ります。
+@c COMMON
+@end itemize
 
 @c EN
 When you try to store a number out of the range of the vector type,
@@ -22124,13 +22163,30 @@ Clamps both sides; does both @code{high} and @code{low}.
 In the following description, @code{@var{TAG}} can be replaced
 for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @code{s32}, @code{u32}, @code{s64}, @code{u64},
-@code{f16}, @code{f32}, @code{f64}.
+@code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64} or @code{c128}.
 @c JP
 以下の記述では、@code{@var{TAG}}は
 @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @code{s32}, @code{u32}, @code{s64}, @code{u64},
-@code{f16}, @code{f32}, @code{f64}
+@code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64}, @code{c128}
 のいずれにも置き換えて読むことができるものとします。
+@c COMMON
+
+@c EN
+Note: R7RS-large provides separate library for each type,
+and you should import them individually, for example,
+@code{(use scheme.vector.u8)} (Gauche way) or
+@code{(import (scheme vector u8))} (R7RS way).
+
+On the other hand, using @code{gauche.uvector} imports all the bindings.
+@c JP
+註： R7RS-largeでは、それぞれの型に対して個別のライブラリがあり、
+例えば@code{u8}ベクタが使いたければ
+@code{(use scheme.vector.u8)} (Gauche式)
+あるいは @code{(import (scheme vector u8))} (R7RS式)
+のようにする必要があります。
+
+一方、@code{gauche.uvector}使った場合は術の手続きがインポートされます。
 @c COMMON
 
 @menu
@@ -22201,7 +22257,7 @@ Denotes a literal homogeneous vector.
 @findex f16vector?
 @findex f32vector?
 @findex f64vector?
-[SRFI-4]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Returns @code{#t} iff @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
@@ -22233,7 +22289,7 @@ Returns @code{#t} iff @var{obj} is of any uniform vector type.
 @findex f16vector
 @findex f32vector
 @findex f64vector
-[SRFI-4]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Constructs @var{TAG}vector whose elements are numbers @var{x} @dots{}.
@@ -22261,7 +22317,7 @@ and in the valid range of the vector.
 @findex make-f16vector
 @findex make-f32vector
 @findex make-f64vector
-[SRFI-4]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Constructs a @var{TAG}vector of length @var{len}.  The elements are
@@ -22308,7 +22364,7 @@ each uvector type, you can pass the class of desired uvector.
 @findex f16vector-length
 @findex f32vector-length
 @findex f64vector-length
-[SRFI-4]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Returns the length of the @var{TAG}vector @var{vec}.
@@ -22412,7 +22468,7 @@ An error is raised when @var{class} is not a uvector class.
 @findex f16vector-ref
 @findex f32vector-ref
 @findex f64vector-ref
-[SRFI-4+]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Returns the @var{k}-th element of @var{TAG}vector @var{vec}.
@@ -22489,7 +22545,7 @@ difference.
 @findex f16vector-set!
 @findex f32vector-set!
 @findex f64vector-set!
-[SRFI-4+]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Sets a number @var{n} to the @var{k}-th element of @var{TAG}vector @var{vec}.
@@ -23104,7 +23160,7 @@ does not support @var{skip} and @var{rounding} arguments.
 @findex f16vector->list
 @findex f32vector->list
 @findex f64vector->list
-[SRFI-4+]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Converts @var{TAG}vector @var{vec} to a list.
@@ -23205,7 +23261,7 @@ optional arguments are the same as @code{@var{TAG}vector->vector}.
 @findex list->f16vector
 @findex list->f32vector
 @findex list->f64vector
-[SRFI-4+]
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Converts a list @var{list} to a @var{TAG}vector.

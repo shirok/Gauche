@@ -4023,12 +4023,12 @@ order (LSB first) (@pxref{Bitwise operations}).
 @mdindex srfi-66
 @c EN
 This module defines procedures to deal with @code{u8vector}s; they are
-almost a subset of @code{srfi-4} and @code{gauche.uvector}
+almost a subset of @code{srfi-160} and @code{gauche.uvector}
 (@pxref{Uniform vectors}, except one procedure, @code{u8vector-copy!},
 which has different argument orders (unfortunate historical artifacts).
 @c JP
 このモジュールは@code{u8vector}に特化した手続きを定義します。
-ほぼ@code{srfi-4}および@code{gauche.uvector}のサブセットです。
+ほぼ@code{srfi-160}および@code{gauche.uvector}のサブセットです。
 (@pxref{Uniform vectors})。例外は@code{u8vector-copy!}で、
 これは不幸な歴史的事情から、@code{gauche.uvector}と引数順が異なります。
 @c COMMON
