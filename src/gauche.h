@@ -1833,7 +1833,13 @@ SCM_CLASS_DECL(Scm_RegexpClass);
 #define SCM_REGEXP_MULTI_LINE     (1L<<4)
 
 SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern, int flags);
+#if GAUCHE_API_1_0
 SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast, int flags);
+#define Scm_RegCompFromAST2(a,b) Scm_RegCompFromAST(a,b)
+#else   /*!GAUCHE_API_1_0*/
+SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast);
+SCM_EXTERN ScmObj Scm_RegCompFromAST2(ScmObj ast, int flags);
+#endif  /*!GAUCHE_API_1_0*/
 SCM_EXTERN ScmObj Scm_RegOptimizeAST(ScmObj ast);
 SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input, ScmObj start, ScmObj end);
 SCM_EXTERN void Scm_RegDump(ScmRegexp *rx);

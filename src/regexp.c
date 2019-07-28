@@ -2308,7 +2308,16 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
 }
 
 /* alternative entry that compiles from AST */
+#if GAUCHE_API_1_0
 ScmObj Scm_RegCompFromAST(ScmObj ast, int flags)
+#else /*!GAUCHE_API_1_0*/
+ScmObj Scm_RegCompFromAST(ScmObj ast)
+{
+    return Scm_RegCompFromAST2(ast, 0);
+}
+    
+ScmObj Scm_RegCompFromAST2(ScmObj ast, int flags)
+#endif /*!GAUCHE_API_1_0*/
 {
     ScmRegexp *rx = make_regexp();
     regcomp_ctx cctx;

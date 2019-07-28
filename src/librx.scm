@@ -53,7 +53,10 @@
                                (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)
                                SCM_REGEXP_PARSE_ONLY))))
 (define-cproc regexp-compile (ast :key (multi-line #f))
-  (return (Scm_RegCompFromAST ast (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0))))
+  (return (Scm_RegCompFromAST2 ast
+                               (?: (SCM_BOOL_VALUE multi-line)
+                                   SCM_REGEXP_MULTI_LINE
+                                   0))))
 (define-cproc regexp-optimize (ast) Scm_RegOptimizeAST)
 
 (define-cproc regexp-num-groups (regexp::<regexp>) ::<int>
