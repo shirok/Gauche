@@ -1046,9 +1046,11 @@
 ;; low-level file descriptor handling, and you know what you're doing.
 ;; closing a file descriptor that is still used by Scheme port would
 ;; result a disaster.
+;; NB: close() is not retried on EINTR.  By the time it returns EINTR the
+;; fd has actually been closed, and if other thread happens to grab the same
+;; fd, retrying close() inadvertently closes that one.
 (define-cproc sys-close (fd::<int>) ::<void>
-  (let* ([r::int])
-    (SCM_SYSCALL r (close fd))
+  (let* ([r::int (close fd)])
     (when (< r 0) (Scm_SysError "close failed on file descriptor %d" fd))))
 
 (define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>) ::<void>

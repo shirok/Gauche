@@ -21951,11 +21951,12 @@ I tried to keep the interface similar whenever reasonable.
 @c COMMON
 
 @c EN
-Gauche restarts a system call after it is interrupted by a signal.
+Gauche restarts a system call after it is interrupted by a signal by default.
 See @ref{Signal} for the details.
 @c JP
-なお、Gaucheはシステムコールがシグナルによって割り込まれた場合、
-システムコールをリスタートします。詳しくは@ref{Signal}を参照して下さい。
+なお、システムコールがシグナルによって割り込まれた場合、
+そのシステムコールは原則としてリスタートされます。
+詳しくは@ref{Signal}を参照して下さい。
 @c COMMON
 
 @c EN
@@ -24084,13 +24085,57 @@ See @ref{Signals and threads}, for details.
 When a system call is interrupted by a signal,
 and a programmer defines a handler for the signal that doesn't transfer
 control to other context, the system call is restarted after
-the handler returns.
+the handler returns by default.
 @c JP
 システムコールがシグナルによって割り込まれ、
 プログラマがシグナルハンドラをセットしており、そのハンドラが別コンテキストに
-制御を移さずに戻った場合、そのシステムコールはハンドラからの復帰後に
+制御を移さずに戻った場合、そのシステムコールは原則としてハンドラからの復帰後に
 リスタートされます。
 @c COMMON
+
+@c EN
+Here are some calls that are not simply restared by signal interruption.
+@c JP
+シグナル割り込みによって単純にリスタートされないものは次の通りです。
+@c COMMON
+
+@table @code
+@item close
+@c EN
+This may be called through @code{sys-close}, @code{close-port}, or even
+implicitly when the underlying file is closed.   When a signal interrupts
+this call, the passed fd is no longer in use.  Simply restarting it can
+be a race if another thread just grabs the fd.
+@c JP
+これは@code{sys-close}や@code{close-port}、さらには低層のファイルが自動的に
+クローズされる場合に呼ばれます。シグナルがこのシステムコールを中断して@code{EINTR}が
+返った時点で、渡されたファイルディスクリプタは無効になっており、もし他のスレッドがその
+ディスクリプタを直後に再利用していたら、リスタートするのは競合を引き起こします。
+@c COMMON
+
+@item dup2
+@c EN
+This is called via @code{port-fd-dup!}.  When @code{dup2} returns
+@code{EINTR}, the @var{newfd} is no longer in use and some other thread
+may grab it before restarting it.
+@c JP
+このコールは@code{port-fd-dup!}から呼ばれます。@code{dup2}が@code{EINTR}を
+返した時、@var{newfd}は使われない状態になっており、他のスレッドが直後にそれを使う
+可能性があるのでリスタートは危険です。
+@c COMMON
+
+@item sleep
+@itemx nanosleep
+@c EN
+These calls tells the remaining time when they are interrupted.
+We restart them with that remaining time, not the original argument,
+so that the total sleep time would be close to what was given originally.
+@c JP
+これらのコールは中断された場合に残りの時間を教えてくれます。
+Gaucheではリスタート時に元の引数でなく残りの時間を渡すので、スリープする全体の時間は
+おおよそ最初に与えられた時間となります。
+@c COMMON
+@end table
 
 @c EN
 On Windows native platforms, signals don't work except

@@ -1,5 +1,8 @@
 2019-07-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/libsys.scm, src/port.c: Do not restart close() and dup2().
+	  https://github.com/shirok/Gauche/issues/504
+
 	* lib/srfi-115.scm, src/regexp.c etc.: More support of SRE and
 	  srfi-115, by @pclouds https://github.com/shirok/Gauche/pull/502
 

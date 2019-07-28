@@ -322,10 +322,15 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
         /* flush the current buffer */
         Scm_Flush(dst);
     }
+    /*  NB: We don't retry dup2().  By the time it returns EINTR, the
+        dstfd has actually been closed, and if other thread happens to 
+        grab the same fd, retrying dup2() inadvertently closes that one.
+    */
+
 #if defined(GAUCHE_WINDOWS)
-    SCM_SYSCALL(r, _dup2(srcfd, dstfd));
+    r = _dup2(srcfd, dstfd);
 #else  /*!GAUCHE_WINDOWS*/
-    SCM_SYSCALL(r, dup2(srcfd, dstfd));
+    r = dup2(srcfd, dstfd);
 #endif /*!GAUCHE_WINDOWS*/
     if (r < 0) Scm_SysError("dup2 failed");
     file_buffered_port_set_fd(dst, r);
