@@ -22213,6 +22213,9 @@ On the other hand, using @code{gauche.uvector} imports all the bindings.
 @clindex f16vector
 @clindex f32vector
 @clindex f64vector
+@clindex c32vector
+@clindex c64vector
+@clindex c128vector
 @c MOD gauche.uvector
 @c EN
 A class for @var{TAG}vector.  It inherits @code{<sequence>}.
@@ -22233,6 +22236,9 @@ A class for @var{TAG}vector.  It inherits @code{<sequence>}.
 @lxindex #f16
 @lxindex #f32
 @lxindex #f64
+@lxindex #c32
+@lxindex #c64
+@lxindex #c128
 @c EN
 Denotes a literal homogeneous vector.
 @c JP
@@ -22257,6 +22263,9 @@ Denotes a literal homogeneous vector.
 @findex f16vector?
 @findex f32vector?
 @findex f64vector?
+@findex c32vector?
+@findex c64vector?
+@findex c128vector?
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -22276,6 +22285,55 @@ Returns @code{#t} iff @var{obj} is of any uniform vector type.
 @c COMMON
 @end defun
 
+@deftp {Function} {@var{TAG}?} @r{@var{obj}}
+@findex s8?
+@findex u8?
+@findex s16?
+@findex u16?
+@findex s32?
+@findex u32?
+@findex s64?
+@findex u64?
+@findex f16?
+@findex f32?
+@findex f64?
+@findex c32?
+@findex c64?
+@findex c128?
+[R7RS vector.TAG]
+@c MOD gauche.uvector
+@c EN
+Returns @code{#t} iff @var{obj} can be an element of @code{@var{TAG}vector}.
+@c JP
+引数が@var{TAG}ベクタの要素に収まるなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end deftp
+
+@deftp {Function} {@var{TAG}vector-empty?} @r{@var{obj}}
+@findex u8vector-empty?
+@findex s8vector-empty?
+@findex u16vector-empty?
+@findex s16vector-empty?
+@findex u32vector-empty?
+@findex s32vector-empty?
+@findex u64vector-empty?
+@findex s64vector-empty?
+@findex f16vector-empty?
+@findex f32vector-empty?
+@findex f64vector-empty?
+@findex c32vector-empty?
+@findex c64vector-empty?
+@findex c128vector-empty?
+[R7RS vector.TAG]
+@c MOD gauche.uvector
+@c EN
+The argument must be a @var{TAG}vector.
+Returns @code{#t} iff it is empty.
+@c JP
+引数は@var{TAG}vectorでなければなりません。
+それが空なら@code{#t}を、そうでなければ@var{#f}を返します。
+@c COMMON
+@end deftp
 
 @deftp {Function} {@var{TAG}vector} @r{@var{x} @dots{}}
 @findex s8vector
@@ -22289,6 +22347,9 @@ Returns @code{#t} iff @var{obj} is of any uniform vector type.
 @findex f16vector
 @findex f32vector
 @findex f64vector
+@findex c32vector
+@findex c64vector
+@findex c128vector
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -22305,6 +22366,7 @@ and in the valid range of the vector.
 @end example
 @end deftp
 
+
 @deftp {Function} make-@var{TAG}vector @r{@var{len} @var{:optional} @var{fill}}
 @findex make-s8vector
 @findex make-u8vector
@@ -22317,6 +22379,9 @@ and in the valid range of the vector.
 @findex make-f16vector
 @findex make-f32vector
 @findex make-f64vector
+@findex make-c32vector
+@findex make-c64vector
+@findex make-c128vector
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -22351,19 +22416,74 @@ each uvector type, you can pass the class of desired uvector.
 @end example
 @end defun
 
+@deftp {Function} @var{TAG}vector-unfold @r{@var{vec}} @r{@var{f}} @r{@var{len}} @r{@var{seed}}
+@deftpx {Function} @var{TAG}vector-unfold-right @r{@var{vec}} @r{@var{f}} @r{@var{len}} @r{@var{seed}}
+@findex u8vector-unfold
+@findex s8vector-unfold
+@findex u16vector-unfold
+@findex s16vector-unfold
+@findex u32vector-unfold
+@findex s32vector-unfold
+@findex u64vector-unfold
+@findex s64vector-unfold
+@findex f16vector-unfold
+@findex f32vector-unfold
+@findex f64vector-unfold
+@findex c32vector-unfold
+@findex c64vector-unfold
+@findex c128vector-unfold
+@findex u8vector-unfold-right
+@findex s8vector-unfold-right
+@findex u16vector-unfold-right
+@findex s16vector-unfold-right
+@findex u32vector-unfold-right
+@findex s32vector-unfold-right
+@findex u64vector-unfold-right
+@findex s64vector-unfold-right
+@findex f16vector-unfold-right
+@findex f32vector-unfold-right
+@findex f64vector-unfold-right
+@findex c32vector-unfold-right
+@findex c64vector-unfold-right
+@findex c128vector-unfold-right
+@c MOD gauche.uvector
+@c EN
+Construct a @var{TAG}vector of length @var{len}, with each element
+as a result of @code{(f seed)}, @code{(f (f seed))},
+@code{(f (f (f seed)))}, @dots{}.
+@var{TAG}vector-unfold fills the element from left to right,
+while @var{TAG}vector-unfold-right from right to left.
+@c JP
+長さ@var{len}の@var{TAG}vectorを作り、
+@code{(f seed)}、@code{(f (f seed))}、
+@code{(f (f (f seed)))}、@dots{} の結果を順に要素とします。
+@var{TAG}vector-unfoldは左から右に、
+@var{TAG}vector-unfold-rightは右から左に埋めてゆきます。
+@c COMMON
+@example
+(u8vector-unfold (cut + 2 <>) 5 0)
+ @result{} #u8(2 4 6 8 10)
+(u8vector-unfold-right (pa$ + 2) 5 0)
+ @result{} #u8(10 8 6 4 2)
+@end example
+@end deftp
+
 
 @deftp {Function} @var{TAG}vector-length @r{@var{vec}}
-@findex s8vector-length
 @findex u8vector-length
-@findex s16vector-length
+@findex s8vector-length
 @findex u16vector-length
-@findex s32vector-length
+@findex s16vector-length
 @findex u32vector-length
-@findex s64vector-length
+@findex s32vector-length
 @findex u64vector-length
+@findex s64vector-length
 @findex f16vector-length
 @findex f32vector-length
 @findex f64vector-length
+@findex c32vector-length
+@findex c64vector-length
+@findex c128vector-length
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -22400,7 +22520,6 @@ of its elements.
 その要素数が返されます。
 @c COMMON
 @end defun
-
 
 @defun uvector-size uvector :optional start end
 @c MOD gauche.uvector
@@ -22457,17 +22576,20 @@ An error is raised when @var{class} is not a uvector class.
 
 
 @deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} :optional @var{fallback}}
-@findex s8vector-ref
 @findex u8vector-ref
-@findex s16vector-ref
+@findex s8vector-ref
 @findex u16vector-ref
-@findex s32vector-ref
+@findex s16vector-ref
 @findex u32vector-ref
-@findex s64vector-ref
+@findex s32vector-ref
 @findex u64vector-ref
+@findex s64vector-ref
 @findex f16vector-ref
 @findex f32vector-ref
 @findex f64vector-ref
+@findex c32vector-ref
+@findex c64vector-ref
+@findex c128vector-ref
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -22534,17 +22656,20 @@ difference.
 @end defun
 
 @deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n} :optional @var{clamp}}
-@findex s8vector-set!
 @findex u8vector-set!
-@findex s16vector-set!
+@findex s8vector-set!
 @findex u16vector-set!
-@findex s32vector-set!
+@findex s16vector-set!
 @findex u32vector-set!
-@findex s64vector-set!
+@findex s32vector-set!
 @findex u64vector-set!
+@findex s64vector-set!
 @findex f16vector-set!
 @findex f32vector-set!
 @findex f64vector-set!
+@findex c32vector-set!
+@findex c64vector-set!
+@findex c128vector-set!
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -22590,17 +22715,20 @@ kind of uniform vectors, but a bit slower than the specific versions.
 
 
 @deftp {Function} @var{TAG}vector-fill! @r{@var{vec} @var{fill} :optional @var{start} @var{end}}
-@findex s8vector-fill!
 @findex u8vector-fill!
-@findex s16vector-fill!
+@findex s8vector-fill!
 @findex u16vector-fill!
-@findex s32vector-fill!
+@findex s16vector-fill!
 @findex u32vector-fill!
-@findex s64vector-fill!
+@findex s32vector-fill!
 @findex u64vector-fill!
+@findex s64vector-fill!
 @findex f16vector-fill!
 @findex f32vector-fill!
 @findex f64vector-fill!
+@findex c32vector-fill!
+@findex c64vector-fill!
+@findex c128vector-fill!
 @c MOD gauche.uvector
 @c EN
 Stores @var{fill} in every element of @var{vec},
@@ -22612,50 +22740,87 @@ if they are given.
 @c COMMON
 @end deftp
 
+@deftp {Function} @var{TAG}vector= @var{vec1} @dots{}
+@findex u8vector=
+@findex s8vector=
+@findex u16vector=
+@findex s16vector=
+@findex u32vector=
+@findex s32vector=
+@findex u64vector=
+@findex s64vector=
+@findex f16vector=
+@findex f32vector=
+@findex f64vector=
+@findex c32vector=
+@findex c64vector=
+@findex c128vector=
+[R7RS vector.TAG]
+@c MOD gauche.uvector
+@c EN
+All arguments must be @var{TAG}vectors.  Returns @code{#t} iff
+all arguments have the same length and has the same values (in terms of @code{=})
+at the corresponding position. Zero arguments
+return @var{#t}.
+
+Note that in Gauche you can compare uvectors with @code{equal?}as well.
+@c JP
+全ての引数は@var{TAG}vectorでなければなりません。
+引数が全て同じ長さで、対応する要素が同じ価(@code{=}の意味で)なら@code{#t}を、
+そうでなければ@code{#f}を返します。
+
+Gaucheでは、uvectorは@code{equal?}で比較することができます。
+@c COMMON
+@end deftp
+
 
 @deftp {Function} @var{TAG}vector=? @var{vec1} @var{vec2}
-@findex s8vector=?
 @findex u8vector=?
-@findex s16vector=?
+@findex s8vector=?
 @findex u16vector=?
-@findex s32vector=?
+@findex s16vector=?
 @findex u32vector=?
-@findex s64vector=?
+@findex s32vector=?
 @findex u64vector=?
+@findex s64vector=?
 @findex f16vector=?
 @findex f32vector=?
 @findex f64vector=?
+@findex c32vector=?
+@findex c64vector=?
+@findex c128vector=?
 [SRFI-66]
 @c MOD gauche.uvector
 @c EN
+Note: This is provided only for the srfi-66 compatibility.
+Use @code{@var{TAG}vector=} instead.
+
 Both arguments must be a @var{TAG}vector.  Returns @code{#t} if
 @var{vec1} and @var{vec2} are equal to each other, @code{#f} otherwise.
-
-Note that you can compare uvectors with @code{equal?} in Gauche.
-These are provided because SRFI-66 defines @code{u8vector=?}.
-You can also use them to indicate arguments are vectors of the specific type.
 @c JP
+註: これはsrfi-66との互換性のためだけに提供されています。
+@code{@var{TAG}vector=} を使ってください。
+
 引数はどちらも@var{TAG}vectorでなければなりません。
 両引数が等価なら@code{#t}が、そうでなければ@code{#f}が返されます。
-
-Gaucheでは、uvectorは@code{equal?}で比較することができます。
-これらの手続きが提供されるのは、SRFI-66が@code{u8vector=?}を定義しているためです。
-引数が特定の型のベクタであることを明示したい場合に使っても良いでしょう。
 @c COMMON
 @end deftp
 
 @deftp {Function} @var{TAG}vector-compare @var{vec1} @var{vec2}
-@findex s8vector-compare
 @findex u8vector-compare
-@findex s16vector-compare
+@findex s8vector-compare
 @findex u16vector-compare
-@findex s32vector-compare
+@findex s16vector-compare
 @findex u32vector-compare
-@findex s64vector-compare
+@findex s32vector-compare
 @findex u64vector-compare
+@findex s64vector-compare
 @findex f16vector-compare
 @findex f32vector-compare
 @findex f64vector-compare
+@findex c32vector-compare
+@findex c64vector-compare
+@findex c128vector-compare
 [SRFI-66]
 @c MOD gauche.uvector
 @c EN
@@ -22685,17 +22850,21 @@ Gaucheでは、uvectorは@code{compare}で比較することができます。
 @end deftp
 
 @deftp {Function} @var{TAG}vector-copy @r{@var{vec} :optional @var{start} @var{end}}
-@findex s8vector-copy
 @findex u8vector-copy
-@findex s16vector-copy
+@findex s8vector-copy
 @findex u16vector-copy
-@findex s32vector-copy
+@findex s16vector-copy
 @findex u32vector-copy
-@findex s64vector-copy
+@findex s32vector-copy
 @findex u64vector-copy
+@findex s64vector-copy
 @findex f16vector-copy
 @findex f32vector-copy
 @findex f64vector-copy
+@findex c32vector-copy
+@findex c64vector-copy
+@findex c128vector-copy
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Returns a fresh copy of uniform vector @var{vec}.
@@ -22727,19 +22896,55 @@ You can give any type of uvector to @var{vec}, and get its copy
 @c COMMON
 @end defun
 
+@deftp {Function} @var{TAG}vector-reverse-copy @r{@var{vec} :optional @var{start} @var{end}}
+@findex u8vector-reverse-copy
+@findex s8vector-reverse-copy
+@findex u16vector-reverse-copy
+@findex s16vector-reverse-copy
+@findex u32vector-reverse-copy
+@findex s32vector-reverse-copy
+@findex u64vector-reverse-copy
+@findex s64vector-reverse-copy
+@findex f16vector-reverse-copy
+@findex f32vector-reverse-copy
+@findex f64vector-reverse-copy
+@findex c32vector-reverse-copy
+@findex c64vector-reverse-copy
+@findex c128vector-reverse-copy
+[R7RS vector.TAG]
+@c MOD gauche.uvector
+@c EN
+Copies @var{vec} between @var{strat} and @var{end} index, but
+reversing it.
+@c JP
+@var{vec}の要素を逆順にしたコピーを作って返します。
+省略可能な@var{start}と@var{end}はコピー範囲を限定します。
+@c COMMON
+@example
+(u8vector-reverse-copy '#u8(1 2 3 4 5))
+  @result{} #u8(5 4 3 2 1)
+
+(u8vector-reverse-copy '#u8(1 2 3 4 5) 1 4)
+  @result{} #u8(4 3 2)
+@end example
+@end deftp
 
 @deftp {Function} @var{TAG}vector-copy! @r{@var{target} @var{tstart} @var{source} :optional @var{sstart} @var{send}}
-@findex s8vector-copy!
 @findex u8vector-copy!
-@findex s16vector-copy!
+@findex s8vector-copy!
 @findex u16vector-copy!
-@findex s32vector-copy!
+@findex s16vector-copy!
 @findex u32vector-copy!
-@findex s64vector-copy!
+@findex s32vector-copy!
 @findex u64vector-copy!
+@findex s64vector-copy!
 @findex f16vector-copy!
 @findex f32vector-copy!
 @findex f64vector-copy!
+@findex c32vector-copy!
+@findex c64vector-copy!
+@findex c128vector-copy!
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Both @var{target} and @var{source} must be @i{TAG}vectors, and
@@ -22788,8 +22993,7 @@ overlapping.
 @emph{Note:} This procedure used to take just two uniform vectors, @var{target}
 and @var{source}, and just copies contents of @var{source} to @var{target}.
 Both vectors had to be the same type and same length.  The API is revised
-to the current form to make it parallel with @code{string-copy!} (SRFI-13)
-and @code{vector-copy!} (R7RS,SRFI-133).  The old interface is still supported
+accordnig to srfi-160.  The old interface is still supported
 for the backward compatibility, but it is deprecated and will be gone
 in the future releases.
 
@@ -22799,28 +23003,30 @@ argument order (@pxref{Octet vectors}).
 @emph{注意事項:} この手続きは以前はユニフォームベクタ @var{target} および
 @var{source} のみを引数としてとり、@var{source} の内容を @var{target} へ
 コピーするためだけに使われました。両方のベクタは同じ型で、同じ長さでなけ
-ればなりませんでした。この API は @code{string-copy!} (SRFI-13) および
-@code{vector-copy!} (R7RS,SRFI-133)にあわせて現在の形式に改訂されています。
+ればなりませんでした。この API はsrfi-160にあわせて現在の形式に改訂されています。
 旧来のインタフェースも後方互換性のためにサポートされて
 いますが、これは廃止予定で、将来のリリースではサポートされなくなります。
 
-また、SRFI-66も@code{u8vector-copy!}を提供していますが、
+また、srfi-66も@code{u8vector-copy!}を提供していますが、
 引数の順序が異なります(@ref{Octet vectors}参照)。
 @c COMMON
 @end deftp
 
 @deftp {Function} @var{TAG}vector-multi-copy! @r{@var{target} @var{tstart} @var{tstride} @var{source} :optional @var{sstart} @var{ssize} @var{sstride} @var{count}}
-@findex s8vector-multi-copy!
 @findex u8vector-multi-copy!
-@findex s16vector-multi-copy!
+@findex s8vector-multi-copy!
 @findex u16vector-multi-copy!
-@findex s32vector-multi-copy!
+@findex s16vector-multi-copy!
 @findex u32vector-multi-copy!
-@findex s64vector-multi-copy!
+@findex s32vector-multi-copy!
 @findex u64vector-multi-copy!
+@findex s64vector-multi-copy!
 @findex f16vector-multi-copy!
 @findex f32vector-multi-copy!
 @findex f64vector-multi-copy!
+@findex c32vector-multi-copy!
+@findex c64vector-multi-copy!
+@findex c128vector-multi-copy!
 @c MOD gauche.uvector
 @c EN
 This procedure allows different parts of the source uvector @var{source} into
@@ -22975,17 +23181,21 @@ type of @var{source}.
 
 
 @deftp {Function} @var{TAG}vector-append vec @dots{}
-@findex s8vector-append
 @findex u8vector-append
-@findex s16vector-append
+@findex s8vector-append
 @findex u16vector-append
-@findex s32vector-append
+@findex s16vector-append
 @findex u32vector-append
-@findex s64vector-append
+@findex s32vector-append
 @findex u64vector-append
+@findex s64vector-append
 @findex f16vector-append
 @findex f32vector-append
 @findex f64vector-append
+@findex c32vector-append
+@findex c64vector-append
+@findex c128vector-append
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 All arguments must be @var{TAG}vectors.  Returns a fresh vector
@@ -23002,6 +23212,67 @@ whose contents are concatenation of the given vectors.
   @result{} #u8(1 2 3 4 5 6 7 8)
 @end example
 @end deftp
+
+@deftp {Function} @var{TAG}vector-concatenate vecs
+@findex u8vector-concatenate
+@findex s8vector-concatenate
+@findex u16vector-concatenate
+@findex s16vector-concatenate
+@findex u32vector-concatenate
+@findex s32vector-concatenate
+@findex u64vector-concatenate
+@findex s64vector-concatenate
+@findex f16vector-concatenate
+@findex f32vector-concatenate
+@findex f64vector-concatenate
+@findex c32vector-concatenate
+@findex c64vector-concatenate
+@findex c128vector-concatenate
+[R7RS vector.TAG]
+@c MOD gauche.uvector
+@c EN
+Returns a new @var{TAG}vector which is concatenation of the list of
+@var{TAG}vectors @var{vecs}.
+@c JP
+@var{TAG}vectorのリスト@var{vecs}にあるベクタを全て連結した新たな
+@var{TAG}vectorを返します。
+@c COMMON
+@example
+(u8vector-concatenate '(#u8(1 2 3) #u8(4 5 6)))
+  @result{} #u8(1 2 3 4 5 6)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-append-subvectors :optional vec start end @dots{}
+@findex u8vector-append-subvectors
+@findex s8vector-append-subvectors
+@findex u16vector-append-subvectors
+@findex s16vector-append-subvectors
+@findex u32vector-append-subvectors
+@findex s32vector-append-subvectors
+@findex u64vector-append-subvectors
+@findex s64vector-append-subvectors
+@findex f16vector-append-subvectors
+@findex f32vector-append-subvectors
+@findex f64vector-append-subvectors
+@findex c32vector-append-subvectors
+@findex c64vector-append-subvectors
+@findex c128vector-append-subvectors
+[R7RS vector.TAG]
+@c MOD gauche.uvector
+@c EN
+Returns a new @var{TAG}vector which is concatenation of the subvectors of
+given @var{vec}s, using accompanied @var{start} and @var{end} index.
+@c JP
+各@var{vec}の@var{start}と@var{end}で指定される範囲のサブベクタを
+連結した新たな@var{TAG}vectorを返します。
+@c COMMON
+@example
+(u8vector-append-subvectors '#u8(1 2 3 4) 1 3 '#u8(5 6 7 8) 0 2)
+  @result{} #u8(2 3 5 6)
+@end example
+@end deftp
+
 
 @defun uvector-binary-search uvector key :optional start end skip rounding
 @c MOD gauche.uvector
@@ -23149,17 +23420,20 @@ does not support @var{skip} and @var{rounding} arguments.
 @c NODE ユニフォームベクタの変換
 
 @deftp {Function} @var{TAG}vector->list @r{@var{vec} :optional @var{start} @var{end}}
-@findex s8vector->list
 @findex u8vector->list
-@findex s16vector->list
+@findex s8vector->list
 @findex u16vector->list
-@findex s32vector->list
+@findex s16vector->list
 @findex u32vector->list
-@findex s64vector->list
+@findex s32vector->list
 @findex u64vector->list
+@findex s64vector->list
 @findex f16vector->list
 @findex f32vector->list
 @findex f64vector->list
+@findex c32vector->list
+@findex c64vector->list
+@findex c128vector->list
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -23200,17 +23474,21 @@ optional arguments are the same as @code{@var{TAG}vector->list}.
 
 
 @deftp {Function} @var{TAG}vector->vector @r{@var{vec} :optional @var{start} @var{end}}
-@findex s8vector->vector
 @findex u8vector->vector
-@findex s16vector->vector
+@findex s8vector->vector
 @findex u16vector->vector
-@findex s32vector->vector
+@findex s16vector->vector
 @findex u32vector->vector
-@findex s64vector->vector
+@findex s32vector->vector
 @findex u64vector->vector
+@findex s64vector->vector
 @findex f16vector->vector
 @findex f32vector->vector
 @findex f64vector->vector
+@findex c32vector->vector
+@findex c64vector->vector
+@findex c128vector->vector
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Converts @var{TAG}vector @var{vec} to a vector.
@@ -23261,6 +23539,9 @@ optional arguments are the same as @code{@var{TAG}vector->vector}.
 @findex list->f16vector
 @findex list->f32vector
 @findex list->f64vector
+@findex list->c32vector
+@findex list->c64vector
+@findex list->c128vector
 [R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
@@ -23298,6 +23579,10 @@ if you import @code{gauche.collection}.
 @findex vector->f16vector
 @findex vector->f32vector
 @findex vector->f64vector
+@findex vector->c32vector
+@findex vector->c64vector
+@findex vector->c128vector
+[R7RS vector.TAG]
 @c MOD gauche.uvector
 @c EN
 Converts a vector @var{vec} to a @var{TAG}vector.
@@ -23719,6 +24004,24 @@ of the object after calling the procedure.
 @findex f64vector-sub!
 @findex f64vector-mul
 @findex f64vector-mul!
+@findex c32vector-add
+@findex c32vector-add!
+@findex c32vector-sub
+@findex c32vector-sub!
+@findex c32vector-mul
+@findex c32vector-mul!
+@findex c64vector-add
+@findex c64vector-add!
+@findex c64vector-sub
+@findex c64vector-sub!
+@findex c64vector-mul
+@findex c64vector-mul!
+@findex c128vector-add
+@findex c128vector-add!
+@findex c128vector-sub
+@findex c128vector-sub!
+@findex c128vector-mul
+@findex c128vector-mul!
 @c MOD gauche.uvector
 @c EN
 Element-wise arithmetic.  @var{Vec} must be a @var{TAG}vector,
@@ -23780,6 +24083,12 @@ multiplied by each element of @var{vec}, respectively.
 @findex f32vector-div!
 @findex f64vector-div
 @findex f64vector-div!
+@findex c32vector-div
+@findex c32vector-div!
+@findex c64vector-div
+@findex c64vector-div!
+@findex c128vector-div
+@findex c128vector-div!
 @c MOD gauche.uvector
 @c EN
 Element-wise division of flonum vectors.   These are only defined
@@ -23889,6 +24198,9 @@ and also returns it.
 @findex f16vector-dot
 @findex f32vector-dot
 @findex f64vector-dot
+@findex c32vector-dot
+@findex c64vector-dot
+@findex c128vector-dot
 @c MOD gauche.uvector
 @c EN
 Calculates the dot product of two @var{TAG}vectors.
