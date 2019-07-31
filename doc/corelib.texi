@@ -10791,12 +10791,16 @@ not by the engine).
 @end defun
 
 @defun regexp-parse-sre sre
-
+@c EN
 Parses @var{sre} as a Scheme Regular Expression as described in
 SRFI-115 and returns its AST. Only a subset of SRE is supported at the
 moment. The following syntax is not supported:
 @code{bog}, @code{eog} and @code{grapheme}.
-
+@c JP
+@var{sre}をsrfi-115で定義されるScheme正規表現としてパーズし、
+結果をASTで返します。今のところ、SREのサブセットがサポートされています。
+サポートされていないのは@code{bog}、@code{eog}、@code{grapheme}です。
+@c COMMON
 @end defun
 
 @defun regexp-optimize ast
@@ -10848,14 +10852,22 @@ incomprehensible.  So, don't use this procedure as a AST validness checker.)
 @end defun
 
 @defun regexp-compile-sre sre :key multi-line
-
+@c EN
 Takes a scheme regexp @var{sre} and returns a regexp object. The
 zero-th group is always captured.
 
 If a false value is given to the keyword argument @var{multi-line},
+which is the default,
 @code{bol} and @code{eol} behave like @code{bos} and @code{eos}
 (i.e. only match at the beginning or end of string).
+@c JP
+Scheme正規表現 @var{sre} を取り、コンパイルした正規表現オブジェクトを
+返します。正規表現全体が常に0番の捕捉グループになります。
 
+キーワード引数@var{multi-value}に偽の値が与えられた場合
+(デフォルト)、@code{bol}と@code{eol}はそれぞれ@code{bos}と@code{eos}のように
+振る舞います (つまり、入力文字列の最初と最後にのみマッチします)。
+@c COMMON
 @end defun
 
 @defun regexp-ast regexp
@@ -26788,15 +26800,21 @@ To show all the information, set @code{#f} to this parameter.
 @c COMMON
 @end deffn
 
-@defmac debug-funcall (PROC ARG ...)
-
-This macro prints the value of arguments right before calling
-@code{PROC} and the result(s) of the call afterwards.
+@defmac debug-funcall (proc arg ...)
+@c EN
+This macro prints the value of @var{arg}s right before calling
+@var{proc} and the result(s) of the call afterwards.
 
 The special reader syntax @code{#?,@var{expr}} is expanded into
 @code{(debug-funcall @var{expr})}.  See @ref{Debugging}, for the
 details.
+@c JP
+このマクロは@var{proc}を呼び出す直前に全ての@var{arg}の価を表示し、
+そして@var{proc}の呼び出し後に全ての戻り価を表示します。
 
+特別なリーダ構文 @code{#?,@var{expr}} は @code{(debug-funcall @var{expr})}
+に展開されます。詳しくは @ref{Debugging} を参照してください。
+@c COMMON
 @end defmac
 
 @defun debug-source-info obj
