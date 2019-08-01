@@ -8,31 +8,29 @@
 (define (inexact-complex? x) (and (number? x) (inexact? x) (not (real? x))))
 (define (realify z) (* (real-part z) (imag-part z)))
 
-(define-values (same? list-same?)
-  (let () 
-    (define (same? result expected)
-      (cond
-       ((and (inexact-real? result) (inexact-real? expected))
-        (let ((abserr (abs (* expected relerr))))
-          (<= (- expected abserr) result (+ expected abserr))))
-       ((and (inexact-complex? result) (inexact-complex? expected))
-        (let ((abserr (abs (* (realify expected) relerr))))
-          (<= (- (realify expected) abserr) (realify result) (+ (realify expected) abserr))))
-       ((and (number? result) (number? expected))
-        (= result expected))
-       ((and (pair? result) (pair? expected))
-        (list-same? result expected))
-       (else
-        (equal? result expected))))
-    (define (list-same? result expected)
-      (cond
-       ((and (null? result) (null? expected))
-        #t)
-       ((and (pair? result) (pair? expected))
-        (and (same? (car result) (car expected)) (list-same? (cdr result) (cdr expected))))
-       (else
-        #f)))
-    (values same? list-same?)))
+(define (same? result expected)
+  (cond
+    ((and (inexact-real? result) (inexact-real? expected))
+     (let ((abserr (abs (* expected relerr))))
+       (<= (- expected abserr) result (+ expected abserr))))
+    ((and (inexact-complex? result) (inexact-complex? expected))
+     (let ((abserr (abs (* (realify expected) relerr))))
+       (<= (- (realify expected) abserr) (realify result) (+ (realify expected) abserr))))
+    ((and (number? result) (number? expected))
+     (= result expected))
+    ((and (pair? result) (pair? expected))
+     (list-same? result expected))
+    (else
+      (equal? result expected))))
+
+ (define (list-same? result expected)
+  (cond
+    ((and (null? result) (null? expected))
+     #t)
+    ((and (pair? result) (pair? expected))
+     (and (same? (car result) (car expected)) (list-same? (cdr result) (cdr expected))))
+    (else
+     #f)))
 
 (define-syntax is-same?
   (syntax-rules ()
