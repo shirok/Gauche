@@ -5,6 +5,7 @@
 (define-module compat.chibi-test
   (use gauche.parameter)
   (use gauche.test)
+  (use util.match)
   (export chibi-test current-test-comparator))
 (select-module compat.chibi-test)
 
@@ -77,12 +78,29 @@
            )
        (,(r'chibi-test:expand) ,(cdr f))))))
 
+;; We gather definitions at the same level, so that mutually recursive
+;; definitions work
 (define-syntax chibi-test:expand
-  (syntax-rules ()
-    [(_ ()) (begin)]
-    [(_ (form)) form]
-    [(_ (form . forms))
-     (let () form (chibi-test:expand forms))]))
+  (er-macro-transformer
+   (^[f r c]
+     (let loop ([forms (cadr f)]
+                [defs '()])
+       (match forms
+         [() 
+          (if (null? defs)
+            (quasirename r `(begin))
+            (quasirename r `(let () ,@(reverse defs) (begin))))]
+         [(form)
+          (if (null? defs)
+            (car forms)
+            (quasirename r `(let () ,@(reverse defs) ,(car forms))))]
+         [((and ((? (cut c <> (r'define))) . _) def) . forms)
+          (loop forms (cons def defs))]
+         [(form . forms)
+          (if (null? defs)
+            (quasirename r `(let () ,form (chibi-test:expand ,forms)))
+            (quasirename r `(let () ,@(reverse defs) 
+                                 ,form (chibi-test:expand ,forms))))])))))
 
 (define-syntax chibi-test:include
   (er-macro-transformer
