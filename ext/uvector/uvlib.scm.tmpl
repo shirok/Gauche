@@ -208,16 +208,20 @@
 ;; Constructors
 (define (${t}vector-unfold f len seed)
   (let1 rvec (make-${t}vector len)
-    (do ([i 0 (+ i 1)]
-         [seed (f seed) (f seed)])
-        [(= i len) rvec]
-      (${t}vector-set! rvec i seed))))
+    (let loop ([i 0] [seed seed])
+      (if (= i len)
+        rvec
+        (receive (e seed) (f i seed)
+          (${t}vector-set! rvec i e)
+          (loop (+ i 1) seed))))))
 (define (${t}vector-unfold-right f len seed)
   (let1 rvec (make-${t}vector len)
-    (do ([i (- len 1) (- i 1)]
-         [seed (f seed) (f seed)])
-        [(< i 0) rvec]
-      (${t}vector-set! rvec i seed))))
+    (let loop ([i (- len 1)] [seed seed])
+      (if (< i 0)
+        rvec
+        (receive (e seed) (f i seed)
+          (${t}vector-set! rvec i e)
+          (loop (- i 1) seed))))))
 
 (define (${t}vector-concatenate vs)
   (let* ([size (fold (^[v l] (+ (${t}vector-length v) l)) 0 vs)]

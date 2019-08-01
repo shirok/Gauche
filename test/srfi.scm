@@ -2350,8 +2350,9 @@
 (define-module srfi-160-test
   (use compat.chibi-test)
   (use srfi-160)
-  (define-syntax import (syntax-rules () [(_ _) #f]))
   (chibi-test
-   (include "include/srfi-160-tests.scm")))
+   (include "include/srfi-160-base-tests.scm")
+   (include "include/srfi-160-tests.scm")
+   ))
 
 (test-end)
