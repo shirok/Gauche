@@ -754,7 +754,7 @@ the macro expander first check if the input matches the pattern.
 @c JP
 @code{when}マクロが
 @code{(when (zero? x) (print "huh?") (print "we got zero!"))}
-という形で呼び出されたとしまそう。
+という形で呼び出されたとしましょう。
 マクロ展開器はまず、この入力がパターンとマッチするかどうかを調べます。
 @c COMMON
 
