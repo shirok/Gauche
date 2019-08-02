@@ -1530,6 +1530,38 @@ form, and compile it again.
 @var{procedure} が戻ると、コンパイラは元のフォームの場所に返されたフォームを
 挿入し、再度それをコンパイルします。
 @c COMMON
+
+@c EN
+To avoid name conflict with the bindings inserted by the macro,
+you can use @code{gensym}, just like traditional Lisp macros
+(@pxref{Symbols}).
+@c JP
+マクロによって挿入される束縛の名前衝突を避けるために、
+伝統的なLispマクロと同様に@code{gensym}を使うことができます。
+(@ref{Symbols}参照)。
+@c COMMON
+
+@example
+(define-macro (if-let1 var test then else)
+  (let1 tmp (gensym)
+    `(let ((,tmp ,test))
+       (if ,tmp ,then ,else))))
+
+(macroexpand '(if-let1 v (find odd? '(2 4 6 7 8))
+                 (* v v)
+                 #f))
+  @result{} (let ((#:G1013 (find odd? (quote (2 4 6 7 8)))))
+              (if #:G1013 (* v v) #f))
+@end example
+
+@c EN
+Note that @code{gensym} can't protect name conflict with
+global bindings inserted by the macro.
+@ref{Why hygienic?} discusses this issue.
+@c JP
+@code{gensym}ではマクロが挿入するグローバルな束縛の衝突は回避できません。
+@ref{Why hygienic?}でこの点について説明しています。
+@c COMMON
 @end defspec
 
 @node Macro expansion, Macro utilities, Traditional macros, Macros
