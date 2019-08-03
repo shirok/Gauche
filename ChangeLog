@@ -1,3 +1,10 @@
+2019-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvlib.scm.stub (TAGvector-swap!, TAGvector-reverse!)
+	  (TAGvector-fill!): Let them return #<undef>, so that programs won't
+	  accidentally relies on the return value.  NB: TAGvector-fill! used
+	  to return the uvector itself, but it's undocumented.
+
 2019-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm, src/port.c: Do not restart close() and dup2().

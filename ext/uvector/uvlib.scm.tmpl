@@ -178,10 +178,10 @@
   (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (Scm_ClampMode clamp))))
 
 (define-cproc ${t}vector-fill!
-  (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1)) ::<void>
   (let* ([filler :: (${etype})])
     (C: "${UNBOX filler val SCM_CLAMP_ERROR}")
-    (return (Scm_${T}VectorFill v filler start end))))
+    (Scm_${T}VectorFill v filler start end)))
 
 (define-cproc ${t}vector->vector
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
@@ -446,7 +446,7 @@
 
 ;; Mutators
 
-(define-cproc ${t}vector-swap! (v::<${t}vector> i::<fixnum> j::<fixnum>)
+(define-cproc ${t}vector-swap! (v::<${t}vector> i::<fixnum> j::<fixnum>) ::<void>
   (SCM_UVECTOR_CHECK_MUTABLE v)
   (unless (and (<= 0 i) (< i (SCM_${T}VECTOR_SIZE v)))
     (Scm_Error "Index i out of bound: %d" i))
@@ -454,11 +454,10 @@
     (Scm_Error "Index j out of bound: %d" j))
   (let* ([e::(${etype}) (SCM_${T}VECTOR_ELEMENT v i)])
     (set! (SCM_${T}VECTOR_ELEMENT v i) (SCM_${T}VECTOR_ELEMENT v j))
-    (set! (SCM_${T}VECTOR_ELEMENT v j) e))
-  (return (SCM_OBJ v)))
+    (set! (SCM_${T}VECTOR_ELEMENT v j) e)))
 
 (define-cproc ${t}vector-reverse!
- (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+ (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1)) ::<void>
  (SCM_UVECTOR_CHECK_MUTABLE v)
  (let* ([len::ScmSmallInt (SCM_${T}VECTOR_SIZE v)])
     (SCM_CHECK_START_END start end len)
@@ -470,8 +469,7 @@
         (set! (SCM_${T}VECTOR_ELEMENT v i) (SCM_${T}VECTOR_ELEMENT v j))
         (set! (SCM_${T}VECTOR_ELEMENT v j) e)
         (pre++ i)
-        (pre-- j)))
-    (return (SCM_OBJ v))))
+        (pre-- j)))))
 
 ;; Generators
 

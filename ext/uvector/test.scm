@@ -337,10 +337,11 @@
  (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
  (test* "uvcopy-startend @vector" 
         (list (@vector 1 2 3) (@vector 1 2) (@vector 0 9 9 3))
-        (let1 v (@vector 0 1 2 3)
-          (list (@vector-copy v 1)
-                (@vector-copy v 1 3)
-                (@vector-fill! v 9 1 3)))))
+        (let* ([v (@vector 0 1 2 3)]
+               [v1 (@vector-copy v 1)]
+               [v2 (@vector-copy v 1 3)])
+          (@vector-fill! v 9 1 3)
+          (list v1 v2 v))))
 
 (expand-uvec
  (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
