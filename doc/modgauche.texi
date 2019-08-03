@@ -22713,6 +22713,31 @@ kind of uniform vectors, but a bit slower than the specific versions.
 @c COMMON
 @end defun
 
+@deftp {Function} @var{TAG}vector-swap! @r{@var{vec} @var{i} @var{j}}
+@findex u8vector-swap!
+@findex s8vector-swap!
+@findex u16vector-swap!
+@findex s16vector-swap!
+@findex u32vector-swap!
+@findex s32vector-swap!
+@findex u64vector-swap!
+@findex s64vector-swap!
+@findex f16vector-swap!
+@findex f32vector-swap!
+@findex f64vector-swap!
+@findex c32vector-swap!
+@findex c64vector-swap!
+@findex c128vector-swap!
+[R7RS vector.TAG]
+@c MOD gauche.uvector
+@c EN
+Interchanges @var{i}th and @var{j}th elements of the uvector @var{vec}.
+Return value is not specified.
+@c JP
+ユニフォームベクタ@var{vec}の@var{i}番目と@var{j}番目の要素を入れ替えます。
+戻り値は規定されていません。
+@c COMMON
+@end deftp
 
 @deftp {Function} @var{TAG}vector-fill! @r{@var{vec} @var{fill} :optional @var{start} @var{end}}
 @findex u8vector-fill!
@@ -22734,9 +22759,11 @@ kind of uniform vectors, but a bit slower than the specific versions.
 Stores @var{fill} in every element of @var{vec},
 ranging from @var{start} to @var{end} of @var{vec},
 if they are given.
+Return value is not specified.
 @c JP
 @var{vec}のすべて要素に@var{fill}をセットします。
 @var{start}と@var{end}で要素の範囲を指定することも出来ます。
+戻り値は規定されていません。
 @c COMMON
 @end deftp
 
@@ -23885,6 +23912,8 @@ alignment constraint.
 与えられたパラメータでアラインメントの要請が満たせない場合はエラーが通知されます。
 @c COMMON
 @end defun
+
+
 
 
 @node Uvector numeric operations, Uvector block I/O, Uvector conversion operations, Uniform vectors
