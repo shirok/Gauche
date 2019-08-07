@@ -293,37 +293,72 @@
        (or (null? rest)
            (apply ${t}vector= b rest))))
 
-(define (${t}vector-fold kons knil vec)
-  (let1 len (${t}vector-length vec)
-    (do ([i 0 (+ i 1)]
-         [seed knil (kons seed (${t}vector-ref vec i))])
-        [(= i len) seed])))
-(define (${t}vector-fold-right kons knil vec)
-  (let1 len (${t}vector-length vec)
-    (do ([i (- len 1) (- i 1)]
-         [seed knil (kons (${t}vector-ref vec i) seed)])
-        [(< i 0) seed])))
-(define (${t}vector-map proc vec)
-  ;; we need intermediate list to be restart-safe
-  (let1 len (${t}vector-length vec)
-    (do ([i 0 (+ i 1)]
-         [rs '() (cons (proc (${t}vector-ref vec i)) rs)])
-        [(= i len) (list->${t}vector (reverse rs))])))
-(define (${t}vector-map! proc vec)
-  (let1 len (${t}vector-length vec)
-    (do ([i 0 (+ i 1)])
-        [(= i len) vec]
-      (${t}vector-set! vec i (proc (${t}vector-ref vec i))))))
-(define (${t}vector-for-each proc vec)
-  (let1 len (${t}vector-length vec)
-    (do ([i 0 (+ i 1)])
-        [(= i len) (undefined)]
-      (proc (${t}vector-ref vec i)))))
-(define (${t}vector-count pred vec)
-  (let1 len (${t}vector-length vec)
-    (do ([i 0 (+ i 1)]
-         [c 0 (if (pred (${t}vector-ref vec i)) (+ c 1) c)])
-        [(= i len) c])))
+(define (%minlen vec vecs)
+  (apply min (uvector-length vec) (map uvector-length vecs)))
+(define (%vecrefs i vec vecs)
+  (cons (uvector-ref vec i) (map (cut uvector-ref <> i) vecs)))
+
+(define (${t}vector-fold kons knil vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (do ([i 0 (+ i 1)]
+           [seed knil (kons seed (${t}vector-ref vec i))])
+          [(= i len) seed]))
+    (let1 len (%minlen vec vecs)
+      (do ([i 0 (+ i 1)]
+           [seed knil (apply kons seed (%vecrefs i vec vecs))])
+          [(= i len) seed]))))
+(define (${t}vector-fold-right kons knil vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (do ([i (- len 1) (- i 1)]
+           [seed knil (kons (${t}vector-ref vec i) seed)])
+          [(< i 0) seed]))
+    (let1 len (%minlen vec vecs)
+      (do ([i (- len 1) (- i 1)]
+           [seed knil (apply kons seed (%vecrefs i vec vecs))])
+          [(< i 0) seed]))))
+(define (${t}vector-map proc vec . vecs)
+  (if (null? vecs)
+    ;; we need intermediate list to be restart-safe
+    (let1 len (${t}vector-length vec)
+      (do ([i 0 (+ i 1)]
+           [rs '() (cons (proc (${t}vector-ref vec i)) rs)])
+          [(= i len) (list->${t}vector (reverse rs))]))
+    (let1 len (%minlen vec vecs)
+      (do ([i 0 (+ i 1)]
+           [rs '() (cons (apply proc (%vecrefs i vec vecs)) rs)])
+          [(= i len) (list->${t}vector (reverse rs))]))))
+(define (${t}vector-map! proc vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (do ([i 0 (+ i 1)])
+          [(= i len) vec]
+        (${t}vector-set! vec i (proc (${t}vector-ref vec i)))))
+    (let1 len (%minlen vec vecs)
+      (do ([i 0 (+ i 1)])
+          [(= i len) vec]
+        (${t}vector-set! vec i (apply proc (%vecrefs i vec vecs)))))))
+(define (${t}vector-for-each proc vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (do ([i 0 (+ i 1)])
+          [(= i len) (undefined)]
+        (proc (${t}vector-ref vec i))))
+    (let1 len (%minlen vec vecs)
+      (do ([i 0 (+ i 1)])
+          [(= i len) (undefined)]
+        (apply proc (%vecrefs i vec vecs))))))
+(define (${t}vector-count pred vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (do ([i 0 (+ i 1)]
+           [c 0 (if (pred (${t}vector-ref vec i)) (+ c 1) c)])
+          [(= i len) c]))
+    (let1 len (%minlen vec vecs)
+      (do ([i 0 (+ i 1)]
+           [c 0 (if (apply pred (%vecrefs i vec vecs)) (+ c 1) c)])
+          [(= i len) c]))))
 (define (${t}vector-cumulate proc knil vec)
   (let* ([len (${t}vector-length vec)]
          [rvec (make-${t}vector len)])
@@ -372,49 +407,78 @@
             (loop (- i 1))
             (${t}vector-copy vec 0 (+ i 1))))))))
 
-(define (${t}vector-index pred vec)
-  (let1 len (${t}vector-length vec)
-    (let loop ([i 0])
-      (cond [(= i len) #f]
-            [(pred (${t}vector-ref vec i)) i]
-            [else (loop (+ i 1))]))))
-(define (${t}vector-index-right pred vec)
-  (let1 len (${t}vector-length vec)
-    (let loop ([i (- len 1)])
-      (cond [(< i 0) #f]
-            [(pred (${t}vector-ref vec i)) i]
-            [else (loop (- i 1))]))))
-(define (${t}vector-skip pred vec)
-  (let1 len (${t}vector-length vec)
-    (let loop ([i 0])
-      (cond [(= i len) #f]
-            [(pred (${t}vector-ref vec i)) (loop (+ i 1))]
-            [else i]))))
-(define (${t}vector-skip-right pred vec)
-  (let1 len (${t}vector-length vec)
-    (let loop ([i (- len 1)])
-      (cond [(< i 0) #f]
-            [(pred (${t}vector-ref vec i)) (loop (- i 1))]
-            [else i]))))
-
-(define (${t}vector-any pred vec)
-  (let1 len (${t}vector-length vec)
-    (let loop ([i 0])
-      (if (= i len)
-        #f
-        (let1 e (${t}vector-ref vec i)
-          (if (pred e)
-            e
-            (loop (+ i 1))))))))
-(define (${t}vector-every pred vec)
-  (let1 len (${t}vector-length vec)
-    (let loop ([i 0] [last #f])
-      (if (= i len)
-        last
-        (let1 e (${t}vector-ref vec i)
-          (if (pred e)
-            (loop (+ i 1) e)
-            #f))))))
+(define (${t}vector-index pred vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(pred (${t}vector-ref vec i)) i]
+              [else (loop (+ i 1))])))
+    (let1 len (%minlen vec vecs)
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(apply pred (%vecrefs i vec vecs)) i]
+              [else (loop (+ i 1))])))))
+(define (${t}vector-index-right pred vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (let loop ([i (- len 1)])
+        (cond [(< i 0) #f]
+              [(pred (${t}vector-ref vec i)) i]
+              [else (loop (- i 1))])))
+    (let1 len (%minlen vec vecs)
+      (let loop ([i (- len 1)])
+        (cond [(< i 0) #f]
+              [(apply pred (%vecrefs i vec vecs)) i]
+              [else (loop (- i 1))])))))
+(define (${t}vector-skip pred vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(pred (${t}vector-ref vec i)) (loop (+ i 1))]
+              [else i])))
+    (let1 len (%minlen vec vecs)
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(apply pred (%vecrefs i vec vecs)) (loop (+ i 1))]
+              [else i])))))
+(define (${t}vector-skip-right pred vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (let loop ([i (- len 1)])
+        (cond [(< i 0) #f]
+              [(pred (${t}vector-ref vec i)) (loop (- i 1))]
+              [else i])))
+    (let1 len (%minlen vec vecs)
+      (let loop ([i (- len 1)])
+        (cond [(< i 0) #f]
+              [(apply pred (%vecrefs i vec vecs)) (loop (- i 1))]
+              [else i])))))
+(define (${t}vector-any pred vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(pred (${t}vector-ref vec i))]
+              [else (loop (+ i 1))])))
+    (let1 len (%minlen vec vecs)
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(apply pred (%vecrefs i vec vecs))]
+              [else (loop (+ i 1))])))))
+(define (${t}vector-every pred vec . vecs)
+  (if (null? vecs)
+    (let1 len (${t}vector-length vec)
+      (let loop ([i 0] [last #t])
+        (cond [(= i len) last]
+              [(pred (${t}vector-ref vec i)) => (^r (loop (+ i 1) r))]
+              [else #f])))
+    (let1 len (%minlen vec vecs)
+      (let loop ([i 0] [last #t])
+        (cond [(= i len) last]
+              [(apply pred (%vecrefs i vec vecs)) => (^r (loop (+ i 1) r))]
+              [else #f])))))
 (define (${t}vector-partition pred vec)
   (let1 len (${t}vector-length vec)
     (let loop ([i 0] [ins '()] [outs '()])
