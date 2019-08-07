@@ -40,18 +40,20 @@
 (define-cproc regmatch? (obj) ::<boolean> SCM_REGMATCHP)
 
 (define-cproc string->regexp (str::<string> :key (case-fold #f) (multi-line #f))
-  (return (Scm_RegComp str
-                       (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
-                               (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)))))
+  (return 
+   (Scm_RegComp str
+                (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
+                        (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)))))
 (define-cproc regexp-ast (regexp::<regexp>) (return (-> regexp ast)))
 (define-cproc regexp-case-fold? (regexp::<regexp>) ::<boolean>
   (return (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
 
 (define-cproc regexp-parse (str::<string> :key (case-fold #f) (multi-line #f))
-  (return (Scm_RegComp str
-                       (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
-                               (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)
-                               SCM_REGEXP_PARSE_ONLY))))
+  (return 
+   (Scm_RegComp str
+                (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
+                        (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)
+                        SCM_REGEXP_PARSE_ONLY))))
 (define-cproc regexp-compile (ast :key (multi-line #f))
   (return (Scm_RegCompFromAST2 ast
                                (?: (SCM_BOOL_VALUE multi-line)
@@ -138,6 +140,10 @@
 ;; Skip the first subskip matches, then start replacing only up to
 ;; subcount times (or infinite if subcount is #f).
 (define (%regexp-replace-rec rx string subpat subskip subcount)
+  (define (zero-match-check rx match)
+    (when (= (rxmatch-start match) (rxmatch-end match))
+      (error "regexp-replace-all: matching zero-length string causes \
+              infinite loop:" rx)))
   (if (or (and subcount (zero? subcount))
           (equal? string ""))
     (display string)
@@ -146,8 +152,7 @@
        [(not match)
         (display string)]
        [(> subskip 0)
-        (when (= (rxmatch-start match) (rxmatch-end match))
-          (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
+        (zero-match-check rx match)
         (display (rxmatch-before match))
         (display (rxmatch-substring match))
         (%regexp-replace-rec rx
@@ -156,21 +161,17 @@
                              (- subskip 1)
                              subcount)]
        [else
-        (when (= (rxmatch-start match) (rxmatch-end match))
-          (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
+        (zero-match-check rx match)
         (display (rxmatch-before match))
         (if (procedure? subpat)
-            (display (subpat match))
-            (dolist [pat subpat]
-              (display (cond
-                        [(eq? pat 'pre)
-                         (rxmatch-before match)]
-                        [(eq? pat 'post)
-                         (rxmatch-after match)]
-                        [(or (number? pat) (symbol? pat))
-                         (rxmatch-substring match pat)]
-                        [else
-                         pat]))))
+          (display (subpat match))
+          (dolist [pat subpat]
+            (display (cond
+                      [(eq? pat 'pre) (rxmatch-before match)]
+                      [(eq? pat 'post) (rxmatch-after match)]
+                      [(or (number? pat) (symbol? pat))
+                       (rxmatch-substring match pat)]
+                      [else pat]))))
         (%regexp-replace-rec rx
                              (rxmatch-after match)
                              subpat
@@ -179,12 +180,14 @@
 
 (define (%regexp-replace rx string start end subpat subskip subcount)
   (if (not end)
-    (%regexp-replace rx string start (string-length string) subpat subskip subcount)
+    (%regexp-replace rx string start (string-length string)
+                     subpat subskip subcount)
     (with-output-to-string
       (^[]
         (unless (zero? start)
           (display (substring string 0 start)))
-        (%regexp-replace-rec rx (substring string start end) subpat subskip subcount)
+        (%regexp-replace-rec rx (substring string start end)
+                             subpat subskip subcount)
         (unless (= (string-length string) end)
           (display (substring string end (string-length string))))))))
 
