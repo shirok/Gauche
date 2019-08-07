@@ -1956,6 +1956,38 @@
        '("abc" "123" "def" "456" "ghi" "789")
        (regexp-partition '(* numeric) "abc123def456ghi789"))
 
+(test* "regexp-replace"
+       "abc def"
+       (regexp-replace '(+ space) "abc \t\n def" " "))
+(test* "regexp-replace"
+       "  abc-abc"
+       (regexp-replace '(: ($ (+ alpha)) ":" (* space)) "  abc: " '(1 "-" 1)))
+(test* "regexp-replace"
+       "  abc-  abc"
+       (regexp-replace '(: ($ (+ alpha)) ":" (* space)) "  abc: " '(1 "-" pre 1)))
+
+(test* "regexp-replace"
+       "-abc \t\n d ef  "
+       (regexp-replace '(+ space) "  abc \t\n d ef  " "-" 0))
+(test* "regexp-replace"
+       "-abc \t\n d ef  "
+       (regexp-replace '(+ space) "  abc \t\n d ef  " "-" 0 #f 0))
+(test* "regexp-replace"
+       "  abc-d ef  "
+       (regexp-replace '(+ space) "  abc \t\n d ef  " "-" 0 #f 1))
+(test* "regexp-replace"
+       "  abc \t\n d-ef  "
+       (regexp-replace '(+ space) "  abc \t\n d ef  " "-" 0 #f 2))
+(test* "regexp-replace"
+       "  abc \t\n d ef-"
+       (regexp-replace '(+ space) "  abc \t\n d ef  " "-" 0 #f 3))
+(test* "regexp-replace"
+       "  abc \t\n d ef  "
+       (regexp-replace '(+ space) "  abc \t\n d ef  " "-" 0 #f 4))
+(test* "regexp-replace"
+       " abc d ef "
+       (regexp-replace-all '(+ space) "  abc \t\n d ef  " " "))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-117")
 (use srfi-117)
