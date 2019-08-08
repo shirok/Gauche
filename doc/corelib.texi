@@ -10804,6 +10804,7 @@ moment. The following syntax is not supported:
 結果をASTで返します。今のところ、SREのサブセットがサポートされています。
 サポートされていないのは@code{bog}、@code{eog}、@code{grapheme}です。
 @c COMMON
+@pxref{R7RS regular expressions}.
 @end defun
 
 @defun regexp-optimize ast

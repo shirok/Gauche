@@ -47,6 +47,7 @@ srfi N is supported by Gauche.)
 * Portable runtime environment inquiry::  srfi-112
 * Sets and bags::               srfi-113
 * Comparators::                 srfi-114
+* Scheme regular expressions::  srfi-115
 * Queues based on lists::       srfi-117
 * Simple adjustable-size strings::  srfi-118
 * Lazy sequence (srfi)::        srfi-127
@@ -5120,7 +5121,7 @@ SRFI-113はR7RS largeに採り入れられました。
 
 
 @c ----------------------------------------------------------------------
-@node Comparators, Queues based on lists, Sets and bags, Library modules - SRFIs
+@node Comparators, Scheme regular expressions, Sets and bags, Library modules - SRFIs
 @section @code{srfi-114} - Comparators
 @c NODE 比較器, @code{srfi-114} - 比較器
 
@@ -5553,7 +5554,18 @@ minimum or maximum compared by @var{comparator}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Queues based on lists, Simple adjustable-size strings, Comparators, Library modules - SRFIs
+@node Scheme regular expressions, Comparators, Queues based on lists, Library modules - SRFIs
+@section @code{srfi-115} - Sets and bags
+
+@deftp {Module} srfi-115
+@mdindex srfi-115
+SRFI-115 has become a part of R7RS large.
+@xref{R7RS regular expressions}.
+@end deftp
+
+
+@c ----------------------------------------------------------------------
+@node Queues based on lists, Simple adjustable-size strings, Scheme regular expressions, Library modules - SRFIs
 @section @code{srfi-117} - Queues based on lists
 @c NODE リストを元にしたキュー, @code{srfi-117} - リストを元にしたキュー
 

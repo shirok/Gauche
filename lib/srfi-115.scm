@@ -194,7 +194,8 @@
    (if (string? sub) (list sub) sub) 0 #f))
 
 (define regexp-match? regmatch?)
-(define regexp-match-count rxmatch-num-matches)
+(define (regexp-match-count match)
+  (- (rxmatch-num-matches match) 1))
 (define regexp-match-submatch rxmatch-substring)
 (define regexp-match-submatch-start rxmatch-start)
 (define regexp-match-submatch-end rxmatch-end)
