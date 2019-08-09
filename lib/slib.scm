@@ -55,9 +55,9 @@
           ;; Use this path if your scheme does not support GETENV
           ;; or if SCHEME_LIBRARY_PATH is not set.
           (case (software-type)
-            ((unix) (regexp-replace "(/?)$"
+            ((unix) (regexp-replace "[^\/]$"
                                     (with-module gauche.internal SLIB_DIR)
-                                    "/"))
+                                    (^m #"~(m 0)/")))
             ((vms) "lib$scheme:")
             ((ms-dos) "C:\\SLIB\\")
             (else "")))))
