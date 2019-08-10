@@ -14717,6 +14717,22 @@ you may want to check the implementation of @code{util.stream}
 @c COMMON
 @end defspec
 
+@defun eager obj
+[SRFI-45]
+@c EN
+Returns a promise that returns the value of @var{obj}.
+Since that @code{eager} is a procedure, @var{obj} is evaluated
+before @var{eager} is called; so it works as a type converter
+(<code>a -> Promise a</code>) without delaying the evaluation.
+Used mainly to construct promise-returning functions.
+@c JP
+@var{obj}の値を返すプロミスを作って返します。
+@code{eager}は通常の手続きなので、@var{obj}の評価は遅延されせん。
+評価を遅延することなく型変換(<code>a -> Promise a</code>)だけを行いたい
+場合に使います。プロミスを返すことが要求される手続きで使われます。
+@c COMMON
+@end defun
+
 @defun force promise
 [R7RS lazy]
 @c EN
