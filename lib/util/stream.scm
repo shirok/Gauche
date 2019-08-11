@@ -1,63 +1,86 @@
 ;;;
-;;; util.stream - stream library (srfi-40 & more)
+;;; util.stream - stream library (srfi-40, 41 & more)
 ;;;
-;;; [SK] This module includes the reference implementation of srf-40,
-;;; "A Library of Streams", by Philip L. Bewig, and extension libraries
-;;; written for Chicken by Alejandro Forero Cuervo.
+;;;   [SK] This module includes code from streams-ext.scm,
+;;;   written by Alejandro Forero Cuervo and released in Public Domain
 ;;;
-;;; The part of srfi-40 reference implementation has the copyright shown
-;;; below:
+;;;   The rest is written by Shiro Kawai
 ;;;
-;;;  Copyright (C) 2003 by Philip L. Bewig of Saint Louis, Missouri,
-;;;  United States of America. All rights reserved.
+;;;   Copyright (c) 2019  Shiro Kawai  <shiro@acm.org>
 ;;;
-;;; The part of stream extension library is placed in Public Domain
-;;; by the author, Alejandro Forero Cuervo.
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
 ;;;
-;;; I added Gauche-specific module stuff, and tweaked stream representation
-;;; (our stream is just a promise with a special flag attached).  I also
-;;; omit type checks in basic procedures such as stream-car -- e.g. attempt
-;;; to taking stream-car of stream-null is eventually caught by car.  It
-;;; makes error message a bit less direct, but cutting edges in such
-;;; inner loop procedure has a considerable gain.
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
 (define-module util.stream
   (use srfi-1)
-  (export stream? stream-null stream-cons stream-null?
-          stream-pair? stream-car stream-cdr stream-delay stream
-          stream-unfoldn stream-map stream-for-each stream-filter
-          stream-xcons stream-cons* make-stream stream-tabulate
-          stream-iota stream-format stream-lines stream->list
-          list->stream string->stream stream->string
-          number->stream stream->number symbol->stream stream->symbol
-          port->stream iterator->stream
-          stream= stream-prefix=
-          stream-caar stream-cadr stream-cdar stream-cddr
-          stream-caaar stream-caadr stream-cadar stream-caddr
-          stream-cdaar stream-cdadr stream-cddar stream-cdddr
-          stream-caaaar stream-caaadr stream-caadar stream-caaddr
-          stream-cadaar stream-cadadr stream-caddar stream-cadddr
-          stream-cdaaar stream-cdaadr stream-cdadar stream-cdaddr
-          stream-cddaar stream-cddadr stream-cdddar stream-cddddr
-          stream-ref stream-first stream-second stream-third stream-fourth
-          stream-fifth stream-sixth stream-seventh stream-eighth
-          stream-ninth stream-tenth
-          stream-take-safe stream-take stream-drop-safe stream-drop
-          stream-intersperse stream-split stream-last stream-last-n
-          stream-butlast stream-butlast-n stream-length stream-length>=
-          stream-append stream-concatenate stream-reverse stream-count
-          stream-remove stream-partition stream-find stream-find-tail
-          stream-take-while stream-drop-while stream-span stream-break
-          stream-any stream-every stream-index
-          stream-member stream-memq stream-memv
-          stream-delete stream-delete-duplicates
-          stream-grep ->stream-char stream-replace stream-translate
-          write-stream
+  (export
+   ;;  srfi-40
+   stream? stream-null stream-cons stream-null?
+   stream-pair? stream-car stream-cdr stream-delay stream
+   stream-unfoldn stream-map stream-for-each stream-filter
 
-          ;; srfi-41 additions
-          stream+ stream-lambda stream-define stream-unfold
-          ))
+   ;; srfi-41 additions
+   stream+ stream-lambda stream-define stream-unfold stream-unfolds
+   list->stream port->stream stream->list stream-append stream-concat
+   stream-constant
+
+   ;; extras
+   generator->stream stream-concatenate
+   
+   stream-xcons stream-cons* make-stream stream-tabulate
+   stream-iota stream-format stream-lines 
+   string->stream stream->string
+   number->stream stream->number symbol->stream stream->symbol
+   iterator->stream
+   stream= stream-prefix=
+   stream-caar stream-cadr stream-cdar stream-cddr
+   stream-caaar stream-caadr stream-cadar stream-caddr
+   stream-cdaar stream-cdadr stream-cddar stream-cdddr
+   stream-caaaar stream-caaadr stream-caadar stream-caaddr
+   stream-cadaar stream-cadadr stream-caddar stream-cadddr
+   stream-cdaaar stream-cdaadr stream-cdadar stream-cdaddr
+   stream-cddaar stream-cddadr stream-cdddar stream-cddddr
+   stream-ref stream-first stream-second stream-third stream-fourth
+   stream-fifth stream-sixth stream-seventh stream-eighth
+   stream-ninth stream-tenth
+   stream-take-safe stream-take stream-drop-safe stream-drop
+   stream-intersperse stream-split stream-last stream-last-n
+   stream-butlast stream-butlast-n stream-length stream-length>=
+   stream-reverse stream-count
+   stream-remove stream-partition stream-find stream-find-tail
+   stream-take-while stream-drop-while stream-span stream-break
+   stream-any stream-every stream-index
+   stream-member stream-memq stream-memv
+   stream-delete stream-delete-duplicates
+   stream-grep ->stream-char stream-replace stream-translate
+   write-stream
+
+   ))
 (select-module util.stream)
 
 ;;;
@@ -119,7 +142,7 @@
 (define-syntax stream+
   (syntax-rules ()
     [(_) stream-null]
-    [(_ x y ...) (stream-cons x (stream y ...))]))
+    [(_ x y ...) (stream-cons x (stream+ y ...))]))
 
 ;; srfi-41
 (define-syntax stream-define
@@ -136,71 +159,128 @@
      (stream-cons (f seed) (stream-unfold f p g (g seed)))
      stream-null)))
 
-;; STREAM-UNFOLDN generator seed n -- n+1 streams from (generator seed)
-(define (stream-unfoldn gen seed n)
-  (define (unfold-result-stream gen seed)
-    (let loop ((seed seed))
-      (stream-delay
-       (receive (next . results) (gen seed)
-         (stream-cons results (loop next))))))
-  (define (result-stream->output-stream result-stream i)
+;; srfi-40
+(define (stream-unfoldn f seed n)
+  ;; stream of N-tuples of the results
+  (define rstream
+    ((rec (loop seed)
+       (stream-delay
+        (receive (seed . rs) (f seed)
+          (stream-cons rs (loop seed)))))
+     seed))
+  ;; create N-th stream
+  (define (nth-stream rss i)
     (stream-delay
-     (let ((result (list-ref (stream-car result-stream) i)))
-       (cond ((pair? result)
-              (stream-cons (car result)
-                           (result-stream->output-stream
-                            (stream-cdr result-stream) i)))
-             ((not result)
-              (result-stream->output-stream (stream-cdr result-stream) i))
-             ((null? result) stream-null)
-             (else (error "can't happen"))))))
-  (define (result-stream->output-streams result-stream n)
-    (let loop ((i 0) (outputs '()))
-      (if (= i n)
-        (apply values (reverse outputs))
-        (loop (+ i 1)
-              (cons (result-stream->output-stream result-stream i)
-                    outputs)))))
-  (result-stream->output-streams (unfold-result-stream gen seed) n))
+     (let1 r (~ (stream-car rss) i)
+       (cond [(pair? r) (stream-cons (car r) (nth-stream (stream-cdr rss) i))]
+             [(not r) (nth-stream (stream-cdr rss) i)]
+             [else stream-null]))))
+  (apply values (map (cute nth-stream rstream <>) (iota n))))
 
-;; STREAM-MAP func stream ... -- stream produced by applying func element-wise
-(define (stream-map func . strms)
-  (cond ((null? strms) (error "no stream arguments to stream-map"))
-        ((not (every stream? strms))
-         (error "non-stream argument to stream-map"))
-        (else (let loop ((strms strms))
-                (stream-delay
-                 (if (any stream-null? strms)
-                   stream-null
-                   (stream-cons (apply func (map stream-car strms))
-                                (loop (map stream-cdr strms)))))))))
+;; srfi-41
+;; Similar to stream-unfoldn, but the number of result streams is inferred
+;; from the number of returned values from f.
+(define (stream-unfolds f seed)
+  (receive vs (f seed)
+    (stream-unfoldn f seed (- (length vs) 1))))
 
-;; STREAM-FOR-EACH proc stream ... -- apply proc element-wise for side-effects
-(define (stream-for-each proc . strms)
-  (cond ((null? strms)
-         (error "no stream arguments to stream-for-each"))
-        ((not (every stream? strms))
-         (error "non-stream argument to stream-for-each"))
-        (else (let loop ((strms strms))
-                (if (not (any stream-null? strms))
-                  (begin (apply proc (map stream-car strms))
-                         (loop (map stream-cdr strms))))))))
+;; srfi-40, 41
+(define (stream-map f s . ss)
+  (if (null? ss)
+    (let loop [(s s)]
+      (stream-delay
+       (if (stream-null? s)
+         s
+         (stream-cons (f (stream-car s)) (loop (stream-cdr s))))))
+    (let loop ([ss (cons s ss)])
+      (stream-delay
+       (if (any stream-null? ss)
+         stream-null
+         (stream-cons (apply f (map stream-car ss))
+                      (loop (map stream-cdr ss))))))))
 
-;; STREAM-FILTER pred? stream -- new stream including only items passing pred?
-(define (stream-filter pred? strm)
-  (cond ((not (stream? strm))
-         (error "attempt to apply stream-filter to non-stream"))
-        (else (stream-unfoldn
-               (lambda (s)
-                 (cond
-                  ((stream-null? s)
-                   (values stream-null '()))
-                  ((pred? (stream-car s))
-                   (values (stream-cdr s) (list (stream-car s))))
-                  (else
-                   (values (stream-cdr s) #f))))
-               strm
-               1))))
+;; srfi-40, 41
+(define (stream-for-each f s . ss)
+  (if (null? ss)
+    (let loop [(s s)]
+      (unless (stream-null? s)
+        (f (stream-car s))
+        (loop (stream-cdr s))))
+    (let loop [(ss (cons s ss))]
+      (unless (any stream-null? ss)
+        (apply f (map stream-car ss))
+        (loop (map stream-cdr ss))))))
+
+;; srfi-40, 41
+(define (stream-filter p s)
+  (stream-delay
+   (cond [(stream-null? s) s]
+         [(p (stream-car s)) (stream-cons (stream-car s) 
+                                          (stream-filter p (stream-cdr s)))]
+         [else (stream-filter p (stream-cdr s))])))
+
+;; srfi-41
+(define (list->stream lis)
+  (stream-unfold car pair? cdr lis))
+
+(define (generator->stream gen :optional (fini #f))
+  ((rec (next)
+     (stream-delay
+      (let1 v (gen)
+        (cond [(eof-object? v)
+               (when fini (fini))
+               stream-null]
+              [else (stream-cons v (next))]))))))
+
+;; srfi-41
+;; reader and close-at-eof are Gauche extension.
+(define (port->stream :optional (in (current-input-port))
+                                (reader read-char)
+                                (close-at-eof #f))
+  (generator->stream (cut reader in)
+                     (^[] (when close-at-eof (close-at-eof in)))))
+
+;; srfi-41
+(define stream->list
+  (case-lambda
+    [(n s)
+     (assume n <integer>)
+     (let loop ([n n] [s s] [r '()])
+       (cond [(<= n 0) (reverse r)]
+             [(stream-null? s) (reverse r)]
+             [else (loop (- n 1) (stream-cdr s) (cons (stream-car s) r))]))]
+    [(s)
+     (let loop ([s s] [r '()])
+       (if (stream-null? s)
+         (reverse r)
+         (loop (stream-cdr s) (cons (stream-car s) r))))]))
+
+;; srfi-41
+(define (stream-append . ss)
+  (stream-delay
+   (cond [(null? ss) stream-null]
+         [(null? (cdr ss)) (car ss)]
+         [else
+          (let loop ([s (car ss)] [ss (cdr ss)])
+            (stream-delay
+             (if (stream-null? s)
+               (apply stream-append ss)
+               (stream-cons (stream-car s) (loop (stream-cdr s) ss)))))])))
+
+;; srfi-41
+(define (stream-concat ss)
+  (stream-delay
+   (if (stream-null? ss)
+     stream-null
+     (stream-append (stream-car ss)
+                    (stream-concat (stream-cdr ss))))))
+
+;; for the backward compatibility
+(define stream-concatenate stream-concat)
+
+;; srfi-41
+(define (stream-constant . objs)
+  (list->stream (apply circular-list objs)))
 
 ;;
 ;; What follows is taken from stream-ext.scm by
@@ -247,17 +327,6 @@
 
 ;;; Conversion
 
-(define (stream->list str)
-  (if (stream-null? str)
-    '()
-    (cons (stream-car str) (stream->list (stream-cdr str)))))
-
-(define (list->stream list)
-  (stream-delay
-   (if (null? list)
-     stream-null
-     (stream-cons (car list) (list->stream (cdr list))))))
-
 (define (string->stream str :optional (tail stream-null))
   (let loop ((i 0))
     (stream-delay
@@ -271,17 +340,7 @@
 (define stream->symbol (compose string->symbol stream->string))
 (define symbol->stream (compose string->stream symbol->string))
 
-(define (port->stream :optional (in (current-input-port))
-                      (reader read-char) (close-at-eof close-input-port))
-  (define (next)
-    (stream-delay
-     (let ((element (reader in)))
-       (cond
-        ((eof-object? element)
-         (when close-at-eof (close-at-eof in)) stream-null)
-        (else
-         (stream-cons element (next)))))))
-  (next))
+
 
 ;(define (make-output-port-char write close)
 ;  (make-output-port
@@ -502,18 +561,6 @@
   (or (zero? len)
       (and (not (stream-null? str))
            (stream-length>= (stream-cdr str) (- len 1)))))
-
-(define (stream-append . strs)
-  (stream-delay
-   (cond
-    ((null? strs) stream-null)
-    ((null? (cdr strs)) (car strs))
-    (else
-     (let loop ((c (car strs)) (rest (cdr strs)))
-       (stream-delay
-        (if (stream-null? c)
-          (apply stream-append rest)
-          (stream-cons (stream-car c) (loop (stream-cdr c) rest)))))))))
 
 (define (stream-concatenate strs)
   (stream-delay

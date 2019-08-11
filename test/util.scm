@@ -812,13 +812,11 @@
          (stream->list (stream-take (iter (pa$ + 2) 0) 5))))
 
 (test* "stream-unfold" '(0 1 4 9 16 25 36 49 64 81)
-       (stream->list
-        (stream-take
-         (stream-unfold (cut expt <> 2)
-                        (^_ #t)
-                        (cut + <> 1)
-                        0)
-         10)))
+       (stream->list 10
+                     (stream-unfold (cut expt <> 2)
+                                    (^_ #t)
+                                    (cut + <> 1)
+                                    0)))
 
 (test* "stream-unfoldn" '((0 2 4 6) (1 3 5 7))
        (receive (s0 s1)
@@ -827,6 +825,25 @@
                                      (list s)
                                      (list (+ s 1))))
                            0 2)
+         (map (lambda (s)
+                (list (stream-first s)
+                      (stream-second s)
+                      (stream-third s)
+                      (stream-fourth s)))
+              (list s0 s1))))
+
+(test* "stream-unfolds" '((1 3 5 7) (0 2 4 6))
+       (receive (s0 s1)
+           (stream-unfolds (^s (if (stream-null? s)
+                                 (values s '() '())
+                                 (if (odd? (stream-car s))
+                                   (values (stream-cdr s) 
+                                           (list (stream-car s))
+                                           #f)
+                                   (values (stream-cdr s)
+                                           #f
+                                           (list (stream-car s))))))
+                           (stream-iota 10))
          (map (lambda (s)
                 (list (stream-first s)
                       (stream-second s)
@@ -856,6 +873,23 @@
 
 (test* "stream-remove" '(0 2 4 6)
        (stream->list (stream-remove odd? (stream-iota 8))))
+
+(test* "port->stream" '(#\a #\b #\c)
+       (let1 p (open-input-string "abc")
+         (stream->list (port->stream p))))
+
+(test* "stream+" '(1 1/2 1/3)
+       (stream->list (stream-take (stream+ 1 (/ 1 2) (/ 1 3) (/ 1 0)) 3)))
+
+(test* "stream-append" '(1 2 3 4 a b c d A B C D)
+       (stream->list
+        (stream-append (stream 1 2 3 4)
+                       (stream 'a 'b 'c 'd)
+                       (stream 'A 'B 'C 'D))))
+
+(test* "stream-constant" '(1 2 3 1 2 3 1 2)
+       (stream->list 8
+                     (stream-constant 1 2 3)))
 
 (test* "stream-count" 4
        (stream-count odd? (stream-iota 8)))
