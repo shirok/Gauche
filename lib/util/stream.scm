@@ -50,7 +50,7 @@
    list->stream port->stream stream->list stream-append stream-concat
    stream-constant stream-drop-while stream-take-while
    stream-range stream-fold stream-from stream-iterate
-   stream-length
+   stream-length stream-ref stream-reverse stream-scan stream-zip
    stream-match stream-of
 
    ;; extras
@@ -69,13 +69,13 @@
    stream-cadaar stream-cadadr stream-caddar stream-cadddr
    stream-cdaaar stream-cdaadr stream-cdadar stream-cdaddr
    stream-cddaar stream-cddadr stream-cdddar stream-cddddr
-   stream-ref stream-first stream-second stream-third stream-fourth
+   stream-first stream-second stream-third stream-fourth
    stream-fifth stream-sixth stream-seventh stream-eighth
    stream-ninth stream-tenth
    stream-take-safe stream-take stream-drop-safe stream-drop
    stream-intersperse stream-split stream-last stream-last-n
    stream-butlast stream-butlast-n stream-length>= stream-length=
-   stream-reverse stream-count
+   stream-count
    stream-remove stream-partition stream-find stream-find-tail
    stream-span stream-break
    stream-any stream-every stream-index
@@ -83,7 +83,6 @@
    stream-delete stream-delete-duplicates
    stream-grep ->stream-char stream-replace stream-translate
    write-stream
-
    ))
 (select-module util.stream)
 
@@ -350,6 +349,31 @@
      ((letrec ((tag (stream-lambda (var ...) body0 body1 ...))) tag)
       expr ...)]))
 
+;; srfi-41
+(define (stream-ref s n)
+  (if (zero? n)
+    (stream-car s)
+    (stream-ref (stream-cdr s) (- n 1))))
+
+;; srfi-41
+(define (stream-reverse s)
+  (stream-fold stream-xcons stream-null s))
+
+;; srfi-41
+(define-stream (stream-scan f seed s)
+  (if (stream-null? s)
+    (stream-cons seed stream-null)
+    (stream-cons seed 
+                 (stream-scan f (f seed (stream-car s)) (stream-cdr s)))))
+
+;; srfi-41
+(define (stream-zip . ss)
+  (define-stream (rec ss)
+    (if (any stream-null? ss)
+      stream-null
+      (stream-cons (map stream-car ss) (rec (map stream-cdr ss)))))
+  (rec ss))
+
 ;;;
 ;;; srfi-41 matcher
 ;;;
@@ -455,23 +479,20 @@
 
 ;; End of excerpt from srfi-41 reference implementation
 
+;;;
+;;; Extras
+;;;
 
-;;
-;; What follows is taken from stream-ext.scm by
+;; The following procedures are taken from stream-ext.scm by
 ;; Alejandro Forero Cuervo <bachue@bachue.com>
-;;
-;; Newer versions might be available at:
-;;
-;;    http://anonymous:@afc.no-ip.info:8000/svn/home/src/chicken-eggs/stream-ext
 
-;;; Constructors
+;; Constructors
 (define (stream-xcons a b) (stream-cons b a))
 
-(define (stream-cons* . elts)
-  (stream-delay
-   (if (null? (cdr elts))
-     (car elts)
-     (stream-cons (car elts) (apply stream-cons* (cdr elts))))))
+(define-stream (stream-cons* . elts)
+  (if (null? (cdr elts))
+    (car elts)
+    (stream-cons (car elts) (apply stream-cons* (cdr elts)))))
 
 (define (make-stream n . rest)
   (stream-tabulate n (if (null? rest)
@@ -479,11 +500,10 @@
                        (^_ (car rest)))))
 
 (define (stream-tabulate n init-proc)
-  (let loop ((i 0))
-    (stream-delay
-     (if (equal? i n)
+  (stream-let loop ((i 0))
+    (if (equal? i n)
        stream-null
-       (stream-cons (init-proc i) (loop (+ i 1)))))))
+       (stream-cons (init-proc i) (loop (+ i 1))))))
 
 (define (stream-iota count . args)
   (let loop ((i (or count -1))
@@ -499,7 +519,7 @@
 
 (define stream-lines (cut stream-split <> (cut equal? <> #\newline)))
 
-;;; Conversion
+;; Conversion
 
 (define (string->stream str :optional (tail stream-null))
   (let loop ((i 0))
@@ -573,7 +593,7 @@
 ;         (stream-car stream)))
 ;    proc))
 
-;;; Predicates
+;; Predicates
 
 (define (stream= elt= . strs)
   (or (every stream-null? strs)
@@ -590,7 +610,7 @@
          ((if (null? rest) equal? (car rest)) (stream-car str) (car prefix))
          (apply stream-prefix= (stream-cdr str) (cdr prefix) rest))))
 
-;;; Selectors
+;; Selectors
 
 (define (stream-caar   x) (stream-car (stream-car x)))
 (define (stream-cadr   x) (stream-car (stream-cdr x)))
@@ -623,11 +643,6 @@
 (define (stream-cdddar x) (stream-cdddr (stream-car x)))
 (define (stream-cddddr x) (stream-cdddr (stream-cdr x)))
 
-(define (stream-ref str pos)
-  (if (zero? pos)
-    (stream-car str)
-    (stream-ref (stream-cdr str) (- pos 1))))
-
 (define stream-first  stream-car)
 (define stream-second stream-cadr)
 (define stream-third  stream-caddr)
@@ -652,6 +667,7 @@
      str
      (stream-drop-safe (stream-cdr str) (- count 1)))))
 
+;; NB: srfi-41 has arguments reversed
 (define (stream-take stream count)
   (stream-delay
    (if (zero? count)
@@ -659,6 +675,7 @@
      (stream-cons (stream-car stream)
                   (stream-take (stream-cdr stream) (- count 1))))))
 
+;; NB: srfi-41 has arguments reversed
 (define (stream-drop str count)
   (stream-delay
    (if (zero? count)
@@ -723,9 +740,7 @@
        (stream-cons (stream-car head)
                     (loop (stream-cdr head) (stream-cdr tail)))))))
 
-;;; Miscelaneous: length, append, concatenate, reverse, zip & count
-
-
+;; Miscelaneous: length, append, concatenate, reverse, zip & count
 
 (define (stream-length>= s len)
   (or (zero? len)
@@ -744,15 +759,6 @@
      (stream-append (stream-car strs)
                     (stream-concatenate (stream-cdr strs))))))
 
-(define (stream-reverse str :optional (tail stream-null))
-  (stream-delay
-   (let loop ((head str) (tail tail))
-     (if (stream-null? head)
-       tail
-       (loop (stream-cdr head) (stream-cons (stream-car head) tail))))))
-
-;; zip?
-
 (define (stream-count pred . strs)
   (let loop ((times 0) (s strs))
     (if (any stream-null? s)
@@ -760,7 +766,7 @@
       (loop (+ times (if (apply pred (map stream-car s)) 1 0))
             (map stream-cdr s)))))
 
-;;; Filtering & Partitioning
+;; Filtering & Partitioning
 
 (define (stream-remove pred str)
   (stream-filter (complement pred) str))
@@ -781,7 +787,7 @@
   (values (stream-filter pred str)
           (stream-remove pred str)))
 
-;;; Searching
+;; Searching
 
 (define (stream-find pred str)
   (let ((result (stream-find-tail pred str)))
@@ -830,7 +836,7 @@
 (define (stream-memq x str) (stream-member-real x str eq?))
 (define (stream-memv x str) (stream-member-real x str eqv?))
 
-;;; Deletion
+;; Deletion
 
 (define (stream-delete x str . rest)
   (stream-remove
@@ -851,13 +857,11 @@
         (stream-cons (stream-car str)
                      (stream-delete-dups (stream-cdr str) (cons (stream-car str) already) =))))))
 
-;;; Pattern Matching
+;; Pattern Matching
 
 (define (stream-grep re stream)
   (let ((real-re (if (string? re) (string->regexp re) re)))
     (stream-filter (cut real-re <>) stream)))
-
-;;;
 
 ; (equal? tail stream-null) rather than (stream-null? tail) to avoid an
 ; off-by-one error (evaluating tail before obj is fully consumed).

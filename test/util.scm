@@ -951,6 +951,32 @@
                    (d is (+ (* a a) (* b b)))
                    (= (* c c) d))))
 
+(test* "stream-reverse" '(5 4 3 2 1)
+       (stream->list (stream-reverse (stream 1 2 3 4 5))))
+(test* "stream-reverse" '()
+       (stream->list (stream-reverse stream-null)))
+
+(test* "stream-scan" '(0 1 3 6 10 15)
+       (stream->list 6 (stream-scan + 0 (stream-from 1))))
+(test* "stream-scan"  '(1 1 2 3 5 8 13 21 34 55)
+       (letrec ((fibs (stream-scan + 1 (stream-cons 0 fibs))))
+         (stream->list 10 fibs)))
+(test* "stream-scan" '(() (a) (b a) (c b a) (d c b a) (e d c b a))
+       (stream->list (stream-scan xcons '() (stream 'a 'b 'c 'd 'e))))
+
+(test* "stream-zip" '((0 a) (1 b) (2 c))
+       (stream->list
+        (stream-zip (stream 0 1 2) (stream 'a 'b 'c))))
+
+(test* "stream-zip" '(0 3 5 7 10)
+       (let ()
+         (define-stream (stream-finds eq obj s)
+           (stream-of (car x)
+                      (x in (stream-zip (stream-from 0) s))
+                      (eq obj (cadr x))))
+         (stream->list
+          (stream-finds char=? #\a
+                        (string->stream "abracadabra")))))
 
 (test* "stream-remove" '(0 2 4 6)
        (stream->list (stream-remove odd? (stream-iota 8))))
