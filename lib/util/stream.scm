@@ -45,9 +45,11 @@
    stream-unfoldn stream-map stream-for-each stream-filter
 
    ;; srfi-41 additions
-   stream+ stream-lambda stream-define stream-unfold stream-unfolds
+   stream+ stream-lambda define-stream stream-unfold stream-unfolds
    list->stream port->stream stream->list stream-append stream-concat
-   stream-constant
+   stream-constant stream-drop-while stream-take-while
+   stream-range stream-fold stream-from stream-iterate
+   stream-length
 
    ;; extras
    generator->stream stream-concatenate
@@ -70,10 +72,10 @@
    stream-ninth stream-tenth
    stream-take-safe stream-take stream-drop-safe stream-drop
    stream-intersperse stream-split stream-last stream-last-n
-   stream-butlast stream-butlast-n stream-length stream-length>=
+   stream-butlast stream-butlast-n stream-length>=
    stream-reverse stream-count
    stream-remove stream-partition stream-find stream-find-tail
-   stream-take-while stream-drop-while stream-span stream-break
+   stream-span stream-break
    stream-any stream-every stream-index
    stream-member stream-memq stream-memv
    stream-delete stream-delete-duplicates
@@ -113,8 +115,8 @@
   (and (stream? obj) (null? (force obj))))
 (define-inline (stream-pair? obj)
   (and (stream? obj) (pair? (force obj))))
-(define-inline (stream-car strm) (car (force strm)))
-(define-inline (stream-cdr strm) (cdr (force strm)))
+(define-inline (stream-car s) (car (force s)))
+(define-inline (stream-cdr s) (cdr (force s)))
 
 ;; srfi-40
 (define-syntax stream-delay
@@ -126,7 +128,7 @@
 (define-syntax stream-lambda
   (syntax-rules ()
     [(_ formals body0 body1 ...)
-     (lambda formals (lazy (let () body0 body1 ...)))]))
+     (lambda formals (stream-delay (let () body0 body1 ...)))]))
 
 ;;;
 ;;; Derived
@@ -145,7 +147,7 @@
     [(_ x y ...) (stream-cons x (stream+ y ...))]))
 
 ;; srfi-41
-(define-syntax stream-define
+(define-syntax define-stream
   (syntax-rules ()
     [(_ (name . formal) body0 body1 ...)
      (define name (stream-lambda formal body0 body1 ...))]))
@@ -153,11 +155,10 @@
 ;; srfi-41
 ;; NB: The argument order differs from srfi-1#unfold. Also, predicate is
 ;; to continue, as oppsed to the stop predicate in srfi-1#unfold.
-(define (stream-unfold f p g seed)
-  (stream-delay
-   (if (p seed)
-     (stream-cons (f seed) (stream-unfold f p g (g seed)))
-     stream-null)))
+(define-stream (stream-unfold f p g seed)
+  (if (p seed)
+    (stream-cons (f seed) (stream-unfold f p g (g seed)))
+    stream-null))
 
 ;; srfi-40
 (define (stream-unfoldn f seed n)
@@ -212,12 +213,11 @@
         (loop (map stream-cdr ss))))))
 
 ;; srfi-40, 41
-(define (stream-filter p s)
-  (stream-delay
-   (cond [(stream-null? s) s]
-         [(p (stream-car s)) (stream-cons (stream-car s) 
-                                          (stream-filter p (stream-cdr s)))]
-         [else (stream-filter p (stream-cdr s))])))
+(define-stream (stream-filter p s)
+  (cond [(stream-null? s) s]
+        [(p (stream-car s)) (stream-cons (stream-car s) 
+                                         (stream-filter p (stream-cdr s)))]
+        [else (stream-filter p (stream-cdr s))]))
 
 ;; srfi-41
 (define (list->stream lis)
@@ -245,11 +245,13 @@
   (case-lambda
     [(n s)
      (assume n <integer>)
+     (assume (stream? s))
      (let loop ([n n] [s s] [r '()])
        (cond [(<= n 0) (reverse r)]
              [(stream-null? s) (reverse r)]
              [else (loop (- n 1) (stream-cdr s) (cons (stream-car s) r))]))]
     [(s)
+     (assume (stream? s))
      (let loop ([s s] [r '()])
        (if (stream-null? s)
          (reverse r)
@@ -281,6 +283,63 @@
 ;; srfi-41
 (define (stream-constant . objs)
   (list->stream (apply circular-list objs)))
+
+;; srfi-41
+(define-stream (stream-drop-while pred s)
+  (if (or (stream-null? s) (not (pred (stream-car s))))
+    s
+    (stream-drop-while pred (stream-cdr s))))
+
+;; srfi-41
+(define-stream (stream-take-while pred s)
+  (if (or (stream-null? s) (not (pred (stream-car s))))
+    stream-null
+    (stream-cons (stream-car s)
+                 (stream-take-while pred (stream-cdr s)))))
+
+;; srfi-41
+(define (stream-fold f seed s)
+  (let loop ([seed seed] [s s])
+    (if (stream-null? s)
+      seed
+      (loop (f seed (stream-car s)) (stream-cdr s)))))
+
+;; srfi-41
+(define (stream-from start :optional (step 1))
+  (stream-range start +inf.0 step))
+
+;; srfi-41
+;; NB: End being optional is Gauche's extension
+(define (stream-range start :optional (end +inf.0) step)
+  (assume real? start)
+  (assume real? end)
+  (let* ([step (if (undefined? step)
+                 (if (<= start end) 1 -1)
+                 (begin (assume real? step) step))]
+         [cmp (if (negative? step) > <)])
+    (if (and (exact? start) 
+             (or (exact? end) (infinite? end))
+             (exact? step))
+      (let loop ((start start))
+        (stream-delay
+         (if (cmp start end) 
+           (stream-cons start (loop (+ start step)))
+           stream-null)))
+      (let loop ((k 0))
+        (stream-delay
+         (let1 v (+. start (* k step))
+           (if (cmp v end)
+             (stream-cons v (loop (+ k 1)))
+             stream-null)))))))
+
+;; srfi-41
+(define-stream (stream-iterate proc base)
+  (stream-cons base (stream-iterate proc (proc base))))
+
+;; srfi-41
+(define (stream-length s)
+  (let loop ([n 0] [s s])
+    (if (stream-null? s) n (loop (+ n 1) (stream-cdr s)))))
 
 ;;
 ;; What follows is taken from stream-ext.scm by
@@ -551,11 +610,7 @@
 
 ;;; Miscelaneous: length, append, concatenate, reverse, zip & count
 
-(define (stream-length str)
-  (let loop ((i 0) (s str))
-    (if (stream-null? s)
-      i
-      (loop (+ i 1) (stream-cdr s)))))
+
 
 (define (stream-length>= str len)
   (or (zero? len)
@@ -617,19 +672,6 @@
        (if (pred (stream-car str))
            str
            (stream-find-tail pred (stream-cdr str)))))
-
-(define (stream-take-while pred str)
-  (stream-delay
-   (if (or (stream-null? str) (not (pred (stream-car str))))
-       stream-null
-       (stream-cons (stream-car str)
-         (stream-take-while pred (stream-cdr str))))))
-
-(define (stream-drop-while pred str)
-  (stream-delay
-   (if (or (stream-null? str) (not (pred (stream-car str))))
-       str
-       (stream-drop-while pred (stream-cdr str)))))
 
 (define (stream-span pred str)
   (values (stream-take-while pred str) (stream-drop-while pred str)))

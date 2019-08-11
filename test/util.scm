@@ -805,9 +805,9 @@
                         (stream-cons x (iter f (f x))))])
          (stream->list (stream-take (iter (pa$ + 2) 1) 5))))
 
-(test* "stream-define/stream-take" '(0 2 4 6 8)
+(test* "define-stream/stream-take" '(0 2 4 6 8)
        (let ()
-         (stream-define (iter f x)
+         (define-stream (iter f x)
            (stream-cons x (iter f (f x))))
          (stream->list (stream-take (iter (pa$ + 2) 0) 5))))
 
@@ -870,6 +870,47 @@
        (let1 s (stream-filter (^x (zero? (modulo x 3)))
                               (stream-iota #f))
          (stream->list (stream-take (stream-drop s 4) 4))))
+
+(test* "stream-range" '(10 9 8 7)
+       (stream->list (stream-range 10 6)))
+
+(test* "stream-range" '(10.0 9.0 8.0 7.0)
+       (stream->list (stream-range 10 6.0)))
+
+(test* "stream-range" (lrange 0 1 0.1)
+       (stream->list (stream-range 0 1 0.1)))
+
+(test* "stream-drop-while/stream-range" '(5 6 7 8 9)
+       (stream->list 5 (stream-drop-while (cut < <> 5)
+                                          (stream-range 0))))
+
+(test* "stream-take-while/stream-range" '(0 1 2 3 4)
+       (stream->list (stream-take-while (cut < <> 5)
+                                        (stream-range 0))))
+
+(test* "stream-fold" '(4 3 2 1 0)
+       (stream-fold xcons '() (stream-iota 5)))
+
+(test* "stream-from" '(0 1 2 3 4)
+       (stream->list 5 (stream-from 0)))
+
+(test* "stream-from" '(1 3 5 7 9)
+       (stream->list 5 (stream-from 1 2)))
+
+(test* "stream-from" '(1 3/2 2 5/2 3)
+       (stream->list 5 (stream-from 1 1/2)))
+
+(test* "stream-from" '(1.0 1.1 1.2 1.3 1.4)
+       (stream->list 5 (stream-from 1 0.1)))
+
+(test* "stream-iterate" '(10 11 12 13 14)
+       (stream->list 5 (stream-iterate (cut + <> 1) 10)))
+
+(test* "stream-iterate" '(1 2 4 8 16)
+       (stream->list 5 (stream-iterate (cut * <> 2) 1)))
+
+(test* "stream-length" 6 (stream-length (stream 0 1 2 3 4 5)))
+(test* "stream-length" 0 (stream-length (stream)))
 
 (test* "stream-remove" '(0 2 4 6)
        (stream->list (stream-remove odd? (stream-iota 8))))
