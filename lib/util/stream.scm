@@ -38,6 +38,7 @@
 
 (define-module util.stream
   (use srfi-1)
+  (use util.match)
   (export
    ;;  srfi-40
    stream? stream-null stream-cons stream-null?
@@ -50,6 +51,7 @@
    stream-constant stream-drop-while stream-take-while
    stream-range stream-fold stream-from stream-iterate
    stream-length
+   stream-match
 
    ;; extras
    generator->stream stream-concatenate
@@ -72,7 +74,7 @@
    stream-ninth stream-tenth
    stream-take-safe stream-take stream-drop-safe stream-drop
    stream-intersperse stream-split stream-last stream-last-n
-   stream-butlast stream-butlast-n stream-length>=
+   stream-butlast stream-butlast-n stream-length>= stream-length=
    stream-reverse stream-count
    stream-remove stream-partition stream-find stream-find-tail
    stream-span stream-break
@@ -341,6 +343,76 @@
   (let loop ([n 0] [s s])
     (if (stream-null? s) n (loop (+ n 1) (stream-cdr s)))))
 
+;; srfi-41
+(define-syntax stream-let
+  (syntax-rules ()
+    [(_ tag ((var expr) ...) body0 body1 ...)
+     ((letrec ((tag (stream-lambda (var ...) body0 body1 ...))) tag)
+      expr ...)]))
+
+;;;
+;;; srfi-41 matcher
+;;;
+
+(define-syntax stream-match
+  (er-macro-transformer
+   (^[f r c]
+     ;; returns length of normal patvars, and flag of rest var
+     (define (patlen pat)
+       (let loop ([pat pat] [n 0])
+         (cond [(null? pat) (values n #f)]
+               [(pair? pat) (loop (cdr pat) (+ n 1))]
+               [(or (symbol? pat) (identifier? pat)) (values n #t)]
+               [else (errorf "Bad pattern element ~s in stream-match: ~s" f)])))
+     (define (flatpat pat)
+       (map* identity (^t (if (null? t) '() (list t))) pat))
+     ;; produce one cond clause
+     (define (expand-clause s clause)
+       (match clause
+         [(pat expr)
+          (receive (n rest?) (patlen pat)
+            (if rest?
+              (quasirename r
+                `[(stream-length>= ,s ,n)
+                  (apply (lambda ,(flatpat pat) ,expr) 
+                         (stream->list+stream ,s ,n))])
+              (quasirename r
+                `[(stream-length= ,s ,n)
+                  (apply (lambda ,pat ,expr) (stream->list ,n ,s))])))]
+         [(pat fender expr)
+          (receive (n rest?) (patlen pat)
+            (if rest?
+              (quasirename r
+                `[(and-let* ([ (stream-length>= ,s ,n) ]
+                             [args (stream->list+stream ,s ,n)]
+                             [ (apply (lambda ,(flatpat pat) ,fender) args) ])
+                    args)
+                  => (cut apply (lambda ,(flatpat pat) ,expr) <>)])
+              (quasirename r
+                `[(and-let* ([ (stream-length= ,s ,n) ]
+                             [args (stream->list ,n ,s)]
+                             [ (apply (lambda ,par ,fender) args) ])
+                    args)
+                  => (cut apply (lambda ,pat ,expr) <>)])))]
+         [_ (error "invalid clause ~s in stream-match: ~s" clause f)]))
+          
+     (match f
+       [(_ stream clause ...)
+        (when (null? clause)
+          (error "malformed stream-match: no clauses:" f))
+        (quasirename r
+          `(let1 s ,stream
+             (cond ,@(map (cut expand-clause (r's) <>) clause))))]
+       [_ (error "malformed stream-match:" f)]))))
+
+;; Aux fn for stream-match
+;; {a b c d e ...} => (a b c {d e ...}) etc.
+;; assume we alreadh check s has more than n elts.
+(define (stream->list+stream s n)
+  (if (= n 0)
+    (list s)
+    (cons (stream-car s) (stream->list+stream (stream-cdr s) (- n 1)))))
+             
 ;;
 ;; What follows is taken from stream-ext.scm by
 ;; Alejandro Forero Cuervo <bachue@bachue.com>
@@ -612,10 +684,15 @@
 
 
 
-(define (stream-length>= str len)
+(define (stream-length>= s len)
   (or (zero? len)
-      (and (not (stream-null? str))
-           (stream-length>= (stream-cdr str) (- len 1)))))
+      (and (not (stream-null? s))
+           (stream-length>= (stream-cdr s) (- len 1)))))
+
+(define (stream-length= s len)
+  (if (zero? len)
+    (stream-null? s)
+    (stream-length= (stream-cdr s) (- len 1))))
 
 (define (stream-concatenate strs)
   (stream-delay

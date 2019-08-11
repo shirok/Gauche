@@ -912,6 +912,24 @@
 (test* "stream-length" 6 (stream-length (stream 0 1 2 3 4 5)))
 (test* "stream-length" 0 (stream-length (stream)))
 
+(test* "stream-match" 5
+       (let ()
+         (define (len s)
+           (stream-match s
+             [() 0]
+             [(head . tail) (+ 1 (len tail))]))
+         (len (stream 0 1 2 3 4))))
+
+(test* "stream-match" 'ok
+       (stream-match (stream 1 1 2)
+         [(x y . _) (equal? x y) 'ok]
+         [else 'ng]))
+
+(test* "stream-match" 'ng
+       (stream-match (stream 1 2 1)
+         [(x y . _) (equal? x y) 'ok]
+         [else 'ng]))
+
 (test* "stream-remove" '(0 2 4 6)
        (stream->list (stream-remove odd? (stream-iota 8))))
 
