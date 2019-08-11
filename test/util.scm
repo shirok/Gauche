@@ -800,6 +800,26 @@
 (test* "stream-delay" #t
        (stream? (stream-delay (error "Boo"))))
 
+(test* "stream-lambda/stream-take" '(1 3 5 7 9)
+       (letrec ([iter (stream-lambda (f x)
+                        (stream-cons x (iter f (f x))))])
+         (stream->list (stream-take (iter (pa$ + 2) 1) 5))))
+
+(test* "stream-define/stream-take" '(0 2 4 6 8)
+       (let ()
+         (stream-define (iter f x)
+           (stream-cons x (iter f (f x))))
+         (stream->list (stream-take (iter (pa$ + 2) 0) 5))))
+
+(test* "stream-unfold" '(0 1 4 9 16 25 36 49 64 81)
+       (stream->list
+        (stream-take
+         (stream-unfold (cut expt <> 2)
+                        (^_ #t)
+                        (cut + <> 1)
+                        0)
+         10)))
+
 (test* "stream-unfoldn" '((0 2 4 6) (1 3 5 7))
        (receive (s0 s1)
            (stream-unfoldn (lambda (s)

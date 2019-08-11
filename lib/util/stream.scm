@@ -54,10 +54,13 @@
           stream-delete stream-delete-duplicates
           stream-grep ->stream-char stream-replace stream-translate
           write-stream
+
+          ;; srfi-41 additions
+          stream+ stream-lambda stream-define stream-unfold
           ))
 (select-module util.stream)
 
-;;;================================================================
+;;;
 ;;; <stream> type is a promise with 'stream in its kind.
 ;;;
 
@@ -68,53 +71,70 @@
   (set! (promise-kind promise) 'stream)
   promise)
 
-;;;================================================================
-;;; SRFI-40 syntaxes and procedures
+;;;
+;;; Primitives
 ;;;
 
+;; srfi-40, 41
 ;; A singleton instance of null stream
 (define stream-null (%make-stream (delay '())))
 
-;; STREAM-CONS object stream -- primitive constructor of streams
+;; srfi-40, 41
 (define-syntax stream-cons
   (syntax-rules ()
-    ((stream-cons obj strm)
-     (%make-stream
-      (delay
-        (let ((s strm))
-          (if (not (stream? s))
-            (error "attempt to stream-cons onto non-stream")
-            (cons obj s))))))))
+    [(stream-cons obj strm)
+     (%make-stream (delay (cons obj strm)))]))
 
-;; STREAM-NULL? object -- #t if object is the null stream, #f otherwise
+;; stri-40, 41
 (define-inline (stream-null? obj)
   (and (stream? obj) (null? (force obj))))
-
-;; STREAM-PAIR? object -- #t if object is a non-null stream, #f otherwise
 (define-inline (stream-pair? obj)
-  (and (stream? obj) (not (null? (force obj)))))
+  (and (stream? obj) (pair? (force obj))))
+(define-inline (stream-car strm) (car (force strm)))
+(define-inline (stream-cdr strm) (cdr (force strm)))
 
-;; STREAM-CAR stream -- first element of stream
-(define-inline (stream-car strm)
-  (car (force strm)))
-
-;; STREAM-CDR stream -- remaining elements of stream after first
-(define-inline (stream-cdr strm)
-  (cdr (force strm)))
-
-;; STREAM-DELAY object -- the essential stream mechanism
+;; srfi-40
 (define-syntax stream-delay
   (syntax-rules ()
-    ((stream-delay expr)
-     (%make-stream (lazy expr)))))
+    [(stream-delay expr)
+     (%make-stream (lazy expr))]))
 
-;; STREAM object ... -- new stream whose elements are object ...
+;; srfi-41
+(define-syntax stream-lambda
+  (syntax-rules ()
+    [(_ formals body0 body1 ...)
+     (lambda formals (lazy (let () body0 body1 ...)))]))
+
+;;;
+;;; Derived
+;;;
+
+;; srfi-40 (objs are evaluated first)
 (define (stream . objs)
-  (let loop ((objs objs))
-    (stream-delay
-     (if (null? objs)
-       stream-null
-       (stream-cons (car objs) (loop (cdr objs)))))))
+  (if (null? objs)
+    stream-null
+    (stream-cons (car objs) (apply stream (cdr objs)))))
+
+;; srfi-41's stream (evaluation of objs are delayed)
+(define-syntax stream+
+  (syntax-rules ()
+    [(_) stream-null]
+    [(_ x y ...) (stream-cons x (stream y ...))]))
+
+;; srfi-41
+(define-syntax stream-define
+  (syntax-rules ()
+    [(_ (name . formal) body0 body1 ...)
+     (define name (stream-lambda formal body0 body1 ...))]))
+
+;; srfi-41
+;; NB: The argument order differs from srfi-1#unfold. Also, predicate is
+;; to continue, as oppsed to the stop predicate in srfi-1#unfold.
+(define (stream-unfold f p g seed)
+  (stream-delay
+   (if (p seed)
+     (stream-cons (f seed) (stream-unfold f p g (g seed)))
+     stream-null)))
 
 ;; STREAM-UNFOLDN generator seed n -- n+1 streams from (generator seed)
 (define (stream-unfoldn gen seed n)
