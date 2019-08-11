@@ -51,7 +51,7 @@
    stream-constant stream-drop-while stream-take-while
    stream-range stream-fold stream-from stream-iterate
    stream-length
-   stream-match
+   stream-match stream-of
 
    ;; extras
    generator->stream stream-concatenate
@@ -412,7 +412,50 @@
   (if (= n 0)
     (list s)
     (cons (stream-car s) (stream->list+stream (stream-cdr s) (- n 1)))))
-             
+
+;;;
+;;; srfi-41 comprehension
+;;;
+
+;; The following 'stream-of' definition is taken from srfi-41 reference
+;; implementation.  This kind of code is where syntax-rules shines.
+;;
+;; Copyright (C) Philip L. Bewig (2007). All Rights Reserved.
+;;
+;; Permission is hereby granted, free of charge, to any person obtaining
+;; a copy of this software and associated documentation
+;; files (the "Software"), to deal in the Software without restriction,
+;; including without limitation the rights to use, copy, modify, merge,
+;; publish, distribute, sublicense, and/or sell copies of the Software,
+;; and to permit persons to whom the Software is furnished to do so,
+;; subject to the following conditions:
+;;
+;; The above copyright notice and this permission notice shall be
+;; included in all copies or substantial portions of the Software.
+
+(define-syntax stream-of
+  (syntax-rules ()
+    ((_ expr rest ...)
+     (stream-of-aux expr stream-null rest ...))))
+
+(define-syntax stream-of-aux
+  (syntax-rules (in is)
+    ((stream-of-aux expr base)
+     (stream-cons expr base))
+    ((stream-of-aux expr base (var in stream) rest ...)
+     (stream-let loop ((strm stream))
+                 (if (stream-null? strm)
+                   base
+                   (let ((var (stream-car strm)))
+                     (stream-of-aux expr (loop (stream-cdr strm)) rest ...)))))
+    ((stream-of-aux expr base (var is exp) rest ...)
+     (let ((var exp)) (stream-of-aux expr base rest ...)))
+    ((stream-of-aux expr base pred? rest ...)
+     (if pred? (stream-of-aux expr base rest ...) base))))
+
+;; End of excerpt from srfi-41 reference implementation
+
+
 ;;
 ;; What follows is taken from stream-ext.scm by
 ;; Alejandro Forero Cuervo <bachue@bachue.com>

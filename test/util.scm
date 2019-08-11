@@ -930,6 +930,28 @@
          [(x y . _) (equal? x y) 'ok]
          [else 'ng]))
 
+(test* "stream-of" '(0 4 16 36 64)
+       (stream->list
+        (stream-of (* x x)
+                   (x in (stream-range 0 10))
+                   (even? x))))
+
+(test* "stream-of" '((1 1) (1 2) (2 1) (2 2) (3 1) (3 2))
+       (stream->list
+        (stream-of (list a b)
+                   (a in (stream-range 1 4))
+                   (b in (stream-range 1 3)))))
+
+(test* "stream-of" '((3 4 5) (5 12 13) (6 8 10))
+       (stream->list
+        (stream-of (list a b c)
+                   (a in (stream-range 1 14))
+                   (b in (stream-range a 14))
+                   (c in (stream-range b 14))
+                   (d is (+ (* a a) (* b b)))
+                   (= (* c c) d))))
+
+
 (test* "stream-remove" '(0 2 4 6)
        (stream->list (stream-remove odd? (stream-iota 8))))
 
