@@ -641,7 +641,7 @@ AS_CASE([$host],
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     ],
-  [*-linux-gnu*|*-*-gnu*|*freebsd*|*dragonfly*], [
+  [*-linux-*|*-*-gnu*|*freebsd*|*dragonfly*], [
     SHLIB_SO_CFLAGS="-fPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
