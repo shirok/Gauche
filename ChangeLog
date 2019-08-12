@@ -1,3 +1,9 @@
+2019-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/stream.scm: Add srfi-41 procedures
+	* lib/srfi-41.scm, lib/scheme/stream: Add srfi-41 (scheme.stream)
+	  support
+
 2019-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.scm.stub (TAGvector-swap!, TAGvector-reverse!)

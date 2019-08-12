@@ -790,8 +790,8 @@
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-37")
-
 (use srfi-37)
+(test-module 'srfi-37)
 
 (define options
   (list (option '(#\l "long-display") #f #f
@@ -852,9 +852,14 @@
        (test-options "-i" "-" "foo" "-b" "bar"))
 
 ;;-----------------------------------------------------------------------
-(test-section "srfi-42")
+(test-section "srfi-41")
+(use srfi-41)
+(test-module 'srfi-41)
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-42")
 (use srfi-42)
+(test-module 'srfi-42)
 
 ;; tests took from examples of srfi-42 reference implementation.
 
