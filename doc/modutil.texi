@@ -25874,6 +25874,8 @@ the latter of which became a part of R7RS large (as @code{(scheme stream)},
 @menu
 * Stream primitives::
 * Stream constructors::
+* Stream binding::
+* Stream consumers::
 * Stream operations::
 @end menu
 
@@ -25991,7 +25993,7 @@ as @code{(lambda formals (stream-delay body body2 @dots{}))}.
 @c COMMON
 @end defmac
 
-@node Stream constructors, Stream operations, Stream primitives, Stream library
+@node Stream constructors, Stream binding, Stream primitives, Stream library
 @subsection Stream constructos
 
 @defun stream obj @dots{}
@@ -26214,19 +26216,26 @@ an infinite stream.
 @c COMMON
 @end defun
 
-@defun stream-iota count :optional start step
+@defun stream-iota :optional count start step
 @c MOD util.stream
 @c EN
 Creates a new stream of numbers, starting from @var{start}
-and incrementing @var{step}.  The length of stream is @var{count}
-if it is positive, or infinite if @var{count} is negative.
-The default values of @var{start} and @var{step} are 0 an 1,
-respectively.
+and incrementing @var{step}.  The length of stream is maximum
+integer not greater than nonnegative real number @var{count}.
+The default values of @code{count}, @var{start} and @var{step} are
+@code{+inf.0}, 0 and 1, respectively.
+
+If @var{start} and @var{step} are exact, and @var{count} is exact or
+infinite, a sequence of exact numbers are created.  Otherwise,
+a sequence of inexact numbers are created.
 @c JP
 @var{start}からはじまり、@var{step}ずつ要素が増加する数値のストリーム
-を生成します。ストリームの長さは@var{count}が正ならその値になります。
-@var{count}が負なら無限ストリームになります。@var{start}のデフォルト値
-は 0、@var{step}のデフォルト値は 1 です。
+を生成します。ストリームの長さは非負の実数@var{count}を越えない最大の整数値です。
+@var{count}, @var{start}, @var{step}のデフォルト値はそれぞれ
+@code{+inf.0}, 0 および 1です。
+
+@var{start}と@var{step}が正確数で、@var{count}が正確数か無限大の場合、
+正確数のストリームが作られます。そうでなければ非正確数のストリームになります。
 @c COMMON
 @end defun
 
@@ -26263,6 +26272,40 @@ R7RSの@code{scheme.stream}では、@var{end}引数は必須です。
 @end example
 @end defun
 
+@defun stream-from start :optional step
+[R7RS stream]
+@c MOD util.stream
+@c EN
+This is yet another number sequence generator.  Generates an infinite
+sequence whose @var{i}-th element is @code{(+ @var{start} (* i @var{step}))}.
+If @var{step} is omitted, 1 is assumed.  If both @var{start} and @var{step}
+are exact, exact numbers are generated.  Otherwise, inexact numbers are
+generated.
+@c JP
+もうひとつの数値シーケンス生成手続きです。@var{i}番目の項が
+@code{(+ @var{start} (* i @var{step}))}であるような無限シーケンスを返します。
+@var{step}が省略されたら1が使われます。
+@var{start}と@var{step}が正確数なら、正確数のシーケンスが、
+そうでなければ非正確数のシーケンスが返されます。
+@c COMMON
+@end defun
+
+@defun stream-iterate f seed
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Returns a sequence starting from @var{seed}, and each successive element
+is calcualted by @code{(@var{f} @var{s})} where @var{s} is the previous
+element.
+@c JP
+@c COMMON
+
+@example
+(stream->list 5 (stream-iterate (cut cons 'x <>) '()))
+  @result{} (() (x) (x x) (x x x) (x x x x))
+@end example
+@end defun
+
 @defun stream-xcons a b
 @c MOD util.stream
 @c EN
@@ -26291,7 +26334,6 @@ Retrun a new stream whose elements are the elements in @var{list}.
 @var{list}の要素を要素とする新たなストリームを作って返します。
 @c COMMON
 @end defun
-
 
 @defun string->stream string :optional tail-stream
 @c MOD util.stream
@@ -26357,52 +26399,330 @@ EOFが読まれた直後に呼ばれます。そこでポートをクローズ�
 @c COMMON
 @end defun
 
-@node Stream operations,  , Stream constructors, Stream library
-@subsection Stream operations
-
-@defun stream-map func . streams
-[SRFI-40]
+@defmac stream-of elt-expr clause @dots{}
+[R7RS stream]
 @c MOD util.stream
 @c EN
-Returns a new stream, whose elements are calculated by
-applying @var{func} to each element of @var{streams}.
+Stream comperehension.  Returns a stream in which each element
+is computed by @var{elt-expr}.   
+The @var{clause} creates scope of @var{elt-expr}
+and controls iterations.  Each @var{clause} can be one of the following
+forms:
+ストリーム内包表記。各要素が@var{elt-expr}で計算されるストリームを返します。
+@var{clause}は@var{elt-expr}のスコープを作り、繰り返しを制御します。
+各@var{clause}は以下の形のいずれかです：
 @c JP
-@var{streams}の各要素に@var{func}を適用した値を要素とする新しいストリー
-ムを返します。
 @c COMMON
-@end defun
+@table @code
+@item (@var{x} in @var{stream-expr})
+@c EN
+Iterate over @var{stream-expr}, binding @var{x} to each element in
+each iteration.  The variable @var{x} is visible in successive @var{clause}s
+and @var{elt-expr}
+@c JP
+@var{stream-expr}が返すストリームの各要素を、@var{x}に束縛して繰り返します。
+変数@var{x}のスコープは後続の@var{clause}および@var{elt-expr}です。
+@c COMMON
+@item (@var{x} is @var{expr})
+@c EN
+Bind a variable @var{x} with the value of @var{expr}.  The variable @var{x}
+is visible in successive @var{clause}s
+and @var{elt-expr}.
+@c JP
+変数@var{x}に値@var{expr}の結果を束縛します。@var{x}のスコープは
+後続の@var{clause}および@var{elt-expr}です。
+@c COMMON
+@item expr
+@c EN
+If @var{expr} evaluates to @code{#f}, this iteration is skipped without
+generating a new element.
+@c JP
+@var{expr}が@code{#f}に評価されたらこの回は値を生成せずに打ちきられ、
+次の繰り返しに進みます。
+@c COMMON
+@end table
+
+@c EN
+The following comprehension generates infinite sequence of pythagorean
+triples:
+@c JP
+次の内包表記はピタゴラス数の無限シーケンスを生成します：
+@c COMMON
+
+@example
+(define pythagorean-triples
+  (stream-of (list a b c)
+    (c in (stream-from 3))
+    (b in (stream-range 2 c))
+    (a in (stream-range 1 b))
+    (= (square c) (+ (square b) (square a)))))
+
+(stream->list 5 pythagorean-triples)
+  @result{} ((3 4 5) (6 8 10) (5 12 13) (9 12 15) (8 15 17))
+@end example
+@end defmac
+
+@node Stream binding, Stream consumers, Stream constructors, Stream library
+@subsection Stream binding
+
+@defmac define-stream (name . formals)  body body2 @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+A convenent macro to define a procedure that yields a stream.
+Same as the following form:
+@c JP
+ストリームを作って返す関数を手軽に定義するマクロです。
+次のフォームと同じです:
+@c COMMON
+
+@example
+(define (name . formals)
+  (stream-delay
+    (let () body body2 @dots{})))
+@end example
+@end defmac
+
+@defmac stream-let loop-var ((var init) @dots{}) body body2 @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+A handy macro to write a lazy named-let loop.  It is the same as the
+following:
+@c JP
+lazyなnamed-letによるループを書くときに便利なマクロです。次のフォームと同じです:
+@c COMMON
+@example
+(let loop-var ((var init) @dots{})
+  (stream-delay
+    (let () body body2 @dots{})))
+@end example
+@end defmac
+
+@defmac stream-match stream-expr clause @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+This allows accessing streams via simple pattern matching.
+The @var{stream-expr} argument is evaluated and must yield a stream.
+Each @var{clause}
+must be either a form of @code{(@var{pattern} @var{expr})} or
+@code{(@var{pattern} @var{fender} @var{expr})}.
+
+The content of the stream is matched to each @var{pattern},
+which must have one of the following forms:
+@c JP
+このマクロは簡単なパターンマッチングを使ってストリームの要素にアクセスします。
+@var{stream-expr}はストリームを返す式でなければなりません。
+各@var{clause}は@code{(@var{pattern} @var{expr})}か
+@code{(@var{pattern} @var{fender} @var{expr})}という形です。
+
+入力ストリームは各@var{pattern}に順マッチするかどうかテストされます。
+@var{pattern}には以下の形のいずれかです:
+@c COMMON
+
+@table @code
+@item ()
+@c EN
+Matches a null stream.
+@c JP
+空のストリームとマッチします。
+@c COMMON
+@item (@var{p0} @var{p1} @dots{})
+@c EN
+Matches a stream that has exactly the same number of elements as
+the number of pattern elements.
+@c JP
+パターン内の要素の数と入力ストリームの要素数が一致した時にマッチします。
+@c COMMON
+@item (@var{p0} @var{p1} @dots{} . @var{pRest})
+@c EN
+Matches a stream that has at least the same number of elements as
+the number of pattern elements except @var{pRest}.  The rest of stream
+matches with @var{pRest}.
+@c JP
+入力ストリームの要素数が、@var{pRest}を除いたパターン内の要素の数以上であれば
+マッチします。@var{pRest}にはストリームの残りがマッチします。
+@c COMMON
+@item @var{pRest}
+@c EN
+Matches an entire stream.
+@c JP
+入力ストリーム全体とマッチします。
+@c COMMON
+@end table
+
+@c EN
+Each pattern element can be an identifier or a literal underscore.  If it is
+an identifier, it is bound to the matched element while evaluating
+the corresponding @var{fender} and @var{expr}.
+@c JP
+パターンの各要素は識別子かリテラルのアンダースコア@code{_}です。
+アンダースコア以外の識別子の場合は、それらが対応する入力ストリームの要素に
+束縛された環境で@var{fender}と@var{expr}が評価されます。
+@c COMMON
+
+@c EN
+If @var{fender} is present in the @var{clause}, it is evaluated; if
+it yields @code{#f}, the match of the clause fails and next clauses will be
+tried.
+@c JP
+もし@var{fender}があれば、まずそれが評価され、@code{#f}であったらその@var{clause}の
+マッチは失敗となり、次の@var{clause}が試されます。
+@c COMMON
+
+@c EN
+Otherwise, @var{expr} is evaluated and the result(s) becomes the result(s)
+of @code{stream-match}.
+@c JP
+そうでなければ@var{expr}が評価され、その結果が@code{stream-match}の結果となります。
+@c COMMON
+
+@c EN
+Only the elements from the stream that is required to match are accessed.
+@c JP
+入力ストリームの要素はマッチに必要なだけ取り出されます。
+@c COMMON
+
+@c EN
+The following example defines a procedure to count the number of true
+values in the stream:
+@c JP
+次の例は、ストリーム中の真の値の数を数えています:
+@c COMMON
+
+@example
+(define (num-trues strm)
+  (stream-match strm
+    (() 0)
+    ((head . tail) head (+ 1 (num-trues tail)))
+    ((_ . tail) (num-trues tail))))
+
+(num-trues (stream #f #f #t #f #t #f #t #t))
+  @result{} 4
+@end example
+@end defmac
+
+@node Stream consumers, Stream operations, Stream binding, Stream library
+@subsection Stream consumers
+
+These procedures takes stream(s) and consumes its/their elements
+until one of the streams is exhausted.
 
 @defun stream-for-each func . streams
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 Applies @var{func} for each element of @var{streams}.
 Terminates if one of @var{streams} reaches the end.
 @c JP
 @var{func}を@var{streams}の各要素に適用します。
-@var{streams}が終端にたっしたところで停止します。
+@var{streams}が終端に達したところで停止します。
 @c COMMON
 @end defun
 
-@defun stream-filter pred? stream
-[SRFI-40]
+@defun stream-fold f seed stream
+[R7RS stream]
 @c MOD util.stream
 @c EN
-Returns a new stream including only elements passing @var{pred?}.
+Apply @var{f} on the current seed value and an element from
+@var{stream} to obtain the next seed value, and repeat it until
+@var{stream} is exhausted, then returns the last seed value.
+The initial seed value is given by @var{seed}.
+
+Note: The argument order of @var{f} differs from other @code{*-fold}
+procedures, e.g. @code{fold} (@pxref{Walking over lists}) takes
+the element first, then the seed value.
 @c JP
-@var{pred?}をパスする要素のみからなる新しいストリームを返す。
+@var{f}を現在のシード値と@var{stream}の要素に適用し、その結果を次のシード値として
+@var{stream}が終端に達するまで繰り返します。最初のシード値は@var{seed}引数で与えられます。
+最後のシード値が返されます。
+
+註: @var{f}の引数順は、他の@code{*-fold}系関数のそれと異なることに注意してください。
+例えば@code{fold} (@ref{Walking over lists}参照) では最初に要素、次にシード値が
+渡されます。
+@c COMMON
+
+@example
+(stream-fold - 0 (stream 1 2 3 4 5))
+  @result{} -15
+@end example
+@end defun
+
+@node Stream operations,  , Stream consumers, Stream library
+@subsection Stream operations
+
+@defun stream-append stream @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Returns a new stream which is concatenation of given @var{stream}s.
+@c JP
+与えられた@var{stream}を全部つないだ新たなストリームを返します。
 @c COMMON
 @end defun
 
+@defun stream-concat streams
+@defunx stream-concatenate streams
+[R7RS stream]
+@c MOD util.stream
 @c EN
-The following procedures are taken from the library written by
-Alejandro Forero Cuervo for Chicken Scheme.  They follow
-the naming conventions of srfi-1 (@ref{List library}).
+R7RS @code{scheme.stream} defines @code{stream-concat}.  Gauche had
+@code{stream-concatenate}, and keeps it for the backward compatibility.
+Both are the same.
+
+The @var{streams} argument is a stream of streams.  Returns a new stream
+that is concatenation of them.  Unlike @code{stream-append}, @var{streams}
+can generate infinite streams.
 @c JP
-以下の手続きは Alejandro Forero Cuervo が Chicken Schemeのために書いた
-ライブラリから取ってきたものです。これらの手続きの名前は srfi-1
-(@ref{List library})の命名規則にならったものです。
+R7RS @code{scheme.stream}は@code{stream-concat}を定義しました。
+Gaucheには@code{stream-concatenate}があったので互換性のためにそちらも残しています。
+どちらも同じです。
+
+@var{streams}はストリームのストリームです。各ストリームを連結したストリームを作って
+返します。@code{stream-append}と違い、@var{streams}は無限個のストリームを生成
+することができます。
 @c COMMON
+@end defun
+
+
+@defun stream-map func stream stream2 @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Returns a new stream, whose elements are calculated by
+applying @var{func} to each element of @var{stream} @dots{}.
+@c JP
+@var{streams}の各要素に@var{func}を適用した値を要素とする新しいストリー
+ムを返します。
+@c COMMON
+@end defun
+
+@defun stream-scan func seed stream
+[R7RS stream]
+@c MOD util.stream
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun stream-zip stream @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun stream-filter pred stream
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Returns a new stream including only elements passing @var{pred}.
+@c JP
+@var{pred}をパスする要素のみからなる新しいストリームを返す。
+@c COMMON
+@end defun
 
 @defun stream->list stream
 @defunx stream->string stream
@@ -26562,6 +26882,9 @@ the given stream has less than @var{count} elements.
  @result{} (1 2)
 @end example
 
+Note: srfi-41 (@code{scheme.stream}) also defines @code{stream-take}, but
+the argument order is reversed, and also it allows @var{stream} to have
+less than @code{count} elements.
 @end defun
 
 @defun stream-drop stream count
@@ -26573,6 +26896,10 @@ If the given stream has less than @var{count} elements,
 @code{stream-drop} returns a stream that raises an error
 if its element is accessed, and @code{stream-drop-safe}
 returns an empty stream.
+
+Note: srfi-41 (@code{scheme.stream}) also defines @code{stream-drop}, but
+the argument order is reversed, and also it allows @var{stream} to have
+less than @code{count} elements.
 @end defun
 
 @defun stream-intersperse stream element
@@ -26602,44 +26929,15 @@ inserted between elements of @var{stream}.
 @end defun
 
 @defun stream-length stream
+[R7RS stream]
 @c MOD util.stream
+Returns the number of elements in @var{stream}.  It diverges if @var{stream}
+is infinite.
 @end defun
 
 @defun stream-length>= stream n
+@defunx stream-length= stream n
 @c MOD util.stream
-@end defun
-
-@defun stream-append stream @dots{}
-[R7RS stream]
-@c MOD util.stream
-@c EN
-Returns a new stream which is concatenation of given @var{stream}s.
-@c JP
-与えられた@var{stream}を全部つないだ新たなストリームを返します。
-@c COMMON
-@end defun
-
-@defun stream-concat streams
-@defun stream-concatenate streams
-[R7RS stream]
-@c MOD util.stream
-@c EN
-R7RS @code{scheme.stream} defines @code{stream-concat}.  Gauche had
-@code{stream-concatenate}, and keeps it for the backward compatibility.
-Both are the same.
-
-The @var{streams} argument is a stream of streams.  Returns a new stream
-that is concatenation of them.  Unlike @code{stream-append}, @var{streams}
-can generate infinite streams.
-@c JP
-R7RS @code{scheme.stream}は@code{stream-concat}を定義しました。
-Gaucheには@code{stream-concatenate}があったので互換性のためにそちらも残しています。
-どちらも同じです。
-
-@var{streams}はストリームのストリームです。各ストリームを連結したストリームを作って
-返します。@code{stream-append}と違い、@var{streams}は無限個のストリームを生成
-することができます。
-@c COMMON
 @end defun
 
 @defun stream-reverse stream :optional tail-stream
@@ -26681,10 +26979,12 @@ The optional argument is Gauche's extension.  The description of @code{reverse}
 @end defun
 
 @defun stream-take-while pred stream
+[R7RS stream]
 @c MOD util.stream
 @end defun
 
 @defun stream-drop-while pred stream
+[R7RS stream]
 @c MOD util.stream
 @end defun
 
