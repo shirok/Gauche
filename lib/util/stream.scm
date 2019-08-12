@@ -505,14 +505,21 @@
        stream-null
        (stream-cons (init-proc i) (loop (+ i 1))))))
 
-(define (stream-iota count . args)
-  (let loop ((i (or count -1))
-             (start (if (null? args) 0 (car args)))
-             (step (if (or (null? args) (null? (cdr args))) 1 (cadr args))))
-    (stream-delay
-     (if (zero? i)
-       stream-null
-       (stream-cons start (loop (- i 1) (+ start step) step))))))
+(define (stream-iota :optional (count +inf.0) (start 0) (step 1))
+  (define cnt (if (< count 0) +inf.0 count)) ;; for the backward compatibility
+  (if (and (or (exact? cnt) (infinite? cnt))
+           (exact? start)
+           (exact? step))
+    (let loop ([c cnt] [s start])
+      (stream-delay
+       (if (<= c 0)
+         stream-null
+         (stream-cons s (loop (- c 1) (+ s step))))))
+    (let loop ([k 0])
+      (stream-delay
+       (if (>= k cnt)
+         stream-null
+         (stream-cons (+. start (* k step)) (loop (+ k 1))))))))
 
 (define (stream-format fmt . rest)
   (string->stream (apply format fmt rest)))

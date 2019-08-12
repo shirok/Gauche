@@ -866,9 +866,15 @@
                           (stream-iota -1 1))
          (reverse r)))
 
+(test* "stream-iota" '(1.0 1.5 2.0 2.5 3.0)
+       (stream->list (stream-iota 5 1 0.5)))
+
+(test* "stream-iota" '(1.0 1.0+1.0i 1.0+2.0i 1.0+3.0i)
+       (stream->list (stream-iota 4 1 +i)))
+
 (test* "stream-filter/take/drop" '(12 15 18 21)
        (let1 s (stream-filter (^x (zero? (modulo x 3)))
-                              (stream-iota #f))
+                              (stream-iota))
          (stream->list (stream-take (stream-drop s 4) 4))))
 
 (test* "stream-range" '(10 9 8 7)
