@@ -57,7 +57,7 @@
 * Text terminal control::       text.console
 * CSV tables::                  text.csv
 * Calculate difference of text streams::  text.diff
-* EDN parsing and construction:: text.edn
+* EDN parsing and construction::  text.edn
 * Localized messages::          text.gettext
 * Simple HTML document construction::  text.html-lite
 * Parsing input stream::        text.parse
@@ -25862,15 +25862,26 @@ you can write like this:
 @mdindex util.stream
 @c EN
 This module provides a library of lazy streams, including the
-functions and syntaxes defined in srfi-40.
+functions and syntaxes defined in srfi-40 and srfi-41,
+the latter of which became a part of R7RS large (as @code{(scheme stream)},
 @c JP
 このモジュールは遅延ストリームのライブラリを提供します。このモジュール
-には SRFI-40 で定義されている関数および構文が含まれています。
+にはsrfi-40とsrfi-41で定義されている関数および構文が含まれています。
+後者は@code{(scheme stream)}としてR7RS largeの一部になっています。
 @c COMMON
 @end deftp
 
+@menu
+* Stream primitives::
+* Stream constructors::
+* Stream operations::
+@end menu
+
+@node Stream primitives, Stream constructors, Stream library, Stream library
+@subsection Stream primitives
+
 @defun stream? obj
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 Returns @code{#t} iff @var{obj} is a stream created by a procedure
@@ -25882,7 +25893,7 @@ of @code{util.stream}.
 @end defun
 
 @defvar stream-null
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 The singleton instance of NULL stream.
@@ -25892,7 +25903,7 @@ NULLストリームのシングルトンインスタンス。
 @end defvar
 
 @defmac stream-cons object stream
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 A fundamental constructor of a stream.  Adds @var{object} to the
@@ -25904,7 +25915,7 @@ head of a @var{stream}, and returns a new stream.
 @end defmac
 
 @defun stream-null? obj
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 Returns @code{#t} iff @var{obj} is the null stream.
@@ -25914,7 +25925,7 @@ Returns @code{#t} iff @var{obj} is the null stream.
 @end defun
 
 @defun stream-pair? obj
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 Returns @code{#t} iff @var{obj} is a non-null stream.
@@ -25924,7 +25935,7 @@ Returns @code{#t} iff @var{obj} is a non-null stream.
 @end defun
 
 @defun stream-car s
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 Returns the first element of the stream @var{s}.
@@ -25934,7 +25945,7 @@ Returns the first element of the stream @var{s}.
 @end defun
 
 @defun stream-cdr s
-[SRFI-40]
+[R7RS stream]
 @c MOD util.stream
 @c EN
 Returns the remaining elements of the stream @var{s}, as a stream.
@@ -25956,11 +25967,32 @@ Returns a stream which is a delayed form of @var{expr}.
 @c EN
 As a rule of thumb, any stream-producing functions should
 wrap the resulting expression by @code{stream-delay}.
+(Or you can use @code{stream-lambda}, @code{stream-let} or @code{stream-define},
+described below.)
 @c JP
 原則として、ストリームを生成する関数はすべからく結果を
 @code{stream-delay}でラップすべきです。
+(以下に述べる@code{stream-lambda}, @code{stream-let}, @code{stream-define}を
+使う手もあります)。
 @c COMMON
 @end defmac
+
+@defmac stream-lambda formals body body2 @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+A convenience macro to create a function that returns a stream.
+Effectively, @code{(stream-lambda formals body body2 @dots{})} is the same
+as @code{(lambda formals (stream-delay body body2 @dots{}))}.
+@c JP
+ストリームを返す関数を作る簡易マクロです。
+@code{(stream-lambda formals body body2 @dots{})}は
+@code{(lambda formals (stream-delay body body2 @dots{}))}と同じです。
+@c COMMON
+@end defmac
+
+@node Stream constructors, Stream operations, Stream primitives, Stream library
+@subsection Stream constructos
 
 @defun stream obj @dots{}
 [SRFI-40]
@@ -25970,28 +26002,112 @@ Returns a new stream whose elements are @var{obj} @dots{}.
 @c JP
 要素が@var{obj} @dots{}であるような新しいストリームを返します。
 @c COMMON
+
+@c EN
+Note: This differs from srfi-41's (@code{scheme.stream}'s) @code{stream},
+which is a macro so that arguments are lazily evaluated.  Srfi-41's
+@code{stream} is provided as @code{stream+} in this module.
+@c JP
+註：これはsrfi-41 (@code{scheme.stream})の@code{stream}とは異なります。
+srfi-41の方はマクロで、引数の評価が遅延されます。srfi-41版はこのモジュールでは
+@code{stream+}と言う名前で提供されます。
+@c COMMON
+
+@example
+(stream 1 2 3))     @result{} @r{a stream that contains} (1 2 3)
+(stream 1 (/ 1 0))) @result{} @r{error}
+@end example
 @end defun
 
-@defun stream-unfoldn generator seed n
+@defmac stream+ expr @dots{}
+@c MOD util.stream
+@c EN
+Returns a new stream whose elements are the result of @var{expr} @dots{}.
+
+This is the same as srfi-41(@code{scheme.stream})'s @code{stream}.
+Each @var{expr} isn't evaluated until it is accessed.
+@c JP
+要素が@var{expr} @dots{}の結果であるような新たなストリームを作って返します。
+
+これはsrfi-41(@code{scheme.stream})の@code{stream}と同じです。
+各@var{expr}はアクセスされるまで評価されません。
+@c COMMON
+
+@example
+(define s (stream+ 1 (/ 1 0)))  ;; doesn't yield an error
+
+(stream-car s)  @result{} 1
+
+(stream-cadr s) @result{} @r{error}
+@end example
+@end defmac
+
+@defun stream-unfold f p g seed
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Creates a new stream whose element is determined as follows:
+
+@itemize
+@item
+A ``go'' predicate @var{p} is called on the current seed value.
+If it yields @code{#f}, the stream teminates.
+@item
+Otherwise, @code{(f s)} is the element of the stream,
+and @code{(g s)} becomes the next seed value, where
+@code{s} is the current seed value.  The initial seed value
+is given by @var{seed}.
+@end itemize
+
+Note: Unfortunately, the order of arguments differs from
+other @code{*-unfold} procedures, which takes @code{p f g}
+(predicate, value-generator and seed-generator).  Furthermore,
+the predicate is stop-predicate (returning true stops iteration).
+@c JP
+次の手順で生成される要素をもつ新たなストリームを作成して返します。
+
+@itemize
+@item
+「続行」述語@var{p}が現在のシード値を引数として呼ばれます。
+もし@code{#f}が返されたら、ストリームはそこで終了です。
+@item
+そうでなければ、@code{s}を現在のシード値として、@code{(f s)}をストリームの
+現在の要素とし、@code{(g s)}を次のシード値とします。
+@var{seed}はシード値の初期値を与えます。
+@end itemize
+
+註：残念なことに、この手続きは他の @code{*-unfold} 系手続きと異なる順序で
+引数を取ります。他の手続きは@code{p f g} (述語、値生成、シード生成) の順です。
+さらに、他の手続きでは述語は停止する時に真を返します。
+@c COMMON
+
+@example
+(stream->list
+ (stream-unfold integer->char (cut < <> 58) (cut + 1 <>) 48))
+ @result{} (#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
+@end example
+@end defun
+
+@defun stream-unfoldn f seed n
 [SRFI-40]
 @c MOD util.stream
 @c EN
 Creates @var{n} streams related each other, whose contents are
-generated by @var{generator} and @var{seed}.
+generated by @var{f} and @var{seed}.
 @c JP
 互いに関連する @var{n} 本のストリームを生成します。それぞれの内容は
-@var{generator}および@var{seed}を使って生成します。
+@var{f}および@var{seed}を使って生成します。
 @c COMMON
 
 @c EN
-The @var{generator} is called with the current seed value,
+The @var{f} is called with the current seed value,
 and returns @code{@var{n}+1} values:
 @c JP
-@var{generator}は現在のシード値とともに呼ばれ、@code{@var{n}+1}個の値
+@var{f}は現在のシード値とともに呼ばれ、@code{@var{n}+1}個の値
 を返します。
 @c COMMON
 @example
-(@var{generator} @var{seed})
+(@var{f} @var{seed})
   => seed result_0 result_1 @dots{} result_n-1
 @end example
 
@@ -26040,8 +26156,209 @@ gosh> (stream->list (stream-take s0 10))
 gosh> (stream->list (stream-take s1 10))
 (1 3 5 7 9 11 13 15 17 19)
 @end example
-
 @end defun
+
+@defun stream-unfolds f seed
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Like @code{stream-unfoldn}, but the number of created streams is
+determined by the number fo return values from @var{f}.  See
+@code{stream-unfoldn} above for the details.
+@c JP
+@code{stream-unfoldn}と似ていますが、結果のストリームの数は
+@var{f}の戻り値の数により決定されます。詳しくは
+上の@code{stream-unfoldn}の説明を参照してください。
+@c COMMON
+@end defun
+
+@defun stream-constant obj @dots{}
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Returns an infinite stream that repeats @var{obj} @dots{}.
+@c JP
+@var{obj} @dots{}を繰り返す無限ストリームを返します。
+@c COMMON
+
+@example
+(stream->list 10 (stream-constant 1 2))
+  @result{} (1 2 1 2 1 2 1 2 1 2)
+@end example
+@end defun
+
+@defun make-stream n :optional init
+@c MOD util.stream
+@c EN
+Creates a new stream of @var{n} elements of @var{init}.
+If @var{init} is omitted, @code{#f} is used.
+Specifying a negative number to @var{n} creates an infinite stream.
+@c JP
+@var{n}個の@var{init}を要素とする新しいストリームを生成します。
+@var{init}が省略された場合@code{#f}が使われます。@var{n}を負の値にする
+と無限ストリームが生成されます。
+@c COMMON
+@end defun
+
+@defun stream-tabulate n init-proc
+@c MOD util.stream
+@c EN
+Creates a new stream of @var{n} elements.
+The @var{k}-th element is obtained by applying @var{init-proc}
+to @var{k}.  Specifying a negative number to @var{n} creates
+an infinite stream.
+@c JP
+@var{n}個の要素をもつ新しいストリームを生成します。@var{k}-番目の要素
+は @var{init-proc} を @var{k} に適用して得られます。@var{n}を負の値にする
+と無限ストリームが生成されます。
+@c COMMON
+@end defun
+
+@defun stream-iota count :optional start step
+@c MOD util.stream
+@c EN
+Creates a new stream of numbers, starting from @var{start}
+and incrementing @var{step}.  The length of stream is @var{count}
+if it is positive, or infinite if @var{count} is negative.
+The default values of @var{start} and @var{step} are 0 an 1,
+respectively.
+@c JP
+@var{start}からはじまり、@var{step}ずつ要素が増加する数値のストリーム
+を生成します。ストリームの長さは@var{count}が正ならその値になります。
+@var{count}が負なら無限ストリームになります。@var{start}のデフォルト値
+は 0、@var{step}のデフォルト値は 1 です。
+@c COMMON
+@end defun
+
+@defun stream-range start :optional end step
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Creates a new stream of real numbers, starting from @var{start}
+and stops before @var{end}, stepping by @var{step}.
+If @var{end} is omitted, positive infinity is assumed.
+If @var{step} is omitted, @code{1} is assumed if @var{end} is greater
+than @var{start}, and @code{-1} if @var{end} is less than @var{start}.
+
+The generated numbers are exact if @var{start} and @var{step} are exact
+and @var{end} is either exact or infinite.  Otherwise, inexact numbers
+are generated.
+
+In R7RS @code{scheme.stream}, @var{end} argument is required.
+@c JP
+@var{start}から始まり@var{step}おきに@var{end}の手前まで続く実数のストリームを
+作って返します。@var{end}が省略された場合は正の無限大が使われます。
+@var{step}が省略された場合、@var{start}が@var{end}より小さければ@code{1}が、
+大きければ@var{-1}が使われます。
+
+@var{start}と@var{step}が正確数で、@var{end}が正確数か無限大の場合は、
+正確数のシーケンスが、そうでない場合は非正確数のシーケンスが生成されます。
+
+R7RSの@code{scheme.stream}では、@var{end}引数は必須です。
+@c COMMON
+
+@example
+(stream->list (stream-range 0 10))
+ @result{} (0 1 2 3 4 5 6 7 8 9)
+@end example
+@end defun
+
+@defun stream-xcons a b
+@c MOD util.stream
+@c EN
+@code{(stream-cons b a)}.  Just for convenience.
+@c JP
+@code{(stream-cons b a)}のこと。利便性のためだけにある。
+@c COMMON
+@end defun
+
+@defun stream-cons* elt @dots{} stream
+@c MOD util.stream
+@c EN
+Creates a new stream which appends @var{elt} @dots{} before @var{stream}.
+@c JP
+@var{stream}の前に@var{elt} @dots{}を連結した新しいストリームを生成し
+ます。
+@c COMMON
+@end defun
+
+@defun list->stream list
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Retrun a new stream whose elements are the elements in @var{list}.
+@c JP
+@var{list}の要素を要素とする新たなストリームを作って返します。
+@c COMMON
+@end defun
+
+
+@defun string->stream string :optional tail-stream
+@c MOD util.stream
+@c EN
+Convers a string to a stream of characters.  If an optional
+@var{tail-stream} is given, it becomes the tail of the resulting
+stream.
+@c JP
+文字列を文字のストリームに変換します。@var{tail-stream}が与えられた場合は、
+文字ストリームの後にそれが付け加えられます。
+@c COMMON
+
+@example
+@end example
+(stream->list (string->stream "abc" (list->stream '(1 2 3))))
+ @result{} (#\a #\b #\c 1 2 3)
+@end defun
+
+@defun stream-format fmt arg @dots{}
+@c MOD util.stream
+@c EN
+Returns a stream which is a result of applying @code{string->stream}
+to @code{(format fmt arg @dots{})}.
+@c JP
+@code{string->stream}を@code{(format fmt arg @dots{})}に適用した結果の
+ストリームを返します。
+@c COMMON
+@end defun
+
+@defun port->stream :optional iport reader closer
+[R7RS stream]
+@c MOD util.stream
+@c EN
+Creates a stream, whose elements consist of the items
+read from the input port @var{iport}.
+The default @var{iport} is the current input port.
+The default @var{reader} is @code{read-char}.
+
+The result stream terminates at the point where @var{reader}
+returns EOF (EOF itself is not included in the stream).
+The port won't be closed by default when it reaches EOF.
+
+If @var{closer} is given, it is called with @var{iport} as
+an argument just after @var{reader} reads EOF.  You can close the port
+with it.
+
+The @var{reader} and @var{closer} arguments are Gauche's extension.
+R7RS @code{scheme.stream} only takes one optional argument, @var{iport}.
+@c JP
+@var{iport}から@var{reader}を使って読み出されるデータを要素とする新たなストリームを
+作って返します。@var{iport}のデフォルトは現在の入力ポート、
+@var{reader}のデフォルトは@code{read-char}です。
+
+@var{reader}がEOFを返したらストリームの終端となります (EOF自体は
+ストリームには含まれません)。
+EOFに達してもポートはクローズされません。
+
+もし@var{closer}引数が与えられたら、それが@var{iport}を引数として
+EOFが読まれた直後に呼ばれます。そこでポートをクローズするこはできます。
+
+@var{reader}と@var{closer}引数はR7RSの@code{scheme.stream}では
+定義されない、Gaucheの拡張です。
+@c COMMON
+@end defun
+
+@node Stream operations,  , Stream constructors, Stream library
+@subsection Stream operations
 
 @defun stream-map func . streams
 [SRFI-40]
@@ -26087,79 +26404,6 @@ the naming conventions of srfi-1 (@ref{List library}).
 (@ref{List library})の命名規則にならったものです。
 @c COMMON
 
-@defun stream-xcons a b
-@c MOD util.stream
-@c EN
-@code{(stream-cons b a)}.  Just for convenience.
-@c JP
-@code{(stream-cons b a)}のこと。利便性のためだけにある。
-@c COMMON
-@end defun
-
-@defun stream-cons* elt @dots{} stream
-@c MOD util.stream
-@c EN
-Creates a new stream which appends @var{elt} @dots{} before @var{stream}.
-@c JP
-@var{stream}の前に@var{elt} @dots{}を連結した新しいストリームを生成し
-ます。
-@c COMMON
-@end defun
-
-@defun make-stream n :optional init
-@c MOD util.stream
-@c EN
-Creates a new stream of @var{n} elements of @var{init}.
-If @var{init} is omitted, @code{#f} is used.
-Specifying a negative number to @var{n} creates an infinite stream.
-@c JP
-@var{n}個の@var{init}を要素とする新しいストリームを生成します。
-@var{init}が省略された場合@code{#f}が使われます。@var{n}を負の値にする
-と無限ストリームが生成されます。
-@c COMMON
-@end defun
-
-@defun stream-tabulate n init-proc
-@c MOD util.stream
-@c EN
-Creates a new stream of @var{n} elements.
-The @var{k}-th element is obtained by applying @var{init-proc}
-to @var{k}.  Specifying a negative number to @var{n} creates
-an infinite stream.
-@c JP
-@var{n}個の要素をもつ新しいストリームを生成します。@var{k}-番目の要素
-は @var{init-proc} を @var{k} に適用して得られます。@var{n}を負の値にする
-と無限ストリームが生成されます。
-@c COMMON
-@end defun
-
-@defun stream-iota count :optional start step
-@c MOD util.stream
-@c EN
-Creates a new stream of integers, starting from @var{start}
-and incrementing @var{step}.  The length of stream is @var{count}
-if it is positive, or infinite if @var{count} is negative.
-The default values of @var{start} and @var{step} are 0 an 1,
-respectively.
-@c JP
-@var{start}からはじまり、@var{step}ずつ要素が増加する整数のストリーム
-を生成します。ストリームの長さは@var{count}が正ならその値になります。
-@var{count}が負なら無限ストリームになります。@var{start}のデフォルト値
-は 0、@var{step}のデフォルト値は 1 です。
-@c COMMON
-@end defun
-
-@defun stream-format fmt arg @dots{}
-@c MOD util.stream
-@c EN
-Returns a stream which is a result of applying @code{string->stream}
-to @code{(format fmt arg @dots{})}.
-@c JP
-@code{string->stream}を@code{(format fmt arg @dots{})}に適用した結果の
-ストリームを返します。
-@c COMMON
-@end defun
-
 @defun stream->list stream
 @defunx stream->string stream
 @c MOD util.stream
@@ -26167,36 +26411,6 @@ Converts a stream to a list or a string.  All of @var{stream}'s
 elements are @code{force}d; if @var{stream} is infinite, these
 procedures won't terminate.  For @code{stream->string},
 all @var{stream} must be characters, or an error is signaled.
-@end defun
-
-@defun list->stream list
-@c MOD util.stream
-Converts a list to a stream of its elements.
-@end defun
-
-@defun string->stream string :optional stream
-@c MOD util.stream
-Convers a string to a stream of characters.  If an optional
-@var{stream} is given, it becomes the tail of the resulting
-stream.
-
-@example
-@end example
-(stream->list (string->stream "abc" (list->stream '(1 2 3))))
- @result{} (#\a #\b #\c 1 2 3)
-@end defun
-
-@defun port->stream :optional iport reader closer
-@c MOD util.stream
-Creates a stream, whose elements consist of the items
-read from the input port @var{iport}.
-The default @var{iport} is the current input port.
-The default @var{reader} is @code{read-char}.
-
-The result stream terminates at the point where @var{reader}
-returns EOF (EOF itself is not included in the stream).
-If @var{closer} is given, it is called with @var{iport} as
-an argument just after @var{reader} reads EOF.
 @end defun
 
 @defun iterator->stream iter
@@ -26299,9 +26513,14 @@ as @var{prefix} has are checked.
 @end defun
 
 @defun stream-ref stream pos
+[R7RS stream]
 @c MOD util.stream
+@c EN
 Returns the @var{pos}-th element in the stream.  @var{Pos}
 must be a nonnegative exact integer.
+@c JP
+ストリームの@var{pos}番目の要素を返します。@var{pos}は非負の正確な整数でなければなりません。
+@c COMMON
 @end defun
 
 @defun stream-first s
@@ -26391,15 +26610,54 @@ inserted between elements of @var{stream}.
 @end defun
 
 @defun stream-append stream @dots{}
+[R7RS stream]
 @c MOD util.stream
+@c EN
+Returns a new stream which is concatenation of given @var{stream}s.
+@c JP
+与えられた@var{stream}を全部つないだ新たなストリームを返します。
+@c COMMON
 @end defun
 
+@defun stream-concat streams
 @defun stream-concatenate streams
+[R7RS stream]
 @c MOD util.stream
+@c EN
+R7RS @code{scheme.stream} defines @code{stream-concat}.  Gauche had
+@code{stream-concatenate}, and keeps it for the backward compatibility.
+Both are the same.
+
+The @var{streams} argument is a stream of streams.  Returns a new stream
+that is concatenation of them.  Unlike @code{stream-append}, @var{streams}
+can generate infinite streams.
+@c JP
+R7RS @code{scheme.stream}は@code{stream-concat}を定義しました。
+Gaucheには@code{stream-concatenate}があったので互換性のためにそちらも残しています。
+どちらも同じです。
+
+@var{streams}はストリームのストリームです。各ストリームを連結したストリームを作って
+返します。@code{stream-append}と違い、@var{streams}は無限個のストリームを生成
+することができます。
+@c COMMON
 @end defun
 
 @defun stream-reverse stream :optional tail-stream
+[R7RS stream]
 @c MOD util.stream
+@c EN
+Returns a stream that returns the elements of @var{stream} in reverse order.
+If @var{tail-stream} is given, it is added after the reversed stream.
+
+The optional argument is Gauche's extension.  The description of @code{reverse}
+(@pxref{Other list procedures}) for more details.
+@c JP
+@var{stream}の要素を逆順にしたストリームを返します。@var{tail-stream}が与えられた
+場合、逆順にしたストリームの後にそれ付け加えられます。
+
+省略可能な@var{tail-stream}はGaucheの拡張です。詳しくは
+@code{reverse}の説明を参照してください (@ref{Other list procedures})。
+@c COMMON
 @end defun
 
 @defun stream-count pred stream @dots{}
