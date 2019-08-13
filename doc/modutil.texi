@@ -26399,6 +26399,44 @@ EOFが読まれた直後に呼ばれます。そこでポートをクローズ�
 @c COMMON
 @end defun
 
+@defun iterator->stream iter
+@c MOD util.stream
+A generic procedure to turn an internal iterator @var{iter}
+into a stream of iterated results.
+
+The @var{iter} argument is a procedure that takes two arguments,
+@var{next} and @var{end}, where @var{next} is a procedure that takes
+one argument and @var{end} is a thunk.
+@var{Iter} is supposed to iterate over some set and call @var{next}
+for each argument, then call @var{end} to indicate the end of
+the iteration.  Here's a contrived example:
+
+@example
+(stream->list
+ (iterator->stream
+  (lambda (next end) (for-each next '(1 2 3 4 5)) (end))))
+ @result{} (1 2 3 4 5)
+@end example
+
+Internally @code{iterator->stream} uses the ``inversion of iterator''
+technique, so that @var{iter} only iterates to the element that
+are needed by the stream.  Thus @var{iter} can iterate over
+an infinite set.  In the following example, @var{iter} is
+an infinite loop calling @var{next} with increasing integers,
+but only the first 10 elements are calculated because of
+@code{stream-take}:
+
+@example
+(stream->list
+ (stream-take
+  (iterator->stream
+   (lambda (next end)
+     (let loop ((n 0)) (next n) (loop (+ n 1)))))
+  10))
+ @result{} (0 1 2 3 4 5 6 7 8 9)
+@end example
+@end defun
+
 @defmac stream-of elt-expr clause @dots{}
 [R7RS stream]
 @c MOD util.stream
@@ -26606,8 +26644,12 @@ values in the stream:
 @node Stream consumers, Stream operations, Stream binding, Stream library
 @subsection Stream consumers
 
+@c EN
 These procedures takes stream(s) and consumes its/their elements
 until one of the streams is exhausted.
+@c JP
+これらの手続きはストリームを取り、その要素を消費し尽します。
+@c COMMON
 
 @defun stream-for-each func . streams
 [R7RS stream]
@@ -26702,16 +26744,45 @@ applying @var{func} to each element of @var{stream} @dots{}.
 [R7RS stream]
 @c MOD util.stream
 @c EN
+Returns a stream of @code{@var{seed}}, @code{(@var{func} @var{seed} @var{e0})},
+@code{(@var{func} (@var{func} @var{seed} @var{e0}) @var{e1})}, @dots{}, where
+@var{e0}, @var{e1} @dots{} are the elements from the input @var{stream}.
+If @var{stream} is finite, the result stream has one more elements than
+the number of elements in the original stream.
 @c JP
+@code{@var{seed}}、
+@code{(@var{func} @var{seed} @var{e0})}、
+@code{(@var{func} (@var{func} @var{seed} @var{e0}) @var{e1})} @dots{}
+で構成されるストリームを返します。ここで
+@var{e0}、@var{e1} @dots{}は入力ストリーム@var{stream}の要素です。
+@var{stream}が有限なら、その要素よりひとつ多い要素が出力ストリームには含まれます。
 @c COMMON
+
+@example
+(stream->list
+  (stream-scan xcons '() (stream 1 2 3 4 5)))
+ @result{} (() (1) (2 1) (3 2 1) (4 3 2 1) (5 4 3 2 1))
+@end example
 @end defun
 
 @defun stream-zip stream @dots{}
 [R7RS stream]
 @c MOD util.stream
 @c EN
+Returns a new stream whose elements are lists of corresponding
+elements from input @var{stream}s.  The output stream ends
+when one of input streams is exhausted.
 @c JP
+入力ストリームの対応する要素のリストを要素とするストリームを作って返します。
+入力ストリームのいずれかが終端に達した時に出力ストリームも終わります。
 @c COMMON
+
+@example
+(stream->list
+ (stream-zip (stream 1 2 3) (stream 'a 'b 'c 'd)))
+ @result{} ((1 a) (2 b) (3 c))
+@end example
+
 @end defun
 
 @defun stream-filter pred stream
@@ -26720,56 +26791,50 @@ applying @var{func} to each element of @var{stream} @dots{}.
 @c EN
 Returns a new stream including only elements passing @var{pred}.
 @c JP
-@var{pred}をパスする要素のみからなる新しいストリームを返す。
+@var{pred}をパスする要素のみからなる新しいストリームを返します。
+@c COMMON
+@end defun
+
+@defun stream-remove pred stream
+@c MOD util.stream
+@c EN
+Returns a new stream including only elements that doesn't satisfy @var{pred}.
+@c JP
+述語@var{pred}を満たさない要素のみからなる新しいストリームを返します。
+@c COMMON
+@end defun
+
+@defun stream-partition pred stream
+@c MOD util.stream
+@c EN
+Returns two streams, one consists of the elements in @var{stream}
+that satisfy @var{pred}, the other consists of the ones that doesn't
+satisfy @var{pred}.
+@c JP
+二つのストリームを返します。最初のストリームは@var{stream}の要素のうち
+述語@var{pred}を満たすもの、次のストリームは@var{pred}を満たさないもので構成されます。
 @c COMMON
 @end defun
 
 @defun stream->list stream
-@defunx stream->string stream
+@defunx stream->list n stream
+[R7RS stream]
 @c MOD util.stream
-Converts a stream to a list or a string.  All of @var{stream}'s
-elements are @code{force}d; if @var{stream} is infinite, these
-procedures won't terminate.  For @code{stream->string},
-all @var{stream} must be characters, or an error is signaled.
+Converts a stream to a list.  In the first form, all elements from
+@var{stream} are taken (thus it never returns if @var{stream} is infinite).
+In the second form, at most @var{n} elements are taken, where
+@var{n} must be a nonnegative exact integer.
+
+Note: In usual Scheme conventions, the optional @var{n} comes after
+the main argument (@var{stream}).  
 @end defun
 
-@defun iterator->stream iter
+@defun stream->string stream
 @c MOD util.stream
-A generic procedure to turn an internal iterator @var{iter}
-into a stream of iterated results.
-
-The @var{iter} argument is a procedure that takes two arguments,
-@var{next} and @var{end}, where @var{next} is a procedure that takes
-one argument and @var{end} is a thunk.
-@var{Iter} is supposed to iterate over some set and call @var{next}
-for each argument, then call @var{end} to indicate the end of
-the iteration.  Here's a contrived example:
-
-@example
-(stream->list
- (iterator->stream
-  (lambda (next end) (for-each next '(1 2 3 4 5)) (end))))
- @result{} (1 2 3 4 5)
-@end example
-
-Internally @code{iterator->stream} uses the ``inversion of iterator''
-technique, so that @var{iter} only iterates to the element that
-are needed by the stream.  Thus @var{iter} can iterate over
-an infinite set.  In the following example, @var{iter} is
-an infinite loop calling @var{next} with increasing integers,
-but only the first 10 elements are calculated because of
-@code{stream-take}:
-
-@example
-(stream->list
- (stream-take
-  (iterator->stream
-   (lambda (next end)
-     (let loop ((n 0)) (next n) (loop (+ n 1)))))
-  10))
- @result{} (0 1 2 3 4 5 6 7 8 9)
-@end example
+Conversts a stream to a list.
+All elements of @var{stream} must be characters, or an error is signaled.
 @end defun
+
 
 @defun stream-lines stream
 @c MOD util.stream
@@ -26959,14 +27024,6 @@ The optional argument is Gauche's extension.  The description of @code{reverse}
 @end defun
 
 @defun stream-count pred stream @dots{}
-@c MOD util.stream
-@end defun
-
-@defun stream-remove pred stream
-@c MOD util.stream
-@end defun
-
-@defun stream-partition pred stream
 @c MOD util.stream
 @end defun
 

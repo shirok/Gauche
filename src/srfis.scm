@@ -522,6 +522,20 @@ Supported by the module @code{util.stream}.
 @xref{Stream library}.
 
 
+srfi-41, srfi-41
+()
+
+Streams
+This has become a part of R7RS large.  @xref{R7RS stream}.
+Most of stream procedures are also in @code{util.stream}
+(@pxref{Stream library}).
+
+ストリーム
+これはR7RS largeの一部になりました。@ref{R7RS stream}参照。
+ストリーム手続きのほぼ全ては@code{util.stream}からも提供されています
+(@ref{Stream library}参照)。
+
+
 srfi-42, srfi-42
 ()
 
