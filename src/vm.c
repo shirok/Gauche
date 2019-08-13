@@ -2465,8 +2465,6 @@ static ScmObj throw_continuation(ScmObj *argframe,
     return throw_cont_body(handlers_to_call, ep, args);
 }
 
-/* Ensure partial continuation to return to the caller.
-   (Scm_ApplyRec without BOUNDARY_FRAME is required.) */
 static ScmObj partcont_wrapper(ScmObj *argframe,
                                int nargs SCM_UNUSED, void *data)
 {
