@@ -26446,10 +26446,10 @@ is computed by @var{elt-expr}.
 The @var{clause} creates scope of @var{elt-expr}
 and controls iterations.  Each @var{clause} can be one of the following
 forms:
+@c JP
 ストリーム内包表記。各要素が@var{elt-expr}で計算されるストリームを返します。
 @var{clause}は@var{elt-expr}のスコープを作り、繰り返しを制御します。
 各@var{clause}は以下の形のいずれかです：
-@c JP
 @c COMMON
 @table @code
 @item (@var{x} in @var{stream-expr})
