@@ -513,6 +513,9 @@ struct ScmVMRec {
                                    it per thread.
                                  */
 
+    /* for reset/shift */
+    ScmObj resetChain;          /* list of pointer to dynamic handler chain */
+
     /* Program information */
     int    evalSituation;       /* eval situation (related to eval-when) */
 

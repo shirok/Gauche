@@ -2,7 +2,7 @@
   (export reset shift call/pc))
 (select-module gauche.partcont)
 
-(define %reset (with-module gauche.internal %apply-rec0))
+(define %reset (with-module gauche.internal %reset))
 (define %call/pc (with-module gauche.internal %call/pc))
 
 (define-syntax reset

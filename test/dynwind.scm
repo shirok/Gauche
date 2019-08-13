@@ -530,4 +530,166 @@
 ;;  - tests for interactions of dynamic handlers and partial continuaions.
 ;;  - tests for interactions of partial and full continuations.
 
+(test* "reset/shift + call/cc 1"
+       "[r01][r02][r02][r03]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define done #f)
+           (call/cc
+            (^[k0]
+              (reset
+               (display "[r01]")
+               (shift k (set! k1 k))
+               (display "[r02]")
+               (unless done
+                 (set! done #t)
+                 (k0))
+               (display "[r03]"))))
+           (k1))))
+
+(test* "dynamic-wind + reset/shift 1"
+       ;"[d01][d02][d03][d04]"
+       "[d01][d02][d04][d01][d03][d04]"
+       (with-output-to-string
+         (^[]
+           (reset
+            (shift
+             k
+             (dynamic-wind
+              (^[] (display "[d01]"))
+              (^[] (display "[d02]")
+                   (k)
+                   (display "[d03]"))
+              (^[] (display "[d04]"))))))))
+
+(test* "dynamic-wind + reset/shift 2"
+       "[d01][d02][d04][d01][d03][d04]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (display "[d02]")
+                  (shift k (set! k1 k))
+                  (display "[d03]"))
+             (^[] (display "[d04]"))))
+           (k1))))
+
+(test* "dynamic-wind + reset/shift 3"
+       "[d01][d02][d01][d02][d01][d02][d01][d02]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (shift k (set! k1 k))
+                  (shift k (set! k2 k)))
+             (^[] (display "[d02]"))))
+           (k1)
+           (k2)
+           (k2))))
+
+(test* "dynamic-wind + reset/shift 4"
+       ;"[d01][d11][d12][d02][d11][d12]"
+       "[d01][d11][d12][d02][d01][d11][d12][d02]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (reset
+                   (dynamic-wind
+                    (^[] (display "[d11]"))
+                    (^[] (shift k (set! k1 k)))
+                    (^[] (display "[d12]")))))
+             (^[] (display "[d02]"))))
+           (k1))))
+
+(test* "dynamic-wind + reset/shift 5"
+       ;"[d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]"
+       "[d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (define k3 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (shift k (set! k1 k))
+                  (reset
+                   (dynamic-wind
+                    (^[] (display "[d11]"))
+                    (^[] (shift k (set! k2 k))
+                         (shift k (set! k3 k)))
+                    (^[] (display "[d12]")))))
+             (^[] (display "[d02]"))))
+           (k1)
+           (k2)
+           (k3))))
+
+(test* "dynamic-wind + reset/shift 6"
+       ;"[d01][d02][d11][d12][d13][d14][d03][d04]"
+       "[d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]"
+       (with-output-to-string
+         (^[]
+           (reset
+            (shift
+             k
+             (dynamic-wind
+              (^[] (display "[d01]"))
+              (^[] (display "[d02]")
+                   (dynamic-wind
+                    (^[] (display "[d11]"))
+                    (^[] (display "[d12]")
+                         (k)
+                         (display "[d13]"))
+                    (^[] (display "[d14]")))
+                   (display "[d03]"))
+              (^[] (display "[d04]"))))))))
+
+(test* "dynamic-wind + reset/shift 7"
+       "[d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (display "[d02]")
+                  (dynamic-wind
+                   (^[] (display "[d11]"))
+                   (^[] (display "[d12]")
+                        (shift k (set! k1 k))
+                        (display "[d13]"))
+                   (^[] (display "[d14]")))
+                  (display "[d03]"))
+             (^[] (display "[d04]"))))
+           (k1))))
+
+(test* "dynamic-wind + reset/shift 8"
+       ;"[d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]"
+       "[d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (display "[d02]")
+                  (shift k (set! k1 k))
+                  (display "[d03]"))
+             (^[] (display "[d04]"))))
+           (dynamic-wind
+            (^[] (display "[d11]"))
+            (^[] (display "[d12]")
+                 (k1)
+                 (display "[d13]"))
+            (^[] (display "[d14]"))))))
+
 (test-end)
