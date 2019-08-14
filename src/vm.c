@@ -1534,6 +1534,8 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
                 vm->pc = PC_TO_RETURN;
+                /* restore reset-chain for reset/shift */
+                if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
@@ -2112,6 +2114,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         if (ep->errorReporting) {
             SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
+        /* restore reset-chain for reset/shift */
+        if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
     } else {
         /* We don't have an active error handler, so this is the fallback
            behavior.  Reports the error and rewind dynamic handlers and
@@ -2392,9 +2396,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
     vm->handlers = ep->handlers;
-
-    /* If the target continuation is a full continuation, we restore
-       reset-chain for reset/shift */
+    /* restore reset-chain for reset/shift */
     if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
 
     nargs = Scm_Length(args);

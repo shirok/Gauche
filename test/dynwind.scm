@@ -548,6 +548,17 @@
                (display "[r03]"))))
            (k1))))
 
+(test* "reset/shift + with-error-handler 1"
+       "[E01][E02]"
+       (with-output-to-string
+         (^[]
+           (with-error-handler
+            (^[e] (display (~ e 'message)))
+            (^[]
+              (display "[E01]")
+              (reset (error "[E02]"))
+              (display "[E03]"))))))
+
 (test* "dynamic-wind + reset/shift 1"
        ;"[d01][d02][d03][d04]"
        "[d01][d02][d04][d01][d03][d04]"
