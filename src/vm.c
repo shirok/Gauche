@@ -2342,10 +2342,8 @@ static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
     SCM_FOR_EACH(p, target) {
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), current))) break;
-        ScmObj chain = Scm_Memq(SCM_CAR(p), target);
-        SCM_ASSERT(SCM_PAIRP(chain));
         /* push 'before' handlers to be called */
-        h2 = Scm_Cons(Scm_Cons(SCM_CAAR(p), SCM_CDR(chain)), h2);
+        h2 = Scm_Cons(Scm_Cons(SCM_CAAR(p), p), h2);
     }
     SCM_APPEND(h, t, h2);
     return h;
