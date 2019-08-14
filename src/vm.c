@@ -2262,6 +2262,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->xhandler = vm->exceptionHandler;
+    ep->resetChain = vm->resetChain;
     ep->cont = vm->cont;
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
@@ -2392,6 +2393,10 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     vm->cont = ep->cont;
     vm->handlers = ep->handlers;
 
+    /* If the target continuation is a full continuation, we restore
+       reset-chain for reset/shift */
+    if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
+
     nargs = Scm_Length(args);
     if (nargs == 1) {
         return SCM_CAR(args);
@@ -2502,6 +2507,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->cont = vm->cont;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
+    ep->resetChain = vm->resetChain;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    SCM_MAKE_STR("continuation"));
@@ -2538,6 +2544,8 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->handlers = vm->handlers;
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */
+    ep->resetChain = vm->resetChain;
+
     ScmObj contproc = Scm_MakeSubr(partcont_wrapper, ep, 0, 1,
                                    SCM_MAKE_STR("partial continuation wrapper"));
     /* Remove the saved continuation chain.
@@ -2571,6 +2579,7 @@ ScmObj Scm_VMReset(ScmObj proc)
     /* push and pop the pointer to dynamic handler chain for reset/shift */
     vm->resetChain = Scm_Cons(vm->handlers, vm->resetChain);
     ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
+    SCM_ASSERT(SCM_PAIRP(vm->resetChain));
     vm->resetChain = SCM_CDR(vm->resetChain);
     return ret;
 }
