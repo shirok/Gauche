@@ -445,12 +445,15 @@
 (define (make-format-r fmtstr params flags upcase)
   (if (null? params)
     (^[argptr port ctrl] (error "Roman numerals not implemented yet"))
-    ($ with-format-params ([radix 0]
+    ($ with-format-params ([radix 10]
                            [mincol 0]
                            [padchar #\space]
                            [comma #\,]
                            [interval 3]
                            [point #\.])
+       (unless (<= 2 radix 36)
+         (error "Formatting ~nR: radix out of range (must be between 2 and 36):"
+                radix))
        (format-num-body fmtstr argptr port ctrl radix upcase
                         flags mincol padchar comma interval point))))
 
