@@ -644,11 +644,11 @@
                  (write '(add-load-path "."))
                  (write '(load "foo"))
                  (write '(write
-                          `(,(global-variable-ref 'foo 'foo-literals)
-                            ,(global-variable-ref 'foo 'foo-begin1)
-                            ,(global-variable-ref 'foo 'foo-begin2)
-                            ,(global-variable-ref 'foo 'foo-include1)
-                            ,(global-variable-ref 'foo 'foo-include2))))
+                          `(,((global-variable-ref 'foo 'foo-literals))
+                            ,((global-variable-ref 'foo 'foo-begin1))
+                            ,((global-variable-ref 'foo 'foo-begin2))
+                            ,((global-variable-ref 'foo 'foo-include1))
+                            ,((global-variable-ref 'foo 'foo-include2)))))
                  (write '(exit 0))))
              (let* ([p (run-process '("../../src/gosh" "-ftest" "./t.scm")
                                     :output :pipe :directory "test.o")]
