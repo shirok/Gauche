@@ -779,6 +779,8 @@
 (test* "format ~nr" "****wud0up"  (format "~36,10,'*r" 1985913745))
 (test* "format ~nr" "***+wud0up"  (format "~36,10,'*@r" 1985913745))
 (test* "format ~nR" "WUD0UP"  (format "~36R" 1985913745))
+(test* "format ~vr" "wud0up"  (format "~vr" 36 1985913745))
+(test* "format ~vr" "    wud0up"  (format "~v,10r" 36 1985913745))
 
 (test* "format v param" "     12345"
        (format "~vd" 10 12345))

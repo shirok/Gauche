@@ -1,3 +1,7 @@
+2019-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm: Fix ~vr https://github.com/shirok/Gauche/issues/509
+
 2019-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/stream.scm: Add srfi-41 procedures
