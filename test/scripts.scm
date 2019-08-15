@@ -642,20 +642,16 @@
                                       "-e(begin \
                                            (add-load-path \".\") \
                                            (load \"foo\") \
-                                           (write ((global-variable-ref 'foo 'foo-literals))) \
-                                           (write ((global-variable-ref 'foo 'foo-begin1))) \
-                                           (write ((global-variable-ref 'foo 'foo-begin2))) \
-                                           (write ((global-variable-ref 'foo 'foo-include1))) \
-                                           (write ((global-variable-ref 'foo 'foo-include2))) \
+                                           (write (list ((global-variable-ref 'foo 'foo-literals)) \
+                                                        ((global-variable-ref 'foo 'foo-begin1)) \
+                                                        ((global-variable-ref 'foo 'foo-begin2)) \
+                                                        ((global-variable-ref 'foo 'foo-include1)) \
+                                                        ((global-variable-ref 'foo 'foo-include2)))) \
                                            (exit 0))")
                                     :output :pipe :directory "test.o")]
-                    [ret1 (read (process-output p))]
-                    [ret2 (read (process-output p))]
-                    [ret3 (read (process-output p))]
-                    [ret4 (read (process-output p))]
-                    [ret5 (read (process-output p))])
+                    [ret (read (process-output p))])
                (process-wait p)
-               (list ret1 ret2 ret3))]
+               ret)]
             [else
              (load "foo" :paths '("./test.o"))
              (list ((global-variable-ref 'foo 'foo-literals))
