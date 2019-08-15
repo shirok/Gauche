@@ -48,12 +48,12 @@ typedef uint32_t ScmUInt32;
 typedef int64_t  ScmInt64;
 typedef uint64_t ScmUInt64;
 
-#define SCM_SET_INT64_MAX(v64)    ((v64) = LONG_MAX)
-#define SCM_SET_INT64_MIN(v64)    ((v64) = LONG_MIN)
-#define SCM_SET_UINT64_MAX(v64)   ((v64) = ULONG_MAX)
+#define SCM_SET_INT64_MAX(v64)    ((v64) = INT64_MAX)
+#define SCM_SET_INT64_MIN(v64)    ((v64) = INT64_MIN)
+#define SCM_SET_UINT64_MAX(v64)   ((v64) = UINT64_MAX)
 #define SCM_SET_INT64_ZERO(v64)   ((v64) = 0)
 #define SCM_SET_INT64_BY_LONG(v64, val)   ((v64) = (val))
-#define SCM_SET_INT64_BY_DOUBLE(v64, val) ((v64) = (long)(val))
+#define SCM_SET_INT64_BY_DOUBLE(v64, val) ((v64) = (int64_t)(val))
 
 #define SCM_INT64_EQV(a64, b64)     ((a64) == (b64))
 #define SCM_INT64_CMP(op, a64, b64)     ((a64) op (b64))
