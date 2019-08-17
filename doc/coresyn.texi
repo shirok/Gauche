@@ -435,11 +435,11 @@ The table below lists sharp-syntaxes.
 @item @code{#f}
 @c EN
  @tab [R7RS] Boolean false, or
-      introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+      introducing R7RS uniform vector.  @xref{Uniform vectors}.
       R7RS defines both @code{#f} and @code{#false} as a boolean false value.
 @c JP
  @tab [R7RS] 真理値の偽、あるいは
-      SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
+      R7RS のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
       R7RSでは真理値の偽として@code{#f}と@code{#false}が使えます。
 @c COMMON
 @item @code{#g}, @code{#h}
@@ -474,9 +474,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#s}
 @c EN
- @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+ @tab [R7RS vector.@@] introducing R7RS uniform vector.  @xref{Uniform vectors}.
 @c JP
- @tab [SRFI-4] SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
+ @tab [R7RS vector.@@] R7RSのユニフォームベクタを先導します。@ref{Uniform vectors}参照。
 @c COMMON
 @item @code{#t}
 @c EN
@@ -487,11 +487,11 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#u}
 @c EN
- @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+ @tab [R7RS vector.@@] introducing R7RS uniform vector.  @xref{Uniform vectors}.
  R7RS uses @code{#u8} prefix for bytevectors, which is compatible to
  @code{u8} uniform vectors.
 @c JP
- @tab [SRFI-4] SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
+ @tab [R7RS vector.@@] R7RS のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
  R7RSもバイトベクタに@code{#u8}のプリフィクスを使いますが、これは
  @code{u8}ユニフォームベクタと互換です。
 @c COMMON

@@ -2098,7 +2098,7 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 @defunx eighth pair
 @defunx ninth pair
 @defunx tenth pair
-[SRFI-1]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns n-th element of the (maybe improper) list.

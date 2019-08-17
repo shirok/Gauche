@@ -4420,7 +4420,7 @@ Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 @end defun
 
 @defun null-list? obj
-[SRFI-1]
+[R7RS list]
 @c EN
 Returns @code{#t} if @var{obj} is an empty list,
 @code{#f} if @var{obj} is a pair.  If @var{obj} is neither
@@ -4457,28 +4457,31 @@ See also @code{proper-list?}, @code{circular-list?} and
 
 
 @defun proper-list? x
+[R7RS list]
 @c EN
-[SRFI-1] Returns @code{#t} if x is a proper list.
+Returns @code{#t} if x is a proper list.
 @c JP
-[SRFI-1] @var{x} が真性リストであれば @code{#t} を返します。
+@var{x} が真性リストであれば @code{#t} を返します。
 @c COMMON
 @end defun
 
 @defun circular-list? x
+[R7RS list]
 @c EN
-[SRFI-1] Returns @code{#t} if x is a circular list.
+Returns @code{#t} if x is a circular list.
 @c JP
-[SRFI-1] @var{x} が循環リストであれば @code{#t} を返します。
+@var{x} が循環リストであれば @code{#t} を返します。
 @c COMMON
 @end defun
 
 @defun dotted-list? x
+[R7RS list]
 @c EN
-[SRFI-1] Returns @code{#t} if x is a finite, non-nil-terminated list.
+Returns @code{#t} if x is a finite, non-nil-terminated list.
 This includes non-pair, non-() values (e.g. symbols, numbers),
 which are considered to be dotted lists of length 0.
 @c JP
-[SRFI-1] @var{x} が有限の大きさで、空リストで終端していないリストなら
+@var{x} が有限の大きさで、空リストで終端していないリストなら
 @code{#t} を返します。これには、ペアではなく、空リストもない値(たとえば
 シンボルや数値)のような長さ0のドットリストと考えられるものを含みます。
 @c COMMON
