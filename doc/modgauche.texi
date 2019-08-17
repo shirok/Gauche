@@ -21942,17 +21942,18 @@ The meaning of this property is explained in Unicode standard annex #11,
 Provides procedures that work on vectors
 whose elements are of the same numeric type,
 as defined in srfi-160 (formerly srfi-4),
-which has become R7RS large (as @code{scheme.vector.TAG}.
+which has become R7RS large (as @code{scheme.vector.@@}.
 @c JP
 srfi-160 (元srfi-4) に規定されている、
 要素が同一の数値型であるようなベクタに作用する手続きを提供します。
-srfi-160はR7RS largeの一部(@code{scheme.vector.TAG})になりました。
+srfi-160はR7RS largeの一部(@code{scheme.vector.@@})になりました。
 @c COMMON
 
 @c EN
-The type of elements are indicated by one of the following prefix:
+The @code{@@} part is actually one of the following tags, indicating
+the type of elements:
 @c JP
-要素の型は以下のプレフィクスのひとつによって示されます：
+@code{@@}の部分は実際には要素の型を示す以下のタグのいずれかです。
 @c COMMON
 
 @table @code
@@ -22083,9 +22084,9 @@ HDR画像フォーマットなどで使われる、16ビット浮動小数点数
 @c COMMON
 @item
 @c EN
-Effcient element-wise arithmetic procedures, e.g. @code{@var{TAG}vector-add}.
+Effcient element-wise arithmetic procedures, e.g. @code{@@vector-add}.
 @c JP
-@code{@var{TAG}vector-add}など、効率の良い要素単位の演算手続き。
+@code{@@vector-add}など、効率の良い要素単位の演算手続き。
 @c COMMON
 @item
 @c EN
@@ -22101,11 +22102,11 @@ can be used.
 @c COMMON
 @item
 @c EN
-Some routines takes optional parameters: @code{@var{TAG}vector-ref}
+Some routines takes optional parameters: @code{@@vector-ref}
 takes optional fallback value.
 @c JP
 いくつかの手続きはsrfi-160に無い省略可能な引数を取ります。
-例えば@code{@var{TAG}vector-ref}は省略可能なデフォルト値を取ります。
+例えば@code{@@vector-ref}は省略可能なデフォルト値を取ります。
 @c COMMON
 @end itemize
 
@@ -22160,12 +22161,12 @@ Clamps both sides; does both @code{high} and @code{low}.
 @end example
 
 @c EN
-In the following description, @code{@var{TAG}} can be replaced
+In the following description, @code{@@} can be replaced
 for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @code{s32}, @code{u32}, @code{s64}, @code{u64},
 @code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64} or @code{c128}.
 @c JP
-以下の記述では、@code{@var{TAG}}は
+以下の記述では、@code{@@}は
 @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @code{s32}, @code{u32}, @code{s64}, @code{u64},
 @code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64}, @code{c128}
@@ -22201,7 +22202,7 @@ On the other hand, using @code{gauche.uvector} imports all the bindings.
 @subsection Uvector basic operations
 @c NODE ユニフォームベクタの基本操作
 
-@deftp {Builtin Class} <@var{TAG}vector>
+@deftp {Builtin Class} <@@vector>
 @clindex s8vector
 @clindex u8vector
 @clindex s16vector
@@ -22218,13 +22219,13 @@ On the other hand, using @code{gauche.uvector} imports all the bindings.
 @clindex c128vector
 @c MOD gauche.uvector
 @c EN
-A class for @var{TAG}vector.  It inherits @code{<sequence>}.
+A class for @@vector.  It inherits @code{<sequence>}.
 @c JP
-@var{TAG}vectorのクラス。@code{<sequence>}を継承します。
+@@vectorのクラス。@code{<sequence>}を継承します。
 @c COMMON
 @end deftp
 
-@deftp {Reader Syntax} @code{#@var{TAG}(@var{n} @dots{})}
+@deftp {Reader Syntax} @code{#@@(@var{n} @dots{})}
 @lxindex #s8
 @lxindex #u8
 @lxindex #s16
@@ -22251,7 +22252,7 @@ Denotes a literal homogeneous vector.
 @end example
 @end deftp
 
-@deftp {Function} {@var{TAG}vector?} @r{@var{obj}}
+@deffn {Function} @@vector? obj
 @findex s8vector?
 @findex u8vector?
 @findex s16vector?
@@ -22266,14 +22267,14 @@ Denotes a literal homogeneous vector.
 @findex c32vector?
 @findex c64vector?
 @findex c128vector?
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Returns @code{#t} iff @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
+Returns @code{#t} iff @var{obj} is a @@vector, @code{#f} otherwise.
 @c JP
-@var{obj}が@var{TAG}vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
+@var{obj}が@@vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
-@end deftp
+@end deffn
 
 @defun uvector? obj
 @c MOD gauche.uvector
@@ -22285,7 +22286,7 @@ Returns @code{#t} iff @var{obj} is of any uniform vector type.
 @c COMMON
 @end defun
 
-@deftp {Function} {@var{TAG}?} @r{@var{obj}}
+@deffn {Function} @@? obj
 @findex s8?
 @findex u8?
 @findex s16?
@@ -22300,16 +22301,16 @@ Returns @code{#t} iff @var{obj} is of any uniform vector type.
 @findex c32?
 @findex c64?
 @findex c128?
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Returns @code{#t} iff @var{obj} can be an element of @code{@var{TAG}vector}.
+Returns @code{#t} iff @var{obj} can be an element of @code{@@vector}.
 @c JP
-引数が@var{TAG}ベクタの要素に収まるなら@code{#t}を、そうでなければ@code{#f}を返します。
+引数が@@ベクタの要素に収まるなら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} {@var{TAG}vector-empty?} @r{@var{obj}}
+@deffn {Function} @@vector-empty? obj
 @findex u8vector-empty?
 @findex s8vector-empty?
 @findex u16vector-empty?
@@ -22324,18 +22325,18 @@ Returns @code{#t} iff @var{obj} can be an element of @code{@var{TAG}vector}.
 @findex c32vector-empty?
 @findex c64vector-empty?
 @findex c128vector-empty?
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-The argument must be a @var{TAG}vector.
+The argument must be a @@vector.
 Returns @code{#t} iff it is empty.
 @c JP
-引数は@var{TAG}vectorでなければなりません。
+引数は@@vectorでなければなりません。
 それが空なら@code{#t}を、そうでなければ@var{#f}を返します。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} {@var{TAG}vector} @r{@var{x} @dots{}}
+@deffn {Function} @@vector x @dots{}
 @findex s8vector
 @findex u8vector
 @findex s16vector
@@ -22350,24 +22351,24 @@ Returns @code{#t} iff it is empty.
 @findex c32vector
 @findex c64vector
 @findex c128vector
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Constructs @var{TAG}vector whose elements are numbers @var{x} @dots{}.
+Constructs @@vector whose elements are numbers @var{x} @dots{}.
 The numbers must be exact integer for exact integer vectors,
 and in the valid range of the vector.
 @c JP
-数値@var{x} @dots{} を要素に持つ@var{TAG}vectorを作成して返します。
+数値@var{x} @dots{} を要素に持つ@@vectorを作成して返します。
 正確な整数のベクタに対しては、数値は正確な整数でなければならず、
 また有効な範囲内の値でなければなりません。
 @c COMMON
 @example
 (s8vector 1 2 3) @result{} #s8(1 2 3)
 @end example
-@end deftp
+@end deffn
 
 
-@deftp {Function} make-@var{TAG}vector @r{@var{len} @var{:optional} @var{fill}}
+@deffn {Function} make-@@vector len :optional fill
 @findex make-s8vector
 @findex make-u8vector
 @findex make-s16vector
@@ -22382,15 +22383,15 @@ and in the valid range of the vector.
 @findex make-c32vector
 @findex make-c64vector
 @findex make-c128vector
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Constructs a @var{TAG}vector of length @var{len}.  The elements are
+Constructs a @@vector of length @var{len}.  The elements are
 initialized by a number @var{fill}.   For exact integer vectors,
 @var{fill} must be an exact integer and in the valid range.
 If @var{fill} is omitted, the content of the vector is undefined.
 @c JP
-長さ@var{len}の@var{TAG}vectorを作成して返します。各要素は@var{fill}で
+長さ@var{len}の@@vectorを作成して返します。各要素は@var{fill}で
 初期化されます。正確な整数のベクタに対しては、@var{fill}は正確な整数でなければならず、
 また有効な範囲内の値でなければなりません。
 @var{fill}が省略された場合、各要素の初期値は不定です。
@@ -22398,7 +22399,7 @@ If @var{fill} is omitted, the content of the vector is undefined.
 @example
 (make-u8vector 4 0) @result{} #u8(0 0 0 0)
 @end example
-@end deftp
+@end deffn
 
 @defun make-uvector @code{class} @code{len} :optional @code{fill}
 @c MOD gauche.uvector
@@ -22416,8 +22417,8 @@ each uvector type, you can pass the class of desired uvector.
 @end example
 @end defun
 
-@deftp {Function} @var{TAG}vector-unfold @r{@var{vec}} @r{@var{f}} @r{@var{len}} @r{@var{seed}}
-@deftpx {Function} @var{TAG}vector-unfold-right @r{@var{vec}} @r{@var{f}} @r{@var{len}} @r{@var{seed}}
+@deffn {Function} @@vector-unfold f len seed
+@deffnx {Function} @@vector-unfold-right f len seed
 @findex u8vector-unfold
 @findex s8vector-unfold
 @findex u16vector-unfold
@@ -22448,17 +22449,17 @@ each uvector type, you can pass the class of desired uvector.
 @findex c128vector-unfold-right
 @c MOD gauche.uvector
 @c EN
-Construct a @var{TAG}vector of length @var{len}, with each element
+Construct a @@vector of length @var{len}, with each element
 as a result of @code{(f seed)}, @code{(f (f seed))},
 @code{(f (f (f seed)))}, @dots{}.
-@var{TAG}vector-unfold fills the element from left to right,
-while @var{TAG}vector-unfold-right from right to left.
+@@vector-unfold fills the element from left to right,
+while @@vector-unfold-right from right to left.
 @c JP
-長さ@var{len}の@var{TAG}vectorを作り、
+長さ@var{len}の@@vectorを作り、
 @code{(f seed)}、@code{(f (f seed))}、
 @code{(f (f (f seed)))}、@dots{} の結果を順に要素とします。
-@var{TAG}vector-unfoldは左から右に、
-@var{TAG}vector-unfold-rightは右から左に埋めてゆきます。
+@@vector-unfoldは左から右に、
+@@vector-unfold-rightは右から左に埋めてゆきます。
 @c COMMON
 @example
 (u8vector-unfold (cut + 2 <>) 5 0)
@@ -22466,10 +22467,10 @@ while @var{TAG}vector-unfold-right from right to left.
 (u8vector-unfold-right (pa$ + 2) 5 0)
  @result{} #u8(10 8 6 4 2)
 @end example
-@end deftp
+@end deffn
 
 
-@deftp {Function} @var{TAG}vector-length @r{@var{vec}}
+@deffn {Function} @@vector-length vec
 @findex u8vector-length
 @findex s8vector-length
 @findex u16vector-length
@@ -22484,17 +22485,17 @@ while @var{TAG}vector-unfold-right from right to left.
 @findex c32vector-length
 @findex c64vector-length
 @findex c128vector-length
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Returns the length of the @var{TAG}vector @var{vec}.
+Returns the length of the @@vector @var{vec}.
 
 Note that the generic function @code{size-of} can be used
 to obtain the length of @var{vec} as well,
 if you import @code{gauche.collection}
 (@pxref{Collection framework}).
 @c JP
-@var{TAG}vector @var{vec}の長さを返します。
+@@vector @var{vec}の長さを返します。
 
 モジュール@code{gauche.collection}をインポートしていれば、
 @var{vec}の長さを知るのに、総称関数@code{size-of}を使うこともできます
@@ -22506,16 +22507,16 @@ if you import @code{gauche.collection}
 (use gauche.collection)
 (size-of '#s16(111 222 333)) @result{} 3
 @end example
-@end deftp
+@end deffn
 
 @defun uvector-length uvector
 @c MOD gauche.uvector
 @c EN
-This is a generic version of @code{@var{TAG}vector-length}; you
+This is a generic version of @code{@@vector-length}; you
 can pass any instance of uniform vector, and it returns the number
 of its elements.
 @c JP
-これは@code{@var{TAG}vector-length}の汎用バージョンです。
+これは@code{@@vector-length}の汎用バージョンです。
 どんな型のユニフォームベクタでも渡すことができ、
 その要素数が返されます。
 @c COMMON
@@ -22575,7 +22576,7 @@ An error is raised when @var{class} is not a uvector class.
 @end defun
 
 
-@deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} :optional @var{fallback}}
+@deffn {Function} @@vector-ref vec k :optional fallback
 @findex u8vector-ref
 @findex s8vector-ref
 @findex u16vector-ref
@@ -22590,10 +22591,10 @@ An error is raised when @var{class} is not a uvector class.
 @findex c32vector-ref
 @findex c64vector-ref
 @findex c128vector-ref
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Returns the @var{k}-th element of @var{TAG}vector @var{vec}.
+Returns the @var{k}-th element of @@vector @var{vec}.
 
 If the index @var{k} is out of the valid range, an error is signaled
 unless an optional argument @var{fallback} is given; in that case,
@@ -22602,7 +22603,7 @@ unless an optional argument @var{fallback} is given; in that case,
 Note that the generic function @code{ref} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
-@var{TAG}vector @var{vec}の@var{k}番目の要素を返します。
+@@vector @var{vec}の@var{k}番目の要素を返します。
 
 @var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
 省略可能な引数@var{fallback}が与えられている場合はそれが返されます。
@@ -22617,12 +22618,12 @@ if you import @code{gauche.collection}.
 (use gauche.collection)
 (ref '#u16(111 222 333) 1) @result{} 222
 @end example
-@end deftp
+@end deffn
 
 @defun uvector-ref vec k :optional fallback
 @c MOD gauche.uvector
 @c EN
-Generic version of @code{@var{TAG}vector-ref}.
+Generic version of @code{@@vector-ref}.
 It can take any kind of uniform vector to @var{vec},
 and returns its @var{k}-th element.
 If the index @var{k} is out of the valid range, an error is signaled
@@ -22638,7 +22639,7 @@ difference.
 
 @code{(setter uvector-ref)} is @code{uvector-set!}.
 @c JP
-@code{@var{TAG}vector-ref}の汎用バージョンです。
+@code{@@vector-ref}の汎用バージョンです。
 @var{vec}にどんな種類のユニフォームベクタを取ることができ、
 その@var{k}番めの要素を返します。
 @var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
@@ -22646,7 +22647,7 @@ difference.
 
 この手続きは様々な種類のユニフォームベクタに対して動作するような一般的なコードを
 書く際にとても便利ですが、それぞれの種類のユニフォームベクタ専用の
-アクセサに比べると遅いです。Gaucheのコンパイラは@code{@var{TAG}vector-ref}の
+アクセサに比べると遅いです。Gaucheのコンパイラは@code{@@vector-ref}の
 呼び出しを認識して非常に効率の良いコードを出すのに対し、
 この手続きは通常の手続き呼び出しになるからです。内部のループ内で呼び出す場合、
 これは大きな差になるかもしれません。
@@ -22655,7 +22656,7 @@ difference.
 @c COMMON
 @end defun
 
-@deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n} :optional @var{clamp}}
+@deffn {Function} @@vector-set! vec k n :optional clamp
 @findex u8vector-set!
 @findex s8vector-set!
 @findex u16vector-set!
@@ -22670,17 +22671,17 @@ difference.
 @findex c32vector-set!
 @findex c64vector-set!
 @findex c128vector-set!
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Sets a number @var{n} to the @var{k}-th element of @var{TAG}vector @var{vec}.
+Sets a number @var{n} to the @var{k}-th element of @@vector @var{vec}.
 Optional @var{clamp} argument specifies the behavior when
 @var{n} is out of valid range.   Default is to signal an error.
 
 Note that the setter of the generic function @code{ref} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
-@var{TAG}vector @var{vec}の@var{k}番目の要素に数値@var{n}をセットします。
+@@vector @var{vec}の@var{k}番目の要素に数値@var{n}をセットします。
 省略可能な引数@var{clamp}が、@var{n}が正しい範囲外の数であった場合の動作を指定します。
 デフォルトではエラーが通知されます。
 
@@ -22699,21 +22700,21 @@ if you import @code{gauche.collection}.
   v)
  @result{} #s32vector(-439 4 8933)
 @end example
-@end deftp
+@end deffn
 
 @defun uvector-set! vec k val
 @c MOD gauche.uvector
 @c EN
-Generic version of @code{@var{TAG}vector-set!}.  It can handle any
+Generic version of @code{@@vector-set!}.  It can handle any
 kind of uniform vectors, but a bit slower than the specific versions.
 @c JP
-@code{@var{TAG}vector-set!}の汎用バージョンです。全ての種類の
+@code{@@vector-set!}の汎用バージョンです。全ての種類の
 ユニフォームベクタを扱えますが、特定のユニフォームベクタ用のセッターを
 使うよりやや遅いです。
 @c COMMON
 @end defun
 
-@deftp {Function} @var{TAG}vector-swap! @r{@var{vec} @var{i} @var{j}}
+@deffn {Function} @@vector-swap! vec i j
 @findex u8vector-swap!
 @findex s8vector-swap!
 @findex u16vector-swap!
@@ -22728,7 +22729,7 @@ kind of uniform vectors, but a bit slower than the specific versions.
 @findex c32vector-swap!
 @findex c64vector-swap!
 @findex c128vector-swap!
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
 Interchanges @var{i}th and @var{j}th elements of the uvector @var{vec}.
@@ -22737,9 +22738,9 @@ Return value is not specified.
 ユニフォームベクタ@var{vec}の@var{i}番目と@var{j}番目の要素を入れ替えます。
 戻り値は規定されていません。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-fill! @r{@var{vec} @var{fill} :optional @var{start} @var{end}}
+@deffn {Function} @@vector-fill! vec fill :optional start end
 @findex u8vector-fill!
 @findex s8vector-fill!
 @findex u16vector-fill!
@@ -22765,9 +22766,9 @@ Return value is not specified.
 @var{start}と@var{end}で要素の範囲を指定することも出来ます。
 戻り値は規定されていません。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector= @var{vec1} @dots{}
+@deffn {Function} @@vector= @var{vec1} @dots{}
 @findex u8vector=
 @findex s8vector=
 @findex u16vector=
@@ -22782,26 +22783,26 @@ Return value is not specified.
 @findex c32vector=
 @findex c64vector=
 @findex c128vector=
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-All arguments must be @var{TAG}vectors.  Returns @code{#t} iff
+All arguments must be @@vectors.  Returns @code{#t} iff
 all arguments have the same length and has the same values (in terms of @code{=})
 at the corresponding position. Zero arguments
 return @var{#t}.
 
 Note that in Gauche you can compare uvectors with @code{equal?}as well.
 @c JP
-全ての引数は@var{TAG}vectorでなければなりません。
+全ての引数は@@vectorでなければなりません。
 引数が全て同じ長さで、対応する要素が同じ価(@code{=}の意味で)なら@code{#t}を、
 そうでなければ@code{#f}を返します。
 
 Gaucheでは、uvectorは@code{equal?}で比較することができます。
 @c COMMON
-@end deftp
+@end deffn
 
 
-@deftp {Function} @var{TAG}vector=? @var{vec1} @var{vec2}
+@deffn {Function} @@vector=? @var{vec1} @var{vec2}
 @findex u8vector=?
 @findex s8vector=?
 @findex u16vector=?
@@ -22820,20 +22821,20 @@ Gaucheでは、uvectorは@code{equal?}で比較することができます。
 @c MOD gauche.uvector
 @c EN
 Note: This is provided only for the srfi-66 compatibility.
-Use @code{@var{TAG}vector=} instead.
+Use @code{@@vector=} instead.
 
-Both arguments must be a @var{TAG}vector.  Returns @code{#t} if
+Both arguments must be a @@vector.  Returns @code{#t} if
 @var{vec1} and @var{vec2} are equal to each other, @code{#f} otherwise.
 @c JP
 註: これはsrfi-66との互換性のためだけに提供されています。
-@code{@var{TAG}vector=} を使ってください。
+@code{@@vector=} を使ってください。
 
-引数はどちらも@var{TAG}vectorでなければなりません。
+引数はどちらも@@vectorでなければなりません。
 両引数が等価なら@code{#t}が、そうでなければ@code{#f}が返されます。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-compare @var{vec1} @var{vec2}
+@deffn {Function} @@vector-compare @var{vec1} @var{vec2}
 @findex u8vector-compare
 @findex s8vector-compare
 @findex u16vector-compare
@@ -22851,7 +22852,7 @@ Both arguments must be a @var{TAG}vector.  Returns @code{#t} if
 [SRFI-66]
 @c MOD gauche.uvector
 @c EN
-Both arguments must be a @var{TAG}vector.  Returns @code{-1} if
+Both arguments must be a @@vector.  Returns @code{-1} if
 @var{vec1} is smaller than @var{vec2},
 @code{0} if both are equal to each other,
 and @code{1} if @var{vec1} is greater than @var{vec2}.
@@ -22863,7 +22864,7 @@ Note that you can compare uvectors with @code{compare} in Gauche.
 These are provided because SRFI-66 defines @code{u8vector-compare}.
 You can also use them to indicate arguments are vectors of the specific type.
 @c JP
-引数はどちらも@var{TAG}vectorでなければなりません。
+引数はどちらも@@vectorでなければなりません。
 @var{vec1}が@var{vec2}よりも小さければ@code{-1}が、
 両者が等しければ@code{0}が、
 @var{vec1}が@var{vec2}よりも大きければ@code{1}が返されます。
@@ -22874,9 +22875,9 @@ Gaucheでは、uvectorは@code{compare}で比較することができます。
 これらの手続きが提供されるのは、SRFI-66が@code{u8vector-compare}を定義しているためです。
 引数が特定の型のベクタであることを明示したい場合に使っても良いでしょう。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-copy @r{@var{vec} :optional @var{start} @var{end}}
+@deffn {Function} @@vector-copy vec :optional start end
 @findex u8vector-copy
 @findex s8vector-copy
 @findex u16vector-copy
@@ -22891,7 +22892,7 @@ Gaucheでは、uvectorは@code{compare}で比較することができます。
 @findex c32vector-copy
 @findex c64vector-copy
 @findex c128vector-copy
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
 Returns a fresh copy of uniform vector @var{vec}.
@@ -22908,22 +22909,22 @@ If @var{start} and/or @var{end} are given, they limit the range of
 (u8vector-copy '#u8(1 2 3 4) 2)   @result{} #u8(3 4)
 (u8vector-copy '#u8(1 2 3 4) 1 3) @result{} #u8(2 3)
 @end example
-@end deftp
+@end deffn
 
 @defun uvector-copy vec :optional start end
 @c MOD gauche.uvector
 @c EN
-This is a generic version of @code{@var{TAG}vector-copy}.
+This is a generic version of @code{@@vector-copy}.
 You can give any type of uvector to @var{vec}, and get its copy
 (or copy of its part, depending on @var{start}/@var{end} argument).
 @c JP
-これは@code{@var{TAG}vector-copy}の汎用バージョンです。
+これは@code{@@vector-copy}の汎用バージョンです。
 どんな型のuvectorでも@var{vec}に渡すことができ、そのコピー
 (もしくは、@var{start}/@var{end}によっては一部のコピー)が返されます。
 @c COMMON
 @end defun
 
-@deftp {Function} @var{TAG}vector-reverse-copy @r{@var{vec} :optional @var{start} @var{end}}
+@deffn {Function} @@vector-reverse-copy vec :optional start end
 @findex u8vector-reverse-copy
 @findex s8vector-reverse-copy
 @findex u16vector-reverse-copy
@@ -22938,7 +22939,7 @@ You can give any type of uvector to @var{vec}, and get its copy
 @findex c32vector-reverse-copy
 @findex c64vector-reverse-copy
 @findex c128vector-reverse-copy
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
 Copies @var{vec} between @var{strat} and @var{end} index, but
@@ -22954,9 +22955,9 @@ reversing it.
 (u8vector-reverse-copy '#u8(1 2 3 4 5) 1 4)
   @result{} #u8(4 3 2)
 @end example
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-copy! @r{@var{target} @var{tstart} @var{source} :optional @var{sstart} @var{send}}
+@deffn {Function} @@vector-copy! target tstart source :optional sstart send
 @findex u8vector-copy!
 @findex s8vector-copy!
 @findex u16vector-copy!
@@ -22971,10 +22972,10 @@ reversing it.
 @findex c32vector-copy!
 @findex c64vector-copy!
 @findex c128vector-copy!
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Both @var{target} and @var{source} must be @i{TAG}vectors, and
+Both @var{target} and @var{source} must be @@vectors, and
 @var{target} must be mutable.
 This procedure copies the elements of @var{source}, beginning from index
 @var{sstart} (inclusive) and up to @var{send}, into @var{target},
@@ -22982,7 +22983,7 @@ beginning from index @var{tstart}.  @var{sstart} and @var{send}
 may be omitted, and in that case 0 and the length of @var{source}
 are assumed, respectively.
 @c JP
-@var{target} および @var{source} はともに @i{TAG}vector でなければ
+@var{target} および @var{source} はともに @@vector でなければ
 なりません。さらに、@var{target} は変更可能でなければなりません。
 この手続きは、@var{source}の要素を、インデックス@var{sstart}から(これを含み)
 @var{send} までを、@var{target} へインデックス @var{tstart}からコピーします。
@@ -23037,9 +23038,9 @@ argument order (@pxref{Octet vectors}).
 また、srfi-66も@code{u8vector-copy!}を提供していますが、
 引数の順序が異なります(@ref{Octet vectors}参照)。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-multi-copy! @r{@var{target} @var{tstart} @var{tstride} @var{source} :optional @var{sstart} @var{ssize} @var{sstride} @var{count}}
+@deffn {Function} @@vector-multi-copy! target tstart tstride source :optional sstart ssize sstride count
 @findex u8vector-multi-copy!
 @findex s8vector-multi-copy!
 @findex u16vector-multi-copy!
@@ -23069,8 +23070,8 @@ When @var{ssize} is omitted or zero, this procedure does the following:
 
 @example
 ;; For each @var{i} from 0 to @var{count}:
-(TAGvector-copy! target (+ tstart (* i tstride))
-                 source sstart)
+(u8vector-copy! target (+ tstart (* i tstride))
+                source sstart)
 @end example
 
 @c EN
@@ -23104,9 +23105,9 @@ as follows:
 
 @example
 ;; For each @var{i} from 0 to @var{count}:
-(TAGvector-copy! target (+ tstart (* i tstride))
-                 source (+ sstart (* i sstride))
-                        (+ sstart (* i sstride) ssize))
+(u8vector-copy! target (+ tstart (* i tstride))
+                source (+ sstart (* i sstride))
+                       (+ sstart (* i sstride) ssize))
 @end example
 
 @c EN
@@ -23150,7 +23151,7 @@ Hint: If you want to copy a part of the source vector repeatedly
 
 t @result{} #u8(3 4 5 6 3 4 5 6 3 4 5 6)
 @end example
-@end deftp
+@end deffn
 
 
 @c EN
@@ -23177,7 +23178,7 @@ various operations on the homogeneous vectors.
 @defun uvector-copy! target tstart source :optional sstart send
 @c MOD gauche.uvector
 @c EN
-This is a generic version of @code{@i{TAG}vector-copy!}.
+This is a generic version of @code{@@vector-copy!}.
 The destination @var{target} and the source @var{source} can be
 any type of uniform vectors, and they don't need to match.
 The copy is done bit-by-bit.  So if you copy to a different type
@@ -23188,7 +23189,7 @@ internally.  This is mainly to manipulate binary data.
 and @var{sstart} and @var{send} are interpreted according to the
 type of @var{source}.
 @c JP
-これは@code{@i{TAG}vector-copy!}の汎用バージョンです。
+これは@code{@@vector-copy!}の汎用バージョンです。
 コピー元@var{source}とコピー先@var{target}はユニフォームベクタであれば
 どの型でも許され、また両者の型が異なっていても構いません。
 ビット表現がそのままコピーされます。従って異なる型のユニフォームベクタ間で
@@ -23207,7 +23208,7 @@ type of @var{source}.
 @end defun
 
 
-@deftp {Function} @var{TAG}vector-append vec @dots{}
+@deffn {Function} @@vector-append vec @dots{}
 @findex u8vector-append
 @findex s8vector-append
 @findex u16vector-append
@@ -23222,14 +23223,14 @@ type of @var{source}.
 @findex c32vector-append
 @findex c64vector-append
 @findex c128vector-append
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-All arguments must be @var{TAG}vectors.  Returns a fresh vector
+All arguments must be @@vectors.  Returns a fresh vector
 whose contents are concatenation of the given vectors.
 (It returns a fresh vector even there's only one argument).
 @c JP
-引数はすべて@var{TAG}vectorでなければなりません。
+引数はすべて@@vectorでなければなりません。
 引数ベクタの内容を全てつなぎ合わせた新たなベクタを返します。
 (引数が一つだけの場合も、新たにアロケートされたベクタが返されます。)
 @c COMMON
@@ -23238,9 +23239,9 @@ whose contents are concatenation of the given vectors.
 (u8vector-append '#u8(1 2 3) '#u8(4 5) '#u8() '#u8(6 7 8))
   @result{} #u8(1 2 3 4 5 6 7 8)
 @end example
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-concatenate vecs
+@deffn {Function} @@vector-concatenate vecs
 @findex u8vector-concatenate
 @findex s8vector-concatenate
 @findex u16vector-concatenate
@@ -23255,22 +23256,22 @@ whose contents are concatenation of the given vectors.
 @findex c32vector-concatenate
 @findex c64vector-concatenate
 @findex c128vector-concatenate
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Returns a new @var{TAG}vector which is concatenation of the list of
-@var{TAG}vectors @var{vecs}.
+Returns a new @@vector which is concatenation of the list of
+@@vectors @var{vecs}.
 @c JP
-@var{TAG}vectorのリスト@var{vecs}にあるベクタを全て連結した新たな
-@var{TAG}vectorを返します。
+@@vectorのリスト@var{vecs}にあるベクタを全て連結した新たな
+@@vectorを返します。
 @c COMMON
 @example
 (u8vector-concatenate '(#u8(1 2 3) #u8(4 5 6)))
   @result{} #u8(1 2 3 4 5 6)
 @end example
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-append-subvectors :optional vec start end @dots{}
+@deffn {Function} @@vector-append-subvectors :optional vec start end @dots{}
 @findex u8vector-append-subvectors
 @findex s8vector-append-subvectors
 @findex u16vector-append-subvectors
@@ -23285,20 +23286,20 @@ Returns a new @var{TAG}vector which is concatenation of the list of
 @findex c32vector-append-subvectors
 @findex c64vector-append-subvectors
 @findex c128vector-append-subvectors
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Returns a new @var{TAG}vector which is concatenation of the subvectors of
+Returns a new @@vector which is concatenation of the subvectors of
 given @var{vec}s, using accompanied @var{start} and @var{end} index.
 @c JP
 各@var{vec}の@var{start}と@var{end}で指定される範囲のサブベクタを
-連結した新たな@var{TAG}vectorを返します。
+連結した新たな@@vectorを返します。
 @c COMMON
 @example
 (u8vector-append-subvectors '#u8(1 2 3 4) 1 3 '#u8(5 6 7 8) 0 2)
   @result{} #u8(2 3 5 6)
 @end example
-@end deftp
+@end deffn
 
 
 @defun uvector-binary-search uvector key :optional start end skip rounding
@@ -23446,7 +23447,7 @@ does not support @var{skip} and @var{rounding} arguments.
 @subsection Uvector conversion operations
 @c NODE ユニフォームベクタの変換
 
-@deftp {Function} @var{TAG}vector->list @r{@var{vec} :optional @var{start} @var{end}}
+@deffn {Function} @@vector->list vec :optional start end
 @findex u8vector->list
 @findex s8vector->list
 @findex u16vector->list
@@ -23461,17 +23462,17 @@ does not support @var{skip} and @var{rounding} arguments.
 @findex c32vector->list
 @findex c64vector->list
 @findex c128vector->list
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Converts @var{TAG}vector @var{vec} to a list.
+Converts @@vector @var{vec} to a list.
 If @var{start} and/or @var{end} are given, they limit the range of
 @var{vec} to be extracted.
 
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
-@var{TAG}vector @var{vec}をリストに変換します。
+@@vector @var{vec}をリストに変換します。
 省略可能な引数@var{start}と@var{end}が与えられた場合、
 それらは取り出される要素の範囲を制限します。
 
@@ -23484,23 +23485,23 @@ if you import @code{gauche.collection}.
 (use gauche.collection)
 (coerce-to <list> '#u32(9 2 5)) @result{} (9 2 5)
 @end example
-@end deftp
+@end deffn
 
 @defun uvector->list uvec :optional start end
 @c MOD gauche.uvector
 @c EN
-This is a generic version of @code{@var{TAG}vector->list}.  
+This is a generic version of @code{@@vector->list}.  
 It can take any kind of uvector as @var{uvec}.  The meaning of
-optional arguments are the same as @code{@var{TAG}vector->list}.
+optional arguments are the same as @code{@@vector->list}.
 @c JP
-これは@code{@var{TAG}vector->list}の汎用バージョンで、
+これは@code{@@vector->list}の汎用バージョンで、
 ユニフォームベクタなら何であれ@var{uvec}に取ることができます。
-省略可能引数の意味は@code{@var{TAG}vector->list}と同じです。
+省略可能引数の意味は@code{@@vector->list}と同じです。
 @c COMMON
 @end defun
 
 
-@deftp {Function} @var{TAG}vector->vector @r{@var{vec} :optional @var{start} @var{end}}
+@deffn {Function} @@vector->vector vec :optional start end
 @findex u8vector->vector
 @findex s8vector->vector
 @findex u16vector->vector
@@ -23515,17 +23516,17 @@ optional arguments are the same as @code{@var{TAG}vector->list}.
 @findex c32vector->vector
 @findex c64vector->vector
 @findex c128vector->vector
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Converts @var{TAG}vector @var{vec} to a vector.
+Converts @@vector @var{vec} to a vector.
 If @var{start} and/or @var{end} are given, they limit the range of
 @var{vec} to be copied.
 
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
-@var{TAG}vector @var{vec}をベクタに変換します。
+@@vector @var{vec}をベクタに変換します。
 省略可能な引数@var{start}と@var{end}が与えられた場合、
 それらは取り出される要素の範囲を制限します。
 
@@ -23539,22 +23540,22 @@ if you import @code{gauche.collection}.
 (use gauche.collection)
 (coerce-to <vector> '#f32(9.3 2.2 5.5)) @result{} #(9.3 2.2 5.5)
 @end example
-@end deftp
+@end deffn
 
 @defun uvector->vector uvec :optional start end
 @c MOD gauche.uvector
 @c EN
-This is a generic version of @code{@var{TAG}vector->vector}.  
+This is a generic version of @code{@@vector->vector}.  
 It can take any kind of uvector as @var{uvec}.  The meaning of
-optional arguments are the same as @code{@var{TAG}vector->vector}.
+optional arguments are the same as @code{@@vector->vector}.
 @c JP
-これは@code{@var{TAG}vector->vector}の汎用バージョンで、
+これは@code{@@vector->vector}の汎用バージョンで、
 ユニフォームベクタなら何であれ@var{uvec}に取ることができます。
-省略可能引数の意味は@code{@var{TAG}vector->vector}と同じです。
+省略可能引数の意味は@code{@@vector->vector}と同じです。
 @c COMMON
 @end defun
 
-@deftp {Function} list->@var{TAG}vector @r{@var{list} :optional @var{clamp}}
+@deffn {Function} list->@@vector list :optional clamp
 @findex list->s8vector
 @findex list->u8vector
 @findex list->s16vector
@@ -23569,17 +23570,17 @@ optional arguments are the same as @code{@var{TAG}vector->vector}.
 @findex list->c32vector
 @findex list->c64vector
 @findex list->c128vector
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Converts a list @var{list} to a @var{TAG}vector.
+Converts a list @var{list} to a @@vector.
 Optional argument @var{clamp} specifies the behavior when
 the element of @var{list} is out of the valid range.
 
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
-リスト@var{list}を@var{TAG}vectorに変換します。
+リスト@var{list}を@@vectorに変換します。
 省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
 動作を指定します。
 
@@ -23592,9 +23593,9 @@ if you import @code{gauche.collection}.
 (use gauche.collection)
 (coerce-to <s64vector> '(9 2 5)) @result{} #s64(9 2 5)
 @end example
-@end deftp
+@end deffn
 
-@deftp {Function} vector->@var{TAG}vector @r{@var{vec} :optional @var{start} @var{end} @var{clamp}}
+@deffn {Function} vector->@@vector vec :optional start end clamp
 @findex vector->s8vector
 @findex vector->u8vector
 @findex vector->s16vector
@@ -23609,10 +23610,10 @@ if you import @code{gauche.collection}.
 @findex vector->c32vector
 @findex vector->c64vector
 @findex vector->c128vector
-[R7RS vector.TAG]
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
-Converts a vector @var{vec} to a @var{TAG}vector.
+Converts a vector @var{vec} to a @@vector.
 If @var{start} and/or @var{end} are given, they limit the range of
 @var{vec} to be copied.
 Optional argument @var{clamp} specifies the behavior when
@@ -23621,7 +23622,7 @@ the element of @var{vec} is out of the valid range.
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
-ベクタ@var{vec}を@var{TAG}vectorに変換します。
+ベクタ@var{vec}を@@vectorに変換します。
 省略可能な引数@var{start}と@var{end}が与えられた場合、
 それらは取り出される要素の範囲を制限します。
 省略可能な引数@var{clamp}が、ベクタ内の要素が正しい範囲外の数であった場合の
@@ -23636,7 +23637,7 @@ if you import @code{gauche.collection}.
 (use gauche.collection)
 (coerce-to <f64vector> '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
 @end example
-@end deftp
+@end deffn
 
 @defun string->s8vector string :optional start end immutable?
 @defunx string->u8vector string :optional start end immutable?
@@ -23961,12 +23962,12 @@ of the object after calling the procedure.
 変更され得る引数については、呼び出し後にそれがどういう状態になっているかは定義されません。
 @c COMMON
 
-@deftp {Function} @var{TAG}vector-add @r{@var{vec} @var{val} :optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-add! @r{@var{vec} @var{val} :optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-sub @r{@var{vec} @var{val} :optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-sub! @r{@var{vec} @var{val} :optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-mul @r{@var{vec} @var{val} :optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-mul! @r{@var{vec} @var{val} :optional @var{clamp}}
+@deffn {Function} @@vector-add vec val :optional clamp
+@deffnx {Function} @@vector-add! vec val :optional clamp
+@deffnx {Function} @@vector-sub vec val :optional clamp
+@deffnx {Function} @@vector-sub! vec val :optional clamp
+@deffnx {Function} @@vector-mul vec val :optional clamp
+@deffnx {Function} @@vector-mul! vec val :optional clamp
 @findex s8vector-add
 @findex s8vector-add!
 @findex s8vector-sub
@@ -24053,36 +24054,36 @@ of the object after calling the procedure.
 @findex c128vector-mul!
 @c MOD gauche.uvector
 @c EN
-Element-wise arithmetic.  @var{Vec} must be a @var{TAG}vector,
-and @var{val} must be either a @var{TAG}vector, a vector, or a list
+Element-wise arithmetic.  @var{Vec} must be a @@vector,
+and @var{val} must be either a @@vector, a vector, or a list
 of the same length as @var{vec}, or a number
 (an exact integer for integer vectors,
 and a real number for f32- and f64-vectors).
 @c JP
-要素毎の計算手続きです。@var{vec}は@var{TAG}vectorでなければなりません。
-また、@var{val}は@var{vec}と同じ長さの@var{TAG}vectorかベクタかリスト、
+要素毎の計算手続きです。@var{vec}は@@vectorでなければなりません。
+また、@var{val}は@var{vec}と同じ長さの@@vectorかベクタかリスト、
 あるいは数値(整数ベクタに対しては正確な整数、実数ベクタに対しては実数)
 でなければなりません。
 @c COMMON
 
 @c EN
-If @var{val} is a @var{TAG}vector, its elements are
+If @var{val} is a @@vector, its elements are
 added to, subtracted from, or multiplied by the corresponding
 elements of @var{vec}, respectively,
-and the results are gathered to a @var{TAG}vector
+and the results are gathered to a @@vector
 and returned.  The linear-update version (those have bang `!' in the name)
 reuses @var{vec} to store the result, and also returns it.
-If the result of calculation goes out of the range of @var{TAG}vector's
+If the result of calculation goes out of the range of @@vector's
 element, the behavior is specified by @var{clamp} optional argument.
 (For f32vector and f64vector, @var{clamp} argument is ignored and
 the result may contain infinity).
 @c JP
-@var{val}が@var{TAG}vectorの場合、
+@var{val}が@@vectorの場合、
 @var{vec}と対応する要素毎に加算、減算、乗算が行われ、
-結果が@var{TAG}vectorとして返されます。
+結果が@@vectorとして返されます。
 線形更新バージョン(名前に`!'がついているもの)では、@var{vec}が
 結果を格納するために再利用され、またそれが返されます。
-演算の結果が@var{TAG}vectorの要素の値域外になった場合の動作は
+演算の結果が@@vectorの要素の値域外になった場合の動作は
 省略可能な引数@var{clamp}によって指定されます。
 (f32vectorとf64vectorでは、値域外になった要素にはinfinityが格納され、
 @var{clamp}の値は無視されます)。
@@ -24102,10 +24103,10 @@ multiplied by each element of @var{vec}, respectively.
 
 (f32vector-mul '#f32(3.0 2.0 1.0) 1.5) @result{} #f32(4.5 3.0 1.5)
 @end example
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-div @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-div! @r{@var{vec} @var{val}}
+@deffn {Function} @@vector-div vec val
+@deffnx {Function} @@vector-div! vec val
 @findex f16vector-div
 @findex f16vector-div!
 @findex f32vector-div
@@ -24121,26 +24122,26 @@ multiplied by each element of @var{vec}, respectively.
 @c MOD gauche.uvector
 @c EN
 Element-wise division of flonum vectors.   These are only defined
-for f16, f32 and f64vector.  @var{val} must be a @var{TAG}vector,
+for f16, f32 and f64vector.  @var{val} must be a @@vector,
 a vector or a list of the same length as @var{vec}, or a real number.
 @c JP
 要素毎の除算です。これらはf32vectorとf64vectorのみに対して定義されます。
-@var{val}は@var{vec}と同じ大きさの@var{TAG}vectorかベクタかリスト、
+@var{val}は@var{vec}と同じ大きさの@@vectorかベクタかリスト、
 あるいは実数でなければなりません。
 @c COMMON
 
 @example
 (f32vector-div '#f32(1.0 2.0 3.0) 2.0) @result{} #f32(0.5 1.0 1.5)
 @end example
-@end deftp
+@end deffn
 
 
-@deftp {Function} @var{TAG}vector-and @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-and! @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-ior @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-ior! @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-xor @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-xor! @r{@var{vec} @var{val}}
+@deffn {Function} @@vector-and vec val
+@deffnx {Function} @@vector-and! vec val
+@deffnx {Function} @@vector-ior vec val
+@deffnx {Function} @@vector-ior! vec val
+@deffnx {Function} @@vector-xor vec val
+@deffnx {Function} @@vector-xor! vec val
 @findex s8vector-and
 @findex s8vector-and!
 @findex s8vector-ior
@@ -24193,29 +24194,29 @@ a vector or a list of the same length as @var{vec}, or a real number.
 @c EN
 Element-wise logical (bitwise) operation.
 These procedures are only defined for integral vectors.
-@var{val} must be a @var{TAG}vector, a vector or a list
+@var{val} must be a @@vector, a vector or a list
 of the same length as @var{vec},
 or an exact integer.  Bitwise and, inclusive or or exclusive or
 is calculated between each element in @var{vec} and the corresponding
 element of @var{val} (when @var{val} is a non-scalar value),
 or @var{val} itself (when @var{val} is an integer).
-The result is returned in a @var{TAG}vector.
+The result is returned in a @@vector.
 The linear-update version reuses @var{vec} to store the result,
 and also returns it.
 @c JP
 要素毎の論理(ビット)演算です。
 これらの手続きは整数ベクタに対してのみ定義されています。
-@var{val}は@var{vec}と同じ大きさの@var{TAG}vectorかベクタかリスト、
+@var{val}は@var{vec}と同じ大きさの@@vectorかベクタかリスト、
 あるいは正確な整数でなければなりません。@var{vec}の各要素と、対応する@var{val}の要素
 (@var{val}が非スカラー値の場合)もしくは@var{val}自身
 (@var{val}が整数の場合)とのビット毎のand, inclusive orまたはexclusive or
-が計算され、結果が@var{TAG}vectorで返されます。
+が計算され、結果が@@vectorで返されます。
 線形更新バージョン(名前に`!'がついているもの)では、@var{vec}が
 結果を格納するために再利用され、またそれが返されます。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-dot @r{@var{vec0} @var{vec1}}
+@deffn {Function} @@vector-dot vec0 vec1
 @findex s8vector-dot
 @findex s16vector-dot
 @findex s32vector-dot
@@ -24232,15 +24233,15 @@ and also returns it.
 @findex c128vector-dot
 @c MOD gauche.uvector
 @c EN
-Calculates the dot product of two @var{TAG}vectors.
+Calculates the dot product of two @@vectors.
 The length of @var{vec0} and @var{vec1} must be the same.
 @c JP
-ふたつの@var{TAG}vectorの内積を計算します。
+ふたつの@@vectorの内積を計算します。
 @var{vec0}と@var{vec1}の長さは等しくなければなりません。
 @c COMMON
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-range-check @r{@var{vec} @var{min} @var{max}}
+@deffn {Function} @@vector-range-check vec min max
 @findex s8vector-range-check
 @findex s16vector-range-check
 @findex s32vector-range-check
@@ -24254,8 +24255,8 @@ The length of @var{vec0} and @var{vec1} must be the same.
 @findex f64vector-range-check
 @c MOD gauche.uvector
 @c EN
-@var{Vec} must be a @var{TAG}vector, and each of @var{min} and @var{max}
-must be either a @var{TAG}vector, a vector or a list of the same length
+@var{Vec} must be a @@vector, and each of @var{min} and @var{max}
+must be either a @@vector, a vector or a list of the same length
 as @var{vec}, or a number, or @code{#f}.
 
 For each element in @var{vec}, this procedure checks if the value
@@ -24271,8 +24272,8 @@ If all the elements in @var{vec} are within the range, @code{#f} is
 returned.  Otherwise, the index of the leftmost element of @var{vec}
 that is out of range is returned.
 @c JP
-@var{vec}は@var{TAG}vectorでなければなりません。
-@var{min}と@var{max}はそれぞれ、@var{vec}と同じ長さの@var{TAG}vector、
+@var{vec}は@@vectorでなければなりません。
+@var{min}と@var{max}はそれぞれ、@var{vec}と同じ長さの@@vector、
 ベクタ、リストのいずれかか、実数もしくは@code{#f}でなければなりません。
 
 @var{vec}の各要素に対して、この手続きはそれが対応する@var{minval}と@var{maxval}
@@ -24303,10 +24304,10 @@ that is out of range is returned.
               i (u8vector-ref u8v i))))
  (else (do-something u8v)))
 @end example
-@end deftp
+@end deffn
 
-@deftp {Function} @var{TAG}vector-clamp @r{@var{vec} @var{min} @var{max}}
-@deftpx {Function} @var{TAG}vector-clamp! @r{@var{vec} @var{min} @var{max}}
+@deffn {Function} @@vector-clamp vec min max
+@deffnx {Function} @@vector-clamp! vec min max
 @findex s8vector-clamp
 @findex s16vector-clamp
 @findex s32vector-clamp
@@ -24330,38 +24331,39 @@ that is out of range is returned.
 @findex f64vector-clamp!
 @c MOD gauche.uvector
 @c EN
-@var{Vec} must be a @var{TAG}vector, and each of @var{min} and @var{max}
-must be either a @var{TAG}vector, a vector or a list of the same length
+@var{Vec} must be a @@vector, and each of @var{min} and @var{max}
+must be either a @@vector, a vector or a list of the same length
 as @var{vec}, or a number, or @code{#f}.
 
-Like @var{TAG}vector-range-check, these procedures check if
+Like @@vector-range-check, these procedures check if
 each element of @var{vec} are within the range between @var{minval}
 and @var{maxval} inclusive, which are derived from @var{min} and @var{max}.
 If the value is less than @var{minval}, it is replaced by @var{minval}.
 If the value is grater than @var{maxval}, it is replaced by @var{maxval}.
 
-@var{TAG}vector-clamp creates a copy of @var{vec} and do clamp
-operation on it, while @var{TAG}vector-clamp! modifies @var{vec}.
+@@vector-clamp creates a copy of @var{vec} and do clamp
+operation on it, while @@vector-clamp! modifies @var{vec}.
 Both return the clamped vector.
 @c JP
-@var{vec}は@var{TAG}vectorでなければなりません。
-@var{min}と@var{max}はそれぞれ、@var{vec}と同じ長さの@var{TAG}vector、
+@var{vec}は@@vectorでなければなりません。
+@var{min}と@var{max}はそれぞれ、@var{vec}と同じ長さの@@vector、
 ベクタ、リストのいずれかか、実数もしくは@code{#f}でなければなりません。
 
-@var{TAG}vector-range-checkと同じように、この手続きは@var{vec}の各要素が
+@@vector-range-checkと同じように、この手続きは@var{vec}の各要素が
 @var{min}および@var{max}で指定される最小値と最大値の間にあるかどうかを
 検査します。要素が最小値より小さかった場合はそれが最小値に置き換えられます。
 要素が最大値より大きかった場合はそれが最大値に置き換えられます。
 
-@var{TAG}vector-clampは@var{vec}のコピーを作ってそれに対して
-クランプ操作を行います。@var{TAG}vector-clamp!は@var{vec}を直接
-変更します。どちらもクランプ操作が行われた後の@var{TAG}vectorを返します。
+@@vector-clampは@var{vec}のコピーを作ってそれに対して
+クランプ操作を行います。@@vector-clamp!は@var{vec}を直接
+変更します。どちらもクランプ操作が行われた後の@@vectorを返します。
 @c COMMON
 
 @example
 (s8vector-clamp '#s8(8 14 -3 -22 0) -10 10) @result{} #s8(8 10 -3 -10 0)
 @end example
-@end deftp
+@end deffn
+
 
 @node Uvector block I/O, Bytevector compatibility, Uvector numeric operations, Uniform vectors
 @subsection Uvector block I/O

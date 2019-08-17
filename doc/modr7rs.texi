@@ -1949,7 +1949,7 @@ The following are supported libraries:
 @menu
 * R7RS lists::                  @code{scheme.list}
 * R7RS vectors::                @code{scheme.vector}
-* R7RS uniform vectors::        @code{scheme.vector.TAG}
+* R7RS uniform vectors::        @code{scheme.vector.@@}
 * R7RS sort::                   @code{scheme.sort}
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
@@ -3136,11 +3136,10 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @end defun
 
 @node R7RS uniform vectors, R7RS sort, R7RS vectors, R7RS large
-@subsection @code{scheme.vector.TAG} - R7RS uniform vectors
-@c NODE R7RSユニフォームベクタ, @code{scheme.vector.TAG} - R7RSユニフォームベクタ
+@subsection @code{scheme.vector.@@} - R7RS uniform vectors
+@c NODE R7RSユニフォームベクタ, @code{scheme.vector.@@} - R7RSユニフォームベクタ
 
-@deftp {Module} scheme.vector.TAG
-@mdindex scheme.vector.TAG
+@deftp {Module} scheme.vector.@@
 @mdindex scheme.vector.u8
 @mdindex scheme.vector.s8
 @mdindex scheme.vector.u16
@@ -3153,7 +3152,7 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @mdindex scheme.vector.f64
 @mdindex scheme.vector.c64
 @mdindex scheme.vector.c128
-@var{TAG} is actually one of @code{u8}, @code{s8}, @code{u16}, @code{s16},
+@code{@@} is actually one of @code{u8}, @code{s8}, @code{u16}, @code{s16},
 @code{u32}, @code{s32}, @code{u64}, @code{s64}, @code{f32},
 @code{f64}, @code{c64} or @code{c128}.
 (Gauche's @code{gauche.uvector} module also provides @code{f16}
