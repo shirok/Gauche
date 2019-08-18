@@ -823,10 +823,10 @@
                                      (/ (string-length (rxmatch-substring m 1))
                                         3)))))
 
-(test* "regexp-replace-all" (test-error)
+(test* "regexp-replace-all" "XaXbXcXdXeXfX"
        (regexp-replace-all #/\d*/ "abcdef" "X"))
-(test* "regexp-replace-all" (test-error)
-       (regexp-replace-all #/\d*/ "123abcdef" "X"))
+(test* "regexp-replace-all" "XXaXbXcXXdXeXfX"
+       (regexp-replace-all #/\d*/ "123abc45def" "X"))
 
 (test* "regexp-replace*" "cbazzbc"
        (regexp-replace* "abcbabc"

@@ -140,28 +140,25 @@
 ;; Skip the first subskip matches, then start replacing only up to
 ;; subcount times (or infinite if subcount is #f).
 (define (%regexp-replace-rec rx string subpat subskip subcount)
-  (define (zero-match-check rx match)
-    (when (= (rxmatch-start match) (rxmatch-end match))
-      (error "regexp-replace-all: matching zero-length string causes \
-              infinite loop:" rx)))
-  (if (or (and subcount (zero? subcount))
-          (equal? string ""))
+  (define (next-string match)
+    (let1 rest (rxmatch-after match)
+      (and (not (equal? rest ""))
+           (if (= (rxmatch-start match) (rxmatch-end match))
+             (begin (display (string-ref rest 0))
+                    (string-copy rest 1))
+             rest))))
+  (if (and subcount (zero? subcount))
     (display string)
     (let1 match (rxmatch rx string)
       (cond
        [(not match)
         (display string)]
        [(> subskip 0)
-        (zero-match-check rx match)
         (display (rxmatch-before match))
         (display (rxmatch-substring match))
-        (%regexp-replace-rec rx
-                             (rxmatch-after match)
-                             subpat
-                             (- subskip 1)
-                             subcount)]
+        (and-let1 next (next-string match)
+          (%regexp-replace-rec rx next subpat (- subskip 1) subcount))]
        [else
-        (zero-match-check rx match)
         (display (rxmatch-before match))
         (if (procedure? subpat)
           (display (subpat match))
@@ -172,11 +169,9 @@
                       [(or (number? pat) (symbol? pat))
                        (rxmatch-substring match pat)]
                       [else pat]))))
-        (%regexp-replace-rec rx
-                             (rxmatch-after match)
-                             subpat
-                             subskip
-                             (and subcount (- subcount 1)))]))))
+        (and-let1 next (next-string match)
+          (%regexp-replace-rec rx next subpat subskip
+                               (and subcount (- subcount 1))))]))))
 
 (define (%regexp-replace rx string start end subpat subskip subcount)
   (if (not end)
