@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use gauche.parameter)
 
 (test-start "dynamic-wind and call/cc")
 
@@ -529,6 +530,18 @@
 ;; To be written:
 ;;  - tests for interactions of dynamic handlers and partial continuaions.
 ;;  - tests for interactions of partial and full continuations.
+
+(test* "reset/shift + parameterize 1"
+       "010"
+       (with-output-to-string
+         (^[]
+           (define p (make-parameter 0))
+           (display (p))
+           (reset
+            (parameterize ([p 1])
+              (display (p))
+              ;; 'shift' escapes from 'reset' before done
+              (shift k (display (p))))))))
 
 (test* "reset/shift + call/cc 1"
        "[r01][r02][r02][r03]"

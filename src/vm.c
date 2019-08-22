@@ -2546,18 +2546,8 @@ ScmObj Scm_VMCallPC(ScmObj proc)
                           on any cstack state. */
     ep->resetChain = vm->resetChain;
 
-    ScmObj contproc = Scm_MakeSubr(partcont_wrapper, ep, 0, 1,
-                                   SCM_MAKE_STR("partial continuation wrapper"));
-    /* Remove the saved continuation chain.
-       NB: c can be NULL if we've been executing a partial continuation.
-       It's ok, for a continuation pointed by cstack will be restored
-       in user_eval_inner. */
-    vm->cont = c;
-
     ScmObj reset_handlers = (SCM_NULLP(vm->resetChain)?
                              SCM_NIL : SCM_CAR(vm->resetChain));
-
-    ScmObj ret = Scm_VMApply1(proc, contproc);
 
     /* call dynamic handlers for reset/shift */
     ScmObj handlers_to_call = throw_cont_calculate_handlers(reset_handlers,
@@ -2569,7 +2559,14 @@ ScmObj Scm_VMCallPC(ScmObj proc)
         Scm_ApplyRec(proc, SCM_NIL);
     }
 
-    return ret;
+    ScmObj contproc = Scm_MakeSubr(partcont_wrapper, ep, 0, 1,
+                                   SCM_MAKE_STR("partial continuation wrapper"));
+    /* Remove the saved continuation chain.
+       NB: c can be NULL if we've been executing a partial continuation.
+       It's ok, for a continuation pointed by cstack will be restored
+       in user_eval_inner. */
+    vm->cont = c;
+    return Scm_VMApply1(proc, contproc);
 }
 
 ScmObj Scm_VMReset(ScmObj proc)
