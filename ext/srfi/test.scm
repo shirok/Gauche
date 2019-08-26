@@ -1451,7 +1451,7 @@
         [(_ expr expected)
          (test* #"~'expr (approx)" expected expr
                 (cut approx=? <> <> rel-tolerance 1e-15))])))
-  (use r7rs)
+  (use scheme.base)
   (include "../../test/include/srfi-144-tests.scm")
   (with-module tests.scheme.flonum
     (run-flonum-tests)))

@@ -47,7 +47,7 @@
 
 (test-start "r7rs-tests")
 
-(require "r7rs")
+(require "r7rs-setup")
 (with-module r7rs.user
   (import (adaptor))
   (include "include/r7rs-tests.scm"))

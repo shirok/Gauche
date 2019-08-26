@@ -386,13 +386,13 @@ void test_paths_setup(void)
        from lib, and we want to test the one in lib. */
     if (access("../src/gauche/config.h", R_OK) == 0
         && access("../libsrc/srfi-1.scm", R_OK) == 0
-        && access("../lib/r7rs.scm", R_OK) == 0) {
+        && access("../lib/r7rs-setup.scm", R_OK) == 0) {
         Scm_AddLoadPath("../src", FALSE);
         Scm_AddLoadPath("../libsrc", FALSE);
         Scm_AddLoadPath("../lib", FALSE);
     } else if (access("../../src/gauche/config.h", R_OK) == 0
                && access("../../libsrc/srfi-1.scm", R_OK) == 0
-               && access("../../lib/r7rs.scm", R_OK) == 0) {
+               && access("../../lib/r7rs-setup.scm", R_OK) == 0) {
         Scm_AddLoadPath("../../src", FALSE);
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
@@ -554,7 +554,7 @@ static void process_command_args(ScmObj cmd_args)
                    so that gauche.interactive can do proper setup. */
                 const char *std = Scm_GetStringConst(SCM_STRING(v));
                 if (strcmp(std, "7") == 0) {
-                    if (Scm_Require(SCM_MAKE_STR("r7rs"), 0, &lpak) < 0) {
+                    if (Scm_Require(SCM_MAKE_STR("r7rs-setup"), 0, &lpak) < 0) {
                         error_exit(lpak.exception);
                     }
                     SCM_DEFINE(Scm_UserModule(), "*r7rs-mode*", SCM_TRUE);

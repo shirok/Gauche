@@ -1,3 +1,13 @@
+2019-08-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs.scm -> lib/r7rs-setup.scm: Renamed.  The name 'r7rs' might
+	  give a wrong impression to users that (use r7rs) or (import (r7rs))
+	  is suffice to use r7rs features, while the 'r7rs' module should
+	  never be used or imported directly.  Thus we rename it to
+	  r7rs-setup, indicating it's the internal setup for r7rs libraries
+	  such as (scheme base).
+	  Cf. https://github.com/shirok/Gauche/issues/513
+
 2019-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/librx.scm (%regexp-replace-rec): If regexp matches zero-length

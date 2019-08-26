@@ -244,9 +244,9 @@
       ;; Some black magic needed here to inject the imported module to
       ;; r7rs.user.  We do this here instead of expanding into forms
       ;; to do the work, for "select-module" thingy is tricky.
-      (unless (provided? "r7rs")
-        (load "r7rs")
-        (provide "r7rs"))
+      (unless (provided? "r7rs-setup")
+        (load "r7rs-setup")
+        (provide "r7rs-setup"))
       (eval `(import ,@args) (find-module 'r7rs.user))
       '(select-module r7rs.user))))
 

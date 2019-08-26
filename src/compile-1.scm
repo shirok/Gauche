@@ -1542,8 +1542,8 @@
       [((? symbol-but-not-keyword? a) (? symbol-but-not-keyword? b) . r)
        ;;likely to be an r7rs-style import
        (error "This import form looks like R7RS `import', as opposed to \
-               Gauche `import'.  If you're in REPL, type (use r7rs) \
-               and (select-module r7rs.user) to enter the R7RS namespace.")]
+               Gauche `import'.  If you're in REPL, type (use scheme.base) \
+               then (select-module r7rs.user) to enter the R7RS namespace.")]
       [(m . r) (process-import (cenv-module cenv) (ensure m) r)]
       [m       (process-import (cenv-module cenv) (ensure m) '())]))
   ($values0))
