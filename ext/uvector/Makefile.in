@@ -6,7 +6,7 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-GEN_SCMFILES = exports.scm \
+GEN_SCMFILES = exports.scm uvector/base.scm \
            uvector/u8.scm uvector/s8.scm uvector/u16.scm uvector/s16.scm \
            uvector/u32.scm uvector/s32.scm uvector/u64.scm uvector/s64.scm \
            uvector/f16.scm uvector/f32.scm uvector/f64.scm \
@@ -48,6 +48,9 @@ uvlib.scm : uvlib.scm.tmpl
 
 exports.scm : ifgen.scm
 	$(GOSH) $(srcdir)/ifgen.scm exports
+uvector/base.scm : ifgen.scm
+	@mkdir -p uvector
+	$(GOSH) $(srcdir)/ifgen.scm base
 uvector/u8.scm : ifgen.scm
 	@mkdir -p uvector
 	$(GOSH) $(srcdir)/ifgen.scm u8

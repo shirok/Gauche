@@ -1,3 +1,8 @@
+2019-08-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector: Generate interface module gauche.uvector.base,
+	  corresponds to (srfi-160 base) library.
+
 2019-08-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs.scm -> lib/r7rs-setup.scm: Renamed.  The name 'r7rs' might
