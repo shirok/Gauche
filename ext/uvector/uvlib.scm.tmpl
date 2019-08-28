@@ -535,6 +535,20 @@
         (pre++ i)
         (pre-- j)))))
 
+(define (${t}vector-unfold! f v start end seed)
+  (let loop ([i start] [seed seed])
+    (when (< i end)
+      (receive (e seed) (f seed)
+        (${t}vector-set! v i e)
+        (loop (+ i 1) seed)))))
+
+(define (${t}vector-unfold-right! f v start end seed)
+  (let loop ([i (- end 1)] [seed seed])
+    (when (>= i start)
+      (receive (e seed) (f seed)
+        (${t}vector-set! v i e)
+        (loop (- i 1) seed)))))
+
 ;; Generators
 
 (define (make-${t}vector-generator vec)
