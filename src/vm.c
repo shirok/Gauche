@@ -2569,7 +2569,8 @@ ScmObj Scm_VMCallPC(ScmObj proc)
 
     /* 'proc' is executed on the outside of 'reset' */
     ScmObj reset_chain = vm->resetChain;
-    vm->resetChain = SCM_CDR(vm->resetChain);
+    vm->resetChain = (SCM_NULLP(vm->resetChain)?
+                      SCM_NIL : SCM_CDR(vm->resetChain));
     ScmObj ret = Scm_VMApply1(proc, contproc);
     vm->resetChain = reset_chain;
     return ret;
