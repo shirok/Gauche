@@ -207,6 +207,9 @@
   (let* ([f::u_long 0]
          [fmt::ScmNumberFormat]
          [o::ScmPort* (SCM_PORT (Scm_MakeOutputStringPort TRUE))])
+    (when (or (< radix SCM_RADIX_MIN) (> radix SCM_RADIX_MAX))
+      (Scm_Error "radix must be an integer between %d and %d, but got %d"
+                 SCM_RADIX_MIN SCM_RADIX_MAX radix))  
     (cond [(or (SCM_FALSEP flags) (SCM_NULLP flags)) (set! f 0)]
           [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
           [(SCM_PAIRP flags)

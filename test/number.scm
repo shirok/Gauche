@@ -494,6 +494,20 @@
       (i-tester2 (exp2 127)))
 
 ;;------------------------------------------------------------------
+(test-section "number->string radix")
+
+(test* "number->string radix 1"
+       '("100101" "1101" "211" "122" "101" "52" "45" "41" "37" "34"
+         "31" "2b" "29" "27" "25" "23" "21" "1i" "1h" "1g"
+         "1f" "1e" "1d" "1c" "1b" "1a" "19" "18" "17" "16"
+         "15" "14" "13" "12" "11")
+       (map (cut number->string <> <>) (make-list 35 37) (iota 35 2)))
+
+(test* "number->string radix error 1" (test-error) (number->string 42 0))
+(test* "number->string radix error 2" (test-error) (number->string 42 1))
+(test* "number->string radix error 3" (test-error) (number->string 42 37))
+
+;;------------------------------------------------------------------
 (test-section "number->string customization")
 
 (test* "number->string flags"

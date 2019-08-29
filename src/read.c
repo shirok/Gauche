@@ -1540,8 +1540,9 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         }
     case 'r': case 'R':
         /* #digitR - radix */
-        if (prefix < 2 || prefix > 36) {
-            Scm_ReadError(port, "Radix prefix out of range: radix in #<radix>R must be between 2 and 36 inclusive, but got: %d", prefix);
+        if (prefix < SCM_RADIX_MIN || prefix > SCM_RADIX_MAX) {
+            Scm_ReadError(port, "Radix prefix out of range: radix in #<radix>R must be between %d and %d inclusive, but got: %d",
+                          SCM_RADIX_MIN, SCM_RADIX_MAX, prefix);
             return SCM_UNDEFINED; /* dummy */
         } else {
             int ch = Scm_GetcUnsafe(port);

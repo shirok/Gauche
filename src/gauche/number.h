@@ -58,6 +58,7 @@
     (((k)<=SCM_SMALL_INT_MAX)&&((k)>=SCM_SMALL_INT_MIN))
 
 #define SCM_RADIX_MAX              36
+#define SCM_RADIX_MIN              2
 
 #define SCM_INTEGERP(obj)          (SCM_INTP(obj) || SCM_BIGNUMP(obj))
 #define SCM_RATIONALP(obj)         (SCM_INTEGERP(obj)||SCM_RATNUMP(obj))
