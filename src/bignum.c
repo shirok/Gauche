@@ -1240,7 +1240,7 @@ ScmObj Scm_BignumToString(const ScmBignum *b, int radix, int use_upper)
     static const char utab[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const char *tab = use_upper? utab : ltab;
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    if (radix < 2 || radix > 36)
+    if (radix < SCM_RADIX_MIN || radix > SCM_RADIX_MAX)
         Scm_Error("radix out of range: %d", radix);
     ScmBignum *q = SCM_BIGNUM(Scm_BignumCopy(b));
     for (;q->size > 0;) {

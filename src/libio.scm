@@ -864,11 +864,13 @@
                        obj->printWidth = SCM_INT_VALUE(value); \
                      else obj->printWidth = -1;")
     (base   :type <int>     :c-name "printBase"
-            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 2 \
-                         && SCM_INT_VALUE(value) <= 36) \
+            :setter "if (SCM_INTP(value) \
+                         && SCM_INT_VALUE(value) >= SCM_RADIX_MIN \
+                         && SCM_INT_VALUE(value) <= SCM_RADIX_MAX) \
                        obj->printBase = SCM_INT_VALUE(value); \
                      else Scm_Error(\"print-base must be an integer \
-                                    between 2 and 36, but got: %S\", value);")
+                                    between %d and %d, but got: %S\", \
+                                    SCM_RADIX_MIN, SCM_RADIX_MAX, value);")
     (radix  :type <boolean> :c-name "printRadix"
             :setter "obj->printRadix = !SCM_FALSEP(value);")
     (pretty :type <boolean> :c-name "printPretty"

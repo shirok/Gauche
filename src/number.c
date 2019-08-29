@@ -66,9 +66,6 @@ int Scm_IsInf(double x)
 }
 #endif
 
-#define RADIX_MIN 2
-#define RADIX_MAX 36
-
 /* Maximum allowable range of exponent in the number litereal.
    For flonums, IEEE double can support [-324..308].  For exact
    numbers we can go futher, but it would easily consume huge
@@ -3785,7 +3782,7 @@ void Scm_NumberFormatInit(ScmNumberFormat* fmt)
 /* API */
 ScmObj Scm_NumberToString(ScmObj obj, int radix, u_long flags)
 {
-    if (radix < 2 || radix > SCM_RADIX_MAX)
+    if (radix < SCM_RADIX_MIN || radix > SCM_RADIX_MAX)
         Scm_Error("radix out of range: %d", radix);
     ScmPort *p = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
     ScmNumberFormat fmt;
@@ -3881,15 +3878,15 @@ enum { /* used in the exactness flag */
 
 /* Max digits D such that all D-digit radix R integers fit in signed
    long, i.e. R^(D+1)-1 <= LONG_MAX */
-static long longdigs[RADIX_MAX-RADIX_MIN+1] = { 0 };
+static long longdigs[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
 
 /* Max integer I such that reading next digit (in radix R) will overflow
    long integer.   floor(LONG_MAX/R - R). */
-static u_long longlimit[RADIX_MAX-RADIX_MIN+1] = { 0 };
+static u_long longlimit[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
 
 /* An integer table of R^D, which is a "big digit" to be added
    into bignum. */
-static u_long bigdig[RADIX_MAX-RADIX_MIN+1] = { 0 };
+static u_long bigdig[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
 
 static ScmObj numread_error(const char *msg, struct numread_packet *context);
 
@@ -3905,8 +3902,8 @@ static ScmObj read_uint(const char **strp, int *lenp,
     int digread = FALSE;
     int len = *lenp;
     int radix = ctx->radix;
-    int digits = 0, diglimit = longdigs[radix-RADIX_MIN];
-    u_long limit = longlimit[radix-RADIX_MIN], bdig = bigdig[radix-RADIX_MIN];
+    int digits = 0, diglimit = longdigs[radix-SCM_RADIX_MIN];
+    u_long limit = longlimit[radix-SCM_RADIX_MIN], bdig = bigdig[radix-SCM_RADIX_MIN];
     u_long value_int = 0;
     ScmBignum *value_big = NULL;
     static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -4304,7 +4301,7 @@ static ScmObj read_number(const char *str, int len, int radix,
     } while (0)
 
     /* suggested radix.  may be overridden by prefix. */
-    if (radix <= 1 || radix > 36) return SCM_FALSE;
+    if (radix < SCM_RADIX_MIN || radix > SCM_RADIX_MAX) return SCM_FALSE;
     ctx.radix = radix;
 
     /* start from prefix part */
@@ -4354,7 +4351,7 @@ static ScmObj read_number(const char *str, int len, int radix,
             else {
                 ScmSize nread = 0;
                 long radix = Scm_ParseDigitsAsLong(--str, --len, 10, &nread);
-                if (radix <= 1 || radix > 36) return SCM_FALSE;
+                if (radix < SCM_RADIX_MIN || radix > SCM_RADIX_MAX) return SCM_FALSE;
                 str += nread; len -= nread;
                 if (len <= 0) return SCM_FALSE;
                 if (*str != 'r' && *str != 'R') return SCM_FALSE;
@@ -4466,15 +4463,15 @@ void Scm__InitNumber(void)
 {
     ScmModule *mod = Scm_GaucheModule();
 
-    for (int radix = RADIX_MIN; radix <= RADIX_MAX; radix++) {
-        longlimit[radix-RADIX_MIN] =
+    for (int radix = SCM_RADIX_MIN; radix <= SCM_RADIX_MAX; radix++) {
+        longlimit[radix-SCM_RADIX_MIN] =
             (u_long)floor((double)LONG_MAX/radix - radix);
         /* Find max D where R^(D+1)-1 <= LONG_MAX */
         u_long n = 1;
         for (int i = 0; ; i++, n *= radix) {
             if (n >= (u_long)(LONG_MAX/radix)) {
-                longdigs[radix-RADIX_MIN] = i-1;
-                bigdig[radix-RADIX_MIN] = n;
+                longdigs[radix-SCM_RADIX_MIN] = i-1;
+                bigdig[radix-SCM_RADIX_MIN] = n;
                 break;
             }
         }
