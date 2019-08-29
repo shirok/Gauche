@@ -4607,7 +4607,7 @@ Sparse vectors also implements the Collection API
 @end deftp
 
 @deftp {Class} <sparse-vector>
-@deftpx {Class} <sparse-@var{TAG}vector>
+@deftpx {Class} <sparse-@@vector>
 @clindex sparse-vector
 @clindex sparse-s8vector
 @clindex sparse-u8vector
@@ -4625,11 +4625,11 @@ Sparse vectors also implements the Collection API
 The actual sparse vector classes.  Inherits @code{<sparse-vector-base>}.
 An instance of @code{<sparse-vector>} can contain any Scheme objects.
 
-@var{TAG} either one of @code{s8}, @code{u8},
+@code{@@} is either one of @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
 @code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
 The range of values an instance of those classes can hold
-is the same as the corresponding @code{<@var{TAG}vector>} class
+is the same as the corresponding @code{<@@vector>} class
 in @code{gauche.uvector} (@pxref{Uniform vectors}).  That is,
 @code{<sparse-u8vector>} can have exact integer values
 between 0 and 255.
@@ -4638,11 +4638,11 @@ between 0 and 255.
 
 @code{<sparse-vector>}のインスタンスは任意のSchemeオブジェクトを格納できます。
 
-@var{TAG}は @code{s8}, @code{u8},
+@code{@@}は @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
 @code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64}のいずれかで、
 それぞれの疎なベクタの格納可能な値は、@code{gauche.uvector}の
-対応する@code{<@var{TAG}vector>}に準じます(@ref{Uniform vectors}参照)。
+対応する@code{<@@vector>}に準じます(@ref{Uniform vectors}参照)。
 つまり、@code{<sparse-u8vector>}の要素には0以上255以下の正確な整数を
 格納できます。
 @c COMMON
@@ -4661,7 +4661,7 @@ If @var{type} is omitted or @code{#f}, a @code{<sparse-vector>} is
 created.  If it is a class, an instance of the class is created
 (It is an error to pass a class that is not a subclass of
 @code{<sparse-vector-base>}.)
-If it is a symbol, an instance of corresponding @code{<sparse-@var{TAG}vector>}
+If it is a symbol, an instance of corresponding @code{<sparse-@@vector>}
 is created.
 @c JP
 空の疎なベクタを作成して返します。@var{type}引数は@code{#f}(デフォルト)か、
@@ -4673,7 +4673,7 @@ is created.
 
 @var{type}が省略されるか@code{#f}の場合は@code{<sparse-vector>}のインスタンスが
 作られます。@var{type}がクラスであればそのインスタンスが、またシンボルであれば、
-対応する@code{<sparse-@var{TAG}vector>}のインスタンスが作られます。
+対応する@code{<sparse-@@vector>}のインスタンスが作られます。
 @c COMMON
 
 @c EN
@@ -4979,7 +4979,7 @@ All of these sparse matrix subtypes can be accessed by the same API.
 @end deftp
 
 @deftp {Class} <sparse-matrix>
-@deftpx {Class} <sparse-@var{TAG}matrix>
+@deftpx {Class} <sparse-@@matrix>
 @clindex sparse-matrix
 @clindex sparse-s8matrix
 @clindex sparse-u8matrix
@@ -4996,11 +4996,11 @@ All of these sparse matrix subtypes can be accessed by the same API.
 The actual sparce matrix classes.  Inherits @code{<sparse-matrix-base>}.
 An instance of @code{<sparse-matrix>} can contain any Scheme objects.
 
-@var{TAG} either one of @code{s8}, @code{u8},
+@code{@@} is either one of @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
 @code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
 The range of values an instance of those classes can hold
-is the same as the corresponding @code{<@var{TAG}vector>} class
+is the same as the corresponding @code{<@@vector>} class
 in @code{gauche.uvector} (@pxref{Uniform vectors}).  That is,
 @code{<sparse-u8matrix>} can have exact integer values
 between 0 and 255.
@@ -5018,7 +5018,7 @@ If @var{type} is omitted or @code{#f}, a @code{<sparse-matrix>} is
 created.  If it is a class, an instance of the class is created
 (It is an error to pass a class that is not a subclass of
 @code{<sparse-matrix-base>}.)
-If it is a symbol, an instance of corresponding @code{<sparse-@var{TAG}matrix>}
+If it is a symbol, an instance of corresponding @code{<sparse-@@matrix>}
 is created.
 
 You can specify the default value of the matrix by @var{default}

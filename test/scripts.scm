@@ -637,25 +637,24 @@
                         :directory "test.o")
            (cond-expand
             [gauche.os.windows
-             ;; On Windows, foo.dll can't be removed if process using it exists.
-             (let* ([p (run-process '("../../src/gosh" "-ftest"
-                                      "-e(begin \
-                                           (add-load-path \".\") \
-                                           (load \"foo\") \
-                                           (write ((global-variable-ref 'foo 'foo-literals))) \
-                                           (write ((global-variable-ref 'foo 'foo-begin1))) \
-                                           (write ((global-variable-ref 'foo 'foo-begin2))) \
-                                           (write ((global-variable-ref 'foo 'foo-include1))) \
-                                           (write ((global-variable-ref 'foo 'foo-include2))) \
-                                           (exit 0))")
+             ;; On Windows, foo.dll can't be removed if process using it exists,
+             ;; so we run another gosh in subprocess.
+             (with-output-to-file "test.o/t.scm"
+               (^[]
+                 (write '(add-load-path "."))
+                 (write '(load "foo"))
+                 (write '(write
+                          `(,((global-variable-ref 'foo 'foo-literals))
+                            ,((global-variable-ref 'foo 'foo-begin1))
+                            ,((global-variable-ref 'foo 'foo-begin2))
+                            ,((global-variable-ref 'foo 'foo-include1))
+                            ,((global-variable-ref 'foo 'foo-include2)))))
+                 (write '(exit 0))))
+             (let* ([p (run-process '("../../src/gosh" "-ftest" "./t.scm")
                                     :output :pipe :directory "test.o")]
-                    [ret1 (read (process-output p))]
-                    [ret2 (read (process-output p))]
-                    [ret3 (read (process-output p))]
-                    [ret4 (read (process-output p))]
-                    [ret5 (read (process-output p))])
+                    [result (read (process-output p))])
                (process-wait p)
-               (list ret1 ret2 ret3))]
+               result)]
             [else
              (load "foo" :paths '("./test.o"))
              (list ((global-variable-ref 'foo 'foo-literals))

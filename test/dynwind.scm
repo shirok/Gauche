@@ -540,7 +540,7 @@
            (reset
             (parameterize ([p 1])
               (display (p))
-              ;; 'shift' escapes from 'reset' before done
+              ;; expr of 'shift' is executed on the outside of 'reset'
               (shift k (display (p))))))))
 
 (test* "reset/shift + call/cc 1"
@@ -612,6 +612,25 @@
              (^[] (display "[d01]"))
              (^[] (shift k (set! k1 k))
                   (shift k (set! k2 k)))
+             (^[] (display "[d02]"))))
+           (k1)
+           (k2)
+           (k2))))
+
+(test* "dynamic-wind + reset/shift 3-B"
+       "[d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (shift k (set! k1 k))
+                  (dynamic-wind
+                   (^[] (display "[d11]"))
+                   (^[] (shift k (set! k2 k)))
+                   (^[] (display "[d12]"))))
              (^[] (display "[d02]"))))
            (k1)
            (k2)

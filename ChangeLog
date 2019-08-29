@@ -1,3 +1,14 @@
+2019-08-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/librx.scm (%regexp-replace-rec): If regexp matches zero-length
+	  string, after replacing it we advance one character to loop, to
+	  avoid infinite loop.  (We used to make it error.)  This behavior
+	  is adopted by Perl and Ruby as well.
+
+2019-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm: Fix ~vr https://github.com/shirok/Gauche/issues/509
+
 2019-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/stream.scm: Add srfi-41 procedures

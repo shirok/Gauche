@@ -386,6 +386,25 @@
         (writer c port))))
   (char-formatter (if (has-@? flags) write display)))
 
+;; Common in ~X etc. and ~nR
+(define-inline (format-num-body fmtstr argptr port ctrl radix upcase
+                                flags mincol padchar comma interval point)
+  (let* ([arg (fr-next-arg! fmtstr argptr)]
+         [sarg (if (number? arg)
+                 (number->string arg radix upcase)
+                 (write-to-string arg display))])
+    ;; In CL, ':' and '@' are only honored for exact integers.
+    ;; We honor it on flonums as well.
+    (when (or (exact-integer? arg) (flonum? arg))
+      (when (has-:? flags)
+        (set! sarg (insert-comma-in-digits sarg comma interval point)))
+      (when (and (has-@? flags) (>= arg 0))
+        (set! sarg (string-append "+" sarg))))
+    (let1 len (string-length sarg)
+      (when (< len mincol)
+        (dotimes [_ (- mincol len)] (write-char padchar port)))
+      (display sarg port))))
+
 ;; ~D, ~B, ~O, ~X, ~nR
 (define (make-format-num fmtstr params flags radix upcase)
   (if (and (null? params) (no-flag? flags))
@@ -399,22 +418,9 @@
                            [comma #\,]
                            [interval 3]
                            [point #\.])
-       (let* ([arg (fr-next-arg! fmtstr argptr)]
-              [sarg (if (number? arg)
-                      (number->string arg radix upcase)
-                      (write-to-string arg display))])
-         ;; In CL, ':' and '@' are only honored for exact integers.
-         ;; We honor it on flonums as well.
-         (when (or (exact-integer? arg) (flonum? arg))
-           (when (has-:? flags)
-             (set! sarg (insert-comma-in-digits sarg comma interval point)))
-           (when (and (has-@? flags) (>= arg 0))
-             (set! sarg (string-append "+" sarg))))
-         (let1 len (string-length sarg)
-           (when (< len mincol)
-             (dotimes [_ (- mincol len)] (write-char padchar port)))
-           (display sarg port))))))
-           
+       (format-num-body fmtstr argptr port ctrl radix upcase
+                        flags mincol padchar comma interval point))))
+
 (define (insert-comma-in-digits str comma interval point)
   (define (insert s)
     (let* ([len (string-length s)]
@@ -435,9 +441,21 @@
       (string-append (insert pre) (string point) post)
       (insert str))))
 
-;; ~R (roman numerals)
-(define (make-format-r src flags upper)
-  (^[argptr port ctrl] (error "not implemented yet")))
+;; ~R
+(define (make-format-r fmtstr params flags upcase)
+  (if (null? params)
+    (^[argptr port ctrl] (error "Roman numerals not implemented yet"))
+    ($ with-format-params ([radix 10]
+                           [mincol 0]
+                           [padchar #\space]
+                           [comma #\,]
+                           [interval 3]
+                           [point #\.])
+       (unless (<= 2 radix 36)
+         (error "Formatting ~nR: radix out of range (must be between 2 and 36):"
+                radix))
+       (format-num-body fmtstr argptr port ctrl radix upcase
+                        flags mincol padchar comma interval point))))
 
 ;; ~F, ~E, ~G  ; we only support ~F for now
 ;; kind is 'E 'F or 'G
@@ -499,11 +517,7 @@
     [('x fs . ps) (make-format-num src ps fs 16 #f)]
     [('X fs . ps) (make-format-num src ps fs 16 #t)]
     [('F fs . ps) (make-format-flo src ps fs 'F)]
-    [((or 'R 'r) fs . ps)
-     (let ([upper (eq? (car tree) 'R)])
-       (if (null? ps)
-         (make-format-r src fs upper)
-         (make-format-num src (cdr ps) fs (car ps) upper)))]
+    [((or 'R 'r) fs . ps) (make-format-r src ps fs (eq? (car tree) 'R))]
     [('* fs . ps) (make-format-jump src ps fs)]
     [_ (error "boo!")]))
 
