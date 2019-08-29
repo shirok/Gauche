@@ -276,6 +276,7 @@ typedef struct ScmEscapePointRec {
                                    for they can be executed on anywhere
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
+    ScmObj resetChain;          /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control
@@ -512,6 +513,9 @@ struct ScmVMRec {
                                    Alter this only if you want to customize
                                    it per thread.
                                  */
+
+    /* for reset/shift */
+    ScmObj resetChain;          /* list of pointer to dynamic handler chain */
 
     /* Program information */
     int    evalSituation;       /* eval situation (related to eval-when) */
