@@ -636,6 +636,29 @@
            (k2)
            (k2))))
 
+(test* "dynamic-wind + reset/shift 3-C"
+       ;"[d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]"
+       "[d01][d02][d21][d22][d01][d11][d12][d02][d21][d22][d01][d11][d12][d02][d21][d22][d01][d11][d12][d02][d21][d22]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (shift k (set! k1 k))
+                  (dynamic-wind
+                   (^[] (display "[d11]"))
+                   (^[] (shift k (set! k2 k)))
+                   (^[] (display "[d12]"))))
+             (^[] (display "[d02]"))))
+           (dynamic-wind
+            (^[] (display "[d21]"))
+            (^[] (k1)
+                 (k2)
+                 (k2))
+            (^[] (display "[d22]"))))))
+
 (test* "dynamic-wind + reset/shift 4"
        ;"[d01][d11][d12][d02][d11][d12]"
        "[d01][d11][d12][d02][d01][d11][d12][d02]"
