@@ -169,7 +169,7 @@ test.record
 /lib/rfc/sha1.scm
 /lib/rfc/tls/mbed.scm
 /lib/rfc/zlib.scm
-/lib/srfi/
+/lib/srfi/*.scm
 /lib/sxml/
 /src/autoloads.c
 /src/builtin-syms.c

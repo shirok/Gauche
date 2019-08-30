@@ -56,7 +56,7 @@ SCMFILES = \
        srfi-131.scm srfi-132.scm srfi-134.scm \
        srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
        srfi-151.scm srfi-152.scm srfi-154.scm srfi-155.scm srfi-158.scm \
-       srfi-160.scm srfi/*.scm \
+       srfi-160.scm srfi/*.scm srfi/160/*.scm \
        slib.scm	 \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
@@ -127,7 +127,7 @@ SCMFILES = \
        scheme/stream.scm scheme/stream/primitive.scm scheme/stream/derived.scm \
        scheme/time.scm \
        scheme/vector.scm scheme/write.scm \
-       scheme/vector/u8.scm scheme/vector/s8.scm \
+       scheme/vector/base.scm scheme/vector/u8.scm scheme/vector/s8.scm \
        scheme/vector/u16.scm scheme/vector/s16.scm \
        scheme/vector/u32.scm scheme/vector/s32.scm \
        scheme/vector/u64.scm scheme/vector/s64.scm \
