@@ -156,10 +156,10 @@
   )
 
 ;;
-;; The 'r7rs' module removes all bindings by an empty (extend), except
+;; The 'r7rs.vanilla' module removes all bindings by an empty (extend), except
 ;; 'import' and 'define-library'.
 ;;
-(define-module r7rs
+(define-module r7rs.vanilla
   (export define-library)
   (define-syntax import         (with-module r7rs.import r7rs-import))
   (define-syntax define-library (with-module r7rs.library define-library))
@@ -170,7 +170,7 @@
 ;; r7rs mode.
 ;;
 (define-module r7rs.user
-  (extend r7rs))
+  (extend r7rs.vanilla))
 
 ;; R7RS-small standard libraries.  First I thought to make them have
 ;; separate file for each, but most of its content is just a rebinding&
@@ -462,7 +462,7 @@
   (export environment eval)
   (define (environment . import-lists)
     (rlet1 m (make-module #f)
-      (eval '(extend r7rs) m)
+      (eval '(extend r7rs.vanilla) m)
       (eval `(import ,@import-lists) m)))
   (provide "scheme/eval"))
 
@@ -600,6 +600,6 @@
 ;; we don't want to trigger autoload from gauche#define-library anymore,
 ;; so we overwrite it.
 (with-module gauche
-  (define-syntax define-library (with-module r7rs define-library)))
+  (define-syntax define-library (with-module r7rs.vanilla define-library)))
 
 (provide "r7rs-setup")
