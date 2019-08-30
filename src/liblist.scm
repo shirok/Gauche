@@ -196,9 +196,7 @@
 (define-cproc append! (:rest list)
   (let* ([h '()] [t '()])
     (dopairs [cp list]
-      ;; allow non-list argument at the last position
-      (when (and (not (SCM_PAIRP (SCM_CAR cp)))
-                 (SCM_NULLP (SCM_CDR cp)))
+      (when (SCM_NULLP (SCM_CDR cp))
         (if (SCM_NULLP h)
           (set! h (SCM_CAR cp))
           (SCM_SET_CDR t (SCM_CAR cp)))
