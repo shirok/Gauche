@@ -2566,14 +2566,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
        It's ok, for a continuation pointed by cstack will be restored
        in user_eval_inner. */
     vm->cont = c;
-
-    /* 'proc' is executed on the outside of 'reset' */
-    ScmObj reset_chain = vm->resetChain;
-    vm->resetChain = (SCM_NULLP(vm->resetChain)?
-                      SCM_NIL : SCM_CDR(vm->resetChain));
-    ScmObj ret = Scm_VMApply1(proc, contproc);
-    vm->resetChain = reset_chain;
-    return ret;
+    return Scm_VMApply1(proc, contproc);
 }
 
 ScmObj Scm_VMReset(ScmObj proc)

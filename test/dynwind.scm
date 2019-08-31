@@ -531,6 +531,22 @@
 ;;  - tests for interactions of dynamic handlers and partial continuaions.
 ;;  - tests for interactions of partial and full continuations.
 
+(test* "reset/shift combination 1"
+       1000
+       (begin
+         (define k1 #f)
+         (define k2 #f)
+         (define k3 #f)
+         (reset
+          (shift k (set! k1 k)
+                 (shift k (set! k2 k)
+                        (shift k (set! k3 k))))
+          1000)
+         (k1)
+         ;(k2)
+         ;(k3)
+         ))
+
 (test* "reset/shift + parameterize 1"
        "010"
        (with-output-to-string
