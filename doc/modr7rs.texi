@@ -3140,6 +3140,7 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @c NODE R7RSユニフォームベクタ, @code{scheme.vector.@@} - R7RSユニフォームベクタ
 
 @deftp {Module} scheme.vector.@@
+@mdindex scheme.vector.base
 @mdindex scheme.vector.u8
 @mdindex scheme.vector.s8
 @mdindex scheme.vector.u16
@@ -3158,9 +3159,15 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 (Gauche's @code{gauche.uvector} module also provides @code{f16}
 and @code{c32} vectors.)
 
-This module provides vectors that can hold specific range of numeric
+These modules provides vectors that can hold specific range of numeric
 values.  In Gauche we use @emph{packed} representation, meaning
 numbers are tightly stored in consecutive memory region.
+
+Additionally, @code{scheme.vector.base} module exports basic procedures
+(@code{make-@@vector}, @code{@@vector}, @code{@@vector?}, @code{@@vector-length},
+@code{@@vector-ref}, @code{@@vector-set!},
+@code{@@vector->list}, @code{list->@@vector}, @code{@@?})
+for all element types.
 
 The @code{gauche.uvector} module is a superset of these modules, and
 all procedures are described there.  @xref{Uniform vectors} for the

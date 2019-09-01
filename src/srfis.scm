@@ -1111,14 +1111,17 @@ Note that most of generator procedures are supported by @code{gauche.generator}
 srfi-160, srfi-160
 ()
 
-Homogeneous numeric vector libraries
-Provided by the module @code{srfi-160}.  In fact,
-all procedures of srfi-160 is supported by @code{gauche.uvector}
-(@pxref{Uniform vectors}).
-This module just exports srfi-160 procedures.
+This has become a part of R7RS large,
+supported by the module @code{scheme.vector.@@} where
+@code{@@} is one of @code{base},
+@code{u8}, @code{s8}, @code{u16}, @code{s16},
+@code{u32}, @code{s32}, @code{u64}, @code{s64}, @code{f32}, @code{f64},
+@code{c64}, or @code{c128} (@pxref{R7RS uniform vectors}).
 
-一様な数値ベクタライブラリ
-モジュール@code{srfi-160}で提供されます。
-実のところ、srfi-160の全ての手続きは@code{gauche.uvector}でサポートされています
-(@ref{Uniform vectors}参照)。
-このモジュールはsrfi-160の手続きだけをエクスポートするものです。
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.vector.@@}でサポートされます
+(但し@code{@@}は@code{base},
+@code{u8}, @code{s8}, @code{u16}, @code{s16},
+@code{u32}, @code{s32}, @code{u64}, @code{s64}, @code{f32}, @code{f64},
+@code{c64}, @code{c128})。
+@ref{R7RS uniform vectors}参照。
