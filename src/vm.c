@@ -2483,6 +2483,14 @@ static ScmObj partcont_wrapper(ScmObj *argframe,
                                    SCM_MAKE_STR("partial continuation"));
     ScmObj ret = Scm_ApplyRec(contproc, args);
 
+    /* save return values */
+    int nvals = vm->numVals;
+    ScmObj *vals;
+    if (nvals > 1) {
+        vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
+        memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
+    }
+
     /* call dynamic handlers for reset/shift */
     ScmObj handlers_to_call = throw_cont_calculate_handlers(k_handlers,
                                                             vm->handlers);
@@ -2493,7 +2501,13 @@ static ScmObj partcont_wrapper(ScmObj *argframe,
         Scm_ApplyRec(proc, SCM_NIL);
     }
 
-   return ret;
+    /* restore return values */
+    vm->numVals = nvals;
+    if (nvals > 1) {
+        memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
+    }
+
+    return ret;
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)

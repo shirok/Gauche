@@ -547,6 +547,19 @@
          ;(k3)
          ))
 
+(test* "reset/shift + values 1"
+       '(1 2 3)
+       (values->list (reset (values 1 2 3))))
+
+(test* "reset/shift + values 2"
+       '(1 2 3)
+       (begin
+         (define k1 #f)
+         (reset
+          (shift k (set! k1 k))
+          (values 1 2 3))
+         (values->list (k1))))
+
 (test* "reset/shift + parameterize 1"
        "010"
        (with-output-to-string
