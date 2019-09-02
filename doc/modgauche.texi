@@ -23576,6 +23576,7 @@ optional arguments are the same as @code{@@vector->vector}.
 Converts a list @var{list} to a @@vector.
 Optional argument @var{clamp} specifies the behavior when
 the element of @var{list} is out of the valid range.
+(The @var{clamp} argument is Gauche's extension.)
 
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
@@ -23583,6 +23584,7 @@ if you import @code{gauche.collection}.
 リスト@var{list}を@@vectorに変換します。
 省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
 動作を指定します。
+(@var{clamp}引数はGauche独自拡張です。)
 
 モジュール@code{gauche.collection}をインポートしていれば、
 総称関数@code{coerce-to}を使うこともできます。
@@ -23594,6 +23596,38 @@ if you import @code{gauche.collection}.
 (coerce-to <s64vector> '(9 2 5)) @result{} #s64(9 2 5)
 @end example
 @end deffn
+
+@deffn {Function} reverse-list->@@vector list :optional clamp
+@findex reverse-list->s8vector
+@findex reverse-list->u8vector
+@findex reverse-list->s16vector
+@findex reverse-list->u16vector
+@findex reverse-list->s32vector
+@findex reverse-list->u32vector
+@findex reverse-list->s64vector
+@findex reverse-list->u64vector
+@findex reverse-list->f16vector
+@findex reverse-list->f32vector
+@findex reverse-list->f64vector
+@findex reverse-list->c32vector
+@findex reverse-list->c64vector
+@findex reverse-list->c128vector
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+Create a new @code{@@vector} with the elements of @var{list} in
+reverse order.  
+Optional argument @var{clamp} specifies the behavior when
+the element of @var{list} is out of the valid range.
+(The @var{clamp} argument is Gauche's extension.)
+@c JP
+@var{list}の要素を逆順に持つ新たな@code{@@vector}を作って返します。
+省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
+動作を指定します。
+(@var{clamp}引数はGauche独自拡張です。)
+@c COMMON
+@end deffn
+
 
 @deffn {Function} vector->@@vector vec :optional start end clamp
 @findex vector->s8vector
@@ -23618,6 +23652,7 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @var{vec} to be copied.
 Optional argument @var{clamp} specifies the behavior when
 the element of @var{vec} is out of the valid range.
+(The @var{clamp} argument is Gauche's extension.)
 
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
@@ -23627,6 +23662,7 @@ if you import @code{gauche.collection}.
 それらは取り出される要素の範囲を制限します。
 省略可能な引数@var{clamp}が、ベクタ内の要素が正しい範囲外の数であった場合の
 動作を指定します。
+(@var{clamp}引数はGauche独自拡張です。)
 
 モジュール@code{gauche.collection}をインポートしていれば、
 総称関数@code{coerce-to}を使うこともできます。

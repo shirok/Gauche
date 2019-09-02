@@ -128,6 +128,7 @@
     @vector-reverse-copy!
     @vector-unfold!
     @vector-unfold-right!
+    reverse-list->@vector
     reverse-@vector->list
     @vector->vector
     vector->@vector

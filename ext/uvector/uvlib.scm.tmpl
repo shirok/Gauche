@@ -177,6 +177,14 @@
 (define-cproc list->${t}vector (l::<list> :optional clamp)
   (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (Scm_ClampMode clamp))))
 
+(define (reverse-list->${t}vector l :optional (clamp #f))
+  (let* ([len (length l)]
+         [v (make-${t}vector len)])
+    (do [(l l (cdr l))
+         (i (- len 1) (- i 1))]
+        [(< i 0) v]
+      (${t}vector-set! v i (car l) clamp))))
+
 (define-cproc ${t}vector-fill!
   (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1)) ::<void>
   (let* ([filler :: (${etype})])
