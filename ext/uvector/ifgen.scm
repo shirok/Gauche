@@ -133,6 +133,7 @@
     vector->@vector
     make-@vector-generator
     write-@vector
+    @vector-comparator
     ))
 
 (define *extra-api*

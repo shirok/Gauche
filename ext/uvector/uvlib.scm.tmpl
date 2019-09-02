@@ -555,6 +555,13 @@
   (assume-type vec <${t}vector>)
   (uvector->generator vec))
 
+;; Comparator
+
+(define ${t}vector-comparator
+  (make-comparator ${t}vector? ${t}vector= 
+                   (^[a b] (< (compare a b) 0))
+                   default-hash))
+
 ;; Output
 
 (define (write-${t}vector vec :optional (port (current-output-port)))
