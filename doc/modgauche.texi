@@ -23301,6 +23301,36 @@ given @var{vec}s, using accompanied @var{start} and @var{end} index.
 @end example
 @end deffn
 
+@defvar @@vector-comparator
+@vindex u8vector-comparator
+@vindex s8vector-comparator
+@vindex u16vector-comparator
+@vindex s16vector-comparator
+@vindex u32vector-comparator
+@vindex s32vector-comparator
+@vindex u64vector-comparator
+@vindex s64vector-comparator
+@vindex f16vector-comparator
+@vindex f32vector-comparator
+@vindex f64vector-comparator
+@vindex c32vector-comparator
+@vindex c64vector-comparator
+@vindex c128vector-comparator
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+Bound to comparators that can compare two @code{@@vector}s and
+to hash a @code{@@vector}.  @xref{Basic comparators}, for the details
+of comparators.  These comparators both provides ordering predicate
+and hash function.
+@c JP
+ふたつの@code{@@vector}を比較したり、@code{@@vector}のハッシュを取ったりできる
+比較器に束縛された変数です。比較器の詳細については
+@ref{Basic comparators}を参照してください。
+これらの比較器は順序手続きとハッシュ関数を両方とも実装しています。
+@c COMMON
+@end defvar
+
 
 @defun uvector-binary-search uvector key :optional start end skip rounding
 @c MOD gauche.uvector
