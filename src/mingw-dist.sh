@@ -1,3 +1,4 @@
+#!/bin/sh
 # Create MinGW binary distribution.
 # Run this script on topsrcdir
 # You need MinGW and MSYS.  (You no longer need Cygwin.)
