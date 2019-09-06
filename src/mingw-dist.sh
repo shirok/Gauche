@@ -148,6 +148,6 @@ if [ "$INSTALLER" = "yes" ]; then
   cp winnt/wix/Gauche-mingw-*.msi ..
 fi
 
-# 'zip' isn't included in MinGW.
-#VERSION=`cat VERSION`
-#(cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
+# Build zip archive
+VERSION=`cat VERSION`
+(cd $distdir/../; 7z a Gauche-mingw-$VERSION.zip Gauche)
