@@ -49,12 +49,15 @@ while [ "$#" -gt 0 ]; do
   case $1 in
     --with-gl)   WITH_GL=yes; shift;;
     --with-installer) INSTALLER=yes; shift;;
+    --with-zip) ZIP_ARCHIVE=yes; shift;;
     --skip-config) SKIP_CONFIG=yes; shift;;
     -*)
      echo "Options:"
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
      echo "  --with-installer:  Creates binary installer using Wix.  'candle.exe' and"
      echo "      'light.exe' must be visible in PATH."
+     echo "  --with-zip:  Creates Zip archive using p7zip. '7z.exe' must be visible"
+     echo "      in PATH."
      echo "  --skip-config:  Skip cleanup and configuration."
      exit 1;;
   esac
@@ -149,5 +152,7 @@ if [ "$INSTALLER" = "yes" ]; then
 fi
 
 # Build zip archive
-VERSION=`cat VERSION`
-(cd $distdir/../; 7z a Gauche-mingw-$VERSION.zip Gauche)
+if [ "$ZIP_ARCHIVE" = "yes" ]; then
+    VERSION=`cat VERSION`
+    (cd $distdir/../; 7z a Gauche-mingw-$VERSION.zip Gauche)
+fi
