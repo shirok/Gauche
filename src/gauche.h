@@ -640,6 +640,7 @@ SCM_EXTERN ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 
 SCM_EXTERN ScmObj Scm_VMCallCC(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMCallPC(ScmObj proc);
+SCM_EXTERN ScmObj Scm_VMReset(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                                      ScmSubrProc *body,
