@@ -206,6 +206,14 @@
                 ($string (rope-finalize v)))
            "foobar")
 
+;; $let
+(test-succ "$let" '("foo" "baz")
+           ($let ([foo ($string "foo")]
+                  [    ($string "bar")]
+                  [baz ($string "baz")])
+                 ($return (list foo baz)))
+           "foobarbaz$$$")
+
 ;; $lift and $lift*
 (test-succ "$lift" '(#\a . #\b)
            ($lift cons ($any) ($any))

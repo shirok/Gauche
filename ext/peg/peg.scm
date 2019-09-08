@@ -52,7 +52,7 @@
           return-failure/message return-failure/compound
           
           $bind $return $fail $expect $lift $lift* $debug
-          $do $try $seq $or $fold-parsers $fold-parsers-right
+          $do $let $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many $skip-many1
           $repeat $optional
           $alternate
@@ -415,6 +415,34 @@
     [(_ parser clause . rest)
      ($bind parser (^_ ($do clause . rest)))]
     [(_  . other) (syntax-error "malformed $do" ($do . other))]))
+
+;; API
+;; $let (bind ...) body ...
+;;   where
+;;     bind := (var parser)
+;;          |  (parser)
+;;          |  parser
+;; var's are visible from body ... (but not from parser)
+(define-syntax $let
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (bind ...) body ...)
+        (let1 vars&parsers 
+            (map (^b (match b
+                       [(var parser) `(,var ,(gensym "parser") ,parser)]
+                       [(parser) `(,(gensym "_") ,(gensym "parser") ,parser)]
+                       [parser `(,(gensym "_") ,(gensym "parser") ,parser)]))
+                 bind)
+          (quasirename r
+            `(let (,@(map (^b `(,(cadr b) ,(caddr b))) vars&parsers))
+               ,@(let loop ([vars&parsers vars&parsers])
+                   (if (null? vars&parsers)
+                     body
+                     (match-let1 [(var pvar _) . rest] vars&parsers
+                       (quasirename r
+                         `(($bind ,pvar (^[,var] ,@(loop rest)))))))))))]
+       [_ (error "Malformed $let:" f)]))))
 
 ;; API
 ;; $or p1 p2 ...

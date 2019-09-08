@@ -1,3 +1,7 @@
+2019-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/parser/peg.scm ($let): Experimenting $let/$let* instead of $do.
+
 2019-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs-setup.scm: Rename 'r7rs' module to 'r7rs.vanilla', to
