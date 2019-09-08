@@ -52,7 +52,7 @@
           return-failure/message return-failure/compound
           
           $bind $return $fail $expect $lift $lift* $debug
-          $do $let $try $seq $or $fold-parsers $fold-parsers-right
+          $do $let $let* $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many $skip-many1
           $repeat $optional
           $alternate
@@ -443,6 +443,29 @@
                        (quasirename r
                          `(($bind ,pvar (^[,var] ,@(loop rest)))))))))))]
        [_ (error "Malformed $let:" f)]))))
+
+;; API
+;; $let* (bind ...) body ...
+;;   where
+;;     bind := (var parser)
+;;          |  (parser)
+;;          |  parser
+;; var's are visible from subsequent bind and body
+(define-syntax $let*
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ () body ...) (quasirename r `(begin ,@body))]
+       [(_ ((var parser) bind ...) body ...)
+        (quasirename r
+          `($bind ,parser (^[,var] ($let* ,bind ,@body))))]
+       [(_ ((parser) bind ...) body ...)
+        (quasirename r
+          `($bind ,parser (^[,(gensym "_")] ($let* ,bind ,@body))))]
+       [(_ (parser bind ...) body ...)
+        (quasirename r
+          `($bind ,parser (^[,(gensym "_")] ($let* ,bind ,@body))))]
+       [_ (error "Malformed $let*:" f)]))))
 
 ;; API
 ;; $or p1 p2 ...

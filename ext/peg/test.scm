@@ -206,13 +206,20 @@
                 ($string (rope-finalize v)))
            "foobar")
 
-;; $let
+;; $let, $let*
 (test-succ "$let" '("foo" "baz")
            ($let ([foo ($string "foo")]
                   [    ($string "bar")]
                   [baz ($string "baz")])
                  ($return (list foo baz)))
            "foobarbaz$$$")
+
+(test-succ "$let" '(#\0 "zyx" #\0)
+           ($let* ([opener ($one-of #[\d])]
+                   [meat   ($->string ($many ($one-of #[a-z])))]
+                   [closer ($char opener)])
+                  ($return (list opener meat closer)))
+           "0zyx0")
 
 ;; $lift and $lift*
 (test-succ "$lift" '(#\a . #\b)
