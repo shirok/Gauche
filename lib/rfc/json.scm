@@ -99,15 +99,15 @@
          ($between %begin-array ($sep-by %value %value-separator) %end-array)))
 
 (define %number
-  (let* ([%sign ($or ($do [($. #\-)] ($return -1))
-                     ($do [($. #\+)] ($return 1))
+  (let* ([%sign ($or ($lift (^_ -1) ($. #\-))
+                     ($lift (^_  1) ($. #\+))
                      ($return 1))]
          [%digits ($lift ($ string->number $ list->string $) 
                          ($many ($. #[\d]) 1))]
          [%int %digits]
-         [%frac ($do [($. #\.)]
-                     [d ($many ($. #[\d]) 1)]
-                     ($return (string->number (apply string #\0 #\. d))))]
+         [%frac ($let ([ ($. #\.) ]
+                       [d ($many ($. #[\d]) 1)])
+                  ($return (string->number (apply string #\0 #\. d))))]
          [%exp ($lift (^[_ s d] (* s d)) ($. #[eE]) %sign %digits)])
     ($lift (^[sign int frac exp]
              (let1 mantissa (+ int frac)
@@ -126,51 +126,52 @@
         [err (^c (errorf <json-parse-error>
                          :position #f :object c
                          "unpaired surrogate: \\u~4,'0x" c))])
-    ($do [($. #\u)]
-         [c %hex4]
-         (cond [(<= #xd800 c #xdbff)
-                ($or ($try ($do [($. "\\u")]
-                                [c2 %hex4]
-                                (receive (cc x)
-                                    (utf16->ucs4 `(,c ,c2) 'permissive)
-                                  (and (null? x)
-                                       ($return (ucs->char cc))))))
-                     ;; NB: We wrap (err c) with dummy $do to put the call
-                     ;; to the err into a parser monad.  Simple ($return (err c))
-                     ;; or ($fail (err c)) won't do, since (err c) is evaluated
-                     ;; at the parser-construction time, not the actual parsing
-                     ;; time.  We need a dummy ($return #t) clause to ensure
-                     ;; (err c) is wrapped; ($do x) is expanded to just x.
-                     ;; Definitely we need something better to do this kind of
-                     ;; operation.
-                     ($do [($return #t)] (err c)))]
-               [(<= #xdc00 c #xdfff) (err c)]
-               [else ($return (ucs->char c))]))))
+    ($let ([ ($. #\u) ]
+           [c %hex4])
+      (cond [(<= #xd800 c #xdbff)
+             ($or ($try ($let ([ ($. "\\u") ]
+                               [c2 %hex4])
+                          (receive (cc x)
+                              (utf16->ucs4 `(,c ,c2) 'permissive)
+                            (and (null? x)
+                                 ($return (ucs->char cc))))))
+                  ;; NB: We wrap (err c) with dummy $do to put the call
+                  ;; to the err into a parser monad.  Simple ($return (err c))
+                  ;; or ($fail (err c)) won't do, since (err c) is evaluated
+                  ;; at the parser-construction time, not the actual parsing
+                  ;; time.  We need a dummy ($return #t) clause to ensure
+                  ;; (err c) is wrapped; ($do x) is expanded to just x.
+                  ;; Definitely we need something better to do this kind of
+                  ;; operation.
+                  ($do [($return #t)] (err c)))]
+            [(<= #xdc00 c #xdfff) (err c)]
+            [else ($return (ucs->char c))]))))
 
 (define %string
   (let* ([%dquote ($. #\")]
          [%escape ($. #\\)]
          [%special-char
-          ($do %escape
-               ($or ($. #\")
-                    ($. #\\)
-                    ($. #\/)
-                    ($do [($. #\b)] ($return #\x08))
-                    ($do [($. #\f)] ($return #\page))
-                    ($do [($. #\n)] ($return #\newline))
-                    ($do [($. #\r)] ($return #\return))
-                    ($do [($. #\t)] ($return #\tab))
-                    %unicode))]
+          ($seq %escape
+                ($or ($. #\")
+                     ($. #\\)
+                     ($. #\/)
+                     ($seq ($. #\b) ($return #\x08))
+                     ($seq ($. #\f) ($return #\page))
+                     ($seq ($. #\n) ($return #\newline))
+                     ($seq ($. #\r) ($return #\return))
+                     ($seq ($. #\t) ($return #\tab))
+                     %unicode))]
          [%unescaped ($none-of #[\"])]
          [%body-char ($or %special-char %unescaped)]
          [%string-body ($->rope ($many %body-char))])
     ($between %dquote %string-body %dquote)))
 
 (define %object
-  (let1 %member ($do [k %string] %ws
-                     %name-separator
-                     [v %value]
-                     ($return (cons k v)))
+  (let1 %member ($let ([k %string]
+                       [ %ws ]
+                       [ %name-separator ]
+                       [v %value])
+                  ($return (cons k v)))
     ($between %begin-object
               ($lift ($ build-object $ rope-finalize $)
                      ($sep-by %member %value-separator))
