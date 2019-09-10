@@ -274,12 +274,12 @@
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
-(define %unicode ($do [ ($. #\\) ]
-                      [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
-                      [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ]
-                      ($return ($ integer->char
-                                  $ (cut string->number <> 16)
-                                  $ list->string code))))
+(define %unicode ($let ([ ($. #\\) ]
+                        [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
+                        [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ])
+                   ($return ($ integer->char
+                               $ (cut string->number <> 16)
+                               $ list->string code))))
 ;; escape {unicode}|\\[^\n\r\f0-9a-f] => char
 (define %escape ($/ %unicode ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
 ;; nmstart [_a-z]|{nonascii}|{escape} => char
@@ -288,12 +288,12 @@
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
-(define %unicode ($do [ ($. #\\) ]
-                      [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
-                      [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ]
-                      ($return ($ integer->char
-                                  $ (cut string->number <> 16)
-                                  $ list->string code))))
+(define %unicode ($let ([ ($. #\\) ]
+                        [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
+                        [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ])
+                   ($return ($ integer->char
+                               $ (cut string->number <> 16)
+                               $ list->string code))))
 ;; escape {unicode}|\\[^\n\r\f0-9a-f] => char
 (define %escape ($/ %unicode
                     ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
@@ -361,12 +361,12 @@
     ($seq ($one-of #[Uu]) ($. #\+)
           ($/ ($lift (^[cs1 _ cs2] `(UNICODE-RANGE ,(code cs1) ,(code cs2)))
                      ($many %hexdigit 1 6) ($. #\-) ($many %hexdigit 1 6))
-              ($do [ds ($many %hexdigit 1 5)]
-                   [ws ($many ($. #\?) 1 (- 6 (length ds)))]
-                   ($return
-                    `(UNICODE-RANGE ,(code (append ds (map (^_ #\0) ws)))
-                                    ,(max (code (append ds (map (^_ #\f) ws)))
-                                          #x10ffff))))
+              ($let* ([ds ($many %hexdigit 1 5)]
+                      [ws ($many ($. #\?) 1 (- 6 (length ds)))])
+                ($return
+                 `(UNICODE-RANGE ,(code (append ds (map (^_ #\0) ws)))
+                                 ,(max (code (append ds (map (^_ #\f) ws)))
+                                       #x10ffff))))
               ($lift (^[cs] `(UNICODE-RANGE ,(code cs) ,(code cs)))
                      ($many %hexdigit 1 6))))))
 
@@ -405,7 +405,7 @@
       ($lift (^[val _] `(PERCENTAGE . ,val)) %num ($. #\%))
       ($lift (^[val unit] `(DIMENSION ,val ,unit)) %num %ident)
       ($lift (^[val] `(NUMBER . ,val)) %num)
-      ($do [c ($any)] ($return `(DELIM . ,c)))))
+      ($let ([c ($any)]) ($return `(DELIM . ,c)))))
 
 (define (css-token-generator chars)
   (define cs chars)
@@ -495,12 +495,12 @@
          %brace-block %WS*))
 
 (define %important
-  ($do [ ($delim #\!) ]
-       [ %WS* ]
-       [v ($tok 'IDENT)]
-       (if (string-ci=? (symbol->string v) "important")
-         ($return '!important)
-         ($fail "!important expected"))))
+  ($let ([ ($delim #\!) ]
+         [ %WS* ]
+         [v ($tok 'IDENT)])
+    (if (string-ci=? (symbol->string v) "important")
+      ($return '!important)
+      ($fail "!important expected"))))
         
 (define %declaration
   ($lift (^[name _ _ block important _] (list name block important))
@@ -562,10 +562,10 @@
   ($lift (^[_ class] `(class ,class)) ($delim #\.) ($tok 'IDENT)))
 
 (define %id-selector
-  ($do [hashval ($tok 'HASH)]
-       (if (cadr hashval) ; hashval is ident
-         ($return `(id ,(car hashval)))
-         ($fail "identifier required for id selector"))))
+  ($let ([hashval ($tok 'HASH)])
+    (if (cadr hashval) ; hashval is ident
+      ($return `(id ,(car hashval)))
+      ($fail "identifier required for id selector"))))
 
 (define %pseudo-fn-arg
   ;; NB: To support an+b syntax
@@ -703,8 +703,8 @@
 (define (%decl-value property)
   (if (memq property *juxta-properties*)
     %juxtaposed-exprs
-    ($do [exprs %comma-separated-exprs]
-         ($return (match exprs [(x) x] [(xs ...) `(:or ,@xs)])))))
+    ($let ([exprs %comma-separated-exprs])
+      ($return (match exprs [(x) x] [(xs ...) `(:or ,@xs)])))))
 
 ;; val :: (property-name . tokens)
 (define (parse-declaration val)
