@@ -1,5 +1,8 @@
 2019-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/line-edit.scm (backward-word, forward-word): Added
+	  By @pclouds, https://github.com/shirok/Gauche/pull/524
+
 	* src/main.c: `gosh -h` to emit help message to stdout, and exit
 	  with 0, while other unrecognized option use stderr and 1.
 
