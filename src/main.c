@@ -88,12 +88,13 @@ ScmModule *default_toplevel_module = NULL;
                                    if there's one, is always evaluated in 'user'
                                    module; see lib/gauche/interactive.scm */
 
-void usage(void)
+void usage(int errorp)
 {
-    fprintf(stderr,
+    fprintf(errorp? stderr:stdout,
             "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-m<module>][-l<file>][-L<file>][-e<expr>][-E<expr>][-p<type>][-F<feature>][-r<standard>][-f<flag>][--] [file]\n"
             "Options:\n"
             "  -V       Prints version and exits.\n"
+            "  -h       Show this message to stdout.\n"
             "  -b       Batch mode.  Doesn't print prompts.  Supersedes -i.\n"
             "  -i       Interactive mode.  Forces to print prompts.\n"
             "  -q       Doesn't read the default initialization file.\n"
@@ -193,7 +194,7 @@ void usage(void)
             "      the console's codepage by default.  Setting this variable suppresses it.\n"
 #endif /*defined(GAUCHE_WINDOWS)*/
             );
-    exit(1);
+    exit(errorp? 1:0);
 }
 
 #ifdef GAUCHE_USE_PTHREADS
@@ -331,7 +332,7 @@ void feature_options(const char *optarg)
 int parse_options(int argc, char *argv[])
 {
     int c;
-    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:Vv:r:F:f:I:A:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+be:E:hip:ql:L:m:u:Vv:r:F:f:I:A:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
@@ -361,7 +362,8 @@ int parse_options(int argc, char *argv[])
             }
             break;
         case '-': break;
-        case '?': usage(); break;
+        case 'h': usage(FALSE); break;
+        case '?': usage(TRUE); break;
         }
     }
     return optind;

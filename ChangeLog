@@ -1,3 +1,8 @@
+2019-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: `gosh -h` to emit help message to stdout, and exit
+	  with 0, while other unrecognized option use stderr and 1.
+
 2019-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/parser/peg.scm ($let, $let*): Experimenting $let/$let*
