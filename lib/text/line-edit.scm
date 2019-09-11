@@ -686,6 +686,31 @@
            'moved)
     'unchanged))
 
+(define (move-word! buf move-offset cset peek-offset)
+  (let loop ([result #f])
+    (cond
+     [(gap-buffer-gap-at? buf (if (negative? move-offset) 'beginning 'end))
+      result]
+     [(char-set-contains? cset
+                          (gap-buffer-ref buf
+                                          (+ (gap-buffer-pos buf) peek-offset)
+                                          #\space))
+      (begin
+        (gap-buffer-move! buf move-offset 'current)
+        (loop #t))]
+     [else
+      result])))
+
+(define (backward-word ctx buf key)
+  (let* ([res1 (move-word! buf -1 #[\W] -1)]
+         [res2 (move-word! buf -1 #[\w] -1)])
+    (if (or res1 res2) 'moved 'unchanged)))
+
+(define (forward-word ctx buf key)
+  (let* ([res1 (move-word! buf 1 #[\W] 0)]
+         [res2 (move-word! buf 1 #[\w] 0)])
+    (if (or res1 res2) 'moved 'unchanged)))
+
 (define (move-beginning-of-line ctx buf key)
   (if (not (gap-buffer-gap-at? buf 'beginning))
     (begin (gap-buffer-move! buf 0 'beginning)
@@ -933,11 +958,11 @@
 
               `(,(alt #\`) . ,undefined-command)
               `(,(alt #\a) . ,undefined-command)
-              `(,(alt #\b) . ,undefined-command)
+              `(,(alt #\b) . ,backward-word)
               `(,(alt #\c) . ,undefined-command)
               `(,(alt #\d) . ,undefined-command)
               `(,(alt #\e) . ,undefined-command)
-              `(,(alt #\f) . ,undefined-command)
+              `(,(alt #\f) . ,forward-word)
               `(,(alt #\g) . ,undefined-command)
               `(,(alt #\h) . ,undefined-command)
               `(,(alt #\i) . ,undefined-command)
