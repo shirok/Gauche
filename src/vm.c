@@ -242,6 +242,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->customErrorReporter = (proto? proto->customErrorReporter : SCM_FALSE);
 
     v->resetChain = SCM_NIL;
+    v->partcontReadyState = 0;
 
     v->evalSituation = SCM_VM_EXECUTING;
 
@@ -1501,6 +1502,10 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
             POP_CONT();
             PC = prev_pc;
         } else if (vm->cont == NULL) {
+            /* workaround for partial continuation error */
+            if (vm->partcontReadyState == 4) {
+                Scm_Error("partial continuation error.");
+            }
             /* we're finished with executing partial continuation.*/
             vm->cont = cstack.cont;
             POP_CONT();
@@ -1535,7 +1540,13 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                 vm->cont = ep->cont;
                 vm->pc = PC_TO_RETURN;
                 /* restore reset-chain for reset/shift */
-                if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
+                if (ep->cstack != NULL) {
+                    vm->resetChain = ep->resetChain;
+                    /* workaround for partial continuation error */
+                    if (vm->partcontReadyState != 2) {
+                        vm->partcontReadyState = 3;
+                    }
+                }
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
@@ -2113,7 +2124,13 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
         /* restore reset-chain for reset/shift */
-        if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
+        if (ep->cstack != NULL) {
+            vm->resetChain = ep->resetChain;
+            /* workaround for partial continuation error */
+            if (vm->partcontReadyState != 2) {
+                vm->partcontReadyState = 3;
+            }
+        }
     } else {
         /* We don't have an active error handler, so this is the fallback
            behavior.  Reports the error and rewind dynamic handlers and
@@ -2396,7 +2413,13 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
     /* restore reset-chain for reset/shift */
-    if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
+    if (ep->cstack != NULL) {
+        vm->resetChain = ep->resetChain;
+        /* workaround for partial continuation error */
+        if (vm->partcontReadyState != 2) {
+            vm->partcontReadyState = 3;
+        }
+    }
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -2495,6 +2518,10 @@ static ScmObj partcont_wrapper(ScmObj *argframe,
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
 
+    /* workaround for partial continuation error */
+    int partcontReadyState = vm->partcontReadyState;
+    vm->partcontReadyState = 2;
+
     ScmObj k_handlers = vm->handlers;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
@@ -2527,6 +2554,10 @@ static ScmObj partcont_wrapper(ScmObj *argframe,
     if (nvals > 1) {
         memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
     }
+
+    /* workaround for partial continuation error */
+    /* (recover saved state) */
+    vm->partcontReadyState = partcontReadyState;
 
     return ret;
 }
@@ -2614,6 +2645,12 @@ ScmObj Scm_VMCallPC(ScmObj proc)
        It's ok, for a continuation pointed by cstack will be restored
        in user_eval_inner. */
     vm->cont = c;
+
+    /* workaround for partial continuation error */
+    if (vm->partcontReadyState == 3 && vm->cont == NULL) {
+        vm->partcontReadyState = 4;
+    }
+
     return Scm_VMApply1(proc, contproc);
 }
 
@@ -2621,11 +2658,20 @@ ScmObj Scm_VMReset(ScmObj proc)
 {
     ScmVM *vm = theVM;
 
+    /* workaround for partial continuation error */
+    int partcontReadyState = vm->partcontReadyState;
+    vm->partcontReadyState = 1;
+
     /* push/pop reset-chain for reset/shift */
     vm->resetChain = Scm_Cons(vm->handlers, vm->resetChain);
     ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
     SCM_ASSERT(SCM_PAIRP(vm->resetChain));
     vm->resetChain = SCM_CDR(vm->resetChain);
+
+    /* workaround for partial continuation error */
+    /* (recover saved state) */
+    vm->partcontReadyState = partcontReadyState;
+
     return ret;
 }
 

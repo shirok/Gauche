@@ -517,6 +517,14 @@ struct ScmVMRec {
 
     /* for reset/shift */
     ScmObj resetChain;          /* list of pointer to dynamic handler chain */
+    int    partcontReadyState;  /* EXPERIMENTAL:
+                                   workaround for partial continuation error
+                                   (state of partial continuation availability
+                                     =0: initial state,
+                                     =1: inside of reset,
+                                     =2: inside of partial continuation,
+                                     =3: after executing full continuation,
+                                     =4: partial continuation error) */
 
     /* Program information */
     int    evalSituation;       /* eval situation (related to eval-when) */
