@@ -1543,6 +1543,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                 if (ep->cstack != NULL) {
                     vm->resetChain = ep->resetChain;
                     /* workaround for partial continuation error */
+                    vm->partcontReadyState = ep->partcontReadyState;
                     if (vm->partcontReadyState != 2) {
                         vm->partcontReadyState = 3;
                     }
@@ -2127,6 +2128,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         if (ep->cstack != NULL) {
             vm->resetChain = ep->resetChain;
             /* workaround for partial continuation error */
+            vm->partcontReadyState = ep->partcontReadyState;
             if (vm->partcontReadyState != 2) {
                 vm->partcontReadyState = 3;
             }
@@ -2284,6 +2286,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->xhandler = vm->exceptionHandler;
     ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
+    ep->partcontReadyState = vm->partcontReadyState;
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
@@ -2416,6 +2419,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     if (ep->cstack != NULL) {
         vm->resetChain = ep->resetChain;
         /* workaround for partial continuation error */
+        vm->partcontReadyState = ep->partcontReadyState;
         if (vm->partcontReadyState != 2) {
             vm->partcontReadyState = 3;
         }
@@ -2575,6 +2579,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
+    ep->partcontReadyState = vm->partcontReadyState;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    SCM_MAKE_STR("continuation"));
@@ -2613,6 +2618,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
                           on any cstack state. */
     ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
+    ep->partcontReadyState = vm->partcontReadyState;
 
     ScmObj reset_handlers = (SCM_NULLP(vm->resetChain)?
                              SCM_NIL : SCM_CAR(vm->resetChain));

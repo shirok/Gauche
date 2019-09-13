@@ -278,6 +278,7 @@ typedef struct ScmEscapePointRec {
     ScmObj xhandler;            /* saved exception handler */
     ScmObj resetChain;          /* for reset/shift */
     ScmObj partHandlers;        /* for reset/shift */
+    int partcontReadyState;     /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control

@@ -590,7 +590,7 @@
                (display "[r03]"))))
            (k1))))
 
-(test* "reset/shift + call/cc 2"
+(test* "reset/shift + call/cc error 1"
        (test-error)
        (with-output-to-string
          (^[]
@@ -602,6 +602,21 @@
            (define (f2) (display "[f02]"))
            (reset (f1) (f2))
            (reset (k1)))))
+
+(test* "reset/shift + call/cc error 2"
+       (test-error)
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (define k3 #f)
+           (define (f1) (call/cc (^[k] (set! k1 k)))
+                        (shift k (set! k2 k))
+                        (display "[f01]"))
+           (define (f2) (display "[f02]"))
+           (reset (f1) (f2))
+           (reset (shift k (set! k3 k)) (k1))
+           (k3))))
 
 (test* "reset/shift + with-error-handler 1"
        "[E01][E02]"
