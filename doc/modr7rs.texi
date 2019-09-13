@@ -4525,10 +4525,13 @@ Returns a character set that adds @var{char1} @dots{} to
 @end defvar
 
 @defvar char-set:digit
+@defvarx char-set:ascii-digit
 @defvarx char-set:hex-digit
 @defvarx char-set:letter+digit
 [R7RS charset]
 @c MOD scheme.charset
+@code{char-set:ascii-digit} is Gauche extension that covers only ASCII
+digits.
 @end defvar
 
 @defvar char-set:graphic

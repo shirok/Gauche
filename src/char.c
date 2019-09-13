@@ -1417,7 +1417,7 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
  */
 
 /* NB: The predefined character sets covers full Unicode range,
-   except ASCII_DIGIT, LETTER_DIGIT, HEX_DIGIT, WHITESPACE, BLANK and WORD.
+   except ASCII_DIGIT, HEX_DIGIT, WHITESPACE, BLANK and WORD.
    (You can find the code that determines the exact membership of these
    sets in src/gen-unicode.scm (build-code-sets)).
 
@@ -1444,6 +1444,7 @@ void Scm__InitChar(void)
     predef_sets[SCM_CHAR_SET_LOWER] = predef_sets[SCM_CHAR_SET_Ll];
     predef_sets[SCM_CHAR_SET_UPPER] = predef_sets[SCM_CHAR_SET_Lu];
     predef_sets[SCM_CHAR_SET_TITLE] = predef_sets[SCM_CHAR_SET_Lt];
+    predef_sets[SCM_CHAR_SET_DIGIT] = predef_sets[SCM_CHAR_SET_Nd];
     predef_sets[SCM_CHAR_SET_ISO_CONTROL] = predef_sets[SCM_CHAR_SET_Cc];
     predef_sets[SCM_CHAR_SET_FULL] = Scm_CharSetComplement(make_charset());
     
@@ -1485,7 +1486,8 @@ void Scm__InitChar(void)
     DEFCS("upper-case", UPPER);
     DEFCS("title-case", TITLE);
     DEFCS("letter", LETTER);
-    DEFCS("digit", ASCII_DIGIT);
+    DEFCS("digit", DIGIT);
+    DEFCS("ascii-digit", ASCII_DIGIT);
     DEFCS("letter+digit", LETTER_DIGIT);
     DEFCS("graphic", GRAPHIC);
     DEFCS("printing", PRINTING);

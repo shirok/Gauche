@@ -634,7 +634,7 @@
   (hash-table-put! sets 'LETTER_DIGIT
                    (code-set-union 'LETTER_DIGIT
                                    (hash-table-ref sets 'LETTER)
-                                   (hash-table-ref sets 'ASCII_DIGIT)))
+                                   (hash-table-ref sets 'Nd)))
   (hash-table-put! sets 'WHITESPACE
                    (rlet1 cs (make <char-code-set> :name 'WHITESPACE)
                      (add-code-range! cs 9 13) ;TAB,LF,LTAB,FF,CR
