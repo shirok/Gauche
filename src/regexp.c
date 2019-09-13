@@ -433,11 +433,11 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
         case 'x': case 'u': case 'U':
             return rc1_lex_xdigits(ctx->ipat, ch);
         case 'd':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'D':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return Scm_Cons(SCM_SYM_COMP, cs);
         case 'w':

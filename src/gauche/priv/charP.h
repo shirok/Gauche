@@ -80,8 +80,8 @@ enum {
     SCM_CHAR_SET_UPPER,         /* Lu */
     SCM_CHAR_SET_TITLE,         /* Lt */
     SCM_CHAR_SET_LETTER,        /* Lu|Ll|Lt|Lm|Lo */
-    SCM_CHAR_SET_DIGIT,         /* Nd */
-    SCM_CHAR_SET_LETTER_DIGIT,  /* L*|Nd */
+    SCM_CHAR_SET_ASCII_DIGIT,   /* [0-9] */
+    SCM_CHAR_SET_LETTER_DIGIT,  /* L*|[0-9] */
     SCM_CHAR_SET_GRAPHIC,       /* L*|N*|P*|S* */
     SCM_CHAR_SET_PRINTING,      /* L*|N*|P*|S*|Z* */
     SCM_CHAR_SET_WHITESPACE,    /* Z*|\u0009-\u000d */

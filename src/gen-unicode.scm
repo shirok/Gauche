@@ -407,7 +407,7 @@
   ;; bind predefined charset
   (print "static void init_predefined_charsets() {")
   (dolist [cat (append (ucd-general-categories)
-                       '(LETTER DIGIT LETTER_DIGIT GRAPHIC PRINTING
+                       '(LETTER ASCII_DIGIT LETTER_DIGIT GRAPHIC PRINTING
                          WHITESPACE BLANK PUNCTUATION SYMBOL HEX_DIGIT
                          ASCII EMPTY WORD))]
     (print #"  predef_sets[SCM_CHAR_SET_~|cat|] =")
@@ -626,15 +626,15 @@
                                    (hash-table-ref sets 'Lt)
                                    (hash-table-ref sets 'Lm)
                                    (hash-table-ref sets 'Lo)))
-  (hash-table-put! sets 'DIGIT
-                   (rlet1 cs (make <char-code-set> :name 'DIGIT)
+  (hash-table-put! sets 'ASCII_DIGIT
+                   (rlet1 cs (make <char-code-set> :name 'ASCII_DIGIT)
                      (add-code-range! cs 
                                       (char->integer #\0)
                                       (char->integer #\9))))
   (hash-table-put! sets 'LETTER_DIGIT
                    (code-set-union 'LETTER_DIGIT
                                    (hash-table-ref sets 'LETTER)
-                                   (hash-table-ref sets 'DIGIT)))
+                                   (hash-table-ref sets 'ASCII_DIGIT)))
   (hash-table-put! sets 'WHITESPACE
                    (rlet1 cs (make <char-code-set> :name 'WHITESPACE)
                      (add-code-range! cs 9 13) ;TAB,LF,LTAB,FF,CR

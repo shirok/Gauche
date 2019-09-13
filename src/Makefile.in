@@ -347,7 +347,7 @@ $(libgc_pic_LIBRARY): $(GCLIB) $(libgc_pic_OBJECTS)
 # If you're not sure which files are needed, just run something like
 #    make UNICODEDATA=/ char-data
 # and the script will tell you the required files.
-char_attr.c : unicode-data.scm
+char_attr.c : unicode-data.scm gen-unicode.scm
 	$(BUILD_GOSH) $(srcdir)/gen-unicode.scm --compile $(srcdir)/unicode-data.scm
 
 char-data : gen-unicode.scm
