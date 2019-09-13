@@ -38,6 +38,7 @@
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)
+  (use gauche.parameter)
   (use text.tree)
   (use util.match)
   (export <parse-error>
@@ -59,7 +60,7 @@
           $sep-by $end-by $sep-end-by
           $count $between $followed-by
           $not $many-till $chain-left $chain-right
-          $lazy
+          $lazy $parameterize
 
           $any $eos $.
           
@@ -466,6 +467,22 @@
         (quasirename r
           `($bind ,parser (^[,(gensym "_")] ($let* ,bind ,@body))))]
        [_ (error "Malformed $let*:" f)]))))
+
+;; API
+;; ($parameterize ((param expr) ..) parser ...)
+;; Returns a parse that run parser ... while altering the parameter values
+;; like parameterize.  The parser ... are run as if in $seq.
+;; Suggested by Saito Atsushi
+(define-syntax $parameterize
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ ((p e) ...) parser ...)
+        (let1 tmp (gensym)
+          (quasirename r
+            `(let1 ,tmp ($seq ,@parser)
+               (^[s] (parameterize (,@(map list p e))
+                       (,tmp s))))))]))))
 
 ;; API
 ;; $or p1 p2 ...

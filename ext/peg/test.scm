@@ -33,6 +33,7 @@
 
 (use gauche.test)
 (use srfi-1)
+(use srfi-13)
 (use gauche.generator)
 (use gauche.parameter)
 
@@ -220,6 +221,21 @@
                    [closer ($char opener)])
                   ($return (list opener meat closer)))
            "0zyx0")
+
+;; $parameterize
+(define param1 (make-parameter "zzz"))
+(define match-param1 ($let ([word ($->string ($many ($one-of #[a-z])))])
+                       (if (string-contains word (param1))
+                         ($fail #"word can't have '~(param1)'")
+                         ($return word))))
+(test-succ "$parameterize" "lineament"
+           ($parameterize ((param1 "cicle"))
+              match-param1)
+           "lineament")
+(test-fail "$parameterize" '(9 "word can't have 'line'")
+           ($parameterize ((param1 "line"))
+              match-param1)
+           "lineament")
 
 ;; $lift and $lift*
 (test-succ "$lift" '(#\a . #\b)
