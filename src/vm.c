@@ -2575,7 +2575,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
 
     /* save continuation of reset */
     if (c != NULL && SCM_PAIRP(vm->resetChain)) {
-        ScmObj rst = SCM_CAR(vm->resetChain);
+        ScmObj rst = SCM_CAAR(vm->resetChain);
         if (SCM_CAR(rst) == NULL) {
             SCM_SET_CAR(rst, SCM_OBJ(c));
         }
@@ -2622,9 +2622,18 @@ ScmObj Scm_VMCallPC(ScmObj proc)
        It's ok, for a continuation pointed by cstack will be restored
        in user_eval_inner. */
     vm->cont = (SCM_PAIRP(vm->resetChain)?
-                (ScmContFrame*)SCM_CAAR(vm->resetChain) : c);
+                (ScmContFrame*)SCM_CAAR(SCM_CAR(vm->resetChain)) : c);
 
     return Scm_VMApply1(proc, contproc);
+}
+
+/* workaround for memory leak of reset-chain */
+static ScmObj Scm_DummyCons(ScmObj car, ScmObj cdr)
+{
+    ScmPair *z = SCM_NEW_ATOMIC(ScmPair);
+    SCM_SET_CAR(z, car);
+    SCM_SET_CDR(z, cdr);
+    return SCM_OBJ(z);
 }
 
 ScmObj Scm_VMReset(ScmObj proc)
@@ -2632,7 +2641,9 @@ ScmObj Scm_VMReset(ScmObj proc)
     ScmVM *vm = theVM;
 
     /* push/pop reset-chain for reset/shift */
-    vm->resetChain = Scm_Cons(Scm_Cons(SCM_OBJ(NULL), vm->handlers),
+    vm->resetChain = Scm_Cons(Scm_Cons(Scm_DummyCons(SCM_OBJ(NULL),
+                                                     SCM_FALSE),
+                                       vm->handlers),
                               vm->resetChain);
     ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
     SCM_ASSERT(SCM_PAIRP(vm->resetChain));
