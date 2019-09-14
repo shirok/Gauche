@@ -278,7 +278,6 @@ typedef struct ScmEscapePointRec {
     ScmObj xhandler;            /* saved exception handler */
     ScmObj resetChain;          /* for reset/shift */
     ScmObj partHandlers;        /* for reset/shift */
-    int partcontReadyState;     /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control
@@ -517,15 +516,9 @@ struct ScmVMRec {
                                  */
 
     /* for reset/shift */
-    ScmObj resetChain;          /* list of pointer to dynamic handler chain */
-    int    partcontReadyState;  /* EXPERIMENTAL:
-                                   workaround for partial continuation error
-                                   (state of partial continuation availability
-                                     =0: initial state,
-                                     =1: inside of reset,
-                                     =2: inside of partial continuation,
-                                     =3: after executing full continuation,
-                                     =4: partial continuation error) */
+    ScmObj resetChain;          /* list of reset information,
+                                   where reset information is
+                                   (continuation . <dynamic handlers chain>) */
 
     /* Program information */
     int    evalSituation;       /* eval situation (related to eval-when) */
