@@ -1535,7 +1535,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                 vm->cont = ep->cont;
                 vm->pc = PC_TO_RETURN;
                 /* restore reset-chain for reset/shift */
-                if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
+                if (ep->cstack) vm->resetChain = ep->resetChain;
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
@@ -2113,7 +2113,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
         /* restore reset-chain for reset/shift */
-        if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
+        if (ep->cstack) vm->resetChain = ep->resetChain;
     } else {
         /* We don't have an active error handler, so this is the fallback
            behavior.  Reports the error and rewind dynamic handlers and
@@ -2325,9 +2325,12 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
  */
 
 /* Figure out which before and after thunk should be called.
-   Returns a list of (before-flag <handler> . <handler-chain>),
-   where the <handler-chain> is the state of handlers on which
-   <handler> should be executed. */
+   Returns a list of (before-flag <handler> . <handler-chain>).
+   before-flag is used to determine when handler chain is updated.
+   (for 'before' handler, handler chain should be updated after calling it.
+    for 'after' handler, handler chain should be updated before calling it.)
+   the <handler-chain> is the state of handlers on which <handler> should
+   be executed. */
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
@@ -2396,7 +2399,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
     /* restore reset-chain for reset/shift */
-    if (ep->cstack != NULL) vm->resetChain = ep->resetChain;
+    if (ep->cstack) vm->resetChain = ep->resetChain;
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -2473,7 +2476,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
     }
 
     ScmObj handlers_to_call;
-    if (ep->cstack != NULL) {
+    if (ep->cstack) {
         /* for full continuation */
         handlers_to_call = throw_cont_calculate_handlers(ep->handlers,
                                                          vm->handlers);
@@ -2571,10 +2574,12 @@ ScmObj Scm_VMCallPC(ScmObj proc)
          cp = c, c = c->prev)
         /*empty*/;
 
-    if (cp != NULL) cp->prev = NULL; /* cut the dynamic chain */
+    /* cut the dynamic chain
+       (make the end of partial continuation) */
+    if (cp) cp->prev = NULL; 
 
-    /* save continuation of reset */
-    if (c != NULL && SCM_PAIRP(vm->resetChain)) {
+    /* save the continuation of reset */
+    if (c && SCM_PAIRP(vm->resetChain)) {
         ScmObj rst = SCM_CAAR(vm->resetChain);
         if (SCM_CAR(rst) == NULL) {
             SCM_SET_CAR(rst, SCM_OBJ(c));
@@ -2594,7 +2599,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ScmObj reset_handlers = (SCM_PAIRP(vm->resetChain)?
                              SCM_CDAR(vm->resetChain) : SCM_NIL);
 
-    /* cut dynamic handler chain for reset/shift */
+    /* cut dynamic handlers chain for reset/shift */
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
     SCM_FOR_EACH(p, ep->handlers) {
         if (p == reset_handlers) break;
@@ -2627,8 +2632,9 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     return Scm_VMApply1(proc, contproc);
 }
 
-/* workaround for memory leak of reset-chain */
-static ScmObj Scm_DummyCons(ScmObj car, ScmObj cdr)
+/* workaround for memory leak of reset-chain
+   (don't allow GC to follow the inner pointers of data) */
+static ScmObj dummy_cons(ScmObj car, ScmObj cdr)
 {
     ScmPair *z = SCM_NEW_ATOMIC(ScmPair);
     SCM_SET_CAR(z, car);
@@ -2641,8 +2647,8 @@ ScmObj Scm_VMReset(ScmObj proc)
     ScmVM *vm = theVM;
 
     /* push/pop reset-chain for reset/shift */
-    vm->resetChain = Scm_Cons(Scm_Cons(Scm_DummyCons(SCM_OBJ(NULL),
-                                                     SCM_FALSE),
+    /* (dummy_cons allocates the area to save the continuation of reset) */
+    vm->resetChain = Scm_Cons(Scm_Cons(dummy_cons(NULL, SCM_FALSE),
                                        vm->handlers),
                               vm->resetChain);
     ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
