@@ -125,10 +125,10 @@
                                   (flatten-ranges rest)))]
       [(|\|| or) (apply-char-set char-set-union rest)]
       [(& and) (apply-char-set char-set-intersection rest)]
-      [(-) (let ([rhs (apply-char-set char-set-union (cdr rest))])
-             (if (eq? (car rest) 'any)
-                 `(comp . ,rhs)
-                 (apply-char-set char-set-difference (list (car rest) rhs))))]
+      [(- difference) (let ([rhs (apply-char-set char-set-union (cdr rest))])
+                        (if (eq? (car rest) 'any)
+                            `(comp . ,rhs)
+                            (apply-char-set char-set-difference (list (car rest) rhs))))]
       ;; generate and take advantage of AST form (comp . <cset>)
       ;; delay calling char-set-complement until absolutely needed by
       ;; complex char-set algebra
