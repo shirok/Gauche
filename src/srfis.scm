@@ -817,6 +817,18 @@ Some of the features are built-in (@pxref{Basic comparators}).  Full srfi spec i
 いくつかの機能は組み込みです(@ref{Basic comparators}参照)。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます(@ref{Comparators}参照)。
 
 
+srfi-115, srfi-115
+()
+
+Scheme Regular Expressions
+This has become a part of R7RS large.
+Supported by the module @code{scheme.regex}.  @xref{R7RS regular expressions}.
+
+Scheme正規表現
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.regex}でサポートされます。@ref{R7RS regular expressions}参照。
+
+
 srfi-117, srfi-117
 ()
 

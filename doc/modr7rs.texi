@@ -1962,12 +1962,12 @@ The following are supported libraries:
 * R7RS list queues::            @code{scheme.list-queue}
 * R7RS ephemerons::             @code{scheme.ephemeron}
 * R7RS comparators::            @code{scheme.comparator}
+* R7RS regular expressions::    @code{scheme.regex}
 * R7RS mappings::               @code{scheme.mapping}
 * R7RS integer division::       @code{scheme.division}
 * R7RS bitwise operations::     @code{scheme.bitwise}
 * R7RS fixnum::                 @code{scheme.fixnum}
 * R7RS flonum::                 @code{scheme.flonum}
-* R7RS regular expressions::    @code{scheme.regex}
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large, R7RS large
@@ -6267,7 +6267,7 @@ until returning from this procedure.
 @end defun
 
 
-@node R7RS comparators, R7RS mappings, R7RS ephemerons, R7RS large
+@node R7RS comparators, R7RS regular expressions, R7RS ephemerons, R7RS large
 @subsection @code{scheme.comparator} - R7RS comparators
 @c NODE R7RS比較器, @code{scheme.comparator} - R7RS比較器
 
@@ -6302,7 +6302,916 @@ comparator-test-type comparator-check-type comparator-hash
 @end example
 @end deftp
 
-@node R7RS mappings, R7RS integer division, R7RS comparators, R7RS large
+@c ----------------------------------------------------------------------
+@node R7RS regular expressions, R7RS mappings, R7RS comparators, R7RS large
+@subsection @code{scheme.regex} - R7RS regular expressions
+@c NODE R7RS正規表現, @code{scheme.regex} - R7RS正規表現
+
+@deftp {Module} scheme.regex
+@mdindex scheme.regex
+@c COMMON
+This module provides operations on Scheme Regular Expressions (SRE).
+Originally defined as srfi-115.
+
+@end deftp
+
+Note that support for this module is not complete. Grapheme syntax is
+still missing.
+
+@subheading Scheme regular expression syntax
+
+@subsubheading Syntax summary
+
+SRE is just an S-expression with the structure summarized below.
+
+With the exception of @code{or}, any syntax that takes multiple
+@code{<sre>} processes them in a sequence. In other words @code{(foo
+<sre> ...)} is equivalent to @code{(foo (seq <sre> ...))}.
+
+Note: SRE uses the symbol @code{|} for alteration, but the vertical bar
+character is used for symbol escape in Gauche (and R7RS), so you have to
+write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
+
+@example
+    <sre> ::=
+     | <string>                    ; A literal string match.
+     | <cset-sre>                  ; A character set match.
+     | (* <sre> ...)               ; 0 or more matches.
+     | (zero-or-more <sre> ...)
+     | (+ <sre> ...)               ; 1 or more matches.
+     | (one-or-more <sre> ...)
+     | (? <sre> ...)               ; 0 or 1 matches.
+     | (optional <sre> ...)
+     | (= <n> <sre> ...)           ; <n> matches.
+     | (exactly <n> <sre> ...)
+     | (>= <n> <sre> ...)          ; <n> or more matches.
+     | (at-least <n> <sre> ...)
+     | (** <n> <m> <sre> ...)      ; <n> to <m> matches.
+     | (repeated <n> <m> <sre> ...)
+
+     | (|\||  <sre> ...)           ; Alternation.
+     | (or <sre> ...)
+
+     | (:   <sre> ...)             ; Sequence.
+     | (seq <sre> ...)
+     | ($ <sre> ...)               ; Numbered submatch.
+     | (submatch <sre> ...)
+     | (-> <name> <sre> ...)               ;  Named submatch.  <name> is
+     | (submatch-named <name> <sre> ...)   ;  a symbol.
+
+     | (w/case   <sre> ...)        ; Introduce a case-sensitive context.
+     | (w/nocase <sre> ...)        ; Introduce a case-insensitive context.
+
+     | (w/unicode   <sre> ...)     ; Introduce a unicode context.
+     | (w/ascii <sre> ...)         ; Introduce an ascii context.
+
+     | (w/nocapture <sre> ...)     ; Ignore all enclosed submatches.
+
+     | bos                         ; Beginning of string.
+     | eos                         ; End of string.
+
+     | bol                         ; Beginning of line.
+     | eol                         ; End of line.
+
+     | bow                         ; Beginning of word.
+     | eow                         ; End of word.
+     | nwb                         ; A non-word boundary.
+     | (word <sre> ...)            ; An SRE wrapped in word boundaries.
+     | (word+ <cset-sre> ...)      ; A single word restricted to a cset.
+     | word                        ; A single word.
+
+     | (?? <sre> ...)              ; A non-greedy pattern, 0 or 1 match.
+     | (non-greedy-optional <sre> ...)
+     | (*? <sre> ...)              ; Non-greedy 0 or more matches.
+     | (non-greedy-zero-or-more <sre> ...)
+     | (**? <m> <n> <sre> ...)     ; Non-greedy <m> to <n> matches.
+     | (non-greedy-repeated <sre> ...)
+     | (look-ahead <sre> ...)      ; Zero-width look-ahead assertion.
+     | (look-behind <sre> ...)     ; Zero-width look-behind assertion.
+     | (neg-look-ahead <sre> ...)  ; Zero-width negative look-ahead assertion.
+     | (neg-look-behind <sre> ...) ; Zero-width negative look-behind assertion.
+
+     | (backref <n-or-name>)       ; Match a previous submatch.
+@end example
+
+The grammar for @code{cset-sre} is as follows.
+
+@example
+    <cset-sre> ::=
+     | <char>                      ; literal char
+     | "<char>"                    ; string of one char
+     | <char-set>                  ; embedded SRFI 14 char set
+     | (<string>)                  ; literal char set
+     | (char-set <string>)
+     | (/ <range-spec> ...)        ; ranges
+     | (char-range <range-spec> ...)
+     | (or <cset-sre> ...)         ; union
+     | (|\|| <cset-sre> ...)
+     | (and <cset-sre> ...)        ; intersection
+     | (& <cset-sre> ...)
+     | (- <cset-sre> ...)          ; difference
+     | (- <difference> ...)
+     | (~ <cset-sre> ...)          ; complement of union
+     | (complement <cset-sre> ...)
+     | (w/case <cset-sre>)         ; case and unicode toggling
+     | (w/nocase <cset-sre>)
+     | (w/ascii <cset-sre>)
+     | (w/unicode <cset-sre>)
+     | any | nonl | ascii | lower-case | lower
+     | upper-case | upper | title-case | title
+     | alphabetic | alpha | alphanumeric | alphanum | alnum
+     | numeric | num | punctuation | punct | symbol
+     | graphic | graph | whitespace | white | space
+     | printing | print | control | cntrl | hex-digit | xdigit
+
+    <range-spec> ::= <string> | <char>
+@end example
+
+@subsubheading Basic patterns
+
+@table @code
+@item <string>
+
+A literal string.
+
+@example
+(regexp-search "needle" "hayneedlehay") => #<regexp-match>
+(regexp-search "needle" "haynEEdlehay") => #f
+@end example
+
+@item (seq <sre> ...)
+@itemx (: <sre> ...)
+
+A sequence of patterns that should be matched in the same order.
+
+@example
+(regexp-search '(: "one" space "two" space "three") "one two three") => #<regexp-match>
+@end example
+
+@item (or <sre> ...)
+@itemx (|\|| <sre> ...)
+
+Matches one of the given patterns.
+
+   (regexp-search '(or "eeney" "meeney" "miney") "meeney") => #<regexp-match>
+   (regexp-search '(or "eeney" "meeney" "miney") "moe") => #f
+
+@item (w/nocase <sre> ...)
+
+Changes to match the given patterns case-insensitively. Sub-patterns
+can still be made sensitive with @code{w/case}.
+
+@example
+(regexp-search "needle" "haynEEdlehay") => #f
+(regexp-search '(w/nocase "needle") "haynEEdlehay") => #<regexp-match>
+
+(regexp-search '(~ ("Aab")) "B") => #<regexp-match>
+(regexp-search '(~ ("Aab")) "b") => #f
+(regexp-search '(w/nocase (~ ("Aab"))) "B") => #f
+(regexp-search '(w/nocase (~ ("Aab"))) "b") => #f
+(regexp-search '(~ (w/nocase ("Aab"))) "B") => #f
+(regexp-search '(~ (w/nocase ("Aab"))) "b") => #f
+@end example
+
+@item (w/case <sre> ...)
+
+Changes to match the given patterns case-sensitively. Sub-patterns can
+still be made case-insensitive. This is the default.
+
+@example
+(regexp-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall") => #<regexp-match>
+(regexp-search '(w/nocase (~ (w/case ("Aab")))) "b") => #f
+@end example
+
+@item (w/ascii <sre> ...)
+
+Limits the character sets and other predefined patterns to ASCII. This
+affects patterns or character sets like @code{any}, @code{alpha},
+@code{(word)}@dots{}
+
+@example
+(regexp-search '(w/ascii bos (* alpha) eos) "English") => #<regexp-match>
+(regexp-search '(w/ascii bos (* alpha) eos) "Ελληνική") => #f
+@end example
+
+@item (w/unicode <sre> ...)
+
+Changes the character sets and other predefined patterns back to
+Unicode if @code{w/ascii} has been used in the outer scope. This is
+the default.
+
+@example
+(regexp-search '(w/unicode bos (* alpha) eos) "English") => #<regexp-match>
+(regexp-search '(w/unicode bos (* alpha) eos) "Ελληνική") => #<regexp-match>
+@end example
+
+@item (w/nocapture <sre> ...)
+
+Disables capturing for all @code{submatch} and @code{submatch-named}
+inside.
+
+@example
+(let ((number '($ (+ digit))))
+  (cdr
+   (regexp-match->list
+    (regexp-search `(: ,number "-" ,number "-" ,number)
+                   "555-867-5309")))  ; => '("555" "867" "5309")
+  (cdr
+   (regexp-match->list
+    (regexp-search `(: ,number "-" (w/nocapture ,number) "-" ,number)
+                   "555-867-5309"))))   => '("555" "5309")
+@end example
+@end table
+
+@subsubheading Repeating patterns
+@table @code
+@item (optional <sre> ...)
+@itemx (? <sre> ...)
+
+Matches the pattern(s) one or zero times.
+
+@example
+(regexp-search '(: "match" (? "es") "!") "matches!") => #<regexp-match>
+(regexp-search '(: "match" (? "es") "!") "match!") => #<regexp-match>
+(regexp-search '(: "match" (? "es") "!") "matche!") => #f
+@end example
+
+@item (zero-or-more <sre> ...)
+@itemx (* <sre> ...)
+
+Matches the pattern(s) zero or more times.
+
+@example
+(regexp-search '(: "<" (* (~ #\>)) ">") "<html>") => #<regexp-match>
+(regexp-search '(: "<" (* (~ #\>)) ">") "<>") => #<regexp-match>
+(regexp-search '(: "<" (* (~ #\>)) ">") "<html") => #f
+@end example
+
+@item (one-or-more <sre> ...)
+@itemx (+ <sre> ...)
+
+Matches the pattern(s) at least once.
+
+@example
+(regexp-search '(: "<" (+ (~ #\>)) ">") "<html>") => #<regexp-match>
+(regexp-search '(: "<" (+ (~ #\>)) ">") "<a>") => #<regexp-match>
+(regexp-search '(: "<" (+ (~ #\>)) ">") "<>") => #f
+@end example
+
+@item (at-least n <sre> ...)
+@itemx (>= n <sre> ...)
+
+Matches the pattern(s) at least @code{n} times.
+
+@example
+(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<table>") => #<regexp-match>
+(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<pre>") => #<regexp-match>
+(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<tr>") => #f
+@end example
+
+@item (exactly n <sre> ...)
+@itemx (= n <sre> ...)
+
+Matches the pattern(s) exactly @code{n} times.
+
+@example
+(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<html>") => #<regexp-match>
+(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<table>") => #f
+@end example
+
+@item (repeated from to <sre> ...)
+@itemx (** from to <sre> ...)
+
+Matches the pattern(s) at least @code{from} times and up to @code{to}
+times.
+
+@example
+(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.168.1.10") => #<regexp-match>
+(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.0168.1.10") => #f
+@end example
+@end table
+
+@subsubheading Submatch Patterns
+@table @code
+@item (submatch <sre> ...)
+@itemx ($ <sre> ...)
+
+Captures the matched string. Each capture is numbered increasing from
+one (capture zero is the entire matched string). For nested captures,
+the numbering scheme is depth-first walk.
+
+@item (submatch-named <name> <sre> ...)
+@itemx (-> <name> <sre> ...)
+
+Captures the matched string and assigns a name to it in addition to a
+number.
+
+@item (backref <n-or-name>)
+
+Matches a previously matched submatch.
+
+@end table
+
+@subsubheading Character Sets
+
+@table @code
+@item <char>
+
+A character set contains a single character.
+
+@example
+(regexp-matches '(* #\-) "---") => #<regexp-match>
+(regexp-matches '(* #\-) "-_-") => #f
+@end example
+
+@item "<char>"
+
+A character set contains a single character. This is technically
+ambiguous with SRE matching a literal string. However the end result
+of both syntaxes is the same.
+
+@item <char-set>
+
+A SRFI-14 character set.
+
+Note that while currently there is no portable written representation
+of SRFI 14 character sets, you can use Gauche reader syntax
+@code{#[char-set-spec]}, @pxref{Character set}.
+
+@example
+(regexp-partition `(+ ,char-set:vowels) "vowels")
+  => ("v" "o" "w" "e" "ls")
+@end example
+
+@item (char-set <string>)
+@itemx (<string>)
+
+A character set contains the characters in the given string. This is
+the same as @code{`(char-set ,(string->char-set <string>))}.
+
+@example
+(regexp-matches '(* ("aeiou")) "oui") => #<regexp-match>
+(regexp-matches '(* ("aeiou")) "ouais") => #f
+(regexp-matches '(* ("e\x0301")) "e\x0301") => #<regexp-match>
+(regexp-matches '("e\x0301") "e\x0301") => #f
+(regexp-matches '("e\x0301") "e") => #<regexp-match>
+(regexp-matches '("e\x0301") "\x0301") => #<regexp-match>
+(regexp-matches '("e\x0301") "\x00E9") => #f
+@end example
+
+@item (char-range <range-spec> ...)
+@itemx (/ <range-spec> ...)
+
+A character set contains the characters within
+@code{<range-set>}. This is the equivalent of @code{[]} syntax in
+regular expressions.
+
+@example
+(regexp-matches '(* (/ "AZ09")) "R2D2") => #<regexp-match>
+(regexp-matches '(* (/ "AZ09")) "C-3PO") => #f
+@end example
+
+@item (or <cset-sre> ...)
+@itemx (|\|| <cset-sre> ...)
+
+A shorthand for @code{`(char-set ,(char-set-union <cset-sre>...))}.
+
+@item (complement <cset-sre> ...)
+@itemx (~ <cset-sre> ...)
+
+A shorthand for @code{`(char-set ,(char-set-complement <cset-sre>...))}.
+
+@item (difference <cset-sre> ...)
+@itemx (- <cset-sre> ...)
+
+A shorthand for @code{`(char-set ,(char-set-difference <cset-sre>...))}.
+
+@example
+(regexp-matches '(* (- (/ "az") ("aeiou"))) "xyzzy") => #<regexp-match>
+(regexp-matches '(* (- (/ "az") ("aeiou"))) "vowels") => #f
+@end example
+
+@item (and <cset-sre> ...)
+@itemx (& <cset-sre> ...)
+
+A shorthand for @code{`(char-set ,(char-set-intersection <cset-sre>...))}.
+
+@example
+(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "xyzzy") => #<regexp-match>
+(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "vowels") => #f
+@end example
+
+@item (w/case <cset-sre>)
+@itemx (w/nocase <cset-sre>)
+@itemx (w/ascii <cset-sre>)
+@itemx (w/unicode <cset-sre>)
+
+This is similar to the SRE equivalent, listed to indicate that they
+can also be applied on character sets.
+
+@end table
+
+@subsubheading Named Character Sets
+
+Note that if @code{w/ascii} is in effect, these character sets will
+return the ASCII subset. Otherwise they return full Unicode ones.
+
+@table @code
+@item any
+
+Matches any character. This is the @code{.} in regular expression.
+
+@item nonl
+
+Matches any character other than @code{#\return} or @code{#\newline}.
+
+@item ascii
+
+A shorthand for @code{`(char-set ,char-set:ascii)}.
+
+@item lower-case
+@itemx lower
+
+A shorthand for @code{`(char-set ,char-set:lower-case)}.
+
+@item upper-case
+@itemx upper
+
+A shorthand for @code{`(char-set ,char-set:upper-case)}.
+
+@item title-case
+@itemx title
+
+A shorthand for @code{`(char-set ,char-set:title-case)}.
+
+@item alphabetic
+@itemx alpha
+
+A shorthand for @code{`(char-set ,char-set:letter)}.
+
+@item numeric
+@itemx num
+
+A shorthand for @code{`(char-set ,char-set:digit)}.
+
+@item alphanumeric
+@itemx alphanum
+@itemx alnum
+
+A shorthand for @code{`(char-set ,char-set:letter+digit)}.
+
+@item punctuation
+@itemx punct
+
+A shorthand for @code{`(char-set ,char-set:punctuation)}.
+
+@item symbol
+
+A shorthand for @code{`(char-set ,char-set:symbol)}.
+
+@item graphic
+@itemx graph
+
+A shorthand for @code{`(char-set ,char-set:graphic)}.
+
+@example
+(or alphanumeric punctuation symbol)
+@end example
+
+
+@item whitespace
+@itemx white
+@itemx space
+
+A shorthand for @code{`(char-set ,char-set:whitespace)}.
+
+@item printing
+@itemx print
+
+A shorthand for @code{`(char-set ,char-set:printing)}.
+
+@item control
+@itemx cntrl
+
+A character set contains ASCII characters with from 0 to 31.
+
+@item hex-digit
+@itemx xdigit
+
+A shorthand for @code{`(char-set ,char-set:hex-digit)}.
+
+@end table
+
+@subsubheading Boundary Assertions
+
+@table @code
+@item bos
+@itemx eos
+
+Matches the beginning of the string. If start/end parameters are
+specified, matches the start or end of the substring as specified.
+
+@item bol
+@itemx eol
+
+Matches the beginning or end of a line (or the string). For single
+line matching, this is the same as @code{bos} and @code{eos}. A line
+is interpreted the same way with @code{read-line}.
+
+@item bow
+@itemx eow
+
+Matches the beginning or the end of a word.
+
+@example
+  (regexp-search '(: bow "foo") "foo") => #<regexp-match>
+  (regexp-search '(: bow "foo") "<foo>>") => #<regexp-match>
+  (regexp-search '(: bow "foo") "snafoo") => #f
+  (regexp-search '(: "foo" eow) "foo") => #<regexp-match>
+  (regexp-search '(: "foo" eow) "foo!") => #<regexp-match>
+  (regexp-search '(: "foo" eow) "foobar") => #f
+@end example
+
+
+@item nwb
+
+A shorthand for @code{(neg-look-ahead (or bow eow))}.
+
+@item (word <sre> ...)
+
+Matches the word boundary around the given SRE:
+
+@example
+(: bow <sre> ... eow)
+@end example
+
+
+@item (word+ <cset-sre> ...)
+
+Matches a single word composed of characters of the given characters
+sets:
+
+@example
+(word (+ (and (or alphanumeric "_") (or cset-sre ...))))
+@end example
+
+
+@item word
+
+A shorthand for @code{(word+ any)}.
+
+@end table
+
+@subsubheading Non-Greedy Patterns
+
+@table @code
+
+@item (non-greedy-optional <sre> ...)
+@itemx (?? <sre> ...)
+
+The non-greedy equivalent of @code{(optional <sre>...)}.
+
+@item (non-greedy-zero-or-more< <sre> ...)
+@itemx (*? <sre> ...)
+
+The non-greedy equivalent of @code{(zero-or-more <sre>...)}.
+
+@item (non-greedy-repeated <m> <n> <sre> ...)
+@itemx (**? <m> <n> <sre> ...)
+
+The non-greedy equivalent of @code{(repeated <sre>...)}.
+
+@end table
+
+@subsubheading Look Around Patterns
+
+@table @code
+@item (look-ahead <sre> ...)
+
+Zero-width look-ahead assertion. Asserts the sequence matches from the
+current position, without advancing the position.
+
+@example
+(regexp-matches '(: "regular" (look-ahead " expression") " expression") "regular expression")=> #<regexp-match>
+(regexp-matches '(: "regular" (look-ahead " ") "expression") "regular expression")=> #f
+@end example
+
+
+@item (look-behind <sre> ...)
+
+Zero-width look-behind assertion. Asserts the sequence matches behind
+the current position, without advancing the position. It is an error
+if the sequence does not have a fixed length.
+
+@item (neg-look-ahead <sre> ...)
+
+Zero-width negative look-ahead assertion.
+
+@item (neg-look-behind <sre> ...)
+
+Zero-width negative look-behind assertion.
+
+@end table
+
+@subheading Using regular expressions
+
+@defun regexp @var{re}
+[R7RS regex]
+@c MOD scheme.regex
+Compiles the given Scheme Regular Expression into a @code{<regexp>}
+object. If @var{re} is already a regexp object, the object is
+returned as-is.
+
+@end defun
+
+@defmac rx @var{sre} @dots{}
+[R7RS regex]
+@c MOD scheme.regex
+A macro shorthand for @code{(regexp `(: @var{sre} ...))}.
+@end defmac
+
+@defun regexp->sre @var{re}
+[R7RS regex]
+@c MOD scheme.regex
+Returns the SRE corresponding to the given given regexp object. Note
+that if the regexp object is not created from an SRE, it may contain
+features that cannot be expressed in SRE and cause an error.
+@end defun
+
+@defun char-set->sre @var{char-set}
+[R7RS regex]
+@c MOD scheme.regex
+Returns the SRE of the given character set. Currently this is not
+optimized. If you convert @code{any} to SRE for example, you may get
+an SRE listing every single character.
+@end defun
+
+@defun valid-sre? @var{obj}
+[R7RS regex]
+@c MOD scheme.regex
+Returns true iff @var{obj} can be safely passed to regexp.
+@end defun
+
+@defun regexp? @var{obj}
+[R7RS regex]
+@c MOD scheme.regex
+Returns true iff @var{obj} is a regexp.
+@end defun
+
+@defun regexp-matches @var{re} @var{str} [@var{start} [@var{end}]]
+[R7RS regex]
+@c MOD scheme.regex
+Returns an @code{<regexp-match>} object if re successfully matches the
+entire string @var{str} or optionally from @var{start} (inclusive) to
+@var{end} (exclusive), or @code{#f} is the match fails.
+
+For convenience, @var{end} accepts @code{#f} and interprets it as the
+end of the string.
+
+The regexp-match object will contain information needed to extract any
+submatches.
+@end defun
+
+@defun regexp-matches? @var{re} @var{str} [@var{start} [@var{end}]]
+[R7RS regex]
+@c MOD scheme.regex
+Similar to @code{regexp-matches} but returns @code{#t} instead of a
+@code{<regexp-match>} object.
+@end defun
+
+@defun regexp-search @var{re} @var{str} [@var{start} [@var{end}]]
+[R7RS regex]
+@c MOD scheme.regex
+Similar to @code{regexp-matches} except that @var{re} only has to
+match a substring in @var{str} instead.
+@end defun
+
+
+@defun regexp-fold @var{re} @var{kons} @var{knil} @var{str} [@var{finish} [@var{start} [@var{end}]]]
+[R7RS regex]
+@c MOD scheme.regex
+Calls the procedure @var{kons} for every match found in @var{str} with
+following four arguments:
+
+@itemize
+@item
+The position of the end of the last matched string.
+@item
+The @code{<regexp-match>} object.
+@item
+The argument @var{str}.
+@item
+The result of the last @var{kons} call or @var{knil} if this is the
+first call.
+@end itemize
+
+If @var{finish} is given, it is called after all matches with the same
+parameters as calling @var{kons} except that @code{#f} is passed
+instead of @code{<regexp-match>} and the result is returned. Otherwise
+the result of the last @var{kons} call is returned.
+
+@example
+   (regexp-fold 'word
+                (lambda (i m str acc)
+                  (let ((s (regexp-match-submatch m 0)))
+                   (cond ((assoc s acc)
+                          => (lambda (x) (set-cdr! x (+ 1 (cdr x))) acc))
+                         (else `((,s . 1) ,@@acc)))))
+                '()
+                "to be or not to be")
+   => '(("not" . 1) ("or" . 1) ("be" . 2) ("to" . 2))
+@end example
+@end defun
+
+
+@defun regexp-extract @var{re} @var{str} [@var{start} [@var{end}]]
+[R7RS regex]
+@c MOD scheme.regex
+Returns a list of matched string or an empty list if no matches.
+
+@example
+   (regexp-extract '(+ numeric) "192.168.0.1")
+   => ("192" "168" "0" "1")
+@end example
+@end defun
+
+@defun regexp-split @var{re} @var{str} [@var{start} [@var{end}]]
+[R7RS regex]
+@c MOD scheme.regex
+Returns a list of not matched substrings. This can be seen as the
+opposite of @code{regexp-extract} where the matched strings are
+removed instead of returned.
+
+@example
+   (regexp-split '(+ space) " fee fi  fo\tfum\n")
+   => ("fee" "fi" "fo" "fum")
+   (regexp-split '(",;") "a,,b,")
+   => ("a" "" "b" "")
+   (regexp-split '(* numeric) "abc123def456ghi789")
+   => ("abc" "def" "ghi" "")
+@end example
+@end defun
+
+@defun regexp-partition @var{re} @var{str} [@var{start} [@var{end}]]
+[R7RS regex]
+@c MOD scheme.regex
+Returns a list of all matched and not matched substrings. In other
+words it's the combination of @code{regexp-extract} and
+@code{regexp-split} where the boundary of matched strings are used to
+split the original string.
+
+@example
+   (regexp-partition '(+ (or space punct)) "")
+   => ("")
+   (regexp-partition '(+ (or space punct)) "Hello, world!\n")
+   => ("Hello" ", " "world" "!\n")
+   (regexp-partition '(+ (or space punct)) "¿Dónde Estás?")
+   => ("" "¿" "Dónde" " " "Estás" "?")
+   (regexp-partition '(* numeric) "abc123def456ghi789")
+   => ("abc" "123" "def" "456" "ghi" "789")
+@end example
+@end defun
+
+@defun regexp-replace @var{re} @var{str} @var{subst} [@var{start} [@var{end} [@var{count}]]
+[R7RS regex]
+@c MOD scheme.regex
+Returns a new string where the first matched substring is replaced
+with @var{subst}. If @var{count} is specified, the @var{count}-th
+match will be replaced instead of the first one.
+
+@var{subst} can be either a string (the replacement), an integer or a
+symbol to refer to the capture group that will be used as the
+replacement.
+
+The special symbols @code{pre} and @code{post} use the substring to
+the left or right of the match as replacement, respectively. But this
+is not supported yet.
+
+As a Gauche extension, @var{subst} could also be a procedure, which is
+called with the given match object and the result will be used as the
+replacement.
+
+The optional parameters @var{start} and @var{end} restrict both the
+matching and the substitution, to the given indices, such that the
+result is equivalent to omitting these parameters and replacing on
+@code{(substring str start end)}. As a convenience, a value of
+@code{#f} for end is equivalent to @code{(string-length str)}.
+
+@example
+   (regexp-replace '(+ space) "one two three" "_")
+   => "one_two three"
+   (regexp-replace '(+ space) "one two three" "_" 0 #f 0)
+   => "one_two three"
+   (regexp-replace '(+ space) "one two three" "_" 0 #f 1)
+   => "one two_three"
+   (regexp-replace '(+ space) "one two three" "_" 0 #f 2)
+   => "one two three"
+@end example
+
+Note that Gauche also has a builtin procedure of the same name, but
+works slightly differently, @pxref{Using regular expressions}.
+@end defun
+
+
+@defun regexp-replace-all @var{re} @var{str} @var{subst} [@var{start} [@var{end}]]
+[R7RS regex]
+@c MOD scheme.regex
+Returns a new string where all matches in @var{str} are replaced with
+@var{subst}. @var{subst} can also take a string, a number, a symbol or
+a procedure similar to @code{regexp-replace}.
+
+@example
+(regexp-replace-all '(+ space) "one two three" "_")
+   => "one_two_three"
+@end example
+
+Note that Gauche also has a builtin procedure of the same name, but
+works slightly differently, @pxref{Using regular expressions}.
+@end defun
+
+
+@defun regexp-match? @var{obj}
+[R7RS regex]
+@c MOD scheme.regex
+Returns true iff @var{obj} is a @code{<regexp-match>} object.
+
+@example
+(regexp-match? (regexp-matches "x" "x"))  => #t
+(regexp-match? (regexp-matches "x" "y"))  => #f
+@end example
+@end defun
+
+
+@defun regexp-match-count @var{regexp-match}
+[R7RS regex]
+@c MOD scheme.regex
+Returns the number of matches in @var{match} except the implicit zero
+full match. This is just an alias of @code{rxmatch-num-matches} minus
+one.
+
+@example
+(regexp-match-count (regexp-matches "x" "x"))  => 0
+(regexp-match-count (regexp-matches '($ "x") "x"))  => 1
+@end example
+@end defun
+
+@defun regexp-match-submatch @var{regexp-match} @var{field}
+[R7RS regex]
+@c MOD scheme.regex
+This is an alias of @code{rxmatch-substring}
+
+@example
+   (regexp-match-submatch (regexp-search 'word "**foo**") 0)  => "foo"
+   (regexp-match-submatch
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => "*foo*"
+   (regexp-match-submatch
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => "foo"
+@end example
+@end defun
+
+@defun regexp-match-submatch-start @var{regexp-match} @var{field}
+[R7RS regex]
+@c MOD scheme.regex
+This is an alias of @code{regexp-match-submatch-start}.
+
+@example
+   (regexp-match-submatch-start
+    (regexp-search 'word "**foo**") 0)  => 2
+   (regexp-match-submatch-start
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => 1
+   (regexp-match-submatch-start
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => 2
+@end example
+@end defun
+
+@defun regexp-match-submatch-end @var{regexp-match} @var{field}
+[R7RS regex]
+@c MOD scheme.regex
+This is an alias of @code{regexp-match-submatch-end}.
+
+@example
+   (regexp-match-submatch-end
+    (regexp-search 'word "**foo**") 0)  => 5
+   (regexp-match-submatch-end
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => 6
+   (regexp-match-submatch-end
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => 5
+@end example
+@end defun
+
+@defun regexp-match->list @var{regexp-match}
+[R7RS regex]
+@c MOD scheme.regex
+This is an alias of @code{rxmatch-substrings}
+
+@example
+   (regexp-match->list
+    (regexp-search '(: ($ word) (+ (or space punct)) ($ word)) "cats & dogs"))
+    => '("cats & dogs" "cats" "dogs")
+@end example
+@end defun
+
+@node R7RS mappings, R7RS integer division, R7RS regular expressions, R7RS large
 @subsection @code{scheme.mapping} - R7RS mappings
 @c NODE R7RSマップ, @code{scheme.mapping} - R7RSマップ
 
@@ -8250,7 +9159,7 @@ srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
 
 
 @c ----------------------------------------------------------------------
-@node R7RS flonum, R7RS regular expressions, R7RS fixnum, R7RS large
+@node R7RS flonum,  , R7RS fixnum, R7RS large
 @subsection @code{scheme.flonum} - R7RS flonum
 @c NODE R7RS flonum, @code{scheme.flonum} - R7RS flonum
 
@@ -9136,915 +10045,6 @@ Returns the error function erf(@var{x}).
 Returns the complementary error function, 1 - erf(@var{x}).
 @end defun
 
-@c ----------------------------------------------------------------------
-@node R7RS regular expressions,  , R7RS flonum, R7RS large
-@subsection @code{scheme.regex} - R7RS regular expressions
-@c NODE R7RS regular expressions, @code{scheme.regex} - R7RS regular expressions
-
-@deftp {Module} scheme.regex
-@mdindex scheme.regex
-@c COMMON
-This module provides operations on Scheme Regular Expressions (SRE).
-Originally defined as srfi-115.
-
-@end deftp
-
-Note that support for this module is not complete. Grapheme syntax is
-still missing.
-
-@subheading Scheme regular expression syntax
-
-@subsubheading Syntax summary
-
-The grammar for SREs is summarized below. Note that an SRE is a
-first-class object consisting of nested lists of strings, chars,
-char-sets, symbols and numbers. Where the syntax is described as
-@code{(foo bar)}, this can be constructed equivalently as @code{'(foo
-bar)} or @code{(list 'foo 'bar)}, etc. The following sections explain
-the semantics in greater detail.
-
-With the exception of @code{or}, any syntax that takes multiple
-@code{<sre>} processes them in a sequence. In other words @code{(foo
-<sre> ...)} is equivalent to @code{(foo (seq <sre> ...))}.
-
-@example
-    <sre> ::=
-     | <string>                    ; A literal string match.
-     | <cset-sre>                  ; A character set match.
-     | (* <sre> ...)               ; 0 or more matches.
-     | (zero-or-more <sre> ...)
-     | (+ <sre> ...)               ; 1 or more matches.
-     | (one-or-more <sre> ...)
-     | (? <sre> ...)               ; 0 or 1 matches.
-     | (optional <sre> ...)
-     | (= <n> <sre> ...)           ; <n> matches.
-     | (exactly <n> <sre> ...)
-     | (>= <n> <sre> ...)          ; <n> or more matches.
-     | (at-least <n> <sre> ...)
-     | (** <n> <m> <sre> ...)      ; <n> to <m> matches.
-     | (repeated <n> <m> <sre> ...)
-
-     | (|  <sre> ...)              ; Alternation.
-     | (or <sre> ...)
-
-     | (:   <sre> ...)             ; Sequence.
-     | (seq <sre> ...)
-     | ($ <sre> ...)               ; Numbered submatch.
-     | (submatch <sre> ...)
-     | (-> <name> <sre> ...)               ;  Named submatch.  <name> is
-     | (submatch-named <name> <sre> ...)   ;  a symbol.
-
-     | (w/case   <sre> ...)        ; Introduce a case-sensitive context.
-     | (w/nocase <sre> ...)        ; Introduce a case-insensitive context.
-
-     | (w/unicode   <sre> ...)     ; Introduce a unicode context.
-     | (w/ascii <sre> ...)         ; Introduce an ascii context.
-
-     | (w/nocapture <sre> ...)     ; Ignore all enclosed submatches.
-
-     | bos                         ; Beginning of string.
-     | eos                         ; End of string.
-
-     | bol                         ; Beginning of line.
-     | eol                         ; End of line.
-
-     | bow                         ; Beginning of word.
-     | eow                         ; End of word.
-     | nwb                         ; A non-word boundary.
-     | (word <sre> ...)            ; An SRE wrapped in word boundaries.
-     | (word+ <cset-sre> ...)      ; A single word restricted to a cset.
-     | word                        ; A single word.
-
-     | (?? <sre> ...)              ; A non-greedy pattern, 0 or 1 match.
-     | (non-greedy-optional <sre> ...)
-     | (*? <sre> ...)              ; Non-greedy 0 or more matches.
-     | (non-greedy-zero-or-more <sre> ...)
-     | (**? <m> <n> <sre> ...)     ; Non-greedy <m> to <n> matches.
-     | (non-greedy-repeated <sre> ...)
-     | (look-ahead <sre> ...)      ; Zero-width look-ahead assertion.
-     | (look-behind <sre> ...)     ; Zero-width look-behind assertion.
-     | (neg-look-ahead <sre> ...)  ; Zero-width negative look-ahead assertion.
-     | (neg-look-behind <sre> ...) ; Zero-width negative look-behind assertion.
-
-     | (backref <n-or-name>)       ; Match a previous submatch.
-@end example
-
-The grammar for @code{cset-sre} is as follows.
-
-@example
-    <cset-sre> ::=
-     | <char>                      ; literal char
-     | "<char>"                    ; string of one char
-     | <char-set>                  ; embedded SRFI 14 char set
-     | (<string>)                  ; literal char set
-     | (char-set <string>)
-     | (/ <range-spec> ...)        ; ranges
-     | (char-range <range-spec> ...)
-     | (or <cset-sre> ...)         ; union
-     | (|\|| <cset-sre> ...)
-     | (and <cset-sre> ...)        ; intersection
-     | (& <cset-sre> ...)
-     | (- <cset-sre> ...)          ; difference
-     | (- <difference> ...)
-     | (~ <cset-sre> ...)          ; complement of union
-     | (complement <cset-sre> ...)
-     | (w/case <cset-sre>)         ; case and unicode toggling
-     | (w/nocase <cset-sre>)
-     | (w/ascii <cset-sre>)
-     | (w/unicode <cset-sre>)
-     | any | nonl | ascii | lower-case | lower
-     | upper-case | upper | title-case | title
-     | alphabetic | alpha | alphanumeric | alphanum | alnum
-     | numeric | num | punctuation | punct | symbol
-     | graphic | graph | whitespace | white | space
-     | printing | print | control | cntrl | hex-digit | xdigit
-
-    <range-spec> ::= <string> | <char>
-@end example
-
-@subsubheading Basic patterns
-
-@table @code
-@item <string>
-
-A literal string.
-
-@example
-(regexp-search "needle" "hayneedlehay") => #<regexp-match>
-(regexp-search "needle" "haynEEdlehay") => #f
-@end example
-
-@item (seq <sre> ...)
-@itemx (: <sre> ...)
-
-A sequence of patterns that should be matched in the same order.
-
-@example
-(regexp-search '(: "one" space "two" space "three") "one two three") => #<regexp-match>
-@end example
-
-@item (or <sre> ...)
-@itemx (|\|| <sre> ...)
-
-Matches one of the given patterns.
-
-   (regexp-search '(or "eeney" "meeney" "miney") "meeney") => #<regexp-match>
-   (regexp-search '(or "eeney" "meeney" "miney") "moe") => #f
-
-@item (w/nocase <sre> ...)
-
-Changes to match the given patterns case-insensitively. Sub-patterns
-can still be made sensitive with @code{w/case}.
-
-@example
-(regexp-search "needle" "haynEEdlehay") => #f
-(regexp-search '(w/nocase "needle") "haynEEdlehay") => #<regexp-match>
-
-(regexp-search '(~ ("Aab")) "B") => #<regexp-match>
-(regexp-search '(~ ("Aab")) "b") => #f
-(regexp-search '(w/nocase (~ ("Aab"))) "B") => #f
-(regexp-search '(w/nocase (~ ("Aab"))) "b") => #f
-(regexp-search '(~ (w/nocase ("Aab"))) "B") => #f
-(regexp-search '(~ (w/nocase ("Aab"))) "b") => #f
-@end example
-
-@item (w/case <sre> ...)
-
-Changes to match the given patterns case-sensitively. Sub-patterns can
-still be made case-insensitive. This is the default.
-
-@example
-(regexp-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall") => #<regexp-match>
-(regexp-search '(w/nocase (~ (w/case ("Aab")))) "b") => #f
-@end example
-
-@item (w/ascii <sre> ...)
-
-Limits the character sets and other predefined patterns to ASCII. This
-affects patterns or character sets like @code{any}, @code{alpha},
-@code{(word)}@dots{}
-
-@example
-(regexp-search '(w/ascii bos (* alpha) eos) "English") => #<regexp-match>
-(regexp-search '(w/ascii bos (* alpha) eos) "Ελληνική") => #f
-@end example
-
-@item (w/unicode <sre> ...)
-
-Changes the character sets and other predefined patterns back to
-Unicode if @code{w/ascii} has been used in the outer scope. This is
-the default.
-
-@example
-(regexp-search '(w/unicode bos (* alpha) eos) "English") => #<regexp-match>
-(regexp-search '(w/unicode bos (* alpha) eos) "Ελληνική") => #<regexp-match>
-@end example
-
-@item (w/nocapture <sre> ...)
-
-Disables capturing for all @code{submatch} and @code{submatch-named}
-inside.
-
-@example
-(let ((number '($ (+ digit))))
-  (cdr
-   (regexp-match->list
-    (regexp-search `(: ,number "-" ,number "-" ,number)
-                   "555-867-5309")))  ; => '("555" "867" "5309")
-  (cdr
-   (regexp-match->list
-    (regexp-search `(: ,number "-" (w/nocapture ,number) "-" ,number)
-                   "555-867-5309"))))   => '("555" "5309")
-@end example
-@end table
-
-@subsubheading Repeating patterns
-@table @code
-@item (optional <sre> ...)
-@itemx (? <sre> ...)
-
-Matches the pattern(s) one or zero times.
-
-@example
-(regexp-search '(: "match" (? "es") "!") "matches!") => #<regexp-match>
-(regexp-search '(: "match" (? "es") "!") "match!") => #<regexp-match>
-(regexp-search '(: "match" (? "es") "!") "matche!") => #f
-@end example
-
-@item (zero-or-more <sre> ...)
-@itemx (* <sre> ...)
-
-Matches the pattern(s) zero or more times.
-
-@example
-(regexp-search '(: "<" (* (~ #\>)) ">") "<html>") => #<regexp-match>
-(regexp-search '(: "<" (* (~ #\>)) ">") "<>") => #<regexp-match>
-(regexp-search '(: "<" (* (~ #\>)) ">") "<html") => #f
-@end example
-
-@item (one-or-more <sre> ...)
-@itemx (+ <sre> ...)
-
-Matches the pattern(s) at least once.
-
-@example
-(regexp-search '(: "<" (+ (~ #\>)) ">") "<html>") => #<regexp-match>
-(regexp-search '(: "<" (+ (~ #\>)) ">") "<a>") => #<regexp-match>
-(regexp-search '(: "<" (+ (~ #\>)) ">") "<>") => #f
-@end example
-
-@item (at-least n <sre> ...)
-@itemx (>= n <sre> ...)
-
-Matches the pattern(s) at least @code{n} times.
-
-@example
-(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<table>") => #<regexp-match>
-(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<pre>") => #<regexp-match>
-(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<tr>") => #f
-@end example
-
-@item (exactly n <sre> ...)
-@itemx (= n <sre> ...)
-
-Matches the pattern(s) exactly @code{n} times.
-
-@example
-(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<html>") => #<regexp-match>
-(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<table>") => #f
-@end example
-
-@item (repeated from to <sre> ...)
-@itemx (** from to <sre> ...)
-
-Matches the pattern(s) at least @code{from} times and up to @code{to}
-times.
-
-@example
-(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.168.1.10") => #<regexp-match>
-(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.0168.1.10") => #f
-@end example
-@end table
-
-@subsubheading Submatch Patterns
-@table @code
-@item (submatch <sre> ...)
-@itemx ($ <sre> ...)
-
-Captures the matched string. Each capture is numbered increasing from
-one (capture zero is the entire matched string). For nested captures,
-the numbering scheme is depth-first walk.
-
-@item (submatch-named <name> <sre> ...)
-@itemx (-> <name> <sre> ...)
-
-Captures the matched string and assigns a name to it in addition to a
-number.
-
-@item (backref <n-or-name>)
-
-Matches a previously matched submatch.
-
-@end table
-
-@subsubheading Character Sets
-
-@table @code
-@item <char>
-
-A character set contains a single character.
-
-@example
-(regexp-matches '(* #\-) "---") => #<regexp-match>
-(regexp-matches '(* #\-) "-_-") => #f
-@end example
-
-@item "<char>"
-
-A character set contains a single character. This is technically
-ambiguous with SRE matching a literal string. However the end result
-of both syntaxes is the same.
-
-@item <char-set>
-
-A SRFI-14 character set.
-
-Note that while currently there is no portable written representation
-of SRFI 14 character sets, you can use Gauche reader syntax
-@code{#[char-set-spec]}, @pxref{Character set}.
-
-@example
-(regexp-partition `(+ ,char-set:vowels) "vowels")
-  => ("v" "o" "w" "e" "ls")
-@end example
-
-@item (char-set <string>)
-@itemx (<string>)
-
-A character set contains the characters in the given string. This is
-the same as @code{`(char-set ,(string->char-set <string>))}.
-
-@example
-(regexp-matches '(* ("aeiou")) "oui") => #<regexp-match>
-(regexp-matches '(* ("aeiou")) "ouais") => #f
-(regexp-matches '(* ("e\x0301")) "e\x0301") => #<regexp-match>
-(regexp-matches '("e\x0301") "e\x0301") => #f
-(regexp-matches '("e\x0301") "e") => #<regexp-match>
-(regexp-matches '("e\x0301") "\x0301") => #<regexp-match>
-(regexp-matches '("e\x0301") "\x00E9") => #f
-@end example
-
-@item (char-range <range-spec> ...)
-@itemx (/ <range-spec> ...)
-
-A character set contains the characters within
-@code{<range-set>}. This is the equivalent of @code{[]} syntax in
-regular expressions.
-
-@example
-(regexp-matches '(* (/ "AZ09")) "R2D2") => #<regexp-match>
-(regexp-matches '(* (/ "AZ09")) "C-3PO") => #f
-@end example
-
-@item (or <cset-sre> ...)
-@itemx (|\|| <cset-sre> ...)
-
-A shorthand for @code{`(char-set ,(char-set-union <cset-sre>...))}.
-
-@item (complement <cset-sre> ...)
-@itemx (~ <cset-sre> ...)
-
-A shorthand for @code{`(char-set ,(char-set-complement <cset-sre>...))}.
-
-@item (difference <cset-sre> ...)
-@itemx (- <cset-sre> ...)
-
-A shorthand for @code{`(char-set ,(char-set-difference <cset-sre>...))}.
-
-@example
-(regexp-matches '(* (- (/ "az") ("aeiou"))) "xyzzy") => #<regexp-match>
-(regexp-matches '(* (- (/ "az") ("aeiou"))) "vowels") => #f
-@end example
-
-@item (and <cset-sre> ...)
-@itemx (& <cset-sre> ...)
-
-A shorthand for @code{`(char-set ,(char-set-intersection <cset-sre>...))}.
-
-@example
-(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "xyzzy") => #<regexp-match>
-(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "vowels") => #f
-@end example
-
-@item (w/case <cset-sre>)
-@itemx (w/nocase <cset-sre>)
-@itemx (w/ascii <cset-sre>)
-@itemx (w/unicode <cset-sre>)
-
-This is similar to the SRE equivalent, listed to indicate that they
-can also be applied on character sets.
-
-@end table
-
-@subsubheading Named Character Sets
-
-Note that if @code{w/ascii} is in effect, these character sets will
-return the ASCII subset. Otherwise they return full Unicode ones.
-
-@table @code
-@item any
-
-Matches any character. This is the @code{.} in regular expression.
-
-@item nonl
-
-Matches any character other than @code{#\return} or @code{#\newline}.
-
-@item ascii
-
-A shorthand for @code{`(char-set ,char-set:ascii)}.
-
-@item lower-case
-@itemx lower
-
-A shorthand for @code{`(char-set ,char-set:lower-case)}.
-
-@item upper-case
-@itemx upper
-
-A shorthand for @code{`(char-set ,char-set:upper-case)}.
-
-@item title-case
-@itemx title
-
-A shorthand for @code{`(char-set ,char-set:title-case)}.
-
-@item alphabetic
-@itemx alpha
-
-A shorthand for @code{`(char-set ,char-set:letter)}.
-
-@item numeric
-@itemx num
-
-A shorthand for @code{`(char-set ,char-set:digit)}.
-
-@item alphanumeric
-@itemx alphanum
-@itemx alnum
-
-A shorthand for @code{`(char-set ,char-set:letter+digit)}.
-
-@item punctuation
-@itemx punct
-
-A shorthand for @code{`(char-set ,char-set:punctuation)}.
-
-@item symbol
-
-A shorthand for @code{`(char-set ,char-set:symbol)}.
-
-@item graphic
-@itemx graph
-
-A shorthand for @code{`(char-set ,char-set:graphic)}.
-
-@example
-(or alphanumeric punctuation symbol)
-@end example
-
-
-@item whitespace
-@itemx white
-@itemx space
-
-A shorthand for @code{`(char-set ,char-set:whitespace)}.
-
-@item printing
-@itemx print
-
-A shorthand for @code{`(char-set ,char-set:printing)}.
-
-@item control
-@itemx cntrl
-
-A character set contains ASCII characters with from 0 to 31.
-
-@item hex-digit
-@itemx xdigit
-
-A shorthand for @code{`(char-set ,char-set:hex-digit)}.
-
-@end table
-
-@subsubheading Boundary Assertions
-
-@table @code
-@item bos
-@itemx eos
-
-Matches the beginning of the string. If start/end parameters are
-specified, matches the start or end of the substring as specified.
-
-@item bol
-@itemx eol
-
-Matches the beginning or end of a line (or the string). For single
-line matching, this is the same as @code{bos} and @code{eos}. A line
-is interpreted the same way with @code{read-line}.
-
-@item bow
-@itemx eow
-
-Matches the beginning or the end of a word.
-
-@example
-  (regexp-search '(: bow "foo") "foo") => #<regexp-match>
-  (regexp-search '(: bow "foo") "<foo>>") => #<regexp-match>
-  (regexp-search '(: bow "foo") "snafoo") => #f
-  (regexp-search '(: "foo" eow) "foo") => #<regexp-match>
-  (regexp-search '(: "foo" eow) "foo!") => #<regexp-match>
-  (regexp-search '(: "foo" eow) "foobar") => #f
-@end example
-
-
-@item nwb
-
-A shorthand for @code{(neg-look-ahead (or bow eow))}.
-
-@item (word <sre> ...)
-
-Matches the word boundary around the given SRE:
-
-@example
-(: bow <sre> ... eow)
-@end example
-
-
-@item (word+ <cset-sre> ...)
-
-Matches a single word composed of characters of the given characters
-sets:
-
-@example
-(word (+ (and (or alphanumeric "_") (or cset-sre ...))))
-@end example
-
-
-@item word
-
-A shorthand for @code{(word+ any)}.
-
-@end table
-
-@subsubheading Non-Greedy Patterns
-
-@table @code
-
-@item (non-greedy-optional <sre> ...)
-@itemx (?? <sre> ...)
-
-The non-greedy equivalent of @code{(optional <sre>...)}.
-
-@item (non-greedy-zero-or-more< <sre> ...)
-@itemx (*? <sre> ...)
-
-The non-greedy equivalent of @code{(zero-or-more <sre>...)}.
-
-@item (non-greedy-repeated <m> <n> <sre> ...)
-@itemx (**? <m> <n> <sre> ...)
-
-The non-greedy equivalent of @code{(repeated <sre>...)}.
-
-@end table
-
-@subsubheading Look Around Patterns
-
-@table @code
-@item (look-ahead <sre> ...)
-
-Zero-width look-ahead assertion. Asserts the sequence matches from the
-current position, without advancing the position.
-
-@example
-(regexp-matches '(: "regular" (look-ahead " expression") " expression") "regular expression")=> #<regexp-match>
-(regexp-matches '(: "regular" (look-ahead " ") "expression") "regular expression")=> #f
-@end example
-
-
-@item (look-behind <sre> ...)
-
-Zero-width look-behind assertion. Asserts the sequence matches behind
-the current position, without advancing the position. It is an error
-if the sequence does not have a fixed length.
-
-@item (neg-look-ahead <sre> ...)
-
-Zero-width negative look-ahead assertion.
-
-@item (neg-look-behind <sre> ...)
-
-Zero-width negative look-behind assertion.
-
-@end table
-
-@subheading Using regular expressions
-
-@defun regexp @var{re}
-[R7RS regex]
-@c MOD scheme.regex
-Compiles the given Scheme Regular Expression into a @code{<regexp>}
-object. If @var{re} is already a regexp object, the object is
-returned as-is.
-
-@end defun
-
-@defmac rx @var{sre} @dots{}
-[R7RS regex]
-@c MOD scheme.regex
-A macro shorthand for @code{(regexp `(: @var{sre} ...))}.
-@end defmac
-
-@defun regexp->sre @var{re}
-[R7RS regex]
-@c MOD scheme.regex
-Returns the SRE corresponding to the given given regexp object. Note
-that if the regexp object is not created from an SRE, it may contain
-features that cannot be expressed in SRE and cause an error.
-@end defun
-
-@defun char-set->sre @var{char-set}
-[R7RS regex]
-@c MOD scheme.regex
-Returns the SRE of the given character set. Currently this is not
-optimized. If you convert @code{any} to SRE for example, you may get
-an SRE listing every single character.
-@end defun
-
-@defun valid-sre? @var{obj}
-[R7RS regex]
-@c MOD scheme.regex
-Returns true iff @var{obj} can be safely passed to regexp.
-@end defun
-
-@defun regexp? @var{obj}
-[R7RS regex]
-@c MOD scheme.regex
-Returns true iff @var{obj} is a regexp.
-@end defun
-
-@defun regexp-matches @var{re} @var{str} [@var{start} [@var{end}]]
-[R7RS regex]
-@c MOD scheme.regex
-Returns an @code{<regexp-match>} object if re successfully matches the
-entire string @var{str} or optionally from @var{start} (inclusive) to
-@var{end} (exclusive), or @code{#f} is the match fails.
-
-For convenience, @var{end} accepts @code{#f} and interprets it as the
-end of the string.
-
-The regexp-match object will contain information needed to extract any
-submatches.
-@end defun
-
-@defun regexp-matches? @var{re} @var{str} [@var{start} [@var{end}]]
-[R7RS regex]
-@c MOD scheme.regex
-Similar to @code{regexp-matches} but returns @code{#t} instead of a
-@code{<regexp-match>} object.
-@end defun
-
-@defun regexp-search @var{re} @var{str} [@var{start} [@var{end}]]
-[R7RS regex]
-@c MOD scheme.regex
-Similar to @code{regexp-matches} except that @var{re} only has to
-match a substring in @var{str} instead.
-@end defun
-
-
-@defun regexp-fold @var{re} @var{kons} @var{knil} @var{str} [@var{finish} [@var{start} [@var{end}]]]
-[R7RS regex]
-@c MOD scheme.regex
-Calls the procedure @var{kons} for every match found in @var{str} with
-following four arguments:
-
-@itemize
-@item
-The position of the end of the last matched string.
-@item
-The @code{<regexp-match>} object.
-@item
-The argument @var{str}.
-@item
-The result of the last @var{kons} call or @var{knil} if this is the
-first call.
-@end itemize
-
-If @var{finish} is given, it is called after all matches with the same
-parameters as calling @var{kons} except that @code{#f} is passed
-instead of @code{<regexp-match>} and the result is returned. Otherwise
-the result of the last @var{kons} call is returned.
-
-@example
-   (regexp-fold 'word
-                (lambda (i m str acc)
-                  (let ((s (regexp-match-submatch m 0)))
-                   (cond ((assoc s acc)
-                          => (lambda (x) (set-cdr! x (+ 1 (cdr x))) acc))
-                         (else `((,s . 1) ,@@acc)))))
-                '()
-                "to be or not to be")
-   => '(("not" . 1) ("or" . 1) ("be" . 2) ("to" . 2))
-@end example
-@end defun
-
-
-@defun regexp-extract @var{re} @var{str} [@var{start} [@var{end}]]
-[R7RS regex]
-@c MOD scheme.regex
-Returns a list of matched string or an empty list if no matches.
-
-@example
-   (regexp-extract '(+ numeric) "192.168.0.1")
-   => ("192" "168" "0" "1")
-@end example
-@end defun
-
-@defun regexp-split @var{re} @var{str} [@var{start} [@var{end}]]
-[R7RS regex]
-@c MOD scheme.regex
-Returns a list of not matched substrings. This can be seen as the
-opposite of @code{regexp-extract} where the matched strings are
-removed instead of returned.
-
-@example
-   (regexp-split '(+ space) " fee fi  fo\tfum\n")
-   => ("fee" "fi" "fo" "fum")
-   (regexp-split '(",;") "a,,b,")
-   => ("a" "" "b" "")
-   (regexp-split '(* numeric) "abc123def456ghi789")
-   => ("abc" "def" "ghi" "")
-@end example
-@end defun
-
-@defun regexp-partition @var{re} @var{str} [@var{start} [@var{end}]]
-[R7RS regex]
-@c MOD scheme.regex
-Returns a list of all matched and not matched substrings. In other
-words it's the combination of @code{regexp-extract} and
-@code{regexp-split} where the boundary of matched strings are used to
-split the original string.
-
-@example
-   (regexp-partition '(+ (or space punct)) "")
-   => ("")
-   (regexp-partition '(+ (or space punct)) "Hello, world!\n")
-   => ("Hello" ", " "world" "!\n")
-   (regexp-partition '(+ (or space punct)) "¿Dónde Estás?")
-   => ("" "¿" "Dónde" " " "Estás" "?")
-   (regexp-partition '(* numeric) "abc123def456ghi789")
-   => ("abc" "123" "def" "456" "ghi" "789")
-@end example
-@end defun
-
-@defun regexp-replace @var{re} @var{str} @var{subst} [@var{start} [@var{end} [@var{count}]]
-[R7RS regex]
-@c MOD scheme.regex
-Returns a new string where the first matched substring is replaced
-with @var{subst}. If @var{count} is specified, the @var{count}-th
-match will be replaced instead of the first one.
-
-@var{subst} can be either a string (the replacement), an integer or a
-symbol to refer to the capture group that will be used as the
-replacement.
-
-The special symbols @code{pre} and @code{post} use the substring to
-the left or right of the match as replacement, respectively. But this
-is not supported yet.
-
-As a Gauche extension, @var{subst} could also be a procedure, which is
-called with the given match object and the result will be used as the
-replacement.
-
-The optional parameters @var{start} and @var{end} restrict both the
-matching and the substitution, to the given indices, such that the
-result is equivalent to omitting these parameters and replacing on
-@code{(substring str start end)}. As a convenience, a value of
-@code{#f} for end is equivalent to @code{(string-length str)}.
-
-@example
-   (regexp-replace '(+ space) "one two three" "_")
-   => "one_two three"
-   (regexp-replace '(+ space) "one two three" "_" 0 #f 0)
-   => "one_two three"
-   (regexp-replace '(+ space) "one two three" "_" 0 #f 1)
-   => "one two_three"
-   (regexp-replace '(+ space) "one two three" "_" 0 #f 2)
-   => "one two three"
-@end example
-
-Note that Gauche also has a builtin procedure of the same name, but
-works slightly differently, @pxref{Using regular expressions}.
-@end defun
-
-
-@defun regexp-replace-all @var{re} @var{str} @var{subst} [@var{start} [@var{end}]]
-[R7RS regex]
-@c MOD scheme.regex
-Returns a new string where all matches in @var{str} are replaced with
-@var{subst}. @var{subst} can also take a string, a number, a symbol or
-a procedure similar to @code{regexp-replace}.
-
-@example
-(regexp-replace-all '(+ space) "one two three" "_")
-   => "one_two_three"
-@end example
-
-Note that Gauche also has a builtin procedure of the same name, but
-works slightly differently, @pxref{Using regular expressions}.
-@end defun
-
-
-@defun regexp-match? @var{obj}
-[R7RS regex]
-@c MOD scheme.regex
-Returns true iff @var{obj} is a @code{<regexp-match>} object.
-
-@example
-(regexp-match? (regexp-matches "x" "x"))  => #t
-(regexp-match? (regexp-matches "x" "y"))  => #f
-@end example
-@end defun
-
-
-@defun regexp-match-count @var{regexp-match}
-[R7RS regex]
-@c MOD scheme.regex
-Returns the number of matches in @var{match} except the implicit zero
-full match. This is just an alias of @code{rxmatch-num-matches} minus
-one.
-
-@example
-(regexp-match-count (regexp-matches "x" "x"))  => 0
-(regexp-match-count (regexp-matches '($ "x") "x"))  => 1
-@end example
-@end defun
-
-@defun regexp-match-submatch @var{regexp-match} @var{field}
-[R7RS regex]
-@c MOD scheme.regex
-This is an alias of @code{rxmatch-substring}
-
-@example
-   (regexp-match-submatch (regexp-search 'word "**foo**") 0)  => "foo"
-   (regexp-match-submatch
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => "*foo*"
-   (regexp-match-submatch
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => "foo"
-@end example
-@end defun
-
-@defun regexp-match-submatch-start @var{regexp-match} @var{field}
-[R7RS regex]
-@c MOD scheme.regex
-This is an alias of @code{regexp-match-submatch-start}.
-
-@example
-   (regexp-match-submatch-start
-    (regexp-search 'word "**foo**") 0)  => 2
-   (regexp-match-submatch-start
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => 1
-   (regexp-match-submatch-start
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => 2
-@end example
-@end defun
-
-@defun regexp-match-submatch-end @var{regexp-match} @var{field}
-[R7RS regex]
-@c MOD scheme.regex
-This is an alias of @code{regexp-match-submatch-end}.
-
-@example
-   (regexp-match-submatch-end
-    (regexp-search 'word "**foo**") 0)  => 5
-   (regexp-match-submatch-end
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => 6
-   (regexp-match-submatch-end
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => 5
-@end example
-@end defun
-
-@defun regexp-match->list @var{regexp-match}
-[R7RS regex]
-@c MOD scheme.regex
-This is an alias of @code{rxmatch-substrings}
-
-@example
-   (regexp-match->list
-    (regexp-search '(: ($ word) (+ (or space punct)) ($ word)) "cats & dogs"))
-    => '("cats & dogs" "cats" "dogs")
-@end example
-@end defun
 
 @c Local variables:
 @c mode: texinfo
