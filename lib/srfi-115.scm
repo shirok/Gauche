@@ -176,22 +176,42 @@
                   start
                   end))))
 
+;; %regexp-replace-rec takes a substitution as either a procedure or a
+;; list of symbols, numbers and strings. Wrap single symbols or
+;; strings to a list to follow this rule
+(define (transform-sub rx sub)
+  (define (check-pre-post sub)
+    (when (and (eq? sub 'pre) (assq 'pre (regexp-named-groups rx)))
+      (error "If 'pre is used in regexp-replace, there should not be a capture group also named 'pre"))
+    (when (and (eq? sub 'post) (assq 'post (regexp-named-groups rx)))
+      (error "If 'post is used in regexp-replace, there should not be a capture group also named 'post"))
+    sub)
+
+  (cond
+   [(string? sub) (list sub)]
+   [(number? sub) (list sub)]
+   [(symbol? sub) (list (check-pre-post sub))]
+   [(list? sub) (map check-pre-post sub)]
+   [else sub]))
+
 (define (regexp-replace rx str sub :optional
                         (start 0)
                         (end #f)
                         (count 0))
-  ((with-module gauche.internal %regexp-replace)
-   (regexp rx)
-   str start end
-   (if (string? sub) (list sub) sub) count 1))
+  (let1 rx (regexp rx)
+    ((with-module gauche.internal %regexp-replace)
+     rx
+     str start end
+     (transform-sub rx sub) count 1)))
 
 (define (regexp-replace-all rx str sub :optional
                             (start 0)
                             (end #f))
-  ((with-module gauche.internal %regexp-replace)
-   (regexp rx)
-   str start end
-   (if (string? sub) (list sub) sub) 0 #f))
+  (let1 rx (regexp rx)
+    ((with-module gauche.internal %regexp-replace)
+     rx
+     str start end
+     (transform-sub rx sub) 0 #f)))
 
 (define regexp-match? regmatch?)
 (define (regexp-match-count match)

@@ -7081,11 +7081,10 @@ match will be replaced instead of the first one.
 
 @var{subst} can be either a string (the replacement), an integer or a
 symbol to refer to the capture group that will be used as the
-replacement.
+replacement, or a list of those.
 
 The special symbols @code{pre} and @code{post} use the substring to
-the left or right of the match as replacement, respectively. But this
-is not supported yet.
+the left or right of the match as replacement, respectively.
 
 As a Gauche extension, @var{subst} could also be a procedure, which is
 called with the given match object and the result will be used as the
