@@ -1970,6 +1970,12 @@
 (test* "regexp-replace"
        "  abc-  abc"
        (regexp-replace '(: ($ (+ alpha)) ":" (* space)) "  abc: " '(1 "-" pre 1)))
+(test* "regexp-replace"
+       "abcghighi"
+       (regexp-replace "def" "abcdefghi" 'post))
+(test* "regexp-replace"
+       "abcabcghi"
+       (regexp-replace "def" "abcdefghi" 'pre))
 
 (test* "regexp-replace"
        "-abc \t\n d ef  "
