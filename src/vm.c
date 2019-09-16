@@ -2498,6 +2498,14 @@ static ScmObj partcont_wrapper(ScmObj *argframe,
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
 
+    /* check reset-chain to avoid the wrong return from partial
+       continuation */
+    if (!SCM_PAIRP(ep->resetChain)) {
+        Scm_Error("reset missing.");
+    }
+
+    /* capture the dynamic handlers chain before calling partial
+       continuation */
     ScmObj k_handlers = vm->handlers;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
@@ -2574,8 +2582,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
          cp = c, c = c->prev)
         /*empty*/;
 
-    /* cut the dynamic chain
-       (make the end of partial continuation) */
+    /* cut the dynamic chain to make the end of partial continuation */
     if (cp) cp->prev = NULL; 
 
     /* save the continuation of reset */
@@ -2596,10 +2603,11 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
 
+    /* get the dynamic handlers chain saved on reset */
     ScmObj reset_handlers = (SCM_PAIRP(vm->resetChain)?
                              SCM_CDAR(vm->resetChain) : SCM_NIL);
 
-    /* cut dynamic handlers chain for reset/shift */
+    /* cut the dynamic handlers chain from current to reset */
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
     SCM_FOR_EACH(p, ep->handlers) {
         if (p == reset_handlers) break;
@@ -2632,8 +2640,8 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     return Scm_VMApply1(proc, contproc);
 }
 
-/* workaround for memory leak of reset-chain
-   (don't allow GC to follow the inner pointers of data) */
+/* workaround for memory leak of reset-chain.
+   NB: this function doesn't allow GC to follow the inner pointers of data. */
 static ScmObj dummy_cons(ScmObj car, ScmObj cdr)
 {
     ScmPair *z = SCM_NEW_ATOMIC(ScmPair);
@@ -2646,8 +2654,8 @@ ScmObj Scm_VMReset(ScmObj proc)
 {
     ScmVM *vm = theVM;
 
-    /* push/pop reset-chain for reset/shift */
-    /* (dummy_cons allocates the area to save the continuation of reset) */
+    /* push/pop reset-chain for reset/shift.
+       NB: dummy_cons allocates the area to save the continuation of reset. */
     vm->resetChain = Scm_Cons(Scm_Cons(dummy_cons(NULL, SCM_FALSE),
                                        vm->handlers),
                               vm->resetChain);
@@ -3124,7 +3132,7 @@ void Scm_VMDump(ScmVM *vm)
         ep = ep->prev;
     }
     Scm_Printf(out, "dynenv: %S\n", vm->handlers);
-    Scm_Printf(out, "reset-chain: %S\n", vm->resetChain);
+    Scm_Printf(out, "reset-chain-length: %d\n", (int)Scm_Length(vm->resetChain));
     if (vm->base) {
         Scm_Printf(out, "Code:\n");
         Scm_CompiledCodeDump(vm->base);
