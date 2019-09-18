@@ -1,3 +1,11 @@
+2019-09-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/gen-unicode.scm: Enhance char-set:digit and
+	  SCM_CHAR_SET_DIGIT to include all Unicode Nd characters.
+	  Add char-set:ascii-digit to cover the original range. "\d" in
+	  regexp and char-set means ascii-digit for the backward compatibility.
+	  By @pclouds, https://github.com/shirok/Gauche/pull/525
+
 2019-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/parser/peg.scm ($parameterize): Added, based on the suggestion
