@@ -1421,12 +1421,9 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
    (You can find the code that determines the exact membership of these
    sets in src/gen-unicode.scm (build-code-sets)).
 
-   This is mostly for the backward compatibility of \d, \s and \w of
+   This is for the backward compatibility of \d, \s and \w of
    the regexp.  Those have been extensively used for input validation
    and changing them can have unexpected consequences.
-
-   The current plan is to retain \d, \s and \w in regexp by adding
-   ASCII_DIGIT class etc, and extend DIGIT etc. to Unicode range.
  */
 
 ScmObj Scm_GetStandardCharSet(int id)
