@@ -1045,11 +1045,11 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                     goto ordchar;
                 case 'd':
                     moreset_complement = FALSE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
+                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
                     break;
                 case 'D':
                     moreset_complement = TRUE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
+                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
                     break;
                 case 's':
                     moreset_complement = FALSE;
@@ -1197,7 +1197,7 @@ ScmObj read_predef_charset(const char **cp, int error_p)
         } else if (strncmp(name, ":cntrl:", 7) == 0) {
             return Scm_GetStandardCharSet(SCM_CHAR_SET_ISO_CONTROL);
         } else if (strncmp(name, ":digit:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
         } else if (strncmp(name, ":graph:", 7) == 0) {
             return Scm_GetStandardCharSet(SCM_CHAR_SET_GRAPHIC);
         } else if (strncmp(name, ":lower:", 7) == 0) {
@@ -1417,7 +1417,7 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
  */
 
 /* NB: The predefined character sets covers full Unicode range,
-   except DIGIT, LETTER_DIGIT, HEX_DIGIT, WHITESPACE, BLANK and WORD.
+   except ASCII_DIGIT, HEX_DIGIT, WHITESPACE, BLANK and WORD.
    (You can find the code that determines the exact membership of these
    sets in src/gen-unicode.scm (build-code-sets)).
 
@@ -1444,6 +1444,7 @@ void Scm__InitChar(void)
     predef_sets[SCM_CHAR_SET_LOWER] = predef_sets[SCM_CHAR_SET_Ll];
     predef_sets[SCM_CHAR_SET_UPPER] = predef_sets[SCM_CHAR_SET_Lu];
     predef_sets[SCM_CHAR_SET_TITLE] = predef_sets[SCM_CHAR_SET_Lt];
+    predef_sets[SCM_CHAR_SET_DIGIT] = predef_sets[SCM_CHAR_SET_Nd];
     predef_sets[SCM_CHAR_SET_ISO_CONTROL] = predef_sets[SCM_CHAR_SET_Cc];
     predef_sets[SCM_CHAR_SET_FULL] = Scm_CharSetComplement(make_charset());
     
@@ -1486,6 +1487,7 @@ void Scm__InitChar(void)
     DEFCS("title-case", TITLE);
     DEFCS("letter", LETTER);
     DEFCS("digit", DIGIT);
+    DEFCS("ascii-digit", ASCII_DIGIT);
     DEFCS("letter+digit", LETTER_DIGIT);
     DEFCS("graphic", GRAPHIC);
     DEFCS("printing", PRINTING);
