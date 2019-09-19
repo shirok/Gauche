@@ -4152,15 +4152,24 @@ They do provide hash functions.
 @c EN
 Implements character set library, originally defined as SRFI-14.
 Note that the following
-character-set procedures are Gauche's build-in.  @xref{Character set}.
+character-set procedures and pre-defined charsets are Gauche's build-in.  
+@xref{Character set}.
 @c JP
 文字集合ライブラリを実装します。元はSRFI-14で定義されたものです。
-以下の文字集合手続きはGauche組み込みになっているので、@ref{Character set}を参照してください。
+以下の文字集合手続きと定義済み文字セットはGauche組み込みになっているので、
+@ref{Character set}を参照してください。
 @c COMMON
 
 @example
-char-set char-set? char-set-contains? char-set-copy
-char-set-complement char-set-complement!
+char-set             char-set?            char-set-contains?
+char-set-copy        char-set-complement  char-set-complement!
+
+char-set:lower-case  char-set:upper-case  char-set:title-case
+char-set:letter      char-set:digit       char-set:letter+digit
+char-set:graphic     char-set:printing    char-set:whitespace
+char-set:iso-control char-set:punctuation char-set:symbol
+char-set:hex-digit   char-set:blank       char-set:ascii
+char-set:empty       char-set:full
 @end example
 
 @c EN
@@ -4181,7 +4190,6 @@ Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 * Character-set iteration::
 * Character-set query::
 * Character-set algebra::
-* Predefined character-set::
 @end menu
 
 @node Character-set constructors, Character-set comparison, R7RS character sets, R7RS character sets
@@ -4452,7 +4460,7 @@ Be careful to apply this on a large char set.
 @end defun
 
 
-@node Character-set algebra, Predefined character-set, Character-set query, R7RS character sets
+@node Character-set algebra,  , Character-set query, R7RS character sets
 @subsubsection Character-set algebra
 @c NODE 文字セットに適用できる代数的関数
 
@@ -4504,83 +4512,6 @@ Returns a character set that adds @var{char1} @dots{} to
 @c MOD scheme.charset
 @end defun
 
-
-
-@node Predefined character-set,  , Character-set algebra, R7RS character sets
-@subsubsection Predefined character-set
-@c NODE 定義済みの文字セット
-
-@defvar char-set:letter
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:blank
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:iso-control
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:digit
-@defvarx char-set:ascii-digit
-@defvarx char-set:hex-digit
-@defvarx char-set:letter+digit
-[R7RS charset]
-@c MOD scheme.charset
-@code{char-set:ascii-digit} is Gauche extension that covers only ASCII
-digits.
-@end defvar
-
-@defvar char-set:graphic
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:lower-case
-@defvarx char-set:upper-case
-@defvarx char-set:title-case
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:printing
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:punctuation
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:whitespace
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:symbol
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:ascii
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:empty
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
-
-@defvar char-set:full
-[R7RS charset]
-@c MOD scheme.charset
-@end defvar
 
 @node R7RS hash tables, R7RS immutable deques, R7RS character sets, R7RS large
 @subsection @code{scheme.hash-table} - R7RS hash tables

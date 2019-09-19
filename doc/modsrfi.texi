@@ -1353,7 +1353,7 @@ Splits the string @var{s} into a list of substrings,
 where each substring is a maximal non-empty contiguous
 sequence of characters from the character set @var{token-set}.
 The default of @var{token-set} is @code{char-set:graphic}
-(@pxref{Predefined character-set}).
+(@pxref{Character set}).
 
 See also Gauche's built-in @code{string-split} (@pxref{String utilities}),
 which provides similar features but different criteria.
@@ -1362,7 +1362,7 @@ which provides similar features but different criteria.
 構成される、空でない最大限連続した文字のシーケンスのそれぞれを
 要素とするリストを返します。
 @var{token-set} のデフォルト値は @code{char-set:graphic}
-(@ref{Predefined character-set}参照)。
+(@ref{Character set}参照)。
 
 同様の機能を提供する、しかし異なる基準を持つ、Gauche の組み込み手続き
 @code{string-split} (@ref{String utilities} 参照) も見て下さい。

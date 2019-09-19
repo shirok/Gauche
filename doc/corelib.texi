@@ -7592,6 +7592,12 @@ Gaucheは文字集合オブジェクトのサポートと、
 @c COMMON
 @end deftp
 
+@c EN
+@subheading Char-set literal
+@c JP
+@subheading 文字セットリテラル
+@c COMMON
+
 @deftp {Reader Syntax} @code{#[@i{char-set-spec}]}
 @lxindex #[
 @c EN
@@ -7613,7 +7619,8 @@ This is a legacy Gauche syntax, for a unicode character
 whose Unicode codepoint is represented by 4-digit and 8-digit hexadecimal
 numbers, respectively.  
 @item \s
-Whitespace characters.
+Whitespace characters
+(space, newline, tab, form feed, vertical tab, carrige return).
 @item \S
 Complement of whitespace characters.
 @item \d
@@ -7621,8 +7628,7 @@ Decimal digit characters.
 @item \D
 Complement of decimal digit characters.
 @item \w
-Word constituent characters.  Currently, it is alphanumeric characters
-and underscore.
+Word constituent characters (@code{#[A-Za-z0-9_]}).
 @item \W
 Complement of word constituent characters.
 @item \\
@@ -7660,7 +7666,7 @@ recognized: @code{alnum}, @code{alpha}, @code{blank}, @code{cntrl},
 @item \x@var{N};
 Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item \s
-空白文字。
+空白文字(space, newline, tab, form feed, vertical tab, carrige return)
 @item \S
 空白でない文字。(@code{\s}の補集合)
 @item \d
@@ -7668,7 +7674,7 @@ Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item \D
 @code{\d}の補集合
 @item \w
-単語を構成する文字の集合(アルファベット、数字、アンダースコア)
+単語を構成する文字の集合(@code{#[A-Za-z0-9_]})
 @item \W
 @code{\W}の補集合
 @item \\
@@ -7735,6 +7741,159 @@ To write code that can work both in new and old syntax, use @code{\u} escape.
 使ってください。
 @c COMMON
 @end deftp
+
+
+@c EN
+@subheading Predefined char-sets
+@c JP
+@subheading 定義済み文字セット
+@c COMMON
+
+We provide a bunch of predefined character sets, including the ones
+defined in R7RS charset library (@pxref{R7RS character sets}).
+Those character sets are immutable.
+
+@defvar char-set:letter
+[R7RS charset]
+Letters (Unicode general category @code{Lu}, @code{Ll}, @code{Lt},
+@code{Lm} and @code{Lo}).
+@end defvar
+
+
+@defvar char-set:lower-case
+@defvarx char-set:upper-case
+@defvarx char-set:title-case
+[R7RS charset]
+Lower case, upper case and title case letters
+(Unicode general category @code{Ll}, @code{Lu} and @code{Lt}, respectively).
+@end defvar
+
+@defvar char-set:digit
+[R7RS charset]
+Digit characters (Unicode general category @code{Nd}).  Note that this
+contains many more characters than ASCII @code{0} to @code{9}.  If you
+need @code{#[0-9]}, use @code{char-set:ascii-digit}.
+@end defvar
+
+@defvar char-set:hex-digit
+[R7RS charset]
+Digit characters used for hexadecimal, i.e. @code{#[0-9A-Fa-f]}.  This does
+not contain other Unicode digit characters, for it isn't practical
+to mix non-ascii digit characters with hexadecimal notation.
+@end defvar
+
+@defvar char-set:letter+digit
+@defvarx char-set:graphic
+@defvarx char-set:printing
+[R7RS charset]
+@end defvar
+
+@defvar char-set:whitespace
+@defvarx char-set:blank
+[R7RS charset]
+Whitespace and blank characters; @code{char-set:whitespace}
+includes @code{#\tab}, @code{#\newline}, @code{#\u000B} (vertical tab),
+@code{#\page}, @code{#\return}, and all characters in general category
+@code{Zs}, @code{Zl}, @code{Zp}, while @code{char-set:blank}
+includes @code{#\tab} and all characters in general category @code{Zs}.
+Note that @code{char-set:whitespace} is the same set of characters
+that Scheme reader treats as whitespace characters.
+@end defvar
+
+@defvar char-set:iso-control
+[R7RS charset]
+Control characters (Unicode general category @code{Cc}).
+@end defvar
+
+
+@defvar char-set:punctuation
+[R7RS charset]
+Punctuation characters (Unicode general category
+@code{Pc}, @code{Pd}, @code{Ps}, @code{Pe}, @code{Pi}, @code{Pf}
+and @code{Po}).
+@end defvar
+
+@defvar char-set:symbol
+[R7RS charset]
+Symbol characters (Unicode general category @code{Sm}, @code{Sc},
+@code{Sk} and @code{So}).
+@end defvar
+
+@defvar char-set:ascii
+[R7RS charset]
+Contains all ASCII characters (U+0000 to U+007f).
+@end defvar
+
+@defvar char-set:empty
+[R7RS charset]
+An empty character set.
+@end defvar
+
+@defvar char-set:full
+[R7RS charset]
+A character set that includes all characters.
+@end defvar
+
+@defvar char-set:ascii-letter
+@defvarx char-set:ascii-digit
+@defvarx char-set:ascii-whitespace
+@defvarx char-set:ascii-blank
+These are intersection of @code{char-set:ascii} and
+one of @code{char-set:letter}, @code{char-set:digit},
+@code{char-set:whitespace} and @code{char-set:blank}, respectively.
+
+The @code{\d} and @code{\s} notation in the char-set literal and regexp
+literal corresponds to @code{char-set:ascii-digit} and
+@code{char-set:ascii-whitespace}, respectively (not the unicode set).
+@end defvar
+
+@defvar char-set:word
+This is a set corresponds to @code{\w} in the chara-set literal and
+regexp literal, and equivalent to @code{#[0-9A-Za-z_]}.
+This doesn't include any non-ascii characters.
+@end defvar
+
+@defvar char-set:Lu
+@defvarx char-set:Ll
+@defvarx char-set:Lt
+@defvarx char-set:Lm
+@defvarx char-set:Lo
+@defvarx char-set:Mn
+@defvarx char-set:Mc
+@defvarx char-set:Me
+@defvarx char-set:Nd
+@defvarx char-set:Nl
+@defvarx char-set:No
+@defvarx char-set:Pc
+@defvarx char-set:Pd
+@defvarx char-set:Ps
+@defvarx char-set:Pe
+@defvarx char-set:Pi
+@defvarx char-set:Pf
+@defvarx char-set:Po
+@defvarx char-set:Sm
+@defvarx char-set:Sc
+@defvarx char-set:Sk
+@defvarx char-set:So
+@defvarx char-set:Zs
+@defvarx char-set:Zl
+@defvarx char-set:Zp
+@defvarx char-set:Cc
+@defvarx char-set:Cf
+@defvarx char-set:Cs
+@defvarx char-set:Co
+@defvarx char-set:Cn
+Each character set contains the corresponding Unicode characters with
+the given general category; e.g. @code{char-set:Lu} contains all characters
+of the general category @code{Lu}.
+@end defvar
+
+
+@c EN
+@subheading Char-set operations
+@c JP
+@subheading 文字セットの操作
+@c COMMON
 
 @defun char-set? obj
 [SRFI-14]
