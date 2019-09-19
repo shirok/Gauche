@@ -80,17 +80,20 @@ enum {
     SCM_CHAR_SET_UPPER,         /* Lu */
     SCM_CHAR_SET_TITLE,         /* Lt */
     SCM_CHAR_SET_LETTER,        /* Lu|Ll|Lt|Lm|Lo */
+    SCM_CHAR_SET_ASCII_LETTER,  /* intersection(LETTER, ASCII) == A-Za-z */
     SCM_CHAR_SET_DIGIT,         /* Nd */
     SCM_CHAR_SET_ASCII_DIGIT,   /* [0-9] */
     SCM_CHAR_SET_LETTER_DIGIT,  /* L*|Nd */
     SCM_CHAR_SET_GRAPHIC,       /* L*|N*|P*|S* */
     SCM_CHAR_SET_PRINTING,      /* L*|N*|P*|S*|Z* */
     SCM_CHAR_SET_WHITESPACE,    /* Z*|\u0009-\u000d */
+    SCM_CHAR_SET_ASCII_WHITESPACE, /* \u0020, \u0009-\u000d */
     SCM_CHAR_SET_ISO_CONTROL,   /* Cc */
     SCM_CHAR_SET_PUNCTUATION,   /* P* */
     SCM_CHAR_SET_SYMBOL,        /* S* */
     SCM_CHAR_SET_HEX_DIGIT,     /* 0-9A-Fa-f */
     SCM_CHAR_SET_BLANK,         /* Zs|\u0009 */
+    SCM_CHAR_SET_ASCII_BLANK,   /* \u0020,\u0009 */
     SCM_CHAR_SET_ASCII,         /* \u0000-\u007f */
     SCM_CHAR_SET_EMPTY,
     SCM_CHAR_SET_FULL,

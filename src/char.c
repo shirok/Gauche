@@ -1053,11 +1053,11 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                     break;
                 case 's':
                     moreset_complement = FALSE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
+                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WHITESPACE);
                     break;
                 case 'S':
                     moreset_complement = TRUE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
+                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WHITESPACE);
                     break;
                 case 'w':
                     moreset_complement = FALSE;
@@ -1483,17 +1483,20 @@ void Scm__InitChar(void)
     DEFCS("upper-case", UPPER);
     DEFCS("title-case", TITLE);
     DEFCS("letter", LETTER);
+    DEFCS("ascii-letter", ASCII_LETTER);
     DEFCS("digit", DIGIT);
     DEFCS("ascii-digit", ASCII_DIGIT);
     DEFCS("letter+digit", LETTER_DIGIT);
     DEFCS("graphic", GRAPHIC);
     DEFCS("printing", PRINTING);
     DEFCS("whitespace", WHITESPACE);
+    DEFCS("ascii-whitespace", ASCII_WHITESPACE);
     DEFCS("iso-control", ISO_CONTROL);
     DEFCS("punctuation", PUNCTUATION);
     DEFCS("symbol", SYMBOL);
     DEFCS("hex-digit", HEX_DIGIT);
     DEFCS("blank", BLANK);
+    DEFCS("ascii-blank", ASCII_BLANK);
     DEFCS("ascii", ASCII);
     DEFCS("empty", EMPTY);
     DEFCS("full", FULL);

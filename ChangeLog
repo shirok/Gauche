@@ -1,3 +1,10 @@
+2019-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/gen-unicode.scm: Also enhance char-set:whitespace
+	  and char-set:blank to full Unicode range.  For the backward
+	  compatibility, char-set:ascii-whitespace and char-set:ascii-blank
+	  is also defined.  \s means char-set:ascii-whitespace.
+
 2019-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c, src/gen-unicode.scm: Enhance char-set:digit and

@@ -407,8 +407,9 @@
   ;; bind predefined charset
   (print "static void init_predefined_charsets() {")
   (dolist [cat (append (ucd-general-categories)
-                       '(LETTER ASCII_DIGIT LETTER_DIGIT GRAPHIC PRINTING
-                         WHITESPACE BLANK PUNCTUATION SYMBOL HEX_DIGIT
+                       '(LETTER ASCII_LETTER ASCII_DIGIT LETTER_DIGIT 
+                         GRAPHIC PRINTING PUNCTUATION SYMBOL HEX_DIGIT
+                         WHITESPACE ASCII_WHITESPACE BLANK ASCII_BLANK
                          ASCII EMPTY WORD))]
     (print #"  predef_sets[SCM_CHAR_SET_~|cat|] =")
     (print #"      make_charset_~|cat|();"))
@@ -626,6 +627,14 @@
                                    (hash-table-ref sets 'Lt)
                                    (hash-table-ref sets 'Lm)
                                    (hash-table-ref sets 'Lo)))
+  (hash-table-put! sets 'ASCII_LETTER
+                   (rlet1 cs (make <char-code-set> :name 'ASCII_LETTER)
+                     (add-code-range! cs 
+                                      (char->integer #\A)
+                                      (char->integer #\Z))
+                     (add-code-range! cs 
+                                      (char->integer #\a)
+                                      (char->integer #\z))))
   (hash-table-put! sets 'ASCII_DIGIT
                    (rlet1 cs (make <char-code-set> :name 'ASCII_DIGIT)
                      (add-code-range! cs 
@@ -635,14 +644,24 @@
                    (code-set-union 'LETTER_DIGIT
                                    (hash-table-ref sets 'LETTER)
                                    (hash-table-ref sets 'Nd)))
-  (hash-table-put! sets 'WHITESPACE
-                   (rlet1 cs (make <char-code-set> :name 'WHITESPACE)
+  (hash-table-put! sets 'ASCII_WHITESPACE
+                   (rlet1 cs (make <char-code-set> :name 'ASCII_WHITESPACE)
                      (add-code-range! cs 9 13) ;TAB,LF,LTAB,FF,CR
                      (add-code! cs (char->integer #\space))))
-  (hash-table-put! sets 'BLANK
-                   (rlet1 cs (make <char-code-set> :name 'BLANK)
+  (hash-table-put! sets 'WHITESPACE
+                   (code-set-union 'WHITESPACE
+                                   (hash-table-ref sets 'ASCII_WHITESPACE)
+                                   (hash-table-ref sets 'Zs)
+                                   (hash-table-ref sets 'Zl)
+                                   (hash-table-ref sets 'Zp)))
+  (hash-table-put! sets 'ASCII_BLANK
+                   (rlet1 cs (make <char-code-set> :name 'ASCII_BLANK)
                      (add-code! cs 9) ;TAB
                      (add-code! cs (char->integer #\space))))
+  (hash-table-put! sets 'BLANK
+                   (code-set-union 'BLANK
+                                   (hash-table-ref sets 'ASCII_BLANK)
+                                   (hash-table-ref sets 'Zs)))
   (hash-table-put! sets 'PUNCTUATION
                    (code-set-union 'PUNCTUATION
                                    (hash-table-ref sets 'Pc)
