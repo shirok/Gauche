@@ -7621,14 +7621,17 @@ numbers, respectively.
 @item \s
 Whitespace characters
 (space, newline, tab, form feed, vertical tab, carrige return).
+Members of @code{char-set:ascii-whitespace} (@pxref{Character set}).
 @item \S
 Complement of whitespace characters.
 @item \d
-Decimal digit characters.
+Decimal digit characters.  Members of
+@code{char-set:ascii-digits} (@pxref{Character set}).
 @item \D
 Complement of decimal digit characters.
 @item \w
 Word constituent characters (@code{#[A-Za-z0-9_]}).
+Members of @code{char-set:word} (@pxref{Character set}).
 @item \W
 Complement of word constituent characters.
 @item \\
@@ -7666,15 +7669,21 @@ recognized: @code{alnum}, @code{alpha}, @code{blank}, @code{cntrl},
 @item \x@var{N};
 Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item \s
-空白文字(space, newline, tab, form feed, vertical tab, carrige return)
+空白文字(space, newline, tab, form feed, vertical tab, carrige return).
+文字セット@code{char-set:ascii-whitespace}の要素
+(@ref{Character set}参照)。
 @item \S
 空白でない文字。(@code{\s}の補集合)
 @item \d
-10進数の数字
+10進数の数字。
+文字セット@code{char-set:ascii-digit}の要素
+(@ref{Character set}参照)。
 @item \D
 @code{\d}の補集合
 @item \w
-単語を構成する文字の集合(@code{#[A-Za-z0-9_]})
+単語を構成する文字の集合(@code{#[A-Za-z0-9_]})。
+文字セット@code{char-set:word}の要素
+(@ref{Character set}参照)。
 @item \W
 @code{\W}の補集合
 @item \\
@@ -9762,16 +9771,20 @@ Matches any of the character set specified by @i{char-set-spec}.
 
 @item \s, \d, \w
 @c EN
-Matches a whitespace character (@code{#[[:space:]]}),
-a digit character (@code{#[[:digit:]]}), or
-a word-constituent character (@code{#[[:alpha:][:digit:]_]}),
+Matches a whitespace character (@code{char-set:ascii-whitespace}, 
+@code{#[\u0009-\u000d ]}),
+a digit character(@code{char-set:ascii-digit}, @code{#[0-9])}, or
+a word-constituent character (@code{char-set:word}, @code{#[A-Za-z0-9_]}),
 respectively.
+Note that they don't include characters outside ASCII range.
 
 Can be used both inside and outside of character set.
 @c JP
-それぞれ空白文字(@code{#[[:space:]]})、
-数字(@code{#[[:digit:]]})、
-単語を構成する文字(@code{#[[:alpha:][:digit:]_]})にマッチします。
+それぞれ空白文字(@code{char-set:ascii-whitespace}, 
+@code{#[\u0009-\u000d ]})、
+数字(@code{char-set:ascii-digit}, @code{#[0-9])}、
+単語を構成する文字(@code{char-set:word}, @code{#[A-Za-z0-9_]})にマッチします。
+ASCIIの外の文字は含まれないことに注意してください。
 
 文字セット内でも、その外でも使えます。
 @c COMMON
