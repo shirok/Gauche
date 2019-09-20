@@ -1268,7 +1268,7 @@ gosh> (call-with-input-file "src/Info.plist" (cut ssax:xml->sxml <> '()))
 (*TOP*
  (*PI* xml "version=\"1.0\" encoding=\"UTF-8\"")
  (plist
-  (|@| (version "1.0"))
+  (|@@| (version "1.0"))
   (dict (key "CFBundleDevelopmentRegion") (string "English")
    (key "CFBundleExecutable") (string "Gauche") (key "CFBundleIconFile")
    (string) (key "CFBundleIdentifier") (string "com.schemearts.gauche")
