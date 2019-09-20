@@ -934,6 +934,19 @@ void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
     SCM_PUTZ("Stack Trace:\n", -1, port);
     SCM_PUTZ("_______________________________________\n", -1, port);
     Scm_ShowStackTrace(port, stack, 0, 0, 0, 0);
+
+    /* display additional stack trace */
+    if (vm->errorCont) {
+        ScmContFrame *vmcont = vm->cont;
+        vm->cont = vm->errorCont;
+        ScmObj stack2 = Scm_VMGetStackLite(vm);
+        SCM_PUTZ("Stack Trace on Error:\n", -1, port);
+        SCM_PUTZ("_______________________________________\n", -1, port);
+        Scm_ShowStackTrace(port, stack2, 0, 0, 0, 0);
+        vm->cont = vmcont;
+        vm->errorCont = NULL;
+    }
+
     if (vm->callTrace) {
         ScmObj trace = Scm_VMGetCallTraceLite(vm);
         SCM_PUTZ("Call Trace:\n", -1, port);

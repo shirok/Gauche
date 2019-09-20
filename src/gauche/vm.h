@@ -513,6 +513,9 @@ struct ScmVMRec {
                                    it per thread.
                                  */
 
+    /* for additional stack trace */
+    ScmContFrame *errorCont;    /* saved continuation when error occurs */
+
     /* Program information */
     int    evalSituation;       /* eval situation (related to eval-when) */
 
