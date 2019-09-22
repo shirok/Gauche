@@ -937,7 +937,7 @@ void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
 
     /* display additional stack trace */
     if (vm->errorCont) {
-        ScmContFrame    *vmcont = vm->cont;
+        ScmContFrame *vmcont = vm->cont;
         ScmCompiledCode *vmbase = vm->base;
         vm->cont = vm->errorCont;
         vm->base = NULL;
@@ -947,6 +947,7 @@ void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
         Scm_ShowStackTrace(port, stack2, 0, 0, 0, 0);
         vm->cont = vmcont;
         vm->base = vmbase;
+        /* reset information for additional stack trace */
         vm->errorCont = NULL;
     }
 

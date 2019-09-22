@@ -1692,7 +1692,7 @@ static ScmObj safe_eval_handler(ScmObj *args,
     SCM_ASSERT(nargs == 1);
     ((struct eval_packet_rec *)data)->exception = args[0];
 
-    /* save continuation for additional stack trace */
+    /* save information for additional stack trace */
     if (vm->errorCont == NULL) {
         save_cont(vm);
         vm->errorCont = vm->cont;
@@ -1743,7 +1743,7 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
     epak.cstr = cstr;
     epak.exception = SCM_UNBOUND;
 
-    /* reset continuation for additional stack trace */
+    /* reset information for additional stack trace */
     vm->errorCont = NULL;
 
     ScmObj proc = Scm_MakeSubr(safe_eval_int, &epak, 0, 0, SCM_FALSE);
