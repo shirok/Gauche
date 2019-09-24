@@ -293,6 +293,41 @@
   ]
  [else])
 
+;; predefined charsets
+;; here we just see if all of them are indeed charsets.
+(test* "predefined-charsets" #t
+       (every char-set?
+              (list char-set:lower-case
+                    char-set:ascii-lower-case
+                    char-set:upper-case
+                    char-set:ascii-upper-case
+                    char-set:title-case
+                    char-set:letter
+                    char-set:ascii-letter
+                    char-set:digit
+                    char-set:ascii-digit
+                    char-set:letter+digit
+                    char-set:ascii-letter+digit
+                    char-set:graphic
+                    char-set:ascii-graphic
+                    char-set:printing
+                    char-set:ascii-printing
+                    char-set:whitespace
+                    char-set:ascii-whitespace
+                    char-set:iso-control
+                    char-set:ascii-iso-control
+                    char-set:punctuation
+                    char-set:ascii-punctuation
+                    char-set:symbol
+                    char-set:ascii-symbol
+                    char-set:hex-digit
+                    char-set:blank
+                    char-set:ascii-blank
+                    char-set:ascii
+                    char-set:empty
+                    char-set:full
+                    char-set:word
+                    char-set:ascii-word)))
 
 (test-end)
 

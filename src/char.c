@@ -1171,8 +1171,7 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
 
 
 /* Read posix [:alpha:] etc.  The first '[' is already read.
-   Return #f on error if errorp is FALSE.
-   Set reverse list of read chars in *chars */
+   Return #f on error if errorp is FALSE. */
 #define MAX_CHARSET_NAME_LEN  10
 ScmObj read_predef_charset(const char **cp, int error_p)
 {
@@ -1480,24 +1479,34 @@ void Scm__InitChar(void)
     DEFCS("Cn", Cn);
 
     DEFCS("lower-case", LOWER);
+    DEFCS("ascii-lower-case", ASCII_LOWER);
     DEFCS("upper-case", UPPER);
+    DEFCS("ascii-upper-case", ASCII_UPPER);
     DEFCS("title-case", TITLE);
     DEFCS("letter", LETTER);
     DEFCS("ascii-letter", ASCII_LETTER);
     DEFCS("digit", DIGIT);
     DEFCS("ascii-digit", ASCII_DIGIT);
     DEFCS("letter+digit", LETTER_DIGIT);
+    DEFCS("ascii-letter+digit", ASCII_LETTER_DIGIT);
     DEFCS("graphic", GRAPHIC);
+    DEFCS("ascii-graphic", ASCII_GRAPHIC);
     DEFCS("printing", PRINTING);
+    DEFCS("ascii-printing", ASCII_PRINTING);
     DEFCS("whitespace", WHITESPACE);
     DEFCS("ascii-whitespace", ASCII_WHITESPACE);
     DEFCS("iso-control", ISO_CONTROL);
+    DEFCS("ascii-iso-control", ASCII_ISO_CONTROL);
     DEFCS("punctuation", PUNCTUATION);
+    DEFCS("ascii-punctuation", ASCII_PUNCTUATION);
     DEFCS("symbol", SYMBOL);
+    DEFCS("ascii-symbol", ASCII_SYMBOL);
     DEFCS("hex-digit", HEX_DIGIT);
     DEFCS("blank", BLANK);
     DEFCS("ascii-blank", ASCII_BLANK);
     DEFCS("ascii", ASCII);
+    DEFCS("word", WORD);
+    DEFCS("ascii-word", ASCII_WORD);
     DEFCS("empty", EMPTY);
     DEFCS("full", FULL);
 

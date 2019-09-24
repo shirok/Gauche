@@ -1,3 +1,9 @@
+2019-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-unicode.scm, src/char.c: Add ascii-* counterparts to
+	  all predefined charsets (except when it doesn't make sense),
+	  for the consistency.
+
 2019-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c, src/gen-unicode.scm: Also enhance char-set:whitespace

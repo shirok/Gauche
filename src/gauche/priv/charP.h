@@ -77,20 +77,28 @@ enum {
     SCM_CHAR_SET_Cn,            /* Other, not assigned */
     /* SRFI-14 sets */
     SCM_CHAR_SET_LOWER,         /* Ll */
+    SCM_CHAR_SET_ASCII_LOWER,
     SCM_CHAR_SET_UPPER,         /* Lu */
+    SCM_CHAR_SET_ASCII_UPPER,
     SCM_CHAR_SET_TITLE,         /* Lt */
     SCM_CHAR_SET_LETTER,        /* Lu|Ll|Lt|Lm|Lo */
     SCM_CHAR_SET_ASCII_LETTER,  /* intersection(LETTER, ASCII) == A-Za-z */
     SCM_CHAR_SET_DIGIT,         /* Nd */
     SCM_CHAR_SET_ASCII_DIGIT,   /* [0-9] */
     SCM_CHAR_SET_LETTER_DIGIT,  /* L*|Nd */
+    SCM_CHAR_SET_ASCII_LETTER_DIGIT,
     SCM_CHAR_SET_GRAPHIC,       /* L*|N*|P*|S* */
+    SCM_CHAR_SET_ASCII_GRAPHIC,
     SCM_CHAR_SET_PRINTING,      /* L*|N*|P*|S*|Z* */
+    SCM_CHAR_SET_ASCII_PRINTING,
     SCM_CHAR_SET_WHITESPACE,    /* Z*|\u0009-\u000d */
     SCM_CHAR_SET_ASCII_WHITESPACE, /* \u0020, \u0009-\u000d */
     SCM_CHAR_SET_ISO_CONTROL,   /* Cc */
+    SCM_CHAR_SET_ASCII_ISO_CONTROL,
     SCM_CHAR_SET_PUNCTUATION,   /* P* */
+    SCM_CHAR_SET_ASCII_PUNCTUATION,
     SCM_CHAR_SET_SYMBOL,        /* S* */
+    SCM_CHAR_SET_ASCII_SYMBOL,
     SCM_CHAR_SET_HEX_DIGIT,     /* 0-9A-Fa-f */
     SCM_CHAR_SET_BLANK,         /* Zs|\u0009 */
     SCM_CHAR_SET_ASCII_BLANK,   /* \u0020,\u0009 */
@@ -99,6 +107,7 @@ enum {
     SCM_CHAR_SET_FULL,
     /* internal use: word constituent chars */
     SCM_CHAR_SET_WORD,
+    SCM_CHAR_SET_ASCII_WORD,
     SCM_CHAR_SET_NUM_PREDEFINED_SETS
 };
 SCM_EXTERN ScmObj Scm_GetStandardCharSet(int id);
