@@ -1249,12 +1249,11 @@ static ScmObj read_predef_charset(const char **cp, int error_p)
     struct predef_charset_posix_name_rec *e = predef_charset_posix_names;
     while (e->name != NULL) {
         if (strcmp(start, e->name) == 0) {
-            ScmObj cs = Scm_GetStandardCharSet(e->cset);
-            if (complement) {
-                cs = Scm_CharSetCopy(SCM_CHAR_SET(cs));
-                cs = Scm_CharSetComplement(SCM_CHAR_SET(cs));
+            if (!complement) {
+                return Scm_GetStandardCharSet(e->cset);
+            } else {
+                return Scm_GetStandardCharSet(-e->cset);
             }
-            return cs;
         }
         e++;
     }
