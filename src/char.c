@@ -1169,53 +1169,106 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
     return TRUE;
 }
 
+/* Predefined charset name table */
+struct predef_charset_posix_name_rec {
+    const char *name;
+    int cset;           /* default cset */
+    int cset_unicode;   /* 'unicode' mode cset (:alnum: for unicode range)
+                           not used yet. */
+};
+
+#define PREDEF_ENTRY(n, cs, csu) \
+    { n, SCM_CPP_CAT(SCM_CHAR_SET_, cs), SCM_CPP_CAT(SCM_CHAR_SET_, csu) }
+
+static struct predef_charset_posix_name_rec predef_charset_posix_names[] = {
+    PREDEF_ENTRY("alpha:", ASCII_LETTER, LETTER),
+    PREDEF_ENTRY("alnum:", ASCII_LETTER_DIGIT, LETTER_DIGIT),
+    PREDEF_ENTRY("blank:", ASCII_BLANK, BLANK),
+    PREDEF_ENTRY("cntrl:", ASCII_ISO_CONTROL, ISO_CONTROL),
+    PREDEF_ENTRY("digit:", ASCII_DIGIT, DIGIT),
+    PREDEF_ENTRY("graph:", ASCII_GRAPHIC, GRAPHIC),
+    PREDEF_ENTRY("lower:", ASCII_LOWER, LOWER),
+    PREDEF_ENTRY("print:", ASCII_PRINTING, PRINTING),
+    PREDEF_ENTRY("punct:", ASCII_PUNCTUATION, PUNCTUATION),
+    PREDEF_ENTRY("space:", ASCII_WHITESPACE, WHITESPACE),
+    PREDEF_ENTRY("upper:", ASCII_UPPER, UPPER),
+    PREDEF_ENTRY("word:",  ASCII_WORD, WORD),
+    PREDEF_ENTRY("xdigit:", HEX_DIGIT, HEX_DIGIT),
+    PREDEF_ENTRY("ascii:", ASCII, ASCII), /* like Go */
+
+    /* Gauche extension - explicitly unicode range */
+    PREDEF_ENTRY("ALPHA:", LETTER, LETTER),
+    PREDEF_ENTRY("ALNUM:", LETTER_DIGIT, LETTER_DIGIT),
+    PREDEF_ENTRY("BLANK:", BLANK, BLANK),
+    PREDEF_ENTRY("CNTRL:", ISO_CONTROL, ISO_CONTROL),
+    PREDEF_ENTRY("DIGIT:", DIGIT, DIGIT),
+    PREDEF_ENTRY("GRAPH:", GRAPHIC, GRAPHIC),
+    PREDEF_ENTRY("LOWER:", LOWER, LOWER),
+    PREDEF_ENTRY("PRINT:", PRINTING, PRINTING),
+    PREDEF_ENTRY("PUNCT:", PUNCTUATION, PUNCTUATION),
+    PREDEF_ENTRY("SPACE:", WHITESPACE, WHITESPACE),
+    PREDEF_ENTRY("UPPER:", UPPER, UPPER),
+    PREDEF_ENTRY("WORD:",  WORD, WORD),
+    PREDEF_ENTRY("XDIGIT:", HEX_DIGIT, HEX_DIGIT),
+
+    { NULL, 0, 0 }
+};
+
+#define MAX_CHARSET_NAME_LEN  11
+static int read_predef_charset_name(const char **cp, char *namebuf) 
+{
+    int i = 0;
+    for (; i<MAX_CHARSET_NAME_LEN-1; i++) {
+        ScmChar ch;
+        SCM_CHAR_GET(*cp, ch);
+        if (ch == SCM_CHAR_INVALID || !SCM_CHAR_ASCII_P(ch)) {
+            namebuf[i] = '\0';
+            return -1;
+        }
+        *cp += SCM_CHAR_NBYTES(ch);
+        if (ch == ']') {
+            namebuf[i] = '\0';
+            return i;
+        }
+        namebuf[i] = (char)ch;
+    }
+    namebuf[i] = '\0';
+    return -1;    
+}
 
 /* Read posix [:alpha:] etc.  The first '[' is already read.
    Return #f on error if errorp is FALSE. */
-#define MAX_CHARSET_NAME_LEN  10
-ScmObj read_predef_charset(const char **cp, int error_p)
+static ScmObj read_predef_charset(const char **cp, int error_p)
 {
-    int i;
     char name[MAX_CHARSET_NAME_LEN+1];
-    for (i=0; i<MAX_CHARSET_NAME_LEN; i++) {
-        ScmChar ch;
-        SCM_CHAR_GET(*cp, ch);
-        if (ch == SCM_CHAR_INVALID) return SCM_FALSE;
-        *cp += SCM_CHAR_NBYTES(ch);
-        if (!SCM_CHAR_ASCII_P(ch)) break;
-        if (ch != ']') {
-            name[i] = (char)ch;
-            continue;
-        }
-        if (strncmp(name, ":alnum:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_LETTER_DIGIT);
-        } else if (strncmp(name, ":alpha:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_LETTER);
-        } else if (strncmp(name, ":blank:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_BLANK);
-        } else if (strncmp(name, ":cntrl:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_ISO_CONTROL);
-        } else if (strncmp(name, ":digit:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
-        } else if (strncmp(name, ":graph:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_GRAPHIC);
-        } else if (strncmp(name, ":lower:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_LOWER);
-        } else if (strncmp(name, ":print:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_PRINTING);
-        } else if (strncmp(name, ":punct:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_PUNCTUATION);
-        } else if (strncmp(name, ":space:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_WHITESPACE);
-        } else if (strncmp(name, ":upper:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_UPPER);
-        } else if (strncmp(name, ":xdigit:", 8) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHAR_SET_HEX_DIGIT);
-        } else break;
+    int namelen = read_predef_charset_name(cp, name);
+
+    if (namelen <= 2) goto err;
+    if (name[0] != ':') goto err;
+
+    int complement = FALSE;
+    const char *start = name+1;
+
+    if (*start == '^') {
+        complement = TRUE;
+        start++;
     }
+
+    struct predef_charset_posix_name_rec *e = predef_charset_posix_names;
+    while (e->name != NULL) {
+        if (strcmp(start, e->name) == 0) {
+            ScmObj cs = Scm_GetStandardCharSet(e->cset);
+            if (complement) {
+                cs = Scm_CharSetCopy(SCM_CHAR_SET(cs));
+                cs = Scm_CharSetComplement(SCM_CHAR_SET(cs));
+            }
+            return cs;
+        }
+        e++;
+    }
+ err:
     /* here we got invalid charset name */
     if (error_p) {
-        name[i] = '\0';
         Scm_Error("invalid or unsupported POSIX charset '[%s]'", name);
     }
     return SCM_FALSE;

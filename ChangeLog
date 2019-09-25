@@ -3,6 +3,9 @@
 	* src/gen-unicode.scm, src/char.c: Add ascii-* counterparts to
 	  all predefined charsets (except when it doesn't make sense),
 	  for the consistency.
+	* src/char.c (read_predef_charset): Read [:alpha:] etc. as ASCII
+	  charset.  Recognize [:ALPHA:] etc. to cover full Unicode range.
+	  Support [:^alpha:] negation (like Go).
 
 2019-09-18  Shiro Kawai  <shiro@acm.org>
 
