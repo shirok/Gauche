@@ -437,25 +437,25 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'D':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
+            cs = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_DIGIT);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
-            return Scm_Cons(SCM_SYM_COMP, cs);
+            return cs;
         case 'w':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WORD);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'W':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
+            cs = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WORD);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
-            return Scm_Cons(SCM_SYM_COMP, cs);
+            return cs;
         case 's':
             cs = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WHITESPACE);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'S':
-            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WHITESPACE);
+            cs = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WHITESPACE);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
-            return Scm_Cons(SCM_SYM_COMP, cs);
+            return cs;
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
             Scm_UngetcUnsafe(ch, ctx->ipat);

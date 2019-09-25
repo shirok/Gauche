@@ -39,6 +39,7 @@
 #include "gauche/priv/vectorP.h"
 
 static ScmObj predef_sets[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
+static ScmObj predef_sets_complement[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
 
 #include "char_attr.c"          /* generated tables */
 
@@ -1006,7 +1007,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
 
     Scm_DStringInit(&buf);
     if (read_charset_syntax(input, bracket_syntax, &buf, &complement)) {
-        int lastchar = -1, inrange = FALSE, moreset_complement = FALSE;
+        int lastchar = -1, inrange = FALSE;
         ScmCharSet *set = SCM_CHAR_SET(Scm_MakeEmptyCharSet());
         ScmSmallInt size;
         const char *cp = Scm_DStringPeek(&buf, &size, NULL);
@@ -1044,34 +1045,25 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                     if (ch == SCM_CHAR_INVALID) goto err;
                     goto ordchar;
                 case 'd':
-                    moreset_complement = FALSE;
                     moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
                     break;
                 case 'D':
-                    moreset_complement = TRUE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_DIGIT);
+                    moreset = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_DIGIT);
                     break;
                 case 's':
-                    moreset_complement = FALSE;
                     moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WHITESPACE);
                     break;
                 case 'S':
-                    moreset_complement = TRUE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WHITESPACE);
+                    moreset = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WHITESPACE);
                     break;
                 case 'w':
-                    moreset_complement = FALSE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
+                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_ASCII_WORD);
                     break;
                 case 'W':
-                    moreset_complement = TRUE;
-                    moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
+                    moreset = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WORD);
                     break;
                 default:
                     goto ordchar;
-                }
-                if (moreset_complement) {
-                    moreset = Scm_CharSetComplement(SCM_CHAR_SET(Scm_CharSetCopy(SCM_CHAR_SET(moreset))));
                 }
                 Scm_CharSetAdd(set, SCM_CHAR_SET(moreset));
                 continue;
@@ -1468,21 +1460,28 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
  * Pre-defined charset
  */
 
-/* NB: The predefined character sets covers full Unicode range,
-   except ASCII_DIGIT, HEX_DIGIT, WHITESPACE, BLANK and WORD.
-   (You can find the code that determines the exact membership of these
-   sets in src/gen-unicode.scm (build-code-sets)).
-
-   This is for the backward compatibility of \d, \s and \w of
-   the regexp.  Those have been extensively used for input validation
-   and changing them can have unexpected consequences.
- */
+/* Most predefined charset are pre-generated as static immutable data.
+   See gen-unicode.scm for the generation code. */
 
 ScmObj Scm_GetStandardCharSet(int id)
 {
-    if (id < 0 || id >= SCM_CHAR_SET_NUM_PREDEFINED_SETS)
+    if (id == 0 
+        || id >= SCM_CHAR_SET_NUM_PREDEFINED_SETS
+        || id <= -SCM_CHAR_SET_NUM_PREDEFINED_SETS) {
         Scm_Error("bad id for predefined charset index: %d", id);
-    return SCM_OBJ(predef_sets[id]);
+    }
+
+    if (id > 0) {
+        return predef_sets[id];
+    } else {
+        if (!SCM_CHAR_SET_P(predef_sets_complement[-id])) {
+            ScmObj cs = Scm_CharSetCopy(SCM_CHAR_SET(predef_sets[-id]));
+            cs = Scm_CharSetComplement(SCM_CHAR_SET(cs));
+            Scm_CharSetFreezeX(SCM_CHAR_SET(cs));
+            predef_sets_complement[-id] = cs;
+        }
+        return predef_sets_complement[-id];
+    }
 }
 
 void Scm__InitChar(void)
@@ -1562,6 +1561,15 @@ void Scm__InitChar(void)
     DEFCS("ascii-word", ASCII_WORD);
     DEFCS("empty", EMPTY);
     DEFCS("full", FULL);
+
+    /* We initialize complement charset on demand, except EMPTY and FULL. */
+    for (int i=0; i<SCM_CHAR_SET_NUM_PREDEFINED_SETS; i++) {
+        predef_sets_complement[i] = SCM_FALSE;
+    }
+    predef_sets_complement[SCM_CHAR_SET_EMPTY]
+        = predef_sets_complement[SCM_CHAR_SET_FULL];
+    predef_sets_complement[SCM_CHAR_SET_FULL]
+        = predef_sets_complement[SCM_CHAR_SET_EMPTY];
 
     /* Expose internal charset */
 #if defined(GAUCHE_CHAR_ENCODING_EUC_JP)

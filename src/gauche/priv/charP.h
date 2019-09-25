@@ -39,13 +39,16 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
                                           int (*c2u)(ScmChar));
 
 /* Predefined charsets
-   The enum value may change across versions, so we keep thme private.
- */
+   The enum value may change across versions, so we keep them private.
 
+   The charset object can be obtained by Scm_GetStandardCharSet(id)
+   where ID is either the enum defined below, or its negation for
+   complement charset.
+ */
 
 enum {
     /* Unicode General Categories */
-    SCM_CHAR_SET_Lu,            /* Letter, uppercase */
+    SCM_CHAR_SET_Lu = 1,        /* Letter, uppercase */
     SCM_CHAR_SET_Ll,            /* Letter, lowercase */
     SCM_CHAR_SET_Lt,            /* Letter, titlecase */
     SCM_CHAR_SET_Lm,            /* Letter, modifier */
