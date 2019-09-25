@@ -649,9 +649,13 @@ ScmObj Scm_CharSetFreezeX(ScmCharSet *src)
         uint32_t iv[2];
         uint32_t *v = char_set_freeze_vec(src, iv, &s);
         src->large.frozen.size = s;
-        src->large.frozen.vec = (s == 2)? src->large.frozen.ivec : v;
-        src->large.frozen.ivec[0] = iv[0];
-        src->large.frozen.ivec[1] = iv[1];
+        if (s == 2) {
+            src->large.frozen.vec = src->large.frozen.ivec;
+            src->large.frozen.ivec[0] = iv[0];
+            src->large.frozen.ivec[1] = iv[1];
+        } else {
+            src->large.frozen.vec = v;
+        }
     }
     src->flags |= SCM_CHAR_SET_IMMUTABLE;
     return SCM_OBJ(src);
@@ -839,24 +843,26 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
     
     ScmDictEntry *e, *n;
 
-    set_large(cs, !SCM_CHAR_SET_LARGE_P(cs));
-    
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
                     0, SCM_CHAR_SET_SMALL_CHARS);
     int last = SCM_CHAR_SET_SMALL_CHARS-1;
+    int largep = FALSE;
     /* we can't use treeiter, since we modify the tree while traversing it. */
     while ((e = Scm_TreeCoreNextEntry(&cs->large.tree, last)) != NULL) {
         Scm_TreeCoreSearch(&cs->large.tree, e->key, SCM_DICT_DELETE);
         if (last < e->key-1) {
             n = Scm_TreeCoreSearch(&cs->large.tree, last+1, SCM_DICT_CREATE);
             n->value = e->key-1;
+            largep = TRUE;
         }
         last = (int)e->value;
     }
     if (last < SCM_CHAR_MAX) {
         n = Scm_TreeCoreSearch(&cs->large.tree, last+1, SCM_DICT_CREATE);
         n->value = SCM_CHAR_MAX;
+        largep = TRUE;
     }
+    set_large(cs, largep);
     return SCM_OBJ(cs);
 }
 
