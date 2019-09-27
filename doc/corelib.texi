@@ -7621,17 +7621,17 @@ numbers, respectively.
 @item \s
 Whitespace characters
 (space, newline, tab, form feed, vertical tab, carrige return).
-Members of @code{char-set:ascii-whitespace} (@pxref{Character set}).
+Members of @code{char-set:ascii-whitespace}.
 @item \S
 Complement of whitespace characters.
 @item \d
 Decimal digit characters.  Members of
-@code{char-set:ascii-digits} (@pxref{Character set}).
+@code{char-set:ascii-digits}.
 @item \D
 Complement of decimal digit characters.
 @item \w
 Word constituent characters (@code{#[A-Za-z0-9_]}).
-Members of @code{char-set:ascii-word} (@pxref{Character set}).
+Members of @code{char-set:ascii-word}.
 @item \W
 Complement of word constituent characters.
 @item \\
@@ -7644,19 +7644,23 @@ A caret character.
 Character set a la POSIX.  See the table below for the complete list of
 recognized character set names.  The set name must be in all lower cases.
 This notation only includes characters in ASCII range.  
+@item [:^alnum:] @dots{}
+Complement set of @code{[:alnum:]} etc.
 @item [:ALNUM:] @dots{}
 Gauche's extension of character set a la POSIX; the name must be
 all in upper cases, and includes full Unicode range.  See the table below
 for the recognized names.
+@item [:^ALNUM:] @dots{}
+Complement set of @code{[:ALNUM:]} etc.
 @end table
 
 Here's the list of POSIX-style character class names:
 
-@multitable {aaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable @columnfractions .15 .85
 @item @code{:alpha:} @tab ASCII alphabets.  @code{char-set:ascii-letter}, @code{#[A-Za-z]}
 @item @code{:alnum:} @tab ASCII alphabets and digits.  @code{char-set:ascii-letter+digits}, @code{#[0-9A-Za-z]}.
 @item @code{:blank:} @tab ASCII blanks.  @code{char-set:ascii-blank}, tab and space.
-@item @code{:cntrl:} @tab ASCII control characters.  @code{char-set:ascii-iso-control}, U+0000 to U+001f and U+007f.
+@item @code{:cntrl:} @tab ASCII control characters.  @code{char-set:ascii-control}, U+0000 to U+001f and U+007f.
 @item @code{:digit:} @tab ASCII digits.  @code{char-set:ascii-digit}, @code{#[0-9]}.
 @item @code{:graph:} @tab ASCII graphic characters.  @code{char-set:ascii-graphic}.
 @item @code{:lower:} @tab ASCII lower-case alphabets.  @code{char-set:ascii-lower-case}, @code{#[a-z]}.
@@ -7667,21 +7671,23 @@ Here's the list of POSIX-style character class names:
 @item @code{:word:} @tab ASCII word characters (not POSIX).  @code{char-set:ascii-word}, @code{#[0-9A-Za-z_]}.
 @item @code{:xdigit:} @tab Hexadecimal digits.  @code{char-set:hex-digit}, @code{#[0-9a-fA-F]}.
 @item @code{:ascii:} @tab ASCII characters (not POSIX).  @code{char-set:ascii}.
-@item @code{:ALPHA:} @tab Unicode letters.  @code{char-set:letter}.
+@item @code{:ALPHA:} @tab Unicode letters (category @code{L*}). @code{char-set:letter}.
 @item @code{:ALNUM:} @tab Unicode letters and digits.  @code{char-set:letter+digits}.
-@item @code{:BLANK:} @tab Unicode blanks.  @code{char-set:blank}.
-@item @code{:CNTRL:} @tab Unicode control characters.  @code{char-set:iso-control}.
-@item @code{:DIGIT:} @tab Unicode digits.  @code{char-set:digit}.
-@item @code{:GRAPH:} @tab Unicode graphic characters.  @code{char-set:graphic}.
-@item @code{:LOWER:} @tab Unicode lower-case letters.  @code{char-set:lower-case}, @code{#[a-z]}.
-@item @code{:PRINT:} @tab Unicode printing characters.  @code{char-set:printing}.
-@item @code{:PUNCT:} @tab Unicode punctuation characters.  @code{char-set:punctuation}.
-@item @code{:SPACE:} @tab Unicode whitespaces. @code{char-set:whitespace}.
-@item @code{:UPPER:} @tab Unicode upper-case letters.  @code{char-set:upper-case}, @code{#[A-Z]}.
+@item @code{:BLANK:} @tab Unicode blanks (tab and category @code{Zs}).  @code{char-set:blank}.
+@item @code{:CNTRL:} @tab Unicode control characters (category @code{Cc}).  @code{char-set:iso-control}.
+@item @code{:DIGIT:} @tab Unicode digits (category @code{Nd}).  @code{char-set:digit}.
+@item @code{:GRAPH:} @tab Unicode graphic characters (letter, digits, punctuation, symbol, and category @code{Nl} and @code{No}).  @code{char-set:graphic}.
+@item @code{:LOWER:} @tab Unicode lower-case letters (category @code{Ll}).  @code{char-set:lower-case}, @code{#[a-z]}.
+@item @code{:PRINT:} @tab Unicode printing characters (graphic and whitespace).  @code{char-set:printing}.
+@item @code{:PUNCT:} @tab Unicode punctuation characters (category @code{P*}).  @code{char-set:punctuation}.
+@item @code{:SPACE:} @tab Unicode whitespaces (tab, LF, vertial tab, FF, CR, and category @code{Z*}). @code{char-set:whitespace}.
+@item @code{:TITLE:} @tab Unicode titlecase letters (category @code{Lt}).  @code{char-set:title-case}.
+@item @code{:UPPER:} @tab Unicode upper-case letters (category @code{Lu}).  @code{char-set:upper-case}, @code{#[A-Z]}.
 @item @code{:WORD:} @tab Unicode word characters.  @code{char-set:word}.
 @item @code{:XDIGIT:} @tab Hexadecimal digits (same as @code{:xdigit:}).
 @end multitable
 
+Here are some examples:
 
 @example
 #[aeiou]       ; @r{a character set consists of vowels}
@@ -7706,20 +7712,17 @@ Here's the list of POSIX-style character class names:
 Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item \s
 空白文字(space, newline, tab, form feed, vertical tab, carrige return).
-文字セット@code{char-set:ascii-whitespace}の要素
-(@ref{Character set}参照)。
+文字セット@code{char-set:ascii-whitespace}の要素。
 @item \S
 空白でない文字。(@code{\s}の補集合)
 @item \d
 10進数の数字。
-文字セット@code{char-set:ascii-digit}の要素
-(@ref{Character set}参照)。
+文字セット@code{char-set:ascii-digit}の要素。
 @item \D
 @code{\d}の補集合
 @item \w
 単語を構成する文字の集合(@code{#[A-Za-z0-9_]})。
-文字セット@code{char-set:ascii-word}の要素
-(@ref{Character set}参照)。
+文字セット@code{char-set:ascii-word}の要素。
 @item \W
 @code{\W}の補集合
 @item \\
@@ -7731,19 +7734,23 @@ Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item [:alnum:] @dots{}
 POSIX風文字集合表記。サポートされる名前については下の表を参照してください。
 名前は全て小文字でなければなりません。この表記の文字集合はASCII範囲のみを含みます。
+@item [:^alnum:] @dots{}
+@code{[:alnum:]}等の補集合です。
 @item [:ALNUM:] @dots{}
 POSIX風文字集合表記のGauche拡張。名前は全て大文字でなければなりません。
 この表記の文字集合はUnicode全範囲を対象とします。
 サポートされる名前については下の表を参照してください。
+@item [:^ALNUM:] @dots{}
+@code{[:ALNUM:]}等の補集合です。
 @end table
 
 POSIX風文字集合表記で認識される名前は次のとおりです。
 
-@multitable {aaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable @columnfractions .15 .85
 @item @code{:alpha:} @tab ASCII alphabets.  @code{char-set:ascii-letter}, @code{#[A-Za-z]}
 @item @code{:alnum:} @tab ASCII alphabets and digits.  @code{char-set:ascii-letter+digits}, @code{#[0-9A-Za-z]}.
 @item @code{:blank:} @tab ASCII blanks.  @code{char-set:ascii-blank}, tab and space.
-@item @code{:cntrl:} @tab ASCII control characters.  @code{char-set:ascii-iso-control}, U+0000 to U+001f and U+007f.
+@item @code{:cntrl:} @tab ASCII control characters.  @code{char-set:ascii-control}, U+0000 to U+001f and U+007f.
 @item @code{:digit:} @tab ASCII digits.  @code{char-set:ascii-digit}, @code{#[0-9]}.
 @item @code{:graph:} @tab ASCII graphic characters.  @code{char-set:ascii-graphic}.
 @item @code{:lower:} @tab ASCII lower-case alphabets.  @code{char-set:ascii-lower-case}, @code{#[a-z]}.
@@ -7768,6 +7775,8 @@ POSIX風文字集合表記で認識される名前は次のとおりです。
 @item @code{:WORD:} @tab Unicode word characters.  @code{char-set:word}.
 @item @code{:XDIGIT:} @tab Hexadecimal digits (same as @code{:xdigit:}).
 @end multitable
+
+いくつか例を示します。
 
 @example
 #[aeiou]     ; @r{母音文字'a', 'e', 'i', 'o', 'u'の集合}
@@ -7930,12 +7939,13 @@ If you intend to mean ASCII-only words, use @code{char-set:ascii-word}.
 @defvarx char-set:ascii-printing
 @defvarx char-set:ascii-whitespace
 @defvarx char-set:ascii-blank
-@defvarx char-set:ascii-iso-contorl
+@defvarx char-set:ascii-contorl
 @defvarx char-set:ascii-punctuation
 @defvarx char-set:ascii-symbol
 @defvarx char-set:ascii-word
 These are intersection of @code{char-set:ascii} and
 the corresponding char set without @code{ascii-}.
+(@code{char-set:ascii-control} corresponds to @code{char-set:iso-control}).
 
 The @code{\d}, @code{\s} and @code{\w} notation in the char-set literal 
 and regexp literal corresponds to @code{char-set:ascii-digit},

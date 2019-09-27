@@ -315,7 +315,7 @@
                     char-set:whitespace
                     char-set:ascii-whitespace
                     char-set:iso-control
-                    char-set:ascii-iso-control
+                    char-set:ascii-control
                     char-set:punctuation
                     char-set:ascii-punctuation
                     char-set:symbol

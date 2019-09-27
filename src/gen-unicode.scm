@@ -418,7 +418,7 @@
                          PRINTING ASCII_PRINTING
                          PUNCTUATION ASCII_PUNCTUATION 
                          SYMBOL ASCII_SYMBOL
-                         (ISO_CONTROL Cc) ASCII_ISO_CONTROL
+                         (ISO_CONTROL Cc) ASCII_CONTROL
                          HEX_DIGIT
                          WHITESPACE ASCII_WHITESPACE 
                          BLANK ASCII_BLANK
@@ -763,8 +763,8 @@
                    (code-set-union 'ASCII_PRINTING
                                    (hash-table-ref sets 'ASCII_GRAPHIC)
                                    (hash-table-ref sets 'ASCII_WHITESPACE)))
-  (hash-table-put! sets 'ASCII_ISO_CONTROL
-                   (rlet1 cs (make <char-code-set> :name 'ASCII_ISO_CONTROL)
+  (hash-table-put! sets 'ASCII_CONTROL
+                   (rlet1 cs (make <char-code-set> :name 'ASCII_CONTROL)
                      (add-code-range! cs #x00 #x1f)
                      (add-code! cs #x7f)))
   (hash-table-put! sets 'HEX_DIGIT

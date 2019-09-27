@@ -1182,7 +1182,7 @@ static struct predef_charset_posix_name_rec predef_charset_posix_names[] = {
     PREDEF_ENTRY("alpha:", ASCII_LETTER, LETTER),
     PREDEF_ENTRY("alnum:", ASCII_LETTER_DIGIT, LETTER_DIGIT),
     PREDEF_ENTRY("blank:", ASCII_BLANK, BLANK),
-    PREDEF_ENTRY("cntrl:", ASCII_ISO_CONTROL, ISO_CONTROL),
+    PREDEF_ENTRY("cntrl:", ASCII_CONTROL, ISO_CONTROL),
     PREDEF_ENTRY("digit:", ASCII_DIGIT, DIGIT),
     PREDEF_ENTRY("graph:", ASCII_GRAPHIC, GRAPHIC),
     PREDEF_ENTRY("lower:", ASCII_LOWER, LOWER),
@@ -1206,6 +1206,7 @@ static struct predef_charset_posix_name_rec predef_charset_posix_names[] = {
     PREDEF_ENTRY("PUNCT:", PUNCTUATION, PUNCTUATION),
     PREDEF_ENTRY("SPACE:", WHITESPACE, WHITESPACE),
     PREDEF_ENTRY("UPPER:", UPPER, UPPER),
+    PREDEF_ENTRY("TITLE:", TITLE, TITLE),
     PREDEF_ENTRY("WORD:",  WORD, WORD),
     PREDEF_ENTRY("XDIGIT:", HEX_DIGIT, HEX_DIGIT),
 
@@ -1553,7 +1554,7 @@ void Scm__InitChar(void)
     DEFCS("whitespace", WHITESPACE);
     DEFCS("ascii-whitespace", ASCII_WHITESPACE);
     DEFCS("iso-control", ISO_CONTROL);
-    DEFCS("ascii-iso-control", ASCII_ISO_CONTROL);
+    DEFCS("ascii-control", ASCII_CONTROL);
     DEFCS("punctuation", PUNCTUATION);
     DEFCS("ascii-punctuation", ASCII_PUNCTUATION);
     DEFCS("symbol", SYMBOL);
