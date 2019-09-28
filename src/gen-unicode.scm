@@ -408,7 +408,8 @@
   ;; The CAT entry can be just a symbol or (alias symbol).
   (print "static void init_predefined_charsets() {")
   (dolist [cat (append (ucd-general-categories)
-                       '(LETTER ASCII_LETTER
+                       '(L M N P S Z C
+                         (LETTER L) ASCII_LETTER
                          (DIGIT Nd) ASCII_DIGIT
                          LETTER_DIGIT ASCII_LETTER_DIGIT 
                          (LOWER Ll) ASCII_LOWER 
@@ -416,8 +417,8 @@
                          (TITLE Lt)
                          GRAPHIC ASCII_GRAPHIC 
                          PRINTING ASCII_PRINTING
-                         PUNCTUATION ASCII_PUNCTUATION 
-                         SYMBOL ASCII_SYMBOL
+                         (PUNCTUATION P) ASCII_PUNCTUATION 
+                         (SYMBOL S) ASCII_SYMBOL
                          (ISO_CONTROL Cc) ASCII_CONTROL
                          HEX_DIGIT
                          WHITESPACE ASCII_WHITESPACE 
@@ -631,18 +632,21 @@
         (if (= n m)
           (add-code! set n)
           (add-code-range! set n m)))))
+  ;; general category charsets (char-set:Lt etc.)
   (dolist [cat categories]
     (let1 cs (make <char-code-set> :name cat)
       (walker (cut register cs cat <> <>))
       (hash-table-put! sets cat cs)))
-  ;; srfi-14 charsets
-  (hash-table-put! sets 'LETTER
-                   (code-set-union 'LETTER
-                                   (hash-table-ref sets 'Lu)
-                                   (hash-table-ref sets 'Ll)
-                                   (hash-table-ref sets 'Lt)
-                                   (hash-table-ref sets 'Lm)
-                                   (hash-table-ref sets 'Lo)))
+  ;; general category class charsets (char-set:L etc.)
+  (dolist [gcats (group-collection categories
+                                  :key (^c (string-ref (symbol->string c) 0)))]
+    (let1 cs 
+        (make <char-code-set>
+          :name (string->symbol (substring (symbol->string (car gcats)) 0 1)))
+      (for-each (^c (walker (cut register cs c <> <>))) gcats)
+      (hash-table-put! sets (~ cs'name) cs)))
+  ;; srfi-14 charsets (the ones that has equivalent set in general category set
+  ;; is handled implicitly.
   (hash-table-put! sets 'ASCII_UPPER
                    (rlet1 cs (make <char-code-set> :name 'ASCII_UPPER)
                      (add-code-range! cs 
@@ -664,7 +668,7 @@
                                       (char->integer #\9))))
   (hash-table-put! sets 'LETTER_DIGIT
                    (code-set-union 'LETTER_DIGIT
-                                   (hash-table-ref sets 'LETTER)
+                                   (hash-table-ref sets 'L)
                                    (hash-table-ref sets 'Nd)))
   (hash-table-put! sets 'ASCII_LETTER_DIGIT
                    (code-set-union 'ASCII_LETTER_DIGIT
@@ -677,9 +681,7 @@
   (hash-table-put! sets 'WHITESPACE
                    (code-set-union 'WHITESPACE
                                    (hash-table-ref sets 'ASCII_WHITESPACE)
-                                   (hash-table-ref sets 'Zs)
-                                   (hash-table-ref sets 'Zl)
-                                   (hash-table-ref sets 'Zp)))
+                                   (hash-table-ref sets 'Z)))
   (hash-table-put! sets 'ASCII_BLANK
                    (rlet1 cs (make <char-code-set> :name 'ASCII_BLANK)
                      (add-code! cs 9) ;TAB
@@ -688,15 +690,6 @@
                    (code-set-union 'BLANK
                                    (hash-table-ref sets 'ASCII_BLANK)
                                    (hash-table-ref sets 'Zs)))
-  (hash-table-put! sets 'PUNCTUATION
-                   (code-set-union 'PUNCTUATION
-                                   (hash-table-ref sets 'Pc)
-                                   (hash-table-ref sets 'Pd)
-                                   (hash-table-ref sets 'Ps)
-                                   (hash-table-ref sets 'Pe)
-                                   (hash-table-ref sets 'Pi)
-                                   (hash-table-ref sets 'Pf)
-                                   (hash-table-ref sets 'Po)))
   (hash-table-put! sets 'ASCII_PUNCTUATION
                    (rlet1 cs (make <char-code-set> :name 'ASCII_PUNCTUATION)
                      (add-code! cs 33)  ;!
@@ -723,12 +716,6 @@
                      (add-code! cs 123) ;{
                      (add-code! cs 125) ;}
                      ))
-  (hash-table-put! sets 'SYMBOL
-                   (code-set-union 'SYMBOL
-                                   (hash-table-ref sets 'Sm)
-                                   (hash-table-ref sets 'Sc)
-                                   (hash-table-ref sets 'Sk)
-                                   (hash-table-ref sets 'So)))
   (hash-table-put! sets 'ASCII_SYMBOL
                    (rlet1 cs (make <char-code-set> :name 'ASCII_SYMBOL)
                      (add-code! cs 36)  ;$
@@ -743,12 +730,10 @@
                      ))
   (hash-table-put! sets 'GRAPHIC
                    (code-set-union 'GRAPHIC
-                                   (hash-table-ref sets 'LETTER)
-                                   (hash-table-ref sets 'Nd)
-                                   (hash-table-ref sets 'Nl)
-                                   (hash-table-ref sets 'No)
-                                   (hash-table-ref sets 'PUNCTUATION)
-                                   (hash-table-ref sets 'SYMBOL)))
+                                   (hash-table-ref sets 'L)
+                                   (hash-table-ref sets 'N)
+                                   (hash-table-ref sets 'P)
+                                   (hash-table-ref sets 'S)))
   (hash-table-put! sets 'ASCII_GRAPHIC
                    (code-set-union 'ASCII_GRAPHIC
                                    (hash-table-ref sets 'ASCII_LETTER)

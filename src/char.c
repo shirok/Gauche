@@ -1495,27 +1495,26 @@ void Scm__InitChar(void)
     ScmModule *mod = Scm_GaucheModule();
 
     init_predefined_charsets();
-    predef_sets[SCM_CHAR_SET_LOWER] = predef_sets[SCM_CHAR_SET_Ll];
-    predef_sets[SCM_CHAR_SET_UPPER] = predef_sets[SCM_CHAR_SET_Lu];
-    predef_sets[SCM_CHAR_SET_TITLE] = predef_sets[SCM_CHAR_SET_Lt];
-    predef_sets[SCM_CHAR_SET_DIGIT] = predef_sets[SCM_CHAR_SET_Nd];
-    predef_sets[SCM_CHAR_SET_ISO_CONTROL] = predef_sets[SCM_CHAR_SET_Cc];
     predef_sets[SCM_CHAR_SET_FULL] = Scm_CharSetComplement(make_charset());
     
 #define DEFCS(name, id) \
     Scm_Define(mod, SCM_SYMBOL(SCM_INTERN("char-set:" name)), predef_sets[SCM_CPP_CAT(SCM_CHAR_SET_, id)])
 
+    DEFCS("L",  L);
     DEFCS("Lu", Lu);
     DEFCS("Ll", Ll);
     DEFCS("Lt", Lt);
     DEFCS("Lm", Lm);
     DEFCS("Lo", Lo);
+    DEFCS("M",  M);
     DEFCS("Mn", Mn);
     DEFCS("Mc", Mc);
     DEFCS("Me", Me);
+    DEFCS("N",  N);
     DEFCS("Nd", Nd);
     DEFCS("Nl", Nl);
     DEFCS("No", No);
+    DEFCS("P",  P);
     DEFCS("Pc", Pc);
     DEFCS("Pd", Pd);
     DEFCS("Ps", Ps);
@@ -1523,13 +1522,16 @@ void Scm__InitChar(void)
     DEFCS("Pi", Pi);
     DEFCS("Pf", Pf);
     DEFCS("Po", Po);
+    DEFCS("S",  S);
     DEFCS("Sm", Sm);
     DEFCS("Sc", Sc);
     DEFCS("Sk", Sk);
     DEFCS("So", So);
+    DEFCS("Z",  Z);
     DEFCS("Zs", Zs);
     DEFCS("Zl", Zl);
     DEFCS("Zp", Zp);
+    DEFCS("C",  C);
     DEFCS("Cc", Cc);
     DEFCS("Cf", Cf);
     DEFCS("Cs", Cs);

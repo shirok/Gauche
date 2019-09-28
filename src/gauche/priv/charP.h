@@ -48,17 +48,21 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
 
 enum {
     /* Unicode General Categories */
-    SCM_CHAR_SET_Lu = 1,        /* Letter, uppercase */
+    SCM_CHAR_SET_L = 1,         /* Letters */
+    SCM_CHAR_SET_Lu,            /* Letter, uppercase */
     SCM_CHAR_SET_Ll,            /* Letter, lowercase */
     SCM_CHAR_SET_Lt,            /* Letter, titlecase */
     SCM_CHAR_SET_Lm,            /* Letter, modifier */
     SCM_CHAR_SET_Lo,            /* Letter, other */
+    SCM_CHAR_SET_M,             /* Marks */
     SCM_CHAR_SET_Mn,            /* Mark, nonspacing */
     SCM_CHAR_SET_Mc,            /* Mark, combining */
     SCM_CHAR_SET_Me,            /* Mark, enclosing */
+    SCM_CHAR_SET_N,             /* Numbers */
     SCM_CHAR_SET_Nd,            /* Number, decimal digit */
     SCM_CHAR_SET_Nl,            /* Number, letter */
     SCM_CHAR_SET_No,            /* Number, other */
+    SCM_CHAR_SET_P,             /* Punctuations */
     SCM_CHAR_SET_Pc,            /* Punctuation, connector */
     SCM_CHAR_SET_Pd,            /* Punctuation, dash */
     SCM_CHAR_SET_Ps,            /* Punctuation, open */
@@ -66,13 +70,16 @@ enum {
     SCM_CHAR_SET_Pi,            /* Punctuation, initial quote */
     SCM_CHAR_SET_Pf,            /* Punctuation, final quote */
     SCM_CHAR_SET_Po,            /* Punctuation, other */
+    SCM_CHAR_SET_S,             /* Symbols */
     SCM_CHAR_SET_Sm,            /* Symbol, math */
     SCM_CHAR_SET_Sc,            /* Symbol, currency */
     SCM_CHAR_SET_Sk,            /* Symbol, modifier */
     SCM_CHAR_SET_So,            /* Symbol, other */
+    SCM_CHAR_SET_Z,             /* Separators */
     SCM_CHAR_SET_Zs,            /* Separator, space */
     SCM_CHAR_SET_Zl,            /* Separator, line */
     SCM_CHAR_SET_Zp,            /* Separator, paragraph */
+    SCM_CHAR_SET_C,             /* Others */
     SCM_CHAR_SET_Cc,            /* Other, control */
     SCM_CHAR_SET_Cf,            /* Other, format */
     SCM_CHAR_SET_Cs,            /* Other, surrogate */
