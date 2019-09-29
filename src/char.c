@@ -1002,6 +1002,7 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
    In that case, the returned charset is not complemented. */
 
 static ScmObj read_predef_charset(const char**, int);
+static int read_charset_category(const char**, char);
 static int read_charset_syntax(ScmPort *input, int bracket_syntax,
                                ScmDString *buf, int *complementp);
 
@@ -1067,6 +1068,12 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                     break;
                 case 'W':
                     moreset = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WORD);
+                    break;
+                case 'p':
+                    moreset = Scm_GetStandardCharSet(read_charset_category(&cp, ch));
+                    break;
+                case 'P': 
+                    moreset = Scm_GetStandardCharSet(-read_charset_category(&cp, ch));
                     break;
                 default:
                     goto ordchar;
@@ -1271,6 +1278,82 @@ static ScmObj read_predef_charset(const char **cp, int error_p)
     }
     return SCM_FALSE;
 }
+
+static struct predef_charset_category_name_rec {
+    const char *cat;
+    int cset;
+} predef_charset_category_name[] = {
+    { "L",  SCM_CHAR_SET_L },
+    { "Lu", SCM_CHAR_SET_Lu },
+    { "Ll", SCM_CHAR_SET_Ll },
+    { "Lt", SCM_CHAR_SET_Lt },
+    { "Lm", SCM_CHAR_SET_Lm },
+    { "M",  SCM_CHAR_SET_M },
+    { "Mn", SCM_CHAR_SET_Mn },
+    { "Mc", SCM_CHAR_SET_Mc },
+    { "Me", SCM_CHAR_SET_Me },
+    { "N",  SCM_CHAR_SET_N },
+    { "Nd", SCM_CHAR_SET_Nd },
+    { "Nl", SCM_CHAR_SET_Nl },
+    { "No", SCM_CHAR_SET_No },
+    { "P",  SCM_CHAR_SET_P },
+    { "Pc", SCM_CHAR_SET_Pc },
+    { "Pd", SCM_CHAR_SET_Pd },
+    { "Ps", SCM_CHAR_SET_Ps },
+    { "Pe", SCM_CHAR_SET_Pe },
+    { "Pi", SCM_CHAR_SET_Pi },
+    { "Pf", SCM_CHAR_SET_Pf },
+    { "Po", SCM_CHAR_SET_Po },
+    { "S",  SCM_CHAR_SET_S },
+    { "Sm", SCM_CHAR_SET_Sm },
+    { "Sc", SCM_CHAR_SET_Sc },
+    { "Sk", SCM_CHAR_SET_Sk },
+    { "So", SCM_CHAR_SET_So },
+    { "Z",  SCM_CHAR_SET_Z },
+    { "Zs", SCM_CHAR_SET_Zs },
+    { "Zl", SCM_CHAR_SET_Zl },
+    { "Zp", SCM_CHAR_SET_Zp },
+    { "C",  SCM_CHAR_SET_C },
+    { "Cc", SCM_CHAR_SET_Cc },
+    { "Cf", SCM_CHAR_SET_Cf },
+    { "Cs", SCM_CHAR_SET_Cs },
+    { "Co", SCM_CHAR_SET_Co },
+    { "Cn", SCM_CHAR_SET_Cn },
+    { NULL, 0 }
+};
+
+/* Read \p{Category}.  *cp must point to '{'. 
+   ch is either 'p' or 'P'. */
+static int read_charset_category(const char **cp, char ch)
+{
+    if (**cp != '{') {
+        Scm_Error("\\%c must followed by '{'", ch);
+    }
+    char name[4];
+    int i = 0;
+    for (; i < 2; i++) {
+        char c = (*cp)[i+1];
+        if (!isalpha(c)) break;
+        name[i] = (*cp)[i+1];
+    }
+    if ((*cp)[i+1] != '}') {
+        name[i] = (*cp)[i+1];
+        name[i+1] = '\0';
+        goto bad;
+    }
+    name[i] = '\0';
+
+    for (int j=0; predef_charset_category_name[j].cat; j++) {
+        if (strcmp(name, predef_charset_category_name[j].cat) == 0) {
+            *cp += i + 2;
+            return predef_charset_category_name[j].cset;
+        }
+    }
+ bad:
+    Scm_Error("Bad charset category name near \\%c{%s...", ch, name);
+    return 0;                   /* dummy */
+}
+
 
 /*-----------------------------------------------------------------
  * Character attributes

@@ -1,6 +1,11 @@
+2019-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c: Support \p{<category>}, \P{<cateogry>} notation in
+	  charset literals.
+
 2019-09-27  Shiro Kawai  <shiro@acm.org>
 
-	* rc/gen-unicode.scm, src/char.c: Add overall general category
+	* src/gen-unicode.scm, src/char.c: Add overall general category
 	  charsets, e.g. char-set:L for all L* categories.
 
 2019-09-24  Shiro Kawai  <shiro@acm.org>
