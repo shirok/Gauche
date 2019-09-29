@@ -114,6 +114,7 @@ typedef struct ScmEnvFrameRec {
  *   |  base  |
  *   |   pc   |
  *   |  cpc   |
+ *   | marker |
  *   | size=N |
  *   |  env   |
  *   |..prev..|<--- ScmContFrame* cont
@@ -132,6 +133,7 @@ typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
     int size;                     /* size of argument frame */
+    int marker;                   /* end marker of partial continuation */
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
@@ -276,6 +278,8 @@ typedef struct ScmEscapePointRec {
                                    for they can be executed on anywhere
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
+    ScmObj resetChain;          /* for reset/shift */
+    ScmObj partHandlers;        /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control
@@ -535,6 +539,14 @@ struct ScmVMRec {
                                    Set by vm_register. */
 
     ScmCallTrace *callTrace;
+
+    /* for reset/shift */
+    ScmObj resetChain;          /* list of reset information,
+                                   where reset information is
+                                   (delimited . <dynamic handlers chain>).
+                                   the delimited flag is set when 'shift'
+                                   appears in 'reset' and the end marker of
+                                   partial continuation is set. */
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);
