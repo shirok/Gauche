@@ -237,6 +237,8 @@
                                   (symbol? (car rest))))
                          `(backref . ,(car rest))
                          (err "expected (backref <integer/symbol>)" (cons sym rest))))]
+        ;; gauche extensions
+        [(atomic) `(once ,@(cdr (seq-loop)))]
         [else (err "invalid SRE" sym)]))
 
     (define (fold-case cset)
@@ -320,6 +322,7 @@
                          `(neg-look-behind ,@(map unparse (cdar rest)))
                          `(neg-look-ahead ,@(map unparse rest)))]
           [(backref) `(backref ,rest)]
+          [(once) `(atomic ,@(map unparse rest))]
           [else
            (cond
             ;; group number is ignored, which should be ok

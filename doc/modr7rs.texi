@@ -6320,6 +6320,7 @@ write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
      | (non-greedy-zero-or-more <sre> ...)
      | (**? <m> <n> <sre> ...)     ; Non-greedy <m> to <n> matches.
      | (non-greedy-repeated <sre> ...)
+     | (atomic <sre> ...)          ; Atomic clustering.
      | (look-ahead <sre> ...)      ; Zero-width look-ahead assertion.
      | (look-behind <sre> ...)     ; Zero-width look-behind assertion.
      | (neg-look-ahead <sre> ...)  ; Zero-width negative look-ahead assertion.
@@ -6821,6 +6822,13 @@ the same as RE syntax @code{@i{re}*?}
 
 The non-greedy equivalent of @code{(repeated <sre>...)}. This is the
 same as RE syntax @code{@i{re}@{@i{n},@i{m}@}?}
+
+@item (atomic <sre> ...)
+
+Atomic clustering. Once @code{<sre> ...} matches, the match is fixed;
+even if the following pattern fails, the engine won't backtrack to try
+the alternative match in @code{<sre> ...}. This is Gauche extension
+and is the same as RE syntax @code{(?>@i{pattern})}
 
 @end table
 

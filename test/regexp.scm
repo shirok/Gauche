@@ -1155,6 +1155,14 @@
 (test-ast #\a #\a)
 (test-ast (seq #\a #\b #\c) "abc")
 
+(test* "atomic sre -> once ast"
+       '(0 #f (once (seq #\f #\o) (seq #\o)))
+       (regexp-parse-sre '(atomic "fo" "o")))
+
+(test* "once ast -> atomic sre"
+       '(seq (atomic #\f #\o #\o))
+       (regexp-unparse-sre (regexp-ast #/(?>foo)/)))
+
 ;;-------------------------------------------------------------------------
 (test-section "regexp-unparse-sre")
 
