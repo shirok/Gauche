@@ -7837,14 +7837,24 @@ To write code that can work both in new and old syntax, use @code{\u} escape.
 @subheading 定義済み文字セット
 @c COMMON
 
+@c EN
 We provide a bunch of predefined character sets, including the ones
 defined in R7RS charset library (@pxref{R7RS character sets}).
 Those character sets are immutable.
+@c JP
+定義済みの文字セットがいくつか提供されています。
+R7RS文字セットライブラリで定義されているものも含まれます(@ref{R7RS character sets}参照)。
+これらの文字セットは変更不可です。
+@c COMMON
 
 @defvar char-set:letter
 [R7RS charset]
+@c EN
 Letters (Unicode general category @code{Lu}, @code{Ll}, @code{Lt},
 @code{Lm} and @code{Lo}).
+@c JP
+文字 (Unicodeカテゴリ@code{Lu}、@code{Ll}、@code{Lt}、@code{Lm}、@code{Lo})。
+@c COMMON
 @end defvar
 
 
@@ -7852,22 +7862,39 @@ Letters (Unicode general category @code{Lu}, @code{Ll}, @code{Lt},
 @defvarx char-set:upper-case
 @defvarx char-set:title-case
 [R7RS charset]
+@c EN
 Lower case, upper case and title case letters
 (Unicode general category @code{Ll}, @code{Lu} and @code{Lt}, respectively).
+@c JP
+小文字、大文字、タイトルケース文字
+(それぞれ、Unicodeカテゴリ@code{Ll}、@code{Lu}、@code{Lt})。
+@c COMMON
 @end defvar
 
 @defvar char-set:digit
 [R7RS charset]
+@c EN
 Digit characters (Unicode general category @code{Nd}).  Note that this
 contains many more characters than ASCII @code{0} to @code{9}.  If you
 need @code{#[0-9]}, use @code{char-set:ascii-digit}.
+@c JP
+数字 (Unicodeカテゴリ@code{Nd})。
+これには非ASCIIの数字もたくさん含まれています。
+ASCIIの数字(@code{#[0-9]})だけが欲しい時は@code{char-set:ascii-digit}を
+使ってください。
+@c COMMON
 @end defvar
 
 @defvar char-set:hex-digit
 [R7RS charset]
+@c EN
 Digit characters used for hexadecimal, i.e. @code{#[0-9A-Fa-f]}.  This does
 not contain other Unicode digit characters, for it isn't practical
 to mix non-ascii digit characters with hexadecimal notation.
+@c JP
+16進数表記に使われる文字、つまり@code{#[0-9A-Fa-f]}。
+これにはASCII外の文字は含まれません。
+@c COMMON
 @end defvar
 
 @defvar char-set:letter+digit
