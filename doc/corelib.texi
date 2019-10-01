@@ -8024,6 +8024,18 @@ the given general category; e.g. @code{char-set:Lu} contains all characters
 of the general category @code{Lu}.
 @end defvar
 
+@defvar char-set:L
+@defvarx char-set:M
+@defvarx char-set:N
+@defvarx char-set:P
+@defvarx char-set:S
+@defvarx char-set:Z
+@defvarx char-set:C
+Each character set contains the Unicode characters with the general
+category starting with the letter; e.g. @code{char-set:L} is union
+of @code{char-set:Lu}, @code{char-set:Ll}, @code{char-set:Lt},
+@code{char-set:Lm} and @code{char-set:Lo}.
+@end defvar
 
 @c EN
 @subheading Char-set operations
