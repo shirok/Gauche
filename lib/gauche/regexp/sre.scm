@@ -176,7 +176,7 @@
         [(word) (%sre->ast '(word+ any) nocapture casefold ascii)]
         [else (err "not supported" sre)]))
 
-    ;; FIXME: missing bos, eos, bog, eog, grapheme
+    ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
       (define (loop :optional (rest rest))
         (map (cut %sre->ast <> nocapture casefold ascii) rest))
