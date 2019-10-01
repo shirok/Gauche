@@ -191,6 +191,14 @@
                         (ascii ascii))
         `(seq ,@(map (cut %sre->ast <> nocapture casefold ascii) rest)))
 
+      (define (cpat test)
+        `(cpat ,(test (map-one (car rest)))
+               (,(map-one (cadr rest)))
+               ,(cond
+                 [(null? (cddr rest)) '()]
+                 [(null? (cdddr rest)) (list (map-one (caddr rest)))]
+                 [else (err "unsupported syntax" sre)])))
+
       (case sym
         [(* zero-or-more) `(rep 0 #f ,@(loop))]
         [(+ one-or-more) `(rep 1 #f ,@(loop))]
@@ -250,6 +258,10 @@
                                [(null? (cddr rest)) '()]
                                [(null? (cdddr rest)) (list (map-one (caddr rest)))]
                                [else (err "unsupported syntax" sre)]))]
+        [(if-look-ahead) (cpat (^x `(assert ,x)))]
+        [(if-neg-look-ahead) (cpat (^x `(nassert ,x)))]
+        [(if-look-behind) (cpat (^x `(assert (lookbehind ,x))))]
+        [(if-neg-look-behind) (cpat (^x `(nassert (lookbehind ,x))))]
         [else (err "invalid SRE" sym)]))
 
     (define (fold-case cset)
@@ -292,6 +304,18 @@
     (cond
      [(number? test)
       (values 'if-backref test)]
+     [(not (pair? test))
+      (err "unsupported AST" ast)]
+     [(eq? (car test) 'assert)
+      (if (and (pair? (cadr test))
+               (eq? (caadr test) 'lookbehind))
+        (values 'if-look-behind (cdadr test))
+        (values 'if-look-ahead (cdr test)))]
+     [(eq? (car test) 'nassert)
+      (if (and (pair? (cadr test))
+               (eq? (caadr test) 'lookbehind))
+        (values 'if-neg-look-behind (cdadr test))
+        (values 'if-neg-look-ahead (cdr test)))]
      [else
       (err "unsupported AST" ast)]))
 
