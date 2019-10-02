@@ -206,7 +206,7 @@ enum {
  *                                 ; like rep, but no backtrack
  *         | (<integer> <symbol> . <ast>)
  *                                 ; capturing group.  <symbol> may be #f.
- *         | (cpat <condition> <ast> <ast>)
+ *         | (cpat <condition> (<ast>) (<ast>))
  *                                 ; conditional expression
  *         | (backref . <integer>) ; backreference by group number
  *         | (backref . <symbol>)  ; backreference by name
