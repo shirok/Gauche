@@ -345,6 +345,7 @@ static ScmObj rc1_group_name(regcomp_ctx *ctx);
 static ScmObj rc1_lex_minmax(regcomp_ctx *ctx);
 static ScmObj rc1_lex_open_paren(regcomp_ctx *ctx);
 static ScmObj rc1_lex_xdigits(ScmPort *port, int key);
+static ScmObj rc1_lex_charset_category(ScmPort *port, ScmChar ch);
 
 /*----------------------------------------------------------------
  * pass1 - parser
@@ -456,6 +457,10 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             cs = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WHITESPACE);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
+        case 'p': case 'P':
+            cs = rc1_lex_charset_category(ctx->ipat, ch);
+            rc_register_charset(ctx, SCM_CHAR_SET(cs));
+            return cs;
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
             Scm_UngetcUnsafe(ch, ctx->ipat);
@@ -523,6 +528,33 @@ static ScmObj rc1_lex_xdigits(ScmPort *port, int key)
             return h;
         }
     }
+}
+
+/* Read \p{Xx} and \P{Xx}, character category spec.   The input port
+   is right after \p or \P.
+   Returns charset. CH is either 'p' or 'P' */
+static ScmObj rc1_lex_charset_category(ScmPort *port, ScmChar ch)
+{
+    ScmDString ds;
+    Scm_DStringInit(&ds);
+
+    for (;;) {
+        ScmChar c = Scm_GetcUnsafe(port);
+        if (c == SCM_CHAR_INVALID) {
+            Scm_Error("Unterminated \\%c in regexp", ch);
+        }
+        Scm_DStringPutc(&ds, c);
+        if (c == '}') {
+            const char *buf = Scm_DStringPeek(&ds, NULL, NULL);
+            int cset = Scm_CharSetParseCategory(&buf, ch);
+            if (ch == 'p') {
+                return Scm_GetStandardCharSet(cset);
+            } else {
+                return Scm_GetStandardCharSet(-cset);
+            }
+        }
+    }
+    /* NOTREACHED */
 }
 
 /* Called after '+', '*' or '?' is read, and check if there's a

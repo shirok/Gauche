@@ -1002,7 +1002,6 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
    In that case, the returned charset is not complemented. */
 
 static ScmObj read_predef_charset(const char**, int);
-static int read_charset_category(const char**, char);
 static int read_charset_syntax(ScmPort *input, int bracket_syntax,
                                ScmDString *buf, int *complementp);
 
@@ -1070,10 +1069,10 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                     moreset = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WORD);
                     break;
                 case 'p':
-                    moreset = Scm_GetStandardCharSet(read_charset_category(&cp, ch));
+                    moreset = Scm_GetStandardCharSet(Scm_CharSetParseCategory(&cp, ch));
                     break;
                 case 'P': 
-                    moreset = Scm_GetStandardCharSet(-read_charset_category(&cp, ch));
+                    moreset = Scm_GetStandardCharSet(-Scm_CharSetParseCategory(&cp, ch));
                     break;
                 default:
                     goto ordchar;
@@ -1324,7 +1323,7 @@ static struct predef_charset_category_name_rec {
 
 /* Read \p{Category}.  *cp must point to '{'. 
    ch is either 'p' or 'P'. */
-static int read_charset_category(const char **cp, char ch)
+int Scm_CharSetParseCategory(const char **cp, char ch)
 {
     if (**cp != '{') {
         Scm_Error("\\%c must followed by '{'", ch);

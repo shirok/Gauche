@@ -1,3 +1,8 @@
+2019-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (rc1_lex_charset_category): Support \p{<category} and
+	  \P{<category>} in regexp literals.
+
 2019-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c: Support \p{<category>}, \P{<cateogry>} notation in
