@@ -178,8 +178,11 @@
 
     ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
+      (define (map-one sre)
+          (%sre->ast sre nocapture casefold ascii))
+
       (define (loop :optional (rest rest))
-        (map (cut %sre->ast <> nocapture casefold ascii) rest))
+        (map (cut map-one <>) rest))
 
       (define (seq-loop :optional
                         (rest rest)
@@ -239,6 +242,14 @@
                          (err "expected (backref <integer/symbol>)" (cons sym rest))))]
         ;; gauche extensions
         [(atomic) `(once ,@(cdr (seq-loop)))]
+        [(if-backref) `(cpat ,(if (number? (car rest))
+                                (car rest)
+                                (err "if-backref can only take a number" sre))
+                             (,(map-one (cadr rest)))
+                             ,(cond
+                               [(null? (cddr rest)) '()]
+                               [(null? (cdddr rest)) (list (map-one (caddr rest)))]
+                               [else (err "unsupported syntax" sre)]))]
         [else (err "invalid SRE" sym)]))
 
     (define (fold-case cset)
@@ -277,6 +288,13 @@
                   :multi-line multi-line))
 
 (define (regexp-unparse-sre ast)
+  (define (parse-cpat test)
+    (cond
+     [(number? test)
+      (values 'if-backref test)]
+     [else
+      (err "unsupported AST" ast)]))
+
   (define (unparse ast)
     (cond
      [(char? ast) ast]
@@ -323,6 +341,15 @@
                          `(neg-look-ahead ,@(map unparse rest)))]
           [(backref) `(backref ,rest)]
           [(once) `(atomic ,@(map unparse rest))]
+          [(cpat) (call-with-values
+                      (lambda () (parse-cpat (car rest)))
+                    (lambda (name test)
+                      `(,name
+                        ,(if (pair? test)
+                           `(seq ,@(map unparse test))
+                           test)
+                        (seq ,@(map unparse (cadr rest)))
+                        (seq ,@(map unparse (caddr rest))))))]
           [else
            (cond
             ;; group number is ignored, which should be ok

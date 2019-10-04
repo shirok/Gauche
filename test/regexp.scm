@@ -1163,6 +1163,20 @@
        '(seq (atomic #\f #\o #\o))
        (regexp-unparse-sre (regexp-ast #/(?>foo)/)))
 
+
+(test* "if-backref -> cpat/num ast"
+       '(0 #f (cpat 1
+                    ((seq #\t #\h #\e #\n))
+                    ((seq #\e #\l #\s #\e))))
+       (regexp-parse-sre '(if-backref 1 "then" "else")))
+
+(test* "cpat/num ast -> if-backref sre"
+       '(seq (if-backref 1
+                         (seq (seq #\t #\h #\e #\n))
+                         (seq (seq #\e #\l #\s #\e))))
+       (regexp-unparse-sre (regexp-ast #/(?(1)then|else)/)))
+
+
 ;;-------------------------------------------------------------------------
 (test-section "regexp-unparse-sre")
 

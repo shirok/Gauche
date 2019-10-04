@@ -6321,12 +6321,14 @@ write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
      | (**? <m> <n> <sre> ...)     ; Non-greedy <m> to <n> matches.
      | (non-greedy-repeated <sre> ...)
      | (atomic <sre> ...)          ; Atomic clustering.
+
      | (look-ahead <sre> ...)      ; Zero-width look-ahead assertion.
      | (look-behind <sre> ...)     ; Zero-width look-behind assertion.
      | (neg-look-ahead <sre> ...)  ; Zero-width negative look-ahead assertion.
      | (neg-look-behind <sre> ...) ; Zero-width negative look-behind assertion.
 
      | (backref <n-or-name>)       ; Match a previous submatch.
+     | (if-backref <backref> <then-sre> [<else-sre>])          ; Conditional pattern
 @end example
 
 The grammar for @code{cset-sre} is as follows.
@@ -6549,6 +6551,15 @@ number. This is the equivalent of @code{(?<@i{name}>@i{re}@dots{})}
 
 Matches a previously matched submatch. This is the same as
 RE syntax @code{\@i{n}} or @code{\k<@i{name}>}.
+
+@item (if-backref <n> <then-sre> [<else-sre>])
+
+Conditional matching. If the @code{<n>}-th capturing group has a
+match, @code{<then-sre>} pattern is tried; otherwise @code{<else-sre>}
+pattern is tried when provided.
+
+This is Gauche extension and is the same as RE syntax
+@code{(?(@i{n})@i{then})} or @code{(?(@i{n})@i{then}|@i{else})}.
 
 @end table
 
