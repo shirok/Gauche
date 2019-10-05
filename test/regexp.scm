@@ -1155,6 +1155,100 @@
 (test-ast #\a #\a)
 (test-ast (seq #\a #\b #\c) "abc")
 
+(test* "atomic sre -> once ast"
+       '(0 #f (once (seq #\f #\o) (seq #\o)))
+       (regexp-parse-sre '(atomic "fo" "o")))
+
+(test* "once ast -> atomic sre"
+       '(seq (atomic #\f #\o #\o))
+       (regexp-unparse-sre (regexp-ast #/(?>foo)/)))
+
+
+(test* "if-look-ahead sre -> cpat/assert ast"
+       '(0 #f (cpat (assert (seq #\t #\e #\s #\t))
+                    ((seq #\t #\h #\e #\n))
+                    ((seq #\e #\l #\s #\e))))
+       (regexp-parse-sre '(if-look-ahead "test" "then" "else")))
+
+(test* "cpat/assert ast -> if-look-ahead sre"
+       '(seq (if-look-ahead (seq #\t #\e #\s #\t)
+                            (seq (seq #\t #\h #\e #\n))
+                            (seq (seq #\e #\l #\s #\e))))
+       (regexp-unparse-sre (regexp-ast #/(?(?=test)then|else)/)))
+
+(test* "if-look-ahead sre -> cpat/assert ast, no else pattern"
+       '(0 #f (cpat (assert (seq #\t #\e #\s #\t))
+                    ((seq #\t #\h #\e #\n))
+                    ()))
+       (regexp-parse-sre '(if-look-ahead "test" "then")))
+
+(test* "cpat/assert ast -> if-look-ahead sre, no else pattern"
+       '(seq (if-look-ahead (seq #\t #\e #\s #\t)
+                            (seq #\t #\h #\e #\n)
+                            (seq)))
+       (regexp-unparse-sre (regexp-ast #/(?(?=test)then)/)))
+
+(test* "if-neg-look-ahead sre -> cpat/nassert ast"
+       '(0 #f (cpat (nassert (seq #\t #\e #\s #\t))
+                    ((seq #\t #\h #\e #\n))
+                    ((seq #\e #\l #\s #\e))))
+       (regexp-parse-sre '(if-neg-look-ahead "test" "then" "else")))
+
+(test* "cpat/nassert ast -> if-neg-look-ahead sre"
+       '(seq (if-neg-look-ahead (seq #\t #\e #\s #\t)
+                                (seq (seq #\t #\h #\e #\n))
+                                (seq (seq #\e #\l #\s #\e))))
+       (regexp-unparse-sre (regexp-ast #/(?(?!test)then|else)/)))
+
+(test* "if-neg-look-ahead sre -> cpat/nassert ast, no else pattern"
+       '(0 #f (cpat (nassert (seq #\t #\e #\s #\t))
+                    ((seq #\t #\h #\e #\n))
+                    ()))
+       (regexp-parse-sre '(if-neg-look-ahead "test" "then")))
+
+(test* "cpat/nassert ast -> if-neg-look-ahead sre, no else pattern"
+       '(seq (if-neg-look-ahead (seq #\t #\e #\s #\t)
+                                (seq #\t #\h #\e #\n)
+                                (seq)))
+       (regexp-unparse-sre (regexp-ast #/(?(?!test)then)/)))
+
+(test* "if-look-behind sre -> cpat/lookbehind ast"
+       '(0 #f (cpat (assert (lookbehind (seq #\t #\e #\s #\t)))
+                    ((seq #\t #\h #\e #\n))
+                    ((seq #\e #\l #\s #\e))))
+       (regexp-parse-sre '(if-look-behind "test" "then" "else")))
+
+(test* "cpat/lookbehind ast -> if-look-behind sre"
+       '(seq (if-look-behind (seq #\t #\e #\s #\t)
+                             (seq (seq #\t #\h #\e #\n))
+                             (seq (seq #\e #\l #\s #\e))))
+       (regexp-unparse-sre (regexp-ast #/(?(?<=test)then|else)/)))
+
+(test* "if-neg-look-behind sre -> cpat/lookbehind ast"
+       '(0 #f (cpat (nassert (lookbehind (seq #\t #\e #\s #\t)))
+                    ((seq #\t #\h #\e #\n))
+                    ((seq #\e #\l #\s #\e))))
+       (regexp-parse-sre '(if-neg-look-behind "test" "then" "else")))
+
+(test* "cpat/lookbehind ast -> if-neg-look-behind sre"
+       '(seq (if-neg-look-behind (seq #\t #\e #\s #\t)
+                                 (seq (seq #\t #\h #\e #\n))
+                                 (seq (seq #\e #\l #\s #\e))))
+       (regexp-unparse-sre (regexp-ast #/(?(?<!test)then|else)/)))
+
+(test* "if-backref -> cpat/num ast"
+       '(0 #f (cpat 1
+                    ((seq #\t #\h #\e #\n))
+                    ((seq #\e #\l #\s #\e))))
+       (regexp-parse-sre '(if-backref 1 "then" "else")))
+
+(test* "cpat/num ast -> if-backref sre"
+       '(seq (if-backref 1
+                         (seq (seq #\t #\h #\e #\n))
+                         (seq (seq #\e #\l #\s #\e))))
+       (regexp-unparse-sre (regexp-ast #/(?(1)then|else)/)))
+
+
 ;;-------------------------------------------------------------------------
 (test-section "regexp-unparse-sre")
 

@@ -6320,12 +6320,20 @@ write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
      | (non-greedy-zero-or-more <sre> ...)
      | (**? <m> <n> <sre> ...)     ; Non-greedy <m> to <n> matches.
      | (non-greedy-repeated <sre> ...)
+     | (atomic <sre> ...)          ; Atomic clustering.
+
      | (look-ahead <sre> ...)      ; Zero-width look-ahead assertion.
      | (look-behind <sre> ...)     ; Zero-width look-behind assertion.
      | (neg-look-ahead <sre> ...)  ; Zero-width negative look-ahead assertion.
      | (neg-look-behind <sre> ...) ; Zero-width negative look-behind assertion.
 
+     | (if-look-ahead <test-sre> <then-sre> [<else-sre>])      ; Conditional pattern
+     | (if-neg-look-ahead <test-sre> <then-sre> [<else-sre>])  ; Conditional pattern
+     | (if-look-behind <test-sre> <then-sre> [<else-sre>])     ; Conditional pattern
+     | (if-neg-look-behind <test-sre> <then-sre> [<else-sre>]) ; Conditional pattern
+
      | (backref <n-or-name>)       ; Match a previous submatch.
+     | (if-backref <backref> <then-sre> [<else-sre>])          ; Conditional pattern
 @end example
 
 The grammar for @code{cset-sre} is as follows.
@@ -6376,7 +6384,8 @@ A literal string.
 @item (seq <sre> ...)
 @itemx (: <sre> ...)
 
-A sequence of patterns that should be matched in the same order.
+A sequence of patterns that should be matched in the same order. This
+is the same as RE syntax @code{(?:@i{re}@dots{})}
 
 @example
 (regexp-search '(: "one" space "two" space "three") "one two three") => #<regexp-match>
@@ -6385,7 +6394,8 @@ A sequence of patterns that should be matched in the same order.
 @item (or <sre> ...)
 @itemx (|\|| <sre> ...)
 
-Matches one of the given patterns.
+Matches one of the given patterns. This is the same as
+RE syntax @code{@i{pattern1}|@i{pattern2}|@dots{}}
 
    (regexp-search '(or "eeney" "meeney" "miney") "meeney") => #<regexp-match>
    (regexp-search '(or "eeney" "meeney" "miney") "moe") => #f
@@ -6393,7 +6403,8 @@ Matches one of the given patterns.
 @item (w/nocase <sre> ...)
 
 Changes to match the given patterns case-insensitively. Sub-patterns
-can still be made sensitive with @code{w/case}.
+can still be made sensitive with @code{w/case}. This is the same as
+RE syntax @code{(?i:@i{re}@dots{})}
 
 @example
 (regexp-search "needle" "haynEEdlehay") => #f
@@ -6410,7 +6421,8 @@ can still be made sensitive with @code{w/case}.
 @item (w/case <sre> ...)
 
 Changes to match the given patterns case-sensitively. Sub-patterns can
-still be made case-insensitive. This is the default.
+still be made case-insensitive. This is the same as RE syntax
+@code{(?-i:@i{re}@dots{})}. This is the default.
 
 @example
 (regexp-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall") => #<regexp-match>
@@ -6538,11 +6550,21 @@ the numbering scheme is depth-first walk.
 @itemx (-> <name> <sre> ...)
 
 Captures the matched string and assigns a name to it in addition to a
-number.
+number. This is the equivalent of @code{(?<@i{name}>@i{re}@dots{})}
 
 @item (backref <n-or-name>)
 
-Matches a previously matched submatch.
+Matches a previously matched submatch. This is the same as
+RE syntax @code{\@i{n}} or @code{\k<@i{name}>}.
+
+@item (if-backref <n> <then-sre> [<else-sre>])
+
+Conditional matching. If the @code{<n>}-th capturing group has a
+match, @code{<then-sre>} pattern is tried; otherwise @code{<else-sre>}
+pattern is tried when provided.
+
+This is Gauche extension and is the same as RE syntax
+@code{(?(@i{n})@i{then})} or @code{(?(@i{n})@i{then}|@i{else})}.
 
 @end table
 
@@ -6597,8 +6619,7 @@ the same as @code{`(char-set ,(string->char-set <string>))}.
 @itemx (/ <range-spec> ...)
 
 A character set contains the characters within
-@code{<range-set>}. This is the equivalent of @code{[]} syntax in
-regular expressions.
+@code{<range-set>}. This is the same as RE syntax @code{[]}.
 
 @example
 (regexp-matches '(* (/ "AZ09")) "R2D2") => #<regexp-match>
@@ -6803,17 +6824,27 @@ A shorthand for @code{(word+ any)}.
 @item (non-greedy-optional <sre> ...)
 @itemx (?? <sre> ...)
 
-The non-greedy equivalent of @code{(optional <sre>...)}.
+The non-greedy equivalent of @code{(optional <sre>...)}. This is the
+same as RE syntax @code{@i{re}??}
 
 @item (non-greedy-zero-or-more< <sre> ...)
 @itemx (*? <sre> ...)
 
-The non-greedy equivalent of @code{(zero-or-more <sre>...)}.
+The non-greedy equivalent of @code{(zero-or-more <sre>...)}. This is
+the same as RE syntax @code{@i{re}*?}
 
 @item (non-greedy-repeated <m> <n> <sre> ...)
 @itemx (**? <m> <n> <sre> ...)
 
-The non-greedy equivalent of @code{(repeated <sre>...)}.
+The non-greedy equivalent of @code{(repeated <sre>...)}. This is the
+same as RE syntax @code{@i{re}@{@i{n},@i{m}@}?}
+
+@item (atomic <sre> ...)
+
+Atomic clustering. Once @code{<sre> ...} matches, the match is fixed;
+even if the following pattern fails, the engine won't backtrack to try
+the alternative match in @code{<sre> ...}. This is Gauche extension
+and is the same as RE syntax @code{(?>@i{pattern})}
 
 @end table
 
@@ -6823,7 +6854,8 @@ The non-greedy equivalent of @code{(repeated <sre>...)}.
 @item (look-ahead <sre> ...)
 
 Zero-width look-ahead assertion. Asserts the sequence matches from the
-current position, without advancing the position.
+current position, without advancing the position. This is the same as
+RE syntax @code{(?=@i{pattern})}
 
 @example
 (regexp-matches '(: "regular" (look-ahead " expression") " expression") "regular expression")=> #<regexp-match>
@@ -6835,15 +6867,31 @@ current position, without advancing the position.
 
 Zero-width look-behind assertion. Asserts the sequence matches behind
 the current position, without advancing the position. It is an error
-if the sequence does not have a fixed length.
+if the sequence does not have a fixed length. This is the same as RE
+syntax @code{(?<=@i{pattern})}
 
 @item (neg-look-ahead <sre> ...)
 
-Zero-width negative look-ahead assertion.
+Zero-width negative look-ahead assertion. This is the same as
+RE syntax @code{(?!@i{pattern})}
 
 @item (neg-look-behind <sre> ...)
 
-Zero-width negative look-behind assertion.
+Zero-width negative look-behind assertion. This is the same as RE
+syntax @code{(?<!@i{pattern})}
+
+@item (if-look-ahead <test-sre> <then-sre> [<else-sre>])
+@itemx (if-neg-look-ahead <test-sre> <then-sre> [<else-sre>])
+@itemx (if-look-behind <test-sre> <then-sre> [<else-sre>])
+@itemx (if-neg-look-behind <test-sre> <then-sre> [<else-sre>])
+
+Conditional matching. If @code{<test-sre>} counts true,
+@code{<then-sre>} pattern is tried; otherwise @code{<else-sre>}
+pattern is tried when provided.
+
+This is Gauche extension and the same as @code{(?(?=..)...)},
+@code{(?(?!..)...)}, @code{(?(?<=..)...)}, @code{(?(?<!..)...)}
+respectively.
 
 @end table
 
