@@ -546,12 +546,7 @@ static ScmObj rc1_lex_charset_category(ScmPort *port, ScmChar ch)
         Scm_DStringPutc(&ds, c);
         if (c == '}') {
             const char *buf = Scm_DStringPeek(&ds, NULL, NULL);
-            int cset = Scm_CharSetParseCategory(&buf, ch);
-            if (ch == 'p') {
-                return Scm_GetStandardCharSet(cset);
-            } else {
-                return Scm_GetStandardCharSet(-cset);
-            }
+            return Scm_GetStandardCharSet(Scm_CharSetParseCategory(&buf, ch));
         }
     }
     /* NOTREACHED */

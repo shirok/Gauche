@@ -1068,11 +1068,8 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                 case 'W':
                     moreset = Scm_GetStandardCharSet(-SCM_CHAR_SET_ASCII_WORD);
                     break;
-                case 'p':
+                case 'p': case 'P':
                     moreset = Scm_GetStandardCharSet(Scm_CharSetParseCategory(&cp, ch));
-                    break;
-                case 'P': 
-                    moreset = Scm_GetStandardCharSet(-Scm_CharSetParseCategory(&cp, ch));
                     break;
                 default:
                     goto ordchar;
@@ -1140,10 +1137,9 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
     int begin = REAL_BEGIN, complement = FALSE, brackets = 0;
 
     for (;;) {
-        int ch;
-        SCM_GETC(ch, input);
+        int ch = Scm_Getc(input);
         if (ch == EOF) return FALSE;
-
+        
         if (begin == REAL_BEGIN && ch == '^') {
             complement = TRUE;
             begin = CARET_BEGIN;
@@ -1163,7 +1159,7 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
         case ']': brackets--; break;
         case '[': brackets++; break;
         case '\\':
-            SCM_GETC(ch, input);
+            ch = Scm_Getc(input);
             if (ch == EOF) return FALSE;
             Scm_DStringPutc(buf, ch);
             break;
@@ -1321,8 +1317,11 @@ static struct predef_charset_category_name_rec {
     { NULL, 0 }
 };
 
-/* Read \p{Category}.  *cp must point to '{'. 
-   ch is either 'p' or 'P'. */
+/* Read \p{Category}, \P{Category}.   *CP must point right after 'p' or
+   'P'.  CH is either 'p' or 'P'.  On successful reading,  Returns the
+   charset number and update *cp to point right after the syntax. 
+   Otherwise, throws an error.
+*/
 int Scm_CharSetParseCategory(const char **cp, char ch)
 {
     if (**cp != '{') {
@@ -1345,7 +1344,11 @@ int Scm_CharSetParseCategory(const char **cp, char ch)
     for (int j=0; predef_charset_category_name[j].cat; j++) {
         if (strcmp(name, predef_charset_category_name[j].cat) == 0) {
             *cp += i + 2;
-            return predef_charset_category_name[j].cset;
+            if (ch == 'p') {
+                return predef_charset_category_name[j].cset;
+            } else {
+                return -predef_charset_category_name[j].cset;
+            }
         }
     }
  bad:
