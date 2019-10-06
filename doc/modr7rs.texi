@@ -6327,13 +6327,13 @@ write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
      | (neg-look-ahead <sre> ...)  ; Zero-width negative look-ahead assertion.
      | (neg-look-behind <sre> ...) ; Zero-width negative look-behind assertion.
 
-     | (if-look-ahead <test-sre> <then-sre> [<else-sre>])      ; Conditional pattern
-     | (if-neg-look-ahead <test-sre> <then-sre> [<else-sre>])  ; Conditional pattern
-     | (if-look-behind <test-sre> <then-sre> [<else-sre>])     ; Conditional pattern
-     | (if-neg-look-behind <test-sre> <then-sre> [<else-sre>]) ; Conditional pattern
-
      | (backref <n-or-name>)       ; Match a previous submatch.
-     | (if-backref <backref> <then-sre> [<else-sre>])          ; Conditional pattern
+     @c These are extensions
+     @c | (if-look-ahead <test-sre> <then-sre> [<else-sre>])      ; Conditional pattern
+     @c | (if-neg-look-ahead <test-sre> <then-sre> [<else-sre>])  ; Conditional pattern
+     @c | (if-look-behind <test-sre> <then-sre> [<else-sre>])     ; Conditional pattern
+     @c | (if-neg-look-behind <test-sre> <then-sre> [<else-sre>]) ; Conditional pattern
+     @c | (if-backref <backref> <then-sre> [<else-sre>])          ; Conditional pattern
 @end example
 
 The grammar for @code{cset-sre} is as follows.
@@ -6557,14 +6557,14 @@ number. This is the equivalent of @code{(?<@i{name}>@i{re}@dots{})}
 Matches a previously matched submatch. This is the same as
 RE syntax @code{\@i{n}} or @code{\k<@i{name}>}.
 
-@item (if-backref <n> <then-sre> [<else-sre>])
+@c @item (if-backref <n> <then-sre> [<else-sre>])
 
-Conditional matching. If the @code{<n>}-th capturing group has a
-match, @code{<then-sre>} pattern is tried; otherwise @code{<else-sre>}
-pattern is tried when provided.
+@c Conditional matching. If the @code{<n>}-th capturing group has a
+@c match, @code{<then-sre>} pattern is tried; otherwise @code{<else-sre>}
+@c pattern is tried when provided.
 
-This is Gauche extension and is the same as RE syntax
-@code{(?(@i{n})@i{then})} or @code{(?(@i{n})@i{then}|@i{else})}.
+@c This is Gauche extension and is the same as RE syntax
+@c @code{(?(@i{n})@i{then})} or @code{(?(@i{n})@i{then}|@i{else})}.
 
 @end table
 
@@ -6880,18 +6880,18 @@ RE syntax @code{(?!@i{pattern})}
 Zero-width negative look-behind assertion. This is the same as RE
 syntax @code{(?<!@i{pattern})}
 
-@item (if-look-ahead <test-sre> <then-sre> [<else-sre>])
-@itemx (if-neg-look-ahead <test-sre> <then-sre> [<else-sre>])
-@itemx (if-look-behind <test-sre> <then-sre> [<else-sre>])
-@itemx (if-neg-look-behind <test-sre> <then-sre> [<else-sre>])
+@c @item (if-look-ahead <test-sre> <then-sre> [<else-sre>])
+@c @itemx (if-neg-look-ahead <test-sre> <then-sre> [<else-sre>])
+@c @itemx (if-look-behind <test-sre> <then-sre> [<else-sre>])
+@c @itemx (if-neg-look-behind <test-sre> <then-sre> [<else-sre>])
 
-Conditional matching. If @code{<test-sre>} counts true,
-@code{<then-sre>} pattern is tried; otherwise @code{<else-sre>}
-pattern is tried when provided.
+@c Conditional matching. If @code{<test-sre>} counts true,
+@c @code{<then-sre>} pattern is tried; otherwise @code{<else-sre>}
+@c pattern is tried when provided.
 
-This is Gauche extension and the same as @code{(?(?=..)...)},
-@code{(?(?!..)...)}, @code{(?(?<=..)...)}, @code{(?(?<!..)...)}
-respectively.
+@c This is Gauche extension and the same as @code{(?(?=..)...)},
+@c @code{(?(?!..)...)}, @code{(?(?<=..)...)}, @code{(?(?<!..)...)}
+@c respectively.
 
 @end table
 
