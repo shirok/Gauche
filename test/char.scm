@@ -329,5 +329,15 @@
                     char-set:word
                     char-set:ascii-word)))
 
+(test* "\\p and \\P syntax (\\p{Lu})" #t
+       (equal? #[\p{Lu}] char-set:Lu))
+(test* "\\p and \\P syntax (\\P{Nd})" #t
+       (equal? #[\P{Nd}] (char-set-complement char-set:Nd)))
+(test* "\\p and \\P syntax(\\p{Lu}a)"  #t
+       (and (#[\p{Lu}a] #\A)
+            (#[\p{Lu}a] #\a)))
+(test* "\\p and \\P syntax (\\p{L}\\P{L})" #t
+       (equal? #[\P{L}\p{L}] char-set:full))
+
 (test-end)
 
