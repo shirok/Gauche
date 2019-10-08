@@ -723,7 +723,7 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
    be read.  The character is passed to KEY.  It also receives
    ScmReaderLexicalMode.
 
-   Character literal doesn't take terminating ';'.  TERMINATOR character
+   Character literal doesn't take terminating ';'.  TERMINATOR flag
    indicates whether we expect terminator or not.
 
    NEXTBUF is an output variable points to the next character on success.
