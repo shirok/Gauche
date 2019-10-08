@@ -1083,7 +1083,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                 Scm_DStringPutc(&xbuf, '\0');
                 const char *cp = Scm_DStringPeek(&xbuf, NULL, NULL);
                 SCM_CHAR_GET(cp, ch);
-                cp += SCM_CHAR_NFOLLOWS(*cp);
+                cp += SCM_CHAR_NFOLLOWS(*cp)+1;
                 if (*cp != '\0') {
                     prefetched = cp;
                 }
