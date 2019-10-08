@@ -535,21 +535,7 @@ static ScmObj rc1_lex_xdigits(ScmPort *port, int key)
    Returns charset. CH is either 'p' or 'P' */
 static ScmObj rc1_lex_charset_category(ScmPort *port, ScmChar ch)
 {
-    ScmDString ds;
-    Scm_DStringInit(&ds);
-
-    for (;;) {
-        ScmChar c = Scm_GetcUnsafe(port);
-        if (c == SCM_CHAR_INVALID) {
-            Scm_Error("Unterminated \\%c in regexp", ch);
-        }
-        Scm_DStringPutc(&ds, c);
-        if (c == '}') {
-            const char *buf = Scm_DStringPeek(&ds, NULL, NULL);
-            return Scm_GetStandardCharSet(Scm_CharSetParseCategory(&buf, ch));
-        }
-    }
-    /* NOTREACHED */
+    return Scm_GetStandardCharSet(Scm_CharSetParseCategory(port, ch));
 }
 
 /* Called after '+', '*' or '?' is read, and check if there's a

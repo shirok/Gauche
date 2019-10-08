@@ -107,7 +107,7 @@ SCM_EXTERN ScmObj Scm_CharSetCaseFold(ScmCharSet *cs);
 SCM_EXTERN ScmObj Scm_CharSetRanges(ScmCharSet *cs);
 SCM_EXTERN ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                                   int error_p, int bracket_syntax);
-SCM_EXTERN int    Scm_CharSetParseCategory(const char **cp, char ch);
+SCM_EXTERN int    Scm_CharSetParseCategory(ScmPort *input, char ch);
 
 SCM_EXTERN int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
 SCM_EXTERN void   Scm_CharSetDump(ScmCharSet *cs, ScmPort *port);
