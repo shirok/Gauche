@@ -5874,7 +5874,7 @@ string-unfold      string-unfold-right      reverse-list->string
 string-take        string-drop        string-take-right  string-drop-right
 string-pad         string-pad-right   string-trim        string-trim-right
 string-trim-both   string-replace     string-prefix-length string-suffix-length
-string-prefix?     string-suffix?     string-innex       string-index-right
+string-prefix?     string-suffix?     string-index       string-index-right
 string-skip        string-skip-right  string-contains    string-concatenate
 string-concatenate-reverse            string-fold        string-fold-right
 string-count       string-filter      string-copy!
