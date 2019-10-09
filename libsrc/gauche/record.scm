@@ -444,7 +444,7 @@
       [#f '()]
       [#t `((,%define-inline ,(sym+ 'make- typename) (,%ctor ,typename)))]
       [((? id? ctor-name) field ...)
-       `((,%define-inline ,ctor-name (,%ctor ,typename ,(list->vector field))))]
+       `((,%define-inline ,ctor-name (,%ctor ,typename ',(list->vector field))))]
       [(? id? ctor-name)
        `((,%define-inline ,ctor-name (,%ctor ,typename)))]
       [x (error "invalid constructor spec" ctor-spec)]))
