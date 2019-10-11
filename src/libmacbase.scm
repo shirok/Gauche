@@ -143,11 +143,11 @@
       ;; NB: We need to apply unravel-syntax on expr and out at once,
       ;; so that we can correspond the identifiers from input and output.
       (let1 unraveled (unravel-syntax (cons expr out))
-        (display "Macro input>>>\n")
+        (display "Macro input>>>\n" (current-error-port))
         (pprint (car unraveled) :port (current-error-port) :level #f :length #f)
-        (display "\nMacro output<<<\n")
+        (display "\nMacro output<<<\n" (current-error-port))
         (pprint (cdr unraveled) :port (current-error-port) :level #f :length #f)
-        (display "\n")))
+        (display "\n" (current-error-port))))
     out))
 
 (define-cproc make-syntax (name::<symbol> proc)
