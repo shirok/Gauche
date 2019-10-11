@@ -153,8 +153,8 @@ fi
 
 # Build zip archive
 if [ "$ZIP_ARCHIVE" = "yes" ]; then
-    VERSION=`cat VERSION`
-    ZIP_FILE=Gauche-mingw-${VERSION}.zip
+    VERSION=$(cat VERSION)
+    ZIP_FILE="Gauche-mingw-${VERSION}.zip"
 
     (cd "${distdir}/../" && rm -f "./${ZIP_FILE}" && 7z a "./${ZIP_FILE}" $(basename "${distdir}"))
     cp "${distdir}/../${ZIP_FILE}" ..
