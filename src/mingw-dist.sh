@@ -154,5 +154,7 @@ fi
 # Build zip archive
 if [ "$ZIP_ARCHIVE" = "yes" ]; then
     VERSION=`cat VERSION`
-    (cd $distdir/../; 7z a Gauche-mingw-$VERSION.zip Gauche)
+    ZIP_FILE=Gauche-mingw-${VERSION}.zip
+
+    (cd "${distdir}/../" && rm -f "./${ZIP_FILE}" && 7z a "./${ZIP_FILE}" $(basename "${distdir}"))
 fi
