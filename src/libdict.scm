@@ -97,6 +97,9 @@
            (return resultval_))]))])
  )
 
+;; An unique object, used to detect exhausted iterator
+(define *unique* (cons #f #f))
+
 ;;;
 ;;; Hashtables
 ;;;
@@ -328,6 +331,16 @@
 (define-cproc hash-table-keys (ht::<hash-table>)   Scm_HashTableKeys)
 (define-cproc hash-table-values (ht::<hash-table>) Scm_HashTableValues)
 (define-cproc hash-table-stat (ht::<hash-table>)   Scm_HashTableStat)
+
+;; used in some internal routines
+(define (hash-table-fold ht kons knil)
+  (assume-type ht <hash-table>)
+  (let1 i ((with-module gauche.internal %hash-table-iter) ht)
+    (let loop ([r knil])
+      (receive [k v] (i (with-module gauche.internal *unique*))
+        (if (eq? k (with-module gauche.internal *unique*))
+          r
+          (loop (kons k v r)))))))
 
 ;; conversion to/from hash-table
 (define (alist->hash-table a . opt-cmpr)

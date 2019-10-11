@@ -185,7 +185,7 @@
           hash-table-for-each hash-table-for-each-r7
           hash-table-map hash-table-map-r7 hash-table-map!-r7
           hash-table-map->list-r7
-          hash-table-fold hash-table-fold-r7 hash-table-count-r7
+          hash-table-fold-r7 hash-table-count-r7
           hash-table-prune!-r7
           hash-table-compare-as-sets hash-table=?
           hash-table-union! hash-table-intersection!
