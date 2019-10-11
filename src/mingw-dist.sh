@@ -157,4 +157,5 @@ if [ "$ZIP_ARCHIVE" = "yes" ]; then
     ZIP_FILE=Gauche-mingw-${VERSION}.zip
 
     (cd "${distdir}/../" && rm -f "./${ZIP_FILE}" && 7z a "./${ZIP_FILE}" $(basename "${distdir}"))
+    cp "${distdir}/../${ZIP_FILE}" ..
 fi
