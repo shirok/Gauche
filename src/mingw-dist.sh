@@ -4,7 +4,7 @@
 # You need MinGW and MSYS.  (You no longer need Cygwin.)
 # The compiled binary is installed in ../Gauche-mingw-dist.  You can just
 # zip it and distribute.
-# See doc/HOWTO-mingw.txt for the details.
+# See doc/HOWTO-mingw.adoc for the details.
 
 set -e
 
