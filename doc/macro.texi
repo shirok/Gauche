@@ -36,7 +36,7 @@ Gaucheは、名前の衝突を避ける安全なマクロを簡単に書ける�
 * Why hygienic?::
 * Hygienic macros::
 * Traditional macros::
-* Macro expansion::
+* Debugging macros::
 * Macro utilities::
 @end menu
 
@@ -1502,7 +1502,7 @@ This will be the default behavior in future.
 @end defmac
 
 
-@node Traditional macros, Macro expansion, Hygienic macros, Macros
+@node Traditional macros, Debugging macros, Hygienic macros, Macros
 @section Traditional macros
 @c NODE 伝統的なマクロ
 
@@ -1564,9 +1564,215 @@ global bindings inserted by the macro.
 @c COMMON
 @end defspec
 
-@node Macro expansion, Macro utilities, Traditional macros, Macros
-@section Macro expansion
-@c NODE マクロの展開
+@node Debugging macros, Macro utilities, Traditional macros, Macros
+@section Debugging macros
+@c NODE マクロのデバッグ
+
+@c EN
+Macro expansion happens at the compile time, which makes it difficult
+to debug.  The best way to avoid headache of macro debugging is
+not to write macros unless they're absolutely necessary, and
+keep them as simple as possible if you need to write ones.
+@c JP
+マクロ展開はコンパイル時に行われるため、デバッグが難しいです。
+マクロのデバッグに悩まされるのを避ける最良の方法は、どうしても必要でない限り
+マクロを書かないこと、そして書くハメになったとしてもできる限り単純なものにすることです。
+@c COMMON
+
+@c EN
+However, if you find yourself in an unfortunate situation that
+you have to untangle hairy macros, 
+Gauche has some tools to help.
+@c JP
+しかし、時には怪しげなマクロを解きほぐす必要に迫られるという不運に見舞われるかもしれません。
+Gaucheにはその助けになるツールがいくつかあります。
+@c COMMON
+
+@menu
+* Tracing macro expansion::
+* Expanding macros manually::
+@end menu
+
+@node Tracing macro expansion, Expanding macros manually, Debugging macros, Debugging macros
+@subsection Tracing macro expansion
+@c NODE マクロ展開をトレースする
+
+Macro tracing shows the input to the macro expander and the result of
+its expansion on selected macros.  Suppose you have the following
+macro definition.  It's essentially the same as shown in the definition
+of @code{letrec} in R7RS section 7.3:
+
+@example
+(define-syntax my-letrec
+  (syntax-rules ()
+    [(_ ((var init) ...) body ...)
+     (my-letrec "tmps" (var ...) () ((var init) ...) body ...)]
+    [(_ "tmps" () (tmp ...) ((var init) ...) body ...)
+     (let ((var 'undefined) ...)
+       (let ((tmp init) ...)
+         (set! var tmp) ...
+         body ...))]
+    [(_ "tmps" (x y ...) (tmp ...) binds body ...)
+     (my-letrec "tmps" (y ...) (newtmp tmp ...) binds body ...)]))
+@end example
+
+The @code{my-letrec} macro uses an idiom to generate temporary
+variables by looping with @code{"tmps"} tag.  You can see how
+the macro is expanded step by step, by tracing @code{my-letrec}:
+
+@example
+gosh> (trace-macro 'my-letrec)
+(my-letrec)
+gosh> (my-letrec [(ev? (^n (if (= n 0) #t (od? (- n 1)))))
+                  (od? (^n (if (= n 0) #f (ev? (- n 1)))))]
+        (ev? 3))
+Macro input>>>
+(my-letrec
+ ((ev? (^n (if (= n 0) #t (od? (- n 1)))))
+  (od? (^n (if (= n 0) #f (ev? (- n 1))))))
+ (ev? 3))
+
+Macro output<<<
+(my-letrec
+ "tmps"
+ (ev? od?)
+ ()
+ ((ev? (^n (if (= n 0) #t (od? (- n 1)))))
+  (od? (^n (if (= n 0) #f (ev? (- n 1))))))
+ (ev? 3))
+
+Macro input>>>
+(my-letrec
+ "tmps"
+ (ev? od?)
+ ()
+ ((ev? (^n (if (= n 0) #t (od? (- n 1)))))
+  (od? (^n (if (= n 0) #f (ev? (- n 1))))))
+ (ev? 3))
+
+Macro output<<<
+(my-letrec
+ "tmps"
+ (od?)
+ (newtmp.0)
+ ((ev? (^n (if (= n 0) #t (od? (- n 1)))))
+  (od? (^n (if (= n 0) #f (ev? (- n 1))))))
+ (ev? 3))
+
+Macro input>>>
+(my-letrec
+ "tmps"
+ (od?)
+ (newtmp.0)
+ ((ev? (^n (if (= n 0) #t (od? (- n 1)))))
+  (od? (^n (if (= n 0) #f (ev? (- n 1))))))
+ (ev? 3))
+
+Macro output<<<
+(my-letrec
+ "tmps"
+ ()
+ (newtmp.1 newtmp.0)
+ ((ev? (^n (if (= n 0) #t (od? (- n 1)))))
+  (od? (^n (if (= n 0) #f (ev? (- n 1))))))
+ (ev? 3))
+
+Macro input>>>
+(my-letrec
+ "tmps"
+ ()
+ (newtmp.0 newtmp.1)
+ ((ev? (^n (if (= n 0) #t (od? (- n 1)))))
+  (od? (^n (if (= n 0) #f (ev? (- n 1))))))
+ (ev? 3))
+
+Macro output<<<
+(let
+ ((ev? (quote undefined)) (od? (quote undefined)))
+ (let
+  ((newtmp.0 (^n (if (= n 0) #t (od? (- n 1)))))
+   (newtmp.1 (^n (if (= n 0) #f (ev? (- n 1))))))
+  (set! ev? newtmp.0)
+  (set! od? newtmp.1)
+  (ev? 3)))
+
+#f
+@end example
+
+In the above example, the S-expressions
+after @code{gosh>} prompt is what you type; all other things are
+Gauche's answer, including @code{Macro input} and @code{Macro output}
+S-expressions.
+
+The S-expression shown with @code{Macro input} is the input of
+the macro expander, and the one with @code{Macro output} is the
+expanded result.   Actual macro output has syntactic information
+attached, but the tracer strips them off for the legibility.
+
+Note that the loop introduces new temporary variables with the same
+name (@code{newtemp}), but they are treated as different identifiers
+in the macro expansion.
+
+Once you're done, don't forget to call @code{untrace-macro} with no arguments
+to remove macro traces.  If there's a macro trace set, all macro expansions
+get some overhead, so don't leave macro traces.
+
+@example
+gosh> (untrace-macro)
+#f
+@end example
+
+
+@defun trace-macro
+@defunx trace-macro boolean
+@defunx trace-macro name-or-pattern @dots{}
+Get/set current macro trace setting.  Macro trace setting can be
+one of the following values:
+
+@table @asis
+@item @code{#f}
+Macro tracing is off.  This is the default setting.
+@item @code{#t}
+All macro expansions are traced.
+@item @code{(@var{name-or-pattern} @dots{})}
+Trace macros that match any one of @var{name-or-pattern}, which
+is either a symbol or a regexp.  If it's a symbol, a macro whose name
+is the same as the symbol is traced.  If it's a regexp, macros whose
+name match the regexp are traced.
+@end table
+
+When called without arguments, @code{trace-macro} doesn't change
+the setting; it returns the current setting.
+
+When called with signle boolean value, it sets the current setting
+to that value.  Returns the updated setting.
+
+When called with one or more @var{name-or-pattern}, it @emph{adds} them
+to the current setting.  Note that if the current setting is @code{#t},
+it remains @code{#t}, for all macros are already traced.
+Returns the updated setting.
+
+If macro trace settings is not @code{#f}, it incurs overhead for
+every macro expansion.  Be careful not to leave macro trace set.
+@end defun
+
+@defun untrace-macro
+@defunx untrace-macro name-or-pattern @dots{}
+When called without arguments, it turns macro trace off.
+
+When called with one or more @var{name-or-pattern}, which is either
+a symbol or a regexp, @code{untrace-macro} removes them from
+the currently traced macros.  Note that if the current macro trace setting
+is @code{#t} (trace all macros), you can't remove traced macro individually.
+
+It returns the updated macro trace setting.
+@end defun
+
+
+@node Expanding macros manually,  , Tracing macro expansion, Debugging macros
+@subsection Expanding macros manually
+@c NODE マクロを自分で展開する
+
 
 @defun macroexpand form
 @defunx macroexpand-1 form
@@ -1665,7 +1871,7 @@ feature only for interactive macro testing.
 @defspecx %macroexpand-1 form
 @end defspec
 
-@node Macro utilities,  , Macro expansion, Macros
+@node Macro utilities,  , Debugging macros, Macros
 @section Macro utilities
 @c NODE マクロユーティリティ
 
