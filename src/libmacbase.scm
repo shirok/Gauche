@@ -123,11 +123,18 @@
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
 (define-cproc macro-name (mac::<macro>) Scm_MacroName)
 
-;; Macro expand tracer (temporary)
+;; Macro expand tracer
 ;; *trace-macro* can be #f (default - no trace), #t (trace all macros),
-;; or a list of symbols (trace macros whose name that matches one of the
-;; symbols).
+;; or a list of symbols/regexp (trace macros whose name that matches)
 (define *trace-macro* #f)
+
+(define (%macro-traced? mac)
+  (or (eq? *trace-macro* #t)
+      (and-let1 macname (unwrap-syntax (macro-name mac))
+        (find (^z (cond [(symbol? z) (eq? z macname)]
+                        [(regexp? z) (z (symbol->string macname))]
+                        [else #f]))
+              *trace-macro*))))
 
 (define (call-macro-expander mac expr cenv)
   (let* ([r ((macro-transformer mac) expr cenv)]
@@ -137,9 +144,7 @@
                            (extended-cons (car r) (cdr r)))
                   (pair-attribute-set! p 'original expr))
                 r)])
-    (when (and *trace-macro*
-               (or (eq? *trace-macro* #t)
-                   (memq (macro-name mac) *trace-macro*)))
+    (when (and *trace-macro* (%macro-traced? mac))
       ;; NB: We need to apply unravel-syntax on expr and out at once,
       ;; so that we can correspond the identifiers from input and output.
       (let1 unraveled (unravel-syntax (cons expr out))
@@ -164,21 +169,28 @@
   (SCM_ASSERT (SCM_SYNTAXP syn))
   (return (-> (SCM_SYNTAX syn) handler)))
 
-;; EXPERIMENTAL - API may change
 (define-in-module gauche (trace-macro . args)
+  ;; force resolving autoload of pprint before changing *trace-macro*; otherwise,
+  ;; autoloading pprint can trigger macro tracing which needs pprint.
+  (procedure? pprint)
   (match args
     [() #f]                             ;just show current traces
     [(#t) (set! *trace-macro* #t)]      ;trace all macros
-    [(sym ...) (and-let1 ms (cond [(not *trace-macro*) '()]
-                                 [(list? *trace-macro*) *trace-macro*]
-                                 [else #f])
-                 (set! *trace-macro* (delete-duplicates (append sym ms))))])
+    [(objs ...)
+     (unless (every (^x (or (symbol? x) (regexp? x))) objs)
+       (error "Argument(s) of trace-macro should be a \
+               boolean, or symbols or regexps, but got:" args))
+     (and-let1 ms (cond [(not *trace-macro*) '()]
+                        [(list? *trace-macro*) *trace-macro*]
+                        [else #f]) ;; if we're tracing all macros, no need to
+                                   ;; add symbols.
+       (set! *trace-macro* (delete-duplicates (append objs ms))))])
   *trace-macro*)
 
 (define-in-module gauche (untrace-macro . args)
   (match args
     [() (set! *trace-macro* #f)]        ;untrace all
     [(sym ...) (when (list? *trace-macro*)
-                 (let1 ms (remove (cute memq <> sym) *trace-macro*)
+                 (let1 ms (remove (cute member <> sym) *trace-macro*)
                    (set! *trace-macro* (if (null? ms) #f ms))))])
   *trace-macro*)

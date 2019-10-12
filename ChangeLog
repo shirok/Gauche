@@ -1,3 +1,8 @@
+2019-10-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacbase.scm (trace-macro, untrace-macro): Allow regexp pattern
+	  for the macros to trace.  Make it official.
+
 2019-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (rc1_lex_charset_category): Support \p{<category} and

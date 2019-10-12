@@ -186,15 +186,6 @@
 (define (hash-table-for-each-r7 proc ht) ; r7rs
   (hash-table-for-each ht proc))
 
-(define (hash-table-fold ht kons knil)
-  (assume-type ht <hash-table>)
-  (let1 i ((with-module gauche.internal %hash-table-iter) ht)
-    (let loop ([r knil])
-      (receive [k v] (i unique)
-        (if (eq? k unique)
-          r
-          (loop (kons k v r)))))))
-
 (define (hash-table-fold-r7 kons knil ht) ; r7rs
   (hash-table-fold ht cons knil))
 
