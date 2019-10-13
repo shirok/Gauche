@@ -1,9 +1,10 @@
+#!/bin/sh
 # Create MinGW binary distribution.
 # Run this script on topsrcdir
 # You need MinGW and MSYS.  (You no longer need Cygwin.)
 # The compiled binary is installed in ../Gauche-mingw-dist.  You can just
 # zip it and distribute.
-# See doc/HOWTO-mingw.txt for the details.
+# See doc/HOWTO-mingw.adoc for the details.
 
 set -e
 
@@ -48,12 +49,15 @@ while [ "$#" -gt 0 ]; do
   case $1 in
     --with-gl)   WITH_GL=yes; shift;;
     --with-installer) INSTALLER=yes; shift;;
+    --with-zip) ZIP_ARCHIVE=yes; shift;;
     --skip-config) SKIP_CONFIG=yes; shift;;
     -*)
      echo "Options:"
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
      echo "  --with-installer:  Creates binary installer using Wix.  'candle.exe' and"
      echo "      'light.exe' must be visible in PATH."
+     echo "  --with-zip:  Creates Zip archive using p7zip. '7z.exe' must be visible"
+     echo "      in PATH."
      echo "  --skip-config:  Skip cleanup and configuration."
      exit 1;;
   esac
@@ -147,6 +151,11 @@ if [ "$INSTALLER" = "yes" ]; then
   cp winnt/wix/Gauche-mingw-*.msi ..
 fi
 
-# 'zip' isn't included in MinGW.
-#VERSION=`cat VERSION`
-#(cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
+# Build zip archive
+if [ "$ZIP_ARCHIVE" = "yes" ]; then
+    VERSION=$(cat VERSION)
+    ZIP_FILE="Gauche-mingw-${VERSION}.zip"
+
+    (cd "${distdir}/../" && rm -f "./${ZIP_FILE}" && 7z a "./${ZIP_FILE}" $(basename "${distdir}"))
+    cp "${distdir}/../${ZIP_FILE}" ..
+fi
