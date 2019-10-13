@@ -1795,7 +1795,7 @@ which means the blowfish algorithm compatible to bcrypt.
 But @code{$2a$} is vulnerable. Use @code{$2b$} for new code.
 If you omit @var{prefix}, use @code{$2b$} for default value.
 
-The @var{count} arugment specifies the amount of iterations;
+The @var{count} argument specifies the amount of iterations;
 the larger the value is, the more time is required to calculate
 the hash value.  Note that for the password hashing, taking more
 time is actually a good thing, for it works against the dictionary attack.
@@ -1839,7 +1839,7 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 @mdindex data.cache
 @c EN
 A cache works similarly as a dictionary, associating keys to values,
-but its entries may dissapear according to the policy of the cache
+but its entries may disappear according to the policy of the cache
 algorithm.  This module defines
 a common protocol for cache datatypes, and also provides several
 typical cache implementations.
@@ -3289,7 +3289,7 @@ Because of this danger, we don't allow @code{<mtqueue>} to be
 passed to this procedure; it would signal an error if you do so.
 
 If you just want to extract the accumulated result in @var{queue} without
-copying, consinder @code{dequeue-all!}, which is safe because it atomically
+copying, consider @code{dequeue-all!}, which is safe because it atomically
 resets the queue.  Use this procedure only when you absolutely need
 to access the contents of the queue without taking them out.
 @c JP
@@ -7004,7 +7004,7 @@ and @ref{Dictionary framework}, respectively).
 @c EN
 An abstract class for dbm-style database.    Inherits
 @code{<dictionary>} (@pxref{Dictionary framework}).
-Defindes the common
+Defines the common
 database operations.   This class has the following instance slots.
 They must be set before the database is actually opened by
 @code{dbm-open}.
@@ -9828,7 +9828,7 @@ To prevent retrying, give 0 to @var{retry-limit}.
 @c EN
 The name of the secondary lock file (or directory).  If omitted,
 @var{lock-name} with a suffix @code{.2} attached is used.
-Note: The secondary lock name must be aggreed on all programs that
+Note: The secondary lock name must be agreed on all programs that
 locks the same (primary) lock file.  I recommend to leave this
 to the default unless there's a good reason to do otherwise.
 @c JP
@@ -10315,7 +10315,7 @@ and you'll save space.
 @c EN
 For relatively small positive integers 
 (below @code{*small-prime-bound*}, to be specific), this procedure
-determines if the input is prime or not, quickly and determinisically.
+determines if the input is prime or not, quickly and deterministically.
 If @var{n} is on or above the bound, this procedure returns @code{#f}.
 
 This can be used to quickly filter out known primes; it never returns
@@ -11275,7 +11275,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c In lazy languages like Haskell this doesn't matter, but we Schemers
 @c are @emph{eager}!
 
-@c The solution is to delay the parser construciton until it is
+@c The solution is to delay the parser construction until it is
 @c actually used.  The @code{$lazy} combinator does the job:
 
 @c @example
@@ -12381,7 +12381,7 @@ those information is given in the @var{host} argument.
 @c COMMON
 
 @c EN
-If the keyword arugment @var{account} is given, its value
+If the keyword argument @var{account} is given, its value
 is passed to ftp @code{ACCT} command when requested by
 the server at login time.  The default value is a null string @code{""}.
 @c JP
@@ -14457,7 +14457,7 @@ argument @var{charset} specifies the character encoding scheme
 in string or symbol.
 whose default is @code{utf-8}.  If @var{charset} differs from
 Gauche's internal encoding and @var{word} is a complete string,
-the procedure convers the character encoding to @var{charset},
+the procedure converts the character encoding to @var{charset},
 then performs transfer encoding.
 @c JP
 @var{word}をRFC2047フォーマットにエンコードします。キーワード引数
@@ -21801,7 +21801,7 @@ EDNのマップとセットは、この比較器を使うGaucheのハッシュ�
 @defunx edn-set item @dots{}
 @c MOD text.edn
 @c EN
-Convenicne procedures to create hash-tables and sets compatible
+Convenience procedures to create hash-tables and sets compatible
 for EDN.
 @c JP
 EDNに使えるハッシュテーブルとセットを構築する便利手続きです。
@@ -21982,7 +21982,7 @@ The @code{construct-edn} procedure calls this internally.
 
 To write out a Gauche object as EDN tagged object, define a method to
 this generic function.   In the method you can call @code{edn-write}
-recursively to write out componends of the object.
+recursively to write out components of the object.
 
 The following example writes @code{#u8(1 2 3 4)} as
 EDN @code{#u8vector[1 2 3 4]}:
@@ -22483,7 +22483,7 @@ notation before the actual content.
   "<a href=\"http://foo/bar\">foobar</a\n>"
 
 (tree->string
-  (html:table :width "100%" :cellpading 0 "content here"))
+  (html:table :width "100%" :cellpadding 0 "content here"))
   @result{}
   "<table width=\"100%\" cellpadding=\"0\">content here</table\n>"
 @end example
@@ -23336,7 +23336,7 @@ of symbols; they specify names of modules to inherit from or to import from.
 
 @c EN
 The keyword arguments @var{bindings} must either be a dictionary
-(anything that inherits @code{<dictonary>}), or a key-value list.
+(anything that inherits @code{<dictionary>}), or a key-value list.
 The mappings represented by it are incorporated to the environment.
 @c JP
 キーワード引数@var{bindings}はディクショナリ(@code{<dictionary>}のサブクラスの
@@ -23726,7 +23726,7 @@ argument that is used to test equality, which defaults to @code{eqv?}.
 
 @defun permutations set
 @defunx permutations* set :optional eq
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 Returns a list of all permutations of a list @var{set}.
 @c JP
@@ -23758,7 +23758,7 @@ each permutation at a time, consider @code{permutations-for-each} below.
 
 @defun permutations-for-each proc set
 @defunx permutations*-for-each proc set :optional eq
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 For each permutation of a list @var{set}, calls @var{proc}.
 Returns an undefined value.
@@ -23770,7 +23770,7 @@ Returns an undefined value.
 
 @defun combinations set n
 @defunx combinations* set n :optional eq
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 Returns a list of all possible combinations of @var{n} elements out
 of a list @var{set}.
@@ -23799,7 +23799,7 @@ Watch out the explosion of combinations when @var{set} is large.
 
 @defun combinations-for-each proc set n
 @defunx combinations*-for-each proc set n :optional eq
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 Calls @var{proc} for each combination of @var{n} elements out of @var{set}.
 Returns an undefined value.
@@ -23811,7 +23811,7 @@ Returns an undefined value.
 
 @defun power-set set
 @defunx power-set* set :optional eq
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 Returns power set (all subsets) of a list @var{set}.
 @c JP
@@ -23829,7 +23829,7 @@ Returns power set (all subsets) of a list @var{set}.
 
 @defun power-set-for-each proc set
 @defunx power-set*-for-each proc set :optional eq
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 Calls @var{proc} for each subset of @var{set}.
 @c JP
@@ -23838,7 +23838,7 @@ Calls @var{proc} for each subset of @var{set}.
 @end defun
 
 @defun power-set-binary set
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 Returns power set of @var{set}, like @code{power-set}, but in different order.
 @code{Power-set-binary} traverses subset space in depth-first order,
@@ -23857,7 +23857,7 @@ while @code{power-set} in breadth-first order.
 
 @defun cartesian-product list-of-sets
 @defunx cartesian-product-right list-of-sets
-@c MOD util.comibinations
+@c MOD util.combinations
 @c EN
 Returns a cartesian product of sets in @var{list-of-sets}.
 @code{Cartesian-product} construct the result in left fixed order
@@ -24095,7 +24095,7 @@ in the result.
 There may be multiple routes, but if you have to pass node Y no matter
 which route you take, then Y is a dominator of X.  There may be
 many dominators of X.  Among them, there's
-always one domniator such that all other X's dominators are also
+always one dominator such that all other X's dominators are also
 its dominators---in other words, the closest dominator of X---which
 is called the immediate dominator of X.)
 @c JP
@@ -25994,7 +25994,7 @@ as @code{(lambda formals (stream-delay body body2 @dots{}))}.
 @end defmac
 
 @node Stream constructors, Stream binding, Stream primitives, Stream library
-@subsection Stream constructos
+@subsection Stream constructors
 
 @defun stream obj @dots{}
 [SRFI-40]
@@ -26295,7 +26295,7 @@ generated.
 @c MOD util.stream
 @c EN
 Returns a sequence starting from @var{seed}, and each successive element
-is calcualted by @code{(@var{f} @var{s})} where @var{s} is the previous
+is calculated by @code{(@var{f} @var{s})} where @var{s} is the previous
 element.
 @c JP
 @c COMMON
@@ -26338,7 +26338,7 @@ Retrun a new stream whose elements are the elements in @var{list}.
 @defun string->stream string :optional tail-stream
 @c MOD util.stream
 @c EN
-Convers a string to a stream of characters.  If an optional
+Converts a string to a stream of characters.  If an optional
 @var{tail-stream} is given, it becomes the tail of the resulting
 stream.
 @c JP
@@ -26441,7 +26441,7 @@ but only the first 10 elements are calculated because of
 [R7RS stream]
 @c MOD util.stream
 @c EN
-Stream comperehension.  Returns a stream in which each element
+Stream comprehension.  Returns a stream in which each element
 is computed by @var{elt-expr}.   
 The @var{clause} creates scope of @var{elt-expr}
 and controls iterations.  Each @var{clause} can be one of the following
@@ -26507,7 +26507,7 @@ triples:
 [R7RS stream]
 @c MOD util.stream
 @c EN
-A convenent macro to define a procedure that yields a stream.
+A convenient macro to define a procedure that yields a stream.
 Same as the following form:
 @c JP
 ストリームを作って返す関数を手軽に定義するマクロです。
@@ -26831,7 +26831,7 @@ the main argument (@var{stream}).
 
 @defun stream->string stream
 @c MOD util.stream
-Conversts a stream to a list.
+Converts a stream to a list.
 All elements of @var{stream} must be characters, or an error is signaled.
 @end defun
 
@@ -27191,7 +27191,7 @@ which the API takes as arguments:
 @c EN
 A comparator to see if an item is a variable, and also
 check equality of two variables.  It must be hashable.
-@xref{Basic comparators}, for the defails of comparators.
+@xref{Basic comparators}, for the details of comparators.
 @c JP
 要素が変数であるかどうかを調べ、また二つの変数が同じかどうかを判定
 するための比較器です。ハッシュ可能でなければなりません。

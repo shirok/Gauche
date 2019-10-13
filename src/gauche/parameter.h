@@ -82,7 +82,7 @@ SCM_EXTERN ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
                                                              ScmObj initval,
                                                              u_long flags);
 
-/* TRANSIENT - exposed only for the backward compatiblity - will be gone by 1.0 */
+/* TRANSIENT - exposed only for the backward compatibility - will be gone by 1.0 */
 typedef struct ScmParameterLocRec {
     ScmPrimitiveParameter *p;
 } ScmParameterLoc;

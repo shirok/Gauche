@@ -1043,7 +1043,7 @@ Gauche's @code{raise} may return if @var{obj} isn't a
 Distinguishing continuable and noncontinuable exception throw by the
 procedure has an issue when your exception handler wants to reraise
 the condition (you don't know if the original condition is raised
-by @code{raise} or @code{raise-continuable}!).  Yet R7RS adoted
+by @code{raise} or @code{raise-continuable}!).  Yet R7RS adopted
 that model, so we compel.
 
 R7RS @code{raise} is a wrapper of Gauche's @code{raise},
@@ -1052,7 +1052,7 @@ which throws an error if Gauche's @code{raise} returns.
 R7RS @code{raise-continuable} is currently just an alias of
 Gauche's @code{raise}---as long as you don't pass
 @code{<serious-condition>}, it may return.  It is not exactly
-R7RS comformant---it won't return if you pass @code{<serious-condition>}
+R7RS conformant---it won't return if you pass @code{<serious-condition>}
 or object of one of its subclasses (e.g. @code{<error>}), but
 it's weired to expect returning from raising @code{<error>}, isn't it?
 @c JP
@@ -1381,7 +1381,7 @@ Gauche組み込みの@code{digit->integer}はより汎用的なインタフェ�
 
 @node R7RS complex numbers, R7RS cxr accessors, R7RS char library, R7RS small language
 @subsection @code{scheme.complex} - R7RS complex numbers
-@c NODE R7RS複素数, @code{scheme.compex} - R7RS複素数
+@c NODE R7RS複素数, @code{scheme.complex} - R7RS複素数
 
 @deftp {Module} scheme.complex
 @mdindex scheme.complex
@@ -2522,7 +2522,7 @@ Returns a set of elements that are in every @var{list}s.
 @c MOD scheme.list
 @c EN
 Returns a set of elements that are in @var{list1} but not
-in @var{list2}.  In n-ary case, binary differece operation is
+in @var{list2}.  In n-ary case, binary difference operation is
 simply folded.
 @c JP
 @var{list1} には含まれていて、@var{list2} には含まれていない要素の集合を
@@ -3458,7 +3458,7 @@ is already in a bag, you have two items of the kind.
 
 @c EN
 To check whether the items are ``the same'', sets and bags
-takes a comparator at constrution time.  The comparator
+takes a comparator at construction time.  The comparator
 doesn't need to have an ordering predicate (we don't need
 to order the elements) but has to have a hash function.
 @xref{Basic comparators}, for the details of comparators.
@@ -4530,7 +4530,7 @@ built-in but under aliases.
 With this module, procedures are provided as defined in R7RS.  Use this
 module when you're writing portable code.
 
-Srfi-125 also defines compatiblity procedures with srfi-69, although saying
+Srfi-125 also defines compatibility procedures with srfi-69, although saying
 they're deprecated.  Those deprecated procedures are supported in this
 module, too.
 
@@ -4543,7 +4543,7 @@ hash-table-set!     hash-table-update!/default
 hash-table-clear!   hash-table-size   hash-table-keys
 hash-table-values   hash-table-copy   hash-table-empty-copy
 hash-table->alist   hash-table-union! hash-table-intersection!
-hash-table-differnce!                 hash-table-xor!
+hash-table-difference!                hash-table-xor!
 @end example
 
 @xref{Hashtables}, for the description of those procedures.
@@ -4616,7 +4616,7 @@ table @var{ht}.  It is ok if @var{ht} doesn't have @var{key}.
 Returns the number of entries that are actually deleted.
 
 It differs from built-in @code{hash-table-delete!} in two points:
-The bulit-in one can take exactly one @var{key}, and returns
+The built-in one can take exactly one @var{key}, and returns
 a boolean indicating if the entry is actually deleted.
 @end defun
 
@@ -4635,7 +4635,7 @@ and insert a new entry associating @var{key} and the value
 [R7RS hash-table]
 @c MOD scheme.hash-table
 This is the same as built-in @code{hash-table-update!-r7}.
-It takes differnt optional arguments from built-in @code{hash-table-update!}.
+It takes different optional arguments from built-in @code{hash-table-update!}.
 
 @var{Updater} is a procedure that takes one argument,
 @var{failure} is a thunk, and @var{success} is a procedure
@@ -4822,7 +4822,7 @@ This module provides a functional double-ended queue
 (deque, pronounced as ``deck''),
 with amortized O(1) access of queue operations on either end.
 
-It also serves as a convenient bidrectional list structures
+It also serves as a convenient bidirectional list structures
 in a sense that operations from the end of the list is just as
 efficient as the ones from the front.
 
@@ -5236,7 +5236,7 @@ There's no @code{reverse-bytevector-accumulator}.
 The @var{vec} or @var{bvec} argument is a mutable vector or
 bytevector (u8vector), and is used as a buffer.
 
-Returns an accumlator that stores the accumulated values in the
+Returns an accumulator that stores the accumulated values in the
 buffer, starting from the index @var{at}.
 It is an error if the accumulator gets more values after
 the buffer reaches at the end.
@@ -5547,7 +5547,7 @@ to the implementation when two are not @code{eqv?}.
 @end itemize
 
 When you're writing portable code, be careful not to depend on the
-@code{equal?} behavoir.
+@code{equal?} behavior.
 @end deftp
 
 @defun box val
@@ -5627,7 +5627,7 @@ Creates and returns a list-queue whose initial content is @var{lis}.
 In Gauche, a list queue is just an instance of @code{<queue>} (@pxref{Queue}).
 
 The cells in @var{lis} are owned by the queue; the caller shouldn't mutate
-it afterwords, nor assume its structure remains the same.
+it afterwards, nor assume its structure remains the same.
 
 The optional @var{last} argument must be the last pair of @var{lis}.
 If it is passed, @code{make-list-queue} will skip scanning @var{lis}
@@ -7305,7 +7305,7 @@ at this moment.
 [R7RS mapping]
 @c MOD scheme.mapping
 Similar to @code{mapping-unfold}, but keys are generated in the
-ascendnig order
+ascending order
 w.r.t. the comparator.  An implementation may use more efficient algorithm
 than @code{mapping-unfold}. 
 In Gauche, this is the same as @code{mapping-unfold} at this moment.
@@ -7400,7 +7400,7 @@ Linear update version @code{mapping-adjoin!} may destructively modify
 @var{m} to create the return value, while @code{mapping-adjoin}
 creates a new mapping.
 
-Argments are processed in order.
+Arguments are processed in order.
 If there's already an entry in @var{m} with the same key as given to
 @var{arg}, the original entry remains.
 
@@ -7421,7 +7421,7 @@ Linear update version @code{mapping-set!} may destructively modify
 @var{m} to create the return value, while @code{mapping-set}
 creates a new mapping.
 
-Argments are processed in order.
+Arguments are processed in order.
 If there's already an entry in @var{m} with the same key as given to
 @var{arg}, the new key-value pair supersedes the old one.
 
@@ -9828,7 +9828,7 @@ Returns @code{(expt 2 x)}
 @defun flexp-1 x
 [R7RS flonum]
 @c MOD scheme.flonum
-Returns @code{(- 1 (expt fl-e x))}, but is much more accureate
+Returns @code{(- 1 (expt fl-e x))}, but is much more accurate
 when @var{x} is small.  We all C's @code{expm1} internally.
 @end defun
 

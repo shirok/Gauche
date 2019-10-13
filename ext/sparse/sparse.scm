@@ -113,7 +113,7 @@
        (define (,x-update! sv k proc . fallback)
          (rlet1 tmp (proc (apply ,ref sv k fallback))
            (,set sv k tmp)))
-       ;; Treatment of defauleValue differ between sptab and spvec atm,
+       ;; Treatment of defaultValue differ between sptab and spvec atm,
        ;; so we define push! separately.
        ;; (define (,x-push! sv k val)
        ;;   (,set sv k (cons val (,ref sv k '()))))

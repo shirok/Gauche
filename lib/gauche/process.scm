@@ -565,7 +565,7 @@
     (process-wait p #f eflag)
     (zero? (process-exit-status p))))
 
-;; For the backward compatiblity.  DEPRECATED.
+;; For the backward compatibility.  DEPRECATED.
 (define (run-process-pipeline . args) ; returns list of processes.
   (let1 p (apply run-pipeline args)
     (append (~ p'upstreams) (list p))))

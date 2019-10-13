@@ -2691,7 +2691,7 @@ When you want to distribute your Gauche scripts or applications,
 the users need to install Gauche runtime on their machine.
 Although it is always the case for any language implementations---you need
 Java runtime to run Java applications, or C runtime to run
-C applciations---it may be an extra effort to ask users to install
+C applications---it may be an extra effort to ask users to install
 not-so-standard language runtimes.
 @c JP
 Gaucheで作ったスクリプトやアプリケーションを配布する場合、
@@ -2963,7 +2963,7 @@ project/src/
 @end example
 
 @c EN
-If you run @code{build-standalone} in the dirctory as @file{src},
+If you run @code{build-standalone} in the directory as @file{src},
 you can just say this:
 @c JP
 @code{build-standalone}を@file{src}の下で実行する場合は、

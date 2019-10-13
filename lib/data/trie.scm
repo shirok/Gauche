@@ -164,7 +164,7 @@
 
 ;;
 ;; Primitive accessors
-;; We have three accessors; they are slightly differnt from each other, and
+;; We have three accessors; they are slightly different from each other, and
 ;; it is simpler to define them separately than compounding them
 ;; into one routine.
 ;;

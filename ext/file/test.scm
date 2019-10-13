@@ -17,7 +17,7 @@
 
 ;; shorthand of normalizing pathname.  this doesn't do anything on
 ;; unix, but on Windows the separator in PATHNAME is replaced.
-;; NB: we remove the drive letter from DOS path to accomodate
+;; NB: we remove the drive letter from DOS path to accommodate
 ;; different installations.
 (define (n pathname . pathnames)
   (define (normalize s)

@@ -1402,7 +1402,7 @@ hexadecimal notation of the character code.  (Note that the character
 safely as a C identifier.  The mapping is injective, that is,
 if the source strings differ, the result string always differ.
 
-On the other hand, @code{cgen-safe-name-friendly} convers
+On the other hand, @code{cgen-safe-name-friendly} converts
 the input string into more readable C identifier.  @code{->} becomes
 @code{_TO} (e.g. @code{char->integer} becomes @code{char_TOinteger}),
 other @code{-} and @code{_} become @code{_},
@@ -4558,7 +4558,7 @@ autoconf, though, so if you need to write complex tests
 you may have to switch back to autoconf.  We'll add tests
 as needed.
 @c JP
-ただ、今のところ@code{gauhce.confiugre}はautoconfの機能の小さなサブセット
+ただ、今のところ@code{gauhce.configure}はautoconfの機能の小さなサブセット
 しかカバーしないので、複雑な機能テストが必要ならautoconfに戻らなければ
 ならない場合もあります。必要に応じて機能テストを足して行く予定です。
 @c COMMON
@@ -4567,7 +4567,7 @@ as needed.
 @c EN
 The core feature of @code{gauche.configure} is the ability to generate files
 (e.g. @file{Makefile}) from templates (e.g. @file{Makefile.in}) with replacing
-parameters.  We follow autoconf convension, so the substitution parameters
+parameters.  We follow autoconf convention, so the substitution parameters
 in a template is written like @code{@@VAR@@}.  You should be able
 to reuse @file{Makefile.in} used for autoconf without changing them.
 @c JP
@@ -5605,7 +5605,7 @@ The @var{aggregate} part can be any type name (typedef-ed name is ok).
 
 This corresponds to autoconf's @code{AC_CHECK_MEMBER}.
 
-This test checks if @var{member} is a member of @var{aggrette}, and
+This test checks if @var{member} is a member of @var{aggregate}, and
 returns @code{#t} if so, or returns @code{#f} if not.
 This procedure is intended to be used as a predicate; it doesn't have
 side effects.
@@ -5653,7 +5653,7 @@ This corresponds to autoconf's @code{AC_CHECK_FUNC}.
 @defun cf-check-funcs funcs :key if-found if-not-found
 @c MOD gauche.configure
 For each function name @var{func} in @var{funcs}, call @code{cf-check-func}
-to determine availabiltiy.  If it is available, define
+to determine availability.  If it is available, define
 @code{HAVE_@var{func}}, and calls @code{if-found} with @var{func}
 if provided.  If it is not available, calls @code{if-not-found}
 with @var{func} if provided.
@@ -5978,7 +5978,7 @@ connection-address-name obj                ; optional
 
 At this moment this framework doesn't provide a generic way to
 @emph{create} a connection, since the way to do it may greatly vary
-depending on the concreate implementation.  Each concrete implementation
+depending on the concrete implementation.  Each concrete implementation
 should provide its own procedure to create and return a new connection.
 @end deftp
 
@@ -9847,7 +9847,7 @@ This procedure may raise an error if the input contains
 @c COMMON
 
 @c EN
-There are a few error situations the listener handles diffetently.
+There are a few error situations the listener handles differently.
 @c JP
 エラー状況によりリスナーのエラー処理法が異ります。
 @c COMMON
@@ -17019,7 +17019,7 @@ Both @var{needle} and @var{haystack} must be sequences.
 Searches @var{needle} from @var{haystack} from the beginning of @var{haystack}.
 If @var{needle} is found, the index in @var{haystack} where it begins is
 returned.  Otherwise @code{#f} is returned.  The keyword argument
-@var{test} is used to compare elements; its defaule is @code{eqv?}.
+@var{test} is used to compare elements; its default is @code{eqv?}.
 @c JP
 @var{needle}と@var{haystack}はシーケンスです。
 @var{haystack}の中で、@var{needle}に一致するシーケンスを左から探します。
@@ -17051,7 +17051,7 @@ This can be regarded as generalization of @code{string-contains} in srfi-13
 @c EN
 Searches a sequence @var{needle} from @var{list},
 and if found, breaks @var{list}
-to two parts---the prefix of @var{list} up to right befor @var{needle}
+to two parts---the prefix of @var{list} up to right before @var{needle}
 begins, and the rest---and returns them.
 @var{List} must be a list, but @var{needle} can be any sequence.
 Elements are compared by @var{test}, defaulted to @code{eqv?}.
@@ -18973,7 +18973,7 @@ autoloadに設定されている変数が実際にロードできるか。
 @item
 @c EN
 While testing module, see if the symbols declared in the export list
-are acutally defined.
+are actually defined.
 @c JP
 モジュールをテストしている場合、exportされているシンボルが
 定義されているか。
@@ -23021,7 +23021,7 @@ overlapping.
 @emph{Note:} This procedure used to take just two uniform vectors, @var{target}
 and @var{source}, and just copies contents of @var{source} to @var{target}.
 Both vectors had to be the same type and same length.  The API is revised
-accordnig to srfi-160.  The old interface is still supported
+according to srfi-160.  The old interface is still supported
 for the backward compatibility, but it is deprecated and will be gone
 in the future releases.
 
@@ -23112,7 +23112,7 @@ as follows:
 
 @c EN
 That is, each @var{ssize} slice from @var{source},
- is copied into @var{target}, advaincing source index
+ is copied into @var{target}, advancing source index
 by @var{sstride} and the destination index by @var{dstride}.
 In this case, @var{sstride} defaults to @var{ssize} if omitted.
 @c JP
@@ -24002,7 +24002,7 @@ so you shouldn't assume the return values are freshly
 allocated objects, unless it is noted so explicitly.)
 
 A linear update version may reuse the stoarge of the designated
-argumentt to produce the return value.  Gauche tries to reuse the
+argument to produce the return value.  Gauche tries to reuse the
 argument as much as possible, but you should always use the return
 value and shouldn't assume the argument itself is modified in-place.
 In fact, after calling linear-updating procedure, you can't use
@@ -24468,7 +24468,7 @@ For example, you can read input as an octet stream as follows:
 @end example
 
 @c EN
-If the input port has aleady reached EOF, an EOF object is
+If the input port has already reached EOF, an EOF object is
 returned.  The returned uvector can be shorter than @var{size}
 if the input reaches EOF before @var{size} elements are read.
 @c JP
@@ -25912,7 +25912,7 @@ storage for the data output to the port.
 If @var{uvector} is completely filled, what happens after that
 depends on @var{extendable} - if it is false (default), the rest
 of data is discarded silently.  If it is true, the storage is
-extended automatically to accomodate more data.
+extended automatically to accommodate more data.
 
 If you give true value to @var{extendable}, you have to retrieve
 the result by @code{get-output-uvector} below, since the uvector

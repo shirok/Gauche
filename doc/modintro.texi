@@ -295,7 +295,7 @@ limited types of values.  This is also supported by @ref{Arrays}.
 @item
 @emph{String} - a sequence of characters.  See @ref{Strings}
 and @ref{String library}.  Gauche handles multibyte strings---
-see @ref{Multibyte strings} for the defatils.
+see @ref{Multibyte strings} for the details.
 @item
 @emph{Character set} - a set of characters.  See @ref{Character set}
 and @ref{Character-set library}.
