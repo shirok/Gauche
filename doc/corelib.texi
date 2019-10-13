@@ -1129,7 +1129,7 @@ these are defined in @code{scheme.comparator}.
 
 (Note: @code{scheme.comparator}
 defines these as macros, in order to allow
-implementatins optimize runtime overhead.  In Gauche we use
+implementations optimize runtime overhead.  In Gauche we use
 procedures but the overhead is negligible.)
 
 User-defined hash functions can limit the range of the result between
@@ -6915,14 +6915,14 @@ Gaucheコードはデフォルトで@code{gauche}モジュールを継承し、
 @c EN
 In the following example, the R7RS library @code{foo} imports only
 @code{copy-port} from @code{(gauche base)}; in that case,
-you have to import @code{(gacueh keyword)} separately
+you have to import @code{(gauche keyword)} separately
 in order to use @code{:size} keyword without quoting.
 (Or add @code{:size} explicitly in the imported symbol
 list of @code{(gauche base)}.)
 @c JP
 次の例では、R7RSライブラリ@code{foo}が@code{(gauche base)}から
 @code{copy-port}のみをインポートしています。こういった場合、
-@code{:size}キーワードをクオートなしで使うには、@code{(gauhce keyword)}も
+@code{:size}キーワードをクオートなしで使うには、@code{(gauche keyword)}も
 別にインポートしなければなりません。
 (あるいは、@code{(gauche base)}からインポートするシンボルのリストに
 @code{:size}も明示するか)。
@@ -6954,7 +6954,7 @@ list of @code{(gauche base)}.)
 An identifier is an internal object to keep track of
 binding of variables by the compiler.
 
-Usually it is hidden from Scheme world, but the higyenic
+Usually it is hidden from Scheme world, but the hygienic
 macro expander inserts identifiers into its output, which
 is necessary for hygiene.  But that makes reading macro expansion
 result difficult.
@@ -8699,7 +8699,7 @@ so do not rely on the current behavior.)
 @c COMMON
 
 @c EN
-Since the @code{#"..."} syntax is eqivalent to a macro call
+Since the @code{#"..."} syntax is equivalent to a macro call
 of @code{string-interpolate*}, which is provided in the Gauche module,
 it must be visible from where you use the interpolation syntax.
 When you write Gauche code, typically you implicitly inherit the Gauche
@@ -11760,7 +11760,7 @@ R7RS-large defines hashtable (@code{scheme.hash-table} module,
 with Gauche's original hashtables and other native APIs.
 
 Rather than mixing different flavor of APIs, we keep Gauche's native 
-API consistent, and provide R7RS procedures that are inconsitent
+API consistent, and provide R7RS procedures that are inconsistent
 with aliases---specifically, those procedures are suffixed with @code{-r7}
 in @code{gauche} module.  For portable programs, you can import
 @code{scheme.hash-table} to get R7RS names.
@@ -20986,7 +20986,7 @@ get exactly the same flonum.)
 (format "~6,3f" 3.141592)    @result{} " 3.142"
 (format "~6,0f" 3.141592)    @result{} "    3."
 (format "~10,4f" 355/113)    @result{} "    3.1416"
-(foramt "~10,4f" 3)          @result{} "    3.0000"
+(format "~10,4f" 3)          @result{} "    3.0000"
 @end example
 
 @c EN
@@ -23997,8 +23997,8 @@ to @var{owner-id} and @var{group-id} respectively.
 @var{owner-id} and @var{group-id} must be an exact integer.
 If either of them is -1, the corresponding ownership is not changed.
 @c JP
-ファイル@var{path}のオーナーとグループを@var{owner-id}と@var{gruop-id}
-で示されるものに変更します。@var{owner-id}と@var{gruop-id}は正確な整数で
+ファイル@var{path}のオーナーとグループを@var{owner-id}と@var{group-id}
+で示されるものに変更します。@var{owner-id}と@var{group-id}は正確な整数で
 なければなりません。どちらかに-1が渡された場合は、対応する情報は変更されません。
 @c COMMON
 @end defun

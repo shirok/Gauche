@@ -155,7 +155,7 @@
  ;; Push source info to (-> compiled-code info).
  ;; Usually the source info is pushed as the instructions are emitted.
  ;; This is mainly used to add info that are not attached to a particular
- ;; insturuction (e.g. the definition of the entire closure).
+ ;; instruction (e.g. the definition of the entire closure).
  (define-cproc compiled-code-push-info! (cc::<compiled-code> info)
    ::<void> Scm_CompiledCodePushInfo)
 

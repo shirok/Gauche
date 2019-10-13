@@ -2303,7 +2303,7 @@ the exception will be caught and converted to Gauche error condition.
 
 @item
 @code{(inliner @var{insn-name})} : only used in Gauche core procedures that
-can be inlined into an VM insturuction.
+can be inlined into an VM instruction.
 @end itemize
 
 @var{stmt} is a cise expression.  Inside the expression, a cise macro
@@ -4558,7 +4558,7 @@ autoconf, though, so if you need to write complex tests
 you may have to switch back to autoconf.  We'll add tests
 as needed.
 @c JP
-ただ、今のところ@code{gauhce.configure}はautoconfの機能の小さなサブセット
+ただ、今のところ@code{gauche.configure}はautoconfの機能の小さなサブセット
 しかカバーしないので、複雑な機能テストが必要ならautoconfに戻らなければ
 ならない場合もあります。必要に応じて機能テストを足して行く予定です。
 @c COMMON
@@ -4670,7 +4670,7 @@ This script does several common tasks.
 @c EN
 The @code{cf-init-gauche-extension} does the following:
 @c JP
-@code{cf-init-gauche-extensino}の仕事は以下のとおりです。
+@code{cf-init-gauche-extension}の仕事は以下のとおりです。
 @c COMMON
 
 @itemize @bullet
@@ -4704,7 +4704,7 @@ from it.  Dependencies are also checked.
 @c COMMON
 @item
 @c EN
-It sets up global envionment to run other configure checks.
+It sets up global environment to run other configure checks.
 @c JP
 configureのチェックのためのグローバルな環境が準備されます。
 @c COMMON
@@ -5134,7 +5134,7 @@ returns @code{"full"}.   If the user hasn't given the command-line
 argument, @code{#f} is returned.
 
 If you add or change the value of features or packages,
-you can use generatlized @code{set!} as
+you can use generalized @code{set!} as
 @code{(set! (cf-feature-ref 'NAME) VALUE)} etc.
 @end defun
 
@@ -6942,7 +6942,7 @@ using one of generator constructors
 (@pxref{Generator constructors}) or rolling your own one.  You
 may connect generator operators that modifies the stream of
 generated items as you wish (@pxref{Generator operations}).
-Eventually you need to extract actual values from the geneator
+Eventually you need to extract actual values from the generator
 to consume; there are utitlity procedures provided
 (@pxref{Generator consumers}).  Overall, you create a pipeline
 (or DAG) of generators that works as lazy value-propagation network.
@@ -12793,7 +12793,7 @@ can raise an error or reject to change the parameter's value.
 [SRFI-39]
 @c MOD gauche.parameter
 @c EN
-Evaluages @var{body} @dots{}, with
+Evaluates @var{body} @dots{}, with
 change parameter @var{param}'s value to the given @var{value} within
 the dynamic scope of @var{body} @dots{}.
 Returns the value(s) of the result of the last @var{body}.
@@ -14279,7 +14279,7 @@ timing to collect its exit status.
 ;; Check the exit status
 (let1 st (process-exit-status p)
   (cond [(sys-wait-exited? st)
-         (print "wget exitted with status " (sys-wait-exit-status st))]
+         (print "wget exited with status " (sys-wait-exit-status st))]
         [(sys-wait-signaled? st)
          (print "wget interrupted by signal " (sys-wait-termsig st))]
         [else
@@ -14905,7 +14905,7 @@ calling process's stderr.
 Like @code{do-process}, @code{do-pipeline} waits for completion of
 all the processes, and returns @code{#t} if the tail process
 succeeds (i.e. exits with zero status) or @code{#f} if the last process
-failes (i.e. exits with non-zero status).   If you give
+fails (i.e. exits with non-zero status).   If you give
 @code{:error} to @code{on-abnormal-exit} keyword arguments, however,
 a failure of the tail process raises an error.
 Exit statuses of subprocesses other than the tail one are
@@ -15017,7 +15017,7 @@ the low-level process calls such as @code{sys-wait} or
 @c EN
 A condition type mainly used by the process port utility procedures.
 Inherits @code{<error>}.  This type of condition is thrown when
-the high-level process port utilities detect the child proces exitted
+the high-level process port utilities detect the child proces exited
 with non-zero status code.
 @c JP
 主にプロセスポートユーティリティ関数で使われるコンディション型。
@@ -15035,7 +15035,7 @@ A process object.
 @end defivar
 
 @c EN
-Note: In Unix terms, exitting a process by calling @code{exit(2)} or
+Note: In Unix terms, exiting a process by calling @code{exit(2)} or
 returning from @code{main()} is a normal exit, regardless of the
 exit status.  Some commands do use non-zero exit status
 to tell one of the normal results of execution (such as @code{grep(1)}).
@@ -15908,7 +15908,7 @@ types preferable choice when you only need a mechanism to bundle
 several related values to carry around, and don't need fancier
 mechanisms such as class redefinitions.
 @item
-As Gauche's extention, you can define pseudo record types,
+As Gauche's extension, you can define pseudo record types,
 which interprets ordinary aggregate types such as vectors and lists
 as records.  (For Common Lisp users; it is like the @code{:type}
 option of @code{defstruct}).
@@ -16038,7 +16038,7 @@ The rest of the arguments specify fields (slots) of the record.
 @end example
 
 The first and the third forms define immutable fields, which can only
-be intialized by the constructor but cannot be modified afterwards
+be initialized by the constructor but cannot be modified afterwards
 (thus such fields don't have modifiers).
 The second and the fourth forms define multable fields.
 
@@ -19419,7 +19419,7 @@ anything when it dies because of an unhandled error.
 @c COMMON
 
 @c EN
-What's happneing is this: An unhandled error in a thread body would
+What's happening is this: An unhandled error in a thread body would
 cause the thread to terminate, and the error itself will propagate
 to the thread who's expecting the result of the terminated thread.
 So, you get the error (wrapped by @code{<uncaught-exception>})
@@ -22084,7 +22084,7 @@ HDR画像フォーマットなどで使われる、16ビット浮動小数点数
 @c COMMON
 @item
 @c EN
-Effcient element-wise arithmetic procedures, e.g. @code{@@vector-add}.
+Efficient element-wise arithmetic procedures, e.g. @code{@@vector-add}.
 @c JP
 @code{@@vector-add}など、効率の良い要素単位の演算手続き。
 @c COMMON
@@ -23901,7 +23901,7 @@ the range of conversion between them.
 @c EN
 The optional @var{terminator} argument must be an exact
 integer or @code{#f} (default).  If an integer is given,
-and the integer is fonud in the input,
+and the integer is found in the input,
 the output string terminates right before it.
 @c JP
 省略可能引数@var{terminator}は、正確な整数か@code{#f}でなければ
@@ -26031,7 +26031,7 @@ uvectorの型が@code{s8vector}や@code{u8vector}以外である場合、
 The following procedures allow you to use list of characters
 or octets as a source of an input port.  These are (a kind of)
 opposite of @code{port->list} family
-(@pxref{Input utility functions}) or @code{port->char-lseq} famliy
+(@pxref{Input utility functions}) or @code{port->char-lseq} family
 (@pxref{Lazy sequences}).
 @c JP
 以下の手続きは、文字またはオクテットのリストを入力ポートのソースとして利用するものです。

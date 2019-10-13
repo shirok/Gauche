@@ -63,17 +63,17 @@
 ;;  which contains forms like define-module, use, export, etc.
 ;;
 ;;  A generated C file contains an initialization function, named
-;;  Scm_Init_<foo> by default.   Typically it is called by "extention
+;;  Scm_Init_<foo> by default.   Typically it is called by "extension
 ;;  initializer", which is invoked when the DSO file is loaded by
 ;;  dynamic-load.
 ;;
 ;;    Example1:
 ;;
-;;     *  An extention extention.so is built from extension.c,
+;;     *  An extension extension.so is built from extension.c,
 ;;        foo.scm and bar.scm.
 ;;
 ;;     *  extension.c must contain a funciton Scm_Init_extension(),
-;;        which is the extention initializer.  It is called from
+;;        which is the extension initializer.  It is called from
 ;;        (dynamic-load "extension")
 ;;
 ;;     *  By processing foo.scm and bar.scm, you'll get foo.c and
@@ -85,20 +85,20 @@
 ;;
 ;;  Sometimes sources consist of Scheme files only.  In which case,
 ;;  giving true value to ext-initializer keyword argument makes
-;;  the inialization function work as an extention initializer.
+;;  the inialization function work as an extension initializer.
 ;;
 ;;    Example2:
 ;;
-;;     * An extension extension.so is built from extention.scm.
+;;     * An extension extension.so is built from extension.scm.
 ;;
 ;;     * Processing extension.scm with :ext-initializer #t
-;;       makes generated Scm_Init_extension() work as an extention
+;;       makes generated Scm_Init_extension() work as an extension
 ;;       initializer.
 ;;
 ;;  If there are more than one Scheme files and you want to make
-;;  one of its initializer funtion as an extention initializer,
+;;  one of its initializer funtion as an extension initializer,
 ;;  give :sub-initializers argument to the 'main' source whose
-;;  initialization function becomes an extention initializer.
+;;  initialization function becomes an extension initializer.
 ;;
 ;;    Example3:
 ;;

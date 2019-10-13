@@ -137,7 +137,7 @@
     "--so-libs" "--dylib-suffix" "--dylib-ldflags" "--rpath-flag"))
 
 (dolist [opt *config-options*]
-  (test* #"gauhce-config ~opt" (gauche-config opt) (run-gauche-config opt)))
+  (test* #"gauche-config ~opt" (gauche-config opt) (run-gauche-config opt)))
 
 ;;=======================================================================
 (test-section "configure")

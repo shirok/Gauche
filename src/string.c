@@ -861,7 +861,7 @@ static ScmSmallInt boyer_moore_reverse(const char *ss1, ScmSmallInt siz1,
 }
 
 /* Primitive routines to search a substring s2 within s1.
-   Returns NOT_FOUND if not fonud, FOUND_BOTH_INDEX if both byte index
+   Returns NOT_FOUND if not found, FOUND_BOTH_INDEX if both byte index
    (*bi) and character index (*ci) is calculted, FOUND_BYTE_INDEX
    if only byte index is calculated.
 

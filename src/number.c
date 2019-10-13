@@ -68,7 +68,7 @@ int Scm_IsInf(double x)
 
 /* Maximum allowable range of exponent in the number litereal.
    For flonums, IEEE double can support [-324..308].  For exact
-   numbers we can go futher, but it would easily consume huge
+   numbers we can go further, but it would easily consume huge
    memory.  So I assume it is reasonable to limit its range. */
 #define MAX_EXPONENT  325
 

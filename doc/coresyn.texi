@@ -4095,7 +4095,7 @@ changing the original code at all.
 @c EN
 Sometimes you need to have a different piece of code
 depending on available features provided by the
-implemantation and/or platform.  For example,
+implementation and/or platform.  For example,
 you may want to switch behavior depending on whether
 networking is available, or to embed an
 implementation specific procedures in otherwise-portable code.
@@ -4206,7 +4206,7 @@ list of symbols/integers, e.g. @code{(gauche net)} instead of
 @c EN
 Here's a typical example: Suppose you want to have implementation-specific
 part for Gauche, Chicken Scheme and ChibiScheme.  Most modern Scheme
-impelementations defines a feature-identifier to identify itself.
+implementations defines a feature-identifier to identify itself.
 You can write the conditional part as follows:
 @c JP
 例えば、Gauche、Chicken Scheme、ChibiSchemeに依存するコードを
@@ -4359,7 +4359,7 @@ OSがIPv6サポートをオフにしている場合、IPv6機能を使おうと�
 
 @item gauche.sys.threads
 @itemx gauche.sys.pthreads
-@itemx gauhce.sys.wthreads
+@itemx gauche.sys.wthreads
 @c EN
 If the runtime supports multithreading, @code{gauche.sys.threads} is
 defined (@pxref{Threads}).  Multithreading is based on either POSIX pthreads
@@ -4382,7 +4382,7 @@ POSIXスレッドかWindowsスレッドを利用しますが、前者の場合�
 @itemx gauche.sys.lchown
 @itemx gauche.sys.getpgid
 @itemx gauche.sys.nanosleep
-@itemx gauhce.sys.crypt
+@itemx gauche.sys.crypt
 @itemx gauche.sys.symlink
 @itemx gauche.sys.readlink
 @itemx gauche.sys.select
@@ -5148,7 +5148,7 @@ In future, there may be some mechanism to customize this mapping.
 @c COMMON
 
 @c EN
-The file to be @code{use}'d must have explict module selection
+The file to be @code{use}'d must have explicit module selection
 to have any toplevel definitions
 (usually via @code{define-module}/@code{select-module} pair
 or @code{define-library}).  If you get an error saying
@@ -5661,7 +5661,7 @@ Gaucheがデフォルトの@code{GAUCHE_KEYWORD_IS_SYMBOL}モードで実行さ�
 @c COMMON
 
 @c EN
-The followig R7RS program imports @code{gauche.base}; it makes gauche
+The following R7RS program imports @code{gauche.base}; it makes gauche
 built-in identifiers, @emph{and} all self-bound keywords, available:
 @c JP
 次のR7RSプログラムは@code{gauche.base}をimportすることで、

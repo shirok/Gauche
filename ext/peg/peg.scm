@@ -88,7 +88,7 @@
 ;;;     => (define a ($or b c))
 ;;;     To be precise, this actually mean B / C in PEG; if B fails without
 ;;;     consuming input, we try C.  But if B ever consumes input, we don't
-;;;     backtrack and A failes.  If you want backtracking, use $try as well.
+;;;     backtrack and A fails.  If you want backtracking, use $try as well.
 ;;;     => (define a ($or ($try b) c))
 ;;;
 ;;;   A :: B*
@@ -101,7 +101,7 @@
 ;;;     is that you want a string out of gathered values.  $->string is a
 ;;;     combinator that just translates the semantic value.
 ;;;     => (define a ($->string ($many b)))
-;;;     If the result of a is futher gathered, it is wasteful to make it
+;;;     If the result of a is further gathered, it is wasteful to make it
 ;;;     a string, since it will be thrown away soon.  We have an efficient
 ;;;     intermediate string representation called rope.  Here you can make
 ;;;     the result of a as rope:
@@ -665,7 +665,7 @@
 ;; $alternate p sep
 ;;   P separated by SEP.  Returns list of values of P.
 ;;   Unline $sep-by, this one sets backtrack point before each SEP.  So,
-;;   for example, $sep-by failes with input P SEP P SEP P SEP Q, but
+;;   for example, $sep-by fails with input P SEP P SEP P SEP Q, but
 ;;   $alternate returns three results from SEP, leaving SEP Q in the input.
 (define ($alternate parse sep)
   ($or ($do [h parse]
@@ -780,7 +780,7 @@
 ;;   - $match1 takes one item from stream and see if it matches
 ;;     with PATTERN.
 ;;   - $match applys PATTERN on the entire input stream.
-;;   - If matched, RESULT is evaluated in the envionment where pattern variables
+;;   - If matched, RESULT is evaluated in the environment where pattern variables
 ;;     in PATTERN are bound, and its result becomes the result value of the
 ;;     parser.
 ;;   - If RESULT is omitted, the matched item is returned.

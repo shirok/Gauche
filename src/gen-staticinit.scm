@@ -72,7 +72,7 @@
       default)))
 
 ;;
-;; Scan ext/* directories to gather extention initfns, and generate
+;; Scan ext/* directories to gather extension initfns, and generate
 ;; Scm_InitPrelinked() function.
 ;;
 

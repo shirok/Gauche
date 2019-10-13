@@ -55,7 +55,7 @@
 ;;  problem, JACM 21(1), 1974, shows DP algorithm to calculate this, but
 ;;  there's no mention of "Levenshtein" in the paper.
 ;;
-;;  Damerau-Levenshtein-distance: Lowrance & Wagner, An extention of
+;;  Damerau-Levenshtein-distance: Lowrance & Wagner, An extension of
 ;;  the string-to-string correction problem, JACM 22(2), 1975.  Again,
 ;;  there's no mention of "Damerau" nor "Levenshtein".
 ;;
@@ -69,7 +69,7 @@
 ;;  hand, this one restricts how transposition is applied and is not
 ;;  fully compatible to Damerau-Levenshtein.
 
-;; It is often explaned using (N+k)x(M+k) array for dynamic programming
+;; It is often explained using (N+k)x(M+k) array for dynamic programming
 ;; (k=1 or 2), but we only need to refer to look back at most k rows,
 ;; so we can run the algorithm with k+1 rows and rotating them.
 ;;

@@ -148,7 +148,7 @@ static struct threadRec {
    deconstruction phase, the handler thread_cleanup() runs and saves the
    thread result to the ScmVM structure.  If nobody cares about the
    result of the thread, ScmVM structure will eventually be GCed.
-   This is to prevent exitted thread's system resources from being
+   This is to prevent exited thread's system resources from being
    uncollected.
  */
 ScmObj Scm_ThreadStart(ScmVM *vm)

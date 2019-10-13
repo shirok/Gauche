@@ -909,7 +909,7 @@ SRFI-13のAPIはSRFI-128の上位互換になっています。内部で使っ�
 @c EN
 Returns the length of the longest common prefix/suffix of two strings,
 @var{s1} and @var{s2}.  The optional arguments restrict the range of
-search.  The @code{*-ci} variations use case foling character comparison.
+search.  The @code{*-ci} variations use case folding character comparison.
 @c JP
 二つの文字列@var{s1}と@var{s2}の、共通するプレフィクスもしくはサフィックスの
 長さを返します。省略可能引数はそれぞれの文字列の探索範囲を限定します。
@@ -935,7 +935,7 @@ search.  The @code{*-ci} variations use case foling character comparison.
 @c EN
 Returns true iff @var{s1} is a prefix or suffix of @var{s2}, respectively.
 The optional arguments limit the range of @var{s1} and @var{s2} to look at.
-The @code{*-ci} variations use case foling character comparison.
+The @code{*-ci} variations use case folding character comparison.
 @c JP
 それぞれ、@var{s1}が@var{s2}のプレフィクスまたはサフィックスになっていた場合に
 @code{#t}を、それ以外の場合に@code{#f}を返します。
@@ -1291,7 +1291,7 @@ Call @var{proc} on each index of the string @var{s}.
 @defun xsubstring s from :optional to start end
 [SRFI-13]
 @c MOD srfi-13
-Takes a substring of inifinite repetition of string @var{s}
+Takes a substring of infinite repetition of string @var{s}
 between index @var{from} (inclusive) and index @var{to} (exclusive).
 
 For example, if @var{s} is @code{"abcde"}, we repeat it
@@ -2247,7 +2247,7 @@ character, such as @code{~@@a}.
 @c state what happens if @code{string->date} doesn't accept the
 @c input, which actually reduces usability of @code{string->date}
 
-@c but the reference implentation signals an error, and
+@c but the reference implementation signals an error, and
 @c it would be safe to assume
 
 
@@ -2658,7 +2658,7 @@ and won't affect the processing of subsequent directives.
 
 Although SRFI-28 spec is compatible to
 Gauche's native @code{format} (@pxref{Output}),
-this SRFI-29 extention isn't.
+this SRFI-29 extension isn't.
 Specifically, the @code{~N@@*} directive of Gauche's @code{format}
 changes the argument pointer to points @var{N}-th optional argument,
 thus it affects all the subsequent arguments.
@@ -4442,7 +4442,7 @@ into the target blob @var{target} starting from @var{tstart}.
 
 Note that the order of arguments differs from other @code{*-copy!}
 procedures (e.g. R7RS's @code{string-copy!} and @code{vector-copy!},
-and @code{gauhce.uvector}'s @code{u8vector-copy!})), which have the
+and @code{gauche.uvector}'s @code{u8vector-copy!})), which have the
 following signature: @code{(*-copy! target tstart src sstart send)}
 @end defun
 
@@ -5268,7 +5268,7 @@ all other real numbers, even than @code{+inf.0}.
 If it's a symbol @code{error}, an error is signaled.
 @item a procedure taking one argument
 The procedure is invoked with the real number which is not NaN.
-If it ever returns, it must return eithr 1, 0 or -1, for
+If it ever returns, it must return either 1, 0 or -1, for
 it's used as the result of the comparison procedure of
 the comparator.  However, since the procedure doesn't know
 @emph{which} argument is non-NaN, it's hard to have consistent

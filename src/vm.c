@@ -648,7 +648,7 @@ static void vm_unregister(ScmVM *vm)
             fprintf(stderr, "\"%s\", line %d: Assertion failed: %s\n",  \
                     __FILE__, __LINE__, #expr);                         \
             Scm_VMDump(theVM);                                          \
-            Scm_Panic("exitting...\n");                                 \
+            Scm_Panic("exiting...\n");                                 \
         }                                                               \
     } while (0)
 
@@ -1931,7 +1931,7 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
  * raise unconditionally within the exception handler causes infinite loop.
  *
  * Srfi-34 says that an exception handler is called with the same dynamic
- * envionment where the exception is raised, _except_ that the current
+ * environment where the exception is raised, _except_ that the current
  * exception handler is "popped", i.e. when an exception handler is running,
  * the current exception handler is the "outer" or "old" one.  Calling
  * raise within an exception handler passes the control to the outer
@@ -1968,7 +1968,7 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
  * of ScmEscapePoints.
  *
  * Note that this model assumes an exception handler returns unless it
- * explictly invokes continuation captured elsewhere.   In reality,
+ * explicitly invokes continuation captured elsewhere.   In reality,
  * "error" exceptions are not supposed to return (hence it is checked
  * in raise).  Gauche provides another useful exception handling
  * constructs that automates such continuation capturing.  It can be
