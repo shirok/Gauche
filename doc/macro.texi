@@ -1597,10 +1597,16 @@ Gaucheにはその助けになるツールがいくつかあります。
 @subsection Tracing macro expansion
 @c NODE マクロ展開をトレースする
 
+@c EN
 Macro tracing shows the input to the macro expander and the result of
 its expansion on selected macros.  Suppose you have the following
 macro definition.  It's essentially the same as shown in the definition
 of @code{letrec} in R7RS section 7.3:
+@c JP
+マクロトレースは、選択したマクロのマクロ展開器の入力と結果を表示する機能です。
+例えば、次のマクロを定義したとしましょう。これはR7RSの7.3節にある@code{letrec}の
+定義とだいたい同じです:
+@c COMMON
 
 @example
 (define-syntax my-letrec
@@ -1616,9 +1622,15 @@ of @code{letrec} in R7RS section 7.3:
      (my-letrec "tmps" (y ...) (newtmp tmp ...) binds body ...)]))
 @end example
 
+@c EN
 The @code{my-letrec} macro uses an idiom to generate temporary
 variables by looping with @code{"tmps"} tag.  You can see how
 the macro is expanded step by step, by tracing @code{my-letrec}:
+@c JP
+この@code{my-letrec}マクロは、@code{"tmps"}をタグにしてループすることで
+一時変数を作るというイディオムを使っています。@code{my-letrec}をトレースすることで、
+このマクロの展開の様子をステップごとに見ることができます:
+@c COMMON
 
 @example
 gosh> (trace-macro 'my-letrec)
@@ -1699,23 +1711,47 @@ Macro output<<<
 #f
 @end example
 
+@c EN
 In the above example, the S-expressions
 after @code{gosh>} prompt is what you type; all other things are
 Gauche's answer, including @code{Macro input} and @code{Macro output}
 S-expressions.
+@c JP
+上に示した例において、@code{gosh>}プロンプトの次にあるS式がユーザがタイプしたものです。
+他はすべて、@code{Macro input}と@code{Macro output}のS式を含め、
+Gaucheの出力です。
+@c COMMON
 
+@c EN
 The S-expression shown with @code{Macro input} is the input of
 the macro expander, and the one with @code{Macro output} is the
 expanded result.   Actual macro output has syntactic information
 attached, but the tracer strips them off for the legibility.
+@c JP
+@code{Macro input}の後に示されるS式がマクロ展開器の入力で、
+@code{Macro output}の後がその展開結果です。実際のマクロ展開結果は
+構文情報が付加されていますが、この出力では読みやすくするために構文情報は取り去られています。
+@c COMMON
 
+@c EN
 Note that the loop introduces new temporary variables with the same
 name (@code{newtemp}), but they are treated as different identifiers
 in the macro expansion.
+@c JP
+ループの度に同じ名前(@code{newtemp})の変数が導入されていますが、
+それらが異なる識別子として扱われていることが展開結果からわかると思います。
+@c COMMON
 
-Once you're done, don't forget to call @code{untrace-macro} with no arguments
+@c EN
+Once you're done debugging,
+don't forget to call @code{untrace-macro} with no arguments
 to remove macro traces.  If there's a macro trace set, all macro expansions
 get some overhead, so don't leave macro traces.
+@c JP
+デバッグが終わったら、@code{untrace-macro}を引数なしで呼んで
+マクロトレースをオフにしましょう。マクロトレースが設定されていると、
+すべてのマクロ展開においてオーバヘッドがかかります。
+@c COMMON
 
 @example
 gosh> (untrace-macro)
@@ -1726,38 +1762,86 @@ gosh> (untrace-macro)
 @defun trace-macro
 @defunx trace-macro boolean
 @defunx trace-macro name-or-pattern @dots{}
+@c EN
 Get/set current macro trace setting.  Macro trace setting can be
 one of the following values:
+@c JP
+現在のマクロトレース設定を得たり、変更したりします。
+マクロトレース設定は次のいずれかの値を取ります。
+@c COMMON
 
 @table @asis
 @item @code{#f}
+@c EN
 Macro tracing is off.  This is the default setting.
+@c JP
+マクロトレースはオフです。これがデフォルトの設定です。
+@c COMMON
 @item @code{#t}
+@c EN
 All macro expansions are traced.
+@c JP
+全てのマクロの展開がトレースされます。
+@c COMMON
 @item @code{(@var{name-or-pattern} @dots{})}
+@c EN
 Trace macros that match any one of @var{name-or-pattern}, which
 is either a symbol or a regexp.  If it's a symbol, a macro whose name
 is the same as the symbol is traced.  If it's a regexp, macros whose
 name match the regexp are traced.
+@c JP
+名前が@var{name-or-pattern}のいずれかにマッチするマクロがトレースされます。
+ここで各@var{name-or-pattern}は、シンボルか正規表現オブジェクトです。
+シンボルの場合は名前が完全に一致するもの、正規表現の場合は
+名前がそれに一致するものがトレースの対象となります。
+@c COMMON
 @end table
 
+@c EN
 When called without arguments, @code{trace-macro} doesn't change
 the setting; it returns the current setting.
+@c JP
+引数なしで呼ばれたら、@code{trace-macro}は設定を変えず、単に現在の設定を返します。
+@c COMMON
 
+@c EN
 When called with signle boolean value, it sets the current setting
 to that value.  Returns the updated setting.
+@c JP
+単一の真偽値を引数に渡した場合は、それをマクロトレースの設定値として、
+更新された設定値を返します。
+@c COMMON
 
+@c EN
 When called with one or more @var{name-or-pattern}, it @emph{adds} them
 to the current setting.  Note that if the current setting is @code{#t},
 it remains @code{#t}, for all macros are already traced.
 Returns the updated setting.
+@c JP
+一つ以上の@var{name-or-pattern}が渡されたら、それらが現在のマクロトレース設定に
+@emph{追加}されます。もし現在の設定が@code{#t}なら設定は変わらないことに注意して
+ください。全てのマクロは既にトレースされているからです。
+更新された設定値を返します。
+@c COMMON
 
+@c EN
 If macro trace settings is not @code{#f}, it incurs overhead for
 every macro expansion.  Be careful not to leave macro trace set.
+@c JP
+マクロトレースの設定値が@code{#f}でない限り、すべてのマクロ展開にオーバヘッドがかかります。
+マクロトレースを設定したままにしないようにしてください。
+@c COMMON
+
+@c EN
+The trace information is output to the current error port.
+@c JP
+トレース情報は現在のエラー出力ポートに出力されます。
+@c COMMON
 @end defun
 
 @defun untrace-macro
 @defunx untrace-macro name-or-pattern @dots{}
+@c EN
 When called without arguments, it turns macro trace off.
 
 When called with one or more @var{name-or-pattern}, which is either
@@ -1766,6 +1850,15 @@ the currently traced macros.  Note that if the current macro trace setting
 is @code{#t} (trace all macros), you can't remove traced macro individually.
 
 It returns the updated macro trace setting.
+@c JP
+引数なしで呼ばれた場合、マクロトレースをオフにします。
+
+1つ以上の@var{name-or-pattern}が渡された場合は、現在のマクロトレース設定から
+それらを除きます。ただし、現在のマクロトレース設定が@code{#t} (全てのマクロをトレース)
+の場合は個別にマクロを除外できません。
+
+更新後のマクロトレース設定を返します。
+@c COMMON
 @end defun
 
 
