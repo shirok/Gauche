@@ -142,7 +142,7 @@ ScmObj Scm_WeakVectorSet(ScmWeakVector *v, ScmSmallInt index, ScmObj value)
 /* ptr points to the target object weakly.
    Registered flag becomes TRUE whenever ptr points to a GC_malloced object,
    thus &wbox->ptr is registered as a disappearing link.
-   Note that we can distinguish a box that contaning NULL pointer, and
+   Note that we can distinguish a box that containing NULL pointer, and
    a box whose target has been GCed and hence ptr is cleared---in the
    former case registered is FALSE, while in the latter case it is TRUE. */
 struct ScmWeakBoxRec {

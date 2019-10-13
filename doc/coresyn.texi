@@ -3624,7 +3624,7 @@ Suppose you define @var{x} as follows:
 Then, the code @code{(list x)} is compiled to the same code
 as @code{(list '#(1 2 3))}.
 
-This distinctino is especially important when you do AOT (ahead of time)
+This distinction is especially important when you do AOT (ahead of time)
 compilation.
 @c JP
 すると、コード@code{(list x)}は@code{(list '#(1 2 3))}と同じコードにコンパイルされます。
@@ -3858,7 +3858,7 @@ that file (@pxref{Multibyte scripts}).
 @c EN
 If @var{filename} is absolute, the file is just searched.  If it
 is relative, the file
-is first searched relative to the file contaning the @code{include}
+is first searched relative to the file containing the @code{include}
 form, then the directories in @code{*load-path*} are tried.
 @c JP
 @var{filename}が絶対パスならば、そのパスに正確に合致するファイルが探されます。
@@ -4058,7 +4058,7 @@ won't persist after @code{load}.
 @c EN
 Usually, @code{require} (or @code{use} and @code{extend}) are
 better way to incorporate sources in other files.  The @code{include}
-form is mainly for the tricks that can't be acheved with
+form is mainly for the tricks that can't be achieved with
 @code{require}.  For example, you have a third-party R5RS code
 and you want to wrap it with Gauche module system.  Using @code{include},
 you place the following small source file along the third-party code,
@@ -5048,7 +5048,7 @@ list the name with prefix.
 @c COMMON
 
 @c EN
-Note: R7RS has @code{import} form, which has slightly differnent
+Note: R7RS has @code{import} form, which has slightly different
 syntax and semantics.  @xref{Three forms of import}, for the details.
 @c JP
 註: R7RSにも@code{import}フォームがありますが、若干構文と意味が異なります。
@@ -5699,7 +5699,7 @@ quote them, import @code{gauche.keyword} separately.
 @example
 ;; R7RS program
 (import (scheme base)
-        (prefix (gauche base) gauche/) ; use gauche builting with gauche/ prefix
+        (prefix (gauche base) gauche/) ; use gauche builtin with gauche/ prefix
         (gauche keyword))              ; imports keywords
 
 ;; Without importing gauche.keyword,

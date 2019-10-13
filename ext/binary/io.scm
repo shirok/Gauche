@@ -165,7 +165,7 @@
 (define write-binary-long   write-s32)
 (define write-binary-ulong  write-u32)
 
-;; Other compatibility names.  They have been official befor 0.8.10,
+;; Other compatibility names.  They have been official before 0.8.10,
 ;; and used widely.  So we keep them for a while.
 (define read-binary-uint  read-uint)
 (define read-binary-sint  read-sint)

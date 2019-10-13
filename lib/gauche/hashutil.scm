@@ -151,7 +151,7 @@
 ;; procedures.  We add a check in case the caller mistook this with R7RS one.
 (define (hash-table-map ht proc :optional arg)
   (when (not (undefined? arg))
-    (error "Gauche's bulit-in hash-table-map is called with R7RS interface. \
+    (error "Gauche's built-in hash-table-map is called with R7RS interface. \
             Use hash-table-map-r7, or say (use scheme.hash-table)."))
   (assume-type ht <hash-table>)
   (let1 i ((with-module gauche.internal %hash-table-iter) ht)

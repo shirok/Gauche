@@ -831,7 +831,7 @@
        (with-input-from-string "{\"a\":1, \"b\":2}{\"c\":3, \"d\":4}"
          parse-json*))
 
-(test* "Customizing consturctors"
+(test* "Customizing constructors"
        '(object ("x" array 1 2 3) ("y" array #f #t null))
        (parameterize ([json-array-handler (^[elts] (cons 'array elts))]
                       [json-object-handler (^[pairs] (cons 'object pairs))]

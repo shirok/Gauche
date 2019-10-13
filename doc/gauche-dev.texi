@@ -1351,7 +1351,7 @@ the integer.
 @end deftypefun
 
 @deftypefun ScmObj Scm_MakeBignumFromDouble (double @var{val})
-Returns a (possible denormalizeD) bignum that represents
+Returns a (possible denormalized) bignum that represents
 the integral part of @var{val}.
 @end deftypefun
 
@@ -1915,7 +1915,7 @@ to @code{ScmStringBody}.
 
 @deftp {Type} ScmStringBody
 The body of the string.  It is immutable---that is, once it
-is constucted, it should never be changed.
+is constructed, it should never be changed.
 @end deftp
 
 @deftypevr {Constant} int SCM_STRING_IMMUTABLE
@@ -2301,7 +2301,7 @@ and @code{prefix} as defined in @code{srfi-13}'s @code{string-join}.
 @deftypefunx ScmObj Scm_StringScanChar (ScmString *@var{s1}, ScmChar @var{ch}, int @var{retmode})
 Scheme's @code{string-scan}.
 Search a string @var{s2} or a character @var{ch} within a string @var{s1},
-respectively.  Return value depens on the @var{retmode} argument, as follows:
+respectively.  Return value depends on the @var{retmode} argument, as follows:
 @table @code
 @item SCM_STRING_SCAN_INDEX
 Returns an index of the first found instance of @var{s1}/@var{ch},
@@ -3457,7 +3457,7 @@ They are to help build and installation process.
 
 The @code{gauche-package} command is the front-end of managing
 Gauche extension packages.  It can perform the various operations
-accoring to @var{operation} argument.
+according to @var{operation} argument.
 
 @table @asis
 @item Download, compile and install packages

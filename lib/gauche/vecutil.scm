@@ -47,7 +47,7 @@
   (let* ([len (length lis)]
          [end (if (< end 0) len end)])
     (when (< len start)
-      (errorf "start arugment out of range [0-~s]: ~s" len start))
+      (errorf "start argument out of range [0-~s]: ~s" len start))
     (when (< end start)
       (errorf "start ~s is greater than end ~s" start end))
     (do ([vec (make-vector (- end start))]

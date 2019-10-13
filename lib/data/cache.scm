@@ -49,7 +49,7 @@
 ;;  (cache-write! cache key value) => void                       method
 ;;
 ;;  (cache-storage cache) => dictionary                       procedure
-;;  (cache-compartor cache) => comparator                     procedure
+;;  (cache-comparator cache) => comparator                     procedure
 ;;
 ;; Implementor-side API
 ;;

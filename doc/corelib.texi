@@ -446,7 +446,7 @@ do not call @code{object-equal?} directly; call @code{equal?} on each element.
 @deffn {Method} object-equal? (obj1 <top>) (obj2 <top>)
 @c EN
 This method catches @code{equal?} between two objects of a user-defined
-classe, in case the user doesn't define a specialized method for the class.
+class, in case the user doesn't define a specialized method for the class.
 
 When called, it scans the registered default comparators that can handle
 both @var{obj1} and @var{obj2},
@@ -1098,7 +1098,7 @@ depending on the equality predicate).
 Gaucheでは、これらの関数は単に引数の型チェックをして(必要なら大文字小文字の
 区別をなくした後)、組み込みの@code{default-hash}を呼び出しているだけです。
 これらは@code{scheme.comparator}で定義されているために提供されていますが、
-特にポータビリティが必要でなければ@code{defailt-hash}
+特にポータビリティが必要でなければ@code{default-hash}
 (あるいは、等価述語によっては@code{eq-hash}や
 @code{eqv-hash})を呼んでしまう方が簡単だし高速です。
 @c COMMON
@@ -1605,7 +1605,7 @@ that satisfy the type predicates of @var{cmpr}.  The procedure
 returns either -1, 0 or 1, depending on whether the first object
 is less than, equal to, or greater than the second.  The comparator
 must be ordered, that is, it must have an ordering predicate
-(or a comparison procedure, if it is created by SRFI-114 consturctor).
+(or a comparison procedure, if it is created by SRFI-114 constructor).
 @c JP
 これはSRFI-114の手続きですが、
 @code{scheme.comparator}比較器でも時々便利なことがあります。
@@ -2415,7 +2415,7 @@ Returns @code{#t} if @var{x} is a number represented by a floating-point
 number, @code{#f} otherwise.  In Gauche, inexact real numbers
 are flonums.
 
-@xref{R7RS flonum}, for comprehesive flonum library.
+@xref{R7RS flonum}, for comprehensive flonum library.
 @c JP
 @var{x}が浮動小数点数で表現される数値の場合に@code{#t}を、それ以外の場合に
 @code{#f}を返します。Gaucheでは、不正確な実数がflonumです。
@@ -2981,7 +2981,7 @@ R7RS division library (@code{scheme.division}) introduces
 other variation of integer divisions
 (@pxref{R7RS integer division}).
 @c JP
-R7RS除算ライブラリ(@code{scheme.divison})では、
+R7RS除算ライブラリ(@code{scheme.division})では、
 他の整数除算のバリエーションが定義されています。
 (@ref{R7RS integer division}参照)。
 @c COMMON
@@ -5903,7 +5903,7 @@ If no pair matches, these return @code{#f}.
 @c COMMON
 
 @c EN
-If the optional argument of @code{ascoc} is given,
+If the optional argument of @code{assoc} is given,
 it is called instead of @code{equal?}
 to check the equivalence of @var{obj} and each key.
 @c JP
@@ -6518,7 +6518,7 @@ Returns @code{#t} if @var{obj} is a keyword.
 @defun make-keyword name
 @c EN
 Returns a keyword whose name is @var{name} prepended by @code{:}.
-The @var{name} argment can be a string or a symbol.
+The @var{name} argument can be a string or a symbol.
 @c JP
 @var{name}の前に@code{:}を付加した名前を持つキーワードを返します。
 @var{name}には文字列かシンボルが許されます。
@@ -7620,7 +7620,7 @@ whose Unicode codepoint is represented by 4-digit and 8-digit hexadecimal
 numbers, respectively.  
 @item \s
 Whitespace characters
-(space, newline, tab, form feed, vertical tab, carrige return).
+(space, newline, tab, form feed, vertical tab, carriage return).
 Members of @code{char-set:ascii-whitespace}.
 @item \S
 Complement of whitespace characters.
@@ -7711,7 +7711,7 @@ Here are some examples:
 @item \x@var{N};
 Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item \s
-空白文字(space, newline, tab, form feed, vertical tab, carrige return).
+空白文字(space, newline, tab, form feed, vertical tab, carriage return).
 文字セット@code{char-set:ascii-whitespace}の要素。
 @item \S
 空白でない文字。(@code{\s}の補集合)
@@ -7966,7 +7966,7 @@ If you intend to mean ASCII-only words, use @code{char-set:ascii-word}.
 @defvarx char-set:ascii-printing
 @defvarx char-set:ascii-whitespace
 @defvarx char-set:ascii-blank
-@defvarx char-set:ascii-contorl
+@defvarx char-set:ascii-control
 @defvarx char-set:ascii-punctuation
 @defvarx char-set:ascii-symbol
 @defvarx char-set:ascii-word
@@ -8942,7 +8942,7 @@ Returns @code{#t} iff all arguments are strings with the same content.
 
 @c EN
 If any of arguments is incomplete string, it returns @code{#t} iff
-all argumnets are incomplete and have exactly the same content.
+all arguments are incomplete and have exactly the same content.
 In other words, a complete string and an incomplete string never equal
 to each other.
 @c JP
@@ -9462,7 +9462,7 @@ Compatibility note:
 The @var{grammar} argument is added for the consistency of srfis
 (srfi-130, srfi-152, @pxref{String library (reduced)}).
 However, for the backward compatibility and
-the covenience, it also accepts @var{limit} without @var{grammar} argument;
+the convenience, it also accepts @var{limit} without @var{grammar} argument;
 it is distinguishable since @var{grammar} is a symbol and
 @var{limit} is an integer.
 For the code that's compatible to srfi-152, use the first form that takes
@@ -20289,7 +20289,7 @@ controls.
 @code{write}は二つまでそういった引数を取ります。すなわち、@code{write}は
 以下のいずれの形式でも呼び出すことができます:
 @code{(write obj)}、@code{(write obj port)}、
-@code{(write obj contorls)}、@code{(write obj port controls)}、
+@code{(write obj controls)}、@code{(write obj port controls)}、
 @code{(write obj controls port)}。
 省略された場合、ポートは現在の出力ポート、出力制御についてはデフォルトの出力制御が
 使われます。

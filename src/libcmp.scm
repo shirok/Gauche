@@ -72,7 +72,7 @@
      (Scm_MakeComparator type-test equality-test comparison-proc hash
                          name flags))))
 
-;; Argument checkers for consturctors.
+;; Argument checkers for constructors.
 ;; We use <bottom> for applicability check except type-test, since
 ;; those procs are only required to handle objects that passes type-test.
 (define (ensure-type-test type-test)

@@ -636,7 +636,7 @@ ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
  *  Since the algorithm is generally useful, I implement the core routine
  *  of the algorithm here.
  *
- *  TODO at 1.0: I noticed START argument acutally isn't used in the
+ *  TODO at 1.0: I noticed START argument actually isn't used in the
  *  algorithm at all.  We can drop it and the caller can just say
  *  Scm_Cons(start, Scm_MonotonicMerge(sequences)).   We can't change it
  *  now because of ABI compatibility, but it will be nice to do so when

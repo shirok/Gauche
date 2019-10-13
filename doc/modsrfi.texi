@@ -858,7 +858,7 @@ R7RS版は後者です。
 (Note: Gauche has builtin @code{string-hash} and @code{string-ci-hash}
 according to SRFI-128. @xref{Hashing}, for the details.
 SRFI-13's API is upper-compatible to SRFI-128's.  The underlying
-hash algorighm is the same as the builtin ones, so @code{string-hash}
+hash algorithm is the same as the builtin ones, so @code{string-hash}
 returns the same value as the builtin ones for the same string
 if optional arguments are omitted.
 On the other hand, the builtin @code{string-ci-hash} uses string case
@@ -3675,7 +3675,7 @@ It terminates when any one of @var{generator} is exhausted.
 @mdindex srfi-43
 @c EN
 This module is effectively superseded by R7RS and @code{srfi-133}.  
-There are a few procedures that are not compatbile with R7RS and 
+There are a few procedures that are not compatible with R7RS and 
 @code{srfi-133}, and this module remains to support
 legacy code that depends on them.  
 
@@ -5216,7 +5216,7 @@ built-in @code{comparator-ordered?} and @code{comparator-hashable?}.
 [SRFI-114]
 @c MOD srfi-114
 Returns type test predicate of a comparator @var{c}.
-This is an alias of bulit-in @code{comparator-type-test-predicate}.
+This is an alias of built-in @code{comparator-type-test-predicate}.
 @end defun
 
 @defun comparator-equal? c a b
@@ -5224,7 +5224,7 @@ This is an alias of bulit-in @code{comparator-type-test-predicate}.
 @c MOD srfi-114
 Checks equality of @var{a} and @var{b} using the equality predicate
 of a comparator @var{c}.  This can be also written in @code{=?}, which
-is bulit-in (@pxref{Comparator predicates and accessors}).
+is built-in (@pxref{Comparator predicates and accessors}).
 @example
 (=? c a b)
 @end example
@@ -5356,7 +5356,7 @@ That is, @code{make-list-comparator} can be written in
 @example
 (make-list-compartator element-comparator)
   @equiv{}
-  (make-listwise-comparator list? element-compartor null? car cdr)
+  (make-listwise-comparator list? element-comparator null? car cdr)
 @end example
 
 This can be used to compare list-like structures.  For example,
@@ -6130,7 +6130,7 @@ Note: The order of @var{pred} and the source object is different from
 @deftp {Module} srfi-154
 @mdindex srfi-154
 @c EN
-This module provides a convenent way to reify the dynamic environment.
+This module provides a convenient way to reify the dynamic environment.
 A continuation captured by @code{call/cc} includes the dynamic environment,
 as well as the control flow.  Sometimes you only want the dynamic environment
 part.  A dynamic extent is a reified dynamic environment.
@@ -6249,7 +6249,7 @@ but also the dynamic environment.  Yields a procedure.
 
 Note: Since @code{dynamic-lambda} needs to swap the dynamic environment
 after executing @var{body}, the last expression of @var{body} isn't
-called in the tail contenxt even if the procedure created by
+called in the tail context even if the procedure created by
 @code{dynamic-lambda} is called in tail context.
 @c JP
 @code{lambda}のように振る舞いますが、レキシカルな環境だけでなく、
