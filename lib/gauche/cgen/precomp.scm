@@ -774,7 +774,7 @@
       `((with-module gauche define-syntax) ,@form))
      ;; If the macro needs to exported, check if we can put it in
      ;; precompiled file (it is, if the transformer is a closure).
-     ;; Othewise, we emit the form to *.sci file.
+     ;; Otherwise, we emit the form to *.sci file.
      (when (or (symbol-exported? name)
                (memq name (private-macros-to-keep)))
        (let1 val (global-variable-ref (~ (current-tmodule)'module) name #f)

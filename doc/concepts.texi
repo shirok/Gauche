@@ -612,7 +612,7 @@ Gaucheでは、名前空間はオブジェクトシステムとは直交する�
 
 @c EN
 Gauche has a simple module system that allows
-modularlized development of large software.
+modularized development of large software.
 @c JP
 Gaucheは大きなソフトウェアをモジュール化して開発するための、
 単純なモジュールシステムを備えています。

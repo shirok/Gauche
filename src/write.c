@@ -260,7 +260,7 @@ void Scm_WriteWithControls(ScmObj obj, ScmObj p, int mode,
  *
  *  Characters exceeding WIDTH are truncated.
  *  If the output fits within WIDTH, # of characters actually written
- *  is returned.  Othewise, -1 is returned.
+ *  is returned.  Otherwise, -1 is returned.
  *
  *  Currently this API is only used from Scm_Printf, for 'format' has been
  *  moved to libfmt.scm.  I don't like the way this is implemented and would

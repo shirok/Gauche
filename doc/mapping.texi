@@ -575,9 +575,9 @@ Use @code{read-line} or @code{read-string}.    @xref{Input}.
 @c COMMON
 @item fileno
 @c EN
-@code{port-file-numer}.   @xref{Common port operations}.
+@code{port-file-number}.   @xref{Common port operations}.
 @c JP
-@code{port-file-numer}。@ref{Common port operations} 参照。
+@code{port-file-number}。@ref{Common port operations} 参照。
 @c COMMON
 @item floor
 @c EN

@@ -192,7 +192,7 @@
         [else word]))
 
 ;; Decode the entire header field body, possibly a mixture of
-;; encoded-words and orginary words.  NOTE: If you apply this to
+;; encoded-words and ordinary words.  NOTE: If you apply this to
 ;; a structured field body, the decoded words may contain special
 ;; characters meaningful to the structured body and thus confuse
 ;; the parser.  The correct order is to parse first, then apply

@@ -6902,7 +6902,7 @@ To create or open a database, you need a concrete implementation
 of the database.  With the default build-time configuration,
 the following implementations are included in Gauche.
 Bindings to various other dbm-like libraries are
-available as extension pacakges.
+available as extension packages.
 Each module defines its own low-level accessing functions
 as well as the common interface.
 Note that your system may not have one or more of those DBM libraries;
@@ -8637,7 +8637,7 @@ Takes integer as permission mode bits.
 @item :owner @var{uid}
 @itemx :group @var{gid}
 Takes integer uid/gid of the owner/group of the file/directory.
-Calling process may need special priviledge to change the owner
+Calling process may need special privilege to change the owner
 and/or group.
 @item :symlink @var{path}
 This is only valid for file spec, and it causes
@@ -13713,7 +13713,7 @@ left to be zero, which is to be filled by the kernel
 @defun icmp-packet-type buffer offset
 @defunx icmp-packet-code buffer offset
 @defunx icmp-packet-ident buffer offset
-@defunx icmp-packet-sequence buffer offsetj
+@defunx icmp-packet-sequence buffer offset
 @c MOD rfc.icmp
 @c EN
 Extracts type, code, ident and sequence fields of ICMP packet.
@@ -14702,7 +14702,7 @@ of enclosed message.  If it is other media types such as @code{text}
 or @code{application}, @var{handler} is called on the (only) message body.
 @c JP
 メッセージはマルチパートである必要はありません。メッセージが
-MIME @code{mesasge}タイプである場合は、@var{handler}は囲まれたメッセージの
+MIME @code{message}タイプである場合は、@var{handler}は囲まれたメッセージの
 ボディに対して呼ばれます。メッセージが、@code{text}や@code{application}
 などの他のメディアタイプの場合は、@var{handler}は単にメッセージボディに
 対して呼ばれます。
@@ -22453,7 +22453,7 @@ em       fieldset   form       frame       frameset
 h1       h2         h3         h4          h5        h6
 head     hr         html       i           iframe    img
 input    ins        kbd        label       legend    li
-link     map        meta       nofrmaes    noscript  object
+link     map        meta       noframes    noscript  object
 ol       optgroup   option     p           param     pre
 q        samp       script     select      small     span
 strong   style      sub        sup         table     tbody
@@ -28442,7 +28442,7 @@ The following is the complete rules of SxCSS syntax.
             | ($= <ident> <attrib-value>)           ; E[attrib$=val]
             | (:not <negation-arg>)                 ; E:not(s)
             | (: <ident>)                           ; E:pseudo-class
-            | (: (<fn> <ident> ...))                ; E:pseudl-class(arg)
+            | (: (<fn> <ident> ...))                ; E:pseudo-class(arg)
             | (:: <ident>)                          ; E::pseudo-element
 <element-name> : <ident> | *
 <attrib-value> : <ident> | <string>

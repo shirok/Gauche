@@ -311,7 +311,7 @@
 (define (dummy . _) "/* not implemented */")
 
 ;;===============================================================
-;; Uvector opertaion generator
+;; Uvector operation generator
 ;;
 
 (define (generate-numop)

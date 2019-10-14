@@ -77,7 +77,7 @@ void Scm__SetupPortsForWindows(int has_console);
  *
  *  The port's lock state is kept in a single pointer, port->lockOwner.
  *  It points to the owner of the port, or NULL if the port is unlocked.
- *  Unlocking the port is a single atomic opertaion, port->lockOwner = NULL,
+ *  Unlocking the port is a single atomic operation, port->lockOwner = NULL,
  *  hence PORT_UNLOCK doesn't need mutex to do that.
  *
  *  To lock the port, the thread needs to grab a system-level lock
@@ -91,7 +91,7 @@ void Scm__SetupPortsForWindows(int has_console);
  *  the port would wait extra timeslice.  Not a big deal.
  *
  *  Note that we cannot use a condition variable to let the locking thread
- *  wait on it.  If we use CV, unlocking becomes two-step opertaion
+ *  wait on it.  If we use CV, unlocking becomes two-step operation
  *  (set lockOwner to NULL, and call cond_signal), so it is no longer
  *  atomic.  We would need to get system-level lock in PORT_UNLOCK as well.
  */

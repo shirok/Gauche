@@ -382,7 +382,7 @@
 
   ;; 6.13 Input and output
   ;; input-port? output-port? port? current-input-port current-output-port
-  ;; current-error-port close-port close-input-port close-ouptut-port
+  ;; current-error-port close-port close-input-port close-output-port
   ;; open-input-string open-output-string get-output-string read-string
   ;; read-char peek-char read-line eof-object? eof-object char-ready?
   ;; newline write-char write-string

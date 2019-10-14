@@ -3148,7 +3148,7 @@ that expands to @code{cond} form:
 
 @c EN
 Note the two @code{else}s in the macro definition; one isn't unquoted,
-thus appears liteally in the output, while another is unquoted and
+thus appears literally in the output, while another is unquoted and
 the corresponding macro argument is inserted in its place.
 @c JP
 マクロ定義内の2つの@code{else}に注目してください。ひとつはアンクォート

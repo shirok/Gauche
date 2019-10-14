@@ -1130,7 +1130,7 @@ tool to decompose macro input):
 
 @c EN
 This is ok as long as you know you don't need hygiene---e.g. when
-you only use this macro locally in your code, knowning all the
+you only use this macro locally in your code, knowing all the
 macro call site won't contain name conflicts.  However, if you
 provide your @code{when-not} macro for general use,
 you have to protect namespace pollution around the macro use.

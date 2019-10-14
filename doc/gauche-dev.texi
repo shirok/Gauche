@@ -91,7 +91,7 @@ That said, it won't be too difficult to use Gauche's C API
 as far as you know some fundamental design concepts.
 
 We intend this document to serve both a programmer's guide
-that explains such design concepts, and a programer's reference
+that explains such design concepts, and a programmer's reference
 that describes every C API in detail.
 
 The guide part begins with @ref{Getting started}, that shows
@@ -2264,7 +2264,7 @@ Returns a new Scheme string whose content is concatenation of
 a Scheme string @var{x} and C-level string @var{s}.
 Like @code{Scm_MakeString}, you can give -1 to @var{size} and/or @var{len}
 to make the function calculates those values.  If you give -1 to @var{size},
-@var{s} must be @code{NUL}-terminated; othewise @var{s} doesn't need to be.
+@var{s} must be @code{NUL}-terminated; otherwise @var{s} doesn't need to be.
 @end deftypefun
 
 @deftypefun ScmObj Scm_StringAppend (ScmObj @var{strs})
@@ -2367,7 +2367,7 @@ mutex.
 @deftp {Datatype} ScmDString
 A structure to keep a string under construction.   It is not a
 Scheme datatype (means: you can't cast it to @code{ScmObj}).
-You can allocate it on the C stack for efficient opertaion.
+You can allocate it on the C stack for efficient operation.
 @end deftp
 
 The typical usage of dynamic strings looks like this:
@@ -2680,7 +2680,7 @@ Sets @var{value} to the value field of @var{entry} and returns
 @var{value} itself.
 
 The caller have to make sure @var{value} is a valid @code{ScmObj}.
-Particulary, it is prohibited to pass @code{SCM_UNBOUND} as @var{value}.
+Particularly, it is prohibited to pass @code{SCM_UNBOUND} as @var{value}.
 @end deftypefn
 
 Each core dictionary API provides a search function that takes
@@ -2987,7 +2987,7 @@ flag is cleared.
 
 @deftypefun {ScmDictEntry *} Scm_TreeIterNext (ScmTreeIter *@var{iter})
 @deftypefunx {ScmDictEntry *} Scm_TreeIterPrev (ScmTreeIter *@var{iter})
-Moves the iterator to the next or prevoius entry and returns it,
+Moves the iterator to the next or previous entry and returns it,
 respectively.
 If the iterator was pointing the maximum (minimum) key entry
 before calling @code{Scm_TreeIterNext} (@code{Scm_TreeIterPrev}),
@@ -3201,7 +3201,7 @@ description of ports only useful for debug messages.
 Returns the value of @var{line} slot of the port.
 Most built-in port types keeps track of the line count,
 as far as (1) only character I/O is performed, and
-(2) no random-access opertaion is performed, on the port.
+(2) no random-access operation is performed, on the port.
 If either of such operation is done on the port, the number
 returned from this function doesn't have meaning.
 
@@ -3486,7 +3486,7 @@ Other operations are mainly invoked by @code{make} command.
 
 @deffn {Package Operation} gauche-package install [@var{options}] @var{tarball-path/url}
 
-This opertaion obtains the package source specified by @var{tarball-path/url},
+This operation obtains the package source specified by @var{tarball-path/url},
 then extracts the source, configures and builds,
 runs the tests, and installs the built package.
 Most of the time this is the only command required to install a Gauche
@@ -3499,7 +3499,7 @@ it first.  By default @code{gauche-package} uses the current working
 directory, but you can make it use specific directory by customizing
 @file{~/.gauche-package} (@pxref{Customizing gauche-package}).
 
-The following options are recognized by this opertaion.
+The following options are recognized by this operation.
 
 @deffn {Option} -n, --dry-run
 Shows shell commands to be executed, without running them.

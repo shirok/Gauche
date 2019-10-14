@@ -3394,7 +3394,7 @@ between @var{start} and @var{end} so that
 elements smaller than the pivot comes between @code{@var{start}} and
 @code{@var{start} + @var{k}}, and the rest of the elements come
 afterwards.  When omitted, @var{start} is 0 and @var{end} is
-the lenght of the @var{vec}.
+the length of the @var{vec}.
 
 This can be used as a building block for in-place divide-and-conquer
 algorithms.  Runs in O(n) time.
@@ -3687,7 +3687,7 @@ The @var{update} argument is a procedure that takes two arguments,
 as @code{(update new-item retval)}.  It replaces the matching @var{item} in the
 set/bag with @var{new-item}, and returns @var{retval}.
 The @var{remove} argument is a procedure that takes one argument,
-as @code{(remove retval)}.  It removes the mathing @var{item} in
+as @code{(remove retval)}.  It removes the matching @var{item} in
 the set/bag, and returns @var{retval}.
 
 If an item that matches @var{elt} is not found, the @var{failure} procedure
@@ -5330,7 +5330,7 @@ Gauche's native lazy sequence.  It is upper-compatible,
 except that the code that assumes the internal structure could break.
 Notably, the constructor @code{generator->lseq} is the same as
 Gauche's built-in, which returns Gauche's lseq, undistinguishable
-to the oridnary list.
+to the ordinary list.
 
 @example
 (procedure? (generator->lseq (generator 1))) 
@@ -7217,7 +7217,7 @@ The caller must treat mappings and hashmaps as immutable object.
 The modules also provide ``linear update'' APIs, which is @emph{allowed}
 to mutate the mappings passed to the arguments, under assumption
 that the argument won't be used afterwards.  The linear update APIs
-are maked with @code{!} at the end of the name.
+are marked with @code{!} at the end of the name.
 @end deftp
 
 @menu
@@ -9994,7 +9994,7 @@ This is same as Gauche's built-in @code{gamma} (@pxref{Arithmetics}).
 [R7RS flonum]
 @c MOD scheme.flonum
 Returns two values, @code{(log (abs (flgamma x)))} and the sign of
-@code{(flgamma x)} as 1.0 if it is postiive and -1.0 if it is negative.
+@code{(flgamma x)} as 1.0 if it is positive and -1.0 if it is negative.
 
 The first value is calculated by Gauche's built-in @code{lgamma}
 (@pxref{Arithmetics}).  It's more accurate than using @code{gamma} then

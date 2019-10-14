@@ -1061,7 +1061,7 @@ ScmObj Scm_BignumDivRem(const ScmBignum *dividend, const ScmBignum *divisor)
 }
 
 /*-----------------------------------------------------------------------
- * Logical (bitwise) opertaions
+ * Logical (bitwise) operations
  */
 
 ScmObj Scm_BignumAsh(const ScmBignum *x, int cnt)
