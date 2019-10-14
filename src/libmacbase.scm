@@ -44,12 +44,30 @@
 ;;; Macro expansion utilities
 ;;;
 
+;; macroexpand FORM [ENV/FLAG]
+;; macroexpand-1 FORM [ENV/FLAG]
+;;   ENV/FLAG can be:
+;;     #f - we expand it in the current runtime env, run unravel-syntax on output
+;;     #t - we expand it in the current runtime env
+;;     #<module> - use it as the toplevel env.
+
 ;; API
-(define-in-module gauche (macroexpand form)
-  (%internal-macro-expand form (make-cenv (vm-current-module)) #f))
+(define-in-module gauche (macroexpand form :optional (env/flag #f))
+  (%do-macroexpand form env/flag #f))
 ;; API
-(define-in-module gauche (macroexpand-1 form)
-  (%internal-macro-expand form (make-cenv (vm-current-module)) #t))
+(define-in-module gauche (macroexpand-1 form :optional (env/flag #f))
+  (%do-macroexpand form env/flag #t))
+
+(define (%do-macroexpand form env/flag once?)
+  (let* ([env (cond
+               [(boolean? env/flag) (vm-current-module)]
+               [(module? env/flag) env/flag]
+               [else (error "argument must be a boolean or a module, but got:"
+                            env/flag)])]
+         [r (%internal-macro-expand form (make-cenv env) once?)])
+    (if (eq? env/flag #f)
+      (unravel-syntax r)
+      r)))
 
 (select-module gauche)
 ;; API

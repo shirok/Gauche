@@ -142,7 +142,7 @@
        ;; The current implementation relies on how cond-expand constructs
        ;; the output; if we change cond-expand, we may need to tweak this
        ;; as well.
-       (let1 expanded (macroexpand `(,cond-expand. ,@(cdr decl)))
+       (let1 expanded (macroexpand `(,cond-expand. ,@(cdr decl)) #t)
          (if (pair? expanded)
            (if (global-id=? (car expanded) begin.)
              `(,begin. ,@(map transform-decl (cdr expanded)))

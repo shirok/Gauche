@@ -1,3 +1,12 @@
+2019-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacbase.scm (macroexpand, macroexpand-1): INCOMPATIBLE CHANGE:
+	  Process output via unravel-syntax by default.  These procedures are
+	  mainly used for humans to check macro output, so identifier
+	  information is just an annoyance.  If you need identifier information,
+	  pass #t to the second arg.  You can also pass a module to the second
+	  arg to expand in the given environment.
+
 2019-10-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacbase.scm (trace-macro, untrace-macro): Allow regexp pattern

@@ -1273,9 +1273,9 @@
 ;; This is EXPERIMENTAL: may be changed in later release.
 (define-syntax expand-id-compare (syntax-rules () ((hoge foo ...) (cdr b))))
 (test "comparison of identifiers" '(cdr b)
-      (lambda () (macroexpand '(expand-id-compare bar))))
-(test "comparison of identifiers" (macroexpand '(expand-id-compare bar))
-      (lambda () (macroexpand '(expand-id-compare bar))))
+      (lambda () (macroexpand '(expand-id-compare bar) #t)))
+(test "comparison of identifiers" (macroexpand '(expand-id-compare bar) #t)
+      (lambda () (macroexpand '(expand-id-compare bar) #t)))
 
 ;;----------------------------------------------------------------------
 ;; keyword and extended lambda list
