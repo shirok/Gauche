@@ -3596,7 +3596,7 @@ Create exact integer generators.  The first one, @code{integers$}, creates
 a generator that generates integers from start (inclusive) below
 start+size (exclusive) uniformly.  The second one, @code{integers-between$},
 creates a generator that generates integers between
-@var{lower-bound} and @var{upper-bound} (both inclusive) unformly.
+@var{lower-bound} and @var{upper-bound} (both inclusive) uniformly.
 @c JP
 正確な整数のジェネレータを作成します。
 @code{integer$}が返すジェネレータは、
