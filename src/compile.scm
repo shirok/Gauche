@@ -1610,14 +1610,17 @@
 (define (%make-er-transformer/toplevel xformer def-module def-name)
   (%make-er-transformer xformer (%make-cenv def-module '() def-name)))
 
-;; EXPERIMENTAL
 ;; Returns an S-expr all macros in which are expanded.
 ;; The resulting form may not be equivalent to the input form, though,
 ;; since we strip off identifier information so toplevel hygiene isn't
 ;; kept.  (Local variables are renamed so they won't conflict with each
 ;; other.)
-(define-in-module gauche (macroexpand-all form)
-  (let1 flags-save (vm-compiler-flag)
+(define-in-module gauche (macroexpand-all form :optional (env #f))
+  (let ([flags-save (vm-compiler-flag)]
+        [env (cond
+              [(boolean? env) (vm-current-module)]
+              [(module? env) env]
+              [else (error "a boolean or a module required but got:" env)])])
     (unwind-protect
         (begin
           ;; TODO: We suppress global inline expansion, otherwise we'll see
@@ -1626,7 +1629,7 @@
           ;; We'll think of it later.
           (vm-compiler-flag-set! SCM_COMPILE_NOINLINE_GLOBALS)
           ($ unwrap-syntax $ iform->sexpr
-             $ pass1 form (make-bottom-cenv (vm-current-module))))
+             $ pass1 form (make-bottom-cenv env)))
       (begin
         (vm-compiler-flag-clear! SCM_COMPILE_NOINLINE_GLOBALS)
         (vm-compiler-flag-set! flags-save)))))

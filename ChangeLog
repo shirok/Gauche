@@ -1,5 +1,7 @@
 2019-10-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (macroexpand-all): Also let it take environment
+	  argument, for the consistency with macroexapnd.
 	* src/libmacbase.scm (macroexpand, macroexpand-1): INCOMPATIBLE CHANGE:
 	  Process output via unravel-syntax by default.  These procedures are
 	  mainly used for humans to check macro output, so identifier
