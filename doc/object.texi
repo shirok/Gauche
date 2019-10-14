@@ -1402,7 +1402,7 @@ It is automatically inserted by the system.
 When multiple inheritance is involved, a story becomes a bit
 complicated.  We have to merge multiple CPLs of the superclasses
 into one CPL.  It is called @emph{linearization}, and there are
-several known linealization strategies.  By default, Gauche uses
+several known linearization strategies.  By default, Gauche uses
 an algorithm called @emph{C3 linearization},
 which is consistent with the local precedence order,
 monotonicity, and the extended precedence graph.
@@ -2992,7 +2992,7 @@ rest arguments or not.
 
 @example
 specs:        ((self <myclass>) (index <integer>) value)
-specializers: (<myclas> <integer> <top>)
+specializers: (<myclass> <integer> <top>)
 optional:     #f
 
 specs:        (obj (attr <string>))
@@ -3000,11 +3000,11 @@ specializers: (<top> <string>)
 optional:     #f
 
 specs:        ((self <myclass>) obj . options)
-specializers: (<myclas> <top>)
+specializers: (<myclass> <top>)
 optional:     #t
 
 specs:        ((self <myclass>) obj :optional (a 0) (b 1) :key (c 2))
-specializers: (<myclas> <top>)
+specializers: (<myclass> <top>)
 optional:     #t
 
 specs:        args
@@ -3543,7 +3543,7 @@ next subsection (@pxref{Customizing slot access}).
 If your metaclass needs to initialize auxiliary slots, you can
 define your own @code{initialize} method, in which you call
 @code{next-method} first to set up the core part of the
-@code{<class>} structure, then you sets up metcalss-specific part.  
+@code{<class>} structure, then you sets up metaclass-specific part.  
 One caveat is that, after @code{next-method} handles
 initialization of the core @code{<class>} part, you can no longer
 modify essential class slots.  If you need to tweak those slots,

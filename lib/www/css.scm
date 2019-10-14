@@ -56,7 +56,7 @@
 ;;;               | (style-decls <declaration> ...)
 ;;;
 ;;;  <pattern>   : <selector> | (:or <selector> ...)
-;;;  <seletor>   : <simple-selector>
+;;;  <selector>  : <simple-selector>
 ;;;              | <chained-selector>
 ;;;  <chained-selector> : (<simple-selector> . (<op>? . <chained-selector>))
 ;;;  <op>        : > | + | ~
@@ -73,7 +73,7 @@
 ;;;              | ($= <ident> <attrib-value>)           ; E[attrib$=val]
 ;;;              | (:not <negation-arg>)                 ; E:not(s)
 ;;;              | (: <ident>)                           ; E:pseudo-class
-;;;              | (: (<fn> <ident> ...))                ; E:pseudl-class(arg)
+;;;              | (: (<fn> <ident> ...))                ; E:pseudo-class(arg)
 ;;;              | (:: <ident>)                          ; E::pseudo-element
 ;;;  <element-name> : <ident> | *
 ;;;  <attrib-value> : <ident> | <string>

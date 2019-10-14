@@ -269,7 +269,7 @@ Useful to check precisely which files are loaded in what order.
 Reports whenever a file is included.
 Useful to check precisely which files are included in what order.
 @item warn-legacy-syntax
-Warns if the reader sees leagacy hex-escape syntax in string literals.
+Warns if the reader sees legacy hex-escape syntax in string literals.
 @xref{Reader lexical mode}.
 @item no-source-info
 Don't keep source information for debugging.  Consumes less memory.
@@ -383,7 +383,7 @@ imported for your convenience.
 @xref{Library modules - R7RS standard libraries}, for the details on
 how Gauche supports R7RS.
 
-(Note: The @code{-r7} option doesn't change reader lexiacl mode
+(Note: The @code{-r7} option doesn't change reader lexical mode
 (@pxref{Reader lexical mode}) to @code{strict-r7}.  That's because
 using @code{strict-r7} mode by default prevents many Gauche code
 from being loaded.)
@@ -975,7 +975,7 @@ just type @code{,help} and return.
 gosh> ,help
 You're in REPL (read-eval-print-loop) of Gauche shell.
 Type a Scheme expression to evaluate.
-A word preceeded with comma has special meaning.  Type ,help <cmd> 
+A word preceded with comma has special meaning.  Type ,help <cmd> 
 to see the detailed help for <cmd>.
 Commands can be abbreviated as far as it is not ambiguous.
 
@@ -1744,7 +1744,7 @@ Cのシステムプログラミングに詳しいなら、上のコードは以�
 
 @c EN
 There are quite a few such feature identifiers; each identifier is
-explained in the maunal entry of the procedures that depend on the feature.
+explained in the manual entry of the procedures that depend on the feature.
 Here we list a few important ones:
 @c JP
 このような機能識別子はたくさんあり、それぞれの識別子についてはこのマニュ
@@ -2528,7 +2528,7 @@ working directory.  You can change it by a customization file; see below.
 @c COMMON
 
 @c EN
-If you need a special priviledge to install the files, you can
+If you need a special privilege to install the files, you can
 use @code{--install-as} option which runs @code{make install} part via
 the @code{sudo} program.
 @c JP
@@ -2808,7 +2808,7 @@ how Gauche is configured, and can be checked
 by running system-provided tools, 
 such as @code{ldd} on most Unix systems and MinGW or @code{otool -L} on OSX,
 on the generated standalone binaries.
-You may want to ensure the users have requied libraries.
+You may want to ensure the users have required libraries.
 @c JP
 作られたバイナリファイルは、libpthreadなど外部の動的ライブラリには依存します。
 具体的にどのライブラリに依存するかはプラットフォームとGaucheのコンフィグレーションによります。
@@ -2918,7 +2918,7 @@ basenameから拡張子を除いたものになります。
 @c EN
 Add C preprocessor definitions while compiling the generated C code.
 An important use case of this option is to exclude gdbm dependency
-from the generated binaries, by specifing
+from the generated binaries, by specifying
 @code{-D GAUCHE_STATIC_EXCLUDE_GDBM}.  Note that you need a whitespace
 between @code{-D} and @var{var}.
 
@@ -3030,7 +3030,7 @@ Note that a whitespace is required between @code{-I} and @var{load-path}.
 @deftp {Command Option} --header-dir dir
 @deftpx {Command Option} --library-dir dir
 @c EN
-These tells @code{build-standlone} where to find Gauche C headers
+These tells @code{build-standalone} where to find Gauche C headers
 and static libraries.
 
 If you've installed Gauche on your system, @code{build-standalone}

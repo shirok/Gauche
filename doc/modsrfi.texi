@@ -131,7 +131,7 @@ named let syntax) within the list of bindings (as in the third
 syntax above).
 @item
 The extended @code{let} syntax accepts the rest parameter binding
-which works like the rest paremter in the @code{lambda} syntax.
+which works like the rest parameter in the @code{lambda} syntax.
 @end itemize
 
 See SRFI-5 document for rationale of this extension.
@@ -2267,7 +2267,7 @@ character, such as @code{~@@a}.
 @c Skip to an alphanumeric character, then matches full
 @c month name in locale.  Sets the month component of the date.
 @c @item ~d
-@c Skip to a numeric character, then maches the day of month.
+@c Skip to a numeric character, then matches the day of month.
 @c Sets the month component of the date.
 @c @item ~e
 
@@ -3610,7 +3610,7 @@ then this qualifier is used.
 
 @deffn {EC Qualifier} :parallel generator @dots{}
 @c EN
-This is used to run through mutiple generators in parallel.
+This is used to run through multiple generators in parallel.
 It terminates when any one of @var{generator} is exhausted.
 @c JP
 複数のジェネレータ節を並列に走査するのに使います。
@@ -4493,7 +4493,7 @@ Each integer occupies @var{size} octets.
 @c @section @code{srfi-78} - Lightweight testing
 @c @c NODE 軽量なテスト, @code{srfi-78} - 軽量なテスト
 
-@c NOTE: Keep this unoffical, until we integrate this into gauche.test.
+@c NOTE: Keep this unofficial, until we integrate this into gauche.test.
 
 @c @deftp {Module} srfi-78
 @c @mdindex srfi-78
@@ -4715,7 +4715,7 @@ the port specified by
 @var{service}, which must be a string.  A service name solely consists
 of decimal digits is interpreted as a port number.
 @c JP
-@var{serivce}で指定されるポートで待ち受けるサーバソケットを作って返します。
+@var{service}で指定されるポートで待ち受けるサーバソケットを作って返します。
 @var{service}は文字列でなければなりません。@var{service}が全て数字で構成されていた
 場合はポート番号と解釈されます。
 @c COMMON
@@ -5330,7 +5330,7 @@ as @var{element-comparator}.
 
 For a list comparator, it is an error to pass improper lists.
 
-Note that comparing sequences of different lenghts is slightly
+Note that comparing sequences of different lengths is slightly
 different between lists and vector/bytevectors.  List comparator
 uses ``dictionary'' order, so @code{(1 3)} comes after @code{(1 2 3)},
 assuming elements are compared numerically.
@@ -5601,7 +5601,7 @@ you the same performance.  (Be aware that the interface is slightly
 different from the immutable versions.)
 
 We provide this module only for the compatibility.  Gauche-specific
-programs should stay away from this module.  Particulary, avoid
+programs should stay away from this module.  Particularly, avoid
 code like the example in SRFI-118 document (build a string by
 @code{append!}-ing small chunks at a time)---they're quadratic on Gauche.
 @c JP

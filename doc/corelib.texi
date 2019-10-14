@@ -3657,7 +3657,7 @@ for this purpose.  Use @code{real->rational} only when you need finer
 control of error bounds.
 @c JP
 指定されたエラー範囲の中で、有限な実数@var{x}の正確な有理数表現のうち
-最も簡単なものを返します。@code{ratinalize}や@code{exact}はこの手続きを
+最も簡単なものを返します。@code{rationalize}や@code{exact}はこの手続きを
 下請けとして呼び出しています。通常は@code{rationalize} (@ref{Arithmetics}参照)
 を使い、@code{real->rational}は誤差許容値をより細かく制御したい時のみ
 使うのが良いでしょう。
@@ -6076,7 +6076,7 @@ the key first.
 @c COMMON
 @end defun
 
-@defun assoc-update-in alist keys proc :optonal default eq-fn
+@defun assoc-update-in alist keys proc :optional default eq-fn
 @c EN
 This procedure allows to update a nested associative list.
 The @var{alist} argument is a (possibly nested) associative list,
@@ -6112,7 +6112,7 @@ the structure with @var{alist}.
 @c EN
 If @var{alist} doesn't have the entry specified by @var{keys},
 a new entry is added.  A new entry is added at the beginning of
-the sequence where specfied key didn't exist.
+the sequence where specified key didn't exist.
 @c JP
 @var{alist}が@var{keys}で指定されるエントリを持たない場合は新たなエントリが
 追加されます。新たなエントリは、キーが存在しないシーケンスの先頭に付け加えられます。
@@ -6125,7 +6125,7 @@ the sequence where specfied key didn't exist.
 
 @c EN
 The @var{default} argument is passed to @var{proc} when there's
-no entry with specified keys.  If ommitted, @code{#f} is assumed.
+no entry with specified keys.  If omitted, @code{#f} is assumed.
 @c JP
 @var{default}引数は、キーに対応するエントリが存在しなかった場合に@var{proc}に
 渡されます。省略値は@code{#f}です。
@@ -7117,7 +7117,7 @@ Unicodeコードポイントでなく内部文字エンコーディングで文�
 @code{\xNN}で記されたASCIIの範囲外の文字の解釈は、
 0.9.3.3およびそれ以前のGaucheとは異なることになります。
 
-リーダのモードを@code{leagcy}にセットすれば(@ref{Reader lexical mode}参照)、
+リーダのモードを@code{legacy}にセットすれば(@ref{Reader lexical mode}参照)、
 @code{#\xNN}は以前と同じ解釈となり、互換性は保たれます
 (ただし、R7RSとは非互換になります)。
 あるいは@code{#\uNNNN}表記や文字そのものを表記することで、
@@ -7680,7 +7680,7 @@ Here's the list of POSIX-style character class names:
 @item @code{:LOWER:} @tab Unicode lower-case letters (category @code{Ll}).  @code{char-set:lower-case}, @code{#[a-z]}.
 @item @code{:PRINT:} @tab Unicode printing characters (graphic and whitespace).  @code{char-set:printing}.
 @item @code{:PUNCT:} @tab Unicode punctuation characters (category @code{P*}).  @code{char-set:punctuation}.
-@item @code{:SPACE:} @tab Unicode whitespaces (tab, LF, vertial tab, FF, CR, and category @code{Z*}). @code{char-set:whitespace}.
+@item @code{:SPACE:} @tab Unicode whitespaces (tab, LF, vertical tab, FF, CR, and category @code{Z*}). @code{char-set:whitespace}.
 @item @code{:TITLE:} @tab Unicode titlecase letters (category @code{Lt}).  @code{char-set:title-case}.
 @item @code{:UPPER:} @tab Unicode upper-case letters (category @code{Lu}).  @code{char-set:upper-case}, @code{#[A-Z]}.
 @item @code{:WORD:} @tab Unicode word characters.  @code{char-set:word}.
@@ -7820,7 +7820,7 @@ To write code that can work both in new and old syntax, use @code{\u} escape.
 しかし曖昧な場合もあります。@code{#[\x0a;]}は新しい構文では
 改行文字のみのセットですが、古い構文では改行文字とセミコロンになります。
 
-リーダのモードを@code{leagcy}にセットすると、常に古い構文で認識されます。
+リーダのモードを@code{legacy}にセットすると、常に古い構文で認識されます。
 リーダのモードを@code{warn-legacy}にセットすると、
 デフォルトと同じように振る舞いますが、古い構文を見つけた場合は警告が出力されます。
 詳しくは@ref{Reader lexical mode}を参照してください。
@@ -8415,7 +8415,7 @@ behavior, but prints warning when it finds legacy syntax.
 しかし曖昧な場合もあります。@code{"\x0a;"}は新しい構文では
 @code{"\n"}と同じですが、、古い構文では@code{"\n;"}となります。
 
-リーダのモードを@code{leagcy}にセットすると、常に古い構文で認識されます。
+リーダのモードを@code{legacy}にセットすると、常に古い構文で認識されます。
 リーダのモードを@code{warn-legacy}にセットすると、
 デフォルトと同じように振る舞いますが、古い構文を見つけた場合は警告が出力されます。
 詳しくは@ref{Reader lexical mode}を参照してください。
@@ -9415,7 +9415,7 @@ character in @var{string}, and the consecutive characters that caused
 @c EN
 The @var{grammar} argument is the same as @code{string-join} above; it
 must be one of symbols @code{infix}, @code{strict-infix}, @code{prefix}
-or @code{suffix}.  When ommitted, @code{infix} is assumed.
+or @code{suffix}.  When omitted, @code{infix} is assumed.
 @c JP
 @var{grammar}引数の意味は上の@code{string-join}と同じです。
 シンボル@code{infix}、@code{strict-infix}、@code{prefix}、
@@ -9617,7 +9617,7 @@ Gaucheの内部エンコーディングがutf-8であれば、この手続きは
   @result{} "_abc"     ; can be represented as a complete string
 
 (string-incomplete->complete #*"_ab\x80;c")
-  @result{} #f        ; can't be represetend as a complete string
+  @result{} #f        ; can't be represented as a complete string
 
 (string-incomplete->complete #*"_ab\x80;c" :omit)
   @result{} "_abc"     ; omit the illegal bytes
@@ -10164,7 +10164,7 @@ about the match, including submatches.
 The advantage of using match object, rather than substrings or
 list of indices, is efficiency.  The regmatch object keeps internal
 state of match, and computes indices and/or substrings only when
-requested.  This is particularly effective for mutibyte strings,
+requested.  This is particularly effective for multibyte strings,
 for index access is slow on them.
 @c JP
 正規表現マッチオブジェクトのクラスです。正規表現エンジン@code{rxmatch}は、
@@ -11996,7 +11996,7 @@ refrain from mutating the returned hash tables.
 @c COMMON
 @end defun
 
-@defun hash-talbe-unfold p f g seed comparator :rest args
+@defun hash-table-unfold p f g seed comparator :rest args
 [R7RS hash-table]
 @c EN
 Constructs and returns a new hash table with those repetitive steps.
@@ -12038,7 +12038,7 @@ the implementation supports one, unless the optional @var{mutable?}
 argument is provided and not false.  Gauche doesn't have immutable
 hash tables so it ignores the optional argument and
 always returns a mutable hash table.  But when you write
-a portable programs, keep it in mynd.
+a portable programs, keep it in mind.
 @c JP
 ハッシュテーブル@var{ht}のコピーを作って返します。
 
@@ -13006,7 +13006,7 @@ is strictly greater than @var{probe}.
 それぞれの手続きは異なった「最も近い」の基準を持っています。
 @code{tree-map-floor}は@var{probe}以下で最大のキーを、
 @code{tree-map-ceiling}は@var{probe}以上で最小のキーを、
-@code{tree-map-precedessor}は@var{probe}未満で最大のキーを、
+@code{tree-map-predecessor}は@var{probe}未満で最大のキーを、
 @code{tree-map-successor}は@var{probe}を越える最小のキーを探します。
 @c COMMON
 @end defun
@@ -16634,7 +16634,7 @@ from outside of @code{unwind-protect} by invoking continuations
 captured within @var{expr}.
 
 However, keep in mind that once @var{cleanup} are executed,
-some resouces might not be available in @var{expr}.
+some resources might not be available in @var{expr}.
 We still allow it since the reexecuted part of @var{expr} may not
 depend on the resources cleaned up with @var{cleanup}.
 
@@ -19053,7 +19053,7 @@ if not, an incomplete string is returned.
 This doesn't affect the @var{port}'s operation, so you can keep
 accumulating content to @var{port} after calling @code{get-output-string}.
 @c JP
-これは@var{port}の操作には影響をあたえません。@code{get-ouptut-string}を
+これは@var{port}の操作には影響をあたえません。@code{get-output-string}を
 呼んだ後でも、@var{port}に内容を蓄積しつづけることができます。
 @c COMMON
 @end defun
@@ -24437,7 +24437,7 @@ the handler returns by default.
 @c COMMON
 
 @c EN
-Here are some calls that are not simply restared by signal interruption.
+Here are some calls that are not simply restarted by signal interruption.
 @c JP
 シグナル割り込みによって単純にリスタートされないものは次の通りです。
 @c COMMON

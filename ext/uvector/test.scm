@@ -470,7 +470,7 @@
 
 ;; there are too many combinations to write down by hand.
 ;;
-;; for each opertaion in add, sub, mul
+;; for each operation in add, sub, mul
 ;;   for each testdata such that:
 ;;     - vector vs vector normal
 ;;     - vector vs vector underflow

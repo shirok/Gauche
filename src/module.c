@@ -59,7 +59,7 @@
  *  namespace---for example, a 'sandbox' environment to evaluate an
  *  expression sent over the network during a session.
  *  The anonymous namespace will be garbage-collected if nobody references
- *  it, recovering its resouces.
+ *  it, recovering its resources.
  */
 
 /* Note on mutex of module operation

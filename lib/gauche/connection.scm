@@ -48,7 +48,7 @@
 ;; bidirectional communication to another entity.
 ;;
 ;; The data communication is abstracted as a pair of input and
-;; ouptut ports.  They can be accessed by connection-input-port
+;; output ports.  They can be accessed by connection-input-port
 ;; and connection-output-port.
 ;;
 ;; A connected connection has two endpoints; self and peer.  Each

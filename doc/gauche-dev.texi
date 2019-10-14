@@ -91,7 +91,7 @@ That said, it won't be too difficult to use Gauche's C API
 as far as you know some fundamental design concepts.
 
 We intend this document to serve both a programmer's guide
-that explains such design concepts, and a programer's reference
+that explains such design concepts, and a programmer's reference
 that describes every C API in detail.
 
 The guide part begins with @ref{Getting started}, that shows
@@ -561,7 +561,7 @@ but does not call @code{exit(2)} at the end.  This is useful
 for applications that want to shut down Gauche runtime but
 need to continue running.
 
-Once you call @code{Scm_Cleanup()}, you shoudn't use any
+Once you call @code{Scm_Cleanup()}, you shouldn't use any
 other Gauche functions.
 
 It is harmless to call @code{Scm_Cleanup()} more than once;
@@ -704,7 +704,7 @@ objects referred from @var{obj} are in such state.
 You can't choose which thread will call the finalizer.  Any thread that
 allocates may call the finalizer.
 
-You can ressurrect @var{obj} by storing a pointer to it in some root set.
+You can resurrect @var{obj} by storing a pointer to it in some root set.
 GC doesn't immediately put back @var{obj} to a free memor pool
 after the finalizer is run; basically
 it leaves @var{obj}'s fate to the finalizer.  If the finalizer doesn't keep
@@ -1160,7 +1160,7 @@ Corresponds to Scheme @code{logtest}.
 @deftypefun int Scm_LogBit (ScmObj @var{x}, int @var{b})
 Returns @code{TRUE} or @code{FALSE} if @var{b}-th bit of
 a Scheme exact integer @var{x} is set or not set, respectively.
-0-th bit is the least siginificant bit.
+0-th bit is the least significant bit.
 Corresponds to Scheme @code{logbit}.
 @end deftypefun
 
@@ -2105,7 +2105,7 @@ copies the content every time and returns a freshly allocated
 string.
 @end deftypefun
 
-@deftypefun {const char *} Scm_GetStringContent (ScmString *@var{str}, unsigned int *@var{psize}, unsignd int *@var{plen}, unsigned int *@var{pflags})
+@deftypefun {const char *} Scm_GetStringContent (ScmString *@var{str}, unsigned int *@var{psize}, unsigned int *@var{plen}, unsigned int *@var{pflags})
 Use this function if you want to retrieve other attributes of
 the strings at once.  The return value points to the beginning
 of the string content, but it may not be @code{NUL}-terminated.
@@ -2264,7 +2264,7 @@ Returns a new Scheme string whose content is concatenation of
 a Scheme string @var{x} and C-level string @var{s}.
 Like @code{Scm_MakeString}, you can give -1 to @var{size} and/or @var{len}
 to make the function calculates those values.  If you give -1 to @var{size},
-@var{s} must be @code{NUL}-terminated; othewise @var{s} doesn't need to be.
+@var{s} must be @code{NUL}-terminated; otherwise @var{s} doesn't need to be.
 @end deftypefun
 
 @deftypefun ScmObj Scm_StringAppend (ScmObj @var{strs})
@@ -2367,7 +2367,7 @@ mutex.
 @deftp {Datatype} ScmDString
 A structure to keep a string under construction.   It is not a
 Scheme datatype (means: you can't cast it to @code{ScmObj}).
-You can allocate it on the C stack for efficient opertaion.
+You can allocate it on the C stack for efficient operation.
 @end deftp
 
 The typical usage of dynamic strings looks like this:
@@ -2680,7 +2680,7 @@ Sets @var{value} to the value field of @var{entry} and returns
 @var{value} itself.
 
 The caller have to make sure @var{value} is a valid @code{ScmObj}.
-Particulary, it is prohibited to pass @code{SCM_UNBOUND} as @var{value}.
+Particularly, it is prohibited to pass @code{SCM_UNBOUND} as @var{value}.
 @end deftypefn
 
 Each core dictionary API provides a search function that takes
@@ -2949,7 +2949,7 @@ Must be treated as opaque structure.
 An iterator can point to one of the entries in a tree core,
 or @code{NULL}.  The @code{NULL} indicates the iterator is
 outside of the tree---it's both below the minimum key and above
-the maximum key simulaneously.  That is, when an iterator points
+the maximum key simultaneously.  That is, when an iterator points
 to @code{NULL}, when you call @code{Scm_TreeIterNext} you'll get
 the minimum key entry, while you call @code{Scm_TreeIterPrev} and
 you'll get the maximum key entry.
@@ -2987,7 +2987,7 @@ flag is cleared.
 
 @deftypefun {ScmDictEntry *} Scm_TreeIterNext (ScmTreeIter *@var{iter})
 @deftypefunx {ScmDictEntry *} Scm_TreeIterPrev (ScmTreeIter *@var{iter})
-Moves the iterator to the next or prevoius entry and returns it,
+Moves the iterator to the next or previous entry and returns it,
 respectively.
 If the iterator was pointing the maximum (minimum) key entry
 before calling @code{Scm_TreeIterNext} (@code{Scm_TreeIterPrev}),
@@ -3038,7 +3038,7 @@ of the given tree map.
 @deftypefun ScmObj Scm_TreeMapRef (ScmTreeMap *@var{tm}, ScmObj @var{key}, ScmObj @var{fallback})
 Searches an entry with the given @var{key}, and returns its value.
 If there's no entry that has @var{key}, a value passed to @var{fallback}
-is returned (unlinke Scheme-level @code{tree-map-get}, it doesn't
+is returned (unlike Scheme-level @code{tree-map-get}, it doesn't
 signals an error).
 
 A standard way to take a specific action when no entry is found is
@@ -3201,7 +3201,7 @@ description of ports only useful for debug messages.
 Returns the value of @var{line} slot of the port.
 Most built-in port types keeps track of the line count,
 as far as (1) only character I/O is performed, and
-(2) no random-access opertaion is performed, on the port.
+(2) no random-access operation is performed, on the port.
 If either of such operation is done on the port, the number
 returned from this function doesn't have meaning.
 
@@ -3244,7 +3244,7 @@ these functions.
 
 There are two ways to extend port functionalities and creates
 your own port types.  A @emph{fully virtual port} basically has
-all basic port I/O operations as virutal functions, so you
+all basic port I/O operations as virtual functions, so you
 can override those functionalities as you like.
 A @emph{virtual buffered port}, on the other hand, implements
 buffering by itself, and calls back your routines when it needs
@@ -3486,7 +3486,7 @@ Other operations are mainly invoked by @code{make} command.
 
 @deffn {Package Operation} gauche-package install [@var{options}] @var{tarball-path/url}
 
-This opertaion obtains the package source specified by @var{tarball-path/url},
+This operation obtains the package source specified by @var{tarball-path/url},
 then extracts the source, configures and builds,
 runs the tests, and installs the built package.
 Most of the time this is the only command required to install a Gauche
@@ -3499,7 +3499,7 @@ it first.  By default @code{gauche-package} uses the current working
 directory, but you can make it use specific directory by customizing
 @file{~/.gauche-package} (@pxref{Customizing gauche-package}).
 
-The following options are recognized by this opertaion.
+The following options are recognized by this operation.
 
 @deffn {Option} -n, --dry-run
 Shows shell commands to be executed, without running them.

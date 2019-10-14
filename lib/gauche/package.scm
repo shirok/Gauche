@@ -218,7 +218,7 @@
                                  *load-path*))
     (generator->lseq g)))
 
-;; scan the directory to find older verison of Gauche library directories.
+;; scan the directory to find older version of Gauche library directories.
 (define (%get-all-version-paths)
   (apply append
          *load-path*

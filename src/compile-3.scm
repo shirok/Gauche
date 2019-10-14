@@ -42,7 +42,7 @@
 
 ;; Dispatch pass3 handler.
 ;; Each handler is called with IForm and a list of label nodes.
-;; Returs IForm.
+;; Returns IForm.
 ;; *pass3-dispatch-table* is defined below, after all handlers are defined.
 (define-inline (pass3/rec iform labels)
   ((vector-ref *pass3-dispatch-table* (iform-tag iform)) iform labels))

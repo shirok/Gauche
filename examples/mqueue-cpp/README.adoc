@@ -143,14 +143,14 @@ world.  Although it sounds simple, it requires more attention than
 its superficial simplicity.  If you do something wrong here,
 you'll get a nasty bug which is very hard to track.
 
-Typically, there are a few cases with regard to the foreign resouce
+Typically, there are a few cases with regard to the foreign resource
 management.
 
 Case 1::
 You allocate the foreign object via Gauche's allocator.
 (`SCM_NEW` etc.)   In this case, Gauche's GC can take care
 of deallocation, so you don't need specify 'cleanup' procedure
-except you have other resouces to free (e.g. file descriptors).
+except you have other resources to free (e.g. file descriptors).
 
 anchor:frm-case-2[]Case 2::
 The foreign object is allocated by the foreign library, and

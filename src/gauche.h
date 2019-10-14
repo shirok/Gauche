@@ -1740,7 +1740,7 @@ SCM_CLASS_DECL(Scm_PromiseClass);
 SCM_EXTERN ScmObj Scm_MakePromise(int forced, ScmObj code);
 SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 
-/* Lazy pair structur is opaque to public.  Whenever you apply to an
+/* Lazy pair structure is opaque to public.  Whenever you apply to an
    ScmObj SCM_PAIRP, a lazy pair morphs itself to a pair, so the normal
    code never see lazy pairs. */
 

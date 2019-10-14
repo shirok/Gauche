@@ -577,7 +577,7 @@ allows mutually recursive macros.
 ローカルマクロを定義します。各@var{name}が
 対応する@var{transformer-spec}で定義されるマクロ変換器へと束縛された
 環境を作り@var{body}を評価します。
-@code{let-synta}では、@var{transformer-spec}は@code{let-syntax}を
+@code{let-syntax}では、@var{transformer-spec}は@code{let-syntax}を
 囲むスコープ内で@var{transformer-spec}を評価するのに対し、
 @code{letrec-syntax}では@var{name}の束縛がなされた環境で
 @var{transformer-spec}を評価します。つまり@code{letrec-syntax}は
@@ -588,7 +588,7 @@ allows mutually recursive macros.
 @subheading Transformer specs
 
 @c EN
-The @var{trasformer-spec} is a special expression that evaluates
+The @var{transformer-spec} is a special expression that evaluates
 to a macro transformer.  It is evaluated in a different phase
 than the other expressions, since macro transformers must be
 executed during compiling.  So there are some restrictions.
@@ -1130,7 +1130,7 @@ tool to decompose macro input):
 
 @c EN
 This is ok as long as you know you don't need hygiene---e.g. when
-you only use this macro locally in your code, knowning all the
+you only use this macro locally in your code, knowing all the
 macro call site won't contain name conflicts.  However, if you
 provide your @code{when-not} macro for general use,
 you have to protect namespace pollution around the macro use.
@@ -1447,7 +1447,7 @@ If you already have a quasirename form that does intend to produce
 a quasiquoted form, you have to rewrite it with double quasiquote:
 @code{(quasirename r ``form)}.
 
-To help transiation, the handling of quasiquote in of @code{quasirename}
+To help transition, the handling of quasiquote in of @code{quasirename}
 can be customized with the environment variable
 @code{GAUCHE_QUASIRENAME_MODE}.  It can have one of the following
 values:
@@ -1805,7 +1805,7 @@ the setting; it returns the current setting.
 @c COMMON
 
 @c EN
-When called with signle boolean value, it sets the current setting
+When called with single boolean value, it sets the current setting
 to that value.  Returns the updated setting.
 @c JP
 単一の真偽値を引数に渡した場合は、それをマクロトレースの設定値として、

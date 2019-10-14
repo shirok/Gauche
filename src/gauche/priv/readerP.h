@@ -45,7 +45,7 @@ struct ScmReadContextRec {
 };
 
 enum ScmReadContextFlags {
-    RCTX_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
+    RCTX_SOURCE_INFO = (1L<<0),  /* preserving source file information */
     RCTX_LITERAL_IMMUTABLE = (1L<<1), /* literal should be read as immutable */
     RCTX_DISABLE_CTOR = (1L<<2), /* disable #,() */
     RCTX_RECURSIVELY = (1L<<3),  /* used internally. */

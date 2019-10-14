@@ -47,7 +47,7 @@
 
 (define *info-file* "gauche-refe.info")
 
-(define-class <repl-info> () ;; a signleton
+(define-class <repl-info> () ;; a singleton
   ((info  :init-keyword :info)   ;; <info>
    (index :init-keyword :index)  ;; hashtable name -> [(node-name line-no)]
    ))

@@ -919,7 +919,7 @@ a square matrix, and @var{pow} must be a nonnegative exact integer.
 @c MOD gauche.array
 @c EN
 Inverse of @code{array-mul}; @code{array-div-left}
-rrturns a matrix @code{M} such that @code{(array-mul B M)}
+returns a matrix @code{M} such that @code{(array-mul B M)}
 equals to @code{A}, and @code{array-div-right} returns
 a matrix @code{M} such that @code{(array-mul M B)} equals to @code{A}.
 @var{A} and @var{B} must be a 2-dimensional square matrix.
@@ -1088,7 +1088,7 @@ A newly created module @emph{inherits} the @code{gauche} module by default.
 
 @c EN
 Sometimes you need a module that doesn't inherit the @code{gauche} module,
-yet you want to use Gauche built-in features.  Particulary, R7RS libraries
+yet you want to use Gauche built-in features.  Particularly, R7RS libraries
 and programs require any bindings to be explicitly imported,
 so R7RS's @code{import} and @code{define-library} sets up the module not
 to inherit the @code{gauche} module.   In R7RS code, you need
@@ -1352,7 +1352,7 @@ Placed inside the initialization function, which appears at
 the end of the C source.
 @end table
 
-The following procedures are the simple way to put a souce
+The following procedures are the simple way to put a source
 code fragments in an appropriate part:
 
 @defun cgen-extern code @dots{}
@@ -1879,7 +1879,7 @@ any S-expression (quasiquote comes pretty handy).
 
 C types can be written either as a symbol (e.g. @code{int}) or
 a list (e.g. @code{(const char *)}.  When used in definition, it is
-preceded by @code{::}.  The following example shows typess
+preceded by @code{::}.  The following example shows types
 are used in local variable definitions:
 
 @example
@@ -1889,7 +1889,7 @@ are used in local variable definitions:
 @end example
 
 For the convenience and readability, you can write the variable name,
-separting double-colon and type name concatenated.  You can also concatenate
+separating double-colon and type name concatenated.  You can also concatenate
 point suffixes (@code{char*} instead of @code{char *} in the following example):
 
 @example
@@ -2034,7 +2034,7 @@ generates the latter.
 header files, e.g. @code{(.include <stdint.h>)}.
 @end deffn
 
-@deffn {CiSE Statement} define-cfn name (arg [@code{::} type] @dots{}) [ret-type [qualiter @dots{}]] stmt @dots{}
+@deffn {CiSE Statement} define-cfn name (arg [@code{::} type] @dots{}) [ret-type [qualifier @dots{}]] stmt @dots{}
 Defines a C function.
 
 If @var{type} or @var{ret-type} is omitted, the default type is
@@ -2289,7 +2289,7 @@ supported.
 
 @itemize
 @item
-@code{(setter @var{setter-name})} : specfy setter. @var{setter-name} should
+@code{(setter @var{setter-name})} : specify setter. @var{setter-name} should
 be a cproc name defined in the same stub file
 
 @item
@@ -3017,7 +3017,7 @@ neither @var{from-code} nor @var{to-code}.
 @c EN
 @var{buffer-size} specifies the size of internal conversion buffer.
 The characters put to the returned port may stay in the buffer,
-until the port is explicity flushed (by @code{flush}) or
+until the port is explicitly flushed (by @code{flush}) or
 the port is closed.
 @c JP
 @var{buffer-size}は内部で変換に使われるバッファサイズを指定します。
@@ -4518,7 +4518,7 @@ It is used to check the system properties and generates build files
 @c EN
 The primary purpose is to replace autoconf-generated 
 @file{configure} shell scripts
-in Gauche extension pakcages.
+in Gauche extension packages.
 @c JP
 主な目的は、Gauche拡張パッケージにおいて、autoconfが生成する
 @file{configure}シェルスクリプトを置き換えることです。
@@ -4599,7 +4599,7 @@ A @file{configure} script tests
 running system's properties to determine values of
 substitution parameters, then read one or more template build files,
 and write out one output build file for each, replacing
-substutition parameters for the assigned values.
+substitution parameters for the assigned values.
 @c JP
 @file{configure}スクリプトは、それを実行しているシステムの特性を調べて
 置換パラメータの値を決定し、ビルドファイルのテンプレート中の置換パラメータを
@@ -5399,7 +5399,7 @@ used instead of the found program name to be set to @var{sym}.
 The list of search paths is taken from @code{PATH} environment
 variable.  You can override the list by the @var{paths} keyword
 argument, which must be a list of directory names.  It may contain
-nonexistent directory names, which are siently skipped.
+nonexistent directory names, which are silently skipped.
 
 The @var{filter} keyword argument, if given, must be a predicate
 that takes full pathname of the executable program.  It is called
@@ -5838,8 +5838,8 @@ This corresponds to autoconf's @code{AC_OUTPUT}.
 For each @var{file}, a file named @file{@var{file}.in} is read
 as a template.  Within the file, @code{@@PARAMETER@@} is substituted
 with the value of @code{(cf$ 'PARAMETER)}.  If the named parameter
-isn't registetered, a warning is issued and the parameter is left
-unsubstited.
+isn't registered, a warning is issued and the parameter is left
+unsubstituted.
 
 If config headers are not registered via @code{cf-config-headers},
 a substitution parameter @code{DEFS} is replaced with
@@ -5995,7 +5995,7 @@ If @var{connection} is not connected, these methods can return @code{#f}.
 The returned value (other than @code{#f}) must be able to
 be passed to @code{connection-address-name} method.
 
-Currently addresses are only used for logging purpoes within
+Currently addresses are only used for logging purpose within
 the connection framework; however, we may enhance the framework
 to add ``connect'' operation, for example, so the concrete class
 is encouraged to use objects that can be used to create connections.
@@ -6469,7 +6469,7 @@ When duplicate relations are found, does nothing and returns @code{#f}.
 @end table
 
 Note: At this moment, an attempt to add a relation exactly same as the
-existing one is regareded as a conflict.  This limitation may be
+existing one is regarded as a conflict.  This limitation may be
 lifted in future.
 @end defun
 
@@ -6883,7 +6883,7 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @c EN
 A generator is merely a procedure with no arguments and works
 as a source of a series of values.  Every time it is called,
-it yeilds a value.  The EOF value indicates the generator is exhausted.
+it yields a value.  The EOF value indicates the generator is exhausted.
 For example, @code{read-char} can be seen as a generator that
 generates characters from the current input port.
 
@@ -6943,7 +6943,7 @@ using one of generator constructors
 may connect generator operators that modifies the stream of
 generated items as you wish (@pxref{Generator operations}).
 Eventually you need to extract actual values from the generator
-to consume; there are utitlity procedures provided
+to consume; there are utility procedures provided
 (@pxref{Generator consumers}).  Overall, you create a pipeline
 (or DAG) of generators that works as lazy value-propagation network.
 @c JP
@@ -7140,7 +7140,7 @@ it to @code{g}.
 @defun list->generator lis :optional start end
 @defunx vector->generator vec :optional start end
 @defunx reverse-vector->generator vec :optional start end
-@defunx string->generator str :optioanl start end
+@defunx string->generator str :optional start end
 @defunx uvector->generator uvec :optional start end
 @defunx bytevector->generator u8vector :optional start end
 [SRFI-158+]
@@ -7241,7 +7241,7 @@ MSBからビットを取り出します。
 The optional @var{start} and/or @var{end} arguments are used to specify
 the range of bitfield, LSB being 0.  Unlike @code{list->generator} etc,
 @var{start} specifies the rightmost position (inclusive) and
-@var{end} specfies the leftmost position (exclusive).  It is consistent
+@var{end} specifies the leftmost position (exclusive).  It is consistent
 with other procedures that accesses bit fields in integers
 (@pxref{Bitwise operations}).
 @c JP
@@ -9450,7 +9450,7 @@ This is a lazy sequence version of @code{grxmatch}
 (@pxref{Generator operations}).
 
 The @var{seq} argument must be a sequence of characters (including
-orginary strings).
+ordinary strings).
 The return value is a lazy sequence of @var{<rxmatch>} objects,
 each representing strings matching to the regular expression @var{rx}.
 @c JP
@@ -9860,7 +9860,7 @@ can no longer go on safely.  You cannot even tell so to the
 listener client, since the connection to the client may be broken.
 All you can do is to clean up the listener session (e.g. removes
 the handler).   This case happens in (1) a low-level system error
-occurrs during reading from @var{input-port}. (A syntax error
+occurs during reading from @var{input-port}. (A syntax error
 of the input isn't count as fatal, and handled as REPL error described
 below.), (2) a @code{SIGPIPE} signal is raised during writing to
 @var{output-port}, or (3) an unhandled error occurred during executing
@@ -9889,7 +9889,7 @@ if it is given.  If @var{fatal-handler} returns @code{#f}, or
 
 @item
 @c EN
-@emph{Leaked error} - If an error occurrs during executing
+@emph{Leaked error} - If an error occurs during executing
 @var{fatal-handler} or @var{finalizer}, we don't have no more
 safety net.  The error is 'leaked' outside the listener handler,
 and should be handled by the user of @code{gauche.listener}.
@@ -10031,7 +10031,7 @@ Pathname of the log file.  The output is written to it.
 @itemx @code{#t}
 The output goes to the current error port.
 @item @code{current-output}
-The output goes to the urrent output port.
+The output goes to the current output port.
 @item @code{syslog}
 The output is sent to the system logger.
 @item @code{ignore}
@@ -10297,7 +10297,7 @@ the log drain temporary.
 Formats a log message by @var{format} and @var{arg @dots{}}, by using
 @code{format} (@pxref{Output}).    In the first form, the output goes
 to the default destination.  In the second form, the output goes to
-the specfied drain.
+the specified drain.
 @c JP
 ログメッセージを@code{format}手続きでフォーマットし(@ref{Output}参照)、
 指定された行き先に書き出します。最初の形式ではデフォルトの行き先が使われます。
@@ -10982,7 +10982,7 @@ IP アドレスをもつ場合、ソケットアドレスはそれぞれのIPア
 @defun inet-string->address address
 @c MOD gauche.net
 @c EN
-Converts string representating of the internet address @var{address}
+Converts string representing of the internet address @var{address}
 to an integer address.  If @var{address} is parsed successfully,
 returns two values: the integer address value and the recognized
 protocol (the constant value @code{2} (= @code{AF_INET})
@@ -11732,7 +11732,7 @@ Transmits the content of @var{msg} through @var{socket}.
 @var{msg} can be either a string or a uniform vector; if you send
 binary packets, uniform vectors are recommended.
 
-Returns the nubmer of octets that are actually sent.
+Returns the number of octets that are actually sent.
 
 When @code{socket-send} is used, @var{socket} must already be connected.
 On the other hand, @code{socket-sendto} can be used for non-connected
@@ -14254,7 +14254,7 @@ categories.
 This can only be given to @code{run-process}.
 If @var{flag} is true, @code{run-process} waits until the
 subprocess terminates, by calling @code{process-wait} internally.
-Othewise the subprocess runs asynchronously
+Otherwise the subprocess runs asynchronously
 and @code{run-process} returns immediately, which is the default behavior.
 
 Note that if the subprocess is running asynchronously, it is the
@@ -15017,7 +15017,7 @@ the low-level process calls such as @code{sys-wait} or
 @c EN
 A condition type mainly used by the process port utility procedures.
 Inherits @code{<error>}.  This type of condition is thrown when
-the high-level process port utilities detect the child proces exited
+the high-level process port utilities detect the child process exited
 with non-zero status code.
 @c JP
 主にプロセスポートユーティリティ関数で使われるコンディション型。
@@ -15278,10 +15278,10 @@ of @var{process}, which represents the last process in the pipeline;
 if an other subprocess exits with nonzero status, it is stored in
 its respective process objects, but won't cause a fuss.
 
-If you speficy a true value to @var{nohang} for the pipelined
+If you specify a true value to @var{nohang} for the pipelined
 process, @code{process-wait} still
 probes other subprocesses in the pipeline and updates exit statuses
-of termianted ones, but doesn't wait unterminated subprocesses.
+of terminated ones, but doesn't wait unterminated subprocesses.
 The unterminated subprocesses should be waited individually, or
 by @code{process-wait-any}, to collect their exit statuses.
 @c JP
@@ -15739,7 +15739,7 @@ bypass the shell.)
 現在は@code{windows}か@code{posix}が指定可能です。シェルが
 エスケープやクオートを処理する方法がこの二つのプラットフォームで大きく
 異なるからです。@code{windows}フレーバーの場合はMVCSランタイムの
-引数パージングに合わせ、@code{posxi}フレーバーの場合はIEEE Std 1003.1に
+引数パージングに合わせ、@code{posix}フレーバーの場合はIEEE Std 1003.1に
 合わせます。
 省略された場合は、プロセスが走っているプラットフォームが
 デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
@@ -15775,7 +15775,7 @@ the default value is chosen according to the running platform.
 @c JP
 省略可能な@var{flavor}引数はシンボル@code{windows}か@code{posix}を取り、
 構文を指定します。@code{windows}の場合はMVCSランタイムの
-引数パージングに合わせ、@code{posxi}フレーバーの場合はIEEE Std 1003.1
+引数パージングに合わせ、@code{posix}フレーバーの場合はIEEE Std 1003.1
 Shell Command Languageに合わせます。
 省略された場合は、プロセスが走っているプラットフォームが
 デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
@@ -15866,7 +15866,7 @@ SRFI-99 and R6RS design.
 
 The syntactic layer is the @code{define-record-type} macro
 that conveniently defines a record type and related procedures
-(a constructor, a predictate, accessors and modifiers) all at once
+(a constructor, a predicate, accessors and modifiers) all at once
 declaratively.   Knowing this macro alone is sufficient for
 most common usage of records.
 
@@ -16040,7 +16040,7 @@ The rest of the arguments specify fields (slots) of the record.
 The first and the third forms define immutable fields, which can only
 be initialized by the constructor but cannot be modified afterwards
 (thus such fields don't have modifiers).
-The second and the fourth forms define multable fields.
+The second and the fourth forms define mutable fields.
 
 The third and fourth forms explicitly name the accessor and modifier.
 With the first and second forms, on the other hand,
@@ -17172,7 +17172,7 @@ return the found index.)
       (receive (k found) (stepper (car haystack) k) ; KMP step
         (if found
           'found
-          (loop (cdr kaystack) k)))))
+          (loop (cdr haystack) k)))))
   'needle-is-empty)
 @end example
 @end defun
@@ -17485,7 +17485,7 @@ The semantics of keyword arguments @var{key}, @var{test},
 @code{delete-neighbor-dups}.
 @c JP
 キーワード引数@var{key}、@var{test}、@var{start}、@var{end}の意味は
-@code{delete-neughbor-dups}と同じです。
+@code{delete-neighbor-dups}と同じです。
 @c COMMON
 @end deffn
 
@@ -18780,7 +18780,7 @@ For example, the following test passes if @code{proc} returns either
 @c EN
 Similar to @code{test-one-of}, but creates a special object
 representing @emph{none of the choices}.
-The test succees if the test expression evaluates to a value that
+The test suceeds if the test expression evaluates to a value that
 don't match any of @var{choice}s.
 @c JP
 @emph{@var{choice} @dots{} のいずれでもない} を表現する特別なオブジェクトを返します。
@@ -18797,7 +18797,7 @@ don't match any of @var{choice}s.
 @defun test-error :optional (condition-type <error>) (message #f)
 @c MOD gauche.test
 @c EN
-Returns a new @code{<test-error>} object that mathes with
+Returns a new @code{<test-error>} object that matches with
 other @code{<test-error>} object with the given @var{condition-type}.
 @c JP
 与えられた@var{condition-type}と適合する@code{<test-error>}オブジェクト
@@ -19603,7 +19603,7 @@ Once a thread is in this state, the state can no longer be changed.
 @end table
 
 @c EN
-Access to the resouces shared by multiple threads must be protected
+Access to the resources shared by multiple threads must be protected
 explicitly by synchronization primitives.
 @xref{Synchronization primitives}.
 @c JP
@@ -19886,7 +19886,7 @@ if timeout reached.   When @var{timeout-val} is omitted, @code{#f}
 is assumed.
 @c JP
 @code{thread-stop!}の戻り値は、対象スレッドを停止させられたなら
-その@var{thread}オブジェクト、タイムアウトしたなら@var{tiemout-val}です。
+その@var{thread}オブジェクト、タイムアウトしたなら@var{timeout-val}です。
 @var{timeout-val}が省略された場合は@code{#f}とみなされます。
 @c COMMON
 
@@ -20057,7 +20057,7 @@ use following higher-level synchronization utilities:
 @table @asis
 @item Atoms
 An atom is a wrapper of arbitrary Scheme object, and allows synchronized
-access to it somewhat like Java's @code{synchroized} blocks.  Atoms are
+access to it somewhat like Java's @code{synchronized} blocks.  Atoms are
 explained in this section.
 @item MT-Queues
 Thread-safe queues (@code{<mtqueue>}) are provided in @code{data.queue} module
@@ -21475,7 +21475,7 @@ Unicodeとして不正なコードポイントに対しては空リストが返�
 @c MOD gauche.unicode
 @c EN
 Takes @var{octet} as the first octet of UTF-8 sequence, and
-returns the number of total octets requried to decode
+returns the number of total octets required to decode
 the codepoint.
 @c JP
 @var{octet}をutf-8シーケンスの最初のオクテットとみなし、
@@ -23075,7 +23075,7 @@ When @var{ssize} is omitted or zero, this procedure does the following:
 @end example
 
 @c EN
-That is, it copies the content of @var{source} (offsetted by @var{sstart},
+That is, it copies the content of @var{source} (offset by @var{sstart},
 which defaults to 0)
 into the @var{target} repeatedly, advancing index with @var{tstride}.
 If either the target index reaches the end or @var{count} copies
@@ -23383,7 +23383,7 @@ The optional @var{skip} argument must be a nonnegative exact integer
 or @code{#f}.  If it is a positive integer, the number of elements after
 every key in the @var{uvector} is ignored.  For example, if @var{skip} is 2
 and @var{uvector} is @code{#u8(3 100 101 5 102 103 13 104 105)},
-only @code{3}, @code{5} and @code{13} are subject to seach, and elements
+only @code{3}, @code{5} and @code{13} are subject to search, and elements
 inbetween are ignored.  This allows the caller to store @emph{payload},
 or associated value to each key, in the @var{uvector} itself.
 If @var{skip} is positive integer, the length of the searched portion
@@ -23419,7 +23419,7 @@ match isn't found.  It can be either one of the following values:
 @item @code{#f}
 @c EN
 This is the default.
-The procedure seaches the element that is equal to @var{key}, and
+The procedure searches the element that is equal to @var{key}, and
 returns @code{#f} if such element isn't found.
 @c JP
 これがデフォルトです。@var{key}と等しい要素だけを探し、
@@ -24001,7 +24001,7 @@ arguments as is, or returns a pre-computed value,
 so you shouldn't assume the return values are freshly
 allocated objects, unless it is noted so explicitly.)
 
-A linear update version may reuse the stoarge of the designated
+A linear update version may reuse the storage of the designated
 argument to produce the return value.  Gauche tries to reuse the
 argument as much as possible, but you should always use the return
 value and shouldn't assume the argument itself is modified in-place.
@@ -25021,7 +25021,7 @@ The reason of having @code{<pre-subrelease>} is to allow
 A trick: If you want ``version 1.2 release or later'', you
 can say @code{(version<=? "1.2" v)}.  This excludes prerelease
 versions such as @code{1.2_pre3}.
-If you want ``verison 1.2 prelease or later'', 
+If you want ``version 1.2 release or later'', 
 you can say @code{(version<=? "1.2_" v)}, which includes
 @code{1.2_pre1} etc., but excludes anything below, such as
 @code{1.1.99999}.
@@ -25133,7 +25133,7 @@ satisfies a version specification.
 @c MOD gauche.version
 @c EN
 This is a syntax checker.  Returns @code{#t} if @var{spec} is
-a valid version specfication, @code{#f} otherwise.
+a valid version specification, @code{#f} otherwise.
 See @code{gauche.version} module description for the definition of
 version specification.
 @c JP
@@ -25147,7 +25147,7 @@ version specification.
 @c MOD gauche.version
 @c EN
 Returns @code{#t} if @var{version} satisfies
-a version specfication @var{spec}, @code{#f} otherwise.
+a version specification @var{spec}, @code{#f} otherwise.
 See @code{gauche.version} module description for the definition of
 version specification.
 @c JP
