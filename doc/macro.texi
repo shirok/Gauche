@@ -1867,8 +1867,8 @@ It returns the updated macro trace setting.
 @c NODE マクロを自分で展開する
 
 
-@defun macroexpand form
-@defunx macroexpand-1 form
+@defun macroexpand form :optional env
+@defunx macroexpand-1 form :optional env
 @c EN
 If @var{form} is a list and its first element is a variable
 globally bound to a macro, @code{macroexpand-1}
@@ -1876,7 +1876,9 @@ invokes its macro transformer and
 returns the expanded form.  Otherwise, returns @var{form} as is.
 
 @code{macroexpand} repeats @code{macroexpand-1} until the
-@var{form} can't be expanded.
+outermost expression of @var{form} can't be expanded.
+(It doesn't expand macros other than outermost one.  If you want
+to expand all the macros within @var{form}, use @code{macroexpand-all}).
 
 These procedures can be used to expand globally defined macros.
 @c JP
@@ -1885,11 +1887,74 @@ These procedures can be used to expand globally defined macros.
 展開されたフォームを返します。そうでなければ、@var{form} をそのまま
 返します。
 
-@code{macroexpand} は、@var{form} が展開できなくなるまで
+@code{macroexpand} は、@var{form}の一番外側の式がが展開できなくなるまで
 @code{macroexpand-1} を繰り返します。
+(@code{macroexpand}は@var{form}の一番外側以外のマクロは展開しません。
+@var{form}内の全てのマクロを展開するには@code{macroexpand-all}を使ってください。)
 
 これらの手続きは、大域的に定義されたマクロを展開するために使うことが
 できます。
+@c COMMON
+
+@c EN
+Internally, hygienic macro expansion wraps symbols in @var{form}
+with syntactic information to keep hygiene.  However, such information
+is hard to read, and not suitable when you just want to expand a macro
+in REPL to check its result.  So, by default, these procedures
+strips syntactic information.  For the identifiers introduced in the
+macro, it renames them to avoid name conflicts.
+
+The following example expands @code{my-letrec} macro
+(@pxref{Tracing macro expansion}, for the definition) and
+results shows temporary variable introduced by the macro (@var{newtemp})
+to be renamed.
+@c JP
+内部的には、衛生マクロは展開されると@var{form}の中にあるシンボルを
+構文情報でラップします。しかし、REPLでマクロを展開して確かめたい場合に
+その情報がついているととても読みにくくなります。
+そこで、デフォルトではこれらの手続きは構文情報を取り除いて出力します。
+マクロ内で導入された識別子については、必要に応じて名前の衝突を避けるリネームが
+行われます。
+
+下の例は@code{my-letrec} (定義は@ref{Tracing macro expansion}参照) を
+展開しています。マクロ展開で導入された変数 (@var{newtemp}) がリネームされています。
+@c COMMON
+
+@example
+(macroexpand
+  '(my-letrec [(ev? (^n (if (= n 0) #t (od? (- n 1)))))
+               (od? (^n (if (= n 0) #f (ev? (- n 1)))))]
+     (ev? 3)))
+
+@result{} 
+
+(let
+ ((ev? (quote undefined)) (od? (quote undefined)))
+ (let
+  ((newtmp.0 (^n (if (= n 0) #t (od? (- n 1)))))
+   (newtmp.1 (^n (if (= n 0) #f (ev? (- n 1))))))
+  (set! ev? newtmp.0)
+  (set! od? newtmp.1)
+  (ev? 3)))
+@end example
+
+@c EN
+If you pass a module to the @var{env} argument, it is used as the
+macro use environment.  You can also pass @code{#t} to let it use
+the current @emph{runtime} environment as the macro use environment.
+In those cases, syntactic information in the output won't be
+stripped.
+
+If you want to use the output of @code{macroexpand} as a program,
+e.g. embed it into another macro expansion, you need syntactic
+information preserved.
+@c JP
+@var{env}引数にモジュールを渡すと、そのモジュールをマクロ使用環境として
+マクロが展開されます。@var{env}に@code{#t}を渡すと、実行時のモジュールが
+マクロ使用環境になります。これらの場合は、出力に構文情報が付加されたままになります。
+
+@code{macroexpand}の出力を他のマクロ展開結果にプログラム的に埋め込むといった
+用途に使う場合には、構文情報を保ったままのフォームが必要になります。
 @c COMMON
 @end defun
 
