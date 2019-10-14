@@ -589,7 +589,7 @@
                      ,(pass1/make-inlinable-binding form name closure cenv)))))]
        ))))
 
-;; If IFORM generats a closure with local environment, returns
+;; If IFORM generates a closure with local environment, returns
 ;; the closure itself ($lambda node) and the environment
 ;; ((lvar . init) ...).
 ;; Typical case is ($let ... ($lambda ...)).  In such case this

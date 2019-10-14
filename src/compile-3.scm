@@ -204,7 +204,7 @@
                       iform])]
           [(x . (and (y . ys) xs))
            ;; Skip empty $seq if it immediately follows x.
-           ;; This prevents the constant expression follwed by empty $seq as
+           ;; This prevents the constant expression followed by empty $seq as
            ;; the last expression from being removed as the dead code.
            (if (and (has-tag? y $SEQ) (null? ($seq-body y)))
              (loop r (cons x ys))

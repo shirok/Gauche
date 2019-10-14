@@ -452,15 +452,15 @@
                  (zero? (sys-wait-exit-status status)))
       (cond [(sys-wait-exited? status)
              (errorf <process-abnormal-exit> :process process
-                     "~s exitted abnormally with exit code ~a"
+                     "~s exited abnormally with exit code ~a"
                      process (sys-wait-exit-status status))]
             [(sys-wait-signaled? status)
              (errorf <process-abnormal-exit> :process process
-                     "~s exitted by signal ~s"
+                     "~s exited by signal ~s"
                      process (sys-signal-name (sys-wait-termsig status)))]
             [else ;; we shouldn't be here, but just in case...
              (errorf <process-abnormal-exit> :process process
-                     "~s exitted abnormally with status ~s"
+                     "~s exited abnormally with status ~s"
                      process status)]))))
 
 ;; other basic interfaces

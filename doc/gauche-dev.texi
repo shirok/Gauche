@@ -309,7 +309,7 @@ You can also run a unit test by @code{make check}.
 Testing trivial ...                                              passed.
 @end example
 
-For now, it just checks if the compiled extention can be loaded,
+For now, it just checks if the compiled extension can be loaded,
 and the integrity of the module.  As you add APIs in the extension,
 you're expected to add tests as well.
 
@@ -717,7 +717,7 @@ is called, @var{obj} no longer has a finalizer.
 Last but not least, there's no guarantee that the finalizer is called
 promptly after @var{obj} lost all live references, 
 or whether it is called at all.  There might be an indefinite delay
-between the point when @var{obj} becomes a garabe and the finalizer is run.
+between the point when @var{obj} becomes a garbage and the finalizer is run.
 You should think finalizers as a safety-net, rather than a guaranteed clean-up
 mechanism.  If your object requires explicit clean-up, ask users to do it
 explicitly (possibly wrapping it with @code{call-with-*} style procedure).
@@ -1128,7 +1128,7 @@ Returns real part, imaginary part, magnitude and angle of a Scheme number
 
 @subsubheading Exact integer operations
 
-The folowing routines operates on Scheme exact integers.  If
+The following routines operates on Scheme exact integers.  If
 the given @code{ScmObj} argument is not a Scheme exact integer,
 an error is signalled.   For bitwise routines, an integer is
 regarded in 2's complement form in case if it is negative.

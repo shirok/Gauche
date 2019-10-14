@@ -1604,7 +1604,7 @@ the primordial thread (@pxref{Threads}), the output
 includes a number to distinguish which thread it is generated.
 In the following example, @code{#<thread ...>} and the prompt
 is the output of REPL in the primordial thread,
-but followig @code{#?=[1]...} and @code{#?-[1]...} are
+but following @code{#?=[1]...} and @code{#?-[1]...} are
 the debug output from the thread created by @code{make-thread}.
 The number is for debugging only---
 they differ for each thread, but other than that there's no meaning.

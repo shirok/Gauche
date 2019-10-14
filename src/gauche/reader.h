@@ -66,7 +66,7 @@ SCM_EXTERN ScmObj Scm_ReaderLexicalMode(void);
 SCM_EXTERN ScmObj Scm_SetReaderLexicalMode(ScmObj);
 
 /* An object to keep unrealized circular reference (e.g. #N=) during
- * 'read'.  It is replaced by the reference value before exitting 'read',
+ * 'read'.  It is replaced by the reference value before exiting 'read',
  * and it shouldn't leak out to the normal Scheme program, except the
  * code that handles it explicitly (like read-time constructor).
  */

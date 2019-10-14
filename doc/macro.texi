@@ -242,7 +242,7 @@ Now, the question.  Which binding @code{f} in the expanded form [2]
 should refer?  If we literally interpret the expansion,
 it would refer to the inner binding @code{(^x (+ x x))}.
 However, following the Scheme's scoping principle, the outer
-code should be fully understood regardless of innter code:
+code should be fully understood regardless of inner code:
 @c JP
 さてここで問題です。展開結果に現れた[2]のフォーム内の@code{f}は、どちらの
 @code{f}を参照すべきでしょう。上の式を文字通り解釈するなら、
@@ -996,7 +996,7 @@ splicing the leaves into the surrounding list:
 @c EN
 Note: Allowing multiple ellipses to directly follow a subtemplate,
 and a pattern variable in a subtemplate to be enclosed within more
-than the variable's level of nesting of ellipses, are extention to
+than the variable's level of nesting of ellipses, are extension to
 R7RS, and defined in SRFI-149.  In the above examples, 
 @code{ellipsis-test}, @code{my-append} and @code{my-append2} are
 outside of R7RS.
@@ -1013,7 +1013,7 @@ Identifiers in a pattern is treated as pattern variables.  But sometimes
 you want to match a specific identifier in the input.  For example,
 the built-in @code{cond} and @code{case} detects an identifier @code{else}
 as a special identifier.  You can use @var{literal} @dots{} for that.
-See the followign example.
+See the following example.
 @c JP
 パターン中に現れる識別子はパターン変数として扱われますが、
 特定の識別子そのものにマッチさせたい場合もあります。例えば組み込みの@code{cond}や
@@ -1074,7 +1074,7 @@ hence they don't match.
 
 @node Explicit-renaming macro transformer,  , Syntax-rules macro transformer, Hygienic macros
 @subsection Explicit-renaming macro transformer
-@c NODE Explcit-renamingマクロ変換器
+@c NODE Explicit-renamingマクロ変換器
 
 @defspec er-macro-transformer procedure-expr
 @c EN
@@ -1213,7 +1213,7 @@ the hygienic @code{when-not} as follows:
 @end example
 
 @c EN
-You can intentionally break hyginene by inserting a symbol
+You can intentionally break hygiene by inserting a symbol
 without renaming.  The following code implements
 @emph{anaphoric} @code{when}, meaning the result of the
 test expression is available in the @var{expr1} @var{exprs} @dots{}

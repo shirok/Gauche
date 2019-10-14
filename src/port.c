@@ -937,7 +937,7 @@ static void unregister_buffered_port(ScmPort *port)
    called recursively if one of the flushing routine calls Scm_Exit.
    In order to avoid infinite loop, I have to delete the entries of already
    flushed port before calling flush, then recover them before return
-   (unless exitting is true, in that case we know nobody cares the active
+   (unless exiting is true, in that case we know nobody cares the active
    port vector anymore).
    Even if more than one thread calls Scm_FlushAllPorts simultaneously,
    the flush method is called only once for each vector.

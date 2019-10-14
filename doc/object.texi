@@ -2709,9 +2709,9 @@ If you desire, you can call it by your own @code{change-class} method.
 となります。
 @end enumerate
 
-@var{obj}に対して@var{new-class}の@code{initilize} メソッドは呼ばれないことに
+@var{obj}に対して@var{new-class}の@code{initialize} メソッドは呼ばれないことに
 注意してください。必要なら、独自の @code{change-class} メソッドを
-定義して@code{intialize}を呼ぶようにすることができます。
+定義して@code{initialize}を呼ぶようにすることができます。
 
 @code{change-object-class} は @var{obj} を返します。
 @c COMMON
@@ -2971,7 +2971,7 @@ function will select appropriate methods(s).
 Here are some examples of @var{specs} and the corresponding
 specializer list (note that the rest argument isn't considered
 as a part of specializer list; we know it's always a list.)
-The @code{optional} item indiecates whether the method takes
+The @code{optional} item indicates whether the method takes
 rest arguments or not.
 @c JP
 @i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
@@ -3534,7 +3534,7 @@ this method, it @emph{freezes} the essential class slots; they became
 immutable.
 
 Calculation of inheritance and slots are handle by generic
-fucntions.  If you define a metaclass, you can define methods
+functions.  If you define a metaclass, you can define methods
 for them to customize how those calculations are done.
 Class inheritance is calculated by @code{compute-cpl} defined below.
 Slot calculation is a bit involved, and explained in the 
@@ -3544,7 +3544,7 @@ If your metaclass needs to initialize auxiliary slots, you can
 define your own @code{initialize} method, in which you call
 @code{next-method} first to set up the core part of the
 @code{<class>} structure, then you sets up metcalss-specific part.  
-One caveat is that, after @code{next-method} handes
+One caveat is that, after @code{next-method} handles
 initialization of the core @code{<class>} part, you can no longer
 modify essential class slots.  If you need to tweak those slots,
 you can override @code{class-post-initialize} method, which

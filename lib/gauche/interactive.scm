@@ -69,7 +69,7 @@
                         (let1 substr (symbol->string item)
                           (^[name] (string-scan name substr)))]
                        [(string? item)
-                        ;; Note: future extention
+                        ;; Note: future extension
                         (error "Bad object for item: " item)]
                        [(is-a? item <regexp>) (^[name] (rxmatch item name))]
                        [else

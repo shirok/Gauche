@@ -2890,7 +2890,7 @@ w.r.t. @var{cmp}.  Using that fact, this procedure performs
 binary search instead of linear search.
 
 The optional arguments @var{start} and @var{end} are an
-extention to SRFI-133, and can be used to limit the range of the
+extension to SRFI-133, and can be used to limit the range of the
 search in @var{start}-th element (inclusive) to
 @var{end}-th element (exclusive).
 @c JP
@@ -3250,7 +3250,7 @@ The ``stable'' variation guarantees stable sort.
 
 When the optional @var{start} and/or @var{end} arguments are given,
 only the portion from @var{start} (inclusive) and
-@var{end} (exlusive) of @var{vec} are looked at.
+@var{end} (exclusive) of @var{vec} are looked at.
 The result vector's length is @code{@var{end} - @var{start})}.
 When @var{end} is omitted, the length of @var{vec} is assumed.
 
@@ -3270,7 +3270,7 @@ caller must rely on the side effect.
 
 When the optional @var{start} and/or @var{end} arguments are given,
 only the portion from @var{start} (inclusive) and
-@var{end} (exlusive) of @var{vec} are sorted; other elements
+@var{end} (exclusive) of @var{vec} are sorted; other elements
 will remain intact.
 When @var{end} is omitted, the length of @var{vec} is assumed.
 
@@ -3281,7 +3281,7 @@ See also @code{sort!} and @code{stable-sort!} in @ref{Sorting and merging}.
 [R7RS sort]
 @c MOD scheme.sort
 Returns true iff @var{vec} between @var{start} (inclusive)
-and @var{end} (exlusive) is sorted according to the ordering
+and @var{end} (exclusive) is sorted according to the ordering
 predicate @var{elt<}.  If @var{start} and/or @var{end} is/are omitted,
 0 and the length of @var{vec} are assumed, respectively.
 
@@ -5156,7 +5156,7 @@ gindex                   gselect
 @example
 generator->list         generator->reverse-list   generator-map->list
 generator->vector       generator->vector!        generator->string
-generator-count         generator-any             genreator-every
+generator-count         generator-any             generator-every
 generator-unfold
 @end example
 @item @ref{Folding generated values}:
@@ -5310,7 +5310,7 @@ element.  It is much lighter than streams (@pxref{Stream library}),
 which requires to create a thunk for every element.
 
 Gauche already has built-in support for such lazy sequences;
-we go futher to make it behave like ordinary pairs---that is, if you
+we go further to make it behave like ordinary pairs---that is, if you
 take cdr of a lazy pair, we automatically forces the generator so
 it is indistinguishable from an ordinary pair, modulo side effects.
 @xref{Lazy sequences}.
@@ -5479,7 +5479,7 @@ so @var{lseq}s work just as well as ordinary lists.
 
 @deftp {Module} scheme.stream
 @mdindex scheme.stream
-This module provides utilities for lazily evaluted streams.
+This module provides utilities for lazily evaluated streams.
 It is more heavyweight than lazy sequences (@pxref{Lazy sequences}),
 but it strictly implements ``as lazy as possible'' semantics---elements
 are never evaluated until it is actually accessed.
@@ -5888,7 +5888,7 @@ consider double-ended queue.  (@xref{Immutable deques}, and also
 Remove all the elements from @var{queue} and returns them as a list.
 The list isn't copied---this is O(1) operation.  This should be preferred
 over @code{list-queue-list}, for it's safer.
-In Gauhce, this is the same as @code{dequeue-all!} in @code{data.queue}.
+In Gauche, this is the same as @code{dequeue-all!} in @code{data.queue}.
 @c JP
 @var{queue}を空にして、入っていた全ての要素をリストで返します。
 リストはコピーされません。つまりO(1)の操作です。
@@ -8875,7 +8875,7 @@ versions.
 
 @c EN
 The procedure @code{fixnum?} is built-in, and
-not explaned here.  @xref{Numerical predicates}.
+not explained here.  @xref{Numerical predicates}.
 @c JP
 手続き@code{fixnum?}は組み込みなのでここでは説明しません。
 @ref{Numerical predicates}を参照してください。
@@ -9185,7 +9185,7 @@ versions.
 
 @c EN
 The procedure @code{flonum?} is built-in, and
-not explaned here.  @xref{Numerical predicates}.
+not explained here.  @xref{Numerical predicates}.
 @c JP
 手続き@code{flonum?}は組み込みなのでここでは説明しません。
 @ref{Numerical predicates}を参照してください。
@@ -9726,7 +9726,7 @@ Returns @code{(+ (* x y) z)}, but (potentially) faster, and more accurately.
 It calls C99 @code{fma} function internally.  (``More accurately'' means
 that calculation is done in a single step, with rounding once at the end.)
 
-Note: As of release of 0.9.8, MinGW imlementation of @code{fma} seems
+Note: As of release of 0.9.8, MinGW implementation of @code{fma} seems
 to produce slightly off value occasionally, as if it is calculated
 with the two steps (rounding after multiplication).
 @end defun
@@ -10005,13 +10005,13 @@ calling @code{log}.  The second value is @code{+nan.0} when
 @defun flfirst-bessel n x
 [R7RS flonum]
 @c MOD scheme.flonum
-Returns the @var{n}-th order Bessel fucntion of the first kind.
+Returns the @var{n}-th order Bessel function of the first kind.
 @end defun
 
 @defun flsecond-bessel n x
 [R7RS flonum]
 @c MOD scheme.flonum
-Returns the @var{n}-th order Bessel fucntion of the second kind.
+Returns the @var{n}-th order Bessel function of the second kind.
 @end defun
 
 @defun flerf x

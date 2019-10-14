@@ -66,7 +66,7 @@ Gauche extension packages use these options.
 .B --mandir, --infodir
 Directories where gauche manpage and info docs are installed.
 
-.SS Parameters to compile Gauche extention
+.SS Parameters to compile Gauche extension
 .TP
 .B --object-suffix
 Extension of the compiled objects (e.g. 'o').

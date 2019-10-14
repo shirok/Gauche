@@ -52,7 +52,7 @@ the core features of Gauche but separated since less frequently used.
 
 @item
 @ref{Library modules - R7RS standard libraries} explains how Gauche
-integrates R7RS into exising Gauche structures.  If you want to
+integrates R7RS into existing Gauche structures.  If you want to
 write R7RS-compliant portable programs, you definitely want to
 check the first two sections of this chapter.  What follows is
 the description of R7RS modules.  Since Gauche supports most of
@@ -494,7 +494,7 @@ if you need localization.
 をとり、文字の変換を暗黙におこないます。非ASCII文字でSchemeのプログラ
 ムを書きたい場合には@ref{Multibyte scripts}を見てください。encodingと
 いうマジックコメントを含むGaucheのソースコードを処理したいなら
-@ref{Coding-aware ports}を見てください。地域化が必要なら、Gaucneには
+@ref{Coding-aware ports}を見てください。地域化が必要なら、Gaucheには
 GNU gettext互換のモジュール(@ref{Localized messages})もあります。
 @c COMMON
 

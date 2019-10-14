@@ -533,7 +533,7 @@ esac
 
 dnl Checks for pty-related fns.  It appears that recent Cygwin has them,
 dnl but only in a static library.  That prevents us from creating DLL
-dnl version of gauche.  Thus we explictly exclude them on cygwin.
+dnl version of gauche.  Thus we explicitly exclude them on cygwin.
 case "$host" in
   *cygwin*)
     : ;;

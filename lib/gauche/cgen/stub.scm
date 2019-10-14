@@ -131,7 +131,7 @@
 ;;             Gauche error condition.
 ;;
 ;;        (inliner <insn-name>) : only used in Gauche core procedures
-;;             that can be inlined into an VM insturuction.
+;;             that can be inlined into an VM instruction.
 ;;
 ;;      <Body> is a cise expression.  Inside the expression, a cise macro
 ;;      (result expr ...) can be used to assign the value(s) to return

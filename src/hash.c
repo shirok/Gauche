@@ -1241,7 +1241,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
  *
  * There are several drawbacks, though.  The guaranteed hash value means
  * we can't change hash function.   The quality of the original hash
- * functon wasn't good (it behaves terrible on flonums and compnums);
+ * function wasn't good (it behaves terrible on flonums and compnums);
  * it's vulnerable to collision attacks; and it had a few bugs in the
  * number hash that broke the 'portable' guarantee between platforms.
  *
