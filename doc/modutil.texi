@@ -11782,7 +11782,7 @@ a list of tokens.   @var{Tokenizer-specs} is passed to
 @c EN
 A utility procedure that consumes any comments and/or whitespace
 characters from @var{iport}, and returns the head character
-that is neither a whitespece nor a comment.  The returned character
+that is neither a whitespace nor a comment.  The returned character
 remains in @var{iport}.
 @c JP
 @var{iport} から、すべてのコメントおよび/または白空白文字を消費し、
@@ -27200,7 +27200,7 @@ check equality of two variables.  It must be hashable.
 @item Value comparator: @code{val-cmpr}
 @c EN
 A comparator to see if an item is a value, and also
-check equality of two vaues.
+check equality of two values.
 Note that if a tree satisfies neither @var{var-cmpr} nor @var{val-compr},
 it is regarded as a tuple.
 @c JP

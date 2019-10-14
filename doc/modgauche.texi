@@ -5839,7 +5839,7 @@ For each @var{file}, a file named @file{@var{file}.in} is read
 as a template.  Within the file, @code{@@PARAMETER@@} is substituted
 with the value of @code{(cf$ 'PARAMETER)}.  If the named parameter
 isn't registered, a warning is issued and the parameter is left
-unsubstited.
+unsubstituted.
 
 If config headers are not registered via @code{cf-config-headers},
 a substitution parameter @code{DEFS} is replaced with
@@ -6883,7 +6883,7 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @c EN
 A generator is merely a procedure with no arguments and works
 as a source of a series of values.  Every time it is called,
-it yeilds a value.  The EOF value indicates the generator is exhausted.
+it yields a value.  The EOF value indicates the generator is exhausted.
 For example, @code{read-char} can be seen as a generator that
 generates characters from the current input port.
 
@@ -6943,7 +6943,7 @@ using one of generator constructors
 may connect generator operators that modifies the stream of
 generated items as you wish (@pxref{Generator operations}).
 Eventually you need to extract actual values from the generator
-to consume; there are utitlity procedures provided
+to consume; there are utility procedures provided
 (@pxref{Generator consumers}).  Overall, you create a pipeline
 (or DAG) of generators that works as lazy value-propagation network.
 @c JP
@@ -10031,7 +10031,7 @@ Pathname of the log file.  The output is written to it.
 @itemx @code{#t}
 The output goes to the current error port.
 @item @code{current-output}
-The output goes to the urrent output port.
+The output goes to the current output port.
 @item @code{syslog}
 The output is sent to the system logger.
 @item @code{ignore}

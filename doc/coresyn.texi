@@ -777,7 +777,7 @@ The actual arguments are collected to form a new list and bound to
 the variable.
 @c JP
 手続きは不定個の引数を取ります。
-実引数は新しいリストに集められて、そのリストが@var{varible}に束縛されます。
+実引数は新しいリストに集められて、そのリストが@var{variable}に束縛されます。
 @c COMMON
 
 @example
@@ -2173,7 +2173,7 @@ Each @var{binding} should be one of the following form:
 The @var{expression} is evaluated; if it yields true value, the value
 is bound to @var{variable}, then proceed to the next binding.  If
 no more bindings, evaluates @var{body} @dots{}.   If @var{expression}
-yieds @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
+yields @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
 @c JP
 @var{expression}が評価されます。それが真の値を返したら、その値が@var{variable}
 に束縛され、次の@var{binding}へと進みます。もう@var{binding}が無ければ
@@ -4035,7 +4035,7 @@ anywhere.
 @item
 @c EN
 The file is searched from @code{*load-path*}, except when the
-file begins with @code{./} or @code{../}, in whcih case it is
+file begins with @code{./} or @code{../}, in which case it is
 first tried relative to the current directory before being searched
 from @code{*load-path*}.
 @c JP
@@ -4512,7 +4512,7 @@ and affects the resolution of global variable reference.
 @c EN
 Unlike CommonLisp's packages, which map names to symbols,
 in Gauche symbols are @code{eq?} in principle if two have the
-same name (except uninterened symbols; @pxref{Symbols}).
+same name (except uninterned symbols; @pxref{Symbols}).
 However, Gauche's symbol doesn't have a 'value'
 slot in it.  From a given symbol, a module finds its binding that
 keeps a value.

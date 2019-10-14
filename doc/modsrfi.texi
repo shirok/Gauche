@@ -4493,7 +4493,7 @@ Each integer occupies @var{size} octets.
 @c @section @code{srfi-78} - Lightweight testing
 @c @c NODE 軽量なテスト, @code{srfi-78} - 軽量なテスト
 
-@c NOTE: Keep this unoffical, until we integrate this into gauche.test.
+@c NOTE: Keep this unofficial, until we integrate this into gauche.test.
 
 @c @deftp {Module} srfi-78
 @c @mdindex srfi-78

@@ -2105,7 +2105,7 @@ copies the content every time and returns a freshly allocated
 string.
 @end deftypefun
 
-@deftypefun {const char *} Scm_GetStringContent (ScmString *@var{str}, unsigned int *@var{psize}, unsignd int *@var{plen}, unsigned int *@var{pflags})
+@deftypefun {const char *} Scm_GetStringContent (ScmString *@var{str}, unsigned int *@var{psize}, unsigned int *@var{plen}, unsigned int *@var{pflags})
 Use this function if you want to retrieve other attributes of
 the strings at once.  The return value points to the beginning
 of the string content, but it may not be @code{NUL}-terminated.
@@ -3038,7 +3038,7 @@ of the given tree map.
 @deftypefun ScmObj Scm_TreeMapRef (ScmTreeMap *@var{tm}, ScmObj @var{key}, ScmObj @var{fallback})
 Searches an entry with the given @var{key}, and returns its value.
 If there's no entry that has @var{key}, a value passed to @var{fallback}
-is returned (unlinke Scheme-level @code{tree-map-get}, it doesn't
+is returned (unlike Scheme-level @code{tree-map-get}, it doesn't
 signals an error).
 
 A standard way to take a specific action when no entry is found is
@@ -3244,7 +3244,7 @@ these functions.
 
 There are two ways to extend port functionalities and creates
 your own port types.  A @emph{fully virtual port} basically has
-all basic port I/O operations as virutal functions, so you
+all basic port I/O operations as virtual functions, so you
 can override those functionalities as you like.
 A @emph{virtual buffered port}, on the other hand, implements
 buffering by itself, and calls back your routines when it needs
