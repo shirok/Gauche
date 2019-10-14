@@ -1958,21 +1958,25 @@ information preserved.
 @c COMMON
 @end defun
 
-@defun macroexpand-all form
+@defun macroexpand-all form　:optional env
 @c EN
 Fully expand macros inside @var{form}.  The result only contains
 function calls and Gauche's built-in syntax.
-The @var{form} is assumed to be a toplevel form within the current module.
-(@xref{Module semantics}, for the concept of the current module.
-It can be tricky, for sometimes the current module differ
-between compile-time and run-time.)
 @c JP
 @var{form}中にあるマクロを全て展開します。結果の中に残るのは、
 関数呼び出しとGaucheの組み込み構文だけになります。
-@var{form}は現在のモジュール中のトップレベルにあるものと解釈されます
-(現在のモジュールについては@ref{Module semantics}を参照してください。
-この概念はちょっとややこしいです。コンパイル時と実行時で
-現在のモジュールが異なる場合があるからです。)
+@c COMMON
+
+@c EN
+By default, or @code{#t} is passed to @var{env},
+the @var{form} is assumed to be a toplevel form within the current runtime
+module.
+You can also pass a module to @var{env} to specify
+the alternative toplevel environment.
+@c JP
+デフォルト、もしくは@var{env}に@code{#t}が渡された場合は、
+@var{form}は実行時のモジュールのトップレベルにあると解釈されます。
+モジュールを@var{env}に渡せば、そのモジュールをマクロ使用環境として展開できます。
 @c COMMON
 
 @c EN
