@@ -588,7 +588,7 @@ static void call_initfn(ScmDLObj *dlo, const char *name)
    already loaded from a pseudo pathname "@/DSONAME" (e.g. for
    "gauche--collection", we use "@/gauche--collection".) */
 
-/* Register DSONAME as prelinked.  DSONAME shoudn't have system's suffix.
+/* Register DSONAME as prelinked.  DSONAME shouldn't have system's suffix.
    INITFNS is an array of function pointers, NULL terminated.
    INITFN_NAMES should have prefixed with '_', for call_initfn() searches
    names with '_' first. */

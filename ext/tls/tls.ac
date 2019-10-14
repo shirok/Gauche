@@ -17,7 +17,7 @@ TLSLIBS=axtls,mbedtls
 AC_ARG_WITH(tls,
   AS_HELP_STRING([--with-tls=TLSLIB,...],
   [Select which TLS libraries to be compiled.  Currently we support 'axtls'
-   (to use bundled souce of Cameron Rich's axTLS) and 'mbedtls' (to use mbed
+   (to use bundled source of Cameron Rich's axTLS) and 'mbedtls' (to use mbed
    TLS).  By default, available libraries are autodetected.  Specify this
    option only when you want to exclude some of the libraries.
    Specify --with-tls=no to disable tls support.]),

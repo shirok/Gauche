@@ -860,7 +860,7 @@ guard quasiquote unquote unquote-splicing case-lambda
 @end example
 @item Macros
 @example
-let-synatx letrec-syntax syntax-rules syntax-error define-syntax
+let-syntax letrec-syntax syntax-rules syntax-error define-syntax
 @end example
 @item Variable definitions
 @example
@@ -3957,7 +3957,7 @@ to be the same, in terms of the equality of items.
 @defunx bag>=? bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
-Returs true iff each preceding set/bag is a proper subset of, 
+Returns true iff each preceding set/bag is a proper subset of, 
 a proper superset of, a subset of, or a superset of the following
 set/bags, respectively.
 
@@ -5783,7 +5783,7 @@ queue-related operations with small overhead.
 If you merely need a cheap access the content of the queue,
 consider @code{list-queue-remove-all!}.
 That returns the list of elements of the queue without copying, and
-simultaneoulsy reset the queue to empty, so it's safe.
+simultaneously reset the queue to empty, so it's safe.
 @c JP
 @var{queue}が内部的に保持している要素のリストを返します。
 返されたリストは、@var{queue}が操作されれば破壊的に変更される可能性があり、
@@ -6049,7 +6049,7 @@ being collected if there's no strong reference to the key,
 
 @item
 @c EN
-Refernece to the datum is also a kind of weak; it doesn't prevent the datum
+Reference to the datum is also a kind of weak; it doesn't prevent the datum
 from being collected if there's no strong reference to the datum,
 @emph{and there's no strong reference to the associated key}.
 Note that the datum is retained as long as the key is retained,
@@ -8154,10 +8154,10 @@ This module provides a comprehensive set of integer division operators.
 Quotient and remainder in integer divisions can be defined in multiple
 ways, when you consider the choice of sign of the result with regard to
 the operands.  Gauche has builtin procedures in several flavors:
-R5RS @code{quotient}, @code{remadiner} and @code{modulo},
+R5RS @code{quotient}, @code{remainder} and @code{modulo},
 R6RS @code{div}, @code{mod}, @code{div0} and @code{mod0},
 and R7RS @code{floor-quotient}, @code{floor-remainder}, @code{floor/},
-@code{truncate-quotinet}, @code{truncate-remainder}, @code{truncate/}.
+@code{truncate-quotient}, @code{truncate-remainder}, @code{truncate/}.
 
 This module complements R7RS procedures, by adding @code{ceiling},
 @code{round}, @code{euclidean} and @code{balanced} variants.
@@ -8174,7 +8174,7 @@ R5RSの@code{quotient}、@code{remainder}、@code{modulo}、
 R6RSの@code{div}、@code{mod}、@code{div0}、@code{mod0}、
 そしてR7RSの
 @code{floor-quotient}、@code{floor-remainder}、@code{floor/}、
-@code{truncate-quotinet}、@code{truncate-remainder}、@code{truncate/}、です。
+@code{truncate-quotient}、@code{truncate-remainder}、@code{truncate/}、です。
 
 このモジュールは、R7RSの手続きにさらに
 @code{ceiling}、
@@ -9841,7 +9841,7 @@ Returns @code{(*. x x)} (@pxref{Arithmetics})
 @defun flsqrt x
 [R7RS flonum]
 @c MOD scheme.flonum
-Flonum-speicific verison of @code{sqrt}.
+Flonum-specific version of @code{sqrt}.
 @end defun
 
 @defun flcbrt x

@@ -2808,7 +2808,7 @@ how Gauche is configured, and can be checked
 by running system-provided tools, 
 such as @code{ldd} on most Unix systems and MinGW or @code{otool -L} on OSX,
 on the generated standalone binaries.
-You may want to ensure the users have requied libraries.
+You may want to ensure the users have required libraries.
 @c JP
 作られたバイナリファイルは、libpthreadなど外部の動的ライブラリには依存します。
 具体的にどのライブラリに依存するかはプラットフォームとGaucheのコンフィグレーションによります。
@@ -2918,7 +2918,7 @@ basenameから拡張子を除いたものになります。
 @c EN
 Add C preprocessor definitions while compiling the generated C code.
 An important use case of this option is to exclude gdbm dependency
-from the generated binaries, by specifing
+from the generated binaries, by specifying
 @code{-D GAUCHE_STATIC_EXCLUDE_GDBM}.  Note that you need a whitespace
 between @code{-D} and @var{var}.
 
@@ -3030,7 +3030,7 @@ Note that a whitespace is required between @code{-I} and @var{load-path}.
 @deftp {Command Option} --header-dir dir
 @deftpx {Command Option} --library-dir dir
 @c EN
-These tells @code{build-standlone} where to find Gauche C headers
+These tells @code{build-standalone} where to find Gauche C headers
 and static libraries.
 
 If you've installed Gauche on your system, @code{build-standalone}

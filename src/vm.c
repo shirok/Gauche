@@ -109,7 +109,7 @@ static unsigned long vminsn_offsets[SCM_VM_NUM_INSNS] = { 0, };
 
 static ScmVM *rootVM = NULL;         /* VM for primodial thread */
 static ScmHashCore vm_table;         /* VMs other than primordial one is
-                                        registered to this hashtalbe, in order
+                                        registered to this hashtable, in order
                                         to avoid being GC-ed. */
 static ScmInternalMutex vm_table_mutex;
 static void vm_register(ScmVM *vm);

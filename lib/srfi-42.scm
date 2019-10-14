@@ -1176,7 +1176,7 @@
 ; Alternative: Instead of modifying the generator with :until, it is
 ;   possible to use call-with-current-continuation:
 ;
-;   (define-synatx first-ec
+;   (define-syntax first-ec
 ;     ...same as above...
 ;     ((first-ec default qualifier expression)
 ;      (call-with-current-continuation

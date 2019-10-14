@@ -5678,7 +5678,7 @@ Gaucheの組み込みの識別子とともに自己束縛されたキーワー�
 @end example
 
 @c EN
-If you use more sophisitcated import tricks, however, keep in mind
+If you use more sophisticated import tricks, however, keep in mind
 that keywords are just imported symbols by default.
 The following code imports
 Gauche builtin identifiers with prefix @code{gauche/}.  That causes

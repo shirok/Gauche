@@ -1297,7 +1297,7 @@ static inline void scheme_slot_set(ScmObj obj, ScmSmallInt number, ScmObj val)
 }
 
 /* These three are exposed to Scheme to do some nasty things.
-   We shoudn't do class redefinition check here, since the slot number
+   We shouldn't do class redefinition check here, since the slot number
    is calculated based on the old class, if the class is ever redefined.
 */
 /* OBSOLETED, for the backward compatibility */
@@ -2429,7 +2429,7 @@ static int method_leaf_p(ScmClosure *body)
 /*
  * (initialize <method> (&key lamdba-list generic specializers body method-locked))
  *    Method initialization.   This needs to be hardcoded, since
- *    we can't call Scheme verison of initialize to initialize the
+ *    we can't call Scheme version of initialize to initialize the
  *    "initialize" method (chicken-and-egg circularity).
  */
 static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,

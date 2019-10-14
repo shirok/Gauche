@@ -56,7 +56,7 @@
 ;;;               | (style-decls <declaration> ...)
 ;;;
 ;;;  <pattern>   : <selector> | (:or <selector> ...)
-;;;  <seletor>   : <simple-selector>
+;;;  <selector>  : <simple-selector>
 ;;;              | <chained-selector>
 ;;;  <chained-selector> : (<simple-selector> . (<op>? . <chained-selector>))
 ;;;  <op>        : > | + | ~

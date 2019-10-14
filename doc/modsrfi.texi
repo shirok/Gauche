@@ -4715,7 +4715,7 @@ the port specified by
 @var{service}, which must be a string.  A service name solely consists
 of decimal digits is interpreted as a port number.
 @c JP
-@var{serivce}で指定されるポートで待ち受けるサーバソケットを作って返します。
+@var{service}で指定されるポートで待ち受けるサーバソケットを作って返します。
 @var{service}は文字列でなければなりません。@var{service}が全て数字で構成されていた
 場合はポート番号と解釈されます。
 @c COMMON

@@ -121,7 +121,7 @@
 ;;      <Qual> (qualifier) is a list to adds auxiliary information to the
 ;;      SUBR.  Currently the following <quals> are officially supported.
 ;;
-;;        (setter <setter-name>) : specfy setter.  <setter-name> should
+;;        (setter <setter-name>) : specify setter.  <setter-name> should
 ;;             be a cproc name defined in the same stub file
 ;;        (setter (args ...) body ...) : specify setter anonymously.
 ;;

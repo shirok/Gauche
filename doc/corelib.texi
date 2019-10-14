@@ -3657,7 +3657,7 @@ for this purpose.  Use @code{real->rational} only when you need finer
 control of error bounds.
 @c JP
 指定されたエラー範囲の中で、有限な実数@var{x}の正確な有理数表現のうち
-最も簡単なものを返します。@code{ratinalize}や@code{exact}はこの手続きを
+最も簡単なものを返します。@code{rationalize}や@code{exact}はこの手続きを
 下請けとして呼び出しています。通常は@code{rationalize} (@ref{Arithmetics}参照)
 を使い、@code{real->rational}は誤差許容値をより細かく制御したい時のみ
 使うのが良いでしょう。
@@ -6112,7 +6112,7 @@ the structure with @var{alist}.
 @c EN
 If @var{alist} doesn't have the entry specified by @var{keys},
 a new entry is added.  A new entry is added at the beginning of
-the sequence where specfied key didn't exist.
+the sequence where specified key didn't exist.
 @c JP
 @var{alist}が@var{keys}で指定されるエントリを持たない場合は新たなエントリが
 追加されます。新たなエントリは、キーが存在しないシーケンスの先頭に付け加えられます。
@@ -9617,7 +9617,7 @@ Gaucheの内部エンコーディングがutf-8であれば、この手続きは
   @result{} "_abc"     ; can be represented as a complete string
 
 (string-incomplete->complete #*"_ab\x80;c")
-  @result{} #f        ; can't be represetend as a complete string
+  @result{} #f        ; can't be represented as a complete string
 
 (string-incomplete->complete #*"_ab\x80;c" :omit)
   @result{} "_abc"     ; omit the illegal bytes
@@ -11996,7 +11996,7 @@ refrain from mutating the returned hash tables.
 @c COMMON
 @end defun
 
-@defun hash-talbe-unfold p f g seed comparator :rest args
+@defun hash-table-unfold p f g seed comparator :rest args
 [R7RS hash-table]
 @c EN
 Constructs and returns a new hash table with those repetitive steps.
@@ -16634,7 +16634,7 @@ from outside of @code{unwind-protect} by invoking continuations
 captured within @var{expr}.
 
 However, keep in mind that once @var{cleanup} are executed,
-some resouces might not be available in @var{expr}.
+some resources might not be available in @var{expr}.
 We still allow it since the reexecuted part of @var{expr} may not
 depend on the resources cleaned up with @var{cleanup}.
 
@@ -24437,7 +24437,7 @@ the handler returns by default.
 @c COMMON
 
 @c EN
-Here are some calls that are not simply restared by signal interruption.
+Here are some calls that are not simply restarted by signal interruption.
 @c JP
 シグナル割り込みによって単純にリスタートされないものは次の通りです。
 @c COMMON

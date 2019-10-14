@@ -1212,7 +1212,7 @@ the directory at once.  @xref{Directories}.
 @item readlink
 @c EN
 Gauche's @code{sys-readlink}.  @xref{Directory manipulation}.
-This function is available on systems that support symbolink links.
+This function is available on systems that support symbolic links.
 @c JP
 Gauche の @code{sys-readlink}。@ref{Directory manipulation} 参照。
 この関数はシンボリックリンクをサポートしているシステム上で利用可能です。
@@ -1634,7 +1634,7 @@ Not supported yet.
 @item symlink
 @c EN
 Gauche's @code{sys-symlink}.  @xref{Directory manipulation}.
-This function is available on systems that support symbolink links.
+This function is available on systems that support symbolic links.
 @c JP
 Gauche の @code{sys-symlink}。@ref{Directory manipulation}参照。
 この関数は、シンボリックリンクをサポートしているシステム上で利用可能です。

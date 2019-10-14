@@ -561,7 +561,7 @@ but does not call @code{exit(2)} at the end.  This is useful
 for applications that want to shut down Gauche runtime but
 need to continue running.
 
-Once you call @code{Scm_Cleanup()}, you shoudn't use any
+Once you call @code{Scm_Cleanup()}, you shouldn't use any
 other Gauche functions.
 
 It is harmless to call @code{Scm_Cleanup()} more than once;
@@ -704,7 +704,7 @@ objects referred from @var{obj} are in such state.
 You can't choose which thread will call the finalizer.  Any thread that
 allocates may call the finalizer.
 
-You can ressurrect @var{obj} by storing a pointer to it in some root set.
+You can resurrect @var{obj} by storing a pointer to it in some root set.
 GC doesn't immediately put back @var{obj} to a free memor pool
 after the finalizer is run; basically
 it leaves @var{obj}'s fate to the finalizer.  If the finalizer doesn't keep
@@ -1160,7 +1160,7 @@ Corresponds to Scheme @code{logtest}.
 @deftypefun int Scm_LogBit (ScmObj @var{x}, int @var{b})
 Returns @code{TRUE} or @code{FALSE} if @var{b}-th bit of
 a Scheme exact integer @var{x} is set or not set, respectively.
-0-th bit is the least siginificant bit.
+0-th bit is the least significant bit.
 Corresponds to Scheme @code{logbit}.
 @end deftypefun
 
@@ -2949,7 +2949,7 @@ Must be treated as opaque structure.
 An iterator can point to one of the entries in a tree core,
 or @code{NULL}.  The @code{NULL} indicates the iterator is
 outside of the tree---it's both below the minimum key and above
-the maximum key simulaneously.  That is, when an iterator points
+the maximum key simultaneously.  That is, when an iterator points
 to @code{NULL}, when you call @code{Scm_TreeIterNext} you'll get
 the minimum key entry, while you call @code{Scm_TreeIterPrev} and
 you'll get the maximum key entry.

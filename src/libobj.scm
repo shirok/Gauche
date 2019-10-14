@@ -198,7 +198,7 @@
  (define-cproc %make-next-method (gf methods::<list> args::<list>)
    (let* ([argv::ScmObj*] [argc::ScmSize])
      (unless (Scm_TypeP gf SCM_CLASS_GENERIC)
-       (Scm_Error "generic function requied, but got %S" gf))
+       (Scm_Error "generic function required, but got %S" gf))
      (dolist [mp methods]
        (unless (Scm_TypeP mp SCM_CLASS_METHOD)
          (Scm_Error "method required, but got %S" mp)))

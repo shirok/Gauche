@@ -1,5 +1,5 @@
 /*
- * identifierP.h - identifier structur
+ * identifierP.h - identifier structure
  *
  *   Copyright (c) 2000-2019  Shiro Kawai  <shiro@acm.org>
  *

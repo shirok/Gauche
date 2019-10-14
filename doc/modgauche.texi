@@ -919,7 +919,7 @@ a square matrix, and @var{pow} must be a nonnegative exact integer.
 @c MOD gauche.array
 @c EN
 Inverse of @code{array-mul}; @code{array-div-left}
-rrturns a matrix @code{M} such that @code{(array-mul B M)}
+returns a matrix @code{M} such that @code{(array-mul B M)}
 equals to @code{A}, and @code{array-div-right} returns
 a matrix @code{M} such that @code{(array-mul M B)} equals to @code{A}.
 @var{A} and @var{B} must be a 2-dimensional square matrix.
@@ -1352,7 +1352,7 @@ Placed inside the initialization function, which appears at
 the end of the C source.
 @end table
 
-The following procedures are the simple way to put a souce
+The following procedures are the simple way to put a source
 code fragments in an appropriate part:
 
 @defun cgen-extern code @dots{}
@@ -1879,7 +1879,7 @@ any S-expression (quasiquote comes pretty handy).
 
 C types can be written either as a symbol (e.g. @code{int}) or
 a list (e.g. @code{(const char *)}.  When used in definition, it is
-preceded by @code{::}.  The following example shows typess
+preceded by @code{::}.  The following example shows types
 are used in local variable definitions:
 
 @example
@@ -1889,7 +1889,7 @@ are used in local variable definitions:
 @end example
 
 For the convenience and readability, you can write the variable name,
-separting double-colon and type name concatenated.  You can also concatenate
+separating double-colon and type name concatenated.  You can also concatenate
 point suffixes (@code{char*} instead of @code{char *} in the following example):
 
 @example
@@ -2034,7 +2034,7 @@ generates the latter.
 header files, e.g. @code{(.include <stdint.h>)}.
 @end deffn
 
-@deffn {CiSE Statement} define-cfn name (arg [@code{::} type] @dots{}) [ret-type [qualiter @dots{}]] stmt @dots{}
+@deffn {CiSE Statement} define-cfn name (arg [@code{::} type] @dots{}) [ret-type [qualifier @dots{}]] stmt @dots{}
 Defines a C function.
 
 If @var{type} or @var{ret-type} is omitted, the default type is
@@ -2289,7 +2289,7 @@ supported.
 
 @itemize
 @item
-@code{(setter @var{setter-name})} : specfy setter. @var{setter-name} should
+@code{(setter @var{setter-name})} : specify setter. @var{setter-name} should
 be a cproc name defined in the same stub file
 
 @item
@@ -4599,7 +4599,7 @@ A @file{configure} script tests
 running system's properties to determine values of
 substitution parameters, then read one or more template build files,
 and write out one output build file for each, replacing
-substutition parameters for the assigned values.
+substitution parameters for the assigned values.
 @c JP
 @file{configure}スクリプトは、それを実行しているシステムの特性を調べて
 置換パラメータの値を決定し、ビルドファイルのテンプレート中の置換パラメータを
@@ -5399,7 +5399,7 @@ used instead of the found program name to be set to @var{sym}.
 The list of search paths is taken from @code{PATH} environment
 variable.  You can override the list by the @var{paths} keyword
 argument, which must be a list of directory names.  It may contain
-nonexistent directory names, which are siently skipped.
+nonexistent directory names, which are silently skipped.
 
 The @var{filter} keyword argument, if given, must be a predicate
 that takes full pathname of the executable program.  It is called
@@ -5838,7 +5838,7 @@ This corresponds to autoconf's @code{AC_OUTPUT}.
 For each @var{file}, a file named @file{@var{file}.in} is read
 as a template.  Within the file, @code{@@PARAMETER@@} is substituted
 with the value of @code{(cf$ 'PARAMETER)}.  If the named parameter
-isn't registetered, a warning is issued and the parameter is left
+isn't registered, a warning is issued and the parameter is left
 unsubstited.
 
 If config headers are not registered via @code{cf-config-headers},
@@ -6469,7 +6469,7 @@ When duplicate relations are found, does nothing and returns @code{#f}.
 @end table
 
 Note: At this moment, an attempt to add a relation exactly same as the
-existing one is regareded as a conflict.  This limitation may be
+existing one is regarded as a conflict.  This limitation may be
 lifted in future.
 @end defun
 
@@ -7241,7 +7241,7 @@ MSBからビットを取り出します。
 The optional @var{start} and/or @var{end} arguments are used to specify
 the range of bitfield, LSB being 0.  Unlike @code{list->generator} etc,
 @var{start} specifies the rightmost position (inclusive) and
-@var{end} specfies the leftmost position (exclusive).  It is consistent
+@var{end} specifies the leftmost position (exclusive).  It is consistent
 with other procedures that accesses bit fields in integers
 (@pxref{Bitwise operations}).
 @c JP
@@ -10297,7 +10297,7 @@ the log drain temporary.
 Formats a log message by @var{format} and @var{arg @dots{}}, by using
 @code{format} (@pxref{Output}).    In the first form, the output goes
 to the default destination.  In the second form, the output goes to
-the specfied drain.
+the specified drain.
 @c JP
 ログメッセージを@code{format}手続きでフォーマットし(@ref{Output}参照)、
 指定された行き先に書き出します。最初の形式ではデフォルトの行き先が使われます。
@@ -10982,7 +10982,7 @@ IP アドレスをもつ場合、ソケットアドレスはそれぞれのIPア
 @defun inet-string->address address
 @c MOD gauche.net
 @c EN
-Converts string representating of the internet address @var{address}
+Converts string representing of the internet address @var{address}
 to an integer address.  If @var{address} is parsed successfully,
 returns two values: the integer address value and the recognized
 protocol (the constant value @code{2} (= @code{AF_INET})
@@ -15278,10 +15278,10 @@ of @var{process}, which represents the last process in the pipeline;
 if an other subprocess exits with nonzero status, it is stored in
 its respective process objects, but won't cause a fuss.
 
-If you speficy a true value to @var{nohang} for the pipelined
+If you specify a true value to @var{nohang} for the pipelined
 process, @code{process-wait} still
 probes other subprocesses in the pipeline and updates exit statuses
-of termianted ones, but doesn't wait unterminated subprocesses.
+of terminated ones, but doesn't wait unterminated subprocesses.
 The unterminated subprocesses should be waited individually, or
 by @code{process-wait-any}, to collect their exit statuses.
 @c JP
@@ -18780,7 +18780,7 @@ For example, the following test passes if @code{proc} returns either
 @c EN
 Similar to @code{test-one-of}, but creates a special object
 representing @emph{none of the choices}.
-The test succees if the test expression evaluates to a value that
+The test suceeds if the test expression evaluates to a value that
 don't match any of @var{choice}s.
 @c JP
 @emph{@var{choice} @dots{} のいずれでもない} を表現する特別なオブジェクトを返します。
@@ -19603,7 +19603,7 @@ Once a thread is in this state, the state can no longer be changed.
 @end table
 
 @c EN
-Access to the resouces shared by multiple threads must be protected
+Access to the resources shared by multiple threads must be protected
 explicitly by synchronization primitives.
 @xref{Synchronization primitives}.
 @c JP
@@ -19886,7 +19886,7 @@ if timeout reached.   When @var{timeout-val} is omitted, @code{#f}
 is assumed.
 @c JP
 @code{thread-stop!}の戻り値は、対象スレッドを停止させられたなら
-その@var{thread}オブジェクト、タイムアウトしたなら@var{tiemout-val}です。
+その@var{thread}オブジェクト、タイムアウトしたなら@var{timeout-val}です。
 @var{timeout-val}が省略された場合は@code{#f}とみなされます。
 @c COMMON
 
@@ -20057,7 +20057,7 @@ use following higher-level synchronization utilities:
 @table @asis
 @item Atoms
 An atom is a wrapper of arbitrary Scheme object, and allows synchronized
-access to it somewhat like Java's @code{synchroized} blocks.  Atoms are
+access to it somewhat like Java's @code{synchronized} blocks.  Atoms are
 explained in this section.
 @item MT-Queues
 Thread-safe queues (@code{<mtqueue>}) are provided in @code{data.queue} module
@@ -21475,7 +21475,7 @@ Unicodeとして不正なコードポイントに対しては空リストが返�
 @c MOD gauche.unicode
 @c EN
 Takes @var{octet} as the first octet of UTF-8 sequence, and
-returns the number of total octets requried to decode
+returns the number of total octets required to decode
 the codepoint.
 @c JP
 @var{octet}をutf-8シーケンスの最初のオクテットとみなし、
@@ -23383,7 +23383,7 @@ The optional @var{skip} argument must be a nonnegative exact integer
 or @code{#f}.  If it is a positive integer, the number of elements after
 every key in the @var{uvector} is ignored.  For example, if @var{skip} is 2
 and @var{uvector} is @code{#u8(3 100 101 5 102 103 13 104 105)},
-only @code{3}, @code{5} and @code{13} are subject to seach, and elements
+only @code{3}, @code{5} and @code{13} are subject to search, and elements
 inbetween are ignored.  This allows the caller to store @emph{payload},
 or associated value to each key, in the @var{uvector} itself.
 If @var{skip} is positive integer, the length of the searched portion
@@ -23419,7 +23419,7 @@ match isn't found.  It can be either one of the following values:
 @item @code{#f}
 @c EN
 This is the default.
-The procedure seaches the element that is equal to @var{key}, and
+The procedure searches the element that is equal to @var{key}, and
 returns @code{#f} if such element isn't found.
 @c JP
 これがデフォルトです。@var{key}と等しい要素だけを探し、
@@ -24001,7 +24001,7 @@ arguments as is, or returns a pre-computed value,
 so you shouldn't assume the return values are freshly
 allocated objects, unless it is noted so explicitly.)
 
-A linear update version may reuse the stoarge of the designated
+A linear update version may reuse the storage of the designated
 argument to produce the return value.  Gauche tries to reuse the
 argument as much as possible, but you should always use the return
 value and shouldn't assume the argument itself is modified in-place.
@@ -25021,7 +25021,7 @@ The reason of having @code{<pre-subrelease>} is to allow
 A trick: If you want ``version 1.2 release or later'', you
 can say @code{(version<=? "1.2" v)}.  This excludes prerelease
 versions such as @code{1.2_pre3}.
-If you want ``verison 1.2 release or later'', 
+If you want ``version 1.2 release or later'', 
 you can say @code{(version<=? "1.2_" v)}, which includes
 @code{1.2_pre1} etc., but excludes anything below, such as
 @code{1.1.99999}.
@@ -25133,7 +25133,7 @@ satisfies a version specification.
 @c MOD gauche.version
 @c EN
 This is a syntax checker.  Returns @code{#t} if @var{spec} is
-a valid version specfication, @code{#f} otherwise.
+a valid version specification, @code{#f} otherwise.
 See @code{gauche.version} module description for the definition of
 version specification.
 @c JP
@@ -25147,7 +25147,7 @@ version specification.
 @c MOD gauche.version
 @c EN
 Returns @code{#t} if @var{version} satisfies
-a version specfication @var{spec}, @code{#f} otherwise.
+a version specification @var{spec}, @code{#f} otherwise.
 See @code{gauche.version} module description for the definition of
 version specification.
 @c JP

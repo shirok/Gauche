@@ -4115,7 +4115,7 @@ of nonnegative integers.
 @c EN
 A ring buffer is an array with two fill pointers; in a typical usage,
 a producer adds new data to one end while a consumer removes data
-from the other end; if fill pointer reachers at the end of the array,
+from the other end; if fill pointer reaches at the end of the array,
 it wraps around to the beginning, hence the name.
 @c JP
 リングバッファは、両端を指す二つのポインタを持つ配列と考えられます。良くある使い方は、
@@ -4993,7 +4993,7 @@ All of these sparse matrix subtypes can be accessed by the same API.
 @clindex sparse-f32matrix
 @clindex sparse-f64matrix
 @c MOD data.sparse
-The actual sparce matrix classes.  Inherits @code{<sparse-matrix-base>}.
+The actual sparse matrix classes.  Inherits @code{<sparse-matrix-base>}.
 An instance of @code{<sparse-matrix>} can contain any Scheme objects.
 
 @code{@@} is either one of @code{s8}, @code{u8},
@@ -8882,7 +8882,7 @@ by default.
   @result{} "/bin/ls"
 
 @c EN
-;; @r{example of searchin user preference file of my application}
+;; @r{example of searching user preference file of my application}
 @c JP
 ;; @r{アプリケーション"myapp"のユーザプレファレンスファイルを探す例}
 @c COMMON
@@ -10280,7 +10280,7 @@ On the other hand,
 each sequence returned by @code{primes} are realized individually,
 duplicating calculation.  
 
-The rule of thumb is---if you use primes repeatedly throughtout
+The rule of thumb is---if you use primes repeatedly throughout
 the program, just use @code{*primes*} and you'll save calculation.
 If you need primes one-shot, call @code{primes} and abandon it
 and you'll save space.
@@ -12644,7 +12644,7 @@ format depends on the server.
 @defunx ftp-ls conn :optional path
 @c MOD rfc.ftp
 @c EN
-Return the list of names in the specfied @var{path}, or the current
+Return the list of names in the specified @var{path}, or the current
 remote directory, without any other information.  @code{ftp-ls}
 is just an alias of @code{ftp-name-list} for the convenience.
 @c JP
@@ -13021,7 +13021,7 @@ The following keywords are treated specially.
 
 @table @code
 @item :value
-Speficies the value of the parameter.  The convenience form,
+Specifies the value of the parameter.  The convenience form,
 @code{(@var{name} @var{val})}, is just an abbreviation of
 @code{(@var{name} :value @var{val})}.
 @item :file
@@ -15319,7 +15319,7 @@ Uniform Resource Identifiers、
 @c COMMON
 @end deftp
 
-First, lets review the structur of URI briefly.
+First, lets review the structure of URI briefly.
 The following graph shows how the URI is constructed:
 
 @example
@@ -15695,7 +15695,7 @@ full or part of URIs.  This procedure resolves @var{relative-uri}
 in relative to @var{base-uri}, as defined in RFC3986 Section 5.2.
 ``Relative Resolution''.
 
-If more @var{realtive-uri2}s are given, first @var{relative-uri}
+If more @var{relative-uri2}s are given, first @var{relative-uri}
 is merged to @var{base-uri}, then the next argument is merged
 to the resulting uri, and so on.
 @c JP
@@ -18920,7 +18920,7 @@ one. This lets you pass arguments to the procedure.
 
 @example
 ;; select all <book> elements whose style attribute value is equal to
-;; the <bookstore> element's speciality attribute value.
+;; the <bookstore> element's specialty attribute value.
 (sxpath "//book[/bookstore/@@specialty=@@style]")
 ;; a similar query but this time make sure specialty of _all_
 ;; bookstores is matched
@@ -21977,7 +21977,7 @@ This procedure is thread-safe.
 @deffn {Generic Function} edn-write obj
 @c MOD text.edn
 @c EN
-Write EDN represenation of @var{obj} to the current output port.
+Write EDN representation of @var{obj} to the current output port.
 The @code{construct-edn} procedure calls this internally.
 
 To write out a Gauche object as EDN tagged object, define a method to
@@ -24482,7 +24482,7 @@ Three algorithms are implemented:
 @item Levenshtein distance
 @c EN
 Count deletion of one element, insertion of one element,
-and susbstitution of one element.
+and substitution of one element.
 @c JP
 1要素の削除、1要素の追加、1要素の置き換えそれぞれを1操作と数えます。
 @c COMMON
@@ -26053,7 +26053,7 @@ Creates a new stream whose element is determined as follows:
 @itemize
 @item
 A ``go'' predicate @var{p} is called on the current seed value.
-If it yields @code{#f}, the stream teminates.
+If it yields @code{#f}, the stream terminates.
 @item
 Otherwise, @code{(f s)} is the element of the stream,
 and @code{(g s)} becomes the next seed value, where
@@ -26329,7 +26329,7 @@ Creates a new stream which appends @var{elt} @dots{} before @var{stream}.
 [R7RS stream]
 @c MOD util.stream
 @c EN
-Retrun a new stream whose elements are the elements in @var{list}.
+Returns a new stream whose elements are the elements in @var{list}.
 @c JP
 @var{list}の要素を要素とする新たなストリームを作って返します。
 @c COMMON
@@ -28425,7 +28425,7 @@ The following is the complete rules of SxCSS syntax.
              | (style-decls <declaration> ...)
 
 <pattern>   : <selector> | (:or <selector> ...)
-<seletor>   : <simple-selector>
+<selector>  : <simple-selector>
             | <chained-selector>
 <chained-selector> : (<simple-selector> . (<op>? . <chained-selector>))
 <op>        : > | + | ~

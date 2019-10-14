@@ -260,7 +260,7 @@
   ;; guard quasiquote unquote unquote-splicing case-lambda
 
   ;; 4.3 Macros
-  ;; let-synatx letrec-syntax syntax-rules syntax-error
+  ;; let-syntax letrec-syntax syntax-rules syntax-error
 
   ;; 5.3 Variable definitions
   ;; define define-values

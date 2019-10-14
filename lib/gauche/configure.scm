@@ -905,7 +905,7 @@
 ;;;
 
 ;; Various language-specific operations are defined as methods on
-;; the language signleton object inheriting <cf-language>.
+;; the language singleton object inheriting <cf-language>.
 ;; Methods a named with -m suffix to distinguish from cf- API, which
 ;; is a usual procedure dispatches according to the current
 ;; language.
