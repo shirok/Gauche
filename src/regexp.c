@@ -653,7 +653,7 @@ static ScmObj rc1_lex_minmax(regcomp_ctx *ctx)
         } else if (ch == ',') {
             /* NB: The following line makes us to treat {,m} as {0,m}.
                Oniguruma does so.  Perl doesn't.  Strictly speaking they're
-               incompatibile to each other (if Perl code /a{,3}/ expects
+               incompatible to each other (if Perl code /a{,3}/ expects
                to match "a{,3}", it needs to be written as /a\{,3}/ in
                Oniguruma).   Let's take Oniguruma now. */
             if (rep_min < 0) rep_min = 0;

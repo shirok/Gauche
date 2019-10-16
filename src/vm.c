@@ -99,7 +99,7 @@ static unsigned long vminsn_offsets[SCM_VM_NUM_INSNS] = { 0, };
 /*
  * The VM.
  *
- *   VM encapsulates the dynamic status of the current exection.
+ *   VM encapsulates the dynamic status of the current execution.
  *   In Gauche, there's always one active virtual machine per thread,
  *   referred by Scm_VM().   From Scheme, VM is seen as a <thread> object.
  *
@@ -1147,7 +1147,7 @@ int Scm__VMProtectStack(ScmVM *vm)
 
 /* The inverse of Scm__VMProtectStack.  This is required if you called
  * Scm__VMProtectStack _in_the_middle_of_VM_instruction_execution_.
- * The VM instruciton may push things after that, counting on the fact
+ * The VM instruction may push things after that, counting on the fact
  * that subsequent instructoins use the pushed item.  However,
  * Scm__VMProtectStack makes the next instruction to be executed
  * to RET.  This makes the thing pushed by the current instruction be
@@ -1541,7 +1541,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                 */
                 Scm_Exit(EX_SOFTWARE);
             } else {
-                /* Jump again until C stack is recovered.  We sould pop
+                /* Jump again until C stack is recovered.  We could pop
                    the extra continuation frame so that the VM stack
                    is consistent. */
                 vm->cont = cstack.cont;
@@ -2722,7 +2722,7 @@ static void process_queued_requests(ScmVM *vm)
             vm->state = SCM_VM_TERMINATED;
             break;
         default:
-            Scm_Panic("Unkown value in vm->stopRequest (%d).  Aborting.",
+            Scm_Panic("Unknown value in vm->stopRequest (%d).  Aborting.",
                       vm->stopRequest);
         }
         SCM_INTERNAL_MUTEX_SAFE_LOCK_END();

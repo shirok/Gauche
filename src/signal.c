@@ -693,7 +693,7 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
     }
 
     if (mask == NULL) {
-        /* If no mask is specified, block singals in SIGS. */
+        /* If no mask is specified, block signals in SIGS. */
         mask = make_sigset();
         mask->set = sigset;
     }

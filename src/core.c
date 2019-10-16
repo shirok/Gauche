@@ -37,7 +37,7 @@
 
 /* GC_print_static_roots() is declared in private/gc_priv.h.  It is too much
    hassle to include it with other GC internal baggages, so we just declare
-   it.  It's a private funciton of GC, so watch out the changes in GC. */
+   it.  It's a private function of GC, so watch out the changes in GC. */
 extern void GC_print_static_roots(void);
 
 /*

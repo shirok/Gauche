@@ -514,7 +514,7 @@ int Scm_FdReady(int fd, int dir)
  *        bc                                  e
  *
  *  Close
- *    Port is closed either explicitly (via close-port etc) or implicity
+ *    Port is closed either explicitly (via close-port etc) or implicitly
  *    (via GC -> finalizer).   In either case, the flusher is called first
  *    if there's any data remaining in the buffer.   Then, if the closer
  *    procedure (port->src.buf.closer) is not NULL, and port->owner is TRUE,

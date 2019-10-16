@@ -394,7 +394,7 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
  * functions.
  */
 
-/* The implementation of dynamic loader is a bit complicated in the presense
+/* The implementation of dynamic loader is a bit complicated in the presence
    of multiple threads and multiple initialization routines.
 
    We keep ScmDLObj record for each DYNAMIC-LOADed files (keyed

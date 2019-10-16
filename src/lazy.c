@@ -523,7 +523,7 @@ int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
             }
             if (lp->owner == (ScmAtomicWord)1) {
                 /* Somebody else has forced OBJ.  In the typical cases
-                   where we call this funtion for co-recursive lazy
+                   where we call this function for co-recursive lazy
                    algorithms, this situation rarely happens.   We fallthrough
                    to the SCM_PAIRP check below to return appropriate
                    values. */

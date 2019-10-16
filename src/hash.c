@@ -453,7 +453,7 @@ ScmObj Scm_CurrentRecursiveHash(ScmObj newval)
    
    It is guaranteed that the hash value won't change for the same objects
    (roughly, indistinguishable in their external representation)
-   accross the runs of the program, and among different platforms.
+   across the runs of the program, and among different platforms.
    That is, the value can be used in persistent stores.
  */
 u_long Scm_PortableHash(ScmObj obj, u_long salt)

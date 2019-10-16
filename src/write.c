@@ -83,7 +83,7 @@ static const ScmWriteControls *defaultWriteControls;
    (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)? \
     SCM_WRITE_CASE_FOLD:SCM_WRITE_CASE_NOFOLD)
 
-/* Whether we need 'walk' pass to find out shared and/or ciruclar
+/* Whether we need 'walk' pass to find out shared and/or circular
    structure.  Now we use two-pass writing by default, and use one-pass
    writing only when requested specifically. */
 #define WRITER_NEED_2PASS(ctx) (SCM_WRITE_MODE(ctx) != SCM_WRITE_SIMPLE)
@@ -1119,7 +1119,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap,
 {
     if (!SCM_OPORTP(out)) Scm_Error("output port required, but got %S", out);
 
-    /* TOOD: handle sharedp */
+    /* TODO: handle sharedp */
     ScmObj args = vprintf_pass1(out, fmt, ap);
 
     ScmVM *vm = Scm_VM();

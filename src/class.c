@@ -316,7 +316,7 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
 
 /* Defining builtin class in C.
  *
- *    Defining classes in C is devided in two steps.  First, you have to
+ *    Defining classes in C is divided in two steps.  First, you have to
  *    define the static part of the class; it is done by one of the
  *    SCM_DEFINE_***_CLASS macros provided in gauche.h, and it defines
  *    static instance of ScmClass structure.  Then, in the initialization

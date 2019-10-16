@@ -1996,7 +1996,7 @@ void Scm_SysKill(ScmObj process, int signal)
     SCM_SYSCALL(r, kill(pid, signal));
     if (r < 0) Scm_SysError("kill failed");
 #else  /*GAUCHE_WINDOWS*/
-    /* You cannot really "send" singals to other processes on Windows.
+    /* You cannot really "send" signals to other processes on Windows.
        We try to emulate SIGKILL and SIGINT by Windows API.
        To send a signal to the current process we can use raise(). */
     HANDLE p;
@@ -2318,7 +2318,7 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
    whenever we put a new definition of envvars we've inserted before.
 
    Another merit of this compatibility layer is to guarantee MT-safeness;
-   Putenv/setenv aren't usally MT-safe, neither is getenv when environment
+   Putenv/setenv aren't usually MT-safe, neither is getenv when environment
    is being modified.
 */
 
@@ -3096,10 +3096,10 @@ int Scm__InternalCondWait(ScmInternalCond *cond, ScmInternalMutex *mutex,
 
     if (lastWaiter) {
         /* tell the broadcaster that all the waiters have gained
-           control, and wait to aquire mutex. */
+           control, and wait to acquire mutex. */
         r1 = SignalObjectAndWait(cond->done, *mutex, INFINITE, FALSE);
     } else {
-        /* Aquire mutex */
+        /* Acquire mutex */
         r1 = WaitForSingleObject(*mutex, INFINITE);
     }
     if (r0 == WAIT_TIMEOUT) return SCM_INTERNAL_COND_TIMEDOUT;

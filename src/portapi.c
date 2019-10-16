@@ -1062,7 +1062,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
                 p->src.buf.current = p->src.buf.end; /* invalidate buffer */
                 SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
                 if (r == (off_t)-1) {
-                    /* This may happend if seeker somehow gave up */
+                    /* This may happened if seeker somehow gave up */
                     p->src.buf.current = c;
                 }
             } else {
