@@ -1,3 +1,8 @@
 inspecode:
-  cppcheck:
-    threshold: 0
+  misspell: default
+  clanf-format: default
+  cpd: default
+  infer: default
+  uncrustify: default
+  unused: default
+  scan-build: default
