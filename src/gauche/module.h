@@ -60,7 +60,7 @@ struct ScmModuleRec {
                                    different name if export renaming is in
                                    effect) */
     ScmObj origin;              /* if this module is an anonymous wrapper
-                                   module, this holds a orginal module.
+                                   module, this holds a original module.
                                    this isn't used for resolving bindings,
                                    but used to avoid duplicating imports. */
     ScmObj prefix;              /* if symbol, all bindings in this module

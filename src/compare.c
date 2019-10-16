@@ -221,7 +221,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
     else return 1;
 }
 
-/* NB: It turns out that calling back Scheme funtion from sort routine
+/* NB: It turns out that calling back Scheme function from sort routine
    is very inefficient and runs much slower than Scheme version, if
    a Scheme comarison function is given.
    So, as of 0.7.2, the C function is only used when a comparison

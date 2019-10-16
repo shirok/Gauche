@@ -100,7 +100,7 @@ typedef struct ScmPortBufferRec {
 #define SCM_PORT_BUFFER_AVAIL(p) \
     (int)((p)->src.buf.current-(p)->src.buf.buffer)
 
-/* The funtion table of procedural port. */
+/* The function table of procedural port. */
 
 typedef struct ScmPortVTableRec {
     int     (*Getb)(ScmPort *p);

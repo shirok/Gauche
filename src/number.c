@@ -2623,7 +2623,7 @@ ScmObj Scm_Gcd(ScmObj x, ScmObj y)
 }
 
 /*===============================================================
- * Exponential and trigometric funcitons
+ * Exponential and trigometric functions
  */
 
 /* Integer power of 10.  It is extensively used during string->number
@@ -3368,7 +3368,7 @@ static char *notational_roundup(const char *src, int start, int end)
 /* Notational rounding
    Should we use commercial rounding (round half towards infinity)
    or banker's rounding?  Since notational rounding is inherently
-   taking convenience than accuarcy, we go with commercial rounding.
+   taking convenience than accuracy, we go with commercial rounding.
 */
 static void notational_rounding(ScmDString *ds, int numstart, int precision)
 {

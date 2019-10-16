@@ -236,10 +236,10 @@ SCM_EXTERN ScmObj  Scm_StringAppend2(ScmString *x, ScmString *y);
 SCM_EXTERN ScmObj  Scm_StringAppendC(ScmString *x, const char *s,
                                      ScmSmallInt size, ScmSmallInt len);
 SCM_EXTERN ScmObj  Scm_StringAppend(ScmObj strs);
-SCM_EXTERN ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer);
+SCM_EXTERN ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim, int grammar);
 
 
-/* grammer spec for StringJoin (see SRFI-13) */
+/* grammar spec for StringJoin (see SRFI-13) */
 enum {
     SCM_STRING_JOIN_INFIX,
     SCM_STRING_JOIN_STRICT_INFIX,

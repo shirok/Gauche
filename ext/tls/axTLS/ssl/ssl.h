@@ -295,7 +295,7 @@ EXP_FUNC void STDCALL ssl_free(SSL *ssl);
  * @param ssl [in] An SSL object reference.
  * @param in_data [out] If the read was successful, a pointer to the read
  * buffer will be here. Do NOT ever free this memory as this buffer is used in
- * sucessive calls. If the call was unsuccessful, this value will be null.
+ * successive calls. If the call was unsuccessful, this value will be null.
  * @return The number of decrypted bytes:
  * - if > 0, then the handshaking is complete and we are returning the number 
  *   of decrypted bytes. 

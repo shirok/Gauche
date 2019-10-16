@@ -144,7 +144,7 @@ static ScmClassStaticSlotSpec synclo_slots[] = {
  * where the binding occur, for the efficient lookup and comparison.
  * Notably, the identifiers that are unbound or refer to toplevel variable 
  * has () in its env.
- * A caveat--we can't truncate frames at the time of consturction, since
+ * A caveat--we can't truncate frames at the time of construction, since
  * the entire frame structure may not be fixed while we're processing internal
  * defines.  The identifier may refer to another identifier that will be 
  * inserted later.  Thus, we delay the truncation operation until it is

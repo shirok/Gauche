@@ -126,7 +126,7 @@ extern ScmObj Scm_TLSSocket(ScmTLS *t);
    KZ: presumably due to block sizes imposed by the crypto algorithms
    used, TLSRead() doesn't take a desired size and instead returns
    whatever the underlying TLS layer was able to read and
-   decrypt. size accomodation is implemented in tls.scm.
+   decrypt. size accommodation is implemented in tls.scm.
  */
 extern ScmObj Scm_TLSRead(ScmTLS* t);
 extern ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg);

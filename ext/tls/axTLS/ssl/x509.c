@@ -389,7 +389,7 @@ static bigint *sig_verify(BI_CTX *ctx, const uint8_t *sig, int sig_len,
 
     const uint8_t *sig_prefix = NULL; 
     uint8_t sig_prefix_size = 0, hash_len = 0;
-    /* adjust our expections */
+    /* adjust our exceptions */
     switch (sig_type)
     {
         case SIG_TYPE_MD5:

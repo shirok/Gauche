@@ -59,7 +59,7 @@ typedef pthread_t ScmInternalThread;
 #define SCM_INTERNAL_THREAD_PROC_RETTYPE   void*
 #define SCM_INTERNAL_THREAD_PROC_RETVAL    NULL
 
-/* On POSIX systems, when avaialble, we reserve one signal to notify
+/* On POSIX systems, when available, we reserve one signal to notify
    other threads to terminate.
    NB: POSIX requires at least 8 realtime signals, but cygwin doesn't
    provide them (on cygwin, SIGRTMIN == SIGRTMAX).   We use SIGPWR

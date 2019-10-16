@@ -647,7 +647,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
 #undef BODY_ARRAY_SIZE
 }
 
-ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
+ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammar)
 {
 #define BODY_ARRAY_SIZE 32
     ScmSmallInt size = 0, len = 0;
@@ -657,8 +657,8 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
     ScmSmallInt nstrs = Scm_Length(strs);
     if (nstrs < 0) Scm_Error("improper list not allowed: %S", strs);
     if (nstrs == 0) {
-        if (grammer == SCM_STRING_JOIN_STRICT_INFIX) {
-            Scm_Error("can't join empty list of strings with strict-infix grammer");
+        if (grammar == SCM_STRING_JOIN_STRICT_INFIX) {
+            Scm_Error("can't join empty list of strings with strict-infix grammar");
         }
         return SCM_MAKE_STR("");
     }
@@ -692,8 +692,8 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
         }
         bodies[i++] = b;
     }
-    if (grammer == SCM_STRING_JOIN_INFIX
-        || grammer == SCM_STRING_JOIN_STRICT_INFIX) {
+    if (grammar == SCM_STRING_JOIN_INFIX
+        || grammar == SCM_STRING_JOIN_STRICT_INFIX) {
         ndelim = nstrs - 1;
     } else {
         ndelim = nstrs;
@@ -704,7 +704,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
 
     char *buf = SCM_NEW_ATOMIC2(char *, size+1);
     char *bufp = buf;
-    if (grammer == SCM_STRING_JOIN_PREFIX) {
+    if (grammar == SCM_STRING_JOIN_PREFIX) {
         memcpy(bufp, SCM_STRING_BODY_START(dbody), dsize);
         bufp += dsize;
     }
@@ -717,7 +717,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
             bufp += dsize;
         }
     }
-    if (grammer == SCM_STRING_JOIN_SUFFIX) {
+    if (grammar == SCM_STRING_JOIN_SUFFIX) {
         memcpy(bufp, SCM_STRING_BODY_START(dbody), dsize);
         bufp += dsize;
     }
@@ -866,7 +866,7 @@ static ScmSmallInt boyer_moore_reverse(const char *ss1, ScmSmallInt siz1,
    if only byte index is calculated.
 
    When the encoding is utf-8 or none, we can scan a string as if it is just
-   a bytestring.   The only caveat is that, with utf-8, we need to caclulate
+   a bytestring.   The only caveat is that, with utf-8, we need to calculate
    character index after we find the match.  It is still a total win, for
    finding out non-matches using Boyer-Moore is a lot faster than naive way.
 

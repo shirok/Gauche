@@ -62,7 +62,7 @@ struct ScmCompiledCodeRec {
                                    its name.  Otherwise #f. */
     ScmObj debugInfo;           /* debug info, that associates instructions
                                    and source code / other metainfo.  May be
-                                   () if no info is avaialble. (*3) */
+                                   () if no info is available. (*3) */
     ScmObj signatureInfo;       /* signature info, a metainfo related to the
                                    interface of this closure.   Maybe #f
                                    if no info is available. (*4) */

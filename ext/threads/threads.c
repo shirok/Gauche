@@ -389,7 +389,7 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
    We try to terminate the thread gracefully as possible.
    First, we use vm->stopRequest mechanism.  If the target thread is
    in VM loop, it responds to the flag and terminates itself.
-   If that fails, then we use more agressive means.
+   If that fails, then we use more aggressive means.
 
    TODO: We should probably make it configurable whether to use the
    forcible termination---it is too dangerous.

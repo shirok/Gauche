@@ -102,7 +102,7 @@
  *   So we employ some atomic pointer operations so that readers can
  *   see the consistent state even another thread is modifying it.
  *
- *   We still aquire GF lock whenever we modify the mhash, so there's
+ *   We still acquire GF lock whenever we modify the mhash, so there's
  *   at most one thread that's modifying it.  Modification is only required
  *   when a new method is added to the GF or any one of classes that
  *   specializes one of the methods is redefined.

@@ -27,7 +27,7 @@ rm -rf $framework_dir
 mkdir $prefix/Resources
 cp src/Info.plist $prefix/Resources
 
-# Creates apropriate links
+# Creates appropriate links
 rm -f $framework_dir/Versions/Current
 ln -s ./$version $framework_dir/Versions/Current
 rm -f $framework_dir/Headers

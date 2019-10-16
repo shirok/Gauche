@@ -387,7 +387,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     } else if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_OUTPUT_PORT)) {
         dir = SCM_PORT_OUTPUT;
     } else {
-        Scm_Panic("vport_allocate: implementaion error (class wiring screwed?)");
+        Scm_Panic("vport_allocate: implementation error (class wiring screwed?)");
     }
     ScmObj port = Scm_MakeVirtualPort(klass, dir, &vtab);
     SCM_PORT(port)->src.vt.data = data;
@@ -644,7 +644,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     } else if (Scm_SubtypeP(klass, SCM_CLASS_BUFFERED_OUTPUT_PORT)) {
         dir = SCM_PORT_OUTPUT;
     } else {
-        Scm_Panic("bport_allocate: implementaion error (class wiring screwed?)");
+        Scm_Panic("bport_allocate: implementation error (class wiring screwed?)");
     }
     ScmObj port = Scm_MakeBufferedPort(klass, SCM_FALSE, dir, TRUE, &buf);
     SCM_PORT(port)->name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
