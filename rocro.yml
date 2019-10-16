@@ -1,6 +1,6 @@
 inspecode:
   misspell: default
-  clanf-format: default
+  clang-format: default
   cpd: default
   infer: default
   uncrustify: default
