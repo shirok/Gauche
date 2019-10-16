@@ -7,4 +7,11 @@ inspecode:
   #uncrustify:
   #  auto-fix: true
   #  ignore: gc/*
-  #unused: default
+  unused:
+    ignore:
+      - gc/*
+      - ext/tls/axTLS/*
+    threshold:
+      num-issues: 0
+
+
