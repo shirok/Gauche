@@ -1,8 +1,9 @@
 inspecode:
   misspell: default
-  clang-format: default
+    threshold:
+      num-issues: 0
   cpd: default
-  infer: default
   uncrustify: default
+    auto-fix: true
+    ignore: gc/*
   unused: default
-  scan-build: default
