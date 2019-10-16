@@ -1,9 +1,9 @@
 inspecode:
-  misspell: default
+  misspell:
     threshold:
       num-issues: 0
   cpd: default
-  uncrustify: default
+  uncrustify:
     auto-fix: true
     ignore: gc/*
   unused: default
