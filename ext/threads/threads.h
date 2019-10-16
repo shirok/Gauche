@@ -108,25 +108,4 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
 ScmObj Scm_MutexLocker(ScmMutex *mutex);
 ScmObj Scm_MutexUnlocker(ScmMutex *mutex);
 
-/*
- * Scheme reader/writer lock.
- */
-typedef struct ScmRWLockRec {
-    SCM_HEADER;
-    ScmInternalMutex mutex;
-    ScmInternalCond cond;
-    ScmObj name;
-    ScmObj specific;
-    int numReader;
-    int numWriter;
-} ScmRWLock;
-
-SCM_CLASS_DECL(Scm_RWLockClass);
-#define SCM_CLASS_RWLOCK       (&Scm_RWLockClass)
-#define SCM_RWLOCK(obj)        ((ScmRWLock*)obj)
-#define SCM_RWLOCKP(obj)       SCM_XTYPEP(obj, SCM_CLASS_RWLOCK)
-
-ScmObj Scm_MakeRWLock(ScmObj name);
-
-
 #endif /*GAUCHE_THREADS_H*/
