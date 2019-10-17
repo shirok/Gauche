@@ -13,7 +13,6 @@ inspecode:
     ignore:
       - gc/*
       - ext/tls/axTLS/*
-      - ext/*
       - src/*
   unused:
     ignore:
