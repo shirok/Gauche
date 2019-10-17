@@ -838,11 +838,6 @@ void Scm_Format(ScmPort *out SCM_UNUSED,
  *  move away from %A in future.
  */
 
-struct vprintf_ctx {
-    const char *fmt;
-    ScmObj args;
-};
-
 /* NB: Scm_Vprintf scans format string twice.  In the first pass, arguments
  * are retrieved from va_list variable and pushed to a list.  In the second
  * pass, they are printed according to the format string.
