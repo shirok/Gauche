@@ -3,10 +3,16 @@ inspecode:
     auto-fix: true
     threshold:
       num-issues: 0
-  cpd: default
-  #uncrustify:
-  #  auto-fix: true
-  #  ignore: gc/*
+  cpd:
+    ignore:
+      - gc/*
+      - ext/tls/axTLS/*
+      - src/dws32hash.c
+      - src/dwsiphash.c
+  uncrustify:
+    ignore:
+      - gc/*
+      - ext/tls/axTLS/*
   unused:
     ignore:
       - gc/*
