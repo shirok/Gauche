@@ -10,10 +10,12 @@ inspecode:
       - src/dws32hash.c
       - src/dwsiphash.c
   uncrustify:
+    auto-fix: true
     ignore:
       - gc/*
       - ext/tls/axTLS/*
-      - src/*
+      # Uncrustify stumbles on WITH_GLOBAL_LOCK macro in netdb.c
+      - ext/net/netdb.c
   unused:
     ignore:
       - gc/*
