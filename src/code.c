@@ -886,7 +886,7 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
  * VM Instruction introspection
  */
 
-static struct insn_info {
+static struct {
     const char *name;           /* name */
     int nparams;                /* # of parameters */
     int operandType;            /* operand type */
