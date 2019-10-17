@@ -1,3 +1,9 @@
+2019-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/json.scm (%number): Fix number parser - converting integral
+	  part and fractional part separately to numbers then combining them
+	  could introduce rounding errors.
+
 2019-10-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (macroexpand-all): Also let it take environment

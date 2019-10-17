@@ -909,4 +909,9 @@
                                          "{\"b\":2,\"a\":1}")
        (construct-json-string (hash-table 'eq? '(a . 1) '(b . 2))))
 
+;; https://sourceforge.net/p/gauche/mailman/message/36786284/
+(test* "read/write invariance"
+       '#(48.529166)
+       (parse-json-string (construct-json-string '#(48.529166))))
+       
 (test-end)

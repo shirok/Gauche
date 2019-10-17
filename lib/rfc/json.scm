@@ -99,21 +99,13 @@
          ($between %begin-array ($sep-by %value %value-separator) %end-array)))
 
 (define %number
-  (let* ([%sign ($or ($lift (^_ -1) ($. #\-))
-                     ($lift (^_  1) ($. #\+))
-                     ($return 1))]
-         [%digits ($lift ($ string->number $ list->string $) 
-                         ($many ($. #[\d]) 1))]
-         [%int %digits]
-         [%frac ($let ([ ($. #\.) ]
-                       [d ($many ($. #[\d]) 1)])
-                  ($return (string->number (apply string #\0 #\. d))))]
-         [%exp ($lift (^[_ s d] (* s d)) ($. #[eE]) %sign %digits)])
-    ($lift (^[sign int frac exp]
-             (let1 mantissa (+ int frac)
-               (* sign (if exp (exact->inexact mantissa) mantissa)
-                  (if exp (expt 10 exp) 1))))
-           %sign %int ($or %frac ($return 0)) ($or %exp ($return #f)))))
+  (let* ([%sign ($optional ($->rope ($one-of #[+-])))]
+         [%digits ($->rope ($many ($. #[\d]) 1))]
+         [%frac ($->rope ($. #\.) ($many ($. #[\d]) 1))]
+         [%exp ($->rope ($. #[eE]) %sign %digits)])
+    ($lift ($ string->number $ string-concatenate
+              $ map rope->string $ list $*)
+           %sign %digits ($optional %frac) ($optional %exp))))
 
 (define %unicode
   (let ([%hex4 ($lift (^s (string->number (list->string s) 16))
