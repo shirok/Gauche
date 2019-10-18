@@ -1,5 +1,10 @@
 2019-10-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/libproc.scm, src/libmacro.scm (let-optionals*, let-keywords),
+	  (let-keywords*): Make these macros hygienic, and moved their
+	  definitions to libmacro (er-macro-transformer must be placed
+	  _after_ the compiler is initialized).
+
 	* src/compile-1.scm (pass1/extended-lambda-body): Insert aux macros
 	  hygienically.
 

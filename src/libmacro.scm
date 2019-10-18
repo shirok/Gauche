@@ -42,6 +42,7 @@
                              let-values let*-values define-values set!-values
                              values-ref values->list
                              assume assume-type cond-list unwind-protect
+                             let-keywords let-keywords* let-optionals*
                              define-compiler-macro))
 
 ;; This file defines built-in macros.
@@ -809,13 +810,160 @@
           (apply values r)))
       :rewind-before #t)))
 
+;;; Extended argument parsing
+
+;; Extended lambda formals (:optional, :key, :rest etc) are
+;; expanded into the call of let-optionals* and let-keywords*
+;; macros within the compiler.  Eventually the handling of the
+;; optional and keyword arguments will be built in the VM.
+
 (select-module gauche)
+(define-syntax let-optionals*
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ arg specs . body)
+        (define (rec arg vars&inits rest)
+          (cond
+           [(null? (cdr vars&inits))
+            (quasirename r
+              `((let ((,(caar vars&inits)
+                       (if (null? ,arg) ,(cdar vars&inits) (car ,arg)))
+                      ,@(if (null? rest)
+                          '()
+                          `((,rest (if (null? ,arg) '() (cdr ,arg))))))
+                  ,@body)))]
+           [else
+            (let ([g (gensym)]
+                  [v (caar vars&inits)]
+                  [i (cdar vars&inits)])
+              ;; NB: if the compiler were more clever, we could use receive
+              ;; or apply to make (null? ,arg) test once.  For now, testing it
+              ;; twice is faster.
+              (quasirename r
+                `((let ((,v (if (null? ,arg) ,i (car ,arg)))
+                        (,g (if (null? ,arg) '() (cdr ,arg))))
+                    ,@(rec g (cdr vars&inits) rest)))))]))
+        (let1 g (gensym)
+          (quasirename r
+            `(let ((,g ,arg))
+               ,@(rec g (map* (^s
+                               (cond [(and (pair? s) (pair? (cdr s)) (null? (cddr s)))
+                                      (cons (car s) (cadr s))]
+                                     [(or (symbol? s) (identifier? s))
+                                      (cons s '(undefined))]
+                                     [else (error "malformed let-optionals* bindings:"
+                                                  specs)]))
+                              (^_ '()) ; ignore last cdr of dotted list
+                              specs)
+                      (cdr (last-pair specs))))))]
+       [_ (error "Malformed let-optionals*:" f)]))))
+
+(select-module gauche)
+(define-syntax let-keywords
+  (er-macro-transformer
+   (^[f r c] ((with-module gauche.internal %let-keywords-rec) f r 'let))))
+
+(define-syntax let-keywords*
+  (er-macro-transformer
+   (^[f r c] ((with-module gauche.internal %let-keywords-rec) f r 'let*))))
+
+(select-module gauche.internal)
+(use util.match)
+(define (%let-keywords-rec form rename %let)
+  (define (triplet var&default)
+    (or (and-let* ([ (list? var&default) ]
+                   [var (unwrap-syntax (car var&default))]
+                   [ (symbol? var) ])
+          (case (length var&default)
+            [(2) (values (car var&default)
+                         (make-keyword var)
+                         (cadr var&default))]
+            [(3) (values (car var&default)
+                         (unwrap-syntax (cadr var&default))
+                         (caddr var&default))]
+            [else #f]))
+        (and-let* ([var (unwrap-syntax var&default)]
+                   [ (symbol? var) ])
+          (values var (make-keyword var) (undefined)))
+        (error "bad binding form in let-keywords" var&default)))
+  (define (process-specs specs)
+    (let loop ((specs specs)
+               (vars '()) (keys '()) (defaults '()) (tmps '()))
+      (define (finish restvar)
+        (values (reverse! vars)
+                (reverse! keys)
+                (reverse! defaults)
+                (reverse! tmps)
+                restvar))
+      (cond [(null? specs) (finish #f)]
+            [(pair? specs)
+             (receive (var key default) (triplet (car specs))
+               (loop (cdr specs)
+                     (cons var vars)
+                     (cons key keys)
+                     (cons default defaults)
+                     (cons (gensym) tmps)))]
+            [else (finish (or specs #t))])))
+  (match form
+    [(_ arg specs . body)
+     (let ([argvar (gensym "args")]
+           [loop (gensym "loop")]
+           [let. (rename %let)])
+       (receive (vars keys defaults tmps restvar) (process-specs specs)
+         (quasirename rename
+           `(let
+             ,loop ((,argvar ,arg)
+                    ,@(if (boolean? restvar) '() `((,restvar '())))
+                    ,@(map (cut list <> (undefined)) tmps))
+             (cond
+              [(null? ,argvar)
+               (,let. ,(map (^[var tmp default]
+                              (quasirename rename
+                                `(,var (if (undefined? ,tmp) ,default ,tmp))))
+                            vars tmps defaults)
+                      ,@body)]
+              [(null? (cdr ,argvar))
+               (error "keyword list not even" ,argvar)]
+              [else
+               (case (car ,argvar)
+                 ,@(map (^[key]
+                          (quasirename rename
+                            `((,key)
+                              (,loop (cddr ,argvar)
+                                     ,@(if (boolean? restvar)
+                                         '()
+                                         `(,restvar))
+                                     ,@(map (^[k t] (if (eq? key k)
+                                                      (quasirename rename
+                                                        `(cadr ,argvar))
+                                                      t))
+                                            keys tmps)))))
+                        keys)
+                 (else
+                  ,(cond [(eq? restvar #t)
+                          (quasirename rename
+                            `(,loop (cddr ,argvar) ,@tmps))]
+                         [(eq? restvar #f)
+                          (quasirename rename
+                            `(begin
+                               (errorf "unknown keyword ~S" (car ,argvar))
+                               (,loop (cddr ,argvar) ,@tmps)))]
+                         [else
+                          (quasirename rename
+                            `(,loop
+                              (cddr ,argvar)
+                              (list* (car ,argvar) (cadr ,argvar) ,restvar)
+                              ,@tmps))])))])))))]
+    [_ (errorf "Malformed ~a: ~S"
+               (if (eq? %let 'let) 'let-keywords 'let-keywords*)
+               form)]))
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 
 ;;;
 
-
+(select-module gauche)
 ;; TRANSIENT: Remove by 1.0
 (define-macro (define-compiler-macro name xformer-spec)
   (error "define-compiler-macro is obsoleted.  Use define-inline/syntax."))
