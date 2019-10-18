@@ -1,3 +1,8 @@
+2019-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1/extended-lambda-body): Insert aux macros
+	  hygienically.
+
 2019-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/json.scm (%number): Fix number parser - converting integral

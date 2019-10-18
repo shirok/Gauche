@@ -438,6 +438,7 @@
 (define eager.          (global-id 'eager))
 (define values.         (global-id 'values))
 (define begin.          (global-id 'begin))
+(define let.            (global-id 'let))
 (define include.        (global-id 'include))
 (define include-ci.     (global-id 'include-ci))
 (define else.           (global-id 'else))
@@ -447,7 +448,10 @@
 (define quasiquote.     (global-id 'quasiquote))
 (define unquote.        (global-id 'unquote))
 (define unquote-splicing. (global-id 'unquote-splicing))
+(define let-optionals*. (global-id 'let-optionals*))
+(define let-keywords*.  (global-id 'let-keywords*))
 
+(define make-case-lambda. (global-id% 'make-case-lambda))
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
 (define %with-inline-transformer.      (global-id% '%with-inline-transformer))
@@ -1271,7 +1275,7 @@
   (define (expand-opt os ks r a)
     (if (null? os)
       (if r
-        `(((with-module gauche let) ((,r ,garg)) ,@(expand-key ks garg a)))
+        `((,let. ((,r ,garg)) ,@(expand-key ks garg a)))
         (expand-key ks garg a))
       (let ([binds (map (match-lambda
                           [[? symbol? o] o]
@@ -1280,7 +1284,7 @@
                           [_ (error "illegal optional argument spec in " kargs)])
                         os)]
             [rest (or r (gensym))])
-        `(((with-module gauche let-optionals*) ,garg ,(append binds rest)
+        `((,let-optionals*. ,garg ,(append binds rest)
            ,@(if (and (not r) (null? ks))
                ;; TODO: better error message!
                `((unless (null? ,rest)
@@ -1301,7 +1305,7 @@
                         [(o init) `(,o ,init)]
                         [_ (error "illegal keyword argument spec in " kargs)])
                       ks)
-        `(((with-module gauche let-keywords*) ,garg
+        `((,let-keywords*. ,garg
            ,(if a (append args a) args)
            ,@body)))))
 
@@ -1316,9 +1320,7 @@
     [(_) (error "syntax-error: malformed case-lambda:" form)]
     [(_ (formals . body) ...)
      (receive (min-req max-req) (find-argcount-minmax formals)
-       (pass1 `(,(make-identifier 'make-case-lambda
-                                  (find-module 'gauche.internal)
-                                  '())
+       (pass1 `(,make-case-lambda.
                 ,min-req ,max-req ',formals
                 (list ,@(map (^(f b) `(,lambda. ,f ,@b)) formals body))
                 ',(cenv-exp-name cenv))
