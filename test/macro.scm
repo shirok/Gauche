@@ -1780,6 +1780,39 @@
           (interaction-environment))))
 
 ;;----------------------------------------------------------------------
+;; let-keyword* hygienic expansion
+;;
+
+(test-section "hygienic extened-lambda expansion")
+(define-module let-keyword-hygiene-def
+  (use gauche.base)
+  (use util.match)
+  (export klambda)
+  (extend scheme)
+  (define-syntax klambda
+    (er-macro-transformer
+     (^[f r c]
+       (match f
+         [(_ formals&keys . body)
+          (quasirename r
+            `(lambda (,@(drop-right formals&keys 1)
+                      ,(make-keyword 'key)
+                      ,@(map (^s `(,s #f)) (last formals&keys)))
+               ,@body))])))))
+
+(define-module let-keyword-hygeiene-use
+  (import let-keyword-hygiene-def)
+  (import gauche.keyword)
+  (export call-klambda)
+  (extend scheme)
+  (define (call-klambda a b c d)
+    ((klambda (a b (x y)) (list a b x y))
+     a b :x c :y d)))
+
+(test* "hygienic let-keyword expansion" '(1 2 3 4)
+       ((with-module let-keyword-hygeiene-use call-klambda) 1 2 3 4))
+
+;;----------------------------------------------------------------------
 ;; srfi-147 begin
 ;; (not yest supported)
 
