@@ -634,6 +634,71 @@
           (eval 'x m1))))
 
 ;;-------------------------------------------------------------------
+;; null and scheme module bindings (R5RS)
+
+(test "null module bindings" '()
+      (lambda ()
+        (let loop ((names '(and begin cond define define-syntax delay do
+                            if lambda let let* let-syntax
+                            letrec letrec-syntax or quasiquote quote
+                            set! syntax-rules else =>))
+                   (missing '()))
+          (cond [(null? names) missing]
+                [(global-variable-bound? 'null (car names))
+                 (loop (cdr names) missing)]
+                [else (loop (cdr names) (cons (car names) missing))]))))
+
+(test "scheme module bindings" '()
+      (lambda ()
+        (let loop ((names '(* + - / < <= = >= >
+                            abs acos angle append apply asin assoc assq
+                            assv atan boolean? call-with-current-continuation
+                            call-with-input-file call-with-output-file
+                            call-with-values car cdr caar cadr cdar cddr
+                            caaar caadr cadar caddr cdaar cdadr cddar cdddr
+                            caaaar caaadr caadar caaddr cadaar cadadr
+                            caddar cadddr cdaaar cdaadr cdadar cdaddr
+                            cddaar cddadr cdddar cddddr ceiling char->integer
+                            char-alphabetic? char-ci<=? char-ci<? char-ci=?
+                            char-ci>=? char-ci>? char-downcase char-lower-case?
+                            char-numeric? char-ready? char-upcase
+                            char-upper-case? char-whitespace?
+                            char<? char<=? char=? char>? char>=? char?
+                            close-input-port close-output-port complex?
+                            cons cos current-input-port current-output-port
+                            denominator display dynamic-wind eof-object?
+                            eq? equal? eqv? eval even? exact->inexact
+                            exact? exp expt floor for-each force gcd
+                            imag-part inexact->exact inexact? input-port?
+                            integer->char integer? interaction-environment
+                            lcm length list list->string list->vector
+                            list-ref list-tail list? load log magnitude
+                            make-polar make-rectangular make-string
+                            make-vector map max member memq memv min modulo
+                            negative? newline not null-environment null?
+                            number->string number? numerator odd?
+                            open-input-file open-output-file or output-port?
+                            pair? peek-char port? positive? procedure?
+                            quotient rational? rationalize read read-char
+                            real-part real? remainder reverse round
+                            scheme-report-environment set-car! set-cdr!
+                            sin sqrt string string->list string->number
+                            string->symbol string-append string-ci<=?
+                            string-ci<? string-ci=? string-ci>? string-ci>=?
+                            string-copy string-fill! string-length string-ref
+                            string-set! string<=? string<? string=? string>?
+                            string>=? substring symbol->string symbol?
+                            tan truncate vector vector->list vector-fill!
+                            vector-length vector-ref vector-set! vector?
+                            with-input-from-file with-output-to-file
+                            write write-char zero?))
+                   (missing '()))
+          (cond [(null? names) missing]
+                [(global-variable-bound? 'scheme (car names))
+                 (loop (cdr names) missing)]
+                [else (loop (cdr names) (cons (car names) missing))]))))
+
+;;-------------------------------------------------------------------
 ;; Macro and builtin inliner
 ;; https://twitter.com/tk_riple/status/647865265154326528
 
@@ -654,7 +719,4 @@
 (test* "builtin inliner bug" 64
        ((with-module builtin-inliner-bug-C ash-3) 7 2))
   
-
-
-
 (test-end)
