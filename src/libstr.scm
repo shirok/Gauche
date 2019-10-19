@@ -205,7 +205,7 @@
 
 (set! (setter string-byte-ref) string-byte-set!)
 
-(define-in-module gauche (string-fill! str c
+(define-in-module scheme (string-fill! str c
                                        :optional (start 0)
                                                  (end (string-length str)))
   (let1 len (string-length str)
