@@ -107,6 +107,7 @@
 (%define-cxr cdddar cddr cdar)
 (%define-cxr cddddr cddr cddr)
 
+(select-module scheme)
 (define-cproc null? (obj) ::<boolean> :fast-flonum :constant
   (inliner NULLP) SCM_NULLP)
 (define-cproc list? (obj) ::<boolean> :fast-flonum :constant
@@ -117,6 +118,8 @@
   (let* ([len::long (Scm_Length list)])
     (when (< len 0) (Scm_Error "bad list: %S" list))
     (return len)))
+
+(select-module gauche)
 (define-cproc length<=? (list k::<integer>) ::<boolean> :constant
   (if (SCM_INTP k)
     (let* ([n::int (SCM_INT_VALUE k)])
@@ -133,7 +136,7 @@
 (define (length>? list k) (not (length<=? list k)))
 (define (length>=? list k) (not (length<? list k)))
                   
-
+(select-module scheme)
 (define-cproc append (:rest lists) (inliner APPEND) Scm_Append)
 (define-cproc reverse (list::<list> :optional (tail ())) Scm_Reverse2)
 
