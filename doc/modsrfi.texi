@@ -4546,12 +4546,12 @@ Each integer occupies @var{size} octets.
 @c EN
 This srfi defines a portable way to access the underlying system's
 environment variables.  Gauche supports such procedures built-in
-(@pxref{Environment Inquiry}),
+(@pxref{Environment inquiry}),
 but portable programs may want to use srfi API instead.
 @c JP
 このsrfiはシステムの環境変数にアクセスするポータブルな方法を定義しています。
 Gaucheは組み込みで環境変数にアクセスする手続きを持っていますが
-(@ref{Environment Inquiry}参照)、
+(@ref{Environment inquiry}参照)、
 ポータブルなコードを書くにはこちらのAPIを使うのが良いでしょう。
 @c COMMON
 @end deftp
@@ -5052,7 +5052,7 @@ Returns a string @code{"Gauche"}.
 [SRFI-112]
 @c MOD srfi-112
 Returns a string of Gauche's version.  The same as @code{gauche-version}
-(@pxref{Environment Inquiry}).
+(@pxref{Environment inquiry}).
 @end defun
 
 @defun cpu-architecture

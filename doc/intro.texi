@@ -4,11 +4,11 @@
 
 @c EN
 This is a users' guide and reference manual of
-the Gauche Scheme system.
+the Gauche Scheme.
 Here I tried to describe the implementation precisely,
 sometimes referring to background design choices.
 @c JP
-本書はGauche Scheme systemに関する、ユーザのためのガイドと
+本書はGauche Schemeに関する、ユーザのためのガイドと
 リファレンスです。なるべくGaucheの実装を正確に記述することを
 目的として、時には背景となる設計上の選択も含めて説明しています。
 @c COMMON

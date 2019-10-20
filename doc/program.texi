@@ -460,7 +460,7 @@ The following environment variables are recognized:
 @deftp {Environment variable} GAUCHE_AVAILABLE_PROCESSORS
 @c EN
 You can get the number of system's processors by
-@code{sys-available-processors} (@pxref{Environment Inquiry});
+@code{sys-available-processors} (@pxref{Environment inquiry});
 libraries/programs may use this info to optimize number of
 parallel threads.  But you might change that, for testing
 and benchmarking---e.g. a program automatically uses
@@ -470,7 +470,7 @@ This environment variable overrides
 the return value of @code{sys-available-processors}.
 @c JP
 @code{sys-available-processors} でシステムのプロセッサ数を
-取得できます(@ref{Environment Inquiry}参照)。
+取得できます(@ref{Environment inquiry}参照)。
 ライブラリやプログラムの中には、その数に基づいて並行に走るスレッド数を
 調整するものがあります。けれども、テストやベンチマークでその数を
 変えたいと思うことがあるかもしれません。例えば、8コア上では自動的に

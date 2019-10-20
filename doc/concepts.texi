@@ -40,16 +40,16 @@ Gaucheは、オプショナルな構文や手続きも含め
 @itemize @bullet
 @item
 @c EN
-Gauche has a keyword object, expressed as a name prefixed by a colon
-(e.g. @code{:key}).
-It is a subtype of symbols that
-automatically bound to itself.
-@xref{Keywords}, for the details.
+Gauche has a special kind of symbols, called keywords.
+They're symbols with its name beginning with a colon
+(e.g. @code{:key}), but behaves as if it is automatically bound to
+itself.  @xref{Keywords}, for the details.
 Keywords are used extensively when
 passing so-called keyword arguments (@pxref{Making procedures}).
 @c JP
-Gaucheには、コロンで始まる名前(例:@code{:key})を持つ、キーワードオブジェクトがあります。
-キーワードはシンボルのサブタイプで、自動的に自分自身に束縛されます。
+Gaucheには、キーワードと呼ばれる特殊なシンボルがあります。
+コロンで始まる名前(例:@code{:key})を持つシンボルはキーワードで、
+自動的に自分自身に束縛されます。
 詳しくは@ref{Keywords}を参照してください。
 主にキーワード引数を渡すときに使われます(@ref{Making procedures}参照)。
 @c COMMON

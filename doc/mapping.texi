@@ -748,9 +748,9 @@ Gauche の @code{sys-getegid}。@ref{System inquiry} 参照。
 @c COMMON
 @item getenv
 @c EN
-Gauche's @code{sys-getenv}.   @xref{Environment Inquiry}.
+Gauche's @code{sys-getenv}.   @xref{Environment inquiry}.
 @c JP
-Gauche の @code{sys-getenv}。@ref{Environment Inquiry} 参照。
+Gauche の @code{sys-getenv}。@ref{Environment inquiry} 参照。
 @c COMMON
 @item geteuid
 @c EN

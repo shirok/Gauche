@@ -21345,7 +21345,7 @@ path list for dynamic loading correctly.   Suppose you have
 your Scheme module in @code{/home/yours/lib}, and that requires
 a dynamic loadable library.  You can put the library under
 @code{/home/yours/lib/@var{ARCH}/}, where @var{ARCH} is
-the value @code{(gauche-architecture)} returns (@pxref{Environment Inquiry}).
+the value @code{(gauche-architecture)} returns (@pxref{Environment inquiry}).
 Then you can have compiled libraries for multiple platforms and
 Gauche can still find the right library.
 @c JP
@@ -21353,7 +21353,7 @@ Gauche can still find the right library.
 ないかどうかを探し、あればそれを内部の共有ライブラリサーチパスに追加します。
 例えばあなたが自分のSchemeモジュールを@code{/home/yours/lib}に入れていて、
 それが共有ライブラリを必要としていたとします。手続き@code{gauche-architecture}
-(@ref{Environment Inquiry}参照)が返す値を@var{ARCH}として、
+(@ref{Environment inquiry}参照)が返す値を@var{ARCH}として、
 共有ライブラリを@code{/home/yours/lib/@var{ARCH}/}に置いておくと、
 共有ライブラリはそこからロードされます。この方法を取ると、複数のプラットフォーム用に
 別々にコンパイルされた共有ライブラリを管理することができます。
@@ -22316,7 +22316,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 @menu
 * Program termination::
 * Command-line arguments::
-* Environment Inquiry::
+* Environment inquiry::
 * Filesystems::
 * Unix groups and users::
 * Locale::
@@ -22325,7 +22325,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 * Time::
 * Process management::
 * I/O multiplexing::
-* Garbage Collection::
+* Garbage collection::
 * Miscellaneous system calls::
 @end menu
 
@@ -22579,7 +22579,7 @@ POSIXのabort()を呼びます。通常、現在のプロセスは終了され�
 @c COMMON
 @end defun
 
-@node Command-line arguments, Environment Inquiry, Program termination, System interface
+@node Command-line arguments, Environment inquiry, Program termination, System interface
 @subsection Command-line arguments
 @c NODE コマンドライン引数
 
@@ -22695,8 +22695,8 @@ Gaucheが埋め込み言語として使われている場合、これらの変�
 @end defvar
 
 
-@node Environment Inquiry, Filesystems, Command-line arguments, System interface
-@subsection Environment Inquiry
+@node Environment inquiry, Filesystems, Command-line arguments, System interface
+@subsection Environment inquiry
 @c NODE 環境の問い合わせ
 
 @defun sys-getenv name
@@ -22925,7 +22925,7 @@ then the value is returned regardless of what the hardware/OS tells.
 @c COMMON
 @end defun
 
-@node Filesystems, Unix groups and users, Environment Inquiry, System interface
+@node Filesystems, Unix groups and users, Environment inquiry, System interface
 @subsection Filesystems
 @c NODE ファイルシステム
 
@@ -26609,7 +26609,7 @@ Windowsプロセスハンドル@var{handle}が示すプロセスの、整数のp
 @end defun
 
 
-@node I/O multiplexing, Garbage Collection, Process management, System interface
+@node I/O multiplexing, Garbage collection, Process management, System interface
 @subsection I/O multiplexing
 @c NODE I/Oの多重化
 
@@ -26790,8 +26790,8 @@ doesn't modify its arguments.
 @end defun
 
 
-@node Garbage Collection, Miscellaneous system calls, I/O multiplexing, System interface
-@subsection Garbage Collection
+@node Garbage collection, Miscellaneous system calls, I/O multiplexing, System interface
+@subsection Garbage collection
 @c NODE ガベージコレクション
 
 @c EN
@@ -26828,7 +26828,7 @@ GCに関する統計情報を返します。返り値はリストのリストで
 @c COMMON
 @end defun
 
-@node Miscellaneous system calls,  , Garbage Collection, System interface
+@node Miscellaneous system calls,  , Garbage collection, System interface
 @subsection Miscellaneous system calls
 @c NODE その他のシステムコール
 
