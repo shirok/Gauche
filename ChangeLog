@@ -1,3 +1,8 @@
+2019-10-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h (ScmContFrameRec, ScmVM), src/vm.c: Fix partial
+	  conitnuation structure by @Hamayama.  See PR #529 for the details.
+
 2019-10-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/libproc.scm, src/libmacro.scm (let-optionals*, let-keywords),
