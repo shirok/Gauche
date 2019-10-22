@@ -71,6 +71,7 @@
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
 (define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
+(define-cproc %reset (proc) (return (Scm_VMReset proc)))
 
 ;;;
 ;;; Profiler
