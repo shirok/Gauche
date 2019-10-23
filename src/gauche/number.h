@@ -363,6 +363,7 @@ typedef struct ScmNumberFormatRec {
     int precision;    /* # of digits after decimal point, -1 for unlimited */
     int exp_lo;       /* use exp notation if exponent <= exp_lo */
     int exp_hi;       /* use exp notation if exponent >= exp_hi */
+    int exp_width;    /* min # of digits used for exponent */
 } ScmNumberFormat;
 
 SCM_EXTERN void   Scm_NumberFormatInit(ScmNumberFormat*);

@@ -3426,7 +3426,8 @@ static void spill_fixup(ScmDString *ds, int numstart)
    If it's true, we first generate optimal decimal notation, then round.
    */
 static void print_double(ScmDString *ds, double val, int plus_sign,
-                         int precision, int notational, int exp_lo, int exp_hi)
+                         int precision, int notational, 
+                         int exp_lo, int exp_hi, int exp_width)
 {
     /* Handle a few special cases first. */
     if (val == 0.0) {
@@ -3655,8 +3656,18 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     est--;
     if (est != 0) {
         SCM_DSTRING_PUTC(ds, 'e');
-        char zbuf[6];
-        sprintf(zbuf, "%d", (int)est);
+        if (est < 0) {
+            Scm_DStringPutc(ds, '-');
+            est = -est;
+        }
+        char zbuf[5]; /* we know est is at most 4 digits */
+        int echars = sprintf(zbuf, "%d", (int)est);
+        if (echars < exp_width) {
+            int fill = exp_width - echars;
+            while (fill--) {
+                Scm_DStringPutc(ds, '0');
+            }
+        }
         Scm_DStringPutz(ds, zbuf, -1);
     }
 }
@@ -3734,7 +3745,7 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         print_double(&ds, SCM_FLONUM_VALUE(obj), show_plus,
                      fmt->precision,
                      fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                     fmt->exp_lo, fmt->exp_hi);
+                     fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
         Scm_Putz(Scm_DStringGetz(&ds), -1, port);
         return Scm_DStringSize(&ds);
     } else if (SCM_RATNUMP(obj)) {
@@ -3751,14 +3762,14 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         print_double(&ds, SCM_COMPNUM_REAL(obj), show_plus,
                      fmt->precision,
                      fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                     fmt->exp_lo, fmt->exp_hi);
+                     fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
         Scm_Putz(Scm_DStringGetz(&ds), -1, port);
         nchars += Scm_DStringSize(&ds);
         Scm_DStringTruncate(&ds, 0);
         print_double(&ds, SCM_COMPNUM_IMAG(obj), TRUE,
                      fmt->precision,
                      fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                     fmt->exp_lo, fmt->exp_hi);
+                     fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
         Scm_Putz(Scm_DStringGetz(&ds), -1, port);
         nchars += Scm_DStringSize(&ds);
         Scm_Putc('i', port);
@@ -3777,6 +3788,7 @@ void Scm_NumberFormatInit(ScmNumberFormat* fmt)
     fmt->precision = -1;
     fmt->exp_lo = -3;
     fmt->exp_hi = 10;
+    fmt->exp_width = 0;
 }
 
 /* API */
@@ -3818,7 +3830,7 @@ size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
                  fmt->flags & SCM_NUMBER_FORMAT_SHOW_PLUS,
                  fmt->precision,
                  fmt->flags & SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                 fmt->exp_lo, fmt->exp_hi);
+                 fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
     size_t nchars = Scm_DStringSize(&ds);
     Scm_Putz(Scm_DStringGetz(&ds), (int)nchars, port);
     return nchars;
