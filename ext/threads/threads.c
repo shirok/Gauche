@@ -35,6 +35,7 @@
 #include <gauche/vm.h>
 #include <gauche/extend.h>
 #include <gauche/exception.h>
+#include <gauche/priv/vmP.h>
 #include "threads.h"
 
 #ifdef HAVE_UNISTD_H
