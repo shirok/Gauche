@@ -2336,6 +2336,32 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
  */
 
 /* Figure out which before and after thunk should be called.
+
+   In general, handler chains consist a tree.  For example,
+   we capture a continuatoin at the chain F, then we the chain
+   was popped to C, and we create other chains.  Now we want to
+   invoke the captured continuation.  We have a handler tree like this:
+
+
+           current -> I -- H -- G
+                                 \
+                                  C -- B -- A
+                                 /
+            target -> F -- E -- D
+
+
+   Here, target is the captured continuation's chain, and current is
+   the current head of the chain.
+
+   We have to call the following handlers in this order:
+
+           I's after handler
+           H's after handler
+           G's after handler
+           D's before handler
+           E's before handler
+           F's before handler
+
    Returns a list of (before-flag <handler> . <handler-chain>).
    before-flag is used to determine when handler chain is updated.
    (for 'before' handler, handler chain should be updated after calling it.
@@ -2502,6 +2528,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
     return throw_cont_body(handlers_to_call, ep, args);
 }
 
+/* Body of the partial continuation SUBR */
 static ScmObj partcont_wrapper(ScmObj *argframe,
                                int nargs SCM_UNUSED, void *data)
 {
