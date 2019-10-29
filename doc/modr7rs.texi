@@ -5499,7 +5499,26 @@ stream-let          stream-map        stream-match     stream-of
 stream-range        stream-ref        stream-reverse   stream-scan
 stream-take-while   stream-unfold     stream-unfolds   stream-zip
 @end example
+
+The following macro and procedures have different interface from
+Gauche's @code{util.stream} module:
+
+@example
+stream              stream-take      stream-drop
+@end example
 @end deftp
+
+@defmac stream expr @dots{}
+[R7RS stream]
+@c MOD scheme.stream
+Returns a new stream whose elements are the result of @var{expr} @dots{}.
+Arguments won't be evaluated until required.
+
+This differs from srfi-40 and @code{util.stream}'s @code{stream},
+which is a procedure so arguments are evaluated 
+(@pxref{Stream constructors}, for the details).
+@end defmac
+
 
 @defun stream-take n stream
 @defunx stream-drop n stream
