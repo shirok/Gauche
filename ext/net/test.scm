@@ -170,38 +170,40 @@
           [(< k 0)]
         (u8vector-set! uv k (logand val #xff)))
       (test* #"inet-address->string (~desc, int)" expected
-             (inet-address->string input vers))
+             (inet-address->string input vers)
+             (^[xs y] (member y xs)))
       (test* #"inet-address->string (~desc, uv)" expected
-             (inet-address->string uv vers))))
+             (inet-address->string uv vers)
+             (^[xs y] (member y xs)))))
 
-  (addr-test "v4-1" #x7f000001 AF_INET "127.0.0.1")
-  (addr-test "v4-2" #xc0a80102 AF_INET "192.168.1.2")
-  (addr-test "v4-3" #xfffffc00 AF_INET "255.255.252.0")
+  (addr-test "v4-1" #x7f000001 AF_INET '("127.0.0.1"))
+  (addr-test "v4-2" #xc0a80102 AF_INET '("192.168.1.2"))
+  (addr-test "v4-3" #xfffffc00 AF_INET '("255.255.252.0"))
 
   (cond-expand
    [gauche.net.ipv6
     (addr-test "v6-1" #x0001000200030004fffcfffdfffeffff AF_INET6
-               "1:2:3:4:fffc:fffd:fffe:ffff")
+               '("1:2:3:4:fffc:fffd:fffe:ffff"))
     (addr-test "v6-2" #x00000000000000000000000000000001 AF_INET6
-               "::1")
+               '("::1"))
     (addr-test "v6-3" #x00000000000000000000000000010002 AF_INET6
-               "::0.1.0.2")
+               '("::0.1.0.2" "::1:2"))
     (addr-test "v6-4" #x00080001000200030004000500060007 AF_INET6
-               "8:1:2:3:4:5:6:7")
+               '("8:1:2:3:4:5:6:7"))
     (addr-test "v6-5" #xffe00000000000000000000000000000 AF_INET6
-               "ffe0::")
+               '("ffe0::"))
     (addr-test "v6-6" #xffe00001000000000000000000000000 AF_INET6
-               "ffe0:1::")
+               '("ffe0:1::"))
     (addr-test "v6-7" #xffe00000000000000000000002340567 AF_INET6
-               "ffe0::234:567")
+               '("ffe0::234:567"))
     (addr-test "v6-8" #xffe00000000002230001000200030004 AF_INET6
-               "ffe0::223:1:2:3:4")
+               '("ffe0::223:1:2:3:4"))
     (addr-test "v6-9" #xffe00000000002230000000000030004 AF_INET6
-               "ffe0::223:0:0:3:4")
+               '("ffe0::223:0:0:3:4"))
     (addr-test "v6-10" #xffe00000000002230000000000000004 AF_INET6
-               "ffe0:0:0:223::4")
+               '("ffe0:0:0:223::4"))
     (addr-test "v6-11" #xffe00000000000000001000000000004 AF_INET6
-               "ffe0::1:0:0:4")
+               '("ffe0::1:0:0:4"))
     ]
    [else])
   )
