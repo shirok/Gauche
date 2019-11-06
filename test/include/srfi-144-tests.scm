@@ -247,7 +247,9 @@
      (test/= .4342944819032518276511289                    fl-log10-e)
      (test/= .6931471805599453094172321                    fl-log-2)
      (test/= 1.4426950408889634073599246810018921374266    fl-1/log-2)
-     (test/= 1.0986122886681096913952452                   fl-log-3)
+     ;; [SK] MUSL clib yields 1ulp error
+     ;;(test/= 1.0986122886681096913952452                   fl-log-3)
+     (test/approx-1ulp 1.0986122886681096913952452                   fl-log-3)
      (test/= 1.144729885849400174143427                    fl-log-pi)
      (test/= 2.3025850929940456840179915                   fl-log-10)
      (test/= 0.4342944819032518276511289189166050822944    fl-1/log-10)
@@ -284,8 +286,9 @@
 
      (test/= 1.7724538509055160272981674833411451827975    fl-gamma-1/2)
      (test/= 2.6789385347077476336556929409746776441287    fl-gamma-1/3)
-     (test/= 1.3541179394264004169452880281545137855193    fl-gamma-2/3)
-
+     ;; [SK] MUSL clib yields 1ulp error
+     ;;(test/= 1.3541179394264004169452880281545137855193    fl-gamma-2/3)
+     (test/approx-1ulp 1.3541179394264004169452880281545137855193    fl-gamma-2/3)
      ;; Implementation Constants
 
      (test-assert (inexact? fl-greatest))
@@ -791,7 +794,9 @@
 
      (test (flexp negzero) one)
      (test (flexp zero) one)
-     (test (flexp one) fl-e)
+     ;; [SK] MUSL clib yields 1ulp error
+     ;;(test (flexp one) fl-e)
+     (test/approx (flexp one) fl-e)
      (test/approx (flexp (fl- one)) fl-1/e)
      (test/approx (flexp two) fl-e-2)
      (test/approx (flexp fl-pi/4) fl-e-pi/4)
