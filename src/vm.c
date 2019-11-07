@@ -2552,7 +2552,7 @@ static ScmObj partcont_wrapper(ScmObj *argframe,
 
     /* save return values */
     int nvals = vm->numVals;
-    ScmObj *vals;
+    ScmObj *vals = NULL;
     if (nvals > 1) {
         vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
         memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
@@ -2573,7 +2573,7 @@ static ScmObj partcont_wrapper(ScmObj *argframe,
 
     /* restore return values */
     vm->numVals = nvals;
-    if (nvals > 1) {
+    if (vals != NULL) {
         memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
     }
 
