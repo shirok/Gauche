@@ -2398,4 +2398,15 @@
    (include "include/srfi-160-tests.scm")
    ))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-173")
+(use srfi-173)
+(test-module 'srfi-173)
+
+(define-module srfi-173-test
+  (use compat.chibi-test)
+  (use srfi-173)
+  (chibi-test
+   (include "include/srfi-173-tests.scm")))
+
 (test-end)

@@ -1123,6 +1123,7 @@ Note that most of generator procedures are supported by @code{gauche.generator}
 srfi-160, srfi-160
 ()
 
+Homogeneous numeric vector libraries
 This has become a part of R7RS large,
 supported by the module @code{scheme.vector.@@} where
 @code{@@} is one of @code{base},
@@ -1130,6 +1131,7 @@ supported by the module @code{scheme.vector.@@} where
 @code{u32}, @code{s32}, @code{u64}, @code{s64}, @code{f32}, @code{f64},
 @code{c64}, or @code{c128} (@pxref{R7RS uniform vectors}).
 
+均質な数値ベクタライブラリ
 これはR7RS largeの一部となりました。
 モジュール@code{scheme.vector.@@}でサポートされます
 (但し@code{@@}は@code{base},
@@ -1137,3 +1139,16 @@ supported by the module @code{scheme.vector.@@} where
 @code{u32}, @code{s32}, @code{u64}, @code{s64}, @code{f32}, @code{f64},
 @code{c64}, @code{c128})。
 @ref{R7RS uniform vectors}参照。
+
+
+srfi-173, srfi-173
+()
+
+Hooks
+Supported by the module @code{srfi-173}, which is a thin layer
+on top of @code{gauche.hook} (@pxref{Hooks})
+
+フック
+モジュール@code{srfi-173}でサポートされます。それ自体は
+@code{gauche.hook}の上にかぶせた薄いレイヤです (@ref{Hooks}参照)。
+

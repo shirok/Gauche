@@ -1,3 +1,7 @@
+2019-11-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-173.scm: Added srfi-173 Hooks.
+
 2019-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h (ScmContFrameRec, ScmVM), src/vm.c: Fix partial
