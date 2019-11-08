@@ -23,45 +23,46 @@ srfi N is supported by Gauche.)
 
 @c ----------------------------------------------------------------------
 @menu
-* List library::                                              srfi-1
-* Homogeneous vectors::                                       srfi-4
+* List library::                srfi-1
+* Homogeneous vectors::         srfi-4
 * A compatible let form with signatures and rest arguments::  srfi-5
-* Feature-based program configuration language::              srfi-7
-* String library::                                            srfi-13
-* Character-set library::                                     srfi-14
-* Time data types and procedures::                            srfi-19
-* Sources of random bits::                                    srfi-27
-* Localization::                                              srfi-29
-* A program argument processor::                              srfi-37
-* Streams::                                                   srfi-41
-* Eager comprehensions::                                      srfi-42
-* Vector library (Legacy)::                                   srfi-43
-* Requiring extensions::                                      srfi-55
-* Integers as bits::                                          srfi-60
-* Octet vectors::                                             srfi-66
-* Basic hash tables::                                         srfi-69
-* Octet-addressed binary blocks::                             srfi-74
-* Accessing environment variables::                           srfi-98
-* Basic socket interface::                                    srfi-106
-* Boxes::                                                     srfi-111
-* Portable runtime environment inquiry::                      srfi-112
-* Sets and bags::                                             srfi-113
-* Comparators::                                               srfi-114
-* Scheme regular expressions::                                srfi-115
-* Queues based on lists::                                     srfi-117
-* Simple adjustable-size strings::                            srfi-118
-* Lazy sequence (srfi)::                                      srfi-127
-* Sort library::                                              srfi-132
-* Vector library::                                            srfi-133
-* Integer division::                                          srfi-141
-* Fixnums::                                                   srfi-143
-* Mappings and hashmaps::                                     srfi-146
-* Bitwise operations::                                        srfi-151
-* String library (reduced)::                                  srfi-152
-* First-class dynamic extents::                               srfi-154
-* Generators and accumulators::                               srfi-158
-* Homogeneous numeric vector libraries::                      srfi-160
-* Comparator sublibrary::                                     srfi-162
+* Feature-based program configuration language::  srfi-7
+* String library::              srfi-13
+* Character-set library::       srfi-14
+* Time data types and procedures::  srfi-19
+* Sources of random bits::      srfi-27
+* Localization::                srfi-29
+* A program argument processor::  srfi-37
+* Streams::                     srfi-41
+* Eager comprehensions::        srfi-42
+* Vector library (Legacy)::     srfi-43
+* Requiring extensions::        srfi-55
+* Integers as bits::            srfi-60
+* Octet vectors::               srfi-66
+* Basic hash tables::           srfi-69
+* Octet-addressed binary blocks::  srfi-74
+* Accessing environment variables::  srfi-98
+* Basic socket interface::      srfi-106
+* Boxes::                       srfi-111
+* Portable runtime environment inquiry::  srfi-112
+* Sets and bags::               srfi-113
+* Comparators::                 srfi-114
+* Scheme regular expressions::  srfi-115
+* Queues based on lists::       srfi-117
+* Simple adjustable-size strings::  srfi-118
+* Lazy sequence (srfi)::        srfi-127
+* Sort library::                srfi-132
+* Vector library::              srfi-133
+* Integer division::            srfi-141
+* Fixnums::                     srfi-143
+* Mappings and hashmaps::       srfi-146
+* Bitwise operations::          srfi-151
+* String library (reduced)::    srfi-152
+* First-class dynamic extents::  srfi-154
+* Generators and accumulators::  srfi-158
+* Homogeneous numeric vector libraries::  srfi-160
+* Comparator sublibrary::       srfi-162
+* Hooks (srfi)::                srfi-173
 @end menu
 
 
@@ -6296,7 +6297,7 @@ This module only exports the procedures defined in @code{srfi-160}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Comparator sublibrary,  , Homogeneous numeric vector libraries, Library modules - SRFIs
+@node Comparator sublibrary, Hooks (srfi), Homogeneous numeric vector libraries, Library modules - SRFIs
 @section @code{srfi-162} - Comparator sublibrary
 @c NODE 比較器のサブライブラリ, @code{srfi-162} - 比較器のサブライブラリ
 
@@ -6338,6 +6339,80 @@ Note: Srfi-114 provides the same procedures.
 Find the object in @var{list} that is minimum or maximum compared
 by @var{comparator}.  It is an error if @var{list} is empty.
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Hooks (srfi),  , Comparator sublibrary, Library modules - SRFIs
+@section @code{srfi-173} - Hooks (srfi)
+@c NODE フック(srfi), @code{srfi-173} - フック(srfi)
+
+@deftp {Module} srfi-173
+@mdindex srfi-173
+This module provides hooks, which manages a list of
+closures to be called.
+
+It is based on Guile's hooks, which Gauche supports in
+@code{gauche.hook} module (@pxref{Hooks}).  This srfi
+is a thin layer on top of @code{gauche.hook}.
+
+The following procedures are the same as @code{gauche.hook}:
+
+@example
+make-hook     hook?      hook->list
+@end example
+@end deftp
+
+@defun hook-add! hook proc
+[SRFI-173]
+@c MOD srfi-173
+Add a procedure @var{proc} to a hook @var{hook}.   The procedure
+must accept the number of arguments that matches the arity of the hook.
+It is the same as @code{(add-hook! hook proc)} of @code{gauche.hook}.
+@end defun
+
+@defun hook-delete! hook proc
+[SRFI-173]
+@c MOD srfi-173
+Delete @var{proc} from @var{hook}.  If @var{proc} isn't in @var{hook},
+do nothing.  It is the same as @code{(delete-hook! hook proc)}
+of @code{gauche.hook}.
+@end defun
+
+@defun hook-reset! hook
+[SRFI-173]
+@c MOD srfi-173
+Remove all the procedures registered in @code{hook}.
+It is the same as @code{(reset-hook! hook)} of @code{gauche.hook}.
+@end defun
+
+@defun hook-run hook args @dots{}
+[SRFI-173]
+@c MOD srfi-173
+Apply all the procedures from @var{hook} to the @var{args}.
+The order of the procedure isn't specified in the srfi, though
+Gauche preserves the order (see @code{run-hook}
+(@pxref{Hooks}).
+@end defun
+
+@defun list->hook arity list
+[SRFI-173]
+@c MOD srfi-173
+Creates a new hook with specified @var{arity} (which is a non-negative
+exact integer), which has the procedures in @var{list}.
+All the procedures must accept @var{arity} number of arguments.
+@end defun
+
+@defun list->hook! hook list
+[SRFI-173]
+@c MOD srfi-173
+Replace the list of procedures in @var{hook} with procedures
+in @var{list}.
+All the procedures must accept the number of arguments
+the same as @var{hook}'s arity.
+@end defun
+
+
+
+
 
 
 @c Local variables:

@@ -1155,10 +1155,10 @@ srfi-173, srfi-173
 ()
 
 Hooks
-Supported by the module @code{srfi-173}, which is a thin layer
-on top of @code{gauche.hook} (@pxref{Hooks})
+Supported by the module @code{srfi-173} (@pxref{Hooks (srfi)}),
+which is a thin layer on top of @code{gauche.hook} (@pxref{Hooks})
 
 フック
-モジュール@code{srfi-173}でサポートされます。それ自体は
-@code{gauche.hook}の上にかぶせた薄いレイヤです (@ref{Hooks}参照)。
+モジュール@code{srfi-173}でサポートされます (@ref{Hooks (srfi)}参照) 。
+それ自体は@code{gauche.hook}の上にかぶせた薄いレイヤです (@ref{Hooks}参照)。
 

@@ -8587,6 +8587,14 @@ Guileとの互換性のために、@code{remove-hook!}が@code{delete-hook!}の
 エイリアスとして定義されています。
 @c COMMON
 @end itemize
+
+@c EN
+If you're writing portable code, srfi-173 provides the basic
+hook functionality (@pxref{Hooks (srfi)}).
+@c JP
+ポータブルなコードを書いているなら、srfi-173が基本的なフック機能を
+提供しています (@ref{Hooks (srfi)}参照)。
+@c COMMON
 @end deftp
 
 @deftp {Class} <hook>
