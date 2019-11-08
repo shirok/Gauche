@@ -23,44 +23,45 @@ srfi N is supported by Gauche.)
 
 @c ----------------------------------------------------------------------
 @menu
-* List library::                srfi-1
-* Homogeneous vectors::         srfi-4
+* List library::                                              srfi-1
+* Homogeneous vectors::                                       srfi-4
 * A compatible let form with signatures and rest arguments::  srfi-5
-* Feature-based program configuration language::  srfi-7
-* String library::              srfi-13
-* Character-set library::       srfi-14
-* Time data types and procedures::  srfi-19
-* Sources of random bits::      srfi-27
-* Localization::                srfi-29
-* A program argument processor::  srfi-37
-* Streams::                     srfi-41
-* Eager comprehensions::        srfi-42
-* Vector library (Legacy)::     srfi-43
-* Requiring extensions::        srfi-55
-* Integers as bits::            srfi-60
-* Octet vectors::               srfi-66
-* Basic hash tables::           srfi-69
-* Octet-addressed binary blocks::  srfi-74
-* Accessing environment variables::  srfi-98
-* Basic socket interface::      srfi-106
-* Boxes::                       srfi-111
-* Portable runtime environment inquiry::  srfi-112
-* Sets and bags::               srfi-113
-* Comparators::                 srfi-114
-* Scheme regular expressions::  srfi-115
-* Queues based on lists::       srfi-117
-* Simple adjustable-size strings::  srfi-118
-* Lazy sequence (srfi)::        srfi-127
-* Sort library::                srfi-132
-* Vector library::              srfi-133
-* Integer division::            srfi-141
-* Fixnums::                     srfi-143
-* Mappings and hashmaps::       srfi-146
-* Bitwise operations::          srfi-151
-* String library (reduced)::    srfi-152
-* First-class dynamic extents::  srfi-154
-* Generators and accumulators::  srfi-158
-* Homogeneous numeric vector libraries::  srfi-160
+* Feature-based program configuration language::              srfi-7
+* String library::                                            srfi-13
+* Character-set library::                                     srfi-14
+* Time data types and procedures::                            srfi-19
+* Sources of random bits::                                    srfi-27
+* Localization::                                              srfi-29
+* A program argument processor::                              srfi-37
+* Streams::                                                   srfi-41
+* Eager comprehensions::                                      srfi-42
+* Vector library (Legacy)::                                   srfi-43
+* Requiring extensions::                                      srfi-55
+* Integers as bits::                                          srfi-60
+* Octet vectors::                                             srfi-66
+* Basic hash tables::                                         srfi-69
+* Octet-addressed binary blocks::                             srfi-74
+* Accessing environment variables::                           srfi-98
+* Basic socket interface::                                    srfi-106
+* Boxes::                                                     srfi-111
+* Portable runtime environment inquiry::                      srfi-112
+* Sets and bags::                                             srfi-113
+* Comparators::                                               srfi-114
+* Scheme regular expressions::                                srfi-115
+* Queues based on lists::                                     srfi-117
+* Simple adjustable-size strings::                            srfi-118
+* Lazy sequence (srfi)::                                      srfi-127
+* Sort library::                                              srfi-132
+* Vector library::                                            srfi-133
+* Integer division::                                          srfi-141
+* Fixnums::                                                   srfi-143
+* Mappings and hashmaps::                                     srfi-146
+* Bitwise operations::                                        srfi-151
+* String library (reduced)::                                  srfi-152
+* First-class dynamic extents::                               srfi-154
+* Generators and accumulators::                               srfi-158
+* Homogeneous numeric vector libraries::                      srfi-160
+* Comparator sublibrary::                                     srfi-162
 @end menu
 
 
@@ -5540,21 +5541,11 @@ When @var{comparator} is omitted, the default comparator is used.
 
 @subsubheading Min/max comparison procedures
 
-@defun comparator-min comparator obj1 obj2 @dots{}
-@defunx comparator-max comparator obj1 obj2 @dots{}
-[SRFI-114]
-@c MOD srfi-114
-Find the object in @var{obj1} @var{obj2} @dots{} that is
-minimum or maximum compared by @var{comparator}.
-
-@example
-(comparator-min list-comparator '(a c b) '(a d) '(a c))
-  @result{} (a c)
-@end example
-@end defun
+@code{comparator-min} and @code{comparator-max} are the
+same as @code{srfi-162}.  @xref{Comparator sublibrary}.
 
 @c ----------------------------------------------------------------------
-@node Scheme regular expressions, Comparators, Queues based on lists, Library modules - SRFIs
+@node Scheme regular expressions, Queues based on lists, Comparators, Library modules - SRFIs
 @section @code{srfi-115} - Sets and bags
 
 @deftp {Module} srfi-115
@@ -6279,7 +6270,7 @@ SRFI-158はR7RS largeに採り入れられました。
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Homogeneous numeric vector libraries,  , Generators and accumulators, Library modules - SRFIs
+@node Homogeneous numeric vector libraries, Comparator sublibrary, Generators and accumulators, Library modules - SRFIs
 @section @code{srfi-160} - Homogeneous numeric vector libraries
 @c NODE 均質な数値ベクタライブラリ, @code{srfi-160} - 均質な数値ベクタライブラリ
 
@@ -6295,6 +6286,50 @@ as a part of @code{gauche.uvector} module
 
 This module only exports the procedures defined in @code{srfi-160}.
 @end deftp
+
+@c ----------------------------------------------------------------------
+@node Comparator sublibrary,  , Homogeneous numeric vector libraries, Library modules - SRFIs
+@section @code{srfi-162} - Comparator sublibrary
+@c NODE 比較器のサブライブラリ, @code{srfi-162} - 比較器のサブライブラリ
+
+@deftp {Module} srfi-162
+@mdindex srfi-162
+This is a supplement of srfi-128, comparators.  It provides
+a few comparator procedures, as well as several useful
+pre-defined comparators, listed below.
+Theese pre-defined comparators are already built in Gauche,
+so see @ref{Predefined comparators} for the details.
+
+@example
+default-comparator    boolean-comparator    real-comparator
+char-comparator       char-ci-comparator    string-comparator
+string-ci-comparator  pair-comparator       list-comparator
+vector-comparator     eq-comparator         eqv-comparator
+equal-comparator
+@end example
+@end deftp
+
+@defun comparator-min comparator obj obj2 @dots{}
+@defunx comparator-max comparator obj obj2 @dots{}
+[SRFI-162]
+@c MOD srfi-162
+Find the object in @var{obj1} @var{obj2} @dots{} that is
+minimum or maximum compared by @var{comparator}.
+Note: Srfi-114 provides the same procedures.
+
+@example
+(comparator-min list-comparator '(a c b) '(a d) '(a c))
+  @result{} (a c)
+@end example
+@end defun
+
+@defun comparator-min-in-list comparator list
+@defunx comparator-min-in-list comparator list
+[SRFI-162]
+@c MOD srfi-162
+Find the object in @var{list} that is minimum or maximum compared
+by @var{comparator}.  It is an error if @var{list} is empty.
+@end defun
 
 
 @c Local variables:

@@ -1145,10 +1145,10 @@ srfi-162, srfi-162
 ()
 
 Comparators sublibrary
-Supported by the module @code{srfi-162}.
+Supported by the module @code{srfi-162}.  @xref{Comparator sublibrary}.
 
 比較器のサブライブラリ
-モジュール@code{srfi-162}でサポートされます。
+モジュール@code{srfi-162}でサポートされます。@ref{Comparator sublibrary}参照。
 
 
 srfi-173, srfi-173
