@@ -143,8 +143,38 @@
     (apply stable-sort! seq args)))
 
 (define (stable-sort! seq :optional (cmp #f) (key identity))
+  (let1 sorted (%stable-sort! seq cmp key)
+    (if (and (pair? sorted) (not (eq? sorted seq)))
+      ;; %stable-sort! on a list may return a cell that's not the same
+      ;; cell as the head of input.  We have to ensure we preserve the
+      ;; identity.
+      (let loop ([p sorted])
+        (if (eq? (cdr p) seq)
+          (let ([sorted-car (car sorted)]
+                [sorted-cdr (cdr sorted)]
+                [seq-car (car seq)]
+                [seq-cdr (cdr seq)])
+            (set! (car sorted) seq-car)
+            (set! (cdr sorted) seq-cdr)
+            (set! (car seq) sorted-car)
+            (if (eq? p sorted)
+              (set! (cdr seq) sorted)
+              (begin
+                (set! (cdr seq) sorted-cdr)
+                (set! (cdr p) sorted)))
+            seq)
+          (loop (cdr p))))
+      sorted)))
+
+;; Internal stable sorter.  If key is identity we use merge sort
+;; straightforwardly.  Otherwise, we extract keys first, sort
+;; by the key, and strip the keys.
+;; Note that if SEQ is a list, the returned cell doesn't need to
+;; be the same cell as the head of SEQ.
+(define (%stable-sort! seq :optional (cmp #f) (key identity))
   (define-less? less? cmp 'sort!)
   (if (memq key `(,identity ,values))
+    ;; shortcut
     (letrec ([step (^n (cond [(> n 2) (let* ([j (ash n -1)]
                                              [a (step j)]
                                              [k (- n j)]
@@ -184,7 +214,7 @@
              (do ([spine seq (cdr spine)])
                  [(null? spine)]
                (set-car! spine (cons (car spine) (key (car spine)))))
-             (let1 spine (stable-sort! seq kless?)
+             (let1 spine (%stable-sort! seq kless?)
                (do ([lis spine (cdr lis)])
                    [(null? lis)]
                  (set-car! lis (caar lis)))
@@ -195,7 +225,7 @@
                    [(= i len)]
                  (vector-set! seq i (cons (vector-ref seq i)
                                           (key (vector-ref seq i)))))
-               (do ([seq (stable-sort! seq kless?)]
+               (do ([seq (%stable-sort! seq kless?)]
                     [i 0 (+ i 1)])
                    [(= i len)]
                  (vector-set! seq i (car (vector-ref seq i))))
@@ -216,13 +246,13 @@
   (define-less? less? cmp 'sort)
   (if (memq key `(,identity ,values))
     (cond [(null? seq) seq]
-          [(pair? seq) (stable-sort! (list-copy seq) less?)]
+          [(pair? seq) (%stable-sort! (list-copy seq) less?)]
           [(vector? seq) (list->vector (sort! (vector->list seq) less?))]
           [(is-a? seq <sequence>) (%generic-sort seq less?)]
           [else (error "sequence required, but got:" seq)])
     (cond [(null? seq) seq]
-          [(pair? seq) (stable-sort! (list-copy seq) less? key)]
-          [(vector? seq) (stable-sort! (vector-copy seq) less? key)]
+          [(pair? seq) (%stable-sort! (list-copy seq) less? key)]
+          [(vector? seq) (%stable-sort! (vector-copy seq) less? key)]
           [(is-a? seq <sequence>) (%generic-sort seq less? key)]
           [else (error "sequence required, but got:" seq)])))
 
@@ -231,15 +261,4 @@
 (define stable-sort-by sort-by)
 (define (sort-by! seq key :optional (cmp #f)) (sort! seq cmp key))
 (define stable-sort-by! sort-by!)
-
-;;;
-;;; K-smallest selection
-;;;  Useful for partial sort---we can do it in O(n) instead of O(n log n).
-;;;
-
-;; Internal parameterized version
-;(define (%select-kth seq k cmp ref )
-;  (define-less? less? cmp 'select-kth)
-;  (
-
 

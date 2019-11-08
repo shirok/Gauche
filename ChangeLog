@@ -1,4 +1,11 @@
-2019-11-07  shiro  <shiro@acm.org>
+2019-11-07  Shiro Kawai <shiro@acm.org>
+
+	* lib/gauche/sortutil.scm (stable-sort!): Make sure sort! and
+	  stable-sort! can be used without referring to their return values;
+	  that is, after calling them, seq argument should point to sorted
+	  list.  Before, we assumed sort! is linear-updating, thus caller
+	  should use the return value insted of counting the side effects.
+	  However, srfi-95 doesn't explicitly says so.
 
 	* lib/srfi-162.scm: Added srfi-162 support.  Move comparator-{min|max}
 	  implementation to from srfi-114.scm to srfi-162.scm, and let

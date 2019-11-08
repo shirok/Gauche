@@ -42,12 +42,14 @@
   (define (test1 kind fn destructive? gensrc copy genexp)
     (test* (format "~a (~a) ~a" name kind (if destructive? "!" ""))
            exp
-           (let* ((src  (gensrc in))
-                  (src2 (copy src))
-                  (res  (apply fn src2 xargs)))
-             (and (or destructive?
-                      (equal? src src2))
-                  (genexp res)))))
+           (let* ([src  (gensrc in)]
+                  [src2 (copy src)]
+                  [res  (apply fn src2 xargs)]
+                  [res-list (genexp res)])
+             (and (if destructive?
+                    (eq? src2 res)      ; ensure identity preserved
+                    (equal? src src2))  ; ensure src2 isn't destroyed
+                  res-list))))
   (define (test2 fn destructive?)
     (test1 "list"   fn destructive? values list-copy values)
     (test1 "vector" fn destructive? list->vector vector-copy vector->list)
@@ -168,5 +170,15 @@
  even?
  boolean<?
  '((1 3 1 2 4 2) (1 3 1 2 4 2)))
+
+;; ensure in-place list sort
+;; https://twitter.com/kmizu/status/1192614125647482882
+(let ()
+  (define nexts (list '(3 2 0) '(3 1 1) '(2 0 1)))
+  (test* "in-place list sort identity preservation"
+         '((2 0 1) (3 2 0) (3 1 1))
+         (begin 
+           (sort! nexts < car)
+           nexts)))
 
 (test-end)
