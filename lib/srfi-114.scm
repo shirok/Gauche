@@ -45,6 +45,7 @@
 
 (define-module srfi-114
   (use gauche.uvector)
+  (use srfi-162) ; comparator-min, comparator-max
   (export comparator?                   ;builtin (srfi-128)
           comparator-comparison-procedure?
           comparator-hash-function?
@@ -98,7 +99,8 @@
           in-open-interval? in-closed-interval?
           in-open-closed-interval? in-closed-open-interval?
 
-          comparator-min comparator-max))
+          comparator-min comparator-max ;srfi-162
+          ))
 (select-module srfi-114)
 
 ;;;
@@ -366,15 +368,3 @@
   (case-lambda
     [(cmp a b c) (and (<=? cmp a b) (<? cmp b c))]
     [(a b c) (in-closed-open-interval? default-comparator a b c)]))
-
-(define (comparator-min cmp x . xs)
-  (let loop ([r x] [xs xs])
-    (cond [(null? xs) r]
-          [(<? cmp (car xs) r) (loop (car xs) (cdr xs))]
-          [else (loop r (cdr xs))])))
-
-(define (comparator-max cmp x . xs)
-  (let loop ([r x] [xs xs])
-    (cond [(null? xs) r]
-          [(>? cmp (car xs) r) (loop (car xs) (cdr xs))]
-          [else (loop r (cdr xs))])))

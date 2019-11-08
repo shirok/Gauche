@@ -1141,6 +1141,16 @@ supported by the module @code{scheme.vector.@@} where
 @ref{R7RS uniform vectors}参照。
 
 
+srfi-162, srfi-162
+()
+
+Comparators sublibrary
+Supported by the module @code{srfi-162}.
+
+比較器のサブライブラリ
+モジュール@code{srfi-162}でサポートされます。
+
+
 srfi-173, srfi-173
 ()
 

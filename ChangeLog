@@ -1,3 +1,9 @@
+2019-11-07  shiro  <shiro@acm.org>
+
+	* lib/srfi-162.scm: Added srfi-162 support.  Move comparator-{min|max}
+	  implementation to from srfi-114.scm to srfi-162.scm, and let
+	  srfi-114 depend on srfi-162.
+
 2019-11-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-173.scm: Added srfi-173 Hooks.
