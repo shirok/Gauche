@@ -73,6 +73,9 @@ static ScmWord boundaryFrameMark = SCM_VM_INSN(SCM_VM_NOP);
 /* return true if cont has the end marker of partial continuation */
 #define MARKER_FRAME_P(cont)   ((cont)->marker == 1)
 
+/* check the delimited flag in reset information */
+#define DELIMITED_RESET_P(rinfo) (!SCM_FALSEP(SCM_CAR(rinfo)))
+
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
 #define PC_TO_RETURN  return_code
@@ -2427,8 +2430,16 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
      * the partial continuation.  The returning part is handled by
      * user_level_inner, but we have to make sure that our current continuation
      * won't be overwritten by execution of the partial continuation.
+     *
+     * NB: As an exception case, if we'll jump into the delimited reset,
+     * we might reach to the end of partial continuation even though
+     * the target continuation is a full continuation.
      */
-    if (ep->cstack == NULL) save_cont(vm);
+    if (ep->cstack == NULL ||
+        (SCM_PAIRP(ep->resetChain) &&
+         DELIMITED_RESET_P(SCM_CAR(ep->resetChain)))) {
+        save_cont(vm);
+    }
 
     /*
      * now, install the target continuation
@@ -2669,10 +2680,11 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     /* Remove the saved continuation chain.
        NB: vm->cont can be NULL if we've been executing a partial continuation.
            It's ok, for a continuation pointed by cstack will be restored
-           in user_eval_inner. 
+           in user_eval_inner.
        NB: If the delimited flag in reset information is not set,
            we can consider we've been executing a partial continuation. */
-    if (cp && SCM_PAIRP(vm->resetChain) && SCM_FALSEP(SCM_CAAR(vm->resetChain))) {
+    if (cp && SCM_PAIRP(vm->resetChain) &&
+              !DELIMITED_RESET_P(SCM_CAR(vm->resetChain))) {
         vm->cont = NULL;
     } else {
         vm->cont = c;
