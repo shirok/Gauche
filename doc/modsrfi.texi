@@ -6207,6 +6207,8 @@ being defined, not when it is called:
 @end deftp
 
 @defun current-dynamic-extent
+[SRFI-154]
+@c MOD srfi-154
 @c EN
 Returns a dynamic-extent object that reifies the current dynamic
 environment.
@@ -6216,6 +6218,8 @@ environment.
 @end defun
 
 @defun dynamic-extent? obj
+[SRFI-154]
+@c MOD srfi-154
 @c EN
 Returns @code{#t} iff @var{obj} is a dynamic-extent object.
 @c JP
@@ -6224,6 +6228,8 @@ Returns @code{#t} iff @var{obj} is a dynamic-extent object.
 @end defun
 
 @defun with-dynamic-extent dynext thunk
+[SRFI-154]
+@c MOD srfi-154
 @c EN
 Calls the @var{thunk} in the dynamic extent @var{dynext}, and
 returns the values yielded by @var{thunk}.
@@ -6234,6 +6240,8 @@ returns the values yielded by @var{thunk}.
 @end defun
 
 @defmac dynamic-lambda formals body @dots{}
+[SRFI-154]
+@c MOD srfi-154
 @c EN
 Like @code{lambda}, but this not only captures the lexical environment,
 but also the dynamic environment.  Yields a procedure.
