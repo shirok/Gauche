@@ -2399,6 +2399,13 @@
    ))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-162")
+(use srfi-162)
+(test-module 'srfi-162)
+
+;; if we pass srfi-114 tests, it should be ok.
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-173")
 (use srfi-173)
 (test-module 'srfi-173)
