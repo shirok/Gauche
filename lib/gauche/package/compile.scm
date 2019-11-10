@@ -141,6 +141,10 @@
     (unless (equal? (path-extension f) OBJEXT)
       (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
 
+;; Adjust pathnames in INCDIR and LIBDIR
+;;   If we're running compiler in-place during testing, we replace
+;;   the paths 'gauche-config --incdir' or 'gauche-config --libdir' returns
+;;   with the source tree directories.
 (define (filter-dir flag olddirs dir-key)
   (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
   (define dirs
@@ -154,4 +158,8 @@
             #"~|new|~|sep|~|to-dir|/gc/include"
             new))
         olddirs))
-  (string-join (map (^s #"'-~|flag|~|s|'") (string-split dirs sep)) " "))
+  ;; Return "-I<path> -I<path> ..." or "-L<path> -L<path> ...".
+  ;; We exclude nonexistent paths, for OSX complains about it.
+  (string-join (map (^s #"'-~|flag|~|s|'")
+                    (filter file-exists? (string-split dirs sep)))
+               " "))
