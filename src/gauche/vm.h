@@ -133,7 +133,9 @@ typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
     int size;                     /* size of argument frame */
-    int marker;                   /* end marker of partial continuation */
+    int marker;                   /* marker of partial continuation
+                                      bit0: end marker
+                                      bit1: inside marker */
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
@@ -457,12 +459,13 @@ struct ScmVMRec {
     ScmCallTrace *callTrace;
 
     /* for reset/shift */
-    ScmObj resetChain;          /* list of reset information,
-                                   where reset information is
-                                   (delimited . <dynamic handlers chain>).
-                                   the delimited flag is set when 'shift'
-                                   appears in 'reset' and the end marker of
-                                   partial continuation is set. */
+    ScmObj resetChain;          /* list of reset information, where reset
+                                   information is the dynamic handlers chain
+                                   saved on reset. */
+    ScmObj partChain;           /* list of partial continuation information,
+                                   where the information is only #f that
+                                   indicates we are inside of partial
+                                   continuation. */
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);

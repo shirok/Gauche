@@ -590,6 +590,37 @@
                (display "[r03]"))))
            (k1))))
 
+
+(test* "reset/shift + call/cc 2"
+       "[r01][s01][s02][s02]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            (display "[s02]"))
+           (k1)
+           (reset (reset (k2))))))
+
+(test* "reset/shift + call/cc 3"
+       "[r01][s01][s01]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (call/cc (lambda (k)
+                       (set! k1 k)
+                       (shift k (set! k2 k))))
+            (display "[s01]"))
+           (k2)
+           (reset (k1)))))
+
 (test* "reset/shift + call/cc error 1"
        (test-error)
        (with-output-to-string

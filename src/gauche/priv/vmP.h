@@ -88,6 +88,7 @@ typedef struct ScmEscapePointRec {
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
     ScmObj resetChain;          /* for reset/shift */
+    ScmObj partChain;           /* for reset/shift */
     ScmObj partHandlers;        /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
