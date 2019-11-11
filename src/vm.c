@@ -72,7 +72,7 @@ static ScmWord boundaryFrameMark = SCM_VM_INSN(SCM_VM_NOP);
 
 /* return true if cont has the marker of partial continuation */
 #define PART_END_FRAME_P(cont)    ((cont) && (cont)->marker & 1)
-#define PART_INSIDE_FRAME_P(cont) ((cont) && (cont)->marker & 2)
+#define PART_INSIDE_FRAME_P(cont) ((cont) == NULL || (cont)->marker & 2)
 
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
@@ -1477,6 +1477,8 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
  *   frame pointer) in cstack.cont.
  */
 
+static void call_dynamic_handlers(ScmObj target, ScmObj current);
+
 static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
 {
     ScmCStack cstack;
@@ -1484,6 +1486,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     /* Save prev_pc, for the boundary continuation uses pc slot
        to mark the boundary. */
     ScmWord * volatile prev_pc = PC;
+    ScmObj vmhandlers = vm->handlers;
 
     /* Push extra continuation.  This continuation frame is a 'boundary
        frame' and marked by pc == &boundaryFrameMark.   VM loop knows
@@ -1514,7 +1517,13 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
             POP_CONT();
             PC = prev_pc;
         } else if (vm->cont == NULL) {
-            /* we're finished with executing partial continuation.*/
+            /* we're finished with executing partial continuation. */
+
+            /* call dynamic handlers for returning to the caller */
+            if (vmhandlers != vm->handlers) {
+                call_dynamic_handlers(vmhandlers, vm->handlers);
+            }
+
             vm->cont = cstack.cont;
             POP_CONT();
             PC = prev_pc;
@@ -2398,6 +2407,22 @@ static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
     return h;
 }
 
+static void call_dynamic_handlers(ScmObj target, ScmObj current)
+{
+    ScmVM *vm = theVM;
+    ScmObj handlers_to_call = throw_cont_calculate_handlers(target,
+                                                            current);
+    ScmObj p;
+    SCM_FOR_EACH(p, handlers_to_call) {
+        ScmObj before_flag = SCM_CAAR(p);
+        ScmObj handler     = SCM_CADR(SCM_CAR(p));
+        ScmObj chain       = SCM_CDDR(SCM_CAR(p));
+        if (SCM_FALSEP(before_flag))  vm->handlers = chain;
+        Scm_ApplyRec(handler, SCM_NIL);
+        if (!SCM_FALSEP(before_flag)) vm->handlers = chain;
+    }
+}
+
 static ScmObj throw_cont_cc(ScmObj, void **);
 
 static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
@@ -2584,44 +2609,14 @@ static ScmObj throw_continuation(ScmObj *argframe,
         /* push part-chain for reset/shift */
         vm->partChain = Scm_Cons(SCM_FALSE, vm->partChain);
 
-        /* capture the dynamic handlers chain before calling partial
-           continuation */
-        ScmObj k_handlers = vm->handlers;
-
         ScmObj contproc = Scm_MakeSubr(partcont_wrapper, ep, 0, 1,
                                        SCM_MAKE_STR("partial continuation"));
         ScmObj ret = Scm_ApplyRec(contproc, args);
-
-        /* save return values */
-        int nvals = vm->numVals;
-        ScmObj *vals = NULL;
-        if (nvals > 1) {
-            vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
-            memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
-        }
-
-        /* call dynamic handlers for returning to the caller */
-        ScmObj handlers_to_call = throw_cont_calculate_handlers(k_handlers,
-                                                                vm->handlers);
-        ScmObj p;
-        SCM_FOR_EACH(p, handlers_to_call) {
-            ScmObj before_flag = SCM_CAAR(p);
-            ScmObj handler     = SCM_CADR(SCM_CAR(p));
-            ScmObj chain       = SCM_CDDR(SCM_CAR(p));
-            if (SCM_FALSEP(before_flag))  vm->handlers = chain;
-            Scm_ApplyRec(handler, SCM_NIL);
-            if (!SCM_FALSEP(before_flag)) vm->handlers = chain;
-        }
 
         /* pop part-chain for reset/shift */
         SCM_ASSERT(SCM_PAIRP(vm->partChain));
         vm->partChain = SCM_CDR(vm->partChain);
 
-        /* restore return values */
-        vm->numVals = nvals;
-        if (vals != NULL) {
-            memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
-        }
         return ret;
     }
 }
@@ -2702,16 +2697,8 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->partHandlers = h;
 
     /* call dynamic handlers for exiting reset */
-    ScmObj handlers_to_call = throw_cont_calculate_handlers(reset_handlers,
-                                                            ep->handlers);
-    ScmObj p2;
-    SCM_FOR_EACH(p2, handlers_to_call) {
-        ScmObj before_flag = SCM_CAAR(p2);
-        ScmObj handler     = SCM_CADR(SCM_CAR(p2));
-        ScmObj chain       = SCM_CDDR(SCM_CAR(p2));
-        if (SCM_FALSEP(before_flag))  vm->handlers = chain;
-        Scm_ApplyRec(handler, SCM_NIL);
-        if (!SCM_FALSEP(before_flag)) vm->handlers = chain;
+    if (reset_handlers != ep->handlers) {
+        call_dynamic_handlers(reset_handlers, ep->handlers);
     }
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
