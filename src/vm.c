@@ -141,6 +141,7 @@ static void save_stack(ScmVM *vm);
 static ScmSubr default_exception_handler_rec;
 #define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current);
+static void   call_dynamic_handlers(ScmObj target, ScmObj current);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
 static void   vm_finalize(ScmObj vm, void *data);
@@ -1477,8 +1478,6 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
  *   frame pointer) in cstack.cont.
  */
 
-static void call_dynamic_handlers(ScmObj target, ScmObj current);
-
 static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
 {
     ScmCStack cstack;
@@ -2593,9 +2592,8 @@ static ScmObj throw_continuation(ScmObj *argframe,
         /* full continuation jump */
 
         /* calc dynamic handlers to call */
-        ScmObj handlers_to_call;
-        handlers_to_call = throw_cont_calculate_handlers(ep->handlers,
-                                                         vm->handlers);
+        ScmObj handlers_to_call = throw_cont_calculate_handlers(ep->handlers,
+                                                                vm->handlers);
         return throw_cont_body(handlers_to_call, ep, args);
     } else {
         /* partial continuation call */
