@@ -931,14 +931,14 @@ void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
     if (vm == NULL) vm = Scm_VM();
     if (port == NULL) port = SCM_VM_CURRENT_ERROR_PORT(vm);
     ScmObj stack = Scm_VMGetStackLite(vm);
+    ScmObj calls = Scm_VMGetCallTraceLite(vm);
     SCM_PUTZ("Stack Trace:\n", -1, port);
     SCM_PUTZ("_______________________________________\n", -1, port);
     Scm_ShowStackTrace(port, stack, 0, 0, 0, 0);
-    if (vm->callTrace) {
-        ScmObj trace = Scm_VMGetCallTraceLite(vm);
+    if (SCM_PAIRP(calls)) {
         SCM_PUTZ("Call Trace:\n", -1, port);
         SCM_PUTZ("_______________________________________\n", -1, port);
-        Scm_ShowStackTrace(port, trace, 0, 0, 0, 0);
+        Scm_ShowStackTrace(port, calls, 0, 0, 0, 0);
     }
     SCM_FLUSH(port);
 }
