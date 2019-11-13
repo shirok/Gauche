@@ -457,7 +457,15 @@
 ;;  caller's argument frame and shift the callee's argument frame.
 ;;
 (define-insn TAIL-CALL 1 none #f
-  (begin (DISCARD-ENV) ($goto-insn CALL)))
+  (begin
+    (let* ([ct::ScmCallTrace* (-> vm callTrace)])
+      (when (!= ct NULL)
+        (set! (ref (aref (-> ct entries) (-> ct top)) base) BASE)
+        (set! (ref (aref (-> ct entries) (-> ct top)) pc) PC)
+        (set! (-> ct top) (logand (+ (-> ct top) 1)
+                                  (- (-> ct size) 1)))))
+    (DISCARD-ENV)
+    ($goto-insn CALL)))
 
 ;; JUMP <addr>
 ;;  Jump to <addr>.
