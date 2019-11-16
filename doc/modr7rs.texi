@@ -9472,21 +9472,32 @@ The latter is the same as @code{(flonum-min-denormalized)} in Gauche
 @defvr {Constant} fl-epsilon
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 The same as @code{(flonum-epsilon)} in Gauche
 (@pxref{Numerical comparison}).
+@c JP
+Gaucheの@code{(flonum-epsilon)}と同じです。
+(@ref{Numerical comparison}参照)。
+@c COMMON
 @end defvr
 
 @defvr {Constant} fl-fast-fl+*
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 If this is @code{#t}, @code{(fl+* x y z)} executes as fast as,
 or faster than, @code{(fl+ (fl* x y) z)}.  If not, @code{#f}.
+@c JP
+これが@code{#t}を返した場合、@code{(fl+* x y z)}は
+@code{(fl+ (fl* x y) z)}と同等の速度、もしくはより速く実行されます。
+@c COMMON
 @end defvr
 
 @defvr {Constant} fl-integer-exponent-zero
 @defvrx {Constant} fl-integer-exponent-nan
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 These are exact integer values returned in special occasion
 from @code{flinteger-exponent}.  The values themselves don't mean
 much; they're to be compared with the result of @code{flinteger-exponent}.
@@ -9494,6 +9505,13 @@ much; they're to be compared with the result of @code{flinteger-exponent}.
 If its argument is 0, @code{flinteger-exponent} returns
 @code{fl-integer-exponent-zero}.  If its argument is @code{+nan.0},
 @code{flinteger-exponent} returns @code{fl-integer-exponent-nan}.
+@c JP
+これらは、@code{flinteger-exponent}が特別な場合に返し得る正確な整数値です。
+値そのものに意味はなく、@code{flinteger-exponent}の結果と比較するために使われます。
+
+@code{flinteger-exponent}は引数が0の時@code{fl-integer-exponent-zero}を、
+引数が@code{+nan.0}の時@code{fl-integer-exponent-nan}を返します。
+@c COMMON
 @end defvr
 
 @c EN
@@ -9505,6 +9523,7 @@ If its argument is 0, @code{flinteger-exponent} returns
 @defun flonum number
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns a flonum that's equal to or (if there's no equivalent flnoum)
 the closest to @var{number}.
 
@@ -9512,13 +9531,26 @@ If @var{number} is not a real number,
 @code{+nan.0} is returned.  (Note: srfi-144 recommends it, but
 a conformant implementation may signal an error in such case.
 Portable code shouldn't rely on this behavior.)
+@c JP
+@var{number}と等しいflonum、もしくは等しい値がflonumで表現可能でなければもっとも近い
+flonumを返します。
+
+@var{number}が実数でなければ@code{+nan.0}が返されます
+(これはsrfi-144で推奨されている動作ですが、処理系によってはエラーを投げても良いことに
+なっているので、ポータブルなコードを書くときは注意してください。)
+@c COMMON
 @end defun
 
 @defun fladjacent x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns a flonum adjacent to @var{x} in the direction of @var{y}.
 If @var{x} = @var{y}, @var{x} is returned.
+@c JP
+flonum @var{x}から@var{y}の方向に1最小単位だけ進めたflonumを返します。
+@var{x} = @var{y}なら、@var{x}そのものが返されます。
+@c COMMON
 
 @example
 (fladjacent 1.0 2.0) @result{} 1.0000000000000002
@@ -9529,16 +9561,25 @@ If @var{x} = @var{y}, @var{x} is returned.
 @defun flcopysign x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns a flonum whose absolute value is @code{(abs x)} and whose
 sign is the sign of @var{y}.
+@c JP
+絶対値が@code{(abs x)}と同じで、符号が@var{y}と同じであるようなflonumを返します。
+@c COMMON
 @end defun
 
 
 @defun make-flonum x n
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns a flonum @code{(* @var{x} (expt 2 @var{n}))}.  It is the same
 as @code{ldexp} (@pxref{Numerical conversions}).
+@c JP
+@code{(* @var{x} (expt 2 @var{n}))}なるflonumを返します。
+Gaucheの@code{ldexp}と同じです (@ref{Numerical conversions}参照)。
+@c COMMON
 @end defun
 
 @c EN
@@ -9550,6 +9591,7 @@ as @code{ldexp} (@pxref{Numerical conversions}).
 @defun flinteger-fraction x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns two flnoums, the integral part of @var{x} and the fractional
 part of @var{x}.  Same as @code{modf} (@pxref{Numerical conversions}).
 
@@ -9558,6 +9600,16 @@ If @var{x} is @code{-inf.0}, @code{-inf.0} and @code{-0.0} is returned.
 If @var{x} is @code{+nan.0}, @code{+nan.0} and @code{+nan.0} is returned.
 (These corner cases are not explicit in srfi-144, but follows 
 the POSIX specification of @code{modf}.)
+@c JP
+flonum @var{x}の整数部と小数部をそれぞれflonumとして返します。
+Gaucheの@code{modf}と同じです (@ref{Numerical conversions}参照)。
+
+@var{x}が@code{+inf.0}なら、@code{+inf.0}と@code{0.0}が、
+@var{x}が@code{-inf.0}なら、@code{-inf.0}と@code{-0.0}が、
+そして@var{x}が@code{+nan.0}なら、@code{+nan.0}と@code{+nan.0}が返されます。
+(この動作はsrfi-144では指定されていません。GaucheはPOSIXの@code{modf}の動作に
+準じています)。
+@c COMMON
 
 @example
 (flinteger-fraction fl-pi)
@@ -9568,11 +9620,19 @@ the POSIX specification of @code{modf}.)
 @defun flexponent x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns the exponent part of @var{x} as a flnoum.  If @var{x} is
 a non-zero finite value, the result is an integer.
 
 If @var{x} is zero, @code{-inf.0} is returned.
 If @var{x} is @var{+inf.0} or @code{-inf.0}, @code{+inf.0} is returned.
+@c JP
+flonum @var{x}の指数部をflonumとして返します。@var{x}がゼロでない有限値なら、
+結果は整数です。
+
+@var{x}がゼロなら、@code{-inf.0}が、
+@var{x}が無限大なら、@code{+inf.0}が返されます。
+@c COMMON
 
 @example
 (flexponent 1.0)    @result{} 0.0
@@ -9585,6 +9645,7 @@ If @var{x} is @var{+inf.0} or @code{-inf.0}, @code{+inf.0} is returned.
 @defun flinteger-exponent x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns the same as @code{flexponent} but as an exact integer.
 
 If @var{x} is zero, the value of @code{fl-integer-exponent-zero} is
@@ -9595,25 +9656,52 @@ implementation-dependent exact integer (usually it's so large that
 is returned.
 If @var{x} is @code{+nan.0}, the value of
 @code{fl-integer-exponent-nan} is returned.
+@c JP
+@code{flexponent}と同様に@var{x}の指数部を返しますが、こちらは正確な整数を返します。
+
+@var{x}がゼロの場合、定数@code{fl-integer-exponent-zero}が返されます。
+@var{x}が無限大の場合、非常に大きな正確な整数
+(@code{(ldexp 1 (flinteger-exponent +inf.0))}が@code{+inf.0}になるような
+値)が返されます。
+@var{x}が@code{+nan.0}の場合、定数@code{fl-integer-exponent-nan}が返されます。
+@c COMMON
 @end defun
 
 @defun flnormalized-fraction-exponent x
 [R7RS flonum]
 @c MOD scheme.flonum
-Returns two flonums, a normalized mantissa of @var{x} with the same sign
-as @var{x}, and an exact integer exponent of @var{x}.  If it returns
+@c EN
+Returns two values, a normalized mantissa of @var{x} with the same sign
+as @var{x} as a flonum, and an exact integer exponent of @var{x}.  If it returns
 a value @var{y} and @var{n}, @code{x = (* y (expt 2 n))} and
 @code{x = (ldexp y n)}.
 This is the same as @code{frexp}
 (@pxref{Numerical conversions}).
+@c JP
+flonum @var{x}の正規化された仮数部 (符号は@var{x}と同じ)をflonumで、
+および@var{x}の指数部を正確な整数で2つの返り値として返します。
+それらを@var{y}と@var{n}とすれば、@code{x = (* y (expt 2 n))}であり、
+@code{x = (ldexp y n)}となります。
+この手続きはGaucheの@code{frexp}と同じです(@ref{Numerical conversions}参照)。
+@c COMMON
 
+@c EN
 If @var{x} is non-zero finite value, the first value
 falls between 0.5 (inclusive) and 1.0 (exclusive).
 The corner cases are not explicit in srfi-144, but Gauche follows
 @code{frexp}: If @var{x} is (minus) zero, it returns
 (minus) zero and 0; if @var{x} is infinity, it returns
-infinity (of the same sign) and 0; if @var{x} is NaN,
-it returns NaN and 0.
+infinity (of the same sign) and 0; if @var{x} is @code{+nan.0},
+it returns @code{+nan.0} and 0.
+@c JP
+@var{x}がゼロでない有限の値ならば、
+最初の返り値は0.5以上で1.0より小さな値になります。
+コーナーケースについてはsrfi-144では規程されていませんが、Gaucheは
+@code{frexp}の仕様に沿って、次のようにしています。
+@var{x}が@code{0.0}(か@code{-0.0})なら、結果は@code{0.0}(か@code{-0.0})と@code{0}。
+@var{x}が無限大なら、同じ符号の無限大と@code{0}。
+@var{x}が@code{+nan.0}なら、@code{+nan.0}と@code{0}。
+@c COMMON
 
 @example
 (flnormalized-fraction-exponent 12345.6789)
@@ -9626,9 +9714,15 @@ it returns NaN and 0.
 @defun flsign-bit x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns 0 if @var{x} is positive or @var{0.0},
 and 1 if it is negative (including @code{-0.0}).
 @code{(flsign-bit +nan.0)} is implementation-dependent.
+@c JP
+@var{x}が正もしくは@code{0.0}なら@code{0}を、
+負もしくは@code{-0.0}なら@code{1}を返します。
+@code{(flsign-bit +nan.0)}は実装依存です。
+@c COMMON
 @end defun
 
 @c EN
@@ -9637,7 +9731,11 @@ and 1 if it is negative (including @code{-0.0}).
 @subheading 述語
 @c COMMON
 
+@c EN
 (Note: @code{flonum?} is built-in; @pxref{Numerical predicates}).
+@c JP
+(註: @code{flonum?}は組み込みです。@ref{Numerical predicates}参照)。
+@c COMMON
 
 @defun fl=? x y z @dots{}
 @defunx fl<? x y z @dots{}
