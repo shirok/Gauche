@@ -9744,6 +9744,7 @@ and 1 if it is negative (including @code{-0.0}).
 @defunx fl>=? x y z @dots{}
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum specific version of numerical comparison predicates
 @code{=}, @code{<}, @code{>}, @code{<=} and @code{>=}, respectively.
 
@@ -9755,22 +9756,46 @@ compilers hints that you are passing flonums so that it can optimize.
 Note that @code{-0.0} and @code{0.0} are the same in terms of
 these predicates, e.g. @code{(fl<? -0.0 0.0)} is @code{#f}.
 
-If a NaN is passed to any of the arguments, these predicates returns
+If a @code{+nan.0} is passed to any of the arguments, these predicates returns
 @code{#f}.
+@c JP
+flonum専用の比較関数です。それぞれ
+@code{=}、@code{<}、@code{>}、@code{<=}、@code{>=}に対応します。
+
+今のところGaucheではこれらは単に汎用の比較関数の別名となっています。
+なのでflonum以外の数値が渡されても動作しますが、そうすることはポータブルではありません。
+これらの関数の意図は、将来的にコンパイラに型についてのヒントを与え
+最適化を可能にすることです。
+
+@code{-0.0}と@code{0.0}は数値比較においては等しいものと扱われることに
+注意してください。@code{(fl<? -0.0 0.0)}は@code{#f}になります。
+
+引数に@code{+nan.0}がひとつでもあれば、結果は常に@code{#f}となります。
+@c COMMON
 @end defun
 
 @defun flunordered? x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{#t} iff at least one of @var{x} or @var{y} is
-a NaN.
+a @code{+nan.0}.
+@c JP
+@var{x}と@var{y}の少なくとも一方が@code{+nan.0}であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun flinteger? x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{#t} if @var{x} is an integral flonum,
 @code{#f} otherwise.
+@c JP
+@var{x}が整数のflonumであれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun flzero? x
@@ -9778,16 +9803,28 @@ Returns @code{#t} if @var{x} is an integral flonum,
 @defunx flnevative? x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{zero?}, @code{positive?} and @code{negative?}.
 Note that @code{(flnegative? -0.0)} is @code{#f}.
+You need @code{flsign-bit} to distinguish negative zero from zero.
+@c JP
+flonum専用の@code{zero?}、@code{positive?}、@code{negative?}です。
+@code{(flnegative? -0.0)}は@code{#f}であることに注意してください。
+負のゼロを普通のゼロと見分けるには@code{flsign-bit}を使います。
+@c COMMON
 @end defun
 
 @defun flodd? x
 @defunx fleven? x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{odd?} and @code{even?}.  An error is thrown
 if @var{x} is not an integer.
+@c JP
+flonum専用の@code{odd?}と@code{even?}です。
+@var{x}が整数でなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun flfinite? x
@@ -9795,16 +9832,26 @@ if @var{x} is not an integer.
 @defunx flnan? x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{finite?}, @code{infinite?} and
 @code{nan?} (@pxref{Numerical predicates}).
+@c JP
+それぞれflonum専用の@code{finite?}、@code{infinite?}、
+@code{nan?}です (@ref{Numerical predicates}参照)。
+@c COMMON
 @end defun
 
 @defun flnormalized? x
 @defunx fldenormalized? x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{#t} iff @var{x} is a normalized/denormalized flonum,
 respectively.
+@c JP
+それぞれ、@var{x}が正規化浮動小数点数、非正規化浮動小数点数の場合に
+@code{#t}を返し、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @c EN
@@ -9817,74 +9864,130 @@ respectively.
 @defunx flmin x @dots{}
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{min} and @code{max}, except that
 these can take no arguments, in which case @code{-inf.0}
 and @code{+inf.0} are returned, respectively.
 
 Note that we don't check whether the arguments are flonums or not,
 but passing non-flonums are not portable.
+@c JP
+flonum専用の@code{min}と@code{max}です。汎用の@code{min}、@code{max}と
+異なり、引数がゼロ個でもエラーにならず、それぞれ@code{-inf.0}と
+@code{+inf.0}が返されます。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @defun fl+ x @dots{}
 @defunx fl* x @dots{}
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{+.} and @code{*.}
 (@pxref{Arithmetics}).
 
 Note that we don't check whether the arguments are flonums or not,
 but passing non-flonums is not portable.
+@c JP
+flonum専用の@code{+.}と@code{-.}です (@ref{Arithmetics}参照)。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @defun fl+* x y z
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(+ (* x y) z)}, but (potentially) faster, and more accurately.
-It calls C99 @code{fma} function internally.  (``More accurately'' means
-that calculation is done in a single step, with rounding once at the end.)
+It calls C99 @code{fma} function internally.  ``More accurately'' means
+that calculation is done in a single step, with rounding once at the end.
 
 Note: As of release of 0.9.8, MinGW implementation of @code{fma} seems
 to produce slightly off value occasionally, as if it is calculated
 with the two steps (rounding after multiplication).
+@c JP
+@code{(+ (* x y) z)}の値を返しますが、
+プラットフォームによってはより速く正確な結果を返します。
+Gaucheは内部的にはC99の@code{fma}を呼んでいます。
+「より正確」というのは、乗算と加算が一度に行われ、丸めが最後に1回だけ起きることを
+指します。
+
+註: 0.9.8リリース時点で、MinGWの@code{fma}実装は
+乗算と加算それぞれに丸めが入るようになっているので、
+しばしばわずかにずれた結果を返します。
+@c COMMON
 @end defun
 
 @defun fl- x y @dots{}
 @defunx fl- x y @dots{}
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{-.} and @code{/.}
 (@pxref{Arithmetics}).
 
 Note that we don't check whether the arguments are flonums or not,
 but passing non-flonums is not portable.
+@c JP
+flonum専用の@code{-.}と@code{/.}です (@ref{Arithmetics}参照)。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @defun flabs x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{abs} 
 (@pxref{Arithmetics}).
 
 Note that we don't check whether the argument is a flonum or not,
 but passing non-flonum is not portable.
+@c JP
+flonum専用の@code{abs}です (@ref{Arithmetics}参照)。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @defun flabsdiff x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(abs (- x y))}.
 
 Note that we don't check whether the arguments are flonums or not,
 but passing non-flonum is not portable.
+@c JP
+@code{(abs (- x y))}を返します。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @defun flposdiff
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(max (- x y) 0)}.
 
 Note that we don't check whether the arguments are flonums or not,
 but passing non-flonum is not portable.
+@c JP
+@code{(max (- x y) 0)}を返します。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @defun flsgn x
