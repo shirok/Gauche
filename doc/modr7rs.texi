@@ -9718,10 +9718,14 @@ it returns @code{+nan.0} and 0.
 Returns 0 if @var{x} is positive or @var{0.0},
 and 1 if it is negative (including @code{-0.0}).
 @code{(flsign-bit +nan.0)} is implementation-dependent.
+
+There's also @code{flsgn}, if you need sign instead of a bit value.
 @c JP
 @var{x}が正もしくは@code{0.0}なら@code{0}を、
 負もしくは@code{-0.0}なら@code{1}を返します。
 @code{(flsign-bit +nan.0)}は実装依存です。
+
+ビット値でなく符号が欲しい場合、@code{flsgn}も使えます。
 @c COMMON
 @end defun
 
@@ -9806,11 +9810,12 @@ Returns @code{#t} if @var{x} is an integral flonum,
 @c EN
 Flonum-specific version of @code{zero?}, @code{positive?} and @code{negative?}.
 Note that @code{(flnegative? -0.0)} is @code{#f}.
-You need @code{flsign-bit} to distinguish negative zero from zero.
+You need @code{flsign-bit} or @code{flsgn} to 
+distinguish negative zero from zero.
 @c JP
 flonum専用の@code{zero?}、@code{positive?}、@code{negative?}です。
 @code{(flnegative? -0.0)}は@code{#f}であることに注意してください。
-負のゼロを普通のゼロと見分けるには@code{flsign-bit}を使います。
+負のゼロを普通のゼロと見分けるには@code{flsign-bit}や@code{flsgn}を使います。
 @c COMMON
 @end defun
 
@@ -9993,23 +9998,54 @@ but passing non-flonum is not portable.
 @defun flsgn x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{1.0} if @var{x}'s sign bit is 0 (zero or positive),
-@code{-1.0} if it's 1 (negative).  Same as @code{(flcopysign 1.0 x)}.
+@code{-1.0} if it's 1 (negative).  Same as @code{(flcopysign 1.0 x)},
+or @code{(if (zero? (flsign-bit x)) 1.0 -1.0)}.
 Note that @code{(flsgn 0.0)} is @code{1.0}, while
 @code{(flsgn -0.0)} is @code{-1.0}.  The result of
 passing @code{+nan.0} is implementation-dependent, reflecting
 the sign bit of underlying representation; it returns either @code{1.0} or
 @code{-1.0} but you can't count on which.
+
+To extract the sign bit, instead of obtaining a signed flonum,
+you can use @code{flsign-bit}.
+@c JP
+@var{x}の符号ビットが0 (ゼロまたは正)なら@code{1.0}を、
+1 (負および負のゼロ)の場合は@code{-1.0}を返します。
+@code{(flcopysign 1.0 x)}や@code{(if (zero? (flsign-bit x)) 1.0 -1.0)}
+と考えることもできます。
+@code{(flsgn 0.0)}の結果は@code{1.0}、
+@code{(flsng -0.0)}の結果は@code{-1.0}です。
+@code{+nan.0}を渡した場合の結果は実装上NaNの符号ビットがどうなっているかに
+よるので、結果は@code{1.0}か@code{-1.0}かのいずれかになりますが、
+どちらになるかはっきりしたことは言えません。
+
+符号つきflonumではなく符号ビットそのものを取り出すには@code{flsign-bit}が使えます。
+@c COMMON
 @end defun
 
 @defun flnumerator x
 @defunx fldenominator x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{numerator} and @code{denominator}
 (@pxref{Arithmetics}).
 
 For infinity and zero, denominator is 1.0.
+
+Note that we don't check whether the arguments are flonums or not,
+but passing non-flonum is not portable.
+@c JP
+flonum専用の@code{numerator}と@code{denominator}です
+(@ref{Arithmetics}参照)。
+
+無限大とゼロのdenominatorは@code{1.0}になります。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @defun flfloor x
@@ -10018,12 +10054,20 @@ For infinity and zero, denominator is 1.0.
 @defunx fltruncate x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{floor}, @code{ceiling},
 @code{round} and @code{truncate}
 (@pxref{Arithmetics}).
 
 Note that we don't check whether the arguments are flonums or not,
 but passing non-flonum is not portable.
+@c JP
+flonum専用の@code{floor}、@code{ceiling}、@code{round}、@code{truncate}です
+(@ref{Arithmetics}参照)。
+
+引数がflonumかどうかはチェックしていませんが、flonum以外の引数を渡すことは
+ポータブルではありません。
+@c COMMON
 @end defun
 
 @c EN
