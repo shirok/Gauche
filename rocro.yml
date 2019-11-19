@@ -20,6 +20,8 @@ inspecode:
     ignore:
       - gc/*
       - ext/tls/axTLS/*
+      - ext/sparse/spvec.c
+      - src/gauche/win-compat.h
     threshold:
       num-issues: 0
 
