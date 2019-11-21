@@ -100,7 +100,6 @@
           (:macro check-arg get-optional get-keyword*)
           (:macro $)
           (:macro fluid-let)
-          (:macro ecase)
           (:macro dotimes dolist doplist while until)
           (:macro guard))
 

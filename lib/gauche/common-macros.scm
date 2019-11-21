@@ -265,30 +265,6 @@
      (syntax-error "malformed until" (until . other))]))
 
 ;;;-------------------------------------------------------------
-;;; ecase, a la CL
-
-(define-syntax ecase
-  (syntax-rules ()
-    [(ecase expr clause ...) (ecase-helper expr () () clause ...)]))
-
-(define-syntax ecase-helper
-  (syntax-rules (else =>)
-    [(ecase-helper expr choices (clause ...))
-     (let ([v expr])
-       (case v
-         clause ...
-         (else (errorf "ecase test fell through: got ~s, \
-                        expecting one of ~s" v 'choices))))]
-    [(ecase-helper expr choices (clause ...) (else . rest))
-     ;; If there's an else, ecase is the same as case.
-     (case expr clause ... (else . rest))]
-    [(ecase-helper expr (choice ...) (clause ...) ((v ...) . rest) more-clause ...)
-     (ecase-helper expr
-                   (choice ... v ...)
-                   (clause ... ((v ...) . rest))
-                   more-clause ...)]))
-
-;;;-------------------------------------------------------------
 ;;; guard (srfi-34)
 
 (define %reraise (with-module gauche.internal %reraise))

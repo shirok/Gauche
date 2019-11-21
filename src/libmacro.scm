@@ -41,7 +41,7 @@
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
-                             assume assume-type cond-list unwind-protect
+                             assume assume-type ecase cond-list unwind-protect
                              let-keywords let-keywords* let-optionals*
                              define-compiler-macro))
 
@@ -681,6 +681,30 @@
           `(let1 v ,expr
              (unless (is-a? v ,type)
                (type-error 'expr ,type v))))]))))
+
+;;; ecase, a la CL
+
+(define-syntax ecase
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr clause ...)
+        (or (and-let* ([ (pair? clause) ]
+                       [last-clause (last clause)]
+                       [ (pair? last-clause) ]
+                       [ (c (r'else) (car last-clause)) ])
+              ;; If there's an else, ecase is the same as case.
+              (quasirename r
+                `(case ,expr ,@clause)))
+            (let1 choices (append-map car clause)
+              (quasirename r
+                `(let ([v ,expr])
+                   (case v 
+                     ,@clause
+                     (else (errorf "ecase test fell through: got ~s, \
+                                    expecting one of ~s" v ',choices)))))))]
+       [else (error "Malformed ecase:" f)]))))
+
 
 ;;; cond-list - a syntax to construct a list
 
