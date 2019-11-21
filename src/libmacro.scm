@@ -41,7 +41,9 @@
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
-                             assume assume-type ecase cond-list unwind-protect
+                             assume assume-type 
+                             dotimes
+                             ecase cond-list unwind-protect
                              let-keywords let-keywords* let-optionals*
                              define-compiler-macro))
 
@@ -682,6 +684,31 @@
              (unless (is-a? v ,type)
                (type-error 'expr ,type v))))]))))
 
+;;; repeat construct
+
+(define-syntax dotimes
+  (er-macro-transformer
+   (^[f r c]
+     (define (expand var n res body)
+       (quasirename r
+         `(do ([limit ,n]
+               [,var 0 (+ ,var 1)])
+              [(>= ,var limit) ,res]
+            ,@body)))
+     (match f
+       [(_ (var n res) . body)  (expand var n res body)]
+       [(_ (var n) . body)      (expand var n (undefined) body)]
+       [(_ (n) . body)
+        ;; gauche extension.  we special-case when n is inf.0 to avoid
+        ;; unnecessary flonum calculation
+        (quasirename r
+          `(let1 i ,n
+             (cond [(<= i 0) (undefined)]
+                   [(infinite? i) (do () (#f) ,@body)]
+                   [else
+                    ,(expand (gensym) n (undefined) body)])))]
+       [_ (error "Malformed dotimes:" f)]))))
+
 ;;; ecase, a la CL
 
 (define-syntax ecase
@@ -703,7 +730,7 @@
                      ,@clause
                      (else (errorf "ecase test fell through: got ~s, \
                                     expecting one of ~s" v ',choices)))))))]
-       [else (error "Malformed ecase:" f)]))))
+       [_ (error "Malformed ecase:" f)]))))
 
 
 ;;; cond-list - a syntax to construct a list

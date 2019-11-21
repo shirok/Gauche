@@ -166,30 +166,6 @@
 ;;;-------------------------------------------------------------
 ;;; repeat construct
 
-(define-syntax dotimes
-  (syntax-rules ()
-    [(_ (var n res) . body)
-     (do ([limit n]
-          [var 0 (+ var 1)])
-         [(>= var limit) res]
-       . body)]
-    [(_ (var n) . body)
-     (do ([limit n]
-          [var 0 (+ var 1)])
-         [(>= var limit) (undefined)]
-       . body)]
-    [(_ (n) . body)
-     (let1 i n
-       (cond [(<= i 0) (undefined)]
-             [(infinite? i)
-              (do () (#f) . body)] ;avoid unnecessary flonum calculation
-             [else
-              (do ([i i (- i 1)])
-                  [(<= i 0) (undefined)]
-                . body)]))]
-    [(_ . other)
-     (syntax-error "malformed dotimes" (dotimes . other))]))
-
 (define-syntax dolist
   (syntax-rules ()
     [(_ (var lis res) . body)
