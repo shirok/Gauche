@@ -499,12 +499,11 @@
 
 (define-module scheme.process-context
   (import r7rs.aux)
-  (use srfi-98)
   (export command-line emergency-exit exit
           get-environment-variable get-environment-variables)
   (define (emergency-exit :optional (obj 0)) (sys-exit obj))
-  (define+ get-environment-variable  srfi-98)
-  (define+ get-environment-variables srfi-98)
+  (define get-environment-variable  sys-getenv)
+  (define get-environment-variables sys-environ->alist)
   (provide "scheme/process-context"))
 
 (define-module scheme.read
