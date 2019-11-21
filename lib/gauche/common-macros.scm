@@ -166,22 +166,6 @@
 ;;;-------------------------------------------------------------
 ;;; repeat construct
 
-(define-syntax dolist
-  (syntax-rules ()
-    [(_ (var lis res) . body)
-     (do ([p lis (cdr p)])
-         [(null? p)
-          (let1 var '() res)]      ;bound var for CL compatibility
-       (let1 var (car p) . body))]
-    [(_ (var lis) . body)
-     (do ([p lis (cdr p)])
-         [(null? p) '()]
-       (let1 var (car p) . body))]
-    [(_ (lis) . body)
-     (dolist (tmp lis) . body)]
-    [(_ . other)
-     (syntax-error "malformed dolist" (dolist . other))]))
-
 (define-syntax doplist
   (syntax-rules ()
     [(_ ((k v) plis default) . body)

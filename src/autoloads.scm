@@ -100,7 +100,7 @@
           (:macro check-arg get-optional get-keyword*)
           (:macro $)
           (:macro fluid-let)
-          (:macro dolist doplist while until)
+          (:macro doplist while until)
           (:macro guard))
 
 (autoload gauche.regexp

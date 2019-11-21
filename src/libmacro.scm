@@ -42,7 +42,7 @@
                              let-values let*-values define-values set!-values
                              values-ref values->list
                              assume assume-type 
-                             dotimes
+                             dotimes dolist
                              ecase cond-list unwind-protect
                              let-keywords let-keywords* let-optionals*
                              define-compiler-macro))
@@ -690,14 +690,15 @@
   (er-macro-transformer
    (^[f r c]
      (define (expand var n res body)
-       (quasirename r
-         `(do ([limit ,n]
-               [,var 0 (+ ,var 1)])
-              [(>= ,var limit) ,res]
-            ,@body)))
+       (let1 limit (gensym "limit")
+         (quasirename r
+           `(do ([,limit ,n]
+                 [,var 0 (+ ,var 1)])
+                [(>= ,var ,limit) ,res]
+            ,@body))))
      (match f
-       [(_ (var n res) . body)  (expand var n res body)]
-       [(_ (var n) . body)      (expand var n (undefined) body)]
+       [(_ (var n res) . body) (expand var n res body)]
+       [(_ (var n) . body)     (expand var n (undefined) body)]
        [(_ (n) . body)
         ;; gauche extension.  we special-case when n is inf.0 to avoid
         ;; unnecessary flonum calculation
@@ -708,6 +709,22 @@
                    [else
                     ,(expand (gensym) n (undefined) body)])))]
        [_ (error "Malformed dotimes:" f)]))))
+
+(define-syntax dolist
+  (er-macro-transformer
+   (^[f r c]
+     (define (expand var lis res body)
+       (let1 p (gensym "p")
+         (quasirename r
+           `(do ([,p ,lis (cdr ,p)])
+                [(null? ,p)
+                 (let1 ,var '() ,res)] ;bound var for CL compatibility
+              (let1 ,var (car ,p) ,@body)))))
+     (match f
+       [(_ (var lis res) . body) (expand var lis res body)]
+       [(_ (var lis) . body)     (expand var lis (undefined) body)]
+       [(_ (lis) . body)         (expand (gensym) lis (undefined) body)]
+       [_ (error "Malformed dolist:" f)]))))   
 
 ;;; ecase, a la CL
 
