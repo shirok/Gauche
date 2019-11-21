@@ -199,7 +199,6 @@
   (use gauche.unicode)
   (use srfi-13)
 
-  (require "text/parse")
   (require "srfi-43")
 
   (import r7rs.aux)
