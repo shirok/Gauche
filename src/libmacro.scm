@@ -37,6 +37,7 @@
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z cut cute rec
+                             guard
                              push! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
@@ -399,6 +400,36 @@
         (quasirename r
           `(letrec ((,name ,expr)) ,name))]
        [_ (error "malformed rec:" f)]))))
+
+;;; guard (srfi-34)
+
+(define-syntax guard
+  (er-macro-transformer
+   (^[f r c]
+     (define %reraise. ((with-module gauche.internal make-identifier)
+                        '%reraise
+                        (find-module 'gauche.internal)
+                        '()))
+     (match f
+       [(_ (var clause ...) body ...)
+        (unless (every list? clause)
+          (error "malformed guard clauses:" f))
+        (if (and (pair? clause)
+                 (c (r'else) (car (last clause))))
+          (quasirename r
+            `(with-error-handler
+                 (lambda (,var)
+                   (cond ,@clause))
+               (lambda () ,@body)
+               :rewind-before #t))
+          (quasirename r
+            `(with-error-handler
+                 (lambda (,var)
+                   (cond ,@clause
+                         (else (,%reraise.))))
+               (lambda () ,@body)
+               :rewind-before #t)))]
+       [_ (error "malformed guard:" f)]))))
 
 ;;; bind construct
 

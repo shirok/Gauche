@@ -100,8 +100,7 @@
           (:macro check-arg get-optional get-keyword*)
           (:macro $)
           (:macro fluid-let)
-          (:macro doplist while until)
-          (:macro guard))
+          (:macro doplist while until))
 
 (autoload gauche.regexp
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)

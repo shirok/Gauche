@@ -44,7 +44,6 @@
           fluid-let
           ecase
           dotimes doilst doplist while until
-          guard
           ))
 (select-module gauche.common-macros)
 
@@ -223,38 +222,3 @@
        . body)]
     [(_ . other)
      (syntax-error "malformed until" (until . other))]))
-
-;;;-------------------------------------------------------------
-;;; guard (srfi-34)
-
-(define %reraise (with-module gauche.internal %reraise))
-
-(define-syntax guard
-  (syntax-rules ()
-    [(guard (var . clauses) . body)
-     (with-error-handler
-         (lambda (e)
-           (let ((var e))
-             (%guard-rec var e . clauses)))
-       (lambda () . body)
-       :rewind-before #t)]))
-
-(define-syntax %guard-rec
-  (syntax-rules (else =>)
-    [(%guard-rec var exc)
-     ;; exception handler can return to the caller
-     (%reraise)]
-    [(%guard-rec var exc (else . exprs))
-     (begin . exprs)]
-    [(%guard-rec var exc (test => proc) . more)
-     (let ((tmp test))
-       (if tmp
-         (proc tmp)
-         (%guard-rec var exc . more)))]
-    [(%guard-rec var exc (test . exprs) . more)
-     (if test
-       (begin . exprs)
-       (%guard-rec var exc . more))]
-    [(%guard-rec var exc other . more)
-     (syntax-error "malformed guard clause" other)]))
-
