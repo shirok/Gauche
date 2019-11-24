@@ -34,10 +34,10 @@
 ;; Since this depends on gauche.unicode, we split it from the core.
 
 (define-module gauche.hashutil
-  (use gauche.unicode)                  ;string-foldcase
   (export string-ci-hash))
 (select-module gauche.hashutil)
 
+(autoload gauche.unicode string-foldcase)
 (define (string-ci-hash obj)
   (assume-type obj <string>)
   (default-hash (string-foldcase obj)))
