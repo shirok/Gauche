@@ -37,13 +37,13 @@
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z $ cut cute rec
-                             guard
+                             guard check-arg
                              push! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
                              assume assume-type 
-                             dotimes dolist
+                             dotimes dolist do-plist doplist
                              ecase cond-list unwind-protect
                              let-keywords let-keywords* let-optionals*
                              define-compiler-macro))
@@ -486,6 +486,19 @@
                :rewind-before #t)))]
        [_ (error "malformed guard:" f)]))))
 
+;;; check-arg
+
+(define-syntax check-arg
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ test arg)
+        (quasirename r
+          `(let ((tmp ,arg))
+             (unless (,test tmp)
+               (errorf "bad type of argument for ~s: ~s" 'arg tmp))))]
+       [_ (error "malformed check-arg:" f)]))))
+
 ;;; bind construct
 
 (define-syntax let1                     ;single variable bind
@@ -811,6 +824,27 @@
        [(_ (var lis) . body)     (expand var lis (undefined) body)]
        [(_ (lis) . body)         (expand (gensym) lis (undefined) body)]
        [_ (error "Malformed dolist:" f)]))))   
+
+(define-syntax do-plist
+  (er-macro-transformer
+   (^[f r c]
+     (define (expand k v plis body default)
+       (quasirename r
+         `(do ([e (^[,k ,v] ,@body)]
+               [p ,plis (cddr p)])
+              [(cond [(null? p) #t]
+                     [(null? (cdr p)) (e (car p) ,default)]
+                     [else #f])]
+            (e (car p) (cadr p)))))
+     (match f
+       [(_ ((k v) plis default) . body)
+        (expand k v plis body default)]
+       [(_ ((k v) plis) . body)
+        (expand k v plis body 
+                (quasirename r `(error "plist is not even:" ,plis)))]
+       [_ (error "Malformed do-plist:" f)]))))
+
+(define-syntax doplist do-plist)        ;for backward compatibility
 
 ;;; ecase, a la CL
 

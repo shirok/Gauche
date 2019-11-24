@@ -31,18 +31,12 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;;; Defines number of useful macros.  This file is to be autoloaded.
-
-;; Note: This file is so fundamental that most other autoloaded files
-;; depend on it.  If you modify this file, be very careful not to depend
-;; on other autoloaded files, since it is easy to create circular
-;; dependency.
+;; This file used to have a bunch of fundamental macro definitions.
+;; Now most of them are compiled into the core (libmacro.scm).  We only keep
+;; serveral less-used macros here.  They are autoloaded.
 
 (define-module gauche.common-macros
-  (export check-arg get-optional get-keyword*
-          fluid-let
-          doplist while until
-          ))
+  (export get-optional get-keyword* fluid-let while until))
 (select-module gauche.common-macros)
 
 ;;;-------------------------------------------------------------
@@ -73,14 +67,6 @@
 ;;;-------------------------------------------------------------
 ;;; useful argument utility
 
-(define-syntax check-arg
-  (syntax-rules ()
-    [(_ test arg)
-     (let ((tmp arg))
-       (unless (test tmp)
-         (errorf "bad type of argument for ~s: ~s" 'arg tmp)))]
-    ))
-
 (define-syntax get-keyword*
   (syntax-rules ()
     [(_ key lis default)
@@ -103,30 +89,6 @@
 
 ;;;-------------------------------------------------------------
 ;;; repeat construct
-
-(define-syntax doplist
-  (syntax-rules ()
-    [(_ ((k v) plis default) . body)
-     (do ([p plis (cddr p)])
-         [(cond [(null? p) #t]
-                [(null? (cdr p))
-                 (let ([k (car p)]
-                       [v default])
-                   . body)]
-                [else #f])]
-       (let ([k (car p)]
-             [v (cadr p)])
-         . body))]
-    [(_ ((k v) plis) . body)
-     (do ([p plis (cddr p)])
-         [(cond [(null? p) #t]
-                [(null? (cdr p)) (error "plist is not even:" plis)]
-                [else #f])]
-       (let ([k (car p)]
-             [v (cadr p)])
-         . body))]
-    [(_ . other)
-     (syntax-error "malformed doplist" (doplist . other))]))
 
 (define-syntax while
   (syntax-rules (=>)
