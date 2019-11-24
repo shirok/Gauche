@@ -40,10 +40,8 @@
 
 (define-module gauche.common-macros
   (export check-arg get-optional get-keyword*
-          $
           fluid-let
-          ecase
-          dotimes doilst doplist while until
+          doplist while until
           ))
 (select-module gauche.common-macros)
 
@@ -71,65 +69,6 @@
                ,swap
                (lambda () ,@body)
                ,swap))))))
-
-;;;-------------------------------------------------------------
-;;; applications
-
-;; Haskell-ish application.
-;; The starting '$' introduces the macro.
-;; Subsequent '$' delimits "one more arguments"
-;; Subsequent '$*' delimits "zero or more arguments".
-;;
-;;  ($ f a b c)         => (f a b c)
-;;  ($ f a b c $)       => (lambda (arg) (f a b c arg))
-;;  ($ f $ g a b c)     => (f (g a b c))
-;;  ($ f $ g a b c $)   => (lambda (arg) (f (g a b c arg)))
-;;  ($ f $ g $ h a b c) => (f (g (h a b c)))
-;;  ($ f a $ g b $ h c) => (f a (g b (h c)))
-;;  ($ f a $ g b $ h $) => (lambda (arg) (f a (g b (h arg))))
-;;
-;;  ($ f a b c $*)      => (lambda args (apply f a b c args))
-;;                         == (pa$ f a b c)
-;;  ($ f a b $* g c d)  => (apply f a b (g c d))
-;;  ($ f a b $* g c d $) => (lambda (arg) (apply f a b (g c d arg)))
-;;  ($ f a b $* g c d $*) => (lambda args (apply f a b (apply g c d args)))
-;;  ($ f a b $ g c d $*) => (lambda args (f a b (apply g c d args)))
-
-;; Kludge: We already have binding of '$' in gauche module, created for
-;; autoload.  Using (define-syntax $ ...) here makes a separate binding in
-;; gauche.common-macros, and that makes the literal comparison of '$'
-;; fail, since '$' in here refers to gauche.common-macros#$, while
-;; the macro use environment will refer to gauche#$.  We use very ugly
-;; hack here to workaround the issue; needs fundamental fix later.
-(define-syntax %$
-  (syntax-rules ()
-    [($ x . xs) (%$-split (x . xs) () ())]
-    [($) (syntax-error "invalid $ form" ($))]))
-(set! $ %$) ; DON'T DO THIS.  Only works in the current version.
-
-;; ($ a b $ c d $*) => ($* (c d) $ (a b))
-;; ($ a b $ c d $* e f) => ((e f) $* (c d) $ (a b))
-(define-syntax %$-split
-  (syntax-rules ($ $*)
-    ;; terminal condition
-    [(_ ()   segs (e ...)) (%$-gen #f    ((e ...)           . segs))]
-    [(_ ($)  segs (e ...)) (%$-gen (arg) ((e ... arg)       . segs))]
-    [(_ ($*) segs (e ...)) (%$-gen arg   ((apply e ... arg) . segs))]
-    ;; recurse
-    [(_ ($ t ...)  segs (e ...)) (%$-split (t ...) ($  (e ...) . segs) ())]
-    [(_ ($* t ...) segs (e ...)) (%$-split (t ...) ($* (e ...) . segs) ())]
-    [(_ (t0 t ...) segs (e ...)) (%$-split (t ...) segs (e ... t0))]
-    ))
-
-(define-syntax %$-gen
-  (syntax-rules ($ $*)
-    ;; terminal condition
-    [(_ #f     (seg))  seg]
-    [(_ formal (seg))  (lambda formal seg)]
-    ;; recurse
-    [(_ type (seg0 $ (s ...) . segs))  (%$-gen type ((s ... seg0) . segs))]
-    [(_ type (seg0 $* (s ...) . segs)) (%$-gen type ((apply s ... seg0) . segs))]
-    ))
 
 ;;;-------------------------------------------------------------
 ;;; useful argument utility

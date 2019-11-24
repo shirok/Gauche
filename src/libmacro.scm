@@ -36,7 +36,7 @@
 (declare (keep-private-macro cond-expand quasirename 
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
-                             ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z cut cute rec
+                             ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z $ cut cute rec
                              guard
                              push! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
@@ -332,6 +332,61 @@
 (define-macro (define-^x . vars)
   `(begin ,@(map (lambda (x) `(^-generator ,x)) vars)))
 (define-^x _ a b c d e f g h i j k l m n o p q r s t u v w x y z)
+
+;;; $
+
+;; Haskell-ish application.
+;; The starting '$' introduces the macro.
+;; Subsequent '$' delimits "one more arguments"
+;; Subsequent '$*' delimits "zero or more arguments".
+;;
+;;  ($ f a b c)         => (f a b c)
+;;  ($ f a b c $)       => (lambda (arg) (f a b c arg))
+;;  ($ f $ g a b c)     => (f (g a b c))
+;;  ($ f $ g a b c $)   => (lambda (arg) (f (g a b c arg)))
+;;  ($ f $ g $ h a b c) => (f (g (h a b c)))
+;;  ($ f a $ g b $ h c) => (f a (g b (h c)))
+;;  ($ f a $ g b $ h $) => (lambda (arg) (f a (g b (h arg))))
+;;
+;;  ($ f a b c $*)      => (lambda args (apply f a b c args))
+;;                         == (pa$ f a b c)
+;;  ($ f a b $* g c d)  => (apply f a b (g c d))
+;;  ($ f a b $* g c d $) => (lambda (arg) (apply f a b (g c d arg)))
+;;  ($ f a b $* g c d $*) => (lambda args (apply f a b (apply g c d args)))
+;;  ($ f a b $ g c d $*) => (lambda args (f a b (apply g c d args)))
+
+(define-syntax $
+  (er-macro-transformer
+   (^[f r c]
+     (define $.  (r '$))
+     (define $*. (r '$*))
+
+     ;; ($ x y $ ...) => (x y ($-fold ...))
+     ;; last-arg has gensym'd symbol used as the outermost lambda arg.
+     ;; it is passed only when lis ends with $ or $*.
+     (define ($-fold lis rargs last-arg)
+       (cond
+        [(null? lis) (reverse rargs)]
+        [(c (car lis) $.)
+         (if (null? (cdr lis))
+           (reverse rargs `(,last-arg))
+           (reverse rargs `(,($-fold (cdr lis) '() last-arg))))]
+        [(c (car lis) $*.)
+         (if (null? (cdr lis))
+           (cons (r'apply) (reverse rargs `(,last-arg)))
+           (cons (r'apply) (reverse rargs `(,($-fold (cdr lis) '() last-arg)))))]
+        [else ($-fold (cdr lis) (cons (car lis) rargs) last-arg)]))
+
+     (if (null? (cdr f))
+       (error "malformed $ form:" f)
+       (let1 x (last f)
+         (cond [(c x $.) 
+                (let1 arg (gensym)
+                  `(,(r'lambda) (,arg) ,($-fold (cdr f) '() arg)))]
+               [(c x $*.)
+                (let1 arg (gensym)
+                  `(,(r'lambda) ,arg ,($-fold (cdr f) '() arg)))]
+               [else ($-fold (cdr f) '() #f)]))))))
 
 ;;; cut, cute (srfi-26)
 

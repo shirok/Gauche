@@ -98,7 +98,6 @@
 
 (autoload gauche.common-macros
           (:macro check-arg get-optional get-keyword*)
-          (:macro $)
           (:macro fluid-let)
           (:macro doplist while until))
 
