@@ -234,8 +234,8 @@
   (define extra-headers
     ($ concatenate $ reverse
        $ rlet1 z '()
-       (doplist [(k v) opts]
-                (when v (push! z (list k v))))))
+       (do-plist [(k v) opts]
+         (when v (push! z (list k v))))))
 
   (define conn (ensure-connection server auth-handler auth-user auth-password
                                   proxy secure extra-headers))

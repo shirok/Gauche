@@ -119,7 +119,7 @@
 ;; EDN map is a hashtable with edn-comparator.
 (define (edn-map . kv-list)
   (rlet1 h (make-hash-table edn-comparator)
-    (doplist [[k v] kv-list]
+    (do-plist [[k v] kv-list]
       ;; todo: duplicate key check
       (hash-table-put! h k v))))
 

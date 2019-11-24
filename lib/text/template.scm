@@ -69,9 +69,9 @@
            (error "Symbol required for binding table key, but got:" k))
          (eval `(define ,k ',v) m)))]
      [(list? bindings)
-      (doplist ([k v] bindings)
-         (unless (symbol? k)
-           (error "Symbol required for binding table key, but got:" k))
+      (do-plist ([k v] bindings)
+        (unless (symbol? k)
+          (error "Symbol required for binding table key, but got:" k))
          (eval `(define ,k ',v) m))]
      [(not bindings)]
      [else (error "Invalid bindings: a dictionary or kv-list expected, but got"

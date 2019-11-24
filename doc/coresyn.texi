@@ -2838,7 +2838,7 @@ rich way to iterate.
 @c COMMON
 @end defmac
 
-@c @defmac doplist ((kvar vvar) plist-expr [default]) body @dots{}
+@c @defmac do-plist ((kvar vvar) plist-expr [default]) body @dots{}
 @c @c EN
 @c A @emph{plist} is a list alternating key and values.  This macro
 @c provides a convenient way to loop over a plist.

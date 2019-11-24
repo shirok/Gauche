@@ -69,7 +69,7 @@
 
 (define (hash-table-r7 cmpr . kvs) ; r7rs's hash-table
   (rlet1 h (make-hash-table cmpr)
-    (doplist [(k v) kvs] (hash-table-put! h k v))))
+    (do-plist [(k v) kvs] (hash-table-put! h k v))))
 
 (define (hash-table-empty? h) (zero? (hash-table-num-entries h))) ; r7rs
 (define hash-table-contains? hash-table-exists?) ; r7rs
@@ -109,7 +109,7 @@
   (hash-table-get ht key default))
 
 (define (hash-table-set! ht . kvs) ; r7rs
-  (doplist [[k v] kvs]
+  (do-plist [[k v] kvs]
     (hash-table-put! ht k v)))
 
 (define (hash-table-intern!-r7 ht key failure) ; r7rs
