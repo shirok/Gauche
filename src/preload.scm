@@ -20,6 +20,7 @@
 (use gauche.generator)
 (use gauche.interpolate)
 (use gauche.threads)
+(use gauche.hashutil) ; TRANSIENT: only needed to compile 0.9.9 with 0.9.8
 (use srfi-1)
 (use srfi-13)
 (use file.util)
