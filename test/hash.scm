@@ -562,6 +562,4 @@
                                         #f #f)
                        c d)))
               
-(test-module 'gauche.hashutil) ; autoloaded module
-
 (test-end)
