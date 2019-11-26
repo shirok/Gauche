@@ -590,6 +590,92 @@
                (display "[r03]"))))
            (k1))))
 
+
+(test* "reset/shift + call/cc 2"
+       "[r01][s01][s02][s02]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            (display "[s02]"))
+           (k1)
+           (reset (reset (k2))))))
+
+(test* "reset/shift + call/cc 2-B"
+       "[r01][s01]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            ;; empty after call/cc
+            ;(display "[s02]")
+            )
+           (k1)
+           (reset (reset (k2))))))
+
+(test* "reset/shift + call/cc 2-C"
+       "[d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (dynamic-wind
+             (^[] (display "[d01]"))
+             (^[] (display "[d02]")
+                  (shift k (set! k1 k))
+                  (display "[s01]")
+                  (call/cc (lambda (k) (set! k2 k)))
+                  (display "[s02]"))
+             (^[] (display "[d03]"))))
+           (k1)
+           (reset (reset (k2))))))
+
+(test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
+       "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            (display "[s02]")
+            12345)
+           (k1)
+           (dynamic-wind
+            (^[] (display "[d01]"))
+            (^[] (display "[d02]")
+                 (display (reset (reset (k2)))))
+            (^[] (display "[d03]"))))))
+
+(test* "reset/shift + call/cc 3"
+       "[r01][s01][s01]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (call/cc (lambda (k)
+                       (set! k1 k)
+                       (shift k (set! k2 k))))
+            (display "[s01]"))
+           (k2)
+           (reset (k1)))))
+
 (test* "reset/shift + call/cc error 1"
        (test-error)
        (with-output-to-string
