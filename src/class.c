@@ -168,7 +168,7 @@ static ScmObj key_generic        = SCM_FALSE;
 static ScmObj key_specializers   = SCM_FALSE;
 static ScmObj key_body           = SCM_FALSE;
 
-/* TRANSIENT: Global flag to dispable generic dispatcher.  This is an escape
+/* TRANSIENT: Global flag to disable generic dispatcher.  This is an escape
    pod to fall back the default mechanism when we find a serious bug in
    dispatch accelerator.  Can be turned on with a environment variable. */
 static int disable_generic_dispatcher = FALSE;
