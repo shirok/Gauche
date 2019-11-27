@@ -7073,7 +7073,7 @@ split the original string.
 @end example
 @end defun
 
-@defun regexp-replace @var{re} @var{str} @var{subst} [@var{start} [@var{end} [@var{count}]]
+@defun regexp-replace @var{re} @var{str} @var{subst} [@var{start} [@var{end} [@var{count}]]]
 [R7RS regex]
 @c MOD scheme.regex
 Returns a new string where the first matched substring is replaced
