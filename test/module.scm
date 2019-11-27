@@ -718,5 +718,19 @@
 
 (test* "builtin inliner bug" 64
        ((with-module builtin-inliner-bug-C ash-3) 7 2))
-  
+
+;;-------------------------------------------------------------------
+;; Import qualifier & binding check
+;; https://github.com/shirok/Gauche/issues/549
+
+(test* "import qualifier binding check" 1
+       (eval '(begin
+                (define-module imp-A
+                  (export x)
+                  (define (x) 1))
+                (define-module imp-B
+                  (import (imp-A :only (x)))
+                  (x)))
+             (current-module)))
+
 (test-end)

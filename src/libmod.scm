@@ -148,14 +148,28 @@
 (define-cproc %export-all (module::<module>) Scm_ExportAll)
 (define-cproc %extend-module (module::<module> supers::<list>)
   Scm_ExtendModule)
+
+;; Insert binding into the given module.  flags may be a list of
+;; one or more of the following symbols:
+;;   const     - SCM_BINDING_CONST
+;;   inlinable - SCM_BINDING_INLINABLE
+;;   fresh     - insert only if there's no binding yet (this isn't an
+;;               attribute for the binding itself)
+;; returns GLOC or #f
 (define-cproc %insert-binding (mod::<module> name::<symbol> value
                                              :optional (flags '()))
   (let* ([z::int 0])
-    (unless (SCM_FALSEP (Scm_Memq 'const flags))
-      (logior= z SCM_BINDING_CONST))
-    (unless (SCM_FALSEP (Scm_Memq 'inlinable flags))
-      (logior= z SCM_BINDING_INLINABLE))
-    (set! SCM_RESULT (SCM_OBJ (Scm_MakeBinding mod name value z)))))
+    (if (and (not (SCM_FALSEP (Scm_Memq 'fresh flags)))
+             (not (SCM_UNBOUNDP 
+                   (Scm_GlobalVariableRef mod name 
+                                          SCM_BINDING_STAY_IN_MODULE))))
+      (return SCM_FALSE)
+      (begin
+        (unless (SCM_FALSEP (Scm_Memq 'const flags))
+          (logior= z SCM_BINDING_CONST))
+        (unless (SCM_FALSEP (Scm_Memq 'inlinable flags))
+          (logior= z SCM_BINDING_INLINABLE))
+        (return (SCM_OBJ (Scm_MakeBinding mod name value z)))))))
 
 ;; Insert binding as a syntactic keyword.  VALUE must be #<macro> or #<syntax>.
 ;; Currently Gauche conflates toplevel variable bindings and syntax bindings,
