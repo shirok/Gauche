@@ -829,7 +829,7 @@ double Scm_ImagPart(ScmObj z)
 
 ScmHalfComplex Scm_GetHalfComplex(ScmObj z)
 {
-    ScmHalfComplex c;
+    ScmHalfComplex c = {0, 0};
     if (SCM_COMPNUMP(z)) {
         c.r = Scm_DoubleToHalf(SCM_COMPNUM_REAL(z));
         c.i = Scm_DoubleToHalf(SCM_COMPNUM_IMAG(z));
