@@ -210,6 +210,12 @@ void version(void)
     printf("Gauche scheme shell, version %s [%s%s], %s\n",
            GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT,
            Scm_HostArchitecture());
+    printf("(version \"%s\")\n", GAUCHE_VERSION);
+    printf("(command \"gosh\")\n");
+    printf("(scheme-id gauche)\n");
+    printf("(language scheme r5rs r7rs)\n");
+    printf("(website \"https://practical-scheme.net/gauche\")\n");
+    printf("(platform \"%s\")\n", Scm_HostArchitecture());
     exit(0);
 }
 
