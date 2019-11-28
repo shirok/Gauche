@@ -19621,20 +19621,6 @@ R7RSの字句構文で解釈されます。もしそれがR7RSの16進数エス�
 セミコロンがあった場合、それはR7RSとして読まれ、非互換性が生じます。
 @c COMMON
 
-@c EN
-Identifiers beginning with a colon are read as keywords, as they've always been. 
-For the
-strict R7RS behavior, you need to use vertical-bar escaping
-(e.g. @code{|:foo|}) to have symbols beginning with colon.
-Note that this incompatibility will be addressed in the future version
-of Gauche, when keywords become a subtype of symbols.
-@c JP
-コロンで始まる識別子は従来通りキーワードとして読まれます。厳密にR7RSと同じ
-振る舞いにする、つまりシンボルとして読ませるには、縦棒でエスケープしてください。
-(例: @code{|:foo|})。この非互換性は、将来のGaucheでキーワードがシンボルの
-サブタイプとなった時に解消されます。
-@c COMMON
-
 @item strict-r7
 @c EN
 Strict R7RS compatible mode.
@@ -19648,14 +19634,12 @@ the rest of file is read with this mode.
 
 @c EN
 In this mode, Gauche's extended lexical syntax will raise an error.
-Identifiers beginning with a colon are read as symbols.
 
-Use this mode to read R7RS code with maximum compatibility.
+Use this mode to ensure the code can be read on other R7RS implementations.
 @c JP
 このモードでは、Gaucheの拡張字句構文はエラーとなります。
-コロンで始まる識別子はシンボルとして読まれます。
 
-R7RSとの最大限の互換性を得るにはこのモードを使ってください。
+他のR7RS実装でも読めるコードであることを確認したい場合に使ってください。
 @c COMMON
 
 @item legacy
