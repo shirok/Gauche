@@ -318,21 +318,12 @@
 ;; Call thunk while binding current-output-port to a temp file,
 ;; then calls (finisher tmpfile file).
 (define (cgen-with-output-file file finisher thunk)
-  ;; Replace for this after 0.9.7 release
-  ;; (call-with-temporary-file 
-  ;;  (^[port tmpfile]
-  ;;    (with-output-to-port port thunk)
-  ;;    (close-output-port port)
-  ;;    (finisher tmpfile file))
-  ;;  :directory ".")
-  (receive (port tmpfile) (sys-mkstemp file)
-    (guard (e [else
-               (close-output-port port)
-               (sys-unlink tmpfile)
-               (raise e)])
-      (with-output-to-port port thunk)
-      (close-output-port port)
-      (finisher tmpfile file))))
+  (call-with-temporary-file 
+   (^[port tmpfile]
+     (with-output-to-port port thunk)
+     (close-output-port port)
+     (finisher tmpfile file))
+   :directory "."))
 
 (define (emit-raw code)
   (if (list? code)
