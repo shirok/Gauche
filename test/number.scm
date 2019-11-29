@@ -174,6 +174,9 @@
        (string->number "#x-123_456_789"))
 (test* "Gauche extended format" #f
        (string->number "123_456_789"))
+(test* "Gauche extended format not allowed in r7rs strict mode" 
+       (test-error <read-error> #/bad numeric format/)
+       (read-from-string "#!r7rs #x1234_5678"))
 
 ;;------------------------------------------------------------------
 (test-section "rational reader")

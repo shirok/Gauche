@@ -348,13 +348,15 @@ enum ScmNumberFormatFlags {
                                               between N and S:
                                               [N] always add radix prefix
                                               [S] never allow radix prefix */
-    SCM_NUMBER_FORMAT_ROUND_NOTATIONAL = (1L<<3)
+    SCM_NUMBER_FORMAT_ROUND_NOTATIONAL = (1L<<3),
                                            /* Using notational decimal rounding.
                                               [N] When rounding fractional part,
                                               we first generate the closest
                                               decimal notation, then round.
                                               [S] ignored.
                                             */
+    SCM_NUMBER_FORMAT_STRICT_R7RS = (1L<<4) /*[N] ignored.
+                                              [S] reject syntax outside of R7RS*/
 };
 
 typedef struct ScmNumberFormatRec {

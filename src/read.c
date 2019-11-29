@@ -1352,6 +1352,9 @@ static ScmObj read_number(ScmPort *port, ScmChar initial, int radix,
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
     u_long flags = radix >=2 ? SCM_NUMBER_FORMAT_ALT_RADIX : 0;
+    if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
+        flags |= SCM_NUMBER_FORMAT_STRICT_R7RS;
+    }
     int default_radix = radix >= 2? radix : 10;
     ScmObj num = Scm_StringToNumber(s, default_radix, flags);
     if (num == SCM_FALSE) {

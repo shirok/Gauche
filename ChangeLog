@@ -1,11 +1,16 @@
-2019-11-26  Shiro Kawai <shiro@acm.org>
+2019-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/numebr.c, src/read.c: Reject underscores in numeric literals
+	  in strict-r7rs mode.
+
+2019-11-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/define): Insert a dummy binding to the
 	  compiling module at compile-time.  It is necessary if we compile
 	  multiple modules at once, and one imports another with qualifiers.
 	  Cf. https://github.com/shirok/Gauche/issues/549
 
-2019-11-07  Shiro Kawai <shiro@acm.org>
+2019-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/sortutil.scm (stable-sort!): Make sure sort! and
 	  stable-sort! can be used without referring to their return values;

@@ -4291,6 +4291,7 @@ static ScmObj read_real(const char **strp, int *lenp,
 
 /* Entry point */
 static ScmObj read_number(const char *str, int len, int radix,
+                          int strict,
                           int disallow_radix_prefix)
 {
     struct numread_packet ctx;
@@ -4301,7 +4302,7 @@ static ScmObj read_number(const char *str, int len, int radix,
     ctx.exactness = NOEXACT;
     ctx.padread = FALSE;
     ctx.explicit = FALSE;
-    ctx.strict = FALSE;
+    ctx.strict = strict;
     ctx.throwerror = FALSE;
 
 #define CHK_EXACT_COMPLEX()                                                 \
@@ -4461,7 +4462,9 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
         /* This can't be a proper number. */
         return SCM_FALSE;
     } else {
-        return read_number(p, size, radix, flags&SCM_NUMBER_FORMAT_ALT_RADIX);
+        return read_number(p, size, radix,
+                           flags&SCM_NUMBER_FORMAT_STRICT_R7RS,
+                           flags&SCM_NUMBER_FORMAT_ALT_RADIX);
     }
 }
 
