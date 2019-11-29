@@ -1024,6 +1024,18 @@ int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
     *sec = ns / 1000000000;
     *nsec = ns % 1000000000;
     return TRUE;
+#elif defined(GAUCHE_WINDOWS)
+    LARGE_INTEGER qpf;
+    LARGE_INTEGER qpc;
+    if (!QueryPerformanceFrequency(&qpf)) {
+        Scm_SysError("QueryPerformanceFrequency failed");
+    }
+    if (!QueryPerformanceCounter(&qpc)) {
+        Scm_SysError("QueryPerformanceCounter failed");
+    }
+    *sec = (u_long)(qpc.QuadPart / qpf.QuadPart);
+    *nsec = (u_long)((qpc.QuadPart % qpf.QuadPart) * 1000000000 / qpf.QuadPart);
+    return TRUE;
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
     ScmTimeSpec ts;
     int r;
@@ -1054,6 +1066,15 @@ int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
 	*nsec = tinfo.numer / tinfo.denom;
     }
     return TRUE;
+#elif defined(GAUCHE_WINDOWS)
+    LARGE_INTEGER qpf;
+    if (!QueryPerformanceFrequency(&qpf)) {
+        Scm_SysError("QueryPerformanceFrequency failed");
+    }
+    *sec = 0;
+    *nsec = (u_long)(1000000000 / qpf.QuadPart);
+    if (*nsec == 0) *nsec = 1;
+    return TRUE;
 #elif defined(HAVE_CLOCK_GETRES) && defined(CLOCK_MONOTONIC)
     ScmTimeSpec ts;
     int r;
@@ -1062,10 +1083,10 @@ int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
     *sec = (u_long)ts.tv_sec;
     *nsec = (u_long)ts.tv_nsec;
     return TRUE;
-#else  /*!HAVE_CLOCK_GETTIME*/
+#else  /*!HAVE_CLOCK_GETRES*/
     *sec = *nsec = 0;
     return FALSE;
-#endif /*!HAVE_CLOCK_GETTIME*/
+#endif /*!HAVE_CLOCK_GETRES*/
 }
 
 
@@ -1352,11 +1373,11 @@ int Scm_NanoSleep(const ScmTimeSpec *req, ScmTimeSpec *rem)
 void
 Scm_YieldCPU(void)
 {
-#if defined(HAVE_SCHED_YIELD)
-    sched_yield();
-#elif defined(GAUCHE_WINDOWS)
+#if defined(GAUCHE_WINDOWS)
     /* Windows have select(), but it doesn't allow all fds are NULL. */
-    Sleep(10);
+    Sleep(0);
+#elif defined(HAVE_SCHED_YIELD)
+    sched_yield();
 #elif defined(HAVE_NANOSLEEP)
     /* We can use struct timespec instead of ScmTimeSpec here, for mingw
        won't use this path. */
