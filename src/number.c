@@ -3875,7 +3875,8 @@ size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
 struct numread_packet {
     const char *buffer;         /* original buffer */
     int buflen;                 /* original length */
-    int radix;                  /* radix */
+    int radix;                  /* radix (can be overridden by prefix) */
+    int noradixprefix;          /* do not allow radix prefix */
     int exactness;              /* exactness; see enum below */
     int padread;                /* '#' padding has been read */
     int explicit;               /* explicit prefix is appeared */
@@ -4290,32 +4291,25 @@ static ScmObj read_real(const char **strp, int *lenp,
 }
 
 /* Entry point */
-static ScmObj read_number(const char *str, int len, int radix,
-                          int strict,
-                          int disallow_radix_prefix)
+static ScmObj read_number(struct numread_packet *ctx)
 {
-    struct numread_packet ctx;
     int radix_seen = 0, exactness_seen = 0, sign_seen = 0;
 
-    ctx.buffer = str;
-    ctx.buflen = len;
-    ctx.exactness = NOEXACT;
-    ctx.padread = FALSE;
-    ctx.explicit = FALSE;
-    ctx.strict = strict;
-    ctx.throwerror = FALSE;
+    const char *str = ctx->buffer;
+    int len = ctx->buflen;
 
 #define CHK_EXACT_COMPLEX()                                                 \
     do {                                                                    \
-        if (ctx.exactness == EXACT) {                                       \
+        if (ctx->exactness == EXACT) {                                      \
             return numread_error("(exact complex number is not supported)", \
-                                 &ctx);                                     \
+                                 ctx);                                      \
         }                                                                   \
     } while (0)
 
     /* suggested radix.  may be overridden by prefix. */
-    if (radix < SCM_RADIX_MIN || radix > SCM_RADIX_MAX) return SCM_FALSE;
-    ctx.radix = radix;
+    if (ctx->radix < SCM_RADIX_MIN || ctx->radix > SCM_RADIX_MAX) {
+        return SCM_FALSE;
+    }
 
     /* start from prefix part */
     while (len >= 0) {
@@ -4323,44 +4317,44 @@ static ScmObj read_number(const char *str, int len, int radix,
         str++;
         switch (*str++) {
         case 'x':; case 'X':;
-            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
-            ctx.radix = 16; radix_seen++;
-            ctx.explicit = TRUE;
+            if (ctx->noradixprefix || radix_seen) return SCM_FALSE;
+            ctx->radix = 16; radix_seen++;
+            ctx->explicit = TRUE;
             len -= 2;
             continue;
         case 'o':; case 'O':;
-            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
-            ctx.radix = 8; radix_seen++;
-            ctx.explicit = TRUE;
+            if (ctx->noradixprefix || radix_seen) return SCM_FALSE;
+            ctx->radix = 8; radix_seen++;
+            ctx->explicit = TRUE;
             len -= 2;
             continue;
         case 'b':; case 'B':;
-            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
-            ctx.radix = 2; radix_seen++;
-            ctx.explicit = TRUE;
+            if (ctx->noradixprefix || radix_seen) return SCM_FALSE;
+            ctx->radix = 2; radix_seen++;
+            ctx->explicit = TRUE;
             len -= 2;
             continue;
         case 'd':; case 'D':;
-            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
-            ctx.radix = 10; radix_seen++;
-            ctx.explicit = TRUE;
+            if (ctx->noradixprefix || radix_seen) return SCM_FALSE;
+            ctx->radix = 10; radix_seen++;
+            ctx->explicit = TRUE;
             len -= 2;
             continue;
         case 'e':; case 'E':;
             if (exactness_seen) return SCM_FALSE;
-            ctx.exactness = EXACT; exactness_seen++;
-            ctx.explicit = TRUE;
+            ctx->exactness = EXACT; exactness_seen++;
+            ctx->explicit = TRUE;
             len -= 2;
             continue;
         case 'i':; case 'I':;
             if (exactness_seen) return SCM_FALSE;
-            ctx.exactness = INEXACT; exactness_seen++;
-            ctx.explicit = TRUE;
+            ctx->exactness = INEXACT; exactness_seen++;
+            ctx->explicit = TRUE;
             len -= 2;
             continue;
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
-            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
+            if (ctx->noradixprefix || radix_seen) return SCM_FALSE;
             else {
                 ScmSize nread = 0;
                 long radix = Scm_ParseDigitsAsLong(--str, --len, 10, &nread);
@@ -4369,8 +4363,8 @@ static ScmObj read_number(const char *str, int len, int radix,
                 if (len <= 0) return SCM_FALSE;
                 if (*str != 'r' && *str != 'R') return SCM_FALSE;
                 str++; len--;
-                ctx.radix = radix; radix_seen++;
-                ctx.explicit = TRUE;
+                ctx->radix = radix; radix_seen++;
+                ctx->explicit = TRUE;
                 continue;
             }
         }
@@ -4389,7 +4383,7 @@ static ScmObj read_number(const char *str, int len, int radix,
         sign_seen = TRUE;
     }
 
-    ScmObj realpart = read_real(&str, &len, &ctx);
+    ScmObj realpart = read_real(&str, &len, ctx);
     if (SCM_FALSEP(realpart) || len == 0) return realpart;
 
     switch (*str) {
@@ -4399,7 +4393,7 @@ static ScmObj read_number(const char *str, int len, int radix,
             return SCM_FALSE;
         } else {
             str++; len--;
-            ScmObj angle = read_real(&str, &len, &ctx);
+            ScmObj angle = read_real(&str, &len, ctx);
             if (SCM_FALSEP(angle)) return SCM_FALSE;
             /* Gauche extension: X@Ypi */
             int pi_angle = (len == 2 && str[0] == 'p' && str[1] == 'i');
@@ -4420,7 +4414,7 @@ static ScmObj read_number(const char *str, int len, int radix,
             return Scm_MakeComplex(Scm_GetDouble(realpart),
                                    (*str == '+' ? 1.0 : -1.0));
         } else {
-            ScmObj imagpart = read_real(&str, &len, &ctx);
+            ScmObj imagpart = read_real(&str, &len, ctx);
             if (SCM_FALSEP(imagpart) || len != 1
                 || (*str != 'i' && *str != 'I')) {
                 return SCM_FALSE;
@@ -4462,9 +4456,17 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
         /* This can't be a proper number. */
         return SCM_FALSE;
     } else {
-        return read_number(p, size, radix,
-                           flags&SCM_NUMBER_FORMAT_STRICT_R7RS,
-                           flags&SCM_NUMBER_FORMAT_ALT_RADIX);
+        struct numread_packet ctx;
+        ctx.buffer = p;
+        ctx.buflen = size;
+        ctx.exactness = NOEXACT;
+        ctx.padread = FALSE;
+        ctx.explicit = FALSE;
+        ctx.strict = flags&SCM_NUMBER_FORMAT_STRICT_R7RS;
+        ctx.throwerror = FALSE;
+        ctx.radix = radix;
+        ctx.noradixprefix = flags&SCM_NUMBER_FORMAT_ALT_RADIX;
+        return read_number(&ctx);
     }
 }
 
