@@ -87,8 +87,11 @@ typedef struct ScmEscapePointRec {
                                    for they can be executed on anywhere
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
-    ScmObj resetChain;          /* for reset/shift */
-    ScmObj partHandlers;        /* for reset/shift */
+    ScmObj resetChain;          /* saved reset-chain for reset/shift */
+    ScmObj partHandlers;        /* dynamic handlers chain cut for reset/shift
+                                   NB: if it is set to SCM_FALSE, it indicates
+                                   this ep is used for full continuation jump
+                                */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control

@@ -661,6 +661,22 @@
                  (display (reset (reset (k2)))))
             (^[] (display "[d03]"))))))
 
+(test* "reset/shift + call/cc 2-E (check return position)"
+       "[r01][s01][s02][s02][r02]"
+       (with-output-to-string
+         (^[]
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            (display "[s02]"))
+           (k1)
+           (reset (reset (k2))
+                  (display "[r02]")))))
+
 (test* "reset/shift + call/cc 3"
        "[r01][s01][s01]"
        (with-output-to-string
