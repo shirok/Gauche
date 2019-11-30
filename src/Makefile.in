@@ -422,7 +422,10 @@ $(LIBGAUCHE_STATIC).a : all $(STATICINIT_OBJS)
             $(STATICINIT_OBJS) \
             `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 
-$(STATICINIT_SRCS) : all gen-staticinit.scm
+# Pseudo dependencies to prevent multiple gen-staticinit from running in parallel
+staticinit_gdbm.c : staticinit.c
+staticinit_mbed.c : staticinit.c
+staticinit.c : all gen-staticinit.scm
 	$(STATIC_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir) $(GAUCHE_ABI_VERSION)
 
 # tests -----------------------------------------------
