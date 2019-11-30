@@ -123,16 +123,17 @@ make install-examples
 rm -rf $distdir/lib/libgauche.dll*
 case "$MSYSTEM" in
   MINGW64|MINGW32)
-    for dll in libwinpthread-1.dll; do
-      if [ -f $mingwdir/bin/$dll ]; then
-        cp $mingwdir/bin/$dll $distdir/bin
-      fi
-    done
-    ;;
+    mingw_dll="libwinpthread-1.dll";;
   *)
-    cp $mingwdir/bin/mingwm10.dll $distdir/bin
-    ;;
+    mingw_dll="mingwm10.dll";;
 esac
+if [ -n "$mingw_dll" ]; then
+  for dll in $mingw_dll; do
+    if [ -f $mingwdir/bin/$dll ]; then
+      cp $mingwdir/bin/$dll $distdir/bin
+    fi
+  done
+fi
 
 # Enable using freshly-built gosh for the subsequent operations.
 PATH=$distdir/bin:$PATH
