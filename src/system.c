@@ -1025,6 +1025,8 @@ int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
     *nsec = ns % 1000000000;
     return TRUE;
 #elif defined(GAUCHE_WINDOWS)
+    /* On MinGW, clock_gettime is in libwinpthread-1.dll; we avoid depending
+       on it. */
     LARGE_INTEGER qpf;
     LARGE_INTEGER qpc;
     if (!QueryPerformanceFrequency(&qpf)) {
@@ -1067,6 +1069,8 @@ int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
     }
     return TRUE;
 #elif defined(GAUCHE_WINDOWS)
+    /* On MinGW, clock_getres is in libwinpthread-1.dll; we avoid depending
+       on it. */
     LARGE_INTEGER qpf;
     if (!QueryPerformanceFrequency(&qpf)) {
         Scm_SysError("QueryPerformanceFrequency failed");
