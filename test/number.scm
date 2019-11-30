@@ -113,6 +113,10 @@
            (string->number "#x#12r15")
            (string->number "#12r#x15")))
 
+(test* "radix prefix not allowed in strict r7rs"
+       (test-error <read-error> #/Radix prefix isn't allowed/)
+       (read-from-string "#!r7rs #12r123"))
+
 (define (radix-tester radix)
   (list
    (let loop ((digits 0)

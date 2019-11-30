@@ -1371,7 +1371,11 @@ static ScmObj read_number(ScmPort *port, ScmChar initial, int radix,
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
-    ScmObj num = Scm_StringToNumber(s, 10, 0);
+    u_long flags = 0;
+    if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
+        flags |= SCM_NUMBER_FORMAT_STRICT_R7RS;
+    }
+    ScmObj num = Scm_StringToNumber(s, 10, flags);
     if (num != SCM_FALSE) return num;
     check_valid_symbol(s);
     return Scm_Intern(s);
@@ -1543,6 +1547,9 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         }
     case 'r': case 'R':
         /* #digitR - radix */
+        if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
+            Scm_ReadError(port, "Radix prefix isn't allowed in strict R7RS mode.");
+        }
         if (prefix < SCM_RADIX_MIN || prefix > SCM_RADIX_MAX) {
             Scm_ReadError(port, "Radix prefix out of range: radix in #<radix>R must be between %d and %d inclusive, but got: %d",
                           SCM_RADIX_MIN, SCM_RADIX_MAX, prefix);

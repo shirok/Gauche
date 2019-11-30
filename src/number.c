@@ -3901,7 +3901,7 @@ static u_long longlimit[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
    into bignum. */
 static u_long bigdig[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
 
-static ScmObj numread_error(const char *msg, struct numread_packet *context);
+static ScmObj numread_error(const char *msg, struct numread_packet *ctx);
 
 /* Returns either small integer or bignum.
    initval may be a Scheme integer that will be 'concatenated' before
@@ -4306,7 +4306,7 @@ static ScmObj read_number(struct numread_packet *ctx)
         }                                                                   \
     } while (0)
 
-    /* suggested radix.  may be overridden by prefix. */
+    /* check suggested radix. */
     if (ctx->radix < SCM_RADIX_MIN || ctx->radix > SCM_RADIX_MAX) {
         return SCM_FALSE;
     }
@@ -4354,7 +4354,7 @@ static ScmObj read_number(struct numread_packet *ctx)
             continue;
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
-            if (ctx->noradixprefix || radix_seen) return SCM_FALSE;
+            if (ctx->noradixprefix || ctx->strict || radix_seen) return SCM_FALSE;
             else {
                 ScmSize nread = 0;
                 long radix = Scm_ParseDigitsAsLong(--str, --len, 10, &nread);
@@ -4436,12 +4436,12 @@ static ScmObj read_number(struct numread_packet *ctx)
     }
 }
 
-static ScmObj numread_error(const char *msg, struct numread_packet *context)
+static ScmObj numread_error(const char *msg, struct numread_packet *ctx)
 {
-    if (context->throwerror) {
+    if (ctx->throwerror) {
         Scm_Error("bad number format %s: %A", msg,
-                  Scm_MakeString(context->buffer, context->buflen,
-                                 context->buflen, 0));
+                  Scm_MakeString(ctx->buffer, ctx->buflen,
+                                 ctx->buflen, 0));
     }
     return SCM_FALSE;
 }
