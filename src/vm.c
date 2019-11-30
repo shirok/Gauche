@@ -1572,9 +1572,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                 vm->cont = ep->cont;
                 vm->pc = PC_TO_RETURN;
                 /* restore reset-chain for reset/shift */
-                if (SCM_FALSEP(ep->partHandlers)) {
-                    vm->resetChain = ep->resetChain;
-                }
+                if (ep->cstack) vm->resetChain = ep->resetChain;
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
@@ -2152,9 +2150,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
         /* restore reset-chain for reset/shift */
-        if (SCM_FALSEP(ep->partHandlers)) {
-            vm->resetChain = ep->resetChain;
-        }
+        if (ep->cstack) vm->resetChain = ep->resetChain;
     } else {
         /* We don't have an active error handler, so this is the fallback
            behavior.  Reports the error and rewind dynamic handlers and
@@ -2307,7 +2303,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->cstack = vm->cstack;
     ep->xhandler = vm->exceptionHandler;
     ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_FALSE;
+    ep->partHandlers = SCM_NIL;
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
@@ -2475,8 +2471,14 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
      * the partial continuation.  The returning part is handled by
      * user_level_inner, but we have to make sure that our current continuation
      * won't be overwritten by execution of the partial continuation.
+     *
+     * NB: As an exception case, if we'll jump into reset,
+     * we might reach to the end of partial continuation even though
+     * the target continuation is a full continuation.
      */
-    if (ep->cstack == NULL) save_cont(vm);
+    if (ep->cstack == NULL || SCM_PAIRP(ep->resetChain)) {
+        save_cont(vm);
+    }
 
     /*
      * now, install the target continuation
@@ -2484,9 +2486,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
     /* restore reset-chain for reset/shift */
-    if (SCM_FALSEP(ep->partHandlers)) {
-        vm->resetChain = ep->resetChain;
-    }
+    if (ep->cstack) vm->resetChain = ep->resetChain;
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -2527,14 +2527,6 @@ static ScmObj throw_continuation(ScmObj *argframe,
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
-
-    /* If we'll jump into reset, we might reach to the end of partial
-       continuation even though the target continuation is a full
-       continuation (ep->cstack != NULL). In this case, we must treat
-       the continuation like a partial continuation (ep->cstack == NULL). */
-    if (ep->cstack && SCM_PAIRP(ep->resetChain)) {
-        ep->cstack = NULL;
-    }
 
     /* First, check to see if we need to rewind C stack.
        NB: If we are invoking a partial continuation (ep->cstack == NULL),
@@ -2577,7 +2569,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
     }
 
     ScmObj handlers_to_call;
-    if (SCM_FALSEP(ep->partHandlers)) {
+    if (ep->cstack) {
         /* for full continuation */
         handlers_to_call = throw_cont_calculate_handlers(ep->handlers,
                                                          vm->handlers);
@@ -2603,7 +2595,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_FALSE;
+    ep->partHandlers = SCM_NIL;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    SCM_MAKE_STR("continuation"));
