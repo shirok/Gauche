@@ -178,6 +178,8 @@
       (run #"\"~make\" maintainer-clean"))
     (when (file-exists? "DIST")
       (run #"./DIST gen"))
+    (run "./configure")
+    (run #"\"~make\" distclean")
     (with-output-to-file "DIST_EXCLUDE_X"
       (^[] 
         (print "DIST")
