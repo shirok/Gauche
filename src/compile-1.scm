@@ -257,6 +257,10 @@
                          [((name . formals) . body)
                           `(,name :rec (,lambda. ,formals ,@body) . ,src)]
                          [(var init) `(,var :rec ,init . ,src)]
+                         [(var)
+                          (if (global-identifier=? head r5rs-define.)
+                            (error "define without expression is not allowed in R7RS" (caar exprs))
+                            `(,var :rec ,(undefined) . ,src))]
                          [_ (error "malformed internal define:" (caar exprs))])
                (if (not mframe)
                  (let* ([cenv (cenv-extend cenv '() SYNTAX)]
