@@ -1,5 +1,7 @@
 2019-12-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-1.scm (pass1/define): Allow R6RS-style (define <name>).
+
 	* lib/r7rs-setup.scm (define): We've been exporting Gauche's define
 	  instead of vanilla define inadvertently.  Fixed.
 

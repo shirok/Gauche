@@ -505,6 +505,14 @@
                         `(,(if extended? lambda. r5rs-lambda.) ,args ,@body)
                         oform))
                    oform flags extended? module cenv)]
+
+    [(_ name)
+     (if extended?
+       ;; Gauche's define allows R6RS-style (define <name>).
+       (pass1/define `(define ,name ,(undefined))
+                     oform flags #t module cenv)
+       ;; R7RS define doesn't allow it.
+       (error "define without an expression is not allowed in R7RS (it is in R6RS):" oform))]
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
