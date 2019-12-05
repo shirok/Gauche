@@ -41,8 +41,13 @@ SCM_DECL_BEGIN
 struct ScmSyntaxRec {
     SCM_HEADER;
     ScmSymbol *name;         /* for debugging.  can be NULL */
+    ScmModule *mod;          /* for debugging.  can be NULL */
     ScmObj     handler;      /* syntax handler.  (Sexpr, Env) -> IForm */
 };
+
+SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name,
+                                 ScmModule *mod,
+                                 ScmObj handler);
 
 /* Macro */
 struct ScmMacroRec {

@@ -424,9 +424,10 @@
                [(:internal) 'gauche.internal])]
         ;; a trick to assign comprehensive name to body:
         [name (string->symbol #"syntax/~(car formals)")])
-    `(let ((,name (^ ,(cdr formals) ,@body)))
-       (%insert-syntax-binding (find-module ',mod) ',(car formals)
-                               (make-syntax ',(car formals) ,name)))))
+    `(let ((,name (^ ,(cdr formals) ,@body))
+           (m (find-module ',mod)))
+       (%insert-syntax-binding m ',(car formals)
+                               (make-syntax ',(car formals) m ,name)))))
 
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
 (define (global-id% id) (make-identifier id (find-module 'gauche.internal) '()))

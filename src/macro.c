@@ -54,16 +54,24 @@ static void syntax_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *mode SCM_UNUSED)
 {
     ScmSymbol *name = SCM_SYNTAX(obj)->name;
-    Scm_Printf(port, "#<syntax %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
+    ScmModule *mod = SCM_SYNTAX(obj)->mod;
+    if (mod == NULL) {
+        Scm_Printf(port, "#<syntax %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
+    } else {
+        Scm_Printf(port, "#<syntax %A#%A>", 
+                   mod->name,
+                   (name ? SCM_OBJ(name) : SCM_FALSE));
+    }
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxClass, syntax_print);
 
-ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler)
+ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmModule *mod, ScmObj handler)
 {
     ScmSyntax *s = SCM_NEW(ScmSyntax);
     SCM_SET_CLASS(s, SCM_CLASS_SYNTAX);
     s->name = name;
+    s->mod = mod;
     s->handler = handler;
     return SCM_OBJ(s);
 }

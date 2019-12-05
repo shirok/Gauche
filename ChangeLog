@@ -1,3 +1,10 @@
+2019-12-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/macroP.h (ScmSyntax): Keep defining module for
+	  better debugging info.
+	  (Scm_MakeSyntax): INCOMPATIBLE CHANGE: move to private header and
+	  change API.  No external libraries should've called this.
+
 2019-12-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/define): Allow R6RS-style (define <name>).

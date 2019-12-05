@@ -173,7 +173,7 @@
         (display "\n" (current-error-port))))
     out))
 
-(define-cproc make-syntax (name::<symbol> proc)
+(define-cproc make-syntax (name::<symbol> module::<module> proc)
   Scm_MakeSyntax)
 
 (define-cproc make-syntactic-closure (env literals expr)

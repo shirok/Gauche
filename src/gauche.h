@@ -1704,8 +1704,6 @@ SCM_EXTERN ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args);
 SCM_CLASS_DECL(Scm_SyntaxClass);
 #define SCM_CLASS_SYNTAX            (&Scm_SyntaxClass)
 
-SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler);
-
 #define SCM_MACRO(obj)             ((ScmMacro*)(obj))
 #define SCM_MACROP(obj)            SCM_XTYPEP(obj, SCM_CLASS_MACRO)
 SCM_CLASS_DECL(Scm_MacroClass);
