@@ -32,7 +32,6 @@
 ;;;
 
 (define-module gauche.regexp.sre
-  (use scheme.base)
   (use scheme.list)
   (use scheme.charset)
   (export regexp-parse-sre regexp-unparse-sre regexp-compile-sre

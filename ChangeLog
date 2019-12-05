@@ -1,3 +1,8 @@
+2019-12-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs-setup.scm (define): We've been exporting Gauche's define
+	  instead of vanilla define inadvertently.  Fixed.
+
 2019-11-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/numebr.c, src/read.c: Reject underscores in numeric literals
