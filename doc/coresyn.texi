@@ -3343,6 +3343,7 @@ mutating such structures.
 
 @defspec define variable expression
 @defspecx define (variable . formals) body @dots{}
+@defspecx define variable
 [R7RS+]
 @c EN
 This form has different meanings in the toplevel (without no
@@ -3375,6 +3376,16 @@ It is equivalent to the following form.
 (define (@var{name} . @var{args}) @var{body} @dots{})
   @equiv{} (define @var{name} (lambda @var{args} @var{body} @dots{}))
 @end example
+
+@c EN
+The third form is a shorthand of @code{(define variable (undefined))}.
+It is introduced in R6RS (but not a part of R7RS).  You can use that
+form to indicate the initial value doesn't matter.
+@c JP
+3番目の形式は@code{(define variable (undefined))}の略記です。
+これはR6RSで導入されました(ただし、R7RSには入っていません)。
+初期値が重要でないことを示したい場合に使えます。
+@c COMMON
 
 @c EN
 If the form appears inside a local scope (internal define),

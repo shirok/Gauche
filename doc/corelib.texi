@@ -4252,10 +4252,10 @@ gosh> (if #f #t)
 
 @c EN
 It is a value used as a filler where the actual value doesn't matter,
-or to indicate there's no other suitable value.
+or there's no other suitable value, or the binding hasn't been calculated.
 @c JP
-この値は、値そのものに意味が無いこと、あるいは
-とりたててほかにふさわしい値が無いことを意味します。
+この値は、値そのものに意味が無いこと、
+ほかにふさわしい値が無いこと、あるいは束縛する値がまだ計算されていないことを示します。
 @c COMMON
 
 @c EN
@@ -4290,6 +4290,91 @@ You shouldn't let it carry too much meanings.
 せいぜいその値にたいした意味がないということくらいです。
 @code{#<undef>}に大きな意味を持たせすぎないようにしましょう。
 @c COMMON
+
+@c EN
+The toplevel variable can be bound to @code{#<undef>} if it is
+defined by @code{(define variable)} form (@pxref{Definitions}).
+Note also that toplevel definitions grouped by @code{begin} is
+has @code{letrec*} semantics, and all the variables
+are bound to @code{#<undef>} first, then each of the actual value is
+calculated.
+@c JP
+トップレベル変数は、@code{(define variable)}の形式で定義された場合に
+@code{#<undef>}に束縛されます(@ref{Definitions}参照)。
+また、@code{begin}でまとめられた束縛がトップレベルにあった場合、それらは
+@code{letrec*}と同様に扱われます--つまり、全ての束縛がまず@code{#<undef>}で
+初期化されたのち、順に本当の値が計算されます。
+@c COMMON
+
+@c EN
+It means the old technique to enhance existing procedure by saving
+the old procedure then redefining it would no longer work.  The following
+code intends to ``save'' the original value of @code{car}, then redefines
+@code{car} to handle a vector argument, while delegating the handling of
+pairs to the original @code{car}:
+@c JP
+手続きの現在値をグローバル変数に保存しておいて、手続きを再定義することにより
+拡張するという古いテクニックはもう使えないことに注意してください。
+次のコードは@code{car}の元の値を「セーブ」してから、@code{car}がベクタも
+扱えるように拡張しようとしたものです。新しい@code{car}がペアを受け取った場合は
+古い@code{car}を呼び出します。
+@c COMMON
+
+@example
+;; won't work
+(begin
+ (define orig-car car)
+ (define (car x)
+   (cond [(pair? x) (orig-car x)]
+         [(and (vector? x) (>= (vector-length x) 1)) (vector-ref x 0)]
+         [else (error "bad arg:" x)]))
+ )
+@end example
+
+@c EN
+This kind of code have never been to guarantee to work, and explicitly
+prohibited in R6RS.  In R7RS its behavior is implementation specific.
+In Gauche,
+the first appearance of @code{car} in the above expression refers
+to the @code{car} defined in the next line, not the built-in @code{car}
+(much the same as internal defines).
+At the time @code{orig-car}'s binding value is calculated, the value
+of @code{car} hasn't been calculated, so @code{orig-car} receives
+@code{#<undef>}.  Hence you'll get the following error when you use
+the new @code{car}:
+@c JP
+この類のコードは、実は動作は保証されておらず、R6RSでは明確に禁止されました。
+R7RSでは処理系依存になっています。Gaucheにおいては、最初の@code{car}の参照は
+組み込みの@code{car}ではなく、次の行で定義される@code{car}を意味します
+(内部defineと同じです)。
+@code{orig-car}に束縛する値が計算される時点では、@code{car}の値はまだ
+計算されていないため、@code{orig-car}は@code{#<undef>}に束縛されます。
+したがって新しい@code{car}を使おうとすると次のようなエラーになります。
+@c COMMON
+
+@example
+gosh> (car '(a))
+*** ERROR: invalid application: (#<undef> (a))
+@end example
+
+@c EN
+What intended can be acheieved by explicitly referring to the old
+binding of @code{car} in the original module:
+@c JP
+求める動作を得るには、既存の@code{car}の束縛を元のモジュールから明示的に
+持ってくる必要があります:
+@c COMMON
+
+@example
+;; R7RS way
+(import (rename (scheme base) (car r7rs:car)))
+(define (car x) (cond [(pair? x) (r7rs:car x)] ...))
+
+;; Traditional Gauche way
+(define (car x)
+  (cond [(pair? x) ((with-module scheme car) x)] ...))
+@end example
+
 
 @c EN
 Being said that, there are a couple of procedures
