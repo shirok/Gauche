@@ -441,7 +441,10 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             CASE_ITAG_RET(SCM_NIL,       "()");
             CASE_ITAG_RET(SCM_EOF,       "#<eof>");
             CASE_ITAG_RET(SCM_UNDEFINED, "#<undef>");
+            /* The following two values should never be seen by the user; but
+               internal bugs may reveal them. */
             CASE_ITAG_RET(SCM_UNBOUND,   "#<unbound>");
+            CASE_ITAG_RET(SCM_UNINITIALIZED, "#<uninitialized>");
         default:
             Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
         }

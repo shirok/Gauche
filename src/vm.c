@@ -646,6 +646,9 @@ static void vm_unregister(ScmVM *vm)
         if (SCM_UNBOUNDP(v)) {                                          \
             VM_ERR(("unbound variable: %S", SCM_OBJ(gloc->name)));      \
         }                                                               \
+        if (SCM_UNINITIALIZEDP(v)) {                                    \
+            VM_ERR(("uninitialized variable: %S", SCM_OBJ(gloc->name)));\
+        }                                                               \
         INCR_PC;                                                        \
     } while (0)
 

@@ -1,5 +1,15 @@
 2019-12-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h: Add SCM_UNINITIALIZED that indicates the toplevel
+	  variable is bound but not initialized.  It clarifies the state
+	  introduced by https://github.com/shirok/Gauche/issues/549, when
+	  a variable is bound at the compile-time but its value hasn't been
+	  calculated at runtime.  It's different from SCM_UNBOUND, which
+	  says the variable is not bound at all.  Like SCM_UNBOUND,
+	  SCM_UNINITIALIZED should never be seen by the Scheme user code.
+	* src/vm.c (GLOBAL_REF): Catches when a global variable has
+	  SCM_UNINITIALIZED, and raises an error.
+
 	* src/gauche/priv/macroP.h (ScmSyntax): Keep defining module for
 	  better debugging info.
 	  (Scm_MakeSyntax): INCOMPATIBLE CHANGE: move to private header and

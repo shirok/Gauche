@@ -51,6 +51,11 @@
     (apply format (current-error-port) (string-append "WARNING: " fmt) args)
     (flush (current-error-port))))
 
+;; uninitialized value is only used in the compiler and should never be leaked
+;; out to the userland.
+(select-module gauche.internal)
+(define-cproc %uninitialized () (return SCM_UNINITIALIZED))
+
 ;; Debug label
 (select-module gauche)
 (define-cproc debug-label (obj) (result (Scm_Sprintf "@%lx" obj)))

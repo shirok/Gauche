@@ -249,7 +249,7 @@ typedef struct ScmClassRec ScmClass;
  *
  * [Miscellaneous]
  *      -------- -------- -------- 00001011
- *      #f, #t, '(), eof-object, undefined
+ *      #f, #t, '(), eof-object, undefined, uninitialized
  *
  * [Pattern variable]
  *      -------- -------- -------- 00010011
@@ -302,13 +302,15 @@ typedef struct ScmClassRec ScmClass;
 #define SCM_EOF             SCM_OBJ(SCM__MAKE_ITAG(3)) /* eof-object */
 #define SCM_UNDEFINED       SCM_OBJ(SCM__MAKE_ITAG(4)) /* #undefined */
 #define SCM_UNBOUND         SCM_OBJ(SCM__MAKE_ITAG(5)) /* unbound value */
+#define SCM_UNINITIALIZED   SCM_OBJ(SCM__MAKE_ITAG(6)) /* uninitialized */
 
-#define SCM_FALSEP(obj)     ((obj) == SCM_FALSE)
-#define SCM_TRUEP(obj)      ((obj) == SCM_TRUE)
-#define SCM_NULLP(obj)      ((obj) == SCM_NIL)
-#define SCM_EOFP(obj)       ((obj) == SCM_EOF)
-#define SCM_UNDEFINEDP(obj) ((obj) == SCM_UNDEFINED)
-#define SCM_UNBOUNDP(obj)   ((obj) == SCM_UNBOUND)
+#define SCM_FALSEP(obj)         ((obj) == SCM_FALSE)
+#define SCM_TRUEP(obj)          ((obj) == SCM_TRUE)
+#define SCM_NULLP(obj)          ((obj) == SCM_NIL)
+#define SCM_EOFP(obj)           ((obj) == SCM_EOF)
+#define SCM_UNDEFINEDP(obj)     ((obj) == SCM_UNDEFINED)
+#define SCM_UNBOUNDP(obj)       ((obj) == SCM_UNBOUND)
+#define SCM_UNINITIALIZEDP(obj) ((obj) == SCM_UNINITIALIZED)
 
 /*
  * BOOLEAN

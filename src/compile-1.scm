@@ -536,7 +536,7 @@
          ;; Insert dummy binding at compile time, if we don't have one yet.
          ;; This matters when we compile multiple modules at once, and
          ;; one need to import from another with qualifiers.
-         (%insert-binding module (unwrap-syntax name) (undefined) '(fresh))
+         (%insert-binding module (unwrap-syntax name) (%uninitialized) '(fresh))
          ($define oform flags id (pass1 expr cenv))))]
     [_ (error "syntax-error:" oform)]))
 
