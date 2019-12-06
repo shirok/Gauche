@@ -3254,4 +3254,7 @@ void Scm__InitVM(void)
     if (Scm_GetEnv("GAUCHE_CHECK_UNDEFINED_TEST") != NULL) {
         SCM_VM_RUNTIME_FLAG_SET(rootVM, SCM_CHECK_UNDEFINED_TEST);
     }
+    if (Scm_GetEnv("GAUCHE_SLOPPY_DEFINE") != NULL) {
+        SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_SLOPPY_DEFINE);
+    }
 }

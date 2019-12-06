@@ -3,6 +3,7 @@ data.scm
 util2.scm
 optimize.scm
 control.scm
+compiler-misc.scm
 debug.scm
 scripts.scm
 interactive.scm
