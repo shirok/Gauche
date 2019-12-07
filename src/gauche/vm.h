@@ -631,7 +631,7 @@ enum {
     SCM_COMPILE_NOINLINE_SETTERS = (1L<<10), /* Do not inline setters */
     SCM_COMPILE_NODISSOLVE_APPLY = (1L<<11),/* Do not dissolve APPLY
                                               (pass2/dissolve-apply) */
-    SCM_COMPILE_SLOPPY_DEFINE = (1L<<12)   /* Do not insert toplevel binding 
+    SCM_COMPILE_LEGACY_DEFINE = (1L<<12)   /* Do not insert toplevel binding 
                                               at compile-time. */
 };
 

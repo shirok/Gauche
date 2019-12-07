@@ -536,7 +536,7 @@
          ;; Insert dummy binding at compile time, if we don't have one yet.
          ;; This matters when we compile multiple modules at once, and
          ;; one need to import from another with qualifiers.
-         (unless (vm-compiler-flag-is-set? SCM_COMPILE_SLOPPY_DEFINE)
+         (unless (vm-compiler-flag-is-set? SCM_COMPILE_LEGACY_DEFINE)
            (%insert-binding module (unwrap-syntax name) 
                             (%uninitialized) '(fresh)))
          ($define oform flags id (pass1 expr cenv))))]
