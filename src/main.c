@@ -152,6 +152,8 @@ void usage(int errorp)
             "      Value must be an integer.  If set, it overrides the number of\n"
             "      available processors on the system, returned from\n"
             "      `sys-available-processors'.\n"
+            "  GAUCHE_CHECK_UNDEFINED_TEST\n"
+            "      Warn if #<undef> is used in the test expression of branch.\n"
             "  GAUCHE_DYNLOAD_PATH\n"
             "      Directories separated by colon (on Unix) or semilcolon (on Windows)\n"
             "      to search dynamically loadable files.\n"
