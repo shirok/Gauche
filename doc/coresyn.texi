@@ -4,19 +4,19 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Lexical structure::           
-* Literals::                    
-* Making procedures::           
-* Assignments::                 
-* Conditionals::                
-* Binding constructs::          
-* Sequencing::                  
-* Iteration::                   
-* Quasiquotation::              
-* Definitions::                 
-* Inclusions::                  
-* Feature conditional::         
-* Modules::                     
+* Lexical structure::
+* Literals::
+* Making procedures::
+* Assignments::
+* Conditionals::
+* Binding constructs::
+* Sequencing::
+* Iteration::
+* Quasiquotation::
+* Definitions::
+* Inclusions::
+* Feature conditional::
+* Modules::
 @end menu
 
 @node Lexical structure, Literals, Core syntax, Core syntax
@@ -278,8 +278,8 @@ See the table below.
 @end table
 
 @menu
-* Sharp syntax::                
-* Hash-bang token::             
+* Sharp syntax::
+* Hash-bang token::
 @end menu
 
 @node Sharp syntax, Hash-bang token, Lexical structure, Lexical structure
@@ -3367,6 +3367,36 @@ x @result{} 3
 @end example
 
 @c EN
+If @var{variable} is already bound @emph{in the same module}, the subsequent
+definitions work just like assignments.
+@c JP
+@var{variable}が@emph{同じモジュールの中で}既に束縛されていた場合、
+二度目以降の定義は代入と同じです。
+@c COMMON
+
+@example
+(define x 3)
+(define (value-of-x) x)
+
+(value-of-x x) @result{} 3
+
+(define x 4)
+
+(value-of-x x) @result{} 4
+@end example
+
+@c EN
+If @var{variable} is not bound in the current module, but has an
+imported bindings, things get interesting but complicated.
+@xref{Into the Scheme-Verse}, for the details.
+@c JP
+@var{variable}が現在のモジュールでは束縛されていないけれど、
+他のモジュールからインポートされた束縛があった場合、話はちょっとややこしく
+(おもしろく)なります。詳しくは
+@ref{Into the Scheme-Verse}で論じます。
+@c COMMON
+
+@c EN
 The second form is a syntactic sugar of defining a procedure.
 It is equivalent to the following form.
 @c JP
@@ -3832,6 +3862,141 @@ the current module, you can use @code{global-variable-bound?}
 を調べるには、@code{global-variable-bound?}が使えます
 (@ref{Module introspection}参照)。
 @c COMMON
+
+@menu
+* Into the Scheme-Verse::
+@end menu
+
+@node Into the Scheme-Verse,  , Definitions, Definitions
+@subsection Into the Scheme-Verse
+@c NODE Scheme多世界へようこそ
+
+@subsubheading Multiple toplevels are multiple scopes
+
+One upon a time, the Scheme world was simple.  We had one single global
+space we called the toplevel.  Toplevel definitions can be understood
+as side-effects to this global space; if the name hasn't been exist
+there yet, create a new binding, otherwise, overwrite existing one.
+
+The problem was that it was hard to scale, thus many implementations
+introduced their own module systems.  One of the main agenda of R6RS
+was to have a module system (which is called ``library'' in RnRS)
+consistent with the design of Scheme.
+Especially, since Scheme's hygienic macro system captures lexical scope,
+it is desirable that it interacts with module system in the same way.
+
+In modern Scheme, ``toplevel'' of each module creates its own lexical
+scope, and the definitions are understood in @code{letrec*} semantics.
+Hence, macro systems can consistently treat identifiers as
+a name associated with a scope.
+
+Suppose you see these toplevel definitions:
+
+@example
+(define (odd? n)  (if (zero? x) #f (even? (- n 1))))
+(define (even? n) (if (zero? x) #t (odd? (- n 1))))
+@end example
+
+The first appearance of @code{even?} in the first line 
+is understood as the one defined in the second line.  It becomes
+apparent when we compare it with internal defines:
+
+@example
+(let ((even? error))
+  (define (odd? n)  (if (zero? x) #f (even? (- n 1))))
+  (define (even? n) (if (zero? x) #t (odd? (- n 1))))
+  ...)
+@end example
+
+The @code{even?} in the definition of @code{odd?} refers to the
+one defined in the next line, never to the one bound by @code{let}.
+
+So far, so good.
+
+Now, consider the following toplevel code:
+
+@example
+;; Invalid in RnRS, n >= 6
+(import (scheme base) (scheme write))
+(define orig-error error)
+(define (error . args)
+  (write args) (newline)
+  (apply orig-error args))
+@end example
+
+The intention is to save the @emph{original} value of @code{error},
+which is imported from @code{(scheme base)}, into a variable
+@code{orig-error}, then redefine @code{error} to add logging feature.
+This technique was popular in pre-R6RS Scheme.
+
+However, with our new toplevel-as-a-scope Scheme, the @code{error}
+in @code{(define orig-error error)} @emph{must} refer to the one defined
+in the same scope, which is the new definition below; otherwise lexical
+scoping gets broken.  The value of inner @code{error} hasn't been calculated
+when @code{orig-error}'s value is calculated, so the above form is
+an invalid program in terms of RnRS.
+
+In fact, to avoid confusion, R6RS prohibits defining a toplevel variable
+that conflicts with the imported name (in R7RS the behavior of such program
+is undefined).  In the example above,
+the name @code{error} is imported from @code{(scheme base)} and also
+defined in the toplevel, hence it's a violation.
+
+The modern way of such augumentation is to use renaming import:
+
+@example
+(import (except (scheme base) error)
+        (rename (scheme base) (error r7rs:error))
+        (scheme write))
+(define (error . args)
+  (write args) (newline)
+  (apply r7rs:error args))
+@end example
+
+@subsubheading Gauche's take
+
+Gauche's module system predates R6RS and R7RS, and it regards a module
+as a first-class entity and suppors class-like inheritance.  It is 
+upper-compatible to R7RS libraries, but we take freedom in interpreting
+R7RS undefined behaviors.
+
+First, you can define toplevel variables that conflict with
+imported or inherited bindings.  The new definition simply shadows the
+old one.
+
+Second, if multiple toplevel forms processed at once
+e.g. it is enclosed in @code{begin} or the file is read by @code{include},
+we treat them in one scope.  That is, if the above @code{orig-error} example
+is read by @code{include}, the first @code{error} refers to the to-be-defined
+@code{error} below.  Since the value of @code{error} hasn't been calculated
+by the time it's used, you'll get the following error:
+
+@example
+*** ERROR: uninitialized variable: error
+@end example
+
+Third, Gauche compiles and executes each individual toplevel forms
+(the forms that's not enclosed in other S-expressions).  It is the
+same as REPL semantics.  If each form of @code{orig-error} example
+appears individually on the toplevel, the @code{(define orig-error error)}
+line actually refers to the R7RS @code{error} and assign it to
+@code{orig-error}, since @emph{we don't know yet if @code{error} will be
+defined in the same scope}.
+
+The third rule is necessary to support REPL semantics, but note that
+the result would differ when the same file is @code{include}d.  If
+you can, avoid writing such ambiguous code.
+
+Note: The second behavior is clarified in release 0.9.9 for the
+better compatibility with R7RS.  Before that,
+the behavior of such case is undefined, but some code might have
+expected that it works in REPL semantics (the third rule).
+
+In order to support the transition, if you set an enviornment
+variable @code{GAUCHE_LEGACY_DEFINE}, Gauche treats definitions
+in the same way as 0.9.8 and before.
+Note that if you that, you may see Gauche can't load some valid R7RS 
+code that has multiple libraries in one file.
 
 @c ----------------------------------------------------------------------
 @node Inclusions, Feature conditional, Definitions, Core syntax
@@ -4499,13 +4664,13 @@ Gaucheとは異なる構文で定義します。詳しくは@ref{R7RS library fo
 @c COMMON
 
 @menu
-* Module semantics::            
-* Modules and libraries::       
-* Defining and selecting modules::  
-* Using modules::               
-* Module inheritance::          
-* Module introspection::        
-* Predefined modules::          
+* Module semantics::
+* Modules and libraries::
+* Defining and selecting modules::
+* Using modules::
+* Module inheritance::
+* Module introspection::
+* Predefined modules::
 @end menu
 
 @node Module semantics, Modules and libraries, Modules, Modules
