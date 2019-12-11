@@ -3871,35 +3871,69 @@ the current module, you can use @code{global-variable-bound?}
 @subsection Into the Scheme-Verse
 @c NODE Scheme多世界へようこそ
 
+@c EN
 @subsubheading Multiple toplevels are multiple scopes
+@c JP
+@subsubheading 複数のトップレベルと複数のスコープ
+@c COMMON
 
+@c EN
 One upon a time, the Scheme world was simple.  We had one single global
 space we called the toplevel.  Toplevel definitions can be understood
 as side-effects to this global space; if the name hasn't been exist
 there yet, create a new binding, otherwise, overwrite existing one.
+@c JP
+昔、Schemeの世界は単純でした。トップレベルと呼ばれる単一のグローバルな空間があり、
+トップレベル定義はその空間への副作用と考えることが出来ました。名前がそこに
+まだなければ新たに作り、既にあったなら書き換えます。
+@c COMMON
 
+@c EN
 The problem was that it was hard to scale, thus many implementations
 introduced their own module systems.  One of the main agenda of R6RS
 was to have a module system (which is called ``library'' in RnRS)
 consistent with the design of Scheme.
 Especially, since Scheme's hygienic macro system captures lexical scope,
 it is desirable that it interacts with module system in the same way.
+@c JP
+ただ、その単純なモデルはスケールしなかったので、
+実装ごとに色々なモジュールシステムが試されました。R6RSの重要な目標のひとつは、
+Schemeの設計と一貫性のあるモジュールシステム (RnRSでは「ライブラリ」と呼ばれることになります)
+を決めることでした。
+特に、Schemeの衛生的マクロシステムはレキシカルスコープを捕捉するものでしたから、
+モジュールシステムもマクロから見て同じように扱えることが望まれました。
+@c COMMON
 
+@c EN
 In modern Scheme, ``toplevel'' of each module creates its own lexical
 scope, and the definitions are understood in @code{letrec*} semantics.
 Hence, macro systems can consistently treat identifiers as
 a name associated with a scope.
+@c JP
+現代のSchemeでは、「トップレベル」、あるいは各モジュールは自分のレキシカルスコープを
+持っていて、そこでの定義は@code{letrec*}セマンティクスで理解できる、とされます。
+つまり、マクロシステムは識別子を常に「スコープと関連付けられた名前」として扱えます。
+@c COMMON
 
+@c EN
 Suppose you see these toplevel definitions:
+@c JP
+次のようなトップレベル定義があるとします。
+@c COMMON
 
 @example
 (define (odd? n)  (if (zero? x) #f (even? (- n 1))))
 (define (even? n) (if (zero? x) #t (odd? (- n 1))))
 @end example
 
+@c EN
 The first appearance of @code{even?} in the first line 
 is understood as the one defined in the second line.  It becomes
 apparent when we compare it with internal defines:
+@c JP
+最初の行に現れる@code{even?}は、次の行で定義される名前だとみなされます。
+これは内部defineと比べてみるとはっきりするでしょう。
+@c COMMON
 
 @example
 (let ((even? error))
@@ -3908,12 +3942,25 @@ apparent when we compare it with internal defines:
   ...)
 @end example
 
+@c EN
 The @code{even?} in the definition of @code{odd?} refers to the
 one defined in the next line, never to the one bound by @code{let}.
+@c JP
+@code{odd?}の定義中に現れる@code{even?}は、@code{let}が導入する束縛ではなく、
+次の行で定義される@code{even?}を参照します。
+@c COMMON
 
+@c EN
 So far, so good.
+@c JP
+ここまではいいですね。
+@c COMMON
 
+@c EN
 Now, consider the following toplevel code:
+@c JP
+では、次のコードを考えてみてください。
+@c COMMON
 
 @example
 ;; Invalid in RnRS, n >= 6
@@ -3924,25 +3971,52 @@ Now, consider the following toplevel code:
   (apply orig-error args))
 @end example
 
+@c EN
 The intention is to save the @emph{original} value of @code{error},
 which is imported from @code{(scheme base)}, into a variable
 @code{orig-error}, then redefine @code{error} to add logging feature.
 This technique was popular in pre-R6RS Scheme.
+@c JP
+コードの意図は、@code{(scheme base)}からインポートされた
+@code{error}の@emph{元の}値を変数@code{orig-error}にセーブしておいて、
+@code{error}を再定義してログを出す機能を仕込むというものです。
+このテクニックはR6RSより前のSchemeではよく見られました。
+@c COMMON
 
+@c EN
 However, with our new toplevel-as-a-scope Scheme, the @code{error}
 in @code{(define orig-error error)} @emph{must} refer to the one defined
 in the same scope, which is the new definition below; otherwise lexical
 scoping gets broken.  The value of inner @code{error} hasn't been calculated
 when @code{orig-error}'s value is calculated, so the above form is
 an invalid program in terms of RnRS.
+@c JP
+でも、トップレベルはスコープであるとした最近のSchemeでは、
+@code{(define orig-error error)}における@code{error}は
+同じスコープで定義されるもの、つまりその下で定義される@code{error}を参照しなければ
+なりません。でないとレキシカルスコープの規則が崩れてしまいます。
+とはいえ内側の@code{error}の値は@code{orig-error}の初期値を計算する時点では
+まだ計算されていないので、上のコードはRnRS的には無効なコードということになります。
+@c COMMON
 
+@c EN
 In fact, to avoid confusion, R6RS prohibits defining a toplevel variable
 that conflicts with the imported name (in R7RS the behavior of such program
 is undefined).  In the example above,
 the name @code{error} is imported from @code{(scheme base)} and also
 defined in the toplevel, hence it's a violation.
+@c JP
+実際、混乱を避けるために、R6RSではインポートした名前とぶつかる名前をトップレベルで
+定義することを禁止しています (R7RSでは未定義動作になっています)。
+上の例では、@code{error}は@code{(scheme base)}から既にインポートされているので、
+トップレベルで再定義するのは文法違反となります。
+@c COMMON
 
+@c EN
 The modern way of such augumentation is to use renaming import:
+@c JP
+既存の手続きに機能を付け加える、現代風のやり方は、インポート時にリネームすることです。
+@c COMMON
 
 @example
 (import (except (scheme base) error)
@@ -3953,28 +4027,54 @@ The modern way of such augumentation is to use renaming import:
   (apply r7rs:error args))
 @end example
 
+@c EN
 @subsubheading Gauche's take
+@c JP
+@subsubheading Gaucheの選択
+@c COMMON
 
+@c EN
 Gauche's module system predates R6RS and R7RS, and it regards a module
 as a first-class entity and suppors class-like inheritance.  It is 
 upper-compatible to R7RS libraries, but we take freedom in interpreting
 R7RS undefined behaviors.
+@c JP
+GaucheのモジュールシステムはR6RS/R7RS以前からありました。
+モジュールは第一級のオブジェクトで、クラスのような継承関係も持てます。
+R7RSのライブラリの上位互換ですが、R7RSの未定義動作の部分については
+拡張解釈をしています。
+@c COMMON
 
+@c EN
 First, you can define toplevel variables that conflict with
 imported or inherited bindings.  The new definition simply shadows the
 old one.
+@c JP
+まず、インポートしたり継承している名前と同名のトップレベル変数を定義できます。
+新たな定義は前の定義を単にシャドウします。
+@c COMMON
 
+@c EN
 Second, if multiple toplevel forms processed at once
 e.g. it is enclosed in @code{begin} or the file is read by @code{include},
 we treat them in one scope.  That is, if the above @code{orig-error} example
 is read by @code{include}, the first @code{error} refers to the to-be-defined
 @code{error} below.  Since the value of @code{error} hasn't been calculated
 by the time it's used, you'll get the following error:
+@c JP
+次に、複数のトップレベルフォームが@code{begin}に包まれたり
+@code{include}経由で読まれるなどした場合、それらはひとつのスコープにあるものとして
+処理されます。上の@code{orig-error}の例が@code{include}で読まれたとすると、
+最初の@code{error}はその下で定義されるはずの@code{error}を参照することになります。
+そのスコープの@code{error}の値は、@code{orig-error}の初期値を計算する時点では
+計算されていないので、次のエラーが投げられます:
+@c COMMON
 
 @example
 *** ERROR: uninitialized variable: error
 @end example
 
+@c EN
 Third, Gauche compiles and executes each individual toplevel forms
 (the forms that's not enclosed in other S-expressions).  It is the
 same as REPL semantics.  If each form of @code{orig-error} example
@@ -3982,21 +4082,49 @@ appears individually on the toplevel, the @code{(define orig-error error)}
 line actually refers to the R7RS @code{error} and assign it to
 @code{orig-error}, since @emph{we don't know yet if @code{error} will be
 defined in the same scope}.
+@c JP
+一方、Gaucheは他のS式で囲まれていないトップレベルフォームは、ひとつひとつ
+逐次的に処理します。つまりREPLと同じセマンティクスです。
+@code{orig-error}の例がそのまま読み込まれた場合、@code{(define orig-error error)}
+の@code{error}はR7RSの@code{error}を参照し、その値が@code{orig-error}に
+束縛されます。なぜなら@code{(define orig-error error)}を見た時点では、
+次に@code{error}が再定義されるかどうかはまだわからないからです。
+@c COMMON
 
+@c EN
 The third rule is necessary to support REPL semantics, but note that
 the result would differ when the same file is @code{include}d.  If
 you can, avoid writing such ambiguous code.
+@c JP
+最後の動作はREPLをサポートするのに必要な動作ですが、
+同じコードを@code{include}した場合に結果が変わってくることに気をつけてください。
+こういった曖昧性のあるコードを書くのを避けることが一番です。
+@c COMMON
 
+@c EN
 Note: The second behavior is clarified in release 0.9.9 for the
 better compatibility with R7RS.  Before that,
 the behavior of such case is undefined, but some code might have
 expected that it works in REPL semantics (the third rule).
+@c JP
+註：トップレベルフォームが@code{begin}で囲まれた場合の動作は、
+R7RSとの互換性を高めるために、0.9.9で明確化されました。
+それ以前のバージョンでは上の例の動作は未定義でしたが、
+REPLセマンティクスで動くことを期待していたコードはあるかもしれません。
+@c COMMON
 
+@c EN
 In order to support the transition, if you set an enviornment
 variable @code{GAUCHE_LEGACY_DEFINE}, Gauche treats definitions
 in the same way as 0.9.8 and before.
-Note that if you that, you may see Gauche can't load some valid R7RS 
+Note that if you that, you may see Gauche can't include some valid R7RS 
 code that has multiple libraries in one file.
+@c JP
+移行をスムースにするために、環境変数@code{GAUCHE_LEGACY_DEFINE}が定義されている
+場合は、Gaucheはトップレベル定義の評価を0.9.8以前と同じにします。
+その場合、複数のライブラリが1ファイルで定義されている
+R7RSとして有効なコードをincludeできない場合があります。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Inclusions, Feature conditional, Definitions, Core syntax
