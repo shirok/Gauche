@@ -3156,25 +3156,54 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @mdindex scheme.vector.f64
 @mdindex scheme.vector.c64
 @mdindex scheme.vector.c128
+@c EN
 @code{@@} is actually one of @code{u8}, @code{s8}, @code{u16}, @code{s16},
 @code{u32}, @code{s32}, @code{u64}, @code{s64}, @code{f32},
 @code{f64}, @code{c64} or @code{c128}.
 (Gauche's @code{gauche.uvector} module also provides @code{f16}
 and @code{c32} vectors.)
+@c JP
+@code{@@}は次のいずれかに置き換えて読んでください：
+@code{u8}, @code{s8}, @code{u16}, @code{s16},
+@code{u32}, @code{s32}, @code{u64}, @code{s64}, @code{f32},
+@code{f64}, @code{c64}, @code{c128}。
+(Gaucheの@code{gauche.uvector}モジュールはさらに@code{f16}と@code{c32}を
+提供します)。
+@c COMMON
 
+@c EN
 These modules provides vectors that can hold specific range of numeric
 values.  In Gauche we use @emph{packed} representation, meaning
 numbers are tightly stored in consecutive memory region.
+@c JP
+これらのモジュールは限られた範囲の数値だけを格納するベクタを提供します。
+Gaucheでは、数値は連続したメモリ領域に@emph{詰められて}格納されます。
+@c COMMON
 
-Additionally, @code{scheme.vector.base} module exports basic procedures
-(@code{make-@@vector}, @code{@@vector}, @code{@@vector?}, @code{@@vector-length},
+@c EN
+Additionally, @code{scheme.vector.base} module exports basic procedures,
+@code{make-@@vector}, @code{@@vector}, @code{@@vector?}, @code{@@vector-length},
 @code{@@vector-ref}, @code{@@vector-set!},
-@code{@@vector->list}, @code{list->@@vector}, @code{@@?})
-for all element types.
+@code{@@vector->list}, @code{list->@@vector}, @code{@@?},
+for @code{@@} being over all element types.
+@c JP
+また、@code{scheme.vector.base}モジュールは全ての要素型についての
+基本手続き、つまり次の手続きの@code{@@}を全ての基本型で置換した手続きをまとめて
+エクスポートしています：
+@code{make-@@vector}、@code{@@vector}、@code{@@vector?}
+@code{@@vector-length}、@code{@@vector-ref}、@code{@@vector-set!}、
+@code{@@vector->list}、@code{list->@@vector}、@code{@@?}
+@c COMMON
 
+@c EN
 The @code{gauche.uvector} module is a superset of these modules, and
 all procedures are described there.  @xref{Uniform vectors} for the
 details.
+@c JP
+@code{gauche.uvector}モジュールはこれらのモジュールのスーパーセットで、
+このモジュールの全ての手続きはそちらで説明されています。
+@ref{Uniform vectors}を参照してください。
+@c COMMON
 @end deftp
 
 @node R7RS sort, R7RS sets, R7RS uniform vectors, R7RS large
