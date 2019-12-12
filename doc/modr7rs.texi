@@ -1829,6 +1829,8 @@ the difference can be used to measure the time interval.
 @end defun
 
 @defun jiffies-per-second
+[R7RS time]
+@c MOD scheme.time
 Returns a constant to tell how many time units used in @code{current-jiffy}
 consists of a second.  Currently this is 10^9 on 64bit architectures
 (that is, nanosecond resolution) and 10^4 on 32bit architectures
