@@ -3894,7 +3894,7 @@ introduced their own module systems.  One of the main agenda of R6RS
 was to have a module system (which is called ``library'' in RnRS)
 consistent with the design of Scheme.
 Especially, since Scheme's hygienic macro system captures lexical scope,
-it is desirable that it interacts with module system in the same way.
+it is desirable that it interacts with the module system in the same way.
 @c JP
 ただ、その単純なモデルはスケールしなかったので、
 実装ごとに色々なモジュールシステムが試されました。R6RSの重要な目標のひとつは、
@@ -4055,7 +4055,7 @@ old one.
 @c COMMON
 
 @c EN
-Second, if multiple toplevel forms processed at once
+Second, if multiple toplevel forms are processed at once
 e.g. it is enclosed in @code{begin} or the file is read by @code{include},
 we treat them in one scope.  That is, if the above @code{orig-error} example
 is read by @code{include}, the first @code{error} refers to the to-be-defined

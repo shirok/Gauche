@@ -4304,19 +4304,19 @@ boolean context,
 since it is not @code{#f}.  However, branching based on @code{#<undef>}
 is dangerous---a procedure that is defined to return unspecified value
 may merely returning @code{#<undef>} as a provisional value; it will 
-change the return value in future, since the return value isn't specified,
+change the return value in future.  Since the return value isn't specified,
 no one should be using it.  The code that tests such result value as
-generalized boolean may break if the procedure changes the return value.
+a generalized boolean may break if the procedure changes the return value.
 
 In fact, we've found that there are quite a few code that accidentally tests
-@code{#<undef>} return value in the conditional.  They can be seeds
+@code{#<undef>} return value in conditionals.  They can be seeds
 for future bugs, so we added a feature to warn when @code{#<undef>} value
-is used in the test of branch.  You can turn it on with
+is used in the test of branches.  You can turn it on with
 setting the environment variable @code{GAUCHE_CHECK_UNDEFINED_TEST}.
 In future, we may turn it on while testing.
 
 One typical case of such accidental use of @code{#<undef>} branching
-is in @code{and-let*}; the following code assumes @code{print} always returns
+is in @code{and-let*}; the following code assumes @code{print} always return
 @code{#<undef>}, which is counted as a true value, and expects the control
 to proceeed to the next clause.  It'll break if @code{print} ever changes
 so that it may return @code{#f} in some cases.

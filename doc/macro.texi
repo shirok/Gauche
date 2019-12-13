@@ -1400,7 +1400,7 @@ be any procedure that takes one symbol or identifier argument:
 @c COMMON
 
 @example
-(quasirename (^[x] (symbol-append 'x: x)) (+ a ,(+ 1 2) 5))
+(quasirename (^[x] (symbol-append 'x: x)) `(+ a ,(+ 1 2) 5))
   @result{} (x:+ x:a 3 5)
 @end example
 
@@ -1958,7 +1958,7 @@ information preserved.
 @c COMMON
 @end defun
 
-@defun macroexpand-all form　:optional env
+@defun macroexpand-all form :optional env
 @c EN
 Fully expand macros inside @var{form}.  The result only contains
 function calls and Gauche's built-in syntax.
