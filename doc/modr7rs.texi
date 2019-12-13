@@ -3212,16 +3212,34 @@ details.
 
 @deftp {Module} scheme.sort
 @mdindex scheme.sort
+@c EN
 Provides utilities to sort, and to work on sorted lists/vectors.
 This module is the same as @code{srfi-132}.
+@c JP
+ソートおよびソート済みのリストやベクタに関する手続きを提供します。
+このモジュールは@code{srfi-132}と同じです。
+@c COMMON
 
+@c EN
 Gauche has built-in sort and merge procedures (@pxref{Sorting and merging}).
 This module has a bit different API.  Notably, the ordering predicate
 comes first than the sequence to be sorted, and the procedures
 dealing with vectors uniformly support start/end arguments
+@c JP
+Gaucheは組み込みでソートとマージの手続きを用意していますが
+(@ref{Sorting and merging}参照)、
+このモジュールはAPIがちょっと異なります。特に、順序を決める述語が
+ソートすべきシーケンスより先に来ます。また、ベクタを扱う手続きは一様に
+start/end引数をサポートします。
+@c COMMON
 
+@c EN
 This module also provide useful procedures working on sorted or
 partially sorted sequences.
+@c JP
+このモジュールはまた、(部分的に)ソートされた列に対する便利な手続きをいくつか
+定義しています。
+@c COMMON
 @end deftp
 
 @defun list-sort elt< lis
@@ -3230,19 +3248,36 @@ partially sorted sequences.
 @defunx list-stable-sort! elt< lis
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Sort elements in a list @var{lis} according to the ordering
 predicate @var{elt<}, which takes two elements from @var{lis}
 and returns true iff the first argument is strictly less
 than the second argument.
 
 Returns a sorted list.
-The procedures with bang are allowed, but not required, to reuse
-@code{lis}.  The ``stable'' variation guarantees stable sort.
+The procedures with bang are linear update version.  They are
+allowed, but not required, to reuse
+@var{lis}.  The ``stable'' variation guarantees stable sort.
 
 These are basically the same as Gauche's built-in  
 @code{sort}, @code{sort!}, @code{stable-sort} and @code{stable-sort!},
 except the Gauche's version works on any sequences and takes
-arguments differently.  (@xref{Sorting and merging}.)
+arguments differently. (@xref{Sorting and merging}.)
+@c JP
+リスト@var{lis}の要素を比較述語@var{elt<}を使ってソートします。
+@var{elt<}は@var{lis}からの二要素を引数に取り、最初の引数が厳密に
+二番目の引数より小さい場合に限り@code{#t}を返します。
+
+ソートされたリストが返されます。@code{!}つきの手続きは線形更新版で、
+@var{lis}を破壊的に再利用することが許されています (再利用しないかもしれません。
+したがって呼び出し側は常に戻り値を使う必要があります)。 ``stable'' がついている
+ものは安定ソートを行います。
+
+これらは基本的にはGaucheの組み込み手続き
+@code{sort}、@code{sort!}、@code{stable-sort}、@code{stable-slot!}と
+同じです。ただ、Gaucheのは引数の順序と、任意のシーケンスを取れるところが異なります
+(@ref{Sorting and merging}参照)。
+@c COMMON
 @end defun
 
 
