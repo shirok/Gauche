@@ -4299,6 +4299,58 @@ You shouldn't let it carry too much meanings.
 @c COMMON
 
 @c EN
+The @code{#<undef>} value is counted as true value in generalized 
+boolean context,
+since it is not @code{#f}.  However, branching based on @code{#<undef>}
+is dangerous---a procedure that is defined to return unspecified value
+may merely returning @code{#<undef>} as a provisional value; it will 
+change the return value in future, since the return value isn't specified,
+no one should be using it.  The code that tests such result value as
+generalized boolean may break if the procedure changes the return value.
+
+In fact, we've found that there are quite a few code that accidentally tests
+@code{#<undef>} return value in the conditional.  They can be seeds
+for future bugs, so we added a feature to warn when @code{#<undef>} value
+is used in the test of branch.  You can turn it on with
+setting the environment variable @code{GAUCHE_CHECK_UNDEFINED_TEST}.
+In future, we may turn it on while testing.
+
+One typical case of such accidental use of @code{#<undef>} branching
+is in @code{and-let*}; the following code assumes @code{print} always returns
+@code{#<undef>}, which is counted as a true value, and expects the control
+to proceeed to the next clause.  It'll break if @code{print} ever changes
+so that it may return @code{#f} in some cases.
+@c JP
+@code{#<undef>}は一般化された真偽値としては真の値とみなされます
+(偽になるのは@code{#f}のみですから)。
+しかし、@code{#<undef>}の値を見て分岐するコードは危険です。
+というのも、戻り値が規定されていない手続きが暫定的に@code{#<undef>}を返している
+場合が良くあるからです。でも、それは将来変更されるかもしれません。
+戻り値が規定されていない以上、戻り値に依存するコードは無いはずだからです。
+もしうっかり、その戻り値に基づいて分岐しているコードがあると、変更があったときに
+壊れてしまいます。
+
+実のところ、@code{#<undef>}に依存して分岐しているコードが結構多いことがわかりました。
+これは将来のバグの芽となるので、@code{#<undef>}が分岐テストに現れた時に
+警告する機能がつけてあります。環境変数@code{GAUCHE_CHECK_UNDEFINED_TEST}
+をセットすることでその機能をオンにできます。
+将来、テストの際にこの機能をオンにするかもしれません。
+
+@code{#<undef>}をうっかり分岐テストに使ってしまう良くあるパターンは、
+@code{and-let*}です。次のコードでは、@code{print}がテスト節に現れていますが、
+このコードは@code{print}が常に@code{#<undef>}を返しそれが真の値であることから
+次のテスト節に進むことを期待しています。けれども、@code{print}が場合によっては@code{#f}を
+返すように変更されたら、このコードは壊れてしまいます。
+@c COMMON
+
+@example
+(and-let* ([var (foo x y z)]
+           [ (print var) ]    ;; branch on #<undef>
+           [baz (bar var)])
+  ...)
+@end example
+
+@c EN
 Being said that, there are a couple of procedures
 to deal with undefined values.
 @c JP
