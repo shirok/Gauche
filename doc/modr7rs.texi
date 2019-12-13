@@ -4388,7 +4388,11 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Returns @code{#t} iff every char-set argument is a subset of
+the following char-sets.  If no arguments are given, @code{#t} is returned.
 @c JP
+各char-set引数がそれ以降のchar-setの部分集合になっている場合に限り@code{#t}を返します。
+引数が無い場合は@code{#t}を返します。
 @c COMMON
 @end defun
 
@@ -4396,7 +4400,14 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Returns a non-negative exact integer as a hash value of @var{char-set}.
+If optional @var{bound} argument is given, it must be a positive integer
+that limits the range of the hash value, which will fall between
+0 to @code{(- bound 1)}, inclusive.
 @c JP
+@var{char-set}のハッシュ値を非負の正確な整数で返します。@var{bound}が与えられた場合、
+それは正の正確な整数でなければならず、戻り値は0から@code{(- bound 1)}まで(両端含む)の
+値を取ります。
 @c COMMON
 @end defun
 
@@ -4408,7 +4419,20 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Returns an object that can point to a first character within @var{char-set}
+(here, `first' merely means the beginning of iteration; the order of
+iteration is implementation-dependent and you can't assume a specific
+order).
+The caller must treat the return value as an opaque object; it can only
+be used to pass as the @var{cursor} argument of @code{char-set-ref},
+@code{char-set-cursor-next} and @code{end-of-char-set?}.
 @c JP
+@var{char-set}中の最初の文字を指すオブジェクトを返します。
+(ここでの「最初」は文字セットを順にたどってゆく際の最初ということです。
+文字セットをたどる順は実装依存で、特定の順序を当てにしないようにしてください。)
+返されたオブジェクトは、そのまま@code{char-set-ref}、
+@code{char-set-cursor-next}、@code{end-of-char-set?}の@var{cursor}引数に
+渡す以外に使ってはいけません。
 @c COMMON
 @end defun
 
@@ -4416,7 +4440,18 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Returns a character in @var{char-set} pointed by @var{cursor}.
+
+The @var{cursor} argument must be an object returned from
+@code{char-set-cursor} or @code{char-set-cursor-next} with @var{char-set}.
+The behavior is undefined if @var{cursor} is not a cursor
+created from @var{char-set}.
 @c JP
+@var{char-set}中の、@var{cursor}に指された文字を返します。
+
+@var{cursor}は@code{char-set-cursor}か@code{char-set-cursor-next}によって
+@var{char-set}から作られたオブジェクトでなければなりません。
+@var{cursor}が@var{char-set}から作られたものでない場合の動作は未定義です。
 @c COMMON
 @end defun
 
@@ -4424,15 +4459,29 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Returns a new cursor for the next character pointed by @var{cursor}
+within @var{char-set}.
+
+The @var{cursor} argument must be an object returned from
+@code{char-set-cursor} or @code{char-set-cursor-next} with @var{char-set}.
+The behavior is undefined if @var{cursor} is not a cursor
+created from @var{char-set}.
 @c JP
+@var{char-set}中の、@var{cursor}が指している文字の次の文字を指す新たなカーソルを返します。
+
+@var{cursor}は@code{char-set-cursor}か@code{char-set-cursor-next}によって
+@var{char-set}から作られたオブジェクトでなければなりません。
+@var{cursor}が@var{char-set}から作られたものでない場合の動作は未定義です。
 @c COMMON
 @end defun
 
-@defun end-of-char-set? ccursor
+@defun end-of-char-set? cursor
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Returns @code{#t} iff @var{cursor} points to the end of the charset.
 @c JP
+@var{cursor}が文字セットの終端を指していたら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -4440,7 +4489,15 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Iterate over all characters in @var{char-set}, calling the procedure @var{kons}
+with a character and the seed value.  The return value of @var{kons} becomes
+the next seed value, while @var{knil} gives the first seed value.
+Returns the last seed value.  The order of traversal isn't specified.
 @c JP
+@var{char-set}中の全ての文字について、手続き@var{kons}を、文字とシード値を引数にして
+呼び出します。@var{knil}が最初のシード値を与え、@var{kons}の戻り値が次のシード値となります。
+最後のシード値が@code{char-set-fold}の戻り値となります。
+文字を取り出す順番は規定されていません。
 @c COMMON
 @end defun
 
@@ -4449,7 +4506,27 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Build a character set by calling @var{fun} on the seed value repeatedly.
+For each iteration, first @var{pred} is applied to the current seed value.
+If it returns true, a character set that gathers characters generated so far
+is returned.  Otherwise, @var{fun} is called on the seed value,
+which must return a character.  Then @var{gen} is called on the seed value
+to obtain the next seed value.
+
+If @var{base-char-set} is given, a union of it and the generated characters
+is returned.
+The linear-update version @code{char-set-unfold!} may modify @var{base-char-set}
+to create the result.
 @c JP
+@var{fun}をシード値に適用して得られる文字から文字集合を作って返します。
+繰り返しの度に、まず@var{pred}が現在のシード値に対して呼ばれ、それが真の値を返したら
+繰り返しは終了で、それまで作られた文字を集めた集合が戻り値となります。
+そうでなければ@var{fun}がシード値を引数として呼ばれ、文字を返します。
+次に@var{gen}がシード値を引数として呼ばれ、次のシード値を作ります。
+
+@var{base-char-set}が与えられた場合は、それと生成された文字との和集合が返されます。
+線形更新バージョンである@code{char-set-unfold!}は、@var{base-char-set}を破壊的に
+再利用するかもしれません。
 @c COMMON
 @end defun
 
@@ -4457,7 +4534,11 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Applies @var{proc} on each character in @var{char-set}.  The return value
+of @var{proc} is discarded.  Returns undefined value.
 @c JP
+@var{proc}を@var{char-set}中のそれぞれの文字に適用します。
+@var{proc}の戻り値は捨てられます。この手続きの戻り値は規定されません。
 @c COMMON
 @end defun
 
@@ -4465,7 +4546,13 @@ same members.
 [R7RS charset]
 @c MOD scheme.charset
 @c EN
+Applies @var{proc} on each character in @var{char-set}, which must
+return a character.  Returns a new charset consists of the characters
+returned from @var{proc}.
 @c JP
+@var{proc}を@var{char-set}中のそれぞれの文字に適用します。
+@var{proc}の戻り値は文字でなければなりません。@var{proc}の戻り値の文字を集めた
+新たな文字セットを返します。
 @c COMMON
 @end defun
 
@@ -4537,8 +4624,13 @@ Be careful to apply this on a large char set.
 @c EN
 Returns a character set that adds @var{char1} @dots{} to
 @var{char-set}.
+
+The linear update version @code{char-set-adjoin!} may modify
+@var{char-set}.
 @c JP
 @var{char-set}に@var{char1} @dots{}を加えた文字集合を返します。
+
+線形更新版の@code{char-set-adjon!}は@var{char-set}引数を破壊的に再利用するかもしれません。
 @c COMMON
 @end defun
 
@@ -4546,36 +4638,112 @@ Returns a character set that adds @var{char1} @dots{} to
 @defunx char-set-delete! char-set char1 @dots{}
 [R7RS charset]
 @c MOD scheme.charset
+@c EN
+Returns a character set that removes @var{char1} @dots{} from @var{char-set}.
+It is noop if @var{char-set} doesn't have @var{char1} @dots{}.
+
+The linear update version @code{char-set-delete!} may modify
+@var{char-set}.
+@c JP
+@var{char-set}から@var{char1} @dots{}を除いた文字集合を返します。
+@var{char1} @dots{}が@var{char-set}に含まれている必要はありません。
+
+線形更新版の@code{char-set-delete!}は@var{char-set}引数を破壊的に再利用するかもしれません。
+@c COMMON
 @end defun
 
 @defun char-set-union char-set @dots{}
 @defunx char-set-union! char-set1 char-set2 @dots{}
 [R7RS charset]
 @c MOD scheme.charset
+@c EN
+Returns a character set of all characters in any one of
+@var{char-set} @dots{}.
+Without arguments, returns an empty charset.
+
+The linear update version @code{char-set-union!} may modify
+@var{char-set1}.
+@c JP
+@var{char-set} @dots{}内の少なくともひとつに含まれる文字の文字集合を返します。
+引数が無ければ空の文字集合を返します。
+
+線形更新版の@code{char-set-union!}は@var{char-set1}引数を破壊的に再利用するかもしれません。
+@c COMMON
 @end defun
 
 @defun char-set-intersection char-set @dots{}
 @defunx char-set-intersection! char-set1 char-set2 @dots{}
 [R7RS charset]
 @c MOD scheme.charset
+@c EN
+Returns a character set of every character that
+is in all of @var{char-set} @dots{}.
+Without arguments, returns @code{char-set:full}.
+
+The linear update version @code{char-set-intersection!} may modify
+@var{char-set1}.
+@c JP
+@var{char-set} @dots{}の全てに共通して含まれる文字の文字集合を返します。
+引数が無ければ@code{char-set:full}を返します。
+
+線形更新版の@code{char-set-intersection!}は@var{char-set1}引数を破壊的に再利用するかもしれません。
+@c COMMON
 @end defun
 
 @defun char-set-difference char-set1 char-set2 @dots{}
 @defunx char-set-difference! char-set1 char-set2 @dots{}
 [R7RS charset]
 @c MOD scheme.charset
+@c EN
+Returns a character set of every character that is in @var{char-set1}
+but not in any of @var{char-set2} @dots{}.
+
+The linear update version @code{char-set-difference!} may modify
+@var{char-set1}.
+@c JP
+@var{char-set1}に含まれ、しかし@code{char-set2} @dots{}のどれにも含まれない文字の文字集合を返します。
+
+線形更新版の@code{char-set-difference!}は@var{char-set1}引数を破壊的に再利用するかもしれません。
+@c COMMON
 @end defun
 
 @defun char-set-xor char-set @dots{}
 @defunx char-set-xor! char-set1 char-set2 @dots{}
 [R7RS charset]
 @c MOD scheme.charset
+@c EN
+With zero arguments, returns an empty charset.
+With one argument, it is returned as is.
+With two arguments, returns a character set of every character that
+is in either one of two sets, but not in both.
+With more than two arguments, it returns
+@code{(char-set-xor (char-set-xor set1 set2) set3 @dots{})}.
+
+The linear update version @code{char-set-xor!} may modify
+@var{char-set1}.
+@c JP
+引数がない場合は空の文字集合を、引数が一つの場合はそれをそのまま返します。
+引数が二つの場合、そのどちらか一方に含まれるが両方には含まれない文字の文字集合を返します。
+引数が三つ以上の場合は@code{(char-set-xor (char-set-xor set1 set2) set3 @dots{})}を
+返します。
+
+線形更新版の@code{char-set-xor!}は@var{char-set1}引数を破壊的に再利用するかもしれません。
+@c COMMON
 @end defun
 
 @defun char-set-diff+intersection char-set1 char-set2 @dots{}
 @defunx char-set-diff+intersection! char-set1 char-set2 char-set3 @dots{}
 [R7RS charset]
 @c MOD scheme.charset
+@c EN
+Returns two values, the result of
+@code{(char-set-difference char-set1 char-set2 @dots{}} and the result of
+@code{(char-set-intersection char-set1 char-set2 @dots{}}.
+@c JP
+@code{(char-set-difference char-set1 char-set2 @dots{}}の結果と
+@code{(char-set-intersection char-set1 char-set2 @dots{}}の結果の
+二つの値を返します。
+@c COMMON
 @end defun
 
 

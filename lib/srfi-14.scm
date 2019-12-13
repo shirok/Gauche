@@ -109,6 +109,8 @@
   (case-lambda [() #t]
                [args (every %char-set<=? args (cdr args))]))
 
+;; TRANSIENT: After 0.9.9, put this into built-in so that default-hash
+;; can handle charsets.
 ;; I'm not sure this works well.  at least it won't break anything.
 (define (char-set-hash cs :optional (bound #x1fffffff))
   (fold (^[range val] (modulo (hash (+ val (car range) (cdr range))) bound))
