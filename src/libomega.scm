@@ -225,6 +225,9 @@
        (subset? a b)
        (subset? b a)))
 
+;; Make charset hashable
+(define-method object-hash ((c <char-set>) _) (char-set-hash c))
+
 ;;
 ;; Turn on generic dispatcher on selected gfs.
 ;; Eventually, we automate attaching dispacher whenever gf meets certain

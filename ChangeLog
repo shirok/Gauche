@@ -1,5 +1,6 @@
 2019-12-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/libomega.scm: Make charset hashable by default-hash.
 	* lib/gauche/interactive.scm (apropos): Allow to take a string
 	  https://github.com/shirok/Gauche/pull/555
 
