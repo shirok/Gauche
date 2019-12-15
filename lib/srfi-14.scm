@@ -51,7 +51,7 @@
 ;;    integer-range->char-set integer-range->char-set!
 
 (define-module srfi-14
-  (export char-set= char-set<= char-set-hash
+  (export char-set= char-set<=
           char-set-cursor char-set-ref char-set-cursor-next end-of-char-set?
           char-set-fold char-set-unfold char-set-unfold!
           char-set-for-each char-set-map
@@ -60,7 +60,7 @@
           ucs-range->char-set ucs-range->char-set!
           integer-range->char-set integer-range->char-set!
           ->char-set
-          char-set-size char-set-count char-set->list char-set->string
+          char-set-count char-set->list char-set->string
           char-set-every char-set-any
           char-set-adjoin char-set-adjoin! char-set-delete char-set-delete!
           char-set-complement char-set-complement!
@@ -78,6 +78,7 @@
 
           ;; The followings are defined in core
           char-set char-set? char-set-contains? char-set-copy
+          char-set-hash char-set-size
           char-set-complement char-set-complement!
           ))
 (select-module srfi-14)
@@ -108,13 +109,6 @@
 (define char-set<=
   (case-lambda [() #t]
                [args (every %char-set<=? args (cdr args))]))
-
-;; TRANSIENT: After 0.9.9, put this into built-in so that default-hash
-;; can handle charsets.
-;; I'm not sure this works well.  at least it won't break anything.
-(define (char-set-hash cs :optional (bound #x1fffffff))
-  (fold (^[range val] (modulo (hash (+ val (car range) (cdr range))) bound))
-        0 (%char-set-ranges cs)))
 
 ;;-------------------------------------------------------------------
 ;; Iteration

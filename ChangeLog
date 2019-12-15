@@ -1,3 +1,7 @@
+2019-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-14.scm, src/libchar.scm (char-set-hash): Moved to core.
+
 2019-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* Release 0.9.9

@@ -242,6 +242,10 @@
 (define-cproc char-set-immutable? (cs::<char-set>) ::<boolean>
   (return (SCM_CHAR_SET_IMMUTABLE_P cs)))
 
+(define (char-set-hash cs :optional (bound #x1fffffff))
+  (fold (^[range val] (modulo (hash (+ val (car range) (cdr range))) bound))
+        0 ((with-module gauche.internal %char-set-ranges) cs)))
+
 (select-module gauche.internal)
 
 (define-cproc %char-set-equal? (x::<char-set> y::<char-set>)
