@@ -68,9 +68,7 @@
         [matcher (cond [(symbol? item)
                         (let1 substr (symbol->string item)
                           (^[name] (string-scan name substr)))]
-                       [(string? item)
-                        ;; Note: future extension
-                        (error "Bad object for item: " item)]
+                       [(string? item) (^[name] (string-scan name item))]
                        [(is-a? item <regexp>) (^[name] (rxmatch item name))]
                        [else
                         (error "Bad object for item: " item)])]
