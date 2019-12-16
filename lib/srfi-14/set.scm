@@ -165,7 +165,9 @@
   (values (apply char-set-difference base charsets)
           (char-set-intersection base (apply char-set-union charsets))))
 
+;; NB: We don't modify the arguments so far; if we do modify them,
+;; we need to be careful about the operation order.
 (define (char-set-diff+intersection! cs1 cs2 . charsets)
-  (values (apply char-set-difference! cs1 cs2 charsets)
-          (char-set-intersection! cs1 (apply char-set-union! cs2 charsets))))
+  (values (apply char-set-difference cs1 cs2 charsets)
+          (char-set-intersection cs1 (apply char-set-union cs2 charsets))))
 

@@ -1,5 +1,9 @@
 2019-12-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-14/set.scm (char-set-diff+intersection!): Provisional
+	  fix to avoid depending on evaluation order.
+	  https://github.com/shirok/Gauche/issues/554
+
 	* src/libomega.scm: Make charset hashable by default-hash.
 	* lib/gauche/interactive.scm (apropos): Allow to take a string
 	  https://github.com/shirok/Gauche/pull/555
