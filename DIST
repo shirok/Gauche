@@ -58,23 +58,8 @@ do_gen () {
     (cd gc; ./autogen.sh)
 }
 
-# Regenerate rpmfiles list.  Must be run after the release version is 
-# installed locally, with --prefix=/usr.
-# NB: The result depedns on configure options.
-do_rpmfiles () {
-    check_version
-    if [ -e /usr/share/gauche-0.97/$VERSION -a -e /usr/lib/gauche-0.97/$VERSION ]; then
-        find /usr/share/gauche-0.97/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
-        find /usr/share/gauche-0.97/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
-        find /usr/lib/gauche-0.97/$VERSION -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
-        find /usr/lib/gauche-0.97/$VERSION -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
-    fi
-}
-
-
 # Creates a release tarabll as ../Gauche-$VERSION.tgz
 do_tgz () {
-    do_rpmfiles
     tools/make-tgz.sh
 }
 

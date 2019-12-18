@@ -2,7 +2,8 @@
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
-	clean distclean maintainer-clean install-check
+	clean distclean maintainer-clean install-check \
+	rpmfiles
 
 @SET_MAKE@
 SHELL       = @SHELL@
@@ -23,6 +24,7 @@ INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
 GAUCHE_DATA_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@
+GAUCHE_ARCH_DIR = $(libdir)/gauche-@GAUCHE_ABI_VERSION@
 GAUCHE_ACLOCAL_DIR = $(GAUCHE_DATA_DIR)/$(GAUCHE_VERSION)/
 BUILD_GOSH_FLAGS =
 DESTDIR =
@@ -33,7 +35,7 @@ LN_S = @LN_S@
 PRE_PACKAGE_GENERATED = INSTALL.en.adoc INSTALL.ja.adoc
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 	           libtool configure.lineno autom4* gc/autom4* \
-	           gc/configure.gnu-gauche
+	           gc/configure.gnu-gauche Gauche.spec
 AUTOCONF_GENERATED = $(CONFIG_GENERATED) configure
 
 TESTRECORD = ./test.record
@@ -112,7 +114,7 @@ install-examples:
 #  NB: we don't run maintainer-clean in $(LIBATOMICDIR) to avoid
 #      dealing with automake.
 clean:
-	rm -rf test.log test.record core Gauche.framework *~
+	rm -rf test.log test.record core Gauche.framework rpmfiles-*.txt *~
 	-for d in $(SRIDBUS); do (cd $$d; $(MAKE) clean); done
 	-if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) clean); fi
 
@@ -143,3 +145,11 @@ dist:
 
 distcheck:
 	@echo "To create a distribution tarball, use DIST script."
+
+# This must be called after the current version of Gauche is installed
+rpmfiles:
+	find $(GAUCHE_DATA_DIR)/$(VERSION) -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
+	find $(GAUCHE_DATA_DIR)/$(VERSION) -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
+	find $(GAUCHE_ARCH_DIR)/$(VERSION) -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
+	find $(GAUCHE_ARCH_DIR)/$(VERSION) -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
+
