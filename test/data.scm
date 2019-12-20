@@ -705,6 +705,13 @@
 (test-ring-buffer (make-u8vector 5))
 
 ;;;========================================================================
+;; skew-list
+(test-section "data.skwe-list")
+(use data.skew-list)
+(test-module 'data.skew-list)
+
+
+;;;========================================================================
 ;; trie
 (test-section "data.trie")
 (use data.trie)
