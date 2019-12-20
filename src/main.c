@@ -389,10 +389,37 @@ static void sig_setup(void)
     Scm_SetMasterSigmask(&set);
 }
 
+/*
+ * On Linux, LD_LIBRARY_PATH takes precedence over -rpath (which is
+ * already set to $(top_srcdir)/src) and could make GNU ld.so load the
+ * wrong libgauche.so.
+ *
+ * To avoid this, if we detect $LD_LIBRARY_PATH, adjust it and exec()
+ * again.
+ */
+static void test_ld_path_setup(char **av, const char *src_path)
+{
+#if defined(__GNUC__) && defined(__linux__)
+    char *ld_library_path = getenv("LD_LIBRARY_PATH");
+    if (!ld_library_path) return;
+
+    if (getenv("GAUCHE_CHANGED_LD_PATH")) return;
+    setenv("GAUCHE_CHANGED_LD_PATH", "1", 1);
+
+    char *new_path = malloc(strlen(src_path) + 1 /* : */ + strlen(ld_library_path) + 1);
+    strcpy(new_path, src_path);
+    strcat(new_path, ":");
+    strcat(new_path, ld_library_path);
+    setenv("LD_LIBRARY_PATH", new_path, 1);
+
+    execv("/proc/self/exe", av);
+#endif
+}
+
 /* Path setup.  When we're ran with -ftest flag, add paths to refer
    to the files in the source tree.  This is called after option processing
    and before loading init file. */
-void test_paths_setup(void)
+static void test_paths_setup(char **av)
 {
     /* The order of directories is important.  'lib' should
        be searched first (hence it should come latter), since some
@@ -401,12 +428,14 @@ void test_paths_setup(void)
     if (access("../src/gauche/config.h", R_OK) == 0
         && access("../libsrc/srfi-1.scm", R_OK) == 0
         && access("../lib/r7rs-setup.scm", R_OK) == 0) {
+        test_ld_path_setup(av, "../src");
         Scm_AddLoadPath("../src", FALSE);
         Scm_AddLoadPath("../libsrc", FALSE);
         Scm_AddLoadPath("../lib", FALSE);
     } else if (access("../../src/gauche/config.h", R_OK) == 0
                && access("../../libsrc/srfi-1.scm", R_OK) == 0
                && access("../../lib/r7rs-setup.scm", R_OK) == 0) {
+        test_ld_path_setup(av, "../../src");
         Scm_AddLoadPath("../../src", FALSE);
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
@@ -727,7 +756,7 @@ int main(int ac, char **av)
        tree, adds build directories to the library path _before_
        loading init file.   This is to help development of Gauche
        itself; normal user should never need this. */
-    if (test_mode) test_paths_setup();
+    if (test_mode) test_paths_setup(av);
 
     /* prepare *program-name* and *argv* */
     if (argind < argc) {
