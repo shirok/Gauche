@@ -99,7 +99,7 @@ SCMFILES = \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        data/cache.scm data/heap.scm \
        data/ideque.scm data/imap.scm data/priority-map.scm data/random.scm \
-       data/ring-buffer.scm data/trie.scm \
+       data/ring-buffer.scm data/skew-list.scm data/trie.scm \
        lang/asm/x86_64.scm \
        math/const.scm math/prime.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm util/queue.scm \

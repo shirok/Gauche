@@ -44,9 +44,12 @@
           skew-list?
           skew-list-elements
           skew-list-empty?
+          skew-list-null
           skew-list-cons
           skew-list-car
           skew-list-cdr
+          skew-list-ref
+          skew-list-set
           skew-list-fold
           skew-list-length
           skew-list-length<=?
@@ -68,28 +71,70 @@
 (define (skew-list-cons x y)
   (assume-type y <skew-list>)
   (match (skew-list-elements y)
-    [((w1 . t1) (w2 . t2) . ts)
-     (if (eqv? w1 w2)
-       (SL (acons (+ 1 w1 w2) `(Node ,x ,t1 ,t2) ts))
-       (SL `((1 . (Leaf ,x)) ,@(skew-list-elements y))))]
-    [_ (SL `((1 . (Leaf ,x)) ,@(skew-list-elements y)))]))
+    [([w1 . t1] [w2 . t2] . ts)
+     (if (= w1 w2)
+       (SL `([,(+ 1 w1 w2) . (Node ,x ,t1 ,t2)] ,@ts))
+       (SL `([1 . (Leaf ,x)] ,@(skew-list-elements y))))]
+    [_ (SL `([1 . (Leaf ,x)] ,@(skew-list-elements y)))]))
 
-(define (skew-list-car obj)
-  (assume-type obj <skew-list>)
-  (match (skew-list-elements obj)
+(define (skew-list-car sl)
+  (assume-type sl <skew-list>)
+  (match (skew-list-elements sl)
     [() (error "Attempt to take skew-list-car of empty skew-list")]
-    [((_ . ('Leaf x)) . _) x]
-    [((_ . ('Node x _ _)) . _) x]))
+    [([_ . ('Leaf x)] . _) x]
+    [([_ . ('Node x _ _)] . _) x]))
 
-(define (skew-list-cdr obj)
-  (assume-type obj <skew-list>)
-  (match (skew-list-elements obj)
+(define (skew-list-cdr sl)
+  (assume-type sl <skew-list>)
+  (match (skew-list-elements sl)
     [() (error "Attempt to take skew-list-cdr of empty skew-list")]
-    [((_ . ('Leaf _)) . ts) (SL ts)]
-    [((w . ('Node x t1 t2)) . ts)
+    [([_ . ('Leaf _)] . ts) (SL ts)]
+    [([w . ('Node x t1 t2)] . ts)
      (let1 w2 (quotient w 2)
-       (SL `((,w2 . ,t1) (,w2 . ,t2) ,@ts)))]))
+       (SL `([,w2 . ,t1] [,w2 . ,t2] ,@ts)))]))
 
+(define (skew-list-ref sl n)
+  (define (tree-ref w i t)
+    (if (= i 0)
+      (cadr t)
+      (if (= w 1)
+        (error "index out of range" n)
+        (match-let1 ('Node x t1 t2) t
+          (let1 w2 (quotient w 2)
+            (if (<= i w2) 
+              (tree-ref w2 (- i 1) t1)
+              (tree-ref w2 (- i 1 w2) t2)))))))
+  (define (ref i ts)
+    (match ts
+      [() (error "index out of range" n)]
+      [((w . t) . ts)
+       (if (< i w) (tree-ref w i t) (ref (- i w) ts))]))
+  (assume-type sl <skew-list>)
+  (ref n (skew-list-elements sl)))
+
+(define (skew-list-set sl n v)
+  (define (tree-set w i t)
+    (if (= i 0)
+      (match t
+        [('Leaf _) `(Leaf ,v)]
+        [(`Node _ t1 t2) `(Node ,v ,t1 ,t2)])
+      (if (= w 1)
+        (error "index out of range" n)
+        (match-let1 ('Node x t1 t2) t
+          (let1 w2 (quotient w 2)
+            (if (<= i w2) 
+              `(Node ,x ,(tree-set w2 (- i 1) t1) ,t2)
+              `(Node ,x ,t1 ,(tree-set w2 (- i 1 w2) t2))))))))
+  (define (set i ts)
+    (match ts
+      [() (error "index out of range" n)]
+      [((w . t) . ts)
+       (if (< i w)
+         `((,w . ,(tree-set w i t)) ,@ts)
+         `((,w . ,t) ,@(set (- i w) ts)))]))
+  (assume-type sl <skew-list>)
+  (SL (set n (skew-list-elements sl))))
+       
 ;; Can be more efficient
 (define (list->skew-list lis)
   (if (null? lis)
@@ -107,7 +152,7 @@
       [('Node x t1 t2)
        (tree-fold t2 (tree-fold t1 (proc x seed)))]))
   (assume-type sl <skew-list>)
-  (fold (^[p s] (tree-fold p s)) seed (skew-list-elements sl)))
+  (fold (^[p s] (tree-fold (cdr p) s)) seed (skew-list-elements sl)))
 
 (define (skew-list-length sl)
   (assume-type sl <skew-list>)

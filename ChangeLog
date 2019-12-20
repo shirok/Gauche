@@ -1,3 +1,7 @@
+2019-12-20  Shiro Kawai  <shiro@acm.org>
+
+	* data/skew-list.scm: Added. This will be the base of scheme.rlist.
+
 2019-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* Gauche.spec.in, rpmfiles-*.txt: Remove rpmfiles*.txt from repo,

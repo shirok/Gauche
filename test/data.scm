@@ -710,6 +710,45 @@
 (use data.skew-list)
 (test-module 'data.skew-list)
 
+(test* "skew-list?" #f (skew-list? '()))
+(test* "skew-list?" #f (skew-list? '(a b)))
+(test* "skew-list?" #t (skew-list? (list->skew-list '(a b))))
+
+(test* "list -> skew-list ->list" '(a b c d e)
+       (skew-list->list (list->skew-list '(a b c d e))))
+(test* "list -> skew-list ->list" '()
+       (skew-list->list (list->skew-list '())))
+
+(test* "skew-list-cons" 'a
+       (skew-list-car (skew-list-cons 'a skew-list-null)))
+(test* "skew-list-cons/car/cdr" '((z a b c d e) a (b c d e))
+       (let1 sl (list->skew-list '(a b c d e))
+         (list (skew-list->list (skew-list-cons 'z sl))
+               (skew-list-car sl)
+               (skew-list->list (skew-list-cdr sl)))))
+(test* "skew-list-cons (error)" (test-error)
+       (skew-list-cons 'a 'b))
+(test* "skew-list-car (error)" (test-error)
+       (skew-list-car skew-list-null))
+(test* "skew-list-cdr (error)" (test-error)
+       (skew-list-cdr skew-list-null))
+
+(dotimes [n 20]
+  (test* #"skew-list-length ~n" n
+         (skew-list-length (list->skew-list (make-list n)))))
+
+(let* ([data '(a b c d e f g h i j k l m n o p q r s t u v w x y z)]
+       [sl (list->skew-list data)])
+  (test* "skew-list-ref" data
+         (map-with-index (^[i _] (skew-list-ref sl i)) data))
+  (test* "skew-list-ref (out of range)" (test-error)
+         (skew-list-ref sl (length data)))
+  (dotimes [n (length data)]
+    (test* #"skew-list-set ~n"
+           (rlet1 seq (list-copy data)
+             (list-set! seq n 'z))
+           (skew-list->list (skew-list-set sl n 'z)))))
+
 
 ;;;========================================================================
 ;; trie
