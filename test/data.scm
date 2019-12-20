@@ -714,10 +714,10 @@
 (test* "skew-list?" #f (skew-list? '(a b)))
 (test* "skew-list?" #t (skew-list? (list->skew-list '(a b))))
 
-(test* "list -> skew-list ->list" '(a b c d e)
-       (skew-list->list (list->skew-list '(a b c d e))))
-(test* "list -> skew-list ->list" '()
-       (skew-list->list (list->skew-list '())))
+(dotimes [n 30]
+  (let1 data (iota n)
+    (test* "list -> skew-list ->list" data
+           (skew-list->list (list->skew-list data)))))
 
 (test* "skew-list-cons" 'a
        (skew-list-car (skew-list-cons 'a skew-list-null)))

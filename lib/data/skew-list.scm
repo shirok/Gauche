@@ -135,11 +135,34 @@
   (assume-type sl <skew-list>)
   (SL (set n (skew-list-elements sl))))
        
-;; Can be more efficient
 (define (list->skew-list lis)
   (if (null? lis)
     skew-list-null
-    (skew-list-cons (car lis) (list->skew-list (cdr lis)))))
+    (let1 len (length lis)
+      ;; divide n into (k0 k1 ...) where each k is 2^j-1 and decreasing order
+      (define (series-2^n-1 n)
+        (cond [(= n 0) '()]
+              [(= n 1) '(1)]
+              [else (let1 k (- (ash 1 (- (integer-length (+ n 1)) 1)) 1)
+                      (cons k (series-2^n-1 (- n k))))]))
+      ;; make tree from first n elts of lis (n = 2^j-1)
+      ;; returns the rest of the lis as well,
+      ;; being careful not to copy the spine of lis.
+      (define (make-tree n lis)
+        (if (= n 1)
+          (values `(Leaf ,(car lis)) (cdr lis))
+          (let1 n2 (ash (- n 1) -1)
+            (receive (t1 rest) (make-tree n2 (cdr lis))
+              (receive (t2 rest) (make-tree n2 rest)
+                (values `(Node ,(car lis) ,t1 ,t2) rest))))))
+      ;; get reversed series-2^n-1, returns [(Size . Tree)]
+      (define (make-forest ns lis)
+        (if (null? ns)
+          '()
+          (receive (tree rest) (make-tree (car ns) lis)
+            (acons (car ns) tree (make-forest (cdr ns) rest)))))
+      ;; Build one.
+      (SL (make-forest (reverse (series-2^n-1 len)) lis)))))
 
 (define (skew-list->list sl)
   (assume-type sl <skew-list>)
