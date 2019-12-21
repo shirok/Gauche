@@ -1,5 +1,9 @@
 2019-12-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c: Make sure libgauche.so in the build tree is linked
+	  when invoked with -ftest, even LD_LIBRARY_PATH is set.
+	  Based on https://github.com/shirok/Gauche/pull/557 by @pclouds
+
 	* data/skew-list.scm: Added. This will be the base of scheme.rlist.
 
 2019-12-17  Shiro Kawai  <shiro@acm.org>

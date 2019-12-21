@@ -396,6 +396,8 @@ static void sig_setup(void)
  *
  * To avoid this, if we detect $LD_LIBRARY_PATH, adjust it and exec()
  * again.
+ *
+ * This is only called when -ftest option is given.
  */
 static void test_ld_path_setup(char **av, const char *src_path)
 {
@@ -403,14 +405,14 @@ static void test_ld_path_setup(char **av, const char *src_path)
     char *ld_library_path = getenv("LD_LIBRARY_PATH");
     if (!ld_library_path) return;
 
-    if (getenv("GAUCHE_CHANGED_LD_PATH")) return;
+    if (getenv("GAUCHE_CHANGED_LD_PATH")) return; /* avoid recursive addition */
     setenv("GAUCHE_CHANGED_LD_PATH", "1", 1);
 
-    char *new_path = malloc(strlen(src_path) + 1 /* : */ + strlen(ld_library_path) + 1);
-    strcpy(new_path, src_path);
-    strcat(new_path, ":");
-    strcat(new_path, ld_library_path);
-    setenv("LD_LIBRARY_PATH", new_path, 1);
+    ScmObj new_path = Scm_NormalizePathname(SCM_STRING(SCM_MAKE_STR(src_path)),
+                                            SCM_PATH_ABSOLUTE);
+    new_path = Scm_StringAppendC(SCM_STRING(new_path), ":", 1, 1);
+    new_path = Scm_StringAppendC(SCM_STRING(new_path), ld_library_path, -1, -1);
+    setenv("LD_LIBRARY_PATH", strdup(Scm_GetString(SCM_STRING(new_path))), 1);
 
     execv("/proc/self/exe", av);
 #endif
