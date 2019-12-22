@@ -260,9 +260,20 @@
 ;;;
 
 (define (make-rtd name fieldspecs :optional (parent #f) :rest opts)
-  (make (if parent (class-of parent) <record-meta>)
+  ;; We only allow to inherit either other record class, or classes that
+  ;; don't add slots.  The metaclass be alwayas <record-meta>
+  (when (and parent
+             (not (is-a? parent <record-meta>))
+             (not (null? (class-slots parent))))
+    (error "Inheriting from non-record class with slots is prohibited:"
+           parent))
+  (make (if (is-a? parent <record-meta>)
+          (class-of parent)  ; in case <record-meta> is subclassed
+          <record-meta>)
     :name name :field-specs fieldspecs :metaclass <record-meta>
-    :supers (list (or parent <record>))
+    :supers (cond [(is-a? parent <record-meta>) (list parent)]
+                  [(is-a? parent <class>) (list parent <record>)]
+                  [else (list <record>)])
     :slots ($ fieldspecs->slotspecs fieldspecs
               $ if parent (length (class-slots parent)) 0)))
 

@@ -1,3 +1,8 @@
+2019-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/record.scm (make-rtd): Allow record type to inherit
+	  from non-record class, as long as the class doesn't add slots.
+
 2019-12-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: Make sure libgauche.so in the build tree is linked

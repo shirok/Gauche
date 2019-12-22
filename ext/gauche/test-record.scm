@@ -435,6 +435,41 @@
                (sub1-d z)
                (sub1-b z))))
 
+;; inheriting mixin class
+(define-record-type (myseq <sequence>) #t #t elements)
+(define-method referencer ((s myseq)) 
+  (^[o i] (ref (myseq-elements o) i)))
+(define-method modifier ((s myseq))
+  (^[o i v] (set! (ref (myseq-elements o) i) v)))
+(define-method call-with-iterator ((s myseq) proc)
+  (call-with-iterator (myseq-elements s) proc))
+
+(let1 seq (make-myseq (vector 'a 'b 'c 'd 'e))
+  (test* "inheritance (mixin) pred" #t (is-a? seq <sequence>))
+  (test* "inheritance (mixin) pred" #t (is-a? seq <record>))
+  (test* "inheritance (mixin) ref" '(a b c d e)
+         (map (cut ref seq <>) (iota 5)))
+  (test* "inheritance (mixin) iterator" '(a b c d e)
+         (coerce-to <list> seq))
+  (test* "inheritance (mixin) modifier" '(a b z d e)
+         (begin (set! (ref seq 2) 'z)
+                (coerce-to <list> seq)))
+  )
+
+(define-record-type (myseq2 myseq) #t #t)
+(let1 seq (make-myseq2 (vector 'a 'b 'c 'd 'e))
+  (test* "inheritance (mixin) pred" #t (is-a? seq <sequence>))
+  (test* "inheritance (mixin) pred" #t (is-a? seq <record>))
+  (test* "inheritance (mixin) ref" '(a b c d e)
+         (map (cut ref seq <>) (iota 5)))
+  (test* "inheritance (mixin) iterator" '(a b c d e)
+         (coerce-to <list> seq))
+  (test* "inheritance (mixin) modifier" '(a b z d e)
+         (begin (set! (ref seq 2) 'z)
+                (coerce-to <list> seq)))
+  )
+
+
 ;;--------------------------------------------------------------------
 (test-section "describe")
 
