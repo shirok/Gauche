@@ -608,6 +608,25 @@ static void vm_unregister(ScmVM *vm)
         FINISH_ENV(info_, ENV);                 \
     } while (0)
 
+/* save and restore vm values */
+#define SAVE_VM_VALUES(nvals_, vals_)                               \
+    do {                                                            \
+        nvals_ = vm->numVals;                                       \
+        if (nvals_ > 1) {                                           \
+            vals_ = SCM_NEW_ARRAY(ScmObj, nvals_ - 1);              \
+            memcpy(vals_, vm->vals, sizeof(ScmObj) * (nvals_ - 1)); \
+        } else {                                                    \
+            vals_ = NULL;                                           \
+        }                                                           \
+    } while (0)
+#define RESTORE_VM_VALUES(nvals_, vals_)                            \
+    do {                                                            \
+        vm->numVals = nvals_;                                       \
+        if (vals_ != NULL) {                                        \
+            memcpy(vm->vals, vals_, sizeof(ScmObj) * (nvals_ - 1)); \
+        }                                                           \
+    } while (0)
+
 /* used for the inlined instruction which is supposed to be called at
    tail position (e.g. SLOT-REF).  This checks whether we're at the tail
    position or not, and if not, push a cont frame to make the operation
@@ -663,7 +682,7 @@ static void vm_unregister(ScmVM *vm)
             fprintf(stderr, "\"%s\", line %d: Assertion failed: %s\n",  \
                     __FILE__, __LINE__, #expr);                         \
             Scm_VMDump(theVM);                                          \
-            Scm_Panic("exiting...\n");                                 \
+            Scm_Panic("exiting...\n");                                  \
         }                                                               \
     } while (0)
 
@@ -1525,22 +1544,16 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
 
             /* save return values */
             ScmObj val0 = vm->val0;
-            int nvals = vm->numVals;
+            int numVals = vm->numVals;
             ScmObj *vals = NULL;
-            if (nvals > 1) {
-                vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
-                memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
-            }
+            SAVE_VM_VALUES(numVals, vals);
 
             /* call dynamic handlers for returning to the caller */
             call_dynamic_handlers(vmhandlers, vm->handlers);
 
             /* restore return values */
             vm->val0 = val0;
-            vm->numVals = nvals;
-            if (vals != NULL) {
-                memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
-            }
+            RESTORE_VM_VALUES(numVals, vals);
 
             vm->cont = cstack.cont;
             POP_CONT();
@@ -1908,28 +1921,30 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
 
     SCM_ASSERT(SCM_PAIRP(vm->handlers));
     vm->handlers = SCM_CDR(vm->handlers);
+
+    /* save return values */
+    int numVals = vm->numVals;
+    ScmObj *vals = NULL;
+    SAVE_VM_VALUES(numVals, vals);
+
     d[0] = (void*)result;
-    d[1] = (void*)(intptr_t)vm->numVals;
-    if (vm->numVals > 1) {
-        ScmObj *array = SCM_NEW_ARRAY(ScmObj, (vm->numVals-1));
-        memcpy(array, vm->vals, sizeof(ScmObj)*(vm->numVals-1));
-        d[2] = (void*)array;
-    }
+    d[1] = (void*)(intptr_t)numVals;
+    d[2] = (void*)vals;
     Scm_VMPushCC(dynwind_after_cc, d, 3);
     return Scm_VMApply0(after);
 }
 
 static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
 {
-    ScmObj val0 = SCM_OBJ(data[0]);
-    int nvals = (int)(intptr_t)data[1];
     ScmVM *vm = theVM;
 
-    vm->numVals = nvals;
-    if (nvals > 1) {
-        SCM_ASSERT(nvals <= SCM_VM_MAX_VALUES);
-        memcpy(vm->vals, data[2], sizeof(ScmObj)*(nvals-1));
-    }
+    /* restore return values */
+    ScmObj val0 = SCM_OBJ(data[0]);
+    int numVals = (int)(intptr_t)data[1];
+    SCM_ASSERT(numVals <= SCM_VM_MAX_VALUES);
+    ScmObj *vals = (ScmObj*)data[2];
+    RESTORE_VM_VALUES(numVals, vals);
+
     return val0;
 }
 
@@ -2052,8 +2067,9 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         /* There's an escape point defined by with-error-handler. */
         ScmObj target, current;
         ScmObj vmhandlers = vm->handlers;
-        ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
+        ScmObj result = SCM_FALSE;
         int numVals = 0;
+        ScmObj *vals = NULL;
 
         /* To conform SRFI-34, the error handler (clauses in 'guard' form)
            should be executed with the same continuation and dynamic
@@ -2086,9 +2102,10 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         SCM_UNWIND_PROTECT {
             result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
-            if ((numVals = vm->numVals) > 1) {
-                for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
-            }
+
+            /* save return values */
+            SAVE_VM_VALUES(numVals, vals);
+
             if (!ep->rewindBefore) {
                 target = ep->handlers;
                 current = vm->handlers;
@@ -2144,9 +2161,11 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         }
 
         /* Install the continuation */
-        for (int i=0; i<numVals; i++) vm->vals[i] = rvals[i];
-        vm->numVals = numVals;
+
+        /* restore return values */
         vm->val0 = result;
+        RESTORE_VM_VALUES(numVals, vals);
+
         vm->cont = ep->cont;
         SCM_VM_FLOATING_EP_SET(vm, ep->floating);
         if (ep->errorReporting) {
