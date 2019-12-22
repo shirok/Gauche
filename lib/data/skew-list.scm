@@ -39,6 +39,7 @@
 
 (define-module data.skew-list
   (use gauche.record)
+  (use gauche.sequence)
   (use util.match)
   (export <skew-list>
           skew-list?
@@ -53,12 +54,13 @@
           skew-list-fold
           skew-list-length
           skew-list-length<=?
+          list*->skew-list
           list->skew-list
           skew-list->list)
   )
 (select-module data.skew-list)
 
-(define-record-type <skew-list>
+(define-record-type (<skew-list> <sequence>)
   SL skew-list?
   (elements skew-list-elements))               ; [(Int, Tree)]]
 
@@ -134,11 +136,12 @@
          `((,w . ,t) ,@(set (- i w) ts)))]))
   (assume-type sl <skew-list>)
   (SL (set n (skew-list-elements sl))))
-       
-(define (list->skew-list lis)
-  (if (null? lis)
-    skew-list-null
-    (let1 len (length lis)
+
+;; Input may be an improper list.  Returns SL and the last cdr.
+(define (list*->skew-list lis)
+  (if (pair? lis)
+    (let1 spine-len (let loop ((lis lis) (n 0))
+                      (if (pair? lis) (loop (cdr lis) (+ n 1)) n))
       ;; divide n into (k0 k1 ...) where each k is 2^j-1 and decreasing order
       (define (series-2^n-1 n)
         (cond [(= n 0) '()]
@@ -155,14 +158,25 @@
             (receive (t1 rest) (make-tree n2 (cdr lis))
               (receive (t2 rest) (make-tree n2 rest)
                 (values `(Node ,(car lis) ,t1 ,t2) rest))))))
-      ;; get reversed series-2^n-1, returns [(Size . Tree)]
+      ;; get reversed series-2^n-1
+      ;; returns [(Size . Tree)] and the last cdr of lis
       (define (make-forest ns lis)
         (if (null? ns)
-          '()
+          (values '() lis)
           (receive (tree rest) (make-tree (car ns) lis)
-            (acons (car ns) tree (make-forest (cdr ns) rest)))))
+            (receive (forest last-cdr) (make-forest (cdr ns) rest)
+              (values (acons (car ns) tree forest) last-cdr)))))
       ;; Build one.
-      (SL (make-forest (reverse (series-2^n-1 len)) lis)))))
+      (receive (forest last-cdr)
+          (make-forest (reverse (series-2^n-1 spine-len)) lis)
+        (values (SL forest) last-cdr)))
+    (values skew-list-null lis)))
+
+(define (list->skew-list lis)
+  (receive (sl last-cdr) (list*->skew-list lis)
+    (unless (null? last-cdr)
+      (error "proper list required, but got" lis))
+    sl))
 
 (define (skew-list->list sl)
   (assume-type sl <skew-list>)
@@ -188,3 +202,26 @@
           [(< k s) #f]
           [else (loop (cdr es) (+ s (caar es)))])))
 
+;; collection & sequence protocol
+(define-method call-with-iterator ((sl <skew-list>) proc)
+  (define seq (skew-list-elements sl))
+  (define stack '())  ; [Tree]
+  (define (end?) (and (null? stack) (null? seq)))
+  (define (next)
+    (if (null? stack)
+      (if (null? seq)
+        (error "No more elements iterating over:" sl)
+        (begin (set! stack (list (cdr (pop! seq))))
+               (next)))
+      (match stack
+        [(('Leaf x) . xs) (set! stack xs) x]
+        [(('Node x t1 t2) . xs) (set! stack (list* t1 t2 xs)) x])))
+  (proc end? next))
+
+(define-method fold (proc knil (sl <skew-list>))
+  (skew-list-fold sl proc knil))
+
+(define-method size-of ((sl <skew-list>)) (skew-list-length sl))
+
+(define-method referencer ((sl <skew-list>))
+  (^[o i] (skew-list-ref o i)))

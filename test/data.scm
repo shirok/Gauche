@@ -706,8 +706,9 @@
 
 ;;;========================================================================
 ;; skew-list
-(test-section "data.skwe-list")
+(test-section "data.skew-list")
 (use data.skew-list)
+(use gauche.sequence)
 (test-module 'data.skew-list)
 
 (test* "skew-list?" #f (skew-list? '()))
@@ -748,6 +749,16 @@
            (rlet1 seq (list-copy data)
              (list-set! seq n 'z))
            (skew-list->list (skew-list-set sl n 'z)))))
+
+;; sequence protocol
+(test* "skew-list size-of" 5 
+       (size-of (list->skew-list '(a b c d e))))
+(test* "skew-list iterator" '(a b c d e f g h i j k l m n o p q)
+       (coerce-to <list> (list->skew-list '(a b c d e f g h i j k l m n o p q))))
+(test* "skew-list fold" '(e d c b a)
+       (fold cons '() (list->skew-list '(a b c d e))))
+(test* "skew-list ref" '(a b c d e)
+       (map (cute ref (list->skew-list '(a b c d e)) <>) (iota 5)))
 
 
 ;;;========================================================================

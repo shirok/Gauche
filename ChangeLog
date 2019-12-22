@@ -1,5 +1,8 @@
 2019-12-21  Shiro Kawai  <shiro@acm.org>
 
+	* data/skew-list.scm: Add list*->skew-list to handle improper lists.
+	  Also adapted to the sequence protocol.
+
 	* libsrc/gauche/record.scm (make-rtd): Allow record type to inherit
 	  from non-record class, as long as the class doesn't add slots.
 
