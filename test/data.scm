@@ -709,6 +709,7 @@
 (test-section "data.skew-list")
 (use data.skew-list)
 (use gauche.sequence)
+(use gauche.generator)
 (test-module 'data.skew-list)
 
 (test* "skew-list?" #f (skew-list? '()))
@@ -749,6 +750,20 @@
            (rlet1 seq (list-copy data)
              (list-set! seq n 'z))
            (skew-list->list (skew-list-set sl n 'z)))))
+
+;; generator
+(let* ([data '(a b c d e f g h i j k l m n o p q r s t u v w x y z)]
+       [sl (list->skew-list data)])
+  (define (t-gen . args)
+    (test* #"skew-list->generator ~args"
+           (apply subseq data args)
+           (generator->list (apply skew-list->generator sl args))))
+  (t-gen)
+  (t-gen 5)
+  (t-gen 9 17)
+  (t-gen 20 20)
+  (t-gen 25 26))
+
 
 ;; sequence protocol
 (test* "skew-list size-of" 5 

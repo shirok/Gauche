@@ -56,7 +56,8 @@
           skew-list-length<=?
           list*->skew-list
           list->skew-list
-          skew-list->list)
+          skew-list->list
+          skew-list->generator)
   )
 (select-module data.skew-list)
 
@@ -64,7 +65,10 @@
   SL skew-list?
   (elements skew-list-elements))               ; [(Int, Tree)]]
 
-;; Primitives
+;;;
+;;; Primitives
+;;;
+
 (define (skew-list-empty? sl)
   (assume-type sl <skew-list>)
   (null? (skew-list-elements sl)))
@@ -137,6 +141,10 @@
   (assume-type sl <skew-list>)
   (SL (set n (skew-list-elements sl))))
 
+;;;
+;;; Conversion
+;;;
+
 ;; Input may be an improper list.  Returns SL and the last cdr.
 (define (list*->skew-list lis)
   (if (pair? lis)
@@ -182,6 +190,10 @@
   (assume-type sl <skew-list>)
   (reverse (skew-list-fold sl cons '())))
 
+;;;
+;;; Utilities
+;;;
+
 (define (skew-list-fold sl proc seed)
   (define (tree-fold tree seed)
     (match tree
@@ -202,20 +214,62 @@
           [(< k s) #f]
           [else (loop (cdr es) (+ s (caar es)))])))
 
-;; collection & sequence protocol
-(define-method call-with-iterator ((sl <skew-list>) proc)
+;; Tree, Int, Int, [Tree] -> [Tree]
+;; Given Tree of size N, returns [Tree] which includes the K-th element
+;; and after.  The last input is the tail of the output.
+(define (tree-kth-and-after t n k tail)
+  (if (zero? k)
+    (cons t tail)
+    (match-let1 ('Node _ t1 t2) t
+      (let1 m (quotient n 2)
+        (if (<= k m)
+          (tree-kth-and-after t1 m (- k 1) (cons t2 tail))
+          (tree-kth-and-after t2 m (- k m 1) tail))))))
+
+;; [(Int, Tree)], Int -> [(Int, Tree)], Int
+;; Skips elts in seq that doesn't contain K-th element.  Returns offset as well.
+(define (skip-seq seq k)
+  (if (< k (caar seq))
+    (values seq k)
+    (skip-seq (cdr seq) (- k (caar seq)))))
+
+(define (%skew-list-iterator sl start end_)
   (define seq (skew-list-elements sl))
   (define stack '())  ; [Tree]
-  (define (end?) (and (null? stack) (null? seq)))
+  (define end (or end_ (skew-list-length sl)))
+  (define pos start)
   (define (next)
-    (if (null? stack)
-      (if (null? seq)
-        (error "No more elements iterating over:" sl)
-        (begin (set! stack (list (cdr (pop! seq))))
-               (next)))
+    (if (= pos end)
+      (values #f #t)
       (match stack
-        [(('Leaf x) . xs) (set! stack xs) x]
-        [(('Node x t1 t2) . xs) (set! stack (list* t1 t2 xs)) x])))
+        [() (set! stack (list (cdr (pop! seq)))) (next)]
+        [(('Leaf x) . xs) (set! stack xs) (inc! pos)(values x #f)]
+        [(('Node x t1 t2) . xs) (set! stack (list* t1 t2 xs)) (inc! pos) (values x #f)])))
+  ;; Adjust start point
+  (unless (<= start end) (errorf "start ~s is greater than end ~s" start end))
+  (when (< 0 start)
+    (receive (seq_ k) (skip-seq seq start)
+      (set! stack (tree-kth-and-after (cdar seq_) (caar seq_) k '()))
+      (set! seq (cdr seq_))))
+  next)
+
+(define (skew-list->generator sl :optional start end)
+  (define iter (%skew-list-iterator sl
+                                    (if (undefined? start) 0 start)
+                                    (if (undefined? end) #f end)))
+  (^[] (receive (x eof?) (iter)
+         (if eof? (eof-object) x))))
+
+;;;
+;;; Collection & sequence protocol
+;;;
+
+(define-method call-with-iterator ((sl <skew-list>) proc)
+  (define iter (%skew-list-iterator sl 0 #f))
+  (define-values (item end) (iter))
+  (define (end?) end)
+  (define (next) (begin0 item
+                   (set!-values (item end) (iter))))
   (proc end? next))
 
 (define-method fold (proc knil (sl <skew-list>))
