@@ -57,7 +57,9 @@
           list*->skew-list
           list->skew-list
           skew-list->list
-          skew-list->generator)
+          skew-list->generator
+          skew-list->lseq
+          skew-list-take)
   )
 (select-module data.skew-list)
 
@@ -259,6 +261,60 @@
                                     (if (undefined? end) #f end)))
   (^[] (receive (x eof?) (iter)
          (if eof? (eof-object) x))))
+
+(define (skew-list->lseq sl :optional start end)
+  (define iter (%skew-list-iterator sl
+                                    (if (undefined? start) 0 start)
+                                    (if (undefined? end) #f end)))
+  ((rec (loop)
+     (receive (x eof?) (iter)
+       (if eof?
+         '()
+         (lcons x (loop)))))))
+
+;; take first k elements
+;;  In some cases we can share the some of the trees in the original skew-list.
+;;  Other than the obvious cases when k is the sum of prefix of the original
+;;  seq, there are some nontrivial cases.  Suppose 1 < n and n = 2m+1.
+;;  If original seq begins with:
+;;    [1 n ...]   ->  We can take 2 and 2+m if m>1
+;;                    (e.g. from [1 7 ..] we can take [1 1] and [1 1 3]
+;;    [n ...]     ->  We can take 1, 2, 1+m, 2+m' (where m = 2m'+1)
+;;                    (e.g. from [15 ...] we can take [1 7], [1 1 3]
+
+(define (skew-list-take sl k)
+  (define elts (skew-list-elements sl))
+  (define (trivial-prefix)
+    (let loop ([seq elts] [sum 0] [i 0])
+      (cond [(= k sum) (SL (take elts i))]
+            [(> k sum) (loop (cdr seq) (+ sum (caar seq)) (+ i 1))]
+            [else #f])))
+  (define (special-prefix)
+    (match (skew-list-elements sl)
+      [((1 . x) (n . ('Node y t1 t2)) . _)
+       (if (= k 2)
+         (SL `((1 . ,x) (1 . (Leaf ,y))))
+         (and (> n 3)
+              (= k (+ 2 (quotient n 2)))
+              (SL `((1 . ,x) (1 . (Leaf ,y)) (,(quotient n 2) . ,t1)))))]
+      [((n . ('Node x (and ('Node y t1 _) t0) _)) . _)
+       (cond [(= k 1) (SL `((1 . (Leaf ,x))))]
+             [(= k 2) (SL `((1 . (Leaf ,x)) (1 . (Leaf ,y))))]
+             [(= k (+ 1 (quotient n 2)))
+              (SL `((1 . (Leaf ,x)) (,(quotient n 2) . ,t0)))]
+             [(and (> k 3) (= k (+ 2 (quotient n 4))) )
+              (SL `((1 . (Leaf ,x)) (1 . (Leaf ,y)) 
+                    (,(quotient n 4) . ,t1)))]
+             [else #f])]
+      [((n . ('Node x ('Leaf y) _)) . _)
+       (cond [(= k 1) (SL `((1 . (Leaf ,x))))]
+             [(= k 2) (SL `((1 . (Leaf ,x)) (1 . (Leaf ,y))))]
+             [else #f])]))
+  (define (fallback)
+    (list->skew-list (skew-list->lseq sl 0 k)))
+  (or (trivial-prefix)
+      (special-prefix)
+      (fallback)))
 
 ;;;
 ;;; Collection & sequence protocol

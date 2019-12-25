@@ -751,19 +751,66 @@
              (list-set! seq n 'z))
            (skew-list->list (skew-list-set sl n 'z)))))
 
-;; generator
+;; generator & lseq
 (let* ([data '(a b c d e f g h i j k l m n o p q r s t u v w x y z)]
        [sl (list->skew-list data)])
   (define (t-gen . args)
     (test* #"skew-list->generator ~args"
            (apply subseq data args)
-           (generator->list (apply skew-list->generator sl args))))
+           (generator->list (apply skew-list->generator sl args)))
+    (test* #"skew-list->lseq ~args"
+           (apply subseq data args)
+           (apply skew-list->lseq sl args)))
   (t-gen)
   (t-gen 5)
   (t-gen 9 17)
   (t-gen 20 20)
   (t-gen 25 26))
 
+;; take
+(let ()
+  (define (t-take orig-len take-len)
+    (let1 input (iota orig-len)
+      (test* #"skew-list-take ~|take-len| from ~|orig-len|"
+             (take input take-len)
+             (skew-list->list
+              (skew-list-take (list->skew-list input) take-len)))))
+  ;; We cover all the cases
+  ;; edge case
+  (t-take 0 0)
+  (t-take 10 0)
+  ;; trivial prefix
+  (t-take 26 1)   ; 26 = [1 3 7 15]
+  (t-take 26 4)
+  (t-take 26 11)
+  (t-take 26 26)
+  (t-take 29 7)   ; 29 = [7 7 15]
+  (t-take 29 14)  ; 29 = [7 7 15]
+  (t-take 29 29)  ; 29 = [7 7 15]
+  ;; [1 n ...] case
+  (t-take 8 2)    ; 8 = [1 7]
+  (t-take 8 5)    ; 8 = [1 7]
+  ;; [n ...] (n > 3) case
+  (t-take 14 1)   ; 14 = [7 7]
+  (t-take 14 2)
+  (t-take 14 4)
+  (t-take 15 1)   ; 15 = [15]
+  (t-take 15 2)
+  (t-take 15 5)
+  (t-take 15 8)
+  ;; [3 ...] case
+  (t-take 6 1)    ; 6 = [3 3]
+  (t-take 6 2)
+  ;; general case
+  (t-take 6 3)  
+  (t-take 6 4)  
+  (t-take 6 5)  
+  (t-take 26 2)
+  (t-take 26 3)
+  (t-take 26 5)
+  (t-take 26 10)
+  (t-take 26 15)
+  )
 
 ;; sequence protocol
 (test* "skew-list size-of" 5 
