@@ -46,6 +46,7 @@
                              dotimes dolist do-plist doplist
                              ecase cond-list unwind-protect
                              let-keywords let-keywords* let-optionals*
+                             lcons lcons* llist*
                              define-compiler-macro))
 
 ;; This file defines built-in macros.
@@ -1146,6 +1147,27 @@
     [_ (errorf "Malformed ~a: ~S"
                (if (eq? %let 'let) 'let-keywords 'let-keywords*)
                form)]))
+
+;;; lseq
+(select-module gauche)
+(define-syntax lcons
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ x y)
+        (quasirename r
+          `(,(with-module gauche.internal %lcons) ,x (lambda () ,y)))]))))
+
+(define-syntax lcons*
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ x) x]
+       [(_ x y) (quasirename r `(lcons ,x ,y))]
+       [(_ x y z ...) (quasirename r
+                        `(cons ,x (lcons* ,y ,@z)))]))))
+
+(define-syntax llist* lcons*)
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 

@@ -76,7 +76,7 @@
     (result lp)))
 
 ;; A primitive for corecursion.
-;; See lib/gauche/common-macros.scm for the lcons macro.
+;; See libmacro.scm for lcons macro.
 (define (%lcons item thunk)
   (%make-lazy-pair item (^[] (%decompose-lazy-pair (thunk)))))
 
@@ -147,30 +147,3 @@
   (generator->lseq (cut read-line port)))
 (define-in-module gauche (port->sexp-lseq :optional (port (current-input-port)))
   (generator->lseq (cut read port)))
-
-(select-module gauche)
-(define-macro (lcons a b)
-  ;; poor man's explicit renaming.
-  ;; don't copy---we'll have real ER-transformer in future.
-  (let1 %lcons ((with-module gauche.internal make-identifier)
-                '%lcons
-                (find-module 'gauche.internal)
-                '())
-    `(,%lcons ,a (lambda () ,b))))
-
-(define-macro (lcons* x . args)
-  (let1 %lcons ((with-module gauche.internal make-identifier)
-                '%lcons
-                (find-module 'gauche.internal)
-                '())
-    (cond [(null? args) x]
-          [(null? (cdr args)) `(,%lcons ,x (lambda () ,(car args)))]
-          [else `(cons ,x (lcons* ,@args))])))
-(define-macro (llist* . args) `(lcons* ,@args))
-
-;; Once we are able to precompile hygineic macros ...
-;; (define-syntax lcons*
-;;   (syntax-rules ()
-;;     [(_ x) x]
-;;     [(_ x y) (lcons x y)]
-;;     [(_ x y z ...) (cons x (lcons* y z ...))]))

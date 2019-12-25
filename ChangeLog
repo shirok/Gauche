@@ -1,3 +1,8 @@
+2019-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblazy.scm, src/libmacro.scm (lcons, lcons*, llist*): Implement
+	  them in er-macro.
+
 2019-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* data/skew-list.scm: Add list*->skew-list to handle improper lists.
