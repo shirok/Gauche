@@ -59,13 +59,19 @@
           skew-list->list
           skew-list->generator
           skew-list->lseq
-          skew-list-take)
+          skew-list-take
+          skew-list-drop
+          skew-list-split-at)
   )
 (select-module data.skew-list)
 
 (define-record-type (<skew-list> <sequence>)
   SL skew-list?
   (elements skew-list-elements))               ; [(Int, Tree)]]
+
+;; We use these frequently.  NB: n is always 2^k-1.
+(define-inline (/2 n) (ash n -1))
+(define-inline (/4 n) (ash n -2))
 
 ;;;
 ;;; Primitives
@@ -98,8 +104,7 @@
     [() (error "Attempt to take skew-list-cdr of empty skew-list")]
     [([_ . ('Leaf _)] . ts) (SL ts)]
     [([w . ('Node x t1 t2)] . ts)
-     (let1 w2 (quotient w 2)
-       (SL `([,w2 . ,t1] [,w2 . ,t2] ,@ts)))]))
+     (SL `([,(/2 w) . ,t1] [,(/2 w) . ,t2] ,@ts))]))
 
 (define (skew-list-ref sl n)
   (define (tree-ref w i t)
@@ -108,7 +113,7 @@
       (if (= w 1)
         (error "index out of range" n)
         (match-let1 ('Node x t1 t2) t
-          (let1 w2 (quotient w 2)
+          (let1 w2 (/2 w)
             (if (<= i w2) 
               (tree-ref w2 (- i 1) t1)
               (tree-ref w2 (- i 1 w2) t2)))))))
@@ -129,7 +134,7 @@
       (if (= w 1)
         (error "index out of range" n)
         (match-let1 ('Node x t1 t2) t
-          (let1 w2 (quotient w 2)
+          (let1 w2 (/2 w)
             (if (<= i w2) 
               `(Node ,x ,(tree-set w2 (- i 1) t1) ,t2)
               `(Node ,x ,t1 ,(tree-set w2 (- i 1 w2) t2))))))))
@@ -223,7 +228,7 @@
   (if (zero? k)
     (cons t tail)
     (match-let1 ('Node _ t1 t2) t
-      (let1 m (quotient n 2)
+      (let1 m (/2 n)
         (if (<= k m)
           (tree-kth-and-after t1 m (- k 1) (cons t2 tail))
           (tree-kth-and-after t2 m (- k m 1) tail))))))
@@ -272,7 +277,7 @@
          '()
          (lcons x (loop)))))))
 
-;; take first k elements
+;; take/drop first k elements
 ;;  In some cases we can share the some of the trees in the original skew-list.
 ;;  Other than the obvious cases when k is the sum of prefix of the original
 ;;  seq, there are some nontrivial cases.  Suppose 1 < n and n = 2m+1.
@@ -282,39 +287,66 @@
 ;;    [n ...]     ->  We can take 1, 2, 1+m, 2+m' (where m = 2m'+1)
 ;;                    (e.g. from [15 ...] we can take [1 7], [1 1 3]
 
-(define (skew-list-take sl k)
+(define (%skew-list-splitter sl k rettype)
+  ;; The branch logic is common among take, drop and split-at.  This macro
+  ;; dispatches the return value.
+  (define-syntax ret
+    (syntax-rules ()
+      [(_ taken dropped)
+       (case rettype
+         [(take) (SL taken)]
+         [(drop) (SL dropped)]
+         [(split) (cons (SL taken) (SL dropped))])]))
   (define elts (skew-list-elements sl))
   (define (trivial-prefix)
     (let loop ([seq elts] [sum 0] [i 0])
-      (cond [(= k sum) (SL (take elts i))]
+      (cond [(= k sum) (ret (take elts i) (drop elts i))]
             [(> k sum) (loop (cdr seq) (+ sum (caar seq)) (+ i 1))]
             [else #f])))
   (define (special-prefix)
     (match (skew-list-elements sl)
-      [((1 . x) (n . ('Node y t1 t2)) . _)
+      [((1 . x) (n . ('Node y t1 t2)) . zs)
        (if (= k 2)
-         (SL `((1 . ,x) (1 . (Leaf ,y))))
+         (ret `((1 . ,x) (1 . (Leaf ,y)))
+              `((,(/2 n) . ,t1) (,(/2 n) . ,t2)  ,@zs))
          (and (> n 3)
-              (= k (+ 2 (quotient n 2)))
-              (SL `((1 . ,x) (1 . (Leaf ,y)) (,(quotient n 2) . ,t1)))))]
-      [((n . ('Node x (and ('Node y t1 _) t0) _)) . _)
-       (cond [(= k 1) (SL `((1 . (Leaf ,x))))]
-             [(= k 2) (SL `((1 . (Leaf ,x)) (1 . (Leaf ,y))))]
-             [(= k (+ 1 (quotient n 2)))
-              (SL `((1 . (Leaf ,x)) (,(quotient n 2) . ,t0)))]
-             [(and (> k 3) (= k (+ 2 (quotient n 4))) )
-              (SL `((1 . (Leaf ,x)) (1 . (Leaf ,y)) 
-                    (,(quotient n 4) . ,t1)))]
+              (= k (+ 2 (/2 n)))
+              (ret `((1 . ,x) (1 . (Leaf ,y)) (,(/2 n) . ,t1))
+                   `((,(/2 n) . ,t2) ,@zs))))]
+      [((n . ('Node x (and ('Node y t11 t12) t1) t2)) . zs)
+       (cond [(= k 1) (ret `((1 . (Leaf ,x)))
+                           `((,(/2 n) . ,t1) (,(/2 n) . ,t2) ,@zs))]
+             [(= k 2) (ret `((1 . (Leaf ,x)) (1 . (Leaf ,y)))
+                           `((,(/4 n) . ,t11) (,(/4 n) . ,t12) (,(/2 n) . ,t2) ,@zs))]
+             [(= k (+ 1 (/2 n)))
+              (ret `((1 . (Leaf ,x)) (,(/2 n) . ,t1))
+                   `((,(/2 n) . ,t2) ,@zs))]
+             [(and (> k 3) (= k (+ 2 (/4 n))) )
+              (ret `((1 . (Leaf ,x)) (1 . (Leaf ,y)) (,(/4 n) . ,t11))
+                   `((,(/4 n) . ,t12) (,(/2 n) . ,t2) ,@zs))]
              [else #f])]
-      [((n . ('Node x ('Leaf y) _)) . _)
-       (cond [(= k 1) (SL `((1 . (Leaf ,x))))]
-             [(= k 2) (SL `((1 . (Leaf ,x)) (1 . (Leaf ,y))))]
+      [((n . ('Node x ('Leaf y) t2)) . zs)
+       (cond [(= k 1) (ret `((1 . (Leaf ,x)))
+                           `((1 . (Leaf ,y)) (,(/2 n) . ,t2) ,@zs))]
+             [(= k 2) (ret `((1 . (Leaf ,x)) (1 . (Leaf ,y)))
+                           `((,(/2 n) . ,t2) ,@zs))]
              [else #f])]))
   (define (fallback)
-    (list->skew-list (skew-list->lseq sl 0 k)))
+    (case rettype
+      [(take) (list->skew-list (skew-list->lseq sl 0 k))]
+      [(drop) (list->skew-list (skew-list->lseq sl k))]
+      [(split) (let1 lis (skew-list->list sl)
+                 (receive (t d) (split-at lis k)
+                   (cons (list->skew-list t) (list->skew-list d))))]))
   (or (trivial-prefix)
       (special-prefix)
       (fallback)))
+
+(define (skew-list-take sl k) (%skew-list-splitter sl k 'take))
+(define (skew-list-drop sl k) (%skew-list-splitter sl k 'drop))
+(define (skew-list-split-at sl k)
+  (let1 r (%skew-list-splitter sl k 'split)
+    (values (car r) (cdr r))))
 
 ;;;
 ;;; Collection & sequence protocol

@@ -774,7 +774,18 @@
       (test* #"skew-list-take ~|take-len| from ~|orig-len|"
              (take input take-len)
              (skew-list->list
-              (skew-list-take (list->skew-list input) take-len)))))
+              (skew-list-take (list->skew-list input) take-len)))
+      (test* #"skew-list-drop ~|take-len| from ~|orig-len|"
+             (drop input take-len)
+             (skew-list->list
+              (skew-list-drop (list->skew-list input) take-len)))
+      (test* #"skew-list-split-at ~|take-len| from ~|orig-len|"
+             (values->list (split-at input take-len))
+             (receive (a b)
+                 (skew-list-split-at (list->skew-list input) take-len)
+               (list (skew-list->list a)
+                     (skew-list->list b))))
+      ))
   ;; We cover all the cases
   ;; edge case
   (t-take 0 0)
