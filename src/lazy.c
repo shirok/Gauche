@@ -258,7 +258,7 @@ ScmObj Scm_Force(ScmObj obj)
   +---------------+
 
 
-  (2) If generator yields a non-nil value, owner first creates a
+  (2) If generator yields a non-EOF value, owner first creates a
       new LazyPair...
 
   +---------------+
