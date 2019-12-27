@@ -1,3 +1,7 @@
+2019-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/record.scm: Rewrote define-record-type with er-macro.
+
 2019-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblazy.scm, src/libmacro.scm (lcons, lcons*, llist*): Implement

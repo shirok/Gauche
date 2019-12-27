@@ -90,6 +90,8 @@
 ;;; Infrastructure
 ;;;
 
+;; All record class must be an instance of <record-meta>.
+
 (define-class <record-meta> (<class>)
   ((field-specs :init-keyword :field-specs :init-value '#())
    ;; - A vector of field specs, as specified in the fieldspecs argument
@@ -427,69 +429,80 @@
 ;;; Syntactic layer
 ;;;
 
-;; TODO: Rewriter this w/ er-macro after 0.9.6 release
-(define-macro (define-record-type type-spec ctor-spec pred-spec . field-specs)
-  (define (->id x) ((with-module gauche.internal make-identifier) x
-                    (find-module 'gauche.record) '()))
-  (define (id? x)  (or (symbol? x) (identifier? x)))
-  (define %make (->id 'make-rtd))
-  (define %ctor (->id 'rtd-constructor))
-  (define %pred (->id 'rtd-predicate))
-  (define %asor (->id 'rtd-accessor))
-  (define %mtor (->id 'rtd-mutator))
-  (define %define-inline (->id 'define-inline))
-  (define tmp   (gensym))
-  (define (build-field-spec)
-    (map-to <vector> (match-lambda
-                       [((? id? f) a s) f]
-                       [((? id? f) a) `(immutable ,f)]
-                       [((? id? f)) f]
-                       [(? id? f) `(immutable ,f)]
-                       [x (error "invalid field spec:" x)])
+(define-syntax define-record-type 
+  (er-macro-transformer
+   (^[f r c]
+     (define (id? x)  (or (symbol? x) (identifier? x)))
+     (define (build-field-spec field-specs)
+       (map-to <vector> (match-lambda
+                          [((? id? f) a s) f]
+                          [((? id? f) a) `(immutable ,f)]
+                          [((? id? f)) f]
+                          [(? id? f) `(immutable ,f)]
+                          [x (error "invalid field spec:" x)])
+               field-specs))
+     (define (build-def typename parent field-specs)
+       (quasirename r
+         `(define-inline ,typename
+            (make-rtd ',typename ',(build-field-spec field-specs)
+                      ,@(if parent `(,parent) '())))))
+     (define (build-ctor typename ctor-spec)
+       (match ctor-spec
+         [#f '()]
+         [#t (quasirename r
+               `((define-inline ,(sym+ 'make- typename) 
+                   (rtd-constructor ,typename))))]
+         [((? id? ctor-name) field ...)
+          (quasirename r
+            `((define-inline ,ctor-name
+                (rtd-constructor ,typename ',(list->vector field)))))]
+         [(? id? ctor-name)
+          (quasirename r
+            `((define-inline ,ctor-name (rtd-constructor ,typename))))]
+         [x (error "invalid constructor spec" ctor-spec)]))
+     (define (build-pred typename pred-spec)
+       (match pred-spec
+         [#f '()]
+         [#t (quasirename r
+               `((define-inline ,(sym+ typename '?)
+                   (rtd-predicate ,typename))))]
+         [(? id? pred-name)
+          (quasirename r
+            `((define-inline ,pred-name (,rtd-predicate ,typename))))]
+         [_ (error "invalid predicate spec" pred-spec)]))
+     (define (build-accessors typename field-specs)
+       (map (match-lambda
+              [(f a . _) (quasirename r
+                           `(define-inline ,a (rtd-accessor ,typename ',f)))]
+              [(f)       (quasirename r
+                           `(define-inline ,(sym+ typename '- f)
+                              (rtd-accessor ,typename ',f)))]
+              [f         (quasirename r
+                           `(define-inline ,(sym+ typename '- f)
+                              (rtd-accessor ,typename ',f)))])
             field-specs))
-  (define (build-def typename parent)
-    `(,%define-inline ,typename
-       (,%make ',typename ',(build-field-spec) ,@(if parent `(,parent) '()))))
-  (define (build-ctor typename)
-    (match ctor-spec
-      [#f '()]
-      [#t `((,%define-inline ,(sym+ 'make- typename) (,%ctor ,typename)))]
-      [((? id? ctor-name) field ...)
-       `((,%define-inline ,ctor-name (,%ctor ,typename ',(list->vector field))))]
-      [(? id? ctor-name)
-       `((,%define-inline ,ctor-name (,%ctor ,typename)))]
-      [x (error "invalid constructor spec" ctor-spec)]))
-  (define (build-pred typename)
-    (match pred-spec
-      [#f '()]
-      [#t `((,%define-inline (,(sym+ typename '?) ,tmp)
-              ((,%pred ,typename) ,tmp)))]
-      [(? id? pred-name)
-       `((,%define-inline (,pred-name ,tmp) ((,%pred ,typename) ,tmp)))]
-      [x (error "invalid predicate spec" pred-spec)]))
-  (define (build-accessors typename)
-    (map (match-lambda
-           [(f a . _) `(,%define-inline ,a (,%asor ,typename ',f))]
-           [(f)       `(,%define-inline ,(sym+ typename '- f)
-                         (,%asor ,typename ',f))]
-           [f         `(,%define-inline ,(sym+ typename '- f)
-                         (,%asor ,typename ',f))])
-         field-specs))
-  (define (build-mutators typename)
-    (append-map (match-lambda
-                  [(f a m) `((,%define-inline ,m (,%mtor ,typename ',f)))]
-                  [(f)     `((,%define-inline ,(sym+ typename '- f '-set!)
-                               (,%mtor ,typename ',f)))]
-                  [_ '()])
-                field-specs))
+     (define (build-mutators typename field-specs)
+       (append-map 
+        (match-lambda
+          [(f a m) (quasirename r
+                     `((define-inline ,m
+                         (rtd-mutator ,typename ',f))))]
+          [(f)     (quasirename r
+                     `((define-inline ,(sym+ typename '- f '-set!)
+                         (rtd-mutator ,typename ',f))))]
+          [_ '()])
+        field-specs))
 
-  (receive (typename parent) (match type-spec
-                               [((? id? name) parent) (values name parent)]
-                               [(? id? name) (values name #f)]
-                               [x (error "invalid type-spec" type-spec)])
-    `(begin ,(build-def typename parent)
-            ,@(build-ctor typename)
-            ,@(build-pred typename)
-            ,@(build-accessors typename)
-            ,@(build-mutators typename)))
-    )
+     (match f
+       [(_ type-spec ctor-spec pred-spec . field-specs)
+        (receive (typename parent) (match type-spec
+                                     [((? id? name) parent) (values name parent)]
+                                     [(? id? name) (values name #f)]
+                                     [_ (error "invalid type-spec" type-spec)])
+          (quasirename r
+            `(begin ,(build-def typename parent field-specs)
+                    ,@(build-ctor typename ctor-spec)
+                    ,@(build-pred typename pred-spec)
+                    ,@(build-accessors typename field-specs)
+                    ,@(build-mutators typename field-specs))))]
+       [_ (error "malformed define-record-type" f)]))))
