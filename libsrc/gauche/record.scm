@@ -468,7 +468,7 @@
                    (rtd-predicate ,typename))))]
          [(? id? pred-name)
           (quasirename r
-            `((define-inline ,pred-name (,rtd-predicate ,typename))))]
+            `((define-inline ,pred-name (rtd-predicate ,typename))))]
          [_ (error "invalid predicate spec" pred-spec)]))
      (define (build-accessors typename field-specs)
        (map (match-lambda
