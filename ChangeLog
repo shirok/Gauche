@@ -1,3 +1,7 @@
+2019-12-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm: Render (quote X) as 'X etc.
+
 2019-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/record.scm: Rewrote define-record-type with er-macro.

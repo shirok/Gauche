@@ -176,7 +176,7 @@
         [(>=* level (rp-level c)) (layout-simple "#")]
         [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
 
-;; layout-misc :: (Obj, ((Obj, Context) -> Layouter), Context) -> Layouter
+;; layout-misc :: (Obj, (Obj -> Layouter), Context) -> Layouter
 (define (layout-misc obj rec c)
 
   ;; mapi :: (Obj -> Layouter), Vector -> Layouter
@@ -199,6 +199,10 @@
     (let loop ([lis lis] [len 0] [rs '()])
       (match lis
         [() (reverse rs)]
+        [((and (or 'quote 'quasiquote 'unquote 'unquote-splicing) p) _)
+         (if (has-label? (cdr lis) c)
+           (reverse (list* (layout-ref (cdr lis) c) dot (fn p) rs))
+           (reverse (list* (layout-shorthand lis fn c) dot rs)))]
         [(l . lis)
          (if (>=* len (rp-length c))
            (reverse `(,dots ,@rs))
@@ -208,7 +212,13 @@
                (loop lis (+ len 1) (cons r rs)))))]
         [x (reverse `(,(fn x) ,dot ,@rs))])))
 
-  (cond [(pair? obj) (layout-list (sprefix obj "(" c) (map+ rec obj) c)]
+  (cond [(pair? obj)
+         (or (and (pair? (cdr obj))
+                  (null? (cddr obj))
+                  (not (has-label? (cdr obj) c))
+                  (memq (car obj) '(quote quasiquote unquote unquote-splicing))
+                  (layout-shorthand obj rec c))
+             (layout-list (sprefix obj "(" c) (map+ rec obj) c))]
         [(vector? obj) (layout-list (sprefix obj "#(" c) (mapi rec obj) c)]
         [(is-a? obj <uvector>)
          (let1 tag (rxmatch-substring
@@ -227,6 +237,27 @@
 ;; layout-ref :: Object -> Layouter
 (define (layout-ref obj c)
   (layout-simple (format "#~d#" (- (hash-table-get (rp-shared c) obj)))))
+
+;; layout-shorthand :: (Object, (Object -> Layouter), Context) -> Layouter
+;;   handles quote etc.
+;;   Object is a two-element list, e.g. (quote X)
+;;   The second argument is to recursively layout X.
+;;   The case that cdr of the form is shared should be handled by the caller.
+(define (layout-shorthand form rec c)
+  (let* ([pfx (sprefix form 
+                       (assq-ref '((quote . "'")
+                                   (quasiquote . "`")
+                                   (unquote . ",")
+                                   (unquote-splicing . ",@")) 
+                                 (car form))
+                       c)]
+         [plen (string-length pfx)]
+         [inner (if (has-label? (cadr form) c)
+                  (layout-ref (cadr form) c)
+                  (rec (cadr form)))])
+    (memo^ [room memo]
+           (match-let1 (s . w) (inner (-* room plen) memo)
+             (cons (list pfx s) (and w (+ w plen)))))))
 
 ;; layout-list :: (String, [Layouter], Context) -> Layouter
 (define (layout-list prefix elts c)

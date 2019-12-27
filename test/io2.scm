@@ -690,7 +690,28 @@
 (test* "label (issue #484)" "#0=(a #1=(b #0# #1#))\n"
        (call-with-output-string
          (cut pprint '#0=(a #1=(b #0# #1#)) :port <>)))
-       
+
+(test* "shorthand notation" "('a `b ,c ,@d `(e ,f 'g ,@h))\n"
+       (call-with-output-string
+         (cut pprint '('a `b ,c ,@d `(e ,f 'g ,@h)) :port <>)))
+(test* "shorthand notation" "'#0=(a . '#0#)\n"
+       (call-with-output-string
+         (cut pprint ''#0=(a . '#0#) :port <>)))
+(test* "shorthand notation" "'#0=(a ,@#1='(#0# . ,#1#))\n"
+       (call-with-output-string
+         (cut pprint ''#0=(a ,@#1='(#0# . ,#1#)) :port <>)))
+(test* "shorthand notation" "#0=(a (quote . #0#))\n"
+       (call-with-output-string
+         (cut pprint '#0=(a (quote . #0#)) :port <>)))
+(test* "shorthand notation" "#0=(a quote . #0#)\n"
+       (call-with-output-string
+         (cut pprint '#0=(a quote . #0#) :port <>)))
+(test* "shorthand notation" "'(,@(the quick brown fox\
+                           \n     jumps over the\
+                           \n     ,@lazy dog))\n"
+       (call-with-output-string
+         (cut pprint ''(,@(the quick brown fox jumps over the ,@lazy dog))
+              :port <> :width 25)))
 
 ;;===============================================================
 ;; utf-8 with BOM
