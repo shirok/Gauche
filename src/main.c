@@ -415,6 +415,9 @@ static void test_ld_path_setup(char **av, const char *src_path)
     setenv("LD_LIBRARY_PATH", strdup(Scm_GetString(SCM_STRING(new_path))), 1);
 
     execv("/proc/self/exe", av);
+#else
+    (void)av;
+    (void)src_path;
 #endif
 }
 
@@ -636,7 +639,7 @@ int execute_script(const char *scriptfile, ScmObj args)
         static ScmObj run_main_proc = SCM_UNDEFINED;
         SCM_BIND_PROC(run_main_proc, "run-main", Scm_GaucheInternalModule());
         SCM_ASSERT(SCM_PROCEDUREP(run_main_proc));
-        
+
         ScmEvalPacket epak;
         int r = Scm_Apply(run_main_proc, SCM_LIST2(mainproc, args), &epak);
         SCM_ASSERT(r == 1 && SCM_INTP(epak.results[0]));
@@ -682,7 +685,7 @@ void enter_repl()
     if (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)) {
         Scm_SetPortCaseFolding(SCM_PORT(Scm_Stdin()), TRUE);
     }
-    
+
     if (batch_mode || (!has_terminal() && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), SCM_LOAD_PROPAGATE_ERROR, NULL);
     } else {
@@ -726,7 +729,7 @@ int main(int ac, char **av)
             Scm_SetCallTraceSize(strtoul(call_trace, NULL, 10));
         }
     }
-    
+
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
@@ -750,7 +753,7 @@ int main(int ac, char **av)
     if (strcmp(safe_basename(argv[0]), "scheme-r7rs") == 0) {
         main_module = SCM_INTERN("r7rs.user");
     }
-    
+
     /* Check command-line options */
     int argind = parse_options(argc, argv);
 

@@ -411,7 +411,7 @@ static int char_is_delimiter(ScmChar ch)
             || SCM_CHAR_EXTRA_WHITESPACE(ch));
 }
 
-static void read_nested_comment(ScmPort *port, 
+static void read_nested_comment(ScmPort *port,
                                 ScmReadContext *ctx SCM_UNUSED)
 {
     int nesting = 0;
@@ -1274,7 +1274,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
    the read context setting.  INCLUDE_HASH_SIGN allows '#' to appear in
    the word.
 */
-static ScmObj read_word(ScmPort *port, ScmChar initial, 
+static ScmObj read_word(ScmPort *port, ScmChar initial,
                         ScmReadContext *ctx SCM_UNUSED,
                         int temp_case_fold, int include_hash_sign)
 {
@@ -1653,11 +1653,11 @@ ScmObj Scm_DefineReaderDirective(ScmObj symbol, ScmObj proc)
 
 static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
 {
-    /* If '#!' appears in the beginning of the input port, and it is
-       followed by '/' or a space, then we consider it as the
-       beginning of shebang and discards entire line.  Otherwise, we
-       take this as #!<identifier> directive as specified in R6RS, and
-       calls appropriate handler.
+    /* If '#!' appears at the beginning of the input port, and it is
+       followed by '/' or a space or a newline, then we consider it as
+       the beginning of shebang and discard the entire line.
+       Otherwise, we take this as #!<identifier> directive as
+       specified in R6RS, and calls appropriate handler.
 
        R6RS is actually not very clean at this corner.  It requires
        distinct modes to parse a script (which always begins with
@@ -1666,12 +1666,12 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
        parser that strictly covers both situation.
     */
     int c2 = Scm_GetcUnsafe(port);
-    if (port->bytes == 3 && (c2 == '/' || c2 == ' ')) {
+    if (port->bytes == 3 && (c2 == '/' || c2 == ' ' || c2 == '\n')) {
         /* shebang */
         for (;;) {
-            c2 = Scm_GetcUnsafe(port);
             if (c2 == '\n') return SCM_UNDEFINED;
             if (c2 == EOF) return SCM_EOF;
+            c2 = Scm_GetcUnsafe(port);
         }
         /*NOTREACHED*/
     } else {
@@ -1760,7 +1760,7 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
             || strcmp(w, "c64") == 0
             || strcmp(w, "c128") == 0) {
             tag = w;
-        } 
+        }
         break;
     case 'f':
         if (strcmp(w, "f16") == 0
@@ -1833,7 +1833,7 @@ void Scm__InitRead(void)
         SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(hashBangData.mutex);
 
-    defaultReadContext = 
+    defaultReadContext =
         Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE,
                                    SCM_OBJ(make_read_context(NULL)),
                                    0);
