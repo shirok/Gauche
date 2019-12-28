@@ -1653,11 +1653,11 @@ ScmObj Scm_DefineReaderDirective(ScmObj symbol, ScmObj proc)
 
 static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
 {
-    /* If '#!' appears in the beginning of the input port, and it is
-       followed by '/' or a space, then we consider it as the
-       beginning of shebang and discards entire line.  Otherwise, we
-       take this as #!<identifier> directive as specified in R6RS, and
-       calls appropriate handler.
+    /* If '#!' appears at the beginning of the input port, and it is
+       followed by '/' or a space or a newline, then we consider it as
+       the beginning of shebang and discard the entire line.
+       Otherwise, we take this as #!<identifier> directive as
+       specified in R6RS, and calls appropriate handler.
 
        R6RS is actually not very clean at this corner.  It requires
        distinct modes to parse a script (which always begins with
@@ -1666,12 +1666,12 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
        parser that strictly covers both situation.
     */
     int c2 = Scm_GetcUnsafe(port);
-    if (port->bytes == 3 && (c2 == '/' || c2 == ' ')) {
+    if (port->bytes == 3 && (c2 == '/' || c2 == ' ' || c2 == '\n')) {
         /* shebang */
         for (;;) {
-            c2 = Scm_GetcUnsafe(port);
             if (c2 == '\n') return SCM_UNDEFINED;
             if (c2 == EOF) return SCM_EOF;
+            c2 = Scm_GetcUnsafe(port);
         }
         /*NOTREACHED*/
     } else {
