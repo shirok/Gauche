@@ -65,7 +65,7 @@
   )
 (select-module data.skew-list)
 
-(define-record-type (<skew-list> <sequence>)
+(define-record-type (<skew-list> #f :mixins (<sequence>))
   SL skew-list?
   (elements skew-list-elements))               ; [(Int, Tree)]]
 

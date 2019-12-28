@@ -72,7 +72,6 @@
 ;;     the caller is a foreign entity.
 
 ;; some convenience utility
-
 (define-macro (sym+ . args)
   `((with-module gauche.internal identifier-append) ,@args))
 
@@ -261,21 +260,29 @@
 ;;; Procedural layer
 ;;;
 
-(define (make-rtd name fieldspecs :optional (parent #f) :rest opts)
+(define (make-rtd name fieldspecs :optional (parent #f)
+                  :key (mixins '()) (metaclass #f))
   ;; We only allow to inherit either other record class, or classes that
   ;; don't add slots.  The metaclass be alwayas <record-meta>
-  (when (and parent
-             (not (is-a? parent <record-meta>))
-             (not (null? (class-slots parent))))
-    (error "Inheriting from non-record class with slots is prohibited:"
-           parent))
-  (make (if (is-a? parent <record-meta>)
-          (class-of parent)  ; in case <record-meta> is subclassed
-          <record-meta>)
-    :name name :field-specs fieldspecs :metaclass <record-meta>
-    :supers (cond [(is-a? parent <record-meta>) (list parent)]
-                  [(is-a? parent <class>) (list parent <record>)]
-                  [else (list <record>)])
+  (when parent
+    (unless (is-a? parent <record-meta>)
+      (error "Inheriting from non-record class is prohibited:" parent
+             (class-of parent) (is-a? parent <record-meta>))))
+  (when (list? mixins)
+    (dolist [m mixins]
+      (unless (null? (class-slots m))
+        (error "Cannot use a class with slots as a record mixin:" m))))
+  (when metaclass
+    (unless (subtype? metaclass <record-meta>)
+      (error "Cannot use a metaclass that isn't a subtype of <record-meta>:"
+             metaclass)))
+  (make (or metaclass
+            (and parent (class-of parent))
+            <record-meta>)
+    :name name :field-specs fieldspecs
+    :supers (append mixins
+                    (cond [(is-a? parent <record-meta>) (list parent)]
+                          [else (list <record>)]))
     :slots ($ fieldspecs->slotspecs fieldspecs
               $ if parent (length (class-slots parent)) 0)))
 
@@ -433,6 +440,19 @@
   (er-macro-transformer
    (^[f r c]
      (define (id? x)  (or (symbol? x) (identifier? x)))
+     (define (parse-type-spec type-spec)
+       (match type-spec
+         [(? id? name) (values name #f '())]
+         [((? id? name) parent) (values name parent '())]
+         [((? id? name) parent . opts)
+          (let-keywords opts ([mixins #f]
+                              [metaclass #f])
+            (values name parent
+                    (cond-list [mixins @ (quasirename r 
+                                           `(:mixins (list ,@mixins)))]
+                               [metaclass @ (quasirename r
+                                              `(:metaclass ,metaclass))])))]
+         [_ (error "invalid type-spec" type-spec)]))
      (define (build-field-spec field-specs)
        (map-to <vector> (match-lambda
                           [((? id? f) a s) f]
@@ -441,11 +461,11 @@
                           [(? id? f) `(immutable ,f)]
                           [x (error "invalid field spec:" x)])
                field-specs))
-     (define (build-def typename parent field-specs)
+     (define (build-def typename parent opts field-specs)
        (quasirename r
          `(define-inline ,typename
-            (make-rtd ',typename ',(build-field-spec field-specs)
-                      ,@(if parent `(,parent) '())))))
+            (make-rtd ',typename ',(build-field-spec field-specs) ,parent
+                      ,@opts))))
      (define (build-ctor typename ctor-spec)
        (match ctor-spec
          [#f '()]
@@ -495,12 +515,10 @@
 
      (match f
        [(_ type-spec ctor-spec pred-spec . field-specs)
-        (receive (typename parent) (match type-spec
-                                     [((? id? name) parent) (values name parent)]
-                                     [(? id? name) (values name #f)]
-                                     [_ (error "invalid type-spec" type-spec)])
+        (receive (typename parent opts)
+            (parse-type-spec type-spec)
           (quasirename r
-            `(begin ,(build-def typename parent field-specs)
+            `(begin ,(build-def typename parent opts field-specs)
                     ,@(build-ctor typename ctor-spec)
                     ,@(build-pred typename pred-spec)
                     ,@(build-accessors typename field-specs)

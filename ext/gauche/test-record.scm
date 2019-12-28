@@ -436,7 +436,7 @@
                (sub1-b z))))
 
 ;; inheriting mixin class
-(define-record-type (myseq <sequence>) #t #t elements)
+(define-record-type (myseq #f :mixins (<sequence>)) #t #t elements)
 (define-method referencer ((s myseq)) 
   (^[o i] (ref (myseq-elements o) i)))
 (define-method modifier ((s myseq))
@@ -469,6 +469,18 @@
                 (coerce-to <list> seq)))
   )
 
+(define-class <myseq3-meta> (<record-meta>) ())
+(define-record-type (myseq3 #f :mixins (<sequence>) :metaclass <myseq3-meta>)
+  #t #t elements)
+(define-method call-with-iterator ((s myseq3) proc)
+  (call-with-iterator (myseq3-elements s) proc))
+(define-method call-with-builder ((s <myseq3-meta>) proc . opts)
+  (define xs '())
+  (proc (^x (push! xs x))
+        (^[] (make-myseq3 (reverse xs)))))
+
+(test* "metaclass and builder" '(a b c d e)
+       (coerce-to <list> (coerce-to myseq3 '(a b c d e))))
 
 ;;--------------------------------------------------------------------
 (test-section "describe")
