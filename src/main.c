@@ -415,6 +415,9 @@ static void test_ld_path_setup(char **av, const char *src_path)
     setenv("LD_LIBRARY_PATH", strdup(Scm_GetString(SCM_STRING(new_path))), 1);
 
     execv("/proc/self/exe", av);
+#else
+    (void)av;
+    (void)src_path;
 #endif
 }
 
