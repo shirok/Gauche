@@ -1365,14 +1365,23 @@ struct ScmProcedureRec {
  */
 
 /* About 'constant' flag:
-   This flag being TRUE means this procedure returns the same constant
-   value if given same constant arguments, and it does not have any other
-   external effects.   The compiler may use this info to replace a call
-   of this proc with the resulting value, if all the arguments are known
-   at compile-time.  The resulting value must be serializable to the
+
+   For a <procedure> and <method>, this flag being TRUE means it returns
+   the same constant value if given same constant arguments, and it does
+   not have any other external effects.   The compiler may use this info
+   to replace a call of this proc with the resulting value, 
+   if all the arguments are known at compile-time.  
+   The resulting value must be serializable to the
    precompiled file.  The result shouldn't be affected
    by the timing of the compile, architecture on which the compiler runs,
    or the compiler configuration (e.g. internal encoding).
+
+   If <generic> has this flag, it tells the compiler that it can calculate
+   applicable method at the compile time.  It is independent from method's
+   constantness---the selected method may or may not be used as a compile-time
+   calculation; but it is safe to pre-select that method, given that
+   enough information is available at the compile time.
+   We warn if a new method is added to a 'constant' generic.
  */
 
 /* About 'leaf' flag:
@@ -1475,6 +1484,7 @@ enum ScmProcedureType {
 #define SCM_PROCEDURE_REQUIRED(obj) SCM_PROCEDURE(obj)->required
 #define SCM_PROCEDURE_OPTIONAL(obj) SCM_PROCEDURE(obj)->optional
 #define SCM_PROCEDURE_TYPE(obj)     SCM_PROCEDURE(obj)->type
+#define SCM_PROCEDURE_CONSTANT(obj) SCM_PROCEDURE(obj)->constant
 #define SCM_PROCEDURE_CURRYING(obj) SCM_PROCEDURE(obj)->currying
 #define SCM_PROCEDURE_INFO(obj)     SCM_PROCEDURE(obj)->info
 #define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
@@ -1594,6 +1604,9 @@ SCM_CLASS_DECL(Scm_GenericClass);
 #define SCM_GENERICP(obj)          SCM_XTYPEP(obj, SCM_CLASS_GENERIC)
 #define SCM_GENERIC(obj)           ((ScmGeneric*)obj)
 #define SCM_GENERIC_DATA(obj)      (SCM_GENERIC(obj)->data)
+
+/* we share 'constant' flag for sealed generic */
+#define SCM_GENERIC_SEALED_P(obj)  SCM_PROCEDURE_CONSTANT(obj)
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \

@@ -115,6 +115,12 @@
 (define (%make-setter-name name)
   (string->symbol (format #f "setter of ~a" name)))
 
+;; These are hidden procedure in gauche.object, for now.
+(define-cproc generic-seal! (gf::<generic>) ::<void>
+  (set! (SCM_PROCEDURE_CONSTANT gf) TRUE))
+(define-cproc generic-unseal! (gf::<generic>) ::<void>
+  (set! (SCM_PROCEDURE_CONSTANT gf) FALSE))
+
 ;;----------------------------------------------------------------
 ;; Method
 ;;

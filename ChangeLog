@@ -1,3 +1,9 @@
+2019-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/gauche.h, src/libobj.scm (generic-seal!):
+	  Experimentally use 'constant' attribute of generic as the "sealed
+	  generic" to allow the compiler to pre-select methods.
+
 2019-12-27  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/record.scm: Enhance define-record-type and make-rtd

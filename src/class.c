@@ -2076,6 +2076,11 @@ static void generic_name_set(ScmGeneric *gf, ScmObj val)
     gf->common.info = val;
 }
 
+static ScmObj generic_sealed(ScmGeneric *gf)
+{
+    return SCM_GENERIC_SEALED_P(gf)? SCM_TRUE:SCM_FALSE;
+}
+
 static ScmObj generic_methods(ScmGeneric *gf)
 {
     return gf->methods;
@@ -2630,6 +2635,10 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
         Scm_Error("method %S already appears in a method list of generic %S"
                   " something wrong in MOP implementation?",
                   method, gf);
+    if (SCM_GENERIC_SEALED_P(gf)) {
+        Scm_Warn("Attempt to add a method to a sealed generic %S. "
+                 "You may need to recompile code that calls it.", gf);
+    }
 
     int reqs = gf->maxReqargs;  /* # of maximum required args */
     method->generic = gf;
@@ -3103,6 +3112,7 @@ static ScmClassStaticSlotSpec class_slots[] = {
 
 static ScmClassStaticSlotSpec generic_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", generic_name, generic_name_set),
+    SCM_CLASS_SLOT_SPEC("sealed", generic_sealed, NULL),
     SCM_CLASS_SLOT_SPEC("methods", generic_methods, generic_methods_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
