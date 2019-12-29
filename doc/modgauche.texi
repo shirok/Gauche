@@ -15960,10 +15960,12 @@ The @var{type-spec} argument names the record type,
 and optionally specifies the supertype (@var{parent}).
 
 @example
-@var{type-spec} : @var{type-name} | (@var{type-name} @var{parent})
+@var{type-spec} : @var{type-name}
+                | (@var{type-name} @var{parent} @var{option} @dots{})
 
 @var{type-name} : @r{identifier}
 @var{parent} : @r{expression}
+@var{option} @dots{} : @r{keyword-value list}
 @end example
 
 The @var{type-name} identifier will be bound to a
@@ -15982,11 +15984,27 @@ predicate of the parent type.
 
 Since a record type is also a class, parent type is also a superclass
 of the defined record type.  However, record types are limited to
-have single inheritance.
+have single implementation inheritance.  The parent type must be
+a subclass of @code{<record>}.  (You can have abstract classes along
+the main inheritance, though.  See @var{mixins} below.)
 
 You can give a pseudo record base type as @var{parent} to define a
 pseudo record type, which allows you to access ordinary aggregates
 like vectors as records.  See @ref{Pseudo record types} for more details.
+
+the @var{option} @dots{} part is Gauche's extension.  It must be a
+keyword-value list.  The following keywords are recognized:
+
+@table @asis
+@item @code{:mixins} (@var{class} @dots{})
+Specifies auxiliary superclasses.  The classes must be abstract, that is,
+must not have slots.  It is to implement protocols in the record type,
+e.g. @code{<sequence>} (@pxref{Sequence framework}).
+@item @code{:metaclass} @var{metaclass}
+Specifies alternative metaclass.  By default, metaclass of record types
+is @code{<record-meta>}.  If you specify an alternative metaclass,
+it must be a subclass of @code{<record-meta>}.
+@end table
 
 The @var{ctor-spec} defines the constructor of the record instance.
 
