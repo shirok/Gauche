@@ -663,7 +663,7 @@ static void vm_unregister(ScmVM *vm)
             fprintf(stderr, "\"%s\", line %d: Assertion failed: %s\n",  \
                     __FILE__, __LINE__, #expr);                         \
             Scm_VMDump(theVM);                                          \
-            Scm_Panic("exiting...\n");                                 \
+            Scm_Panic("exiting...\n");                                  \
         }                                                               \
     } while (0)
 
@@ -1908,28 +1908,35 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
 
     SCM_ASSERT(SCM_PAIRP(vm->handlers));
     vm->handlers = SCM_CDR(vm->handlers);
+
+    /* save return values */
+    int nvals = vm->numVals;
     d[0] = (void*)result;
-    d[1] = (void*)(intptr_t)vm->numVals;
-    if (vm->numVals > 1) {
-        ScmObj *array = SCM_NEW_ARRAY(ScmObj, (vm->numVals-1));
-        memcpy(array, vm->vals, sizeof(ScmObj)*(vm->numVals-1));
-        d[2] = (void*)array;
+    d[1] = (void*)(intptr_t)nvals;
+    if (nvals > 1) {
+        ScmObj *vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
+        memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
+        d[2] = (void*)vals;
     }
+
     Scm_VMPushCC(dynwind_after_cc, d, 3);
     return Scm_VMApply0(after);
 }
 
 static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
 {
-    ScmObj val0 = SCM_OBJ(data[0]);
-    int nvals = (int)(intptr_t)data[1];
     ScmVM *vm = theVM;
 
+    /* restore return values */
+    ScmObj val0 = SCM_OBJ(data[0]);
+    int nvals = (int)(intptr_t)data[1];
+    ScmObj *vals = (ScmObj*)data[2];
     vm->numVals = nvals;
     if (nvals > 1) {
         SCM_ASSERT(nvals <= SCM_VM_MAX_VALUES);
-        memcpy(vm->vals, data[2], sizeof(ScmObj)*(nvals-1));
+        memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
     }
+
     return val0;
 }
 
@@ -2086,9 +2093,14 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         SCM_UNWIND_PROTECT {
             result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
-            if ((numVals = vm->numVals) > 1) {
+
+            /* save return values */
+            /* NB: for loop is slightly faster than memcpy */
+            numVals = vm->numVals;
+            if (numVals > 1) {
                 for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
             }
+
             if (!ep->rewindBefore) {
                 target = ep->handlers;
                 current = vm->handlers;
@@ -2143,10 +2155,14 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             return result;
         }
 
-        /* Install the continuation */
-        for (int i=0; i<numVals; i++) vm->vals[i] = rvals[i];
-        vm->numVals = numVals;
+        /* restore return values */
         vm->val0 = result;
+        vm->numVals = numVals;
+        if (numVals > 1) {
+            for (int i=0; i<numVals-1; i++) vm->vals[i] = rvals[i];
+        }
+
+        /* Install the continuation */
         vm->cont = ep->cont;
         SCM_VM_FLOATING_EP_SET(vm, ep->floating);
         if (ep->errorReporting) {
