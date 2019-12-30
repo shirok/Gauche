@@ -1909,7 +1909,12 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
     SCM_ASSERT(SCM_PAIRP(vm->handlers));
     vm->handlers = SCM_CDR(vm->handlers);
 
-    /* save return values */
+    /* Save return values.
+       We could avoid malloc when numVals is small (we can push
+       them directly onto the stack).  But our benchmark showed doing so
+       actually gets slightly slower.  More branches may have a negative
+       effect.  So we keep it simple here.
+     */
     int nvals = vm->numVals;
     d[0] = (void*)result;
     d[1] = (void*)(intptr_t)nvals;
@@ -1917,9 +1922,10 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
         ScmObj *vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
         memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
         d[2] = (void*)vals;
+        Scm_VMPushCC(dynwind_after_cc, d, 3);
+    } else {
+        Scm_VMPushCC(dynwind_after_cc, d, 2);
     }
-
-    Scm_VMPushCC(dynwind_after_cc, d, 3);
     return Scm_VMApply0(after);
 }
 
@@ -1927,16 +1933,15 @@ static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmVM *vm = theVM;
 
-    /* restore return values */
+    /* Restore return values. */
     ScmObj val0 = SCM_OBJ(data[0]);
     int nvals = (int)(intptr_t)data[1];
-    ScmObj *vals = (ScmObj*)data[2];
     vm->numVals = nvals;
     if (nvals > 1) {
+        ScmObj *vals = (ScmObj*)data[2];
         SCM_ASSERT(nvals <= SCM_VM_MAX_VALUES);
         memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
     }
-
     return val0;
 }
 
