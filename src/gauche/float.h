@@ -49,6 +49,10 @@
 
 /* assuming gauche/config.h is read. */
 
+/* We avoid to use C macro 'complex' for C++ extensions. */
+typedef float _Complex ScmFloatComplex;
+typedef double _Complex ScmDoubleComplex;
+
 /*
  * Half float support
  */

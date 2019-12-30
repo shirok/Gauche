@@ -751,8 +751,8 @@
     [(eq? class <f32vector>) "float"]
     [(eq? class <f64vector>) "double"]
     [(eq? class <c32vector>) "ScmHalfComplex"]
-    [(eq? class <c64vector>) "complex float"]
-    [(eq? class <c128vector>) "complex double"]
+    [(eq? class <c64vector>) "ScmFloatComplex"]
+    [(eq? class <c128vector>) "ScmDoubleComplex"]
     ))
 
 (define (uvector-class-emit-elt class v)

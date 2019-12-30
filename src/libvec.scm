@@ -441,19 +441,19 @@
                                   ceil::size_t*)
    ::size_t (%binary-search ScmHalfComplex hc-eqv hc-lt))
  
- (define-cfn Scm_BinarySearchC64 (vec::(const complex float*)
+ (define-cfn Scm_BinarySearchC64 (vec::(const ScmFloatComplex*)
                                   len::size_t
-                                  key::(complex float)
+                                  key::(ScmFloatComplex)
                                   skip::u_int
                                   floor::size_t*
                                   ceil::size_t*)
-   ::size_t (%binary-search (complex float) common-eqv fc-lt))
+   ::size_t (%binary-search (ScmFloatComplex) common-eqv fc-lt))
 
- (define-cfn Scm_BinarySearchC128 (vec::(const complex double*)
+ (define-cfn Scm_BinarySearchC128 (vec::(const ScmDoubleComplex*)
                                    len::size_t
-                                   key::(complex double)
+                                   key::(ScmDoubleComplex)
                                    skip::u_int
                                    floor::size_t*
                                    ceil::size_t*)
-   ::size_t (%binary-search (complex double) common-eqv dc-lt))
+   ::size_t (%binary-search (ScmDoubleComplex) common-eqv dc-lt))
  )
