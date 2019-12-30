@@ -1,5 +1,7 @@
 2019-12-29  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/time.scm: make-time-result wasn't exported.
+
 	* src/class.c, src/gauche.h, src/libobj.scm (generic-seal!):
 	  Experimentally use 'constant' attribute of generic as the "sealed
 	  generic" to allow the compiler to pre-select methods.
