@@ -47,12 +47,12 @@
 
 (select-module gauche)
 (define-cproc promise? (obj) ::<boolean> :constant
-  (result (SCM_XTYPEP obj SCM_CLASS_PROMISE)))
+  (return (SCM_XTYPEP obj SCM_CLASS_PROMISE)))
 (define-cproc eager (obj)              ;srfi-45
-  (result (Scm_MakePromise TRUE obj)))
+  (return (Scm_MakePromise TRUE obj)))
 (define-cproc promise-kind (p::<promise>)
   (setter (p::<promise> obj) ::<void> (set! (-> p kind) obj))
-  (result (-> p kind)))
+  (return (-> p kind)))
 
 ;;;
 ;;; lazy sequence
@@ -65,15 +65,15 @@
 (define-cproc %decompose-lazy-pair (obj) :: (<top> <top>)
   (let* ([item] [generator])
     (let* ([r::int (Scm_DecomposeLazyPair obj (& item) (& generator))])
-      (cond [r (result item generator)]
+      (cond [r (return item generator)]
             ;; NB: there's a possibility that obj has been forced by
             ;; some other thread; handle it.
-            [else (result SCM_EOF SCM_FALSE)]))))
+            [else (return SCM_EOF SCM_FALSE)]))))
 
 (define-cproc %force-lazy-pair (lp)
   (if (SCM_LAZY_PAIR_P lp)
-    (result (Scm_ForceLazyPair (SCM_LAZY_PAIR lp)))
-    (result lp)))
+    (return (Scm_ForceLazyPair (SCM_LAZY_PAIR lp)))
+    (return lp)))
 
 ;; A primitive for corecursion.
 ;; See libmacro.scm for lcons macro.

@@ -1908,7 +1908,7 @@
  (define-cproc vm-compiler-flag-clear! (flag::<uint>) ::<void>
    (SCM_VM_COMPILER_FLAG_CLEAR (Scm_VM) flag))
  (define-cproc vm-compiler-flag () ::<uint>
-   (result (-> (Scm_VM) compilerFlags)))
+   (return (-> (Scm_VM) compilerFlags)))
 
  (define-cproc vm-compiler-flag-noinline-locals? () ::<boolean>
    (return (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS)))

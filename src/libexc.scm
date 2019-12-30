@@ -52,8 +52,8 @@
   (unless (SCM_PROCEDURE_THUNK_P thunk)
     (Scm_Error "thunk required, but got %S" thunk))
   (if rewind-before
-    (result (Scm_VMWithGuardHandler handler thunk))
-    (result (Scm_VMWithErrorHandler handler thunk))))
+    (return (Scm_VMWithGuardHandler handler thunk))
+    (return (Scm_VMWithErrorHandler handler thunk))))
 
 (define-cproc report-error (exception :optional (port (current-error-port)))
   Scm_ReportError)
@@ -93,7 +93,7 @@
 
 (select-module gauche)
 (define-cproc current-exception-handler ()
-  (result (-> (Scm_VM) exceptionHandler)))
+  (return (-> (Scm_VM) exceptionHandler)))
 
 (define-cproc with-exception-handler (handler thunk)
   Scm_VMWithExceptionHandler)
@@ -103,7 +103,7 @@
 (define-cproc %raise (exception :optional (non-continuable? #f))
   (let* ([flags::u_long
           (?: (SCM_FALSEP non-continuable?) 0 SCM_RAISE_NON_CONTINUABLE)])
-    (result (Scm_Raise exception flags))))
+    (return (Scm_Raise exception flags))))
 
 ;; For r7rs compatible guard.
 ;; %reraise must be called at the tail position of the error handler.

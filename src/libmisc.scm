@@ -58,7 +58,7 @@
 
 ;; Debug label
 (select-module gauche)
-(define-cproc debug-label (obj) (result (Scm_Sprintf "@%lx" obj)))
+(define-cproc debug-label (obj) (return (Scm_Sprintf "@%lx" obj)))
 
 ;; Foreign pointer (may be in libsys.scm?)
 

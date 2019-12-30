@@ -136,8 +136,8 @@
 (define-cproc procedure-locked-setter (proc::<procedure>)
   (if (and (-> proc locked)
            (SCM_PROCEDUREP (-> proc setter)))
-    (result (-> proc setter))
-    (result SCM_FALSE)))
+    (return (-> proc setter))
+    (return SCM_FALSE)))
 ;; Returns #t iff obj is a procedure AND constant
 ;; Note: This also returns #t if obj is generic and sealed.  The behavior
 ;; may change in future, though, so do not rely on it.
