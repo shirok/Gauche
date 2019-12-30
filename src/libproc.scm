@@ -138,6 +138,12 @@
            (SCM_PROCEDUREP (-> proc setter)))
     (result (-> proc setter))
     (result SCM_FALSE)))
+;; Returns #t iff obj is a procedure AND constant
+;; Note: This also returns #t if obj is generic and sealed.  The behavior
+;; may change in future, though, so do not rely on it.
+(define-cproc procedure-constant? (obj) ::<boolean>
+  (return (and (SCM_PROCEDUREP obj)
+               (SCM_PROCEDURE_CONSTANT obj))))
 
 (define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
 

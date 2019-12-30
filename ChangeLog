@@ -1,5 +1,7 @@
 2019-12-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/libproc.scm (procedure-constant?): Added (internally)
+
 	* lib/gauche/time.scm: make-time-result wasn't exported.
 
 	* src/class.c, src/gauche.h, src/libobj.scm (generic-seal!):

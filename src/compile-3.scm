@@ -249,7 +249,7 @@
                       [p (gref-inlinable-proc proc)])
              (or (and (%procedure-inliner p)
                       (pass3/late-inline iform proc p labels))
-                 (and (slot-ref p 'constant)
+                 (and (procedure-constant? p)
                       (every $const? args)
                       (pass3/precompute-constant p args))))]
           [(and-let* ([ (has-tag? proc $GREF) ]
