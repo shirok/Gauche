@@ -194,14 +194,18 @@
    [(list? sub) (map check-pre-post sub)]
    [else sub]))
 
+(define (%substring str start end)
+  (if (or (> start 0) end)
+      (substring str start (or end (string-length str)))
+      str))
+
 (define (regexp-replace rx str sub :optional
                         (start 0)
                         (end #f)
                         (count 0))
   (let1 rx (regexp rx)
     ((with-module gauche.internal %regexp-replace)
-     rx
-     str start end
+     rx (%substring str start end)
      (transform-sub rx sub) count 1)))
 
 (define (regexp-replace-all rx str sub :optional
@@ -209,8 +213,7 @@
                             (end #f))
   (let1 rx (regexp rx)
     ((with-module gauche.internal %regexp-replace)
-     rx
-     str start end
+     rx (%substring str start end)
      (transform-sub rx sub) 0 #f)))
 
 (define regexp-match? regmatch?)

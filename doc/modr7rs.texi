@@ -7325,15 +7325,21 @@ As a Gauche extension, @var{subst} could also be a procedure, which is
 called with the given match object and the result will be used as the
 replacement.
 
-The optional parameters @var{start} and @var{end} restrict both the
-matching and the substitution, to the given indices, such that the
-result is equivalent to omitting these parameters and replacing on
-@code{(substring str start end)}. As a convenience, a value of
-@code{#f} for end is equivalent to @code{(string-length str)}.
+The optional parameters @var{start} and @var{end} essentially
+transform the substitution into this
+
+@example
+   (regexp-replace re (substring str start end) subst)
+@end example
+
+except that @var{end} can take @code{#f} which is the same as
+@code{(string-length str)}.
 
 @example
    (regexp-replace '(+ space) "one two three" "_")
    => "one_two three"
+   (regexp-replace '(+ space) "one two three" "_" 1 10)
+   => "ne_two th"
    (regexp-replace '(+ space) "one two three" "_" 0 #f 0)
    => "one_two three"
    (regexp-replace '(+ space) "one two three" "_" 0 #f 1)
