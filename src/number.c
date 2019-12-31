@@ -842,9 +842,9 @@ ScmHalfComplex Scm_GetHalfComplex(ScmObj z)
     return c;
 }
 
-complex float Scm_GetFloatComplex(ScmObj z)
+ScmFloatComplex Scm_GetFloatComplex(ScmObj z)
 {
-    complex float c = 0.0f;
+    ScmFloatComplex c = 0.0f;
     if (SCM_COMPNUMP(z)) {
         c = (float)SCM_COMPNUM_REAL(z) 
             + (float)SCM_COMPNUM_IMAG(z) * _Complex_I;
@@ -856,9 +856,9 @@ complex float Scm_GetFloatComplex(ScmObj z)
     return c;
 }
 
-complex double Scm_GetDoubleComplex(ScmObj z)
+ScmDoubleComplex Scm_GetDoubleComplex(ScmObj z)
 {
-    complex double c = 0.0f;
+    ScmDoubleComplex c = 0.0f;
     if (SCM_COMPNUMP(z)) {
         c = SCM_COMPNUM_REAL(z) 
             + SCM_COMPNUM_IMAG(z) * _Complex_I;
@@ -876,12 +876,12 @@ ScmObj Scm_HalfComplexToComplex(ScmHalfComplex z)
                            Scm_HalfToDouble(z.i));
 }
 
-ScmObj Scm_FloatComplexToComplex(complex float z)
+ScmObj Scm_FloatComplexToComplex(ScmFloatComplex z)
 {
     return Scm_MakeComplex((double)crealf(z), (double)cimagf(z));
 }
 
-ScmObj Scm_DoubleComplexToComplex(complex double z)
+ScmObj Scm_DoubleComplexToComplex(ScmDoubleComplex z)
 {
     return Scm_MakeComplex(creal(z), cimag(z));
 }

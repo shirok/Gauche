@@ -573,13 +573,13 @@ static inline uint64_t u64g_mul(uint64_t x, uint64_t y, int clamp)
 #define f64g_mul(x, y, clamp)   (x*y)
 #define f64g_div(x, y, clamp)   (x/y)
 
-static inline complex double complex_half_to_double(ScmHalfComplex x)
+static inline ScmDoubleComplex complex_half_to_double(ScmHalfComplex x)
 {
-    return (complex double)(Scm_HalfToDouble(x.r)
+    return (ScmDoubleComplex)(Scm_HalfToDouble(x.r)
                             + Scm_HalfToDouble(x.i) * _Complex_I);
 }
 
-static inline ScmHalfComplex complex_double_to_half(complex double x)
+static inline ScmHalfComplex complex_double_to_half(ScmDoubleComplex x)
 {
     return (ScmHalfComplex){Scm_DoubleToHalf(creal(x)),
                             Scm_DoubleToHalf(cimag(x))};
@@ -590,8 +590,8 @@ static inline ScmHalfComplex c32c32_add(ScmHalfComplex x,
                                         ScmHalfComplex y,
                                         int clamp SCM_UNUSED)
 {
-    complex double cx = complex_half_to_double(x);
-    complex double cy = complex_half_to_double(y);
+    ScmDoubleComplex cx = complex_half_to_double(x);
+    ScmDoubleComplex cy = complex_half_to_double(y);
     return complex_double_to_half(cx+cy);
 }
 
@@ -599,8 +599,8 @@ static inline ScmHalfComplex c32c32_sub(ScmHalfComplex x,
                                         ScmHalfComplex y,
                                         int clamp SCM_UNUSED)
 {
-    complex double cx = complex_half_to_double(x);
-    complex double cy = complex_half_to_double(y);
+    ScmDoubleComplex cx = complex_half_to_double(x);
+    ScmDoubleComplex cy = complex_half_to_double(y);
     return complex_double_to_half(cx-cy);
 }
 
@@ -608,8 +608,8 @@ static inline ScmHalfComplex c32c32_mul(ScmHalfComplex x,
                                         ScmHalfComplex y,
                                         int clamp SCM_UNUSED)
 {
-    complex double cx = complex_half_to_double(x);
-    complex double cy = complex_half_to_double(y);
+    ScmDoubleComplex cx = complex_half_to_double(x);
+    ScmDoubleComplex cy = complex_half_to_double(y);
     return complex_double_to_half(cx*cy);
 }
 
@@ -617,8 +617,8 @@ static inline ScmHalfComplex c32c32_div(ScmHalfComplex x,
                                         ScmHalfComplex y,
                                         int clamp SCM_UNUSED)
 {
-    complex double cx = complex_half_to_double(x);
-    complex double cy = complex_half_to_double(y);
+    ScmDoubleComplex cx = complex_half_to_double(x);
+    ScmDoubleComplex cy = complex_half_to_double(y);
     return complex_double_to_half(cx/cy);
 }
 

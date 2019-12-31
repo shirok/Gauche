@@ -369,11 +369,11 @@
             (set! r (Scm_BinarySearchC32 (+ (SCM_C32VECTOR_ELEMENTS v) s)
                                          (- e s) k p (& lb) (& ub))))]         
          [(SCM_UVECTOR_C64)
-          (let* ([k::(complex float) (Scm_GetFloatComplex key)])
+          (let* ([k::(ScmFloatComplex) (Scm_GetFloatComplex key)])
             (set! r (Scm_BinarySearchC64 (+ (SCM_C64VECTOR_ELEMENTS v) s)
                                          (- e s) k p (& lb) (& ub))))]         
          [(SCM_UVECTOR_C128)
-          (let* ([k::(complex double) (Scm_GetDoubleComplex key)])
+          (let* ([k::(ScmDoubleComplex) (Scm_GetDoubleComplex key)])
             (set! r (Scm_BinarySearchC128 (+ (SCM_C128VECTOR_ELEMENTS v) s)
                                           (- e s) k p (& lb) (& ub))))] 
          [else (Scm_Error "[internal] Invalid uvector type: %S" v)]

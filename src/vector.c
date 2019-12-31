@@ -299,8 +299,8 @@ int Scm_UVectorElementSize(ScmClass *klass)
     static const int sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8,
                                  2, sizeof(float), sizeof(double), -1,
                                  sizeof(ScmHalfComplex),
-                                 sizeof(complex float),
-                                 sizeof(complex double),
+                                 sizeof(ScmFloatComplex),
+                                 sizeof(ScmDoubleComplex),
                                  -1 };
     int ind = (int)Scm_UVectorType(klass);
     if (ind >= 0) return sizes[ind];
@@ -567,8 +567,8 @@ DEF_UVCTOR_FILL(F16, ScmHalfFloat)
 DEF_UVCTOR_FILL(F32, float)
 DEF_UVCTOR_FILL(F64, double)
 DEF_UVCTOR_FILL(C32, ScmHalfComplex)
-DEF_UVCTOR_FILL(C64, complex float)
-DEF_UVCTOR_FILL(C128,complex double)
+DEF_UVCTOR_FILL(C64, ScmFloatComplex)
+DEF_UVCTOR_FILL(C128,ScmDoubleComplex)
 
 DEF_UVCTOR_ARRAY(S8,  int8_t)
 DEF_UVCTOR_ARRAY(U8,  uint8_t)
@@ -582,8 +582,8 @@ DEF_UVCTOR_ARRAY(F16, ScmHalfFloat)
 DEF_UVCTOR_ARRAY(F32, float)
 DEF_UVCTOR_ARRAY(F64, double)
 DEF_UVCTOR_ARRAY(C32, ScmHalfComplex)
-DEF_UVCTOR_ARRAY(C64, complex float)
-DEF_UVCTOR_ARRAY(C128,complex double)
+DEF_UVCTOR_ARRAY(C64, ScmFloatComplex)
+DEF_UVCTOR_ARRAY(C128,ScmDoubleComplex)
 
 /*
  * Reader
@@ -711,8 +711,8 @@ DEF_PRINT(F16, f16, ScmHalfFloat, f16pr)
 DEF_PRINT(F32, f32, float, fpr)
 DEF_PRINT(F64, f64, double, fpr)
 DEF_PRINT(C32, c32, ScmHalfComplex, c32pr)
-DEF_PRINT(C64, c64, complex float, c64pr)
-DEF_PRINT(C128, c128, complex double, c128pr)
+DEF_PRINT(C64, c64, ScmFloatComplex, c64pr)
+DEF_PRINT(C128, c128, ScmDoubleComplex, c128pr)
 
 
 /* comparer */
@@ -761,14 +761,14 @@ static inline int c32lt(ScmHalfComplex x, ScmHalfComplex y)
                 && SCM_HALF_FLOAT_CMP(<, x.i, y.i)));
 }
 
-static inline int c64lt(complex float x, complex float y)
+static inline int c64lt(ScmFloatComplex x, ScmFloatComplex y)
 {
     return (crealf(x) < crealf(y)
             || (crealf(x) == crealf(y)
                 && cimagf(x) < cimagf(y)));
 }
 
-static inline int c128lt(complex double x, complex double y)
+static inline int c128lt(ScmDoubleComplex x, ScmDoubleComplex y)
 {
     return (creal(x) < creal(y)
             || (creal(x) == creal(y)
@@ -788,8 +788,8 @@ DEF_CMP(F16, f16, ScmHalfFloat, f16eqv, f16lt)
 DEF_CMP(F32, f32, float, common_eqv, common_lt)
 DEF_CMP(F64, f64, double, common_eqv, common_lt)
 DEF_CMP(C32, c32, ScmHalfComplex, c32eqv, c32lt)
-DEF_CMP(C64, c64, complex float, common_eqv, c64lt)
-DEF_CMP(C128, c128, complex double, common_eqv, c128lt)
+DEF_CMP(C64, c64, ScmFloatComplex, common_eqv, c64lt)
+DEF_CMP(C128, c128, ScmDoubleComplex, common_eqv, c128lt)
 
 /*=====================================================================
  * Utility

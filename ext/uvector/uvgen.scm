@@ -295,14 +295,14 @@
     ,@(common-rules 'c32)))
 
 (define (make-c64rules)
-  `((etype     "complex float")
+  `((etype     "ScmFloatComplex")
     (REF_NTYPE ,(^[v i] #"SCM_C64VECTOR_ELEMENTS(~v)[~i]"))
     (UNBOX     ,(^[dst src clamp] #"~dst = Scm_GetFloatComplex(~src)"))
     (BOX       ,(^[dst src]       #"~dst = Scm_FloatComplexToComplex(~src)"))
     ,@(common-rules 'c64)))
 
 (define (make-c128rules)
-  `((etype     "complex double")
+  `((etype     "ScmDoubleComplex")
     (REF_NTYPE ,(^[v i] #"SCM_C128VECTOR_ELEMENTS(~v)[~i]"))
     (UNBOX     ,(^[dst src clamp] #"~dst = Scm_GetDoubleComplex(~src)"))
     (BOX       ,(^[dst src]       #"~dst = Scm_DoubleComplexToComplex(~src)"))
