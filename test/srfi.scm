@@ -1999,6 +1999,13 @@
        " abc d ef "
        (regexp-replace-all '(+ space) "  abc \t\n d ef  " " "))
 
+(test* "regexp-replace"
+       "bc pre: <<<bc >>> match1: <<<def>>> post: <<<gh>>>gh"
+       (regexp-replace '(: ($ (+ alpha)) ":" (* space))
+                       "abc def: ghi"
+                       '("pre: <<<" pre ">>> match1: <<<" 1 ">>> post: <<<" post ">>>")
+                       1 11))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-117")
 (use srfi-117)

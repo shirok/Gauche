@@ -173,25 +173,17 @@
           (%regexp-replace-rec rx next subpat subskip
                                (and subcount (- subcount 1))))]))))
 
-(define (%regexp-replace rx string start end subpat subskip subcount)
-  (if (not end)
-    (%regexp-replace rx string start (string-length string)
-                     subpat subskip subcount)
-    (with-output-to-string
+(define (%regexp-replace rx string subpat subskip subcount)
+  (with-output-to-string
       (^[]
-        (unless (zero? start)
-          (display (substring string 0 start)))
-        (%regexp-replace-rec rx (substring string start end)
-                             subpat subskip subcount)
-        (unless (= (string-length string) end)
-          (display (substring string end (string-length string))))))))
+        (%regexp-replace-rec rx string subpat subskip subcount))))
 
 (define-in-module gauche (regexp-replace rx string sub)
-  (%regexp-replace rx string 0 #f
+  (%regexp-replace rx string
                    (%regexp-parse-subpattern sub) 0 1))
 
 (define-in-module gauche (regexp-replace-all rx string sub)
-  (%regexp-replace rx string 0 #f
+  (%regexp-replace rx string
                    (%regexp-parse-subpattern sub) 0 #f))
 
 (define (regexp-replace-driver name func-1)
