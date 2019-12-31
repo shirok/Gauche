@@ -1,3 +1,8 @@
+2019-12-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-3.scm (pass3/optimize-call): Apply constant computation
+	  if arguments are not only constants but has inlinable binding.
+
 2019-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/libproc.scm (procedure-constant?): Added (internally)

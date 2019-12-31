@@ -249,9 +249,9 @@
                       [p (gref-inlinable-proc proc)])
              (or (and (%procedure-inliner p)
                       (pass3/late-inline iform proc p labels))
-                 (and (procedure-constant? p)
-                      (every $const? args)
-                      (pass3/precompute-constant p args))))]
+                 (and-let* ([ (procedure-constant? p) ]
+                            [constargs (pass3/constant-arguments args)])
+                   (pass3/precompute-constant p constargs))))]
           [(and-let* ([ (has-tag? proc $GREF) ]
                       [ (pair? args) ]
                       [ (null? (cdr args)) ]
@@ -260,7 +260,7 @@
                              (car args))])
              (pass3/deduce-predicate-result proc val))]
           [;; Like above, but we follow $LREFs.
-           ;; NB: We tempted to inline calles if the $lref is bound to $lambda
+           ;; NB: We tempted to inline calls if the $lref is bound to $lambda
            ;; node and it has reference count 1---in a non-redundant program,
            ;; it means the $lambda is no recursive call.  Unfortunately it
            ;; breaks when $lambda does have recursive call to itself, and
@@ -289,6 +289,19 @@
              [val  (gloc-ref gloc)]
              [ (procedure? val) ])
     val))
+
+;; Get the constant or inlinable value for each iform in the list; if
+;; we can't get such value from any one, returns #f.
+(define (pass3/constant-arguments iforms)
+  (let loop ([iforms iforms] [args '()])
+    (cond 
+     [(null? iforms) (reverse args)]
+     [($const? (car iforms)) 
+      (loop (cdr iforms) (cons ($const-value (car iforms)) args))]
+     [(has-tag? (car iforms) $GREF)
+      (and-let1 gloc (gref-inlinable-gloc (car iforms))
+        (loop (cdr iforms) (cons (gloc-ref gloc) args)))]
+     [else #f])))
 
 ;; An ad-hoc table of builtin predicates that we can deduce its value
 ;; from what we know about its argument at compile-time.  Even the argument
@@ -357,9 +370,9 @@
 ;; we let the compiler fail, it will be confusing since even a call in
 ;; a dead code can be the cause.  So if we get an error, we give up this
 ;; optimization and let the runtime fail.
-(define (pass3/precompute-constant proc arg-nodes)
+(define (pass3/precompute-constant proc args)
   (guard (e [else #f])                  ; give up optimization
-    (receive r (apply proc (imap (^[a] ($const-value a)) arg-nodes))
+    (receive r (apply proc args)
       (match r
         [()  ($const-undef)]
         [(r) ($const r)]
