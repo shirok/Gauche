@@ -191,6 +191,21 @@
            (test (bar)))
          (foo)))
 
+;; generic function pre-dispatch
+;; NB: We're still not sure how to expose this feature in general.
+;; For the time being, we test the inlining logic (it's in pass 3)
+;; with the hand-wired setting.  Don't copy this way to your production code.
+(define-inline static-gf (make <generic> :name 'static-gf))
+(define-method static-gf :locked ((x <string>)) 'string)
+(define-method static-gf :locked ((x <number>)) 'number)
+((with-module gauche.object generic-seal!) static-gf)
+
+(test* "generic function pre-dispatch"
+       '(((CONST-RET) string))
+       (proc->insn/split (^[] (static-gf "abc"))))
+(test* "generic function pre-dispatch"
+       '(((CONST-RET) number))
+       (proc->insn/split (^[] (static-gf 123))))
 
 (test-end)
 
