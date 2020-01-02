@@ -176,8 +176,9 @@
     (put-u32be! v 0  (%uuid-random-int (ash 1 32)))
     (put-u32be! v 4  (logior (logand (%uuid-random-int (ash 1 32))
                                      #xffff0fff)
-                             #x4000))  ;verson
-    (put-u32be! v 8  (%uuid-random-int (ash 1 32)))
+                             #x4000))  ;Verson 4
+    (put-u32be! v 8  (copy-bit-field (%uuid-random-int (ash 1 32))
+                                     2 30 32)) ;Variant 10
     (put-u32be! v 12 (%uuid-random-int (ash 1 32)))
     (%make-uuid v)))
 
