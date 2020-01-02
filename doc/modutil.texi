@@ -48,6 +48,7 @@
 * SHA message digest::          rfc.sha
 * Transport layer security::    rfc.tls
 * URI parsing and construction::  rfc.uri
+* UUID::                        rfc.uuid
 * Zlib compression library::    rfc.zlib
 * SLIB::                        slib
 * Functional XML parser::       sxml.ssax
@@ -15301,7 +15302,7 @@ we can't securely fetch the file before we get valid CA certs!)
 
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, Zlib compression library, Transport layer security, Library modules - Utilities
+@node URI parsing and construction, UUID, Transport layer security, Library modules - Utilities
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
@@ -15873,7 +15874,92 @@ operations on character sets).
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Zlib compression library, SLIB, URI parsing and construction, Library modules - Utilities
+@node UUID, Zlib compression library, URI parsing and construction, Library modules - Utilities
+@section @code{rfc.uuid} - UUID
+@c NODE UUID, @code{rfc.uuid} - UUID
+
+@deftp {Module} rfc.uuid
+@mdindex rfc.uuid
+This module implements UUID defined in RFC4122.
+
+It provides generators of UUID version 1 and 4, and writer/parser
+of the string represenation of UUIDs.
+@end deftp
+
+@deftp {Class} <uuid>
+@c MOD rfc.uuid
+Class of UUID instances.
+@end deftp
+
+@defun uuid-value uuid
+@c MOD rfc.uuid
+Returns the raw value of @var{uuid} as 16-element @code{u8vector}.
+You shouldn't mutate the returned u8vector.
+@end defun
+
+@defun uuid-version uuid
+@c MOD rfc.uuid
+Returns the version number of @var{uuid}.
+@end defun
+
+@defvar uuid-comparator
+@c MOD rfc.uuid
+A comparator to compare and hash uuids.  @xref{Basic comparators}.
+@end defvar
+
+@defun uuid-random-source-set! random-source
+@c MOD rfc.uuid
+We use PRNG to generate UUIDs.  By default, we internally creates
+a random source and randomize it.  You can pass in your own
+random source instead (@pxref{Sources of random bits}, for the details).
+@end defun
+
+@defun uuid1 :optional node-id
+@c MOD rfc.uuid
+Generates a uuid with version 1 algorithm (timestamp and node id based).
+The optional @var{node-id} argument must be 48bit exact integer
+specifing the node ID (IEEE802 MAC address of the machine).
+If it is omitted, we generate a process-global
+random node ID (with the multicast bit set to 1, so that it won't
+conflict with existing MAC address).
+@end defun
+
+@defun uuid4
+@c MOD rfc.uuid
+Generates a uuid with version 4 algorithm (random numbers).
+@end defun
+
+@defun nil-uuid
+@c MOD rfc.uuid
+Returns a nil-UUID (all bits zero).
+@end defun
+
+@defun parse-uuid string
+@c MOD rfc.uuid
+Takes a string representation of UUID, parses it and returns
+an uuid instance.  If the string isn't a valid UUID representation,
+an error is thrown.
+
+Other than @code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} format,
+it recognizes the one with @code{urn:uuid:} prefix,
+the one enclosed by curly braces, and the one without hyphens.
+@end defun
+
+@defun write-uuid uuid :optional port
+@c MOD rfc.uuid
+Writes out a string representation of @var{uuid},
+in @code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} format, to the given
+port.  If the port is omitted, current output port is used.
+@end defun
+
+@defun uuid->string uuid
+@c MOD rfc.uuid
+Returns a string representation of @var{uuid},
+in @code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} format.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Zlib compression library, SLIB, UUID, Library modules - Utilities
 @section @code{rfc.zlib} - zlib compression library
 @c NODE zlib圧縮ライブラリ, @code{rfc.zlib} - zlib圧縮ライブラリ
 
