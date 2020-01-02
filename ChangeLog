@@ -1,3 +1,7 @@
+2020-01-01  Shiro Kawai  <shiro@acm.org>
+
+	* rfc/uuid.scm: Added.
+
 2019-12-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-3.scm (pass3/optimize-call): Apply constant computation

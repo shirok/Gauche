@@ -113,6 +113,7 @@ SCMFILES = \
        rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \
        rfc/cookie.scm rfc/quoted-printable.scm rfc/http.scm rfc/http/tunnel.scm \
        rfc/hmac.scm rfc/ftp.scm rfc/icmp.scm rfc/ip.scm rfc/json.scm \
+       rfc/uuid.scm \
        scheme/base.scm scheme/box.scm scheme/bitwise.scm \
        scheme/case-lambda.scm scheme/char.scm scheme/charset.scm \
        scheme/comparator.scm scheme/complex.scm scheme/cxr.scm \

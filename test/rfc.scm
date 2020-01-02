@@ -774,4 +774,35 @@
 
 (sys-waitpid -1)
 
+
+;;--------------------------------------------------------------------
+(test-section "rfc.uuid")
+
+(use rfc.uuid)
+(test-module 'rfc.uuid)
+(use srfi-13)
+
+(let1 u "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+  (test* "uuid-parse & write 1" u
+         (uuid->string (parse-uuid u)))
+  (test* "uuid-parse & write 2" u
+         (uuid->string (parse-uuid #"urn:uuid:~u")))
+  (test* "uuid-parse & write 3" u
+         (uuid->string (parse-uuid #"{~u}")))
+  (test* "uuid-parse & write 4" u
+         (uuid->string (parse-uuid (string-delete #\- u))))
+  )
+
+(let* ([u1 (uuid1)]
+       [u2 (uuid1)])
+  (test* "uuid-version" 1 (uuid-version u1))
+  (test* "uuid1 timestamp" #t (<? uuid-comparator u1 u2))
+  (test* "uuid1 node id" #t
+         (u8vector=? (uvector-alias <u8vector> (uuid-value u1) 10)
+                     (uvector-alias <u8vector> (uuid-value u2) 10)))
+  )
+
+(let* ([u (uuid4)])
+  (test* "uuid-version" 4 (uuid-version u)))
+
 (test-end)
