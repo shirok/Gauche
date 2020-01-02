@@ -154,7 +154,7 @@
 
 (define (%pseudo-node)                  ; see Section 4.5
   (logior (%uuid-random-int (ash 1 47))
-          (ash 1 47)))
+          (ash 1 40)))                  ; multicast bit
   
 (define (uuid1 :optional (node-id #f))
   (let ([nid (or node-id 
