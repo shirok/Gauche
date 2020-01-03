@@ -105,12 +105,14 @@
     [([w . ('Node x t1 t2)] . ts)
      (SL `([,(/2 w) . ,t1] [,(/2 w) . ,t2] ,@ts))]))
 
-(define (skew-list-ref sl n)
+(define (skew-list-ref sl n :optional fallback)
   (define (tree-ref w i t)
     (if (= i 0)
       (cadr t)
       (if (= w 1)
-        (error "index out of range" n)
+        (if (undefined? fallback)
+          (error "index out of range" n)
+          fallback)
         (match-let1 ('Node x t1 t2) t
           (let1 w2 (/2 w)
             (if (<= i w2) 
@@ -118,7 +120,9 @@
               (tree-ref w2 (- i 1 w2) t2)))))))
   (define (ref i ts)
     (match ts
-      [() (error "index out of range" n)]
+      [() (if (undefined? fallback)
+            (error "index out of range" n)
+            fallback)]
       [((w . t) . ts)
        (if (< i w) (tree-ref w i t) (ref (- i w) ts))]))
   (assume-type sl <skew-list>)
