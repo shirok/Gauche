@@ -43,7 +43,6 @@
   (use util.match)
   (export <skew-list>
           skew-list?
-          skew-list-elements
           skew-list-empty?
           skew-list-null
           skew-list-cons
