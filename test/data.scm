@@ -745,6 +745,8 @@
          (map-with-index (^[i _] (skew-list-ref sl i)) data))
   (test* "skew-list-ref (out of range)" (test-error)
          (skew-list-ref sl (length data)))
+  (test* "skew-list-ref fallback" 'oops
+         (skew-list-ref sl (length data) 'oops))
   (dotimes [n (length data)]
     (test* #"skew-list-set ~n"
            (rlet1 seq (list-copy data)

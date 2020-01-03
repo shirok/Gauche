@@ -19,6 +19,7 @@
 * Queue::                       data.queue
 * Random data generators::      data.random
 * Ring buffer::                 data.ring-buffer
+* Skew binary random-access lists:: data.skew-list
 * Sparse data containers::      data.sparse
 * Trie::                        data.trie
 * Database independent access layer::  dbi
@@ -4107,7 +4108,7 @@ of nonnegative integers.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Ring buffer, Sparse data containers, Random data generators, Library modules - Utilities
+@node Ring buffer, Skew binary random-access lists, Random data generators, Library modules - Utilities
 @section @code{data.ring-buffer} - Ring buffer
 @c NODE リングバッファ, @code{data.ring-buffer} - リングバッファ
 
@@ -4402,7 +4403,143 @@ An error is signaled if the index is out of bounds.
 
 
 @c ----------------------------------------------------------------------
-@node Sparse data containers, Trie, Ring buffer, Library modules - Utilities
+@node Skew binary random-access lists, Sparse data containers, Ring buffer, Library modules - Utilities
+@section @code{data.skew-list} - Skew binary random-access lists
+@c NODE Skew binary random-access lists, @code{data.sparse} - Skew binary random-access lists
+
+@deftp {Module} data.skew-list
+@mdindex data.skew-list
+This module implements skew binary random-access list (we call it skew-list
+for short).  It's an immutable
+data structure that has propertis of both list and vector; constant
+time to take the first element (car) and append an eleemnt in front
+of existing one (cons), O(log n) to take the rest of
+the elements (cdr), and O(log n) for indexed access, wher n is
+the number of elements.
+
+A skew-list is always 'proper'; that is, it is either an empty
+skew-list (@code{skew-list-null}), or an object appended in front
+of a skew-list.
+@end deftp
+
+@deftp {Class} <skew-list>
+@clindex skew-list
+@c MOD data.skew-list
+The class for skew-lists.
+@end deftp
+
+@defun skew-list? obj
+@c MOD data.skew-list
+Returns @code{#t} iff @var{obj} is a skew-list.
+@end defun
+
+@defun skew-list-empty? sl
+@c MOD data.skew-list
+The argument must be a skew list.  Returns @code{#t} iff @var{sl}
+is an empty skew list.
+@end defun
+
+@defvar skew-list-null
+@c MOD data.skew-list
+An empty skew list.
+@end defvar
+
+@defun skew-list-cons obj sl
+@c MOD data.skew-list
+Returns a new skew-list which has @var{obj} prepended to
+a skew-list @var{sl}.
+@end defun
+
+@defun skew-list-car sl
+@c MOD data.skew-list
+Returns the first element of a skew-list @var{sl}.  An error is
+raised when @var{sl} is empty.
+@end defun
+
+@defun skew-list-cdr sl
+@c MOD data.skew-list
+Returns a new skew-list that containts elements in @var{sl} but
+the firest one.  An error is
+raised when @var{sl} is empty.
+@end defun
+
+@defun skew-list-ref sl k :optional fallback
+@c MOD data.skew-list
+Returns the @var{k}-th element of a skew-list @var{sl}.  If @var{k}
+points past the range of @var{sl}, @var{fallback} is returned if it
+is given, or an error is signaled.
+@end defun
+
+@defun skew-list-set sl k obj
+@c MOD data.skew-list
+Returns a new skew-list which is the same as @var{sl} except the @var{k}-th
+element is replaced with @var{obj}.  The argument @var{sl} remains intact.
+
+It is an error if @var{k} points beyond the last element of @var{sl}.
+@end defun
+
+@defun skew-list-length sl
+@c MOD data.skew-list
+Returns an integer length of a skew-list @var{sl}.
+@end defun
+
+@defun skew-list-length<=? sl n
+@c MOD data.skew-list
+Returns @code{#t} iff the length of a skew-list @var{sl} is less than
+or equal to @var{n}.  It is more efficient than calculating
+the total length and compares with @var{n}.
+@end defun
+
+@defun list->skew-list lis
+@c MOD data.skew-list
+Returns a new skew-list which contains elements in @var{lis}, with the
+same order.  It is an error if @var{lis} is not a proper list.
+@end defun
+
+@defun list*->skew-list lis
+@c MOD data.skew-list
+The argument @var{lis} may be an improper list (but can't be circular).
+Returns two values: a new skew-list which contains elements 
+in @var{lis} except the last cdr of it, and the last cdr of @var{lis}.
+@end defun
+
+@defun skew-list->list sl
+@c MOD data.skew-list
+Returns a new list that contains all the elements in a skew-list @var{sl},
+with the same order.
+@end defun
+
+@defun skew-list->generator sl
+@c MOD data.skew-list
+Returns a new generator that traverses a skew-list @var{sl}.
+@end defun
+
+@defun skew-list->lseq sl
+@c MOD data.skew-list
+Converts a skew-list @var{sl} to a lazy sequence.
+@end defun
+
+@defun skew-list-take sl k
+@defunx skew-list-drop sl k
+@c MOD data.skew-list
+Returns a new skew-list of the first @var{k} elements and the elements
+except the first @var{k} elements, respectively.
+@end defun
+
+@defun skew-list-split-at sl k
+@c MOD data.skew-list
+Returns two values, the result of @code{(skew-list-take sl k)}
+and @code{(skew-list-drop sl k)}, but more efficiently.
+@end defun
+
+@defun skew-list-fold sl kons knil
+@c MOD data.skew-list
+Like @var{fold} on a list.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Sparse data containers, Trie, Skew binary random-access lists, Library modules - Utilities
 @section @code{data.sparse} - Sparse data containers
 @c NODE 疎なデータコンテナ, @code{data.sparse} - 疎なデータコンテナ
 
