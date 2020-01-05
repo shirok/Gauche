@@ -18116,6 +18116,26 @@ in typical cases.
 @end example
 @end deffn
 
+@deffn {Parameter} current-trace-port
+@c EN
+A paremeter that holds an output port which debug trace goes to.
+The initial value is the same as the initial value of @code{current-error-port}.
+@c JP
+デバッグトレース出力に使われる出力ポートを保持するパラメータです。
+初期値は@code{current-error-port}の初期値と同じです。
+@c COMMON
+
+@c EN
+The @code{debug-print} feature (@pxref{Debugging aid}) and
+the macro trace feature (@pxref{Tracing macro expansion}) uses
+this port.
+@c JP
+@code{debug-print}機能(@ref{Debugging aid}参照)と、
+マクロトレース機能(@ref{Tracing macro expansion}参照)がこのポートを使っています。
+@c COMMON
+@end deffn
+
+
 @deffn {Parameter} standard-input-port
 @deffnx {Parameter} standard-output-port
 @deffnx {Parameter} standard-error-port
@@ -27145,6 +27165,14 @@ then prints out the result(s), and returns them.
 @c COMMON
 
 @c EN
+The output goes to the current trace port
+(@pxref{Common port operations}).
+@c JP
+出力は現在のトレース出力ポート (@code{current-trace-port})
+に行きます (@ref{Common port operations}参照)。
+@c COMMON
+
+@c EN
 The special reader syntax @code{#?=@var{expr}} is expanded into
 @code{(debug-print @var{expr})}.  See @ref{Debugging}, for the
 details.
@@ -27178,14 +27206,24 @@ To show all the information, set @code{#f} to this parameter.
 @c EN
 This macro prints the value of @var{arg}s right before calling
 @var{proc} and the result(s) of the call afterwards.
+@c JP
+このマクロは@var{proc}を呼び出す直前に全ての@var{arg}の価を表示し、
+そして@var{proc}の呼び出し後に全ての戻り価を表示します。
+@c COMMON
 
+@c EN
+The output goes to the current trace port
+(@pxref{Common port operations}).
+@c JP
+出力は現在のトレース出力ポート (@code{current-trace-port})
+に行きます (@ref{Common port operations}参照)。
+@c COMMON
+
+@c EN
 The special reader syntax @code{#?,@var{expr}} is expanded into
 @code{(debug-funcall @var{expr})}.  See @ref{Debugging}, for the
 details.
 @c JP
-このマクロは@var{proc}を呼び出す直前に全ての@var{arg}の価を表示し、
-そして@var{proc}の呼び出し後に全ての戻り価を表示します。
-
 特別なリーダ構文 @code{#?,@var{expr}} は @code{(debug-funcall @var{expr})}
 に展開されます。詳しくは @ref{Debugging} を参照してください。
 @c COMMON

@@ -1833,9 +1833,11 @@ every macro expansion.  Be careful not to leave macro trace set.
 @c COMMON
 
 @c EN
-The trace information is output to the current error port.
+The trace information is output to the current trace port.
+(@pxref{Common port operations}).
 @c JP
-トレース情報は現在のエラー出力ポートに出力されます。
+トレース情報は現在のトレース出力ポートに出力されます。
+(@ref{Common port operations}参照)。
 @c COMMON
 @end defun
 
