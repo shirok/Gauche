@@ -79,22 +79,22 @@
                        (car info) (cadr info) (debug-print-width) form)
                (format "#?=~a~,,,,v:s\n" thr-prefix
                        (debug-print-width) form))
-             (current-error-port))))
+             (current-trace-port))))
 
 (define (debug-print-post vals)
   (let1 thr-prefix (case (~ (current-thread)'vmid)
                      [(0) ""]
                      [else => (cut format "[~a]" <>)])
     (if (null? vals)
-      (display (format "#?-~a<void>\n" thr-prefix) (current-error-port))
+      (display (format "#?-~a<void>\n" thr-prefix) (current-trace-port))
       (begin
         (display (format "#?-~a    ~,,,,v:s\n" thr-prefix
                          (debug-print-width) (car vals))
-                 (current-error-port))
+                 (current-trace-port))
         (for-each (^[elt]
                     (display (format/ss "#?+~a    ~,,,,v:s\n" thr-prefix
                                         (debug-print-width) elt)
-                             (current-error-port)))
+                             (current-trace-port)))
                   (cdr vals))))
     (apply values vals)))
 
@@ -124,7 +124,7 @@
 ;; For now, we don't use argforms, but we pass them in so that in future
 ;; we may be able to use them.
 (define (debug-funcall-pre form procname argforms args)
-  (define p (current-error-port))
+  (define p (current-trace-port))
   (define w (- (debug-print-width) (string-length "calling `' with args:")))
   (define argvalw (- (debug-print-width) (string-length "#?,- : ")))
   (cond [(debug-source-info form)

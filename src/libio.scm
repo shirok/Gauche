@@ -96,6 +96,11 @@
 (define-cproc standard-error-port (:optional (p::<output-port>? #f))
   (return (?: p (Scm_SetStderr p) (Scm_Stderr))))
 
+(inline-stub
+ (initcode
+  (Scm_BindPrimitiveParameter (Scm_GaucheModule) 
+                              "current-trace-port"
+                              (Scm_Stderr) 0)))
 
 ;;
 ;; Query and low-level properties

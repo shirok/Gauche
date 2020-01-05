@@ -1,3 +1,9 @@
+2020-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (current-trace-port): A parameter to keep trace output.
+	* src/libmacbase.scm: Macro traces goes to current-trace-port.
+	* lib/gauche/vm/debugger.scm: Debug print goes to current-trace-port.
+
 2020-01-01  Shiro Kawai  <shiro@acm.org>
 
 	* rfc/uuid.scm: Added.
