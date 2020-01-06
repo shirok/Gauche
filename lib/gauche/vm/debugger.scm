@@ -79,7 +79,8 @@
                        (car info) (cadr info) (debug-print-width) form)
                (format "#?=~a~,,,,v:s\n" thr-prefix
                        (debug-print-width) form))
-             (current-trace-port))))
+             (current-trace-port))
+    (flush (current-trace-port))))
 
 (define (debug-print-post vals)
   (let1 thr-prefix (case (~ (current-thread)'vmid)
@@ -96,6 +97,7 @@
                                         (debug-print-width) elt)
                              (current-trace-port)))
                   (cdr vals))))
+    (flush (current-trace-port))
     (apply values vals)))
 
 ;; debug-funcall
@@ -133,4 +135,5 @@
         [else
          (format p "#?,calling `~,,,,v:s' with args:\n" w procname)])
   (dolist [arg args]
-    (format p "#?,> ~,,,,v:s\n" w arg)))
+    (format p "#?,> ~,,,,v:s\n" w arg))
+  (flush p))

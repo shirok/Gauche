@@ -170,7 +170,8 @@
         (pprint (car unraveled) :port (current-trace-port) :level #f :length #f)
         (display "\nMacro output<<<\n" (current-trace-port))
         (pprint (cdr unraveled) :port (current-trace-port) :level #f :length #f)
-        (display "\n" (current-trace-port))))
+        (display "\n" (current-trace-port))
+        (flush (current-trace-port))))
     out))
 
 (define-cproc make-syntax (name::<symbol> module::<module> proc)
