@@ -825,6 +825,36 @@
   (t-take 26 15)
   )
 
+;; append 
+(let ()
+  (define (t-append i j)
+    (let ([x (iota i)]
+          [y (iota j)])
+      (test* "skew-list-append" (append x y)
+             (skew-list->list (skew-list-append (list->skew-list x)
+                                                (list->skew-list y))))))
+  (t-append 0 0)
+  (t-append 0 1)
+  (t-append 1 0)
+  (t-append 1 1)
+  (t-append 1 2)
+  (t-append 1 3)
+  (t-append 1 4)
+  (t-append 1 5)
+  (t-append 2 1)
+  (t-append 2 2)
+  (t-append 2 3)
+  (t-append 2 6)
+  (t-append 3 1)
+  (t-append 3 2)
+  (t-append 3 3)
+  (t-append 3 4)
+  (t-append 3 6)
+  (t-append 3 7)
+  (t-append 3 10)
+  (t-append 5 10)
+  )
+
 ;; sequence protocol
 (test* "skew-list size-of" 5 
        (size-of (list->skew-list '(a b c d e))))

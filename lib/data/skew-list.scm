@@ -60,7 +60,8 @@
           skew-list->lseq
           skew-list-take
           skew-list-drop
-          skew-list-split-at)
+          skew-list-split-at
+          skew-list-append)
   )
 (select-module data.skew-list)
 
@@ -350,6 +351,30 @@
 (define (skew-list-split-at sl k)
   (let1 r (%skew-list-splitter sl k 'split)
     (values (car r) (cdr r))))
+
+(define (skew-list-append sl . sls)
+  (cond [(null? sls) sl]
+        [(skew-list-empty? sl) (apply skew-list-append sls)]
+        [(not (skew-list? sl)) (error "argument must be a skew list:" sl)]
+        [else (%skew-list-append2 sl (apply skew-list-append sls))]))
+
+(define (%skew-list-append2 sl1 sl2)
+  (define (slow-append sl1 sl2)
+    (list->skew-list (append (skew-list->list sl1) (skew-list->list sl2))))
+  (match (skew-list-elements sl1)
+    [((1 . ('Leaf x))) (skew-list-cons x sl2)]
+    [((w0 . t0))
+     (match-let1 ((w1 . t1) . ts) (skew-list-elements sl2)
+       (if (= w0 w1)
+         (SL (cons (car (skew-list-elements sl1)) (skew-list-elements sl2)))
+         (slow-append sl1 sl2)))]
+    [_
+     (match-let1 (wz . tz) (last (skew-list-elements sl1))
+       (match-let1 ((w1 . t1) . ts) (skew-list-elements sl2)
+         (if (< wz w1)
+           (SL (append (skew-list-elements sl1) (skew-list-elements sl2)))
+           (slow-append sl1 sl2))))]))
+                
 
 ;;;
 ;;; Collection & sequence protocol
