@@ -4426,6 +4426,8 @@ of a skew-list.
 @clindex skew-list
 @c MOD data.skew-list
 The class for skew-lists.
+
+It inherits @code{<sequence>} and follws the sequence protocol.
 @end deftp
 
 @defun skew-list? obj
@@ -4468,6 +4470,9 @@ raised when @var{sl} is empty.
 Returns the @var{k}-th element of a skew-list @var{sl}.  If @var{k}
 points past the range of @var{sl}, @var{fallback} is returned if it
 is given, or an error is signaled.
+
+Sicne a skew-list is also a sequence, you can use generic @code{ref} as well
+(@pxref{Sequence framework}.
 @end defun
 
 @defun skew-list-set sl k obj
@@ -4481,6 +4486,9 @@ It is an error if @var{k} points beyond the last element of @var{sl}.
 @defun skew-list-length sl
 @c MOD data.skew-list
 Returns an integer length of a skew-list @var{sl}.
+
+Sicne a skew-list is also a sequence, you can use generic @code{size-of} as well
+(@pxref{Sequence framework}.
 @end defun
 
 @defun skew-list-length<=? sl n
@@ -4494,6 +4502,9 @@ the total length and compares with @var{n}.
 @c MOD data.skew-list
 Returns a new skew-list which contains elements in @var{lis}, with the
 same order.  It is an error if @var{lis} is not a proper list.
+
+Sicne a skew-list is also a sequence, you can use generic @code{coerce-to}
+as well (@pxref{Sequence framework}.
 @end defun
 
 @defun list*->skew-list lis
@@ -4507,6 +4518,9 @@ in @var{lis} except the last cdr of it, and the last cdr of @var{lis}.
 @c MOD data.skew-list
 Returns a new list that contains all the elements in a skew-list @var{sl},
 with the same order.
+
+Sicne a skew-list is also a sequence, you can use generic @code{coerce-to}
+as well (@pxref{Sequence framework}.
 @end defun
 
 @defun skew-list->generator sl
@@ -4532,9 +4546,27 @@ Returns two values, the result of @code{(skew-list-take sl k)}
 and @code{(skew-list-drop sl k)}, but more efficiently.
 @end defun
 
+@defun skew-list-append sl sl2 @dots{}
+@c MOD data.skew-list
+Returns a skew-list which is a concatenation of all the given skew-lists.
+@end defun
+
 @defun skew-list-fold sl kons knil
 @c MOD data.skew-list
 Like @var{fold} on a list.
+
+Sicne a skew-list is also a sequence, you can use generic @code{fold}
+as well (@pxref{Sequence framework}.
+@end defun
+
+@defun skew-list-map sl proc
+@c MOD data.skew-list
+Returns a skew list, each element of which is the result of
+applying @var{proc} on the element of @var{sl}.
+
+NB: If you want ot map over multiple skew-lists, you can use generic
+@code{map} (@pxref{Sequence framework}).  The @code{skew-list-map} employs
+optimization that's specific to one-argument case.
 @end defun
 
 
