@@ -753,6 +753,12 @@
              (list-set! seq n 'z))
            (skew-list->list (skew-list-set sl n 'z)))))
 
+;; mapping
+(let1 sl (list->skew-list (iota 22))
+  (define (f x) (+ (* 2 x) 1))
+  (test* "skew-list-map" (map f (skew-list->list sl))
+         (skew-list->list (skew-list-map sl f))))
+
 ;; generator & lseq
 (let* ([data '(a b c d e f g h i j k l m n o p q r s t u v w x y z)]
        [sl (list->skew-list data)])

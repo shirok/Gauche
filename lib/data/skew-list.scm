@@ -51,6 +51,7 @@
           skew-list-ref
           skew-list-set
           skew-list-fold
+          skew-list-map
           skew-list-length
           skew-list-length<=?
           list*->skew-list
@@ -213,6 +214,16 @@
        (tree-fold t2 (tree-fold t1 (proc x seed)))]))
   (assume-type sl <skew-list>)
   (fold (^[p s] (tree-fold (cdr p) s)) seed (skew-list-elements sl)))
+
+;; NB: We don't support general (n-ary) map; it can be done via
+;; sequence framework.  One arg map is worth to support, for we can take
+;; advantage of isomorphism of input and output.
+(define (skew-list-map sl f)
+  (define (tmap tree)
+    (match tree
+      [('Leaf x) `(Leaf ,(f x))]
+      [('Node x t0 t1) `(Node ,(f x) ,(tmap t0) ,(tmap t1))]))
+  (SL (map (^p `(,(car p) . ,(tmap (cdr p)))) (skew-list-elements sl))))
 
 (define (skew-list-length sl)
   (assume-type sl <skew-list>)
