@@ -10294,17 +10294,41 @@ Mersenne Twister RNGの状態をカプセル化するクラスです。
 @defun mt-random-set-seed! mt seed
 @c MOD math.mt-random
 @c EN
-Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
+Sets random seed value @var{seed} to the Mersenne Twister RNG (MTRNG) @var{mt}.
 @var{Seed} can be an arbitrary positive exact integer,
 or arbitrary length of u32vector (@pxref{Homogeneous vectors}).
 If it is an integer, the lower 32bits are used for initialization.
 If it is a u32vector, up to 624 elements are used for initialization.
 @c JP
-Mersenne Twister RNG @var{mt}にランダムシードの値@var{seed}をセットします。
+メルセンヌツイスターRNG @var{mt}にランダムシードの値@var{seed}をセットします。
 @var{seed}は任意の正の正確整数か、任意長のu32vector
 (@ref{Homogeneous vectors}参照)が使えます。
 整数の場合は、初期化のために低位の32ビットが使われます。
 u32vectorの場合は、初期化のために624までの要素が使われます。
+@c COMMON
+
+@c EN
+Internally, MTRNG keeps its state in 624 32-bit integers.  If only
+one integer is given, it fills the state space using simple linear
+congruential method starting from the seed value.  If you do so,
+there is an algorithm
+that only samples a couple of result from MTRNG to calculate the original
+seed value, hence can predict entire sequence.  If you want the random
+sequence harder to predict, prepare your own u32vector seed filled with
+high-entroby bits.
+
+Note that Mersenne Twister is never intended for cryptograhpy, you shouldn't
+use it for such purpose anyway.
+@c JP
+MTRNGは624要素の32ビット整数配列を内部状態として持っています。もし単一の整数のみが
+シードとして与えられたら、そこから単純な線形合同法で得られる数列で内部状態が初期化されます。
+そういた場合、MTRNGの二つの出力だけからシード値を逆算するアルゴリズムがあり、
+全ての乱数列の値が予測できてしまいます。
+もし乱数列をもっと予測しづらくしたいなら、u32vectorをエントロピーの高いビットで満たして
+それをシードとして使ってください。
+
+メルセンヌツイスターは暗号学的に安全であることを意図して作られてはいません。
+暗号用途には使わないでください。
 @c COMMON
 @end defun
 
