@@ -1,3 +1,8 @@
+2020-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfi-27.scm (random-source-randomize!): If /dev/urandom is
+	  available, use 128 bits from it for the seed.
+
 2020-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (current-trace-port): A parameter to keep trace output.

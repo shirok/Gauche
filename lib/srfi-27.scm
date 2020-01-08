@@ -35,7 +35,8 @@
 
 (define-module srfi-27
   (use math.mt-random)
-  (use srfi-4)
+  (use gauche.uvector)
+  (use binary.io)
   (export random-integer random-real default-random-source
           make-random-source random-source?
           random-source-state-ref random-source-state-set!
@@ -59,16 +60,24 @@
 (define (random-source-state-set! source state)
   (mt-random-set-state! source state))
 
-(define (%ensure-random-source source)
-  (unless (random-source? source)
-    (error "random source required, but got" source)))
-
 ;; Randomize
 (define (random-source-randomize! source)
-  (%ensure-random-source source)
-  (mt-random-set-seed! source
-                       (let1 s (* (exact (sys-time)) (sys-getpid))
-                         (logior s (ash s -16)))))
+  (assume (random-source? source))
+  (cond
+   [(sys-access "/dev/urandom" R_OK)
+    (call-with-input-file "/dev/urandom"
+      (^p
+       (let1 seedv (make-u32vector 4)
+         (u32vector-set! seedv 0 (read-u32 p))
+         (u32vector-set! seedv 1 (read-u32 p))
+         (u32vector-set! seedv 2 (read-u32 p))
+         (u32vector-set! seedv 3 (read-u32 p))
+         (mt-random-set-seed! source seedv))))]
+   [else
+    (let1 t (current-time)
+      (mt-random-set-seed! source
+                           (* (~ t'second) (~ t'nanosecond)
+                              (sys-getpid))))]))
 
 (define (random-source-pseudo-randomize! source i j)
   ;; This procedure is effectively required to map integers (i,j) into
@@ -90,7 +99,7 @@
         (interleave-i i q (cons r lis)))))
 
   ;; main body
-  (%ensure-random-source source)
+  (assume (random-source? source))
   (when (or (not (integer? i)) (not (integer? j))
             (negative? i) (negative? j))
     (errorf "indices must be non-negative integers: ~s, ~s" i j))
@@ -100,16 +109,16 @@
 
 ;; Obtain generators from random source.
 (define (random-source-make-integers source)
-  (%ensure-random-source source)
+  (assume (random-source? source))
   (^n (mt-random-integer source n)))
 
 (define random-source-make-reals
   (case-lambda
     [(source)
-     (%ensure-random-source source)
+     (assume (random-source? source))
      (^[] (mt-random-real source))]
     [(source unit)
-     (%ensure-random-source source)
+     (assume (random-source? source))
      (unless (< 0 unit 1)
        (error "unit must be between 0.0 and 1.0 (exclusive), but got" unit))
      (let* ([1/unit (/ unit)]
