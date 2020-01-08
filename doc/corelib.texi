@@ -20409,7 +20409,7 @@ to preserve topology of a graph structure.
 
 @example
 (let1 x (list 1)
-  (write (list x x)))
+  (write-shared (list x x)))
  @result{} @r{shows} (#0=(1) #0#)
 @end example
 
