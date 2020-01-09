@@ -86,13 +86,24 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
 void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
 {
     if (SCM_INTP(seed)) {
-        Scm_MTInitByUI(mt, Scm_GetUInteger(seed));
+        /* For the backward compatibility, we only use the lower 32bit. */
+        Scm_MTInitByUI(mt, (uint32_t)Scm_GetUInteger(seed));
     } else if (SCM_BIGNUMP(seed)) {
-        int i; unsigned long s = 0;
-        for (i=0; i<(int)SCM_BIGNUM_SIZE(seed); i++) {
-            s ^= SCM_BIGNUM(seed)->values[i];
+#if SIZEOF_LONG == 4
+        Scm_MTInitByArray(mt, (int32_t*)SCM_BIGNUM(seed)->values,
+                          (int)SCM_BIGNUM_SIZE(seed));
+#elif SIZEOF_LONG == 8
+        /* We can't just pass seed->values as (int32_t*), for the result
+           would differ by endianness. */
+        int32_t seedv[SCM_BIGNUM_SIZE(seed)*2];
+        for (size_t i=0; i<SCM_BIGNUM_SIZE(seed); i++) {
+            seedv[i*2] = (int32_t)(SCM_BIGNUM(seed)->values[i]&0xffffffff);
+            seedv[i*2+1] = (int32_t)(SCM_BIGNUM(seed)->values[i]>>32);
         }
-        Scm_MTInitByUI(mt, s);
+        Scm_MTInitByArray(mt, seedv, (int)SCM_BIGNUM_SIZE(seed)*2);
+#else
+#error "sizeof(long) must be 4 or 8"
+#endif
     } else if (SCM_U32VECTORP(seed)) {
         Scm_MTInitByArray(mt, (int32_t*)SCM_U32VECTOR_ELEMENTS(seed),
                           SCM_U32VECTOR_SIZE(seed));

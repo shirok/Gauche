@@ -1,3 +1,11 @@
+2020-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random/mt-random.c (Scm_MTInitByUI): When bignum is given
+	  as a seed, use all the bits in it.  (Technically this is
+	  an INCOMPATIBLE CHANGE, for the random series would change
+	  for the same bignum seed.  We assume it is rare that bignum
+	  is actually used.)
+
 2020-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfi-27.scm (random-source-randomize!): If /dev/urandom is
