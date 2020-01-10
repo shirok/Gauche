@@ -739,6 +739,12 @@
   (test* #"skew-list-length ~n" n
          (skew-list-length (list->skew-list (make-list n)))))
 
+(let ([series '(0 1 2 3 5 8 13 21)])
+  (dolist [x series]
+    (dolist [y series]
+      (test* #"skew-list-length<=? ~x ~y" (<= x y)
+             (skew-list-length<=? (list->skew-list (iota x)) y)))))
+
 (let* ([data '(a b c d e f g h i j k l m n o p q r s t u v w x y z)]
        [sl (list->skew-list data)])
   (test* "skew-list-ref" data

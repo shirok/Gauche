@@ -243,8 +243,8 @@
 (define (skew-list-length<=? sl k)
   (assume-type sl <skew-list>)
   (let loop ([es (skew-list-elements sl)] [s 0])
-    (cond [(null? es) #t]
-          [(< k s) #f]
+    (cond [(< k s) #f]
+          [(null? es) #t]
           [else (loop (cdr es) (+ s (caar es)))])))
 
 ;; Tree, Int, Int, [Tree] -> [Tree]
