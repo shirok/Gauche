@@ -203,6 +203,14 @@
   (reverse (skew-list-fold sl cons '())))
 
 ;;;
+;;; Comparison
+;;;
+
+(define-method object-equal? ((a <skew-list>) (b <skew-list>))
+  (equal? (skew-list-elements a)
+          (skew-list-elements b)))
+
+;;;
 ;;; Utilities
 ;;;
 
