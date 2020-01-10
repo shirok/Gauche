@@ -41,6 +41,7 @@
   (use gauche.record)
   (use gauche.sequence)
   (use util.match)
+  (use util.queue)
   (export <skew-list>
           skew-list?
           skew-list-empty?
@@ -66,7 +67,9 @@
   )
 (select-module data.skew-list)
 
-(define-record-type (<skew-list> #f :mixins (<sequence>))
+(define-class <skew-list-meta> (<record-meta>) ())
+(define-record-type (<skew-list> #f :mixins (<sequence>)
+                                    :metaclass <skew-list-meta>)
   SL skew-list?
   (elements skew-list-elements))               ; [(Int, Tree)]]
 
@@ -406,6 +409,11 @@
   (define (next) (begin0 item
                    (set!-values (item end) (iter))))
   (proc end? next))
+
+(define-method call-with-builder ((slc <skew-list-meta>) proc :allow-other-keys)
+  (let1 q (make-queue)
+    (proc (cut enqueue! q <>)
+          (cut list->skew-list (dequeue-all! q)))))
 
 (define-method fold (proc knil (sl <skew-list>))
   (skew-list-fold sl proc knil))
