@@ -70,8 +70,13 @@
 (define-class <skew-list-meta> (<record-meta>) ())
 (define-record-type (<skew-list> #f :mixins (<sequence>)
                                     :metaclass <skew-list-meta>)
-  SL skew-list?
+  %make-sl skew-list?
   (elements skew-list-elements))               ; [(Int, Tree)]]
+
+(define (SL elts)
+  (if (null? elts)
+    skew-list-null                      ;singleton to save allocation
+    (%make-sl elts)))
 
 ;; We use these frequently.  NB: n is always 2^k-1.
 (define-inline (/2 n) (ash n -1))
@@ -84,7 +89,7 @@
 (define (skew-list-empty? sl)
   (assume-type sl <skew-list>)
   (null? (skew-list-elements sl)))
-(define skew-list-null (SL '()))
+(define skew-list-null (%make-sl '()))
 
 (define (skew-list-cons x y)
   (assume-type y <skew-list>)
