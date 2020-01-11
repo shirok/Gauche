@@ -1,3 +1,7 @@
+2020-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-101.scm: Added.
+
 2020-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/mt-random/mt-random.c (Scm_MTInitByUI): When bignum is given

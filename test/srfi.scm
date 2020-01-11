@@ -1689,6 +1689,167 @@
 (test-module 'srfi-98)
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-101")
+(define-module srfi-101-test
+  (use gauche.test)
+  (use util.match)
+  (use srfi-101 :prefix ra:)
+  (test-module 'srfi-101)
+
+  (test* "ra-quote" (ra:quote (1 2 3)) (ra:list 1 2 3))
+  (test* "ra-quote" (ra:quote (1 . 2)) (ra:cons 1 2))
+  (test* "ra-quote" (ra:quote 1) 1)
+  (test* "ra-quote" (ra:quote ()) '())
+  (test* "ra-pairs" #t (ra:pair? (ra:cons 'a 'b)))
+  (test* "ra-pairs" #t (ra:pair? (ra:list 'a 'b 'c)))
+  (test* "ra-pairs" #f (ra:pair? (ra:quote ())))
+  (test* "ra-pairs" #f (ra:pair? (ra:quote #(a b))))
+
+  (test* "conversions" '(a b c d e)
+         (ra:random-access-list->linear-access-list
+          (ra:list 'a 'b 'c 'd 'e)))
+  (test* "conversions" '(a b . c)
+         (ra:random-access-list->linear-access-list
+          (ra:cons 'a (ra:cons 'b 'c))))
+  (test* "conversions" (ra:list 'a 'b 'c 'd 'e)
+         (ra:linear-access-list->random-access-list
+          '(a b c d e)))
+  (test* "conversions" (ra:cons 'a (ra:cons 'b 'c))
+         (ra:linear-access-list->random-access-list
+          '(a b . c)))
+  (test* "conversions" 'a
+         (ra:linear-access-list->random-access-list 'a))
+
+  (let ()
+    (define-syntax t-pair
+      (syntax-rules ()
+        [(_ ca cd)
+         (begin (test* #"(ra-cons ~ca ~cd)" ca (ra:car (ra:cons ca cd)))
+                (test* #"(ra-cons ~ca ~cd)" cd (ra:cdr (ra:cons ca cd))))]))
+    (t-pair 1 2)
+    (t-pair 1 (ra:list 2))
+    (t-pair 1 '()))
+  (test* "ra-car" (test-error) (ra:car '()))
+  (test* "ra-cdr" (test-error) (ra:cdr '()))
+
+  (let ()
+    (define (make-tree kons depth seed)
+      (if (zero? depth)
+        (values seed (+ seed 1))
+        (receive (x sx) (make-tree kons (- depth 1) seed)
+          (receive (y sy) (make-tree kons (- depth 1) sx)
+            (values (kons x y) sy)))))
+    (define tree    (make-tree cons 4 0))
+    (define ra-tree (make-tree ra:cons 4 0))
+    (define (x->ra x)
+      (if (pair? x)
+        (ra:cons (x->ra (car x)) (x->ra (cdr x)))
+        x))
+    (define-syntax t
+      (er-macro-transformer
+       (^[f r c]
+         (match f
+           [(_ name)
+            (let ([ra-name (symbol-append 'ra: name)])
+              (quasirename r
+                `(test* ,ra-name (x->ra (,name tree))
+                        (,ra-name ra-tree))))]))))
+    (t car) (t cdr)
+    (t caar) (t cadr) (t cdar) (t cddr)
+    (t caaar) (t caadr) (t cadar) (t caddr)
+    (t cdaar) (t cdadr) (t cddar) (t cdddr)
+    (t caaaar) (t caaadr) (t caadar) (t caaddr)
+    (t cadaar) (t cadadr) (t caddar) (t cadddr)
+    (t cdaaar) (t cdaadr) (t cdadar) (t cdaddr)
+    (t cddaar) (t cddadr) (t cdddar) (t cddddr)
+    )
+
+  (test* "ra-null?" #t (ra:null? '()))
+  (test* "ra-null?" #t (ra:null? (ra:list)))
+  (test* "ra-null?" #f (ra:null? 'x))
+  (test* "ra-list?" #t (ra:list? '()))
+  (test* "ra-list?" #t (ra:list? (ra:list)))
+  (test* "ra-list?" #t (ra:list? (ra:list 1 2 3)))
+  (test* "ra-list?" #f (ra:list? (ra:cons 1 2)))
+  (test* "ra-make-list" '(1 1 1 1 1)
+         (ra:random-access-list->linear-access-list (ra:make-list 5 1)))
+
+  (dotimes [n 10]
+    (test* "ra-length" n (ra:length (ra:make-list n))))
+  (test* "ra-append" '(a b c)
+         (ra:random-access-list->linear-access-list
+          (ra:append (ra:quote (a b c)))))
+  (test* "ra-append" 'x
+         (ra:random-access-list->linear-access-list
+          (ra:append (ra:quote x))))
+  (test* "ra-append" '(a b c d e f . g)
+         (ra:random-access-list->linear-access-list
+          (ra:append (ra:quote (a b c)) (ra:quote (d e f . g)))))
+  (test* "ra-append" '(a b c d e f . g)
+         (ra:random-access-list->linear-access-list
+          (ra:append (ra:quote (a b c)) (ra:quote (d e f)) (ra:quote g))))
+  (test* "ra-append" '(a b c d e f . g)
+         (ra:random-access-list->linear-access-list
+          (ra:append (ra:quote (a b c)) (ra:quote (d e)) (ra:quote (f . g)))))
+  (test* "ra-append" '(a b . c)
+         (ra:random-access-list->linear-access-list
+          (ra:append (ra:quote (a b)) (ra:quote ()) (ra:quote c))))
+  (test* "ra-append" (test-error) (ra:append (ra:quote x) (ra:quote y)))
+  (test* "ra-reverse" '()
+         (ra:random-access-list->linear-access-list (ra:reverse '())))
+  (test* "ra-reverse" '(e d c b a)
+         (ra:random-access-list->linear-access-list
+          (ra:reverse (ra:quote (a b c d e)))))
+  (test* "ra-reverse" (test-error) (ra:reverse (ra:quote a)))
+
+  (test* "ra-list-tail" '() (ra:list-tail (ra:list) 0))
+  (test* "ra-list-tail" (test-error) (ra:list-tail (ra:list) 1))
+  (test* "ra-list-tail" (ra:list 1 2 3) (ra:list-tail (ra:list 0 1 2 3) 1))
+  (test* "ra-list-tail" (ra:cons 2 3)
+         (ra:list-tail (ra:linear-access-list->random-access-list '(0 1 2 . 3))
+                       2))
+  (test* "ra-list-tail" 3
+         (ra:list-tail (ra:linear-access-list->random-access-list '(0 1 2 . 3))
+                       3))
+  (test* "ra-list-tail" (test-error)
+         (ra:list-tail (ra:linear-access-list->random-access-list '(0 1 2 . 3))
+                       4))
+  (test* "ra-list-ref" (test-error) (ra:list-ref (ra:list) 0))
+  (test* "ra-list-ref" 'a (ra:list-ref (ra:list 'a 'b 'c) 0))
+  (test* "ra-list-ref" 'b (ra:list-ref (ra:list 'a 'b 'c) 1))
+  (test* "ra-list-ref" 'c (ra:list-ref (ra:list 'a 'b 'c) 2))
+  (test* "ra-list-ref" 'a (ra:list-ref (ra:cons 'a 'b) 0))
+  (test* "ra-list-set" (test-error) (ra:list-set (ra:list) 0 'a))
+  (test* "ra-list-set" (ra:quote (z b c))
+         (ra:list-set (ra:list 'a 'b 'c) 0 'z))
+  (test* "ra-list-set" (ra:quote (a z c))
+         (ra:list-set (ra:list 'a 'b 'c) 1 'z))
+  (test* "ra-list-set" (ra:quote (a b z))
+         (ra:list-set (ra:list 'a 'b 'c) 2 'z))
+  (test* "ra-list-ref/update" (list 1 (ra:quote (0 10 2)))
+         (values->list
+          (ra:list-ref/update (ra:list  0 1 2) 1 (cut * <> 10))))
+
+  (test* "ra-map" (ra:quote (2 4 6))
+         (ra:map (cut * 2 <>) (ra:list 1 2 3)))
+  (test* "ra-map" (ra:quote ((1 . 4) (2 . 5) (3 . 6)))
+         (ra:map ra:cons (ra:list 1 2 3) (ra:list 4 5 6)))
+  (test* "ra-map" (test-error)
+         (ra:map ra:cons (ra:list 1 2 3) (ra:list 4 5 6 7)))
+  (test* "ra-for-each" '(4 3 2 1)
+         (rlet1 xs '()
+           (ra:for-each (^x (push! xs x)) (ra:list 1 2 3 4))))
+  (test* "ra-for-each" '((3 . 6) (2 . 5) (1 . 4))
+         (rlet1 xs '()
+           (ra:for-each (^[x y] (push! xs (cons x y)))
+                        (ra:list 1 2 3) (ra:list 4 5 6))))
+  (test* "ra-for-each" (test-error)
+         (rlet1 xs '()
+           (ra:for-each (^[x y] (push! xs (cons x y)))
+                        (ra:list 1 2 3 4) (ra:list 4 5 6))))
+  )
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-111")
 (use srfi-111)
 (test-module 'srfi-111)
