@@ -338,17 +338,17 @@
 
   ;; NB: Autoconf uses AC_PROG_CC to set up CC.  However, we need
   ;; to use the same C compiler with which Gauche was compiled, so
-  ;; so we set it as the default.  We also allow env overrides for
-  ;; some common variables.  (In autoconf, AC_PROG_CC issues AC_ARG_VAR
+  ;; we set it as the default.  We also allow env overrides for some
+  ;; common variables.  (In autoconf, AC_PROG_CC issues AC_ARG_VAR
   ;; for them).
   (cf-subst 'CC       (gauche-config "--cc"))
   (cf-arg-var 'CPP)
-  (cf-arg-var 'CPPFALGS)
+  (cf-arg-var 'CPPFLAGS)
   (cf-arg-var 'CC)
   (cf-arg-var 'CFLAGS)
   (cf-arg-var 'LDFLAGS)
   (cf-arg-var 'LIBS)
-  ;; NB: Autoconf detemines these through tests, but we already
+  ;; NB: Autoconf determines these through tests, but we already
   ;; know them at the time Gauche is configured.
   (cf-subst 'SOEXT  (gauche-config "--so-suffix"))
   (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
@@ -600,8 +600,22 @@
   (cf-path-prog 'GAUCHE_INSTALL  "gauche-install")
   (cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
 
+  ;; C build settings
+  (unless (cf-have-subst? 'CFLAGS)
+    (cf-subst 'CFLAGS (gauche-config "--default-cflags")))
+  (unless (cf-have-subst? 'CPPFLAGS) (cf-subst 'CPPFLAGS ""))
+  (unless (cf-have-subst? 'LDFLAGS)  (cf-subst 'LDFLAGS  ""))
+  (unless (cf-have-subst? 'LIBS)     (cf-subst 'LIBS     ""))
+
+  ;; For Windows Unicode support
+  (cond-expand
+   [(and gauche.os.windows gauche.ces.utf8)
+    (unless (#/(^-|\s+-)DUNICODE\b/ (cf$ 'CPPFLAGS))
+      (cf-subst-append 'CPPFLAGS "-DUNICODE"))]
+   [else])
+
   (cf-subst 'default_prefix (gauche-config "--prefix"))
- 
+
   (cf-subst 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
   (cf-subst 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
   (cf-subst 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
