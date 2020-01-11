@@ -1,3 +1,7 @@
+2020-01-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/rlist.scm: srfi-101 is also scheme.rlist
+
 2020-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-101.scm: Added.

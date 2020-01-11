@@ -760,6 +760,19 @@ Supported by the module @code{gauche.record}.  @xref{Record types}.
 ERR5RS レコード
 モジュール@code{gauche.record}でサポートされます。@ref{Record types}参照。
 
+
+srfi-101, srfi-101
+()
+
+Purely functional random-access pairs and lists
+This has become a part of R7RS large.
+Supported by the module @code{scheme.rlist}.
+
+純粋に関数的でランダムアクセス可能なペアとリスト
+これはR7RS largeの一部となりました。
+モジュール@code{scheme.rlist}でサポートされます。
+
+
 srfi-106, srfi-106
 ()
 

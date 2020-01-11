@@ -125,7 +125,7 @@ SCMFILES = \
        scheme/list-queue.scm scheme/list.scm scheme/load.scm \
        scheme/lseq.scm scheme/mapping.scm scheme/mapping/hash.scm \
        scheme/process-context.scm scheme/r5rs.scm scheme/read.scm \
-       scheme/regex.scm scheme/repl.scm \
+       scheme/regex.scm scheme/repl.scm scheme/rlist.scm \
        scheme/set.scm scheme/sort.scm \
        scheme/stream.scm scheme/stream/primitive.scm scheme/stream/derived.scm \
        scheme/time.scm \
