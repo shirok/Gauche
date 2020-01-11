@@ -782,7 +782,7 @@
         (quasirename r
           `(let1 v ,expr
              (unless (is-a? v ,type)
-               (type-error 'expr ,type v))))]))))
+               (type-error ',expr ,type v))))]))))
 
 ;;; repeat construct
 
