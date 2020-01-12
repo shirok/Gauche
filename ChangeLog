@@ -1,3 +1,8 @@
+2020-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($assert, $assert-not, $and): Added zero-width
+	  assertions.
+
 2020-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/endian.h, src/gauche/priv/bytesP.h: C MACRO API CHANGE:

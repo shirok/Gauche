@@ -53,7 +53,8 @@
           return-failure/message return-failure/compound
           
           $bind $return $fail $expect $lift $lift* $debug
-          $do $let $let* $try $seq $or $fold-parsers $fold-parsers-right
+          $do $let $let* $try $assert $assert-not $and
+          $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many $skip-many1
           $repeat $optional
           $alternate
@@ -553,9 +554,44 @@
 ;;   would try a, b, ... even some of them consumes the input.
 (define-inline ($try p)
   (^[s0] (receive (r v s) (p s0)
-           (if (not r)
+           (if (parse-success? r)
              (return-result v s)
              (values r v s0)))))
+
+;; API
+;; $assert parser
+;;   Match parser, but never consumes the result.
+;;   On success, the value of th he parser is 
+(define-inline ($assert p)
+  (^s (receive (r v s1) (p s)
+        (values r v s))))
+
+;; API
+;; $assert-not parser
+;;   Same as ($assert ($not parser)).  Just for the convenience.
+(define-inline ($assert-not p)
+  (^s (receive (r v s1) (p s)
+        (if (parse-success? r)
+          (return-failure/expect "assert-not" s)
+          (return-result #t s)))))
+
+;; API
+;; $and p1 p2 ... pn
+;;   Try p1, p2, ... on the same position of the input.  When all succeeds,
+;;   apply pn.
+;;   Effectively same as ($seq ($assert p1) ($assert p2) ... pn), but simpler.
+(define ($and . parsers)
+  (match parsers
+    [() (^s (return-result #t s))]      ;always success
+    [(p) p]
+    [(ps ...)
+     (^s (let loop ([ps ps])
+           (receive (r v s1) ((car ps) s)
+             (if (parse-success? r)
+               (if (null? (cdr ps))
+                 (return-result v s1)
+                 (loop (cdr ps)))
+               (values r v s)))))]))
 
 ;; API
 (define-syntax $lazy
