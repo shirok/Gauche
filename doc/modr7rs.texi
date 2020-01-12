@@ -1956,6 +1956,7 @@ The following are supported libraries:
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
 * R7RS hash tables::            @code{scheme.hash-table}
+* R7RS random-access purely-functional pairs and lists::
 * R7RS immutable deques::       @code{scheme.ideque}
 * R7RS generators::             @code{scheme.generator}
 * R7RS lazy sequences::         @code{scheme.lseq}
@@ -4747,7 +4748,7 @@ Returns two values, the result of
 @end defun
 
 
-@node R7RS hash tables, R7RS immutable deques, R7RS character sets, R7RS large
+@node R7RS hash tables, R7RS random-access purely-functional pairs and lists, R7RS character sets, R7RS large
 @subsection @code{scheme.hash-table} - R7RS hash tables
 @c NODE R7RSハッシュテーブル, @code{scheme.hash-table} - R7RSハッシュテーブル
 
@@ -5046,7 +5047,92 @@ built-in @code{hash-table-comparator}.  (Unfortunately, it is not
 included in @code{scheme.hash-table}, though.)
 @end defun
 
-@node R7RS immutable deques, R7RS generators, R7RS hash tables, R7RS large
+
+@node R7RS random-access purely-functional pairs and lists, R7RS immutable deques, R7RS hash tables, R7RS large
+@subsection @code{scheme.rlist} - R7RS random-access purely-functional pairs and lists
+@c NODE R7RSランダムアクセス純粋関数型ペアとリスト, @code{scheme.rlist} - R7RSランダムアクセス純粋関数型ペアとリスト
+
+@deftp {Module} scheme.rlist
+@mdindex scheme.rlist
+This module provides an alternative datatype for pairs and lists,
+which are immutable and allows O(log n) random access, while
+maintaining O(1) @code{car} and @code{cdr} operations.
+This is originally defined as @code{srfi-101}.  We call this datatype
+@emph{rlist} in the following explanation.
+
+The srfi allows a Scheme implementation to adopt rlist
+as the built-in pairs and lists, so the procedure names are
+duplicated from the Scheme primitives.  If you use this module,
+you might want to import with prefix 
+(e.g. @code{(use scheme.rlist :prefix rlist:)}).
+
+In Gauche, we implement rlist on top of skew-list
+(@pxref{Skew binary random-access lists}).  The main difference
+is that skew-list only allows proper lists, while rlist allows
+improper lists (the @code{cdr} of the last pair can be an arbitrary
+objects).
+
+However, having improper lists makes things a lot complicated.  If you just
+need a list with fast random access, you want to use skew-list.
+Use rlist only if you need to deal with improper lists.
+
+The following procedures behaves just like the built-in counterparts,
+except they take/return rlists instead of ordinary pairs and lists.
+(NB: @code{list-ref} and @code{list-tail} here doesn't take the optional
+fallback argument, for they are Gauche's extension).
+
+@example
+pair?     cons       car        cdr
+caar      cadr       cdar       cddr
+caaar     caadr      cadar      caddr
+cdaar     cdadr      cddar      cdddr
+caaaar    caaadr     caadar     caaddr
+cadaar    cadadr     caddar     cadddr
+cdaaar    cdaadr     cdadar     cdaddr
+cddaar    cddadr     cdddar     cddddr
+null?     list?      list       make-list
+length    append     reverse    list-tail
+list-ref  map        for-each
+@end example
+
+This module also export a syntax @code{quote}, which denotes
+the literal rlist.  @code{(quote (a (b c)))} becomes a literal
+rlist consists of elements @code{a}, and an rlist consists
+of @code{b} and @code{c}.
+
+Note that if you import @code{scheme.rlist} without suffix,
+the shorthand notation @code{'(a (b c))} refers to @code{scheme.rlist#quote},
+instead of built-in @code{quote}.
+@end deftp
+
+@defun list-set rlist k obj
+Returns a new rlist which is the same as @var{rlist} except
+that its @var{k}-th element is replaced with @var{obj}.
+This is O(log n) operation where n is the length of @var{rlist}.
+@end defun
+
+@defun list-ref/update rlist k proc
+Returns two values, the result of @code{(list-ref rlist k)}
+and the result of @code{(list-set rlist k (proc (list-ref rlist k)))},
+but may be more efficient.
+@end defun
+
+@defun random-access-list->linear-access-list rlist
+Convert a proper rlist to an ordinary list.  An error is
+thrown when @var{rlist} is not proper.
+The conversion is only done in the ``spine'' of @var{rlist}; that is,
+if @var{rlist} is nested, only the outermost @var{rlist} is converted.
+@end defun
+
+@defun linear-access-list->linear-access-list list
+Convert a proper ordinary list to an rlist.
+An error is thrown when @var{list} is not proper.
+The conversion is only done in the ``spine'' of @var{list}; that is,
+if @var{list} is nested, only the outermost @var{list} is converted.
+@end defun
+
+
+@node R7RS immutable deques, R7RS generators, R7RS random-access purely-functional pairs and lists, R7RS large
 @subsection @code{scheme.ideque} - R7RS immutable deques
 @c NODE R7RS変更不可な両端キュー, @code{scheme.ideque} - R7RS変更不可な両端キュー
 
