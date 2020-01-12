@@ -1705,20 +1705,25 @@
   (test* "ra-pairs" #f (ra:pair? (ra:quote ())))
   (test* "ra-pairs" #f (ra:pair? (ra:quote #(a b))))
 
+  ;; NB: spec says those conversion procedures only accept proper lists
   (test* "conversions" '(a b c d e)
          (ra:random-access-list->linear-access-list
           (ra:list 'a 'b 'c 'd 'e)))
-  (test* "conversions" '(a b . c)
-         (ra:random-access-list->linear-access-list
-          (ra:cons 'a (ra:cons 'b 'c))))
+  (test* "conversions" '()
+         (ra:random-access-list->linear-access-list (ra:list)))
+  ;; (test* "conversions" '(a b . c)
+  ;;        (ra:random-access-list->linear-access-list
+  ;;         (ra:cons 'a (ra:cons 'b 'c))))
   (test* "conversions" (ra:list 'a 'b 'c 'd 'e)
          (ra:linear-access-list->random-access-list
           '(a b c d e)))
-  (test* "conversions" (ra:cons 'a (ra:cons 'b 'c))
-         (ra:linear-access-list->random-access-list
-          '(a b . c)))
-  (test* "conversions" 'a
-         (ra:linear-access-list->random-access-list 'a))
+  (test* "conversions" (ra:list)
+         (ra:linear-access-list->random-access-list '()))
+  ;; (test* "conversions" (ra:cons 'a (ra:cons 'b 'c))
+  ;;        (ra:linear-access-list->random-access-list
+  ;;         '(a b . c)))
+  ;; (test* "conversions" 'a
+  ;;        (ra:linear-access-list->random-access-list 'a))
 
   (let ()
     (define-syntax t-pair
@@ -1776,44 +1781,31 @@
 
   (dotimes [n 10]
     (test* "ra-length" n (ra:length (ra:make-list n))))
-  (test* "ra-append" '(a b c)
-         (ra:random-access-list->linear-access-list
-          (ra:append (ra:quote (a b c)))))
-  (test* "ra-append" 'x
-         (ra:random-access-list->linear-access-list
-          (ra:append (ra:quote x))))
-  (test* "ra-append" '(a b c d e f . g)
-         (ra:random-access-list->linear-access-list
-          (ra:append (ra:quote (a b c)) (ra:quote (d e f . g)))))
-  (test* "ra-append" '(a b c d e f . g)
-         (ra:random-access-list->linear-access-list
-          (ra:append (ra:quote (a b c)) (ra:quote (d e f)) (ra:quote g))))
-  (test* "ra-append" '(a b c d e f . g)
-         (ra:random-access-list->linear-access-list
-          (ra:append (ra:quote (a b c)) (ra:quote (d e)) (ra:quote (f . g)))))
-  (test* "ra-append" '(a b . c)
-         (ra:random-access-list->linear-access-list
-          (ra:append (ra:quote (a b)) (ra:quote ()) (ra:quote c))))
+  (test* "ra-append" (ra:quote (a b c))
+         (ra:append (ra:quote (a b c))))
+  (test* "ra-append" (ra:quote x)
+         (ra:append (ra:quote x)))
+  (test* "ra-append" (ra:quote (a b c d e f . g))
+         (ra:append (ra:quote (a b c)) (ra:quote (d e f . g))))
+  (test* "ra-append" (ra:quote (a b c d e f . g))
+         (ra:append (ra:quote (a b c)) (ra:quote (d e f)) (ra:quote g)))
+  (test* "ra-append" (ra:quote (a b c d e f . g))
+         (ra:append (ra:quote (a b c)) (ra:quote (d e)) (ra:quote (f . g))))
+  (test* "ra-append" (ra:quote (a b . c))
+         (ra:append (ra:quote (a b)) (ra:quote ()) (ra:quote c)))
   (test* "ra-append" (test-error) (ra:append (ra:quote x) (ra:quote y)))
-  (test* "ra-reverse" '()
-         (ra:random-access-list->linear-access-list (ra:reverse '())))
-  (test* "ra-reverse" '(e d c b a)
-         (ra:random-access-list->linear-access-list
-          (ra:reverse (ra:quote (a b c d e)))))
+  (test* "ra-reverse" (ra:quote ())
+         (ra:reverse '()))
+  (test* "ra-reverse" (ra:quote (e d c b a))
+         (ra:reverse (ra:quote (a b c d e))))
   (test* "ra-reverse" (test-error) (ra:reverse (ra:quote a)))
 
   (test* "ra-list-tail" '() (ra:list-tail (ra:list) 0))
   (test* "ra-list-tail" (test-error) (ra:list-tail (ra:list) 1))
   (test* "ra-list-tail" (ra:list 1 2 3) (ra:list-tail (ra:list 0 1 2 3) 1))
-  (test* "ra-list-tail" (ra:cons 2 3)
-         (ra:list-tail (ra:linear-access-list->random-access-list '(0 1 2 . 3))
-                       2))
-  (test* "ra-list-tail" 3
-         (ra:list-tail (ra:linear-access-list->random-access-list '(0 1 2 . 3))
-                       3))
-  (test* "ra-list-tail" (test-error)
-         (ra:list-tail (ra:linear-access-list->random-access-list '(0 1 2 . 3))
-                       4))
+  (test* "ra-list-tail" (ra:cons 2 3) (ra:list-tail (ra:quote (0 1 2 . 3)) 2))
+  (test* "ra-list-tail" 3 (ra:list-tail (ra:quote (0 1 2 . 3)) 3))
+  (test* "ra-list-tail" (test-error) (ra:list-tail (ra:quote (0 1 2 . 3)) 4))
   (test* "ra-list-ref" (test-error) (ra:list-ref (ra:list) 0))
   (test* "ra-list-ref" 'a (ra:list-ref (ra:list 'a 'b 'c) 0))
   (test* "ra-list-ref" 'b (ra:list-ref (ra:list 'a 'b 'c) 1))

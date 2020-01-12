@@ -281,14 +281,11 @@
      (apply for-each proc (map ra-spine ras))]))
 
 (define (ra-random-access-list->linear-access-list ra)
-  (if (ra-pair? ra)
-    (rlet1 lis (skew-list->list (ra-spine ra))
-      (unless (null? (ra-last-cdr ra))
-        (set-cdr! (last-pair lis) (ra-last-cdr ra))))
-    ra))
+  (assume (ra-list? ra))
+  (if (null? ra)
+    ra
+    (skew-list->list (ra-spine ra))))
 
 (define (ra-linear-access-list->random-access-list lis)
-  (if (pair? lis)
-    (receive (sl last-cdr) (list*->skew-list lis)
-      (make-ra sl last-cdr))
-    lis))
+  (assume (proper-list? lis))
+  (make-ra (list->skew-list lis) '()))
