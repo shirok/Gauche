@@ -44,7 +44,8 @@
 #include <gauche/extend.h>
 #include <gauche/priv/builtin-syms.h>
 #include <gauche/priv/arith.h>
-#include <gauche/bytes_inline.h> /* for byte swapping stuff */
+#include <gauche/priv/bytesP.h>
+#include <gauche/endian.h>
 #include <gauche/scmconst.h>
 
 #define EXTUVECTOR_EXPORTS
@@ -1329,7 +1330,7 @@ ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
 
     SCM_CHECK_START_END(start, end, len);
     SCM_UVECTOR_CHECK_MUTABLE(v);
-    CHECK_ENDIAN(endian);
+    SCM_CHECK_ENDIAN(endian);
 
     int eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
     SCM_ASSERT(eltsize >= 1);
@@ -1374,7 +1375,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
     ScmSmallInt len = SCM_UVECTOR_SIZE(v);
     int swap_needed = FALSE, swap_type;
     SCM_CHECK_START_END(start, end, len);
-    CHECK_ENDIAN(endian);
+    SCM_CHECK_ENDIAN(endian);
 
     int eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
     SCM_ASSERT(eltsize >= 1);

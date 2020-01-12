@@ -1,5 +1,12 @@
 2020-01-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/endian.h, src/gauche/priv/bytesP.h: C MACRO API CHANGE:
+	  Split bytes_inline.h into these two; the first one provides a
+	  public macros to check endianness symbols, and the second one is
+	  private for byte-swapping macros.  The public macros are prefixed
+	  with SCM_.
+	* src/gauche/bytes_inline.h: Removed.
+
 	* lib/scheme/rlist.scm: srfi-101 is also scheme.rlist
 
 2020-01-10  Shiro Kawai  <shiro@acm.org>

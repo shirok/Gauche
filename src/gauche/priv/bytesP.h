@@ -1,5 +1,5 @@
 /*
- * gauche/bytes_inline.h - Some speed-sensitive byte-swapping routines
+ * gauche/bytesP.h - Some speed-sensitive byte-swapping routines
  *
  *   Copyright (c) 2009-2019  Shiro Kawai  <shiro@acm.org>
  *
@@ -31,27 +31,17 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GAUCHE_BYTES_INLINE_H
-#define GAUCHE_BYTES_INLINE_H
+#ifndef GAUCHE_PRIV_BYTESP_H
+#define GAUCHE_PRIV_BYTESP_H
 
-/*
- * Byte swapping code pieces shared in binary.io and gauche.uvector.
- * This is not meant for general use.   We don't worry about name conflicts.
- */
-
-#define IS_BE(endian)     (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN))
-#define IS_LE(endian)     (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN))
-#define IS_ARM_LE(endian) (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN))
+#include <gauche/endian.h>
 
 #if WORDS_BIGENDIAN
-#define SWAP_REQUIRED(endian)   (!IS_BE(endian))
+#define SWAP_REQUIRED(endian)   (!ISCM_S_BE(endian))
 #else  /*!WORDS_BIGENDIAN.  Covers both little-endian and arm-little-endian. */
-#define SWAP_REQUIRED(endian)   IS_BE(endian)
+#define SWAP_REQUIRED(endian)   SCM_IS_BE(endian)
 #endif
 
-#define CHECK_ENDIAN(endian) \
-    do { if (endian == NULL) endian = SCM_SYMBOL(Scm_DefaultEndian()); \
-    } while (0)
 
 /*
  * Swapping macros.   They can be used both ways (native <-> external)
@@ -103,4 +93,4 @@ typedef union { char buf[8]; double val; }       swap_f64_t;
     } while (0)
 
 
-#endif /*GAUCHE_BYTES_INLINE_H*/
+#endif /*GAUCHE_PRIV_BYTESP_H*/

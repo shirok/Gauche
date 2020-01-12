@@ -212,6 +212,9 @@
     (next-method               SCM_SYM_NEXT_METHOD)
     ;; macro addition (move this up on 1.0 release)
     (_                         SCM_SYM_UNDERBAR)
+    ;; to support scheme.bytevector (move this up on 1.0 release)
+    (big                       SCM_SYM_BIG)
+    (little                    SCM_SYM_LITTLE)
     ))
 
 
