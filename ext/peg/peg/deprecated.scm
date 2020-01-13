@@ -9,7 +9,30 @@
   (export anychar upper lower letter alphanum digit
           hexdigit newline tab space spaces eof
 
+          $do
+
+          $skip-many $skip-many1
+
           $s $c $y)
+
+  ;; $do clause ... body
+  ;;   where
+  ;;     clause := (var parser)
+  ;;            |  (parser)
+  ;;            |  parser
+  (define-syntax $do
+    (syntax-rules ()
+      [(_ body) body]
+      [(_ [var parser] clause . rest)
+       ($bind parser (^[var] ($do clause . rest)))]
+      [(_ [parser] clause . rest)
+       ($bind parser (^_ ($do clause . rest)))]
+      [(_ parser clause . rest)
+       ($bind parser (^_ ($do clause . rest)))]
+      [(_  . other) (syntax-error "malformed $do" ($do . other))]))
+
+  (define $skip-many $many_)
+  (define $skip-many1 $many1_)
 
   ;; for these two, use '$.'
   (define ($s x) ($string x))

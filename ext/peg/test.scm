@@ -158,56 +158,55 @@
            ($try ($seq ($string "foo") ($string "bar")))
            "foobaz...")
 
-;; $do
-(test-succ "$do" "j"
-           ($do (j ($string "j"))
-                ($return j))
+;; $let, $let*
+(test-succ "$let" "j"
+           ($let ([j ($string "j")])
+             ($return j))
            "j")
 
-(test-succ "$do" "j"
+(test-succ "$let" "j"
            (let1 parse ($string "j")
-             ($do (j parse) ($return j)))
+             ($let ([j parse]) ($return j)))
            "j")
 
-(test-succ "$do" '("foo" "bar")
-           ($do (foo ($string "foo"))
-                (bar ($string "bar"))
-                ($return (list foo bar)))
+(test-succ "$let" '("foo" "bar")
+           ($let ([foo ($string "foo")]
+                  [bar ($string "bar")])
+             ($return (list foo bar)))
            "foobar...")
 
-(test-succ "$do" '("foo" "baz")
-           ($do (foo ($string "foo"))
-                (    ($string "bar") )
-                (baz ($string "baz"))
-                ($return (list foo baz)))
+(test-succ "$let" '("foo" "baz")
+           ($let ([foo ($string "foo")]
+                  [    ($string "bar")]
+                  [baz ($string "baz")])
+             ($return (list foo baz)))
            "foobarbaz$$$")
 
-(test-succ "$do" "foo"
+(test-succ "$let" "foo"
            (let1 dot ($string ".")
-             ($do (foo ($string "foo"))
-                  dot
-                  ($return foo)))
+             ($let ([foo ($string "foo")]
+                    dot)
+               ($return foo)))
            "foo.")
 
-(test-fail "$do" '(3 "bar")
-           ($do (foo ($string "foo"))
-                (bar ($string "bar"))
-                ($return (list foo bar)))
+(test-fail "$let" '(3 "bar")
+           ($let ([foo ($string "foo")]
+                  [bar ($string "bar")])
+             ($return (list foo bar)))
            "foo12")
 
-(test-succ "$do" '("AB" "cd" "EF")
-           ($do (x ($or ($string "AB") ($string "ab")))
-                (y ($or ($string "CD") ($string "cd")))
-                (z ($or ($string "EF") ($string "ef")))
-                ($return (list x y z)))
+(test-succ "$let" '("AB" "cd" "EF")
+           ($let ([x ($or ($string "AB") ($string "ab"))]
+                  [y ($or ($string "CD") ($string "cd"))]
+                  [z ($or ($string "EF") ($string "ef"))])
+             ($return (list x y z)))
            "ABcdEF")
 
-(test-fail "$do and $or" '(3 "foo")
-           ($do (v ($or ($string "foo") ($string "bar")))
-                ($string (rope-finalize v)))
+(test-fail "$let and $or" '(3 "foo")
+           ($let ([v ($or ($string "foo") ($string "bar"))])
+             ($string (rope-finalize v)))
            "foobar")
 
-;; $let, $let*
 (test-succ "$let" '("foo" "baz")
            ($let ([foo ($string "foo")]
                   [    ($string "bar")]
@@ -296,11 +295,11 @@
 (test-succ "$many" '("a" "a")
            ($many ($string "a") 1 2) "aaaaa")
 
-;; $skip-many
-(test-succ "$skip-many" #\a
-           ($seq ($skip-many ($string "a") 1 2) ($one-of #[a-z])) "aaaaa")
-(test-succ "$skip-many" #\b
-           ($seq ($skip-many ($string "a")) ($one-of #[a-z])) "baaaaa")
+;; $many_
+(test-succ "$many_" #\a
+           ($seq ($many_ ($string "a") 1 2) ($one-of #[a-z])) "aaaaa")
+(test-succ "$many_" #\b
+           ($seq ($many_ ($string "a")) ($one-of #[a-z])) "baaaaa")
 
 ;; $repeat
 (test-succ "$repeat" '(#\a #\b #\a)
@@ -427,11 +426,11 @@
 
 ;; $chain-left
 (let ([integer
-       ($do [v ($many ($one-of #[\d])  1)]
-            ($return (string->number (apply string v))))]
+       ($let ([v ($many ($one-of #[\d])  1)])
+         ($return (string->number (apply string v))))]
       [op
-       ($or ($do [($char #\*)] ($return *))
-            ($do [($char #\+)] ($return +)))])
+       ($or ($seq ($char #\*) ($return *))
+            ($seq ($char #\+) ($return +)))])
   (test-succ "$chain-left" 9
              ($chain-left integer op)
              "1+2*3")
@@ -444,11 +443,11 @@
 
 ;; $chain-right
 (let ([integer
-       ($do [v ($many ($one-of #[\d])  1)]
-            ($return (string->number (apply string v))))]
+       ($let ([v ($many ($one-of #[\d])  1)])
+         ($return (string->number (apply string v))))]
       [op
-       ($or ($do [($char #\*)] ($return *))
-            ($do [($char #\+)] ($return +)))])
+       ($or ($seq ($char #\*) ($return *))
+            ($seq ($char #\+) ($return +)))])
   (test-succ "$chain-right" 7
              ($chain-right integer op)
              "1+2*3")
@@ -471,20 +470,16 @@
 (test-section "backtrack control")
 
 (test-succ "$or and $try" "abc"
-           ($or ($try ($do [foo ($string "abc")]
-                           [bar ($string "foo")]
-                           ($return (list foo bar))))
-                ($do (v ($string "abc"))
-                     ($return v)))
+           ($or ($try ($lift list ($string "abc") ($string "foo")))
+                ($string "abc"))
            "abcdefg")
 
-(let1 parser ($or ($do [foo ($try ($do [v ($string "abc")]
-                                       [($one-of #[+-])]
-                                       ($return v)))]
-                       [bar ($string "foo")]
-                       ($return (list foo bar)))
-                  ($do (v ($string "abc"))
-                       ($return v)))
+(let1 parser ($or ($let ([foo ($try ($let ([v ($string "abc")]
+                                           [($one-of #[+-])])
+                                      ($return v)))]
+                         [bar ($string "foo")])
+                    ($return (list foo bar)))
+                  ($string "abc"))
   (test-succ "$or and $try" "abc" parser
              "abcdefg")
   (test-fail "$or and $try" '(4 "foo") parser
@@ -552,21 +547,56 @@
 ;;;
 (test-section "examples")
 
-;; In the manual
+;; PEG walkthrough
+(test* "walkthrough char" #\a
+       (peg-parse-string ($. #\a) "abc"))
+(test* "walkthrough error" (test-error <parse-error>
+                                       "expecting #\\a at 0, but got #\\x")
+       (peg-parse-string ($char #\a) "xyz"))
+(test* "walkthrough $many" '(#\a #\a #\a #\a #\a)
+       (peg-parse-string ($many ($. #\a)) "aaaaabc"))
+(test* "walkthrough $many" '()
+       (peg-parse-string ($many ($. #\a)) "xxxxxyz"))
 
 (let ()
-  (define integer   ($many1 ($one-of #[\d])))
-  (define ws        ($skip-many ($one-of #[\s])))
-  (define int-list0 ($seq ($char #\[ )
+  (define digits    ($many1 ($. #[\d])))
+  (define ws        ($many_ ($. #[\s])))
+  (define separator ($seq ws ($. #\,) ws))
+  (define integer
+    ($let ([ds digits])
+      ($return (x->integer (list->string ds)))))
+  (define integers1 
+    ($seq integer ($many ($seq separator integer))))
+  (define integers2 
+    ($let ([n  integer]
+           [ns ($many ($seq separator integer))])
+      ($return (cons n ns))))
+  (define integers3
+    ($lift cons
+           integer
+           ($many ($seq separator integer))))
+  
+  (test* "integers1" '(456 789)
+         (peg-parse-string integers1 "123, 456, 789"))
+  (test* "integers2" '(123 456 789)
+         (peg-parse-string integers2 "123, 456, 789"))
+  (test* "integers3" '(123 456 789)
+         (peg-parse-string integers3 "123, 456, 789"))
+  )
+  
+(let ()
+  (define integer   ($many1 ($. #[\d])))
+  (define ws        ($many_ ($. #[\s])))
+  (define int-list0 ($seq ($. #\[ )
                           ($many ($seq ws integer))
                           ws
                           ($char #\] )))
   (define int-list
-    ($do [ ($char #\[ )]
-         [digs ($many ($seq ws integer))]
-         [ ws ]
-         [ ($char #\] ) ]
-         ($return (map (compose x->integer list->string) digs))))
+    ($let ([ ($char #\[ )]
+           [digs ($many ($seq ws integer))]
+           [ ws ]
+           [ ($char #\] ) ])
+      ($return (map (compose x->integer list->string) digs))))
 
   (test-succ "integer" '(#\1 #\2 #\3) integer "123")
   (test-succ "int-list0" #\] int-list0 "[123 456 789]")
@@ -575,11 +605,11 @@
 
 ;; Count the maximal nesting level
 (letrec ((nesting
-          ($lazy ($or ($do [ ($char #\() ]
-                           [n nesting]
-                           [ ($char #\)) ]
-                           [m nesting]
-                           ($return (max (+ n 1) m)))
+          ($lazy ($or ($let ([ ($char #\() ]
+                             [n nesting]
+                             [ ($char #\)) ]
+                             [m nesting])
+                        ($return (max (+ n 1) m)))
                       ($return 0)))))
   (test-succ "nesting parenthesis" 3 nesting "((()))")
   (test-succ "nesting parenthesis" 3 nesting "((()))()")
@@ -587,12 +617,12 @@
   (test-fail "nesting parenthesis" '(3 #\) ) nesting "((("))
 
 ;; number parser (1) - simple
-(let* ((sign?    ($optional ($one-of #[-+])))
-       (digits   ($seq sign? ($many-chars #[\d] 1)))
-       (point    ($seq ($char #\.) ($many ($one-of #[\d]) 1)))
-       (exponent ($seq ($one-of #[eE]) digits))
-       (number?  ($seq digits ($optional point) ($optional exponent)))
-       (p        ($do [number?] [($eos)] ($return #t))))
+(let* ([sign?    ($optional ($one-of #[-+]))]
+       [digits   ($seq sign? ($many-chars #[\d] 1))]
+       [point    ($seq ($char #\.) ($many ($one-of #[\d]) 1))]
+       [exponent ($seq ($one-of #[eE]) digits)]
+       [number?  ($seq digits ($optional point) ($optional exponent))]
+       [p        ($let ([number?] [($eos)]) ($return #t))])
   (define (%test str . fails?)
     (if (null? fails?)
       (test-succ #"number(1) \"~str\"" #t p str)
@@ -617,7 +647,7 @@
   (define ws     ($many ($one-of #[ \t])))
   (define comma  ($seq ws ($char #\,) ws))
   (define dquote ($char #\"))
-  (define double-dquote ($do [($string "\"\"")] ($return #\")))
+  (define double-dquote ($seq ($string "\"\"") ($return #\")))
   (define quoted-body ($many ($or double-dquote ($one-of #[^\"]))))
   (define quoted ($between dquote quoted-body dquote))
   (define unquoted ($many-till ($any) ($or comma ($char #\newline))))
@@ -632,10 +662,10 @@
 
 ;; hand-tuned version
 (let ()
-  (define ws     ($skip-many ($one-of #[ \t])))
+  (define ws     ($many_ ($one-of #[ \t])))
   (define comma  ($seq ws ($char #\,) ws))
   (define dquote ($char #\"))
-  (define double-dquote ($do [($string "\"\"")] ($return #\")))
+  (define double-dquote ($seq ($string "\"\"") ($return #\")))
   (define quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
   (define quoted ($between dquote quoted-body dquote))
   (define unquoted ($alternate ($many1 ($one-of #[^ \t\r\n,]))
@@ -664,23 +694,23 @@
          [close-tag (^[tagname]
                       ($seq ($string "</") ($string tagname) ($char #\>)))]
          [text ($->rope ($many ($none-of #[<])))]
-         [body ($do [t text]
-                    [r ($many ($do [e element]
-                                   [t text]
-                                   ($return (list e t))))]
-                    ($return `(,t ,@(apply append r))))]
-         [element ($do [tagname ($try open-tag)]
-                       [body body]
-                       [ (close-tag (rope-finalize tagname)) ]
-                       ($return (cons tagname body)))])
+         [body ($let ([t text]
+                      [r ($many ($let ([e element]
+                                       [t text])
+                                  ($return (list e t))))])
+                 ($return `(,t ,@(apply append r))))]
+         [element ($let* ([tagname ($try open-tag)]
+                          [body body]
+                          [ (close-tag (rope-finalize tagname)) ])
+                    ($return (cons tagname body)))])
   (test-succ "tag element" '("a" "")
              element "<a></a>")
   (test-succ "tag element" '("a" "foo" ("b" "bar") "baz")
              element "<a>foo<b>bar</b>baz</a>"))
 
 ;; Calculator
-(letrec ([integer ($do (v ($many ($one-of #[\d]) 1))
-                       ($return (string->number (apply string v))))]
+(letrec ([integer ($let ([v ($many ($one-of #[\d]) 1)])
+                    ($return (string->number (apply string v))))]
          [mulop ($or ($seq ($char #\*) ($return *))
                      ($seq ($char #\/) ($return /)))]
          [addop ($or ($seq ($char #\+) ($return +))

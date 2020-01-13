@@ -77,7 +77,7 @@
 ;;;============================================================
 ;;; Parser
 ;;;
-(define %ws ($skip-many ($. #[ \t\r\n])))
+(define %ws ($many_ ($. #[ \t\r\n])))
 
 (define %begin-array     ($seq ($. #\[) %ws))
 (define %begin-object    ($seq ($. #\{) %ws))
@@ -127,15 +127,15 @@
                               (utf16->ucs4 `(,c ,c2) 'permissive)
                             (and (null? x)
                                  ($return (ucs->char cc))))))
-                  ;; NB: We wrap (err c) with dummy $do to put the call
+                  ;; NB: We wrap (err c) with dummy $let to put the call
                   ;; to the err into a parser monad.  Simple ($return (err c))
                   ;; or ($fail (err c)) won't do, since (err c) is evaluated
                   ;; at the parser-construction time, not the actual parsing
                   ;; time.  We need a dummy ($return #t) clause to ensure
-                  ;; (err c) is wrapped; ($do x) is expanded to just x.
+                  ;; (err c) is wrapped; ($let () x) is expanded to just x.
                   ;; Definitely we need something better to do this kind of
                   ;; operation.
-                  ($do [($return #t)] (err c)))]
+                  ($let ([($return #t)]) (err c)))]
             [(<= #xdc00 c #xdfff) (err c)]
             [else ($return (ucs->char c))]))))
 

@@ -181,13 +181,13 @@
 
 (define (parse lseq)
   (define %term
-    ($lazy ($seq ($skip-many %ws)
+    ($lazy ($seq ($many_ %ws)
                  ($or %list %vec %map %set
                       %tagged %atom %str %char))))
   (define %ws
-    ($or ($skip-many1 ($. #[\s,]))
+    ($or ($many1_ ($. #[\s,]))
          ($seq ($. #\;)
-               ($skip-many ($. #[^\newline])))
+               ($many_ ($. #[^\newline])))
          ($seq ($. "#_") %term)))
   (define %list
     ($between ($. #\() ($many %term) ($. #\))))
@@ -200,25 +200,25 @@
   (define %word ; intermediate - used by %atom, %char and %tagged
     ($->string ($many1 ($. #[\w*!?$%&=<>:#/+.-]))))
   (define %atom
-    ($do [val %word]
-         (cond
-          [(equal? val "true")  ($return #t)]
-          [(equal? val "false") ($return #f)]
-          [(equal? val "nil")   ($return 'nil)]
-          [(string-prefix? ":" val) ($return 
-                                     (make-keyword (string-drop val 1)))]
-          [(%parse-num val) => $return]
-          [(edn-valid-symbol-name? val) ($return (string->symbol val))]
-          [else ($fail (format "invalid token: ~s" val))])))
+    ($let ([val %word])
+      (cond
+       [(equal? val "true")  ($return #t)]
+       [(equal? val "false") ($return #f)]
+       [(equal? val "nil")   ($return 'nil)]
+       [(string-prefix? ":" val) ($return 
+                                  (make-keyword (string-drop val 1)))]
+       [(%parse-num val) => $return]
+       [(edn-valid-symbol-name? val) ($return (string->symbol val))]
+       [else ($fail (format "invalid token: ~s" val))])))
   (define %tagged
-    ($do [ ($. #\#) ]
-         [tag %word]
-         [content %term]
-         (if (edn-valid-symbol-name? tag)
-           (if-let1 h (edn-object-handler tag)
-             ($return (h tag content))
-             ($return (make-edn-object (string->symbol tag) content)))
-           ($fail (format "invalid tag: ~s" tag)))))
+    ($let ([ ($. #\#) ]
+           [tag %word]
+           [content %term])
+      (if (edn-valid-symbol-name? tag)
+        (if-let1 h (edn-object-handler tag)
+          ($return (h tag content))
+          ($return (make-edn-object (string->symbol tag) content)))
+        ($fail (format "invalid tag: ~s" tag)))))
   (define %str 
     ($between ($. #\")
               ($->string
@@ -230,16 +230,16 @@
                            ($. #[^\\\"]))))
               ($. #\")))
   (define %char
-    ($do [w ($seq ($. #\\) %word)] 
-         (rxmatch-case w
-           [#/^newline$/ (_) ($return #\newline)]
-           [#/^return$/  (_) ($return #\return)]
-           [#/^space$/   (_) ($return #\space)]
-           [#/^tab$/     (_) ($return #\tab)]
-           [#/^u([0-9a-fA-F]+)$/ (_ v)
-                ($return (ucs->char (string->number v 16)))]
-           [#/^.$/       (s) ($return (~ s 0))]
-           [else ($fail (format "invalid char name: ~a" w))])))
+    ($let ([w ($seq ($. #\\) %word)] )
+      (rxmatch-case w
+        [#/^newline$/ (_) ($return #\newline)]
+        [#/^return$/  (_) ($return #\return)]
+        [#/^space$/   (_) ($return #\space)]
+        [#/^tab$/     (_) ($return #\tab)]
+        [#/^u([0-9a-fA-F]+)$/ (_ v)
+             ($return (ucs->char (string->number v 16)))]
+        [#/^.$/       (s) ($return (~ s 0))]
+        [else ($fail (format "invalid char name: ~a" w))])))
   (wrap-parser (cut peg-run-parser %term lseq)))
 
 (define (%parse-num word)

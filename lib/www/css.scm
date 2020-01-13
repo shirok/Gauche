@@ -258,39 +258,39 @@
 ;;       | (COLON) | (SEMICOLON) | (COMMA) | (OPEN-BRACKET) | (CLOSE-BRACKET)
 ;;       | (OPEN-PAREN) | (CLOSE-PAREN) | (OPEN-BRACE) | (CLOSE-BRACE)
 
-(define %w ($skip-many ($one-of #[ \t\r\n\f])))
-(define %s ($skip-many1 ($one-of #[ \t\r\n\f])))
-(define %nl ($/ ($. "\n") ($. "\r\n") ($. "\n") ($. "\f")))
+(define %w ($many_  ($. #[ \t\r\n\f])))
+(define %s ($many1_ ($. #[ \t\r\n\f])))
+(define %nl ($or ($. "\n") ($. "\r\n") ($. "\n") ($. "\f")))
 ;; comment => vlid
 (define %comment
   ($seq ($. "/*")
-        ($skip-many ($none-of #[*]))
-        ($skip-many1 ($. #\*))
-        ($skip-many ($seq ($none-of #[/*])
-                          ($skip-many ($none-of #[*]))
-                          ($skip-many1 ($. #\*))))
+        ($many_ ($none-of #[*]))
+        ($many1_ ($. #\*))
+        ($many_ ($seq ($none-of #[/*])
+                      ($many_ ($none-of #[*]))
+                      ($many1_ ($. #\*))))
         ($. #\/)))
 
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
 (define %unicode ($let ([ ($. #\\) ]
-                        [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
-                        [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ])
+                        [code ($many ($. #[0-9a-fA-F]) 1 6)]
+                        [ ($optional ($or ($. "\r\n") ($. #[ \n\r\t\f]))) ])
                    ($return ($ integer->char
                                $ (cut string->number <> 16)
                                $ list->string code))))
 ;; escape {unicode}|\\[^\n\r\f0-9a-f] => char
 (define %escape ($/ %unicode ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
 ;; nmstart [_a-z]|{nonascii}|{escape} => char
-(define %nmstart ($/ ($one-of #[_a-zA-Z]) %nonascii %escape))
+(define %nmstart ($/ ($. #[_a-zA-Z]) %nonascii %escape))
   
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
 (define %unicode ($let ([ ($. #\\) ]
-                        [code ($many ($one-of #[0-9a-fA-F]) 1 6)]
-                        [ ($optional ($/ ($. "\r\n") ($one-of #[ \n\r\t\f]))) ])
+                        [code ($many ($. #[0-9a-fA-F]) 1 6)]
+                        [ ($optional ($or ($. "\r\n") ($. #[ \n\r\t\f]))) ])
                    ($return ($ integer->char
                                $ (cut string->number <> 16)
                                $ list->string code))))
@@ -299,9 +299,9 @@
                     ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
 
 ;; nmstart [_a-z]|{nonascii}|{escape} => char
-(define %nmstart ($/ ($one-of #[_a-zA-Z]) %nonascii %escape))
+(define %nmstart ($/ ($. #[_a-zA-Z]) %nonascii %escape))
 ;; nmchar [_a-z0-9-]|{nonascii}|{escape} => char
-(define %nmchar ($/ ($one-of #[_a-zA-Z0-9-]) %nonascii %escape))
+(define %nmchar ($/ ($. #[_a-zA-Z0-9-]) %nonascii %escape))
 
 ;; name {nmchar}+ => string
 (define %name ($->string ($many1 %nmchar)))
@@ -309,11 +309,11 @@
 ;; ident [-]?{nmstart}{nmchar}* => string
 (define %ident ($->symbol ($optional ($. #\-)) %nmstart ($many %nmchar)))
 
-(define %hexdigit ($one-of #[0-9a-fA-F]))
+(define %hexdigit ($. #[0-9a-fA-F]))
 
 ;; num [0-9]+|[0-9]*\.[0-9]+
 (define %num
-  (let* ([digs ($many1 ($one-of #[0-9]))]
+  (let* ([digs ($many1 ($. #[0-9]))]
          [frac ($->rope ($. #\.) digs)])
     ($lift ($ string->number $ rope->string $)
            ($/ ($->rope digs ($optional frac))
@@ -326,25 +326,25 @@
   ($->rope
    ($/ ($between ($. #\")
                  ($many ($/ ($none-of #[\n\r\f\"\\])
-                            ($try ($seq ($. #\\) %nl))
+                            ($seq ($. #\\) %nl)
                             %escape))
                  ($or ($. #\") ($eos)))
        ($between ($. #\')
                  ($many ($/ ($none-of #[\n\r\f\'\\])
-                            ($try ($seq ($. #\\) %nl))
+                            ($seq ($. #\\) %nl)
                             %escape))
                  ($or ($. #\') ($eos))))))
 
 (define %bad-string
   ($/ ($seq ($. #\")
-            ($skip-many ($/ ($none-of #[\n\r\f\"])
-                            ($try ($seq ($. #\\) %nl))
-                            %escape))
+            ($many_ ($/ ($none-of #[\n\r\f\"])
+                        ($seq ($. #\\) %nl)
+                        %escape))
             ($. #\newline))
       ($seq ($. #\')
-            ($skip-many ($/ ($none-of #[\n\r\f\'])
-                            ($try ($seq ($. #\\) %nl))
-                            %escape))
+            ($many_ ($/ ($none-of #[\n\r\f\'])
+                        ($seq ($. #\\) %nl)
+                        %escape))
             ($. #\newline))))
 
 (define %url
@@ -358,7 +358,7 @@
 
 (define %unicode-range
   (letrec [(code (^[cs] (string->number (list->string cs) 16)))]
-    ($seq ($one-of #[Uu]) ($. #\+)
+    ($seq ($. #[Uu]) ($. #\+)
           ($/ ($lift (^[cs1 _ cs2] `(UNICODE-RANGE ,(code cs1) ,(code cs2)))
                      ($many %hexdigit 1 6) ($. #\-) ($many %hexdigit 1 6))
               ($let* ([ds ($many %hexdigit 1 5)]
@@ -442,7 +442,7 @@
     (return-failure/unexpect "EOF" s)
     (return-result (car s) (cdr s))))
 
-(define %WS* ($skip-many ($tok 'WHITESPACE)))
+(define %WS* ($many_ ($tok 'WHITESPACE)))
 
 (define %component-value
   ($lazy
@@ -517,7 +517,7 @@
                   ($lift list %at-rule %declaration-list)))))
 
 (define %inter-rule-spaces
-  ($skip-many ($/ ($tok 'CDO) ($tok 'CDC) ($tok 'WHITESPACE))))
+  ($many_ ($/ ($tok 'CDO) ($tok 'CDC) ($tok 'WHITESPACE))))
 
 (define %rule-list
   ($many ($/ ($tok 'WHITESPACE) %qualified-rule %at-rule)))

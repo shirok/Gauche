@@ -53,9 +53,9 @@
           return-failure/message return-failure/compound
           
           $bind $return $fail $expect $lift $lift* $debug
-          $do $let $let* $try $assert $assert-not $and
+          $let $let* $try $assert $assert-not $and
           $seq $or $fold-parsers $fold-parsers-right
-          $many $many1 $skip-many $skip-many1
+          $many $many1 $many_ $many1_
           $repeat $optional
           $alternate
           $sep-by $end-by $sep-end-by
@@ -80,9 +80,9 @@
 ;;;
 ;;;   A ::= B C
 ;;;     => (define a ($seq b c))
-;;;    If you need values of B and C, use monadic macro $do, or applicative
+;;;    If you need values of B and C, use monadic macro $let, or applicative
 ;;;    combinator $lift
-;;;     => (define a ($do [x b] [y c] ($return (cons x y))))
+;;;     => (define a ($let ([x b] [y c]) ($return (cons x y))))
 ;;;     => (define a ($lift cons b c)
 ;;;
 ;;;   A :: B | C
@@ -109,7 +109,7 @@
 ;;;     => (define a ($->rope ($many b)))
 ;;;     Later, you can concatenate and convert ropes to a string by
 ;;;     rope->string.
-;;;     If you don't need the values, you can use $skip-many instead, which
+;;;     If you don't need the values, you can use $many_ instead, which
 ;;;     is more efficient.
 ;;;
 ;;;   A ::= B?
@@ -369,9 +369,9 @@
 
 ;; API
 ;; $lift :: (a,...) -> b, (Parser,..) -> Parser
-;; ($lift f parser) == ($do [x parser] ($return (f x)))
+;; ($lift f parser) == ($let ([x parser]) ($return (f x)))
 (define-inline ($lift f . parsers)
-  ;; We don't use the straightforward definition (using $do or $bind)
+  ;; We don't use the straightforward definition (using $let or $bind)
   ;; to reduce closure construction.
   (^s (let accum ([s s] [parsers parsers] [vs '()])
         (if (null? parsers)
@@ -400,23 +400,6 @@
       (receive [r v s] (parser s)
         (debug-print-post (list r v s))
         (values r v s))))
-
-;; API
-;; $do clause ... body
-;;   where
-;;     clause := (var parser)
-;;            |  (parser)
-;;            |  parser
-(define-syntax $do
-  (syntax-rules ()
-    [(_ body) body]
-    [(_ [var parser] clause . rest)
-     ($bind parser (^[var] ($do clause . rest)))]
-    [(_ [parser] clause . rest)
-     ($bind parser (^_ ($do clause . rest)))]
-    [(_ parser clause . rest)
-     ($bind parser (^_ ($do clause . rest)))]
-    [(_  . other) (syntax-error "malformed $do" ($do . other))]))
 
 ;; API
 ;; $let (bind ...) body ...
@@ -512,7 +495,7 @@
 ;;   Apply parsers sequentially, passing around seed value.
 ;;   Note: $fold-parsers can be written much simpler (only shown in
 ;;   recursion branch):
-;;     ($do [v (car ps)] ($fold-parsers proc (proc v seed) (cdr ps)))
+;;     ($let ([v (car ps)]) ($fold-parsers proc (proc v seed) (cdr ps)))
 ;;   but it needs to create closures at parsing time, rather than construction
 ;;   time.  Interestingly, $fold-parsers-right can be written simply
 ;;   without this disadvantage.
@@ -532,9 +515,7 @@
 (define ($fold-parsers-right proc seed ps)
   (match ps
     [()       ($return seed)]
-    [(p . ps) ($do [v    p]
-                   [seed ($fold-parsers-right proc seed ps)]
-                   ($return (proc v seed)))]))
+    [(p . ps) ($lift proc p ($fold-parsers-right proc seed ps))]))
 
 ;; API
 ;; $seq p1 p2 ...
@@ -625,11 +606,15 @@
 (define ($skip-count parse n)
   (if (= n 1)
     parse
-    ($do parse ($skip-count parse (- n 1)))))
+    ($let (parse) ($skip-count parse (- n 1)))))
 
 ;; API
 ;; $many p :optional min max
+;; $many_ p :optional min max
 ;; $many1 p :optional max
+;; $many1_ p :optional max
+;; $manyN p n
+;; $manyN_ p n.
 (define-inline ($many parse :optional (min 0) (max #f))
   (%check-min-max min max)
   (lambda (s)
@@ -642,29 +627,20 @@
                  (return-result (reverse! vs) s1)]
                 [else (values r v s1)]))))))
 
-(define ($many1 parse :optional (max #f))
-  (if max
-    ($do [v parse] [vs ($many parse 0 (- max 1))] ($return (cons v vs)))
-    ($do [v parse] [vs ($many parse)] ($return (cons v vs)))))
-
-;; API
-;; $skip-many p :optional min max
-;; $skip-many1 p :optional max
-;;   Like $many, but does not keep the results. Always returns #f.
-;;   This should be optimized; we don't need to retain intermediate values
-(define ($skip-many parse :optional (min 0) (max #f))
+(define-inline ($many_ parse :optional (min 0) (max #f))
   (%check-min-max min max)
-  (if (= min 0)
-    ($do [($many parse min max)]
-         ($return #f))
-    ($do [($skip-count parse min)]
-         [($skip-many parse 0 (and max (- max min)))]
-         ($return #f))))
+  (lambda (s)
+    (let loop ([s s] [count 0])
+      (if (>=? count max)
+        (return-result #t s)
+        (receive (r v s1) (parse s)
+          (cond [(parse-success? r) (loop s1 (+ count 1))]
+                [(and (eq? s s1) (<= min count))
+                 (return-result #t s1)]
+                [else (values r v s1)]))))))
 
-(define ($skip-many1 parse :optional (max #f))
-  (if max
-    ($do parse [($skip-many parse 0 (- max 1))] ($return #f))
-    ($do parse [($skip-many parse)] ($return #f))))
+(define-inline ($many1 parse :optional (max #f)) ($many parse 1 max))
+(define-inline ($many1_ parse :optional (max #f)) ($many_ parse 1 max))
 
 ;; API
 ;; $optional p :optional fallback
@@ -687,11 +663,11 @@
 ;;   entire $sep-by fails.
 (define ($sep-by parse sep :optional (min 0) (max #f))
   (define rep
-    ($do [x parse]
-         [xs ($many ($seq sep parse)
-                    (clamp (- min 1) 0)
-                    (and max (- max 1)))]
-         ($return (cons x xs))))
+    ($let ([x parse]
+           [xs ($many ($seq sep parse)
+                      (clamp (- min 1) 0)
+                      (and max (- max 1)))])
+      ($return (cons x xs))))
   (cond
    [(and max (zero? max)) ($return '())]
    [(> min 0) rep]
@@ -704,9 +680,9 @@
 ;;   for example, $sep-by fails with input P SEP P SEP P SEP Q, but
 ;;   $alternate returns three results from SEP, leaving SEP Q in the input.
 (define ($alternate parse sep)
-  ($or ($do [h parse]
-            [t ($many ($try ($do [v1 sep] [v2 parse] ($return (list v1 v2)))))]
-            ($return (cons h (apply append! t))))
+  ($or ($let ([h parse]
+              [t ($many ($try ($lift list sep parse)))])
+         ($return (cons h (apply append! t))))
        ($return '())))
 
 ;; API
@@ -715,7 +691,7 @@
 ;;   This one doesn't set backtrack point, so for example the input is
 ;;   P SEP P SEP P Q, the entire match fails.
 (define ($end-by parse sep . args)
-  (apply $many ($try ($do [v parse] sep ($return v))) args))
+  (apply $many ($try ($let ([v parse] sep) ($return v))) args))
 
 ;; API
 ;; $sep-end-by p sep min max
@@ -741,7 +717,7 @@
 ;; $between A B C
 ;;   Matches A B C, and returns the result of B.
 (define ($between open parse close)
-  ($do open [v parse] close ($return v)))
+  ($let (open [v parse] close) ($return v)))
 
 ;; API
 ;; $followed-by P S ...
@@ -765,7 +741,7 @@
 ;; $many-till P E :optional min max
 ;;
 (define ($many-till parse end . args)
-  (apply $many ($do [($not end)] parse) args))
+  (apply $many ($and ($assert-not end) parse) args))
 
 ;; API
 ;; $chain-left P OP
@@ -774,8 +750,8 @@
     (receive (r v s) (parse st)
       (if (parse-success? r)
         (let loop ([r1 r] [v1 v] [s1 s])
-          (receive (r2 v2 s2) (($do [proc op] [v parse]
-                                    ($return (proc v1 v)))
+          (receive (r2 v2 s2) (($let ([proc op] [v parse])
+                                 ($return (proc v1 v)))
                                s1)
             (if (parse-success? r2)
               (loop r2 v2 s2)
@@ -786,11 +762,11 @@
 ;; $chain-right P OP
 (define ($chain-right parse op)
   (rec (loop s)
-    (($do (h parse)
-          ($or ($try ($do [proc op]
-                          [t loop]
-                          ($return (proc h t))))
-               ($return h)))
+    (($let ([h parse])
+       ($or ($try ($let ([proc op]
+                         [t loop])
+                    ($return (proc h t))))
+            ($return h)))
      s)))
 
 ;; API
@@ -942,7 +918,7 @@
 (define ($none-of charset)
   ($one-of (char-set-complement charset)))
 
-;; Anything except enf of stream.
+;; Anything except end of stream.
 (define-inline ($any :optional (what "character"))
   (^s (if (pair? s)
         (return-result (car s) (cdr s))
