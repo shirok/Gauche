@@ -9,6 +9,7 @@
 	($repeat_, $many-till_): Added for the consistency.
 	($unexpect, $skip-count): Removed, for they were not exported and
 	  not used anywhere.
+	($assert-not): Dropped.  Instead, make $not never consume input.
 
 2020-01-12  Shiro Kawai  <shiro@acm.org>
 

@@ -494,7 +494,7 @@
   )
 
 (let ([parser1 ($between ($. "/*")
-                         ($->rope ($many ($seq ($assert-not ($. "*/"))
+                         ($->rope ($many ($seq ($not ($. "*/"))
                                                ($any))))
                          ($. "*/"))]
       [parser2 ($between ($. "/*")

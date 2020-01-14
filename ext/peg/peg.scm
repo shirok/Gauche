@@ -53,15 +53,15 @@
           return-failure/message return-failure/compound
           
           $bind $return $fail $expect $lift $lift* $debug
-          $let $let* $try $assert $assert-not $and
-          $seq $seq0 $or $fold-parsers $fold-parsers-right
+          $let $let* $try $assert $not $and
+          $or $fold-parsers $fold-parsers-right
+          $seq $seq0 $between
           $many $many1 $many_ $many1_ $repeat $repeat_
           $many-till $many-till_
           $optional
           $alternate
           $sep-by $end-by $sep-end-by
-          $between
-          $not $chain-left $chain-right
+          $chain-left $chain-right
           $lazy $parameterize
 
           $any $eos $.
@@ -544,19 +544,21 @@
 ;; API
 ;; $assert parser
 ;;   Match parser, but never consumes the result.
-;;   On success, the value of th he parser is 
+;;   On success, the value of the parser is returned.
 (define-inline ($assert p)
   (^s (receive (r v s1) (p s)
         (values r v s))))
 
 ;; API
-;; $assert-not parser
-;;   Same as ($assert ($not parser)).  Just for the convenience.
-(define-inline ($assert-not p)
+;; $not parser
+;;   Succeeds when the input does not matches parser.  The value is #t.
+;;   If the input matches P, unexpected failure results.
+;;   Never consumes input.
+(define ($not p)
   (^s (receive (r v s1) (p s)
         (if (parse-success? r)
-          (return-failure/expect "assert-not" s)
-          (return-result #t s)))))
+          (return-failure/unexpect v s)
+          (return-result #f s)))))
 
 ;; API
 ;; $and p1 p2 ... pn
@@ -639,9 +641,9 @@
 ;; $many-till P E :optional min max
 ;; $many-till_ P E :optional min max
 (define ($many-till parse end . args)
-  (apply $many ($and ($assert-not end) parse) args))
+  (apply $many ($and ($not end) parse) args))
 (define ($many-till_ parse end . args)
-  (apply $many_ ($and ($assert-not end) parse) args))
+  (apply $many_ ($and ($not end) parse) args))
 
 ;; API
 ;; $optional p :optional fallback
@@ -713,18 +715,6 @@
 ;;   Matches A B C, and returns the result of B.
 (define ($between open parse close)
   ($let (open [v parse] close) ($return v)))
-
-;; API
-;; $not P
-;;   Succeeds when the input does not matches P.  The value is #f.
-;;   If the input matches P, unexpected failure results.
-;;   Unlike other parsers, input may be consumed when this parser succeeds.
-(define ($not parse)
-  (lambda (s0)
-    (receive (r v s) (parse s0)
-      (if r
-        (return-result #f s)
-        (return-failure/unexpect v s0)))))
 
 ;; API
 ;; $chain-left P OP
