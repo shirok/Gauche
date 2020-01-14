@@ -1,3 +1,8 @@
+2020-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($alternate): Deprecate $alternate, for
+	  it overlaps $sep-by.
+
 2020-01-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($do, $skip-many, $skip-many1, $followed-by, $count):

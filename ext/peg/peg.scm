@@ -59,7 +59,6 @@
           $many $many1 $many_ $many1_ $repeat $repeat_
           $many-till $many-till_
           $optional
-          $alternate
           $sep-by $end-by $sep-end-by
           $chain-left $chain-right
           $lazy $parameterize
@@ -653,18 +652,6 @@
    [else ($or rep ($return '()))]))
 
 ;; API
-;; $alternate p sep
-;;   P separated by SEP.  Returns list of values of P.
-;;   Unline $sep-by, this one sets backtrack point before each SEP.  So,
-;;   for example, $sep-by fails with input P SEP P SEP P SEP Q, but
-;;   $alternate returns three results from SEP, leaving SEP Q in the input.
-(define ($alternate parse sep)
-  ($or ($let ([h parse]
-              [t ($many ($try ($lift list sep parse)))])
-         ($return (cons h (apply append! t))))
-       ($return '())))
-
-;; API
 ;; $end-by p sep :optional min max
 ;;   Matches repetition of P SEP.  Returns a list of values of P.
 ;;   This one doesn't set backtrack point, so for example the input is
@@ -674,7 +661,8 @@
 
 ;; API
 ;; $sep-end-by p sep min max
-;;   
+;;   The last SEP is optional.  The definition is a bit involved
+;;   for performance.
 (define ($sep-end-by parse sep :optional (min 0) (max #f))
   (%check-min-max min max)
   (^s (let loop ([vs '()] [s s] [count 0])

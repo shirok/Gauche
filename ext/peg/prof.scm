@@ -16,7 +16,7 @@
          (double-dquote ($do (($string "\"\"")) ($return #\")))
          (quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
          (quoted ($between dquote quoted-body dquote))
-         (unquoted ($alternate ($one-of #[^ \t\n,]) spaces))
+         (unquoted ($sep-by ($one-of #[^ \t\n,]) spaces))
          (field ($or quoted unquoted))
          (record ($sep-by ($->rope field) comma 1)))
     ($sep-by record newline)))

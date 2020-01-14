@@ -11,7 +11,7 @@
 
           $do
 
-          $followed-by $skip-many $skip-many1 $count
+          $followed-by $skip-many $skip-many1 $count $alternate
 
           $s $c $y)
 
@@ -35,6 +35,12 @@
   (define $skip-many1 $many1_)
   (define $followed-by $seq0)
   (define $count $repeat)
+
+  (define ($alternate parse sep)
+    ($or ($let ([h parse]
+                [t ($many ($try ($lift list sep parse)))])
+           ($return (cons h (apply append! t))))
+         ($return '())))
 
   ;; for these two, use '$.'
   (define ($s x) ($string x))
