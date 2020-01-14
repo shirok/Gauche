@@ -92,7 +92,7 @@
 
 (define %value
   ($lazy
-   ($followed-by ($or %special %object %array %number %string) %ws)))
+   ($seq0 ($or %special %object %array %number %string) %ws)))
 
 (define %array
   ($lift ($ build-array $ rope-finalize $)

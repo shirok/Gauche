@@ -628,8 +628,8 @@
                                      ($seq ($delim #\+) ($return '+))
                                      ($seq ($delim #\~) ($return '~)))
                                  %WS*)
-                       ($followed-by ($seq ($tok 'WHITESPACE) ($return #f))
-                                     %WS*))
+                       ($seq0 ($seq ($tok 'WHITESPACE) ($return #f))
+                              %WS*))
                    %selector-seq))))))
 
 (define %selector-group  ;; section 5
@@ -788,7 +788,7 @@
 ;; Integrated stylesheet parser
 (define (make-stylesheet-parser qualified-rule-handler at-rule-handler)
   ($seq %inter-rule-spaces
-        ($many ($followed-by
+        ($many ($seq0
                 ($/ ($lift (^[a] (at-rule-handler (car a) (cadr a) (caddr a)
                                                   qualified-rule-handler))
                            %at-rule)

@@ -1,9 +1,10 @@
 2020-01-13  Shiro Kawai  <shiro@acm.org>
 
-	* ext/peg/peg.scm ($do, $skip-many, $skip-many1): Make these deprecated,
-	  moved to parser.peg.deprecated.  $do can be rewritten with $let
-	  or $let*.  $skip-many and $skip-many1 got new names $many_ and
-	  $many1_.
+	* ext/peg/peg.scm ($do, $skip-many, $skip-many1, $followed-by):
+	  Make these deprecated, moved to parser.peg.deprecated.
+	  $do can be rewritten with $let or $let*.
+	  $skip-many and $skip-many1 got new names $many_ and $many1_.
+	  $followed-by is renamed to $seq0.
 
 2020-01-12  Shiro Kawai  <shiro@acm.org>
 

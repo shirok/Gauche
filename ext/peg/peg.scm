@@ -54,12 +54,12 @@
           
           $bind $return $fail $expect $lift $lift* $debug
           $let $let* $try $assert $assert-not $and
-          $seq $or $fold-parsers $fold-parsers-right
+          $seq $seq0 $or $fold-parsers $fold-parsers-right
           $many $many1 $many_ $many1_
           $repeat $optional
           $alternate
           $sep-by $end-by $sep-end-by
-          $count $between $followed-by
+          $count $between
           $not $many-till $chain-left $chain-right
           $lazy $parameterize
 
@@ -518,12 +518,17 @@
     [(p . ps) ($lift proc p ($fold-parsers-right proc seed ps))]))
 
 ;; API
-;; $seq p1 p2 ...
-;;   Match p1, p2 ... sequentially.  On success, returns the semantic
-;;   value of the last parser.
+;; $seq P ... Pz
+;;   Matches P ... Pz sequentially, and returns the result of Pz.
 ;;   To get all the results of p1, p2, ... in a list, use $lift list p1 p2 ...
 (define ($seq . parsers)
   ($fold-parsers (^[v s] v) #f parsers))
+
+;; API
+;; $seq0 P0 P ...
+;;   Matches P0 P ..., and returns the result of P.
+(define ($seq0 parse . followers)
+  (apply $lift (^[v . _] v) parse followers))
 
 ;; API
 ;; $try parser
@@ -718,12 +723,6 @@
 ;;   Matches A B C, and returns the result of B.
 (define ($between open parse close)
   ($let (open [v parse] close) ($return v)))
-
-;; API
-;; $followed-by P S ...
-;;   Matches P S ..., and returns the result of P.
-(define ($followed-by parse . followers)
-  (apply $lift (^[v . _] v) parse followers))
 
 ;; API
 ;; $not P

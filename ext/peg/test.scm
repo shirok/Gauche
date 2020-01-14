@@ -491,9 +491,9 @@
 ;;;
 (test-section "lookahead assertion")
 
-(let ([parser ($followed-by 
+(let ([parser ($seq0 
                ($->rope ($many 
-                         ($try ($followed-by ($any)
+                         ($try ($seq0 ($any)
                                              ($assert ($. #[a-z]))))))
                ($any))])
   (test-succ "positive lookahead" " abc" parser
@@ -575,6 +575,32 @@
     ($lift cons
            integer
            ($many ($seq separator integer))))
+  (define integers4
+    ($or ($let ([n  integer]
+                [ns ($many ($seq separator integer))])
+           ($return (cons n ns)))
+         ($return '())))
+  (define (sep-by stuff separator)
+    ($or ($let ([n  stuff]
+                [ns ($many ($seq separator stuff))])
+           ($return (cons n ns)))
+         ($return '())))
+  (define integers5 (sep-by integer separator))
+  (define begin-list 
+    ($seq0 ($. #[\(\[\{]) ws))
+  (define (end-list opener) 
+    (case opener
+      [(#\() ($. #\))]
+      [(#\[) ($. #\])]
+      [(#\{) ($. #\})]))
+  
+  (define int-list1
+    ($let* ([opener begin-list]
+            [ ws ]
+            [ints ($sep-by integer separator)]
+            [ ws ]
+            [ (end-list opener) ])
+      ($return ints)))
   
   (test* "integers1" '(456 789)
          (peg-parse-string integers1 "123, 456, 789"))
@@ -582,6 +608,34 @@
          (peg-parse-string integers2 "123, 456, 789"))
   (test* "integers3" '(123 456 789)
          (peg-parse-string integers3 "123, 456, 789"))
+  (test* "integers4" '(123 456 789)
+         (peg-parse-string integers4 "123, 456, 789"))
+  (test* "integers4" '()
+         (peg-parse-string integers4 ""))
+  (test* "integers5" '(123 456 789)
+         (peg-parse-string integers5 "123, 456, 789"))
+  (test* "integers5" '()
+         (peg-parse-string integers5 ""))
+
+  (test* "int-list1" '(123 456 789)
+         (peg-parse-string int-list1 "[123, 456, 789]"))
+  (test* "int-list1" '(123 456 789)
+         (peg-parse-string int-list1 "{123, 456, 789}"))
+  (test* "int-list1" (test-error <parse-error>
+                                 "expecting #\\) at 14, but got #\\}")
+         (peg-parse-string int-list1 "(123, 456, 789}"))
+  )
+
+(let ()
+  (define paren  ($. #\())
+  (define thesis ($. #\)))
+
+  (test* "$or example" 
+         (test-error <parse-error> "expecting ab at 1, but got #\\c")
+
+         (peg-parse-string ($or ($seq paren ($."ab") thesis)
+                                ($seq paren ($."cd") thesis))
+                           "(cd)"))
   )
   
 (let ()
