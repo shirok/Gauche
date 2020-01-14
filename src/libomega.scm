@@ -162,7 +162,11 @@
 (define-inline/syntax identity 
   (let ([identity (^[val] val)]) ; to attach name to the clojure
     identity)
-  (er-macro-transformer (^[f r c] (cadr f))))
+  (er-macro-transformer 
+   (^[f r c] 
+     (if (and (pair? f) (pair? (cdr f)) (null? (cddr f)))
+       (cadr f)
+       (error "Wrong number of arguments for identity:" f)))))
 
 ;; Recursive hash function
 ;; This is here instead of in libdict.scm, for we need the rest of
