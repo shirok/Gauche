@@ -719,14 +719,13 @@
 ;;     call (RESULT head (PRED head)) and let its result
 ;;     as the value of successulf parsing.
 ;;   - Otherwise, returns failure with EXPECT as the expected input.
-(define-syntax $satisfy
-  (syntax-rules ()
-    [(_ pred expect) ($satisfy pred expect identity)]
-    [(_ pred expect result)
-     (lambda (s)
-       (if-let1 v (and (pair? s) (pred (car s)))
-         (return-result (result (car s) v) (cdr s))
-         (return-failure/expect expect s)))]))
+(define-inline ($satisfy pred expect :optional (result #f))
+  (^s (if-let1 v (and (pair? s) (pred (car s)))
+        (return-result (if result
+                         (result (car s) v) 
+                         (car s))
+                       (cdr s))
+        (return-failure/expect expect s))))
 
 ;; API
 ;; $match PATTERN [RESULT]
