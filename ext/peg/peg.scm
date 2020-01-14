@@ -55,12 +55,13 @@
           $bind $return $fail $expect $lift $lift* $debug
           $let $let* $try $assert $assert-not $and
           $seq $seq0 $or $fold-parsers $fold-parsers-right
-          $many $many1 $many_ $many1_
-          $repeat $optional
+          $many $many1 $many_ $many1_ $repeat $repeat_
+          $many-till $many-till_
+          $optional
           $alternate
           $sep-by $end-by $sep-end-by
-          $count $between
-          $not $many-till $chain-left $chain-right
+          $between
+          $not $chain-left $chain-right
           $lazy $parameterize
 
           $any $eos $.
@@ -345,10 +346,6 @@
           (values r v ss)
           (return-failure/expect msg s)))))
 
-;; a parser that merely returns 'fail-unexpect with MSG.
-(define ($unexpect msg s) (^_ (return-failure/unexpect msg s)))
-
-
 ;; A convenience utility to check the upper bound, allowing unlimited
 ;; upper bound by #f.
 (define-inline (>=? count max) (and max (>= count max)))
@@ -600,26 +597,10 @@
     (error "invalid argument:" min max)))
 
 ;; API
-;; $count p n
-;;   Exactly n times of p.  Returns the list.
-(define ($count parse n)
-  ($many parse n n))
-
-;; API
-;; $skip-count p n
-;;   Exactly n times of p, discarding the results but the last.
-(define ($skip-count parse n)
-  (if (= n 1)
-    parse
-    ($let (parse) ($skip-count parse (- n 1)))))
-
-;; API
 ;; $many p :optional min max
 ;; $many_ p :optional min max
 ;; $many1 p :optional max
 ;; $many1_ p :optional max
-;; $manyN p n
-;; $manyN_ p n.
 (define-inline ($many parse :optional (min 0) (max #f))
   (%check-min-max min max)
   (lambda (s)
@@ -648,18 +629,27 @@
 (define-inline ($many1_ parse :optional (max #f)) ($many_ parse 1 max))
 
 ;; API
+;; $repeat p n
+;; $repeat_ p n
+;;   Exactly n time of P.  Same as ($many p n n)
+(define ($repeat parse n) ($many parse n n))
+(define ($repeat_ parse n) ($many_ parse n n))
+
+;; API
+;; $many-till P E :optional min max
+;; $many-till_ P E :optional min max
+(define ($many-till parse end . args)
+  (apply $many ($and ($assert-not end) parse) args))
+(define ($many-till_ parse end . args)
+  (apply $many_ ($and ($assert-not end) parse) args))
+
+;; API
 ;; $optional p :optional fallback
 ;;   Try P.  If not match, use FALLBACK as the value.
 ;;   Does not backtrack by default; if P may consume some input and
 ;;   you want to backtrack later, wrap it with $try.
 (define ($optional parse :optional (fallback #f))
   ($or parse ($return fallback)))
-
-;; API
-;; $repeat p n
-;;   Exactly n time of P.  Same as ($many p n n)
-(define ($repeat parse n)
-  ($many parse n n))
 
 ;; API
 ;; $sep-by p sep :optional min max
@@ -735,12 +725,6 @@
       (if r
         (return-result #f s)
         (return-failure/unexpect v s0)))))
-
-;; API
-;; $many-till P E :optional min max
-;;
-(define ($many-till parse end . args)
-  (apply $many ($and ($assert-not end) parse) args))
 
 ;; API
 ;; $chain-left P OP

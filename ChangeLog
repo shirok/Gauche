@@ -1,10 +1,14 @@
 2020-01-13  Shiro Kawai  <shiro@acm.org>
 
-	* ext/peg/peg.scm ($do, $skip-many, $skip-many1, $followed-by):
+	* ext/peg/peg.scm ($do, $skip-many, $skip-many1, $followed-by, $count):
 	  Make these deprecated, moved to parser.peg.deprecated.
 	  $do can be rewritten with $let or $let*.
 	  $skip-many and $skip-many1 got new names $many_ and $many1_.
 	  $followed-by is renamed to $seq0.
+	  $count is the same as $repeat.
+	($repeat_, $many-till_): Added for the consistency.
+	($unexpect, $skip-count): Removed, for they were not exported and
+	  not used anywhere.
 
 2020-01-12  Shiro Kawai  <shiro@acm.org>
 

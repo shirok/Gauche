@@ -11,7 +11,7 @@
 
           $do
 
-          $followed-by $skip-many $skip-many1
+          $followed-by $skip-many $skip-many1 $count
 
           $s $c $y)
 
@@ -34,6 +34,7 @@
   (define $skip-many $many_)
   (define $skip-many1 $many1_)
   (define $followed-by $seq0)
+  (define $count $repeat)
 
   ;; for these two, use '$.'
   (define ($s x) ($string x))

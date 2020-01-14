@@ -374,13 +374,6 @@
              "aa,bb,")
   )
 
-;; $count
-(test-succ "$count" '(#\a #\b)
-           ($count ($one-of #[ab]) 2) "abab")
-
-(test-fail "$count" '(1 #[ab])
-           ($count ($one-of #[ab]) 2) "a012")
-
 ;; $between
 (test-succ "$between" "foo"
            ($between ($string "(")
@@ -589,19 +582,25 @@
   (define begin-list 
     ($seq0 ($. #[\(\[\{]) ws))
   (define (end-list opener) 
-    (case opener
-      [(#\() ($. #\))]
-      [(#\[) ($. #\])]
-      [(#\{) ($. #\})]))
+    ($seq ws (case opener
+               [(#\() ($. #\))]
+               [(#\[) ($. #\])]
+               [(#\{) ($. #\})])))
   
-  (define int-list1
+  (define int-list
     ($let* ([opener begin-list]
-            [ ws ]
             [ints ($sep-by integer separator)]
-            [ ws ]
             [ (end-list opener) ])
       ($return ints)))
-  
+
+  (define nested-list
+    ($lazy
+     ($let* ([opener begin-list]
+             [ints ($sep-by elem separator)]
+             [ (end-list opener) ])
+       ($return ints))))
+  (define elem  ($or integer nested-list))
+
   (test* "integers1" '(456 789)
          (peg-parse-string integers1 "123, 456, 789"))
   (test* "integers2" '(123 456 789)
@@ -617,13 +616,16 @@
   (test* "integers5" '()
          (peg-parse-string integers5 ""))
 
-  (test* "int-list1" '(123 456 789)
-         (peg-parse-string int-list1 "[123, 456, 789]"))
-  (test* "int-list1" '(123 456 789)
-         (peg-parse-string int-list1 "{123, 456, 789}"))
-  (test* "int-list1" (test-error <parse-error>
-                                 "expecting #\\) at 14, but got #\\}")
-         (peg-parse-string int-list1 "(123, 456, 789}"))
+  (test* "int-list" '(123 456 789)
+         (peg-parse-string int-list "[123, 456, 789]"))
+  (test* "int-list" '(123 456 789)
+         (peg-parse-string int-list "{123, 456, 789}"))
+  (test* "int-list" (test-error <parse-error>
+                                "expecting #\\) at 14, but got #\\}")
+         (peg-parse-string int-list "(123, 456, 789}"))
+
+  (test* "nested-list" '(123 (456 () 789) 987)
+         (peg-parse-string nested-list "(123, [456, {}, 789], 987)"))
   )
 
 (let ()
