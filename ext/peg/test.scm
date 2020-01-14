@@ -496,18 +496,10 @@
 (let ([parser1 ($between ($. "/*")
                          ($->rope ($many ($seq ($not ($. "*/"))
                                                ($any))))
-                         ($. "*/"))]
-      [parser2 ($between ($. "/*")
-                         ($->rope ($many ($and ($not ($. "*/"))
-                                               ($any))))
                          ($. "*/"))])
   (test-succ "negative lookahead 1" " abc * def " parser1
              "/* abc * def */ def")
-  (test-succ "negative lookahead 2" " abc * def " parser2
-             "/* abc * def */ def")
   (test-fail "negative lookahead 1" '(12 "*/")  parser1
-             "/* abc * def")
-  (test-fail "negative lookahead 2" '(12 "*/")  parser2
              "/* abc * def")
   )
 

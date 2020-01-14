@@ -10,6 +10,10 @@
 	($unexpect, $skip-count): Removed, for they were not exported and
 	  not used anywhere.
 	($assert-not): Dropped.  Instead, make $not never consume input.
+	($and): Dropped.  Upon the change of $not, we can simply use $seq for
+	  negative lookahead assertions, and having $assert for positive
+	  lookahead assertions won't be so much hassle, so I see not much
+	  point of having $and.
 
 2020-01-12  Shiro Kawai  <shiro@acm.org>
 

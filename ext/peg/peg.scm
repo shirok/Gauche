@@ -53,7 +53,7 @@
           return-failure/message return-failure/compound
           
           $bind $return $fail $expect $lift $lift* $debug
-          $let $let* $try $assert $not $and
+          $let $let* $try $assert $not
           $or $fold-parsers $fold-parsers-right
           $seq $seq0 $between
           $many $many1 $many_ $many1_ $repeat $repeat_
@@ -561,24 +561,6 @@
           (return-result #f s)))))
 
 ;; API
-;; $and p1 p2 ... pn
-;;   Try p1, p2, ... on the same position of the input.  When all succeeds,
-;;   apply pn.
-;;   Effectively same as ($seq ($assert p1) ($assert p2) ... pn), but simpler.
-(define ($and . parsers)
-  (match parsers
-    [() (^s (return-result #t s))]      ;always success
-    [(p) p]
-    [(ps ...)
-     (^s (let loop ([ps ps])
-           (receive (r v s1) ((car ps) s)
-             (if (parse-success? r)
-               (if (null? (cdr ps))
-                 (return-result v s1)
-                 (loop (cdr ps)))
-               (values r v s)))))]))
-
-;; API
 (define-syntax $lazy
   (syntax-rules ()
     [(_ parse)
@@ -641,9 +623,9 @@
 ;; $many-till P E :optional min max
 ;; $many-till_ P E :optional min max
 (define ($many-till parse end . args)
-  (apply $many ($and ($not end) parse) args))
+  (apply $many ($seq ($not end) parse) args))
 (define ($many-till_ parse end . args)
-  (apply $many_ ($and ($not end) parse) args))
+  (apply $many_ ($seq ($not end) parse) args))
 
 ;; API
 ;; $optional p :optional fallback
