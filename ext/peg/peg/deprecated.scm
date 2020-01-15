@@ -12,6 +12,7 @@
           $do
 
           $followed-by $skip-many $skip-many1 $count $alternate
+          $match
 
           $s $c $y)
 
@@ -30,6 +31,8 @@
       [(_ parser clause . rest)
        ($bind parser (^_ ($do clause . rest)))]
       [(_  . other) (syntax-error "malformed $do" ($do . other))]))
+
+  (define-syntax $match $match1*)
 
   (define $skip-many $many_)
   (define $skip-many1 $many1_)

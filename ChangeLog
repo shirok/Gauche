@@ -2,6 +2,9 @@
 
 	* ext/peg/peg.scm ($alternate): Deprecate $alternate, for
 	  it overlaps $sep-by.
+	($match1*): Rename from $match, to avoid confusion of util.match
+	  macro, which takes multiple clauses.
+	($any): Drop optional 
 
 2020-01-13  Shiro Kawai  <shiro@acm.org>
 

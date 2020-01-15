@@ -67,7 +67,7 @@
           
           $symbol $string $string-ci
           $char $one-of $none-of $many-chars
-          $satisfy $match $match1
+          $satisfy $match1 $match1*
 
           $->rope $->string $->symbol rope->string rope-finalize
           )
@@ -728,19 +728,18 @@
         (return-failure/expect expect s))))
 
 ;; API
-;; $match PATTERN [RESULT]
 ;; $match1 PATTERN [RESULT]
+;; $match1* PATTERN [RESULT]
 ;;   - Run util.match#match against the input stream.
 ;;   - $match1 takes one item from stream and see if it matches
 ;;     with PATTERN.
-;;   - $match applys PATTERN on the entire input stream.
+;;   - $match1* applys PATTERN on the entire input stream.
 ;;   - If matched, RESULT is evaluated in the environment where pattern variables
 ;;     in PATTERN are bound, and its result becomes the result value of the
 ;;     parser.
 ;;   - If RESULT is omitted, the matched item is returned.
-;;   - The item may be consumed even the parser fails.
 
-(define-syntax $match
+(define-syntax $match1*
   (syntax-rules ()
     [(_ (pat ...) result)
      (lambda (s)
@@ -861,14 +860,14 @@
   ($one-of (char-set-complement charset)))
 
 ;; Anything except end of stream.
-(define-inline ($any :optional (what "character"))
+(define-inline ($any)
   (^s (if (pair? s)
         (return-result (car s) (cdr s))
-        (return-failure/expect what s))))
+        (return-failure/unexpect "end of input" s))))
 
 (define-inline ($eos)
   (^s (if (pair? s)
-        (return-failure/expect "end of stream" s)
+        (return-failure/expect "end of input" s)
         (return-result (eof-object) s))))
 
 ;; Parse one item---a char, a string or a charset.

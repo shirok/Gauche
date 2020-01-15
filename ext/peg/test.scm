@@ -304,7 +304,7 @@
 ;; $repeat
 (test-succ "$repeat" '(#\a #\b #\a)
            ($repeat ($any) 3) "abab")
-(test-fail "$repeat" '(2 "character")
+(test-fail "$repeat" '(2 "end of input")
            ($repeat ($any) 3) "ab")
 
 ;; $optional
@@ -680,7 +680,7 @@
   (%test "+27.46") (%test "0.46")
   (%test ".46" '(0 #[0-9]))
   (%test "0..3" '(2 #[0-9]))
-  (%test "0.4.2" '(3 "end of stream"))
+  (%test "0.4.2" '(3 "end of input"))
   (%test "3e5")
   (%test "3.0e5")
   (%test "3.e5" '(2 #[0-9]))
@@ -815,20 +815,20 @@
            ($satisfy char-numeric? "numeric")
            "a")
 
-(test-succ "$match" #\a
-           ($match (#\c x #\r) x)
+(test-succ "$match1*" #\a
+           ($match1* (#\c x #\r) x)
            "car foo")
-(test-succ "$match" #\d
-           ($match (#\c x #\r) x)
+(test-succ "$match1*" #\d
+           ($match1* (#\c x #\r) x)
            "cdr foo")
-(test-succ "$match" '(#\a (#\space #\f #\o #\o))
-           ($match (#\c x #\r . t) (list x t))
+(test-succ "$match1*" '(#\a (#\space #\f #\o #\o))
+           ($match1* (#\c x #\r . t) (list x t))
            "car foo")
-(test-succ "$match (no result arg)" '(#\c #\u #\r)
-           ($match (#\c x #\r))
+(test-succ "$match1* (no result arg)" '(#\c #\u #\r)
+           ($match1* (#\c x #\r))
            "cur foo")
-(test-fail "$match" '(0 "(#\\c x #\\r)")
-           ($match (#\c x #\r) x)
+(test-fail "$match1*" '(0 "(#\\c x #\\r)")
+           ($match1* (#\c x #\r) x)
            "zxy foo")
 
 (test-succ "$match1" #\a ($match1 #\a) "abc")
