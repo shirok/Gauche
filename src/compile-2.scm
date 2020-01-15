@@ -723,6 +723,7 @@
             [(VEC-LEN) (pass2/const-veclen args)]
             [(EQ)      (pass2/const-op2 eq? args)]
             [(EQV)     (pass2/const-op2 eqv? args)]
+            [(NUMEQ2)  (pass2/const-numop2 = args)]
             [(NUMADD2) (pass2/const-numop2 + args)]
             [(NUMSUB2) (pass2/const-numop2 - args)]
             [(NUMMUL2) (pass2/const-numop2 * args)]
