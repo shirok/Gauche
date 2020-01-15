@@ -881,5 +881,6 @@
    [(char-set? item) ($one-of item)]
    [(char? item) ($char item)]
    [(string? item) ($string item)]
-   [else (error "Bad item: $. requires a char, a char-set or a string,
-                 but got:" item)]))
+   [(symbol? item) ($symbol item)]
+   [else (error "Bad item: $. requires a char, a char-set, a string, \
+                 or a symbol, but got:" item)]))
