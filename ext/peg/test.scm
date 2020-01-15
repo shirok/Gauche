@@ -400,23 +400,6 @@
            ($many-till ($one-of #[[:alnum:]]) ($one-of #[\d]))
            "ab78")
 
-;; $many-chars
-(test-succ "$many-chars" '(#\c #\b #\a)
-           ($many-chars #[a-c])
-           "cbad")
-(test-succ "$many-chars" '()
-           ($many-chars #[a-c])
-           "ABCD")
-(test-succ "$many-chars" '(#\c #\b #\a)
-           ($many-chars #[a-c] 2 5)
-           "cbad")
-(test-fail "$many-chars" '(3 #[a-c])
-           ($many-chars #[a-c] 4 5)
-           "cbad")
-(test-succ "$many-chars" '(#\c #\b)
-           ($many-chars #[a-c] 0 2)
-           "cbad")
-
 ;; $chain-left
 (let ([integer
        ($let ([v ($many ($one-of #[\d])  1)])
@@ -666,11 +649,11 @@
 
 ;; number parser (1) - simple
 (let* ([sign?    ($optional ($one-of #[-+]))]
-       [digits   ($seq sign? ($many-chars #[\d] 1))]
-       [point    ($seq ($char #\.) ($many ($one-of #[\d]) 1))]
-       [exponent ($seq ($one-of #[eE]) digits)]
+       [digits   ($seq sign? ($many ($. #[\d]) 1))]
+       [point    ($seq ($char #\.) ($many ($. #[\d]) 1))]
+       [exponent ($seq ($. #[eE]) digits)]
        [number?  ($seq digits ($optional point) ($optional exponent))]
-       [p        ($let ([number?] [($eos)]) ($return #t))])
+       [p        ($seq number? ($eos) ($return #t))])
   (define (%test str . fails?)
     (if (null? fails?)
       (test-succ #"number(1) \"~str\"" #t p str)
@@ -692,13 +675,13 @@
 
 ;; CSV parser
 (let ()
-  (define ws     ($many ($one-of #[ \t])))
-  (define comma  ($seq ws ($char #\,) ws))
-  (define dquote ($char #\"))
-  (define double-dquote ($seq ($string "\"\"") ($return #\")))
-  (define quoted-body ($many ($or double-dquote ($one-of #[^\"]))))
+  (define ws     ($many ($. #[ \t])))
+  (define comma  ($seq ws ($. #\,) ws))
+  (define dquote ($. #\"))
+  (define double-dquote ($seq ($. "\"\"") ($return #\")))
+  (define quoted-body ($many ($or double-dquote ($. #[^\"]))))
   (define quoted ($between dquote quoted-body dquote))
-  (define unquoted ($many-till ($any) ($or comma ($char #\newline))))
+  (define unquoted ($many-till ($any) ($or comma ($. #\newline))))
   (define field ($or quoted unquoted))
   (define record ($sep-by ($->rope field) comma))
   (test-succ "CSV" '("a" "b" "c")
@@ -710,17 +693,17 @@
 
 ;; hand-tuned version
 (let ()
-  (define ws     ($many_ ($one-of #[ \t])))
-  (define comma  ($seq ws ($char #\,) ws))
-  (define dquote ($char #\"))
-  (define double-dquote ($seq ($string "\"\"") ($return #\")))
-  (define quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
+  (define ws     ($many_ ($. #[ \t])))
+  (define comma  ($seq ws ($. #\,) ws))
+  (define dquote ($. #\"))
+  (define double-dquote ($seq ($. "\"\"") ($return #\")))
+  (define quoted-body ($many ($or ($. #[^\"]) double-dquote)))
   (define quoted ($between dquote quoted-body dquote))
-  (define unquoted ($sep-end-by ($many1 ($one-of #[^ \t\r\n,]))
-                                ($many_ ($one-of #[ \t]))))
+  (define unquoted ($sep-end-by ($many1 ($. #[^ \t\r\n,]))
+                                ($many_ ($. #[ \t]))))
   (define field   ($or quoted unquoted))
   (define record  ($sep-by ($->rope field) comma 1))
-  (define records ($sep-end-by record ($string "\r\n")))
+  (define records ($sep-end-by record ($. "\r\n")))
   ;; NB: In CSV spec there's an ambiguity of treatment of the ending CRLF.
   ;; The CRLF after the last record can be omitted; so if the file ends with
   ;; CRLF, it may be the end of whole records, or there may be one record

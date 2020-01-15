@@ -66,7 +66,7 @@
           $any $eos $.
           
           $symbol $string $string-ci
-          $char $one-of $none-of $many-chars
+          $char $one-of $none-of
           $satisfy $match1 $match1*
 
           $->rope $->string $->symbol rope->string rope-finalize
@@ -858,14 +858,6 @@
 (define ($symbol sym) 
   (assume-type sym <symbol>)
   ($seq ($string (symbol->string sym)) ($return sym)))
-
-;; ($many-chars charset [min [max]]) == ($many ($one-of charset) [min [max]])
-;;   with possible optimization.
-(define-inline $many-chars
-  (case-lambda
-    [(p) ($many ($one-of p))]
-    [(p min) ($many ($one-of p) min)]
-    [(p min max) ($many ($one-of p) min max)]))
 
 (define ($none-of charset)
   ($one-of (char-set-complement charset)))

@@ -12,7 +12,7 @@
           $do
 
           $followed-by $skip-many $skip-many1 $count $alternate
-          $match
+          $match $many-chars
 
           $s $c $y)
 
@@ -38,6 +38,8 @@
   (define $skip-many1 $many1_)
   (define $followed-by $seq0)
   (define $count $repeat)
+  (define ($many-chars cset :optional min max)
+    ($many ($. cset) min max))
 
   (define ($alternate parse sep)
     ($or ($let ([h parse]

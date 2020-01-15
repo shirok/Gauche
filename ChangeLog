@@ -4,7 +4,7 @@
 	  natural.
 	($string): We don't need to gather the matched result.  We already know
 	  what it would be.
-	($many-chars): Doesn't need to be a macro.
+	($many-chars): Deprecate this.  ($many ($. #[...])) isn't much longer.
 	($.): Support $symbol as well.
 
 2020-01-14  Shiro Kawai  <shiro@acm.org>
