@@ -811,26 +811,30 @@
              (cons ca cd)))]
         [else obj]))
 
-(define-values ($string $string-ci)
-  (let-syntax
-      ([expand
-        (syntax-rules ()
-          ((_ char=)
-           (lambda (str)
-             (assume-type str <string>)
-             (let1 lis (string->list str)
-               (lambda (s0)
-                 (let loop ((r '()) (s s0) (lis lis))
-                   (if (null? lis)
-                     (return-result (make-rope (reverse! r)) s)
-                     (if (and (pair? s)
-                              (char? (car s))
-                              (char= (car s) (car lis)))
-                       (loop (cons (car s) r) (cdr s) (cdr lis))
-                       (return-failure/expect str s0)))))))))])
-    (values (expand char=?)
-            (expand char-ci=?))))
+;; NB: On success, we know the matched input is the same as STR,
+;; so we don't need to bother to collect matched chars.
+(define ($string str)
+  (let1 lis (string->list str)
+    (^[s0]
+      (let loop ([s s0] [lis lis])
+        (if (null? lis)
+          (return-result str s)
+          (if (and (pair? s) (eqv? (car s) (car lis)))
+            (loop (cdr s) (cdr lis))
+            (return-failure/expect str s0)))))))
 
+(define ($string-ci str)
+  (let1 lis (string->list str)
+    (^[s0]
+      (let loop ([r '()] [s s0] [lis lis])
+        (if (null? lis)
+          (return-result (make-rope (reverse! r)) s)
+          (if (and (pair? s)
+                   (char? (car s))
+                   (char-ci=? (car s) (car lis)))
+            (loop (cons (car s) r) (cdr s) (cdr lis))
+            (return-failure/expect str s0)))))))
+   
 (define ($char c)
   (assume-type c <char>) 
   ($satisfy (cut eqv? c <>) c))
@@ -845,16 +849,17 @@
   ($satisfy (^x (and (char? x) (char-set-contains? charset x)))
             charset))
 
-(define ($symbol x) 
-  ($lift ($ string->symbol $ rope->string $) ($string x)))
+(define ($symbol sym) 
+  (assume-type sym <symbol>)
+  ($seq ($string (symbol->string sym)) ($return sym)))
 
 ;; ($many-chars charset [min [max]]) == ($many ($one-of charset) [min [max]])
 ;;   with possible optimization.
-(define-syntax $many-chars
-  (syntax-rules ()
-    [(_ parser) ($many ($one-of parser))]
-    [(_ parser min) ($many ($one-of parser) min)]
-    [(_ parser min max) ($many ($one-of parser) min max)]))
+(define-inline $many-chars
+  (case-lambda
+    [(p) ($many ($one-of p))]
+    [(p min) ($many ($one-of p) min)]
+    [(p min max) ($many ($one-of p) min max)]))
 
 (define ($none-of charset)
   ($one-of (char-set-complement charset)))

@@ -1,10 +1,18 @@
+2020-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($symbol): Make it take a symbol; which is just
+	  natural.
+	($string): We don't need to gather the matched result.  We already know
+	  what it would be.
+	($many-chars): Doesn't need to be a macro.
+
 2020-01-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($alternate): Deprecate $alternate, for
 	  it overlaps $sep-by.
 	($match1*): Rename from $match, to avoid confusion of util.match
 	  macro, which takes multiple clauses.
-	($any): Drop optional 
+	($any): Drop optional arg.  It only fails at the end of input.
 
 2020-01-13  Shiro Kawai  <shiro@acm.org>
 
