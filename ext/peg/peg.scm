@@ -813,15 +813,21 @@
 
 ;; NB: On success, we know the matched input is the same as STR,
 ;; so we don't need to bother to collect matched chars.
-(define ($string str)
-  (let1 lis (string->list str)
-    (^[s0]
-      (let loop ([s s0] [lis lis])
-        (if (null? lis)
-          (return-result str s)
-          (if (and (pair? s) (eqv? (car s) (car lis)))
-            (loop (cdr s) (cdr lis))
-            (return-failure/expect str s0)))))))
+(define-inline ($string str)
+  (if (= (string-length str) 1)
+    (let1 ch (string-ref str 0)
+      (^s
+        (if (and (pair? s) (eqv? (car s) ch))
+          (return-result str (cdr s))
+          (return-failure/expect str s))))
+    (let1 lis (string->list str)
+      (^[s0]
+        (let loop ([s s0] [lis lis])
+          (if (null? lis)
+            (return-result str s)
+            (if (and (pair? s) (eqv? (car s) (car lis)))
+              (loop (cdr s) (cdr lis))
+              (return-failure/expect str s0))))))))
 
 (define ($string-ci str)
   (let1 lis (string->list str)
@@ -835,7 +841,7 @@
             (loop (cons (car s) r) (cdr s) (cdr lis))
             (return-failure/expect str s0)))))))
    
-(define ($char c)
+(define-inline ($char c)
   (assume-type c <char>) 
   ($satisfy (cut eqv? c <>) c))
 
