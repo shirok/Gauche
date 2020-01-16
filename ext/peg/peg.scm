@@ -49,7 +49,8 @@
           peg-parser->generator ;experimental
 
           parse-success?
-          return-result return-failure/expect return-failure/unexpect
+          return-result return-failure
+          return-failure/expect return-failure/unexpect
           return-failure/message return-failure/compound
           
           $bind $return $fail $expect $lift $lift* $debug
@@ -173,17 +174,27 @@
 
 (define-inline (parse-success? x) (not x))
 
-(define-macro (return-result value s)
-  `(values #f ,value ,s))
-
-(define-macro (return-failure/message m s)
-  `(values 'fail-message ,m ,s))
-(define-macro (return-failure/expect m s)
-  `(values 'fail-expect ,m ,s))
-(define-macro (return-failure/unexpect m s)
-  `(values 'fail-unexpect ,m ,s))
-(define-macro (return-failure/compound m s)
-  `(values 'fail-compound ,m ,s))
+(define-inline (return-result v s) (values #f v s))
+(define-inline/syntax return-failure
+  (^[t v s] (values t v s))
+  ;; If type is given as a literal symbol, we statically check it.
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ ('quote x) v s)
+        (unless (memq x '(fail-message fail-expect fail-unexpect fail-compound))
+          (error "Invalid failure type; must be one of fail-message, \
+                  fail-expect, fail-unexpect or fail-compund, but got: " x))
+        (quasirename r
+          `(values ',x ,v ,s))]
+       [(_ t v s)
+        (quasirename r
+          `(values ,t ,v ,s))]
+       [_ f]))))
+(define-inline (return-failure/message v s)  (values 'fail-message v s))
+(define-inline (return-failure/expect v s)   (values 'fail-expect v s))
+(define-inline (return-failure/unexpect v s) (values 'fail-unexpect v s))
+(define-inline (return-failure/compound v s) (values 'fail-compound v s))
 
 (define (make-peg-parse-error type objs pos seq)
   (define (flatten-compound-error objs)
@@ -342,7 +353,7 @@
 (define ($expect parse msg)
   (^s (receive (r v ss) (parse s)
         (if (parse-success? r)
-          (values r v ss)
+          (return-result v ss)
           (return-failure/expect msg s)))))
 
 ;; A convenience utility to check the upper bound, allowing unlimited
@@ -361,7 +372,7 @@
   (^s (receive [r v s1] (p s)
         (if (parse-success? r)
           ((f v) s1)
-          (values r v s1)))))
+          (return-failure r v s1)))))
 
 ;; API
 ;; $lift :: (a,...) -> b, (Parser,..) -> Parser
@@ -375,7 +386,7 @@
           (receive [r v s1] ((car parsers) s)
             (if (parse-success? r)
               (accum s1 (cdr parsers) (cons v vs))
-              (values r v s1)))))))
+              (return-failure r v s1)))))))
 
 ;; API
 ;; Like $lift, but f gets single list argument
@@ -386,7 +397,7 @@
           (receive [r v s1] ((car parsers) s)
             (if (parse-success? r)
               (accum s1 (cdr parsers) (cons v vs))
-              (values r v s1)))))))
+              (return-failure r v s1)))))))
 
 ;; API
 ;; For debugging
@@ -505,7 +516,7 @@
           (receive (r1 v1 s1) ((car ps) s)
             (if (parse-success? r1)
               (loop s1 (cdr ps) (proc v1 seed))
-              (values r1 v1 s1))))))))
+              (return-failure r1 v1 s1))))))))
 
 ;; API
 (define ($fold-parsers-right proc seed ps)
@@ -538,7 +549,7 @@
   (^[s0] (receive (r v s) (p s0)
            (if (parse-success? r)
              (return-result v s)
-             (values r v s0)))))
+             (return-failure r v s0)))))
 
 ;; API
 ;; $assert parser
@@ -594,7 +605,7 @@
           (cond [(parse-success? r) (loop (cons v vs) s1 (+ count 1))]
                 [(and (eq? s s1) (<= min count))
                  (return-result (reverse! vs) s1)]
-                [else (values r v s1)]))))))
+                [else (return-failure r v s1)]))))))
 
 (define-inline ($many_ parse :optional (min 0) (max #f))
   (%check-min-max min max)
@@ -606,7 +617,7 @@
           (cond [(parse-success? r) (loop s1 (+ count 1))]
                 [(and (eq? s s1) (<= min count))
                  (return-result #t s1)]
-                [else (values r v s1)]))))))
+                [else (return-failure r v s1)]))))))
 
 (define-inline ($many1 parse :optional (max #f)) ($many parse 1 max))
 (define-inline ($many1_ parse :optional (max #f)) ($many_ parse 1 max))
@@ -675,10 +686,10 @@
                             (loop (cons v vs) s.. (+ count 1))]
                            [(and (eq? s.. s.) (<= min (+ count 1)))
                             (return-result (reverse (cons v vs)) s.)]
-                           [else (values r. v. s..)]))]
+                           [else (return-failure r. v. s..)]))]
                   [(and (eq? s s.) (<= min count))
                    (return-result (reverse vs) s)]
-                  [else (values r v s.)]))))))
+                  [else (return-failure r v s.)]))))))
 
 ;; API
 ;; $between A B C
@@ -698,8 +709,8 @@
                                s1)
             (if (parse-success? r2)
               (loop r2 v2 s2)
-              (values r1 v1 s1))))
-        (values r v s)))))
+              (return-failure r1 v1 s1))))
+        (return-failure r v s)))))
 
 ;; API
 ;; $chain-right P OP

@@ -6,6 +6,7 @@
 	  what it would be.
 	($many-chars): Deprecate this.  ($many ($. #[...])) isn't much longer.
 	($.): Support $symbol as well.
+	(return-failure): To explicitly show it's a failure.
 
 2020-01-14  Shiro Kawai  <shiro@acm.org>
 
