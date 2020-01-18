@@ -1,3 +1,11 @@
+2020-01-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: Do not load srfi-101 on (cond-expand ((srfi-101) ...)).
+	  Loading srfi-101 without prefix or renaming would shadow important
+	  list operators and cause surprises.  Slib uses cond-expand to
+	  check library availability and loading srfi-101 would make slib
+	  unusable.  Cf. https://github.com/shirok/Gauche/issues/566
+
 2020-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($symbol): Make it take a symbol; which is just

@@ -22,7 +22,9 @@
 
 ;; returns ((num module exports doc-en doc-ja) ...)
 (define (parse self)
-  (let1 gen ($ record-generator $ file->string-list self :encoding 'utf-8)
+  (let1 gen ($ record-generator 
+               $ remove #/^\;/
+               $ file->string-list self :encoding 'utf-8)
     ($ generator->list
        $ gmap ($ paragraphs->final-record $ split-by-empty-line $) gen)))
 
@@ -761,7 +763,11 @@ ERR5RS レコード
 モジュール@code{gauche.record}でサポートされます。@ref{Record types}参照。
 
 
-srfi-101, srfi-101
+;; We don't load srfi-101 on (cond-expand ((srfi-101) ...)) for now, since
+;; it would shadow many list primitives and may create wreck havoc.  Especialy
+;; it would make SLIB unusable, for it uses cond-expand to check library
+;; availability.
+srfi-101
 ()
 
 Purely functional random-access pairs and lists
