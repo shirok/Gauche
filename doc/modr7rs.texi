@@ -1937,7 +1937,7 @@ the following are @emph{not} supported yet:
 @c COMMON
 
 @example
-scheme.ilist      scheme.rlist        scheme.text
+scheme.ilist      scheme.text
 scheme.bytevector scheme.show
 @end example
 
@@ -1956,7 +1956,7 @@ The following are supported libraries:
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
 * R7RS hash tables::            @code{scheme.hash-table}
-* R7RS random-access purely-functional pairs and lists::
+* R7RS purely functional random-access pairs and lists::
 * R7RS immutable deques::       @code{scheme.ideque}
 * R7RS generators::             @code{scheme.generator}
 * R7RS lazy sequences::         @code{scheme.lseq}
@@ -4748,7 +4748,7 @@ Returns two values, the result of
 @end defun
 
 
-@node R7RS hash tables, R7RS random-access purely-functional pairs and lists, R7RS character sets, R7RS large
+@node R7RS hash tables, R7RS purely functional random-access pairs and lists, R7RS character sets, R7RS large
 @subsection @code{scheme.hash-table} - R7RS hash tables
 @c NODE R7RSハッシュテーブル, @code{scheme.hash-table} - R7RSハッシュテーブル
 
@@ -5048,9 +5048,9 @@ included in @code{scheme.hash-table}, though.)
 @end defun
 
 
-@node R7RS random-access purely-functional pairs and lists, R7RS immutable deques, R7RS hash tables, R7RS large
-@subsection @code{scheme.rlist} - R7RS random-access purely-functional pairs and lists
-@c NODE R7RSランダムアクセス純粋関数型ペアとリスト, @code{scheme.rlist} - R7RSランダムアクセス純粋関数型ペアとリスト
+@node R7RS purely functional random-access pairs and lists, R7RS immutable deques, R7RS hash tables, R7RS large
+@subsection @code{scheme.rlist} - R7RS purely functional random-access pairs and lists
+@c NODE R7RS純粋に関数的でランダムアクセス可能なペアとリスト, @code{scheme.rlist} - R7RS純粋に関数的でランダムアクセス可能なペアとリスト
 
 @deftp {Module} scheme.rlist
 @mdindex scheme.rlist
@@ -5132,7 +5132,7 @@ if @var{list} is nested, only the outermost @var{list} is converted.
 @end defun
 
 
-@node R7RS immutable deques, R7RS generators, R7RS random-access purely-functional pairs and lists, R7RS large
+@node R7RS immutable deques, R7RS generators, R7RS purely functional random-access pairs and lists, R7RS large
 @subsection @code{scheme.ideque} - R7RS immutable deques
 @c NODE R7RS変更不可な両端キュー, @code{scheme.ideque} - R7RS変更不可な両端キュー
 

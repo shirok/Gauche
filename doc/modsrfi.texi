@@ -43,6 +43,7 @@ srfi N is supported by Gauche.)
 * Octet-addressed binary blocks::  srfi-74
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
+* Purely functional random-access pairs and lists::
 * Boxes::                       srfi-111
 * Portable runtime environment inquiry::  srfi-112
 * Sets and bags::               srfi-113
@@ -4600,7 +4601,7 @@ the optional argument.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Basic socket interface, Boxes, Accessing environment variables, Library modules - SRFIs
+@node Basic socket interface, Purely functional random-access pairs and lists, Accessing environment variables, Library modules - SRFIs
 @section @code{srfi-106} - Basic socket interface
 @c NODE 基本的なソケットインタフェース, @code{srfi-106} - 基本的なソケットインタフェース
 
@@ -5017,9 +5018,52 @@ An error is signaled if other symbols are passed.
 @c COMMON
 @end defmac
 
+@c ----------------------------------------------------------------------
+@node Purely functional random-access pairs and lists, Boxes, Basic socket interface, Library modules - SRFIs
+@section @code{srfi-101} - Purely functional random-access
+@c NODE 純粋に関数的でランダムアクセス可能なペアとリスト, @code{srfi-101} - 純粋に関数的でランダムアクセス可能なペアとリスト
+
+@deftp {Module} srfi-101
+@mdindex srfi-101
+@c EN
+SRFI-111 has become a part of R7RS large.
+@xref{R7RS purely functional random-access pairs and lists}.
+@c JP
+SRFI-111はR7RS largeに採り入れられました。
+@ref{R7RS purely functional random-access pairs and lists}を参照してください。
+@c COMMON
+
+@c EN
+Special treatment of @code{cond-expand}: The feature conditional
+@code{cond-expand} implicitly makes the checked library loaded
+if available.  That is, you can usually say
+@code{(cond-expand (srfi-N <code>))} where @code{<code>} can assume
+@code{srfi-N} is already available, without saying @code{(use srfi-N)}.
+
+However, @code{srfi-101} exports the names that conflicts with
+standard primitive pair and list operators, and it is generally
+useless to import it without prefix or renaming.  Currently @code{cond-expand}
+has no way to specify such renaming, so we don't import
+@code{srfi-101} by @code{cond-expand}.
+You have to say @code{(cond-expand (srfi-101 (use srfi-101 :prefix ra:)))},
+for example.
+@c JP
+@code{cond-expand}の特別な扱いについて: @code{cond-expand}は
+チェックした機能が使える場合には、必要なライブラリを暗黙にロードしまう。
+つまり、@code{(cond-expand (srfi-N <code>))} とした場合、@code{srfi-N}が
+サポートされていれば@code{<code>}の中で@code{(use srfi-N)}とする必要はありません。
+
+しかし、@code{srfi-101}は組み込みの重要なリストやペア操作手続きと同じ名前の
+手続きをたくさんエクスポートしているので、プレフィクスやリネーム無しで
+インポートすることはあまり実用的ではありません。@code{cond-expand}では
+インポート時のプレフィクスやリネームは指定できないので、
+@code{srfi-101}に限り、@code{cond-expand}ではインポートしないようにしています。
+@code{(cond-expand (srfi-101 (use srfi-101 :prefix ra:)))} などとしてください。
+@c COMMON
+@end deftp
 
 @c ----------------------------------------------------------------------
-@node Boxes, Portable runtime environment inquiry, Basic socket interface, Library modules - SRFIs
+@node Boxes, Portable runtime environment inquiry, Purely functional random-access pairs and lists, Library modules - SRFIs
 @section @code{srfi-111} - Boxes
 @c NODE ボックス, @code{srfi-111} - ボックス
 
