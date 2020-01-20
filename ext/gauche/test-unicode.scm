@@ -190,6 +190,31 @@
 
     (for-each (^d (apply conversion-tester d)) data)))
 
+;; utf16->string
+(test* "utf16->string big-endian" "012"
+       (utf16->string #u8(0 48 0 49 0 50) 'big))
+(test* "utf16->string little-endian" "012"
+       (utf16->string #u8(48 0 49 0 50 0) 'little))
+(test* "utf16->string big-endian by default" "012"
+       (utf16->string #u8(0 48 0 49 0 50)))
+(test* "utf16->string BOM big-endian" "012"
+       (utf16->string #u8(#xfe #xff 0 48 0 49 0 50)))
+(test* "utf16->string BOM little-endian" "012"
+       (utf16->string #u8(#xff #xfe 48 0 49 0 50 0)))
+(test* "utf16->string BOM override" "012"
+       (utf16->string #u8(#xff #xfe 48 0 49 0 50 0) 'big))
+(test* "utf16->string ignore-bom big-endian" "\xfeff;012"
+       (utf16->string #u8(#xfe #xff 0 48 0 49 0 50) 'big #t))
+(test* "utf16->string ignore-bom little-endian" "\xfeff;012"
+       (utf16->string #u8(#xff #xfe 48 0 49 0 50 0) 'little #t))
+(test* "utf16->string start/end" "012"
+       (utf16->string #u8(0 0 48 0 49 0 50) 'big #t 1))
+(test* "utf16->string BOM only" ""
+       (utf16->string #u8(#xfe #xff)))
+(test* "utf16->string BOM only" ""
+       (utf16->string #u8(#xff #xfe)))
+
+
 (test-section "word boundary")
 
 (define (test-word-breaker sentence expected)

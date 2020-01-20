@@ -40,6 +40,7 @@
   (export ucs4->utf8  utf8-length  utf8->ucs4
           ucs4->utf16 utf16-length utf16->ucs4
           utf8->string string->utf8
+          utf16->string
 
           make-word-breaker
           make-word-reader
@@ -403,6 +404,46 @@
       (string->u8vector (ces-convert (substring str start end)
                                      (gauche-character-encoding)
                                      'utf-8)))))
+
+;; ;; R7RS scheme.bytevector
+
+(define (utf16->string bvec :optional (endian #f) (ignore-bom? #f)
+                       (start 0) (end -1))
+  (assume-type bvec <u8vector>)
+  (let1 end (cond [(< end 0) (u8vector-length bvec)]
+                  [(or (< start 0) (< end start))
+                   (error "invalid start/end positions:" (list start end))]
+                  [else end])
+    (receive (start endian)
+        (if (or ignore-bom? (< (- end start) 2))
+          (values start (or endian 'bid-endian))
+          (let ([b0 (u8vector-ref bvec start)]
+                [b1 (u8vector-ref bvec (+ start 1))])
+            (cond [(and (eqv? b0 #xfe) (eqv? b1 #xff))
+                   (values (+ start 2) 'big-endian)]
+                  [(and (eqv? b0 #xff) (eqv? b1 #xfe))
+                   (values (+ start 2) 'little-endian)]
+                  [else (values start (or endian 'big-endian))])))
+      (unless (even? (- end start))
+        (error "number of input octets for utf8 isn't even:" (- end start)))
+      (with-output-to-string
+        (^[] (let loop ([in ($ generator->lseq
+                               $ %u8->u16-generator bvec start end endian)])
+               (receive (u32 next) (utf16->ucs4 in 'replace)
+                 (or (eof-object? u32)
+                     (begin (write-char (ucs->char u32))
+                            (loop next))))))))))
+
+(define (%u8->u16-generator bvec start end endian)
+  (define combine
+    (if (memq endian '(big big-endian))
+      (^[a b] (+ (ash a 8) b))
+      (^[a b] (+ (ash b 8) a))))
+  (^[] (if (= start end)
+         (eof-object)
+         (begin0 (combine (u8vector-ref bvec start)
+                          (u8vector-ref bvec (+ start 1)))
+           (inc! start 2)))))
 
 ;;;
 ;;;  Character properties
