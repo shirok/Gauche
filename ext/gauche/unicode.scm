@@ -83,6 +83,7 @@
 ;;   'strict     - default, throws an error.
 ;;   'permissive - convert as if it is a valid value.
 ;;   'ignore     - drop the data.  behaves as if invalid data weren't there.
+;;   'replace    - replace the output char with U+FFFD
 
 (define-macro (utf8-2 c)  `(logior (ash ,c -6) #xc0))
 (define-macro (utf8-3 c)  `(logior (ash ,c -12) #xe0))
@@ -95,13 +96,17 @@
 (define-macro (utf8-w c)  `(logior (logand (ash ,c -18) #x3f) #x80))
 (define-macro (utf8-v c)  `(logior (logand (ash ,c -24) #x3f) #x80))
 
+(define-constant *utf8-replacement* '(#xef #xbf #xbd))
+(define-constant *utf16-replacement* '(#xfffd))
+(define-constant *ucs4-replacement*  #xfffd)
 
 ;; Returns list of integers
 (define (ucs4->utf8 code :optional (strictness 'strict))
   (cond [(< code 0)
          (ecase strictness
            [(strict permissive) (errorf "Invalid unicode codepoint: ~x" code)]
-           [(ignore) '()])]
+           [(ignore) '()]
+           [(replace) *utf8-replacement*])]
         [(< code #x80)     `(,code)]
         [(< code #x800)    `(,(utf8-2 code) ,(utf8-z code))]
         [(< code #x10000)
@@ -110,7 +115,8 @@
              [(strict)
               (errorf "Codepoint doesn't encode a character: ~4,'0x" code)]
              [(permissive) `(,(utf8-3 code) ,(utf8-y code) ,(utf8-z code))]
-             [(ignore) '()])
+             [(ignore) '()]
+             [(replace) *utf8-replacement*])
            `(,(utf8-3 code) ,(utf8-y code) ,(utf8-z code)))]
         [(< code #x110000) `(,(utf8-4 code)
                              ,(utf8-x code) ,(utf8-y code) ,(utf8-z code))]
@@ -129,7 +135,8 @@
                    `(,(utf8-6 code) ,(utf8-v code) ,(utf8-w code)
                      ,(utf8-x code) ,(utf8-y code) ,(utf8-z code))]
                   [else (errorf "Codepoint outside domain: #x~x" code)]
-                  )])]
+                  )]
+           [(replace) *utf8-replacement*])]
         ))
 
 (define (utf8-length octet :optional (strictness 'strict))
@@ -141,7 +148,7 @@
         [(< octet #x80) 1]
         [(< octet #xc0) (ecase strictness
                           [(strict) (err-illegal octet)]
-                          [(permissive) 1]
+                          [(permissive replace) 1]
                           [(ignore) 0])]
         [(< octet #xe0) 2]
         [(< octet #xf0) 3]
@@ -150,9 +157,9 @@
         [else (ecase strictness
                 [(strict) (err-illegal octet)]
                 [(ignore) 0]
-                [(permissive) (cond [(< octet #xfc) 5]
-                                    [(< octet #xfe) 6]
-                                    [else 1])])]))
+                [(permissive replace) (cond [(< octet #xfc) 5]
+                                            [(< octet #xfe) 6]
+                                            [else 1])])]))
 
 ;; decoding utf8
 ;;  To avoid code redundancy and runtime overhead, we generate
@@ -175,7 +182,11 @@
        (values b #f)
        (case (utf8-length b ',strictness)
          [(0) (values 0 ,(name "u1"))]         ;ignore
-         [(1) (values b #f)]
+         [(1) ,(if (eq? strictness 'replace)
+                 '(if (>= b #x80)
+                    (values *ucs4-replacement* #f)
+                    (values b #f))
+                 '(values b #f))]
          [(2) (values (logand #x1f b) ,(name "u2-1"))]
          [(3) (values (logand #x0f b) ,(name "u3-1"))]
          [(4) (values (logand #x07 b) ,(name "u4-1"))]
@@ -214,14 +225,17 @@
     (case strictness
       [(strict)     `(values 'bad #f)]
       [(permissive) `(values v #f)]
+      [(replace)    `(values ,*ucs4-replacement* #f)]
       [(ignore)     `(values 0 ,(string->symbol #"u1-~|strictness|"))]))
   (define (bad-octet strictness)
     (case strictness
       [(strict permissive) `(values 'bad #f)]
+      [(replace)           `(values ,*ucs4-replacement* #f)]
       [(ignore)            `(values b #t)]))
   (define (end-input strictness)
     (case strictness
       [(strict permissive) `(values 'bad #f)]
+      [(replace)           `(values ,*ucs4-replacement* #f)]
       [(ignore)            `(values eof #f)]))
   `(begin ,@(rec n 1)))
 
@@ -234,41 +248,42 @@
      (decode-utf8-gen-n 5 #x200000 ,strictness)
      (decode-utf8-gen-n 6 #x4000000 ,strictness)))
 
-(define utf8->ucs4 #f)
+(define utf8->ucs4
+  (let ()
+    (decode-utf8-gen strict)
+    (decode-utf8-gen permissive)
+    (decode-utf8-gen replace)
+    (decode-utf8-gen ignore)
 
-(let ()
-  (decode-utf8-gen strict)
-  (decode-utf8-gen permissive)
-  (decode-utf8-gen ignore)
+    (define (utf8->ucs4 octets :optional (strictness 'strict))
+      (define initial-state (ecase strictness
+                              [(strict)     u1-strict]
+                              [(permissive) u1-permissive]
+                              [(replace)    u1-replace]
+                              [(ignore)     u1-ignore]))
+      (if (null? octets)
+        (values eof '())
+        (let loop ([state initial-state]
+                   [val 0]
+                   [b (car octets)]
+                   [bs (cdr octets)])
+          (receive (val next) (state b val)
+            (cond [(eq? val 'bad)
+                   ;; TODO: better error message
+                   (error "invalid utf8 sequence")]
+                  [(not next)    (values val bs)]
+                  [(eq? next #t) (loop initial-state 0 val bs)]
+                  [(null? bs)    (loop next val eof '())]
+                  [else          (loop next val (car bs) (cdr bs))])))))
 
-  (define (%utf8->ucs4 octets :optional (strictness 'strict))
-    (define initial-state (ecase strictness
-                            [(strict)     u1-strict]
-                            [(permissive) u1-permissive]
-                            [(ignore)     u1-ignore]))
-    (if (null? octets)
-      (values eof '())
-      (let loop ([state initial-state]
-                 [val 0]
-                 [b (car octets)]
-                 [bs (cdr octets)])
-        (receive (val next) (state b val)
-          (cond [(eq? val 'bad)
-                 ;; TODO: better error message
-                 (error "invalid utf8 sequence")]
-                [(not next)    (values val bs)]
-                [(eq? next #t) (loop initial-state 0 val bs)]
-                [(null? bs)    (loop next val eof '())]
-                [else          (loop next val (car bs) (cdr bs))])))))
-
-  (set! utf8->ucs4 %utf8->ucs4)
-  )
+    utf8->ucs4))
 
 (define (ucs4->utf16 code :optional (strictness 'strict))
   (define (error-oob strictness)
     (ecase strictness
       [(strict permissive)
        (errorf "Input outside of Unicode codepoint range: #x~x" code)]
+      [(replace) *utf16-replacement*]
       [(ignore) '()]))
   (cond  [(< code 0) (error-oob strictness)]
          [(< code #xd800) `(,code)]
@@ -277,6 +292,7 @@
             [(strict)     (errorf "Converting codepoint ~x to utf-16 \
                                   will lose information" code)]
             [(ignore)     '()]
+            [(replace)    *utf16-replacement*]
             [(permissive) `(,code)])]
          [(< code #x10000) `(,code)]
          [(< code #x110000) (let1 code (- code #x10000)
@@ -289,78 +305,80 @@
         [(<= #xdc00 word #xdfff)
          (ecase strictness
            [(strict)    (errorf "unpaired surrogate: #x~x" word)]
-           [(permissive) 1]
+           [(permissive replace) 1]
            [(ignore)     0])]
         [(<= 0 word #xffff) 1]
         [else (ecase strictness
                 [(strict permissive) (errorf "Illegal utf-16 word: #x~x" word)]
+                [(replace) 1]
                 [(ignore) 0])]))
 
-(define utf16->ucs4 #f)
+(define utf16->ucs4
+  (let ()
+    ;; The state machine for decoding utf16.  Each state takes the current
+    ;; 16bit word, previous word, and stricness parameter.  Return values are
+    ;; the value to be passed around, and the action.
+    ;; Possible actions:
+    ;;   reset  - reset to initial state
+    ;;   surrogate - switch to secondary state
+    ;;   unget  - don't consume the current word, and use val as a return value.
+    ;;   skip   - don't take the next word and move to init
+    ;;   lone   - lone surrogate.  val indicates bad word.
+    ;;   range  - range error
+    ;;   end    - end
 
-(let ()
-  ;; The state machine for decoding utf16.  Each state takes the current
-  ;; 16bit word, previous word, and stricness parameter.  Return values are
-  ;; the value to be passed around, and the action.
-  ;; Possible actions:
-  ;;   reset  - reset to initial state
-  ;;   surrogate - switch to secondary state
-  ;;   unget  - don't consume the current word, and use val as a return value.
-  ;;   skip   - don't take the next word and move to init
-  ;;   lone   - lone surrogate.  val indicates bad word.
-  ;;   range  - range error
-  ;;   end    - end
+    ;; Common routine.  Surrogate? is #t if w is supposed to be the second
+    ;; word of the surrogated pair.
+    (define (dispatch surrogate? w prev strictness)
+      (if (not surrogate?)
+        ;; first word
+        (cond [(eof-object? w) (values eof 'end)]
+              [(< w 0) (values w 'range)]
+              [(< w #xd800) (values w 'end)]
+              [(< w #xdc00) (values w 'surrogate)]
+              [(< w #xe000) (ecase strictness
+                              [(strict)     (values w 'lone)]
+                              [(permissive) (values w 'end)]
+                              [(replace)    (values *ucs4-replacement* 'end)]
+                              [(ignore) (values 0 'reset)])]
+              [(< w #x10000) (values w 'end)]
+              [else (values w 'range)])
+        ;; second word
+        (cond [(eof-object? w) (ecase strictness
+                                 [(strict)     (values prev 'lone)]
+                                 [(permissive) (values prev 'end)]
+                                 [(replace)    (values *ucs4-replacement* 'end)]
+                                 [(ignore)     (values eof 'end)])]
+              [(<= #xdc00 w #xdfff)
+               (values (+ #x10000 (ash (logand #x3ff prev) 10) (logand #x3ff w))
+                       'end)]
+              [(<= 0 w #xffff)
+               (ecase strictness
+                 [(strict)     (values prev 'lone)]
+                 [(permissive) (values prev 'unget)]  ; don't consume w
+                 [(replace)    (values *ucs4-replacement* 'unget)] ; ditto
+                 [(ignore)     (values w 'skip)])]
+              [else (values w 'range)])))
 
-  ;; Common routine.  Surrogate? is #t if w is supposed to be the second
-  ;; word of the surrogated pair.
-  (define (dispatch surrogate? w prev strictness)
-    (if (not surrogate?)
-      ;; first word
-      (cond [(eof-object? w) (values eof 'end)]
-            [(< w 0) (values w 'range)]
-            [(< w #xd800) (values w 'end)]
-            [(< w #xdc00) (values w 'surrogate)]
-            [(< w #xe000) (ecase strictness
-                            [(strict) (values w 'lone)]
-                            [(permissive) (values w 'end)]
-                            [(ignore) (values 0 'reset)])]
-            [(< w #x10000) (values w 'end)]
-            [else (values w 'range)])
-      ;; second word
-      (cond [(eof-object? w) (ecase strictness
-                               [(strict)     (values prev 'lone)]
-                               [(permissive) (values prev 'end)]
-                               [(ignore)     (values eof 'end)])]
-            [(<= #xdc00 w #xdfff)
-             (values (+ #x10000 (ash (logand #x3ff prev) 10) (logand #x3ff w))
-                     'end)]
-            [(<= 0 w #xffff)
-             (ecase strictness
-               [(strict)     (values prev 'lone)]
-               [(permissive) (values prev 'unget)]  ; don't consume w
-               [(ignore)     (values w 'skip)])]
-            [else (values w 'range)])))
+    (define (utf16->ucs4 words :optional (strictness 'strict))
+      (let loop ([words words]
+                 [lookahead #f]
+                 [surrogate #f]
+                 [val 0])
+        (receive (w ws) (cond [lookahead (values lookahead words)]
+                              [(null? words) (values eof '())]
+                              [else (values (car words) (cdr words))])
+          (receive (val action) (dispatch surrogate w val strictness)
+            (ecase action
+              [(reset)  (loop ws #f #f 0)]
+              [(surrogate) (loop ws #f #t val)]
+              [(unget)  (values val words)] ; not consuming w
+              [(skip)   (loop ws val #f 0)]
+              [(lone)   (errorf "lone surrogate in utf-16 stream: #x~4,'0x" val)]
+              [(range)  (errorf "out-of-range word in utf-16 stream: ~x" val)]
+              [(end)    (values val ws)])))))
 
-  (define (%utf16->ucs4 words :optional (strictness 'strict))
-    (let loop ([words words]
-               [lookahead #f]
-               [surrogate #f]
-               [val 0])
-      (receive (w ws) (cond [lookahead (values lookahead words)]
-                            [(null? words) (values eof '())]
-                            [else (values (car words) (cdr words))])
-        (receive (val action) (dispatch surrogate w val strictness)
-          (ecase action
-            [(reset)  (loop ws #f #f 0)]
-            [(surrogate) (loop ws #f #t val)]
-            [(unget)  (values val words)] ; not consuming w
-            [(skip)   (loop ws val #f 0)]
-            [(lone)   (errorf "lone surrogate in utf-16 stream: #x~4,'0x" val)]
-            [(range)  (errorf "out-of-range word in utf-16 stream: ~x" val)]
-            [(end)    (values val ws)])))))
-
-  (set! utf16->ucs4 %utf16->ucs4)
-  )
+    utf16->ucs4))
 
 ;; R7RS procedures
 

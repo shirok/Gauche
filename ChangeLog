@@ -1,3 +1,9 @@
+2020-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/unicode.scm (utf8->ucs4, ucs4->utf8, utf16->ucs4)
+	  (ucs4->utf16): Support 'replace' strictness that replaces invalid
+	  encoding with U+FFFD.
+
 2020-01-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfis.scm: Do not load srfi-101 on (cond-expand ((srfi-101) ...)).
