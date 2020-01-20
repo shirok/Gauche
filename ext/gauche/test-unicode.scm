@@ -213,7 +213,16 @@
        (utf16->string #u8(#xfe #xff)))
 (test* "utf16->string BOM only" ""
        (utf16->string #u8(#xff #xfe)))
-
+(test* "string->utf16 default" #u8(0 48 0 49 0 50)
+       (string->utf16 "012"))
+(test* "string->utf16 big" #u8(0 48 0 49 0 50)
+       (string->utf16 "012" 'big-endian))
+(test* "string->utf16 little" #u8(48 0 49 0 50 0)
+       (string->utf16 "012" 'little-endian))
+(test* "string->utf16 start" #u8(48 0 49 0 50 0)
+       (string->utf16 "a012" 'little-endian 1))
+(test* "string->utf16 start/end" #u8(48 0 49 0 50 0)
+       (string->utf16 "a012b" 'little-endian 1 4))
 
 (test-section "word boundary")
 

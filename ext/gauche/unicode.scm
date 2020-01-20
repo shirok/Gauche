@@ -40,7 +40,7 @@
   (export ucs4->utf8  utf8-length  utf8->ucs4
           ucs4->utf16 utf16-length utf16->ucs4
           utf8->string string->utf8
-          utf16->string
+          utf16->string string->utf16
 
           make-word-breaker
           make-word-reader
@@ -444,6 +444,17 @@
          (begin0 (combine (u8vector-ref bvec start)
                           (u8vector-ref bvec (+ start 1)))
            (inc! start 2)))))
+
+(define (string->utf16 str :optional (endian 'big-endian) (start 0) end)
+  (with-builder (<u8vector> add! get)
+    (define add16!
+      (if (memq endian '(big big-endian))
+        (^u (add! (ash u -8)) (add! (logand u #xff)))
+        (^u (add! (logand u #xff)) (add! (ash u -8)))))
+    (generator-for-each (^[ch] (for-each add16! (ucs4->utf16 (char->ucs ch))))
+                        (string->generator str start end))
+    (get)))
+    
 
 ;;;
 ;;;  Character properties
