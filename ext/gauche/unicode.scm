@@ -435,15 +435,16 @@
                             (loop next))))))))))
 
 (define (%u8->u16-generator bvec start end endian)
+  ;; We don't want to depend on binary.io
   (define combine
     (if (memq endian '(big big-endian))
-      (^[a b] (+ (ash a 8) b))
-      (^[a b] (+ (ash b 8) a))))
+      (^[v k] (logior (ash (u8vector-ref v k) 8)
+                      (u8vector-ref v (+ k 1))))
+      (^[v k] (logior (u8vector-ref v k)
+                      (ash (u8vector-ref v (+ k 1)) 8)))))
   (^[] (if (= start end)
          (eof-object)
-         (begin0 (combine (u8vector-ref bvec start)
-                          (u8vector-ref bvec (+ start 1)))
-           (inc! start 2)))))
+         (begin0 (combine bvec start) (inc! start 2)))))
 
 (define (string->utf16 str :optional (endian 'big-endian) (start 0) end)
   (with-builder (<u8vector> add! get)
@@ -454,7 +455,6 @@
     (generator-for-each (^[ch] (for-each add16! (ucs4->utf16 (char->ucs ch))))
                         (string->generator str start end))
     (get)))
-    
 
 ;;;
 ;;;  Character properties
