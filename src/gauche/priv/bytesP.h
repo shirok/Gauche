@@ -34,7 +34,18 @@
 #ifndef GAUCHE_PRIV_BYTESP_H
 #define GAUCHE_PRIV_BYTESP_H
 
-#include <gauche/endian.h>
+#include "gauche/priv/builtin-syms.h"
+
+/* Gauche use big-endian / little-endian.   scheme.bytevector requires
+   big / little.   We recognize both.  */
+#define SCM_IS_BE(endian)                               \
+    (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)        \
+     || (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG)))
+#define SCM_IS_LE(endian)                               \
+    (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)     \
+     || SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE))
+#define SCM_IS_ARM_LE(endian)                           \
+    (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN))
 
 #if WORDS_BIGENDIAN
 #define SWAP_REQUIRED(endian)   (!ISCM_S_BE(endian))

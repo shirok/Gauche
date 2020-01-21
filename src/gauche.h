@@ -2013,6 +2013,7 @@ SCM_EXTERN ScmObj Scm__RuntimeDirectory(void); /* private */
 #endif /* !GAUCHE_RECKLESS */
 
 #include <gauche/scmconst.h>
+#include <gauche/endian.h>
 
 SCM_DECL_END
 

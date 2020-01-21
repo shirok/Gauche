@@ -34,24 +34,20 @@
 #ifndef GAUCHE_ENDIAN_H
 #define GAUCHE_ENDIAN_H
 
-/*
- * Byte swapping code pieces shared in binary.io and gauche.uvector.
- * This is not included via gauche.h.  Users should explicitly include it.
- */
+/* Byte swapping macros are in gauche/priv/bytesP.h.
+   The actual code is current in number.c for now. */
 
-/* Gauche use big-endian / little-endian.   scheme.bytevector requires
-   big / little.   We recognize both.  */
-#define SCM_IS_BE(endian)                               \
-    (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)        \
-     || (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG)))
-#define SCM_IS_LE(endian)                               \
-    (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)     \
-     || SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE))
-#define SCM_IS_ARM_LE(endian)                           \
-    (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN))
+SCM_EXTERN ScmObj Scm_NativeEndian(void);
+SCM_EXTERN ScmObj Scm_DefaultEndian(void);
+SCM_EXTERN void   Scm_SetDefaultEndian(ScmObj endian);
 
-#define SCM_CHECK_ENDIAN(endian) \
+#define SCM_CHECK_ENDIAN(endian)                                       \
     do { if (endian == NULL) endian = SCM_SYMBOL(Scm_DefaultEndian()); \
     } while (0)
 
-#endif /*GAUCHE_BYTES_INLINE_H*/
+/* Check ENDIAN symbol */
+SCM_EXTERN int  Scm_IsBE(ScmObj endian);
+SCM_EXTERN int  Scm_IsLE(ScmObj endian);
+SCM_EXTERN int  Scm_IsArmLE(ScmObj endian);
+
+#endif /*GAUCHE_ENDIAN_H*/

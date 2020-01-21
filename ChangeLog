@@ -1,3 +1,11 @@
+2020-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/endian.h: We can't refer to SCM_SYM_BIG_ENDIAN etc publicly.
+          So we export functions (Scm_IsBE() etc.) here, and moved the macros
+	  to src/gauche/priv/bytesP.h.  The function definitions are in
+	  number.c for now, since we already have Scm_DefaultEndian() there.
+	  Also endian.h is now included from gauche.h.
+
 2020-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/unicode.scm (utf8->ucs4, ucs4->utf8, utf16->ucs4)

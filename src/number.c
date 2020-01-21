@@ -38,6 +38,7 @@
 #include "gauche/bits_inline.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/arith.h"
+#include "gauche/priv/bytesP.h"
 
 #include <limits.h>
 #include <float.h>
@@ -266,6 +267,22 @@ void Scm_SetDefaultEndian(ScmObj endian)
        or arm-little-endian. */
     Scm_PrimitiveParameterSet(Scm_VM(), default_endian, endian);
 }
+
+int Scm_IsBE(ScmObj endian)
+{
+    return SCM_IS_BE(endian);
+}
+
+int Scm_IsLE(ScmObj endian)
+{
+    return SCM_IS_LE(endian);
+}
+
+int Scm_IsArmLE(ScmObj endian)
+{
+    return SCM_IS_ARM_LE(endian);
+}
+
 
 /*=====================================================================
  *  Flonums

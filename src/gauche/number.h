@@ -376,11 +376,6 @@ SCM_EXTERN size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *f);
 SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, u_long flags);
 SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags);
 
-/* This is here, for we need to check double endianness on ARM. */
-SCM_EXTERN ScmObj Scm_NativeEndian(void);
-SCM_EXTERN ScmObj Scm_DefaultEndian(void);
-SCM_EXTERN void   Scm_SetDefaultEndian(ScmObj endian);
-
 /* The Scm_VM* version leaves unboxed flonum (FLONUM_REG) in VM's VAL0
    register.   They can only be called "on VM", that is, when its return
    value is used immediately by VM. */
