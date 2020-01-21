@@ -1410,6 +1410,12 @@
        (string->u32vector "@ABCD" 0 5))
 (test* "string->u32vector (OOB)" (test-error)
        (string->u32vector "abcde" 2 6))
+(test* "string->u32vector (byte swapping)"
+       '#u32(#x40000000 #x41000000 #x42000000)
+       (string->u32vector "@AB" 0 -1 
+                          (case (default-endian)
+                            [(big-endian) 'little-endian]
+                            [(little-endian) 'big-endian])))
 
 (test* "string->u32vector!" '#u32(64 65 66 67 68 1 1 1)
        (string->u32vector! (make-u32vector 8 1) 0 "@ABCD"))
@@ -1417,6 +1423,12 @@
        (string->u32vector! (make-u32vector 8 1) 4 "@ABCD"))
 (test* "string->u32vector!" '#u32(1 1 1 66 67 1 1 1)
        (string->u32vector! (make-u32vector 8 1) 3 "@ABCD" 2 4))
+(test* "string->u32vector! (byte swapping)"
+       '#u32(#x40000000 #x41000000 #x42000000)
+       (string->u32vector! (make-u32vector 3) 0 "@AB" 0 3
+                           (case (default-endian)
+                             [(big-endian) 'little-endian]
+                             [(little-endian) 'big-endian]) ))
        
 
 (test* "u32vector->string" "@ABCD"
@@ -1435,6 +1447,12 @@
        (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 1))
 (test* "u32vector->string (terminator)" "@AB\0C"
        (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 68))
+(test* "u32vector->string (byte swapping)" "@AB"
+       (u32vector->string  '#u32(#x40000000 #x41000000 #x42000000)
+                           0 -1 #f 
+                           (case (default-endian)
+                             [(big-endian) 'little-endian]
+                             [(little-endian) 'big-endian])))
 
 (test* "string->s32vector" '#s32(64 65 66 67 68)
        (string->s32vector "@ABCD"))
@@ -1446,6 +1464,12 @@
        (string->s32vector "@ABCD" 0 5))
 (test* "string->s32vector (OOB)" (test-error)
        (string->s32vector "abcde" 2 6))
+(test* "string->s32vector (byte swapping)"
+       '#s32(#x40000000 #x41000000 #x42000000)
+       (string->s32vector "@AB" 0 -1 
+                          (case (default-endian)
+                            [(big-endian) 'little-endian]
+                            [(little-endian) 'big-endian])))
 
 (test* "s32vector->string" "@ABCD"
        (s32vector->string '#s32(64 65 66 67 68)))
@@ -1463,6 +1487,12 @@
        (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 1))
 (test* "s32vector->string (terminator)" "@AB\0C"
        (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 68))
+(test* "s32vector->string (byte swapping)" "@AB"
+       (s32vector->string  '#s32(#x40000000 #x41000000 #x42000000)
+                           0 -1 #f 
+                           (case (default-endian)
+                             [(big-endian) 'little-endian]
+                             [(little-endian) 'big-endian])))
 
 ;; test for multibyte chars
 (cond-expand

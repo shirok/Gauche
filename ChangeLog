@@ -1,3 +1,8 @@
+2020-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (string->[su]32vector[!]),
+	  ([su]32vector->string): Add endian argument.
+
 2020-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/endian.h: We can't refer to SCM_SYM_BIG_ENDIAN etc publicly.
