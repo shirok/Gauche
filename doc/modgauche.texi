@@ -23860,8 +23860,8 @@ of the string.
 @c COMMON
 @end defun
 
-@defun string->s32vector string :optional start end
-@defunx string->u32vector string :optional start end
+@defun string->s32vector string :optional start end endian
+@defunx string->u32vector string :optional start end endian
 @c MOD gauche.uvector
 @c EN
 Returns an s32vector or u32vector whose elements are
@@ -23869,21 +23869,43 @@ the internal codes of the characters in the string.
 Optional range arguments @var{start} and @var{end} specifies
 the @emph{character position} inside @var{string} to be
 converted.
-
-These procedures are useful when you want to access
-the characters in the string randomly.
 @c JP
 与えられた文字列@var{string}の各文字の内部コードを値として持つ
 s32vectorもしくはu32vectorを返します。
 省略可能な範囲引数@var{start}、@var{end}は、
 変換される文字列中の文字位置を指定します。
+@c COMMON
 
+@c EN
+The optional @var{endian} argument specifies the endianness to store
+codepoint value into the uvector.  When omitted or @code{#f},
+we use the platform's
+native endianness.  You can give a symbol @code{big-endian}, @code{big},
+@code{little-endian}, @code{little} or @code{arm-little-endian} to use a specific
+endianness.  Note that when you access the resulting uvector,
+the platform's native endianness is used.
+@c JP
+省略可能な@var{endian}引数は、uvectorにコードポイント値を格納する際の
+バイトオーダーを指定します。省略された場合や@code{#f}の場合は、
+プラットフォームのネイティブバイトオーダーが使われます。
+シンボル@code{big-endian}、@code{big}、
+@code{little-endian}、@code{little}、@code{arm-little-endian}で
+特定のバイトオーダーを指定できます。
+結果のuvectorにアクセスする時にはネイティブバイトオーダーが使われることに注意してください。
+@c COMMON
+
+@c EN
+These procedures are useful when you want to access
+the characters in the string randomly.
+@c JP
 これらの手続きは、文字列中の文字をランダムにアクセスする場合に便利です。
 @c COMMON
+
+
 @end defun
 
-@defun string->s32vector! target tstart string :optional start end
-@defunx string->u32vector! target tstart string :optional start end
+@defun string->s32vector! target tstart string :optional start end endian
+@defunx string->u32vector! target tstart string :optional start end endian
 @c MOD gauche.uvector
 @c EN
 @var{Target} must be a mutable s32vector or u32vector, respectively.
@@ -23902,10 +23924,28 @@ considered.
 省略可能な引数@var{start}と@var{end}は@var{string}内の文字位置のインデックスで、
 考慮する@var{string}の範囲を制限します。
 @c COMMON
+
+@c EN
+The optional @var{endian} argument specifies the endianness to store
+codepoint value into the uvector.  When omitted or @code{#f},
+we use the platform's
+native endianness.  You can give a symbol @code{big-endian}, @code{big},
+@code{little-endian}, @code{little} or @code{arm-little-endian} to use a specific
+endianness.  Note that when you access the resulting uvector,
+the platform's native endianness is used.
+@c JP
+省略可能な@var{endian}引数は、uvectorにコードポイント値を格納する際の
+バイトオーダーを指定します。省略された場合や@code{#f}の場合は、
+プラットフォームのネイティブバイトオーダーが使われます。
+シンボル@code{big-endian}、@code{big}、
+@code{little-endian}、@code{little}、@code{arm-little-endian}で
+特定のバイトオーダーを指定できます。
+結果のuvectorにアクセスする時にはネイティブバイトオーダーが使われることに注意してください。
+@c COMMON
 @end defun
 
-@defun s32vector->string vec :optional start end terminator
-@defunx u32vector->string vec :optional start end terminator
+@defun s32vector->string vec :optional start end terminator endian
+@defunx u32vector->string vec :optional start end terminator endian
 @c MOD gauche.uvector
 @c EN
 Without @var{start} and @var{end}, these procedures work like this:
@@ -23934,6 +23974,22 @@ the output string terminates right before it.
 なりません (@code{#f}がデフォルト)。正確な整数が与えられ、
 入力にその数値が見つかった場合は、出力の文字列はその直前で
 打ちきられます。
+@c COMMON
+
+@c EN
+The optional @var{endian} argument specifies the endianness to store
+codepoint value into the uvector.  When omitted or @code{#f},
+we use the platform's
+native endianness.  You can give a symbol @code{big-endian}, @code{big},
+@code{little-endian}, @code{little} or @code{arm-little-endian} to use a specific
+endianness.
+@c JP
+省略可能な@var{endian}引数は、uvectorにコードポイント値を格納する際の
+バイトオーダーを指定します。省略された場合や@code{#f}の場合は、
+プラットフォームのネイティブバイトオーダーが使われます。
+シンボル@code{big-endian}、@code{big}、
+@code{little-endian}、@code{little}、@code{arm-little-endian}で
+特定のバイトオーダーを指定できます。
 @c COMMON
 
 @example
