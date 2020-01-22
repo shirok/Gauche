@@ -460,12 +460,15 @@
          (eof-object)
          (begin0 (combine bvec start) (inc! start 2)))))
 
-(define (string->utf16 str :optional (endian 'big-endian) (start 0) end)
+(define (string->utf16 str :optional (endian 'big-endian) 
+                                     (add-bom? #f)
+                                     (start 0) end)
   (with-builder (<u8vector> add! get)
     (define add16!
       (if (memq endian '(big big-endian))
         (^u (add! (ash u -8)) (add! (logand u #xff)))
         (^u (add! (logand u #xff)) (add! (ash u -8)))))
+    (when add-bom? (add16! #xfeff))
     (generator-for-each (^[ch] (for-each add16! (ucs4->utf16 (char->ucs ch))))
                         (string->generator str start end))
     (get)))

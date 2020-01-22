@@ -1,3 +1,9 @@
+2020-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/unicode.scm (string->utf16): Add add-bom? argument, for
+	  the symmetry of utf16->string (but the logic is reversed, for the
+	  convenience).
+
 2020-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (string->[su]32vector[!]),

@@ -224,9 +224,13 @@
 (test* "string->utf16 little" #u8(48 0 49 0 50 0)
        (string->utf16 "012" 'little-endian))
 (test* "string->utf16 start" #u8(48 0 49 0 50 0)
-       (string->utf16 "a012" 'little-endian 1))
+       (string->utf16 "a012" 'little-endian #f 1))
 (test* "string->utf16 start/end" #u8(48 0 49 0 50 0)
-       (string->utf16 "a012b" 'little-endian 1 4))
+       (string->utf16 "a012b" 'little-endian #f 1 4))
+(test* "string->utf16 bom" #u8(#xff #xfe 48 0 49 0 50 0)
+       (string->utf16 "012" 'little-endian #t))
+(test* "string->utf16 bom" #u8(#xfe #xff 0 48 0 49 0 50)
+       (string->utf16 "012" 'big-endian #t))
 
 (test-section "word boundary")
 
