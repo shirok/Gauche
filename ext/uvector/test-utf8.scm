@@ -20,9 +20,15 @@
 (test "mb u8vector->string" "あいう"
       (lambda ()
         (u8vector->string '#u8(#xe3 #x81 #x82 #xe3 #x81 #x84 #xe3 #x81 #x86))))
-(test "mb u8vector->string (incomplete)" #*"\xe3\x81\x82\xe3"
+(test "mb u8vector->string (incomplete, premature)" #*"\xe3\x81\x82\xe3"
       (lambda ()
         (u8vector->string '#u8(#xe3 #x81 #x82 #xe3 #x81 #x84 #xe3 #x81 #x86) 0 4)))
+(test "mb u8vector->string (incomplete, bad leading byte)" #*"\x80"
+      (lambda ()
+        (u8vector->string '#u8(#x80))))
+(test "mb u8vector->string (incomplete, redundant encoding)" #*"\xc0\x90"
+      (lambda ()
+        (u8vector->string '#u8(#xc0 #x90))))
 
 (test "mb string->u32vector" '#u32(#x3042 #x41 #x3044 #x42)
       (lambda ()

@@ -2,6 +2,8 @@
 
 	* ext/uvector/uvector.scm (string->[su]32vector[!]),
 	  ([su]32vector->string): Add endian argument.
+	* src/string.c (count_size_and_length): Strictly check invalid encoding
+	  in input so that such string becomes incomplete.
 
 2020-01-20  Shiro Kawai  <shiro@acm.org>
 

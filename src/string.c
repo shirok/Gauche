@@ -122,18 +122,24 @@ static inline ScmSmallInt count_size_and_length(const char *str,
                                                 ScmSmallInt *plen)  /* out */
 {
     char c;
+    int incomplete = FALSE;
     const char *p = str;
     ScmSmallInt size = 0, len = 0;
     while ((c = *p++) != 0) {
         int i = SCM_CHAR_NFOLLOWS(c);
         len++;
-        size++;
+        size += i+1;
+
+        ScmChar ch;
+        SCM_CHAR_GET(p-1, ch);
+        if (ch == SCM_CHAR_INVALID) incomplete = TRUE;
+        /* Check every octet to avoid skipping over terminating NUL. */
         while (i-- > 0) {
-            if (!*p++) { len = -1; goto eos; }
-            size++;
+            if (!*p++) { incomplete = TRUE; goto eos; }
         }
     }
   eos:
+    if (incomplete) len = -1;
     *psize = size;
     *plen = len;
     return len;
