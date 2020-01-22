@@ -21445,6 +21445,13 @@ that just want to use UTF-8 as an encoding scheme of binary data.
 utf-8の規則を拡張することでエンコード可能であり、文字列以外のバイナリデータを単にutf-8風に
 エンコードしたいだけの場合などには便利かもしれません。
 @c COMMON
+@item replace
+@c EN
+If the procedure sees invalid input, replaces it with a unicode
+replacement character @code{U+FFFD} and proceed.
+@c JP
+不正な入力を見たら、それをユニコード置換文字@code{U+FFFD}に置き換え処理を続行します。
+@c COMMON
 @item ignore
 @c EN
 Whenver possible, treat the invalid input as if they do not exist.
@@ -21454,11 +21461,11 @@ Whenver possible, treat the invalid input as if they do not exist.
 @end table
 
 @c EN
-The procedure may still raise an error in @code{permissive} or
+The procedure may still raise an error in @code{permissive}, @code{replace} or
 @code{ignore} strictness mode, if there can't be a sensible
 way to handle the input data.
 @c JP
-@var{strictness}が@code{permissive}や@code{ignore}であっても、
+@var{strictness}が@code{permissive}や@code{replace}や@code{ignore}であっても、
 入力データの妥当な解釈ができない場合はエラーが投げられる可能性があります。
 @c COMMON
 
@@ -21479,7 +21486,10 @@ encodes the input in UTF-8.
 @c EN
 If @var{strictness} is @code{strict} (default), input codepoint
 between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
-are rejected.  If @var{strictness} is @code{permissive}, it accepts
+are rejected. If @var{strictness} is @code{replace}, such input
+yields a utf8 sequence @code{#xef, #xbf, #xbd}, which encodes
+@code{U+FFFD}.
+If @var{strictness} is @code{permissive}, it accepts
 input between @code{0} and @code{#x7fffffff}, inclusive; it may produce
 5 or 6 octets if the input is large (as the original UTF-8 definition).
 If @var{strictness} is @code{ignore}, it returns an empty list
@@ -21488,6 +21498,8 @@ for invalid codepoints.
 @var{strictness}が@code{strict}の場合(デフォルト)、
 入力が@code{#xd800}と@code{#xdfff}の間か、@code{#x110000}以上の場合は
 エラーを投げます。
+@var{strictness}が@code{replace}であれば、そのような入力に対しては
+utf8シーケンス@code{#xef, #xbf, #xbd} (@code{U+FFFD}) がせ生成されます。
 @var{strictness}が@code{permissive}の場合は、
 @code{0}から@code{#x7fffffff}までの入力が許されます。
 入力が大きい場合はエンコードされた出力は5〜6オクテットになるでしょう
@@ -21529,7 +21541,7 @@ Unicodeコードポイントの最初のオクテットとしてありえない�
 @c COMMON
 
 @c EN
-If @var{strictness} is @code{permissive}, this procedure
+If @var{strictness} is @code{permissive} or @code{replace}, this procedure
 may return an integer between 0 and 6, inclusive.
 If the input is from @code{#xf8} to @code{#xfd}, inclusive,
 this returns 5 or 6, according to the original utf-8 spec
@@ -21541,7 +21553,7 @@ and @code{#xbf}, inclusive, or @var{#xfe} or @code{#xff},
 this procedure returns 1--it's up to the application how to treat these illegal
 octets.
 @c JP
-@var{strictness}が@code{permissive}の場合、
+@var{strictness}が@code{permissive}か@code{replace}の場合、
 この手続きは0から6までの整数を返します。
 入力が@code{#xf8}から@code{#xfd}の間の値(両端含む)の場合は
 元々のutf-8仕様に基づいて5か6を返します
@@ -21587,6 +21599,8 @@ regardless of the value of @var{strictness}.
 @c EN
 An invalid utf8 sequence causes an error if @var{strictness}
 is @code{strict}, or skipped if it is @code{ignore}.
+If @var{strictness} is @code{replace}, such utf8 sequence
+yields @code{U+FFFD}.
 If @var{strictness} is @code{permissive}, the procedure accepts
 the original utf-8 sequence which can produce surrogated pair
 range (between @code{#xd800} and @code{#dfff}) and the range
@@ -21595,6 +21609,8 @@ octet sequence is still an error with @code{permissive} mode.
 @c JP
 それ以外の不正なutf-8シーケンスは、@var{strictness}が@code{strict}であれば
 エラーに、@code{ignore}であればスキップされます。
+@var{strictness}が@code{replace}の場合は、そういったutf8シーケンスは
+@code{U+FFFD}を生成します。
 @var{strictness}が@code{permissive}の場合は、
 最初のutf-8仕様で許されていた全てのコードポイント、すなわち
 サロゲートペア領域(@code{#xd800}から@code{#dfff}まで)及び
@@ -21683,6 +21699,14 @@ mapping from them to utf-16 is defined.
 @c COMMON
 
 @c EN
+If @var{strictness} is @code{replace}, such input is replaced
+with @code{#xfffd}, which encodes Unicode replacement character.
+@c JP
+@var{strictness}が@code{replace}であれば、そのような入力は
+@code{#xfffd}(Unicode置換文字)に置き換えられます。
+@c COMMON
+
+@c EN
 If @var{strictness} is @code{permissive}, it accepts
 high surrogates and low surrogates, in which case the result is
 single element list of input.  An error is still thrown for
@@ -21724,14 +21748,14 @@ Returns 1 if @var{code} is BMP character codepoint, or
 @c EN
 If @var{strictness} is @code{strict} (default), an error is
 signalled if @var{code} is a low surrogate, or it is out of range.
-If @var{strictness} is @code{permissive}, 1 is returned
+If @var{strictness} is @code{permissive} or @code{replace}, 1 is returned
 for low surrogates, but an error is signalled for out of range arguments.
 If @var{strictness} is @code{ignore}, 0 is returned
 for low surrogates and out of range arguments.
 @c JP
 @var{strictness}が@code{strict}の場合(デフォルト)、@var{code}が
 下位サロゲートであったり、定義外の値であればエラーが投げられます。
-@var{strictness}が@code{permissive}の場合は、
+@var{strictness}が@code{permissive}や@code{replace}の場合は、
 やはり定義外の値であればエラーが投げられますが、
 下位サロゲートの場合には1が返されます。
 @var{strictness}が@code{ignore}の場合、
@@ -21754,7 +21778,10 @@ input list.
 If @var{strictness} is @code{strict} (default), an invalid utf-16
 sequence and out-of-range integer raise an error.  If @var{strictness}
 is @code{permissive}, an out-of-range integer causes an error, but
-a lone surrogate is allowed and returned as is.  If @var{strictness}
+a lone surrogate is allowed and returned as is.  
+If @var{strictness} is @code{replace}, a lone surrogate is
+replaced with @code{U+FFFD}.
+If @var{strictness}
 is @code{ignore}, lone surrogates and out-of-range integers are just
 ignored.
 @c JP
@@ -21763,6 +21790,8 @@ ignored.
 @var{strictness}が@code{permissive}の場合は、
 やはり定義外の値であればエラーが投げられますが、
 片方だけのサロゲートの場合にはそれがそのまま(コードポイントとして)返されます。
+@var{strictness}が@code{replace}の場合は、
+片方だけのサロゲートは@code{U+FFFD}に置換されます。
 @var{strictness}が@code{ignore}の場合、
 定義域外および片方だけのサロゲートは無視されます。
 @c COMMON
