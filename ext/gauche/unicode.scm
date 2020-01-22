@@ -387,12 +387,26 @@
 ;; at runtime.
 ;; At this moment, we don't worry much about performance when the native
 ;; encoding isn't utf8.
+;; If the input contains invalid utf-8 encoding, we replace those parts with
+;; U+FFFD.  That is a slow path.
 (define (utf8->string bvec :optional (start 0) (end -1))
   (assume-type bvec <u8vector>)
   (if (eq? (gauche-character-encoding) 'utf-8)
-    (rlet1 s (u8vector->string bvec start end)
-      (when (string-incomplete? s)
-        (error "invalid utf-8 sequence in u8vector:" bvec)))
+    (let1 s (u8vector->string bvec start end)
+      (if (string-incomplete? s)
+        ;; we have to go through every char
+        (with-output-to-string
+          (^[]
+            (let loop ([in ($ generator->lseq
+                              $ uvector->generator bvec start
+                              $ if (< end 0) (u8vector-length bvec) end)])
+              (receive (ch next) (utf8->ucs4 in 'replace)
+                (unless (eof-object? ch)
+                  (write-char (ucs->char ch))
+                  (loop next))))))
+        s))
+    ;; If intenral encoding isn't utf-8, we just let ces-convert handle it.
+    ;; (invalid char replacement may not be handled well).
     (ces-convert (u8vector->string bvec start end) 'utf-8)))
 
 (define (string->utf8 str :optional (start 0) (end -1))

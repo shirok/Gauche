@@ -4,6 +4,13 @@
 	  ([su]32vector->string): Add endian argument.
 	* src/string.c (count_size_and_length): Strictly check invalid encoding
 	  in input so that such string becomes incomplete.
+	* ext/gauche/unicode.scm (utf8->string): When input contains invalid
+	  utf8 sequences, replace them with U+FFFD instead of throwing an error.
+	  The behavior is consistent with scheme.bytevector.
+	  NB: This breaks the code that relied on the throwing error behavior
+	  and implemented their own alternative conversion mechanism by catching
+	  the error.  I doubt there's any, though, for it is easier to
+	  use u8vector->string if that's Gauche-specific code.
 
 2020-01-20  Shiro Kawai  <shiro@acm.org>
 
