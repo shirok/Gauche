@@ -21714,7 +21714,7 @@ negative input and input greater than or equal to @code{#x110000}.
 @c JP
 @var{strictness}が@code{permissive}の場合、サロゲート領域の入力は
 エラーにならず、その値を唯一の要素とするリストが返されます。
-負の値および@code{#x110000}の値についてはやはりエラーにあんります。
+負の値および@code{#x110000}の値についてはやはりエラーになります。
 @c COMMON
 
 @c EN
