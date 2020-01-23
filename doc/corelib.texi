@@ -4072,7 +4072,7 @@ This procedure is also equivalent to srfi-60's @code{log2-binary-factors} and
 
 @node Endianness,  , Basic bitwise operations, Numbers
 @subsection Endianness
-@c NODE エンディアン
+@c NODE エンディアンネス
 
 @c EN
 In the Scheme world you rarely need to know about how the numbers
@@ -4094,7 +4094,7 @@ to specify the endianness.
 @c JP
 @code{binary.io}モジュール(@ref{Binary I/O}参照)や
 @code{write-uvector}/@code{read-uvector!}(@ref{Uniform vectors}参照)
-等、Gaucheのバイナリ入出力手続きはエンディアンを指定する
+等、Gaucheのバイナリ入出力手続きはバイトオーダーを指定する
 省略可能な@var{endian}引数を取ります。
 @c COMMON
 
@@ -4106,20 +4106,36 @@ Currently Gauche recognizes the following endiannesses.
 
 @table @code
 @item big-endian
+@itemx big
 @c EN
-Big endian.  With this endianness, a 32-bit integer @code{#x12345678}
+Big-endian.  With this endianness, a 32-bit integer @code{#x12345678}
 will be written out as an octet sequence @code{#x12 #x34 #x56 #x78}.
+
+Gauche has been using @code{big-endian}, but @code{scheme.bytevector}
+incorporated in R7RS uses @code{big}, so we recognize both.
 @c JP
 ビッグエンディアン。32ビット整数値@code{#x12345678}は@code{#x12 #x34 #x56 #x78}
 のようなバイトシーケンスとして出力されます。
+
+Gaucheはずっと@code{big-endian}を使ってきましたが、
+R7RS-largeに取り入れられた@code{scheme.bytevector}が@code{big}を使うので、
+両方認識するようになっています。
 @c COMMON
 @item little-endian
+@itemx little
 @c EN
-Little endian.  With this endianness, a 32-bit integer @code{#x12345678}
+Little-endian.  With this endianness, a 32-bit integer @code{#x12345678}
 is written out as an octet sequence @code{#x78 #x56 #x34 #x12}.
+
+Gauche has been using @code{little-endian}, but @code{scheme.bytevector}
+incorporated in R7RS uses @code{little}, so we recognize both.
 @c JP
 リトルエンディアン。32ビット整数値@code{#x12345678}は@code{#x78 #x56 #x34 #x12}
 のようなバイトシーケンスとして出力されます。
+
+Gaucheはずっと@code{little-endian}を使ってきましたが、
+R7RS-largeに取り入れられた@code{scheme.bytevector}が@code{little}を使うので、
+両方認識するようになっています。
 @c COMMON
 @item arm-little-endian
 @c EN

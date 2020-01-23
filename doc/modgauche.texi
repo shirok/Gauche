@@ -21634,17 +21634,35 @@ range of the input.
 @c COMMON
 
 @c EN
-If Gauche's native encoding is utf8, 
-@code{u8vector->string} (@pxref{Uvector conversion operations})
-will do the job faster; but this routine can be used regardless
-of Gauche's native encoding, and it raises an error if @var{u8vector}
-contains octet sequences illegal as utf8.
+If Gauche's native encoding is utf8, this procedure first tries
+@code{u8vector->string} (@pxref{Uvector conversion operations}).
+If the input utf8 sequence is valid, this is the fastest way.
+If the input contains invalid utf8 sequence, the procedure falls
+back to construct a string by one character at at time, 
+replacing invalid sequence with Unicode replacement character @code{U+FFFD}.
+Hence it always returns a complete string.
+To know if the input contains invalid utf8 sequence, you can use
+@code{u8vector->string} directly.
 @c JP
-もしGaucheのネイティブエンコーディングがutf8であれば、
-@code{u8vector->string}の方が高速です
+Gaucheのネイティブエンコーディングがutf8の場合、
+この手続きはまず@code{u8vector->string}を試します
 (@ref{Uvector conversion operations}参照)。
-一方、この手続きはGaucheのネイティブエンコーディングが何であれ動作し、
-@var{u8vector}がutf8として不正なシーケンスを含んでいた場合にエラーを投げます。
+もし入力がutf8シーケンスとして有効であれば、それが最も速いです。
+しかし、入力に無効なutf8シーケンスが含まれていた場合、
+この手続きは1文字づつ文字列を構築するモードにフォールバックし、
+無効なutf8シーケンスの部分はUnicode置換文字@code{U+FFFD}に置き換えられます。
+従って戻り値は常に完全な文字列です。
+入力に不正なuft8シーケンスが含まれていたかどうかを知りたい場合は
+@code{u8vector->string}を直接呼んでください。
+@c COMMON
+
+@c EN
+If Gauche's native encoding is other than utf8,
+there's no @code{U+FFFD} so invalid utf8 sequence throws an error.
+@c JP
+Gaucheのネイティブエンコーディングがutf8以外の場合、
+@code{U+FFFD}に相当するコードがないので、無効なutf8シーケンスに出会うと
+エラーが投げられます。
 @c COMMON
 @end defun
 
@@ -21661,15 +21679,16 @@ range of the input.
 @c COMMON
 
 @c EN
-If Gauche's native encoding is utf8, 
-@code{string->u8vector} (@pxref{Uvector conversion operations})
-will do the job faster; but this routine can be used regardless
-of Gauche's native encoding.
+If Gauche's native encoding is utf8, this procedure
+just calls @code{string->u8vector} (@pxref{Uvector conversion operations}).
+Otherwise, it first converts the input string to utf-8, then
+@code{string->u8vector} is called.
 @c JP
-Gaucheのネイティブエンコーディングがutf8であれば、
-@code{string->u8vector}の方が高速です
+Gaucheのネイティブエンコーディングがutf8であれば、この手続きは
+単に@code{string->u8vector}を呼び出すだけです。
 (@ref{Uvector conversion operations}参照)。
-一方、この手続きはGaucheのネイティブエンコーディングが何であれ動作します。
+そうでなければまず入力文字列がutf8に変換されてから
+@code{string->u8vector}が呼ばれます。
 @c COMMON
 @end defun
 
@@ -21796,6 +21815,117 @@ ignored.
 定義域外および片方だけのサロゲートは無視されます。
 @c COMMON
 @end defun
+
+
+@defun utf16->string u8vector :optional endian ignore-bom? start end
+@c MOD guache.unicode
+[R7RS scheme.bytevector]
+@c EN
+Convert utf16 sequence stored in @var{u8vector} to a string.
+If the input contains invlaid utf16 sequence (unpaired surrogate),
+it is replaced with Unicode replacement character @code{U+FFFD}.
+If the number of input octet is not even, an error is thrown.
+@c JP
+@var{u8vector}に格納されたutf16シーケンスを文字列に変換します。
+もし入力に不正なutf16シーケンス (ペアになっていないサロゲート) があった場合は、
+それがUnicode置換文字(@code{U+FFFD})に置き換えられます。
+入力のオクテット数が奇数の場合はエラーが投げられます。
+@c COMMON
+
+@c EN
+The optional @var{endian} and @var{ignore-bom?} arguments
+determines whether the input is in UTF16BE or UTF16LE.
+If @var{ignore-bom?} is @code{#f} or omitted, the first two octets
+of input is examined; if it's BOM, it deterimines the endianness
+regardless of @var{endian} argument,
+and the BOM won't be included in the output.
+If the input does not begin with BOM, or @var{ignore-bom?} is true,
+then the endianness is determined by @var{endian} argument: It can be
+@code{big-endian} or @code{big} for UTF16BE, and
+@code{little-endian} or @code{little} or @code{arm-big-endian}
+for UTF16LE (@pxref{Endianness}, for the details of endianness).
+
+Note that if @var{ignore-bom?} is given and true,
+the initial BOM is interpreted as a codepoint @code{U+FEFF}.
+If @var{endian} is @code{#f} or omitted, UTF16BE
+is assumed (it is defined so in R7RS @code{scheme.bytevector}).
+
+In R7RS @code{scheme.bytevector}, @var{ignore-bom?} argument
+is called @var{endianness-mandatory}.  The behavior is the same.
+@c JP
+省略可能な@var{endian}と@var{ignore-bom?}引数は入力がUTF16BEかUTF16LEかを
+決めます。@var{ignore-bom?}が@code{#f}または省略された場合、まず入力の
+最初の2オクテットが調べられ、BOMであれば@var{endian}の値にかかわらず
+それがバイトオーダーを決定します。
+入力がBOMで始まっていないか、@var{ignore-bom?}が真の値であれば、
+@var{endian}引数がバイトオーダーを決定します。それが
+@code{big-endian}か@code{big}であればUTF16BE、
+@code{little-endian}か@code{little}か@code{arm-little-endian}であれば
+UTF16LEとなります (エンディアンについては@ref{Endianness}参照)。
+
+@var{ignore-bom?}が与えられて真の値であった場合、
+入力の先頭のBOMはコードポイントとみなされます。
+@var{endian}が@code{#f}または省略された場合は、
+UTF16BEとみなされます (これはR7RS @code{scheme.bytevector}で定義された仕様です)。
+
+なおR7RS @code{scheme.bytevector}では@var{ignore-bom?}引数は
+@var{endianness-mandatory}と呼ばれています。動作は同じです。
+@c COMMON
+
+@c EN
+Optinoal argument @var{start} and @var{end} trims the input octet sequence
+before other processing (including BOM detection).  These arguments are
+Gauche's extension, and not the part of R7RS @code{scheme.bytevector}.
+@c JP
+省略可能な@var{start}と@var{end}引数は処理に先立って入力のオクテットシーケンスの
+範囲を制限します(BOM検出も範囲制限後に行われます)。
+この2つの引数はGauche独自拡張で、R7RS @code{scheme.bytevector}では定義されていません。
+@c COMMON
+@end defun
+
+@defun string->utf16 str :optional endian add-bom? start end
+@c MOD gauche.unicode
+[R7RS scheme.bytevector]
+@c EN
+Encode a string @var{str} to utf-16 sequences stored in a u8vector.
+
+The optional @var{endian} argument specifies whether the encoding
+is UTF16BE or UTF16LE.  If it is a symobl @code{big-endian} or
+@code{big}, the encoding is UTF16BE.  If it is a symbol
+@code{little-endian}, @code{little} or @code{arm-little-endian},
+the encoding is UTF16LE.
+@xref{Endianness}, for the details of endianness.
+If it is omitted or @code{#f}, UTF16BE is assumed.
+
+
+The second optional argument @var{add-bom?} specifies, if true value is
+given, the output contains BOM.  When omitted BOM won't be added.
+
+The @var{start} and @var{end} arguments limits the range of @var{str}
+to be converted.
+
+R7RS @code{scheme.bytevector} only defines @var{endian} optional
+argument.  The rest is Gauche's extension.
+@c JP
+文字列@var{str}をutf-16にエンコードしたオクテット列をu8vectorで返します。
+
+省略可能な@var{endian}引数は、エンコーディングがUTF16BEかUTF16LEかを決めます。
+シンボル@code{big-endian}か@code{big}が渡されたらUTF16BE、
+シンボル@code{little-endian}か@code{little}か@code{arm-little-endian}が
+渡されたらUTF16LEになります。省略されるか@code{#f}ならUTF16BEになります。
+バイトオーダーについての詳細は@ref{Endianness}を参照してください。
+
+二つめの省略可能引数@var{add-bom?}にもし真の値が与えられたら、
+出力の先頭にBOMが含められます。省略されるか@code{#f}であればBOMは付加されません。
+
+続く省略可能引数@var{start}と@var{end}は入力文字列@var{str}の特定の範囲だけを
+対象とするのに使います。
+
+R7RSの@code{scheme.bytevector}では@var{endian}引数だけを認めています。
+残りはGaucheの拡張です。
+@c COMMON
+@end defun
+
 
 @node Unicode text segmentation, Full string case conversion, Unicode transfer encodings, Unicode utilities
 @subsection Unicode text segmentation
