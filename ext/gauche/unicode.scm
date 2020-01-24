@@ -41,6 +41,7 @@
           ucs4->utf16 utf16-length utf16->ucs4
           utf8->string string->utf8
           utf16->string string->utf16
+          utf32->string string->utf32
 
           make-word-breaker
           make-word-reader
@@ -439,7 +440,7 @@
                    (values (+ start 2) 'little-endian)]
                   [else (values start (or endian 'big-endian))])))
       (unless (even? (- end start))
-        (error "number of input octets for utf8 isn't even:" (- end start)))
+        (error "number of input octets for utf16 isn't even:" (- end start)))
       (with-output-to-string
         (^[] (let loop ([in ($ generator->lseq
                                $ %u8->u16-generator bvec start end endian)])
@@ -472,6 +473,73 @@
     (generator-for-each (^[ch] (for-each add16! (ucs4->utf16 (char->ucs ch))))
                         (string->generator str start end))
     (get)))
+
+(define (utf32->string bvec :optional (endian #f) (ignore-bom? #f)
+                                      (start 0) (end -1))
+  (assume-type bvec <u8vector>)
+  (let1 end (cond [(< end 0) (u8vector-length bvec)]
+                  [(or (< start 0) (< end start))
+                   (error "invalid start/end positions:" (list start end))]
+                  [else end])
+    (receive (start endian)
+        (if (or ignore-bom? (< (- end start) 4))
+          (values start (or endian 'bid-endian))
+          (let ([b0 (u8vector-ref bvec start)]
+                [b1 (u8vector-ref bvec (+ start 1))]
+                [b2 (u8vector-ref bvec (+ start 2))]
+                [b3 (u8vector-ref bvec (+ start 3))])
+            (cond [(and (eqv? b0 0) (eqv? b1 0) (eqv? b2 #xfe) (eqv? b3 #xff))
+                   (values (+ start 4) 'big-endian)]
+                  [(and (eqv? b0 #xff) (eqv? b1 #xfe) (eqv? b2 0) (eqv? b3 0))
+                   (values (+ start 4) 'little-endian)]
+                  [else (values start (or endian 'big-endian))])))
+      (unless (zero? (modulo (- end start) 4))
+        (error "number of input octets for utf32 isn't multiple of 4"
+               (- end start)))
+      (if (zero? (mod start 4))
+        (u32vector->string (uvector-alias <u32vector> bvec start end)
+                           0 -1 #f endian)
+        (map-to <string> ucs->char 
+                ($ generator->lseq
+                   $ %u8->u32-generator bvec start end endian))))))
+
+(define (%u8->u32-generator bvec start end endian)
+  ;; We don't want to depend on binary.io
+  (define combine
+    (if (memq endian '(big big-endian))
+      (^[v k] (logior (ash (u8vector-ref v k) 24)
+                      (ash (u8vector-ref v (+ k 1)) 16)
+                      (ash (u8vector-ref v (+ k 2)) 8)
+                      (u8vector-ref v (+ k 3))))
+      (^[v k] (logior (u8vector-ref v k)
+                      (ash (u8vector-ref v (+ k 1)) 8)
+                      (ash (u8vector-ref v (+ k 2)) 16)
+                      (ash (u8vector-ref v (+ k 3)) 24)))))
+  (^[] (if (= start end)
+         (eof-object)
+         (begin0 (combine bvec start) (inc! start 4)))))
+
+(define (string->utf32 str :optional (endian 'big-endian)
+                                     (add-bom? #f)
+                                     (start 0) end)
+  (let* ([s ((with-module gauche.internal %maybe-substring) str start end)]
+         [len (string-length s)]
+         [r (make-u8vector (* 4 (if add-bom? (+ len 1) len)))]
+         [rr (uvector-alias <u32vector> r (if add-bom? 4 0))])
+    (string->u32vector! rr 0 s 0 -1 endian)
+    (when add-bom?
+      (case endian
+        [(big big-endian) 
+         (u8vector-set! r 0 #x00)
+         (u8vector-set! r 1 #x00)
+         (u8vector-set! r 2 #xfe)
+         (u8vector-set! r 3 #xff)]
+        [else 
+         (u8vector-set! r 0 #xff)
+         (u8vector-set! r 1 #xfe)
+         (u8vector-set! r 2 #x00)
+         (u8vector-set! r 3 #x00)]))
+    r))
 
 ;;;
 ;;;  Character properties

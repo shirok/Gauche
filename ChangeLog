@@ -1,3 +1,7 @@
+2020-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/unicode.scm (string->utf32, utf32->string): Added.
+
 2020-01-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/unicode.scm (string->utf16): Add add-bom? argument, for

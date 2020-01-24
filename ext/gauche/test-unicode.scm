@@ -232,6 +232,46 @@
 (test* "string->utf16 bom" #u8(#xfe #xff 0 48 0 49 0 50)
        (string->utf16 "012" 'big-endian #t))
 
+;; utf32->string
+(test* "utf32->string big-endian" "012"
+       (utf32->string #u8(0 0 0 48 0 0 0 49 0 0 0 50) 'big))
+(test* "utf32->string little-endian" "012"
+       (utf32->string #u8(48 0 0 0 49 0 0 0 50 0 0 0) 'little))
+(test* "utf32->string big-endian by default" "012"
+       (utf32->string #u8(0 0 0 48 0 0 0 49 0 0 0 50)))
+(test* "utf32->string BOM big-endian" "012"
+       (utf32->string #u8(0 0 #xfe #xff 0 0 0 48 0 0 0 49 0 0 0 50)))
+(test* "utf32->string BOM little-endian" "012"
+       (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0)))
+(test* "utf32->string BOM override" "012"
+       (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'big))
+(test* "utf32->string ignore-bom big-endian" "\xfeff;012"
+       (utf32->string #u8(0 0 #xfe #xff 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t))
+(test* "utf32->string ignore-bom little-endian" "\xfeff;012"
+       (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'little #t))
+(test* "utf32->string start/end" "012" ; map-to path
+       (utf32->string #u8(0 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t 1))
+(test* "utf32->string start/end" "12" ; u32vector->string path
+       (utf32->string #u8(0 0 0 48 0 0 0 49 0 0 0 50) 'big #t 4))
+(test* "utf32->string BOM only" ""
+       (utf32->string #u8(0 0 #xfe #xff)))
+(test* "utf32->string BOM only" ""
+       (utf32->string #u8(#xff #xfe 0 0)))
+(test* "string->utf32 default" #u8(0 0 0 48 0 0 0 49 0 0 0 50)
+       (string->utf32 "012"))
+(test* "string->utf32 big" #u8(0 0 0 48 0 0 0 49 0 0 0 50)
+       (string->utf32 "012" 'big-endian))
+(test* "string->utf32 little" #u8(48 0 0 0 49 0 0 0 50 0 0 0)
+       (string->utf32 "012" 'little-endian))
+(test* "string->utf32 start" #u8(48 0 0 0 49 0 0 0 50 0 0 0)
+       (string->utf32 "a012" 'little-endian #f 1))
+(test* "string->utf32 start/end" #u8(48 0 0 0 49 0 0 0 50 0 0 0)
+       (string->utf32 "a012b" 'little-endian #f 1 4))
+(test* "string->utf32 bom" #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0)
+       (string->utf32 "012" 'little-endian #t))
+(test* "string->utf32 bom" #u8(0 0 #xfe #xff 0 0 0 48 0 0 0 49 0 0 0 50)
+       (string->utf32 "012" 'big-endian #t))
+
 (test-section "word boundary")
 
 (define (test-word-breaker sentence expected)
