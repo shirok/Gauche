@@ -22382,7 +22382,7 @@ On the other hand, using @code{gauche.uvector} imports all the bindings.
 あるいは @code{(import (scheme vector u8))} (R7RS式)
 のようにする必要があります。
 
-一方、@code{gauche.uvector}使った場合は術の手続きがインポートされます。
+一方、@code{gauche.uvector}使った場合は全ての手続きがインポートされます。
 @c COMMON
 
 @menu
