@@ -1,6 +1,10 @@
 2020-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/unicode.scm (string->utf32, utf32->string): Added.
+	  (codeponts->words): Fix: Document has been saying the result
+	  is a list of sequences of the same type as input, but we returned
+	  a list of lists.  Code relying on previous behavior will break, but
+	  technically this is an implementation bug.
 
 2020-01-22  Shiro Kawai  <shiro@acm.org>
 

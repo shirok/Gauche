@@ -21946,16 +21946,24 @@ word breaking algorithms defined in UAX #29: Unicode Text Segmentation.
 @defun string->words string
 @defunx codepoints->words sequence
 @c MOD gauche.unicode
+@c EN
 From given string or codepoint sequence (a @code{<sequence>}
-object containing list of codepoints), returns a list of
-words.  Each cluster is represented as a string, or
+object containing codepoints), returns a list of
+words.  Each word is represented as a string, or
 a sequence of the same type as input, respectively.
+@c JP
+与えられた文字列あるいはコードポイントシーケンス(コードポイントを要素とする
+@code{<sequence>}オブジェクト)から、単語のリストを返します。
+各単語はそれぞれ、文字列あるいはコードポイントシーケンスで表現されます。
+@c COMMON
 
 @example
 (string->words "That's it.")
  @result{} ("That's" " " "it" ".")
 (codepoints->words '(84 104 97 116 39 115 32 105 116 46)
  @result{} ((84 104 97 116 39 115) (32) (105 116) (46))
+(codepoints->words '#(84 104 97 116 39 115 32 105 116 46)
+ @result{} (#(84 104 97 116 39 115) #(32) #(105 116) #(46))
 @end example
 
 In the second example, the list is a list of codepoints

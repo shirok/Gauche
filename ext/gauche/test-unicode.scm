@@ -280,7 +280,7 @@
          (map (^w (map char->ucs w)) expected)
          (codepoints->words (map char->ucs sentence)))
   (test* "codepoints->words"
-         (map (^w (map char->ucs w)) expected)
+         (map (^w (map-to <vector> char->ucs w)) expected)
          (codepoints->words (map-to <vector> char->ucs sentence))))
 
 ;; example given in UAX#29

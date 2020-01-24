@@ -672,7 +672,8 @@
 (define (make-sequence-splitter cluster-reader-maker)
   (^[seq]
     (let1 gen (x->generator seq)
-      (generator->list (cluster-reader-maker gen identity)))))
+      (generator->list 
+       (cluster-reader-maker gen (cut coerce-to (class-of seq) <>))))))
 
 ;;=========================================================================
 ;; State transition compiler
