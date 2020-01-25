@@ -1,3 +1,8 @@
+2020-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/bytevector.scm: Added R7RS-large scheme.bytevector.
+	  Tests are coming along.
+
 2020-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/unicode.scm (string->utf32, utf32->string): Added.

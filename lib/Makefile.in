@@ -116,6 +116,7 @@ SCMFILES = \
        rfc/hmac.scm rfc/ftp.scm rfc/icmp.scm rfc/ip.scm rfc/json.scm \
        rfc/uuid.scm \
        scheme/base.scm scheme/box.scm scheme/bitwise.scm \
+       scheme/bytevector.scm \
        scheme/case-lambda.scm scheme/char.scm scheme/charset.scm \
        scheme/comparator.scm scheme/complex.scm scheme/cxr.scm \
        scheme/division.scm scheme/ephemeron.scm scheme/eval.scm \
