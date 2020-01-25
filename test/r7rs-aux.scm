@@ -24,16 +24,6 @@
     (test* "native-endianness" #t
            (boolean (memq (native-endianness) lis))))
 
-  (test* "make-bytevector" '#u8(255 255 255)
-         (make-bytevector 3 -1))
-  (test* "bytevector-fill!" '#u8(254 254 254)
-         (rlet1 v (make-bytevector 3 0)
-           (bytevector-fill! v -2)))
-  (test* "bytevector-copy!" '#u8(0 0 2 3 4 0 0 0)
-         (rlet1 v (make-bytevector 8 0)
-           ;; different order of args!
-           (bytevector-copy! '#u8(1 2 3 4 5) 1 v 2 3)))
-
   (test* "bytevector-[su8]-ref/set!" '#u8(5 255 0 3 4 5)
          (rlet1 v (u8-list->bytevector '(0 1 2 3 4 5))
            (bytevector-u8-set! v 0 (bytevector-u8-ref v 5))

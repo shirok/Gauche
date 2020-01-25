@@ -65,11 +65,13 @@
 
           write-block write-uvector
 
-          ;; R7RS compatibility
-          bytevector bytevector? make-bytevector
+          ;; R7RS compatibility (scheme base) and (scheme bytevector)
+          bytevector bytevector? make-bytevector bytevector-fill!
           bytevector-length bytevector-u8-ref bytevector-u8-set!
-          bytevector-copy bytevector-copy! bytevector-append
-          bytevector=? ; not in (scheme base), but bonus
+          bytevector-s8-ref bytevector-s8-set!
+          bytevector->u8-list u8-list->bytevector
+          bytevector-copy bytevector-copy! bytevector-copy!-r6
+          bytevector-append bytevector=?
           ))
 (select-module gauche.uvector)
 
@@ -787,9 +789,18 @@
 ;; Bytevector aliases (R7RS compatibility)
 ;;
 
+(define (%adjust-fill-arg fill)
+  (cond [(<= 0 fill 255) fill]
+        [(<= -128 fill -1) (logand fill #xff)]
+        [else (error "fill argument out of range" fill)]))
+
+(define (make-bytevector len :optional (fill 0))
+  (make-u8vector len (%adjust-fill-arg fill)))
+(define (bytevector-fill! v fill)       ; scheme.bytevector
+  (u8vector-fill! v (%adjust-fill-arg fill)))
+
 (define-inline bytevector         u8vector)
 (define-inline bytevector?        u8vector?)
-(define-inline make-bytevector    make-u8vector)
 (define-inline bytevector-length  u8vector-length)
 (define-inline bytevector-u8-ref  u8vector-ref)
 (define-inline bytevector-u8-set! u8vector-set!)
@@ -797,3 +808,16 @@
 (define-inline bytevector-copy!   u8vector-copy!)
 (define-inline bytevector-append  u8vector-append)
 (define-inline bytevector=?       u8vector=?)
+
+(define (bytevector-s8-ref v k)         ; scheme.bytevector
+  (let1 b (bytevector-u8-ref v k)
+    (if (>= b 128) (- b 256) b)))
+(define (bytevector-s8-set! v k b)      ; scheme.bytevector
+  (bytevector-u8-set! v k (logand b #xff)))
+
+(define (bytevector-copy!-r6 src sstart target tstart len) ; scheme.bytevector
+  (u8vector-copy! target tstart src sstart (+ sstart len)))
+
+(define (bytevector->u8-list v) (u8vector->list v))     ; scheme.bytevector
+(define (u8-list->bytevector lis) (list->u8vector lis)) ; scheme.bytevector
+

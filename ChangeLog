@@ -1,3 +1,11 @@
+2020-01-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm: Enhanced make-bytevector and bytevector-fill!
+	  so that we don't need have separate definition in scheme.bytevector.
+	  We also provide bytevector-copy!-r6 here to alleviate confusion
+	  having same name, different procedures (we can just explain that
+	  scheme.bytevector exports bytevector-copy!-r6 as bytevector-copy!)
+
 2020-01-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/scheme/bytevector.scm: Added R7RS-large scheme.bytevector.

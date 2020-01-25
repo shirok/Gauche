@@ -38,18 +38,18 @@
   (use binary.io)
   (export endianness native-endianness
           bytevector?                   ; gauche.uvector
-          (rename make-bytevector-r6 make-bytevector) ; fill arg differs
+          make-bytevector               ; gauche.uvector
           bytevector-length             ; gauche.uvector
           bytevector=?                  ; gauche.uvector
-          (rename bytevector-fill!-r6 bytevector-fill!) ; fill arg differs
-          (rename bytevector-copy!-r6 bytevector-copy!) ; args differ
+          bytevector-fill!              ; gauche.uvector
+          (rename bytevector-copy!-r6 bytevector-copy!) ; gauche.uvector
           bytevector-copy               ; subset of gauche.uvector
           bytevector-u8-ref             ; gauche.uvector
-          bytevector-s8-ref
+          bytevector-s8-ref             ; gauche.uvector
           bytevector-u8-set!            ; gauche.uvector
-          bytevector-s8-set!
-          bytevector->u8-list
-          u8-list->bytevector
+          bytevector-s8-set!            ; gauche.uvector
+          bytevector->u8-list           ; gauche.uvector
+          u8-list->bytevector           ; gauche.uvector
           bytevector-uint-ref
           bytevector-sint-ref
           bytevector-uint-set!
@@ -115,28 +115,6 @@
        [_ (error "Malformed endianness: " f)]))))
 
 (define (native-endianness) (native-endian))
-
-(define-inline (%u8->s8 b) (if (>= b 128) (- b 256) b))
-(define-inline (%s8->u8 b) (logand b #xff))
-
-(define (%adjust-fill-arg fill)
-  (cond [(<= 0 fill 255) fill]
-        [(<= -128 fill -1) (%s8->u8 fill)]
-        [else (error "fill argument out of range" fill)]))
-
-(define (make-bytevector-r6 len :optional (fill 0))
-  (make-u8vector len (%adjust-fill-arg fill)))
-(define (bytevector-fill!-r6 v fill)
-  (u8vector-fill! v (%adjust-fill-arg fill)))
-
-(define (bytevector-copy!-r6 src sstart target tstart len)
-  (u8vector-copy! target tstart src sstart (+ sstart len)))
-
-(define (bytevector-s8-ref v k) (%u8->s8 (bytevector-u8-ref v k)))
-(define (bytevector-s8-set! v k b) (bytevector-u8-set! v k (%s8->u8 b)))
-
-(define (bytevector->u8-list v) (u8vector->list v))
-(define (u8-list->bytevector lis) (list->u8vector lis))
 
 (define (bytevector-uint-ref v pos endian size)
   (get-uint size v pos endian))
