@@ -1971,6 +1971,7 @@ The following are supported libraries:
 * R7RS bitwise operations::     @code{scheme.bitwise}
 * R7RS fixnum::                 @code{scheme.fixnum}
 * R7RS flonum::                 @code{scheme.flonum}
+* R7RS bytevectors::
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large, R7RS large
@@ -9485,7 +9486,7 @@ srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
 
 
 @c ----------------------------------------------------------------------
-@node R7RS flonum,  , R7RS fixnum, R7RS large
+@node R7RS flonum, R7RS bytevectors, R7RS fixnum, R7RS large
 @subsection @code{scheme.flonum} - R7RS flonum
 @c NODE R7RS flonum, @code{scheme.flonum} - R7RS flonum
 
@@ -10615,6 +10616,40 @@ Returns the error function erf(@var{x}).
 @c MOD scheme.flonum
 Returns the complementary error function, 1 - erf(@var{x}).
 @end defun
+
+@c ----------------------------------------------------------------------
+@node R7RS bytevectors,  , R7RS flonum, R7RS large
+@subsection @code{scheme.bytevector} - R7RS bytevectors
+@c NODE R7RS bytevectors, @code{scheme.bytevector} - R7RS bytevector
+
+@deftp {Module} scheme.bytevector
+@mdindex scheme.bytevector
+This module is taken from R6RS (@code{(rnrs bytevectors)} (note
+that R7RS uses singular form).
+
+The bytevector in this module is u8vector in Gauche.
+
+The following procedures are the same as in @code{gauche.uvector}.
+@xref{Uniform vectors}, for the explanations.
+
+@example
+bytevector?        bytevector-length      bytevector=?
+bytevector-u8-ref  bytevector-u8-set!
+@end example
+
+The following procedures are the same as in @code{gauche.unicode}.
+@xref{Unicode utilities}, for the explanations.
+
+@example
+string->utf8       string->utf16          string->utf32
+utf8->string       utf16->string          utf32->string
+@end example
+
+It has a few procedures that has the same name as R7RS-small
+but has slightly different API.  If you import this module,
+you might want to rename or exclude them.
+@end deftp
+
 
 
 @c Local variables:
