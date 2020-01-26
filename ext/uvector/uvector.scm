@@ -809,12 +809,15 @@
 (define-inline bytevector-append  u8vector-append)
 (define-inline bytevector=?       u8vector=?)
 
-(define (bytevector-s8-ref v k)         ; scheme.bytevector
-  (let1 b (bytevector-u8-ref v k)
-    (if (>= b 128) (- b 256) b)))
 (define (bytevector-s8-set! v k b)      ; scheme.bytevector
   (bytevector-u8-set! v k (logand b #xff)))
-
+(define bytevector-s8-ref         ; scheme.bytevector
+  (letrec ([bytevector-s8-ref 
+            (^[v k]
+              (let1 b (bytevector-u8-ref v k)
+                (if (>= b 128) (- b 256) b)))])
+    (getter-with-setter bytevector-s8-ref bytevector-s8-set!)))
+   
 (define (bytevector-copy!-r6 src sstart target tstart len) ; scheme.bytevector
   (u8vector-copy! target tstart src sstart (+ sstart len)))
 
