@@ -71,8 +71,8 @@
 */
 typedef struct ScmStringBodyRec {
     u_long flags;
-    ScmSmallInt length;
-    ScmSmallInt size;
+    ScmSmallInt length;         /* in characters */
+    ScmSmallInt size;           /* in bytes */
     const char *start;
 } ScmStringBody;
 
@@ -403,5 +403,26 @@ SCM_EXTERN ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
 SCM_EXTERN ScmObj Scm_StringPointerCopy(ScmStringPointer *sp);
 SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
 
-#endif /* GAUCHE_STRING_H */
+/*
+ * (Immutable) String cursors
+ */
+typedef struct ScmStringCursorRec {
+    SCM_HEADER;
+    const char *cursor;
+} ScmStringCursor;
 
+SCM_CLASS_DECL(Scm_StringCursorClass);
+#define SCM_CLASS_STRING_CURSOR      (&Scm_StringCursorClass)
+#define SCM_STRING_CURSORP(obj)      SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR)
+#define SCM_STRING_CURSOR(obj)       ((ScmStringCursor*)obj)
+#define SCM_STRING_CURSOR_PTR(obj)   ((obj)->cursor)
+
+SCM_EXTERN ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index);
+SCM_EXTERN ScmObj Scm_MakeStringCursorEnd(ScmString *src);
+SCM_EXTERN ScmObj Scm_StringCursorIndex(ScmString *s, ScmObj sc);
+SCM_EXTERN ScmObj Scm_StringCursorStart(ScmString* s);
+SCM_EXTERN ScmObj Scm_StringCursorEnd(ScmString* s);
+SCM_EXTERN ScmObj Scm_StringCursorForward(ScmString* s, ScmObj cursor, int nchars);
+SCM_EXTERN ScmObj Scm_StringCursorBack(ScmString* s, ScmObj cursor, int nchars);
+
+#endif /* GAUCHE_STRING_H */

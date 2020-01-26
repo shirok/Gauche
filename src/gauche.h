@@ -532,6 +532,7 @@ typedef struct ScmLazyPairRec       ScmLazyPair;
 typedef struct ScmCharSetRec        ScmCharSet;
 typedef struct ScmStringRec         ScmString;
 typedef struct ScmDStringRec        ScmDString;
+typedef struct ScmStringCursorRec   ScmCursor;
 typedef struct ScmVectorRec         ScmVector;
 typedef struct ScmBignumRec         ScmBignum;
 typedef struct ScmRatnumRec         ScmRatnum;
