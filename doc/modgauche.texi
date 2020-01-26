@@ -24989,14 +24989,23 @@ a bytevector (u8vector).
 
 @defun make-bytevector len :optional byte
 @c MOD gauche.uvector
-[R7RS base]
+[R7RS base][R7RS bytevector]
 @c EN
-Alias of @code{make-u8vector}.  Returns a fresh bytevector (u8vector)
+Returns a fresh bytevector (u8vector)
 of length @var{len}.  All elements are initialized by @var{byte}
 if given.
+
+R7RS base accepts an exact integer between 0 and 255 inclusive as
+@var{byte}.  R7RS bytevector extends the range to -128 to 255 inclusive,
+while the negative value is wrapped-around by modulo 255.
+This procedure supports the extended range.
 @c JP
-@code{make-u8vector}の別名です。長さ@var{len}の新たなバイトベクタ(u8vector)
-を作って返します。@var{byte}が与えられていれば、全ての要素をそれで初期化します。
+長さ@var{len}の新たなバイトベクタ(u8vector)を作って返します。
+@var{byte}が与えられていれば、全ての要素をそれで初期化します。
+
+R7RS baseでは@var{byte}の範囲を0から255(両端含む)としていますが、
+R7RS bytevectorではそれを-128から255(両端含む)に拡張しています。
+負の場合は256を法としてラップアラウンドします。この手続きは拡張範囲をサポートします。
 @c COMMON
 @end defun
 
@@ -25038,6 +25047,25 @@ Gaucheの拡張として、@code{(setter bytevector-u8-ref)} は
 @c COMMON
 @end defun
 
+@defun bytevector-s8-ref bv k
+@defunx bytevector-s8-set! bv k signed-byte
+@c MOD gauche.uvector
+[R7RS bytevector]
+@c EN
+Like @code{bytevector-u8-ref} and @code{bytevector-u8-set!}, but
+treates octets as a signed byte, ranging from -128 to 127, inclusive.
+
+As Gauche's extension, @code{(setter bytevector-s8-ref)} is
+@code{bytevector-s8-set!}.
+@c JP
+オクテットを-128から127までの符号つきバイトと扱うことを除き、
+それぞれ@code{bytevector-u8-ref}および@code{bytevector-u8-set!}と同じです。
+
+Gaucheの拡張として、@code{(setter bytevector-s8-ref)} は
+@code{bytevector-s8-set!}になっています。
+@c COMMON
+@end defun
+
 @defun bytevector-copy bv :optional start end
 @c MOD gauche.uvector
 [R7RS base]
@@ -25071,6 +25099,36 @@ into @var{target} starting at the index @var{tstart}.
 @c COMMON
 @end defun
 
+@defun bytevector-copy!-r6 src sstart target tstart len
+@c MOD gauche.uvector
+@c EN
+This is a compatibility procedure for R6RS @code{bytevector-copy!}
+(hence the suffix @code{-r6}).  When R6RS bytevectors are
+adpoted as R7RS-large @code{scheme.bytevector}, the R6RS version
+of @code{bytevector-copy!} comes into R7RS as well
+(hence R7RS has two different @code{bytevector-copy!}, one in
+@code{scheme.base} and one in @code{scheme.bytevector}).
+
+It's unfortunate
+that R6RS tends to break tradition and invent a new API; here, the
+arguments differ from other @code{*-copy!} procedures:
+This procedure copies from @var{src}, starting from
+@var{sstart} and length @var{len}, to @var{target} starting @var{tstart}.
+@c JP
+これはR6RSの@code{bytevector-copy!}との互換ルーチンです
+(なので@code{-r6}サフィックスがついています)。
+R6RSバイトベクタライブラリがR7RS-largeにも@code{scheme.bytevector}として
+採り入れられたので、R6RSバージョンの@code{bytevector-copy!}もR7RSに入ってきました。
+(なのでR7RSには二つの異なる@code{bytevector-copy!}があります。
+ひとつは@code{scheme.base}に、もうひとつは@code{scheme.bytevector}に。)
+
+残念なことに、R6RSはしばしば伝統を破って新しいAPIを発明することがあり、
+この手続きもそのひとつで、他の@code{*-copy!}系の手続きと引数が異なります。
+この手続きでは、バイトベクタ@var{src}の@var{sstart}から@var{len}の長さのデータを
+@var{target}の@var{tstart}からの領域にコピーします。
+@c COMMON
+@end defun
+
 @defun bytevector-append bv @dots{}
 @c MOD gauche.uvector
 [R7RS base]
@@ -25087,6 +25145,7 @@ the concatenation of elements of @var{bv} @dots{}.
 
 @defun bytevector=? bv1 bv2
 @c MOD gauche.uvector
+[R7RS bytevector]
 @c EN
 Alias of @code{u8vector=?}.  All arguments must be bytevectors
 (u8vectors).  Returns @code{#t} iff all bytevectors are of the same
@@ -25094,6 +25153,20 @@ size and content.
 @c JP
 @code{u8vector=?}の別名です。全ての引数はバイトベクタ(u8vector)でなければなりません。
 引数の大きさと内容が一致している時に限り@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun bytevector->u8-list bv
+@defunx u8-list->bytevector list
+[R7RS bytevector]
+@c EN
+Convert a u8vector to a list of bytes, and vice versa.
+Same as @code{u8vector->list} and @code{list->u8vector}, except to not
+taking optional @var{start}/@var{end} arguments.
+@c JP
+それぞれ、u8vectorをバイトのリストへ変換、およびその逆を行う手続きです。
+省略可能な@var{start}/@var{end}引数を取らないことを除き、
+@var{u8vector->list}およぎ@code{list->u8vector}と同じです。
 @c COMMON
 @end defun
 

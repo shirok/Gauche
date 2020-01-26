@@ -1956,7 +1956,7 @@ The following are supported libraries:
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
 * R7RS hash tables::            @code{scheme.hash-table}
-* R7RS purely functional random-access pairs and lists::
+* R7RS purely functional random-access pairs and lists:: @code{scheme.rlist}
 * R7RS immutable deques::       @code{scheme.ideque}
 * R7RS generators::             @code{scheme.generator}
 * R7RS lazy sequences::         @code{scheme.lseq}
@@ -1971,7 +1971,7 @@ The following are supported libraries:
 * R7RS bitwise operations::     @code{scheme.bitwise}
 * R7RS fixnum::                 @code{scheme.fixnum}
 * R7RS flonum::                 @code{scheme.flonum}
-* R7RS bytevectors::
+* R7RS bytevectors::            @code{scheme.bytevector}
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large, R7RS large
@@ -10630,26 +10630,102 @@ that R7RS uses singular form).
 The bytevector in this module is u8vector in Gauche.
 
 The following procedures are the same as in @code{gauche.uvector}.
-@xref{Uniform vectors}, for the explanations.
+@xref{Bytevector compatibility}, for the explanations.
 
 @example
-bytevector?        bytevector-length      bytevector=?
-bytevector-u8-ref  bytevector-u8-set!
+bytevector?        make-bytevector     bytevector-length 
+bytevector=?       bytevector-fill!    bytevector-copy
+bytevector-u8-ref  bytevector-u8-set!  bytevector-s8-ref
+bytevector-s8-set! bytevector->u8-list u8-list->bytevector
 @end example
 
 The following procedures are the same as in @code{gauche.unicode}.
 @xref{Unicode utilities}, for the explanations.
 
 @example
-string->utf8       string->utf16          string->utf32
-utf8->string       utf16->string          utf32->string
+string->utf8       string->utf16       string->utf32
+utf8->string       utf16->string       utf32->string
 @end example
 
-It has a few procedures that has the same name as R7RS-small
-but has slightly different API.  If you import this module,
-you might want to rename or exclude them.
+This module exports @code{bytevector-copy!}, which takes arguments
+in different order from
+R7RS base's (and @code{gauche.uvector}'s) @code{bytevector-copy!}.
+It is the same as @code{bytevector-copy!-r6} in @code{gauche.uvector}
+(@pxref{Bytevector compatibility}).
 @end deftp
 
+@defmac endianness symbol
+[R7RS bytevector]
+@end defmac
+
+@defun native-endianness
+[R7RS bytevector]
+@end defun
+
+
+@defun bytevector-uint-ref bv pos endian size
+@defunx bytevector-sint-ref bv pos endian size
+[R7RS bytevector]
+@end defun
+
+@defun bytevector-uint-set! bv pos val endian size
+@defunx bytevector-sint-set! bv pos val endian size
+[R7RS bytevector]
+@end defun
+
+@defun bytevector->uint-list bv endian size
+@defunx bytevector->sint-list bv endian size
+[R7RS bytevector]
+@end defun
+
+@defun uint-list->bytevector lis endian size
+@defunx sint-list->bytevector lis endian size
+[R7RS bytevector]
+@end defun
+
+@defun bytevector-u16-ref bv k endian
+@defunx bytevector-s16-ref bv k endian
+@defunx bytevector-u32-ref bv k endian
+@defunx bytevector-s32-ref bv k endian
+@defunx bytevector-u64-ref bv k endian
+@defunx bytevector-s64-ref bv k endian
+@defunx bytevector-ieee-single-ref bv k endian
+@defunx bytevector-ieee-double-ref bv k endian
+[R7RS bytevector]
+@end defun
+
+@defun bytevector-u16-native-ref bv k
+@defunx bytevector-s16-native-ref bv k
+@defunx bytevector-u32-native-ref bv k
+@defunx bytevector-s32-native-ref bv k
+@defunx bytevector-u64-native-ref bv k
+@defunx bytevector-s64-native-ref bv k
+@defunx bytevector-ieee-single-native-ref bv k
+@defunx bytevector-ieee-double-native-ref bv k
+[R7RS bytevector]
+@end defun
+
+@defun bytevector-u16-set! bv k val endian
+@defunx bytevector-s16-set! bv k val endian
+@defunx bytevector-u32-set! bv k val endian
+@defunx bytevector-s32-set! bv k val endian
+@defunx bytevector-u64-set! bv k val endian
+@defunx bytevector-s64-set! bv k val endian
+@defunx bytevector-ieee-single-set! bv k val endian
+@defunx bytevector-ieee-double-set! bv k val endian
+[R7RS bytevector]
+@end defun
+
+@defun bytevector-u16-native-set! bv k val
+@defunx bytevector-s16-native-set! bv k val
+@defunx bytevector-u32-native-set! bv k val
+@defunx bytevector-s32-native-set! bv k val
+@defunx bytevector-u64-native-set! bv k val
+@defunx bytevector-s64-native-set! bv k val
+@defunx bytevector-ieee-single-native-set! bv k val
+@defunx bytevector-ieee-double-native-set! bv k val
+[R7RS bytevector]
+@end defun
 
 
 @c Local variables:
