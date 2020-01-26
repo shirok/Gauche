@@ -10656,31 +10656,72 @@ It is the same as @code{bytevector-copy!-r6} in @code{gauche.uvector}
 
 @defmac endianness symbol
 [R7RS bytevector]
+If @var{symbol} is a valid endianness symbol, returns it.  Otherwise,
+raise an error at macro-expansion time.   Useful to catch an error early,
+and explicitly indicates you mean endianness.
+
+Valid symbols are listed in @ref{Endianness}.  Only @code{big} and
+@code{little} are portable.
 @end defmac
 
 @defun native-endianness
 [R7RS bytevector]
+Returns a symbol representing the native endianness.
+Same as Gauche's built-in @code{native-endian} (@pxref{Endianness}).
 @end defun
 
 
 @defun bytevector-uint-ref bv pos endian size
 @defunx bytevector-sint-ref bv pos endian size
 [R7RS bytevector]
+Read @var{size} octets from u8vector @var{bv}, starting from @var{pos}-th
+octed, as an unsigned or signed integer, respectively.
+Similar to @code{binary.io}'s @code{get-uint} and @code{get-sint},
+with different argument order.
+
+They accept all valid endianness symbols in Gauche, but
+the portable code should only use @code{big} and @var{little} for
+@var{endian} argument.
 @end defun
 
 @defun bytevector-uint-set! bv pos val endian size
 @defunx bytevector-sint-set! bv pos val endian size
 [R7RS bytevector]
+Store an unsigned or signed integer @var{val} into an u8vector
+@var{bv} starting from @var{pos}-th octet, for @var{size} octets,
+respectively.
+Similar to @code{binary.io}'s @code{put-uint!} and @code{put-sint!},
+with different argument order.
+
+They accept all valid endianness symbols in Gauche, but
+the portable code should only use @code{big} and @var{little} for
+@var{endian} argument.
 @end defun
 
 @defun bytevector->uint-list bv endian size
 @defunx bytevector->sint-list bv endian size
 [R7RS bytevector]
+Convert the u8vector @var{bv} to a list of unsigned or signed integer,
+each of which is represented by @var{size}-octets.
+The length of @var{bv} must be a multiple of @var{size}; otherwise
+an error is signaled.
+
+They accept all valid endianness symbols in Gauche, but
+the portable code should only use @code{big} and @var{little} for
+@var{endian} argument.
 @end defun
 
 @defun uint-list->bytevector lis endian size
 @defunx sint-list->bytevector lis endian size
 [R7RS bytevector]
+@var{Lis} must be a list of unsigned or signed integers, respectively.
+Creates a u8vector of length @code{(* size (length lis))}, and
+stores each integer into the u8vector using @var{size} octets,
+and returns the u8vector.
+
+They accept all valid endianness symbols in Gauche, but
+the portable code should only use @code{big} and @var{little} for
+@var{endian} argument.
 @end defun
 
 @defun bytevector-u16-ref bv k endian
@@ -10692,6 +10733,16 @@ It is the same as @code{bytevector-copy!-r6} in @code{gauche.uvector}
 @defunx bytevector-ieee-single-ref bv k endian
 @defunx bytevector-ieee-double-ref bv k endian
 [R7RS bytevector]
+Retrieve a numerical value from a u8vector @var{bv} starting at
+index @var{k}, using @var{endian}.  These are the same as
+@code{get-u16}, @dots{} in @code{binary.io}, except that
+all arguments are mandatory.  (Note that
+@code{ieee-single} and @code{ieee-double} corresponds to @code{f32} and
+@code{f64}).  @xref{Binary I/O}), for the details.
+
+They accept all valid endianness symbols in Gauche, but
+the portable code should only use @code{big} and @var{little} for
+@var{endian} argument.
 @end defun
 
 @defun bytevector-u16-native-ref bv k
@@ -10703,6 +10754,7 @@ It is the same as @code{bytevector-copy!-r6} in @code{gauche.uvector}
 @defunx bytevector-ieee-single-native-ref bv k
 @defunx bytevector-ieee-double-native-ref bv k
 [R7RS bytevector]
+Like @code{bytevector-u16-ref} etc., but uses native endianness.
 @end defun
 
 @defun bytevector-u16-set! bv k val endian
@@ -10714,6 +10766,16 @@ It is the same as @code{bytevector-copy!-r6} in @code{gauche.uvector}
 @defunx bytevector-ieee-single-set! bv k val endian
 @defunx bytevector-ieee-double-set! bv k val endian
 [R7RS bytevector]
+Store a numerical value into a u8vector @var{bv} starting at
+index @var{k}, using @var{endian}.  These are the same as
+@code{put-u16!}, @dots{} in @code{binary.io}, except that
+all arguments are mandatory.  (Note that
+@code{ieee-single} and @code{ieee-double} corresponds to @code{f32} and
+@code{f64}).  @xref{Binary I/O}), for the details.
+
+They accept all valid endianness symbols in Gauche, but
+the portable code should only use @code{big} and @var{little} for
+@var{endian} argument.
 @end defun
 
 @defun bytevector-u16-native-set! bv k val
@@ -10725,6 +10787,7 @@ It is the same as @code{bytevector-copy!-r6} in @code{gauche.uvector}
 @defunx bytevector-ieee-single-native-set! bv k val
 @defunx bytevector-ieee-double-native-set! bv k val
 [R7RS bytevector]
+Like @code{bytevector-u16-set!} etc., but uses native endianness.
 @end defun
 
 
