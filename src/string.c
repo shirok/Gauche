@@ -1542,6 +1542,155 @@ void Scm_StringPointerDump(ScmStringPointer *sp1)
 
 /*==================================================================
  *
+ * String cursor
+ *
+ */
+
+static void cursor_print(ScmObj obj SCM_UNUSED, ScmPort *port,
+                         ScmWriteContext *mode SCM_UNUSED)
+{
+    Scm_Printf(port, "#<string-cursor>");
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringCursorClass, cursor_print);
+
+static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
+{
+    const ScmStringBody *srcb = SCM_STRING_BODY(src);
+
+    if (SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
+        Scm_Error("making a cursor of incomplete strings is not supported");
+    }
+    if (cursor < SCM_STRING_BODY_START(srcb) ||
+        cursor > SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb)) {
+        Scm_Error("cursor out of range");
+    }
+
+    ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
+    SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR);
+    sc->cursor = cursor;
+    return SCM_OBJ(sc);
+}
+
+ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index)
+{
+    const ScmStringBody *srcb = SCM_STRING_BODY(src);
+    ScmSmallInt len = SCM_STRING_BODY_LENGTH(srcb);
+    if (index < 0 || index > len) {
+        Scm_Error("index out of range: %ld", index);
+    }
+    return Scm_MakeStringCursor(src, SCM_STRING_BODY_START(srcb) + index);
+}
+
+ScmObj Scm_MakeStringCursorEnd(ScmString *src)
+{
+    const ScmStringBody *srcb = SCM_STRING_BODY(src);
+
+    if (SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
+        Scm_Error("making a cursor of incomplete strings is not supported");
+    }
+
+    ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
+    SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR);
+    sc->cursor = SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb);
+    return SCM_OBJ(sc);
+}
+
+ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
+{
+    if (SCM_INTP(sc) || SCM_BIGNUMP(sc)) {
+        return sc;              /* no validation */
+    }
+
+    if (!SCM_STRING_CURSORP(sc)) {
+        Scm_Error("must be either an index or a cursor: %S", sc);
+    }
+
+    ScmStringCursor     *c       = SCM_STRING_CURSOR(sc);
+    const ScmStringBody *srcb    = SCM_STRING_BODY(src);
+    const char          *current = SCM_STRING_BODY_START(srcb);
+
+    if (c->cursor < current ||
+        c->cursor > current + SCM_STRING_BODY_SIZE(srcb)) {
+        Scm_Error("cursor out of range");
+    }
+
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
+        return SCM_MAKE_INT(c->cursor - current);
+    }
+
+    ScmSmallInt len   = SCM_STRING_BODY_LENGTH(srcb);
+    ScmSmallInt index = 0;
+    while (index < len && current < c->cursor) {
+        current += SCM_CHAR_NFOLLOWS(*current) + 1;
+        index++;
+    }
+    if (current != c->cursor) {
+        Scm_Error("bad cursor");
+    }
+
+    return SCM_MAKE_INT(index);
+}
+
+ScmObj Scm_StringCursorForward(ScmString* s, ScmObj sc, int nchars)
+{
+    if (nchars < 0) {
+        Scm_Error("nchars is negative: %ld", nchars);
+    }
+
+    if (!SCM_STRING_CURSORP(sc)) {
+        return Scm_MakeStringCursorFromIndex(s, Scm_GetInteger(sc) + nchars);
+    }
+
+    const ScmStringBody *srcb = SCM_STRING_BODY(s);
+    ScmStringCursor     *c    = SCM_STRING_CURSOR(sc);
+    const char          *new_cursor;
+
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
+        new_cursor = c->cursor + nchars;
+    } else {
+        new_cursor = forward_pos(c->cursor, nchars);
+    }
+
+    return Scm_MakeStringCursor(s, new_cursor);
+}
+
+ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
+{
+    if (nchars < 0) {
+        Scm_Error("nchars is negative: %ld", nchars);
+    }
+
+    if (SCM_INTP(sc) || SCM_BIGNUMP(sc)) {
+        return Scm_MakeStringCursorFromIndex(s, Scm_GetInteger(sc) - nchars);
+    }
+
+    if (!SCM_STRING_CURSORP(sc)) {
+        Scm_Error("must be either an index or a cursor: %S", sc);
+    }
+
+    const ScmStringBody *srcb = SCM_STRING_BODY(s);
+    ScmStringCursor     *c    = SCM_STRING_CURSOR(sc);
+
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
+        return Scm_MakeStringCursor(s, c->cursor - nchars);
+    }
+
+    const char *new_cursor = c->cursor;
+    while (nchars--) {
+        const char *prev;
+        SCM_CHAR_BACKWARD(new_cursor, SCM_STRING_BODY_START(srcb), prev);
+        if (!prev) {
+            Scm_Error("nchars out of range: %ld", nchars);
+        }
+        new_cursor = prev;
+    }
+
+    return Scm_MakeStringCursor(s, new_cursor);
+}
+
+/*==================================================================
+ *
  * Dynamic strings
  *
  */
