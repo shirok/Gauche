@@ -785,7 +785,7 @@ static ScmObj substring(const ScmStringBody *xb,
         if (start) s = forward_pos(SCM_STRING_BODY_START(xb), start);
         else s = SCM_STRING_BODY_START(xb);
         if (len == end) {
-            e = SCM_STRING_BODY_START(xb) + SCM_STRING_BODY_SIZE(xb);
+            e = SCM_STRING_BODY_END(xb);
         } else {
             e = forward_pos(s, end - start);
             flags &= ~SCM_STRING_TERMINATED;
@@ -1410,7 +1410,7 @@ ScmObj Scm_MakeStringPointer(ScmString *src, ScmSmallInt index,
         sptr = forward_pos(SCM_STRING_BODY_START(srcb), start);
         ptr = forward_pos(sptr, index);
         if (end == len) {
-            eptr = SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb);
+            eptr = SCM_STRING_BODY_END(srcb);
         } else {
             eptr = forward_pos(sptr, end - start);
         }
@@ -1562,7 +1562,7 @@ static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
         Scm_Error("making a cursor of incomplete strings is not supported");
     }
     if (cursor < SCM_STRING_BODY_START(srcb) ||
-        cursor > SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb)) {
+        cursor > SCM_STRING_BODY_END(srcb)) {
         Scm_Error("cursor out of range");
     }
 
@@ -1592,7 +1592,7 @@ ScmObj Scm_MakeStringCursorEnd(ScmString *src)
 
     ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
     SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR);
-    sc->cursor = SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb);
+    sc->cursor = SCM_STRING_BODY_END(srcb);
     return SCM_OBJ(sc);
 }
 

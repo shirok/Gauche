@@ -116,6 +116,7 @@ SCM_CLASS_DECL(Scm_StringClass);
 #define SCM_STRING_BODY_LENGTH(body)       ((body)->length)
 #define SCM_STRING_BODY_SIZE(body)         ((body)->size)
 #define SCM_STRING_BODY_START(body)        ((body)->start)
+#define SCM_STRING_BODY_END(body)          ((body)->start + (body)->size)
 #define SCM_STRING_BODY_FLAGS(body)        ((body)->flags)
 
 #define SCM_STRING_BODY_HAS_FLAG(body, flag) \
