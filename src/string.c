@@ -843,24 +843,50 @@ ScmObj Scm_Substring(ScmString *x, ScmSmallInt start, ScmSmallInt end,
    string range, call substring.  Otherwise returns x itself. */
 ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 {
-    ScmSmallInt istart, iend;
     const ScmStringBody *xb = SCM_STRING_BODY(x);
-    if (SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start)) {
+    int no_start = SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start);
+    int no_end = SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end);
+    ScmStringCursor *cstart = NULL, *cend = NULL;
+
+    ScmSmallInt istart, iend;
+    if (no_start)
         istart = 0;
-    } else {
-        if (!SCM_INTP(start))
-            Scm_Error("exact integer required for start, but got %S", start);
+    else if (SCM_STRING_CURSORP(start))
+        cstart = SCM_STRING_CURSOR(start);
+    else if (SCM_INTP(start))
         istart = SCM_INT_VALUE(start);
+    else
+        Scm_Error("exact integer or cursor required for start, but got %S", start);
+
+    if (no_end) {
+        if (istart == 0 || cstart == SCM_STRING_CURSOR(start)) {
+            return SCM_OBJ(x);
+        }
+        iend = SCM_STRING_BODY_LENGTH(xb);
+    } else if (SCM_STRING_CURSORP(end))
+        cend = SCM_STRING_CURSOR(end);
+    else if (SCM_INTP(end))
+        iend = SCM_INT_VALUE(end);
+    else
+        Scm_Error("exact integer or cursor required for start, but got %S", end);
+
+    if (no_start && cend) {
+        return substring_cursor(xb, SCM_STRING_BODY_START(xb), cend->cursor);
+    }
+    if (cstart && cend) {
+        return substring_cursor(xb, cstart->cursor, cend->cursor);
+    }
+    if (cstart && no_end) {
+        return substring_cursor(xb, cstart->cursor, SCM_STRING_BODY_END(xb));
     }
 
-    if (SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end)) {
-        if (istart == 0) return SCM_OBJ(x);
-        iend = SCM_STRING_BODY_LENGTH(xb);
-    } else {
-        if (!SCM_INTP(end))
-            Scm_Error("exact integer required for start, but got %S", end);
-        iend = SCM_INT_VALUE(end);
+    if (cstart) {
+        istart = Scm_GetInteger(Scm_StringCursorIndex(x, start));
     }
+    if (cend) {
+        iend = Scm_GetInteger(Scm_StringCursorIndex(x, end));
+    }
+
     return substring(xb, istart, iend, FALSE);
 }
 
