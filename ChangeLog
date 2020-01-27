@@ -1,3 +1,9 @@
+2020-01-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/string.h, src/string.c, src/libstr.scm, src/class.c:
+	  Add ScmStringCursor type by @pcloud
+	  https://github.com/shirok/Gauche/pull/569
+
 2020-01-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm: Enhanced make-bytevector and bytevector-fill!
