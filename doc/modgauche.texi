@@ -21966,18 +21966,28 @@ a sequence of the same type as input, respectively.
  @result{} (#(84 104 97 116 39 115) #(32) #(105 116) #(46))
 @end example
 
-In the second example, the list is a list of codepoints
+@c EN
+In the second and third example, the input is a sequence of codepoints
 of characters in "That's it."
+@c JP
+二番めと三番目の例の入力は "That's it." をコードポイント列にしたものです。
+@c COMMON
 @end defun
 
 
 @defun string->grapheme-clusters string
 @defunx codepoints->grapheme-clusters sequence
 @c MOD gauche.unicode
+@c EN
 From given string or codepoint sequence (a @code{<sequence>}
-object containing list of codepoints), returns a list of
+object containing codepoints), returns a list of
 grapheme clusters.  Each cluster is represented as a string,
 or a sequence of the same type as input, respectively.
+@c JP
+与えられた文字列あるいはコードポイントシーケンス(コードポイントを要素とする
+@code{<sequence>}オブジェクト)から、graphemeクラスタのリストを返します。
+各クラスタはそれぞれ、文字列あるいはコードポイントシーケンスで表現されます。
+@c COMMON
 @end defun
 
 
