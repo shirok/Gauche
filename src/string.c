@@ -1414,7 +1414,7 @@ ScmObj Scm_MakeStringPointer(ScmString *src, ScmSmallInt index,
         } else {
             eptr = forward_pos(sptr, end - start);
         }
-        effective_size = eptr - ptr;
+        effective_size = eptr - sptr;
     }
     ScmStringPointer *sp = SCM_NEW(ScmStringPointer);
     SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
