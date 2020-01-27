@@ -799,6 +799,39 @@ static ScmObj substring(const ScmStringBody *xb,
     }
 }
 
+static ScmObj substring_cursor(const ScmStringBody *xb,
+                               const char *start,
+                               const char *end)
+{
+    u_long flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
+
+    if (start < SCM_STRING_BODY_START(xb) ||
+        start > SCM_STRING_BODY_END(xb)) {
+        Scm_Error("start argument out of range");
+    }
+    else if (end > SCM_STRING_BODY_END(xb)) {
+        Scm_Error("end argument out of range");
+    } else if (end < start) {
+        Scm_Error("end argument must be greater than or "
+                  "equal to the start argument");
+    }
+
+    if (end != SCM_STRING_BODY_END(xb)) {
+        flags &= ~SCM_STRING_TERMINATED;
+    }
+
+    ScmSmallInt len;
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(xb)) {
+        len = (ScmSmallInt)(end - start);
+    } else {
+        len = Scm_MBLen(start, end);
+    }
+
+    return SCM_OBJ(make_str(len,
+                            (ScmSmallInt)(end - start),
+                            start, flags));
+}
+
 ScmObj Scm_Substring(ScmString *x, ScmSmallInt start, ScmSmallInt end,
                      int byterangep)
 {
@@ -1708,6 +1741,22 @@ ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
     ScmChar ch;
     SCM_CHAR_GET(c->cursor, ch);
     return ch;
+}
+
+ScmObj Scm_SubstringCursor(ScmString *str,
+                           ScmObj start_scm, ScmObj end_scm)
+{
+    if (SCM_STRING_CURSORP(start_scm) &&
+        SCM_STRING_CURSORP(end_scm)) {
+        return substring_cursor(SCM_STRING_BODY(str),
+                                SCM_STRING_CURSOR(start_scm)->cursor,
+                                SCM_STRING_CURSOR(end_scm)->cursor);
+    }
+
+    return substring(SCM_STRING_BODY(str),
+                     Scm_GetInteger(Scm_StringCursorIndex(str, start_scm)),
+                     Scm_GetInteger(Scm_StringCursorIndex(str, end_scm)),
+                     FALSE);
 }
 
 /*==================================================================

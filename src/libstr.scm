@@ -101,8 +101,8 @@
   :constant
   (let* ([r::ScmChar (Scm_StringRefCursor str k (SCM_UNBOUNDP fallback))])
     (return (?: (== r SCM_CHAR_INVALID) fallback (SCM_MAKE_CHAR r)))))
-(define-cproc substring (str::<string> start::<fixnum> end::<fixnum>)
-  (return (Scm_Substring str start end FALSE)))
+(define-cproc substring (str::<string> start end)
+  (return (Scm_SubstringCursor str start end)))
 
 (select-module gauche)
 (define-cproc string-size (str::<string>) ::<fixnum> :constant
