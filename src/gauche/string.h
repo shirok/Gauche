@@ -425,5 +425,6 @@ SCM_EXTERN ScmObj Scm_StringCursorStart(ScmString* s);
 SCM_EXTERN ScmObj Scm_StringCursorEnd(ScmString* s);
 SCM_EXTERN ScmObj Scm_StringCursorForward(ScmString* s, ScmObj cursor, int nchars);
 SCM_EXTERN ScmObj Scm_StringCursorBack(ScmString* s, ScmObj cursor, int nchars);
+SCM_EXTERN ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error);
 
 #endif /* GAUCHE_STRING_H */

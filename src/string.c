@@ -1680,6 +1680,36 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
     return Scm_MakeStringCursor(s, new_cursor);
 }
 
+ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
+{
+    const ScmStringBody *b = SCM_STRING_BODY(s);
+    ScmSmallInt size = SCM_STRING_BODY_SIZE(b);
+
+    if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
+        Scm_Error("incomplete string not allowed : %S", SCM_OBJ(s));
+    }
+
+    if (SCM_INTP(sc)) {
+        return Scm_StringRef(s, SCM_INT_VALUE(sc), range_error);
+    }
+    if (!SCM_STRING_CURSORP(sc)) {
+        Scm_Error("expected an integer or <string-cursor>, got: %S", sc);
+    }
+
+    ScmStringCursor *c = SCM_STRING_CURSOR(sc);
+    if (c->cursor < SCM_STRING_BODY_START(b) ||
+        c->cursor >= SCM_STRING_BODY_START(b) + size) {
+        if (range_error) {
+            Scm_Error("argument out of range of string %S", SCM_OBJ(s));
+        } else {
+            return SCM_CHAR_INVALID;
+        }
+    }
+    ScmChar ch;
+    SCM_CHAR_GET(c->cursor, ch);
+    return ch;
+}
+
 /*==================================================================
  *
  * Dynamic strings

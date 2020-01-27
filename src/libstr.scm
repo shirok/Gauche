@@ -97,9 +97,9 @@
 (select-module scheme)
 (define-cproc string-length (str::<string>) ::<fixnum> :constant
   (return (SCM_STRING_BODY_LENGTH (SCM_STRING_BODY str))))
-(define-cproc string-ref (str::<string> k::<fixnum> :optional fallback)
+(define-cproc string-ref (str::<string> k :optional fallback)
   :constant
-  (let* ([r::ScmChar (Scm_StringRef str k (SCM_UNBOUNDP fallback))])
+  (let* ([r::ScmChar (Scm_StringRefCursor str k (SCM_UNBOUNDP fallback))])
     (return (?: (== r SCM_CHAR_INVALID) fallback (SCM_MAKE_CHAR r)))))
 (define-cproc substring (str::<string> start::<fixnum> end::<fixnum>)
   (return (Scm_Substring str start end FALSE)))
