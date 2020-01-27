@@ -465,8 +465,15 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
  */
 
 /* Internal fn for index -> position.  Args assumed in boundary. */
-static const char *forward_pos(const char *current, ScmSmallInt offset)
+static inline const char *forward_pos(const ScmStringBody *body,
+                                      const char *current,
+                                      ScmSmallInt offset)
 {
+    if (body && (SCM_STRING_BODY_SINGLE_BYTE_P(body) ||
+                 SCM_STRING_BODY_INCOMPLETE_P(body))) {
+        return current + offset;
+    }
+
     while (offset--) {
         int n = SCM_CHAR_NFOLLOWS(*current);
         current += n + 1;
@@ -499,10 +506,10 @@ ScmChar Scm_StringRef(ScmString *str, ScmSmallInt pos, int range_error)
             return SCM_CHAR_INVALID;
         }
     }
+    const char *p = forward_pos(b, SCM_STRING_BODY_START(b), pos);
     if (SCM_STRING_BODY_SINGLE_BYTE_P(b)) {
-        return (ScmChar)(((unsigned char *)SCM_STRING_BODY_START(b))[pos]);
+        return (ScmChar)(*(unsigned char *)p);
     } else {
-        const char *p = forward_pos(SCM_STRING_BODY_START(b), pos);
         ScmChar c;
         SCM_CHAR_GET(p, c);
         return c;
@@ -537,11 +544,7 @@ const char *Scm_StringBodyPosition(const ScmStringBody *b, ScmSmallInt offset)
     if (offset < 0 || offset > SCM_STRING_BODY_LENGTH(b)) {
         Scm_Error("argument out of range: %ld", offset);
     }
-    if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
-        return (SCM_STRING_BODY_START(b)+offset);
-    } else {
-        return (forward_pos(SCM_STRING_BODY_START(b), offset));
-    }
+    return forward_pos(b, SCM_STRING_BODY_START(b), offset);
 }
 
 /* This is old API and now DEPRECATED.  It's difficult to use this safely,
@@ -773,24 +776,25 @@ static ScmObj substring(const ScmStringBody *xb,
     u_long flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
     SCM_CHECK_START_END(start, end, len);
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(xb) || byterange) {
-        if (end != len) flags &= ~SCM_STRING_TERMINATED;
-        if (byterange)  flags |= SCM_STRING_INCOMPLETE;
-        return SCM_OBJ(make_str(end-start,
-                                end-start,
+    if (byterange) {
+        if (end != len) {
+            flags &= ~SCM_STRING_TERMINATED;
+        }
+        flags |= SCM_STRING_INCOMPLETE;
+        return SCM_OBJ(make_str(end - start,
+                                end - start,
                                 SCM_STRING_BODY_START(xb) + start,
                                 flags));
     } else {
         const char *s, *e;
-        if (start) s = forward_pos(SCM_STRING_BODY_START(xb), start);
-        else s = SCM_STRING_BODY_START(xb);
+        s = forward_pos(xb, SCM_STRING_BODY_START(xb), start);
         if (len == end) {
             e = SCM_STRING_BODY_END(xb);
         } else {
-            e = forward_pos(s, end - start);
+            e = forward_pos(xb, s, end - start);
             flags &= ~SCM_STRING_TERMINATED;
         }
-        return SCM_OBJ(make_str((ScmSmallInt)(end - start),
+        return SCM_OBJ(make_str(end - start,
                                 (ScmSmallInt)(e - s), s, flags));
     }
 }
@@ -1402,20 +1406,15 @@ ScmObj Scm_MakeStringPointer(ScmString *src, ScmSmallInt index,
     while (index < 0) index += (end - start) + 1;
     if (index > (end - start)) goto badindex;
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
-        sptr = SCM_STRING_BODY_START(srcb) + start;
-        ptr = sptr + index;
-        effective_size = end - start;
+    sptr = forward_pos(srcb, SCM_STRING_BODY_START(srcb), start);
+    ptr = forward_pos(srcb, sptr, index);
+    if (end == len) {
+        eptr = SCM_STRING_BODY_END(srcb);
     } else {
-        sptr = forward_pos(SCM_STRING_BODY_START(srcb), start);
-        ptr = forward_pos(sptr, index);
-        if (end == len) {
-            eptr = SCM_STRING_BODY_END(srcb);
-        } else {
-            eptr = forward_pos(sptr, end - start);
-        }
-        effective_size = eptr - sptr;
+        eptr = forward_pos(srcb, sptr, end - start);
     }
+    effective_size = eptr - sptr;
+
     ScmStringPointer *sp = SCM_NEW(ScmStringPointer);
     SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
     sp->length = (SCM_STRING_BODY_INCOMPLETE_P(srcb)? -1 : (end-start));
@@ -1488,7 +1487,7 @@ ScmObj Scm_StringPointerSet(ScmStringPointer *sp, ScmSmallInt index)
     } else {
         if (index > sp->length) goto badindex;
         sp->index = index;
-        sp->current = forward_pos(sp->start, index);
+        sp->current = forward_pos(NULL, sp->start, index);
     }
     return SCM_OBJ(sp);
   badindex:
@@ -1644,15 +1643,7 @@ ScmObj Scm_StringCursorForward(ScmString* s, ScmObj sc, int nchars)
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
     ScmStringCursor     *c    = SCM_STRING_CURSOR(sc);
-    const char          *new_cursor;
-
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
-        new_cursor = c->cursor + nchars;
-    } else {
-        new_cursor = forward_pos(c->cursor, nchars);
-    }
-
-    return Scm_MakeStringCursor(s, new_cursor);
+    return Scm_MakeStringCursor(s, forward_pos(srcb, c->cursor, nchars));
 }
 
 ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
