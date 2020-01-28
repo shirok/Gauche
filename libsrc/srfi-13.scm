@@ -724,15 +724,19 @@
         (loop (string-cursor-next s cur)
               (kons (string-ref s cur) r))))))
 
-(define (string-fold-right kons knil s . args)
+(define (string-fold-right kons knil s
+                           :optional
+                           (start (string-cursor-start s))
+                           (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src (apply make-string-pointer s -1 args)))
-    (let loop ((ch (string-pointer-prev! src))
-               (r  knil))
-      (if (eof-object? ch)
+  (let ([start (string-index->cursor s start)])
+    (let loop ([cur (string-index->cursor s end)]
+               [r knil])
+      (if (string-cursor=? cur start)
         r
-        (loop (string-pointer-prev! src) (kons ch r))))
-    ))
+        (let ([new-cur (string-cursor-prev s cur)])
+          (loop new-cur
+                (kons (string-ref s new-cur) r)))))))
 
 (define (string-unfold p f g seed
                        :optional (base "") (make-final (^_ "")))
