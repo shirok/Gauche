@@ -711,15 +711,18 @@
   (let ((mapped (apply string-map proc s args)))
     (string-copy! s (get-optional args 0) mapped)))
 
-(define (string-fold kons knil s . args)
+(define (string-fold kons knil s
+                     :optional
+                     (start (string-cursor-start s))
+                     (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! src))
-               (r  knil))
-      (if (eof-object? ch)
+  (let ([end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)]
+               [r knil])
+      (if (string-cursor=? cur end)
         r
-        (loop (string-pointer-next! src) (kons ch r))))
-    ))
+        (loop (string-cursor-next s cur)
+              (kons (string-ref s cur) r))))))
 
 (define (string-fold-right kons knil s . args)
   (assume-type s <string>)

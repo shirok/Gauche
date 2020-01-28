@@ -4,7 +4,8 @@
 
 (define-module srfi-130
   (use srfi-13)
-  (export string-index
+  (export string-fold
+          string-index
           string-index-right
           string-skip
           string-skip-right
