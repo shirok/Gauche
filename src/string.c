@@ -38,6 +38,7 @@
 #include <ctype.h>
 
 void Scm_DStringDump(FILE *out, ScmDString *dstr);
+static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor);
 
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
@@ -1152,6 +1153,10 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
     if (retcode == NOT_FOUND) {
         if (retmode > SCM_STRING_SCAN_AFTER) *secondval = SCM_FALSE;
         return SCM_FALSE;
+    }
+
+    if (retmode == SCM_STRING_SCAN_CURSOR) {
+        return Scm_MakeStringCursor(ss1, s1 + bi);
     }
 
     if (retcode == FOUND_BYTE_INDEX && !incomplete) {
