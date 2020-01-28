@@ -760,14 +760,16 @@
         (begin (write-char (f seed) dest)
                (loop (g seed)))))))
 
-(define (string-for-each proc s . args)
+(define (string-for-each proc s
+                         :optional
+                         (start (string-cursor-start s))
+                         (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! src)))
-      (unless (eof-object? ch)
-        (proc ch)
-        (loop (string-pointer-next! src)))))
-  )
+  (let ([end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)])
+      (unless (string-cursor=? cur end)
+        (proc (string-ref s cur))
+        (loop (string-cursor-next s cur))))))
 
 (define (string-for-each-index proc s :optional (start 0) (end (string-length s)))
   (assume-type s <string>)
