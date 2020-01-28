@@ -1578,7 +1578,7 @@ ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index)
     if (index < 0 || index > len) {
         Scm_Error("index out of range: %ld", index);
     }
-    return Scm_MakeStringCursor(src, SCM_STRING_BODY_START(srcb) + index);
+    return Scm_MakeStringCursor(src, forward_pos(srcb, SCM_STRING_BODY_START(srcb), index));
 }
 
 ScmObj Scm_MakeStringCursorEnd(ScmString *src)
