@@ -1,7 +1,14 @@
+2020-01-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c, src/libstr.c (Scm_StringRefCursor, Scm_SubstringCursor):
+	  Added.
+	  (Scm_MaybeSubstring): Support cursor.
+	  by @pclouds https://github.com/shirok/Gauche/pull/571
+
 2020-01-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/string.h, src/string.c, src/libstr.scm, src/class.c:
-	  Add ScmStringCursor type by @pcloud
+	  Add ScmStringCursor type by @pclouds
 	  https://github.com/shirok/Gauche/pull/569
 
 2020-01-25  Shiro Kawai  <shiro@acm.org>
