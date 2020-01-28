@@ -131,6 +131,77 @@
 (test* "string-pointer-prev!" #\ﾞ (string-pointer-prev! sp))
 
 ;;-------------------------------------------------------------------
+(test-section "string-cursor")
+
+(define str "いろはにhoへと")
+(define ss #f)
+(define se #f)
+(test* "string-cursor-start" #t
+       (begin
+         (set! ss (string-cursor-start str))
+         (string-cursor? ss)))
+(test* "string-cursor-start" #t
+       (begin
+         (set! se (string-cursor-end str))
+         (string-cursor? se)))
+(test* "string-cursor-next" #\ろ
+       (string-ref str (string-cursor-next str ss)))
+(test* "string-cursor-forward" #\に
+       (string-ref str (string-cursor-forward str ss 3)))
+(test* "string-cursor-prev" #\と
+       (string-ref str (string-cursor-prev str se)))
+(test* "string-cursor-back" #\に
+       (string-ref str (string-cursor-back str se 5)))
+(test* "string-index->cursor" #\へ
+       (string-ref str (string-index->cursor str 6)))
+(test* "string-cursor->index" 0
+       (string-cursor->index str ss))
+(test* "string-cursor->index" 8
+       (string-cursor->index str se))
+(test* "substring with cursors" "はにho"
+       (substring str
+                  (string-cursor-forward str ss 2)
+                  (string-cursor-back str se 2)))
+(test* "substring with cursors" "はにho"
+       (substring str
+                  2
+                  (string-cursor-back str se 2)))
+(test* "substring with cursors" "はにh"
+       (substring str
+                  (string-cursor-forward str ss 2)
+                  5))
+(test* "string->list" '(#\ろ #\は #\に #\h #\o #\へ)
+       (string->list str
+                     (string-cursor-next str ss)
+                     (string-cursor-prev str se)))
+(test* "string->list" '(#\ろ #\は #\に #\h #\o #\へ)
+       (string->list str
+                     1
+                     (string-cursor-prev str se)))
+(test* "string->list" '(#\ろ #\は #\に #\h #\o #\へ)
+       (string->list str
+                     (string-cursor-next str ss)
+                     7))
+(test* "string-cursor=?" #t
+       (string-cursor=? ss (string-cursor-back str se 8)))
+(test* "string-cursor=?" #t
+       (string-cursor=? 0 0))
+(test* "string-cursor<?" #t
+       (string-cursor<? ss se))
+(test* "string-cursor<=?" #t
+       (string-cursor<=? ss se))
+(test* "string-cursor<=?" #t
+       (string-cursor<=? ss ss))
+(test* "string-cursor>?" #t
+       (string-cursor>? se ss))
+(test* "string-cursor>=?" #t
+       (string-cursor>=? se se))
+(test* "string-cursor-diff" 8
+       (string-cursor-diff str ss se))
+(test* "string-cursor-diff" -8
+       (string-cursor-diff str se ss))
+
+;;-------------------------------------------------------------------
 (test-section "incomplete strings")
 
 (test* "string-length" 6 (string-length #*"あいう"))
