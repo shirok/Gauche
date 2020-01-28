@@ -465,8 +465,15 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
  */
 
 /* Internal fn for index -> position.  Args assumed in boundary. */
-static const char *forward_pos(const char *current, ScmSmallInt offset)
+static inline const char *forward_pos(const ScmStringBody *body,
+                                      const char *current,
+                                      ScmSmallInt offset)
 {
+    if (body && (SCM_STRING_BODY_SINGLE_BYTE_P(body) ||
+                 SCM_STRING_BODY_INCOMPLETE_P(body))) {
+        return current + offset;
+    }
+
     while (offset--) {
         int n = SCM_CHAR_NFOLLOWS(*current);
         current += n + 1;
@@ -499,10 +506,10 @@ ScmChar Scm_StringRef(ScmString *str, ScmSmallInt pos, int range_error)
             return SCM_CHAR_INVALID;
         }
     }
+    const char *p = forward_pos(b, SCM_STRING_BODY_START(b), pos);
     if (SCM_STRING_BODY_SINGLE_BYTE_P(b)) {
-        return (ScmChar)(((unsigned char *)SCM_STRING_BODY_START(b))[pos]);
+        return (ScmChar)(*(unsigned char *)p);
     } else {
-        const char *p = forward_pos(SCM_STRING_BODY_START(b), pos);
         ScmChar c;
         SCM_CHAR_GET(p, c);
         return c;
@@ -537,11 +544,7 @@ const char *Scm_StringBodyPosition(const ScmStringBody *b, ScmSmallInt offset)
     if (offset < 0 || offset > SCM_STRING_BODY_LENGTH(b)) {
         Scm_Error("argument out of range: %ld", offset);
     }
-    if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
-        return (SCM_STRING_BODY_START(b)+offset);
-    } else {
-        return (forward_pos(SCM_STRING_BODY_START(b), offset));
-    }
+    return forward_pos(b, SCM_STRING_BODY_START(b), offset);
 }
 
 /* This is old API and now DEPRECATED.  It's difficult to use this safely,
@@ -773,26 +776,60 @@ static ScmObj substring(const ScmStringBody *xb,
     u_long flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
     SCM_CHECK_START_END(start, end, len);
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(xb) || byterange) {
-        if (end != len) flags &= ~SCM_STRING_TERMINATED;
-        if (byterange)  flags |= SCM_STRING_INCOMPLETE;
-        return SCM_OBJ(make_str(end-start,
-                                end-start,
+    if (byterange) {
+        if (end != len) {
+            flags &= ~SCM_STRING_TERMINATED;
+        }
+        flags |= SCM_STRING_INCOMPLETE;
+        return SCM_OBJ(make_str(end - start,
+                                end - start,
                                 SCM_STRING_BODY_START(xb) + start,
                                 flags));
     } else {
         const char *s, *e;
-        if (start) s = forward_pos(SCM_STRING_BODY_START(xb), start);
-        else s = SCM_STRING_BODY_START(xb);
+        s = forward_pos(xb, SCM_STRING_BODY_START(xb), start);
         if (len == end) {
-            e = SCM_STRING_BODY_START(xb) + SCM_STRING_BODY_SIZE(xb);
+            e = SCM_STRING_BODY_END(xb);
         } else {
-            e = forward_pos(s, end - start);
+            e = forward_pos(xb, s, end - start);
             flags &= ~SCM_STRING_TERMINATED;
         }
-        return SCM_OBJ(make_str((ScmSmallInt)(end - start),
+        return SCM_OBJ(make_str(end - start,
                                 (ScmSmallInt)(e - s), s, flags));
     }
+}
+
+static ScmObj substring_cursor(const ScmStringBody *xb,
+                               const char *start,
+                               const char *end)
+{
+    u_long flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
+
+    if (start < SCM_STRING_BODY_START(xb) ||
+        start > SCM_STRING_BODY_END(xb)) {
+        Scm_Error("start argument out of range");
+    }
+    else if (end > SCM_STRING_BODY_END(xb)) {
+        Scm_Error("end argument out of range");
+    } else if (end < start) {
+        Scm_Error("end argument must be greater than or "
+                  "equal to the start argument");
+    }
+
+    if (end != SCM_STRING_BODY_END(xb)) {
+        flags &= ~SCM_STRING_TERMINATED;
+    }
+
+    ScmSmallInt len;
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(xb)) {
+        len = (ScmSmallInt)(end - start);
+    } else {
+        len = Scm_MBLen(start, end);
+    }
+
+    return SCM_OBJ(make_str(len,
+                            (ScmSmallInt)(end - start),
+                            start, flags));
 }
 
 ScmObj Scm_Substring(ScmString *x, ScmSmallInt start, ScmSmallInt end,
@@ -806,24 +843,50 @@ ScmObj Scm_Substring(ScmString *x, ScmSmallInt start, ScmSmallInt end,
    string range, call substring.  Otherwise returns x itself. */
 ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 {
-    ScmSmallInt istart, iend;
     const ScmStringBody *xb = SCM_STRING_BODY(x);
-    if (SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start)) {
+    int no_start = SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start);
+    int no_end = SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end);
+    ScmStringCursor *cstart = NULL, *cend = NULL;
+
+    ScmSmallInt istart, iend;
+    if (no_start)
         istart = 0;
-    } else {
-        if (!SCM_INTP(start))
-            Scm_Error("exact integer required for start, but got %S", start);
+    else if (SCM_STRING_CURSORP(start))
+        cstart = SCM_STRING_CURSOR(start);
+    else if (SCM_INTP(start))
         istart = SCM_INT_VALUE(start);
+    else
+        Scm_Error("exact integer or cursor required for start, but got %S", start);
+
+    if (no_end) {
+        if (istart == 0 || cstart == SCM_STRING_CURSOR(start)) {
+            return SCM_OBJ(x);
+        }
+        iend = SCM_STRING_BODY_LENGTH(xb);
+    } else if (SCM_STRING_CURSORP(end))
+        cend = SCM_STRING_CURSOR(end);
+    else if (SCM_INTP(end))
+        iend = SCM_INT_VALUE(end);
+    else
+        Scm_Error("exact integer or cursor required for start, but got %S", end);
+
+    if (no_start && cend) {
+        return substring_cursor(xb, SCM_STRING_BODY_START(xb), cend->cursor);
+    }
+    if (cstart && cend) {
+        return substring_cursor(xb, cstart->cursor, cend->cursor);
+    }
+    if (cstart && no_end) {
+        return substring_cursor(xb, cstart->cursor, SCM_STRING_BODY_END(xb));
     }
 
-    if (SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end)) {
-        if (istart == 0) return SCM_OBJ(x);
-        iend = SCM_STRING_BODY_LENGTH(xb);
-    } else {
-        if (!SCM_INTP(end))
-            Scm_Error("exact integer required for start, but got %S", end);
-        iend = SCM_INT_VALUE(end);
+    if (cstart) {
+        istart = Scm_GetInteger(Scm_StringCursorIndex(x, start));
     }
+    if (cend) {
+        iend = Scm_GetInteger(Scm_StringCursorIndex(x, end));
+    }
+
     return substring(xb, istart, iend, FALSE);
 }
 
@@ -1402,20 +1465,15 @@ ScmObj Scm_MakeStringPointer(ScmString *src, ScmSmallInt index,
     while (index < 0) index += (end - start) + 1;
     if (index > (end - start)) goto badindex;
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
-        sptr = SCM_STRING_BODY_START(srcb) + start;
-        ptr = sptr + index;
-        effective_size = end - start;
+    sptr = forward_pos(srcb, SCM_STRING_BODY_START(srcb), start);
+    ptr = forward_pos(srcb, sptr, index);
+    if (end == len) {
+        eptr = SCM_STRING_BODY_END(srcb);
     } else {
-        sptr = forward_pos(SCM_STRING_BODY_START(srcb), start);
-        ptr = forward_pos(sptr, index);
-        if (end == len) {
-            eptr = SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb);
-        } else {
-            eptr = forward_pos(sptr, end - start);
-        }
-        effective_size = eptr - sptr;
+        eptr = forward_pos(srcb, sptr, end - start);
     }
+    effective_size = eptr - sptr;
+
     ScmStringPointer *sp = SCM_NEW(ScmStringPointer);
     SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
     sp->length = (SCM_STRING_BODY_INCOMPLETE_P(srcb)? -1 : (end-start));
@@ -1488,7 +1546,7 @@ ScmObj Scm_StringPointerSet(ScmStringPointer *sp, ScmSmallInt index)
     } else {
         if (index > sp->length) goto badindex;
         sp->index = index;
-        sp->current = forward_pos(sp->start, index);
+        sp->current = forward_pos(NULL, sp->start, index);
     }
     return SCM_OBJ(sp);
   badindex:
@@ -1562,8 +1620,8 @@ static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
         Scm_Error("making a cursor of incomplete strings is not supported");
     }
     if (cursor < SCM_STRING_BODY_START(srcb) ||
-        cursor > SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb)) {
-        Scm_Error("cursor out of range");
+        cursor > SCM_STRING_BODY_END(srcb)) {
+        Scm_Error("cursor out of range of %S", SCM_OBJ(src));
     }
 
     ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
@@ -1579,7 +1637,7 @@ ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index)
     if (index < 0 || index > len) {
         Scm_Error("index out of range: %ld", index);
     }
-    return Scm_MakeStringCursor(src, SCM_STRING_BODY_START(srcb) + index);
+    return Scm_MakeStringCursor(src, forward_pos(srcb, SCM_STRING_BODY_START(srcb), index));
 }
 
 ScmObj Scm_MakeStringCursorEnd(ScmString *src)
@@ -1592,7 +1650,7 @@ ScmObj Scm_MakeStringCursorEnd(ScmString *src)
 
     ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
     SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR);
-    sc->cursor = SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb);
+    sc->cursor = SCM_STRING_BODY_END(srcb);
     return SCM_OBJ(sc);
 }
 
@@ -1603,7 +1661,7 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
     }
 
     if (!SCM_STRING_CURSORP(sc)) {
-        Scm_Error("must be either an index or a cursor: %S", sc);
+        Scm_Error("must be either an index or a cursor on string %S", SCM_OBJ(src));
     }
 
     ScmStringCursor     *c       = SCM_STRING_CURSOR(sc);
@@ -1612,7 +1670,7 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
 
     if (c->cursor < current ||
         c->cursor > current + SCM_STRING_BODY_SIZE(srcb)) {
-        Scm_Error("cursor out of range");
+        Scm_Error("cursor out of range of string %S", SCM_OBJ(src));
     }
 
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
@@ -1626,7 +1684,7 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
         index++;
     }
     if (current != c->cursor) {
-        Scm_Error("bad cursor");
+        Scm_Error("bad cursor of string %S", SCM_OBJ(src));
     }
 
     return SCM_MAKE_INT(index);
@@ -1644,15 +1702,7 @@ ScmObj Scm_StringCursorForward(ScmString* s, ScmObj sc, int nchars)
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
     ScmStringCursor     *c    = SCM_STRING_CURSOR(sc);
-    const char          *new_cursor;
-
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
-        new_cursor = c->cursor + nchars;
-    } else {
-        new_cursor = forward_pos(c->cursor, nchars);
-    }
-
-    return Scm_MakeStringCursor(s, new_cursor);
+    return Scm_MakeStringCursor(s, forward_pos(srcb, c->cursor, nchars));
 }
 
 ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
@@ -1666,7 +1716,7 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
     }
 
     if (!SCM_STRING_CURSORP(sc)) {
-        Scm_Error("must be either an index or a cursor: %S", sc);
+        Scm_Error("must be either an index or a cursor of string %S", SCM_OBJ(s));
     }
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
@@ -1687,6 +1737,52 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
     }
 
     return Scm_MakeStringCursor(s, new_cursor);
+}
+
+ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
+{
+    const ScmStringBody *b = SCM_STRING_BODY(s);
+    ScmSmallInt size = SCM_STRING_BODY_SIZE(b);
+
+    if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
+        Scm_Error("incomplete string not allowed : %S", SCM_OBJ(s));
+    }
+
+    if (SCM_INTP(sc)) {
+        return Scm_StringRef(s, SCM_INT_VALUE(sc), range_error);
+    }
+    if (!SCM_STRING_CURSORP(sc)) {
+        Scm_Error("expected an integer or <string-cursor>, got: %S", sc);
+    }
+
+    ScmStringCursor *c = SCM_STRING_CURSOR(sc);
+    if (c->cursor < SCM_STRING_BODY_START(b) ||
+        c->cursor >= SCM_STRING_BODY_START(b) + size) {
+        if (range_error) {
+            Scm_Error("argument out of range of string %S", SCM_OBJ(s));
+        } else {
+            return SCM_CHAR_INVALID;
+        }
+    }
+    ScmChar ch;
+    SCM_CHAR_GET(c->cursor, ch);
+    return ch;
+}
+
+ScmObj Scm_SubstringCursor(ScmString *str,
+                           ScmObj start_scm, ScmObj end_scm)
+{
+    if (SCM_STRING_CURSORP(start_scm) &&
+        SCM_STRING_CURSORP(end_scm)) {
+        return substring_cursor(SCM_STRING_BODY(str),
+                                SCM_STRING_CURSOR(start_scm)->cursor,
+                                SCM_STRING_CURSOR(end_scm)->cursor);
+    }
+
+    return substring(SCM_STRING_BODY(str),
+                     Scm_GetInteger(Scm_StringCursorIndex(str, start_scm)),
+                     Scm_GetInteger(Scm_StringCursorIndex(str, end_scm)),
+                     FALSE);
 }
 
 /*==================================================================

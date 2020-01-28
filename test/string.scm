@@ -477,6 +477,77 @@
              (string-pointer-substring sp :after #t)))
 
 ;;-------------------------------------------------------------------
+(test-section "string-cursor")
+
+(define str "abcdefg")
+(define ss #f)
+(define se #f)
+(test* "string-cursor-start" #t
+       (begin
+         (set! ss (string-cursor-start str))
+         (string-cursor? ss)))
+(test* "string-cursor-start" #t
+       (begin
+         (set! se (string-cursor-end str))
+         (string-cursor? se)))
+(test* "string-cursor-next" #\b
+       (string-ref str (string-cursor-next str ss)))
+(test* "string-cursor-forward" #\d
+       (string-ref str (string-cursor-forward str ss 3)))
+(test* "string-cursor-prev" #\g
+       (string-ref str (string-cursor-prev str se)))
+(test* "string-cursor-back" #\d
+       (string-ref str (string-cursor-back str se 4)))
+(test* "string-index->cursor" #\f
+       (string-ref str (string-index->cursor str 5)))
+(test* "string-cursor->index" 0
+       (string-cursor->index str ss))
+(test* "string-cursor->index" 7
+       (string-cursor->index str se))
+(test* "substring with cursors" "cde"
+       (substring str
+                  (string-cursor-forward str ss 2)
+                  (string-cursor-back str se 2)))
+(test* "substring with cursors" "cde"
+       (substring str
+                  2
+                  (string-cursor-back str se 2)))
+(test* "substring with cursors" "cde"
+       (substring str
+                  (string-cursor-forward str ss 2)
+                  5))
+(test* "string->list" '(#\b #\c #\d #\e #\f)
+       (string->list str
+                     (string-cursor-next str ss)
+                     (string-cursor-prev str se)))
+(test* "string->list" '(#\b #\c #\d #\e #\f)
+       (string->list str
+                     1
+                     (string-cursor-prev str se)))
+(test* "string->list" '(#\b #\c #\d #\e #\f)
+       (string->list str
+                     (string-cursor-next str ss)
+                     6))
+(test* "string-cursor=?" #t
+       (string-cursor=? ss (string-cursor-back str se 7)))
+(test* "string-cursor=?" #t
+       (string-cursor=? 0 0))
+(test* "string-cursor<?" #t
+       (string-cursor<? ss se))
+(test* "string-cursor<=?" #t
+       (string-cursor<=? ss se))
+(test* "string-cursor<=?" #t
+       (string-cursor<=? ss ss))
+(test* "string-cursor>?" #t
+       (string-cursor>? se ss))
+(test* "string-cursor>=?" #t
+       (string-cursor>=? se se))
+(test* "string-cursor-diff" 7
+       (string-cursor-diff str ss se))
+(test* "string-cursor-diff" -7
+       (string-cursor-diff str se ss))
+
+;;-------------------------------------------------------------------
 (test-section "input string port")
 
 ;; These also tests port's ungetc and scratch buffer, and

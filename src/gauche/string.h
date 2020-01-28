@@ -116,6 +116,7 @@ SCM_CLASS_DECL(Scm_StringClass);
 #define SCM_STRING_BODY_LENGTH(body)       ((body)->length)
 #define SCM_STRING_BODY_SIZE(body)         ((body)->size)
 #define SCM_STRING_BODY_START(body)        ((body)->start)
+#define SCM_STRING_BODY_END(body)          ((body)->start + (body)->size)
 #define SCM_STRING_BODY_FLAGS(body)        ((body)->flags)
 
 #define SCM_STRING_BODY_HAS_FLAG(body, flag) \
@@ -424,5 +425,7 @@ SCM_EXTERN ScmObj Scm_StringCursorStart(ScmString* s);
 SCM_EXTERN ScmObj Scm_StringCursorEnd(ScmString* s);
 SCM_EXTERN ScmObj Scm_StringCursorForward(ScmString* s, ScmObj cursor, int nchars);
 SCM_EXTERN ScmObj Scm_StringCursorBack(ScmString* s, ScmObj cursor, int nchars);
+SCM_EXTERN ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error);
+SCM_EXTERN ScmObj Scm_SubstringCursor(ScmString *str, ScmObj start, ScmObj end);
 
 #endif /* GAUCHE_STRING_H */
