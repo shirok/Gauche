@@ -1563,7 +1563,7 @@ static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
     }
     if (cursor < SCM_STRING_BODY_START(srcb) ||
         cursor > SCM_STRING_BODY_END(srcb)) {
-        Scm_Error("cursor out of range");
+        Scm_Error("cursor out of range of %S", SCM_OBJ(src));
     }
 
     ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
@@ -1603,7 +1603,7 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
     }
 
     if (!SCM_STRING_CURSORP(sc)) {
-        Scm_Error("must be either an index or a cursor: %S", sc);
+        Scm_Error("must be either an index or a cursor on string %S", SCM_OBJ(src));
     }
 
     ScmStringCursor     *c       = SCM_STRING_CURSOR(sc);
@@ -1612,7 +1612,7 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
 
     if (c->cursor < current ||
         c->cursor > current + SCM_STRING_BODY_SIZE(srcb)) {
-        Scm_Error("cursor out of range");
+        Scm_Error("cursor out of range of string %S", SCM_OBJ(src));
     }
 
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
@@ -1626,7 +1626,7 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
         index++;
     }
     if (current != c->cursor) {
-        Scm_Error("bad cursor");
+        Scm_Error("bad cursor of string %S", SCM_OBJ(src));
     }
 
     return SCM_MAKE_INT(index);
@@ -1666,7 +1666,7 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
     }
 
     if (!SCM_STRING_CURSORP(sc)) {
-        Scm_Error("must be either an index or a cursor: %S", sc);
+        Scm_Error("must be either an index or a cursor of string %S", SCM_OBJ(s));
     }
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
