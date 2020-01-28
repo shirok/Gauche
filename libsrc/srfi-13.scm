@@ -500,6 +500,19 @@
                 (loop prev)))
           (cons cur start)))))
 
+(define (%string-skip s c/s/p
+                      :optional
+                      (start (string-cursor-start s))
+                      (end (string-cursor-end s)))
+  (assume-type s <string>)
+  (let ([pred (%get-char-pred c/s/p)]
+        [end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)])
+      (if (and (string-cursor<? cur end)
+               (pred c/s/p (string-ref s cur)))
+          (loop (string-cursor-next s cur))
+          (cons cur end)))))
+
 (define (string-index s c/s/p . args)
   (let ([result (apply %string-index s c/s/p args)])
     (if (string-cursor=? (car result) (cdr result))
@@ -513,14 +526,10 @@
         (- (string-cursor->index s (car result)) 1))))
 
 (define (string-skip s c/s/p . args)
-  (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (offset (if (pair? args) (car args) 0))
-        (sp (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! sp)))
-      (cond ((eof-object? ch) #f)
-            ((pred c/s/p ch) (loop (string-pointer-next! sp)))
-            (else (+ offset (- (string-pointer-index sp) 1)))))))
+  (let ([result (apply %string-skip s c/s/p args)])
+    (if (string-cursor=? (car result) (cdr result))
+        #f
+        (string-cursor->index s (car result)))))
 
 (define (string-skip-right s c/s/p . args)
   (assume-type s <string>)
