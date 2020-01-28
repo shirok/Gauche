@@ -471,15 +471,25 @@
 ;;; Search
 ;;;
 
-(define (string-index s c/s/p . args)
+;; these % variants return a pair of result and end cursor
+(define (%string-index s c/s/p
+                       :optional
+                       (start (string-cursor-start s))
+                       (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (offset (if (pair? args) (car args) 0))
-        (sp (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! sp)))
-      (cond ((eof-object? ch) #f)
-            ((pred c/s/p ch) (+ offset (- (string-pointer-index sp) 1)))
-            (else (loop (string-pointer-next! sp)))))))
+  (let ([pred (%get-char-pred c/s/p)]
+        [end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)])
+      (if (or (string-cursor=? cur end)
+              (pred c/s/p (string-ref s cur)))
+          (cons cur end)
+          (loop (string-cursor-next s cur))))))
+
+(define (string-index s c/s/p . args)
+  (let ([result (apply %string-index s c/s/p args)])
+    (if (string-cursor=? (car result) (cdr result))
+        #f
+        (string-cursor->index s (car result)))))
 
 (define (string-index-right s c/s/p . args)
   (assume-type s <string>)
