@@ -4,6 +4,7 @@
 
 (define-module srfi-130
   (use srfi-13)
+  (use gauche.stringutil)
   (export string-contains
           string-fold
           string-fold-right
@@ -14,11 +15,74 @@
           string-skip-right
 
           ;; These are from SRFI-13
+          reverse-list->string
+          string-any
+          string-concatenate
+          string-concatenate-reverse
           string-count
+          string-drop
+          string-drop-right
+          string-every
+          string-join
+          string-null?
+          string-pad
+          string-pad-right
+          string-prefix-length
+          string-prefix?
+          string-replace
+          string-reverse
+          string-suffix-length
+          string-suffix?
+          string-tabulate
+          string-take
+          string-take-right
+          string-trim
+          string-trim-both
+          string-trim-right
+          string-unfold
+          string-unfold-right
+          string-filter
+
+          ;; These are from gauche.stringutil
+          string-split
+
+          ;; Aliases
+          string->list/cursors
+          string->vector/cursors
+          string-copy/cursors
+          string-ref/cursor
+          string-remove
+          substring/cursors
+
+          ;; Gauche supports the following functions natively, but
+          ;; we re-export them so that they will be available by
+          ;; importing srfi-130 into vanilla environment.
+          string-cursor->index
+          string-cursor-back
+          string-cursor-diff
+          string-cursor-end
+          string-cursor-forward
+          string-cursor-next
+          string-cursor-prev
+          string-cursor-start
+          string-cursor<=?
+          string-cursor<?
+          string-cursor=?
+          string-cursor>=?
+          string-cursor>?
+          string-cursor?
+          string-index->cursor
           ))
 (select-module srfi-130)
 
 (define %maybe-substring (with-module gauche.internal %maybe-substring))
+
+(define string->list/cursors string->list)
+(define string->vector/cursors string->vector)
+(define string-copy/cursors string-copy)
+(define string-ref/cursor string-ref)
+(define string-remove string-delete)
+(define substring/cursors substring)
 
 (define (string-index . args)
   (car (apply (with-module srfi-13 %string-index) args)))

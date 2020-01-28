@@ -54,7 +54,7 @@ SCMFILES = \
        srfi-115.scm srfi-117.scm srfi-118.scm \
        srfi-121.scm srfi-124.scm srfi-125.scm \
        srfi-127.scm srfi-128.scm srfi-129.scm \
-       srfi-131.scm srfi-132.scm srfi-134.scm \
+       srfi-130.scm srfi-131.scm srfi-132.scm srfi-134.scm \
        srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
        srfi-151.scm srfi-152.scm srfi-154.scm srfi-155.scm srfi-158.scm \
        srfi-160.scm srfi/*.scm srfi/160/*.scm srfi-162.scm srfi-173.scm \
