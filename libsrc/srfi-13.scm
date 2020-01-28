@@ -552,15 +552,21 @@
         #f
         (- (string-cursor->index s (car result)) 1))))
 
-(define (string-count s c/s/p . args)
+(define (string-count s c/s/p
+                      :optional
+                      (start (string-cursor-start s))
+                      (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
-        (sp (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! sp))
+        (end (string-index->cursor s end)))
+    (let loop ((cur (string-index->cursor s start))
                (count 0))
-      (cond ((eof-object? ch) count)
-            ((pred c/s/p ch) (loop (string-pointer-next! sp) (+ count 1)))
-            (else      (loop (string-pointer-next! sp) count))))))
+      (if (string-cursor=? cur end)
+          count
+          (loop (string-cursor-next s cur)
+                (if (pred c/s/p (string-ref s cur))
+                    (+ count 1)
+                    count))))))
 
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)

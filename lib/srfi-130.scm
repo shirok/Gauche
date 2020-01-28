@@ -8,6 +8,9 @@
           string-index-right
           string-skip
           string-skip-right
+
+          ;; These are from SRFI-13
+          string-count
           ))
 (select-module srfi-130)
 
