@@ -7,6 +7,7 @@
   (export string-index
           string-index-right
           string-skip
+          string-skip-right
           ))
 (select-module srfi-130)
 
@@ -18,3 +19,6 @@
 
 (define (string-skip . args)
   (car (apply (with-module srfi-13 %string-skip) args)))
+
+(define (string-skip-right . args)
+  (car (apply (with-module srfi-13 %string-skip-right) args)))
