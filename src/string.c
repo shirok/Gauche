@@ -859,7 +859,8 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
         Scm_Error("exact integer or cursor required for start, but got %S", start);
 
     if (no_end) {
-        if (istart == 0 || cstart == SCM_STRING_CURSOR(start)) {
+        if ((!cstart && istart == 0) ||
+            (cstart && cstart->cursor == SCM_STRING_BODY_START(xb))) {
             return SCM_OBJ(x);
         }
         iend = SCM_STRING_BODY_LENGTH(xb);
