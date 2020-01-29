@@ -1,3 +1,7 @@
+2020-01-28  Shiro Kawai  <shiro@acm.org>
+
+	* examples/pegintro.scm: Added.
+
 2020-01-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c, src/libstr.c (Scm_StringRefCursor, Scm_SubstringCursor):

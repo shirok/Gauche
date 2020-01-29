@@ -11266,6 +11266,15 @@ However, you have to watch out some traps; see
 @c NODE PEGひとめぐり
 
 @c EN
+This section we cover the basic concepts and tools of @code{parser.peg}
+The code of examples is in @file{examples/pegintro.scm} if you have the
+source tree of Gauche.
+@c JP
+本節では、@code{parser.peg}の基本的なコンセプトと道具を説明します。
+例に使ったコードは、Gaucheのソースツリーの@file{examples/pegintro.scm}にあります。
+@c COMMON
+
+@c EN
 In @code{parser.peg}, a parser is merely a Scheme procedure
 that takes an input (list of tokens) as an argument and returns
 a result (well, in fact, it returns three values, but we'll go
@@ -11288,7 +11297,7 @@ following, which accepts a character @code{#\a}.
 @c COMMON
 
 @example
-($. #\a)   ; => a parser
+($. #\a)   ; @result{} a parser
 @end example
 
 @c EN
@@ -11373,11 +11382,11 @@ to a variable, then can be used to construct more complex parsers.
 @end example
 
 @c EN
-I leave explanation of @code{$many1}, and
+I leave explanation of @code{$many1} and
 @code{$many_} for the later section,
 but I guess you can imagine what those parsers do;
-@code{digits} accepts a sequence of digits, and
-@code{ws} accepts sequence of whitespaces.   The @code{separator}
+@code{digits} accepts a sequence of one or more digits, and
+@code{ws} accepts sequence of zero or more whitespaces.   The @code{separator}
 parser accepts a comma, optionally surrounded by whitespaces.
 @c JP
 @code{$many1}と@code{$many_}の説明は後回しにしますが、
@@ -11501,9 +11510,9 @@ return a parser.
 @c COMMON
 
 @example
-(define integer3 ($lift cons
-                        integer
-                        ($many ($seq separator integer))))
+(define integers3 ($lift cons
+                         integer
+                         ($many ($seq separator integer))))
 @end example
 
 @c EN
@@ -11605,7 +11614,7 @@ You may factor out the common prefix:
 
 @example
 ($seq paren
-      ($or ($."ab") ($."cd")
+      ($or ($."ab") ($."cd"))
       thesis)
 @end example
 
@@ -11742,19 +11751,35 @@ elem : integer | list
 @end example
 
 @c EN
-Unfortunately, the straightforward translation won't work:
+The straight translation would be he following.
 @c JP
-残念ながら、これをそのまま移し替えようとしてもうまくいきません：
+これをそのまま移し替えると次のようになります。
 @c COMMON
 
 @example
-;; Does not work
+;; First try
 (define nested-list
   ($let* ([opener begin-list]
           [ints ($sep-by elem separator)]
           [ (end-list opener) ])
     ($return ints)))
 (define elem  ($or integer nested-list))
+@end example
+
+@c EN
+Let's load it... Oops.
+@c JP
+ロードしてみましょう。おっと
+@c COMMON
+
+@example
+*** ERROR: unbound variable: elem
+Stack Trace:
+_______________________________________
+  0  elem
+        [unknown location]
+  1  (eval expr env)
+        at "../lib/gauche/interactive.scm":267
 @end example
 
 @c EN
@@ -11788,6 +11813,94 @@ actually used.  The @code{$lazy} form does the job:
 
 gosh> (peg-parse-string nested-list "(123, [456, @{@}, 789], 987)")
 (123 (456 () 789) 987)
+@end example
+
+@c EN
+Ok, we're almost done.  Our code can parse nested list of integers,
+checking brackets matches.  But if you give an erroneous input, the message
+is cryptic and not helpful:
+@c JP
+さあ、ほとんど完成です。
+括弧の対応をチェックしながら、ネストした整数のリストをパーズできるようになりました。
+ただ、間違いのある入力を与えた時に出されるエラーメッセージがわかりにくいですね。
+@c COMMON
+
+@example
+gosh> (peg-parse-string nested-list "(123, [456, @{@}, 789), 987)")
+*** PARSE-ERROR: expecting one of (#[0-9] #\]) at 19
+Stack Trace:
+_______________________________________
+  0  (eval expr env)
+        at "../lib/gauche/interactive.scm":267
+@end example
+
+@c EN
+We could check the reason of failure in the parser, and call
+@code{$fail} with more reasonable error message.  Let's replace
+@code{end-list} above with @code{end-list2} below:
+@c JP
+パーザの中で失敗の理由を調べて、意味のあるエラーメッセージで@code{$fail}を呼び出すことが
+できます。上の@code{end-list}を下の@code{end-list2}に置き換えてみて下さい。
+@c COMMON
+
+@example
+(define (end-list2 opener) 
+  (define expected
+    (assv-ref '((#\( . #\)) (#\[ . #\]) (#\@{ . #\@})) opener))
+  ($seq ws 
+        ($let ([closer ($. #[\)\]\@}])])
+          (if (eqv? closer expected)
+            ($return closer)
+            ($fail (format "Mismatched closing bracket. '~c' expected, but got '~c'"
+                           expected closer))))))
+@end example
+
+@c EN
+You also have to change @code{nested-list} and @code{elem} to 
+use @code{end-list2}:
+@c JP
+@code{nested-list}と@code{elem}についても@code{end-list2}を使うように変更します:
+@c COMMON
+                           
+@example
+(define nested-list2
+  ($lazy
+    ($let* ([opener begin-list]
+            [ints ($sep-by elem2 separator)]
+            [ (end-list2 opener) ])
+      ($return ints))))
+
+(define elem2  ($or integer nested-list2))
+@end example
+
+@c EN
+(You could redefine @code{end-list}, but if you do so, don't forget to
+re-evaluate the definitions of @code{nested-list} and @code{elem}.  
+It's because the combinators
+are caculated taking the value of other combinators when it's defined,
+unlike typical procedural approach where you redefine one procedure and
+other procedures will refer to the updated version after that.)
+@c JP
+(@code{end-list}を再定義しても良いのですが、その場合は
+@code{nested-list}と@code{elem}の定義を再評価することを忘れないでください。
+コンビネータは、定義時に他のコンビネータの値を使って計算されます。
+通常の手続き定義のアプローチでは、一つの手続きの定義を差し替えたら他の手続きは
+新しい定義を使うようになりますが、それと異なるので要注意です。)
+@c COMMON
+
+@c EN
+And now you see this error:
+@c JP
+これで、エラーメッセージはこんなふうになります。
+@c COMMON
+
+@example
+gosh> (peg-parse-string nested-list2 "(123, [456, @{@}, 789), 987)")
+*** PARSE-ERROR: Mismatched closing bracket. ']' expected, but got ')' at 20
+Stack Trace:
+_______________________________________
+  0  (eval expr env)
+        at "../lib/gauche/interactive.scm":267
 @end example
 
 
