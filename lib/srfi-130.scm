@@ -6,6 +6,7 @@
   (use srfi-13)
   (export string-fold
           string-fold-right
+          string-for-each-cursor
           string-index
           string-index-right
           string-skip
@@ -27,3 +28,13 @@
 
 (define (string-skip-right . args)
   (car (apply (with-module srfi-13 %string-skip-right) args)))
+
+(define (string-for-each-cursor proc s :optional
+                                (start (string-cursor-start s))
+                                (end (string-cursor-end s)))
+  (assume-type s <string>)
+  (let ([end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)])
+      (unless (string-cursor=? cur end)
+        (proc cur)
+        (loop (string-cursor-next s cur))))))
