@@ -964,6 +964,13 @@ Titlecase手続き
 この3つの手続きがインポートされます。
 
 
+srfi-130, srfi-130
+()
+
+Cursor-based string library
+
+Don't challenge my JLPT N5 skills!
+
 srfi-131, gauche.record
 ()
 

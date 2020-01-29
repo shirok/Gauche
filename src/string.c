@@ -38,6 +38,7 @@
 #include <ctype.h>
 
 void Scm_DStringDump(FILE *out, ScmDString *dstr);
+static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor);
 
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
@@ -848,7 +849,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
     int no_end = SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end);
     ScmStringCursor *cstart = NULL, *cend = NULL;
 
-    ScmSmallInt istart, iend;
+    ScmSmallInt istart = -1, iend = -1;
     if (no_start)
         istart = 0;
     else if (SCM_STRING_CURSORP(start))
@@ -1152,6 +1153,10 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
     if (retcode == NOT_FOUND) {
         if (retmode > SCM_STRING_SCAN_AFTER) *secondval = SCM_FALSE;
         return SCM_FALSE;
+    }
+
+    if (retmode == SCM_STRING_SCAN_CURSOR) {
+        return Scm_MakeStringCursor(ss1, s1 + bi);
     }
 
     if (retcode == FOUND_BYTE_INDEX && !incomplete) {
@@ -1617,9 +1622,6 @@ static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
 {
     const ScmStringBody *srcb = SCM_STRING_BODY(src);
 
-    if (SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
-        Scm_Error("making a cursor of incomplete strings is not supported");
-    }
     if (cursor < SCM_STRING_BODY_START(srcb) ||
         cursor > SCM_STRING_BODY_END(srcb)) {
         Scm_Error("cursor out of range of %S", SCM_OBJ(src));
@@ -1644,10 +1646,6 @@ ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index)
 ScmObj Scm_MakeStringCursorEnd(ScmString *src)
 {
     const ScmStringBody *srcb = SCM_STRING_BODY(src);
-
-    if (SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
-        Scm_Error("making a cursor of incomplete strings is not supported");
-    }
 
     ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
     SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR);
@@ -1723,7 +1721,8 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
     ScmStringCursor     *c    = SCM_STRING_CURSOR(sc);
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb) ||
+        SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
         return Scm_MakeStringCursor(s, c->cursor - nchars);
     }
 
@@ -1744,10 +1743,6 @@ ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
 {
     const ScmStringBody *b = SCM_STRING_BODY(s);
     ScmSmallInt size = SCM_STRING_BODY_SIZE(b);
-
-    if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
-        Scm_Error("incomplete string not allowed : %S", SCM_OBJ(s));
-    }
 
     if (SCM_INTP(sc)) {
         return Scm_StringRef(s, SCM_INT_VALUE(sc), range_error);

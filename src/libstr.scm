@@ -135,6 +135,7 @@
    (let* ([rmode::int 0])
      (cond
       [(SCM_EQ mode 'index)   (set! rmode SCM_STRING_SCAN_INDEX)]
+      [(SCM_EQ mode 'cursor)  (set! rmode SCM_STRING_SCAN_CURSOR)]
       [(SCM_EQ mode 'before)  (set! rmode SCM_STRING_SCAN_BEFORE)]
       [(SCM_EQ mode 'after)   (set! rmode SCM_STRING_SCAN_AFTER)]
       [(SCM_EQ mode 'before*) (set! rmode SCM_STRING_SCAN_BEFORE2)]

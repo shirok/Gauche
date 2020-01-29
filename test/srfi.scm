@@ -2273,6 +2273,10 @@
 (test-module 'srfi-128)
 
 ;;-----------------------------------------------------------------------
+(define-module srfi-130-tests
+  (include "include/srfi-130-tests.scm"))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-132")
 (use srfi-132)
 (test-module 'srfi-132)

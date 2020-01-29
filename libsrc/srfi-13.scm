@@ -471,55 +471,102 @@
 ;;; Search
 ;;;
 
-(define (string-index s c/s/p . args)
+;; these % variants return a pair of result and end cursor
+(define (%string-index s c/s/p
+                       :optional
+                       (start (string-cursor-start s))
+                       (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (offset (if (pair? args) (car args) 0))
-        (sp (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! sp)))
-      (cond ((eof-object? ch) #f)
-            ((pred c/s/p ch) (+ offset (- (string-pointer-index sp) 1)))
-            (else (loop (string-pointer-next! sp)))))))
+  (let ([pred (%get-char-pred c/s/p)]
+        [end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)])
+      (if (or (string-cursor=? cur end)
+              (pred c/s/p (string-ref s cur)))
+          (cons cur end)
+          (loop (string-cursor-next s cur))))))
+
+(define (%string-index-right s c/s/p
+                             :optional
+                             (start (string-cursor-start s))
+                             (end (string-cursor-end s)))
+  (assume-type s <string>)
+  (let ([pred (%get-char-pred c/s/p)]
+        [start (string-index->cursor s start)])
+    (let loop ([cur (string-index->cursor s end)])
+      (if (string-cursor>? cur start)
+          (let ([prev (string-cursor-prev s cur)])
+            (if (pred c/s/p (string-ref s prev))
+                (cons cur start)
+                (loop prev)))
+          (cons cur start)))))
+
+(define (%string-skip s c/s/p
+                      :optional
+                      (start (string-cursor-start s))
+                      (end (string-cursor-end s)))
+  (assume-type s <string>)
+  (let ([pred (%get-char-pred c/s/p)]
+        [end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)])
+      (if (and (string-cursor<? cur end)
+               (pred c/s/p (string-ref s cur)))
+          (loop (string-cursor-next s cur))
+          (cons cur end)))))
+
+(define (%string-skip-right s c/s/p
+                            :optional
+                            (start (string-cursor-start s))
+                            (end (string-cursor-end s)))
+  (assume-type s <string>)
+  (let ([pred (%get-char-pred c/s/p)]
+        [start (string-index->cursor s start)])
+    (let loop ([cur (string-index->cursor s end)])
+      (if (string-cursor>? cur start)
+          (let ([prev (string-cursor-prev s cur)])
+            (if (pred c/s/p (string-ref s prev))
+                (loop prev)
+                (cons cur start)))
+          (cons cur start)))))
+
+(define (string-index s c/s/p . args)
+  (let ([result (apply %string-index s c/s/p args)])
+    (if (string-cursor=? (car result) (cdr result))
+        #f
+        (string-cursor->index s (car result)))))
 
 (define (string-index-right s c/s/p . args)
-  (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (offset (if (pair? args) (car args) 0))
-        (sp (apply make-string-pointer s -1 args)))
-    (let loop ((ch (string-pointer-prev! sp)))
-      (cond ((eof-object? ch) #f)
-            ((pred c/s/p ch) (+ offset (string-pointer-index sp)))
-            (else (loop (string-pointer-prev! sp)))))))
+  (let ([result (apply %string-index-right s c/s/p args)])
+    (if (string-cursor=? (car result) (cdr result))
+        #f
+        (- (string-cursor->index s (car result)) 1))))
 
 (define (string-skip s c/s/p . args)
-  (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (offset (if (pair? args) (car args) 0))
-        (sp (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! sp)))
-      (cond ((eof-object? ch) #f)
-            ((pred c/s/p ch) (loop (string-pointer-next! sp)))
-            (else (+ offset (- (string-pointer-index sp) 1)))))))
+  (let ([result (apply %string-skip s c/s/p args)])
+    (if (string-cursor=? (car result) (cdr result))
+        #f
+        (string-cursor->index s (car result)))))
 
 (define (string-skip-right s c/s/p . args)
-  (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (offset (if (pair? args) (car args) 0))
-        (sp (apply make-string-pointer s -1 args)))
-    (let loop ((ch (string-pointer-prev! sp)))
-      (cond ((eof-object? ch) #f)
-            ((pred c/s/p ch) (loop (string-pointer-prev! sp)))
-            (else (+ offset (string-pointer-index sp)))))))
+  (let ([result (apply %string-skip-right s c/s/p args)])
+    (if (string-cursor=? (car result) (cdr result))
+        #f
+        (- (string-cursor->index s (car result)) 1))))
 
-(define (string-count s c/s/p . args)
+(define (string-count s c/s/p
+                      :optional
+                      (start (string-cursor-start s))
+                      (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
-        (sp (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! sp))
+        (end (string-index->cursor s end)))
+    (let loop ((cur (string-index->cursor s start))
                (count 0))
-      (cond ((eof-object? ch) count)
-            ((pred c/s/p ch) (loop (string-pointer-next! sp) (+ count 1)))
-            (else      (loop (string-pointer-next! sp) count))))))
+      (if (string-cursor=? cur end)
+          count
+          (loop (string-cursor-next s cur)
+                (if (pred c/s/p (string-ref s cur))
+                    (+ count 1)
+                    count))))))
 
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
@@ -664,25 +711,32 @@
   (let ((mapped (apply string-map proc s args)))
     (string-copy! s (get-optional args 0) mapped)))
 
-(define (string-fold kons knil s . args)
+(define (string-fold kons knil s
+                     :optional
+                     (start (string-cursor-start s))
+                     (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! src))
-               (r  knil))
-      (if (eof-object? ch)
+  (let ([end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)]
+               [r knil])
+      (if (string-cursor=? cur end)
         r
-        (loop (string-pointer-next! src) (kons ch r))))
-    ))
+        (loop (string-cursor-next s cur)
+              (kons (string-ref s cur) r))))))
 
-(define (string-fold-right kons knil s . args)
+(define (string-fold-right kons knil s
+                           :optional
+                           (start (string-cursor-start s))
+                           (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src (apply make-string-pointer s -1 args)))
-    (let loop ((ch (string-pointer-prev! src))
-               (r  knil))
-      (if (eof-object? ch)
+  (let ([start (string-index->cursor s start)])
+    (let loop ([cur (string-index->cursor s end)]
+               [r knil])
+      (if (string-cursor=? cur start)
         r
-        (loop (string-pointer-prev! src) (kons ch r))))
-    ))
+        (let ([new-cur (string-cursor-prev s cur)])
+          (loop new-cur
+                (kons (string-ref s new-cur) r)))))))
 
 (define (string-unfold p f g seed
                        :optional (base "") (make-final (^_ "")))
