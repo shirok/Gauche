@@ -848,7 +848,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
     int no_end = SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end);
     ScmStringCursor *cstart = NULL, *cend = NULL;
 
-    ScmSmallInt istart, iend;
+    ScmSmallInt istart = -1, iend = -1;
     if (no_start)
         istart = 0;
     else if (SCM_STRING_CURSORP(start))
