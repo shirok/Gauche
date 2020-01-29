@@ -255,6 +255,10 @@ typedef struct ScmClassRec ScmClass;
  *      -------- -------- -------- 00010011
  *      Used in macro expander.
  *
+ * [String cursor]
+ *      -------- -------- -------- 00011011
+ *      Represent short string cursors.
+ *
  * [Heap object]
  *      -------- -------- -------- -----111
  *      Only appears at the first word of heap-allocated

@@ -420,7 +420,9 @@
    "SCM_STRING_LARGE_CURSORP" "SCM_STRING_LARGE_CURSOR")
  )
 
-(define-cproc string-cursor? (obj) ::<boolean> SCM_STRING_LARGE_CURSORP)
+(define-cproc string-cursor? (obj) ::<boolean>
+  (return (or (SCM_STRING_LARGE_CURSORP obj)
+              (SCM_STRING_SMALL_CURSORP obj))))
 (define-cproc string-cursor-start (s::<string>)
   (return (Scm_MakeStringCursorFromIndex s 0)))
 (define-cproc string-cursor-end (s::<string>)
@@ -434,7 +436,8 @@
 (define-cproc string-cursor-back (s::<string> cursor nchars::<fixnum>)
   Scm_StringCursorBack)
 (define-cproc string-index->cursor (s::<string> index)
-  (if (SCM_STRING_LARGE_CURSORP index)
+  (if (or (SCM_STRING_LARGE_CURSORP index)
+          (SCM_STRING_SMALL_CURSORP index))
       (return index)
       (return (Scm_MakeStringCursorFromIndex s (Scm_GetInteger index)))))
 (define-cproc string-cursor->index (s::<string> cursor)
