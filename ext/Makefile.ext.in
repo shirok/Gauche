@@ -86,7 +86,7 @@ default : all link
 
 check : all
 	@rm -f test.log
-	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I"$(srcdir)" -I. "$(srcdir)/test.scm" > test.log
+	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I"$(srcdir)" -I. "$(srcdir)/test.scm" > test.log
 
 install-check :
 	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) "${bindir}/gosh" "$(srcdir)/test.scm"
