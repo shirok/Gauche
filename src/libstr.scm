@@ -441,39 +441,19 @@
   Scm_StringCursorIndex)
 
 (define-cproc string-cursor=? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (== (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-                (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumEq cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumEq)))
 
 (define-cproc string-cursor<? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (< (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-               (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumLT cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumLT)))
 
 (define-cproc string-cursor>? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (> (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-               (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumGT cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumGT)))
 
 (define-cproc string-cursor<=? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (<= (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-                (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumLE cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumLE)))
 
 (define-cproc string-cursor>=? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (>= (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-                (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumGE cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumGE)))
 
 (define-cproc string-cursor-diff (s::<string> start end)
   (return (Scm_Sub (Scm_StringCursorIndex s end)

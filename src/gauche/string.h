@@ -417,7 +417,6 @@ SCM_CLASS_DECL(Scm_StringCursorClass);
 #define SCM_CLASS_STRING_CURSOR      (&Scm_StringCursorClass)
 #define SCM_STRING_CURSORP(obj)      SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR)
 #define SCM_STRING_CURSOR(obj)       ((ScmStringCursor*)obj)
-#define SCM_STRING_CURSOR_PTR(obj)   ((obj)->cursor)
 
 SCM_EXTERN ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index);
 SCM_EXTERN ScmObj Scm_MakeStringCursorEnd(ScmString *src);
@@ -428,5 +427,6 @@ SCM_EXTERN ScmObj Scm_StringCursorForward(ScmString* s, ScmObj cursor, int nchar
 SCM_EXTERN ScmObj Scm_StringCursorBack(ScmString* s, ScmObj cursor, int nchars);
 SCM_EXTERN ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error);
 SCM_EXTERN ScmObj Scm_SubstringCursor(ScmString *str, ScmObj start, ScmObj end);
+SCM_EXTERN int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2, int (*numcmp)(ScmObj, ScmObj));
 
 #endif /* GAUCHE_STRING_H */

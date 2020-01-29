@@ -1782,6 +1782,26 @@ ScmObj Scm_SubstringCursor(ScmString *str,
                      FALSE);
 }
 
+int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2, int (*numcmp)(ScmObj, ScmObj))
+{
+    if (SCM_STRING_CURSORP(sc1) && SCM_STRING_CURSORP(sc2)) {
+        const char *c1 = SCM_STRING_CURSOR(sc1)->cursor;
+        const char *c2 = SCM_STRING_CURSOR(sc2)->cursor;
+        if (numcmp == Scm_NumEq) {
+            return c1 == c2;
+        } else if (numcmp == Scm_NumLT) {
+            return c1 < c2;
+        } else if (numcmp == Scm_NumLE) {
+            return c1 <= c2;
+        } else if (numcmp == Scm_NumGT) {
+            return c1 > c2;
+        } else if (numcmp == Scm_NumGE) {
+            return c1 >= c2;
+        }
+    }
+    return numcmp(sc1, sc2);
+}
+
 /*==================================================================
  *
  * Dynamic strings
