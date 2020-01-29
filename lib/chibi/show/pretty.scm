@@ -39,7 +39,7 @@
 (define (string-find/index str pred i)
   (string-cursor->index
    str
-   (string-find str pred (string-index->cursor str i))))
+   (string-index str pred (string-index->cursor str i))))
 
 (define (try-fitted2 proc fail)
   (fn (width output)

@@ -86,7 +86,7 @@
     (call-with-output
      fmt
      (lambda (str)
-       (if (string-cursor<? (string-find str esc?) (string-cursor-end str))
+       (if (string-cursor<? (string-index str esc?) (string-cursor-end str))
            (each quot (escaped str quot esc rename) quot)
            (displayed str))))))
 
@@ -217,11 +217,11 @@
            ((and (eqv? radix 10) (or (integer? n) (inexact? n)))
             (let* ((s (number->string n))
                    (end (string-cursor-end s))
-                   (dec (string-find s #\.))
+                   (dec (string-index s #\.))
                    (digits (- (string-cursor->index s end)
                               (string-cursor->index s dec))))
               (cond
-               ((string-cursor<? (string-find s #\e) end)
+               ((string-cursor<? (string-index s #\e) end)
                 (gen-general n))
                ((string-cursor=? dec end)
                 (string-append s (if (char? dec-sep) (string dec-sep) dec-sep)
@@ -264,7 +264,7 @@
           (let* ((dec-pos (if (string? dec-sep)
                               (or (string-contains str dec-sep)
                                   (string-cursor-end str))
-                              (string-find str dec-sep)))
+                              (string-index str dec-sep)))
                  (left (substring-cursor str (string-cursor-start str) dec-pos))
                  (right (substring-cursor str dec-pos))
                  (sep (cond ((char? comma-sep) (string comma-sep))
@@ -328,7 +328,7 @@
                                 (string-cursor->index
                                  s
                                  (if (char? dec-sep)
-                                     (string-find s dec-sep)
+                                     (string-index s dec-sep)
                                      (or (string-contains s dec-sep)
                                          (string-cursor-end s))))
                                 0))

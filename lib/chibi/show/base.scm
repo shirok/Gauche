@@ -91,7 +91,7 @@
 (define (output-default str)
   (fn (port row col string-width)
     (display str port)
-    (let ((nl-index (string-find-right str #\newline)))
+    (let ((nl-index (string-index-right str #\newline)))
       (if (string-cursor>? nl-index (string-cursor-start str))
           (with! (row (+ row (string-count str #\newline)))
                  (col (string-width str (string-cursor->index str nl-index))))
