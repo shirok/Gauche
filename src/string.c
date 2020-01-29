@@ -1672,7 +1672,8 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
         Scm_Error("cursor out of range of string %S", SCM_OBJ(src));
     }
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb) ||
+        SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
         return SCM_MAKE_INT(c->cursor - current);
     }
 
