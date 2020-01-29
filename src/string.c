@@ -870,7 +870,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
     else if (SCM_INTP(end))
         iend = SCM_INT_VALUE(end);
     else
-        Scm_Error("exact integer or cursor required for start, but got %S", end);
+        Scm_Error("exact integer or cursor required for end, but got %S", end);
 
     if (no_start && cend) {
         return substring_cursor(xb, SCM_STRING_BODY_START(xb), cend->cursor);
