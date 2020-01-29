@@ -408,17 +408,17 @@ SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
 /*
  * (Immutable) String cursors
  */
-typedef struct ScmStringCursorRec {
+typedef struct ScmStringLargeCursorRec {
     SCM_HEADER;
     ScmSmallInt offset;	 /* in bytes, relative to string body start */
-} ScmStringCursor;
+} ScmStringLargeCursor;
 
-SCM_CLASS_DECL(Scm_StringCursorClass);
-#define SCM_CLASS_STRING_CURSOR      (&Scm_StringCursorClass)
-#define SCM_STRING_CURSORP(obj)      SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR)
-#define SCM_STRING_CURSOR(obj)       ((ScmStringCursor*)obj)
-#define SCM_STRING_CURSOR_OFFSET(obj)       ((obj)->offset)
-#define SCM_STRING_CURSOR_POINTER(sb, obj)  (SCM_STRING_BODY_START(sb) + (obj)->offset)
+SCM_CLASS_DECL(Scm_StringLargeCursorClass);
+#define SCM_CLASS_STRING_LARGE_CURSOR      (&Scm_StringLargeCursorClass)
+#define SCM_STRING_LARGE_CURSORP(obj)      SCM_XTYPEP(obj, SCM_CLASS_STRING_LARGE_CURSOR)
+#define SCM_STRING_LARGE_CURSOR(obj)       ((ScmStringLargeCursor*)obj)
+#define SCM_STRING_LARGE_CURSOR_OFFSET(obj)       ((obj)->offset)
+#define SCM_STRING_LARGE_CURSOR_POINTER(sb, obj)  (SCM_STRING_BODY_START(sb) + (obj)->offset)
 
 SCM_EXTERN ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index);
 SCM_EXTERN ScmObj Scm_MakeStringCursorEnd(ScmString *src);

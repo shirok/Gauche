@@ -3479,7 +3479,7 @@ void Scm__InitClass(void)
 
     /* string.c */
     CINIT(SCM_CLASS_STRING,           "<string>");
-    CINIT(SCM_CLASS_STRING_CURSOR,    "<string-cursor>");
+    CINIT(SCM_CLASS_STRING_LARGE_CURSOR, "<string-cursor>");
     CINIT(SCM_CLASS_STRING_POINTER,   "<string-pointer>");
 
     /* symbol.c */

@@ -847,13 +847,13 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
     const ScmStringBody *xb = SCM_STRING_BODY(x);
     int no_start = SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start);
     int no_end = SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end);
-    ScmStringCursor *cstart = NULL, *cend = NULL;
+    ScmStringLargeCursor *cstart = NULL, *cend = NULL;
 
     ScmSmallInt istart = -1, iend = -1;
     if (no_start)
         istart = 0;
-    else if (SCM_STRING_CURSORP(start))
-        cstart = SCM_STRING_CURSOR(start);
+    else if (SCM_STRING_LARGE_CURSORP(start))
+        cstart = SCM_STRING_LARGE_CURSOR(start);
     else if (SCM_INTP(start))
         istart = SCM_INT_VALUE(start);
     else
@@ -861,25 +861,25 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 
     if (no_end) {
         if ((!cstart && istart == 0) ||
-            (cstart && SCM_STRING_CURSOR_OFFSET(cstart) == 0)) {
+            (cstart && SCM_STRING_LARGE_CURSOR_OFFSET(cstart) == 0)) {
             return SCM_OBJ(x);
         }
         iend = SCM_STRING_BODY_LENGTH(xb);
-    } else if (SCM_STRING_CURSORP(end))
-        cend = SCM_STRING_CURSOR(end);
+    } else if (SCM_STRING_LARGE_CURSORP(end))
+        cend = SCM_STRING_LARGE_CURSOR(end);
     else if (SCM_INTP(end))
         iend = SCM_INT_VALUE(end);
     else
         Scm_Error("exact integer or cursor required for end, but got %S", end);
 
     if (no_start && cend) {
-        return substring_cursor(xb, SCM_STRING_BODY_START(xb), SCM_STRING_CURSOR_POINTER(xb, cend));
+        return substring_cursor(xb, SCM_STRING_BODY_START(xb), SCM_STRING_LARGE_CURSOR_POINTER(xb, cend));
     }
     if (cstart && cend) {
-        return substring_cursor(xb, SCM_STRING_CURSOR_POINTER(xb, cstart), SCM_STRING_CURSOR_POINTER(xb, cend));
+        return substring_cursor(xb, SCM_STRING_LARGE_CURSOR_POINTER(xb, cstart), SCM_STRING_LARGE_CURSOR_POINTER(xb, cend));
     }
     if (cstart && no_end) {
-        return substring_cursor(xb, SCM_STRING_CURSOR_POINTER(xb, cstart), SCM_STRING_BODY_END(xb));
+        return substring_cursor(xb, SCM_STRING_LARGE_CURSOR_POINTER(xb, cstart), SCM_STRING_BODY_END(xb));
     }
 
     if (cstart) {
@@ -1613,10 +1613,10 @@ void Scm_StringPointerDump(ScmStringPointer *sp1)
 static void cursor_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *mode SCM_UNUSED)
 {
-    Scm_Printf(port, "#<string-cursor %ld>", SCM_STRING_CURSOR_OFFSET(SCM_STRING_CURSOR(obj)));
+    Scm_Printf(port, "#<string-cursor %ld>", SCM_STRING_LARGE_CURSOR_OFFSET(SCM_STRING_LARGE_CURSOR(obj)));
 }
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringCursorClass, cursor_print);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringLargeCursorClass, cursor_print);
 
 static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
 {
@@ -1629,8 +1629,8 @@ static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
                   (ScmSmallInt)(cursor - SCM_STRING_BODY_START(srcb)));
     }
 
-    ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
-    SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR);
+    ScmStringLargeCursor *sc = SCM_NEW(ScmStringLargeCursor);
+    SCM_SET_CLASS(sc, SCM_CLASS_STRING_LARGE_CURSOR);
     sc->offset = cursor - SCM_STRING_BODY_START(srcb);
     return SCM_OBJ(sc);
 }
@@ -1649,8 +1649,8 @@ ScmObj Scm_MakeStringCursorEnd(ScmString *src)
 {
     const ScmStringBody *srcb = SCM_STRING_BODY(src);
 
-    ScmStringCursor *sc = SCM_NEW(ScmStringCursor);
-    SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR);
+    ScmStringLargeCursor *sc = SCM_NEW(ScmStringLargeCursor);
+    SCM_SET_CLASS(sc, SCM_CLASS_STRING_LARGE_CURSOR);
     sc->offset = SCM_STRING_BODY_END(srcb) - SCM_STRING_BODY_START(srcb);
     return SCM_OBJ(sc);
 }
@@ -1661,31 +1661,31 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
         return sc;              /* no validation */
     }
 
-    if (!SCM_STRING_CURSORP(sc)) {
+    if (!SCM_STRING_LARGE_CURSORP(sc)) {
         Scm_Error("must be either an index or a cursor: %S", sc);
     }
 
-    ScmStringCursor     *c       = SCM_STRING_CURSOR(sc);
+    ScmStringLargeCursor     *c       = SCM_STRING_LARGE_CURSOR(sc);
     const ScmStringBody *srcb    = SCM_STRING_BODY(src);
 
-    if (SCM_STRING_CURSOR_POINTER(srcb, c) < SCM_STRING_BODY_START(srcb) ||
-        SCM_STRING_CURSOR_POINTER(srcb, c) > SCM_STRING_BODY_END(srcb)) {
+    if (SCM_STRING_LARGE_CURSOR_POINTER(srcb, c) < SCM_STRING_BODY_START(srcb) ||
+        SCM_STRING_LARGE_CURSOR_POINTER(srcb, c) > SCM_STRING_BODY_END(srcb)) {
         Scm_Error("cursor out of range: %S", sc);
     }
 
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb) ||
         SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
-        return SCM_MAKE_INT(SCM_STRING_CURSOR_OFFSET(c));
+        return SCM_MAKE_INT(SCM_STRING_LARGE_CURSOR_OFFSET(c));
     }
 
     const char *current = SCM_STRING_BODY_START(srcb);
     ScmSmallInt len     = SCM_STRING_BODY_LENGTH(srcb);
     ScmSmallInt index   = 0;
-    while (index < len && current < SCM_STRING_CURSOR_POINTER(srcb, c)) {
+    while (index < len && current < SCM_STRING_LARGE_CURSOR_POINTER(srcb, c)) {
         current += SCM_CHAR_NFOLLOWS(*current) + 1;
         index++;
     }
-    if (current != SCM_STRING_CURSOR_POINTER(srcb, c)) {
+    if (current != SCM_STRING_LARGE_CURSOR_POINTER(srcb, c)) {
         Scm_Error("cursor not pointed at the beginning of a character: %S", sc);
     }
 
@@ -1698,13 +1698,13 @@ ScmObj Scm_StringCursorForward(ScmString* s, ScmObj sc, int nchars)
         Scm_Error("nchars is negative: %ld", nchars);
     }
 
-    if (!SCM_STRING_CURSORP(sc)) {
+    if (!SCM_STRING_LARGE_CURSORP(sc)) {
         return Scm_MakeStringCursorFromIndex(s, Scm_GetInteger(sc) + nchars);
     }
 
-    const ScmStringBody *srcb = SCM_STRING_BODY(s);
-    ScmStringCursor     *c    = SCM_STRING_CURSOR(sc);
-    return Scm_MakeStringCursor(s, forward_pos(srcb, SCM_STRING_CURSOR_POINTER(srcb, c), nchars));
+    const ScmStringBody  *srcb = SCM_STRING_BODY(s);
+    ScmStringLargeCursor *c    = SCM_STRING_LARGE_CURSOR(sc);
+    return Scm_MakeStringCursor(s, forward_pos(srcb, SCM_STRING_LARGE_CURSOR_POINTER(srcb, c), nchars));
 }
 
 ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
@@ -1717,19 +1717,19 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
         return Scm_MakeStringCursorFromIndex(s, Scm_GetInteger(sc) - nchars);
     }
 
-    if (!SCM_STRING_CURSORP(sc)) {
+    if (!SCM_STRING_LARGE_CURSORP(sc)) {
         Scm_Error("must be either an index or a cursor: %S", sc);
     }
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
-    ScmStringCursor     *c    = SCM_STRING_CURSOR(sc);
+    ScmStringLargeCursor     *c    = SCM_STRING_LARGE_CURSOR(sc);
 
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb) ||
         SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
-        return Scm_MakeStringCursor(s, SCM_STRING_CURSOR_POINTER(srcb, c) - nchars);
+        return Scm_MakeStringCursor(s, SCM_STRING_LARGE_CURSOR_POINTER(srcb, c) - nchars);
     }
 
-    const char *new_cursor = SCM_STRING_CURSOR_POINTER(srcb, c);
+    const char *new_cursor = SCM_STRING_LARGE_CURSOR_POINTER(srcb, c);
     while (nchars--) {
         const char *prev;
         SCM_CHAR_BACKWARD(new_cursor, SCM_STRING_BODY_START(srcb), prev);
@@ -1749,13 +1749,13 @@ ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
     if (SCM_INTP(sc)) {
         return Scm_StringRef(s, SCM_INT_VALUE(sc), range_error);
     }
-    if (!SCM_STRING_CURSORP(sc)) {
+    if (!SCM_STRING_LARGE_CURSORP(sc)) {
         Scm_Error("expected an integer or <string-cursor>, got: %S", sc);
     }
 
-    ScmStringCursor *c = SCM_STRING_CURSOR(sc);
-    if (SCM_STRING_CURSOR_POINTER(b, c) < SCM_STRING_BODY_START(b) ||
-        SCM_STRING_CURSOR_POINTER(b, c) >= SCM_STRING_BODY_END(b)) {
+    ScmStringLargeCursor *c = SCM_STRING_LARGE_CURSOR(sc);
+    if (SCM_STRING_LARGE_CURSOR_POINTER(b, c) < SCM_STRING_BODY_START(b) ||
+        SCM_STRING_LARGE_CURSOR_POINTER(b, c) >= SCM_STRING_BODY_END(b)) {
         if (range_error) {
             Scm_Error("cursor out of range: %S", sc);
         } else {
@@ -1763,19 +1763,19 @@ ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
         }
     }
     ScmChar ch;
-    SCM_CHAR_GET(SCM_STRING_CURSOR_POINTER(b, c), ch);
+    SCM_CHAR_GET(SCM_STRING_LARGE_CURSOR_POINTER(b, c), ch);
     return ch;
 }
 
 ScmObj Scm_SubstringCursor(ScmString *str,
                            ScmObj start_scm, ScmObj end_scm)
 {
-    if (SCM_STRING_CURSORP(start_scm) &&
-        SCM_STRING_CURSORP(end_scm)) {
+    if (SCM_STRING_LARGE_CURSORP(start_scm) &&
+        SCM_STRING_LARGE_CURSORP(end_scm)) {
         const ScmStringBody *sb = SCM_STRING_BODY(str);
         return substring_cursor(sb,
-                                SCM_STRING_CURSOR_POINTER(sb, SCM_STRING_CURSOR(start_scm)),
-                                SCM_STRING_CURSOR_POINTER(sb, SCM_STRING_CURSOR(end_scm)));
+                                SCM_STRING_LARGE_CURSOR_POINTER(sb, SCM_STRING_LARGE_CURSOR(start_scm)),
+                                SCM_STRING_LARGE_CURSOR_POINTER(sb, SCM_STRING_LARGE_CURSOR(end_scm)));
     }
 
     return substring(SCM_STRING_BODY(str),
@@ -1795,13 +1795,13 @@ int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2, int (*numcmp)(ScmObj, ScmObj
     }
 
     ScmObj o1, o2;
-    if (SCM_STRING_CURSORP(sc1)) {
-        o1 = SCM_MAKE_INT(SCM_STRING_CURSOR_OFFSET(SCM_STRING_CURSOR(sc1)));
+    if (SCM_STRING_LARGE_CURSORP(sc1)) {
+        o1 = SCM_MAKE_INT(SCM_STRING_LARGE_CURSOR_OFFSET(SCM_STRING_LARGE_CURSOR(sc1)));
     } else {
         Scm_Error("arguments must be either both cursors or both indexes: %S vs %S", sc1, sc2);
     }
-    if (SCM_STRING_CURSORP(sc2)) {
-        o2 = SCM_MAKE_INT(SCM_STRING_CURSOR_OFFSET(SCM_STRING_CURSOR(sc2)));
+    if (SCM_STRING_LARGE_CURSORP(sc2)) {
+        o2 = SCM_MAKE_INT(SCM_STRING_LARGE_CURSOR_OFFSET(SCM_STRING_LARGE_CURSOR(sc2)));
     } else {
         Scm_Error("arguments must be either both cursors or both indexes: %S vs %S", sc1, sc2);
     }
