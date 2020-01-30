@@ -1,3 +1,10 @@
+2020-01-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c, src/gauche.h, src/gauche/string.h: Introduce small
+	  string cursor which is an immediate value.  Almost all cursors fit
+	  in the small range and we can avoid allocations.
+	  Done by @pclouds https://github.com/shirok/Gauche/pull/576
+
 2020-01-28  Shiro Kawai  <shiro@acm.org>
 
 	* examples/pegintro.scm: Added.
