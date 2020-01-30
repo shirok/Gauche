@@ -683,16 +683,18 @@
 ;;; Mappers
 ;;;
 
-(define (string-map proc s . args)
+(define (string-map proc s :optional
+                    (start (string-cursor-start s))
+                    (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src  (apply make-string-pointer s 0 args))
+  (let ((end  (string-index->cursor s end))
         (dest (open-output-string)))
-    (let loop ((ch (string-pointer-next! src)))
-      (if (eof-object? ch)
+    (let loop ((cur (string-index->cursor s start)))
+      (if (string-cursor=? cur end)
         (get-output-string dest)
-        (begin (write-char (proc ch) dest)
-               (loop (string-pointer-next! src)))))
-    ))
+        (begin
+          (write-char (proc (string-ref s cur)) dest)
+          (loop (string-cursor-next s cur)))))))
 
 (define (string-map! proc s . args)
   (assume-type s <string>)
