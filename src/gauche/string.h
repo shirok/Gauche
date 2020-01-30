@@ -153,6 +153,54 @@ SCM_CLASS_DECL(Scm_StringClass);
 #define SCM_MAKSTR_COPYING     SCM_STRING_COPYING
 
 /*
+ * String cursors (srfi-130)
+ */
+
+/* If offset is small, we use immediate value (see gauche.h).
+ * When the offset doesn't fit, we fall back to ScmStringCursorLarge.
+ * The two types of cursors are handled transparently in string.c and
+ * users shouldn't worry about the distinction.
+ */
+typedef struct ScmStringCursorLargeRec {
+    SCM_HEADER;
+    ScmSmallInt offset;	 /* in bytes, relative to string body start */
+} ScmStringCursorLarge;
+
+SCM_CLASS_DECL(Scm_StringCursorLargeClass);
+
+#define SCM_CLASS_STRING_CURSOR_LARGE      (&Scm_StringCursorLargeClass)
+#define SCM_STRING_CURSOR_LARGE_P(obj) \
+    SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR_LARGE)
+#define SCM_STRING_CURSOR_LARGE(obj)       ((ScmStringCursorLarge*)obj)
+#define SCM_STRING_CURSOR_LARGE_OFFSET(obj)      \
+    (SCM_STRING_CURSOR_LARGE(obj)->offset)
+#define SCM_STRING_CURSOR_LARGE_POINTER(sb, obj) \
+    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_LARGE_OFFSET(obj))
+
+#define SCM_MAKE_STRING_CURSOR_SMALL(obj) \
+    SCM_OBJ(((uintptr_t)(obj) << 8) + 0x1b)
+#define SCM_STRING_CURSOR_SMALL_P(obj)        (SCM_TAG8(obj) == 0x1b)
+#define SCM_STRING_CURSOR_SMALL_OFFSET(obj) \
+    (((signed long int)SCM_WORD(obj)) >> 8)
+#define SCM_STRING_CURSOR_SMALL_POINTER(sb, obj) \
+    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_SMALL_OFFSET(obj))
+
+#define SCM_STRING_CURSOR_P(obj) \
+    (SCM_STRING_CURSOR_SMALL_P(obj)||SCM_STRING_CURSOR_LARGE_P(obj))
+
+SCM_EXTERN ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index);
+SCM_EXTERN ScmObj Scm_MakeStringCursorEnd(ScmString *src);
+SCM_EXTERN ScmObj Scm_StringCursorIndex(ScmString *s, ScmObj sc);
+SCM_EXTERN ScmObj Scm_StringCursorStart(ScmString* s);
+SCM_EXTERN ScmObj Scm_StringCursorEnd(ScmString* s);
+SCM_EXTERN ScmObj Scm_StringCursorForward(ScmString* s, ScmObj cursor, int nchars);
+SCM_EXTERN ScmObj Scm_StringCursorBack(ScmString* s, ScmObj cursor, int nchars);
+SCM_EXTERN ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error);
+SCM_EXTERN ScmObj Scm_SubstringCursor(ScmString *str, ScmObj start, ScmObj end);
+SCM_EXTERN int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2, int (*numcmp)(ScmObj, ScmObj));
+
+
+/*
  * Constructors
  */
 
@@ -408,46 +456,5 @@ SCM_EXTERN ScmObj Scm_StringPointerSet(ScmStringPointer *sp,
 SCM_EXTERN ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
 SCM_EXTERN ScmObj Scm_StringPointerCopy(ScmStringPointer *sp);
 SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
-
-/*
- * (Immutable) String cursors
- *
- * This is only used when the cursor cannot fit in SCM_OBJ
- * (i.e. "small cursors"). In other words when the string size is more
- * than 8M (on 32-bit platform?). This should be very rare.
- */
-typedef struct ScmStringCursorLargeRec {
-    SCM_HEADER;
-    ScmSmallInt offset;	 /* in bytes, relative to string body start */
-} ScmStringCursorLarge;
-
-SCM_CLASS_DECL(Scm_StringCursorLargeClass);
-#define SCM_CLASS_STRING_CURSOR_LARGE      (&Scm_StringCursorLargeClass)
-#define SCM_STRING_CURSOR_LARGE_P(obj) \
-    SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR_LARGE)
-#define SCM_STRING_CURSOR_LARGE(obj)       ((ScmStringCursorLarge*)obj)
-#define SCM_STRING_CURSOR_LARGE_OFFSET(obj)      \
-    (SCM_STRING_CURSOR_LARGE(obj)->offset)
-#define SCM_STRING_CURSOR_LARGE_POINTER(sb, obj) \
-    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_LARGE_OFFSET(obj))
-
-#define SCM_MAKE_STRING_CURSOR_SMALL(obj) \
-    SCM_OBJ(((uintptr_t)(obj) << 8) + 0x1b)
-#define SCM_STRING_CURSOR_SMALL_P(obj)        (SCM_TAG8(obj) == 0x1b)
-#define SCM_STRING_CURSOR_SMALL_OFFSET(obj) \
-    (((signed long int)SCM_WORD(obj)) >> 8)
-#define SCM_STRING_CURSOR_SMALL_POINTER(sb, obj) \
-    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_SMALL_OFFSET(obj))
-
-SCM_EXTERN ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index);
-SCM_EXTERN ScmObj Scm_MakeStringCursorEnd(ScmString *src);
-SCM_EXTERN ScmObj Scm_StringCursorIndex(ScmString *s, ScmObj sc);
-SCM_EXTERN ScmObj Scm_StringCursorStart(ScmString* s);
-SCM_EXTERN ScmObj Scm_StringCursorEnd(ScmString* s);
-SCM_EXTERN ScmObj Scm_StringCursorForward(ScmString* s, ScmObj cursor, int nchars);
-SCM_EXTERN ScmObj Scm_StringCursorBack(ScmString* s, ScmObj cursor, int nchars);
-SCM_EXTERN ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error);
-SCM_EXTERN ScmObj Scm_SubstringCursor(ScmString *str, ScmObj start, ScmObj end);
-SCM_EXTERN int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2, int (*numcmp)(ScmObj, ScmObj));
 
 #endif /* GAUCHE_STRING_H */

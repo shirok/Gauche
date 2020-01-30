@@ -1674,6 +1674,26 @@ ScmObj Scm_MakeStringCursorEnd(ScmString *src)
     return SCM_OBJ(sc);
 }
 
+/* Common routine to get hold of the pointer from string cursor.
+   Returns NULL if SC isn't a string cursor.
+   Raise an error if sc is not in the range. */
+static inline const char *string_cursor_ptr(const ScmStringBody *sb, ScmObj sc)
+{
+    const char *ptr = NULL;
+    if (SCM_STRING_CURSOR_LARGE_P(sc)) {
+        ptr = SCM_STRING_CURSOR_LARGE_POINTER(sb, sc);
+    } else if (SCM_STRING_CURSOR_SMALL_P(sc)) {
+        ptr = SCM_STRING_CURSOR_SMALL_POINTER(sb, sc);
+    } else {
+        return NULL;
+    }
+    if (ptr < SCM_STRING_BODY_START(sb) ||
+        ptr > SCM_STRING_BODY_END(sb)) {
+        Scm_Error("cursor out of range: %S", sc);
+    }
+    return ptr;
+}
+
 ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
 {
     if (SCM_INTP(sc) || SCM_BIGNUMP(sc)) {
@@ -1683,17 +1703,8 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
     const ScmStringBody *srcb = SCM_STRING_BODY(src);
     const char          *ptr  = NULL;
 
-    if (SCM_STRING_CURSOR_LARGE_P(sc)) {
-        ptr = SCM_STRING_CURSOR_LARGE_POINTER(srcb, sc);
-    } else if (SCM_STRING_CURSOR_SMALL_P(sc)) {
-        ptr = SCM_STRING_CURSOR_SMALL_POINTER(srcb, sc);
-    } else {
+    if ((ptr = string_cursor_ptr(srcb, sc)) == NULL) {
         Scm_Error("must be either an index or a cursor: %S", sc);
-    }
-
-    if (ptr < SCM_STRING_BODY_START(srcb) ||
-        ptr > SCM_STRING_BODY_END(srcb)) {
-        Scm_Error("cursor out of range: %S", sc);
     }
 
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb) ||
@@ -1721,16 +1732,16 @@ ScmObj Scm_StringCursorForward(ScmString* s, ScmObj sc, int nchars)
         Scm_Error("nchars is negative: %ld", nchars);
     }
 
-    const ScmStringBody  *srcb = SCM_STRING_BODY(s);
-
-    if (SCM_STRING_CURSOR_LARGE_P(sc)) {
-        ScmStringCursorLarge *c = SCM_STRING_CURSOR_LARGE(sc);
-        return Scm_MakeStringCursor(s, forward_pos(srcb, SCM_STRING_CURSOR_LARGE_POINTER(srcb, c), nchars));
-    } else if (SCM_STRING_CURSOR_SMALL_P(sc)) {
-        return Scm_MakeStringCursor(s, forward_pos(srcb, SCM_STRING_CURSOR_SMALL_POINTER(srcb, sc), nchars));
-    } else {
+    if (SCM_INTEGERP(sc)) {
         return Scm_MakeStringCursorFromIndex(s, Scm_GetInteger(sc) + nchars);
     }
+    
+    const ScmStringBody *srcb = SCM_STRING_BODY(s);
+    const char *ptr = string_cursor_ptr(srcb, sc);
+    if (ptr == NULL) {
+        Scm_Error("must be either an index or a cursor: %S", sc);
+    }
+    return Scm_MakeStringCursor(s, forward_pos(srcb, ptr, nchars));
 }
 
 ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
@@ -1744,16 +1755,11 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
     }
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
-    const char          *ptr  = NULL;
-
-    if (SCM_STRING_CURSOR_LARGE_P(sc)) {
-        ptr = SCM_STRING_CURSOR_LARGE_POINTER(srcb, sc);
-    } else if (SCM_STRING_CURSOR_SMALL_P(sc)) {
-        ptr = SCM_STRING_CURSOR_SMALL_POINTER(srcb, sc);
-    } else {
+    const char *ptr = string_cursor_ptr(srcb, sc);
+    if (ptr == NULL) {
         Scm_Error("must be either an index or a cursor: %S", sc);
     }
-
+    
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb) ||
         SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
         return Scm_MakeStringCursor(s, ptr - nchars);
@@ -1778,19 +1784,13 @@ ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
     }
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
-    const char          *ptr  = NULL;
-
-    if (SCM_STRING_CURSOR_LARGE_P(sc)) {
-        ptr = SCM_STRING_CURSOR_LARGE_POINTER(srcb, sc);
-    } else if (SCM_STRING_CURSOR_SMALL_P(sc)) {
-        ptr = SCM_STRING_CURSOR_SMALL_POINTER(srcb, sc);
-    } else {
+    const char *ptr = string_cursor_ptr(srcb, sc);
+    if (ptr == NULL) {
         Scm_Error("must be either an index or a cursor: %S", sc);
     }
-
-    if (ptr < SCM_STRING_BODY_START(srcb) || ptr >= SCM_STRING_BODY_END(srcb)) {
+    if (ptr == SCM_STRING_BODY_END(srcb)) {
         if (range_error) {
-            Scm_Error("cursor out of range: %S", sc);
+            Scm_Error("cursor is at the end: %S", sc);
         } else {
             return SCM_CHAR_INVALID;
         }
@@ -1804,20 +1804,8 @@ ScmObj Scm_SubstringCursor(ScmString *str,
                            ScmObj start_scm, ScmObj end_scm)
 {
     const ScmStringBody *sb = SCM_STRING_BODY(str);
-    const char *start = NULL;
-    const char *end = NULL;
-
-    if (SCM_STRING_CURSOR_LARGE_P(start_scm)) {
-        start = SCM_STRING_CURSOR_LARGE_POINTER(sb, start_scm);
-    } else if (SCM_STRING_CURSOR_SMALL_P(start_scm)) {
-        start = SCM_STRING_CURSOR_SMALL_POINTER(sb, start_scm);
-    }
-
-    if (SCM_STRING_CURSOR_LARGE_P(end_scm)) {
-        end = SCM_STRING_CURSOR_LARGE_POINTER(sb, end_scm);
-    } else if (SCM_STRING_CURSOR_SMALL_P(end_scm)) {
-        end = SCM_STRING_CURSOR_SMALL_POINTER(sb, end_scm);
-    }
+    const char *start = string_cursor_ptr(sb, start_scm);
+    const char *end   = string_cursor_ptr(sb, end_scm);
 
     if (start && end) {
         return substring_cursor(sb, start, end);
