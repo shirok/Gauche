@@ -1142,7 +1142,7 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
     ScmSmallInt siz1 = SCM_STRING_BODY_SIZE(sb);
     ScmSmallInt len1 = SCM_STRING_BODY_LENGTH(sb);
 
-    if (retmode < 0 || retmode > SCM_STRING_SCAN_BOTH) {
+    if (retmode < 0 || retmode >= SCM_STRING_SCAN_NUM_RETMODES) {
         Scm_Error("return mode out fo range: %d", retmode);
     }
 
@@ -1162,17 +1162,16 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
         return SCM_FALSE;
     }
 
-    if (retmode == SCM_STRING_SCAN_CURSOR) {
-        return Scm_MakeStringCursor(ss1, s1 + bi);
-    }
-
-    if (retcode == FOUND_BYTE_INDEX && !incomplete) {
+    if (retmode == SCM_STRING_SCAN_CURSOR
+        || (retcode == FOUND_BYTE_INDEX && !incomplete)) {
         ci = count_length(s1, bi);
     }
 
     switch (retmode) {
     case SCM_STRING_SCAN_INDEX:
         return Scm_MakeInteger(ci);
+    case SCM_STRING_SCAN_CURSOR:
+        return Scm_MakeStringCursor(ss1, s1 + bi);
     case SCM_STRING_SCAN_BEFORE:
         return Scm_MakeString(s1, bi, ci, incomplete);
     case SCM_STRING_SCAN_AFTER:

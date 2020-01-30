@@ -266,12 +266,16 @@ SCM_EXTERN ScmObj  Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmod
 /* "retmode" argument for string scan */
 enum {
     SCM_STRING_SCAN_INDEX,      /* return index */
-    SCM_STRING_SCAN_CURSOR,     /* return <string-cursor> */
     SCM_STRING_SCAN_BEFORE,     /* return substring of s1 before s2 */
     SCM_STRING_SCAN_AFTER,      /* return substring of s1 after s2 */
     SCM_STRING_SCAN_BEFORE2,    /* return substr of s1 before s2 and rest */
     SCM_STRING_SCAN_AFTER2,     /* return substr of s1 up to s2 and rest */
-    SCM_STRING_SCAN_BOTH        /* return substr of s1 before and after s2 */
+    SCM_STRING_SCAN_BOTH,       /* return substr of s1 before and after s2 */
+    SCM_STRING_SCAN_CURSOR,     /* return <string-cursor> 
+                                   TRANSIENT: This may be more reasonable
+                                   to be after INDEX, but we have it here
+                                   until 1.0 to keep ABI compatibility */
+    SCM_STRING_SCAN_NUM_RETMODES
 };
 
 /*
