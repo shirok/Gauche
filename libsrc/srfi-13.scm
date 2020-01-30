@@ -226,21 +226,22 @@
 ;;;
 
 (define (%string-compare-int off str1 str2 cmp< cmp> proc< proc= proc>)
-  (let ((sp1 (make-string-pointer str1))
-        (sp2 (make-string-pointer str2)))
-    (let loop ((ch1 (string-pointer-next! sp1))
-               (ch2 (string-pointer-next! sp2)))
-      (cond ((eof-object? ch1)
-             (if (eof-object? ch2)
-                 (proc= (+ off (string-pointer-index sp1)))
-                 (proc< (+ off (string-pointer-index sp1)))))
-            ((eof-object? ch2)
-             (proc> (+ off (string-pointer-index sp1))))
-            ((cmp< ch1 ch2) (proc< (+ off (string-pointer-index sp1))))
-            ((cmp> ch1 ch2) (proc> (+ off (string-pointer-index sp1))))
-            (else (loop (string-pointer-next! sp1)
-                        (string-pointer-next! sp2))))
-      )))
+  (let ((end1 (string-cursor-end str1))
+        (end2 (string-cursor-end str2)))
+    (let loop ((cur1 (string-cursor-start str1))
+               (cur2 (string-cursor-start str2))
+               (off off))
+      (cond ((string-cursor=? cur1 end1)
+             (if (string-cursor=? cur2 end2) (proc= off) (proc< off)))
+            ((string-cursor=? cur2 end2)
+             (proc> off))
+            ((cmp< (string-ref str1 cur1) (string-ref str2 cur2))
+             (proc< off))
+            ((cmp> (string-ref str1 cur1) (string-ref str2 cur2))
+             (proc> off))
+            (else (loop (string-cursor-next str1 cur1)
+                        (string-cursor-next str2 cur2)
+                        (+ off 1)))))))
 
 (define (string-compare s1 s2 proc< proc= proc>
                         :optional (start1 0) end1 start2 end2)
@@ -248,7 +249,7 @@
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-compare-int (- start1 1) str1 str2
+    (%string-compare-int start1 str1 str2
                          char<? char>?
                          proc< proc= proc>)))
 
@@ -258,7 +259,7 @@
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-compare-int (- start1 1) str1 str2
+    (%string-compare-int start1 str1 str2
                          char-ci<? char-ci>?
                          proc< proc= proc>)))
 
