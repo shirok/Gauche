@@ -288,6 +288,9 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
     }
+    else if (strcmp(optarg, "safe-string-cursors") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_SAFE_STRING_CURSORS);
+    }
     /* For development; not for public use */
     else if (strcmp(optarg, "collect-stats") == 0) {
         stats_mode = TRUE;

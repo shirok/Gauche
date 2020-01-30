@@ -631,8 +631,10 @@ enum {
     SCM_COMPILE_NOINLINE_SETTERS = (1L<<10), /* Do not inline setters */
     SCM_COMPILE_NODISSOLVE_APPLY = (1L<<11),/* Do not dissolve APPLY
                                               (pass2/dissolve-apply) */
-    SCM_COMPILE_LEGACY_DEFINE = (1L<<12)   /* Do not insert toplevel binding 
+    SCM_COMPILE_LEGACY_DEFINE = (1L<<12),  /* Do not insert toplevel binding
                                               at compile-time. */
+    SCM_SAFE_STRING_CURSORS = (1L<<13)     /* Always use large cursors for
+                                              extra validation. */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

@@ -8915,8 +8915,8 @@ character, it's usually used to determine if nothing is found.
 A string cursor is associated with a specific string and should not be
 used with another string. A string cursor also becomes invalid when
 the associated string is modified. Accessing an invalid cursor does
-not always fail though. You just have to be careful and make sure you
-don't use invalid cursors.
+not always fail though. Running @code{gosh} with @code{-fsafe-string-cursors}
+could help catch these issues. @xref{Invoking Gosh}.
 
 Most procedures that take indexes in Gauche can also take
 cursors. Relying on this though is unportable. For example, the

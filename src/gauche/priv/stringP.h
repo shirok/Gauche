@@ -46,6 +46,7 @@
 
 struct ScmStringCursorLargeRec {
     SCM_HEADER;
+    const char *start;
     ScmSmallInt offset;	 /* in bytes, relative to string body start
                             offset is non-negative. */
 };
@@ -60,6 +61,8 @@ struct ScmStringCursorLargeRec {
     (SCM_STRING_CURSOR_LARGE(obj)->offset)
 #define SCM_STRING_CURSOR_LARGE_POINTER(sb, obj) \
     (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_LARGE_OFFSET(obj))
+#define SCM_STRING_CURSOR_LARGE_START(obj)       \
+    (SCM_STRING_CURSOR_LARGE(obj)->start)
 
 #define SCM_MAKE_STRING_CURSOR_SMALL(obj) \
     SCM_OBJ(((uintptr_t)(obj) << 8) + 0x1b)
