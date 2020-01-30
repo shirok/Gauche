@@ -111,7 +111,7 @@
 
 ;; Compatibility
 (define string-remove string-delete)
-(define string-replicate xsubstring)
 
-
-
+;; 'to' is not optional in srfi-152
+(define (string-replicate s from to :optional start end)
+  (xsubstring s from to start end))
