@@ -149,9 +149,6 @@
 (define elem2  ($or integer nested-list2))
 
 #|
-(peg-parse-string nested-list2 "(123, [456, @{@}, 789), 987)")
-;; => 
-
-
-
+(peg-parse-string nested-list2 "(123, [456, {}, 789), 987)")
+;; =>  *** PARSE-ERROR: Mismatched closing bracket. ']' expected, but got ')' at 20
 |#
