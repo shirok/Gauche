@@ -41,53 +41,37 @@
 (select-module srfi-152)
 
 (define %subs (with-module gauche.internal %maybe-substring))
+;; Note, 130 version returns a cursor, not an index
+(define %string-index (with-module srfi-130 string-index))
+(define %string-index-right (with-module srfi-130 string-index-right))
 
-;; return string pointer
-(define-inline (%string-span-ptr s pred negate reverse?)
-  (let ([p ((with-module srfi-13 %get-char-pred) pred)]
-        [sp (make-string-pointer s (if reverse? -1 0))]
-        [move! (if reverse? string-pointer-prev! string-pointer-next!)])
-    (when reverse? (string-pointer-prev! sp))
-    (let loop ()
-      (let1 c (string-pointer-ref sp)
-        (cond [(eof-object? c) sp]
-              [(negate (p pred c))
-               (when reverse? (string-pointer-next! sp))
-               sp]
-              [else (move! sp) (loop)])))))
-  
-(define (string-take-while s pred :optional (start 0) (end -1))
-  (assume-type s <string>)
-  (let* ([ss (%subs s start end)]
-         [sp (%string-span-ptr ss pred not #f)])
-    (string-pointer-substring sp)))
-(define (string-take-while-right s pred :optional (start 0) (end -1))
-  (assume-type s <string>)
-  (let* ([ss (%subs s start end)]
-         [sp (%string-span-ptr ss pred not #t)])
-    (string-pointer-substring sp :after #t)))
-(define (string-drop-while s pred :optional (start 0) (end -1))
-  (assume-type s <string>)
-  (let* ([ss (%subs s start end)]
-         [sp (%string-span-ptr ss pred not #f)])
-    (string-pointer-substring sp :after #t)))
-(define (string-drop-while-right s pred :optional (start 0) (end -1))
-  (assume-type s <string>)
-  (let* ([ss (%subs s start end)]
-         [sp (%string-span-ptr ss pred not #t)])
-    (string-pointer-substring sp)))
-(define (string-span s pred :optional (start 0) (end -1))
-  (assume-type s <string>)
-  (let* ([ss (%subs s start end)]
-         [sp (%string-span-ptr ss pred not #f)])
-    (values (string-pointer-substring sp)
-            (string-pointer-substring sp :after #t))))
-(define (string-break s pred :optional (start 0) (end -1))
-  (assume-type s <string>)
-  (let* ([ss (%subs s start end)]
-         [sp (%string-span-ptr ss pred identity #f)])
-    (values (string-pointer-substring sp)
-            (string-pointer-substring sp :after #t))))
+(define (%negate pred)
+  (lambda (x)
+    (not (pred x))))
+
+(define (string-take-while s pred :optional
+                           (start (string-cursor-start s))
+                           (end (string-cursor-end s)))
+  (substring s start (%string-index s (%negate pred) start end)))
+
+(define (string-take-while-right s pred :optional
+                                 (start (string-cursor-start s))
+                                 (end (string-cursor-end s)))
+  (substring s (%string-index-right s (%negate pred) start end) end))
+
+(define (string-span s pred :optional
+                     (start (string-cursor-start s))
+                     (end (string-cursor-end s)))
+  (let ([cur (%string-index s (%negate pred) start end)])
+    (values (substring s start cur)
+            (substring s cur end))))
+
+(define (string-break s pred :optional
+                      (start (string-cursor-start s))
+                      (end (string-cursor-end s)))
+  (let ([cur (%string-index s pred start end)])
+    (values (substring s start cur)
+            (substring s cur end))))
 
 (define (string-segment s k)
   (let loop ([r '()] [s s])
@@ -105,6 +89,8 @@
     (and res (+ start1 res))))
 
 ;; Compatibility
+(define string-drop-while string-trim)
+(define string-drop-while-right string-trim-right)
 (define string-remove string-delete)
 
 ;; 'to' is not optional in srfi-152
