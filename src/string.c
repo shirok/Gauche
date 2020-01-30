@@ -1113,29 +1113,32 @@ static int string_search_reverse(const char *s1, ScmSmallInt siz1,
 }
 
 /* Scan s2 in s1, and calculates appropriate return value(s) according to
-   retmode.
+   retmode.  Returns # of values, 1 or 2.
 
-   SCM_STRING_SCAN_INDEX  : return the index of s1
+   SCM_STRING_SCAN_INDEX  : v1 <- the index of s1
         s1 = "abcde" and s2 = "cd" => 2
-   SCM_STRING_SCAN_BEFORE : return substring of s1 before s2
+   SCM_STRING_SCAN_CURSOR : v1 <- the cursor of s1
+        s1 = "abcde" and s2 = "cd" => #<string-cursor 2>
+   SCM_STRING_SCAN_BEFORE : v1 <- substring of s1 before s2
         s1 = "abcde" and s2 = "cd" => "ab"
-   SCM_STRING_SCAN_AFTER  : return substring of s1 after s2
+   SCM_STRING_SCAN_AFTER  : v1 <- substring of s1 after s2
         s1 = "abcde" and s2 = "cd" => "e"
-   SCM_STRING_SCAN_BEFORE2 : return substring of s1 before s2, and rest
+   SCM_STRING_SCAN_BEFORE2 : v1 <- substring of s1 before s2, v2 <- rest
        s1 = "abcde" and s2 = "cd" => "ab" and "cde"
-   SCM_STRING_SCAN_AFTER2 : return substring of s1 up to s2 and rest
+   SCM_STRING_SCAN_AFTER2 : v1 <- substring of s1 up to s2, v2 <- rest
        s1 = "abcde" and s2 = "cd" => "abcd" and "e"
-   SCM_STRING_SCAN_BOTH   : return substring of s1 before and after s2
+   SCM_STRING_SCAN_BOTH   : v1 <- substring of s1 before, v2 <- after s2
        s1 = "abcde" and s2 = "cd" => "ab" and "e"
 */
-static ScmObj string_scan(ScmString *ss1, const char *s2,
-                          ScmSmallInt siz2, ScmSmallInt len2,
-                          int incomplete2,
-                          int retmode,
-                          int (*searcher)(const char*, ScmSmallInt, ScmSmallInt,
-                                          const char*, ScmSmallInt, ScmSmallInt,
-                                          ScmSmallInt*, ScmSmallInt*),
-                          ScmObj *secondval) /* out */
+static int string_scan(ScmString *ss1, const char *s2,
+                       ScmSmallInt siz2, ScmSmallInt len2,
+                       int incomplete2,
+                       int retmode,
+                       int (*searcher)(const char*, ScmSmallInt, ScmSmallInt,
+                                       const char*, ScmSmallInt, ScmSmallInt,
+                                       ScmSmallInt*, ScmSmallInt*),
+                       ScmObj *v1,        /* out */
+                       ScmObj *v2)        /* out */
 {
     ScmSmallInt bi = 0, ci = 0;
     const ScmStringBody *sb = SCM_STRING_BODY(ss1);
@@ -1159,51 +1162,68 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
         : searcher(s1, siz1, len1, s2, siz2, len2, &bi, &ci);
 
     if (retcode == NOT_FOUND) {
-        if (retmode > SCM_STRING_SCAN_AFTER) *secondval = SCM_FALSE;
-        return SCM_FALSE;
+        switch (retmode) {
+        case SCM_STRING_SCAN_INDEX:
+        case SCM_STRING_SCAN_CURSOR:
+        case SCM_STRING_SCAN_BEFORE:
+        case SCM_STRING_SCAN_AFTER:
+            *v1 = SCM_FALSE;
+            return 1;
+        default:
+            *v1 = SCM_FALSE;
+            *v2 = SCM_FALSE;
+            return 2;
+        }
     }
 
-    if (retmode == SCM_STRING_SCAN_CURSOR
-        || (retcode == FOUND_BYTE_INDEX && !incomplete)) {
+    if (retmode != SCM_STRING_SCAN_CURSOR
+        && (retcode == FOUND_BYTE_INDEX && !incomplete)) {
         ci = count_length(s1, bi);
     }
 
     switch (retmode) {
     case SCM_STRING_SCAN_INDEX:
-        return Scm_MakeInteger(ci);
+        *v1 = Scm_MakeInteger(ci);
+        return 1;
     case SCM_STRING_SCAN_CURSOR:
-        return Scm_MakeStringCursor(ss1, s1 + bi);
+        *v1 = Scm_MakeStringCursor(ss1, s1 + bi);
+        return 1;
     case SCM_STRING_SCAN_BEFORE:
-        return Scm_MakeString(s1, bi, ci, incomplete);
+        *v1 = Scm_MakeString(s1, bi, ci, incomplete);
+        return 1;
     case SCM_STRING_SCAN_AFTER:
-        return Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
-                              len1-ci-len2, incomplete);
+        *v1 = Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                             len1-ci-len2, incomplete);
+        return 1;
     case SCM_STRING_SCAN_BEFORE2:
-        *secondval = Scm_MakeString(s1+bi, siz1-bi, len1-ci, incomplete);
-        return Scm_MakeString(s1, bi, ci, incomplete);
+        *v1 = Scm_MakeString(s1, bi, ci, incomplete);
+        *v2 = Scm_MakeString(s1+bi, siz1-bi, len1-ci, incomplete);
+        return 2;
     case SCM_STRING_SCAN_AFTER2:
-        *secondval = Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
-                                    len1-ci-len2, incomplete);
-        return Scm_MakeString(s1, bi+siz2, ci+len2, incomplete);
+        *v1 = Scm_MakeString(s1, bi+siz2, ci+len2, incomplete);
+        *v2 = Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                             len1-ci-len2, incomplete);
+        return 2;
     case SCM_STRING_SCAN_BOTH:
-        *secondval = Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
-                                    len1-ci-len2, incomplete);
-        return Scm_MakeString(s1, bi, ci, incomplete);
+        *v1 = Scm_MakeString(s1, bi, ci, incomplete);;
+        *v2 = Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                             len1-ci-len2, incomplete);
+        return 2;
     }
-    return SCM_UNDEFINED;       /* dummy */
+    return 0;       /* dummy */
 }
 
 ScmObj Scm_StringScan(ScmString *s1, ScmString *s2, int retmode)
 {
     ScmObj v1, v2;
     const ScmStringBody *s2b = SCM_STRING_BODY(s2);
-    v1 = string_scan(s1,
-                     SCM_STRING_BODY_START(s2b),
-                     SCM_STRING_BODY_SIZE(s2b),
-                     SCM_STRING_BODY_LENGTH(s2b),
-                     SCM_STRING_BODY_INCOMPLETE_P(s2b),
-                     retmode, string_search, &v2);
-    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    int nvals = string_scan(s1,
+                            SCM_STRING_BODY_START(s2b),
+                            SCM_STRING_BODY_SIZE(s2b),
+                            SCM_STRING_BODY_LENGTH(s2b),
+                            SCM_STRING_BODY_INCOMPLETE_P(s2b),
+                            retmode, string_search, &v1, &v2);
+    if (nvals == 1) return v1;
     else return Scm_Values2(v1, v2);
 }
 
@@ -1212,9 +1232,9 @@ ScmObj Scm_StringScanChar(ScmString *s1, ScmChar ch, int retmode)
     ScmObj v1, v2;
     char buf[SCM_CHAR_MAX_BYTES];
     SCM_CHAR_PUT(buf, ch);
-    v1 = string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
-                     string_search, &v2);
-    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    int nvals = string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
+                            string_search, &v1, &v2);
+    if (nvals == 1) return v1;
     else return Scm_Values2(v1, v2);
 }
 
@@ -1222,13 +1242,13 @@ ScmObj Scm_StringScanRight(ScmString *s1, ScmString *s2, int retmode)
 {
     ScmObj v1, v2;
     const ScmStringBody *s2b = SCM_STRING_BODY(s2);
-    v1 = string_scan(s1,
-                     SCM_STRING_BODY_START(s2b),
-                     SCM_STRING_BODY_SIZE(s2b),
-                     SCM_STRING_BODY_LENGTH(s2b),
-                     SCM_STRING_BODY_INCOMPLETE_P(s2b),
-                     retmode, string_search_reverse, &v2);
-    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    int nvals = string_scan(s1,
+                            SCM_STRING_BODY_START(s2b),
+                            SCM_STRING_BODY_SIZE(s2b),
+                            SCM_STRING_BODY_LENGTH(s2b),
+                            SCM_STRING_BODY_INCOMPLETE_P(s2b),
+                            retmode, string_search_reverse, &v1, &v2);
+    if (nvals == 1) return v1;
     else return Scm_Values2(v1, v2);
 }
 
@@ -1237,9 +1257,9 @@ ScmObj Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmode)
     ScmObj v1, v2;
     char buf[SCM_CHAR_MAX_BYTES];
     SCM_CHAR_PUT(buf, ch);
-    v1 = string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
-                     string_search_reverse, &v2);
-    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    int nvals = string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
+                            string_search_reverse, &v1, &v2);
+    if (nvals == 1) return v1;
     else return Scm_Values2(v1, v2);
 }
 
@@ -1270,8 +1290,8 @@ ScmObj Scm_StringSplitByCharWithLimit(ScmString *str, ScmChar ch, int limit)
 
     for (;;) {
         ScmObj v1, v2;
-        v1 = string_scan(str, buf, nb, 1, FALSE, SCM_STRING_SCAN_BOTH,
-                         string_search, &v2);
+        (void)string_scan(str, buf, nb, 1, FALSE, SCM_STRING_SCAN_BOTH,
+                          string_search, &v1, &v2);
         if (SCM_FALSEP(v1)) {
             SCM_APPEND1(head, tail, SCM_OBJ(str));
             break;
