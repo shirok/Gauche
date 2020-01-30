@@ -11,6 +11,7 @@
           string-for-each-cursor
           string-index
           string-index-right
+          string-replicate
           string-skip
           string-skip-right
 
@@ -116,3 +117,7 @@
          (string-cursor-forward s1
                                 (string-index->cursor s1 start1)
                                 (string-cursor->index str1 res)))))
+
+;; 'to' is not optional in srfi-130
+(define (string-replicate s from to :optional start end)
+  (xsubstring s from to start end))

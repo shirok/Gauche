@@ -2877,8 +2877,6 @@
               v))
     (fail 'string-for-each-cursor))
 
-
-#|
 (OR (string=? "cdefabcdefabcd"
               (string-replicate "abcdef" -4 10))
     (fail 'string-replicate))
@@ -2890,7 +2888,10 @@
 (OR (string=? "ecdecdecde"
               (string-replicate "abcdef" -13 -3 2 5))
     (fail 'string-replicate))
-|#
+
+(test* "string-replicate" "ecdecdecde"
+       (let ([s "abcdef"])
+         (string-replicate s -13 -3 (string-index->cursor s 2) (string-index->cursor s 5))))
 
 (OR (= 6 (string-count "abcdef" char?))
     (fail 'string-count))
