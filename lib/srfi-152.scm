@@ -98,16 +98,11 @@
       (loop (cons (string-copy s 0 k) r)
             (string-copy s k)))))
 
-(define (string-contains-right s1 s2 :optional start1 (end1 -1) start2 end2)
-  ;; This looks terrible---but once we reverse the strings, we can take
-  ;; advantage of internal fast string-scan.  It is arguable whether writing
-  ;; yet-another search for reverse direction might be better or not.
-  (let ([rs1 (string-reverse (%subs s1 start1 end1))]
-        [rs2 (string-reverse (%subs s2 start2 end2))])
-    (and-let1 z (string-contains rs1 rs2)
-      (- (if (< end1 0) (string-length s1) end1)
-         z
-         (string-length rs2)))))
+(define (string-contains-right s1 s2 :optional (start1 0) end1 start2 end2)
+  (let* ((str1 (%subs s1 start1 end1))
+         (str2 (%subs s2 start2 end2))
+         (res  (string-scan-right str1 str2)))
+    (and res (+ start1 res))))
 
 ;; Compatibility
 (define string-remove string-delete)
