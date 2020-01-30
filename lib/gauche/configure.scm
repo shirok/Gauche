@@ -619,9 +619,12 @@
 ;; API
 ;; Like AC_SUBST, but we require value (instead of implicitly referencing
 ;; a global variable.
-(define (cf-subst symbol value)
+(define (cf-subst symbol :optional (value #f))
   (assume-type symbol <symbol>)
-  (dict-put! (~ (ensure-package)'substs) symbol value))
+  (if value
+    (dict-put! (~ (ensure-package)'substs) symbol value)
+    (unless (cf-have-subst? symbol)
+      (dict-put! (~ (ensure-package)'substs) symbol ""))))
 
 ;; API
 (define (cf-subst-prepend symbol value :optional (delim " ") (default ""))
@@ -651,8 +654,9 @@
 (define (cf-arg-var symbol)
   (assume-type symbol <symbol>)
   (update! (~ (ensure-package)'precious) (cut set-adjoin! <> symbol))
-  (and-let1 v (sys-getenv (x->string symbol))
-    (cf-subst symbol v)))
+  (if-let1 v (sys-getenv (x->string symbol))
+    (cf-subst symbol v)
+    (cf-subst symbol)))
 
 (define (var-precious? symbol)
   (assume-type symbol <symbol>)

@@ -1,3 +1,11 @@
+2020-01-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-arg-var): Always make the symbol a
+	  subst var even if the environment variable isn't set.
+	  (cf-subst): Make the value optional.  When omitted, the symbol
+	  is made subst and set to "" if it hasn't been a subst var, but
+	  is left intact if it's already a subst var.
+
 2020-01-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c, src/gauche.h, src/gauche/string.h: Introduce small
