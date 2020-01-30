@@ -416,11 +416,13 @@
 (select-module gauche)
 (inline-stub
  ;; string pointer
- (define-type <string-cursor> "ScmStringCursor*" "string cursor"
-   "SCM_STRING_CURSORP" "SCM_STRING_CURSOR")
+ (define-type <string-cursor> "ScmStringLargeCursor*" "string cursor"
+   "SCM_STRING_LARGE_CURSORP" "SCM_STRING_LARGE_CURSOR")
  )
 
-(define-cproc string-cursor? (obj) ::<boolean> SCM_STRING_CURSORP)
+(define-cproc string-cursor? (obj) ::<boolean>
+  (return (or (SCM_STRING_LARGE_CURSORP obj)
+              (SCM_STRING_SMALL_CURSORP obj))))
 (define-cproc string-cursor-start (s::<string>)
   (return (Scm_MakeStringCursorFromIndex s 0)))
 (define-cproc string-cursor-end (s::<string>)
@@ -434,46 +436,27 @@
 (define-cproc string-cursor-back (s::<string> cursor nchars::<fixnum>)
   Scm_StringCursorBack)
 (define-cproc string-index->cursor (s::<string> index)
-  (if (SCM_STRING_CURSORP index)
+  (if (or (SCM_STRING_LARGE_CURSORP index)
+          (SCM_STRING_SMALL_CURSORP index))
       (return index)
       (return (Scm_MakeStringCursorFromIndex s (Scm_GetInteger index)))))
 (define-cproc string-cursor->index (s::<string> cursor)
   Scm_StringCursorIndex)
 
 (define-cproc string-cursor=? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (== (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-                (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumEq cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumEq)))
 
 (define-cproc string-cursor<? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (< (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-               (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumLT cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumLT)))
 
 (define-cproc string-cursor>? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (> (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-               (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumGT cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumGT)))
 
 (define-cproc string-cursor<=? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (<= (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-                (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumLE cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumLE)))
 
 (define-cproc string-cursor>=? (cursor1 cursor2) ::<boolean>
-  (if (and (SCM_STRING_CURSORP cursor1)
-           (SCM_STRING_CURSORP cursor2))
-    (return (>= (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor1))
-                (SCM_STRING_CURSOR_PTR (SCM_STRING_CURSOR cursor2))))
-    (return (Scm_NumGE cursor1 cursor2))))
+  (return (Scm_StringCursorCompare cursor1 cursor2 Scm_NumGE)))
 
 (define-cproc string-cursor-diff (s::<string> start end)
   (return (Scm_Sub (Scm_StringCursorIndex s end)
