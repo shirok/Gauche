@@ -2,8 +2,9 @@
 ;; Configuring @@package@@
 ;; Run ./configure (or gosh ./configure) to generate Makefiles.
 
+(add-load-path "." :relative)
 (use gauche.configure)
-(use gauche.version)
+(use util-config)
 
 ;; Here you can define handlers of configure arguments by cf-arg-enable
 ;; and cf-arg-with.  Note that --with-local is handled implicitly if you use
@@ -14,25 +15,7 @@
 ;; command-line args and sets up default values.
 (cf-init-gauche-extension)
 
-;; For Gauche 0.9.9 or earlier
-(when (version<=? (gauche-version) "0.9.9")
-  ;; C build settings
-  (unless (cf-have-subst? 'CFLAGS)
-    (cf-subst 'CFLAGS (gauche-config "--default-cflags")))
-  (unless (cf-have-subst? 'CPPFLAGS) (cf-subst 'CPPFLAGS ""))
-  (unless (cf-have-subst? 'LDFLAGS)  (cf-subst 'LDFLAGS  ""))
-  (unless (cf-have-subst? 'LIBS)     (cf-subst 'LIBS     ""))
-
-  ;; For Windows Unicode support
-  (cond-expand
-   [(and gauche.os.windows gauche.ces.utf8)
-    (unless (#/(^-|\s+-)DUNICODE\b/ (cf$ 'CPPFLAGS))
-      (cf-subst-append 'CPPFLAGS "-DUNICODE"))]
-   [else])
-  )
-
 ;; Here you can add feature tests and other cf-define's.
-
 
 ;; Output
 (cf-output-default)

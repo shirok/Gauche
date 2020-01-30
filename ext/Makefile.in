@@ -29,7 +29,7 @@ TEMPLATE_INST_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@/$(GAUCHE_VERSION)
 TEMPLATES = template.Makefile.in template.configure template.configure.ac \
 	    template.extension.h template.extension.c \
 	    template.extensionlib.stub template.module.scm \
-	    template.package.scm template.test.scm
+	    template.package.scm template.test.scm template.util-config.scm
 
 all: $(SUBDIRS)
 
