@@ -777,18 +777,19 @@
     ;; Adjust the range
     (let* ([from. (modulo from len)]
            [to. (- to (- from from.))])
-      (let1 sp (make-string-pointer str from.)
+      (let ([start-cur (string-cursor-start str)]
+            [end-cur (string-cursor-end str)])
         (let loop ([count from.]
-                   [ch (string-pointer-next! sp)])
-          (cond [(>= count to.) (get-output-string dest)]
-                [(eof-object? ch)
-                 (string-pointer-set! sp 0)
-                 (write-char (string-pointer-next! sp) dest)
-                 (loop (+ count 1) (string-pointer-next! sp))]
+                   [cur (string-index->cursor str from.)])
+          (cond [(>= count to.)
+                 (get-output-string dest)]
+                [(string-cursor=? cur end-cur)
+                 ;; infinite loop if start-cur == end-cur, but that
+                 ;; can't happen because we catch len == 0 earlier
+                 (loop count start-cur)]
                 [else
-                 (write-char ch dest)
-                 (loop (+ count 1) (string-pointer-next! sp))]))
-        ))))
+                 (write-char (string-ref str cur) dest)
+                 (loop (+ count 1) (string-cursor-next str cur))]))))))
 
 (define (string-xcopy! target tstart s sfrom . args)
   (assume-type target <string>)
