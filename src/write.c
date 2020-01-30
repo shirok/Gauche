@@ -476,10 +476,10 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         Scm_PutzUnsafe(buf, -1, port);
         return SCM_MAKE_INT(k);
     }
-    else if (SCM_STRING_SMALL_CURSORP(obj)) {
+    else if (SCM_STRING_CURSOR_SMALL_P(obj)) {
         char buf[SPBUFSIZ];
         int k = snprintf(buf, SPBUFSIZ, "#<string-cursor %ld>",
-			 SCM_STRING_SMALL_CURSOR_OFFSET(obj));
+			 SCM_STRING_CURSOR_SMALL_OFFSET(obj));
         Scm_PutzUnsafe(buf, -1, port);
         return SCM_MAKE_INT(k);
     }

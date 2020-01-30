@@ -416,22 +416,28 @@ SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
  * (i.e. "small cursors"). In other words when the string size is more
  * than 8M (on 32-bit platform?). This should be very rare.
  */
-typedef struct ScmStringLargeCursorRec {
+typedef struct ScmStringCursorLargeRec {
     SCM_HEADER;
     ScmSmallInt offset;	 /* in bytes, relative to string body start */
-} ScmStringLargeCursor;
+} ScmStringCursorLarge;
 
-SCM_CLASS_DECL(Scm_StringLargeCursorClass);
-#define SCM_CLASS_STRING_LARGE_CURSOR      (&Scm_StringLargeCursorClass)
-#define SCM_STRING_LARGE_CURSORP(obj)      SCM_XTYPEP(obj, SCM_CLASS_STRING_LARGE_CURSOR)
-#define SCM_STRING_LARGE_CURSOR(obj)       ((ScmStringLargeCursor*)obj)
-#define SCM_STRING_LARGE_CURSOR_OFFSET(obj)       ((obj)->offset)
-#define SCM_STRING_LARGE_CURSOR_POINTER(sb, obj)  (SCM_STRING_BODY_START(sb) + (obj)->offset)
+SCM_CLASS_DECL(Scm_StringCursorLargeClass);
+#define SCM_CLASS_STRING_CURSOR_LARGE      (&Scm_StringCursorLargeClass)
+#define SCM_STRING_CURSOR_LARGE_P(obj) \
+    SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR_LARGE)
+#define SCM_STRING_CURSOR_LARGE(obj)       ((ScmStringCursorLarge*)obj)
+#define SCM_STRING_CURSOR_LARGE_OFFSET(obj)      \
+    (SCM_STRING_CURSOR_LARGE(obj)->offset)
+#define SCM_STRING_CURSOR_LARGE_POINTER(sb, obj) \
+    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_LARGE_OFFSET(obj))
 
-#define SCM_MAKE_STRING_SMALL_CURSOR(obj)         SCM_OBJ(((uintptr_t)(obj) << 8) + 0x1b)
-#define SCM_STRING_SMALL_CURSORP(obj)             (SCM_TAG8(obj) == 0x1b)
-#define SCM_STRING_SMALL_CURSOR_OFFSET(obj)       (((signed long int)SCM_WORD(obj)) >> 8)
-#define SCM_STRING_SMALL_CURSOR_POINTER(sb, obj)  (SCM_STRING_BODY_START(sb) + SCM_STRING_SMALL_CURSOR_OFFSET(obj))
+#define SCM_MAKE_STRING_CURSOR_SMALL(obj) \
+    SCM_OBJ(((uintptr_t)(obj) << 8) + 0x1b)
+#define SCM_STRING_CURSOR_SMALL_P(obj)        (SCM_TAG8(obj) == 0x1b)
+#define SCM_STRING_CURSOR_SMALL_OFFSET(obj) \
+    (((signed long int)SCM_WORD(obj)) >> 8)
+#define SCM_STRING_CURSOR_SMALL_POINTER(sb, obj) \
+    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_SMALL_OFFSET(obj))
 
 SCM_EXTERN ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index);
 SCM_EXTERN ScmObj Scm_MakeStringCursorEnd(ScmString *src);

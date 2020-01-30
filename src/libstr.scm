@@ -417,12 +417,12 @@
 (inline-stub
  ;; string pointer
  (define-type <string-cursor> "ScmStringLargeCursor*" "string cursor"
-   "SCM_STRING_LARGE_CURSORP" "SCM_STRING_LARGE_CURSOR")
+   "SCM_STRING_CURSOR_LARGE_P" "SCM_STRING_CURSOR_LARGE")
  )
 
 (define-cproc string-cursor? (obj) ::<boolean>
-  (return (or (SCM_STRING_LARGE_CURSORP obj)
-              (SCM_STRING_SMALL_CURSORP obj))))
+  (return (or (SCM_STRING_CURSOR_LARGE_P obj)
+              (SCM_STRING_CURSOR_SMALL_P obj))))
 (define-cproc string-cursor-start (s::<string>)
   (return (Scm_MakeStringCursorFromIndex s 0)))
 (define-cproc string-cursor-end (s::<string>)
@@ -436,8 +436,8 @@
 (define-cproc string-cursor-back (s::<string> cursor nchars::<fixnum>)
   Scm_StringCursorBack)
 (define-cproc string-index->cursor (s::<string> index)
-  (if (or (SCM_STRING_LARGE_CURSORP index)
-          (SCM_STRING_SMALL_CURSORP index))
+  (if (or (SCM_STRING_CURSOR_LARGE_P index)
+          (SCM_STRING_CURSOR_SMALL_P index))
       (return index)
       (return (Scm_MakeStringCursorFromIndex s (Scm_GetInteger index)))))
 (define-cproc string-cursor->index (s::<string> cursor)
