@@ -625,15 +625,17 @@
 ;;; Reverse & append
 ;;;
 
-(define (string-reverse s . args)
-  (let ((sp (apply make-string-pointer s -1 args))
+(define (string-reverse s :optional
+                        (start (string-cursor-start s))
+                        (end (string-cursor-end s)))
+  (let ((start (string-index->cursor s start))
         (dst (open-output-string)))
-    (let loop ((ch (string-pointer-prev! sp)))
-      (if (eof-object? ch)
+    (let loop ((cur (string-index->cursor s end)))
+      (if (string-cursor=? cur start)
         (get-output-string dst)
-        (begin (write-char ch dst)
-               (loop (string-pointer-prev! sp)))))
-    ))
+        (let ([new-cur (string-cursor-prev s cur)])
+          (write-char (string-ref s new-cur) dst)
+          (loop new-cur))))))
 
 (define (string-reverse! s . args)
   (let ((rev (apply string-reverse s args)))
