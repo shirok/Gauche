@@ -69,11 +69,20 @@
    As of 0.9.7, we switch to use ScmSmallInt for length and size, breaking
    the backward compatibility.
 */
+/* The 'index' slot may contain an index vector to realize O(1) random-access
+ * of the string.  Building index costs time and space, so it is only 
+ * constructed when explicitly asked.  Srfi-135 (Immutable Texts) is
+ * really an immutable string with an indexed body.
+ * The user should treat index field as a opaque pointer.  
+ * See priv/stringP.h for the details.
+ */
+
 typedef struct ScmStringBodyRec {
     u_long flags;
     ScmSmallInt length;         /* in characters */
     ScmSmallInt size;           /* in bytes */
     const char *start;
+    const void *index;
 } ScmStringBody;
 
 #if SIZEOF_LONG == 4
@@ -160,34 +169,14 @@ SCM_CLASS_DECL(Scm_StringClass);
  * When the offset doesn't fit, we fall back to ScmStringCursorLarge.
  * The two types of cursors are handled transparently in string.c and
  * users shouldn't worry about the distinction.
+ * The actual definition is in priv/stringP.h.
  */
-typedef struct ScmStringCursorLargeRec {
-    SCM_HEADER;
-    ScmSmallInt offset;	 /* in bytes, relative to string body start */
-} ScmStringCursorLarge;
+typedef struct ScmStringCursorLargeRec ScmStringCursorLarge;
 
 SCM_CLASS_DECL(Scm_StringCursorLargeClass);
-
 #define SCM_CLASS_STRING_CURSOR_LARGE      (&Scm_StringCursorLargeClass)
-#define SCM_STRING_CURSOR_LARGE_P(obj) \
-    SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR_LARGE)
-#define SCM_STRING_CURSOR_LARGE(obj)       ((ScmStringCursorLarge*)obj)
-#define SCM_STRING_CURSOR_LARGE_OFFSET(obj)      \
-    (SCM_STRING_CURSOR_LARGE(obj)->offset)
-#define SCM_STRING_CURSOR_LARGE_POINTER(sb, obj) \
-    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_LARGE_OFFSET(obj))
 
-#define SCM_MAKE_STRING_CURSOR_SMALL(obj) \
-    SCM_OBJ(((uintptr_t)(obj) << 8) + 0x1b)
-#define SCM_STRING_CURSOR_SMALL_P(obj)        (SCM_TAG8(obj) == 0x1b)
-#define SCM_STRING_CURSOR_SMALL_OFFSET(obj) \
-    (((signed long int)SCM_WORD(obj)) >> 8)
-#define SCM_STRING_CURSOR_SMALL_POINTER(sb, obj) \
-    (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_SMALL_OFFSET(obj))
-
-#define SCM_STRING_CURSOR_P(obj) \
-    (SCM_STRING_CURSOR_SMALL_P(obj)||SCM_STRING_CURSOR_LARGE_P(obj))
-
+SCM_EXTERN int    Scm_StringCursorP(ScmObj obj);
 SCM_EXTERN ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index);
 SCM_EXTERN ScmObj Scm_MakeStringCursorEnd(ScmString *src);
 SCM_EXTERN ScmObj Scm_StringCursorIndex(ScmString *s, ScmObj sc);
@@ -348,7 +337,7 @@ SCM_EXTERN ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
 
 #define SCM_STRING_CONST_INITIALIZER(str, len, siz)             \
     { { SCM_CLASS_STATIC_TAG(Scm_StringClass) }, NULL,          \
-      { SCM_STRING_IMMUTABLE|SCM_STRING_TERMINATED, (len), (siz), (str) } }
+    { SCM_STRING_IMMUTABLE|SCM_STRING_TERMINATED, (len), (siz), (str), NULL } }
 
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)            \
     ScmString name = SCM_STRING_CONST_INITIALIZER(str, len, siz)

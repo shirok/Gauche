@@ -35,7 +35,8 @@
 
 (inline-stub
  (declcode (.include <gauche/bignum.h>
-                     <gauche/vminsn.h>)))
+                     <gauche/vminsn.h>
+                     <gauche/priv/stringP.h>)))
 
 ;;
 ;; Predicates

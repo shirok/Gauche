@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/stringP.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -1624,6 +1625,13 @@ static void cursor_print(ScmObj obj, ScmPort *port,
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringCursorLargeClass, cursor_print);
+
+/* Public interface */
+int Scm_StringCursorP(ScmObj obj)
+{
+    return SCM_STRING_CURSOR_P(obj);
+}
+
 
 static ScmObj Scm_MakeStringCursor(ScmString *src, const char *cursor)
 {

@@ -39,6 +39,7 @@
 #include "gauche/priv/macroP.h" /* PVREF stuff.  Will go in future */
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/portP.h"
+#include "gauche/priv/stringP.h"
 #include "gauche/char_attr.h"
 
 #include <ctype.h>
