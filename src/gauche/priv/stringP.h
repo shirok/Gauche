@@ -36,10 +36,22 @@
 
 /* String cursor */
 
+/* If the offset is less than or equal to this, we use small cursor that
+   fits in ScmObj.  Otherwise we allocate ScmStringCursorLarge. */
+#if SIZEOF_LONG == 4
+#define SCM_STRING_CURSOR_SMALL_OFFSET_MAX  ((1L<<24)-1)
+#else
+#define SCM_STRING_CURSOR_SMALL_OFFSET_MAX  ((1L<<56)-1)
+#endif
+
 struct ScmStringCursorLargeRec {
     SCM_HEADER;
-    ScmSmallInt offset;	 /* in bytes, relative to string body start */
+    ScmSmallInt offset;	 /* in bytes, relative to string body start
+                            offset is non-negative. */
 };
+
+#define SCM_STRING_CURSOR_FITS_SMALL_P(off) \
+    ((off) <= SCM_STRING_CURSOR_SMALL_OFFSET_MAX)
 
 #define SCM_STRING_CURSOR_LARGE_P(obj) \
     SCM_XTYPEP(obj, SCM_CLASS_STRING_CURSOR_LARGE)
@@ -53,7 +65,7 @@ struct ScmStringCursorLargeRec {
     SCM_OBJ(((uintptr_t)(obj) << 8) + 0x1b)
 #define SCM_STRING_CURSOR_SMALL_P(obj)        (SCM_TAG8(obj) == 0x1b)
 #define SCM_STRING_CURSOR_SMALL_OFFSET(obj) \
-    (((signed long int)SCM_WORD(obj)) >> 8)
+    ((ScmSmallInt)(SCM_WORD(obj) >> 8))
 #define SCM_STRING_CURSOR_SMALL_POINTER(sb, obj) \
     (SCM_STRING_BODY_START(sb) + SCM_STRING_CURSOR_SMALL_OFFSET(obj))
 
