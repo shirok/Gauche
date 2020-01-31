@@ -6,11 +6,13 @@
   (use srfi-13)
   (use gauche.stringutil)
   (export string-contains
+          string-contains-right
           string-fold
           string-fold-right
           string-for-each-cursor
           string-index
           string-index-right
+          string-replicate
           string-skip
           string-skip-right
 
@@ -116,3 +118,18 @@
          (string-cursor-forward s1
                                 (string-index->cursor s1 start1)
                                 (string-cursor->index str1 res)))))
+
+(define (string-contains-right s1 s2 :optional (start1 (string-cursor-start s1)) end1 start2 end2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
+  (let* ((str1 (%maybe-substring s1 start1 end1))
+         (str2 (%maybe-substring s2 start2 end2))
+         (res  (string-scan-right str1 str2 'cursor)))
+    (and res
+         (string-cursor-forward s1
+                                (string-index->cursor s1 start1)
+                                (string-cursor->index str1 res)))))
+
+;; 'to' is not optional in srfi-130
+(define (string-replicate s from to :optional start end)
+  (xsubstring s from to start end))

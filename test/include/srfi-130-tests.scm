@@ -2400,7 +2400,6 @@
           (string-contains ABCDEFFFFOO "efffoo"))
     (fail 'string-contains))
 
-#|
 (OR (eqv? 0
           (string-cursor->index EMPTY
                                 (string-contains-right EMPTY EMPTY)))
@@ -2432,11 +2431,9 @@
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "efffoo")))
+          (string-contains-right ABCDEFFFFOO
+                                 "efffoo"))
     (fail 'string-contains-right))
-|#
 
 (OR (eqv? 0
           (string-cursor->index EMPTY
@@ -2469,7 +2466,6 @@
 (OR (eqv? #f (string-contains ABCDEFFFFOO "efffoo" 2))
     (fail 'string-contains))
 
-#|
 (OR (eqv? 0
           (string-cursor->index EMPTY
                                 (string-contains-right EMPTY EMPTY 0)))
@@ -2482,9 +2478,8 @@
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "a" 2)))
+          (string-contains-right ABCDEFFFFOO
+                                 "a" 2))
     (fail 'string-contains-right))
 
 (OR (eqv? 7
@@ -2506,11 +2501,9 @@
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "efffoo" 2)))
+          (string-contains-right ABCDEFFFFOO
+                                 "efffoo" 2))
     (fail 'string-contains-right))
-|#
 
 
 (OR (eqv? 0
@@ -2547,7 +2540,7 @@
 (OR (eqv? #f (string-contains ABCDEFFFFOO "efffoo" 2 10))
     (fail 'string-contains))
 
-#|
+
 (OR (eqv? 0
           (string-cursor->index EMPTY
                                 (string-contains-right EMPTY EMPTY 0 0)))
@@ -2560,9 +2553,8 @@
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "a" 2 10)))
+          (string-contains-right ABCDEFFFFOO
+                                 "a" 2 10))
     (fail 'string-contains-right))
 
 (OR (eqv? 7
@@ -2578,17 +2570,14 @@
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "foo" 2 10)))
+          (string-contains-right ABCDEFFFFOO
+                                 "foo" 2 10))
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "efffoo" 2 10)))
+          (string-contains-right ABCDEFFFFOO
+                                 "efffoo" 2 10))
     (fail 'string-contains-right))
-|#
 
 (OR (eqv? 0
           (string-cursor->index EMPTY
@@ -2625,7 +2614,6 @@
 (OR (eqv? #f (string-contains ABCDEFFFFOO "efffoo" 2 10 1))
     (fail 'string-contains))
 
-#|
 (OR (eqv? 0
           (string-cursor->index EMPTY
                                 (string-contains-right EMPTY EMPTY 0 0 0)))
@@ -2656,17 +2644,14 @@
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "foo" 2 10 1)))
+          (string-contains-right ABCDEFFFFOO
+                                 "foo" 2 10 1))
     (fail 'string-contains-right))
 
 (OR (eqv? #f
-          (string-cursor->index ABCDEFFFFOO
-                                (string-contains-right ABCDEFFFFOO
-                                                       "efffoo" 2 10 1)))
+          (string-contains-right ABCDEFFFFOO
+                                 "efffoo" 2 10 1))
     (fail 'string-contains-right))
-|#
 
 (OR (eqv? 0
           (string-cursor->index EMPTY
@@ -2709,7 +2694,6 @@
                                                  "efffoo" 2 10 0 2)))
     (fail 'string-contains))
 
-#|
 (OR (eqv? 0
           (string-cursor->index EMPTY
                                 (string-contains-right EMPTY EMPTY 0 0 0 0)))
@@ -2750,7 +2734,6 @@
                                 (string-contains-right ABCDEFFFFOO
                                                        "efffoo" 2 10 1 3)))
     (fail 'string-contains-right))
-|#
 
 ;;-----------------------------------------------------------------------
 (test-section "The whole string")
@@ -2877,8 +2860,6 @@
               v))
     (fail 'string-for-each-cursor))
 
-
-#|
 (OR (string=? "cdefabcdefabcd"
               (string-replicate "abcdef" -4 10))
     (fail 'string-replicate))
@@ -2890,7 +2871,10 @@
 (OR (string=? "ecdecdecde"
               (string-replicate "abcdef" -13 -3 2 5))
     (fail 'string-replicate))
-|#
+
+(test* "string-replicate" "ecdecdecde"
+       (let ([s "abcdef"])
+         (string-replicate s -13 -3 (string-index->cursor s 2) (string-index->cursor s 5))))
 
 (OR (= 6 (string-count "abcdef" char?))
     (fail 'string-count))
