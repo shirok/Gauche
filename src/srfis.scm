@@ -968,8 +968,9 @@ srfi-130, srfi-130
 ()
 
 Cursor-based string library
+Most of the procedures in srfi-13 accept cursors in addition to indexes.
 
-Don't challenge my JLPT N5 skills!
+Cursor-based string library (to be translated)
 
 srfi-131, gauche.record
 ()
