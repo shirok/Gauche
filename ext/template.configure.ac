@@ -36,6 +36,25 @@ AC_PATH_PROG([GAUCHE_PACKAGE], gauche-package)
 AC_PATH_PROG([GAUCHE_INSTALL], gauche-install)
 AC_PATH_PROG([GAUCHE_CESCONV], gauche-cesconv)
 
+dnl C build settings
+if test -z "$CC"; then
+  CC=`"$GAUCHE_CONFIG" --cc`
+fi
+if test -z "$CFLAGS"; then
+  CFLAGS=`"$GAUCHE_CONFIG" --default-cflags`
+fi
+AC_SUBST(CC)
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(LIBS)
+
+dnl For Windows Unicode support
+if gosh -e'(exit (cond-expand ((and gauche.os.windows gauche.ces.utf8) 0) (else 1)))'; then
+  WINDOWS_UNICODE_FLAG="-DUNICODE"
+fi
+AC_SUBST(WINDOWS_UNICODE_FLAG)
+
 dnl Usually these parameters are set by AC_PROG_CC, but we'd rather use
 dnl the same one as Gauche has been compiled with.
 SOEXT=`"$GAUCHE_CONFIG" --so-suffix`
@@ -46,6 +65,16 @@ AC_SUBST(OBJEXT)
 AC_SUBST(EXEEXT)
 
 ac_default_prefix=`"$GAUCHE_CONFIG" --prefix`
+
+dnl On MSYS2/MinGW-w64, we must overwrite 'prefix' because
+dnl /mingw64/etc/config.site sets prefix=/mingw64 .
+case "$MSYSTEM" in
+  MINGW64|MINGW32)
+    case "$prefix" in
+      /mingw64|/mingw32)
+        prefix=`"$GAUCHE_CONFIG" --prefix`;;
+    esac;;
+esac
 
 GAUCHE_PKGINCDIR=`"$GAUCHE_CONFIG" --pkgincdir`
 GAUCHE_PKGLIBDIR=`"$GAUCHE_CONFIG" --pkglibdir`

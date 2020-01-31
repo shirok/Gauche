@@ -44,11 +44,14 @@ GAUCHE_PKGLIBDIR  = "$(DESTDIR)@GAUCHE_PKGLIBDIR@"
 GAUCHE_PKGARCHDIR = "$(DESTDIR)@GAUCHE_PKGARCHDIR@"
 
 @@extname@@_SRCS = $(srcdir)/@@extname@@.c $(srcdir)/@@extname@@lib.stub
+@@extname@@_HDRS = $(srcdir)/@@extname@@.h
 
 all : $(TARGET)
 
-@@extname@@.$(SOEXT): $(@@extname@@_SRCS)
+@@extname@@.$(SOEXT): $(@@extname@@_SRCS) $(@@extname@@_HDRS)
 	$(GAUCHE_PACKAGE) compile \
+	  --cppflags="$(CPPFLAGS)" --cflags="$(CFLAGS)" \
+	  --ldflags="$(LDFLAGS)" --libs="$(LIBS)" \
 	  --local=$(LOCAL_PATHS) --verbose @@extname@@ $(@@extname@@_SRCS)
 
 check : all

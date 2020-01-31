@@ -4,26 +4,30 @@
 
 (use gauche.version)
 
-(when (version< (gauche-version) "0.9.7")
-  ;; 0.9.6 or before doesn't have cf-init-gauche-extension.
-  ;; Give the user a helpful message.
-  (define (cf-init-gauche-extension)
-    (exit 1 " Gauche 0.9.7 or later is required to use\
+;; For the compatibility to Gauche 0.9.7 - 0.9.9
+(define (cf-init-gauche-extension)
+  (when (version<? (gauche-version) "0.9.7")
+    ;; 0.9.6 or before doesn't have cf-init-gauche-extension.
+    ;; Give the user a helpful message.
+    (exit 1 " Gauche 0.9.7 or later is required to use \
               cf-init-gauche-extension."))
-  )
 
-(when (version<= (gauche-version) "0.9.9")
-  ;; The default values for these variables weren't set in older Gauche.
-  (unless (cf-have-subst? 'CFLAGS)
-    (cf-subst 'CFLAGS (gauche-config "--default-cflags")))
-  (unless (cf-have-subst? 'CPPFLAGS) (cf-subst 'CPPFLAGS ""))
-  (unless (cf-have-subst? 'LDFLAGS)  (cf-subst 'LDFLAGS  ""))
-  (unless (cf-have-subst? 'LIBS)     (cf-subst 'LIBS     ""))  
-  (unless (cf-have-subst? 'WINDOWS_UNICODE_FLAG)
-    (cf-subst 'WINDOWS_UNICODE_FLAG
-              (cond-expand
-               [(and gauche.os.windows gauche.ces.utf8) "-DUNICODE"]
-               [else ""])))
+  ;; Call original procedure
+  ((with-module gauche.configure cf-init-gauche-extension))
+
+  (when (version<=? (gauche-version) "0.9.9")
+    ;; The default values for these variables weren't set in older Gauche.
+    (unless (cf-have-subst? 'CFLAGS)
+      (cf-subst 'CFLAGS (gauche-config "--default-cflags")))
+    (unless (cf-have-subst? 'CPPFLAGS) (cf-subst 'CPPFLAGS ""))
+    (unless (cf-have-subst? 'LDFLAGS)  (cf-subst 'LDFLAGS  ""))
+    (unless (cf-have-subst? 'LIBS)     (cf-subst 'LIBS     ""))  
+    (unless (cf-have-subst? 'WINDOWS_UNICODE_FLAG)
+      (cf-subst 'WINDOWS_UNICODE_FLAG
+                (cond-expand
+                 [(and gauche.os.windows gauche.ces.utf8) "-DUNICODE"]
+                 [else ""])))
+    )
   )
 
 ;; Local variables:
