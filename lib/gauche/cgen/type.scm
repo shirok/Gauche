@@ -231,6 +231,7 @@
    (<c64vector> "ScmUVector*" "c64vector" "SCM_C64VECTORP" "SCM_C64VECTOR")
    (<c128vector> "ScmUVector*" "c128vector" "SCM_C128VECTORP" "SCM_C128VECTOR")
    (<string> "ScmString*" "string" "SCM_STRINGP" "SCM_STRING")
+   (<string-cursor> "ScmObj" "string cursor" "Scm_StringCursorP" "")
    (<symbol> "ScmSymbol*" "symbol" "SCM_SYMBOLP" "SCM_SYMBOL")
    (<keyword> "ScmKeyword*" "keyword" "SCM_KEYWORDP" "SCM_KEYWORD")
    (<identifier> "ScmIdentifier*" "identifier" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")

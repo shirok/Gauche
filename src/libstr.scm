@@ -415,11 +415,6 @@
 ;;
 
 (select-module gauche)
-(inline-stub
- ;; string pointer
- (define-type <string-cursor> "ScmStringLargeCursor*" "string cursor"
-   "SCM_STRING_CURSOR_LARGE_P" "SCM_STRING_CURSOR_LARGE")
- )
 
 (define-cproc string-cursor? (obj) ::<boolean>
   SCM_STRING_CURSOR_P)
