@@ -185,11 +185,19 @@ ScmSmallInt Scm_MBLen(const char *str, const char *stop)
 static void cursor_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *mode SCM_UNUSED)
 {
-    Scm_Printf(port, "#<string-cursor %ld>",
+    Scm_Printf(port, "#<string-cursor-large %ld>",
                SCM_STRING_CURSOR_LARGE_OFFSET(obj));
 }
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringCursorLargeClass, cursor_print);
+static ScmClass *cursor_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_StringCursorClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringCursorClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_StringCursorLargeClass, cursor_print, NULL, NULL,
+                         NULL, cursor_cpl);
 
 /* Common routine to get hold of the pointer from string cursor.
    Returns NULL if SC isn't a string cursor.

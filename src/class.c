@@ -40,6 +40,7 @@
 #include "gauche/priv/macroP.h"
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/dispatchP.h"
+#include "gauche/priv/stringP.h"
 
 /* Some routines uses small array on stack to keep data about
    arguments to dispatch.  If the # of args used for dispach is bigger
@@ -484,6 +485,7 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         if (SCM_INTP(obj))  return SCM_CLASS_INTEGER;
         if (SCM_EOFP(obj))  return SCM_CLASS_EOF_OBJECT;
         if (SCM_UNDEFINEDP(obj)) return SCM_CLASS_UNDEFINED_OBJECT;
+        if (SCM_STRING_CURSOR_SMALL_P(obj)) return SCM_CLASS_STRING_CURSOR;
         else return SCM_CLASS_UNKNOWN;
     }
     if (SCM_FLONUMP(obj)) return SCM_CLASS_REAL;
@@ -3479,7 +3481,8 @@ void Scm__InitClass(void)
 
     /* string.c */
     CINIT(SCM_CLASS_STRING,           "<string>");
-    CINIT(SCM_CLASS_STRING_CURSOR_LARGE, "<string-cursor>");
+    BINIT(SCM_CLASS_STRING_CURSOR,    "<string-cursor>", NULL);
+    BINIT(SCM_CLASS_STRING_CURSOR_LARGE, "<string-cursor-large>", NULL);
     CINIT(SCM_CLASS_STRING_POINTER,   "<string-pointer>");
 
     /* symbol.c */

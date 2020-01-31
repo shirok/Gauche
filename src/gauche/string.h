@@ -173,7 +173,9 @@ SCM_CLASS_DECL(Scm_StringClass);
  */
 typedef struct ScmStringCursorLargeRec ScmStringCursorLarge;
 
+SCM_CLASS_DECL(Scm_StringCursorClass);
 SCM_CLASS_DECL(Scm_StringCursorLargeClass);
+#define SCM_CLASS_STRING_CURSOR            (&Scm_StringCursorClass)
 #define SCM_CLASS_STRING_CURSOR_LARGE      (&Scm_StringCursorLargeClass)
 
 SCM_EXTERN int    Scm_StringCursorP(ScmObj obj);
