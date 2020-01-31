@@ -202,66 +202,46 @@
     (error "argument out of range:" nchars))
   (%maybe-substring s 0 (- (string-length s) nchars)))
 
-(define (string-trim s :optional (c/s/p #[\s]) start end)
-  (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (%maybe-substring s start end))))
-    (let loop ((ch (string-pointer-next! sp)))
-      (cond ((eof-object? ch) "")
-            ((pred c/s/p ch) (loop (string-pointer-next! sp)))
-            (else (string-pointer-prev! sp)
-                  (string-pointer-substring sp :after #t))))
-    ))
+(define (string-trim s :optional
+                     (c/s/p #[\s])
+                     (start (string-cursor-start s))
+                     (end (string-cursor-end s)))
+  (substring s (car (%string-skip s c/s/p start end)) end))
 
-(define (string-trim-right s :optional (c/s/p #[\s]) start end)
-  (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (%maybe-substring s start end) -1)))
-    (let loop ((ch (string-pointer-prev! sp)))
-      (cond ((eof-object? ch) "")
-            ((pred c/s/p ch) (loop (string-pointer-prev! sp)))
-            (else (string-pointer-next! sp)
-                  (string-pointer-substring sp))))
-    ))
+(define (string-trim-right s :optional
+                           (c/s/p #[\s])
+                           (start (string-cursor-start s))
+                           (end (string-cursor-end s)))
+  (substring s start (car (%string-skip-right s c/s/p start end))))
 
-(define (string-trim-both s :optional (c/s/p #[\s]) start end)
-  (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (%maybe-substring s start end))))
-    (let loop ((ch (string-pointer-next! sp)))
-      (cond ((eof-object? ch) "")
-            ((pred c/s/p ch) (loop (string-pointer-next! sp)))
-            (else (string-pointer-prev! sp)
-                  (let ((sp (make-string-pointer
-                             (string-pointer-substring sp :after #t) -1)))
-                    (let loop ((ch (string-pointer-prev! sp)))
-                      (cond ((eof-object? ch) "")
-                            ((pred c/s/p ch) (loop (string-pointer-prev! sp)))
-                            (else (string-pointer-next! sp)
-                                  (string-pointer-substring sp))))
-                    ))))
-    ))
+(define (string-trim-both s :optional
+                          (c/s/p #[\s])
+                          (start (string-cursor-start s))
+                          (end (string-cursor-end s)))
+  (let ([new-start (car (%string-skip s c/s/p start end))])
+    (substring s new-start (car (%string-skip-right s c/s/p new-start end)))))
 
 ;;;
 ;;; Comparison functions
 ;;;
 
 (define (%string-compare-int off str1 str2 cmp< cmp> proc< proc= proc>)
-  (let ((sp1 (make-string-pointer str1))
-        (sp2 (make-string-pointer str2)))
-    (let loop ((ch1 (string-pointer-next! sp1))
-               (ch2 (string-pointer-next! sp2)))
-      (cond ((eof-object? ch1)
-             (if (eof-object? ch2)
-                 (proc= (+ off (string-pointer-index sp1)))
-                 (proc< (+ off (string-pointer-index sp1)))))
-            ((eof-object? ch2)
-             (proc> (+ off (string-pointer-index sp1))))
-            ((cmp< ch1 ch2) (proc< (+ off (string-pointer-index sp1))))
-            ((cmp> ch1 ch2) (proc> (+ off (string-pointer-index sp1))))
-            (else (loop (string-pointer-next! sp1)
-                        (string-pointer-next! sp2))))
-      )))
+  (let ((end1 (string-cursor-end str1))
+        (end2 (string-cursor-end str2)))
+    (let loop ((cur1 (string-cursor-start str1))
+               (cur2 (string-cursor-start str2))
+               (off off))
+      (cond ((string-cursor=? cur1 end1)
+             (if (string-cursor=? cur2 end2) (proc= off) (proc< off)))
+            ((string-cursor=? cur2 end2)
+             (proc> off))
+            ((cmp< (string-ref str1 cur1) (string-ref str2 cur2))
+             (proc< off))
+            ((cmp> (string-ref str1 cur1) (string-ref str2 cur2))
+             (proc> off))
+            (else (loop (string-cursor-next str1 cur1)
+                        (string-cursor-next str2 cur2)
+                        (+ off 1)))))))
 
 (define (string-compare s1 s2 proc< proc= proc>
                         :optional (start1 0) end1 start2 end2)
@@ -269,7 +249,7 @@
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-compare-int (- start1 1) str1 str2
+    (%string-compare-int start1 str1 str2
                          char<? char>?
                          proc< proc= proc>)))
 
@@ -279,7 +259,7 @@
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-compare-int (- start1 1) str1 str2
+    (%string-compare-int start1 str1 str2
                          char-ci<? char-ci>?
                          proc< proc= proc>)))
 
@@ -384,88 +364,95 @@
 ;;; Prefix and suffix
 ;;;
 
-(define (%string-prefix-int str1 str2 = action)
-  (let ((sp1 (make-string-pointer str1))
-        (sp2 (make-string-pointer str2)))
-    (let loop ((ch1 (string-pointer-next! sp1))
-               (ch2 (string-pointer-next! sp2)))
-      (cond ((eof-object? ch1) (action (string-pointer-index sp1) #t))
-            ((eof-object? ch2) (action (string-pointer-index sp2) #f))
-            ((= ch1 ch2) (loop (string-pointer-next! sp1)
-                               (string-pointer-next! sp2)))
-            (else (action (- (string-pointer-index sp1) 1) #f)))
-      )))
+(define (%string-prefix-int str1 str2 =)
+  (let ((end1 (string-cursor-end str1))
+        (end2 (string-cursor-end str2)))
+    (let loop ((cur1 (string-cursor-start str1))
+               (cur2 (string-cursor-start str2))
+               (count 0))
+      (if (and (string-cursor<? cur1 end1)
+               (string-cursor<? cur2 end2)
+               (= (string-ref str1 cur1) (string-ref str2 cur2)))
+        (loop (string-cursor-next str1 cur1)
+              (string-cursor-next str2 cur2)
+              (+ count 1))
+        count))))
 
 (define (string-prefix-length s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-prefix-int str1 str2 char=? (lambda (cnt flag) cnt))))
+    (%string-prefix-int str1 str2 char=?)))
 
 (define (string-prefix-length-ci s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-prefix-int str1 str2 char-ci=? (lambda (cnt flag) cnt))))
+    (%string-prefix-int str1 str2 char-ci=?)))
 
 (define (string-prefix? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-prefix-int str1 str2 char=? (lambda (cnt flag) flag))))
+    (= (%string-prefix-int str1 str2 char=?)
+       (string-length str1))))
 
 (define (string-prefix-ci? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-prefix-int str1 str2 char-ci=? (lambda (cnt flag) flag))))
+    (= (%string-prefix-int str1 str2 char-ci=?)
+       (string-length str1))))
 
-
-(define (%string-suffix-int str1 str2 = action)
-  (let ((sp1 (make-string-pointer str1 -1))
-        (sp2 (make-string-pointer str2 -1)))
-    (let loop ((ch1 (string-pointer-prev! sp1))
-               (ch2 (string-pointer-prev! sp2))
+(define (%string-suffix-int str1 str2 =)
+  (let ((start1 (string-cursor-start str1))
+        (start2 (string-cursor-start str2)))
+    (let loop ((cur1 (string-cursor-end str1))
+               (cur2 (string-cursor-end str2))
                (count 0))
-      (cond ((eof-object? ch1) (action count #t))
-            ((eof-object? ch2) (action count #f))
-            ((= ch1 ch2) (loop (string-pointer-prev! sp1)
-                               (string-pointer-prev! sp2)
-                               (+ count 1)))
-            (else (action count #f)))
-      )))
+      (if (and (string-cursor>? cur1 start1)
+               (string-cursor>? cur2 start2))
+        (let ([new-cur1 (string-cursor-prev str1 cur1)]
+              [new-cur2 (string-cursor-prev str2 cur2)])
+          (if (= (string-ref str1 new-cur1)
+                 (string-ref str2 new-cur2))
+            (loop new-cur1 new-cur2 (+ count 1))
+            count))
+        count))))
 
 (define (string-suffix-length s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-suffix-int str1 str2 char=? (lambda (cnt flag) cnt))))
+    (%string-suffix-int str1 str2 char=?)))
 
 (define (string-suffix-length-ci s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-suffix-int str1 str2 char-ci=? (lambda (cnt flag) cnt))))
+    (%string-suffix-int str1 str2 char-ci=?)))
 
 (define (string-suffix? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-suffix-int str1 str2 char=? (lambda (cnt flag) flag))))
+    (= (%string-suffix-int str1 str2 char=?)
+       (string-length str1))))
 
 (define (string-suffix-ci? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
-    (%string-suffix-int str1 str2 char-ci=? (lambda (cnt flag) flag))))
+    (= (%string-suffix-int str1 str2 char-ci=?)
+       (string-length str1))))
 
 ;;;
 ;;; Search
@@ -639,15 +626,17 @@
 ;;; Reverse & append
 ;;;
 
-(define (string-reverse s . args)
-  (let ((sp (apply make-string-pointer s -1 args))
+(define (string-reverse s :optional
+                        (start (string-cursor-start s))
+                        (end (string-cursor-end s)))
+  (let ((start (string-index->cursor s start))
         (dst (open-output-string)))
-    (let loop ((ch (string-pointer-prev! sp)))
-      (if (eof-object? ch)
+    (let loop ((cur (string-index->cursor s end)))
+      (if (string-cursor=? cur start)
         (get-output-string dst)
-        (begin (write-char ch dst)
-               (loop (string-pointer-prev! sp)))))
-    ))
+        (let ([new-cur (string-cursor-prev s cur)])
+          (write-char (string-ref s new-cur) dst)
+          (loop new-cur))))))
 
 (define (string-reverse! s . args)
   (let ((rev (apply string-reverse s args)))
@@ -695,16 +684,18 @@
 ;;; Mappers
 ;;;
 
-(define (string-map proc s . args)
+(define (string-map proc s :optional
+                    (start (string-cursor-start s))
+                    (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src  (apply make-string-pointer s 0 args))
+  (let ((end  (string-index->cursor s end))
         (dest (open-output-string)))
-    (let loop ((ch (string-pointer-next! src)))
-      (if (eof-object? ch)
+    (let loop ((cur (string-index->cursor s start)))
+      (if (string-cursor=? cur end)
         (get-output-string dest)
-        (begin (write-char (proc ch) dest)
-               (loop (string-pointer-next! src)))))
-    ))
+        (begin
+          (write-char (proc (string-ref s cur)) dest)
+          (loop (string-cursor-next s cur)))))))
 
 (define (string-map! proc s . args)
   (assume-type s <string>)
@@ -760,14 +751,16 @@
         (begin (write-char (f seed) dest)
                (loop (g seed)))))))
 
-(define (string-for-each proc s . args)
+(define (string-for-each proc s
+                         :optional
+                         (start (string-cursor-start s))
+                         (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((src (apply make-string-pointer s 0 args)))
-    (let loop ((ch (string-pointer-next! src)))
-      (unless (eof-object? ch)
-        (proc ch)
-        (loop (string-pointer-next! src)))))
-  )
+  (let ([end (string-index->cursor s end)])
+    (let loop ([cur (string-index->cursor s start)])
+      (unless (string-cursor=? cur end)
+        (proc (string-ref s cur))
+        (loop (string-cursor-next s cur))))))
 
 (define (string-for-each-index proc s :optional (start 0) (end (string-length s)))
   (assume-type s <string>)
@@ -796,18 +789,19 @@
     ;; Adjust the range
     (let* ([from. (modulo from len)]
            [to. (- to (- from from.))])
-      (let1 sp (make-string-pointer str from.)
+      (let ([start-cur (string-cursor-start str)]
+            [end-cur (string-cursor-end str)])
         (let loop ([count from.]
-                   [ch (string-pointer-next! sp)])
-          (cond [(>= count to.) (get-output-string dest)]
-                [(eof-object? ch)
-                 (string-pointer-set! sp 0)
-                 (write-char (string-pointer-next! sp) dest)
-                 (loop (+ count 1) (string-pointer-next! sp))]
+                   [cur (string-index->cursor str from.)])
+          (cond [(>= count to.)
+                 (get-output-string dest)]
+                [(string-cursor=? cur end-cur)
+                 ;; infinite loop if start-cur == end-cur, but that
+                 ;; can't happen because we catch len == 0 earlier
+                 (loop count start-cur)]
                 [else
-                 (write-char ch dest)
-                 (loop (+ count 1) (string-pointer-next! sp))]))
-        ))))
+                 (write-char (string-ref str cur) dest)
+                 (loop (+ count 1) (string-cursor-next str cur))]))))))
 
 (define (string-xcopy! target tstart s sfrom . args)
   (assume-type target <string>)

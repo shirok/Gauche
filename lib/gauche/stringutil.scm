@@ -102,19 +102,26 @@
          (%string-split-scanner-each-char splitter)]))
 
 (define (%string-split-scanner-each-char pred)
-  (define (scan-in p)
-    (let1 c (string-pointer-ref p)
-      (cond [(eof-object? c) (values (string-pointer-substring p) #f)]
-            [(pred c) (let1 before (string-pointer-substring p)
-                        (string-pointer-next! p)
-                        (scan-out p before))]
-            [else (string-pointer-next! p) (scan-in p)])))
-  (define (scan-out p before)
-    (let1 c (string-pointer-ref p)
-      (cond [(eof-object? c) (values before "")]
-            [(pred c) (string-pointer-next! p) (scan-out p before)]
-            [else (values before (string-pointer-substring p :after #t))])))
-  (^s (scan-in (make-string-pointer s))))
+  (define (cursor-substr s cur)
+    (substring s (string-cursor-start s) cur))
+
+  (define (scan-in s cur end)
+    (cond [(string-cursor=? cur end)
+           (values (cursor-substr s cur) #f)]
+          [(pred (string-ref s cur))
+           (scan-out s (string-cursor-next s cur) end (cursor-substr s cur))]
+          [else
+           (scan-in s (string-cursor-next s cur) end)]))
+
+  (define (scan-out s cur end before)
+    (cond [(string-cursor=? cur end)
+           (values before "")]
+          [(pred (string-ref s cur))
+           (scan-out s (string-cursor-next s cur) end before)]
+          [else
+           (values before (substring s cur end))]))
+
+  (^s (scan-in s (string-cursor-start s) (string-cursor-end s))))
 
 (define (%string-split-by-scanner string scanner limit)
   (let loop ([s string]
