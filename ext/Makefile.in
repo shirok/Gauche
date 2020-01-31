@@ -27,6 +27,7 @@ GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install.in -C
 TEMPLATE_INST_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@/$(GAUCHE_VERSION)
 
 TEMPLATES = template.Makefile.in template.configure template.configure.ac \
+	    template.configure-compat \
 	    template.extension.h template.extension.c \
 	    template.extensionlib.stub template.module.scm \
 	    template.package.scm template.test.scm

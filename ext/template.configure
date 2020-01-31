@@ -3,6 +3,9 @@
 ;; Run ./configure (or gosh ./configure) to generate Makefiles.
 
 (use gauche.configure)
+(load "configure-compat" 
+      :paths `(,(current-load-path))
+      :error-if-not-found #f)
 
 ;; Here you can define handlers of configure arguments by cf-arg-enable
 ;; and cf-arg-with.  Note that --with-local is handled implicitly if you use

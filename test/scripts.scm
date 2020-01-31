@@ -177,6 +177,7 @@
                    :input infile
                    :output outfile))
     (filter-copy (build-path extdir "template.configure") "test.o/configure")
+    (filter-copy (build-path extdir "template.configure-compat") "test.o/configure-compat")
     (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
     (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
 

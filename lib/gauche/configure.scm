@@ -341,9 +341,10 @@
   ;; so we set it as the default.  We also allow env overrides for
   ;; some common variables.  (In autoconf, AC_PROG_CC issues AC_ARG_VAR
   ;; for them).
-  (cf-subst 'CC       (gauche-config "--cc"))
+  (cf-subst 'CC (gauche-config "--cc"))
+  (cf-subst 'CFLAGS (gauche-config "--default-cflags"))
   (cf-arg-var 'CPP)
-  (cf-arg-var 'CPPFALGS)
+  (cf-arg-var 'CPPFLAGS)
   (cf-arg-var 'CC)
   (cf-arg-var 'CFLAGS)
   (cf-arg-var 'LDFLAGS)
@@ -353,6 +354,11 @@
   (cf-subst 'SOEXT  (gauche-config "--so-suffix"))
   (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
   (cf-subst 'EXEEXT (gauche-config "--executable-suffix"))
+
+  ;; '-DUNICODE' if gauche is in utf8 and on windows.
+  (cf-subst 'WINDOWS_UNICODE_FLAG
+            (cond-expand [(and gauche.os.windows gauche.ces.utf8) "-DUNICODE"]
+                         [else ""]))
   )
 
 (define (parse-command-line-arguments)
