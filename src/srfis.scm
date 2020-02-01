@@ -970,7 +970,9 @@ srfi-130, srfi-130
 Cursor-based string library
 Most of the procedures in srfi-13 accept cursors in addition to indexes.
 
-Cursor-based string library (to be translated)
+カーソルベースの文字列ライブラリ
+srfi-13の多くの手続きはインデックスのかわりにカーソルも取れるようになっています。
+
 
 srfi-131, gauche.record
 ()
