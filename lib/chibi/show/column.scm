@@ -11,7 +11,7 @@
         (reverse res))
        (else
         (let ((sc2 (string-index str separator? sc)))
-          (lp (string-cursor-next str sc2)
+          (lp (if (string-cursor=? sc2 end) sc2 (string-cursor-next str sc2))
               (if (string-cursor=? sc sc2)
                   res
                   (cons (substring/cursors str sc sc2) res)))))))))
