@@ -54,7 +54,7 @@
                 (if (eq? i j) "" (substring/cursors str i j)))
               (if (string-cursor>=? j end)
                   (output (collect))
-                  (let ((c (string-cursor-ref str j))
+                  (let ((c (string-ref/cursor str j))
                         (j2 (string-cursor-next str j)))
                     (cond
                      ((or (eqv? c quot) (eqv? c esc))
@@ -234,12 +234,12 @@
                        (res (substring/cursors s (string-cursor-start s) last)))
                   (if (and
                        (string-cursor<? last end)
-                       (let ((next (digit-value (string-cursor-ref s last))))
+                       (let ((next (digit-value (string-ref/cursor s last))))
                          (or (> next 5)
                              (and (= next 5)
                                   (string-cursor>? last (string-cursor-start s))
                                   (memv (digit-value
-                                         (string-cursor-ref
+                                         (string-ref/cursor
                                           s (string-cursor-prev s last)))
                                         '(1 3 5 7 9))))))
                       (list->string
