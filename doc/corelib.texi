@@ -8327,6 +8327,7 @@ SRFI-13については@ref{String library}を参照してください。
 * String Predicates::
 * String Constructors::
 * String interpolation::
+* String Cursors::
 * String Accessors & Modifiers::
 * String Comparison::
 * String utilities::
@@ -8650,7 +8651,7 @@ Other class may provide a method to customize the behavior.
 @c COMMON
 @end deffn
 
-@node String interpolation, String Accessors & Modifiers, String Constructors, Strings
+@node String interpolation, String Cursors, String Constructors, Strings
 @subsection String interpolation
 @c NODE 文字列の補間
 
@@ -8896,7 +8897,124 @@ Schemeは他のスクリプト言語より一般的により多くの文字を�
 @c COMMON
 
 
-@node String Accessors & Modifiers, String Comparison, String interpolation, Strings
+@node String Cursors, String Accessors & Modifiers, String interpolation, Strings
+@subsection String Cursors
+
+String cursors are opaque objects that point into strings, similar to
+indexes. Cursors however are more efficient. For example, to get a
+character with @code{string-ref} using an index on a multibyte string,
+Gauche needs to iterate from the beginning of the string until that
+position, or @code{O(n)}. Using cursors you can access in @code{O(1)}
+(for singlebyte strings, Gauche does it in @code{O(1)} even with
+index).
+
+For a string of length @var{n}, there are @code{n + 1} cursors. The
+last cursor at the end of the string does not point to any valid
+character, it's usually used to determine if nothing is found.
+
+A string cursor is associated with a specific string and should not be
+used with another string. A string cursor also becomes invalid when
+the associated string is modified. Accessing an invalid cursor does
+not always fail though. You just have to be careful and make sure you
+don't use invalid cursors.
+
+Most procedures that take indexes in Gauche can also take
+cursors. Relying on this though is unportable. For example, the
+@code{substring} procedure in RnRS standards does not mention anything
+about cursors even though the Gauche version accepts cursors. For
+portable programs, you should only use cursors on procedures from
+srfi-130 module.
+
+@deftp {Builtin Class} <string-cursor>
+Represents a cursor. When printed out, you'll see the
+@emph{byte offset} from the beginning of the string, not the character index.
+@end deftp
+
+@defun string-cursor? @var{obj}
+[SRFI-130]
+
+Returns @code{#t} if @var{obj} is a string cursor, @code{#f} otherwise.
+@end defun
+
+@defun string-cursor-start @var{str}
+[SRFI-130]
+
+Returns a cursor pointing to the start of
+@var{str}. @code{string-cursor-start} returns a valid cursor on an
+empty string too. It's the same as @code{string-cursor-end} in that
+case.
+@end defun
+
+@defun string-cursor-end @var{str}
+[SRFI-130]
+
+Returns a cursor pointing to the end of @var{str} (including empty
+string). This cursor does not point to any valid character of the
+string.
+@end defun
+
+@defun string-cursor-next @var{str} @var{cur}
+[SRFI-130]
+
+Returns the cursor into @var{str} following @var{cur}. @var{cur} can
+also be an index.
+@end defun
+
+@defun string-cursor-prev @var{str} @var{cur}
+[SRFI-130]
+
+Returns the cursor into @var{str} preceding @var{cur}. @var{cur} can
+also be an index.
+@end defun
+
+@defun string-cursor-forward @var{str} @var{cur} @var{n}
+[SRFI-130]
+
+Returns the cursor into @var{str} following @var{cur} by @var{n}
+characters. @var{cur} can also be an index.
+@end defun
+
+@defun string-cursor-back @var{str} @var{cur} @var{n}
+[SRFI-130]
+
+Returns the cursor into @var{str} preceding @var{cur} by @var{n}
+characters. @var{cur} can also be an index.
+@end defun
+
+@defun string-index->cursor @var{str} @var{index}
+[SRFI-130]
+
+Convert an @var{index} to a cursor. If @var{index} is a cursor it will
+be returned as-is.
+@end defun
+
+@defun string-cursor->index @var{str} @var{cur}
+[SRFI-130]
+
+Convert a cursor to an index. If @var{cur} is a an index it will be
+returned as-is.
+@end defun
+
+@defun string-cursor-diff @var{str} @var{start} @var{end}
+[SRFI-130]
+
+Returns the number of characters between @var{start} and @var{end}. It
+should be non-negative if @var{start} precedes @var{end}, non-positive
+otherwise. @var{start} and @var{end} also accept index.
+@end defun
+
+@defun string-cursor=? @var{cur1} @var{cur2}
+@defunx string-cursor<? @var{cur1} @var{cur2}
+@defunx string-cursor<=? @var{cur1} @var{cur2}
+@defunx string-cursor>? @var{cur1} @var{cur2}
+@defunx string-cursor>=? @var{cur1} @var{cur2}
+[SRFI-130]
+
+Compares two cursors or two indexes (but not a cursor and an index)
+and returns @code{#t} or @code{#f} accordingly.
+@end defun
+
+@node String Accessors & Modifiers, String Comparison, String Cursors, Strings
 @subsection String Accessors & Modifiers
 @c NODE 文字列のアクセスと変更
 
@@ -8938,6 +9056,8 @@ By default, an error is signaled if @code{k} is out of range
 (negative, or greater than or equal to the length of @var{cstring}).
 However, if an optional argument @var{fallback} is given,
 it is returned in such case.  This is Gauche's extension.
+
+@var{k} can also be a string cursor (also Gauche's extension).
 @c JP
 完全な文字列@var{cstring}の@var{k}番目の文字を返します。
 不完全な文字列を渡すのはエラーです。
@@ -9102,7 +9222,7 @@ R7RSでプログラミングする際に@code{(scheme char)}をインポート�
 @c NODE 文字列を扱うその他の手続き
 
 @defun substring string start end
-[R7RS base]
+[R7RS+ base]
 @c EN
 Returns a substring of @var{string}, starting from @var{start}-th
 character (inclusive) and ending at @var{end}-th character (exclusive).
@@ -9111,6 +9231,9 @@ The @var{start} and @var{end} arguments must satisfy
 @code{0 <= @var{end} <= @var{N}}, and
 @code{@var{start} <= @var{end}}, where @var{N} is the length of the
 string.
+
+@var{start} and @var{end} can also be string cursors, but this is an
+extension of Gauche.
 @c JP
 @var{string}の@var{start}番目の文字(これを含む)から、@var{end}番目の文
 字(これを含まない)までの部分文字列を返します。引数@var{start}および

@@ -52,6 +52,7 @@ srfi N is supported by Gauche.)
 * Queues based on lists::       srfi-117
 * Simple adjustable-size strings::  srfi-118
 * Lazy sequence (srfi)::        srfi-127
+* Cursor-based string library:: srfi-130
 * Sort library::                srfi-132
 * Vector library::              srfi-133
 * Integer division::            srfi-141
@@ -5718,7 +5719,7 @@ rather than @code{string-replace}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Lazy sequence (srfi), Sort library, Simple adjustable-size strings, Library modules - SRFIs
+@node Lazy sequence (srfi), Cursor-based string library, Simple adjustable-size strings, Library modules - SRFIs
 @section @code{srfi-127} - Lazy sequence (srfi)
 
 @deftp {Module} srfi-127
@@ -5734,7 +5735,89 @@ SRFI-127はR7RS largeに採り入れられました。
 
 
 @c ----------------------------------------------------------------------
-@node Sort library, Vector library, Lazy sequence (srfi), Library modules - SRFIs
+@node Cursor-based string library, Sort library, Lazy sequence (srfi), Library modules - SRFIs
+@section @code{srfi-130} - Cursor-based string library
+
+@deftp {Module} srfi-130
+@mdindex srfi-130
+This is an reduced version of @code{srfi-13} that supports cursors in
+addition to indexes. The consistency with R7RS and recent srfis are
+also considered.
+
+The following are built-in.  @xref{String Cursors}, for the details.
+
+@example
+string-cursor?        string-cursor-start    string-cursor-end
+string-cursor-next    strig-cursor-prev      string-cursor-forward
+string-cursor-back    string-cursor=?        string-cursor<?
+string-cursor<=?      string-cursor>?        string-cursor>=?
+string-cursor-diff    string-cursor->index   string-index->cursor
+@end example
+
+The following procedures are simply aliases of the builtin version
+without the @code{/cursor} or @code{/cursors} suffix.
+
+@example
+string->list/cursors  string->vector/cursors string-copy/cursors
+string-ref/cursor     substring/cursors
+@end example
+
+The following procedures are defined in srfi-13.  @xref{String library},
+for the details.  Note: Some of those procedures in srfi-13 accept
+only indexes (e.g. @code{string-index}).  In srfi-130, both indexes
+and cursors are accepted.  Our srfi-13 implementation shares the same
+procedure with srfi-130, so they accept both indexes and cursors but
+such code won't be portable as srfi-13.
+
+@example
+string-null?       string-any         string-every       string-tabulate
+string-unfold      string-unfold-right                   reverse-list->string
+string-take        string-drop        string-take-right  string-drop-right
+string-pad         string-pad-right   string-trim        string-trim-right
+string-trim-both   string-replace     string-prefix-length
+string-suffix-length                  string-prefix?     string-suffix
+string-concatenate string-concatenate-reverse            string-count
+string-filter      string-reverse
+@end example
+
+The following procedures are also defined in srfi-13 and redefined in
+srfi-130. However, for operations going from left to right, the
+srfi-130 version returns a cursor instead of an index when found or
+@code{(string-cursor-end)} of the input string when not found.  For
+operations going from right to left, it returns a cursor representing
+a @emph{successor} of the matching character when found, or
+@code{(string-cursor-begin)} of the input string when not found. In
+contrast, the srfi-13 version returns either an index when found or
+@code{#f} otherwise.
+
+@example
+string-fold        string-fold-right   string-index
+string-index-right string-skip         string-skip-right
+@end example
+
+@code{string-contains} is defined the same as srfi-13. However the
+srfi-130 returns a cursor when a string is found, and @code{#f}
+otherwise. In contrast, the srfi-13 version returns an index or
+@code{#f}. @code{string-contains-right} is similar to
+@code{string-contains} except that the searching start from the end of
+the string.
+
+@code{string-for-each-cursor} is similar to
+@code{string-for-each-index} from srfi-13 but @code{proc} will take
+the cursor instead of the index.
+
+@code{xsubstring} and @code{string-delete} in srfi-13 are renamed
+@code{string-replicate} and @code{string-remove} respectively in
+srfi-130. Similar to srfi-152, the @var{to} argument is required in
+@code{string-replicate}.
+
+@code{string-split} is the same as one from srfi-152 or
+@code{gauche.stringutil} module.
+
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Sort library, Vector library, Cursor-based string library, Library modules - SRFIs
 @section @code{srfi-132} - Sort library
 @c NODE ソートライブラリ, @code{srfi-133} - ソートライブラリ
 
