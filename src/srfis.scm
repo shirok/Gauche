@@ -971,7 +971,7 @@ Cursor-based string library
 Most of the procedures in srfi-13 accept cursors in addition to indexes.
 
 カーソルベースの文字列ライブラリ
-srfi-13の多くの手続きはインデックスのかわりにカーソルも取れるようになっています。
+多くのsrfi-13手続きはインデックスのかわりにカーソルも取れるようになっています。
 
 
 srfi-131, gauche.record
