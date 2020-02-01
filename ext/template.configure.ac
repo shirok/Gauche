@@ -37,6 +37,8 @@ AC_PATH_PROG([GAUCHE_INSTALL], gauche-install)
 AC_PATH_PROG([GAUCHE_CESCONV], gauche-cesconv)
 
 dnl C build settings
+dnl Usually these parameters are set by AC_PROG_CC, but we'd rather use
+dnl the same one as Gauche has been compiled with.
 if test -z "$CC"; then
   CC=`"$GAUCHE_CONFIG" --cc`
 fi
@@ -55,8 +57,6 @@ if gosh -e'(exit (cond-expand ((and gauche.os.windows gauche.ces.utf8) 0) (else 
 fi
 AC_SUBST(WINDOWS_UNICODE_FLAG)
 
-dnl Usually these parameters are set by AC_PROG_CC, but we'd rather use
-dnl the same one as Gauche has been compiled with.
 SOEXT=`"$GAUCHE_CONFIG" --so-suffix`
 OBJEXT=`"$GAUCHE_CONFIG" --object-suffix`
 EXEEXT=`"$GAUCHE_CONFIG" --executable-suffix`
