@@ -26,10 +26,10 @@
       (let* ((offset (if (pair? rule) (car rule) rule))
              (i2 (if offset (string-cursor-back str i offset) start)))
         (if (string-cursor<=? i2 start)
-            (apply string-append (cons (substring-cursor str start i) res))
+            (apply string-append (cons (substring/cursors str start i) res))
             (lp i2
                 (if (and (pair? rule) (not (null? (cdr rule)))) (cdr rule) rule)
-                (cons sep (cons (substring-cursor str i2 i) res))))))))
+                (cons sep (cons (substring/cursors str i2 i) res))))))))
 
 ;;> Outputs the string str, escaping any quote or escape characters.
 ;;> If esc-ch, which defaults to #\\, is #f, escapes only the
@@ -51,7 +51,7 @@
                 (end (string-cursor-end str)))
             (let lp ((i start) (j start))
               (define (collect)
-                (if (eq? i j) "" (substring-cursor str i j)))
+                (if (eq? i j) "" (substring/cursors str i j)))
               (if (string-cursor>=? j end)
                   (output (collect))
                   (let ((c (string-cursor-ref str j))
@@ -231,7 +231,7 @@
                (else
                 (let* ((last
                         (string-cursor-back s end (- digits precision 1)))
-                       (res (substring-cursor s (string-cursor-start s) last)))
+                       (res (substring/cursors s (string-cursor-start s) last)))
                   (if (and
                        (string-cursor<? last end)
                        (let ((next (digit-value (string-cursor-ref s last))))
@@ -265,8 +265,8 @@
                               (or (string-contains str dec-sep)
                                   (string-cursor-end str))
                               (string-index str dec-sep)))
-                 (left (substring-cursor str (string-cursor-start str) dec-pos))
-                 (right (substring-cursor str dec-pos))
+                 (left (substring/cursors str (string-cursor-start str) dec-pos))
+                 (right (substring/cursors str dec-pos))
                  (sep (cond ((char? comma-sep) (string comma-sep))
                             ((string? comma-sep) comma-sep)
                             ((eqv? #\, dec-sep) ".")
