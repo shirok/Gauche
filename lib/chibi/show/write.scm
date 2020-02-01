@@ -19,12 +19,17 @@
     (get-output-string out)))
 
 (define (string-intersperse-right str sep rule)
+  (define (cursor-back str i offset)    ; safe version
+    (if (or (zero? offset)
+            (string-cursor=? i (string-cursor-start str)))
+        i
+        (cursor-back str (string-cursor-prev str i) (- offset 1))))
   (let ((start (string-cursor-start str)))
     (let lp ((i (string-cursor-end str))
              (rule rule)
              (res '()))
       (let* ((offset (if (pair? rule) (car rule) rule))
-             (i2 (if offset (string-cursor-back str i offset) start)))
+             (i2 (if offset (cursor-back str i offset) start)))
         (if (string-cursor<=? i2 start)
             (apply string-append (cons (substring/cursors str start i) res))
             (lp i2
