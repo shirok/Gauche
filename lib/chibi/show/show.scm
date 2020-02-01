@@ -182,7 +182,7 @@
          (each ell
                (if (negative? diff)
                    nothing
-                   (substring str diff))))))))
+                   (string-copy str diff))))))))
 
 ;;> An alias for \scheme{trimmed/left}.
 (define trimmed trimmed/left)

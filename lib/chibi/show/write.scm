@@ -266,7 +266,7 @@
                                   (string-cursor-end str))
                               (string-index str dec-sep)))
                  (left (substring/cursors str (string-cursor-start str) dec-pos))
-                 (right (substring/cursors str dec-pos))
+                 (right (string-copy/cursors str dec-pos))
                  (sep (cond ((char? comma-sep) (string comma-sep))
                             ((string? comma-sep) comma-sep)
                             ((eqv? #\, dec-sep) ".")
