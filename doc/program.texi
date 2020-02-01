@@ -1681,6 +1681,13 @@ extra parenthesis, and
 (2)デバッグスタブをエディタで探したり取り除いたりするのが極めて簡単、というものです。
 @c COMMON
 
+Note that because @code{debug-print} is not available in r7rs
+environment, to use @code{#?=} you need to import it, e.g.
+
+@example
+(import (only (gauche base) debug-print))
+@end example
+
 @c ----------------------------------------------------------------------
 @node Platform-dependent features, Profiling and tuning, Debugging, Programming in Gauche
 @section Using platform-dependent features
