@@ -4,5 +4,5 @@
           joined/shares try-fitted
           )
   (import (scheme base) (scheme write) (chibi show) (chibi show base)
-          (srfi 1) (srfi 69) (chibi string))
+          (srfi 1) (srfi 69) (srfi 130))
   (include "pretty.scm"))

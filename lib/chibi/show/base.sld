@@ -9,6 +9,6 @@
    call-with-shared-ref call-with-shared-ref/cdr)
   (import (scheme base) (scheme write) (scheme complex) (scheme inexact)
           (only (gauche base) let-optionals*)
-          (srfi 1) (srfi 69) (chibi string) (chibi monad environment))
+          (srfi 1) (srfi 69) (srfi 130) (chibi monad environment))
   (include "base.scm")
   (include "write.scm"))
