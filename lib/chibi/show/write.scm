@@ -294,18 +294,9 @@
                 (if comma-rule (insert-commas s1) s1))))
         ;; Wrap the sign of a real number, forcing a + prefix or using
         ;; parentheses (n) for negatives according to sign-rule.
-
-        (define-syntax is-neg-zero?
-          (syntax-rules ()
-            ((_ n)
-             (is-neg-zero? (-0.0) n))
-            ((_ (0.0) n)                ; -0.0 is not distinguished?
-             #f)
-            ((_ (-0.0) n)
-             (eqv? -0.0 n))))
         (define (negative?* n)
           (or (negative? n)
-              (is-neg-zero? n)))
+              (and (zero? n) (string=? (number->string n) "-0.0"))))
         (define (wrap-sign n sign-rule)
           (cond
            ((negative?* n)
