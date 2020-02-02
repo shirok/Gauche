@@ -518,22 +518,58 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
  * Reference
  */
 
-/* Internal fn for index -> position.  Args assumed in boundary. */
+/* Advance ptr for NCHARS characters.  Args assumed in boundary. */
 static inline const char *forward_pos(const ScmStringBody *body,
                                       const char *current,
-                                      ScmSmallInt offset)
+                                      ScmSmallInt nchars)
 {
     if (body && (SCM_STRING_BODY_SINGLE_BYTE_P(body) ||
                  SCM_STRING_BODY_INCOMPLETE_P(body))) {
-        return current + offset;
+        return current + nchars;
     }
 
-    while (offset--) {
+    while (nchars--) {
         int n = SCM_CHAR_NFOLLOWS(*current);
         current += n + 1;
     }
     return current;
 }
+
+/* Index -> ptr.  Args assumed in boundary. */
+static const char *index2ptr(const ScmStringBody *body,
+                             ScmSmallInt nchars)
+{
+    if (body->index == NULL) {
+        return forward_pos(body, SCM_STRING_BODY_START(body), nchars);
+    }
+    ScmStringIndex *index = STRING_INDEX(body->index);
+    ScmSmallInt off = 0;
+    ScmSmallInt array_off = nchars>>STRING_INDEX_SHIFT(index);
+    if (array_off != 0) {
+        switch (STRING_INDEX_TYPE(index)) {
+        case STRING_INDEX8:
+            off = index->index8[array_off];
+            break;
+        case STRING_INDEX16:
+            off = index->index16[array_off];
+            break;
+        case STRING_INDEX32:
+            off = index->index32[array_off];
+            break;
+        case STRING_INDEX64:
+            off = index->index64[array_off];
+            break;
+        default:
+            Scm_Panic("String index contains unrecognized signature (%02x). "
+                      "Possible memory corruption.  Aborting...", 
+                      index->signature);
+        }
+    }
+    return forward_pos(body, 
+                       SCM_STRING_BODY_START(body) + off, 
+                       nchars & (STRING_INDEX_INTERVAL(index)-1));
+}
+
 
 /* string-ref.
  * If POS is out of range,
@@ -560,7 +596,14 @@ ScmChar Scm_StringRef(ScmString *str, ScmSmallInt pos, int range_error)
             return SCM_CHAR_INVALID;
         }
     }
-    const char *p = forward_pos(b, SCM_STRING_BODY_START(b), pos);
+
+    const char *p = NULL;
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(b)) {
+        p = SCM_STRING_BODY_START(b) + pos;
+    } else {
+        p = index2ptr(b, pos);
+    }
+    
     if (SCM_STRING_BODY_SINGLE_BYTE_P(b)) {
         return (ScmChar)(*(unsigned char *)p);
     } else {
@@ -587,7 +630,7 @@ int Scm_StringByteRef(ScmString *str, ScmSmallInt offset, int range_error)
     return (ScmByte)SCM_STRING_BODY_START(b)[offset];
 }
 
-/* External interface of forward_pos.  Returns the pointer to the
+/* External interface of index2ptr.  Returns the pointer to the
    offset-th character in str. */
 /* NB: this function allows offset == length of the string; in that
    case, the return value points the location past the string body,
@@ -598,7 +641,7 @@ const char *Scm_StringBodyPosition(const ScmStringBody *b, ScmSmallInt offset)
     if (offset < 0 || offset > SCM_STRING_BODY_LENGTH(b)) {
         Scm_Error("argument out of range: %ld", offset);
     }
-    return forward_pos(b, SCM_STRING_BODY_START(b), offset);
+    return index2ptr(b, offset);
 }
 
 /* This is old API and now DEPRECATED.  It's difficult to use this safely,
@@ -841,11 +884,16 @@ static ScmObj substring(const ScmStringBody *xb,
                                 flags));
     } else {
         const char *s, *e;
-        s = forward_pos(xb, SCM_STRING_BODY_START(xb), start);
+        s = index2ptr(xb, start);
         if (len == end) {
             e = SCM_STRING_BODY_END(xb);
         } else {
-            e = forward_pos(xb, s, end - start);
+            /* kludge - if we don't have index, forward_pos is faster. */
+            if (start > 0 && xb->index == NULL) {
+                e = forward_pos(xb, s, end - start);
+            } else {
+                e = index2ptr(xb, end);
+            }
             flags &= ~SCM_STRING_TERMINATED;
         }
         return SCM_OBJ(make_str(end - start,
@@ -1528,6 +1576,114 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 /*==================================================================
  *
+ * String index building
+ *
+ */
+
+static int string_body_index_needed(const ScmStringBody *sb)
+{
+    return (!SCM_STRING_BODY_SINGLE_BYTE_P(sb)
+            && !SCM_STRING_BODY_INCOMPLETE_P(sb)
+            && SCM_STRING_BODY_SIZE(sb) >= 64);
+}
+
+int Scm_StringBodyFastIndexableP(const ScmStringBody *sb)
+{
+    return (!string_body_index_needed(sb)
+            || SCM_STRING_BODY_HAS_INDEX(sb));
+}
+
+static void *build_index_array(const ScmStringBody *sb)
+{
+#define BUILD_ARRAY(type_, typeenum_, shift_)                           \
+    do {                                                                \
+        int interval = 1 << (shift_);                                   \
+        size_t index_size = SCM_STRING_BODY_LENGTH(sb) / interval;      \
+        type_ *vec = SCM_NEW_ATOMIC_ARRAY(type_, index_size);           \
+        vec[0] = STRING_INDEX_SIGNATURE(shift_, typeenum_);             \
+        const char *p = SCM_STRING_BODY_START(sb);                      \
+        for (size_t i = 1; i < index_size; i++) {                       \
+            const char *q = forward_pos(sb, p, interval);               \
+            vec[i] = (type_)(q - SCM_STRING_BODY_START(sb));            \
+            p = q;                                                      \
+        }                                                               \
+        return vec;                                                     \
+    } while (0)
+
+    /* Technically we can use index8 even if size is bigger than 256,
+       as long as the last indexed character is within the range.  But
+       checking it is too much. */
+    if (sb->size < 256) {
+        BUILD_ARRAY(uint8_t, STRING_INDEX8, 4);
+    } else if (sb->size < 8192) {
+        /* 32 chars interval */
+        BUILD_ARRAY(uint16_t, STRING_INDEX16, 5);
+    } else if (sb->size < 65536) {
+        /* 64 chars interval */
+        BUILD_ARRAY(uint16_t, STRING_INDEX16, 6);
+    }
+#if SIZEOF_LONG == 4
+    else {
+        /* 128 chars interval */
+        BUILD_ARRAY(uint32_t, STRING_INDEX32, 7);
+    }
+#else /* SIZEOF_LONG != 4 */
+    else if (sb->size < (1L<<32)) {
+        /* 128 chars interval */
+        BUILD_ARRAY(uint32_t, STRING_INDEX32, 7);
+    } else {
+        /* 256 chars interval */
+        BUILD_ARRAY(uint32_t, STRING_INDEX64, 8);
+    }
+#endif
+#undef BUILD_ARRAY
+}
+
+void Scm_StringBodyBuildIndex(ScmStringBody *sb)
+{
+    if (!string_body_index_needed(sb) || SCM_STRING_BODY_HAS_INDEX(sb)) return;
+    /* This is idempotent, atomic operation; no need to lock.  */
+    sb->index = build_index_array(sb);
+}
+
+/* For debugging */
+void Scm_StringBodyIndexDump(const ScmStringBody *sb, ScmPort *port)
+{
+    ScmStringIndex *index = STRING_INDEX(sb->index);
+    if (index == NULL) {
+        Scm_Printf(port, "(nil)\n");
+        return;
+    }
+    int interval = STRING_INDEX_INTERVAL(index);
+    size_t index_size = SCM_STRING_BODY_LENGTH(sb)/interval;
+
+    switch (STRING_INDEX_TYPE(index)) {
+    case STRING_INDEX8:  Scm_Printf(port, "index8  "); break;
+    case STRING_INDEX16: Scm_Printf(port, "index16 "); break;
+    case STRING_INDEX32: Scm_Printf(port, "index32 "); break;
+    case STRING_INDEX64: Scm_Printf(port, "index64 "); break;
+    default:       Scm_Printf(port, "unknown(%02x) ", 
+                              (uint8_t)STRING_INDEX_TYPE(index));
+    }
+    Scm_Printf(port, " interval %d  size %d\n", interval, index_size);
+    Scm_Printf(port, "        0         0\n");
+    for (size_t i = 1; i < index_size; i++) {
+        switch (STRING_INDEX_TYPE(index)) {
+        case STRING_INDEX8:
+            Scm_Printf(port, " %8ld  %8u\n", i, index->index8[i]); break;
+        case STRING_INDEX16:
+            Scm_Printf(port, " %8ld  %8u\n", i, index->index16[i]); break;
+        case STRING_INDEX32:
+            Scm_Printf(port, " %8ld  %8u\n", i, index->index32[i]); break;
+        case STRING_INDEX64:
+            Scm_Printf(port, " %8ld  %8lu\n",i, index->index64[i]); break;
+        }
+    }
+}
+
+
+/*==================================================================
+ *
  * String pointer
  *
  */
@@ -1720,9 +1876,7 @@ ScmObj Scm_MakeStringCursorFromIndex(ScmString *src, ScmSmallInt index)
     if (index < 0 || index > len) {
         Scm_Error("index out of range: %ld", index);
     }
-    return make_string_cursor(src, forward_pos(srcb, 
-                                               SCM_STRING_BODY_START(srcb),
-                                               index));
+    return make_string_cursor(src, index2ptr(srcb, index));
 }
 
 ScmObj Scm_MakeStringCursorEnd(ScmString *src)

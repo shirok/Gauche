@@ -224,6 +224,21 @@
                                             (make-string (- end start) c)
                                             (substring str end len))))))
 
+;; Build index.
+;; Technically, string-build-index mutates StringBody, but it's an idempotent
+;; operation and can be applied on immutable strings.
+(select-module gauche)
+(define-cproc string-build-index! (s::<string>) ::<string>
+  (Scm_StringBodyBuildIndex (cast ScmStringBody* (SCM_STRING_BODY s)))
+  (return s))
+
+(define-cproc string-fast-indexable? (s::<string>) ::<boolean>
+  (return (Scm_StringBodyFastIndexableP (SCM_STRING_BODY s))))
+
+(select-module gauche.internal)
+(define-cproc %string-index-dump (s::<string> :optional (p::<port> (current-output-port)))
+  (Scm_StringBodyIndexDump (SCM_STRING_BODY s) p))
+
 ;;
 ;; Comparison
 ;;

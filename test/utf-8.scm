@@ -197,6 +197,48 @@
        (string-cursor-diff str se ss))
 
 ;;-------------------------------------------------------------------
+(test-section "string index building")
+
+(let* ([make-cycle (^[start-char count]
+                     ($ circular-list
+                        $* map ucs->char (iota count (char->ucs start-char))))]
+       [cycle1 (make-cycle #\a 26)]
+       [cycle2 (make-cycle #\α 25)]
+       [cycle3 (make-cycle #\あ 85)])
+  (define (make-str max-size)
+    (let loop ([size 0] [r '()] 
+               [srcs (circular-list cycle1 cycle2 cycle3)]
+               [counts (circular-list 1 2 3)])
+      (let ([next-char (caar srcs)]
+            [next-count (car counts)])
+        (if (> (+ size next-count) max-size)
+          (list->string (reverse r))
+          (loop (+ size next-count)
+                (cons next-char r)
+                (circular-list (cadr srcs) (caddr srcs) (cdar srcs))
+                (cdr counts))))))
+  (define (test-string-index max-size)
+    (let1 s (string-build-index! (make-str max-size))
+      ;;((with-module gauche.internal %string-index-dump) s)
+      (test* #"string indexing (size=~max-size)"
+             #f
+             (any (^p (and (not (eqv? (car p) (string-ref s (cdr p))))
+                           (list 'pos (cdr p)
+                                 'expect (car p)
+                                 'actual (string-ref s (cdr p)))))
+                  (map cons (string->list s) (liota))))))
+  (test-string-index 0)
+  (test-string-index 15)
+  (test-string-index 63)
+  (test-string-index 64)
+  (test-string-index 255)
+  (test-string-index 256)
+  (test-string-index 8191)
+  (test-string-index 65535)
+  (test-string-index 131072)
+  )
+
+;;-------------------------------------------------------------------
 (test-section "incomplete strings")
 
 (test "string-length" 9 (lambda () (string-length #*"あいう")))

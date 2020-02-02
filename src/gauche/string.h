@@ -326,6 +326,7 @@ SCM_EXTERN ScmSmallInt Scm_MBLen(const char *str, const char *stop);
 SCM_EXTERN const char *Scm_StringPosition(ScmString *str, ScmSmallInt k); /*DEPRECATED*/
 SCM_EXTERN const char *Scm_StringBodyPosition(const ScmStringBody *str, ScmSmallInt k);
 SCM_EXTERN ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
+SCM_EXTERN int     Scm_StringBodyFastIndexableP(const ScmStringBody *sb);
 
 /*
  * Static initializer

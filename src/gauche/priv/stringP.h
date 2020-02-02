@@ -82,11 +82,12 @@ struct ScmStringCursorLargeRec {
 typedef union ScmStringIndexRec {
     /* We use element size according to the length of string body.
        The first entry encodes the entry size and shift value.
+       (We might try index24 and/or index48.)
        
        RRSSS000 - index8
        RRSSS001 - index16
-       RRSSS010 - index32
-       RRSSS100 - index64
+       RRSSS011 - index32
+       RRSSS101 - index64
 
        'SSS' encodes a value S, where an index is created for 
        every 1<<(S+1) characters.
@@ -98,16 +99,30 @@ typedef union ScmStringIndexRec {
        This allows us to read the first byte to find out the actual
        index type, regardless of endianness.
      */
-    const uint8_t  *index8;
-    const uint16_t *index16;
-    const uint32_t *index32;
-    const uint64_t *index64;
+    const uint8_t  signature;
+    const uint8_t  index8[1];
+    const uint16_t index16[1];
+    const uint32_t index32[1];
+    const uint64_t index64[1];
 } ScmStringIndex;
 
-#define STRING_INDEX(p)       ((ScmStringIndex*)(p))
-#define STRING_INDEX_ETYPE(p) (STRING_INDEX(p)->index8[0] & 0x07)
-#define STRING_INDEX_SHIFT(p) (((STRING_INDEX(p)->index8[0] & 0x38)>>3)+1)
+enum {
+    STRING_INDEX8 = 0,
+    STRING_INDEX16 = 1,
+    STRING_INDEX32 = 3,
+    STRING_INDEX64 = 5
+};
 
-#define STRING_INDEX_TYPE_BYTE(s, type)  ((((s)&0x3)<<3)|((etype)&0x03))
+#define STRING_INDEX(p)       ((ScmStringIndex*)(p))
+#define STRING_INDEX_TYPE(p)  (STRING_INDEX(p)->signature & 0x07)
+#define STRING_INDEX_SHIFT(p) (((STRING_INDEX(p)->signature>>3)&0x07)+1)
+#define STRING_INDEX_INTERVAL(p) (1L<<STRING_INDEX_SHIFT(p))
+
+#define STRING_INDEX_SIGNATURE(s, t)  (((((s)-1)&0x7)<<3)|((t)&0x07))
+
+#define SCM_STRING_BODY_HAS_INDEX(sb) ((sb)->index != NULL)
+
+SCM_EXTERN void Scm_StringBodyBuildIndex(ScmStringBody *sb);
+SCM_EXTERN void Scm_StringBodyIndexDump(const ScmStringBody *sb, ScmPort *port);
 
 #endif /*GAUCHE_PRIV_STRINGP_H*/
