@@ -320,14 +320,31 @@
   (define+ vector-for-each gauche)
   ;; NB: we have string-map and string-for-each here, for they're different
   ;; from srfi-13 api.  Also they must be restart-safe.  The current one
-  ;; is quick hack without thinking efficiency.  We think empoying
-  ;; immutable string pointers would be better solution.  In some day...
+  ;; is quick hack without thinking efficiency.
   (define (string-map proc str . more-strs)
     (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
       (error "non-string argument passed to string-map:" a)
       (if (null? more-strs)
-        (list->string (map proc (string->list str)))
-        (list->string (apply map proc (map string->list (cons str more-strs)))))))
+        ;; go reverse so we don't have to reverse the final list
+        ;; slightly slower than iterating forward, but less temp.
+        ;; objects
+        (let ([start (string-cursor-start str)])
+          (let loop ([cur (string-cursor-end str)]
+                     [lst '()])
+            (if (string-cursor=? cur start)
+                (list->string lst)
+                (let1 cur (string-cursor-prev str cur)
+                  (loop cur (cons (proc (string-ref str cur)) lst))))))
+        ;; the multi-strs version is already more complicated/less
+        ;; efficient with lots of lists, just go from left to right
+        (let* ([strs (cons str more-strs)]
+               [ends (map string-cursor-end strs)])
+          (let loop ([curs (map string-cursor-start strs)]
+                     [lst '()])
+            (if (null? (filter-map string-cursor=? curs ends))
+              (loop (map string-cursor-next strs curs)
+                    (cons (apply proc (map string-ref strs curs)) lst))
+              (list->string (reverse lst))))))))
   (define (string-for-each proc str . more-strs)
     (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
       (error "non-string argument passed to string-for-each:" a)
