@@ -361,10 +361,10 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 @menu
 * SRFI-13 General conventions::
 * SRFI-13 String predicates::
-* SRFI-13 String Constructors::
-* SRFI-13 String Selection::
-* SRFI-13 String Comparison::
-* SRFI-13 String Prefixes & Suffixes::
+* SRFI-13 String constructors::
+* SRFI-13 String selection::
+* SRFI-13 String comparison::
+* SRFI-13 String prefixes & suffixes::
 * SRFI-13 String searching::
 * SRFI-13 String case mapping::
 * SRFI-13 String reverse & append::
@@ -485,7 +485,7 @@ that works from right to left.
 
 @end table
 
-@node SRFI-13 String predicates, SRFI-13 String Constructors, SRFI-13 General conventions, String library
+@node SRFI-13 String predicates, SRFI-13 String constructors, SRFI-13 General conventions, String library
 @subsection String predicates
 @c NODE 文字列についての述語
 
@@ -533,8 +533,8 @@ satisfies @var{char/char-set/pred}, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@node SRFI-13 String Constructors, SRFI-13 String Selection, SRFI-13 String predicates, String library
-@subsection String Constructors
+@node SRFI-13 String constructors, SRFI-13 String selection, SRFI-13 String predicates, String library
+@subsection String constructors
 @c NODE 文字列の構築子
 
 @defun string-tabulate proc len
@@ -564,7 +564,7 @@ creates a string, whose @var{i}-th character is calculated by
 @equiv{} @code{(list->string (reverse char-list))}.
 @end defun
 
-@node SRFI-13 String Selection, SRFI-13 String Comparison, SRFI-13 String Constructors, String library
+@node SRFI-13 String selection, SRFI-13 String comparison, SRFI-13 String constructors, String library
 @subsection String selection
 @c NODE 文字列の選択
 
@@ -726,7 +726,7 @@ the substring of @var{s} is used as the source.
 @end example
 @end defun
 
-@node SRFI-13 String Comparison, SRFI-13 String Prefixes & Suffixes, SRFI-13 String Selection, String library
+@node SRFI-13 String comparison, SRFI-13 String prefixes & suffixes, SRFI-13 String selection, String library
 @subsection String comparison
 @c NODE 文字列の色々な比較
 
@@ -808,14 +808,14 @@ Comparison is done by character-wise.
 
 Note: The builtin procedures @code{string=?} etc. can also be
 used for character-wise string comparison, but they take
-arguments differently.  @xref{String Comparison}.
+arguments differently.  @xref{String comparison}.
 @c JP
 二つの文字列@var{s1}と@var{s2}を比較します。省略可能引数で
 それぞれの文字列の一部のみを比較するように指定できます。
 比較は文字ごとに行われます。
 
 註: 組み込み手続きの@code{string=?}等も文字毎の比較に使えますが、
-引数の取り方が違います。@ref{String Comparison}参照。
+引数の取り方が違います。@ref{String comparison}参照。
 @c COMMON
 @end defun
 
@@ -835,7 +835,7 @@ consider case folding that affects multiple characters.
 
 Note: We have two other sets of string comparison operations,
 both are named as @code{string-ci=?} etc.
-The builtin version (@pxref{String Comparison}) does character-wise
+The builtin version (@pxref{String comparison}) does character-wise
 comparison.  The one in @code{gauche.unicode} uses full-string
 case conversion (@pxref{Full string case conversion}).
 R7RS version is the latter.
@@ -848,7 +848,7 @@ R7RS version is the latter.
 註: Gaucheには他に2種類の大文字小文字を区別しない文字列比較手続き群があります。
 どちらも@code{string-ci=?}等のようにクエスチョンマーク付きの名前を持っています。
 Gauche組み込みのものは文字毎に大文字小文字を畳み込みます
-(@ref{String Comparison}参照)。一方、@code{gauche.unicode}にあるものは
+(@ref{String comparison}参照)。一方、@code{gauche.unicode}にあるものは
 文字列としての畳み込みを行います(@ref{Full string case conversion}参照)。
 R7RS版は後者です。
 @c COMMON
@@ -900,8 +900,8 @@ SRFI-13のAPIはSRFI-128の上位互換になっています。内部で使っ�
 @c COMMON
 @end defun
 
-@node SRFI-13 String Prefixes & Suffixes, SRFI-13 String searching, SRFI-13 String Comparison, String library
-@subsection String Prefixes & Suffixes
+@node SRFI-13 String prefixes & suffixes, SRFI-13 String searching, SRFI-13 String comparison, String library
+@subsection String prefixes & suffixes
 @c NODE 文字列のプリフィックスとサフィックス
 
 @defun string-prefix-length s1 s2 :optional start1 end1 start2 end2
@@ -958,7 +958,7 @@ The @code{*-ci} variations use case folding character comparison.
 @end example
 @end defun
 
-@node SRFI-13 String searching, SRFI-13 String case mapping, SRFI-13 String Prefixes & Suffixes, String library
+@node SRFI-13 String searching, SRFI-13 String case mapping, SRFI-13 String prefixes & suffixes, String library
 @subsection String searching
 @c NODE 文字列の探索
 
@@ -5732,7 +5732,7 @@ This is an reduced version of @code{srfi-13} that supports cursors in
 addition to indexes. The consistency with R7RS and recent srfis are
 also considered.
 
-The following are built-in.  @xref{String Cursors}, for the details.
+The following are built-in.  @xref{String cursors}, for the details.
 
 @example
 string-cursor?        string-cursor-start    string-cursor-end

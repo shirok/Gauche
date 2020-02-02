@@ -17550,11 +17550,11 @@ procedure is applied (default @code{identity}), then compared with
 @c EN
 For strings, @code{srfi-13} has a specific function with
 related feature: @code{string-prefix-length}
-(@pxref{SRFI-13 String Prefixes & Suffixes}).
+(@pxref{SRFI-13 String prefixes & suffixes}).
 @c JP
 文字列については、@code{srfi-13}に似た機能を持つ手続き
 @code{string-prefix-length}があります。
-(@ref{SRFI-13 String Prefixes & Suffixes}参照)。
+(@ref{SRFI-13 String prefixes & suffixes}参照)。
 @c COMMON
 @end deffn
 
@@ -22121,7 +22121,7 @@ codepoints instead.  Returns a sequence of the same type of the input.
 Case-insensitive string comparison, using full-string case conversion.
 
 Note that Gauche has builtin @code{string-ci=?} etc., which use
-character-wise case folding (@pxref{String Comparison}).  These are
+character-wise case folding (@pxref{String comparison}).  These are
 different procedures.
 
 @example

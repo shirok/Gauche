@@ -279,7 +279,7 @@ Ignore case for symbols.
 @item safe-string-cursors
 String cursors used on wrong strings will raise an error. This may
 cause performance problems because all cursors will be allocated on
-heap. @xref{String Cursors}.
+heap. @xref{String cursors}.
 @item test
 Adds "@code{../src}" and "@code{../lib}" to the load path before loading
 initialization file.  This is useful when you want to test the
@@ -1174,22 +1174,22 @@ It shows the entries in the document that match the pattern.
 @example
 gosh> ,info #/^string-.*\?/
 string-ci<=?             Full string case conversion:44
-                         String Comparison:19
+                         String comparison:19
 string-ci<?              Full string case conversion:43
-                         String Comparison:18
+                         String comparison:18
 string-ci=?              Full string case conversion:42
-                         String Comparison:17
+                         String comparison:17
 string-ci>=?             Full string case conversion:46
-                         String Comparison:21
+                         String comparison:21
 string-ci>?              Full string case conversion:45
-                         String Comparison:20
+                         String comparison:20
 string-immutable?        String Predicates:9
 string-incomplete?       String Predicates:12
 string-null?             SRFI-13 String predicates:6
-string-prefix-ci?        SRFI-13 String Prefixes & Suffixes:28
-string-prefix?           SRFI-13 String Prefixes & Suffixes:26
-string-suffix-ci?        SRFI-13 String Prefixes & Suffixes:29
-string-suffix?           SRFI-13 String Prefixes & Suffixes:27
+string-prefix-ci?        SRFI-13 String prefixes & suffixes:28
+string-prefix?           SRFI-13 String prefixes & suffixes:26
+string-suffix-ci?        SRFI-13 String prefixes & suffixes:29
+string-suffix?           SRFI-13 String prefixes & suffixes:27
 @end example
 
 @c EN

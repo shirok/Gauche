@@ -8278,7 +8278,7 @@ Gauche does not attempt to make string mutation faster;
 two substrings, before and after of k-th character, and
 concatenate them with a single-character string inbetween.
 So, just avoid string mutations; we believe it's a better practice.
-See also @ref{String Constructors}.
+See also @ref{String constructors}.
 @c JP
 GaucheではSchemeの文字列は、内部的には、変更不可能なオブジェクト(文字列実体)を
 用いて表現されている、ということを強調しておきます。
@@ -8308,7 +8308,7 @@ Gaucheはそもそも文字列の変更に関して全く最適化を行って�
 c一文字の文字列を間に挟んで継ぎ足すことで新たな文字列を作るのと
 全く同じコストがかかります。
 文字列を変更不可として扱う方が良いプログラミングスタイルだと考えるからです。
-@ref{String Constructors}も参照してください。
+@ref{String constructors}も参照してください。
 @c COMMON
 
 @c EN
@@ -8324,18 +8324,18 @@ SRFI-13については@ref{String library}を参照してください。
 
 @menu
 * String syntax::
-* String Predicates::
-* String Constructors::
+* String predicates::
+* String constructors::
 * String interpolation::
-* String Cursors::
-* String Indexing::
-* String Accessors & Modifiers::
-* String Comparison::
+* String cursors::
+* String indexing::
+* String accessors & modifiers::
+* String comparison::
 * String utilities::
 * Incomplete strings::
 @end menu
 
-@node String syntax, String Predicates, Strings, Strings
+@node String syntax, String predicates, Strings, Strings
 @subsection String syntax
 @c NODE 文字列の表記
 
@@ -8523,8 +8523,8 @@ and two can coexist).
 @end deftp
 
 
-@node String Predicates, String Constructors, String syntax, Strings
-@subsection String Predicates
+@node String predicates, String constructors, String syntax, Strings
+@subsection String predicates
 @c NODE 文字列に関する述語
 
 @defun string? obj
@@ -8560,8 +8560,8 @@ Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @c COMMON
 @end defun
 
-@node String Constructors, String interpolation, String Predicates, Strings
-@subsection String Constructors
+@node String constructors, String interpolation, String predicates, Strings
+@subsection String constructors
 @c NODE 文字列の作成
 
 @defun make-string k :optional char
@@ -8660,7 +8660,7 @@ Other class may provide a method to customize the behavior.
 @c COMMON
 @end deffn
 
-@node String interpolation, String Cursors, String Constructors, Strings
+@node String interpolation, String cursors, String constructors, Strings
 @subsection String interpolation
 @c NODE 文字列の補間
 
@@ -8691,12 +8691,12 @@ character sequence @code{~@var{expr}}, where
 @var{expr} is a valid external representation
 of a Scheme expression, @var{expr} is evaluated and
 its result is inserted in the original place (by using @code{x->string},
-see @ref{String Constructors}).
+see @ref{String constructors}).
 @c JP
 文字列に評価されます。@var{string-literal}内に、@code{~@var{expr}}
 というシーケンス(ここで@var{expr}は有効なScheme式の外部表現)が
 現われたら、@var{expr}が評価されてその結果がもとの位置に埋め込まれます。
-結果の文字列化には@code{x->string}が使われます(@ref{String Constructors}参照)。
+結果の文字列化には@code{x->string}が使われます(@ref{String constructors}参照)。
 @c COMMON
 
 @c EN
@@ -8906,8 +8906,8 @@ Schemeは他のスクリプト言語より一般的により多くの文字を�
 @c COMMON
 
 
-@node String Cursors, String Indexing, String interpolation, Strings
-@subsection String Cursors
+@node String cursors, String indexing, String interpolation, Strings
+@subsection String cursors
 
 String cursors are opaque objects that point into strings, similar to
 indexes. Cursors however are more efficient. For example, to get a
@@ -9023,8 +9023,8 @@ Compares two cursors or two indexes (but not a cursor and an index)
 and returns @code{#t} or @code{#f} accordingly.
 @end defun
 
-@node String Indexing, String Accessors & Modifiers, String Cursors, Strings
-@subsection String Indexing
+@node String indexing, String accessors & modifiers, String cursors, Strings
+@subsection String indexing
 @c NODE 文字列のインデックス
 
 Since Gauche stores strings in multibyte encoding, random access
@@ -9037,7 +9037,7 @@ access string (mostly when porting third-party code, we imagine).
 There are a couple of ways to achieve O(1) random access.
 
 First, instead of integer character indexes,
-you can use string cursors (@pxref{String Cursors}).  It is defined
+you can use string cursors (@pxref{String cursors}).  It is defined
 by @code{srfi-130}, and you can use the code that's using srfi-130
 as is, without worring about slow access.  However, if external interface
 gives you integer character index, converting index to cursor and vice versa
@@ -9075,8 +9075,8 @@ a short string, or a long multibyte string with index computed.
 @end defun
 
 
-@node String Accessors & Modifiers, String Comparison, String Indexing, Strings
-@subsection String Accessors & Modifiers
+@node String accessors & modifiers, String comparison, String indexing, Strings
+@subsection String accessors & modifiers
 @c NODE 文字列のアクセスと変更
 
 @defun string-length string
@@ -9184,8 +9184,8 @@ Return value is undefined.
 @c COMMON
 @end defun
 
-@node String Comparison, String utilities, String Accessors & Modifiers, Strings
-@subsection String Comparison
+@node String comparison, String utilities, String accessors & modifiers, Strings
+@subsection String comparison
 @c NODE 文字列の比較
 
 @defun string=? string1 string2 string3 @dots{}
@@ -9278,7 +9278,7 @@ R7RSでプログラミングする際に@code{(scheme char)}をインポート�
 @c COMMON
 @end defun
 
-@node String utilities, Incomplete strings, String Comparison, Strings
+@node String utilities, Incomplete strings, String comparison, Strings
 @subsection String utilities
 @c NODE 文字列を扱うその他の手続き
 

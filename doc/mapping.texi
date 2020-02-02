@@ -1473,10 +1473,10 @@ Gauche の @code{sys-stat}。@ref{File stats}参照。
 @item strcasecmp
 @c EN
 R7RS @code{string-ci=?} and other comparison functions.
-@xref{String Comparison}.
+@xref{String comparison}.
 @c JP
 R7RS の @code{string-ci=?} および、その他の比較関数。
-@ref{String Comparison}参照。
+@ref{String comparison}参照。
 @c COMMON
 @item strcat
 @c EN
@@ -1493,10 +1493,10 @@ SRFI-13 の @code{string-index}。  @ref{SRFI-13 String searching}参照。
 @item strcmp
 @c EN
 R7RS @code{string=?} and other comparison functions.
-@xref{String Comparison}.
+@xref{String comparison}.
 @c JP
 R7RS の @code{string=?} および、その他の比較関数。
-@ref{String Comparison}参照。
+@ref{String comparison}参照。
 @c COMMON
 @item strcoll
 @c EN
@@ -1532,9 +1532,9 @@ Gauche の @code{sys-strftime}。@ref{Time}参照。
 @c COMMON
 @item strlen
 @c EN
-R7RS @code{string-length}.  @xref{String Accessors & Modifiers}.
+R7RS @code{string-length}.  @xref{String accessors & modifiers}.
 @c JP
-R7RS の @code{string-length}。@ref{String Accessors & Modifiers}参照。
+R7RS の @code{string-length}。@ref{String accessors & modifiers}参照。
 @c COMMON
 @item strncat
 @c EN
@@ -1548,12 +1548,12 @@ Not directly supported, but you can use @code{string-append} and
 @c EN
 SRFI-13 @code{string-compare-ci} provides the most flexible
 (but a bit difficult to use) functionality.
-@xref{SRFI-13 String Comparison}.
+@xref{SRFI-13 String comparison}.
 If what you want is just to check the fixed-length prefixes of two
 string matches, you can use SRFI-13 @code{string-prefix-ci?}.
 @c JP
 SRFI-13 の @code{string-compare-ci} は非常に柔軟な(しかし、使うのは
-多少難しい)機能を提供しています。@ref{SRFI-13 String Comparison}参照。
+多少難しい)機能を提供しています。@ref{SRFI-13 String comparison}参照。
 ふたつの文字列の固定長の接頭辞が一致しているかどうかをチェックしたい
 だけなら、SRFI-13 の @code{string-prefix-ci?} が使えます。
 @c COMMON
@@ -1561,16 +1561,16 @@ SRFI-13 の @code{string-compare-ci} は非常に柔軟な(しかし、使うの
 @c EN
 SRFI-13 @code{string-compare} provides the most flexible
 (but a bit difficult to use) functionality.
-@xref{SRFI-13 String Comparison}.
+@xref{SRFI-13 String comparison}.
 If what you want is just to check the fixed-length prefixes of two
 string matches, you can use SRFI-13 @code{string-prefix?}.
-@xref{SRFI-13 String Prefixes & Suffixes}.
+@xref{SRFI-13 String prefixes & suffixes}.
 @c JP
 SRFI-13 の @code{string-compare-ci} は非常に柔軟な(しかし、使うのは
-多少難しい)機能を提供しています。@ref{SRFI-13 String Comparison}参照。
+多少難しい)機能を提供しています。@ref{SRFI-13 String comparison}参照。
 ふたつの文字列の固定長の接頭辞が一致しているかどうかをチェックしたい
 だけなら、SRFI-13 の @code{string-prefix-ci?} が使えます。
-@ref{SRFI-13 String Prefixes & Suffixes}参照。
+@ref{SRFI-13 String prefixes & suffixes}参照。
 @c COMMON
 @item strncpy
 @c EN
