@@ -276,6 +276,10 @@ Don't keep source information for debugging.  Consumes less memory.
 @item case-fold
 Ignore case for symbols.
 @xref{Case-sensitivity}.
+@item safe-string-cursors
+String cursors used on wrong strings will raise an error. This may
+cause performance problems because all cursors will be allocated on
+heap. @xref{String Cursors}.
 @item test
 Adds "@code{../src}" and "@code{../lib}" to the load path before loading
 initialization file.  This is useful when you want to test the

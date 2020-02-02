@@ -206,6 +206,10 @@ static inline const char *string_cursor_ptr(const ScmStringBody *sb, ScmObj sc)
 {
     const char *ptr = NULL;
     if (SCM_STRING_CURSOR_LARGE_P(sc)) {
+        if (SCM_STRING_BODY_START(sb) != SCM_STRING_CURSOR_LARGE_START(sc)) {
+            Scm_Error("invalid cursor (made for string '%s'): %S",
+                      SCM_STRING_CURSOR_LARGE_START(sc), sc);
+        }
         ptr = SCM_STRING_CURSOR_LARGE_POINTER(sb, sc);
     } else if (SCM_STRING_CURSOR_SMALL_P(sc)) {
         ptr = SCM_STRING_CURSOR_SMALL_POINTER(sb, sc);
@@ -1859,13 +1863,15 @@ static ScmObj make_string_cursor(ScmString *src, const char *ptr)
     }
 
     ScmSmallInt offset = (ScmSmallInt)(ptr - SCM_STRING_BODY_START(srcb));
-    if (SCM_STRING_CURSOR_FITS_SMALL_P(offset)) {
+    if (!SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_SAFE_STRING_CURSORS) &&
+        SCM_STRING_CURSOR_FITS_SMALL_P(offset)) {
         return SCM_MAKE_STRING_CURSOR_SMALL(offset);
     }
 
     ScmStringCursorLarge *sc = SCM_NEW(ScmStringCursorLarge);
     SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR_LARGE);
     sc->offset = offset;
+    sc->start = SCM_STRING_BODY_START(srcb);
     return SCM_OBJ(sc);
 }
 
@@ -1884,12 +1890,14 @@ ScmObj Scm_MakeStringCursorEnd(ScmString *src)
     const ScmStringBody *srcb = SCM_STRING_BODY(src);
 
     ScmSmallInt offset = SCM_STRING_BODY_END(srcb) - SCM_STRING_BODY_START(srcb);
-    if (SCM_STRING_CURSOR_FITS_SMALL_P(offset)) {
+    if (!SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_SAFE_STRING_CURSORS) &&
+        SCM_STRING_CURSOR_FITS_SMALL_P(offset)) {
         return SCM_MAKE_STRING_CURSOR_SMALL(offset);
     }
     ScmStringCursorLarge *sc = SCM_NEW(ScmStringCursorLarge);
     SCM_SET_CLASS(sc, SCM_CLASS_STRING_CURSOR_LARGE);
     sc->offset = offset;
+    sc->start = SCM_STRING_BODY_START(srcb);
     return SCM_OBJ(sc);
 }
 
