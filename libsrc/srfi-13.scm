@@ -204,19 +204,19 @@
 
 (define (string-trim s :optional
                      (c/s/p #[\s])
-                     (start (string-cursor-start s))
+                     (start 0)
                      (end (string-cursor-end s)))
   (substring s (car (%string-skip s c/s/p start end)) end))
 
 (define (string-trim-right s :optional
                            (c/s/p #[\s])
-                           (start (string-cursor-start s))
+                           (start 0)
                            (end (string-cursor-end s)))
   (substring s start (car (%string-skip-right s c/s/p start end))))
 
 (define (string-trim-both s :optional
                           (c/s/p #[\s])
-                          (start (string-cursor-start s))
+                          (start 0)
                           (end (string-cursor-end s)))
   (let ([new-start (car (%string-skip s c/s/p start end))])
     (substring s new-start (car (%string-skip-right s c/s/p new-start end)))))
@@ -461,7 +461,7 @@
 ;; these % variants return a pair of result and end cursor
 (define (%string-index s c/s/p
                        :optional
-                       (start (string-cursor-start s))
+                       (start 0)
                        (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([pred (%get-char-pred c/s/p)]
@@ -474,7 +474,7 @@
 
 (define (%string-index-right s c/s/p
                              :optional
-                             (start (string-cursor-start s))
+                             (start 0)
                              (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([pred (%get-char-pred c/s/p)]
@@ -489,7 +489,7 @@
 
 (define (%string-skip s c/s/p
                       :optional
-                      (start (string-cursor-start s))
+                      (start 0)
                       (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([pred (%get-char-pred c/s/p)]
@@ -502,7 +502,7 @@
 
 (define (%string-skip-right s c/s/p
                             :optional
-                            (start (string-cursor-start s))
+                            (start 0)
                             (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([pred (%get-char-pred c/s/p)]
@@ -541,7 +541,7 @@
 
 (define (string-count s c/s/p
                       :optional
-                      (start (string-cursor-start s))
+                      (start 0)
                       (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
@@ -627,7 +627,7 @@
 ;;;
 
 (define (string-reverse s :optional
-                        (start (string-cursor-start s))
+                        (start 0)
                         (end (string-cursor-end s)))
   (let ((start (string-index->cursor s start))
         (dst (open-output-string)))
@@ -685,7 +685,7 @@
 ;;;
 
 (define (string-map proc s :optional
-                    (start (string-cursor-start s))
+                    (start 0)
                     (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ((end  (string-index->cursor s end))
@@ -704,7 +704,7 @@
 
 (define (string-fold kons knil s
                      :optional
-                     (start (string-cursor-start s))
+                     (start 0)
                      (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([end (string-index->cursor s end)])
@@ -717,7 +717,7 @@
 
 (define (string-fold-right kons knil s
                            :optional
-                           (start (string-cursor-start s))
+                           (start 0)
                            (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([start (string-index->cursor s start)])
@@ -753,7 +753,7 @@
 
 (define (string-for-each proc s
                          :optional
-                         (start (string-cursor-start s))
+                         (start 0)
                          (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([end (string-index->cursor s end)])

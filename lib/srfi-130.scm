@@ -99,7 +99,7 @@
   (car (apply (with-module srfi-13 %string-skip-right) args)))
 
 (define (string-for-each-cursor proc s :optional
-                                (start (string-cursor-start s))
+                                (start 0)
                                 (end (string-cursor-end s)))
   (assume-type s <string>)
   (let ([end (string-index->cursor s end)])
@@ -108,7 +108,7 @@
         (proc cur)
         (loop (string-cursor-next s cur))))))
 
-(define (string-contains s1 s2 :optional (start1 (string-cursor-start s1)) end1 start2 end2)
+(define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let* ((str1 (%maybe-substring s1 start1 end1))
@@ -119,7 +119,7 @@
                                 (string-index->cursor s1 start1)
                                 (string-cursor->index str1 res)))))
 
-(define (string-contains-right s1 s2 :optional (start1 (string-cursor-start s1)) end1 start2 end2)
+(define (string-contains-right s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (let* ((str1 (%maybe-substring s1 start1 end1))
