@@ -968,10 +968,18 @@ srfi-130, srfi-130
 ()
 
 Cursor-based string library
-Most of the procedures in srfi-13 accept cursors in addition to indexes.
+String cursors are supported natively (@pxref{String cursors}).
+Most of built-in and srfi-13 string procedures accept cursors in addition
+to indexes.  The module srfi-130 provides several procedures that
+has the same name as srfi-13 but returns a string cursor instead
+of an index (@pxref{Cursor-based string library}).
 
 カーソルベースの文字列ライブラリ
-多くのsrfi-13手続きはインデックスのかわりにカーソルも取れるようになっています。
+文字列カーソルは組み込みでサポートされています (@ref{String cursors}参照)。
+また、多くの組み込みおよびsrfi-13手続きはインデックスに加えてカーソルも
+取れるようになっています。モジュールsrfi-130は、srfi-13と同名だけれど
+インデックスの代わりにカーソルを返す手続きを提供します
+(@ref{Cursor-based string library}参照)。
 
 
 srfi-131, gauche.record
