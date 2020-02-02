@@ -1,5 +1,10 @@
 2020-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c, src/main.c (-fsafe-string-cursors): A runtime flag
+	  that makes all string cursors 'large', for misuse detection
+	  trading off the speed and space.
+	  https://github.com/shirok/Gauche/pull/584 by @pclouds.
+
 	* ext/template.Makefile.in: Pass down CFLAGS etc into
 	  ;gauche-package compile'.  Other small fixes.
 	  https://github.com/shirok/Gauche/pull/580 from @Hamayama
