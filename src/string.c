@@ -874,16 +874,16 @@ ScmObj Scm_StringReplaceBody(ScmString *str, const ScmStringBody *newbody)
 
 static ScmObj substring(const ScmStringBody *xb,
                         ScmSmallInt start, ScmSmallInt end,
-                        int byterange)
+                        int byterange, int immutable)
 {
     ScmSmallInt len = byterange? SCM_STRING_BODY_SIZE(xb) : SCM_STRING_BODY_LENGTH(xb);
-    u_long flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
+    u_long flags = SCM_STRING_BODY_FLAGS(xb);
+    if (!immutable) flags &= ~SCM_STRING_IMMUTABLE;
+    
     SCM_CHECK_START_END(start, end, len);
 
     if (byterange) {
-        if (end != len) {
-            flags &= ~SCM_STRING_TERMINATED;
-        }
+        if (end != len) flags &= ~SCM_STRING_TERMINATED;
         flags |= SCM_STRING_INCOMPLETE;
         return SCM_OBJ(make_str(end - start,
                                 end - start,
@@ -910,9 +910,11 @@ static ScmObj substring(const ScmStringBody *xb,
 
 static ScmObj substring_cursor(const ScmStringBody *xb,
                                const char *start,
-                               const char *end)
+                               const char *end,
+                               int immutable)
 {
-    u_long flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
+    u_long flags = SCM_STRING_BODY_FLAGS(xb);
+    if (!immutable) flags &= ~SCM_STRING_IMMUTABLE;
 
     if (start < SCM_STRING_BODY_START(xb) ||
         start > SCM_STRING_BODY_END(xb)) {
@@ -944,18 +946,25 @@ static ScmObj substring_cursor(const ScmStringBody *xb,
 ScmObj Scm_Substring(ScmString *x, ScmSmallInt start, ScmSmallInt end,
                      int byterangep)
 {
-    return substring(SCM_STRING_BODY(x), start, end, byterangep);
+    return substring(SCM_STRING_BODY(x), start, end, byterangep, FALSE);
 }
 
 /* Auxiliary procedure to support optional start/end parameter specified
    in lots of SRFI-13 functions.   If start and end is specified and restricts
-   string range, call substring.  Otherwise returns x itself. */
+   string range, call substring.  Otherwise returns x itself.
+   If input string is immutable, the result is also immutable.  If the caller
+   needs a mutable string it should call CopyString anyway, for the caller
+   doesn't know if the input string is just passed through.
+*/
 ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 {
     const ScmStringBody *xb = SCM_STRING_BODY(x);
     int no_start = SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start);
     int no_end = SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end);
     ScmSmallInt istart = -1, iend = -1, ostart = -1, oend = -1;
+
+    int immutable = SCM_STRING_BODY_HAS_FLAG(xb, SCM_STRING_IMMUTABLE);
+
     if (no_start)
         istart = 0;
     else if (SCM_STRING_CURSOR_P(start))
@@ -980,17 +989,20 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
     if (no_start && oend != -1) {
         return substring_cursor(xb,
                                 SCM_STRING_BODY_START(xb),
-                                SCM_STRING_BODY_START(xb) + oend);
+                                SCM_STRING_BODY_START(xb) + oend,
+                                immutable);
     }
     if (ostart != -1 && oend != -1) {
         return substring_cursor(xb,
                                 SCM_STRING_BODY_START(xb) + ostart,
-                                SCM_STRING_BODY_START(xb) + oend);
+                                SCM_STRING_BODY_START(xb) + oend,
+                                immutable);
     }
     if (ostart != -1 && no_end) {
         return substring_cursor(xb,
                                 SCM_STRING_BODY_START(xb) + ostart,
-                                SCM_STRING_BODY_END(xb));
+                                SCM_STRING_BODY_END(xb),
+                                immutable);
     }
 
     if (ostart != -1) {
@@ -1000,7 +1012,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
         iend = Scm_GetInteger(Scm_StringCursorIndex(x, end));
     }
 
-    return substring(xb, istart, iend, FALSE);
+    return substring(xb, istart, iend, FALSE, immutable);
 }
 
 /*----------------------------------------------------------------
@@ -2019,13 +2031,13 @@ ScmObj Scm_SubstringCursor(ScmString *str,
     const char *end   = string_cursor_ptr(sb, end_scm);
 
     if (start && end) {
-        return substring_cursor(sb, start, end);
+        return substring_cursor(sb, start, end, FALSE);
     }
 
     return substring(SCM_STRING_BODY(str),
                      Scm_GetInteger(Scm_StringCursorIndex(str, start_scm)),
                      Scm_GetInteger(Scm_StringCursorIndex(str, end_scm)),
-                     FALSE);
+                     FALSE, FALSE);
 }
 
 int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2,

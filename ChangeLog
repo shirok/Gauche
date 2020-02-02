@@ -1,3 +1,10 @@
+2020-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_MaybeSubstring): Returns immutable string if
+	  input is immutable.  The caller can't count on the input string
+	  begin copied, so it must copy the returned value anyway if it wants
+	  a mutable string.
+
 2020-02-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/main.c (-fsafe-string-cursors): A runtime flag
