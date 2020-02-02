@@ -341,16 +341,27 @@
                [ends (map string-cursor-end strs)])
           (let loop ([curs (map string-cursor-start strs)]
                      [lst '()])
-            (if (null? (filter-map string-cursor=? curs ends))
+            (if (any string-cursor=? curs ends)
+              (list->string (reverse lst))
               (loop (map string-cursor-next strs curs)
-                    (cons (apply proc (map string-ref strs curs)) lst))
-              (list->string (reverse lst))))))))
+                    (cons (apply proc (map string-ref strs curs)) lst))))))))
   (define (string-for-each proc str . more-strs)
     (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
       (error "non-string argument passed to string-for-each:" a)
       (if (null? more-strs)
-        (for-each proc (string->list str))
-        (apply for-each proc (map string->list (cons str more-strs))))))
+        (let ([end (string-cursor-end str)])
+          (let loop ([cur (string-cursor-start str)])
+            (if (string-cursor=? cur end)
+              (undefined)
+              (begin (proc (string-ref str cur))
+                     (loop (string-cursor-next str cur))))))
+        (let* ([strs (cons str more-strs)]
+               [ends (map string-cursor-end strs)])
+          (let loop ([curs (map string-cursor-start strs)])
+            (if (any string-cursor=? curs ends)
+              (undefined)
+              (begin (apply proc (map string-ref strs curs))
+                     (loop (map string-cursor-next strs curs)))))))))
 
   ;; 6.11 Exceptions
   ;; error - built-in
