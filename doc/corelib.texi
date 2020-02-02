@@ -8539,8 +8539,16 @@ Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
 @defun string-immutable? obj
 @c EN
 Returns @code{#t} if @var{obj} is an immutable string, @code{#f} otherwise
+
+String literals, and the strings returned from certain procedures such
+as @code{symbol->string} are immutable.  To ensure you get
+an immutable string in a program, you can use @code{string-copy-immutable}.
 @c JP
 @var{obj}が変更不可な文字列なら@code{#t}を、そうでなければ@code{#f}を返します。
+
+文字列リテラルおよび、@code{symbol->string}などいくつかの手続きから
+返される文字列は変更不可です。プログラム中で変更不可の文字列を確実に手に入れたい場合は
+@code{string-copy-immtuable}が使えます。
 @c COMMON
 @end defun
 
@@ -9403,6 +9411,26 @@ by @code{srfi-13} module (@pxref{String library}).
 提供されます (@ref{String library}参照)。
 @c COMMON
 @end defun
+
+@defun string-copy-immutable string :optional start end
+@c EN
+If @var{string} is immutable, return it as is.  Otherwise, returns
+an immutable copy of @var{string}.  It is a dual of @code{string-copy}
+which always returns a mutable copy.
+
+The optional @var{start} and @var{end} argument may be a nonnegative
+integer character index and/or string cursors to restrict the range
+of @var{string} to be copied.
+@c JP
+@var{string}が変更不可であればそれをそのまま返し、変更可能であれば
+変更不可なコピーを返します。
+@code{string-copy}が常に変更可能なコピーを返すのと対照的です。
+
+@var{start}と@var{end}は非負整数の文字インデックスか文字列カーソルで、
+@var{string}中のコピーされる範囲を指定します。
+@c COMMON
+@end defun
+
 
 @defun string-fill! string char :optional start end
 [R7RS base]

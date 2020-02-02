@@ -66,6 +66,14 @@
 (define-cproc string-append (:rest args) Scm_StringAppend)
 
 (select-module gauche)
+(define-cproc string-copy-immutable (str::<string> :optional start end)
+  (let* ([s (Scm_MaybeSubstring str start end)])
+    (if (SCM_STRING_IMMUTABLE_P s)
+      (return s)
+      (return (Scm_CopyStringWithFlags (SCM_STRING s)
+                                       SCM_STRING_IMMUTABLE
+                                       SCM_STRING_IMMUTABLE)))))
+
 (define-cproc string-join (strs::<list>
                            :optional (delim::<string> " ") (grammar infix))
   (let* ([gm::int 0])

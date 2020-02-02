@@ -718,6 +718,19 @@
                    )
 
 ;;-------------------------------------------------------------------
+(test-section "immutablility")
+
+(test* "string-immutable?" '(#t #f)
+       (list (string-immutable? "abc")
+             (string-immutable? (string-copy "abc"))))
+
+(test* "string-copy-immutable" '(#t #t #t #t)
+       (list (string-immutable? (string-copy-immutable "abc"))
+             (string-immutable? (string-copy-immutable "abc" 0 1))
+             (string-immutable? (string-copy-immutable (string-copy "abc")))
+             (string-immutable? (string-copy-immutable (string-copy "abc") 0 1))))
+
+;;-------------------------------------------------------------------
 (test-section "string interpolation")
 
 (test* "string interpolation" "string interpolation"
