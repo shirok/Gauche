@@ -39,7 +39,7 @@ fi
 
 rm -rf libsrc
 $LN_S $top_srcdir/libsrc libsrc
-for f in `(cd $top_srcdir; find lib \( -name '*.scm' -o -name 'dump' -o -name 'restore' \) -print)`; do
+for f in `(cd $top_srcdir; find lib \( -name '*.scm' -o -name '*.sld' -o -name 'dump' -o -name 'restore' \) -print)`; do
   if [ $f != "lib/gauche/config.scm" -a $f != "slib.scm" ]; then
     mkdir -p `dirname $f`
     rm -rf $f
