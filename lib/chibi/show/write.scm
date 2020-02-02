@@ -19,17 +19,22 @@
     (get-output-string out)))
 
 (define (string-intersperse-right str sep rule)
+  (define (cursor-back str i offset)    ; safe version
+    (if (or (zero? offset)
+            (string-cursor=? i (string-cursor-start str)))
+        i
+        (cursor-back str (string-cursor-prev str i) (- offset 1))))
   (let ((start (string-cursor-start str)))
     (let lp ((i (string-cursor-end str))
              (rule rule)
              (res '()))
       (let* ((offset (if (pair? rule) (car rule) rule))
-             (i2 (if offset (string-cursor-back str i offset) start)))
+             (i2 (if offset (cursor-back str i offset) start)))
         (if (string-cursor<=? i2 start)
-            (apply string-append (cons (substring-cursor str start i) res))
+            (apply string-append (cons (substring/cursors str start i) res))
             (lp i2
                 (if (and (pair? rule) (not (null? (cdr rule)))) (cdr rule) rule)
-                (cons sep (cons (substring-cursor str i2 i) res))))))))
+                (cons sep (cons (substring/cursors str i2 i) res))))))))
 
 ;;> Outputs the string str, escaping any quote or escape characters.
 ;;> If esc-ch, which defaults to #\\, is #f, escapes only the
@@ -51,10 +56,10 @@
                 (end (string-cursor-end str)))
             (let lp ((i start) (j start))
               (define (collect)
-                (if (eq? i j) "" (substring-cursor str i j)))
+                (if (eq? i j) "" (substring/cursors str i j)))
               (if (string-cursor>=? j end)
                   (output (collect))
-                  (let ((c (string-cursor-ref str j))
+                  (let ((c (string-ref/cursor str j))
                         (j2 (string-cursor-next str j)))
                     (cond
                      ((or (eqv? c quot) (eqv? c esc))
@@ -86,7 +91,7 @@
     (call-with-output
      fmt
      (lambda (str)
-       (if (string-cursor<? (string-find str esc?) (string-cursor-end str))
+       (if (string-cursor<? (string-index str esc?) (string-cursor-end str))
            (each quot (escaped str quot esc rename) quot)
            (displayed str))))))
 
@@ -217,11 +222,11 @@
            ((and (eqv? radix 10) (or (integer? n) (inexact? n)))
             (let* ((s (number->string n))
                    (end (string-cursor-end s))
-                   (dec (string-find s #\.))
+                   (dec (string-index s #\.))
                    (digits (- (string-cursor->index s end)
                               (string-cursor->index s dec))))
               (cond
-               ((string-cursor<? (string-find s #\e) end)
+               ((string-cursor<? (string-index s #\e) end)
                 (gen-general n))
                ((string-cursor=? dec end)
                 (string-append s (if (char? dec-sep) (string dec-sep) dec-sep)
@@ -231,15 +236,15 @@
                (else
                 (let* ((last
                         (string-cursor-back s end (- digits precision 1)))
-                       (res (substring-cursor s (string-cursor-start s) last)))
+                       (res (substring/cursors s (string-cursor-start s) last)))
                   (if (and
                        (string-cursor<? last end)
-                       (let ((next (digit-value (string-cursor-ref s last))))
+                       (let ((next (digit-value (string-ref/cursor s last))))
                          (or (> next 5)
                              (and (= next 5)
                                   (string-cursor>? last (string-cursor-start s))
                                   (memv (digit-value
-                                         (string-cursor-ref
+                                         (string-ref/cursor
                                           s (string-cursor-prev s last)))
                                         '(1 3 5 7 9))))))
                       (list->string
@@ -264,9 +269,9 @@
           (let* ((dec-pos (if (string? dec-sep)
                               (or (string-contains str dec-sep)
                                   (string-cursor-end str))
-                              (string-find str dec-sep)))
-                 (left (substring-cursor str (string-cursor-start str) dec-pos))
-                 (right (substring-cursor str dec-pos))
+                              (string-index str dec-sep)))
+                 (left (substring/cursors str (string-cursor-start str) dec-pos))
+                 (right (string-copy/cursors str dec-pos))
                  (sep (cond ((char? comma-sep) (string comma-sep))
                             ((string? comma-sep) comma-sep)
                             ((eqv? #\, dec-sep) ".")
@@ -289,18 +294,9 @@
                 (if comma-rule (insert-commas s1) s1))))
         ;; Wrap the sign of a real number, forcing a + prefix or using
         ;; parentheses (n) for negatives according to sign-rule.
-
-        (define-syntax is-neg-zero?
-          (syntax-rules ()
-            ((_ n)
-             (is-neg-zero? (-0.0) n))
-            ((_ (0.0) n)                ; -0.0 is not distinguished?
-             #f)
-            ((_ (-0.0) n)
-             (eqv? -0.0 n))))
         (define (negative?* n)
           (or (negative? n)
-              (is-neg-zero? n)))
+              (and (zero? n) (string=? (number->string n) "-0.0"))))
         (define (wrap-sign n sign-rule)
           (cond
            ((negative?* n)
@@ -328,7 +324,7 @@
                                 (string-cursor->index
                                  s
                                  (if (char? dec-sep)
-                                     (string-find s dec-sep)
+                                     (string-index s dec-sep)
                                      (or (string-contains s dec-sep)
                                          (string-cursor-end s))))
                                 0))

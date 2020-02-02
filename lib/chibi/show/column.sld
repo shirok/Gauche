@@ -2,7 +2,8 @@
 (define-library (chibi show column)
   (import (scheme base) (scheme char) (scheme file) (scheme write)
           (srfi 1) (srfi 117) (srfi 130)
-          (chibi optional) (chibi show))
+          (only (gauche base) let-optionals*)
+          (chibi show))
   (export
    call-with-output-generator call-with-output-generators
    string->line-generator
