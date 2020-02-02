@@ -1157,6 +1157,14 @@ Note that most of generator procedures are supported by @code{gauche.generator}
 (@ref{Generators}参照)。
 
 
+srfi-159, srfi-159
+()
+
+Combinator Formatting
+This has become a part of R7RS large.
+
+Combinator Formatting
+
 srfi-160, srfi-160
 ()
 
