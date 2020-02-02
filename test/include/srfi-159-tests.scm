@@ -255,7 +255,8 @@
 
       (cond-expand
        (complex
-        (test "1+2i" (show #f (string->number "1+2i")))
+        ;(test "1+2i" (show #f (string->number "1+2i")))
+        (test "1.0+2.0i" (show #f (string->number "1+2i")))
         (test "1.00+2.00i"
             (show #f (with ((precision 2)) (string->number "1+2i"))))
         (test "3.14+2.00i"
