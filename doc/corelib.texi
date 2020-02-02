@@ -8328,6 +8328,7 @@ SRFI-13については@ref{String library}を参照してください。
 * String Constructors::
 * String interpolation::
 * String Cursors::
+* String Indexing::
 * String Accessors & Modifiers::
 * String Comparison::
 * String utilities::
@@ -8897,7 +8898,7 @@ Schemeは他のスクリプト言語より一般的により多くの文字を�
 @c COMMON
 
 
-@node String Cursors, String Accessors & Modifiers, String interpolation, Strings
+@node String Cursors, String Indexing, String interpolation, Strings
 @subsection String Cursors
 
 String cursors are opaque objects that point into strings, similar to
@@ -9014,7 +9015,59 @@ Compares two cursors or two indexes (but not a cursor and an index)
 and returns @code{#t} or @code{#f} accordingly.
 @end defun
 
-@node String Accessors & Modifiers, String Comparison, String Cursors, Strings
+@node String Indexing, String Accessors & Modifiers, String Cursors, Strings
+@subsection String Indexing
+@c NODE 文字列のインデックス
+
+Since Gauche stores strings in multibyte encoding, random access
+requires O(N) by default.  In most cases, string access is either
+sequential or search-and-extract pattern, and Gauche provides direct
+means for these operations, so you don't need to deal with indexed access.
+However, there may be a case that you have need more efficient random
+access string (mostly when porting third-party code, we imagine).
+
+There are a couple of ways to achieve O(1) random access.
+
+First, instead of integer character indexes,
+you can use string cursors (@pxref{String Cursors}).  It is defined
+by @code{srfi-130}, and you can use the code that's using srfi-130
+as is, without worring about slow access.  However, if external interface
+gives you integer character index, converting index to cursor and vice versa
+takes O(N) after all.
+
+There's another way.  You can precompute @emph{string index}, mapping from
+integer character index to the position in the multibyte string.  It costs
+O(N) of time and space to compute it, but once computed, you have
+O(1) random access.  (We store positions for every K characters, where K
+is between 16 to 256, so it won't take up as large storage as the
+actual string body).
+
+For portability, srfi-135 Immutable Texts provides O(1) accessible string
+as ``texts''.  On Gauche, a text is just an immutable string with
+index attached.
+
+@defun string-build-index! str
+Computes and attaches index to a string @var{str}, and returns @var{str}
+itself.  The operation doesn't alter the content of @var{str}, and you can
+pass immutable string as well.
+
+If @var{str} is a single-byte string (ASCII-only, or incomplete),
+or a short one (less than 64 octets), no index is attached.
+It is ok to pass a string which already has an index; then index computation
+is skipped.
+
+The index is attached to the string's content.  If you alter @var{str}
+by e.g. @code{string-set!}, the index is discarded.
+@end defun
+
+@defun string-fast-indexable? str
+Returns @code{#t} iff index access of a string @var{str} is effectively O(1),
+that is, @var{str} is either a single-byte string,
+a short string, or a long multibyte string with index computed.
+@end defun
+
+
+@node String Accessors & Modifiers, String Comparison, String Indexing, Strings
 @subsection String Accessors & Modifiers
 @c NODE 文字列のアクセスと変更
 
