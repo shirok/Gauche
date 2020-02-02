@@ -1,5 +1,9 @@
 2020-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* ext/template.Makefile.in: Pass down CFLAGS etc into
+	  ;gauche-package compile'.  Other small fixes.
+	  https://github.com/shirok/Gauche/pull/580 from @Hamayama
+
 	* src/string.c (Scm_StringBodyBuildIndex),
 	  src/libstr.c (string-build-index!, string-fast-indexable?):
 	  Add O(1) access multibyte string feature.
