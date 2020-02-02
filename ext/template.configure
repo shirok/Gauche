@@ -4,7 +4,7 @@
 
 (use gauche.configure)
 (load "configure-compat" 
-      :paths `(,(current-load-path))
+      :paths `(,(sys-dirname (current-load-path)))
       :error-if-not-found #f)
 
 ;; Here you can define handlers of configure arguments by cf-arg-enable

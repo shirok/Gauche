@@ -338,8 +338,8 @@
 
   ;; NB: Autoconf uses AC_PROG_CC to set up CC.  However, we need
   ;; to use the same C compiler with which Gauche was compiled, so
-  ;; so we set it as the default.  We also allow env overrides for
-  ;; some common variables.  (In autoconf, AC_PROG_CC issues AC_ARG_VAR
+  ;; we set it as the default.  We also allow env overrides for some
+  ;; common variables.  (In autoconf, AC_PROG_CC issues AC_ARG_VAR
   ;; for them).
   (cf-subst 'CC (gauche-config "--cc"))
   (cf-subst 'CFLAGS (gauche-config "--default-cflags"))
@@ -349,7 +349,7 @@
   (cf-arg-var 'CFLAGS)
   (cf-arg-var 'LDFLAGS)
   (cf-arg-var 'LIBS)
-  ;; NB: Autoconf detemines these through tests, but we already
+  ;; NB: Autoconf determines these through tests, but we already
   ;; know them at the time Gauche is configured.
   (cf-subst 'SOEXT  (gauche-config "--so-suffix"))
   (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
