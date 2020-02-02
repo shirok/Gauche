@@ -55,7 +55,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
 /* Internal primitive constructor.   LEN can be negative if the string
    is incomplete. */
 static ScmString *make_str(ScmSmallInt len, ScmSmallInt siz,
-                           const char *p, u_long flags)
+                           const char *p, u_long flags,
+                           const void *index)
 {
     if (len < 0) flags |= SCM_STRING_INCOMPLETE;
     if (flags & SCM_STRING_INCOMPLETE) len = siz;
@@ -74,6 +75,7 @@ static ScmString *make_str(ScmSmallInt len, ScmSmallInt siz,
     s->initialBody.length = len;
     s->initialBody.size = siz;
     s->initialBody.start = p;
+    s->initialBody.index = index;
     return s;
 }
 
@@ -255,9 +257,9 @@ ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
     ScmString *s;
     if (flags & SCM_STRING_COPYING) {
         flags |= SCM_STRING_TERMINATED; /* SCM_STRDUP_PARTIAL terminates the result str */
-        s = make_str(len, size, SCM_STRDUP_PARTIAL(str, size), flags);
+        s = make_str(len, size, SCM_STRDUP_PARTIAL(str, size), flags, NULL);
     } else {
-        s = make_str(len, size, str, flags);
+        s = make_str(len, size, str, flags, NULL);
     }
     return SCM_OBJ(s);
 }
@@ -273,7 +275,7 @@ ScmObj Scm_MakeFillString(ScmSmallInt len, ScmChar fill)
         SCM_CHAR_PUT(p, fill);
     }
     ptr[csize*len] = '\0';
-    return SCM_OBJ(make_str(len, csize*len, ptr, SCM_STRING_TERMINATED));
+    return SCM_OBJ(make_str(len, csize*len, ptr, SCM_STRING_TERMINATED, NULL));
 }
 
 ScmObj Scm_ListToString(ScmObj chars)
@@ -379,10 +381,11 @@ ScmObj Scm_CopyStringWithFlags(ScmString *x, u_long flags, u_long mask)
     ScmSmallInt size = SCM_STRING_BODY_SIZE(b);
     ScmSmallInt len  = SCM_STRING_BODY_LENGTH(b);
     const char *start = SCM_STRING_BODY_START(b);
+    const void *index = b->index;
     u_long newflags = ((SCM_STRING_BODY_FLAGS(b) & ~mask)
                        | (flags & mask));
 
-    return SCM_OBJ(make_str(len, size, start, newflags));
+    return SCM_OBJ(make_str(len, size, start, newflags, index));
 }
 
 /* OBSOLETED */
@@ -680,7 +683,7 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     if (SCM_STRING_BODY_INCOMPLETE_P(xb) || SCM_STRING_BODY_INCOMPLETE_P(yb)) {
         flags |= SCM_STRING_INCOMPLETE; /* yields incomplete string */
     }
-    return SCM_OBJ(make_str(lenx+leny, sizex+sizey, p, flags));
+    return SCM_OBJ(make_str(lenx+leny, sizex+sizey, p, flags, NULL));
 }
 
 ScmObj Scm_StringAppendC(ScmString *x, const char *str,
@@ -704,7 +707,7 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str,
     if (SCM_STRING_BODY_INCOMPLETE_P(xb) || leny < 0) {
         flags |= SCM_STRING_INCOMPLETE;
     }
-    return SCM_OBJ(make_str(lenx + leny, sizex + sizey, p, flags));
+    return SCM_OBJ(make_str(lenx + leny, sizex + sizey, p, flags, NULL));
 }
 
 ScmObj Scm_StringAppend(ScmObj strs)
@@ -753,7 +756,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
     *bufp = '\0';
     bodies = NULL;              /* to help GC */
     flags |= SCM_STRING_TERMINATED;
-    return SCM_OBJ(make_str(len, size, buf, flags));
+    return SCM_OBJ(make_str(len, size, buf, flags, NULL));
 #undef BODY_ARRAY_SIZE
 }
 
@@ -834,7 +837,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammar)
     *bufp = '\0';
     bodies = NULL;              /* to help GC */
     flags |= SCM_STRING_TERMINATED;
-    return SCM_OBJ(make_str(len, size, buf, flags));
+    return SCM_OBJ(make_str(len, size, buf, flags, NULL));
 #undef BODY_ARRAY_SIZE
 }
 
@@ -885,7 +888,7 @@ static ScmObj substring(const ScmStringBody *xb,
         return SCM_OBJ(make_str(end - start,
                                 end - start,
                                 SCM_STRING_BODY_START(xb) + start,
-                                flags));
+                                flags, NULL));
     } else {
         const char *s, *e;
         s = index2ptr(xb, start);
@@ -901,7 +904,7 @@ static ScmObj substring(const ScmStringBody *xb,
             flags &= ~SCM_STRING_TERMINATED;
         }
         return SCM_OBJ(make_str(end - start,
-                                (ScmSmallInt)(e - s), s, flags));
+                                (ScmSmallInt)(e - s), s, flags, NULL));
     }
 }
 
@@ -935,7 +938,7 @@ static ScmObj substring_cursor(const ScmStringBody *xb,
 
     return SCM_OBJ(make_str(len,
                             (ScmSmallInt)(end - start),
-                            start, flags));
+                            start, flags, NULL));
 }
 
 ScmObj Scm_Substring(ScmString *x, ScmSmallInt start, ScmSmallInt end,
@@ -1800,18 +1803,19 @@ ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int afterp)
     /* TODO: set SCM_STRING_TERMINATED if applicable. */
     if (sp->length < 0) {
         if (afterp)
-            return SCM_OBJ(make_str(-1, sp->size - sp->index, sp->current, 0));
+            return SCM_OBJ(make_str(-1, sp->size - sp->index, sp->current,
+                                    0, NULL));
         else
-            return SCM_OBJ(make_str(-1, sp->index, sp->start, 0));
+            return SCM_OBJ(make_str(-1, sp->index, sp->start, 0, NULL));
     } else {
         if (afterp)
             return SCM_OBJ(make_str(sp->length - sp->index,
                                     sp->start + sp->size - sp->current,
-                                    sp->current, 0));
+                                    sp->current, 0, NULL));
         else
             return SCM_OBJ(make_str(sp->index,
                                     sp->current - sp->start,
-                                    sp->start, 0));
+                                    sp->start, 0, NULL));
     }
 }
 
@@ -2182,7 +2186,7 @@ ScmObj Scm_DStringGet(ScmDString *dstr, u_long flags)
 {
     ScmSmallInt len, size;
     const char *str = dstring_getz(dstr, &size, &len, FALSE);
-    return SCM_OBJ(make_str(len, size, str, flags|SCM_STRING_TERMINATED));
+    return SCM_OBJ(make_str(len, size, str, flags|SCM_STRING_TERMINATED, NULL));
 }
 
 /* For conveninence.   Note that dstr may already contain NUL byte in it,
