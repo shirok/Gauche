@@ -50,24 +50,24 @@
     (not (pred x))))
 
 (define (string-take-while s pred :optional
-                           (start (string-cursor-start s))
+                           (start 0)
                            (end (string-cursor-end s)))
   (substring s start (%string-index s (%negate pred) start end)))
 
 (define (string-take-while-right s pred :optional
-                                 (start (string-cursor-start s))
+                                 (start 0)
                                  (end (string-cursor-end s)))
   (substring s (%string-index-right s (%negate pred) start end) end))
 
 (define (string-span s pred :optional
-                     (start (string-cursor-start s))
+                     (start 0)
                      (end (string-cursor-end s)))
   (let ([cur (%string-index s (%negate pred) start end)])
     (values (substring s start cur)
             (substring s cur end))))
 
 (define (string-break s pred :optional
-                      (start (string-cursor-start s))
+                      (start 0)
                       (end (string-cursor-end s)))
   (let ([cur (%string-index s pred start end)])
     (values (substring s start cur)
