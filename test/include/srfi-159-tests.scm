@@ -1,19 +1,19 @@
-(define-library (chibi show-test)
-  (export run-tests)
-  (import (scheme base) (scheme char) (scheme read) (scheme file)
-          (only (srfi 1) circular-list)
-          (chibi test)
-          (chibi show) (chibi show base) (chibi show color)
-          (chibi show column) (chibi show pretty)
-          (chibi show unicode))
-  (begin
+;(define-library (chibi show-test)
+;  (export run-tests)
+;  (import (scheme base) (scheme char) (scheme read) (scheme file)
+;          (only (srfi 1) circular-list)
+;          (chibi test)
+;          (chibi show) (chibi show base) (chibi show color)
+;          (chibi show column) (chibi show pretty)
+;          (chibi show unicode))
+;  (begin
     (define-syntax test-pretty
       (syntax-rules ()
         ((test-pretty str)
          (let ((sexp (read (open-input-string str))))
            (test str (show #f (pretty sexp)))))))
-    (define (run-tests)
-      (test-begin "show")
+;    (define (run-tests)
+;      (test-begin "show")
 
       ;; basic data types
 
@@ -253,14 +253,12 @@
       (test "1,5" (show #f (numeric 1.5 10 #f #f #f #\.)))
       (test "1%5" (show #f (numeric 1.5 10 #f #f #f #\. #\%)))
 
-      (cond-expand
-       (complex
-        ;(test "1+2i" (show #f (string->number "1+2i")))
-        (test "1.0+2.0i" (show #f (string->number "1+2i")))
-        (test "1.00+2.00i"
+      ;(test "1+2i" (show #f (string->number "1+2i")))
+      (test "1.0+2.0i" (show #f (string->number "1+2i")))
+      (test "1.00+2.00i"
             (show #f (with ((precision 2)) (string->number "1+2i"))))
-        (test "3.14+2.00i"
-            (show #f (with ((precision 2)) (string->number "3.14159+2i"))))))
+      (test "3.14+2.00i"
+            (show #f (with ((precision 2)) (string->number "3.14159+2i"))))
 
       (test "608" (show #f (numeric/si 608)))
       (test "608 B" (show #f (numeric/si 608 1000 " ") "B"))
@@ -757,4 +755,4 @@ def | 6
          (show #f (columnar 4 'right 'infinite (line-numbers) " " (from-file tmp-file))))
         (delete-file tmp-file))
 
-      (test-end))))
+;      (test-end))))
