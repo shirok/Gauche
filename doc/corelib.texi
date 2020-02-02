@@ -9526,7 +9526,6 @@ Use @var{delim} after each string.
   @result{} "&"
 @end example
 @end table
-
 @end defun
 
 @defun string-scan string item :optional return
@@ -9772,6 +9771,79 @@ See also @code{string-tokenize} in
 @c JP
 @code{string-tokenize} (@ref{SRFI-13 other string operations})
 も参照して下さい。
+@c COMMON
+@end defun
+
+@defun string-map proc str str2 @dots{}
+@defunx string-map proc str :optional start end
+[R7RS base][SRFI-13]
+@c EN
+Applies @var{proc} over each character in the input string, and
+gathers the characters returned from @var{proc} into a string and
+returns it.  It is an error if @var{proc} returns non-character.
+
+Because of historical reasons, this procedure has two interfaces.
+The first one takes one or more input strings, and @var{proc} receives
+as many characters as the number of input strings, each character
+being taken from each string.  Iteration stops on the shortest string.
+This is defined in R7RS-small, and consistent with @code{map},
+@code{vector-map}, etc.
+
+The second one takes only one string argument, and optional start/end
+arguments, which may be nonnegative integer indexes or string cursors
+to limit the input range of the string.  This is defined in srfi-13,
+string library.
+
+The order in which @var{proc} is applied is not guaranteed to be left to right.
+You shouldn't depend on the order.
+
+If @var{proc} saves a continuation and it is invoked later, the result
+already returned from @code{string-map} won't be affected 
+(as specified in R7RS).
+@c JP
+入力文字列中の各文字に対して@var{proc}を適用し、その結果の文字を集めた
+文字列を返します。@var{proc}は文字を返さねばなりません。
+
+歴史的経緯により、この手続きは2種類のインタフェースを持ちます。
+最初のインタフェースは1個以上の文字列を取ります。
+@var{proc}には文字列引数の数だけ、各文字列から取られた文字が渡されます。
+繰り返しは最も短い文字列でストップします。これはR7RS-smallで定義され、
+@code{map}、@code{vector-map}等と一貫性があります。
+
+二番目のインタフェースでは、文字列引数はひとつだけで、省略可能な@var{start}/@var{end}
+引数を取ります。@var{start}と@var{end}は非負整数のインデックスか
+文字列カーソルで、入力文字列を使う範囲を制限します。
+
+@var{proc}が適用される順序は左から右とは限りません。順序に依存しないようにしてください。
+
+@var{proc}が継続を補足し、それが再び起動された場合、既に@code{string-map}から
+返された結果は影響を受けません。(R7RSで指定されています)
+@c COMMON
+
+@example
+(string-map char-upcate "apple") @result{} "APPLE"
+(string-map (^[a b] (if (char>? a b) a b)) "orange" "apple") @result{} "orpng"
+(string-map char-upcase "pineapple" 0 4) @result{} "PINE"
+@end example
+@end defun
+
+
+@defun string-for-each proc str str2 @dots{}
+@defunx string-for-each proc str :optional start end
+[R7RS base][SRFI-13]
+@c EN
+Applies @var{proc} over each character in the input string in left-to-right
+order.  The results of @var{proc} is discarded.
+
+Because of historical reasons, this procedure has two interfaces,
+first one defined in R7RS and second one defined in srfi-13.
+See @code{string-map} above for the explanation.
+@c JP
+@var{proc}を入力文字列の各文字に左から右の順で適用します。@var{proc}の結果は捨てられます。
+
+歴史的経緯から、この手続きは2種類のインタフェースを持ちます。
+最初のインタフェースはR7RSで、二番目のインタフェースはsrfi-13で定義されています。
+詳しくは上の@code{string-map}の項を参照してください。
 @c COMMON
 @end defun
 

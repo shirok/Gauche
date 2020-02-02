@@ -318,50 +318,8 @@
   ;; call-with-current-continuation call/cc values call-with-values dynamic-wind
   (define+ vector-map gauche)
   (define+ vector-for-each gauche)
-  ;; NB: we have string-map and string-for-each here, for they're different
-  ;; from srfi-13 api.  Also they must be restart-safe.  The current one
-  ;; is quick hack without thinking efficiency.
-  (define (string-map proc str . more-strs)
-    (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
-      (error "non-string argument passed to string-map:" a)
-      (if (null? more-strs)
-        ;; go reverse so we don't have to reverse the final list
-        ;; slightly slower than iterating forward, but less temp.
-        ;; objects
-        (let ([start (string-cursor-start str)])
-          (let loop ([cur (string-cursor-end str)]
-                     [lst '()])
-            (if (string-cursor=? cur start)
-                (list->string lst)
-                (let1 cur (string-cursor-prev str cur)
-                  (loop cur (cons (proc (string-ref str cur)) lst))))))
-        ;; the multi-strs version is already more complicated/less
-        ;; efficient with lots of lists, just go from left to right
-        (let* ([strs (cons str more-strs)]
-               [ends (map string-cursor-end strs)])
-          (let loop ([curs (map string-cursor-start strs)]
-                     [lst '()])
-            (if (any string-cursor=? curs ends)
-              (list->string (reverse lst))
-              (loop (map string-cursor-next strs curs)
-                    (cons (apply proc (map string-ref strs curs)) lst))))))))
-  (define (string-for-each proc str . more-strs)
-    (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
-      (error "non-string argument passed to string-for-each:" a)
-      (if (null? more-strs)
-        (let ([end (string-cursor-end str)])
-          (let loop ([cur (string-cursor-start str)])
-            (if (string-cursor=? cur end)
-              (undefined)
-              (begin (proc (string-ref str cur))
-                     (loop (string-cursor-next str cur))))))
-        (let* ([strs (cons str more-strs)]
-               [ends (map string-cursor-end strs)])
-          (let loop ([curs (map string-cursor-start strs)])
-            (if (any string-cursor=? curs ends)
-              (undefined)
-              (begin (apply proc (map string-ref strs curs))
-                     (loop (map string-cursor-next strs curs)))))))))
+  (define+ string-map gauche)
+  (define+ string-for-each gauche)
 
   ;; 6.11 Exceptions
   ;; error - built-in

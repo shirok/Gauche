@@ -76,7 +76,7 @@
           string? make-string string string->list list->string
           string-join string-length string-ref string-copy
           string-set! string-fill!
-          string-append
+          string-append string-map string-for-each
           ))
 (select-module srfi-13)
 
@@ -684,19 +684,6 @@
 ;;; Mappers
 ;;;
 
-(define (string-map proc s :optional
-                    (start 0)
-                    (end (string-cursor-end s)))
-  (assume-type s <string>)
-  (let ((end  (string-index->cursor s end))
-        (dest (open-output-string)))
-    (let loop ((cur (string-index->cursor s start)))
-      (if (string-cursor=? cur end)
-        (get-output-string dest)
-        (begin
-          (write-char (proc (string-ref s cur)) dest)
-          (loop (string-cursor-next s cur)))))))
-
 (define (string-map! proc s . args)
   (assume-type s <string>)
   (let ((mapped (apply string-map proc s args)))
@@ -750,17 +737,6 @@
                        base)
         (begin (write-char (f seed) dest)
                (loop (g seed)))))))
-
-(define (string-for-each proc s
-                         :optional
-                         (start 0)
-                         (end (string-cursor-end s)))
-  (assume-type s <string>)
-  (let ([end (string-index->cursor s end)])
-    (let loop ([cur (string-index->cursor s start)])
-      (unless (string-cursor=? cur end)
-        (proc (string-ref s cur))
-        (loop (string-cursor-next s cur))))))
 
 (define (string-for-each-index proc s :optional (start 0) (end (string-length s)))
   (assume-type s <string>)

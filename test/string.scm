@@ -548,6 +548,40 @@
        (string-cursor-diff str se ss))
 
 ;;-------------------------------------------------------------------
+(test-section "string mappers")
+
+(test* "string-map, single arg" "O'AFU"
+       (string-map char-upcase "o'afu"))
+(test* "string-map, single arg" ""
+       (string-map char-upcase ""))
+(test* "string-map, multi arg" "orpng"
+       (string-map (^[a b] (if (char>? a b) a b))
+                   "apple" "orange"))
+(test* "string-map, srfi-13 style" "CALIFRAGILISTICEXPIALIDOCIOUS"
+       (string-map char-upcase "supercalifragilisticexpialidocious" 5))
+(test* "string-map, srfi-13 style" "CALIFRAGILISTIC"
+       (string-map char-upcase "supercalifragilisticexpialidocious" 5 20))
+(test* "string-map, bad arg" (test-error)
+       (string-map (^ _ #\space) "abc" 'def))
+(test* "string-map, bad arg" (test-error)
+       (string-map (^ _ #\space) 'abc))
+(test* "string-map, bad arg" (test-error)
+       (string-map (^ _ #\space) "abc" "def" 2))
+(test* "string-map, bad arg" (test-error)
+       (string-map (^ _ #\space) "abc" 1 2 3))
+(test* "string-for-each single arg" "maui"
+       (with-output-to-string
+         (cut string-for-each write-char "maui")))
+(test* "string-for-each multi arg" "Niuihi"
+       (with-output-to-string
+         (cut string-for-each (^[a b] (write-char (if (char>? a b) a b)))
+              "Kaua'i" "Ni'ihau")))
+(test* "string-for-each srfi-13 style" "califragilistic"
+       (with-output-to-string
+         (cut string-for-each write-char
+              "supercalifragilisticexpialidocious" 5 20)))
+
+;;-------------------------------------------------------------------
 (test-section "input string port")
 
 ;; These also tests port's ungetc and scratch buffer, and

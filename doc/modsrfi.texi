@@ -1179,23 +1179,19 @@ Gaucheでは、``共有''バージョンは全く同じ動作をします。
 @subsection String mapping
 @c NODE 文字列のマッピング
 
-@defun string-map proc s :optional start end
-@defunx string-map! proc s :optional start end
+@defun string-map! proc s :optional start end
 [SRFI-13]
 @c MOD srfi-13
 @c EN
-@code{string-map} applies @var{proc} on every character of @var{s},
-and collects the results into a string and returns it.
-On the other hand, @code{string-map!} modifies @var{s}.
+@code{string-map!} applies @var{proc} on every character of @var{s},
+and stores the results into @var{s}.  It is an error if @var{proc} returns
+non-character.
 @c JP
-@code{string-map}は、@var{s}の全ての文字に対して@var{proc}を
-適用し、その結果を文字列に集めそれを返します。
-一方、@code{string-map!}は@var{s}そのものを変更します。
+@code{string-map!}は、@var{s}の全ての文字に対して@var{proc}を
+適用し、その結果を@var{s}に格納します。
+@var{proc}は文字を返さねばなりません。
 @c COMMON
 @example
-(string-map char-upcase "wikiwiki") @result{} "WIKIWIKI"
-(string-map char-upcase "wikiwiki" 4) @result{} "WIKI"
-
 (let ((s (string-copy "wikiwiki")))
   (string-map! char-upcase s 4)
   s)
@@ -1272,14 +1268,6 @@ if given, becomes the suffix of result, and the result of
                      0 "foo" x->string)
   @result{} "109876543210foo"
 @end example
-@end defun
-
-@defun string-for-each proc s :optional start end
-[SRFI-13]
-@c MOD srfi-13
-Apply @var{proc} on each character of string @var{s},
-from left to right.  Optional @var{start} and @var{end} arguments
-limit the range of the input string.
 @end defun
 
 @defun string-for-each-index proc s :optional start end
@@ -5946,7 +5934,8 @@ string->vector     string->list       vector->string     list->string
 string-ref         string-set!        substring          string-copy
 string=?           string<?           string<=?          string>?
 string>=?          string-append      string-join        string-split
-read-string        write-string       string-fill!
+string-map         string-for-each    read-string        write-string
+string-fill!
 @end example
 
 @c EN
@@ -5997,19 +5986,6 @@ string-prefix?     string-suffix?     string-index       string-index-right
 string-skip        string-skip-right  string-contains    string-concatenate
 string-concatenate-reverse            string-fold        string-fold-right
 string-count       string-filter      string-copy!
-@end example
-
-@c EN
-The following procedures are the same with the ones in
-R7RS @code{scheme.base} module (@pxref{R7RS base library}).
-Note that srfi-13 defines different procedures with the same name.
-@c JP
-次の手続きはR7RS @code{scheme.base}モジュールにあるものと同じです。
-srfi-13に同名の手続きがありますが異なるので注意してください。
-@c COMMON
-
-@example
-string-map         string-for-each
 @end example
 @end deftp
 

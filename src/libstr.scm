@@ -301,6 +301,81 @@
   (strcmp-multiarg (strcmpi >=)))
 
 ;;
+;; Mapping
+;;
+
+;; We have two kinds of string-{map|for-each}.  SRFI-13 takes one string
+;; with optional start/end arguments.  R7RS takes one or more string arguments.
+;; In retrospect, R7RS is more consistent, but srfi-13 is very frequently
+;; imported and it is bothersome to avoid name conflicts.  So we have
+;; single implementation that handles both.
+
+(select-module gauche.internal)
+(define (%string-map-dispatch name proc str rest proc-single proc-multi)
+  (cond [(null? rest) (proc-single proc str)]
+        [(or (integer? (car rest))
+             (string-cursor? (car rest)))
+         (if (null? (cdr rest))
+           (proc-single proc (%maybe-substring str (car rest) (undefined)))
+           (if (or (integer? (cadr rest))
+                   (string-cursor? (cadr rest)))
+             (if (null? (cddr rest))
+               (proc-single proc (%maybe-substring str
+                                                   (car rest)
+                                                   (cadr rest)))
+               (errorf "Too many arguments for srfi-13 style ~a" name))
+             (error "Integer or string-cursor expected, but got:" (cadr rest))))]
+        [(string? (car rest))
+         (if-let1 bad (find (^s (not (string? s))) (cdr rest))
+           (error "string expected, but got:" bad)
+           (apply proc-multi proc str rest))]
+        [else (error "string expected, but got:" (car rest))]))
+
+(select-module gauche)
+(define (string-map proc str . rest)
+  (define (string-map-1 proc str)
+    ;; go reverse so we don't have to reverse the final list
+    ;; slightly slower than iterating forward, but less temp.
+    ;; objects
+    (let ([start (string-cursor-start str)])
+      (let loop ([cur (string-cursor-end str)]
+                 [lst '()])
+        (if (string-cursor=? cur start)
+          (list->string lst)
+          (let1 cur (string-cursor-prev str cur)
+            (loop cur (cons (proc (string-ref str cur)) lst)))))))
+  (define (string-map-n proc . strs)
+    ;; the multi-strs version is already more complicated/less
+    ;; efficient with lots of lists, just go from left to right
+    (let1 ends (map string-cursor-end strs)
+      (let loop ([curs (map string-cursor-start strs)]
+                 [lst '()])
+        (if (any string-cursor=? curs ends)
+          (list->string (reverse lst))
+          (loop (map string-cursor-next strs curs)
+                (cons (apply proc (map string-ref strs curs)) lst))))))
+  ((with-module gauche.internal %string-map-dispatch)
+   'string-map proc str rest string-map-1 string-map-n))
+
+(define (string-for-each proc str . rest)
+  (define (string-for-each-1 proc str)
+    (let ([end (string-cursor-end str)])
+      (let loop ([cur (string-cursor-start str)])
+        (if (string-cursor=? cur end)
+          (undefined)
+          (begin (proc (string-ref str cur))
+                 (loop (string-cursor-next str cur)))))))
+  (define (string-for-each-n proc . strs)
+    (let1 ends (map string-cursor-end strs)
+      (let loop ([curs (map string-cursor-start strs)])
+        (if (any string-cursor=? curs ends)
+          (undefined)
+          (begin (apply proc (map string-ref strs curs))
+                 (loop (map string-cursor-next strs curs)))))))
+  ((with-module gauche.internal %string-map-dispatch)
+   'string-for-each proc str rest string-for-each-1 string-for-each-n))
+
+;;
 ;; Byte string
 ;;
 

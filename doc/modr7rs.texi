@@ -907,6 +907,7 @@ char? char=? char<? char>? char<=? char>=? char->integer integer->char
 string? make-string string string-length string-ref string-set!
 string=? string<? string>? string<=? string>=? substring string-append
 string->list list->string string-copy string-copy! string-fill!
+string-map string-for-each
 @end example
 @item Vectors
 @example
@@ -978,29 +979,6 @@ utf8->string       string->utf8
 @c JP
 @subheading 制御機能
 @c COMMON
-
-@defun string-map proc str @dots{}
-@defunx string-for-each proc str @dots{}
-[R7RS base]
-@c MOD scheme.base
-@c EN
-These take different arguments from 
-@code{string-map} and @code{string-for-each} in SRFI-13
-(@pxref{SRFI-13 String mapping}), 
-so provided only in @code{scheme.base} module
-to avoid confusion.
-
-If you pass only one string argunemt, however, it works exactly
-the same way in both @code{srfi-13} and @code{scheme.base}.
-@c JP
-これらの手続きはSRFI-13の@code{string-map}及び@code{string-for-each}
-(@ref{SRFI-13 String mapping}参照)とは異なる引数を取るので、
-混乱を避けるため@code{scheme.base}でのみ提供されます。
-
-但し、文字列引数をひとつだけ渡す場合は、
-@code{srfi-13}でも@code{scheme.base}でも全く同様に動作します。
-@c COMMON
-@end defun
 
 @defun with-exception-handler handler thunk
 [R7RS base]
