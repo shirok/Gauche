@@ -4,6 +4,11 @@
 
 (define-module srfi-152
   (use srfi-13)
+  ;; Note, 130 version returns a cursor, not an index
+  (use srfi-130 
+       :only (string-index string-index-right)
+       :rename ((string-index %string-index) 
+                (string-index-right %string-index-right)))
   (use gauche.unicode)
   (export
    ;; 
@@ -41,9 +46,6 @@
 (select-module srfi-152)
 
 (define %subs (with-module gauche.internal %maybe-substring))
-;; Note, 130 version returns a cursor, not an index
-(define %string-index (with-module srfi-130 string-index))
-(define %string-index-right (with-module srfi-130 string-index-right))
 
 (define (%negate pred)
   (lambda (x)
