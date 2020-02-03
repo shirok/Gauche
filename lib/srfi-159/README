@@ -1,0 +1,19 @@
+SRFI-159 is '(chibi show)' library from chibi scheme. Imported from
+commit 5c43ca77 (move the col+ansi test to color section, 2019-11-07).
+
+The library is restructured to become (srfi 159) (or (scheme
+show)). This is mostly about sld changes:
+
+chibi/show.sld          becomes srfi-159/util.sld (internal)
+chibi/show/base.sld     becomes srfi-159/inner-base.sld (internal)
+chibi/show/color.sld    becomes srfi-159/color.sld
+chibi/show/column.sld   becomes srfi-159/columnar.sld
+chibi/show/unicode.sld  becomes srfi-159/unicode.sld
+util and inner-base     make    srfi-159/base.sld
+
+Most libraries include inner-base to have access to some procedures
+that are not visible from (srfi 159 base). columnar not only needs
+inner-base but also util.
+
+All .scm files keep their names from chibi (e.g. util library includes
+show.scm).

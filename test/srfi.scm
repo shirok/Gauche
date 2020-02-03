@@ -2570,18 +2570,14 @@
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-159")
-;(use srfi-159)
-;(test-module 'srfi-159)
+(use srfi-159)
+(test-module 'srfi-159)
 
 (define-module srfi-159-test
   (use compat.chibi-test)
   (use scheme.list)
   (use scheme.file)
-  (use chibi.show)
-  (use chibi.show.base)
-  (use chibi.show.color)
-  (use chibi.show.column)
-  (use chibi.show.unicode)
+  (use srfi-159)
   (chibi-test
    (include "include/srfi-159-tests.scm")))
 
