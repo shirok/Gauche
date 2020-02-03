@@ -1,1 +1,8 @@
 Source files here are included in the test file in the parent directory.
+
+You can put the external srfi test source files in this directory.  When
+you do so, we recommend to keep changes in these files minimal, so that
+it will be easier to incorporate updates from the upstreams.  Many srfi
+tests are written in either srfi-64, Chibi test library, or portable
+Scheme, and you can put Gauche-specific stuff in the main test file
+(test/srfi.scm) that include the original file.
