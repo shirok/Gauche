@@ -1,5 +1,7 @@
 2020-02-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-135.scm: Added.
+
 	* src/libstr.scm (string-copy-immutable): Added.
 	  (string-map, string-for-each): Integrate R7RS one and SRFI-13 one
 	  into one procedure supporting both interface.

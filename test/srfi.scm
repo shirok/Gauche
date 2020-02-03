@@ -2392,6 +2392,25 @@
   (for-each t data))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-135")
+(use srfi-135)
+(test-module 'srfi-135)
+
+(define-module srfi-135-tests
+  (use gauche.test)
+  (use gauche.uvector)
+  (use srfi-135)
+  (define-syntax orig-or (with-module gauche or))
+  (define-syntax or
+    (syntax-rules (fail)
+      [(_ x (fail 'what))
+       (test* (format "~a: ~s" 'what 'x) #t x)]
+      [(_ . xs) (orig-or . xs)]))
+  (define-syntax import
+    (syntax-rules () [(_ . x) #f]))
+  (include "include/srfi-135-tests.scm"))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-141")
 (use srfi-141)
 (test-module 'srfi-141)
