@@ -2581,7 +2581,6 @@
   (use chibi.show.base)
   (use chibi.show.color)
   (use chibi.show.column)
-  (use chibi.show.pretty)
   (use chibi.show.unicode)
   (chibi-test
    (include "include/srfi-159-tests.scm")))
