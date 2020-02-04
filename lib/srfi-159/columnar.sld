@@ -3,9 +3,11 @@
           (srfi 1) (srfi 117) (srfi 130)
           (only (gauche base) let-optionals*)
           (srfi-159 base) (srfi-159 util))
-  (export
-   call-with-output-generator call-with-output-generators
-   string->line-generator
-   tabular columnar show-columns wrapped wrapped/list wrapped/char
-   justified line-numbers from-file)
+  (export call-with-output-generator call-with-output-generators columnar
+          from-file
+          justified
+          line-numbers
+          show-columns string->line-generator
+          tabular
+          wrapped wrapped/char wrapped/list)
   (include "column.scm"))

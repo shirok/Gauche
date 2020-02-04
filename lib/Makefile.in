@@ -57,7 +57,7 @@ SCMFILES = \
        srfi-130.scm srfi-131.scm srfi-132.scm srfi-134.scm srfi-135.scm \
        srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
        srfi-151.scm srfi-152.scm srfi-154.scm srfi-155.scm srfi-158.scm \
-       srfi-159.sld srfi-159/*.sld srfi-159/*.scm srfi/159/*.scm \
+       srfi-159.scm srfi-159/*.sld srfi-159/*.scm srfi/159/*.scm \
        srfi-160.scm srfi/*.scm srfi/160/*.scm srfi-162.scm srfi-173.scm \
        slib.scm	 \
        check-script \

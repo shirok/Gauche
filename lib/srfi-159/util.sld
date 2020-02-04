@@ -1,11 +1,12 @@
 (define-library (srfi-159 util)
-  (export
-   nl fl space-to tab-to
-   padded padded/left padded/right padded/both
-   trimmed trimmed/left trimmed/right trimmed/both trimmed/lazy
-   fitted fitted/left fitted/right fitted/both
-   joined joined/prefix joined/suffix joined/last joined/dot joined/range
-   upcased downcased)
+  (export downcased
+          fitted fitted/both fitted/left fitted/right fl
+          joined joined/dot joined/last joined/prefix joined/range joined/suffix
+          nl
+          padded padded/both padded/left padded/right
+          space-to
+          tab-to trimmed trimmed/both trimmed/lazy trimmed/left trimmed/right
+          upcased)
   (import (scheme base) (scheme char) (scheme write)
           (srfi-159 inner-base))
   (include "show.scm"))
