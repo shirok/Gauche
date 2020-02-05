@@ -555,8 +555,81 @@ creates a string, whose @var{i}-th character is calculated by
   (lambda (i) (integer->char (+ i #x30))) 10)
  @result{} "0123456789"
 @end example
-
 @end defun
+
+@defun string-unfold p f g seed :optional base make-final
+[SRFI-13]
+@c MOD srfi-13
+@c EN
+A fundamental string builder.  The @var{p}, @var{f} and @var{g} are
+procedures, taking the current seed value.  The stop predicate @var{p}
+determines when to stop: If it returns a true value, string building
+stops.  The mapping function @var{f} returns a character
+from the current seed value.  The next seed function @var{g} returns
+a next seed value from the current seed value.  The @var{seed} argument
+gives the initial seed value.
+@c JP
+基本的な文字列構築手続きです。
+@var{p}、@var{f}、@var{g}は手続きで、現在のシード値を受けとります。
+停止述語@var{p}はいつ繰り返しを止めるかを判断します。それが真の値を返したら、
+文字列構築は終了し、それまでに生成された文字が集められて文字列として返されます。
+@var{f}はシード値から文字を生成する手続きです。@var{g}はシード値から次のシード値を
+生成します。@var{seed}引数はシード値の初期値を指定します。
+@c COMMON
+
+@example
+(string-unfold (^n (= n 10))
+               (^n (integer->char (+ n 48)))
+               (^n (+ n 1))
+               0)
+  @result{} "0123456789"
+@end example
+
+@c EN
+The optional argument @var{base} is, when given, prepended to the
+result string.  Another optional argument @var{make-final}
+is a procedure that takes the last return value of @var{g} and
+returns a string that becomes the suffix of the result string.
+@c JP
+省略可能引数@var{base}は、与えられれば生成される文字列のプレフィクスとなります。
+@var{make-final}は手続きで、繰り返しが終了した後の最後のシード値を受け取り、
+文字列のサフィックスを返します。
+@c COMMON
+
+@example
+(string-unfold (^n (= n 10))
+               (^n (integer->char (+ n 48)))
+               (^n (+ n 1))
+               0 "foo" x->string)
+  @result{} "foo012345678910"
+@end example
+@end defun
+
+@defun string-unfold-right p f g seed :optional base make-final
+[SRFI-13]
+@c MOD srfi-13
+@c EN
+Another fundamental string builder.  The meanings of arguments
+are the same as @code{string-unfold}.  The only difference is
+that the string is build right-to-left.  The optional @var{base},
+if given, becomes the suffix of result, and the result of
+@var{make-final} becomes the prefix.
+@c JP
+もうひとつの基本的な文字列構築器です。引数の意味は@code{string-unfold}と
+同じですが、@var{f}の返す文字が右から左へと並べられます。
+また、章句可能な@var{base}引数はサフィックスに、
+@var{make-final}が返す文字列はプレフィクスになります。
+@c COMMON
+
+@example
+(string-unfold-right (^n (= n 10))
+                     (^n (integer->char (+ n 48)))
+                     (^n (+ n 1))
+                     0 "foo" x->string)
+  @result{} "109876543210foo"
+@end example
+@end defun
+
 
 @defun reverse-list->string char-list
 [SRFI-13]
@@ -1216,57 +1289,6 @@ but works on a string instead of a list.
   @result{} (#\e #\d #\c #\b #\a)
 (string-fold-right cons '() "abcde")
   @result{} (#\a #\b #\c #\d #\e)
-@end example
-@end defun
-
-@defun string-unfold p f g seed :optional base make-final
-[SRFI-13]
-@c MOD srfi-13
-A fundamental string builder.  The @var{p}, @var{f} and @var{g} are
-procedures, taking the current seed value.  The stop predicate @var{p}
-determines when to stop: If it returns a true value, string building
-stops.  The mapping function @var{f} returns a character
-from the current seed value.  The next seed function @var{g} returns
-a next seed value from the current seed value.  The @var{seed} argument
-gives the initial seed value.
-
-@example
-(string-unfold (^n (= n 10))
-               (^n (integer->char (+ n 48)))
-               (^n (+ n 1))
-               0)
-  @result{} "0123456789"
-@end example
-
-The optional argument @var{base} is, when given, prepended to the
-result string.  Another optional argument @var{make-final}
-is a procedure that takes the last return value of @var{g} and
-returns a string that becomes the suffix of the result string.
-
-@example
-(string-unfold (^n (= n 10))
-               (^n (integer->char (+ n 48)))
-               (^n (+ n 1))
-               0 "foo" x->string)
-  @result{} "foo012345678910"
-@end example
-@end defun
-
-@defun string-unfold-right p f g seed :optional base make-final
-[SRFI-13]
-@c MOD srfi-13
-Another fundamental string builder.  The meanings of arguments
-are the same as @samp{string-unfold}.  The only difference is
-that the string is build right-to-left.  The optional @var{base},
-if given, becomes the suffix of result, and the result of
-@var{make-final} becomes the prefix.
-
-@example
-(string-unfold-right (^n (= n 10))
-                     (^n (integer->char (+ n 48)))
-                     (^n (+ n 1))
-                     0 "foo" x->string)
-  @result{} "109876543210foo"
 @end example
 @end defun
 

@@ -9649,7 +9649,7 @@ a regexp, or a procedure.
 
 If @var{splitter} is a character or a string, it is
 used as a delimiter.  Note that srfi-152's @code{string-split}
-only allows strings for @var{delimiter} (it also interprets the first
+only allows strings for @var{splitter} (it also interprets the first
 optional argument as a grammer; see below for the compatibility note.)
 
 If @var{splitter} is a character set, any consecutive characters
