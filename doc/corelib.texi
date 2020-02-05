@@ -9118,7 +9118,12 @@ By default, an error is signaled if @code{k} is out of range
 However, if an optional argument @var{fallback} is given,
 it is returned in such case.  This is Gauche's extension.
 
+If @var{cstring} is a multibyte string without index attached,
+this procedure takes O(@var{k}) time.  @xref{String indexing}, for
+ensuring O(1) access.
+
 @var{k} can also be a string cursor (also Gauche's extension).
+Cursor acccess is O(1).
 @c JP
 完全な文字列@var{cstring}の@var{k}番目の文字を返します。
 不完全な文字列を渡すのはエラーです。
@@ -9126,6 +9131,13 @@ it is returned in such case.  This is Gauche's extension.
 @var{k}が負数であったり@var{cstring}の長さと同じかそれ以上であった場合には
 エラーが報告されます。但し、引数@var{fallback}が与えられている場合にはエラーを
 報告せず@var{fallback}が返されます。これはGaucheの拡張です。
+
+@var{cstring}がマルチバイト文字列でインデックスが付加されていない場合、
+この手続きはO(@var{k})時間かかります。O(1)アクセスを得る方法は
+@ref{String indexing}を参照してください。
+
+@var{k}に文字列カーソルを渡すこともできます (これもGaucheの拡張です)。
+カーソルによるアクセスはO(1)です。
 @c COMMON
 @end defun
 

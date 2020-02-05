@@ -11851,7 +11851,8 @@ We could check the reason of failure in the parser, and call
         ($let ([closer ($. #[\)\]\@}])])
           (if (eqv? closer expected)
             ($return closer)
-            ($fail (format "Mismatched closing bracket. '~c' expected, but got '~c'"
+            ($fail (format "Mismatched closing bracket. '~c' expected, \
+                            but got '~c'"
                            expected closer))))))
 @end example
 
@@ -19978,19 +19979,20 @@ one. This lets you pass arguments to the procedure.
 
 @c COMMON
 
-@example
+@smalllisp
 ;; select all <book> elements whose style attribute value is equal to
 ;; the <bookstore> element's specialty attribute value.
 (sxpath "//book[/bookstore/@@specialty=@@style]")
 ;; a similar query but this time make sure specialty of _all_
 ;; bookstores is matched
-(let ([match-specialty (lambda (node root var-binding)
-                         (let ([style (car ((sxpath '(@@ style *text*)) node))]
-                               [all-specialty ((sxpath '(bookstore @@ specialty *text*)) node)])
-                           (fold (lambda (specialty last-result)
-                                   (and last-result (string=? style specialty)))
-                                 #t
-                                 all-specialty)))])
+(let ([match-specialty
+       (lambda (node root var-binding)
+         (let ([style (car ((sxpath '(@@ style *text*)) node))]
+               [all-specialty ((sxpath '(bookstore @@ specialty *text*)) node)])
+           (fold (lambda (specialty last-result)
+                   (and last-result (string=? style specialty)))
+                        #t
+                        all-specialty)))])
   (sxpath `(// (book (,match-specialty)))))
 
 ;; select all <bookstore> elements that are inside top-level <book>
@@ -20022,7 +20024,7 @@ one. This lets you pass arguments to the procedure.
                               3))
                          nodeset))])
   (sxpath `(book bookstore @@ rating ,greater)))
-@end example
+@end smalllisp
 @end defun
 
 @c EN
@@ -22419,7 +22421,8 @@ the following row as the header row:
 @c COMMON
 
 @example
-(define *input-row* '("" "" "Year" "Country" "" "Population" "GDP" "Notes"))
+(define *input-row*
+  '("" "" "Year" "Country" "" "Population" "GDP" "Notes"))
 @end example
 
 @c EN
@@ -25685,7 +25688,7 @@ L(X;Z) <= L(X;Y) + L(Y;Z) を満たしますが、Restricted edit距離には
 @end example
 
 @c EN
-Note: If you pass list of sequences to the second argument
+Note: If you pass a list of sequences to the second argument
 of the singular version by accident, you might not get an error immediately
 because a list is also a sequence.
 @c JP
@@ -25703,7 +25706,7 @@ because a list is also a sequence.
 @mdindex util.match
 @c EN
 This module is a port of Andrew Wright's pattern matching macro library.
-It is widely used in Scheme world, and ported to various Scheme
+It is widely used in the Scheme world, and ported to various Scheme
 implementations, including Chez Scheme, PLT Scheme, Scheme48, Chicken,
 and SLIB.
 It is similar to, but more powerful than
@@ -26924,10 +26927,23 @@ you can write like this:
 This module provides a library of lazy streams, including the
 functions and syntaxes defined in srfi-40 and srfi-41,
 the latter of which became a part of R7RS large (as @code{(scheme stream)},
+
+Gauche has a built-in lazy sequences (@pxref{Lazy sequences}), which is
+a lazy stream integrated to a list so that you can use all list procedures
+on it.  Lazy streams provided in this module is somewhat heavier than
+lazy sequences and you need to use special procedures,
+but it is strictly lazy (while a lazy sequence evaluates one element ahead)
+and portable.
 @c JP
 このモジュールは遅延ストリームのライブラリを提供します。このモジュール
 にはsrfi-40とsrfi-41で定義されている関数および構文が含まれています。
 後者は@code{(scheme stream)}としてR7RS largeの一部になっています。
+
+Gaucheには遅延ストリームとリストを統合したような、組み込みの遅延シーケンスがあります
+(@ref{Lazy sequences})参照。そちらは通常のリスト手続きを使って扱うことができます。
+このモジュールで提供される遅延ストームは、遅延シーケンスより重く、
+扱うために専用の手続きが必要です。ただ、要素の評価は必要になるぎりぎりまで遅延され
+(遅延シーケンスでは必要な要素のひとつ先まで評価されます)、またポータブルです。
 @c COMMON
 @end deftp
 
@@ -29478,7 +29494,7 @@ This parses the selector part of the CSS.
 
 The following is the complete rules of SxCSS syntax.
 
-@example
+@smallexample
 <sxcss>      : (@{<style-rule> | <at-rule>@} ...)
 
 <style-rule> : (style-rule <pattern> <declaration> ...)
@@ -29528,7 +29544,7 @@ The following is the complete rules of SxCSS syntax.
                    ; NB: Other at-rules are not supported yet
 <at-media-rule>  : (@@media (<symbol> ...) <style-rule> ...)
 <at-import-rule> : (@@import <string> (<symbol> ...))
-@end example
+@end smallexample
 
 NB: Negation op is @code{:not} instead of @code{not}, 
 since @code{(not <negation-arg>)}
