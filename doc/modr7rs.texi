@@ -5334,7 +5334,7 @@ Use this module if you need portability.
 @end deftp
 
 @defun text? obj
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Returns @code{#t} iff @var{obj} is a text, which is an immutable
 indexed string in Gauche.  Note that a text type is not disjoint
@@ -5342,14 +5342,14 @@ from a string in Gauche.
 @end defun
 
 @defun textual? obj
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Returns @code{#t} iff @var{obj} is either a text or a string.
 In Gauche, this is just an alias of @code{string?}.
 @end defun
 
 @defun textual-null? obj
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Returns @code{#t} iff @var{obj} is an empty string/text.  In Gauche
 this is just an alias of @code{string-null?}.
@@ -5357,25 +5357,25 @@ this is just an alias of @code{string-null?}.
 
 @defun textual-every pred textual :optional start end
 @defunx textual-any pred textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun make-text len char
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 In Gauche it is same as @code{make-string}, except that the returned
 string is immutable and indexed, and you can't omit @var{char}.
 @end defun
 
 @defun text char @dots{}
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Like @code{string}, but returned string is immutable and indexed.
 @end defun
 
 @defun text-tabulate proc len
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Like @code{string-tabulate}, but returned string is immutable and indexed
 (@pxref{String constructors}).
@@ -5383,7 +5383,7 @@ Like @code{string-tabulate}, but returned string is immutable and indexed
 
 @defun text-unfold p f g seed :optional base make-final
 @defunx text-unfold-right p f g seed :optional base make-final
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Like @code{string-unfold} and @code{string-unfold-right},
 but returned string is immutable and indexed
@@ -5392,23 +5392,23 @@ a string instead of a character.
 @end defun
 
 @defun text-length text
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun text-ref text index
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-length textual
 @defunx textual-ref textual index
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual->text textual
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Takes a string, and returns an immutable, indexed string of the same
 content.  If @var{textual} is already a such string, it is returned as is.
@@ -5417,7 +5417,7 @@ content.  If @var{textual} is already a such string, it is returned as is.
 @defun textual->string textual :optional start end
 @defunx textual->vector textual :optional start end
 @defunx textual->list textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Converts a textual to a fresh mutable string,
 a vector and a list, respectively.
@@ -5428,7 +5428,7 @@ and @code{string->list} in Gauche.
 @defun string->text string :optional start end
 @defunx vector->text char-vector :optional start end
 @defunx list->text char-list :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Convert a string, a vector of characters, and a list of characters
 to an immutable indexed string.
@@ -5437,13 +5437,13 @@ start/end arguments, the input is returned as is.
 @end defun
 
 @defun reverse-list->text char-list
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Same as @code{(list->text (reverse char-list))} but maybe more efficient.
 @end defun
 
 @defun textual->utf8 textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Returns a bytevector that contains utf8 encoding of the input
 textual.  In Gauche, it is the same as @code{string->utf8}
@@ -5451,7 +5451,7 @@ textual.  In Gauche, it is the same as @code{string->utf8}
 @end defun
 
 @defun textual->utf16 textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Returns a bytevector that contains utf16 encoding of the input
 textual, with BOM attached, and in the native byteorder.
@@ -5462,7 +5462,7 @@ In Gauche, it is the same as
 
 @defun textual->utf16be textual :optional start end
 @defunx textual->utf16le textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Returns a bytevector that contains utf16be and utf16le encoding of the input
 textual.  No BOM is attached.
@@ -5473,29 +5473,29 @@ In Gauche, they are the same as
 @end defun
 
 @defun utf8->text bytevector :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun utf16->text bytevector :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun utf16be->text bytevector :optional start end
 @defunx utf16le->text bytevector :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun subtext text start end
 @defunx subtextual textual start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-copy textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
@@ -5508,7 +5508,7 @@ In Gauche, they are the same as
 @defunx textual-trim textual :optional pred start end
 @defunx textual-trim-right textual :optional pred start end
 @defunx textual-trim-both textual :optional pred start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 In Gauche, these are the same as corresponding string operations
 (@code{string-take}, @code{string-drop}, @code{string-take-right},
@@ -5519,7 +5519,7 @@ except that the returned string is always immutable and indexed.
 @end defun
 
 @defun textual-replace textual1 textual2 start1 end1 :optional start2 end2
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 In Gauche, this is same as @code{string-replace},
 except that the returned string is always immutable and indexed.
@@ -5531,7 +5531,7 @@ except that the returned string is always immutable and indexed.
 @defunx textual>? textual1 textual2 textual3 @dots{}
 @defunx textual<=? textual1 textual2 textual3 @dots{}
 @defunx textual>=? textual1 textual2 textual3 @dots{}
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
@@ -5540,7 +5540,7 @@ except that the returned string is always immutable and indexed.
 @defunx textual-ci>? textual1 textual2 textual3 @dots{}
 @defunx textual-ci<=? textual1 textual2 textual3 @dots{}
 @defunx textual-ci>=? textual1 textual2 textual3 @dots{}
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
@@ -5548,7 +5548,7 @@ except that the returned string is always immutable and indexed.
 @defunx textual-suffix-length textual1 textual2 :optional start1 end1 start2 end2
 @defunx textual-prefix? textual1 textual2 :optional start1 end1 start2 end2
 @defunx textual-suffix? textual1 textual2 :optional start1 end1 start2 end2
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
@@ -5558,7 +5558,7 @@ except that the returned string is always immutable and indexed.
 @defunx textual-skip-right textual pred :optional start end
 @defunx textual-contains textual1 textual2 :optional start1 end1 start2 end2
 @defunx textual-contains-right textual1 textual2 :optional start1 end1 start2 end2
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
@@ -5566,70 +5566,70 @@ except that the returned string is always immutable and indexed.
 @defunx textual-downcase textual
 @defunx textual-foldcase textual
 @defunx textual-titlecase textual
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-append textual @dots{}
 @defunx textual-concatenate textual-list
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-concatenate-reversse args :optional final-textual end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-join textual-list :optional delimiter grammar
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-fold kons knil textual :optional start end
 @defunx textual-fold-right kons knil textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-map proc textural1 textural2 @dots{}
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-for-each proc textual1 textual2 @dots{}
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-map-index proc textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-for-each-index proc textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-count textual pred :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-filter pred textual :optional start end
 @defunx textual-remove pred textual :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-replicate textual from to :optional start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 @end defun
 
 @defun textual-split textual delimiter :optional grammar limit start end
-[R7RS immutable texts]
+[R7RS text]
 @c MOD scheme.text
 Like @code{string-split}, except that the returned strings are all
 immutable and indexed.  @xref{String utilities}, for the details.
