@@ -9767,9 +9767,9 @@ in the given range before splitting.
 
 @c EN
 See also @code{string-tokenize} in
-(@pxref{SRFI-13 other string operations}).
+(@pxref{SRFI-13 Other string operations}).
 @c JP
-@code{string-tokenize} (@ref{SRFI-13 other string operations})
+@code{string-tokenize} (@ref{SRFI-13 Other string operations})
 も参照して下さい。
 @c COMMON
 @end defun

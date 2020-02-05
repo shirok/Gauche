@@ -5523,7 +5523,7 @@ except that the returned string is always immutable and indexed.
 @c MOD scheme.text
 In Gauche, this is same as @code{string-replace},
 except that the returned string is always immutable and indexed.
-@xref{SRFI-13 other string operations}, for the details.
+@xref{SRFI-13 Other string operations}, for the details.
 @end defun
 
 @defun textual=? textual1 textual2 textual3 @dots{}

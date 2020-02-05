@@ -1614,9 +1614,9 @@ R7RS の @code{string->number}が使えます。@ref{Numerical conversions}参�
 @c COMMON
 @item strtok
 @c EN
-SRFI-13 @code{string-tokenize}.  @xref{SRFI-13 other string operations}.
+SRFI-13 @code{string-tokenize}.  @xref{SRFI-13 Other string operations}.
 @c JP
-SRFI-13 の @code{string-tokenize}。@ref{SRFI-13 other string operations}参照。
+SRFI-13 の @code{string-tokenize}。@ref{SRFI-13 Other string operations}参照。
 @c COMMON
 @item strtol
 @itemx strtoul

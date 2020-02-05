@@ -370,7 +370,7 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 * SRFI-13 String reverse & append::
 * SRFI-13 String mapping::
 * SRFI-13 String rotation::
-* SRFI-13 other string operations::
+* SRFI-13 Other string operations::
 * SRFI-13 String filtering::
 * SRFI-13 Low-level string procedures::
 @end menu
@@ -1298,7 +1298,7 @@ but works on a string instead of a list.
 Call @var{proc} on each index of the string @var{s}.
 @end defun
 
-@node SRFI-13 String rotation, SRFI-13 other string operations, SRFI-13 String mapping, String library
+@node SRFI-13 String rotation, SRFI-13 Other string operations, SRFI-13 String mapping, String library
 @subsection String rotation
 @c NODE 文字列のローテーション
 
@@ -1325,7 +1325,7 @@ is always @code{#\a}, which extends negative @var{n} as well.
 @c MOD srfi-13
 @end defun
 
-@node SRFI-13 other string operations, SRFI-13 String filtering, SRFI-13 String rotation, String library
+@node SRFI-13 Other string operations, SRFI-13 String filtering, SRFI-13 String rotation, String library
 @subsection Other string operations
 @c NODE 他の文字列操作
 
@@ -1383,7 +1383,7 @@ which provides similar features but different criteria.
 @c COMMON
 @end defun
 
-@node SRFI-13 String filtering, SRFI-13 Low-level string procedures, SRFI-13 other string operations, String library
+@node SRFI-13 String filtering, SRFI-13 Low-level string procedures, SRFI-13 Other string operations, String library
 @subsection String filtering
 @c NODE 文字列のフィルタリング
 
@@ -5711,12 +5711,12 @@ arguments @var{src-start} and @var{src-end} limits the region of
 
 @c EN
 Be aware that the order of arguments differ from
-SRFI-13's @code{string-replace} (@pxref{SRFI-13 other string operations});
+SRFI-13's @code{string-replace} (@pxref{SRFI-13 Other string operations});
 @code{string-replace!} resembles to @code{string-copy!} (also in SRFI-13),
 rather than @code{string-replace}.
 @c JP
 引数の順序がSRFI-13の@code{string-replace}とは異なることに
-注意して下さい (@ref{SRFI-13 other string operations}参照)。
+注意して下さい (@ref{SRFI-13 Other string operations}参照)。
 @code{string-replace!}の引数順は同じくSRFI-13にある@code{string-copy!}に
 似せてあります。
 @c COMMON
