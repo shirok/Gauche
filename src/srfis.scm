@@ -1034,6 +1034,24 @@ The module @code{data.ideque} is compatible to srfi-134.
 @ref{変更不可な両端キュー}参照。
 
 
+srfi-135, srfi-135
+()
+
+Immutable Texts
+This has become a part of R7RS large.
+In Gauche, the text type is not disjoint from the string type.  Instead,
+a text is simply an immutable and indexed string.
+@xref{String indexing}, for the detail of indexed string.
+The API is described in @ref{R7RS immutable texts}.
+
+変更不可なテキスト
+これはR7RS largeの一部となりました。
+Gaucheではtext型はstring型と独立してはおらず、
+textは単に「変更不可でインデクスされた文字列」にすぎません。
+文字列のインデクシングについては@ref{String indexing}を参照してください。
+APIは@ref{R7RS immutable texts}で説明しています。
+
+
 srfi-141, srfi-141
 ()
 
