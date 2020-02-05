@@ -82,10 +82,10 @@ No equivalent procedure.
 @c COMMON
 @c EN
 @item & (binary)
-Gauche @code{logand}.  @xref{Bitwise operations}.
+Gauche @code{logand}.  @xref{R7RS bitwise operations}.
 @c JP
 @item & (二項演算子)
-Gauche の @code{logand}。@ref{Bitwise operations}参照。
+Gauche の @code{logand}。@ref{R7RS bitwise operations}参照。
 @c COMMON
 @c EN
 @item & (unary)
@@ -109,9 +109,9 @@ No equivalent procedure.
 @c COMMON
 @item |
 @c EN
-Gauche @code{logior}.  @xref{Bitwise operations}.
+Gauche @code{logior}.  @xref{R7RS bitwise operations}.
 @c JP
-Gauche の @code{logior}。@ref{Bitwise operations}参照。
+Gauche の @code{logior}。@ref{R7RS bitwise operations}参照。
 @c COMMON
 @item ||
 @c EN
@@ -127,9 +127,9 @@ No equivalent procedure.
 @c COMMON
 @item ^
 @c EN
-Gauche @code{logxor}.  @xref{Bitwise operations}.
+Gauche @code{logxor}.  @xref{R7RS bitwise operations}.
 @c JP
-Gauche の @code{logxor}。@ref{Bitwise operations}参照。
+Gauche の @code{logxor}。@ref{R7RS bitwise operations}参照。
 @c COMMON
 @item =
 @c EN
@@ -158,9 +158,9 @@ R7RS の算術演算手続き @code{<} および @code{<=}。
 @c COMMON
 @item <<
 @c EN
-Gauche @code{ash}.  @xref{Bitwise operations}.
+Gauche @code{ash}.  @xref{R7RS bitwise operations}.
 @c JP
-Gauche の @code{ash}。@ref{Bitwise operations}参照。
+Gauche の @code{ash}。@ref{R7RS bitwise operations}参照。
 @c COMMON
 @item <<=
 @c EN
@@ -181,9 +181,9 @@ R7RS の算術演算手続き @code{<} および @code{<=}。
 @c COMMON
 @item >>
 @c EN
-Gauche @code{ash}.  @xref{Bitwise operations}.
+Gauche @code{ash}.  @xref{R7RS bitwise operations}.
 @c JP
-Gauche の @code{ash}。@ref{Bitwise operations}参照。
+Gauche の @code{ash}。@ref{R7RS bitwise operations}参照。
 @c COMMON
 @item >>=
 @c EN
@@ -221,9 +221,9 @@ Gauche の @code{slot-ref} がこれに近いものです。@ref{Accessing insta
 @c COMMON
 @item ~
 @c EN
-Gauche @code{lognot}.  @xref{Bitwise operations}.
+Gauche @code{lognot}.  @xref{R7RS bitwise operations}.
 @c JP
-Gauche の @code{lognot}。@ref{Bitwise operations}参照。
+Gauche の @code{lognot}。@ref{R7RS bitwise operations}参照。
 @c COMMON
 @item ~=
 @c EN
@@ -319,10 +319,10 @@ You can use @code{string->number}.  @xref{Numerical conversions}.
 @item bsearch
 @c EN
 You can use SRFI-133's @code{vector-binary-search}.
-@xref{Vector library}.
+@xref{R7RS vectors}.
 @c JP
 SRFI-133の@code{vector-binary-search}が使えます。
-@ref{Vector library}参照。
+@ref{R7RS vectors}参照。
 @c COMMON
 @item calloc
 @c EN
@@ -839,19 +839,19 @@ Gauche の @code{sys-gmtime}。@ref{Time} 参照。
 @c EN
 Not directly supported, but you can use R7RS @code{char-alphabetic?} and
 @code{char-numeric?}.  @xref{Characters}.   You can also use
-character set.  @xref{Character set}, also @ref{Character-set library}.
+character set.  @xref{Character set}, also @ref{R7RS character sets}.
 @c JP
 直接はサポートされていませんが、R7RS の @code{char-alphabetic?} および
 @code{char-numeric?} が使えます。@ref{Characters} 参照。また、文字集合も
-使えます。@ref{Character set}、@ref{Character-set library} 参照。
+使えます。@ref{Character set}、@ref{R7RS character sets} 参照。
 @c COMMON
 @item isalpha
 @c EN
 R7RS @code{char-alphabetic?}.  @xref{Characters}.  See also
-@ref{Character set} and @ref{Character-set library}.
+@ref{Character set} and @ref{R7RS character sets}.
 @c JP
 R7RS の @code{char-alphabetic?}。@ref{Characters} 参照。また、
-@ref{Character set} および @ref{Character-set library} も参照してください。
+@ref{Character set} および @ref{R7RS character sets} も参照してください。
 @c COMMON
 @item isatty
 @c EN
@@ -863,91 +863,91 @@ Gauche の @code{sys-isatty}。@ref{Other file operations} 参照。
 @c EN
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:iso-control c)} with @code{srfi-14}.
-@xref{Character-set library}.
+@xref{R7RS character sets}.
 @c JP
 直接はサポートされていませんが、@code{srfi-14} で
 @code{(char-set-contains? char-set:iso-control c)} が使えます。
-@ref{Character-set library} 参照。
+@ref{R7RS character sets} 参照。
 @c COMMON
 @item isdigit
 @c EN
 R7RS @code{char-numeric?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:digit c)}
-with @code{srfi-14}.   @xref{Character-set library}.
+with @code{srfi-14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-numeric?}。@ref{Characters} 参照。
 @code{srfi-14} で、@code{(char-set-contains? char-set:digit c)} も
-使えます。@ref{Character-set library} 参照。
+使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isgraph
 @c EN
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:graphic c)} with @code{srfi-14}.
-@xref{Character-set library}.
+@xref{R7RS character sets}.
 @c JP
 直接はサポートされていませんが、@code{srfi-14} で
 @code{(char-set-contains? char-set:graphic c)} が使えます。
-@ref{Character-set library} 参照。
+@ref{R7RS character sets} 参照。
 @c COMMON
 @item islower
 @c EN
 R7RS @code{char-lower-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:lower-case c)}
-with @code{srfi-14}.   @xref{Character-set library}.
+with @code{srfi-14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-lower-case?}。@ref{Characters} 参照。
 @code{srfi-14} で @code{(char-set-contains? char-set:lower-case c)}
-も使えます。@ref{Character-set library} 参照。
+も使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isprint
 @c EN
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:printing c)} with @code{srfi-14}.
-@xref{Character-set library}.
+@xref{R7RS character sets}.
 @c JP
 直接はサポートされていませんが、@code{srfi-14} で
 @code{(char-set-contains? char-set:printing c)} が使えます。
-@ref{Character-set library} 参照。
+@ref{R7RS character sets} 参照。
 @c COMMON
 @item ispunct
 @c EN
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:punctuation c)} with @code{srfi-14}.
-@xref{Character-set library}.
+@xref{R7RS character sets}.
 @c JP
 直接はサポートされていませんが、@code{srfi-14} で
 @code{(char-set-contains? char-set:punctuation c)} が使えます。
-@ref{Character-set library} 参照。
+@ref{R7RS character sets} 参照。
 @c COMMON
 @item isspace
 @c EN
 R7RS @code{char-whitespace?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:whitespace c)}
-with @code{srfi-14}.   @xref{Character-set library}.
+with @code{srfi-14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-whitespace?}。@ref{Characters} 参照。
 @code{srfi-14} で @code{(char-set-contains? char-set:whitespace c)}
-も使えます。@ref{Character-set library} 参照。
+も使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isupper
 @c EN
 R7RS @code{char-upper-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:upper-case c)}
-with @code{srfi-14}.   @xref{Character-set library}.
+with @code{srfi-14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-upper-case?}。@ref{Characters} 参照。
 @code{srfi-14} で @code{(char-set-contains? char-set:upper-case c)}
-も使えます。@ref{Character-set library} 参照。
+も使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isxdigit
 @c EN
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:hex-digit c)} with @code{srfi-14}.
-@xref{Character-set library}.
+@xref{R7RS character sets}.
 @c JP
 直接はサポートされていませんが、@code{srfi-14} で
 @code{(char-set-contains? char-set:hex-digit c)} が使えます。
-@ref{Character-set library} 参照。
+@ref{R7RS character sets} 参照。
 @c COMMON
 @item kill
 @c EN

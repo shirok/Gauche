@@ -2882,7 +2882,7 @@ you need a deque (double-ended queue).
 dequeue on top of vectors.  Or you can use immutable deques
 provided by @code{data.ideque} (@pxref{Immutable deques}).
 
-See also SRFI-117 (@ref{Queues based on lists}), which defines a
+See also @code{scheme.list-queue} (@ref{R7RS list queues}), which defines a
 portable API for list-based queue.
 @c JP
 キュー(FIFO)機能を提供します。
@@ -2908,8 +2908,8 @@ deque (double-ended queue)が必要です。@code{data.ring-buffer}モジュー�
 (@ref{Ring buffer}参照)。また、変更不可な両端キュー@code{data.ideque}
 もあります(@ref{Immutable deques}参照)。
 
-また、SRFI-117はポータブルなリストベースのキューのAPIを提供しています
-(@ref{Queues based on lists})。
+また、@code{scheme.list-queue}はポータブルなリストベースのキューのAPIを提供しています
+(@ref{R7RS list queues})。
 @c COMMON
 @end deftp
 
@@ -16837,12 +16837,12 @@ to convert @var{string} to the specified character encoding.
 @c EN
 These constants are bound to character sets that represents
 ``unreserved'' characters defined in RFC2396 and RFC3986, respectively.
-(See @ref{Character set}, and @ref{Character-set library}, for
+(See @ref{Character set}, and @ref{R7RS character sets}, for
 operations on character sets).
 @c JP
 これらの定数はそれぞれ、RFC2396とRFC3986で定義されている
 「非予約文字」の文字集合に束縛されています。
-(文字集合の操作については、@ref{Character set}および@ref{Character-set library}
+(文字集合の操作については、@ref{Character set}および@ref{R7RS character sets}
 を参照して下さい。)
 @c COMMON
 @end defvr

@@ -7649,7 +7649,7 @@ An instance of @code{<char-set>} is applicable to a character,
 and works as a membership predicate; see @code{char-set-contains?} below.
 
 Further operations, such as set algebra, is defined in SRFI-14
-module (@pxref{Character-set library}).
+module (@pxref{R7RS character sets}).
 @c JP
 文字の集合を取り扱う、文字集合(キャラクタセット)のクラスです。
 Gaucheは文字集合オブジェクトのサポートと、
@@ -7663,7 +7663,7 @@ Gaucheは文字集合オブジェクトのサポートと、
 下記の@code{char-set-contains?}を参照してください。
 
 文字集合に関する他の操作、例えば集合演算などは、SRFI-14モジュール
-(@ref{Character-set library}参照) で提供されています。
+(@ref{R7RS character sets}参照) で提供されています。
 @c COMMON
 @end deftp
 
@@ -11639,7 +11639,7 @@ R7RS defines bytevectors; in Gauche, they're just @code{u8vector}s
 in @code{gauche.uvector} module (r7rs modules defines aliases.
 @pxref{R7RS base library}).
 
-@xref{Vector library}, for additional operations on vectors.
+@xref{R7RS vectors}, for additional operations on vectors.
 @c JP
 ベクタはSchemeオブジェクトの単純な一次元配列です。
 インデックスを用いて定数時間でその要素にアクセスできます。
@@ -11657,7 +11657,7 @@ R7RSはバイトベクタを定義しています。Gaucheではそれは単に
 @code{gauche.uvector}モジュールの@code{u8vector}です
 (R7RSモジュールは別名を定義しています。@ref{R7RS base library}参照。)
 
-より多くのベクタに対する操作が@ref{Vector library}で提供されています。
+より多くのベクタに対する操作が@ref{R7RS vectors}で提供されています。
 @c COMMON
 @end deftp
 

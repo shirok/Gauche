@@ -278,7 +278,7 @@ to construct and traverse collections/sequences in concise code.
 @ref{Pairs and lists} and @ref{R7RS lists}
 @item
 @emph{Vector} - a one-dimensional array of arbitrary Scheme values.
-See @ref{Vectors} and @ref{Vector library}.
+See @ref{Vectors} and @ref{R7RS vectors}.
 If you need a wide range of index, but the actual data
 is sparse, you might want to look at @ref{Sparse vectors}.
 @item
@@ -298,7 +298,7 @@ and @ref{String library}.  Gauche handles multibyte strings---
 see @ref{Multibyte strings} for the details.
 @item
 @emph{Character set} - a set of characters.  See @ref{Character set}
-and @ref{Character-set library}.
+and @ref{R7RS character sets}.
 @item
 @emph{Hash table} - hash tables.  See @ref{Hashtables}.
 For very large hash tables (millions of entries),
@@ -343,7 +343,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @ref{Pairs and lists}と@ref{R7RS lists}をチェックしましょう。
 @item
 @emph{ベクタ} - 任意のSchemeの値を格納する一次元配列。@ref{Vectors}お
-よび@ref{Vector library}を見ましょう。
+よび@ref{R7RS vectors}を見ましょう。
 広い範囲のインデックスが必要で、しかし実際に格納されるデータが疎である場合は
 @ref{Sparse vectors}が使えるかもしれません。
 @item
@@ -361,7 +361,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 については@ref{Multibyte strings}を見てください。
 @item
 @emph{文字集合} - 文字の集合。@ref{Character set}および
-@ref{Character-set library}参照。
+@ref{R7RS character sets}参照。
 @item
 @emph{ハッシュテーブル} - ハッシュテーブル。 @ref{Hashtables}参照。
 非常に大きなハッシュテーブル(数百万エントリ)の場合、
@@ -419,10 +419,10 @@ apply methods in @ref{Collection framework} and
 
 @c EN
 Character and character set operations are covered in
-@ref{Characters}, @ref{Character set}, and @ref{Character-set library}.
+@ref{Characters}, @ref{Character set}, and @ref{R7RS character sets}.
 @c JP
 文字および文字集合の操作は
-@ref{Characters}、@ref{Character set}、@ref{Character-set library}がカ
+@ref{Characters}、@ref{Character set}、@ref{R7RS character sets}がカ
 バーしています。
 @c COMMON
 
@@ -776,12 +776,12 @@ binary data, a la Perl's @code{pack}/@code{unpack}.
 Gauche core provides basic bitshift and mask operations
 (@pxref{Basic bitwise operations}).
 SRFI-151 has comprehensive bitwise operations
-(@pxref{Bitwise operations}).
+(@pxref{R7RS bitwise operations}).
 @c JP
 Gaucheコアは基本的なビットシフトおよびマスク操作を提供しています
 (@ref{Basic bitwise operations}参照)。
 SRFI-151はより包括的なビット演算を提供します
-(@ref{Bitwise operations}参照)。
+(@ref{R7RS bitwise operations}参照)。
 @c COMMON
 
 @node Naming convention of libraries, Obsolete and superseded modules, Finding libraries you need, Library modules - Overview
@@ -1122,21 +1122,21 @@ SRFI-14(文字集合ライブラリ)はR7RS largeに採り入れられ、
 @c EN
 Vector library (Legacy) - 
 this module is effectively superseded by R7RS and @code{srfi-133}.
-@xref{Vectors}, and @pxref{Vector library}.
+@xref{Vectors}, and @pxref{R7RS vectors}.
 @c JP
 ベクタライブラリ(旧式) - 
 このモジュールは実効的に、R7RSと@code{srfi-133}に取って代わられています。
-@ref{Vectors}と@ref{Vector library}参照。
+@ref{Vectors}と@ref{R7RS vectors}参照。
 @c COMMON
 @end deftp
 
 @deftp {Module} srfi-60
 @c EN
 Integers as bits - this module is superseded by @code{srfi-151}.
-@xref{Bitwise operations}.
+@xref{R7RS bitwise operations}.
 @c JP
 整数に対するビット操作 - このモジュールは@code{srfi-151}に取って代わられています。
-@ref{Bitwise operations}参照。
+@ref{R7RS bitwise operations}参照。
 @c COMMON
 @end deftp
 

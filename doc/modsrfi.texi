@@ -5,7 +5,10 @@
 @c EN
 This chapter lists modules that provides SRFI functionalities.
 Note that some of SRFI features are built in Gauche core and
-not listed here.  @xref{Standard conformance}, for entire list
+not listed here.  The SRFIs that have been adopted to R7RS-large
+are described in @ref{Library modules - R7RS standard libraries}.
+
+@xref{Standard conformance}, for entire list
 of supported SRFIs.
 
 (Even if a srfi is not listed here, you can still say
@@ -15,6 +18,8 @@ srfi N is supported by Gauche.)
 この章ではSRFIの機能を提供するモジュールをリストします。
 一部のSRFIはGaucheのコアに組み込まれており、
 この章には挙げられていないことに注意して下さい。
+また、R7RS-largeに取り入れられたsrfiは@ref{Library modules - R7RS standard libraries}で解説しています。
+
 サポートされている全てのSRFIのリストは@ref{Standard conformance}にあります。
 
 (ここに挙げられていないSRFIでも、サポートされているものについては
@@ -23,17 +28,15 @@ srfi N is supported by Gauche.)
 
 @c ----------------------------------------------------------------------
 @menu
-* List library::                srfi-1
+* SRFIs that have become R7RS-large::
 * Homogeneous vectors::         srfi-4
 * A compatible let form with signatures and rest arguments::  srfi-5
 * Feature-based program configuration language::  srfi-7
 * String library::              srfi-13
-* Character-set library::       srfi-14
 * Time data types and procedures::  srfi-19
 * Sources of random bits::      srfi-27
 * Localization::                srfi-29
 * A program argument processor::  srfi-37
-* Streams::                     srfi-41
 * Eager comprehensions::        srfi-42
 * Vector library (Legacy)::     srfi-43
 * Requiring extensions::        srfi-55
@@ -43,49 +46,88 @@ srfi N is supported by Gauche.)
 * Octet-addressed binary blocks::  srfi-74
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
-* Purely functional random-access pairs and lists::
-* Boxes::                       srfi-111
+* Purely functional random-access pairs and lists:: srfi-101
 * Portable runtime environment inquiry::  srfi-112
-* Sets and bags::               srfi-113
 * Comparators::                 srfi-114
-* Scheme regular expressions::  srfi-115
-* Queues based on lists::       srfi-117
 * Simple adjustable-size strings::  srfi-118
-* Lazy sequence (srfi)::        srfi-127
-* Cursor-based string library:: srfi-130
-* Sort library::                srfi-132
-* Vector library::              srfi-133
-* Integer division::            srfi-141
-* Fixnums::                     srfi-143
-* Mappings and hashmaps::       srfi-146
-* Bitwise operations::          srfi-151
+* Cursor-based string library::  srfi-130
 * String library (reduced)::    srfi-152
 * First-class dynamic extents::  srfi-154
-* Generators and accumulators::  srfi-158
 * Homogeneous numeric vector libraries::  srfi-160
 * Comparator sublibrary::       srfi-162
 * Hooks (srfi)::                srfi-173
 @end menu
 
 
-@c ----------------------------------------------------------------------
-@node List library, Homogeneous vectors, Library modules - SRFIs, Library modules - SRFIs
-@section @code{srfi-1} - List library
-@c NODE リストライブラリ, @code{srfi-1} - リストライブラリ
+@node SRFIs that have become R7RS-large, Homogeneous vectors, Library modules - SRFIs, Library modules - SRFIs
+@section SRFIs that have become R7RS-large
+@c NODE R7RS-largeになったSRFI
 
-@deftp {Module} srfi-1
-@mdindex srfi-1
 @c EN
-SRFI-1 has become a part of R7RS large.
-@xref{R7RS lists}.
+Here's a list of SRFIs that have become a part of R7RS-large,
+ordered by SRFI numbers.
 @c JP
-SRFI-1はR7RS largeに採り入れられました。
-@ref{R7RS lists}を参照してください。
+以下に、R7RS-largeに取り入れられたSRFIのリストを番号順に示します。
 @c COMMON
-@end deftp
+
+@table @asis
+@item srfi-1 List library
+@code{scheme.list} (@pxref{R7RS lists}).
+@item srfi-14 Character-set library
+@code{scheme.char-set} (@pxref{R7RS character sets}).
+@item srfi-41 Streams
+@code{scheme.stream} (@pxref{R7RS stream}).
+@item srfi-101 Purely functional random-access pairs and lists
+@code{scheme.rlist} (@pxref{R7RS random-access lists}).
+@item srfi-111 Boxes
+@code{scheme.box} (@pxref{R7RS boxes}).
+@item srfi-113 Sets and bags
+@code{scheme.set} (@pxref{R7RS sets}).
+@item srfi-115 Scheme Regular Expressions
+@code{scheme.regex} (@pxref{R7RS regular expressions}).
+@item srfi-116 Immutable list library
+@code{scheme.ilist}
+@item srfi-117 Queues based on lists
+@code{scheme.list-queue} (@pxref{R7RS list queues}).
+@item srfi-121 Generators
+@code{scheme.generator} (@pxref{R7RS generators}).
+@item srfi-124 Ephemerons
+@code{scheme.ephemeron} (@pxref{R7RS ephemerons}).
+@item srfi-125 Intermediate hash tables
+@code{scheme.hash-table} (@pxref{R7RS hash tables}).
+@item srfi-127 Lazy sequences
+@code{scheme.lseq} (@pxref{R7RS lazy sequences}).
+@item srfi-128 Comparators (reduced)
+@code{scheme.comparator} (@pxref{R7RS comparators}).
+@item srfi-132 Sort library
+@code{scheme.sort} (@pxref{R7RS sort}).
+@item srfi-133 Vector library
+@code{scheme.vector} (@pxref{R7RS vectors}).
+@item srfi-134 Immutable deques
+@code{scheme.ideque} (@pxref{R7RS immutable deques}).
+@item srfi-135 Immutable texts
+@code{scheme.text} (@pxref{R7RS immutable texts}).
+@item srfi-141 Integer division
+@code{scheme.division} (@pxref{R7RS integer division}).
+@item srfi-143 Fixnums
+@code{scheme.fixnum} (@pxref{R7RS fixnum}).
+@item srfi-144 Flonums
+@code{scheme.flonum} (@pxref{R7RS flonum}).
+@item srfi-146 Mappings
+@code{scheme.mapping}, @code{scheme.mapping.hash} (@pxref{R7RS mappings}).
+@item srfi-151 Bitwise operations
+@code{scheme.bitwise} (@pxref{R7RS bitwise operations}).
+@item srfi-158 Generators and accumulators
+@code{scheme.generator} (@pxref{R7RS generators}).
+@item srfi-159 Combinator formatting
+@code{scheme.show}
+@item srfi-160 Homogeneous numeric vector libraries
+@code{scheme.vector.@@} (@pxref{R7RS uniform vectors}).
+@end table
+
 
 @c ----------------------------------------------------------------------
-@node Homogeneous vectors, A compatible let form with signatures and rest arguments, List library, Library modules - SRFIs
+@node Homogeneous vectors, A compatible let form with signatures and rest arguments, SRFIs that have become R7RS-large, Library modules - SRFIs
 @section @code{srfi-4} - Homogeneous vectors
 @c NODE 単一型のベクタ, @code{srfi-4} - 単一型のベクタ
 
@@ -316,7 +358,7 @@ Gauche はそれぞれの @var{requirement} をひとつずつチェックし、
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node String library, Character-set library, Feature-based program configuration language, Library modules - SRFIs
+@node String library, Time data types and procedures, Feature-based program configuration language, Library modules - SRFIs
 @section @code{srfi-13} - String library
 @c NODE 文字列ライブラリ, @code{srfi-13} - 文字列ライブラリ
 
@@ -1477,23 +1519,7 @@ We recommend the new code to use the new order.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library, Time data types and procedures, String library, Library modules - SRFIs
-@section @code{srfi-14} - Character-set library
-@c NODE 文字集合ライブラリ, @code{srfi-14} - 文字集合ライブラリ
-
-@deftp {Module} srfi-14
-@mdindex srfi-14
-@c EN
-SRFI-14 has become a part of R7RS large.
-@xref{R7RS character sets}.
-@c JP
-SRFI-14はR7RS largeに採り入れられました。
-@ref{R7RS character sets}を参照してください。
-@c COMMON
-@end deftp
-
-@c ----------------------------------------------------------------------
-@node Time data types and procedures, Sources of random bits, Character-set library, Library modules - SRFIs
+@node Time data types and procedures, Sources of random bits, String library, Library modules - SRFIs
 @section @code{srfi-19} - Time data types and procedures
 @c NODE 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
 
@@ -2708,7 +2734,7 @@ Gauche ネイティヴの @code{format} を使いたければ、@code{srfi-29.bu
 @end defun
 
 @c ----------------------------------------------------------------------
-@node A program argument processor, Streams, Localization, Library modules - SRFIs
+@node A program argument processor, Eager comprehensions, Localization, Library modules - SRFIs
 @section @code{srfi-37} - args-fold: a program argument processor
 @c NODE args-fold プログラム引数処理, @code{srfi-37} - args-fold プログラム引数処理
 
@@ -2982,23 +3008,7 @@ A simple example:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Streams, Eager comprehensions, A program argument processor, Library modules - SRFIs
-@section @code{srfi-41} - Streams
-@c NODE ストリーム, @code{srfi-42} - ストリーム
-
-@deftp {Module} srfi-41
-@mdindex srfi-41
-@c EN
-SRFI-41 has become a part of R7RS large.
-@xref{R7RS stream}.
-@c JP
-SRFI-41はR7RS largeに採り入れられました。
-@ref{R7RS stream}を参照してください。
-@c COMMON
-@end deftp
-
-@c ----------------------------------------------------------------------
-@node Eager comprehensions, Vector library (Legacy), Streams, Library modules - SRFIs
+@node Eager comprehensions, Vector library (Legacy), A program argument processor, Library modules - SRFIs
 @section @code{srfi-42} - Eager comprehensions
 @c NODE 先行評価的内包表記, @code{srfi-42} - 先行評価的内包表記
 
@@ -3693,7 +3703,7 @@ There are a few procedures that are not compatible with R7RS and
 @code{srfi-133}, and this module remains to support
 legacy code that depends on them.  
 
-@xref{Vectors}, and @pxref{Vector library}, for the ``modern'' versions
+@xref{Vectors}, and @pxref{R7RS vectors}, for the ``modern'' versions
 of vector library.  New code should use them.
 
 The following procedures in srfi-43 are built-in.
@@ -3704,7 +3714,7 @@ The following procedures in srfi-43 are built-in.
 このモジュールは@code{srfi-43}に依存している既存のコードのためだけに
 残されています。
 
-「現代的な」ベクタライブラリは、@ref{Vectors}と@ref{Vector library}
+「現代的な」ベクタライブラリは、@ref{Vectors}と@ref{R7RS vectors}
 で説明されています。新たなコードはそちらを使うべきです。
 
 以下の@code{srfi-43}の手続きは組み込みになっています。
@@ -3720,10 +3730,10 @@ reverse-list->vector
 
 @c EN
 The following procedures in srfi-43 are supported by srfi-133.
-@xref{Vector library}, for the description.
+@xref{R7RS vectors}, for the description.
 @c JP
 以下の@code{srfi-43}の手続きは@code{srfi-133}でも同様にサポートされています。
-説明は@ref{Vector library}を参照してください。
+説明は@ref{R7RS vectors}を参照してください。
 @c COMMON
 
 @example
@@ -3942,7 +3952,7 @@ This srfi provides bit operations on integers, regarding them
 as 2's complement representation.  It is compatible to SLIB's @code{logical}
 module.
 
-The newer srfi-151 (@pxref{Bitwise operations}) provides the same
+The newer srfi-151 (@pxref{R7RS bitwise operations}) provides the same
 functionality and more, with more consistent naming.  We recommend
 new code to use srfi-151, while we keep srfi-60 for the backward
 compatibility.
@@ -3957,7 +3967,7 @@ copy-bit         bit-field        copy-bit-field   ash
 @end example
 
 The following procedures are defined in srfi-151.
-@xref{Bitwise operations}, for the description.
+@xref{R7RS bitwise operations}, for the description.
 
 @example
 bitwise-not      bitwise-and      bitwise-ior      bitwise-xor
@@ -3971,21 +3981,21 @@ We describe procedures that are unique in srfi-60 below.
 @defun bitwise-merge mask n0 n1
 [SRFI-60]
 @c MOD srfi-60
-Same as @code{bitwise-if} (@pxref{Bitwise operations}).
+Same as @code{bitwise-if} (@pxref{R7RS bitwise operations}).
 @end defun
 
 @defun any-bits-set? mask n
 [SRFI-60]
 @c MOD srfi-60
 Same as builtin @code{logtest} (@pxref{Basic bitwise operations}).
-It is also called @code{any-bit-set?} in srfi-151 (@pxref{Bitwise operations}).
+It is also called @code{any-bit-set?} in srfi-151 (@pxref{R7RS bitwise operations}).
 @end defun
 
 @defun log2-binary-factors n
 [SRFI-60]
 @c MOD srfi-60
 It is also called as @code{first-set-bit} in this srfi, which is also
-in srfi-151 (@pxref{Bitwise operations}).
+in srfi-151 (@pxref{R7RS bitwise operations}).
 This is equivalent to Gauche's built-in  @code{twos-exponent-factor}
 (@pxref{Basic bitwise operations}).
 @end defun
@@ -3994,14 +4004,14 @@ This is equivalent to Gauche's built-in  @code{twos-exponent-factor}
 [SRFI-60]
 @c MOD srfi-60
 This is equivalent to @code{bit-field-rotate} in srfi-151
-(@pxref{Bitwise operations}).
+(@pxref{R7RS bitwise operations}).
 @end defun
 
 @defun reverse-bit-field n start end
 [SRFI-60]
 @c MOD srfi-60
 This is equivalent to @code{bit-field-reverse} in srfi-151
-(@pxref{Bitwise operations}).
+(@pxref{R7RS bitwise operations}).
 @end defun
 
 @defun integer->list n :optional len
@@ -4018,7 +4028,7 @@ of the result.   If it is omitted, @code{(integer-length n)} is used.
 @end example
 
 Srfi-151 has similar procedure @code{bits->list}, with a reversed bit
-order (LSB first) (@pxref{Bitwise operations}).
+order (LSB first) (@pxref{R7RS bitwise operations}).
 @end defun
 
 @defun list->integer lis
@@ -4034,7 +4044,7 @@ each value as a binary digit.  If @var{n} is nonnegative integer,
 @end example
 
 Srfi-151 has similar procedure @code{list->bits}, with a reversed bit
-order (LSB first) (@pxref{Bitwise operations}).
+order (LSB first) (@pxref{R7RS bitwise operations}).
 @end defun
 
 @defun booleans->integer bool @dots{}
@@ -4043,7 +4053,7 @@ order (LSB first) (@pxref{Bitwise operations}).
 @equiv{} @code{(list->integer (list @var{bool} @dots{}))}
 
 Srfi-151 has similar procedure @code{bits}, with a reversed bit
-order (LSB first) (@pxref{Bitwise operations}).
+order (LSB first) (@pxref{R7RS bitwise operations}).
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -5030,7 +5040,7 @@ An error is signaled if other symbols are passed.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Purely functional random-access pairs and lists, Boxes, Basic socket interface, Library modules - SRFIs
+@node Purely functional random-access pairs and lists, Portable runtime environment inquiry, Basic socket interface, Library modules - SRFIs
 @section @code{srfi-101} - Purely functional random-access
 @c NODE 純粋に関数的でランダムアクセス可能なペアとリスト, @code{srfi-101} - 純粋に関数的でランダムアクセス可能なペアとリスト
 
@@ -5038,10 +5048,10 @@ An error is signaled if other symbols are passed.
 @mdindex srfi-101
 @c EN
 SRFI-101 has become a part of R7RS large.
-@xref{R7RS purely functional random-access pairs and lists}.
+@xref{R7RS random-access lists}.
 @c JP
 SRFI-101はR7RS largeに採り入れられました。
-@ref{R7RS purely functional random-access pairs and lists}を参照してください。
+@ref{R7RS random-access lists}を参照してください。
 @c COMMON
 
 @c EN
@@ -5074,23 +5084,7 @@ for example.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Boxes, Portable runtime environment inquiry, Purely functional random-access pairs and lists, Library modules - SRFIs
-@section @code{srfi-111} - Boxes
-@c NODE ボックス, @code{srfi-111} - ボックス
-
-@deftp {Module} srfi-111
-@mdindex srfi-111
-@c EN
-SRFI-111 has become a part of R7RS large.
-@xref{R7RS boxes}.
-@c JP
-SRFI-111はR7RS largeに採り入れられました。
-@ref{R7RS boxes}を参照してください。
-@c COMMON
-@end deftp
-
-@c ----------------------------------------------------------------------
-@node Portable runtime environment inquiry, Sets and bags, Boxes, Library modules - SRFIs
+@node Portable runtime environment inquiry, Comparators, Purely functional random-access pairs and lists, Library modules - SRFIs
 @section @code{srfi-112} - Environment inquiry
 @c NODE ポータブルな実行環境の問い合わせ, @code{srfi-112} - 実行環境の問い合わせ
 
@@ -5161,24 +5155,7 @@ gosh> (os-version)
 
 
 @c ----------------------------------------------------------------------
-@node Sets and bags, Comparators, Portable runtime environment inquiry, Library modules - SRFIs
-@section @code{srfi-113} - Sets and bags
-@c NODE setとbag, @code{srfi-113} - setとbag
-
-@deftp {Module} srfi-113
-@mdindex srfi-113
-@c EN
-SRFI-113 has become a part of R7RS large.
-@xref{R7RS sets}.
-@c JP
-SRFI-113はR7RS largeに採り入れられました。
-@ref{R7RS sets}を参照してください。
-@c COMMON
-@end deftp
-
-
-@c ----------------------------------------------------------------------
-@node Comparators, Scheme regular expressions, Sets and bags, Library modules - SRFIs
+@node Comparators, Simple adjustable-size strings, Portable runtime environment inquiry, Library modules - SRFIs
 @section @code{srfi-114} - Comparators
 @c NODE 比較器, @code{srfi-114} - 比較器
 
@@ -5600,35 +5577,9 @@ When @var{comparator} is omitted, the default comparator is used.
 @code{comparator-min} and @code{comparator-max} are the
 same as @code{srfi-162}.  @xref{Comparator sublibrary}.
 
-@c ----------------------------------------------------------------------
-@node Scheme regular expressions, Queues based on lists, Comparators, Library modules - SRFIs
-@section @code{srfi-115} - Sets and bags
-
-@deftp {Module} srfi-115
-@mdindex srfi-115
-SRFI-115 has become a part of R7RS large.
-@xref{R7RS regular expressions}.
-@end deftp
-
 
 @c ----------------------------------------------------------------------
-@node Queues based on lists, Simple adjustable-size strings, Scheme regular expressions, Library modules - SRFIs
-@section @code{srfi-117} - Queues based on lists
-@c NODE リストを元にしたキュー, @code{srfi-117} - リストを元にしたキュー
-
-@deftp {Module} srfi-117
-@mdindex srfi-117
-@c EN
-SRFI-117 has become a part of R7RS large.
-@xref{R7RS list queues}.
-@c JP
-SRFI-117はR7RS largeに採り入れられました。
-@ref{R7RS list queues}を参照してください。
-@c COMMON
-@end deftp
-
-@c ----------------------------------------------------------------------
-@node Simple adjustable-size strings, Lazy sequence (srfi), Queues based on lists, Library modules - SRFIs
+@node Simple adjustable-size strings, Cursor-based string library, Comparators, Library modules - SRFIs
 @section @code{srfi-118} - Simple adjustable-size strings
 @c NODE 簡単な可変長文字列, @code{srfi-118} - 簡単な可変長文字列
 
@@ -5728,24 +5679,9 @@ rather than @code{string-replace}.
 @end example
 @end defun
 
-@c ----------------------------------------------------------------------
-@node Lazy sequence (srfi), Cursor-based string library, Simple adjustable-size strings, Library modules - SRFIs
-@section @code{srfi-127} - Lazy sequence (srfi)
-
-@deftp {Module} srfi-127
-@mdindex srfi-127
-@c EN
-SRFI-127 has become a part of R7RS large.
-@xref{R7RS lazy sequences}.
-@c JP
-SRFI-127はR7RS largeに採り入れられました。
-@ref{R7RS lazy sequences}を参照してください。
-@c COMMON
-@end deftp
-
 
 @c ----------------------------------------------------------------------
-@node Cursor-based string library, Sort library, Lazy sequence (srfi), Library modules - SRFIs
+@node Cursor-based string library, String library (reduced), Simple adjustable-size strings, Library modules - SRFIs
 @section @code{srfi-130} - Cursor-based string library
 
 @deftp {Module} srfi-130
@@ -5826,111 +5762,10 @@ srfi-130. Similar to srfi-152, the @var{to} argument is required in
 
 @end deftp
 
-@c ----------------------------------------------------------------------
-@node Sort library, Vector library, Cursor-based string library, Library modules - SRFIs
-@section @code{srfi-132} - Sort library
-@c NODE ソートライブラリ, @code{srfi-133} - ソートライブラリ
-
-@deftp {Module} srfi-132
-@mdindex srfi-132
-@c EN
-SRFI-132 has become a part of R7RS large.
-@xref{R7RS sort}.
-@c JP
-SRFI-132はR7RS largeに採り入れられました。
-@ref{R7RS sort}を参照してください。
-@c COMMON
-@end deftp
 
 
 @c ----------------------------------------------------------------------
-@node Vector library, Integer division, Sort library, Library modules - SRFIs
-@section @code{srfi-133} - Vector library
-@c NODE ベクタライブラリ, @code{srfi-133} - ベクタライブラリ
-
-@deftp {Module} srfi-133
-@mdindex srfi-133
-@c EN
-SRFI-133 has become a part of R7RS large.
-@xref{R7RS vectors}.
-@c JP
-SRFI-133はR7RS largeに採り入れられました。
-@ref{R7RS vectors}を参照してください。
-@c COMMON
-@end deftp
-
-@c ----------------------------------------------------------------------
-@node Integer division, Fixnums, Vector library, Library modules - SRFIs
-@section @code{srfi-141} - Integer division
-@c NODE 整数除算, @code{srfi-141} - 整数除算
-
-@deftp {Module} srfi-141
-@mdindex srfi-141
-@c EN
-SRFI-141 has become a part of R7RS large.
-@xref{R7RS integer division}.
-@c JP
-SRFI-141はR7RS largeに採り入れられました。
-@ref{R7RS integer division}を参照してください。
-@c COMMON
-@end deftp
-
-
-
-@c ----------------------------------------------------------------------
-@node Fixnums, Mappings and hashmaps, Integer division, Library modules - SRFIs
-@section @code{srfi-143} - Fixnums
-@c NODE Fixnums, @code{srfi-143} - Fixnums
-
-@deftp {Module} srfi-143
-@mdindex srfi-143
-@c EN
-SRFI-143 has become a part of R7RS large.
-@xref{R7RS fixnum}.
-@c JP
-SRFI-143はR7RS largeに採り入れられました。
-@ref{R7RS fixnum}を参照してください。
-@c COMMON
-@end deftp
-
-@c ----------------------------------------------------------------------
-@node Mappings and hashmaps, Bitwise operations, Fixnums, Library modules - SRFIs
-@section @code{srfi-146} - Mappings and hashmaps
-@c NODE mappingとhashmap, @code{srfi-146} - mappingとhashmap
-
-@deftp {Module} srfi-146
-@deftpx {Module} srfi-146.hash
-@mdindex srfi-146
-@mdindex srfi-146.hash
-@c EN
-SRFI-146 has become a part of R7Rs large.
-@xref{R7RS mappings}.
-@c JP
-SRFI-146はR7RS largeに採り入れられました。
-@ref{R7RS mappings}を参照してください。
-@c COMMON
-@end deftp
-
-
-@c ----------------------------------------------------------------------
-@node Bitwise operations, String library (reduced), Mappings and hashmaps, Library modules - SRFIs
-@section @code{srfi-151} - Bitwise operations
-@c NODE ビット演算, @code{srfi-151} - ビット演算
-
-@deftp {Module} srfi-151
-@mdindex srfi-151
-@c EN
-SRFI-151 has become a part of R7Rs large.
-@xref{R7RS bitwise operations}.
-@c JP
-SRFI-151はR7RS largeに採り入れられました。
-@ref{R7RS bitwise operations}を参照してください。
-@c COMMON
-@end deftp
-
-
-@c ----------------------------------------------------------------------
-@node String library (reduced), First-class dynamic extents, Bitwise operations, Library modules - SRFIs
+@node String library (reduced), First-class dynamic extents, Cursor-based string library, Library modules - SRFIs
 @section @code{srfi-152} - String library (reduced)
 @c NODE 文字列ライブラリ(簡略版), @code{srfi-152} - 文字列ライブラリ(簡略版)
 
@@ -6240,7 +6075,7 @@ Note: The order of @var{pred} and the source object is different from
 @end defun
 
 @c ----------------------------------------------------------------------
-@node First-class dynamic extents, Generators and accumulators, String library (reduced), Library modules - SRFIs
+@node First-class dynamic extents, Homogeneous numeric vector libraries, String library (reduced), Library modules - SRFIs
 @section @code{srfi-154} - First-class dynamic extents
 @c NODE 第一級の動的エクステント, @code{srfi-154} - 第一級の動的エクステント
 
@@ -6387,24 +6222,9 @@ called in the tail context even if the procedure created by
 @end defmac
 
 
-@c ----------------------------------------------------------------------
-@node Generators and accumulators, Homogeneous numeric vector libraries, First-class dynamic extents, Library modules - SRFIs
-@section @code{srfi-158} - Generators and accumulators
-@c NODE ジェネレータとアキュムレータ, @code{srfi-158} - ジェネレータとアキュムレータ
-
-@deftp {Module} srfi-158
-@mdindex srfi-158
-@c EN
-SRFI-158 has become a part of R7RS large.
-@xref{R7RS generators}
-@c JP
-SRFI-158はR7RS largeに採り入れられました。
-@ref{R7RS generators}を参照してください。
-@c COMMON
-@end deftp
 
 @c ----------------------------------------------------------------------
-@node Homogeneous numeric vector libraries, Comparator sublibrary, Generators and accumulators, Library modules - SRFIs
+@node Homogeneous numeric vector libraries, Comparator sublibrary, First-class dynamic extents, Library modules - SRFIs
 @section @code{srfi-160} - Homogeneous numeric vector libraries
 @c NODE 均質な数値ベクタライブラリ, @code{srfi-160} - 均質な数値ベクタライブラリ
 

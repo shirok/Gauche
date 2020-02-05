@@ -6907,7 +6907,7 @@ Since @code{gauche.generator} predates srfi-121, we have different
 names for some procedures; for the compatibility, we provide
 both names.  Srfi-151 (Generators and accumulators) adds some more
 generator procedures, which is also included (but accumulator procedures
-are left to srfi-158. @xref{Generators and accumulators}.)
+are left to srfi-158. @xref{R7RS generators}.)
 @c JP
 srfi-121 (Generators) はこのモジュールのサブセットです。
 @code{gauche.generator}はsrfi-121より前からあったので、
@@ -6916,7 +6916,7 @@ srfi-121 (Generators) はこのモジュールのサブセットです。
 srfi-158 (Generators and accumulators)はさらに追加のジェネレータ手続きを
 定義していますが、それらもこのモジュールに含まれています
 (ただし、アキュムレータについてはsrfi-158モジュールに分けてあります。
-@ref{Generators and accumulators}参照)。
+@ref{R7RS generators}参照)。
 @c COMMON
 @end deftp
 
@@ -7220,11 +7220,11 @@ at the last element, and reverse generators ends at the first element.
 @c EN
 These procedures take an exact integer and treat it as a sequence of
 boolean values (0 for false and 1 for true), as @code{bits->list} does
-(@pxref{Bitwise operations}).  @code{Bits->generator} takes bits from
+(@pxref{R7RS bitwise operations}).  @code{Bits->generator} takes bits from
 LSB, while @code{reverse-bits->generator} takes them from MSB.
 @c JP
 これらの手続きは正確な整数を引数に取り、
-@code{bits->list}と同様に(@ref{Bitwise operations}参照)、
+@code{bits->list}と同様に(@ref{R7RS bitwise operations}参照)、
 それを真偽値のシーケンス(0が偽、1を真)として扱います。
 @code{bits->generator}はLSBから、@code{reverse-bits->generator}は
 MSBからビットを取り出します。
@@ -7243,13 +7243,13 @@ the range of bitfield, LSB being 0.  Unlike @code{list->generator} etc,
 @var{start} specifies the rightmost position (inclusive) and
 @var{end} specifies the leftmost position (exclusive).  It is consistent
 with other procedures that accesses bit fields in integers
-(@pxref{Bitwise operations}).
+(@pxref{R7RS bitwise operations}).
 @c JP
 省略可能引数@var{start}と@var{end}はビットフィールドの範囲を指定します
 (LSBが0)。@code{list->generator}等の同名の引数と違って、
 @var{start}が右端(含まれる)、@var{end}が左端(含まれない)を指定します。
 この指定方法は整数のビットフィールドにアクセスする他の手続きと一貫しています
-(@ref{Bitwise operations}参照)。
+(@ref{R7RS bitwise operations}参照)。
 @c COMMON
 
 @example
@@ -7265,11 +7265,11 @@ with other procedures that accesses bit fields in integers
 @c EN
 Note: SRFI-151's @code{make-bitwise-generator} is similar to
 @code{bits->generator}, except that it produces an infinite generator.
-@xref{Bitwise operations}.
+@xref{R7RS bitwise operations}.
 @c JP
 註: SRFI-151の@code{make-bitwise-generator}は
 @code{bits->generator}と似ていますが、生成されるジェネレータは無限ジェネレータになります。
-@ref{Bitwise operations}参照。
+@ref{R7RS bitwise operations}参照。
 @c COMMON
 @end defun
 
@@ -23675,12 +23675,12 @@ not smaller than @var{key}.  If @var{key} is greater than all the elements,
 
 @c EN
 Note: SRFI-133 has @code{vector-binary-search}, which is quite similar to
-this procedure (@pxref{Vector library}) but it requires comparison
+this procedure (@pxref{R7RS vectors}) but it requires comparison
 procedure, for it needs to compare general Scheme values.  And it
 does not support @var{skip} and @var{rounding} arguments.
 @c JP
 註: SRFI-133の@code{vector-binary-search}はこの手続きと良く似ています
-(@ref{Vector library}参照)。ただし、
+(@ref{R7RS vectors}参照)。ただし、
 そちらは一般のScheme値を相手にするために、比較手続きも取ります。
 また@var{skip}と@var{rounding}引数の機能はサポートされません。
 @c COMMON

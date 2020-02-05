@@ -609,11 +609,11 @@ srfi-60, srfi-60
 ()
 
 Integers as bits
-Most procedures are built-in: @xref{Bitwise operations}.
+Most procedures are built-in: @xref{R7RS bitwise operations}.
 The complete support is in @code{srfi-60} module: @xref{Integers as bits}.
 
 整数に対するビット操作
-ほとんどの手続きは組み込みになっています。@ref{Bitwise operations}参照。
+ほとんどの手続きは組み込みになっています。@ref{R7RS bitwise operations}参照。
 完全なサポートは@code{srfi-60}モジュールで提供されます。
 @ref{Integers as bits}参照。
 
@@ -1127,12 +1127,12 @@ srfi-151, srfi-151
 ()
 
 Bitwise operations
-Supported by the module @code{srfi-151} (@pxref{Bitwise operations}).
+Supported by the module @code{srfi-151} (@pxref{R7RS bitwise operations}).
 Note that many equivalent procedures are provided built-in
 (@pxref{Basic bitwise operations}).
 
 ビット演算
-モジュール@code{srfi-151}でサポートされます (@ref{Bitwise operations}参照)。
+モジュール@code{srfi-151}でサポートされます (@ref{R7RS bitwise operations}参照)。
 なお、組み込みでも多くの手続きについては同等の手続きが提供されています
 (@ref{Basic bitwise operations}参照).
 

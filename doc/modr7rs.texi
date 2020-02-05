@@ -1933,7 +1933,7 @@ The following are supported libraries:
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
 * R7RS hash tables::            @code{scheme.hash-table}
-* R7RS purely functional random-access pairs and lists::  @code{scheme.rlist}
+* R7RS random-access lists::    @code{scheme.rlist}
 * R7RS immutable deques::       @code{scheme.ideque}
 * R7RS immutable texts::        @code{scheme.text}
 * R7RS generators::             @code{scheme.generator}
@@ -4727,7 +4727,7 @@ Returns two values, the result of
 @end defun
 
 
-@node R7RS hash tables, R7RS purely functional random-access pairs and lists, R7RS character sets, R7RS large
+@node R7RS hash tables, R7RS random-access lists, R7RS character sets, R7RS large
 @subsection @code{scheme.hash-table} - R7RS hash tables
 @c NODE R7RSハッシュテーブル, @code{scheme.hash-table} - R7RSハッシュテーブル
 
@@ -5027,9 +5027,9 @@ included in @code{scheme.hash-table}, though.)
 @end defun
 
 
-@node R7RS purely functional random-access pairs and lists, R7RS immutable deques, R7RS hash tables, R7RS large
-@subsection @code{scheme.rlist} - R7RS purely functional random-access pairs and lists
-@c NODE R7RS純粋に関数的でランダムアクセス可能なペアとリスト, @code{scheme.rlist} - R7RS純粋に関数的でランダムアクセス可能なペアとリスト
+@node R7RS random-access lists, R7RS immutable deques, R7RS hash tables, R7RS large
+@subsection @code{scheme.rlist} - R7RS random-access lists
+@c NODE R7RSランダムアクセスリスト, @code{scheme.rlist} - R7RSランダムアクセスリスト
 
 @deftp {Module} scheme.rlist
 @mdindex scheme.rlist
@@ -5111,7 +5111,7 @@ if @var{list} is nested, only the outermost @var{list} is converted.
 @end defun
 
 
-@node R7RS immutable deques, R7RS immutable texts, R7RS purely functional random-access pairs and lists, R7RS large
+@node R7RS immutable deques, R7RS immutable texts, R7RS random-access lists, R7RS large
 @subsection @code{scheme.ideque} - R7RS immutable deques
 @c NODE R7RS変更不可な両端キュー, @code{scheme.ideque} - R7RS変更不可な両端キュー
 
