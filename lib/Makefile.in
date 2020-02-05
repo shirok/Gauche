@@ -130,7 +130,7 @@ SCMFILES = \
        scheme/regex.scm scheme/repl.scm scheme/rlist.scm \
        scheme/set.scm scheme/sort.scm scheme/show.scm \
        scheme/stream.scm scheme/stream/primitive.scm scheme/stream/derived.scm \
-       scheme/time.scm \
+       scheme/time.scm scheme/text.scm \
        scheme/vector.scm scheme/write.scm \
        scheme/vector/base.scm scheme/vector/u8.scm scheme/vector/s8.scm \
        scheme/vector/u16.scm scheme/vector/s16.scm \
