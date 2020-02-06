@@ -629,13 +629,13 @@
     (fail 'textual->utf8))
 
 
-(define assumed-endianness #f)
-(let ((bom (textual->utf16 (as-text ""))))
-  (or (eqv? (bytevector-length bom) 2)
-      (fail 'textual->utf16))
-  (if (= (bytevector-u8-ref bom 0) 254)
-    'big
-    'little))
+(define assumed-endianness
+  (let ((bom (textual->utf16 (as-text ""))))
+    (or (eqv? (bytevector-length bom) 2)
+        (fail 'textual->utf16))
+    (if (= (bytevector-u8-ref bom 0) 254)
+      'big
+      'little)))
 
 (or (equal? (if (eq? assumed-endianness 'big)
                 '#u8(254 255 0 97 0 98 0 99)
