@@ -5475,16 +5475,37 @@ In Gauche, they are the same as
 @defun utf8->text bytevector :optional start end
 [R7RS text]
 @c MOD scheme.text
+Converts a utf8 octet sequence stored in @var{bytevector} to a text.
+If the octet sequence begins with BOM sequence, it is interpreted
+as a character U+FEFF.  Optional @var{start}/@var{end} arguments
+limits the input range of @var{bytevector}.
+
+If the input contains an invalid utf-8 sequence, and Gauche's native
+encoding is utf-8, it is replaced by a unicode replacement character
+U+FFFD.  (NB: Srfi-135 says it is an error.)
 @end defun
 
 @defun utf16->text bytevector :optional start end
-[R7RS text]
-@c MOD scheme.text
-@end defun
-
-@defun utf16be->text bytevector :optional start end
+@defunx utf16be->text bytevector :optional start end
 @defunx utf16le->text bytevector :optional start end
 [R7RS text]
+Converts a utf16 octet sequence stored in @var{bytevector} to a text.
+For @code{utf16->text}, the sequence may begin with BOM, 
+in which case it determines the endianness.
+Otherwise, platform's native endianness is assumed.
+Fro @code{utf16be->text} and @code{utf16le->text}, the input is
+assumed to be in UTF16BE/UTF16LE respectively; if it begins with BOM
+it is treated as a character U+FEFF.
+
+Optional @var{start}/@var{end} arguments
+limits the input range of @var{bytevector}.
+
+If the length of input (@var{end} - @var{start}, if the range is limited)
+isn't even, an error is thrown.
+
+If the input contains an invalid utf-16 sequence (unpaired surrogates),
+it is replaced by a unicode replacement character U+FFFD.
+(NB: Srfi-135 says it is an error.)
 @c MOD scheme.text
 @end defun
 
@@ -5492,11 +5513,19 @@ In Gauche, they are the same as
 @defunx subtextual textual start end
 [R7RS text]
 @c MOD scheme.text
+Returns a text between @var{start}-th (inclusive) and @var{end}-th (exclusive)
+characters in the input.
 @end defun
 
 @defun textual-copy textual :optional start end
 [R7RS text]
 @c MOD scheme.text
+Returns a copy of @var{textual}, optionally limited between
+@var{start}/@var{end}.
+
+Srfi-135 specifies that even the input is a text, the returned one
+must be freshly allocated.  In Gauche, string body is immutable anyway,
+so it isn't a big deal.
 @end defun
 
 @defun textual-take textual nchars
@@ -5533,6 +5562,10 @@ except that the returned string is always immutable and indexed.
 @defunx textual>=? textual1 textual2 textual3 @dots{}
 [R7RS text]
 @c MOD scheme.text
+In Gauche, these are just aliases of built-in
+@code{string=?}, @code{string<?}, @code{string>?},
+@code{string<=?} and @code{string>?}, respectively.
+@xref{String comparison}, for the details.
 @end defun
 
 @defun textual-ci=? textual1 textual2 textual3 @dots{}
@@ -5542,6 +5575,10 @@ except that the returned string is always immutable and indexed.
 @defunx textual-ci>=? textual1 textual2 textual3 @dots{}
 [R7RS text]
 @c MOD scheme.text
+In Gauche, these are just aliases of @emph{the unicode version} of 
+@code{string-ci=?}, @code{string-ci<?}, @code{string-ci>?},
+@code{string-ci<=?} and @code{string-ci>?}, respectively.
+@xref{Full string case conversion}, for the details.
 @end defun
 
 @defun textual-prefix-length textual1 textual2 :optional start1 end1 start2 end2
@@ -10709,79 +10746,137 @@ flonum専用の@code{floor}、@code{ceiling}、@code{round}、@code{truncate}で
 @defun flexp x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{exp} (@pxref{Arithmetics}).
 Returns @code{(expt fl-e x)}.
+@c JP
+flonum専用の@code{exp}です (@ref{Arithmetics}参照)。
+@code{(expt fl-e x)}を返します。
+@c COMMON
 @end defun
 
 @defun flexp2 x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(expt 2 x)}
+@c JP
+@code{(expt 2 x)}を返します。
+@c COMMON
 @end defun
 
 @defun flexp-1 x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(- 1 (expt fl-e x))}, but is much more accurate
-when @var{x} is small.  We all C's @code{expm1} internally.
+when @var{x} is small.  We call C's @code{expm1} internally.
+@c JP
+@code{(- 1 (expt fl-e x))}を返しますが、@var{x}が小さい場合はより正確です。
+内部的にはCの@code{expm1}を呼んでいます。
+@c COMMON
 @end defun
 
 @defun flsquare x
 [R7RS flonum]
 @c MOD scheme.flonum
-Returns @code{(*. x x)} (@pxref{Arithmetics})
+@c EN
+Returns @code{(*. x x)}
+@c JP
+@code{(*. x x)}を返します。
+@c COMMON
 @end defun
 
 @defun flsqrt x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{sqrt}.
+@c JP
+flonum専用の@code{sqrt}です。
+@c COMMON
 @end defun
 
 @defun flcbrt x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns cubic root of a flonum @var{x}.
+@c JP
+flonum @var{x}の3乗根を返します。
+@c COMMON
 @end defun
 
 @defun flhypot x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Calculates @code{(sqrt (* x x) (* y y))}, with avoiding
 overflow or underflow during the intermediate steps.
+@c JP
+@code{(sqrt (* x x) (* y y))}を計算しますが、
+中間結果でオーバーフローやアンダーフローが起きないように配慮されています。
+@c COMMON
 @end defun
 
 @defun flexpt x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{expt} (@pxref{Arithmetics}).
+@c JP
+flonum専用の@code{expt}です(@ref{Arithmetics}参照)。
+@c COMMON
 @end defun
 
 @defun fllog x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{log} (@pxref{Arithmetics}).
+@c JP
+flonum専用の@code{log}です(@ref{Arithmetics}参照)。
+@c COMMON
 @end defun
 
 @defun fllog1+ x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(log (+ x 1))}, but is more accurate than @code{log}
-when @code{x} is near zero.
+when @var{x} is near zero.
+@c JP
+@code{(log (+ x 1))}を返しますが、@var{x}がゼロに近い場合により正確です。
+@c COMMON
 @end defun
 
 @defun fllog2 x
 @defunx fllog10 x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns base-2 and base-10 logarithm of a flonum @var{x}, respectively.
+@c JP
+flonum @var{x}の2および10を底とする対数を返します。
+@c COMMON
 @end defun
 
 @defun make-fllog-base x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns a procedure that calculates base-@var{x} logarithm.
-An error is signalled if @var{x} isn't a rela number greater than 1.0.
+An error is signalled if @var{x} isn't a real number greater than 1.0.
+@c JP
+@var{x}を底とする対数を計算する手続きを返します。@var{x}が1.0より大きい実数でない
+場合はエラーが投げられます。
+@c COMMON
+
+@example
+(define log5 (make-fllog-base 5.0))
+
+(log5 25.0) @result{} 5.0
+@end example
 @end defun
 
 @c EN
@@ -10805,13 +10900,26 @@ An error is signalled if @var{x} isn't a rela number greater than 1.0.
 @defunx flatanh x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Flonum-specific version of @code{sin}, @code{cos}, @code{tan},
 @code{asin}, @code{acos}, @code{sinh}, @code{cosh}, @code{tanh},
 @code{asinh}, @code{acosh}, and @code{atanh}, respectively
 (@pxref{Arithmetics}).
+@c JP
+それぞれ、flonum専用の
+@code{sin}, @code{cos}, @code{tan},
+@code{asin}, @code{acos}, @code{sinh}, @code{cosh}, @code{tanh},
+@code{asinh}, @code{acosh}, @code{atanh}です
+(@ref{Arithmetics}参照)。
+@c COMMON
 
+@c EN
 Note that @code{flatan} can take one or two arguments; if two arguments
 are passed, it calculates @code{(atan (/ y x)}.
+@c JP
+@code{flatan}は1つまたは2つの引数を取ります。@code{(flatan y x)}は
+@code{(flatan (/ y x))}を計算します (が、より正確です)。
+@c COMMON
 @end defun
 
 @c EN
@@ -10823,9 +10931,16 @@ are passed, it calculates @code{(atan (/ y x)}.
 @defun flquotient x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(fltruncate (fl/ x y))}.
+
 The result is always integer flonum, but @var{x} and @var{y} doesn't
 need to be integers.
+@c JP
+@code{(fltruncate (fl/ x y))} を返します。
+
+結果は常に整数のflonumになります。引数@var{x}、@var{y}は整数である必要はありません。
+@c COMMON
 
 @example
 (flquotient 14.0 4.0)  @result{} 3.0
@@ -10838,7 +10953,11 @@ need to be integers.
 @defun flremainder x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns @code{(- x (* y (flquotient x y)))}.
+@c JP
+@code{(- x (* y (flquotient x y)))}を返します。
+@c COMMON
 
 @example
 (flquotient 14.0 4.0)  @result{} 2.0
@@ -10851,21 +10970,44 @@ Returns @code{(- x (* y (flquotient x y)))}.
 @defun flremquo x y
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns two values:
+@c JP
+二つの値を返します:
+@c COMMON
 @itemize @bullet
 @item
-Remainder of @code{x}/@code{y}.
+@c EN
+Remainder of @var{x} divided by @var{y}.
 (Same as @code{(flremainder x y)}, but we calculate it in different
 routines so the result may differ in a few ulp.
+@c JP
+@var{x}を@var{y}で割った余り。
+(@code{(flremainder x y)}と同じですが、異なる計算方法を使うので
+最後のビットで差が出るかもしれません)。
+@c COMMON
 @item
-Integer quotient of @var{x}/@var{y}, modulo 2^@var{n} (@var{n} >= 3), as
+@c EN
+Integer quotient of @var{x} divided by @var{y}, modulo 2^@var{n} (@var{n} >= 3), as
 an exact integer.  Its sign is the same as @var{x}/@var{y}.
+@c JP
+2^@var{n} (@var{n} >= 3) を法とする、@var{x}割る@var{y}の商。
+正確な整数で、@var{x}/@var{y}と同じ符号を持ちます。
+@c COMMON
 @end itemize
 
-This corresponds to C99's @var{remquo}.
+@c EN
+This corresponds to C99's @code{remquo}.
+@c JP
+これはC99の@code{remquo}に相当します。
+@c COMMON
 
+@c EN
 This function is useful to reduce the input for the periodic functions
 with symmetries.
+@c JP
+周期関数の入力を対称性を使って絞る時に便利です。
+@c COMMON
 @end defun
 
 
@@ -10878,46 +11020,80 @@ with symmetries.
 @defun flgamma x
 [R7RS flonum]
 @c MOD scheme.flonum
-Computes the value of gamma function for @var{x}.
+@c EN
+Computes the value of gamma function for a flonum @var{x}.
 When @var{x} is integer, it is the same as the factorial of @var{x}-1.
 
 This is same as Gauche's built-in @code{gamma} (@pxref{Arithmetics}).
+@c JP
+flonum @var{x}のガンマ関数を計算します。
+@var{x}が整数の時は、@var{x}-1の階乗と一致します。
+
+これはGauche組み込みの@code{gamma}と同じです (@ref{Arithmetics}参照)。
+@c COMMON
 @end defun
 
 @defun flloggamma x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns two values, @code{(log (abs (flgamma x)))} and the sign of
 @code{(flgamma x)} as 1.0 if it is positive and -1.0 if it is negative.
+@c JP
+@code{(log (abs (flgamma x)))}の値および、@code{(flgamma x)}の符号
+(正の場合は1.0、負の場合は-1.0)の二つの値を返します。
+@c COMMON
 
+@c EN
 The first value is calculated by Gauche's built-in @code{lgamma}
 (@pxref{Arithmetics}).  It's more accurate than using @code{gamma} then
 calling @code{log}.  The second value is @code{+nan.0} when
 @var{x} is @code{-inf.0} or @code{+nan.0}.
+@c JP
+最初の値はGauche組み込みの@code{lgamma}で計算されます (@ref{Arithmetics}参照)。
+これは@code{gamma}を計算して@code{log}を取るより正確です。
+なお、@var{x}が@code{-inf.0}か@code{+nan.0}の場合、二番目の値は@code{+nan.0}になります。
+@c COMMON
 @end defun
 
 @defun flfirst-bessel n x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns the @var{n}-th order Bessel function of the first kind.
+@c JP
+@var{n}階の第1種ベッセル関数の値を返します。
+@c COMMON
 @end defun
 
 @defun flsecond-bessel n x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns the @var{n}-th order Bessel function of the second kind.
+@c JP
+@var{n}階の第2種ベッセル関数の値を返します。
+@c COMMON
 @end defun
 
 @defun flerf x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns the error function erf(@var{x}).
+@c JP
+誤差関数erfです。
+@c COMMON
 @end defun
 
 @defun flerfc x
 [R7RS flonum]
 @c MOD scheme.flonum
+@c EN
 Returns the complementary error function, 1 - erf(@var{x}).
+@c JP
+1 - erf(@var{x}) を計算します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -10927,13 +11103,25 @@ Returns the complementary error function, 1 - erf(@var{x}).
 
 @deftp {Module} scheme.bytevector
 @mdindex scheme.bytevector
+@c EN
 This module is taken from R6RS (@code{(rnrs bytevectors)} (note
 that R7RS uses singular form).
 
 The bytevector in this module is u8vector in Gauche.
+@c JP
+このモジュールはR6RSの@code{(rnrs bytevectors)}からの輸入です
+(R7RSのライブラリ名は単数形であることに注意)。
 
+Gaucheでは「バイトベクタ」はu8vectorです。
+@c COMMON
+
+@c EN
 The following procedures are the same as in @code{gauche.uvector}.
 @xref{Bytevector compatibility}, for the explanations.
+@c JP
+以下の手続きは@code{gauche.uvector}のものと同じです。
+詳しくは@ref{Bytevector compatibility}を参照してください。
+@c COMMON
 
 @example
 bytevector?        make-bytevector     bytevector-length 
@@ -10942,19 +11130,31 @@ bytevector-u8-ref  bytevector-u8-set!  bytevector-s8-ref
 bytevector-s8-set! bytevector->u8-list u8-list->bytevector
 @end example
 
+@c EN
 The following procedures are the same as in @code{gauche.unicode}.
 @xref{Unicode utilities}, for the explanations.
+@c JP
+以下の手続きは@code{gauche.unicode}のものと同じです。
+詳しくは@ref{Unicode utilities}を参照してください。
+@c COMMON
 
 @example
 string->utf8       string->utf16       string->utf32
 utf8->string       utf16->string       utf32->string
 @end example
 
+@c EN
 This module exports @code{bytevector-copy!}, which takes arguments
 in different order from
 R7RS base's (and @code{gauche.uvector}'s) @code{bytevector-copy!}.
 It is the same as @code{bytevector-copy!-r6} in @code{gauche.uvector}
 (@pxref{Bytevector compatibility}).
+@c JP
+このモジュールは@code{bytevector-copy!}をexportしていますが、
+R7RS baseおよび@code{gauche.unicode}に含まれる同名の手続きと引数の順序が異なります。
+@code{gauche.uvector}で@code{bytevector-copy!-r6}として定義されているものと
+同じになります(@ref{Bytevector compatibility}参照)。
+@c COMMON
 @end deftp
 
 @defmac endianness symbol
