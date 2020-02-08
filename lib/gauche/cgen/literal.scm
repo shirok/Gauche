@@ -374,7 +374,9 @@
      [(pair? val) (logand (+ (rec (car val)) (rec (cdr val))) mask)]
      [(vector? val) (fold (^(v r) (logand (+ (rec v) r) mask)) 0 val)]
      [(string? val) (logand (string-hash val) mask)]
-     [(identifier? val) (logand (+ (rec (~ val'name))(rec (~ val'module))) mask)]
+     ;; TRANSIENT: After 1.0, the condition below can be 'wrapped-identifier?'
+     [(and (identifier? val) (not (symbol? val)))
+      (logand (+ (rec (~ val'name))(rec (~ val'module))) mask)]
      [else (eqv-hash val)]))
   (modulo (rec literal) .literal-hash-size.))
 
@@ -389,8 +391,9 @@
                   (every?-ec (: i len)
                              (rec (vector-ref x i) (vector-ref y i))))))]
      [(string? x) (and (string? y) (string=? x y))]
-     [(identifier? x)
-      (and (identifier? y)
+     ;; TRANSIENT: After 1.0, the conditions below can be 'wrapped-identifier?'
+     [(and (identifier? x) (not (symbol? x)))
+      (and (identifier? y) (not (symbol? y))
            (eq? (~ x'name) (~ y'name))
            (eq? (~ x'module) (~ y'module)))]
      [else (and (eq? (class-of x) (class-of y)) (eqv? x y))]))

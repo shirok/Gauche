@@ -140,10 +140,16 @@
 ;; of symbols that can have auxiliary info needed for hygiene.
 
 (select-module gauche)
+(define-cproc wrapped-identifier? (obj) ::<boolean> :constant
+  SCM_IDENTIFIERP)
 (define-cproc identifier? (obj) ::<boolean> :constant
-  (inliner IDENTIFIERP) SCM_IDENTIFIERP)
-(define-cproc identifier->symbol (obj::<identifier>) :constant
-  (return (SCM_OBJ (Scm_UnwrapIdentifier obj))))
+  (inliner IDENTIFIERP)
+  (return (or (SCM_SYMBOLP obj) (SCM_IDENTIFIERP obj))))
+(define-cproc identifier->symbol (obj) :constant
+  (cond [(SCM_SYMBOLP obj) (return obj)]
+        [(SCM_IDENTIFIERP obj)
+         (return (SCM_OBJ (Scm_UnwrapIdentifier (SCM_IDENTIFIER obj))))]
+        [else (Scm_Error "identifier required, but got %S" obj)]))
 
 (select-module gauche.internal)
 (define-cproc make-identifier (name mod::<module> env::<list>)
@@ -166,7 +172,7 @@
 ;; of hygiene to define-macro.
 (define (identifier-append . args)
   (let1 r (apply symbol-append #t args)
-    (if-let1 first-id (find identifier? args)
+    (if-let1 first-id (find wrapped-identifier? args)
       (make-identifier r (identifier-module first-id) (identifier-env first-id))
       r)))
 

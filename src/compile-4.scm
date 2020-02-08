@@ -225,9 +225,8 @@
       (when (pair? lms)
         (or (and-let* ([ ($lambda-lifted-var (car lms)) ]
                        [n ($lambda-name (car lms))])
-              (set! top-name (if (identifier? n)
-                               (identifier-name n)
-                               n)))
+              (set! top-name (identifier->symbol n))
+              #t)
             (loop (cdr lms)))))
     (rlet1 results '()
       (let loop ([lms lambda-nodes])

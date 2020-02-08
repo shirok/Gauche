@@ -92,19 +92,19 @@
              (error "Invalid module name (component can't be \".\" or \"..\"):"
                     name)])))
   (with-input-from-string
-   (cond [(symbol? name) (symbol->string name)]
-         [(identifier? name) (symbol->string (identifier->symbol name))]
-         [else (error "symbol or identifier expected, but got:" name)])
-   (^[] (let loop ([c (read-char)] [p '()] [ps '()])
-          (cond
-           [(eof-object? c)
-            (string-join (reverse (cons (path-comp p) ps)) "/")]
-           [(eqv? c #\.)
-            (let1 c2 (read-char)
-              (if (eqv? c2 #\.)
-                (loop (read-char) (cons c2 p) ps)
-                (loop c2 '() (cons (path-comp p) ps))))]
-           [else (loop (read-char) (cons c p) ps)])))))
+      (if (identifier? name)
+        (symbol->string (identifier->symbol name))
+        (error "identifier expected, but got:" name))
+    (^[] (let loop ([c (read-char)] [p '()] [ps '()])
+           (cond
+            [(eof-object? c)
+             (string-join (reverse (cons (path-comp p) ps)) "/")]
+            [(eqv? c #\.)
+             (let1 c2 (read-char)
+               (if (eqv? c2 #\.)
+                 (loop (read-char) (cons c2 p) ps)
+                 (loop c2 '() (cons (path-comp p) ps))))]
+            [else (loop (read-char) (cons c p) ps)])))))
 
 (define (path->module-name path)
   (unless (string? path) (error "string required, but got:" path))
@@ -345,8 +345,8 @@
 ;; Like free-identifier=? but we know id1 and id2 are both toplevel and
 ;; at least one is bound, so we skip local binding lookup.
 (define (global-identifier=? id1 id2)
-  (and-let* ([ (identifier? id1) ]
-             [ (identifier? id2) ]
+  (and-let* ([ (wrapped-identifier? id1) ]
+             [ (wrapped-identifier? id2) ]
              [g1 (id->bound-gloc id1)]
              [g2 (id->bound-gloc id2)])
     (eq? g1 g2)))

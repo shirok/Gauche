@@ -188,9 +188,9 @@
 ;; Maximum size of $LAMBDA node we allow to duplicate and inline.
 (define-constant SMALL_LAMBDA_SIZE 12)
 
-(define-inline (variable? arg) (or (symbol? arg) (identifier? arg)))
+;; In case keyword is disjoint from symbols
 (define-inline (variable-or-keyword? arg)
-  (or (symbol? arg) (keyword? arg) (identifier? arg)))
+  (or (identifier? arg) (keyword? arg)))
 
 ;;============================================================
 ;; Data structures
@@ -1383,7 +1383,7 @@
   (define (get-lvar lvar)
     (or (hash-table-get lvar-dict lvar #f)
         (let* ([name (lvar-name lvar)]
-               [name (if (identifier? name) (identifier->symbol name) name)])
+               [name (identifier->symbol name)])
           (rlet1 s ($ string->symbol $ format "~a.~d" name
                       $ hash-table-num-entries lvar-dict)
             (hash-table-put! lvar-dict lvar s)))))
@@ -1543,7 +1543,7 @@
 ;; identifier for those occurrences.
 (define (er-rename form dict module env)
   (cond
-   [(variable? form)
+   [(identifier? form)
     (if-let1 id (assq-ref dict form)
       (values id dict)
       (let1 id (make-identifier form module env)
@@ -1677,8 +1677,7 @@
        (<= 0 obj #x7ffff)))
 
 (define (variable-name arg)
-  (cond [(symbol? arg) arg]
-        [(identifier? arg) (unwrap-syntax arg)]
+  (cond [(identifier? arg) (identifier->symbol arg)]
         [(lvar? arg) (lvar-name arg)]
         [else (error "variable required, but got:" arg)]))
 
@@ -1768,12 +1767,12 @@
 ;; TODO: We should also check iff k isn't bound to something else!
 (define (keyword-like? k)
   (or (keyword? k)
-      (and (identifier? k) (keyword? (identifier->symbol k)))))
+      (and (wrapped-identifier? k) (keyword? (identifier->symbol k)))))
 
 (define (global-eq? var id cenv)  ; like free-identifier=?, used in pass1.
-  (and (variable? var)
+  (and (identifier? var)
        (let1 v (cenv-lookup-variable cenv var)
-         (and (identifier? v)
+         (and (wrapped-identifier? v)
               (global-identifier=? v id)))))
 
 ;; TRANSIENT: To compare keyword hygienically.  We need to treat keywords
@@ -1781,7 +1780,7 @@
 (define (global-keyword-eq? var key cenv)
   (or (eq? var key)
       (and (symbol? key)
-           (identifier? var)
+           (wrapped-identifier? var)
            (global-eq? var (global-id key) cenv))))
 
 (define (everyc proc lis c)             ;avoid closure allocation
@@ -1806,7 +1805,7 @@
 (define (global-eq?? sym srcmod modgen)
   (let1 id-gloc (find-binding (find-module srcmod) sym #f)
     (^[var] (eq? id-gloc
-                 (if (identifier? var)
+                 (if (wrapped-identifier? var)
                    (find-binding (slot-ref var'module) (slot-ref var'name) #f)
                    (find-binding (modgen) var #f))))))
 

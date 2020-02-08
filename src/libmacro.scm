@@ -68,9 +68,8 @@
      ;; by Gauche built-in features).
      (define (fulfill? req seed)
        (cond
-        [(identifier? req) (fulfill? (identifier->symbol req) seed)]
-        [(symbol? req)
-         (and-let1 p (assq req features)
+        [(identifier? req)
+         (and-let1 p (assq (identifier->symbol req) features)
            (if (null? (cdr p)) seed (cons (cadr p) seed)))]
         [(not (pair? req)) (error "Invalid cond-expand feature-id:" req)]
         [else
@@ -102,7 +101,6 @@
        (let* ([libname (car rest)]
               [modname (cond
                         [(identifier? libname) (identifier->symbol libname)]
-                        [(symbol? libname) libname]
                         [(list? libname) (library-name->module-name libname)]
                         [else (error "Invalid library name in 'library' clause \
                                       of cond-expand:" libname)])])
@@ -139,18 +137,21 @@
    (^[f r c]
      (define unquote. (r'unquote))
      (define (unquote? x)
+       ;; TRANSIENT: After 1.0, we won't need 'symbol?'
        (and (or (symbol? x) (identifier? x))
             (c (r x) unquote.)))
      (define unquote-splicing. (r'unquote-splicing))
      (define (unquote-splicing? x)
-       (and (or (symbol? x) (identifier? x))
+       (and (identifier? x)
             (c (r x) unquote-splicing.)))
      (define (unquote*? x)
+       ;; TRANSIENT: After 1.0, we won't need 'symbol?'
        (and (or (symbol? x) (identifier? x))
             (or (c (r x) unquote.)
                 (c (r x) unquote-splicing.))))
      (define quasiquote. (r'quasiquote))
      (define (quasiquote? x)
+       ;; TRANSIENT: After 1.0, we won't need 'symbol?'
        (and (or (symbol? x) (identifier? x))
             (c (r x) quasiquote.)))
      (define cons. (r'cons))
@@ -185,6 +186,7 @@
                 `(,cons. ',op ,xxs))))]
          [(? pair?)       (quasi* obj level)]
          [(? vector?)     (quasi-vector obj level)]
+         ;; TRANSIENT: identifier?
          [(or (? symbol?) (? identifier?)) `(,rename. ',obj)]
          [_  `',obj]))
 
@@ -1039,7 +1041,7 @@
                ,@(rec g (map* (^s
                                (cond [(and (pair? s) (pair? (cdr s)) (null? (cddr s)))
                                       (cons (car s) (cadr s))]
-                                     [(or (symbol? s) (identifier? s))
+                                     [(or (symbol? s) (ydentifier? s))
                                       (cons s '(undefined))]
                                      [else (error "malformed let-optionals* bindings:"
                                                   specs)]))

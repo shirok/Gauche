@@ -1,3 +1,18 @@
+2020-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsym.scm (identifier?, identifier->symbol): POSSIBLY
+	  INCOMPATIBLE CHANGE: Make identifier? respond to both symbol and
+	  <identifier>s.  It greatly simplifies low-level macros.
+	  The original 'identifier?' is renamed to 'wrapped-identifier?'
+	  (we may change the name later).  The 'identifier?' procedure entry
+	  has been in the manual, but without descriptions.  We expect
+	  no other code depends on it, and most of the dependent one
+	  won't break, as long as it only uses these two procedures.
+	  (The accessor to the <identifier> field is in gauche.internal).
+	  Some code needs to be read by 0.9.9 during build, so we have
+	  transient code in several places.  The VM instruction IDENTIFIERP
+	  is also changed to respond to both symbol and identifier.
+
 2020-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-135.scm: Added.

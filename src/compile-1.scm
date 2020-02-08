@@ -59,7 +59,7 @@
 ;; we need to treat PROGRAM as a special form or an ordinary procedure.
 ;; It would be a large change, so this is a compromise...
 (define-inline (pass1/lookup-head head cenv)
-  (or (and (variable? head)
+  (or (and (identifier? head)
            (cenv-lookup-syntax cenv head))
       (and (pair? head)
            (module-qualified-variable? head cenv)
@@ -95,7 +95,7 @@
     (cond
      [(pass1/lookup-head (car program) cenv)
       => (^h (cond
-              [(identifier? h) (pass1/global-call h)]
+              [(wrapped-identifier? h) (pass1/global-call h)]
               [(lvar? h) (pass1/call program ($lref h) (cdr program) cenv)]
               [(macro? h) ;; local macro
                (pass1 (call-macro-expander h program cenv) cenv)]
@@ -117,10 +117,10 @@
                            (cdr program) cenv)))]
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                        (cdr program) cenv)])]
-   [(variable? program)                 ; variable reference
+   [(identifier? program)               ; variable reference
     (let1 r (cenv-lookup-variable cenv program)
       (cond [(lvar? r) ($lref r)]
-            [(identifier? r)
+            [(wrapped-identifier? r)
              (or (and-let* ([const (find-const-binding r)]) ($const const))
                  ($gref r))]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
@@ -134,9 +134,9 @@
        (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_SETTERS))
        (global-identifier=? (car op) setter.)
        (and-let* ([var (cadr op)]
-                  [ (variable? var) ]   ;ok, <var> is variable
+                  [ (identifier? var) ] ;ok, <var> is variable
                   [hd (pass1/lookup-head var cenv)]
-                  [ (identifier? hd) ]
+                  [ (wrapped-identifier? hd) ]
                   [gloc (id->bound-gloc hd)] ; <var> has inlinable binding
                   [val (gloc-ref gloc)]
                   [ (procedure? val) ])
@@ -157,7 +157,7 @@
              [opt?  (slot-ref proc 'optional)])
          (unless (argcount-ok? args (slot-ref proc 'required) opt?)
            (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
-                   (if (variable? name) (variable-name name) name)
+                   (if (identifier? name) (identifier->symbol name) name)
                    (slot-ref proc 'required) nargs))
          ;; We might get away with this limit by transforming inline calls
          ;; to apply or something.  Maybe in future.
@@ -191,7 +191,7 @@
 ;; thus we can afford the time.
 (define (module-qualified-variable? expr cenv)
   (match expr
-    [((? variable? wm) mod (? variable? v))
+    [((? identifier? wm) mod (? identifier? v))
      (and-let* ([var (cenv-lookup-syntax cenv wm)]
                 [ (identifier? var) ])
        (global-identifier=? var with-module.))]
@@ -249,7 +249,8 @@
              (pass1/body-finish exprs mframe vframe cenv)]
             [(and (pair? head) (eq? (car head) :rec))
              (pass1/body-finish exprs mframe vframe cenv)]
-            [(not (identifier? head)) (error "[internal] pass1/body" head)]
+            [(not (wrapped-identifier? head)) 
+             (error "[internal] pass1/body" head)]
             [(or (global-identifier=? head define.)
                  (global-identifier=? head define-inline.)
                  (global-identifier=? head r5rs-define.))
@@ -302,7 +303,7 @@
             [(global-identifier=? head include-ci.)
              (let1 sexpr&srcs (pass1/expand-include args cenv #t)
                (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
-            [(identifier? head)
+            [(wrapped-identifier? head)
              (or (and-let* ([gloc (id->bound-gloc head)]
                             [gval (gloc-ref gloc)]
                             [ (macro? gval) ])
@@ -363,9 +364,9 @@
 
 ;; get symbol or id, and returns identiier.
 (define (ensure-identifier sym-or-id cenv)
-  (if (identifier? sym-or-id)
-    sym-or-id
-    (make-identifier sym-or-id (cenv-module cenv) (cenv-frames cenv))))
+  (if (symbol? sym-or-id)
+    (make-identifier sym-or-id (cenv-module cenv) (cenv-frames cenv))
+    sym-or-id))
 
 ;; Does the given argument list satisfy procedure's reqargs/optarg?
 (define (argcount-ok? args reqargs optarg?)
@@ -380,15 +381,14 @@
 
 ;; returns a module specified by THING.
 (define (ensure-module thing name create?)
-  (let1 mod (cond [(symbol? thing) (find-module thing)]
-                  [(identifier? thing) (find-module (unwrap-syntax thing))]
+  (let1 mod (cond [(identifier? thing) (find-module (identifier->symbol thing))]
                   [(module? thing) thing]
                   [else
                    (errorf "~a requires a module name or a module, but got: ~s"
                            name thing)])
     (or mod
         (if create?
-          (make-module (if (identifier? thing) (unwrap-syntax thing) thing))
+          (make-module (identifier->symbol thing))
           (errorf "~a: no such module: ~s" name thing)))))
 
 ;; IFORM must be a $LAMBDA node.  This expands the application of IFORM
@@ -519,7 +519,7 @@
        ;; R7RS define doesn't allow it.
        (error "define without an expression is not allowed in R7RS (it is in R6RS):" oform))]
     [(_ name expr)
-     (unless (variable? name) (error "syntax-error:" oform))
+     (unless (identifier? name) (error "syntax-error:" oform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
        ;; If NAME is an identifier, it is inserted by macro expander; we
        ;; can't simply place it in $define, since it would insert a toplevel
@@ -530,7 +530,7 @@
        ;; other code except the code generated in the same macro expansion.
        ;; A trick - we directly modify the identifier, so that other forms
        ;; referring to the same (eq?) identifier can keep referring it.
-       (let1 id (if (identifier? name)
+       (let1 id (if (wrapped-identifier? name)
                   (%rename-toplevel-identifier! name)
                   (make-identifier name module '()))
          ;; Insert dummy binding at compile time, if we don't have one yet.
@@ -584,7 +584,7 @@
     [(_ (name . args) . body)
      (pass1/define-inline form name `(,lambda. ,args ,@body) cenv)]
     [(_ name expr)
-     (unless (variable? name) (error "syntax-error:" form))
+     (unless (identifier? name) (error "syntax-error:" form))
      (pass1/define-inline form name expr cenv)]
     [_ (error "syntax-error: malformed define-inline:" form)]))
 
@@ -675,7 +675,7 @@
 
 (define (pass1/make-inlinable-binding form name iform cenv)
   ;; See the comment in pass1/define about renaming the toplevel identifier.
-  (let1 id (if (identifier? name)
+  (let1 id (if (wrapped-identifier? name)
              (%rename-toplevel-identifier! name)
              (make-identifier name (cenv-module cenv) '()))
     ($define form '(inlinable) id iform)))
@@ -699,7 +699,7 @@
     [_ (error "syntax-error:" form)]))
 
 (define (pass1/define-macro src name expr cenv)
-  (unless (variable? name) (error "syntax-error:" src))
+  (unless (identifier? name) (error "syntax-error:" src))
   ;; TODO: macro autoload
   (let* ([proc (eval expr (cenv-module cenv))]
          [trans (%make-macro-transformer name
@@ -790,10 +790,10 @@
 (define (%internal-macro-expand expr cenv once?)
   (define (xpand expr)
     (match expr
-      [((? variable? op) . args)
+      [((? identifier? op) . args)
        (let1 var (cenv-lookup-syntax cenv op)
          (cond [(macro? var) (call-macro-expander var expr cenv)]
-               [(identifier? var)
+               [(wrapped-identifier? var)
                 (if-let1 gval (and-let* ([gloc (id->bound-gloc var)]
                                          [gval (gloc-ref gloc)]
                                          [ (macro? gval) ])
@@ -1016,11 +1016,11 @@
        ($if form (pass1 exp (cenv-sans-name cenv))
             (process-binds more body cenv)
             ($it))]
-      [([? variable? var] . more)
+      [([? identifier? var] . more)
        ($if form (pass1 var (cenv-sans-name cenv))
             (process-binds more body cenv)
             ($it))]
-      [(([? variable? var] init) . more)
+      [(([? identifier? var] init) . more)
        (let* ([lvar (make-lvar var)]
               [newenv (cenv-extend cenv `((,var . ,lvar)) LEXICAL)]
               [itree (pass1 init (cenv-add-name cenv var))])
@@ -1105,7 +1105,7 @@
              ($cons obj ($const op) xx))))]
       [(? pair?)       (quasi* obj level)]
       [(? vector?)     (quasi-vector obj level)]
-      [(? identifier?) ($const (unwrap-syntax obj))]
+      [(? wrapped-identifier?) ($const (unwrap-syntax obj))]
       [() ($const-nil)]
       [_  ($const obj)]))
 
@@ -1186,9 +1186,9 @@
      (receive (reqs rest) 
          (let loop ((xs formals) (ys '()))
            (cond [(null? xs) (values (reverse ys) #f)]
-                 [(variable? xs) (values (reverse ys) xs)]
+                 [(identifier? xs) (values (reverse ys) xs)]
                  [(pair? xs) 
-                  (unless (variable? (car xs))
+                  (unless (identifier? (car xs))
                     (error "Invalid formal parameter:" (car xs)))
                   (loop (cdr xs) (cons (car xs) ys))]
                  [else (error "Invalid formal parameter:" formals)]))
@@ -1297,7 +1297,6 @@
         `((,let. ((,r ,garg)) ,@(expand-key ks garg a)))
         (expand-key ks garg a))
       (let ([binds (map (match-lambda
-                          [[? symbol? o] o]
                           [[? identifier? o] o]
                           [(o init) `(,o ,init)]
                           [_ (error "illegal optional argument spec in " kargs)])
@@ -1314,12 +1313,9 @@
     (if (null? ks)
       body
       (let1 args (map (match-lambda
-                        [[? symbol? o] o]
                         [[? identifier? o] o]
                         [(([? keyword-like? key] o) init)
-                         (let1 k (if (identifier? key)
-                                   (identifier->symbol key)
-                                   key)
+                         (let1 k (identifier->symbol key)
                            `(,o ,k ,init))]
                         [(o init) `(,o ,init)]
                         [_ (error "illegal keyword argument spec in " kargs)])
@@ -1370,7 +1366,7 @@
                   expr lvars)
              (pass1/body body newenv)))]
     [(_ name ((var expr) ...) body ...)
-     (unless (variable? name) (error "bad name for named let:" name))
+     (unless (identifier? name) (error "bad name for named let:" name))
      ;; Named let.  (let name ((var exp) ...) body ...)
      ;;
      ;;  We don't use the textbook expansion here
@@ -1478,7 +1474,7 @@
      ;; have a chance of optimization.
      (pass1 (with-original-source `((,setter. ,op) ,@args ,expr) form) cenv)]
     [(_ name expr)
-     (unless (variable? name)
+     (unless (identifier? name)
        (error "syntax-error: malformed set!:" form))
      (let ([var (cenv-lookup-variable cenv name)]
            [val (pass1 expr cenv)])

@@ -487,7 +487,7 @@
 (define-macro (define-fstruct-type name ctor-name pred-name slots . options)
   (let* ([yname (unwrap-syntax name)]
          [maker (cond
-                 [(or (symbol? ctor-name) (identifier? ctor-name)) ctor-name]
+                 [(identifier? ctor-name) ctor-name]
                  [(eq? ctor-name #t) (string->symbol #"make-~yname")]
                  [(eq? ctor-name #f) #f]
                  ;; TODO: support inheritance like define-record-type
@@ -495,7 +495,7 @@
                                must be a symbol or a boolean, but got:"
                               ctor-name)])]
          [pred  (cond
-                 [(or (symbol? pred-name) (identifier? pred-name)) pred-name]
+                 [(identifier? pred-name) pred-name]
                  [(eq? pred-name #t) (string->symbol #"~|yname|?")]
                  [(eq? pred-name #f) #f]
                  [else (error "invalid define-fstruct-type: pred-name \

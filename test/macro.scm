@@ -79,8 +79,7 @@
          (let* ([first (car clauses)]
                 [rest  (cdr clauses)]
                 [test  (car first)])
-           (cond [(and (or (symbol? test)
-                           (identifier? test))
+           (cond [(and (identifier? test)
                        (c test (r 'else)))
                   `(,(r 'begin) ,@(cdr first))]
                  [else `(,(r 'if) ,test
@@ -110,8 +109,7 @@
            (let* ([first (car clauses)]
                   [rest  (cdr clauses)]
                   [test  (car first)])
-             (cond [(and (or (symbol? test)
-                             (identifier? test))
+             (cond [(and (identifier? test)
                          (c test (r 'else)))
                     `(,(r 'begin) ,@(cdr first))]
                    [else `(,(r 'if) ,test
@@ -141,7 +139,7 @@
 ;; cf. http://saito.hatenablog.jp/entry/2014/11/18/233209
 (define (er-test-traverse proc obj)
   (let loop ((obj obj))
-    (cond [(or (symbol? obj) (identifier? obj))    (proc obj)]
+    (cond [(identifier? obj) (proc obj)]
           [(pair? obj)   (cons (loop (car obj)) (loop (cdr obj)))]
           [(vector? obj) (vector-map loop obj)]
           [else obj])))

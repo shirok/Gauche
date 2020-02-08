@@ -1077,9 +1077,9 @@
 (define-insn STRINGP     0 none #f ($w/argr v ($result:b (SCM_STRINGP v))))
 (define-insn SYMBOLP     0 none #f ($w/argr v ($result:b (SCM_SYMBOLP v))))
 (define-insn VECTORP     0 none #f ($w/argr v ($result:b (SCM_VECTORP v))))
-(define-insn IDENTIFIERP 0 none #f ($w/argr v ($result:b (SCM_IDENTIFIERP v))))
 (define-insn NUMBERP     0 none #f ($w/argr v ($result:b (SCM_NUMBERP v))))
 (define-insn REALP       0 none #f ($w/argr v ($result:b (SCM_REALP v))))
+(define-insn IDENTIFIERP 0 none #f ($w/argr v ($result:b (or (SCM_SYMBOLP v) (SCM_IDENTIFIERP v)))))
 
 (define-insn SETTER      0 none #f ($w/argr v ($result (Scm_Setter v))))
 

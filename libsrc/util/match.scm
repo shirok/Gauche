@@ -194,12 +194,10 @@
 (define match:set-error-control
   (lambda (v) (set! match:error-control v)))
 
-(define-inline (symid? x) (or (symbol? x) (identifier? x)))
-
 (define match:disjoint-predicates
   (cons 'null
         '(pair?
-          symid?
+          identifier?
           boolean?
           number?
           string?
@@ -230,7 +228,7 @@
                                          (pair? (cadr c))
                                          (equal? (caadr c) '=>)
                                          (pair? (cdadr c))
-                                         (symid? (cadadr c))
+                                         (identifier? (cadadr c))
                                          (null? (cddadr c))
                                          (pair? (cddr c))
                                          (cadadr c)))
@@ -289,20 +287,17 @@
               ,m))))
 
 (define (symbolize x)
-  (cond [(symbol? x) x]
-        [(identifier? x) (unwrap-syntax x)]
-        [else x]))
+  (if (identifier? x) (identifier->symbol x) x))
 
 (define (pattern-var? x)
-  (and-let* ([x (cond [(symbol? x) x]
-                      [(identifier? x) (unwrap-syntax x)]
-                      [else #f])]
+  (and-let* ([x (and (identifier? x)
+                     (identifier->symbol x))]
              [ (not (dot-dot-k? x)) ])
     (not (memq x '(quasiquote quote unquote unquote-splicing
                    ? _ $ struct @ object = and or not set! get! ... ___)))))
 
 (define (dot-dot-k? s)
-  (and (symid? s)
+  (and (identifier? s)
        (if (member s '(... ___))
          0
          (and-let* ([s (if (symbol? s) s (unwrap-syntax s))]
@@ -376,11 +371,11 @@
              `(not ,@(map ordinary (cdr p)))
              (cons-ordinary (car p) (cdr p))))
           (($ struct)
-           (if (and (pair? (cdr p)) (symid? (cadr p)) (list? (cddr p)))
+           (if (and (pair? (cdr p)) (identifier? (cadr p)) (list? (cddr p)))
              `($ ,(cadr p) ,@(map ordinary (cddr p)))
              (cons-ordinary (car p) (cdr p))))
           ((@ object)
-           (if (and (pair? (cdr p)) (symid? (cadr p)) (list? (cddr p))
+           (if (and (pair? (cdr p)) (identifier? (cadr p)) (list? (cddr p))
                     (every (lambda (p) (and (list? p) (= (length p) 2)))
                            (cddr p)))
              `(object ,(cadr p) ,@(map (lambda (p)
@@ -417,7 +412,7 @@
     (let ((cons-quasi (lambda (x y) (cons (quasi x) (quasi y)))))
       (cond
        ((simple? p) p)
-       ((symid? p) `',p)
+       ((identifier? p) `',p)
        ((pair? p)
         (cond
          ((eq? (car p) 'unquote)
@@ -460,7 +455,7 @@
   (define (bound p a k)
     (cond
      ((eq? '_ p) (k p a))
-     ((symid? p)
+     ((identifier? p)
       (when (memq p a)
         (match:syntax-err pattern "duplicate variable in pattern"))
       (k p (cons p a)))
@@ -470,7 +465,7 @@
       (cond
        ((not (null? (cddr p)))
         (bound `(and (? ,(cadr p)) ,@(cddr p)) a k))
-       ((or (not (symid? (cadr p)))
+       ((or (not (identifier? (cadr p)))
             (memq (cadr p) a))
         (let ((g (gensym)))
           (push! pred-bodies `(,g ,(cadr p)))
@@ -478,7 +473,7 @@
        (else (k p a))))
      ((and (pair? p) (eq? '= (car p)))
       (cond
-       ((or (not (symid? (cadr p)))
+       ((or (not (identifier? (cadr p)))
             (memq (cadr p) a))
         (let ((g (gensym)))
           (push! pred-bodies `(,g ,(cadr p)))
@@ -650,7 +645,7 @@
                  See the ``Keyword and symbol integration'' section \
                  of the manual for the details.\n" p x)
           (emit `(equal? ,e ,p) sf kf ks))
-         ((symid? p) (set! v (cons (cons p e) v))
+         ((identifier? p) (set! v (cons (cons p e) v))
           (ks sf))
          ((null? p) (emit `(null? ,e) sf kf ks))
          ((equal? p ''()) (emit `(null? ,e) sf kf ks))
@@ -732,7 +727,7 @@
                                                       (lambda (sf) #f)
                                                       (lambda (sf) #t)))
                                           (tst (if (and (pair? ptst)
-                                                        (symid? (car ptst))
+                                                        (identifier? (car ptst))
                                                         (pair? (cdr ptst))
                                                         (eq? eta (cadr ptst))
                                                         (null? (cddr ptst)))
@@ -741,7 +736,7 @@
                                      (assm `(match:every ,tst ,e)
                                            (kf sf)
                                            (ks sf))))
-                                  ((and (symid? (car p))
+                                  ((and (identifier? (car p))
                                         (equal? (list (car p)) bound))
                                    (next (car p) e sf kf ks))
                                   (else
@@ -1003,7 +998,7 @@
                  (loop (cadddr code)))))
        ((equal? (car code) 'lambda) #f)
        ((and (eq? (car code) 'let)
-             (symid? (cadr code)))
+             (identifier? (cadr code)))
         #f)
        (else (or (loop (car code))
                  (loop (cdr code))))))))
@@ -1064,7 +1059,7 @@
                 (pair? (cdr p))
                 (null? (cddr p))
                 (equal? 'quote (car p))
-                (symid? (cadr p)))
+                (identifier? (cadr p)))
            'symbol?)
           (else #f)))))
 
@@ -1116,8 +1111,8 @@
             (lambda (y) (and (list? y) (<= 2 (length y))))
             (cdr args))) (let* ((exp (car args))
                                 (clauses (cdr args))
-                                (e (if (symid? exp) exp (gensym))))
-                           (if (symid? exp)
+                                (e (if (identifier? exp) exp (gensym))))
+                           (if (identifier? exp)
                                ((car match:expanders)
                                 e
                                 clauses
@@ -1175,7 +1170,7 @@
                      (,match. (cons ,g1 ,g2) ((,p1 . ,p2) ,@body))))))
         (g136 (cadddr match:expanders)))
     (if (pair? args)
-        (if (symid? (car args))
+        (if (identifier? (car args))
             (if (and (pair? (cdr args)) (list? (cadr args)))
                 (let g161 ((g162 (cadr args)) (g160 '()) (g159 '()))
                   (if (null? g162)

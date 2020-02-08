@@ -96,7 +96,7 @@
                   (rlet1 sym (symbol-append nam "." num)
                     (hash-table-put! tab id sym)))))))))
   (define (rec form)
-    (cond [(identifier? form) (id->sym form)]
+    (cond [(wrapped-identifier? form) (id->sym form)]
           [(pair? form) (cons (rec (car form)) (rec (cdr form)))]
           [(vector? form) (vector-map rec form)]
           [else form]))

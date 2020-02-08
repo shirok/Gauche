@@ -103,11 +103,9 @@
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
-  (cond [(symbol? name) (values name #f)]
-        [(identifier? name) (values name #f)]
+  (cond [(identifier? name) (values name #f)]
         [(and (pair? name) (eq? (car name) 'setter)
-              (pair? (cdr name)) (or (symbol? (cadr name))
-                                     (identifier? (cadr name)))
+              (pair? (cdr name)) (identifier? (cadr name))
               (null? (cddr name)))
          (values (%make-setter-name (cadr name)) (cadr name))]
         [else (error "Bad name for generic function or method" name)]))

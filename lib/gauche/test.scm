@@ -398,7 +398,7 @@
           [(and (pair? (car code))
                 (memq (caar code) gref-call-insns))
            (if (pair? (cdr code))
-             (if (identifier? (cadr code))
+             (if (wrapped-identifier? (cadr code))
                (let* ([src-code (assq-ref (assv-ref debug-info i '())
                                           'source-info)]
                       ;; If the identifier is in `code' and the source-code
@@ -421,7 +421,7 @@
                        debug-info))
                (loop r (cddr code) (+ i 2) debug-info))    ;skip #<gloc>
              (loop r '() (+ i 1) debug-info))]
-          [(identifier? (car code))
+          [(wrapped-identifier? (car code))
            (loop `((,(car code) #f #f) ,@r) (cdr code) (+ i 1) debug-info)]
           [(is-a? (car code) <compiled-code>)
            (loop (loop r (code->list (car code)) 0 (~ (car code)'debug-info))

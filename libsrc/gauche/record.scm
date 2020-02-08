@@ -172,15 +172,14 @@
       s)))
 
 (define (%valid-fieldspecs? specs signal-error?)
-  (define (id? x) (or (symbol? x) (identifier? x)))
   (if (not (vector? specs))
     (if signal-error?
       (error "make-rtd: fieldspecs must be a vector, but got" specs)
       #f)
     (every (^[spec]
              (match spec
-               [((or 'mutable 'immutable) (? id? name)) #t]
-               [(? id? name) #t]
+               [((or 'mutable 'immutable) (? identifier? name)) #t]
+               [(? identifier? name) #t]
                [other (if signal-error?
                         (error "make-rtd: invalid field spec:" other)
                         #f)]))
@@ -439,12 +438,11 @@
 (define-syntax define-record-type 
   (er-macro-transformer
    (^[f r c]
-     (define (id? x)  (or (symbol? x) (identifier? x)))
      (define (parse-type-spec type-spec)
        (match type-spec
-         [(? id? name) (values name #f '())]
-         [((? id? name) parent) (values name parent '())]
-         [((? id? name) parent . opts)
+         [(? identifier? name) (values name #f '())]
+         [((? identifier? name) parent) (values name parent '())]
+         [((? identifier? name) parent . opts)
           (let-keywords opts ([mixins #f]
                               [metaclass #f])
             (values name parent
@@ -455,10 +453,10 @@
          [_ (error "invalid type-spec" type-spec)]))
      (define (build-field-spec field-specs)
        (map-to <vector> (match-lambda
-                          [((? id? f) a s) f]
-                          [((? id? f) a) `(immutable ,f)]
-                          [((? id? f)) f]
-                          [(? id? f) `(immutable ,f)]
+                          [((? identifier? f) a s) f]
+                          [((? identifier? f) a) `(immutable ,f)]
+                          [((? identifier? f)) f]
+                          [(? identifier? f) `(immutable ,f)]
                           [x (error "invalid field spec:" x)])
                field-specs))
      (define (build-def typename parent opts field-specs)
@@ -472,11 +470,11 @@
          [#t (quasirename r
                `((define-inline ,(sym+ 'make- typename) 
                    (rtd-constructor ,typename))))]
-         [((? id? ctor-name) field ...)
+         [((? identifier? ctor-name) field ...)
           (quasirename r
             `((define-inline ,ctor-name
                 (rtd-constructor ,typename ',(list->vector field)))))]
-         [(? id? ctor-name)
+         [(? identifier? ctor-name)
           (quasirename r
             `((define-inline ,ctor-name (rtd-constructor ,typename))))]
          [x (error "invalid constructor spec" ctor-spec)]))
@@ -486,7 +484,7 @@
          [#t (quasirename r
                `((define-inline ,(sym+ typename '?)
                    (rtd-predicate ,typename))))]
-         [(? id? pred-name)
+         [(? identifier? pred-name)
           (quasirename r
             `((define-inline ,pred-name (rtd-predicate ,typename))))]
          [_ (error "invalid predicate spec" pred-spec)]))

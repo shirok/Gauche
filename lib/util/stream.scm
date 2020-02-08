@@ -386,7 +386,7 @@
        (let loop ([pat pat] [n 0])
          (cond [(null? pat) (values n #f)]
                [(pair? pat) (loop (cdr pat) (+ n 1))]
-               [(or (symbol? pat) (identifier? pat)) (values n #t)]
+               [(identifier? pat) (values n #t)]
                [else (errorf "Bad pattern element ~s in stream-match: ~s" f)])))
      (define (flatpat pat)
        (map* identity (^t (if (null? t) '() (list t))) pat))
