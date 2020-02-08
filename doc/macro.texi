@@ -1501,7 +1501,6 @@ This will be the default behavior in future.
 @c COMMON
 @end defmac
 
-
 @node Traditional macros, Debugging macros, Hygienic macros, Macros
 @section Traditional macros
 @c NODE 伝統的なマクロ
@@ -1563,6 +1562,97 @@ global bindings inserted by the macro.
 @ref{Why hygienic?}でこの点について説明しています。
 @c COMMON
 @end defspec
+
+
+@menu
+* Identifiers::
+@end menu
+
+@node Identifiers,  , Traditional macros, Traditional macros
+@subsection Identifiers
+@c NODE 識別子
+
+In the hygienic macro, we keep saying the symbols are
+@emph{effective renamed}.  What it means is that we don't actually create
+a new symbol with a new name. We have to remember the origin of
+the renamed symbol to resolve scope of the variable, and having a separate
+table to keep track of renamed symbols is costly.  Instead, the rename
+procedure wraps the symbols in the input form with syntactic information.
+
+When you play with macro internals, you'll see an object
+that is printed somethign like @code{#<identifier user#foo.fb4ca828>}.
+That's the wrapped symbol.
+
+If one macro output is passed to another macro expander, the wrapped symbol
+may further be wrapped.
+
+The macro expander must assume that symbols in the input is already
+wrapped by another macro expander.  So, instead of calling it a ``symbol'',
+we call it an ``identifier''.   An identifier is something that usually
+works as a variable or a syntactic keyword in the prorgam.  It may be
+a symbol or a wrapped identifier.
+(Note that symbols in quoted literals are bare symbols, for the @code{quote}
+form strips wrappers.)
+
+Legacy Lisp macros sometimes examines the symbols in the input form.
+In Scheme, you have to treat the input program as consists of
+a tree of identifiers and other objects.  You can test whether an object
+is an identifier or not by @code{identifier?}, where traditional Lisp
+macor would have used @code{symbol?}.  To compare identifiers, you need
+to use the ``compare'' procedure passed to the er-macro expander,
+or @code{free-identifier=?}.
+
+@deftp {Builtin Class} <identifier>
+@clindex identifier
+A class of wrapped identifier.  An identifier is either a symbol
+or another wrapped identifier.  It is created as a result of
+``renaming'' in the hygienic macro expander.
+
+A wrapped identifier contains transient information about the program
+source, and cannot be portably saved or passed around; it is only valid
+in the macro expansion phase.
+
+For the details of identifier, @pxref{Identifiers}.
+@end deftp
+
+@defun identifier? obj
+Returns @code{#t} if @var{obj} is either a symbol or a wrapped
+identifier.  Returns @code{#f} otherwise.
+@end defun
+
+@defun identifier->symbol obj
+Returns the symbol that is the origin of the @var{obj}, which must
+be either a symbol or a wrapped identifier.
+@end defun
+
+@defun free-identifier=? id1 id2
+When both arguments @var{id1} and @var{id2} are wrapped identifiers,
+returns @code{#t} if either (1) @var{id1} and @var{id2} both refer to
+the same binding, or (2) @var{id1} and @var{id2} are both unbound.
+Otherwise, @code{#f} is returned.
+
+If at least one of @var{id1} or @var{id2} is not a wrapped identifier,
+@code{#f} is returned.  Note that bare symbols can't be compared
+with this procedure, for they lack the necessary lexical information.
+To obtain a wrapped identifier, you need to pass a bare symbol
+to the ``rename'' procedure passed to the er-macro transformer.
+
+Usually you don't need to use this procedure directly, for
+the compare procedure passed to the er-macro transformer is suffice.
+@end defun
+
+@defun unwrap-syntax form
+Removes wrappings of identifiers in @var{form}.
+The output of macro expanders contain wrapped identifiers,
+which is bothersome to see.  This procedure traverses @var{form}
+and replaces any wrapped identifiers with its original symbol,
+by @code{identifier->symbol}.
+
+Note that the result is an ordinary S-expression easier to read,
+but syntactic information is lost.
+@c COMMON
+@end defun
+
 
 @node Debugging macros, Macro utilities, Traditional macros, Macros
 @section Debugging macros
@@ -2050,8 +2140,8 @@ except that the error is signaled at macro-expansion time
 They are useful to tell the user the wrong usage of macro in
 the comprehensive way, instead of the cryptic error from the macro
 transformer.   Because of the purpose, @var{arg} @dots{} are first
-passed to @code{unwrap-syntax} described below, to strip off
-the internal syntactic binding informations.
+passed to @code{unwrap-syntax}  to strip off
+the internal syntactic binding informations (@pxref{Identifiers}).
 @c JP
 これらは@code{error}と@code{errorf} (@ref{Signaling exceptions}参照) と
 ほぼ同じですが、実行時ではなくマクロ展開時(すなわち、コンパイル時)に
@@ -2060,8 +2150,8 @@ the internal syntactic binding informations.
 これらの手続きは、マクロの誤った使い方を、
 マクロ展開ルーチンの出す複雑なエラーではなく、
 分かりやすい方法でユーザーに通知するのに使えます。
-そのため、@var{arg} @dots{}はまず下に述べる@code{unwrap-syntax}に渡されて
-内部の構文的束縛情報を取り除いた後でこれらの手続きに渡されます。
+そのため、@var{arg} @dots{}は@code{unwrap-syntax}に渡されて
+内部の構文的束縛情報を取り除いた後でこれらの手続きに渡されます (@ref{Identifiers}参照)。
 @c COMMON
 
 @example
@@ -2076,28 +2166,6 @@ the internal syntactic binding informations.
   @result{} @r{error: "malformed my-macro: (my-macro 1 2 3 4)"}
 @end example
 @end defmac
-
-@defun unwrap-syntax form
-@c EN
-Removes internal syntactic information from @var{form}.
-In order to implement a hygienic macro, macro transformer replaces
-symbols in the macro form for identifiers, which captures the
-syntactic environment where they are defined.  Although it is
-necessary information for the compiler, it is rather confusing
-for users if it appears in the messages.  This function
-replaces occurrences of identifiers in @var{form} to the original
-symbols.
-@c JP
-@var{form}の内部的な構文情報を取り除きます。
-衛生マクロの実装のために、マクロ拡張ルーチンはマクロ内のシンボルを
-識別子(identifier)に置き換えます。識別子はそれが現れる構文的環境を
-捕捉します。それはコンパイラに取っては必要な情報ですが、
-エラーメッセージに現れるとユーザーを混乱させるもとにもなります。
-そこで、この手続きでは@var{form}中の識別子をもとのシンボルに
-置換しなおします。
-@c COMMON
-@end defun
-
 @c Local variables:
 @c mode: texinfo
 @c coding: utf-8

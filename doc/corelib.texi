@@ -12,7 +12,6 @@
 * Pairs and lists::
 * Symbols::
 * Keywords::
-* Identifiers::
 * Characters::
 * Character set::
 * Strings::
@@ -6500,7 +6499,7 @@ only allows symbols as the arguments and the result is always interned.
 
 
 @c ----------------------------------------------------------------------
-@node Keywords, Identifiers, Symbols, Core library
+@node Keywords, Characters, Symbols, Core library
 @section Keywords
 @c NODE キーワード
 
@@ -7018,47 +7017,8 @@ list of @code{(gauche base)}.)
 @end example
 
 
-
 @c ----------------------------------------------------------------------
-@node Identifiers, Characters, Keywords, Core library
-@section Identifiers
-@c NODE Identifier
-
-@deftp {Builtin Class} <identifier>
-@clindex identifier
-An identifier is an internal object to keep track of
-binding of variables by the compiler.
-
-Usually it is hidden from Scheme world, but the hygienic
-macro expander inserts identifiers into its output, which
-is necessary for hygiene.  But that makes reading macro expansion
-result difficult.
-
-If you bothered by all the @code{#<identifier ...>} stuff in
-the macro output, remember a handy trick
-to pass the expansion result to @code{unwrap-syntax}; it converts
-all identifiers in the passed form to bare symbols.   It does lose
-information---two different identifiers may be converted to a symbol
-with the same name---so you need some care to interpret the output,
-but usually the output gives a fairly good idea of what the macro is doing.
-
-Currently, identifiers are disjoint from symbols.  That might cause
-problems if you tweak macro output.  The plan is to make identifiers
-just a special kind of symbols eventually, so do not assume too much
-about identifiers.
-@end  deftp
-
-@defun identifier? obj
-@end defun
-
-@defun identifier->symbol identifier
-@end defun
-
-@defun unwrap-syntax form
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Characters, Character set, Identifiers, Core library
+@node Characters, Character set, Keywords, Core library
 @section Characters
 @c NODE 文字
 
