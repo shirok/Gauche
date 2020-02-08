@@ -36,6 +36,7 @@ Gaucheは、名前の衝突を避ける安全なマクロを簡単に書ける�
 * Why hygienic?::
 * Hygienic macros::
 * Traditional macros::
+* Identifiers::
 * Debugging macros::
 * Macro utilities::
 @end menu
@@ -1501,7 +1502,7 @@ This will be the default behavior in future.
 @c COMMON
 @end defmac
 
-@node Traditional macros, Debugging macros, Hygienic macros, Macros
+@node Traditional macros, Identifiers, Hygienic macros, Macros
 @section Traditional macros
 @c NODE 伝統的なマクロ
 
@@ -1564,12 +1565,8 @@ global bindings inserted by the macro.
 @end defspec
 
 
-@menu
-* Identifiers::
-@end menu
-
-@node Identifiers,  , Traditional macros, Traditional macros
-@subsection Identifiers
+@node Identifiers, Debugging macros, Traditional macros, Macros
+@section Identifiers
 @c NODE 識別子
 
 In the hygienic macro, we keep saying the symbols are
@@ -1654,7 +1651,7 @@ but syntactic information is lost.
 @end defun
 
 
-@node Debugging macros, Macro utilities, Traditional macros, Macros
+@node Debugging macros, Macro utilities, Identifiers, Macros
 @section Debugging macros
 @c NODE マクロのデバッグ
 
