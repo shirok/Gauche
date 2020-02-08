@@ -1569,21 +1569,21 @@ global bindings inserted by the macro.
 @section Identifiers
 @c NODE 識別子
 
-In the hygienic macro, we keep saying the symbols are
-@emph{effective renamed}.  What it means is that we don't actually create
+In the discussion of hygienic macros, we keep saying the symbols are
+@emph{effectively renamed}.  What it means is that we don't actually create
 a new symbol with a new name. We have to remember the origin of
-the renamed symbol to resolve scope of the variable, and having a separate
-table to keep track of renamed symbols is costly.  Instead, the rename
-procedure wraps the symbols in the input form with syntactic information.
+the renamed symbol to resolve the scope of the variable, and having a separate
+table to keep track of renamed symbols would be costly.  Instead, the ``rename''
+procedure wraps the symbols in the input with syntactic information.
 
 When you play with macro internals, you'll see an object
-that is printed somethign like @code{#<identifier user#foo.fb4ca828>}.
+that is printed something like @code{#<identifier user#foo.fb4ca828>}.
 That's the wrapped symbol.
 
 If one macro output is passed to another macro expander, the wrapped symbol
 may further be wrapped.
 
-The macro expander must assume that symbols in the input is already
+The macro expander must assume that symbols in the input are already
 wrapped by another macro expander.  So, instead of calling it a ``symbol'',
 we call it an ``identifier''.   An identifier is something that usually
 works as a variable or a syntactic keyword in the prorgam.  It may be
@@ -1643,10 +1643,10 @@ Removes wrappings of identifiers in @var{form}.
 The output of macro expanders contain wrapped identifiers,
 which is bothersome to see.  This procedure traverses @var{form}
 and replaces any wrapped identifiers with its original symbol,
-by @code{identifier->symbol}.
+retrieved by @code{identifier->symbol}.
 
-Note that the result is an ordinary S-expression easier to read,
-but syntactic information is lost.
+Note that, although the result is an ordinary S-expression easier to read,
+syntactic information is lost.
 @c COMMON
 @end defun
 
