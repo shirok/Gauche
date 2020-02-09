@@ -1041,7 +1041,7 @@
                ,@(rec g (map* (^s
                                (cond [(and (pair? s) (pair? (cdr s)) (null? (cddr s)))
                                       (cons (car s) (cadr s))]
-                                     [(or (symbol? s) (ydentifier? s))
+                                     [(or (symbol? s) (identifier? s))
                                       (cons s '(undefined))]
                                      [else (error "malformed let-optionals* bindings:"
                                                   specs)]))

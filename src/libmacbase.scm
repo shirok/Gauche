@@ -75,7 +75,6 @@
 (define-cproc unwrap-syntax (form) Scm_UnwrapSyntax)
 
 ;; API
-;; EXPERIMENTAL
 ;; This preserves identity of local identifiers by suffixing it.
 ;; The identity of toplevel identifiers are still not preserved across modules.
 (select-module gauche.internal)
