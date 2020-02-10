@@ -130,6 +130,8 @@ void usage(int errorp)
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      load-verbose    report while loading files\n"
             "      include-verbose report while including files\n"
+            "      safe-string-cursors\n"
+            "                      performs extra validation for use of string cursors\n"
             "      warn-legacy-syntax\n"
             "                      print warning when legacy Gauche syntax is encountered\n"
             "      no-inline       don't inline procedures & constants (combined\n"
@@ -314,7 +316,12 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-dissolve-apply -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-inline-setters, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, "
+                "-finclude-verbose, -fno-dissolve-apply -fno-inline, "
+                "-fno-inline-globals, -fno-inline-locals, "
+                "-fno-inline-constants, -fno-inline-setters, -fno-source-info, "
+                "-fno-post-inline-pass, -fno-lambda-lifting-pass, "
+                "-fsafe-string-cursors, -fwarn-legacy-syntax, or -ftest\n");
         exit(1);
     }
 }
