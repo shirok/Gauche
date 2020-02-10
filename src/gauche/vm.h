@@ -590,8 +590,10 @@ enum {
                                            (incurs runtime overhead) */
     SCM_COLLECT_LOAD_STATS   = (1L<<6), /* log the stats of file load
                                            timings (incurs runtime overhead) */
-    SCM_CHECK_UNDEFINED_TEST = (1L<<7)  /* check if #<undef> appears as
+    SCM_CHECK_UNDEFINED_TEST = (1L<<7), /* check if #<undef> appears as
                                            the test value in branch */
+    SCM_SAFE_STRING_CURSORS = (1L<<8)   /* Always use large cursors for
+                                           extra validation. */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))
@@ -631,10 +633,8 @@ enum {
     SCM_COMPILE_NOINLINE_SETTERS = (1L<<10), /* Do not inline setters */
     SCM_COMPILE_NODISSOLVE_APPLY = (1L<<11),/* Do not dissolve APPLY
                                               (pass2/dissolve-apply) */
-    SCM_COMPILE_LEGACY_DEFINE = (1L<<12),  /* Do not insert toplevel binding
+    SCM_COMPILE_LEGACY_DEFINE = (1L<<12)   /* Do not insert toplevel binding
                                               at compile-time. */
-    SCM_SAFE_STRING_CURSORS = (1L<<13)     /* Always use large cursors for
-                                              extra validation. */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

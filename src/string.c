@@ -1879,7 +1879,7 @@ static ScmObj make_string_cursor(ScmString *src, const char *ptr)
     }
 
     ScmSmallInt offset = (ScmSmallInt)(ptr - SCM_STRING_BODY_START(srcb));
-    if (!SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_SAFE_STRING_CURSORS) &&
+    if (!SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_SAFE_STRING_CURSORS) &&
         SCM_STRING_CURSOR_FITS_SMALL_P(offset)) {
         return SCM_MAKE_STRING_CURSOR_SMALL(offset);
     }
@@ -1906,7 +1906,7 @@ ScmObj Scm_MakeStringCursorEnd(ScmString *src)
     const ScmStringBody *srcb = SCM_STRING_BODY(src);
 
     ScmSmallInt offset = SCM_STRING_BODY_END(srcb) - SCM_STRING_BODY_START(srcb);
-    if (!SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_SAFE_STRING_CURSORS) &&
+    if (!SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_SAFE_STRING_CURSORS) &&
         SCM_STRING_CURSOR_FITS_SMALL_P(offset)) {
         return SCM_MAKE_STRING_CURSOR_SMALL(offset);
     }

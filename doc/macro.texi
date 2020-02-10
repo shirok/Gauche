@@ -1615,6 +1615,9 @@ For the details of identifier, @pxref{Identifiers}.
 @defun identifier? obj
 Returns @code{#t} if @var{obj} is either a symbol or a wrapped
 identifier.  Returns @code{#f} otherwise.
+
+Note: In R6RS, @code{identifier?} only returns @code{#t} for an
+identifier object, which is of a disjoint type from symbols.
 @end defun
 
 @defun identifier->symbol obj
@@ -1646,9 +1649,30 @@ and replaces any wrapped identifiers with its original symbol,
 retrieved by @code{identifier->symbol}.
 
 Note that, although the result is an ordinary S-expression easier to read,
-syntactic information is lost.
-@c COMMON
+syntactic information is completely lost.  If you distinguish newly inserted
+identifiers with the same name, use @code{unravel-syntax}.
 @end defun
+
+@defun unravel-syntax form
+Removes wrappings of identifiers in @var{form}, but attach suffix
+if two distinct identifiers have the same name, so that they won't
+be confused.
+
+For example, a common idiom of @code{syntax-rules} to generate
+temporary variables with recursions create all variables with
+the same name, although each variable is different because they are
+inserted by the different invocation of the expander.  If you pass
+its output to @code{unwrap-syntax}, all syntactic information is stripped
+and these variables can't be distinguished from one another.
+
+This procedure is automatically called with some macro utilities;
+@xref{Tracing macro expansion}, and @pxref{Expanding macros manually},
+for the example of output of @code{unravel-syntax}.
+
+Note that the global identifiers becomes bare symbols, so you are still
+unable to tell which module the global identifiers refer to.
+@end defun
+
 
 
 @node Debugging macros, Macro utilities, Identifiers, Macros

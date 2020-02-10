@@ -289,7 +289,7 @@ void further_options(const char *optarg)
         test_mode = TRUE;
     }
     else if (strcmp(optarg, "safe-string-cursors") == 0) {
-        SCM_VM_COMPILER_FLAG_SET(vm, SCM_SAFE_STRING_CURSORS);
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_SAFE_STRING_CURSORS);
     }
     /* For development; not for public use */
     else if (strcmp(optarg, "collect-stats") == 0) {
