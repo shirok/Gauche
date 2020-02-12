@@ -501,14 +501,17 @@
          (test-error <parse-error> "expecting one of (#\\c #\\a #\\b) at 1")
          (peg-parse-string p2 "dd")))
 
-
 ;;;============================================================
-;;; Token Parsers
+;;; Optional arg for peg-parse-string and peg-parse-port
 ;;;
 
-;;;============================================================
-;;; Permulate Parsers
-;;;
+(test-section "optional cont arg")
+
+(test* "peg-parse-string cont" '("aaaa" #\b #\b #\c)
+       (peg-parse-string ($->rope ($many ($. #\a))) "aaaabbc" cons))
+(test* "peg-parse-port cont" '("aaaa" #\b #\b #\c)
+       (call-with-input-string "aaaabbc"
+         (cut peg-parse-port ($->rope ($many ($. #\a))) <> cons)))
 
 ;;;============================================================
 ;;; Examples

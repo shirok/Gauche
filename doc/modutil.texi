@@ -11266,7 +11266,7 @@ However, you have to watch out some traps; see
 @c NODE PEGひとめぐり
 
 @c EN
-This section we cover the basic concepts and tools of @code{parser.peg}
+In this section we cover the basic concepts and tools of @code{parser.peg}.
 The code of examples is in @file{examples/pegintro.scm} if you have the
 source tree of Gauche.
 @c JP
@@ -11276,7 +11276,7 @@ source tree of Gauche.
 
 @c EN
 In @code{parser.peg}, a parser is merely a Scheme procedure
-that takes an input (list of tokens) as an argument and returns
+that takes a list of tokens as an argument and returns
 a result (well, in fact, it returns three values, but we'll go
 into the details later.)
 @c JP
@@ -11304,7 +11304,7 @@ following, which accepts a character @code{#\a}.
 Here, @emph{accept} means the parser checks if the head of input has
 a character @code{#\a}, and if it is, it succeeds, and if not, it fails.
 @c JP
-ここで@emph{受容する}とは、パーザが入力の先頭をチェックして、
+ここで@emph{受理する}とは、パーザが入力の先頭をチェックして、
 それが文字@code{#\a}ならば成功し、そうでなければ失敗するという意味です。
 @c COMMON
 
@@ -11357,7 +11357,7 @@ The combinator @code{$many} takes a parser and returns a new parser
 that accepts zero or more occurrence of the string the original parser
 accepts.
 @c JP
-コンビネータ@code{$many}はパーザを取ると、それのゼロ回以上の繰り返しを受容する
+コンビネータ@code{$many}はパーザを取ると、それのゼロ回以上の繰り返しを受理する
 パーザを作って返します。
 @c COMMON
 
@@ -11384,7 +11384,7 @@ to a variable, then can be used to construct more complex parsers.
 @c EN
 I leave explanation of @code{$many1} and
 @code{$many_} for the later section,
-but I guess you can imagine what those parsers do;
+but you may be able to guess what those parsers do;
 @code{digits} accepts a sequence of one or more digits, and
 @code{ws} accepts sequence of zero or more whitespaces.   The @code{separator}
 parser accepts a comma, optionally surrounded by whitespaces.
@@ -11392,7 +11392,7 @@ parser accepts a comma, optionally surrounded by whitespaces.
 @code{$many1}と@code{$many_}の説明は後回しにしますが、
 何となくこれらのパーザの動作は推測できるのではないでしょうか。
 @code{digits}は1個以上の数字の並びを、
-@code{ws}は0個以上の空白文字の並びを受容するパーザです。
+@code{ws}は0個以上の空白文字の並びを受理するパーザです。
 @code{separator}パーザは0個以上の空白で囲まれたコンマを受容します。
 @c COMMON
 
@@ -11400,7 +11400,7 @@ parser accepts a comma, optionally surrounded by whitespaces.
 The @code{digits} parser returns a list of accepted
 characters:
 @c JP
-@code{digits}は受容した文字のリストを返します。
+@code{digits}は受理した文字のリストを返します。
 @c COMMON
 
 @example
@@ -11482,7 +11482,7 @@ We can use @code{$let} again to keep all the results.
 @c JP
 あれ、最初の123がどっかいっちゃいました。そうそう、
 @code{$seq}は最後のパーザの値以外は捨てるのでした。
-また@code{$let}を使って結果を集めることができます。
+@code{$let}を使って結果を集めることができます。
 @c COMMON
 
 @example
@@ -11535,7 +11535,7 @@ we can modify it to handle zero-element case.
 By the way, ``list of stuff separated by something'' is a very common
 pattern, so we can extract the pattern to name it:
 @c JP
-ところで、「何かで区切られた何かリスト」というのは頻繁に出てくるので、次のように
+ところで、「何かで区切られた何かのリスト」というのは頻繁に出てくるので、次のように
 パターンを取り出しておくことができます：
 @c COMMON
 
@@ -11572,13 +11572,13 @@ you can use ordinary procedural abstraction to factor out common patterns.
 @c EN
 There's one catch in the @code{$or} form.
 It tries the next alternative only when the
-parser fails without consuming the input.  Once the input is
+parser fails @emph{without consuming the input}.  Once the input is
 consumed, @code{$or} commits to that choice.   For example,
 the following fails even if the input seems to match the
 second alternative:
 @c JP
 @code{$or}についてはひとつ注意があります。ある選択肢が失敗した時、
-それが入力を消費していない場合に限り、次の選択肢が試されるということです。
+@emph{それが入力を消費していない場合に限り}、次の選択肢が試されるということです。
 入力が少しでも消費されたら、@code{$or}はその選択肢にコミットし、
 その先で失敗しても他の選択肢を試しません。下の例では、
 2番目の@code{$seq}が入力にマッチするにもかかわらず、パーズは失敗します。
@@ -11642,7 +11642,7 @@ lookahead and backtrack.
 @c EN
 Now, let's get back to the integer list example and make
 it more interesting.
-Suppose the list of integers are surrounded by parenthesis,
+Suppose the list of integers are surrounded by parentheses,
 brackets or curly-braces.  Opening one and closing one must correspond.
 @c JP
 さて整数のリストの例をもうちょっとおもしろくしてみましょう。
@@ -11673,7 +11673,7 @@ The @code{$seq0} combinator is similar to @code{seq}, but returns
 the result of the first parser instead of the last one
 (it's @code{begin0} to @code{begin}).
 @c JP
-開き括弧は@code{begin-list}パーザが受容します。@code{$seq0}は
+開き括弧は@code{begin-list}パーザが受理します。@code{$seq0}は
 @code{$seq}とほぼ同じですが、最初のパーザの結果を返します。
 (@code{begin}に対する@code{begin0}と同じです。)
 @c COMMON
@@ -11711,7 +11711,7 @@ the scope of the parser expressions in the binding.  Note that, however,
 @c JP
 @var{opener}の値を続く束縛フォームの中で使う必要があるので、
 ここでは@code{$let}ではなく@code{$let*}を使いました。
-この差は@code{let}と@code{let*}の差と同じです。
+この差は@code{let}と@code{let*}の差と同じで、スコープの違いです。
 ただ、@code{$let}の方が処理系にはうんと最適化しやすいので、
 可能なら@code{$let}を使う方が良いでしょう。
 @c COMMON
@@ -11817,7 +11817,7 @@ gosh> (peg-parse-string nested-list "(123, [456, @{@}, 789], 987)")
 
 @c EN
 Ok, we're almost done.  Our code can parse nested list of integers,
-checking brackets matches.  But if you give an erroneous input, the message
+checking bracket matches.  But if you give an erroneous input, the message
 is cryptic and not helpful:
 @c JP
 さあ、ほとんど完成です。
@@ -11904,6 +11904,23 @@ _______________________________________
         at "../lib/gauche/interactive.scm":267
 @end example
 
+@c EN
+For further examples, you can take a look at some libraries in the
+Gauche source tree that use @code{parser.peg}:
+@c JP
+更なる例は、Gaucheソースツリーの中で@code{parser.peg}を使っているライブラリに
+見ることができます:
+@c COMMON
+
+@itemize @bullet
+@item
+@file{lib/rfc/json.scm}
+@item
+@file{lib/text/edn.scm}
+@item
+@file{lib/www/css.scm}
+@end itemize
+
 
 @node PEG parser drivers, What is a PEG parser, PEG Walkthrough, PEG parser combinators
 @subsection Parser drivers
@@ -11927,10 +11944,22 @@ have a separate lexer that generates a list of tokens, and let @var{parser}
 parse them.
 @end defun
 
-@defun peg-parse-string parser string
-@defunx peg-parse-port parser iport
+@defun peg-parse-string parser string :optional cont
+@defunx peg-parse-port parser iport :optional cont
 Convenience wrappers of @code{peg-run-parser} that takes input from
 @var{string} or @var{iport}.
+
+Without @var{cont} argument or it is @code{#f}, 
+it returns the parsed result and discards
+the rest of the input.  (Hint: To make sure there's no garbage
+following, use @code{$eos} parser.)
+
+If you want to keep parsing after @var{parser} accepts its input,
+pass @var{cont} a procedure; it must take two arguments, the result of
+@var{parser} and a lazy sequence of the rest of the input.  What @var{cont}
+returns will be the result of these procedures.
+
+It is an error to pass other values ot @var{cont}.
 @end defun
 
 @defun peg-parser->generator parser list

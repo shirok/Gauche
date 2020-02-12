@@ -1,3 +1,8 @@
+2020-02-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm (peg-parse-string, peg-parse-port): Add optional
+	  continuation procedure to allow to receive the rest of the input.
+
 2020-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsym.scm (identifier?, identifier->symbol): POSSIBLY
