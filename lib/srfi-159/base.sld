@@ -9,6 +9,6 @@
           padded padded/both padded/right
           show space-to
           tab-to trimmed trimmed/both trimmed/lazy trimmed/right
-          with with! written written-shared written-simply)
+          with with! written written-simply)
   (import (srfi-159 inner-base)
           (srfi-159 util)))

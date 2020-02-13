@@ -449,9 +449,11 @@
           (show #f (written (let ((ones (list 1)))
                               (list ones ones)))))
 
+#|
       (test "(#0=(1) #0#)"
           (show #f (written-shared (let ((ones (list 1)))
                                      (list ones ones)))))
+|#
 
       ;; cycles without shared detection
 
