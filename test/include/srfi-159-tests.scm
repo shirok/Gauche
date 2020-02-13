@@ -7,11 +7,11 @@
 ;          (chibi show column) (chibi show pretty)
 ;          (chibi show unicode))
 ;  (begin
-;    (define-syntax test-pretty
-;      (syntax-rules ()
-;        ((test-pretty str)
-;         (let ((sexp (read (open-input-string str))))
-;           (test str (show #f (pretty sexp)))))))
+    (define-syntax test-pretty
+      (syntax-rules ()
+        ((test-pretty str)
+         (let ((sexp (read (open-input-string str))))
+           (test str (show #f (pretty sexp)))))))
 ;    (define (run-tests)
 ;      (test-begin "show")
 
@@ -449,9 +449,11 @@
           (show #f (written (let ((ones (list 1)))
                               (list ones ones)))))
 
+#|
       (test "(#0=(1) #0#)"
           (show #f (written-shared (let ((ones (list 1)))
                                      (list ones ones)))))
+|#
 
       ;; cycles without shared detection
 
@@ -467,7 +469,6 @@
                     (written-simply
                      (let ((ones (list 1))) (set-cdr! ones ones) ones)))))
 
-#|
       ;; pretty printing
 
       (test-pretty "(foo bar)\n")
@@ -571,7 +572,7 @@
         (test "(foo\n (a a\n    " (show #f (trimmed/lazy 15 (pretty-simply `(foo ,ca)))))
         (test "(with-x \n  (a a" (show #f (trimmed/lazy 15 (pretty-simply `(with-x ,ca)))))
         )
-|#
+
       ;; columns
 
       (test "abc\ndef\n"
