@@ -6,9 +6,10 @@
           joined joined/dot joined/last joined/prefix joined/range joined/suffix
           maybe-escaped
           nl nothing numeric numeric/comma numeric/fitted numeric/si
-          padded padded/both padded/right
+          padded padded/both padded/right pretty pretty-simply
           show space-to
           tab-to trimmed trimmed/both trimmed/lazy trimmed/right
           with with! written written-simply)
   (import (srfi-159 inner-base)
+          (srfi-159 pretty)
           (srfi-159 util)))
