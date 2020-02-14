@@ -93,6 +93,8 @@ static const char *tls_strerror(int code)
         return "not ok (internal error)";
     case SSL_ERROR_DEAD:  
         return "connection dead";
+    case SSL_CLOSE_NOTIFY:
+        return "connection is being closed";
     case SSL_ERROR_CONN_LOST:
         return "connection lost";
     case SSL_ERROR_RECORD_OVERFLOW:
