@@ -80,6 +80,62 @@ static ScmObj k_num_sessions;
 static ScmObj k_server_name;
 #endif
 
+/* axTLS has ssl_display_error but it emits directly to stdout. */
+static const char *tls_strerror(int code) 
+{
+    if (code < SSL_X509_OFFSET) {
+        return x509_display_error(code - SSL_X509_OFFSET);
+    }
+    switch (code) {
+    case SSL_OK:
+        return "no error";
+    case SSL_NOT_OK:
+        return "not ok (internal error)";
+    case SSL_ERROR_DEAD:  
+        return "connection dead";
+    case SSL_ERROR_CONN_LOST:
+        return "connection lost";
+    case SSL_ERROR_RECORD_OVERFLOW:
+        return "record overflow";
+    case SSL_ERROR_SOCK_SETUP_FAILURE:
+        return "socket setup failure";
+    case SSL_ERROR_INVALID_HANDSHAKE:
+        return "invalid handshake";
+    case SSL_ERROR_INVALID_PROT_MSG:
+        return "invalid protocol message";
+    case SSL_ERROR_INVALID_HMAC:
+        return "invalid mac";
+    case SSL_ERROR_INVALID_VERSION:
+        return "invalid version";
+    case SSL_ERROR_UNSUPPORTED_EXTENSION:
+        return "unsupported extension";
+    case SSL_ERROR_INVALID_SESSION:
+        return "invalid session";
+    case SSL_ERROR_NO_CIPHER:
+        return "no cipher";
+    case SSL_ERROR_INVALID_CERT_HASH_ALG:
+        return "invalid cert hash algorithm";
+    case SSL_ERROR_BAD_CERTIFICATE:
+        return "bad certificate";
+    case SSL_ERROR_INVALID_KEY:
+        return "invalid key";
+    case SSL_ERROR_FINISHED_INVALID:
+        return "finished invalid";
+    case SSL_ERROR_NO_CERT_DEFINED:
+        return "no certificate defined";
+    case SSL_ERROR_NO_CLIENT_RENOG:
+        return "client renegotiation not supported";
+    case SSL_ERROR_NOT_SUPPORTED:
+        return "option not supported";
+    default:
+        break;
+    }
+    ScmObj z = Scm_Sprintf("SSL error %d", -code);
+    return Scm_GetStringConst(SCM_STRING(z));
+}
+
+
+
 /*
  * Common operations
  */
@@ -284,7 +340,7 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
 {
     ScmAxTLS *t = (ScmAxTLS*)tls;
     ax_context_check(t, "connect");
-    if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
+    if (t->conn) Scm_Error("attempt to connect already-connected TLS %S", t);
 
     ScmObj ca_bundle_path = SCM_UNDEFINED;
     SCM_BIND_PROC(ca_bundle_path, "tls-ca-bundle-path",
@@ -326,7 +382,7 @@ static ScmObj ax_accept(ScmTLS* tls, int fd)
 {
     ScmAxTLS *t = (ScmAxTLS*)tls;
     ax_context_check(t, "accept");
-    if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
+    if (t->conn) Scm_Error("attempt to connect already-connected TLS %S", t);
     t->conn = ssl_server_new(t->ctx, fd);
 
     return SCM_UNDEFINED;
@@ -339,7 +395,7 @@ static ScmObj ax_read(ScmTLS* tls)
     ax_close_check(t, "read");
     int r; uint8_t* buf;
     while ((r = ssl_read(t->conn, &buf)) == SSL_OK);
-    if (r < 0) Scm_SysError("ssl_read() failed");
+    if (r < 0) Scm_Error("ssl_read() failed: %s", tls_strerror(r));
     return Scm_MakeString((char*) buf, r, r, SCM_STRING_INCOMPLETE);
 }
 
@@ -356,9 +412,7 @@ static ScmObj ax_write(ScmTLS* tls, ScmObj msg)
     }
 
     int r = ssl_write(t->conn, cmsg, size);
-    if (r  < 0) {
-        Scm_SysError("ssl_write() failed");
-    }
+    if (r < 0) Scm_Error("ssl_write() failed: %s", tls_strerror(r));
     return SCM_MAKE_INT(r);
 }
 
