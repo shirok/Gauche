@@ -214,19 +214,19 @@
 (define-in-module scheme (string-fill! str c
                                        :optional (start 0)
                                                  (end (string-length str)))
-  (let1 len (string-length str)
-    (when (or (< start 0) (< len start))
-      (error "start index out of range:" start))
-    (when (or (< end 0) (< len end))
-      (error "end index out of range:" end))
-    (when (< end start)
-      (errorf "end index ~s is smaller than start index ~s" end start))
-    (if (and (= start 0) (= end len))
+  (let ([start  (string-index->cursor str start)]
+        [end    (string-index->cursor str end)]
+        [istart (string-cursor->index str start)]
+        [iend   (string-cursor->index str end)]
+        [len    (string-length str)])
+    (when (< iend istart)
+      (errorf "end index ~s is smaller than start index ~s" iend istart))
+    (if (and (= istart 0) (= iend len))
       (%string-replace-body! str (make-string len c))
       (%string-replace-body! str
                              (string-append (substring str 0 start)
-                                            (make-string (- end start) c)
-                                            (substring str end len))))))
+                                            (make-string (- iend istart) c)
+                                            (string-copy str end))))))
 
 ;; Build index.
 ;; Technically, string-build-index mutates StringBody, but it's an idempotent
