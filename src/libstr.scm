@@ -186,16 +186,12 @@
 
 (define-in-module scheme (string-set! str k ch)
   (check-arg string? str)
-  (check-arg integer? k)
-  (check-arg exact? k)
   (check-arg char? ch)
-  (let1 len (string-length str)
-    (when (or (< k 0) (<= len k))
-      (error "string index out of range:" k))
+  (let1 cur (string-index->cursor str k)
     (%string-replace-body! str
-                           (string-append (substring str 0 k)
+                           (string-append (substring str 0 cur)
                                           (string ch)
-                                          (substring str (+ k 1) len)))))
+                                          (string-copy str (string-cursor-next str k))))))
 
 (set! (setter string-ref) string-set!)
 
