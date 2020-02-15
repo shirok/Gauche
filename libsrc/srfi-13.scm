@@ -924,6 +924,7 @@
 ;; contains multibyte characters.  So the programs using these functions
 ;; may not be very efficient, in spite of the efforts for efficiency put
 ;; in the original SRFI design.
+;; TODO: see if cursors can be used instead of index.
 
 (define (make-kmp-restart-vector s :optional (c= char=?) start end)
   (let* ((pat (%maybe-substring s start end))
