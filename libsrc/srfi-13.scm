@@ -614,7 +614,8 @@
 
 (define (%string-*case! converter)
   (lambda (s :optional (start 0) (end (string-length s)))
-    (if (and (= start 0) (= end (string-length s)))
+    (if (and (= (string-cursor->index s start) 0)
+             (= (string-cursor->index s end) (string-length s)))
       (%string-replace-body! s (converter s))
       (string-copy! s start (converter s start end)))))
 
