@@ -1659,9 +1659,15 @@ Gauche専用のコードを書いている時はこの手続きは不要です�
 
 @deftp {Module} scheme.load
 @mdindex scheme.load
+@c EN
 Exports bindings of R7RS @code{(scheme load)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme load))}.
+@c JP
+R7RSの@code{(scheme load)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme load))}とすることで使えます。
+@c COMMON
 @end deftp
 
 @defun load file :optional env
@@ -1693,20 +1699,36 @@ Gaucheの@code{load}では環境はキーワード引数で受け取られるこ
 
 @deftp {Module} scheme.process-context
 @mdindex scheme.process-context
+@c EN
 Exports bindings of R7RS @code{(scheme process-context)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme process-context))}.
+@c JP
+R7RSの@code{(scheme process-context)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme process-context))}とすることで使えます。
+@c COMMON
 @end deftp
 
+@c EN
 The following bindings are the same as Gauche built-ins
 (@pxref{Command-line arguments}, and @ref{Program termination}):
+@c JP
+次の束縛はGauche組み込みのものと同じです
+(@ref{Command-line arguments}、および@ref{Program termination}参照)：
+@c COMMON
 
 @example
 command-line exit
 @end example
 
+@c EN
 The following bindings are the same as SRFI-98
 (@pxref{Accessing environment variables}):
+@c JP
+次の束縛はsrfi-98のものと同じです
+(@ref{Accessing environment variables}参照)：
+@c COMMON
 
 @example
 get-environment-variable get-environment-variables
@@ -1715,14 +1737,28 @@ get-environment-variable get-environment-variables
 @defun emergency-exit :optional (obj 0)
 [R7RS process-context]
 @c MOD scheme.process-context
+@c EN
 Terminate the program without running any clean-up procedures
-(@var{after} thunks of @code{dynamic-wind}).  Internally, 
+(@var{after} thunks of @code{dynamic-wind}).    I/O buffers won't
+be flushed.
+Internally, 
 it calls the @code{_exit(2)} system call directly.
 The optional argument is used for the process exit code.
+When omitted, 0 is assumed.
 
 This is almost the same
 as Gauche's @code{sys-exit}, except that @code{sys-exit} requires
-the exit code object (@pxref{Program termination}).
+the exit code argument (@pxref{Program termination}).
+@c JP
+クリーンアップ手続きを飛ばしてプログラムを直ちに終了させます
+(@code{dynamic-wind}によって設定された@var{after}サンクは実行されません)。
+内部的には、@code{_exit(2)}システムコールを直接呼んでいます。
+省略可能引数はプロセスの終了コードを指定します。省略された場合は0になります。
+
+この手続きはGaucheの@code{sys-exit}とほぼ同じですが、
+@code{sys-exit}の方は終了コード引数が必須です
+(@ref{Program termination}参照)。
+@c COMMON
 @end defun
 
 @node R7RS read, R7RS repl, R7RS process context, R7RS small language
