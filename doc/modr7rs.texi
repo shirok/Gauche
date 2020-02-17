@@ -1951,7 +1951,7 @@ the following are @emph{not} supported yet:
 @c COMMON
 
 @example
-scheme.ilist      scheme.show
+scheme.ilist
 @end example
 
 @c EN
@@ -1986,6 +1986,7 @@ The following are supported libraries:
 * R7RS fixnum::                 @code{scheme.fixnum}
 * R7RS flonum::                 @code{scheme.flonum}
 * R7RS bytevectors::            @code{scheme.bytevector}
+* R7RS combinator formatting::  @code{scheme.show}
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large, R7RS large
@@ -11133,7 +11134,7 @@ Returns the complementary error function, 1 - erf(@var{x}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node R7RS bytevectors,  , R7RS flonum, R7RS large
+@node R7RS bytevectors, R7RS combinator formatting, R7RS flonum, R7RS large
 @subsection @code{scheme.bytevector} - R7RS bytevectors
 @c NODE R7RS bytevectors, @code{scheme.bytevector} - R7RS bytevector
 
@@ -11328,6 +11329,644 @@ the portable code should only use @code{big} and @var{little} for
 [R7RS bytevector]
 Like @code{bytevector-u16-set!} etc., but uses native endianness.
 @end defun
+
+@node R7RS combinator formatting,  , R7RS bytevectors, R7RS large
+@subsection @code{scheme.show} - R7RS combinator formatting
+@c NODE R7RS combinator formatting, @code{scheme.show} - R7RS combinator formatting
+
+@subsubheading Module structure
+@deftp {Module} scheme.show
+@mdindex scheme.show
+Exports bindings of R7RS @code{(scheme show)} library.
+From R7RS programs, those bindings are available by
+@code{(import (scheme show))}.
+
+scheme.show is a combination of submodules scheme.show.base,
+scheme.show.color, scheme.show.columnar and scheme.show.unicode.
+@end deftp
+
+@deftp {Module} scheme.show.base
+Exports bindings of R7RS @code{(scheme show base)} library.
+From R7RS programs, those bindings are available by
+@code{(import (scheme show base))}.
+
+This contains most combinator formatting procedures.
+@end deftp
+
+@deftp {Module} scheme.show.color
+Exports bindings of R7RS @code{(scheme show color)} library.
+From R7RS programs, those bindings are available by
+@code{(import (scheme show color))}.
+
+This contains formatters to color text using ANSI escape codes.
+@end deftp
+
+@deftp {Module} scheme.show.columnar
+Exports bindings of R7RS @code{(scheme show columnar)} library.
+From R7RS programs, those bindings are available by
+@code{(import (scheme show columnar))}.
+
+This contains formatters to help format in columns.
+@end deftp
+
+@deftp {Module} scheme.show.unicode
+Exports bindings of R7RS @code{(scheme show unicode)} library.
+From R7RS programs, those bindings are available by
+@code{(import (scheme show unicode))}.
+@end deftp
+
+@subsubheading Usage
+
+Combinator formatting provides a functionality similar to
+@code{format} from SRFI-28. But instead of writing a template string,
+you can use S-expressions, which are called ``formatters''. It's also
+extensible.
+
+The two main concepts in combinator formatting are formatters and
+states. Formatters are procedures that specify how or what you want to
+output. Formatters can be composed to produce complex format. Normal
+types are also accepted where a procedure takes a formatter, they are
+formatted with @code{displayed}.
+
+Format states let us customize control formatting, for example how
+many precision digits, what character for padding @dots{}. Format
+states can be changed locally with @code{with} or @code{with!}.
+
+The entry point to combinator formatting is @code{show}, which takes a
+sequence of formatters and outputs to a port or returns a string.
+
+@defun show @var{output-dest} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+This is the main entry for combinator formatting. All formatters are
+processed to produce a string to @var{output-dest} if it's a port. If
+@var{output-dest} is @code{#f}, the output string is returned.
+@code{show} return value is otherwise undefined. Non-formatters are
+also accepted and will be wrapped in @code{displayed} formatter.
+
+@example
+(show #f "π = " (with ((precision 2)) (acos -1)) nl)
+@result{} "π = 3.14\n"
+@end example
+@end defun
+
+@subsubheading Formatting Objects
+
+@defun displayed @var{obj}
+[R7RS show base]
+@c MOD scheme.show.base
+The formatter that formats the object @var{obj} the
+same as @code{display}. This is the default formatter when you pass an
+object to @code{show}.
+@end defun
+
+@defun written @var{obj}
+[R7RS show base]
+@c MOD scheme.show.base
+The formatter that formats the object @var{obj} the same as
+@code{write}. Formatting settings @code{numeric} and @code{precision}
+are respected for relevant number types as long as the result can
+still be passed to @code{read}.
+@end defun
+
+@defun written-simply @var{obj}
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{written} but does not handle shared structures.
+@end defun
+
+@defun pretty @var{obj}
+[R7RS show base]
+@c MOD scheme.show.base
+Pretty prints an object.
+@end defun
+
+@defun pretty-simply @var{obj}
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{pretty} but does not handle shared structures.
+@end defun
+
+@defun escaped @var{str} [@var{quote-ch} @var{esc-ch} @var{renamer}]
+[R7RS show base]
+@c MOD scheme.show.base
+Prints a string, adding @var{esc-ch} (@code{#\\} by default) in front
+of all @var{quote-ch} (@code{#\"} by default).
+
+If @var{esc-ch} is @code{#f}, escape all @var{quote-ch} by doubling
+it.
+
+If @var{renamer} is specified, it's a procedure that takes one
+character and returns another character or @code{#f}. It serves two
+purposes: to allow quoting more than one character and to replace them
+with something else. If the procedure returns @code{#f}, the character
+in question is not escaped. Otherwise the character is escaped and
+replaced with a new one.
+
+@var{esc-ch} could also be a string, but this is Gauche specific behavior.
+
+@example
+(show #t (escaped "hello \"world\"")) @result{} hello \"world\"
+(show #t (escaped "hello \"world\"" #\l)) @result{} he\l\lo "world"
+(show #t (escaped "hello \"world\"" #\l #\x)) @result{} hexlxlo "worxld"
+(show #t (escaped "hello \"world\""
+                  #\e #f
+                  (lambda (x) (if (char=? x #\o) #\O #f))))
+@result{} heelleO "weOrld"
+@end example
+@end defun
+
+@defun maybe-escaped @var{str} @var{pred} [@var{quote-ch} @var{esc-ch} @var{renamer}]
+[R7RS show base]
+@c MOD scheme.show.base
+Determines if @var{str} needs to be escaped or not. If true, the
+string is wrapped with @var{quote-ch}. The original string is escaped
+with @code{escaped}.
+
+The string needs to be escaped if any @var{quote-ch} or @var{esc-ch}
+is present, or any character that makes @var{pred} return @code{#t}.
+
+@example
+(show #t (maybe-escaped "helloworld" char-whitespace?)) @result{} helloworld
+(show #t (maybe-escaped "hello world" char-whitespace?)) @result{} "hello world"
+(show #t (maybe-escaped "hello \"world\"" char-whitespace? #\")) @result{} "hello \"world\""
+@end example
+
+@end defun
+
+@subsubheading Formatting Numbers
+
+@defun numeric @var{num} [@var{radix} @var{precision} @var{sign-rule} @var{comma-rule} @var{comma-sep} @var{decimal-sep}]
+[R7RS show base]
+@c MOD scheme.show.base
+Formats a number. The default values are from state variables below.
+
+@example
+(show #f (numeric 1000)) @result{} "1000"
+(show #f (numeric 1000 8)) @result{} "1750"
+(show #f (numeric 1000 8 2)) @result{} "1750.00"
+(show #f (numeric 1000 8 2 #t)) @result{} "+1750.00"
+(show #f (numeric -1000 8 2 (cons "(" ")"))) @result{} "(1750.00)"
+(show #f (numeric 1000 8 2 #t 2)) @result{} "+17,50.00"
+(show #f (numeric 1000 8 2 #t 2 #\')) @result{} "+17'50.00"
+(show #f (numeric 1000 8 2 #t 2 #\' #\:)) @result{} "+17'50:00"
+@end example
+
+@end defun
+
+@defun numeric/comma @var{num} [@var{radix} @var{precision} @var{sign-rule}]
+[R7RS show base]
+@c MOD scheme.show.base
+Formats a number with default @var{comma-rule} 3. See @code{numeric}
+for details.
+@example
+(show #f (numeric/comma 1000)) @result{} "1,000"
+(show #f (with ((comma-sep #\.)) (numeric/comma 1000))) @result{} "1.000"
+@end example
+
+@end defun
+
+@defun numeric/si @var{num} [@var{base} @var{separator}]
+[R7RS show base]
+@c MOD scheme.show.base
+Formats a numeric with SI suffix. The default base is 1024 and uses
+suffix names like Ki, Mi, Gi@dots{}. Other bases (e.g. 1000) use
+suffixes k, M, G@dots{}. If @var{separator} is specified, it's
+inserted between the number and suffix.
+
+@example
+(show #f (numeric/si 1024)) @result{} "1Ki"
+(show #f (numeric/si 200000 1000)) @result{} "200k"
+(show #f (numeric/si 1024 1024 #\/)) @result{} "1/Ki"
+@end example
+
+@end defun
+
+@defun numeric/fitted @var{width} @var{n} [@var{arg} @dots{}]
+[R7RS show base]
+@c MOD scheme.show.base
+Like @code{numeric} but if the result does not fit in @var{width}
+characters with current precision, outputs a string of hashes instead
+of the truncated and incorrect number.
+
+@example
+(show #f (with ((precision 2)) (numeric/fitted 4 1.25))) @result{} "1.25"
+(show #f (with ((precision 2)) (numeric/fitted 4 12.345))) @result{} "#.##"
+@end example
+
+@end defun
+
+@subsubheading Formatting Space
+
+@defvar nl
+Outputs a newline.
+
+@example
+(show #f nl) @result{} "\n"
+@end example
+@end defvar
+
+@defvar fl
+Short for ``fresh line'', make sures the following output is at the
+beginning of the line.
+
+@example
+(show #f fl) @result{} ""
+(show #f "aaa" fl) @result{} "aaa\n"
+@end example
+@end defvar
+
+@defvar nothing
+Outputs nothing. This is useful in combinators as default no-op in
+conditionals.
+@end defvar
+
+@defun space-to @var{column}
+[R7RS show base]
+@c MOD scheme.show.base
+Appends @var{pad-char} to reach the given @var{column}.
+
+@example
+(show #f "abcdef" (space-to 3) "a") @result{} "   a"
+(show #f "abcdef" (space-to 3) "a") @result{} "abcdefa"
+@end example
+@end defun
+
+@defun tab-to [@var{tab-width}]
+[R7RS show base]
+@c MOD scheme.show.base
+Outputs @var{pad-char} to reach the next tab stop.
+@end defun
+
+@subsubheading Concatenation
+
+@defun each @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+@end defun
+
+@defun each-in-list @var{list-of-fmts}
+[R7RS show base]
+@c MOD scheme.show.base
+@end defun
+
+@defun joined @var{mapper} @var{list} [@var{sep}]
+[R7RS show base]
+@c MOD scheme.show.base
+Formats each element in @var{list} with @var{mapper} and inserts
+@var{sep} in between. @var{sep} by default is an empty string, but it
+could be any string or formatter.
+
+@example
+(show #f (joined displayed (list "a" "b") " ")) @result{} "a b"
+(show #f (joined displayed (list "a" "b") nl)) @result{} "a\nb"
+@end example
+@end defun
+
+@defun joined/prefix @var{mapper} @var{list} [@var{sep}]
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{joined} except the separator is inserted before
+every element.
+
+@example
+(show #f (joined/prefix displayed '(usr local bin) "/")) @result{} "/usr/local/bin"
+@end example
+@end defun
+
+@defun joined/suffix @var{mapper} @var{list} [@var{sep}]
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{joined} except the separator is inserted after every
+element.
+
+@example
+(show #f (joined/suffix displayed '(1 2 3) nl)) @result{} "1\n2\n3\n"
+@end example
+@end defun
+
+@defun joined/last @var{mapper} @var{last-mapper} @var{list} [@var{sep}]
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{joined} but @var{last-mapper} is used on the last
+element of @var{list} instead.
+
+@example
+(show #f (joined/last displayed
+                      (lambda (last) (each "and " last))
+                      '(lions tigers bears)
+                      ", "))
+@result{} "lions, tigers, and bears"
+@end example
+@end defun
+
+@defun joined/dot @var{mapper} @var{dot-mapper} @var{list} [@var{sep}]
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{joined} but if @var{list} is a dotted list, then
+formats the dotted value with @var{dot-mapper} instead.
+@end defun
+
+@defun joined/range @var{mapper} @var{start} [@var{end} @var{sep}]
+[R7RS show base]
+@c MOD scheme.show.base
+@end defun
+
+@subsubheading Padding and Trimming
+
+@defun padded @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+Pads the output of @var{fmt}@dots{} on the left side with
+@var{pad-char} if it's shorter than @var{width} characters.
+
+@example
+(show #f (padded 10 "abc")) @result{} "       abc"
+(show #f (with ((pad-char #\-)) (padded 10 "abc"))) @result{} "-------abc"
+@end example
+@end defun
+
+@defun padded/right @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{padded} but except padding is on the right side instead.
+@end defun
+
+@defun padded/both @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{padded} but except padding is on both sides, keeping
+the @var{fmt} output at the center.
+@end defun
+
+@defun trimmed @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+Trims the output of @var{fmt}@dots{} on the left so that the length is
+@var{width} characters or less. If @var{ellipsis} state variable is
+defined, it will be put on the left to denote trimming.
+
+@example
+(show #f (trimmed 5 "hello world")) @result{} "world"
+(show #f (with ((ellipsis "..")) (trimmed 5 "hello world"))) @result{} "..rld"
+@end example
+@end defun
+
+@defun trimmed/right @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{trimmed} but the trimming is on the right.
+@end defun
+
+@defun trimmed/both @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{trimmed} but the trimming is on both sides, keeping
+the center of the output.
+@end defun
+
+@defun trimmed/lazy @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+A variant of @code{trimmed} which generates each @code{fmt} in left to
+right order, and truncates and terminates immediately if more than
+@code{width} characters are generated. Thus this is safe to use with
+an infinite amount of output, e.g. from @code{written-simply} on an
+infinite list.
+@end defun
+
+@defun fitted width @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+A combination of @code{padded} and @code{trimmed}, ensures the output
+width is exactly @var{width}, truncating if it goes over and padding
+if it goes under.
+@end defun
+
+@defun fitted/right @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+A combination of @code{padded/right} and @code{trimmed/right}, ensures
+the output width is exactly @var{width}, truncating if it goes over
+and padding if it goes under.
+@end defun
+
+@defun fitted/both @var{width} @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+A combination of @code{padded/both} and @code{trimmed/both}, ensures
+the output width is exactly @var{width}, truncating if it goes over
+and padding if it goes under.
+@end defun
+
+@subsubheading Columnar Formatting
+
+@defun columnar @var{column} @dots{}
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@defun tabular @var{column} @dots{}
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@defun wrapped @var{fmt} @dots{}
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@defun wrapped/list @var{list-of-strings}
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@defun wrapped/char @var{fmt} @dots{}
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@defun justified @var{format} @dots{}
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@defun from-file @var{pathname}
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@defun line-numbers [@var{start}]
+[R7RS show columnar]
+@c MOD scheme.show.columnar
+@end defun
+
+@subsubheading Colors
+
+@defun as-red @var{fmt} @dots{}
+@defunx as-blue @var{fmt} @dots{}
+@defunx as-green @var{fmt} @dots{}
+@defunx as-cyan @var{fmt} @dots{}
+@defunx as-yellow @var{fmt} @dots{}
+@defunx as-magenta @var{fmt} @dots{}
+@defunx as-white @var{fmt} @dots{}
+@defunx as-black @var{fmt} @dots{}
+@defunx as-bold @var{fmt} @dots{}
+@defunx as-underline @var{fmt} @dots{}
+[R7RS show color]
+@c MOD scheme.show.color
+Outputs the ANSI escape code to make all @var{fmt}@dots{} a given
+color or style.
+@end defun
+
+@subsubheading Unicode
+
+@defun as-unicode @var{fmt} @dots{}
+[R7RS show unicode]
+@c MOD scheme.show.unicode
+@end defun
+
+@defun unicode-terminal-width @var{str}
+[R7RS show unicode]
+@c MOD scheme.show.unicode
+@end defun
+
+@subsubheading Higher Order Formatters and State
+
+@defun fn ((@var{id} @var{state-var}) @dots{}) @var{expr} @dots{} @var{fmt}
+[R7RS show base]
+@c MOD scheme.show.base
+This is short for ``function'' and the analog to @code{lambda}. It
+returns a formatter which on application evaluates each @var{expr} and
+@var{fmt} in left-to-right order, in a lexical environment extended
+with each identifier id bound to the current value of the state
+variable named by the symbol @var{state-var}. The result of the
+@var{fmt} is then applied as a formatter.
+
+As a convenience, any @code{(id state-var)} list may be abbreviated as
+simply @code{id}, indicating @var{id} is bound to the state variable
+of the same (symbol) name.
+@end defun
+
+@defun with ((@var{state-var} @var{value}) @dots{}) @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+This is the analog of @code{let}. It temporarily binds specified state
+variables with new values for @var{fmt} @dots{}.
+@end defun
+
+@defun with! (@var{state-var} @var{value}) @var{fmt} @dots{}
+[R7RS show base]
+@c MOD scheme.show.base
+Similar to @code{with} but the value updates persist even after
+@code{with!}.
+@end defun
+
+@defun forked @var{fmt1} @var{fmt2}
+[R7RS show base]
+@c MOD scheme.show.base
+Calls @var{fmt1} on (a conceptual copy of) the current state, then
+@var{fmt2} on the same original state as though @var{fmt1} had not
+been called (i.e. any potential state mutation by @var{fmt1} does not
+affect @var{fmt2}).
+@end defun
+
+@defun call-with-output @var{formatter} @var{mapper}
+[R7RS show base]
+@c MOD scheme.show.base
+A utility, calls formatter on a copy of the current state (as with
+@code{forked}), accumulating the results into a string. Then calls the
+formatter resulting from @code{(mapper result-string)} on the original
+state.
+@end defun
+
+@subsubheading Standard State Variables
+
+@defvar port
+The current port output is written into, could be overriden to capture
+intermediate output.
+@end defvar
+
+@defvar row
+The current row of the output.
+@end defvar
+
+@defvar col
+The current column of the output.
+@end defvar
+
+@defvar width
+The current line width, used for wrapping, pretty printing and
+columnar formatting.
+@end defvar
+
+@defvar output
+The underlying standard formatter for writing a single string.
+
+The default value outputs the string while tracking the current row
+and col. This can be overridden both to capture intermediate output
+and perform transformations on strings before outputting, but should
+generally wrap the existing output to preserve expected behavior.
+@end defvar
+
+@defvar writer
+The mapper for automatic formatting of non-string/char values in
+top-level show, each and other formatters. Default value is
+implementation-defined.
+@end defvar
+
+@defvar string-width
+A function of a single string. It returns the length in columns of
+that string, used by the default output.
+@end defvar
+
+@defvar pad-char
+The character used for by padding formatters, @code{#\space} by default
+@end defvar
+
+@defvar ellipsis
+The string used when truncating as described in @code{trimmed}.
+@end defvar
+
+@defvar radix
+The radix for numeric output, 10 by default. Valid values are from 2
+to 36.
+@end defvar
+
+@defvar precision
+The number of digits written after the decimal point for numeric
+output. The value is rounded if the numeric value written out requires
+more digits than requested precision. See the SRFI for exact rounding
+behavior.
+@end defvar
+
+@defvar sign-rule
+If @code{#t}, always output the plus sign @code{+} for positive
+numbers. If @var{sign-rule} is a par of two strings, negative numbers
+are printed with the strings wrapped around (and no preceding negative
+sign @code{-}).
+@end defvar
+
+@defvar comma-rule
+The number of digits between commans, specified by @var{comma-sep}.
+@end defvar
+
+@defvar comma-sep
+The character used as comma for numeric formatting, @code{#\,} by
+default.
+@end defvar
+
+@defvar decimal-sep
+The character to use for decimals in numeric formatting. The default
+depends on @var{comma-sep}, if it's @code{#\.}, then the decimal
+separator is @code{#\,}, otherwise it's @code{#\.}
+@end defvar
+
+@defvar decimal-align
+@end defvar
+
+@defvar word-separator?
+@end defvar
 
 
 @c Local variables:
