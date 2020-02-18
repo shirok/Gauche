@@ -1179,9 +1179,10 @@ srfi-159, srfi-159
 ()
 
 Combinator Formatting
-This has become a part of R7RS large.
+This has become a part of R7RS large.  @xref{R7RS combinator formatting}.
 
-Combinator Formatting
+コンビネータによるフォーマッタ
+これはR7RS largeの一部になりました。@ref{R7RS combinator formatting}参照。
 
 srfi-160, srfi-160
 ()

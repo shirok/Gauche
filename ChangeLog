@@ -1,3 +1,8 @@
+2020-02-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-159*, lib/scheme/show*: Ported from Chibi, done by
+	  @pclouds.  Also with documentation.
+
 2020-02-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Avoid using Scm_SysError to report tls error (axTLS routine
