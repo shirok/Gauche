@@ -129,6 +129,8 @@ SCMFILES = \
        scheme/process-context.scm scheme/r5rs.scm scheme/read.scm \
        scheme/regex.scm scheme/repl.scm scheme/rlist.scm \
        scheme/set.scm scheme/sort.scm scheme/show.scm \
+       scheme/show/base.scm scheme/show/color.scm scheme/show/columnar.scm \
+       scheme/show/unicode.scm \
        scheme/stream.scm scheme/stream/primitive.scm scheme/stream/derived.scm \
        scheme/time.scm scheme/text.scm \
        scheme/vector.scm scheme/write.scm \
