@@ -1,3 +1,9 @@
+2020-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm, src/gauche.h: Align statically allocated
+	  pairs in two-ScmWord boundary.  A preparation for the new extended
+	  pair tagging.
+
 2020-02-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-159*, lib/scheme/show*: Ported from Chibi, done by

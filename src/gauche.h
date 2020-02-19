@@ -162,13 +162,19 @@ SCM_DECL_BEGIN
 #define SCM_IGNORE_RESULT(expr)  do { if(expr) {} } while(0)
 
 /* ScmFlonum and ScmClass must always be aligned in 8-byte boundaries.
-   (All other Scheme objects can be in 4-byte boundary.)
    Some platform doesn't align static double in 8-byte boundaries, so
    we try this as well.  */
 #ifdef __GNUC__
 #define SCM_ALIGN8  __attribute__ ((aligned (8)))
 #else  /* !__GNUC__ */
 #define SCM_ALIGN8  /*empty*/
+#endif /* !__GNUC__ */
+
+/* Statically allocated ScmPair must be aligned in two ScmWords boundary.*/
+#ifdef __GNUC__
+#define SCM_ALIGN_PAIR  __attribute__ ((aligned(sizeof(ScmWord)*2)))
+#else  /* !__GNUC__ */
+#define SCM_ALIGN_PAIR  /*empty*/
 #endif /* !__GNUC__ */
 
 /* 'No return' attribute */

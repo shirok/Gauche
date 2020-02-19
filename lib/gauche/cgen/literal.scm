@@ -163,8 +163,8 @@
               name)
       (dolist [dl dls]
         (for-each (cut print "#if "<>) (reverse (~ dl'cpp-conditions)))
-        (format #t "  ~a ~a[~a];\n" (~ dl'c-type) (~ dl'c-member-name)
-                (~ dl'count))
+        (format #t "  ~a ~a[~a] SCM_ALIGN_PAIR;\n" 
+                (~ dl'c-type) (~ dl'c-member-name) (~ dl'count))
         (for-each (cut print "#endif /*"<>"*/") (~ dl'cpp-conditions)))
       (format #t "} ~a SCM_UNUSED = " name)))
 
@@ -620,12 +620,14 @@
    (cdr :init-keyword :cdr))
   (make (value)
     (let* ([ca (cgen-literal (car value))]
-           [cd (cgen-literal (cdr value))]
-           [sobj (cgen-allocate-static-array
-                  'runtime 'ScmObj
-                  (list (get-literal-initializer ca)
-                        (get-literal-initializer cd)))])
-      (make <cgen-scheme-pair> :value value :car ca :cdr cd :c-name sobj)))
+           [cd (cgen-literal (cdr value))])
+      (define (init-thunk)
+        (format #t "   { ~a, ~a}"
+                (get-literal-initializer ca)
+                (get-literal-initializer cd)))
+      (make <cgen-scheme-pair> :value value :car ca :cdr cd
+            :c-name (cgen-allocate-static-datum 'runtime 'ScmPair
+                                                init-thunk))))
   (init (self)
     (let1 cname (cgen-cexpr self)
       (unless (cgen-literal-static? (~ self'car))
