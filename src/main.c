@@ -451,6 +451,21 @@ static void test_paths_setup(char **av)
         Scm_AddLoadPath("../../src", FALSE);
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
+    } else {
+        // should be synchronized with the ifdefs in paths to avoid
+        // triggering Scm_Error.
+#if defined(GAUCHE_WINDOWS) || defined(GAUCHE_MACOSX_FRAMEWORK) || defined(__linux__)
+        ScmObj install_dir = Scm__RuntimeDirectory();
+        ScmObj src = Scm_StringAppendC(SCM_STRING(install_dir), "/src", -1, -1);
+        test_ld_path_setup(av, Scm_GetStringConst(SCM_STRING(src)));
+        Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(src)), FALSE);
+        ScmObj libsrc = Scm_StringAppendC(SCM_STRING(install_dir), "/libsrc", -1, -1);
+        Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(libsrc)), FALSE);
+        ScmObj lib = Scm_StringAppendC(SCM_STRING(install_dir), "/lib", -1, -1);
+        Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(lib)), FALSE);
+#else
+        fprintf(stderr, "Unable to find source tree, -ftest has no effect\n");
+#endif
     }
     /* Also set a feature identifier gauche.in-place, so that other modules
        may initialize differently if needed. */
