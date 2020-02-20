@@ -93,24 +93,33 @@
       [(ascii) char-set:ascii]
       [(lower lower-case)
        (cond
+        [(ascii) char-set:ascii-lower-case]
         [(casefold) char-set:cased]
         [else char-set:lower-case])]
       [(upper upper-case)
        (cond
+        [(ascii) char-set:ascii-upper-case]
         [(casefold) char-set:cased]
         [else char-set:upper-case]) ]
       [(title title-case)
        (cond
         [(casefold) char-set:cased]
         [else char-set:title-case])]
-      [(alpha alphabetic) char-set:letter]
-      [(num numeric) char-set:digit]
-      [(alnum alphanum alphanumeric) char-set:letter+digit]
-      [(punct punctuation) char-set:punctuation]
-      [(symbol) char-set:symbol]
-      [(graph graphic) char-set:graphic]
+      [(alpha alphabetic)
+       (if (ascii) char-set:ascii-lower-case char-set:letter)]
+      [(num numeric)
+       (if (ascii) char-set:ascii-digit char-set:digit)]
+      [(alnum alphanum alphanumeric)
+       (if (ascii) char-set:ascii-letter+digit char-set:letter+digit)]
+      [(punct punctuation)
+       (if (ascii) char-set:ascii-punctuation char-set:punctuation)]
+      [(symbol)
+       (if (ascii) char-set:ascii-symbol char-set:symbol)]
+      [(graph graphic)
+       (if (ascii) char-set:ascii-graphic char-set:graphic)]
       [(space white whitespace) char-set:whitespace]
-      [(print printing) char-set:printing]
+      [(print printing)
+       (if (ascii) char-set:ascii-printing char-set:printing)]
       [(cntrl control) (ucs-range->char-set 0 32)]
       [(xdigit hex-digit) char-set:hex-digit]
       [else #f]))
