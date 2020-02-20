@@ -163,8 +163,11 @@
               name)
       (dolist [dl dls]
         (for-each (cut print "#if "<>) (reverse (~ dl'cpp-conditions)))
-        (format #t "  ~a ~a[~a] SCM_ALIGN_PAIR;\n" 
-                (~ dl'c-type) (~ dl'c-member-name) (~ dl'count))
+        (format #t "  ~a ~a[~a]~a;\n" 
+                (~ dl'c-type) (~ dl'c-member-name) (~ dl'count)
+                (if (eq? (~ dl'c-type) 'ScmPair)
+                  " SCM_ALIGN_PAIR"
+                  ""))
         (for-each (cut print "#endif /*"<>"*/") (~ dl'cpp-conditions)))
       (format #t "} ~a SCM_UNUSED = " name)))
 
