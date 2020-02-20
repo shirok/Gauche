@@ -186,16 +186,16 @@
     (define (seq-loop rest)
       `(seq ,@(map %sre->ast rest)))
 
+    (define (cpat test rest)
+      `(cpat ,(test (%sre->ast (car rest)))
+             (,(%sre->ast (cadr rest)))
+             ,(cond
+               [(null? (cddr rest)) '()]
+               [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
+               [else (err "unsupported syntax" sre)])))
+
     ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
-      (define (cpat test)
-        `(cpat ,(test (%sre->ast (car rest)))
-               (,(%sre->ast (cadr rest)))
-               ,(cond
-                 [(null? (cddr rest)) '()]
-                 [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
-                 [else (err "unsupported syntax" sre)])))
-
       (case sym
         [(* zero-or-more) `(rep 0 #f ,@(loop rest))]
         [(+ one-or-more) `(rep 1 #f ,@(loop rest))]
@@ -258,10 +258,10 @@
                                [(null? (cddr rest)) '()]
                                [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
                                [else (err "unsupported syntax" sre)]))]
-        [(if-look-ahead) (cpat (^x `(assert ,x)))]
-        [(if-neg-look-ahead) (cpat (^x `(nassert ,x)))]
-        [(if-look-behind) (cpat (^x `(assert (lookbehind ,x))))]
-        [(if-neg-look-behind) (cpat (^x `(nassert (lookbehind ,x))))]
+        [(if-look-ahead) (cpat (^x `(assert ,x)) rest)]
+        [(if-neg-look-ahead) (cpat (^x `(nassert ,x)) rest)]
+        [(if-look-behind) (cpat (^x `(assert (lookbehind ,x))) rest)]
+        [(if-neg-look-behind) (cpat (^x `(nassert (lookbehind ,x))) rest)]
         [else (err "invalid SRE" sym)]))
 
     (define (fold-case cset)
