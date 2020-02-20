@@ -26,16 +26,10 @@ jobs:
     - name: Install tools
       run: |
         sudo apt-get install libgdbm-dev
-    - name: Build
+    - name: Self-host-test
       run: |
         pwd
-        ./DIST gen
-        ./configure
-        make -j4
-    - name: Test
-      run: |
-        pwd
-        make check
+        ./DIST self-host-test
 
   build-osx:
     runs-on: macos-latest
@@ -58,16 +52,10 @@ jobs:
     - name: Install tools
       run: |
         brew install automake
-    - name: Build
+    - name: Self-host-test
       run: |
         pwd
-        ./DIST gen
-        ./configure
-        make -j4
-    - name: Test
-      run: |
-        pwd
-        make check
+        ./DIST self-host-test
 
   build-windows:
     runs-on: windows-latest
