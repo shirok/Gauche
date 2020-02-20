@@ -182,21 +182,18 @@
 
     ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
-      (define (map-one sre)
-        (%sre->ast sre))
-
       (define (loop :optional (rest rest))
-        (map (cut map-one <>) rest))
+        (map %sre->ast rest))
 
       (define (seq-loop :optional (rest rest))
         `(seq ,@(map %sre->ast rest)))
 
       (define (cpat test)
-        `(cpat ,(test (map-one (car rest)))
-               (,(map-one (cadr rest)))
+        `(cpat ,(test (%sre->ast (car rest)))
+               (,(%sre->ast (cadr rest)))
                ,(cond
                  [(null? (cddr rest)) '()]
-                 [(null? (cdddr rest)) (list (map-one (caddr rest)))]
+                 [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
                  [else (err "unsupported syntax" sre)])))
 
       (case sym
@@ -256,10 +253,10 @@
         [(if-backref) `(cpat ,(if (number? (car rest))
                                 (car rest)
                                 (err "if-backref can only take a number" sre))
-                             (,(map-one (cadr rest)))
+                             (,(%sre->ast (cadr rest)))
                              ,(cond
                                [(null? (cddr rest)) '()]
-                               [(null? (cdddr rest)) (list (map-one (caddr rest)))]
+                               [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
                                [else (err "unsupported syntax" sre)]))]
         [(if-look-ahead) (cpat (^x `(assert ,x)))]
         [(if-neg-look-ahead) (cpat (^x `(nassert ,x)))]
