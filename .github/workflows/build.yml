@@ -1,0 +1,189 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Gauche
+      run: |
+        pwd
+        curl -f -o get-gauche.sh https://raw.githubusercontent.com/shirok/get-gauche/master/get-gauche.sh
+        chmod +x get-gauche.sh
+        ./get-gauche.sh --auto --home
+    - name: Add Gauche path
+      run: |
+        PATH="$HOME/bin:$PATH"
+        echo "::set-env name=PATH::$PATH"
+    - name: Run Gauche once
+      run: |
+        echo $PATH
+        gosh -V
+    - name: Install tools
+      run: |
+        sudo apt-get install libgdbm-dev
+    - name: Build
+      run: |
+        pwd
+        ./DIST gen
+        ./configure
+        make -j4
+    - name: Test
+      run: |
+        pwd
+        make check
+
+  build-osx:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Gauche
+      run: |
+        pwd
+        curl -f -o get-gauche.sh https://raw.githubusercontent.com/shirok/get-gauche/master/get-gauche.sh
+        chmod +x get-gauche.sh
+        ./get-gauche.sh --auto --home
+    - name: Add Gauche path
+      run: |
+        PATH="$HOME/bin:$PATH"
+        echo "::set-env name=PATH::$PATH"
+    - name: Run Gauche once
+      run: |
+        echo $PATH
+        gosh -V
+    - name: Install tools
+      run: |
+        brew install automake
+    - name: Build
+      run: |
+        pwd
+        ./DIST gen
+        ./configure
+        make -j4
+    - name: Test
+      run: |
+        pwd
+        make check
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, i686]
+        include:
+        - arch: x86_64
+          bit: 64
+          progpath: C:\Program Files
+        - arch: i686
+          bit: 32
+          progpath: C:\Program Files (x86)
+    env:
+      MSYSTEM: MINGW${{ matrix.bit }}
+      MSYS2_PATH_TYPE: inherit
+      MSYS2_PATH_LIST: D:\msys64\mingw${{ matrix.bit }}\bin;D:\msys64\usr\local\bin;D:\msys64\usr\bin;D:\msys64\bin
+      MINGW_TYPE: mingw${{ matrix.bit }}
+      MINGW_ARCH: ${{ matrix.arch }}
+      MINGW_PATH: /mingw${{ matrix.bit }}/bin
+      GAUCHE_INFO_URL: https://practical-scheme.net/gauche/releases
+      GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
+      GAUCHE_INSTALLER_BIT: ${{ matrix.bit }}bit
+      GAUCHE_PATH: ${{ matrix.progpath }}\Gauche\bin
+      RESULT_NAME: Gauche-${{ matrix.arch }}
+      RESULT_PATH: ..\Gauche-mingw-dist\Gauche-${{ matrix.arch }}
+    steps:
+    - run: git config --global core.autocrlf false
+    - uses: actions/checkout@v2
+    - name: Install MSYS2
+      run: |
+        #del alias:curl
+        curl -f -o msys2.tar.xz http://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20190524.tar.xz
+        #tar xf msys2.tar.xz
+        bash -c "7z x msys2.tar.xz -so | 7z x -aoa -si -ttar"
+        dir
+        mv msys64 D:\
+        dir D:\
+    - name: Add MSYS2 path
+      run: |
+        $env:PATH = "$env:MSYS2_PATH_LIST;$env:PATH"
+        echo "::set-env name=PATH::$env:PATH"
+    - name: Run MSYS2 once
+      run: |
+        $script = @'
+          pwd
+          uname -m
+          uname -a
+          echo $PATH
+        '@
+        & bash -lc $script
+    - name: Install MinGW-w64
+      run: |
+        $script = @'
+          pacman -S --noconfirm base-devel
+          pacman -S --noconfirm $MINGW_TYPE/mingw-w64-${MINGW_ARCH}-toolchain
+        '@
+        & bash -lc $script
+    - name: Install Gauche
+      run: |
+        #del alias:curl
+        $env:GAUCHE_INSTALLER_VERSION = curl -f $env:GAUCHE_INFO_URL/latest.txt
+        echo $env:GAUCHE_INSTALLER_VERSION
+        $env:GAUCHE_INSTALLER = "Gauche-mingw-${env:GAUCHE_INSTALLER_VERSION}-${env:GAUCHE_INSTALLER_BIT}.msi"
+        echo $env:GAUCHE_INSTALLER
+        curl -f -L -o $env:GAUCHE_INSTALLER $env:GAUCHE_INSTALLER_URL/$env:GAUCHE_INSTALLER
+        dir
+        msiexec /i $env:GAUCHE_INSTALLER /quiet /qn /norestart
+    - name: Add Gauche path
+      run: |
+        $env:PATH = "$env:GAUCHE_PATH;$env:PATH"
+        echo "::set-env name=PATH::$env:PATH"
+    - name: Run Gauche once
+      run: |
+        gosh -V
+    - name: Install tools
+      run: |
+        $script = @'
+          #pacman -S --noconfirm msys/winpty
+          #winpty --version
+          where openssl
+          openssl version
+          mv $MINGW_PATH/openssl.exe $MINGW_PATH/openssl_NG.exe
+          where openssl
+          #openssl version
+        '@
+        & bash -lc $script
+    - name: Build
+      run: |
+        $script = @'
+          pwd
+          cd $GITHUB_WORKSPACE
+          gcc -v
+          ./DIST gen
+          src/mingw-dist.sh
+        '@
+        & bash -lc $script
+    - name: Test
+      run: |
+        $script = @'
+          pwd
+          cd $GITHUB_WORKSPACE
+          make check
+        '@
+        & bash -lc $script
+    - name: Upload result
+      if: success() || failure()
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.RESULT_NAME }}
+        path: ${{ env.RESULT_PATH }}
+    - name: Upload result2
+      if: (success() || failure()) && matrix.arch == 'x86_64'
+      uses: actions/upload-artifact@v1
+      with:
+        name: tls
+        path: ext/tls
+
