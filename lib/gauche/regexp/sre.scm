@@ -32,11 +32,16 @@
 ;;;
 
 (define-module gauche.regexp.sre
+  (use gauche.parameter)
   (use scheme.list)
   (use scheme.charset)
   (export regexp-parse-sre regexp-unparse-sre regexp-compile-sre
           <regexp-invalid-sre>))
 (select-module gauche.regexp.sre)
+
+(define ascii (make-parameter #f))
+(define nocapture (make-parameter #f))
+(define casefold (make-parameter #f))
 
 (define-condition-type <regexp-invalid-sre> <error> #f
   (offending-item))
@@ -168,27 +173,23 @@
 (define (regexp-parse-sre sre)
   (define id 0)
 
-  (define (%sre->ast sre nocapture casefold ascii)
+  (define (%sre->ast sre)
     (define (sre-sym sre)
       (case sre
         [(bos eos bol eol bow eow nwb) sre]
-        [(word) (%sre->ast '(word+ any) nocapture casefold ascii)]
+        [(word) (%sre->ast '(word+ any))]
         [else (err "not supported" sre)]))
 
     ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
       (define (map-one sre)
-          (%sre->ast sre nocapture casefold ascii))
+        (%sre->ast sre))
 
       (define (loop :optional (rest rest))
         (map (cut map-one <>) rest))
 
-      (define (seq-loop :optional
-                        (rest rest)
-                        (nocapture nocapture)
-                        (casefold casefold)
-                        (ascii ascii))
-        `(seq ,@(map (cut %sre->ast <> nocapture casefold ascii) rest)))
+      (define (seq-loop :optional (rest rest))
+        `(seq ,@(map %sre->ast rest)))
 
       (define (cpat test)
         `(cpat ,(test (map-one (car rest)))
@@ -212,26 +213,29 @@
                              ,@(loop (cddr rest)))]
         [(|\|| or) `(alt ,@(loop))]
         [(: seq) (seq-loop)]
-        [($ submatch) (if nocapture
+        [($ submatch) (if (nocapture)
                           (seq-loop)
                           (begin
                             (set! id (+ id 1))
                             `(,id #f ,@(loop))))]
-        [(-> submatch-named) (if nocapture
+        [(-> submatch-named) (if (nocapture)
                                  (seq-loop)
                                  (begin
                                    (set! id (+ id 1))
                                    `(,id ,(car rest) ,@(loop (cdr rest)))))]
-        [(w/case) (seq-loop rest nocapture #f)]
-        [(w/nocase) (seq-loop rest nocapture #t)]
-        [(w/ascii) (seq-loop rest nocapture casefold #t)]
-        [(w/unicode) (seq-loop rest nocapture casefold #f)]
-        [(w/nocapture) (seq-loop rest #t)]
-        [(word) (%sre->ast `(: bow ,@rest eow)
-                           nocapture casefold ascii)]
+        [(w/case) (parameterize ([casefold #f])
+                    (seq-loop rest))]
+        [(w/nocase) (parameterize ([casefold #t])
+                      (seq-loop rest))]
+        [(w/ascii) (parameterize ([ascii #t])
+                     (seq-loop rest))]
+        [(w/unicode) (parameterize ([ascii #f])
+                       (seq-loop rest))]
+        [(w/nocapture) (parameterize ([nocapture #t])
+                         (seq-loop rest))]
+        [(word) (%sre->ast `(: bow ,@rest eow))]
         [(word+) (%sre->ast `(word (+ (and (or alphanumeric "_")
-                                           (or ,@rest))))
-                            nocapture casefold ascii)]
+                                           (or ,@rest)))))]
         [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop))]
         [(*? non-greedy-zero-or-more) `(rep-min 0 #f ,@(loop))]
         [(**? non-greedy-repeated) `(rep-min ,(car rest)
@@ -265,7 +269,7 @@
 
     (define (fold-case cset)
       (cond
-       [(not casefold) cset]
+       [(not (casefold)) cset]
        [(eq? cset 'any) cset]
        [else
         ((with-module gauche.internal %char-set-case-fold!)
@@ -273,7 +277,7 @@
 
     (define (ascii-context cset)
       (cond
-       [(not ascii) cset]
+       [(not (ascii)) cset]
        ;; 'any technically should become char-set:ascii to avoid
        ;; matching non-ascii character, but we lose 'any' special
        ;; handling in the regexp engine. Not worth it
@@ -291,7 +295,10 @@
      [(pair? sre) (sre-list (car sre) (cdr sre))]
      [else (err "invalid SRE" sre)]))
 
-  `(0 #f ,(%sre->ast sre #f #f #f)))
+  `(0 #f ,(parameterize ([nocapture #f]
+                         [casefold #f]
+                         [ascii #f])
+            (%sre->ast sre))))
 
 
 (define (regexp-compile-sre re :key (multi-line #t))
