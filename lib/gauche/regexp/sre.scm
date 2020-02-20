@@ -180,13 +180,13 @@
         [(word) (%sre->ast '(word+ any))]
         [else (err "not supported" sre)]))
 
+    (define (seq-loop rest)
+      `(seq ,@(map %sre->ast rest)))
+
     ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
       (define (loop :optional (rest rest))
         (map %sre->ast rest))
-
-      (define (seq-loop :optional (rest rest))
-        `(seq ,@(map %sre->ast rest)))
 
       (define (cpat test)
         `(cpat ,(test (%sre->ast (car rest)))
@@ -209,14 +209,14 @@
                              ,(cadr rest)
                              ,@(loop (cddr rest)))]
         [(|\|| or) `(alt ,@(loop))]
-        [(: seq) (seq-loop)]
+        [(: seq) (seq-loop rest)]
         [($ submatch) (if (nocapture)
-                          (seq-loop)
+                          (seq-loop rest)
                           (begin
                             (set! id (+ id 1))
                             `(,id #f ,@(loop))))]
         [(-> submatch-named) (if (nocapture)
-                                 (seq-loop)
+                                 (seq-loop rest)
                                  (begin
                                    (set! id (+ id 1))
                                    `(,id ,(car rest) ,@(loop (cdr rest)))))]
@@ -249,7 +249,7 @@
                          `(backref . ,(car rest))
                          (err "expected (backref <integer/symbol>)" (cons sym rest))))]
         ;; gauche extensions
-        [(atomic) `(once ,@(cdr (seq-loop)))]
+        [(atomic) `(once ,@(cdr (seq-loop rest)))]
         [(if-backref) `(cpat ,(if (number? (car rest))
                                 (car rest)
                                 (err "if-backref can only take a number" sre))
