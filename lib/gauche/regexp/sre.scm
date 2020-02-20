@@ -32,11 +32,19 @@
 ;;;
 
 (define-module gauche.regexp.sre
+  (use gauche.parameter)
   (use scheme.list)
   (use scheme.charset)
   (export regexp-parse-sre regexp-unparse-sre regexp-compile-sre
           <regexp-invalid-sre>))
 (select-module gauche.regexp.sre)
+
+(define ascii (make-parameter #f))
+(define nocapture (make-parameter #f))
+(define casefold (make-parameter #f))
+(define char-set:cased (char-set-union char-set:lower-case
+                                       char-set:upper-case
+                                       char-set:title-case))
 
 (define-condition-type <regexp-invalid-sre> <error> #f
   (offending-item))
@@ -83,17 +91,35 @@
       [(any) 'any]
       [(nonl) (cset-sre '(~ #\newline #\return))]
       [(ascii) char-set:ascii]
-      [(lower lower-case) char-set:lower-case]
-      [(upper upper-case) char-set:upper-case]
-      [(title title-case) char-set:title-case]
-      [(alpha alphabetic) char-set:letter]
-      [(num numeric) char-set:digit]
-      [(alnum alphanum alphanumeric) char-set:letter+digit]
-      [(punct punctuation) char-set:punctuation]
-      [(symbol) char-set:symbol]
-      [(graph graphic) char-set:graphic]
+      [(lower lower-case)
+       (cond
+        [(ascii) char-set:ascii-lower-case]
+        [(casefold) char-set:cased]
+        [else char-set:lower-case])]
+      [(upper upper-case)
+       (cond
+        [(ascii) char-set:ascii-upper-case]
+        [(casefold) char-set:cased]
+        [else char-set:upper-case]) ]
+      [(title title-case)
+       (cond
+        [(casefold) char-set:cased]
+        [else char-set:title-case])]
+      [(alpha alphabetic)
+       (if (ascii) char-set:ascii-lower-case char-set:letter)]
+      [(num numeric)
+       (if (ascii) char-set:ascii-digit char-set:digit)]
+      [(alnum alphanum alphanumeric)
+       (if (ascii) char-set:ascii-letter+digit char-set:letter+digit)]
+      [(punct punctuation)
+       (if (ascii) char-set:ascii-punctuation char-set:punctuation)]
+      [(symbol)
+       (if (ascii) char-set:ascii-symbol char-set:symbol)]
+      [(graph graphic)
+       (if (ascii) char-set:ascii-graphic char-set:graphic)]
       [(space white whitespace) char-set:whitespace]
-      [(print printing) char-set:printing]
+      [(print printing)
+       (if (ascii) char-set:ascii-printing char-set:printing)]
       [(cntrl control) (ucs-range->char-set 0 32)]
       [(xdigit hex-digit) char-set:hex-digit]
       [else #f]))
@@ -168,40 +194,33 @@
 (define (regexp-parse-sre sre)
   (define id 0)
 
-  (define (%sre->ast sre nocapture casefold ascii)
+  (define (%sre->ast sre)
     (define (sre-sym sre)
       (case sre
         [(bos eos bol eol bow eow nwb) sre]
-        [(word) (%sre->ast '(word+ any) nocapture casefold ascii)]
+        [(word) (%sre->ast '(word+ any))]
         [else (err "not supported" sre)]))
+
+    (define (loop rest)
+      (map %sre->ast rest))
+
+    (define (seq-loop rest)
+      `(seq ,@(map %sre->ast rest)))
+
+    (define (cpat test rest)
+      `(cpat ,(test (%sre->ast (car rest)))
+             (,(%sre->ast (cadr rest)))
+             ,(cond
+               [(null? (cddr rest)) '()]
+               [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
+               [else (err "unsupported syntax" sre)])))
 
     ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
-      (define (map-one sre)
-          (%sre->ast sre nocapture casefold ascii))
-
-      (define (loop :optional (rest rest))
-        (map (cut map-one <>) rest))
-
-      (define (seq-loop :optional
-                        (rest rest)
-                        (nocapture nocapture)
-                        (casefold casefold)
-                        (ascii ascii))
-        `(seq ,@(map (cut %sre->ast <> nocapture casefold ascii) rest)))
-
-      (define (cpat test)
-        `(cpat ,(test (map-one (car rest)))
-               (,(map-one (cadr rest)))
-               ,(cond
-                 [(null? (cddr rest)) '()]
-                 [(null? (cdddr rest)) (list (map-one (caddr rest)))]
-                 [else (err "unsupported syntax" sre)])))
-
       (case sym
-        [(* zero-or-more) `(rep 0 #f ,@(loop))]
-        [(+ one-or-more) `(rep 1 #f ,@(loop))]
-        [(? optional) `(rep 0 1 ,@(loop))]
+        [(* zero-or-more) `(rep 0 #f ,@(loop rest))]
+        [(+ one-or-more) `(rep 1 #f ,@(loop rest))]
+        [(? optional) `(rep 0 1 ,@(loop rest))]
         [(= exactly) (let ([n (car rest)])
                        `(rep ,n ,n ,@(loop (cdr rest))))]
         [(>= at-least) `(rep ,(car rest)
@@ -210,37 +229,40 @@
         [(** repeated) `(rep ,(car rest)
                              ,(cadr rest)
                              ,@(loop (cddr rest)))]
-        [(|\|| or) `(alt ,@(loop))]
-        [(: seq) (seq-loop)]
-        [($ submatch) (if nocapture
-                          (seq-loop)
+        [(|\|| or) `(alt ,@(loop rest))]
+        [(: seq) (seq-loop rest)]
+        [($ submatch) (if (nocapture)
+                          (seq-loop rest)
                           (begin
                             (set! id (+ id 1))
-                            `(,id #f ,@(loop))))]
-        [(-> submatch-named) (if nocapture
-                                 (seq-loop)
+                            `(,id #f ,@(loop rest))))]
+        [(-> submatch-named) (if (nocapture)
+                                 (seq-loop rest)
                                  (begin
                                    (set! id (+ id 1))
                                    `(,id ,(car rest) ,@(loop (cdr rest)))))]
-        [(w/case) (seq-loop rest nocapture #f)]
-        [(w/nocase) (seq-loop rest nocapture #t)]
-        [(w/ascii) (seq-loop rest nocapture casefold #t)]
-        [(w/unicode) (seq-loop rest nocapture casefold #f)]
-        [(w/nocapture) (seq-loop rest #t)]
-        [(word) (%sre->ast `(: bow ,@rest eow)
-                           nocapture casefold ascii)]
+        [(w/case) (parameterize ([casefold #f])
+                    (seq-loop rest))]
+        [(w/nocase) (parameterize ([casefold #t])
+                      (seq-loop rest))]
+        [(w/ascii) (parameterize ([ascii #t])
+                     (seq-loop rest))]
+        [(w/unicode) (parameterize ([ascii #f])
+                       (seq-loop rest))]
+        [(w/nocapture) (parameterize ([nocapture #t])
+                         (seq-loop rest))]
+        [(word) (%sre->ast `(: bow ,@rest eow))]
         [(word+) (%sre->ast `(word (+ (and (or alphanumeric "_")
-                                           (or ,@rest))))
-                            nocapture casefold ascii)]
-        [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop))]
-        [(*? non-greedy-zero-or-more) `(rep-min 0 #f ,@(loop))]
+                                           (or ,@rest)))))]
+        [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop rest))]
+        [(*? non-greedy-zero-or-more) `(rep-min 0 #f ,@(loop rest))]
         [(**? non-greedy-repeated) `(rep-min ,(car rest)
                                              ,(cadr rest)
                                              ,@(loop (cddr rest)))]
-        [(look-ahead) `(assert ,@(loop))]
-        [(look-behind) `(assert (lookbehind ,@(loop)))]
-        [(neg-look-ahead) `(nassert ,@(loop))]
-        [(neg-look-behind) `(nassert (lookbehind ,@(loop)))]
+        [(look-ahead) `(assert ,@(loop rest))]
+        [(look-behind) `(assert (lookbehind ,@(loop rest)))]
+        [(neg-look-ahead) `(nassert ,@(loop rest))]
+        [(neg-look-behind) `(nassert (lookbehind ,@(loop rest)))]
         [(backref) (begin
                      (if (and (null? (cdr rest))
                               (or (number? (car rest))
@@ -248,24 +270,24 @@
                          `(backref . ,(car rest))
                          (err "expected (backref <integer/symbol>)" (cons sym rest))))]
         ;; gauche extensions
-        [(atomic) `(once ,@(cdr (seq-loop)))]
+        [(atomic) `(once ,@(cdr (seq-loop rest)))]
         [(if-backref) `(cpat ,(if (number? (car rest))
                                 (car rest)
                                 (err "if-backref can only take a number" sre))
-                             (,(map-one (cadr rest)))
+                             (,(%sre->ast (cadr rest)))
                              ,(cond
                                [(null? (cddr rest)) '()]
-                               [(null? (cdddr rest)) (list (map-one (caddr rest)))]
+                               [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
                                [else (err "unsupported syntax" sre)]))]
-        [(if-look-ahead) (cpat (^x `(assert ,x)))]
-        [(if-neg-look-ahead) (cpat (^x `(nassert ,x)))]
-        [(if-look-behind) (cpat (^x `(assert (lookbehind ,x))))]
-        [(if-neg-look-behind) (cpat (^x `(nassert (lookbehind ,x))))]
+        [(if-look-ahead) (cpat (^x `(assert ,x)) rest)]
+        [(if-neg-look-ahead) (cpat (^x `(nassert ,x)) rest)]
+        [(if-look-behind) (cpat (^x `(assert (lookbehind ,x))) rest)]
+        [(if-neg-look-behind) (cpat (^x `(nassert (lookbehind ,x))) rest)]
         [else (err "invalid SRE" sym)]))
 
     (define (fold-case cset)
       (cond
-       [(not casefold) cset]
+       [(not (casefold)) cset]
        [(eq? cset 'any) cset]
        [else
         ((with-module gauche.internal %char-set-case-fold!)
@@ -273,7 +295,7 @@
 
     (define (ascii-context cset)
       (cond
-       [(not ascii) cset]
+       [(not (ascii)) cset]
        ;; 'any technically should become char-set:ascii to avoid
        ;; matching non-ascii character, but we lose 'any' special
        ;; handling in the regexp engine. Not worth it
@@ -291,7 +313,10 @@
      [(pair? sre) (sre-list (car sre) (cdr sre))]
      [else (err "invalid SRE" sre)]))
 
-  `(0 #f ,(%sre->ast sre #f #f #f)))
+  `(0 #f ,(parameterize ([nocapture #f]
+                         [casefold #f]
+                         [ascii #f])
+            (%sre->ast sre))))
 
 
 (define (regexp-compile-sre re :key (multi-line #t))

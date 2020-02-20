@@ -14,11 +14,10 @@
 (test-sre '("σζ") '(* lower) "σζ")
 (test-sre '("Σ") '(* upper) "Σ")
 (test-sre '("\x01C5;") '(* title) "\x01C5;")
+(test-sre '("σζ\x01C5;") '(w/nocase (* lower)) "σζ\x01C5;")
 
 (test-sre '("кириллица") '(* alpha) "кириллица")
 (test-sre '("") '(w/ascii (* alpha)) "кириллица")
 (test-sre '("кириллица") '(w/nocase "КИРИЛЛИЦА") "кириллица")
 
 (test-sre '("") '(w/ascii (* numeric)) "１２３４５")
-
-
