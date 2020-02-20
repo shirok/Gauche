@@ -42,6 +42,9 @@
 (define ascii (make-parameter #f))
 (define nocapture (make-parameter #f))
 (define casefold (make-parameter #f))
+(define char-set:cased (char-set-union char-set:lower-case
+                                       char-set:upper-case
+                                       char-set:title-case))
 
 (define-condition-type <regexp-invalid-sre> <error> #f
   (offending-item))
@@ -88,9 +91,18 @@
       [(any) 'any]
       [(nonl) (cset-sre '(~ #\newline #\return))]
       [(ascii) char-set:ascii]
-      [(lower lower-case) char-set:lower-case]
-      [(upper upper-case) char-set:upper-case]
-      [(title title-case) char-set:title-case]
+      [(lower lower-case)
+       (cond
+        [(casefold) char-set:cased]
+        [else char-set:lower-case])]
+      [(upper upper-case)
+       (cond
+        [(casefold) char-set:cased]
+        [else char-set:upper-case]) ]
+      [(title title-case)
+       (cond
+        [(casefold) char-set:cased]
+        [else char-set:title-case])]
       [(alpha alphabetic) char-set:letter]
       [(num numeric) char-set:digit]
       [(alnum alphanum alphanumeric) char-set:letter+digit]
