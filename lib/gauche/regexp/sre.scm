@@ -180,14 +180,14 @@
         [(word) (%sre->ast '(word+ any))]
         [else (err "not supported" sre)]))
 
+    (define (loop rest)
+      (map %sre->ast rest))
+
     (define (seq-loop rest)
       `(seq ,@(map %sre->ast rest)))
 
     ;; FIXME: missing bog, eog, grapheme
     (define (sre-list sym rest)
-      (define (loop :optional (rest rest))
-        (map %sre->ast rest))
-
       (define (cpat test)
         `(cpat ,(test (%sre->ast (car rest)))
                (,(%sre->ast (cadr rest)))
@@ -197,9 +197,9 @@
                  [else (err "unsupported syntax" sre)])))
 
       (case sym
-        [(* zero-or-more) `(rep 0 #f ,@(loop))]
-        [(+ one-or-more) `(rep 1 #f ,@(loop))]
-        [(? optional) `(rep 0 1 ,@(loop))]
+        [(* zero-or-more) `(rep 0 #f ,@(loop rest))]
+        [(+ one-or-more) `(rep 1 #f ,@(loop rest))]
+        [(? optional) `(rep 0 1 ,@(loop rest))]
         [(= exactly) (let ([n (car rest)])
                        `(rep ,n ,n ,@(loop (cdr rest))))]
         [(>= at-least) `(rep ,(car rest)
@@ -208,13 +208,13 @@
         [(** repeated) `(rep ,(car rest)
                              ,(cadr rest)
                              ,@(loop (cddr rest)))]
-        [(|\|| or) `(alt ,@(loop))]
+        [(|\|| or) `(alt ,@(loop rest))]
         [(: seq) (seq-loop rest)]
         [($ submatch) (if (nocapture)
                           (seq-loop rest)
                           (begin
                             (set! id (+ id 1))
-                            `(,id #f ,@(loop))))]
+                            `(,id #f ,@(loop rest))))]
         [(-> submatch-named) (if (nocapture)
                                  (seq-loop rest)
                                  (begin
@@ -233,15 +233,15 @@
         [(word) (%sre->ast `(: bow ,@rest eow))]
         [(word+) (%sre->ast `(word (+ (and (or alphanumeric "_")
                                            (or ,@rest)))))]
-        [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop))]
-        [(*? non-greedy-zero-or-more) `(rep-min 0 #f ,@(loop))]
+        [(?? non-greedy-optional) `(rep-min 0 1 ,@(loop rest))]
+        [(*? non-greedy-zero-or-more) `(rep-min 0 #f ,@(loop rest))]
         [(**? non-greedy-repeated) `(rep-min ,(car rest)
                                              ,(cadr rest)
                                              ,@(loop (cddr rest)))]
-        [(look-ahead) `(assert ,@(loop))]
-        [(look-behind) `(assert (lookbehind ,@(loop)))]
-        [(neg-look-ahead) `(nassert ,@(loop))]
-        [(neg-look-behind) `(nassert (lookbehind ,@(loop)))]
+        [(look-ahead) `(assert ,@(loop rest))]
+        [(look-behind) `(assert (lookbehind ,@(loop rest)))]
+        [(neg-look-ahead) `(nassert ,@(loop rest))]
+        [(neg-look-behind) `(nassert (lookbehind ,@(loop rest)))]
         [(backref) (begin
                      (if (and (null? (cdr rest))
                               (or (number? (car rest))
