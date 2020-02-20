@@ -1592,7 +1592,7 @@ a symbol or a wrapped identifier.
 form strips wrappers.)
 
 Legacy Lisp macros sometimes examines the symbols in the input form.
-In Scheme, you have to treat the input program as consists of
+In Scheme, you have to treat the input program as
 a tree of identifiers and other objects.  You can test whether an object
 is an identifier or not by @code{identifier?}, where traditional Lisp
 macor would have used @code{symbol?}.  To compare identifiers, you need

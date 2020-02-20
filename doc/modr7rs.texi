@@ -5092,7 +5092,7 @@ However, having improper lists makes things a lot complicated.  If you just
 need a list with fast random access, you want to use skew-list.
 Use rlist only if you need to deal with improper lists.
 
-The following procedures behaves just like the built-in counterparts,
+The following procedures behave just like the built-in counterparts,
 except they take/return rlists instead of ordinary pairs and lists.
 (NB: @code{list-ref} and @code{list-tail} here doesn't take the optional
 fallback argument, for they are Gauche's extension).
@@ -5111,7 +5111,7 @@ length    append     reverse    list-tail
 list-ref  map        for-each
 @end example
 
-This module also export a syntax @code{quote}, which denotes
+This module also exports a syntax @code{quote}, which denotes
 the literal rlist.  @code{(quote (a (b c)))} becomes a literal
 rlist consists of elements @code{a}, and an rlist consists
 of @code{b} and @code{c}.
@@ -5712,7 +5712,6 @@ immutable and indexed.  @xref{String utilities}, for the details.
 
 @node R7RS generators, R7RS lazy sequences, R7RS immutable texts, R7RS large
 @subsection @code{scheme.generator} - R7RS generators
- - R7RS generators
 @c NODE R7RSジェネレータ, @code{scheme.generator} - R7RSジェネレータ
 
 @deftp {Module} scheme.generator
@@ -5834,11 +5833,12 @@ The following generator procedures are explained in
 @itemize
 @item @ref{Generator constructors}:
 @example
-generator                  circular-generator       make-iota-generator
-make-range-generator       make-coroutine-generator
-make-unfold-generator      make-for-each-generator
-list->generator            vector->generator        reverse-vector->generator
-string->generator          bytevector->generator
+generator                circular-generator       make-iota-generator
+make-range-generator     make-coroutine-generator
+make-unfold-generator    make-for-each-generator
+list->generator            
+vector->generator        reverse-vector->generator
+string->generator        bytevector->generator
 @end example
 @item @ref{Generator operations}:
 @example
@@ -6983,7 +6983,7 @@ Note: SRE uses the symbol @code{|} for alteration, but the vertical bar
 character is used for symbol escape in Gauche (and R7RS), so you have to
 write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
 
-@example
+@smallexample
     <sre> ::=
      | <string>                    ; A literal string match.
      | <cset-sre>                  ; A character set match.
@@ -7051,11 +7051,11 @@ write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
      @c | (if-look-behind <test-sre> <then-sre> [<else-sre>])     ; Conditional pattern
      @c | (if-neg-look-behind <test-sre> <then-sre> [<else-sre>]) ; Conditional pattern
      @c | (if-backref <backref> <then-sre> [<else-sre>])          ; Conditional pattern
-@end example
+@end smallexample
 
 The grammar for @code{cset-sre} is as follows.
 
-@example
+@smallexample
     <cset-sre> ::=
      | <char>                      ; literal char
      | "<char>"                    ; string of one char
@@ -7084,7 +7084,7 @@ The grammar for @code{cset-sre} is as follows.
      | printing | print | control | cntrl | hex-digit | xdigit
 
     <range-spec> ::= <string> | <char>
-@end example
+@end smallexample
 
 @subsubheading Basic patterns
 
@@ -7094,8 +7094,10 @@ The grammar for @code{cset-sre} is as follows.
 A literal string.
 
 @example
-(regexp-search "needle" "hayneedlehay") => #<regexp-match>
-(regexp-search "needle" "haynEEdlehay") => #f
+(regexp-search "needle" "hayneedlehay") 
+ @result{} #<regexp-match>
+(regexp-search "needle" "haynEEdlehay") 
+ @result{} #f
 @end example
 
 @item (seq <sre> ...)
@@ -7105,7 +7107,8 @@ A sequence of patterns that should be matched in the same order. This
 is the same as RE syntax @code{(?:@i{re}@dots{})}
 
 @example
-(regexp-search '(: "one" space "two" space "three") "one two three") => #<regexp-match>
+(regexp-search '(: "one" space "two" space "three") "one two three")
+ @result{} #<regexp-match>
 @end example
 
 @item (or <sre> ...)
@@ -7114,8 +7117,12 @@ is the same as RE syntax @code{(?:@i{re}@dots{})}
 Matches one of the given patterns. This is the same as
 RE syntax @code{@i{pattern1}|@i{pattern2}|@dots{}}
 
-   (regexp-search '(or "eeney" "meeney" "miney") "meeney") => #<regexp-match>
-   (regexp-search '(or "eeney" "meeney" "miney") "moe") => #f
+@example
+(regexp-search '(or "eeney" "meeney" "miney") "meeney")
+ @result{} #<regexp-match>
+(regexp-search '(or "eeney" "meeney" "miney") "moe")
+ @result{} #f
+@end example
 
 @item (w/nocase <sre> ...)
 
@@ -7124,15 +7131,16 @@ can still be made sensitive with @code{w/case}. This is the same as
 RE syntax @code{(?i:@i{re}@dots{})}
 
 @example
-(regexp-search "needle" "haynEEdlehay") => #f
-(regexp-search '(w/nocase "needle") "haynEEdlehay") => #<regexp-match>
+(regexp-search "needle" "haynEEdlehay") @result{} #f
+(regexp-search '(w/nocase "needle") "haynEEdlehay") 
+  @result{}  #<regexp-match>
 
-(regexp-search '(~ ("Aab")) "B") => #<regexp-match>
-(regexp-search '(~ ("Aab")) "b") => #f
-(regexp-search '(w/nocase (~ ("Aab"))) "B") => #f
-(regexp-search '(w/nocase (~ ("Aab"))) "b") => #f
-(regexp-search '(~ (w/nocase ("Aab"))) "B") => #f
-(regexp-search '(~ (w/nocase ("Aab"))) "b") => #f
+(regexp-search '(~ ("Aab")) "B") @result{} #<regexp-match>
+(regexp-search '(~ ("Aab")) "b") @result{} #f
+(regexp-search '(w/nocase (~ ("Aab"))) "B") @result{} #f
+(regexp-search '(w/nocase (~ ("Aab"))) "b") @result{} #f
+(regexp-search '(~ (w/nocase ("Aab"))) "B") @result{} #f
+(regexp-search '(~ (w/nocase ("Aab"))) "b") @result{} #f
 @end example
 
 @item (w/case <sre> ...)
@@ -7142,8 +7150,9 @@ still be made case-insensitive. This is the same as RE syntax
 @code{(?-i:@i{re}@dots{})}. This is the default.
 
 @example
-(regexp-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall") => #<regexp-match>
-(regexp-search '(w/nocase (~ (w/case ("Aab")))) "b") => #f
+(regexp-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall") 
+ @result{} #<regexp-match>
+(regexp-search '(w/nocase (~ (w/case ("Aab")))) "b") @result{} #f
 @end example
 
 @item (w/ascii <sre> ...)
@@ -7153,8 +7162,9 @@ affects patterns or character sets like @code{any}, @code{alpha},
 @code{(word)}@dots{}
 
 @example
-(regexp-search '(w/ascii bos (* alpha) eos) "English") => #<regexp-match>
-(regexp-search '(w/ascii bos (* alpha) eos) "Ελληνική") => #f
+(regexp-search '(w/ascii bos (* alpha) eos) "English")
+ @result{} #<regexp-match>
+(regexp-search '(w/ascii bos (* alpha) eos) "Ελληνική") @result{} #f
 @end example
 
 @item (w/unicode <sre> ...)
@@ -7164,8 +7174,10 @@ Unicode if @code{w/ascii} has been used in the outer scope. This is
 the default.
 
 @example
-(regexp-search '(w/unicode bos (* alpha) eos) "English") => #<regexp-match>
-(regexp-search '(w/unicode bos (* alpha) eos) "Ελληνική") => #<regexp-match>
+(regexp-search '(w/unicode bos (* alpha) eos) "English")
+ @result{} #<regexp-match>
+(regexp-search '(w/unicode bos (* alpha) eos) "Ελληνική")
+ @result{} #<regexp-match>
 @end example
 
 @item (w/nocapture <sre> ...)
@@ -7178,11 +7190,11 @@ inside.
   (cdr
    (regexp-match->list
     (regexp-search `(: ,number "-" ,number "-" ,number)
-                   "555-867-5309")))  ; => '("555" "867" "5309")
+                   "555-867-5309")))  ; @result{} '("555" "867" "5309")
   (cdr
    (regexp-match->list
     (regexp-search `(: ,number "-" (w/nocapture ,number) "-" ,number)
-                   "555-867-5309"))))   => '("555" "5309")
+                   "555-867-5309"))))   @result{} '("555" "5309")
 @end example
 @end table
 
@@ -7194,9 +7206,12 @@ inside.
 Matches the pattern(s) one or zero times.
 
 @example
-(regexp-search '(: "match" (? "es") "!") "matches!") => #<regexp-match>
-(regexp-search '(: "match" (? "es") "!") "match!") => #<regexp-match>
-(regexp-search '(: "match" (? "es") "!") "matche!") => #f
+(regexp-search '(: "match" (? "es") "!") "matches!") 
+ @result{} #<regexp-match>
+(regexp-search '(: "match" (? "es") "!") "match!") 
+ @result{} #<regexp-match>
+(regexp-search '(: "match" (? "es") "!") "matche!")
+ @result{} #f
 @end example
 
 @item (zero-or-more <sre> ...)
@@ -7205,9 +7220,12 @@ Matches the pattern(s) one or zero times.
 Matches the pattern(s) zero or more times.
 
 @example
-(regexp-search '(: "<" (* (~ #\>)) ">") "<html>") => #<regexp-match>
-(regexp-search '(: "<" (* (~ #\>)) ">") "<>") => #<regexp-match>
-(regexp-search '(: "<" (* (~ #\>)) ">") "<html") => #f
+(regexp-search '(: "<" (* (~ #\>)) ">") "<html>")
+ @result{} #<regexp-match>
+(regexp-search '(: "<" (* (~ #\>)) ">") "<>")
+ @result{} #<regexp-match>
+(regexp-search '(: "<" (* (~ #\>)) ">") "<html")
+ @result{} #f
 @end example
 
 @item (one-or-more <sre> ...)
@@ -7216,9 +7234,12 @@ Matches the pattern(s) zero or more times.
 Matches the pattern(s) at least once.
 
 @example
-(regexp-search '(: "<" (+ (~ #\>)) ">") "<html>") => #<regexp-match>
-(regexp-search '(: "<" (+ (~ #\>)) ">") "<a>") => #<regexp-match>
-(regexp-search '(: "<" (+ (~ #\>)) ">") "<>") => #f
+(regexp-search '(: "<" (+ (~ #\>)) ">") "<html>")
+ @result{} #<regexp-match>
+(regexp-search '(: "<" (+ (~ #\>)) ">") "<a>")
+ @result{} #<regexp-match>
+(regexp-search '(: "<" (+ (~ #\>)) ">") "<>")
+ @result{} #f
 @end example
 
 @item (at-least n <sre> ...)
@@ -7227,9 +7248,12 @@ Matches the pattern(s) at least once.
 Matches the pattern(s) at least @code{n} times.
 
 @example
-(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<table>") => #<regexp-match>
-(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<pre>") => #<regexp-match>
-(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<tr>") => #f
+(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<table>")
+ @result{} #<regexp-match>
+(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<pre>")
+ @result{} #<regexp-match>
+(regexp-search '(: "<" (>= 3 (~ #\>)) ">") "<tr>")
+ @result{} #f
 @end example
 
 @item (exactly n <sre> ...)
@@ -7238,8 +7262,10 @@ Matches the pattern(s) at least @code{n} times.
 Matches the pattern(s) exactly @code{n} times.
 
 @example
-(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<html>") => #<regexp-match>
-(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<table>") => #f
+(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<html>")
+ @result{} #<regexp-match>
+(regexp-search '(: "<" (= 4 (~ #\>)) ">") "<table>")
+ @result{} #f
 @end example
 
 @item (repeated from to <sre> ...)
@@ -7249,8 +7275,12 @@ Matches the pattern(s) at least @code{from} times and up to @code{to}
 times.
 
 @example
-(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.168.1.10") => #<regexp-match>
-(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.0168.1.10") => #f
+(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric))
+               "192.168.1.10")
+ @result{} #<regexp-match>
+(regexp-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric))
+               "192.0168.1.10")
+ @result{} #f
 @end example
 @end table
 
@@ -7293,8 +7323,8 @@ RE syntax @code{\@i{n}} or @code{\k<@i{name}>}.
 A character set contains a single character.
 
 @example
-(regexp-matches '(* #\-) "---") => #<regexp-match>
-(regexp-matches '(* #\-) "-_-") => #f
+(regexp-matches '(* #\-) "---") @result{} #<regexp-match>
+(regexp-matches '(* #\-) "-_-") @result{} #f
 @end example
 
 @item "<char>"
@@ -7313,7 +7343,7 @@ of SRFI 14 character sets, you can use Gauche reader syntax
 
 @example
 (regexp-partition `(+ ,char-set:vowels) "vowels")
-  => ("v" "o" "w" "e" "ls")
+ @result{} ("v" "o" "w" "e" "ls")
 @end example
 
 @item (char-set <string>)
@@ -7323,13 +7353,13 @@ A character set contains the characters in the given string. This is
 the same as @code{`(char-set ,(string->char-set <string>))}.
 
 @example
-(regexp-matches '(* ("aeiou")) "oui") => #<regexp-match>
-(regexp-matches '(* ("aeiou")) "ouais") => #f
-(regexp-matches '(* ("e\x0301")) "e\x0301") => #<regexp-match>
-(regexp-matches '("e\x0301") "e\x0301") => #f
-(regexp-matches '("e\x0301") "e") => #<regexp-match>
-(regexp-matches '("e\x0301") "\x0301") => #<regexp-match>
-(regexp-matches '("e\x0301") "\x00E9") => #f
+(regexp-matches '(* ("aeiou")) "oui") @result{} #<regexp-match>
+(regexp-matches '(* ("aeiou")) "ouais") @result{} #f
+(regexp-matches '(* ("e\x0301")) "e\x0301") @result{} #<regexp-match>
+(regexp-matches '("e\x0301") "e\x0301") @result{} #f
+(regexp-matches '("e\x0301") "e") @result{} #<regexp-match>
+(regexp-matches '("e\x0301") "\x0301") @result{} #<regexp-match>
+(regexp-matches '("e\x0301") "\x00E9") @result{} #f
 @end example
 
 @item (char-range <range-spec> ...)
@@ -7339,8 +7369,8 @@ A character set contains the characters within
 @code{<range-set>}. This is the same as RE syntax @code{[]}.
 
 @example
-(regexp-matches '(* (/ "AZ09")) "R2D2") => #<regexp-match>
-(regexp-matches '(* (/ "AZ09")) "C-3PO") => #f
+(regexp-matches '(* (/ "AZ09")) "R2D2") @result{} #<regexp-match>
+(regexp-matches '(* (/ "AZ09")) "C-3PO") @result{} #f
 @end example
 
 @item (or <cset-sre> ...)
@@ -7359,8 +7389,10 @@ A shorthand for @code{`(char-set ,(char-set-complement <cset-sre>...))}.
 A shorthand for @code{`(char-set ,(char-set-difference <cset-sre>...))}.
 
 @example
-(regexp-matches '(* (- (/ "az") ("aeiou"))) "xyzzy") => #<regexp-match>
-(regexp-matches '(* (- (/ "az") ("aeiou"))) "vowels") => #f
+(regexp-matches '(* (- (/ "az") ("aeiou"))) "xyzzy")
+ @result{} #<regexp-match>
+(regexp-matches '(* (- (/ "az") ("aeiou"))) "vowels")
+ @result{} #f
 @end example
 
 @item (and <cset-sre> ...)
@@ -7369,8 +7401,10 @@ A shorthand for @code{`(char-set ,(char-set-difference <cset-sre>...))}.
 A shorthand for @code{`(char-set ,(char-set-intersection <cset-sre>...))}.
 
 @example
-(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "xyzzy") => #<regexp-match>
-(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "vowels") => #f
+(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "xyzzy")
+ @result{} #<regexp-match>
+(regexp-matches '(* (& (/ "az") (~ ("aeiou")))) "vowels")
+ @result{} #f
 @end example
 
 @item (w/case <cset-sre>)
@@ -7496,12 +7530,12 @@ is interpreted the same way with @code{read-line}.
 Matches the beginning or the end of a word.
 
 @example
-  (regexp-search '(: bow "foo") "foo") => #<regexp-match>
-  (regexp-search '(: bow "foo") "<foo>>") => #<regexp-match>
-  (regexp-search '(: bow "foo") "snafoo") => #f
-  (regexp-search '(: "foo" eow) "foo") => #<regexp-match>
-  (regexp-search '(: "foo" eow) "foo!") => #<regexp-match>
-  (regexp-search '(: "foo" eow) "foobar") => #f
+  (regexp-search '(: bow "foo") "foo") @result{} #<regexp-match>
+  (regexp-search '(: bow "foo") "<foo>>") @result{} #<regexp-match>
+  (regexp-search '(: bow "foo") "snafoo") @result{} #f
+  (regexp-search '(: "foo" eow) "foo") @result{} #<regexp-match>
+  (regexp-search '(: "foo" eow) "foo!") @result{} #<regexp-match>
+  (regexp-search '(: "foo" eow) "foobar") @result{} #f
 @end example
 
 
@@ -7575,8 +7609,12 @@ current position, without advancing the position. This is the same as
 RE syntax @code{(?=@i{pattern})}
 
 @example
-(regexp-matches '(: "regular" (look-ahead " expression") " expression") "regular expression")=> #<regexp-match>
-(regexp-matches '(: "regular" (look-ahead " ") "expression") "regular expression")=> #f
+(regexp-matches '(: "regular" (look-ahead " expression") " expression")
+                "regular expression")
+ @result{} #<regexp-match>
+(regexp-matches '(: "regular" (look-ahead " ") "expression")
+                "regular expression")
+ @result{} #f
 @end example
 
 
@@ -7718,7 +7756,7 @@ the result of the last @var{kons} call is returned.
                          (else `((,s . 1) ,@@acc)))))
                 '()
                 "to be or not to be")
-   => '(("not" . 1) ("or" . 1) ("be" . 2) ("to" . 2))
+   @result{} '(("not" . 1) ("or" . 1) ("be" . 2) ("to" . 2))
 @end example
 @end defun
 
@@ -7730,7 +7768,7 @@ Returns a list of matched string or an empty list if no matches.
 
 @example
    (regexp-extract '(+ numeric) "192.168.0.1")
-   => ("192" "168" "0" "1")
+   @result{} ("192" "168" "0" "1")
 @end example
 @end defun
 
@@ -7743,11 +7781,11 @@ removed instead of returned.
 
 @example
    (regexp-split '(+ space) " fee fi  fo\tfum\n")
-   => ("fee" "fi" "fo" "fum")
+   @result{} ("fee" "fi" "fo" "fum")
    (regexp-split '(",;") "a,,b,")
-   => ("a" "" "b" "")
+   @result{} ("a" "" "b" "")
    (regexp-split '(* numeric) "abc123def456ghi789")
-   => ("abc" "def" "ghi" "")
+   @result{} ("abc" "def" "ghi" "")
 @end example
 @end defun
 
@@ -7761,13 +7799,13 @@ split the original string.
 
 @example
    (regexp-partition '(+ (or space punct)) "")
-   => ("")
+   @result{} ("")
    (regexp-partition '(+ (or space punct)) "Hello, world!\n")
-   => ("Hello" ", " "world" "!\n")
+   @result{} ("Hello" ", " "world" "!\n")
    (regexp-partition '(+ (or space punct)) "¿Dónde Estás?")
-   => ("" "¿" "Dónde" " " "Estás" "?")
+   @result{} ("" "¿" "Dónde" " " "Estás" "?")
    (regexp-partition '(* numeric) "abc123def456ghi789")
-   => ("abc" "123" "def" "456" "ghi" "789")
+   @result{} ("abc" "123" "def" "456" "ghi" "789")
 @end example
 @end defun
 
@@ -7801,15 +7839,15 @@ except that @var{end} can take @code{#f} which is the same as
 
 @example
    (regexp-replace '(+ space) "one two three" "_")
-   => "one_two three"
+   @result{} "one_two three"
    (regexp-replace '(+ space) "one two three" "_" 1 10)
-   => "ne_two th"
+   @result{} "ne_two th"
    (regexp-replace '(+ space) "one two three" "_" 0 #f 0)
-   => "one_two three"
+   @result{} "one_two three"
    (regexp-replace '(+ space) "one two three" "_" 0 #f 1)
-   => "one two_three"
+   @result{} "one two_three"
    (regexp-replace '(+ space) "one two three" "_" 0 #f 2)
-   => "one two three"
+   @result{} "one two three"
 @end example
 
 Note that Gauche also has a builtin procedure of the same name, but
@@ -7826,7 +7864,7 @@ a procedure similar to @code{regexp-replace}.
 
 @example
 (regexp-replace-all '(+ space) "one two three" "_")
-   => "one_two_three"
+   @result{} "one_two_three"
 @end example
 
 Note that Gauche also has a builtin procedure of the same name, but
@@ -7840,8 +7878,8 @@ works slightly differently, @pxref{Using regular expressions}.
 Returns true iff @var{obj} is a @code{<regexp-match>} object.
 
 @example
-(regexp-match? (regexp-matches "x" "x"))  => #t
-(regexp-match? (regexp-matches "x" "y"))  => #f
+(regexp-match? (regexp-matches "x" "x"))  @result{} #t
+(regexp-match? (regexp-matches "x" "y"))  @result{} #f
 @end example
 @end defun
 
@@ -7854,8 +7892,8 @@ full match. This is just an alias of @code{rxmatch-num-matches} minus
 one.
 
 @example
-(regexp-match-count (regexp-matches "x" "x"))  => 0
-(regexp-match-count (regexp-matches '($ "x") "x"))  => 1
+(regexp-match-count (regexp-matches "x" "x"))  @result{} 0
+(regexp-match-count (regexp-matches '($ "x") "x"))  @result{} 1
 @end example
 @end defun
 
@@ -7865,11 +7903,11 @@ one.
 This is an alias of @code{rxmatch-substring}
 
 @example
-   (regexp-match-submatch (regexp-search 'word "**foo**") 0)  => "foo"
+   (regexp-match-submatch (regexp-search 'word "**foo**") 0)  @result{} "foo"
    (regexp-match-submatch
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => "*foo*"
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  @result{} "*foo*"
    (regexp-match-submatch
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => "foo"
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  @result{} "foo"
 @end example
 @end defun
 
@@ -7880,11 +7918,11 @@ This is an alias of @code{regexp-match-submatch-start}.
 
 @example
    (regexp-match-submatch-start
-    (regexp-search 'word "**foo**") 0)  => 2
+    (regexp-search 'word "**foo**") 0)  @result{} 2
    (regexp-match-submatch-start
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => 1
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  @result{} 1
    (regexp-match-submatch-start
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => 2
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  @result{} 2
 @end example
 @end defun
 
@@ -7895,11 +7933,11 @@ This is an alias of @code{regexp-match-submatch-end}.
 
 @example
    (regexp-match-submatch-end
-    (regexp-search 'word "**foo**") 0)  => 5
+    (regexp-search 'word "**foo**") 0)  @result{} 5
    (regexp-match-submatch-end
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  => 6
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 0)  @result{} 6
    (regexp-match-submatch-end
-    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  => 5
+    (regexp-search '(: "*" ($ word) "*") "**foo**") 1)  @result{} 5
 @end example
 @end defun
 
@@ -7911,7 +7949,7 @@ This is an alias of @code{rxmatch-substrings}
 @example
    (regexp-match->list
     (regexp-search '(: ($ word) (+ (or space punct)) ($ word)) "cats & dogs"))
-    => '("cats & dogs" "cats" "dogs")
+    @result{} '("cats & dogs" "cats" "dogs")
 @end example
 @end defun
 
