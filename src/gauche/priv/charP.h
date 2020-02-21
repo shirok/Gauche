@@ -49,6 +49,7 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
 enum {
     /* Unicode General Categories */
     SCM_CHAR_SET_L = 1,         /* Letters */
+    SCM_CHAR_SET_LC,            /* Cased Letters (Lu + Ll + Lt) */
     SCM_CHAR_SET_Lu,            /* Letter, uppercase */
     SCM_CHAR_SET_Ll,            /* Letter, lowercase */
     SCM_CHAR_SET_Lt,            /* Letter, titlecase */

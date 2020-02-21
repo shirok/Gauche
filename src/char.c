@@ -1260,6 +1260,7 @@ static struct predef_charset_category_name_rec {
     int cset;
 } predef_charset_category_name[] = {
     { "L",  SCM_CHAR_SET_L },
+    { "LC", SCM_CHAR_SET_LC },
     { "Lu", SCM_CHAR_SET_Lu },
     { "Ll", SCM_CHAR_SET_Ll },
     { "Lt", SCM_CHAR_SET_Lt },
@@ -1578,6 +1579,7 @@ void Scm__InitChar(void)
     Scm_Define(mod, SCM_SYMBOL(SCM_INTERN("char-set:" name)), predef_sets[SCM_CPP_CAT(SCM_CHAR_SET_, id)])
 
     DEFCS("L",  L);
+    DEFCS("LC", LC);
     DEFCS("Lu", Lu);
     DEFCS("Ll", Ll);
     DEFCS("Lt", Lt);

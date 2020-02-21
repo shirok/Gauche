@@ -408,7 +408,7 @@
   ;; The CAT entry can be just a symbol or (alias symbol).
   (print "static void init_predefined_charsets() {")
   (dolist [cat (append (ucd-general-categories)
-                       '(L M N P S Z C
+                       '(L LC M N P S Z C
                          (LETTER L) ASCII_LETTER
                          (DIGIT Nd) ASCII_DIGIT
                          LETTER_DIGIT ASCII_LETTER_DIGIT 
@@ -778,6 +778,11 @@
                                       (char->integer #\a)
                                       (char->integer #\z))
                      (add-code! cs (char->integer #\_))))
+  (hash-table-put! sets 'LC
+                   (code-set-union 'LC
+                                   (hash-table-ref sets 'Lt)
+                                   (hash-table-ref sets 'Ll)
+                                   (hash-table-ref sets 'Lu)))
   (hash-table-put! sets 'EMPTY (make <char-code-set> :name 'EMPTY))
   sets)
 

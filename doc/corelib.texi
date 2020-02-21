@@ -8060,6 +8060,7 @@ of the general category @code{Lu}.
 @end defvar
 
 @defvar char-set:L
+@defvarx char-set:LC
 @defvarx char-set:M
 @defvarx char-set:N
 @defvarx char-set:P
