@@ -1,8 +1,6 @@
 name: Build
 
-on:
-  push:
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   build-linux:
@@ -74,22 +72,17 @@ jobs:
       MSYSTEM: MINGW${{ matrix.bit }}
       MSYS2_PATH_TYPE: inherit
       MSYS2_PATH_LIST: D:\msys64\mingw${{ matrix.bit }}\bin;D:\msys64\usr\local\bin;D:\msys64\usr\bin;D:\msys64\bin
-      MINGW_TYPE: mingw${{ matrix.bit }}
-      MINGW_ARCH: ${{ matrix.arch }}
-      MINGW_PATH: /mingw${{ matrix.bit }}/bin
-      GAUCHE_INFO_URL: https://practical-scheme.net/gauche/releases
+      MSYS2_TARBALL_URL: http://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20190524.tar.xz
+      GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
       GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
-      GAUCHE_INSTALLER_BIT: ${{ matrix.bit }}bit
       GAUCHE_PATH: ${{ matrix.progpath }}\Gauche\bin
-      RESULT_NAME: Gauche-${{ matrix.arch }}
-      RESULT_PATH: ..\Gauche-mingw-dist\Gauche-${{ matrix.arch }}
     steps:
     - run: git config --global core.autocrlf false
     - uses: actions/checkout@v2
     - name: Install MSYS2
       run: |
         #del alias:curl
-        curl -f -o msys2.tar.xz http://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20190524.tar.xz
+        curl -f -o msys2.tar.xz $env:MSYS2_TARBALL_URL
         #tar xf msys2.tar.xz
         bash -c "7z x msys2.tar.xz -so | 7z x -aoa -si -ttar"
         dir
@@ -107,20 +100,20 @@ jobs:
           uname -a
           echo $PATH
         '@
-        & bash -lc $script
+        bash -lc $script
     - name: Install MinGW-w64
       run: |
         $script = @'
           pacman -S --noconfirm base-devel
-          pacman -S --noconfirm $MINGW_TYPE/mingw-w64-${MINGW_ARCH}-toolchain
+          pacman -S --noconfirm mingw${{ matrix.bit }}/mingw-w64-${{ matrix.arch }}-toolchain
         '@
-        & bash -lc $script
+        bash -lc $script
     - name: Install Gauche
       run: |
         #del alias:curl
-        $env:GAUCHE_INSTALLER_VERSION = curl -f $env:GAUCHE_INFO_URL/latest.txt
+        $env:GAUCHE_INSTALLER_VERSION = curl -f $env:GAUCHE_VERSION_URL
         echo $env:GAUCHE_INSTALLER_VERSION
-        $env:GAUCHE_INSTALLER = "Gauche-mingw-${env:GAUCHE_INSTALLER_VERSION}-${env:GAUCHE_INSTALLER_BIT}.msi"
+        $env:GAUCHE_INSTALLER = "Gauche-mingw-$env:GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi"
         echo $env:GAUCHE_INSTALLER
         curl -f -L -o $env:GAUCHE_INSTALLER $env:GAUCHE_INSTALLER_URL/$env:GAUCHE_INSTALLER
         dir
@@ -138,12 +131,12 @@ jobs:
           #pacman -S --noconfirm msys/winpty
           #winpty --version
           where openssl
-          openssl version
-          mv $MINGW_PATH/openssl.exe $MINGW_PATH/openssl_NG.exe
+          echo 'Rename unavailable openssl.exe'
+          mv /mingw${{ matrix.bit }}/bin/openssl.exe /mingw${{ matrix.bit }}/bin/openssl_NG.exe
           where openssl
-          #openssl version
+          /usr/bin/openssl version
         '@
-        & bash -lc $script
+        bash -lc $script
     - name: Build
       run: |
         $script = @'
@@ -153,7 +146,7 @@ jobs:
           ./DIST gen
           src/mingw-dist.sh
         '@
-        & bash -lc $script
+        bash -lc $script
     - name: Test
       run: |
         $script = @'
@@ -161,17 +154,17 @@ jobs:
           cd $GITHUB_WORKSPACE
           make check
         '@
-        & bash -lc $script
-    - name: Upload result
-      if: success() || failure()
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ env.RESULT_NAME }}
-        path: ${{ env.RESULT_PATH }}
-    - name: Upload result2
-      if: (success() || failure()) && matrix.arch == 'x86_64'
-      uses: actions/upload-artifact@v1
-      with:
-        name: tls
-        path: ext/tls
+        bash -lc $script
+    #- name: Upload result
+    #  if: success() || failure()
+    #  uses: actions/upload-artifact@v1
+    #  with:
+    #    name: Gauche-${{ matrix.arch }}
+    #    path: ../Gauche-mingw-dist/Gauche-${{ matrix.arch }}
+    #- name: Upload result2 (for rfc.tls debug)
+    #  if: (success() || failure()) && matrix.arch == 'x86_64'
+    #  uses: actions/upload-artifact@v1
+    #  with:
+    #    name: tls
+    #    path: ext/tls
 
