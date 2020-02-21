@@ -1569,20 +1569,41 @@ global bindings inserted by the macro.
 @section Identifiers
 @c NODE 識別子
 
+@c EN
 In the discussion of hygienic macros, we keep saying the symbols are
 @emph{effectively renamed}.  What it means is that we don't actually create
 a new symbol with a new name. We have to remember the origin of
 the renamed symbol to resolve the scope of the variable, and having a separate
 table to keep track of renamed symbols would be costly.  Instead, the ``rename''
 procedure wraps the symbols in the input with syntactic information.
+@c JP
+衛生的マクロの説明では、衝突を避けるためにシンボルを「リネームする」といいますが、
+本当に名前を変えたシンボルを作っているわけではありません。後でスコープの解決をする際に、
+リネームされたシンボルと元のシンボルを関連付ける必要があるのですが、
+それを別のテーブルで管理するのは重いのです。
+そこで、@code{er-macro-expander}に渡されるリネーム手続きは、
+実際には元のシンボルを構文情報で「包む」ということをしています。
+@c COMMON
 
+@c EN
 When you play with macro internals, you'll see an object
 that is printed something like @code{#<identifier user#foo.fb4ca828>}.
 That's the wrapped symbol.
+@c JP
+マクロの中身をいじっていると、しばしば
+@code{#<identifier user#foo.fb4ca828>} のように印字されるオブジェクトを見るでしょう。
+それが包まれたシンボルです。
+@c COMMON
 
+@c EN
 If one macro output is passed to another macro expander, the wrapped symbol
 may further be wrapped.
+@c JP
+マクロ展開結果がさらに他のマクロ展開器に渡された場合は、
+一旦包まれたシンボルがさらに包まれることもあります。
+@c COMMON
 
+@c EN
 The macro expander must assume that symbols in the input are already
 wrapped by another macro expander.  So, instead of calling it a ``symbol'',
 we call it an ``identifier''.   An identifier is something that usually
@@ -1590,7 +1611,16 @@ works as a variable or a syntactic keyword in the prorgam.  It may be
 a symbol or a wrapped identifier.
 (Note that symbols in quoted literals are bare symbols, for the @code{quote}
 form strips wrappers.)
+@c JP
+マクロ展開器は、入力に含まれているシンボルが既に包まれていることを想定しなければなりません。
+「シンボル」ではなく「識別子」と呼んでいるのはそのためです。
+識別子は、プログラム中で変数か構文キーワードとして働くもので、
+その実体はシンボルか、包まれた識別子です。
+(クオートの中にあるシンボルは常に「裸の」シンボルになります。
+@code{quote}が構文情報を剥ぎ取るからです)。
+@c COMMON
 
+@c EN
 Legacy Lisp macros sometimes examines the symbols in the input form.
 In Scheme, you have to treat the input program as
 a tree of identifiers and other objects.  You can test whether an object
@@ -1598,11 +1628,20 @@ is an identifier or not by @code{identifier?}, where traditional Lisp
 macor would have used @code{symbol?}.  To compare identifiers, you need
 to use the ``compare'' procedure passed to the er-macro expander,
 or @code{free-identifier=?}.
+@c JP
+伝統的なLispのマクロではよく入力フォーム中のシンボルを調べますが、
+Schemeでは入力を識別子やその他のオブジェクトからなる木と考えます。
+伝統的なLispマクロで@code{symbol?}を使うところでは、
+@code{identifier?}を使ってオブジェクトが識別子かどうか調べる必要があります。
+また、識別子同士が等しい(同じ束縛を表している)かどうかを調べるには単なる@code{eq?}ではなく、
+@code{er-macro-transformer}に与えられる ``compare'' 手続きや、
+@code{free-identifier=?}といった特別な手続きを使う必要があります。
+@c COMMON
 
 @deftp {Builtin Class} <identifier>
 @clindex identifier
-A class of wrapped identifier.  An identifier is either a symbol
-or another wrapped identifier.  It is created as a result of
+@c EN
+A class of wrapped identifier.  It is created as a result of
 ``renaming'' in the hygienic macro expander.
 
 A wrapped identifier contains transient information about the program
@@ -1610,14 +1649,31 @@ source, and cannot be portably saved or passed around; it is only valid
 in the macro expansion phase.
 
 For the details of identifier, @pxref{Identifiers}.
+@c JP
+構文情報で包まれた識別子を表すクラスです。衛生的マクロ展開器の
+``rename''手続きにより作られます。
+
+包まれた識別子は、プログラムの構文情報を含んでおり、
+ポータブルな形でセーブすることはできません。その情報はマクロ展開の期間内のみで有効です。
+
+識別子について詳しくは@ref{Identifiers}を参照してください。
+@c COMMON
 @end deftp
 
 @defun identifier? obj
+@c EN
 Returns @code{#t} if @var{obj} is either a symbol or a wrapped
 identifier.  Returns @code{#f} otherwise.
 
 Note: In R6RS, @code{identifier?} only returns @code{#t} for an
 identifier object, which is of a disjoint type from symbols.
+@c JP
+@var{obj}がシンボルもしくは包まれた識別子である場合に@code{#t}を、
+そうでなければ@code{#f}を返します。
+
+R6RSでは、@code{identifier?}はシンボルとdisjointな型を持つ「識別子オブジェクト」
+についてのみ@code{#t}を返す、と規定されています。
+@c COMMON
 @end defun
 
 @defun identifier->symbol obj
