@@ -1677,11 +1677,17 @@ R6RSでは、@code{identifier?}はシンボルとdisjointな型を持つ「識�
 @end defun
 
 @defun identifier->symbol obj
+@c EN
 Returns the symbol that is the origin of the @var{obj}, which must
 be either a symbol or a wrapped identifier.
+@c JP
+@var{obj}はシンボルか包まれた識別子でなければなりません。@var{obj}の元となった
+シンボルを返します。
+@c COMMON
 @end defun
 
 @defun free-identifier=? id1 id2
+@c EN
 When both arguments @var{id1} and @var{id2} are wrapped identifiers,
 returns @code{#t} if either (1) @var{id1} and @var{id2} both refer to
 the same binding, or (2) @var{id1} and @var{id2} are both unbound.
@@ -1695,22 +1701,57 @@ to the ``rename'' procedure passed to the er-macro transformer.
 
 Usually you don't need to use this procedure directly, for
 the compare procedure passed to the er-macro transformer is suffice.
+@c JP
+@var{id1}と@var{id2}がともに包まれた識別子で、次のいずれかの場合にのみ@code{#t}を
+返します：
+(1)@var{id1}と@var{id2}が同じ束縛を表しているか、
+(2)@var{id1}と@var{id2}がどちらも束縛されていない。
+
+@var{id1}と@var{id2}の少なくとも一方が包まれた識別子でなければ、この手続きは
+@code{#f}を返します。「裸の」シンボルはレキシカル情報を欠いているため、この手続きでは
+比較することができません。シンボルをレキシカルな情報で包むには、
+er-macro変換器に渡されるrename手続きを通す必要があります。
+
+er-macroを使っている場合、compare手続きで識別子の比較ができるので、
+この手続きを直接使う必要はあまりないでしょう。
+@c COMMON
 @end defun
 
 @defun unwrap-syntax form
-Removes wrappings of identifiers in @var{form}.
+@c EN
+Returns a copy of @var{form}, except
+removing wrappings of identifiers in it.
 The output of macro expanders contain wrapped identifiers,
 which is bothersome to see.  This procedure traverses @var{form}
 and replaces any wrapped identifiers with its original symbol,
 retrieved by @code{identifier->symbol}.
 
 Note that, although the result is an ordinary S-expression easier to read,
-syntactic information is completely lost.  If you distinguish newly inserted
+syntactic information is completely lost.  For example, distinct identifiers
+can become indistinguishable if they happen to have the same name
+(it happens often when you generate temporary variables via
+recursive calls of @code{syntax-rules}).
+If you distinguish newly inserted
 identifiers with the same name, use @code{unravel-syntax}.
+@c JP
+@var{form}の中に含まれる「包まれた識別子」の構文情報を全て剥ぎ取った形での
+@var{form}のコピーを返します。
+マクロ展開器の出力には包まれた識別子が含まれていてとても見づらいです。
+この手続きは@var{form}をトラバースし、包まれた識別子があればそれを
+@code{identifier->symbol}を使って元のシンボルへと戻します。
+
+返り値は通常のS式で読みやすいですが、構文情報が失われていることに注意してください。
+例えば本来異なるはずの識別子がたまたま同じ名前を持っていると、区別ができなくなります
+(@code{syntax-rules}を再帰的に呼び出して一時変数を作るパターンでは
+そういうことが頻繁に起きます)。
+新たに挿入された同名の識別子を区別したい場合は、@code{unravel-syntax}を使ってください。
+@c COMMON
 @end defun
 
 @defun unravel-syntax form
-Removes wrappings of identifiers in @var{form}, but attach suffix
+@c EN
+Returns a copy of @var{form} while
+removing wrappings of identifiers in it, but attach suffix
 if two distinct identifiers have the same name, so that they won't
 be confused.
 
@@ -1727,6 +1768,24 @@ for the example of output of @code{unravel-syntax}.
 
 Note that the global identifiers becomes bare symbols, so you are still
 unable to tell which module the global identifiers refer to.
+@c JP
+@var{form}中に含まれる包まれた識別子を裸のシンボルに変換した形での
+@var{form}のコピーを返しますが、同じ名前を持つ異なる識別子があった場合は
+区別できるようにサフィックスをつけた名前に変更します。
+
+@code{syntax-rules}を再帰的に呼び出して一時変数を生成する定石では、
+新たに作られる変数は全て同じ名前になってしまいますが、それぞれ作られるタイミングが
+違うために異なる識別子として扱われます。その結果を@code{unwrap-syntax}に渡して
+構文情報を剥ぎ取ると、それらの識別子同士の区別ができなくなってしまいます。
+
+この手続きはいくつかのマクロを扱うユーティリティ関数内で自動的に呼ばれます。
+@code{unravel-syntax}の出力例は、
+@ref{Tracing macro expansion}や@ref{Expanding macros manually}を
+参照してください。
+
+ただし、グローバルな識別子は元のシンボルへと変換されるので、
+どのモジュールの束縛を指しているかの情報は失われます。
+@c COMMON
 @end defun
 
 
