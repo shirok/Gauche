@@ -4770,6 +4770,7 @@ Returns two values, the result of
 
 @deftp {Module} scheme.hash-table
 @mdindex scheme.hash-table
+@c EN
 This module provides hash table library, originally defined as @code{srfi-125}.
 
 Hash table provided with this module is the same as Gauche's built-in
@@ -4780,12 +4781,34 @@ built-in but under aliases.
 
 With this module, procedures are provided as defined in R7RS.  Use this
 module when you're writing portable code.
+@c JP
+このモジュールは、元々@code{srfi-125}で定義されていたハッシュテーブルのライブラリです。
 
+このモジュールで提供されるハッシュテーブルはGaucheの組み込みハッシュテーブルそのものです。
+ただ、srfi-125はいくつか、Gaucheの元々持っていた手続きと名前が衝突する手続きを
+定義しています。Gaucheはそれらの手続きに関しては異なる名前で組み込み手続きを
+用意しています。組み込みのハッシュテーブル手続きについては
+@ref{Hashtables}を参照してください。
+
+このモジュールを使うと、手続きはR7RSで定義されたとおりの動作になります。
+ポータブルなコードを書く際にこのモジュールを使うと良いでしょう。
+@c COMMON
+
+@c EN
 Srfi-125 also defines compatibility procedures with srfi-69, although saying
 they're deprecated.  Those deprecated procedures are supported in this
 module, too.
+@c JP
+srfi-125はまた、srfi-69で定義されたいくつかの手続きを、非推奨ながら
+互換性のためにサポートしています。これらの非推奨手続きも
+このモジュールで提供されます。
+@c COMMON
 
+@c EN
 The following procedures are the same as Gauche's built-in.
+@c JP
+以下の手続きはGaucheの組み込みと同じです。
+@c COMMON
 @example
 hash-table-unfold   hash-table?       hash-table-contains?
 hash-table-exists?  hash-table-empty? hash-table=?
@@ -4797,10 +4820,19 @@ hash-table->alist   hash-table-union! hash-table-intersection!
 hash-table-difference!                hash-table-xor!
 @end example
 
+@c EN
 @xref{Hashtables}, for the description of those procedures.
+@c JP
+これらの手続きの説明は@ref{Hashtables}を参照してください。
+@c COMMON
 
+@c EN
 The following procedures are also provided as Gauche's built-in,
 but with @code{-r7} suffix.
+@c JP
+以下の手続きは、Gaucheの組み込みでは@code{-r7}サフィックスをつけた名前で
+提供されています。
+@c COMMON
 @example
 hash-table         hash-table-delete! hash-table-intern!
 hash-table-update! hash-table-pop!    hash-table-find
@@ -4814,20 +4846,36 @@ hash-table-prune!
 @defunx make-hash-table equal-proc hash-proc arg @dots{}
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This enhances built-in @code{make-hash-table} with the second form,
 that takes two procedures instead of one comparator, as srfi-69.
 
-In the srfi-69 form, equal-proc is a procedure taking two keys
-to see if they are the same, and hash-proc is a procedure taking
+In the srfi-69 form, @var{equal-proc} is a procedure taking two keys
+to see if they are the same, and @var{hash-proc} is a procedure taking
 a key to calculate its hash value (nonnegative fixnum).
 The compatibility form is deprecated and should be avoided in the new code.
 
-The optional @var{arg} @var{dots} are ignored in Gauche.
+The optional @var{arg} @var{dots} are implementation-dependent,
+and specify various properties of the created hash table.
+They are ignored in Gauche.
+@c JP
+この手続きは、組み込みの@code{make-hash-table}を拡張して二番目の形式を許したものです。
+二番目の形式は比較器のかわりに二つの手続きをとるもので、srfi-69互換です。
+
+srfi-69互換形式では、@var{equal-proc}はふたつのキーを取りそれが等しいかどうかを
+返す述語、@var{hash-proc}は一つのキーを取りそのハッシュ値を非負の正確な整数で
+返す手続きです。
+この互換係式は非推奨で、新たなコードでは使うべきではありません。
+
+省略可能な@var{arg} @var{dots}引数は実装依存で、作られるハッシュテーブルの
+様々な特性を指定するものです。Gaucheでは無視されます。
+@c COMMON
 @end defun
 
 @defun hash-table cmpr key value @dots{}
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-r7} (@pxref{Hashtables}).
 
 Construct a new hash table with key-comparator @var{cmpr}.  It is
@@ -4840,26 +4888,56 @@ hash table if the implementation supports one.  Gauche doesn't provide
 immutable hash tables (we do have immutable map
 instead, @pxref{Immutable map}), but when you're writing a portable
 program, be careful not to modify the table returned by this procedure.
+@c JP
+これは組み込みの@code{hash-table-r7}と同じです(@ref{Hashtables}参照)。
+
+キーの比較とハッシュに比較器@var{cmpr}を使う新たなハッシュテーブルを作って返します。
+また、ハッシュテーブルの内容は@var{key} @var{value} @dots{}によって初期化されます。
+ここで引数はキーと値が交互に並んだものです。@var{key} @var{value} @dots{}部分の
+長さが偶数でなければエラーが投げられます。
+
+srfi-125では、この手続きは(実装がサポートしていれば)変更不可なハッシュテーブルを
+返すと規定されています。Gaucheは変更不可なハッシュテーブルを持っていないので、
+変更可能なハッシュテーブルが返りますが、ポータブルなコードを書く際には
+返されたテーブルを変更しないようにしてください。
+なお、Gaucheも変更不可なマップは持っています (@ref{Immutable map}参照)。
+@c COMMON
 @end defun
 
 @defun alist->hash-table alist cmpr arg @dots{}
 @defunx alist->hash-table equal-proc hash-proc cmpr arg @dots{}
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This enhances built-in @code{alist->hash-table} with the second form,
 that takes two procedures instead of one comparator, as srfi-69.
 
-In the srfi-69 form, equal-proc is a procedure taking two keys
-to see if they are the same, and hash-proc is a procedure taking
+In the srfi-69 form, @var{equal-proc} is a procedure taking two keys
+to see if they are the same, and @var{hash-proc} is a procedure taking
 a key to calculate its hash value (nonnegative fixnum).
 The compatibility form is deprecated and should be avoided in the new code.
 
-The optional @var{arg} @var{dots} are ignored in Gauche.
+The optional @var{arg} @var{dots} are implementation-dependent,
+and specify various properties of the created hash table.
+They are ignored in Gauche.
+@c JP
+この手続きは、組み込みの@code{alist->hash-table}を拡張して二番目の形式を許したものです。
+二番目の形式は比較器のかわりに二つの手続きをとるもので、srfi-69互換です。
+
+srfi-69互換形式では、@var{equal-proc}はふたつのキーを取りそれが等しいかどうかを
+返す述語、@var{hash-proc}は一つのキーを取りそのハッシュ値を非負の正確な整数で
+返す手続きです。
+この互換係式は非推奨で、新たなコードでは使うべきではありません。
+
+省略可能な@var{arg} @var{dots}引数は実装依存で、作られるハッシュテーブルの
+様々な特性を指定するものです。Gaucheでは無視されます。
+@c COMMON
 @end defun
 
 @defun hash-table-delete! ht key @dots{}
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-delete!-r7}.
 
 Deletes entries associated with the given @var{key}s from the
@@ -4869,17 +4947,36 @@ Returns the number of entries that are actually deleted.
 It differs from built-in @code{hash-table-delete!} in two points:
 The built-in one can take exactly one @var{key}, and returns
 a boolean indicating if the entry is actually deleted.
+@c JP
+これは組み込みの@code{hash-table-delete!-r7}と同じです。
+
+ハッシュテーブル@var{ht}から、@var{key} @dots{}を持つエントリを削除します。
+@var{ht}が@var{key}を持っていなくてもエラーにはなりません。
+実際に削除されたエントリの数を返します。
+
+組み込みの@code{hash-table-delete!}と違うのは次の2点です。
+組み込みはkeyをひとつしか取らず、そえが実際に削除されたかどうかをブール値で返します。
+@c COMMON
 @end defun
 
 @defun hash-table-intern! ht key failure
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-intern!-r7}.
 
 Search @var{key} in @var{ht}.  If it is found, returns the associated
 value.  If it is not found, call @var{failure} without artuments,
 and insert a new entry associating @var{key} and the value
 @var{failure} returns, and returns that new value.
+@c JP
+これは組み込みの@code{hash-table-intern!-r7}と同じです。
+
+ハッシュテーブル@var{ht}からキー@var{key}を持つエントリを探し、
+見つかった場合はその値を返します。見つからなかった場合は、手続き@var{failure}を
+引数無しで呼び出し、その返り値を@var{key}に結びついた新たなエントリとして
+@var{ht}に追加し、また@code{hash-table-intern!}の返り値とします。
+@c COMMON
 @end defun
 
 @defun hash-table-update! ht key updater :optional failure success
