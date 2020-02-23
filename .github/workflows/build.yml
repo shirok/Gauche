@@ -64,10 +64,10 @@ jobs:
         include:
         - arch: x86_64
           bit: 64
-          progpath: C:\Program Files
+          devtool_path: D:\devtool
         - arch: i686
           bit: 32
-          progpath: C:\Program Files (x86)
+          devtool_path: D:\devtool
     env:
       MSYSTEM: MINGW${{ matrix.bit }}
       MSYS2_PATH_TYPE: inherit
@@ -75,7 +75,7 @@ jobs:
       MSYS2_TARBALL_URL: http://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20190524.tar.xz
       GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
       GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
-      GAUCHE_PATH: ${{ matrix.progpath }}\Gauche\bin
+      GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
     steps:
     - run: git config --global core.autocrlf false
     - uses: actions/checkout@v2
@@ -83,10 +83,8 @@ jobs:
       run: |
         #del alias:curl
         curl -f -o msys2.tar.xz $env:MSYS2_TARBALL_URL
-        #tar xf msys2.tar.xz
-        bash -c "7z x msys2.tar.xz -so | 7z x -aoa -si -ttar"
-        dir
-        mv msys64 D:\
+        #tar xf msys2.tar.xz -C /d/
+        bash -c "7z x msys2.tar.xz -so | 7z x -aoa -si -ttar -oD:"
         dir D:\
     - name: Add MSYS2 path
       run: |
@@ -117,7 +115,7 @@ jobs:
         echo $env:GAUCHE_INSTALLER
         curl -f -L -o $env:GAUCHE_INSTALLER $env:GAUCHE_INSTALLER_URL/$env:GAUCHE_INSTALLER
         dir
-        msiexec /i $env:GAUCHE_INSTALLER /quiet /qn /norestart
+        msiexec /a $env:GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}
     - name: Add Gauche path
       run: |
         $env:PATH = "$env:GAUCHE_PATH;$env:PATH"
