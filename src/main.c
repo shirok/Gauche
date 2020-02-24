@@ -222,6 +222,7 @@ void version(void)
     printf("(command \"gosh\")\n");
     printf("(scheme.id gauche)\n");
     printf("(languages scheme r5rs r7rs)\n");
+    printf("(encodings %s)\n", SCM_CHAR_ENCODING_NAME);
     printf("(website \"https://practical-scheme.net/gauche\")\n");
     printf("(build.platform \"%s\")\n", Scm_HostArchitecture());
     exit(0);
