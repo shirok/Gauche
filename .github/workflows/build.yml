@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
     - uses: actions/checkout@v2
     - name: Install Gauche
@@ -15,22 +16,21 @@ jobs:
         ./get-gauche.sh --auto --home
     - name: Add Gauche path
       run: |
-        PATH="$HOME/bin:$PATH"
-        echo "::set-env name=PATH::$PATH"
+        echo "::set-env name=PATH::$HOME/bin:$PATH"
     - name: Run Gauche once
       run: |
-        echo $PATH
         gosh -V
     - name: Install tools
       run: |
         sudo apt-get install libgdbm-dev
     - name: Self-host-test
       run: |
-        pwd
+        gcc -v
         ./DIST self-host-test
 
   build-osx:
     runs-on: macos-latest
+    timeout-minutes: 60
     steps:
     - uses: actions/checkout@v2
     - name: Install Gauche
@@ -41,22 +41,21 @@ jobs:
         ./get-gauche.sh --auto --home
     - name: Add Gauche path
       run: |
-        PATH="$HOME/bin:$PATH"
-        echo "::set-env name=PATH::$PATH"
+        echo "::set-env name=PATH::$HOME/bin:$PATH"
     - name: Run Gauche once
       run: |
-        echo $PATH
         gosh -V
     - name: Install tools
       run: |
         brew install automake
     - name: Self-host-test
       run: |
-        pwd
+        gcc -v
         ./DIST self-host-test
 
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -88,14 +87,11 @@ jobs:
         dir D:\
     - name: Add MSYS2 path
       run: |
-        $env:PATH = "$env:MSYS2_PATH_LIST;$env:PATH"
-        echo "::set-env name=PATH::$env:PATH"
+        echo "::set-env name=PATH::$env:MSYS2_PATH_LIST;$env:PATH"
     - name: Run MSYS2 once
       run: |
         bash -lc @'
           pwd
-          uname -m
-          uname -a
           echo $PATH
         '@
     - name: Install MinGW-w64
@@ -116,8 +112,7 @@ jobs:
         msiexec /a $env:GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}
     - name: Add Gauche path
       run: |
-        $env:PATH = "$env:GAUCHE_PATH;$env:PATH"
-        echo "::set-env name=PATH::$env:PATH"
+        echo "::set-env name=PATH::$env:GAUCHE_PATH;$env:PATH"
     - name: Run Gauche once
       run: |
         gosh -V
@@ -137,14 +132,15 @@ jobs:
         bash -lc @'
           pwd
           cd $GITHUB_WORKSPACE
+          pwd
           gcc -v
           ./DIST gen
           src/mingw-dist.sh
         '@
     - name: Test
+      timeout-minutes: 15
       run: |
         bash -lc @'
-          pwd
           cd $GITHUB_WORKSPACE
           make check
         '@
