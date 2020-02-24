@@ -1,3 +1,8 @@
+2020-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm, src/main.c: Support srfi-176
+	  Cf. https://github.com/shirok/Gauche/pull/607 by @lassik
+
 2020-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm, src/gauche.h: Align statically allocated

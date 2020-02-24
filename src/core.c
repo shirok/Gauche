@@ -521,6 +521,10 @@ init_cond_features()
         { "little-endian", NULL }, /* NB: r7rs say nothing on mixed endian */
 #endif
 
+        /* SRFIs that are not libraries */
+        { "srfi-22", NULL },    /* Scheme scripts */
+        { "srfi-176", NULL },   /* Version flag */
+        
         /* Threads */
 #if   defined(GAUCHE_USE_PTHREADS)
         { "gauche.sys.threads", "gauche.threads" },
