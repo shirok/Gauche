@@ -225,6 +225,10 @@ void version(void)
     printf("(encodings %s)\n", SCM_CHAR_ENCODING_NAME);
     printf("(website \"https://practical-scheme.net/gauche\")\n");
     printf("(build.platform \"%s\")\n", Scm_HostArchitecture());
+    printf("(scheme.path");
+    for (ScmObj p = Scm_GetLoadPath(); SCM_PAIRP(p); p = SCM_CDR(p))
+        printf(" \"%s\"", Scm_GetStringConst(SCM_STRING(SCM_CAR(p))));
+    printf(")\n");
     exit(0);
 }
 
