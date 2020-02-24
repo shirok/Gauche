@@ -138,7 +138,6 @@ jobs:
           src/mingw-dist.sh
         '@
     - name: Test
-      timeout-minutes: 15
       run: |
         bash -lc @'
           cd $GITHUB_WORKSPACE
