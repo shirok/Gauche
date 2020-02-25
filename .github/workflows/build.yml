@@ -6,6 +6,9 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      TESTLOG_NAME: testlog-linux
+      TESTLOG_PATH: testlog-linux
     steps:
     - uses: actions/checkout@v2
     - name: Install Gauche
@@ -27,10 +30,24 @@ jobs:
       run: |
         gcc -v
         ./DIST self-host-test
+    - name: Copy testlog
+      if: success() || failure()
+      run: |
+        mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
+        cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+    - name: Upload testlog
+      if: success() || failure()
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.TESTLOG_NAME }}
+        path: ${{ env.TESTLOG_PATH }}
 
   build-osx:
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      TESTLOG_NAME: testlog-osx
+      TESTLOG_PATH: testlog-osx
     steps:
     - uses: actions/checkout@v2
     - name: Install Gauche
@@ -52,6 +69,17 @@ jobs:
       run: |
         gcc -v
         ./DIST self-host-test
+    - name: Copy testlog
+      if: success() || failure()
+      run: |
+        mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
+        cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+    - name: Upload testlog
+      if: success() || failure()
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.TESTLOG_NAME }}
+        path: ${{ env.TESTLOG_PATH }}
 
   build-windows:
     runs-on: windows-latest
@@ -75,6 +103,8 @@ jobs:
       GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
       GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
+      TESTLOG_NAME: testlog-windows-${{ matrix.arch }}
+      TESTLOG_PATH: testlog-windows
     steps:
     - run: git config --global core.autocrlf false
     - uses: actions/checkout@v2
@@ -143,16 +173,21 @@ jobs:
           cd $GITHUB_WORKSPACE
           make check
         '@
+    - name: Copy testlog
+      if: success() || failure()
+      run: |
+        mkdir $env:TESTLOG_PATH/$env:TESTLOG_NAME
+        cp src/test.log $env:TESTLOG_PATH/$env:TESTLOG_NAME
+    - name: Upload testlog
+      if: success() || failure()
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.TESTLOG_NAME }}
+        path: ${{ env.TESTLOG_PATH }}
     #- name: Upload result
     #  if: success() || failure()
     #  uses: actions/upload-artifact@v1
     #  with:
     #    name: Gauche-${{ matrix.arch }}
     #    path: ../Gauche-mingw-dist/Gauche-${{ matrix.arch }}
-    #- name: Upload result2 (for rfc.tls debug)
-    #  if: (success() || failure()) && matrix.arch == 'x86_64'
-    #  uses: actions/upload-artifact@v1
-    #  with:
-    #    name: tls
-    #    path: ext/tls
 
