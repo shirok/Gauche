@@ -31,6 +31,7 @@ jobs:
         gcc -v
         ./DIST self-host-test
     - name: Copy testlog
+      if: success() || failure()
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
         cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
@@ -69,6 +70,7 @@ jobs:
         gcc -v
         ./DIST self-host-test
     - name: Copy testlog
+      if: success() || failure()
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
         cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
@@ -172,6 +174,7 @@ jobs:
           make check
         '@
     - name: Copy testlog
+      if: success() || failure()
       run: |
         mkdir $env:TESTLOG_PATH/$env:TESTLOG_NAME
         cp src/test.log $env:TESTLOG_PATH/$env:TESTLOG_NAME
