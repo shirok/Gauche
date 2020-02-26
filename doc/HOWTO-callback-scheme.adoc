@@ -1,0 +1,78 @@
+# Calling Scheme procedure from C code
+
+A typical code to call a Scheme procedure from C looks like the following.
+(We assume you want to call a Scheme procedure `my-procedure` in
+a module `my-module`):
+
+[source,c]
+----
+{
+    ...
+    static ScmObj x_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(x_proc, "my-procedure", 
+                  Scm_FindModule(SCM_INTERN("my-module"), 0));
+    ...
+
+    ScmObj result = Scm_ApplyRec(x_proc, args);
+    ...
+
+}
+----
+
+The macro `SCM_BIND_PROC` checks `x_proc` is `SCM_UNDEFINED`, and
+if so, fetch the value of `my-procedure` in `my-module` and store
+it in `x_proc`.  You don't need a lock, for the result is idempotent.
+
+The module `my-module` must be loaded before this code.  If you're not
+sure it's the case, you want to call `Scm_Require` before the above code;
+it loads the library if it hasn't been loaded, and it's thread-safe.
+
+Once you obtain the Scheme procedure in `x_proc`, there's a few
+ways to call it.
+
+The easiest way is to use `Scm_ApplyRec`. It takes the Scheme procedure
+and a list of arguments, and receives a single result.  For the zero to
+five arguments case, we have `Scm_ApplyRec0` to `Scm_ApplyRec5`,
+for your convenience.
+
+The `Scm_ApplyRec` family won't trap Scheme errors; that is, if a Scheme
+procedure throws an error, it `longjmp`'s to somewhere outside of your
+routine.  If you allocate some resource in the above scope, it will leak.
+Furthermore, the above code assumes there's *someone* outside of this
+frame that are waiting to catch the error.   If your code is
+called from Gauche runtime, there's a Scheme VM running outside of
+your routine that calls you---so the Scheme VM will handle the error.
+
+If you need to stop the error (either for resource handling or
+there's no VM running outside of your routine), or you need to receive
+more than one results, you have to use `Scm_Apply`:
+
+
+[source,c]
+----
+    ScmEvalPacket packet;
+    int nargs = Scm_Apply(x_proc, args, &packet);
+----
+
+`Scm_Apply` always returns even the Scheme routine throws an error.
+The return value is the number of results, or -1 if there's an error.
+The `packet` structure contains the result(s) or the error thrown:
+
+[source,c]
+----
+typedef struct ScmEvalPacketRec {
+    ScmObj results[SCM_VM_MAX_VALUES];
+    int    numResults;
+    ScmObj exception;
+    ScmModule *module;          /* 'Current module' after evaluation */
+} ScmEvalPacket;
+----
+
+Another caveat of `Scm_ApplyRec` and `Scm_Apply` is that they implicitly
+inserts `reset` to call the Scheme routine---that is, if the Scheme
+routine captures a continuation, the continuation chain is delimited
+by the frame where you call `Scm_ApplyRec` or `Scm_Apply`.  It is inevitable,
+for C routine isn't expect a procedure returns more than once.
+
+To make your C code transparent with continuations, you have to employ
+a technique we call "C continuation".  We'll add explanation later.
