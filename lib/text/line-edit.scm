@@ -711,17 +711,31 @@
          [res2 (move-word! buf 1 #[\w] 0)])
     (if (or res1 res2) 'moved 'unchanged)))
 
-(define (move-beginning-of-line ctx buf key)
+(define (move-beginning-of-buffer ctx buf key)
   (if (not (gap-buffer-gap-at? buf 'beginning))
     (begin (gap-buffer-move! buf 0 'beginning)
            'moved)
     'unchanged))
 
-(define (move-end-of-line ctx buf key)
+(define (move-end-of-buffer ctx buf key)
   (if (not (gap-buffer-gap-at? buf 'end))
     (begin (gap-buffer-move! buf 0 'end)
            'moved)
     'unchanged))
+
+(define (move-beginning-of-line ctx buf key)
+  (match-let1 (lines . col) (buffer-current-line&col buf)
+    (if (zero? col)
+        'unchanged
+        (begin
+          (buffer-set-line&col! buf lines 0)
+          'moved))))
+
+(define (move-end-of-line ctx buf key)
+  (match-let1 (lines . col) (buffer-current-line&col buf)
+    (begin
+      (buffer-set-line&col! buf lines 9999)
+      'moved)))
 
 (define (set-mark-command ctx buf key)
   (set-mark! ctx buf)
@@ -731,7 +745,7 @@
   (if (not (gap-buffer-gap-at? buf 'end))
     (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
            [e (gap-buffer-edit! buf `(d #f ,len))])
-      ;; e contiains (i <pos> <killed-string>)
+      ;; e contains (i <pos> <killed-string>)
       (save-kill-ring ctx (caddr e))
       e)
     'unchanged))
@@ -742,7 +756,7 @@
      ;; NB: the cursor is either on start or on end.  either way,
      ;; after operation the cursor's be at start.
      (rlet1 e (gap-buffer-edit! buf `(d ,start ,(- end start)))
-       ;; e contiains (i <pos> <killed-string>)
+       ;; e contains (i <pos> <killed-string>)
        (save-kill-ring ctx (caddr e)))]
     [_ 'unchanged]))
 
@@ -752,6 +766,16 @@
      (save-kill-ring ctx (gap-buffer->string buf start end))
      'visible] ; this clears selection
     [_ 'unchanged]))
+
+(define (kill-word ctx buf key)
+  (set-mark! ctx buf)
+  (forward-word ctx buf key)
+  (kill-region ctx buf key))
+
+(define (backward-kill-word ctx buf key)
+  (set-mark! ctx buf)
+  (backward-word ctx buf key)
+  (kill-region ctx buf key))
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
@@ -917,9 +941,9 @@
               `(,(alt #\9) . ,undefined-command)
               `(,(alt #\:) . ,undefined-command)
               `(,(alt #\;) . ,undefined-command)
-              `(,(alt #\<) . ,undefined-command)
+              `(,(alt #\<) . ,move-beginning-of-buffer)
               `(,(alt #\=) . ,undefined-command)
-              `(,(alt #\>) . ,undefined-command)
+              `(,(alt #\>) . ,move-end-of-buffer)
               `(,(alt #\?) . ,undefined-command)
 
               
@@ -960,7 +984,7 @@
               `(,(alt #\a) . ,undefined-command)
               `(,(alt #\b) . ,backward-word)
               `(,(alt #\c) . ,undefined-command)
-              `(,(alt #\d) . ,undefined-command)
+              `(,(alt #\d) . ,kill-word)
               `(,(alt #\e) . ,undefined-command)
               `(,(alt #\f) . ,forward-word)
               `(,(alt #\g) . ,undefined-command)
@@ -988,7 +1012,7 @@
               `(,(alt #\}) . ,undefined-command)
               `(,(alt #\)) . ,undefined-command)
               `(,(alt #\_) . ,undefined-command)
-              `(,(alt #\x7f) . ,undefined-command)
+              `(,(alt #\x7f) . ,backward-kill-word)
 
               `(#\x7f . ,delete-backward-char)
 
