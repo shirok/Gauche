@@ -19,8 +19,8 @@ a module `my-module`):
 }
 ----
 
-The macro `SCM_BIND_PROC` checks `x_proc` is `SCM_UNDEFINED`, and
-if so, fetch the value of `my-procedure` in `my-module` and store
+The macro `SCM_BIND_PROC` checks whether `x_proc` is `SCM_UNDEFINED`, and
+if so, fetches the value of `my-procedure` in `my-module` and stores
 it in `x_proc`.  You don't need a lock, for the result is idempotent.
 
 The module `my-module` must be loaded before this code.  If you're not
@@ -36,9 +36,9 @@ five arguments case, we have `Scm_ApplyRec0` to `Scm_ApplyRec5`,
 for your convenience.
 
 The `Scm_ApplyRec` family won't trap Scheme errors; that is, if a Scheme
-procedure throws an error, it `longjmp`'s to somewhere outside of your
+procedure throws an error, it `longjmp`s to somewhere outside of your
 routine.  If you allocate some resource in the above scope, it will leak.
-Furthermore, the above code assumes there's *someone* outside of this
+Furthermore, the above code assumes there's **someone** outside of this
 frame that are waiting to catch the error.   If your code is
 called from Gauche runtime, there's a Scheme VM running outside of
 your routine that calls you---so the Scheme VM will handle the error.
