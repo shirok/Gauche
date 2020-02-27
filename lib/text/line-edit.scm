@@ -751,13 +751,13 @@
   'moved)
 
 (define (kill-line ctx buf key)
-  (if (not (gap-buffer-gap-at? buf 'end))
-    (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
-           [e (gap-buffer-edit! buf `(d #f ,len))])
-      ;; e contains (i <pos> <killed-string>)
-      (save-kill-ring ctx (caddr e))
-      e)
-    'unchanged))
+  (cond
+   [(gap-buffer-gap-at? buf 'end)
+    'unchanged]
+   [(eqv? (gap-buffer-ref buf (gap-buffer-pos buf)) #\newline)
+    (macro! ctx (ctrl #\d))]
+   [else
+    (macro! ctx (ctrl #\@) (ctrl #\e) (ctrl #\w))]))
 
 (define (kill-region ctx buf key)
   (match (selected-range ctx buf)
