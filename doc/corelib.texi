@@ -23226,9 +23226,20 @@ SRFI-98 (@ref{Accessing environment variables}参照) にも、
 @defunx gauche-site-architecture-directory
 @c EN
 These functions returns a string that tells information about Gauche
-interpreter itself.
+runtime itself.
 @c JP
-これらの手続きはGaucheインタプリタの情報を文字列で返します。
+これらの手続きはGaucheランタイムの情報を文字列で返します。
+@c COMMON
+@end defun
+
+@defun version-alist
+[SRFI-176]
+@c EN
+Returns an alist of various runtime information.
+The information is the same as what displayed with @code{gosh -V}.
+@c JP
+様々なランタイムの情報をalistで返します。
+@code{gosh -V}で表示される情報と同じです。
 @c COMMON
 @end defun
 

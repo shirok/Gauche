@@ -59,6 +59,7 @@ SCMFILES = \
        srfi-151.scm srfi-152.scm srfi-154.scm srfi-155.scm srfi-158.scm \
        srfi-159.scm srfi-159/*.sld srfi-159/*.scm srfi/159/*.scm \
        srfi-160.scm srfi/*.scm srfi/160/*.scm srfi-162.scm srfi-173.scm \
+       srfi-176.scm \
        slib.scm	 \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \

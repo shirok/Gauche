@@ -1227,12 +1227,14 @@ which is a thin layer on top of @code{gauche.hook} (@pxref{Hooks})
 それ自体は@code{gauche.hook}の上にかぶせた薄いレイヤです (@ref{Hooks}参照)。
 
 
-srfi-176
+srfi-176, srfi-176
 ()
 
 Version flag
 Supported as a command-line flag of @code{gosh}.
+The @code{version-alist} procedure is built-in.
 
 バージョンフラグ
 @code{gosh}のコマンドライン引数としてサポートされます。
+@code{version-alist}手続きは組み込みです。
 
