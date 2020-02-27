@@ -618,6 +618,17 @@
 (define-cproc gauche-site-architecture-directory () Scm_SiteArchitectureDirectory)
 (define-cproc gauche-dso-suffix () ::<const-cstring> (return SHLIB_SO_SUFFIX))
 
+;; srfi-176
+(define (version-alist)
+  `((version ,(gauche-version))
+    (command "gosh")
+    (scheme.id gauche)
+    (languages scheme r5rs r7rs)
+    (encodings ,(gauche-character-encoding))
+    (website "https://practical-scheme.net/gauche")
+    (build.platform ,(gauche-architecture))
+    (scheme.path ,@*load-path*)))
+
 (select-module gauche.internal)
 (define-cproc %gauche-runtime-directory () Scm__RuntimeDirectory)
 (define-cproc %gauche-replace-runtime-directory (str::<const-cstring>)

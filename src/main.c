@@ -218,17 +218,13 @@ void version(void)
     printf("Gauche scheme shell, version %s [%s%s], %s\n",
            GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT,
            Scm_HostArchitecture());
-    printf("(version \"%s\")\n", GAUCHE_VERSION);
-    printf("(command \"gosh\")\n");
-    printf("(scheme.id gauche)\n");
-    printf("(languages scheme r5rs r7rs)\n");
-    printf("(encodings %s)\n", SCM_CHAR_ENCODING_NAME);
-    printf("(website \"https://practical-scheme.net/gauche\")\n");
-    printf("(build.platform \"%s\")\n", Scm_HostArchitecture());
-    printf("(scheme.path");
-    for (ScmObj p = Scm_GetLoadPath(); SCM_PAIRP(p); p = SCM_CDR(p))
-        printf(" \"%s\"", Scm_GetStringConst(SCM_STRING(SCM_CAR(p))));
-    printf(")\n");
+    static ScmObj version_alist_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(version_alist_proc, "version-alist", Scm_GaucheModule());
+    ScmObj alist = Scm_ApplyRec0(version_alist_proc), cp;
+
+    SCM_FOR_EACH(cp, alist) {
+        Scm_Printf(SCM_CUROUT, "%S\n", SCM_CAR(cp));
+    }
     exit(0);
 }
 

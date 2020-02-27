@@ -1,3 +1,9 @@
+2020-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (version-alist): srfi-176 defines Scheme proc
+	  to retrieve this info.
+	* src/main.c (version): Use version-alist to generate output.
+
 2020-02-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfis.scm, src/main.c: Support srfi-176
