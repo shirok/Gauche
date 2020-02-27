@@ -31,12 +31,12 @@ jobs:
         gcc -v
         ./DIST self-host-test
     - name: Copy testlog
-      if: success() || failure()
+      if: always()
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
         cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
     - name: Upload testlog
-      if: success() || failure()
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         name: ${{ env.TESTLOG_NAME }}
@@ -70,12 +70,12 @@ jobs:
         gcc -v
         ./DIST self-host-test
     - name: Copy testlog
-      if: success() || failure()
+      if: always()
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
         cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
     - name: Upload testlog
-      if: success() || failure()
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         name: ${{ env.TESTLOG_NAME }}
@@ -110,7 +110,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install MSYS2
       run: |
-        #del alias:curl
         curl -f -o msys2.tar.xz $env:MSYS2_TARBALL_URL
         #tar xf msys2.tar.xz -C /d/
         bash -c "7z x msys2.tar.xz -so | 7z x -aoa -si -ttar -oD:"
@@ -132,14 +131,13 @@ jobs:
         '@
     - name: Install Gauche
       run: |
-        #del alias:curl
         $env:GAUCHE_INSTALLER_VERSION = curl -f $env:GAUCHE_VERSION_URL
         echo $env:GAUCHE_INSTALLER_VERSION
         $env:GAUCHE_INSTALLER = "Gauche-mingw-$env:GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi"
         echo $env:GAUCHE_INSTALLER
         curl -f -L -o $env:GAUCHE_INSTALLER $env:GAUCHE_INSTALLER_URL/$env:GAUCHE_INSTALLER
         dir
-        msiexec /a $env:GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}
+        cmd.exe /c start /wait msiexec /a $env:GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}
     - name: Add Gauche path
       run: |
         echo "::set-env name=PATH::$env:GAUCHE_PATH;$env:PATH"
@@ -174,18 +172,21 @@ jobs:
           make check
         '@
     - name: Copy testlog
-      if: success() || failure()
+      if: always()
       run: |
-        mkdir $env:TESTLOG_PATH/$env:TESTLOG_NAME
-        cp src/test.log $env:TESTLOG_PATH/$env:TESTLOG_NAME
+        bash -lc @'
+          cd $GITHUB_WORKSPACE
+          mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
+          cp src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+        '@
     - name: Upload testlog
-      if: success() || failure()
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         name: ${{ env.TESTLOG_NAME }}
         path: ${{ env.TESTLOG_PATH }}
     #- name: Upload result
-    #  if: success() || failure()
+    #  if: always()
     #  uses: actions/upload-artifact@v1
     #  with:
     #    name: Gauche-${{ matrix.arch }}
