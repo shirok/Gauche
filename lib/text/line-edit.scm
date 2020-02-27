@@ -658,6 +658,9 @@
   (let1 ch (getch (~ ctx'console)) ; TODO: octal digits input
     (gap-buffer-edit! buf `(i #f ,(x->string ch)))))
 
+(define (insert-parentheses ctx buf key)
+  (macro! ctx #\( #\) (ctrl #\b)))
+
 (define (commit-input ctx buf key)
   'commit)
 
@@ -930,7 +933,7 @@
               `(,(alt #\%) . ,undefined-command)
               `(,(alt #\&) . ,undefined-command)
               `(,(alt #\') . ,undefined-command)
-              `(,(alt #\() . ,undefined-command)
+              `(,(alt #\() . ,insert-parentheses)
               `(,(alt #\)) . ,undefined-command)
               `(,(alt #\*) . ,undefined-command)
               `(,(alt #\+) . ,undefined-command)
