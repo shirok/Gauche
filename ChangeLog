@@ -1,5 +1,8 @@
 2020-02-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/line-edit.scm (macro!): Keystrokes macro feature by @pclouds
+	  https://github.com/shirok/Gauche/pull/612
+
 	* src/compile-1.scm (define-hybrid-syntax): Renamed
 	  define-inline/syntax, which is a name from implementor's viewpoint
 	  (we use the same mechanism to handle it as define-inline) but rather
