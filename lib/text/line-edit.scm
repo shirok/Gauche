@@ -132,6 +132,9 @@
    (undo-stack :init-form (make-queue))
    (redo-queue :init-form (make-queue))
 
+   ;; Keystroke queue
+   (keystroke-queue :init-form (make-queue))
+
    ;; History
    ;; Global history is kept in the ring buffer, index 0 being the most recent.
    ;; History-pos is the index to the last recalled history; -1 indicates
@@ -197,7 +200,9 @@
          (let* ([redisp (if (and redisp (not (chready? con)))
                           (begin (redisplay ctx buffer) #f)
                           redisp)]
-                [ch (getch con)]
+                [ch (if (queue-empty? (~ ctx'keystroke-queue))
+                      (getch con)
+                      (queue-pop! (~ ctx'keystroke-queue)))]
                 [h (hash-table-get (~ ctx'keymap) ch ch)])
            (cond
             [(eof-object? h) (eofread)]
@@ -431,6 +436,10 @@
 (define (ctrl k)
   (integer->char (- (logand (char->integer k) (lognot #x20)) #x40)))
 (define (alt k) `(ALT ,k))
+
+(define (macro! ctx . keys)
+  (apply enqueue! (~ ctx'keystroke-queue) keys)
+  'nop)
 
 ;;
 ;; Selection
