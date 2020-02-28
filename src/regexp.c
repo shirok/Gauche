@@ -1011,6 +1011,32 @@ static ScmObj rc1(regcomp_ctx *ctx)
     return ast;
 }
 
+static void rc_casefold(ScmObj *set, int complement)
+{
+    int set1 = SCM_CHAR_SET_LOWER;
+    int set2 = SCM_CHAR_SET_UPPER;
+    int set3 = SCM_CHAR_SET_TITLE;
+    int set4 = SCM_CHAR_SET_LC;
+    if (complement) {
+        set1 = -set1;
+        set2 = -set2;
+        set3 = -set3;
+        set4 = -set4;
+    }
+
+    ScmCharSet* cur = SCM_CHAR_SET(*set);
+    if (SCM_CHAR_SET_LARGE_P(cur) &&
+        (Scm_CharSetEq(cur, SCM_CHAR_SET(Scm_GetStandardCharSet(set1))) ||
+         Scm_CharSetEq(cur, SCM_CHAR_SET(Scm_GetStandardCharSet(set2))) ||
+         Scm_CharSetEq(cur, SCM_CHAR_SET(Scm_GetStandardCharSet(set3))))) {
+            *set = Scm_MakeEmptyCharSet();
+            Scm_CharSetAdd(SCM_CHAR_SET(*set),
+                           SCM_CHAR_SET(Scm_GetStandardCharSet(set4)));
+    }
+
+    Scm_CharSetCaseFold(SCM_CHAR_SET(*set));
+}
+
 /* character range */
 static ScmObj rc_charset(regcomp_ctx *ctx)
 {
@@ -1020,7 +1046,7 @@ static ScmObj rc_charset(regcomp_ctx *ctx)
         Scm_Error("bad charset spec in pattern: %S", ctx->pattern);
     }
     if (ctx->casefoldp) {
-        Scm_CharSetCaseFold(SCM_CHAR_SET(set));
+        rc_casefold(&set, complement);
     }
     Scm_CharSetFreezeX(SCM_CHAR_SET(set));
     rc_register_charset(ctx, SCM_CHAR_SET(set));

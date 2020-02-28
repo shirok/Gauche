@@ -884,5 +884,9 @@
        (cond ((rxmatch (string->regexp "о[А-Я]а") "она")
               => rxmatch-substring)
              (else #f)))
+(test* "regexp/unicode-ci" "σζ\x01C5;"
+       (cond ((rxmatch (string->regexp "[[:LOWER:]]*" :case-fold #t) "σζ\x01C5;")
+              => rxmatch-substring)
+             (else #f)))
 
 (test-end)
