@@ -132,6 +132,9 @@
    (undo-stack :init-form (make-queue))
    (redo-queue :init-form (make-queue))
 
+   ;; Keystroke queue
+   (keystroke-queue :init-form (make-queue))
+
    ;; History
    ;; Global history is kept in the ring buffer, index 0 being the most recent.
    ;; History-pos is the index to the last recalled history; -1 indicates
@@ -182,11 +185,11 @@
        ;;   undone - the command undid the change.  we record the fact,
        ;;            for the consecutive undo behaves differently than
        ;;            other commands.
-       ;;   <edit-command> - the commad changed the buffer contents,
-       ;;        and the return value is an edit command to undo the
-       ;;        change.
+       ;;   <edit-command> - the command changed the buffer contents,
+       ;;            and the return value is an edit command to undo the
+       ;;            change.
        ;;   (yanked <edit-command>) - this is only returned by yank and yank-pop
-       ;;        command.
+       ;;            command.
        ;;
        ;; If the key is a character and it is not registered in the table,
        ;; we treat as if it is associated to the self-insert-command.
@@ -197,7 +200,9 @@
          (let* ([redisp (if (and redisp (not (chready? con)))
                           (begin (redisplay ctx buffer) #f)
                           redisp)]
-                [ch (getch con)]
+                [ch (if (queue-empty? (~ ctx'keystroke-queue))
+                      (getch con)
+                      (queue-pop! (~ ctx'keystroke-queue)))]
                 [h (hash-table-get (~ ctx'keymap) ch ch)])
            (cond
             [(eof-object? h) (eofread)]
@@ -432,6 +437,10 @@
   (integer->char (- (logand (char->integer k) (lognot #x20)) #x40)))
 (define (alt k) `(ALT ,k))
 
+(define (macro! ctx . keys)
+  (apply enqueue! (~ ctx'keystroke-queue) keys)
+  'nop)
+
 ;;
 ;; Selection
 ;;
@@ -649,6 +658,9 @@
   (let1 ch (getch (~ ctx'console)) ; TODO: octal digits input
     (gap-buffer-edit! buf `(i #f ,(x->string ch)))))
 
+(define (insert-parentheses ctx buf key)
+  (macro! ctx #\( #\) (ctrl #\b)))
+
 (define (commit-input ctx buf key)
   'commit)
 
@@ -742,13 +754,13 @@
   'moved)
 
 (define (kill-line ctx buf key)
-  (if (not (gap-buffer-gap-at? buf 'end))
-    (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
-           [e (gap-buffer-edit! buf `(d #f ,len))])
-      ;; e contains (i <pos> <killed-string>)
-      (save-kill-ring ctx (caddr e))
-      e)
-    'unchanged))
+  (cond
+   [(gap-buffer-gap-at? buf 'end)
+    'unchanged]
+   [(eqv? (gap-buffer-ref buf (gap-buffer-pos buf)) #\newline)
+    (macro! ctx (ctrl #\d))]
+   [else
+    (macro! ctx (ctrl #\@) (ctrl #\e) (ctrl #\w))]))
 
 (define (kill-region ctx buf key)
   (match (selected-range ctx buf)
@@ -768,14 +780,10 @@
     [_ 'unchanged]))
 
 (define (kill-word ctx buf key)
-  (set-mark! ctx buf)
-  (forward-word ctx buf key)
-  (kill-region ctx buf key))
+  (macro! ctx (ctrl #\@) (alt #\f) (ctrl #\w)))
 
 (define (backward-kill-word ctx buf key)
-  (set-mark! ctx buf)
-  (backward-word ctx buf key)
-  (kill-region ctx buf key))
+  (macro! ctx (ctrl #\@) (alt #\b) (ctrl #\w)))
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
@@ -921,7 +929,7 @@
               `(,(alt #\%) . ,undefined-command)
               `(,(alt #\&) . ,undefined-command)
               `(,(alt #\') . ,undefined-command)
-              `(,(alt #\() . ,undefined-command)
+              `(,(alt #\() . ,insert-parentheses)
               `(,(alt #\)) . ,undefined-command)
               `(,(alt #\*) . ,undefined-command)
               `(,(alt #\+) . ,undefined-command)
