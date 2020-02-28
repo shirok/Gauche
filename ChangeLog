@@ -4,6 +4,7 @@
 	  define-inline/syntax, which is a name from implementor's viewpoint
 	  (we use the same mechanism to handle it as define-inline) but rather
 	  confusing for the users.
+	* doc/macro.texi: Document define-hybrid-syntax
 
 2020-02-27  Shiro Kawai  <shiro@acm.org>
 

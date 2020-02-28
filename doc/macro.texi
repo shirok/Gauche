@@ -36,6 +36,7 @@ Gaucheは、名前の衝突を避ける安全なマクロを簡単に書ける�
 * Why hygienic?::
 * Hygienic macros::
 * Traditional macros::
+* Hybrid macros::
 * Identifiers::
 * Debugging macros::
 * Macro utilities::
@@ -1502,7 +1503,7 @@ This will be the default behavior in future.
 @c COMMON
 @end defmac
 
-@node Traditional macros, Identifiers, Hygienic macros, Macros
+@node Traditional macros, Hybrid macros, Hygienic macros, Macros
 @section Traditional macros
 @c NODE 伝統的なマクロ
 
@@ -1564,8 +1565,36 @@ global bindings inserted by the macro.
 @c COMMON
 @end defspec
 
+@node Hybrid macros, Identifiers, Traditional macros, Macros
+@section Hybrid macros
+@c NODE ハイブリッドマクロ
 
-@node Identifiers, Debugging macros, Traditional macros, Macros
+A hybrid macro is both a macro and a procedure simultaneously.
+If a symbol bound to a hybrid macro appears in the first position
+of a form, it behaves like a macro and the form is expanded accodring
+to its macro expander.  If a symbol appears other places, it is evaluated
+to a procedure.
+
+It can realize so-called ``compiler macros''---at a compile time,
+the macro part examines the arguments and can transform the form as
+desired.  In all other circumstances, it behaves like a normal procedure
+binding, so you can pass the procedure to @code{map}, for example.
+
+@defmac define-hybrid-syntax variable expr transformer-spec
+Binds @var{variable} to both an ordinary Scheme value and a macro
+simultaneously.  At the compile time, @var{transformer-spec} is evaluated;
+it must yield a macro in the the compile-time environment, and bound
+to @var{variable} to be used at macro expansion.  At the execution time,
+@var{expr} is evaluated and bound to @var{variable} to be used as
+a run-time value.
+
+The macro transformer can return the input form as is (that is, returns
+an object @code{eq?} to the input form), to indicate that it doesn't
+need to expand it.  In that case, Gauche compiles the form as an ordinary
+procedure call, to use the value of @var{expr} at run-time.
+@end defmac
+
+@node Identifiers, Debugging macros, Hybrid macros, Macros
 @section Identifiers
 @c NODE 識別子
 
