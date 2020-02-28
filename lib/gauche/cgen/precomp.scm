@@ -710,8 +710,8 @@
       ((with-module gauche.cgen.precomp handle-define-syntax) f))
     (define-macro (define-macro . f)
       ((with-module gauche.cgen.precomp handle-define-macro) f))
-    (define-macro (define-inline/syntax . f)
-      ((with-module gauche.cgen.precomp handle-define-inline/syntax) f))
+    (define-macro (define-hybrid-syntax . f)
+      ((with-module gauche.cgen.precomp handle-define-hybrid-syntax) f))
     ;; TODO - we need more general framework supporting various declarations.
     ;; for the time being, this ad-hoc solution suffice our needs.
     (define-macro (declare . f)
@@ -788,7 +788,7 @@
                     #f))))]
     [_ (error "Malformed define-syntax" form)]))
 
-(define (handle-define-inline/syntax form)
+(define (handle-define-hybrid-syntax form)
   (match form
     [(name expr xformer-spec)
      ;; KLUDGE: We treat NAME as a macro during compiling this unit, since
@@ -805,10 +805,10 @@
              `((with-module gauche define-inline) ,name
                ((with-module gauche.internal %with-inline-transformer)
                 ,expr ,xformer-spec)))
-           (error "Currently, you can't use define-inline/syntax with \
+           (error "Currently, you can't use define-hybrid-syntax with \
                    other than er-macro-transformer in precompiled file"
                   form)))]
-    [_ (error "Malformed define-inline/syntax" form)]))
+    [_ (error "Malformed define-hybrid-syntax" form)]))
 
 (define (handle-define-constant form)
   (match form

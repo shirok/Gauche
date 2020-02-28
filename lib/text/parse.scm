@@ -171,7 +171,7 @@
       (errorf "~awrong character ~s ~a. ~s expected."
               (ppp port) c string char-list))))
 
-(define-inline/syntax assert-curr-char
+(define-hybrid-syntax assert-curr-char
   %assert-curr-char (er-macro-transformer prefold-macro-1))
 
 ;; SKIP-UNTIL <char-list/number/pred> :optional <port>
@@ -186,7 +186,7 @@
     (skip-until/char-list (char-list-predicate char-list/number/pred)
                           char-list/number/pred port)]))
 
-(define-inline/syntax skip-until
+(define-hybrid-syntax skip-until
   %skip-until (er-macro-transformer prefold-macro-1))
 
 (define (skip-until/number num port)
@@ -214,7 +214,7 @@
    [else (skip-while/char-list (char-list-predicate char-list/pred)
                                char-list/pred port)]))
 
-(define-inline/syntax skip-while
+(define-hybrid-syntax skip-while
   %skip-while (er-macro-transformer prefold-macro-1))
 
 (define-inline (skip-while/common pred port)
@@ -241,7 +241,7 @@
       (next-token/char-list (char-list-predicate break-char-list/pred)
                             break-char-list/pred c port comment))))
 
-(define-inline/syntax next-token
+(define-hybrid-syntax next-token
   %next-token (er-macro-transformer prefold-macro-2))
 
 (define-inline (next-token/common break-pred char port errmsg)
@@ -262,7 +262,7 @@
     (next-token-of/char-list (char-list-predicate char-list/pred)
                              char-list/pred port)))
 
-(define-inline/syntax next-token-of
+(define-hybrid-syntax next-token-of
   %next-token-of (er-macro-transformer prefold-macro-1))
 
 (define-inline (next-token-of/common pred port)

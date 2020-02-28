@@ -1178,4 +1178,4 @@
 (select-module gauche)
 ;; TRANSIENT: Remove by 1.0
 (define-macro (define-compiler-macro name xformer-spec)
-  (error "define-compiler-macro is obsoleted.  Use define-inline/syntax."))
+  (error "define-compiler-macro is obsoleted.  Use define-hybrid-syntax."))

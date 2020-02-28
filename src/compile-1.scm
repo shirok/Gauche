@@ -724,17 +724,22 @@
     [_ (error "syntax-error: malformed define-syntax:" form)]))
 
 ;; Experimental
-(define-pass1-syntax (define-inline/syntax form cenv) :gauche
+(define-pass1-syntax (define-hybrid-syntax form cenv) :gauche
+  (pass1-define-hybrid-syntax form cenv))
+(define-pass1-syntax (define-inline/syntax form cenv) :gauche ;deprecated
+  (pass1-define-hybrid-syntax form cenv))
+
+(define (pass1-define-hybrid-syntax form cenv)
   (check-toplevel form cenv)
   (match form
     [(_ name expr macro-expr)
      (let* ([cenv (cenv-add-name cenv (variable-name name))]
-            [xformer (pass1/eval-macro-rhs 'define-inline/syntax
+            [xformer (pass1/eval-macro-rhs 'define-hybrid-syntax
                                            macro-expr cenv)]
             [body (pass1/call expr ($gref %with-inline-transformer.)
                               (list expr xformer) cenv)])
        (pass1/make-inlinable-binding form name body cenv))]
-    [_ (error "syntax-error: define-inline/syntax")]))
+    [_ (error "syntax-error: define-hybrid-syntax")]))
             
 ;; Returns either <syntax> or <macro>
 (define (pass1/eval-macro-rhs who expr cenv)

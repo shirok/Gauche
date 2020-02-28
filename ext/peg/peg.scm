@@ -175,7 +175,7 @@
 (define-inline (parse-success? x) (not x))
 
 (define-inline (return-result v s) (values #f v s))
-(define-inline/syntax return-failure
+(define-hybrid-syntax return-failure
   (^[t v s] (values t v s))
   ;; If type is given as a literal symbol, we statically check it.
   (er-macro-transformer

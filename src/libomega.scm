@@ -159,7 +159,7 @@
 ;; we can optimize it away (useful when used as a default value in macro).
 ;; This needs to be here, after compiler and macro system has been booted.
 (select-module gauche)
-(define-inline/syntax identity 
+(define-hybrid-syntax identity 
   (let ([identity (^[val] val)]) ; to attach name to the clojure
     identity)
   (er-macro-transformer 

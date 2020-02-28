@@ -1578,9 +1578,9 @@
 ;;----------------------------------------------------------------------
 ;; compiler macros
 
-(test-section "define-inline/syntax")
+(test-section "define-hybrid-syntax")
 
-(define-inline/syntax cpm
+(define-hybrid-syntax cpm
   (lambda (a b) (+ a b))
   (er-macro-transformer
    (lambda (f r c) `(,(r '*) ,(cadr f) ,(caddr f)))))

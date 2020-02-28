@@ -1,3 +1,10 @@
+2020-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (define-hybrid-syntax): Renamed
+	  define-inline/syntax, which is a name from implementor's viewpoint
+	  (we use the same mechanism to handle it as define-inline) but rather
+	  confusing for the users.
+
 2020-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (version-alist): srfi-176 defines Scheme proc

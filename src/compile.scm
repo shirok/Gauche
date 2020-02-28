@@ -1638,10 +1638,10 @@
 ;; Customizable inliner interface
 ;;
 
-;; This is invoked from the expansion of define-inline/syntax.
+;; This is invoked from the expansion of define-hybrid-syntax.
 (define (%with-inline-transformer proc xformer)
   (unless (procedure? proc)
-    (error "define-inline/syntax: expression yields non-procedure value" proc))
+    (error "define-hybrid-syntax: expression yields non-procedure value" proc))
   (unless (macro? xformer)
     (errorf "macro required, but got" xformer))
   ;; Copy PROC, in case the given proc refers to already defined global
