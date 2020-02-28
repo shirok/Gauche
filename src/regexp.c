@@ -1025,6 +1025,10 @@ static void rc_casefold(ScmObj *set, int complement)
     }
 
     ScmCharSet* cur = SCM_CHAR_SET(*set);
+    /* NB: Scm_CharSetEq can be slow.  This is only called during regexp
+       compilation, so we expect this isn't too bad, but if this ever gets
+       a bottle-neck, we can add an extra field in ScmCharSet to indicate
+       that it's one of the predefined charset. */
     if (SCM_CHAR_SET_LARGE_P(cur) &&
         (Scm_CharSetEq(cur, SCM_CHAR_SET(Scm_GetStandardCharSet(set1))) ||
          Scm_CharSetEq(cur, SCM_CHAR_SET(Scm_GetStandardCharSet(set2))) ||
