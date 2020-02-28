@@ -780,14 +780,10 @@
     [_ 'unchanged]))
 
 (define (kill-word ctx buf key)
-  (set-mark! ctx buf)
-  (forward-word ctx buf key)
-  (kill-region ctx buf key))
+  (macro! ctx (ctrl #\@) (alt #\f) (ctrl #\w)))
 
 (define (backward-kill-word ctx buf key)
-  (set-mark! ctx buf)
-  (backward-word ctx buf key)
-  (kill-region ctx buf key))
+  (macro! ctx (ctrl #\@) (alt #\b) (ctrl #\w)))
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
