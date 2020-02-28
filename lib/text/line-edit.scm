@@ -182,11 +182,11 @@
        ;;   undone - the command undid the change.  we record the fact,
        ;;            for the consecutive undo behaves differently than
        ;;            other commands.
-       ;;   <edit-command> - the commad changed the buffer contents,
-       ;;        and the return value is an edit command to undo the
-       ;;        change.
+       ;;   <edit-command> - the command changed the buffer contents,
+       ;;            and the return value is an edit command to undo the
+       ;;            change.
        ;;   (yanked <edit-command>) - this is only returned by yank and yank-pop
-       ;;        command.
+       ;;            command.
        ;;
        ;; If the key is a character and it is not registered in the table,
        ;; we treat as if it is associated to the self-insert-command.
