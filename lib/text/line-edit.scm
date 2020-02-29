@@ -35,6 +35,7 @@
   (use gauche.generator)
   (use data.ring-buffer)
   (use data.queue)
+  (use file.util)
   (use util.match)
   (use text.console)
   (use text.gap-buffer)
@@ -163,17 +164,15 @@
     :if-does-not-exist #f))
 
 (define (read-line/save-history ctx path)
-  (with-output-to-file path
-    (lambda ()
+  (call-with-temporary-file
+    (lambda (port name)
       (for-each
        (lambda (i)
-         (write (ring-buffer-ref (~ ctx'history) i))
-         (display "\n"))
-       (reverse (iota (history-size ctx)))))
-    :if-does-not-exist :create
-    ;; to append, we need to make sure only write new history, not
-    ;; ones loaded previously from the same file...
-    :if-exists :overwrite))
+         (write (ring-buffer-ref (~ ctx'history) i) port)
+         (display "\n" port))
+       (reverse (iota (history-size ctx))))
+      (sys-rename name path))
+    :directory (sys-dirname path)))
 
 ;; Entry point API
 ;; NB: For the consistency with read-line, the returned string won't include
