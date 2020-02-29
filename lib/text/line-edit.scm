@@ -153,6 +153,7 @@
 (define (read-line/load-history ctx path)
   (with-input-from-file path
     (lambda ()
+      (read)                            ; ignore version for now
       (let loop ([input (read)])
         (cond
          [(eof-object? input) #f]
@@ -166,6 +167,8 @@
 (define (read-line/save-history ctx path)
   (call-with-temporary-file
     (lambda (port name)
+      (write '(gauche-history-version 1) port)
+      (display #\newline port)
       (for-each
        (lambda (i)
          (write (ring-buffer-ref (~ ctx'history) i) port)
