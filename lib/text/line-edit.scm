@@ -35,11 +35,13 @@
   (use gauche.generator)
   (use data.ring-buffer)
   (use data.queue)
+  (use file.util)
   (use util.match)
   (use text.console)
   (use text.gap-buffer)
   (use gauche.unicode)
-  (export <line-edit-context> read-line/edit)
+  (export <line-edit-context> read-line/edit
+          read-line/load-history read-line/save-history)
   )
 (select-module text.line-edit)
 
@@ -147,6 +149,46 @@
    (history-pos :init-value -1)
    (history-transient :init-value #f)
    ))
+
+(define (%load-history ctx path)
+  (with-input-from-file path
+    (lambda ()
+      (read)                            ; ignore version for now
+      (for-each
+       (lambda (input)
+         (guard (e [else #f])
+           (commit-history ctx
+                           (string->gap-buffer
+                            (call-with-input-string input read)))))
+       (port->string-list (current-input-port))))
+    :if-does-not-exist #f))
+
+(define (read-line/load-history ctx path)
+  (guard (e [else
+             (display "failed to read history: " (current-error-port))
+             (display e (current-error-port))
+             (display #\newline (current-error-port))])
+    (%load-history ctx path)))
+
+(define (%save-history ctx path)
+  (call-with-temporary-file
+    (lambda (port name)
+      (write '(gauche-history-version 1) port)
+      (display #\newline port)
+      (for-each
+       (lambda (i)
+         (write (ring-buffer-ref (~ ctx'history) i) port)
+         (display "\n" port))
+       (reverse (iota (history-size ctx))))
+      (sys-rename name path))
+    :directory (sys-dirname path)))
+
+(define (read-line/save-history ctx path)
+  (guard (e [else
+             (display "failed to save history: " (current-error-port))
+             (display e (current-error-port))
+             (display #\newline (current-error-port))])
+    (%save-history ctx path)))
 
 ;; Entry point API
 ;; NB: For the consistency with read-line, the returned string won't include
@@ -479,11 +521,18 @@
 ;; History
 ;;
 
+(define (duplicated-history? ctx str)
+  (and (not (ring-buffer-empty? (~ ctx'history)))
+       (string=? (ring-buffer-front (~ ctx'history)) str)))
+
 ;; Enter the current buffer contents as the history, and discard any
 ;; transient info.  Returns the current buffer content.
 (define (commit-history ctx buffer)
   (rlet1 str (gap-buffer->string buffer)
-    (ring-buffer-add-front! (~ ctx'history) str)
+    (unless (or (string=? str "\n")
+                (string=? str "")
+                (duplicated-history? ctx str))
+      (ring-buffer-add-front! (~ ctx'history) str))
     (set! (~ ctx'history-pos) -1)
     (set! (~ ctx'history-transient) #f)))
 
