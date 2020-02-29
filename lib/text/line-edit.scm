@@ -507,11 +507,18 @@
 ;; History
 ;;
 
+(define (duplicated-history? ctx str)
+  (and (not (ring-buffer-empty? (~ ctx'history)))
+       (string=? (ring-buffer-front (~ ctx'history)) str)))
+
 ;; Enter the current buffer contents as the history, and discard any
 ;; transient info.  Returns the current buffer content.
 (define (commit-history ctx buffer)
   (rlet1 str (gap-buffer->string buffer)
-    (ring-buffer-add-front! (~ ctx'history) str)
+    (unless (or (string=? str "\n")
+                (string=? str "")
+                (duplicated-history? ctx str))
+      (ring-buffer-add-front! (~ ctx'history) str))
     (set! (~ ctx'history-pos) -1)
     (set! (~ ctx'history-transient) #f)))
 
