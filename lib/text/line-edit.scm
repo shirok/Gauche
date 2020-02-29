@@ -150,7 +150,7 @@
    (history-transient :init-value #f)
    ))
 
-(define (read-line/load-history ctx path)
+(define (%load-history ctx path)
   (with-input-from-file path
     (lambda ()
       (read)                            ; ignore version for now
@@ -163,7 +163,14 @@
        (port->string-list (current-input-port))))
     :if-does-not-exist #f))
 
-(define (read-line/save-history ctx path)
+(define (read-line/load-history ctx path)
+  (guard (e [else
+             (display "failed to read history: " (current-error-port))
+             (display e (current-error-port))
+             (display #\newline (current-error-port))])
+    (%load-history ctx path)))
+
+(define (%save-history ctx path)
   (call-with-temporary-file
     (lambda (port name)
       (write '(gauche-history-version 1) port)
@@ -175,6 +182,13 @@
        (reverse (iota (history-size ctx))))
       (sys-rename name path))
     :directory (sys-dirname path)))
+
+(define (read-line/save-history ctx path)
+  (guard (e [else
+             (display "failed to save history: " (current-error-port))
+             (display e (current-error-port))
+             (display #\newline (current-error-port))])
+    (%save-history ctx path)))
 
 ;; Entry point API
 ;; NB: For the consistency with read-line, the returned string won't include
