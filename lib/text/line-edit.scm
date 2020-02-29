@@ -39,7 +39,8 @@
   (use text.console)
   (use text.gap-buffer)
   (use gauche.unicode)
-  (export <line-edit-context> read-line/edit)
+  (export <line-edit-context> read-line/edit
+          read-line/load-history read-line/save-history)
   )
 (select-module text.line-edit)
 
@@ -147,6 +148,32 @@
    (history-pos :init-value -1)
    (history-transient :init-value #f)
    ))
+
+(define (read-line/load-history ctx path)
+  (with-input-from-file path
+    (lambda ()
+      (let loop ([input (read)])
+        (cond
+         [(eof-object? input) #f]
+         [(string? input)
+          (commit-history ctx (string->gap-buffer input))
+          (loop (read))]
+         [else
+          (loop (read))])))
+    :if-does-not-exist #f))
+
+(define (read-line/save-history ctx path)
+  (with-output-to-file path
+    (lambda ()
+      (for-each
+       (lambda (i)
+         (write (ring-buffer-ref (~ ctx'history) i))
+         (display "\n"))
+       (reverse (iota (history-size ctx)))))
+    :if-does-not-exist :create
+    ;; to append, we need to make sure only write new history, not
+    ;; ones loaded previously from the same file...
+    :if-exists :overwrite))
 
 ;; Entry point API
 ;; NB: For the consistency with read-line, the returned string won't include

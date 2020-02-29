@@ -37,11 +37,13 @@
   (use text.console)
   (use util.match)
   (use gauche.listener :only (complete-sexp?))
+  (use file.util)
   (export make-editable-reader))
 (select-module gauche.interactive.editable-reader)
 
 ;; Delay loading line-edit in case editable console isn't available.
-(autoload text.line-edit <line-edit-context> read-line/edit)
+(autoload text.line-edit <line-edit-context> read-line/edit
+          read-line/load-history read-line/save-history)
 
 ;; Internal API, to be used by gauche.interactive.
 ;; Because of toplevel commands, we can't just provide alternative 'read'
@@ -51,7 +53,7 @@
 ;  They are suitable to be passed to make-repl-reader.
 ;; NB: Currently we assume we use default console.  Might be useful
 ;; to allow other console (e.g. over pty).
-(define (make-editable-reader get-prompt-string)
+(define (make-editable-reader get-prompt-string hist-file)
   (if-let1 console (make-default-console :if-not-available #f)
     (let ([ctx (make <line-edit-context>
                  :console console
@@ -64,11 +66,16 @@
             (if (eof-object? x)
               (let1 input (read-line/edit ctx)
                 (if (eof-object? input)
-                  input                     ; EOF is typed
+                  (begin                ; EOF is typed
+                    (if hist-file
+                      (read-line/save-history ctx (expand-path hist-file)))
+                    input)
                   (begin 
                     (set! buffer (open-input-string (string-append input "\n")))
                     (try))))
               x))))
+      (if hist-file
+        (read-line/load-history ctx (expand-path hist-file)))
       (values (read-1 read)
               (read-1 read-line)
               (^[] (consume-trailing-whitespaces buffer))
