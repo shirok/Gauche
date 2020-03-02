@@ -240,7 +240,7 @@
   (return (Scm_StringBodyFastIndexableP (SCM_STRING_BODY s))))
 
 (select-module gauche.internal)
-(define-cproc %string-index-dump (s::<string> :optional (p::<port> (current-output-port)))
+(define-cproc %string-index-dump (s::<string> :optional (p::<port> (current-output-port))) ::<void>
   (Scm_StringBodyIndexDump (SCM_STRING_BODY s) p))
 
 ;;
