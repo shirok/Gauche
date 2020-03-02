@@ -110,7 +110,7 @@
 
      (define (rec cls)
        (cond
-        [(null? cls) (error "Unfulfilled cond-expand:" cls)]
+        [(null? cls) (error "Unfulfilled cond-expand (likely missing feature to run this code)")]
         [(not (pair? (car cls)))
          (error "Bad clause in cond-expand:" (car cls))]
         [(c (r (caar cls)) else.)
