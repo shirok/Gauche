@@ -72,7 +72,7 @@
 ;;;     - Global constant variables are substituted to its value.
 ;;;     - Variable bindings are resolved.  Local variables are marked
 ;;;       according to its usage (# of reference count and set count).
-;;;     - Constant expressons are folded.
+;;;     - Constant expressions are folded.
 ;;;
 ;;;   Pass 2 (Variable and closure optimization):
 ;;;     - Traverses IForm and modify the tree to optimize it.
@@ -201,7 +201,7 @@
 ;;   Slots:
 ;;     name  - name of the variable (symbol)
 ;;     initval   - initialized value (Maybe IForm)
-;;     ref-count - in how many places this variable is referefnced?
+;;     ref-count - in how many places this variable is referenced?
 ;;     set-count - in how many places this variable is set!
 ;;
 
@@ -280,7 +280,7 @@
 ;;                local binding).   This slot may be #f.
 ;;
 ;;     current-proc - Holds the information of the current
-;;                compilig procedure.  It accumulates information needed
+;;                compiling procedure.  It accumulates information needed
 ;;                in later stages for the optimization.  This slot may
 ;;                be #f.
 ;;
@@ -292,7 +292,7 @@
 (define (make-cenv module :optional (frames '()) (exp-name #f))
   (%make-cenv module frames exp-name))
 
-;; Some cenv-related proceduers are in C for better performance.
+;; Some cenv-related procedures are in C for better performance.
 (inline-stub
  ;; env-lookup-int :: Name, LookupAs, Module, [Frame] -> Var
  ;;         where Var = Lvar | Identifier | Macro
@@ -588,7 +588,7 @@
    ))
 
 ;; $seq <body>
-;;    Sequensing.  <body> is a list of IForms.
+;;    Sequencing.  <body> is a list of IForms.
 ;;    The compile tries to avoid creating $seq node if <body> has only
 ;;    one expression, but optimization paths may introduce such a $seq node.
 ;;    There can also be an empty $seq node, ($seq '()).

@@ -93,7 +93,7 @@
         (error "Invalid color name:" color)))
   (define (check-option opt)
     (or (memq opt '(bright underscore reverse))
-        (error "Invalid atttribute option name:" opt)))
+        (error "Invalid attribute option name:" opt)))
   (match spec
     [(fgcolor bgcolor . opts)
      (check-color fgcolor)

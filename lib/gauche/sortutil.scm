@@ -69,7 +69,7 @@
                 (and (not (less? knext last))
                      (loop knext (read-char p))))))))]
    [(is-a? seq <sequence>) (%generic-sorted? seq less? key)]
-   [else (error "seqeuence required, but got:" seq)]))
+   [else (error "sequence required, but got:" seq)]))
 
 ;;; (merge a b less?)
 ;;; takes two lists a and b such that (sorted? a less?) and (sorted? b less?)

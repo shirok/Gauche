@@ -1568,7 +1568,7 @@
 ;; qualifiers := :base | :built-in | :private
 
 ;; 'qualifiers' modifies the generated code slightly.  :base and :built-in
-;; is exclusive.  :base generates a base class definition (inheritable
+;; are exclusive.  :base generates a base class definition (inheritable
 ;; from Scheme code), while :built-in generates a built-in class definition
 ;; (not inheritable from Scheme code).  If neither one appears, built-in
 ;; class is generated.  :private is an optional qualifier, and when it is
