@@ -1373,7 +1373,6 @@
             (imap (cut subst <> mapping dict) ($*-args iform))))
   (subst iform mapping (make-hash-table 'eq?)))
 
-;; EXPERIMENTAL
 ;; Convert IForm back to S-expr.
 ;; This is used by macroexpand-all.  Note that pass2 can make IForm DG, and
 ;; it's not generally possible to convert it back to S-expr.  You can only
@@ -1396,7 +1395,12 @@
                        ,(rec ($lset-expr iform)))]
      [($GREF)   ($gref-id iform)]
      [($GSET)   `(set! ,($gset-id iform) ,(rec ($gset-expr iform)))]
-     [($CONST)  `',($const-value iform)]
+     [($CONST)  (let1 v ($const-value iform)
+                  ;; This is just for better readability
+                  (if (or (number? v) (string? v) (char? v) (boolean? v)
+                          (undefined? v) (port? v) (procedure? v))
+                    v
+                    `',v))]
      [($IF)     (cond [(has-tag? ($if-then iform) $IT)
                        `(or ,(rec ($if-test iform))
                             ,(rec ($if-else iform)))]
