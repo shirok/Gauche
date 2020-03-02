@@ -167,6 +167,8 @@
     (bow                       SCM_SYM_BOW)
     (eow                       SCM_SYM_EOW)
     (nwb                       SCM_SYM_NWB)
+    (bog                       SCM_SYM_BOG)
+    (eog                       SCM_SYM_EOG)
     (comp                      SCM_SYM_COMP)
     (*                         SCM_SYM_STAR)
     (*?                        SCM_SYM_STARQ)
