@@ -1,3 +1,8 @@
+2020-03-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c, lib/gauce/regexp/sre.scm: Implement BOG/EOG asseritions.
+	  Patch by @pclouds https://github.com/shirok/Gauche/pull/618
+
 2020-02-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/line-edit.scm (macro!): Keystrokes macro feature by @pclouds
