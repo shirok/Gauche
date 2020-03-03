@@ -9429,18 +9429,18 @@ See the notes in @code{make-string} about performance consideration.
 @c COMMON
 @end defun
 
-@defun string-join strs :optional delim grammer
+@defun string-join strs :optional delim grammar
 @c EN
 [SRFI-13] Concatenate strings in the list @var{strs},
 with a string @var{delim} as `glue'.
 
-The argument @var{grammer} may be one of the following symbol
+The argument @var{grammar} may be one of the following symbol
 to specify how the strings are concatenated.
 @c JP
 [SRFI-13] リスト @var{strs} 中にある文字列を、文字列 @var{delim} を'糊'
 として連結します。
 
-引数 @var{grammer} は、文字列がどのように連結されるかを指定する
+引数 @var{grammar} は、文字列がどのように連結されるかを指定する
 シンボルで、以下のうちの一つです。
 @c COMMON
 @table @code
@@ -9623,7 +9623,7 @@ a regexp, or a procedure.
 If @var{splitter} is a character or a string, it is
 used as a delimiter.  Note that srfi-152's @code{string-split}
 only allows strings for @var{splitter} (it also interprets the first
-optional argument as a grammer; see below for the compatibility note.)
+optional argument as a grammar; see below for the compatibility note.)
 
 If @var{splitter} is a character set, any consecutive characters
 that are member of the character set are used as a delimiter.

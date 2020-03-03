@@ -2277,9 +2277,9 @@ If any element in @var{strs} is incomplete, the result string
 becomes incomplete.
 @end deftypefun
 
-@deftypefun ScmObj Scm_StringJoin (ScmObj @var{strs}, ScmString *@var{delim}, int @var{grammer})
+@deftypefun ScmObj Scm_StringJoin (ScmObj @var{strs}, ScmString *@var{delim}, int @var{grammar})
 Scheme's @var{string-join}.  Concatenates a list of strings @var{strs}
-with inserting a delimiter @var{delim} between them.  The @var{grammer}
+with inserting a delimiter @var{delim} between them.  The @var{grammar}
 argument must be one of the following enums:
 
 @example
