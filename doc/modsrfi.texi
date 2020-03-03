@@ -6292,6 +6292,7 @@ by @var{comparator}.  It is an error if @var{list} is empty.
 
 @deftp {Module} srfi-173
 @mdindex srfi-173
+@c EN
 This module provides hooks, which manages a list of
 closures to be called.
 
@@ -6300,6 +6301,16 @@ It is based on Guile's hooks, which Gauche supports in
 is a thin layer on top of @code{gauche.hook}.
 
 The following procedures are the same as @code{gauche.hook}:
+@c JP
+このモジュールは、呼ばれるべきクロージャのリストを管理する「フック」を提供します。
+
+GaucheではもともとGuileにあったhookの仕様を
+@code{gauche.hook}モジュールとして採り入れています
+(@ref{Hooks}参照)。
+このsrfiは@code{gauche.hook}に薄いレイヤをかぶせたものです。
+
+以下の手続きは@code{gauche.hook}のものと同じです。
+@c COMMON
 
 @example
 make-hook     hook?      hook->list
@@ -6309,56 +6320,87 @@ make-hook     hook?      hook->list
 @defun hook-add! hook proc
 [SRFI-173]
 @c MOD srfi-173
+@c EN
 Add a procedure @var{proc} to a hook @var{hook}.   The procedure
 must accept the number of arguments that matches the arity of the hook.
 It is the same as @code{(add-hook! hook proc)} of @code{gauche.hook}.
+@c JP
+手続き@var{proc}をフック@var{hook}に追加します。手続きは、フックのアリティと
+同じ数の引数を受け付けなければなりません。
+これは@code{gauche.hook}の@code{(add-hook! hook proc)}と同じです。
+@c COMMON
 @end defun
 
 @defun hook-delete! hook proc
 [SRFI-173]
 @c MOD srfi-173
+@c EN
 Delete @var{proc} from @var{hook}.  If @var{proc} isn't in @var{hook},
 do nothing.  It is the same as @code{(delete-hook! hook proc)}
 of @code{gauche.hook}.
+@c JP
+@var{proc}を@var{hook}から削除します。@var{proc}が@var{hook}に登録されていない
+場合は何もしません。
+@code{gauche.hook}の@code{(delete-hook! hook proc)}と同じです。
+@c COMMON
 @end defun
 
 @defun hook-reset! hook
 [SRFI-173]
 @c MOD srfi-173
-Remove all the procedures registered in @code{hook}.
+@c EN
+Remove all the procedures registered in @var{hook}.
 It is the same as @code{(reset-hook! hook)} of @code{gauche.hook}.
+@c JP
+@var{hook}に登録された全ての手続きを削除します。
+@code{gauche.hook}の@code{(reset-hook! hook)}と同じです。
+@c COMMON
 @end defun
 
 @defun hook-run hook args @dots{}
 [SRFI-173]
 @c MOD srfi-173
+@c EN
 Apply all the procedures from @var{hook} to the @var{args}.
 The order of the procedure isn't specified in the srfi, though
 Gauche preserves the order (see @code{run-hook}
 (@pxref{Hooks}).
+@c JP
+@var{hook}に登録された手続き全てを順次、@var{args}を引数として呼び出します。
+srfiでは手続きを呼び出す順番は指定されていません。
+Gaucheは登録された順序で呼び出します
+(@ref{Hooks}の@code{run-hook}参照)。
+@c COMMON
 @end defun
 
 @defun list->hook arity list
 [SRFI-173]
 @c MOD srfi-173
+@c EN
 Creates a new hook with specified @var{arity} (which is a non-negative
 exact integer), which has the procedures in @var{list}.
 All the procedures must accept @var{arity} number of arguments.
+@c JP
+アリティ@var{arity} (非負の正確な整数) を持つフックを作り、
+手続きのリスト@var{list}中の手続きをフックに登録して、そのフックを返します。
+全ての手続きは@var{arity}個の引数を受け付けなくてはなりません。
+@c COMMON
 @end defun
 
 @defun list->hook! hook list
 [SRFI-173]
 @c MOD srfi-173
+@c EN
 Replace the list of procedures in @var{hook} with procedures
 in @var{list}.
 All the procedures must accept the number of arguments
 the same as @var{hook}'s arity.
+@c JP
+フック@var{hook}に登録された手続きのリストを、@var{list}にある手続きと
+置き換えます。
+全ての手続きは@var{arity}個の引数を受け付けなくてはなりません。
+@c COMMON
 @end defun
-
-
-
-
-
 
 @c Local variables:
 @c mode: texinfo
