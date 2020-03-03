@@ -7063,9 +7063,6 @@ Originally defined as srfi-115.
 
 @end deftp
 
-Note that support for this module is not complete. Grapheme syntax is
-still missing.
-
 @subheading Scheme regular expression syntax
 
 @subsubheading Syntax summary

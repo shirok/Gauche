@@ -11431,13 +11431,10 @@ not by the engine).
 @defun regexp-parse-sre sre
 @c EN
 Parses @var{sre} as a Scheme Regular Expression as described in
-SRFI-115 and returns its AST. Only a subset of SRE is supported at the
-moment. The following syntax is not supported:
-@code{bog}, @code{eog} and @code{grapheme}.
+SRFI-115 and returns its AST.
 @c JP
 @var{sre}をsrfi-115で定義されるScheme正規表現としてパーズし、
-結果をASTで返します。今のところ、SREのサブセットがサポートされています。
-サポートされていないのは@code{bog}、@code{eog}、@code{grapheme}です。
+結果をASTで返します。
 @c COMMON
 @pxref{R7RS regular expressions}.
 @end defun
@@ -11559,6 +11556,7 @@ to convert it to this AST back and forth.   Contributions are welcome.
        | bos | eos    ; beginning/end of string assertion
        | bol | eol    ; beginning/end of line assertion
        | bow | eow | wb | nwb ; word-boundary/negative word boundary assertion
+       | bog | eog    ; beginning/end of grapheme assertion
 
 <clause> : (seq <ast> ...)       ; sequence
        | (seq-uncase <ast> ...)  ; sequence (case insensitive match)
