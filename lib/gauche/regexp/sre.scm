@@ -55,6 +55,10 @@
 ;;
 ;; Corner cases, positions zero and length, should be handled by the
 ;; caller.
+;;
+;; Note, if we assume "cur" only moves forward, we could keep at most
+;; two cursors in saved-curs. That means backtracking MUST recreate a
+;; new predicate because it breaks the "moving forward" assumption.
 (define (make-grapheme-predicate str)
   (let ([get-more (call-with-input-string str
                     (lambda (port)
