@@ -227,6 +227,8 @@
           [(eq? n 'bow)  (disp "\\b(?=\\w)")] ; unsupported pcre syntax
           [(eq? n 'eow)  (disp "\\b(?<=\\w)")] ; unsupported pcre syntax
           [(eq? n 'nwb)  (disp "\\B")]
+          [(eq? n 'bog)  (disp "<bog>")] ; unsupported syntax
+          [(eq? n 'eog)  (disp "<eog>")] ; unsupported syntax
           [(not (pair? n)) (err "invalid AST node" n)]
           [else (case (car n)
                   [(comp) (rlet1 s (write-to-string (cdr n))

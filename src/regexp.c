@@ -40,6 +40,7 @@
 #include "gauche/class.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/charP.h"
+#include "gauche/priv/stringP.h"
 
 /* I don't like to reinvent wheels, so I looked for a regexp implementation
  * that can handle multibyte encodings and not bound to Unicode.
@@ -131,6 +132,8 @@ enum {
     RE_BOW,                     /* begin-of-word boundary assertion */
     RE_EOW,                     /* end-of-word boundary assertion */
     RE_NWB,                     /* negative word boundary assertion */
+    RE_BOG,                     /* beginning of a grapheme */
+    RE_EOG,                     /* end of a grapheme */
     RE_BACKREF,                 /* followed by group #. */
     RE_BACKREF_RL,
     RE_BACKREF_CI,              /* followed by group #. */
@@ -1505,6 +1508,14 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
                 rc3_emit(ctx, RE_NWB);
                 return;
             }
+            if (SCM_EQ(ast, SCM_SYM_BOG)) {
+                rc3_emit(ctx, RE_BOG);
+                return;
+            }
+            if (SCM_EQ(ast, SCM_SYM_EOG)) {
+                rc3_emit(ctx, RE_EOG);
+                return;
+            }
             /* fallback */
         }
         Scm_Error("internal error in regexp compilation: unrecognized AST item: %S", ast);
@@ -2096,6 +2107,12 @@ void Scm_RegDump(ScmRegexp *rx)
         case RE_NWB:
             Scm_Printf(SCM_CUROUT, "%4d  NWB\n", codep);
             continue;
+        case RE_BOG:
+            Scm_Printf(SCM_CUROUT, "%4d  BOG\n", codep);
+            continue;
+        case RE_EOG:
+            Scm_Printf(SCM_CUROUT, "%4d  EOG\n", codep);
+            continue;
         case RE_SET1R: case RE_SET1R_RL:
             codep++;
             Scm_Printf(SCM_CUROUT, "%4d  %s %d   %S\n",
@@ -2211,6 +2228,7 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
             || SCM_EQ(ast, SCM_SYM_BOL) || SCM_EQ(ast, SCM_SYM_EOL)
             || SCM_EQ(ast, SCM_SYM_WB) || SCM_EQ(ast, SCM_SYM_NWB)
             || SCM_EQ(ast, SCM_SYM_BOW) || SCM_EQ(ast, SCM_SYM_EOW)
+            || SCM_EQ(ast, SCM_SYM_BOG) || SCM_EQ(ast, SCM_SYM_EOG)
             || SCM_EQ(ast, SCM_SYM_ANY)) {
             return ast;
         }
@@ -2394,6 +2412,7 @@ struct match_ctx {
     struct ScmRegMatchSub **matches;
     void *begin_stack;          /* C stack pointer the match began from. */
     sigjmp_buf *cont;
+    ScmObj grapheme_predicate;
 };
 
 #define MAX_STACK_USAGE   0x100000
@@ -2470,6 +2489,38 @@ static int is_end_of_line(struct match_ctx *ctx, const char *input)
     if (nextb == '\n' || nextb == '\r') return TRUE;
 
     return FALSE;
+}
+
+static int is_grapheme_boundary(struct match_ctx *ctx,
+                                const char *input,
+                                unsigned int code)
+{
+    if (input == ctx->input) return code == RE_BOG;
+    if (input == ctx->stop) return code == RE_EOG;
+
+    if (ctx->grapheme_predicate == SCM_UNDEFINED) {
+        ScmObj make_predicate = SCM_UNDEFINED;
+        /*
+         * So far only gauche.regexp.sre can produce AST grapheme
+         * nodes, so we're sure it's already loaded.
+         */
+        SCM_BIND_PROC(make_predicate, "make-grapheme-predicate",
+                      SCM_FIND_MODULE("gauche.regexp.sre", 0));
+
+        ScmObj str = Scm_MakeString(ctx->input,
+                                    ctx->stop - ctx->input, -1,
+                                    SCM_STRING_IMMUTABLE);
+        ctx->grapheme_predicate = Scm_ApplyRec1(make_predicate, str);
+    }
+
+    /*
+     * Using small cursors essentially puts a limit on input string's
+     * length. But regex should not be run on very long strings to
+     * begin with, so this should be fine.
+     */
+    ScmObj cursor = SCM_MAKE_STRING_CURSOR_SMALL(input - ctx->input);
+    ScmObj result = Scm_ApplyRec1(ctx->grapheme_predicate, cursor);
+    return !SCM_FALSEP(result);
 }
 
 static void rex_rec(const unsigned char *code,
@@ -2664,6 +2715,9 @@ static void rex_rec(const unsigned char *code,
             continue;
         case RE_NWB:
             if (is_word_boundary(ctx, input, RE_WB)) return;
+            continue;
+	case RE_BOG: case RE_EOG:
+            if (!is_grapheme_boundary(ctx, input, code[-1])) return;
             continue;
         case RE_SUCCESS:
             ctx->last = input;
@@ -2924,6 +2978,7 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
     ctx.begin_stack = (void*)&ctx;
     ctx.cont = &cont;
     ctx.matches = SCM_NEW_ARRAY(struct ScmRegMatchSub *, rx->numGroups);
+    ctx.grapheme_predicate = SCM_UNDEFINED;
 
     for (int i = 0; i < rx->numGroups; i++) {
         ctx.matches[i] = SCM_NEW(struct ScmRegMatchSub);

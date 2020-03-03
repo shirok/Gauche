@@ -32,10 +32,13 @@
 ;;;
 
 (define-module gauche.regexp.sre
+  (use gauche.generator)
   (use gauche.parameter)
+  (use gauche.unicode)
   (use scheme.list)
   (use scheme.charset)
   (export regexp-parse-sre regexp-unparse-sre regexp-compile-sre
+          make-grapheme-predicate
           <regexp-invalid-sre>))
 (select-module gauche.regexp.sre)
 
@@ -45,6 +48,54 @@
 
 (define-condition-type <regexp-invalid-sre> <error> #f
   (offending-item))
+
+;; To be used internally by regexp.c. Returns a closure that takes a
+;; position and returns true if grapheme boundary is right before that
+;; position.
+;;
+;; Corner cases, positions zero and length, should be handled by the
+;; caller.
+(define (make-grapheme-predicate str)
+  (let ([get-more (call-with-input-string str
+                    (lambda (port)
+                      (let ([read-one (case (gauche-character-encoding)
+                                        [(utf8 none) (cut read-char port)]
+                                        [else (gmap char->ucs (cut read-char port))])])
+                        (make-grapheme-cluster-reader read-one length))))]
+        [saved-curs '()])
+    (lambda (cur)
+      ;; check old-curs first, then use gen-more to get one more
+      ;; grapheme boundary while keep adding everything to
+      ;; new-curs. Save new-curs to saved-curs before returning.
+      ;;
+      ;; yes we generate a bit of garbage here everytime this
+      ;; procedure runs. Maybe we could set! get-more to #f when it
+      ;; returns eof, and after that stop maintaining new-curs
+      ;; completely...
+      (let loop ([old-curs saved-curs]
+                 [new-curs '()]
+                 [last-cur (string-cursor-start str)])
+        (if-let1 last-cur (if (null? old-curs)
+                              (let ([len (get-more)])
+                                (if (eof-object? len)
+                                    #f
+                                    (string-cursor-forward str last-cur len)))
+                              (car old-curs))
+          (let ([new-curs (cons last-cur new-curs)])
+            (cond
+             [(string-cursor=? cur last-cur)
+              (set! saved-curs (reverse new-curs))
+              #t]
+             [(string-cursor<? cur last-cur)
+              (set! saved-curs (reverse new-curs))
+              #f]
+             [(null? old-curs)
+              (loop '() new-curs last-cur)]
+             [else
+              (loop (cdr old-curs) new-curs last-cur)]))
+          (begin
+            (set! saved-curs (reverse new-curs))
+            #f))))))
 
 (define (err msg item)
   (error <regexp-invalid-sre> :offending-item item msg item))
@@ -194,7 +245,7 @@
   (define (%sre->ast sre)
     (define (sre-sym sre)
       (case sre
-        [(bos eos bol eol bow eow nwb) sre]
+        [(bos eos bol eol bow eow nwb bog eog) sre]
         [(word) (%sre->ast '(word+ any))]
         [else (err "not supported" sre)]))
 
@@ -212,7 +263,7 @@
                [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
                [else (err "unsupported syntax" sre)])))
 
-    ;; FIXME: missing bog, eog, grapheme
+    ;; FIXME: missing grapheme
     (define (sre-list sym rest)
       (case sym
         [(* zero-or-more) `(rep 0 #f ,@(loop rest))]
