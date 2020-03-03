@@ -1062,6 +1062,11 @@
 (select-module gauche.internal)
 (use util.match)
 (define (%let-keywords-rec form rename %let)
+  ;; arg is either:
+  ;;   identidfir
+  ;;   (identifier default-expr)
+  ;;   (identifier keyword default-expr)
+  ;; returns (values identifier keyword default-expr)
   (define (triplet var&default)
     (or (and-let* ([ (list? var&default) ]
                    [var (unwrap-syntax (car var&default))]
@@ -1078,6 +1083,12 @@
                    [ (symbol? var) ])
           (values var (make-keyword var) (undefined)))
         (error "bad binding form in let-keywords" var&default)))
+  ;; Loop over var-specs, returns
+  ;;  (values vars        ; list of local variables to bound
+  ;;          keys        ; list of keywords to detect
+  ;;          defaults    ; list of expressions for the default
+  ;;          tmps        ; list of temporary variables
+  ;;          restvar)    ; #f, #t or identifier
   (define (process-specs specs)
     (let loop ((specs specs)
                (vars '()) (keys '()) (defaults '()) (tmps '()))
