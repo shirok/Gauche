@@ -250,6 +250,8 @@
     (define (sre-sym sre)
       (case sre
         [(bos eos bol eol bow eow nwb bog eog) sre]
+        [(grapheme) (%sre->ast
+                     '(: bog (non-greedy-repeated 1 #f any) eog))]
         [(word) (%sre->ast '(word+ any))]
         [else (err "not supported" sre)]))
 
@@ -267,7 +269,6 @@
                [(null? (cdddr rest)) (list (%sre->ast (caddr rest)))]
                [else (err "unsupported syntax" sre)])))
 
-    ;; FIXME: missing grapheme
     (define (sre-list sym rest)
       (case sym
         [(* zero-or-more) `(rep 0 #f ,@(loop rest))]
