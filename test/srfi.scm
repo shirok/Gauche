@@ -2088,6 +2088,27 @@
 (test* "regexp-extract"
        '("123" "456" "789")
        (regexp-extract '(* numeric) "abc123def456ghi789"))
+(cond-expand
+ (full-unicode
+  (test* "regexp-extract"
+         '("a" "b" "c") (regexp-extract 'grapheme "abc"))
+  (test* "regexp-extract"
+         '("a" " " "b" " " "c") (regexp-extract 'grapheme "a b c"))
+  (test* "regexp-extract"
+         '("a" "\n" "b" "\r\n" "c") (regexp-extract 'grapheme "a\nb\r\nc"))
+  (test* "regexp-extract"
+         '("a\x0300;" "b\x0301;\x0302;" "c\x0303;\x0304;\x0305;")
+         (regexp-extract 'grapheme "a\x0300;b\x0301;\x0302;c\x0303;\x0304;\x0305;"))
+  (test* "regexp-extract"
+         '("한" "글") (regexp-extract 'grapheme "한글"))
+  (test* "regexp-extract"
+         '("한" "글")
+         (regexp-extract
+          'grapheme
+          ((with-module gauche.unicode utf8->string)
+           '#u8(#xe1 #x84 #x92 #xe1 #x85 #xa1 #xe1 #x86 #xab
+                     #xe1 #x84 #x80 #xe1 #x85 #xb3 #xe1 #x86 #xaf)))))
+ (else))
 
 (test* "regexp-split"
        '("abc" "def" "ghi" "")
