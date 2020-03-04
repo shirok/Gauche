@@ -21,3 +21,6 @@
 (test-sre '("кириллица") '(w/nocase "КИРИЛЛИЦА") "кириллица")
 
 (test-sre '("") '(w/ascii (* numeric)) "１２３４５")
+
+(test-sre '("한") '(: bog grapheme eog) "한")
+(test-sre #f '(: "ᄒ" bog grapheme eog "ᆫ") "한")
