@@ -2,6 +2,8 @@
 
 	* src/regexp.c, lib/gauce/regexp/sre.scm: Implement BOG/EOG asseritions.
 	  Patch by @pclouds https://github.com/shirok/Gauche/pull/618
+	  Also support 'grapheme' of SRE.
+	  Patch by @pclouds https://github.com/shirok/Gauche/pull/620
 
 2020-02-28  Shiro Kawai  <shiro@acm.org>
 
