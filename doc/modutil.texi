@@ -29464,14 +29464,24 @@ An example:
 @c NODE CSSのパーズと構築, @code{www.css} - CSSのパーズと構築
 
 @deftp {Module} www.css
+@c EN
 This module provides tools to convert between S-expression and CSS.
 
 The S-expression CSS (SxCSS) is a convenient way to manipulate
 CSS in Scheme.
+@c JP
+このモジュールはS式とCSSを相互変換するツールを提供します。
+
+S式CSS(SxCSS)はCSSをSchemeから操作するのに便利な方法です。
+@c COMMON
 @end deftp
 
+@c EN
 For example, the following CSS and SxCSS are equivalent, and
 can be converted back and forth:
+@c JP
+例えば、次のCSSとSxCSSは等価で、相互に変換可能です。
+@c COMMON
 
 CSS:
 @example
@@ -29503,21 +29513,39 @@ SxCSS:
  (style-rule (a (: visited)) (color purple !important)))
 @end example
 
+@c EN
 See the ``CSS in S-expression'' section below for the complete
 specification.
+@c JP
+完全な仕様については下の ``S式CSS'' を参照してください。
+@c COMMON
 
+@c EN
 @subheading Constructing CSS
+@c JP
+@subheading CSSの構築
+@c COMMON
 
 @defun construct-css sxcss :optional oport
 @c MOD www.css
+@c EN
 Take SxCSS and writes out CSS to the given port, defaulted to
 the current output port.
+@c JP
+SxCSSを取り、与えられたポートにCSSを書き出します。@var{oport}のデフォルトは
+現在の出力ポートです。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Parsing CSS
+@c JP
+@subheading CSSのパーズ
+@c COMMON
 
 @defun parse-css :optional iport
 @c MOD www.css
+@c JP
 Read CSS from the given port, defaulted to the current input port,
 and returns SxCSS.
 
@@ -29528,19 +29556,40 @@ unparsable part and tries to continue reading the rest.
 NB: Currently we don't handle @code{@@charset} directive; we assume
 the text is already in the port's encoding.  We may support
 it in future versions.
+@c JP
+CSSを与えられたポートから読み、SxCSSを返します。@var{iport}のデフォルトは
+現在の入力ポートです。
+
+パーズできないCSS (不正なCSSか、サポートされていない構文) に出会った場合、
+warningメッセージを出力してその箇所を飛ばし、次にパーズできるところから処理を続けます。
+
+註：今のところ、@code{@@charset}ディレクティブは無視され、
+入力テキストはポートのエンコーディングであると仮定されます。将来は対応するかもしれません。
+@c COMMON
 @end defun
 
 @defun parse-css-file file :key encoding
 @c MOD www.css
+@c EN
 Read the CSS text from the given file and parse it using
 @code{parse-css}.  Again, we don't handle @code{@@charset} directive
 yet, and you have to pass @code{encoding} argument if
 the CSS text isn't in the Gauche's native character encoding.
+@c JP
+与えられたファイルからCSSを読み、@code{parse-css}を使ってパーズして結果をSxCSSで
+返します。@code{@@charset}ディレクティブはまだ認識されないので、
+CSSファイルがGaucheのネイティブエンコーディングと異なるエンコーディングで書かれている
+場合は、@var{encoding}にエンコーディング名を渡してください。
+@c COMMON
 @end defun
 
 @defun parse-css-selector-string str
 @c MOD www.css
+@c EN
 This parses the selector part of the CSS.
+@c JP
+CSSのセレクター部分をパーズするユーティリティです。
+@c COMMON
 
 @example
 (parse-css-selector-string "ul li.item span#foo")
@@ -29551,10 +29600,17 @@ This parses the selector part of the CSS.
 @end example
 @end defun
 
-
+@c EN
 @subheading CSS in S-expression
+@c JP
+@subheading S式CSS
+@c COMMON
 
+@c EN
 The following is the complete rules of SxCSS syntax.
+@c JP
+完全なSxCSSの構文規則を以下に示します。
+@c COMMON
 
 @smallexample
 <sxcss>      : (@{<style-rule> | <at-rule>@} ...)
@@ -29608,14 +29664,34 @@ The following is the complete rules of SxCSS syntax.
 <at-import-rule> : (@@import <string> (<symbol> ...))
 @end smallexample
 
+@c EN
 NB: Negation op is @code{:not} instead of @code{not}, 
 since @code{(not <negation-arg>)}
 would be ambiguous from the simple node named "not" with one option.
+@c JP
+註: 否定オペレータは@code{not}ではなく@code{:not}です。
+というのは、@code{(not <negation-arg>)}だと ``not'' と言う名前を持ち
+一つのオプションを持つノードと区別できないからです。
+@c COMMON
 
+@c EN
 NB: @code{style-decls} selector rule is currently won't appear in
 the @code{parse-css} output; it can be used in SxCSS to make
 @code{construct-css} render declarations only, which can be
 used in the @code{style} attribute of the document, for example.
+@c JP
+註: @code{style-decls}セレクタルールは@code{parse-css}の出力には
+現れません。
+ドキュメントの@code{style}属性に渡すCSS断片を生成したい場合に、
+@code{(style-decls <declaration> ...)}を@code{construct-css}に渡します。
+@c COMMON
+@example
+(with-output-to-string 
+ (cut construct-css
+      '((style-decls (width (50 %))
+                     (padding #(0 (10 pt) 0 (10 pt)))))))
+  @result{} "width:50%;padding:0 10pt 0 10pt"
+@end example
 
 @c Local variables:
 @c mode: texinfo

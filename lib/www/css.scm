@@ -31,8 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; EXPERIMENTAL : API may change
-
 (define-module www.css
   (use gauche.generator)
   (use gauche.lazy)
