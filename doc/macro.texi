@@ -1569,29 +1569,57 @@ global bindings inserted by the macro.
 @section Hybrid macros
 @c NODE ハイブリッドマクロ
 
+@c EN
 A hybrid macro is both a macro and a procedure simultaneously.
 If a symbol bound to a hybrid macro appears in the first position
 of a form, it behaves like a macro and the form is expanded accodring
 to its macro expander.  If a symbol appears other places, it is evaluated
-to a procedure.
+to a procedure at runtime.
+@c JP
+ハイブリッドマクロは、マクロと手続きを合わせたものです。
+ハイブリッドマクロに束縛されているシンボルがフォームの最初のポジションにある場合、
+それはマクロのように振る舞い、マクロ展開器によって展開されます。
+シンボルがその他の場所に現れた場合は、実行時に手続きへと評価されます。
+@c COMMON
 
+@c EN
 It can realize so-called ``compiler macros''---at a compile time,
 the macro part examines the arguments and can transform the form as
 desired.  In all other circumstances, it behaves like a normal procedure
 binding, so you can pass the procedure to @code{map}, for example.
+@c JP
+これは、いわゆる「コンパイラマクロ」を実現するのに使えます。つまり、
+コンパイル時に引数を調べ好きなようにフォームを変換できます。
+それ以外の場合は普通の手続きへの束縛のように振る舞うので、
+例えば@code{map}の引数として渡すことができます。
+@c COMMON
 
 @defmac define-hybrid-syntax variable expr transformer-spec
+@c EN
 Binds @var{variable} to both an ordinary Scheme value and a macro
 simultaneously.  At the compile time, @var{transformer-spec} is evaluated;
 it must yield a macro in the the compile-time environment, and bound
 to @var{variable} to be used at macro expansion.  At the execution time,
 @var{expr} is evaluated and bound to @var{variable} to be used as
 a run-time value.
+@c JP
+@var{variable}を通常のScheme値とマクロの両方に束縛します。
+コンパイル時に@var{transformer-spec}が評価されます。それはコンパイル時環境において
+マクロを返さなければなりません。そして、マクロ展開用に@var{variable}に束縛されます。
+一方@var{expr}は実行時に評価され、実行時の値として@var{variable}に束縛されます。
+@c COMMON
 
+@c EN
 The macro transformer can return the input form as is (that is, returns
 an object @code{eq?} to the input form), to indicate that it doesn't
 need to expand it.  In that case, Gauche compiles the form as an ordinary
 procedure call, to use the value of @var{expr} at run-time.
+@c JP
+マクロ展開器は、入力フォームに展開の必要がなければそれをそのまま
+(入力フォームと@code{eq?}になるオブジェクトとして)返すことができます。
+その場合、Gaucheはフォームを単なる手続き呼び出しとしてコンパイルし、
+@var{expr}の実行時の値が呼び出されます。
+@c COMMON
 @end defmac
 
 @node Identifiers, Debugging macros, Hybrid macros, Macros
