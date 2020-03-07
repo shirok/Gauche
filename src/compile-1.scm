@@ -521,6 +521,7 @@
     [(_ name expr)
      (unless (identifier? name) (error "syntax-error:" oform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
+       ;; Hygiene alert
        ;; If NAME is an identifier, it is inserted by macro expander; we
        ;; can't simply place it in $define, since it would insert a toplevel
        ;; definition into the toplevel of macro-definition environment---
