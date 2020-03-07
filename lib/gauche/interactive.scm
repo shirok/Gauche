@@ -84,10 +84,14 @@
            (when (matcher (symbol->string symbol))
              (found mod symbol))))))
 
+    (define (visible? sym)
+      (global-variable-bound? module sym))
+    
     (define (found module symbol)
-      (set! result
-            (cons (format #f "~30s (~a)~%" symbol (module-name module))
-                  result)))
+      (push! result
+             (format #f "~30s (~a~a)~%" symbol 
+                     (if (visible? symbol) "" "*")
+                     (module-name module))))
 
     ;; mimics the Scm_FindBinding
     (if stay-in-module
