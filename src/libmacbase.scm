@@ -194,6 +194,7 @@
   (match args
     [() #f]                             ;just show current traces
     [(#t) (set! *trace-macro* #t)]      ;trace all macros
+    [(#f) (set! *trace-macro* #f)]      ;untrace all macros
     [(objs ...)
      (unless (every (^x (or (symbol? x) (regexp? x))) objs)
        (error "Argument(s) of trace-macro should be a \
