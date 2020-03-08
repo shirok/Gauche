@@ -7782,33 +7782,33 @@ POSIX風文字集合表記のGauche拡張。名前は全て大文字でなけれ
 POSIX風文字集合表記で認識される名前は次のとおりです。
 
 @multitable @columnfractions .15 .85
-@item @code{:alpha:} @tab ASCII alphabets.  @code{char-set:ascii-letter}, @code{#[A-Za-z]}
-@item @code{:alnum:} @tab ASCII alphabets and digits.  @code{char-set:ascii-letter+digits}, @code{#[0-9A-Za-z]}.
-@item @code{:blank:} @tab ASCII blanks.  @code{char-set:ascii-blank}, tab and space.
-@item @code{:cntrl:} @tab ASCII control characters.  @code{char-set:ascii-control}, U+0000 to U+001f and U+007f.
-@item @code{:digit:} @tab ASCII digits.  @code{char-set:ascii-digit}, @code{#[0-9]}.
-@item @code{:graph:} @tab ASCII graphic characters.  @code{char-set:ascii-graphic}.
-@item @code{:lower:} @tab ASCII lower-case alphabets.  @code{char-set:ascii-lower-case}, @code{#[a-z]}.
-@item @code{:print:} @tab ASCII printing characters.  @code{char-set:ascii-printing}.
-@item @code{:punct:} @tab ASCII punctuation characters.  @code{char-set:ascii-punctuation}.
-@item @code{:space:} @tab ASCII whitespaces. @code{char-set:ascii-whitespace}.
-@item @code{:upper:} @tab ASCII upper-case characters.  @code{char-set:ascii-upper-case}, @code{#[A-Z]}.
-@item @code{:word:} @tab ASCII word characters (not POSIX).  @code{char-set:ascii-word}, @code{#[0-9A-Za-z_]}.
-@item @code{:xdigit:} @tab Hexadecimal digits.  @code{char-set:hex-digit}, @code{#[0-9a-fA-F]}.
-@item @code{:ascii:} @tab ASCII characters (not POSIX).  @code{char-set:ascii}.
-@item @code{:ALPHA:} @tab Unicode letters.  @code{char-set:letter}.
-@item @code{:ALNUM:} @tab Unicode letters and digits.  @code{char-set:letter+digits}.
-@item @code{:BLANK:} @tab Unicode blanks.  @code{char-set:blank}.
-@item @code{:CNTRL:} @tab Unicode control characters.  @code{char-set:iso-control}.
-@item @code{:DIGIT:} @tab Unicode digits.  @code{char-set:digit}.
-@item @code{:GRAPH:} @tab Unicode graphic characters.  @code{char-set:graphic}.
-@item @code{:LOWER:} @tab Unicode lower-case letters.  @code{char-set:lower-case}, @code{#[a-z]}.
-@item @code{:PRINT:} @tab Unicode printing characters.  @code{char-set:printing}.
-@item @code{:PUNCT:} @tab Unicode punctuation characters.  @code{char-set:punctuation}.
-@item @code{:SPACE:} @tab Unicode whitespaces. @code{char-set:whitespace}.
-@item @code{:UPPER:} @tab Unicode upper-case letters.  @code{char-set:upper-case}, @code{#[A-Z]}.
-@item @code{:WORD:} @tab Unicode word characters.  @code{char-set:word}.
-@item @code{:XDIGIT:} @tab Hexadecimal digits (same as @code{:xdigit:}).
+@item @code{:alpha:} @tab ASCIIアルファベット。@code{char-set:ascii-letter}, @code{#[A-Za-z]}
+@item @code{:alnum:} @tab ASCIIアルファベットと数字。@code{char-set:ascii-letter+digits}, @code{#[0-9A-Za-z]}.
+@item @code{:blank:} @tab ASCIIブランク文字。@code{char-set:ascii-blank}, tab and space.
+@item @code{:cntrl:} @tab ASCII制御文字。@code{char-set:ascii-control}, U+0000 to U+001f and U+007f.
+@item @code{:digit:} @tab ASCII数字。@code{char-set:ascii-digit}, @code{#[0-9]}.
+@item @code{:graph:} @tab ASCIIグラフィック文字。@code{char-set:ascii-graphic}.
+@item @code{:lower:} @tab ASCII小文字アルファベット。@code{char-set:ascii-lower-case}, @code{#[a-z]}.
+@item @code{:print:} @tab ASCII印字可能文字。@code{char-set:ascii-printing}.
+@item @code{:punct:} @tab ASCII句読点。@code{char-set:ascii-punctuation}.
+@item @code{:space:} @tab ASCII空白文字。@code{char-set:ascii-whitespace}.
+@item @code{:upper:} @tab ASCII大文字アルファベット。@code{char-set:ascii-upper-case}, @code{#[A-Z]}.
+@item @code{:word:} @tab ASCII単語構成文字(POSIXではありません)。 @code{char-set:ascii-word}, @code{#[0-9A-Za-z_]}.
+@item @code{:xdigit:} @tab 16進数の数字。@code{char-set:hex-digit}, @code{#[0-9a-fA-F]}.
+@item @code{:ascii:} @tab ASCII文字 (POSIXではありません).  @code{char-set:ascii}.
+@item @code{:ALPHA:} @tab Unicode通常文字。@code{char-set:letter}.
+@item @code{:ALNUM:} @tab Unicode通常文字と数字。@code{char-set:letter+digits}.
+@item @code{:BLANK:} @tab Unicodeブランク文字。@code{char-set:blank}.
+@item @code{:CNTRL:} @tab Unicode制御文字。@code{char-set:iso-control}.
+@item @code{:DIGIT:} @tab Unicode数字。@code{char-set:digit}.
+@item @code{:GRAPH:} @tab Unicodeグラフィック文字。@code{char-set:graphic}.
+@item @code{:LOWER:} @tab Unicode小文字。@code{char-set:lower-case}, @code{#[a-z]}.
+@item @code{:PRINT:} @tab Unicode印字可能文字。@code{char-set:printing}.
+@item @code{:PUNCT:} @tab Unicode句読点。@code{char-set:punctuation}.
+@item @code{:SPACE:} @tab Unicode空白文字。@code{char-set:whitespace}.
+@item @code{:UPPER:} @tab Unicode大文字。@code{char-set:upper-case}, @code{#[A-Z]}.
+@item @code{:WORD:} @tab Unicode単語構成文字。@code{char-set:word}.
+@item @code{:XDIGIT:} @tab 16進数の数字。(@code{:xdigit:}と同じ).
 @end multitable
 
 いくつか例を示します。
@@ -7933,14 +7933,37 @@ to mix non-ascii digit characters with hexadecimal notation.
 @end defvar
 
 @defvar char-set:letter+digit
-@defvarx char-set:graphic
-@defvarx char-set:printing
 [R7RS charset]
+@c EN
+Union of @code{char-set:letter} and @code{char-set:digit}.
+@c JP
+@code{char-set:letter}と@code{char-set:digit}の和集合です。
+@c COMMON
+@end defvar
+
+@defvar char-set:graphic
+[R7RS charset]
+@c EN
+Characters that has some glyph.  Union of letters, numbers, punctuations
+and symbols.
+@c JP
+何らかのグリフを持っている文字。通常文字、数字、句読点、シンボルの和集合です。
+@c COMMON
+@end defvar
+
+@defvar char-set:printing
+[R7RS charset]
+@c EN
+Union of @code{char-set:graphic} and @code{char-set:whitespace}.
+@c JP
+@code{char-set:graphic}と@code{char-set:whitespace}の和集合です。
+@c COMMON
 @end defvar
 
 @defvar char-set:whitespace
 @defvarx char-set:blank
 [R7RS charset]
+@c EN
 Whitespace and blank characters; @code{char-set:whitespace}
 includes @code{#\tab}, @code{#\newline}, @code{#\u000B} (vertical tab),
 @code{#\page}, @code{#\return}, and all characters in general category
@@ -7948,47 +7971,90 @@ includes @code{#\tab}, @code{#\newline}, @code{#\u000B} (vertical tab),
 includes @code{#\tab} and all characters in general category @code{Zs}.
 Note that @code{char-set:whitespace} is the same set of characters
 that Scheme reader treats as whitespace characters.
+@c JP
+空白文字およびブランク文字です。
+空白文字@code{char-set:whitespace}は、
+@code{#\tab}、@code{#\newline}、@code{#\u000B} (vertical tab)、
+@code{#\page}、@code{#\return}、および
+一般カテゴリ@code{Zs}、@code{Zl}、@code{Zp}の文字です。
+一方、ブランク文字@code{char-set:blank}は、
+@code{#\tab}と一般カテゴリ@code{Zs}の文字です。
+@code{char-set:whitespace}は、Schemeのリーダが空白扱いにする文字の集合と一致します。
+@c COMMON
 @end defvar
 
 @defvar char-set:iso-control
 [R7RS charset]
+@c EN
 Control characters (Unicode general category @code{Cc}).
+@c JP
+制御文字 (Unicode一般カテゴリ@code{Cc})。
+@c COMMON
 @end defvar
 
 
 @defvar char-set:punctuation
 [R7RS charset]
+@c EN
 Punctuation characters (Unicode general category
 @code{Pc}, @code{Pd}, @code{Ps}, @code{Pe}, @code{Pi}, @code{Pf}
 and @code{Po}).
+@c JP
+句読点 (Unicode一般カテゴリ
+@code{Pc}, @code{Pd}, @code{Ps}, @code{Pe}, @code{Pi}, @code{Pf}, @code{Po})。
+@c COMMON
 @end defvar
 
 @defvar char-set:symbol
 [R7RS charset]
+@c EN
 Symbol characters (Unicode general category @code{Sm}, @code{Sc},
 @code{Sk} and @code{So}).
+@c JP
+シンボル文字 (Unicode一般カテゴリ
+@code{Sm}, @code{Sc}, @code{Sk}, @code{So})。
+@c COMMON
 @end defvar
 
 @defvar char-set:ascii
 [R7RS charset]
+@c EN
 Contains all ASCII characters (U+0000 to U+007f).
+@c JP
+すべてのASCII文字 (U+0000 to U+007f)。
+@c COMMON
 @end defvar
 
 @defvar char-set:empty
 [R7RS charset]
+@c EN
 An empty character set.
+@c JP
+空の文字集合。
+@c COMMON
 @end defvar
 
 @defvar char-set:full
 [R7RS charset]
+@c EN
 A character set that includes all characters.
+@c JP
+すべての文字を含む文字集合。
+@c COMMON
 @end defvar
 
 @defvar char-set:word
+@c EN
 A word constituent characters.  In the current version,
 it is equivalent to @code{char-set:ascii-word} (@code{#[0-9A-Za-z_]})
 but in future versions we may extend this to other Unicode characters.
 If you intend to mean ASCII-only words, use @code{char-set:ascii-word}.
+@c JP
+単語を構成する文字。今のところ、これは@code{char-set:ascii-word}、
+つまり@code{#[0-9A-Za-z_]}と同じです。
+ただ、将来はUnicodeの全域に意味を拡張するかもしれません。
+ASCIIの範囲内だけを扱いたい場合は@code{char-set:ascii-word}を使ってください。
+@c COMMON
 @end defvar
 
 
@@ -8005,23 +8071,46 @@ If you intend to mean ASCII-only words, use @code{char-set:ascii-word}.
 @defvarx char-set:ascii-punctuation
 @defvarx char-set:ascii-symbol
 @defvarx char-set:ascii-word
+@c EN
 These are intersection of @code{char-set:ascii} and
 the corresponding char set without @code{ascii-}.
 (@code{char-set:ascii-control} corresponds to @code{char-set:iso-control}).
+@c JP
+これらはそれぞれ、@code{ascii-}を除いた名前の文字集合と@code{char-set:ascii}と
+の積集合です。
+@c COMMON
 
+@c EN
 The @code{\d}, @code{\s} and @code{\w} notation in the char-set literal 
 and regexp literal corresponds to @code{char-set:ascii-digit},
 @code{char-set:ascii-whitespace}, and @code{char-set:ascii-word},
 respectively (not the Unicode set).
+@c JP
+文字集合リテラルおよび正規表現リテラルにおける
+@code{\d}、@code{\s}、@code{\w}はそれぞれ
+@code{char-set:ascii-digit}、
+@code{char-set:ascii-whitespace}、@code{char-set:ascii-word}に
+対応します (Unicode版ではなく)。
+@c COMMON
 
+@c EN
 The POSIX character class notation, such as @code{[:alpha:]} in
 char-set literal and regexp literal, refers to these ASCII-only
 charsets.
+@c JP
+また、@code{[:alpha:]}などのPOSIX文字クラス表記もこちらのASCII版の方に対応します。
+@c COMMON
 
+@c EN
 Note: We don't have @code{char-set:ascii-title-case} and
 @code{char-set:ascii-hex-digit}.  There's no titlecase letter
 in ASCII range.  And @code{char-set:hex-digit} is limited to ASCII
 by definition.
+@c JP
+なお、@code{char-set:ascii-title-case}と@code{char-set:ascii-hex-digit}は
+ありません。ASCIIの範囲内にtitlecaseにあたる文字はなく、
+また@code{char-set:hex-digit}はそれ自体ASCII範囲に限定されています。
+@c COMMON
 @end defvar
 
 @defvar char-set:Lu
@@ -8054,9 +8143,14 @@ by definition.
 @defvarx char-set:Cs
 @defvarx char-set:Co
 @defvarx char-set:Cn
+@c EN
 Each character set contains the corresponding Unicode characters with
 the given general category; e.g. @code{char-set:Lu} contains all characters
 of the general category @code{Lu}.
+@c JP
+それぞれ、対応するUniocdeの一般カテゴリに属する文字の集合です。
+例えば@code{char-set:Lu}は一般カテゴリ@code{Lu}の文字の集合です。
+@c COMMON
 @end defvar
 
 @defvar char-set:L
@@ -8067,10 +8161,23 @@ of the general category @code{Lu}.
 @defvarx char-set:S
 @defvarx char-set:Z
 @defvarx char-set:C
+@c EN
 Each character set contains the Unicode characters with the general
 category starting with the letter; e.g. @code{char-set:L} is union
 of @code{char-set:Lu}, @code{char-set:Ll}, @code{char-set:Lt},
 @code{char-set:Lm} and @code{char-set:Lo}.
+
+@code{char-set:LC} is for cased-letters, the union of
+@code{char-set:Lt}, @code{char-set:Ll}, @code{char-set:Lu}.
+@c JP
+各文字集合は、その文字で始まるUnicodeの一般カテゴリのすべての文字の集合です。
+例えば@code{char-set:L}は、@code{char-set:Lu}、
+@code{char-set:Ll}、@code{char-set:Lt}、
+@code{char-set:Lm}、@code{char-set:Lo}の和集合です。
+
+@code{char-set:LC}は大文字小文字の区別のある文字の集合、つまり
+@code{char-set:Lt}、@code{char-set:Ll}、@code{char-set:Lu}の和集合です。
+@c COMMON
 @end defvar
 
 @c EN
