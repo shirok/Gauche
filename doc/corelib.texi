@@ -8976,31 +8976,68 @@ Schemeは他のスクリプト言語より一般的により多くの文字を�
 
 @node String cursors, String indexing, String interpolation, Strings
 @subsection String cursors
+@c NODE 文字列カーソル
 
+@c EN
 String cursors are opaque objects that point into strings, similar to
 indexes. Cursors however are more efficient. For example, to get a
 character with @code{string-ref} using an index on a multibyte string,
 Gauche needs to iterate from the beginning of the string until that
 position, or @code{O(n)}. Using cursors you can access in @code{O(1)}
-(for singlebyte strings, Gauche does it in @code{O(1)} even with
-index).
+(for singlebyte (ASCII) strings or an indexed string,
+Gauche does it in @code{O(1)} even with index.  @xref{String indexing},
+for the details of indexed string.)
+@c JP
+文字列カーソルは文字列の中の文字を指示するオブジェクトです。文字列中の文字を指定するのに
+インデックスも使えますが、カーソルの方が効率が良いです。例えば、
+文字インデックスを使ってマルチバイト文字列中の文字を@code{string-ref}で取り出すには、
+Gaucheは文字列の最初からその文字まで文字列をたどらなければならず、
+インデックスnに対してO(n)かかります。カーソルを使えばO(1)でアクセスできます
+(ASCII文字だけからなる文字列や、インデックス付加済み文字列では
+文字インデックスを使ったアクセスもO(1)になります。
+インデックス付加済み文字列については@ref{String indexing}を参照してください。)
+@c COMMON
 
-For a string of length @var{n}, there are @code{n + 1} cursors. The
+@c EN
+For a string of length n, there can be n+1 cursors. The
 last cursor at the end of the string does not point to any valid
 character, it's usually used to determine if nothing is found.
+@c JP
+長さnの文字列には、n+1個のカーソルが存在し得ます。
+一番最後のカーソルは文字列末尾を指し、該当する文字を持ちません。
+探している文字が無いことを示す値としても使われます。
+@c COMMON
 
+@c EN
 A string cursor is associated with a specific string and should not be
 used with another string. A string cursor also becomes invalid when
 the associated string is modified. Accessing an invalid cursor does
 not always fail though. Running @code{gosh} with @code{-fsafe-string-cursors}
-could help catch these issues. @xref{Invoking Gosh}.
+could help catch these issues, with some performance overhead.
+@xref{Invoking Gosh}.
+@c JP
+文字列カーソルは特定の文字列と結びついていて、それ以外の文字列に対して使うのは無効です。
+また、元の文字列が変更されると文字列カーソルは無効になります。
+ただ、無効になったカーソルを使っても必ずしもエラーになるとは限りません。
+@code{gosh}を@code{-fsafe-string-cursors}オプションつきで起動すると、
+性能が落ちますがその種のエラーを検出することができます。
+詳しくは@ref{Invoking Gosh}を参照してください。
+@c COMMON
 
+@c EN
 Most procedures that take indexes in Gauche can also take
 cursors. Relying on this though is unportable. For example, the
 @code{substring} procedure in RnRS standards does not mention anything
 about cursors even though the Gauche version accepts cursors. For
 portable programs, you should only use cursors on procedures from
-srfi-130 module.
+srfi-130 module (@pxref{Cursor-based string library}).
+@c JP
+文字インデックスを取るGaucheの文字列手続きのほとんどはカーソルも受け付けます。
+但し、それに依存したコードは移植性がありません。例えば@code{substring}は、
+Gauche版ではインデックスもカーソルも使えますが、RnRSではインデックスしか許していません。
+移植性のあるプログラムを書く際には、srfi-130モジュールにある手続きでのみ
+カーソルを使うようにしてください (@ref{Cursor-based string library}参照)。
+@c COMMON
 
 @deftp {Builtin Class} <string-cursor>
 Represents a cursor. When printed out, you'll see the
@@ -9093,7 +9130,7 @@ and returns @code{#t} or @code{#f} accordingly.
 
 @node String indexing, String accessors & modifiers, String cursors, Strings
 @subsection String indexing
-@c NODE 文字列のインデックス
+@c NODE 文字列のインデクシング
 
 Since Gauche stores strings in multibyte encoding, random access
 requires O(N) by default.  In most cases, string access is either
