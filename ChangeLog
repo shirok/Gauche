@@ -1,3 +1,9 @@
+2020-03-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (define-macro, define-syntax): Fix
+	  macro-defining-macro called from other module.
+	  Cf: https://github.com/shirok/Gauche/issues/532
+
 2020-03-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c, lib/gauce/regexp/sre.scm: Implement BOG/EOG asseritions.

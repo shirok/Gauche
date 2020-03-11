@@ -705,9 +705,14 @@
   (let* ([proc (eval expr (cenv-module cenv))]
          [trans (%make-macro-transformer name
                                          (^[form env] (apply proc (cdr form)))
-                                         expr #f)])
-    ;; See the "Hygiene alert" in pass1/define.
-    (%insert-syntax-binding (cenv-module cenv) (unwrap-syntax name) trans)
+                                         expr #f)]
+         ;; See the "Hygiene alert" in pass1/define.
+         [id (if (wrapped-identifier? name)
+               (%rename-toplevel-identifier! name)
+               (make-identifier name (cenv-module cenv) '()))])
+    (%insert-syntax-binding (identifier-module id)
+                            (unwrap-syntax name)
+                            trans)
     ($const-undef)))
 
 (define-pass1-syntax (define-syntax form cenv) :null
@@ -717,10 +722,14 @@
   (match form
     [(_ name expr)
      (let* ([cenv (cenv-add-name cenv (variable-name name))]
-            [transformer (pass1/eval-macro-rhs 'define-syntax expr cenv)])
-       ;; See the "Hygiene alert" in pass1/define.
-       (%insert-syntax-binding (cenv-module cenv) (unwrap-syntax name)
-                               transformer)
+            [trans (pass1/eval-macro-rhs 'define-syntax expr cenv)]
+            ;; See the "Hygiene alert" in pass1/define.
+            [id (if (wrapped-identifier? name)
+                  (%rename-toplevel-identifier! name)
+                  (make-identifier name (cenv-module cenv) '()))])
+       (%insert-syntax-binding (identifier-module id)
+                               (unwrap-syntax name)
+                               trans)
        ($const-undef))]
     [_ (error "syntax-error: malformed define-syntax:" form)]))
 

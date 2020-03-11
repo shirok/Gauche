@@ -1263,6 +1263,35 @@
   (test "literal identifier comparison car car-alias" #t
         (lambda () (free-identifier=?? car car-alias))))
 
+;; macro defining macro from other module
+;; https://github.com/shirok/Gauche/issues/532
+
+(define-module macro-defining-macro-toplevel
+  (export x1)
+  (define-syntax x1
+    (syntax-rules ()
+      ((x1 y1)
+       (x2 x3 y1))))
+
+  (define-syntax x2
+    (syntax-rules ()
+      ((x2 x3 y1)
+       (begin
+         (define-syntax x3
+           (syntax-rules ()
+             ((x3 x4) x4)))
+         (define-syntax y1
+           (syntax-rules ()
+             ((y1 y2) (x3 y2)))))))))
+
+(define-module macro-defining-macro-toplevel-user
+  (use gauche.test)
+  (import macro-defining-macro-toplevel)
+  (x1 bar)
+  ;; without fix, (bar 1) fails with "unbound variable: #<identifier ... x3>"
+  (test "macro defining macro in other module" 1
+        (lambda () (eval '(bar 1) (current-module)))))
+
 ;;----------------------------------------------------------------------
 ;; identifier comparison
 
