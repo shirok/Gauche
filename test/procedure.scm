@@ -457,6 +457,28 @@
                (1 ,(undefined) ,(undefined) 0 1 ())
                ,(test-error)))
 
+;; :allow-other-keys without :key
+;; http://chaton.practical-scheme.net/gauche/a/2020/03/12#entry-5e6a02c5-9b99a
+(test-optkey ":allow-other-keys z"
+             (lambda (x :allow-other-keys z)
+               (cons x z))
+             '(1 :a 2 :b 3)
+             `((1 :b 3 :a 2)
+               ,(test-error)
+               (1 :a 2)
+               ,(test-error)
+               (1)
+               ,(test-error)))
+
+(test-optkey ":allow-other-keys"
+             (lambda (:allow-other-keys) 'ok)
+             '(:a 2 :b 3)
+             `(ok
+               ,(test-error)
+               ok
+               ,(test-error)
+               ok))
+
 ;; If keyword is symbol, we should allow them as formals.
 (test-section "rnrs lambda formals")
 

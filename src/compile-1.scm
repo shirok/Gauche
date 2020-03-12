@@ -1318,7 +1318,7 @@
                         os)]
             [rest (or r (gensym))])
         `((,let-optionals*. ,garg ,(append binds rest)
-           ,@(if (and (not r) (null? ks))
+           ,@(if (and (not r) (null? ks) (not a))
                ;; TODO: better error message!
                `((unless (null? ,rest)
                    (error "too many arguments for" ',form))
@@ -1326,7 +1326,13 @@
                (expand-key ks rest a)))))))
   (define (expand-key ks garg a)
     (if (null? ks)
-      body
+      (if a
+        ;; The case when we have :allow-other-keys without :key.
+        ;; We don't deal with specific keyword arguments, but expecting
+        ;; the user provides some.  Using let-keywords* checks the
+        ;; argument list is even.
+        `((,let-keywords*. ,garg ,(if (boolean? a) (gensym) a) ,@body))
+        body)
       (let1 args (map (match-lambda
                         [[? identifier? o] o]
                         [(([? keyword-like? key] o) init)

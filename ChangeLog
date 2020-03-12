@@ -1,3 +1,10 @@
+2020-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1/extended-lambda-body):
+	  Allow :allow-other-keys without :key.  It can be useful that the
+	  procedure itself won't handle specific keyword arguments, but
+	  want to let Gauche check the arguments are even.
+
 2020-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (define-macro, define-syntax): Fix
