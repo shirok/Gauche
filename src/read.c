@@ -642,18 +642,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
         return read_list(port, ']', ctx);
     case '{':
         reject_in_r7(port, ctx, "{}");
-        /* srfi-105 experimental support */
-        {
-            ScmObj r = read_list(port, '}', ctx);
-            if (SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(),SCM_COMPILE_ENABLE_CEXPR)){
-                static ScmObj xform_cexpr = SCM_UNDEFINED;
-                SCM_BIND_PROC(xform_cexpr, "%xform-cexpr",
-                              Scm_GaucheInternalModule());
-                return Scm_ApplyRec1(xform_cexpr, r);
-            } else {
-                return r;
-            }
-        }
+        return read_list(port, '}', ctx);
     case '+':; case '-':
         /* Note: R5RS doesn't permit identifiers beginning with '+' or '-',
            but some Scheme programs use such identifiers. */
