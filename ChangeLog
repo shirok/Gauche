@@ -1,3 +1,10 @@
+2020-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/editable-reader.scm (%input-complete?):
+	  Regard an empty string as complete input.  I don't remember why
+	  I explicitly excluded it.
+	  Cf: https://github.com/shirok/Gauche/pull/629
+
 2020-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/extended-lambda-body):
