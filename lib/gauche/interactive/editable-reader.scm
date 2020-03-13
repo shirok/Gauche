@@ -85,7 +85,7 @@
 ;; We have to handle both toplevel command (begins with comma, ends with
 ;; newline) and the complete sexp.
 (define (%input-complete? s)
-  (and (not (equal? s ""))
-       (if-let1 m (#/^\s*,(.*)/ s)
-         (not (#/^\s*$/ (m 1)))
-         (complete-sexp? s))))
+  (or (equal? s "")
+      (if-let1 m (#/^\s*,(.*)/ s)
+        (not (#/^\s*$/ (m 1)))
+        (complete-sexp? s))))
