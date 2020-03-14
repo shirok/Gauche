@@ -23,7 +23,7 @@ $(TARGET): make-scoop-manifesto.scm
 	emacs --batch --file=$@ --load=json --funcall=json-pretty-print-buffer --funcall=save-buffer
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(TARGET:=~)
 
 distclean: clean
 	rm -f Makefile
