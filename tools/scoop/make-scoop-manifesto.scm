@@ -1,0 +1,38 @@
+#!/usr/bin/gosh
+
+(use rfc.json)
+
+(construct-json
+ '(
+   ("description" . "Scheme Scripting Engine")
+   ("license" . "BSD-3-Clause")
+   ("homepage" . "https://practical-scheme.net/gauche/")
+   ("version" . "0.9.9")
+
+   ("checkver" .
+    (("github" . "https://github.com/shirok/Gauche")))
+
+   ("autoupdate" .
+    (("architecture" .
+      (("64bit" .
+	(("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-64bit.msi")))
+       ("32bit" .
+	(("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-32bit.msi")))))))
+
+   ("architecture" .
+    (("64bit" .
+      (("url" .  "https://github.com/shirok/Gauche/releases/download/release0_9_9/Gauche-mingw-0.9.9-64bit.msi")
+       ("hash" . "620389588eda0765973bc499c7eb340744b4d463022cd4b3a37164539952eafc")))
+     ("32bit" .
+      (("url" .  "https://github.com/shirok/Gauche/releases/download/release0_9_9/Gauche-mingw-0.9.9-32bit.msi")
+       ("hash" . "6b6f742f05c8153448f779850333eac9a24894e2a7c706aa6bfd230bc1435434")))))
+
+   ("bin" .
+    #("Gauche/bin/gauche-cesconv.exe"
+      "Gauche/bin/gauche-config.exe"
+      "Gauche/bin/gauche-install.exe"
+      "Gauche/bin/gauche-package.exe"
+      "Gauche/bin/gosh.exe"
+      "Gauche/bin/gosh-noconsole.exe"))
+
+   ))
