@@ -41,10 +41,10 @@
 
        ("architecture" .
 	(("64bit" .
-	  (("url" .  ,#"https://github.com/shirok/Gauche/releases/download/release~|underscoreVersion|/Gauche-mingw-~|version|-64bit.msi")
+	  (("url"  . ,#"https://github.com/shirok/Gauche/releases/download/release~|underscoreVersion|/Gauche-mingw-~|version|-64bit.msi")
 	   ("hash" . ,hash64)))
 	 ("32bit" .
-	  (("url" .  ,#"https://github.com/shirok/Gauche/releases/download/release~|underscoreVersion|/Gauche-mingw-~|version|-32bit.msi")
+	  (("url"  . ,#"https://github.com/shirok/Gauche/releases/download/release~|underscoreVersion|/Gauche-mingw-~|version|-32bit.msi")
 	   ("hash" . ,hash32)))))
 
        ("bin" .
