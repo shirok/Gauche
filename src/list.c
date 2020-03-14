@@ -760,4 +760,16 @@ ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
     return SCM_UNDEFINED;
 }
 
-
+/* Temporary - Check if normal pairs are all aligned with 2-word boundary */
+#if GAUCHE_CHECK_PAIR_ALIGNMENT
+int Scm_CheckingPairP(ScmObj obj) 
+{
+    if (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj)))) {
+        if (SCM_WORD(obj) & SIZEOF_LONG) {
+            fprintf(stderr, "Unaligned pair %p\n", obj);
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+#endif /*GAUCHE_CHECK_PAIR_ALIGNMENT*/

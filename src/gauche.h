@@ -137,6 +137,9 @@ SCM_DECL_BEGIN
 /* Define this to 0 to turn off lazy-pair feature. */
 #define GAUCHE_LAZY_PAIR 1
 
+/* Temporary - to test alignment of pairs */
+#define GAUCHE_CHECK_PAIR_ALIGNMENT 0
+
 /* Enable an option to make keywords and symbols disjoint.
    (Transient: Will be gone once we completely migrate to
    unified keyword-symbol system */
@@ -1090,8 +1093,13 @@ struct ScmExtendedPairRec {
 };
 
 #if GAUCHE_LAZY_PAIR
-#define SCM_PAIRP(obj)  \
-    (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj))))
+#  if GAUCHE_CHECK_PAIR_ALIGNMENT
+#    define SCM_PAIRP(obj)  (Scm_CheckingPairP(SCM_OBJ(obj)))
+SCM_EXTERN int Scm_CheckingPairP(ScmObj);
+#  else
+#    define SCM_PAIRP(obj)                                                  \
+       (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj))))
+#  endif
 #else  /*!GAUCHE_LAZY_PAIR*/
 #define SCM_PAIRP(obj)          (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7))
 #endif /*!GAUCHE_LAZY_PAIR*/
