@@ -2,6 +2,9 @@
     "description": "Scheme Scripting Engine",
     "homepage": "https://practical-scheme.net/gauche/",
     "version": "0.9.9",
+    "checkver": {
+	"github": "https://github.com/shirok/Gauche"
+    },
     "architecture": {
 	"64bit": {
 	    "url":  "https://github.com/shirok/Gauche/releases/download/release0_9_9/Gauche-mingw-0.9.9-64bit.msi",
