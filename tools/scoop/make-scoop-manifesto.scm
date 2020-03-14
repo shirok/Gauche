@@ -6,9 +6,12 @@
 ;;  $ gosh make-scoop-manifasto.scm --version="version number" --msi64="64bit MSI file" --msi32="32bit MSI file" > gauche.json
 ;;
 ;;
-;; NB: Output JSON file uses commpressed format. Use pretty printer for
+;; NB: Output JSON file uses commpressed format. Use JSON pretty printer for
 ;;     human-readable form.
-;;  $ emacs --batch --file=gauche.json --load=json --funcall=json-pretty-print-buffer --eval="(set-buffer-file-coding-system 'utf-8-dos)" --funcall=save-buffer
+;;  $ emacs --batch --file=gauche.json --load=json \
+;;          --funcall=json-pretty-print-buffer \
+;;          --eval="(set-buffer-file-coding-system 'utf-8-dos)" \
+;;          --funcall=save-buffer
 ;;
 
 (use rfc.json)
