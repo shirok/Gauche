@@ -14,15 +14,16 @@
 
 (define (print-manifesto version msi64 msi32)
   (let ((underscoreVersion (string-tr version "." "_"))
-	(hash64 (get-sha256 msi64))
-	(hash32 (get-sha256 msi32)))
+	(hash64            (get-sha256 msi64))
+	(hash32            (get-sha256 msi32)))
     (construct-json
      `(
        ("##" . "This file is generated from Gauche source tree")
+
        ("description" . "Scheme Scripting Engine")
-       ("license" . "BSD-3-Clause")
-       ("homepage" . "https://practical-scheme.net/gauche/")
-       ("version" . ,version)
+       ("license"     . "BSD-3-Clause")
+       ("homepage"    . "https://practical-scheme.net/gauche/")
+       ("version"     . ,version)
 
        ("checkver" .
 	(("github" . "https://github.com/shirok/Gauche")))
