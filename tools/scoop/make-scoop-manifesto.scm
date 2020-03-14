@@ -39,16 +39,6 @@
 	(("identifier" . "BSD-3-Clause")
 	 ("url" . "https://github.com/shirok/Gauche/blob/master/COPYING")))
 
-       ("checkver" .
-	(("github" . "https://github.com/shirok/Gauche")))
-
-       ("autoupdate" .
-	(("architecture" .
-	  (("64bit" .
-	    (("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-64bit.msi")))
-	   ("32bit" .
-	    (("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-32bit.msi")))))))
-
        ("architecture" .
 	(("64bit" .
 	  (("url" .  ,#"https://github.com/shirok/Gauche/releases/download/release~|underscoreVersion|/Gauche-mingw-~|version|-64bit.msi")
@@ -64,6 +54,17 @@
 	  "Gauche/bin/gauche-package.exe"
 	  "Gauche/bin/gosh.exe"
 	  "Gauche/bin/gosh-noconsole.exe"))
+
+       ("checkver" .
+	(("github" . "https://github.com/shirok/Gauche")))
+
+       ("autoupdate" .
+	(("architecture" .
+	  (("64bit" .
+	    (("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-64bit.msi")))
+	   ("32bit" .
+	    (("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-32bit.msi")))))))
+
        ))))
 
 (define (main args)
