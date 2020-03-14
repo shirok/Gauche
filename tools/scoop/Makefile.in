@@ -1,4 +1,8 @@
 #
+# Scoop manifesto generator
+#
+# NB: See also Scoop (https://scoop.sh/)
+#
 
 top_builddir = @top_builddir@
 
