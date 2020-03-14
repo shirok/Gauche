@@ -1,5 +1,6 @@
 {
     "description": "Scheme Scripting Engine",
+    "license": "BSD-3-Clause",
     "homepage": "https://practical-scheme.net/gauche/",
     "version": "0.9.9",
     "checkver": {
