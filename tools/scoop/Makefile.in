@@ -1,8 +1,10 @@
 #
 
+top_builddir = @top_builddir@
+
 VERSION = @PACKAGE_VERSION@
-MSI64   = Gauche-mingw-$(VERSION)-64bit.msi
-MSI32   = Gauche-mingw-$(VERSION)-32bit.msi
+MSI64   = $(top_builddir)/../Gauche-mingw-$(VERSION)-64bit.msi
+MSI32   = $(top_builddir)/../Gauche-mingw-$(VERSION)-32bit.msi
 
 TARGET = gauche.json
 
