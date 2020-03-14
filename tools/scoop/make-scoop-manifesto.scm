@@ -18,7 +18,7 @@
 (use gauche.parseopt)
 (use text.tr)
 
-(define (get-sha256 file)
+(define (hex-digest-file file)
   (with-input-from-file
       file
     (lambda ()
@@ -27,8 +27,8 @@
 
 (define (print-manifesto version msi64 msi32)
   (let ((underscoreVersion (string-tr version "." "_"))
-	(hash64            (get-sha256 msi64))
-	(hash32            (get-sha256 msi32)))
+	(hash64            (hex-digest-file msi64))
+	(hash32            (hex-digest-file msi32)))
     (construct-json
      `(
        ("##" . "This file is generated from Gauche source tree")
