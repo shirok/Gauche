@@ -32,9 +32,12 @@
        ("##" . "This file is generated from Gauche source tree")
 
        ("description" . "Scheme Scripting Engine")
-       ("license"     . "BSD-3-Clause")
        ("homepage"    . "https://practical-scheme.net/gauche/")
        ("version"     . ,version)
+
+       ("license" .
+	(("identifier" . "BSD-3-Clause")
+	 ("url" . "https://github.com/shirok/Gauche/blob/master/COPYING")))
 
        ("checkver" .
 	(("github" . "https://github.com/shirok/Gauche")))
