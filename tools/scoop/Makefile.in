@@ -1,12 +1,12 @@
 #
 
-VERSION = 0.9.9
-MSI64   = Gauche-mingw-0.9.9-64bit.msi
-MSI32   = Gauche-mingw-0.9.9-32bit.msi
+VERSION = @PACKAGE_VERSION@
+MSI64   = Gauche-mingw-$(VERSION)-64bit.msi
+MSI32   = Gauche-mingw-$(VERSION)-32bit.msi
 
 TARGET = gauche.json
 
-GOSH = gosh
+GOSH = @BUILD_GOSH@
 
 all: $(TARGET)
 
