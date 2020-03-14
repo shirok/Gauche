@@ -1,5 +1,6 @@
 {
     "description": "Scheme Scripting Engine",
+    "homepage": "https://practical-scheme.net/gauche/",
     "version": "0.9.9",
     "architecture": {
 	"64bit": {
