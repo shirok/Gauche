@@ -9,9 +9,7 @@
 ;; NB: Output JSON file uses commpressed format. Use JSON pretty printer for
 ;;     human-readable form.
 ;;  $ emacs --batch --file=gauche.json --load=json \
-;;          --eval='(setq json-encoding-default-indentation "    ")' \
 ;;          --funcall=json-pretty-print-buffer \
-;;          --eval="(set-buffer-file-coding-system 'utf-8-dos)" \
 ;;          --funcall=save-buffer
 ;;
 

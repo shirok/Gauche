@@ -20,11 +20,7 @@ all: $(TARGET)
 
 $(TARGET): make-scoop-manifesto.scm
 	$(GOSH) $< --version=$(VERSION) --msi64=$(MSI64) --msi32=$(MSI32) > $@
-	emacs --batch --file=$@ --load=json \
-		--eval='(setq json-encoding-default-indentation "    ")' \
-		--funcall=json-pretty-print-buffer \
-		--eval="(set-buffer-file-coding-system 'utf-8-dos)" \
-		--funcall=save-buffer
+	emacs --batch --file=$@ --load=batch-pretty-print-json.el
 
 clean:
 	rm -f $(TARGET) $(TARGET:=~)
