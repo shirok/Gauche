@@ -10,7 +10,7 @@ GOSH = gosh
 
 all: $(TARGET)
 
-.PHONY: clean
+.PHONY: all clean distclean
 
 $(TARGET): make-scoop-manifesto.scm
 	$(GOSH) $< --version=$(VERSION) --msi64=$(MSI64) --msi32=$(MSI32) > $@
@@ -18,3 +18,6 @@ $(TARGET): make-scoop-manifesto.scm
 
 clean:
 	rm -f $(TARGET)
+
+distclean: clean
+	rm -f Makefile
