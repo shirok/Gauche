@@ -5,13 +5,15 @@ Gauche can works with Scoop.
 
 == Building Scoop manifesto
 
-1. Build 64 bit and 32 bit MSI package. See link:HOWTO-mingw.adoc[].
-  Output MSI files may copied to parent directory of Gauche project directory.
+1. Build 64 bit and 32 bit MSI package. See link:HOWTO-mingw.adoc[] for details.
+  Output MSI files may copied to parent directory of Gauche project root
+  directory.
 2. Go to `tools/scoop` directory and build Scoop manifesto.
 
     $ cd tools/scoop
     $ make
 
-3. Scoop manifesto is `gauche.json`. Use this file to install Gauche on Scoop.
+3. Our Scoop manifesto is `gauche.json`. Use this file to install Gauche on
+   Scoop.
 
     PS1> scoop install gauche.json
