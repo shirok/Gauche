@@ -90,47 +90,6 @@
   )
 
 ;;-------------------------------------------------------------------
-(test-section "string-pointer")
-(define sp #f)
-(test* "make-string-pointer" #t
-       (begin (set! sp (make-string-pointer "いろはにhoへと"))
-              (string-pointer? sp)))
-(test* "string-pointer-next!" #\い (string-pointer-next! sp))
-(test* "string-pointer-next!" #\ろ (string-pointer-next! sp))
-(test* "string-pointer-prev!" #\ろ (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\い (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #t (eof-object? (string-pointer-prev! sp)))
-(test* "string-pointer-index" 0 (string-pointer-index sp))
-(test* "string-pointer-index" 8
-       (do ((x (string-pointer-next! sp) (string-pointer-next! sp)))
-           ((eof-object? x) (string-pointer-index sp))))
-(test* "string-pointer-substring" '("いろはにhoへと" "")
-       (list (string-pointer-substring sp)
-             (string-pointer-substring sp :after #t)))
-(test* "string-pointer-substring" '("いろはにh" "oへと")
-       (begin
-         (string-pointer-set! sp 5)
-         (list (string-pointer-substring sp)
-               (string-pointer-substring sp :after #t))))
-(test* "string-pointer-substring" '("" "いろはにhoへと")
-       (begin
-         (string-pointer-set! sp 0)
-         (list (string-pointer-substring sp)
-               (string-pointer-substring sp :after #t))))
-
-;; torturing backward pointer movement
-(define sp (make-string-pointer "むa" -1))
-(test* "string-pointer-prev!" #\a (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\む (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #t (eof-object? (string-pointer-prev! sp)))
-
-(define sp (make-string-pointer "ｲﾁﾞめﾙa" -1)) ;;dreaded jisx0201 kana
-(test* "string-pointer-prev!" #\a (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\ﾙ (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\め (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\ﾞ (string-pointer-prev! sp))
-
-;;-------------------------------------------------------------------
 (test-section "string-cursor")
 
 (define str "いろはにhoへと")

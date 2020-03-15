@@ -90,42 +90,6 @@
   )
 
 ;;-------------------------------------------------------------------
-(test-section "string-pointer")
-(define sp #f)
-(test "make-string-pointer" #t
-      (lambda ()
-        (set! sp (make-string-pointer "いろはにhoへと"))
-        (string-pointer? sp)))
-(test "string-pointer-next!" #\い
-      (lambda () (string-pointer-next! sp)))
-(test "string-pointer-next!" #\ろ
-      (lambda () (string-pointer-next! sp)))
-(test "string-pointer-prev!" #\ろ
-      (lambda () (string-pointer-prev! sp)))
-(test "string-pointer-prev!" #\い
-      (lambda () (string-pointer-prev! sp)))
-(test "string-pointer-prev!" #t
-      (lambda () (eof-object? (string-pointer-prev! sp))))
-(test "string-pointer-index" 0
-      (lambda () (string-pointer-index sp)))
-(test "string-pointer-index" 8
-      (lambda () (do ((x (string-pointer-next! sp) (string-pointer-next! sp)))
-                     ((eof-object? x) (string-pointer-index sp)))))
-(test "string-pointer-substring" '("いろはにhoへと" "")
-      (lambda () (list (string-pointer-substring sp)
-                       (string-pointer-substring sp :after #t))))
-(test "string-pointer-substring" '("いろはにh" "oへと")
-      (lambda ()
-        (string-pointer-set! sp 5)
-        (list (string-pointer-substring sp)
-              (string-pointer-substring sp :after #t))))
-(test "string-pointer-substring" '("" "いろはにhoへと")
-      (lambda ()
-        (string-pointer-set! sp 0)
-        (list (string-pointer-substring sp)
-              (string-pointer-substring sp :after #t))))
-
-;;-------------------------------------------------------------------
 (test-section "string-cursor")
 
 (define str "いろはにhoへと")

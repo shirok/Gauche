@@ -90,62 +90,6 @@
   )
 
 ;;-------------------------------------------------------------------
-(test-section "string-pointer")
-(define sp #f)
-(test* "make-string-pointer" #t
-       (begin
-         (set! sp (make-string-pointer "‚¢‚ë‚Í‚Ého‚Ö‚Æ"))
-         (string-pointer? sp)))
-(test* "string-pointer-next!" #\‚¢
-       (string-pointer-next! sp))
-(test* "string-pointer-next!" #\‚ë
-       (string-pointer-next! sp))
-(test* "string-pointer-next!" #\‚Í
-       (string-pointer-next! sp))
-(test* "string-pointer-next!" #\‚É
-       (string-pointer-next! sp))
-(test* "string-pointer-next!" #\h
-       (string-pointer-next! sp))
-(test* "string-pointer-next!" #\o
-       (string-pointer-next! sp))
-(test* "string-pointer-next!" #\‚Ö
-       (string-pointer-next! sp))
-(test* "string-pointer-prev!" #\‚Ö
-       (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\o
-       (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\h
-       (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\‚É
-       (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\‚Í
-       (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\‚ë
-       (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #\‚¢
-       (string-pointer-prev! sp))
-(test* "string-pointer-prev!" #t
-       (eof-object? (string-pointer-prev! sp)))
-(test* "string-pointer-index" 0
-       (string-pointer-index sp))
-(test* "string-pointer-index" 8
-       (do ((x (string-pointer-next! sp) (string-pointer-next! sp)))
-           ((eof-object? x) (string-pointer-index sp))))
-(test* "string-pointer-substring" '("‚¢‚ë‚Í‚Ého‚Ö‚Æ" "")
-       (list (string-pointer-substring sp)
-             (string-pointer-substring sp :after #t)))
-(test* "string-pointer-substring" '("‚¢‚ë‚Í‚Éh" "o‚Ö‚Æ")
-       (begin
-         (string-pointer-set! sp 5)
-         (list (string-pointer-substring sp)
-               (string-pointer-substring sp :after #t))))
-(test* "string-pointer-substring" '("" "‚¢‚ë‚Í‚Ého‚Ö‚Æ")
-       (begin
-         (string-pointer-set! sp 0)
-         (list (string-pointer-substring sp)
-               (string-pointer-substring sp :after #t))))
-
-;;-------------------------------------------------------------------
 (test-section "string-cursor")
 
 (define str "‚¢‚ë‚Í‚Ého‚Ö‚Æ")

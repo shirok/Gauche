@@ -419,8 +419,9 @@ SCM_EXTERN void Scm__DStringRealloc(ScmDString *dstr, ScmSmallInt min_incr);
  */
 SCM_EXTERN char *Scm_StrdupPartial(const char *src, size_t size);
 
+#if GAUCHE_STRING_POINTER
 /*
- * String pointers (WILL BE OBSOLETED)
+ * String pointers (OBSOLETED)
  */
 
 /* Efficient way to access string from Scheme */
@@ -448,5 +449,7 @@ SCM_EXTERN ScmObj Scm_StringPointerSet(ScmStringPointer *sp,
 SCM_EXTERN ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
 SCM_EXTERN ScmObj Scm_StringPointerCopy(ScmStringPointer *sp);
 SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
+
+#endif /*GAUCHE_STRING_POINTER*/
 
 #endif /* GAUCHE_STRING_H */

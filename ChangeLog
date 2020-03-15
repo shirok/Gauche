@@ -1,3 +1,10 @@
+2020-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* Exclude string pointers unless GAUCHE_STRING_POINTER is defined
+	  non-zero.  String pointers are never officially documented, and
+	  now we have string cursors that does the job.   We keep the code
+	  one more release in case there's application code that depends on it.
+
 2020-03-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/editable-reader.scm (%input-complete?):

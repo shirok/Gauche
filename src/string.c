@@ -1703,9 +1703,11 @@ void Scm_StringBodyIndexDump(const ScmStringBody *sb, ScmPort *port)
 
 /*==================================================================
  *
- * String pointer
+ * String pointer (OBSOLETED)
  *
  */
+
+#if GAUCHE_STRING_POINTER
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringPointerClass, NULL);
 
@@ -1854,6 +1856,8 @@ void Scm_StringPointerDump(ScmStringPointer *sp1)
                sp1, sp1->length, sp1->size, sp1->start, sp1->index,
                sp1->current);
 }
+
+#endif /*GAUCHE_STRING_POINTER*/
 
 /*==================================================================
  *
