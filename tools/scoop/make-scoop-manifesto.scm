@@ -74,6 +74,10 @@
 	    ((version "version=s")
 	     (msi64   "msi64=s")
 	     (msi32   "msi32=s"))
+
+	    (if (not (and version msi64 msi32))
+		(error "Required option (version,msi64,msi32) is missing"))
+
 	    (print-manifesto version msi64 msi32)
 	    )
   0)
