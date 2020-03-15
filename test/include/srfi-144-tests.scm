@@ -638,7 +638,7 @@
      (test (fl* nan one) nan)
      (test (fl* one nan) nan)
      ;; [SK] (fl* (flonum 1/3) (flonum 1/3) (flonum 1/3)) yields 1ulp error
-     ;; comapred to (flonum (expt 1/3 3)).
+     ;; compared to (flonum (expt 1/3 3)).
      (test/approx-1ulp (map fl* somereals somereals somereals)
                        (map (lambda (x) (flonum (expt x 3)))
                             somereals))
@@ -675,7 +675,7 @@
        ;; FIXME: the following test assumes IEEE double precision,
        ;; in which (expt 10 23) lies exactly halfway between the
        ;; two nearest flonums.
-       ;; [SK] MinGW's fma doesn't handle it corectly.
+       ;; [SK] MinGW's fma doesn't handle it correctly.
        (cond-expand
         [gauche.os.windows]
         [else
@@ -691,12 +691,10 @@
      (test-assert (flnan? (fl+* posinf zero nan)))
      (test-assert (flnan? (fl+* neginf zero nan)))
 
-     ;; On MinGW-w64 (gcc 9.2.0), result is +nan.0 instead of neginf/posinf.
-     (cond-expand
-      [gauche.os.windows]
-      [else
-       (test (fl+* fl-greatest fl-greatest neginf) neginf)
-       (test (fl+* fl-greatest (fl- fl-greatest) posinf) posinf)])
+     ;; POSIX spec says fma function returns either a NaN or
+     ;; an implementation-defined value in these cases.
+     (test/one-of (fl+* fl-greatest fl-greatest neginf) `(,nan ,neginf))
+     (test/one-of (fl+* fl-greatest (fl- fl-greatest) posinf) `(,nan ,posinf))
 
      (test-assert (flnan? (fl+* nan one one)))
      (test-assert (flnan? (fl+* one nan one)))
