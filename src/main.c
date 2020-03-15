@@ -215,9 +215,9 @@ void usage(int errorp)
 
 void version(void)
 {
-    printf("Gauche scheme shell, version %s [%s%s], %s\n",
-           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT,
-           Scm_HostArchitecture());
+    Scm_Printf(SCM_CUROUT, "Gauche scheme shell, version %s [%s%s], %s\n",
+               GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT,
+               Scm_HostArchitecture());
     static ScmObj version_alist_proc = SCM_UNDEFINED;
     SCM_BIND_PROC(version_alist_proc, "version-alist", Scm_GaucheModule());
     ScmObj alist = Scm_ApplyRec0(version_alist_proc), cp;
