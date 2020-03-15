@@ -1413,7 +1413,7 @@
   (define-module srfi.144 (extend srfi-144))
   (define-module tests.scheme.test
     (use gauche.test)
-    (export test test/unspec-or-exn test/approx test/approx-1ulp)
+    (export test test/one-of test/unspec-or-exn test/approx test/approx-1ulp)
     (define (f=? a b)
       (cond [(flonum? a)
              (and (flonum? b)
@@ -1428,6 +1428,11 @@
       (syntax-rules ()
         [(_ expr expected)
          (test* #"~'expr" expected expr f=?)]))
+    (define-syntax test/one-of
+      (syntax-rules ()
+        [(_ expr expected-list)
+         (test* #"~'expr" expected-list expr
+                (^[elis r] (any (cut f=? <> r) elis)))]))
     (define-syntax test/unspec-or-exn
       (syntax-rules ()
         [(_ expr _)
