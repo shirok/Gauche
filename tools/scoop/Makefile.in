@@ -1,5 +1,5 @@
 #
-# Scoop manifesto generator
+# Scoop manifest generator
 #
 # NB: See also Scoop (https://scoop.sh/)
 #
@@ -20,7 +20,7 @@ all: $(TARGET)
 
 .PHONY: all clean distclean
 
-$(TARGET): make-scoop-manifesto.scm batch-pretty-print-json.el
+$(TARGET): make-scoop-manifest.scm batch-pretty-print-json.el
 	$(GOSH) $(word 1,$^) --version=$(VERSION) --msi64=$(MSI64) --msi32=$(MSI32) > $@
 	emacs --batch --file=$@ --load=$(word 2,$^)
 
