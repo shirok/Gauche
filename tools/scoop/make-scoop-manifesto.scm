@@ -13,22 +13,22 @@
 ;;          --funcall=save-buffer
 ;;
 
+(use gauche.parseopt)
 (use rfc.json)
 (use rfc.sha)
-(use gauche.parseopt)
 (use text.tr)
 
 (define (hex-digest-file file)
   (with-input-from-file
       file
     (lambda ()
-      (digest-hexify (sha256-digest))
-      )))
+      (digest-hexify (sha256-digest)))))
 
 (define (print-manifesto version msi64 msi32)
   (let ((underscoreVersion (string-tr version "." "_"))
 	(hash64            (hex-digest-file msi64))
 	(hash32            (hex-digest-file msi32)))
+
     (construct-json
      `(
        ("##" . "This file is generated from Gauche source tree")
@@ -66,8 +66,8 @@
 	    (("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-64bit.msi")))
 	   ("32bit" .
 	    (("url" . "https://github.com/shirok/Gauche/releases/download/release$underscoreVersion/Gauche-mingw-$version-32bit.msi")))))))
-
-       ))))
+       ))
+    ))
 
 (define (main args)
   (let-args (cdr args)
