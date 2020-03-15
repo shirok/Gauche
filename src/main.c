@@ -225,6 +225,7 @@ void version(void)
     SCM_FOR_EACH(cp, alist) {
         Scm_Printf(SCM_CUROUT, "%S\n", SCM_CAR(cp));
     }
+    Scm_FlushAllPorts(TRUE);
     exit(0);
 }
 
