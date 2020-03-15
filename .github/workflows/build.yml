@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
+      GET_GAUCHE_URL: https://raw.githubusercontent.com/shirok/get-gauche/master
+      GAUCHE_TEST_PATH: ../Gauche-tmp-self-host-test/stage2
       TESTLOG_NAME: testlog-linux
       TESTLOG_PATH: testlog-linux
     steps:
@@ -18,7 +20,7 @@ jobs:
     - name: Install Gauche
       run: |
         pwd
-        curl -f -o get-gauche.sh https://raw.githubusercontent.com/shirok/get-gauche/master/get-gauche.sh
+        curl -f -o get-gauche.sh $GET_GAUCHE_URL/get-gauche.sh
         chmod +x get-gauche.sh
         ./get-gauche.sh --auto --home
     - name: Add Gauche path
@@ -38,7 +40,7 @@ jobs:
       if: always()
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
-        cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+        cp $GAUCHE_TEST_PATH/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v1
@@ -50,6 +52,8 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 90
     env:
+      GET_GAUCHE_URL: https://raw.githubusercontent.com/shirok/get-gauche/master
+      GAUCHE_TEST_PATH: ../Gauche-tmp-self-host-test/stage2
       TESTLOG_NAME: testlog-osx
       TESTLOG_PATH: testlog-osx
     steps:
@@ -57,7 +61,7 @@ jobs:
     - name: Install Gauche
       run: |
         pwd
-        curl -f -o get-gauche.sh https://raw.githubusercontent.com/shirok/get-gauche/master/get-gauche.sh
+        curl -f -o get-gauche.sh $GET_GAUCHE_URL/get-gauche.sh
         chmod +x get-gauche.sh
         ./get-gauche.sh --auto --home
     - name: Add Gauche path
@@ -77,7 +81,7 @@ jobs:
       if: always()
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
-        cp ../Gauche-tmp-self-host-test/stage2/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+        cp $GAUCHE_TEST_PATH/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v1
@@ -95,10 +99,10 @@ jobs:
         include:
         - arch: x86_64
           bit: 64
-          devtool_path: D:\devtool
+          devtool_path: D:\devtool64
         - arch: i686
           bit: 32
-          devtool_path: D:\devtool
+          devtool_path: D:\devtool32
     env:
       MSYSTEM: MINGW${{ matrix.bit }}
       MSYS2_PATH_TYPE: inherit
@@ -134,6 +138,8 @@ jobs:
       run: |
         bash -lc @'
           pwd
+          cd $GITHUB_WORKSPACE
+          pwd
           echo $PATH
         '@
     - name: Update MSYS2
@@ -151,19 +157,25 @@ jobs:
         '@
     - name: Install Gauche
       run: |
-        $env:GAUCHE_INSTALLER_VERSION = curl -f $env:GAUCHE_VERSION_URL
-        echo $env:GAUCHE_INSTALLER_VERSION
-        $env:GAUCHE_INSTALLER = "Gauche-mingw-$env:GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi"
-        echo $env:GAUCHE_INSTALLER
-        curl -f -L -o $env:GAUCHE_INSTALLER $env:GAUCHE_INSTALLER_URL/$env:GAUCHE_INSTALLER
-        dir
-        cmd.exe /c start /wait msiexec /a $env:GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}
+        bash -lc @'
+          cd $GITHUB_WORKSPACE
+          GAUCHE_INSTALLER_VERSION=`curl -f $GAUCHE_VERSION_URL`
+          echo $GAUCHE_INSTALLER_VERSION
+          GAUCHE_INSTALLER=Gauche-mingw-$GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi
+          echo $GAUCHE_INSTALLER
+          curl -f -L -o $GAUCHE_INSTALLER $GAUCHE_INSTALLER_URL/$GAUCHE_INSTALLER
+          ls -l
+          cmd.exe //c \"start /wait msiexec /a $GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}\"
+        '@
     - name: Add Gauche path
       run: |
         echo "::set-env name=PATH::$env:GAUCHE_PATH;$env:PATH"
     - name: Run Gauche once
       run: |
-        gosh -V
+        bash -lc @'
+          where gosh
+          gosh -V
+        '@
     - name: Install tools
       run: |
         bash -lc @'
@@ -178,9 +190,7 @@ jobs:
     - name: Build
       run: |
         bash -lc @'
-          pwd
           cd $GITHUB_WORKSPACE
-          pwd
           gcc -v
           ./DIST gen
           src/mingw-dist.sh
