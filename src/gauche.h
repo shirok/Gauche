@@ -179,8 +179,10 @@ SCM_DECL_BEGIN
 
 /* Statically allocated ScmPair must be aligned in two ScmWords boundary.*/
 #ifdef __GNUC__
+#define SCM_PAIR_ALWAYS_ALIGNED_EVEN_WORDS  1
 #define SCM_ALIGN_PAIR  __attribute__ ((aligned(sizeof(ScmWord)*2)))
 #else  /* !__GNUC__ */
+#define SCM_PAIR_ALWAYS_ALIGNED_EVEN_WORDS  0
 #define SCM_ALIGN_PAIR  /*empty*/
 #endif /* !__GNUC__ */
 
@@ -1119,8 +1121,19 @@ SCM_EXTERN int Scm_CheckingPairP(ScmObj);
 #define SCM_SET_CAR(obj, value) (SCM_CAR(obj) = (value))
 #define SCM_SET_CDR(obj, value) (SCM_CDR(obj) = (value))
 
+#if SIZEOF_LONG == 4
+#define SCM_ODD_WORD_POINTER_P(p) (SCM_WORD(p) & 0x4)
+#else /*SIZEOF_LONG == 8*/
+#define SCM_ODD_WORD_POINTER_P(p) (SCM_WORD(p) & 0x8)
+#endif
+
+#if SCM_PAIR_ALWAYS_ALIGNED_EVEN_WORDS
 #define SCM_EXTENDED_PAIR_P(obj) \
-    (SCM_PAIRP(obj)&&GC_base(obj)&&GC_size(obj)>=sizeof(ScmExtendedPair))
+    (SCM_ODD_WORD_POINTER_P(obj)&&SCM_PAIRP(obj))
+#else  /*!SCM_PAIR_ALWAYS_ALIGNED_EVEN_WORDS*/
+#define SCM_EXTENDED_PAIR_P(obj) \
+    (SCM_ODD_WORD_POINTER_P(obj)&&SCM_PAIRP(obj)&&SCM_HOBJP(((ScmObj*)(obj))-1))
+#endif /*!SCM_PAIR_ALWAYS_ALIGNED_EVEN_WORDS*/
 #define SCM_EXTENDED_PAIR(obj)  ((ScmExtendedPair*)(obj))
 
 

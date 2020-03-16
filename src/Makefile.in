@@ -186,9 +186,10 @@ PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 	          gauche/priv/builtin-syms.h gauche/priv/codeP.h \
 		  gauche/priv/classP.h gauche/priv/dispatchP.h \
 	          gauche/priv/identifierP.h gauche/priv/macroP.h \
-                  gauche/priv/moduleP.h gauche/priv/parameterP.h \
-	          gauche/priv/portP.h gauche/priv/readerP.h \
-	          gauche/priv/stringP.h gauche/priv/writerP.h
+                  gauche/priv/moduleP.h gauche/priv/pairP.h \
+	          gauche/priv/parameterP.h gauche/priv/portP.h \
+	          gauche/priv/readerP.h gauche/priv/stringP.h \
+	          gauche/priv/writerP.h
 
 # MinGW specific
 INSTALL_MINGWHEADERS = gauche/win-compat.h

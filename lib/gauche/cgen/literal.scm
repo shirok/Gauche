@@ -119,6 +119,11 @@
         (or dl
             (rlet1 new (make <cgen-static-data-list>
                          :category category :c-type c-type)
+              (when (eq? c-type 'ScmPair)
+                ;; We need a sentinel at the beginning of ScmPair array
+                ;; See ScmExtendedPair description in gauche/priv/pairP.h.
+                (push! (~ new'init-thunks) "   { SCM_NIL, SCM_NIL }")
+                (inc! (~ new'count)))
               (push! (~ unit'static-data-list) new))))))
 
   (let ([dl (ensure-static-data-list category c-type)]
@@ -163,7 +168,7 @@
               name)
       (dolist [dl dls]
         (for-each (cut print "#if "<>) (reverse (~ dl'cpp-conditions)))
-        (format #t "  ~a ~a[~a]~a;\n" 
+        (format #t "  ~a ~a[~a]~a;\n"
                 (~ dl'c-type) (~ dl'c-member-name) (~ dl'count)
                 (if (eq? (~ dl'c-type) 'ScmPair)
                   " SCM_ALIGN_PAIR"

@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/pairP.h"
 
 /*
  * Classes
@@ -717,11 +718,12 @@ ScmObj Scm_PairAttr(ScmPair *pair)
 
 ScmObj Scm_MakeExtendedPair(ScmObj car, ScmObj cdr, ScmObj attrs)
 {
-    ScmExtendedPair *xp = SCM_NEW(ScmExtendedPair);
-    xp->car = car;
-    xp->cdr = cdr;
-    xp->attributes = attrs;
-    return SCM_OBJ(xp);
+    ScmRealExtendedPair *xp = SCM_NEW(ScmRealExtendedPair);
+    SCM_SET_CLASS(xp, SCM_CLASS_PAIR);
+    xp->data.car = car;
+    xp->data.cdr = cdr;
+    xp->data.attributes = attrs;
+    return SCM_OBJ(&xp->data);  /* hide the first word  */
 }
 
 /* The common scenario is to use ExtendedCons in place of Cons,
