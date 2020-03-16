@@ -182,10 +182,10 @@
        (rlet1 p (generator->lseq 0 gnull)
          (set! (cdr p) 1)))
 
-;; lazy pair returns <pair> for class-of, without forcing.
-(test* "class-of" <pair> (class-of (generator->lseq 0 (gerr 0))))
+;; lazy pair returns <mpair> for class-of, without forcing.
+(test* "class-of" <mpair> (class-of (generator->lseq 0 (gerr 0))))
 (test* "is-a?" #f (is-a? (generator->lseq 0 gnull) <null>))
-(test* "is-a?" #t (is-a? (generator->lseq 0 (gerr 0)) <pair>))
+(test* "is-a?" #t (is-a? (generator->lseq 0 (gerr 0)) <mpair>))
 
 ;; Forcing lazy pair during builtin insturction evaluation.
 ;; For memq & memv test, we coerce the result to boolean so that

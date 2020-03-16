@@ -410,7 +410,7 @@ ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list)
                 return Scm_DeleteKeywordX(key, SCM_CDR(SCM_CDR(cp)));
             } else {
                 ScmObj tail = Scm_DeleteKeywordX(key, SCM_CDR(SCM_CDR(cp)));
-                SCM_SET_CDR(prev, tail);
+                Scm_SetCdr(prev, tail);
                 return list;
             }
         }

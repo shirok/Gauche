@@ -38,6 +38,7 @@
 #include "gauche/priv/classP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/macroP.h"
+#include "gauche/priv/pairP.h"
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/dispatchP.h"
 #include "gauche/priv/stringP.h"
@@ -490,7 +491,16 @@ ScmClass *Scm_ClassOf(ScmObj obj)
     }
     if (SCM_FLONUMP(obj)) return SCM_CLASS_REAL;
     /* check lazy pair first, so that we won't trigger forcing. */
-    if (SCM_LAZY_PAIR_P(obj)||SCM_PAIRP(obj)) return SCM_CLASS_PAIR;
+    if (SCM_LAZY_PAIR_P(obj)) return SCM_CLASS_MPAIR;
+    if (SCM_PAIRP(obj)) {
+        if (SCM_EXTENDED_PAIR_P(obj)) {
+            ScmRealExtendedPair *xp = Scm__RevealRealExtendedPair(obj);
+            return SCM_CLASS_OF(xp);
+        } else {
+            return SCM_CLASS_MPAIR;
+        }
+    }
+    
     return SCM_CLASS_OF(obj);
 }
 
@@ -1089,7 +1099,7 @@ void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub)
         (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
         /* avoid duplication */
         if (SCM_FALSEP(Scm_Memq(super->directSubclasses, SCM_OBJ(sub)))) {
-            SCM_SET_CDR(p, super->directSubclasses);
+            SCM_SET_CDR_UNCHECKED(p, super->directSubclasses);
             super->directSubclasses = p;
         }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
@@ -1116,7 +1126,7 @@ void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m)
         (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
         /* avoid duplication */
         if (SCM_FALSEP(Scm_Memq(super->directMethods, SCM_OBJ(m)))) {
-            SCM_SET_CDR(p, super->directMethods);
+            SCM_SET_CDR_UNCHECKED(p, super->directMethods);
             super->directMethods = p;
         }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
@@ -2672,7 +2682,7 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                     method_locked = mm;
                 } else {
                     replaced = mm;
-                    SCM_SET_CAR(mp, SCM_OBJ(method));
+                    Scm_SetCar(mp, SCM_OBJ(method));
                 }
                 break;
             }
@@ -3079,7 +3089,7 @@ ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
     ScmObj r = SCM_UNDEFINED;
     ScmObj p = Scm_Assq(key, fp->attributes);
     if (SCM_PAIRP(p)) {
-        SCM_SET_CDR(p, value);
+        SCM_SET_CDR_UNCHECKED(p, value);
         r = value;
     } else {
         fp->attributes = Scm_Acons(key, value, fp->attributes);
@@ -3439,6 +3449,9 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_LIST,             "<list>");
     CINIT(SCM_CLASS_PAIR,             "<pair>");
     CINIT(SCM_CLASS_NULL,             "<null>");
+    CINIT(SCM_CLASS_IPAIR,            "<ipair>");
+    CINIT(SCM_CLASS_MPAIR,            "<mpair>");
+    Scm__InitIPairClass(SCM_CLASS_IPAIR);
 
     /* load.c */
     CINIT(SCM_CLASS_AUTOLOAD,         "<autoload>");

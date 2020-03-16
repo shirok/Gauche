@@ -917,7 +917,7 @@ ScmObj Scm_Provide(ScmObj feature)
     ScmObj cp;
     SCM_FOR_EACH(cp, ldinfo.providing) {
         if (SCM_CADR(SCM_CAR(cp)) == SCM_OBJ(self)) {
-            SCM_SET_CDR(SCM_CDR(SCM_CAR(cp)), SCM_LIST1(feature));
+            SCM_SET_CDR_UNCHECKED(SCM_CDR(SCM_CAR(cp)), SCM_LIST1(feature));
             break;
         }
     }

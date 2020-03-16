@@ -718,7 +718,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 } else {
                     Scm_PutcUnsafe(' ', port);
                     obj = SCM_VECTOR_ELEMENT(v, i);
-                    SCM_SET_CAR(top, SCM_MAKE_INT(i+1));
+                    SCM_SET_CAR_UNCHECKED(top, SCM_MAKE_INT(i+1));
                     goto write1;
                 }
             } else {
@@ -744,8 +744,9 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                         POP();
                     } else {
                         obj = v;
-                        SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
-                        SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
+                        SCM_SET_CAR_UNCHECKED(SCM_CDR(top), 
+                                              SCM_MAKE_INT(count+1));
+                        SCM_SET_CDR_UNCHECKED(SCM_CDR(top), SCM_NIL);
                         goto write1;
                     }
                 } else if (wp->printLength >= 0 && wp->printLength <= count) {
@@ -756,14 +757,14 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     /* cdr part is shared */
                     Scm_PutzUnsafe(" . ", -1, port);
                     obj = v;
-                    SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
-                    SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
+                    SCM_SET_CAR_UNCHECKED(SCM_CDR(top), SCM_MAKE_INT(count+1));
+                    SCM_SET_CDR_UNCHECKED(SCM_CDR(top), SCM_NIL);
                     goto write1;
                 } else {
                     Scm_PutcUnsafe(' ', port);
                     obj = SCM_CAR(v);
-                    SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
-                    SCM_SET_CDR(SCM_CDR(top), SCM_CDR(v));
+                    SCM_SET_CAR_UNCHECKED(SCM_CDR(top), SCM_MAKE_INT(count+1));
+                    SCM_SET_CDR_UNCHECKED(SCM_CDR(top), SCM_CDR(v));
                     goto write1;
                 }
             }

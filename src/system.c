@@ -1594,7 +1594,7 @@ ScmObj win_process_register(ScmObj process)
     SCM_ASSERT(Scm_WinProcessP(process));
     ScmObj pair = Scm_Cons(process, SCM_NIL);
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
-    SCM_SET_CDR(pair, process_mgr.children);
+    SCM_SET_CDR_UNCHECKED(pair, process_mgr.children);
     process_mgr.children = pair;
     SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
     return process;

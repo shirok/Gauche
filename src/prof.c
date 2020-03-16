@@ -235,7 +235,7 @@ void collect_samples(ScmVMProfiler *prof)
                      prof->samples[i].func, prof->samples[i].func);
         } else {
             SCM_ASSERT(SCM_PAIRP(e));
-            SCM_SET_CDR(e, Scm_Add(SCM_CDR(e), SCM_MAKE_INT(1)));
+            SCM_SET_CDR_UNCHECKED(e, Scm_Add(SCM_CDR(e), SCM_MAKE_INT(1)));
         }
     }
 }
@@ -278,7 +278,7 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
             Scm_HashTableSet(vm->prof->statHash, func, e, 0);
         }
         SCM_ASSERT(SCM_PAIRP(e));
-        SCM_SET_CAR(e, Scm_Add(SCM_CAR(e), SCM_MAKE_INT(1)));
+        SCM_SET_CAR_UNCHECKED(e, Scm_Add(SCM_CAR(e), SCM_MAKE_INT(1)));
     }
     vm->prof->currentCount = 0;
 

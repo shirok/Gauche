@@ -454,7 +454,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
                     lp->generator = SCM_NIL;
                 }
                 AO_nop_full();
-                SCM_SET_CAR(lp, item);
+                SCM_SET_CAR_UNCHECKED(lp, item);
                 /* We don't need barrier here. */
                 lp->owner = (ScmAtomicWord)1;
             } SCM_WHEN_ERROR {

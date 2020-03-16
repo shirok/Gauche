@@ -40,6 +40,7 @@
  */
 
 static ScmClass *list_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_PairClass),
     SCM_CLASS_STATIC_PTR(Scm_ListClass),
     SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
     SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
@@ -47,9 +48,11 @@ static ScmClass *list_cpl[] = {
     NULL
 };
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_ListClass, NULL, NULL, NULL, NULL, list_cpl+1);
-SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, NULL, list_cpl);
-SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ListClass, NULL, NULL, NULL, NULL, list_cpl+2);
+SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, NULL, list_cpl+1);
+SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl+1);
+SCM_DEFINE_BUILTIN_CLASS(Scm_IPairClass, NULL, NULL, NULL, NULL, list_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_MPairClass, NULL, NULL, NULL, NULL, list_cpl);
 
 /*
  * CONSTRUCTOR
@@ -64,8 +67,8 @@ ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
        the register. */
     SCM_FLONUM_ENSURE_MEM(car);
     SCM_FLONUM_ENSURE_MEM(cdr);
-    SCM_SET_CAR(z, car);
-    SCM_SET_CDR(z, cdr);
+    SCM_SET_CAR_UNCHECKED(z, car);
+    SCM_SET_CDR_UNCHECKED(z, cdr);
     return SCM_OBJ(z);
 }
 
@@ -73,10 +76,10 @@ ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr)
 {
     ScmPair *y = SCM_NEW(ScmPair);
     ScmPair *z = SCM_NEW(ScmPair);
-    SCM_SET_CAR(y, caar);
-    SCM_SET_CDR(y, cdar);
-    SCM_SET_CAR(z, SCM_OBJ(y));
-    SCM_SET_CDR(z, cdr);
+    SCM_SET_CAR_UNCHECKED(y, caar);
+    SCM_SET_CDR_UNCHECKED(y, cdar);
+    SCM_SET_CAR_UNCHECKED(z, SCM_OBJ(y));
+    SCM_SET_CDR_UNCHECKED(z, cdr);
     return SCM_OBJ(z);
 }
 
@@ -115,15 +118,15 @@ ScmObj Scm_VaList(va_list pvar)
     {
         if (SCM_NULLP(start)) {
             start = SCM_OBJ(SCM_NEW(ScmPair));
-            SCM_SET_CAR(start, obj);
-            SCM_SET_CDR(start, SCM_NIL);
+            SCM_SET_CAR_UNCHECKED(start, obj);
+            SCM_SET_CDR_UNCHECKED(start, SCM_NIL);
             cp = start;
         } else {
             ScmObj item;
             item = SCM_OBJ(SCM_NEW(ScmPair));
-            SCM_SET_CDR(cp, item);
-            SCM_SET_CAR(item, obj);
-            SCM_SET_CDR(item, SCM_NIL);
+            SCM_SET_CDR_UNCHECKED(cp, item);
+            SCM_SET_CAR_UNCHECKED(item, obj);
+            SCM_SET_CDR_UNCHECKED(item, SCM_NIL);
             cp = item;
         }
     }
@@ -202,6 +205,33 @@ CXR(Scm_Cadr, "cadr", D A)
 CXR(Scm_Cdar, "cdar", A D)
 CXR(Scm_Cddr, "cddr", D D)
 
+void Scm_SetCar(ScmObj pair, ScmObj obj)
+{
+    if (!SCM_PAIRP(pair)) {
+        Scm_Error("set-car!: Pair required, but got: %S", pair);
+    }
+    ScmClass *k = Scm_ClassOf(pair);
+    if (k->data) {
+        ((ScmExtendedPairDescriptor*)k->data)->setCar(pair, obj);
+    } else {
+        SCM_CAR(pair) = obj;
+    }
+}
+
+void Scm_SetCdr(ScmObj pair, ScmObj obj)
+{
+    if (!SCM_PAIRP(pair)) {
+        Scm_Error("set-cdr!: Pair required, but got: %S", pair);
+    }
+    ScmClass *k = Scm_ClassOf(pair);
+    if (k->data) {
+        ((ScmExtendedPairDescriptor*)k->data)->setCdr(pair, obj);
+    } else {
+        SCM_CDR(pair) = obj;
+    }
+}
+
+
 /*
  * List manipulate routines:
  */
@@ -246,7 +276,7 @@ ScmObj Scm_CopyList(ScmObj list)
     SCM_FOR_EACH(list, list) {
         SCM_APPEND1(start, last, SCM_CAR(list));
     }
-    if (!SCM_NULLP(list)) SCM_SET_CDR(last, list);
+    if (!SCM_NULLP(list)) SCM_SET_CDR_UNCHECKED(last, list);
     return start;
 }
 
@@ -278,7 +308,7 @@ ScmObj Scm_Append2X(ScmObj list, ScmObj obj)
     ScmObj cp;
     SCM_FOR_EACH(cp, list) {
         if (SCM_NULLP(SCM_CDR(cp))) {
-            SCM_SET_CDR(cp, obj);
+            Scm_SetCdr(cp, obj);
             return list;
         }
     }
@@ -301,7 +331,7 @@ ScmObj Scm_Append2(ScmObj list, ScmObj obj)
     if (!SCM_NULLP(cp)) {
         Scm_Error("proper list required, but got %S", list);
     }
-    SCM_SET_CDR(last, obj);
+    SCM_SET_CDR_UNCHECKED(last, obj);
 
     return start;
 }
@@ -312,7 +342,7 @@ ScmObj Scm_Append(ScmObj args)
     SCM_FOR_EACH(cp, args) {
         if (!SCM_PAIRP(SCM_CDR(cp))) {
             if (SCM_NULLP(start)) return SCM_CAR(cp);
-            SCM_SET_CDR(last, SCM_CAR(cp));
+            SCM_SET_CDR_UNCHECKED(last, SCM_CAR(cp));
             break;
         } else if (SCM_NULLP(SCM_CAR(cp))) {
             continue;
@@ -341,15 +371,15 @@ ScmObj Scm_Reverse2(ScmObj list, ScmObj tail)
     if (!SCM_PAIRP(list)) return tail;
 
     ScmPair *p = SCM_NEW(ScmPair);
-    SCM_SET_CAR(p, SCM_NIL);
-    SCM_SET_CDR(p, tail);
+    SCM_SET_CAR_UNCHECKED(p, SCM_NIL);
+    SCM_SET_CDR_UNCHECKED(p, tail);
     ScmObj result = SCM_OBJ(p);
     ScmObj cp;
     SCM_FOR_EACH(cp, list) {
-        SCM_SET_CAR(result, SCM_CAR(cp));
+        SCM_SET_CAR_UNCHECKED(result, SCM_CAR(cp));
         p = SCM_NEW(ScmPair);
-        SCM_SET_CAR(p, SCM_NIL);
-        SCM_SET_CDR(p, result);
+        SCM_SET_CAR_UNCHECKED(p, SCM_NIL);
+        SCM_SET_CDR_UNCHECKED(p, result);
         result = SCM_OBJ(p);
     }
     return SCM_CDR(result);
@@ -374,7 +404,7 @@ ScmObj Scm_Reverse2X(ScmObj list, ScmObj tail)
     ScmObj first, next, result = tail;
     for (first = list; SCM_PAIRP(first); first = next) {
         next = SCM_CDR(first);
-        SCM_SET_CDR(first, result);
+        Scm_SetCdr(first, result);
         result = first;
     }
     return result;
@@ -493,7 +523,7 @@ ScmObj Scm_DeleteX(ScmObj obj, ScmObj list, int cmpmode)
             if (SCM_NULLP(prev)) {
                 list = SCM_CDR(cp);
             } else {
-                SCM_SET_CDR(prev, SCM_CDR(cp));
+                Scm_SetCdr(prev, SCM_CDR(cp));
             }
         } else {
             prev = cp;
@@ -584,7 +614,7 @@ ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
                     alist = SCM_CDR(cp);
                     continue;
                 } else {
-                    SCM_SET_CDR(prev, SCM_CDR(cp));
+                    Scm_SetCdr(prev, SCM_CDR(cp));
                 }
             }
         }
@@ -614,7 +644,7 @@ ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
     SCM_FOR_EACH(lp, list) {
         ScmObj obj = SCM_CAR(lp);
         ScmObj tail = Scm_DeleteX(obj, SCM_CDR(lp), cmpmode);
-        if (SCM_CDR(lp) != tail) SCM_SET_CDR(lp, tail);
+        if (SCM_CDR(lp) != tail) Scm_SetCdr(lp, tail);
     }
     return list;
 }
@@ -704,8 +734,33 @@ ScmObj Scm_MonotonicMerge1(ScmObj sequences)
 }
 
 /*
- * Pair attributes
+ * Extended pairs
  */
+
+static ScmObj make_extended_pair(ScmClass *klass, 
+                                 ScmObj car, ScmObj cdr, ScmObj attrs)
+{
+    ScmRealExtendedPair *xp = SCM_NEW(ScmRealExtendedPair);
+    SCM_SET_CLASS(xp, klass);
+    xp->data.car = car;
+    xp->data.cdr = cdr;
+    xp->data.attributes = attrs;
+    return SCM_OBJ(&xp->data);  /* hide the first word  */
+}
+
+/* "vanilla" extended pair.  used mainly to hold extra attributes, but
+   otherwise behaves like normal pairs. */
+ScmObj Scm_MakeExtendedPair(ScmObj car, ScmObj cdr, ScmObj attrs)
+{
+    return make_extended_pair(SCM_CLASS_MPAIR, car, cdr, attrs);
+}
+
+ScmRealExtendedPair *Scm__RevealRealExtendedPair(ScmObj p)
+{
+    SCM_ASSERT(SCM_EXTENDED_PAIR_P(p));
+    ScmObj *z = ((ScmObj*)p) - 1;
+    return (ScmRealExtendedPair*)z;
+}
 
 ScmObj Scm_PairAttr(ScmPair *pair)
 {
@@ -714,16 +769,6 @@ ScmObj Scm_PairAttr(ScmPair *pair)
     } else {
         return SCM_NIL;
     }
-}
-
-ScmObj Scm_MakeExtendedPair(ScmObj car, ScmObj cdr, ScmObj attrs)
-{
-    ScmRealExtendedPair *xp = SCM_NEW(ScmRealExtendedPair);
-    SCM_SET_CLASS(xp, SCM_CLASS_PAIR);
-    xp->data.car = car;
-    xp->data.cdr = cdr;
-    xp->data.attributes = attrs;
-    return SCM_OBJ(&xp->data);  /* hide the first word  */
 }
 
 /* The common scenario is to use ExtendedCons in place of Cons,
@@ -756,10 +801,42 @@ ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
     }
 
     ScmObj p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
-    if (SCM_PAIRP(p)) SCM_SET_CDR(p, value);
+    if (SCM_PAIRP(p)) SCM_SET_CDR_UNCHECKED(p, value);
     else SCM_EXTENDED_PAIR(pair)->attributes
         = Scm_Acons(key, value, SCM_EXTENDED_PAIR(pair)->attributes);
     return SCM_UNDEFINED;
+}
+
+/*
+ * Immutable pairs
+ */
+
+/* not cheap.  usually you don't want to check this and let it catched
+   in set-car!/set-cdr!. */
+int Scm_ImmutablePairP(ScmObj obj)
+{
+    return SCM_ISA(obj, SCM_CLASS_IPAIR);
+}
+
+ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr)
+{
+    return make_extended_pair(SCM_CLASS_IPAIR, car, cdr, SCM_NIL);
+}
+
+static void ipair_set_cxr(ScmObj pair, ScmObj obj SCM_UNUSED)
+{
+    Scm_Error("Attempt to modify an immutable pair: %S", pair);
+}
+
+static ScmExtendedPairDescriptor ipair_desc = {
+    ipair_set_cxr,
+    ipair_set_cxr
+};
+
+/* Called from class.c, to set up hooks. */
+void Scm__InitIPairClass(ScmClass *klass)
+{
+    klass->data = &ipair_desc;
 }
 
 /* Temporary - Check if normal pairs are all aligned with 2-word boundary */
@@ -775,3 +852,4 @@ int Scm_CheckingPairP(ScmObj obj)
     return FALSE;
 }
 #endif /*GAUCHE_CHECK_PAIR_ALIGNMENT*/
+

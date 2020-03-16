@@ -37,8 +37,9 @@
 /* ScmExtendedPair actually has a hidden pointer to a class before it.  The
  * user won't see it.
  *
- * The class must be <pair> or its subclass, and may have
- * ScmExtendedPairDescriptor in its data field.
+ * The class may have ScmExtendedPairDescriptor in its data field.
+ * Note that any extended pair satisfy SCM_PAIRP and pair?, so althouh
+ * 
  *
  * Read access to car and cdr is simply a single pointer reference, with no
  * overhead.  Mutations on an extended pair, otoh, are intercepted by setCar
@@ -59,14 +60,16 @@
  * pair at the beginning of every static ScmPair array.)
  */
 typedef struct ScmExtendedPairDescriptorRec {
-    ScmClass *klass;
-    void (*setCar)(ScmExtendedPair*);
-    void (*setCdr)(ScmExtendedPair*);
+    void (*setCar)(ScmObj, ScmObj);
+    void (*setCdr)(ScmObj, ScmObj);
 } ScmExtendedPairDescriptor;
 
 typedef struct ScmRealExtendedPairRec {
     ScmClass *klass;
     ScmExtendedPair data;
 } ScmRealExtendedPair;
+
+SCM_EXTERN ScmRealExtendedPair *Scm__RevealRealExtendedPair(ScmObj pair);
+SCM_EXTERN void Scm__InitIPairClass(ScmClass *klass);
 
 #endif /*GAUCHE_PRIV_PAIRP_H*/

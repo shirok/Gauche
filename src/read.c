@@ -318,11 +318,11 @@ static void read_context_flush(ScmReadContext *ctx)
         } else if (SCM_PAIRP(obj)) {
             SCM_FOR_EACH(ep, obj) {
                 if (SCM_READ_REFERENCE_P(SCM_CAR(ep))) {
-                    SCM_SET_CAR(ep, ref_val(SCM_CAR(ep)));
+                    SCM_SET_CAR_UNCHECKED(ep, ref_val(SCM_CAR(ep)));
                 }
                 if (SCM_READ_REFERENCE_P(SCM_CDR(ep))) {
                     /* in case we have (... . #N#) */
-                    SCM_SET_CDR(ep, ref_val(SCM_CDR(ep)));
+                    SCM_SET_CDR_UNCHECKED(ep, ref_val(SCM_CDR(ep)));
                     break;
                 }
             }
@@ -923,7 +923,7 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
                 Scm_UngetcUnsafe(c2, port);
                 item = read_item(port, ctx);
                 if (SCM_READ_REFERENCE_P(item)) ref_seen = TRUE;
-                SCM_SET_CDR(last, item);
+                SCM_SET_CDR_UNCHECKED(last, item);
                 dot_seen = TRUE;
                 continue;
             }

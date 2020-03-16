@@ -509,7 +509,7 @@ void Scm_SigCheck(ScmVM *vm)
             if (SCM_NULLP(tail)) {
                 q->pending = tail = cell;
             } else {
-                SCM_SET_CDR(tail, cell);
+                SCM_SET_CDR_UNCHECKED(tail, cell);
                 tail = SCM_CDR(tail);
             }
         }

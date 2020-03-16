@@ -1118,8 +1118,12 @@ SCM_EXTERN int Scm_CheckingPairP(ScmObj);
 #define SCM_CDAR(obj)           (SCM_CDR(SCM_CAR(obj)))
 #define SCM_CDDR(obj)           (SCM_CDR(SCM_CDR(obj)))
 
-#define SCM_SET_CAR(obj, value) (SCM_CAR(obj) = (value))
-#define SCM_SET_CDR(obj, value) (SCM_CDR(obj) = (value))
+#define SCM_SET_CAR(obj, value) Scm_SetCar(obj, value)
+#define SCM_SET_CDR(obj, value) Scm_SetCdr(obj, value)
+
+/* Use these only if you know OBJ is a mutable pair */
+#define SCM_SET_CAR_UNCHECKED(obj, value) (SCM_CAR(obj) = (value))
+#define SCM_SET_CDR_UNCHECKED(obj, value) (SCM_CDR(obj) = (value))
 
 #if SIZEOF_LONG == 4
 #define SCM_ODD_WORD_POINTER_P(p) (SCM_WORD(p) & 0x4)
@@ -1139,9 +1143,13 @@ SCM_EXTERN int Scm_CheckingPairP(ScmObj);
 
 SCM_CLASS_DECL(Scm_ListClass);
 SCM_CLASS_DECL(Scm_PairClass);
+SCM_CLASS_DECL(Scm_IPairClass); /* immutable pair */
+SCM_CLASS_DECL(Scm_MPairClass); /* mutable pair */
 SCM_CLASS_DECL(Scm_NullClass);
 #define SCM_CLASS_LIST          (&Scm_ListClass)
 #define SCM_CLASS_PAIR          (&Scm_PairClass)
+#define SCM_CLASS_IPAIR         (&Scm_IPairClass)
+#define SCM_CLASS_MPAIR         (&Scm_MPairClass)
 #define SCM_CLASS_NULL          (&Scm_NullClass)
 
 #define SCM_LISTP(obj)          (SCM_NULLP(obj) || SCM_PAIRP(obj))
@@ -1210,6 +1218,10 @@ SCM_EXTERN ScmObj Scm_Cadr(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cdar(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cddr(ScmObj obj);
 
+SCM_EXTERN int    Scm_ImmutablePairP(ScmObj obj);
+SCM_EXTERN void   Scm_SetCar(ScmObj pair, ScmObj value);
+SCM_EXTERN void   Scm_SetCdr(ScmObj pair, ScmObj value);
+
 SCM_EXTERN ScmSize Scm_Length(ScmObj obj);
 SCM_EXTERN ScmObj Scm_CopyList(ScmObj list);
 SCM_EXTERN ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill);
@@ -1249,6 +1261,8 @@ SCM_EXTERN ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_PairAttr(ScmPair *pair);
 SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
+
+SCM_EXTERN ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr);
 
 /*--------------------------------------------------------
  * CHARACTERS

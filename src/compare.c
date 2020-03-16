@@ -359,7 +359,7 @@ static ScmObj sort_list_int(ScmObj objs, ScmObj fn, int destructive)
     if (destructive) {
         ScmObj cp = objs;
         for (ScmSize i=0; i<len; i++, cp = SCM_CDR(cp)) {
-            SCM_SET_CAR(cp, array[i]);
+            Scm_SetCar(cp, array[i]);
         }
         return objs;
     } else {

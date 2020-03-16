@@ -2652,7 +2652,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
         cp->marker = 1;
         /* also set the delimited flag in reset information */
         if (SCM_PAIRP(vm->resetChain)) {
-            SCM_SET_CAR(SCM_CAR(vm->resetChain), SCM_TRUE);
+            SCM_SET_CAR_UNCHECKED(SCM_CAR(vm->resetChain), SCM_TRUE);
         }
     }
 

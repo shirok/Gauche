@@ -594,7 +594,7 @@ ScmObj Scm_ImportModule(ScmModule *module,
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     {
         ScmObj ms, prev = p;
-        SCM_SET_CDR(p, module->imported);
+        SCM_SET_CDR_UNCHECKED(p, module->imported);
         /* Remove duplicate module, if any.
            NB: We allow to import the same module multiple times if they are
            qualified by :only, :prefix, etc.  Theoretically we should check
@@ -607,7 +607,7 @@ ScmObj Scm_ImportModule(ScmModule *module,
                 prev = ms;
                 continue;
             }
-            SCM_SET_CDR(prev, SCM_CDR(ms));
+            SCM_SET_CDR_UNCHECKED(prev, SCM_CDR(ms));
             break;
         }
         module->imported = p;

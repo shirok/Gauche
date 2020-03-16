@@ -603,7 +603,6 @@
   )
 
 ;;--------------------------------------------------------------------------
-
 (test-section "monotonic-merge")
 
 ;; monotonic-merge is a core function to implement Dylan-style class
@@ -631,5 +630,30 @@
             '((hv-grid vh-grid)
               (hv-grid horizontal-grid vertical-grid grid-layout object)
               (vh-grid vertical-grid horizontal-grid grid-layout object)))))
+
+;;--------------------------------------------------------------------------
+(test-section "immutable pairs")
+
+(test* "ipair" #t (ipair? (ipair 1 2)))
+(test* "ipair" #f (ipair? '()))
+(test* "ipair" #f (ipair? (cons 1 2)))
+(test* "ipair" '(1 . 2)
+       (let1 p (ipair 1 2)
+         (cons (car p) (cdr p))))
+
+(test* "ilist" '(#t #t #t #f)
+       (let1 p (ilist 1 2 3)
+         (list (ipair? p)
+               (ipair? (cdr p))
+               (ipair? (cddr p))
+               (ipair? (cdddr p)))))
+(test* "ilist" '() (ilist))
+
+(test* "ipair immutability" (test-error)
+       (let1 p (ipair 1 2)
+         (set-car! p 5)))
+(test* "ipair immutability" (test-error)
+       (let1 p (ipair 1 2)
+         (set-cdr! p 5)))
 
 (test-end)

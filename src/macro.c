@@ -697,17 +697,17 @@ static void grow_branch(MatchVar *rec, int level)
         }
         if (SCM_NULLP(SCM_CAR(trunc))) {
             for (i++; i<level-1; i++, trunc = SCM_CAR(trunc)) {
-                SCM_SET_CAR(trunc, SPROUT);
+                SCM_SET_CAR_UNCHECKED(trunc, SPROUT);
             }
             rec->sprout = SPROUT;
-            SCM_SET_CAR(trunc, rec->sprout);
+            SCM_SET_CAR_UNCHECKED(trunc, rec->sprout);
             return;
         }
     }
     SCM_FOR_EACH(trunc, trunc) {
         if (SCM_NULLP(SCM_CDR(trunc))) {
             rec->sprout = SPROUT;
-            SCM_SET_CDR(trunc, rec->sprout);
+            SCM_SET_CDR_UNCHECKED(trunc, rec->sprout);
             break;
         }
     }
@@ -733,8 +733,8 @@ static void exit_subpattern(ScmSyntaxPattern *subpat, MatchVar *mvec)
             if (subpat->level == 1) {
                 mvec[count].root = Scm_ReverseX(mvec[count].branch);
             } else {
-                SCM_SET_CAR(mvec[count].sprout,
-                            Scm_ReverseX(mvec[count].branch));
+                SCM_SET_CAR_UNCHECKED(mvec[count].sprout,
+                                      Scm_ReverseX(mvec[count].branch));
                 mvec[count].branch = SCM_NIL;
             }
         }

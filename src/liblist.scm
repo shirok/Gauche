@@ -48,8 +48,8 @@
   (inliner CAR) (setter set-car!) SCM_CAR)
 (define-cproc cdr (obj::<pair>) :constant
   (inliner CDR) (setter set-cdr!) SCM_CDR)
-(define-cproc set-car! (obj::<pair> value) ::<void> SCM_SET_CAR)
-(define-cproc set-cdr! (obj::<pair> value) ::<void> SCM_SET_CDR)
+(define-cproc set-car! (obj value) ::<void> Scm_SetCar)
+(define-cproc set-cdr! (obj value) ::<void> Scm_SetCdr)
 
 (inline-stub
  "#define CXR_SETTER(PRE, pre, tail) \
@@ -107,6 +107,22 @@
 (%define-cxr cdddar cddr cdar)
 (%define-cxr cddddr cddr cddr)
 
+;; primitives for immutable pars
+(define-cproc ipair? (obj) ::<boolean> Scm_ImmutablePairP)
+(define-cproc ipair (car cdr) Scm_MakeImmutablePair)
+(define-cproc ilist (:rest args)
+  (if (SCM_NULLP args)
+    (return SCM_NIL)
+    (let* ([h SCM_NIL] [t SCM_NIL])
+      (dopairs (cp args)
+        (if (SCM_NULLP t)
+          (set! h (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL)
+                t h)
+          (let* ([p (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL)])
+            (SCM_SET_CDR_UNCHECKED t p)
+            (set! t p))))
+      (return h))))
+
 (select-module scheme)
 (define-cproc null? (obj) ::<boolean> :fast-flonum :constant
   (inliner NULLP) SCM_NULLP)
@@ -148,7 +164,7 @@
 (define-cproc list-set! (lis k::<fixnum> v) ::<void>
   (let* ([p (Scm_ListTail lis k SCM_FALSE)])
     (if (SCM_PAIRP p)
-      (SCM_SET_CAR p v)
+      (Scm_SetCar p v)
       (Scm_Error "list-set!: index out of bound: %d" k))))
 (define-cproc list-ref (list k::<fixnum> :optional fallback) :constant
   (setter list-set!)
@@ -191,7 +207,7 @@
     (let* ([head (SCM_LIST1 arg)] [tail head])
       (dopairs [cp args]
         (unless (SCM_PAIRP (SCM_CDR cp))
-          (SCM_SET_CDR tail (SCM_CAR cp))
+          (SCM_SET_CDR_UNCHECKED tail (SCM_CAR cp))
           (break))
         (SCM_APPEND1 head tail (SCM_CAR cp)))
       (return head))))
@@ -202,7 +218,7 @@
       (when (SCM_NULLP (SCM_CDR cp))
         (if (SCM_NULLP h)
           (set! h (SCM_CAR cp))
-          (SCM_SET_CDR t (SCM_CAR cp)))
+          (Scm_SetCdr t (SCM_CAR cp)))
         (break))
       (SCM_APPEND h t (SCM_CAR cp))
       (unless (or (SCM_NULLP t) (SCM_NULLP (SCM_CDR t)))

@@ -118,7 +118,7 @@ static ScmObj message_get(ScmMessageCondition *obj)
 static void message_set(ScmMessageCondition *obj, ScmObj val)
 {
     ScmObj msglist = obj->message;
-    if (SCM_PAIRP(msglist)) SCM_SET_CAR(msglist, val);
+    if (SCM_PAIRP(msglist)) SCM_SET_CAR_UNCHECKED(msglist, val);
     else SCM_MESSAGE_CONDITION(obj)->message = SCM_LIST2(val, val);
 }
 
@@ -136,7 +136,7 @@ static void message_prefix_set(ScmMessageCondition *obj, ScmObj val)
 {
     ScmObj msglist = obj->message;
     if (SCM_PAIRP(msglist) && SCM_PAIRP(SCM_CDR(msglist))) {
-        SCM_SET_CAR(SCM_CDR(msglist), val);
+        SCM_SET_CAR_UNCHECKED(SCM_CDR(msglist), val);
     } else {
         obj->message = SCM_LIST2(msglist, val);
     }
@@ -156,7 +156,7 @@ static void message_args_set(ScmMessageCondition *obj, ScmObj val)
 {
     ScmObj msglist = obj->message;
     if (SCM_PAIRP(msglist) && SCM_PAIRP(SCM_CDR(msglist))) {
-        SCM_SET_CDR(SCM_CDR(msglist), val);
+        SCM_SET_CDR_UNCHECKED(SCM_CDR(msglist), val);
     } else {
         obj->message = Scm_Cons(msglist, Scm_Cons(msglist, val));
     }

@@ -1171,7 +1171,7 @@ ScmObj Scm_PortAttrSetUnsafe(ScmPort *p, ScmObj key, ScmObj val)
                 SAFE_CALL(p, Scm_ApplyRec2(setter, SCM_OBJ(p), val));
             }
         } else {
-            SCM_SET_CAR(SCM_CDR(v), val);
+            SCM_SET_CAR_UNCHECKED(SCM_CDR(v), val);
         }
     } else {
         p->attrs = Scm_Cons(SCM_LIST2(key, val), p->attrs);

@@ -205,8 +205,8 @@ ScmObj Scm_IdentifierEnv(ScmIdentifier *id)
         /* MT safety: This operation is idempotent, so it's ok if more than
            one thread execute here. */
         ScmObj f = get_binding_frame(id->name, SCM_CDR(id->frames));
-        SCM_SET_CDR(id->frames, f);
-        SCM_SET_CAR(id->frames, SCM_TRUE);
+        SCM_SET_CDR_UNCHECKED(id->frames, f);
+        SCM_SET_CAR_UNCHECKED(id->frames, SCM_TRUE);
     }
     return SCM_CDR(id->frames);
 }

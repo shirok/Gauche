@@ -1,3 +1,22 @@
+2020-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/*: Implement immutable pairs.  This has a few visibile changes:
+	- An ordinary pair is an instance of <mpair>, which inherits <pair>.
+	  An immutable pair is an instance of <ipair> which is also a
+	  subclass of <pair>.  We can't just keep mutable pairs as <pair>
+	  and subclass <ipair> from it, for mutable pairs and immutable pairs
+	  don't have subtype relationship.  BUT, this change may break code
+	  that assumes all pairs are instances of <pair> and has tests like
+	  (eq? (class-of x) <pair>).
+	- SCM_SET_CAR and SCM_SET_CDR simply calls Scm_SetCar and Scm_SetCdr,
+	  which rejects mutating immutable pairs (and we'll have other kind of
+	  hooks).  They do have far more overhead than signle assignment like
+	  before.  If you KNOW you're setting car/cdr of normal pairs (typically
+	  the one you just allocated), you can use SCM_SET_CAR_UNCHECKED and
+	  SCM_SET_CDR_UNCHECKED.
+	- These changes are provisional.  If it breaks something horribly,
+	  we'll change the strategy.
+
 2020-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* Exclude string pointers unless GAUCHE_STRING_POINTER is defined
