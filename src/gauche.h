@@ -1125,7 +1125,7 @@ SCM_EXTERN int Scm_CheckingPairP(ScmObj);
 #define SCM_SET_CAR_UNCHECKED(obj, value) (SCM_CAR(obj) = (value))
 #define SCM_SET_CDR_UNCHECKED(obj, value) (SCM_CDR(obj) = (value))
 
-#if SIZEOF_LONG == 4
+#if SIZEOF_LONG == 4 && !defined(_WIN64)
 #define SCM_ODD_WORD_POINTER_P(p) (SCM_WORD(p) & 0x4)
 #else /*SIZEOF_LONG == 8*/
 #define SCM_ODD_WORD_POINTER_P(p) (SCM_WORD(p) & 0x8)
