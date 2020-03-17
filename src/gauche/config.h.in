@@ -465,6 +465,9 @@
 /* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
+/* The size of `intptr_t', as computed by sizeof. */
+#undef SIZEOF_INTPTR_T
+
 /* The size of `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
 
