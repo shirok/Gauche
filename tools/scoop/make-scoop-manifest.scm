@@ -34,8 +34,7 @@
        ("description" . "Scheme Scripting Engine")
        ("homepage"    . "https://practical-scheme.net/gauche/")
        ("version"     . ,version)
-
-       ("license" . "BSD-3-Clause")
+       ("license"     . "BSD-3-Clause")
 
        ("architecture" .
 	(("64bit" .
@@ -61,7 +60,7 @@
 
        ("checkver" .
 	(("github" . "https://github.com/shirok/Gauche")
-	 ("regex" . "mingw-([\\d.]+)-\\d+bit\\.msi")))
+	 ("regex"  . "mingw-([\\d.]+)-\\d+bit\\.msi")))
 
        ("autoupdate" .
 	(("architecture" .
