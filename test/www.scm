@@ -347,7 +347,7 @@ Content-Disposition: form-data; name=bbb
       (print "echo \"CONTENT_LENGTH = $CONTENT_LENGTH\"")
       (print "echo \"QUERY_STRING = $QUERY_STRING\"")
       (print "cat")))
-       
+
   (test* "run-cgi-script->string-list (using parameters)"
          '("REQUEST_METHOD = POST"
            "CONTENT_TYPE = application/x-www-form-urlencoded"
@@ -387,5 +387,3 @@ Content-Disposition: form-data; name=bbb
 (run-css-test)
 
 (test-end)
-
-
