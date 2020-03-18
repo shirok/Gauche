@@ -303,7 +303,7 @@
 (define %escape ($/ %unicode ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
 ;; nmstart [_a-z]|{nonascii}|{escape} => char
 (define %nmstart ($/ ($. #[_a-zA-Z]) %nonascii %escape))
-  
+
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
@@ -520,7 +520,7 @@
     (if (string-ci=? (symbol->string v) "important")
       ($return '!important)
       ($fail "!important expected"))))
-        
+
 (define %declaration
   ($lift (^[name _ _ block important _] (list name block important))
          ($tok 'IDENT) %WS* ($tok 'COLON)
@@ -540,7 +540,7 @@
 
 (define %rule-list
   ($many ($/ ($tok 'WHITESPACE) %qualified-rule %at-rule)))
-               
+
 ;;
 ;; Higher-level parser
 ;;
