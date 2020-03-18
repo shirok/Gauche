@@ -31,9 +31,9 @@
 
     (construct-json
      `(
+       ("version"     . ,version)
        ("description" . "Scheme Scripting Engine")
        ("homepage"    . "https://practical-scheme.net/gauche/")
-       ("version"     . ,version)
        ("license"     . "BSD-3-Clause")
 
        ("architecture" .
