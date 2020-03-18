@@ -390,4 +390,8 @@ Content-Disposition: form-data; name=bbb
        #f
        (parse-css-selector-string ":::"))
 
+(test* "parse-css-selector-string (pseudo-class with arg)"
+       '(* (: (nth-child 1)))
+       (parse-css-selector-string ":nth-child(1)"))
+
 (test-end)
