@@ -61,7 +61,7 @@
           idrop-right
           isplit-at
           (rename last ilast)
-          (rename ast-ipair last-ipair)
+          (rename last-pair last-ipair)
 
           (rename length ilength)
           iappend
@@ -76,24 +76,24 @@
           iunzip5
           (rename count icount)
 
-          ;; imap
-          ;; (rename for-each ifor-each)
-          ;; (rename fold ifold)
-          ;; iunfold
-          ;; (rename pair-fold ipair-fold)
-          ;; (rename reduce ireduce)
-          ;; (rename fold-right ifold-right)
-          ;; iunfold-right
-          ;; (rename pair-fold-right ipair-fold-right)
-          ;; (rename reduce-right ireduce-right)
-          ;; iappend-map
-          ;; (rename pair-for-each ipair-for-each)
-          ;; ifilter-map
-          ;; imap-in-order
+          imap
+          (rename for-each ifor-each)
+          (rename fold ifold)
+          iunfold
+          (rename pair-fold ipair-fold)
+          (rename reduce ireduce)
+          (rename fold-right ifold-right)
+          iunfold-right
+          (rename pair-fold-right ipair-fold-right)
+          (rename reduce-right ireduce-right)
+          iappend-map
+          (rename pair-for-each ipair-for-each)
+          ifilter-map
+          imap-in-order
 
-          ;; ifilter
-          ;; ipartition
-          ;; iremove
+          ifilter
+          ipartition
+          iremove
 
           ;; (rename member imember)
           ;; (rename memq imemq)
@@ -183,7 +183,7 @@
     (ipair (car lis) (itake (cdr lis) (- i 1)))))
 (define (idrop-right lis i)
   (assume exact-integer? i)
-  (let rec ([p0 (list-tail lis k)] [p1 lis])
+  (let rec ([p0 (list-tail lis i)] [p1 lis])
     (if (pair? p0) (ipair (car p1) (rec (cdr p0) (cdr p1))) '())))
 (define (isplit-at lis i)
   (assume exact-integer? i)
@@ -254,3 +254,56 @@
                     (ipair (car (cddddr  elt)) e)))))))
 
 
+(define imap
+  (case-lambda
+    ([proc lis] (fold-right (^[x ys] (xipair (proc x) ys)) '() lis))
+    ([proc lis . liss]
+     (ireverse (apply fold-left (^[ys . xs] (cons (apply proc xs) ys)) '()
+                      lis liss)))))
+
+(define (iunfold p f g seed :optional (tail-gen identity))
+  (let rec ((seed seed))
+    (if (p seed) 
+      (tail-gen seed)
+      (ipair (f seed) (rec (g seed))))))
+
+(define (iunfold-right p f g seed :optional (ans '()))
+  (let loop ((seed seed) (ans ans))
+    (if (p seed)
+      ans
+      (loop (g seed)
+            (ipair (f seed) ans)))))
+
+(define (iappend-map proc lis . lists)
+  (iconcatenate (apply map proc lis lists)))
+
+(define (ifilter-map proc lis . lists)
+  (if (null? lists)
+    (let loop ([lis lis] [r '()])
+      (cond [(null-list? lis) (ireverse r)]
+            [(proc (car lis)) => (^x (loop (cdr lis) (cons x r)))]
+            [else (loop (cdr lis) r)]))
+    (let loop ([liss (cons lis lists)] [r '()])
+      (receive (cars cdrs)
+          ((with-module gauche.internal %zip-nary-args) liss)
+        (cond [(not cars) (ireverse r)]
+              [(apply proc cars) => (^x (loop cdrs (cons x r)))]
+              [else (loop cdrs r)])))))
+  
+(define imap-in-order imap)
+
+(define (ifilter pred lis)
+  (let loop ([lis lis] [r '()])
+    (cond [(null-list? lis) (ireverse r)]
+          [(pred (car lis)) (loop (cdr lis) (cons (car lis) r))]
+          [else (loop (cdr lis) r)])))
+
+(define (iremove  pred l) (ifilter  (^x (not (pred x))) l))
+
+(define (ipartition pred lis)
+  (let rec ([lis lis] [xs '()] [ys '()])
+    (if (null-list? lis)
+      (values (ireverse xs) (ireverse ys))
+      (if (pred (car lis))
+        (rec (cdr lis) (cons (car lis) xs) ys)
+        (rec (cdr lis) xs (cons (car lis) ys))))))
