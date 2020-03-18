@@ -386,4 +386,8 @@ Content-Disposition: form-data; name=bbb
 
 (run-css-test)
 
+(test* "parse-css-selector-string (failure)"
+       #f
+       (parse-css-selector-string ":::"))
+
 (test-end)
