@@ -616,7 +616,7 @@
            (match sel
              [('not not-arg) `(:not ,not-arg)]
              [(? symbol?) `(,(if elem? ':: ':) ,sel)]
-             [_ `(,(if elem? ':: ':) ,@sel)]))
+             [_ `(,(if elem? ':: ':) ,sel)]))
          ($tok 'COLON) ($optional ($tok 'COLON))
          ($/ ($tok 'IDENT) %pseudo-fn)))
 
