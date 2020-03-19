@@ -451,8 +451,9 @@ static void vm_unregister(ScmVM *vm)
 #endif
 
 /* Hint for gcc -- at this moment, using __builtin_expect doesn't
-   do any good.  I'll try this later on. */
-#if 0
+   do any good (except for SCM_PROF_COUNT_CALL). I'll try this
+   later on. */
+#if 1
 #define MOSTLY_FALSE(expr)  __builtin_expect(expr, 0)
 #else
 #define MOSTLY_FALSE(expr)  expr
