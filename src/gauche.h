@@ -1998,7 +1998,8 @@ SCM_EXTERN void Scm_Cleanup(void);
 SCM_EXTERN void Scm_Exit(int code) SCM_NORETURN;
 SCM_EXTERN void Scm_Abort(const char *msg) SCM_NORETURN;
 SCM_EXTERN void Scm_Panic(const char *msg, ...) SCM_NORETURN;
-SCM_EXTERN ScmObj Scm_InitCommandLine(int argc, const char *argv[]);
+SCM_EXTERN ScmObj Scm_InitCommandLine(const char *argv[], int argc,
+                                      int offset);
 
 SCM_EXTERN void Scm_SimpleMain(int argc, const char *argv[],
                                const char *script, u_long flags);

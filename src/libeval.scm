@@ -642,6 +642,9 @@
 (inline-stub
  (initcode
   (Scm_BindPrimitiveParameter (Scm_GaucheModule) "command-line" SCM_NIL 0)))
+(inline-stub
+ (initcode
+  (Scm_BindPrimitiveParameter (Scm_GaucheModule) "script-file" SCM_FALSE 0)))
 
 ;;
 ;; External view of VM.

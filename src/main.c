@@ -627,9 +627,18 @@ static void process_command_args(ScmObj cmd_args)
 /* When scriptfile is provided, execute it.  Returns exit code. */
 int execute_script(const char *scriptfile, ScmObj args)
 {
+    static ScmObj script_file_proc = SCM_UNDEFINED;
     /* If script file is specified, load it. */
     ScmObj mainproc = SCM_FALSE;
     ScmLoadPacket lpak;
+
+    static ScmObj sys_realpath_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(sys_realpath_proc, "sys-realpath", Scm_GaucheModule());
+    ScmObj script_file = Scm_ApplyRec1(sys_realpath_proc,
+                                       SCM_MAKE_STR_IMMUTABLE(scriptfile));
+
+    SCM_BIND_PROC(script_file_proc, "script-file", Scm_GaucheModule());
+    Scm_ApplyRec1(script_file_proc, script_file);
 
     Scm_Load(scriptfile, SCM_LOAD_PROPAGATE_ERROR, &lpak);
     if (!lpak.loaded) return 1;
@@ -800,9 +809,9 @@ int main(int ac, char **av)
         }
 
         /* sets up arguments. */
-        args = Scm_InitCommandLine(argc - argind, (const char**)argv + argind);
+        args = Scm_InitCommandLine((const char**)argv, argc, argind);
     } else {
-        args = Scm_InitCommandLine(1, (const char**)argv);
+        args = Scm_InitCommandLine((const char**)argv, argc, argc);
     }
 
     process_command_args(Scm_Reverse(pre_cmds));

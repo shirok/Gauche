@@ -605,15 +605,33 @@ const char *Scm_GetRuntimeDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
  * Command line arguments
  */
 
-ScmObj Scm_InitCommandLine(int argc, const char *argv[])
+ScmObj Scm_InitCommandLine(const char *argv[], int argc, int offset)
 {
     static ScmObj command_line_proc = SCM_UNDEFINED;
-    ScmObj args = Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
+    ScmObj os_command_line, command_line;
+    ScmObj compat_program_name, compat_argv;
+
+    command_line = os_command_line =
+        Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
+    for (int i = 0; i < offset; i++)
+        command_line = SCM_CDR(command_line);
+    SCM_DEFINE(Scm_GaucheModule(), "*os-command-line*", os_command_line);
     SCM_BIND_PROC(command_line_proc, "command-line", Scm_GaucheModule());
-    Scm_ApplyRec1(command_line_proc, args);
-    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(args));
-    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(args));
-    return args;
+    Scm_ApplyRec1(command_line_proc, command_line);
+    if (SCM_NULLP(command_line)) {
+        compat_program_name = SCM_CAR(os_command_line);
+        compat_argv = SCM_NIL;
+        offset = -1;
+    } else {
+        compat_program_name = SCM_CAR(command_line);
+        compat_argv = SCM_CDR(command_line);
+    }
+    SCM_DEFINE(Scm_UserModule(), "*program-name*", compat_program_name);
+    SCM_DEFINE(Scm_UserModule(), "*argv*", compat_argv);
+    SCM_DEFINE(Scm_GaucheModule(), "*command-line-offset*",
+               (offset >= 0) ? SCM_MAKE_INT(offset) : SCM_FALSE);
+
+    return command_line;
 }
 
 /*=============================================================
@@ -640,7 +658,7 @@ void Scm_SimpleMain(int argc, const char *argv[],
                     const char *script, u_long flags SCM_UNUSED)
 {
     SCM_ASSERT(argc > 0);
-    ScmObj args = Scm_InitCommandLine(argc, argv);
+    ScmObj args = Scm_InitCommandLine(argv, argc, 0);
 
     if (script) {
         ScmObj s = SCM_MAKE_STR(script);
