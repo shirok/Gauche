@@ -131,7 +131,7 @@ SCM_EXTERN void Scm_ProfilerCountBufferFlush(ScmVM *vm);
 #ifdef GAUCHE_PROFILE
 #define SCM_PROF_COUNT_CALL(vm, obj)                                    \
     do {                                                                \
-        if (vm->profilerRunning) {                                      \
+        if (MOSTLY_FALSE(vm->profilerRunning)) {                        \
             if (vm->prof->currentCount == SCM_PROF_COUNTER_IN_BUFFER) { \
                 Scm_ProfilerCountBufferFlush(vm);                       \
             }                                                           \
