@@ -804,10 +804,13 @@
   (return (difftime (Scm_GetSysTime time1) (Scm_GetSysTime time0))))
 
 (define-cproc sys-strftime (format::<const-cstring> tm::<sys-tm>)
-  ::<const-cstring>
+  ;; NB: We don't use <const-cstring> return type to use autoboxing,
+  ;; for (return tmpbuf) carries the reference of tmpbuf to outside of
+  ;; the scope. 
+  ;; See https://github.com/shirok/Gauche/issues/638#issuecomment-601777334
   (let* ([tmpbuf::(.array char [256])])
     (strftime tmpbuf (sizeof tmpbuf) format (& (SCM_SYS_TM_TM tm)))
-    (return tmpbuf)))
+    (return (SCM_MAKE_STR_COPYING tmpbuf))))
 
 (define-cproc sys-gmtime (time)
   (let* ([tim::time_t (Scm_GetSysTime time)])
