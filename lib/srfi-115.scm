@@ -34,7 +34,7 @@
 (define-module srfi-115
   (use scheme.charset)
   (use gauche.regexp.sre)
-  (export rx regexp regexp->sre char-set->sre valid-sre?
+  (export rx regexp regexp? regexp->sre char-set->sre valid-sre?
           regexp-matches regexp-matches? regexp-search
           regexp-fold regexp-extract regexp-split regexp-partition
           regexp-replace regexp-replace-all
@@ -42,10 +42,6 @@
           regexp-match-submatch-start regexp-match-submatch-end
           regexp-match->list))
 (select-module srfi-115)
-
-(define-syntax rx
-  (syntax-rules ()
-    [(_ sre ...) (regexp `(: sre ...))]))
 
 (define (regexp re)
   (if (regexp? re) re (regexp-compile-sre re)))
@@ -60,9 +56,6 @@
   (guard (e [(<regexp-invalid-sre> e) #f][else (raise e)])
     (regexp-parse-sre sre)
     #t))
-
-;; regexp? is already defined by gauche.regexp and is builtin.
-;; do we even need to export it in pure R7RS environment?
 
 (define (regexp-matches re str :optional start end)
   (if (regexp? re)

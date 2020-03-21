@@ -101,6 +101,10 @@
             [strp (string? temp)])
        (rxmatch-case #t temp strp ?clause ...))]))
 
+(define-syntax rx
+  (syntax-rules ()
+    [(_ sre ...) (regexp-compile-sre `(: sre ...))]))
+
 ;; Extract all matches (including entire match).  Allows match to be #f.
 (define (rxmatch-substrings match :optional (start 0) (end #f))
   (if match
