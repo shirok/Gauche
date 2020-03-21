@@ -797,17 +797,17 @@
 (define-cproc sys-asctime (tm::<sys-tm>)
   (return (SCM_MAKE_STR_COPYING (asctime (& (SCM_SYS_TM_TM tm))))))
 
-(define-cproc sys-ctime (time) ::<const-cstring>
-  (let* ([tim::time_t (Scm_GetSysTime time)]) (return (ctime (& tim)))))
+;; NB: For sys-ctime and sys-strftime, we don't use <const-cstring> return
+;; type to use autoboxing.
+;; See https://github.com/shirok/Gauche/issues/638#issuecomment-601777334
+(define-cproc sys-ctime (time)
+  (let* ([tim::time_t (Scm_GetSysTime time)]) 
+    (return (SCM_MAKE_STR_COPYING (ctime (& tim))))))
 
 (define-cproc sys-difftime (time1 time0) ::<double>
   (return (difftime (Scm_GetSysTime time1) (Scm_GetSysTime time0))))
 
 (define-cproc sys-strftime (format::<const-cstring> tm::<sys-tm>)
-  ;; NB: We don't use <const-cstring> return type to use autoboxing,
-  ;; for (return tmpbuf) carries the reference of tmpbuf to outside of
-  ;; the scope. 
-  ;; See https://github.com/shirok/Gauche/issues/638#issuecomment-601777334
   (let* ([tmpbuf::(.array char [256])])
     (strftime tmpbuf (sizeof tmpbuf) format (& (SCM_SYS_TM_TM tm)))
     (return (SCM_MAKE_STR_COPYING tmpbuf))))
@@ -1177,23 +1177,23 @@
 #define HOSTNAMELEN 1024
 #endif")
 
-(define-cproc sys-gethostname () ::<const-cstring>
+(define-cproc sys-gethostname ()
   (.if "defined HAVE_GETHOSTNAME"
        (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
          (SCM_SYSCALL r (gethostname buf HOSTNAMELEN))
          (when (< r 0) (Scm_SysError "gethostname failed"))
-         (return buf))
+         (return (SCM_MAKE_STR_COPYING buf)))
        ;; TODO: find better alternative
-       (return "localhost")))
+       (return (SCM_MAKE_STR_IMMUTABLE "localhost"))))
 
-(define-cproc sys-getdomainname () ::<const-cstring>
+(define-cproc sys-getdomainname ()
   (.if "defined HAVE_GETDOMAINNAME"
        (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
          (SCM_SYSCALL r (getdomainname buf HOSTNAMELEN))
          (when (< r 0) (Scm_SysError "getdomainame failed"))
-         (return buf))
+         (return (SCM_MAKE_STR_COPYING buf)))
        ;; TODO: find better alternative
-       (return "local")))
+       (return (SCM_MAKE_STR_IMMUTABLE "local"))))
 
 ;; not supported yet:
 ;;  fpathconf lseek pathconf read sysconf write
