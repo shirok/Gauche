@@ -25,7 +25,9 @@
  (define-cproc crypt-ra (pass::<const-cstring> setting::<const-cstring>)
    (let* ([data::void* NULL] [size::int 0]
           [c::char* (crypt_ra pass setting (& data) (& size))])
-     (when (== c NULL) (Scm_SysError "crypt_ra failed"))
+     (when (== c NULL)
+       (free data)
+       (Scm_SysError "crypt_ra failed"))
      (let* ([r (SCM_MAKE_STR_COPYING c)])
        (free data)
        (return r))))
