@@ -162,7 +162,7 @@
       [((and (or '= '~= '^= '$= '*=) op) ident value)
        `("[" ,ident ,op ,(render-attrval value) "]")]
       [(':= ident value) `("[" ,ident "|=" ,(render-attrval value) "]")]
-      [(':not not-arg) `(":(" ,(if (symbol? not-arg)
+      [(':not not-arg) `(":not(" ,(if (symbol? not-arg)
                                  not-arg
                                  (render-options not-arg)) ")")]
       [(': (fn arg ...)) `(":" ,(render-fn fn arg))]
