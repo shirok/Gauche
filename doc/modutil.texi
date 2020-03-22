@@ -12081,11 +12081,11 @@ type failure
 If you're failing because of all of multiple choices fail, you can
 gather those failures into an assoc list
 @code{((fail-type . objs) @dots{})}, and 
-call @code{return/failure-compound}.  It generates @code{fail-compound}
+call @code{return-failure/compound}.  It generates @code{fail-compound}
 type failure.
 @item
 Finally, your failure can't be categorized to one of the above,
-you can call @code{return/failure-message}, with the message
+you can call @code{return-failure/message}, with the message
 describing the reason of the failure.
 @end itemize
 @end defun
