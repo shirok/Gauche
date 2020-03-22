@@ -751,10 +751,9 @@
 ;; it as a selector and returns <pattern> structure of S-expr CSS.
 ;; If it can't be parsed, returns #f.
 (define (parse-selectors tokens)
-  (receive (r v s) (%selector-group tokens)
-    (and (parse-success? r)
-         (null? s)
-         v)))
+  (guard (e [(<parse-error> e) #f])
+    (receive (val next) (peg-run-parser %selector-group tokens)
+      (and (null? next) val))))
 
 ;; default declaration value parser
 ;; This part roughly follows CSS2.1 spec appendix G.
