@@ -407,6 +407,10 @@ Content-Disposition: form-data; name=bbb
        (parse-css-selector-string ":nth-child(-n)"))
 
 (test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b -1 -6))))
+       (parse-css-selector-string ":nth-child(-n-6)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
        '(* (: (nth-child (:an+b -3 4))))
        (parse-css-selector-string ":nth-child(-3n+4)"))
 
