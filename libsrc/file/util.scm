@@ -200,18 +200,26 @@
 
 ;; mkdir -p
 (define (make-directory* dir :optional (mode #o755))
+  (define (err-notdir p)
+    (errorf "non-directory ~s is found while creating a directory ~s"
+            (sys-basename p) dir))
+    
   (define (rec p)
     (if (file-exists? p)
-      (unless (file-is-directory? p)
-        (errorf "non-directory ~s is found while creating a directory ~s"
-                (sys-basename p) dir))
+      (unless (file-is-directory? p) (err-notdir p))
       (let1 d (sys-dirname p)
         (rec d)
         (unless (file-is-writable? d)
           (errorf "directory ~s unwritable during creating a directory ~s"
                   d dir))
         (unless (equal? (sys-basename p) ".") ; omit the last component in "/a/b/c/."
-          (sys-mkdir p mode))
+          ;; Directory p might have been created by other process after
+          ;; we checked it doesn't exist.  We rescue such case.
+          (guard (e [(and (is-a? e <system-error>)
+                          (eqv? (~ e'errno) EEXIST))
+                     (unless (file-is-directory? p) (err-notdir p))]
+                    [else (raise e)])
+            (sys-mkdir p mode)))
         )))
   ;; some platform complains the last "/"
   (rec (string-trim-right dir #[/])))

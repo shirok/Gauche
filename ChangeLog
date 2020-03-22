@@ -3,6 +3,7 @@
 	* lib/www/css.scm (construct-css): Fix :not pseudo class rendering
 	  from @leque https://github.com/shirok/Gauche/pull/645
 	  Also add rendering of @import and @media.
+	* libsrc/file/util.scm (make-directory*): Fix timing hazard.
 
 2020-03-15  Shiro Kawai  <shiro@acm.org>
 
