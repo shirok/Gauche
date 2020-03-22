@@ -347,7 +347,7 @@ Content-Disposition: form-data; name=bbb
       (print "echo \"CONTENT_LENGTH = $CONTENT_LENGTH\"")
       (print "echo \"QUERY_STRING = $QUERY_STRING\"")
       (print "cat")))
-       
+
   (test* "run-cgi-script->string-list (using parameters)"
          '("REQUEST_METHOD = POST"
            "CONTENT_TYPE = application/x-www-form-urlencoded"
@@ -386,6 +386,48 @@ Content-Disposition: form-data; name=bbb
 
 (run-css-test)
 
+(test* "parse-css-selector-string (failure)"
+       #f
+       (parse-css-selector-string ":::"))
+
+(test* "parse-css-selector-string (nth-child)"
+       '(* (: (nth-child 1)))
+       (parse-css-selector-string ":nth-child(1)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b 2 1))))
+       (parse-css-selector-string ":nth-child(2n+1)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b 1 0))))
+       (parse-css-selector-string ":nth-child(n)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b -1 0))))
+       (parse-css-selector-string ":nth-child(-n)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b -1 -6))))
+       (parse-css-selector-string ":nth-child(-n-6)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b -3 4))))
+       (parse-css-selector-string ":nth-child(-3n+4)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b -3 -4))))
+       (parse-css-selector-string ":nth-child(-3n-4)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       #f
+       (parse-css-selector-string ":nth-child(- n)"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (:not (: (nth-child (:an+b -1 0)))))
+       (parse-css-selector-string ":not(:nth-child(-n))"))
+
+(test* "parse-css-selector-string (nth-child an+b)"
+       #f
+       (parse-css-selector-string ":not(:nth-child(- n))"))
+
 (test-end)
-
-

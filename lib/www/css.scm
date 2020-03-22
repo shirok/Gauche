@@ -34,6 +34,7 @@
 (define-module www.css
   (use gauche.generator)
   (use gauche.lazy)
+  (use gauche.unicode)
   (use parser.peg)
   (use util.match)
   (use text.tree)
@@ -200,7 +201,10 @@
   (define (render-arg arg)
     (match arg
       [#(v ...)  (intersperse " " (map render-attrval v))]
-      [(/ v ...) (intersperse "/" (map render-attrval v))]
+      [(:an+b a b) `(,(if (= a 1) "" a)
+                     n
+                     ,(if (= b 0) "" (format "~@d" b)))]
+      [('/ v ...) (intersperse "/" (map render-attrval v))]
       [v (render-attrval v)]))
 
   (define (render-decl decl)
@@ -303,7 +307,7 @@
 (define %escape ($/ %unicode ($seq ($. #\\) ($none-of #[\n\r\f0-9a-f]))))
 ;; nmstart [_a-z]|{nonascii}|{escape} => char
 (define %nmstart ($/ ($. #[_a-zA-Z]) %nonascii %escape))
-  
+
 ;; nonascii [^\0-\237] => char
 (define %nonascii ($none-of #[\x00-\x9f]))
 ;; unicode \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?  => char
@@ -472,7 +476,7 @@
 
 (define %component-value+  ; whitespace preserving
   ($lazy ($/ ($seq ($tok 'WHITESPACE) ($return '(WHITESPACE)))
-             %brace-block %paren-block %bracket-block %function-call
+             %brace-block %paren-block %bracket-block %function-call+
              %preserved-token)))
 
 (define (block-parser opener closer tag :optional (preserve-ws? #f))
@@ -493,6 +497,12 @@
   ($lift (^[fn args _] `(funcall ,fn ,@args))
          ($tok 'FUNCTION)
          ($many ($seq ($not ($tok 'CLOSE-PAREN)) %component-value))
+         ($tok 'CLOSE-PAREN)))
+
+(define %function-call+
+  ($lift (^[fn args _] `(funcall ,fn ,@args))
+         ($tok 'FUNCTION)
+         ($many ($seq ($not ($tok 'CLOSE-PAREN)) %component-value+))
          ($tok 'CLOSE-PAREN)))
 
 (define %at-rule
@@ -520,7 +530,7 @@
     (if (string-ci=? (symbol->string v) "important")
       ($return '!important)
       ($fail "!important expected"))))
-        
+
 (define %declaration
   ($lift (^[name _ _ block important _] (list name block important))
          ($tok 'IDENT) %WS* ($tok 'COLON)
@@ -540,7 +550,7 @@
 
 (define %rule-list
   ($many ($/ ($tok 'WHITESPACE) %qualified-rule %at-rule)))
-               
+
 ;;
 ;; Higher-level parser
 ;;
@@ -598,13 +608,91 @@
    ($/ %type-selector %attr-selector %class-selector %id-selector
        %pseudo-selector)))
 
+(define %sign
+  ($or ($seq ($delim #\+) ($return +))
+       ($seq ($delim #\-) ($return -))))
+
+(define %optional-sign
+  ($optional %sign +))
+
+(define-syntax %match1
+  (syntax-rules ()
+    [(_ pat body0 body ...)
+     (lambda (s)
+       (if (pair? s)
+         (match (car s)
+           [pat ((begin body0 body ...) (cdr s))]
+           [_ (return-failure/expect (write-to-string 'pat) s)])
+         (return-failure/expect (write-to-string 'pat) s)))]
+    [(_ pat)
+     (lambda (s)
+       (if (pair? s)
+         (match (car s)
+           [pat (return-result (car s) (cdr s))]
+           [_ (return-failure/expect (write-to-string 'pat) s)])
+         (return-failure/expect (write-to-string 'pat) s)))]))
+
+(define (symbol-foldcase sym)
+  (string->symbol
+   (string-foldcase
+    (symbol->string sym))))
+
+(define (%one-of-ident-ci idents)
+  (%match1 ('IDENT . (and ident
+                          (= symbol-foldcase
+                             (? (cut memq <> idents)))))
+           ($return ident)))
+
+(define (%%an+b a b)
+  ($return
+   (if (= a 0)
+       b
+       `(:an+b ,a ,b))))
+
+(define (%n-b a n-b)
+  (rxmatch-if (#/^n(-\d+)$/ (symbol->string n-b))
+      (_ b)
+     (%%an+b a (string->number b))
+    ($fail "n-b")))
+
+(define %an+b
+  ($between %WS*
+            ($/ ($let ([sign %optional-sign])
+                  ($or ($let ([a ($or (%match1 ('DIMENSION a (or 'n 'N))
+                                               ($return a))
+                                      ($seq (%one-of-ident-ci '(n))
+                                            ($return 1))
+                                      ($seq (%one-of-ident-ci '(-n))
+                                            ($return -1)))]
+                              [b ($optional
+                                  ($lift (cut <> <>)
+                                         ($between %WS* %sign %WS*)
+                                         ($tok 'NUMBER))
+                                  0)])
+                         (%%an+b (sign a) b))
+                       (%match1 ('DIMENSION a n-b)
+                                (%n-b (sign a) n-b))
+                       (%match1 ('IDENT . n-b)
+                                (if-let1 n-b* (symbol-sans-prefix n-b '-)
+                                  (%n-b -1 n-b*)
+                                  (%n-b 1 n-b)))))
+                ($lift (cut <> <>)
+                       %optional-sign
+                       ($tok 'NUMBER))
+                (%one-of-ident-ci '(even odd)))
+            %WS*))
+
 ;; NB: negation-selector is also treated in pseudo-fn
 (define (%pseudo-fn s)
   (match s
     [(('funcall name . arg-tokens) . rest)
-     (receive (r v s) (if (eq? name 'not)
-                        (%negation-selector-arg arg-tokens)
-                        (%pseudo-fn-arg arg-tokens))
+     (receive (r v s) (case (symbol-foldcase name)
+                        [(not)
+                         (%negation-selector-arg arg-tokens)]
+                        [(nth-child nth-last-child nth-of-type nth-last-of-type)
+                         (%an+b arg-tokens)]
+                        [else
+                         (%pseudo-fn-arg arg-tokens)])
        (if (and (parse-success? r)
                 (null? s))
          (return-result (list name v) rest)
@@ -616,7 +704,7 @@
            (match sel
              [('not not-arg) `(:not ,not-arg)]
              [(? symbol?) `(,(if elem? ':: ':) ,sel)]
-             [_ `(,(if elem? ':: ':) ,@sel)]))
+             [_ `(,(if elem? ':: ':) ,sel)]))
          ($tok 'COLON) ($optional ($tok 'COLON))
          ($/ ($tok 'IDENT) %pseudo-fn)))
 
@@ -663,8 +751,10 @@
 ;; it as a selector and returns <pattern> structure of S-expr CSS.
 ;; If it can't be parsed, returns #f.
 (define (parse-selectors tokens)
-  (receive (val next) (peg-run-parser %selector-group tokens)
-    (and (null? next) val)))
+  (receive (r v s) (%selector-group tokens)
+    (and (parse-success? r)
+         (null? s)
+         v)))
 
 ;; default declaration value parser
 ;; This part roughly follows CSS2.1 spec appendix G.
@@ -849,7 +939,7 @@
 (define %selector-only
   ($seq %WS*
         ($many ($seq ($not ($tok 'OPEN-BRACE))
-                     ($/ %paren-block %bracket-block %function-call
+                     ($/ %paren-block %bracket-block %function-call+
                          %preserved-token ($tok 'WHITESPACE))))))
 
 ;; TODO: make this customizable
