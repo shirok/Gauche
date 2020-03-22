@@ -204,7 +204,7 @@
       [(:an+b a b) `(,(if (= a 1) "" a)
                      n
                      ,(if (= b 0) "" (format "~@d" b)))]
-      [(/ v ...) (intersperse "/" (map render-attrval v))]
+      [('/ v ...) (intersperse "/" (map render-attrval v))]
       [v (render-attrval v)]))
 
   (define (render-decl decl)
