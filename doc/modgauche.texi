@@ -2217,7 +2217,7 @@ Register a new type to be recognized.  This is rather a declaration
 than definition; no C code will be generated directly by this form.
 @end deffn
 
-@deffn {Stub Form} define-cproc name (args @dots{}) [ret-type] [flag @dots{}] [qualifier @dots{}] body @dots{}
+@deffn {Stub Form} define-cproc name (args @dots{}) [ret-type] [flag @dots{}] [qualifier @dots{}] stmt @dots{}
 Create Scheme procedure.
 
 @var{args} specifies arguments:
