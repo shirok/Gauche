@@ -201,6 +201,9 @@
   (define (render-arg arg)
     (match arg
       [#(v ...)  (intersperse " " (map render-attrval v))]
+      [(:an+b a b) `(,(if (= a 1) "" a)
+                     n
+                     ,(if (= b 0) "" (format "~@d" b)))]
       [(/ v ...) (intersperse "/" (map render-attrval v))]
       [v (render-attrval v)]))
 
