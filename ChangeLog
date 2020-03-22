@@ -1,3 +1,9 @@
+2020-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/css.scm (construct-css): Fix :not pseudo class rendering
+	  from @leque https://github.com/shirok/Gauche/pull/645
+	  Also add rendering of @import and @media.
+
 2020-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/*: Implement immutable pairs.  This has a few visibile changes:
