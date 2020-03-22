@@ -96,7 +96,8 @@
 ;;;  <at-rule>    : <at-media-rule> | <at-import-rule>
 ;;;                     ; NB: Other at-rules are not supported yet
 ;;;  <at-media-rule>  : (@media (<symbol> ...) <style-rule> ...)
-;;;  <at-import-rule> : (@import <string> (<symbol> ...))
+;;;  <at-import-rule> : (@import <import-path> (<symbol> ...))
+;;;  <import-path>    : <string> | <url>
 ;;;
 ;;; NB: style-decls shouldn't appear in a complete stylesheet, but can
 ;;;     appear when the 'style' attribute of the document is parsed.
@@ -141,7 +142,9 @@
                    oport)]
       [('@import path mediaqueries)
        (write-tree `("@import "
-                     ,(format "~s" path)
+                     ,(match path
+                        [('url s) (format "url(~s)" s)]
+                        [s        (format "~s" s)])
                      ,@(if (null? mediaqueries)
                          '("")
                          `(" " ,@(intersperse "," mediaqueries)))
@@ -786,15 +789,15 @@
       (and (eq? at-keyword 'import)
            (match args
              [(url . media)
-              (and-let* ([url-string (match url
-                                       [('STRING . s) s]
-                                       [('URL . s) s]
-                                       [_ #f])]
+              (and-let* ([import-path (match url
+                                        [('STRING . s) s]
+                                        [('URL . s) `(url ,s)]
+                                        [_ #f])]
                          [media-kinds (filter-map (^x (match x
                                                         [('IDENT . s) s]
                                                         [_ #f]))
                                                   media)])
-                `(@import ,url-string ,media-kinds))]
+                `(@import ,import-path ,media-kinds))]
              [_ #f]))
       (begin
         (css-parser-warn "Ignored unsupported at-rule: ~s\n"
