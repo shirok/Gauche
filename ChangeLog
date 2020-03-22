@@ -1,3 +1,8 @@
+2020-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/css.scm: Support an+b syntax
+	  from @gengar https://github.com/shirok/Gauche/pull/648
+
 2020-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/css.scm (construct-css): Fix :not pseudo class rendering
