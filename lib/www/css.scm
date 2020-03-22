@@ -134,6 +134,21 @@
        (newline oport)]
       [('style-decls . decls)
        (write-tree (intersperse ";" (map render-decl decls)))]
+      [('@media media . rules)
+       (write-tree `("@media "
+                     ,@(intersperse "," media)
+                     " {"))
+       (for-each render rules)
+       (write-tree '("}"))
+       (newline oport)]
+      [('@import path mediaqueries)
+       (write-tree `("@import "
+                     ,(format "~s" path)
+                     ,@(if (null? mediaqueries)
+                         '("")
+                         `(" " ,@(intersperse "," mediaqueries)))
+                     ";"))
+       (newline oport)]
       [_ (error "invalid or unsupported sexpr css:" top)]))
   (define (render-style-rule pattern decls)
     `(,(render-pattern pattern) "{"

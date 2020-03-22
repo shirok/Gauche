@@ -368,14 +368,23 @@ Content-Disposition: form-data; name=bbb
 (test-module 'www.css)
 
 ;; NB: this assumes the test is run either under src/ or test/
-(define (run-css-parser-test)
+(define (run-css-test)
   (dolist [infile (glob "../test/data/css-*.css")]
+    (define sxcss
+      (call-with-input-file (path-swap-extension infile "sxcss") read))
     (test* #"css parser ~infile"
-           (call-with-input-file (path-swap-extension infile "sxcss") read)
+           sxcss
            (parse-css-file infile)
+           equal?)
+    (test* #"css constructor ~infile"
+           sxcss
+           (with-input-from-string
+               (with-output-to-string
+                 (cut construct-css sxcss))
+             parse-css)
            equal?)))
 
-(run-css-parser-test)
+(run-css-test)
 
 (test-end)
 
