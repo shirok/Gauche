@@ -129,26 +129,29 @@
 (define (construct-css sexpr :optional (oport (current-output-port)))
   (define (render top)
     (match top
-      [('style-rule pattern . decls)
-       (write-tree (render-style-rule pattern decls) oport)
+      [((or 'style-rule 'style-decls) _ ...)
+       (write-tree (render-style-rule-or-decl top) oport)
        (newline oport)]
-      [('style-decls . decls)
-       (write-tree (intersperse ";" (map render-decl decls)))]
       [('@media media . rules)
        (write-tree `("@media "
                      ,@(intersperse "," media)
-                     " {"))
-       (for-each render rules)
-       (write-tree '("}"))
-       (newline oport)]
+                     " {"
+                     ,@(map render-style-rule-or-decl rules)
+                     "}\n")
+                   oport)]
       [('@import path mediaqueries)
        (write-tree `("@import "
                      ,(format "~s" path)
                      ,@(if (null? mediaqueries)
                          '("")
                          `(" " ,@(intersperse "," mediaqueries)))
-                     ";"))
-       (newline oport)]
+                     ";\n")
+                   oport)]
+      [_ (error "invalid or unsupported sexpr css:" top)]))
+  (define (render-style-rule-or-decl top)
+    (match top
+      [('style-rule pattern . decls) (render-style-rule pattern decls)]
+      [('style-decls . decls) (intersperse ";" (map render-decl decls))]
       [_ (error "invalid or unsupported sexpr css:" top)]))
   (define (render-style-rule pattern decls)
     `(,(render-pattern pattern) "{"
