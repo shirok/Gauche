@@ -673,7 +673,9 @@
                        (%match1 ('DIMENSION a n-b)
                                 (%n-b (sign a) n-b))
                        (%match1 ('IDENT . n-b)
-                                (%n-b (sign 1) n-b))))
+                                (if-let1 n-b* (symbol-sans-prefix n-b '-)
+                                  (%n-b -1 n-b*)
+                                  (%n-b 1 n-b)))))
                 ($lift (cut <> <>)
                        %optional-sign
                        ($tok 'NUMBER))
