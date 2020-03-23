@@ -430,4 +430,8 @@ Content-Disposition: form-data; name=bbb
        #f
        (parse-css-selector-string ":not(:nth-child(- n))"))
 
+(test* "parse-css-selector-string (nth-child an+b)"
+       '(* (: (nth-child (:an+b 2 -1))))
+       (parse-css-selector-string ":nth-child(2n- 1)"))
+
 (test-end)
