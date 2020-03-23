@@ -670,6 +670,15 @@
                                          ($tok 'NUMBER))
                                   0)])
                          (%%an+b (sign a) b))
+                       ($let ([a ($or (%match1 ('DIMENSION a (or 'n- 'N-))
+                                               ($return a))
+                                      ($seq (%one-of-ident-ci '(n-))
+                                            ($return 1))
+                                      ($seq (%one-of-ident-ci '(-n-))
+                                            ($return -1)))]
+                              %WS*
+                              [b ($tok 'NUMBER)])
+                         (%%an+b (sign a) (- b)))
                        (%match1 ('DIMENSION a n-b)
                                 (%n-b (sign a) n-b))
                        (%match1 ('IDENT . n-b)
