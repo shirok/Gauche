@@ -603,10 +603,13 @@
  (define-cfn Scm__RuntimeDirectory ()
    (C: "static ScmObj dir = SCM_FALSE;")
    (when (SCM_FALSEP dir)
-     (set! dir (Scm_MakeString (get_install_dir Scm_Error)
-                               -1 -1 
-                               (logior SCM_STRING_COPYING
-                                       SCM_STRING_IMMUTABLE))))
+     (let* ([d::(const char*)  (get_install_dir Scm_Error)])
+       (when (== d NULL)
+         (Scm_Error "Couldn't obtain runtime directory."))
+       (set! dir (Scm_MakeString d
+                                 -1 -1 
+                                 (logior SCM_STRING_COPYING
+                                         SCM_STRING_IMMUTABLE)))))
    (return dir))
  )
 

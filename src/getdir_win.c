@@ -1,9 +1,19 @@
 /*
  * getdir_win.c - get the library directory at runtime (fow windows)
  *  included from paths.c
- *  This routine is shared between libgauche and gauche-config.c.
- *  In libgauche, it returns GC_malloc-ed buffer.  In gauche-config.c,
- *  it returns malloc-ed buffer.
+ *
+ *  This file must define a static function get_install_dir, which returns
+ *  the pathanme of the directory where libgauche DSO is installed.
+ *  It can return NULL if such directory can't be determined.
+ *  If an unexpected error occurs during operations, call errfn(), which
+ *  won't return.
+ *
+ *  The function may be called within gauche-config, which doesn't link Gauche
+ *  runtime.  So it shouldn't use any ScmObj stuff.
+ *
+ *  If it needs to allocate, use PATH_ALLOC() macro.  You don't need to
+ *  worry about freeing; gauche-config is short-living program so it doesn't
+ *  bother to free stuff, and libgauche manages allocated memory with GC.
  */
 
 #include <string.h>

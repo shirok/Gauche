@@ -50,7 +50,7 @@
 #elif defined(GAUCHE_MACOSX_FRAMEWORK)
 #include "getdir_darwin.c"
 #else
-#include "getdir_dummy.c"
+#include "getdir_procfs.c"
 #endif
 
 #include <string.h>
@@ -101,5 +101,9 @@ static const char *replace_install_dir(const char *orig,
                                        void (*errfn)(const char *, ...))
 {
     if (strstr(orig, "@") == NULL) return orig; /* no replace */
-    return substitute_all(orig, "@", get_install_dir(errfn));
+    const char *idir =  get_install_dir(errfn);
+    if (idir == NULL) {
+        errfn("Couldn't obtain installation directory.");
+    }
+    return substitute_all(orig, "@", idir);
 }
