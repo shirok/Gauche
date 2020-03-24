@@ -536,6 +536,14 @@
              (s (call-with-input-file "test.o" port->string-list)))
          (equal? r s)))
 
+;; This merely tests if process-output->string-list accepts :encoding
+;; argument.  https://github.com/shirok/Gauche/issues/651
+(test* "process-output->string-list" #t
+       (begin
+         (process-output->string-list (cmd ls '-a) 
+                                      :encoding (gauche-character-encoding))
+         #t))
+
 (rmrf "test2.o")
 (sys-mkdir "test2.o" #o755)
 (with-output-to-file "test2.o/probe"

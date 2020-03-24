@@ -807,16 +807,22 @@
 ;; rule is too broken to use reliably.  Another possibility is to implement
 ;; much of high-level /bin/sh functionalities in Scheme, so that we can
 ;; provide consistent behavior.  Something to think about.
+;; NB: We explicitly remove :encoding and :conversion-buffer-size argument
+;; from opts.  These can be passed down from high-level APIs but only used
+;; by wrap-*-process-port.
 (define (%apply-run-process command stdin stdout stderr host opts)
-  (apply run-process
-         (cond [(string? command)
-                (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
-                             [else              `("/bin/sh" "-c" ,command)])]
-               [(list? command) command]
-               [else (error "Bad command spec" command)])
-         :input stdin :output stdout :host host
-         (cond [(string? stderr) `(:error ,stderr ,@opts)]
-               [else opts])))
+  (let-keywords opts ([encoding #f]
+                      [conversion-buffer-size 0]
+                      . opts)
+    (apply run-process
+           (cond [(string? command)
+                  (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
+                               [else              `("/bin/sh" "-c" ,command)])]
+                 [(list? command) command]
+                 [else (error "Bad command spec" command)])
+           :input stdin :output stdout :host host
+           (cond [(string? stderr) `(:error ,stderr ,@opts)]
+                 [else opts]))))
 
 ;; Possibly wrap the process port by a conversion port
 (define (wrap-input-process-port process opts)

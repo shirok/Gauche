@@ -1,3 +1,9 @@
+2020-03-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (%apply-run-process): Fix high-level
+	  utilities rejecting :encoding keyword argument.
+	  https://github.com/shirok/Gauche/issues/651
+
 2020-03-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/css.scm: Support an+b syntax
