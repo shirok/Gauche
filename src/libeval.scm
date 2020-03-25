@@ -554,9 +554,10 @@
 ;;; Some system introspection
 ;;;
 
-(select-module gauche)
 ;; API
 ;; Obtain info about gauche itself
+
+(select-module gauche)
 
 (inline-stub
  (declcode "#include \"paths.c\"")
@@ -599,18 +600,22 @@
                                (logior SCM_STRING_COPYING
                                        SCM_STRING_IMMUTABLE))))
    (return dir))
- ;; TRANSIENT: Make it static in 1.0; we keep it public for ABI compatibility.
- (define-cfn Scm__RuntimeDirectory ()
-   (C: "static ScmObj dir = SCM_FALSE;")
-   (when (SCM_FALSEP dir)
+
+ ;; May return #f if runtime directory isn't available.
+ (define-cfn Scm_RuntimeDirectory ()
+   (C: "static ScmObj dir = SCM_UNBOUND;")
+   (when (SCM_UNBOUNDP dir)
      (let* ([d::(const char*)  (get_install_dir Scm_Error)])
-       (when (== d NULL)
-         (Scm_Error "Couldn't obtain runtime directory."))
-       (set! dir (Scm_MakeString d
-                                 -1 -1 
-                                 (logior SCM_STRING_COPYING
-                                         SCM_STRING_IMMUTABLE)))))
+       (if (== d NULL)
+         (set! dir SCM_FALSE)
+         (set! dir (Scm_MakeString d
+                                   -1 -1 
+                                   (logior SCM_STRING_COPYING
+                                           SCM_STRING_IMMUTABLE))))))
    (return dir))
+
+ ;; TRANSIENT: For ABI compatibility.  Remove on 1.0 release.
+ (define-cfn Scm__RuntimeDirectory() (return (Scm_RuntimeDirectory)))
  )
 
 (define-cproc gauche-version () ::<const-cstring> (return GAUCHE_VERSION))
@@ -633,7 +638,7 @@
     (scheme.path ,@*load-path*)))
 
 (select-module gauche.internal)
-(define-cproc %gauche-runtime-directory () Scm__RuntimeDirectory)
+(define-cproc %gauche-runtime-directory () Scm_RuntimeDirectory)
 (define-cproc %gauche-replace-runtime-directory (str::<const-cstring>)
   ::<const-cstring>
   (return (replace_install_dir str Scm_Error)))

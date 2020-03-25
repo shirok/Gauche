@@ -36,6 +36,7 @@
  * doesn't use ScmObj, so the function works on bare C strings.
  * Note that this also included in libextra.scm for testing, so be careful
  * not to put any public definitions here to avoid duplicate definitions.
+ * NB: Do not include this from other files.
  */
 
 #define LIBGAUCHE_BODY

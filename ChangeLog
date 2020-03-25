@@ -1,5 +1,8 @@
 2020-03-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/libeval.scm (Scm_RuntimeDirectory): Make it public API, for
+	  it is generally useful, and we'll cover more platforms.
+
 	* lib/gauche/process.scm (%apply-run-process): Fix high-level
 	  utilities rejecting :encoding keyword argument.
 	  https://github.com/shirok/Gauche/issues/651

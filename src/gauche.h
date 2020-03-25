@@ -2027,7 +2027,7 @@ SCM_EXTERN ScmObj Scm_LibraryDirectory(void);
 SCM_EXTERN ScmObj Scm_ArchitectureDirectory(void);
 SCM_EXTERN ScmObj Scm_SiteLibraryDirectory(void);
 SCM_EXTERN ScmObj Scm_SiteArchitectureDirectory(void);
-SCM_EXTERN ScmObj Scm__RuntimeDirectory(void); /* private */
+SCM_EXTERN ScmObj Scm_RuntimeDirectory(void); /* may return SCM_FALSE */
 
 /* Compare and Sort */
 
