@@ -95,20 +95,20 @@
           ipartition
           iremove
 
-          ;; (rename member imember)
-          ;; (rename memq imemq)
-          ;; (rename memv imemv)
-          ;; (rename find ifind)
-          ;; (rename find-tail ifind-tail)
-          ;; (rename any iany)
-          ;; (rename every ievery)
-          ;; (rename list-index ilist-index)
-          ;; itake-while
-          ;; (rename drop-while idrop-while)
-          ;; ispan
-          ;; ibreak
+          (rename member imember)
+          (rename memq imemq)
+          (rename memv imemv)
+          (rename find ifind)
+          (rename find-tail ifind-tail)
+          (rename any iany)
+          (rename every ievery)
+          (rename list-index ilist-index)
+          itake-while
+          (rename drop-while idrop-while)
+          ispan
+          ibreak
 
-          ;; idelete
+          idelete
           ;; idelete-duplicates
 
           ;; (rename assoc iassoc)
@@ -307,3 +307,27 @@
       (if (pred (car lis))
         (rec (cdr lis) (cons (car lis) xs) ys)
         (rec (cdr lis) xs (cons (car lis) ys))))))
+
+(define (itake-while pred lis)
+  (cond [(null? lis) '()]
+        [(pred (car lis)) (ipair (car lis) (itake-while pred (cdr lis)))]
+        [else '()]))
+
+(define (ispan pred lis)
+  (cond [(null? lis) '()]
+        [(pred (car lis))
+         (receive (pre post) (ispan pred (cdr lis))
+           (values (ipair (car lis) pre) post))]
+        [else (values '() lis)]))
+
+(define (ibreak pred lis) (ispan (complement pred) lis))
+
+(define (idelete x lis :optional (eq equal?))
+  (if (null? lis)
+    '()
+    (let1 tail (idelete x (cdr lis) eq)
+      (cond [(eq x (car lis)) tail]
+            [(eq? (cdr lis) tail) lis]
+            [else (ipair (car lis) tail)]))))
+
+
