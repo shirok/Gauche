@@ -11,6 +11,9 @@
 
 (define-module srfi-116
   (use srfi-1)
+  (use srfi-114 :only (make-car-comparator
+                       make-cdr-comparator
+                       make-improper-list-comparator))
   (use util.match)
   (export ipair                         ;builtin
           ilist                         ;builtin
@@ -109,34 +112,34 @@
           ibreak
 
           idelete
-          ;; idelete-duplicates
+          idelete-duplicates
 
-          ;; (rename assoc iassoc)
-          ;; (rename assq iassq)
-          ;; (rename assv iassv)
-          ;; ialist-cons
-          ;; ialist-delete
+          (rename assoc iassoc)
+          (rename assq iassq)
+          (rename assv iassv)
+          ialist-cons
+          ialist-delete
 
-          ;; replace-icar
-          ;; replace-icdr
+          replace-icar
+          replace-icdr
 
-          ;; pair->ipair
-          ;; ipair->pair
-          ;; list->ilist
-          ;; ilist->list
-          ;; tree->itree
-          ;; itree->tree
-          ;; gtree->itree
-          ;; gtree->tree
+          pair->ipair
+          ipair->pair
+          list->ilist
+          ilist->list
+          tree->itree
+          itree->tree
+          gtree->itree
+          gtree->tree
 
-          ;; (rename apply iapply)
+          (rename apply iapply)
 
-          ;; ipair-comparator
-          ;; ilist-comparator
-          ;; make-ilist-comparator
-          ;; make-improper-ilist-comparator
-          ;; make-icar-comparator
-          ;; mkae-icdr-comparator
+          ipair-comparator
+          ilist-comparator
+          (rename make-list-comparator make-ilist-comparator)
+          (rename make-improper-list-comparator make-improper-ilist-comparator)
+          (rename make-car-comparator make-icar-comparator)
+          (rename make-cdr-comparator make-icdr-comparator)
           ))
 (select-module srfi-116)
 
@@ -330,4 +333,75 @@
             [(eq? (cdr lis) tail) lis]
             [else (ipair (car lis) tail)]))))
 
+(define (idelete-duplicates lis :optional (eq equal?))
+  (cond [(null? lis) lis]
+        [(null? (cdr lis)) lis]
+        [else (let1 tail (idelete (car lis) (cdr lis) eq)
+                (if (eq? tail (cdr lis))
+                  lis
+                  (ipair (car lis) tail)))]))
 
+(define (ialist-cons k d alis)
+  (ipair (ipair k d) alis))
+
+(define (ialist-delete k alis :optional (eq equal?))
+  (cond [(null? alis) '()]
+        [(eq k (caar alis)) (ialist-delete k (cdr alis) eq)]
+        [else (let1 tail (ialist-delete k (cdr alis) eq)
+                (if (eq? tail (cdr alis))
+                  alis
+                  (ipair (car alis) tail)))]))
+
+(define (replace-icar p obj) (ipair obj (cdr p)))
+(define (replace-icdr p obj) (ipair (car p) obj))
+
+(define (pair->ipair p) (ipair (car p) (cdr p)))
+(define (ipair->pair p) (cons (car p) (cdr p)))
+
+(define (list->ilist p)
+  (cond [(null? p) '()]
+        [(ipair? p) (let1 tail (list->ilist (cdr p))
+                      (if (eq? (cdr p) tail)
+                        p
+                        (ipair (car p) tail)))]
+        [(pair? p) (ipair (car p) (list->ilist (cdr p)))]
+        [else p]))
+(define (ilist->list p)
+  (cond [(null? p) '()]
+        [(pair? p) (let1 tail (ilist->list (cdr p))
+                      (if (eq? (cdr p) tail)
+                        p
+                        (cons (car p) tail)))]
+        [(ipair? p) (cons (car p) (ilist->list (cdr p)))]
+        [else p]))
+
+(define (tree->itree p)
+  (cond [(ipair? p)
+         (let ([ca (tree->itree (car p))]
+               [cd (tree->itree (cdr p))])
+           (if (and (eq? ca (car p)) (eq? cd (cdr p)))
+             p
+             (ipair ca cd)))]
+        [(pair? p)
+         (ipair (tree->itree (car p)) (tree->itree (cdr p)))]
+        [else p]))
+(define (itree->tree p)
+  (cond [(pair? p)
+         (let ([ca (itree->tree (car p))]
+               [cd (itree->tree (cdr p))])
+           (if (and (eq? ca (car p)) (eq? cd (cdr p)))
+             p
+             (cons ca cd)))]
+        [(ipair? p)
+         (cons (itree->tree (car p)) (itree->tree (cdr p)))]
+        [else p]))
+
+;; Our itree->tree and tree->itree accepts mixed trees, so these are the same.
+(define (gtree->itree obj) (tree->itree obj))
+(define (gtree->tree obj)  (itree->tree obj))
+
+
+(define ipair-comparator
+  (make-comparator/compare ipair? #t compare default-hash 'ipair-comparator))
+(define ilist-comparator
+  (make-comparator/compare list? #t compare default-hash 'ilist-comparator))
