@@ -1784,6 +1784,7 @@ SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
 
 SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
+SCM_EXTERN ScmObj Scm_UnwrapSyntaxImmutable(ScmObj form);
 
 /*--------------------------------------------------------
  * PROMISE

@@ -293,7 +293,7 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
    This keeps linear history to avoid entering infinite loop if
    the given form is circular; but it doens't recover the shared
    substructure. */
-static ScmObj unwrap_rec(ScmObj form, ScmObj history)
+static ScmObj unwrap_rec(ScmObj form, ScmObj history, int immutable)
 {
     if (!SCM_PTRP(form)) return form;
     if (!SCM_FALSEP(Scm_Memq(form, history))) return form;
@@ -303,10 +303,13 @@ static ScmObj unwrap_rec(ScmObj form, ScmObj history)
     if (SCM_PAIRP(form)) {
         ScmObj ca, cd;
         newh = Scm_Cons(form, history);
-        ca = unwrap_rec(SCM_CAR(form), newh);
-        cd = unwrap_rec(SCM_CDR(form), newh);
-        if (ca == SCM_CAR(form) && cd == SCM_CDR(form)) {
+        ca = unwrap_rec(SCM_CAR(form), newh, immutable);
+        cd = unwrap_rec(SCM_CDR(form), newh, immutable);
+        if (ca == SCM_CAR(form) && cd == SCM_CDR(form)
+            && (!immutable || Scm_ImmutablePairP(form))) {
             return form;
+        } else if (immutable) {
+            return Scm_MakeImmutablePair(ca, cd);
         } else {
             return Scm_Cons(ca, cd);
         }
@@ -319,7 +322,7 @@ static ScmObj unwrap_rec(ScmObj form, ScmObj history)
         ScmObj *pelt = SCM_VECTOR_ELEMENTS(form);
         newh = Scm_Cons(form, history);
         for (int i=0; i<len; i++, pelt++) {
-            ScmObj elt = unwrap_rec(*pelt, newh);
+            ScmObj elt = unwrap_rec(*pelt, newh, immutable);
             if (elt != *pelt) {
                 ScmObj newvec = Scm_MakeVector(len, SCM_FALSE);
                 pelt = SCM_VECTOR_ELEMENTS(form);
@@ -329,7 +332,8 @@ static ScmObj unwrap_rec(ScmObj form, ScmObj history)
                 }
                 SCM_VECTOR_ELEMENT(newvec, i) = elt;
                 for (; j<len; j++, pelt++) {
-                    SCM_VECTOR_ELEMENT(newvec, j) = unwrap_rec(*pelt, newh);
+                    SCM_VECTOR_ELEMENT(newvec, j) =
+                        unwrap_rec(*pelt, newh, immutable);
                 }
                 return newvec;
             }
@@ -341,7 +345,12 @@ static ScmObj unwrap_rec(ScmObj form, ScmObj history)
 
 ScmObj Scm_UnwrapSyntax(ScmObj form)
 {
-    return unwrap_rec(form, SCM_NIL);
+    return unwrap_rec(form, SCM_NIL, FALSE);
+}
+
+ScmObj Scm_UnwrapSyntaxImmutable(ScmObj form) 
+{
+    return unwrap_rec(form, SCM_NIL, TRUE);
 }
 
 /*===================================================================

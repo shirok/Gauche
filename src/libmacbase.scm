@@ -72,7 +72,10 @@
 (select-module gauche)
 ;; API
 ;; This strips all syntactic information (lossy)
-(define-cproc unwrap-syntax (form) Scm_UnwrapSyntax)
+(define-cproc unwrap-syntax (form :optional (to_immutable::<boolean> #f))
+  (if to_immutable
+    (return (Scm_UnwrapSyntaxImmutable form))
+    (return (Scm_UnwrapSyntax form))))
 
 ;; API
 ;; This preserves identity of local identifiers by suffixing it.

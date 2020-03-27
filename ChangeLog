@@ -1,3 +1,9 @@
+2020-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacbase.scm (unwrap-syntax),
+	  src/compaux.c (Scm_UnwrapSyntaxImmutable): Way to create immutable
+	  structure after unwrap-syntax.
+
 2020-03-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-116.scm, lib/scheme/ilist.scm : Added.
