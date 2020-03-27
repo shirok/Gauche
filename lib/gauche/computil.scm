@@ -49,7 +49,6 @@
           make-pair-comparator make-list-comparator
 
           make-reverse-comparator make-key-comparator
-          make-car-comparator make-cdr-comparator
           make-tuple-comparator
 
           =? <? <=? >? >=? comparator-if<=>))
