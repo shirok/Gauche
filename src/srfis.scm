@@ -848,6 +848,20 @@ Scheme正規表現
 モジュール@code{scheme.regex}でサポートされます。@ref{R7RS regular expressions}参照。
 
 
+srfi-116, srfi-116
+()
+
+Immutable List Library
+This has become a part of R7RS large.
+Immutable pairs are supported natively.  Full set of APIs are available
+in the module @code{scheme.ilist}.
+
+変更不可リストのライブラリ
+これはR7RS largeの一部となりました。
+変更不可なペアはGauche本体で直接サポートされます。フルセットのAPIは
+モジュール@code{scheme.ilist}でサポートされます。
+
+
 srfi-117, srfi-117
 ()
 

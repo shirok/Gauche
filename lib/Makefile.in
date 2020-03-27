@@ -124,7 +124,7 @@ SCMFILES = \
        scheme/division.scm scheme/ephemeron.scm scheme/eval.scm \
        scheme/file.scm scheme/fixnum.scm scheme/flonum.scm \
        scheme/generator.scm scheme/hash-table.scm scheme/ideque.scm \
-       scheme/inexact.scm scheme/lazy.scm \
+       scheme/inexact.scm scheme/ilist.scm scheme/lazy.scm \
        scheme/list-queue.scm scheme/list.scm scheme/load.scm \
        scheme/lseq.scm scheme/mapping.scm scheme/mapping/hash.scm \
        scheme/process-context.scm scheme/r5rs.scm scheme/read.scm \

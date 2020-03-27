@@ -20,6 +20,8 @@
           xipair ipair* make-ilist ilist-tabulate
           ilist-copy iiota
 
+          iq
+
           ipair?                        ;builtin
           ;; NB: Other predicates don't distinguish mutable and immutable
           ;; pairs.
@@ -45,6 +47,7 @@
           (rename cdadar icdadar) (rename cdaddr icdaddr)
           (rename cddaar icddaar) (rename cddadr icddadr)
           (rename cdddar icdddar) (rename cddddr icddddr)
+          (rename car+cdr icar+icdr)
           (rename list-ref ilist-ref)
 
           (rename first ifirst) (rename second isecond)
@@ -101,7 +104,7 @@
           (rename member imember)
           (rename memq imemq)
           (rename memv imemv)
-          (rename find ifind)
+          ifind
           (rename find-tail ifind-tail)
           (rename any iany)
           (rename every ievery)
@@ -143,6 +146,11 @@
           ))
 (select-module srfi-116)
 
+(define-syntax iq
+  (syntax-rules ()
+    [(iq x ...)
+     (gtree->itree '(x ...))]))
+
 (define (xipair cd ca) (ipair ca cd))
 (define (ipair* x . xs)
   (if (null? xs)
@@ -155,7 +163,7 @@
       (loop (ipair fill r) (- n 1)))))
 (define (ilist-tabulate n init-proc)
   (let loop ([r '()] [n (- n 1)])
-    (if (<= n 0)
+    (if (< n 0)
       r
       (loop (ipair (init-proc n) r) (- n 1)))))
 (define (ilist-copy lis)
@@ -259,12 +267,12 @@
 
 (define imap
   (case-lambda
-    ([proc lis] (fold-right (^[x ys] (xipair (proc x) ys)) '() lis))
+    ([proc lis] (fold-right (^[x ys] (ipair (proc x) ys)) '() lis))
     ([proc lis . liss]
      (ireverse (apply fold-left (^[ys . xs] (cons (apply proc xs) ys)) '()
                       lis liss)))))
 
-(define (iunfold p f g seed :optional (tail-gen identity))
+(define (iunfold p f g seed :optional (tail-gen (^_ '())))
   (let rec ((seed seed))
     (if (p seed) 
       (tail-gen seed)
@@ -293,7 +301,12 @@
               [(apply proc cars) => (^x (loop cdrs (cons x r)))]
               [else (loop cdrs r)])))))
   
-(define imap-in-order imap)
+(define imap-in-order
+  (case-lambda
+    ([proc lis] (ireverse (fold (^[x ys] (cons (proc x) ys)) '() lis)))
+    ([proc lis . liss]
+     (ireverse (apply fold-left (^[ys . xs] (cons (apply proc xs) ys)) '() 
+                      lis liss)))))
 
 (define (ifilter pred lis)
   (let loop ([lis lis] [r '()])
@@ -302,6 +315,13 @@
           [else (loop (cdr lis) r)])))
 
 (define (iremove  pred l) (ifilter  (^x (not (pred x))) l))
+
+;;built-in find tolerate improper lists.  we're bit more strict here.
+(define (ifind pred lis)
+  (cond [(null? lis) #f]
+        [(not (pair? lis)) (error "pair expected, but got:" lis)]
+        [(pred (car lis)) (car lis)]
+        [else (ifind pred (cdr lis))]))
 
 (define (ipartition pred lis)
   (let rec ([lis lis] [xs '()] [ys '()])
@@ -336,7 +356,9 @@
 (define (idelete-duplicates lis :optional (eq equal?))
   (cond [(null? lis) lis]
         [(null? (cdr lis)) lis]
-        [else (let1 tail (idelete (car lis) (cdr lis) eq)
+        [else (let1 tail (idelete (car lis)
+                                  (idelete-duplicates (cdr lis) eq)
+                                  eq)
                 (if (eq? tail (cdr lis))
                   lis
                   (ipair (car lis) tail)))]))
