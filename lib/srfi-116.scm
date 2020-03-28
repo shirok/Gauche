@@ -59,7 +59,6 @@
           (rename eighth ieighth)
           (rename ninth ininth)
           (rename tenth itenth)
-          (rename car+cdr icar+cdr)
           itake
           (rename drop idrop)
           (rename list-tail ilist-tail)

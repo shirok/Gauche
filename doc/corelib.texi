@@ -4418,6 +4418,7 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 
 @menu
 * Pair and null class::
+* Mutable and immutable pairs::
 * List predicates::
 * List constructors::
 * List accessors and modifiers::
@@ -4426,7 +4427,7 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 * Association lists::
 @end menu
 
-@node Pair and null class, List predicates, Pairs and lists, Pairs and lists
+@node Pair and null class, Mutable and immutable pairs, Pairs and lists, Pairs and lists
 @subsection Pair and null class
 @c NODE pairクラスとnullクラス
 
@@ -4471,7 +4472,31 @@ A class of pairs.
 @c COMMON
 @end deftp
 
-@node List predicates, List constructors, Pair and null class, Pairs and lists
+@node Mutable and immutable pairs, List predicates, Pair and null class, Pairs and lists
+@subsection Mutable and immutable pairs
+@c NODE 変更可能なペアと変更不可なペア
+
+A pair may be either mutable or immutable.  You can desctructively
+modify mutable pairs with @code{set-car!}, @code{set-cdr!}, or other
+destructive procedures (usually they have @code{!} at the end).
+An error is signaled when you try to modify an immutable pair.
+
+In Gauche, both type of pairs can be treated the same unless you try 
+to modify them.  Both satisfies the predicate @code{pair?}.  If you
+need to test specifically if a pair is immutable, use @code{ipair?}
+(@pxref{List predicates}).
+The traditional constructor @code{cons} creates a mutable pair; you
+can create an immutable pair with @code{ipair} (@pxref{List constructors}).
+More procedures that use immutable pairs are defined in
+R7RS-large @code{scheme.ilist} module (@pxref{R7RS immutable lists}).
+
+Note that quoted literals must be treated as immutable.  Gauche hasn't
+supported immutable pairs before, so quoted literals are mutable for the
+time being, but we'll soon use immutable pairs for literals.
+Codes that accidentally mutate literals would raise an error.
+
+
+@node List predicates, List constructors, Mutable and immutable pairs, Pairs and lists
 @subsection List predicates
 @c NODE リストに関する述語
 
@@ -4481,6 +4506,23 @@ A class of pairs.
 Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @c JP
 @var{obj}がペアなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun ipair? obj
+[R7RS ilist]
+@c EN
+Returns @code{#t} iff @var{obj} is an immutable pair, @code{#f} otherwise.
+
+An immutable pair is indistinguishable from a mutable pair except using
+this predicate, or when you attempt to modify it.
+@xref{Mutable and immutable pairs}.
+@c JP
+@var{obj}が変更不可なペアなら@code{#t}を、そうでなければ@code{#f}を返します。
+
+変更不可なペアは、この述語を使うか、あるいはそのペアを変更しようとした場合を除いては、
+変更可能なペアと全く同じように動作します。
+詳しくは@ref{Mutable and immutable pairs}参照。
 @c COMMON
 @end defun
 
@@ -4569,12 +4611,24 @@ which are considered to be dotted lists of length 0.
 @defun cons obj1 obj2
 [R7RS base]
 @c EN
-Constructs a pair of @var{obj1} and @var{obj2} and returns it.
+Constructs a mutable pair of @var{obj1} and @var{obj2} and returns it.
 @c JP
-@var{obj1}と@var{obj2}のペアを作成します。
+@var{obj1}と@var{obj2}の変更可能なペアを作成して返します。
 @c COMMON
 @lisp
 (cons 'a 'b) @result{} (a . b)
+@end lisp
+@end defun
+
+@defun ipair obj1 obj2
+[R7RS ilist]
+@c EN
+Constructs an immutable pair of @var{obj1} and @var{obj2} and returns it.
+@c JP
+@var{obj1}と@var{obj2}の変更不可なペアを作成して返します。
+@c COMMON
+@lisp
+(ipair 'a 'b) @result{} (a . b)
 @end lisp
 @end defun
 
@@ -4604,6 +4658,23 @@ Makes a list, whose elements are @var{obj} @dots{}.
 @lisp
 (list 1 2 3) @result{} (1 2 3)
 (list) @result{} ()
+@end lisp
+@end defun
+
+@defun ilist obj @dots{}
+[R7RS ilist]
+@c EN
+Makes a list, whose elements are @var{obj} @dots{},
+and which consists of immutable pairs.
+@c JP
+要素が@var{obj} @dots{}であり、変更不可なペアで作られたリストを作成します。
+@c COMMON
+@lisp
+(ilist 1 2 3) @result{} (1 2 3)
+(ilist) @result{} ()
+
+(list-set! (ilist 1 2 3) 1 'a)
+  @result{} ERROR: Attempt to modify an immutable pair: (2 3)
 @end lisp
 @end defun
 

@@ -212,7 +212,7 @@ Gaucheライブラリの@code{foo.bar}をR7RSコードから使うには、
 
 @c EN
 For SRFI modules, R7RS implementations have a convention to
-name it as @code{(srfi n)}, and Gauche follows it.  
+name it as @code{(srfi n)}, and Gauche follows it.
 The following code loads srfi-1 and srfi-13 from R7RS code:
 @c JP
 SRFIモジュールについては、R7RSでは慣習的に@code{(srfi n)}という
@@ -256,7 +256,7 @@ filter @result{} #<closure filter>
 
 @c EN
 R7RS scripts always begin with @code{import} form.  However, @code{r7rs#import}
-has a different syntax and semantics 
+has a different syntax and semantics
 from @code{gauche#import}---so we employ a trick.
 @c JP
 R7RSスクリプトは必ず@code{import}フォームで始まります。
@@ -362,7 +362,7 @@ R7RS REPLにいることはプロンプトを見ればわかります。
 @c COMMON
 
 @example
-gosh[r7rs.user]> 
+gosh[r7rs.user]>
 @end example
 
 @c EN
@@ -378,7 +378,7 @@ gosh[r7rs.user]> (import (gauche base))
 #<undef>
 gosh[r7rs.user]> (select-module user)
 #<undef>
-gosh> 
+gosh>
 @end example
 
 @c EN
@@ -393,7 +393,7 @@ want to do---changing @code{gauche} module can have unwanted side effects.)
 When you're working on R7RS code in file and load it into R7RS REPL
 (for example, if you're using Emacs Scheme mode, C-c C-l does the job),
 make sure the file is in proper shape as R7RS; that is, the file
-must start with appropriate @code{import} declarations, or 
+must start with appropriate @code{import} declarations, or
 the file contains @code{define-library} form(s).  If you load
 file without those forms, it is loaded into Gauche's @code{user} module
 no matter what your REPL's current module is,
@@ -436,7 +436,7 @@ Gauche REPLからR7RS REPLにスイッチするには、
 @example
 gosh> (import (scheme base))
 #<undef>
-gosh[r7rs.user]> 
+gosh[r7rs.user]>
 @end example
 
 @c EN
@@ -461,7 +461,7 @@ module and directly select @code{r7rs.user}:
 @example
 gosh> (use r7rs)
 gosh> (select-module r7rs.user)
-gosh[r7rs.user]> 
+gosh[r7rs.user]>
 @end example
 
 @c EN
@@ -516,7 +516,7 @@ Gaucheの@code{import}とR7RSの@code{import}の両方の文法を理解でき�
 @c EN
 Gauche's module system design is inherited from STk, and we've been
 used @code{import} for purely name-space level operation; that is,
-it assumes the module you import from already exists in memory.  
+it assumes the module you import from already exists in memory.
 Loading a file that defines the module (if necessary) is
 done by separate primitives, @code{require}.  In most cases one file
 defines one module, and using that module means @code{require} it then
@@ -579,7 +579,7 @@ R7RSでいうライブラリは、Gaucheがモジュールと呼んできたも�
 @c COMMON
 
 @c EN
-R7RS libraries are named by a list of symbols or integers, 
+R7RS libraries are named by a list of symbols or integers,
 e.g. @code{(scheme base)} or @code{(srfi 1)}.
 It is translated to Gauche's module name by joining the symbols
 by periods; so, R7RS @code{(scheme base)} is Gauche's @code{scheme.base}.
@@ -598,7 +598,7 @@ R7RSプログラムからこれら二つのライブラリを使うには、プ�
 @c COMMON
 
 @example
-(import (scheme base) 
+(import (scheme base)
         (data queue))
 @end example
 
@@ -723,7 +723,7 @@ Gaucheでは、R7RSの世界をGaucheの世界の中に作っています。
 @defmac define-library library-name library-decl @dots{}
 [R7RS]
 @c EN
-Defines a library @var{library-name}, which is a list of 
+Defines a library @var{library-name}, which is a list of
 symbols or base-10 integer:
 @c JP
 @var{library-name}という名前を持つライブラリを定義します。
@@ -736,7 +736,7 @@ symbols or base-10 integer:
 @end smallexample
 
 @c EN
-Library declarations @var{library-decl} 
+Library declarations @var{library-decl}
 can be export declarations, import declarations,
 @code{begin}-list of Scheme code,
 include forms, or @code{cond-expand} forms.
@@ -752,7 +752,7 @@ include forms, or @code{cond-expand} forms.
                | (begin <command-or-definition> @dots{})
                | (include <string> <string2> @dots{})
                | (include-ci <string> <string2> @dots{})
-               | (include-library-declarations 
+               | (include-library-declarations
                         <string> <string2> @dots{})
                | (cond-expand <cond-expand-clause>
                               <cond-expand-clause2> @dots{})
@@ -917,7 +917,7 @@ vector-copy vector-copy! vector-append vector-fill!
 @end example
 @item Control features
 @example
-procedure? apply map call-with-current-continuation call/cc 
+procedure? apply map call-with-current-continuation call/cc
 values call-with-values dynamic-wind
 @end example
 @item Exception
@@ -1068,7 +1068,7 @@ Defined as @code{(condition-has-type? exc <error>))}
 [R7RS base]
 @c MOD scheme.base
 @c EN
-If @var{exc} is a @code{<message-condition>}, 
+If @var{exc} is a @code{<message-condition>},
 returns its @code{message-prefix} slot;
 otherwise, returns an empty string.
 @c JP
@@ -1081,7 +1081,7 @@ otherwise, returns an empty string.
 [R7RS base]
 @c MOD scheme.base
 @c EN
-If @var{exc} is a @code{<message-condition>}, 
+If @var{exc} is a @code{<message-condition>},
 returns its @code{message-args} slot;
 otherwise, returns an empty string.
 @c JP
@@ -1183,7 +1183,7 @@ respectively.
 [R7RS base]
 @c MOD scheme.base
 @c EN
-Equivalent to @code{(read-uvector <u8vector> size iport)}. 
+Equivalent to @code{(read-uvector <u8vector> size iport)}.
 @c JP
 @code{(read-uvector <u8vector> size iport)}と等価です。
 @c COMMON
@@ -1374,7 +1374,7 @@ R7RSプログラムからは、エクスポートされた束縛は
 @c COMMON
 
 @c EN
-This module provides the following bindings, all of which are 
+This module provides the following bindings, all of which are
 Gauche built-in (@pxref{Numerical conversions}).
 @c JP
 このモジュールは以下の束縛を提供します。
@@ -1404,7 +1404,7 @@ R7RSプログラムからは、エクスポートされた束縛は
 @c COMMON
 
 @c EN
-This module provides the following bindings, all of which are 
+This module provides the following bindings, all of which are
 Gauche built-in (@pxref{List accessors and modifiers}).
 @c JP
 このモジュールは以下の束縛を提供します。
@@ -1562,7 +1562,7 @@ R7RSプログラムからは、エクスポートされた束縛は
 @c COMMON
 
 @c EN
-This module provides the following bindings, all of which are 
+This module provides the following bindings, all of which are
 Gauche built-in (@pxref{Arithmetics}, and @ref{Numerical predicates}).
 @c JP
 このモジュールは以下の束縛を提供します。全てGaucheの組み込みです
@@ -1741,7 +1741,7 @@ get-environment-variable get-environment-variables
 Terminate the program without running any clean-up procedures
 (@var{after} thunks of @code{dynamic-wind}).    I/O buffers won't
 be flushed.
-Internally, 
+Internally,
 it calls the @code{_exit(2)} system call directly.
 The optional argument is used for the process exit code.
 When omitted, 0 is assumed.
@@ -1816,8 +1816,8 @@ to take difference of two timepoints.  The unix time returned by
 @code{sys-time} and @code{sys-gettimeofday} are defined in terms of
 UTC date and time, so if the interval spans across leap seconds,
 it won't reflect the actual number of seconds in the interval.
-(The precise definition is given in section 4.15 of 
-IEEE Std 1003.1, 2013 Edition, a.k.a Single Unix Specification 4.) 
+(The precise definition is given in section 4.15 of
+IEEE Std 1003.1, 2013 Edition, a.k.a Single Unix Specification 4.)
 
 However, since we don't know yet when the next leap second happen,
 the current implementation just uses a fixed amount of offset
@@ -1874,7 +1874,7 @@ Exports bindings of R7RS @code{(scheme write)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme write))}.
 
-This module provides the following bindings, all of which are 
+This module provides the following bindings, all of which are
 Gauche built-in (@pxref{Object output}).
 
 @example
@@ -1969,6 +1969,7 @@ The following are supported libraries:
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
 * R7RS hash tables::            @code{scheme.hash-table}
+* R7RS immutable lists::
 * R7RS random-access lists::    @code{scheme.rlist}
 * R7RS immutable deques::       @code{scheme.ideque}
 * R7RS immutable texts::        @code{scheme.text}
@@ -2662,7 +2663,7 @@ Gaucheの組み込み手続きでサポートされています
 [R7RS vector]
 @c MOD scheme.vector
 Creates a vector of length @var{length}, filling elements
-left to right by calling @var{f} repeatedly.  
+left to right by calling @var{f} repeatedly.
 
 The procedure @var{f} must take as many arguments as
 one plus number of seed values, and must return the same number
@@ -2684,7 +2685,7 @@ rest of return values are passed to the next call of @var{f}.
 [R7RS vector]
 @c MOD scheme.vector
 Creates a vector of length @var{length}, filling elements
-right to left by calling @var{f} repeatedly.  
+right to left by calling @var{f} repeatedly.
 
 The procedure @var{f} must take as many arguments as
 one plus number of seed values, and must return the same number
@@ -3276,7 +3277,7 @@ The procedures with bang are linear update version.  They are
 allowed, but not required, to reuse
 @var{lis}.  The ``stable'' variation guarantees stable sort.
 
-These are basically the same as Gauche's built-in  
+These are basically the same as Gauche's built-in
 @code{sort}, @code{sort!}, @code{stable-sort} and @code{stable-sort!},
 except the Gauche's version works on any sequences and takes
 arguments differently. (@xref{Sorting and merging}.)
@@ -3472,7 +3473,7 @@ This procedure may partially modify @var{vec}.
 @c MOD scheme.sort
 Find @var{k}-th smallerst element in @var{vec} (pivot) between
 between @var{start} and @var{end}, according to the ordering
-predicate @var{elt<}, then rearrange elements 
+predicate @var{elt<}, then rearrange elements
 between @var{start} and @var{end} so that
 elements smaller than the pivot comes between @code{@var{start}} and
 @code{@var{start} + @var{k}}, and the rest of the elements come
@@ -3760,7 +3761,7 @@ instead of relying on the side effects.
 Lookup-and-modify procedures.  The @var{failure} and @var{success}
 arguments are procedures.
 
-First, they search @var{elt} in the given set/bag.  
+First, they search @var{elt} in the given set/bag.
 If an item that matches @var{elt} is found, the @var{success} procedure
 is called with three arguments, as follows:
 @example
@@ -4040,7 +4041,7 @@ to be the same, in terms of the equality of items.
 @defunx bag>=? bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
-Returns true iff each preceding set/bag is a proper subset of, 
+Returns true iff each preceding set/bag is a proper subset of,
 a proper superset of, a subset of, or a superset of the following
 set/bags, respectively.
 
@@ -4235,7 +4236,7 @@ They do provide hash functions.
 @c EN
 Implements character set library, originally defined as SRFI-14.
 Note that the following
-character-set procedures and pre-defined charsets are Gauche's build-in.  
+character-set procedures and pre-defined charsets are Gauche's build-in.
 @xref{Character set}.
 @c JP
 文字集合ライブラリを実装します。元はSRFI-14で定義されたものです。
@@ -4355,7 +4356,7 @@ UCS-4 code lies in the half-open range [@var{lower},@var{upper}).
 @c EN
 A convenience function to coerce various kinds of objects to a char-set.
 The argument @var{x} can be a collection of characters,
-a char-set, or a character.  If the argument is a char-set, 
+a char-set, or a character.  If the argument is a char-set,
 it is returned as-is.  If the argument is a character,
 a char-set with that single character is returned.
 @c JP
@@ -4764,7 +4765,7 @@ Returns two values, the result of
 @end defun
 
 
-@node R7RS hash tables, R7RS random-access lists, R7RS character sets, R7RS large
+@node R7RS hash tables, R7RS immutable lists, R7RS character sets, R7RS large
 @subsection @code{scheme.hash-table} - R7RS hash tables
 @c NODE R7RSハッシュテーブル, @code{scheme.hash-table} - R7RSハッシュテーブル
 
@@ -5069,7 +5070,7 @@ result of @var{proc} is discarded.  Returns an unspecified value.
 
 This procedure allows arguments in both order for the compatibility---
 the first way is the @code{scheme.hash-table} recommended one,
-which is the same as built-in @code{hash-table-for-each-r7}, 
+which is the same as built-in @code{hash-table-for-each-r7},
 and the latter way is compatible with srfi-69, which is
 the same as built-in @code{hash-table-for-each}.
 
@@ -5095,7 +5096,7 @@ Returns the result of the last call of @var{seed}.
 
 This procedure allows arguments in both order for the compatibility---
 the first way is the @code{scheme.hash-table} recommended one,
-which is the same as built-in @code{hash-table-fold-r7}, 
+which is the same as built-in @code{hash-table-fold-r7},
 and the latter way is compatible with srfi-69, which is
 the same as built-in @code{hash-table-fold}.
 
@@ -5161,7 +5162,132 @@ included in @code{scheme.hash-table}, though.)
 @end defun
 
 
-@node R7RS random-access lists, R7RS immutable deques, R7RS hash tables, R7RS large
+@node R7RS immutable lists, R7RS random-access lists, R7RS hash tables, R7RS large
+@subsection @code{scheme.ilist} - R7RS immutable lists
+@c NODE R7RS変更不可リスト, @code{scheme.ilist} - R7RS変更不可リスト
+
+@deftp {Module} scheme.ilist
+@mdindex scheme.ilist
+@findex proper-ilist?
+@findex ilist?
+@findex dotted-ilist?
+@findex not-ipair?
+@findex null-ilist?
+@findex ilist=
+@findex icar
+@findex icdr
+@findex icaar
+@findex icadr
+@findex icdar
+@findex icddr
+@findex icaaar
+@findex icaadr
+@findex icadar
+@findex icaddr
+@findex icdaar
+@findex icdadr
+@findex icddar
+@findex icdddr
+@findex icaaaar
+@findex icaaadr
+@findex icaadar
+@findex icaaddr
+@findex icadaar
+@findex icadadr
+@findex icaddar
+@findex icadddr
+@findex icdaaar
+@findex icdaadr
+@findex icdadar
+@findex icdaddr
+@findex icddaar
+@findex icddadr
+@findex icdddar
+@findex icddddr
+@findex icar+icdr
+@findex ilist-ref
+@findex ifirst
+@findex isecond
+@findex ithird
+@findex ifourth
+@findex ififth
+@findex isixth
+@findex iseventh
+@findex ieighth
+@findex ininth
+@findex itenth
+@findex idrop
+@findex ilist-tail
+@findex itake-right
+@findex ilast
+@findex last-ipair
+@findex ilength
+@findex icount
+@findex ifor-each
+@findex ifold
+@findex ipair-fold
+@findex ireduce
+@findex ifold-right
+@findex ipair-fold-right
+@findex ireduce-right
+@findex ipair-for-each
+@findex imember
+@findex imemv
+@findex imemq
+@findex ifind-tail
+@findex iany
+@findex ievery
+@findex ilist-index
+@findex idrop-while
+@findex iassoc
+@findex iassq
+@findex iassv
+@findex iapply
+@findex make-ilist-comparator
+@findex make-improper-ilist-comparator
+@findex make-icar-comparator
+@findex make-icdr-comparator
+This module provides a set of procedures that handles immutable pairs
+and lists.
+
+The standard allows an implementation to have mutable pairs and immutable
+pairs separately, so it defines immutable version of most @code{scheme.list}
+procedures.   In Gauche, mutable pairs and immutable pairs are both
+abstract ``pairs'', and all procedures that accesses pairs (without modifying
+them) works seamlessly on both kind.
+
+Consequently, the following procedures are just aliases of their
+non-immutable versions (just remove @code{i} prefix from them).
+Note that these procedures and variables in Gauche do not reject if the input is
+mutable pairs/lists, but such usage may not be portable.
+
+@example
+proper-ilist?     ilist?            dotted-ilist?     not-ipair?
+null-ilist?       ilist=
+icar              icdr              icaar             icadr
+icdar             icddr             icaaar            icaadr
+icadar            icaddr            icdaar            icdadr
+icddar            icdddr            icaaaar           icaaadr
+icaadar           icaaddr           icadaar           icadadr
+icaddar           icadddr           icdaaar           icdaadr
+icdadar           icdaddr           icddaar           icddadr
+icdddar           icddddr           icar+icdr         ilist-ref
+ifirst            isecond           ithird            ifourth
+ififth            isixth            iseventh          ieighth
+ininth            itenth
+idrop             ilist-tail        itake-right
+ilast             last-ipair        ilength           icount
+ifor-each         ifold             ipair-fold        ireduce
+ifold-right       ipair-fold-right  ireduce-right     ipair-for-each
+imember           imemv             imemq             ifind-tail
+iany              ievery            ilist-index       idrop-while
+iassoc            iassq             iassv             iapply
+make-ilist-comparator               make-improper-ilist-comparator
+make-icar-comparator                make-icdr-comparator
+@end example
+@end deftp
+
+@node R7RS random-access lists, R7RS immutable deques, R7RS immutable lists, R7RS large
 @subsection @code{scheme.rlist} - R7RS random-access lists
 @c NODE R7RSランダムアクセスリスト, @code{scheme.rlist} - R7RSランダムアクセスリスト
 
@@ -5176,7 +5302,7 @@ This is originally defined as @code{srfi-101}.  We call this datatype
 The srfi allows a Scheme implementation to adopt rlist
 as the built-in pairs and lists, so the procedure names are
 duplicated from the Scheme primitives.  If you use this module,
-you might want to import with prefix 
+you might want to import with prefix
 (e.g. @code{(use scheme.rlist :prefix rlist:)}).
 
 In Gauche, we implement rlist on top of skew-list
@@ -5624,7 +5750,7 @@ U+FFFD.  (NB: Srfi-135 says it is an error.)
 @defunx utf16le->text bytevector :optional start end
 [R7RS text]
 Converts a utf16 octet sequence stored in @var{bytevector} to a text.
-For @code{utf16->text}, the sequence may begin with BOM, 
+For @code{utf16->text}, the sequence may begin with BOM,
 in which case it determines the endianness.
 Otherwise, platform's native endianness is assumed.
 Fro @code{utf16be->text} and @code{utf16le->text}, the input is
@@ -5709,7 +5835,7 @@ In Gauche, these are just aliases of built-in
 @defunx textual-ci>=? textual1 textual2 textual3 @dots{}
 [R7RS text]
 @c MOD scheme.text
-In Gauche, these are just aliases of @emph{the unicode version} of 
+In Gauche, these are just aliases of @emph{the unicode version} of
 @code{string-ci=?}, @code{string-ci<?}, @code{string-ci>?},
 @code{string-ci<=?} and @code{string-ci>?}, respectively.
 @xref{Full string case conversion}, for the details.
@@ -5933,7 +6059,7 @@ The following generator procedures are explained in
 generator                circular-generator       make-iota-generator
 make-range-generator     make-coroutine-generator
 make-unfold-generator    make-for-each-generator
-list->generator            
+list->generator
 vector->generator        reverse-vector->generator
 string->generator        bytevector->generator
 @end example
@@ -6128,7 +6254,7 @@ Gauche's built-in, which returns Gauche's lseq, undistinguishable
 to the ordinary list.
 
 @example
-(procedure? (generator->lseq (generator 1))) 
+(procedure? (generator->lseq (generator 1)))
   ;; => #t, in srfi-127 reference implementation,
   ;;    #f, in our implementation.
 @end example
@@ -6147,7 +6273,7 @@ from a pair.
 [R7RS lseq]
 @c MOD scheme.lseq
 Compare two lseqs element-wise using @code{elt=?} and returns @code{#t}
-iff two lseqs are equal. 
+iff two lseqs are equal.
 @end defun
 
 @defun lseq-car lseq
@@ -6236,7 +6362,7 @@ Gauche doesn't distinguish lseqs and ordinary lists.
 @defunx lseq-remove pred lseq
 [R7RS lseq]
 @c MOD scheme.lseq
-Returns an lseq that contains elements from the input 
+Returns an lseq that contains elements from the input
 @var{lseq} that satisfy or don't satisfy @var{pred}, respectively.
 @code{Lseq-filter} is the same as Gauche's @code{lfilter}.
 @end defun
@@ -6290,7 +6416,7 @@ define-stream       list->stream      port->stream
 stream->list        stream-append     stream-concat    stream-constant
 stream-drop-while   stream-filter     stream-fold
 stream-for-each     stream-from       stream-iterate   stream-length
-stream-let          stream-map        stream-match     stream-of 
+stream-let          stream-map        stream-match     stream-of
 stream-range        stream-ref        stream-reverse   stream-scan
 stream-take-while   stream-unfold     stream-unfolds   stream-zip
 @end example
@@ -6310,7 +6436,7 @@ Returns a new stream whose elements are the result of @var{expr} @dots{}.
 Arguments won't be evaluated until required.
 
 This differs from srfi-40 and @code{util.stream}'s @code{stream},
-which is a procedure so arguments are evaluated 
+which is a procedure so arguments are evaluated
 (@pxref{Stream constructors}, for the details).
 @end defmac
 
@@ -6421,7 +6547,7 @@ a list-queue created by @code{make-list-queue} to Gauche's queue API.
 
 @c EN
 Note: Some API of this library requires to return internal pairs the queue
-uses, for the efficiency.  
+uses, for the efficiency.
 The pair's car/cdr will be mutated by subsequent queue operation,
 and also any mutation done on the pair would cause inconsistency
 in the original queue.
@@ -7188,9 +7314,9 @@ The grammar for @code{cset-sre} is as follows.
 A literal string.
 
 @example
-(regexp-search "needle" "hayneedlehay") 
+(regexp-search "needle" "hayneedlehay")
  @result{} #<regexp-match>
-(regexp-search "needle" "haynEEdlehay") 
+(regexp-search "needle" "haynEEdlehay")
  @result{} #f
 @end example
 
@@ -7226,7 +7352,7 @@ RE syntax @code{(?i:@i{re}@dots{})}
 
 @example
 (regexp-search "needle" "haynEEdlehay") @result{} #f
-(regexp-search '(w/nocase "needle") "haynEEdlehay") 
+(regexp-search '(w/nocase "needle") "haynEEdlehay")
   @result{}  #<regexp-match>
 
 (regexp-search '(~ ("Aab")) "B") @result{} #<regexp-match>
@@ -7244,7 +7370,7 @@ still be made case-insensitive. This is the same as RE syntax
 @code{(?-i:@i{re}@dots{})}. This is the default.
 
 @example
-(regexp-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall") 
+(regexp-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall")
  @result{} #<regexp-match>
 (regexp-search '(w/nocase (~ (w/case ("Aab")))) "b") @result{} #f
 @end example
@@ -7300,9 +7426,9 @@ inside.
 Matches the pattern(s) one or zero times.
 
 @example
-(regexp-search '(: "match" (? "es") "!") "matches!") 
+(regexp-search '(: "match" (? "es") "!") "matches!")
  @result{} #<regexp-match>
-(regexp-search '(: "match" (? "es") "!") "match!") 
+(regexp-search '(: "match" (? "es") "!") "match!")
  @result{} #<regexp-match>
 (regexp-search '(: "match" (? "es") "!") "matche!")
  @result{} #f
@@ -8162,7 +8288,7 @@ at this moment.
 Similar to @code{mapping-unfold}, but keys are generated in the
 ascending order
 w.r.t. the comparator.  An implementation may use more efficient algorithm
-than @code{mapping-unfold}. 
+than @code{mapping-unfold}.
 In Gauche, this is the same as @code{mapping-unfold} at this moment.
 @end defun
 
@@ -8234,7 +8360,7 @@ Returns a comparator used to compare keys in a mapping @var{m}.
 
 @subsubheading Updaters
 
-Note that the basic premise of mappings srfi is to treat mappings 
+Note that the basic premise of mappings srfi is to treat mappings
 as immutable.  Each updating operation comes with a purely functional
 version (without bang) and a linear update version (with bang), but
 the linear update version may not require to destructively modiy
@@ -8628,8 +8754,8 @@ creates a new mapping.
 @c MOD scheme.mapping
 @end defun
 
-@defun mapping-catenate comparator m1 key value m2 
-@defunx mapping-catenate! m1 key value m2 
+@defun mapping-catenate comparator m1 key value m2
+@defunx mapping-catenate! m1 key value m2
 [R7RS mapping]
 @c MOD scheme.mapping
 @end defun
@@ -8775,7 +8901,7 @@ Returns a comparator used to compare keys in a hashmap @var{m}.
 
 @subsubheading Updaters
 
-Note that the basic premise of hashmaps srfi is to treat hashmaps 
+Note that the basic premise of hashmaps srfi is to treat hashmaps
 as immutable.  Each updating operation comes with a purely functional
 version (without bang) and a linear update version (with bang), but
 the linear update version may not require to destructively modiy
@@ -9201,7 +9327,7 @@ bit 1 everywhere that all the argument's bit agree.
 @c COMMON
 
 @c EN
-The first three procedures are the same as built-in 
+The first three procedures are the same as built-in
 @code{logand}, @code{logior} and @code{logxor}, respectively
 (@pxref{Basic bitwise operations}).
 @c JP
@@ -9718,7 +9844,7 @@ tell your intentions to the compiler for potential optimizations.
 
 @c EN
 In the current Gauche architecture,
-generic numeric operators are just as efficient, 
+generic numeric operators are just as efficient,
 so most procedures provided in this module are aliases to corresponding
 operators.   However, we might employ some optimizations in future
 versions.
@@ -9980,7 +10106,7 @@ except that you should use these only for fixnums.
 [R7RS fixnum]
 @c MOD scheme.fixnum
 @c EN
-These are equivalent to srfi-60's 
+These are equivalent to srfi-60's
 @code{bitwise-if}, @code{rotate-bit-field} and
 @code{reverse-bit-field},
 except that you should use these only for fixnums.
@@ -10028,7 +10154,7 @@ tell your intentions to the compiler for potential optimizations.
 
 @c EN
 In the current Gauche architecture,
-generic numeric operators are just as efficient, 
+generic numeric operators are just as efficient,
 so most procedures provided in this module are aliases to corresponding
 operators.   However, we might employ some optimizations in future
 versions.
@@ -10434,7 +10560,7 @@ part of @var{x}.  Same as @code{modf} (@pxref{Numerical conversions}).
 If @var{x} is @code{+inf.0}, @code{+inf.0} and @code{0.0} is returned.
 If @var{x} is @code{-inf.0}, @code{-inf.0} and @code{-0.0} is returned.
 If @var{x} is @code{+nan.0}, @code{+nan.0} and @code{+nan.0} is returned.
-(These corner cases are not explicit in srfi-144, but follows 
+(These corner cases are not explicit in srfi-144, but follows
 the POSIX specification of @code{modf}.)
 @c JP
 flonum @var{x}の整数部と小数部をそれぞれflonumとして返します。
@@ -10646,7 +10772,7 @@ Returns @code{#t} if @var{x} is an integral flonum,
 @c EN
 Flonum-specific version of @code{zero?}, @code{positive?} and @code{negative?}.
 Note that @code{(flnegative? -0.0)} is @code{#f}.
-You need @code{flsign-bit} or @code{flsgn} to 
+You need @code{flsign-bit} or @code{flsgn} to
 distinguish negative zero from zero.
 @c JP
 flonum専用の@code{zero?}、@code{positive?}、@code{negative?}です。
@@ -10786,7 +10912,7 @@ flonum専用の@code{-.}と@code{/.}です (@ref{Arithmetics}参照)。
 [R7RS flonum]
 @c MOD scheme.flonum
 @c EN
-Flonum-specific version of @code{abs} 
+Flonum-specific version of @code{abs}
 (@pxref{Arithmetics}).
 
 Note that we don't check whether the argument is a flonum or not,
@@ -11293,7 +11419,7 @@ The following procedures are the same as in @code{gauche.uvector}.
 @c COMMON
 
 @example
-bytevector?        make-bytevector     bytevector-length 
+bytevector?        make-bytevector     bytevector-length
 bytevector=?       bytevector-fill!    bytevector-copy
 bytevector-u8-ref  bytevector-u8-set!  bytevector-s8-ref
 bytevector-s8-set! bytevector->u8-list u8-list->bytevector
