@@ -114,7 +114,7 @@
 (define uint16s (integers$ 65536))
 (define int32s  (integers$ (expt 2 32) (- (expt 2 31))))
 (define uint32s (integers$ (expt 2 32)))
-(define int64s  (integers$ (expt 2 64) (- (expt 2 64))))
+(define int64s  (integers$ (expt 2 64) (- (expt 2 63))))
 (define uint64s (integers$ (expt 2 64)))
 
 ;; API.
