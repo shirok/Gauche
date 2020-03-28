@@ -10,6 +10,6 @@
           show space-to
           tab-to trimmed trimmed/both trimmed/lazy trimmed/right
           with with! written written-simply)
-  (import (srfi-159 inner-base)
-          (srfi-159 pretty)
-          (srfi-159 util)))
+  (import (srfi-159 internal base)
+          (srfi-159 internal pretty)
+          (srfi-159 internal util)))

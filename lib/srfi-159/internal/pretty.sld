@@ -1,0 +1,5 @@
+(define-library (srfi-159 internal pretty)
+  (export pretty pretty-simply)
+  (import (scheme base) (scheme write) (srfi-159 internal util) (srfi-159 internal base)
+          (srfi 1) (srfi 69) (srfi 130))
+  (include "pretty.scm"))

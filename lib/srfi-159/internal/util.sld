@@ -1,4 +1,4 @@
-(define-library (srfi-159 util)
+(define-library (srfi-159 internal util)
   (export downcased
           fitted fitted/both fitted/left fitted/right fl
           joined joined/dot joined/last joined/prefix joined/range joined/suffix
@@ -8,5 +8,5 @@
           tab-to trimmed trimmed/both trimmed/lazy trimmed/left trimmed/right
           upcased)
   (import (scheme base) (scheme char) (scheme write)
-          (srfi-159 inner-base))
-  (include "show.scm"))
+          (srfi-159 internal base))
+  (include "util.scm"))

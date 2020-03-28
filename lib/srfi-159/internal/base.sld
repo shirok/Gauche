@@ -1,4 +1,4 @@
-(define-library (srfi-159 inner-base)
+(define-library (srfi-159 internal base)
   (export
    show fn forked with with! each each-in-list call-with-output
    displayed written written-shared written-simply numeric nothing
