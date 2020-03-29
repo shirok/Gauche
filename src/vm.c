@@ -3279,7 +3279,4 @@ void Scm__InitVM(void)
     if (Scm_GetEnv("GAUCHE_LEGACY_DEFINE") != NULL) {
         SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_LEGACY_DEFINE);
     }
-    if (Scm_GetEnv("GAUCHE_MUTABLE_LITERALS") != NULL) {
-        SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_MUTABLE_LITERALS);
-    }
 }

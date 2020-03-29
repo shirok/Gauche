@@ -1055,8 +1055,7 @@
 ;; Quote and quasiquote ................................
 
 (define (pass1/quote obj)
-  ($const ($ unwrap-syntax obj 
-             $ not $ vm-compiler-flag-is-set? SCM_COMPILE_MUTABLE_LITERALS)))
+  ($const (unwrap-syntax obj)))
 
 (define-pass1-syntax (quote form cenv) :null
   (match form

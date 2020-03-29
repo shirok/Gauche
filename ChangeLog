@@ -1,10 +1,5 @@
 2020-03-29  Shiro Kawai  <shiro@acm.org>
 
-	* src/compile-1.scm: Make literal pairs immutable by default.
-	  Can be switched back by env var GAUCHE_MUTABLE_LITERALS.
-	  If this breaks too many existing code, we'll reverse the default.
-	  Let's see.
-
 	* src/list.c, src/class.c: Abandon the idea of having <mpair> and
 	  <ipair> separately.  (1) It breaks the existing code that assumes
 	  class of pair is always <pair>. (2) It'll be cumbersome if we have
