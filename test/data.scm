@@ -1027,7 +1027,7 @@
            (trie-num-entries t4))
     (test* "trie(hetero): get" <vector> (trie-get t4 '#()))
     (test* "trie(hetero): get" <u8vector> (trie-get t4 '#u8()))
-    (test* "trie(hetero): get" <mpair> (trie-get t4 '(#\k #\u)))
+    (test* "trie(hetero): get" <pair> (trie-get t4 '(#\k #\u)))
 
     (test* "trie(hetero): delete!" <string>
            (begin (trie-delete! t4 '()) (trie-get t4 "")))

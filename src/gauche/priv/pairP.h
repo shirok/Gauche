@@ -34,17 +34,15 @@
 #ifndef GAUCHE_PRIV_PAIRP_H
 #define GAUCHE_PRIV_PAIRP_H
 
-/* ScmExtendedPair actually has a hidden pointer to a class before it.  The
+/* ScmExtendedPair actually has a hidden tagged pointer before it.  The
  * user won't see it.
  *
- * The class may have ScmExtendedPairDescriptor in its data field.
- * Note that any extended pair satisfy SCM_PAIRP and pair?, so althouh
- * 
+ * The tagged pointer is the same as usual class tag ('111' lower bits) but
+ * point to ScmExtendedPairDescriptor instead of ScmClass.
  *
  * Read access to car and cdr is simply a single pointer reference, with no
- * overhead.  Mutations on an extended pair, otoh, are intercepted by setCar
- * and setCdr procedure of ScmExtendedPairDescriptor if its class has one. 
- * It can perform tricks.
+ * overhead.  Mutations on an extended pair, OTOH, are intercepted by setCar
+ * and setCdr procedure of ScmExtendedPairDescriptor, which can do tricks.
  *
  * We distinguish a normal pair and an extended pair by looking at the address.
  * Both normal pairs and ScmRealExtendedPairs are aligned on even word boundary.
@@ -58,18 +56,33 @@
  * (It is safe to do so---all heap allocated objects are on even-word boundary,
  * so only the statically allocated pairs matter.  And we generate a dummy
  * pair at the beginning of every static ScmPair array.)
+ *
+ * The reason we don't use the class pointer in the first word is that
+ * we don't want to split classes for mutable and immutable pairs.  We'd rather
+ * see mutability as 'const' qualifier of C, rather than different types.
+ * One reason is that existing code expects <pair> for both (class-of '(a . b))
+ * and (class-of (cons 'a 'b)) --- we could've subclass <pair> for mutable
+ * and immutable pairs, but that'll break existing code which tests equality
+ * of class, rather than is-a relationship.
  */
 typedef struct ScmExtendedPairDescriptorRec {
+    ScmClass *klass;
+    u_long flags;
     void (*setCar)(ScmObj, ScmObj);
     void (*setCdr)(ScmObj, ScmObj);
 } ScmExtendedPairDescriptor;
 
 typedef struct ScmRealExtendedPairRec {
-    ScmClass *klass;
+    ScmWord hiddenTag;
     ScmExtendedPair data;
 } ScmRealExtendedPair;
 
-SCM_EXTERN ScmRealExtendedPair *Scm__RevealRealExtendedPair(ScmObj pair);
+/* Pair flags */
+enum {
+    SCM_PAIR_IMMUTABLE = (1L<<0)
+};
+
+SCM_EXTERN ScmExtendedPairDescriptor *Scm__GetExtendedPairDescriptor(ScmObj);
 SCM_EXTERN void Scm__InitIPairClass(ScmClass *klass);
 
 #endif /*GAUCHE_PRIV_PAIRP_H*/

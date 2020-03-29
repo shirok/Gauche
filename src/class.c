@@ -491,13 +491,13 @@ ScmClass *Scm_ClassOf(ScmObj obj)
     }
     if (SCM_FLONUMP(obj)) return SCM_CLASS_REAL;
     /* check lazy pair first, so that we won't trigger forcing. */
-    if (SCM_LAZY_PAIR_P(obj)) return SCM_CLASS_MPAIR;
+    if (SCM_LAZY_PAIR_P(obj)) return SCM_CLASS_PAIR;
     if (SCM_PAIRP(obj)) {
-        if (SCM_EXTENDED_PAIR_P(obj)) {
-            ScmRealExtendedPair *xp = Scm__RevealRealExtendedPair(obj);
-            return SCM_CLASS_OF(xp);
+        ScmExtendedPairDescriptor *d = Scm__GetExtendedPairDescriptor(obj);
+        if (d) {
+            return d->klass;
         } else {
-            return SCM_CLASS_MPAIR;
+            return SCM_CLASS_PAIR;
         }
     }
     
@@ -3449,9 +3449,6 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_LIST,             "<list>");
     CINIT(SCM_CLASS_PAIR,             "<pair>");
     CINIT(SCM_CLASS_NULL,             "<null>");
-    CINIT(SCM_CLASS_IPAIR,            "<ipair>");
-    CINIT(SCM_CLASS_MPAIR,            "<mpair>");
-    Scm__InitIPairClass(SCM_CLASS_IPAIR);
 
     /* load.c */
     CINIT(SCM_CLASS_AUTOLOAD,         "<autoload>");

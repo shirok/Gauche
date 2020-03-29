@@ -40,7 +40,6 @@
  */
 
 static ScmClass *list_cpl[] = {
-    SCM_CLASS_STATIC_PTR(Scm_PairClass),
     SCM_CLASS_STATIC_PTR(Scm_ListClass),
     SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
     SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
@@ -48,11 +47,9 @@ static ScmClass *list_cpl[] = {
     NULL
 };
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_ListClass, NULL, NULL, NULL, NULL, list_cpl+2);
-SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, NULL, list_cpl+1);
-SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl+1);
-SCM_DEFINE_BUILTIN_CLASS(Scm_IPairClass, NULL, NULL, NULL, NULL, list_cpl);
-SCM_DEFINE_BUILTIN_CLASS(Scm_MPairClass, NULL, NULL, NULL, NULL, list_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ListClass, NULL, NULL, NULL, NULL, list_cpl+1);
+SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, NULL, list_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl);
 
 /*
  * CONSTRUCTOR
@@ -210,12 +207,17 @@ void Scm_SetCar(ScmObj pair, ScmObj obj)
     if (!SCM_PAIRP(pair)) {
         Scm_Error("set-car!: Pair required, but got: %S", pair);
     }
-    ScmClass *k = Scm_ClassOf(pair);
-    if (k->data) {
-        ((ScmExtendedPairDescriptor*)k->data)->setCar(pair, obj);
-    } else {
-        SCM_CAR(pair) = obj;
+    ScmExtendedPairDescriptor *d = Scm__GetExtendedPairDescriptor(pair);
+    if (d) {
+        if (d->flags & SCM_PAIR_IMMUTABLE) {
+            Scm_Error("attempt to mutate an immutable pair: %S", pair);
+        }
+        if (d->setCar) {
+            d->setCar(pair, obj);
+            return;
+        }
     }
+    SCM_CAR(pair) = obj;
 }
 
 void Scm_SetCdr(ScmObj pair, ScmObj obj)
@@ -223,14 +225,18 @@ void Scm_SetCdr(ScmObj pair, ScmObj obj)
     if (!SCM_PAIRP(pair)) {
         Scm_Error("set-cdr!: Pair required, but got: %S", pair);
     }
-    ScmClass *k = Scm_ClassOf(pair);
-    if (k->data) {
-        ((ScmExtendedPairDescriptor*)k->data)->setCdr(pair, obj);
-    } else {
-        SCM_CDR(pair) = obj;
+    ScmExtendedPairDescriptor *d = Scm__GetExtendedPairDescriptor(pair);
+    if (d) {
+        if (d->flags & SCM_PAIR_IMMUTABLE) {
+            Scm_Error("attempt to mutate an immutable pair: %S", pair);
+        }
+        if (d->setCdr) {
+            d->setCdr(pair, obj);
+            return;
+        }
     }
+    SCM_CDR(pair) = obj;
 }
-
 
 /*
  * List manipulate routines:
@@ -737,11 +743,15 @@ ScmObj Scm_MonotonicMerge1(ScmObj sequences)
  * Extended pairs
  */
 
-static ScmObj make_extended_pair(ScmClass *klass, 
+static ScmObj make_extended_pair(ScmExtendedPairDescriptor *desc,
                                  ScmObj car, ScmObj cdr, ScmObj attrs)
 {
     ScmRealExtendedPair *xp = SCM_NEW(ScmRealExtendedPair);
-    SCM_SET_CLASS(xp, klass);
+    /* ScmRealExtendedPair is not an ScmObj, and 
+       ScmExtendedPairDescriptor is not an ScmClass.   To avoid confusion,
+       we manually tweak tag bits.
+    */
+    xp->hiddenTag = SCM_WORD((ScmByte*)desc + 7);
     xp->data.car = car;
     xp->data.cdr = cdr;
     xp->data.attributes = attrs;
@@ -749,17 +759,30 @@ static ScmObj make_extended_pair(ScmClass *klass,
 }
 
 /* "vanilla" extended pair.  used mainly to hold extra attributes, but
-   otherwise behaves like normal pairs. */
+   otherwise behaves like normal pairs.
+   NB: Static initialization with ScmClass* requires extra care on
+   Windows.  To avoid complication, we initialize the klass field in
+   _Init() routine.
+*/
+static ScmExtendedPairDescriptor mpair_desc = {
+    NULL,                       /* will be SCM_CLASS_PAIR */
+    0,
+    NULL,
+    NULL
+};
+
 ScmObj Scm_MakeExtendedPair(ScmObj car, ScmObj cdr, ScmObj attrs)
 {
-    return make_extended_pair(SCM_CLASS_MPAIR, car, cdr, attrs);
+    return make_extended_pair(&mpair_desc, car, cdr, attrs);
 }
 
-ScmRealExtendedPair *Scm__RevealRealExtendedPair(ScmObj p)
+/* Returns NULL if p isn't an extended pair. */
+ScmExtendedPairDescriptor *Scm__GetExtendedPairDescriptor(ScmObj p)
 {
-    SCM_ASSERT(SCM_EXTENDED_PAIR_P(p));
-    ScmObj *z = ((ScmObj*)p) - 1;
-    return (ScmRealExtendedPair*)z;
+    if (!SCM_EXTENDED_PAIR_P(p)) return NULL;
+    ScmRealExtendedPair *z = (ScmRealExtendedPair*)(((ScmObj*)p) - 1);
+    SCM_ASSERT((z->hiddenTag&0x7) == 0x7);
+    return (ScmExtendedPairDescriptor *)(z->hiddenTag-7);
 }
 
 ScmObj Scm_PairAttr(ScmPair *pair)
@@ -815,28 +838,28 @@ ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
    in set-car!/set-cdr!. */
 int Scm_ImmutablePairP(ScmObj obj)
 {
-    return SCM_ISA(obj, SCM_CLASS_IPAIR);
-}
-
-ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr)
-{
-    return make_extended_pair(SCM_CLASS_IPAIR, car, cdr, SCM_NIL);
-}
-
-static void ipair_set_cxr(ScmObj pair, ScmObj obj SCM_UNUSED)
-{
-    Scm_Error("Attempt to modify an immutable pair: %S", pair);
+    if (!SCM_EXTENDED_PAIR_P(obj)) return FALSE;
+    ScmExtendedPairDescriptor *d = Scm__GetExtendedPairDescriptor(obj);
+    return d->flags & SCM_PAIR_IMMUTABLE;
 }
 
 static ScmExtendedPairDescriptor ipair_desc = {
-    ipair_set_cxr,
-    ipair_set_cxr
+    NULL,                       /* will be SCM_CLASS_PAIR.  see above. */
+    SCM_PAIR_IMMUTABLE,
+    NULL,
+    NULL
 };
 
-/* Called from class.c, to set up hooks. */
-void Scm__InitIPairClass(ScmClass *klass)
+ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr)
 {
-    klass->data = &ipair_desc;
+    return make_extended_pair(&ipair_desc, car, cdr, SCM_NIL);
+}
+
+
+void Scm__InitList()
+{
+    mpair_desc.klass = SCM_CLASS_PAIR;
+    ipair_desc.klass = SCM_CLASS_PAIR;
 }
 
 /* Temporary - Check if normal pairs are all aligned with 2-word boundary */

@@ -1,3 +1,15 @@
+2020-03-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c, src/class.c: Abandon the idea of having <mpair> and
+	  <ipair> separately.  (1) It breaks the existing code that assumes
+	  class of pair is always <pair>. (2) It'll be cumbersome if we have
+	  to define mutable/immutable subclasses for other kind of extended
+	  pairs. (3) We don't have separate classes for other immutable objects.
+	  Note that, now the first word of ScmRealExtendedPair is not a tagged
+	  pointer to ScmClass.  Less uniformity, but the extended pairs are
+	  exceptional, so it wouldn't matter except you're looking at the
+	  binary dump.
+
 2020-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/compaux.c (unwrap_rec): Fix circular structure handling.  The

@@ -1078,19 +1078,20 @@ SCM_CLASS_DECL(Scm_ConnectionClass);
  * PAIR AND LIST
  */
 
-/* Ordinary pair uses two words.  It can be distinguished from
+/* An ordinary pair uses two words.  It can be distinguished from
  * other heap allocated objects by checking the first word doesn't
- * have "11" in the lower bits.
+ * have "111" in the lower bits.
  */
 struct ScmPairRec {
     ScmObj car;                 /* should be accessed via macros */
     ScmObj cdr;                 /* ditto */
 };
 
-/* To keep extra information such as source-code info, some pairs
- * actually have one extra word for attribute assoc-list.  Checking
- * whether a pair is an extended one or not isn't a very lightweight
- * operation, so the use of extended pair should be kept minimal.
+/* An extended pair behaves like an ordinary pair for read operations,
+ * but can keep extra information in attributes.  It also has
+ * hidden field, and can behave differently on mutating operations.
+ * Immutable pairs are implemented on that mechanism.
+ * See priv/pairP.h for the real structure of an extended pair.
  */
 struct ScmExtendedPairRec {
     ScmObj car;                 /* should be accessed via macros */
@@ -1143,13 +1144,9 @@ SCM_EXTERN int Scm_CheckingPairP(ScmObj);
 
 SCM_CLASS_DECL(Scm_ListClass);
 SCM_CLASS_DECL(Scm_PairClass);
-SCM_CLASS_DECL(Scm_IPairClass); /* immutable pair */
-SCM_CLASS_DECL(Scm_MPairClass); /* mutable pair */
 SCM_CLASS_DECL(Scm_NullClass);
 #define SCM_CLASS_LIST          (&Scm_ListClass)
 #define SCM_CLASS_PAIR          (&Scm_PairClass)
-#define SCM_CLASS_IPAIR         (&Scm_IPairClass)
-#define SCM_CLASS_MPAIR         (&Scm_MPairClass)
 #define SCM_CLASS_NULL          (&Scm_NullClass)
 
 #define SCM_LISTP(obj)          (SCM_NULLP(obj) || SCM_PAIRP(obj))
