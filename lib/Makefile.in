@@ -33,7 +33,8 @@ CONFIG_GENERATED = Makefile
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
            gauche/package gauche/cgen gauche/experimental gauche/test \
            gauche/regexp \
-           srfi srfi/160 srfi-14 srfi-29 srfi-146 srfi-159 srfi/159 \
+           srfi srfi/160 srfi-14 srfi-29 srfi-146 \
+           srfi-159 srfi-159/internal srfi/159 \
            binary control data dbd dbm math util compat file \
            parser parser/peg rfc rfc/http \
            scheme scheme/mapping scheme/show scheme/stream scheme/vector \
@@ -57,7 +58,8 @@ SCMFILES = \
        srfi-130.scm srfi-131.scm srfi-132.scm srfi-134.scm srfi-135.scm \
        srfi-141.scm srfi-143.scm srfi-146.scm srfi-146/hash.scm \
        srfi-151.scm srfi-152.scm srfi-154.scm srfi-155.scm srfi-158.scm \
-       srfi-159.scm srfi-159/*.sld srfi-159/*.scm srfi/159/*.scm \
+       srfi-159.scm srfi-159/*.sld srfi-159/*.scm \
+       srfi-159/internal/*.sld srfi-159/internal/*.scm srfi/159/*.scm \
        srfi-160.scm srfi/*.scm srfi/160/*.scm srfi-162.scm srfi-173.scm \
        srfi-176.scm \
        slib.scm	 \

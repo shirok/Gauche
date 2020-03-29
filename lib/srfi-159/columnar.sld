@@ -2,7 +2,7 @@
   (import (scheme base) (scheme char) (scheme file) (scheme write)
           (srfi 1) (srfi 117) (srfi 130)
           (only (gauche base) let-optionals*)
-          (srfi-159 base) (srfi-159 util))
+          (srfi-159 base) (srfi-159 internal util))
   (export call-with-output-generator call-with-output-generators columnar
           from-file
           justified
