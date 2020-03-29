@@ -131,7 +131,7 @@
                    '(0 1 2 3 4)
                    (circular-list 0 1))))
 (test* "map!" '(4 1 5 1)
-       (map! + '(3 1 4 1) (circular-list 1 0)))
+       (map! + (list 3 1 4 1) (circular-list 1 0)))
 (test* "map-in-order"  '(4 1 5 1)
        (map-in-order + '(3 1 4 1) (circular-list 1 0)))
 (test* "pair-for-each" '((c) (b c) (a b c))

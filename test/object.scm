@@ -879,15 +879,16 @@
   ())
 
 (define-method initialize ((class <auto-accessor-class>) initargs)
-  (let ((slots (get-keyword :slots initargs '())))
-    (for-each (lambda (slot)
-                (unless (get-keyword :accessor (cdr slot) #f)
-                  (set-cdr! slot (list* :accessor
-                                        (string->symbol
-                                         (format #f "~a-of" (car slot)))
-                                        (cdr slot)))))
-              slots)
-    (next-method)))
+  (let ((slots (map (lambda (slot)
+                      (if (get-keyword :accessor (cdr slot) #f)
+                        slot
+                        (cons (car slot)
+                              (list* :accessor
+                                     (string->symbol
+                                      (format #f "~a-of" (car slot)))
+                                     (cdr slot)))))
+                    (get-keyword :slots initargs '()))))
+    (next-method class (list* :slots slots initargs))))
 
 (define-class <zz> ()
   (a b c)
