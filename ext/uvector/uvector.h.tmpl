@@ -2,7 +2,7 @@
 ///; Lines beginning with '///' are directives for ugven.scm.
 
 ///;; Header ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-///(define *tmpl-prologue* '(
+///(define *tmpl-prologue* (list
 /*
  * uvector - uniform (homogeneous) numeric vector types (SRFI-4)
  *
@@ -72,7 +72,7 @@ SCM_EXTERN ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
 
 ///)) ;; tmpl-prologue
 
-///(define *tmpl-body* '(
+///(define *tmpl-body* (list
 /* ${T}Vector */
 
 SCM_EXTERN ScmObj Scm_${T}VectorFill(ScmUVector *vec, ${etype} fill, int, int);

@@ -2,7 +2,7 @@
 ///; Lines beginning with '///' are directives for ugven.scm.
 
 ///;; Prologue ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-///(define *tmpl-prologue* '(
+///(define *tmpl-prologue* (list
 /*
  * uvector.c.tmpl - uniform vector support code template
  *
@@ -261,7 +261,7 @@ ScmObj Scm_${T}VectorCopyX(ScmUVector *dst,
 
 ///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ///;; Numeric operator template
-///(append! *tmpl-prologue* '(
+///(append! *tmpl-prologue* (list
 /****** Add, sub, mul and div (f32 and f64 only) *****/
 #define s8s8_add(x, y, clamp)   clamp_s8(x+y, clamp)
 #define s8s8_sub(x, y, clamp)   clamp_s8(x-y, clamp)
@@ -776,7 +776,7 @@ ScmObj Scm_${T}Vector${Opname}X(ScmUVector *s0, ScmObj s1, int clamp)
 ///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ///;; Bitwise operator template
 ///;;   very similar to numop, except boundary checks.
-///(append! *tmpl-prologue* '(
+///(append! *tmpl-prologue* (list
 /****** Bit operation *****/
 
 static inline u_long bitext(ScmObj x)
@@ -872,7 +872,7 @@ ScmObj Scm_${T}Vector${Opname}X(ScmUVector *s0, ScmObj s1)
 
 ///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ///;; Dot operator template
-///(append! *tmpl-prologue* '(
+///(append! *tmpl-prologue* (list
 /****** Multiply-and-add operation. *****/
 
 static inline long s8muladd(long x, long y, long acc, ScmObj *sacc)
@@ -1053,7 +1053,7 @@ ScmObj Scm_VM${T}VectorDotProd(ScmUVector *x, ScmObj y)
 
 ///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ///;; Range check template
-///(append! *tmpl-prologue* '(
+///(append! *tmpl-prologue* (list
 
 #if SCM_EMULATE_INT64
 #define INT64LT(a, b)  ((a.hi < b.hi) || (a.hi == b.hi) && (a.lo < b.lo))
@@ -1140,7 +1140,7 @@ ScmObj Scm_${T}Vector${Opname}(ScmUVector *x, ScmObj min, ScmObj max)
 ///;; Byte swap template
 ///;;
 
-///(append! *tmpl-prologue* '(
+///(append! *tmpl-prologue* (list
 
 static void f64vector_swapb_arm2le(ScmF64Vector *v)
 {
