@@ -1,3 +1,8 @@
+2020-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/compaux.c (unwrap_rec): Fix circular structure handling.  The
+	  old code didn't correctly handle all the cases.
+
 2020-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacbase.scm (unwrap-syntax),

@@ -34,6 +34,9 @@
 #ifndef GAUCHE_PRIV_READERP_H
 #define GAUCHE_PRIV_READERP_H
 
+/* ReadReference */
+SCM_EXTERN ScmObj Scm_MakeReadReference(void);
+
 /*
  * ReadContext
  */

@@ -69,6 +69,7 @@ SCM_EXTERN ScmObj Scm_SetReaderLexicalMode(ScmObj);
  * 'read'.  It is replaced by the reference value before exiting 'read',
  * and it shouldn't leak out to the normal Scheme program, except the
  * code that handles it explicitly (like read-time constructor).
+ * This object is also used in Scm_UnwrapSyntax to track circular structures.
  */
 typedef struct ScmReadReferenceRec {
     SCM_HEADER;
