@@ -210,7 +210,8 @@ void Scm_SetCar(ScmObj pair, ScmObj obj)
     ScmExtendedPairDescriptor *d = Scm__GetExtendedPairDescriptor(pair);
     if (d) {
         if (d->flags & SCM_PAIR_IMMUTABLE) {
-            Scm_Error("attempt to mutate an immutable pair: %S", pair);
+            Scm_Error("attempt to mutate car of an immutable pair %S with %S",
+                      pair, obj);
         }
         if (d->setCar) {
             d->setCar(pair, obj);
@@ -228,7 +229,8 @@ void Scm_SetCdr(ScmObj pair, ScmObj obj)
     ScmExtendedPairDescriptor *d = Scm__GetExtendedPairDescriptor(pair);
     if (d) {
         if (d->flags & SCM_PAIR_IMMUTABLE) {
-            Scm_Error("attempt to mutate an immutable pair: %S", pair);
+            Scm_Error("attempt to mutate cdr of an immutable pair %S with %S",
+                      pair, obj);
         }
         if (d->setCdr) {
             d->setCdr(pair, obj);
@@ -868,7 +870,9 @@ int Scm_CheckingPairP(ScmObj obj)
 {
     if (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj)))) {
         if (SCM_WORD(obj) & SIZEOF_LONG) {
-            fprintf(stderr, "Unaligned pair %p\n", obj);
+            if ((SCM_WORD((ScmObj*)obj - 1) & 7) != 7) {
+                fprintf(stderr, "Unaligned pair %p\n", obj);
+            }
         }
         return TRUE;
     }
