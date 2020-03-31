@@ -326,9 +326,7 @@ libextra.c   : libextra.scm $(PRECOMP_DEPENDENCY)
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
 
-libeval.$(OBJEXT) : libeval.c \
-             getdir_win.c getdir_dummy.c getdir_darwin.c getdir_procfs.c \
-	     paths_arch.c paths.c
+libeval.$(OBJEXT) : libeval.c paths.c paths_arch.c
 libextra.$(OBJEXT): libextra.c paths.c
 
 $(libgc_pic_LIBRARY): $(GCLIB) $(libgc_pic_OBJECTS)

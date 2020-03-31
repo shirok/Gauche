@@ -44,6 +44,8 @@
  */
 
 #define LIBGAUCHE_BODY
+#include <stdio.h>
+#include <string.h>
 #include "gauche.h"
 
 #if !defined(PATH_ALLOC)
@@ -62,15 +64,146 @@ static void errfn(const char *fmt, ...)
 #define PATH_ERROR(...) errfn(__VA_ARGS__)
 #endif
 
+/*
+ * Platform-specifc routined to obtain runtime directories
+ */
+
 #if defined(GAUCHE_WINDOWS)
-#include "getdir_win.c"
+static const char *get_install_dir()
+{
+    HMODULE mod;
+    DWORD r;
+    TCHAR path[MAX_PATH];
+    const TCHAR *libname = _T("libgauche-"GAUCHE_ABI_VERSION".dll");
+
+    /* We try libugauche.dll, then the process itself.  The latter is
+       for the case when gauche is statically linked. */
+    if ((mod = GetModuleHandle(libname)) == NULL
+	&& (mod = GetModuleHandle(NULL)) == NULL) {
+	PATH_ERROR("GetModuleHandle failed");
+    }
+    if ((r = GetModuleFileName(mod, path, MAX_PATH)) == 0) {
+        PATH_ERROR("GetModuleFileName failed");
+    }
+    /* remove \libgauche.dll */
+    if (!PathRemoveFileSpec(path)) {
+        PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
+    }
+    /* remove \bin */
+    if (!PathRemoveFileSpec(path)) {
+        PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
+    }
+    return SCM_WCS2MBS(path);
+}
+
 #elif defined(GAUCHE_MACOSX_FRAMEWORK)
-#include "getdir_darwin.c"
+
+#include <libgen.h>
+#include <CoreFoundation/CoreFoundation.h>
+
+/* Must match the id in Info.plist */
+#define LIBGAUCHE_ID  "com.schemearts.gauche"
+
+/* Subdirs appended to the bundle path */
+#define SUBDIR   "/Versions/Current/"
+
+static const char *get_install_dir()
+{
+    CFBundleRef bundle     = NULL;
+    CFURLRef    bundleURL  = NULL;
+    CFStringRef bundlePath = NULL;
+
+#define CLEANUP                                 \
+    do {                                        \
+        if (bundlePath) CFRelease(bundlePath);  \
+        if (bundleURL) CFRelease(bundleURL);    \
+        if (bundle) CFRelease(bundle);          \
+    } while (0)
+
+    bundle = CFBundleGetBundleWithIdentifier(CFSTR(LIBGAUCHE_ID));
+    if (bundle == NULL) {
+        /* This call fails when gosh is called during the build process
+           (thus, the framework hasn't been created).  For the time
+           being, we just return a dummy directory. */
+        CLEANUP;
+        return ".";
+    }
+    /* Ownership of bundle follows the Get Rule of Core Foundation.
+       ie. we must claim ownership (with the CFRetain function).
+       We are then responsible for relinquishing ownership when we
+       have finished with it. */
+    CFRetain(bundle);
+
+    bundleURL = CFBundleCopyBundleURL(bundle);
+    if (bundleURL == NULL) {
+        CLEANUP;
+        PATH_ERROR("CFBundleCopyBundleURL failed");
+    }
+    /* Ownership of bundleURL follows the Create Rule of Core Foundation.
+       ie. it is our responsibility to relinquish ownership (using CFRelease)
+       when we have finished with it. */
+
+    bundlePath = CFURLCopyFileSystemPath(bundleURL, kCFURLPOSIXPathStyle);
+    if (bundlePath == NULL) {
+        CLEANUP;
+        PATH_ERROR("CFURLCopyFileSystemPath failed");
+    }
+    /* Ownership follows the Create Rule. */
+
+    /* Estimate string length in utf8.  This is provisional; we'll refine
+       the code later. */
+    size_t utf16len = (size_t)CFStringGetLength(bundlePath);
+    size_t maxlen = 3 * (utf16len+1)/2;
+    size_t bufsiz = maxlen + strlen(SUBDIR) + 1;
+    char* buf = PATH_ALLOC(bufsiz);
+
+    if (!CFStringGetCString(bundlePath, buf, maxlen, kCFStringEncodingUTF8)) {
+        CLEANUP;
+        PATH_ERROR("CFStringGetCString failed");
+    }
+    strcat(buf, SUBDIR);
+    CLEANUP;
+    return buf;
+#undef CLEANUP
+}
+
 #else
-#include "getdir_procfs.c"
+
+#define MAPS_LINE_MAX 4096
+
+static const char *get_install_dir()
+{
+    FILE *fp = fopen("/proc/self/maps", "r");
+    if (fp == NULL) return NULL;
+    
+    char buf[MAPS_LINE_MAX+1];
+    while (fgets(buf, MAPS_LINE_MAX, fp) != NULL) {
+        const char *p = strstr(buf, "libgauche-"GAUCHE_ABI_VERSION".so");
+        if (p) {
+            for (const char *q = p-1; q >= buf; q--) {
+                if (*q == ' ') {
+                    q++;
+                    if (q == p) {
+                        return ".";
+                    } else {
+                        char *r = PATH_ALLOC(p - q + 1);
+                        strncpy(r, q, p-q);
+                        r[p-q] = '\0';
+                        return r;
+                    }
+                }
+            }
+        }
+    }
+    if (ferror(fp)) PATH_ERROR("Read error from /proc/self/maps");
+    return NULL;
+}
+
 #endif
 
-#include <string.h>
+/*
+ * Common routines
+ */
 
 static const char *substitute_all(const char *input,
                                   const char *mark,
