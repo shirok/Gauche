@@ -37,7 +37,8 @@
   (use gauche.unicode)
   (use scheme.list)
   (use scheme.charset)
-  (export regexp-parse-sre regexp-unparse-sre regexp-compile-sre
+  (export regexp-parse-sre regexp-unparse-sre
+          sre->regexp regexp->sre
           make-grapheme-predicate
           <regexp-invalid-sre>))
 (select-module gauche.regexp.sre)
@@ -372,7 +373,7 @@
             (%sre->ast sre))))
 
 
-(define (regexp-compile-sre re :key (multi-line #t))
+(define (sre->regexp re :key (multi-line #t))
   (regexp-compile (regexp-optimize (regexp-parse-sre re))
                   :multi-line multi-line))
 
@@ -467,3 +468,6 @@
            (pair? (cdr ast)) (not (cadr ast)))
       (unparse (cons 'seq (cddr ast)))
       (unparse ast)))
+
+(define (regexp->sre re)
+  (regexp-unparse-sre (regexp-ast re)))

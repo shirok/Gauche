@@ -48,7 +48,7 @@
     [(_ sre ...) (regexp `(: sre ...))]))
 
 (define (regexp re)
-  (if (regexp? re) re (regexp-compile-sre re)))
+  (if (regexp? re) re (sre->regexp re)))
 
 (define (regexp->sre re)
   (regexp-unparse-sre (regexp-ast re)))
