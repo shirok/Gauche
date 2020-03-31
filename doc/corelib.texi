@@ -10248,18 +10248,13 @@ If you want to construct regexp on-the-fly, however, use @code{string->regexp}.
 @c EN
 Gauche's built-in regexp syntax follows POSIX extended regular
 expression, with a bit of extensions taken from Perl.
-
-Note that the syntax described here is just a surface syntax.
-Gauche's regexp compiler works on the abstract syntax tree,
-and alternative syntax such as SRE will be supported in the
-future versions.
+(Scheme Regulare Expression (SRE) is also supported as an alternative
+syntax; @pxref{R7RS regular expressions}, for the details of SRE.)
 @c JP
 Gaucheの組み込み正規表現構文はPOSIX拡張正規表現に準じたものに、
 Perlの拡張の一部を採り入れたものです。
-
-ここに示す構文は表面的な構文にすぎないことに注意して下さい。
-Gaucheの正規表現コンパイラは抽象構文木を扱うようになっており、
-将来はSREのような別の構文もサポートされる予定です。
+(別構文として、Scheme正規表現(SRE)もサポートされています。
+SREについては@ref{R7RS regular expressions}を参照してください。)
 @c COMMON
 
 @table @code
@@ -10686,9 +10681,9 @@ regexp object at loading time.
 
 Gauche's regexp engine is fully aware of multibyte characters.
 @c JP
-% @code{string->regexp} _or_ @code{sre->regexp}...
-正規表現オブジェクトのクラスです。@code{string->regexp}を使って実行時に
-作成できます。また、Gaucheはリテラルの正規表現を表す構文を持っており、
+正規表現オブジェクトのクラスです。@code{string->regexp}
+あるいは@code{sre->regexp}を使って実行時に作成できます。
+また、Gaucheはリテラルの正規表現を表す構文を持っており、
 ロード時に作成することもできます。
 
 Gaucheの正規表現エンジンはマルチバイト文字列に対応しています。
@@ -10740,15 +10735,22 @@ the created regexp object becomes case-folding regexp.
 (大文字小文字を区別しない正規表現に関しては上の説明を参照して下さい)。
 @c COMMON
 
+@c EN
 If a true value is given to the keyword argument @var{multi-line},
 @code{^} and @code{$} will assert the beginning and end of line in
 addition to beginning and end of string. Popular line terminators (LF
 only, CRLF and CR only) are recognized.
+@c JP
+キーワード引数@var{multi-line}に真の値が与えられた場合、
+@code{^}と@code{$}はそれぞれ入力文字列の最初と最後に加え、
+各行の先頭と末尾にもマッチします。
+行の区切りはLFのみ、CRLF、あるいはCRのみのいずれも認識されます。
+@c COMMON
 @end defun
 
 @defun sre->regexp sre :key multi-line
 @c EN
-Takes a scheme regexp @var{sre} and returns a regexp object. The
+Takes a scheme regexp @var{sre} and returns a @code{<regexp>} object. The
 zero-th group is always captured.
 
 If a false value is given to the keyword argument @var{multi-line},
@@ -10756,10 +10758,10 @@ which is the default,
 @code{bol} and @code{eol} behave like @code{bos} and @code{eos}
 (i.e. only match at the beginning or end of string).
 @c JP
-Scheme正規表現 @var{sre} を取り、コンパイルした正規表現オブジェクトを
+Scheme正規表現 @var{sre} を取り、コンパイルした@code{<regexp>}オブジェクトを
 返します。正規表現全体が常に0番の捕捉グループになります。
 
-キーワード引数@var{multi-value}に偽の値が与えられた場合
+キーワード引数@var{multi-line}に偽の値が与えられた場合
 (デフォルト)、@code{bol}と@code{eol}はそれぞれ@code{bos}と@code{eos}のように
 振る舞います (つまり、入力文字列の最初と最後にのみマッチします)。
 @c COMMON
@@ -10784,7 +10786,13 @@ The returned string is immutable.
 @end defun
 
 @defun regexp->sre @var{regexp}
-Returns a scheme regexp describing the regexp @var{regexp}.
+@c EN
+Returns a scheme regexp (SRE) describing the regexp @var{regexp}.
+@xref{R7RS regular expressions}, for the details of SRE.
+@c JP
+正規表現@var{regexp}を生成するScheme正規表現式(SRE)を返します。
+SREについて詳しくは@ref{R7RS regular expressions}を参照してください。
+@c COMON
 @end defun
 
 @defun regexp-num-groups regexp
@@ -11670,11 +11678,13 @@ not by the engine).
 
 @defun regexp-parse-sre sre
 @c EN
-Parses @var{sre} as a Scheme Regular Expression as described in
+Parses @var{sre} as a Scheme Regular Expression (SRE) as described in
 SRFI-115 and returns its AST.
+@xref{R7RS regular expressions}
 @c JP
-@var{sre}をsrfi-115で定義されるScheme正規表現としてパーズし、
+@var{sre}をsrfi-115で定義されるScheme正規表現(SRE)としてパーズし、
 結果をASTで返します。
+SREについて詳しくは@ref{R7RS regular expressions}を参照してください。
 @c COMMON
 @pxref{R7RS regular expressions}.
 @end defun
@@ -11755,15 +11765,11 @@ If it's the latter, @code{regexp-unparse} just returns @code{#f}.
 This is the structure of AST.  Note that this is originally
 developed only for internal use, and not very convenient to manipulate
 from the code (e.g. if you insert or delete a subtree, you have to
-renumber capturing groups to make them consistent.)  There's a plan
-to provide a better representation, such as SRE, and a tool
-to convert it to this AST back and forth.   Contributions are welcome.
+renumber capturing groups to make them consistent.) 
 @c JP
 以下にASTの構造を示します。この仕様は当初、内部的に使うためだけに設計されたので、
 コードで直接いじるのには若干不便です (例えば、部分木を削除したり
 追加した場合、捕捉グループの番号を振りなおして一貫性を保つ必要があるかもしれません。)
-いずれSREのようなより良い表現を採用し、この内部形式との相互変換手続きを用意する
-予定です。パッチ歓迎です。
 @c COMMON
 
 @smallexample
