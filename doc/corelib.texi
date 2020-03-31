@@ -10679,12 +10679,14 @@ test counts true.
 @clindex regexp
 @c EN
 Regular expression object.  You can construct a regexp object
-from a string by @code{string->regexp} at run time.  Gauche also
+from a string by @code{string->regexp} or @code{sre->regexp}
+at run time.  Gauche also
 has a special syntax to denote regexp literals, which construct
 regexp object at loading time.
 
 Gauche's regexp engine is fully aware of multibyte characters.
 @c JP
+% @code{string->regexp} _or_ @code{sre->regexp}...
 正規表現オブジェクトのクラスです。@code{string->regexp}を使って実行時に
 作成できます。また、Gaucheはリテラルの正規表現を表す構文を持っており、
 ロード時に作成することもできます。
@@ -10744,6 +10746,25 @@ addition to beginning and end of string. Popular line terminators (LF
 only, CRLF and CR only) are recognized.
 @end defun
 
+@defun sre->regexp sre :key multi-line
+@c EN
+Takes a scheme regexp @var{sre} and returns a regexp object. The
+zero-th group is always captured.
+
+If a false value is given to the keyword argument @var{multi-line},
+which is the default,
+@code{bol} and @code{eol} behave like @code{bos} and @code{eos}
+(i.e. only match at the beginning or end of string).
+@c JP
+Scheme正規表現 @var{sre} を取り、コンパイルした正規表現オブジェクトを
+返します。正規表現全体が常に0番の捕捉グループになります。
+
+キーワード引数@var{multi-value}に偽の値が与えられた場合
+(デフォルト)、@code{bol}と@code{eol}はそれぞれ@code{bos}と@code{eos}のように
+振る舞います (つまり、入力文字列の最初と最後にのみマッチします)。
+@c COMMON
+@end defun
+
 @defun regexp? @var{obj}
 @c EN
 Returns true iff @var{obj} is a regexp object.
@@ -10760,6 +10781,10 @@ The returned string is immutable.
 正規表現@var{regexp}を記述する元になった文字列を返します。
 返される文字列は変更不可な文字列です。
 @c COMMON
+@end defun
+
+@defun regexp->sre @var{regexp}
+Returns a scheme regexp describing the regexp @var{regexp}.
 @end defun
 
 @defun regexp-num-groups regexp
@@ -11699,25 +11724,6 @@ incomprehensible.  So, don't use this procedure as a AST validness checker.)
 (この関数が有効でないASTを見つけてエラーにする場合でも、
 そのエラーメッセージからどこがおかしいかを判断するのが難しい場合があります。
 この手続きをASTが有効であるかどうかのチェッカーとして使うのは避けましょう。)
-@c COMMON
-@end defun
-
-@defun regexp-compile-sre sre :key multi-line
-@c EN
-Takes a scheme regexp @var{sre} and returns a regexp object. The
-zero-th group is always captured.
-
-If a false value is given to the keyword argument @var{multi-line},
-which is the default,
-@code{bol} and @code{eol} behave like @code{bos} and @code{eos}
-(i.e. only match at the beginning or end of string).
-@c JP
-Scheme正規表現 @var{sre} を取り、コンパイルした正規表現オブジェクトを
-返します。正規表現全体が常に0番の捕捉グループになります。
-
-キーワード引数@var{multi-value}に偽の値が与えられた場合
-(デフォルト)、@code{bol}と@code{eol}はそれぞれ@code{bos}と@code{eos}のように
-振る舞います (つまり、入力文字列の最初と最後にのみマッチします)。
 @c COMMON
 @end defun
 

@@ -1288,7 +1288,7 @@
 (define (test-sre expected sre input)
   (test* sre
          expected
-         (let ([result (rxmatch (regexp-compile-sre sre) input)])
+         (let ([result (rxmatch (sre->regexp sre) input)])
            (and result
                 (map (cut result <>)
                      (iota (rxmatch-num-matches result)))))))
@@ -1296,7 +1296,7 @@
 (define (test-sre-named expected sre input)
   (test* sre
          expected
-         (let ([result (rxmatch (regexp-compile-sre sre) input)])
+         (let ([result (rxmatch (sre->regexp sre) input)])
            (and result (rxmatch-named-groups result)))))
 
 (test-sre '("ababc" "abab")
@@ -1320,7 +1320,7 @@
 (test* '(or (-> foo "ab") (-> foo "cd"))
        "ab"
        ((rxmatch
-         (regexp-compile-sre
+         (sre->regexp
           '(or (-> foo "ab") (-> foo "cd")))
          "ab")
         'foo))
@@ -1328,7 +1328,7 @@
 (test* '(or (-> foo "ab") (-> foo "cd"))
        "cd"
        ((rxmatch
-         (regexp-compile-sre
+         (sre->regexp
           '(or (-> foo "ab") (-> foo "cd")))
          "cd")
         'foo))

@@ -104,7 +104,7 @@
           regexp-unparse rxmatch-substrings rxmatch-positions)
 
 (autoload gauche.regexp.sre
-          regexp-parse-sre regexp-compile-sre)
+          regexp-parse-sre sre->regexp regexp->sre)
 
 (autoload gauche.procedure
           compose .$ complement pa$ map$ for-each$ apply$
