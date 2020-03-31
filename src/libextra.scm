@@ -47,7 +47,9 @@
 
 ;; Pathname replacement
 (inline-stub
- "#include \"paths.c\""
+ (declcode "#define PATH_ALLOC(n) SCM_MALLOC_ATOMIC(n)")
+ (declcode "#define PATH_ERROR(...) Scm_Error(__VA_ARGS__)")
+ (declcode "#include \"paths.c\"")
 
  (define-cproc substitute-all (input::<const-cstring>
                                mark::<const-cstring>

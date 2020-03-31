@@ -22,7 +22,7 @@
 
 #define MAPS_LINE_MAX 4096
 
-static const char *get_install_dir(void (*errfn)(const char *, ...))
+static const char *get_install_dir()
 {
     FILE *fp = fopen("/proc/self/maps", "r");
     if (fp == NULL) return NULL;
@@ -46,6 +46,6 @@ static const char *get_install_dir(void (*errfn)(const char *, ...))
             }
         }
     }
-    if (ferror(fp)) errfn("Read error from /proc/self/maps");
+    if (ferror(fp)) PATH_ERROR("Read error from /proc/self/maps");
     return NULL;
 }

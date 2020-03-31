@@ -239,6 +239,7 @@ static struct cmd_rec {
 #if (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE)
 /* mbs <-> wcs stuff */
 #include "win-compat.c"
+static void errfn(const char *fmt,...); /*definition in paths.c*/
 #define SCM_MBS2WCS(s)   mbs2wcs(s, FALSE, errfn)
 #define SCM_WCS2MBS(s)   wcs2mbs(s, FALSE, errfn)
 #else  /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
@@ -246,16 +247,6 @@ static struct cmd_rec {
 #define SCM_WCS2MBS(s)  (s)
 #endif /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
 
-static void errfn(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    exit(1);
-}
-
-#define PATH_ALLOC(n) malloc(n)
 #include "paths.c"
 
 static int process(const char *arg, int check)
@@ -263,7 +254,7 @@ static int process(const char *arg, int check)
     struct cmd_rec *cp = cmds;
     while (cp->cmd != NULL) {
         if (strcmp(cp->cmd, arg) == 0) {
-            if (!check) printf("%s\\n", replace_install_dir(cp->value, errfn));
+            if (!check) printf("%s\\n", replace_install_dir(cp->value));
             return 1;
         }
         cp++;

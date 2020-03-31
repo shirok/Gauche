@@ -36,14 +36,30 @@
  * doesn't use ScmObj, so the function works on bare C strings.
  * Note that this also included in libextra.scm for testing, so be careful
  * not to put any public definitions here to avoid duplicate definitions.
- * NB: Do not include this from other files.
+ * Do not include this from other files.
+ *
+ * The includer must define two macros:
+ *   const void *PATH_ALLOC(size_t size)  - allocation routine
+ *   void PATH_ERROR(const char *fmt, ...) - print error message and exit
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 
 #if !defined(PATH_ALLOC)
-#define PATH_ALLOC(n)  SCM_MALLOC_ATOMIC(n)
+#define PATH_ALLOC(n)  malloc(n)
+#endif
+#if !defined(PATH_ERROR)
+static void errfn(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    exit(1);
+}
+
+#define PATH_ERROR(...) errfn(__VA_ARGS__)
 #endif
 
 #if defined(GAUCHE_WINDOWS)
@@ -98,13 +114,12 @@ static const char *substitute_all(const char *input,
    NB: This is a static function, but called from gauche-config.c (it includes
    paths.c).
 */
-static const char *replace_install_dir(const char *orig,
-                                       void (*errfn)(const char *, ...))
+static const char *replace_install_dir(const char *orig)
 {
     if (strstr(orig, "@") == NULL) return orig; /* no replace */
-    const char *idir =  get_install_dir(errfn);
+    const char *idir =  get_install_dir();
     if (idir == NULL) {
-        errfn("Couldn't obtain installation directory.");
+        PATH_ERROR("Couldn't obtain installation directory.");
     }
     return substitute_all(orig, "@", idir);
 }

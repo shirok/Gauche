@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-static const char *get_install_dir(void (*errfn)(const char *msg, ...))
+static const char *get_install_dir()
 {
     HMODULE mod;
     DWORD r;
@@ -29,18 +29,18 @@ static const char *get_install_dir(void (*errfn)(const char *msg, ...))
        for the case when gauche is statically linked. */
     if ((mod = GetModuleHandle(libname)) == NULL
 	&& (mod = GetModuleHandle(NULL)) == NULL) {
-	errfn("GetModuleHandle failed");
+	PATH_ERROR("GetModuleHandle failed");
     }
     if ((r = GetModuleFileName(mod, path, MAX_PATH)) == 0) {
-        errfn("GetModuleFileName failed");
+        PATH_ERROR("GetModuleFileName failed");
     }
     /* remove \libgauche.dll */
     if (!PathRemoveFileSpec(path)) {
-        errfn("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
+        PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
     }
     /* remove \bin */
     if (!PathRemoveFileSpec(path)) {
-        errfn("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
+        PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
     }
     return SCM_WCS2MBS(path);
 }

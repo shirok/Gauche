@@ -3,8 +3,7 @@
  *  included from paths.c
  */
 
-static const char *get_install_dir(void (*errfn)(const char *, ...))
+static const char *get_install_dir()
 {
-    errfn("We can't obtain runtime pathname on this platform");
-    return "(install directory unknown)"; /* dummy */
+    return NULL;
 }

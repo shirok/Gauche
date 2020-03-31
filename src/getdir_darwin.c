@@ -30,7 +30,7 @@
 /* Subdirs appended to the bundle path */
 #define SUBDIR   "/Versions/Current/"
 
-static const char *get_install_dir(void (*errfn)(const char *, ...))
+static const char *get_install_dir()
 {
     CFBundleRef bundle     = NULL;
     CFURLRef    bundleURL  = NULL;
@@ -60,7 +60,7 @@ static const char *get_install_dir(void (*errfn)(const char *, ...))
     bundleURL = CFBundleCopyBundleURL(bundle);
     if (bundleURL == NULL) {
         CLEANUP;
-        errfn("CFBundleCopyBundleURL failed");
+        PATH_ERROR("CFBundleCopyBundleURL failed");
     }
     /* Ownership of bundleURL follows the Create Rule of Core Foundation.
        ie. it is our responsibility to relinquish ownership (using CFRelease)
@@ -69,7 +69,7 @@ static const char *get_install_dir(void (*errfn)(const char *, ...))
     bundlePath = CFURLCopyFileSystemPath(bundleURL, kCFURLPOSIXPathStyle);
     if (bundlePath == NULL) {
         CLEANUP;
-        errfn("CFURLCopyFileSystemPath failed");
+        PATH_ERROR("CFURLCopyFileSystemPath failed");
     }
     /* Ownership follows the Create Rule. */
 
@@ -82,7 +82,7 @@ static const char *get_install_dir(void (*errfn)(const char *, ...))
 
     if (!CFStringGetCString(bundlePath, buf, maxlen, kCFStringEncodingUTF8)) {
         CLEANUP;
-        errfn("CFStringGetCString failed");
+        PATH_ERROR("CFStringGetCString failed");
     }
     strcat(buf, SUBDIR);
     CLEANUP;
