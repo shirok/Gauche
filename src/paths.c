@@ -65,35 +65,74 @@ static void errfn(const char *fmt, ...)
 #endif
 
 /*
- * Platform-specifc routined to obtain runtime directories
+ * Platform-specifc routined to obtain runtime directories.
+ *
+ * For each platform, we need the following procedures:
+ *   get_libgauche_dir()  - the directory where running libgauche* is.
+ *   get_executable_dir() - the directory where running executable is.
+ *   get_install_dir()    - the installation directory (the libraries
+ *                          can be found under lib/ of this directory).
+ * Those may return NULL if the directory can't be determined.
  */
 
 #if defined(GAUCHE_WINDOWS)
-static const char *get_install_dir()
+
+static const char *get_libgauche_dir()
 {
-    HMODULE mod;
-    DWORD r;
     TCHAR path[MAX_PATH];
     const TCHAR *libname = _T("libgauche-"GAUCHE_ABI_VERSION".dll");
 
-    /* We try libugauche.dll, then the process itself.  The latter is
-       for the case when gauche is statically linked. */
-    if ((mod = GetModuleHandle(libname)) == NULL
-	&& (mod = GetModuleHandle(NULL)) == NULL) {
-	PATH_ERROR("GetModuleHandle failed");
-    }
-    if ((r = GetModuleFileName(mod, path, MAX_PATH)) == 0) {
-        PATH_ERROR("GetModuleFileName failed");
-    }
+    /* This may return NULL if gosh is statically linked. */
+    HMODULE mod = GetModuleHandle(libname);
+    if (mod == NULL) return NULL;
+
+    DWORD r = GetModuleFileName(mod, path, MAX_PATH);
+    if (r == 0) PATH_ERROR("GetModuleFileName failed");
+
     /* remove \libgauche.dll */
     if (!PathRemoveFileSpec(path)) {
         PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
     }
-    /* remove \bin */
+    return SCM_WCS2MBS(path);
+}
+
+static const char *get_executable_dir()
+{
+    HMODULE mod;
+    DWORD r;
+    TCHAR path[MAX_PATH];
+
+    HMODULE mod = GetModuleHandle(NULL);
+    if (mod == NULL) return NULL;
+    DWORD r = GetModuleFileName(mod, path, MAX_PATH);
+    if (r == 0) PATH_ERROR("GetModuleFileName failed");
+
+    /* remove \gosh.exe */
     if (!PathRemoveFileSpec(path)) {
         PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
     }
     return SCM_WCS2MBS(path);
+}
+
+static const char *get_install_dir()
+{
+    /* On Windows, both libgauche.dll and gosh.exe are in $PREFIX\bin, and
+       libraries can be found under $PREFIX\lib.  So we can just remove \bin. */
+    static const char *dir = get_libgauche_dir();
+    if (dir == NULL) dir = get_executable_dir();
+    if (dir == NULL) return NULL;
+
+    size_t len = strlen(dir);
+    for (size_t i = len - 1; i > 0; i--) {
+        if (dir[i] == '/' || dir [i] == '\\') {
+            char *zdir = PATH_ALLOC(i+1);
+            memcpy(zdir, dir, i);
+            zdir[i] = '\0';
+            return zdir;
+        }
+    }
+    if (dir[0] == '/' || dir[0] == '\\') return NULL; /* something's wrong */
+    return ".";
 }
 
 #elif defined(GAUCHE_MACOSX_FRAMEWORK)
@@ -171,7 +210,7 @@ static const char *get_install_dir()
 
 #define MAPS_LINE_MAX 4096
 
-static const char *get_install_dir()
+static const char *get_libgauche_dir()
 {
     FILE *fp = fopen("/proc/self/maps", "r");
     if (fp == NULL) return NULL;
@@ -199,6 +238,77 @@ static const char *get_install_dir()
     return NULL;
 }
 
+static const char *get_executable_dir()
+{
+    const char *self = "/proc/self/exe";
+    ssize_t buflen = MAPS_LINE_MAX;
+    char *buf = PATH_ALLOC(buflen);
+    ssize_t r = readlink(self, buf, buflen);
+    if (r < 0) PATH_ERROR("readlink failed on %s", self);
+    if (r == buflen) return NULL; /* name is suspiciously long; something's wrong. */
+    for (ssize_t i = r-1; i > 0; i--) {
+        if (buf[i] == '/') {
+            buf[i] = '\0';
+            return buf;
+        }
+    }
+    return ".";
+}
+
+static const char *remove_suffix(const char *dir,
+                                 size_t len,
+                                 const char *suffix)
+{
+    size_t suflen = strlen(suffix);
+    if (len > suflen && strncmp(dir + len - suflen, suffix, suflen) == 0) {
+        char *buf = PATH_ALLOC(len - suflen + 1);
+        memcpy(buf, dir, len - suflen);
+        buf[len-suflen] = '\0';
+        return buf;
+    }
+    return NULL;
+}
+
+static const char *get_install_dir()
+{
+    /* libdir is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH
+       or $PRFIX/lib.  */
+    const char *libdir = get_libgauche_dir();
+    if (libdir != NULL) {
+        size_t len = strlen(libdir);
+        const char *dir = remove_suffix(libdir, len, "/lib");
+        if (dir != NULL) return dir;
+        for (size_t i = len-1, cnt = 0; i > 0; i--) {
+            if (libdir[i] == '/') {
+                cnt++;
+                if (cnt == 3) {
+                    dir = remove_suffix(libdir, i, "/lib");
+                    if (dir != NULL) return dir;
+                    break;
+                }
+            }
+        }
+    }
+    /* executable is in $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH 
+       or $PREFIX/bin */
+    const char *bindir = get_executable_dir();
+    if (bindir != NULL) {
+        size_t len = strlen(bindir);
+        const char *dir = remove_suffix(bindir, len, "/bin");
+        if (dir != NULL) return dir;
+        for (size_t i = len-1, cnt = 0; i > 0; i--) {
+            if (bindir[i] == '/') {
+                cnt++;
+                if (cnt == 3) {
+                    dir = remove_suffix(bindir, i, "/lib");
+                    if (dir != NULL) return dir;
+                    break;
+                }
+            }
+        }
+    }
+    return NULL;
+}
 #endif
 
 /*

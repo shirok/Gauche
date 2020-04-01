@@ -603,7 +603,31 @@
  (define-cfn Scm_RuntimeDirectory ()
    (C: "static ScmObj dir = SCM_UNBOUND;")
    (when (SCM_UNBOUNDP dir)
-     (let* ([d::(const char*)  (get_install_dir Scm_Error)])
+     (let* ([d::(const char*) (get_install_dir)])
+       (if (== d NULL)
+         (set! dir SCM_FALSE)
+         (set! dir (Scm_MakeString d
+                                   -1 -1 
+                                   (logior SCM_STRING_COPYING
+                                           SCM_STRING_IMMUTABLE))))))
+   (return dir))
+
+ (define-cfn Scm_LibgaucheDirectory ()
+   (C: "static ScmObj dir = SCM_UNBOUND;")
+   (when (SCM_UNBOUNDP dir)
+     (let* ([d::(const char*) (get_libgauche_dir)])
+       (if (== d NULL)
+         (set! dir SCM_FALSE)
+         (set! dir (Scm_MakeString d
+                                   -1 -1 
+                                   (logior SCM_STRING_COPYING
+                                           SCM_STRING_IMMUTABLE))))))
+   (return dir))
+
+ (define-cfn Scm_ExecutableDirectory ()
+   (C: "static ScmObj dir = SCM_UNBOUND;")
+   (when (SCM_UNBOUNDP dir)
+     (let* ([d::(const char*) (get_executable_dir)])
        (if (== d NULL)
          (set! dir SCM_FALSE)
          (set! dir (Scm_MakeString d
@@ -637,6 +661,8 @@
 
 (select-module gauche.internal)
 (define-cproc %gauche-runtime-directory () Scm_RuntimeDirectory)
+(define-cproc %gauche-libgauche-directory () Scm_LibgaucheDirectory)
+(define-cproc %gauche-executable-directory () Scm_ExecutableDirectory)
 (define-cproc %gauche-replace-runtime-directory (str::<const-cstring>)
   ::<const-cstring>
   (return (replace_install_dir str)))
