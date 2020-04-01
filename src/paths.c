@@ -359,7 +359,7 @@ static const char *substitute_all(const char *input,
     char *q = buf;
     for (p = input; noccurs > 0; noccurs--) {
         const char *p1 = strstr(p, mark);
-        strncpy(q, p, p1-p);
+        memcpy(q, p, p1-p);
         q += p1-p;
         memcpy(q, subst, slen);
         q += slen;

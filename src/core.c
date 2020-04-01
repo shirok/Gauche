@@ -120,7 +120,9 @@ static void init_cond_features(void);
 
 #ifdef GAUCHE_USE_PTHREADS
 /* a trick to make sure the gc thread object is linked */
-static int (*ptr_pthread_create)(void) = NULL;
+static int (*ptr_pthread_create)(pthread_t *,
+                                 GC_PTHREAD_CREATE_CONST pthread_attr_t *,
+                                 void *(*)(void *), void * /* arg */) = NULL;
 #endif
 
 /* flag to see if Scheme infrastructure is fully initialized or not */
@@ -216,7 +218,7 @@ void Scm_Init(const char *signature)
 
 #ifdef GAUCHE_USE_PTHREADS
     /* a trick to make sure the gc thread object is linked */
-    ptr_pthread_create = (int (*)(void))GC_pthread_create;
+    ptr_pthread_create = GC_pthread_create;
 #endif
 
     scheme_initialized = TRUE;
