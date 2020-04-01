@@ -569,34 +569,22 @@
  (define-cfn Scm_LibraryDirectory ()
    (C: "static ScmObj dir = SCM_FALSE;")
    (when (SCM_FALSEP dir)
-     (set! dir (Scm_MakeString (replace_install_dir gauche_lib_dir)
-                               -1 -1 
-                               (logior SCM_STRING_COPYING
-                                       SCM_STRING_IMMUTABLE))))
+     (set! dir (SCM_MAKE_STR_IMMUTABLE (replace_install_dir gauche_lib_dir))))
    (return dir))
  (define-cfn Scm_ArchitectureDirectory ()
    (C: "static ScmObj dir = SCM_FALSE;")
    (when (SCM_FALSEP dir)
-     (set! dir (Scm_MakeString (replace_install_dir gauche_arch_dir)
-                               -1 -1 
-                               (logior SCM_STRING_COPYING
-                                       SCM_STRING_IMMUTABLE))))
+     (set! dir (SCM_MAKE_STR_IMMUTABLE (replace_install_dir gauche_arch_dir))))
    (return dir))
  (define-cfn Scm_SiteLibraryDirectory ()
    (C: "static ScmObj dir = SCM_FALSE;")
    (when (SCM_FALSEP dir)
-     (set! dir (Scm_MakeString (replace_install_dir gauche_site_lib_dir)
-                               -1 -1 
-                               (logior SCM_STRING_COPYING
-                                       SCM_STRING_IMMUTABLE))))
+     (set! dir (SCM_MAKE_STR_IMMUTABLE (replace_install_dir gauche_site_lib_dir))))
    (return dir))
  (define-cfn Scm_SiteArchitectureDirectory ()
    (C: "static ScmObj dir = SCM_FALSE;")
    (when (SCM_FALSEP dir)
-     (set! dir (Scm_MakeString (replace_install_dir gauche_site_arch_dir)
-                               -1 -1 
-                               (logior SCM_STRING_COPYING
-                                       SCM_STRING_IMMUTABLE))))
+     (set! dir (SCM_MAKE_STR_IMMUTABLE (replace_install_dir gauche_site_arch_dir))))
    (return dir))
 
  ;; May return #f if runtime directory isn't available.
@@ -639,8 +627,16 @@
 (define-cproc gauche-site-architecture-directory () Scm_SiteArchitectureDirectory)
 (define-cproc gauche-dso-suffix () ::<const-cstring> (return SHLIB_SO_SUFFIX))
 
+(select-module gauche.internal)
+(define-cproc %gauche-runtime-directory () Scm_RuntimeDirectory)
+(define-cproc %gauche-libgauche-path () Scm_LibgauchePath)
+(define-cproc %gauche-executable-path () Scm_ExecutablePath)
+(define-cproc %gauche-replace-runtime-directory (str::<const-cstring>)
+  ::<const-cstring>
+  (return (replace_install_dir str)))
+
 ;; srfi-176
-(define (version-alist)
+(define-in-module gauche (version-alist)
   `((version ,(gauche-version))
     (command "gosh")
     (scheme.id gauche)
@@ -649,14 +645,6 @@
     (website "https://practical-scheme.net/gauche")
     (build.platform ,(gauche-architecture))
     (scheme.path ,@*load-path*)))
-
-(select-module gauche.internal)
-(define-cproc %gauche-runtime-directory () Scm_RuntimeDirectory)
-(define-cproc %gauche-libgauche-path () Scm_LibgauchePath)
-(define-cproc %gauche-executable-path () Scm_ExecutablePath)
-(define-cproc %gauche-replace-runtime-directory (str::<const-cstring>)
-  ::<const-cstring>
-  (return (replace_install_dir str)))
 
 ;; API
 ;; Command line - R7RS adds 'command-line' procedure.  We provide it as
