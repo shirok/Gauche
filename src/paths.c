@@ -94,10 +94,7 @@ static const char *get_libgauche_path()
 
 static const char *get_executable_path()
 {
-    HMODULE mod;
-    DWORD r;
     TCHAR path[MAX_PATH];
-
     HMODULE mod = GetModuleHandle(NULL);
     if (mod == NULL) return NULL;
     DWORD r = GetModuleFileName(mod, path, MAX_PATH);
@@ -107,15 +104,15 @@ static const char *get_executable_path()
 
 static const char *get_install_dir()
 {
-    static const char *dir = get_libgauche_path();
+    const char *dir = get_libgauche_path();
     if (dir == NULL) dir = get_executable_path();
     if (dir == NULL) return NULL;
-    size_t len = strlen(dir);
+    ssize_t len = strlen(dir);
 
     /* On Windows, both libgauche.dll and gosh.exe are in $PREFIX\bin, and
        libraries can be found under $PREFIX\lib.  So we have to skip
        two directory separators. */
-    size_t i = len-1;
+    ssize_t i = len-1;
     for (int cnt = 0; i >= 0; i--) {
         if (dir[i] == '/' || dir [i] == '\\') {
             if (cnt++ == 1) {
@@ -354,7 +351,7 @@ static const char *substitute_all(const char *input,
         const char *p1 = strstr(p, mark);
         strncpy(q, p, p1-p);
         q += p1-p;
-        strncpy(q, subst, slen);
+        memcpy(q, subst, slen);
         q += slen;
         p = p1 + mlen;
     }
