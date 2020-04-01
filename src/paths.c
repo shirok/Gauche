@@ -141,6 +141,16 @@ static const char *get_install_dir()
 /* Subdirs appended to the bundle path */
 #define SUBDIR   "/Versions/Current/"
 
+static const char *get_libgauche_path()
+{
+    return NULL;		/* Placeholder for now */
+}
+
+static const char *get_executable_path()
+{
+    return NULL;		/* Placeholder for now */
+}
+
 static const char *get_install_dir()
 {
     CFBundleRef bundle     = NULL;
