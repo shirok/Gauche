@@ -10792,7 +10792,7 @@ Returns a scheme regexp (SRE) describing the regexp @var{regexp}.
 @c JP
 正規表現@var{regexp}を生成するScheme正規表現式(SRE)を返します。
 SREについて詳しくは@ref{R7RS regular expressions}を参照してください。
-@c COMON
+@c COMMON
 @end defun
 
 @defun regexp-num-groups regexp
