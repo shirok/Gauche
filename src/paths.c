@@ -68,35 +68,31 @@ static void errfn(const char *fmt, ...)
  * Platform-specifc routined to obtain runtime directories.
  *
  * For each platform, we need the following procedures:
- *   get_libgauche_dir()  - the directory where running libgauche* is.
- *   get_executable_dir() - the directory where running executable is.
+ *   get_libgauche_path()  - path of the running libgauche*.
+ *   get_executable_path() - path of the running executable.
  *   get_install_dir()    - the installation directory (the libraries
  *                          can be found under lib/ of this directory).
  * Those may return NULL if the directory can't be determined.
+ * Can return either static string or a string allocated by PATH_ALLOC; doesn't
+ * need to worry about freeing it.
+ * Those may throw an error with PATH_ERROR if unexpected situation occurs.
  */
 
 #if defined(GAUCHE_WINDOWS)
 
-static const char *get_libgauche_dir()
+static const char *get_libgauche_path()
 {
     TCHAR path[MAX_PATH];
     const TCHAR *libname = _T("libgauche-"GAUCHE_ABI_VERSION".dll");
 
-    /* This may return NULL if gosh is statically linked. */
     HMODULE mod = GetModuleHandle(libname);
     if (mod == NULL) return NULL;
-
     DWORD r = GetModuleFileName(mod, path, MAX_PATH);
     if (r == 0) PATH_ERROR("GetModuleFileName failed");
-
-    /* remove \libgauche.dll */
-    if (!PathRemoveFileSpec(path)) {
-        PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
-    }
     return SCM_WCS2MBS(path);
 }
 
-static const char *get_executable_dir()
+static const char *get_executable_path()
 {
     HMODULE mod;
     DWORD r;
@@ -106,33 +102,35 @@ static const char *get_executable_dir()
     if (mod == NULL) return NULL;
     DWORD r = GetModuleFileName(mod, path, MAX_PATH);
     if (r == 0) PATH_ERROR("GetModuleFileName failed");
-
-    /* remove \gosh.exe */
-    if (!PathRemoveFileSpec(path)) {
-        PATH_ERROR("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
-    }
     return SCM_WCS2MBS(path);
 }
 
 static const char *get_install_dir()
 {
-    /* On Windows, both libgauche.dll and gosh.exe are in $PREFIX\bin, and
-       libraries can be found under $PREFIX\lib.  So we can just remove \bin. */
-    static const char *dir = get_libgauche_dir();
-    if (dir == NULL) dir = get_executable_dir();
+    static const char *dir = get_libgauche_path();
+    if (dir == NULL) dir = get_executable_path();
     if (dir == NULL) return NULL;
-
     size_t len = strlen(dir);
-    for (size_t i = len - 1; i > 0; i--) {
+
+    /* On Windows, both libgauche.dll and gosh.exe are in $PREFIX\bin, and
+       libraries can be found under $PREFIX\lib.  So we have to skip
+       two directory separators. */
+    size_t i = len-1;
+    for (int cnt = 0; i >= 0; i--) {
         if (dir[i] == '/' || dir [i] == '\\') {
-            char *zdir = PATH_ALLOC(i+1);
-            memcpy(zdir, dir, i);
-            zdir[i] = '\0';
-            return zdir;
+            if (cnt++ == 1) {
+                if (i == 0) {
+                    /* This is unlikely but can happen when $PREFIX is rootdir */
+                    return "/";
+                }
+                char *zdir = PATH_ALLOC(i+1);
+                memcpy(zdir, dir, i);
+                zdir[i] = '\0';
+                return zdir;
+            }
         }
     }
-    if (dir[0] == '/' || dir[0] == '\\') return NULL; /* something's wrong */
-    return ".";
+    return NULL;
 }
 
 #elif defined(GAUCHE_MACOSX_FRAMEWORK)
@@ -207,27 +205,32 @@ static const char *get_install_dir()
 }
 
 #else
-
+/* 
+ * The fallback case.  We try procfs, for it is supported on several platforms
+ * and doesn't use special API functions.
+ */
 #define MAPS_LINE_MAX 4096
 
-static const char *get_libgauche_dir()
+static const char *get_libgauche_path()
 {
     FILE *fp = fopen("/proc/self/maps", "r");
     if (fp == NULL) return NULL;
+    const char *const libgauche = "libgauche-"GAUCHE_ABI_VERSION".so";
     
     char buf[MAPS_LINE_MAX+1];
     while (fgets(buf, MAPS_LINE_MAX, fp) != NULL) {
-        const char *p = strstr(buf, "libgauche-"GAUCHE_ABI_VERSION".so");
+        const char *p = strstr(buf, libgauche);
         if (p) {
+            const char *tail = p + strlen(libgauche);
             for (const char *q = p-1; q >= buf; q--) {
                 if (*q == ' ') {
                     q++;
                     if (q == p) {
-                        return ".";
+                        return libgauche;
                     } else {
-                        char *r = PATH_ALLOC(p - q + 1);
-                        strncpy(r, q, p-q);
-                        r[p-q] = '\0';
+                        char *r = PATH_ALLOC(tail-q+1);
+                        strncpy(r, q, tail-q);
+                        r[tail-q] = '\0';
                         return r;
                     }
                 }
@@ -238,7 +241,7 @@ static const char *get_libgauche_dir()
     return NULL;
 }
 
-static const char *get_executable_dir()
+static const char *get_executable_path()
 {
     const char *self = "/proc/self/exe";
     ssize_t buflen = MAPS_LINE_MAX;
@@ -246,65 +249,75 @@ static const char *get_executable_dir()
     ssize_t r = readlink(self, buf, buflen);
     if (r < 0) PATH_ERROR("readlink failed on %s", self);
     if (r == buflen) return NULL; /* name is suspiciously long; something's wrong. */
-    for (ssize_t i = r-1; i > 0; i--) {
-        if (buf[i] == '/') {
-            buf[i] = '\0';
-            return buf;
-        }
-    }
-    return ".";
+    buf[r] = '\0';
+    return buf;
 }
 
-static const char *remove_suffix(const char *dir,
-                                 size_t len,
-                                 const char *suffix)
+/* remove N components from path */
+static char *remove_components(const char *path, int n)
+{
+    ssize_t len = strlen(path);
+    for (ssize_t i = len-1, cnt = 0; i >= 0; i--) {
+        if (path[i] == '/') {
+            cnt++;
+            if (cnt == n) {
+                char *buf = PATH_ALLOC(i+1);
+                memcpy(buf, path, i);
+                buf[i] = '\0';
+                return buf;
+            }
+        }
+    }
+    return NULL;
+}
+
+/* remove SUFFIX from dir */
+static char *remove_suffix(char *dir,
+                           size_t len,
+                           const char *suffix)
 {
     size_t suflen = strlen(suffix);
     if (len > suflen && strncmp(dir + len - suflen, suffix, suflen) == 0) {
-        char *buf = PATH_ALLOC(len - suflen + 1);
-        memcpy(buf, dir, len - suflen);
-        buf[len-suflen] = '\0';
-        return buf;
+        dir[len-suflen] = '\0';
+        return dir;
     }
     return NULL;
 }
 
 static const char *get_install_dir()
 {
-    /* libdir is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH
-       or $PRFIX/lib.  */
-    const char *libdir = get_libgauche_dir();
-    if (libdir != NULL) {
-        size_t len = strlen(libdir);
-        const char *dir = remove_suffix(libdir, len, "/lib");
-        if (dir != NULL) return dir;
-        for (size_t i = len-1, cnt = 0; i > 0; i--) {
-            if (libdir[i] == '/') {
-                cnt++;
-                if (cnt == 3) {
-                    dir = remove_suffix(libdir, i, "/lib");
-                    if (dir != NULL) return dir;
-                    break;
-                }
-            }
+    /* path is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH or $PRFIX/lib.  */
+    const char *path = get_libgauche_path();
+    if (path != NULL) {
+        /* remove libgauche-$ABI.so */
+        char *dir = remove_components(path, 1);
+        if (dir == NULL) return NULL;
+        size_t len = strlen(dir);
+        /* first, try $PREFIX/lib. */
+        char *dir1 = remove_suffix(dir, len, "/lib");
+        if (dir1 != NULL) return dir1;
+        /* now we try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
+        dir1 = remove_components(dir, 3);
+        if (dir != NULL) {
+            dir1 = remove_suffix(dir1, strlen(dir1), "/lib");
+            if (dir1 != NULL) return dir1;
         }
     }
-    /* executable is in $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH 
-       or $PREFIX/bin */
-    const char *bindir = get_executable_dir();
-    if (bindir != NULL) {
-        size_t len = strlen(bindir);
-        const char *dir = remove_suffix(bindir, len, "/bin");
-        if (dir != NULL) return dir;
-        for (size_t i = len-1, cnt = 0; i > 0; i--) {
-            if (bindir[i] == '/') {
-                cnt++;
-                if (cnt == 3) {
-                    dir = remove_suffix(bindir, i, "/lib");
-                    if (dir != NULL) return dir;
-                    break;
-                }
-            }
+    /* executable is in $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH or $PREFIX/bin */
+    path = get_executable_path();
+    if (path != NULL) {
+        /* remove binary name */
+        char *dir = remove_components(path, 1);
+        if (dir == NULL) return NULL;
+        size_t len = strlen(dir);
+        /* first, try $PREFIX/bin. */
+        char *dir1 = remove_suffix(dir, len, "/bin");
+        if (dir1 != NULL) return dir1;
+        /* now we try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
+        dir1 = remove_components(dir, 3);
+        if (dir != NULL) {
+            dir1 = remove_suffix(dir1, strlen(dir1), "/lib");
+            if (dir1 != NULL) return dir1;
         }
     }
     return NULL;

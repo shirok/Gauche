@@ -606,35 +606,26 @@
      (let* ([d::(const char*) (get_install_dir)])
        (if (== d NULL)
          (set! dir SCM_FALSE)
-         (set! dir (Scm_MakeString d
-                                   -1 -1 
-                                   (logior SCM_STRING_COPYING
-                                           SCM_STRING_IMMUTABLE))))))
+         (set! dir (SCM_MAKE_STR_IMMUTABLE d)))))
    (return dir))
 
- (define-cfn Scm_LibgaucheDirectory ()
-   (C: "static ScmObj dir = SCM_UNBOUND;")
-   (when (SCM_UNBOUNDP dir)
-     (let* ([d::(const char*) (get_libgauche_dir)])
+ (define-cfn Scm_LibgauchePath ()
+   (C: "static ScmObj path = SCM_UNBOUND;")
+   (when (SCM_UNBOUNDP path)
+     (let* ([d::(const char*) (get_libgauche_path)])
        (if (== d NULL)
-         (set! dir SCM_FALSE)
-         (set! dir (Scm_MakeString d
-                                   -1 -1 
-                                   (logior SCM_STRING_COPYING
-                                           SCM_STRING_IMMUTABLE))))))
-   (return dir))
+         (set! path SCM_FALSE)
+         (set! path (SCM_MAKE_STR_IMMUTABLE d))))) 
+   (return path))
 
- (define-cfn Scm_ExecutableDirectory ()
-   (C: "static ScmObj dir = SCM_UNBOUND;")
-   (when (SCM_UNBOUNDP dir)
-     (let* ([d::(const char*) (get_executable_dir)])
+ (define-cfn Scm_ExecutablePath ()
+   (C: "static ScmObj path = SCM_UNBOUND;")
+   (when (SCM_UNBOUNDP path)
+     (let* ([d::(const char*) (get_executable_path)])
        (if (== d NULL)
-         (set! dir SCM_FALSE)
-         (set! dir (Scm_MakeString d
-                                   -1 -1 
-                                   (logior SCM_STRING_COPYING
-                                           SCM_STRING_IMMUTABLE))))))
-   (return dir))
+         (set! path SCM_FALSE)
+         (set! path (SCM_MAKE_STR_IMMUTABLE d)))))
+   (return path))
 
  ;; TRANSIENT: For ABI compatibility.  Remove on 1.0 release.
  (define-cfn Scm__RuntimeDirectory() (return (Scm_RuntimeDirectory)))
@@ -661,8 +652,8 @@
 
 (select-module gauche.internal)
 (define-cproc %gauche-runtime-directory () Scm_RuntimeDirectory)
-(define-cproc %gauche-libgauche-directory () Scm_LibgaucheDirectory)
-(define-cproc %gauche-executable-directory () Scm_ExecutableDirectory)
+(define-cproc %gauche-libgauche-path () Scm_LibgauchePath)
+(define-cproc %gauche-executable-path () Scm_ExecutablePath)
 (define-cproc %gauche-replace-runtime-directory (str::<const-cstring>)
   ::<const-cstring>
   (return (replace_install_dir str)))
