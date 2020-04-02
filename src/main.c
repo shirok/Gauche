@@ -468,6 +468,9 @@ static void test_paths_setup(char **av)
         Scm_AddLoadPath("../../src", FALSE);
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
+    } else {
+	Scm_Warn("Unable to find source tree.  The -ftest option is ignored.");
+	return;
     }
     /* Also set a feature identifier gauche.in-place, so that other modules
        may initialize differently if needed. */
