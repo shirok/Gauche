@@ -283,7 +283,7 @@ heap. @xref{String cursors}.
 @item test
 Adds "@code{../src}" and "@code{../lib}" to the load path before loading
 initialization file.  This is useful when you want to test the
-compiled @code{gosh} interpreter inside source tree, without installing it.
+compiled @code{gosh} interpreter without installing it.
 @end table
 @c JP
 このオプションはコンパイラとランタイムの動作に影響を与えます。
@@ -319,7 +319,7 @@ lambda lifting最適化パスを抑止します。
 @item test
 "@code{../src}" と "@code{../lib}" を、初期化ファイルを読む前に
 ロードパスに加えます。これは、作成された@code{gosh}をインストールせずに
-ソースツリーの中で実行してみるのに便利です。
+実行してみるのに便利です。
 @end table
 @c COMMON
 @end deftp
