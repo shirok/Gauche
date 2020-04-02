@@ -65,7 +65,41 @@ static void errfn(const char *fmt, ...)
 #endif
 
 /*
- * Platform-specifc routined to obtain runtime directories.
+ * A couple of utilities used commoly in platform-specific routines:
+ */
+
+/* remove N components from path */
+static char *remove_components(const char *path, int n)
+{
+    ssize_t len = strlen(path);
+    for (ssize_t i = len-1, cnt = 0; i >= 0; i--) {
+        if (path[i] == '/') {
+            cnt++;
+            if (cnt == n) {
+                char *buf = PATH_ALLOC(i+1);
+                memcpy(buf, path, i);
+                buf[i] = '\0';
+                return buf;
+            }
+        }
+    }
+    return NULL;
+}
+
+/* remove SUFFIX from dir */
+static char *remove_suffix(char *dir, const char *suffix)
+{
+    size_t len = strlen(dir);
+    size_t suflen = strlen(suffix);
+    if (len > suflen && strncmp(dir + len - suflen, suffix, suflen) == 0) {
+        dir[len-suflen] = '\0';
+        return dir;
+    }
+    return NULL;
+}
+
+/*
+ * Platform-specifc routines to obtain runtime directories.
  *
  * For each platform, we need the following procedures:
  *   get_libgauche_path()  - path of the running libgauche*.
@@ -77,6 +111,7 @@ static void errfn(const char *fmt, ...)
  * need to worry about freeing it.
  * Those may throw an error with PATH_ERROR if unexpected situation occurs.
  */
+
 
 #if defined(GAUCHE_WINDOWS)
 
@@ -107,27 +142,56 @@ static const char *get_install_dir()
     const char *dir = get_libgauche_path();
     if (dir == NULL) dir = get_executable_path();
     if (dir == NULL) return NULL;
-    ssize_t len = strlen(dir);
 
     /* On Windows, both libgauche.dll and gosh.exe are in $PREFIX\bin, and
        libraries can be found under $PREFIX\lib.  So we have to skip
        two directory separators. */
-    ssize_t i = len-1;
-    for (int cnt = 0; i >= 0; i--) {
-        if (dir[i] == '/' || dir [i] == '\\') {
-            if (cnt++ == 1) {
-                if (i == 0) {
-                    /* This is unlikely but can happen when $PREFIX is rootdir */
-                    return "/";
-                }
-                char *zdir = PATH_ALLOC(i+1);
-                memcpy(zdir, dir, i);
-                zdir[i] = '\0';
-                return zdir;
-            }
-        }
+    dir = remove_components(dir, 2);
+    if (dir[0] == '\0') {
+	/* This is unlikely but can happen when $PREFIX is rootdir */
+	return "/";
+    } else {
+	return dir;
     }
+}
+
+#elif defined(HAVE_LIBPROC_H) && defined(HAVE_LIBPROC)
+
+/* OSX */
+#include <libproc.h>
+
+static const char *get_libgauche_path()
+{
     return NULL;
+}
+
+static const char *get_executable_path()
+{
+    pid_t selfpid = getpid();
+    char buf[PROC_PIDPATHINFO_MAXSIZE];
+    memset(buf, 0, PROC_PIDPATHINFO_MAXSIZE);
+    int r = proc_pidpath(selfpid, buf, PROC_PIDPATHINFO_MAXSIZE);
+    if (r < 0) return NULL;
+    if (r == PROC_PIDPATHINFO_MAXSIZE) return NULL; /* too long? something's funny */
+    char *path = PATH_ALLOC(r+1);
+    memcpy(path, buf, r);
+    return path;
+}
+
+static const char *get_install_dir()
+{
+    const char *self = get_executable_path();
+    if (self == NULL) return NULL;
+    /* remove executable name */
+    char *dir = remove_components(self, 1);
+    if (dir == NULL) return NULL;
+    /* first, try $PREFIX/bin */
+    char *dir1 = remove_suffix(dir, "/bin");
+    if (dir1 != NULL) return dir;
+    /* next, try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
+    dir1 = remove_components(dir, 3);
+    if (dir1 == NULL) return NULL;
+    return remove_suffix(dir1, "/lib");
 }
 
 #elif defined(GAUCHE_MACOSX_FRAMEWORK)
@@ -260,37 +324,6 @@ static const char *get_executable_path()
     return buf;
 }
 
-/* remove N components from path */
-static char *remove_components(const char *path, int n)
-{
-    ssize_t len = strlen(path);
-    for (ssize_t i = len-1, cnt = 0; i >= 0; i--) {
-        if (path[i] == '/') {
-            cnt++;
-            if (cnt == n) {
-                char *buf = PATH_ALLOC(i+1);
-                memcpy(buf, path, i);
-                buf[i] = '\0';
-                return buf;
-            }
-        }
-    }
-    return NULL;
-}
-
-/* remove SUFFIX from dir */
-static char *remove_suffix(char *dir,
-                           size_t len,
-                           const char *suffix)
-{
-    size_t suflen = strlen(suffix);
-    if (len > suflen && strncmp(dir + len - suflen, suffix, suflen) == 0) {
-        dir[len-suflen] = '\0';
-        return dir;
-    }
-    return NULL;
-}
-
 static const char *get_install_dir()
 {
     /* path is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH or $PRFIX/lib.  */
@@ -299,14 +332,12 @@ static const char *get_install_dir()
         /* remove libgauche-$ABI.so */
         char *dir = remove_components(path, 1);
         if (dir == NULL) return NULL;
-        size_t len = strlen(dir);
         /* first, try $PREFIX/lib. */
-        char *dir1 = remove_suffix(dir, len, "/lib");
+        char *dir1 = remove_suffix(dir, "/lib");
         if (dir1 != NULL) return dir1;
         /* now we try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
-        dir1 = remove_components(dir, 3);
         if (dir != NULL) {
-            dir1 = remove_suffix(dir1, strlen(dir1), "/lib");
+            dir1 = remove_suffix(dir1, "/lib");
             if (dir1 != NULL) return dir1;
         }
     }
@@ -316,14 +347,13 @@ static const char *get_install_dir()
         /* remove binary name */
         char *dir = remove_components(path, 1);
         if (dir == NULL) return NULL;
-        size_t len = strlen(dir);
         /* first, try $PREFIX/bin. */
-        char *dir1 = remove_suffix(dir, len, "/bin");
+        char *dir1 = remove_suffix(dir, "/bin");
         if (dir1 != NULL) return dir1;
         /* now we try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
         dir1 = remove_components(dir, 3);
-        if (dir != NULL) {
-            dir1 = remove_suffix(dir1, strlen(dir1), "/lib");
+        if (dir1 != NULL) {
+            dir1 = remove_suffix(dir1, "/lib");
             if (dir1 != NULL) return dir1;
         }
     }

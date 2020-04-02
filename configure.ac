@@ -405,6 +405,10 @@ dnl OSX specific.  If this header exists, we assume that extern char **environ
 dnl isn't available and we should use _NSGetEnviron().
 AC_CHECK_HEADERS(crt_externs.h)
 
+dnl OSX specific.  To call proc_pidpath().  Note that this is not officially
+dnl supported by Apple.
+AC_CHECK_HEADERS(libproc.h)
+
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
 AS_CASE([$host],
@@ -481,6 +485,9 @@ AC_CHECK_LIB(sunmath, isinf)
 
 dnl clock_gettime may be in librt
 AC_CHECK_LIB(rt, clock_gettime)
+
+dnl OSX specific
+AC_CHECK_LIB(proc, proc_pidpath)
 
 dnl For Windows/MinGW, manually adds several libraries
 dnl Also adds -DUNICODE to CFLAGS enable Windows wchar API,

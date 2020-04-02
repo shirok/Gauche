@@ -237,6 +237,12 @@
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
+/* Define to 1 if you have the `libproc' library (-lproc). */
+#undef HAVE_LIBPROC
+
+/* Define to 1 if you have the <libproc.h> header file. */
+#undef HAVE_LIBPROC_H
+
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
 
