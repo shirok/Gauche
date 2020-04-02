@@ -254,7 +254,7 @@ static const char *get_executable_path()
     ssize_t buflen = MAPS_LINE_MAX;
     char *buf = PATH_ALLOC(buflen);
     ssize_t r = readlink(self, buf, buflen);
-    if (r < 0) PATH_ERROR("readlink failed on %s", self);
+    if (r < 0) return NULL;	/* procfs may not be available */
     if (r == buflen) return NULL; /* name is suspiciously long; something's wrong. */
     buf[r] = '\0';
     return buf;
