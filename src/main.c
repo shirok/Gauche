@@ -436,11 +436,25 @@ static void test_ld_path_setup(char **av, const char *src_path)
    and before loading init file. */
 static void test_paths_setup(char **av)
 {
-    /* The order of directories is important.  'lib' should
+    /* We first try from the location of executable; if it's not
+       available, we assume we're in the source tree, either in
+       src/ or ext/$EXT/.
+
+       The order of directories is important.  'lib' should
        be searched first (hence it should come latter), since some
        extension modules are built from the file in src then linked
        from lib, and we want to test the one in lib. */
-    if (access("../src/gauche/config.h", R_OK) == 0
+    ScmObj self = Scm_ExecutablePath();
+    if (SCM_STRINGP(self)) {
+        ScmString *base = SCM_STRING(Scm_DirName(SCM_STRING(self)));
+        ScmObj srcdir = Scm_StringAppendC(base, "/../src", -1, -1);
+        ScmObj libsrcdir = Scm_StringAppendC(base, "/../libsrc", -1, -1);
+        ScmObj libdir = Scm_StringAppendC(base, "/../lib", -1, -1);
+        test_ld_path_setup(av, Scm_GetStringConst(SCM_STRING(srcdir)));
+        Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(srcdir)), FALSE);
+        Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(libsrcdir)), FALSE);
+        Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(libdir)), FALSE);
+    } else if (access("../src/gauche/config.h", R_OK) == 0
         && access("../libsrc/srfi-1.scm", R_OK) == 0
         && access("../lib/r7rs-setup.scm", R_OK) == 0) {
         test_ld_path_setup(av, "../src");

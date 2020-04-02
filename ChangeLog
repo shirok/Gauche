@@ -1,3 +1,9 @@
+2020-04-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: When -ftest is given, try to use executable location
+	  first, if it's available.
+	  This achieves the goal of  https://github.com/shirok/Gauche/pull/600
+
 2020-03-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm: Make literal pairs immutable by default.
