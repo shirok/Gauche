@@ -2075,7 +2075,8 @@ void Scm_SysKill(ScmObj process, int signal)
            to the process group leader.  OTOH, for SIGINT, the windows
            manual says it always directed to the specified process,
            not the process group, unless pid == 0 */
-        r = GenerateConsoleCtrlEvent(abs(pid),
+        if (pid < 0) pid = -pid;
+        r = GenerateConsoleCtrlEvent(pid,
                                      (signal == SIGINT)?
                                      CTRL_C_EVENT : CTRL_BREAK_EVENT);
         if (r == 0) {
