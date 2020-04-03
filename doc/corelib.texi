@@ -4476,11 +4476,19 @@ A class of pairs.
 @subsection Mutable and immutable pairs
 @c NODE 変更可能なペアと変更不可なペア
 
+@c EN
 A pair may be either mutable or immutable.  You can desctructively
 modify mutable pairs with @code{set-car!}, @code{set-cdr!}, or other
 destructive procedures (usually they have @code{!} at the end).
 An error is signaled when you try to modify an immutable pair.
+@c JP
+ペアには変更可能なものと変更不可なものがあります。
+変更可能なペアは、@code{set-car!}や@code{set-cdr!}等の破壊的変更手続き
+(通常、名前の最後に@code{!}がついています)で変更することが可能です。
+変更不可なペアを変更しようとするとエラーが報告されます。
+@c COMMON
 
+@c EN
 In Gauche, both type of pairs can be treated the same unless you try 
 to modify them.  Both satisfies the predicate @code{pair?}.  If you
 need to test specifically if a pair is immutable, use @code{ipair?}
@@ -4489,11 +4497,31 @@ The traditional constructor @code{cons} creates a mutable pair; you
 can create an immutable pair with @code{ipair} (@pxref{List constructors}).
 More procedures that use immutable pairs are defined in
 R7RS-large @code{scheme.ilist} module (@pxref{R7RS immutable lists}).
+@c JP
+Gaucheでは、変更しようとしない限り、どちらのペアも全く同じように振る舞います。
+@code{pair?}にはどちらも真を返します。ペアが変更不可であることを調べたければ
+@code{ipair?}が使えます(@ref{List predicates}参照)。
+伝統的なコンストラクタ@code{cons}は変更可能なペアを作ります。
+変更不可なペアを作るには@code{ipair}を使ってください (@ref{List constructors}参照)。
+変更不可なペアを特に扱う手続きは、R7RS-largeの@code{scheme.ilist}モジュールに
+定義されています (@ref{R7RS immutable lists}参照)。
+@c COMMON
 
-Note that quoted literals must be treated as immutable.  Gauche hasn't
-supported immutable pairs before, so quoted literals are mutable for the
-time being, but we'll soon use immutable pairs for literals.
-Codes that accidentally mutate literals would raise an error.
+@c EN
+Note that quoted literals are immutable.
+Old versions of Gauche wasn't supported immutable pairs and quoted literal lists
+were mutable.  If your code accidentally mutate such pairs, you'll get an
+error.  If you need to run such code without tracking down the error,
+you can define the environment variable
+@code{GAUCHE_MUTABLE_LITERALS}.
+@c JP
+クオートされたリテラルは変更不可です。
+ただ、古いバージョンのGaucheは変更不可なペアを持っておらず、クオートされたリテラルリストも
+変更可能でした。その頃に書かれたコードでうっかりリテラルを変更していたら、
+現在のGaucheではエラーになってしまうでしょう。
+問題を修正せずにどうしても古いコードのまま走らせたい場合は、環境変数
+@code{GAUCHE_MUTABLE_LITERALS}を定義してください。
+@c COMMON
 
 
 @node List predicates, List constructors, Mutable and immutable pairs, Pairs and lists
