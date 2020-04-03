@@ -74,10 +74,10 @@ static char *remove_components(const char *path, int n)
     ssize_t len = strlen(path);
     for (ssize_t i = len-1, cnt = 0; i >= 0; i--) {
         if (path[i] == '/'
-#if defined(GAUCHE_WINDOWS)			
+#if defined(GAUCHE_WINDOWS)
             || path[i] == '\\'
 #endif
-			) {
+            ) {
             cnt++;
             if (cnt == n) {
                 char *buf = PATH_ALLOC(i+1);
@@ -214,12 +214,12 @@ static const char *get_install_dir()
 
 static const char *get_libgauche_path()
 {
-    return NULL;		/* Placeholder for now */
+    return NULL;                /* Placeholder for now */
 }
 
 static const char *get_executable_path()
 {
-    return NULL;		/* Placeholder for now */
+    return NULL;                /* Placeholder for now */
 }
 
 static const char *get_install_dir()
@@ -325,7 +325,7 @@ static const char *get_executable_path()
     ssize_t buflen = MAPS_LINE_MAX;
     char *buf = PATH_ALLOC(buflen);
     ssize_t r = readlink(self, buf, buflen);
-    if (r < 0) return NULL;	/* procfs may not be available */
+    if (r < 0) return NULL;     /* procfs may not be available */
     if (r == buflen) return NULL; /* name is suspiciously long; something's wrong. */
     buf[r] = '\0';
     return buf;
