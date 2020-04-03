@@ -34,11 +34,6 @@
 #ifndef GAUCHE_H
 #define GAUCHE_H
 
-#ifndef GAUCHE_API_0_97
-#define GAUCHE_API_0_97 1
-#define GAUCHE_API_0_95 1
-#endif
-
 /* Read config.h _before_ other headers, for it may affect the behavior
    of system header files.  Currently the only known instance of it is
    sigwait() on Solaris---we need to define _POSIX_PTHREAD_SEMANTICS to
@@ -46,14 +41,6 @@
    instances. */
 #include <gauche/config.h>
 #include <gauche/config_threads.h>
-
-#if     GAUCHE_API_0_95         /* A provisional API towards 1.0 */
-#define GAUCHE_API_0_9   0
-#endif  /*GAUCHE_API_0_95*/
-
-#ifndef GAUCHE_API_0_9
-#define GAUCHE_API_0_9   1      /* 0.9 API */
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
