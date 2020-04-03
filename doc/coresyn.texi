@@ -680,7 +680,7 @@ Equivalent to @code{(quote datum)}.
 if you try to change, for example, a quoted pair with @code{set-car!}
 or a literal string with @code{string-set!}.
 Mutability may be managed differently for each type, so some object
-may not raise an error even if it appers in a part of literals
+may not raise an error even if it appears in a part of literals
 (it is often the case with user-defined class with read-time constructor,
 @pxref{Read-time constructor}.  However, if you ever modify a literal
 data, it is not guaranteed that the program runs correctly.
