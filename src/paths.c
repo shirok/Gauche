@@ -73,7 +73,11 @@ static char *remove_components(const char *path, int n)
 {
     ssize_t len = strlen(path);
     for (ssize_t i = len-1, cnt = 0; i >= 0; i--) {
-        if (path[i] == '/') {
+        if (path[i] == '/'
+#if defined(GAUCHE_WINDOWS)			
+            || path[i] == '\\'
+#endif
+			) {
             cnt++;
             if (cnt == n) {
                 char *buf = PATH_ALLOC(i+1);
@@ -139,20 +143,21 @@ static const char *get_executable_path()
 
 static const char *get_install_dir()
 {
-    const char *dir = get_libgauche_path();
-    if (dir == NULL) dir = get_executable_path();
-    if (dir == NULL) return NULL;
+    const char * path= get_libgauche_path();
+    if (path == NULL) path = get_executable_path();
+    if (path == NULL) return NULL;
 
     /* On Windows, both libgauche.dll and gosh.exe are in $PREFIX\bin, and
        libraries can be found under $PREFIX\lib.  So we have to skip
        two directory separators. */
-    dir = remove_components(dir, 2);
-    if (dir[0] == '\0') {
-	/* This is unlikely but can happen when $PREFIX is rootdir */
-	return "/";
-    } else {
-	return dir;
-    }
+    char *dir = remove_components(path, 1);
+    if (dir == NULL) return NULL;
+    char *dir1 = remove_suffix(dir, "\\bin");
+    if (dir1 != NULL) return dir1;
+    dir1 = remove_suffix(dir, "\\src"); /* while we're buliding */
+    if (dir1 != NULL) return dir1;
+    fprintf(stderr, "boing %s\n", dir);
+    return NULL;
 }
 
 #elif defined(HAVE_LIBPROC_H) && defined(HAVE_LIBPROC)
