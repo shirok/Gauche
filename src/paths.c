@@ -156,8 +156,10 @@ static const char *get_install_dir()
     if (dir1 != NULL) return dir1;
     dir1 = remove_suffix(dir, "\\src"); /* while we're buliding */
     if (dir1 != NULL) return dir1;
-    fprintf(stderr, "boing %s\n", dir);
-    return NULL;
+    /* At this moment, we're probably in a statically linked binary. 
+       We don't need a particular path, but we need something to substitute
+       '@' in the load path. */
+    return "";
 }
 
 #elif defined(HAVE_LIBPROC_H) && defined(HAVE_LIBPROC)
