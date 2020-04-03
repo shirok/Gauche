@@ -1969,7 +1969,7 @@ The following are supported libraries:
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
 * R7RS hash tables::            @code{scheme.hash-table}
-* R7RS immutable lists::
+* R7RS immutable lists::        @code{scheme.ilist}
 * R7RS random-access lists::    @code{scheme.rlist}
 * R7RS immutable deques::       @code{scheme.ideque}
 * R7RS immutable texts::        @code{scheme.text}

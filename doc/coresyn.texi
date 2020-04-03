@@ -676,21 +676,23 @@ Equivalent to @code{(quote datum)}.
 @end deftp
 
 @c EN
-@emph{Note:}  RnRS says it is an error to alter the value of
-a literal expression.
-Gauche doesn't check constant-ness of pairs and vectors, and does
-not signal an error if you modify them using the destructive
-procedures such as @code{set-car!}
-and @code{vector-set!}.  Doing so will cause unexpected results.
-Gauche does check constant-ness of strings, and signals an error
-if you try to alter a constant string.
+@emph{Note:}  Literals are immutable.  You'll get an error
+if you try to change, for example, a quoted pair with @code{set-car!}
+or a literal string with @code{string-set!}.
+Mutability may be managed differently for each type, so some object
+may not raise an error even if it appers in a part of literals
+(it is often the case with user-defined class with read-time constructor,
+@pxref{Read-time constructor}.  However, if you ever modify a literal
+data, it is not guaranteed that the program runs correctly.
 @c JP
-@emph{注:} RnRSは、リテラル式の値を変更するのはエラーであるとしています。
-しかしGaucheはペアとベクタについてはそれが定数であるかどうかをチェックしておらず、
-@code{set-car!}や@code{vector-set!}等の破壊的手続きによってそれらの値を
-変更してもエラーは報告されません。そうした場合の動作は不定です。
-文字列に関しては定数かどうかのチェックを行っており、定数文字列を変更しようとすると
-エラーが報告されます。
+@emph{註:} リテラルは変更不可です。例えばクオートされたペアを@code{set-car!}に
+渡したり、リテラル文字列を@code{string-set!}に渡すと、エラーが報告されるでしょう。
+変更可能かどうかのチェックは型ごとに行われるので、時にはリテラルの一部であっても
+変更でエラーにならないオブジェクトもあります
+(読み込み時コンストラクタを持つユーザ定義クラスはそうです。
+@ref{読み込み時コンストラクタ}参照。)
+たとえエラーが発生しなうても、リテラルを変更しているプログラムの動作は
+保証されません。
 @c COMMON
 
 @c ----------------------------------------------------------------------
