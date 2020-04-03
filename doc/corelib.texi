@@ -8715,7 +8715,7 @@ an immutable string in a program, you can use @code{string-copy-immutable}.
 
 文字列リテラルおよび、@code{symbol->string}などいくつかの手続きから
 返される文字列は変更不可です。プログラム中で変更不可の文字列を確実に手に入れたい場合は
-@code{string-copy-immtuable}が使えます。
+@code{string-copy-immutable}が使えます。
 @c COMMON
 @end defun
 
