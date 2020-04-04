@@ -73,9 +73,7 @@
 ;; API
 ;; This strips all syntactic information (lossy)
 (define-cproc unwrap-syntax (form :optional (to_immutable::<boolean> #f))
-  (if to_immutable
-    (return (Scm_UnwrapSyntaxImmutable form))
-    (return (Scm_UnwrapSyntax form))))
+  (return (Scm_UnwrapSyntax2 form to_immutable)))
 
 ;; API
 ;; This preserves identity of local identifiers by suffixing it.

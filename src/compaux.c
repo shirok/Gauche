@@ -426,23 +426,20 @@ static ScmObj unwrap_rec(ScmObj form, unwrap_ctx *ctx)
     return form;
 }
 
+#if GAUCHE_API_VERSION < 1000
 ScmObj Scm_UnwrapSyntax(ScmObj form)
 {
-    unwrap_ctx ctx;
-    Scm_HashCoreInitSimple(&ctx.history, SCM_HASH_EQ, 0, NULL);
-    Scm_HashCoreInitSimple(&ctx.refs, SCM_HASH_EQ, 0, NULL);
-    ctx.immutable = FALSE;
-    ScmObj r = unwrap_rec(form, &ctx);
-    patch_locations(&ctx);
-    return r;
+    return Scm_UnwrapSyntax2(form, FALSE);
 }
-
-ScmObj Scm_UnwrapSyntaxImmutable(ScmObj form) 
+ScmObj Scm_UnwrapSyntax2(ScmObj form, int immutablep)
+#else  /* GAUCHE_API_VERSION >= 1000 */
+ScmObj Scm_UnwrapSyntax(ScmObj form, int immutablep)
+#endif /* GAUCHE_API_VERSION >= 1000 */
 {
     unwrap_ctx ctx;
     Scm_HashCoreInitSimple(&ctx.history, SCM_HASH_EQ, 0, NULL);
     Scm_HashCoreInitSimple(&ctx.refs, SCM_HASH_EQ, 0, NULL);
-    ctx.immutable = TRUE;
+    ctx.immutable = immutablep;
     ScmObj r = unwrap_rec(form, &ctx);
     patch_locations(&ctx);
     return r;

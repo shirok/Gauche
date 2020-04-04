@@ -222,7 +222,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                                SCM_CDR(bindinfo));
                 } else {
                     Scm_Printf(SCM_CUROUT, "; %#40.1S\n",
-                               Scm_UnwrapSyntax(SCM_CDR(srcinfo)));
+                               Scm_UnwrapSyntax2(SCM_CDR(srcinfo), FALSE));
                 }
             }
         }

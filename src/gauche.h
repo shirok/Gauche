@@ -1773,8 +1773,13 @@ SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
 SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
 
+#if GAUCHE_API_VERSION >= 1000
+SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form, int immutablep);
+#define Scm_UnwrapSyntax2(form, imm) Scm_UnwrapSyntax(form, imm)
+#else  /* GAUCHE_API_VERSION < 1000 */
 SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
-SCM_EXTERN ScmObj Scm_UnwrapSyntaxImmutable(ScmObj form);
+SCM_EXTERN ScmObj Scm_UnwrapSyntax2(ScmObj form, int immutablep);
+#endif /* GAUCHE_API_VERSION < 1000 */
 
 /*--------------------------------------------------------
  * PROMISE
