@@ -1137,6 +1137,8 @@
     (POP-ARG vec)
     ($type-check vec SCM_VECTORP "vector")
     ($type-check ind SCM_INTP "fixnum")
+    (when (SCM_VECTOR_IMMUTABLE_P vec)
+      ($vm-err "vector is immutable: %S" vec))
     (let* ([k::int (SCM_INT_VALUE ind)] [v VAL0])
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-set! index out of range: %d" k))
@@ -1156,6 +1158,8 @@
 (define-insn VEC-SETI    1 none #f
   ($w/argp vec
     ($type-check vec SCM_VECTORP "vector")
+    (when (SCM_VECTOR_IMMUTABLE_P vec)
+      ($vm-err "vector is immutable: %S" vec))
     (let* ([k::int (SCM_VM_INSN_ARG code)] [v VAL0])
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-set! index out of range: %d" k))

@@ -105,7 +105,11 @@ static ScmVector *make_vector(ScmSmallInt size)
     ScmVector *v = SCM_NEW2(ScmVector *,
                             sizeof(ScmVector) + sizeof(ScmObj)*(size-1));
     SCM_SET_CLASS(v, SCM_CLASS_VECTOR);
+#if GAUCHE_API_VERSION >= 1000
+    v->size_flags = (size << 1);
+#else    
     v->size = size;
+#endif
     return v;
 }
 
@@ -161,19 +165,21 @@ ScmObj Scm_VectorToList(ScmVector *v, ScmSmallInt start, ScmSmallInt end)
 
 ScmObj Scm_VectorRef(ScmVector *vec, ScmSmallInt i, ScmObj fallback)
 {
-    if (i < 0 || i >= vec->size) return fallback;
+    if (i < 0 || i >= SCM_VECTOR_SIZE(vec)) return fallback;
     return vec->elements[i];
 }
 
 ScmObj Scm_VectorSet(ScmVector *vec, ScmSmallInt i, ScmObj obj)
 {
-    if (i >= 0 && i < vec->size) vec->elements[i] = obj;
+    SCM_VECTOR_CHECK_MUTABLE(vec);
+    if (i >= 0 && i < SCM_VECTOR_SIZE(vec)) vec->elements[i] = obj;
     return obj;
 }
 
 ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill,
                       ScmSmallInt start, ScmSmallInt end)
 {
+    SCM_VECTOR_CHECK_MUTABLE(vec);
     ScmSmallInt len = SCM_VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, len);
     for (ScmSmallInt i=start; i < end; i++) {

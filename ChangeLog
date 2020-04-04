@@ -1,3 +1,13 @@
+2020-04-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: Introduced GAUCHE_API_VERSION macro in place of
+	  GAUCHE_API_xx.  Currently it's 97.  It'll be 1000 on 1.0 prerelease.
+	  After 1.0 release, we'll use it as major*1000 + revision.  Revision
+	  is only incremented when API changes, and isn't necessarily in sync
+	  with Gauche minor/micro versions.
+	* src/vector.c: Add immutable flag for API_VERSION >= 1000.  This is
+	  binary incompatible change and client code will need to be recompiled.
+
 2020-04-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: When -ftest is given, try to use executable location

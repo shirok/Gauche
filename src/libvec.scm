@@ -66,11 +66,13 @@
         [else (return (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)))]))
 
 (define-cproc vector-set! (vec::<vector> k::<integer> obj) ::<void>
-  (if (or (SCM_BIGNUMP k)
-          (< (SCM_INT_VALUE k) 0)
-          (>= (SCM_INT_VALUE k) (SCM_VECTOR_SIZE vec)))
-    (Scm_Error "vector-set! index out of range: %S" k)
-    (set! (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)) obj)))
+  (begin
+    (SCM_VECTOR_CHECK_MUTABLE vec)
+    (if (or (SCM_BIGNUMP k)
+            (< (SCM_INT_VALUE k) 0)
+            (>= (SCM_INT_VALUE k) (SCM_VECTOR_SIZE vec)))
+      (Scm_Error "vector-set! index out of range: %S" k)
+      (set! (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)) obj))))
 
 (define-cproc vector->list
   (vec::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
@@ -92,6 +94,7 @@
   (t::<vector> tstart::<fixnum> s::<vector>
                :optional (sstart::<fixnum> 0) (send::<fixnum> -1)) ::<void>
   (let* ([tsize::long (SCM_VECTOR_SIZE t)])
+    (SCM_VECTOR_CHECK_MUTABLE t)
     (when (< send 0) (set! send (SCM_VECTOR_SIZE s)))
     (unless (and (<= 0 tstart) (<= tstart tsize))
       (Scm_Error "tstart out of range: %ld" tstart))

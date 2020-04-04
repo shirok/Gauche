@@ -40,19 +40,44 @@
 
 struct ScmVectorRec {
     SCM_HEADER;
+#if GAUCHE_API_VERSION >= 1000
+    ScmWord size_flags;
+#else  /* GAUCHE_API_VERSION < 1000 */
     ScmWord size;
+#endif /* GAUCHE_API_VERSION < 1000 */
     ScmObj elements[1];
 };
 
+SCM_CLASS_DECL(Scm_VectorClass);
+#define SCM_CLASS_VECTOR     (&Scm_VectorClass)
 #define SCM_VECTOR(obj)          ((ScmVector*)(obj))
 #define SCM_VECTORP(obj)         SCM_XTYPEP(obj, SCM_CLASS_VECTOR)
-#define SCM_VECTOR_SIZE(obj)     (SCM_VECTOR(obj)->size)
 #define SCM_VECTOR_ELEMENTS(obj) (SCM_VECTOR(obj)->elements)
 #define SCM_VECTOR_ELEMENT(obj, i)   (SCM_VECTOR(obj)->elements[i])
 
-SCM_CLASS_DECL(Scm_VectorClass);
-#define SCM_CLASS_VECTOR     (&Scm_VectorClass)
+/* SCM_VECTOR_SIZE_SLOT_INITIALIZER is used in cgen-generated code  */
 
+#if GAUCHE_API_VERSION >= 1000
+#define SCM_VECTOR_SIZE(obj)        (SCM_VECTOR(obj)->size_flags >> 1)
+#define SCM_VECTOR_IMMUTABLE_P(obj) (SCM_VECTOR(obj)->size_flags & 1)
+#define SCM_VECTOR_IMMUTABLE_SET(obj, flag)     \
+    ((flag)                                     \
+     ? (SCM_UVECTOR(obj)->size_flags |= 1)      \
+     : (SCM_UVECTOR(obj)->size_flags &= ~1))
+#define SCM_VECTOR_SIZE_SLOT_INITIALIZER(len, imm) \
+    SCM_OBJ(((len)<<1)|(imm?1:0))
+#else  /* GAUCHE_API_VERSION < 1000 */
+#define SCM_VECTOR_SIZE(obj)        (SCM_VECTOR(obj)->size)
+#define SCM_VECTOR_IMMUTABLE_P(obj) (FALSE)
+#define SCM_VECTOR_IMMUTABLE_SET(obj, flag)  /*empty*/
+#define SCM_VECTOR_SIZE_SLOT_INITIALIZER(len, imm)  SCM_OBJ(len)
+#endif /* GAUCHE_API_VERSION < 1000 */
+
+#define SCM_VECTOR_CHECK_MUTABLE(obj)           \
+  do { if (SCM_VECTOR_IMMUTABLE_P(obj)) {       \
+    Scm_Error("vector is immutable: %S", obj);  \
+  }} while (0)
+    
 SCM_EXTERN ScmObj Scm_MakeVector(ScmSmallInt size, ScmObj fill);
 SCM_EXTERN ScmObj Scm_VectorRef(ScmVector *vec, ScmSmallInt i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_VectorSet(ScmVector *vec, ScmSmallInt i, ScmObj obj);
