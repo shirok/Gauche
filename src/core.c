@@ -86,6 +86,7 @@ extern void Scm__InitVM(void);
 extern void Scm__InitAutoloads(void);
 extern void Scm__InitCollection(void);
 extern void Scm__InitComparator(void);
+extern void Scm__InitExecenv(void);
 
 extern void Scm_Init_libalpha(void);
 extern void Scm_Init_libbool(void);
@@ -177,6 +178,7 @@ void Scm_Init(const char *signature)
     Scm__InitSignal();
     Scm__InitSystem();
     Scm__InitComparator();
+    Scm__InitExecenv();
 
     Scm_Init_libalpha();
     Scm_Init_libbool();
@@ -606,21 +608,6 @@ const char *Scm_GetRuntimeDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 }
 
 /*=============================================================
- * Command line arguments
- */
-
-ScmObj Scm_InitCommandLine(int argc, const char *argv[])
-{
-    static ScmObj command_line_proc = SCM_UNDEFINED;
-    ScmObj args = Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
-    SCM_BIND_PROC(command_line_proc, "command-line", Scm_GaucheModule());
-    Scm_ApplyRec1(command_line_proc, args);
-    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(args));
-    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(args));
-    return args;
-}
-
-/*=============================================================
  * 'Main'
  */
 
@@ -644,7 +631,7 @@ void Scm_SimpleMain(int argc, const char *argv[],
                     const char *script, u_long flags SCM_UNUSED)
 {
     SCM_ASSERT(argc > 0);
-    ScmObj args = Scm_InitCommandLine(argc, argv);
+    ScmObj args = Scm_InitCommandLine2(argc, argv, SCM_COMMAND_LINE_BOTH);
 
     if (script) {
         ScmObj s = SCM_MAKE_STR(script);

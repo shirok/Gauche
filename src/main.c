@@ -647,10 +647,8 @@ static void process_command_args(ScmObj cmd_args)
 int execute_script(const char *scriptfile, ScmObj args)
 {
     /* If script file is specified, load it. */
-    ScmObj mainproc = SCM_FALSE;
     ScmLoadPacket lpak;
-
-    Scm_Load(scriptfile, SCM_LOAD_PROPAGATE_ERROR, &lpak);
+    Scm_Load(scriptfile, SCM_LOAD_PROPAGATE_ERROR|SCM_LOAD_MAIN_SCRIPT, &lpak);
     if (!lpak.loaded) return 1;
 
     /* If symbol 'main is bound, call it (SRFI-22).   */
@@ -658,19 +656,19 @@ int execute_script(const char *scriptfile, ScmObj args)
                           ? Scm_FindModule(SCM_SYMBOL(main_module), 0)
                           : Scm_UserModule());
     if (mainmod) {
-        mainproc = Scm_GlobalVariableRef(mainmod,
-                                         SCM_SYMBOL(SCM_INTERN("main")),
-                                         SCM_BINDING_STAY_IN_MODULE);
-    }
-    if (SCM_PROCEDUREP(mainproc)) {
-        static ScmObj run_main_proc = SCM_UNDEFINED;
-        SCM_BIND_PROC(run_main_proc, "run-main", Scm_GaucheInternalModule());
-        SCM_ASSERT(SCM_PROCEDUREP(run_main_proc));
+        ScmObj mainproc = Scm_GlobalVariableRef(mainmod,
+                                                SCM_SYMBOL(SCM_INTERN("main")),
+                                                SCM_BINDING_STAY_IN_MODULE);
+        if (SCM_PROCEDUREP(mainproc)) {
+            static ScmObj run_main_proc = SCM_UNDEFINED;
+            SCM_BIND_PROC(run_main_proc, "run-main", Scm_GaucheInternalModule());
+            SCM_ASSERT(SCM_PROCEDUREP(run_main_proc));
 
-        ScmEvalPacket epak;
-        int r = Scm_Apply(run_main_proc, SCM_LIST2(mainproc, args), &epak);
-        SCM_ASSERT(r == 1 && SCM_INTP(epak.results[0]));
-        return SCM_INT_VALUE(epak.results[0]);
+            ScmEvalPacket epak;
+            int r = Scm_Apply(run_main_proc, SCM_LIST2(mainproc, args), &epak);
+            SCM_ASSERT(r == 1 && SCM_INTP(epak.results[0]));
+            return SCM_INT_VALUE(epak.results[0]);
+        }
     }
     return 0;
 }
@@ -819,9 +817,12 @@ int main(int ac, char **av)
         }
 
         /* sets up arguments. */
-        args = Scm_InitCommandLine(argc - argind, (const char**)argv + argind);
+        Scm_InitCommandLine2(argc, (const char**)argv, SCM_COMMAND_LINE_OS);
+        args = Scm_InitCommandLine2(argc - argind, (const char**)argv + argind,
+                                    SCM_COMMAND_LINE_SCRIPT);
     } else {
-        args = Scm_InitCommandLine(1, (const char**)argv);
+        args = Scm_InitCommandLine2(argc, (const char **)argv,
+                                    SCM_COMMAND_LINE_BOTH);
     }
 
     process_command_args(Scm_Reverse(pre_cmds));

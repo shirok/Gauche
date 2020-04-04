@@ -93,6 +93,7 @@ static ScmObj key_macro              = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
 static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
+static ScmObj key_main_script        = SCM_UNBOUND;
 
 #define PARAM_REF(vm, loc)      Scm_PrimitiveParameterRef(vm, ldinfo.loc)
 
@@ -195,6 +196,9 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj paths, ScmObj env, int flags)
     if (flags&SCM_LOAD_IGNORE_CODING) {
         opts = Scm_Cons(key_ignore_coding, Scm_Cons(SCM_TRUE, opts));
     }
+    if (flags&SCM_LOAD_MAIN_SCRIPT) {
+        opts = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, opts));
+    }
     if (SCM_NULLP(paths) || SCM_PAIRP(paths)) {
         opts = Scm_Cons(key_paths, Scm_Cons(paths, opts));
     }
@@ -216,6 +220,9 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
     }
     if (flags&SCM_LOAD_IGNORE_CODING) {
         opts = Scm_Cons(key_ignore_coding, Scm_Cons(SCM_TRUE, opts));
+    }
+    if (flags&SCM_LOAD_MAIN_SCRIPT) {
+        opts = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, opts));
     }
 
     load_packet_prepare(packet);
@@ -1201,6 +1208,7 @@ void Scm__InitLoad(void)
     key_ignore_coding = SCM_MAKE_KEYWORD("ignore-coding");
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_environment = SCM_MAKE_KEYWORD("environment");
+    key_main_script = SCM_MAKE_KEYWORD("main-script");
 
     Scm_InitStaticClass(SCM_CLASS_DLOBJ, "<dlobj>",
                         m, dlobj_slots, 0);

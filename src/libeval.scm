@@ -70,7 +70,8 @@
                                          (suffixes *load-suffixes*)
                                          (error-if-not-found #t)
                                          (environment #f)
-                                         (ignore-coding #f))
+                                         (ignore-coding #f)
+                                         (main-script #f))
   ;; NB: 'File not found' error is handled in find-load-file.
   (and-let* ([r (find-load-file file paths suffixes
                                 :error-if-not-found error-if-not-found
@@ -80,6 +81,10 @@
            [hooked? (pair? (cddr r))]
            [opener (if hooked? (caddr r) open-input-file)]
            [port (guard (e [else e]) (opener path))])
+      (when main-script 
+        ;; record full path of the script
+        (script-file (sys-normalize-pathname path
+                                             :absolute #t :canonicalize #t)))
       (when (%load-verbose?)
         (format (current-error-port) ";;~aLoading ~a~a...\n"
                 (make-string (* (length (current-load-history)) 2) #\space)
@@ -645,14 +650,6 @@
     (website "https://practical-scheme.net/gauche")
     (build.platform ,(gauche-architecture))
     (scheme.path ,@*load-path*)))
-
-;; API
-;; Command line - R7RS adds 'command-line' procedure.  We provide it as
-;; a predefined parameter.
-(select-module gauche.internal)
-(inline-stub
- (initcode
-  (Scm_BindPrimitiveParameter (Scm_GaucheModule) "command-line" SCM_NIL 0)))
 
 ;;
 ;; External view of VM.

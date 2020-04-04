@@ -1994,7 +1994,22 @@ SCM_EXTERN void Scm_Cleanup(void);
 SCM_EXTERN void Scm_Exit(int code) SCM_NORETURN;
 SCM_EXTERN void Scm_Abort(const char *msg) SCM_NORETURN;
 SCM_EXTERN void Scm_Panic(const char *msg, ...) SCM_NORETURN;
+
+/* 'kind' argument of Scm_InitCommandLine */
+enum {
+    SCM_COMMAND_LINE_SCRIPT = 1,    /* for (command-line) */
+    SCM_COMMAND_LINE_OS = 2,        /* for (os-command-line) */
+    SCM_COMMAND_LINE_BOTH = (SCM_COMMAND_LINE_SCRIPT|SCM_COMMAND_LINE_OS)
+};
+
+#if GAUCHE_API_VERSION >= 1000
+SCM_EXTERN ScmObj Scm_InitCommandLine(int argc, const char *argv[],
+                                      int kind);
+#define Scm_InitCommandLine2(ac, av, kind) Scm_InitCommandLine(ac, av, kind)
+#else  /* GAUCHE_API_VERSION < 1000 */
 SCM_EXTERN ScmObj Scm_InitCommandLine(int argc, const char *argv[]);
+SCM_EXTERN ScmObj Scm_InitCommandLine2(int argc, const char *argv[], int kind);
+#endif /* GAUCHE_API_VERSION < 1000 */
 
 SCM_EXTERN void Scm_SimpleMain(int argc, const char *argv[],
                                const char *script, u_long flags);

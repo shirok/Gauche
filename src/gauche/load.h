@@ -40,14 +40,10 @@
  * Loading Scheme files
  */
 
-/* Flags for Scm_VMLoad (V), Scm_Load (L), Scm_Require (R), Scm_VMLoadPort (P),
- * and Scm_FindFile (F).
- * NB: We intended to use 1L<<3 for MAIN_SCRIPT flag but it turned out
- * unnecessary.
- */
+/* Flags for Scm_VMLoad (V), Scm_Load (L), Scm_Require (R) */
 typedef enum {
     SCM_LOAD_QUIET_NOFILE = (1L<<0),
-    /* [L,V,F] do not signal an error if the file does not exist;
+    /* [L,V] do not signal an error if the file does not exist;
        just return #f. */
 
     SCM_LOAD_IGNORE_CODING = (1L<<1),
@@ -56,10 +52,9 @@ typedef enum {
     SCM_LOAD_PROPAGATE_ERROR = (1L<<2),
     /* [L,R] do not capture an error; let the caller handle it.  */
 
-    SCM_LOAD_SEARCH_ARCHIVE = (1L<<4)
-    /* [F] Search a file to load from archive file, using the hook of
-       Scm_FindFile.  This is mainly for internal use---Scm_VMLoad etc calls
-       Scm_FindFile with this flag on. */
+    SCM_LOAD_MAIN_SCRIPT = (1L<<4)
+    /* [L,V] loading main script.  We set full path of the loaded script
+       to `scrilt-file`.  */
 } ScmLoadFlags;
 
 /* A structure to obtain a detailed result of loading. */
@@ -68,8 +63,6 @@ typedef struct ScmLoadPacketRec {
     int    loaded;    /* OUT: TRUE iff file is successfully loaded.  */
 } ScmLoadPacket;
 
-SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
-                                     ScmObj env, int flags);
 SCM_EXTERN ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, ScmObj env,
                              int flags);
 
@@ -78,6 +71,10 @@ SCM_EXTERN int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *p);
 SCM_EXTERN int Scm_Load(const char *file, u_long flags, ScmLoadPacket *p);
 SCM_EXTERN int Scm_LoadFromCString(const char *program, u_long flags,
                                    ScmLoadPacket *p);
+
+/* DEPRECATED.  Will go away on 1.0 */
+SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
+                                     ScmObj env, int flags);
 
 /*=================================================================
  * Dynamic state access

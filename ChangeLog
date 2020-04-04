@@ -1,3 +1,20 @@
+2020-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/execenv.c: Overhaul Scm_InitCommandLine taking the idea of
+	  @lassik https://github.com/shirok/Gauche/pull/640
+	  - Added `os-command-line` parameter, that keeps entire command line
+	    list given by the OS.  (The name is subject to change, to follow
+	    the coming command-lines srfi.)
+	  - Application can set up `command-line` and/or `os-command-line`
+	    separately, or simultaneously.
+	  - For 1.0 API, we have 'kind' argument in Scm_InitCommandLine.  To
+	    keep the ABI compatibility, 0.97 API has Scm_InitCommandLine2.
+	* src/libeval.scm (load): Add :main-script parameter; if #t, it
+	  records the full path of loaded file in `script-file` parameter.
+	  It can only be done here, since the full path is known after `load`
+	  searches the file.
+	* src/load.c, src/gauche/load.h: Add SCM_LOAD_MAIN_SCRIPT flag.
+
 2020-04-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h: Introduced GAUCHE_API_VERSION macro in place of
