@@ -137,6 +137,10 @@
           (set! j (+ j k))))
       (return dst))))
 
+(select-module gauche)
+(define-cproc vector-immutable? (v::<vector>) ::<boolean>
+  SCM_VECTOR_IMMUTABLE_P)
+
 ;; TRANSIENT: :optional thing will be expanded unhygienically, inserting
 ;; reference to 'error'.  If we define these within #<module scheme> it
 ;; would cause 'error' to be unbound.  Better fix would be to make

@@ -95,5 +95,17 @@
               (vector-append))
 (test* "vector-append 4" (test-error) (vector-append '#() 'b 'c))
 
+;; immutable vectors
+;; literal vectors are immutable only when compiled with API_VERSION >= 1000
+(when (vector-immutable? '#(1 2 3))
+  (test* "vector-immutable?" #f
+         (vector-immutable? (vector 1 2 3)))
+  (test* "set! to immutalbe vector" (test-error)
+         (vector-set! '#(1 2 3) 0 3))
+  (test* "set! to immutalbe vector" (test-error)
+         (set! (vector-ref '#(1 2 3) 0) 3))
+  (test* "fill! to immutalbe vector" (test-error)
+         (vector-fill!! '#(1 2 3) 0)))
+
 (test-end)
 

@@ -34,7 +34,9 @@
 #ifndef GAUCHE_H
 #define GAUCHE_H
 
-/* GAUCHE_API_VERSION will be 1000 on 1.0 prerelease. */
+/* GAUCHE_API_VERSION is GAUCHE_MAJOR_VERSION*1000 + revision.
+   The revision is only incremented when we change API, which we expect
+   rare during the same major revision. */
 #define GAUCHE_API_VERSION  97
 //#define GAUCHE_API_VERSION 1000
 

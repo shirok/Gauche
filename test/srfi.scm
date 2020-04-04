@@ -587,7 +587,7 @@
 (test "(setter cddddr)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1) (((2 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1)
       (^[] (set! (cddddr x) (list 0 1)) x))
 
-(define x '#(1 2 3 4 5))
+(define x (vector 1 2 3 4 5))
 (test "(setter vector-ref)" '#(1 2 3 #f 5)
       (^[] (set! (vector-ref x 3) #f) x))
 

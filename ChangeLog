@@ -7,6 +7,8 @@
 	  with Gauche minor/micro versions.
 	* src/vector.c: Add immutable flag for API_VERSION >= 1000.  This is
 	  binary incompatible change and client code will need to be recompiled.
+	* src/compaux.c (unwrap_rec): Make literal vectors immutable on
+	  API_VERSION >= 1000.
 
 2020-04-01  Shiro Kawai  <shiro@acm.org>
 

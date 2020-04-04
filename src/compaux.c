@@ -398,7 +398,8 @@ static ScmObj unwrap_rec(ScmObj form, unwrap_ctx *ctx)
         e = Scm_HashCoreSearch(&ctx->history, (intptr_t)form, SCM_DICT_CREATE);
         for (int i=0; i<len; i++, pelt++) {
             ScmObj elt = unwrap_rec(*pelt, ctx);
-            if (elt != *pelt) {
+            if (elt != *pelt
+                || (ctx->immutable && !SCM_VECTOR_IMMUTABLE_P(form))) {
                 ScmObj newvec = Scm_MakeVector(len, SCM_FALSE);
                 pelt = SCM_VECTOR_ELEMENTS(form);
                 int j;
@@ -411,6 +412,9 @@ static ScmObj unwrap_rec(ScmObj form, unwrap_ctx *ctx)
                     elt = unwrap_rec(*pelt, ctx);
                     register_location(ctx, &SCM_VECTOR_ELEMENT(newvec, i), elt);
                     SCM_VECTOR_ELEMENT(newvec, j) = elt;
+                }
+                if (ctx->immutable) {
+                    SCM_VECTOR_IMMUTABLE_SET(newvec, TRUE);
                 }
                 fill_history(e, newvec);
                 return newvec;
