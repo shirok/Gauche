@@ -68,7 +68,7 @@ SCM_CLASS_DECL(Scm_VectorClass);
     SCM_OBJ(((len)<<1)|(imm?1:0))
 #else  /* GAUCHE_API_VERSION < 1000 */
 #define SCM_VECTOR_SIZE(obj)        (SCM_VECTOR(obj)->size)
-#define SCM_VECTOR_IMMUTABLE_P(obj) (FALSE)
+#define SCM_VECTOR_IMMUTABLE_P(obj) (!SCM_VECTORP(obj)) /* always FALSE, but need to use obj to avoid unused variable warning */
 #define SCM_VECTOR_IMMUTABLE_SET(obj, flag)  /*empty*/
 #define SCM_VECTOR_SIZE_SLOT_INITIALIZER(len, imm)  SCM_OBJ(len)
 #endif /* GAUCHE_API_VERSION < 1000 */
