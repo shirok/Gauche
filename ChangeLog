@@ -1,5 +1,8 @@
 2020-04-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/experimental/command-lines.scm: Added.  To test out
+	  command-line srfi.  The interface is subject to change.
+
 	* src/libsys.scm (sys-normalize-pathname),
 	  src/system.c (Scm_NormalizePathname): Rewrote this in Scheme.
 
