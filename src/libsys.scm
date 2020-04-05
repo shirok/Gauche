@@ -122,7 +122,9 @@
                  (loop (cdr comps) (cons (car comps) r) #f)
                  (loop (cdr comps) (cdr r) #t))]
               [else (loop (cdr comps) (cons (car comps) r) #f)]))
-      path))
+      (if windows?
+        (string-join (string-split path #\/) "\\")
+        path)))
   ($ canon-path $ abs-path $ expand-tilde pathname))
 
 ;;---------------------------------------------------------------------
