@@ -211,7 +211,7 @@
          (and (file-exists? "test.o/VERSION")
               (file->string "test.o/VERSION")))
   (test* "srcdir etc."
-         '("srcdir = ." "top_srcdir = .." "builddir = ." "top_builddir = ..")
+         '("srcdir = ." "top_srcdir = ../" "builddir = ." "top_builddir = ../")
          (file->string-list "test.o/src/Makefile"))
 
   (test* "configure --version" "package configure 1.0"
@@ -232,7 +232,7 @@
                (file-exists? "test2.o/src/Makefile")))
 
   (test* "srcdir etc."
-         '("srcdir = ../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ..")
+         '("srcdir = ../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ../")
          (file->string-list "test2.o/src/Makefile"))
 
   (dolist [d '("test.o" "test2.o")]

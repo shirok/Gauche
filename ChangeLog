@@ -1,5 +1,8 @@
 2020-04-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/libsys.scm (sys-normalize-pathname),
+	  src/system.c (Scm_NormalizePathname): Rewrote this in Scheme.
+
 	* src/execenv.c: Overhaul Scm_InitCommandLine taking the idea of
 	  @lassik https://github.com/shirok/Gauche/pull/640
 	  - Added `os-command-line` parameter, that keeps entire command line

@@ -59,28 +59,79 @@
 
 (select-module gauche)
 (define-cproc sys-readdir (pathname::<string>) Scm_ReadDirectory)
-
-;; Bonus
-
-(define-cproc sys-normalize-pathname (pathname::<string>
-                                      :key (absolute #f)
-                                      (expand #f)
-                                      (canonicalize #f))
-  (let* ([flags::int 0])
-    (unless (SCM_FALSEP absolute) (logior= flags SCM_PATH_ABSOLUTE))
-    (unless (SCM_FALSEP expand)   (logior= flags SCM_PATH_EXPAND))
-    (unless (SCM_FALSEP canonicalize) (logior= flags SCM_PATH_CANONICALIZE))
-    (return (Scm_NormalizePathname pathname flags))))
-
 (define-cproc sys-tmpdir () Scm_TmpDir)
 (define-cproc sys-basename (pathname::<string>) Scm_BaseName)
 (define-cproc sys-dirname (pathname::<string>) Scm_DirName)
+
+(select-module gauche.internal)
+
+;; This isn't POSIX, but we need it in bootstrap so we have it here.
+(define-in-module gauche (sys-normalize-pathname pathname
+                                                 :key 
+                                                 (absolute #f)
+                                                 (expand #f)
+                                                 (canonicalize #f))
+  ;; NB: We can't use cond-expand, for this file is cross-precompiled.
+  (define windows? (assq 'gauche.os.windows (cond-features)))
+  (define separator (if windows? "\\" "/"))
+  (define (expand-tilde path)
+    (if-let1 m (and expand (rxmatch #/^~([^\\\/]*)/ path))
+      (let* ([user (m 1)]
+             [home (if (equal? user "")
+                     (if windows?
+                       (get-windows-home)
+                       (get-unix-home (sys-getpwuid (sys-getuid))))
+                     (if windows?
+                       (error "'~user' expansil isn't supported on Windows:"
+                              path)
+                       (get-unix-home (sys-getpwnam (m 1)))))])
+        (string-append home (m 'after)))
+      path))
+  (define (get-windows-home)
+    (or (sys-getenv "HOME") ; MSYS
+        (sys-getenv "HOMEDRIVE") ; cmd.exe
+        (sys-getenv "HOMEPATH")
+        "\\"))
+  (define (get-unix-home pw)
+    (if pw (~ pw'dir) (error "Couldn't obtain username for :" pathname)))
+  (define (absolute? path)
+    (if windows?
+      (rxmatch #/^([A-Za-z]:)?[\\\/]/ path)
+      (rxmatch #/^\// path)))
+  (define (abs-path path)
+    (if (and absolute (not (absolute? path)))
+      (string-append (sys-getcwd) separator path)
+      path))
+  (define (root? comps)
+    (or (equal? comps '(""))
+        (and windows?
+             (length= comps 1)
+             (rxmatch #/^[A-Za-z]:$/ (car comps)))))
+  (define (canon-path path)
+    (if canonicalize
+      (let loop ([comps (string-split path #[\\/])]
+                 [r '()]
+                 [dir? #f])             ;whether we add '/' at end
+        (cond [(null? comps) 
+               (let1 r (if dir? (cons "" r) r)
+                 (string-join (reverse r) separator))]
+              [(equal? (car comps) ".") (loop (cdr comps) r #t)]
+              [(equal? (car comps) "..")
+               ;; If we've reached to the root dir, we go like "/../"
+               (if (or (null? r) (equal? (car r) "..") (root? r))
+                 (loop (cdr comps) (cons (car comps) r) #f)
+                 (loop (cdr comps) (cdr r) #t))]
+              [else (loop (cdr comps) (cons (car comps) r) #f)]))
+      path))
+  ($ canon-path $ abs-path $ expand-tilde pathname))
 
 ;;---------------------------------------------------------------------
 ;; errno.h - error numbers
 
 ;; We won't (and can't) cover every possible errnos, including system
 ;; specific ones.  The following list is taken from Linux asm/errno.h.
+
+(select-module gauche)
 
 (inline-stub
  "ScmHashTable *errno_n2y;"             ;integer -> symbol

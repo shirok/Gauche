@@ -371,216 +371,31 @@ static const char *truncate_trailing_separators(const char *path,
     }
 }
 
-#if !defined(GAUCHE_WINDOWS)
-/* A utility for tilde expansion.  They are called only on
-   Unix variants, so we only need to check '/'. */
-static void put_user_home(ScmDString *dst,
-                          const char *name,
-                          const char *end)
-{
-    struct passwd *pwd;
-
-    if (name == end) {
-        pwd = getpwuid(geteuid());
-        if (pwd == NULL) {
-            Scm_SigCheck(Scm_VM());
-            Scm_SysError("couldn't get home directory.");
-        }
-    } else {
-        int namesiz = (int)(end - name);
-        char *uname = SCM_STRDUP_PARTIAL(name, namesiz);
-        pwd = getpwnam(uname);
-        if (pwd == NULL) {
-            Scm_SigCheck(Scm_VM());
-            Scm_Error("couldn't get home directory of user \"%s\".", uname);
-        }
-    }
-    int dirlen = (int)strlen(pwd->pw_dir);
-    Scm_DStringPutz(dst, pwd->pw_dir, dirlen);
-    if (pwd->pw_dir[dirlen-1] != '/') Scm_DStringPutc(dst, '/');
-}
-
-/* SRC points to the pathname string beginning with '~'.  Expand it
-   to the user's home directory, leaving the partial result in DST.
-   Returns the pointer into SRC sans tilde prefix (e.g. removed "~user/").
-   The returned pointer may points just past the last char of SRC. */
-static const char *expand_tilde(ScmDString *dst,
-                                const char *src,
-                                const char *end)
-{
-    const char *sep = get_first_separator(src, end);
-
-    if (sep == NULL) {
-        put_user_home(dst, src+1, end);
-        return end;
-    } else {
-        put_user_home(dst, src+1, sep);
-        return skip_separators(sep, end);
-    }
-}
-#endif /* !GAUCHE_WINDOWS */
-
-/* Put current dir to DST */
-static void put_current_dir(ScmDString *dst)
-{
-    ScmString *dir = SCM_STRING(Scm_GetCwd());
-    ScmSmallInt size;
-    const char *sdir = Scm_GetStringContent(dir, &size, NULL, NULL);
-
-    Scm_DStringAdd(dst, dir);
-    if (!SEPARATOR_P(sdir[size-1])) {
-        Scm_DStringPutc(dst, SEPARATOR);
-    }
-}
-
-
-#if defined(GAUCHE_WINDOWS)
-/* win32 specific; copy pathname with replacing '/' by '\\'. */
-static void copy_win32_path(ScmDString *dst,
-                            const char *srcp,
-                            const char *end)
-{
-    while (srcp < end) {
-        ScmChar ch;
-        if (SEPARATOR_P(*srcp)) {
-            ch = SEPARATOR;
-        } else {
-            SCM_CHAR_GET(srcp, ch);
-        }
-        Scm_DStringPutc(dst, ch);
-        srcp += SCM_CHAR_NBYTES(ch);
-    }
-}
-#endif /* GAUCHE_WINDOWS */
+/* for keyword arguments */
+static ScmObj key_absolute = SCM_FALSE;
+static ScmObj key_expand = SCM_FALSE;
+static ScmObj key_canonicalize = SCM_FALSE;
 
 ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
-    ScmSmallInt size;
-    const char *str = Scm_GetStringContent(pathname, &size, NULL, NULL);
-    const char *srcp = str;
-    const char *endp = str + size;
-    ScmDString buf;
-
-    Scm_DStringInit(&buf);
-
-    /* Preprocess.  We expand tilde (on unix platform), and prepend the
-       current directory to the relative pathname if absolutize is required.
-       For canonicalization, we also put any absolute prefix into buf, so
-       that srcp points to the relative path part after this. */
-#if !defined(GAUCHE_WINDOWS)
-    if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
-        srcp = expand_tilde(&buf, srcp, endp);
-    } else if (endp > srcp && *srcp == '/') {
-        /* Path is absolute */
-        if (flags & SCM_PATH_CANONICALIZE) {
-            Scm_DStringPutc(&buf, SEPARATOR);
-            srcp = skip_separators(srcp, endp);
-        }
-    } else {
-        /* Path is relative */
-        if (flags & SCM_PATH_ABSOLUTE) {
-            put_current_dir(&buf);
-        }
+    static ScmObj proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(proc, "sys-normalize-pathname", Scm_GaucheModule());
+    
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    SCM_APPEND1(h, t, SCM_OBJ(pathname));
+    if (flags & SCM_PATH_ABSOLUTE) {
+        SCM_APPEND1(h, t, key_absolute);
+        SCM_APPEND1(h, t, SCM_TRUE);
     }
-    if (!(flags & SCM_PATH_CANONICALIZE)) {
-        Scm_DStringPutz(&buf, srcp, endp - srcp);
-        return Scm_DStringGet(&buf, 0);
+    if (flags & SCM_PATH_CANONICALIZE) {
+        SCM_APPEND1(h, t, key_canonicalize);
+        SCM_APPEND1(h, t, SCM_TRUE);
     }
-#else /* GAUCHE_WINDOWS */
-    if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
-        const char *home;
-        if (size >= 2 && strchr("/\\", str[1]) == NULL) {
-            Scm_Error("On windows native platforms, getting other user's home "
-                      "directory is not supported (yet): %S",
-                      SCM_OBJ(pathname));
-        }
-        srcp++;
-        if ((home = Scm_GetEnv("HOME")) != NULL) { /* MSYS */
-            Scm_DStringPutz(&buf, home, -1);
-        } else if ((home = Scm_GetEnv("HOMEDRIVE")) != NULL) { /* cmd.exe */
-            Scm_DStringPutz(&buf, home, -1);
-            if ((home = Scm_GetEnv("HOMEPATH")) != NULL) {
-                Scm_DStringPutz(&buf, home, -1);
-            }
-        }
-        /*FALLTHROUGH - if no env is set we use root dir. */
-    } else if (endp > srcp+1 && isalpha(*srcp) && *(srcp+1) == ':') {
-        /* We first process the Evil Drive Letter */
-        Scm_DStringPutc(&buf, *srcp++);
-        Scm_DStringPutc(&buf, *srcp++);
+    if (flags & SCM_PATH_EXPAND) {
+        SCM_APPEND1(h, t, key_expand);
+        SCM_APPEND1(h, t, SCM_TRUE);
     }
-    if (endp > srcp && (SEPARATOR_P(*srcp))) {
-        if (flags & SCM_PATH_CANONICALIZE) {
-            Scm_DStringPutc(&buf, SEPARATOR);
-            srcp = skip_separators(srcp, endp);
-        }
-    } else if (srcp == str) {
-        /* Path is relative (the srcp==str condition rules out the
-           drive letter case */
-        if (flags & SCM_PATH_ABSOLUTE) {
-            put_current_dir(&buf);
-        }
-    }
-    if (!(flags & SCM_PATH_CANONICALIZE)) {
-        copy_win32_path(&buf, srcp, endp);
-        return Scm_DStringGet(&buf, 0);
-    }
-#endif /* GAUCHE_WINDOWS */
-
-    /* Canonicalization.  We used to have a tricky piece of code here
-       that avoids extra allocations, but have replaced it for
-       simple-minded code, since speed gain here won't contribute to
-       the overall performance anyway.  */
-    {
-        ScmObj comps = SCM_NIL; /* reverse list of components */
-        int cnt = 0;            /* # of components except ".."'s */
-        int final = FALSE;
-        int wentup = FALSE;     /* true if the last loop went up a dir */
-
-        for (;;) {
-            const char *p = get_first_separator(srcp, endp);
-            if (p == NULL) {
-                final = TRUE;
-                p = endp;
-            }
-
-            if (p == srcp+1 && *srcp == '.') {
-                /* do nothing */
-            } else if (p == srcp+2 && srcp[0] == '.' && srcp[1] == '.') {
-                if (cnt > 0) {
-                    SCM_ASSERT(SCM_PAIRP(comps));
-                    comps = SCM_CDR(comps);
-                    cnt--;
-                    wentup = TRUE;
-                } else {
-                    comps = Scm_Cons(SCM_MAKE_STR(".."), comps);
-                    wentup = FALSE;
-                }
-            } else {
-                comps = Scm_Cons(Scm_MakeString(srcp, (int)(p-srcp), -1, 0),
-                                 comps);
-                cnt++;
-                wentup = FALSE;
-            }
-            if (final) {
-                /* If we just went up a directory, we want to preserve the
-                   trailing separator in the result.  So we add an empty
-                   component. */
-                if (wentup) comps = Scm_Cons(SCM_MAKE_STR(""), comps);
-                break;
-            }
-            srcp = skip_separators(p, endp);
-        }
-        if (SCM_PAIRP(comps)) {
-            comps = Scm_ReverseX(comps);
-            Scm_DStringAdd(&buf, SCM_STRING(SCM_CAR(comps)));
-            SCM_FOR_EACH(comps, SCM_CDR(comps)) {
-                Scm_DStringPutc(&buf, SEPARATOR);
-                Scm_DStringAdd(&buf, SCM_STRING(SCM_CAR(comps)));
-            }
-        }
-    }
-    return Scm_DStringGet(&buf, 0);
+    return Scm_ApplyRec(proc, h);
 }
 
 /* Returns system's temporary directory. */
@@ -3231,6 +3046,10 @@ void Scm__InitSystem(void)
 #endif
     SCM_INTERNAL_MUTEX_INIT(env_mutex);
     Scm_HashCoreInitSimple(&env_strings, SCM_HASH_STRING, 0, NULL);
+
+    key_absolute = SCM_MAKE_KEYWORD("absolute");
+    key_expand = SCM_MAKE_KEYWORD("expand");
+    key_canonicalize = SCM_MAKE_KEYWORD("canonicalize");
 
 #ifdef GAUCHE_WINDOWS
     init_winsock();
