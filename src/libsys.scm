@@ -105,7 +105,7 @@
   (define (root? comps)
     (or (equal? comps '(""))
         (and windows?
-             (length= comps 1)
+             (length=? comps 1)
              (rxmatch #/^[A-Za-z]:$/ (car comps)))))
   (define (canon-path path)
     (if canonicalize
