@@ -21,7 +21,8 @@
  * dwsiphash.c            (none)               Scm__DwSipDefaultHash
  */
 
-#include <gauche/config.h>
+#undef GC_PTHREADS		/* avoid GC_PTHREADS redefinition warning */
+#include <gauche/config.h>	/* for SIZEOF_LONG */
 
 #ifdef SCM_DWSIPHASH_INTERFACE
 
