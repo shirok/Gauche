@@ -343,8 +343,9 @@ static const char *get_install_dir()
         char *dir1 = remove_suffix(dir, "/lib");
         if (dir1 != NULL) return dir1;
         /* now we try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
+        dir = remove_components(path, 3);
         if (dir != NULL) {
-            dir1 = remove_suffix(dir1, "/lib");
+            dir1 = remove_suffix(dir, "/lib");
             if (dir1 != NULL) return dir1;
         }
     }
