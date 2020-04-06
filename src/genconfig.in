@@ -312,10 +312,16 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
 (select-module gauche.config)
 
 (define (gauche-config param)
-  (cond [(assoc param *configurations*) 
-         => (^p ((with-module gauche.internal %gauche-replace-runtime-directory)
-                 (cadr p)))]
+  (cond [(assoc param *configurations*) => (^p (replace-install-dir (cadr p)))]
         [else (error "unknown configuration parameter name" param)]))
+
+(define (replace-install-dir str)
+  (let1 ss (string-split str #\@)
+    (if (length<=? ss 1)
+      str
+      (if-let1 d ((with-module gauche.internal %gauche-runtime-directory))
+        (string-join ss d)
+        (error "Couldn't obtain installation directory.")))))
 
 (define *configurations*
   (quote
