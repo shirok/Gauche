@@ -36,6 +36,8 @@ Makefile
 *.so
 *.sci
 *.dll
+*.dSYM
+*.dylib
 *.exe
 stamp-h1
 /src/libatomic_ops_pic.a
