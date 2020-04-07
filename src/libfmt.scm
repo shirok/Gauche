@@ -482,14 +482,27 @@
                          [ovchar #f]
                          [padchar #\space])
      (let1 arg (fr-next-arg! fmtstr argptr)
-       (if (real? arg)
-         (do-fmt (inexact (* arg (expt 10 scale)))
-                 width digits ovchar padchar flags port)
-         (let1 sarg (write-to-string arg display)
-           (let1 len (string-length sarg)
-             (when (< len width)
-               (dotimes [(- width len)] (write-char padchar port)))
-             (display sarg port)))))))
+       (cond [(real? arg)
+              (do-fmt (inexact (* arg (expt 10 scale)))
+                      width digits ovchar padchar flags port)]
+             [(complex? arg)
+              (let1 s (call-with-output-string
+                        (^p
+                         (do-fmt (* (real-part arg) (expt 10 scale))
+                                 0 digits ovchar padchar flags p)
+                         (do-fmt (* (imag-part arg) (expt 10 scale))
+                                 0 digits ovchar padchar (cons #\@ flags) p)
+                         (display "i" p)))
+                (let1 len (string-length s)
+                  (when (< len width)
+                    (dotimes [(- width len)]  (write-char padchar port)))
+                  (display s port)))]
+             [else 
+              (let1 sarg (write-to-string arg display)
+                (let1 len (string-length sarg)
+                  (when (< len width)
+                    (dotimes [(- width len)] (write-char padchar port)))
+                  (display sarg port)))]))))
            
 ;; ~*
 (define (make-format-jump fmtstr params flags)

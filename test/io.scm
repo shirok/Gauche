@@ -774,6 +774,14 @@
 (test* "format ~,1000f" (string-append "0.01" (make-string 998 #\0))
        (format "~,1000f" 0.01))
 
+(test* "format ~f with non-numeric object"  "   abc" (format "~6f" 'abc))
+(test* "format ~f with complex"  "0.707+0.707i" (format "~1,3f" (sqrt +i)))
+(test* "format ~f with complex"  "0.707-0.707i" (format "~1,3f" (sqrt -i)))
+(test* "format ~f with complex"  "          1.10+0.46i"
+       (format "~20,2f" (sqrt 1+i)))
+(test* "format ~f with complex"  "         +1.10+0.46i"
+       (format "~20,2@f" (sqrt 1+i)))
+
 (test* "format ~nr" "wud0up"  (format "~36r" 1985913745))
 (test* "format ~nr" "    wud0up"  (format "~36,10r" 1985913745))
 (test* "format ~nr" "****wud0up"  (format "~36,10,'*r" 1985913745))
