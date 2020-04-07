@@ -21990,26 +21990,40 @@ or a sequence of the same type as input, respectively.
 @c COMMON
 @end defun
 
-
+@c EN
 The following procedures are low-level building blocks
 to build the above @code{string->words} etc.
-A @var{generator} argument is a procedure
-with no arguments, and returns a value (or some values) at at time
-for every call, until it returns EOF.
+@c JP
+以下の手続きは上記の@code{string->words}等の高レベル手続きを作る部品となる、
+低レベル手続きです。
+@c COMMON
 
 @defun make-word-breaker generator
 @defunx make-grapheme-cluster-breaker generator
 @c MOD gauche.unicode
-From given @var{generator} is a generator of characters or codepoints,
+@c EN
+From given @var{generator}, which is a generator of characters or codepoints,
 returns a generator that returns two values: The first value is the
 character or codepoint generated from the original generator, and the
 second value is a boolean flag, which is @code{#t} if a word
 or a grapheme cluster
 breaks before the character/codepoint, and @code{#f} otherwise.
+@c JP
+文字かコードポイントを生成するジェネレータ@var{generator}を取り、
+二つの値を返すジェネレータを返します。最初の値は元のジェネレータから受け取った
+文字またはコードポイントで、二つめの値は、その文字またはコードポイントの直前に
+単語もしくはgraphemeクラスタ境界があった時に@code{#t}、そうでない時に@code{#f}となる
+真偽値です。
+@c COMMON
 
+@c EN
 Suppose a generator @var{g} returns characters in a string
 @code{That's it.}, one at a time.  Then the created generator
 will work as follows:
+@c JP
+ジェネレータ@code{g}が文字列@code{That's it.}に含まれる文字を順に返す
+ジェネレータとすれば、作られるジェネレータの動作は次の通りです。
+@c COMMON
 
 @example
 (define brk (make-word-breaker g))
@@ -22026,9 +22040,14 @@ will work as follows:
 (brk)  @result{}  #<eof>  and #t
 @end example
 
+@c EN
 It shows the word breaks at those character boundaries shown
 by the caret @code{^} below (for clearity, I use @code{_} to indicate
 the space).
+@c JP
+つまり、下図で@code{^}で示される箇所が単語境界となっています
+(空白字を@code{_}で表しています)。
+@c COMMON
 
 @example
   T h a t ' s _ i t .
@@ -22039,15 +22058,27 @@ the space).
 @defun make-word-reader generator return
 @defunx make-grapheme-cluster-reader generator return
 @c MOD gauche.unicode
+@c EN
 The input @var{generator} is a generator of characters or codepoints,
 and @var{return} is a procedure that takes a list of characters or
 codepoints, and returns an object.   These procedures creates a
 generator that returns an object at at time, each consists of a
 word or a grapheme cluster, respectively.
+@c JP
+@var{generator}は文字またはコードポイントを生成するジェネレータで、
+@var{return}は文字またはコードポイントのリストを受け取り、オブジェクトを返す手続きです。
+これらの手続きは、オブジェクト (単語またはgraphemeクラスタ) をひとつづつ生成する
+ジェネレータを返します。
+@c COMMON
 
+@c EN
 Suppose a generator @var{g} returns characters in a string
 @code{That's it.}, one at a time, again.
 Then the created generator works as follows:
+@c JP
+ジェネレータ@code{g}が文字列@code{That's it.}に含まれる文字を順に返す
+ジェネレータとすれば、作られるジェネレータの動作は次の通りです。
+@c COMMON
 
 @example
 (define brk (make-word-reader g list->string))
@@ -22063,6 +22094,7 @@ Then the created generator works as follows:
 
 @node Full string case conversion, East asian width property, Unicode text segmentation, Unicode utilities
 @subsection Full string case conversion
+@c NODE フルセットの大文字小文字変換
 
 @defun string-upcase string
 @defunx string-downcase string
@@ -22070,8 +22102,8 @@ Then the created generator works as follows:
 @defunx string-foldcase string
 [R6RS][R7RS char]
 @c MOD gauche.unicode
-Converts given @var{string} to upper case, using language-independent
-full case folding defined by Unicode standard.
+Converts the case of given @var{string}
+using language-independent full case folding defined by Unicode standard.
 They differ from srfi-13's procedures
 with the same names (@pxref{SRFI-13 String case mapping}),
 which simply uses character-by-character case mapping.
