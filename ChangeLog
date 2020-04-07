@@ -1,3 +1,8 @@
+2020-04-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (load-from-port): Fixed 3-year old bug
+	  https://github.com/shirok/Gauche/issues/292
+
 2020-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/experimental/command-lines.scm: Added.  To test out

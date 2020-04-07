@@ -979,5 +979,14 @@
                          (loop (read-char wrap) (cons ch r)))))))
               tdata)))
 
+;;-------------------------------------------------------------------
+;; Literal uvector on load
+;; Cf. https://github.com/shirok/Gauche/issues/521
+
+(load (string-append (sys-dirname (current-load-path)) "/load-literal-test"))
+
+(test* "uvector immutability on load & read" '(#t #f #f)
+       (map uvector-immutable? (load-read-test-uvectors)))
+
 (test-end)
 

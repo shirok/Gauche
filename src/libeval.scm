@@ -115,7 +115,8 @@
         [prev-next    (current-load-next)]
         [prev-reader-lexical-mode (reader-lexical-mode)]
         [prev-eval-situation (vm-eval-situation)]
-        [prev-read-context (current-read-context)])
+        [prev-read-context (current-read-context)]
+        [load-read-context (%new-read-context-for-load)])
 
     (define (setup-load-context)
       (when (port-closed? port) (error "port already closed:" port))
@@ -129,7 +130,6 @@
                (list #f))
              prev-history))
       (vm-eval-situation SCM_VM_LOADING)
-      (current-read-context (%new-read-context-for-load))
       (%record-load-stat (or (current-load-path) "(unnamed source)")))
 
     (define (restore-load-context)
@@ -143,6 +143,14 @@
       (close-port port)
       (%record-load-stat #f)
       (%port-unlock! port))
+
+    ;; Read a source form with load-read-context.  We don't use dynamic-wind,
+    ;; for the error from read will be captured by the guard and the context
+    ;; will be restored anyway.
+    (define (read+ port)
+      (current-read-context load-read-context)
+      (begin0 (read port)
+        (current-read-context prev-read-context)))
 
     (guard (e [else (let1 e2 (if (condition? e)
                                ($ make-compound-condition e
@@ -158,7 +166,7 @@
       (when (eq? (gauche-character-encoding) 'utf-8)
         (when (eqv? (peek-char port) #\ufeff)
           (read-char port)))
-      (do ([s (read port) (read port)])
+      (do ([s (read+ port) (read+ port)])
           [(eof-object? s)]
         (eval s #f)))
     (restore-load-context)
