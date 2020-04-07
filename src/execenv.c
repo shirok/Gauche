@@ -186,16 +186,16 @@ ScmObj Scm__RuntimeDirectory()
 void Scm__InitExecenv(void)
 {
     /* (command-line) is R7RS.  We realize it as a a parameter.  */
+    ScmObj defaultval = SCM_LIST1(SCM_MAKE_STR_IMMUTABLE(""));
     command_line = Scm_BindPrimitiveParameter(Scm_GaucheModule(),
                                               "command-line",
-                                              SCM_FALSE, 0);
+                                              defaultval, 0);
     os_command_line = Scm_BindPrimitiveParameter(Scm_GaucheModule(),
                                                  "os-command-line",
-                                                 SCM_NIL, 0);
+                                                 defaultval, 0);
     /* script-file is set by 'load'.  */
     script_file = Scm_BindPrimitiveParameter(Scm_GaucheModule(),
                                              "script-file",
                                              SCM_FALSE, 0);
 }
-
 

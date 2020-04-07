@@ -821,8 +821,8 @@ int main(int ac, char **av)
         args = Scm_InitCommandLine2(argc - argind, (const char**)argv + argind,
                                     SCM_COMMAND_LINE_SCRIPT);
     } else {
-        args = Scm_InitCommandLine2(argc, (const char **)argv,
-                                    SCM_COMMAND_LINE_BOTH);
+        /* For REPL, we leave command-line to the default '(""). */
+        Scm_InitCommandLine2(argc, (const char**)argv, SCM_COMMAND_LINE_OS);
     }
 
     process_command_args(Scm_Reverse(pre_cmds));
