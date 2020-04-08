@@ -21653,17 +21653,20 @@ absolute position of the arguments, starting from 0.
 @c COMMON
 
 @item @b{~~}
+@itemx @b{~%}
+@itemx @b{~t}
+@itemx @b{~|}
 @c EN
-Output a single tilda @code{~}.
-@c JP
-チルダ@code{~}を出力します。
-@c COMMON
+Parameter: @var{count}
 
-@item @b{~%}
-@c EN
-Output a newline character.
+Output a @code{#\~}, @code{#\newline}, @code{#\tab} and @code{#\page}, 
+respectively.    If @var{count} is given, output the specified number
+of characters.
 @c JP
-改行文字を出力します。
+パラメータ: @var{count}
+
+それぞれ、文字@code{#\~}、@code{#\newline}、@code{#\tab}、@code{#\page}を
+ひとつ出力します。@var{count}が与えられた場合はその個数出力します。
 @c COMMON
 
 @end table
