@@ -808,6 +808,16 @@
 (test* "format ~@*" "1 2 5"
        (format "~a ~a ~4@*~a" 1 2 3 4 5))
 
+(test* "format single character"
+       '(("~" "~~~" "~~~~~")
+         ("\t" "\t\t\t" "\t\t\t\t\t")
+         ("\n" "\n\n\n" "\n\n\n\n\n")
+         ("\f" "\f\f\f" "\f\f\f\f\f"))
+       (map (^c (list (format (string #\~ c))
+                      (format (string #\~ #\3 c))
+                      (format (string #\~ #\v c) 5)))
+            '(#\~ #\t #\% #\|)))
+
 (test* "format incomplete tilde sequence" (test-error)
        (format "~"))
 (test* "format incomplete tilde sequence" (test-error)

@@ -56,6 +56,7 @@
 ;;         | (r flags mincol padchar commachar interval)
 ;;         | (F flags width digits scale ovfchar padchar)
 ;;         | (* flags count)
+;;         | (char flags <char> count) ; single-character insertion
 ;; flags : '() | (Cons #\@ flags) | (Cons #\: flags)
 
 ;; NB: This procedure is written in a way that all closures can be
@@ -64,10 +65,12 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*fF" c))
+    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*fF~%tT|" c))
     (define directive-param-spec ; (type max-#-of-params)
       '((S 5) (A 5) (W 0) (C 0)
-        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5)))
+        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5)
+        ;; single-character instertion
+        (~ #\~) (% #\newline) (T #\tab) (|\|| #\page)))
     (define (flag? c) (memv c '(#\@ #\:)))
     (define (next p)
       (rlet1 c (read-char p)
@@ -82,18 +85,16 @@
                        (directive p (next p)))]
                 [else (loop (cons c cs))]))))
     ;; NB: this keeps params and flags in reverse order.
-    ;; check-param 
+    ;; check-param reverses them.
     (define (directive p c)
       (let loop ([params '()] [c c])
         (receive (param c) (fc-param p c params)
           (cond [param (loop (cons param params) c)]
                 [(directive? c)
-                 => (^_  (let1 directive
-                             ($ string->symbol $ string
-                                $ if (memv c '(#\x #\r)) c (char-upcase c))
-                           (acons directive params (init p))))]
-                [(eqv? c #\~) (cons (string c) (init p))]
-                [(eqv? c #\%) (cons "\n" (init p))] ;TODO: handle param
+                 (let1 directive
+                     ($ string->symbol $ string
+                        $ if (memv c '(#\x #\r)) c (char-upcase c))
+                   (acons directive params (init p)))]
                 [else (errorf "Invalid format directive character `~a' in ~s"
                               c (fmtstr p))]))))
     ;; initial state
@@ -151,12 +152,20 @@
                     [(flag? (car ps)) (outer (cdr ps) (cons (car ps) fs))]
                     [(eq? (car ps) 'empty) (outer (cdr ps) fs)]
                     [else (values fs (reverse! ps))]))
-          (let1 spec (assq (car directive) directive-param-spec)
-            (unless (length<=? params (cadr spec))
+          (let* ([spec (assq (car directive) directive-param-spec)]
+                 [nparams (if (char? (cadr spec)) 1 (cadr spec))])
+            (unless (length<=? params nparams)
               (errorf "Too many parameters for directive `~a' in ~s"
-                      (car directive) (fmtstr p))))
-          (list* (car directive) flags params))
+                      (car directive) (fmtstr p)))
+            (if (char? (cadr spec))
+              (char-node flags params (cadr spec))
+              (list* (car directive) flags params))))
         directive))
+    ;; single character node optimization
+    (define (char-node flags params char)
+      (cond [(null? params) (string char)]
+            [(integer? (car params)) (make-string (car params) char)]
+            [else (list* 'char flags char params)]))
 
     ;; Body of formatter-lex
     (^[format-str]
@@ -185,6 +194,7 @@
 ;;      | (x flags mincol padchar commachar interval)
 ;;      | (F flags width digits scale ovfchar padchar)
 ;;      | (* flags count)
+;;      | (char flags <char> count)
 ;;
 ;; argcnt : An integer if the formatter takes fixed number of arguments,
 ;;          #f otherwise.
@@ -512,6 +522,11 @@
          (fr-jump-arg! argptr count)
          (fr-jump-arg-relative! argptr count)))))
 
+;; ~t, ~%, ~~
+(define (make-format-single fmtstr ch params flags)
+  ($ with-format-params ([count 1])
+     (display (make-string count ch) port)))
+
 ;; Tree -> Formatter
 ;; src : source format string for error message
 (define (formatter-compile-rec src tree)
@@ -532,6 +547,7 @@
     [('F fs . ps) (make-format-flo src ps fs 'F)]
     [((or 'R 'r) fs . ps) (make-format-r src ps fs (eq? (car tree) 'R))]
     [('* fs . ps) (make-format-jump src ps fs)]
+    [('char fs c . ps) (make-format-single src c ps fs)]
     [_ (error "boo!")]))
 
 ;; Toplevel compiler
