@@ -467,7 +467,7 @@
 
 (define (hash-table-map!-r7 proc ht) ; r7rs
   (assume-type ht <hash-table>)
-  (hash-table-for-each ht (^[k v] (hash-table-put! ht k (proc v)))))
+  (hash-table-for-each ht (^[k v] (hash-table-put! ht k (proc k v)))))
 
 (define (hash-table-map->list-r7 proc ht) ; r7rs
   (hash-table-map ht proc))
@@ -484,7 +484,7 @@
   (hash-table-for-each ht proc))
 
 (define (hash-table-fold-r7 kons knil ht) ; r7rs
-  (hash-table-fold ht cons knil))
+  (hash-table-fold ht kons knil))
 
 (define (hash-table-prune!-r7 proc ht) ; r7rs
   (hash-table-for-each ht (^[k v] (when (proc k v) (hash-table-delete! ht k)))))
@@ -615,6 +615,7 @@
 (define (hash-table=? value-cmpr h1 h2)
   (or (eq? h1 h2)
       (and (= (hash-table-num-entries h1) (hash-table-num-entries h2))
+           (equal? (hash-table-comparator h1) (hash-table-comparator h2))
            (zero? (hash-table-compare-as-sets h1 h2
                                               (cut =? value-cmpr <> <>)
                                               100))))) ;; any non-zero number

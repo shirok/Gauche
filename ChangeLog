@@ -1,3 +1,8 @@
+2020-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm (hash-table-map!-r7, hash-table-fold-r7,
+	  hash-table=?): Fix incorrect implementation.
+
 2020-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (make-format-flo): Make ~f handle complex numbers.
