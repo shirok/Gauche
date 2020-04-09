@@ -56,6 +56,7 @@
 ;;         | (r flags mincol padchar commachar interval)
 ;;         | (F flags width digits scale ovfchar padchar)
 ;;         | (* flags count)
+;;         | (? flags)
 ;;         | (char flags <char> count) ; single-character insertion
 ;; flags : '() | (Cons #\@ flags) | (Cons #\: flags)
 
@@ -65,10 +66,10 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*fF~%tT|" c))
+    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*?fF~%tT|" c))
     (define directive-param-spec ; (type max-#-of-params)
       '((S 5) (A 5) (W 0) (C 0)
-        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5)
+        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5) (? 0)
         ;; single-character instertion
         (~ #\~) (% #\newline) (T #\tab) (|\|| #\page)))
     (define (flag? c) (memv c '(#\@ #\:)))
@@ -194,6 +195,7 @@
 ;;      | (x flags mincol padchar commachar interval)
 ;;      | (F flags width digits scale ovfchar padchar)
 ;;      | (* flags count)
+;;      | (? flags)
 ;;      | (char flags <char> count)
 ;;
 ;; argcnt : An integer if the formatter takes fixed number of arguments,
@@ -513,6 +515,22 @@
                   (when (< len width)
                     (dotimes [(- width len)] (write-char padchar port)))
                   (display sarg port)))]))))
+
+;; ~?
+(define (make-format-recur fmtstr flags)
+  (define (fcompile str)
+    (unless (string? str)
+      (error "Argument for ~? must be a string, but got" str))
+    ($ formatter-compile-rec str $ formatter-parse $ formatter-lex str))
+  (if (has-@? flags)
+    ;; take 
+    (^[argptr port ctrl]
+      (let1 formatter (fcompile (fr-next-arg! fmtstr argptr))
+        (formatter argptr port ctrl)))
+    (^[argptr port ctrl]
+      (let* ([formatter (fcompile (fr-next-arg! fmtstr argptr))]
+             [xargptr (fr-make-argptr (fr-next-arg! fmtstr argptr))])
+        (formatter xargptr port ctrl)))))
            
 ;; ~*
 (define (make-format-jump fmtstr params flags)
@@ -546,6 +564,7 @@
     [('X fs . ps) (make-format-num src ps fs 16 #t)]
     [('F fs . ps) (make-format-flo src ps fs 'F)]
     [((or 'R 'r) fs . ps) (make-format-r src ps fs (eq? (car tree) 'R))]
+    [('? fs)      (make-format-recur src fs)]
     [('* fs . ps) (make-format-jump src ps fs)]
     [('char fs c . ps) (make-format-single src c ps fs)]
     [_ (error "boo!")]))

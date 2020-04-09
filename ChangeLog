@@ -4,6 +4,7 @@
 	  The d parameters are effective on both real and imaginary part.
 	  (format): Support single character escape family, ~nt, ~n%, ~n~ and
 	  ~n|.
+	  Also support ~?.
 
 2020-04-06  Shiro Kawai  <shiro@acm.org>
 

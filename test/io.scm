@@ -818,6 +818,17 @@
                       (format (string #\~ #\v c) 5)))
             '(#\~ #\t #\% #\|)))
 
+(test* "format ~?" "ding[\"dang\" dong]ping"
+       (format "~s~?~a" 'ding "[~s ~a]" '("dang" "dong") "ping"))
+(test* "format ~?" "ding[\"dang\" gong]ping" ; extra args for ~? are ignored
+       (format "~s~?~a" 'ding "[~s ~a]" '("dang" "gong" "dong") "ping"))
+(test* "format ~@?" "ding[\"dang\" dong]ping"
+       (format "~s~@?~a" 'ding "[~s ~a]" "dang" "dong" "ping"))
+(test* "format nested ~?" "<[<<{\"O\" O}>>]>"
+       (format "~s[~?]~s" '< "~s{~?}~s" '(<< "~s ~a" ("O" "O") >>) '>))
+(test* "format nested ~@?" "<[<<{\"O\" O}>>]>"
+       (format "~s[~@?]~s" '< "~s{~@?}~s" '<< "~s ~a" "O" "O" '>> '>))
+
 (test* "format incomplete tilde sequence" (test-error)
        (format "~"))
 (test* "format incomplete tilde sequence" (test-error)

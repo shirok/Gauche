@@ -21631,6 +21631,43 @@ adding @code{:} flag.
 (format "~6,1:f" 1.15) @result{} "   1.2"
 @end example
 
+@item @b{~?}
+@c EN
+Recursive formatting.  The argument for this directive must be a string
+which is interpreted as a format string.  The arguments for the given directive
+should be given in the next argument, as a list.
+
+@example
+(format "~s~?~s" '< "~s ~s" '(a b) '>)
+  @result{} "<a b>"
+@end example
+
+If @code{@@} flag is given, the arguments for the given directive
+is taken from the following arguments.
+
+@example
+(format "~s~@@?~s" '< "~s ~s" 'a 'b '>)
+  @result{} "<a b>"
+@end example
+@c JP
+再帰的フォーマッティング。この指示子はまず文字列を引数に取り、それをフォーマット文字列と
+解釈します。そしてさらに次の引数(それはリストでなければなりません)を、そのフォーマット文字列
+への引数と解釈します。
+
+@example
+(format "~s~?~s" '< "~s ~s" '(a b) '>)
+  @result{} "<a b>"
+@end example
+
+@code{@@}フラグが与えられた場合は、最初の引数をフォーマット文字列と解釈した後で、
+続く引数を必要なだけそのフォーマット文字列の引数として使います。
+
+@example
+(format "~s~@@?~s" '< "~s ~s" 'a 'b '>)
+  @result{} "<a b>"
+@end example
+@c COMMON
+
 @item @b{~*}
 @c EN
 Parameter: @var{count}
