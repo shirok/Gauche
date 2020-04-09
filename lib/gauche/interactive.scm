@@ -246,10 +246,9 @@
           expr)))))
 
 ;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
-;; Note that, at this moment, text.line-edit isn't complete; it doesn't
-;; handle multibyte characters nor the multiline expressions bigger
-;; than the screen height.  Once we complete text.line-edit, we make
-;; the feature available through command-line options of gosh.
+;; Note that, at this moment, text.line-edit isn't complete. Once we
+;; complete text.line-edit, we make the feature available through
+;; command-line options of gosh.
 
 (define-values (%prompter %reader %line-edit-ctx)
   (receive (r rl skipper ctx)
