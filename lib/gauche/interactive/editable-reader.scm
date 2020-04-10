@@ -57,7 +57,7 @@
   (if-let1 console (make-default-console :if-not-available #f)
     (let ([ctx (make <line-edit-context>
                  :console console
-                 :prompt (^[] (putstr console (get-prompt-string)))
+                 :prompt (^[] (display (get-prompt-string)))
                  :input-continues (^s (not (%input-complete? s))))]
           [buffer (open-input-string "")])
       (define (read-1 reader)
