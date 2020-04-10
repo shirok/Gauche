@@ -38,7 +38,7 @@
   (use gauche.hashutil)
   (export make-hash-table                   ; extended for compatibility
           hash-table                        ; extended for compatibility
-          hash-table-unfold                 ; builtin
+          hash-table-unfold                 ; extended for compatibility
           alist->hash-table                 ; extended for compatibility
           
           hash-table?                   ; builtin
@@ -98,14 +98,20 @@
 (define %make-hash-table (with-module gauche make-hash-table))
 (define %alist->hash-table (with-module gauche alist->hash-table))
 
+(define (%eq-fn->comparator eq-fn)
+  (cond [(eq? eq-fn eq?) eq-comparator]
+        [(eq? eq-fn eqv?) eqv-comparator]
+        [(eq? eq-fn equal?) equal-comparator]
+        [(eq? eq-fn string=?) string-comparator]
+        [(eq? eq-fn string-ci=?) string-ci-comparator]
+        [else (make-comparator #t eq-fn #f default-hash)]))
+
 (define (make-hash-table cmpr . args)
   (if (procedure? cmpr)                 ; srfi-69
     (if (and (pair? args) (procedure? (car args)))
-      (apply %make-hash-table
-             (make-comparator #t cmpr #f (car args)) (cdr args))
-      (apply %make-hash-table
-             (make-comparator #t cmpr #f default-hash) args))
-    (apply %make-hash-table cmpr args)))
+      (%make-hash-table (make-comparator #t cmpr #f (car args)))
+      (%make-hash-table (%eq-fn->comparator cmpr)))
+    (%make-hash-table cmpr)))
 
 (define (hash-table cmpr . kvs)
   (cond [(comparator? cmpr) (apply hash-table-r7 cmpr kvs)]
@@ -117,17 +123,22 @@
                   (list 'hash-table cmpr)))]
         [else (error "comparator or procedure expected, but got:" cmpr)]))
 
-(define (alist->hash-table cmpr . pairs)
-  (cond [(comparator? cmpr)
-         (apply (with-module gauche alist->hash-table) cmpr pairs)]
+(define (alist->hash-table alist cmpr . args)
+  ;; ignore args
+  (cond [(comparator? cmpr) (%alist->hash-table alist cmpr)]
         [(procedure? cmpr)
-         (if (pair? pairs)
-           (apply (with-module gauche alist->hash-table)
-                  (make-comparator #t cmpr #f (cadr pairs))
-                  (cdr pairs))
-           (error "missing hash function in alist->hash-table (srfi-69 compatibility):"
-                  (list 'alist->hash-table cmpr)))]
+         ;; srfi-69 compatibility
+         (if (null? args)
+           (%alist->hash-table alist (%eq-fn->comparator cmpr))
+           (let* ([eq-proc cmpr]
+                  [hash-proc (car args)])
+             (%alist->hash-table alist
+                                 (make-comparator #t eq-proc #f hash-proc))))]
         [else (error "comparator or procedure expected, but got:" cmpr)]))
+
+(define (hash-table-unfold p f g seed cmpr . args)
+  ;; ignore args
+  ((with-module gauche hash-table-unfold) p f g seed cmpr))
 
 (define (hash-table-walk ht proc) (hash-table-for-each ht proc))
 

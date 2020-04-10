@@ -2288,6 +2288,31 @@
 (use srfi-125)
 (test-module 'srfi-125)
 
+(define-module srfi-125-tests
+  (use srfi-125)
+  (use scheme.sort :only (list-sort))
+  (use gauche.test :only (test*))
+  (define (exit x) #f)                  ;ignore
+  (define-syntax import                 ;ignore
+    (syntax-rules ()
+      [(_ . xs) (begin)]))
+  (define-syntax test
+    (syntax-rules ()
+      [(_ expr expected) (test* 'expr expected expr)]))
+  (define-syntax test-assert
+    (syntax-rules ()
+      [(_ expr) (test* 'expr #t expr)]))
+  (define-syntax test-deny
+    (syntax-rules ()
+      [(_ expr) (test* 'expr #f expr)]))
+  ;; srfi-125-tests includes deprecated srfi-69 procedures tests.
+  ;; some of them emits warnings in Gauche, so we use dummies here.
+  (define (hash x . _) (default-hash x))
+  (define (hash-by-identity x . _) (eq-hash x))
+  (define deprecated:string-hash string-hash)
+  (define deprecated:string-ci-hash string-ci-hash)
+  (include "include/srfi-125-tests.scm"))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-127")
 (use srfi-127)

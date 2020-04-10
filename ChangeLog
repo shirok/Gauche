@@ -1,5 +1,6 @@
 2020-04-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-125.scm (alist->hash-table, hash-table-unfold): Fix bugs.
 	* src/libdict.scm (hash-table-map!-r7, hash-table-fold-r7,
 	  hash-table=?): Fix incorrect implementation.
 
