@@ -38,7 +38,6 @@
   (use file.util)
   (use util.match)
   (use text.console)
-  (use text.console.replay)
   (use text.gap-buffer)
   (use gauche.unicode)
   (export <line-edit-context> read-line/edit
@@ -305,16 +304,16 @@
     (set! (~ ctx'screen-width) w)))
 
 ;; Show prompt.  Returns the current column.
-(define (show-prompt ctx :optional (con #f))
+(define (show-prompt ctx)
   (let* ([p (~ ctx'prompt)]
          [s (if (applicable? p) (with-output-to-string p) (x->string p))])
-    (putstr (or con (~ ctx'console)) s)))
+    (putstr (~ ctx'console) s)))
 
 ;; Show secondary prompt
 ;; TODO: make this customizable
-(define (show-secondary-prompt ctx con)
+(define (show-secondary-prompt ctx)
   (when (> (~ ctx'initpos-x) 0)
-    (putstr con (make-string (~ ctx'initpos-x) #\.))))
+    (putstr (~ ctx'console) (make-string (~ ctx'initpos-x) #\.))))
 
 ;; Get a tab character width
 (define (get-tab-char-width ctx x w)
@@ -366,8 +365,7 @@
   (if (< (~ ctx'initpos-y) 0)
     (set! (~ ctx'initpos-y) 0))
 
-  (let* ([real-con (~ ctx'console)]
-         [con     (make <replay-console>)]
+  (let* ([con     (~ ctx'console)]
          [y       (~ ctx'initpos-y)]
          [x       (~ ctx'initpos-x)]
          [w       (~ ctx'screen-width)]
@@ -409,10 +407,9 @@
          [else
           (inc! y)])))
 
-    (start-recording con)
     (reset-character-attribute con)
     (move-cursor-to con y 0)
-    (show-prompt ctx con)
+    (show-prompt ctx)
     (clear-to-eos con)
     (let loop ([n 0])
       (glet1 ch (g)
@@ -428,7 +425,7 @@
            (line-wrapping w w)
            (when (display-area?)
              (switch-char-attr-when-needed con newattr '(#f #f))
-             (show-secondary-prompt ctx con)
+             (show-secondary-prompt ctx)
              (switch-char-attr-when-needed con '(#f #f) newattr))
            (set! x      (~ ctx'initpos-x))
            (set! disp-x x)]
@@ -460,9 +457,7 @@
           (set! pos-y y))
 
         (loop (+ n 1))))
-    (move-cursor-to con pos-y pos-x)
-    (finish-recording con)
-    (play-recording con real-con)))
+    (move-cursor-to con pos-y pos-x)))
 
 (define (current-char-attr pos sel oparen)
   (cond-list
