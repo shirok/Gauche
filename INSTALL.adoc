@@ -36,6 +36,59 @@ Check out the latest information on the site:
 endif::EN[]
 https://practical-scheme.net/gauche/
 
+ifdef::JA[]
+このドキュメントでは、配布されるtarballからGaucheをコンパイルしてインストールする
+方法を説明します。ソースリポジトリをcloneしてコンパイルする場合はさらに準備が必要です。
+詳しくは link:HACKING.adoc[] ファイルを参照してください。
+endif::JA[]
+ifdef::EN[]
+This document explains how to compile and install Gauche from a distributed
+tarball.   To compile from cloned source tree from the repository,
+you need some extra steps; See the file link:HACKING.adoc[] for the details.
+endif::EN[]
+
+
+ifdef::JA[]
+== 必要なもの
+endif::JA[]
+ifdef::EN[]
+== Prerequisites
+endif::EN[]
+
+
+ifdef::JA[]
+Unix環境の標準的なビルドツールに加え、以下のツールとライブラリをあらかじめ入れておくことを
+推奨します。無くてもGaucheはビルドできますが、一部機能が使えなくなります。
+
+- Makeinfo (バージョン5.0以降) - infoドキュメントをビルドするのに使います。
+入ってなければドキュメントはインストールされません (その場合、REPLでのオンラインドキュメント
+も使えません)
+- Gzip - 同じくドキュメントビルド時に使われます。
+- Libiconv - 文字エンコーディング変換に使われます。下の説明も参照。
+
+他のオプショナルなライブラリについては以下で順次説明します。
+
+Windows上では、MSYS/MinGWを使ってビルドできます。
+詳しくはlink:doc/HOWTO-mingw.adoc[]を参照してください。
+endif::JA[]
+ifdef::EN[]
+Other than standard build tools on Unix environment, the following
+tools and libraries are recommended to have.  You can build Gauche without
+them, but some features won't be available.
+
+- Makeinfo (version 5.0 or later) - used to build info document.
+If the build platform doesn't have it, document building is skipped and info
+document won't be installed.  (You need info document to use online document
+browsing from REPL.)
+- Gzip - also used during document building.
+- Libiconv - Used for character encoding conversion.  See below.
+
+There are other optional libraries, which will be explained below.
+
+To build on Windows, you can use MSYS/MinGW.
+See link:doc/HOWTO-mingw.adoc[] for the details.
+endif::EN[]
+
 
 ifdef::JA[]
 == 簡単な方法
@@ -90,16 +143,7 @@ shell and you can reconfigure with the same options.  It is a
 convenient way to update Gauche.
 endif::EN[]
 
-ifdef::JA[]
-注: gitレポジトリの開発版HEADをコンパイルする場合は、 `configure` を
-走らせる前にいくつか準備が必要です。詳しくは link:HACKING.adoc[] ファイルを参照して
-ください。
-endif::JA[]
-ifdef::EN[]
-Note: If you are compiling from development HEAD cloned from
-git repository, you need extra steps before running `configure`.
-See the file link:HACKING.adoc[] for the details.
-endif::EN[]
+
 
 ifdef::JA[]
 == スレッドサポート
