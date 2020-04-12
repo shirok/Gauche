@@ -4338,7 +4338,35 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @c EN
 Creates a character set containing every character whose ISO/IEC 10646
 UCS-4 code lies in the half-open range [@var{lower},@var{upper}).
+
+If the range contains unassigned codepoint, they are silently ignored.
+
+If the range contains a valid codepoint which isn't supported in Gauche,
+it is ignored when @var{error?} is false (default),
+or an error is raised when @var{error?} has a true value.
+If you compile Gauche with utf-8 native encoding (default), all valid
+Unicode codepoints are supported.  If Gauche is compiled with other native
+encoding, some codepoints are not supported.
+
+If a character set @var{base-cs} is given, its content is added to
+the result.  The linear update version @code{ucs-range->char-set!}
+is allowed, but not required, to modify @var{base-cs} to store the result.
 @c JP
+@var{lower}以上、@var{upper}未満のUnicodeコードポイントを持つ文字を服務
+文字セットを作って返します。
+
+指定された範囲内に文字を割り当てられていないコードポイントがあった場合、
+それは単に無視されます。
+
+指定された範囲内にある有効なコードポイントをGaucheがサポートしていない場合、
+@var{error?}が偽なら(デフォルト)それは単に無視され、真の値ならエラーが投げられます。
+デフォルトではGaucheはutf-8内部エンコーディングでコンパイルされていて、
+有効な全てのUnicodeコードポイントが扱えます。しかし、Gaucheをそれ以外の内部エンコーディング
+でコンパイルした場合は、サポートされないコードポイントがあります。
+
+文字セット@var{base-cs}が与えられた場合、その内容が結果の文字セットに追加されます。
+@code{ucs-range->char-set!}は、結果を格納するために@var{base-cs}を
+再利用するかもしれません。
 @c COMMON
 @end defun
 
@@ -4346,7 +4374,23 @@ UCS-4 code lies in the half-open range [@var{lower},@var{upper}).
 @defunx integer-range->char-set! lower upper error? base-cs
 @c MOD scheme.charset
 @c EN
+These are Gauche-specific procedures and not in @code{scheme.charset}.
+When Gauche is compiled with utf-8 native encoding (default), they are
+the same as @code{ucs-range->char-set} and @code{ucs-range->char-set!},
+respectively.
+If Gauche is compiled with other native encoding, these interprets
+the given range in its native encoding.
+
+Meaning of @var{error?} and @var{base-cs} are the same as
+@code{ucs-char->char-set}.
 @c JP
+これらはGauche特有で、@code{scheme.charset}の仕様には含まれていません。
+Gaucheがutf-8内部エンコーディングでコンパイルされていた場合(デフォルト)、これらは
+それぞれ@code{ucs-range->charset}および@code{ucs->range-char-set!}と同じです。
+Gaucheがそれ以外の内部エンコーディングでコンパイルされていた場合は、
+範囲指定がそのエンコーディングでの文字コードで解釈されません。
+
+@var{error?}および@var{base-cs}引数の意味は@code{ucs-char->char-set}と同じです。
 @c COMMON
 @end defun
 
