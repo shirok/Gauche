@@ -474,20 +474,6 @@
 ;; @ flag is used to force plus sign (CL)
 ;; : flag is used for notational rounding (Gauche only)
 (define (make-format-flo fmtstr params flags kind)
-  (define (do-fmt n w d ovchar padchar flags port)
-    (let* ([s (number->string n 10
-                              (cond-list
-                               [(has-@? flags) 'plus]
-                               [(has-:? flags) 'notational])
-                              d)]
-           [l (string-length s)])
-      (if (< w l)
-        (if ovchar
-          (dotimes [w] (write-char ovchar port))
-          (display s port))
-        (begin
-          (dotimes [(- w l)] (write-char padchar port))
-          (display s port)))))
   ($ with-format-params ([width 0]
                          [digits -1]
                          [scale 0]
@@ -495,15 +481,18 @@
                          [padchar #\space])
      (let1 arg (fr-next-arg! fmtstr argptr)
        (cond [(real? arg)
-              (do-fmt (inexact (* arg (expt 10 scale)))
-                      width digits ovchar padchar flags port)]
+              (flo-fmt (inexact (* arg (expt 10 scale)))
+                       width digits ovchar padchar
+                       (has-@? flags) (has-:? flags) #f port)]
              [(complex? arg)
               (let1 s (call-with-output-string
                         (^p
-                         (do-fmt (* (real-part arg) (expt 10 scale))
-                                 0 digits ovchar padchar flags p)
-                         (do-fmt (* (imag-part arg) (expt 10 scale))
-                                 0 digits ovchar padchar (cons #\@ flags) p)
+                         (flo-fmt (* (real-part arg) (expt 10 scale))
+                                  0 digits ovchar padchar 
+                                  (has-@? flags) (has-:? flags) #f p)
+                         (flo-fmt (* (imag-part arg) (expt 10 scale))
+                                  0 digits ovchar padchar 
+                                  #t (has-:? flags) #f p)
                          (display "i" p)))
                 (let1 len (string-length s)
                   (when (< len width)
@@ -515,6 +504,25 @@
                   (when (< len width)
                     (dotimes [(- width len)] (write-char padchar port)))
                   (display sarg port)))]))))
+
+(define (flo-fmt val w d ovchar padchar plus? notational? sign-front? port)
+  (let* ([s (number->string val 10
+                            (cond-list
+                             [plus? 'plus]
+                             [notational? 'notational])
+                            d)]
+         [l (string-length s)])
+    (if (< w l)
+      (if ovchar
+        (dotimes [w] (write-char ovchar port))
+        (display s port))
+      (receive (pre-sign body)
+          (if (and sign-front? (memv (string-ref s 0) '(#\+ #\-)))
+            (values (substring s 0 1) (substring s 1))
+            (values "" s))
+        (display pre-sign port)
+        (dotimes [(- w l)] (write-char padchar port))
+        (display body port)))))
 
 ;; ~?
 (define (make-format-recur fmtstr flags)
