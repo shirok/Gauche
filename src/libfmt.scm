@@ -55,6 +55,7 @@
 ;;         | (R flags mincol padchar commachar interval)
 ;;         | (r flags mincol padchar commachar interval)
 ;;         | (F flags width digits scale ovfchar padchar)
+;;         | ($ flags digits pre-digits width padchar)
 ;;         | (* flags count)
 ;;         | (? flags)
 ;;         | (char flags <char> count) ; single-character insertion
@@ -66,10 +67,10 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*?fF~%tT|" c))
+    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%tT|" c))
     (define directive-param-spec ; (type max-#-of-params)
       '((S 5) (A 5) (W 0) (C 0)
-        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5) (? 0)
+        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5) ($ 4) (? 0)
         ;; single-character instertion
         (~ #\~) (% #\newline) (T #\tab) (|\|| #\page)))
     (define (flag? c) (memv c '(#\@ #\:)))
@@ -194,6 +195,7 @@
 ;;      | (X flags mincol padchar commachar interval)
 ;;      | (x flags mincol padchar commachar interval)
 ;;      | (F flags width digits scale ovfchar padchar)
+;;      | ($ flags digits pre-digits width padchar)
 ;;      | (* flags count)
 ;;      | (? flags)
 ;;      | (char flags <char> count)
@@ -277,6 +279,12 @@
     (errorf "Running out arguments for format string ~s" fmtstr)
     (rlet1 arg (cadr argptr)
       (set! (cdr argptr) (cddr argptr)))))
+
+;; returns the current arg, without changing pointer
+(define (fr-peek-arg fmtstr argptr)
+  (if (null? (cdr argptr))
+    (errorf "Running out arguments for format string ~s" fmtstr)
+    (cadr argptr)))
 
 ;; check if we used all args.  if we've reordered args, this always succeeds.
 (define (fr-args-used? argptr)
@@ -482,16 +490,16 @@
      (let1 arg (fr-next-arg! fmtstr argptr)
        (cond [(real? arg)
               (flo-fmt (inexact (* arg (expt 10 scale)))
-                       width digits ovchar padchar
+                       width digits 0 ovchar padchar
                        (has-@? flags) (has-:? flags) #f port)]
              [(complex? arg)
               (let1 s (call-with-output-string
                         (^p
                          (flo-fmt (* (real-part arg) (expt 10 scale))
-                                  0 digits ovchar padchar 
+                                  0 digits 0 ovchar padchar 
                                   (has-@? flags) (has-:? flags) #f p)
                          (flo-fmt (* (imag-part arg) (expt 10 scale))
-                                  0 digits ovchar padchar 
+                                  0 digits 0 ovchar padchar 
                                   #t (has-:? flags) #f p)
                          (display "i" p)))
                 (let1 len (string-length s)
@@ -505,23 +513,51 @@
                     (dotimes [(- width len)] (write-char padchar port)))
                   (display sarg port)))]))))
 
-(define (flo-fmt val w d ovchar padchar plus? notational? sign-front? port)
-  (let* ([s (number->string val 10
-                            (cond-list
-                             [plus? 'plus]
-                             [notational? 'notational])
-                            d)]
+;; ~$ (monetary floating point)
+;; The order of parameters and their defaults differ from ~F
+;; We use notatational rounding (:-flag is used for sign-front.
+(define (make-format-currency fmtstr params flags)
+  ($ with-format-params ([digits 2]
+                         [pre-digits 1]
+                         [width 0]
+                         [padchar #\space])
+     (let1 arg (fr-peek-arg fmtstr argptr)
+       (if (real? arg)
+         (flo-fmt (inexact (fr-next-arg! fmtstr argptr))
+                  width digits pre-digits 
+                  #f padchar (has-@? flags) #t (has-:? flags) port)
+         ;; if arg isn't real, use ~wD.
+         (format-num-body fmtstr argptr port ctrl 10 #f
+                          '() width #\space #\, 3 #\.)))))
+
+(define (flo-fmt val width digits pre-digits
+                 ovchar padchar plus? notational? sign-front? port)
+  (let* ([s0 (number->string val 10
+                             (cond-list
+                              [plus? 'plus]
+                              [notational? 'notational])
+                             digits)]
+         [s (if (> pre-digits 0)        ;special for ~$
+              (let* ([m (#/^([+-]?)(\d+)/ s0)]
+                     [pre (m 2)])
+                (if (> pre-digits (string-length pre))
+                  (string-append 
+                   (m 1)
+                   (make-string (- pre-digits (string-length pre)) #\0)
+                   pre (m 'after))
+                  s0))
+              s0)]
          [l (string-length s)])
-    (if (< w l)
+    (if (< width l)
       (if ovchar
-        (dotimes [w] (write-char ovchar port))
+        (dotimes [width] (write-char ovchar port))
         (display s port))
       (receive (pre-sign body)
           (if (and sign-front? (memv (string-ref s 0) '(#\+ #\-)))
-            (values (substring s 0 1) (substring s 1))
+            (values (string-copy s 0 1) (string-copy s 1))
             (values "" s))
         (display pre-sign port)
-        (dotimes [(- w l)] (write-char padchar port))
+        (dotimes [(- width l)] (write-char padchar port))
         (display body port)))))
 
 ;; ~?
@@ -571,6 +607,7 @@
     [('x fs . ps) (make-format-num src ps fs 16 #f)]
     [('X fs . ps) (make-format-num src ps fs 16 #t)]
     [('F fs . ps) (make-format-flo src ps fs 'F)]
+    [('$ fs . ps) (make-format-currency src ps fs)]
     [((or 'R 'r) fs . ps) (make-format-r src ps fs (eq? (car tree) 'R))]
     [('? fs)      (make-format-recur src fs)]
     [('* fs . ps) (make-format-jump src ps fs)]

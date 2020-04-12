@@ -764,6 +764,7 @@
 (test* "format ~10f" "     abcde"  (format "~10,2f" 'abcde))
 (test* "format ~1,2f" "0.00"     (format "~1,2f" 0.003))
 (test* "format ~1,0f" "-1."      (format "~1,0f" -0.555))
+(test* "format ~,2f" "0.00"      (format "~,2f" 0))
 
 (test* "format carry over ~,4f" "0.0100" (format "~,4f" 0.00999))
 (test* "format carry over across decimal point ~,1f" "124.0"
@@ -781,6 +782,28 @@
        (format "~20,2f" (sqrt 1+i)))
 (test* "format ~f with complex"  "         +1.10+0.46i"
        (format "~20,2@f" (sqrt 1+i)))
+
+(test* "format ~$" "100.00"  (format "~$" 100))
+(test* "format ~$" "0.33"    (format "~$" 1/3))
+(test* "format ~$" "3.14"    (format "~$" 3.1415926))
+(test* "format ~$" "3.14"    (format "~2$" 3.1415926))
+(test* "format ~$" "3.142"   (format "~3$" 3.1415926))
+(test* "format ~$" "3.1416"  (format "~4$" 3.1415926))
+(test* "format ~$" "3.14159" (format "~5$" 3.1415926))
+(test* "format ~$ pre-digits" "00.00"   (format "~,2$" 0))
+(test* "format ~$ padding"    "   0.00" (format "~,,7$" 0))
+(test* "format ~$ padding"    "***0.00" (format "~,,7,'*$" 0))
+(test* "format ~$ sign"       "  -3.14" (format "~,,7$" -3.1416))
+(test* "format ~$ sign"       "  -3.14" (format "~,,7@$" -3.1416))
+(test* "format ~$ sign"       "  +3.14" (format "~,,7@$" 3.1416))
+(test* "format ~$ sign"       "  -3.14" (format "~,,7$" -3.1416))
+(test* "format ~$ sign"       "  -3.14" (format "~,,7@$" -3.1416))
+(test* "format ~$ sign"       "  +3.14" (format "~,,7@$" 3.1416))
+(test* "format ~$ sign"       "-  3.14" (format "~,,7:$" -3.1416))
+(test* "format ~$ sign"       "   3.14" (format "~,,7:$" 3.1416))
+(test* "format ~$ sign"       "-  3.14" (format "~,,7@:$" -3.1416))
+(test* "format ~$ sign"       "+  3.14" (format "~,,7@:$" 3.1416))
+(test* "format ~$ non-real"   "    zzz" (format "~,,7$" 'zzz))
 
 (test* "format ~nr" "wud0up"  (format "~36r" 1985913745))
 (test* "format ~nr" "    wud0up"  (format "~36,10r" 1985913745))
