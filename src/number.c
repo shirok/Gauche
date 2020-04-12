@@ -3453,8 +3453,13 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
         } else {
             SCM_DSTRING_PUTC(ds, '-');
         }
-        if (precision == 0) Scm_DStringPutz(ds, "0.", 2);
-        else Scm_DStringPutz(ds, "0.0", 3);
+        if (precision < 0) Scm_DStringPutz(ds, "0.0", 3);
+        else {
+            Scm_DStringPutz(ds, "0.", 2);
+            for (int i=0; i<precision; i++) {
+                Scm_DStringPutc(ds, '0');
+            }
+        }
         return;
     } else if (SCM_IS_INF(val)) {
         if (val < 0.0) Scm_DStringPutz(ds, "-inf.0", 6);
