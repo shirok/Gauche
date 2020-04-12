@@ -21631,6 +21631,57 @@ adding @code{:} flag.
 (format "~6,1:f" 1.15) @result{} "   1.2"
 @end example
 
+@item @b{~$}
+@c EN
+Parameters: @var{digits},@var{idigits},@var{width},@var{padchar}
+
+Floating-point formatting suitable for currency display.  The @var{digits}
+parameter specifies the number of digits after the decimal point (default 2).
+The @var{idigits} parameter specifies the minimum number of digits before
+the decimal point (default 1).  The @var{width} parameter specifies the 
+mininum number of characters for the entire display, 
+and if the number of printed characters are smaller than it,
+@var{padchar} is displayed on the left to fill the blank.  The default
+of @var{width} is 0, and the default of @var{padchar} is @code{#\space}.
+
+If @code{@@} flag is given and the argument is nonnegative, @code{+} is
+displayed.
+
+If @code{:} flag is given, the sign is displayed first, before any
+padding characters.
+
+If the argument isn't a real number, the object is formatted as if
+@code{~wD} directive is given (where @var{w} is @var{width}).
+
+Gauche specific: The number is rounded with notational rounding (see the
+description of @code{~F} above for the rounding mode).
+@c JP
+パラメータ: @var{digits},@var{idigits},@var{width},@var{padchar}
+
+通貨の表示に適した浮動小数点数フォーマット。
+@var{digits}は小数点以下に表示される桁数で、デフォルトは2です。
+@var{idigits}は小数点より前に表示される最小の桁数で、デフォルトは1です。
+@var{width}パラメータは全体の最少文字数を指定し、表示すべき文字がそれより少ない場合は
+@var{padchar}が左側に足されます。@var{width}のデフォルトは0、
+@var{padchar}のデフォルトは@code{#\space}です。
+
+@code{@@}フラグが与えられた場合、非負の値に@code{+}符号が表示されます。
+
+@code{:}フラグが与えられた場合、符号があればそれはパディングより前に表示されます。
+
+引数が実数でない場合は、あたかも@code{~wD} (@code{w}は@var{width}) が指定
+されたかのように表示されます。
+
+Gauche特有の機能として、数値は表示に基づいた丸め(notational rounding)で
+丸められます。表示に基づいた丸めについては上の@code{~F}の項の説明を参照してください。
+@c COMMON
+
+@example
+(map (cut format "~$" <>) '(1.23 4.5 6))
+  @result{} '("1.23" "4.50" "6.00")
+@end example
+
+
 @item @b{~?}
 @c EN
 Recursive formatting.  The argument for this directive must be a string
