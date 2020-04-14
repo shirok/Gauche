@@ -8105,7 +8105,7 @@ replacement, or a list of those.
 The special symbols @code{pre} and @code{post} use the substring to
 the left or right of the match as replacement, respectively.
 
-As a Gauche extension, @var{subst} could also be a procedure, which is
+@var{subst} could also be a procedure, which is
 called with the given match object and the result will be used as the
 replacement.
 
