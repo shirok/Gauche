@@ -1,3 +1,8 @@
+2020-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* .dir-locals.el: Gauche-specific settings for Emacs
+	  by @lassik https://github.com/shirok/Gauche/pull/670
+
 2020-04-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (make-format-currency): Add ~$ support.
