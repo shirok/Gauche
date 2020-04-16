@@ -9124,6 +9124,31 @@ could help catch these issues, with some performance overhead.
 @c COMMON
 
 @c EN
+Most of the time, string cursors aren't heap-allocated.  It is only
+allocated in heap either (1) when it points at a huge byte index,
+or (2) when you use @code{-fsafe-string-cursors} to enable extra
+run-time check.
+
+The threashold of byte index to cause a string cursor to be heap-allocated
+is 2^56 on 64bit systems, and 2^24 on 32bit systems, in the current
+implementation.  On 64bit systems you will never hit the threashold practically.
+On 32bit systems you may, if you have a huge string, but you may want to
+consider using other data structure rather than keeping such data in
+one string object.
+@c JP
+ほとんどの場合、文字列カーソルはヒープアロケーションを伴いません。
+文字列カーソルがヒープにアロケートされるのは (1)巨大なバイトインデックスを指す場合か、
+(2)@code{-fsafe-string-cursors}を使って追加の実行時検査を有効にした場合です。
+
+現在の実装では、カーソルがヒープアロケートされる閾値は、64bitシステムでは
+2^56、32bitシステムでは2^24です。
+64bitシステムでこの閾値を越えることは現実的にはありえないでしょう。
+32bitシステムでは、超巨大な文字列オブジェクトを使った場合にあり得るかもしれませんが、
+それほど大きなデータを扱うならば、
+単一の文字列ではなくデータ構造を工夫した方が良いかもしれません。
+@c COMMON
+
+@c EN
 Most procedures that take indexes in Gauche can also take
 cursors. Relying on this though is unportable. For example, the
 @code{substring} procedure in RnRS standards does not mention anything
@@ -9139,31 +9164,57 @@ Gauche版ではインデックスもカーソルも使えますが、RnRSでは�
 @c COMMON
 
 @deftp {Builtin Class} <string-cursor>
+@c EN
 Represents a cursor. When printed out, you'll see the
 @emph{byte offset} from the beginning of the string, not the character index.
+@c JP
+文字列カーソルのクラスです。書き出される時に表示される数字は、
+文字インデックスではなく@emph{文字へのバイトオフセット}です。
+@c COMMON
+
+@example
+(string-index->cursor "あかさたな" 2)
+ @result{} #<string-cursor 6>
+@end example
 @end deftp
 
 @defun string-cursor? @var{obj}
 [SRFI-130]
-
+@c EN
 Returns @code{#t} if @var{obj} is a string cursor, @code{#f} otherwise.
+@c JP
+@var{obj}が文字列カーソルなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun string-cursor-start @var{str}
 [SRFI-130]
-
+@c EN
 Returns a cursor pointing to the start of
-@var{str}. @code{string-cursor-start} returns a valid cursor on an
+a string @var{str}. It returns a valid cursor on an
 empty string too. It's the same as @code{string-cursor-end} in that
 case.
+@c JP
+文字列@var{str}の先頭を指す文字列カーソルを返します。
+@var{str}が空文字列でも有効な文字列カーソルが返されます。
+(@var{str}が空文字列の場合、@code{string-cursor-end}が返すカーソルは
+同じものです)。
+@c COMMON
 @end defun
 
 @defun string-cursor-end @var{str}
 [SRFI-130]
-
-Returns a cursor pointing to the end of @var{str} (including empty
-string). This cursor does not point to any valid character of the
-string.
+@c EN
+Returns a cursor pointing to the end of @var{str} (the point after
+the last character.)  If @var{str} is empty, it is the same
+as @code{string-cursor-start}.
+This cursor does not point to any valid character of the string.
+@c JP
+文字列@var{str}の末尾(最後の文字の直後)を指す文字列カーソルを返します。
+@var{str}が空文字列の場合、@code{string-cursor-start}が返すカーソルと
+同じものが返されます。
+このカーソルは有効な文字を指しません。
+@c COMMON
 @end defun
 
 @defun string-cursor-next @var{str} @var{cur}
