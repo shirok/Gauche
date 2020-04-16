@@ -48,27 +48,35 @@
 (define *info-file* "gauche-refe.info")
 
 (define-class <repl-info> () ;; a singleton
-  ((info  :init-keyword :info)   ;; <info>
+  ((info  :init-keyword :info)   ;; <info> or #f
    (index :init-keyword :index)  ;; hashtable name -> [(node-name line-no)]
    ))
 
 (define get-info
   (let1 repl-info
       (delay
-        (let ([info  (open-info-file (find-info-file))]
+        (let ([info  (and-let1 path (find-info-file)
+                       (open-info-file path))]
               [index (make-hash-table 'string=?)])
-          (dolist [index-page '("Function and Syntax Index"
-                                "Module Index"
-                                "Variable Index")]
-            (dolist [p ($ info-parse-menu $ info-get-node info index-page)]
-              (hash-table-push! index (entry-name (car p)) (cdr p))))
-          ;; class index doesn't have surrounding '<>', but we want to search
-          ;; with them.
-          (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
-            (hash-table-push! index #"<~(car p)>" (cdr p)))
-          ($ hash-table-for-each index
-             ;; reverse v here so that earlier entry listed first
-             (^[k v] (hash-table-put! index k (squash-entries (reverse v)))))
+          (if info
+            (begin
+              (dolist [index-page '("Function and Syntax Index"
+                                    "Module Index"
+                                    "Variable Index")]
+                (dolist [p ($ info-parse-menu $ info-get-node info index-page)]
+                  (hash-table-push! index (entry-name (car p)) (cdr p))))
+              ;; class index doesn't have surrounding '<>', but we want to search
+              ;; with them.
+              (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
+                (hash-table-push! index #"<~(car p)>" (cdr p)))
+              ($ hash-table-for-each index
+                 ;; reverse v here so that earlier entry listed first
+                 (^[k v] 
+                   (hash-table-put! index k (squash-entries (reverse v))))))
+            (warn "Couldn't find info document in ~s. \
+                   Maybe it has't been installed. \
+                   Check your Gauche installation.\n"
+                  (get-info-paths)))
           (make <repl-info>
             :info info :index index)))
     (^[] (force repl-info))))
@@ -151,14 +159,11 @@
     (append in-place syspath instpath)))
 
 (define (find-info-file)
-  (let1 paths (get-info-paths)
-    (or (find-file-in-paths *info-file*
-                            :paths paths
-                            :pred (^p (or (file-is-readable? p)
-                                          (file-is-readable? #"~|p|.gz")
-                                          (file-is-readable? #"~|p|.bz2"))))
-        (errorf "couldn't find info file ~s in paths: ~s" *info-file* paths))
-    ))
+  (find-file-in-paths *info-file*
+                      :paths (get-info-paths)
+                      :pred (^p (or (file-is-readable? p)
+                                    (file-is-readable? #"~|p|.gz")
+                                    (file-is-readable? #"~|p|.bz2")))))
 
 (define (handle-ambiguous-name entry-name)
   (let* ([keys (map x->string (hash-table-keys (~ (get-info)'index)))]
@@ -201,6 +206,8 @@
   (values))
 
 ;; API
+;; NB: The info slot may be #f, but in that case key never hits, so
+;; the proc won't be called.
 (define (info key)
   ($ lookup&show key
      (^[node&line]
@@ -210,6 +217,8 @@
                    (info-extract-definition node (cadr node&line))))))))
 
 ;; API
+;; NB: The info slot may be #f, but in that case key never hits, so
+;; the proc won't be called.
 (define (info-page key)
   ($ lookup&show key
      (^[node&line]

@@ -1,3 +1,8 @@
+2020-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm (get-info): Graceful handling for
+	  the case when info document couldn't be found.
+
 2020-04-14  Shiro Kawai  <shiro@acm.org>
 
 	* .dir-locals.el: Gauche-specific settings for Emacs
