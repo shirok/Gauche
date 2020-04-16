@@ -244,7 +244,10 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
     v->customErrorReporter = (proto? proto->customErrorReporter : SCM_FALSE);
-
+#if GAUCHE_SPLIT_STACK
+    v->lastError = NULL;
+#endif /*GAUCHE_SPLIT_STACK*/
+ 
     v->evalSituation = SCM_VM_EXECUTING;
 
     sigemptyset(&v->sigMask);
@@ -495,9 +498,20 @@ static void vm_unregister(ScmVM *vm)
 #define ARGP  (vm->argp)
 #define BASE  (vm->base)
 
-/* return true if ptr points into the stack area */
+/* IN_STACK_P(ptr) returns true if ptr points into the active stack area.
+   IN_FULL_STACK_P(ptr) returns true if ptr points into any part of the stack.
+ */
+
+#if GAUCHE_SPLIT_STACK
 #define IN_STACK_P(ptr)                         \
-      ((unsigned long)((ptr) - vm->stackBase) < SCM_VM_STACK_SIZE)
+    ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
+#define IN_FULL_STACK_P(ptr)                    \
+    ((ptr) >= vm->stack && (ptr) < vm->stackend)
+#else  /*!GAUCHE_SPLIT_STACK*/
+#define IN_STACK_P(ptr)                                                 \
+      ((unsigned long)((ptr) - vm->stack) < SCM_VM_STACK_SIZE)
+#define IN_FULL_STACK_P(ptr) IN_STACK_P(ptr)
+#endif /*!GAUCHE_SPLIT_STACK*/
 
 /* Check if stack has room at least size bytes. */
 #define CHECK_STACK(size)                                       \
@@ -2068,6 +2082,11 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
         int numVals = 0;
 
+#if GAUCHE_SPLIT_STACK
+        vm->lastError = vm->cont;
+        vm->stackBase = vm->sp;
+#endif
+        
         /* To conform SRFI-34, the error handler (clauses in 'guard' form)
            should be executed with the same continuation and dynamic
            environment of the guard form itself.  That means the dynamic

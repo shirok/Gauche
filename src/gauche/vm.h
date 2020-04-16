@@ -400,6 +400,14 @@ struct ScmVMRec {
     ScmObj *stack;              /* bottom of allocated stack area */
     ScmObj *stackBase;          /* base of current stack area  */
     ScmObj *stackEnd;           /* end of current stack area */
+#if GAUCHE_SPLIT_STACK
+    /* EXPERIMENTAL: Save the continuation when an error occurs, used for
+       better error diagnostics.  Reset by the "cross the border" APIs
+       such as Scm_Eval().  This can point into the stack, but must be
+       saved when save_cont() is called.
+     */
+    ScmContFrame *lastError;
+#endif /*GAUCHE_SPLIT_STACK*/
 
 #if GAUCHE_FFX
     ScmFlonum *fpsp;            /* flonum stack pointer.  we call it 'stack'
@@ -463,6 +471,7 @@ struct ScmVMRec {
                                    the delimited flag is set when 'shift'
                                    appears in 'reset' and the end marker of
                                    partial continuation is set. */
+
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);

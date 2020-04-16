@@ -142,6 +142,10 @@ SCM_DECL_BEGIN
    unified keyword-symbol system */
 #define GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION 1
 
+/* Experimental: Enable lightweight continuation capturing in exception
+   handling. */
+#define GAUCHE_SPLIT_STACK 0
+
 /* Include appropriate threading interface.  Threading primitives are
    abstracted with SCM_INTERNAL_* macros and ScmInternal* typedefs.
    See gauche/uthread.h for the semantics of these primitives. */
