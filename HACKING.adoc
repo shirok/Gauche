@@ -139,3 +139,16 @@ To keep ChangeLog in that role *and* to be friendly to distributed
 development, I suggest that you don't update ChangeLog unless you
 feel you really want to.  If I see your change is better mentioned
 in ChangeLog, I'll update it separately.
+
+
+== CODING STYLE
+
+We aren't picky about coding style, but adopt some Gauche-specific
+style, especially for Gauche macros.  For Emacs users, such style is 
+written in `.dir-locals.el` in the top source directory.  If you're
+using lisp-local package (available from MELPA), Emacs will ask you to
+apply the settings.  Answering with `!` causes Emacs to remember your
+choice and the settings will be applied in future without asking.
+
+
+
