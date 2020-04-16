@@ -365,6 +365,12 @@ AC_CHECK_TOOLS(AR, ar gar)
 AC_CHECK_PROGS(MAKEINFO, makeinfo)
 AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
 
+if test -z "$MAKEINFO" -o -z "$GZIP_PROGRAM"; then
+  build_doc="No (requires makeinfo and gzip to build documents)"
+else
+  build_doc=Yes
+fi
+
 dnl for cross build
 AC_CHECK_PROGS(BUILD_CC, ${build}-gcc ${build_alias}-gcc gcc cc)
 
@@ -941,6 +947,7 @@ AC_MSG_RESULT(
 This Gauche has been configured with the following parameters:
            version: $GAUCHE_VERSION
          multibyte: $GAUCHE_CHAR_ENCODING
+     documentation: $build_doc
               slib: $SLIB_DIR
             thread: $GAUCHE_THREAD_TYPE
            tls/ssl: $GAUCHE_TLS_TYPES
