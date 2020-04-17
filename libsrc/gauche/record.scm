@@ -109,7 +109,8 @@
 
 (for-each-subst
  (list vector u8vector s8vector u16vector s16vector u32vector s32vector
-       u64vector s64vector f16vector f32vector f64vector)
+       u64vector s64vector f16vector f32vector f64vector
+       c32vector c64vector c128vector)
  (define-class <??-pseudo-record-meta> (<pseudo-record-meta>) ())
  (define-class <??-pseudo-record> () ()
    :metaclass <??-pseudo-record-meta>)
@@ -130,7 +131,8 @@
       (error "pseudo-rtd requires a class object <vector>, <list>, \
               <u8vector>, <s8vector>, <u16vector>, <s16vector>, \
               <u32vector>, <s32vector>, <u64vector>, <s64vector>, \
-              <f16vector>, <f32vector>, <f64vector>, \
+              <f16vector>, <f32vector>, <f64vector>, <c32vector>, \
+              <c64vector>, <c128vector>, \
               or other pseudo-rtd, but got" class)))
 
 (define-method initialize ((class <record-meta>) initargs)
@@ -340,7 +342,8 @@
 
 (for-each-subst
  (list vector u8vector s8vector u16vector s16vector u32vector s32vector
-       u64vector s64vector f16vector f32vector f64vector)
+       u64vector s64vector f16vector f32vector f64vector
+       c32vector c64vector c128vector)
  (define-ctor-generators %??-ctor
    `(?? ,@vars)
    `(apply ?? ,@(cdr tmps) ,(car tmps))
@@ -405,7 +408,8 @@
 
 (for-each-subst
  (list vector u8vector s8vector u16vector s16vector u32vector s32vector
-       u64vector s64vector f16vector f32vector f64vector)
+       u64vector s64vector f16vector f32vector f64vector
+       c32vector c64vector c128vector)
  (define-rtd-methods <??-pseudo-record-meta>
    %??-ctor
    (??-ref)
