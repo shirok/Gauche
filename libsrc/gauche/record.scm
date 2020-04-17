@@ -287,6 +287,8 @@
 
 (define (rtd? obj) (is-a? obj <record-meta>))
 
+;; The following several macros are only used locally, so legacy macros are ok.
+
 ;; For conciseness.  We need to use macros (for now) to ensure Gauche compiler
 ;; optimize the gref away---a kludge not recommended in general.
 (define-macro (%make)  '(with-module gauche.object %make-record))
@@ -306,7 +308,7 @@
         [else (lambda (,@(cdr tmps) . ,(car tmps))
                 ,,rest-maker)])))
 
- (define-macro (define-ctor-generators ctor-name-base make1 make* makev)
+(define-macro (define-ctor-generators ctor-name-base make1 make* makev)
   (define default-name (sym+ ctor-name-base '-default))
   (define custom-name  (sym+ ctor-name-base '-custom))
   `(begin
@@ -430,6 +432,13 @@
                 ($ slot-definition-name
                    (find (^s (= num (get-keyword :index (cdr s))))
                          (class-slots class)))))))
+
+;; Manually seal infrastructure
+;; (Hopefully this will help inlining constructors and accessors in future;
+;;  for now, this has no effect.)
+(for-each (with-module gauche.object generic-seal!)
+          (list %rtd-predicate %rtd-constructor %rtd-accessor %rtd-mutator))
+
 
 ;;;
 ;;; Syntactic layer
