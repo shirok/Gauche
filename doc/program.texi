@@ -246,36 +246,33 @@ as a script.
 This option controls compiler and runtime behavior.  For now we have
 following options available:
 @table @asis
+@item case-fold
+Ignore case for symbols.
+@item include-verbose
+Reports whenever a file is included.
+Useful to check precisely which files are included in what order.
+
+@item load-verbose
+Reports whenever a file is loaded.
+Useful to check precisely which files are loaded in what order.
 @item no-inline
 Prohibits the compiler from inlining procedures and constants. Equivalent to
 no-inline-globals, no-inline-locals, no-inline-constants
 and no-inline-setters combined.
+@item no-inline-constants
+Prohibits the compiler from inlining constants.
 @item no-inline-globals
 Prohibits the compiler from inlining global procedures.
 @item no-inline-locals
 Prohibits the compiler from inlining local procedures.
-@item no-inline-constants
-Prohibits the compiler from inlining constants.
 @item no-inline-setters
 Prohibits the compiler from inlining setters.
-@item no-post-inline-pass
-Prohibits the compiler from running post-inline optimization pass.
 @item no-lambda-lifting-pass
 Prohibits the compiler from running lambda-lifting pass.
-@item load-verbose
-Reports whenever a file is loaded.
-Useful to check precisely which files are loaded in what order.
-@item include-verbose
-Reports whenever a file is included.
-Useful to check precisely which files are included in what order.
-@item warn-legacy-syntax
-Warns if the reader sees legacy hex-escape syntax in string literals.
-@xref{Reader lexical mode}.
+@item no-post-inline-pass
+Prohibits the compiler from running post-inline optimization pass.
 @item no-source-info
 Don't keep source information for debugging.  Consumes less memory.
-@item case-fold
-Ignore case for symbols.
-@xref{Case-sensitivity}.
 @item safe-string-cursors
 String cursors used on wrong strings will raise an error. This may
 cause performance problems because all cursors will be allocated on
@@ -283,7 +280,11 @@ heap. @xref{String cursors}.
 @item test
 Adds "@code{../src}" and "@code{../lib}" to the load path before loading
 initialization file.  This is useful when you want to test the
-compiled @code{gosh} interpreter without installing it.
+compiled @code{gosh} REPL without installing it.
+@item warn-legacy-syntax
+Warns if the reader sees legacy hex-escape syntax in string literals.
+@xref{Reader lexical mode}.
+@xref{Case-sensitivity}.
 @end table
 @c JP
 このオプションはコンパイラとランタイムの動作に影響を与えます。
@@ -484,6 +485,38 @@ the return value of @code{sys-available-processors}.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_CHECK_UNDEFINED_TEST
+@c EN
+Warn if @code{#<undef>} is used in the test expression of branch.
+
+In boolean context, @code{#<undef>} counts true.  It is also
+often the case that a procedure returns @code{#<undef>} when
+the return value doesn't matter, and you shouldn't rely on
+the value that is supposed not to matter--the procedure may
+change the return value in future (which should be ok, since
+the value shouldn't have mattered), which can cause unintentional
+and hard-to-track bugs.
+@xref{Undefined values}, for the details.
+
+We strongly recommend users to turn on this warning.  In future,
+we plan to make this default.
+@c JP
+@code{#<undef>}が条件式のテスト式に使われた場合に警告を出します。
+
+真偽値判定では@code{#<undef>}は真とみなされます。しかし、
+@code{#<undef>}を返す手続きはしばしば、
+「戻り値に意味はない」ことを示すためにそれを返しています。
+戻り値に意味がないなら、その値に依存したコードを書くべきではありません。
+もし、手続きが将来、もともと意味が無いのだからと戻り値を変えた場合に、
+@code{#<undef>}に依存してたコードは壊れる可能性があります。
+詳しくは@xref{Undefined values}を参照してください。
+
+この機能はなるべくONtにしておくようにお勧めします。
+将来はデフォルトで警告を出すようにする予定です。
+@c COMMON
+@end deftp
+
+
 @deftp {Environment variable} GAUCHE_DYNLOAD_PATH
 @c EN
 You can specify additional load paths for dynamically loaded
@@ -525,6 +558,20 @@ as symbols or not.  @xref{Keywords}, for the details.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_LEGACY_DEFINE
+@c EN
+Make the behavior of toplevel @code{define} the same as
+0.9.8 and before.
+It allows certain legacy programs that aren't valid R7RS.
+@xref{Into the Scheme-Verse}, for the details.
+@c JP
+トップレベルの@code{define}の振る舞いを0.9.8およびそれ以前のものに
+合わせます。これは、厳密にはR7RSに従わない、古いコードを走らせる必要が
+ある場合に使ってください。詳しくは
+@ref{Into the Scheme-Verse}参照。
+@c COMMON
+@end deftp
+
 @deftp {Environment variable} GAUCHE_LOAD_PATH
 @c EN
 You can specify additional load paths by this environment
@@ -541,6 +588,23 @@ files to load.
 
 GaucheがロードするSchemeファイルを見つける方法について詳しくは
 @ref{Loading Scheme file}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_MUTABLE_LITERALS
+@c EN
+Allow literal lists and vectors to be mutated.  Such code isn't a
+valid Scheme program and causes an error,
+but Gauche didn't enforce the restriction
+on 0.9.9 and before, so some legacy code may accidentally mutates
+literals.  Set this environment variables to run such old programs.
+@xref{Literals}, for the details.
+@c JP
+リテラルリストとリテラルベクタの改変を許します。
+そういったコードは正しいSchemeプログラムではなく、今のGaucheはエラーを投げますが、
+0.9.9とそれ以前のバージョンではリテラルリストとリテラルベクタの変更はチェックされて
+いませんでした。うっかりリテラルを変更してしまっている古いコードを走らせたい場合のみ
+この環境変数をセットしてください。詳しくは@xref{Literals}参照。
 @c COMMON
 @end deftp
 
