@@ -1,6 +1,12 @@
 2020-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/libsys.scm (sys-setugid?): eXpose Scm_IsSugid() to Scheme.
+
 	* src/system.c (Scm_IsSugid): Use issetugid() if the system has it.
+	  If it is not available, we remember the initial state of real and
+	  effective uid/gid.  Just comparing them when this function is called
+	  isn't good, for suid-ed process may have changed its real and
+	  effective uids match.
 
 2020-04-16  Shiro Kawai  <shiro@acm.org>
 

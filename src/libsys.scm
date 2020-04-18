@@ -988,6 +988,8 @@
 (define-cproc sys-geteuid () ::<int> geteuid)
 (define-cproc sys-getuid ()  ::<int> getuid)
 
+(define-cproc sys-setugid? () ::<boolean> Scm_IsSugid) ; xBSD's issetugid()
+
 (define-cproc sys-getpid ()  ::<int> getpid)
 (define-cproc sys-getppid () ::<int> getppid)
 

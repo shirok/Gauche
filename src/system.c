@@ -1372,17 +1372,20 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
 };
 
 /*
- * check if we're suid/sgid-ed.
+ * Check if we're suid/sgid-ed.
  */
+
+/* We "remember" the initial state, in case issetugid() isn't available.
+   This isn't perfect, for the process may change euid/egid before calling
+   Scm_Init().  */
+static int initial_ugid_differ = FALSE;
+
 int Scm_IsSugid(void)
 {
 #if HAVE_ISSETUGID
     return issetugid();
-#elif !defined(GAUCHE_WINDOWS)
-    /* This isn't perfect, but for our purposes it's enough. */
-    return (geteuid() != getuid() || getegid() != getgid());
-#else  /* GAUCHE_WINDOWS */
-    return FALSE;
+#else
+    return initial_ugid_differ;
 #endif /* GAUCHE_WINDOWS */
 }
 
@@ -3052,6 +3055,8 @@ void Scm__InitSystem(void)
     key_absolute = SCM_MAKE_KEYWORD("absolute");
     key_expand = SCM_MAKE_KEYWORD("expand");
     key_canonicalize = SCM_MAKE_KEYWORD("canonicalize");
+
+    initial_ugid_differ = (geteuid() != getuid() || getegid() != getgid());
 
 #ifdef GAUCHE_WINDOWS
     init_winsock();

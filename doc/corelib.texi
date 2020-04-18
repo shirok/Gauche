@@ -26235,14 +26235,15 @@ group id (@pxref{Unix groups and users}).
 
 @defun sys-getuid
 @defunx sys-geteuid
+[POSIX]
 @c EN
-[POSIX] Returns integer value of real and effective user id of the
+Returns integer value of real and effective user id of the
 current process, respectively.
 Use @code{sys-uid->user-name} or @code{sys-getpwuid} to obtain
 the user's name and other information associated to the returned
 user id (@pxref{Unix groups and users}).
 @c JP
-[POSIX] 現在のプロセスの実ユーザIDと実効ユーザIDをそれぞれ整数で返します。
+現在のプロセスの実ユーザIDと実効ユーザIDをそれぞれ整数で返します。
 返されたユーザIDからユーザ名その他の情報を得るには
 @code{sys-uid->user-name}や@code{sys-getpwuid}を使って下さい
 (@ref{Unix groups and users}参照)。
@@ -26250,10 +26251,33 @@ user id (@pxref{Unix groups and users}).
 @end defun
 
 @defun sys-setuid uid
+[POSIX]
 @c EN
-[POSIX] Sets the effective user id of the current process.
+Sets the effective user id of the current process.
 @c JP
-[POSIX] 現在のプロセスの実効ユーザIDをセットします。
+現在のプロセスの実効ユーザIDをセットします。
+@c COMMON
+@end defun
+
+@defun sys-setugid?
+@c EN
+Returns true iff the process is running with suid/sgid-ed (that is,
+the program's suid and/or sgid bit is set.)
+
+Note: If the platform has @code{issetugid()} call, we use it.
+Otherwise, we remember the if real (user|group) id and
+effective (user|group) id differ or not at the initialization time.
+(In the latter case, we can't detect the case that the process 
+changes [e]uid/[e]gid before initializing Gauche; keep it in mind if
+libgauche is used as an embedded Scheme engine).
+@c JP
+プロセスがsuid/sgidされていたら@code{#t}を、そうでなければ@code{#f}を返します。
+
+註：プラットフォームが@code{issetugid()}を持っていればそれを呼びます。
+そうでない場合は、初期化時にリアルuid/gidと実効uid/gidが異なるかどうかを
+記憶しています。(後者の場合、Gaucheが組み込みSchemeエンジンとして使われていて、
+プロセスがGauche初期化前に[e]uid/[e]gidを変更していたケースは検出できないことに
+留意してください)。
 @c COMMON
 @end defun
 
