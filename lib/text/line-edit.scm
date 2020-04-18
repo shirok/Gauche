@@ -705,8 +705,13 @@
   ((name      :init-keyword :name)
    (handler   :init-keyword :handler) ; handler
    (docstring :init-keyword :docstring)     ; document string
-   ))
 
+   (all-commands :allocation :class
+                 :init-form (make-hash-table 'eq?))
+   ))
+(define-method initialize ((c <edit-command>) initargs)
+  (next-method)
+  (hash-table-put! (~ c'all-commands) (~ c'name) c))
 (define-method object-apply ((c <edit-command>) ctx buf key)
   ((~ c'handler) ctx buf key))
 
