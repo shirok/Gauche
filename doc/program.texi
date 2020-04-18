@@ -547,6 +547,21 @@ This is used by @code{ed} procedure in @code{gauche.interactive} module.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_HISTORY_FILE
+@c EN
+If Gauche is invoked with @code{GAUCHE_READ_EDIT} enabled (see below),
+the REPL history is kept in @file{~/.gosh_history} by default.
+This environment variable overrides the history file.
+To prohibit saving history, set an empty string to this variable.
+If the process is suid/sgid-ed, history won't be saved.
+@c JP
+@code{GAUCHE_READ_EDIT}が有効になっている場合、REPLのヒストリが
+@file{~/.gosh_history}に保存されます。この環境変数で
+別のヒストリ保存ファイル名を指定できます。
+(プロセスがsuid/sgidされている場合はヒストリは保存されません)。
+@c COMMON
+@end deftp
+
 @deftp {Environment variable} GAUCHE_KEYWORD_DISJOINT
 @deftpx {Environment variable} GAUCHE_KEYWORD_IS_SYMBOL
 @c EN

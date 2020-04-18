@@ -74,7 +74,7 @@
                     (set! buffer (open-input-string (string-append input "\n")))
                     (try))))
               x))))
-      (if hist-file
+      (when hist-file
         (read-line/load-history ctx (expand-path hist-file)))
       (values (read-1 read)
               (read-1 read-line)

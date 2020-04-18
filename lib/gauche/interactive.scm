@@ -245,7 +245,18 @@
           (unless (eof-object? expr) (skipper))
           expr)))))
 
-;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
+;; History file, used by GAUCHE_READ_EDIT mode.
+;; The default history file is ~/.gosh_history.  The user can override
+;; it with the environment variable GAUCHE_HISTORY_FILE, unless
+;; the process is suid/sgid-ed.
+;; To prohibit history saving, set an empty string to "GAUCHE_HISTORY_FILE".
+(define (get-history-filename)
+  (let1 h (sys-getenv "GAUCHE_HISTORY_FILE")
+    (cond [(or (equal? h "") (sys-setugid?)) #f] ; do not save history file
+          [h    (sys-normalize-pathname h :absolute #t :expand #t)]
+          [else (sys-normalize-pathname "~/.gosh_history" :expand #t)])))
+
+;; Environment GAUCHE_READ_EDIT enables editing mode.
 ;; Note that, at this moment, text.line-edit isn't complete. Once we
 ;; complete text.line-edit, we make the feature available through
 ;; command-line options of gosh.
@@ -254,7 +265,7 @@
   (receive (r rl skipper ctx)
       (if (sys-getenv "GAUCHE_READ_EDIT")
         (make-editable-reader (^[] (default-prompt-string "$"))
-                              (sys-getenv "GAUCHE_HISTFILE"))
+                              (get-history-filename))
         (values #f #f #f #f))
     (if (and r rl skipper ctx)
       (values (^[] #f)

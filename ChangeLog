@@ -1,5 +1,10 @@
 2020-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive.scm (get-history-filename): Changed
+	  history file environment variable from GAUCHE_HISTFILE to
+	  GAUCHE_HISTORY_FILE; we generally avoid abbreviation.
+	  Also we ignore it when process is suid/sgid-ed.
+
 	* src/libsys.scm (sys-setugid?): eXpose Scm_IsSugid() to Scheme.
 
 	* src/system.c (Scm_IsSugid): Use issetugid() if the system has it.
