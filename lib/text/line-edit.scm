@@ -254,7 +254,7 @@
              (clear-mark! ctx buffer)
              (push-undo! ctx (self-insert-command ctx buffer h))
              (loop #t)]
-            [(procedure? h)
+            [(applicable? h <top> <top> <top>)
              (match (h ctx buffer ch)
                [(? eof-object?) (eofread)]
                ['nop       (loop redisp)]
@@ -695,53 +695,89 @@
 ;;; Commands
 ;;;
 
-;; A command is a procedure that takes <line-edit-context>, <gap-buffer>,
-;; and <key>.
+;; Editor command, invoked by specific key sequence.
+;; Its handler is a procedure that takes <line-edit-context>,
+;; <gap-buffer>, and <key>.
 ;; Return value indicates the action to be taken by the main editor
 ;; loop.  See the read-line/edit above for the details.
 
-(define (self-insert-command ctx buf key)
+(define-class <edit-command> ()
+  ((name      :init-keyword :name)
+   (handler   :init-keyword :handler) ; handler
+   (docstring :init-keyword :docstring)     ; document string
+   ))
+
+(define-method object-apply ((c <edit-command>) ctx buf key)
+  ((~ c'handler) ctx buf key))
+
+(define-syntax define-edit-command
+  (syntax-rules ()
+    [(_ (name . args) docstring . body)
+     (define name (make <edit-command>
+                    :name 'name
+                    :handler (lambda args . body)
+                    :docstring docstring))]))
+
+
+(define-edit-command (self-insert-command ctx buf key)
+  "Insert typed character at the cursor, and position the cursor after it."
   (gap-buffer-edit! buf `(i #f ,(x->string key))))
 
-(define (quoted-insert ctx buf key)
+(define-edit-command (quoted-insert ctx buf key)
+  "Read next keystroke and insert it into the buffer at the cursor."
   (let1 ch (getch (~ ctx'console)) ; TODO: octal digits input
     (gap-buffer-edit! buf `(i #f ,(x->string ch)))))
 
-(define (insert-parentheses ctx buf key)
+(define-edit-command (insert-parentheses ctx buf key)
+  "Insert a pair of parentheses at the cursor, and position the cursor \
+   between them."
   (macro! ctx #\( #\) (ctrl #\b)))
 
-(define (commit-input ctx buf key)
+(define-edit-command (commit-input ctx buf key)
+  "Commit the current buffer content as the finished input."
   'commit)
 
-(define (commit-or-newline ctx buf key)
+(define-edit-command (commit-or-newline ctx buf key)
+  "If the current buffer content consists a complete input, \
+   commit it as the finished input.  Otherwise, insert a newline."
   (or (and-let* ([pred (~ ctx'input-continues)]
                  [ (pred (gap-buffer->string buf)) ])
         (gap-buffer-edit! buf '(i #f "\n")))
       'commit))
 
-(define (delete-char ctx buf key)
+(define-edit-command (delete-char ctx buf key)
+  "Delete a single character at the cursor. \
+   If the cursor is at the end of the buffer, do nothing."
   (if (not (gap-buffer-gap-at? buf 'end))
     (gap-buffer-edit! buf '(d #f 1))
     'unchanged))
 
-(define (eot-or-delete-char ctx buf key)
+(define-edit-command (eot-or-delete-char ctx buf key)
+  "If the buffer is empty, commit input as EOF.  Otherwise, delete \
+   one character at the cursor."
   (if (zero? (gap-buffer-content-length buf))
     (eof-object)
     (delete-char ctx buf key)))
 
-(define (delete-backward-char ctx buf key)
+(define-edit-command (delete-backward-char ctx buf key)
+  "Delete one character right before the cursor. \
+   If the current point is beginning of the buffer, do nothing."
   (if (not (gap-buffer-gap-at? buf 'beginning))
     (let1 p-1 (- (gap-buffer-pos buf) 1)
       (gap-buffer-edit! buf `(d ,p-1 1)))
     'unchanged))
 
-(define (backward-char ctx buf key)
+(define-edit-command (backward-char ctx buf key)
+  "Move the cursor one character backward.  If the cursor is at the beginning, \
+   do nothing."
   (if (not (gap-buffer-gap-at? buf 'beginning))
     (begin (gap-buffer-move! buf -1 'current)
            'moved)
     'unchanged))
 
-(define (forward-char ctx buf key)
+(define-edit-command (forward-char ctx buf key)
+  "Move the cursor one character forward.  If the cursor is at the end of the \
+   buffer, do nothing."
   (if (not (gap-buffer-gap-at? buf 'end))
     (begin (gap-buffer-move! buf 1 'current)
            'moved)
@@ -762,47 +798,56 @@
      [else
       result])))
 
-(define (backward-word ctx buf key)
+(define-edit-command (backward-word ctx buf key)
+  "Move the cursor one word backward."
   (let* ([res1 (move-word! buf -1 #[\W] -1)]
          [res2 (move-word! buf -1 #[\w] -1)])
     (if (or res1 res2) 'moved 'unchanged)))
 
-(define (forward-word ctx buf key)
+(define-edit-command (forward-word ctx buf key)
+  "Move the cursor one word forward."
   (let* ([res1 (move-word! buf 1 #[\W] 0)]
          [res2 (move-word! buf 1 #[\w] 0)])
     (if (or res1 res2) 'moved 'unchanged)))
 
-(define (move-beginning-of-buffer ctx buf key)
+(define-edit-command (move-beginning-of-buffer ctx buf key)
+  "Position the cursor at the beginning of the buffer."
   (if (not (gap-buffer-gap-at? buf 'beginning))
     (begin (gap-buffer-move! buf 0 'beginning)
            'moved)
     'unchanged))
 
-(define (move-end-of-buffer ctx buf key)
+(define-edit-command (move-end-of-buffer ctx buf key)
+  "Position the cursor at the end of the buffer."
   (if (not (gap-buffer-gap-at? buf 'end))
     (begin (gap-buffer-move! buf 0 'end)
            'moved)
     'unchanged))
 
-(define (move-beginning-of-line ctx buf key)
+(define-edit-command (move-beginning-of-line ctx buf key)
+  "Move the cursor at the beginning of the current line."
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (zero? col)
-        'unchanged
-        (begin
-          (buffer-set-line&col! buf lines 0)
-          'moved))))
+      'unchanged
+      (begin
+        (buffer-set-line&col! buf lines 0)
+        'moved))))
 
-(define (move-end-of-line ctx buf key)
+(define-edit-command (move-end-of-line ctx buf key)
+  "Move the cursor at the end of the current line."
   (match-let1 (lines . col) (buffer-current-line&col buf)
-    (begin
-      (buffer-set-line&col! buf lines 9999)
-      'moved)))
+    (buffer-set-line&col! buf lines 9999)
+    'moved))
 
-(define (set-mark-command ctx buf key)
+(define-edit-command (set-mark-command ctx buf key)
+  "Set mark at the current cursor position."
   (set-mark! ctx buf)
   'moved)
 
-(define (kill-line ctx buf key)
+(define-edit-command (kill-line ctx buf key)
+  "If the cursor is at the end of line, delete the newline character and \
+   combine the line with the next line.  Otherwise, delete characters from \
+   the cursor to the end of the line."
   (cond
    [(gap-buffer-gap-at? buf 'end)
     'unchanged]
@@ -811,7 +856,9 @@
    [else
     (macro! ctx (ctrl #\@) (ctrl #\e) (ctrl #\w))]))
 
-(define (kill-region ctx buf key)
+(define-edit-command (kill-region ctx buf key)
+  "Delete characters between the cursor and the mark, and save them into \
+   the kill ring.  If there's no active mark, do nothing."
   (match (selected-range ctx buf)
     [(start . end)
      ;; NB: the cursor is either on start or on end.  either way,
@@ -821,20 +868,27 @@
        (save-kill-ring ctx (caddr e)))]
     [_ 'unchanged]))
 
-(define (kill-ring-save ctx buf key)
+(define-edit-command (kill-ring-save ctx buf key)
+  "Save the characters between the cursor and the mark into the kill-ring. \
+   The contents of the buffer isn't changed, but the mark is cleared."
   (match (selected-range ctx buf)
     [(start . end)
      (save-kill-ring ctx (gap-buffer->string buf start end))
      'visible] ; this clears selection
     [_ 'unchanged]))
 
-(define (kill-word ctx buf key)
+(define-edit-command (kill-word ctx buf key)
+  "Delete characters from the cursor to the end of the word, and save them \
+   into the kill ring.  The mark is cleared."
   (macro! ctx (ctrl #\@) (alt #\f) (ctrl #\w)))
 
-(define (backward-kill-word ctx buf key)
+(define-edit-command (backward-kill-word ctx buf key)
+  "Delete characters from the cursor to the beginning of the word, and save \
+   them into the kill ring.  The mark is cleared."
   (macro! ctx (ctrl #\@) (alt #\b) (ctrl #\w)))
 
-(define (refresh-display ctx buf key)
+(define-edit-command (refresh-display ctx buf key)
+  "Redraw contents of the buffer."
   (reset-terminal (~ ctx'console))
   (move-cursor-to (~ ctx'console) 0 0) ;redundant, but mintty has problem without this
   (show-prompt ctx)
@@ -842,7 +896,9 @@
   'visible)
 
 ;; NB: This command may modify undo queue
-(define (prev-history ctx buf key)
+(define-edit-command (prev-history ctx buf key)
+  "Replace the buffer content with the last item in the history currently \
+   looking at."
   (if (< (history-pos ctx) (- (history-size ctx) 1))
     (begin
       (save-history-transient ctx buf)
@@ -855,7 +911,9 @@
     'unchanged))
 
 ;; NB: This command may modify undo queue
-(define (next-history ctx buf key)
+(define-edit-command (next-history ctx buf key)
+  "Replace the buffer content with the next item in the history currently \
+   looking at."
   (if (> (history-pos ctx) -1)
     (begin
       (save-history-transient ctx buf)
@@ -867,20 +925,27 @@
         'visible))
     'unchanged))
 
-(define (prev-line-or-history ctx buf key)
+(define-edit-command (prev-line-or-history ctx buf key)
+  "If the cursor is at the first line, do prev-sitory.  Otherwise, \
+   move the cursor one line up."
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (zero? lines)
       (prev-history ctx buf key)
       (begin (buffer-set-line&col! buf (- lines 1) col) 'moved))))
 
-(define (next-line-or-history ctx buf key)
+(define-edit-command (next-line-or-history ctx buf key)
+  "If the cursor is at the last line, do next-sitory.  Otherwise, \
+   move the cursor one line down."
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (= lines (buffer-num-lines buf))
       (next-history ctx buf key)
       (begin (buffer-set-line&col! buf (+ lines 1) col) 'moved))))
   
        
-(define (transpose-chars ctx buf key)
+(define-edit-command (transpose-chars ctx buf key)
+  "Exchange characters on the cursor and before the cursor and position \
+   the cursor one character before.  If the buffer is empty, do nothing. \
+   If the buffer has only one character, just move the cursor."
   (cond [(gap-buffer-gap-at? buf 'beginning) 'unchanged]
         [(= (gap-buffer-content-length buf) 1) ; special case
          (gap-buffer-move! buf 0)
@@ -893,7 +958,9 @@
                [prev (gap-buffer-ref buf (gap-buffer-pos buf))])
            (gap-buffer-edit! buf `(c #f 2 ,(string cur prev))))]))
 
-(define (yank ctx buf key)
+(define-edit-command (yank ctx buf key)
+  "Insert the last chunk in the kill ring at the cursor \
+   position."
   (if (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
     (begin
       (set! (~ ctx'last-yank) 0)
@@ -903,7 +970,9 @@
         `(yanked ,(gap-buffer-edit! buf `(i #f ,yanked-text)))))
     'unchanged))
 
-(define (yank-pop ctx buf key)
+(define-edit-command (yank-pop ctx buf key)
+  "Replace just yanked chunk of characters with the other chunk in the kill \
+   ring."
   (if (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
            (>= (~ ctx'last-yank) 0))
     (let* ([text (pop-yank-line ctx)]
@@ -914,7 +983,8 @@
       `(yanked ,edit))
     'unchanged))
 
-(define (undo ctx buf key)
+(define-edit-command (undo ctx buf key)
+  "Undo the last change."
   (if (not (queue-empty? (~ ctx'undo-stack)))
     (let* ([undo-command (queue-pop! (~ ctx'undo-stack))]
            [redo-command (gap-buffer-edit! buf undo-command)])
@@ -923,15 +993,19 @@
       'undone)
     'unchanged))
 
-(define (keyboard-quit ctx buf key)
+(define-edit-command (keyboard-quit ctx buf key)
+  "Reset yank sequence, clear a mark, and break undo sequence.  Basically, \
+   break whatever work that spans for several commands."
   (beep (~ ctx'console))
   'visible)
 
-(define (undefined-command ctx buf key)
+(define-edit-command (undefined-command ctx buf key)
+  "Placeholder for a keystroke that hasn't assigned to any command."
   (beep (~ ctx'console))
   'visible)
 
-(define (nop-command ctx buf key)
+(define-edit-command (nop-command ctx buf key)
+  "Do nothing."
   'nop)
 
 (define (default-keymap)
