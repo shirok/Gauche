@@ -5421,7 +5421,7 @@ Internally it stores the data as a tree where each node corresponds
 to each element in the key sequence.
 Key lookup is O(n) where n is the length of the key, and not affected
 much by the number of total entries.
-Also it is easy to find a set of values whose keys have a common prefix.
+Also it is easy to find a set of values whose keys share a common prefix.
 @c JP
 このモジュールは@emph{Trie}を提供します。@emph{Trie}はディレクトリに似
 たデータ構造で、キーを値に写像します。また、キーは任意のシーケンスです。
