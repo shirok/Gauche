@@ -43,7 +43,7 @@
 ;; Load user-specific default settings from ~/.gaucherc, if there's any.
 ;; It is evaluated in the user module.
 (let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
-  (when (sys-access dotfile F_OK)
+  (when (and (not (sys-setugid?)) (sys-access dotfile F_OK))
     (load dotfile)))
 
 ;; If gosh is invoked with R7RS mode, import r7rs-small libraries

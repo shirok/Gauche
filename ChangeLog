@@ -1,5 +1,8 @@
 2020-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive/init.scm: Do not load ~/.gaucherc if
+	  the process is suid/sgid-ed.
+
 	* lib/gauche/interactive.scm (get-history-filename): Changed
 	  history file environment variable from GAUCHE_HISTFILE to
 	  GAUCHE_HISTORY_FILE; we generally avoid abbreviation.
