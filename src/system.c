@@ -1373,11 +1373,13 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
 
 /*
  * check if we're suid/sgid-ed.
- * TODO: some system has a special syscall for it; use it if so.
  */
 int Scm_IsSugid(void)
 {
-#if !defined(GAUCHE_WINDOWS)
+#if HAVE_ISSETUGID
+    return issetugid();
+#elif !defined(GAUCHE_WINDOWS)
+    /* This isn't perfect, but for our purposes it's enough. */
     return (geteuid() != getuid() || getegid() != getgid());
 #else  /* GAUCHE_WINDOWS */
     return FALSE;

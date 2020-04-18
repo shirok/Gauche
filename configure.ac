@@ -522,6 +522,7 @@ AC_CHECK_FUNCS(gettimeofday getloadavg clock_gettime clock_getres)
 AC_CHECK_FUNCS(syslog setlogmask)
 AC_CHECK_FUNCS(sigwait)
 AC_CHECK_FUNCS(fpsetprec)
+AC_CHECK_FUNCS(issetugid)
 
 dnl KLUDGE: As of Dec 2015, Mingw-w64  provides mkstemp() but it opens
 dnl the file with _O_TEMPORARY flag, so the file gets automatically deleted

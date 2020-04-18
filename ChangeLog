@@ -1,3 +1,7 @@
+2020-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_IsSugid): Use issetugid() if the system has it.
+
 2020-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Report whether document will be built or not in
