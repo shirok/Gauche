@@ -16,6 +16,7 @@
 * Heap::                        data.heap
 * Immutable deques::            data.ideque
 * Immutable map::               data.imap
+* Priority map::                data.priority-map
 * Queue::                       data.queue
 * Random data generators::      data.random
 * Ring buffer::                 data.ring-buffer
@@ -2662,7 +2663,7 @@ structures; it's not in srfi-134, and the portable code can use
 
 
 @c ----------------------------------------------------------------------
-@node Immutable map, Queue, Immutable deques, Library modules - Utilities
+@node Immutable map, Priority map, Immutable deques, Library modules - Utilities
 @section @code{data.imap} - Immutable map
 @c NODE 変更不可なマップ, @code{data.imap} - 変更不可なマップ
 
@@ -2848,7 +2849,77 @@ key in @var{immap}, respectively.  If @var{immap} is empty,
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Queue, Random data generators, Immutable map, Library modules - Utilities
+@node Priority map, Queue, Immutable map, Library modules - Utilities
+@section @code{data.priority-map} - Priority map
+@c NODE プライオリティマップ, @code{data.priority-map} - プライオリティマップ
+
+@deftp {Module} data.priority-map
+@mdindex data.priority-map
+Priority map is a dictionary that can map keys to values, while
+the entires are sorted by their @emph{values}.
+(If the entires are sorted by keys, it's a treemap--@pxref{Treemaps}).
+
+It is useful when you wanted a sorted sequence, with quick access by
+keys that are associated to each value.
+
+Note: If what you need is just a priority queue, you can use
+@code{data.heap} (@pxref{Heap}).
+@end deftp
+
+@deftp {Class} <priority-map>
+@cindex priority-map
+@c MOD data.priority-map
+Priority map class.  It has no public slots.
+Instances of priority maps must be created by
+@code{make-priority-map} procedure instead of @code{make} method on
+the class.
+
+Inherits @code{<ordered-dictionary>}, and implements dictionary protocol.
+Operations concerning
+associations of keys and values are done through dictionary generic
+functions (@pxref{Generic functions for dictionaries}).
+
+When iterated, it iterates increasing order of values.
+@end deftp
+
+@defun make-priority-map :key key-comparator value-comparator
+@c MOD data.priority-map
+Creates and returns an empty priority map.
+It can take @var{key-comparator}, which must have a hash procedure
+and is used to hash keys, and
+@var{value-comparator}, which must have ordering predicate
+and is used to order values.
+When omitted, @code{default-comparator} is assumed.
+@end defun
+
+@defun priority-map-min pmap
+@defunx priority-map-max pmap
+@c MOD data.priority-map
+Return a pair of a key and a value, where the value is smallest or
+largest in the priority map @var{pmap}, respectively.
+
+If @var{pmap} is empty, @code{#f} is returned.
+
+If @var{pmap} has more than one value that are equal to each other
+(w.r.t. @var{value-comparator} given to the constructor),
+either one of them is picked.
+@end defun
+
+@defun priority-map-pop-min! pmap
+@defun priority-map-pop-max! pmap
+@c MOD data.priority-map
+Remove one entry with the smallest or largest value, respectively,
+and returns a pair of the key and the value of removed entry.
+
+If @var{pmap} is empty, @var{#f} is returned.
+
+If @var{pmap} has more than one value that are equal to each other
+(w.r.t. @var{value-comparator} given to the constructor),
+either one of them is picked.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Queue, Random data generators, Priority map, Library modules - Utilities
 @section @code{data.queue} - Queue
 @c NODE キュー, @code{data.queue} - キュー
 

@@ -1,5 +1,7 @@
 2020-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* doc/modutil.texi: Officially document data.priority-map.
+
 	* lib/gauche/interactive/init.scm: Do not load ~/.gaucherc if
 	  the process is suid/sgid-ed.
 
