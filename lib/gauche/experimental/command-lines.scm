@@ -1,19 +1,25 @@
 ;;
-;; Experimental implementatio of planned command-line srfi
-;; https://github.com/shirok/Gauche/pull/640
+;; Experimental implementation of srfi-193
 ;;
 
 (define-module gauche.experimental.command-lines
+  (use srfi-13)
   (use file.util)
-  (export os-executable-file os-command-line script-file script-directory
+  (export os-executable-file os-command-line 
           command-name command-args command-line 
-          filename->command-name
-
-          ;; command-line-offset
+          script-file script-directory
+          ;; filename->command-name
           )
   )
-
 (select-module gauche.experimental.command-lines)
+
+;; utility
+(define (filename->command-name path)
+  (cond-expand
+   [gauche.os.windes 
+    (regexp-replace #/\.(exe|scm)$/ (sys-basename path) "")]
+   [else
+    (regexp-replace #/\.scm$/ (sys-basename path) "")]))
 
 ;;; Fundamental
 
@@ -32,13 +38,11 @@
     (string-append (sys-dirname sf) (string (path-separator)))))
 
 (define (command-name)
-  (and  (not (null? (command-line)))
-        (filename->command-name (car (command-line)))))
+  (let1 arg0 (car (command-line))
+    (and (not (equal? arg0 ""))
+         (filename->command-name arg0))))
 
 (define (command-args)
-  (if (null? (command-line))
-    '()
-    (cdr (command-line))))
+  (cdr (command-line)))
 
-(define (filename->command-name arg)
-  (path-sans-extension (sys-basename arg)))
+
