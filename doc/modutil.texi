@@ -2906,7 +2906,7 @@ either one of them is picked.
 @end defun
 
 @defun priority-map-pop-min! pmap
-@defun priority-map-pop-max! pmap
+@defunx priority-map-pop-max! pmap
 @c MOD data.priority-map
 Remove one entry with the smallest or largest value, respectively,
 and returns a pair of the key and the value of removed entry.
