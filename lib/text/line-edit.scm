@@ -38,6 +38,7 @@
   (use file.util)
   (use util.match)
   (use text.console)
+  (use text.console.framebuffer)
   (use text.gap-buffer)
   (use gauche.unicode)
   (export <line-edit-context> read-line/edit
@@ -110,6 +111,7 @@
    (initpos-x)
    (screen-height)
    (screen-width)
+   (framebuffer :init-value #f) ; :init-form (make <framebuffer-console>)
 
    ;; Selection
    ;; selection is between marker-pos and the current cursor pos.
@@ -301,7 +303,9 @@
     (set! (~ ctx'initpos-x) x))
   (receive (h w) (query-screen-size (~ ctx'console))
     (set! (~ ctx'screen-height) h)
-    (set! (~ ctx'screen-width) w)))
+    (set! (~ ctx'screen-width) w)
+    (if (~ ctx'framebuffer)
+      (init-framebuffer (~ ctx'framebuffer) w h))))
 
 ;; Show prompt.  Returns the current column.
 (define (show-prompt ctx)
@@ -360,6 +364,16 @@
          1])])]))
 
 (define (redisplay ctx buffer)
+  (if (~ ctx'framebuffer)
+    (let ([real-console (~ ctx'console)])
+      (set! (~ ctx'console) (~ ctx'framebuffer))
+      (%redisplay ctx buffer)
+      ;; maybe we should guard and reset ctx'console anyway to be safe...
+      (set! (~ ctx'console) real-console)
+      (draw-framebuffer (~ ctx'framebuffer) real-console (~ ctx'initpos-y) 0))
+    (%redisplay ctx buffer)))
+
+(define (%redisplay ctx buffer)
 
   ;; check a initial position
   (if (< (~ ctx'initpos-y) 0)
