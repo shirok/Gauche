@@ -1,8 +1,8 @@
 ;;
-;; Experimental implementation of srfi-193
+;; srfi-193 is still draft; the API may change
 ;;
 
-(define-module gauche.experimental.command-lines
+(define-module srfi-193
   (use srfi-13)
   (use file.util)
   (export os-executable-file os-command-line 
@@ -11,7 +11,7 @@
           ;; filename->command-name
           )
   )
-(select-module gauche.experimental.command-lines)
+(select-module srfi-193)
 
 ;; utility
 (define (filename->command-name path)

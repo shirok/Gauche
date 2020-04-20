@@ -61,7 +61,7 @@ SCMFILES = \
        srfi-159.scm srfi-159/*.sld srfi-159/*.scm \
        srfi-159/internal/*.sld srfi-159/internal/*.scm srfi/159/*.scm \
        srfi-160.scm srfi/*.scm srfi/160/*.scm srfi-162.scm srfi-173.scm \
-       srfi-176.scm \
+       srfi-176.scm srfi-193.scm \
        slib.scm	 \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
@@ -98,7 +98,6 @@ SCMFILES = \
        gauche/package/util.scm gauche/package/compile.scm \
        gauche/experimental/ref.scm gauche/experimental/lamb.scm \
        gauche/experimental/app.scm \
-       gauche/experimental/command-lines.scm \
        r7rs-setup.scm \
        binary/ftype.scm binary/pack.scm \
        control/job.scm control/mapper.scm control/thread-pool.scm \
