@@ -482,10 +482,16 @@
 		(if source-line (display (cdr source-line)))
 		(display ": ")))
 	  (display (if (eq? kind 'xpass) "XPASS" "FAIL"))
-	  (if test-name
-	      (begin
-		(display " ")
-		(display (cdr test-name))))
+	  (if test-name	
+            (begin
+              (display " ")
+              (display (cdr test-name))))
+          (newline)
+          (display "  expected:")
+          (write (test-result-ref runner 'expected-value))
+          (newline)
+          (display "    actual:")
+          (write (test-result-ref runner 'actual-value))
 	  (newline)))
     (if (output-port? log)
 	(begin
