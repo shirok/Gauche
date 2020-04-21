@@ -1,6 +1,7 @@
 (define-module text.console.framebuffer
   (use srfi-13)
   (use text.console)
+  (use text.console.wide-char-setting)
   (export <framebuffer-console> init-framebuffer draw-framebuffer))
 (select-module text.console.framebuffer)
 
@@ -13,11 +14,18 @@
 ;; This is made for text.line-edit and supports just enough operations
 ;; for it to work. It also assumes that init-framebuffer starts with a
 ;; cleared console. This is true for line-edit, but not always.
+;;
+;; It is undefined behavior if something is written outside the
+;; console's view, aka (or (> x width) (> y height)).
 (define-class <framebuffer-console> ()
   ((width)
    (height)
+   (wide-char-setting :init-value #f)
    ;; Two dimensional array of cons whose car is the character and cdr
-   ;; is the attribute.
+   ;; is the attribute. If car is #f, the position is part of a wide
+   ;; char character. If cdr is #f, the attribute is reset. If a
+   ;; vector item is #f instead of a cons, then it's the same as
+   ;; (#\space . #f)
    (buffer :init-form (make-vector 0))
    (prev-buffer :init-form (make-vector 0))
 
@@ -33,10 +41,17 @@
     ((_ con row col)
      (+ col (* row (~ con'width))))))
 
-(define (init-framebuffer fb w h)
+(define-syntax char-width
+  (syntax-rules ()
+    ((_ con ch) (if (~ con'wide-char-setting)
+                  (get-char-width (~ con'wide-char-setting) ch)
+                  1))))
+
+(define (init-framebuffer fb w h wide-char-setting)
   (set! (~ fb'width) w)
   (set! (~ fb'height) h)
   (set! (~ fb'cursor-hidden) #f)
+  (set! (~ fb'wide-char-setting) wide-char-setting)
   (let ([size (* w h)])
     (if (and (vector? (~ fb'buffer))
              (>= (vector-length (~ fb'buffer)) size))
@@ -73,6 +88,7 @@
       (let ([prev (or (vector-ref prevbuf (+ x (* y width))) empty)]
             [cur (or (vector-ref curbuf (+ x (* y width))) empty)])
         (unless (or (equal? prev cur)
+                    (and (pair? cur) (eq? (car cur) #f))
                     (and clear-to-eos?
                          (eq? (car cur) #\space)))
           (let ([newattr (if (pair? cur) (cdr cur) #f)])
@@ -83,8 +99,9 @@
               (set! rattr newattr)))
           (unless (and (= x rx) (= y ry))
             (move-cursor-to console y x))
-          (putch console (if (pair? cur) (car cur) #\space))
-          (set! rx (+ x 1))
+          (let ([ch (if (pair? cur) (car cur) #\space)])
+            (putch console ch)
+            (set! rx (+ x (char-width con ch))))
           (set! ry y))
         (let ([next-x (+ x 1)]
               [next-y (+ y 1)])
@@ -120,11 +137,17 @@
   (set! (~ con'y) y))
 
 (define-method putch ((con <framebuffer-console>) c)
-  ;; fixme: wide char support
-  (vector-set! (~ con'buffer)
-               (yx->pos con  (~ con'y) (~ con'x))
-               (cons c (~ con'attr)))
-  (inc! (~ con'x)))
+  (let ([pos (yx->pos con  (~ con'y) (~ con'x))])
+    (vector-set! (~ con'buffer)
+                 pos
+                 (cons c (~ con'attr)))
+    (let ([w (char-width con c)])
+      (when (> w 1)
+        (vector-fill! (~ con'buffer)
+                      (cons #f #f) ; blank, occupied by the previous character
+                      (+ pos 1)
+                      (+ pos w)))
+      (inc! (~ con'x) w))))
 
 (define-method putstr ((con <framebuffer-console>) s)
   (string-for-each (cut putch con <>) s))

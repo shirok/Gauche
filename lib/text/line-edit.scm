@@ -279,7 +279,7 @@
     (set! (~ ctx'screen-height) h)
     (set! (~ ctx'screen-width) w)
     (if (~ ctx'framebuffer)
-      (init-framebuffer (~ ctx'framebuffer) w h))))
+      (init-framebuffer (~ ctx'framebuffer) w h (~ ctx'wide-char-pos-setting)))))
 
 ;; Show prompt.  Returns the current column.
 (define (show-prompt ctx)
