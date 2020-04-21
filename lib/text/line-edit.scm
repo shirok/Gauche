@@ -407,6 +407,7 @@
          [else
           (inc! y)])))
 
+    (hide-cursor con)
     (reset-character-attribute con)
     (move-cursor-to con y 0)
     (show-prompt ctx)
@@ -457,7 +458,8 @@
           (set! pos-y y))
 
         (loop (+ n 1))))
-    (move-cursor-to con pos-y pos-x)))
+    (move-cursor-to con pos-y pos-x)
+    (show-cursor con)))
 
 (define (current-char-attr pos sel oparen)
   (cond-list
