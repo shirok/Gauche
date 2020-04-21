@@ -55,6 +55,7 @@
         [height (~ con'height)]
         [clear-to-eos? #f]              ; FIXME
         [empty (cons #\space #f)]
+        [rattr #f]
         [rx 0]
         [ry 0])
 
@@ -74,6 +75,12 @@
         (unless (or (equal? prev cur)
                     (and clear-to-eos?
                          (eq? (car cur) #\space)))
+          (let ([newattr (if (pair? cur) (cdr cur) #f)])
+            (unless (equal? rattr newattr)
+              (if newattr
+                (set-character-attribute console newattr)
+                (reset-character-attribute console))
+              (set! rattr newattr)))
           (unless (and (= x rx) (= y ry))
             (move-cursor-to console y x))
           (putch console (if (pair? cur) (car cur) #\space))
