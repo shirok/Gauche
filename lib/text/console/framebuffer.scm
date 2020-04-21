@@ -54,7 +54,9 @@
         [width (~ con'width)]
         [height (~ con'height)]
         [clear-to-eos? #f]              ; FIXME
-        [empty (cons #\space #f)])
+        [empty (cons #\space #f)]
+        [rx 0]
+        [ry 0])
 
     (hide-cursor console)
 
@@ -72,8 +74,11 @@
         (unless (or (equal? prev cur)
                     (and clear-to-eos?
                          (eq? (car cur) #\space)))
-          (move-cursor-to console y x)
-          (putch console (if (pair? cur) (car cur) #\space)))
+          (unless (and (= x rx) (= y ry))
+            (move-cursor-to console y x))
+          (putch console (if (pair? cur) (car cur) #\space))
+          (set! rx (+ x 1))
+          (set! ry y))
         (let ([next-x (+ x 1)]
               [next-y (+ y 1)])
           (cond
