@@ -25,6 +25,7 @@
    (x :init-value 0)
    (y :init-value 0)
    (attr :init-value #f)
+   (cursor-hidden :init-value #f)
    ))
 
 (define-syntax yx->pos
@@ -35,6 +36,7 @@
 (define (init-framebuffer fb w h)
   (set! (~ fb'width) w)
   (set! (~ fb'height) h)
+  (set! (~ fb'cursor-hidden) #f)
   (let ([size (* w h)])
     (if (and (vector? (~ fb'buffer))
              (>= (vector-length (~ fb'buffer)) size))
@@ -53,6 +55,8 @@
         [height (~ con'height)]
         [clear-to-eos? #f]              ; FIXME
         [empty (cons #\space #f)])
+
+    (hide-cursor console)
 
     ;; in case we detect clearing the screen or something (e.g. the
     ;; majority of updates is to write whitespaces) then better to
@@ -74,13 +78,15 @@
               [next-y (+ y 1)])
           (cond
            [(and (eq? next-x width)
-                 (eq? next-y height))
-            (move-cursor-to console (~ con'y) (~ con'x))]
+                 (eq? next-y height)) #t]
            [(eq? next-x width)
             (loop 0 next-y)]
            [else
             (loop next-x y)]))))
 
+    (move-cursor-to console (~ con'y) (~ con'x))
+    (unless (~ con'cursor-hidden)
+      (show-cursor console))
     (vector-copy! (~ con'prev-buffer) 0 (~ con'buffer))))
 
 (define-method clear-to-eos ((con <framebuffer-console>))
@@ -116,3 +122,9 @@
 
 (define-method set-character-attribute ((con <framebuffer-console>) newattr)
   (set! (~ con'attr) newattr))
+
+(define-method hide-cursor ((con <framebuffer-console>))
+  (set! (~ con'cursor-hidden) #t))
+
+(define-method show-cursor ((con <framebuffer-console>))
+  (set! (~ con'cursor-hidden) #f))
