@@ -43,7 +43,7 @@
 
 ;; Delay loading line-edit in case editable console isn't available.
 (autoload text.line-edit <line-edit-context> read-line/edit
-          read-line/load-history read-line/save-history)
+          load-line-edit-history save-line-edit-history)
 
 ;; Internal API, to be used by gauche.interactive.
 ;; Because of toplevel commands, we can't just provide alternative 'read'
@@ -68,14 +68,14 @@
                 (if (eof-object? input)
                   (begin                ; EOF is typed
                     (if hist-file
-                      (read-line/save-history ctx (expand-path hist-file)))
+                      (save-line-edit-history ctx (expand-path hist-file)))
                     input)
                   (begin 
                     (set! buffer (open-input-string (string-append input "\n")))
                     (try))))
               x))))
       (when hist-file
-        (read-line/load-history ctx (expand-path hist-file)))
+        (load-line-edit-history ctx (expand-path hist-file)))
       (values (read-1 read)
               (read-1 read-line)
               (^[] (consume-trailing-whitespaces buffer))

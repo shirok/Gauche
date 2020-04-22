@@ -41,7 +41,8 @@
   (use text.gap-buffer)
   (use gauche.unicode)
   (export <line-edit-context> read-line/edit
-          read-line/load-history read-line/save-history)
+          save-line-edit-history
+          load-line-edit-history)
   )
 (select-module text.line-edit)
 
@@ -163,7 +164,7 @@
        (port->string-list (current-input-port))))
     :if-does-not-exist #f))
 
-(define (read-line/load-history ctx path)
+(define (load-line-edit-history ctx path)
   (guard (e [else
              (display "failed to read history: " (current-error-port))
              (display e (current-error-port))
@@ -183,7 +184,7 @@
       (sys-rename name path))
     :directory (sys-dirname path)))
 
-(define (read-line/save-history ctx path)
+(define (save-line-edit-history ctx path)
   (guard (e [else
              (display "failed to save history: " (current-error-port))
              (display e (current-error-port))
