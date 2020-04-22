@@ -28,12 +28,14 @@
    ;; (#\space . #f)
    (buffer :init-form (make-vector 0))
    (prev-buffer :init-form (make-vector 0))
+   (commands :init-value '())
 
    ;; current cursor / attribute
    (x :init-value 0)
    (y :init-value 0)
    (attr :init-value #f)
    (cursor-hidden :init-value #f)
+   (pass-through :init-value #f)
    ))
 
 (define-syntax yx->pos
@@ -52,6 +54,8 @@
   (set! (~ fb'height) h)
   (set! (~ fb'cursor-hidden) #f)
   (set! (~ fb'wide-char-setting) wide-char-setting)
+  (set! (~ fb'commands) '())
+  (set! (~ fb'pass-through) #f)
   (let ([size (* w h)])
     (if (and (vector? (~ fb'buffer))
              (>= (vector-length (~ fb'buffer)) size))
@@ -64,6 +68,17 @@
         (set! (~ fb'prev-buffer) (make-vector size #f))))))
 
 (define (draw-framebuffer con console init-row init-col)
+  (if (~ con'pass-through)
+    (begin
+      (for-each (cut <> console) (reverse (~ con'commands)))
+      (set! (~ con'pass-through) #f)
+      (init-framebuffer con
+                        (~ con'width)
+                        (~ con'height)
+                        (~ con'wide-char-setting)))
+    (%draw-framebuffer con console init-row init-col)))
+
+(define (%draw-framebuffer con console init-row init-col)
   (let ([curbuf (~ con'buffer)]
         [prevbuf (~ con'prev-buffer)]
         [width (~ con'width)]
@@ -116,9 +131,16 @@
     (move-cursor-to console (~ con'y) (~ con'x))
     (unless (~ con'cursor-hidden)
       (show-cursor console))
-    (vector-copy! (~ con'prev-buffer) 0 (~ con'buffer))))
+    (vector-copy! (~ con'prev-buffer) 0 (~ con'buffer))
+    (set! (~ con'commands) '())))
+
+(define-syntax save-command
+  (syntax-rules ()
+    ((_ con proc arg ...) (set! (~ con'commands) (cons (cut proc <> arg ...)
+                                                       (~ con'commands))))))
 
 (define-method clear-to-eos ((con <framebuffer-console>))
+  (save-command con clear-to-eos)
   (vector-fill! (~ con'buffer)
                 '(#\space . #f)
                 (+ (~ con'x) (* (~ con'width) (~ con'y)))))
@@ -126,17 +148,20 @@
 (define-method cursor-down/scroll-up ((con <framebuffer-console>)
                                       :optional (y #f) (height #f)
                                       (full-column-flag #f))
-  ;; FIXME: needs more work here, probably
-  (if (< (~ con'y) (- (~ con'height) 1))
-    (inc! (~ con'y)))
-  ;; copied from text.console.generic, maybe there's a better way?
+  (save-command con cursor-down/scroll-up y height full-column-flag)
+  ;; Activate passthrough mode because we cannot handle this. All
+  ;; updates in (~ con'buffer) will be ignored. Instead, the command
+  ;; sequences we are storing will be replayed to the real console.
+  (set! (~ con'pass-through) #t)
   (if (and y height (>= y (- height 1))) 0 1))
 
 (define-method move-cursor-to ((con <framebuffer-console>) y x)
+  (save-command con move-cursor-to y x)
   (set! (~ con'x) x)
   (set! (~ con'y) y))
 
 (define-method putch ((con <framebuffer-console>) c)
+  (save-command con putch c)
   (let ([pos (yx->pos con  (~ con'y) (~ con'x))])
     (vector-set! (~ con'buffer)
                  pos
@@ -153,13 +178,17 @@
   (string-for-each (cut putch con <>) s))
 
 (define-method reset-character-attribute ((con <framebuffer-console>))
+  (save-command con reset-character-attribute)
   (set! (~ con'attr) #f))
 
 (define-method set-character-attribute ((con <framebuffer-console>) newattr)
+  (save-command con set-character-attribute newattr)
   (set! (~ con'attr) newattr))
 
 (define-method hide-cursor ((con <framebuffer-console>))
+  (save-command con hide-cursor)
   (set! (~ con'cursor-hidden) #t))
 
 (define-method show-cursor ((con <framebuffer-console>))
+  (save-command con show-cursor)
   (set! (~ con'cursor-hidden) #f))
