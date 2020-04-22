@@ -199,101 +199,109 @@
   (reset-last-yank! ctx)
   ($ call-with-console (~ ctx'console)
      (^[con]
-       (define buffer (make-gap-buffer))
-       (define (eofread)
-         (if (> (gap-buffer-content-length buffer) 0)
-           (commit-history ctx buffer)
-           (eof-object)))
-       (ensure-bottom-room con) ; workaround for windows IME glitch
-       (show-prompt ctx)
-       (init-screen-params ctx)
-       ;; Main loop.  Get a key and invoke associated command.
-       ;; The command may return one of the following values.
-       ;;   visible - the command changed something visible so we need to 
-       ;;            redisplay, but we don't need to save the change in
-       ;;            the actual buffer.
-       ;;            The selection is cleared.
-       ;;   unchanged - no change visually and internally; we break
-       ;;            undo sequence and reset last yank, but not clear
-       ;;            selection.
-       ;;            This occurs, for example, backward-char at the
-       ;;            beginning of the input.
-       ;;   nop    - totally ignore the key input.
-       ;;   moved  - the command only moved cursor pos.  requires redisplay,
-       ;;            but we keep selection.
-       ;;   #<eof> - end of input - either input port is closed, or
-       ;;            the user typed EOT char when the buffer is empty.
-       ;;   commit - record the current buffer to the history, and
-       ;;            returns it.
-       ;;   undone - the command undid the change.  we record the fact,
-       ;;            for the consecutive undo behaves differently than
-       ;;            other commands.
-       ;;   <edit-command> - the command changed the buffer contents,
-       ;;            and the return value is an edit command to undo the
-       ;;            change.
-       ;;   (yanked <edit-command>) - this is only returned by yank and yank-pop
-       ;;            command.
-       ;;
-       ;; If the key is a character and it is not registered in the table,
-       ;; we treat as if it is associated to the self-insert-command.
-       ;; Given the large character set, it is a reasonable compromise.
-       (let loop ([redisp #f])
-         ;; NB: If next char is ready, don't bother to redisplay and
-         ;; just carry over redisp flag.
-         (let* ([redisp (if (and redisp (not (chready? con)))
-                          (begin (redisplay ctx buffer) #f)
-                          redisp)]
-                [ch (if (queue-empty? (~ ctx'keystroke-queue))
-                      (getch con)
-                      (queue-pop! (~ ctx'keystroke-queue)))]
-                [h (hash-table-get (~ ctx'keymap) ch ch)])
-           (cond
-            [(eof-object? h) (eofread)]
-            [(char? h)
-             (reset-last-yank! ctx)
-             (break-undo-sequence! ctx)
-             (clear-mark! ctx buffer)
-             (push-undo! ctx (self-insert-command ctx buffer h))
-             (loop #t)]
-            [(applicable? h <top> <top> <top>)
-             (match (h ctx buffer ch)
-               [(? eof-object?) (eofread)]
-               ['nop       (loop redisp)]
-               ['visible   (reset-last-yank! ctx)
-                           (clear-mark! ctx buffer)
-                           (break-undo-sequence! ctx)
-                           (loop #t)]
-               ['unchanged (reset-last-yank! ctx)
-                           (break-undo-sequence! ctx)
-                           (loop redisp)]
-               ['moved     (reset-last-yank! ctx)
-                           (break-undo-sequence! ctx)
-                           (loop #t)]
-               ['commit
-                ;; We move the cursor to the last of input and redisplay,
-                ;; so that the output of the client program won't overwrite
-                ;; the existing input.
-                (gap-buffer-move! buffer 0 'end)
-                (redisplay ctx buffer)
-                (putstr con "\r\n")
-                (commit-history ctx buffer)]
-               ['undone (reset-last-yank! ctx)
-                        (clear-mark! ctx buffer)
-                        (loop #t)] ; don't break undo sequence
-               [('yanked edit-command)
-                (break-undo-sequence! ctx)
-                (clear-mark! ctx buffer)
-                (push-undo! ctx edit-command)
-                (loop #t)]
-               [(? list? edit-command)
-                (reset-last-yank! ctx)
-                (break-undo-sequence! ctx)
-                (clear-mark! ctx buffer)
-                (push-undo! ctx edit-command)
-                (loop #t)]
-               [x (error "[internal] invalid return value from a command:" x)])]
-            [else
-             (error "[internal] do not know how to handle key:" h)]))))))
+       (guard (e [(and (<unhandled-signal-error> e)
+                       (eqv? (~ e'signal) SIGINT))
+                  (putstr (~ ctx'console) "\r\nInput interrupted\r\n")
+                  ""]
+                 [else (raise e)])
+         (%read-line-int con ctx)))))
+
+(define (%read-line-int con ctx)
+  (define buffer (make-gap-buffer))
+  (define (eofread)
+    (if (> (gap-buffer-content-length buffer) 0)
+      (commit-history ctx buffer)
+      (eof-object)))
+  (ensure-bottom-room con) ; workaround for windows IME glitch
+  (show-prompt ctx)
+  (init-screen-params ctx)
+  ;; Main loop.  Get a key and invoke associated command.
+  ;; The command may return one of the following values.
+  ;;   visible - the command changed something visible so we need to 
+  ;;            redisplay, but we don't need to save the change in
+  ;;            the actual buffer.
+  ;;            The selection is cleared.
+  ;;   unchanged - no change visually and internally; we break
+  ;;            undo sequence and reset last yank, but not clear
+  ;;            selection.
+  ;;            This occurs, for example, backward-char at the
+  ;;            beginning of the input.
+  ;;   nop    - totally ignore the key input.
+  ;;   moved  - the command only moved cursor pos.  requires redisplay,
+  ;;            but we keep selection.
+  ;;   #<eof> - end of input - either input port is closed, or
+  ;;            the user typed EOT char when the buffer is empty.
+  ;;   commit - record the current buffer to the history, and
+  ;;            returns it.
+  ;;   undone - the command undid the change.  we record the fact,
+  ;;            for the consecutive undo behaves differently than
+  ;;            other commands.
+  ;;   <edit-command> - the command changed the buffer contents,
+  ;;            and the return value is an edit command to undo the
+  ;;            change.
+  ;;   (yanked <edit-command>) - this is only returned by yank and yank-pop
+  ;;            command.
+  ;;
+  ;; If the key is a character and it is not registered in the table,
+  ;; we treat as if it is associated to the self-insert-command.
+  ;; Given the large character set, it is a reasonable compromise.
+  (let loop ([redisp #f])
+    ;; NB: If next char is ready, don't bother to redisplay and
+    ;; just carry over redisp flag.
+    (let* ([redisp (if (and redisp (not (chready? con)))
+                     (begin (redisplay ctx buffer) #f)
+                     redisp)]
+           [ch (if (queue-empty? (~ ctx'keystroke-queue))
+                 (getch con)
+                 (queue-pop! (~ ctx'keystroke-queue)))]
+           [h (hash-table-get (~ ctx'keymap) ch ch)])
+      (cond
+       [(eof-object? h) (eofread)]
+       [(char? h)
+        (reset-last-yank! ctx)
+        (break-undo-sequence! ctx)
+        (clear-mark! ctx buffer)
+        (push-undo! ctx (self-insert-command ctx buffer h))
+        (loop #t)]
+       [(applicable? h <top> <top> <top>)
+        (match (h ctx buffer ch)
+          [(? eof-object?) (eofread)]
+          ['nop       (loop redisp)]
+          ['visible   (reset-last-yank! ctx)
+                      (clear-mark! ctx buffer)
+                      (break-undo-sequence! ctx)
+                      (loop #t)]
+          ['unchanged (reset-last-yank! ctx)
+                      (break-undo-sequence! ctx)
+                      (loop redisp)]
+          ['moved     (reset-last-yank! ctx)
+                      (break-undo-sequence! ctx)
+                      (loop #t)]
+          ['commit
+           ;; We move the cursor to the last of input and redisplay,
+           ;; so that the output of the client program won't overwrite
+           ;; the existing input.
+           (gap-buffer-move! buffer 0 'end)
+           (redisplay ctx buffer)
+           (putstr con "\r\n")
+           (commit-history ctx buffer)]
+          ['undone (reset-last-yank! ctx)
+                   (clear-mark! ctx buffer)
+                   (loop #t)] ; don't break undo sequence
+          [('yanked edit-command)
+           (break-undo-sequence! ctx)
+           (clear-mark! ctx buffer)
+           (push-undo! ctx edit-command)
+           (loop #t)]
+          [(? list? edit-command)
+           (reset-last-yank! ctx)
+           (break-undo-sequence! ctx)
+           (clear-mark! ctx buffer)
+           (push-undo! ctx edit-command)
+           (loop #t)]
+          [x (error "[internal] invalid return value from a command:" x)])]
+       [else
+        (error "[internal] do not know how to handle key:" h)]))))
 
 ;; Check some parameters of screen.
 (define (init-screen-params ctx)
