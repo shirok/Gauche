@@ -85,7 +85,8 @@
    (initpos-x)
    (screen-height)
    (screen-width)
-   (framebuffer :init-value #f) ; :init-form (make <framebuffer-console>)
+   (framebuffer :init-form (and (sys-getenv "GAUCHE_READ_EDIT_WITH_FB")
+                                (make <framebuffer-console>)))
 
    ;; Selection
    ;; selection is between marker-pos and the current cursor pos.
