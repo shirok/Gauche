@@ -18376,9 +18376,14 @@ Gaucheにおいて、@var{env}は単なる@code{<module>}オブジェクトで�
 @c COMMON
 @end defun
 
-R5RS and R7RS provides a portable way to obtain environment
-specifiers.  R5RS way is described below.  R7RS way is
+@c EN
+R5RS and R7RS provide a portable way to obtain environment.
+R5RS way is described below.  R7RS way is
 described in @ref{R7RS eval}.
+@c JP
+R5RSとR7RSは、環境@var{env}を得るポータブルな方法を定義しています。
+R5RSの方法を以下に示します。R7RSの方法は@ref{R7RS eval}を参照してください。
+@c COMMON
 
 @defun null-environment version
 @defunx scheme-report-environment version
