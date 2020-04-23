@@ -48,7 +48,7 @@
     (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN))
 
 #if WORDS_BIGENDIAN
-#define SWAP_REQUIRED(endian)   (!ISCM_S_BE(endian))
+#define SWAP_REQUIRED(endian)   (!SCM_IS_BE(endian))
 #else  /*!WORDS_BIGENDIAN.  Covers both little-endian and arm-little-endian. */
 #define SWAP_REQUIRED(endian)   SCM_IS_BE(endian)
 #endif
