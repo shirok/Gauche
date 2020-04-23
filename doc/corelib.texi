@@ -9219,52 +9219,86 @@ This cursor does not point to any valid character of the string.
 
 @defun string-cursor-next @var{str} @var{cur}
 [SRFI-130]
-
+@c EN
 Returns the cursor into @var{str} following @var{cur}. @var{cur} can
-also be an index.
+also be an index.  An error is signaled if @var{cur} points to the end
+of the string.
+@c JP
+文字列@var{str}中で、@var{cur}が指す文字の次を指すカーソルを返します。
+@var{cur}に文字列インデックスを渡すこともできます。@var{cur}が文字列末尾を
+指している場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun string-cursor-prev @var{str} @var{cur}
 [SRFI-130]
-
+@c EN
 Returns the cursor into @var{str} preceding @var{cur}. @var{cur} can
-also be an index.
+also be an index.  An error is signaled if @var{cur} points to the
+beginning of the string.
+@c JP
+文字列@var{str}中で、@var{cur}が指す文字の一つ前を指すカーソルを返します。
+@var{cur}には文字列インデックスを渡すこともできます。@var{cur}が文字列先頭を
+指している場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun string-cursor-forward @var{str} @var{cur} @var{n}
 [SRFI-130]
-
+@c EN
 Returns the cursor into @var{str} following @var{cur} by @var{n}
 characters. @var{cur} can also be an index.
+@c JP
+文字列@var{str}中で、カーソル@var{cur}が指す文字から@var{n}文字先を指す
+カーソルを返します。@var{cur}に文字列インデックスを渡すこともできます。
+@c COMMON
 @end defun
 
 @defun string-cursor-back @var{str} @var{cur} @var{n}
 [SRFI-130]
-
+@c EN
 Returns the cursor into @var{str} preceding @var{cur} by @var{n}
 characters. @var{cur} can also be an index.
+@c JP
+文字列@var{str}中で、カーソル@var{cur}が指す文字から@var{n}文字前を指す
+カーソルを返します。@var{cur}に文字列インデックスを渡すこともできます。
+@c COMMON
 @end defun
 
 @defun string-index->cursor @var{str} @var{index}
 [SRFI-130]
-
+@c EN
 Convert an @var{index} to a cursor. If @var{index} is a cursor it will
 be returned as-is.
+@c JP
+文字列インデックス@var{index}をカーソルに変換します。
+@var{index}が既にカーソルであった場合はそれがそのまま返されます。
+@c COMMON
 @end defun
 
 @defun string-cursor->index @var{str} @var{cur}
 [SRFI-130]
-
+@c EN
 Convert a cursor to an index. If @var{cur} is a an index it will be
 returned as-is.
+@c JP
+文字列カーソル@var{cur}をインデックスに変換します。
+@var{cur}が既にインデックスであった場合はそれをそのまま返します。
+@c COMMON
 @end defun
 
 @defun string-cursor-diff @var{str} @var{start} @var{end}
 [SRFI-130]
-
+@c EN
 Returns the number of characters between @var{start} and @var{end}. It
 should be non-negative if @var{start} precedes @var{end}, non-positive
 otherwise. @var{start} and @var{end} also accept index.
+@c JP
+二つの文字列カーソル@var{start}と@var{end}の間にある文字数を返します。
+@var{start}より@var{end}が後を指していれば結果は正に、
+@var{end}が@var{start}より手前にあれば結果は負になります。
+@var{start}と@var{end}は文字列インデックスであっても構いません。
+@c COMMON
 @end defun
 
 @defun string-cursor=? @var{cur1} @var{cur2}
@@ -9273,9 +9307,13 @@ otherwise. @var{start} and @var{end} also accept index.
 @defunx string-cursor>? @var{cur1} @var{cur2}
 @defunx string-cursor>=? @var{cur1} @var{cur2}
 [SRFI-130]
-
+@c EN
 Compares two cursors or two indexes (but not a cursor and an index)
 and returns @code{#t} or @code{#f} accordingly.
+@c JP
+二つの文字列カーソル、もしくは二つのインデックスの前後関係を比較します
+(カーソルとインデックスは比較できません)。
+@c COMMON
 @end defun
 
 @node String indexing, String accessors & modifiers, String cursors, Strings
