@@ -9092,9 +9092,9 @@ for the details of indexed string.)
 文字インデックスを使ってマルチバイト文字列中の文字を@code{string-ref}で取り出すには、
 Gaucheは文字列の最初からその文字まで文字列をたどらなければならず、
 インデックスnに対してO(n)かかります。カーソルを使えばO(1)でアクセスできます
-(ASCII文字だけからなる文字列や、インデックス付加済み文字列では
+(ASCII文字だけからなる文字列や、索引付加済み文字列では
 文字インデックスを使ったアクセスもO(1)になります。
-インデックス付加済み文字列については@ref{String indexing}を参照してください。)
+索引付加済み文字列については@ref{String indexing}を参照してください。)
 @c COMMON
 
 @c EN
@@ -9225,7 +9225,7 @@ also be an index.  An error is signaled if @var{cur} points to the end
 of the string.
 @c JP
 文字列@var{str}中で、@var{cur}が指す文字の次を指すカーソルを返します。
-@var{cur}に文字列インデックスを渡すこともできます。@var{cur}が文字列末尾を
+@var{cur}に文字インデックスを渡すこともできます。@var{cur}が文字列末尾を
 指している場合はエラーが投げられます。
 @c COMMON
 @end defun
@@ -9238,7 +9238,7 @@ also be an index.  An error is signaled if @var{cur} points to the
 beginning of the string.
 @c JP
 文字列@var{str}中で、@var{cur}が指す文字の一つ前を指すカーソルを返します。
-@var{cur}には文字列インデックスを渡すこともできます。@var{cur}が文字列先頭を
+@var{cur}には文字インデックスを渡すこともできます。@var{cur}が文字列先頭を
 指している場合はエラーが投げられます。
 @c COMMON
 @end defun
@@ -9250,7 +9250,7 @@ Returns the cursor into @var{str} following @var{cur} by @var{n}
 characters. @var{cur} can also be an index.
 @c JP
 文字列@var{str}中で、カーソル@var{cur}が指す文字から@var{n}文字先を指す
-カーソルを返します。@var{cur}に文字列インデックスを渡すこともできます。
+カーソルを返します。@var{cur}に文字インデックスを渡すこともできます。
 @c COMMON
 @end defun
 
@@ -9261,7 +9261,7 @@ Returns the cursor into @var{str} preceding @var{cur} by @var{n}
 characters. @var{cur} can also be an index.
 @c JP
 文字列@var{str}中で、カーソル@var{cur}が指す文字から@var{n}文字前を指す
-カーソルを返します。@var{cur}に文字列インデックスを渡すこともできます。
+カーソルを返します。@var{cur}に文字インデックスを渡すこともできます。
 @c COMMON
 @end defun
 
@@ -9297,7 +9297,7 @@ otherwise. @var{start} and @var{end} also accept index.
 二つの文字列カーソル@var{start}と@var{end}の間にある文字数を返します。
 @var{start}より@var{end}が後を指していれば結果は正に、
 @var{end}が@var{start}より手前にあれば結果は負になります。
-@var{start}と@var{end}は文字列インデックスであっても構いません。
+@var{start}と@var{end}は文字インデックスであっても構いません。
 @c COMMON
 @end defun
 
@@ -9318,53 +9318,112 @@ and returns @code{#t} or @code{#f} accordingly.
 
 @node String indexing, String accessors & modifiers, String cursors, Strings
 @subsection String indexing
-@c NODE 文字列のインデクシング
+@c NODE 文字列索引
 
+@c EN
 Since Gauche stores strings in multibyte encoding, random access
 requires O(N) by default.  In most cases, string access is either
 sequential or search-and-extract pattern, and Gauche provides direct
 means for these operations, so you don't need to deal with indexed access.
 However, there may be a case that you have need more efficient random
 access string (mostly when porting third-party code, we imagine).
+@c JP
+Gaucheは文字列をマルチバイト形式で保持しているので、
+デフォルトではランダムアクセスにO(N)の時間がかかります。
+ほとんどの場合、文字列へのアクセスは最初から順に見て行くか、
+検索してマッチした箇所を見るかで、Gaucheはそれらの操作をプリミティブで提供しているので、
+文字列を文字のインデックスでアクセスする必要は滅多にないでしょう。
+けれどもどうしても文字列をランダムにアクセスしたい場合があるかもしれません
+(サードパーティ製のライブラリの移植、などが考えられます)。
+@c COMMON
 
+@c EN
 There are a couple of ways to achieve O(1) random access.
+@c JP
+O(1)ランダムアクセスを実現する方法は二つばかりあります。
+@c COMMON
 
+@c EN
 First, instead of integer character indexes,
 you can use string cursors (@pxref{String cursors}).  It is defined
 by @code{srfi-130}, and you can use the code that's using srfi-130
 as is, without worring about slow access.  However, if external interface
 gives you integer character index, converting index to cursor and vice versa
 takes O(N) after all.
+@c JP
+一つは、文字へのインデックスのかわりに、
+文字列カーソルを使うことです(@ref{String cursors}参照)。
+文字列カーソルは@code{srfi-130}で定義され、srfi-130のインタフェースを使っている
+コードはそのまま、効率的に動きます。ただ、もし外部に向けたインタフェースが
+文字インデックスを要求していたなら、カーソルとインデックス間の相互変換のところで
+O(N)時間がかかってしまいます。
+@c COMMON
 
+@c EN
 There's another way.  You can precompute @emph{string index}, mapping from
 integer character index to the position in the multibyte string.  It costs
 O(N) of time and space to compute it, but once computed, you have
 O(1) random access.  (We store positions for every K characters, where K
 is between 16 to 256, so it won't take up as large storage as the
 actual string body).
+@c JP
+もう一つの方法は、文字のインデックスとマルチバイト文字列内の位置を表す
+@emph{文字列索引}をあらかじめ計算しておくことです。計算時にはO(N)の時間・空間
+コストがかかりますが、一度計算すれば以降はO(1)でランダムアクセスできます。
+(実際には、文字列の長さに応じて16から256文字ごとに位置を記録するので、
+文字列本体に比べて索引はそれほどメモリを取りません)。
+@c COMMON
 
+@c EN
 For portability, srfi-135 Immutable Texts provides O(1) accessible string
 as ``texts''.  On Gauche, a text is just an immutable string with
 index attached.
+@c JP
+srfi-135 (変更不可なテキスト) はO(1)アクセス可能な文字列を「テキスト」という型で
+扱っています。Gaucheでは、テキストは単に文字列索引つきの変更不可な文字列です。
+@c COMMON
 
 @defun string-build-index! str
+@c EN
 Computes and attaches index to a string @var{str}, and returns @var{str}
 itself.  The operation doesn't alter the content of @var{str}, and you can
 pass immutable string as well.
+@c JP
+文字列@var{str}の索引を計算して、@var{str}自身を返します。
+この操作は@var{str}自体の内容を変えるものではないため、変更不可な文字列にも適用できます。
+@c COMMON
 
+@c EN
 If @var{str} is a single-byte string (ASCII-only, or incomplete),
 or a short one (less than 64 octets), no index is attached.
 It is ok to pass a string which already has an index; then index computation
 is skipped.
+@c JP
+@var{str}がシングルバイト文字列(ASCIIのみからなるか、不完全な文字列)の場合、
+あるいは短い(64バイト以下)の場合、索引は実際には計算されません。
+また、既に索引がある文字列を渡しても構いません。その場合、単に索引の計算はスキップされます。
+@c COMMON
 
+@c EN
 The index is attached to the string's content.  If you alter @var{str}
 by e.g. @code{string-set!}, the index is discarded.
+@c JP
+索引は文字列の内容そのものに対してつけられます。@var{str}の内容を@code{string-set!}などで
+置き換えた際には、索引は破棄されます。
+@c COMMON
 @end defun
 
 @defun string-fast-indexable? str
+@c EN
 Returns @code{#t} iff index access of a string @var{str} is effectively O(1),
 that is, @var{str} is either a single-byte string,
 a short string, or a long multibyte string with index computed.
+@c JP
+文字列@var{str}への文字インデックスでのアクセスがO(1)で行える場合に@code{#t}を、
+そうでなければ@code{#f}を返します。
+@code{#t}が返されるのは、@var{str}がシングルバイト文字列か、
+短い文字列か、文字列索引が付加された長い文字列である場合です。
+@c COMMON
 @end defun
 
 
