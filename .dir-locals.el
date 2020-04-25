@@ -6,7 +6,7 @@
    $let* 1
    and-let* 1
    and-let1 2
-   begin0 0
+   begin0 1
    call-with-client-socket 1
    call-with-input-conversion 1
    call-with-input-file 1
