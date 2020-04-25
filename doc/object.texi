@@ -3525,6 +3525,7 @@ Scheme 定義のクラスは、@code{scheme} というシンボルを持って�
 @c COMMON
 
 @deffn {Method} initialize (class <class>) :rest initargs
+@c EN
 The @code{define-class} macro expands into a call of
 @code{(make <class> @dots{})}, which allocates a class metaobject
 and calls @code{initialize} method.   This method takes care of
@@ -3532,31 +3533,119 @@ computing inheritance order (class precedence list) and calculate slots,
 and set up various internal slots.  Then, at the very end of
 this method, it @emph{freezes} the essential class slots; they became
 immutable.
+@c JP
+@code{define-class}マクロは、@code{(make <class> @dots{})}という呼び出しへと
+展開されます。@code{make}はクラスメタオブジェクトをアロケートし、
+その@code{initialize}メソッドを呼びます。
+このメソッド内で、クラスの継承順位(class precedence list)や
+持つべきスロットが計算され、クラス内部のスロットに適切な値が与えられます。
+そしてこのメソッドの末尾で、クラスの重要なスロットが@emph{凍結}され、
+以降の変更が禁止されます。
+@c COMMON
 
+@c EN
 Calculation of inheritance and slots are handle by generic
 functions.  If you define a metaclass, you can define methods
 for them to customize how those calculations are done.
 Class inheritance is calculated by @code{compute-cpl} defined below.
 Slot calculation is a bit involved, and explained in the 
 next subsection (@pxref{Customizing slot access}).
+@c JP
+継承とスロットの計算はジェネリックファンクションにより行われます。
+メタクラスを定義し、それに適切なメソッドを定義することで、
+振る舞いをカスタマイズできます。クラスの継承は、下に示す
+@code{compute-cpl}メソッドにより計算されます。
+スロットの計算はもうちょっと複雑なので、次のサブセクションで説明します
+(@ref{Customizing slot access})。
+@c COMMON
 
-If your metaclass needs to initialize auxiliary slots, you can
-define your own @code{initialize} method, in which you call
+@c EN
+If your class needs to initialize auxiliary slots, you can
+define your own @code{initialize} method on its metaclass, in which you call
 @code{next-method} first to set up the core part of the
-@code{<class>} structure, then you sets up metaclass-specific part.  
+@code{<class>} structure, then you sets up class-specific part.  
 One caveat is that, after @code{next-method} handles
 initialization of the core @code{<class>} part, you can no longer
 modify essential class slots.  If you need to tweak those slots,
 you can override @code{class-post-initialize} method, which
 is called right before the core class slots are frozen.
+@c JP
+クラスが独自のスロットを持っていて初期化が必要な場合は、
+メタクラスに@code{initialize}メソッドを定義し、
+その中でまず@code{next-method}を呼んで@code{<class>}構造の基本部分部分を
+初期化してから、独自部分を初期化します。
+@code{next-method}により@code{<class>}の基本部分が初期化されたら、
+それはもう変更できないことに注意してください。
+基本部分のスロットに手を加えたい場合は、
+クラスの基本部分が凍結される直前に呼ばれる
+@code{class-post-initialize}メソッドをオーバライドすることにより可能です。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} compute-cpl class
+@c EN
+This generic function is called from @code{initialize} method
+on @code{<class>}, and responsible to compute the class
+precedence list (CPL).
+
+At the time this generic function is called,
+only @code{name} and @code{direct-supers} slots of @var{class}
+are set.  The @code{direct-supers} slot contains a list of
+classes @var{class} directly inherits from.  All classes in
+it is already initialized.
+
+It must return a list of classes, starting with @var{class}
+itself and ending with @code{<top>}, representing the order
+of precedence with which methods are searched.  The method
+defined for @code{<class>} uses C3 linearlization, which
+topologically sorts all the classes involved in the inheritance.
+
+Override this method if you need to change how CPL is computed.
+You might not want to change the actual algorithm unless you emulate
+different object system, but you can use the method to ensure
+certain class is always inherited, for example.
+@c JP
+@code{<class>}に定義されている@code{initialize}メソッドから呼ばれ、
+クラスの継承優先順リスト(class precedence list, CPL)を計算する
+ジェネリックファンクションです。
+
+これが呼ばれる時点で、クラスメタオブジェクト
+@var{class}は@code{name}および@code{direct-supers}スロットだけが
+設定されています。@code{direct-supers}スロットの値は@var{class}が直接継承する
+クラスのリストです。ここに含まれるクラスは全て初期化済みです。
+
+返り値はクラスのリストで、@var{class}から始まり、@code{<top>}で終わっていなければ
+なりません。このリストの順に、マッチするメソッドが探されます。
+@code{<class>}に対して定義されているメソッドはC3線形化アルゴリズムを使用します。
+これは、直接間接を問わず継承している全てのクラスをトポロジカルソートするものです。
+
+CPLの計算をカスタマイズしたい場合にこのメソッドをオーバライドしてください。
+計算のアルゴリズムを変えることは、他のオブジェクトシステムをエミュレートするというのでも
+なければあまり必要がないかもしれませんが、例えば自分のメタクラスでは
+必ずあるクラスを継承することを保証する、といった使い方もできます。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} class-post-initialize class initargs
-@end deffn
+@c EN
+This generic function is called after all core initialization of @var{class}
+is finished, but before the class is ``freezed'', that is, the essential
+parts of @var{class} becomes immutable.  If you want to trick
+object system in some weird way, override this method.
 
+We assume you know what you are doing, for object system assumes the essential
+parts are computed in the standard way.  Messing with them
+can easily break the system.
+@c JP
+このジェネリックファンクションは、@var{class}のコア部分の初期化が終わった後、
+クラスが「凍結」される、つまくクラスの主要なスロットが変更不可になる直前に呼ばれます。
+このメソッドをオーバライドすることで、オブジェクトシステムを「騙す」ことができます。
+
+自分が何をしているかわかっている場合のみ、このメソッドをオーバライドしてください。
+オブジェクトシステムは、クラスのコア部分が標準的な方法で設定されていることを前提に
+動作します。それを変えることは容易にシステムを壊します。
+@c COMMON
+@end deffn
 
 
 @node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
