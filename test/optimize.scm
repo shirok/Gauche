@@ -94,6 +94,16 @@
        '(((LREF0-PUSH)) ((CONSTI 0)) ((UVEC-REF 1)) ((RET)))
        (proc->insn/split (late-inline-test-1 u8vector-ref)))
 
+
+;; pass3/receive
+(test* "inlining receive-apply-values pattern" '(((LREF0-CAR))
+                                                 ((PUSH-LOCAL-ENV 1))
+                                                 ((PRE-CALL 1) 8)
+                                                 ((CONST-PUSH) "foo")
+                                                 ((GREF-CALL 1) print)
+                                                 ((LREF0-RET)))
+       (unwrap-syntax (proc->insn/split (^x (begin0 (car x) (print "foo"))))))
+
 (test-section "lambda lifting")
 
 ;; bug reported by teppey
