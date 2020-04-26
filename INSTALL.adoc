@@ -355,6 +355,37 @@ endif::EN[]
                             and mbedTLS library (installed on the system).
 
 ifdef::JA[]
+== DBMデータベースのサポート
+endif::JA[]
+ifdef::EN[]
+== DBM database support
+endif::EN[]
+
+ifdef::JA[]
+Gaucheは、DBM系のデータベース ライブラリとして、fsdbm, gdbm, ndbm, odbm を
+サポートしています。
+fsdbm は常に使用可能です。他のライブラリはシステムに外部ライブラリが見つかれば
+使用可能になります。
+
+もし、gdbm, ndbm, odbm のうち いくつかを使用しないようにしたい場合は、
+configure の `--with-dbm=gdbm,ndbm,odbm` オプションで、外したいライブラリを
+除いたものを指定してください。
+また、もし、gdbm, ndbm, odbm のすべてを使用しないようにしたい場合は、
+`--with-dbm=no` を指定してください。
+endif::JA[]
+ifdef::EN[]
+Gauche supports fsdbm, gdbm, ndbm and odbm as DBM-like database libraries.
+fsdbm is always available. Others are enabled only when the external
+libraries are found on your system.
+
+If you want to disable some of gdbm, ndbm and odbm, specify the configure
+option `--with-dbm=gdbm,ndbm,odbm` except for the libraries you want to
+disable.
+Also, if you want to disable all of gdbm, ndbm and odbm, specify the
+configure option `--with-dbm=no` .
+endif::EN[]
+
+ifdef::JA[]
 == SLIBの場所
 endif::JA[]
 ifdef::EN[]
