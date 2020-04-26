@@ -174,13 +174,18 @@
 (eval-when (:compile-toplevel)
   (use gauche.vm.insn)
   (define-macro (define-insn-constants)
-    (let1 name&codes
-        (map (^[insn] (cons (car insn) (ref (cdr insn)'code)))
-             (class-slot-ref <vm-insn-info> 'all-insns))
+    (let ([name&codes
+           (map (^[insn] (cons (car insn) (ref (cdr insn)'code)))
+                (class-slot-ref <vm-insn-info> 'all-insns))]
+          [mv-insn-codes
+           (filter-map (^[insn] (and (~ (cdr insn)'multi-value)
+                                     (~ (cdr insn)'code)))
+                       (class-slot-ref <vm-insn-info> 'all-insns))])
       `(begin
          ,@(map (^[n&c] `(define-constant ,(car n&c) ,(cdr n&c)))
                 name&codes)
          (define-constant .insn-alist. ',name&codes)
+         (define-constant .insn-multi-value-codes. ',mv-insn-codes)
          )))
   (define-insn-constants)
   )
@@ -683,6 +688,9 @@
     (cond [(null? p) #f]
           [(eqv? (cdar p) code) (caar p)]
           [else (loop (cdr p))])))
+
+(define (insn-multi-value? code)
+  (memv code .insn-multi-value-codes.))
 
 ;; prettyprinter of intermediate form
 (define (pp-iform iform :optional (lines +inf.0))

@@ -1,5 +1,11 @@
 2020-04-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-3.scm (pass3/$RECEIVE): Optimize the common pattern
+	  (receive vs expr body ... (apply values vs)).   It appears in the
+	  expansion of begin0, for example.  We omit
+	  packing/unpacking of multiple values when we know expr can only
+	  yield a single value.
+
 	* lib/gauche/vm/insn-core.scm, src/vminsn.scm: Added multi-value slot,
 	  specifies if the insn can result multiple values.  Used by the
 	  compiler for optimization.
