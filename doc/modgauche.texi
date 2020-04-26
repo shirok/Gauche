@@ -7414,6 +7414,44 @@ generate, and use @var{g} to update the seed value.
 @end example
 @end defun
 
+@defun giterate f seed
+@defunx giterate1 f seed
+@c MOD gauche.generator
+@c EN
+Returns a generator of
+an infinite sequence of values where the next value is computed
+by applying @var{f} on the current value.  The first value generated
+by @code{giterate} is @var{seed} itself, while the first one by 
+@code{giterate1} is @code{(@var{f} @var{seed})}.
+@c JP
+要素が、一つ前の要素に@var{f}を適用して計算されるような値の列を無限に生成する
+ジェネレータを返します。@code{giterate}では最初の値は@var{seed}そのものですが、
+@code{giterate1}では@code{(@var{f} @var{seed})}が最初の値になります。
+@c COMMON
+
+@example
+(generator->list (giterate (pa$ * 2) 1) 10)
+  @result{} (1 2 4 8 16 32 64 128 256 512)
+(generator->list (giterate1 (pa$ * 2) 1) 10)
+  @result{} (2 4 8 16 32 64 128 256 512 1024)
+@end example
+
+@c EN
+The reason we have @code{giterate1} is that it's pretty efficient
+(up to 10% faster than @code{giterate}).
+
+See also @code{literate} in @code{gauche.lazy}
+(@pxref{Lazy sequence utilities}).
+@c JP
+@code{giterate1}を別に用意しているのは、それが極めて速いからです
+(@code{giterate}に比べても10%ほど速いです)。
+@c COMMON
+
+@code{gauche.lazy}の@code{literate}も参照
+(@ref{Lazy sequence utilities})。
+@end defun
+
+
 @subsubheading SRFI-158 compatible procedures
 
 @defun generator item @dots{}
@@ -9173,6 +9211,35 @@ a (possibly lazy) list, that forms the tail of the resulting sequence.
   @result{} (0 2 4 6 8 10 12 14 16 18 end)
 @end example
 @end defun
+
+@defun literate proc seed
+@c MOD gauche.lazy
+@c EN
+Creates an infinite sequence of
+@code{(@var{seed} (@var{proc} @var{seed}) (@var{proc} (@var{proc} @var{seed})) @dots{})}.
+
+The same sequence can be created with
+@code{(lunfold (^_ #f) identity proc seed)},
+but this one is a lot more efficient.
+
+See also @code{util.stream}, which as @code{stream-iterate}
+(@pxref{Stream constructors}).
+@c JP
+@code{(@var{seed} (@var{proc} @var{seed}) (@var{proc} (@var{proc} @var{seed})) @dots{})} という無限シーケンスを作ります。
+
+同じシーケンスは@code{(lunfold (^_ #f) identity proc seed)}でも作れますが、
+こちらの方がずっと効率的です。
+
+類似の手続きとして、@code{util.stream}に@code{stream-iterate}があります
+(@ref{Stream constructors}参照)。
+@c COMMON
+
+@example
+(take (literate (pa$ + 1) 0) 10)
+ @result{} (0 1 2 3 4 5 6 7 8 9)
+@end example
+@end defun
+
 
 @defun lmap proc seq seq2 @dots{}
 @c MOD gauche.lazy

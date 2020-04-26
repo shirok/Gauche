@@ -27503,16 +27503,25 @@ generated.
 [R7RS stream]
 @c MOD util.stream
 @c EN
-Returns a sequence starting from @var{seed}, and each successive element
+Returns a stream starting from @var{seed}, and each successive element
 is calculated by @code{(@var{f} @var{s})} where @var{s} is the previous
 element.
 @c JP
+@var{seed}を初期値とし、ひとつ前の要素@var{s}から次の要素を@code{(@var{f} @var{s})}で
+計算するような無限長のストリームを返します。
 @c COMMON
 
 @example
 (stream->list 5 (stream-iterate (cut cons 'x <>) '()))
   @result{} (() (x) (x x) (x x x) (x x x x))
 @end example
+
+@c EN
+See also @code{literate} in @code{gauche.lazy} (@pxref{Lazy sequence utilities}).
+@c JP
+@code{gauche.lazy}の@code{literate}も参照
+(@ref{Lazy sequence utilities}).
+@c COMMON
 @end defun
 
 @defun stream-xcons a b
