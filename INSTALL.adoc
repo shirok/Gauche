@@ -362,27 +362,23 @@ ifdef::EN[]
 endif::EN[]
 
 ifdef::JA[]
-Gaucheは、DBM系のデータベース ライブラリとして、fsdbm, gdbm, ndbm, odbm を
-サポートしています。
-fsdbm は常に使用可能です。他のライブラリはシステムに外部ライブラリが見つかれば
-使用可能になります。
+デフォルトでは、Gaucheはシステム中にgdbm, ndbm, odbm (original dbm)のライブラリ
+があるかどうかを調べ、見つかったライブラリに対するインタフェースサポートをビルドします。
 
-もし、gdbm, ndbm, odbm のうち いくつかを使用しないようにしたい場合は、
-configure の `--with-dbm=gdbm,ndbm,odbm` オプションで、外したいライブラリを
-除いたものを指定してください。
-また、もし、gdbm, ndbm, odbm のすべてを使用しないようにしたい場合は、
-`--with-dbm=no` を指定してください。
+もし特定のdbmライブラリのサポートを除外したい場合は、configureスクリプトの`--with-dbm'
+オプションに、*含めたいライブラリ*を列挙してください。例えば `--with-dbm=ndbm' と
+すれば、gdbmやオリジナルのdbmのライブラリがシステムにあってもそれらは含まれず、
+ndbmのサポートだけビルドされます。いずれのライブラリサポートも含めたくなければ
+`--with-dbm=no' と指定してください。
 endif::JA[]
 ifdef::EN[]
-Gauche supports fsdbm, gdbm, ndbm and odbm as DBM-like database libraries.
-fsdbm is always available. Others are enabled only when the external
-libraries are found on your system.
+By default, Gauche looks for gdbm, ndbm and odbm (original dbm) libraries
+on your system, and build support for available libraries.
 
-If you want to disable some of gdbm, ndbm and odbm, specify the configure
-option `--with-dbm=gdbm,ndbm,odbm` except for the libraries you want to
-disable.
-Also, if you want to disable all of gdbm, ndbm and odbm, specify the
-configure option `--with-dbm=no` .
+If you want to exclude any of these support, list the libraries you
+want to *inlucde* in `--with-dbm' configure option.  For example,
+if you want to include ndbm but nothing else, specify `--with-dbm=ndbm'.
+If you want to include none of them, specify `--with-dbm=no'.
 endif::EN[]
 
 ifdef::JA[]
