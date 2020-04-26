@@ -1,3 +1,9 @@
+2020-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/insn-core.scm, src/vminsn.scm: Added multi-value slot,
+	  specifies if the insn can result multiple values.  Used by the
+	  compiler for optimization.
+
 2020-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modutil.texi: Officially document data.priority-map.

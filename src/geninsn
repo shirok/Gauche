@@ -92,6 +92,7 @@
             (~ insn'num-params) (~ insn'alt-num-params))
     (format #t "  :operand-type '~a\n" (~ insn'operand-type))
     (format #t "  :obsoleted ~s\n" (~ insn'obsoleted))
+    (format #t "  :multi-value ~s\n" (~ insn'multi-value))
     (format #t "  :fold-lref ~s\n" (~ insn'fold-lref))
     (format #t "  :combined '~s\n" (~ insn'combined))
     (format #t "  :body '~s)\n\n" (~ insn'body)))
@@ -383,6 +384,7 @@
          :operand-type operand-type :combined combined
          :body body
          :obsoleted (boolean (memq :obsoleted flags))
+         :multi-value (boolean (memq :multi-value flags))
          :fold-lref (boolean (memq :fold-lref flags))))]
     [else (errorf "unrecognized define-insn form: ~s" definsn)]))
 

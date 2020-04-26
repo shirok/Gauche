@@ -82,6 +82,7 @@
 ;;;                         of having LREF0-SOMETHING or LREF21-SOMETHING
 ;;;                         separately, we'll have LREF-SOMETHING(0,0) and
 ;;;                         LREF-SOMETHING(2,1), respectively.
+;;;           :multi-value - Can result multiple values.
 
 ;;;==============================================================
 ;;; Common Cise macros
@@ -450,7 +451,8 @@
     ($include "./vmcall.c")
     (label tail_apply_entry)
     ($define APPLY_CALL)
-    ($include "./vmcall.c")))
+    ($include "./vmcall.c"))
+  :multi-value)
 
 ;; TAIL-CALL(nargs)
 ;;  Call procedure in val0.  Same as CALL except this discards the
@@ -465,7 +467,8 @@
         (set! (-> ct top) (logand (+ (-> ct top) 1)
                                   (- (-> ct size) 1)))))
     (DISCARD-ENV)
-    ($goto-insn CALL)))
+    ($goto-insn CALL))
+  :multi-value)
 
 ;; JUMP <addr>
 ;;  Jump to <addr>.
@@ -477,7 +480,8 @@
 ;;  Pop the continuation stack.
 ;;
 (define-insn RET       0 none #f
-  (begin (RETURN-OP) CHECK-INTR NEXT))
+  (begin (RETURN-OP) CHECK-INTR NEXT)
+  :multi-value)
 
 ;; DEFINE(flag) <symbol>
 ;;  Defines global binding of SYMBOL in the current module.
@@ -599,7 +603,8 @@
     (CHECK-STACK (-> vm base maxstack))
     CHECK-INTR
     (SCM_PROF_COUNT_CALL vm (SCM_OBJ (-> vm base)))
-    NEXT))
+    NEXT)
+  :multi-value)
 
 (define-insn LOCAL-ENV-TAIL-CALL 1 none #f
   (let* ([nargs::int (cast int (- SP ARGP))] [to::ScmObj*])
@@ -613,7 +618,8 @@
           (set! (* (post++ t)) (* (post++ a))))))
     (set! ARGP to)
     (set! SP (+ to nargs))
-    ($goto-insn LOCAL-ENV-CALL)))
+    ($goto-insn LOCAL-ENV-CALL))
+  :multi-value)
 
 ;; BF <else-offset>          ; branch if VAL0 is false
 ;; BT <else-offset>          ; branch if VAL0 is true
@@ -774,7 +780,8 @@
       (for [() (> nvals 1) (post-- nvals)]
            (POP-ARG (aref (-> vm vals) (- nvals 1))))
       (POP-ARG VAL0)
-      NEXT)))
+      NEXT))
+  :multi-value)
 
 ;; LSET(depth, offset)
 ;;  Local set
@@ -906,7 +913,8 @@
                   (aref (-> vm vals) (- SCM_VM_MAX_VALUES 1)))
         (break))
       (PUSH-ARG (aref (-> vm vals) i)))
-    ($goto-insn TAIL-CALL)))
+    ($goto-insn TAIL-CALL))
+  :multi-value)
 
 ;; Inlined operators
 ;;  They work the same as corresponding Scheme primitives, but they are
@@ -1015,7 +1023,8 @@
     (POP-ARG VAL0)                      ; get proc
     (TAIL-CALL-INSTRUCTION)
     (set! VAL0 (Scm_VMApply VAL0 cp))
-    NEXT))
+    NEXT)
+  :multi-value)
 
 (define-insn TAIL-APPLY  1 none #f
   ;; Inlined apply.  Assumes the call is at the tail position.
@@ -1058,7 +1067,8 @@
     ;; normal path
     (set! (* (post++ SP)) rest)
     (DISCARD-ENV)
-    (goto tail_apply_entry)))
+    (goto tail_apply_entry))
+  :multi-value)
 
 (define-insn IS-A        0 none #f      ; is-a?
   ($w/argp obj
@@ -1083,8 +1093,8 @@
 
 (define-insn SETTER      0 none #f ($w/argr v ($result (Scm_Setter v))))
 
-(define-insn VALUES      1 none #f (begin ($values) NEXT))
-(define-insn VALUES-RET  1 none (VALUES RET) (begin ($values) (RETURN-OP) NEXT))
+(define-insn VALUES      1 none #f (begin ($values) NEXT) :multi-value)
+(define-insn VALUES-RET  1 none (VALUES RET) (begin ($values) (RETURN-OP) NEXT) :multi-value)
 
 (define-insn VEC         1 none #f      ; vector
   (let* ([nargs::int (SCM_VM_INSN_ARG code)]
