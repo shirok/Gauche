@@ -40,7 +40,8 @@
 (define-module gauche.lazy
   (use srfi-1)
   (use gauche.generator)
-  (export x->lseq lunfold lmap lmap-accum lappend lappend-map lconcatenate
+  (export x->lseq lunfold literate
+          lmap lmap-accum lappend lappend-map lconcatenate
           linterweave lfilter lfilter-map lstate-filter
           ltake ltake-while lrxmatch lslices))
 (select-module gauche.lazy)
@@ -61,6 +62,9 @@
 (define (lunfold p f g seed :optional (tail #f))
   ($ generator->lseq
      $ gunfold p f g seed (if tail (^s (list->generator (tail s))) #f)))
+
+(define (literate f seed)
+  (generator->lseq seed (giterate1 f seed)))
 
 (define lmap
   (case-lambda

@@ -54,7 +54,8 @@
 
           null-generator gcons* gappend gflatten
           gconcatenate gmerge ggroup
-          circular-generator gunfold giota grange gindex gselect ginterval
+          circular-generator gunfold giterate giterate1
+          giota grange gindex gselect ginterval
           gmap gmap-accum gfilter gremove gdelete gdelete-neighbor-dups
           gfilter-map gstate-filter gbuffer-filter
           gtake gtake* gdrop gtake-while gdrop-while grxmatch gslices
@@ -230,6 +231,22 @@
                 (set! tail (if tail-gen (tail-gen seed) eof-object))
                 (tail)]
                [else (%begin0 (f seed) (set! seed (g seed)))]))))
+
+;; special case of gunfold, for speed and convenience.
+;;  giterate f seed == gunfold (^_ #f) identity f seed
+;; basically, it generates [seed, (f seed), (f (f seed)), ...]
+;; cf. stream-iterate (scheme.stream)
+(define (giterate f seed)
+  (let ([seed seed]
+        [first? #t])
+    (^[] (if first?
+           (begin (set! first? #f) seed)
+           (begin (set! seed (f seed)) seed)))))
+
+;; variation of giterate, where seed itself is not included.
+;; this is ~10% faster than giterate, mainly because this one is so simple.
+(define (giterate1 f seed)
+  (^[] (set! seed (f seed)) seed))
 
 (define (giota :optional (count +inf.0) (start 0) (step 1))
   (if (and (exact? start) (exact? step))

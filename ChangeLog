@@ -1,5 +1,9 @@
 2020-04-25  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/generator.scm (giterate, giterate1): Added.
+	  lib/gauche/lazy.scm (literate): Added.
+	  http://chaton.practical-scheme.net/gauche/a/2020/04/25#entry-5ea4496b-9be8a
+
 	* src/compile-3.scm (pass3/$RECEIVE): Optimize the common pattern
 	  (receive vs expr body ... (apply values vs)).   It appears in the
 	  expansion of begin0, for example.  We omit

@@ -237,6 +237,11 @@
                                  0
                                  (^s (giota 10)))))
 
+(test* "giterate" '(0 2 4 6 8 10 12 14 16 18)
+       (generator->list (giterate (pa$ + 2) 0) 10))
+(test* "giterate1" '(2 4 6 8 10 12 14 16 18 20)
+       (generator->list (giterate1 (pa$ + 2) 0) 10))
+
 (define-syntax test-list-like
   (syntax-rules ()
     [(_  gfn lfn src ...)

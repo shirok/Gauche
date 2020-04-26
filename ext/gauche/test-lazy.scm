@@ -51,6 +51,9 @@
 (test* "lazyness - coercion" '(#\a #\b #\c #\d #\e)
        (lmap identity "abcde"))
 
+(test* "lazyness - literate" '(0 2 4 6 8)
+       (take (literate (cut + <> 2) 0) 5))
+
 (test* "lazyness - lmap" 0
        ;; this yields an error if lmap works eagerly.
        (list-ref (lmap (^x (quotient 1 x)) '(1 2 3 4 0)) 2))
