@@ -406,7 +406,7 @@ struct ScmVMRec {
        such as Scm_Eval().  This can point into the stack, but must be
        saved when save_cont() is called.
      */
-    ScmContFrame *lastError;
+    ScmContFrame *lastErrorCont;
 #endif /*GAUCHE_SPLIT_STACK*/
 
 #if GAUCHE_FFX

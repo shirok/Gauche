@@ -245,7 +245,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->escapeData[1] = NULL;
     v->customErrorReporter = (proto? proto->customErrorReporter : SCM_FALSE);
 #if GAUCHE_SPLIT_STACK
-    v->lastError = NULL;
+    v->lastErrorCont = NULL;
 #endif /*GAUCHE_SPLIT_STACK*/
  
     v->evalSituation = SCM_VM_EXECUTING;
@@ -506,7 +506,7 @@ static void vm_unregister(ScmVM *vm)
 #define IN_STACK_P(ptr)                         \
     ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
 #define IN_FULL_STACK_P(ptr)                    \
-    ((ptr) >= vm->stack && (ptr) < vm->stackend)
+    ((ptr) >= vm->stack && (ptr) < vm->stackEnd)
 #else  /*!GAUCHE_SPLIT_STACK*/
 #define IN_STACK_P(ptr)                                                 \
       ((unsigned long)((ptr) - vm->stack) < SCM_VM_STACK_SIZE)
@@ -988,12 +988,16 @@ static void run_loop()
    This routine just moves the env frames, but leaves pointers that
    point to moved frames intact (such pointers are found only in
    the in-stack contniuation frames, chained from vm->cont).
-   It's the caller's responsibility to update those pointers. */
+   It's the caller's responsibility to update those pointers.
+
+   The env frames below the stackBase is also moved, to keep the invariance
+   that heap would never contain a pointer into the stack.
+*/
 static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
 {
     ScmEnvFrame *e = env_begin, *prev = NULL, *next, *head = NULL, *saved;
 
-    if (!IN_STACK_P((ScmObj*)e)) return e;
+    if (!IN_FULL_STACK_P((ScmObj*)e)) return e;
 
     do {
         long esize = (long)e->size;
@@ -1018,24 +1022,15 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
         e->size = -1;         /* indicates forwarded */
         e->info = SCM_FALSE;
         e = next;
-    } while (IN_STACK_P((ScmObj*)e));
+    } while (IN_FULL_STACK_P((ScmObj*)e));
     return head;
 }
 
-/* Copy the continuation frames to the heap.
-   We run two passes, first replacing cont frames with the forwarding
-   cont frames, then updates the pointers to them.
-   After save_cont, the only thing possibly left in the stack is the argument
-   frame pointed by vm->argp.
- */
-static void save_cont(ScmVM *vm)
+static void save_cont_1(ScmVM *vm, ScmContFrame *c)
 {
-    ScmContFrame *c = vm->cont, *prev = NULL;
+    if (!IN_FULL_STACK_P((ScmObj*)c)) return;
 
-    /* Save the environment chain first. */
-    vm->env = save_env(vm, vm->env);
-
-    if (!IN_STACK_P((ScmObj*)c)) return;
+    ScmContFrame *prev = NULL;
 
     /* First pass */
     do {
@@ -1046,7 +1041,7 @@ static void save_cont(ScmVM *vm)
         /* update env ptr if necessary */
         if (FORWARDED_ENV_P(c->env)) {
             c->env = FORWARDED_ENV(c->env);
-        } else if (IN_STACK_P((ScmObj*)c->env)) {
+        } else if (IN_FULL_STACK_P((ScmObj*)c->env)) {
             c->env = save_env(vm, c->env);
         }
 
@@ -1080,12 +1075,36 @@ static void save_cont(ScmVM *vm)
         c->prev = csave;
         c->size = -1;
         c = tmp;
-    } while (IN_STACK_P((ScmObj*)c));
+    } while (IN_FULL_STACK_P((ScmObj*)c));
+}
+
+
+/* Copy the continuation frames to the heap.
+   We run two passes, first replacing cont frames with the forwarding
+   cont frames, then updates the pointers to them.
+   After save_cont, the only thing possibly left in the stack is the argument
+   frame pointed by vm->argp.
+ */
+static void save_cont(ScmVM *vm)
+{
+    /* Save the environment chain first. */
+    vm->env = save_env(vm, vm->env);
+
+    /* First pass */
+    save_cont_1(vm, vm->cont);
+#if GAUCHE_SPLIT_STACK
+    save_cont_1(vm, vm->lastErrorCont);
+#endif /*GAUCHE_SPLIT_STACK*/
 
     /* Second pass */
     if (FORWARDED_CONT_P(vm->cont)) {
         vm->cont = FORWARDED_CONT(vm->cont);
     }
+#if GAUCHE_SPLIT_STACK
+    if (FORWARDED_CONT_P(vm->lastErrorCont)) {
+        vm->lastErrorCont = FORWARDED_CONT(vm->lastErrorCont);
+    }
+#endif /*GAUCHE_SPLIT_STACK*/
     for (ScmCStack *cstk = vm->cstack; cstk; cstk = cstk->prev) {
         if (FORWARDED_CONT_P(cstk->cont)) {
             cstk->cont = FORWARDED_CONT(cstk->cont);
@@ -1101,6 +1120,7 @@ static void save_cont(ScmVM *vm)
             ep->cont = FORWARDED_CONT(ep->cont);
         }
     }
+    vm->stackBase = vm->stack;
 }
 
 static void save_stack(ScmVM *vm)
@@ -1137,7 +1157,7 @@ static ScmEnvFrame *get_env(ScmVM *vm)
     ScmEnvFrame *e = save_env(vm, vm->env);
     if (e != vm->env) {
         vm->env = e;
-        for (ScmContFrame *c = vm->cont; IN_STACK_P((ScmObj*)c); c = c->prev) {
+        for (ScmContFrame *c = vm->cont; IN_FULL_STACK_P((ScmObj*)c); c = c->prev) {
             if (FORWARDED_ENV_P(c->env)) {
                 c->env = FORWARDED_ENV(c->env);
             }
@@ -1227,13 +1247,13 @@ void Scm_VMFlushFPStack(ScmVM *vm)
     for (int i=0; i<SCM_VM_MAX_VALUES; i++) {
         SCM_FLONUM_ENSURE_MEM(vm->vals[i]);
     }
-    if (IN_STACK_P(ARGP)) {
+    if (IN_FULL_STACK_P(ARGP)) {
         for (ScmObj *p = ARGP; p < SP; p++) SCM_FLONUM_ENSURE_MEM(*p);
     }
 
     /* scan the main environment chain */
     ScmEnvFrame *e = ENV;
-    while (IN_STACK_P((ScmObj*)e)) {
+    while (IN_FULL_STACK_P((ScmObj*)e)) {
         for (int i = 0; i < visited_index; i++) {
             if (visited[i] == e) goto next;
         }
@@ -1251,9 +1271,9 @@ void Scm_VMFlushFPStack(ScmVM *vm)
 
     /* scan the env chains grabbed by cont chain */
     ScmContFrame *c = CONT;
-    while (IN_STACK_P((ScmObj*)c)) {
+    while (IN_FULL_STACK_P((ScmObj*)c)) {
         e = c->env;
-        while (IN_STACK_P((ScmObj*)e)) {
+        while (IN_FULL_STACK_P((ScmObj*)e)) {
             for (int i = 0; i < visited_index; i++) {
                 if (visited[i] == e) goto next2;
             }
@@ -1267,12 +1287,38 @@ void Scm_VMFlushFPStack(ScmVM *vm)
           next2:
             e = e->up;
         }
-        if (IN_STACK_P((ScmObj*)c) && c->size > 0) {
+        if (IN_FULL_STACK_P((ScmObj*)c) && c->size > 0) {
             ScmObj *p = (ScmObj*)c - c->size;
             for (int i=0; i<c->size; i++, p++) SCM_FLONUM_ENSURE_MEM(*p);
         }
         c = c->prev;
     }
+#if GAUCHE_SPLIT_STACK
+    if ((c = vm->lastErrorCont) != NULL) {
+        while (IN_FULL_STACK_P((ScmObj*)c)) {
+            e = c->env;
+            while (IN_FULL_STACK_P((ScmObj*)e)) {
+                for (int i = 0; i < visited_index; i++) {
+                    if (visited[i] == e) goto next3;
+                }
+                if (visited_index < ENV_CACHE_SIZE) {
+                    visited[visited_index++] = e;
+                }
+                for (int i = 0; i < e->size; i++) {
+                    ScmObj *p = &ENV_DATA(e, i);
+                    SCM_FLONUM_ENSURE_MEM(*p);
+                }
+            next3:
+                e = e->up;
+            }
+            if (IN_FULL_STACK_P((ScmObj*)c) && c->size > 0) {
+                ScmObj *p = (ScmObj*)c - c->size;
+                for (int i=0; i<c->size; i++, p++) SCM_FLONUM_ENSURE_MEM(*p);
+            }
+            c = c->prev;
+        }
+    }
+#endif
 
     vm->fpsp = vm->fpstack;
 
@@ -2083,7 +2129,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         int numVals = 0;
 
 #if GAUCHE_SPLIT_STACK
-        vm->lastError = vm->cont;
+        vm->lastErrorCont = vm->cont;
         vm->stackBase = vm->sp;
 #endif
         
