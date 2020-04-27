@@ -1253,3 +1253,12 @@ The @code{version-alist} procedure is built-in.
 @code{gosh}のコマンドライン引数としてサポートされます。
 @code{version-alist}手続きは組み込みです。
 
+
+srfi-185, srfi-185
+()
+
+Linear adjustable-length strings
+Supported by the module @code{srfi-185}.
+
+線形更新な可変長文字列
+モジュール@code{srfi-185}でサポートされます。
