@@ -2198,20 +2198,25 @@
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-118")
-(use srfi-118)
-(test-module 'srfi-118)
+;; NB: srfi-118 conflicts with srfi-185, so we import it in a separate module.
 
-(test* "string-append!" "abcdef"
-       (rlet1 s (string-copy "ab")
-         (string-append! s "cd" #\e "f")))
+(define-module srfi-118-tests
+  (use gauche.test)
+  (use srfi-118)
+  (test-module 'srfi-118)
 
-(test* "string-replace!" "abcXYZfgh"
-       (rlet1 s (string-copy "abcdefgh")
-         (string-replace! s 3 5 "XYZ")))
+  (test* "string-append!" "abcdef"
+         (rlet1 s (string-copy "ab")
+           (string-append! s "cd" #\e "f")))
 
-(test* "string-replace!" "abcXYZfgh"
-       (rlet1 s (string-copy "abcdefgh")
-         (string-replace! s 3 5 "WXYZw" 1 4)))
+  (test* "string-replace!" "abcXYZfgh"
+         (rlet1 s (string-copy "abcdefgh")
+           (string-replace! s 3 5 "XYZ")))
+
+  (test* "string-replace!" "abcXYZfgh"
+         (rlet1 s (string-copy "abcdefgh")
+           (string-replace! s 3 5 "WXYZw" 1 4)))
+  )
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-121")
@@ -2665,5 +2670,39 @@
   (use srfi-173)
   (chibi-test
    (include "include/srfi-173-tests.scm")))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-185")
+;; NB: srfi-185 conflicts with srfi-118, so we import it in a separate module.
+
+(define-module srfi-185-tests
+  (use gauche.test)
+  (use srfi-185)
+  (test-module 'srfi-185)
+
+  (test* "string-append-linear!" "abcdefghij"
+         (string-append-linear! "abc" "def" #\g "" "hij"))
+  (test* "string-append-linear!" "xyz"
+         (string-append-linear! "xyz"))
+  (test* "string-replace-linear!" "abqqqi"
+         (string-replace-linear! "abcdefghi" 2 8 "qqq"))
+  (test* "string-replace-linear!" "yzghi"
+         (string-replace-linear! "abcdefghi" 0 6 "xyz" 1))
+  (test* "string-replace-linear!" "yghi"
+         (string-replace-linear! "abcdefghi" 0 6 "xyz" 1 2))
+
+  (test* "string-append!" "abcdef"
+         (rlet1 s "ab"
+           (string-append! s "cd" #\e "f")))
+
+  (test* "string-replace!" "abcXYZfgh"
+         (rlet1 s "abcdefgh"
+           (string-replace! s 3 5 "XYZ")))
+
+  (test* "string-replace!" "abcXYZfgh"
+         (rlet1 s "abcdefgh"
+           (string-replace! s 3 5 "WXYZw" 1 4)))
+  )
+
 
 (test-end)
