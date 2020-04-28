@@ -1242,6 +1242,20 @@ which is a thin layer on top of @code{gauche.hook} (@pxref{Hooks})
 それ自体は@code{gauche.hook}の上にかぶせた薄いレイヤです (@ref{Hooks}参照)。
 
 
+srfi-174, srfi-174
+()
+
+POSIX Timespecs
+Supported by the module @code{srfi-174}.
+In Gauche, the timespec type is the same as built-in @code{<time>}
+object, which is also the same as srfi-19 time.
+
+POSIX Timespec
+モジュール@code{srfi-174}でサポートされます。
+Gaucheでは、timespecオブジェクトは組み込みの@code{<time>}オブジェクトであり、
+またsrfi-19のtimeオブジェクトとも共通です。
+
+
 srfi-176, srfi-176
 ()
 

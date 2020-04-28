@@ -1,3 +1,7 @@
+2020-04-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-174.scm: Added.
+
 2020-04-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-185.scm: Added.

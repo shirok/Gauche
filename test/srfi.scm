@@ -2672,6 +2672,41 @@
    (include "include/srfi-173-tests.scm")))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-174")
+(use srfi-174)
+(test-module 'srfi-174)
+
+(let ([t1 (timespec 123456789 987654321)]
+      [t2 (timespec 123456789 987654322)]
+      [t3 (timespec -123456789 987654321)])
+  (define (ts-approx=? a b)
+    (and (= (timespec-seconds a) (timespec-seconds b))
+         (< (abs (- (timespec-nanoseconds a) (timespec-nanoseconds b)))
+            10)))
+  (test* "timespec?" '(#t #t #t)
+         (map timespec? (list t1 t2 t3)))
+  (test* "timespec-seconds" 123456789 (timespec-seconds t1))
+  (test* "timespec-seconds" -123456789 (timespec-seconds t3))
+  (test* "timespec-nanoseconds" 987654322 (timespec-nanoseconds t2))
+  (test* "timespec-nanoseconds" 987654321 (timespec-nanoseconds t3))
+  (test* "inexact <-> timespec" t1
+         (inexact->timespec (timespec->inexact t1))
+         ts-approx=?)
+  (test* "inexact <-> timespec" t3
+         (inexact->timespec (timespec->inexact t3))
+         ts-approx=?)
+  (test* "inexact conversion" (- (timespec->inexact t1))
+         (timespec->inexact t3))
+  (test* "timespec=?" #t (timespec=? t1 t1))
+  (test* "timespec=?" #f (timespec=? t1 t2))
+  (test* "timespec=?" #f (timespec=? t1 t3))
+  (test* "timespec<?" #t (timespec<? t1 t2))
+  (test* "timespec<?" #f (timespec<? t2 t1))
+  (test* "timespec<?" #t (timespec<? t3 t1))
+  (test* "timespec<?" #t (timespec<? t3 t2))
+  )
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-185")
 ;; NB: srfi-185 conflicts with srfi-118, so we import it in a separate module.
 
