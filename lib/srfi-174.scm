@@ -44,8 +44,4 @@
 (define (timespec=? ts1 ts2) (time=? ts1 ts2))
 (define (timespec<? ts1 ts2) (time<? ts1 ts2))
 
-;; probably we should support hash of <time> natively, but for now...
-(define (timespec-hash ts)
-  (combine-hash-value (default-hash (timespec-seconds ts))
-                      (default-hash (timespec-nanoseconds ts))))
-
+(define (timespec-hash ts) (default-hash ts))
