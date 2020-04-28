@@ -1,5 +1,11 @@
 2020-04-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c: Changed ScmClass.serialize to ScmClass.hash.  The
+	  serialize proc has never been used, and we think now that it's better
+	  to be implemented at Scheme level, outside of class.
+	  OTOH, class-specific hash is became more important than before, for
+	  now users count on default-hash just works.
+
 	* lib/srfi-174.scm: Added.
 
 2020-04-26  Shiro Kawai  <shiro@acm.org>

@@ -392,7 +392,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = Scm_ObjectCompare;
-    instance->serialize = NULL; /* class_serialize? */
+    instance->hash = NULL;
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
     instance->coreSize = 0;     /* will be set when CPL is set */

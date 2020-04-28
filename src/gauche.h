@@ -702,10 +702,16 @@ typedef void (*ScmClassPrintProc)(ScmObj obj,
                                   ScmPort *sink,
                                   ScmWriteContext *mode);
 typedef int  (*ScmClassCompareProc)(ScmObj x, ScmObj y, int equalp);
-typedef int  (*ScmClassSerializeProc)(ScmObj obj,
-                                      ScmPort *sink,
-                                      ScmObj context);
+typedef ScmSmallInt (*ScmClassHashProc)(ScmObj obj, ScmSmallInt salt,
+                                        u_long flags);
 typedef ScmObj (*ScmClassAllocateProc)(ScmClass *klass, ScmObj initargs);
+
+/* Flags value for ScmClassHashProc */
+enum {
+    SCM_HASH_PORTABLE = 1L<<0  /* must calculate a portable hash value,
+                                  can be used for portable-hash. */
+};
+    
 
 /* See class.c for the description of function pointer members.
    There's a lot of voodoo magic in class structure, so don't touch
@@ -722,9 +728,12 @@ struct ScmClassRec {
 #if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
     ScmClass **classPtr;
 #endif
+    /* Some type-specific primitive methods.  Note that these take precedence
+       than the generic function verison (write-object, object-compare etc.)
+    */
     ScmClassPrintProc     print;
     ScmClassCompareProc   compare;
-    ScmClassSerializeProc serialize;
+    ScmClassHashProc      hash;
     ScmClassAllocateProc  allocate;
     ScmClass **cpa;             /* class precedence array, NULL terminated */
     int numInstanceSlots;       /* # of instance slots */
