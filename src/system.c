@@ -629,8 +629,32 @@ static ScmObj stat_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(SCM_NEW_INSTANCE(ScmSysStat, klass));
 }
 
+static ScmSmallInt stat_hash(ScmObj obj, ScmSmallInt salt, u_long flags)
+{
+    ScmStat *s = SCM_SYS_STAT_STAT(obj);
+    ScmSmallInt h = salt;
+#define STAT_HASH_UI(name)                                              \
+    h = Scm_CombineHashValue(Scm_SmallIntHash((ScmSmallInt)s->SCM_CPP_CAT(st_, name), \
+                                              salt, flags), h);
+#define STAT_HASH_TIME(name)                                            \
+    h = Scm_CombineHashValue(Scm_Int64Hash((int64_t)s->SCM_CPP_CAT(st_, name), \
+                                           salt, flags), h);
+
+    STAT_HASH_UI(mode);
+    STAT_HASH_UI(ino);
+    STAT_HASH_UI(dev);
+    STAT_HASH_UI(rdev);
+    STAT_HASH_UI(nlink);
+    STAT_HASH_UI(uid);
+    STAT_HASH_UI(gid);
+    STAT_HASH_TIME(atime);
+    STAT_HASH_TIME(mtime);
+    STAT_HASH_TIME(ctime);
+    return h;
+}
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_SysStatClass,
-                         NULL, NULL, NULL,
+                         NULL, NULL, stat_hash,
                          stat_allocate,
                          SCM_CLASS_DEFAULT_CPL);
 
