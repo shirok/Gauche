@@ -200,5 +200,5 @@
   (tree-map-compare-as-sequences a b))
 
 (define-method object-equal? ((a <tree-map>) (b <tree-map>))
-  (= (tree-map-compare-as-sequences a b)) 0)
+  (= (tree-map-compare-as-sequences a b) 0))
 
