@@ -406,34 +406,40 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
             ADDRESS_HASH(hashval, obj);
             return hashval;
         }
-    } else {
-        /* Call specialized object-hash method
-           We need some trick; See libomega.scm for the details. */
-        static ScmObj call_object_hash_proc = SCM_UNDEFINED;
-        static ScmObj portable_hash_proc = SCM_UNDEFINED;
-        static ScmObj default_hash_proc = SCM_UNDEFINED;
-        SCM_BIND_PROC(call_object_hash_proc, "%call-object-hash",
-                      Scm_GaucheInternalModule());
-        SCM_BIND_PROC(portable_hash_proc, "portable-hash", Scm_GaucheModule());
-        SCM_BIND_PROC(default_hash_proc, "default-hash", Scm_GaucheModule());
-        ScmObj r = Scm_ApplyRec3(call_object_hash_proc, obj,
-                                 (portable
-                                  ? portable_hash_proc
-                                  : default_hash_proc),
-                                 (portable
-                                  ? Scm_MakeIntegerU(salt)
-                                  : SCM_FALSE));
-        if (SCM_INTP(r)) {
-            return (u_long)SCM_INT_VALUE(r);
-        }
-        if (SCM_BIGNUMP(r)) {
-            /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
-               so taking the LSW would give better distribution. */
-            return SCM_BIGNUM(r)->values[0];
-        }
-        Scm_Error("object-hash returned non-integer: %S", r);
-        return 0;               /* dummy */
     }
+
+    ScmClass *k = SCM_CLASS_OF(obj);
+    if (k->hash) {
+        return (u_long)k->hash(obj, salt,
+                               (portable? SCM_HASH_PORTABLE:0));
+    }
+
+    /* Call specialized object-hash method
+       We need some trick; See libomega.scm for the details. */
+    static ScmObj call_object_hash_proc = SCM_UNDEFINED;
+    static ScmObj portable_hash_proc = SCM_UNDEFINED;
+    static ScmObj default_hash_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(call_object_hash_proc, "%call-object-hash",
+                  Scm_GaucheInternalModule());
+    SCM_BIND_PROC(portable_hash_proc, "portable-hash", Scm_GaucheModule());
+    SCM_BIND_PROC(default_hash_proc, "default-hash", Scm_GaucheModule());
+    ScmObj r = Scm_ApplyRec3(call_object_hash_proc, obj,
+                             (portable
+                              ? portable_hash_proc
+                              : default_hash_proc),
+                             (portable
+                              ? Scm_MakeIntegerU(salt)
+                              : SCM_FALSE));
+    if (SCM_INTP(r)) {
+        return (u_long)SCM_INT_VALUE(r);
+    }
+    if (SCM_BIGNUMP(r)) {
+        /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
+           so taking the LSW would give better distribution. */
+        return SCM_BIGNUM(r)->values[0];
+    }
+    Scm_Error("object-hash returned non-integer: %S", r);
+    return 0;               /* dummy */
 }
 
 /* For recursive call to the current hash function - see call-object-hash
@@ -466,6 +472,36 @@ ScmSmallInt Scm_DefaultHash(ScmObj obj)
 {
     return equal_hash_common(obj, Scm_HashSaltRef(), FALSE) & HASHMASK;
 }
+
+/* This is to be called from ScmClass->hash if it needs to compute
+   hash value of field values. */
+ScmSmallInt Scm_RecursiveHash(ScmObj obj, ScmSmallInt salt, u_long flags)
+{
+    if (flags & SCM_HASH_PORTABLE) {
+        return equal_hash_common(obj, salt, TRUE) & PORTABLE_HASHMASK;
+    } else {
+        return equal_hash_common(obj, salt, FALSE) & HASHMASK;
+    }
+}
+
+ScmSmallInt Scm_SmallIntHash(ScmSmallInt val, 
+                             ScmSmallInt salt SCM_UNUSED,
+                             u_long flags SCM_UNUSED)
+{
+    ScmSmallInt v;
+    SMALL_INT_HASH(v, val);
+    return v;
+}
+
+ScmSmallInt Scm_Int64Hash(int64_t val,
+                          ScmSmallInt salt SCM_UNUSED,
+                          u_long flags SCM_UNUSED)
+{
+    ScmSmallInt v;
+    SMALL_INT_HASH(v, val);
+    return v;
+}
+
 
 /* This is to expose string hash function.  Modulo is for the compatibility
    of srfi-13; just give 0 as modulo if you don't need it.  */

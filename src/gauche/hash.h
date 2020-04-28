@@ -116,6 +116,15 @@ SCM_EXTERN u_long Scm_EqvHash(ScmObj obj);
 SCM_EXTERN u_long Scm_HashString(ScmString *str, u_long bound);
 SCM_EXTERN u_long Scm_PortableHash(ScmObj obj, u_long salt);
 SCM_EXTERN ScmSmallInt Scm_DefaultHash(ScmObj obj);
+SCM_EXTERN ScmSmallInt Scm_RecursiveHash(ScmObj obj, 
+                                         ScmSmallInt salt,
+                                         u_long flags);
+SCM_EXTERN ScmSmallInt Scm_SmallIntHash(ScmSmallInt val, 
+                                        ScmSmallInt salt,
+                                        u_long flags);
+SCM_EXTERN ScmSmallInt Scm_Int64Hash(int64_t val, 
+                                     ScmSmallInt salt,
+                                     u_long flags);
 SCM_EXTERN u_long Scm_CombineHashValue(u_long a, u_long b);
 
 SCM_EXTERN ScmSmallInt Scm_HashSaltRef(void);
