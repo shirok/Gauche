@@ -764,8 +764,18 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
     }
 }
 
+static ScmSmallInt time_hash(ScmObj x, ScmSmallInt salt, u_long flags)
+{
+    ScmTime *t = SCM_TIME(x);
+    ScmSmallInt h = Scm_CombineHashValue(Scm_RecursiveHash(t->type, salt, flags),
+                                         salt);
+    h = Scm_CombineHashValue(Scm_Int64Hash(t->sec, salt, flags), h);
+    h = Scm_CombineHashValue(Scm_SmallIntHash(t->nsec, salt, flags), h);
+    return h;
+}
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_TimeClass,
-                         time_print, time_compare, NULL,
+                         time_print, time_compare, time_hash,
                          time_allocate, SCM_CLASS_DEFAULT_CPL);
 
 static ScmTime *make_time_int(ScmObj type)
