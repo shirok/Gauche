@@ -791,8 +791,8 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
 static ScmSmallInt time_hash(ScmObj x, ScmSmallInt salt, u_long flags)
 {
     ScmTime *t = SCM_TIME(x);
-    ScmSmallInt h = Scm_CombineHashValue(Scm_RecursiveHash(t->type, salt, flags),
-                                         salt);
+    ScmSmallInt h = salt;
+    h = Scm_CombineHashValue(Scm_RecursiveHash(t->type, salt, flags), h);
     h = Scm_CombineHashValue(Scm_Int64Hash(t->sec, salt, flags), h);
     h = Scm_CombineHashValue(Scm_SmallIntHash(t->nsec, salt, flags), h);
     return h;
@@ -1258,7 +1258,43 @@ static void grp_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED
                SCM_SYS_GROUP(obj)->name);
 }
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysGroupClass, grp_print);
+static int grp_compare(ScmObj x, ScmObj y, int equalp)
+{
+    ScmSysGroup *gx = SCM_SYS_GROUP(x);
+    ScmSysGroup *gy = SCM_SYS_GROUP(y);
+    
+    if (equalp) {
+        return (Scm_EqualP(gx->name, gy->name)
+                && Scm_EqualP(gx->gid, gy->gid)
+                && Scm_EqualP(gx->passwd, gy->passwd)
+                && Scm_EqualP(gx->mem, gy->mem));
+    } else {
+        /* This is arbitrary, but having some order allows the object
+           to be used as a key in treemap. */
+        int r = Scm_Compare(gx->gid, gy->gid);
+        if (r != 0) return r;
+        r = Scm_Compare(gx->name, gy->name);
+        if (r != 0) return r;
+        r = Scm_Compare(gx->passwd, gy->passwd);
+        if (r != 0) return r;
+        return Scm_Compare(gx->mem, gy->mem);
+    }
+}
+
+static ScmSmallInt grp_hash(ScmObj obj, ScmSmallInt salt, u_long flags)
+{
+    ScmSysGroup *g = SCM_SYS_GROUP(obj);
+    ScmSmallInt h = salt;
+    h = Scm_CombineHashValue(Scm_RecursiveHash(g->name, salt, flags), h);
+    h = Scm_CombineHashValue(Scm_RecursiveHash(g->gid, salt, flags), h);
+    h = Scm_CombineHashValue(Scm_RecursiveHash(g->passwd, salt, flags), h);
+    h = Scm_CombineHashValue(Scm_RecursiveHash(g->mem, salt, flags), h);
+    return h;
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysGroupClass,
+                         grp_print, grp_compare, grp_hash,
+                         NULL, SCM_CLASS_DEFAULT_CPL);
 
 static ScmObj make_group(struct group *g)
 {
