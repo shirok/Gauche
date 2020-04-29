@@ -46,7 +46,7 @@ srfi N is supported by Gauche.)
 * Octet-addressed binary blocks::  srfi-74
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
-* Purely functional random-access pairs and lists:: srfi-101
+* Purely functional random-access pairs and lists::  srfi-101
 * Portable runtime environment inquiry::  srfi-112
 * Comparators::                 srfi-114
 * Simple adjustable-size strings::  srfi-118
@@ -56,6 +56,7 @@ srfi N is supported by Gauche.)
 * Homogeneous numeric vector libraries::  srfi-160
 * Comparator sublibrary::       srfi-162
 * Hooks (srfi)::                srfi-173
+* POSIX timespecs::             srfi-174
 @end menu
 
 
@@ -6286,7 +6287,7 @@ by @var{comparator}.  It is an error if @var{list} is empty.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Hooks (srfi),  , Comparator sublibrary, Library modules - SRFIs
+@node Hooks (srfi), POSIX timespecs, Comparator sublibrary, Library modules - SRFIs
 @section @code{srfi-173} - Hooks (srfi)
 @c NODE フック(srfi), @code{srfi-173} - フック(srfi)
 
@@ -6401,6 +6402,59 @@ the same as @var{hook}'s arity.
 全ての手続きは@var{arity}個の引数を受け付けなくてはなりません。
 @c COMMON
 @end defun
+
+@c ----------------------------------------------------------------------
+@node POSIX timespecs,  , Hooks (srfi), Library modules - SRFIs
+@section @code{srfi-174} - POSIX timespecs
+
+@deftp {Module} srfi-174
+@mdindex srfi-174
+Supports timespec record commonly used in POSIX interface.
+In Gauche, the timespec object is the same as built-in @code{<time>} object
+of @code{time-utc} type.
+@end deftp
+
+@defun timespec secs nsecs
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
+@defun timespec? obj
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
+@defun timespec-secods ts
+@defunx timespec-nanosecods ts
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
+@defun inexact->timespec v
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
+@defun timespec->inexact ts
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
+@defun timespec=? ts1 ts2
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
+@defun timespec<? ts1 ts2
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
+@defun timespec-hash ts
+[SRFI-174]
+@c MOD srfi-174
+@end defun
+
 
 @c Local variables:
 @c mode: texinfo

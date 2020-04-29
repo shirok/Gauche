@@ -1246,12 +1246,12 @@ srfi-174, srfi-174
 ()
 
 POSIX Timespecs
-Supported by the module @code{srfi-174}.
+Supported by the module @code{srfi-174} (@pxref{POSIX timespecs}).
 In Gauche, the timespec type is the same as built-in @code{<time>}
 object, which is also the same as srfi-19 time.
 
 POSIX Timespec
-モジュール@code{srfi-174}でサポートされます。
+モジュール@code{srfi-174}でサポートされます (@ref{POSIX timespecs}参照)。
 Gaucheでは、timespecオブジェクトは組み込みの@code{<time>}オブジェクトであり、
 またsrfi-19のtimeオブジェクトとも共通です。
 
