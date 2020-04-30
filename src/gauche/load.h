@@ -72,17 +72,12 @@ SCM_EXTERN int Scm_Load(const char *file, u_long flags, ScmLoadPacket *p);
 SCM_EXTERN int Scm_LoadFromCString(const char *program, u_long flags,
                                    ScmLoadPacket *p);
 
-/* DEPRECATED.  Will go away on 1.0 */
-SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
-                                     ScmObj env, int flags);
-
 /*=================================================================
  * Dynamic state access
  */
 SCM_EXTERN ScmObj Scm_CurrentLoadHistory(void);
 SCM_EXTERN ScmObj Scm_CurrentLoadNext(void);
 SCM_EXTERN ScmObj Scm_CurrentLoadPort(void);
-SCM_EXTERN ScmObj Scm_LoadMainScript(void);
 
 /*=================================================================
  * Load path management
@@ -153,6 +148,13 @@ SCM_EXTERN ScmObj Scm_MakeAutoload(ScmModule *where,
 SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
                                      ScmObj list);
 SCM_EXTERN ScmObj Scm_ResolveAutoload(ScmAutoload *autoload, int flags);
+
+/* Obsoleted stuff */
+#if GAUCHE_API_VERSION < 1000
+SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
+                                     ScmObj env, int flags);
+SCM_EXTERN ScmObj Scm_LoadMainScript(void);
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 #endif /* GAUCHE_LOAD_H */
 

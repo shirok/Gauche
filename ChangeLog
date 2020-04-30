@@ -1,5 +1,8 @@
 2020-04-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/*: Surround pre-1.0 compatibility APIs with #if.
+	  If you set GAUCHE_API_VERSION to 1000, they are excluded.
+
 	* lib/text/line-edit.scm (default-keymap): Let C-j always insert newline.
 	  If it's commit-or-newline, we can't insert a newline in completed
 	  sexp.  (Well, we can do C-q C-j but ont intuitive.)

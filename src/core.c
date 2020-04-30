@@ -582,6 +582,7 @@ init_cond_features()
    the entries just for ABI compatibility.  These shouldn't be called.
    Remove on 1.0 release.
 */
+#if GAUCHE_API_VERSION < 1000
 const char *Scm_GetLibraryDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 {
     Scm_Abort("Scm_GetLibraryDirectory is called (it shouldn't).");
@@ -606,6 +607,7 @@ const char *Scm_GetRuntimeDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
 {
     Scm_Abort("Scm_GetRuntimeDirectory is called (it shouldn't).");
 }
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 /*=============================================================
  * 'Main'

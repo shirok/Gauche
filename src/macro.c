@@ -191,11 +191,13 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 /* TRANSIENT
    This used to be called via make-macro-transformer, but no longer.
    We leave stub here for ABI compatibility. */
+#if GAUCHE_API_VERSION < 1000
 ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name SCM_UNUSED,
                                    ScmProcedure *proc SCM_UNUSED)
 {
     Scm_Panic("Obsoleted Scm_MakeMacroTransformerOld called!  Something is wrong!");
 }
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
 {
@@ -1010,6 +1012,7 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
    Now it's in compile.scm (%internal-macro-expand).  This is kept
    for ABI compatibility, but nobody is supposed to call this.
  */
+#if GAUCHE_API_VERSION < 1000
 ScmObj Scm_VMMacroExpand(ScmObj expr SCM_UNUSED,
                          ScmObj env SCM_UNUSED,
                          int oncep SCM_UNUSED)
@@ -1017,6 +1020,7 @@ ScmObj Scm_VMMacroExpand(ScmObj expr SCM_UNUSED,
     Scm_Error("Scm_VMMacroExpand is obsoleted.");
     return SCM_UNDEFINED;
 }
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj cenv)
 {

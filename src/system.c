@@ -979,7 +979,7 @@ ScmObj Scm_RealSecondsToTime(double sec)
 {
     double s;
     double frac = modf(sec, &s);
-    int64_t secs = Scm_DoubleToInt64(s);
+    int64_t secs = (int64_t)s;
     return Scm_MakeTime64(SCM_SYM_TIME_UTC, secs, (long)(frac * 1.0e9));
 }
 
@@ -1074,7 +1074,7 @@ time_t Scm_GetSysTime(ScmObj val)
 ScmObj Scm_TimeToSeconds(ScmTime *t)
 {
     if (t->nsec) {
-        return Scm_MakeFlonum(Scm_Int64ToDouble(t->sec) + (double)t->nsec/1.0e9);
+        return Scm_MakeFlonum((double)(t->sec) + (double)t->nsec/1.0e9);
     } else {
         return Scm_MakeInteger64(t->sec);
     }

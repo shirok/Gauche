@@ -83,6 +83,7 @@ SCM_EXTERN ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
                                                              u_long flags);
 
 /* TRANSIENT - exposed only for the backward compatibility - will be gone by 1.0 */
+#if GAUCHE_API_VERSION < 1000
 typedef struct ScmParameterLocRec {
     ScmPrimitiveParameter *p;
 } ScmParameterLoc;
@@ -99,6 +100,6 @@ SCM_EXTERN void   Scm_InitParameterLoc(ScmVM *vm,
 SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *location);
 SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,
                                    ScmObj value);
-
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 #endif /*GAUCHE_PARAMETER_H*/

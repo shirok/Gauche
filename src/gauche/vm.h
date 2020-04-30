@@ -354,8 +354,13 @@ struct ScmVMRec {
     ScmCStack *cstack;          /* current escape point.  see the comment of
                                    "C stack rewinding" below. */
     /* TRANSIENT: Change these flags to u_long in 1.0 */
+#if GAUCHE_API_VERSION < 1000    
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
+#else /*GAUCHE_API_VERSION >= 1000*/
+    u_long runtimeFlags;  /* Runtime flags */
+    u_long compilerFlags; /* Compiler flags */
+#endif /*GAUCHE_API_VERSION >= 1000*/
     intptr_t attentionRequest;  /* Flag if VM needs to check signal queue,
                                    finalizer queue, or stop request.
                                    This flag can be turned on asynchronously.

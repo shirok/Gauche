@@ -37,8 +37,10 @@
 /* GAUCHE_API_VERSION is GAUCHE_MAJOR_VERSION*1000 + revision.
    The revision is only incremented when we change API, which we expect
    rare during the same major revision. */
+#ifndef GAUCHE_API_VERSION
 #define GAUCHE_API_VERSION  97
 //#define GAUCHE_API_VERSION 1000
+#endif
 
 /* Read config.h _before_ other headers, for it may affect the behavior
    of system header files.  Currently the only known instance of it is
@@ -59,6 +61,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <gauche/int64.h>
 
 #ifdef TIME_WITH_SYS_TIME
@@ -1972,8 +1975,10 @@ SCM_EXTERN void   Scm_SetMasterSigmask(sigset_t *set);
 SCM_EXTERN ScmObj Scm_SignalName(int signum);
 SCM_EXTERN void   Scm_ResetSignalHandlers(sigset_t *mask);
 
+#if GAUCHE_API_VERSION < 1000
 SCM_EXTERN void   Scm_GetSigmask(sigset_t *mask);
 SCM_EXTERN void   Scm_SetSigmask(sigset_t *mask);
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 /*---------------------------------------------------
  * SYSTEM

@@ -1269,6 +1269,9 @@ uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 
 #endif /* SIZEOF_LONG == 4 */
 
+#if GAUCHE_API_VERSION < 1000
+/* Since we adopt C99, we can simply use cast instead of the funcitons.
+   These are kept for ABI compatibility until 1.0 release */
 int64_t Scm_DoubleToInt64(double v)
 {
     return (int64_t)v;
@@ -1288,6 +1291,7 @@ double Scm_UInt64ToDouble(uint64_t v)
 {
     return (double)v;
 }
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 double Scm_GetDouble(ScmObj obj)
 {

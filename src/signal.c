@@ -852,6 +852,7 @@ void Scm_SetMasterSigmask(sigset_t *set)
  * aren't used anywhere.  Scm_SysSigmask covers those functionalities,
  * so we'll drop them by 1.0.
  */
+#if GAUCHE_API_VERSION < 1000
 void Scm_GetSigmask(sigset_t *mask)
 {
     if (SIGPROCMASK(SIG_SETMASK, NULL, mask) != 0) {
@@ -865,6 +866,7 @@ void Scm_SetSigmask(sigset_t *mask)
         Scm_SysError("sigprocmask failed");
     }
 }
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 /*
  * set signal mask

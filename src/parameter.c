@@ -255,6 +255,7 @@ void Scm__InitParameter(void)
        class.c. */
 }
 
+#if GAUCHE_API_VERSION < 1000
 /* TRANSIENT: For the backward compatibility.  Remove by 1.0 */
 void Scm_DefinePrimitiveParameter(ScmModule *mod,
                                   const char *name,
@@ -299,3 +300,4 @@ void Scm__VMParameterTableInit(void *dummy SCM_UNUSED,
     Scm_Panic("Scm__VMParameterTableInit is obsoleted.  Shouldn't be called.");
 }
 
+#endif /*GAUCHE_API_VERSION < 1000*/

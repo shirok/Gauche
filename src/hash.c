@@ -1184,6 +1184,7 @@ void Scm__InitHash()
  * For backward compatibility
  */
 
+#if GAUCHE_API_VERSION < 1000
 /* Backward compatibility.
    NB: Casting ScmDictEntry* to ScmHashEntry* would be invalid if
    sizeof(intptr_t) and sizeof(void*) differ.  I know only one
@@ -1268,6 +1269,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
     return SCM_UNDEFINED;
 #endif
 }
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 /* Legacy hash function.
  *

@@ -547,7 +547,9 @@
 
 ;; Internal API - undocumented
 (define-cproc instance-slot-ref (obj num::<fixnum> :optional fallback)
-  (return (Scm_InstanceSlotRef3 obj num fallback)))
+  (.if "GAUCHE_API_VERSION < 1000"
+       (return (Scm_InstanceSlotRef3 obj num fallback))
+       (return (Scm_InstanceSlotRef obj num fallback))))
 ;; Internal API - undocumented
 (define-cproc instance-slot-set! (obj num::<fixnum> value) ::<void>
   Scm_InstanceSlotSet)
@@ -575,7 +577,9 @@
 (define-cproc %record-ref (klass::<class> obj k::<fixnum>)
   (unless (SCM_ISA obj klass)
     (Scm_Error "record-ref: instance of %S expected, got %S" klass obj))
-  (return (Scm_InstanceSlotRef3 obj k SCM_UNBOUND)))
+  (.if "GAUCHE_API_VERSION < 1000"
+       (return (Scm_InstanceSlotRef3 obj k SCM_UNBOUND))
+       (return (Scm_InstanceSlotRef obj k SCM_UNBOUND))))
 
 (define-cproc %record-set! (klass::<class> obj k::<fixnum> val) ::<void>
   (unless (SCM_ISA obj klass)

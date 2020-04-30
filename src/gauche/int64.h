@@ -39,9 +39,9 @@
 #ifndef GAUCHE_INT64_H
 #define GAUCHE_INT64_H
 
-/* assuming gauche/config.h is read. */
+#if GAUCHE_API_VERSION < 1000
 
-#include <inttypes.h>
+/* assuming gauche/config.h is read. */
 
 typedef int32_t  ScmInt32;
 typedef uint32_t ScmUInt32;
@@ -65,5 +65,7 @@ double    Scm_Int64ToDouble(int64_t v);
 double    Scm_UInt64ToDouble(uint64_t v);
 int64_t   Scm_DoubleToInt64(double v);
 uint64_t  Scm_DoubleToUInt64(double v);
+
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 #endif /*GAUCHE_INT64_H*/
