@@ -1,3 +1,10 @@
+2020-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/line-edit.scm (default-keymap): Let C-j always insert newline.
+	  If it's commit-or-newline, we can't insert a newline in completed
+	  sexp.  (Well, we can do C-q C-j but ont intuitive.)
+	  Later, we'll implement auto-indent, too.
+
 2020-04-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c: Changed ScmClass.serialize to ScmClass.hash.  The

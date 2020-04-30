@@ -1036,7 +1036,7 @@
               `(,(ctrl #\g) . ,keyboard-quit)
               `(,(ctrl #\h) . ,delete-backward-char)
               `(,(ctrl #\i) . ,self-insert-command) ; tab
-              `(,(ctrl #\j) . ,commit-or-newline)   ; newline
+              `(,(ctrl #\j) . ,self-insert-command) ; newline
               `(,(ctrl #\k) . ,kill-line)
               `(,(ctrl #\l) . ,refresh-display)
               `(,(ctrl #\m) . ,commit-or-newline) ; return
