@@ -188,18 +188,12 @@
                      (vector-set! data pos c)
                      (inc! pos)
                      (set! end (max pos end)))
-              :puts (^s
-                     (string-for-each (^c
-                                       (vector-set! data pos c)
-                                       (inc! pos))
-                                      s)
-                     (set! end (max pos end)))
               :seek (^[off whence]
                       (cond
                        [(= whence SEEK_SET) (set! pos off)]
                        [(= whence SEEK_CUR) (inc! pos off)]
-                       [(= whence SEEK_END) (set! pos (+ end off))]))
-              ))
+                       [(= whence SEEK_END) (set! pos (+ end off))])
+                      pos)))
   (vector-copy! data 0 '#(#\a #\b #\c #\d #\e))
   (inc! end 5)
   (test* "read from io port" "abcde" (port->string p))
