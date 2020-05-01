@@ -1,3 +1,7 @@
+2020-04-30  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport: Support bidirectional virtual ports.
+
 2020-04-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/*: Surround pre-1.0 compatibility APIs with #if.

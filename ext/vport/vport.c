@@ -63,6 +63,10 @@ SCM_DEFINE_BASE_CLASS(Scm_VirtualOutputPortClass, ScmPort,
                       vport_print, NULL, NULL,
                       vport_allocate, vport_cpa);
 
+SCM_DEFINE_BASE_CLASS(Scm_VirtualIOPortClass, ScmPort,
+                      vport_print, NULL, NULL,
+                      vport_allocate, vport_cpa);
+
 /*
  * Scheme handlers.  They are visible from Scheme as instance slots.
  * Any of these slots can be #f - if possible, the vport tries to fulfill
@@ -386,6 +390,8 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
         dir = SCM_PORT_INPUT;
     } else if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_OUTPUT_PORT)) {
         dir = SCM_PORT_OUTPUT;
+    } else if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_IO_PORT)) {
+        dir = SCM_PORT_INPUT | SCM_PORT_OUTPUT;
     } else {
         Scm_Panic("vport_allocate: implementation error (class wiring screwed?)");
     }
@@ -456,7 +462,6 @@ static ScmClassStaticSlotSpec voport_slots[] = {
     SCM_CLASS_SLOT_SPEC_END()
 };
 
-#if 0
 static ScmClassStaticSlotSpec vioport_slots[] = {
     VPORT_SLOT(getb),
     VPORT_SLOT(getc),
@@ -470,7 +475,6 @@ static ScmClassStaticSlotSpec vioport_slots[] = {
     VPORT_SLOT(seek),
     SCM_CLASS_SLOT_SPEC_END()
 };
-#endif
 
 /*================================================================
  * <buffered-port>
@@ -708,6 +712,8 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
                         "<virtual-input-port>", mod, viport_slots, 0);
     Scm_InitStaticClass(&Scm_VirtualOutputPortClass,
                         "<virtual-output-port>", mod, voport_slots, 0);
+    Scm_InitStaticClass(&Scm_VirtualIOPortClass,
+                        "<virtual-io-port>", mod, vioport_slots, 0);
     Scm_InitStaticClass(&Scm_BufferedInputPortClass,
                         "<buffered-input-port>", mod, biport_slots, 0);
     Scm_InitStaticClass(&Scm_BufferedOutputPortClass,

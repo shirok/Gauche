@@ -182,7 +182,8 @@ struct ScmPortRec {
                                    access. */
 };
 
-/* Port direction.  Bidirectional port is not supported yet.
+/* Port direction.
+   Bidirectional port have both SCM_PORT_INPUT and SCM_PORT_OUTPUT bits set.
    SCM_PORT_OUTPUT_TRANSIENT is only used for constructor to indicate
    that the output buffer doesn't need to be flushed when the process
    exits.  It is same as SCM_PORT_OUTPUT for non-buffered ports.

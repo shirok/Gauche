@@ -45,6 +45,9 @@ SCM_CLASS_DECL(Scm_VirtualInputPortClass);
 SCM_CLASS_DECL(Scm_VirtualOutputPortClass);
 #define SCM_CLASS_VIRTUAL_OUTPUT_PORT   (&Scm_VirtualOutputPortClass)
 
+SCM_CLASS_DECL(Scm_VirtualIOPortClass);
+#define SCM_CLASS_VIRTUAL_IO_PORT   (&Scm_VirtualIOPortClass)
+
 SCM_CLASS_DECL(Scm_BufferedInputPortClass);
 #define SCM_CLASS_BUFFERED_INPUT_PORT   (&Scm_BufferedInputPortClass)
 

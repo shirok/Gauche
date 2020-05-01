@@ -37,6 +37,7 @@
   (use util.match)
   (export <virtual-input-port>
           <virtual-output-port>
+          <virtual-io-port>
           <buffered-input-port>
           <buffered-output-port>
           open-input-uvector

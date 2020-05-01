@@ -173,6 +173,51 @@
              (get-output-string o)))))
 
 ;;-----------------------------------------------------------
+(test-section "virtual-io-port")
+
+(let ([data (make-vector 100)]
+      [pos 0]
+      [end 0])
+  (define p (make <virtual-io-port>
+              :getc (^[]
+                      (if (>= pos end)
+                        (eof-object)
+                        (begin0 (vector-ref data pos)
+                          (inc! pos))))
+              :putc (^c
+                     (vector-set! data pos c)
+                     (inc! pos)
+                     (set! end (max pos end)))
+              :puts (^s
+                     (string-for-each (^c
+                                       (vector-set! data pos c)
+                                       (inc! pos))
+                                      s)
+                     (set! end (max pos end)))
+              :seek (^[off whence]
+                      (cond
+                       [(= whence SEEK_SET) (set! pos off)]
+                       [(= whence SEEK_CUR) (inc! pos off)]
+                       [(= whence SEEK_END) (set! pos (+ end off))]))
+              ))
+  (vector-copy! data 0 '#(#\a #\b #\c #\d #\e))
+  (inc! end 5)
+  (test* "read from io port" "abcde" (port->string p))
+  (test* "port-tell" 5 (port-tell p))
+  (write-char #\X p)
+  (write-char #\Y p)
+  (write-char #\Z p)
+  (port-seek p 0)
+  (test* "write, then read" "abcdeXYZ" (port->string p))
+  (port-seek p -8 SEEK_END)
+  (write-string "PQR" p)
+  (port-seek p 2 SEEK_CUR)
+  (write-string "12345" p)
+  (port-seek p 0)
+  (test* "write, then read 2" "PQRde12345" (port->string p))
+  )
+
+;;-----------------------------------------------------------
 (test-section "buffered-input-port")
 
 (let ()
