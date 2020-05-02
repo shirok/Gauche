@@ -57,6 +57,7 @@ srfi N is supported by Gauche.)
 * Comparator sublibrary::       srfi-162
 * Hooks (srfi)::                srfi-173
 * POSIX timespecs::             srfi-174
+* Linear adjustable-lenght strings:: srfi-185
 @end menu
 
 
@@ -6404,7 +6405,7 @@ the same as @var{hook}'s arity.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node POSIX timespecs,  , Hooks (srfi), Library modules - SRFIs
+@node POSIX timespecs, Linear adjustable-lenght strings, Hooks (srfi), Library modules - SRFIs
 @section @code{srfi-174} - POSIX timespecs
 
 @deftp {Module} srfi-174
@@ -6481,6 +6482,89 @@ Compute a hash value of a timespec @var{ts}.  It is same as
 passing a @code{<time>} object to @code{default-hash}, and
 affected by the current hash salt value (@pxref{Hashing}).
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Linear adjustable-lenght strings,  , POSIX timespecs, Library modules - SRFIs
+@section @code{srfi-185} - Linear adjustable-lenght strings
+
+@deftp {Module} srfi-185
+@mdindex srfi-185
+This module provides a linear-update version of @code{string-appear}
+and @code{string-replace}.  ``Linear update'' means the caller
+won't access the first string argument, hence the implementation
+@emph{can} reuse it to store the result, for the efficiency.
+
+Note that, in Gauche, a string is just a pointer to an immutable
+string body.  Mutation of a string is actually constructing a new
+string body and swapping the pointer, so it has no performance
+advantage to immutable versions.  And in fact, we implement
+these without mutating their arguments.
+
+This module also provides macros with the same name as @code{srfi-118}
+procedures (@pxref{Simple adjustable-size strings}), which @code{set!}
+the result to its first argument, so they can work as a drop-in
+replacement to @code{srfi-118}.
+@end deftp
+
+@defun string-append-linear! dst str-or-char @dots{}
+[SRFI-185]
+@c MOD srfi-185
+Returns a string which is a concatenation of a string @var{dst}
+and the arguments.  The second argument an after can be
+a string or a character.  The caller shouldn't access @var{dst}
+after calling this procedure, for the implementation may destructively
+reuse the string passed to @var{dst}.   Although Gauche won't
+mutate @var{dst}, other implementations may, so portable code
+should adhere this restriction.
+
+@example
+(string-append-linear! "abc" "def" #\g "hij")
+  @result{} "abcdefghij"
+@end example
+@end defun
+
+@defun stirng-replace-linear! dst dst-start dst-end src :optional src-start src-end
+[SRFI-185]
+@c MOD srfi-185
+Replace the portion of a string @var{dst} from @var{dst-start} (inclusive)
+to @var{dst-end} (exclusive), by a string @var{src} (from @var{src-start}
+to @var{src-end}).
+The caller shouldn't access @var{dst}
+after calling this procedure, for the implementation may destructively
+reuse the string passed to @var{dst}.   Although Gauche won't
+mutate @var{dst}, other implementations may, so portable code
+should adhere this restriction.
+@end defun
+
+@defmac string-append! dst string-or-char @dots{}
+@defmacx string-replace! dst dst-start dst-end src :optional src-start src-end
+[SRFI-185]
+@c MOD srfi-185
+These macros expand into the following forms:
+
+@example
+(set! dst (string-append-linear! dst string-or-char @dots{}))
+
+(set! dst (string-replace-linear! dst dst-start dst-end src src-start src-end))
+@end example
+
+Hence they can be used for the code that expects @var{dst} to contain
+the result after calling these macros.
+Gauche supports generalized @code{set!}, so @var{dst} can be
+a procedure call with a setter defined.
+
+@example
+(define x (list (string-copy "abc")))
+
+(string-append! (car x) #\d #\e #\f)
+
+x @result{} ("abcdef")
+@end example
+
+The code that uses srfi-118 (@pxref{Simple adjustable-size strings}) is
+like to be replaced using these macros.
+@end defmac
+
 
 
 
