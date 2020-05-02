@@ -6417,43 +6417,71 @@ of @code{time-utc} type.
 @defun timespec secs nsecs
 [SRFI-174]
 @c MOD srfi-174
+Creates and returns a timespec, whose second part is @var{secs} and
+nanosecond part is @var{nsecs}.  The second part must be an exact
+integer; if it is positive, it's the number of seconds since
+Epoch (Jan 1, 1970 UTC), and if it's negative, it's before the Epoch.
+The nanosecond part is a nonnegative integer less than 1e9, and represents
+the fraction of seconds in nanosecond resolution.  Note that if the second
+part is negative, the nanosecond part counts toward past.
+
+This is the same as @code{(make-time time-utc nsecs secs)} of
+srfi-19.  Note the order of arguments.
 @end defun
 
 @defun timespec? obj
 [SRFI-174]
 @c MOD srfi-174
+Returns @code{#t} iff @var{obj} is a @code{<time>} object.  It doesn't
+check the type of time.
 @end defun
 
-@defun timespec-secods ts
+@defun timespec-seconds ts
 @defunx timespec-nanosecods ts
 [SRFI-174]
 @c MOD srfi-174
+Returns second and nanosecond part of the @code{<time>} object.
+Same as @code{time-second} and @code{time-nanosecond} of srfi-19
+(note that we use plurals in this srfi).
 @end defun
 
 @defun inexact->timespec v
 [SRFI-174]
 @c MOD srfi-174
+Convert an inexact real number @var{v} to a timespec.  The integral part
+of @var{v} is the seconds after (when @var{v} is positive)  
+or before (when @var{v} is negative) the Epoch, and the fractional part
+is rounded into nanosecond resolution.
 @end defun
 
 @defun timespec->inexact ts
 [SRFI-174]
+Convert a timespec into an inexact real number in seconds.
 @c MOD srfi-174
 @end defun
 
 @defun timespec=? ts1 ts2
 [SRFI-174]
 @c MOD srfi-174
+Returns @code{#t} iff two timespecs are the same.
+It is the same as @code{time=?} in srfi-19.
 @end defun
 
 @defun timespec<? ts1 ts2
 [SRFI-174]
+Returns @code{#t} iff a timespec @var{ts1} is strictly before
+the timespec @var{ts2}.  It is the same as @code{time<?} in srfi-19.
 @c MOD srfi-174
 @end defun
 
 @defun timespec-hash ts
 [SRFI-174]
 @c MOD srfi-174
+Compute a hash value of a timespec @var{ts}.  It is same as
+passing a @code{<time>} object to @code{default-hash}, and
+affected by the current hash salt value (@pxref{Hashing}).
 @end defun
+
 
 
 @c Local variables:
