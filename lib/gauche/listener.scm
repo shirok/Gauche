@@ -213,6 +213,7 @@
                          [(eqv? c2 #\<)
                           (errorf "unreadable sequence #<~a..."
                                   (read-block 10))]
+                         [(eqv? c2 closer) #t]
                          [else (rec closer)]))]
                 [else (rec closer)])))
 
