@@ -52,6 +52,8 @@
                       tail head)
                 (dopairs [cp args]
                   (when (SCM_NULLP (SCM_CDR cp))
+                    (when (< (Scm_Length (SCM_CAR cp)) 0)
+                      (Scm_Error "improper list not allowed: %S" (SCM_CAR cp)))
                     (SCM_APPEND head tail (SCM_CAR cp))
                     (break))
                   (unless (SCM_PAIRP (SCM_CDR cp))

@@ -1897,24 +1897,36 @@ int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z)
 {
     int count = 0;
     static ScmObj length_proc = SCM_UNDEFINED;
+    ScmObj tortoise = z;
+
     for (;;) {
-        if (SCM_NULLP(z)) {
-            return count;
-        } else if (SCM_LAZY_PAIR_P(z)) {
-            ScmEvalPacket result;
-            SCM_BIND_PROC(length_proc, "length", Scm_GaucheModule());
-            int nres = Scm_Apply(length_proc, SCM_LIST1(z), &result);
-            if (nres == -1) Scm_Raise(result.exception, 0);
-            SCM_ASSERT(nres == 1);
-            SCM_ASSERT(SCM_INTP(result.results[0]));
-            count += SCM_INT_VALUE(result.results[0]);
-            return count;
-        } else if (!SCM_PAIRP(z)) {
-            return -1;
-        } else {
-            z = SCM_CDR(z);
-            count++;
-        }
+        if (SCM_NULLP(z)) return count;
+        if (SCM_LAZY_PAIR_P(z)) goto do_lazy_pair;
+        if (!SCM_PAIRP(z)) return -1;
+        
+        z = SCM_CDR(z);
+        count++;
+        
+        if (SCM_NULLP(z)) return count;
+        if (SCM_LAZY_PAIR_P(z)) goto do_lazy_pair;
+        if (!SCM_PAIRP(z)) return -1;
+
+        z = SCM_CDR(z);
+        tortoise = SCM_CDR(tortoise);
+        if (z == tortoise) return -1; /* circular */
+        count++;
+    }
+
+do_lazy_pair:
+    {
+        ScmEvalPacket result;
+        SCM_BIND_PROC(length_proc, "length", Scm_GaucheModule());
+        int nres = Scm_Apply(length_proc, SCM_LIST1(z), &result);
+        if (nres == -1) Scm_Raise(result.exception, 0);
+        SCM_ASSERT(nres == 1);
+        SCM_ASSERT(SCM_INTP(result.results[0]));
+        count += SCM_INT_VALUE(result.results[0]);
+        return count;
     }
 }
 #else  /* !GAUCHE_LAZY_PAIR */

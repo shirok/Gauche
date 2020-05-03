@@ -1,5 +1,9 @@
 2020-05-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (check_arglist_tail_for_apply): Detect circular list
+	  in the argument.
+	* src/libproc.scm (apply): Ditto.
+
 	* ext/peg/peg.scm ($match1, $match1*): Support 'failure procedure'.
 	  The result expression can do additional check and let the parser fail.
 

@@ -129,6 +129,50 @@
                  (set-car! (cdr new) '100)
                  orig))))
 
+;; Detect circular list in the argument
+;; https://github.com/shirok/Gauche/issues/684
+;; NB: At this point, we haven't tested #0= reader notation,
+;; and to avoid optimization, these data should be in global space.
+(define *apply-circular-data-1*
+  (let ((x (list 'a)))
+    (set-cdr! x x)
+    x))
+(define *apply-circular-data-2*
+  (let ((x (list 'a 'a)))
+    (set-cdr! (cdr x) x)
+    x))
+
+(prim-test "apply, circular list 1"
+           "improper list not allowed: #0=(a . #0#)"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e) (slot-ref e 'message))
+               (lambda ()
+                 (apply list *apply-circular-data-1*)))))
+(prim-test "apply, circular list 2"
+           "improper list not allowed: #0=(a . #0#)"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e) (slot-ref e 'message))
+               (lambda ()
+                 (apply list 'a *apply-circular-data-1*)))))
+(prim-test "apply, circular list 3"
+           "improper list not allowed: #0=(a a . #0#)"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e) (slot-ref e 'message))
+               (lambda ()
+                 (apply list 'a *apply-circular-data-2*)))))
+(prim-test "apply, circular list 4"
+           "improper list not allowed: #0=(a a . #0#)"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e) (slot-ref e 'message))
+               (lambda ()
+                 ;; This is caught in different place (#<subr apply>),
+                 ;; rather than VM APPLY instruction.
+                 (Apply list 'a *apply-circular-data-2*)))))
+
 ;; This test exhibits the optimizer bug reported by Michael Campbell.
 (define bug-optimizer-local-inliner
   (lambda (flag)
