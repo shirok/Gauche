@@ -11506,7 +11506,7 @@ evaluated.  The last @var{expr} must yield a parser.
 @code{($let ([@var{var} @var{parser}] @dots{}) @var{expr})}という形式を取り、
 @var{parser}を順に入力に適用してゆきます。
 @var{parser}のどれかひとつでも失敗したら全体が失敗します。
-全ての@var{parser}が成功したら、そえぞれの結果が@var{var}に束縛された環境下で
+全ての@var{parser}が成功したら、それぞれの結果が@var{var}に束縛された環境下で
 @var{expr} @dots{}が評価されます。最後の@var{expr}はパーザを返さねばなりません。
 @c COMMON
 
@@ -11671,7 +11671,7 @@ open paren from the input, so @code{$or} commits to the first branch.
 When the branch fails, @code{$or} doesn't bother to try the second branch.
 (In other words, @code{$or} does not backtrack.)
 @c JP
-@code{$or}が最初の選択肢で、先頭の開き括弧はマッチに成功して入力が消費されます。
+@code{$or}の最初の選択肢で、先頭の開き括弧はマッチに成功して入力が消費されます。
 その後でマッチが失敗するわけですが、既に入力が消費されているので、
 @code{$or}は他の選択肢を考慮することなく全体を失敗させます。
 (言い換えれば、@code{$or}はバックトラックを行いません。)
