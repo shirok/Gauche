@@ -6489,7 +6489,7 @@ affected by the current hash salt value (@pxref{Hashing}).
 
 @deftp {Module} srfi-185
 @mdindex srfi-185
-This module provides a linear-update version of @code{string-appear}
+This module provides a linear-update version of @code{string-append}
 and @code{string-replace}.  ``Linear update'' means the caller
 won't access the first string argument, hence the implementation
 @emph{can} reuse it to store the result, for the efficiency.
