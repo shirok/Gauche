@@ -149,20 +149,16 @@
 ;;;  status into <parser-error> object and raises it.
 ;;;
 
-;; NB: Currently we're in the transition process of reimplementing this
-;; module for better performance *and* cleaner API.  You may see some
-;; code that doesn't make sense below, which may be just a remaining
-;; of the old code and waiting to be removed.  The whole module is not
-;; 'official' yet---do not rely on the the current behavior unless you
-;; are experimenting.
-;; The rfc.json module is built on top of this module and is serving as
-;; one of the benchmark/testbed.  The API of rfc.json is official; though
-;; its implementation may be changed as parser.peg is changed.
-
 ;;;============================================================
 ;;; Parse result types
 ;;;
 
+;; An error object for the external API.  Note that a parser won't raise
+;; this error; it just returns a 'failure' value, so that other options
+;; can be tried if there's any.   Creating, throwing, and catching an error
+;; is expesive operation compared to the simple call/return.  It is the
+;; parser driver that sees the failure as the final result, then constructs
+;; and creates <parse-error> to raise.
 (define-condition-type <parse-error> <error> #f
   (position)                            ;stream position
   (type)                                ;fail type
@@ -172,6 +168,9 @@
 (define-method write-object ((o <parse-error>) out)
   (format out "#<<parse-error> ~S>" (~ o 'message)))
 
+;; Primitive parts to be used inside custom parser.
+;; The user usually doesn't need to use them, as long as he construct
+;; parsers by parser combinators.
 (define-inline (parse-success? x) (not x))
 
 (define-inline (return-result v s) (values #f v s))
@@ -745,56 +744,107 @@
         (return-failure/expect expect s))))
 
 ;; API
-;; $match1 PATTERN [RESULT]
-;; $match1* PATTERN [RESULT]
+;; $match1 PATTERN [(=> FAIL)] [RESULT]
+;; $match1* PATTERN [(=> FAIL)] [RESULT]
 ;;   - Run util.match#match against the input stream.
 ;;   - $match1 takes one item from stream and see if it matches
 ;;     with PATTERN.
 ;;   - $match1* applys PATTERN on the entire input stream.
-;;   - If matched, RESULT is evaluated in the environment where pattern variables
-;;     in PATTERN are bound, and its result becomes the result value of the
-;;     parser.
+;;   - If matched, RESULT is evaluated in the environment where pattern 
+;;     variables in PATTERN are bound, and its result becomes the result 
+;;     value of the parser.
 ;;   - If RESULT is omitted, the matched item is returned.
+;;   - If (=> FAIL) is given, FAIL (must be an identifier) is bound to
+;;     a closure to be called (FAIL message) to return a failure.
+;;     NB: Unlinke the (=> FAIL) in match (util.match), FAIL is not
+;;     a continuation but just a procedure, so it must be called at
+;;     the tail position of RESULT.
 
 (define-syntax $match1*
-  (syntax-rules ()
-    [(_ (pat ...) result)
-     (lambda (s)
-       (match s
-         [(pat ... . rest) (return-result result rest)]
-         [_ (return-failure/expect (write-to-string '(pat ...)) s)]))]
-    [(_ (pat ... . rest) result)
-     (lambda (s)
-       (match s
-         [(pat ... . rest) (return-result result '())] ;rest consumes all
-         [_ (return-failure/expect (write-to-string '(pat ... . rest)) s)]))]
-    [(_ (pat ...))
-     (lambda (s)
-       (match s
-         [(pat ... . rest) (return-result (take s (length '(pat ...))) rest)]
-         [_ (return-faiulre/expect (write-to-string '(pat ...)) s)]))]
-    [(_ (pat ... . rest))
-     (lambda (s)
-       (match s
-         [(pat ... . rest) (return-result s '())]
-         [_ (return-faiulre/expect (write-to-string '(pat ... . rest)) s)]))]))
+  (er-macro-transformer
+   (^[f r c]
+     (define (=>? x) (c (r'=>) (r x)))
+     (define fail-mark (gensym))
+     (define (build-fail-decl fail)
+       (if fail
+         (quasirename r
+           `((define (,fail msg) (cons ',fail-mark msg))))
+         '()))
+     (define (build-return result fail tail)
+       (if fail
+         (quasirename r
+           `(let ((r ,result))
+              (if (and (pair? r) (eq? (car r) ',fail-mark))
+                (return-failure/message (cdr r) s)
+                (return-result r ,tail))))
+         (quasirename r
+           `(return-result ,result ,tail))))
+     ;; If pat is (x ...), add a rest var: (x ... . rest)
+     ;; Returns the pattern and the rest var.
+     (define (make-match-pattern pat)
+       (if (pair? pat)
+         (if (null? (cdr (last-pair pat)))
+           (let1 rest (gensym)
+             (values (append pat rest) rest))
+           (values pat '()))
+         (values pat '())))
+     (define (build-parser pat result fail)
+       (receive (match-pat tail) (make-match-pattern pat)
+         (quasirename r
+           `(lambda (s)
+              ,@(build-fail-decl fail)
+              (match s
+                [,match-pat ,(build-return result fail tail)]
+                [_ (return-failure/expect ,(write-to-string pat) s)])))))
+     (match f
+       [(_ pat ((? =>?) fail) result)
+        (build-parser pat result fail)]
+       [(_ pat result)
+        (build-parser pat result #f)]
+       [(_ pat)
+        (build-parser pat
+                      (if-let1 n (length+ pat)
+                        (quasirename r
+                          `(take s ,n))
+                        (r 's))
+                      #f)]))))
 
 (define-syntax $match1
-  (syntax-rules ()
-    [(_ pat result)
-     (lambda (s)
-       (if (pair? s)
-         (match (car s)
-           [pat (return-result result (cdr s))]
-           [_ (return-failure/expect (write-to-string 'pat) s)])
-         (return-faiulre/expect (write-to-string 'pat) s)))]
-    [(_ pat)
-     (lambda (s)
-       (if (pair? s)
-         (match (car s)
-           [pat (return-result (car s) (cdr s))]
-           [_ (return-failure/expect (write-to-string 'pat) s)])
-         (return-faiulre/expect (write-to-string 'pat) s)))]))
+  (er-macro-transformer
+   (^[f r c]
+     (define (=>? x) (c (r'=>) (r x)))
+     (define fail-mark (gensym))
+     (define (build-fail-decl fail)
+       (if fail
+         (quasirename r
+           `((define (,fail msg) (cons ',fail-mark msg))))
+         '()))
+     (define (build-return result fail)
+       (if fail
+         (quasirename r
+           `(let ((r ,result))
+              (if (and (pair? r) (eq? (car r) ',fail-mark))
+                (return-failure/message (cdr r) s)
+                (return-result r (cdr s)))))
+         (quasirename r
+           `(return-result ,result (cdr s)))))
+     (define (build-parser pat result fail)
+       (quasirename r
+         `(lambda (s)
+            ,@(build-fail-decl fail)
+            (if (pair? s)
+              (match (car s)
+                [,pat ,(build-return result fail)]
+                [_ (return-failure/expect ,(write-to-string pat) s)])
+              (return-failure/expect ,(write-to-string pat) s)))))
+     (match f
+       [(_ pat ((? =>?) fail) result)
+        (build-parser pat result fail)]
+       [(_ pat result)
+        (build-parser pat result #f)]
+       [(_ pat)
+        (build-parser pat (quasirename r `(car s)) #f)]
+       ))))
 
 ;;;============================================================
 ;;; Intermediate structure constructor

@@ -1,3 +1,8 @@
+2020-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($match1, $match1*): Support 'failure procedure'.
+	  The result expression can do additional check and let the parser fail.
+
 2020-04-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/vport: Support bidirectional virtual ports.
