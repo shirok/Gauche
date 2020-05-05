@@ -212,10 +212,7 @@
     (if (> (gap-buffer-content-length buffer) 0)
       (commit-history ctx buffer)
       (eof-object)))
-  (ensure-bottom-room con) ; workaround for windows IME glitch
-  (show-prompt ctx)
-  (init-screen-params ctx)
-  ;; Main loop.  Get a key and invoke associated command.
+  ;; Command handler.
   ;; The command may return one of the following values.
   ;;   visible - the command changed something visible so we need to 
   ;;            redisplay, but we don't need to save the change in
@@ -245,6 +242,66 @@
   ;; If the key is a character and it is not registered in the table,
   ;; we treat as if it is associated to the self-insert-command.
   ;; Given the large character set, it is a reasonable compromise.
+  (define (handle-command h ch loop redisp)
+    (cond
+     [(eof-object? h) (eofread)]
+     [(char? h)
+      (reset-last-yank! ctx)
+      (break-undo-sequence! ctx)
+      (clear-mark! ctx buffer)
+      (push-undo! ctx (self-insert-command ctx buffer h))
+      (loop #t)]
+     [(applicable? h <top> <top> <top>)
+      (match (h ctx buffer ch)
+        [(? eof-object?) (eofread)]
+        ['nop       (loop redisp)]
+        ['visible   (reset-last-yank! ctx)
+                    (clear-mark! ctx buffer)
+                    (break-undo-sequence! ctx)
+                    (loop #t)]
+        ['unchanged (reset-last-yank! ctx)
+                    (break-undo-sequence! ctx)
+                    (loop redisp)]
+        ['moved     (reset-last-yank! ctx)
+                    (break-undo-sequence! ctx)
+                    (loop #t)]
+        ['commit
+         ;; We move the cursor to the last of input and redisplay,
+         ;; so that the output of the client program won't overwrite
+         ;; the existing input.
+         (gap-buffer-move! buffer 0 'end)
+         (redisplay ctx buffer)
+         (putstr con "\r\n")
+         (commit-history ctx buffer)]
+        ['undone (reset-last-yank! ctx)
+                 (clear-mark! ctx buffer)
+                 (loop #t)] ; don't break undo sequence
+        [('yanked edit-command)
+         (break-undo-sequence! ctx)
+         (clear-mark! ctx buffer)
+         (push-undo! ctx edit-command)
+         (loop #t)]
+        [(? list? edit-command)
+         (reset-last-yank! ctx)
+         (break-undo-sequence! ctx)
+         (clear-mark! ctx buffer)
+         (push-undo! ctx edit-command)
+         (loop #t)]
+        [x (error "[internal] invalid return value from a command:" x)])]
+     [(hash-table? h)
+      (let* ([ch (if (queue-empty? (~ ctx'keystroke-queue))
+                 (getch con)
+                 (queue-pop! (~ ctx'keystroke-queue)))]
+             [h (hash-table-get h ch ch)])
+        (handle-command h ch loop redisp))]
+     [else
+      (error "[internal] do not know how to handle key:" h)]))
+
+  ;; Initialization
+  (ensure-bottom-room con) ; workaround for windows IME glitch
+  (show-prompt ctx)
+  (init-screen-params ctx)
+  ;; Main loop.  Get a key and invoke associated command.
   (let loop ([redisp #f])
     ;; NB: If next char is ready, don't bother to redisplay and
     ;; just carry over redisp flag.
@@ -255,53 +312,7 @@
                  (getch con)
                  (queue-pop! (~ ctx'keystroke-queue)))]
            [h (hash-table-get (~ ctx'keymap) ch ch)])
-      (cond
-       [(eof-object? h) (eofread)]
-       [(char? h)
-        (reset-last-yank! ctx)
-        (break-undo-sequence! ctx)
-        (clear-mark! ctx buffer)
-        (push-undo! ctx (self-insert-command ctx buffer h))
-        (loop #t)]
-       [(applicable? h <top> <top> <top>)
-        (match (h ctx buffer ch)
-          [(? eof-object?) (eofread)]
-          ['nop       (loop redisp)]
-          ['visible   (reset-last-yank! ctx)
-                      (clear-mark! ctx buffer)
-                      (break-undo-sequence! ctx)
-                      (loop #t)]
-          ['unchanged (reset-last-yank! ctx)
-                      (break-undo-sequence! ctx)
-                      (loop redisp)]
-          ['moved     (reset-last-yank! ctx)
-                      (break-undo-sequence! ctx)
-                      (loop #t)]
-          ['commit
-           ;; We move the cursor to the last of input and redisplay,
-           ;; so that the output of the client program won't overwrite
-           ;; the existing input.
-           (gap-buffer-move! buffer 0 'end)
-           (redisplay ctx buffer)
-           (putstr con "\r\n")
-           (commit-history ctx buffer)]
-          ['undone (reset-last-yank! ctx)
-                   (clear-mark! ctx buffer)
-                   (loop #t)] ; don't break undo sequence
-          [('yanked edit-command)
-           (break-undo-sequence! ctx)
-           (clear-mark! ctx buffer)
-           (push-undo! ctx edit-command)
-           (loop #t)]
-          [(? list? edit-command)
-           (reset-last-yank! ctx)
-           (break-undo-sequence! ctx)
-           (clear-mark! ctx buffer)
-           (push-undo! ctx edit-command)
-           (loop #t)]
-          [x (error "[internal] invalid return value from a command:" x)])]
-       [else
-        (error "[internal] do not know how to handle key:" h)]))))
+      (handle-command h ch loop redisp))))
 
 ;; Check some parameters of screen.
 (define (init-screen-params ctx)
