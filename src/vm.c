@@ -1878,7 +1878,6 @@ int Scm_Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
     return safe_eval_wrap(SAFE_APPLY, proc, args, NULL, SCM_FALSE, packet);
 }
 
-#if GAUCHE_LAZY_PAIR
 /*
  * A subroutine to be called while executing apply instruction.
  * Apply needs to check the argument tail is a valid list.  However,
@@ -1929,13 +1928,6 @@ do_lazy_pair:
         return count;
     }
 }
-#else  /* !GAUCHE_LAZY_PAIR */
-int check_arglist_tail_for_apply(ScmVM *vm, ScmObj z)
-{
-    return Scm_Length(z);
-}
-#endif /* !GAUCHE_LAZY_PAIR */
-
 
 /*=================================================================
  * Dynamic handlers

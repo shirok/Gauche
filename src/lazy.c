@@ -211,7 +211,6 @@ ScmObj Scm_Force(ScmObj obj)
     }
 }
 
-#if GAUCHE_LAZY_PAIR
 /*=================================================================
  * Lazy pairs
  *
@@ -555,4 +554,3 @@ int Scm_PairP(ScmObj x)
     }
 }
 
-#endif /* GAUCHE_LAZY_PAIR */

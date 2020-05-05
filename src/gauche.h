@@ -130,9 +130,6 @@ SCM_DECL_BEGIN
    gauche/number.h for the details. */
 #define GAUCHE_FFX 1
 
-/* Define this to 0 to turn off lazy-pair feature. */
-#define GAUCHE_LAZY_PAIR 1
-
 /* Temporary - to test alignment of pairs */
 #define GAUCHE_CHECK_PAIR_ALIGNMENT 0
 
@@ -1108,17 +1105,13 @@ struct ScmExtendedPairRec {
     ScmObj attributes;          /* should be accessed via API func. */
 };
 
-#if GAUCHE_LAZY_PAIR
-#  if GAUCHE_CHECK_PAIR_ALIGNMENT
-#    define SCM_PAIRP(obj)  (Scm_CheckingPairP(SCM_OBJ(obj)))
+#if GAUCHE_CHECK_PAIR_ALIGNMENT
+#  define SCM_PAIRP(obj)  (Scm_CheckingPairP(SCM_OBJ(obj)))
 SCM_EXTERN int Scm_CheckingPairP(ScmObj);
-#  else
-#    define SCM_PAIRP(obj)                                                  \
-       (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj))))
-#  endif
-#else  /*!GAUCHE_LAZY_PAIR*/
-#define SCM_PAIRP(obj)          (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7))
-#endif /*!GAUCHE_LAZY_PAIR*/
+#else
+#  define SCM_PAIRP(obj)                                                  \
+     (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj))))
+#endif
 
 #define SCM_PAIR(obj)           ((ScmPair*)(obj))
 #define SCM_CAR(obj)            (SCM_PAIR(obj)->car)
