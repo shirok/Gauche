@@ -628,7 +628,12 @@
 ;; We only do this transformation if every x y z ... is either $lref
 ;; or $const.  If there's more complex expression, we can't change the order
 ;; of evaluation, so we'd have to modify the outer $let form---which isn't 
-;; trivial.
+;; trivial, so we just give up such a case.
+;;
+;; If the argument list is constructed (as opposed to be a constant),
+;; we also need to consider the possibility that the list can be mutated
+;; before passed to apply.  We check if the intermediate variables are
+;; used elsewhere, and give up if they are passed to other procedures.
 ;;
 ;; IForm must be an $ASM node.
 ;; Returns (potentially updated) iform.
@@ -678,7 +683,8 @@
   (assume (length>=? args 2))
   (if (vm-compiler-flag-is-set? SCM_COMPILE_NODISSOLVE_APPLY)
     iform
-    (or (and-let1 iargs (expand-restarg (last args))
+    (or (and-let* ([iargs (expand-restarg (last args))]
+                   [ (every (^v (= (lvar-ref-count v) 1)) freed-lvars) ])
           (ifor-each lvar-ref--! freed-lvars)
           (ifor-each (^x (when ($lref? x) (lvar-ref++! ($lref-lvar x)))) iargs)
           (pass2/rec ($call ($*-src iform) (car args)

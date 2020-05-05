@@ -60,6 +60,37 @@
 (test* "inlining apply" '(((CONST-PUSH) :a) ((CONSTI 2)) ((CONS)) ((RET)))
        (proc->insn/split (^[] (let1 xs '(2) (apply cons :a xs)))))
 
+;; This should give up apply inlining, for the content of xs may be
+;; altered when passed to a global function.
+(test* "inlining apply (give up)"
+       '(((CONSTI 2)) ((LIST 1)) ((PUSH-LOCAL-ENV 1)) ((PRE-CALL 1) 8)
+         ((LREF0-PUSH)) ((GREF-CALL 1) foo)
+         ((GREF-PUSH) cons) ((CONSTI-PUSH 1)) ((LREF0)) ((TAIL-APPLY 3))
+         ((RET)))
+       (unwrap-syntax
+        (proc->insn/split
+         (^[] (let1 xs (list 2) (foo xs) (apply cons 1 xs))))))
+;; Similar to above, but if xs is constant, so we don't worry about mutation.
+(test* "inlining apply (ok)"
+       '(((PRE-CALL 1) 6) ((CONST-PUSH) (2)) ((GREF-CALL 1) foo)
+         ((CONSTI-PUSH 1)) ((CONSTI 2)) ((CONS))
+         ((RET)))
+       (unwrap-syntax
+        (proc->insn/split
+         (^[] (let1 xs '(2) (foo xs) (apply cons 1 xs))))))
+;; This is the one that exhibits the bug in the issue
+;; https://github.com/shirok/Gauche/issues/685
+(test* "inlining apply (give up)"
+       '(((CONST) a) ((LIST 1)) ((PUSH-LOCAL-ENV 1))
+         ((PRE-CALL 2) 10) ((LREF0-PUSH)) ((LREF0-PUSH))
+         ((GREF-CALL 2) set-cdr!)
+         ((GREF-PUSH) list) ((LREF0)) ((TAIL-APPLY 2)) ((RET)))
+       (unwrap-syntax
+        (proc->insn/split
+         (^[] (let ((x (list 'a)))
+                (set-cdr! x x)
+                (apply list x))))))
+
 (define-inline (apply-inline-1 . args) (apply + 3 args))
 
 (test* "inlining apply" '(((LREF2-NUMADDI 3))
