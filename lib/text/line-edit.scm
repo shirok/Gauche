@@ -1187,7 +1187,7 @@
               `(,(alt (ctrl #\u)) . ,undefined-command)
               `(,(alt (ctrl #\v)) . ,undefined-command)
               `(,(alt (ctrl #\w)) . ,undefined-command)
-              `(,(alt (ctrl #\x)) . ,undefined-command)
+              `(,(alt (ctrl #\x)) . ,commit-input)
               `(,(alt (ctrl #\y)) . ,undefined-command)
               `(,(alt (ctrl #\z)) . ,undefined-command)
               `(,(alt (ctrl #\[)) . ,undefined-command)
