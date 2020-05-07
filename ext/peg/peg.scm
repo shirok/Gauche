@@ -466,7 +466,7 @@
 
 ;; API
 ;; ($parameterize ((param expr) ..) parser ...)
-;; Returns a parse that run parser ... while altering the parameter values
+;; Returns a parser that run parser ... while altering the parameter values
 ;; like parameterize.  The parser ... are run as if in $seq.
 ;; Suggested by Saito Atsushi
 (define-syntax $parameterize
