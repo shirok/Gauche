@@ -709,6 +709,11 @@ fuga
   )
 
 ;;-------------------------------------------------------------------
+(test-section "pager")
+(use text.pager)
+(test-module 'text.pager)
+
+;;-------------------------------------------------------------------
 (test-section "template")
 (use text.template)
 (test-module 'text.template)

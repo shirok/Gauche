@@ -35,12 +35,14 @@
   (use srfi-1)
   (use srfi-13)
   (use text.info)
+  (use text.pager)
   (use file.util)
   (use util.match)
   (use util.levenshtein)
   (use gauche.process)
   (use gauche.config)
   (use gauche.sequence)
+  (use gauche.parameter)
   (export info info-page info-search)
   )
 (select-module gauche.interactive.info)
@@ -96,57 +98,6 @@
 (define (entry-name e)
   (if-let1 m (#/ <\d+>$/ e) (rxmatch-before m) e))
   
-(define *pager* (or (and-let1 s (sys-getenv "PAGER")
-                      (shell-tokenize-string s))
-                    (and-let1 cmd (or (find-file-in-paths "less")
-                                      (find-file-in-paths "more"))
-                      (list cmd))))
-
-(define (viewer-pager s)
-  (let1 p (run-process *pager* :input :pipe)
-    (guard (e (else #f))
-      (display s (process-input p)))
-    (close-output-port (process-input p))
-    (process-wait p)))
-
-(define (viewer-dumb s) (display s))
-
-(define (viewer-nounicode s)
-  (display ($ regexp-replace-all* s
-              #/\u21d2/ "==>"      ; @result{}
-              #/\u2026/ "..."      ; @dots{}
-              #/\u2018/ "`"        ; @code{}
-              #/\u2019/ "'"        ; @code{}
-              #/\u201C/ "``"       ; ``         (e.g. ,i do)
-              #/\u201D/ "''"       ; ''         (e.g. ,i do)
-              #/\u2261/ "=="       ; @equiv{}   (e.g. ,i cut)
-              #/\u2212/ "-"        ; @minus     (e.g. ,i modulo)
-              #/\u2022/ "*"        ; @bullet    (e.g. ,i lambda)
-              #/\u2013/ "--"       ; --         (e.g. ,i utf8-length)
-              #/\u2014/ "---"      ; ---        (e.g. ,i lambda)
-              #/\u00df/ "[Eszett]" ; eszett     (e.g. ,i char-upcase)
-              )))
-
-(define viewer
-  (cond [(cond-expand
-          [(and gauche.os.windows
-                (not gauche.ces.none))
-           (use os.windows)
-           (guard (e [else #f])
-             (and (sys-isatty 1)
-                  (sys-get-console-mode 
-                   (sys-get-std-handle STD_OUTPUT_HANDLE))
-                  (not (= (sys-get-console-output-cp) 65001))))] ;unicode cp
-          [else #f])
-         viewer-nounicode]
-        [(or (equal? (sys-getenv "TERM") "emacs")
-             (equal? (sys-getenv "TERM") "dumb")
-             (not (sys-isatty (current-output-port)))
-             (not *pager*))
-         viewer-dumb]
-        [else 
-         viewer-pager]))
-
 (define (get-info-paths)
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
                         [else '()])]
@@ -212,9 +163,10 @@
   ($ lookup&show key
      (^[node&line]
        (let1 node (info-get-node (~ (get-info)'info) (car node&line))
-         (viewer (if (null? (cdr node&line))
-                   (~ node'content)
-                   (info-extract-definition node (cadr node&line))))))))
+         (display/pager
+          (if (null? (cdr node&line))
+            (~ node'content)
+            (info-extract-definition node (cadr node&line))))))))
 
 ;; API
 ;; NB: The info slot may be #f, but in that case key never hits, so
@@ -222,8 +174,9 @@
 (define (info-page key)
   ($ lookup&show key
      (^[node&line]
-       (viewer (~ (info-get-node (~ (get-info)'info) (car node&line))
-                  'content)))))
+       (display/pager
+        (~ (info-get-node (~ (get-info)'info) (car node&line))
+           'content)))))
 
 ;;
 ;; Search info entries by regexp
@@ -253,8 +206,9 @@
   (let1 entries (search-entries rx)
     (if (null? entries)
       (print #"No entry matching ~|rx|")
-      (viewer (with-output-to-string
-                (^[] (for-each format-search-result-entry entries))))))
+      (display/pager
+       (with-output-to-string
+         (^[] (for-each format-search-result-entry entries))))))
   (values))
 
                
