@@ -1321,13 +1321,14 @@ When the result of evaluation is a huge nested structure,
 it may take too long to display the result.  Gauche actually set
 a limit of length and depth in displaying structures, so you might
 occasionally see the very long or deep list is trucated, with
-@dots{} to show there are more items.
+@dots{} to show there are more items, or @code{#} to show a subtree
+is omitted
 (Try evaluating @code{(make-list 100)} on REPL).
 @c JP
 評価結果が巨大な構造になる場合、それを表示するのに時間がかかりすぎる問題があります。
 Gaucheはデフォルトで、表示する構造の長さと深さに制限を設けているので、
 非常に長い、あるいは深い構造を表示しようとした場合に、@dots{}によって後の方が
-省略されて表示される場合があります。
+省略されたり、@code{#}によって深い構造が省略されたりします
 (REPLで@code{(make-list 100)}を評価してみてください。)
 @c COMMON
 
