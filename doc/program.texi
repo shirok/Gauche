@@ -1304,7 +1304,7 @@ You can think that @code{apropos} is an introspection tool,
 while @code{info} is a document browsing tool.
 @c JP
 註: @code{apropos}コマンドは現在のプロセス中から名前を探します。
-つまり、既にロードされたインポートされた名前しか表示しません。
+つまり、既にロードされインポートされた名前しか表示しません。
 それは同時に、ロードされてさえいれば、ドキュメントのある公式なAPIか
 内部的な非公式なエントリかにかかわらず表示されるということでもあります。
 
