@@ -1047,14 +1047,16 @@
 ;; Keymap maps a keystroke (either <char> or (ALT <char>))
 ;; to a command or another keymap.
 (define-class <keymap> ()
-  ((table   :init-keyword :table)         ;hashtable
+  ((name    :init-keyword :name)
+   (table   :init-keyword :table)         ;hashtable
    (default :init-keyword :default)))
 
-(define (make-keymap :optional (default undefined-command))
-  (make <keymap> :table (make-hash-table 'equal?) :default default))
+(define (make-keymap :optional (name #f) (default undefined-command))
+  (make <keymap> :name name :table (make-hash-table 'equal?) :default default))
 
-(define (copy-keymap km) 
+(define (copy-keymap km :optional (name #f))
   (make <keymap>
+    :name name
     :table (hash-table-copy (~ km'table))
     :default (~ km'default)))
 
@@ -1099,23 +1101,25 @@
         (let1 v (hash-table-get (~ km'table) k)
           (format #t "  ~10a   ~a\n"
                   (show-key k)
-                  (if (is-a? v <edit-command>)
-                    (~ v'name)
-                    v)))))))
+                  (cond [(is-a? v <edit-command>) (~ v'name)]
+                        [(is-a? v <keymap>) (or #"(~(~ v'name))"
+                                                "(anonymous keymap)")]
+                        [else v]))      ;shouldn't happen
+          )))))
 
 ;; C-x h - help keymap
-(define *help-keymap* (make-keymap))
+(define *help-keymap* (make-keymap 'help-keymap))
 
 (define-key *help-keymap* #\b help-binding-command)
 
 
 ;; C-x - general prefix
-(define *c-x-keymap* (make-keymap))
+(define *c-x-keymap* (make-keymap 'prefix))
 
 (define-key *c-x-keymap* #\h *help-keymap*)
 
 ;; Default keymap.
-(define *default-keymap* (make-keymap))
+(define *default-keymap* (make-keymap 'default-keymap))
 
 (define-key *default-keymap* (ctrl #\@) set-mark-command)
 (define-key *default-keymap* (ctrl #\a) move-beginning-of-line)
