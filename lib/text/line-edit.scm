@@ -1036,8 +1036,9 @@
   "Show key bindings"
   (putch (~ ctx'console) #\newline)
   (display/pager
-   (string-append "Line editor key bindings:\n\n"
-                  (keymap-describe (~ ctx'keymap))))
+   (with-output-to-string
+     (^[] (print "Line editor key bindings:") (print)
+       (keymap-describe-recursively (~ ctx'keymap)))))
   'visible)
 
 ;;;
@@ -1069,7 +1070,7 @@
     [(_ km keystroke command)
      (hash-table-put! (~ km'table) keystroke command)]))
 
-(define (keymap-describe km)
+(define (keymap-describe km :optional (prefix-keys '()))
   (define (show-key k)
     (match k
       [('ALT x) #"M-~(show-key x)"]
@@ -1100,43 +1101,54 @@
           [(is-a? v <keymap>) (or #"(~(~ v'name))"
                                   "(anonymous keymap)")]
           [else v]))      ;shouldn't happen
+  (define (show-prefix)
+    (string-join (map show-key prefix-keys) " " 'suffix))
   (define (show-entry-1 k v)
-    (format #t " ~14a  ~a\n" (show-key k) (show-value v)))
+    (format #t " ~20a  ~a\n" #"~(show-prefix)~(show-key k)" (show-value v)))
   (define (show-entry-n k0 k1 v)
     (when k0
       (if (equal? k0 k1)
         (show-entry-1 k0 v)
-        (format #t " ~14a  ~a\n" 
-                #"~(show-key k0) .. ~(show-key k1)"
+        (format #t " ~20a  ~a\n"
+                #"~(show-prefix)~(show-key k0) .. ~(show-key k1)"
                 (show-value v)))))
-  (with-output-to-string
-    (^[]
-      (let loop ([ks (sort (hash-table-keys (~ km'table)) key<?)]
-                 [group-start #f]
-                 [group-end #f])
-        (if (null? ks)
-          (show-entry-n group-start group-end self-insert-command)
-          (let1 v (hash-table-get (~ km'table) (car ks))
-            (if (eq? v self-insert-command)
-              (loop (cdr ks) (or group-start (car ks)) (car ks))
-              (begin
-                (show-entry-n group-start group-end self-insert-command)
-                (show-entry-1 (car ks) v)
-                (loop (cdr ks) #f #f)))))))))
+  (let loop ([ks (sort (hash-table-keys (~ km'table)) key<?)]
+             [group-start #f]
+             [group-end #f])
+    (if (null? ks)
+      (show-entry-n group-start group-end self-insert-command)
+      (let1 v (hash-table-get (~ km'table) (car ks))
+        (if (eq? v self-insert-command)
+          (loop (cdr ks) (or group-start (car ks)) (car ks))
+          (begin
+            (show-entry-n group-start group-end self-insert-command)
+            (show-entry-1 (car ks) v)
+            (loop (cdr ks) #f #f)))))))
+
+(define (keymap-describe-recursively km)
+  (define (rec km prefixes)
+    (print (or (~ km'name) "(anonymous keymap)"))
+    (keymap-describe km prefixes)
+    (hash-table-for-each 
+     (~ km'table)
+     (^[k v] (when (is-a? v <keymap>)
+               (print)
+               (rec v (append prefixes (list k)))))))
+  (rec km '()))
 
 ;; C-x h - help keymap
-(define *help-keymap* (make-keymap 'help-keymap))
+(define *help-keymap* (make-keymap "Help keymap"))
 
 (define-key *help-keymap* #\b help-binding-command)
 
 
 ;; C-x - general prefix
-(define *c-x-keymap* (make-keymap 'prefix))
+(define *c-x-keymap* (make-keymap "C-x prefix"))
 
 (define-key *c-x-keymap* #\h *help-keymap*)
 
 ;; Default keymap.
-(define *default-keymap* (make-keymap 'default-keymap))
+(define *default-keymap* (make-keymap "Default keymap"))
 
 (define-key *default-keymap* (ctrl #\@) set-mark-command)
 (define-key *default-keymap* (ctrl #\a) move-beginning-of-line)
