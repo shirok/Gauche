@@ -1095,17 +1095,34 @@
       [_ (if (char? y)
            (char<? x y)
            #t)]))
+  (define (show-value v)
+    (cond [(is-a? v <edit-command>) (~ v'name)]
+          [(is-a? v <keymap>) (or #"(~(~ v'name))"
+                                  "(anonymous keymap)")]
+          [else v]))      ;shouldn't happen
+  (define (show-entry-1 k v)
+    (format #t " ~14a  ~a\n" (show-key k) (show-value v)))
+  (define (show-entry-n k0 k1 v)
+    (when k0
+      (if (equal? k0 k1)
+        (show-entry-1 k0 v)
+        (format #t " ~14a  ~a\n" 
+                #"~(show-key k0) .. ~(show-key k1)"
+                (show-value v)))))
   (with-output-to-string
     (^[]
-      (dolist [k (sort (hash-table-keys (~ km'table)) key<?)]
-        (let1 v (hash-table-get (~ km'table) k)
-          (format #t "  ~10a   ~a\n"
-                  (show-key k)
-                  (cond [(is-a? v <edit-command>) (~ v'name)]
-                        [(is-a? v <keymap>) (or #"(~(~ v'name))"
-                                                "(anonymous keymap)")]
-                        [else v]))      ;shouldn't happen
-          )))))
+      (let loop ([ks (sort (hash-table-keys (~ km'table)) key<?)]
+                 [group-start #f]
+                 [group-end #f])
+        (if (null? ks)
+          (show-entry-n group-start group-end self-insert-command)
+          (let1 v (hash-table-get (~ km'table) (car ks))
+            (if (eq? v self-insert-command)
+              (loop (cdr ks) (or group-start (car ks)) (car ks))
+              (begin
+                (show-entry-n group-start group-end self-insert-command)
+                (show-entry-1 (car ks) v)
+                (loop (cdr ks) #f #f)))))))))
 
 ;; C-x h - help keymap
 (define *help-keymap* (make-keymap 'help-keymap))
