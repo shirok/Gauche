@@ -36,6 +36,7 @@
 (define-module text.pager
   (use gauche.process)
   (use gauche.parameter)
+  (use gauche.termios)
   (use file.util)
   (export display/pager
           pager-program))
@@ -96,11 +97,22 @@
     s))
 
 (define (run-pager s)
-  (let1 p (run-process (pager-program) :input :pipe)
-    (guard (e (else #f))
-      (display s (process-input p)))
-    (close-output-port (process-input p))
-    (process-wait p)))
+  ;; We need to ensure the terminal mode is restored even the pager process
+  ;; died unexpectedly.
+  (with-terminal-mode
+   (standard-output-port) 'cooked
+   (^_
+    ;; During running the pager, we block SIGINT and let the pager handle
+    ;; (or ignore) it, otherwise the terminal would be taken with both the
+    ;; pager and gosh process and cause a mess.  Note that the sent SIGINT
+    ;; will be handled as soon as we restore the sigmask.
+    (let* ([omask (sys-sigmask SIG_BLOCK (sys-sigset SIGINT))]
+           [p (run-process (pager-program) :input :pipe :sigmask (sys-sigset))])
+      (unwind-protect
+          (display s (process-input p))
+        (close-output-port (process-input p))
+        (process-wait p)
+        (sys-sigmask SIG_SETMASK omask))))))
 
 ;; API
 (define (display/pager s)
