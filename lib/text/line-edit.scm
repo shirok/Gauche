@@ -39,6 +39,7 @@
   (use util.match)
   (use text.console)
   (use text.gap-buffer)
+  (use text.pager)
   (use gauche.unicode)
   (export <line-edit-context> read-line/edit
           save-line-edit-history
@@ -80,8 +81,7 @@
 ;;   console - <console> object to use.  if omitted, make-default-console
 ;;             is called (see text.console)
 ;;   prompt  - a string or a thunk that returns a string.
-;;   keymap  - a hashtable to keycode -> command.  not much useful now,
-;;             for we haven't exported commands.
+;;   keymap  - a keymap to map keystroke -> command.
 ;;   input-continues - if this is #f, commit-or-newline always
 ;;             commit the line---that read-line/edit strictly works as
 ;;             line editor.  Otherwise, this should be a procedure that
@@ -282,11 +282,11 @@
          (push-undo! ctx edit-command)
          (loop #t)]
         [x (error "[internal] invalid return value from a command:" x)])]
-     [(hash-table? h)
+     [(is-a? h <keymap>)
       (let* ([ch (if (queue-empty? (~ ctx'keystroke-queue))
                  (getch con)
                  (queue-pop! (~ ctx'keystroke-queue)))]
-             [h (hash-table-get h ch ch)])
+             [h (keymap-ref h ch)])
         (handle-command h ch loop redisp))]
      [else
       (error "[internal] do not know how to handle key:" h)]))
@@ -1032,6 +1032,14 @@
   "Do nothing."
   'nop)
 
+(define-edit-command (help-binding-command ctx buf key)
+  "Show key bindings"
+  (putch (~ ctx'console) #\newline)
+  (display/pager
+   (string-append "Line editor key bindings:\n\n"
+                  (keymap-describe (~ ctx'keymap))))
+  'visible)
+
 ;;;
 ;;; Keymaps
 ;;;
@@ -1059,7 +1067,54 @@
     [(_ km keystroke command)
      (hash-table-put! (~ km'table) keystroke command)]))
 
-;; Some predefined keymaps
+(define (keymap-describe km)
+  (define (show-key k)
+    (match k
+      [('ALT x) #"M-~(show-key x)"]
+      [(? symbol?) (x->string k)]
+      [#\space "SPC"]
+      [#\del   "DEL"]
+      [_ (cond
+          [(char=? k #\null) "C-@"]
+          [(char<=? k #\x1a)  #"C-~(integer->char (+ (char->integer k) 96))"]
+          [(char<? k #\space) #"C-~(integer->char (+ (char->integer k) 64))"]
+          [else (string k)])]))
+  (define (key<? x y)
+    (match x
+      [('ALT xx)
+       (match y
+         [('ALT yy) (key<? xx yy)]
+         [_ #f])]
+      [(? symbol?)
+       (match y
+         [('ALT _) #t]
+         [(? symbol?) (<? default-comparator x y)]
+         [_ #f])]
+      [_ (if (char? y)
+           (char<? x y)
+           #t)]))
+  (with-output-to-string
+    (^[]
+      (dolist [k (sort (hash-table-keys (~ km'table)) key<?)]
+        (let1 v (hash-table-get (~ km'table) k)
+          (format #t "  ~10a   ~a\n"
+                  (show-key k)
+                  (if (is-a? v <edit-command>)
+                    (~ v'name)
+                    v)))))))
+
+;; C-x h - help keymap
+(define *help-keymap* (make-keymap))
+
+(define-key *help-keymap* #\b help-binding-command)
+
+
+;; C-x - general prefix
+(define *c-x-keymap* (make-keymap))
+
+(define-key *c-x-keymap* #\h *help-keymap*)
+
+;; Default keymap.
 (define *default-keymap* (make-keymap))
 
 (define-key *default-keymap* (ctrl #\@) set-mark-command)
@@ -1086,7 +1141,7 @@
 ;;(define-key *default-keymap* (ctrl #\u) undefined-command)
 ;;(define-key *default-keymap* (ctrl #\v) undefined-command)
 (define-key *default-keymap* (ctrl #\w) kill-region)
-;;(define-key *default-keymap* (ctrl #\x) undefined-command)
+(define-key *default-keymap* (ctrl #\x) *c-x-keymap*)
 (define-key *default-keymap* (ctrl #\y) yank)
 ;;(define-key *default-keymap* (ctrl #\z) undefined-command)
 ;;(define-key *default-keymap* (ctrl #\[) undefined-command)
