@@ -268,9 +268,9 @@
          (define saved-buffering (port-buffering port))
          (define new-attr
            (case mode
-             [(raw)    "-echo -icanon -iexten -isig"]
-             [(rare)   "-echo -icanon -iexten  isig"]
-             [(cooked) " echo  icanon  iexten  isig"]
+             [(raw)    "-echo -icanon -iexten -isig -icrnl"]
+             [(rare)   "-echo -icanon -iexten  isig -icrnl"]
+             [(cooked) " echo  icanon  iexten  isig  icrnl"]
              [else
               (error "terminal mode needs to be one of cooked, rare or raw, \
                       but got:" mode)]))

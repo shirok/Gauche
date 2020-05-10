@@ -148,9 +148,6 @@
       (enqueue! (~ con'keybuf) `(ALT ,(integer->char ch)))]
      [(logtest ctls CTRL_PRESSED)
       (enqueue! (~ con'keybuf) (get-ctrl-char vk))]
-     [(eqv? ch #x0a)] ; drop a newline character
-     [(eqv? ch #x0d)  ; convert a return character to a newline character
-      (enqueue! (~ con'keybuf) #\x0a)]
      [else
       (enqueue! (~ con'keybuf) (integer->char ch))]))
   (dolist [ks (win-keystate)]
