@@ -45,8 +45,10 @@
 (define *default-pager*
   (or (and-let1 s (sys-getenv "PAGER")
         (shell-tokenize-string s))
+      ;; NB: We can use more.com on Windows console.  On MSYS, however
+      ;; fork fails for both less.exe and more.exe, so we don't use them.
       (and-let1 cmd (or (find-file-in-paths "less")
-                        (find-file-in-paths "more"))
+                        (find-file-in-paths "more" :extensions '("com")))
         (list cmd))))
 
 ;; Parameter: pager-program
@@ -76,7 +78,9 @@
 (define (pager-unavailable?)
   (or (equal? (sys-getenv "TERM") "emacs")
       (equal? (sys-getenv "TERM") "dumb")
-      (not (sys-isatty (current-output-port)))
+      (not (or (sys-isatty (current-output-port))
+               ((with-module gauche.internal %sys-mintty?)
+                (current-output-port))))
       (not (pager-program))))
 
 (define (limited-output?)
