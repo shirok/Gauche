@@ -37,6 +37,7 @@
   (use gauche.process)
   (use gauche.parameter)
   (use gauche.termios)
+  (use text.console)
   (use file.util)
   (export display/pager
           pager-program))
@@ -75,12 +76,18 @@
      #/\u00df/ "[Eszett]" ; eszett     (e.g. ,i char-upcase)
      ))
 
+(define (mintty?)
+  (cond-expand
+   [gauche.os.windows
+    (and-let* ([t (sys-getenv "TERM")]
+               [ (vt100-compatible? t) ])
+      ((with-module gauche.internal %sys-mintty?) (current-output-port)))]
+   [else #f]))
+
 (define (pager-unavailable?)
   (or (equal? (sys-getenv "TERM") "emacs")
       (equal? (sys-getenv "TERM") "dumb")
-      (not (or (sys-isatty (current-output-port))
-               ((with-module gauche.internal %sys-mintty?)
-                (current-output-port))))
+      (not (or (sys-isatty (current-output-port)) (mintty?)))
       (not (pager-program))))
 
 (define (limited-output?)
@@ -118,9 +125,45 @@
         (process-wait p)
         (sys-sigmask SIG_SETMASK omask))))))
 
-;; API
+;; On MSYS/mintty, calling subprocess somehow doesn't work.  We display the
+;; text one page at a time.
+(define (mintty-pager s)
+  (call-with-console
+   (make <vt100>)                       ;we know it's vt100 compatible
+   (^c
+    (receive (h w) (query-screen-size c)
+      (let1 ss (string-split s #\newline)
+        (let loop ((pos 0))
+          (let1 lines (drop* ss pos)
+            (clear-screen c)
+            (do ([lines lines (cdr lines)]
+                 [y 0 (+ y 1)])
+                [(or (null? lines)
+                     (= y (- h 1)))]
+              (move-cursor-to c y 0)
+              (putstr c (car lines)))
+            (move-cursor-to c (- h 1) 0)
+            (if (length<=? lines (- h 2))
+              (putstr c "End: ")
+              (putstr c "More: ")))
+          (let input-loop ([ch (getch c)])
+            (cond
+             [(eqv? ch #\q)]
+             [(eqv? ch #\space) (let1 nextpos (+ pos h -1)
+                                  (when (length>=? ss nextpos)
+                                    (loop nextpos)))]
+             [(eqv? ch #\return) (loop (+ pos 1))]
+             [(eqv? ch #\b) (loop (max (- pos h) 0))]
+             [else (input-loop (getch c))])))))
+    (clear-screen c))))
+
+;; Main Entry Point API
 (define (display/pager s)
-  (if (pager-unavailable?)
-    (display (pager-filter s))
-    (run-pager (pager-filter s))))
+  (let1 s (pager-filter s)
+    (cond
+     [(pager-unavailable?) (display s)]
+     [(mintty?)            (mintty-pager s)]
+     [else                 (run-pager s)])))
+
+
 
