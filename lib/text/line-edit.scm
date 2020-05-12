@@ -517,6 +517,24 @@
       (reset-character-attribute con)
       (set-character-attribute con newattr))))
 
+;; Show message at the starting point of the current 
+;; redraw the current buffer below it.
+(define (show-message ctx buffer msg :optional (attr #f))
+  (move-cursor-to (~ ctx'console) (~ ctx'initpos-y) 0)
+  (when attr
+    (set-character-attribute (~ ctx'console) attr))
+  (unwind-protect
+      (dolist [line (string-split msg #\newline)]
+        (clear-to-eos (~ ctx'console))
+        (putstr (~ ctx'console) line)
+        (cursor-down/scroll-up (~ ctx'console))
+        (putch (~ ctx'console) #\return)
+        (ensure-bottom-room (~ ctx'console))
+        (when (< (~ ctx'initpos-y) (- (~ ctx'screen-height) 1))
+          (inc! (~ ctx'initpos-y))))
+    (when attr
+      (reset-character-attribute (~ ctx'console)))))
+
 ;;
 ;; Key combinations
 ;;
@@ -1056,7 +1074,8 @@
 (define-edit-command (undefined-command ctx buf key)
   "Placeholder for a keystroke that hasn't assigned to any command."
   (beep (~ ctx'console))
-  'visible)
+  (show-message ctx buf "Type C-x h b for key binding" '(#f #f reverse))
+  'redraw)
 
 (define-edit-command (nop-command ctx buf key)
   "Do nothing."
