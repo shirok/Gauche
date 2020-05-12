@@ -107,10 +107,15 @@
                           :init-form (make <wide-char-setting>))
 
    ;; Following slots are private.
+   ;; When we enter read/edit, we record the cursor position and screen size.
    (initpos-y)
    (initpos-x)
    (screen-height)
    (screen-width)
+   ;; These are the cursor position immediately before a command is invoked
+   ;; (or, more precisely, the cursor position after the last redraw).
+   (lastpos-y)
+   (lastpos-x)
 
    ;; Selection
    ;; selection is between marker-pos and the current cursor pos.
@@ -224,6 +229,11 @@
   ;;            This occurs, for example, backward-char at the
   ;;            beginning of the input.
   ;;   nop    - totally ignore the key input.
+  ;;   redraw - we won't change the state of the editor, but
+  ;;            we reobtain the cursor position before redrawing
+  ;;            the buffer content.  This is necessary when the command
+  ;;            wrote something on the screen and we don't want to clobber
+  ;;            it.
   ;;   moved  - the command only moved cursor pos.  requires redisplay,
   ;;            but we keep selection.
   ;;   #<eof> - end of input - either input port is closed, or
@@ -256,6 +266,8 @@
         ['unchanged (reset-last-yank! ctx)
                     (break-undo-sequence! ctx)
                     (loop redisp)]
+        ['redraw    (reset-cursor-pos ctx)
+                    (loop #t)]
         ['moved     (reset-last-yank! ctx)
                     (break-undo-sequence! ctx)
                     (loop #t)]
@@ -312,10 +324,26 @@
 (define (init-screen-params ctx)
   (receive (y x) (query-cursor-position (~ ctx'console))
     (set! (~ ctx'initpos-y) y)
-    (set! (~ ctx'initpos-x) x))
+    (set! (~ ctx'lastpos-y) y)
+    (set! (~ ctx'initpos-x) x)
+    (set! (~ ctx'lastpos-x) x))
   (receive (h w) (query-screen-size (~ ctx'console))
     (set! (~ ctx'screen-height) h)
     (set! (~ ctx'screen-width) w)))
+
+;; If the cursor position has been moved from the supposed position,
+;; redisplay the prompt and reset initial position.  This is called
+;; when something may be put on the screen and we don't want to
+;; clobber it.
+(define (reset-cursor-pos ctx)
+  (receive (y x) (query-cursor-position (~ ctx'console))
+    (unless (and (= (~ ctx'lastpos-y) y)
+                 (= (~ ctx'lastpos-x) x))
+      (move-cursor-to (~ ctx'console) y 0)
+      (show-prompt ctx)
+      (receive (y x) (query-cursor-position (~ ctx'console))
+        (set! (~ ctx'initpos-y) y)
+        (set! (~ ctx'initpos-x) x)))))
 
 ;; Show prompt.  Returns the current column.
 (define (show-prompt ctx)
@@ -473,6 +501,8 @@
 
         (loop (+ n 1))))
     (move-cursor-to con pos-y pos-x)
+    (set! (~ ctx'lastpos-y) pos-y)
+    (set! (~ ctx'lastpos-x) pos-x)
     (show-cursor con)))
 
 (define (current-char-attr pos sel oparen)
@@ -1034,12 +1064,11 @@
 
 (define-edit-command (help-binding-command ctx buf key)
   "Show key bindings"
-  (putch (~ ctx'console) #\newline)
   (display/pager
    (with-output-to-string
      (^[] (print "Line editor key bindings:") (print)
        (keymap-describe-recursively (~ ctx'keymap)))))
-  'visible)
+  'redraw)
 
 ;;;
 ;;; Keymaps
