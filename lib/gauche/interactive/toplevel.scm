@@ -58,6 +58,7 @@
 (select-module gauche.interactive.toplevel)
 
 (autoload file.util home-directory expand-path)
+(autoload text.pager with-output-to-pager)
 
 ;; toplevel-commands
 ;; Map from symbol to (parser help-message proc)
@@ -218,22 +219,24 @@
         (cons cmd help)))
     (match args
       [()
-       (print "You're in REPL (read-eval-print-loop) of Gauche shell.")
-       (print "Type a Scheme expression to evaluate.")
-       (print "Evaluate (exit) to exit REPL.")
-       (print "A word preceded with comma has special meaning.  Type ,help <cmd> ")
-       (print "to see the detailed help for <cmd>.")
-       (print "Commands can be abbreviated as far as it is not ambiguous.")
-       (print)
-       (dolist [cmd&help
-                (sort (map (^p (get-cmd&help (cdr p)))
-                           (toplevel-command-keys))
-                      string<? car)]
-         (format #t (if (> (string-length (car cmd&help)) 10)
-                      " ,~10a\n             ~a\n"
-                      " ,~10a ~a\n")
-                 (car cmd&help)
-                 (cdr cmd&help)))
+       (with-output-to-pager
+        (^[]
+          (print "You're in REPL (read-eval-print-loop) of Gauche shell.")
+          (print "Type a Scheme expression to evaluate.")
+          (print "Evaluate (exit) to exit REPL.")
+          (print "A word preceded with comma has special meaning.  Type ,help <cmd> ")
+          (print "to see the detailed help for <cmd>.")
+          (print "Commands can be abbreviated as far as it is not ambiguous.")
+          (print)
+          (dolist [cmd&help
+                   (sort (map (^p (get-cmd&help (cdr p)))
+                              (toplevel-command-keys))
+                         string<? car)]
+            (format #t (if (> (string-length (car cmd&help)) 10)
+                         " ,~10a\n             ~a\n"
+                         " ,~10a ~a\n")
+                    (car cmd&help)
+                    (cdr cmd&help)))))
        *no-value*]
       [(('unquote cmd)) ((toplevel-command-helper cmd)) *no-value*]
       [(cmd) ((toplevel-command-helper cmd)) *no-value*]
