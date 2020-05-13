@@ -1102,7 +1102,7 @@
                                (keys->string (reverse keystrokes) ch)
                                (~ h'name)
                                (~ h'docstring))
-               (show-message ctx buf msg '(#f #f reverse)))]
+               (show-message ctx buf msg '(#f #f bright)))]
             [(is-a? h <keymap>)
              (loop (next-keystroke ctx) h (cons ch keystrokes))]
             [else #f])))                ;can't happen, but just ignore
