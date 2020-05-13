@@ -35,6 +35,7 @@
 
 (define-module gauche.interactive
   (export apropos d read-eval-print-loop print-mode
+          toplevel-reader-editable?          
           ;; autoloaded symbols follow
           info info-page info-search reload ed
           reload-modified-modules module-reload-rules reload-verbose)
@@ -227,6 +228,11 @@
           (format "~a~a " *repl-name* delim)
           (format "~a[~a]~a " *repl-name* (module-name m) delim))))))
 
+
+(define *read-edit-enabled?* #f)
+
+(define (toplevel-reader-editable?) *read-edit-enabled?*)
+
 ;; Returns a reader procedure that can handle toplevel command.
 ;; READ - reads one sexpr from the REPL input
 ;; READ-LINE - read to the EOL from REPL input and returns a string.
@@ -268,9 +274,11 @@
                               (get-history-filename))
         (values #f #f #f #f))
     (if (and r rl skipper ctx)
-      (values (^[] #f)
-              (make-repl-reader r rl skipper)
-              ctx)
+      (begin
+        (set! *read-edit-enabled?* #t)
+        (values (^[] #f)
+                (make-repl-reader r rl skipper)
+                ctx))
       (values (^[] (display (default-prompt-string)) (flush))
               (make-repl-reader read read-line
                                 consume-trailing-whitespaces)
