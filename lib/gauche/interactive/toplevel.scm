@@ -236,7 +236,16 @@
                          " ,~10a\n             ~a\n"
                          " ,~10a ~a\n")
                     (car cmd&help)
-                    (cdr cmd&help)))))
+                    (cdr cmd&help)))
+          (when (toplevel-reader-editable?)
+            (print)
+            (print "You can also edit input using Emacs-like key bindings.")
+            (print "Use C-f (cntl+f), C-b, C-p and C-n for foward, backward,")
+            (print "previous line or next line.  If you're the beginning of")
+            (print "the input expression and you type C-p, the previous expression")
+            (print "is shown if there's any.  C-n is similar.")
+            (print "Type C-x h b to see all the key bindings, and C-x h k <key>")
+            (print "to see the description of a particular <key>."))))
        *no-value*]
       [(('unquote cmd)) ((toplevel-command-helper cmd)) *no-value*]
       [(cmd) ((toplevel-command-helper cmd)) *no-value*]
