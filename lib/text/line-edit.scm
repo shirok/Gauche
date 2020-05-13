@@ -1074,9 +1074,9 @@
   'visible)
 
 (define-edit-command (undefined-command ctx buf key)
-  "Placeholder for a keystroke that hasn't assigned to any command."
+  "Placeholder for a keystroke that isn't assigned to any command."
   (beep (~ ctx'console))
-  (show-message ctx buf "Type C-x h b for key binding" '(#f #f reverse))
+  (show-message ctx buf "Type C-x h b for list of key bindings, C-x h k <key> for description." '(#f #f reverse))
   'redraw)
 
 (define-edit-command (nop-command ctx buf key)
@@ -1089,6 +1089,23 @@
    (with-output-to-string
      (^[] (print "Line editor key bindings:") (print)
        (keymap-describe-recursively (~ ctx'keymap)))))
+  'redraw)
+
+(define-edit-command (help-keystroke-command ctx buf key)
+  "Show description of given keystroke(s)."
+  (let loop ([ch (next-keystroke ctx)]
+             [keymap (~ ctx'keymap)]
+             [keystrokes '()])
+    (let1 h (keymap-ref keymap ch)
+      (cond [(is-a? h <edit-command>)
+             (let1 msg (format "~22a ~a\n~a"
+                               (keys->string (reverse keystrokes) ch)
+                               (~ h'name)
+                               (~ h'docstring))
+               (show-message ctx buf msg '(#f #f reverse)))]
+            [(is-a? h <keymap>)
+             (loop (next-keystroke ctx) h (cons ch keystrokes))]
+            [else #f])))                ;can't happen, but just ignore
   'redraw)
 
 ;;;
@@ -1119,6 +1136,26 @@
   (syntax-rules ()
     [(_ km keystroke command)
      (hash-table-put! (~ km'table) keystroke command)]))
+
+(define (keys->string prefixes key)
+  (define (key->string k)
+    (match k
+      [('ALT x) #"M-~(key->string x)"]
+      [(? symbol?) (x->string k)]
+      [#\space "SPC"]
+      [#\del   "DEL"]
+      [_ (cond
+          [(char=? k #\null) "C-@"]
+          [(char<=? k #\x1a)  #"C-~(integer->char (+ (char->integer k) 96))"]
+          [(char<? k #\space) #"C-~(integer->char (+ (char->integer k) 64))"]
+          [else (string k)])]))
+  (string-append (if (null? prefixes)
+                   ""
+                   (string-join (map (cut keys->string '() <>) prefixes)
+                                " " 'suffix))
+                 (if key
+                   (key->string key)
+                   "")))
 
 (define (keymap-describe km :optional (prefix-keys '()))
   (define (show-key k)
@@ -1151,16 +1188,14 @@
           [(is-a? v <keymap>) (or #"(~(~ v'name))"
                                   "(anonymous keymap)")]
           [else v]))      ;shouldn't happen
-  (define (show-prefix)
-    (string-join (map show-key prefix-keys) " " 'suffix))
   (define (show-entry-1 k v)
-    (format #t " ~20a  ~a\n" #"~(show-prefix)~(show-key k)" (show-value v)))
+    (format #t " ~20a  ~a\n" (keys->string prefix-keys k) (show-value v)))
   (define (show-entry-n k0 k1 v)
     (when k0
       (if (equal? k0 k1)
         (show-entry-1 k0 v)
         (format #t " ~20a  ~a\n"
-                #"~(show-prefix)~(show-key k0) .. ~(show-key k1)"
+                #"~(keys->string prefix-keys k0) .. ~(keys->string '() k1)"
                 (show-value v)))))
   (let loop ([ks (sort (hash-table-keys (~ km'table)) key<?)]
              [group-start #f]
@@ -1190,6 +1225,7 @@
 (define *help-keymap* (make-keymap "Help keymap"))
 
 (define-key *help-keymap* #\b help-binding-command)
+(define-key *help-keymap* #\k help-keystroke-command)
 
 
 ;; C-x - general prefix
