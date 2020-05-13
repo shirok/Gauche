@@ -40,6 +40,7 @@
   (use text.console)
   (use file.util)
   (export display/pager
+          with-output-to-pager
           pager-program))
 (select-module text.pager)
 
@@ -165,5 +166,6 @@
      [(mintty?)            (mintty-pager s)]
      [else                 (run-pager s)])))
 
-
-
+;; Another convenience API
+(define (with-output-to-pager thunk)
+  (display/pager (with-output-to-string thunk)))
