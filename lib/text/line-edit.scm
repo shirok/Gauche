@@ -295,9 +295,7 @@
          (loop #t)]
         [x (error "[internal] invalid return value from a command:" x)])]
      [(is-a? h <keymap>)
-      (let* ([ch (if (queue-empty? (~ ctx'keystroke-queue))
-                 (getch con)
-                 (queue-pop! (~ ctx'keystroke-queue)))]
+      (let* ([ch (next-keystroke ctx)]
              [h (keymap-ref h ch)])
         (handle-command h ch loop redisp))]
      [else
@@ -314,9 +312,7 @@
     (let* ([redisp (if (and redisp (not (chready? con)))
                      (begin (redisplay ctx buffer) #f)
                      redisp)]
-           [ch (if (queue-empty? (~ ctx'keystroke-queue))
-                 (getch con)
-                 (queue-pop! (~ ctx'keystroke-queue)))]
+           [ch (next-keystroke ctx)]
            [h (keymap-ref (~ ctx'keymap) ch)])
       (handle-command h ch loop redisp))))
 
@@ -344,6 +340,12 @@
       (receive (y x) (query-cursor-position (~ ctx'console))
         (set! (~ ctx'initpos-y) y)
         (set! (~ ctx'initpos-x) x)))))
+
+;; Fetch next keystroke.
+(define (next-keystroke ctx)
+  (if (queue-empty? (~ ctx'keystroke-queue))
+    (getch (~ ctx'console))
+    (queue-pop! (~ ctx'keystroke-queue))))
 
 ;; Show prompt.  Returns the current column.
 (define (show-prompt ctx)
@@ -797,7 +799,7 @@
 
 (define-edit-command (quoted-insert ctx buf key)
   "Read next keystroke and insert it into the buffer at the cursor."
-  (let1 ch (getch (~ ctx'console)) ; TODO: octal digits input
+  (let1 ch (next-keystroke ctx) ; TODO: octal digits input
     (gap-buffer-edit! buf `(i #f ,(x->string ch)))))
 
 (define-edit-command (insert-parentheses ctx buf key)
@@ -1082,7 +1084,7 @@
   'nop)
 
 (define-edit-command (help-binding-command ctx buf key)
-  "Show key bindings"
+  "Show key bindings."
   (display/pager
    (with-output-to-string
      (^[] (print "Line editor key bindings:") (print)
