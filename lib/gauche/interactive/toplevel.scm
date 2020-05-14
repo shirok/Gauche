@@ -237,15 +237,23 @@
                          " ,~10a ~a\n")
                     (car cmd&help)
                     (cdr cmd&help)))
-          (when (toplevel-reader-editable?)
-            (print)
-            (print "You can also edit input using Emacs-like key bindings.")
-            (print "Use C-f (cntl+f), C-b, C-p and C-n for foward, backward,")
-            (print "previous line or next line.  If you're the beginning of")
-            (print "the input expression and you type C-p, the previous expression")
-            (print "is shown if there's any.  C-n is similar.")
-            (print "Type C-x h b to see all the key bindings, and C-x h k <key>")
-            (print "to see the description of a particular <key>."))))
+          (case (toplevel-reader-state)
+            [(editable)
+             (print)
+             (print "You can also edit input using Emacs-like key bindings.")
+             (print "Use C-f (cntl+f), C-b, C-p and C-n for foward, backward,")
+             (print "previous line or next line.  If you're the beginning of")
+             (print "the input expression and you type C-p, the previous expression")
+             (print "is shown if there's any.  C-n is similar.")
+             (print "Type C-x h b to see all the key bindings, and C-x h k <key>")
+             (print "to see the description of a particular <key>.")
+             (print)
+             (print "If you have a trouble with input line editor, type \",edit off\"")
+             (print "to turn off input editing.")]
+            [(vanilla)
+             (print)
+             (print "You can also turn on line-editing mode by \",edit on\".")]
+            )))
        *no-value*]
       [(('unquote cmd)) ((toplevel-command-helper cmd)) *no-value*]
       [(cmd) ((toplevel-command-helper cmd)) *no-value*]
@@ -271,6 +279,31 @@
       (if dir
         (begin (sys-chdir dir) (sys-getcwd))
         (usage)))))
+
+;; Turn on/off input editing.
+(define-toplevel-command edit :read
+  " [on|off]\
+ \nQuery, or turn on/off input editing mode.\
+ \nWithout arguments, show the current input editing mode.  With on or off, turns\
+ \non or off input editing mode.  Note that if gosh hasn't been started with input\
+ \nediting feature, you can't turn it on afterwards."
+  (^[args]
+    (match args
+      [() (case (toplevel-reader-state)
+            [(#f)
+             (print "Input editing is not available in the current session.")]
+            [(editable)
+             (print "Input editing is enabled.  Type ',edit off' to turn it off.")]
+            [(vanilla)
+             (print "Input editing is temporarily disabled.  Type ',edit on' to turn it on.")])]
+      [('on)  (if (toplevel-reader-state)
+                (toplevel-reader-state 'editable)
+                (error "You can't turn on input editor in this session."))]
+      [('off) (if (toplevel-reader-state)
+                (toplevel-reader-state 'vanilla)
+               (error "You're not using input editor in this session."))]
+      [_ (usage)])
+    *no-value*))
 
 ;; Run shell command.
 ;; A tradition to use '!' for shell escape, but "comma - exclamation-mark"

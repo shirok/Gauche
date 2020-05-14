@@ -35,7 +35,7 @@
 
 (define-module gauche.interactive
   (export apropos d read-eval-print-loop print-mode
-          toplevel-reader-editable?          
+          toplevel-reader-state
           ;; autoloaded symbols follow
           info info-page info-search reload ed
           reload-modified-modules module-reload-rules reload-verbose)
@@ -229,9 +229,17 @@
           (format "~a[~a]~a " *repl-name* (module-name m) delim))))))
 
 
-(define *read-edit-enabled?* #f)
+;; can be
+;;  #f       - read edit isn't available at all
+;;  editable - read edit is being used
+;;  vanilla  - read edit is available, but turned off temporarily
+(define *read-edit-state* #f)
 
-(define (toplevel-reader-editable?) *read-edit-enabled?*)
+(define toplevel-reader-state
+  (case-lambda
+    [() *read-edit-state*]
+    [(mode) (ecase mode
+              [(#f editable vanilla) (set! *read-edit-state* mode)])]))
 
 ;; Returns a reader procedure that can handle toplevel command.
 ;; READ - reads one sexpr from the REPL input
@@ -273,15 +281,22 @@
         (make-editable-reader (^[] (default-prompt-string "$"))
                               (get-history-filename))
         (values #f #f #f #f))
+    (define vanilla-reader
+      (make-repl-reader read read-line consume-trailing-whitespaces))
     (if (and r rl skipper ctx)
-      (begin
-        (set! *read-edit-enabled?* #t)
-        (values (^[] #f)
-                (make-repl-reader r rl skipper)
+      (let1 editing-reader (make-repl-reader r rl skipper)
+        (set! *read-edit-state* 'editable)
+        (values (^[]
+                  ;; if input editor is running, prompt is shown by the reader
+                  (when (eq? *read-edit-state* 'vanilla)
+                    (display (default-prompt-string)) (flush)))
+                (^[]
+                  (if (eq? *read-edit-state* 'editable)
+                    (editing-reader)
+                    (vanilla-reader)))
                 ctx))
       (values (^[] (display (default-prompt-string)) (flush))
-              (make-repl-reader read read-line
-                                consume-trailing-whitespaces)
+              vanilla-reader
               #f))))
 
 ;; error printing will be handled by the original read-eval-print-loop
