@@ -4,7 +4,6 @@
 
 (define-module srfi-130
   (use srfi-13)
-  (use gauche.stringutil)
   (export string-contains
           string-contains-right
           string-fold
@@ -15,6 +14,7 @@
           string-replicate
           string-skip
           string-skip-right
+          string-split
 
           ;; These are from SRFI-13
           reverse-list->string
@@ -44,9 +44,6 @@
           string-unfold
           string-unfold-right
           string-filter
-
-          ;; These are from gauche.stringutil
-          string-split
 
           ;; Aliases
           string->list/cursors

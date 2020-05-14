@@ -66,7 +66,7 @@ SCMFILES = \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
        gauche/time.scm gauche/connection.scm \
-       gauche/redefutil.scm gauche/stringutil.scm \
+       gauche/redefutil.scm \
        gauche/vecutil.scm gauche/condutil.scm gauche/portutil.scm \
        gauche/hashutil.scm gauche/treeutil.scm gauche/computil.scm \
        gauche/modutil.scm gauche/libutil.scm gauche/sortutil.scm \

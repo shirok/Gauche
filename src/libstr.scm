@@ -117,12 +117,6 @@
 (define-cproc string-size (str::<string>) ::<fixnum> :constant
   (return (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
 
-(select-module gauche.internal)
-;; see lib/gauche/stringutil.scm for generic string-split
-(define-cproc %string-split-by-char (s::<string> ch::<char>
-                                     :optional (limit::<int> -1))
-  Scm_StringSplitByCharWithLimit)
-
 (define-cproc %maybe-substring (str::<string> :optional start end)
   Scm_MaybeSubstring)
 
@@ -175,7 +169,107 @@
                        either string or character" s2)
            (return SCM_UNDEFINED)])))
 
-;;
+;; string-split
+;; Generic string-split
+;;  splitter can be a character, a char-set, a string, or a regexp.
+;;  NB: To adapt to srfi-152, we changed the optional argument - now the
+;;  'grammar' argument comes before 'limit'.  For the bacward compatibility,
+;;  we recognize an integer argument in 'grammar' as 'limit'.
+(define (string-split string splitter
+                      :optional (grammar 'infix) (limit #f) start end)
+  (if (or (not grammar) (integer? grammar))
+    ((with-module gauche.internal %string-split)
+     string splitter 'infix grammar limit start)
+    ((with-module gauche.internal %string-split)
+     string splitter grammar limit start end)))
+
+(select-module gauche.internal)
+(define-cproc %string-split-by-char (s::<string> ch::<char>
+                                     :optional (limit::<int> -1))
+  Scm_StringSplitByCharWithLimit)
+
+(define (%string-split string splitter grammar limit start end)
+  (unless (memq grammar '(infix strict-infix prefix suffix))
+    (error "grammar argument must be one of (infix strict-infix prefix suffix), but got" grammar))
+  (unless (or (not limit) (and (integer? limit) (>= limit 0)))
+    (error "limit argument must be a nonnegative integer or #f, but got" limit))
+  (let1 s ((with-module gauche.internal %maybe-substring) string start end)
+    (if (equal? s "")
+      (if (eq? grammar 'strict-infix)
+        (error "string must not be empty with strict-infix grammar")
+        '())
+      (let1 r (if (char? splitter)
+                (%string-split-by-char s splitter (or limit -1))
+                (%string-split-by-scanner s (%string-split-scanner splitter)
+                                          (or limit -1)))
+        (case grammar
+          [(prefix) (if (and (pair? r) (equal? (car r) ""))
+                      (cdr r)
+                      r)]
+          [(suffix) (if (and (pair? r) (equal? (car (last-pair r)) ""))
+                      (drop-right r 1)
+                      r)]
+          [else r])))))
+
+;; aux fns
+(define (%string-split-scanner splitter)
+  (cond [(string? splitter)
+         (if (string=? splitter "")
+           (^s (if (<= (string-length s) 1)
+                 (values s #f)
+                 (values (string-copy s 0 1) (string-copy s 1))))
+           (^s (receive (before after) (string-scan s splitter 'both)
+                 (if before (values before after) (values s #f)))))]
+        [(char-set? splitter)
+         (%string-split-scanner-each-char
+          (cut char-set-contains? splitter <>))]
+        [(regexp? splitter)
+         (^s (cond [(rxmatch splitter s)
+                    => (^m (let ([before (m 'before)]
+                                 [after  (m 'after)])
+                             (if (string=? s after)
+                               (if (<= (string-length s) 1)
+                                 (values s #f)
+                                 (values (string-copy s 0 1)
+                                         (string-copy s 1)))
+                               (values before after))))]
+                   [else (values s #f)]))]
+        [else ;; assume splitter is a predicate
+         (%string-split-scanner-each-char splitter)]))
+
+(define (%string-split-scanner-each-char pred)
+  (define (cursor-substr s cur)
+    (substring s (string-cursor-start s) cur))
+
+  (define (scan-in s cur end)
+    (cond [(string-cursor=? cur end)
+           (values (cursor-substr s cur) #f)]
+          [(pred (string-ref s cur))
+           (scan-out s (string-cursor-next s cur) end (cursor-substr s cur))]
+          [else
+           (scan-in s (string-cursor-next s cur) end)]))
+
+  (define (scan-out s cur end before)
+    (cond [(string-cursor=? cur end)
+           (values before "")]
+          [(pred (string-ref s cur))
+           (scan-out s (string-cursor-next s cur) end before)]
+          [else
+           (values before (substring s cur end))]))
+
+  (^s (scan-in s (string-cursor-start s) (string-cursor-end s))))
+
+(define (%string-split-by-scanner string scanner limit)
+  (let loop ([s string]
+             [r '()]
+             [limit limit])
+    (if (zero? limit)
+      (reverse! (cons s r))
+      (receive (before after) (scanner s)
+        (if after
+          (loop after (cons before r) (- limit 1))
+          (reverse! (cons before r)))))))
+
 ;; Modifying string
 ;;  They are just for backward compatibility, and they are expensive
 ;;  anyway, so we don't care their performance.

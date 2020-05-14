@@ -140,8 +140,6 @@
 (autoload "gauche/sysutil"
           sys-realpath sys-fdset list->sys-fdset sys-fdset->list)
 
-(autoload gauche.stringutil string-split)
-
 (autoload gauche.vecutil
           vector-tabulate vector-map vector-map! vector-for-each
           vector-map-with-index vector-map-with-index!

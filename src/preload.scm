@@ -19,6 +19,9 @@
 (use gauche.record)
 (use gauche.generator)
 (use gauche.interpolate)
+(cond-expand
+ [gauche-0.9.9 (use gauche.stringutil)]
+ [else])
 (use gauche.threads)
 (use srfi-1)
 (use srfi-13)
