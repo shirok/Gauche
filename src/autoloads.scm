@@ -186,14 +186,6 @@
                           stable-sort stable-sort!
                           sort-by sort-by! stable-sort-by stable-sort-by!)
 
-(autoload gauche.condutil make-condition-type condition-type?
-                          make-condition condition-ref extract-condition
-                          (:macro define-condition-type condition)
-                          &condition &message &serious &error
-                          &i/o-error &i/o-port-error
-                          &i/o-read-error &i/o-write-error &i/o-closed-error
-                          &read-error)
-
 (autoload gauche.pputil   %pretty-print pprint)
 
 ;; Autoloading r7rs-setup allows Gauche-native programs to load R7RS library

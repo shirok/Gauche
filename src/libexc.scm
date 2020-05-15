@@ -36,6 +36,9 @@
  (declcode (.include <gauche/class.h>
                      <gauche/exception.h>)))
 
+(use util.match)
+(declare (keep-private-macro define-condition-type condition))
+
 (define <exception> <condition>) ;; backward compatibility
 
 ;;;
@@ -129,6 +132,60 @@
 
 (define-cproc make-compound-condition (:rest conditions)
   Scm_MakeCompoundCondition)
+
+(define (make-condition-type name parent field-names)
+  (unless (condition-type? parent)
+    (error "condition-type required as a parent of make-condition-type, but got:" parent))
+  (make <condition-meta>
+    :name name
+    :supers (list parent)
+    :slots  field-names))
+
+(define (condition-type? obj)
+  (is-a? obj <condition-meta>))
+
+(define (make-condition type . initargs)
+  (unless (condition-type? type)
+    (error "make-condition requires a condition type, but got:" type))
+  (let ((c (make type)))
+    (let loop ((args initargs))
+      (cond ((null? args) c)
+            ((null? (cdr args))
+             (error "make-condition is given non-even initargs:" initargs))
+            ((slot-exists? c (car args))
+             (slot-set! c (car args) (cadr args))
+             (loop (cddr args)))
+            (else
+             (errorf "condition type ~s doesn't have a field ~s"
+                     type (car args)))))))
+
+(define (condition-ref c slot)
+  (slot-ref c slot))  ;; compound condition traps slot-missing
+
+(define (extract-condition c type)
+  (unless (condition-has-type? c type)
+    (errorf "cannot extract a condition of type ~s from a condition ~s"
+            type c))
+  (let ((cc (make type)))
+    (let loop ((slots (class-slots type)))
+      (if (null? slots)
+        cc
+        (let ((sn (slot-definition-name (car slots))))
+          (when (slot-bound? c sn)
+            (slot-set! cc sn (slot-ref c sn)))
+          (loop (cdr slots)))))))
+
+;; Aliases for srfi-35/srfi-36 compatibility
+(define &condition   <condition>)
+(define &message     <message-condition>)
+(define &serious     <serious-condition>)
+(define &error       <error>)
+(define &i/o-error   <io-error>)
+(define &i/o-port-error <port-error>)
+(define &i/o-read-error <io-read-error>)
+(define &i/o-write-error <io-write-error>)
+(define &i/o-closed-error <io-closed-error>)
+(define &read-error  <read-error>)
 
 ;;;
 ;;; Thread exception classes

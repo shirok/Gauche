@@ -1,5 +1,8 @@
 2020-05-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/condutil.scm, src/gauche/stringutil.scm: Absorbed into
+	  the core.
+
 	* configure.ac: 0.9.10_pre1.  Looks like we need more releases before
 	  1.0.
 

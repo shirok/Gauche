@@ -44,7 +44,8 @@
                              values-ref values->list
                              assume assume-type 
                              dotimes dolist do-plist doplist
-                             ecase cond-list unwind-protect
+                             ecase cond-list define-condition-type condition
+                             unwind-protect
                              let-keywords let-keywords* let-optionals*
                              lcons lcons* llist*
                              define-compiler-macro))
@@ -915,6 +916,67 @@
                     [r (cond-list ,@rest)])
                (if tmp (cons (begin ,@expr) r) r)))]
          )))))
+
+;;; srfi-35 condition macros
+
+;; we extend srfi-35 to allow #f as predicate and accessors, as well as
+;; omitting accessors.
+
+(define-syntax define-condition-type
+  (er-macro-transformer
+   (^[f r c]
+     (match (cdr f)
+       [(name super pred . field-specs)
+        (define (badfield-error field)
+          (error "bad field spec for define-condition-type:" field))
+        (define (scan-specs specs slots readers)
+          (match specs
+            [() (emit-defs slots readers)]
+            [((field #f) . rest)
+             (scan-specs rest (cons field slots) readers)]
+            [((field) . rest)
+             (scan-specs rest (cons field slots) readers)]
+            [((field reader) . rest)
+             (scan-specs rest (cons field slots)
+                         (cons (quasirename r
+                                 `(define (,reader obj)
+                                    (condition-ref obj ',field)))
+                               readers))]
+            [_ (badfield-error (car specs))]))
+        (define (emit-defs slots readers)
+          (quasirename r
+            `(begin
+               (define-class ,name (,super)
+                 ,(map (^s (quasirename r 
+                             `(,s :init-keyword ',(make-keyword s))))
+                       slots)
+                 :metaclass <condition-meta>)
+               ,@readers
+               ,@(if pred
+                   (quasirename r
+                     `((define (,pred obj)
+                        (condition-has-type? obj ,name))))
+                   '()))))
+        (scan-specs field-specs '() '())]
+       ))))
+
+(define-syntax condition
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ type-field-binding ...)
+        (quasirename r
+          `(make-compound-condition
+            ,@(map (match-lambda
+                     [(type (field expr) ...)
+                      (quasirename r
+                        `(make-condition 
+                          ,type
+                          ,@(append-map (^[f e] `(',f ,e)) field expr)))]
+                     [_ (error "malformed condition:" f)])
+                   type-field-binding)))]
+       [_ (error "malformed condition:" f)]))))
+
 
 ;;; unwind-protect
 
