@@ -30,7 +30,6 @@ logger.scm
 text.scm
 util.scm
 io2.scm
-process.scm
 version.scm
 file.scm
 selector.scm

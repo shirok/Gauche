@@ -401,28 +401,8 @@
                [(or (port? arg) (integer? arg)) (push! iomap `(,fd . ,arg))]
                [else (error "invalid entry in process redirection" r)])]
         [(<< <<<)
-         (letrec ([write-arg (^o (unwind-protect
-                                     (cond [(eq? dir '<<<) (write arg o)]
-                                           [(string? arg) (display arg o)]
-                                           [else (write-uvector arg o)])
-                                   (close-output-port o)))])
-           (cond-expand
-            [gauche.sys.threads
-             (receive (in out) (sys-pipe)
-               (push! iomap `(,fd . ,in))
-               (push! toclose in)
-               (thread-start! (make-thread (cut write-arg out))))]
-            [else
-             ;; If we can't use threads, we fall back to using temporary
-             ;; files.  It has some drawbacks: (1) If we 'exec'-ing
-             ;; (not forking), we don't have chance to remove them, and
-             ;; (2) On Windows we won't be able to remove temp file unless
-             ;; we wait the child process to complete.  We'll do our best
-             ;; anyway.
-             (receive (out nam) (sys-mkstemp (%temp-path-prefix))
-               (write-arg out)
-               (push! tmpfiles nam)
-               (do-file '< fd nam))]))]
+         (set!-values [iomap toclose tmpfiles]
+                      (%setup-<< fd do-file dir arg iomap toclose tmpfiles))]
         [(<& >&) (push! todup r)] ;; process dups later
         [else (error "invalid redirection" dir)])))
 
@@ -436,6 +416,35 @@
   (unless (assv 2 iomap) (push! iomap '(2 . 2)))
 
   (values iomap toclose ipipes opipes tmpfiles))
+
+;; Set up source of << and <<< redirection, used inside %setup-iomap.
+;; We don't want to depend on gauche.threads at compile time, so we split
+;; this part to be evaluated at runtime.
+;; Returns updated iomap, toclose, and tmpfiles.
+(without-precompiling
+ (define (%setup-<< fd do-file dir arg iomap toclose tmpfiles)
+   (define (write-arg o)
+     (unwind-protect
+         (cond [(eq? dir '<<<) (write arg o)]
+               [(string? arg) (display arg o)]
+               [else (write-uvector arg o)])
+       (close-output-port o)))
+   (cond-expand
+    [gauche.sys.threads
+     (receive (in out) (sys-pipe)
+       (thread-start! (make-thread (cut write-arg out)))
+       (values (acons fd in iomap) (cons in toclose) tmpfiles))]
+    [else
+     ;; If we can't use threads, we fall back to using temporary
+     ;; files.  It has some drawbacks: (1) If we 'exec'-ing
+     ;; (not forking), we don't have chance to remove them, and
+     ;; (2) On Windows we won't be able to remove temp file unless
+     ;; we wait the child process to complete.  We'll do our best
+     ;; anyway.
+     (receive (out nam) (sys-mkstemp (%temp-path-prefix))
+       (write-arg out)
+       (do-file '< fd nam)
+       (values iomap toclose (cons nam tmpfiles)))])))
 
 (define (%ensure-mask mask)
   (cond

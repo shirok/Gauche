@@ -10,6 +10,7 @@ LIBFILES = gauche--collection.$(SOEXT) \
            gauche--sequence.$(SOEXT)   \
            gauche--dictionary.$(SOEXT)   \
            gauche--parameter.$(SOEXT)  \
+           gauche--process.$(SOEXT) \
            gauche--hook.$(SOEXT) \
 	   gauche--record.$(SOEXT) \
 	   gauche--generator.$(SOEXT) \
@@ -18,6 +19,7 @@ SCMFILES = collection.sci \
            sequence.sci   \
 	   dictionary.sci \
            parameter.sci  \
+	   process.sci \
            hook.sci \
 	   record.sci \
 	   generator.sci \
@@ -32,6 +34,7 @@ OBJECTS = $(gauche-collection_OBJECTS) \
 	  $(gauche-sequence_OBJECTS) \
 	  $(gauche-dictionary_OBJECTS) \
 	  $(gauche-parameter_OBJECTS) \
+	  $(gauche-process_OBJECTS) \
 	  $(gauche-hook_OBJECTS) \
 	  $(gauche-record_OBJECTS) \
 	  $(gauche-generator_OBJECTS) \
@@ -75,6 +78,15 @@ gauche--parameter.$(SOEXT) : $(gauche-parameter_OBJECTS)
 
 gauche--parameter.c parameter.sci : $(top_srcdir)/libsrc/gauche/parameter.scm
 	$(PRECOMP) -e -P -o gauche--parameter $(top_srcdir)/libsrc/gauche/parameter.scm
+
+# gauche.process
+gauche-process_OBJECTS = gauche--process.$(OBJEXT)
+
+gauche--process.$(SOEXT) : $(gauche-process_OBJECTS)
+	$(MODLINK) gauche--process.$(SOEXT) $(gauche-process_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--process.c process.sci : $(top_srcdir)/libsrc/gauche/process.scm
+	$(PRECOMP) -e -P -o gauche--process $(top_srcdir)/libsrc/gauche/process.scm
 
 # gauche.hook
 gauche-hook_OBJECTS = gauche--hook.$(OBJEXT)

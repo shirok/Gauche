@@ -71,7 +71,7 @@ SCMFILES = \
        gauche/hashutil.scm gauche/treeutil.scm gauche/computil.scm \
        gauche/modutil.scm gauche/libutil.scm gauche/sortutil.scm \
        gauche/generic-sortutil.scm gauche/fileutil.scm gauche/sysutil.scm \
-       gauche/regexp.scm gauche/regexp/sre.scm gauche/process.scm \
+       gauche/regexp.scm gauche/regexp/sre.scm \
        gauche/signal.scm gauche/numerical.scm gauche/let-opt.scm \
        gauche/logical.scm \
        gauche/vm/debugger.scm gauche/vm/insn-core.scm gauche/vm/insn.scm \

@@ -648,7 +648,7 @@
 
 (test* "unwind-protect upon exit" '(1 #f)
        ;; assuming we're running gosh under $top_builddir/src
-       (let1 p (run-process `("./gosh" "-ftest" "test.o") :wait #t)
+       (let1 p (run-process `("../../src/gosh" "-ftest" "test.o") :wait #t)
          (list (sys-wait-exit-status (process-exit-status p))
                (file-exists? "test1.o"))))
 
