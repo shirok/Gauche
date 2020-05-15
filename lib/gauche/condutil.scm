@@ -136,21 +136,21 @@
        ))))
 
 (define-syntax condition
-  (syntax-rules ()
-    ((condition (type . bindings) ...)
-     (make-compound-condition
-      (condition-sub type () bindings) ...))
-    ((_ . other)
-     (syntax-error "malformed condition:" (condition . other)))))
-
-(define-syntax condition-sub
-  (syntax-rules ()
-    ((condition-sub type inits ())
-     (make-condition type . inits))
-    ((condition-sub type (init ...) ((field expr) . more))
-     (condition-sub type (init ... 'field expr) more))
-    ((condition-sub type inits (other . more))
-     (syntax-error "malformed condition field initializer:" other))))
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ type-field-binding ...)
+        (quasirename r
+          `(make-compound-condition
+            ,@(map (match-lambda
+                     [(type (field expr) ...)
+                      (quasirename r
+                        `(make-condition 
+                          ,type
+                          ,@(append-map (^[f e] `(',f ,e)) field expr)))]
+                     [_ (error "malformed condition:" f)])
+                   type-field-binding)))]
+       [_ (error "malformed condition:" f)]))))
 
 ;; Aliases for srfi-35/srfi-36 compatibility
 (define &condition   <condition>)
