@@ -91,6 +91,7 @@ test.record
 /ext/gauche/gauche--dictionary.c
 /ext/gauche/gauche--hook.c
 /ext/gauche/gauche--parameter.c
+/ext/gauche/gauche--process.c
 /ext/gauche/gauche--sequence.c
 /ext/gauche/gauche--record.c
 /ext/gauche/gauche--generator.c
