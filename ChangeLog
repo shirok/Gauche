@@ -1,5 +1,10 @@
 2020-05-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/vm/debugger.scm, src/libeval.scm (debug-source-info):
+	  Moved to the core, for it is used in some macros needed for
+	  editable-reader, and we don't want to load gauche.vm.debugger just
+	  for it.
+
 	* lib/gauche/listener.scm, src/libstr.scm (complete-sexp?): Moved
 	  the definition from listener to core, for it is also used in
 	  gauche.interactive.editable-reader.

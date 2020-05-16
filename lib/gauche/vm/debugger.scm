@@ -35,16 +35,14 @@
   (use srfi-1)
   (use srfi-13)
   (use gauche.parameter)
-  (export debug-print debug-print-width debug-source-info
-          debug-print-pre debug-print-post))
+  (export debug-print debug-print-width
+          debug-print-pre debug-print-post
+          debug-source-info))
 (select-module gauche.vm.debugger)
 
-;; Returns source file info attached to OBJ.  If there's no info
-;; attached, returns #f.
-;; The return value can be either (<filename> <line-no>) or
-;; (<filename> <line-no> <original-form>).  The latter happens when
-;; OBJ is a result of macro expansion, and <orginal-form> being
-;; the original source form.
+;; TRANSIENT: In 0.9.10, this is moved to the core (libeval), but
+;; we need a definition here to compile 0.9.10 with 0.9.9.
+;; Remove after 0.9.10 release.
 (define (debug-source-info obj)
   (and-let1 sis ((with-module gauche.internal %source-info) obj)
     (any (^[si] ;; si :: (<file> <line> <form>)

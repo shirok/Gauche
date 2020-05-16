@@ -698,3 +698,17 @@
           (reverse r `((,(car si) ,(cadr si) ,obj)))))
       '())))
 
+;; Returns source file info attached to OBJ.  If there's no info
+;; attached, returns #f.
+;; The return value can be either (<filename> <line-no>) or
+;; (<filename> <line-no> <original-form>).  The latter happens when
+;; OBJ is a result of macro expansion, and <orginal-form> being
+;; the original source form.
+(define-in-module gauche (debug-source-info obj)
+  (and-let1 sis ((with-module gauche.internal %source-info) obj)
+    (any (^[si] ;; si :: (<file> <line> <form>)
+           (and (car si) (cadr si)
+                (if (eq? (caddr si) obj)
+                  `(,(car si) ,(cadr si))
+                  si)))
+         (reverse sis))))
