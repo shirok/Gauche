@@ -159,8 +159,10 @@
   (let1 c (class-of seq)
     (find (^p (eq? c (class-of (car p)))) (cdr node))))
 
-(define (%no-key seq)
-  (error "Trie does not have an entry for a key:" seq))
+(define (%fallback fallback seq)
+  (if (undefined? fallback)
+    (error "Trie does not have an entry for a key:" seq)
+    fallback))
 
 ;;
 ;; Primitive accessors
@@ -245,11 +247,11 @@
   (and-let1 node (%trie-get-node trie seq)
     (not (%trie-node-empty? trie node))))
 
-(define (trie-get trie seq . opt)
+(define (trie-get trie seq :optional fallback)
   (or (and-let* ([node (%trie-get-node trie seq)]
                  [p    (%node-find-terminal node seq)])
         (cdr p))
-      (get-optional opt (%no-key seq))))
+      (%fallback fallback seq)))
 
 (define (trie-put! trie seq val)
   (let* ([node (%trie-get-node-or-create trie seq)]
@@ -260,13 +262,13 @@
            (inc! (slot-ref trie 'size))]))
   (undefined))
 
-(define (trie-update! trie seq proc . opt)
+(define (trie-update! trie seq proc :optional fallback)
   (let* ([node (%trie-get-node-or-create trie seq)]
          [p    (%node-find-terminal node seq)])
     (cond [p (update! (cdr p) proc)]
           [else
            (push! (%node-terminals node)
-                  (cons seq (proc (get-optional opt (%no-key seq)))))
+                  (cons seq (proc (%fallback fallback seq))))
            (inc! (slot-ref trie 'size))])
     (undefined)))
 
@@ -282,9 +284,9 @@
                        terminals))))
   (undefined))
 
-(define (trie-longest-match trie seq . opt)
+(define (trie-longest-match trie seq :optional fallback)
   (or (%trie-get-node-longest trie seq)
-      (get-optional opt (%no-key seq))))
+      (%fallback fallback seq)))
 
 ;;;===========================================================
 ;;; Scanning
