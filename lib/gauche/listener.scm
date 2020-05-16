@@ -38,7 +38,7 @@
   (export <listener>
           listener-read-handler
           listener-show-prompt
-          complete-sexp?)
+          complete-sexp?)   ;now built-in, exported for the compatibility
   )
 (select-module gauche.listener)
 
@@ -170,83 +170,6 @@
     (cond [(call/cc body) => raise]
           [else #t]))
   )
-
-;; Check if the given string can be parsed as a complete sexp.
-;; Note that this test doesn't rule out all invalid sexprs.
-;;
-;; NB: This should eventually be folded into build-in read, so that
-;; any nontrivial syntax can be handled consistently.
-
-(define (complete-sexp? str)
-  (with-input-from-string str
-    (^[]
-      ;; charset that delimits token
-      (define special-chars #[\u0000-\u0020\"\'()\,\;\[\\\]\`{|}\u007f])
-
-      ;; main loop
-      (define (rec closer)
-        (let1 ch (read-char)
-          (cond [(eof-object? ch) (if closer #f #t)]
-                [(eqv? closer ch) #t]
-                [(eqv? #\( ch) (and (rec #\) ) (rec closer))]
-                [(eqv? #\[ ch) (and (rec #\] ) (rec closer))]
-                [(eqv? #\{ ch) (and (rec #\} ) (rec closer))]
-                [(eqv? #\" ch) (and (rec-escaped #\") (rec closer))]
-                [(eqv? #\| ch) (and (rec-escaped #\|) (rec closer))]
-                [(eqv? #\; ch) (skip-to-nl) (rec closer)]
-                [(eqv? #\# ch)
-                 (let1 c2 (read-char)
-                   (cond [(eof-object? c2) #f]
-                         [(eqv? c2 #\\)
-                          (and (not (eof-object? (read-char)))
-                               (begin (skip-token) (rec closer)))]
-                         [(eqv? c2 #\/) (and (rec-escaped #\/) (rec closer))]
-                         [(eqv? c2 #\[) (and (rec-escaped #\]) (rec closer))]
-                         [(eqv? c2 #\,)
-                          (let1 c3 (skip-ws)
-                            (cond [(eof-object? c3) #f]
-                                  [(eqv? #\( c3) (and (rec #\) ) (rec closer))]
-                                  [(eqv? #\[ c3) (and (rec #\] ) (rec closer))]
-                                  [(eqv? #\{ c3) (and (rec #\} ) (rec closer))]
-                                  [else (skip-token) (rec closer)]))]
-                         [(eqv? c2 #\() (and (rec #\)) (rec closer))]
-                         [(eqv? c2 #\<)
-                          (errorf "unreadable sequence #<~a..."
-                                  (read-block 10))]
-                         [(eqv? c2 closer) #t]
-                         [else (rec closer)]))]
-                [else (rec closer)])))
-
-      (define (rec-escaped closer)
-        (let1 ch (read-char)
-          (cond [(eof-object? ch) #f]
-                [(eqv? closer ch) #t]
-                [(eqv? #\\ ch) (read-char) (rec-escaped closer)]
-                [else (rec-escaped closer)])))
-
-      (define (skip-token)
-        (let loop ([ch (peek-char)])
-          (unless (or (eof-object? ch)
-                      (char-set-contains? special-chars ch))
-            (read-char)
-            (loop (peek-char)))))
-
-      (define (skip-ws)
-        (let loop ([ch (read-char)])
-          (if (or (eof-object? ch)
-                  (char-set-contains? #[\S] ch))
-            ch
-            (loop (read-char)))))
-
-      (define (skip-to-nl)
-        (let loop ([ch (read-char)])
-          (unless (or (eof-object? ch)
-                      (eqv? ch #\newline))
-            (loop (read-char)))))
-
-      ;; body
-      (rec #f)
-      )))
 
 ;;;
 ;;; Private utils

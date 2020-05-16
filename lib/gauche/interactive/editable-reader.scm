@@ -36,7 +36,6 @@
 (define-module gauche.interactive.editable-reader
   (use text.console)
   (use util.match)
-  (use gauche.listener :only (complete-sexp?))
   (use file.util)
   (export make-editable-reader))
 (select-module gauche.interactive.editable-reader)
