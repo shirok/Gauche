@@ -35,7 +35,6 @@
 ;; a set of objects, possibly containing infinite objects.
 
 (define-module gauche.collection
-  (use srfi-1)
   (export call-with-iterator with-iterator call-with-iterators
           call-with-builder  with-builder
           fold fold2 fold3 map map-to map-accum for-each
@@ -419,7 +418,7 @@
 
 ;; shortcut
 (define-method find (pred (coll <list>))
-  ((with-module srfi-1 find) pred coll))
+  ((with-module gauche find) pred coll))
 
 ;; find-min, find-max, find-min&max ---------------------
 
@@ -490,7 +489,7 @@
 
 ;; shortcut
 (define-method filter (pred (coll <list>))
-  ((with-module srfi-1 filter) pred coll))
+  ((with-module gauche filter) pred coll))
 
 (define-method filter-to ((class <list-meta>) pred coll)
   (filter pred coll))
@@ -513,7 +512,7 @@
 
 ;; shortcut
 (define-method remove (pred (coll <list>))
-  ((with-module srfi-1 remove) pred coll))
+  ((with-module gauche remove) pred coll))
 
 (define-method remove-to ((class <list-meta>) pred coll)
   (remove pred coll))
@@ -542,7 +541,7 @@
 
 ;; shortcut
 (define-method partition (pred (coll <list>))
-  ((with-module srfi-1 partition) pred coll))
+  ((with-module gauche partition) pred coll))
 
 (define-method partition-to ((class <list-meta>) pred coll)
   (partition pred coll))

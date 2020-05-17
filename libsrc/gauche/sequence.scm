@@ -36,7 +36,6 @@
 ;; See also gauche.collection, that defines various mapping functions.
 
 (define-module gauche.sequence
-  (use srfi-1)
   (extend gauche.collection)
   (export referencer modifier subseq
           fold-right
