@@ -622,6 +622,23 @@
             (Scm_DStringPutz (& ds) buf nbytes)))
     (return (Scm_DStringGet (& ds) SCM_STRING_INCOMPLETE))))
 
+(define (port->string port)
+  (let1 out (open-output-string :private? #t)
+    (copy-port port out :unit 'byte)
+    (get-output-string out)))
+
+(define (port->list reader port)
+  (with-port-locking port
+    (^[]
+      (let loop ([obj (reader port)]
+                 [result '()])
+        (if (eof-object? obj)
+          (reverse! result)
+          (loop (reader port) (cons obj result)))))))
+
+(define (port->string-list port) (port->list (cut read-line <> #t) port))
+(define (port->sexp-list port)   (port->list read port))
+
 ;; Reader parameters
 (define-cproc reader-lexical-mode (:optional k)
   (if (SCM_UNBOUNDP k)

@@ -32,33 +32,12 @@
 ;;;
 
 (define-module gauche.portutil
-  (export port->string port->list port->string-list port->sexp-list
-          copy-port))
+  (export copy-port))
 (select-module gauche.portutil)
 
 ;;-----------------------------------------------------
-;; port->something
-;;   TODO: allow caller to specify reading units
-(define (port->string port)
-  (let1 out (open-output-string :private? #t)
-    (copy-port port out :unit 'byte)
-    (get-output-string out)))
-
-(define (port->list reader port)
-  (with-port-locking port
-    (^[]
-      (let loop ([obj (reader port)]
-                 [result '()])
-        (if (eof-object? obj)
-          (reverse! result)
-          (loop (reader port) (cons obj result)))))))
-
-(define (port->string-list port) (port->list (cut read-line <> #t) port))
-(define (port->sexp-list port)   (port->list read port))
-
-;;-----------------------------------------------------
 ;; copy-port
-;;
+;;  This is autoladed becuse use may depend on gauche.uvector
 
 ;; only load gauche.uvector if we use chunked copy
 (autoload gauche.uvector make-u8vector read-block! write-block)

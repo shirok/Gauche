@@ -20,7 +20,7 @@
 (use gauche.generator)
 (use gauche.interpolate)
 (cond-expand
- [gauche-0.9.9 (use gauche.stringutil)]
+ [gauche-0.9.9 (use gauche.stringutil) (use gauche.portutil)]
  [else])
 (use gauche.threads)
 (use srfi-1)

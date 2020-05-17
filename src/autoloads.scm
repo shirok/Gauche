@@ -89,9 +89,7 @@
 
 (autoload gauche.modutil (:macro export-if-defined use-version))
 
-(autoload gauche.portutil
-          port->string port->list port->string-list port->sexp-list
-          copy-port)
+(autoload gauche.portutil copy-port)
 
 (autoload "gauche/logical"
           logtest logbit? copy-bit bit-field copy-bit-field)
