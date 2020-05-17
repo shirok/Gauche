@@ -37,7 +37,6 @@
 ;; parts of Gauche, but the discussion was the source of inspiration anyway.
 
 (define-module data.trie
-  (use srfi-1)
   (use gauche.sequence)
   (use gauche.generator)
   (use gauche.dictionary)
