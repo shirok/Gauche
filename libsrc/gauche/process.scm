@@ -39,7 +39,6 @@
 (define-module gauche.process
   (use gauche.generator)
   (use gauche.connection)
-  (use srfi-1)
   (use srfi-13)
   (use srfi-14)
   (export <process> <process-abnormal-exit>
