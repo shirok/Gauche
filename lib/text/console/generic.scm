@@ -272,7 +272,8 @@
   (define (e) (error "terminal error when receiving cursor position"))
     
   (putstr con "\x1b;[6n")
-  (until (r) (cut eqv? <> #\x1b) => ch (enqueue! (~ con'input-buffer) ch))
+  (do-generator [ch (gtake-while (^c (not (eqv? c #\x1b))) r)]
+    (enqueue! (~ con'input-buffer) ch))
   (rxmatch-case (list->string (get-ESC-R))
     [#/^\[(\d+)\;(\d+)R$/ (_ row col)
      (values (- (x->integer row) 1) (- (x->integer col) 1))]
