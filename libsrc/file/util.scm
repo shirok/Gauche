@@ -39,7 +39,6 @@
 #!no-fold-case
 
 (define-module file.util
-  (use srfi-1)
   (use srfi-13)
   (use util.match)
   (use gauche.parameter)
