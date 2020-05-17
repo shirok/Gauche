@@ -32,6 +32,7 @@
 ;     mentioned after the definition with a heading.
 
 (define-module srfi-42
+  (use util.match)
   (export-all))
 (select-module srfi-42)
 
@@ -315,24 +316,30 @@
 ; ==========================================================================
 
 (define-syntax srfi-42-do
-  (syntax-rules ()
-
-    ; full decorated -> continue with cc, reentry at (*)
-    ((_ (cc ...) olet lbs ne1? ilet ne2? lss)
-     (cc ... (srfi-42-do olet lbs ne1? ilet ne2? lss)) )
-
-    ; short form -> fill in default values
-    ((_ cc lbs ne1? lss)
-     (srfi-42-do cc (let ()) lbs ne1? (let ()) #t lss) )))
-
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       ;; full decorated -> continue with cc, reentry at (*)
+       [(_ (cc ...) olet lbs ne1? ilet ne2? lss)
+        `(,@cc (,(r'srfi-42-do) ,olet ,lbs ,ne1? ,ilet ,ne2? ,lss))]
+       ;; short form -> fill in default values
+       [(_ cc lbs ne1? lss)
+        (quasirename r
+          `(srfi-42-do ,cc (let ()) ,lbs ,ne1? (let ()) #t ,lss))]))))
 
 (define-syntax srfi-42-let
-  (syntax-rules (index)
-    ((_ cc var (index i) expression)
-     (srfi-42-do cc (let ((var expression) (i 0))) () #t (let ()) #f ()) )
-    ((_ cc var expression)
-     (srfi-42-do cc (let ((var expression))) () #t (let ()) #f ()) )))
-
+  (er-macro-transformer
+   (^[f r c]
+     (define (index.? x) (c (r'index) x))
+     (match f
+       [(_ cc var ((? index.?) i) expression)
+        (quasirename r
+          `(srfi-42-do ,cc (let ((,var ,expression) (,i 0)))
+                       () #t (let ()) #f ()))]
+       [(_ cc var expression)
+        (quasirename r
+          `(srfi-42-do ,cc (let ((,var ,expression)))
+                       () #t (let ()) #f ()) )]))))
 
 (define-syntax srfi-42-parallel
   ;;(syntax-rules (:do)
