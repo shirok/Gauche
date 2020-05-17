@@ -32,6 +32,7 @@
 ;;;
 
 (select-module gauche)
+(use util.match)
 
 (inline-stub
  (declcode (.include <gauche/regexp.h>)))
@@ -226,4 +227,3 @@
         [(eq? (car sel) 'before)
          (apply rxmatch-before (rxmatch rx str) (cdr sel))]
         [else (rxmatch-substring (rxmatch rx str) (car sel))]))
-

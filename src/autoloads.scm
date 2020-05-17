@@ -98,8 +98,8 @@
           (:macro get-optional get-keyword* fluid-let while until))
 
 (autoload gauche.regexp
-          (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)
-          regexp-unparse rxmatch-substrings rxmatch-positions)
+          regexp-unparse rxmatch-substrings rxmatch-positions
+          <regexp-invalid-ast>)
 
 (autoload gauche.regexp.sre
           regexp-parse-sre sre->regexp regexp->sre)

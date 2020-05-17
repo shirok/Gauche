@@ -34,72 +34,9 @@
 ;; NB: refrain from using util.match, for it could cause nasty dependency
 ;; problem.  (Should be resolved once we incorporate match into the core).
 (define-module gauche.regexp
-  (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
-          regexp-unparse <regexp-invalid-ast>))
+  (export regexp-unparse <regexp-invalid-ast>
+          rxmatch-substrings rxmatch-positions))
 (select-module gauche.regexp)
-
-(define-syntax rxmatch-bind*
-  (syntax-rules ()
-    [(rxmatch-bind* ?n ?match () ?form ...)
-     (begin ?form ...)]
-    [(rxmatch-bind* ?n ?match (#f ?vars ...) ?form ...)
-     (rxmatch-bind* (+ ?n 1) ?match (?vars ...) ?form ...)]
-    [(rxmatch-bind* ?n ?match (?var ?vars ...) ?form ...)
-     (let1 ?var (rxmatch-substring ?match ?n)
-       (rxmatch-bind* (+ ?n 1) ?match (?vars ...) ?form ...))]))
-
-(define-syntax rxmatch-let
-  (syntax-rules ()
-    [(rxmatch-let ?expr (?var ...) ?form ...)
-     (cond [?expr => (^(match) (rxmatch-bind* 0 match (?var ...) ?form ...))]
-           [else (error "rxmatch-let: match failed:" '?expr)])]))
-
-(define-syntax rxmatch-if
-  (syntax-rules ()
-    [(rxmatch-if ?expr (?var ...) ?then ?else)
-     (cond [?expr => (^(match) (rxmatch-bind* 0 match (?var ...) ?then))]
-           [else ?else])]))
-
-(define-syntax rxmatch-cond
-  (syntax-rules (test else =>)
-    [(rxmatch-cond) #f]
-    [(rxmatch-cond (else ?form ...))
-     (begin ?form ...)]
-    [(rxmatch-cond (test ?expr => ?obj) ?clause ...)
-     (cond (?expr => ?obj) (else (rxmatch-cond ?clause ...)))]
-    [(rxmatch-cond (test ?expr ?form ...) ?clause ...)
-     (if ?expr (begin ?form ...) (rxmatch-cond ?clause ...))]
-    [(rxmatch-cond (?matchexp ?bind ?form ...) ?clause ...)
-     (rxmatch-if ?matchexp ?bind
-       (begin ?form ...)
-       (rxmatch-cond ?clause ...))]))
-
-(define-syntax rxmatch-case
-  (syntax-rules (test else =>)
-    [(rxmatch-case #t ?temp ?strp) #f]
-    [(rxmatch-case #t ?temp ?strp (else => ?proc))
-     (?proc ?temp)]
-    [(rxmatch-case #t ?temp ?strp (else ?form ...))
-     (begin ?form ...)]
-    [(rxmatch-case #t ?temp ?strp (test ?proc => ?obj) ?clause ...)
-     (cond [(?proc ?temp) => ?obj]
-           [else (rxmatch-case #t ?temp ?strp ?clause ...)])]
-    [(rxmatch-case #t ?temp ?strp (test ?proc ?form ...) ?clause ...)
-     (if (?proc ?temp)
-       (begin ?form ...)
-       (rxmatch-case #t ?temp ?strp ?clause ...))]
-    [(rxmatch-case #t ?temp ?strp (?re ?bind ?form ...) ?clause ...)
-     (rxmatch-if (and ?strp (rxmatch ?re ?temp))
-         ?bind
-       (begin ?form ...)
-       (rxmatch-case #t ?temp ?strp ?clause ...))]
-    [(rxmatch-case #t ?temp ?strip ?clause ...)
-     (syntax-error "malformed rxmatch-case")]
-    ;; main entry
-    [(rxmatch-case ?str ?clause ...)
-     (let* ([temp ?str]
-            [strp (string? temp)])
-       (rxmatch-case #t temp strp ?clause ...))]))
 
 ;; Extract all matches (including entire match).  Allows match to be #f.
 (define (rxmatch-substrings match :optional (start 0) (end #f))

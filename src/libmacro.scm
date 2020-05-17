@@ -48,6 +48,7 @@
                              unwind-protect
                              let-keywords let-keywords* let-optionals*
                              lcons lcons* llist*
+                             rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
                              define-compiler-macro))
 
 ;; This file defines built-in macros.
@@ -1243,6 +1244,122 @@
                         `(cons ,x (lcons* ,y ,@z)))]))))
 
 (define-syntax llist* lcons*)
+
+;;; rxmatch-* macros
+
+;; rxmatch-let expr (var ...) form ...
+(define-syntax rxmatch-let
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr (var ...) form ...)
+        (quasirename r
+          `(if-let1 m ,expr
+             (let ,(map (^[v i] (quasirename r
+                                  `(,v (rxmatch-substring m ,i))))
+                        var (iota (length var)))
+               ,@form)
+             (error "rxmatch-let: match failed:" ',expr)))]
+       [_ (error "malformed rxmatch-let:" f)]))))
+
+;; rxmatch-if expr (var ...) then else
+(define-syntax rxmatch-if
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr (var ...) then else)
+        (quasirename r
+          `(if-let1 m ,expr
+             (let ,(append-map (^[v i] 
+                                 (if v
+                                   (quasirename r
+                                     `((,v (rxmatch-substring m ,i))))
+                                   '()))
+                               var (iota (length var)))
+               ,then)
+             ,else))]
+       [_ (error "malformed rxmatch-if:" f)]))))
+
+;; rxmatch-cond (expr bind form ...) ... [(else form ...)]
+(define-syntax rxmatch-cond
+  (er-macro-transformer
+   (^[f r c]
+     (define (test.? x) (c (r'test) x))
+     (define (else.? x) (c (r'else) x))
+     (define (=>.? x)   (c (r'=>) x))
+     (let loop ([clauses (cdr f)])
+       (match clauses
+         [() `(,(r'undefined))]
+         [(((? else.?) form ...) . rest)
+          (if (null? rest)
+            (quasirename r `(begin ,@form))
+            (error "extra stuff after else clause in rxmatch-cond:" f))]
+         [(((? test.?) expr (? =>.?) proc) . rest)
+          (quasirename r
+            `(if-let1 x ,expr
+               (,proc x)
+               ,(loop rest)))]
+         [(((? test.?) expr form ...) . rest)
+          (quasirename r
+            `(if ,expr
+               (begin ,@form)
+               ,(loop rest)))]
+         [((matchexp (var ...) form ...) . rest)
+          (quasirename r
+            `(rxmatch-if ,matchexp ,var 
+               (begin ,@form)
+               ,(loop rest)))]
+         [_ (error "bad clause in rxmatch-cond:" (car clause))])))))
+
+;; rxmatch-case exp clause ...
+;;   clause: (re bind form ...)
+;;           (test pred form ...)
+;;           (test pred => proc)
+;;           (else form ...)
+;;           (else => proc)
+(define-syntax rxmatch-case
+  (er-macro-transformer
+   (^[f r c]
+     (define (test.? x) (c (r'test) x))
+     (define (else.? x) (c (r'else) x))
+     (define (=>.? x)   (c (r'=>) x))
+     (define tmp. (r'tmp))
+     (define strp. (r'strp))
+     (define (loop clauses)
+       (match clauses
+         [() `(,(r'undefined))]
+         [(((? else.?) (? =>.?) proc) . rest)
+          (if (null? rest)
+            `(,proc ,tmp.)
+            (error "extra stuff after else clause in rxmatch-case:" f))]
+         [(((? else.?) form ...) . rest)
+          (if (null? rest)
+            (quasirename r `(begin ,@form))
+            (error "extra stuff after else clause in rxmatch-case:" f))]
+         [(((? test.?) pred (? =>.?) proc) . rest)
+          (quasirename r
+            `(if-let1 x (,pred ,tmp.)
+               (,proc x)
+               ,(loop rest)))]
+         [(((? test.?) pred form ...) . rest)
+          (quasirename r
+            `(if (,pred ,tmp.)
+               (begin ,@form)
+               ,(loop rest)))]
+         [((re (var ...) form ...) . rest)
+          (quasirename r
+            `(rxmatch-if (and ,strp. (rxmatch ,re ,tmp.)) ,var
+               (begin ,@form)
+               ,(loop rest)))]
+         [_ (error "bad clause in rxmatch-case:" (car clause))]))
+     (match f
+       [(_ exp . clauses)
+        (quasirename r
+          `(let* ([,tmp. ,exp]
+                  [,strp. (string? ,tmp.)])
+             ,(loop clauses)))]
+       [_ (error "malformed rxmatch-case:" f)]))))
+
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 
