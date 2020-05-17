@@ -32,7 +32,6 @@
 ;;;
 
 (define-module gauche.generator
-  (use srfi-1)
   (use gauche.sequence)
   (use gauche.partcont)
   (export list->generator vector->generator reverse-vector->generator
