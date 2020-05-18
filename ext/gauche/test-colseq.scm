@@ -174,6 +174,32 @@
        (rlet1 p '()
          (for-each (^x (push! p x)) (sseq 1 2 3 4 5))))
 
+(test* "map$" '(#\A #\B #\C #\D #\E)
+       ((map$ char-upcase) "abcde"))
+(test* "for-each$" '(#\A #\B #\C #\D #\E)
+       (rlet1 r '()
+         ((for-each$ (^x (push! r x))) "EDCBA")))
+(test* "fold$"  '(#\A #\B #\C #\D #\E . #t)
+       ((fold$ cons) #t "EDCBA"))
+(test* "fold$"  '(#\A #\B #\C #\D #\E . #f)
+       ((fold$ cons #f) "EDCBA"))
+(test* "fold2$"  '(195 (5 15 25 4 14 24 3 13 23 2 12 22 1 11 21))
+       (values->list
+        ((fold2$ (^[n0 n1 n2 s m]
+                   (values (+ n0 n1 n2 s)
+                           (list* n0 n1 n2 m)))
+                 0 '())
+         '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))))
+(test* "fold3$" '(195 275701345920000
+                      (5 15 25 4 14 24 3 13 23 2 12 22 1 11 21))
+       (values->list
+        ((fold3$ (^[n0 n1 n2 s m l]
+                   (values (+ n0 n1 n2 s)
+                           (* n0 n1 n2 m)
+                           (list* n0 n1 n2 l)))
+                 0 1 '())
+         '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))))
+
 (test-section "searching and selection")
 
 (test* "find (list)" 4

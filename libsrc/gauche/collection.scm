@@ -268,15 +268,13 @@
 (define-fold-k fold3 (knil1 knil2 knil3))
 
 ;; partial applied version
-(define-method fold$ (proc)
-  (^[knil . lists] (apply fold proc knil lists)))
-(define-method fold$ (proc knil)
-  (^ lists (apply fold proc knil lists)))
-
-(define-method fold2$ (proc knil1 knil2)
+(define fold$ 
+  (case-lambda
+    ([proc] (^[knil . lists] (apply fold proc knil lists)))
+    ([proc knil] (^ lists (apply fold proc knil lists)))))
+(define (fold2$ proc knil1 knil2)
   (^ lists (apply fold2 proc knil1 knil2 lists)))
-
-(define-method fold3$ (proc knil1 knil2 knil3)
+(define (fold3$ proc knil1 knil2 knil3)
   (^ lists (apply fold3 proc knil1 knil2 knil3 lists)))
 
 ;; map --------------------------------------------------
@@ -308,7 +306,7 @@
         (next-method)))))
 
 ;; redefine map$ to use generic version of map
-(define (map$ proc) (pa$ map proc))
+(define ((map$ proc) . args) (apply map proc args))
 
 ;; map-to -----------------------------------------------
 
@@ -382,7 +380,7 @@
             (next-method)))))
 
 ;; redefine for-each$ to use generic version of for-each
-(define (for-each$ proc) (pa$ for-each proc))
+(define ((for-each$ proc) . args) (apply for-each proc args))
 
 ;; size-of ----------------------------------------------
 
