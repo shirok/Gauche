@@ -160,13 +160,11 @@
   (with-input-from-file path
     (lambda ()
       (read)                            ; ignore version for now
-      (for-each
-       (lambda (input)
-         (guard (e [else #f])
-           (commit-history ctx
-                           (string->gap-buffer
-                            (call-with-input-string input read)))))
-       (port->string-list (current-input-port))))
+      (do-generator [line read-line]    ; for now, one sexpr per line
+        (guard (e [else #f])
+          (commit-history ctx
+                          (string->gap-buffer
+                           (call-with-input-string line read))))))
     :if-does-not-exist #f))
 
 (define (load-line-edit-history ctx path)
