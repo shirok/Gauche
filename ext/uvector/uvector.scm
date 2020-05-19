@@ -44,7 +44,6 @@
 (define-module gauche.uvector
   (use gauche.collection)
   (use gauche.sequence)
-  (use data.queue)
 
   (include "./exports")
   (export make-uvector

@@ -37,7 +37,7 @@ all: $(SUBDIRS)
 $(SUBDIRS):
 	(cd $@; $(MAKE) default)
 
-uvector: data util
+uvector: util
 
 gauche srfi: util uvector charconv
 
