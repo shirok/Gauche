@@ -77,7 +77,7 @@
 ;; may be used in speed-conscious/allocation-conscious situation.
 ;; It is kind of dumb that we have to roll our own dispatcher, though;
 ;; there should be a built-in support.
-(define-constant *dispatch-table*
+(define *dispatch-table*
   ($ hash-table 'eq?
      `(,<vector>    ,vector-length  ,vector-ref    ,vector-set!
                     ,make-vector    . ,vector-copy!)

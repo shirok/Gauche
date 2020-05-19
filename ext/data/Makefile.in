@@ -7,14 +7,16 @@ SCM_CATEGORY = data
 include ../Makefile.ext
 
 LIBFILES = data--queue.$(SOEXT) \
-           data--trie.$(SOEXT)
-SCMFILES = queue.sci trie.sci
+           data--trie.$(SOEXT) \
+           data--ring-buffer.$(SOEXT)
+SCMFILES = queue.sci trie.sci ring-buffer.sci
 
 GENERATED = Makefile
 XCLEANFILES =  *.c $(SCMFILES)
 
 OBJECTS = $(data_queue_OBJECTS) \
-	  $(data_trie_OBJECTS)
+	  $(data_trie_OBJECTS) \
+	  $(data_ring_buffer_OBJECTS)
 
 all : $(LIBFILES)
 
@@ -36,5 +38,16 @@ data--trie.$(SOEXT) : $(data_trie_OBJECTS)
 data--trie.c trie.sci : $(top_srcdir)/libsrc/data/trie.scm
 	$(PRECOMP) -e -P -o data--trie $(top_srcdir)/libsrc/data/trie.scm
 
+# data.ring-buffer
+data_ring_buffer_OBJECTS = data--ring-buffer.$(OBJEXT)
+
+data--ring-buffer.$(SOEXT) : $(data_ring_buffer_OBJECTS)
+	$(MODLINK) data--ring-buffer.$(SOEXT) $(data_ring_buffer_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+data--ring-buffer.c ring-buffer.sci : $(top_srcdir)/libsrc/data/ring-buffer.scm
+	$(PRECOMP) -e -P -o data--ring-buffer $(top_srcdir)/libsrc/data/ring-buffer.scm
+
+
 install : install-std
+
 

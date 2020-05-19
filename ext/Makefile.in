@@ -55,6 +55,8 @@ bcrypt: mt-random
 
 dbm : threads
 
+data : uvector srfi
+
 rfc: gauche srfi util
 
 test : check
