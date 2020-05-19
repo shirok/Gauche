@@ -6,23 +6,35 @@ SCM_CATEGORY = data
 
 include ../Makefile.ext
 
-LIBFILES = data--queue.$(SOEXT)
-SCMFILES = queue.sci
+LIBFILES = data--queue.$(SOEXT) \
+           data--trie.$(SOEXT)
+SCMFILES = queue.sci trie.sci
 
 GENERATED = Makefile
-XCLEANFILES =  *.c queue.sci
+XCLEANFILES =  *.c $(SCMFILES)
 
-OBJECTS = $(data_queue_OBJECTS)
-
-data_queue_OBJECTS = data--queue.$(OBJEXT)
+OBJECTS = $(data_queue_OBJECTS) \
+	  $(data_trie_OBJECTS)
 
 all : $(LIBFILES)
+
+# data.queue
+data_queue_OBJECTS = data--queue.$(OBJEXT)
 
 data--queue.$(SOEXT) : $(data_queue_OBJECTS)
 	$(MODLINK) data--queue.$(SOEXT) $(data_queue_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 data--queue.c queue.sci : queue.scm
 	$(PRECOMP) -e -P -o data--queue $(srcdir)/queue.scm
+
+# data.trie
+data_trie_OBJECTS = data--trie.$(OBJEXT)
+
+data--trie.$(SOEXT) : $(data_trie_OBJECTS)
+	$(MODLINK) data--trie.$(SOEXT) $(data_trie_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+data--trie.c trie.sci : $(top_srcdir)/libsrc/data/trie.scm
+	$(PRECOMP) -e -P -o data--trie $(top_srcdir)/libsrc/data/trie.scm
 
 install : install-std
 
