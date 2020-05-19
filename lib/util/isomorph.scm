@@ -33,7 +33,7 @@
 
 (define-module util.isomorph
   (use srfi-1)
-  (use srfi-43)
+  (use srfi-133)
   (export isomorphic? object-isomorphic?)
   )
 (select-module util.isomorph)

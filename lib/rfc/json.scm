@@ -45,7 +45,7 @@
   (use gauche.unicode)
   (use srfi-13)
   (use srfi-14)
-  (use srfi-43)
+  (use srfi-113)
   (export <json-parse-error> <json-construct-error>
           parse-json parse-json-string
           parse-json*
