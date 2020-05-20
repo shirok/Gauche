@@ -77,6 +77,7 @@ test.record
 /ext/charconv/guess_tab.c
 /ext/charconv/ucs2eucj.c
 /ext/data/data--queue.c
+/ext/data/data--ring-buffer.c
 /ext/data/data--trie.c
 /ext/dbm/dbmconf.h
 /ext/dbm/dbm--gdbm.c
