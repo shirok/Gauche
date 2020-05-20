@@ -5289,7 +5289,7 @@ This corresponds to autoconf's @code{AC_DEFINE}.
 @defun cf-subst symbol value
 @c MOD gauche.configure
 Registers a substitution parameter @var{symbol} with @var{value}.
-@var{Value} can be any Scheme objects; it's @code{display} representation
+@var{Value} can be any Scheme objects; its @code{display} representation
 is used to substitute @var{@@SYMBOL@@} in the template.
 
 This corresponds to autoconf's @code{AC_SUBST}, but we require
