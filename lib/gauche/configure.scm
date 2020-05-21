@@ -336,6 +336,12 @@
   (cf-subst 'cross_compiling "no")
   (cf-subst 'subdirs "")
 
+  ;; For cross compilation.  These can be overridden by --build, --host and
+  ;; --target.
+  (cf-subst 'build  (gauche-architecture))
+  (cf-subst 'host   (gauche-architecture))
+  (cf-subst 'target (gauche-architecture))
+
   ;; NB: Autoconf uses AC_PROG_CC to set up CC.  However, we need
   ;; to use the same C compiler with which Gauche was compiled, so
   ;; we set it as the default.  We also allow env overrides for some
@@ -446,6 +452,10 @@
         [else (print "Invalid argument: " arg)
               (print "Type `./configure --help' for usage.")
               (exit 1)]))
+    ;; build, host and target override
+    (when (cf-have-subst? 'build_alias)  (cf-subst 'build (cf$ 'build_alias)))
+    (when (cf-have-subst? 'host_alias)   (cf-subst 'host (cf$ 'host_alias)))
+    (when (cf-have-subst? 'target_alias) (cf-subst 'target (cf$ 'target_alias)))
     ))
 
 (define (check-directory-names)
@@ -472,6 +482,7 @@
   (cf-subst 'top_builddir (cf$ 'builddir))
   )
 
+;; Process the arg-if-given and arg-if-not-given callbacks of cf-arg-*.
 (define (process-args)
   (dolist [entry (arg-processors)]
     (match entry

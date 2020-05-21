@@ -1,3 +1,9 @@
+2020-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm: Set build, host and target substs.
+	  Not that we don't really support cross compiling yet---but the code
+	  that checks (cf$ 'target) etc. will work.
+
 2020-05-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.scm: Move rxmatch-* macros into core.
