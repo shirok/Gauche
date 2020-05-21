@@ -1055,10 +1055,10 @@
   ;;   ARGP>| arg0 |        VAL0=proc
   ;;        | proc |< original ARGP postiion (proc unused) 
   (let* ([rest VAL0]
-         [rargc::int (check_arglist_tail_for_apply vm rest)]
+         ;; we only check rargc <= 0, so set max limit to 1
+         [rargc::int (check_arglist_tail_for_apply vm rest 1)]
          [nargc::int (- (SCM_VM_INSN_ARG code) 2)]
          [proc (* (- SP nargc 1))])
-    (when (< rargc 0) ($vm-err "improper list not allowed: %S" rest))
     (set! VAL0 proc)
     (post++ ARGP)
     ;; a micro-optimization: if VAL0 is (), we just omit it and

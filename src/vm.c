@@ -144,7 +144,7 @@ static void   call_dynamic_handlers(ScmObj target, ScmObj current);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
 static void   vm_finalize(ScmObj vm, void *data);
-static int    check_arglist_tail_for_apply(ScmVM *vm, ScmObj restargs);
+static int    check_arglist_tail_for_apply(ScmVM *vm, ScmObj restargs, int max_count);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
 
@@ -1890,9 +1890,13 @@ int Scm_Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
  *
  * Currently, we force the lazy argument tail in very inefficient way,
  * assuming that such case is very rare.
+ *
+ * When max_limit is non-negative, we only check up that number of
+ * arguments and bail. For the true length, the caller should call
+ * again with max_limit == -1.
  */
 
-int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z)
+int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z, int max_limit)
 {
     int count = 0;
     static ScmObj length_proc = SCM_UNDEFINED;
@@ -1901,19 +1905,21 @@ int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z)
     for (;;) {
         if (SCM_NULLP(z)) return count;
         if (SCM_LAZY_PAIR_P(z)) goto do_lazy_pair;
-        if (!SCM_PAIRP(z)) return -1;
+        if (!SCM_PAIRP(z)) goto bad_list;
         
         z = SCM_CDR(z);
         count++;
         
         if (SCM_NULLP(z)) return count;
         if (SCM_LAZY_PAIR_P(z)) goto do_lazy_pair;
-        if (!SCM_PAIRP(z)) return -1;
+        if (!SCM_PAIRP(z)) goto bad_list;
 
         z = SCM_CDR(z);
         tortoise = SCM_CDR(tortoise);
-        if (z == tortoise) return -1; /* circular */
+        if (z == tortoise) goto bad_list; /* circular */
         count++;
+
+        if (max_limit >= 0 && count >= max_limit) return count;
     }
 
 do_lazy_pair:
@@ -1927,6 +1933,8 @@ do_lazy_pair:
         count += SCM_INT_VALUE(result.results[0]);
         return count;
     }
+bad_list:
+    Scm_Error("improper list not allowed: %S", tortoise);
 }
 
 /*=================================================================
