@@ -71,11 +71,11 @@
 #else /*APPLY_CALL*/
 #define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
     do {                                                                \
-        int rargc = check_arglist_tail_for_apply(vm, *(vm->sp - 1));    \
         ScmObj p, a;                                                    \
         int reqargs = SCM_PROCEDURE_REQUIRED(proc);                     \
         int optargs = SCM_PROCEDURE_OPTIONAL(proc);                     \
         if (optargs) {                                                  \
+            int rargc = check_arglist_tail_for_apply(vm, *(vm->sp - 1), -1); \
             if ((rargc+argc-1) < reqargs) {                             \
                 wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;  \
             }                                                           \
@@ -102,7 +102,12 @@
             }                                                           \
         } else {                                                        \
             /* no optargs */                                            \
+            int max_rargc = reqargs-argc+1+1;                           \
+            int rargc = check_arglist_tail_for_apply(vm, *(vm->sp - 1), max_rargc); \
             if ((rargc+argc-1) != reqargs) {                            \
+                if (rargc >= max_rargc) {                               \
+                    rargc = check_arglist_tail_for_apply(vm, *(vm->sp - 1), -1); \
+                }                                                       \
                 wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;  \
             }                                                           \
             POP_ARG(p);  /* tail of arglist */                          \
