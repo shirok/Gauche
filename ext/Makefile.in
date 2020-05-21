@@ -53,7 +53,7 @@ tls: vport net
 
 bcrypt: mt-random
 
-dbm : threads
+dbm : gauche threads
 
 data : uvector srfi
 
