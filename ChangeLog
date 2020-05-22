@@ -1,3 +1,7 @@
+2020-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_CopyList): Detect circular list and raise an error.
+
 2020-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm: Set build, host and target substs.

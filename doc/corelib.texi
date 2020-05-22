@@ -4727,11 +4727,15 @@ SRFI-1 (R7RS @code{(scheme list)}) が@code{cons*}という名前を定義しま
 @defun list-copy list
 [R7RS base]
 @c EN
-Shallow copies @var{list}.  If @var{list} is circular,
-this function diverges.
+Shallow copies @var{list}.  
+If @var{list} is circular, an error is thrown.
+(Detecting circular list is Gauche's extension; R7RS allows
+the procedure to diverge.)
 @c JP
 @var{list}の浅いコピーを行います。
-@var{list}が循環リストの場合、この手続きは停止しません。
+@var{list}が循環リストの場合、エラーが投げられます。
+(循環リストを検出するのはGaucheの拡張です。
+R7RSではこの手続きは停止しなくても良いことになっています。)
 @c COMMON
 @end defun
 

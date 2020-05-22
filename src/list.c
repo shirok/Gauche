@@ -279,12 +279,23 @@ ScmSize Scm_Length(ScmObj obj)
 ScmObj Scm_CopyList(ScmObj list)
 {
     if (!SCM_PAIRP(list)) return list;
+    ScmObj tortoise = list, hare = list;
 
     ScmObj start = SCM_NIL, last = SCM_NIL;
-    SCM_FOR_EACH(list, list) {
-        SCM_APPEND1(start, last, SCM_CAR(list));
+    for (;;) {
+        if (!SCM_PAIRP(hare)) break;
+        SCM_APPEND1(start, last, SCM_CAR(hare));
+        hare = SCM_CDR(hare);
+        
+        if (!SCM_PAIRP(hare)) break;
+        SCM_APPEND1(start, last, SCM_CAR(hare));
+        hare = SCM_CDR(hare);
+        tortoise = SCM_CDR(tortoise);
+        if (hare == tortoise) {
+            Scm_Error("Attempt to copy a circular list: %S", list);
+        }
     }
-    if (!SCM_NULLP(list)) SCM_SET_CDR_UNCHECKED(last, list);
+    if (!SCM_NULLP(hare)) SCM_SET_CDR_UNCHECKED(last, hare);
     return start;
 }
 

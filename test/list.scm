@@ -72,7 +72,28 @@
   (test-length '(a b c d e) 5))
 
 ;;--------------------------------------------------------------------------
-(test-section "append and reverse")
+(test-section "copy, append and reverse")
+
+(test* "copy" '((a b c d e) #f)
+       (let* ([x '(a b c d e)]
+              [y (list-copy x)])
+         (list x (eq? x y))))
+(test* "copy" '((a b c d . e) #f)
+       (let* ([x '(a b c d . e)]
+              [y (list-copy x)])
+         (list x (eq? x y))))
+(test* "copy" '(x #t)
+       (let* ([x 'x]
+              [y (list-copy x)])
+         (list x (eq? x y))))
+(test* "copy" '(() #t)
+       (let* ([x '()]
+              [y (list-copy x)])
+         (list x (eq? x y))))
+(test* "copy" (test-error)              ;detect circular list
+       (let* ([x '#0=(a b c . #0#)]
+              [y (list-copy x)])
+         (list x (eq? x y))))
 
 (test* "append (inlined)" '()           (append))
 (test* "append (inlined)" 1             (append 1))
