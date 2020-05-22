@@ -1055,15 +1055,19 @@
   ;;   ARGP>| arg0 |        VAL0=proc
   ;;        | proc |< original ARGP postiion (proc unused) 
   (let* ([rest VAL0]
-         ;; we only check rargc <= 0, so set max limit to 1
-         [rargc::int (check_arglist_tail_for_apply vm rest 1)]
          [nargc::int (- (SCM_VM_INSN_ARG code) 2)]
          [proc (* (- SP nargc 1))])
     (set! VAL0 proc)
     (post++ ARGP)
-    ;; a micro-optimization: if VAL0 is (), we just omit it and
+    ;; a micro-optimization: if the rest arg is (), we just omit it and
     ;; pretend this is a normal TAIL-CALL.
-    (when (== rargc 0) ($goto-insn TAIL-CALL))
+    (when (SCM_NULLP rest) ($goto-insn TAIL-CALL))
+    ;; Checking if rest argument is proper is done after tail_apply_entry.
+    ;; Here we just ensure that rest is a normal pair (If rest is a lazy
+    ;; pair, it is forced by SCM_PAIRP).
+    (unless (SCM_PAIRP rest)
+      ($vm-err "Rest argument is not proper: %S" rest))
+    (set! VAL0 proc)  ;VAL0 may be broken by lazy pair evaluation
     ;; normal path
     (set! (* (post++ SP)) rest)
     (DISCARD-ENV)
