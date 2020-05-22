@@ -57,11 +57,11 @@
  [else])
 
 (define (cmd . args)
-  (cond-expand [gauche.os.windows `(".\\gosh" "-ftest" ".\\testc.o" ,@args)]
+  (cond-expand [gauche.os.windows `("..\\..\\src\\gosh" "-ftest" ".\\testc.o" ,@args)]
                [else args]))
 
 (define (cmd-in-subdir . args)
-  (cond-expand [gauche.os.windows `("..\\gosh" "-ftest" "..\\testc.o" ,@args)]
+  (cond-expand [gauche.os.windows `("..\\..\\..\\src\\gosh" "-ftest" "..\\testc.o" ,@args)]
                [else args]))
 
 (define (cmds . args)
