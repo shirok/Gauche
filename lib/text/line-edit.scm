@@ -1074,7 +1074,10 @@
 (define-edit-command (undefined-command ctx buf key)
   "Placeholder for a keystroke that isn't assigned to any command."
   (beep (~ ctx'console))
-  (show-message ctx buf "Type C-x h b for list of key bindings, C-x h k <key> for description." '(#f #f reverse))
+  (show-message ctx buf
+                #"Unknown keystroke ~(keys->string '() key). \
+                  Type C-x h b for list of key bindings."
+                '(#f #f reverse))
   'redraw)
 
 (define-edit-command (nop-command ctx buf key)
