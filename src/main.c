@@ -146,6 +146,10 @@ void usage(int errorp)
             "      no-post-inline-pass\n"
             "                      don't run post-inline optimization pass.\n"
             "      no-source-info  don't preserve source information for debugging\n"
+            "      read-edit\n"
+            "                      enable input-editing mode, if terminal supports it.\n"
+            "      no-read-edit\n"
+            "                      disable input-editing mode.\n"
             "      safe-string-cursors\n"
             "                      performs extra validation for use of string cursors\n"
             "      test            test mode, to run gosh inside the build tree\n"
@@ -304,6 +308,16 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "safe-string-cursors") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_SAFE_STRING_CURSORS);
     }
+    else if (strcmp(optarg, "read-edit") == 0) {
+        Scm_Define(Scm_GaucheInternalModule(),
+                   SCM_SYMBOL(SCM_INTERN("*read-edit*")),
+                   SCM_TRUE);
+    }
+    else if (strcmp(optarg, "no-read-edit") == 0) {
+        Scm_Define(Scm_GaucheInternalModule(),
+                   SCM_SYMBOL(SCM_INTERN("*read-edit*")),
+                   SCM_FALSE);
+    }
     /* For development; not for public use */
     else if (strcmp(optarg, "collect-stats") == 0) {
         stats_mode = TRUE;
@@ -328,6 +342,7 @@ void further_options(const char *optarg)
                 "-fno-inline-globals, -fno-inline-locals, "
                 "-fno-inline-constants, -fno-inline-setters, -fno-source-info, "
                 "-fno-post-inline-pass, -fno-lambda-lifting-pass, "
+                "-fread-edit, -fno-read-edit, "
                 "-fsafe-string-cursors, -fwarn-legacy-syntax, or -ftest\n");
         exit(1);
     }

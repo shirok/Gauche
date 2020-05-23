@@ -1,3 +1,9 @@
+2020-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: Add -fread-edit and -fno-read-edit command-line arguments
+	  to enable/disable input editing.  This overrides the setting by
+	  the environment variable GAUCHE_READ_EDIT.
+
 2020-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_CopyList): Detect circular list and raise an error.

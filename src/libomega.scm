@@ -45,6 +45,11 @@
     (unless (memq n '(util.match gauche.interpolate gauche.common-macros))
       (provide (module-name->path n)))))
 
+;;;
+;;; Object system finish-up
+;;;
+(select-module gauche)
+
 ;; A trick to allow slot-ref to be used for compound condition.
 ;; This is better to be in libexc.scm, but we need to evaluate this
 ;; after the object system is fully bootstrapped.
@@ -75,6 +80,11 @@
       (format port "    While compiling ~s at line ~d: ~,,,,105:s\n"
               (car src-info) (cadr src-info) expr)
       (format port "    While compiling: ~,,,,90:s\n" expr))))
+
+
+;;;
+;;; Comparator finish-up
+;;;
 
 ;; Built-in comparators.  These are here instead of libcmp.scm, for
 ;; hash functions need to be defined before this.
@@ -154,6 +164,10 @@
     (comparator-hash c a)
     (errorf "Object ~s is not hashable" a)))
 
+;;;
+;;; Identity - using compiler macro
+;;;
+
 ;; 'values' could be used, but sometimes handy to be explicit that
 ;; we're dealing with a single value.  Besides, if it is used directly,
 ;; we can optimize it away (useful when used as a default value in macro).
@@ -167,6 +181,10 @@
      (if (and (pair? f) (pair? (cdr f)) (null? (cddr f)))
        (cadr f)
        (error "Wrong number of arguments for identity:" f)))))
+
+;;;
+;;; Hash function fixup
+;;;
 
 ;; Recursive hash function
 ;; This is here instead of in libdict.scm, for we need the rest of
@@ -231,6 +249,20 @@
 
 ;; Make charset hashable
 (define-method object-hash ((c <char-set>) _) (char-set-hash c))
+
+;;;
+;;; Read-edit mode flag
+;;;
+
+(with-module gauche.internal)
+;; This variable affects hwo gauche.interactive handles input; if true,
+;; it sets up the input editor if possible.  Note that once gauche.interactive
+;; is loaded, this variable has no effect.
+(define *read-edit* (boolean (sys-getenv "GAUCHE_READ_EDIT")))
+
+;;;
+;;; Miscellaneous
+;;;
 
 ;;
 ;; Turn on generic dispatcher on selected gfs.
