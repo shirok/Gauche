@@ -954,7 +954,7 @@ ScmObj Scm_MakeIntegerU(u_long i)
 
 static void range_error(ScmObj obj, int clamp, int *oor)
 {
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+    if (clamp != SCM_CLAMP_ERROR && oor != NULL) {
         *oor = TRUE;
     } else {
         Scm_Error("argument out of range: %S", obj);
