@@ -77,15 +77,12 @@ Gauche as an embedded scripting language.
 
 Gauche's C API is designed for efficiency, consistency,
 simplicity and safety, roughly in this order of precedence.
-That is, simplicity and safety are sometimes compromised
-by efficiency.  For example, sometimes you have to choose
-from similar APIs to achieve a goal, where each API is designed
-to be efficient for a particular case.  The API also assumes
-the caller takes care not to break internal structure; there's
-no much safety net that protects you from shooting your foot.
-(By saying "safety is compromised" I don't mean @file{libgauche}
-has security holes; I mean it assumes the programmer knows what
-he's doing.)
+That is, sometimes we omit a safety net for efficiency, or we provide
+several different APIs, each of which is efficient for a particular
+purpose, rather than simple generic interface with overhead.
+By saying efficiency over safety doesn't mean Gauche has security
+holes, but we do assume you know what you're doing.  If you need
+safety nets, you can write in Scheme and call it from C.
 
 That said, it won't be too difficult to use Gauche's C API
 as far as you know some fundamental design concepts.
@@ -134,7 +131,7 @@ the basic compiler chain, are the followings.  We assume
 these are installed in your system.
 @itemize @bullet
 @item
-Gauche 0.9.5 or later
+Gauche 0.9.10 or later
 @item
 A compiler suite compatible to the one used to build @file{libgauche}.
 @end itemize
@@ -177,6 +174,10 @@ and populates it with template files.  The role of each file is shown
 below.
 
 @table @emph
+@item Package description (@file{package.scm})
+This file contains metainformation about the extension,
+such as version, dependency, license or repository URL.
+
 @item Glue code (@file{trivial.c} and @file{trivial.h})
 If what you want to do is just to write C functions and make it
 available from Scheme, the function definitions and declarations
@@ -525,6 +526,10 @@ Predicates to check whether the given @var{obj} is @code{SCM_EOF},
 
 This section explains how to initialize Gauche scheme runtime,
 and how to clean it up.
+
+These functions are for the applications that uses Gauche as
+an embedded Scheme engine; when you're writing Gauche extensions,
+you don't (and shouldn't) use these functions.
 
 @subsubheading Initialization
 
@@ -1003,80 +1008,86 @@ an odd number.  This throws an error if @var{num} is not an integer.
 
 @deftypefun ScmObj Scm_MakeInteger (long @var{i})
 @deftypefunx ScmObj Scm_MakeIntegerU (u_long @var{i})
-Convert C @code{long} and @code{unsigned long} to a Scheme integer.
+@deftypefunx ScmObj Scm_MakeInteger64 (int64_t @var{i})
+@deftypefunx ScmObj Scm_MakeIntegerU64 (uint64_t @var{i})
+Convert a C integer to a Scheme integer.
 Always returns a normalized number.
+@end deftypefun
+
+@deftypefun long Scm_GetIntegerClamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx u_long Scm_GetIntegerUClamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx int Scm_GetInteger8Clamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx u_int Scm_GetIntegerU8Clamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx int Scm_GetInteger16Clamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx u_int Scm_GetIntegerU16Clamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx int32_t Scm_GetInteger32Clamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx uint32_t Scm_GetIntegerU32Clamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx int64_t Scm_GetInteger64Clamp (ScmObj obj, int clamp, int *oor)
+@deftypefunx uint64_t Scm_GetIntegerU64Clamp (ScmObj obj, int clamp, int *oor)
+Convert a Scheme number @var{obj} to a C integer.
+If @var{obj} is a FLONUM or a RATNUM, they are rounded to the nearest
+integer.
+
+If the number @var{obj} can't be represented by the desired C integer type,
+the behavior depends on @var{clamp},
+which must be one of @code{ScmClampMode}.  See above for how out-of-range
+value can be clamped.  If the out-of-range value isn't clamped by @var{clamp}
+argument, @var{clamp} is not @code{SCM_CLAMP_ERROR}, and @var{oor} is not
+@code{NULL} then @code{*oor} is set to @code{TRUE} and 0 is returned.
+Otherwise, an error is thrown.
+
+If @var{obj} is not a real number, an error is thrown.
 @end deftypefun
 
 @deftypefun long Scm_GetInteger (ScmObj obj)
 @deftypefunx u_long Scm_GetIntegerU (ScmObj obj)
-Convert a Scheme number to C @code{long} and @code{unsigned long},
-respectively.  If @var{obj} is a flonum, it is rounded
-to the nearest integer.  If @var{obj} is too small or too large to
-fit in the C integer, it is clamped to the smallest or largest
-integer representable in the result type; i.e. @code{LONG_MIN} and
-@code{LONG_MAX} in @code{Scm_GetInteger}, and
-@code{0} and @code{ULONG_MAX} in @code{Scm_GetIntegerU}.
-
-If @var{obj} is not a Scheme real number, an error is signalled.
-
-These routines are actually the case that you specify @code{SCM_CLAMP_BOTH}
-in the following routines.
+@deftypefunx int Scm_GetInteger8 (ScmObj obj)
+@deftypefunx u_int Scm_GetIntegerU8 (ScmObj obj)
+@deftypefunx int Scm_GetInteger16 (ScmObj obj)
+@deftypefunx u_int Scm_GetIntegerU16 (ScmObj obj)
+@deftypefunx int32_t Scm_GetInteger32 (ScmObj obj)
+@deftypefunx uint32_t Scm_GetIntegerU32 (ScmObj obj)
+@deftypefunx int64_t Scm_GetInteger64 (ScmObj obj)
+@deftypefunx uint64_t Scm_GetIntegerU64 (ScmObj obj)
+These are actually macros, expand into
+@code{Scm_GetIntegerClamp(obj, SCM_CLAMP_ERROR, NULL)} etc.
 @end deftypefun
 
-@deftypefun long Scm_GetIntegerClamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
-@deftypefunx u_long Scm_GetIntegerUClamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
-More precise conversion routines, where you can specify the behavior
-when the input value isn't in the valid range.
+@subsubheading Rational numbers
 
-The @var{clamp} argument can be one of the @code{ScmClampMode} constants.
-If @var{clamp} is @code{SCM_CLAMP_NONE} and @var{oor} is not @code{NULL},
-the pointed location is set to @code{FALSE} if the input argument is within
-the valid range, and @code{TRUE} otherwise; for the latter case, 0 is
-returned as the result.
+@deftypefun ScmObj Scm_MakeRational (ScmObj numer, ScmObj denom)
+Numerator @var{numer} and denominator @var{denom} must both be
+exact integers, and @var{denum} must not be zero.
+This returns a simplest Scheme numebr of @code{numer/denom},
+that is, it simplifies the rational number as much as possible;
+it can even be an integer if @var{numer} is a multiple of @var{denom}.
 @end deftypefun
 
-@subsubheading 32bit and 64bit integers
+@deftypefun ScmObj Scm_MakeRatnum (ScmObj numer, ScmObj denom)
+Numerator @var{numer} and denominator @var{denom} must both be
+exact integers, and @var{denum} must not be zero.
+Returns a RATNUM of @code{numer/denom}.  This doesn't do any
+simplification.
 
-Sometimes you need to be aware of the width of integers
-(for example, when you're working on uniform integer vectors).
-Sometimes you even need to deal with 64-bit integers explicitly.
-
-Since the widths of @code{int} and @code{long} are platform-dependent,
-and support of 64bit integers varies among platforms,
-Gauche provides an abstraction layer to them.
-
-@deftp {Type} ScmInt32
-@deftpx {Type} ScmUInt32
-@deftpx {Type} ScmInt64
-@deftpx {Type} ScmUInt64
-These are typedef-ed to the platform-specific 32bit signed integer,
-32bit unsigned integer, 64bit signed integer and 64bit unsigned
-integer, respectively.   If the platform doesn't support 64bit
-integer at all, @code{ScmInt64} and @code{ScmUInt64} are a struct
-type consist of two 32bit integers.
-@end deftp
-
-@deftypefun ScmInt32 Scm_GetInteger32Clamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
-@deftypefunx ScmUInt32 Scm_GetIntegerU32Clamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
-@deftypefunx ScmInt64 Scm_GetInteger64Clamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
-@deftypefunx ScmUInt64 Scm_GetInteger64UClamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
-These work like their generic counterparts, @code{Scm_GetIntegerClamp}
-and @code{Scm_GetIntegerUClamp}, except they specifically work on
-32-bit and 64-bit integers.
+You should only use this to create an intermediate result, where
+you'll eventually simplify the result along the way.
+Whenever you create a number to return to the Scheme world,
+you should always use @code{Scm_MakeRational} above.
 @end deftypefun
 
-@deftypefun ScmObj Scm_MakeInteger64 (ScmInt64 @var{i})
-@deftypefunx ScmObj Scm_MakeIntegerU64 (ScmUInt64 @var{i})
-Create Scheme integers from 64bit signed and unsigned integers,
-respectively.
+@deftypefun ScmObj Scm_ReduceRational (ScmObj rational)
+The argument must be a Scheme rational number (exact integer or ratnum).
+Returns a simplified rational number, either in ratnum or integer.
 @end deftypefun
 
-@deftypefun ScmInt64 Scm_GetInteger64 (ScmObj obj)
-@deftypefunx ScmUInt64 Scm_GetIntegerU64 (ScmObj obj)
-Convenience procedures for @code{Scm_GetInteger64Clamp} and
-@code{Scm_GetIntegerU64Clamp}, where the clamp parameter is
-fixed to @code{SCM_CLAMP_BOTH}.
+@deftypefun ScmObj Scm_Numerator (ScmObj n)
+@deftypefunx ScmObj Scm_Denominator (ScmObj n)
+The argument must be a Scheme real number (integer, ratnum or flonum).
+Returns its numerator and denominator, respectively.
+If the argument is a flonum, it is first converted to an exact
+number by @code{Scm_Exact}.
 @end deftypefun
+
 
 @subsubheading Real numbers
 
@@ -1099,6 +1110,55 @@ If @var{obj} is a bignum that can't be represented by @code{double},
 an infinity (positive or negative, depends on @var{obj}'s sign)
 is returned.
 @end deftypefun
+
+@deftypefun ScmObj Scm_DecodeFlonum (double d, int *exp, int *sign)
+Decompose a C double value @var{d} into its mantissa, exponent and sign.
+Returns the mantissa as a Scheme exact integer, and stores the exponent
+and the sign (either -1 or 1) in the location pointed by
+@var{exp} and @var{sign}.
+
+It returns Scheme integer since mantissa may not fit in @code{long} 
+on 32bit platforms, and this was created before @code{int64_t} became
+available universally.  On 64bit platforms, returned number is always
+a fixnum so no allocation occurs.
+@end deftypefun
+
+@deftypefun double Scm_EncodeFlonum (ScmObj mant, int exp, int sign)
+Inverse of @code{Scm_DecodeFlonum}.  Given mantissa (a Scheme exact integer),
+exponent and sign, returns a C double.
+
+@var{sign} must be either -1 or 1, and @var{exp} must be greater than or
+equal to -1074 and less than or equal to 971.  @var{mant} must be between
+2^52 (inclusive) and 2^53 (exclusive) if @var{exp} is greater than -1074,
+or between 0 (inclusive) and 2^52 (exclusive) if @var{exp} is -1074
+(denormalized number).
+
+The returned value is @code{(@var{sign} * @var{mant} * 2^@var{exp})}.
+
+Note that the exponent value is offset by the mantissa scale, so it is not
+the literal value stored in the exponent field of the IEEE double.
+@end deftypefun
+
+@deftypefun int Scm_FlonumSign (double d)
+Returns -1 or 1, depending on the sign bit of @var{d}.  This differs
+from @code{Scm_Sign} which returns 0 for both +0.0 and -0.0.
+@end deftypefun
+
+@deftp {Type} ScmHalfFloat
+16-bit floating point number (1 bit sign, 5 bit exponent and 10-bit mantissa).
+This format is sometimes used in the image data.
+@end deftp
+
+@deftypefun double Scm_HalfToDouble (ScmHalfFloat v)
+@deftypefunx ScmHalfFloat Scm_DoubleToHalf (double d)
+Convert between half float and C double.
+If the given double can't be represented in half float, it is mapped
+to infinities.
+@end deftypefun
+
+
+
+
 
 @subsubheading Complex numbers
 
