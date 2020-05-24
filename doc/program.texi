@@ -880,9 +880,10 @@ internal character encodings.
 
 @menu
 * Working in REPL::
+* Input editing::
 @end menu
 
-@node Working in REPL,  , Interactive development, Interactive development
+@node Working in REPL, Input editing, Interactive development, Interactive development
 @subsection Working in REPL
 @c NODE REPLでの開発
 
@@ -1395,6 +1396,121 @@ option.
 REPLの便利機能は@code{gauche.interactive}モジュールで実装されていますが、
 @code{-q}オプションをつけると@code{gauche.interactive}がロードされないからです。
 @c COMMON
+
+@node Input editing,  , Working in REPL, Interactive development
+@subsection Input editing
+
+Gauche provides input editing feature on REPL.  Currently it is
+an experimental feature and isn't turn on by default, but you can
+try it by setting @code{GAUCHE_READ_EDIT} environment variable,
+or give @code{-fread-edit} flag to @code{gosh}.
+
+If input editing mode is on, the REPL prompt ends with @code{$}, such
+as @code{gosh$}, instead of @code{gosh>}.
+
+(NB: Even if you set @code{GAUCHE_READ_EDIT} or give @code{-fread-edit},
+input editing may not be turned on if the terminal is not capable to do it.
+For example, if you run @code{gosh} inside Emacs, you'll get @code{gosh>}
+prompt even you have @code{GAUCHE_READ_EDIT} set.)
+
+The key binding is similar to Emacs.  Eventually we'll provide customization
+feature.  Before going into details, here's a few quick useful tips.
+
+@itemize @bullet
+@item
+If the screen is garbled somehow, type @code{C-l} (control+l) to clear and
+redisplay.
+@item
+If you want to turn off editing during REPL session, use @code{,edit off}
+toplevel command.
+@item
+The input editor only sends a complete S-expression to the evaluator.  If
+somehow you want to send the current input as-is (or, in case the editor
+has a bug and don't allow you to send a complete S-expression), type
+@code{C-M-x} (control-meta-x).
+@item
+You can type @code{C-x h b} to see the list of keymap, or
+@code{C-x h k} + keystroke to see the help of the key.
+(@code{C-h} is the same as backspace).
+@end itemize
+
+@subsubheading Cursor movement
+
+@code{C-f} (forward) and @code{C-b} (backward) moves the cursor forward
+and backward character-wise.  @code{C-p} (previous) and @code{C-n} (next)
+moves character to previous or next line, if the input already has
+multiple lines, or moves to previous or next history.
+
+@code{M-f} and @code{M-b} move the cursor forward and backward, word-wise.
+
+@code{C-a} and @code{C-e} to move to the beginning and end of the line,
+@code{M-<} and @code{M->} to move to the beginning and end of of the input.
+
+@subsubheading Undo
+
+@code{C-_} is undo the edit.  We follow the Emacs model of undo
+semantics, which allows ``undoing undoes''.
+For the detailed algorithm, see @file{lib/text/line-edit.scm}
+in the source tree.
+
+@subsubheading Kill and yank
+
+@code{C-k} removes characters from the cursor to the end of line.
+If the cursor is at the end of the line though, it removes the newline
+character (so that next line is combined to the current line).
+
+@code{M-d} removes a word that contains the cursor, or a word
+immediately after the cursor if it is not on a word.
+
+@code{C-@@} set a mark to the current cursor position.  @code{C-w} removes
+chracters between the cursor and the mark.
+
+The characters removed by those commands are saved
+in the buffer called ``kill-ring''.
+They can be recalled at the cursor position by @code{C-y} (yank).
+If you press @code{M-y} immediately followed by @code{C-y}, you can
+go back to the older killed characters.
+
+@subsubheading Finishing input
+
+@code{RET} (or @code{C-m}) inserts a newline if the input isn't
+a complete S-expresson.  If the input is already a complete S-expression,
+however, it sends the entire input to the evaluator, no matter where
+the cursor is.  If you want to insert a newline in a complete S-expression,
+you can use @code{C-j}.
+
+@code{M-C-x} sets the current input regardless that the input is
+a complete S-expression or not.
+
+@subsubheading History
+
+Input history is remembered and recalled by @code{M-p} (prev-history)
+and @code{M-n} (next-history).
+The cursor movement command @code{C-p} and @code{C-n} also moves to
+the previous or next history if it is pressed when the cursor is
+at the beginning or the end of the input lines.
+
+The input interrupted by @code{C-c} isn't remembered.
+
+By default, the input is saved to a file @file{~/.gosh_history} when the
+REPL is terminated normally, and reloaded when the next REPL is invoked.
+The name of the history file can be changed by the environment variable
+@code{GAUCHE_HISTORY_FILE}.  If the environment variable is defined to an
+empty string, however, the history won't be saved.
+
+@subsubheading Miscellaneous
+
+@code{C-g} cancels the current command.
+
+@code{C-c} cancels the current input.
+
+@code{C-t} transpose characters at and before the cursor.
+
+@code{C-q} reads the next keystroke and insert it into the input as is.
+
+@code{M-(} inserts a pair of parentheses, and locate a cursor inside them.
+
+@code{C-l} clears the screen and redraws the current input buffer.
 
 
 
