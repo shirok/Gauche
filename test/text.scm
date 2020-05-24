@@ -260,6 +260,11 @@ fuga
             '("nil" "bar/nil" "true" "false" "nile")))
 
 ;;-------------------------------------------------------------------
+(test-section "external-editor")
+(use text.external-editor)
+(test-module 'text.external-editor)
+
+;;-------------------------------------------------------------------
 (test-section "gap-buffer")
 (use text.gap-buffer)
 (use gauche.uvector)

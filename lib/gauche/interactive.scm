@@ -382,7 +382,7 @@
                         module-reload-rules reload-verbose)
 
 ;; Autoload editor invoker
-(autoload gauche.interactive.ed ed ed-pick-file)
+(autoload text.external-editor ed ed-pick-file)
 
 ;; Autoload toplevel command handler
 (autoload gauche.interactive.toplevel handle-toplevel-command)

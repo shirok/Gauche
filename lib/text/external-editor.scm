@@ -1,5 +1,5 @@
 ;;;
-;;; interactive/ed.scm - invoke external editor
+;;; text/external-editor.scm - invoke external editor
 ;;;
 ;;;   Copyright (c) 2015-2019  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,13 +31,13 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This module is autoloaded from gauche.interactive.
+;; Used to be gauche.interactive.ed.
 
-(define-module gauche.interactive.ed
+(define-module text.external-editor
   (use gauche.process)
   (use file.util)
-  (export ed ed-pick-file))
-(select-module gauche.interactive.ed)
+  (export ed ed-string ed-pick-file))
+(select-module text.external-editor)
 
 ;; To remember editor name user typed in
 (define *user-entered-editor* #f)
@@ -93,6 +93,8 @@
        (list (file-size filename :follow-link? #t)
              (file-mtime filename :follow-link? #t))))
 
+;; Customize how to find a file to edit.  The method must return
+;; a list (<filename> <line-numer>).
 (define-generic ed-pick-file)
 (define-method ed-pick-file ((fn <string>)) (list fn 1))
 (define-method ed-pick-file ((fn <procedure>))
@@ -103,6 +105,21 @@
     ;; much useful since that won't contain the definition.  So we ignore it.
     (and (file-exists? (car loc)) loc)))
 (define-method ed-pick-file ((fn <top>)) #f)
+
+;; API
+;; (ed-string string :key (editor #f)
+;; Allow user to edit STRING with the editor. Returns result string.
+;; Need to create a temporary file
+(define (ed-string string :key (editor #f))
+  (call-with-temporary-file
+   (^[port name]
+     (if-let1 e (pick-editor editor)
+       (begin
+         (display string port)
+         (close-output-port port)
+         (invoke-editor e name 1)
+         (file->string name))
+       (print "Can't find an editor.  Aborted.")))))
 
 ;; internal
 ;; NB: If specified editor isn't actually name an executable, we let

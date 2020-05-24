@@ -8,10 +8,6 @@
 (use gauche.interactive)
 (test-module 'gauche.interactive)
 
-(test-section "gauche.interactive.ed")
-(use gauche.interactive.ed)
-(test-module 'gauche.interactive.ed)
-
 (test-section "gauche.interactive.info")
 (use gauche.interactive.info)
 (test-module 'gauche.interactive.info)

@@ -1,5 +1,8 @@
 2020-05-23  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive/ed.scm -> lib/text/external-editor.scm
+	  Renamed.  Generally useful.
+
 	* src/main.c: Add -fread-edit and -fno-read-edit command-line arguments
 	  to enable/disable input editing.  This overrides the setting by
 	  the environment variable GAUCHE_READ_EDIT.
