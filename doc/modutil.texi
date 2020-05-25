@@ -9815,7 +9815,7 @@ for greater flexibility.
 @defun call-with-temporary-file proc :key directory prefix
 @c MOD file.util
 @c EN
-Creates a temporary file with unique name and opens it for output,
+Creates a temporary file with a unique name and opens it for output,
 then calls @var{proc} with the output port and the temporary file's name.
 The temporary file is removed after either @var{proc} returns
 or raises an uncaught error.
