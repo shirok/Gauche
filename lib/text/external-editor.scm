@@ -47,11 +47,18 @@
 ;;   Starts an external editor.  The editor program path is determined
 ;; in the following order:
 ;;
-;;   - The :editor keyword argument, if it's not #f.
+;;   - The :editor keyword argument, if it's a string.
 ;;   - The value of *editor* in the user module, if defined.
 ;;   - The value of the environment variable GAUCHE_EDITOR
 ;;   - The value of the environment variable EDITOR
-;;   - Ask user
+;;   - If none works, the behavior depends on the value of :editor keyword
+;;     argument:
+;;       #f      - just returns #f.
+;;       error   - throws an error
+;;       ask     - ask the user
+;;       message - print message and return #f
+;;
+;; Returns #t for normal termination.
 ;;
 ;; The editor may be called in one of the following way:
 ;;
@@ -71,20 +78,19 @@
 ;; a buffer.  Emacsclient requires filename, so it further complicates things.
 ;; For now we just require one argument.
 
-(define (ed path-or-proc :key (editor #f) (load-after 'ask))
+(define (ed path-or-proc :key (editor 'ask) (load-after 'ask))
   (if-let1 target (ed-pick-file path-or-proc)
     (let* ([filename (car target)]
            [lineno   (cadr target)]
            [sig0     (file-signature filename)])
-      (if-let1 e (pick-editor editor)
+      (and-let1 e (pick-editor editor)
         (begin (invoke-editor e (car target) (cadr target))
                (when (and (not (equal? (file-signature filename) sig0))
                           (file-exists? filename)
                           (load-after? load-after filename))
-                 (load (car target))))
-        (print "Can't find an editor.  Aborted.")))
-    (format #t "Don't know how to edit ~s.\n" path-or-proc))
-  (values))
+                 (load (car target)))
+               #t)))
+    (error "Don't know how to edit:" path-or-proc)))
 
 ;; Returns (<size> <mtime>) of a named file, to check if the file is updated
 ;; by the editor.  Returns #f if filename doesn't exit.
@@ -113,13 +119,12 @@
 (define (ed-string string :key (editor #f))
   (call-with-temporary-file
    (^[port name]
-     (if-let1 e (pick-editor editor)
+     (and-let1 e (pick-editor editor)
        (begin
          (display string port)
          (close-output-port port)
          (invoke-editor e name 1)
-         (file->string name))
-       (print "Can't find an editor.  Aborted.")))))
+         (file->string name))))))
 
 ;; internal
 ;; NB: If specified editor isn't actually name an executable, we let
@@ -129,16 +134,22 @@
       (global-variable-ref (find-module 'user) '*editor* #f)
       (sys-getenv "GAUCHE_EDITOR")
       (sys-getenv "EDITOR")
-      (begin
-        (if *user-entered-editor*
-          (format #t "Editor name [~a]: " *user-entered-editor*)
-          (format #t "Editor name (or just return to abort): "))
-        (flush)
-        (let1 ans (read-line)
-          (if (#/^\s*$/ ans)
-            *user-entered-editor*
-            (begin (set! *user-entered-editor* ans) ans))))))
-
+      (case editor
+        [(#f) #f]                       ;just give up
+        [(error) (error "Don't know which editor to use.")]
+        [(message) (print "Don't know which editor to use.") #f]
+        [(ask)
+         (if *user-entered-editor*
+           (format #t "Editor name [~a]: " *user-entered-editor*)
+           (format #t "Editor name (or just return to abort): "))
+         (flush)
+         (let1 ans (read-line)
+           (if (#/^\s*$/ ans)
+             *user-entered-editor*
+             (begin (set! *user-entered-editor* ans) ans)))]
+        [else (error "Editor argument must be either one of #f, error, \
+                      message, or ask, but got" editor)])))
+  
 ;; internal
 ;; Determine whether we should reload the file if it's updated.
 (define (load-after? load-after name)
