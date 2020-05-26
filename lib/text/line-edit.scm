@@ -1111,22 +1111,49 @@
 
 (define-edit-command (help-summary-command ctx buf key)
   "General help string"
-  (display/pager
-   "\
- Gauche input editing quick cheat sheet:
-  M-h b                  for keymap
-  M-h k <keystroke> ...  for help of specific keystroke
+  (let ((dkm (default-keymap)))
+    (define (lookup name)
+      (command-name->keystroke-string dkm name))
+    (define Help-b (lookup 'help-binding-command))
+    (define Help-k (lookup 'help-keystroke-command))
+    (define C-f    (lookup 'forward-char))
+    (define C-b    (lookup 'backward-char))
+    (define C-p    (lookup 'prev-line-or-history))
+    (define C-n    (lookup 'next-line-or-history))
+    (define C-a    (lookup 'move-beginning-of-line))
+    (define C-e    (lookup 'move-end-of-line))
+    (define M-f    (lookup 'forward-word))
+    (define M-b    (lookup 'backward-word))
+    (define M-p    (lookup 'prev-history))
+    (define M-n    (lookup 'next-history))
+    (define M-<    (lookup 'move-beginning-of-buffer))
+    (define M->    (lookup 'move-end-of-buffer))
+    (define C-@    (lookup 'set-mark-command))
+    (define C-w    (lookup 'kill-region))
+    (define C-k    (lookup 'kill-line))
+    (define M-d    (lookup 'kill-word))
+    (define C-y    (lookup 'yank))
+    (define M-y    (lookup 'yank-pop))
+    (define C-_    (lookup 'undo))
+    (define M-C-x  (lookup 'commit-input))
+    (define C-l    (lookup 'refresh-display))
 
-  C-f/C-b   forward/backward char        M-f/M-b   forward/backward word
-  C-p/C-n   prev/next line or history    M-p/M-n   prev/next history
-  C-a/C-e   beginning/end line           M-</M->   beginning/end buffer
-  C-@       mark                         C-w       kill region
-  C-k       kill line                    M-d       kill word
-  C-y       yank                         M-y       yank pop
-  C-_       undo                         M-C-x     commit input
-  C-l       refresh disiplay
+    (display/pager
+     #"\
+ Gauche input editing quick cheat sheet:
+  ~Help-b                  for keymap
+  ~Help-k <keystroke> ...  for help of specific keystroke
+
+  ~|C-f|/~C-b   forward/backward char        ~|M-f|/~M-b   forward/backward word
+  ~|C-p|/~C-n   prev/next line or history    ~|M-p|/~M-n   prev/next history
+  ~|C-a|/~C-e   beginning/end line           ~|M-<|/~M->   beginning/end buffer
+  ~|C-@|       mark                         ~|C-w|       kill region
+  ~|C-k|       kill line                    ~|M-d|       kill word
+  ~|C-y|       yank                         ~|M-y|       yank pop
+  ~|C-_|       undo                         ~|M-C-x|     commit input
+  ~|C-l|       refresh disiplay
  To disable input editing: Type ,edit off")
-  'redraw)
+    'redraw))
 
 (define-edit-command (help-keystroke-command ctx buf key)
   "Show description of given keystroke(s)."
