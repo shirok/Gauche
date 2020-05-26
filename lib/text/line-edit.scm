@@ -1172,15 +1172,21 @@
 (define (command-name->keystrokes km command-name)
   (assume-type km <keymap>)
   (assume-type command-name <symbol>)
-  (let pick ((km km))
-    ($ hash-table-find (~ km'table)
-       (^[k v] (cond [(is-a? v <keymap>)
-                      (and-let1 r (pick v)
-                        (cons k r))]
-                     [(is-a? v <edit-command>)
-                      (and (eq? command-name (~ v'name))
-                           (list k))]
-                     [else (error "Broken keymap:" km)])))))
+  (letrec ([pred (^[km k v]
+                   (cond [(is-a? v <keymap>)
+                          (and-let1 r (pick v)
+                            (cons k r))]
+                         [(is-a? v <edit-command>)
+                          (and (eq? command-name (~ v'name))
+                               (list k))]
+                         [else (error "Broken keymap:" km)]))]
+           [pick (^[km]
+                   ;; NB: We take precedence in ordinary keys to special keys
+                   (or ($ hash-table-find (~ km'table)
+                          (^[k v] (and (not (symbol? k)) (pred km k v))))
+                       ($ hash-table-find (~ km'table)
+                          (^[k v] (and (symbol? k) (pred km k v))))))])
+    (pick km)))
 
 (define (command-name->keystroke-string km command-name)
   (and-let1 ks (command-name->keystrokes km command-name)
