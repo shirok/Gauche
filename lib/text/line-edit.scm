@@ -43,9 +43,15 @@
   (use gauche.unicode)
   (export <line-edit-context> read-line/edit
           save-line-edit-history
-          load-line-edit-history)
+          load-line-edit-history
+
+          default-keymap
+          command-name->keystrokes
+          command-name->keystroke-string)
   )
 (select-module text.line-edit)
+
+(autoload text.external-editor ed-string)
 
 (define *kill-ring-size* 60)
 (define *history-size* 200)
@@ -1071,12 +1077,23 @@
   (beep (~ ctx'console))
   'visible)
 
+(define-edit-command (edit-with-editor ctx buf key)
+  "Edit the current input buffer with the external editor"
+  (let* ([orig (gap-buffer->string buf)]
+         [edited (ed-string orig)])
+    (if (equal? orig edited)
+      'unchanged
+      (begin
+        (gap-buffer-clear! buf)
+        (gap-buffer-insert! buf edited)
+        'visible))))
+
 (define-edit-command (undefined-command ctx buf key)
   "Placeholder for a keystroke that isn't assigned to any command."
   (beep (~ ctx'console))
   (show-message ctx buf
                 #"Unknown keystroke ~(keys->string '() key). \
-                  Type C-x h b for list of key bindings."
+                  Type M-h b for list of key bindings."
                 '(#f #f reverse))
   'redraw)
 
@@ -1090,6 +1107,25 @@
    (with-output-to-string
      (^[] (print "Line editor key bindings:") (print)
        (keymap-describe-recursively (~ ctx'keymap)))))
+  'redraw)
+
+(define-edit-command (help-summary-command ctx buf key)
+  "General help string"
+  (display/pager
+   "\
+ Gauche input editing quick cheat sheet:
+  M-h b                  for keymap
+  M-h k <keystroke> ...  for help of specific keystroke
+
+  C-f/C-b   forward/backward char        M-f/M-b   forward/backward word
+  C-p/C-n   prev/next line or history    M-p/M-n   prev/next history
+  C-a/C-e   beginning/end line           M-</M->   beginning/end buffer
+  C-@       mark                         C-w       kill region
+  C-k       kill line                    M-d       kill word
+  C-y       yank                         M-y       yank pop
+  C-_       undo                         M-C-x     commit input
+  C-l       refresh disiplay
+ To disable input editing: Type ,edit off")
   'redraw)
 
 (define-edit-command (help-keystroke-command ctx buf key)
@@ -1133,6 +1169,24 @@
   (or (hash-table-get (~ km'table) keystroke #f)
       (~ km'default)))
 
+(define (command-name->keystrokes km command-name)
+  (assume-type km <keymap>)
+  (assume-type command-name <symbol>)
+  (let pick ((km km))
+    ($ hash-table-find (~ km'table)
+       (^[k v] (cond [(is-a? v <keymap>)
+                      (and-let1 r (pick v)
+                        (cons k r))]
+                     [(is-a? v <edit-command>)
+                      (and (eq? command-name (~ v'name))
+                           (list k))]
+                     [else (error "Broken keymap:" km)])))))
+
+(define (command-name->keystroke-string km command-name)
+  (and-let1 ks (command-name->keystrokes km command-name)
+    (let1 s (keys->string ks #f)
+      (substring s 0 (- (string-length s) 1))))) ;avoid depending srfi-13
+  
 (define-syntax define-key
   (syntax-rules ()
     [(_ km keystroke command)
@@ -1222,17 +1276,17 @@
                (rec v (append prefixes (list k)))))))
   (rec km '()))
 
-;; C-x h - help keymap
+;; M-h - help keymap
 (define *help-keymap* (make-keymap "Help keymap"))
 
 (define-key *help-keymap* #\b help-binding-command)
+(define-key *help-keymap* #\h help-summary-command)
 (define-key *help-keymap* #\k help-keystroke-command)
-
 
 ;; C-x - general prefix
 (define *c-x-keymap* (make-keymap "C-x prefix"))
 
-(define-key *c-x-keymap* #\h *help-keymap*)
+(define-key *c-x-keymap* #\e edit-with-editor)
 
 ;; Default keymap.
 (define *default-keymap* (make-keymap "Default keymap"))
@@ -1350,7 +1404,7 @@
 ;;(define-key *default-keymap* (alt #\e) undefined-command)
 (define-key *default-keymap* (alt #\f) forward-word)
 ;;(define-key *default-keymap* (alt #\g) undefined-command)
-;;(define-key *default-keymap* (alt #\h) undefined-command)
+(define-key *default-keymap* (alt #\h) *help-keymap*)
 ;;(define-key *default-keymap* (alt #\i) undefined-command)
 ;;(define-key *default-keymap* (alt #\j) undefined-command)
 ;;(define-key *default-keymap* (alt #\k) undefined-command)
