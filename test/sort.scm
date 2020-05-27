@@ -7,9 +7,6 @@
 
 (test-section "loading and binding")
 
-(test* "autoload" #t (procedure? sort))  ; this triggers sortutil
-(test-module 'gauche.sortutil)
-
 (use gauche.generic-sortutil)
 (test-module 'gauche.generic-sortutil)
 

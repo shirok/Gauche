@@ -177,9 +177,9 @@
                           library-exists? library-has-module?
                           library-name->module-name)
 
-(autoload gauche.sortutil sort sort! merge merge! sorted?
-                          stable-sort stable-sort!
-                          sort-by sort-by! stable-sort-by stable-sort-by!)
+(autoload gauche.generic-sortutil %generic-sorted?
+                                  %generic-sort
+                                  %generic-sort!)
 
 (autoload gauche.pputil   %pretty-print pprint)
 
