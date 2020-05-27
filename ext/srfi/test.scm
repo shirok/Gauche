@@ -173,6 +173,19 @@
        (list-index = '(3 1 4 1 5 9) '(2 7 1)))
 ;; TODO: lset stuff
 
+(test* "lset=" #t (lset= char-ci=? '(#\a #\B #\c) '(#\C #\A #\b)))
+(test* "lset=" #f (lset= char-ci=? '(#\a #\B #\c #\d) '(#\C #\A #\b)))
+(test* "lset=" #f (lset= char-ci=? '(#\a #\B #\c) '(#\C #\d #\A #\b)))
+
+;; This tests the argument order of '=' predicate
+(test* "lset= (order)" #t
+       (lset= (^[x y] (assume (char<=? x y)) (char-ci=? x y))
+              '(#\A #\B #\C) '(#\c #\b #\a)))
+
+(test* "lset<=" #t (lset<= char-ci=? '(#\a #\B #\c) '(#\C #\A #\b)))
+(test* "lset<=" #f (lset<= char-ci=? '(#\a #\B #\c #\d) '(#\C #\A #\b)))
+(test* "lset<=" #t (lset<= char-ci=? '(#\a #\B #\c) '(#\C #\d #\A #\b)))
+
 ;;;
 ;;; test srfi-13
 ;;;

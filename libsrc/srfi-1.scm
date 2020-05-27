@@ -430,7 +430,8 @@
             (let ((s2   (car rest))
                   (rest (cdr rest)))
               (and (or (eq? s1 s2)      ; Fast path
-                       (and (%lset2<= = s1 s2) (%lset2<= = s2 s1))) ; Real test
+                       (and (%lset2<= = s1 s2)
+                            (%lset2<= (^[y x] (= x y)) s2 s1))) ; Real test
                    (lp s2 rest)))))))
 
 

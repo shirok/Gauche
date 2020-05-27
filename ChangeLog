@@ -1,3 +1,7 @@
+2020-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/srfi-1.scm (lset=): Fix bug on the argument order of =.
+
 2020-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/ed.scm -> lib/text/external-editor.scm
