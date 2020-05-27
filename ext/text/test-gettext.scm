@@ -1,4 +1,3 @@
-(use gauche.test)
 (use gauche.charconv)
 
 (add-load-path "../../test")
@@ -21,7 +20,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; run the tests
 
-(test-start "gettext")
+(test-section "text.gettext")
 (use text.gettext)
 (test-module 'text.gettext)
 
@@ -64,5 +63,4 @@
               (assoc-ref *tests* locale)))
   )
 
-(test-end)
 

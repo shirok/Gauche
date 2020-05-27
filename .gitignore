@@ -124,6 +124,7 @@ test.record
 /ext/syslog/gauche--syslog.c
 /ext/termios/gauche--termios.c
 /ext/text/text--gettext.c
+/ext/text/text--line-edit.c
 /ext/text/text--tr.c
 /ext/threads/gauche--threads.c
 /ext/tls/axTLS/ssl/ssltest

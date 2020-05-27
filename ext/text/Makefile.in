@@ -6,13 +6,16 @@ SCM_CATEGORY = text
 
 include ../Makefile.ext
 
-LIBFILES = text--gettext.$(SOEXT) text--tr.$(SOEXT)
-SCMFILES = gettext.sci tr.sci
+LIBFILES = text--gettext.$(SOEXT) \
+           text--line-edit.$(SOEXT) \
+           text--tr.$(SOEXT)
+SCMFILES = gettext.sci line-edit.sci tr.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
 
 OBJECTS = $(text-gettext_OBJECTS) \
+          $(text-line-edit_OBJECTS) \
 	  $(text-tr_OBJECTS)
 
 all : $(LIBFILES)
@@ -30,6 +33,18 @@ text--gettext.$(SOEXT) : $(text-gettext_OBJECTS)
 
 text--gettext.c gettext.sci : gettext.scm
 	$(PRECOMP) -e -P -o text--gettext $(srcdir)/gettext.scm
+
+#
+# text.line-edit
+#
+
+text-line-edit_OBJECTS = text--line-edit.$(OBJEXT)
+
+text--line-edit.$(SOEXT) : $(text-line-edit_OBJECTS)
+	$(MODLINK) text--line-edit.$(SOEXT) $(text-line-edit_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+text--line-edit.c line-edit.sci : $(top_srcdir)/libsrc/text/line-edit.scm
+	$(PRECOMP) -e -P -o text--line-edit $(top_srcdir)/libsrc/text/line-edit.scm
 
 #
 # text.tr

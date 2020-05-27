@@ -2,8 +2,7 @@
 ;; testing text.tr
 ;;
 
-(use gauche.test)
-(test-start "text.tr")
+(test-section "text.tr")
 
 (use text.tr)
 (test-module 'text.tr)
@@ -87,4 +86,3 @@
 (test* "escape in spec" "*ello, World!"
        (string-tr "Hello,-World!" "A\\-H" "_ \\*"))
 
-(test-end)
