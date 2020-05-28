@@ -6,21 +6,35 @@ SCM_CATEGORY = text
 
 include ../Makefile.ext
 
-LIBFILES = text--gettext.$(SOEXT) \
+LIBFILES = text--gap-buffer.$(SOEXT) \
+           text--gettext.$(SOEXT) \
            text--line-edit.$(SOEXT) \
            text--tr.$(SOEXT)
-SCMFILES = gettext.sci line-edit.sci tr.sci
+SCMFILES = gap-buffer.sci gettext.sci line-edit.sci tr.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
 
-OBJECTS = $(text-gettext_OBJECTS) \
+OBJECTS = $(text-gap-buffer_OBJECTS) \
+          $(text-gettext_OBJECTS) \
           $(text-line-edit_OBJECTS) \
 	  $(text-tr_OBJECTS)
 
 all : $(LIBFILES)
 
 install : install-std
+
+#
+# text.gap-buffer
+#
+
+text-gap-buffer_OBJECTS = text--gap-buffer.$(OBJEXT)
+
+text--gap-buffer.$(SOEXT) : $(text-gap-buffer_OBJECTS)
+	$(MODLINK) text--gap-buffer.$(SOEXT) $(text-gap-buffer_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+text--gap-buffer.c gap-buffer.sci : $(top_srcdir)/libsrc/text/gap-buffer.scm
+	$(PRECOMP) -e -P -o text--gap-buffer $(top_srcdir)/libsrc/text/gap-buffer.scm
 
 #
 # text.gettext
