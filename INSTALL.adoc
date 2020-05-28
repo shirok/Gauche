@@ -757,10 +757,6 @@ ifdef::EN[]
   (Replace VERSION for Gauche's version).
   You can check if the tarball isn't tampered using asc signature file
   distributed from https://practical-scheme.net/vault/.
-[source,sh]
-----
-./configure --with-local=$HOME --enable-threads=pthreads
-----
 endif::EN[]
 +
 [source,sh]
