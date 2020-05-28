@@ -43,7 +43,7 @@ gauche srfi: util uvector charconv
 
 net: gauche srfi
 
-text: uvector gauche data srfi charconv
+text: uvector gauche data srfi charconv windows
 
 threads bcrypt sxml mt-random digest zlib termios windows: uvector
 
