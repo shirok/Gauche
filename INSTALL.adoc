@@ -762,7 +762,7 @@ ifdef::EN[]
 ./configure --with-local=$HOME --enable-threads=pthreads
 ----
 endif::EN[]
-
++
 [source,sh]
 ----
 xattr -r -d com.apple.quarantine Gauche-VERSION/
@@ -771,32 +771,22 @@ xattr -r -d com.apple.quarantine Gauche-VERSION/
 ifdef::JA[]
 * IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
   したい場合は次のようにして下さい。
-
-[source,sh]
-----
-CC="cc -64" AS="as -64" ./configure
-----
 endif::JA[]
 ifdef::EN[]
 * IRIX with 64bit binary - If you want to compile for 64bit ABI instead
   of the default 32bit ABI, run configure like this:
-
+endif::EN[]
++
 [source,sh]
 ----
 CC="cc -64" AS="as -64" ./configure
 ----
-endif::EN[]
 
 ifdef::JA[]
 * Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
   ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
   でコンパイルに失敗するという報告がありました。
   この場合は以下のように環境依存の最適化を無効にして下さい。
-
-[source,sh]
-----
-./configure --disable-heuristic-optimization
-----
 endif::JA[]
 ifdef::EN[]
 * Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks
@@ -804,9 +794,9 @@ ifdef::EN[]
   gc where the i686's prefetch instruction is used.
   If you want to disable this machine-dependent heuristic optimization,
   run configure like this:
-
+endif::EN[]
++
 [source,sh]
 ----
 ./configure --disable-heuristic-optimization
 ----
-endif::EN[]
