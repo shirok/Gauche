@@ -87,86 +87,9 @@
    current position pointer right to left.  These instructions are
    used within lookbehind assertion. */
 enum {
-    RE_MATCH1,                  /* followed by 1 byte to match */
-    RE_MATCH1_RL,
-    RE_MATCH,                   /* followed by length, and bytes to match */
-    RE_MATCH_RL,
-    RE_MATCH1_CI,               /* case insensitive match */
-    RE_MATCH1_CI_RL,
-    RE_MATCH_CI,                /* case insensitive match */
-    RE_MATCH_CI_RL,
-    RE_ANY,                     /* match any char */
-    RE_ANY_RL,
-    RE_TRY,                     /* followed by offset (2 bytes). try matching
-                                   the following sequence, and if fails,
-                                   jump to offset.  This handles backtracking.
-                                */
-    RE_SET,                     /* followed by charset #.  match any char in
-                                   the charset. */
-    RE_SET_RL,
-    RE_NSET,                    /* followed by charset #.  match any char but
-                                   in the charset */
-    RE_NSET_RL,
-    RE_SET1,                    /* followed by charset #.  match any char in
-                                   the charset.  guaranteed that the charset
-                                   holds only range 0-127 */
-    RE_SET1_RL,
-    RE_NSET1,                   /* followed by charset #.  match any char
-                                   but the ones in the charset.  guaranteed
-                                   that the charset holds only range 0-127. */
-    RE_NSET1_RL,
-    RE_JUMP,                    /* followed by offset (2 bytes).  jump to that
-                                   bytecode. */
-    RE_FAIL,                    /* fail */
-    RE_SUCCESS,                 /* success */
-    RE_BEGIN,                   /* followed by a group number.  start the
-                                   group. */
-    RE_BEGIN_RL,
-    RE_END,                     /* followed by a group number.  end the
-                                   group. */
-    RE_END_RL,
-    RE_BOS,                     /* beginning of string assertion */
-    RE_EOS,                     /* end of string assertion */
-    RE_BOL,                     /* beginning of line assertion */
-    RE_EOL,                     /* end of line assertion */
-    RE_WB,                      /* RE_BOW + RE_EOW */
-    RE_BOW,                     /* begin-of-word boundary assertion */
-    RE_EOW,                     /* end-of-word boundary assertion */
-    RE_NWB,                     /* negative word boundary assertion */
-    RE_BOG,                     /* beginning of a grapheme */
-    RE_EOG,                     /* end of a grapheme */
-    RE_BACKREF,                 /* followed by group #. */
-    RE_BACKREF_RL,
-    RE_BACKREF_CI,              /* followed by group #. */
-    RE_BACKREF_CI_RL,
-    RE_CPAT,                    /* conditional pattern */
-    RE_CPATA,                   /* conditional pattern */
-    RE_ONCE,                    /* standalone pattern */
-    RE_ASSERT,                  /* positive lookahead assertion. followed by
-                                   offset (2 bytes). */
-    RE_NASSERT,                 /* negative lookahead assertion. followed by
-                                 * offset (2 bytes). */
-    /* The following instructions are not necessary to implement the basic
-       engine, but used in the optimized code */
-    /* The *R instructions (and *R_RL counterparts) consumes all input that
-       matches, without backtracking.  */
-    RE_SET1R,                   /* (1-byte set match repeat)
-                                   followed by charset #. */
-    RE_SET1R_RL,
-    RE_NSET1R,                  /* (1-byte negative set match repeat)
-                                   followed by charset #. */
-    RE_NSET1R_RL,
-    RE_SETR,                    /* (set match repeat)
-                                   followed by charset #. */
-    RE_SETR_RL,
-    RE_NSETR,                   /* (negative set match repeat)
-                                   followed by charset #. */
-    RE_NSETR_RL,
-    RE_MATCH1R,                 /* (1-byte exact match repeat)
-                                   followed by a byte */
-    RE_MATCHR,                  /* (multiple byte exact match repeat)
-                                   followed by length, and bytes to match. */
-    RE_ANYR,                    /* (any char match repeat)  */
+#define DEF_RE_INSN(name, _) SCM_CPP_CAT(RE_, name),
+#include "gauche/regexp_insn.h"
+#undef DEF_RE_INSN
     RE_NUM_INSN
 };
 
@@ -1979,6 +1902,27 @@ static ScmObj rc3(regcomp_ctx *ctx, ScmObj ast)
 /* For debug */
 void Scm_RegDump(ScmRegexp *rx)
 {
+    static const char *opnames[] = {
+#define DEF_RE_INSN(name, _) #name,
+#include "gauche/regexp_insn.h"
+#undef DEF_RE_INSN
+    };
+
+    static enum {
+        OP_none,
+        OP_octet,
+        OP_string,
+        OP_cset,
+        OP_group,
+        OP_offset2,
+        OP_offset1_2,
+        OP_offset2_2
+    } optypes[] = {
+#define DEF_RE_INSN(_, optype) optype,
+#include "gauche/regexp_insn.h"
+#undef DEF_RE_INSN
+    };
+
     Scm_Printf(SCM_CUROUT, "Regexp %p: (flags=%08x", rx, rx->flags);
     if (rx->flags&SCM_REGEXP_BOL_ANCHORED)
         Scm_Printf(SCM_CUROUT, ",BOL_ANCHORED");
@@ -1996,217 +1940,63 @@ void Scm_RegDump(ScmRegexp *rx)
     int end = rx->numCodes;
     for (int codep = 0; codep < end; codep++) {
         int code = rx->code[codep];
-        switch (code) {
-        case RE_MATCH1:    case RE_MATCH1_CI:
-        case RE_MATCH1_RL: case RE_MATCH1_CI_RL:
+        int optype = optypes[code];
+        Scm_Printf(SCM_CUROUT, "%4d  ", codep);
+        switch (optype) {
+        case OP_none:
+            Scm_Printf(SCM_CUROUT, "%s\n", opnames[code]);
+            break;
+        case OP_octet:
+            Scm_Printf(SCM_CUROUT, "%s  0x%02x  '%c'\n",
+                       opnames[code],
+                       rx->code[codep+1],
+                       rx->code[codep+1]);
             codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s  0x%02x  '%c'\n",
-                       codep-1,
-                       (code==RE_MATCH1? "MATCH1": code == RE_MATCH1_CI? "MATCH1_CI":
-                        code==RE_MATCH1_RL? "MATCH1_RL" : "MATCH1_CI_RL"),
-                       rx->code[codep], rx->code[codep]);
-            continue;
-        case RE_MATCH:    case RE_MATCH_CI:
-        case RE_MATCH_RL: case RE_MATCH_CI_RL:
-            codep++;
+            break;
+        case OP_string:
             {
-                u_int numchars = (u_int)rx->code[codep];
+                u_int numchars = (u_int)rx->code[++codep];
                 u_int i;
-                Scm_Printf(SCM_CUROUT, "%4d  %s(%3d) '",
-                           codep-1,
-                           (code==RE_MATCH? "MATCH": code == RE_MATCH_CI? "MATCH_CI":
-                            code==RE_MATCH_RL? "MATCH_RL" : "MATCH_CI_RL"),
-                           numchars);
+                Scm_Printf(SCM_CUROUT, "%s(%3d) '",
+                           opnames[code], numchars);
                 for (i=0; i< numchars; i++)
                     Scm_Printf(SCM_CUROUT, "%c", rx->code[++codep]);
                 Scm_Printf(SCM_CUROUT, "'\n");
             }
-            continue;
-        case RE_ANY: case RE_ANY_RL:
-            Scm_Printf(SCM_CUROUT, "%4d  %s\n",
-                       codep, (code==RE_ANY? "ANY":"ANY_RL"));
-            continue;
-        case RE_TRY:
+            break;
+        case OP_cset:
+            Scm_Printf(SCM_CUROUT, "%s  %d    %S\n",
+                       opnames[code],
+                       rx->code[codep+1],
+                       rx->sets[rx->code[codep+1]]);
             codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  TRY  %d\n", codep-1,
-                       (rx->code[codep])*256 + rx->code[codep+1]);
+            break;
+        case OP_group:
+            Scm_Printf(SCM_CUROUT, "%s  %d\n",
+                       opnames[code],
+                       rx->code[codep+1]);
             codep++;
-            continue;
-        case RE_SET: case RE_SET_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s  %d    %S\n",
-                       codep-1, (code==RE_SET? "SET":"SET_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_NSET: case RE_NSET_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d    %S\n",
-                       codep-1, (code==RE_NSET? "NSET":"NSET_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_SET1: case RE_SET1_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d    %S\n",
-                       codep-1, (code==RE_SET1? "SET1":"SET1_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_NSET1: case RE_NSET1_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d    %S\n",
-                       codep-1, (code==RE_NSET1? "NSET1":"NSET1_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_JUMP:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  JUMP %d\n", codep-1,
-                       (rx->code[codep])*256 + rx->code[codep+1]);
-            codep++;
-            continue;
-        case RE_FAIL:
-            Scm_Printf(SCM_CUROUT, "%4d  FAIL\n", codep);
-            continue;
-        case RE_SUCCESS:
-            Scm_Printf(SCM_CUROUT, "%4d  SUCCESS\n", codep);
-            continue;
-        case RE_BEGIN: case RE_BEGIN_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d\n", codep-1,
-                       code==RE_BEGIN?"BEGIN":"BEGIN_RL",
-                       rx->code[codep]);
-            continue;
-        case RE_END: case RE_END_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d\n", codep-1,
-                       code==RE_END?"END":"END_RL",
-                       rx->code[codep]);
-            continue;
-        case RE_BOS:
-            Scm_Printf(SCM_CUROUT, "%4d  BOS\n", codep);
-            continue;
-        case RE_EOS:
-            Scm_Printf(SCM_CUROUT, "%4d  EOS\n", codep);
-            continue;
-        case RE_BOL:
-            Scm_Printf(SCM_CUROUT, "%4d  BOL\n", codep);
-            continue;
-        case RE_EOL:
-            Scm_Printf(SCM_CUROUT, "%4d  EOL\n", codep);
-            continue;
-        case RE_WB:
-            Scm_Printf(SCM_CUROUT, "%4d  WB\n", codep);
-            continue;
-        case RE_BOW:
-            Scm_Printf(SCM_CUROUT, "%4d  BOW\n", codep);
-            continue;
-        case RE_EOW:
-            Scm_Printf(SCM_CUROUT, "%4d  EOW\n", codep);
-            continue;
-        case RE_NWB:
-            Scm_Printf(SCM_CUROUT, "%4d  NWB\n", codep);
-            continue;
-        case RE_BOG:
-            Scm_Printf(SCM_CUROUT, "%4d  BOG\n", codep);
-            continue;
-        case RE_EOG:
-            Scm_Printf(SCM_CUROUT, "%4d  EOG\n", codep);
-            continue;
-        case RE_SET1R: case RE_SET1R_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d   %S\n",
-                       codep-1, (code==RE_SET1R? "SET1R":"SET1R_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_NSET1R: case RE_NSET1R_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d  %S\n",
-                       codep-1, (code==RE_NSET1R? "NSET1R":"NSET1R_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_SETR: case RE_SETR_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d    %S\n",
-                       codep-1, (code==RE_SETR? "SETR":"SETR_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_NSETR: case RE_NSETR_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d   %S\n",
-                       codep-1, (code==RE_NSETR? "NSETR":"NSETR_RL"),
-                       rx->code[codep],
-                       rx->sets[rx->code[codep]]);
-            continue;
-        case RE_MATCH1R:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s  0x%02x  '%c'\n",
-                       codep-1, "MATCH1R",
-                       rx->code[codep], rx->code[codep]);
-            continue;
-        case RE_MATCHR:
-            codep++;
-            {
-                u_int numchars = (u_int)rx->code[codep];
-                u_int i;
-                Scm_Printf(SCM_CUROUT, "%4d  %s(%3d) '",
-                           codep-1, "MATCHR",
-                           numchars);
-                for (i=0; i< numchars; i++)
-                    Scm_Printf(SCM_CUROUT, "%c", rx->code[++codep]);
-                Scm_Printf(SCM_CUROUT, "'\n");
-            }
-            continue;
-        case RE_ANYR:
-            Scm_Printf(SCM_CUROUT, "%4d  %s\n",
-                       codep, "ANYR");
-            continue;
-        case RE_CPAT:
-            Scm_Printf(SCM_CUROUT, "%4d  CPAT %d %d\n",
-                       codep, rx->code[codep+1],
+            break;
+        case OP_offset2:
+            Scm_Printf(SCM_CUROUT, "%s  %d\n",
+                       opnames[code],
+                       (rx->code[codep+1])*256 + rx->code[codep+2]);
+            codep += 2;
+            break;
+        case OP_offset1_2:
+            Scm_Printf(SCM_CUROUT, "%s %d %d\n",
+                       opnames[code],
+                       rx->code[codep+1],
                        rx->code[codep+2]*256 + rx->code[codep+3]);
             codep += 3;
-            continue;
-        case RE_CPATA:
-            Scm_Printf(SCM_CUROUT, "%4d  CPATA %d %d\n",
-                       codep, rx->code[codep+1]*256+rx->code[codep+2],
+            break;
+        case OP_offset2_2:
+            Scm_Printf(SCM_CUROUT, "%s %d %d\n",
+                       opnames[code],
+                       rx->code[codep+1]*256 + rx->code[codep+2],
                        rx->code[codep+3]*256 + rx->code[codep+4]);
             codep += 4;
-            continue;
-        case RE_BACKREF: case RE_BACKREF_RL:
-        case RE_BACKREF_CI: case RE_BACKREF_CI_RL:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  %s %d\n",
-                       codep-1,
-                       (code==RE_BACKREF? "BACKREF" :
-                        code==RE_BACKREF_RL? "BACKREF_RL" :
-                        code==RE_BACKREF_CI? "BACKREF_CI" : "BACKREF_CI_RL"),
-                       rx->code[codep]);
-            continue;
-        case RE_ONCE:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  ONCE %d\n", codep-1,
-                       (rx->code[codep])*256 + rx->code[codep+1]);
-            codep++;
-            continue;
-        case RE_ASSERT:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  ASSERT %d\n", codep-1,
-                       (rx->code[codep])*256 + rx->code[codep+1]);
-            codep++;
-            continue;
-        case RE_NASSERT:
-            codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  NASSERT %d\n", codep-1,
-                       (rx->code[codep])*256 + rx->code[codep+1]);
-            codep++;
-            continue;
-        default:
-            Scm_Error("regexp screwed up");
+            break;
         }
     }
 }

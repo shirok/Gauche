@@ -326,6 +326,7 @@ libextra.c   : libextra.scm $(PRECOMP_DEPENDENCY)
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
 
+regexp.$(OBJEXT) : gauche/regexp_insn.h
 execenv.$(OBJEXT) : execenv.c paths.c paths_arch.c
 libextra.$(OBJEXT): libextra.c paths.c
 
