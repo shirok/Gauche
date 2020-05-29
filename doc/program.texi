@@ -1399,39 +1399,91 @@ REPLの便利機能は@code{gauche.interactive}モジュールで実装されて
 
 @node Input editing,  , Working in REPL, Interactive development
 @subsection Input editing
+@c NODE 入力の編集
 
+@c EN
 Gauche provides input editing feature on REPL.  Currently it is
 an experimental feature and isn't turn on by default, but you can
 try it by setting @code{GAUCHE_READ_EDIT} environment variable,
 or give @code{-fread-edit} flag to @code{gosh}.
+@c JP
+GaucheはREPLでの入力の編集機能を備えています。今のところまだ実験段階であり、
+デフォルトでは有効になっていませんが、環境変数@code{GAUCHE_READ_EDIT}をセットするか、
+@code{gosh}の起動時にオプション@code{-fread-edit}を与えることにより、
+使うことができます。
+@c COMMON
 
+@c EN
 If input editing mode is on, the REPL prompt ends with @code{$}, such
 as @code{gosh$}, instead of @code{gosh>}.
+@c JP
+入力編集モードが有効であれば、REPLのプロンプトが@code{$}で終わります。
+例えばデフォルトでは@code{gosh>}のかわりに@code{gosh$}になります。
+@c COMMON
 
+@c EN
 (NB: Even if you set @code{GAUCHE_READ_EDIT} or give @code{-fread-edit},
 input editing may not be turned on if the terminal is not capable to do it.
 For example, if you run @code{gosh} inside Emacs, you'll get @code{gosh>}
-prompt even you have @code{GAUCHE_READ_EDIT} set.)
+prompt even you have @code{GAUCHE_READ_EDIT} set.  Of course, you can
+use Emacs editing features in such a case instead.)
+@c JP
+(註: @code{GAUCHE_READ_EDIT}や@code{-fread-edit}が与えられても、
+端末が必要な機能を備えていなければ入力編集モードは有効になりません。
+例えばEmacs内で@code{gosh}を起動した場合は@code{GAUCHE_READ_EDIT}がセットされていても
+プロンプトは@code{gosh>}です。もちろんその場合、Emacsの編集機能が使えるわけですが。)
+@c COMMON
 
+@c EN
 The key binding is similar to Emacs.  Eventually we'll provide customization
 feature.  Before going into details, here's a few quick useful tips.
+@c JP
+キーバインディングはEmacsと似ています。いずれカスタマイズする機能も提供する予定です。
+詳細に立ち入る前に、知っておくと良いヒントをいくつか。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 If the screen is garbled somehow, type @code{C-l} (control+l) to clear and
 redisplay.
+@c JP
+スクリーンがぐちゃぐちゃになってしまったら、@code{C-l} (control+l) で
+スクリーンがクリアされ、入力中の式が再表示されます。
+@c COMMON
 @item
+@c EN
 If you want to turn off editing during REPL session, use @code{,edit off}
 toplevel command.
+@c JP
+REPLセッション中に入力編集モードを切りたくなったら、トップレベルコマンド
+@code{,edit off} が使えます。
+@c COMMON
 @item
+@c EN
 The input editor only sends a complete S-expression to the evaluator.  If
 somehow you want to send the current input as-is (or, in case the editor
 has a bug and don't allow you to send a complete S-expression), type
-@code{C-M-x} (control-meta-x).
+@code{C-M-x} (control-meta-x) to force sending the current input to the
+evaluator.
+@c JP
+入力編集は、完全なS式が入力されて初めてそれを評価器に送ります。
+現在の入力をそのままとにかく送りたい場合 (あるいは、入力編集機能のバグで
+S式が完結しているのに送ってくれない場合) は、@code{C-M-x} (control-meta-x) を
+タイプすると強制的に現在の編集内容が評価器に送られます。
+@c COMMON
 @item
-You can type @code{C-x h b} to see the list of keymap, or
-@code{C-x h k} + keystroke to see the help of the key.
+@c EN
+You can type @code{M-h h} to see a brief summary of editor features,
+@code{M-h b} to see the list of keymap, or
+@code{M-h k} + keystroke to see the help of the key.
 (@code{C-h} is the same as backspace).
+@c JP
+@code{M-h h}で簡単な編集機能のサマリを、
+@code{M-h b}でキーマップのリストを、
+そして@code{M-h k}に続いてキーを打つことでそのキーの機能のヘルプを見ることができます。
+(ヘルプが@code{C-h}でないのは、backspaceと同じキーコードだからです。)
+@c COMMON
 @end itemize
 
 @subsubheading Cursor movement
