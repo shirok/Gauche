@@ -57,7 +57,6 @@
   (use data.trie)
   (use data.queue)
   (use util.match)
-  (use srfi-42)
   (export <vt100> <windows-console>
 
           call-with-console
@@ -213,9 +212,9 @@
 
 (define *input-escape-sequence-trie*
   (delay (rlet1 t (apply trie '() *input-escape-sequence*)
-            (do-ec (: n 128)
-                  (trie-put! t `(,(integer->char n))
-                             `(ALT ,(integer->char n)))))))
+            (dotimes [n 128]
+              (trie-put! t `(,(integer->char n))
+                         `(ALT ,(integer->char n)))))))
 
 ;; Get a char; returns a char, or #f on timeout.
 ;; The timeout argument is in us.
