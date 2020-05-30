@@ -1,3 +1,9 @@
+2020-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_Force): The original code assumes VM trampoline,
+	  so it should really be named Scm_VMForce.  We added Scm_Force which
+	  is safe to be called with C convention, using ApplyRec.
+
 2020-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/sortutil.scm: Absorbed into src/libcmp.scm

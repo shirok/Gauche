@@ -169,10 +169,10 @@ static ScmObj force_cc(ScmObj result, void **data)
         SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
     }
     Scm_VM()->handlers = handlers;
-    SCM_RETURN(Scm_Force(SCM_OBJ(p)));
+    SCM_RETURN(Scm_VMForce(SCM_OBJ(p)));
 }
 
-ScmObj Scm_Force(ScmObj obj)
+ScmObj Scm_VMForce(ScmObj obj)
 {
     if (!SCM_PROMISEP(obj)) {
         SCM_RETURN(obj);
@@ -208,6 +208,20 @@ ScmObj Scm_Force(ScmObj obj)
                 SCM_RETURN(Scm_VMApply0(c->code));
             }
         }
+    }
+}
+
+ScmObj Scm_Force(ScmObj obj)
+{
+    if (!SCM_PROMISEP(obj)) {
+        SCM_RETURN(obj);
+    } else {
+        ScmPromiseContent *c = SCM_PROMISE(obj)->content;
+        if (c->forced) SCM_RETURN(c->code);
+
+        static ScmObj force = SCM_UNDEFINED;
+        SCM_BIND_PROC(force, "force", Scm_SchemeModule());
+        return Scm_ApplyRec1(force, obj);
     }
 }
 

@@ -1806,6 +1806,7 @@ SCM_CLASS_DECL(Scm_PromiseClass);
 #define SCM_PROMISEP(obj)           SCM_XTYPEP(obj, SCM_CLASS_PROMISE)
 
 SCM_EXTERN ScmObj Scm_MakePromise(int forced, ScmObj code);
+SCM_EXTERN ScmObj Scm_VMForce(ScmObj p); /* CPS, lightweight */
 SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 
 /* Lazy pair structure is opaque to public.  Whenever you apply to an

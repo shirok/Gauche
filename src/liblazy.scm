@@ -43,7 +43,7 @@
 ;; expanded into PROMISE instruction.
 
 (select-module scheme)
-(define-cproc force (p) Scm_Force)
+(define-cproc force (p) Scm_VMForce)
 
 (select-module gauche)
 (define-cproc promise? (obj) ::<boolean> :constant
