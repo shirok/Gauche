@@ -32,8 +32,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This is conditionally included from text.console; you don't need
-;; to 'use' or 'require' this file.
+;; This is autoloaded from text.console.
 ;; The code is based on the works by Hamayama
 ;; https://github.com/Hamayama/line-editor-gw
 
