@@ -40,6 +40,8 @@
 (define-module text.console.windows
   (use os.windows)
   (use text.console)
+  (use util.match)
+  (use data.queue)
   (export <windows-console>))
 (select-module text.console.windows)
 
