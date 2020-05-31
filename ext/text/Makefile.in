@@ -6,16 +6,18 @@ SCM_CATEGORY = text
 
 include ../Makefile.ext
 
-LIBFILES = text--gap-buffer.$(SOEXT) \
+LIBFILES = text--console.$(SOEXT) \
+           text--gap-buffer.$(SOEXT) \
            text--gettext.$(SOEXT) \
            text--line-edit.$(SOEXT) \
            text--tr.$(SOEXT)
-SCMFILES = gap-buffer.sci gettext.sci line-edit.sci tr.sci
+SCMFILES = console.sci gap-buffer.sci gettext.sci line-edit.sci tr.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
 
-OBJECTS = $(text-gap-buffer_OBJECTS) \
+OBJECTS = $(text-console_OBJECTS) \
+          $(text-gap-buffer_OBJECTS) \
           $(text-gettext_OBJECTS) \
           $(text-line-edit_OBJECTS) \
 	  $(text-tr_OBJECTS)
@@ -23,6 +25,18 @@ OBJECTS = $(text-gap-buffer_OBJECTS) \
 all : $(LIBFILES)
 
 install : install-std
+
+#
+# text.console
+#
+
+text-console_OBJECTS = text--console.$(OBJEXT)
+
+text--console.$(SOEXT) : $(text-console_OBJECTS)
+	$(MODLINK) text--console.$(SOEXT) $(text-console_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+text--console.c console.sci : $(top_srcdir)/libsrc/text/console.scm
+	$(PRECOMP) -e -P -o text--console $(top_srcdir)/libsrc/text/console.scm
 
 #
 # text.gap-buffer
