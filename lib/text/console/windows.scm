@@ -37,16 +37,24 @@
 ;; The code is based on the works by Hamayama
 ;; https://github.com/Hamayama/line-editor-gw
 
-(use os.windows)
+(define-module text.console.windows
+  (use os.windows)
+  (use text.console)
+  (export <windows-console>))
+(select-module text.console.windows)
+
+(define-class <windows-console> ()
+  (;; all slots are private
+   (keybuf :init-form (make-queue))
+   (high-surrogate)
+   ))
+(define-method initialize ((con <windows-console>) initargs)
+  (next-method)
+  (set! (~ con'high-surrogate) 0))
 
 ;; These handles should not be cached.
 (define (get-ihandle) (sys-get-std-handle STD_INPUT_HANDLE))
 (define (get-ohandle) (sys-get-std-handle STD_OUTPUT_HANDLE))
-
-;; Class <windows-console> is defined in text.console.
-(define-method initialize ((con <windows-console>) initargs)
-  (next-method)
-  (set! (~ con'high-surrogate) 0))
 
 (define-method call-with-console ((con <windows-console>) proc
                                   :allow-other-keys)

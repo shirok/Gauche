@@ -147,7 +147,7 @@ SCMFILES = \
        text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/pager.scm text/progress.scm \
-       text/console/generic.scm text/console/windows.scm \
+       text/console/windows.scm \
        text/template.scm \
        text/unicode.scm text/unicode/ucd.scm text/unicode/codeset.scm \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
