@@ -1,3 +1,9 @@
+2020-06-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_StringToNumber), src/libnum.c (string->number):
+	  Support SCM_NUMBER_FORMAT_EXACT or exact? optional argument, to
+	  interpret the input as exact unless #i is explicitly given.
+
 2020-05-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/lazy.c (Scm_Force): The original code assumes VM trampoline,

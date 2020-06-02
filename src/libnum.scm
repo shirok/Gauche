@@ -232,8 +232,11 @@
     (Scm_PrintNumber o obj (& fmt))
     (return (Scm_GetOutputString o 0))))
 
-(define-cproc string->number (obj::<string> :optional (radix::<fixnum> 10))
-  (return (Scm_StringToNumber obj radix 0)))
+(define-cproc string->number (obj::<string>
+                              :optional (radix::<fixnum> 10)
+                                        (exact?::<boolean> #f))
+  (let* ([flags::u_long (?: exact? SCM_NUMBER_FORMAT_EXACT 0)])
+    (return (Scm_StringToNumber obj radix flags))))
 
 (select-module gauche)
 (define-cproc floor->exact (num) :fast-flonum :constant

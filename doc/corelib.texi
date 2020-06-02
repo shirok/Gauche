@@ -3726,7 +3726,7 @@ we assume closed range.)
 @end defun
 
 @defun number->string z :optional radix use-upper?
-@defunx string->number string :optional radix
+@defunx string->number string :optional radix exact?
 [R7RS+]
 @c EN
 These procedures convert a number and its string representation
@@ -3742,9 +3742,14 @@ character is used for digits, unless the optional argument
 The argument @var{use-upper?} is Gauche's extension.
 
 @code{String->number} takes a string @var{string} and parses it
-as a number in radix @var{radix} system.  If the number looks like
-non-exact number, only radix 10 is allowed.  If the given string
+as a number in radix @var{radix} system.  If the number contains
+a decimal point, only radix 10 is allowed.  If the given string
 can't be a number, @code{#f} is returned.
+
+The @var{exact?} optional argument of @code{string->number}
+is Gauche's extension, and it assumes
+the number is exact unless @code{#i} prefix is present, even
+the number contains a decimal point.
 @c JP
 これらの手続きは数値とそれを@var{radix}進数で表現する文字列とを変換します。
 @var{radix}は2から36の間でなければなりません。省略された場合は10進数とみなされます。
@@ -3756,9 +3761,19 @@ can't be a number, @code{#f} is returned.
 使われます。@var{use-upper?}引数はGaucheの拡張です。
 
 @code{string->number}は文字列@var{string}を取り数値を返します。
-不正確な数値は10進数表記しか認識されません。与えられた文字列が数値を構成しない
-場合は@code{#f}が返されます。
+入力が小数点を含んでいる場合は10進数表記しか認識されません。
+与えられた文字列が数値を構成しない場合は@code{#f}が返されます。
+
+@code{string->number}の省略可能引数@var{exact?}はGaucheの拡張で、
+入力に@code{#i}がついていない限り、小数点があっても正確数とみなすというものです。
 @c COMMON
+
+@example
+(string->number "2.718281828459045" 10 #t)
+  @result{} 543656365691809/200000000000000
+(string->number "#i2.718281828459045" 10 #t)
+  @result{} 2.718281828459045
+@end example
 @end defun
 
 @deffn {Generic Function} x->number obj

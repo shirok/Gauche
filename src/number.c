@@ -4485,7 +4485,9 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
         struct numread_packet ctx;
         ctx.buffer = p;
         ctx.buflen = size;
-        ctx.exactness = NOEXACT;
+        ctx.exactness = ((flags&SCM_NUMBER_FORMAT_EXACT)
+                         ? EXACT
+                         : NOEXACT);
         ctx.padread = FALSE;
         ctx.explicit = FALSE;
         ctx.strict = flags&SCM_NUMBER_FORMAT_STRICT_R7RS;

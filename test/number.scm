@@ -117,6 +117,13 @@
        (test-error <read-error> #/Radix prefix isn't allowed/)
        (read-from-string "#!r7rs #12r123"))
 
+(test* "string->number exact argument" #t
+       (eqv? (string->number "0.1234567890123" 10 #t)
+             1234567890123/10000000000000))
+(test* "string->number exact argument (override)" #t
+       (eqv? (string->number "#i0.1234567890123" 10 #t)
+             0.1234567890123))
+
 (define (radix-tester radix)
   (list
    (let loop ((digits 0)
