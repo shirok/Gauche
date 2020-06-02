@@ -1486,85 +1486,207 @@ You can type @code{M-h h} to see a brief summary of editor features,
 @c COMMON
 @end itemize
 
+@c EN
 @subsubheading Cursor movement
+@c JP
+@subsubheading カーソル移動
+@c COMMON
 
+@c EN
 @code{C-f} (forward) and @code{C-b} (backward) moves the cursor forward
 and backward character-wise.  @code{C-p} (previous) and @code{C-n} (next)
 moves character to previous or next line, if the input already has
 multiple lines, or moves to previous or next history.
+@c JP
+@code{C-f} (forward) と @code{C-b} (backward) はカーソルを一文字前あるいは
+一文字後に移動します。@code{C-p} (previous) と @code{C-n} (next) は
+カーソルを一行前あるいは一行後に移動します。移動方向に行が無ければ、
+入力バッファが一つ前または一つ後のヒストリに置き換わります。
+@c COMMON
 
+@c EN
 @code{M-f} and @code{M-b} move the cursor forward and backward, word-wise.
+@c JP
+@code{M-f}と@code{M-b}は単語単位でカーソルを前後に移動します。
+@c COMMOM
 
+@c EN
 @code{C-a} and @code{C-e} to move to the beginning and end of the line,
 @code{M-<} and @code{M->} to move to the beginning and end of of the input.
+@c JP
+@code{C-a}と@code{C-e}は行の先頭または末尾に、
+@code{M-<}と@code{M->}は入力バッファの最初または最後にカーソルを移動します。
+@c COMMON
 
 @subsubheading Undo
 
-@code{C-_} is undo the edit.  We follow the Emacs model of undo
+@c EN
+@code{C-_} is undo the edit.  You can keep typing @code{C-_} to
+undo the edits you've made.
+We follow the Emacs model of undo
 semantics, which allows ``undoing undoes''.
-For the detailed algorithm, see @file{lib/text/line-edit.scm}
+For the detailed algorithm, see the comment at the bottom of
+@file{lib/text/line-edit.scm}
 in the source tree.
+@c JP
+直前の変更をundoするには@code{C-_}を使います。@code{C-_}を続けてタイプすれば
+どんどん編集をundoできます。undoのモデルはEmacsと同じで、つまり
+[undo自体をundoする]こともできます。
+詳しいアルゴリズムは、ソースの@file{lib/text/line-edit.scm}末尾の
+コメントを見てください。
+@c COMMON
 
+@c EN
 @subsubheading Kill and yank
+@c JP
+@subsubheading killとyank
+@c COMMON
 
+@c EN
 @code{C-k} removes characters from the cursor to the end of line.
 If the cursor is at the end of the line though, it removes the newline
 character (so that next line is combined to the current line).
+@c JP
+@code{C-k}はカーソルから行末までの文字を取り除きます。もしカーソルが既に
+行末にあったら、改行文字そのものを取り除きます(つまり、次の行が現在の行の後に
+接続されます)。
+@c COMMON
 
+@c EN
 @code{M-d} removes a word that contains the cursor, or a word
 immediately after the cursor if it is not on a word.
+@c JP
+@code{M-d}はカーソルが単語の中にあればその単語を、そうでなければ直後の単語を
+取り除きます。
+@c COMMON
 
+@c EN
 @code{C-@@} set a mark to the current cursor position.  @code{C-w} removes
 chracters between the cursor and the mark.
+@c JP
+@code{C-@@}はカーソル位置をマークします。その後、@code{C-w}で
+その時点のカーソルとマークの間の文字を取り除けます。
+@c COMMON
 
+@c EN
 The characters removed by those commands are saved
 in the buffer called ``kill-ring''.
 They can be recalled at the cursor position by @code{C-y} (yank).
 If you press @code{M-y} immediately followed by @code{C-y}, you can
 go back to the older killed characters.
+@c JP
+これらのコマンドで取り除かれた文字は、``kill-ring'' と呼ばれるバッファに
+セーブされていて、@code{C-y}をタイプするとカーソル位置に復元することができます。
+@code{C-y}の後に続けて@code{M-y}をタイプしてゆくと、``kill-ring''にセーブされた
+さらに古い内容へと遡って復元することができます。
+@c COMMON
 
+@c EN
 @subsubheading Finishing input
+@c JP
+@subsubheading 入力の終了
+@c COMMON
 
+@c EN
 @code{RET} (or @code{C-m}) inserts a newline if the input isn't
 a complete S-expresson.  If the input is already a complete S-expression,
 however, it sends the entire input to the evaluator, no matter where
 the cursor is.  If you want to insert a newline in a complete S-expression,
 you can use @code{C-j}.
+@c JP
+入力のS式がまだ完結していなければ、@code{RET} (@code{C-m}) は入力に改行文字を
+挿入します。もしS式が完結していれば、カーソルがどこにあっても@code{RET} (@code{C-m})は
+入力を評価機に送ります。もし完結したS式の途中に改行を追加したい場合は
+@code{C-j}をタイプしてください。
+@c COMMON
 
-@code{M-C-x} sets the current input regardless that the input is
+@c EN
+@code{M-C-x} sends the current input regardless that the input is
 a complete S-expression or not.
+@c JP
+S式が完結しているかどうかにかかわらず入力を評価したい場合は、
+@code{M-C-x}をタイプしてください。
+@c COMMON
 
+@c EN
 @subsubheading History
+@c JP
+@subsubheading ヒストリ
+@c COMMON
 
+@c EN
 Input history is remembered and recalled by @code{M-p} (prev-history)
 and @code{M-n} (next-history).
 The cursor movement command @code{C-p} and @code{C-n} also moves to
 the previous or next history if it is pressed when the cursor is
 at the beginning or the end of the input lines.
+@c JP
+入力のヒストリは保存されていて、@code{M-p} (prev-history)と
+@code{M-n} (next-history)で呼び出すことができます。
+カーソル上下移動の@code{C-p}と@code{C-n}も、現在の入力バッファを越えて移動しようとすると
+前または後のヒストリを呼び出します。
+@c COMMON
 
+@c EN
 The input interrupted by @code{C-c} isn't remembered.
+@c JP
+@code{C-c}で中断された入力はヒストリに保存されません。
+@c COMMON
 
+@c EN
 By default, the input is saved to a file @file{~/.gosh_history} when the
 REPL is terminated normally, and reloaded when the next REPL is invoked.
 The name of the history file can be changed by the environment variable
 @code{GAUCHE_HISTORY_FILE}.  If the environment variable is defined to an
 empty string, however, the history won't be saved.
+@c JP
+デフォルトでは、入力ヒストリはREPLが正常終了する際に@file{~/.gosh_history}され、
+次にREPLが起動する際に読み込まれます。
+ヒストリを保存するファイル名は環境変数@code{GAUCHE_HISTORY_FILE}で変更できます。
+また、この環境変数が空文字列にセットされていれば、ヒストリは保存されません。
+@c COMMON
 
+@c EN
 @subsubheading Miscellaneous
+@c JP
+@subsubheading その他
+@c COMMON
 
-@code{C-g} cancels the current command.
+@c EN
+@code{C-g} cancels the current multi-key sequences.
+@c JP
+@code{C-g}は複数キーシーケンスをキャンセルします。
+@c COMMON
 
+@c EN
 @code{C-c} cancels the current input.
+@c JP
+@code{C-c}は現在の入力をキャンセルします。
+@c COMMON
 
+@c EN
 @code{C-t} transpose characters at and before the cursor.
+@c JP
+@code{C-t}はカーソルとその前の文字を入れ替えます。
+@c COMMON
 
+@c EN
 @code{C-q} reads the next keystroke and insert it into the input as is.
+@c JP
+@code{C-q}は次のキーストロークを読み取ってそれを入力にそのまま挿入します。
+@c COMMON
 
+@c EN
 @code{M-(} inserts a pair of parentheses, and locate a cursor inside them.
+@c JP
+@code{M-(}は対になった括弧を挿入し、カーソルを括弧の間に置きます。
+@c COMMON
 
+@c EN
 @code{C-l} clears the screen and redraws the current input buffer.
-
-
+@c JP
+@code{C-l}は画面をクリアし、入力バッファを再表示します。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Writing Scheme scripts, Debugging, Interactive development, Programming in Gauche
