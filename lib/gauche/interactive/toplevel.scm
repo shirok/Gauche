@@ -430,7 +430,8 @@
  \nbuffer, for the copy&paste, etc."
   (^[exprs]
     (match exprs
-      [() (write *1 (make-write-controls)) (newline)]
+      ;; TODO: Get console width if possible
+      [() (write *1 (make-write-controls :pretty #t :width 79)) (newline)]
       [_ (usage)])
     *no-value*))
 
