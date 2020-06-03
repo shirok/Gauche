@@ -4487,7 +4487,9 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
         ctx.buflen = size;
         ctx.exactness = ((flags&SCM_NUMBER_FORMAT_EXACT)
                          ? EXACT
-                         : NOEXACT);
+                         : ((flags&SCM_NUMBER_FORMAT_INEXACT)
+                            ? INEXACT
+                            : NOEXACT));
         ctx.padread = FALSE;
         ctx.explicit = FALSE;
         ctx.strict = flags&SCM_NUMBER_FORMAT_STRICT_R7RS;

@@ -234,8 +234,15 @@
 
 (define-cproc string->number (obj::<string>
                               :optional (radix::<fixnum> 10)
-                                        (exact?::<boolean> #f))
-  (let* ([flags::u_long (?: exact? SCM_NUMBER_FORMAT_EXACT 0)])
+                                        (default-exactness #f))
+  (let* ([flags::u_long 0])
+    (cond
+     [(SCM_EQ default-exactness 'exact) 
+      (set! flags SCM_NUMBER_FORMAT_EXACT)]
+     [(SCM_EQ default-exactness 'inexact) 
+      (set! flags SCM_NUMBER_FORMAT_INEXACT)]
+     [(SCM_FALSEP default-exactness)]
+     [else (Scm_Error "default-exactness must be either #f, exact or inexact, but got: %S" default-exactness)])
     (return (Scm_StringToNumber obj radix flags))))
 
 (select-module gauche)

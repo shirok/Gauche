@@ -3726,7 +3726,7 @@ we assume closed range.)
 @end defun
 
 @defun number->string z :optional radix use-upper?
-@defunx string->number string :optional radix exact?
+@defunx string->number string :optional radix default-exactness
 [R7RS+]
 @c EN
 These procedures convert a number and its string representation
@@ -3746,10 +3746,11 @@ as a number in radix @var{radix} system.  If the number contains
 a decimal point, only radix 10 is allowed.  If the given string
 can't be a number, @code{#f} is returned.
 
-The @var{exact?} optional argument of @code{string->number}
-is Gauche's extension, and it assumes
-the number is exact unless @code{#i} prefix is present, even
-the number contains a decimal point.
+The @var{default-exactness} optional argument of @code{string->number}
+is Gauche's extension, and it must be either @code{#f} (default),
+a symbol @code{exact}, or a symbol @code{inexact}.
+If it is either symbol, it sets the exactness of the number if
+no exactness prefix (@code{#e} or @code{#i}) is given.
 @c JP
 これらの手続きは数値とそれを@var{radix}進数で表現する文字列とを変換します。
 @var{radix}は2から36の間でなければなりません。省略された場合は10進数とみなされます。
@@ -3764,15 +3765,22 @@ the number contains a decimal point.
 入力が小数点を含んでいる場合は10進数表記しか認識されません。
 与えられた文字列が数値を構成しない場合は@code{#f}が返されます。
 
-@code{string->number}の省略可能引数@var{exact?}はGaucheの拡張で、
-入力に@code{#i}がついていない限り、小数点があっても正確数とみなすというものです。
+@code{string->number}の省略可能引数@var{default-exactness}はGaucheの拡張で、
+@code{#f} (デフォルト)あるいはシンボル@code{exact}または@code{inexact}の
+いずれかでなければなりません。
+シンボルが与えられた場合は、正確数か不正確数かがプレフィクス(@code{#e}もしくは@code{#i})
+で明示されていない場合の正確性の解釈を指定します。
 @c COMMON
 
 @example
-(string->number "2.718281828459045" 10 #t)
+(string->number "2.718281828459045" 10 'exact)
   @result{} 543656365691809/200000000000000
-(string->number "#i2.718281828459045" 10 #t)
+(string->number "#i2.718281828459045" 10 'exact)
   @result{} 2.718281828459045
+(string->number "1/3" 10 'inexact)
+  @result{} 0.3333333333333333
+(string->number "#e1/3" 10 'inexact)
+  @result{} 1/3
 @end example
 @end defun
 

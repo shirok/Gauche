@@ -118,11 +118,17 @@
        (read-from-string "#!r7rs #12r123"))
 
 (test* "string->number exact argument" #t
-       (eqv? (string->number "0.1234567890123" 10 #t)
+       (eqv? (string->number "0.1234567890123" 10 'exact)
              1234567890123/10000000000000))
 (test* "string->number exact argument (override)" #t
-       (eqv? (string->number "#i0.1234567890123" 10 #t)
+       (eqv? (string->number "#i0.1234567890123" 10 'exact)
              0.1234567890123))
+(test* "string->number inexact argument" #t
+       (eqv? (string->number "1/3" 10 'inexact)
+             0.3333333333333333))
+(test* "string->number inexact argument" #t
+       (eqv? (string->number "#e1/3" 10 'inexact)
+             1/3))
 
 (define (radix-tester radix)
   (list

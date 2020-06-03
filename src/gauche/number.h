@@ -357,8 +357,11 @@ enum ScmNumberFormatFlags {
                                             */
     SCM_NUMBER_FORMAT_STRICT_R7RS = (1L<<4),/*[N] ignored.
                                               [S] reject syntax outside of R7RS*/
-    SCM_NUMBER_FORMAT_EXACT = (1L<<5)     /* [N] ignored.
+    SCM_NUMBER_FORMAT_EXACT = (1L<<5),    /* [N] ignored.
                                              [S] treat as if #e is present if
+                                             no exactness prefix is given */
+    SCM_NUMBER_FORMAT_INEXACT = (1L<<6)   /* [N] ignored.
+                                             [S] treat as if #i is present if
                                              no exactness prefix is given */
 };
 
