@@ -1508,7 +1508,7 @@ multiple lines, or moves to previous or next history.
 @code{M-f} and @code{M-b} move the cursor forward and backward, word-wise.
 @c JP
 @code{M-f}と@code{M-b}は単語単位でカーソルを前後に移動します。
-@c COMMOM
+@c COMMON
 
 @c EN
 @code{C-a} and @code{C-e} to move to the beginning and end of the line,
