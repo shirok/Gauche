@@ -107,16 +107,16 @@
   (in (read-line)))
 
 ;; Detect potential typo of extract directives.
-;; Some words (TODO etc.) are not directives, but we include here to avoid
-;; false positives.
+;; I tend to miss the warnings, so make it an error.  Add allowed words
+;; as needed.
 (define (check-typo word line)
   (when (and (string-any char-upper-case? word)
              (let1 ds (re-distances word '("EN" "JP" "COMMON" "NODE" "MOD"
                                            "TODO" "NOTE" "NB"))
                (<= 1 (apply min ds) 2)))
-    (warn "Suspicious extract directive ~s at or near ~s:~d\n"
-          word (port-name (current-input-port))
-          (port-current-line (current-input-port)))))
+    (errorf "Unrecognized extract directive ~s at or near ~s:~d\n"
+            word (port-name (current-input-port))
+            (port-current-line (current-input-port)))))
 
 ;; We search relative to the current directory first, then
 ;; relative to $srcdir; for FILE may be the generated one.
