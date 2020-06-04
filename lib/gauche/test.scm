@@ -220,22 +220,25 @@
 
 ;; Primitive test.  This uses neither with-error-handler nor the
 ;; object system, so it can be used _before_ those constructs are tested.
-(define (prim-test msg expect thunk . compare)
-  (let ([cmp (if (pair? compare) (car compare) test-check)])
+(define (prim-test msg expect thunk . args)
+  (let ([cmp  (if (pair? args) (car args) test-check)]
+        [hook (and (pair? args) (pair? (cdr args)) (cadr args))])
     (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
     (test-count++)
     (let ([r (thunk)])
       (cond [(cmp expect r)
              (format #t "ok\n")
-             (test-pass++)]
+             (test-pass++)
+             (when hook (hook 'pass msg expect r))]
             [else
              (format/ss #t "ERROR: GOT ~S\n" r)
-             (test-fail++ msg expect r)])
+             (test-fail++ msg expect r)
+             (when hook (hook 'fail msg expect r))])
       (flush))))
 
 ;; Normal test.
-(define (test msg expect thunk . compare)
+(define (test msg expect thunk . args)
   (apply prim-test msg expect
          (lambda ()
            (guard (e [else
@@ -248,7 +251,7 @@
                               (slot-ref e 'message)
                               e))])
              (thunk)))
-         compare))
+         args))
 
 ;; A convenient macro version
 ;; We use er-macro-transformer, so test* should be used after macro
@@ -256,8 +259,8 @@
 (define-syntax test*
   (er-macro-transformer
    (lambda (f r c)
-     (apply (lambda (_ msg expect form . compare)
-              `(,(r 'test) ,msg ,expect (,(r 'lambda) () ,form) ,@compare))
+     (apply (lambda (_ msg expect form . args)
+              `(,(r 'test) ,msg ,expect (,(r 'lambda) () ,form) ,@args))
             f))))
 
 ;; Toplevel binding sanity check ----------------------------------

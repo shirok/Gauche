@@ -18725,7 +18725,7 @@ with status 1 if there has been any failure.
 @subheading 個々のテスト
 @c COMMON
 
-@defmac test* name expected expr :optional check
+@defmac test* name expected expr :optional check hook
 @c MOD gauche.test
 @c EN
 A convenience macro that wraps @var{expr} by lambda.
@@ -18739,7 +18739,7 @@ A convenience macro that wraps @var{expr} by lambda.
 @end example
 @end defmac
 
-@defun test name expected thunk :optional check
+@defun test name expected thunk :optional check hook
 @c MOD gauche.test
 @c EN
 Calls @var{thunk}, and checks its result fits @var{expected}
@@ -18804,6 +18804,30 @@ of error.  See the entry of @code{test-error} below for the details.
 その結果を、下で説明する@code{test-error}手続きで作った@code{<test-error>}
 オブジェクトと比較することにより、エラーが期待されたものであるか、
 また適切な例外が上がっているかをテストすることができます。
+@c COMMON
+
+@c EN
+The @var{hook} optional argument must be an @code{#f} or a procedure
+that takes four arguments.  If it is a procedure, it is called after
+the @code{test} procedure finishes the test.  The first argument
+is a symbol either @code{pass} or @code{fail}, the second argument
+is @var{name}, the third argument is @var{expected}, and the fourth argument
+is either the result of @var{thunk}, or a @code{<test-error>} object
+when @var{thunk} raises an error.  The return value of @var{hook} is
+ignored.
+
+It is mainly for libraries that wrap @code{gauche.test} and wants to
+do its own bookkeeping.
+@c JP
+省略可能引数@var{hook}は、@code{#f}か4引数の手続きでなければなりません。
+それが手続きの場合、@code{test}がテストを終えた後で次の引数で呼び出されます:
+第1引数はシンボル@code{pass}か@code{fail}、第2引数は@var{name}、
+第3引数は@var{expected}、そして第4引数は、@var{thunk}の返り値か、
+@var{thunk}がエラーを投げた場合は@code{<test-error>}オブジェクト。
+@var{hook}の戻り値は無視されます。
+
+これは、@code{gauche.test}をラップしたライブラリが独自にテスト結果を記録したい
+場合に便利です。
 @c COMMON
 @end defun
 
