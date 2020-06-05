@@ -2491,10 +2491,10 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
            F's before handler
 
    Returns a list of (before-flag <handler> . <handler-chain>).
-   before-flag is used to determine when handler chain is updated.
+   The before-flag is used to determine when handler chain is updated.
    (for 'before' handler, handler chain should be updated after calling it.
     for 'after' handler, handler chain should be updated before calling it.)
-   the <handler-chain> is the state of handlers on which <handler> should
+   The <handler-chain> is the state of handlers on which <handler> should
    be executed. */
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
 {
@@ -2738,10 +2738,12 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
-    ep->handlers = vm->handlers;
+    ep->handlers = SCM_NIL; /* don't use for partial continuation */
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */
-    ep->resetChain = vm->resetChain;
+    ep->resetChain = (SCM_PAIRP(vm->resetChain)?
+                      Scm_Cons(Scm_Cons(SCM_FALSE, SCM_NIL), SCM_NIL) :
+                      SCM_NIL); /* used only to detect reset missing */
     ep->partHandlers = SCM_NIL;
 
     /* get the dynamic handlers chain saved on reset */
@@ -2750,14 +2752,14 @@ ScmObj Scm_VMCallPC(ScmObj proc)
 
     /* cut the dynamic handlers chain from current to reset */
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
-    SCM_FOR_EACH(p, ep->handlers) {
+    SCM_FOR_EACH(p, vm->handlers) {
         if (p == reset_handlers) break;
         SCM_APPEND1(h, t, SCM_CAR(p));
     }
     ep->partHandlers = h;
 
     /* call dynamic handlers for exiting reset */
-    call_dynamic_handlers(reset_handlers, ep->handlers);
+    call_dynamic_handlers(reset_handlers, vm->handlers);
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    SCM_MAKE_STR("continuation"));
