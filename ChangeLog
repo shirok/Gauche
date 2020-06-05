@@ -1,5 +1,7 @@
 2020-06-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-78.scm: Officially support srfi-78.
+
 	* lib/gauche/test.scm: Add some hooks to make it easy to wrap
 	  gauche.test with other test framework.
 

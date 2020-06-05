@@ -44,6 +44,7 @@ srfi N is supported by Gauche.)
 * Octet vectors::               srfi-66
 * Basic hash tables::           srfi-69
 * Octet-addressed binary blocks::  srfi-74
+* Lightweight testing::         srfi-78
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
 * Purely functional random-access pairs and lists::  srfi-101
@@ -57,7 +58,7 @@ srfi N is supported by Gauche.)
 * Comparator sublibrary::       srfi-162
 * Hooks (srfi)::                srfi-173
 * POSIX timespecs::             srfi-174
-* Linear adjustable-lenght strings:: srfi-185
+* Linear adjustable-lenght strings::  srfi-185
 @end menu
 
 
@@ -4325,7 +4326,7 @@ This is Gauche's @code{eq-hash}, except this one can take bound argument.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Octet-addressed binary blocks, Accessing environment variables, Basic hash tables, Library modules - SRFIs
+@node Octet-addressed binary blocks, Lightweight testing, Basic hash tables, Library modules - SRFIs
 @section @code{srfi-74} - Octet-addressed binary blocks
 
 @deftp {Module} srfi-74
@@ -4515,55 +4516,65 @@ Each integer occupies @var{size} octets.
 @end defun
 
 @c ----------------------------------------------------------------------
-@c @node Lightweight testing
-@c @section @code{srfi-78} - Lightweight testing
-@c @c NODE 軽量なテスト, @code{srfi-78} - 軽量なテスト
+@node Lightweight testing, Accessing environment variables, Octet-addressed binary blocks, Library modules - SRFIs
+@section @code{srfi-78} - Lightweight testing
+@c NODE 軽量なテスト, @code{srfi-78} - 軽量なテスト
 
-@c NOTE: Keep this unofficial, until we integrate this into gauche.test.
+@deftp {Module} srfi-78
+@mdindex srfi-78
+This srfi defines @code{check} and @code{check-ec} macro, along
+with a few helper procedures, to write tests.  Especially,
+@code{check-ec} uses the same comprehension style as @code{srfi-42}
+to run test expressions with various combinations of input easily.
 
-@c @deftp {Module} srfi-78
-@c @mdindex srfi-78
-@c This srfi defines @code{check} and @code{check-ec} macro, along
-@c with a few helper procedures, to write tests.  Especially,
-@c @code{check-ec} uses the same comprehension style as @code{srfi-42}
-@c to run test expressions with various combinations of input easily.
+We implemented this srfi to work with @code{gauche.test}
+(@pxref{Unit testing}).
+Specifically,
+if the check macros are invoked while @code{gauche.test} is active
+(that is, between @code{test-start} and @code{test-end}), the check
+macros are simply a wrapper of Gauche's @code{test} macro; the results
+are tracked and reported by @code{gauche.test}. 
 
-@c Currently we provide the module independently from @code{gauche.test},
-@c but the plan is to integrate this into @code{gauche.test} so that
-@c the test results are folded into @code{gauche.test} and can be reported
-@c together.
-@c @end deftp
+If this srfi is used without @code{gauche.test}, however, it works as
+specified by the srfi, including reporting.  So, a tests using this srfi
+can be run in both ways---if it is loaded by itself, it runs as vanilla srfi-78,
+and if it is included in a test file that uses @code{gacuhe.test}, it runs
+as a part of @code{gauche.test}.
+@end deftp
 
-@c @defmac check expr => expected
-@c @defmacx check expr (=> equal) expected
-@c [SRFI-78]
-@c @end defmac
+@defmac check expr => expected
+@defmacx check expr (=> equal) expected
+[SRFI-78]
+Evaluate @var{expected} and @var{equal}, then evaluate @var{expr} and
+compare the results of @var{expected} and @var{expr} using @var{equal}.
+In the first form, @code{equal?} is used as @var{equal}.
+@end defmac
 
-@c @defmac check-ec qualifier @dots{} => expected (argument @dots{})
-@c @defmacx check-ec qualifier @dots{} (=> equal) expected (argument @dots{})
-@c @defmacx check-ec qualifier @dots{} => expected
-@c @defmacx check-ec qualifier @dots{} (=> equal) expected
-@c [SRFI-78]
-@c @end defmac
+@defmac check-ec qualifier @dots{} => expected (argument @dots{})
+@defmacx check-ec qualifier @dots{} (=> equal) expected (argument @dots{})
+@defmacx check-ec qualifier @dots{} => expected
+@defmacx check-ec qualifier @dots{} (=> equal) expected
+[SRFI-78]
+@end defmac
 
-@c @defun check-report
-@c [SRFI-78]
-@c @end defun
+@defun check-report
+[SRFI-78]
+@end defun
 
-@c @defun check-set-mode! mode
-@c [SRFI-78]
-@c @end defun
+@defun check-set-mode! mode
+[SRFI-78]
+@end defun
 
-@c @defun check-reset!
-@c [SRFI-78]
-@c @end defun
+@defun check-reset!
+[SRFI-78]
+@end defun
 
-@c @defun check-passed? expected-total-count
-@c [SRFI-78]
-@c @end defun
+@defun check-passed? expected-total-count
+[SRFI-78]
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Accessing environment variables, Basic socket interface, Octet-addressed binary blocks, Library modules - SRFIs
+@node Accessing environment variables, Basic socket interface, Lightweight testing, Library modules - SRFIs
 @section @code{srfi-98} - Accessing environment variables
 @c NODE 環境変数へのアクセス, @code{srfi-98} - 環境変数へのアクセス
 

@@ -696,14 +696,11 @@ srfi-78, srfi-78
 
 Lightweight testing
 Supported by the module @code{srfi-78}.
-Since Gauche already has its own test framework (@pxref{Unit testing}),
-this is mainly for third-party modules that adopt srfi-78 for testing.
+It can work with @code{gauche.test}.  @xref{Lightweight testing}.
 
 軽いテストフレームワーク
 モジュール@code{srfi-78}でサポートされます。
-Gaucheは既に独自のテストフレームワークを持っているので(@ref{Unit testing}参照)、
-このモジュールは主としてサードパーティ製のモジュールがsrfi-78をテストに
-使っている場合をサポートするためのものです。
+@code{gauche.test}と一緒に使うこともできます。@ref{Lightweight testing}参照。
 
 
 srfi-87
