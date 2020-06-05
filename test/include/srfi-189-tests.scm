@@ -418,7 +418,7 @@
 
 ;;;; Map, fold, and unfold
 
-'(define (check-map-fold-and-unfold)
+(define (check-map-fold-and-unfold)
   (print-header "Testing maps, folds, and unfolds...")
 
   ;; maybe-map
@@ -483,7 +483,7 @@
 
 ;;;; Conditional syntax
 
-'(define (check-syntax)
+(define (check-syntax)
   (print-header "Testing syntax...")
 
   (check (maybe-if (just #t) #t #f)             => #t)

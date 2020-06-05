@@ -44,17 +44,17 @@
           maybe-length either-length
           maybe-filter maybe-remove either-filter either-remove
           maybe-sequence either-sequence
-          ;; either->maybe list->just list->right
-          ;; maybe->list either->list
-          ;; maybe->lisp lisp->maybe
-          ;; maybe->eof eof->maybe
-          ;; maybe->values either->values
-          ;; values->maybe values->either
-          ;; maybe->lisp-values either->lisp-values
+          either->maybe list->just list->right
+          maybe->list either->list
+          maybe->lisp lisp->maybe
+          maybe->eof eof->maybe
+          maybe->values either->values
+          values->maybe values->either
+          maybe->lisp-values either->lisp-values
           ;; lisp-values->maybe lisp-values->either
-          ;; maybe-map either-map maybe-for-each either-for-each
-          ;; maybe-fold either-fold maybe-unfold either-unfold
-          ;; maybe-if
+          maybe-map either-map maybe-for-each either-for-each
+          maybe-fold either-fold maybe-unfold either-unfold
+          maybe-if
 
           ;; try-not try=? tri-and tri-or tri-merge
           )
@@ -299,6 +299,55 @@
       [(val) (values val #t)]
       [_ (error "right doesn't have exactly one value:" either)])))
 
-  
+(define (maybe-map proc maybe)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe)
+    maybe
+    (make <just> :objs (apply proc (~ maybe'objs)))))
+(define (either-map proc either)
+  (assume-type either <either>)
+  (if (left? either)
+    either
+    (make <right> :objs (apply proc (~ either'objs)))))
 
-  
+(define (maybe-for-each proc maybe)
+  (assume-type maybe <maybe>)
+  (when (just? maybe)
+    (apply proc (~ maybe'objs)))
+  (undefined))
+(define (either-for-each proc either)
+  (assume-type either <either>)
+  (when (right? either)
+    (apply proc (~ either'objs)))
+  (undefined))
+
+(define (maybe-fold kons knil maybe)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe)
+    (apply kons (append (~ maybe'objs) (list knil)))
+    knil))
+(define (either-fold kons knil either)
+  (assume-type either <either>)
+  (if (right? either)
+    (apply kons (append (~ either'objs) (list knil)))
+    knil))
+
+(define (maybe-unfold stop? mapper _ . seeds)
+  (if (apply stop? seeds)
+    (nothing)
+    (apply just (apply mapper seeds))))
+(define (either-unfold stop? mapper _ . seeds)
+  (if (apply stop? seeds)
+    (apply left seeds)
+    (apply right (apply mapper seeds))))
+
+(define-syntax maybe-if
+  (syntax-rules ()
+    [(_ expr justx nothingx)
+     (let1 x expr
+       (assume-type x <maybe>)
+       (if (just? expr) justx nothingx))]))
+
+
+
+    
