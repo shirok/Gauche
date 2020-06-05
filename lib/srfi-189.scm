@@ -224,3 +224,81 @@
   (let/cc return
     (right (cmap (^[ee] (either-ref ee (^ _ (return ee)) aggregator))
                  input))))
+
+(define (maybe->either maybe obj)
+  (assume-type maybe <maybe>)
+  (if (just? maybe)
+    (apply right (~ maybe'objs))
+    (left obj)))
+
+(define (either->maybe either)
+  (assume-type either <either>)
+  (if (right? either)
+    (apply just (~ either'objs))
+    (nothing)))
+
+(define (list->just lis) (apply just lis))
+(define (list->right lis) (apply right lis))
+
+(define (maybe->list maybe)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe) '() (~ maybe'objs)))
+(define (either->list either)
+  (assume-type either <either>)
+  (~ either'objs))
+
+(define (maybe->lisp maybe)
+  (assume-type maybe <maybe>)
+  (and (just? maybe)
+       (match (~ maybe'objs)
+         [(val) val]
+         [_ (error "just doesn't have exactly one value:" maybe)])))
+
+(define (lisp->maybe obj)
+  (if obj (just obj) (nothing)))
+
+(define (maybe->eof maybe)
+  (assume-type maybe <maybe>)
+  (if (just? maybe)
+    (match (~ maybe'objs)
+      [(val) val]
+      [_ (error "just doesn't have exactly one value:" maybe)])
+    (eof-object)))
+
+(define (eof->maybe obj)
+  (if (eof-object? obj)
+    (nothing)
+    (just obj)))
+
+(define (maybe->values maybe)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe) (values) (apply values (~ maybe'objs))))
+(define (either->values either)
+  (assume-type either <either>)
+  (if (left? either) (values) (apply values (~ either'objs))))
+
+(define (values->maybe producer)
+  (call-with-values producer
+    (^ xs (if (null? xs) (nothing) (apply just xs)))))
+(define (values->either producer obj)
+  (call-with-values producer
+    (^ xs (if (null? xs) (left obj) (apply right xs)))))
+
+(define (maybe->lisp-values maybe)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe)
+    (values #f #f)
+    (match (~ maybe'objs)
+      [(val) (values val #t)]
+      [_ (error "just doesn't have exactly one value:" maybe)])))
+(define (either->lisp-values either)
+  (assume-type either <either>)
+  (if (left? either)
+    (values #f #f)
+    (match (~ either'objs)
+      [(val) (values val #t)]
+      [_ (error "right doesn't have exactly one value:" either)])))
+
+  
+
+  

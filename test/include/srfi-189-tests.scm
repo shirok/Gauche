@@ -21,7 +21,7 @@
 
 (import (scheme base))
 (import (scheme write))
-(import (srfi 189))
+(import (srfi-189))                     ; draft
 
 (cond-expand
   ((library (srfi 78))
@@ -247,30 +247,30 @@
   ;;   (check (maybe= eqv? (just #t) ((maybe-compose neg neg neg) (just #f)))
   ;;     => #t))
 
-  ;; ;; either-bind
-  ;; (check (left? (either-bind (left #f) right)) => #t)
+  ;; either-bind
+  (check (left? (either-bind (left #f) right)) => #t)
 
-  ;; (check (right-of-z? (either-bind (right 'z) right)) => #t)
+  (check (right-of-z? (either-bind (right 'z) right)) => #t)
 
-  ;; (check (let ((e (right #t #f)))
-  ;;          (either= eqv? e (either-bind e right)))
-  ;;   => #t)
+  (check (let ((e (right #t #f)))
+           (either= eqv? e (either-bind e right)))
+    => #t)
 
-  ;; ;; Associativity of bind.
-  ;; (let ((k (lambda (n) (right (* n 2))))
-  ;;       (h (lambda (n) (right (+ n 5))))
-  ;;       (e (right 1)))
-  ;;   (check
-  ;;    (either= eqv? (either-bind e (lambda (n) (either-bind (k n) h)))
-  ;;                  (either-bind (either-bind e k) h))
-  ;;    => #t))
+  ;; Associativity of bind.
+  (let ((k (lambda (n) (right (* n 2))))
+        (h (lambda (n) (right (+ n 5))))
+        (e (right 1)))
+    (check
+     (either= eqv? (either-bind e (lambda (n) (either-bind (k n) h)))
+                   (either-bind (either-bind e k) h))
+     => #t))
 
-  ;; ;; Bind with multiple mprocs.
-  ;; (let ((neg (lambda (b) (right (not b)))))
-  ;;   (check (either= eqv? (right #f) (either-bind (right #t) neg neg neg))
-  ;;     => #t)
-  ;;   (check (either= eqv? (left #f) (either-bind (right #t) neg left neg))
-  ;;     => #t))
+  ;; Bind with multiple mprocs.
+  (let ((neg (lambda (b) (right (not b)))))
+    (check (either= eqv? (right #f) (either-bind (right #t) neg neg neg))
+      => #t)
+    (check (either= eqv? (left #f) (either-bind (right #t) neg left neg))
+      => #t))
 
   ;; ;; either-compose
   ;; (check (left-of-z? ((either-compose right) (left 'z)))               => #t)
@@ -349,7 +349,7 @@
 
 ;;;; Conversion procedures
 
-'(define (check-conversions)
+(define (check-conversions)
   (print-header "Testing conversions...")
 
   ;; maybe->either and either->maybe
