@@ -1684,6 +1684,11 @@
   )
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-78")
+(use srfi-78)
+(test-module 'srfi-78)
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-98")
 (use srfi-98)
 (test-module 'srfi-98)
@@ -2739,5 +2744,15 @@
            (string-replace! s 3 5 "WXYZw" 1 4)))
   )
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-189")
+(use srfi-189)
+(test-module 'srfi-189)
+
+(define-module srfi-189-tests
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+  (use srfi-189) 
+  (use srfi-78)                         ; check
+  (include "include/srfi-189-tests"))
 
 (test-end)

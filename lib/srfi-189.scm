@@ -40,10 +40,10 @@
           maybe-ref either-ref maybe-ref/default either-ref/default
           maybe-join either-join
           ;; maybe-compose either-compose
-          ;; maybe-bind either-bind
-          ;; maybe-length either-length
-          ;; maybe-filter maybe-remove either-filter either-remove
-          ;; maybe-sequence either-sequence
+          maybe-bind either-bind
+          maybe-length either-length
+          maybe-filter maybe-remove either-filter either-remove
+          maybe-sequence either-sequence
           ;; either->maybe list->just list->right
           ;; maybe->list either->list
           ;; maybe->lisp lisp->maybe
@@ -74,6 +74,19 @@
 (define-class <left> (<either>)
   ((objs :init-keyword :objs)))
 
+(define-method write-object ((obj <just>) port)
+  (format port "#<Just ~a>"
+          (string-join (map write-to-string (~ obj'objs)) " ")))
+(define-method write-object ((obj <nothing>) port)
+  (display "#<Nothing>" port))
+(define-method write-object ((obj <right>) port)
+  (format port "#<Right ~a>"
+          (string-join (map write-to-string (~ obj'objs)) " ")))
+(define-method write-object ((obj <left>) port)
+  (format port "#<Left ~a>"
+          (string-join (map write-to-string (~ obj'objs)) " ")))
+  
+
 (define *nothing* (make <nothing>))
 
 ;; API
@@ -100,7 +113,7 @@
 (define (either= eqproc x y)
   (or (and (right? x) (right? y)
            (list= eqproc (~ x'objs) (~ y'objs)))
-      (and (just? x) (just? y)
+      (and (left? x) (left? y)
            (list= eqproc (~ x'objs) (~ y'objs)))))
 
 (define (%maybe-ref-failure)
@@ -143,11 +156,71 @@
   (if (left? either)
     either
     (match (~ either'objs)
-      [((? right? val)) val]
+      [((? either? val)) val]
       [x (error "invalid payload" x)])))
       
-  
+(define (maybe-bind maybe proc . procs)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe)
+    maybe
+    (if (null? procs)
+      (apply proc (~ maybe'objs))       ;tail call
+      (apply maybe-bind (apply proc (~ maybe'objs)) procs))))
 
+(define (either-bind either proc . procs)
+  (assume-type either <either>)
+  (if (left? either)
+    either
+    (if (null? procs)
+      (apply proc (~ either'objs))      ;tail call
+      (apply either-bind (apply proc (~ either'objs)) procs))))
 
-  
-          
+(define (maybe-length maybe)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe) 0 1))
+
+(define (either-length either)
+  (assume-type either <either>)
+  (if (left? either) 0 1))
+
+(define (maybe-filter pred maybe)
+  (assume-type maybe <maybe>)
+  (if (and (just? maybe) (apply pred (~ maybe'objs)))
+    maybe
+    (nothing)))
+
+(define (maybe-remove pred maybe)
+  (assume-type maybe <maybe>)
+  (if (and (just? maybe) (not (apply pred (~ maybe'objs))))
+    maybe
+    (nothing)))
+
+(define (either-filter pred either obj)
+  (assume-type either <either>)
+  (if (and (right? either) (apply pred (~ either'objs)))
+    either
+    (left obj)))
+
+(define (either-remove pred either obj)
+  (assume-type either <either>)
+  (if (and (right? either) (not (apply pred (~ either'objs))))
+    either
+    (left obj)))
+
+;; input :: Container Maybe a*
+;; cmap :: Container Maybe a* -> (Maybe a* -> b) -> Container b
+;; aggregator :: a* -> b
+;; Returns Maybe Container b
+(define (maybe-sequence input cmap :optional (aggregator list))
+  (let/cc return
+    (just (cmap (^[me] (maybe-ref me (^[] (return (nothing))) aggregator))
+                input))))
+
+;; input :: Container Either a*
+;; cmap :: Container Either a* -> (Either a -> b) -> Container b
+;; aggregator :: a* -> b
+;; returns Either Container b
+(define (either-sequence input cmap :optional (aggregator list))
+  (let/cc return
+    (right (cmap (^[ee] (either-ref ee (^ _ (return ee)) aggregator))
+                 input))))
