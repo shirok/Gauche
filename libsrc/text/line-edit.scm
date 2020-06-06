@@ -1081,12 +1081,17 @@
   "Edit the current input buffer with the external editor"
   (let* ([orig (gap-buffer->string buf)]
          [edited (ed-string orig)])
-    (if (equal? orig edited)
-      'unchanged
-      (begin
-        (gap-buffer-clear! buf)
-        (gap-buffer-insert! buf edited)
-        'visible))))
+    (cond
+     [(not edited)
+      (show-message ctx buf "External editor is not available."
+                    '(#f #f reverse))
+      'redraw]
+     [(equal? orig edited)
+      'unchanged]
+     [else
+      (gap-buffer-clear! buf)
+      (gap-buffer-insert! buf edited)
+      'visible])))
 
 (define-edit-command (undefined-command ctx buf key)
   "Placeholder for a keystroke that isn't assigned to any command."
@@ -1096,6 +1101,13 @@
                   Type M-h b for list of key bindings."
                 '(#f #f reverse))
   'redraw)
+
+(define-edit-command (undefined-or-self-insert-command ctx buf key)
+  "Undefined or self insertion command (for multibyte characters)."
+  (if (and (char? key)
+           (> (char->integer key) #x7f))
+    (self-insert-command ctx buf key)
+    (undefined-command ctx buf key)))
 
 (define-edit-command (nop-command ctx buf key)
   "Do nothing."
@@ -1322,7 +1334,8 @@
 (define-key *c-x-keymap* #\e edit-with-editor)
 
 ;; Default keymap.
-(define *default-keymap* (make-keymap "Default keymap"))
+(define *default-keymap* (make-keymap "Default keymap"
+                                       undefined-or-self-insert-command))
 
 (define-key *default-keymap* (ctrl #\@) set-mark-command)
 (define-key *default-keymap* (ctrl #\a) move-beginning-of-line)
