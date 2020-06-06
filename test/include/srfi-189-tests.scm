@@ -492,7 +492,7 @@
 
 ;;;; Trivalent logic
 
-'(define (check-trivalent)
+(define (check-trivalent)
   (define (tri-true? m)
     (and (just? m) (maybe-ref m)))
 
@@ -535,10 +535,10 @@
   (check-accessors)
   (check-join-and-bind)
   (check-sequence-operations)
-  ;;(check-conversions)
-  ;;(check-map-fold-and-unfold)
-  ;;(check-syntax)
-  ;;(check-trivalent)
+  (check-conversions)
+  (check-map-fold-and-unfold)
+  (check-syntax)
+  (check-trivalent)
 
   (check-report))
 

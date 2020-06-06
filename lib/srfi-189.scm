@@ -44,7 +44,7 @@
           maybe-length either-length
           maybe-filter maybe-remove either-filter either-remove
           maybe-sequence either-sequence
-          either->maybe list->just list->right
+          maybe->either either->maybe list->just list->right list->left
           maybe->list either->list
           maybe->lisp lisp->maybe
           maybe->eof eof->maybe
@@ -56,7 +56,7 @@
           maybe-fold either-fold maybe-unfold either-unfold
           maybe-if
 
-          ;; try-not try=? tri-and tri-or tri-merge
+          tri-not tri=? tri-and tri-or tri-merge
           )
   )
 (select-module srfi-189)
@@ -121,6 +121,14 @@
 (define (%either-ref-failure . args)
   (error "Attempt to derefenence <left> with values" args))
 
+;; returns one value in container; raises an error if container doesn't have
+;; exactly one value.
+(define (%ref1 container)
+  (match (~ container'objs)
+    [(x) x]
+    [_ (error "~a with exactly one value expected, but got: ~s"
+              (class-of container) container)]))
+    
 (define (maybe-ref maybe :optional (failure %maybe-ref-failure) 
                                    (success values))
   (assume-type maybe <maybe>)
@@ -239,6 +247,7 @@
 
 (define (list->just lis) (apply just lis))
 (define (list->right lis) (apply right lis))
+(define (list->left lis) (apply left lis))
 
 (define (maybe->list maybe)
   (assume-type maybe <maybe>)
@@ -249,10 +258,7 @@
 
 (define (maybe->lisp maybe)
   (assume-type maybe <maybe>)
-  (and (just? maybe)
-       (match (~ maybe'objs)
-         [(val) val]
-         [_ (error "just doesn't have exactly one value:" maybe)])))
+  (and (just? maybe) (%ref1 maybe)))
 
 (define (lisp->maybe obj)
   (if obj (just obj) (nothing)))
@@ -260,9 +266,7 @@
 (define (maybe->eof maybe)
   (assume-type maybe <maybe>)
   (if (just? maybe)
-    (match (~ maybe'objs)
-      [(val) val]
-      [_ (error "just doesn't have exactly one value:" maybe)])
+    (%ref1 maybe)
     (eof-object)))
 
 (define (eof->maybe obj)
@@ -288,27 +292,23 @@
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
     (values #f #f)
-    (match (~ maybe'objs)
-      [(val) (values val #t)]
-      [_ (error "just doesn't have exactly one value:" maybe)])))
+    (values (%ref1 maybe) #t)))
 (define (either->lisp-values either)
   (assume-type either <either>)
   (if (left? either)
     (values #f #f)
-    (match (~ either'objs)
-      [(val) (values val #t)]
-      [_ (error "right doesn't have exactly one value:" either)])))
+    (values (%ref1 either) #t)))
 
 (define (maybe-map proc maybe)
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
     maybe
-    (make <just> :objs (apply proc (~ maybe'objs)))))
+    (make <just> :objs (values->list (apply proc (~ maybe'objs))))))
 (define (either-map proc either)
   (assume-type either <either>)
   (if (left? either)
     either
-    (make <right> :objs (apply proc (~ either'objs)))))
+    (make <right> :objs (values->list (apply proc (~ either'objs))))))
 
 (define (maybe-for-each proc maybe)
   (assume-type maybe <maybe>)
@@ -324,8 +324,8 @@
 (define (maybe-fold kons knil maybe)
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
-    (apply kons (append (~ maybe'objs) (list knil)))
-    knil))
+    knil
+    (apply kons (append (~ maybe'objs) (list knil)))))
 (define (either-fold kons knil either)
   (assume-type either <either>)
   (if (right? either)
@@ -335,11 +335,11 @@
 (define (maybe-unfold stop? mapper _ . seeds)
   (if (apply stop? seeds)
     (nothing)
-    (apply just (apply mapper seeds))))
+    (apply just (values->list (apply mapper seeds)))))
 (define (either-unfold stop? mapper _ . seeds)
   (if (apply stop? seeds)
     (apply left seeds)
-    (apply right (apply mapper seeds))))
+    (apply right (values->list (apply mapper seeds)))))
 
 (define-syntax maybe-if
   (syntax-rules ()
@@ -348,6 +348,67 @@
        (assume-type x <maybe>)
        (if (just? expr) justx nothingx))]))
 
+(define (tri-not maybe)
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe)
+    maybe
+    (just (not (%ref1 maybe)))))
 
+(define (tri=? maybe . maybes)
+  (define (rec val maybe maybes)
+    (assume-type maybe <maybe>)
+    (if (nothing? maybe)
+      (just #f)
+      (if (boolean=? val (boolean (%ref1 maybe)))
+        (if (null? maybes)
+          (just #t)
+          (rec val (car maybes) (cdr maybes)))
+        (just #f))))
+      
+  (assume-type maybe <maybe>)
+  (if (nothing? maybe)
+    (just #f)
+    (let1 v (%ref1 maybe)
+      (if (null? maybes)
+        (just #t)
+        (rec v (car maybes) (cdr maybes))))))
 
-    
+(define (tri-and . maybes)
+  (define (rec maybes)
+    (if (null? maybes)
+      (just #t)
+      (let ([maybe (car maybes)]
+            [maybes (cdr maybes)])
+        (assume-type maybe <maybe>)
+        (if (nothing? maybe)
+          maybe
+          (if-let1 v (%ref1 maybe)
+            (rec maybes)                
+            maybe)))))                  ; this must be #<just #f>
+  (rec maybes))
+
+(define (tri-or . maybes)
+  (define (rec maybes)
+    (if (null? maybes)
+      (just #f)
+      (let ([maybe (car maybes)]
+            [maybes (cdr maybes)])
+        (assume-type maybe <maybe>)
+        (if (nothing? maybe)
+          maybe
+          (if-let1 v (%ref1 maybe)
+            maybe
+            (rec maybes))))))
+  (rec maybes))
+
+(define (tri-merge . maybes)
+  (define (rec maybes)
+    (if (null? maybes)
+      (nothing)
+      (let ([maybe (car maybes)]
+            [maybes (cdr maybes)])
+        (assume-type maybe <maybe>)
+        (if (nothing? maybe)
+          (rec maybes)
+          maybe))))
+  (rec maybes))
