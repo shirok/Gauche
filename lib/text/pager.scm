@@ -133,7 +133,8 @@
    (make <vt100>)                       ;we know it's vt100 compatible
    (^c
     (receive (h w) (query-screen-size c)
-      (let1 ss (string-split s #\newline)
+      (let* ((ss (string-split s #\newline))
+             (max-pos (max (- (length ss) (- h 1)) 0)))
         (let loop ((pos 0))
           (let1 lines (drop* ss pos)
             (clear-screen c)
@@ -144,19 +145,27 @@
               (move-cursor-to c y 0)
               (putstr c (car lines)))
             (move-cursor-to c (- h 1) 0)
-            (if (length<=? lines (- h 2))
-              (putstr c "End: ")
-              (putstr c "More: ")))
+            (if (< pos max-pos)
+              (putstr c "More ([q] quit) : ")
+              (putstr c "End ([q] quit) : ")))
           (let input-loop ([ch (getch c)])
-            (cond
-             [(eqv? ch #\q)]
-             [(eqv? ch #\space) (let1 nextpos (+ pos h -1)
-                                  (when (length>=? ss nextpos)
-                                    (loop nextpos)))]
-             [(eqv? ch #\return) (loop (+ pos 1))]
-             [(eqv? ch #\b) (loop (max (- pos h) 0))]
-             [else (input-loop (getch c))])))))
-    (clear-screen c))))
+            (case ch
+              [(#\q #\Q)]
+              [(KEY_UP   #\y)
+               (loop (max (- pos 1) 0))]
+              [(KEY_DOWN #\e #\return)
+               (loop (min (+ pos 1) max-pos))]
+              [(KEY_PGUP #\b)
+               (loop (max (- pos (- h 1)) 0))]
+              [(KEY_PGDN #\f #\space)
+               (loop (min (+ pos (- h 1)) max-pos))]
+              [(KEY_HOME #\g)
+               (loop 0)]
+              [(KEY_END  #\G)
+               (loop max-pos)]
+              [else (input-loop (getch c))])))))
+    (clear-screen c)
+    (move-cursor-to c 0 0))))
 
 ;; Main Entry Point API
 (define (display/pager s)

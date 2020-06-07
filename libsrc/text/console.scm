@@ -222,8 +222,8 @@
     [(#\[ #\H)         . KEY_HOME]
     [(#\[ #\2 #\~)     . KEY_INS]
     [(#\[ #\3 #\~)     . KEY_DEL]
-    [(#\[ #\5 #\~)     . KEY_PGDN]
-    [(#\[ #\6 #\~)     . KEY_PGUP]
+    [(#\[ #\6 #\~)     . KEY_PGDN]
+    [(#\[ #\5 #\~)     . KEY_PGUP]
     [(#\O #\P)         . KEY_F1]  ; original vt100
     [(#\O #\Q)         . KEY_F2]
     [(#\O #\R)         . KEY_F3]
