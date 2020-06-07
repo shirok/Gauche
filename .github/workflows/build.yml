@@ -108,31 +108,15 @@ jobs:
     env:
       MSYSTEM: MINGW${{ matrix.bit }}
       MSYS2_PATH_TYPE: inherit
-      MSYS2_PATH_LIST: D:\msys64\mingw${{ matrix.bit }}\bin;D:\msys64\usr\local\bin;D:\msys64\usr\bin;D:\msys64\bin
-      MSYS2_TARBALL_URL1: https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.tar.xz
-      MSYS2_TARBALL_URL2: http://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20190524.tar.xz
-      MSYS2_TARBALL_URL3: https://sourceforge.net/projects/msys2/files/Base/x86_64/msys2-base-x86_64-20190524.tar.xz
+      MSYS2_PATH_LIST: C:\msys64\mingw${{ matrix.bit }}\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin
       GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
       GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
       TESTLOG_NAME: testlog-windows-${{ matrix.arch }}
-      TESTLOG_PATH: testlog-windows
+      TESTLOG_PATH: testlog-windows-${{ matrix.arch }}
     steps:
     - run: git config --global core.autocrlf false
     - uses: actions/checkout@v2
-    - name: Install MSYS2
-      run: |
-        bash -lc @'
-          pwd
-          curl -f -L -o msys2.tar.xz $MSYS2_TARBALL_URL1 ||
-          curl -f    -o msys2.tar.xz $MSYS2_TARBALL_URL2 ||
-          curl -f -L -o msys2.tar.xz $MSYS2_TARBALL_URL3
-          err1=$?
-          #tar xf msys2.tar.xz -C /d/
-          7z x msys2.tar.xz -so | 7z x -aoa -si -ttar -oD:
-          ls -l /d/
-          exit $err1
-        '@
     - name: Add MSYS2 path
       run: |
         echo "::set-env name=PATH::$env:MSYS2_PATH_LIST;$env:PATH"
@@ -149,13 +133,6 @@ jobs:
         bash -lc @'
           pacman --version
           pacman -Syyuu --noconfirm
-        '@
-    - name: Install MinGW-w64
-      run: |
-        bash -lc @'
-          pacman --version
-          pacman -S --noconfirm base-devel &&
-          pacman -S --noconfirm mingw${{ matrix.bit }}/mingw-w64-${{ matrix.arch }}-toolchain
         '@
     - name: Install Gauche
       run: |
