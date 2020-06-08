@@ -1103,7 +1103,8 @@
   'redraw)
 
 (define-edit-command (undefined-or-self-insert-command ctx buf key)
-  "Undefined or self insertion command (for multibyte characters)."
+  "Insert the key if its a character beyond ascii range, otherwise behave \
+   as the undefined command."
   (if (and (char? key)
            (> (char->integer key) #x7f))
     (self-insert-command ctx buf key)
