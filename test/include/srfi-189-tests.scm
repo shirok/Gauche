@@ -21,7 +21,7 @@
 
 (import (scheme base))
 (import (scheme write))
-(import (srfi-189))                     ; draft
+(import (srfi-189))                     ;draft
 
 (cond-expand
   ((library (srfi 78))
@@ -241,7 +241,7 @@
   ;; (check (nothing? ((maybe-compose just) (nothing)))   => #t)
   ;; (check (just-of-z? ((maybe-compose just) (just 'z))) => #t)
 
-  ;; ;; Compose with multiple mprocs.
+  ;; Compose with multiple mprocs.
   ;; (let ((neg (lambda (b) (just (not b)))))
   ;;   (check (maybe= eqv? (just #t) ((maybe-compose neg neg neg) (just #f)))
   ;;     => #t))
@@ -271,11 +271,11 @@
     (check (either= eqv? (left #f) (either-bind (right #t) neg left neg))
       => #t))
 
-  ;; ;; either-compose
+  ;; either-compose
   ;; (check (left-of-z? ((either-compose right) (left 'z)))               => #t)
   ;; (check (either= eqv? (right #t) ((either-compose right) (right #t))) => #t)
 
-  ;; ;; Compose with multiple mprocs.
+  ;; Compose with multiple mprocs.
   ;; (let ((neg (lambda (b) (right (not b)))))
   ;;   (check (either= eqv? (right #t) ((either-compose neg neg neg) (right #f)))
   ;;     => #t))
@@ -362,6 +362,7 @@
   ;; list->just and list->right
   (check (maybe= eqv? (just #t #t) (list->just '(#t #t)))    => #t)
   (check (either= eqv? (right #t #t) (list->right '(#t #t))) => #t)
+  (check (either= eqv? (left #t #t) (list->left '(#t #t)))   => #t)
 
   ;; maybe->list and either->list
   (check (maybe->list (nothing))      => '())
@@ -391,6 +392,9 @@
   (check (values~>list (maybe->lisp-values (just #t)))        => '(#t #t))
   (check (catch-exceptions (maybe->lisp-values (just #t #t))) => 'exception)
 
+  (check (just-of-z? (lisp-values->maybe (lambda () (values 'z #t)))) => #t)
+  (check (nothing? (lisp-values->maybe (lambda () (values 'z #f))))   => #t)
+
   (check (nothing? (values->maybe (lambda () (values)))) => #t)
   (check (just-of-z? (values->maybe (lambda () 'z)))     => #t)
   (check (maybe->values (values->maybe (lambda () #t)))  => #t)
@@ -401,11 +405,6 @@
   ;; either->values and friends
   (check (either->values (right #t)) => #t)
   (check (values~>list (either->values (left 'z))) => '())
-
-  (check (values~>list (either->lisp-values (left #t)))  => '(#f #f))
-  (check (values~>list (either->lisp-values (right #t))) => '(#t #t))
-  (check (catch-exceptions (either->lisp-values (right #t #f)))
-   => 'exception)
 
   (check (left-of-z? (values->either (lambda () (values)) 'z)) => #t)
   (check (right-of-z? (values->either (lambda () 'z) #f))      => #t)

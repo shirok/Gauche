@@ -50,8 +50,8 @@
           maybe->eof eof->maybe
           maybe->values either->values
           values->maybe values->either
-          maybe->lisp-values either->lisp-values
-          ;; lisp-values->maybe lisp-values->either
+          maybe->lisp-values
+          lisp-values->maybe
           maybe-map either-map maybe-for-each either-for-each
           maybe-fold either-fold maybe-unfold either-unfold
           maybe-if
@@ -298,11 +298,10 @@
   (if (nothing? maybe)
     (values #f #f)
     (values (%ref1 maybe) #t)))
-(define (either->lisp-values either)
-  (assume-type either <either>)
-  (if (left? either)
-    (values #f #f)
-    (values (%ref1 either) #t)))
+
+(define (lisp-values->maybe producer)
+  (receive (val has-val?) (producer)
+    (if has-val? (just val) (nothing))))
 
 (define (maybe-map proc maybe)
   (assume-type maybe <maybe>)
