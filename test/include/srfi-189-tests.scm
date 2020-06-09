@@ -161,8 +161,7 @@
   (print-header "Testing accessors...")
 
   (check (maybe-ref (just #t))                       => #t)
-  ;;(check (exception-satisfies maybe-ref-error? (maybe-ref (nothing))) => #t)
-  (check (catch-exceptions (maybe-ref (nothing)))    => 'exception)
+  (check (exception-satisfies maybe-ref-error? (maybe-ref (nothing))) => #t)
   (check (maybe-ref (nothing) (lambda () #f))        => #f)
   (check (maybe-ref (just #t) (lambda () #f) values) => #t)
   (check (maybe-ref (nothing) (lambda () #f) values) => #f)

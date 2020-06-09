@@ -35,7 +35,7 @@
   (use srfi-1)
   (use util.match)
   (export just nothing right left either-swap
-          maybe? either? just? nothing? right? left?
+          maybe? either? just? nothing? right? left? maybe-ref-error?
           maybe= either=
           maybe-ref either-ref maybe-ref/default either-ref/default
           maybe-join either-join
@@ -73,6 +73,9 @@
   ((objs :init-keyword :objs)))
 (define-class <left> (<either>)
   ((objs :init-keyword :objs)))
+
+(define-condition-type <maybe-ref-error> <error>
+  maybe-ref-error?)
 
 (define-method write-object ((obj <just>) port)
   (format port "#<Just ~a>"
@@ -117,9 +120,11 @@
            (list= eqproc (~ x'objs) (~ y'objs)))))
 
 (define (%maybe-ref-failure)
-  (error "Attempt to derefenence <nothing>"))
+  (error <maybe-ref-error> "Attempt to derefenence <nothing>"))
 (define (%either-ref-failure . args)
-  (error "Attempt to derefenence <left> with values" args))
+  (match args
+    [(x) (raise x)]
+    [args (error "Attempt to dereference <left> with payload:" args)]))
 
 ;; returns one value in container; raises an error if container doesn't have
 ;; exactly one value.
