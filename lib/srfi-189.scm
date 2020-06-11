@@ -208,17 +208,17 @@
     maybe
     (nothing)))
 
-(define (either-filter pred either obj)
+(define (either-filter pred either . objs)
   (assume-type either <either>)
   (if (and (right? either) (apply pred (~ either'objs)))
     either
-    (left obj)))
+    (apply left objs)))
 
-(define (either-remove pred either obj)
+(define (either-remove pred either . objs)
   (assume-type either <either>)
   (if (and (right? either) (not (apply pred (~ either'objs))))
     either
-    (left obj)))
+    (apply left objs)))
 
 ;; input :: Container Maybe a*
 ;; cmap :: Container Maybe a* -> (Maybe a* -> b) -> Container b
@@ -238,11 +238,11 @@
     (right (cmap (^[ee] (either-ref ee (^ _ (return ee)) aggregator))
                  input))))
 
-(define (maybe->either maybe obj)
+(define (maybe->either maybe . objs)
   (assume-type maybe <maybe>)
   (if (just? maybe)
     (apply right (~ maybe'objs))
-    (left obj)))
+    (apply left objs)))
 
 (define (either->maybe either)
   (assume-type either <either>)
