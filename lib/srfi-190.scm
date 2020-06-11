@@ -32,6 +32,7 @@
 ;;;
 
 ;; EXPERIMENTAL - not using identifier syntax
+;; NB: This isn't correct.  See the mail archive of srfi-190.
 
 (define-module srfi-190
   (use gauche.generator)
