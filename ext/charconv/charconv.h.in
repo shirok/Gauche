@@ -67,6 +67,10 @@ typedef struct ScmConvInfoRec {
     ScmPort *remote;            /* source or drain port */
     int ownerp;                 /* do I own remote port? */
     int remoteClosed;           /* true if remore port is closed */
+    int replacep;               /* true if we replace unrecognized input
+                                   with replacement sequence */
+    ScmSize replaceSize;        /* size of replaceSeq */
+    const char *replaceSeq;     /* the replacement sequence, NULL terminated */
     ScmSize bufsiz;             /* size of conversion buffer */
     char *buf;                  /* internal conversion buffer */
     char *ptr;                  /* current ptr in the internal conv buf */

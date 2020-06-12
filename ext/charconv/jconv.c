@@ -1424,6 +1424,9 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
     info->toCode = toCode;
     info->istate = info->ostate = JIS_ASCII;
     info->fromCode = fromCode;
+    info->replacep = FALSE;
+    info->replaceSize = 0;
+    info->replaceSeq = NULL;
     return info;
 }
 
