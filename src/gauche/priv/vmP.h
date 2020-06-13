@@ -80,7 +80,9 @@ typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *floating;
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
-    ScmObj handlers;            /* saved dynamic handler chain */
+    ScmObj handlers;            /* saved dynamic handler chain
+                                   NB: for partial continuation, partial
+                                   dynamic handler chain is saved. */
     ScmCStack *cstack;          /* vm->cstack when escape point is created.
                                    this will be used to rewind cstack.
                                    this is NULL for partial continuations,
@@ -88,7 +90,6 @@ typedef struct ScmEscapePointRec {
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
     ScmObj resetChain;          /* for reset/shift */
-    ScmObj partHandlers;        /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control

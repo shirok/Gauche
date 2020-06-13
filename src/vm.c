@@ -2405,7 +2405,6 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->cstack = vm->cstack;
     ep->xhandler = vm->exceptionHandler;
     ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_NIL;
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
@@ -2498,18 +2497,17 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
    be executed. */
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
 {
-    ScmObj h = SCM_NIL, t = SCM_NIL, p;
-    ScmObj h2 = SCM_NIL;
-
     /* shortcut */
     if (target == current) return SCM_NIL;
 
+    ScmObj h = SCM_NIL, t = SCM_NIL, p;
     SCM_FOR_EACH(p, current) {
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), target))) break;
         /* push 'after' handlers to be called */
         SCM_APPEND1(h, t, Scm_Cons(SCM_FALSE, Scm_Cons(SCM_CDAR(p), SCM_CDR(p))));
     }
+    ScmObj h2 = SCM_NIL;
     SCM_FOR_EACH(p, target) {
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), current))) break;
@@ -2678,7 +2676,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
     } else {
         /* for partial continuation */
         handlers_to_call
-            = throw_cont_calculate_handlers(Scm_Append2(ep->partHandlers,
+            = throw_cont_calculate_handlers(Scm_Append2(ep->handlers,
                                                         vm->handlers),
                                             vm->handlers);
     }
@@ -2697,7 +2695,6 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_NIL;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    SCM_MAKE_STR("continuation"));
@@ -2738,25 +2735,25 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
-    ep->handlers = SCM_NIL; /* don't use for partial continuation */
+    ep->handlers = SCM_NIL; /* used to save partial handler chain */
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */
     ep->resetChain = (SCM_PAIRP(vm->resetChain)?
                       Scm_Cons(Scm_Cons(SCM_FALSE, SCM_NIL), SCM_NIL) :
                       SCM_NIL); /* used only to detect reset missing */
-    ep->partHandlers = SCM_NIL;
 
-    /* get the dynamic handlers chain saved on reset */
+    /* get the dynamic handler chain saved on reset */
     ScmObj reset_handlers = (SCM_PAIRP(vm->resetChain)?
                              SCM_CDAR(vm->resetChain) : SCM_NIL);
 
-    /* cut the dynamic handlers chain from current to reset */
+    /* cut the dynamic handler chain from current to reset */
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
     SCM_FOR_EACH(p, vm->handlers) {
         if (p == reset_handlers) break;
         SCM_APPEND1(h, t, SCM_CAR(p));
     }
-    ep->partHandlers = h;
+    /* save the partial dynamic handler chain */
+    ep->handlers = h;
 
     /* call dynamic handlers for exiting reset */
     call_dynamic_handlers(reset_handlers, vm->handlers);

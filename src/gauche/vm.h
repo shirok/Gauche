@@ -472,7 +472,7 @@ struct ScmVMRec {
     /* for reset/shift */
     ScmObj resetChain;          /* list of reset information,
                                    where reset information is
-                                   (delimited . <dynamic handlers chain>).
+                                   (delimited . <dynamic handler chain>).
                                    the delimited flag is set when 'shift'
                                    appears in 'reset' and the end marker of
                                    partial continuation is set. */
