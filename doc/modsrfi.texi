@@ -6500,26 +6500,46 @@ affected by the current hash salt value (@pxref{Hashing}).
 
 @deftp {Module} srfi-185
 @mdindex srfi-185
+@c EN
 This module provides a linear-update version of @code{string-append}
 and @code{string-replace}.  ``Linear update'' means the caller
 won't access the first string argument, hence the implementation
 @emph{can} reuse it to store the result, for the efficiency.
+@c JP
+このモジュールは@code{string-append}と@code{string-replace}の線形更新版を提供します。
+「線形更新」とは、この関数を呼び出した後は引数が使われないことが前提になっているという
+意味で、従って処理系は結果を格納するために引数を破壊的に再利用することが許されています。
+@c COMMON
 
+@c EN
 Note that, in Gauche, a string is just a pointer to an immutable
 string body.  Mutation of a string is actually constructing a new
 string body and swapping the pointer, so it has no performance
 advantage to immutable versions.  And in fact, we implement
 these without mutating their arguments.
+@c JP
+しかしGaucheでは、文字列は変更不可な文字列本体へのポインタであって、
+文字列の変更は新たな文字列本体を作ってポインタを差し替える操作にすぎず、
+文字列を破壊的に再利用するメリットは全くありません。
+従ってこのsrfiのAPIは単に非破壊版を呼び出すだけになっています。
+@c COMMON
 
+@c EN
 This module also provides macros with the same name as @code{srfi-118}
 procedures (@pxref{Simple adjustable-size strings}), which @code{set!}
 the result to its first argument, so they can work as a drop-in
 replacement to @code{srfi-118}.
+@c JP
+このモジュールはまた、@code{srfi-118}の手続き(@ref{Simple adjustable-size strings}参照)
+と同名のマクロを提供しています。マクロは結果を引数に渡された式に
+@code{set!}する式に展開されるので、一見@code{srfi-118}と同じように使うことができます。
+@c COMMON
 @end deftp
 
 @defun string-append-linear! dst str-or-char @dots{}
 [SRFI-185]
 @c MOD srfi-185
+@c EN
 Returns a string which is a concatenation of a string @var{dst}
 and the arguments.  The second argument an after can be
 a string or a character.  The caller shouldn't access @var{dst}
@@ -6527,6 +6547,21 @@ after calling this procedure, for the implementation may destructively
 reuse the string passed to @var{dst}.   Although Gauche won't
 mutate @var{dst}, other implementations may, so portable code
 should adhere this restriction.
+@c JP
+文字列@var{dst}と他の引数を全部つなげた文字列を返します。
+2番目以降の引数は文字でも文字列でも構いません。呼び出し元は、この関数を読んだ後は
+@var{dst}が指す文字列にアクセスしてはいけません。実装は@var{dst}が指す文字列を
+破壊的に再利用して結果を格納することが許されています。Gaucheは@var{dst}を
+破壊しませんが、ポータブルなコードでは@var{dst}を使わないようにしてください。
+@c COMMON
+
+@c EN
+You can't count on @var{dst} being mutated; you always have to use the returned
+string.
+@c JP
+@var{dst}が破壊することをあてにしてはいけません。
+常に戻り値の文字列を使うようにしてください。
+@c COMMON
 
 @example
 (string-append-linear! "abc" "def" #\g "hij")
@@ -6537,7 +6572,9 @@ should adhere this restriction.
 @defun stirng-replace-linear! dst dst-start dst-end src :optional src-start src-end
 [SRFI-185]
 @c MOD srfi-185
-Replace the portion of a string @var{dst} from @var{dst-start} (inclusive)
+@c EN
+Returns copy of a string @var{dst} except
+the portion of from @var{dst-start} (inclusive)
 to @var{dst-end} (exclusive), by a string @var{src} (from @var{src-start}
 to @var{src-end}).
 The caller shouldn't access @var{dst}
@@ -6545,6 +6582,25 @@ after calling this procedure, for the implementation may destructively
 reuse the string passed to @var{dst}.   Although Gauche won't
 mutate @var{dst}, other implementations may, so portable code
 should adhere this restriction.
+@c JP
+文字列@var{dst}のうち、@var{dst-start}(含まれる)から@var{dst-end}(含まれない)
+までの範囲を、文字列@var{src}(の@var{src-start}と@var{src-end}の範囲)で置き換えた
+文字列を返します。
+呼び出し元は、この関数を読んだ後は
+@var{dst}が指す文字列にアクセスしてはいけません。実装は@var{dst}が指す文字列を
+破壊的に再利用して結果を格納することが許されています。Gaucheは@var{dst}を
+破壊しませんが、ポータブルなコードでは@var{dst}を使わないようにしてください。
+@c COMMON
+
+@c EN
+Gauche allows string cursors, as well as integer character index,
+in @var{dst-start}, @var{dst-end}, @code{src-start} and @var{src-end} arguments.
+(@xref{String cursors}).
+@c JP
+Gaucheでは、@var{dst-start}、@var{dst-end}、@code{src-start}、@var{src-end}
+引数に、整数の文字インデックスだけでなく文字列カーソルも使えます。
+(@ref{String cursors}参照)。
+@c COMMON
 @end defun
 
 @defmac string-append! dst string-or-char @dots{}
