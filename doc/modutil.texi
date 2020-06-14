@@ -10719,18 +10719,25 @@ Miller-Rabin法より遅いですがカジュアルに使う分には十分に�
 @defun naive-factorize n :optional divisor-limit
 @c MOD math.prime
 @c EN
-Factorize a positive integer @var{n} by trying to divide it with
-all primes up to @code{(sqrt n)}.  Returns a list of prime factors,
+Factorize a positive exact integer @var{n} by trying to divide it with
+all primes up to @code{(sqrt n)}.  Returns a list of prime factors
+(each of which is equal to or greater than 2),
 smaller ones first.
 @c JP
 正整数@var{n}を、@code{(sqrt n)}までの素数で順に割ってみることで
-素因数分解します。戻り値は小さい順に並べられた素因数のリストです。
+素因数分解します。戻り値は小さい順に並べられた素因数(2以上の整数)のリストです。
 @c COMMON
 
 @example
 (naive-factorize 142857)
   @result{} (3 3 3 11 13 37)
 @end example
+
+@c EN
+Note that @code{(naive-factorize 1)} is @code{()}.
+@c JP
+@code{(naive-factorize 1)}は@code{()}を返します。
+@c COMMON
 
 @c EN
 Although this is pretty naive method, this works well as far as
@@ -10795,7 +10802,7 @@ things faster.
 @defun mc-factorize n
 @c MOD math.prime
 @c EN
-Factorize a positive integer @var{n} using the algorithm
+Factorize a positive exact integer @var{n} using the algorithm
 described in 
 R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{http://maths-people.anu.edu.au/~brent/pub/pub051.html}.
 @c JP

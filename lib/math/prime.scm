@@ -336,8 +336,13 @@
 
 ;; API
 (define (naive-factorize n :optional (divisor-limit +inf.0))
-  (if (<= n 3)
-    `(,n)
+  (unless (and (exact-integer? n)
+               (>= n 1))
+    (error "Argument must be an exact positive integer, but got:" n))
+  (cond
+   [(= n 1) '()]
+   [(<= n 3) `(,n)]
+   [else
     (let1 k (twos-exponent-factor n)
       (if (= k 0)
         (naive-factorize-1 n divisor-limit)
@@ -349,7 +354,7 @@
               (reverse r (if (= m 1)
                            '()
                            (naive-factorize (ash n (- k)) divisor-limit))))
-            (loop (+ i 1) (cons 2 r))))))))
+            (loop (+ i 1) (cons 2 r))))))]))
 
 ;; Monte Carlo factorization
 ;;  R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184.
