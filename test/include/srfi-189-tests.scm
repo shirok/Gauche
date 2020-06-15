@@ -238,13 +238,20 @@
       => #t))
 
   ;; maybe-compose
-  ;; (check (nothing? ((maybe-compose just) (nothing)))   => #t)
-  ;; (check (just-of-z? ((maybe-compose just) (just 'z))) => #t)
-
-  ;; Compose with multiple mprocs.
-  ;; (let ((neg (lambda (b) (just (not b)))))
-  ;;   (check (maybe= eqv? (just #t) ((maybe-compose neg neg neg) (just #f)))
-  ;;     => #t))
+  (check (nothing? (maybe-bind (nothing) (maybe-compose just))) => #t)
+  (check (just-of-z? (maybe-bind (just 'z) (maybe-compose just))) => #t)
+  (let ((neg (lambda (b) (just (not b)))))
+    (check (maybe= eqv?
+                   (just #f)
+                   (maybe-bind (just #t) (maybe-compose neg neg neg)))
+           => #t))
+  (let ((dec (lambda (b) (if (zero? b) (nothing) (just (- b 1))))))
+    (check (maybe= eqv?
+                   (just 1)
+                   (maybe-bind (just 4) (maybe-compose dec dec dec)))
+           => #t)
+    (check (nothing? (maybe-bind (just 2) (maybe-compose dec dec dec)))
+           => #t))
 
   ;; either-bind
   (check (left? (either-bind (left #f) right)) => #t)
@@ -272,13 +279,27 @@
       => #t))
 
   ;; either-compose
-  ;; (check (left-of-z? ((either-compose right) (left 'z)))               => #t)
-  ;; (check (either= eqv? (right #t) ((either-compose right) (right #t))) => #t)
-
-  ;; Compose with multiple mprocs.
-  ;; (let ((neg (lambda (b) (right (not b)))))
-  ;;   (check (either= eqv? (right #t) ((either-compose neg neg neg) (right #f)))
-  ;;     => #t))
+  (check (left-of-z? (either-bind (left 'z) (either-compose right))) => #t)
+  (check (either= eqv? 
+                  (right #t)
+                  (either-bind (right #t) (either-compose right))) => #t)
+  (let ((neg (lambda (b) (right (not b)))))
+    (check (either= eqv?
+                    (right #t)
+                    (either-bind (right #f) (either-compose neg neg neg)))
+           => #t))
+  (let ((dec (lambda (v)
+               (if (zero? v)
+                 (left 'underflow)
+                 (right (- v 1))))))
+    (check (either= eqv?
+                    (right 1)
+                    (either-bind (right 4) (either-compose dec dec dec)))
+           => #t)
+    (check (either= eqv?
+                    (left 'underflow)
+                    (either-bind (right 2) (either-compose dec dec dec)))
+           => #t))
   )
 
 ;;;; Sequence operations

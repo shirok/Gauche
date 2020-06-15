@@ -39,7 +39,7 @@
           maybe= either=
           maybe-ref either-ref maybe-ref/default either-ref/default
           maybe-join either-join
-          ;; maybe-compose either-compose
+          maybe-compose either-compose
           maybe-bind either-bind
           maybe-length either-length
           maybe-filter maybe-remove either-filter either-remove
@@ -180,6 +180,16 @@
       (apply proc (~ maybe'objs))       ;tail call
       (apply maybe-bind (apply proc (~ maybe'objs)) procs))))
 
+(define (maybe-compose proc . procs)
+  (if (null? procs)
+    proc
+    (let1 p (apply maybe-compose procs)
+      (^ args
+        (let1 m (apply proc args)
+          (if (nothing? m)
+            m
+            (apply p (~ m'objs))))))))
+
 (define (either-bind either proc . procs)
   (assume-type either <either>)
   (if (left? either)
@@ -187,6 +197,18 @@
     (if (null? procs)
       (apply proc (~ either'objs))      ;tail call
       (apply either-bind (apply proc (~ either'objs)) procs))))
+
+(define (either-compose proc . procs)
+  (if (null? procs)
+    proc
+    (let1 p (apply either-compose procs)
+      (^ args
+        (let1 e (apply proc args)
+          (unless (either? e)
+            (error "mproc returned non-either object:" e))
+          (if (left? e)
+            e
+            (apply p (~ e'objs))))))))
 
 (define (maybe-length maybe)
   (assume-type maybe <maybe>)
