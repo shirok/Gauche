@@ -4522,43 +4522,103 @@ Each integer occupies @var{size} octets.
 
 @deftp {Module} srfi-78
 @mdindex srfi-78
+@c EN
 This srfi defines @code{check} and @code{check-ec} macro, along
 with a few helper procedures, to write tests.  Especially,
 @code{check-ec} uses the same comprehension style as @code{srfi-42}
 to run test expressions with various combinations of input easily.
+@c JP
+このsrfiは、テストを書くためのマクロ@code{check}と@code{check-ec}、
+およびいくつかの補助手続きを定義します。
+特に、@code{check-ec}は@code{srfi-42}スタイルの内包表記で
+パラメータを様々に変えてテストしたい式を評価することができます。
+@c COMMON
 
-We implemented this srfi to work with @code{gauche.test}
+@c EN
+We implemented this module to work with @code{gauche.test}
 (@pxref{Unit testing}).
 Specifically,
 if the check macros are invoked while @code{gauche.test} is active
 (that is, between @code{test-start} and @code{test-end}), the check
 macros are simply a wrapper of Gauche's @code{test} macro; the results
-are tracked and reported by @code{gauche.test}. 
+are tracked and reported by @code{gauche.test}.
+@c JP
+Gaucheでは、このモジュールは@code{gauche.test}とうまく協働するようになっています
+(@ref{Unit testing}参照)。
+@code{gauche.test}がアクティブ (つまり@code{test-start}と@code{test-end}の間)に
+checkマクロが呼ばれた場合、それは@code{gauche.test}の@code{test}マクロの
+ラッパーとなり、テストの結果は@code{gauche.test}側でまとめられて報告されます。
+@c COMMON
 
-If this srfi is used without @code{gauche.test}, however, it works as
+@c EN
+If this module is used without @code{gauche.test}, however, it works as
 specified by the srfi, including reporting.  So, a tests using this srfi
 can be run in both ways---if it is loaded by itself, it runs as vanilla srfi-78,
 and if it is included in a test file that uses @code{gacuhe.test}, it runs
 as a part of @code{gauche.test}.
+@c JP
+このモジュールが@code{gauche.test}と一緒ではなく、単独で使われた場合は、
+結果報告も含めsrfiで述べられている通りに動きます。つまり、このsrfiで書かれた
+テストは2通りの方法で実行できるということです。それ単独でロードされた場合は
+素のsrfi-78として、そして@code{gauche.test}を使うテストファイルからincludeされた
+場合は@code{gauche.test}の一部として。
+@c COMMON
 @end deftp
 
 @defmac check expr => expected
 @defmacx check expr (=> equal) expected
 [SRFI-78]
+@c MOD srfi-78
+@c EN
 Evaluate @var{expected} and @var{equal}, then evaluate @var{expr} and
 compare the results of @var{expected} and @var{expr} using @var{equal}.
 In the first form, @code{equal?} is used as @var{equal}.
+@c JP
+@var{expected}と@var{equal}を評価し、次に@var{expr}を評価してその結果を
+@var{expected}の結果と@var{equal}を使って比べます。
+最初の形式では、@var{equal}として@code{equal?}が使われます。
+@c COMMON
 @end defmac
 
-@defmac check-ec qualifier @dots{} => expected (argument @dots{})
-@defmacx check-ec qualifier @dots{} (=> equal) expected (argument @dots{})
-@defmacx check-ec qualifier @dots{} => expected
-@defmacx check-ec qualifier @dots{} (=> equal) expected
+@defmac check-ec qualifier @dots{} expr => expected (argument @dots{})
+@defmacx check-ec qualifier @dots{} expr (=> equal) expected (argument @dots{})
+@defmacx check-ec qualifier @dots{} expr => expected
+@defmacx check-ec qualifier @dots{} expr (=> equal) expected
 [SRFI-78]
+@c MOD srfi-78
+Evaluates @var{expr}, @var{equal} and @var{expected} repeatedly
+in the environment where the @var{qualifier}s bind variables,
+and each time the results of @var{expr} and @var{equal} are
+compared with @var{equal}.  If the results don't agree,
+the failure is recorded with the given @var{argument} @dots{}, which can
+be useful to diagnose which combination of bindings the test failed on.
+Single failure stops the iteration.  If the results of @var{expr} and
+@var{expected} agrees on all the iterations, the entire @var{check-ec}
+is regarded as success.
+
+The way @var{qualifier}s work is the same as srfi-42.
+@xref{Eager comprehensions}, for the details.
+
+@example
+(use math.prime)
+(check-ec (: n 6)
+          (:let fn (+ (expt 2 (expt 2 n)) 1)) ;; n-th fermat number
+          (bpsw-prime? fn)
+          => #t (n))
+
+(check-report)
+ @result{} @r{prints} Passed 0 tests out of 1 tests.  First failure: ((bpsw-prime? fn) #t #f (5))
+@end example
 @end defmac
 
 @defun check-report
 [SRFI-78]
+@c MOD srfi-78
+If this module is used stand-alone, prints the summary of test results
+to the current output port.
+
+If this module is running inside @code{gauche.test}, this does nothing.
+Reporting is done by @code{gauche.test}.
 @end defun
 
 @defun check-set-mode! mode
