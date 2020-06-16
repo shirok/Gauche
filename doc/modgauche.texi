@@ -2937,6 +2937,16 @@ for typical cases.
 @c COMMON
 
 @c EN
+By default, @code{open-input-conversion-port} leaves @var{source} open.
+If you specify true value to @var{owner?}, the function closes
+@var{source} after it reads EOF from the port.
+@c JP
+通常、@code{open-input-conversion-port}は変換が全て終了した後でも@var{source}
+はオープンしたままにします。キーワード引数@var{owner?}に真の値を指定すると、
+EOFが読まれた後で@var{source}はクローズされます。
+@c COMMON
+
+@c EN
 If you don't know the @var{source}'s CES, you can specify
 CES guessing scheme, such as @code{"*JP"}, in place of @var{from-code}.
 The conversion port tries to guess the encoding, by prefetching
@@ -2966,15 +2976,6 @@ CESを推測しようとします。そのアルゴリズムで推測される�
 良いでしょう。
 @c COMMON
 
-@c EN
-By default, @code{open-input-conversion-port} leaves @var{source} open.
-If you specify true value to @var{owner?}, the function closes
-@var{source} after it reads EOF from the port.
-@c JP
-通常、@code{open-input-conversion-port}は変換が全て終了した後でも@var{source}
-はオープンしたままにします。キーワード引数@var{owner?}に真の値を指定すると、
-EOFが読まれた後で@var{source}はクローズされます。
-@c COMMON
 
 @c EN
 For example, the following code copies a file @file{unknown.txt} to a file
