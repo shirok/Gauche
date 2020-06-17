@@ -4586,6 +4586,7 @@ In the first form, @code{equal?} is used as @var{equal}.
 @defmacx check-ec qualifier @dots{} expr (=> equal) expected
 [SRFI-78]
 @c MOD srfi-78
+@c EN
 Evaluates @var{expr}, @var{equal} and @var{expected} repeatedly
 in the environment where the @var{qualifier}s bind variables,
 and each time the results of @var{expr} and @var{equal} are
@@ -4593,44 +4594,151 @@ compared with @var{equal}.  If the results don't agree,
 the failure is recorded with the given @var{argument} @dots{}, which can
 be useful to diagnose which combination of bindings the test failed on.
 Single failure stops the iteration.  If the results of @var{expr} and
-@var{expected} agrees on all the iterations, the entire @var{check-ec}
+@var{expected} agrees on all the iterations, the entire @code{check-ec}
 is regarded as success.
+@c JP
+@var{qualifier}で指定される変数束縛の全ての組み合わせの下で、
+@var{expr}、@var{equal}、@var{expected}を繰り返し評価し、
+その度に@var{expr}と@var{expected}を@var{equal}で比較します。
+もし異なっていれば、それが失敗として記録され、@code{check-ec}全体が失敗として
+終了します。全ての組み合わせにおいて@var{expr}と@var{expected}の結果が一致すれば、
+@code{check-ec}全体が成功とみなされます。
+@c COMMON
 
+@c EN
 The way @var{qualifier}s work is the same as srfi-42.
 @xref{Eager comprehensions}, for the details.
+@c JP
+@var{qualifier}の指定方法はsrfi-42に準じます。
+詳しくは@ref{Eager comprehensions}を参照してください。
+@c COMMON
+
+@c EN
+The following example tests Fermat numbers (2^2^n + 1) are primes.
+It fails since F_5 is a composite.
+@c JP
+次のテストは、フェルマー数 (2^2^n + 1) が素数かどうかを順に調べています。
+F_5は合成数なのでテストは失敗します。
+@c COMMON
 
 @example
 (use math.prime)
 (check-ec (: n 6)
-          (:let fn (+ (expt 2 (expt 2 n)) 1)) ;; n-th fermat number
+          (:let fn (+ (expt 2 (expt 2 n)) 1))
           (bpsw-prime? fn)
           => #t (n))
-
-(check-report)
- @result{} @r{prints} Passed 0 tests out of 1 tests.  First failure: ((bpsw-prime? fn) #t #f (5))
+ @result{}
+ @r{prints} Checking (bpsw-prime? fn), expecting #t => ERROR: got #f, with n: 5
 @end example
+
+@c EN
+The entire @code{check-ec} form is treated as one check for the sake of
+reporting.
+@c JP
+レポートの観点からは、@code{check-ec}全体がひとつのチェックとして扱われます。
+@c COMMON
 @end defmac
 
 @defun check-report
 [SRFI-78]
 @c MOD srfi-78
+@c EN
 If this module is used stand-alone, prints the summary of test results
 to the current output port.
 
 If this module is running inside @code{gauche.test}, this does nothing.
 Reporting is done by @code{gauche.test}.
+@c JP
+このモジュールが単独で使われた場合、現在の出力ポートにこれまでのテスト結果のまとめを
+出力します。
+
+このモジュールが@code{gauche.test}と一緒に使われた場合は何もしません。
+テスト結果報告は@code{gauche.test}によって行われます。
+@c COMMON
 @end defun
 
 @defun check-set-mode! mode
 [SRFI-78]
+@c MOD srfi-78
+@c EN
+Sets how the test progress and result will be reported.  This only has
+an effect when check is run without @code{gauche.test}.
+@c JP
+テストの進行と結果をどう報告するかを指定します。これは@code{gauche.test}と一緒に
+使われた時には意味を持ちません。
+@c COMMON
+
+@c EN
+Valid @var{mode} is one of the following symbols:
+@c JP
+@var{mode}には次のシンボルのいずれかを指定します。
+@c COMMON
+@table @code
+@item off
+@c EN
+Do not report the result at all, even from @code{(check-report)}.
+@c JP
+@code{(check-report)}も含め、結果は一切報告しません。
+@c COMMON
+@item summary
+@c EN
+Report the summary of the results when @code{(chec-report)} is called.
+@c JP
+@code{(chec-report)}が呼ばれた時にまとめを報告するだけです。
+@c COMMON
+@item report-failed
+@c EN
+In addition to @code{summary}, report any failed checks as they occur.
+@c JP
+@code{summary}の動作に加え、チェックが失敗した場合にその都度報告します。
+@c COMMON
+@item report
+@c EN
+In addition to @code{summary}, report each result of check as they occur.
+@c JP
+@code{summary}の動作に加え、チェック毎にその成功失敗を報告します。
+@c COMMON
+@end table
+
+@c EN
+The default is @code{report}.
+@c JP
+デフォルトは@code{report}です。
+@c COMMON
 @end defun
 
 @defun check-reset!
 [SRFI-78]
+@c MOD srfi-78
+@c EN
+Clears the internal state to keep track of number of performed checks and
+failed checks, etc.  This doesn't affect @code{gauche.test} bookkeeping.
+@c JP
+内部のテスト結果記録をクリアします。@code{gauche.test}の結果記録には影響を及ぼしません。
+@c COMMON
 @end defun
 
 @defun check-passed? expected-total-count
 [SRFI-78]
+@c MOD srfi-78
+@c EN
+This can be used to programatically query whether the expected number
+of tests are passed since the last @code{check-reset!} or the beginning.
+The @var{expected-total-count} must be a number, and it returns @code{#t}
+iff the internal count of passed test matches it and there is no failed checks.
+
+This works even if checks are run with @code{gauche.test}.
+However, only the tests using @code{check} and @code{check-ec} are counted.
+@c JP
+これはプログラム内から、最後の@code{check-reset!}もしくはプログラム開始以降に
+期待した数のテストが成功したかどうかを調べるのに使えます。
+@var{expected-total-count}には期待される成功したテストの数を渡します。
+テスト失敗がなく、成功したテストの数が@var{expected-total-count}に一致すれば
+@code{#t}が、そうでなければ@code{#f}が返されます。
+
+これは@code{gauche.test}と一緒に使った場合でも有効です。ただし、
+カウントされるのは@code{check}と@code{check-ec}の結果のみです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
