@@ -39,6 +39,7 @@
   (use gauche.test)
   (use gauche.parameter)
   (use srfi-42)
+  (use util.match)
   (export check check-ec check-report check-set-mode! check-reset!
           check-passed?))
 (select-module srfi-78)
@@ -98,7 +99,7 @@
           (begin
             (when (and (eq? result *global-results*)
                        (memq (check-mode) '(report report-failed)))
-              (format #t "Checkign ~s, expecting ~s => ERROR: got ~s\n"
+              (format #t "Checking ~s, expecting ~s => ERROR: got ~s\n"
                       name expected result))
             (register-failure! results name expected result aux)))))))
 
@@ -116,32 +117,56 @@
   (and (not (~ *global-results*'first-failure))
        (= expected-num-passed (~ *global-results*'pass-count))))
 
+;; format the argument part of check-ec
+(define (%format-aux aux)
+  (if (null? aux)
+    ""
+    (string-append ", with "
+                   (string-join (map (^p (format "~s: ~s" (car p) (cdr p)))
+                                     aux)
+                                ", "))))
+
 ;; API
 ;; This only reports in standalone-mode
 (define (check-report)
   (unless (or (test-running?) (eq? (check-mode) 'off))
-    (if (~ *global-results*'first-failure)
-      (format #t "Passed ~d tests out of ~d tests.  First failure: ~s\n"
-              (~ *global-results*'pass-count)
-              (~ *global-results*'total-count) 
-              (~ *global-results*'first-failure))
-      (format #t "All ~d tests passed.\n"
-              (~ *global-results*'pass-count)))))
+    (match (~ *global-results*'first-failure)
+      [(name expected result aux)
+       (format #t "Passed ~d tests out of ~d tests.  First failure on ~s, \
+                   expected: ~s, result: ~s~a\n"
+               (~ *global-results*'pass-count)
+               (~ *global-results*'total-count) 
+               name expected result
+               (%format-aux aux))]
+      [_
+       (format #t "All ~d tests passed.\n"
+               (~ *global-results*'pass-count))])))
 
 ;; API
 (define-syntax check-ec
   (syntax-rules (=>)
-    [(_ q ... expr (=> eqproc) expected (args ...))
+    [(_ q ... expr (=> eqproc) expected (arg ...))
      (let ((results (make <check-results>)))
        (do-ec q ...
               (do-check results 'expr expected (^[] expr) eqproc
-                        (list args ...)))
+                        (list (cons 'arg arg) ...)))
        (inc! (~ *global-results*'total-count))
-       (if-let1 failure (~ results'first-failure)
-         (apply register-failure! *global-results* failure)
-         (inc! (~ *global-results*'pass-count))))]
-    [(_ q ... expr => expected (args ...))
-     (check-ec q ... expr (=> equal?) expected (args ...))]
+       (match (~ results'first-failure)
+         [(and (name expected result aux) failure)
+          (when (and (not (test-running?))
+                     (memq (check-mode) '(report report-failed)))
+            (format #t "Checking ~s, expecting ~s => ERROR: got ~s~a\n"
+                    name expected result
+                    (%format-aux aux)))
+          (apply register-failure! *global-results* failure)]
+         [_
+          (when (and (not (test-running?))
+                     (eq? (check-mode) 'report))
+            (format #t "Checking ~s, expecting ~s => ok\n"
+                    'expr 'expected))
+          (inc! (~ *global-results*'pass-count))]))]
+    [(_ q ... expr => expected (arg ...))
+     (check-ec q ... expr (=> equal?) expected (arg ...))]
     [(_ q ... expr (=> eqproc) expected)
      (check-ec q ... expr (=> exproc) expected ())]
     [(_ q ... expr => expected)
