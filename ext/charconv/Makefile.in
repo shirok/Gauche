@@ -2,7 +2,7 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-GENERATED = Makefile charconv.h eucj2ucs.c ucs2eucj.c guess_tab.c
+GENERATED = Makefile iconv-adapter.h eucj2ucs.c ucs2eucj.c guess_tab.c
 XCLEANFILES = convaux.c
 PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c pre-package-data
 
@@ -29,6 +29,8 @@ gauche--charconv.$(SOEXT) : $(OBJECTS)
 
 convaux.c : convaux.scm
 	$(PRECOMP) $(srcdir)/convaux.scm
+
+$(OBJECTS) : charconv.h iconv-adapter.h
 
 jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c
 

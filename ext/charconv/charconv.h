@@ -35,13 +35,7 @@
 #define GAUCHE_CHARCONV_H
 
 #include <gauche.h>
-
-#ifdef HAVE_ICONV_H
-#include <@ICONV_NAME@.h>
-#else
-/* Dummy definitions */
-typedef int iconv_t;
-#endif /* !HAVE_ICONV_H */
+#include "iconv-adapter.h"
 
 SCM_DECL_BEGIN
 

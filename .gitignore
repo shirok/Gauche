@@ -71,7 +71,7 @@ test.record
 /ext/Makefile.ext
 /ext/bcrypt/crypt--bcrypt.c
 /ext/binary/binary--io.c
-/ext/charconv/charconv.h
+/ext/charconv/iconv-adapter.h
 /ext/charconv/convaux.c
 /ext/charconv/eucj2ucs.c
 /ext/charconv/guess_tab.c

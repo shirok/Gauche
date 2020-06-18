@@ -899,7 +899,7 @@ AC_CONFIG_FILES([
           ext/Makefile ext/Makefile.ext
           ext/bcrypt/Makefile
           ext/binary/Makefile
-          ext/charconv/Makefile ext/charconv/charconv.h
+          ext/charconv/Makefile ext/charconv/iconv-adapter.h
           ext/data/Makefile
           ext/dbm/Makefile
           ext/digest/Makefile

@@ -1,0 +1,11 @@
+#ifndef GAUCHE_ICONV_ADAPTER_H
+#define GAUCHE_ICONV_ADAPTER_H
+
+#ifdef HAVE_ICONV_H
+#include <@ICONV_NAME@.h>
+#else
+/* Dummy definitions */
+typedef int iconv_t;
+#endif /* !HAVE_ICONV_H */
+
+#endif /*GAUCHE_ICONV_ADAPTER_H*/
