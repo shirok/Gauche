@@ -52,41 +52,28 @@
 
 #define ERRP(n)    ((n)==INPUT_NOT_ENOUGH||(n)==OUTPUT_NOT_ENOUGH||(n)==ILLEGAL_SEQUENCE)
 
-/* Substitution characters.
- *  Unrecognized 1-byte character is substituted by SUBST1_CHAR.
- *  It's common to all encodings.
- *  Unrecognized or uncovertable multibyte character is substituted
- *  by so-called 'Geta-sign'.
- */
-#define SUBST1_CHAR   '?'
-#define EUCJ_SUBST2_CHAR1  0xa2
-#define EUCJ_SUBST2_CHAR2  0xae
-#define JIS_SUBST2_CHAR1   0x02
-#define JIS_SUBST2_CHAR2   0x0e
-#define SJIS_SUBST2_CHAR1  0x81
-#define SJIS_SUBST2_CHAR2  0xac
-#define UTF8_SUBST2_CHAR1   0xe3
-#define UTF8_SUBST2_CHAR2   0x80
-#define UTF8_SUBST2_CHAR3   0x93
+/* Fill outptr with substitution character.  Can return jconv error code. */
+static inline int do_subst(ScmConvInfo *cinfo,
+                           char *outptr, 
+                           ScmSize outroom,
+                           ScmSize *outchars)
+{
+    if (cinfo->replaceSize == 0) {
+        return ILLEGAL_SEQUENCE;
+    }
+    OUTCHK(cinfo->replaceSize);
+    for (int i = 0; i < cinfo->replaceSize; i++) {
+        outptr[i] = cinfo->replaceSeq[i];
+    }
+    *outchars = cinfo->replaceSize;
+    return cinfo->replaceSize;
+}
 
-#define EUCJ_SUBST                              \
-  do { OUTCHK(2);                               \
-       outptr[0] = EUCJ_SUBST2_CHAR1;           \
-       outptr[1] = EUCJ_SUBST2_CHAR2;           \
-       *outchars = 2; } while (0)
-
-#define SJIS_SUBST                              \
-  do { OUTCHK(2);                               \
-       outptr[0] = SJIS_SUBST2_CHAR1;           \
-       outptr[1] = SJIS_SUBST2_CHAR2;           \
-       *outchars = 2; } while (0)
-
-#define UTF8_SUBST                              \
-  do { OUTCHK(3);                               \
-       outptr[0] = UTF8_SUBST2_CHAR1;           \
-       outptr[1] = UTF8_SUBST2_CHAR2;           \
-       outptr[2] = UTF8_SUBST2_CHAR2;           \
-       *outchars = 3; } while (0)
+#define DO_SUBST                                                \
+    do {                                                        \
+        int i = do_subst(cinfo, outptr, outroom, outchars);     \
+        if (i < 0) return i;                                    \
+    } while (0)
 
 /*=================================================================
  * Shift JIS
@@ -163,7 +150,7 @@ static ScmSize sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
         INCHK(2);
         unsigned char s2 = inptr[1];
         if (s2 < 0x40 || s2 > 0xfc) {
-            EUCJ_SUBST;
+            DO_SUBST;
             return 2;
         }
 
@@ -239,9 +226,8 @@ static ScmSize sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
     }
 
     /* s1 == 0x80 or 0xa0 */
-    outptr[0] = SUBST1_CHAR;
-    *outchars = 1;
-    return 1;
+    DO_SUBST;
+    return 2;
 }
 
 /* EUC_JISX0213 -> Shift_JIS
@@ -305,7 +291,7 @@ static ScmSize eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
         INCHK(2);
         unsigned char e2 = inptr[1];
         if (e2 < 0xa1 || e2 == 0xff) {
-            SJIS_SUBST;
+            DO_SUBST;
             return 2;
         }
         OUTCHK(2);
@@ -327,11 +313,11 @@ static ScmSize eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
         INCHK(2);
         unsigned char e2 = inptr[1];
         if (e2 < 0xa1 || e2 == 0xff) {
-            outptr[0] = SUBST1_CHAR;
+            DO_SUBST;
         } else {
             outptr[0] = e2;
+            *outchars = 1;
         }
-        *outchars = 1;
         return 2;
     }
     if (e1 == 0x8f) {
@@ -344,18 +330,18 @@ static ScmSize eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
         e1 = inptr[1];
         unsigned char e2 = inptr[2];
         if (e1 < 0xa1 || e1 == 0xff || e2 < 0xa1 || e2 == 0xff) {
-            SJIS_SUBST;
+            DO_SUBST;
             return 3;
         }
         if (e1 >= 0xee) {
             s1 = (e1 - 0xa0 + 0x19b)/2;
         } else if (e1 >= 0xb0) {
-            SJIS_SUBST;
+            DO_SUBST;
             return 3;
         } else {
             s1 = cvt[e1-0xa1];
             if (s1 == 0) {
-                SJIS_SUBST;
+                DO_SUBST;
                 return 3;
             }
         }
@@ -371,8 +357,7 @@ static ScmSize eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
         return 3;
     }
     /* no corresponding char */
-    *outptr = SUBST1_CHAR;
-    *outchars = 1;
+    DO_SUBST;
     return 1;
 }
 
@@ -449,9 +434,7 @@ static inline ScmSize utf2euc_emit_euc(unsigned short euc,
                                        ScmSize outroom,
                                        ScmSize *outchars)
 {
-    if (euc == 0) {
-        EUCJ_SUBST;
-    } else if (euc < 0x8000) {
+    if (euc < 0x8000) {
         OUTCHK(3);
         outptr[0] = 0x8f;
         outptr[1] = (euc >> 8) + 0x80;
@@ -505,9 +488,12 @@ static inline ScmSize utf2euc_2(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
     }
     if (etab != NULL) {
         /* table lookup */
-        return utf2euc_emit_euc(etab[u1-0x80], 2, outptr, outroom, outchars);
+        unsigned short euc = etab[u1-0x80];
+        if (euc != 0) {
+            return utf2euc_emit_euc(euc, 2, outptr, outroom, outchars);
+        }
     }
-    EUCJ_SUBST;
+    DO_SUBST;
     return 2;
 }
 
@@ -554,10 +540,13 @@ static inline ScmSize utf2euc_3(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
     if (tab1 != NULL) {
         unsigned char ind = tab1[u1-0x80];
         if (ind != 0) {
-            return utf2euc_emit_euc(tab2[ind-1][u2-0x80], 3, outptr, outroom, outchars);
+            unsigned short euc = tab2[ind-1][u2-0x80];
+            if (euc != 0) {
+                return utf2euc_emit_euc(euc, 3, outptr, outroom, outchars);
+            }
         }
     }
-    EUCJ_SUBST;
+    DO_SUBST;
     return 3;
 }
 
@@ -571,7 +560,7 @@ static inline ScmSize utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 
     INCHK(4);
     if (u0 != 0xf0) {
-        EUCJ_SUBST;
+        DO_SUBST;
         return 4;
     }
     unsigned char u1 = (unsigned char)inptr[1];
@@ -597,11 +586,14 @@ static inline ScmSize utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
         unsigned short u2u3 = u2*256 + u3;
         for (int i=0; tab[i]; i+=2) {
             if (tab[i] == u2u3) {
-                return utf2euc_emit_euc(tab[i+1], 4, outptr, outroom, outchars);
+                unsigned short euc = tab[i+1];
+                if (euc != 0) {
+                    return utf2euc_emit_euc(euc, 4, outptr, outroom, outchars);
+                }
             }
         }
     }
-    EUCJ_SUBST;
+    DO_SUBST;
     return 4;
 }
 
@@ -637,13 +629,13 @@ static ScmSize utf2eucj(ScmConvInfo *cinfo,
     if (u0 <= 0xfb) {
         /* 5-byte UTF8 sequence */
         INCHK(5);
-        EUCJ_SUBST;
+        DO_SUBST;
         return 5;
     }
     if (u0 <= 0xfd) {
         /* 6-byte UTF8 sequence */
         INCHK(6);
-        EUCJ_SUBST;
+        DO_SUBST;
         return 6;
     }
     return ILLEGAL_SEQUENCE;
@@ -713,9 +705,7 @@ static inline ScmSize eucj2utf_emit_utf(unsigned int ucs, ScmSize inchars,
                                         char *outptr, ScmSize outroom,
                                         ScmSize *outchars)
 {
-    if (ucs == 0) {
-        UTF8_SUBST;
-    } else if (ucs < 0x100000) {
+    if (ucs < 0x100000) {
         int outreq = UCS2UTF_NBYTES(ucs);
         OUTCHK(outreq);
         jconv_ucs4_to_utf8(ucs, outptr);
@@ -760,11 +750,15 @@ static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
             }
             index = euc_jisx0213_2_index[e1 - 0xa1];
             if (index < 0) {
-                UTF8_SUBST;
+                DO_SUBST;
                 return 3;
             }
             unsigned int ucs = euc_jisx0213_2_to_ucs2[index][e2 - 0xa1];
-            return eucj2utf_emit_utf(ucs, 3, outptr, outroom, outchars);
+            if (ucs != 0) {
+                return eucj2utf_emit_utf(ucs, 3, outptr, outroom, outchars);
+            }
+            DO_SUBST;
+            return 3;
         }
         else {
             /* ASCII or C1 region */
@@ -779,9 +773,15 @@ static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
         unsigned char e1 = (unsigned char)inptr[1];
         if (e1 < 0xa1 || e1 > 0xfe) return ILLEGAL_SEQUENCE;
         unsigned int ucs = euc_jisx0213_1_to_ucs2[e0 - 0xa1][e1 - 0xa1];
-        return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
+        if (ucs != 0) {
+            return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
+        }
+        DO_SUBST;
+        return 2;
     }
-    return ILLEGAL_SEQUENCE;
+    /* e0 == 0xa0 */
+    DO_SUBST;
+    return 1;
 }
 
 /*=================================================================
@@ -973,8 +973,7 @@ static ScmSize jis2eucj(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
             return 2+inoffset;
         }
         case JIS_UNKNOWN:
-            outptr[0] = SUBST1_CHAR;
-            *outchars = 1;
+            DO_SUBST;
             return 1+inoffset;
         default:
             /* Can't be here */
@@ -1424,10 +1423,36 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
     info->toCode = toCode;
     info->istate = info->ostate = JIS_ASCII;
     info->fromCode = fromCode;
+    /* The replacement settings can be modified by jconv_set_replacement */
     info->replacep = FALSE;
     info->replaceSize = 0;
     info->replaceSeq = NULL;
     return info;
+}
+
+/*------------------------------------------------------------------
+ * JCONV_SET_REPLACEMENT
+ *   Setting up replacement sequence according to the toCode.
+ */
+void jconv_set_replacement(ScmConvInfo *info)
+{
+    static ScmObj ces_replacement_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(ces_replacement_proc, "%ces-replacement-proc",
+                  Scm_FindModule(SCM_SYMBOL(SCM_INTERN("gauche.charconv")), 0));
+    ScmObj replacements = Scm_ApplyRec1(ces_replacement_proc,
+                                        SCM_MAKE_STR(info->toCode));
+    ScmSize i = Scm_Length(replacements);
+    if (i > 0) {
+        info->replacep = TRUE;
+        info->replaceSize = i;
+        char *replaceSeq = SCM_NEW_ATOMIC_ARRAY(char, i);
+        for (int j = 0; j < i; j++) {
+            SCM_ASSERT(SCM_PAIRP(replacements));
+            replaceSeq[j] = SCM_INT_VALUE(SCM_CAR(replacements));
+            replacements = SCM_CDR(replacements);
+        }
+        info->replaceSeq = replaceSeq;
+    }
 }
 
 /*------------------------------------------------------------------

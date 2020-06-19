@@ -113,6 +113,31 @@
 
     (values ces-equivalent? ces-upper-compatible?)))
 
+;; Returns a list of octets for replacement characters.
+;; This is called from jconv_set_replacement() internal C function.
+(define (%ces-replacement ces)
+  (assume-type ces <string>)
+  (cond
+   ;; For unicode, we use U+FFFD Replacement Character.
+   [(ces-equivalent? "utf8" ces)  '(#xef #xbf #xbd)]
+   ;; For jis-family, we use U+3013 Geta Mark (JIS 020E)
+   [(ces-equivalent? "eucjp" ces) '(#xa2 #xae)]
+   [(ces-equivalent? "sjis" ces) '(#x81 #xac)]
+   ;; 1-byte encoding, we use '?'
+   [(ces-equivalent? "ascii" ces) '(#x3f)]
+   [(ces-equivalent? "iso88591" ces) '(#x3f)]
+   [(ces-equivalent? "iso88592" ces) '(#x3f)]
+   [(ces-equivalent? "iso88593" ces) '(#x3f)]
+   [(ces-equivalent? "iso88594" ces) '(#x3f)]
+   [(ces-equivalent? "iso88595" ces) '(#x3f)]
+   [(ces-equivalent? "iso88596" ces) '(#x3f)]
+   [(ces-equivalent? "iso88597" ces) '(#x3f)]
+   [(ces-equivalent? "iso88598" ces) '(#x3f)]
+   [(ces-equivalent? "iso88599" ces) '(#x3f)]
+   ;; we should detect some more unicode family to pass U+FFFD, but
+   ;; for now, we return '?'.
+   [else '(#x3f)]))
+
 ;; returns appropriate input port and size
 (define (%ces-input input)
   (cond [(string? input)
