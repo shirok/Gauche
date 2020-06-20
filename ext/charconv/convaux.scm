@@ -254,17 +254,21 @@
           [cto  ::(const char*) (Scm_GetCESName to "to-code")])
      (return (Scm_ConversionSupportedP cfrom cto))))
 
- ;; NB: :handler interface is experimental.  Do not use it.
  (define-cproc open-input-conversion-port (source::<input-port>
                                            from-code
                                            :key (to-code #f)
                                                 (buffer-size::<fixnum> 0)
                                                 (owner? #f)
-                                                (handler #f))
+                                                (handling #f))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
-          [tc::(const char*) (Scm_GetCESName to_code "to-code")])
-     (return (Scm_MakeInputConversionPort source fc tc handler buffer_size
-                                          (not (SCM_FALSEP ownerP))))))
+          [tc::(const char*) (Scm_GetCESName to_code "to-code")]
+          [flags::u_long 0])
+     (unless (SCM_FALSEP ownerP)
+       (logior= flags CVPORT_OWNER))
+     (when (SCM_EQ handling 'replace)
+       (logior= flags CVPORT_REPLACE))
+     (return (Scm_MakeInputConversionPort source fc tc buffer_size
+                                          flags))))
 
  (define-cproc open-output-conversion-port (sink::<output-port>
                                             to-code
@@ -272,9 +276,11 @@
                                                  (buffer-size::<fixnum> 0)
                                                  (owner? #f))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
-          [tc::(const char*) (Scm_GetCESName to_code "to-code")])
-     (return (Scm_MakeOutputConversionPort sink tc fc buffer_size
-                                           (not (SCM_FALSEP ownerP))))))
+          [tc::(const char*) (Scm_GetCESName to_code "to-code")]
+          [flags::u_long 0])
+     (unless (SCM_FALSEP ownerP)
+       (logior= flags CVPORT_OWNER))
+     (return (Scm_MakeOutputConversionPort sink tc fc buffer_size flags))))
 
  (define-cproc ces-guess-from-string (string::<string> scheme::<string>)
    (let* ([size::ScmSmallInt]

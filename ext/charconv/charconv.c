@@ -240,9 +240,8 @@ static void conv_input_closer(ScmPort *p)
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                    const char *fromCode,
                                    const char *toCode,
-                                   ScmObj handler SCM_UNUSED, /* for now */
                                    ScmSize bufsiz,
-                                   int ownerp)
+                                   u_long flags)
 {
     char *inbuf = NULL;
     ScmSize preread = 0;
@@ -278,7 +277,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                   fromCode, toCode);
     }
     cinfo->remote = fromPort;
-    cinfo->ownerp = ownerp;
+    cinfo->ownerp = flags & CVPORT_OWNER;
     cinfo->bufsiz = bufsiz;
     cinfo->remoteClosed = FALSE;
     if (preread > 0) {
@@ -287,6 +286,10 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     } else {
         cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
         cinfo->ptr = cinfo->buf;
+    }
+
+    if (flags & CVPORT_REPLACE) {
+        jconv_set_replacement(cinfo);
     }
 
     ScmPortBuffer bufrec;
@@ -314,8 +317,7 @@ static ScmPort *coding_aware_conv(ScmPort *src, const char *encoding)
     return SCM_PORT(Scm_MakeInputConversionPort(src,
                                                 encoding,
                                                 Scm_SupportedCharacterEncodings()[0],
-                                                SCM_FALSE,
-                                                0, TRUE));
+                                                0, CVPORT_OWNER));
 }
 
 /*------------------------------------------------------------
@@ -435,7 +437,7 @@ static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
 ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
                                     const char *toCode,
                                     const char *fromCode,
-                                    ScmSize bufsiz, int ownerp)
+                                    ScmSize bufsiz, u_long flags)
 {
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
@@ -451,7 +453,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
                   fromCode, toCode);
     }
     cinfo->remote = toPort;
-    cinfo->ownerp = ownerp;
+    cinfo->ownerp = flags & CVPORT_OWNER;
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
     cinfo->remoteClosed = FALSE;
     cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);

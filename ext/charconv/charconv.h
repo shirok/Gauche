@@ -70,17 +70,24 @@ typedef struct ScmConvInfoRec {
     char *ptr;                  /* current ptr in the internal conv buf */
 } ScmConvInfo;
 
+/* bitmask for 'flags' argument */
+enum {
+    CVPORT_OWNER = (1L<<0),     /* Close the inner port if the conversion port
+                                   is closed. */
+    CVPORT_REPLACE = (1L<<1)    /* Use replacement character for illegal 
+                                   sequences instead of signaling an error */
+};
+
 extern ScmObj Scm_MakeInputConversionPort(ScmPort *source,
                                           const char *fromCode,
                                           const char *toCode,
-                                          ScmObj handler,
                                           ScmSize bufsiz,
-                                          int ownerp);
+                                          u_long flags);
 extern ScmObj Scm_MakeOutputConversionPort(ScmPort *sink,
                                            const char *toCode,
                                            const char *fromCode,
                                            ScmSize bufsiz,
-                                           int ownerp);
+                                           u_long flags);
 
 typedef const char *(*ScmCodeGuessingProc)(const char *buf,
                                            ScmSize bufsiz,
@@ -107,6 +114,7 @@ extern int jconv_close(ScmConvInfo*);
 extern ScmSize jconv(ScmConvInfo*, const char **inptr, ScmSize *inroom,
                      char **outptr, ScmSize *outroom);
 extern ScmSize jconv_reset(ScmConvInfo *, char *outptr, ScmSize outroom);
+extern void jconv_set_replacement(ScmConvInfo *info);
 
 /* Given UCS char, return # of bytes required for UTF8 encoding. */
 #define UCS2UTF_NBYTES(ucs)                      \
