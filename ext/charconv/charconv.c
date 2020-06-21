@@ -207,13 +207,29 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
         info->ptr = info->buf + inroom;
         return info->bufsiz - (ScmSize)outroom;
     } else if (result == ILLEGAL_SEQUENCE) {
-        /* it's likely that the input contains invalid sequence. */
-        ScmSize cnt = inroom >= 6 ? 6 : (ScmSize)inroom;
-        ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
-                                  SCM_STRING_COPYING|SCM_STRING_INCOMPLETE);
-        Scm_Error("invalid character sequence in the input stream: %S ...", s);
+        /* input sequence can't be represented by the destination CES. */
+        if (info->replacep) {
+            if (outroom < info->replaceSize) {
+                /* We don't have enough room to place replace char, so
+                   we stop before the bad char and let it be handled
+                   in the next callback. */
+                memmove(info->buf, info->buf+insize-inroom, inroom);
+                info->ptr = info->buf + inroom;
+                return info->bufsiz - (ScmSize)outroom;
+            } else {
+                memmove(info->buf, info->buf+insize-inroom+1, inroom-1);
+                info->ptr = info->buf + inroom - 1;
+                memcpy(outbuf, info->replaceSeq, info->replaceSize);
+                return info->bufsiz - (ScmSize)(outroom - info->replaceSize);
+            }
+        } else {
+            ScmSize cnt = inroom >= 6 ? 6 : (ScmSize)inroom;
+            ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
+                                      SCM_STRING_COPYING|SCM_STRING_INCOMPLETE);
+            Scm_Error("invalid character sequence in the input stream: %S ...", s);
+        }
     }
-
+    
     /* Conversion is done completely. */
     /* NB: There are cases that some bytes are left in the input buffer
        even iconv returns positive value.  We need to shift those bytes. */

@@ -1437,7 +1437,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
 void jconv_set_replacement(ScmConvInfo *info)
 {
     static ScmObj ces_replacement_proc = SCM_UNDEFINED;
-    SCM_BIND_PROC(ces_replacement_proc, "%ces-replacement-proc",
+    SCM_BIND_PROC(ces_replacement_proc, "%ces-replacement",
                   Scm_FindModule(SCM_SYMBOL(SCM_INTERN("gauche.charconv")), 0));
     ScmObj replacements = Scm_ApplyRec1(ces_replacement_proc,
                                         SCM_MAKE_STR(info->toCode));

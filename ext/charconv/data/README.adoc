@@ -8,6 +8,8 @@ jp3:: long kanji text, containing long lines.
 jp4:: kanji text, specifically designed so that it will cause
       unusual buffer overflow in particular combination of in/out CES.
 
+jpsrc[1-3]:: source files with coding: magic comment in various encodings.
+
 kr1:: one-line hangul text
 
 Text in some encodings are automatically generated from the 'base'
