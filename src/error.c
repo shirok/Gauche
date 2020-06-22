@@ -781,10 +781,8 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 
 /*
  * A convenience function to raise port-related errors.
- * It creates either one of <port-error>, <io-read-error>,
- * <io-write-error>, <io-closed-error>, or <io-unit-error>,
- * depending on the 'reason' argument being
- * SCM_PORT_ERROR_{OTHER,INPUT,OUTPUT,CLOSED,UNIT}, respectively.
+ * It creates either one of port error instance,
+ * depending on the 'reason' argument.
  * If errno isn't zero, it also creates a <system-error> and throws
  * a compound condition of both.
  */
@@ -809,6 +807,10 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
         peclass = SCM_CLASS_IO_CLOSED_ERROR; break;
     case SCM_PORT_ERROR_UNIT:
         peclass = SCM_CLASS_IO_UNIT_ERROR; break;
+    case SCM_PORT_ERROR_DECODING:
+        peclass = SCM_CLASS_IO_DECODING_ERROR; break;
+    case SCM_PORT_ERROR_ENCODING:
+        peclass = SCM_CLASS_IO_ENCODING_ERROR; break;
     default:
         peclass = SCM_CLASS_PORT_ERROR; break;
     }

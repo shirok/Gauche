@@ -48,7 +48,9 @@
     |         +- <io-error>   ; srfi-36
     |              +- <port-error> ; srfi-36
     |                   +- <io-read-error>   ; srfi-36
+    |                        +- <io-decoding-error>  ; (srfi-186)
     |                   +- <io-write-error>  ; srfi-36
+    |                        +- <io-encoding-error>  ; (srfi-186)
     |                   +- <io-closed-error> ; srfi-36
     |                   +- <io-unit-error>
     +- <thread-exception> ; srfi-18

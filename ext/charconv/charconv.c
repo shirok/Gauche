@@ -226,7 +226,8 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
             ScmSize cnt = inroom >= 6 ? 6 : (ScmSize)inroom;
             ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
                                       SCM_STRING_COPYING|SCM_STRING_INCOMPLETE);
-            Scm_Error("invalid character sequence in the input stream: %S ...", s);
+            Scm_PortError(port, SCM_PORT_ERROR_DECODING,
+                          "invalid character sequence in the input stream: %S ...", s);
         }
     }
     
@@ -432,7 +433,8 @@ static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
         } else if (result == ILLEGAL_SEQUENCE) {
             /* it's likely that input contains invalid sequence.
                TODO: we should handle this case gracefully. */
-            Scm_Error("invalid character sequence in the input stream");
+            Scm_PortError(port, SCM_PORT_ERROR_ENCODING,
+                          "cannot encode a character to the output stream");
             return 0;           /* dummy */
         } else {
 #ifndef GLIBC_2_1_ICONV_BUG
