@@ -185,6 +185,21 @@ static ScmClass *porterror_cpl[] = {
     NULL
 };
 
+static ScmClass *decoding_error_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_IOReadErrorClass),
+    SCM_CLASS_STATIC_PTR(Scm_PortErrorClass),
+    SCM_CLASS_STATIC_PTR(Scm_IOErrorClass),
+    ERROR_CPL,
+    NULL
+};
+    
+static ScmClass *encoding_error_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_IOWriteErrorClass),
+    SCM_CLASS_STATIC_PTR(Scm_PortErrorClass),
+    SCM_CLASS_STATIC_PTR(Scm_IOErrorClass),
+    ERROR_CPL,
+    NULL
+};
 
 SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
                       message_print, NULL, NULL,
@@ -216,6 +231,12 @@ SCM_DEFINE_BASE_CLASS(Scm_IOClosedErrorClass, ScmIOClosedError,
 SCM_DEFINE_BASE_CLASS(Scm_IOUnitErrorClass, ScmIOUnitError,
                       message_print, NULL, NULL,
                       porterror_allocate, porterror_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IODecodingErrorClass, ScmIODecodingError,
+                      message_print, NULL, NULL,
+                      porterror_allocate, decoding_error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOEncodingErrorClass, ScmIOEncodingError,
+                      message_print, NULL, NULL,
+                      porterror_allocate, encoding_error_cpl);
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
@@ -1064,7 +1085,14 @@ void Scm__InitExceptions(void)
                                 "<io-unit-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 porterror_slots, 0);
-
+    Scm_InitStaticClassWithMeta(SCM_CLASS_IO_DECODING_ERROR,
+                                "<io-decoding-error>",
+                                mod, cond_meta, SCM_FALSE,
+                                porterror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_IO_ENCODING_ERROR,
+                                "<io-encoding-error>",
+                                mod, cond_meta, SCM_FALSE,
+                                porterror_slots, 0);
 
     Scm_InitStaticClassWithMeta(SCM_CLASS_COMPOUND_CONDITION,
                                 "<compound-condition>",
