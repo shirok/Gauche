@@ -625,6 +625,7 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__charconv(void)
     ucsconv.ucs2char = ucsconv.char2ucs = NULL;
 #endif
     (void)SCM_INTERNAL_MUTEX_INIT(ucsconv.mutex);
+
     Scm_Init_convguess();
     Scm_Init_convaux();
     Scm__InstallCharconvHooks(ucstochar, chartoucs);

@@ -287,15 +287,14 @@
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 ;; replacement handling
-(test* "replacement" (test-error)
+(test* "utf-8 -> ascii noreplacement" (test-error)
        (ces-convert #u8(#x61 #xe3 #x81 #x82 #x62 #xe3 #x81
                        #x84 #x63 #xe3 #x81 #x86)
                     'utf-8 'ascii))
-(test* "replacement" "a???b???c???"
+(test* "utf-8 -> ascii replacement" "a???b???c???"
        (ces-convert #u8(#x61 #xe3 #x81 #x82 #x62 #xe3 #x81
                         #x84 #x63 #xe3 #x81 #x86)
                     'utf-8 'ascii 'replace))
-
 
 ;;--------------------------------------------------------------------
 (test-section "wrapping conversion")

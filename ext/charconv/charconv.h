@@ -104,6 +104,12 @@ extern const char *Scm_GuessCES(const char *code,
                                 const char *buf,
                                 ScmSize buflen);
 
+/* 
+ * jconv interface
+ *
+ *   jconv is a lower-level layer
+ */
+
 /* jconv error code */
 #define ILLEGAL_SEQUENCE  (-1)
 #define INPUT_NOT_ENOUGH  (-2)
