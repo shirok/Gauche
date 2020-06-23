@@ -3328,13 +3328,21 @@ or an error is signaled.
 @defmacx every?-ec qualifier @dots{} test
 [SRFI-42]
 @c MOD srfi-42
+@c EN
 Evaluates @var{test} for each iteration, and returns
-@code{#t} as soon as it yields non-@code{#f} (for @code{any-ec?}),
+@code{#t} as soon as it yields non-@code{#f} (for @code{any?-ec}),
 or returns @code{#f} as soon as it yields @code{#f} (for @code{every?-ec}).
 Unlink the comprehensions introduced above, these stop evaluating
 @var{test} as soon as the condition meets.
 If the qualifiers makes no iteration, @code{#f} and @code{#t} are
 returned, respectively.
+@c JP
+繰り返しのたびに@var{test}を評価し、@code{any?-ec}では@var{test}が偽でない
+値を返したら直ちにその値を、@code{every?-ec}では@var{test}が偽を返したら
+直ちに@code{#f}を、それぞれ返します。これまで上で説明してきた
+内包表記とは異なり、これらは@var{test}が条件を満たしたら繰り返しを打ち切ります。
+もし繰り返しが一度もなされなかった場合、それぞれ@code{#f}と@code{#t}が戻り値となります。
+@c COMMON
 @end defmac
 
 @defmac first-ec default qualifier @dots{} body
@@ -3661,12 +3669,28 @@ It terminates when any one of @var{generator} is exhausted.
 @end deffn
 
 @deffn {EC Qualifier} :let vars expr
+@c EN
+Evaluate @var{expr}, and bind the result to @var{vars} and execure
+the following clauses once.
+If @var{vars} has an index var, it is bound to 0.
+It is effectively the same as @code{(:list vars (list expr))}.
+@c JP
+@var{expr}を評価し、その値を@var{vars}に束縛して1回だけ以降の節を実行します。
+@var{vars}にインデックス変数があればそれは0に束縛されます。
+実効的には@code{(:list vars (list expr))}と同じです。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} :while generator expr
+Evaluate @var{generator} while @var{expr} evaluates true.  Here,
+@var{generator} is one of generative EC qualifiers.  The variable
+bound in @var{generator} is visible from @var{expr}.
 @end deffn
 
 @deffn {EC Qualifier} :until generator expr
+Evaluate @var{generator} until @var{expr} evaluates true.  Here,
+@var{generator} is one of generative EC qualifiers.  The variable
+bound in @var{generator} is visible from @var{expr}.
 @end deffn
 
 @deffn {EC Qualifier} :dispatched vars dispatch arg1 args @dots{}
