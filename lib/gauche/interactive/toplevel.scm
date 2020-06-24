@@ -1,7 +1,7 @@
 ;;;
 ;;; interactive/toplevel.scm - toplevel commands
 ;;;
-;;;   Copyright (c) 2015-2019  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2015-2020  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions

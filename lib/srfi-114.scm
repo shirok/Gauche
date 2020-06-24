@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-114 - comparators
 ;;;
-;;;   Copyright (c) 2014-2019  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2014-2020  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions

@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.package.compile - compile extensions
 ;;;
-;;;   Copyright (c) 2005-2019  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2005-2020  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions

@@ -1,7 +1,7 @@
 ;;;
 ;;; libalpha.scm - Procedures needed by other lib*.scm
 ;;;
-;;;   Copyright (c) 2000-2019  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2020  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
