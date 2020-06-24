@@ -837,7 +837,7 @@
         (121 . -11)
         (144 . -12)))
 
-;;; Bugs reported on 5 January 2019 by J«±ssica Milar«±
+;;; Bugs reported on 5 January 2019 by JÃ©ssica MilarÃ©
 ;;; ( https://srfi-email.schemers.org/srfi-125/msg/10177551 )
 
 ;;; Spec says hash-table returns an immutable hash table (if that
