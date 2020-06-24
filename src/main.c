@@ -120,7 +120,7 @@ void usage(int errorp)
             "  -v<version> If <version> is not the running Gauche's version, but\n"
             "           the specified version is installed in the system, execute\n"
             "           that version's gosh instead.  This is useful when you want\n"
-            "           to invoke specific version of Gauche.  <Version> must be\n"
+            "           to invoke a specific version of Gauche.  <Version> must be\n"
             "           0.9.6 or later.\n"
             "  -r<standard>  Starts gosh with the default environment defined\n"
             "           in RnRS, where n is determined by <standard>.  The following\n"

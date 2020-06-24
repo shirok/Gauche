@@ -4,7 +4,7 @@
 gosh \- a Scheme script interpreter
 .SH SYNOPSIS
 .B gosh
-[-biqV]
+[-bhiqV]
 [-I
 .I path
 ]
@@ -99,6 +99,9 @@ Prints gosh version and exits.
 Batch mode.  Doesn't print prompt even the standard input
 is a terminal.  Supersedes -i.
 .TP
+.BI -h
+Print help message to stdout and exit with 0.
+.TP
 .BI -i
 Interactive mode.  Forces to print prompt, even the standard input
 is not a terminal.
@@ -141,15 +144,15 @@ Same as -e, except that the
 .I expr
 is read as if it is surrounded by parenthesis.
 .TP
-.BI -p type
-Turns on the profiler.
-.I Type
-can be either 'time' or 'load'.
-.TP
 .BI -m module
 When the script file is given, this option specifies the name of
 the module in which the "main" procedure is defined.
 The default is "user".
+.TP
+.BI -p type
+Turns on the profiler.
+.I Type
+can be either 'time' or 'load'.
 .TP
 .BI -r standard
 Starts gosh with the default environment defined
@@ -157,6 +160,14 @@ in RnRS, where n is determined by
 .I standard.
 Currently, only 7 is the valid value of
 .I standard.
+.TP
+.BI -v version
+If
+.I version
+is not the running Gauche's version, but the specified verision
+is installed in the system, execute taht version's gosh instead.
+This is useful when you want to invoke a specific version of Gauche.
+The version must be 0.9.6 or later.
 .TP
 .BI -f flag
 Sets various flags.
@@ -172,7 +183,10 @@ Sets various flags.
   no-inline-setters don't inline setters.
   no-post-inline-pass don't run post-inline optimization pass.
   no-lambda-lifting-pass don't run lambda lifting optimization pass.
+  no-post-inline-pass  don't run post-inline optimization pass.
   no-source-info  don't retain source information.
+  read-edit       enable input editing mode, if terminal supports it.
+  no-read-edit    disable input editing mode.
   warn-legacy-syntax print warning when legacy Gauche syntax
                   is encountered.
   test            assume being run in the build tree; tries to
