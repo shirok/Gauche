@@ -117,6 +117,13 @@ jobs:
     steps:
     - run: git config --global core.autocrlf false
     - uses: actions/checkout@v2
+    - uses: msys2/setup-msys2@v1
+      with:
+        msystem: MINGW${{ matrix.bit }}
+        path-type: inherit
+        release: false
+        update: true
+        cache: true
     - name: Add MSYS2 path
       run: |
         echo "::set-env name=PATH::$env:MSYS2_PATH_LIST;$env:PATH"
@@ -127,12 +134,6 @@ jobs:
           cd $GITHUB_WORKSPACE
           pwd
           echo $PATH
-        '@
-    - name: Update MSYS2
-      run: |
-        bash -lc @'
-          pacman --version
-          pacman -Syyuu --noconfirm
         '@
     - name: Install Gauche
       run: |
