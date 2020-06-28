@@ -45,13 +45,15 @@
           maybe-filter maybe-remove either-filter either-remove
           maybe-sequence either-sequence
           maybe->either either->maybe list->just list->right list->left
-          maybe->list either->list
-          maybe->lisp lisp->maybe
-          maybe->eof eof->maybe
+          maybe->list either->list list->maybe list->either
+          maybe->truth either->truth truth->maybe truth->either
+          maybe->list-truth either->list-truth
+          list-truth->maybe list-truth->either
+          maybe->generation generation->maybe
+          either->generation generation->either
           maybe->values either->values
           values->maybe values->either
-          maybe->lisp-values
-          lisp-values->maybe
+          maybe->two-values two-values->maybe
           maybe-map either-map maybe-for-each either-for-each
           maybe-fold either-fold maybe-unfold either-unfold
           maybe-if
@@ -109,15 +111,24 @@
 (define (right? x) (is-a? x <right>))
 (define (left? x) (is-a? x <left>))
 
-(define (maybe= eqproc x y)
-  (or (and (nothing? x) (nothing? y))
-      (and (just? x) (just? y)
-           (list= eqproc (~ x'objs) (~ y'objs)))))
-(define (either= eqproc x y)
-  (or (and (right? x) (right? y)
-           (list= eqproc (~ x'objs) (~ y'objs)))
-      (and (left? x) (left? y)
-           (list= eqproc (~ x'objs) (~ y'objs)))))
+(define (maybe= eqproc x . xs)
+  (or (null? xs)
+      (let1 y (car xs)
+        (and (or (and (nothing? x) (nothing? y))
+                 (and (just? x) (just? y)
+                      (list= eqproc (~ x'objs) (~ y'objs))))
+             (or (null? (cdr xs))
+                 (apply maybe= eqproc xs))))))
+
+(define (either= eqproc x . xs)
+  (or (null? xs)
+      (let1 y (car xs)
+        (and (or (and (right? x) (right? y)
+                      (list= eqproc (~ x'objs) (~ y'objs)))
+                 (and (left? x) (left? y)
+                      (list= eqproc (~ x'objs) (~ y'objs))))
+             (or (null? (cdr xs))
+                 (apply either= eqproc xs))))))
 
 (define (%maybe-ref-failure)
   (error <maybe-ref-error> "Attempt to derefenence <nothing>"))
@@ -279,27 +290,58 @@
 (define (maybe->list maybe)
   (assume-type maybe <maybe>)
   (if (nothing? maybe) '() (~ maybe'objs)))
+(define (list->maybe lis)
+  (if (null? lis)
+    (nothing)
+    (apply just lis)))
 (define (either->list either)
   (assume-type either <either>)
   (~ either'objs))
+(define (list->either lis . objs)
+  (if (null? lis)
+    (apply left objs)
+    (apply right lis)))
 
-(define (maybe->lisp maybe)
+(define (maybe->truth maybe)
   (assume-type maybe <maybe>)
   (and (just? maybe) (%ref1 maybe)))
-
-(define (lisp->maybe obj)
+(define (truth->maybe obj)
   (if obj (just obj) (nothing)))
+(define (either->truth either)
+  (assume-type either <either>)
+  (and (right? either) (%ref1 either)))
+(define (truth->either obj . fail-objs)
+  (if obj (right obj) (apply left fail-objs)))
 
-(define (maybe->eof maybe)
+(define (maybe->list-truth maybe)
+  (assume-type maybe <maybe>)
+  (and (just? maybe) (~ maybe'objs)))
+(define (list-truth->maybe lis-or-false)
+  (if lis-or-false (apply just lis-or-false) (nothing)))
+(define (either->list-truth either)
+  (assume-type either <either>)
+  (and (right? either) (~ either'objs)))
+(define (list-truth->either lis-or-false . fail-objs)
+  (if lis-or-false (apply right lis-or-false) (apply left fail-objs)))
+
+(define (maybe->generation maybe)
   (assume-type maybe <maybe>)
   (if (just? maybe)
     (%ref1 maybe)
     (eof-object)))
-
-(define (eof->maybe obj)
+(define (generation->maybe obj)
   (if (eof-object? obj)
     (nothing)
     (just obj)))
+(define (either->generation either)
+  (assume-type either <either>)
+  (if (right? either)
+    (%ref1 either)
+    (eof-object)))
+(define (generation->either obj . objs)
+  (if (eof-object? obj)
+    (apply left objs)
+    (right obj)))
 
 (define (maybe->values maybe)
   (assume-type maybe <maybe>)
@@ -311,17 +353,17 @@
 (define (values->maybe producer)
   (call-with-values producer
     (^ xs (if (null? xs) (nothing) (apply just xs)))))
-(define (values->either producer obj)
+(define (values->either producer . objs)
   (call-with-values producer
-    (^ xs (if (null? xs) (left obj) (apply right xs)))))
+    (^ xs (if (null? xs) (apply left objs) (apply right xs)))))
 
-(define (maybe->lisp-values maybe)
+(define (maybe->two-values maybe)
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
     (values #f #f)
     (values (%ref1 maybe) #t)))
 
-(define (lisp-values->maybe producer)
+(define (two-values->maybe producer)
   (receive (val has-val?) (producer)
     (if has-val? (just val) (nothing))))
 
