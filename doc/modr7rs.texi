@@ -9274,8 +9274,13 @@ Eclideanバリエーションは、@code{0 <= remainder < abs(d)}という関係
 balanced-quotient = roundup(n / d)
 balanced-remainder = n - d * balanced-quotient
 balanced/ = values(balanced-quotient, balanced-remainder)
-  where roundup(x) is  ceiling(x) if x - floor(x) <= 0.5
-                   and floor(x)   if x - floor(x) > 0.5
+@c EN
+  where roundup(x) rounds towards zero if |x| - floor(|x|) < 0.5,
+                   and away from zero  if |x| - floor(|x|) >= 0.5,
+@c JP
+  ここでroundup(x)は、|x| - floor(|x|) < 0.5 ならゼロの方向に、
+                       |x| - floor(|x|) >= 0.5 ならゼロと逆方向丸めます
+@c COMMON
 @end example
 @c EN
 The balanced variant satisfies a property
