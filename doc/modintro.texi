@@ -55,9 +55,9 @@ the core features of Gauche but separated since less frequently used.
 integrates R7RS into existing Gauche structures.  If you want to
 write R7RS-compliant portable programs, you definitely want to
 check the first two sections of this chapter.  What follows is
-the description of R7RS modules.  Since Gauche supports most of
-R7RS core procedures in either built-in or existing modules,
-most R7RS modules are for the compatibility.
+the description of R7RS modules.  The ``small'' part of R7RS
+has been frozen, but the ``large'' part--additional libraries--are
+still growing.
 
 @item
 @ref{Library modules - SRFIs} describes the modules which
@@ -88,9 +88,9 @@ network protocol utilities, and more.
 @ref{Library modules - R7RS standard libraries}ではR7RSが既存のGaucheの
 構造にどのように統合されているかについて説明します。R7RS準拠のポータブルな
 プログラムを書く場合は、この章の最初の2節にはぜひ目を通してください。
-その後には、R7RSで定義されているモジュールの説明が続きますが、R7RSの
-手続きはほとんどGaucheの組み込みか他のモジュールで提供されているので、
-これらのR7RSモジュールは互換性のためにあります。
+その後には、R7RSで定義されているモジュールの説明が続きます。
+R7RSの``small''と呼ばれる部分は既に制定されていますが、
+``large''と呼ばれるライブラリは現在でも徐々に追加されています。
 
 @item
 @ref{Library modules - SRFIs}ではSRFIの機能を提供するモジュールを
