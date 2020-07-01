@@ -378,8 +378,11 @@ Options:
 Options:
   --autoconf         : generate configure.ac to be processed with GNU autoconf,
                        instead of a Scheme configure script.
+  -v|verbose         : operate verbosely.
 ")
-  (let-args args ([autoconf "autoconf"] . args)
+  (let-args args ([autoconf "autoconf"] 
+                  [verbose "v|verbose"]
+                  . args)
     (let-optionals* args ([package-name #f]
                           [module-name #f]
                           . more)
@@ -414,13 +417,16 @@ Options:
             (filter-copy src-path dst-path
                          package-name extension-name module-name
                          '("configure")
-                         (if autoconf "configure" "")))))
+                         (if autoconf "configure" "")
+                         verbose))))
       )))
 
 (define (filter-copy src dst
                      package-name extension-name module-name executables
-                     configure)
+                     configure verbose)
   (let1 EXTENSION-NAME (string-upcase extension-name)
+    (when verbose
+      (format #t "Installing ~a as ~a\n" src dst))
     (file-filter (lambda (in out)
                    (port-for-each
                     (lambda (line)
