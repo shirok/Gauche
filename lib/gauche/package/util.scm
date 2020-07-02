@@ -40,9 +40,11 @@
   (use gauche.package)
   (use util.match)
   (use file.util)
+  (use file.filter)
+  (use text.tr)
   (use srfi-13)
   (use srfi-14)
-  (export run dry-run verbose-run get-password
+  (export run dry-run verbose-run get-password copy-templates
           find-package-name-and-version))
 (select-module gauche.package.util)
 
@@ -105,3 +107,56 @@
         (list ($ sys-basename $ sys-dirname $ simplify-path
                  $ sys-normalize-pathname vf :absolute #t)
               ver))))
+
+;; Copy template files from SRCDIR to DESTDIR, with substituting names
+;; suitable for an extention module.  Used by gauche-package generate.
+(define (copy-templates srcdir dstdir package-name module-name 
+                        :key (use-autoconf #f) (verbose #f))
+  (assume-type package-name <string>)
+  (assume-type module-name <symbol>)
+  (let* ([module-path (module-name->path module-name)]
+         [dst-subdir  (sys-dirname module-path)]
+         [extension-name (string-tr package-name "A-Za-z_-" "a-za-z__")])
+
+    (define (filter-copy src dst executables configure-name)
+      (let1 EXTENSION-NAME (string-upcase extension-name)
+        (when verbose
+          (format #t "Installing ~a as ~a\n" src dst))
+        (file-filter (^[in out]
+                       (port-for-each
+                        (^[line]
+                          (display
+                           (regexp-replace-all*
+                            line
+                            #/@@package@@/ package-name
+                            #/@@modname@@/ (x->string module-name)
+                            #/@@modpath@@/ (module-name->path module-name)
+                            #/@@extname@@/ extension-name
+                            #/@@EXTNAME@@/ EXTENSION-NAME
+                            #/@@configure@@/ configure-name)
+                           out)
+                          (newline out))
+                        (cut read-line in)))
+                     :input src
+                     :output dst)
+        (when (member (sys-basename dst) executables)
+          (sys-chmod dst #o755))))
+
+    (make-directory* (build-path dstdir dst-subdir))
+    (dolist [file (append (if use-autoconf
+                            '("configure.ac")
+                            '("configure" "configure-compat"))
+                          '("package.scm" "Makefile.in" "extension.c"
+                            "extension.h" "extensionlib.stub"
+                            "module.scm" "test.scm"))]
+      (let* ([src-path (build-path srcdir #"template.~file")]
+             [dst-name (regexp-replace*
+                        file
+                        #/extension/ extension-name
+                        #/module/ (sys-basename module-path))]
+             [dst-path (if (equal? file "module.scm")
+                         (build-path dstdir dst-subdir dst-name)
+                         (build-path dstdir dst-name))])
+        (filter-copy src-path dst-path
+                     '("configure")
+                     (if use-autoconf "configure" ""))))))
