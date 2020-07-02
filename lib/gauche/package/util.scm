@@ -110,13 +110,19 @@
 
 ;; Copy template files from SRCDIR to DESTDIR, with substituting names
 ;; suitable for an extention module.  Used by gauche-package generate.
-(define (copy-templates srcdir dstdir package-name module-name 
-                        :key (use-autoconf #f) (verbose #f))
+;; PACKAGE-NAME should be a package name.  Extension-name is derived from it.
+;; MODULE-NAME should be a symbol (e.g. foo.bar).  If not given, derived
+;; from extension-name.
+(define (copy-templates srcdir dstdir package-name 
+                        :key (module-name #f)
+                             (use-autoconf #f)
+                             (verbose #f))
   (assume-type package-name <string>)
-  (assume-type module-name <symbol>)
-  (let* ([module-path (module-name->path module-name)]
-         [dst-subdir  (sys-dirname module-path)]
-         [extension-name (string-tr package-name "A-Za-z_-" "a-za-z__")])
+  (let* ([extension-name (string-tr package-name "A-Za-z_-" "a-za-z__")]
+         [module-name (or module-name
+                          (string->symbol extension-name))]
+         [module-path (module-name->path module-name)]
+         [dst-subdir  (sys-dirname module-path)])
 
     (define (filter-copy src dst executables configure-name)
       (let1 EXTENSION-NAME (string-upcase extension-name)

@@ -481,7 +481,9 @@
     (build-path (gauche-architecture-directory) "gauche-package"))
   (define generate-command
     (if in-place?
-      `(../gosh -ftest ./run generate Test test.module)
+      `(../gosh -ftest ../gauche-package generate 
+                --template-dir ../../ext
+                Test test.module)
       `(,gauche-package generate Test test.module)))
   (define compile-command
     (if in-place?

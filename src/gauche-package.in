@@ -34,6 +34,7 @@
 (use gauche.collection)
 (use gauche.config)
 (use gauche.package)
+(use gauche.package.util :only (copy-templates))
 (use gauche.parseopt)
 (use gauche.process)
 (use gauche.version)
@@ -378,10 +379,16 @@ Options:
 Options:
   --autoconf         : generate configure.ac to be processed with GNU autoconf,
                        instead of a Scheme configure script.
+  --template-dir=DIR : directory where template files are stored.  By default,
+                       they are stored along installed Gauche libraries.
+  --package-dir=DIR  : the directory where the files are generated.  By default,
+                       the package name is used as the directory name.
   -v|verbose         : operate verbosely.
 ")
   (let-args args ([autoconf "autoconf"] 
-                  [verbose "v|verbose"]
+                  [verbose  "v|verbose"]
+                  [tmpl-dir "template-dir=s"]
+                  [pkg-dir  "package-dir=s"]
                   . args)
     (let-optionals* args ([package-name #f]
                           [module-name #f]
@@ -394,59 +401,13 @@ Options:
       (let* ([package-name*  (rxmatch-case package-name
                                (#/^Gauche-(.*)/ (#f rest) rest)
                                (else package-name))]
-             [extension-name (string-tr package-name* "A-Za-z_-" "a-za-z__")]
-             [module-name (string->symbol (or module-name extension-name))]
-             [tmpl-dir (sys-dirname (gauche-library-directory))]
-             [scm-subdir (sys-dirname (module-name->path module-name))])
-        (make-directory* (simplify-path (build-path package-name scm-subdir)))
-        (dolist [file (append (if autoconf
-                                '("configure.ac")
-                                '("configure" "configure-compat"))
-                              '("package.scm" "Makefile.in" "extension.c"
-                                "extension.h" "extensionlib.stub"
-                                "module.scm" "test.scm"))]
-          (let* ([src-path (build-path tmpl-dir #"template.~file")]
-                 [dst-name (regexp-replace*
-                            file
-                            #/extension/ extension-name
-                            #/module/ (sys-basename
-                                       (module-name->path module-name)))]
-                 [dst-path (if (equal? file "module.scm")
-                             (build-path package-name scm-subdir dst-name)
-                             (build-path package-name dst-name))])
-            (filter-copy src-path dst-path
-                         package-name extension-name module-name
-                         '("configure")
-                         (if autoconf "configure" "")
-                         verbose))))
-      )))
-
-(define (filter-copy src dst
-                     package-name extension-name module-name executables
-                     configure verbose)
-  (let1 EXTENSION-NAME (string-upcase extension-name)
-    (when verbose
-      (format #t "Installing ~a as ~a\n" src dst))
-    (file-filter (lambda (in out)
-                   (port-for-each
-                    (lambda (line)
-                      (display
-                       (regexp-replace-all*
-                        line
-                        #/@@package@@/ package-name
-                        #/@@modname@@/ (x->string module-name)
-                        #/@@modpath@@/ (module-name->path module-name)
-                        #/@@extname@@/ extension-name
-                        #/@@EXTNAME@@/ EXTENSION-NAME
-                        #/@@configure@@/ configure)
-                       out)
-                      (newline out))
-                    (cut read-line in)))
-                 :input src
-                 :output dst)
-    (when (member (sys-basename dst) executables)
-      (sys-chmod dst #o755))
-    ))
+             [srcdir (or tmpl-dir (sys-dirname (gauche-library-directory)))]
+             [dstdir (or pkg-dir package-name)])
+        (copy-templates srcdir dstdir package-name
+                        :module-name (and module-name
+                                          (string->symbol module-name))
+                        :use-autoconf autoconf
+                        :verbose verbose)))))
 
 ;;------------------------------------------------------
 ;; make-tarball
