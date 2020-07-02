@@ -38,7 +38,6 @@
 
 (use gauche.parseopt)
 (use gauche.cgen.precomp)
-(use gauche.experimental.app)
 (use srfi-1)
 (use srfi-13)
 (use file.util)
