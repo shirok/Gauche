@@ -56,7 +56,9 @@
           maybe->two-values two-values->maybe
           maybe-map either-map maybe-for-each either-for-each
           maybe-fold either-fold maybe-unfold either-unfold
-          maybe-if
+          maybe-if 
+          maybe-and maybe-or maybe-let*
+          either-and either-or either-let*
 
           tri-not tri=? tri-and tri-or tri-merge
           )
@@ -94,15 +96,33 @@
 
 (define *nothing* (make <nothing>))
 
-;; API
+;;; Constructors
 (define (just . objs) (make <just> :objs objs))
 (define (nothing) *nothing*)
 (define (right . objs) (make <right> :objs objs))
 (define (left . objs) (make <left> :objs objs))
 
+(define (list->just lis) (make <just> :objs lis))
+(define (list->right lis) (make <right> :objs lis))
+(define (list->left lis) (make <left> :objs lis))
+
+(define (maybe->either maybe . objs)
+  (assume-type maybe <maybe>)
+  (if (just? maybe)
+    (list->right (~ maybe'objs))
+    (list->left objs)))
+
+(define (either->maybe either)
+  (assume-type either <either>)
+  (if (right? either)
+    (list->just (~ either'objs))
+    (nothing)))
+
 (define (either-swap either)
   (assume-type either <either>)
   (make (if (left? either) <right> <left>) :objs (~ either'objs)))
+
+;;; Predicates
 
 (define (maybe? x) (is-a? x <maybe>))
 (define (just? x) (is-a? x <just>))
@@ -130,12 +150,7 @@
              (or (null? (cdr xs))
                  (apply either= eqproc xs))))))
 
-(define (%maybe-ref-failure)
-  (error <maybe-ref-error> "Attempt to derefenence <nothing>"))
-(define (%either-ref-failure . args)
-  (match args
-    [(x) (raise x)]
-    [args (error "Attempt to dereference <left> with payload:" args)]))
+;;; Accessors
 
 ;; returns one value in container; raises an error if container doesn't have
 ;; exactly one value.
@@ -145,15 +160,13 @@
     [_ (error "~a with exactly one value expected, but got: ~s"
               (class-of container) container)]))
     
-(define (maybe-ref maybe :optional (failure %maybe-ref-failure) 
-                                   (success values))
+(define (maybe-ref maybe failure :optional (success values))
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
     (failure)
     (apply success (~ maybe'objs))))
 
-(define (either-ref either :optional (failure %either-ref-failure) 
-                                     (success values))
+(define (either-ref either failure :optional (success values))
   (assume-type either <either>)
   (if (left? either)
     (apply failure (~ either'objs))
@@ -166,6 +179,8 @@
 (define (either-ref/default either . defaults)
   (assume-type either <either>)
   (apply values (if (right? either) (~ either'objs) defaults)))
+
+;;; Join and bind
 
 (define (maybe-join maybe)
   (assume-type maybe <maybe>)
@@ -221,6 +236,8 @@
             e
             (apply p (~ e'objs))))))))
 
+;;; Sequence operations
+
 (define (maybe-length maybe)
   (assume-type maybe <maybe>)
   (if (nothing? maybe) 0 1))
@@ -245,13 +262,13 @@
   (assume-type either <either>)
   (if (and (right? either) (apply pred (~ either'objs)))
     either
-    (apply left objs)))
+    (list->left objs)))
 
 (define (either-remove pred either . objs)
   (assume-type either <either>)
   (if (and (right? either) (not (apply pred (~ either'objs))))
     either
-    (apply left objs)))
+    (list->left objs)))
 
 ;; input :: Container Maybe a*
 ;; cmap :: Container Maybe a* -> (Maybe a* -> b) -> Container b
@@ -271,21 +288,7 @@
     (right (cmap (^[ee] (either-ref ee (^ _ (return ee)) aggregator))
                  input))))
 
-(define (maybe->either maybe . objs)
-  (assume-type maybe <maybe>)
-  (if (just? maybe)
-    (apply right (~ maybe'objs))
-    (apply left objs)))
-
-(define (either->maybe either)
-  (assume-type either <either>)
-  (if (right? either)
-    (apply just (~ either'objs))
-    (nothing)))
-
-(define (list->just lis) (apply just lis))
-(define (list->right lis) (apply right lis))
-(define (list->left lis) (apply left lis))
+;;; Protocol conversion
 
 (define (maybe->list maybe)
   (assume-type maybe <maybe>)
@@ -367,16 +370,18 @@
   (receive (val has-val?) (producer)
     (if has-val? (just val) (nothing))))
 
+;;; Map, fold and unfold
+
 (define (maybe-map proc maybe)
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
     maybe
-    (make <just> :objs (values->list (apply proc (~ maybe'objs))))))
+    (list->just (values->list (apply proc (~ maybe'objs))))))
 (define (either-map proc either)
   (assume-type either <either>)
   (if (left? either)
     either
-    (make <right> :objs (values->list (apply proc (~ either'objs))))))
+    (list->right (values->list (apply proc (~ either'objs))))))
 
 (define (maybe-for-each proc maybe)
   (assume-type maybe <maybe>)
@@ -400,14 +405,21 @@
     (apply kons (append (~ either'objs) (list knil)))
     knil))
 
-(define (maybe-unfold stop? mapper _ . seeds)
+(define (maybe-unfold stop? mapper successor . seeds)
   (if (apply stop? seeds)
     (nothing)
-    (apply just (values->list (apply mapper seeds)))))
-(define (either-unfold stop? mapper _ . seeds)
+    (if (call-with-values (cut apply successor seeds) stop?)
+      (list->just (values->list (apply mapper seeds)))
+      (error "unstoppable unfold"))))
+      
+(define (either-unfold stop? mapper successor . seeds)
   (if (apply stop? seeds)
-    (apply left seeds)
-    (apply right (values->list (apply mapper seeds)))))
+    (list->left seeds)
+    (if (call-with-values (cut apply successor seeds) stop?)
+      (list->right (values->list (apply mapper seeds)))
+      (error "unstoppable unfold"))))
+
+;;; Conditional syntax
 
 (define-syntax maybe-if
   (syntax-rules ()
@@ -415,6 +427,94 @@
      (let1 x expr
        (assume-type x <maybe>)
        (if (just? expr) justx nothingx))]))
+
+(define-syntax maybe-and
+  (syntax-rules ()
+    [(_) (just "empty maybe-and")]
+    [(_ x) (begin (assume-type x <maybe>) x)]
+    [(_ x . xs) (cond [(nothing? x) x]
+                      [(just? x) (maybe-and . xs)]
+                      [else (assume-type x <maybe>)])]))
+
+(define-syntax either-and
+  (syntax-rules ()
+    [(_) (right "empty either-and")]
+    [(_ x) (begin (assume-type x <either>) x)]
+    [(_ x . xs) (cond [(left? x) x]
+                      [(right? x) (either-and . xs)]
+                      [else (assume-type x <either>)])]))
+
+(define-syntax maybe-or
+  (syntax-rules ()
+    [(_) (nothing)]
+    [(_ x) (begin (assume-type x <maybe>) x)]
+    [(_ x . xs) (cond [(just? x) x]
+                      [(nothing? x) (maybe-or . xs)]
+                      [else (assume-type x <maybe>)])]))
+
+(define-syntax either-or
+  (syntax-rules ()
+    [(_) (left "empty either-or")]
+    [(_ x) (begin (assume-type x <either>) x)]
+    [(_ x . xs) (cond [(right? x) x]
+                      [(left? x) (either-or . xs)]
+                      [else (assume-type x <either>)])]))
+
+(define-syntax maybe-let*
+  (syntax-rules ()
+    ;; empty body case
+    [(_ ()) (just #t)]
+    [(_ ((var expr))) (rlet1 t expr
+                        (assume-type t <maybe>))]
+    [(_ ((expr)))     (rlet1 t expr
+                        (assume-type t <maybe>))]
+    [(_ (var))        (assume-type var <maybe>)]
+    ;; normal case
+    [(_ () . body) (assume-type (begin . body) <maybe>)]
+    [(_ ((var expr) . claws) . body)
+     (let1 t expr
+       (cond [(nothing? t) (nothing)]
+             [(just? t) (let ((var (%ref1 t)))
+                          (maybe-let* claws . body))]
+             [else (assume-type t <maybe>)]))]
+    [(_ ((expr) . claws) . body)
+     (let1 t expr
+       (cond [(nothing? t) (nothing)]
+             [(just? t) (maybe-let* claws . body)]
+             [else (assume-type t <maybe>)]))]
+    [(_ (var . claws) . body)
+     (cond [(nothing? var) (nothing)]
+           [(just? var) (maybe-let* claws . body)]
+           [else (assume-type var <maybe>)])]))
+
+(define-syntax either-let*
+  (syntax-rules ()
+    ;; empty body case
+    [(_ ()) (right #t)]
+    [(_ ((var expr))) (rlet1 t expr
+                        (assume-type t <either>))]
+    [(_ ((expr)))     (rlet1 t expr
+                        (assume-type t <either>))]
+    [(_ (var))        (assume-type var <either>)]
+    ;; normal case
+    [(_ () . body) (assume-type (begin . body) <either>)]
+    [(_ ((var expr) . claws) . body)
+     (let1 t expr
+       (cond [(left? t) t]
+             [(right? t) (let ((var (%ref1 t)))
+                           (either-let* claws . body))]
+             [else (assume-type t <either>)]))]
+    [(_ ((expr) . claws) . body)
+     (let1 t expr
+       (cond [(left? t) t]
+             [(right? t) (either-let* claws . body)]
+             [else (assume-type t <either>)]))]
+    [(_ (var . claws) . body)
+     (cond [(left? var) var]
+           [(right? var) (either-let* claws . body)]
+           [else (assume-type var <either>)])]))
+
+;;; Trivalent logic
 
 (define (tri-not maybe)
   (assume-type maybe <maybe>)
