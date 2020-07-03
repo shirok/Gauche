@@ -461,6 +461,7 @@ test2 : gosh$(EXEEXT)
 	@for testfile in $(TEST2FILES); do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
           top_srcdir=$(top_srcdir) \
+          top_builddir=$(top_builddir) \
 	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
 	done
 
