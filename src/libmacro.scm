@@ -775,8 +775,8 @@
      (match f
        [(_ expr . objs)
         (quasirename r
-          `(unless ,expr
-             (error (format "Invalid assumption: ~s" ',expr) ,@objs)))]))))
+          `(or ,expr
+               (error (format "Invalid assumption: ~s" ',expr) ,@objs)))]))))
 
 (define-syntax assume-type
   (er-macro-transformer
@@ -785,7 +785,8 @@
        [(_ expr type)
         (quasirename r
           `(let1 v ,expr
-             (unless (is-a? v ,type)
+             (if (is-a? v ,type)
+               v
                (type-error ',expr ,type v))))]))))
 
 ;;; repeat construct

@@ -1929,17 +1929,21 @@ Otherwise, undefined value is returned.
 @defmac assume test-expr message @dots{}
 [SRFI-145]
 @c EN
-This declares the programmer's intent that the code following this path
-always satisfy @var{test-expr}.
+Evaluates @var{text-expr} and returns its value.
 
-Currently, Gauche evaluates @var{test-expr}, and if it evaluates to false,
-an error is signalled.
+Also, this form declares the programmer's intent that the code following
+this path always satisfy @var{test-expr}.
+
+Currently, Gauche always signals an error with @var{message} @dots{}
+if @var{text-expr} evaluates to @code{#f}.
 @c JP
-このフォームに続くコードパスにおいて、@var{test-expr}が常に満たされている、
+@var{test-expr}を評価してその値を返します。
+
+また、このフォームに続くコードパスにおいて、@var{test-expr}が常に満たされている、
 というプログラマの意図を宣言します。
 
-今のところ、Gaucheは@var{text-expr}を評価し、
-それが偽となった場合はエラーを報告します。
+Gaucheでは今のところ、@var{text-expr}が偽となった場合は常にエラーが投げられます。
+@var{message} @dots{}がエラーメッセージに使われます。
 @c COMMON
 
 @example
@@ -1952,8 +1956,7 @@ gosh> (real-sqrt -1)
 @end example
 
 @c EN
-Note: This form is advisory---@var{test-expr} isn't guaranteed to be
-evaluated, nor it isn't guaranteed for an error is signaled when
+Note: This form is advisory---it isn't guaranteed for an error is signaled when
 @var{test-expr} fails.  For example, we may add an optimization
 option that omits testing in speed-optimized code in future.
 We may also enhance the compiler to generate better code using the
@@ -1962,8 +1965,8 @@ the compiler could theoretically deduce that @code{(sqrt x)} only needs to
 work as real functions, so it would be able to generate specialized code.
 Use this form to inform the compiler and the reader your intention.
 @c JP
-註: このフォームは勧告として機能します。@var{test-expr}は評価されるとは限らず、
-また@var{test-expr}が失敗してもエラーが投げられるとは限りません。例えば、
+註: このフォームは勧告として機能します。
+@var{test-expr}が失敗してもエラーが投げられるとは限りません。例えば、
 将来、最適化オプションをつけて、
 速度最適化レベルが高い時はテストを省略するようになるかもしれません。
 また一方で、この情報を利用してコンパイラがより良いコードを出すように拡張される
@@ -1978,15 +1981,11 @@ Use this form to inform the compiler and the reader your intention.
 @defmac assume-type expr type
 @c EN
 Check if the value of expression @var{expr} has type @var{type}.
-If not, raises an error.
+If not, raises an error.  The result of @var{expr} is returned.
 @c JP
 @var{expr}の値が型@var{type}かどうかチェックし、
-そうでなければエラーを投げます。
+そうでなければエラーを投げます。@var{expr}の値が返されます。
 @c COMMON
-
-@example
-(assume-type expr type) @equiv{} (assume (is-a? expr type))
-@end example
 
 @c EN
 Note: Like @code{assume}, this form is advisory; it is not guaranteed

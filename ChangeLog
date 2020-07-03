@@ -1,5 +1,8 @@
 2020-07-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmacro.scm (assume, assume-type): Fix assume, which must return
+	  expr's value according to srfi-145.  Adjust assume-type as well.
+
 	* src/gauche-package.in: Add some options to 'generate' command.
 
 2020-06-13  Shiro Kawai  <shiro@acm.org>
