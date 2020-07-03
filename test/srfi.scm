@@ -54,6 +54,12 @@
                     [y x])
            y)))
 
+(test* "empty and-let*" #t (and-let* ()))
+(test* "empty body and-let* var" 1 (let ((x 1)) (and-let* (x))))
+(test* "empty body and-let* expr" 2 (let ((x 1)) (and-let* ([ (+ x x) ]))))
+(test* "empty body and-let* (var expr)" 2 
+       (let ((x 1)) (and-let* ([y (+ x x)]))))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-5")
 ;; NB: srfi-5 replaces the binding of 'let'.  We don't want it to interfere

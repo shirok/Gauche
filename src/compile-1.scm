@@ -1028,27 +1028,40 @@
     (match binds
       [() (pass1/body body cenv)]
       [((exp) . more)
-       ($if form (pass1 exp (cenv-sans-name cenv))
-            (process-binds more body cenv)
-            ($it))]
+       (if (and (null? more) (null? body))
+         (begin
+           (warn "GGGG ~s" form)
+           (pass1 exp (cenv-sans-name cenv)))
+         ($if form (pass1 exp (cenv-sans-name cenv))
+              (process-binds more body cenv)
+              ($it)))]
       [([? identifier? var] . more)
-       ($if form (pass1 var (cenv-sans-name cenv))
-            (process-binds more body cenv)
-            ($it))]
+       (if (and (null? more) (null? body))
+         (begin
+           (warn "GGGGG ~s" form)
+           (pass1 var (cenv-sans-name cenv)))
+         ($if form (pass1 var (cenv-sans-name cenv))
+              (process-binds more body cenv)
+              ($it)))]
       [(([? identifier? var] init) . more)
-       (let* ([lvar (make-lvar var)]
-              [newenv (cenv-extend cenv `((,var . ,lvar)) LEXICAL)]
-              [itree (pass1 init (cenv-add-name cenv var))])
-         (lvar-initval-set! lvar itree)
-         ($let form 'let
-               (list lvar)
-               (list itree)
-               ($if form ($lref lvar)
-                    (process-binds more body newenv)
-                    ($it))))]
+       (if (and (null? more) (null? body))
+         (begin 
+           (warn "ZZZZZZ ~s" form)
+           (pass1 init (cenv-add-name cenv var)))
+         (let* ([lvar (make-lvar var)]
+                [newenv (cenv-extend cenv `((,var . ,lvar)) LEXICAL)]
+                [itree (pass1 init (cenv-add-name cenv var))])
+           (lvar-initval-set! lvar itree)
+           ($let form 'let
+                 (list lvar)
+                 (list itree)
+                 ($if form ($lref lvar)
+                      (process-binds more body newenv)
+                      ($it)))))]
       [_ (error "syntax-error: malformed and-let*:" form)]))
 
   (match form
+    [(_ ()) ($const #t)]                ;special base case
     [(_ binds . body) (process-binds binds body cenv)]
     [_ (error "syntax-error: malformed and-let*:" form)]))
 
