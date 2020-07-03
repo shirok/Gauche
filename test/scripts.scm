@@ -482,8 +482,7 @@
   (define generate-command
     (if in-place?
       `(../gosh -ftest
-                ,(build-path (or (sys-getenv "top_srcdir") "..")
-                             "src" "gauche-package.in") 
+                ,(build-path *top-srcdir* "src" "gauche-package.in") 
                 generate 
                 --template-dir ,(build-path *top-srcdir* "ext")
                 Test test.module)
