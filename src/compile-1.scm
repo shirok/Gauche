@@ -1029,25 +1029,19 @@
       [() (pass1/body body cenv)]
       [((exp) . more)
        (if (and (null? more) (null? body))
-         (begin
-           (warn "GGGG ~s" form)
-           (pass1 exp (cenv-sans-name cenv)))
+         (pass1 exp (cenv-sans-name cenv))
          ($if form (pass1 exp (cenv-sans-name cenv))
               (process-binds more body cenv)
               ($it)))]
       [([? identifier? var] . more)
        (if (and (null? more) (null? body))
-         (begin
-           (warn "GGGGG ~s" form)
-           (pass1 var (cenv-sans-name cenv)))
+         (pass1 var (cenv-sans-name cenv))
          ($if form (pass1 var (cenv-sans-name cenv))
               (process-binds more body cenv)
               ($it)))]
       [(([? identifier? var] init) . more)
        (if (and (null? more) (null? body))
-         (begin 
-           (warn "ZZZZZZ ~s" form)
-           (pass1 init (cenv-add-name cenv var)))
+         (pass1 init (cenv-add-name cenv var))
          (let* ([lvar (make-lvar var)]
                 [newenv (cenv-extend cenv `((,var . ,lvar)) LEXICAL)]
                 [itree (pass1 init (cenv-add-name cenv var))])
