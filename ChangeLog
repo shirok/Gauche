@@ -1,3 +1,7 @@
+2020-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-175.scm: Added.
+
 2020-07-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (and-let*): Fix 20-year old bug - and-let* is

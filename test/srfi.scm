@@ -2718,6 +2718,11 @@
   )
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-175")
+(use srfi-175)
+(test-module 'srfi-175)
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-185")
 ;; NB: srfi-185 conflicts with srfi-118, so we import it in a separate module.
 
