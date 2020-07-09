@@ -2722,6 +2722,15 @@
 (use srfi-175)
 (test-module 'srfi-175)
 
+(define-module srfi-175-tests
+  (use gauche.test)
+  (use gauche.unicode) ;string->utf8
+  (use srfi-175)
+  (define-syntax want
+    (syntax-rules ()
+      [(_ expected expr) (test* (write-to-string 'expr) expected expr)]))
+  (include "include/srfi-175-tests"))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-185")
 ;; NB: srfi-185 conflicts with srfi-118, so we import it in a separate module.

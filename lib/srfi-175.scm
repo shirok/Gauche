@@ -33,7 +33,9 @@
 
 (define-module srfi-175
   (use gauche.uvector)
+  (use gauche.generator)
   (use srfi-13)
+  (use srfi-14)
   (use srfi-42)
   (export ascii-codepoint? ascii-bytevector?
           ascii-char? ascii-string?
@@ -82,14 +84,18 @@
 (define (ascii-non-control? c)
   (not (ascii-control? c)))
 (define (ascii-space-or-tab? c)
-  (memv (%char c) '#(#\space #\tab)))
+  (boolean (memv (%char c) '(#\space #\tab))))
+
+(define *other-graphic*
+  (char-set-difference char-set:ascii-graphic
+                       char-set:letter+digit))
 (define (ascii-other-graphic? c)
-  (char-set-contains? char-set:ascii-graphic (%char c)))
+  (char-set-contains? *other-graphic* (%char c)))
 (define (ascii-alphanumeric? c)
   (char-set-contains? char-set:ascii-letter+digit (%char c)))
 (define (ascii-alphabetic? c)
   (char-set-contains? char-set:ascii-letter (%char c)))
-(define (ascii-numeric? c)
+(define (ascii-numeric? c )
   (char-set-contains? char-set:ascii-digit (%char c)))
 (define (ascii-whitespace? c)
   (char-set-contains? char-set:ascii-whitespace (%char c)))
@@ -110,20 +116,64 @@
 (define (ascii-ci>=? c1 c2) (>= (%foldcase-code c1) (%foldcase-code c2)))
 
 (define (ascii-string-ci=? s1 s2)
-  (every?-ec (:parallel (: c1 s1) (: c2 s2))
-             (ascii-ci=? c1 c2)))
+  (let ([g1 (string->generator s1)]
+        [g2 (string->generator s2)])
+    (let loop ([c1 (g1)] [c2 (g2)])
+      (cond [(eof-object? c1) (eof-object? c2)]
+            [(eof-object? c2) #f]
+            [else (let ([cc1 (%foldcase-code c1)]
+                        [cc2 (%foldcase-code c2)])
+                    (and (= cc1 cc2)
+                         (loop (g1) (g2))))]))))
+
 (define (ascii-string-ci<? s1 s2)
-  (every?-ec (:parallel (: c1 s1) (: c2 s2))
-             (ascii-ci<? c1 c2)))
+  (let ([g1 (string->generator s1)]
+        [g2 (string->generator s2)])
+    (let loop ([c1 (g1)] [c2 (g2)])
+      (cond [(eof-object? c2) #f]
+            [(eof-object? c1) #t]
+            [else (let ([cc1 (%foldcase-code c1)]
+                        [cc2 (%foldcase-code c2)])
+                    (cond [(= cc1 cc2) (loop (g1) (g2))]
+                          [(< cc1 cc2)]
+                          [else #f]))]))))
+
 (define (ascii-string-ci<=? s1 s2)
-  (every?-ec (:parallel (: c1 s1) (: c2 s2))
-             (ascii-ci<=? c1 c2)))
+  (let ([g1 (string->generator s1)]
+        [g2 (string->generator s2)])
+    (let loop ([c1 (g1)] [c2 (g2)])
+      (cond [(eof-object? c2) (eof-object? c1)]
+            [(eof-object? c1) #t]
+            [else (let ([cc1 (%foldcase-code c1)]
+                        [cc2 (%foldcase-code c2)])
+                    (cond [(= cc1 cc2) (loop (g1) (g2))]
+                          [(< cc1 cc2)]
+                          [else #f]))]))))
+
 (define (ascii-string-ci>? s1 s2)
-  (every?-ec (:parallel (: c1 s1) (: c2 s2))
-             (ascii-ci>? c1 c2)))
+  (let ([g1 (string->generator s1)]
+        [g2 (string->generator s2)])
+    (let loop ([c1 (g1)] [c2 (g2)])
+      (cond [(eof-object? c1) #f]
+            [(eof-object? c2) #t]
+            [else
+             (let ([cc1 (%foldcase-code c1)]
+                   [cc2 (%foldcase-code c2)])
+               (cond [(= cc1 cc2) (loop (g1) (g2))]
+                     [(> cc1 cc2) #t]
+                     [else #f]))]))))
+
 (define (ascii-string-ci>=? s1 s2)
-  (every?-ec (:parallel (: c1 s1) (: c2 s2))
-             (ascii-ci>=? c1 c2)))
+  (let ([g1 (string->generator s1)]
+        [g2 (string->generator s2)])
+    (let loop ([c1 (g1)] [c2 (g2)])
+      (cond [(eof-object? c1) (eof-object? c2)]
+            [(eof-object? c2) #t]
+            [else (let ([cc1 (%foldcase-code c1)]
+                        [cc2 (%foldcase-code c2)])
+                    (cond [(= cc1 cc2) (loop (g1) (g2))]
+                          [(> cc1 cc2)]
+                          [else #f]))]))))
 
 (define (ascii-upcase c)
   (cond [(char? c)
@@ -132,7 +182,7 @@
            c)]
         [(integer? c)
          (if (char-set-contains? char-set:ascii-lower-case (integer->char c))
-           (+ c #x20)
+           (- c #x20)
            c)]
         [else (type-error 'c "char or integer" c)]))
 
@@ -143,7 +193,7 @@
            c)]
         [(integer? c)
          (if (char-set-contains? char-set:ascii-upper-case (integer->char c))
-           (- c #x20)
+           (+ c #x20)
            c)]
         [else (type-error 'c "char or integer" c)]))
 
@@ -156,7 +206,7 @@
         [(integer? c)
          (if (char-set-contains? char-set:ascii-control (integer->char c))
            (if (eqv? c #x7f)
-             #\?
+             (char->integer #\?)
              (+ c #x40))
            c)]
         [else (type-error 'c "char or integer" c)]))
@@ -201,7 +251,13 @@
 (define (ascii-nth-lower-case n)
   (integer->char (+ (modulo n 26) (char->integer #\a))))
 
-(define (ascii-digit-value c limit) (digit->integer (%char c) limit))
+(define (ascii-digit-value c limit)
+  (assume (real? limit))
+  (let1 lim (floor->exact limit)
+    (cond
+     [(= lim 1) (and (or (eqv? c #\0) (eqv? c (char->integer #\0))) 0)] ;special
+     [(<= 2 lim) (digit->integer (%char c) (min lim 10))]
+     [else #f])))
 
 (define (ascii-upper-case-value c offset limit)
   (let1 cc (- (%code c) (char->integer #\A))
