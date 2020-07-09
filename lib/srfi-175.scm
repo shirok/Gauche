@@ -81,8 +81,13 @@
 
 (define (ascii-control? c)
   (char-set-contains? char-set:ascii-control (%char c)))
+
+(define *non-control*
+  (char-set-intersection char-set:ascii
+                         (char-set-complement char-set:ascii-control)))
 (define (ascii-non-control? c)
-  (not (ascii-control? c)))
+  (char-set-contains? *non-control* (%char c)))
+
 (define (ascii-space-or-tab? c)
   (boolean (memv (%char c) '(#\space #\tab))))
 
