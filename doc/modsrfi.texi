@@ -58,6 +58,7 @@ srfi N is supported by Gauche.)
 * Comparator sublibrary::       srfi-162
 * Hooks (srfi)::                srfi-173
 * POSIX timespecs::             srfi-174
+* ASCII character library::     srfi-175
 * Linear adjustable-lenght strings::  srfi-185
 @end menu
 
@@ -6608,7 +6609,7 @@ the same as @var{hook}'s arity.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node POSIX timespecs, Linear adjustable-lenght strings, Hooks (srfi), Library modules - SRFIs
+@node POSIX timespecs, ASCII character library, Hooks (srfi), Library modules - SRFIs
 @section @code{srfi-174} - POSIX timespecs
 
 @deftp {Module} srfi-174
@@ -6673,9 +6674,9 @@ It is the same as @code{time=?} in srfi-19.
 
 @defun timespec<? ts1 ts2
 [SRFI-174]
+@c MOD srfi-174
 Returns @code{#t} iff a timespec @var{ts1} is strictly before
 the timespec @var{ts2}.  It is the same as @code{time<?} in srfi-19.
-@c MOD srfi-174
 @end defun
 
 @defun timespec-hash ts
@@ -6687,7 +6688,153 @@ affected by the current hash salt value (@pxref{Hashing}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Linear adjustable-lenght strings,  , POSIX timespecs, Library modules - SRFIs
+@node ASCII character library, Linear adjustable-lenght strings, POSIX timespecs, Library modules - SRFIs
+@section @code{srfi-175} - ASCII character library
+
+@deftp {Module} srfi-175
+@mdindex srfi-175
+This module provides a set of character/string utities that deal with
+ASCII characters and codepoints.  It is particulary useful for small
+Scheme implementations that only handles, and a portable
+code that only concerns, ASCII characters.
+
+Since Gauche supports full Unicode (if it is compiled with utf-8 internal
+encoding, which is the default), you may not need to use this module
+to write Gauche-specific code.  This is mainly for the compatibility.
+
+One of the characteristics of this module is that many procedures can
+take an integer in place of a character; an integer between 0 and 127
+is interpreted as an ASCII codepoint.  An integer outside the range
+is interpreted as an non-ASCII codepoint.  Such argument is noted
+as @var{char-or-code} in the description.  It is handy while you're
+dealing with a binary file which may contain some ASCII text in it.
+@end deftp
+
+@defun ascii-codepoint? obj
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-bytevecotr? obj
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-char? obj
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-string? obj
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-control? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-non-control? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-space-or-tab? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-other-graphic? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-alphanumeric? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-alphabetic? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-numeric? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-whitespace? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-upper-case? char-or-code
+@defunx ascii-lower-case? char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-ci=? char-or-code1 char-or-code2
+@defunx ascii-ci<? char-or-code1 char-or-code2
+@defunx ascii-ci<=? char-or-code1 char-or-code2
+@defunx ascii-ci>? char-or-code1 char-or-code2
+@defunx ascii-ci>=? char-or-code1 char-or-code2
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-string-ci=? string1 string2
+@defunx ascii-string-ci<? string1 string2
+@defunx ascii-string-ci<=? string1 string2
+@defunx ascii-string-ci>? string1 string2
+@defunx ascii-string-ci>=? string1 string2
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-upcase char-or-code
+@defunx ascii-downcase char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-control->graphic char-or-code
+@defunx ascii-graphic->control char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-mirror-bracket char-or-code
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-nth-digit n
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-nth-upper-case n
+@defunx ascii-nth-lower-case n
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-digit-value char-or-code limit
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@defun ascii-upper-case-value char-or-code offset limit
+@defunx ascii-lower-case-value char-or-code offset limit
+[SRFI-175]
+@c MOD srfi-175
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Linear adjustable-lenght strings,  , ASCII character library, Library modules - SRFIs
 @section @code{srfi-185} - Linear adjustable-lenght strings
 
 @deftp {Module} srfi-185

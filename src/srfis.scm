@@ -1253,6 +1253,16 @@ Gaucheでは、timespecオブジェクトは組み込みの@code{<time>}オブ�
 またsrfi-19のtimeオブジェクトとも共通です。
 
 
+srfi-175, srfi-175
+()
+
+ASCII character library
+Supported by the module @code{srfi-175} (@pxref{ASCII character library}).
+
+ASCII文字ライブラリ
+モジュール@code{srfi-175}でサポートされます(@ref{ASCII character library}参照)。
+
+
 srfi-176, srfi-176
 ()
 
