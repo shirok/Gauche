@@ -204,16 +204,15 @@
 
 (define (ascii-control->graphic c)
   (cond [(char? c)
-         (if (char-set-contains? char-set:ascii-control c)
-           (if (eqv? c #\x7f)
-             #\?
-             (integer->char (+ (char->integer c) #x40))))]
+         (and (char-set-contains? char-set:ascii-control c)
+              (if (eqv? c #\x7f)
+                #\?
+                (integer->char (+ (char->integer c) #x40))))]
         [(integer? c)
-         (if (char-set-contains? char-set:ascii-control (integer->char c))
-           (if (eqv? c #x7f)
-             (char->integer #\?)
-             (+ c #x40))
-           c)]
+         (and (char-set-contains? char-set:ascii-control (integer->char c))
+              (if (eqv? c #x7f)
+                (char->integer #\?)
+                (+ c #x40)))]
         [else (type-error 'c "char or integer" c)]))
 
 (define (ascii-graphic->control c)
@@ -221,32 +220,29 @@
          (if (eqv? c #\?) 
            #\x7f
            (let1 cc (char->integer c)
-             (if (<= #x40 cc #x5f)
-               (integer->char (- cc #x40))
-               c)))]
+             (and (<= #x40 cc #x5f)
+                  (integer->char (- cc #x40)))))]
         [(integer? c)
          (cond [(= c (char->integer #\?)) #x7f]
                [(<= #x40 c #x5f) (- c #x40)]
-               [else c])]
+               [else #f])]
         [else (type-error 'c "char or integer" c)]))
 
 (define (ascii-mirror-bracket c)
   (cond[(char? c)
-        (if-let1 p (assv c '((#\( . #\)) (#\[ . #\]) (#\{ . #\}) (#\< . #\>)
-                             (#\) . #\() (#\] . #\[) (#\} . #\{) (#\> . #\<)))
-          (cdr p)
-          c)]
+        (and-let1 p (assv c '((#\( . #\)) (#\[ . #\]) (#\{ . #\}) (#\< . #\>)
+                              (#\) . #\() (#\] . #\[) (#\} . #\{) (#\> . #\<)))
+          (cdr p))]
        [(integer? c)
-        (if-let1 p (assv c `((,(char->integer #\() . ,(char->integer #\)))
-                             (,(char->integer #\[) . ,(char->integer #\]))
-                             (,(char->integer #\{) . ,(char->integer #\}))
-                             (,(char->integer #\<) . ,(char->integer #\>))
-                             (,(char->integer #\)) . ,(char->integer #\())
-                             (,(char->integer #\]) . ,(char->integer #\[))
-                             (,(char->integer #\}) . ,(char->integer #\{))
-                             (,(char->integer #\>) . ,(char->integer #\<))))
-          (cdr p)
-          c)]
+        (and-let1 p (assv c `((,(char->integer #\() . ,(char->integer #\)))
+                              (,(char->integer #\[) . ,(char->integer #\]))
+                              (,(char->integer #\{) . ,(char->integer #\}))
+                              (,(char->integer #\<) . ,(char->integer #\>))
+                              (,(char->integer #\)) . ,(char->integer #\())
+                              (,(char->integer #\]) . ,(char->integer #\[))
+                              (,(char->integer #\}) . ,(char->integer #\{))
+                              (,(char->integer #\>) . ,(char->integer #\<))))
+          (cdr p))]
         [else (type-error 'c "char or integer" c)]))
 
 (define (ascii-nth-digit n) (integer->digit n))
