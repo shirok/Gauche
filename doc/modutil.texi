@@ -16125,7 +16125,7 @@ The caller must use CES conversion port as @var{outp}
 のエンコーディングは適切に処理されます。結果が出力ポート@var{outp}へと
 出力されます。
 
-この手続きは文字セットの変換は扱いません。
+この手続きは文字集合の変換は扱いません。
 必要であれば、呼び出し側が@var{outp}としてCES変換ポートを
 使う必要があります(@ref{Character code conversion}参照)。
 
@@ -16182,7 +16182,7 @@ blocks, instead of all-in-one procedure.
 (``葉''である@code{<mime-part>}オブジェクトの@code{content}フィールドは、
 そのパートのボディを文字列として保持しています。)
 内容の転送エンコーディング(content transfer encoding)は認識され処理
-されますが、文字セットの変換は行われません。
+されますが、文字集合の変換は行われません。
 
 メッセージボディを直接ファイルに書き出したり、MIMEメディアタイプや
 他のヘッダ情報に基づいていくつかのボディをスキップしたいかもしれません。
@@ -17109,7 +17109,7 @@ to convert @var{string} to the specified character encoding.
 文字列を返します。
 
 デフォルトでは、RFC3986 で"非予約文字"として規定されていない文字は
-エスケープされます。@var{noescape} 引数に異なる文字セットを渡すことで、
+エスケープされます。@var{noescape} 引数に異なる文字集合を渡すことで、
 それらがエンコードされるのを抑止することができます。
 例えば古いRFC2396では"非予約文字"がいくつか多かったのですが、
 @code{*rfc2396-unreserved-char-set*} (下記参照) を渡すことで
@@ -17128,12 +17128,12 @@ to convert @var{string} to the specified character encoding.
 @c EN
 These constants are bound to character sets that represents
 ``unreserved'' characters defined in RFC2396 and RFC3986, respectively.
-(See @ref{Character set}, and @ref{R7RS character sets}, for
+(See @ref{Character sets}, and @ref{R7RS character sets}, for
 operations on character sets).
 @c JP
 これらの定数はそれぞれ、RFC2396とRFC3986で定義されている
 「非予約文字」の文字集合に束縛されています。
-(文字集合の操作については、@ref{Character set}および@ref{R7RS character sets}
+(文字集合の操作については、@ref{Character sets}および@ref{R7RS character sets}
 を参照して下さい。)
 @c COMMON
 @end defvr
@@ -18653,7 +18653,7 @@ XML勧告のセクション``4.1 文字と実体参照''によると、
  in the ISO/IEC 10646 character set, for example one not directly
  accessible from available input devices.]"
 @c JP
-``[定義: 文字参照は、ISO/IEC 10646文字セットにある特定の文字を参照する。
+``[定義: 文字参照は、ISO/IEC 10646文字集合にある特定の文字を参照する。
 例えば、利用できる入力デバイスからは直接アクセスできないものなど。]''
 @c COMMON
 @end quotation
@@ -22415,7 +22415,7 @@ its default is @code{#[;\s]}.
 フィールドの出力は、その中に特殊文字が含まれていた場合にクオートされます。
 @var{separator}, @var{quote-char}, @var{newline}に含まれる文字は
 自動的に特殊文字と認識されます。さらに
-@var{special-char-set}に文字セットを渡すと、それも特殊文字として扱われます。
+@var{special-char-set}に文字集合を渡すと、それも特殊文字として扱われます。
 省略時は@code{#[;\s]}が使われます。
 @c COMMON
 @end defun
@@ -23965,7 +23965,7 @@ API は Oleg Kiselyov 氏の入力解析ライブラリ (@ref{oleg1,,OLEG1}) に
 
 Gauche で効果的になるように手続きを再実装しました。特に、@code{string-set!}
 の使用は完全に取り除きました。インターフェースを少し拡張したので、
-文字セットや述語、文字のリストにも使うことができます。
+文字集合や述語、文字のリストにも使うことができます。
 
 これらの手続きは、与えられた入力ポートに対してシーケンシャルに動作します。
 それは、ポートから必要なだけ読み、余分な文字をバッファリングしないということです。
@@ -24028,9 +24028,9 @@ the EOF condition is regarded as an error.
 以下の手続きでは、@var{char-list} は次のどれかを意味します。
 @itemize @bullet
 @item
-文字セット。
+文字集合。
 @item
-文字、文字セット、シンボル @code{*eof*} の任意の組み合わせのリスト。
+文字、文字集合、シンボル @code{*eof*} の任意の組み合わせのリスト。
 @end itemize
 これらにより文字の集合が表現されます。シンボル @code{*eof*} が含まれる場合、
 EOF の条件もまた含まれます。@code{*eof*} が含まれない場合、EOF の条件は
@@ -24876,7 +24876,7 @@ to katakana, you may want to set table size greater than 42483
 (the character code of the last katakana).
 @c JP
 内部的に、@code{tr}はキャラクタのマッピングのためにテーブルを使用します。
-但し、Gaucheでは極めて大きな文字セットを扱うため、テーブルはキャラクタコードの
+但し、Gaucheでは極めて大きな文字集合を扱うため、テーブルはキャラクタコードの
 小さい文字のみに対して使われます(デフォルトではコード255以下の文字)。
 もし、より大きな文字を頻繁に変換することが分かっていて、メモリを余分に使っても
 速度を上げたい場合は、このテーブルの大きさを@var{table-size}キーワード引数で

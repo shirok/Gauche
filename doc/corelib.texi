@@ -13,7 +13,7 @@
 * Symbols::
 * Keywords::
 * Characters::
-* Character set::
+* Character sets::
 * Strings::
 * Regular expressions::
 * Vectors::
@@ -7144,7 +7144,7 @@ list of @code{(gauche base)}.)
 
 
 @c ----------------------------------------------------------------------
-@node Characters, Character set, Keywords, Core library
+@node Characters, Character sets, Keywords, Core library
 @section Characters
 @c NODE 文字
 
@@ -7716,8 +7716,8 @@ that are supported in the native multibyte encoding scheme.
 
 
 @c ----------------------------------------------------------------------
-@node Character set, Strings, Characters, Core library
-@section Character Set
+@node Character sets, Strings, Characters, Core library
+@section Character Sets
 @c NODE 文字集合
 
 @deftp {Builtin Class} <char-set>
@@ -7753,11 +7753,15 @@ Gaucheは文字集合オブジェクトのサポートと、
 @c COMMON
 @end deftp
 
-@c EN
-@subheading Char-set literal
-@c JP
-@subheading 文字セットリテラル
-@c COMMON
+@menu
+* Character set literals::
+* Predefined character sets::
+* Character set operations::
+@end menu
+
+@node Character set literals, Predefined character sets, Character sets, Character sets
+@subsection Character set literals
+@c NODE 文字集合リテラル
 
 @deftp {Reader Syntax} @code{#[@i{char-set-spec}]}
 @lxindex #[
@@ -7873,17 +7877,17 @@ Here are some examples:
 Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item \s
 空白文字(space, newline, tab, form feed, vertical tab, carriage return).
-文字セット@code{char-set:ascii-whitespace}の要素。
+文字集合@code{char-set:ascii-whitespace}の要素。
 @item \S
 空白でない文字。(@code{\s}の補集合)
 @item \d
 10進数の数字。
-文字セット@code{char-set:ascii-digit}の要素。
+文字集合@code{char-set:ascii-digit}の要素。
 @item \D
 @code{\d}の補集合
 @item \w
 単語を構成する文字の集合(@code{#[A-Za-z0-9_]})。
-文字セット@code{char-set:ascii-word}の要素。
+文字集合@code{char-set:ascii-word}の要素。
 @item \W
 @code{\W}の補集合
 @item \\
@@ -7976,7 +7980,7 @@ To write code that can work both in new and old syntax, use @code{\u} escape.
 @c JP
 @b{互換性への注}:
 以前は、@code{\xNN} (2桁固定の16進数、終端のセミコロン無し) を文字と認識していました。
-例えば@code{#[\x0d\x0a]}はリターン文字と改行文字セットを意味していました。
+例えば@code{#[\x0d\x0a]}はリターン文字と改行文字集合を意味していました。
 互換性のため、終端のセミコロンが見当たらない場合は古い構文もサポートされます。
 しかし曖昧な場合もあります。@code{#[\x0a;]}は新しい構文では
 改行文字のみのセットですが、古い構文では改行文字とセミコロンになります。
@@ -7991,21 +7995,18 @@ To write code that can work both in new and old syntax, use @code{\u} escape.
 @c COMMON
 @end deftp
 
-
-@c EN
-@subheading Predefined char-sets
-@c JP
-@subheading 定義済み文字セット
-@c COMMON
+@node Predefined character sets, Character set operations, Character set literals, Character sets
+@subsection Predefined character sets
+@c NODE 定義済み文字集合
 
 @c EN
 We provide a bunch of predefined character sets, including the ones
 defined in R7RS charset library (@pxref{R7RS character sets}).
 Those character sets are immutable.
 @c JP
-定義済みの文字セットがいくつか提供されています。
-R7RS文字セットライブラリで定義されているものも含まれます(@ref{R7RS character sets}参照)。
-これらの文字セットは変更不可です。
+定義済みの文字集合がいくつか提供されています。
+R7RS文字集合ライブラリで定義されているものも含まれます(@ref{R7RS character sets}参照)。
+これらの文字集合は変更不可です。
 @c COMMON
 
 @defvar char-set:letter
@@ -8306,14 +8307,20 @@ of @code{char-set:Lu}, @code{char-set:Ll}, @code{char-set:Lt},
 @c COMMON
 @end defvar
 
+@node Character set operations,  , Predefined character sets, Character sets
+@subsection Character set operations
+@c NODE 文字集合の操作
+
 @c EN
-@subheading Char-set operations
+See also @ref{R7RS character sets} for the comprehensive character set
+operations.
 @c JP
-@subheading 文字セットの操作
+包括的な文字集合操作については、@ref{R7RS character sets}も参照してください。
 @c COMMON
 
+
 @defun char-set? obj
-[SRFI-14]
+[R7RS charset]
 @c EN
 Returns true if and only if @var{obj} is a character set object.
 @c JP
@@ -8332,7 +8339,7 @@ Returns @code{#t} if @var{char-set} is an immutable char-set,
 @end defun
 
 @defun char-set-contains? char-set char
-[SRFI-14]
+[R7RS charset]
 @c EN
 Returns true if and only if a character set object
 @var{char-set} contains a character @var{char}.
@@ -8372,7 +8379,7 @@ works just like @code{(char-set-contains? char-set char)}.
 @end deffn
 
 @defun char-set char @dots{}
-[SRFI-14]
+[R7RS charset]
 @c EN
 Creates a character set that contains @var{char} @dots{}.
 @c JP
@@ -8387,11 +8394,11 @@ Creates a character set that contains @var{char} @dots{}.
 @end defun
 
 @defun char-set-size char-set
-[SRFI-14]
+[R7RS charset]
 @c EN
 Returns a number of characters in the given charset.
 @c JP
-文字セットに含まれる文字数を返します。
+文字集合に含まれる文字数を返します。
 @c COMMON
 
 @example
@@ -8403,7 +8410,7 @@ gosh> (char-set-size #[[:alnum:]])
 @end defun
 
 @defun char-set-copy char-set
-[SRFI-14]
+[R7RS charset]
 @c EN
 Copies a character set @var{char-set}.
 @c JP
@@ -8413,7 +8420,7 @@ Copies a character set @var{char-set}.
 
 @defun char-set-complement char-set
 @defunx char-set-complement! char-set
-[SRFI-14]
+[R7RS charset]
 @c EN
 Returns a complement set of @var{char-set}.  The former always
 returns a new set, while the latter may reuse the given charset.
@@ -8425,7 +8432,7 @@ returns a new set, while the latter may reuse the given charset.
 
 
 @c ----------------------------------------------------------------------
-@node Strings, Regular expressions, Character set, Core library
+@node Strings, Regular expressions, Character sets, Core library
 @section Strings
 @c NODE 文字列
 
@@ -10051,7 +10058,7 @@ character in @var{string}, and the consecutive characters that caused
 @var{splitter} to return a true value are used as a delimiter.
 @c JP
 @var{string} を @var{splitter} で分割し、文字列のリストを返します。
-@var{splitter} には、文字、文字セット、文字列、正規表現、手続きが
+@var{splitter} には、文字、文字集合、文字列、正規表現、手続きが
 使えます。
 
 @var{splitter} が文字か文字列の場合、それがそのままデリミタとして使われます。
@@ -10059,7 +10066,7 @@ character in @var{string}, and the consecutive characters that caused
 (また、省略可能引数の最初のものは常に@var{grammar}として扱われます。
 後述する互換性への註を参照)。
 
-@var{splitter} が文字セットの場合は、その文字セットに含まれる文字の
+@var{splitter} が文字集合の場合は、その文字集合に含まれる文字の
 連続がデリミタとして使われます。
 
 @var{splitter} に手続きが与えられた場合、@var{string} にある各文字に
@@ -10639,10 +10646,10 @@ Matches any character (including newline).
 @item [@i{char-set-spec}]
 @c EN
 Matches any of the character set specified by @i{char-set-spec}.
-@xref{Character set}, for the details of @i{char-set-spec}.
+@xref{Character sets}, for the details of @i{char-set-spec}.
 @c JP
-@i{char-set-spec}で指定される文字セット内の文字にマッチします。
-@i{char-set-spec}については@ref{Character set}を参照して下さい。
+@i{char-set-spec}で指定される文字集合内の文字にマッチします。
+@i{char-set-spec}については@ref{Character sets}を参照して下さい。
 @c COMMON
 
 @item \s, \d, \w
@@ -10662,7 +10669,7 @@ Can be used both inside and outside of character set.
 単語を構成する文字(@code{char-set:ascii-word}, @code{#[A-Za-z0-9_]})にマッチします。
 ASCIIの外の文字は含まれないことに注意してください。
 
-文字セット内でも、その外でも使えます。
+文字集合内でも、その外でも使えます。
 @c COMMON
 
 @item \S, \D, \W
@@ -10670,7 +10677,7 @@ ASCIIの外の文字は含まれないことに注意してください。
 Matches the complement character set of @code{\s}, @code{\d} and
 @code{\w}, respectively.
 @c JP
-それぞれ@code{\s}、@code{\d}、@code{\w}で指定される文字セットの補集合の
+それぞれ@code{\s}、@code{\d}、@code{\w}で指定される文字集合の補集合の
 文字にマッチします。
 @c COMMON
 
@@ -24115,13 +24122,13 @@ any single character.
 @c EN
 Specifies a character set.  Matches any one of the set.
 The syntax of @i{chars} is the same as Gauche's character set
-syntax (@pxref{Character set}).  For the compatibility of the
+syntax (@pxref{Character sets}).  For the compatibility of the
 traditional glob, the @code{!} character can be used to complement
 the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
 @c JP
 文字の集合を指定します。その集合に含まれる文字のどれかにマッチします。
 @i{chars}の構文はGaucheの文字集合を表す構文と同じです
-(@ref{Character set}参照)。伝統的なグロブとの互換性のために、@code{!}
+(@ref{Character sets}参照)。伝統的なグロブとの互換性のために、@code{!}
 文字をつかって、補集合で文字集合を表わすこともできるようになっています。
 すなわち、@code{[!abc]}は@code{[^abc]}と同じです。
 @c COMMON

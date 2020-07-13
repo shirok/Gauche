@@ -297,7 +297,7 @@ limited types of values.  This is also supported by @ref{Arrays}.
 and @ref{String library}.  Gauche handles multibyte strings---
 see @ref{Multibyte strings} for the details.
 @item
-@emph{Character set} - a set of characters.  See @ref{Character set}
+@emph{Character set} - a set of characters.  See @ref{Character sets}
 and @ref{R7RS character sets}.
 @item
 @emph{Hash table} - hash tables.  See @ref{Hashtables}.
@@ -360,7 +360,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @ref{String library}参照。Gaucheではマルチバイト文字列を扱えます。詳細
 については@ref{Multibyte strings}を見てください。
 @item
-@emph{文字集合} - 文字の集合。@ref{Character set}および
+@emph{文字集合} - 文字の集合。@ref{Character sets}および
 @ref{R7RS character sets}参照。
 @item
 @emph{ハッシュテーブル} - ハッシュテーブル。 @ref{Hashtables}参照。
@@ -419,10 +419,10 @@ apply methods in @ref{Collection framework} and
 
 @c EN
 Character and character set operations are covered in
-@ref{Characters}, @ref{Character set}, and @ref{R7RS character sets}.
+@ref{Characters}, @ref{Character sets}, and @ref{R7RS character sets}.
 @c JP
 文字および文字集合の操作は
-@ref{Characters}、@ref{Character set}、@ref{R7RS character sets}がカ
+@ref{Characters}、@ref{Character sets}、@ref{R7RS character sets}がカ
 バーしています。
 @c COMMON
 

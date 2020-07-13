@@ -2716,7 +2716,7 @@ is handled by Gauche's built-in algorithm (see below for details).
 When other CES name is given, Gauche uses
 @code{iconv(3)} if it is linked.
 @c JP
-日本語の文字セットJIS X 0201及びJIS X 0213のエンコーディング
+日本語の文字集合JIS X 0201及びJIS X 0213のエンコーディング
 (EUC_JP、Shift JIS、UTF-8及びISO2022-JP) 間の変換に関しては、
 Gaucheが内部に変換アルゴリズムを持っています (詳細は下の注記を参照)。
 それ以外のCESに関しては、リンクされていればGaucheは@code{iconv(3)}を用いて
@@ -2777,7 +2777,7 @@ the code region JIS X 0213 doesn't use, and JIS X 0212 characters
 are not converted properly to Shift JIS and UTF-8.
 Use JIS X 0213.
 @c JP
-ASCII, JIS X 0201カナ、JIS X 0212、及びJIS X 0213文字セットをカバーします。
+ASCII, JIS X 0201カナ、JIS X 0212、及びJIS X 0213文字集合をカバーします。
 JIS X 0212は、単にJIS X 0213と重ならないコードを使っているためにサポート
 されていますが、他のCESへの変換は行われないので注意して下さい。
 なるべくJIS X 0213の使用をおすすめします。

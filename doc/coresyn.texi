@@ -244,7 +244,7 @@ backward-compatible.  @xref{Reader lexical mode}, for the details.
 @item 16進数文字エスケープ
 @lxindex \x
 いくつかのリテラル中では、文字をその文字コードの16進数表記で記入できます。
-具体的には、文字、文字セット、文字列、シンボル、正規表現リテラルです。
+具体的には、文字、文字集合、文字列、シンボル、正規表現リテラルです。
 
 R7RSは文字列および縦棒で囲まれたシンボル中では@code{\xNNNN;}、文字単独では
 @code{#\xNNNN}というエスケープ構文を採用しました。16進数の桁数は可変で、
@@ -515,9 +515,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#[}
 @c EN
- @tab Introduces a literal character set.  @xref{Character set}.
+ @tab Introduces a literal character set.  @xref{Character sets}.
 @c JP
- @tab リテラルの文字集合を先導します。@ref{Character set}参照
+ @tab リテラルの文字集合を先導します。@ref{Character sets}参照
 @c COMMON
 @item @code{#\}
 @c EN

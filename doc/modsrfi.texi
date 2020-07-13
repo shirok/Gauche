@@ -462,10 +462,10 @@ checked if the character set contains the given character; if
 to the given character.  ``A character satisfies @var{char/char-set/pred}''
 means such application to the character yields true value.
 @c JP
-この引数は、文字、文字セットオブジェクト、あるいは1つの文字を引数に取り
+この引数は、文字、文字集合オブジェクト、あるいは1つの文字を引数に取り
 真偽値を返す述語のいずれかです。``文字に@var{char/char-set/pred}を適用する''
 の意味はそれぞれ、@var{char/char-set/pred}が文字ならば与えられた文字と比較される、
-@var{char/char-set/pred}が文字セットならばその文字セットに与えられた文字が
+@var{char/char-set/pred}が文字集合ならばその文字集合に与えられた文字が
 含まれるかを検査する、@var{char/char-set/pred}が述語ならばそれを与えられた
 文字に適用する、となります。``ある文字が@var{char/char-set/pred}を満足する''
 とは、その文字への前述のような適用が真値を返すという意味になります。
@@ -834,7 +834,7 @@ If @var{start} and @var{end} are provided,
 the substring of @var{s} is used as the source.
 @c JP
 @var{Char/char-set/pred}のデフォルト値は@code{#[\s]}、つまり空白文字の
-文字セットです。@var{start}と@var{end}が与えられると、@var{s}の部分文字列が
+文字集合です。@var{start}と@var{end}が与えられると、@var{s}の部分文字列が
 ソース文字列として使われます。
 @c COMMON
 
@@ -1413,16 +1413,16 @@ Splits the string @var{s} into a list of substrings,
 where each substring is a maximal non-empty contiguous
 sequence of characters from the character set @var{token-set}.
 The default of @var{token-set} is @code{char-set:graphic}
-(@pxref{Character set}).
+(@pxref{Predefined character sets}).
 
 See also Gauche's built-in @code{string-split} (@pxref{String utilities}),
 which provides similar features but different criteria.
 @c JP
-文字列 @var{s} を、@var{token-set} で指定される文字セットで
+文字列 @var{s} を、@var{token-set} で指定される文字集合で
 構成される、空でない最大限連続した文字のシーケンスのそれぞれを
 要素とするリストを返します。
 @var{token-set} のデフォルト値は @code{char-set:graphic}
-(@ref{Character set}参照)。
+(@ref{Predefined character sets}参照)。
 
 同様の機能を提供する、しかし異なる基準を持つ、Gauche の組み込み手続き
 @code{string-split} (@ref{String utilities} 参照) も見て下さい。
@@ -6032,7 +6032,7 @@ portable as srfi-152.
 @c JP
 以下に示す手続きはsrfi-13で定義されています。
 説明は@ref{String library}を参照してください。
-srfi-13ではこれらの手続きのいくつかは、述語引数として手続きだけでなく文字セットや
+srfi-13ではこれらの手続きのいくつかは、述語引数として手続きだけでなく文字集合や
 文字を取ることができます(例: @code{string-filter})。
 srfi-152では手続きしか許していません。Gaucheの実装ではこれらの手続きは
 srfi-13のものと同じなのでsrfi-13のような使い方ができますが、
@@ -6263,7 +6263,7 @@ the prefix and the rest of substring as two values.
 @c EN
 ;; This is Gauche specific - a char-set can work as a predicate:
 @c JP
-;; Gaucheでは文字セットを述語手続きとしても使える
+;; Gaucheでは文字集合を述語手続きとしても使える
 @c COMMON
 (string-span "VAR_1 = $VAR_2" #[\w])
  @result{} "VAR_1" @r{and} " = $VAR_2"
@@ -6798,10 +6798,10 @@ ASCII control characters
 
 @c EN
 Note: The accepted character range corresponds to
-@code{char-set:ascii-control} (@pxref{Character set}).
+@code{char-set:ascii-control} (@pxref{Predefined character sets}).
 @c JP
 @code{#t}が返される文字の集合は@code{char-set:ascii-control}と
-一致します (@ref{Character set}参照)。
+一致します (@ref{Predefined character sets}参照)。
 @c COMMON
 @end defun
 
@@ -6843,11 +6843,11 @@ graphic characters but not a letter nor a digit.
 @c EN
 Note: The accepted character range corresponds to
 @code{(char-set-difference char-set:ascii-graphic char-set:ascii-letter+digit)}
-(@pxref{Character set}).
+(@pxref{Predefined character sets}).
 @c JP
 @code{#t}が返される文字の集合は
 @code{(char-set-difference char-set:ascii-graphic char-set:ascii-letter+digit)}と
-一致します (@ref{Character set}参照)。
+一致します (@ref{Predefined character sets}参照)。
 @c COMMON
 @end defun
 
@@ -6865,11 +6865,11 @@ range.
 @c EN
 Note: The accepted character range corresponds to
 @code{char-set:ascii-letter+digit}
-(@pxref{Character set}).
+(@pxref{Predefined character sets}).
 @c JP
 @code{#t}が返される文字の集合は
 @code{char-set:ascii-letter+digit}と
-一致します (@ref{Character set}参照)。
+一致します (@ref{Predefined character sets}参照)。
 @c COMMON
 @end defun
 
@@ -6885,11 +6885,11 @@ Returns @code{#t} iff @var{char-or-code} is in the ASCII alphabet range.
 @c EN
 Note: The accepted character range corresponds to
 @code{char-set:ascii-letter}
-(@pxref{Character set}).
+(@pxref{Predefined character sets}).
 @c JP
 @code{#t}が返される文字の集合は
 @code{char-set:ascii-letter}と
-一致します (@ref{Character set}参照)。
+一致します (@ref{Predefined character sets}参照)。
 @c COMMON
 @end defun
 
@@ -6901,11 +6901,11 @@ Returns @code{#t} iff @var{char-or-code} is in the ASCII digit range.
 @c EN
 Note: The accepted character range corresponds to
 @code{char-set:ascii-digit}
-(@pxref{Character set}).
+(@pxref{Predefined character sets}).
 @c JP
 @code{#t}が返される文字の集合は
 @code{char-set:ascii-digit}と
-一致します (@ref{Character set}参照)。
+一致します (@ref{Predefined character sets}参照)。
 @c COMMON
 @end defun
 
@@ -6917,11 +6917,11 @@ Returns @code{#t} iff @var{char-or-code} is one of the ASCII whitespaces.
 @c EN
 Note: The accepted character range corresponds to
 @code{char-set:ascii-whitespace}
-(@pxref{Character set}).
+(@pxref{Predefined character sets}).
 @c JP
 @code{#t}が返される文字の集合は
 @code{char-set:ascii-whitespace}と
-一致します (@ref{Character set}参照)。
+一致します (@ref{Predefined character sets}参照)。
 @c COMMON
 @end defun
 
@@ -6935,11 +6935,11 @@ ASCII alphabets.
 @c EN
 Note: The accepted character range corresponds to
 @code{char-set:ascii-upper-case}/@code{char-set:ascii-lower-case}
-(@pxref{Character set}).
+(@pxref{Predefined character sets}).
 @c JP
 @code{#t}が返される文字の集合は
 @code{char-set:ascii-upper-case}/@code{char-set:ascii-lower-case}と
-一致します (@ref{Character set}参照)。
+一致します (@ref{Predefined character sets}参照)。
 @c COMMON
 @end defun
 

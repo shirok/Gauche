@@ -4216,7 +4216,7 @@ They do provide hash functions.
 
 @node R7RS character sets, R7RS hash tables, R7RS sets, R7RS large
 @subsection @code{scheme.charset} - R7RS character sets
-@c NODE R7RS文字セット, @code{scheme.charset} - R7RS文字セット
+@c NODE R7RS文字集合, @code{scheme.charset} - R7RS文字集合
 
 @deftp {Module} scheme.charset
 @mdindex scheme.charset
@@ -4224,11 +4224,11 @@ They do provide hash functions.
 Implements character set library, originally defined as SRFI-14.
 Note that the following
 character-set procedures and pre-defined charsets are Gauche's build-in.
-@xref{Character set}.
+@xref{Character sets}.
 @c JP
 文字集合ライブラリを実装します。元はSRFI-14で定義されたものです。
-以下の文字集合手続きと定義済み文字セットはGauche組み込みになっているので、
-@ref{Character set}を参照してください。
+以下の文字集合手続きと定義済み文字集合はGauche組み込みになっているので、
+@ref{Character sets}を参照してください。
 @c COMMON
 
 @example
@@ -4265,7 +4265,7 @@ Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 
 @node Character-set constructors, Character-set comparison, R7RS character sets, R7RS character sets
 @subsubsection Character-set constructors
-@c NODE 文字セットの構築子
+@c NODE 文字集合の構築子
 
 @defun list->char-set char-list :optional base-cs
 @defunx list->char-set! char-list base-cs
@@ -4278,9 +4278,9 @@ in it are added to the result character set.
 @code{List->char-set!} is allowed, but not required, to reuse @var{base-cs}
 to store the result.
 @c JP
-与えられた文字のリスト@var{char-list}から文字セットを構築して返します。
-文字セット@var{base-cs}が与えられていた場合、返される文字セットは
-その文字セットに@var{char-list}中の文字を追加したものとなります。
+与えられた文字のリスト@var{char-list}から文字集合を構築して返します。
+文字集合@var{base-cs}が与えられていた場合、返される文字集合は
+その文字集合に@var{char-list}中の文字を追加したものとなります。
 @code{list->char-set!}は、結果を格納するために@var{base-cs}を
 変更するかもしれません。
 @c COMMON
@@ -4311,8 +4311,8 @@ the result.  The linear update version @code{char-set-filter!}
 is allowed, but not required, to modify @var{base-cs} to store the result.
 @c JP
 @var{char-set}内の文字のうち、@code{(@var{pred} @var{c})} が真の値を
-返すような@var{c}からなる文字セットを作成して返します。
-文字セット@var{base-cs}が与えられた場合は、その内容が結果に追加されます。
+返すような@var{c}からなる文字集合を作成して返します。
+文字集合@var{base-cs}が与えられた場合は、その内容が結果に追加されます。
 @code{char-set-filter!}は、結果を格納するために@var{base-cs}を変更するかも
 しれません。
 @c COMMON
@@ -4340,7 +4340,7 @@ the result.  The linear update version @code{ucs-range->char-set!}
 is allowed, but not required, to modify @var{base-cs} to store the result.
 @c JP
 @var{lower}以上、@var{upper}未満のUnicodeコードポイントを持つ文字を服務
-文字セットを作って返します。
+文字集合を作って返します。
 
 指定された範囲内に文字を割り当てられていないコードポイントがあった場合、
 それは単に無視されます。
@@ -4351,7 +4351,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 有効な全てのUnicodeコードポイントが扱えます。しかし、Gaucheをそれ以外の内部エンコーディング
 でコンパイルした場合は、サポートされないコードポイントがあります。
 
-文字セット@var{base-cs}が与えられた場合、その内容が結果の文字セットに追加されます。
+文字集合@var{base-cs}が与えられた場合、その内容が結果の文字集合に追加されます。
 @code{ucs-range->char-set!}は、結果を格納するために@var{base-cs}を
 再利用するかもしれません。
 @c COMMON
@@ -4391,10 +4391,10 @@ a char-set, or a character.  If the argument is a char-set,
 it is returned as-is.  If the argument is a character,
 a char-set with that single character is returned.
 @c JP
-様々な種類のオブジェクトを文字セットに変換する関数です。@var{x}に
-文字のコレクション、文字セット、あるいは文字を渡すことができます。
-引数が文字セットの場合はそれがそのまま返されます。
-引数が文字の場合は、その文字のみを含む文字セットが返されます。
+様々な種類のオブジェクトを文字集合に変換する関数です。@var{x}に
+文字のコレクション、文字集合、あるいは文字を渡すことができます。
+引数が文字集合の場合はそれがそのまま返されます。
+引数が文字の場合は、その文字のみを含む文字集合が返されます。
 @c COMMON
 
 @c EN
@@ -4404,14 +4404,14 @@ or a character as an argument.  Gauche extends it so that it can
 accept any collection of characters.
 @c JP
 註: R7RS @code{(scheme charset)}の@code{->char-set}
-は文字列、文字セット、文字のいずれかのみを
+は文字列、文字集合、文字のいずれかのみを
 引数に取ります。Gaucheでは文字の任意のコレクションを取るように拡張しました。
 @c COMMON
 @end defun
 
 @node Character-set comparison, Character-set iteration, Character-set constructors, R7RS character sets
 @subsubsection Character-set comparison
-@c NODE 文字セットの比較
+@c NODE 文字集合の比較
 
 @defun char-set= char-set1 @dots{}
 [R7RS charset]
@@ -4420,7 +4420,7 @@ accept any collection of characters.
 Returns @code{#t} iff all the character sets have exactly the
 same members.
 @c JP
-与えられた文字セットが全て同じ要素を持っている場合に限り@code{#t}を返します。
+与えられた文字集合が全て同じ要素を持っている場合に限り@code{#t}を返します。
 @c COMMON
 
 @example
@@ -4462,7 +4462,7 @@ that limits the range of the hash value, which will fall between
 
 @node Character-set iteration, Character-set query, Character-set comparison, R7RS character sets
 @subsubsection Character-set iteration
-@c NODE 文字セットのイテレーション
+@c NODE 文字集合のイテレーション
 
 @defun char-set-cursor char-set
 [R7RS charset]
@@ -4477,8 +4477,8 @@ be used to pass as the @var{cursor} argument of @code{char-set-ref},
 @code{char-set-cursor-next} and @code{end-of-char-set?}.
 @c JP
 @var{char-set}中の最初の文字を指すオブジェクトを返します。
-(ここでの「最初」は文字セットを順にたどってゆく際の最初ということです。
-文字セットをたどる順は実装依存で、特定の順序を当てにしないようにしてください。)
+(ここでの「最初」は文字集合を順にたどってゆく際の最初ということです。
+文字集合をたどる順は実装依存で、特定の順序を当てにしないようにしてください。)
 返されたオブジェクトは、そのまま@code{char-set-ref}、
 @code{char-set-cursor-next}、@code{end-of-char-set?}の@var{cursor}引数に
 渡す以外に使ってはいけません。
@@ -4530,7 +4530,7 @@ created from @var{char-set}.
 @c EN
 Returns @code{#t} iff @var{cursor} points to the end of the charset.
 @c JP
-@var{cursor}が文字セットの終端を指していたら@code{#t}を、そうでなければ@code{#f}を返します。
+@var{cursor}が文字集合の終端を指していたら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -4601,13 +4601,13 @@ returned from @var{proc}.
 @c JP
 @var{proc}を@var{char-set}中のそれぞれの文字に適用します。
 @var{proc}の戻り値は文字でなければなりません。@var{proc}の戻り値の文字を集めた
-新たな文字セットを返します。
+新たな文字集合を返します。
 @c COMMON
 @end defun
 
 @node Character-set query, Character-set algebra, Character-set iteration, R7RS character sets
 @subsubsection Character-set query
-@c NODE 文字セットへの問い合わせ
+@c NODE 文字集合への問い合わせ
 
 @defun char-set-every pred char-set
 @defunx char-set-any pred char-set
@@ -4642,7 +4642,7 @@ which can make these procedures take very long.
 
 @code{char-set-count}は@var{pred}が真の値を返した回数を返します。
 
-@var{char-set}は非常に大きくなる可能性があり (例えばごく小さな文字セットの補集合)、
+@var{char-set}は非常に大きくなる可能性があり (例えばごく小さな文字集合の補集合)、
 その場合、これらの手続きは非常に長くかかり得ることに注意してください。
 @c COMMON
 @end defun
@@ -4657,14 +4657,14 @@ each character, in @var{char-set}, respectively.
 Be careful to apply this on a large char set.
 @c JP
 @var{char-set}に含まれる文字をリストあるいは文字列にして返します。
-大きな文字セットに適用する場合は注意してください。
+大きな文字集合に適用する場合は注意してください。
 @c COMMON
 @end defun
 
 
 @node Character-set algebra,  , Character-set query, R7RS character sets
 @subsubsection Character-set algebra
-@c NODE 文字セットに適用できる代数的関数
+@c NODE 文字集合に適用できる代数的関数
 
 @defun char-set-adjoin char-set char1 @dots{}
 @defunx char-set-adjoin! char-set char1 @dots{}
@@ -7608,7 +7608,7 @@ A SRFI-14 character set.
 
 Note that while currently there is no portable written representation
 of SRFI 14 character sets, you can use Gauche reader syntax
-@code{#[char-set-spec]}, @pxref{Character set}.
+@code{#[char-set-spec]}, @pxref{Character sets}.
 
 @example
 (regexp-partition `(+ ,char-set:vowels) "vowels")

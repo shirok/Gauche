@@ -839,19 +839,19 @@ Gauche の @code{sys-gmtime}。@ref{Time} 参照。
 @c EN
 Not directly supported, but you can use R7RS @code{char-alphabetic?} and
 @code{char-numeric?}.  @xref{Characters}.   You can also use
-character set.  @xref{Character set}, also @ref{R7RS character sets}.
+character set.  @xref{Character sets}, also @ref{R7RS character sets}.
 @c JP
 直接はサポートされていませんが、R7RS の @code{char-alphabetic?} および
 @code{char-numeric?} が使えます。@ref{Characters} 参照。また、文字集合も
-使えます。@ref{Character set}、@ref{R7RS character sets} 参照。
+使えます。@ref{Character sets}、@ref{R7RS character sets} 参照。
 @c COMMON
 @item isalpha
 @c EN
 R7RS @code{char-alphabetic?}.  @xref{Characters}.  See also
-@ref{Character set} and @ref{R7RS character sets}.
+@ref{Character sets} and @ref{R7RS character sets}.
 @c JP
 R7RS の @code{char-alphabetic?}。@ref{Characters} 参照。また、
-@ref{Character set} および @ref{R7RS character sets} も参照してください。
+@ref{Character sets} および @ref{R7RS character sets} も参照してください。
 @c COMMON
 @item isatty
 @c EN
