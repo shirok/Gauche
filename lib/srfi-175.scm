@@ -246,7 +246,7 @@
         [else (type-error 'c "char or integer" c)]))
 
 (define (ascii-nth-digit n)
-  (and (exact-integer n) (integer->digit n)))
+  (and (exact-integer? n) (integer->digit n)))
 
 (define (ascii-nth-upper-case n)
   (integer->char (+ (modulo n 26) (char->integer #\A))))
