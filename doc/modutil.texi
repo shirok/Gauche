@@ -11289,7 +11289,7 @@ language'' distinct from the base Scheme language, nor you need to
 run separate tools like parser generators to obtain a runnable parser code.
 @c JP
 PEGは、正規表現や文脈自由文法と同様の@emph{形式言語}です。
-PEGが興味深いのは、文法記述がそのまま再帰下降パーザにそのまま移し替えられるところで、
+PEGが興味深いのは、文法記述がそのまま再帰下降パーザに移し替えられるところで、
 このライブラリはまさにそれをやっています。各生成規則は、パーザを受け取って
 結合されたパーザを返すScheme式です。
 このアプローチの利点は、Schemeコードと文法記述を混ぜて書けることです。
@@ -11371,7 +11371,7 @@ following, which accepts a character @code{#\a}.
 @c JP
 パーザ手続きを直接書く必要は滅多にありません。
 代わりに、パーザを生成する手続きがたくさん用意されているのでそれを使います。
-例えば、文字@code{#\a}を受容するパーザはこう書けます。
+例えば、文字@code{#\a}を受理するパーザはこう書けます。
 @c COMMON
 
 @example
@@ -11571,6 +11571,18 @@ We can use @code{$let} again to keep all the results.
 gosh> (peg-parse-string integers2 "123, 456, 789")
 (123 456 789)
 @end example
+
+@c EN
+(Unlike @code{let} where the order of its init expressions are
+not defined, @code{$let} guarantees the parsers are applied sequentially.
+The reason it is not called @code{$let*} is the scope;
+we also have @code{$let*}, which we'll explain shortly.)
+@c JP
+(@code{let}ではinit式の評価順序は決まっていませんが、
+@code{$let}はパーザを書かれた順に適用することを保証しています。
+これを@code{$let*}と呼んでいないのはスコープのためです。
+すぐ後で@code{$let*}も紹介します。)
+@c COMMON
 
 @c EN
 Another way to gather the results of parsers is a combinator @code{$lift}.
@@ -11791,7 +11803,7 @@ the scope of the parser expressions in the binding.  Note that, however,
 ここでは@code{$let}ではなく@code{$let*}を使いました。
 この差は@code{let}と@code{let*}の差と同じで、スコープの違いです。
 ただ、@code{$let}の方が処理系にはうんと最適化しやすいので、
-可能なら@code{$let}を使う方が良いでしょう。
+可能な限り@code{$let}を使う方が良いでしょう。
 @c COMMON
 
 @c EN
@@ -12002,44 +12014,90 @@ Gauche source tree that use @code{parser.peg}:
 
 @node PEG parser drivers, What is a PEG parser, PEG Walkthrough, PEG parser combinators
 @subsection Parser drivers
+@c NODE PEGパーザドライバ, パーザドライバ
 
 @defun peg-run-parser parser list
 @c MOD parser.peg
+@c EN
 Apply @var{parser} on the input @var{list}.   If @var{parser} accepts it,
 returns two values--the result of @var{parser}, and the rest of
 the input.  If @var{parser} fails, raise @code{<parse-error>}.
+@c JP
+パーザ@var{parser}を入力@var{list}に適用します。入力が受理されたら、
+@var{parser}の結果と、残りの入力の二つの値を返します。
+@var{parser}が失敗したら、@code{<parse-error>}が投げられます。
+@c COMMON
 
+@c EN
 The result of @var{parse} is a value yielded by @var{parser}
 passed to @code{rope-finalize}, so any unfinalized rope is
-finalized before being returned.  See the ``rope'' heading below
-for the details.
+finalized before being returned.  @xref{PEG ropes}, for the details.
+@c JP
+@var{parse}の結果は@code{rope-finalize}を通されるので、結果中の
+ファイナライズされていないロープは全てファイナライズされて返されます。
+ロープについては@ref{PEG ropes}を参照してください。
+@c COMMON
 
+@c EN
 Typically, you don't want to have entire input as a list beforehand,
-so you pass a lazy sequence as @var{list}.  If the input is a string
+so you pass a lazy sequence as @var{list} (@pxref{Lazy sequences}).
+If the input is a string
 or a port, convenience procedures are defined.
+@c JP
+多くの場合、入力をあらかじめ全部リストで持っておきたくはないと思います。
+その場合、遅延シーケンスを@var{list}に渡せば良いでしょう (@ref{Lazy sequences})。
+なお、入力が文字列やポートの場合はユーティリティ手続きが定義されています。
+@c COMMON
 
+@c EN
 Input doesn't need to be a character list.  You may, for example,
-have a separate lexer that generates a list of tokens, and let @var{parser}
+have a separate lexer that generates a (lazy) list of tokens, and let @var{parser}
 parse them.
+@c JP
+入力が文字のリストである必要はありません。
+例えば、別の字句解析器を使ってトークンの(遅延)リストにしてから、
+@var{parser}でそれをパーズすることもできます。
+@c COMMON
 @end defun
 
 @defun peg-parse-string parser string :optional cont
 @defunx peg-parse-port parser iport :optional cont
 @c MOD parser.peg
+@c EN
 Convenience wrappers of @code{peg-run-parser} that takes input from
 @var{string} or @var{iport}.
+@c JP
+@code{peg-run-parser}で文字列@var{string}や入力ポート@var{iport}からの入力を
+パーズするユーティリティ手続きです。
+@c COMMON
 
+@c EN
 Without @var{cont} argument or it is @code{#f}, 
 it returns the parsed result and discards
 the rest of the input.  (Hint: To make sure there's no garbage
 following, use @code{$eos} parser.)
+@c JP
+@var{cont}引数が省略されるか@code{#f}であれば、
+この手続きはパーザが受理したところ以降の入力は捨てて、パーザの結果だけ返します。
+(ヒント: 余分なゴミが後に続いてないことを保証するには@code{$eos}パーザが使えます)。
+@c COMMON
 
+@c EN
 If you want to keep parsing after @var{parser} accepts its input,
 pass @var{cont} a procedure; it must take two arguments, the result of
 @var{parser} and a lazy sequence of the rest of the input.  What @var{cont}
 returns will be the result of these procedures.
+@c JP
+@var{parser}が入力を受理した後、さらにパーズを続けたければ、@var{cont}に手続きを
+渡します。その手続きは@var{parser}の結果と、残りの入力の遅延シーケンスの二つの
+引数を取ります。@var{cont}が返すものが全体の返り値となります。
+@c COMMON
 
+@c EN
 It is an error to pass other values ot @var{cont}.
+@c JP
+@var{cont}にそれ以外の値を渡すのはエラーです。
+@c COMMON
 @end defun
 
 @defun peg-parser->generator parser list
