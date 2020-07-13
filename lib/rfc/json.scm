@@ -33,10 +33,6 @@
 
 ;;; http://www.ietf.org/rfc/rfc7159.txt
 
-;; NOTE: This module depends on parser.peg, whose API is not officially
-;; fixed.  Hence do not take this code as an example of parser.peg;
-;; this will likely to be rewritten once parser.peg's API is changed.
-
 (define-module rfc.json
   (use gauche.parameter)
   (use gauche.sequence)
@@ -53,7 +49,7 @@
 
           json-array-handler json-object-handler json-special-handler
 
-          json-parser                   ;experimental
+          json-parser
           ))
 (select-module rfc.json)
 
