@@ -382,12 +382,13 @@ Gaucheでは、それらの関数はいくつかのファイルに分割され�
 ありません。
 @c COMMON
 @c EN
-See SRFI-13 (@ref{srfi-13, [SRFI-13], SRFI-13})
+See SRFI-13 (@uref{https://srfi.schemers.org/srfi-13/srfi-13.html})
 for the detailed specification and discussion of design issues.
 This manual serves as a reference of function API.
 Some SRFI-13 functions are Gauche built-in and not listed here.
 @c JP
-詳細な仕様とデザインに関する議論については、SRFI-13 (@ref{srfi-13, [SRFI-13], SRFI-13})
+詳細な仕様とデザインに関する議論については、SRFI-13
+(@uref{https://srfi.schemers.org/srfi-13/srfi-13.html})
 を参照して下さい。
 このマニュアルは、関数のAPIのリファレンスとして提供されます。
 いくつかのSRFI-13の関数は、Gaucheのビルトインになっており、
@@ -2747,7 +2748,7 @@ Gauche ネイティヴの @code{format} を使いたければ、@code{srfi-29.bu
 @c EN
 This module implements @code{args-fold},
 yet another procedure to process command-line
-arguments, defined in SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}).
+arguments, defined in SRFI-37 (@uref{https://srfi.schemers.org/srfi-37/srfi-37.html}).
 
 Unlike @code{gauche.parseopt}
 (@pxref{Parsing command-line options}),
@@ -2757,7 +2758,7 @@ return values, and also follows POSIX and GNU getopt guidelines,
 including long options.
 @c JP
 このモジュールは、@code{args-fold} を実装しています。
-これは、SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}) で定義されている
+これは、SRFI-37 (@uref{https://srfi.schemers.org/srfi-37/srfi-37.html}) で定義されている
 コマンドライン引数の処理をするもうひとつの手続きです。
 
 @code{gauche.parseopt} (@ref{Parsing command-line options}

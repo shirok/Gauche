@@ -1,4 +1,4 @@
-@node C to Scheme mapping, Function and Syntax Index, References, Top
+@node C to Scheme mapping, Function and Syntax Index, Library modules - Utilities, Top
 @appendix C to Scheme mapping
 @c NODE CとSchemeの関数の対応
 

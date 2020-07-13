@@ -4333,11 +4333,11 @@ Passes iteratee the continuation procedure that continues
 the iteration.   The iteratee just returns when it want
 to terminate the iteration.
 It has resource management problem described in
-Oleg Kiselyov's article (@ref{oleg2,,OLEG2}).
+Oleg Kiselyov's article (@uref{http://okmij.org/ftp/Scheme/enumerators-callcc.html}).
 @c JP
 繰り返しの中身の手続きに対し、繰り返しを続けるための継続手続きを渡す方法です。
 繰り返しを続けたくなければ、手続きは継続を呼ばすにそのまま戻ります。
-Oleg Kiselyovの記事(@ref{oleg2,,OLEG2})に指摘されているような、
+Oleg Kiselyovの記事(@uref{http://okmij.org/ftp/Scheme/enumerators-callcc.html})に指摘されているような、
 リソース管理の問題があります。
 @c COMMON
 
@@ -19351,10 +19351,10 @@ It's a historical overlook, stuck for the backward compatibility.)
 
 @c EN
 Scheme-level thread API conforms SRFI-18, "Multithreading support"
-(@ref{srfi-18,,[SRFI-18]}), wrapped around Gauche's object interface.
+(@uref{https://srfi.schemers.org/srfi-18/srfi-18.html}), wrapped around Gauche's object interface.
 @c JP
 SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポート''
-(@ref{srfi-18,,[SRFI-18]})を満たし、Gaucheのオブジェクトの
+(@uref{https://srfi.schemers.org/srfi-18/srfi-18.html})を満たし、Gaucheのオブジェクトの
 インターフェースでラップされます。
 @c COMMON
 
@@ -19450,15 +19450,15 @@ a thread pool implementation in @code{control.thread-pool} module
 @c COMMON
 
 @c EN
-Preemptive threads have other difficulties
-(e.g. see @ref{fairthreads,[FairThreads],FairThreads}),
+Preemptive threads have other difficulties,
 and sometimes the alternatives may be a better fit
-than the native preemptive threads.
+than the native preemptive threads
+(e.g. see @uref{https://www-sop.inria.fr/mimosa/rp/FairThreads/html/FairThreads.html}).
 @c JP
-プリエンプティブなスレッドには他にも難しい点があり
-(@ref{fairthreads,[FairThreads],FairThreads}参照)、
+プリエンプティブなスレッドには他にも難しい点があり、
 しばしばネイティブなプリエンプティブスレッドよりも
-より良くフィットする代替策があります。
+より良くフィットする代替策があります
+(例えば@uref{https://www-sop.inria.fr/mimosa/rp/FairThreads/html/FairThreads.html}参照)。
 @c COMMON
 
 @itemize @bullet

@@ -21327,12 +21327,12 @@ This is equivalent to @code{(write-char #\newline port)},
 Format @var{arg} @dots{} according to @var{string}.
 This function is a subset of CommonLisp's @code{format} function,
 with a bit of extension.  It is also a superset of SRFI-28,
-Basic format strings (@ref{srfi-28,[SRFI-28],SRFI-28}).
+Basic format strings (@uref{https://srfi.schemers.org/srfi-28/srfi-28.html}).
 @c JP
 @var{string} の指示に従い、@var{arg} @dots{}をフォーマットします。
 この手続きはCommonLispの@code{format}のサブセットに、Gauche独自の拡張を
 加えたものです。また、これはSRFI-28 "Basic format strings" のスーパーセットに
-なっています (@ref{srfi-28,[SRFI-28],SRFI-28})。
+なっています (@uref{https://srfi.schemers.org/srfi-28/srfi-28.html})。
 @c COMMON
 
 @c EN

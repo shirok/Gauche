@@ -1411,8 +1411,11 @@ the order of superclasses in a class's CPL is always
 consistent to the order of direct superclasses of
 the class, the order of CPL of each superclasses,
 and the order of direct superclasses of each superclass,
-and so on.   See @ref{dylan,[Dylan],Dylan} for the precise
-description.
+and so on.   For the precise description, see
+Kim Barrett, Bob Cassels, Paul Haahr,
+David A. Moon, Keith Playford, P. Tucker Withington,
+A Monotonic Superclass Linearization for Dylan,
+in @i{Proceedings of OOPSLA 96}, October 1996.
 
 If a class inherits superclasses in a way that its CPL can't
 be constructed with satisfying consistencies, an error is reported.
@@ -1430,8 +1433,12 @@ Scheme定義のクラスは常に @code{<object>} を継承します。
 ものです。ここでは詳細に立ち入りませんが、一般的なルールとして、
 CPL 中のスーパークラスの順序は、つねにそのクラスの直接スーパークラスの
 順序、それぞれのスーパークラスの CPL の順序、および、各スーパークラス
-の直接スーパークラスの順序、などと整合性をもちます。正確な説明について
-は@ref{dylan,[Dylan],Dylan}を参照してください。
+の直接スーパークラスの順序、などと整合性をもちます。正確な説明については
+次の文献を参照してください:
+Kim Barrett, Bob Cassels, Paul Haahr,
+David A. Moon, Keith Playford, P. Tucker Withington,
+A Monotonic Superclass Linearization for Dylan,
+in @i{Proceedings of OOPSLA 96}, October 1996.
 
 もしクラスが、整合性を満した CPL を構築できないようなやり方で
 複数のスーパークラスを継承すると、エラーになります。以下は多重継承の

@@ -569,7 +569,10 @@ To find examples, see the files @code{lib/gauche/singleton.scm} and
 @code{lib/gauche/mop/validator.scm} included in the distribution.
 You can also read @code{lib/gauche/mop/object.scm}, which actually
 defines how a class is defined in Gauche.
-For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
+For more details about metaobject protocol, see
+Gregor Kiczales, Jim Des Rivieres, Daniel Bobrow,
+The Art of Metaobject Protocol,
+The MIT Press.
 @c JP
 @item クラスはインスタンスでもある
 デフォルトでは、クラスは@code{<class>}というクラスのインスタンスであり、
@@ -586,8 +589,10 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 例として、ディストリビューションに含まれる@code{lib/gauche/mop/singleton.scm}や
 @code{lib/gauche/mop/validator}等があります。@code{src/libobj.scm}を
 読めば、クラス自身がGaucheでどのように定義されているかがわかります。
-メタオブジェクトプロトコルの更に詳しいことについては、
-@ref{mop,[MOP],MOP}が参考になります。
+メタオブジェクトプロトコルの更に詳しいことについては、次の書籍が参考になります:
+Gregor Kiczales, Jim Des Rivieres, Daniel Bobrow,
+The Art of Metaobject Protocol,
+The MIT Press.
 @c COMMON
 
 @c EN

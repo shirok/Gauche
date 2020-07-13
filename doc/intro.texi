@@ -88,14 +88,15 @@ Gauche is a Scheme script engine; it reads Scheme programs,
 compiles it on-the-fly and executes it on a virtual machine.
 Gauche conforms the language standard
 "Revised^7 Report on the Algorithmic Language Scheme"
-(@ref{r7rs,[R7RS],R7RS}),
+(@uref{https://bitbucket.org/cowan/r7rs/raw/tip/rnrs/r7rs.pdf}),
 and supports various common libraries defined in SRFIs
 (@uref{https://srfi.schemers.org}).
 @c JP
 GaucheはScheme言語のスクリプトエンジンです。
 Schemeプログラムを読み込み、直ちにコンパイルして仮想マシンで実行します。
 Scheme言語の標準である、"Revised^7 Report on the Algorithmic Language Scheme"
-(@ref{r7rs,[R7RS],R7RS})に準拠しています。また、SRFI
+(@uref{https://bitbucket.org/cowan/r7rs/raw/tip/rnrs/r7rs.pdf})
+に準拠しています。また、SRFI
 (@uref{https://srfi.schemers.org}) に規定されている数多くのライブラリを
 サポートしています。
 @c COMMON

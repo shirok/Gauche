@@ -42,7 +42,6 @@ TEXIS = concepts.texi      \
 	modutil.texi       \
 	object.texi        \
 	program.texi       \
-	references.texi    \
 	srfis.texi
 
 # Manual page destination.  Default @mandir@ doesn't include 'share'

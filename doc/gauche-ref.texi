@@ -78,7 +78,6 @@ Gaucheのバージョン@VERSION@に対応します。
 * Library modules - R7RS standard libraries::  
 * Library modules - SRFIs::     
 * Library modules - Utilities::  
-* References::                  
 * C to Scheme mapping::         
 * Function and Syntax Index::   
 * Module Index::                
@@ -101,7 +100,6 @@ Gaucheのバージョン@VERSION@に対応します。
 @include modr7rs.texi
 @include modsrfi.texi
 @include modutil.texi
-@include references.texi
 @include mapping.texi
 @include indexfn.texi
 @include indexmd.texi

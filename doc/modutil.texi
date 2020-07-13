@@ -1,4 +1,4 @@
-@node Library modules - Utilities, References, Library modules - SRFIs, Top
+@node Library modules - Utilities, C to Scheme mapping, Library modules - SRFIs, Top
 @chapter Library modules - Utilities
 @c NODE ライブラリモジュール - ユーティリティ
 
@@ -10309,13 +10309,13 @@ Napier's constant.
 Provides a pseudo random number generator (RNG) based on
 "Mersenne Twister" algorithm developed by Makoto Matsumoto and
 Takuji Nishimura.   It is fast, and has huge period of 2^19937-1.
-See @ref{MT,,MT}, for details about the algorithm.
+See @url{https://dl.acm.org/citation.cfm?id=272995}, for details about the algorithm.
 @c JP
 Makoto MatsumotoとTakuji Nishimuraにより開発された、
 ``Mersenne Twister''アルゴリズムに基づく、
 仮想的な乱数発生器(RNG)を提供します。
 高速で、2^19937-1という極めて長大な周期を持ちます。
-アルゴリズムの詳細については、@ref{MT,,MT}を参照して下さい。
+アルゴリズムの詳細については、@url{https://dl.acm.org/citation.cfm?id=272995}を参照して下さい。
 @c COMMON
 
 @c EN
@@ -13245,11 +13245,11 @@ SRFI-19の@code{<date>}オブジェクト(@ref{SRFI-19 Date}参照)
 @mdindex rfc.base64
 @c EN
 This module defines a few functions to encode/decode Base64 format,
-defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3
-and RFC 4648 (@ref{rfc4648, [RFC4648], RFC4648})
+defined in RFC 2045 (@uref{https://www.ietf.org/rfc/rfc2045.txt}), section 6.3
+and RFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt}).
 @c JP
-このモジュールでは、RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045})の6.3節
-およびRFC 4648 (@ref{rfc4648, [RFC4648], RFC4648})で
+このモジュールでは、RFC 2045 (@uref{https://www.ietf.org/rfc/rfc2045.txt}) の6.3節
+およびRFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt}) で
 定義されている Base64 フォーマットへエンコード/デコードするいくつかの
 手続きを定義しています。
 @c COMMON
@@ -14124,7 +14124,7 @@ HTTP/1.1, defined in RFC2616, "Hypertext Transfer Protocol -- HTTP/1.1"
 このモジュールは、RFC2616 "Hypertext Transfer Protocol -- HTTP/1.1"
 で定義されているHTTP/1.1に対する簡単なクライアントAPIを提供します。
 @c COMMON
-(@ref{rfc2616, [RFC2616], RFC2616}).
+(@uref{https://www.ietf.org/rfc/rfc2616.txt}).
 
 @c EN
 Current API implements only a part of the protocol.
@@ -15380,11 +15380,11 @@ JSON配列
 @mdindex rfc.md5
 @c EN
 This module implements MD5 message digest algorithm, defined in
-RFC 1321 (@ref{rfc1321, [RFC1321], RFC1321}).
+RFC 1321 (@uref{https://www.ietf.org/rfc/rfc1321.txt}).
 The module extends util.digest
 (@pxref{Message digester framework}).
 @c JP
-このモジュールは、RFC 1321(@ref{rfc1321, [RFC1321], RFC1321}参照)で
+このモジュールは、RFC 1321 (@uref{https://www.ietf.org/rfc/rfc1321.txt}) で
 定義されている、MD5メッセージダイジェストアルゴリズムを実装しています。
 このモジュールは、util.digest (@ref{Message digester framework}参照)
 を拡張しています。
@@ -16277,9 +16277,9 @@ MIMEマルチパートメッセージのboundaryとして使えるユニーク�
 @mdindex rfc.quoted-printable
 @c EN
 This module defines a few functions to encode/decode Quoted-printable format,
-defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
+defined in RFC 2045 (@uref{https://www.ietf.org/rfc/rfc2045.txt}), section 6.7.
 @c JP
-このモジュールでは、RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}参照)の
+このモジュールでは、RFC 2045 (@uref{https://www.ietf.org/rfc/rfc2045.txt}) の
 セクション6.7で定義されている、Quoted-printableフォーマットにエンコード/から
 デコードするためのいくつかの関数を定義しています。
 @c COMMON
@@ -16575,10 +16575,10 @@ we can't securely fetch the file before we get valid CA certs!)
 @mdindex rfc.uri
 @c EN
 Provides a set of procedures to parse and construct Uniform Resource Identifiers
-defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}),
+defined in RFC 2396 (@uref{https://www.ietf.org/rfc/rfc2396.txt}),
 as well as Data URI scheme defined in RFC2397.
 @c JP
-RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396})で定義されている
+RFC 2396 (@uref{https://www.ietf.org/rfc/rfc2396.txt})で定義されている
 Uniform Resource Identifiers、
 またRFC 2397で定義されているData URI Schemeをパーズおよび構築する
 手続き群を提供します。
@@ -17891,11 +17891,11 @@ module @code{slib}.
 @mdindex sxml.ssax
 @c EN
 @code{sxml.*} modules are the adaptation of
-Oleg Kiselyov's SXML framework (@ref{ssax,,SSAX}),
+Oleg Kiselyov's SXML framework (@uref{http://okmij.org/ftp/Scheme/xml.html}),
 which is based on S-expression representation of XML structure.
 @c JP
 @code{sxml.*}モジュールは、XML構造のS式表現に基づく
-Oleg KiselyovのSXMLフレームワーク(@ref{ssax,,SSAX}参照)の適合です。
+Oleg KiselyovのSXMLフレームワーク(@uref{http://okmij.org/ftp/Scheme/xml.html})の適合です。
 @c COMMON
 
 @c EN
@@ -23938,9 +23938,9 @@ approach.
 @c EN
 A collection of utilities that does simple parsing from
 the input port.   The API is inspired, and compatible with
-Oleg Kiselyov's input parsing library (@ref{oleg1,,OLEG1}).
+Oleg Kiselyov's input parsing library (@uref{http://okmij.org/ftp/Scheme/parsing.html}).
 His library is used in lots of other libraries, notably,
-a full-Scheme XML parser/generator SSAX (@ref{ssax,,SSAX}).
+a full-Scheme XML parser/generator SSAX (@uref{http://okmij.org/ftp/Scheme/xml.html}).
 
 You can use this module in place of his
 @code{input-parse.scm} and @code{look-for-str.scm}.
@@ -23955,10 +23955,10 @@ that is, they read from the port as much as they need, without
 buffering extra characters.
 @c JP
 入力ポートに対して単純な解析を行うユーティリティのコレクションです。
-API は Oleg Kiselyov 氏の入力解析ライブラリ (@ref{oleg1,,OLEG1}) に
+API は Oleg Kiselyov 氏の入力解析ライブラリ (@uref{http://okmij.org/ftp/Scheme/parsing.html}) に
 触発され、互換性を持つものです。氏のライブラリは、他のたくさんの
 ライブラリで使われています。特に、Scheme のみで書かれたパーサ/ジェネレータ
-である SSAX (@ref{ssax,,SSAX}) が挙げられます。
+である SSAX (@uref{http://okmij.org/ftp/Scheme/xml.html}) が挙げられます。
 
 このモジュールは、氏の @code{input-parse.scm} や @code{look-for-str.scm}
 の代わりに使うことができます。
@@ -25619,7 +25619,9 @@ equal (in the sense of @code{equal?}).
 @c EN
 This module implements the algorithm to find the longest common subsequence
 of two given sequences.  The implemented algorithm is based on
-Eugene Myers' O(ND) algorithm (@ref{myers86,[Myers86],Myers86}).
+Eugene Myers' O(ND) algorithm 
+(Eugene Myers, An O(ND) Difference Algorithm and Its Variations,
+@i{Algorithmica} Vol. 1 No. 2, pp. 251-266, 1986.).
 
 One of the applications of this algorithm is to calculate
 the difference of two text streams;
@@ -25627,7 +25629,9 @@ see @ref{Calculate difference of text streams}.
 @c JP
 このモジュールは、与えられた2つのシーケンスの最長共通サブシーケンスを見つける
 アルゴリズムを実装しています。アルゴリズムは、Eugene Myersの
-O(ND)アルゴリズムに基づいています(@ref{myers86,[Myers86],Myers86})。
+O(ND)アルゴリズムに基づいています
+(Eugene Myers, An O(ND) Difference Algorithm and Its Variations,
+@i{Algorithmica} Vol. 1 No. 2, pp. 251-266, 1986.)。
 
 このアルゴリズムを使うアプリケーションの1つは、2つのテキストストリームの
 相違点を計算する@ref{Calculate difference of text streams}です。
