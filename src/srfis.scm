@@ -280,14 +280,14 @@ srfi-14, srfi-14
 Character-set library
 This has become a part of R7RS large.
 Character-set object and a few procedures are built-in.
-@xref{Character set}.
+@xref{Character sets}.
 Complete set of SRFI-14 is supported by the module @code{scheme.charset}.
 @xref{R7RS character sets}.
 
 文字集合のライブラリ
 これはR7RS largeの一部になりました。
 文字集合と基本的な手続きは組み込みになっています。
-@ref{Character set}参照。
+@ref{Character sets}参照。
 SRFI-14の完全なサポートはモジュール@code{scheme.charset}
 で提供されています。@ref{R7RS character sets}参照。
 
