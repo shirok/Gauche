@@ -6690,90 +6690,257 @@ affected by the current hash salt value (@pxref{Hashing}).
 @c ----------------------------------------------------------------------
 @node ASCII character library, Linear adjustable-lenght strings, POSIX timespecs, Library modules - SRFIs
 @section @code{srfi-175} - ASCII character library
+@c NODE ASCII文字ライブラリ, @code{srfi-175} - ASCII文字ライブラリ
 
 @deftp {Module} srfi-175
 @mdindex srfi-175
-This module provides a set of character/string utities that deal with
+@c EN
+This module provides a set of character/string utilities that deal with
 ASCII characters and codepoints.  It is particulary useful for small
 Scheme implementations that only handles, and a portable
 code that only concerns, ASCII characters.
+@c JP
+ASCII文字とASCIIコードポイントを扱うユーティリティを提供するモジュールです。
+ASCIIだけを対象とする小さなScheme実装や、ASCIIだけを対象とするポータブルな
+コードを書きたい場合に便利です。
+@c COMMON
 
+@c EN
 Since Gauche supports full Unicode (if it is compiled with utf-8 internal
 encoding, which is the default), you may not need to use this module
 to write Gauche-specific code.  This is mainly for the compatibility.
+@c JP
+Gaucheは(内部エンコーディングをデフォルトのutf-8でコンパイルしていれば)
+Unicodeの全ての文字を扱えるので、Gauche用のコードを書いている時には
+敢えてこのモジュールを使う必要は無いでしょう。互換性のために用意しています。
+@c COMMON
 
+@c EN
 One of the characteristics of this module is that many procedures can
 take an integer in place of a character; an integer between 0 and 127
 is interpreted as an ASCII codepoint.  An integer outside the range
 is interpreted as an non-ASCII codepoint.  Such argument is noted
 as @var{char-or-code} in the description.  It is handy while you're
 dealing with a binary file which may contain some ASCII text in it.
+@c JP
+このモジュールに特徴的なのは、多くの手続きで、文字のかわりに整数を取れることです。
+0と127の間の正確な整数はASCIIコードポイントと解釈されます。
+それ以外の整数は非ASCIIコードポイントと解釈されます。
+文字と整数の両方を取れる引数は、@var{char-or-code}と表記しています。
+例えばバイナリファイルの一部にASCIIテキストが含まれるものを扱う際に便利でしょう。
+@c COMMON
 @end deftp
 
 @defun ascii-codepoint? obj
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{obj} is an exact integer between 0 and 127,
+inclusive.
+@c JP
+@var{obj}が0..127の範囲の正確な整数であれば@code{#t}を、そうでなければ@code{#f}を
+返します。
+@c COMMON
 @end defun
 
 @defun ascii-bytevecotr? obj
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{obj} is a bytevector (@code{u8vector}) and
+all of its elements are between 0 and 127, inclusive.
+@c JP
+@var{obj}がバイトベクタ(@code{u8vector})で、全ての要素が0..127の範囲に収まっていれば
+@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ascii-char? obj
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{obj} is an ASCII character.
+@c JP
+@var{obj}がASCII文字であれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ascii-string? obj
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{obj} is a string and all of its elements
+are ASCII characters.
+@c JP
+@var{obj}が文字列で、その中の全ての文字がASCII文字なら@code{#t}を、そうでなければ
+@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ascii-control? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{char-or-code} is in the range of
+ASCII control characters
+@c JP
+@var{char-or-code}がASCII制御文字の範囲なら@code{#t}を、そうでなければ@code{#f}を
+返します。
+@c COMMON
+
+@example
+(ascii-control? #\tab) @result{} #t
+(ascii-control? #\A)   @result{} #f
+
+(ascii-control? 127)   @result{} #t
+(ascii-control? 255)   @result{} #f
+@end example
+
+@c EN
+Note: The accepted character range corresponds to
+@code{char-set:ascii-control} (@pxref{Character set}).
+@c JP
+@code{#t}が返される文字の集合は@code{char-set:ascii-control}と
+一致します (@ref{Character set}参照)。
+@c COMMON
 @end defun
 
 @defun ascii-non-control? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{char-or-code} is in the range of ASCII but
+not a control character.
+@c JP
+@var{char-or-code}がASCIIの範囲でかつ制御文字でなければ@code{#t}を、
+そうでなければ@code{#f}を
+返します。
+@c COMMON
 @end defun
 
 @defun ascii-space-or-tab? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{char-or-code} is a tab or a whitespace.
+@c JP
+@var{char-or-code}がタブ文字かASCII空白文字であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ascii-other-graphic? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{char-or-code} is in the range of ASCII
+graphic characters but not a letter nor a digit.
+@c JP
+@var{char-or-code}がASCIIの範囲で、アルファベットと数字以外の
+グラフィック文字であれば@code{#t}を返します。
+@c COMMON
+
+@c EN
+Note: The accepted character range corresponds to
+@code{(char-set-difference char-set:ascii-graphic char-set:ascii-letter+digit)}
+(@pxref{Character set}).
+@c JP
+@code{#t}が返される文字の集合は
+@code{(char-set-difference char-set:ascii-graphic char-set:ascii-letter+digit)}と
+一致します (@ref{Character set}参照)。
+@c COMMON
 @end defun
 
 @defun ascii-alphanumeric? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{char-or-code} is in the ASCII alphabet or digit
+range.
+@c JP
+@var{char-or-code}がASCIIアルファベットか数字であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+
+@c EN
+Note: The accepted character range corresponds to
+@code{char-set:ascii-letter+digit}
+(@pxref{Character set}).
+@c JP
+@code{#t}が返される文字の集合は
+@code{char-set:ascii-letter+digit}と
+一致します (@ref{Character set}参照)。
+@c COMMON
 @end defun
 
 @defun ascii-alphabetic? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{#t} iff @var{char-or-code} is in the ASCII alphabet range.
+@c JP
+@var{char-or-code}が
+@c COMMON
+
+@c EN
+Note: The accepted character range corresponds to
+@code{char-set:ascii-letter}
+(@pxref{Character set}).
+@c JP
+@code{#t}が返される文字の集合は
+@code{char-set:ascii-letter}と
+一致します (@ref{Character set}参照)。
+@c COMMON
 @end defun
 
 @defun ascii-numeric? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+Returns @code{#t} iff @var{char-or-code} is in the ASCII digit range.
+
+@c EN
+Note: The accepted character range corresponds to
+@code{char-set:ascii-digit}
+(@pxref{Character set}).
+@c JP
+@code{#t}が返される文字の集合は
+@code{char-set:ascii-digit}と
+一致します (@ref{Character set}参照)。
+@c COMMON
 @end defun
 
 @defun ascii-whitespace? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+Returns @code{#t} iff @var{char-or-code} is one of the ASCII whitespaces.
+
+@c EN
+Note: The accepted character range corresponds to
+@code{char-set:ascii-whitespace}
+(@pxref{Character set}).
+@c JP
+@code{#t}が返される文字の集合は
+@code{char-set:ascii-whitespace}と
+一致します (@ref{Character set}参照)。
+@c COMMON
 @end defun
 
 @defun ascii-upper-case? char-or-code
 @defunx ascii-lower-case? char-or-code
 [SRFI-175]
 @c MOD srfi-175
+Returns @code{#t} iff @var{char-or-code} is one of upper/lower case
+ASCII alphabets.
+
+@c EN
+Note: The accepted character range corresponds to
+@code{char-set:ascii-upper-case}/@code{char-set:ascii-lower-case}
+(@pxref{Character set}).
+@c JP
+@code{#t}が返される文字の集合は
+@code{char-set:ascii-upper-case}/@code{char-set:ascii-lower-case}と
+一致します (@ref{Character set}参照)。
+@c COMMON
 @end defun
 
 @defun ascii-ci=? char-or-code1 char-or-code2
@@ -6783,6 +6950,27 @@ dealing with a binary file which may contain some ASCII text in it.
 @defunx ascii-ci>=? char-or-code1 char-or-code2
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Each argument may be a character or a codepoint.  If the argument
+falls into ASCII upper case letters, it is converted to the corresponding
+lower case letter codepoint, and then two are compared as codepoints.
+Two arguments don't need to be of the same type.
+@c JP
+各引数は文字かコードポイントです。引数がASCIIの大文字に相当する場合、それは対応する小文字の
+コードポイントに変換され、その後コードポイント同士の比較結果が返されます。
+二つの引数の型が一致している必要はありません。
+@c COMMON
+
+@c EN
+It is allowed to pass non-ascii range; if it is a non-ASCII character,
+its codepoint of the native encoding is taken (no case-folding is considered),
+and compared as codepoints.  Of course the result are not portable, except
+that any non-ASCII character has a codepoint greater than any ASCII characters.
+@c JP
+ASCII範囲外の引数を渡すことは許されます。非ASCII文字は内部エンコーディングによるコードポイント
+に変換されます(大文字小文字は考慮されません)。非ASCII文字はASCII文字より大きい、
+ということ以外、結果は処理系依存になります。
+@c COMMON
 @end defun
 
 @defun ascii-string-ci=? string1 string2
@@ -6792,50 +6980,193 @@ dealing with a binary file which may contain some ASCII text in it.
 @defunx ascii-string-ci>=? string1 string2
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Compares two strings with ASCII case folding.   Argument strings may
+contain non-ASCII characters; such characters are compared without
+case folding.
+@c JP
+ASCII文字の範囲で大文字小文字を考慮せずに、二つの文字列を比較します。
+文字列は非ASCII文字を含んでいても構いません。それらについては大文字小文字の考慮はせず、
+内部エンコーディングのコードポイントを使って比較します。
+@c COMMON
 @end defun
 
 @defun ascii-upcase char-or-code
 @defunx ascii-downcase char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+If the argument represents a ASCII upper/lower case letter,
+returns the corresponding lower/upper case character or codepoint.
+The type of the return value is the same as the argument.
+If the argument is a character or a codepoint other than that,
+it is returned as is.
+@c JP
+引数がASCIIの大文字/小文字に相当する場合、対応する小文字/大文字の文字またはコードポイントを
+返します。戻り値は引数と同じ型になります。
+引数がそれ以外の文字に相当する場合は、そのまま返されます。
+@c COMMON
 @end defun
 
 @defun ascii-control->graphic char-or-code
 @defunx ascii-graphic->control char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+ASCII control characters (@code{#\x00}, @code{#\x01} .. @code{#\x1f}, 
+and @code{#\x7f})
+are sometimes noted as @code{^@@}, @code{^A} .. @code{^_}, and @code{^?}.
+These procedures converts the control character and corresponding
+graphical character (the one comes after @code{^}), and vice versa.
+The type of the return value is the same as the argument.
+@c JP
+ASCII制御文字(@code{#\x00}, @code{#\x01} .. @code{#\x1f}, 
+and @code{#\x7f})はしばしば、
+@code{^@@}, @code{^A} .. @code{^_} および @code{^?} のように
+表記されます。これらの手続きは、制御文字とその表記 (@code{^}の後に来る文字)とを
+相互に変換するものです。
+戻り値の型は引数と同じになります。
+@c COMMON
+
+@c EN
+If the argument isn't an ASCII control character / a graphical character
+that corresponds to an ASCII control character, @code{#f} is returned.
+@c JP
+引数がASCII制御文字/制御文字に対応するASCII表示文字でなければ、@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @defun ascii-mirror-bracket char-or-code
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+There are four pairs of brackets in ASCII: @code{(} and @code{)},
+@code{@{} and @code{@}}, @code{[} and @code{]}, and @code{<} and @code{>}.
+If @var{char-or-code} is either one of these eight chars or codepoints,
+returns the corresponding bracket.
+The type of the return value is the same as the argument.
+@c JP
+ASCIIには4ペアの括弧があります。@code{(}と@code{)}、
+@code{@{}と@code{@}}、@code{[}と@code{]}、そして@code{<}と@code{>}です。
+引数@var{char-or-code}がこれら8文字のいずれかに相当する場合に、
+それと対になる文字またはコードポイントを返します。
+戻り値の型は引数と同じになります。
+@c COMMON
+
+@c EN
+If the argument is a char or a codepoint other than those brackets,
+@code{#f} is returned.
+@c JP
+引数が括弧の文字またはコードポイントでなければ、@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun ascii-nth-digit n
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns a digit character representing the number @var{n}.
+If @var{n} is not an exact integer between 0 and 9, inclusive,
+@code{#f} is returned.
+@c JP
+数値@var{n}を表すASCII数字文字を返します。@var{n}が0から9までの正確な整数でない
+場合は@code{#f}を返します。
+@c COMMON
+
+@example
+(ascii-nth-digit 3) @result{} #\3
+@end example
+
+@c EN
+See also @code{integer->digit} (@pxref{Characters}).
+@c JP
+@code{integer->digit} (@ref{Characters})も参照。
+@c COMMON
 @end defun
 
 @defun ascii-nth-upper-case n
 @defunx ascii-nth-lower-case n
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+Returns @code{(modulo @var{n} 26)}-th character of upper/lower case
+ASCII alphabet.
+@c JP
+@code{(modulo @var{n} 26)}番目のASCII大文字/小文字アルファベットを返します。
+@c COMMON
+
+@example
+(ascii-nth-upper-case 0) @result{} #\A
+(ascii-nth-lower-case 1) @result{} #\b
+
+(ascii-nth-upper-case 25) @result{} #\Z
+(ascii-nth-lower-case 26) @result{} #\a
+@end example
+
+@c EN
+See also @code{integer->digit} (@pxref{Characters}).
+@c JP
+@code{integer->digit} (@ref{Characters})も参照。
+@c COMMON
 @end defun
 
 @defun ascii-digit-value char-or-code limit
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+If @var{char-or-code} represents an ASCII decimal digits and
+the corresponding number is less than @var{limit},
+returns the number.  Otherwise, returns @code{#f}.
+@c JP
+@var{char-or-code}がASCII数字文字またはそのコードポイントであり、
+それが表す数値が@var{limit}未満であればその数値を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+
+@example
+(ascii-digit-value #\5 10) @result{} 5
+(ascii-digit-value #\9 8)  @result{} #f
+
+(ascii-digit-value 48 10)  @result{} 0
+@end example
+
+@c EN
+See also @code{digit->integer} (@pxref{Characters}).
+@c JP
+@code{digit->integer} (@ref{Characters})も参照。
+@c COMMON
 @end defun
 
 @defun ascii-upper-case-value char-or-code offset limit
 @defunx ascii-lower-case-value char-or-code offset limit
 [SRFI-175]
 @c MOD srfi-175
+@c EN
+If @var{char-or-code} is n-th ASCII upper/lower case alphabet,
+and @var{n} is less than @var{limit}, returns @code{(+ @var{n} @var{offset})}.
+Otherwise returns @code{#f}.
+@c JP
+@var{char-or-code}がn番目のASCII大文字/小文字またはそのコードポイントで、
+nが@var{limit}未満であれば、@code{(+ @var{n} @var{offset})}を返します。
+そうでなければ@code{#f}を返します。
+@c COMMON
+
+@example
+(ascii-upper-case-value #\E 10 6) @result{} 14
+(ascii-lower-case-value #\z 0 26) @result{} 25
+@end example
+
+@c EN
+See also @code{digit->integer} (@pxref{Characters}).
+@c JP
+@code{digit->integer} (@ref{Characters})も参照。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node Linear adjustable-lenght strings,  , ASCII character library, Library modules - SRFIs
 @section @code{srfi-185} - Linear adjustable-lenght strings
+@c NODE 線形更新な可変長文字列, @code{srfi-185} - 線形更新な可変長文字列
 
 @deftp {Module} srfi-185
 @mdindex srfi-185
@@ -6946,7 +7277,11 @@ Gaucheでは、@var{dst-start}、@var{dst-end}、@code{src-start}、@var{src-end
 @defmacx string-replace! dst dst-start dst-end src :optional src-start src-end
 [SRFI-185]
 @c MOD srfi-185
+@c EN
 These macros expand into the following forms:
+@c JP
+これらのマクロは次の形に展開されます。
+@c COMMON
 
 @example
 (set! dst (string-append-linear! dst string-or-char @dots{}))
@@ -6954,10 +7289,16 @@ These macros expand into the following forms:
 (set! dst (string-replace-linear! dst dst-start dst-end src src-start src-end))
 @end example
 
+@c EN
 Hence they can be used for the code that expects @var{dst} to contain
 the result after calling these macros.
 Gauche supports generalized @code{set!}, so @var{dst} can be
 a procedure call with a setter defined.
+@c JP
+つまり、呼び出した後に@var{dst}に変更された文字列が格納されることを想定している
+箇所に使えます。Gaucheは一般化された@code{set!}を持っているので、
+@var{dst}にはセッターが定義されている手続き呼び出しも使えます。
+@c COMMON
 
 @example
 (define x (list (string-copy "abc")))
@@ -6967,8 +7308,13 @@ a procedure call with a setter defined.
 x @result{} ("abcdef")
 @end example
 
+@c EN
 The code that uses srfi-118 (@pxref{Simple adjustable-size strings}) is
-like to be replaced using these macros.
+likely to be replaced using these macros.
+@c JP
+srfi-118 (@ref{Simple adjustable-size strings}参照)を使っているコードは、
+このマクロで置き換えられることも多いでしょう。
+@c COMMON
 @end defmac
 
 
