@@ -1027,5 +1027,19 @@
 (test* "read/write invariance"
        '#(48.529166)
        (parse-json-string (construct-json-string '#(48.529166))))
+
+;; json-nesting-depth-limit
+(test* "depth-limit" '#(#(#(#(null))))
+       (parameterize ((json-nesting-depth-limit 4))
+         (parse-json-string "[[[[null]]]]")))
+(test* "depth-limit" (test-error <json-parse-error> #/nesting is too deep/)
+       (parameterize ((json-nesting-depth-limit 4))
+         (parse-json-string "[[[[[null]]]]]")))
+(test* "depth-limit" 123
+       (parameterize ((json-nesting-depth-limit 1))
+         (parse-json-string "123")))
+(test* "depth-limit" (test-error <json-parse-error> #/nesting is too deep/)
+       (parameterize ((json-nesting-depth-limit 1))
+         (parse-json-string "{\"x\":123}")))
        
 (test-end)

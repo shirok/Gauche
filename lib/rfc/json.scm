@@ -48,6 +48,7 @@
           construct-json construct-json-string
 
           json-array-handler json-object-handler json-special-handler
+          json-nesting-depth-limit
 
           json-parser
           ))
@@ -70,6 +71,10 @@
 (define (build-object pairs) ((json-object-handler) pairs))
 (define (build-special symbol) ((json-special-handler) symbol))
 
+;; This is to bail out the input nesting is too deep (see srfi-180)
+(define json-nesting-depth-limit (make-parameter +inf.0))
+(define json-current-nesting-depth (make-parameter 0))
+
 ;;;============================================================
 ;;; Parser
 ;;;
@@ -90,9 +95,20 @@
   ($lazy
    ($seq0 ($or %special %object %array %number %string) %ws)))
 
+(define ($depth-check parser)
+  (^s (let1 d (json-current-nesting-depth)
+        (if (>= d (json-nesting-depth-limit))
+          (error <json-parse-error>
+                 "Input JSON nesting is too deep.")
+          (parameterize ([json-current-nesting-depth (+ d 1)])
+            (parser s))))))
+
 (define %array
-  ($lift ($ build-array $ rope-finalize $)
-         ($between %begin-array ($sep-by %value %value-separator) %end-array)))
+  ($depth-check
+   ($lift ($ build-array $ rope-finalize $)
+          ($between %begin-array 
+                    ($sep-by %value %value-separator)
+                    %end-array))))
 
 (define %number
   (let* ([%sign ($optional ($->rope ($one-of #[+-])))]
@@ -160,12 +176,14 @@
                        [ %name-separator ]
                        [v %value])
                   ($return (cons k v)))
-    ($between %begin-object
-              ($lift ($ build-object $ rope-finalize $)
-                     ($sep-by %member %value-separator))
-              %end-object)))
+    ($depth-check
+     ($between %begin-object
+               ($lift ($ build-object $ rope-finalize $)
+                      ($sep-by %member %value-separator))
+               %end-object))))
 
-(define json-parser ($seq %ws ($or ($eos) %value)))
+(define json-parser ($parameterize ([json-current-nesting-depth 0])
+                       ($seq %ws ($or ($eos) %value))))
 
 ;; entry point
 (define (parse-json :optional (port (current-input-port)))
