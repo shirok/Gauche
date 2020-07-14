@@ -3645,6 +3645,38 @@ then this qualifier is used.
 @c COMMON
 @end deffn
 
+@deffn {EC Qualifier} :collection vars coll
+@c EN
+This is Gauche's extension and not defined in SRFI-42.
+@var{coll} must be an instance of @code{<collection>} or its subclass.
+(@pxref{Collection framework}).
+This qualifier repeats over the elements in the collection.
+
+If srfi-42 has a specialized qualifier, it is faster to use it
+(e.g. a vector is also a collection, but using @code{:vector} is
+faster than @code{:collection}).
+@c JP
+これはSRFI-42には定義さていない、Gauche独自の拡張です。
+@var{coll}は@code{<collection>}クラスかそのサブクラスのインスタンスでなければなりません
+(@ref{Collection framework}参照)。
+このqualifierはコレクションの各要素に対して繰り返します。
+
+特定の型に特化したqualifierがある場合はそちらを使う方が速いです
+(例えば、ベクタはコレクションでもありますが、@code{:collection}を使うより
+@code{:vector}を使う方が速いです。)
+@c COMMON
+
+@c EN
+If one argument is given to the generic
+qualifier @code{:} and it is a collection other than the specific
+types suppored directly in srfi-42, this qualifer is used.
+@c JP
+汎用qualifier@code{:}に1つの引数が与えられ、
+それがsrfi-42で用意されている型以外のコレクションであれば、
+このqualifierが使われます。
+@c COMMON
+@end deffn
+
 @deffn {EC Qualifier} :parallel generator @dots{}
 @c EN
 This is used to run through multiple generators in parallel.

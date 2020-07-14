@@ -33,6 +33,7 @@
 
 (define-module srfi-42
   (use util.match)
+  (use gauche.generator)
   (export-all))
 (select-module srfi-42)
 
@@ -129,6 +130,7 @@
            ((:char-range)  (rename 'srfi-42-char-range))
            ((:port)        (rename 'srfi-42-port))
            ((:generator)   (rename 'srfi-42-generator))
+           ((:collection)  (rename 'srfi-42-collection))
            ((:dispatched)  (rename 'srfi-42-dispatched))
            ((:do)          (rename 'srfi-42-do))
            ((:let)         (rename 'srfi-42-let))
@@ -792,6 +794,20 @@
           #t
           [(gen)])]))
 
+;; Gauche extension
+(define-syntax srfi-42-collection
+  (syntax-rules (index)
+    [(_ cc var (index i) expr)
+     (srfi-42-parallel cc (srfi-42-collection var expr) (srfi-42-integers i))]
+    [(_ cc var expr)
+     (srfi-42-do cc
+          (let ([gen (x->generator expr)]))
+          ([var (gen)])
+          (not (eof-object? var))
+          (let ())
+          #t
+          [(gen)])]))
+
 ; ==========================================================================
 ; The typed generator :dispatched and utilities for constructing dispatchers
 ; ==========================================================================
@@ -904,6 +920,8 @@
                (srfi-42-generator-proc (srfi-42-real-range a1))]
               [(input-port? a1)
                (srfi-42-generator-proc (srfi-42-port a1))]
+              [(is-a? a1 <collection>)
+               (srfi-42-generator-proc (srfi-42-collection a1))]
               [(applicable? a1)
                (srfi-42-generator-proc (srfi-42-generator a1))]
               [else #f]))]

@@ -446,4 +446,24 @@
                                    (giota 20)
                                    :open #t :repeat #t)))
 
+;; srfi-42+generator
+;; NB: This test should be moved to ext/srfi when srfi-42 becomes precompiled.
+(use srfi-42)
+
+(test* "srfi-42 + generator" '(0 2 4 6 8 10)
+       (list-ec (:while (:generator x (giota)) (<= x 5))
+                (* x 2)))
+
+(define-class <my-coll> (<collection>)
+  ((elements :init-keyword :elements)))
+(define-method call-with-iterator ((c <my-coll>) proc)
+  (define xs (~ c'elements))
+  (proc (^[] (null? xs))
+        (^[] (pop! xs))))
+
+(test* "srfi-42 + collection" '(2 4 6 8 10)
+       (list-ec (: x (make <my-coll> :elements '(1 2 3 4 5)))
+                (+ x x)))
+
+
 (test-end)
