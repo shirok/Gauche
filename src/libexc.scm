@@ -294,11 +294,6 @@
    NULL
   };"
 
- (define-cclass <mixin-condition>
-   "ScmCondition*" "Scm_MixinConditionClass"
-   (c "mixin_condition_cpa+1")
-   () ())
- 
  (define-cfn load-condition-mixin-allocate (klass::ScmClass* initargs) :static
    (cast void initargs)                 ;suppress unused warning
    (let* ([c::ScmLoadConditionMixin* (SCM_NEW_INSTANCE ScmLoadConditionMixin klass)])

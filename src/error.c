@@ -84,6 +84,9 @@ SCM_DEFINE_BASE_CLASS(Scm_MessageConditionClass, ScmMessageCondition,
 SCM_DEFINE_BASE_CLASS(Scm_SeriousConditionClass, ScmSeriousCondition,
                       NULL, NULL, NULL,
                       condition_allocate, condition_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_MixinConditionClass, ScmCondition,
+                      NULL, NULL, NULL,
+                      condition_allocate, condition_cpl);
 
 static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
@@ -1046,6 +1049,9 @@ void Scm__InitExceptions(void)
     Scm_InitStaticClassWithMeta(SCM_CLASS_MESSAGE_CONDITION,
                                 "<message-condition>",
                                 mod, cond_meta, SCM_FALSE, message_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_MIXIN_CONDITION,
+                                "<mixin-condition>",
+                                mod, cond_meta, SCM_FALSE, NULL, 0);
 
     Scm_InitStaticClassWithMeta(SCM_CLASS_ERROR,
                                 "<error>",
