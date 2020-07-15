@@ -54,11 +54,13 @@
           maybe->values either->values
           values->maybe values->either
           maybe->two-values two-values->maybe
+          exception->either
           maybe-map either-map maybe-for-each either-for-each
           maybe-fold either-fold maybe-unfold either-unfold
           maybe-if 
           maybe-and maybe-or maybe-let*
           either-and either-or either-let*
+          either-guard
 
           tri-not tri=? tri-and tri-or tri-merge
           )
@@ -370,6 +372,10 @@
   (receive (val has-val?) (producer)
     (if has-val? (just val) (nothing))))
 
+(define (exception->either pred thunk)
+  (guard (e [(pred e) (left e)])
+    (thunk)))
+
 ;;; Map, fold and unfold
 
 (define (maybe-map proc maybe)
@@ -513,6 +519,13 @@
      (cond [(left? var) var]
            [(right? var) (either-let* claws . body)]
            [else (assume-type var <either>)])]))
+
+(define-syntax either-guard
+  (syntax-rules ()
+    [(_ (pred-expr) . body)
+     (guard (e [(pred-expr e) (left e)])
+       (receive xs (begin . body)
+         (list->right xs)))]))
 
 ;;; Trivalent logic
 
