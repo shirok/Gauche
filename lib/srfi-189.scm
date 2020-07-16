@@ -64,6 +64,9 @@
 
           tri-not tri=? tri-and tri-or tri-merge
           )
+  ;; The followings are Gauche-specific.
+  (export <maybe> <just> <nothing>
+          <either> <left> <right>)
   )
 (select-module srfi-189)
 
