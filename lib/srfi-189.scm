@@ -374,7 +374,7 @@
 
 (define (exception->either pred thunk)
   (guard (e [(pred e) (left e)])
-    (thunk)))
+    (call-with-values thunk right)))
 
 ;;; Map, fold and unfold
 
