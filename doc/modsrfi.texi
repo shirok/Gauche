@@ -60,6 +60,7 @@ srfi N is supported by Gauche.)
 * POSIX timespecs::             srfi-174
 * ASCII character library::     srfi-175
 * Linear adjustable-lenght strings::  srfi-185
+* Maybe and Either optional container types:: srfi-189
 @end menu
 
 
@@ -3715,17 +3716,28 @@ It is effectively the same as @code{(:list vars (list expr))}.
 @c COMMON
 @end deffn
 
-@deffn {EC Qualifier} :while generator expr
-Evaluate @var{generator} while @var{expr} evaluates true.  Here,
-@var{generator} is one of generative EC qualifiers.  The variable
-bound in @var{generator} is visible from @var{expr}.
+@deffn {EC Qualifier} :while g-qualifier expr
+@deffnx {EC Qualifier} :until generator expr
+@c EN
+Generates values from  @var{g-qualifier} while/until @var{expr} evaluates true. 
+Here, @var{g-qualifier} is one of generative EC qualifiers.  The variable
+bound in @var{g-qualifier} is visible from @var{expr}.
+@c JP
+@var{g-qualifier}は生成的qualifierです。@var{g-qualifier}が生成する値によって
+@var{expr}が真の値である間/真の値になるまで、値を生成しつづけます。@var{expr}内では
+@var{g-qualifier}が束縛する変数が使えます。
+@c COMMON
+
+@c EN
+@c JP
+@c COMMON
+
+@example
+(use math.prime)
+(sum-ec (:while (: p (index k) *primes*) (<= k 100)) p)
+@end example
 @end deffn
 
-@deffn {EC Qualifier} :until generator expr
-Evaluate @var{generator} until @var{expr} evaluates true.  Here,
-@var{generator} is one of generative EC qualifiers.  The variable
-bound in @var{generator} is visible from @var{expr}.
-@end deffn
 
 @deffn {EC Qualifier} :dispatched vars dispatch arg1 args @dots{}
 @end deffn
@@ -7197,7 +7209,7 @@ See also @code{digit->integer} (@pxref{Characters}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Linear adjustable-lenght strings,  , ASCII character library, Library modules - SRFIs
+@node Linear adjustable-lenght strings, Maybe and Either optional container types, ASCII character library, Library modules - SRFIs
 @section @code{srfi-185} - Linear adjustable-lenght strings
 @c NODE 線形更新な可変長文字列, @code{srfi-185} - 線形更新な可変長文字列
 
@@ -7349,6 +7361,100 @@ srfi-118 (@ref{Simple adjustable-size strings}参照)を使っているコード
 このマクロで置き換えられることも多いでしょう。
 @c COMMON
 @end defmac
+
+@c ----------------------------------------------------------------------
+@node Maybe and Either optional container types,  , Linear adjustable-lenght strings, Library modules - SRFIs
+@section @code{srfi-189} - Maybe and Either: optional container types
+@c NODE MaybeとEither、オプショナルなコンテナ型, @code{srfi-189} - MaybeとEither、オプショナルなコンテナ型
+
+@deftp {Module} srfi-189
+@mdindex srfi-189
+Maybe and Either types are immutable container types
+that can ``wrap'' zero or more values.  Maybe can be used
+in the context where the value(s) may be missing (as opposed to
+``zero values'').  Either can be used in the context where
+the value(s) can be correct ones or erroneous ones.
+
+If you're familiar with functional languages like Haskell, you may
+already know them.  They are useful when used in the monadic pattern; that is,
+you can code as if the chain of calculations never fails, 
+yet whenever the calculation fail at one place,
+the rest of chain is canceled and just the failure is returned.
+
+Maybe is a union of two types, Just and Nothing.  Just wraps
+valid value(s), while Nothing indicates there's no meaningful values.
+Either is a union of two types, Right and Left.  Right wraps
+valid value(s), while Left indicates an error, carrying some information
+as its payload.
+@end deftp
+
+@menu
+* Maybe and Either types and predicates::
+* Maybe and Either constructors::
+* Maybe and Either accessors::
+* Maybe and Either sequence operations::
+* Maybe and Either protocol converters::
+* Maybe and Either syntactic utilities::
+* Trivalent logic::
+@end menu
+
+@node Maybe and Either types and predicates, Maybe and Either constructors, Maybe and Either optional container types, Maybe and Either optional container types
+@subsection Types and predicates
+
+@deftp {Class} <maybe>
+@deftpx {Class} <just>
+@deftpx {Class} <nothing>
+@c MOD srfi-189
+@end deftp
+
+@deftp {Class} <either>
+@deftpx {Class} <right>
+@deftpx {Class} <left>
+@c MOD srfi-189
+@end deftp
+
+@defun maybe? obj
+@defunx just? obj
+@defunx nothing? obj
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either? obj
+@defunx right? obj
+@defunx left? obj
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe= elt= maybe1 maybe @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either= elt= either1 either @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@node Maybe and Either constructors, Maybe and Either accessors, Maybe and Either types and predicates, Maybe and Either optional container types
+@subsection Constructors
+
+@node Maybe and Either accessors, Maybe and Either sequence operations, Maybe and Either constructors, Maybe and Either optional container types
+@subsection Accessors
+
+@node Maybe and Either sequence operations, Maybe and Either protocol converters, Maybe and Either accessors, Maybe and Either optional container types
+@subsection Sequence operations
+
+@node Maybe and Either protocol converters, Maybe and Either syntactic utilities, Maybe and Either sequence operations, Maybe and Either optional container types
+@subsection Protocol converters
+
+@node Maybe and Either syntactic utilities, Trivalent logic, Maybe and Either protocol converters, Maybe and Either optional container types
+@subsection Syntactic utilities
+
+@node Trivalent logic,  , Maybe and Either syntactic utilities, Maybe and Either optional container types
+@subsection Trivalent logic
+
 
 
 
