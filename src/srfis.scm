@@ -1285,3 +1285,13 @@ Supported by the module @code{srfi-185}.
 線形更新な可変長文字列
 モジュール@code{srfi-185}でサポートされます。
 @ref{Linear adjustable-lenght strings}参照。
+
+
+srfi-189, srfi-189
+()
+
+Maybe and Either: optioanl container types
+Supported by the module @code{srfi-189}.
+
+MaybeとEither: オプショナルなコンテナ型
+モジュール@code{srfi-189}でサポートされます。

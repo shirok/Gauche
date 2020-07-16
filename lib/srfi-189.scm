@@ -58,8 +58,8 @@
           maybe-map either-map maybe-for-each either-for-each
           maybe-fold either-fold maybe-unfold either-unfold
           maybe-if 
-          maybe-and maybe-or maybe-let*
-          either-and either-or either-let*
+          maybe-and maybe-or maybe-let* maybe-let*-values
+          either-and either-or either-let* either-let*-values
           either-guard
 
           tri-not tri=? tri-and tri-or tri-merge
@@ -476,7 +476,7 @@
                         (assume-type t <maybe>))]
     [(_ (var))        (assume-type var <maybe>)]
     ;; normal case
-    [(_ () . body) (assume-type (begin . body) <maybe>)]
+    [(_ () . body) (receive xs (let () . body) (list->just xs))]
     [(_ ((var expr) . claws) . body)
      (let1 t expr
        (cond [(nothing? t) (nothing)]
@@ -493,6 +493,31 @@
            [(just? var) (maybe-let* claws . body)]
            [else (assume-type var <maybe>)])]))
 
+(define-syntax maybe-let*-values
+  (syntax-rules ()
+    ;; empty body case
+    [(_ ()) (just #t)]
+    [(_ ((formals expr))) (rlet1 t expr
+                            ;; Just make sure formals match the contained values
+                            (maybe-ref t nothing (^ formals #f)))]
+    [(_ ((expr)))     (rlet1 t expr
+                        (assume-type t <maybe>))]
+    [(_ (var))        (assume-type var <maybe>)]
+    ;; normal case
+    [(_ () . body) (receive xs (let () . body) (list->just xs))]
+    [(_ ((formals expr) . claws) . body)
+     (maybe-ref expr nothing
+                (^ formals (maybe-let*-values claws . body)))]
+    [(_ ((expr) . claws) . body)
+     (let1 t expr
+       (cond [(nothing? t) (nothing)]
+             [(just? t) (maybe-let*-values claws . body)]
+             [else (assume-type t <maybe>)]))]
+    [(_ (var . claws) . body)
+     (cond [(nothing? var) (nothing)]
+           [(just? var) (maybe-let*-values claws . body)] 
+          [else (assume-type var <maybe>)])]))
+
 (define-syntax either-let*
   (syntax-rules ()
     ;; empty body case
@@ -503,7 +528,7 @@
                         (assume-type t <either>))]
     [(_ (var))        (assume-type var <either>)]
     ;; normal case
-    [(_ () . body) (assume-type (begin . body) <either>)]
+    [(_ () . body) (receive xs (let () . body) (list->right xs))]
     [(_ ((var expr) . claws) . body)
      (let1 t expr
        (cond [(left? t) t]
@@ -518,6 +543,31 @@
     [(_ (var . claws) . body)
      (cond [(left? var) var]
            [(right? var) (either-let* claws . body)]
+           [else (assume-type var <either>)])]))
+
+(define-syntax either-let*-values
+  (syntax-rules ()
+    ;; empty body case
+    [(_ ()) (right #t)]
+    [(_ ((formal expr))) (rlet1 t expr
+                           ;; just to check the values match formals
+                           (either-ref t (^ _ #f) (^ formals #f)))]
+    [(_ ((expr)))     (rlet1 t expr
+                        (assume-type t <either>))]
+    [(_ (var))        (assume-type var <either>)]
+    ;; normal case
+    [(_ () . body) (receive xs (let () . body) (list->right xs))]
+    [(_ ((formals expr) . claws) . body)
+     (either-ref expr left
+                 (^ formals (either-let*-values claws . body)))]
+    [(_ ((expr) . claws) . body)
+     (let1 t expr
+       (cond [(left? t) t]
+             [(right? t) (either-let*-values claws . body)]
+             [else (assume-type t <either>)]))]
+    [(_ (var . claws) . body)
+     (cond [(left? var) var]
+           [(right? var) (either-let*-values claws . body)]
            [else (assume-type var <either>)])]))
 
 (define-syntax either-guard

@@ -2773,6 +2773,7 @@
   (define-syntax import (syntax-rules () [(_ . x) #f]))
   (use srfi-189) 
   (use srfi-78)                         ; check
+  (use scheme.base :only (raise-continuable error-object?))
   (include "include/srfi-189-tests"))
 
 (test-end)
