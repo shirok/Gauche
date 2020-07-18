@@ -7440,24 +7440,331 @@ as its payload.
 @node Maybe and Either constructors, Maybe and Either accessors, Maybe and Either types and predicates, Maybe and Either optional container types
 @subsection Constructors
 
+@defun just obj @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun nothing
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun right obj @dots{}
+@defunx left obj @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun list->just objs
+@defunx list->right objs
+@defunx list->left objs
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe->either maybe obj @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either->maybe either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either-swap either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
 @node Maybe and Either accessors, Maybe and Either sequence operations, Maybe and Either constructors, Maybe and Either optional container types
 @subsection Accessors
+
+@defun maybe-ref maybe failure :optional success
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either-ref either failure :optional success
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-ref/default maybe default @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either-ref/default maybe default @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-join maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either-join either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-bind maybe mproc mproc2 @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either-bind either mproc mproc2 @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-compose mproc mproc2 @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either-compose mproc mproc2 @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
 
 @node Maybe and Either sequence operations, Maybe and Either protocol converters, Maybe and Either accessors, Maybe and Either optional container types
 @subsection Sequence operations
 
+@defun maybe-length maybe
+@defunx either-length either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-filter pred maybe
+@defunx either-filter pred either obj @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-remove pred maybe
+@defunx either-remove pred either obj @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-sequence input cmap :optional aggregator
+@defunx either-sequence input cmap :optional aggregator
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-map proc maybe
+@defunx either-map proc either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-for-each proc maybe
+@defunx either-for-each proc either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-fold kons knil maybe
+@defunx either-fold kons knil either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe-unfold p f g seed @dots{}
+@defunx either-unfold p f g seed @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+
 @node Maybe and Either protocol converters, Maybe and Either syntactic utilities, Maybe and Either sequence operations, Maybe and Either optional container types
 @subsection Protocol converters
+
+@defun maybe->list maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun list->maybe lis
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either->list either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun list->either lis obj @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe->truth maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun truth->maybe ojb
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either->truth either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun truth->either obj fail-obj @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe->list-truth maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun list-truth->maybe lis-or-false
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either->list-truth either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun list-truth->either lis-or-false fail-objs @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe->generation maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun generation->maybe obj
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either->generation either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun generation->either obj fail-objs @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe->values maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun values->maybe producer
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun either->values either
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun values->either producer
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun maybe->two-values maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun two-values->maybe producer
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun exception->either pred thunk
+@c MOD srfi-189
+[SRFI-189]
+@end defun
 
 @node Maybe and Either syntactic utilities, Trivalent logic, Maybe and Either protocol converters, Maybe and Either optional container types
 @subsection Syntactic utilities
 
+@defmac maybe-if mtest then else
+@c MOD srfi-189
+[SRFI-189]
+@end defmac
+
+@defmac maybe-and maybe @dots{}
+@defmacx either-and either @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defmac
+
+@defmac maybe-or maybe @dots{}
+@defmacx either-or either @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defmac
+
+@defmac maybe-let* ( claw @dots{} ) body @dots{}
+@defmacx either-let* ( claw @dots{} ) body @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defmac
+
+@defmac maybe-let*-values ( mv-claw @dots{} ) body @dots{}
+@defmacx either-let*-values ( mv-claw @dots{} ) body @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defmac
+
+@defmac either-guard (pred) body @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defmac
+
 @node Trivalent logic,  , Maybe and Either syntactic utilities, Maybe and Either optional container types
 @subsection Trivalent logic
 
+@defun tri-not maybe
+@c MOD srfi-189
+[SRFI-189]
+@end defun
 
+@defun try=? maybe @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
 
+@defun try-and maybe @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
 
+@defun try-or maybe @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
+
+@defun try-merge maybe @dots{}
+@c MOD srfi-189
+[SRFI-189]
+@end defun
 
 @c Local variables:
 @c mode: texinfo
