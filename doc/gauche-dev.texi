@@ -35,7 +35,7 @@
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2009 Shiro Kawai (shiro@@acm.org)
+Copyright @copyright{} 2009-2020 Shiro Kawai (shiro@@acm.org)
 
 @end titlepage
 
@@ -1812,8 +1812,8 @@ or @code{equal}.
 @deftypefunx ScmObj Scm_DeleteDuplicatesX (ScmObj list, int cmpmode)
 @end deftypefun
 
-@c @deftypefun ScmObj Scm_MonotonicMerge (ScmObj sequences)
-@c @end deftypefun
+@deftypefun ScmObj Scm_MonotonicMerge (ScmObj sequences)
+@end deftypefun
 
 
 @node Symbols, Glocs, Pairs and lists, C API reference

@@ -686,23 +686,24 @@ ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
  *  Since the algorithm is generally useful, I implement the core routine
  *  of the algorithm here.
  *
- *  TODO at 1.0: I noticed START argument actually isn't used in the
+ *  TRANSIENT: I noticed START argument actually isn't used in the
  *  algorithm at all.  We can drop it and the caller can just say
  *  Scm_Cons(start, Scm_MonotonicMerge(sequences)).   We can't change it
  *  now because of ABI compatibility, but it will be nice to do so when
  *  releasing 1.0.
  */
 
-/* DEPRECATED 1.0 */
+#if GAUCHE_API_VERSION < 1000
 ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences)
 {
     ScmObj r = Scm_MonotonicMerge1(sequences);
     if (!SCM_FALSEP(r)) r = Scm_Cons(start, r);
     return r;
 }
-
-/* WILL RENAME IN 1.0 */
 ScmObj Scm_MonotonicMerge1(ScmObj sequences)
+#else  /*GAUCHE_API_VERSION >= 1000 */
+ScmObj Scm_MonotonicMerge(ScmObj sequences)
+#endif /*GAUCHE_API_VERSION >= 1000 */
 {
     ScmObj result = SCM_NIL;
     int nseqs = Scm_Length(sequences);

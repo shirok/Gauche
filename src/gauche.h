@@ -1200,6 +1200,7 @@ enum {
 
 SCM_EXTERN ScmObj Scm_Cons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr);
+SCM_EXTERN ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_List(ScmObj elt, ...);
 SCM_EXTERN ScmObj Scm_Conses(ScmObj elt, ...);
 SCM_EXTERN ScmObj Scm_VaList(va_list elts);
@@ -1250,16 +1251,19 @@ SCM_EXTERN ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode);
 SCM_EXTERN ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode);
 SCM_EXTERN ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode);
 
-SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences);
-SCM_EXTERN ScmObj Scm_MonotonicMerge1(ScmObj sequences);
-
 SCM_EXTERN ScmObj Scm_MakeExtendedPair(ScmObj car, ScmObj cdr, ScmObj attrs);
 SCM_EXTERN ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_PairAttr(ScmPair *pair);
 SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
 
-SCM_EXTERN ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr);
+#if GAUCHE_API_VERSION >= 1000
+SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj sequences);
+#define Scm_MonotonicMerge1(x) Scm_MonotonicMerge(x)
+#else  /* GAUCHE_API_VERSION < 1000 */
+SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences);
+SCM_EXTERN ScmObj Scm_MonotonicMerge1(ScmObj sequences);
+#endif /* GAUCHE_API_VERSION < 1000 */
 
 /*--------------------------------------------------------
  * CHARACTERS
