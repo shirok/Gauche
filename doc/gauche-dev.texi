@@ -24,11 +24,6 @@
 @c COMMON
 @comment %**end of header
 
-@iftex
-@finalout
-@parskip 4pt plus 1pt
-@end iftex
-
 @titlepage
 @c EN
 @title Gauche Developers' Reference
@@ -160,14 +155,14 @@ Gauche can generate a skeleton of the extension code
 by @code{gauche-package generate} command.  You give the
 package name to the command-line argument (here we pick @code{trivial}).
 
-@example
+@smallexample
 % @b{ls trivial}
 ls: trivial: No such file or directory
 % @b{gauche-package generate trivial}
 % @b{ls trivial}
 configure    package.scm  trivial.c  triviallib.stub
 Makefile.in  test.scm	  trivial.h  trivial.scm
-@end example
+@end smallexample
 
 The @code{gauche-package} command creates a directory @file{trivial},
 and populates it with template files.  The role of each file is shown
@@ -258,7 +253,7 @@ First, you need to
 run the @file{configure} script to
 generate @file{Makefile}, then run @code{make}.
 
-@example
+@smallexample
 % @b{cd trivial}
 % @b{./configure}
 checking for gosh... /usr/bin/gosh
@@ -275,7 +270,7 @@ configure: creating Makefile
 Makefile     config.log  trivial.c    trivial.o    triviallib.o
 Makefile.in  configure	 trivial.gpd  trivial.scm  triviallib.stub
 VERSION      test.scm	 trivial.h    trivial.so
-@end example
+@end smallexample
 
 The build process creates @file{trivial.so}, the dynamically loadable
 object file (the actual suffix may differ on some OSes).
@@ -287,13 +282,13 @@ and call @code{test-trivial} function.  Note that you need to give
 @code{-I.} option to @code{gosh}, so that Gauche can find the @file{trivial}
 module files.
 
-@example
+@smallexample
 % @b{gosh -I.}
 gosh> @b{(use trivial)}
 gosh> @b{(test-trivial)}
 "trivial is working"
 gosh>
-@end example
+@end smallexample
 
 You may have noticed a file @file{trivial.gpd}.  The unfamiliar
 suffix @code{gpd} stands for ``Gauche package description''.
@@ -304,11 +299,11 @@ of the package and will be used by @code{gauche-package} script
 
 You can also run a unit test by @code{make check}.
 
-@example
+@smallexample
 % make check
 /usr/bin/gosh -I. test.scm > test.log
 Testing trivial ...                                              passed.
-@end example
+@end smallexample
 
 For now, it just checks if the compiled extension can be loaded,
 and the integrity of the module.  As you add APIs in the extension,
@@ -316,25 +311,19 @@ you're expected to add tests as well.
 
 Finally, you can install the extension by @code{make install}.
 
-@example
+@smallexample
 % make install
 /usr/bin/gauche-install -m 444 -T /usr/lib/gauche/site/include
 /usr/bin/gauche-install -m 444 -T /usr/share/gauche/site/lib trivial.scm
 /usr/bin/gauche-install -m 555 -T /usr/lib/gauche/site/0.8.8/i686-pc-linux-gnu trivial.so
 /usr/bin/gauche-install -m 444 -T /usr/share/gauche/site/lib/.packages trivial.gpd
-@end example
+@end smallexample
 
 By default, the files are installed in the site-specific area
 reserved within the installed Gauche.
 If you want to change the install location, you can do the
 same as typical autoconfigured softwares; e.g. giving
-@code{--prefix} option to the @code{configure} script,
-or
-
-
-
-
-
+@code{--prefix} option to the @code{configure} script.
 
 @node The templates explained, Introduction of the stub file, Building the trivial module, A trivial extension
 @subsection The templates explained
@@ -1553,19 +1542,285 @@ Returns a (possibly denormalized) compnum, whose real part is
 
 
 
-
-
-
-
-
 @node Pairs and lists, Symbols, Numbers, C API reference
 @section Pairs and lists
+
+@menu
+* Pair type and null::
+* List constructors::
+* List predicates::
+* List accessors and modifiers::
+* List utilities::
+@end menu
+
+@node Pair type and null, List constructors, Pairs and lists, Pairs and lists
+@subsection Pair type and null
+
+@deftp {Scheme Object} ScmPair
+Represents a Scheme pair.
+
+It exposes @code{car} and @code{cdr} fields, but they should always be
+accessed via accessor functions or macros.
+
+Some pairs are special and may have hidden fields.
+Also, Gauche may impose a special alignment requirements for pairs,
+so you should never define a variable of type ScmPair in your C code.
+Instead, use the constructor API such as @code{Scm_Cons()} to get
+an instance of ScmPair.
+
+@example
+@{
+  /* Don't do this, or a devil comes out of your nose. */
+  ScmPair foo = @{ ... @};
+
+  /* Instead, you can do this: */
+  ScmObj foo = Scm_Cons(...);
+@}
+@end example
+@end deftp
+
+@deftypevr {Scheme Constant} ScmObj SCM_NIL
+A Scheme empty list, @code{()}.
+@end deftypevr
+
+@node List constructors, List predicates, Pair type and null, Pairs and lists
+@subsection List constructors
+
+@deftypefun ScmObj Scm_Cons (ScmObj car, ScmObj cdr)
+Allocates and returns a fresh pair of @var{car} and @var{cdr}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Acons (ScmObj caar, ScmObj cadr, ScmObj cdr)
+Scheme's @code{acons}.  Returns @code{(cons (cons caar cadr) cdr)}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_List (ScmObj elt, @dots{}, NULL)
+Returns a Scheme list of @var{elt}, @dots{}.  The C argument must
+be terminated by NULL (note that NULL can never be a valid Scheme
+value).
+@end deftypefun
+
+@deftypefun ScmObj Scm_Conses (ScmObj elt, @dots{}, NULL)
+Scheme's @code{cons*}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_VaList (va_list elts)
+@deftypefunx ScmObj Scm_VaCons (va_list elts)
+Vararg version of @code{Scm_List} and @code{Scm_Conses}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_ArrayToList (ScmObj *elts, ScmSize nelts)
+Takes a C array of @code{ScmObj}s of size @var{nelts},
+and returns a Scheme list that has @var{elts} as its elements.
+@end deftypefun
+
+@deftypefun ScmObj Scm_ArrayToListWithTail (ScmObj *elts, ScmSize nelts, ScmObj tail)
+Takes a C array of @code{ScmObj}s of size @var{nelts}, and
+creates a Scheme list that has @var{elts} as its elements,
+and has @var{tail} in its tail.
+@end deftypefun
+
+@deftypefun ScmObj *Scm_ListToArray (ScmObj list, ScmSize *nelts, ScmObj *store, int alloc)
+Converts a Scheme list to a C array of @code{ScmObj*}.  An error is thrown
+if @var{list} is not a proper list.
+
+You can pass in a storage to store the result, or let the function allocate.
+
+If @var{store} is NULL, the function always allocate an @code{ScmObj*} array.
+The size of the array is stored in @code{*nelts}.
+
+If @var{store} is not NULL, it must point to a writable memory of at least
+@code{sizeof(ScmObj) * (*nelts)}.  If the length of @var{list} is
+smaller than or equal to @code{*nelts}, the result is stored in @code{*store},
+and @code{store} is returned.  The value of @code{*nelts} is adjusted
+to contain the actual number of elements.
+
+If the lenght of @var{list} is greater than @var{*nelts},
+the behavior depends on the @code{alloc} flag.  If it is @code{FALSE},
+an error is thrown.  Otherwise, a new storage is allocated, filled, and
+returned.  The value of @code{*nelts} is ajusted to contain the actual
+number of elements.
+@end deftypefun
+
+@deftypefn {Macro} ScmObj SCM_LIST1 (ScmObj a)
+@deftypefnx {Macro} ScmObj SCM_LIST1 (ScmObj a, b)
+@deftypefnx {Macro} ScmObj SCM_LIST1 (ScmObj a, b, c)
+@deftypefnx {Macro} ScmObj SCM_LIST1 (ScmObj a, b, c, d)
+@deftypefnx {Macro} ScmObj SCM_LIST1 (ScmObj a, b, c, d, e)
+Convenience macros to create a Scheme list of length 1 to 5.
+@end deftypefn
+
+@deftypefun ScmObj Scm_MakeImmutablePair (ScmObj car, ScmObj cdr)
+Creates and returns an immutable pair.  Immutable pair is almost
+indistinguishable from ordinary (mutable) pairs, except that it
+returns false for @code{Scm_ImmutablePairP()}, and it raises an error
+when its car or cdr is tried to be modified.
+
+Immutable pairs take up more storage than ordinary pairs.  Unless you
+have a specific reason to use immutable pairs, you don't need to
+worry about them.
+@end deftypefun
+
+@node List predicates, List accessors and modifiers, List constructors, Pairs and lists
+@subsection List predicates
+
+@deftypefn {Macro} int SCM_NULLP (ScmObj obj)
+Return a true value iff @var{obj} is @code{SCM_NIL}.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_PAIRP (ScmObj obj)
+Return a true value iff @var{obj} is a Scheme pair.
+
+Note: If @var{obj} is a lazy pair, it is forced by this macro.
+So once this macro returns true, you can assume @var{obj} is @code{ScmPair}.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_LISTP (ScmObj obj)
+Returns a true value iff @var{obj} is a Scheme pair or a Scheme emptylist.
+If @var{obj} is a lazy pair, it is forced.
+
+Note that this doesn't check if @var{obj} is a proper list.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_PROPER_LIST_P (ScmObj obj)
+@deftypefnx {Macro} int SCM_DOTTED_LIST_P (ScmObj obj)
+@deftypefnx {Macro} int SCM_CIRCULAR_LIST_P (ScmObj obj)
+Returns a true value iff @var{obj} is a Scheme proper list,
+a Scheme dotted list, or a Scheme circular list, respectively.
+
+These macros traverses the spine of @var{obj}, so all the lazy pairs
+are forced.  Notably, if @var{obj} is an infinite lazy sequence
+these macros never returns.
+@end deftypefn
+
+@deftypefun int Scm_ImmutablePairP (ScmObj obj)
+Returns a true value if @var{obj} is a pair and immutable.
+@end deftypefun
+
+
+@node List accessors and modifiers, List utilities, List predicates, Pairs and lists
+@subsection List accessors and modifiers
+
+@deftypefun ScmObj Scm_Car (ScmObj obj)
+@deftypefunx ScmObj Scm_Cdr (ScmObj obj)
+@deftypefunx ScmObj Scm_Caar (ScmObj obj)
+@deftypefunx ScmObj Scm_Cadr (ScmObj obj)
+@deftypefunx ScmObj Scm_Cdar (ScmObj obj)
+@deftypefunx ScmObj Scm_Cddr (ScmObj obj)
+Scheme's @code{car} etc.  If @var{obj} isn't a pair, an error is thrown.
+@end deftypefun
+
+@deftypefun ScmObj Scm_SetCar (ScmObj obj)
+@deftypefunx ScmObj Scm_SetCdr (ScmObj obj)
+Scheme's @code{set-car!} and @code{set-cdr!}.  If @var{obj} isn't a
+mutable pair, an error is thrown.
+@end deftypefun
+
+@deftypefun ScmObj Scm_ListRef (ScmObj list, ScmSmallInt i, ScmObj fallback)
+@end deftypefun
+
+@deftypefun ScmObj Scm_ListTail (ScmObj list, ScmSmallInt i, ScmObj fallback)
+@end deftypefun
+
+@deftypefun ScmObj Scm_LastPair (ScmObj list)
+@end deftypefun
+
+@deftypefn {Macro} void SCM_FOR_EACH (ScmObj var, ScmObj list) body
+This is a convenience macro to traverse a Scheme list.  It is expanded
+into something like this:
+
+@example
+for (var = list; SCM_PAIRP(var); var = Scm_Cdr(var)) body
+@end example
+
+That is, @var{body} is executed while @var{var} holds each pair
+in the list.
+@end deftypefn
+
+@node List utilities,  , List accessors and modifiers, Pairs and lists
+@subsection List utilities
+
+@deftypefun ScmSize Scm_Length (ScmObj obj)
+If @var{obj} is a Scheme proper list, returns its length.  If
+@var{obj} is an emptylist, the length is 0.
+
+If @var{obj} is a Scheme dotted list (which includes 
+a non-pair, non-emptylist object), returns SCM_LIST_DOTTED, which
+is a negative integer constant.
+
+If @var{obj} is a Scheme circular list, returns @code{SCM_LIST_CIRCULAR},
+which is a nevative integer constant.
+@end deftypefun
+
+@deftypefun ScmObj Scm_CopyList (ScmObj list)
+@end deftypefun
+
+@deftypefun ScmObj Scm_MakeList (ScmSmallInt len, ScmObj fill)
+@end deftypefun
+
+@deftypefun ScmObj Scm_Append2 (ScmObj list, ScmObj obj)
+@deftypefunx ScmObj Scm_Append2X (ScmObj list, ScmObj obj)
+@end deftypefun
+
+@deftypefun ScmObj Scm_Append (ScmObj args)
+@end deftypefun
+
+@deftypefun ScmObj Scm_Reverse (ScmObj list)
+@deftypefunx ScmObj Scm_ReverseX (ScmObj list)
+@end deftypefun
+
+@deftypefun ScmObj Scm_Reverse2 (ScmObj list, ScmObj tail)
+@deftypefunx ScmObj Scm_Reverse2X (ScmObj list, ScmObj tail)
+@end deftypefun
+
+@deftypefun ScmObj Scm_Memq (ScmObj obj, ScmObj list)
+@deftypefunx ScmObj Scm_Memv (ScmObj obj, ScmObj list)
+Scheme's @code{memq} and @code{memv}.  These won't throw an error,
+as long as @var{list} doesn't contain a lazy pair.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Member (ScmObj obj, ScmObj list, int cmpmode)
+Generalized member.  The @var{cmpmode} argument must be either one
+of @code{SCM_CMP_EQ}, @code{SCM_CMP_EQV}, or @code{SCM_CMP_EQUAL},
+specifying the comparison should be done by @code{eq?}, @code{eqv?},
+or @code{equal}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Assq (ScmObj obj, ScmObj list)
+@deftypefunx ScmObj Scm_Assv (ScmObj obj, ScmObj list)
+Scheme's @code{assq} and @code{assv}.  These won't throw an error,
+as long as @var{list} doesn't contain a lazy pair.
+Non-pair elements in @var{list} are ignored.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Assoc (ScmObj obj, ScmObj list, int cmpmode)
+Generalized assoc.  The @var{cmpmode} argument must be either one
+of @code{SCM_CMP_EQ}, @code{SCM_CMP_EQV}, or @code{SCM_CMP_EQUAL},
+specifying the comparison should be done by @code{eq?}, @code{eqv?},
+or @code{equal}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Delete (ScmObj obj, ScmObj list, int cmpmode)
+@deftypefunx ScmObj Scm_DeleteX (ScmObj obj, ScmObj list, int cmpmode)
+@end deftypefun
+
+@deftypefun ScmObj Scm_AssocDelete (ScmObj obj, ScmObj list, int cmpmode)
+@deftypefunx ScmObj Scm_AssocDeleteX (ScmObj obj, ScmObj list, int cmpmode)
+@end deftypefun
+
+@deftypefun ScmObj Scm_DeleteDuplicates (ScmObj list, int cmpmode)
+@deftypefunx ScmObj Scm_DeleteDuplicatesX (ScmObj list, int cmpmode)
+@end deftypefun
+
+@c @deftypefun ScmObj Scm_MonotonicMerge (ScmObj sequences)
+@c @end deftypefun
+
 
 @node Symbols, Glocs, Pairs and lists, C API reference
 @section Symbols
 
 @deftp {Scheme Object} ScmSymbol
-Represents the Scheme symbols.   Unlike Common Lisp,
+Represents a Scheme symbol.   Unlike Common Lisp,
 Gauche's symbol is merely an interned string.  It keeps
 no other information than its name.  Global binding
 is realized by modules that associate a symbol to

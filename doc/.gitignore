@@ -10,7 +10,7 @@
 
 /gauche-dev[ej].dvi
 /gauche-dev[ej].html
-/gauche-dev[ej].info*.gz
+/gauche-dev[ej].info*
 /gauche-dev[ej].pdf
 
 /gauche-ref[ej]/
