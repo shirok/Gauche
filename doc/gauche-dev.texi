@@ -1661,6 +1661,35 @@ have a specific reason to use immutable pairs, you don't need to
 worry about them.
 @end deftypefun
 
+@deftypefn {Macro} void SCM_APPEND1 (ScmObj head, ScmObj tail, ScmObj obj)
+This macro captures an idiom of constructing a list from left to right.
+
+The @var{head} and @var{tail} arguments must be a variable, initialized
+by @code{SCM_NIL}.   This macro works like this:
+
+@itemize @bullet
+@item
+If @var{head} is @code{SCM_NIL}, create a new pair whose car is @var{obj},
+and make @var{head} and @var{tail} both point to the pair.
+@item
+Otherwise, create a new pair whose car is @var{obj},
+set the cdr of @var{tail} to the new pair, then set @var{tail} to point
+the new pair.
+@end itemize
+
+That is, @var{head} points to the first pair of the constructed list,
+and @var{tail} points to the last pair of the constructed list.
+@end deftypefn
+
+@deftypefn {Macro} void SCM_APPEND (ScmObj head, ScmObj tail, ScmObj lis)
+This macro captures an idiom of constructing a list from left to right.
+Similar to @code{SCM_APPEND1}, but @var{lis} must be a proper Scheme list.
+It appends a list @var{lis} to the
+cdr of @var{tail} and make @var{tail} point to the last pair of @var{lis}.
+In other words, it splices @var{lis}.
+@end deftypefn
+
+
 @node List predicates, List accessors and modifiers, List constructors, Pairs and lists
 @subsection List predicates
 
@@ -1753,16 +1782,25 @@ which is a nevative integer constant.
 @end deftypefun
 
 @deftypefun ScmObj Scm_CopyList (ScmObj list)
+Scheme's @code{copy-list}.
+Return a fresh copy of a Scheme proper or dotted list @var{list}.
+If @var{list} is circular, an error is thrown.
 @end deftypefun
 
 @deftypefun ScmObj Scm_MakeList (ScmSmallInt len, ScmObj fill)
+Scheme's @code{make-list}.
+Creates a fresh @var{len}-element list, whose elements are all @var{fill}.
 @end deftypefun
 
 @deftypefun ScmObj Scm_Append2 (ScmObj list, ScmObj obj)
 @deftypefunx ScmObj Scm_Append2X (ScmObj list, ScmObj obj)
+Concatenate @var{obj} after a Scheme proper list @var{list}.
+@code{Scm_Append2X} may destructively modify @var{list}.
 @end deftypefun
 
 @deftypefun ScmObj Scm_Append (ScmObj args)
+This is rather Scheme's @code{concatenate}.   Elements of @var{args}
+must be proper lists except the last one.
 @end deftypefun
 
 @deftypefun ScmObj Scm_Reverse (ScmObj list)
@@ -1912,8 +1950,22 @@ This may raise an error if @var{gloc} is marked as a constant.
 @node Modules, Keywords, Glocs, C API reference
 @section Modules
 
+@deftp {Scheme Object} ScmModule
+Represents the Scheme module objects.
+@end deftp
 
+@deftypefun ScmModule *Scm_FindModule (ScmSymbol *name, int flags)
+@end deftypefun
 
+@deftypefun ScmObj Scm_MakeModule (ScmSymbol *name, int error_if_exists)
+@end deftypefun
+
+@deftypefun ScmObj Scm_GlobalVariableRef (ScmModule *module, ScmSymbol *symbol, int flags)
+@end deftypefun
+
+@deftypefun ScmObj Scm_Define (ScmModule *module, ScmSymbol *symbol, ScmObj value)
+@deftypefunx ScmObj Scm_DefineConst (ScmModule *module, ScmSymbol *symbol, ScmObj value)
+@end deftypefun
 
 
 @node Keywords, Characters, Modules, C API reference
