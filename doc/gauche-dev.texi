@@ -411,7 +411,6 @@ a new Scheme datatype requires dedicated chapter,
 * Symbols::
 * Glocs::
 * Modules::
-* Keywords::
 * Characters::
 * Character sets::
 * Strings::
@@ -1876,6 +1875,8 @@ Converts @code{ScmObj} to the pointer to a symbol.
 
 @deftypefn {Macro} int SCM_SYMBOLP (ScmObj @var{obj})
 @code{TRUE} iff @var{obj} is a symbol.
+Note: In recent Gauche, keywords are a subclass of symbols, and
+satisfies @code{SCM_SYMBOLP} too.
 @end deftypefn
 
 @deftypefn {Macro} {ScmString *} SCM_SYMBOL_NAME (ScmObj @var{symbol})
@@ -1901,6 +1902,78 @@ Implemented as follows:
 Scm_Intern(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
 @end example
 @end deftypefn
+
+@node Keywords,  , Symbols, Symbols
+@section Keywords
+
+Keywords are almost the same as symbols; in fact,
+@code{ScmKeyword} is just a type alias of @code{ScmSymbol}.
+They do have different runtime types (@code{SCM_CLASS_KEYWORD} vs
+@code{SCM_CLASS_SYMBOL}), but in recent Gauche the keyword class
+is a subclass of the symbol class by default.
+
+@deftp {Scheme Object} ScmKeyword
+Represents the Scheme keyword objects.
+@end deftp
+
+@deftypevr {Scheme Class Constant} {ScmClass *} SCM_CLASS_KEYWORD
+A constant pointer pointing Gauche's @code{<keyword>} class.
+@end deftypevr
+
+@deftypefn {Macro} {ScmKeyword *} SCM_KEYWORD (ScmObj @var{obj})
+Converts @code{ScmObj} to the pointer to a keyword.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_KEYWORDP (ScmObj @var{obj})
+@code{TRUE} iff @var{obj} is a keyword.
+@end deftypefn
+
+@deftypefn {Macro} {ScmString *} SCM_KEYWORD_NAME (ScmObj @var{keyword})
+Returns the name of the keyword.
+@end deftypefn
+
+@deftypefun ScmObj Scm_MakeKeyword (ScmString *@var{name})
+Scheme's @code{make-keyword}.
+Returns a keyword whose name is @var{name}.  Note that preceding
+@code{:} is not a part of the keyword name.
+@end deftypefun
+
+@deftypefun ScmObj Scm_GetKeyword (ScmObj @var{key}, ScmObj @var{list}, ScmObj @var{fallback})
+Scheme's @code{get-keyword}.
+This is actually a misnomer; @var{key} doesn't need to be a keyword, but
+can be any object.
+@end deftypefun
+
+@deftypefun ScmObj Scm_DeleteKeyword (ScmObj @var{key}, ScmObj @var{list})
+Scheme's @code{delete-keyword}.
+This is actually a misnomer; @var{key} doesn't need to be a keyword, but
+can be any object.
+@end deftypefun
+
+@deftypefun ScmObj Scm_DeleteKeywordX (ScmObj @var{key}, ScmObj @var{list})
+Scheme's @code{delete-keyword!}.  @var{list} may be modified desctructively.
+This is actually a misnomer; @var{key} doesn't need to be a keyword, but
+can be any object.
+@end deftypefun
+
+@deftypefn {Macro} ScmObj SCM_MAKE_KEYWORD (const char *@var{name})
+A convenience macro to create a keyword from C string @var{name}.
+Implemented as follows:
+@example
+Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(name)))
+@end example
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_GET_KEYWORD (const char *@var{name}, ScmObj @var{list}, ScmObj @var{fallback})
+A convenience macro to search a value marked by a keyword whose name
+is specified by C string @var{name}.
+Implemented as follows:
+@example
+Scm_GetKeyword(SCM_MAKE_KEYWORD(name), list, fallback)
+@end example
+@end deftypefn
+
+
 
 @node Glocs, Modules, Symbols, C API reference
 @section Glocs
@@ -1947,7 +2020,7 @@ This may raise an error if @var{gloc} is marked as a constant.
 @end deftypefn
 
 
-@node Modules, Keywords, Glocs, C API reference
+@node Modules, Characters, Glocs, C API reference
 @section Modules
 
 @deftp {Scheme Object} ScmModule
@@ -1968,65 +2041,8 @@ Represents the Scheme module objects.
 @end deftypefun
 
 
-@node Keywords, Characters, Modules, C API reference
-@section Keywords
 
-@deftp {Scheme Object} ScmKeyword
-Represents the Scheme keyword objects.
-@end deftp
-
-@deftypevr {Scheme Class Constant} {ScmClass *} SCM_CLASS_KEYWORD
-A constant pointer pointing Gauche's @code{<keyword>} class.
-@end deftypevr
-
-@deftypefn {Macro} {ScmKeyword *} SCM_KEYWORD (ScmObj @var{obj})
-Converts @code{ScmObj} to the pointer to a keyword.
-@end deftypefn
-
-@deftypefn {Macro} int SCM_KEYWORDP (ScmObj @var{obj})
-@code{TRUE} iff @var{obj} is a keyword.
-@end deftypefn
-
-@deftypefn {Macro} {ScmString *} SCM_KEYWORD_NAME (ScmObj @var{keyword})
-Returns the name of the keyword.
-@end deftypefn
-
-@deftypefun ScmObj Scm_MakeKeyword (ScmString *@var{name})
-Returns a keyword whose name is @var{name}.  Note that preceding
-@code{:} is not a part of the keyword name.
-@end deftypefun
-
-@deftypefun ScmObj Scm_GetKeyword (ScmObj @var{key}, ScmObj @var{list}, ScmObj @var{fallback})
-Scheme's @code{get-keyword}.
-@end deftypefun
-
-@deftypefun ScmObj Scm_DeleteKeyword (ScmObj @var{key}, ScmObj @var{list})
-Scheme's @code{delete-keyword}.
-@end deftypefun
-
-@deftypefun ScmObj Scm_DeleteKeywordX (ScmObj @var{key}, ScmObj @var{list})
-Scheme's @code{delete-keyword!}.
-@end deftypefun
-
-@deftypefn {Macro} ScmObj SCM_MAKE_KEYWORD (const char *@var{name})
-A convenience macro to create a keyword from C string @var{name}.
-Implemented as follows:
-@example
-Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(name)))
-@end example
-@end deftypefn
-
-@deftypefn {Macro} ScmObj SCM_GET_KEYWORD (const char *@var{name}, ScmObj @var{list}, ScmObj @var{fallback})
-A convenience macro to search a value marked by a keyword whose name
-is specified by C string @var{name}.
-Implemented as follows:
-@example
-Scm_GetKeyword(SCM_MAKE_KEYWORD(name), list, fallback)
-@end example
-@end deftypefn
-
-
-@node Characters, Character sets, Keywords, C API reference
+@node Characters, Character sets, Modules, C API reference
 @section Characters
 
 @deftp {Type} ScmChar
