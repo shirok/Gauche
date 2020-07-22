@@ -1381,9 +1381,8 @@ double Scm_GetDouble(ScmObj obj)
             ScmObj mask = 
                 Scm_LogNot(Scm_Sub(Scm_Ash(SCM_MAKE_INT(1), shift-1076-1),
                                    SCM_MAKE_INT(1)));
-            if (SCM_INTP(quo) && SCM_INT_VALUE(quo) < 0) {
-                ScmSmallInt iquo = SCM_INT_VALUE(quo);
-                quo = Scm_Negate(Scm_LogAnd(SCM_MAKE_INT(-iquo), mask));
+            if (Scm_Sign(quo) < 0) {
+                quo = Scm_Negate(Scm_LogAnd(Scm_Negate(quo), mask));
             } else {
                 quo = Scm_LogAnd(quo, mask);
             }
