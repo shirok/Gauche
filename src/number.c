@@ -1419,7 +1419,7 @@ double Scm_GetDouble(ScmObj obj)
         if (Scm_LogAnd(quo, mask_2) != SCM_MAKE_INT(0)) {
             quo = Scm_Add(quo, mask);
         }
-        double dquo = Scm_GetDouble(Scm_Add(quo, mask));
+        double dquo = Scm_GetDouble(quo);
         return ldexp(dquo, -shift);
     }
     else return 0.0;
