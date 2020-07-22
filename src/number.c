@@ -1293,88 +1293,135 @@ double Scm_UInt64ToDouble(uint64_t v)
 }
 #endif /*GAUCHE_API_VERSION < 1000*/
 
+/* See if a Scheme integer si can be representable with 53bit mantissa. */
+static int double_precision(ScmObj si, int *hi, int *lo)
+{
+    if (SCM_INTP(si)) {
+        ScmSmallInt i = SCM_INT_VALUE(si);
+        if (i < 0) i = -i;      /* won't overflow */
+        ScmBits bi = (ScmBits)i;
+        *hi = Scm_BitsHighest1(&bi, 0, SCM_WORD_BITS-1);
+        *lo = Scm_BitsLowest1(&bi, 0, SCM_WORD_BITS-1);
+        return (*hi - *lo) < 53;
+    } else {
+        SCM_ASSERT(SCM_BIGNUMP(si));
+        const ScmBits *bits = (ScmBits*)SCM_BIGNUM(si)->values;
+        *hi = Scm_BitsHighest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
+        *lo = Scm_BitsLowest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
+        return (*hi - *lo) < 53;
+    }
+}
+
 double Scm_GetDouble(ScmObj obj)
 {
     if (SCM_FLONUMP(obj)) return SCM_FLONUM_VALUE(obj);
     else if (SCM_INTP(obj)) return (double)SCM_INT_VALUE(obj);
     else if (SCM_BIGNUMP(obj)) return Scm_BignumToDouble(SCM_BIGNUM(obj));
     else if (SCM_RATNUMP(obj)) {
-        /* This is more complicated than I thought first.  The numerator
-         * and/or the denominator can be too big to be converted to double,
-         * yet the ratnum itself can be representable in double.
-         */
-        double dnumer = Scm_GetDouble(SCM_RATNUM_NUMER(obj));
-        double ddenom = Scm_GetDouble(SCM_RATNUM_DENOM(obj));
-        volatile double result;
-
-        if (SCM_IS_INF(dnumer) || SCM_IS_INF(ddenom)) {
-            /* This path should be rare, so we don't bother performance. */
-            ScmObj numer = SCM_RATNUM_NUMER(obj);
-            ScmObj denom = SCM_RATNUM_DENOM(obj);
-
-            if (SCM_INTP(numer)) {
-                /* Denominator is too big.  However, there's a case that
-                   OBJ still falls in a subnormal range if its absolute
-                   value is greater than 1/2^1075 (a half of the least
-                   positive subnormal flonum). */
-                if (Scm_NumCmp(Scm_Abs(obj), SCM_MIN_DENORMALIZED_FLONUM_EXACT) > 0) {
-                    /* We scale the OBJ so that we can calculate the
-                       flonum approximation in the normalized range,
-                       then rescale the result.  The scale factor is chosen
-                       so that we can calculate necessary digits 
-                       without loss of precision.
-                       When we scale back, we can't simply use ldexp, for
-                       in subnormal range we'll get double-rounding. */
-                    double scaled = Scm_GetDouble(Scm_Div(Scm_Ash(numer, 1075),
-                                                          denom));
-                    int exp, sign;
-                    ScmObj mant = Scm_DecodeFlonum(scaled, &exp, &sign);
-                    return Scm_EncodeFlonum(mant, exp-1075, sign);
-                } else {
-                    if (Scm_Sign(obj) > 0) return 0.0;
-                    else return 1.0/SCM_DBL_NEGATIVE_INFINITY;
-                }
-            } else if (SCM_INTP(denom)) {
-                /* Numerator is too big. */
-                if (Scm_NumCmp(Scm_Abs(obj), SCM_MAX_FINITE_FLONUM_EXACT) > 0) {
-                    if (Scm_Sign(denom) < 0) return -dnumer;
-                    else                     return dnumer;
-                } else {
-                    double scaled = Scm_GetDouble(Scm_Div(numer,
-                                                          Scm_Ash(denom, 1024)));
-                    int exp, sign;
-                    ScmObj mant = Scm_DecodeFlonum(scaled, &exp, &sign);
-                    return Scm_EncodeFlonum(mant, exp+1024, sign);
-                }
-            }
-
-            /* If we come here, both numer and denom are bignums. */
-            ScmBignum *bnumer = SCM_BIGNUM(numer);
-            ScmBignum *bdenom = SCM_BIGNUM(denom);
-            int snumer = SCM_BIGNUM_SIZE(bnumer);
-            int sdenom = SCM_BIGNUM_SIZE(bdenom);
-            int shift;
-            /* we rip off the first 3 words, which guarantees we preserve
-               more than 53 bits. */
-            if (snumer > sdenom) shift = (sdenom - 3) * sizeof(long) * 8;
-            else                 shift = (snumer - 3) * sizeof(long) * 8;
-
-            dnumer = Scm_GetDouble(Scm_Ash(SCM_RATNUM_NUMER(obj), -shift));
-            ddenom = Scm_GetDouble(Scm_Ash(SCM_RATNUM_DENOM(obj), -shift));
-        }
-        SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN();
-        /* It is critical to perform this division in IEEE double (53bit
-           mantissa) precision, _not_ in x87 extended double precision;
-           if the latter were used, double-rounding would yield different
-           results, which makes inexact -> exact -> inexact round-trip
-           fail.  For example, (inexact 3002399751580332/3002399751580331)
-           should be 1.0000000000000002 (1LSB greater than 1.0), but
-           extended double precision division yields
-           1.0000000000000004 (2LSB greater than 1.0).
+        /* This is more subtle than it appears.  A naive approach is to
+           convert numerator and denominator to double, and do flonum division.
+           However,
+           - Denominator and/or numerator may exceed FLT_MAX, yielding 
+             infinities in the intermediate results.  However, their ratio
+             can be in a valid flonum range.
+           - If denominator and/or numerator requires more than 53bit precision,
+             converting each to double causes rounding, which occurs before 
+             the final division, causing ULP-off error.
+             E.g.  (inexact (/ (+ 1 (* (exact (flonum-epsilon)) 33/100)) 1))
+             should be 1, but would yield 1.0000000000000002 if the numerator
+             is rounded up first.
         */
-        result = dnumer/ddenom;
-        SCM_FP_ENSURE_DOUBLE_PRECISION_END();
-        return result;
+        ScmObj numer = SCM_RATNUM_NUMER(obj);
+        ScmObj denom = SCM_RATNUM_DENOM(obj);
+
+        int n_hi, n_lo, d_hi, d_lo;
+        int n_dp = double_precision(numer, &n_hi, &n_lo);
+        int d_dp = double_precision(denom, &d_hi, &d_lo);
+
+        if (!(n_dp && d_dp)) goto fullpath;
+            
+        double dnumer = Scm_GetDouble(numer);
+        double ddenom = Scm_GetDouble(denom);
+
+        if (!SCM_IS_INF(dnumer) && !SCM_IS_INF(ddenom)) {
+            /* short path */
+            volatile double result;
+            SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN();
+            /* It is critical to perform this division in IEEE double (53bit
+               mantissa) precision, _not_ in x87 extended double precision;
+               if the latter were used, double-rounding would yield different
+               results, which makes inexact -> exact -> inexact round-trip
+               fail.  For example, (inexact 3002399751580332/3002399751580331)
+               should be 1.0000000000000002 (1LSB greater than 1.0), but
+               extended double precision division yields
+               1.0000000000000004 (2LSB greater than 1.0).
+            */
+            result = dnumer/ddenom;
+            SCM_FP_ENSURE_DOUBLE_PRECISION_END();
+            return result;
+        } 
+    fullpath:;
+        /* Need more precise but expensive calculation.
+           We find K such that 2^K * numer >= 2^54 * denom, so that
+           the integer division yiels more than 53bit integral part.
+         */
+        int shift = 0;
+        if (n_hi - d_hi < 54) {
+            shift = 54 - (n_hi - d_hi);
+            numer = Scm_Ash(numer, shift);
+        }
+
+        ScmObj rem;
+        ScmObj quo = Scm_Quotient(numer, denom, &rem);
+
+        /* If shift > 1076, the result would be denomarlized range.
+           Less than 53bits of quo is used, so we have to mask out the
+           unncessary digit.  (Otherwise, it causes double-rounding.) */
+        if (shift > 1076) {
+            ScmObj mask = 
+                Scm_LogNot(Scm_Sub(Scm_Ash(SCM_MAKE_INT(1), shift-1076-1),
+                                   SCM_MAKE_INT(1)));
+            if (SCM_INTP(quo) && SCM_INT_VALUE(quo) < 0) {
+                ScmSmallInt iquo = SCM_INT_VALUE(quo);
+                quo = Scm_Negate(Scm_LogAnd(SCM_MAKE_INT(-iquo), mask));
+            } else {
+                quo = Scm_LogAnd(quo, mask);
+            }
+        }
+        
+        int q_hi, q_lo;
+        if (double_precision(quo, &q_hi, &q_lo)) {
+            /* Result fits in double precision. */
+            double dquo = Scm_GetDouble(quo);
+            return ldexp(dquo, -shift);
+        }
+        /* We have to look at the 54th bit and below to decide rounding.
+           If 54-th bit is 0, we can safely convert it to double, truncating
+           the lower bits. */
+        ScmObj mask = Scm_Ash(SCM_MAKE_INT(1), q_hi - 53);
+        if (Scm_LogAnd(quo, mask) == SCM_MAKE_INT(0)) {
+            double dquo = Scm_GetDouble(quo);
+            return ldexp(dquo, -shift);
+        }
+        /* If 54-th bit is 1, we see the lower bits.  If we have at least
+           one '1' bit, or remainder isn't zero, we can round up. */
+        int roundup = FALSE;
+        if (rem != SCM_MAKE_INT(0)) roundup = TRUE;
+        else {
+            ScmObj mask_1 = Scm_Sub(mask, SCM_MAKE_INT(1));
+            if (Scm_LogAnd(quo, mask_1) != SCM_MAKE_INT(0)) roundup = TRUE;
+        }
+        if (roundup) {
+            double dquo = Scm_GetDouble(Scm_Add(quo, mask));
+            return ldexp(dquo, -shift);
+        }
+        /* We are half-point.  See the 53-bit and round to even.  */
+        ScmObj mask_2 = Scm_Ash(mask, 1);
+        if (Scm_LogAnd(quo, mask_2) != SCM_MAKE_INT(0)) {
+            quo = Scm_Add(quo, mask);
+        }
+        double dquo = Scm_GetDouble(Scm_Add(quo, mask));
+        return ldexp(dquo, -shift);
     }
     else return 0.0;
 }

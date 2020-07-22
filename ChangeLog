@@ -1,3 +1,11 @@
+2020-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_GetDouble): Fix double-rounding bug in ratnum to
+	  flonum conversion.  Originall reported in Ruby, it is a common
+	  issue that first convert numerator and denominator to double
+	  and then divide.
+	  Cf. https://twitter.com/tanaka_akr/status/1285273115464007685
+
 2020-07-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-189.scm: Srfi finalized.  Adjust to the final spec.
