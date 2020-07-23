@@ -541,7 +541,7 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
     return (ScmHalfFloat)((sign0? 0x8000 : 0x0000)|(e << 10)|(m & 0x3ff));
 }
 
-/* Construct a double directly from the given bit patterns.¡¡¡¡This is
+/* Construct a double directly from the given bit patterns. This is
    an internal procedure; external procedure should use Scm_EncodeFlonum.
 
    On 64bit architecture, only mant1 is used for mantissa.
