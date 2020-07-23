@@ -3276,28 +3276,48 @@ is returned.
 
 @subsubheading Hash functions
 
-A hash function calculates 32bit hash value from the given object.
-(It is fixed to 32bits even on 64bit architectures, to guarantee
-the same hash value across platforms).  Some of the functions
-used in built-in hash table types are provided as API.
+Other than @code{Scm_EqHash} and @code{Scm_EqvHash}, which returns
+a value that depends on the run-time address of the objects,
+hash values depend on the @emph{salt} value, which is initialized
+randomly at the process initialization time.
 
-@deftypefun {unsigned long} Scm_EqHash (ScmObj @var{obj})
+@deftypefun {u_long} Scm_EqHash (ScmObj @var{obj})
 Calculates hash value of the object suitable for @code{eq?}-type
 hash table.
 @end deftypefun
 
-@deftypefun {unsigned long} Scm_EqvHash (ScmObj @var{obj})
+@deftypefun {u_long} Scm_EqvHash (ScmObj @var{obj})
 Calculates hash value of the object suitable for @code{eqv?}-type
 hash table.
 @end deftypefun
 
-@deftypefun {unsigned long} Scm_Hash (ScmObj @var{obj})
-Calculates hash value of the object suitable for @code{equal?}-type
-hash table.
+@deftypefun {u_long} Scm_HashString (ScmString *@var{str}, unsigned long @var{bound})
 @end deftypefun
 
-@c @deftypefun {unsigned long} Scm_HashString (ScmString *@var{str}, unsigned long @var{bound})
-@c @end deftypefun
+@deftypefun {u_long} Scm_PortableHash (ScmObj @var{obj}, u_long salt)
+@end deftypefun
+
+@deftypefun {ScmSmallInt} Scm_DefaultHash (ScmObj @var{obj})
+@end deftypefun
+
+@deftypefun {ScmSmallInt} Scm_RecursiveHash (ScmObj @var{obj}, ScmSmallInt salt, u_long flags)
+@end deftypefun
+
+@deftypefun {ScmSmallInt} Scm_SmallIntHash (ScmSmallInt val, ScmSmallInt salt, u_long flags)
+@end deftypefun
+
+@deftypefun {ScmSmallInt} Scm_Int64Hash (int64_t val, ScmSmallInt salt, u_long flags)
+@end deftypefun
+
+@deftypefun u_long Scm_CombineHashValue (u_long a, u_long b)
+@end deftypefun
+
+@deftypefun ScmSmallInt Scm_HashSaltRef (void)
+@deftypefunx ScmSmallInt Scm_HashSaltSet (ScmSmallInt salt)
+@end deftypefun
+
+@deftypefun ScmSmallInt Scm_PortableHashSalt (ScmObj newval)
+@end deftypefun
 
 
 @subsubheading Scheme HashTable object
