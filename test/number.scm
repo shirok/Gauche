@@ -782,6 +782,20 @@
 (test* "ratnum -> flonum, close to infinity 2" 1.0e308
        (inexact (/ (+ (expt 10 310) 1) 100)))
 
+;; Double-rounding issue in ratnum->flonum
+;; http://blog.practical-scheme.net/gauche/20200722-ratnum-flonum
+(test* "rat->flo" '()
+       (rlet1 offending '()
+         (dotimes [k 100]
+           (let1 r (exact (+ 1 (* k 1/100 (exact (flonum-epsilon)))))
+             (unless (eqv? (inexact r)
+                           (if (<= k 50) 1.0 (+ 1.0 (flonum-epsilon))))
+               (push! offending (vector k (inexact r) r))))
+           (let1 r (exact (- -1 (* k 1/100 (exact (flonum-epsilon)))))
+             (unless (eqv? (inexact r)
+                           (if (<= k 50) -1.0 (- -1.0 (flonum-epsilon))))
+               (push! offending (vector k (inexact r) r)))))))
+
 ;; this exhibits a bug fixed on 9/12/2013.
 (test* "real->rational" '(1/3 2/3)
        (list (real->rational 3/10 1/10 1/10)

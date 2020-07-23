@@ -1312,6 +1312,20 @@ static int double_precision(ScmObj si, int *hi, int *lo)
     }
 }
 
+/* Get n-th bit of absolute value of Scheme integer si */
+static int abs_bittest(ScmObj si, int bit)
+{
+    if (SCM_INTP(si)) {
+        ScmSmallInt i = SCM_INT_VALUE(si);
+        if (i < 0) i = -i;
+        return i & (1L<<bit);
+    } else {
+        SCM_ASSERT(SCM_BIGNUMP(si));
+        ScmBits *bits = (ScmBits*)SCM_BIGNUM(si)->values;
+        return SCM_BITS_TEST(bits, bit);
+    }
+}
+
 double Scm_GetDouble(ScmObj obj)
 {
     if (SCM_FLONUMP(obj)) return SCM_FLONUM_VALUE(obj);
@@ -1397,27 +1411,39 @@ double Scm_GetDouble(ScmObj obj)
         /* We have to look at the 54th bit and below to decide rounding.
            If 54-th bit is 0, we can safely convert it to double, truncating
            the lower bits. */
-        ScmObj mask = Scm_Ash(SCM_MAKE_INT(1), q_hi - 53);
-        if (Scm_LogAnd(quo, mask) == SCM_MAKE_INT(0)) {
+        if (!abs_bittest(quo, q_hi - 53)) {
             double dquo = Scm_GetDouble(quo);
             return ldexp(dquo, -shift);
         }
         /* If 54-th bit is 1, we see the lower bits.  If we have at least
            one '1' bit, or remainder isn't zero, we can round up. */
         int roundup = FALSE;
+        ScmObj mask = Scm_Ash(SCM_MAKE_INT(1), q_hi - 53);
         if (rem != SCM_MAKE_INT(0)) roundup = TRUE;
         else {
             ScmObj mask_1 = Scm_Sub(mask, SCM_MAKE_INT(1));
-            if (Scm_LogAnd(quo, mask_1) != SCM_MAKE_INT(0)) roundup = TRUE;
+            ScmObj q = quo;
+            if (Scm_Sign(q) < 0) {
+                q = Scm_Negate(q);
+            }
+            if (Scm_LogAnd(q, mask_1) != SCM_MAKE_INT(0)) roundup = TRUE;
         }
         if (roundup) {
-            double dquo = Scm_GetDouble(Scm_Add(quo, mask));
+            if (Scm_Sign(quo) < 0) {
+                quo = Scm_Sub(quo, mask);
+            } else {
+                quo = Scm_Add(quo, mask);
+            }
+            double dquo = Scm_GetDouble(quo);
             return ldexp(dquo, -shift);
         }
         /* We are half-point.  See the 53-bit and round to even.  */
-        ScmObj mask_2 = Scm_Ash(mask, 1);
-        if (Scm_LogAnd(quo, mask_2) != SCM_MAKE_INT(0)) {
-            quo = Scm_Add(quo, mask);
+        if (!abs_bittest(quo, q_hi - 52)) {
+            if (Scm_Sign(quo) < 0) {
+                quo = Scm_Add(quo, mask);
+            } else {
+                quo = Scm_Sub(quo, mask);
+            }
         }
         double dquo = Scm_GetDouble(quo);
         return ldexp(dquo, -shift);
