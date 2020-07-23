@@ -957,8 +957,9 @@ See @var{Scm_GetIntegerClamp} below for a concrete example.
 @deftypefn {Macro} int SCM_INTEGERP (ScmObj @var{obj})
 Returns @code{TRUE} if @var{obj} is a Scheme exact integer; that is,
 @var{obj} is either a fixnum or a bignum.
-(The name is somewhat misleading; to check whether @var{obj} is
-an integer, regardless of exact or inexact, use @code{Scm_IntegerP} below).
+(The name is somewhat misleading.  This is @emph{not} Scheme's @code{integer?}.
+To check whether @var{obj} is an integer, regardless of exact or 
+inexact, use @code{Scm_IntegerP} below).
 @end deftypefn
 
 @deftypefn {Macro} int SCM_RATIONALP (ScmObj @var{obj})
@@ -987,6 +988,14 @@ precision of mantissa.
 @deftypefun int Scm_OddP (ScmObj @var{num})
 Returns @code{TRUE} iff a Scheme (exact or inexact) integer is
 an odd number.  This throws an error if @var{num} is not an integer.
+@end deftypefun
+
+@deftypefun int Scm_FiniteP (ScmObj @var{obj})
+@deftypefunx int Scm_IniniteP (ScmObj @var{obj})
+@deftypefunx int Scm_NanP (ScmObj @var{obj})
+Returns @code{TRUE} iff @var{obj} is a finite number,
+an infinite number, or a NaN, respectively.  It is an error if
+@var{obj} is not a Scheme number object.
 @end deftypefun
 
 @node Converting C and Scheme numbers, Generic arithmetics, Number predicates, Numbers
@@ -1092,9 +1101,11 @@ and @var{d} is an integer.
 
 @deftypefun double Scm_GetDouble (ScmObj @var{obj})
 Returns a C @code{double} value of Scheme real number @var{obj}
-(that means @var{obj} can be a Scheme integer as well).
+(that means @var{obj} can be a Scheme integer or ratnum as well).
 If @var{obj} is not a Scheme real number, 0.0 is returned.
-If @var{obj} is a bignum that can't be represented by @code{double},
+If @var{obj} is a ratnum, the closest IEEE double floating point number
+is returned.
+If @var{obj} is a bignum or ratnum that can't be represented by @code{double},
 an infinity (positive or negative, depends on @var{obj}'s sign)
 is returned.
 @end deftypefun
@@ -1144,10 +1155,6 @@ If the given double can't be represented in half float, it is mapped
 to infinities.
 @end deftypefun
 
-
-
-
-
 @subsubheading Complex numbers
 
 @deftypefun ScmObj Scm_MakeComplex (double @var{real}, double @var{imag})
@@ -1169,6 +1176,40 @@ if the imaginary part of the number is zero.
 Returns real part, imaginary part, magnitude and angle of a Scheme number
 @var{obj}, which can be any number.
 @end deftypefun
+
+@deftp {Type} ScmDoubleComplex
+@deftpx {Type} ScmFloatComplex
+@deftpx {Type} ScmHalfComplex
+C-world representation of compelx numbers, using @code{double}, @code{float}
+and @code{ScmHalfFloat} for each complenent, respectively.
+@end deftp
+
+@deftypefun ScmDoubleComplex Scm_GetDoubleComplex (ScmObj z)
+@deftypefunx ScmFloatComplex Scm_GetFloatComplex (ScmObj z)
+@deftypefunx ScmHalfComplex Scm_GetHalfeComplex (ScmObj z)
+Converts a Scheme number object @var{z} (can be any Scheme number)
+to C-world complex representation.
+@end deftypefun
+
+@deftypefun ScmObj Scm_DoubleComplexToComplex (ScmDoubleCompex z)
+@deftypefunx ScmObj Scm_FloatComplexToComplex (ScmFloatCompex z)
+@deftypefunx ScmObj Scm_HalfComplexToComplex (ScmHalfCompex z)
+Converts C-world complex representation to a Scheme number object.
+@end deftypefun
+
+@subsubheading Exactness
+
+@deftypefun ScmObj Scm_Exact (ScmObj obj)
+Scheme's @code{exact}.  An error is thrown if @var{obj} is not a
+Scheme number object, an infinity, or a NaN.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Inexact (ScmObj obj)
+Scheme's @code{inexact}.  An error is thrown if @var{obj} is not a
+Scheme number object.  If @var{obj} is out of range where IEEE double
+can represent, an infinity object is returned.
+@end deftypefun
+
 
 @node Generic arithmetics, Subtype-specific number operations, Converting C and Scheme numbers, Numbers
 @subsection Generic arithmetics
@@ -1226,18 +1267,15 @@ of @var{num} is preserved.   An error is signalled if
 when @var{num} is less than, equal to, or greater than zero,
 respectively.  If @var{num} is not a Scheme real number,
 an error is signalled.
+
+Note that this returns 0 for negative zero @code{-0.0}.  To check
+the sign of zero, use @code{Scm_FlonumSign}.
 @end deftypefun
 
 @deftypefun ScmObj Scm_Negate (ScmObj @var{num})
 @end deftypefun
 
 @deftypefun ScmObj Scm_Reciprocal (ScmObj @var{num})
-@end deftypefun
-
-@deftypefun ScmObj Scm_ExactToInexact (ScmObj @var{num})
-@end deftypefun
-
-@deftypefun ScmObj Scm_InexactToExact (ScmObj @var{num})
 @end deftypefun
 
 @deftypefun ScmObj Scm_Add (ScmObj @var{arg1}, ScmObj @var{arg2})
@@ -1308,6 +1346,9 @@ mostly small and you need speed, these macros will be handy.
 
 @deftypefn {Macro} int SCM_INTP (ScmObj @var{obj})
 Returns @code{TRUE} iff @var{obj} is a fixnum.
+
+See @code{SCM_INTEGERP} (@pxref{Number predicates}), 
+to see if @var{obj} is an exact integer (either a fixnum or a bignum).
 @end deftypefn
 
 @deftypevr {Macro} int SCM_SMALL_INT_SIZE
@@ -1539,6 +1580,59 @@ Returns a (possibly denormalized) compnum, whose real part is
 @node Reading and writing numbers,  , Subtype-specific number operations, Numbers
 @subsection Reading and writing numbers
 
+@deftypefun ScmObj Scm_StringToNumber (ScmString *str, int radix, u_long flags)
+Scheme's @code{string->number}.   Parse external representation of a Scheme
+number in @var{str}.  If the argument can't be parsed as a number,
+@code{SCM_FALSE} is returned.
+
+The @var{radix} argument specifies the default radix.  If it isn't between
+between 2 to 36, inclusive, @code{SCM_FALSE} is returned.
+This setting may be overridden if the input contains explicit radix
+prefix (@code{#x} etc.)
+
+The @var{flags} argument can be a logical or of the following bitmasks:
+
+@table @code
+@item SCM_NUMBER_FORMAT_EXACT
+@itemx SCM_NUMBER_FORMAT_INEXACT
+If no explicit exactness prefix is in input, force the input to
+be parsed as an exact/inexact number.  If neither of these flags
+is given, and no explicit exactness prefix is in input,
+the exactness is automatically deduced as the same rule as Gauche's
+reader---that is, if the input contains a decimal point and/or exponential
+notation, or the input is non-real complex number, it becomes inexact;
+otherwise, it becomes exact.
+
+@item SCM_NUMBER_FORMAT_STRICT_R7RS
+Reject input that's not strictly follow R7RS syntax.
+
+@item SCM_NUMBER_FORMAT_ALT_RADIX
+Do not allow @code{#@var{n}R} style radix prefix.
+@end table
+@end deftypefun
+
+@deftypefun ScmObj Scm_NumberToString (ScmObj obj, int radix, u_long flags)
+Scheme's @code{number->string}.  An error is thrown if @var{obj} isn't a
+number, or @var{radix} isn't between 2 and 10.
+
+The @var{flags} argument can be a logical or of the following bitmasks:
+
+@table @code
+@item SCM_NUMBER_FORMAT_USE_UPPER
+Use uppercase letters for digits greater than 10.  The default is to use
+lower case.
+
+@item SCM_NUMBER_SHOW_PLUS
+Prepend @code{+} sign in positive number.
+
+@item SCM_NUMBER_FORMAT_ALT_RADIX
+Add a radix prefix.
+
+@item SCM_NUMBER_FORMAT_ROUND_NOTATIONAL
+Use notational decimal rounding.  See the @code{format} entry
+of Gauche's reference manual about notational rounding.
+@end table
+@end deftypefun
 
 
 @node Pairs and lists, Symbols, Numbers, C API reference
