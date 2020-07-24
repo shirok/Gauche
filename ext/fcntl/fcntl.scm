@@ -36,6 +36,7 @@
 (define-module gauche.fcntl
   (export <sys-flock>
           sys-fcntl
+          sys-open
 
           F_DUPFD  F_GETFD  F_SETFD  F_GETFL  F_SETFL
           F_GETLK  F_SETLK  F_SETLKW
@@ -109,5 +110,19 @@
 
 (inline-stub
  (define-cproc sys-fcntl (port-or-fd op::<fixnum> :optional arg) Scm_SysFcntl)
+
+ ;; POSIX open().  This is provided for the code that needs to deal with
+ ;; low-level fd.  The integer fd can be closed by sys-close.
+ ;; Unless absolutely necessary, user code should use
+ ;; high-level open-{input|output}-file.
+ (define-cproc sys-open (path::<const-cstring> flags::<int> 
+                                               :optional (mode::<ulong> 0))
+   ::<int>
+   (let* ([fd::int 0])
+    (SCM_SYSCALL fd (open path flags mode))
+    (when (< fd 0) 
+      (Scm_SysError "open failed"))
+    (return fd)))
+
  (declare-cfn Scm_Init_fcntl () ::void)
  (initcode (Scm_Init_fcntl)))

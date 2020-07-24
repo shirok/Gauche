@@ -1,3 +1,11 @@
+2020-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/fcntl/fcntl.scm (sys-open): Added low-level open(2) interface.
+	  Generally Scheme programs should use open-{input|output}-file.
+	  This is for the rare case that you want to get fd without building
+	  whole Scheme port thing, so we put it in the extension rather than
+	  in the core.  SRFI-170 needs this.
+
 2020-07-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_GetDouble): Fix double-rounding bug in ratnum to
