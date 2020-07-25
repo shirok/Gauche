@@ -42,7 +42,7 @@
           F_GETLK  F_SETLK  F_SETLKW
           F_RDLCK  F_WRLCK  F_UNLCK
           O_RDONLY O_WRONLY O_RDWR   O_APPEND O_CREAT
-          O_EXCL   O_ACCMODE
+          O_EXCL   O_ACCMODE O_TRUNC
           )
   )
 (select-module gauche.fcntl)
@@ -81,10 +81,11 @@
  (define-enum O_APPEND)
  (define-enum O_CREAT)
  (define-enum O_EXCL)
+ (define-enum O_TRUNC)
  (define-enum-conditionally O_NOCTTY)
+ (define-enum-conditionally O_NOFOLLOW) ; POSIX.1-2008
  (define-enum-conditionally O_NONBLOCK)
  (define-enum-conditionally O_ASYNC)
- (define-enum O_TRUNC)
 
  ;; Linux specific F_NOTIFY flags (not available yet, w/o _GNU_SOURCE)
  (.if (defined F_NOTIFY)
@@ -105,7 +106,7 @@
  FD_CLOEXEC
  DN_ACCESS DN_MODIFY DN_CREATE DN_DELETE
  DN_RENAME DN_ATTRIB DN_MULTISHOT
- O_ASYNC   O_NOCTTY  O_NONBLOCK O_TRUNC
+ O_ASYNC   O_NOCTTY  O_NOFOLLOW  O_NONBLOCK
  )
 
 (inline-stub

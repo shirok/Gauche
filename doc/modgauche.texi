@@ -6649,6 +6649,15 @@ Whether it grabs terminal control, by @code{O_NOCTTY}.
 @c JP
 @code{O_NOCTTY}でマスクしたとき、端末制御を切離しているかどうか。
 @c COMMON
+@item
+@vindex O_NOFOLLOW
+@c EN
+Let the system call fail with @code{ELOOP}
+when the pathname is a symbolink link.
+@c JP
+パス名が指しているものがシンボリックリンクなら、システムコールが@code{ELOOP}で
+失敗するようにする。
+@c COMMON
 @end itemize
 
 @c EN
