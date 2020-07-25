@@ -37,7 +37,7 @@
 (select-module gauche)
 (inline-stub
  (declcode
-  (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h>)
+  (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
   (.cond ["TIME_WITH_SYS_TIME" (.include <sys/time.h> <time.h>)]
          ["HAVE_SYS_TIME_H"    (.include <sys/time.h>)]
          [else                 (.include <time.h>)])
@@ -726,22 +726,28 @@
  )
 
 ;; utime.h
+(define-cfn utime-ts (ts::(struct timespec*) arg) ::void :static
+  (cond [(SCM_FALSEP arg) (set! (-> ts tv_nsec) UTIME_NOW)]
+        [(SCM_TRUEP arg)  (set! (-> ts tv_nsec) UTIME_OMIT)]
+        [(SCM_REALP arg)
+         (let* ([s::double])
+           (set! (-> ts tv_nsec)
+                 (cast ulong (* (modf (Scm_GetDouble arg) (& s))
+                                1.0e9)))
+           (set! (-> ts tv_sec) (cast ulong s))
+           (while (>= (-> ts tv_nsec) #e1e9)
+             (set! (-> ts tv_nsec) (- (-> ts tv_nsec) #e1e9))
+             (pre++ (-> ts tv_sec))))]
+        [(SCM_TIMEP arg) (Scm_GetTimeSpec arg ts)]
+        [else (Scm_Error "<time> object, real number or boolean required, but got: %S" arg)]))
+
 (define-cproc sys-utime
   (path::<const-cstring> :optional (atime #f) (mtime #f)) ::<void>
-  (let* ([tim::(struct utimbuf)] [r::int])
-    (cond [(and (SCM_FALSEP atime) (SCM_FALSEP mtime))
-           (SCM_SYSCALL r (utime path NULL))]
-          [else
-           (set! (ref tim actime)
-                 (?: (SCM_FALSEP atime) 
-                     (time NULL)
-                     (cast time_t (Scm_GetUInteger atime))))
-           (set! (ref tim modtime)
-                 (?: (SCM_FALSEP mtime) 
-                     (time NULL)
-                     (cast time_t (Scm_GetUInteger mtime))))
-           (SCM_SYSCALL r (utime path (& tim)))])
-    (when (< r 0) (Scm_SysError "utime failed on %s" path))))
+  (let* ([tss::(.array (struct timespec) [2])] [r::int])
+    (utime-ts (& (aref tss 0)) atime)
+    (utime-ts (& (aref tss 1)) mtime)
+    (SCM_SYSCALL r (utimensat AT_FDCWD path tss 0))
+    (when (< r 0) (Scm_SysError "utimensat failed on %s" path))))
 
 ;;---------------------------------------------------------------------
 ;; sys/times.h

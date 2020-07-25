@@ -24876,13 +24876,19 @@ If either of them is -1, the corresponding ownership is not changed.
 @defun sys-utime path :optional atime mtime
 @c EN
 Change the file's access time and modification time to @var{atime}
-and @var{mtime}, respectively.   If @var{atime} and/or @var{mtime}
-are omitted or @code{#f}, they are set to the current time.
+and @var{mtime}, respectively.   The arguments can be either @code{#f}
+(indicating the current time), @code{#t} (do not change),
+a real numebr (number of seconds from Epoch),
+or @code{<time>} object (@xref{Time}).
+
 See also @code{touch-file} (@pxref{File operations}).
 @c JP
 ファイルのアクセスタイムと変更タイムを@var{atime}と@var{mtime}が示す
-値にセットします。@var{atime}と@var{mtime}が省略された場合もしくは
-@code{#f}の場合は現在の時刻が使われます。
+値にセットします。@var{atime}/@var{mtime}引数に許されるのは、
+@code{#f} (現在の時刻)、@code{#t} (変更なし)、
+実数 (Epochからの秒数)、あるいは@code{<time>}インスタンスです
+(@ref{Time}参照)。
+
 @ref{File operations}の@code{touch-file}も参照して下さい。
 @c COMMON
 @end defun

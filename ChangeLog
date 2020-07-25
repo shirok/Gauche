@@ -1,5 +1,9 @@
 2020-07-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/libsys.scm (sys-utime): Use utimensat(2) instead of utime(2).
+	  Allow <time> object, real number, and #t for atime/mtime.
+	  #t is for "unchanged".
+
 	* ext/fcntl/fcntl.scm (sys-open): Added low-level open(2) interface.
 	  Generally Scheme programs should use open-{input|output}-file.
 	  This is for the rare case that you want to get fd without building
