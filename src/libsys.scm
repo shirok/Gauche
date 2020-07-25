@@ -732,9 +732,9 @@
         [(SCM_REALP arg)
          (let* ([s::double])
            (set! (-> ts tv_nsec)
-                 (cast ulong (* (modf (Scm_GetDouble arg) (& s))
-                                1.0e9)))
-           (set! (-> ts tv_sec) (cast ulong s))
+                 (cast u_long (* (modf (Scm_GetDouble arg) (& s))
+                                 1.0e9)))
+           (set! (-> ts tv_sec) (cast u_long s))
            (while (>= (-> ts tv_nsec) #e1e9)
              (set! (-> ts tv_nsec) (- (-> ts tv_nsec) #e1e9))
              (pre++ (-> ts tv_sec))))]
