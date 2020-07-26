@@ -186,6 +186,19 @@ SCM_EXTERN ScmObj Scm_MakeSysTm(struct tm *);
 SCM_EXTERN int    Scm_NanoSleep(const ScmTimeSpec *req,
                                 ScmTimeSpec *rem);
 
+#if !HAVE_UTIMENSAT
+int utimensat(int, const char*, const ScmTimeSpec*, int);
+#  if !defined(AT_FDCWD)
+#  define AT_FDCWD -1
+#  endif
+#  if !defined(UTIME_NOW)
+#  define UTIME_NOW -1
+#  endif
+#  if !defined(UTIME_OMIT)
+#  define UTIME_OMIT -1
+#  endif
+#endif /*!HAVE_UTIMENSAT*/
+
 /*==============================================================
  * Groups and users
  */

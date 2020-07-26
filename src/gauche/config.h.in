@@ -450,6 +450,9 @@
 /* Define to 1 if you have the <util.h> header file. */
 #undef HAVE_UTIL_H
 
+/* Define to 1 if you have the `utimensat' function. */
+#undef HAVE_UTIMENSAT
+
 /* Define to 1 if you have the <wincrypt.h> header file. */
 #undef HAVE_WINCRYPT_H
 

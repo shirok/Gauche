@@ -514,7 +514,7 @@ AC_SUBST(ALTERNATIVE_GOSH)
 
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(isnan isinf trunc rint tgamma lgamma)
-AC_CHECK_FUNCS(symlink readlink lchown realpath nanosleep usleep)
+AC_CHECK_FUNCS(symlink readlink lchown realpath nanosleep usleep utimensat)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
 AC_CHECK_FUNCS(putenv setenv unsetenv clearenv getpgid setgroups)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)

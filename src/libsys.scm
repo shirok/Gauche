@@ -726,7 +726,7 @@
  )
 
 ;; utime.h
-(define-cfn utime-ts (ts::(struct timespec*) arg) ::void :static
+(define-cfn utime-ts (ts::ScmTimeSpec* arg) ::void :static
   (cond [(SCM_FALSEP arg) (set! (-> ts tv_nsec) UTIME_NOW)]
         [(SCM_TRUEP arg)  (set! (-> ts tv_nsec) UTIME_OMIT)]
         [(SCM_REALP arg)
@@ -743,7 +743,7 @@
 
 (define-cproc sys-utime
   (path::<const-cstring> :optional (atime #f) (mtime #f)) ::<void>
-  (let* ([tss::(.array (struct timespec) [2])] [r::int])
+  (let* ([tss::(.array ScmTimeSpec [2])] [r::int])
     (utime-ts (& (aref tss 0)) atime)
     (utime-ts (& (aref tss 1)) mtime)
     (SCM_SYSCALL r (utimensat AT_FDCWD path tss 0))

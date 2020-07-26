@@ -2778,6 +2778,29 @@ char *ttyname(int desc SCM_UNUSED)
     return NULL;
 }
 
+#if !HAVE_UTIMENSAT
+/* Emulate utimensat() by utime().  For MinGW. */
+int utimensat(int dirfd SCM_UNUSED,
+              const char *path,
+              const ScmTimeSpec times[2],
+              int flags SCM_UNUSED)
+{
+    struct utimbuf buf;
+    buf.actime = times[0].tv_sec;
+    buf.modtime = times[1].tv_sec;
+    
+    if (times[0].tv_nsec == UTIME_NOW) {
+        buf.actime = time(NULL);
+    }
+    if (times[1].tv_nsec == UTIME_NOW) {
+        buf.modtime = time(NULL);
+    }
+    /* TODO: UTIME_OMIT case */
+    
+    return utime(path, &buf);
+}
+#endif /*!HAVE_UTIMENSAT*/
+
 #ifndef __MINGW64_VERSION_MAJOR /* MinGW64 has truncate and ftruncate */
 
 static int win_truncate(HANDLE file, off_t len)
