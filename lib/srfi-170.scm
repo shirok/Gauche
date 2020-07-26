@@ -140,13 +140,20 @@
 (define (create-directory name :optional perm)
   (sys-mkdir name perm))
 (define (create-fifo name :optional perm)
-  (sys-mkfifo name perm))
+  (cond-expand
+   [gauche.os.windows (error "create-fifo is not supported on this platform.")]
+   [else (sys-mkfifo name perm)]))
 (define (create-hard-link old new)
   (sys-link old new))
 (define (create-symlink old new)
-  (sys-symlink old new))
+  (cond-expand
+   [gauche.os.windows (error "create-symlink is not supported on this platform")]
+   [else (sys-symlink old new)]))
 
-(define (read-symlink name) (sys-readlink name))
+(define (read-symlink name)
+  (cond-expand
+   [gauche.os.windows (error "read-symlink is not supported on this platform")]
+   [else (sys-readlink name)]))
 
 (define (rename-file old new) (sys-rename old new))
 
@@ -302,15 +309,24 @@
 
 (define (pid) (sys-getpid))
 (define (parent-pid) (sys-getppid))
-(define (process-group) (sys-getpgrp))
+(define (process-group) 
+  (cond-expand
+   [gauche.os.windows (error "process-group is not supported on this platform")]
+   [else (sys-getpgrp)]))
 
-(define (nice :optional (delta 1)) (sys-nice delta))
+(define (nice :optional (delta 1)) 
+  (cond-expand 
+   [gauche.os.windows (error "nice is not supported on this platform")]
+   [else (sys-nice delta)]))
 
 (define (user-uid) (sys-getuid))
 (define (user-gid) (sys-getgid))
 (define (user-effective-uid) (sys-geteuid))
 (define (user-effective-gid) (sys-getegid))
-(define (user-supplementary-gids) (sys-getgroups))
+(define (user-supplementary-gids)
+  (cond-expand
+   [gauche.os.windows (list (sys-getgid))]
+   [else (sys-getgroups)]))
 
 ;;
 ;; 3.6 User and group database access
