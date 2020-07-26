@@ -2672,6 +2672,11 @@
 ;; if we pass srfi-114 tests, it should be ok.
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-170")
+(use srfi-170)
+(test-module 'srfi-170)
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-173")
 (use srfi-173)
 (test-module 'srfi-173)
