@@ -1036,6 +1036,18 @@
      (SCM_SYSCALL SCM_RESULT (setuid uid))
      (when (< SCM_RESULT 0) (Scm_SysError "setuid failed")))
 
+   (define-cfn call-nice (inc::int errno_save::int*) ::int
+     (set! errno 0)
+     (let* ([r::int (nice inc)])
+       (set! (* errno_save) errno)
+       (return r)))
+
+   (define-cproc sys-nice (inc::<int>) ::<int>
+     (let* ([errno_save::int 0])
+       (SCM_SYSCALL SCM_RESULT (call-nice inc (& errno_save)))
+       (when (and (< SCM_RESULT 0) (!= errno 0))
+         (Scm_SysError "nice failed"))))
+   
    ;; some less-frequently used get-*
 
    (define-cproc sys-getgroups ()

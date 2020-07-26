@@ -26589,6 +26589,18 @@ RLIMIT_OFILE
 @end example
 @end defun
 
+@defun sys-nice inc
+[POSIX]
+@c EN
+Adds @var{inc}, which must be an exact integer, to the current process's
+nice value.  Only the root user can specify negative @var{inc} value.
+Returns the new nice value.
+@c JP
+現在のプロセスのnice値に@var{inc}を加算します。@var{inc}は正確な整数でなければなりません。
+ルートユーザのみが@var{inc}に負の値を指定できます。
+新たなnice値を返します。
+@c COMMON
+@end defun
 
 @defun sys-strerror errno
 @c EN

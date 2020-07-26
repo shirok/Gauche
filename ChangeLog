@@ -1,3 +1,7 @@
+2020-07-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm (sys-nice): Added.
+
 2020-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/fcntl/fcntl.scm (O_CLOEXEC): Add flag.
