@@ -108,7 +108,7 @@ jobs:
     env:
       MSYSTEM: MINGW${{ matrix.bit }}
       MSYS2_PATH_TYPE: inherit
-      MSYS2_PATH_LIST: C:\msys64\mingw${{ matrix.bit }}\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin
+      MSYS2_PATH_LIST: ___\msys64\mingw${{ matrix.bit }}\bin;___\msys64\usr\local\bin;___\msys64\usr\bin;___\msys64\bin
       GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
       GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
@@ -117,15 +117,16 @@ jobs:
     steps:
     - run: git config --global core.autocrlf false
     - uses: actions/checkout@v2
-    - uses: msys2/setup-msys2@v1
+    - uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW${{ matrix.bit }}
         path-type: inherit
-        release: false
+        release: true
         update: true
-        cache: true
+        install: 'base-devel mingw-w64-${{ matrix.arch }}-toolchain'
     - name: Add MSYS2 path
       run: |
+        $env:MSYS2_PATH_LIST=$env:MSYS2_PATH_LIST.replace('___', "$env:RUNNER_TEMP\msys")
         echo "::set-env name=PATH::$env:MSYS2_PATH_LIST;$env:PATH"
     - name: Run MSYS2 once
       run: |
