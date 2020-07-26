@@ -82,6 +82,7 @@
  (define-enum O_CREAT)
  (define-enum O_EXCL)
  (define-enum O_TRUNC)
+ (define-enum-conditionally O_CLOEXEC)  ; POSIX.1-2008
  (define-enum-conditionally O_NOCTTY)
  (define-enum-conditionally O_NOFOLLOW) ; POSIX.1-2008
  (define-enum-conditionally O_NONBLOCK)
@@ -106,7 +107,7 @@
  FD_CLOEXEC
  DN_ACCESS DN_MODIFY DN_CREATE DN_DELETE
  DN_RENAME DN_ATTRIB DN_MULTISHOT
- O_ASYNC   O_NOCTTY  O_NOFOLLOW  O_NONBLOCK
+ O_ASYNC   O_CLOEXEC O_NOCTTY  O_NOFOLLOW  O_NONBLOCK
  )
 
 (inline-stub

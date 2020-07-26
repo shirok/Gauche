@@ -6636,6 +6636,13 @@ Whether appending is allowed or not, by @code{O_APPEND}
 @code{O_APPEND}でマスクしたとき、追記が許されているかどうか。
 @c COMMON
 @item
+@vindex O_CLOEXEC
+@c EN
+Whether the file is closed automatically on @code{fork}.
+@c JP
+@code{fork}した時にファイルが自動的にクローズされるかどうか。
+@c COMMON
+@item
 @vindex O_NONBLOCK
 @c EN
 Whether I/O is blocking or non-blocking, by @code{O_NONBLOCK}.
