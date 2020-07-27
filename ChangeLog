@@ -1,5 +1,8 @@
 2020-07-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/gen-features.sh (gauche.sys.statns): New feature identifier
+	  for availability of nanosecond precision of struct stat.
+
 	* src/system.c: Add support of timespec timestamps in struct stat
 	  (st_atim, st_mtim and st_ctim).
 

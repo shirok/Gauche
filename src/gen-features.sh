@@ -67,6 +67,9 @@ check gauche.sys.crypt NULL HAVE_CRYPT
 check gauche.sys.symlink NULL HAVE_SYMLINK
 check gauche.sys.readlink NULL HAVE_READLINK
 check gauche.sys.select NULL HAVE_SELECT
+check gauche.sys.statns NULL HAVE_STRUCT_STAT_ST_ATIM \
+                             HAVE_STRUCT_STAT_ST_MTIM \
+                             HAVE_STRUCT_STAT_ST_CTIM
 
 check gauche.net.ipv6 gauche.net HAVE_IPV6
 check gauche.sys.openpty gauche.termios HAVE_OPENPTY
