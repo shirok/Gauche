@@ -714,12 +714,6 @@ static ScmObj stat_size_get(ScmSysStat *stat)
 #define STAT_GETTER_TIME(name) \
   static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
   { return Scm_MakeSysTime(SCM_SYS_STAT_STAT(s)->SCM_CPP_CAT(st_, name)); }
-#define STAT_GETTER_TIMESPEC(name) \
-  static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
-  { return Scm_MakeTime64(SCM_SYM_TIME_UTC, \
-      (int64_t)SCM_SYS_STAT_STAT(s)->SCM_CPP_CAT(st_, name).tv_sec,     \
-      SCM_SYS_STAT_STAT(s)->SCM_CPP_CAT(st_, name).tv_nsec); \
-  }
 
 STAT_GETTER_UI(mode)
 STAT_GETTER_UI(ino)
@@ -731,15 +725,45 @@ STAT_GETTER_UI(gid)
 STAT_GETTER_TIME(atime)
 STAT_GETTER_TIME(mtime)
 STAT_GETTER_TIME(ctime)
+
+static ScmObj stat_atim_get(ScmSysStat *s)
+{
 #if HAVE_STRUCT_STAT_ST_ATIM
-STAT_GETTER_TIMESPEC(atim)
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC,
+                          (int64_t)s->statrec.st_atim.tv_sec,
+                          s->statrec.st_atim.tv_nsec);
+#else
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC,
+                          (int64_t)s->statrec.st_atime,
+                          0);
 #endif
+}
+
+static ScmObj stat_mtim_get(ScmSysStat *s)
+{
 #if HAVE_STRUCT_STAT_ST_MTIM
-STAT_GETTER_TIMESPEC(mtim)
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC,
+                          (int64_t)s->statrec.st_mtim.tv_sec,
+                          s->statrec.st_mtim.tv_nsec);
+#else
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC,
+                          (int64_t)s->statrec.st_mtime,
+                          0);
 #endif
+}
+
+static ScmObj stat_ctim_get(ScmSysStat *s)
+{
 #if HAVE_STRUCT_STAT_ST_CTIM
-STAT_GETTER_TIMESPEC(ctim)
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC,
+                          (int64_t)s->statrec.st_ctim.tv_sec,
+                          s->statrec.st_ctim.tv_nsec);
+#else
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC,
+                          (int64_t)s->statrec.st_ctime,
+                          0);
 #endif
+}
 
 static ScmClassStaticSlotSpec stat_slots[] = {
     SCM_CLASS_SLOT_SPEC("type",  stat_type_get,  NULL),
@@ -755,15 +779,9 @@ static ScmClassStaticSlotSpec stat_slots[] = {
     SCM_CLASS_SLOT_SPEC("atime", stat_atime_get, NULL),
     SCM_CLASS_SLOT_SPEC("mtime", stat_mtime_get, NULL),
     SCM_CLASS_SLOT_SPEC("ctime", stat_ctime_get, NULL),
-#if HAVE_STRUCT_STAT_ST_ATIM
     SCM_CLASS_SLOT_SPEC("atim",  stat_atim_get, NULL),
-#endif
-#if HAVE_STRUCT_STAT_ST_MTIM
     SCM_CLASS_SLOT_SPEC("mtim",  stat_mtim_get, NULL),
-#endif
-#if HAVE_STRUCT_STAT_ST_CTIM
     SCM_CLASS_SLOT_SPEC("ctim",  stat_ctim_get, NULL),
-#endif
     SCM_CLASS_SLOT_SPEC_END()
 };
 

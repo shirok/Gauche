@@ -24711,17 +24711,11 @@ A number of seconds since Unix Epoch for those information of @code{struct stat}
 @defivarx <sys-stat> mtim
 @defivarx <sys-stat> ctim
 @c EN
-If the system supports nanosecond precision of timestamps, these
-slots are available, containing @code{<time>} object
-(@pxref{Time}).
-You can test the availability of these slots by @code{cond-expand}
-with the feature identifier @code{gauche.sys.statns}.
+Timestamps represented in @code{<time>} object (@pxref{Time}).
+If the system supports it, this allows up to nanosecond precision.
 @c JP
-システムがナノ秒単位のタイムスタンプをサポートしていれば、
-これらのスロットが追加され、それぞれ@code{<time>}オブジェクトを保持しています
-(@ref{Time}参照)。
-これらのスロットが使えるかどうかは、@code{cond-expand}で
-@code{gauche.sys.statns}機能識別子を検査することで判別できます。
+@code{<time>}オブジェクトで表されたタイムスタンプ (@ref{Time}参照)。
+システムがサポートしていれば、ナノ秒単位のタイムスタンプを得ることができます。
 @c COMMON
 @end defivar
 
