@@ -125,6 +125,8 @@ jobs:
       shell: msys2 {0}
       run: |
         pwd
+        echo $MSYSTEM
+        echo $MSYS2_PATH_TYPE
         echo $PATH
     - name: Install Gauche
       shell: msys2 {0}
