@@ -106,9 +106,6 @@ jobs:
           bit: 32
           devtool_path: D:\devtool32
     env:
-      MSYSTEM: MINGW${{ matrix.bit }}
-      MSYS2_PATH_TYPE: inherit
-      MSYS2_PATH_LIST: ___\msys64\mingw${{ matrix.bit }}\bin;___\msys64\usr\local\bin;___\msys64\usr\bin;___\msys64\bin
       GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
       GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
       GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
@@ -124,73 +121,56 @@ jobs:
         release: true
         update: true
         install: 'base-devel mingw-w64-${{ matrix.arch }}-toolchain'
-    - name: Add MSYS2 path
-      run: |
-        $env:MSYS2_PATH_LIST=$env:MSYS2_PATH_LIST.replace('___', "$env:RUNNER_TEMP\msys")
-        echo "::set-env name=PATH::$env:MSYS2_PATH_LIST;$env:PATH"
     - name: Run MSYS2 once
+      shell: msys2 {0}
       run: |
-        bash -lc @'
-          pwd
-          cd $GITHUB_WORKSPACE
-          pwd
-          echo $PATH
-        '@
+        pwd
+        echo $PATH
     - name: Install Gauche
+      shell: msys2 {0}
       run: |
-        bash -lc @'
-          cd $GITHUB_WORKSPACE
-          GAUCHE_INSTALLER_VERSION=`curl -f $GAUCHE_VERSION_URL`
-          echo $GAUCHE_INSTALLER_VERSION
-          GAUCHE_INSTALLER=Gauche-mingw-$GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi
-          echo $GAUCHE_INSTALLER
-          curl -f -L -o $GAUCHE_INSTALLER $GAUCHE_INSTALLER_URL/$GAUCHE_INSTALLER
-          ls -l
-          cmd.exe //c \"start /wait msiexec /a $GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}\"
-        '@
+        GAUCHE_INSTALLER_VERSION=`curl -f $GAUCHE_VERSION_URL`
+        echo $GAUCHE_INSTALLER_VERSION
+        GAUCHE_INSTALLER=Gauche-mingw-$GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi
+        echo $GAUCHE_INSTALLER
+        curl -f -L -o $GAUCHE_INSTALLER $GAUCHE_INSTALLER_URL/$GAUCHE_INSTALLER
+        ls -l
+        cmd.exe //c "start /wait msiexec /a $GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}"
     - name: Add Gauche path
       run: |
         echo "::set-env name=PATH::$env:GAUCHE_PATH;$env:PATH"
     - name: Run Gauche once
+      shell: msys2 {0}
       run: |
-        bash -lc @'
-          where gosh
-          gosh -V
-        '@
+        where gosh
+        gosh -V
     - name: Install tools
+      shell: msys2 {0}
       run: |
-        bash -lc @'
-          #pacman -S --noconfirm msys/winpty
-          #winpty --version
-          where openssl
-          echo 'Rename unavailable openssl.exe'
-          mv /mingw${{ matrix.bit }}/bin/openssl.exe /mingw${{ matrix.bit }}/bin/openssl_NG.exe
-          where openssl
-          /usr/bin/openssl version
-        '@
+        #pacman -S --noconfirm msys/winpty
+        #winpty --version
+        where openssl
+        echo 'Rename unavailable openssl.exe'
+        mv /mingw${{ matrix.bit }}/bin/openssl.exe /mingw${{ matrix.bit }}/bin/openssl_NG.exe
+        where openssl
+        /usr/bin/openssl version
     - name: Build
+      shell: msys2 {0}
       run: |
-        bash -lc @'
-          cd $GITHUB_WORKSPACE
-          gcc -v
-          ./DIST gen
-          src/mingw-dist.sh
-        '@
+        gcc -v
+        ./DIST gen
+        src/mingw-dist.sh
     - name: Test
+      shell: msys2 {0}
       run: |
-        bash -lc @'
-          cd $GITHUB_WORKSPACE
-          make -s check
-        '@
+        make -s check
     - name: Copy testlog
       if: always()
+      shell: msys2 {0}
       run: |
-        bash -lc @'
-          cd $GITHUB_WORKSPACE
-          mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
-          cp src/test.log $TESTLOG_PATH/$TESTLOG_NAME
-          cp ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
-        '@
+        mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
+        cp src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+        cp ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v1
