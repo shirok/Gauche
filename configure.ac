@@ -458,6 +458,11 @@ AC_CHECK_SIZEOF(rlim_t,,[
 #endif
 ])
 
+dnl Checks nanosecond resolution in stat structure
+AC_CHECK_MEMBERS([struct stat.st_atim,
+                  struct stat.st_mtim,
+                  struct stat.st_ctim],,,[#include <sys/stat.h>])
+
 dnl Checks non-POSIX members of system structure
 AC_CHECK_MEMBERS([struct group.gr_passwd],,,[#include <grp.h>])
 AC_CHECK_MEMBERS([struct passwd.pw_passwd,
