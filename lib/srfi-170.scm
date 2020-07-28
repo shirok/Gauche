@@ -259,7 +259,7 @@
 (define-class <DIR> ()
   ((gen :init-keyword :gen)))
 
-(define (open-directory dir :optional (dot? #t))
+(define (open-directory dir :optional (dot? #f))
   (make <DIR> :gen (make-directory-files-generator dir dot?)))
 (define (read-directory dirobj)
   (assume-type dirobj <DIR>)

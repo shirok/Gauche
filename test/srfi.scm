@@ -2676,6 +2676,52 @@
 (use srfi-170)
 (test-module 'srfi-170)
 
+;; srfi-170 is a thin wrapper of Gauche's builtins.  We only test
+;; procedures that are doing something more.
+
+(define-module srfi-170-tests
+  (use srfi-1)
+  (use srfi-170)
+  (use file.util)
+  (use gauche.test)
+  (use gauche.generator)
+  (use gauche.parameter)
+
+  (when (file-exists? "test.o")
+    (if (file-is-directory? "test.o")
+      (remove-directory* "test.o")
+      (sys-unlink "test.o")))
+  (make-directory* "test.o")
+  (touch-files '("test.o/a" "test.o/b" "test.o/c" "test.o/.a"))
+
+  (unwind-protect
+      (begin
+        (test* "directory-files" '("a" "b" "c")
+               (directory-files "test.o")
+               (cut lset= equal? <> <>))
+        (test* "directory-files w/dot" '("a" "b" "c" ".a")
+               (directory-files "test.o" #t)
+               (cut lset= equal? <> <>))
+
+        (test* "make-directory-files-generator"
+               '("a" "b" "c")
+               (generator->list (make-directory-files-generator "test.o"))
+               (cut lset= equal? <> <>))
+        (test* "make-directory-files-generator w/dot"
+               '("a" "b" "c" ".a")
+               (generator->list (make-directory-files-generator "test.o" #t))
+               (cut lset= equal? <> <>))
+
+        (test* "open/read/close-directory"
+               '("a" "b" "c")
+               (let1 d (open-directory "test.o")
+                 (unwind-protect
+                     (generator->list (cut read-directory d))
+                   (close-directory d))))
+        )
+    (remove-directory* "test.o"))
+  )
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-173")
 (use srfi-173)
