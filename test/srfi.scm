@@ -2718,6 +2718,18 @@
                  (unwind-protect
                      (generator->list (cut read-directory d))
                    (close-directory d))))
+
+        (test* "call-with-temporary-filename"
+               #t
+               (let1 ff (call-with-temporary-filename
+                         (^f (let1 z (open-file f (logior open/read+write
+                                                          open/create
+                                                          open/exclusive)
+                                                #o600)
+                               (close-fdes z)
+                               f))
+                         "test.o/")
+                 (boolean (#/^test.o\/\w+/ ff))))
         )
     (remove-directory* "test.o"))
   )
