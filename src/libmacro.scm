@@ -1106,7 +1106,7 @@
                                (cond [(and (pair? s) (pair? (cdr s)) (null? (cddr s)))
                                       (cons (car s) (cadr s))]
                                      [(or (symbol? s) (identifier? s))
-                                      (cons s '(undefined))]
+                                      (cons s `(,(r'undefined)))]
                                      [else (error "malformed let-optionals* bindings:"
                                                   specs)]))
                               (^_ '()) ; ignore last cdr of dotted list
