@@ -3413,13 +3413,15 @@ void Scm__InitClass(void)
 #define CINIT(cl, nam) \
     Scm_InitStaticClassWithMeta(cl, nam, mod, NULL, SCM_FALSE, NULL, 0)
 
-    /* box.c */
-    CINIT(SCM_CLASS_BOX,    "<%box>");
-
-    /* class.c */
+    /* Need to initialize these first */
     BINIT(SCM_CLASS_CLASS,  "<class>", class_slots);
     BINIT(SCM_CLASS_TOP,    "<top>",     NULL);
     BINIT(SCM_CLASS_BOTTOM, "<bottom>",  NULL);
+
+    /* box.c */
+    CINIT(SCM_CLASS_BOX,    "<%box>");
+    
+    /* class.c */
     CINIT(SCM_CLASS_BOOL,   "<boolean>");
     CINIT(SCM_CLASS_CHAR,   "<char>");
     BINIT(SCM_CLASS_EOF_OBJECT,"<eof-object>", NULL);

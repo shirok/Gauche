@@ -64,7 +64,7 @@
  * optimization a lot easier.
  */
 
-/* SRFI-111 defines box API.  Scheme interface is in libmisc.scm. */
+/* SRFI-111 defines box API.  Scheme interface is in libalpha.scm. */
 /* NB: SRFI-111 leave equal? behavior implementation-dependent (except
    it must return #f if eqv? returns #f).  We compare the contents.
  */
@@ -85,7 +85,7 @@ static int box_compare(ScmObj x, ScmObj y, int equalp)
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_BoxClass, box_print, box_compare,
-                         NULL, NULL, NULL);
+                         NULL, NULL, SCM_CLASS_DEFAULT_CPL);
 
 ScmBox *Scm_MakeBox(ScmObj value)
 {
