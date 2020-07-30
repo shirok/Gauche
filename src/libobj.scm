@@ -760,6 +760,17 @@
 (define-method (setter ref) :locked ((obj <tree-map>) key value)
   (tree-map-put! obj key value))
 
+(define-method ref  ((obj <%box>) field) ; srfi-123
+  (unless (eq? field '*)
+    (error "Box content can be accessed with a field name '*, but got:"
+           field))
+  (unbox obj))
+(define-method (setter ref) :locked ((obj <%box>) field value)
+  (unless (eq? field '*)
+    (error "Box content can be accessed with a field name '*, but got:"
+           field))
+  (set-box! obj value))
+
 ;; gauche.sequence has the generic version for <sequence>, but these
 ;; shortcuts would be faster.
 (define-method ref :locked ((obj <list>) (index <integer>))
