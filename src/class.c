@@ -3419,7 +3419,7 @@ void Scm__InitClass(void)
     BINIT(SCM_CLASS_BOTTOM, "<bottom>",  NULL);
 
     /* box.c */
-    CINIT(SCM_CLASS_BOX,    "<%box>");
+    CINIT(SCM_CLASS_BOX,    "<box>");
     
     /* class.c */
     CINIT(SCM_CLASS_BOOL,   "<boolean>");

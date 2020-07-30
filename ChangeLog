@@ -1,5 +1,8 @@
 2020-07-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c (<box>): Rename <%box> to <box>, for there's no reason
+	  to obscure it.
+
 	* src/libobj.scm (ref): Added accessor for a box.  srfi-123.
 
 2020-07-28  Shiro Kawai  <shiro@acm.org>

@@ -760,12 +760,12 @@
 (define-method (setter ref) :locked ((obj <tree-map>) key value)
   (tree-map-put! obj key value))
 
-(define-method ref  ((obj <%box>) field) ; srfi-123
+(define-method ref  ((obj <box>) field) ; srfi-123
   (unless (eq? field '*)
     (error "Box content can be accessed with a field name '*, but got:"
            field))
   (unbox obj))
-(define-method (setter ref) :locked ((obj <%box>) field value)
+(define-method (setter ref) :locked ((obj <box>) field value)
   (unless (eq? field '*)
     (error "Box content can be accessed with a field name '*, but got:"
            field))
