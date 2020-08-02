@@ -670,8 +670,7 @@
 ;;; Consumers
 ;;;
 
-;; NB: The following consumers are in autoloaded lib/gauche/procedure.scm
-;; for historical reasons:
+;; NB: The following consumers are built-in (libproc.scm)
 ;; generator-fold generator-fold-right
 ;; genergenerator-for-each generator-map generator-find 
 
