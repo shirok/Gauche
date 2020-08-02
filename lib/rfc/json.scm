@@ -82,8 +82,8 @@
 
 (define %begin-array     ($seq ($. #\[) %ws))
 (define %begin-object    ($seq ($. #\{) %ws))
-(define %end-array       ($seq ($. #\]) %ws))
-(define %end-object      ($seq ($. #\}) %ws))
+(define %end-array       ($seq ($. #\])))
+(define %end-object      ($seq ($. #\})))
 (define %name-separator  ($seq ($. #\:) %ws))
 (define %value-separator ($seq ($. #\,) %ws))
 
@@ -92,8 +92,7 @@
          ($or ($. "false") ($. "true") ($. "null"))))
 
 (define %value
-  ($lazy
-   ($seq0 ($or %special %object %array %number %string) %ws)))
+  ($lazy ($or %special %object %array %number %string)))
 
 (define ($depth-check parser)
   (^s (let1 d (json-current-nesting-depth)
@@ -107,7 +106,7 @@
   ($depth-check
    ($lift ($ build-array $ rope-finalize $)
           ($between %begin-array 
-                    ($sep-by %value %value-separator)
+                    ($sep-by ($seq0 %value %ws) %value-separator)
                     %end-array))))
 
 (define %number
@@ -174,7 +173,8 @@
   (let1 %member ($let ([k %string]
                        [ %ws ]
                        [ %name-separator ]
-                       [v %value])
+                       [v %value]
+                       [ %ws ])
                   ($return (cons k v)))
     ($depth-check
      ($between %begin-object

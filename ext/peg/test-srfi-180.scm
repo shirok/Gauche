@@ -37,4 +37,15 @@
                          array-start 3 1 2 array-end array-end)
            (parse-with-generator "[ {\"a\": [1,2 ,3],\"b\":456}, null, [ 3, 1, 2]]"))
     )
+
+  (let ([input (open-input-string "123 \"abc\" [1] {} null")])
+    (test* "consecutive call to the generators"
+           '((123) ("abc") (array-start 1 array-end)
+                 (object-start object-end) (null))
+           (let* ([a (generator->list (json-generator input))]
+                  [b (generator->list (json-generator input))]
+                  [c (generator->list (json-generator input))]
+                  [d (generator->list (json-generator input))]
+                  [e (generator->list (json-generator input))])
+             (list a b c d e))))
   )
