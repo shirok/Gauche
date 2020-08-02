@@ -50,7 +50,7 @@
           json-array-handler json-object-handler json-special-handler
           json-nesting-depth-limit
 
-          json-parser make-json-generator
+          json-parser json-tokenizer
           ))
 (select-module rfc.json)
 
@@ -216,105 +216,6 @@
                     :message (~ e'message))])
     (generator->list (peg-parser->generator json-parser port))))
 
-;; stream tokenizer.  
-(define (make-json-generator :optional (port (current-input-port)))
-  (define inner-gen
-    (peg-parser->generator json-tokenizer 
-                           (generator->lseq (cut read-char port))))
-  (define (nexttok)
-    (guard (e ([<parse-error> e]
-               ;; not to expose parser.peg's <parse-error>.
-               (error <json-parse-error>
-                      :position (~ e'position) :objects (~ e'objects)
-                      :message (~ e'message))))
-      (inner-gen)))
-  (define nesting '())
-  (define (push-nesting kind)
-    (when (>= (length nesting) (json-nesting-depth-limit))
-      (error <json-parse-error> "Input JSON nesting is too deep."))
-    (push! nesting (cons kind gen)))
-  (define (pop-nesting kind)
-    (unless (pair? nesting)
-      (errorf <json-parse-error> "Stray close ~a" kind))
-    (unless (eq? (caar nesting) kind)
-      (errorf <json-parse-error> "Unmatched open ~a" (car nesting)))
-    (set! gen (cdr (pop! nesting))))
-  (define (badtok tok)
-    (error <json-parse-error> (format "Invalid token: ~s" tok)))
-
-  ;; Read one value.  array-end and object-end are returned as-is, and the
-  ;; caller should handle it---they can appear in value context input is empty
-  ;; array and empty object.
-  (define (value)
-    (case (nexttok)
-      [(array-start)
-       (push-nesting 'array)
-       (set! gen array-element)
-       'array-start]
-      [(object-start)
-       (push-nesting 'object)
-       (set! gen object-key)
-       'object-start]
-      [(#\: #\,) => badtok]
-      [else => identity]))
-  
-  ;; State machine
-  ;;  Each state is a thunk, set! to variable 'gen'.
-
-  ;; Initial state
-  (define (init)
-    (set! gen fini)
-    (case (value)
-      [(array-end object-end) => badtok]
-      [else => identity]))
-
-  ;; We've already read a whole item.
-  (define (fini) (eof-object))
-
-  ;; Reading an array element.
-  (define (array-element)
-    (set! gen array-element-after)
-    (case (value)
-      [(array-end) (pop-nesting 'array) 'array-end]
-      [(object-end) => badtok]
-      [else => identity]))
-
-  ;; Just read an array element.
-  (define (array-element-after)
-    (case (nexttok)
-      [(#\,) (array-element)]
-      [(array-end) (pop-nesting 'array) 'array-end]
-      [else => badtok]))
-
-  ;; Reading an object key
-  (define (object-key)
-    (let1 t (nexttok)
-      (cond [(string? t) (set! gen object-key-after) t]
-            [(eq? t 'object-end) (pop-nesting 'object) 'object-end]
-            [else (badtok t)])))
-
-  ;; Just read an object key
-  (define (object-key-after)
-    (case (nexttok)
-      [(#\:)
-       (set! gen object-value-after) 
-       (case (value)
-         [(array-end object-end) => badtok]
-         [else => identity])]
-      [else => badtok]))
-
-  ;; Just read an object value
-  (define (object-value-after)
-    (case (nexttok)
-      [(#\,) (object-key)]
-      [(object-end) (pop-nesting 'object) 'object-end]
-      [else => badtok]))
-
-  ;; 'gen' will be set! to the next state handler.
-  (define gen init)
-  ;; Entry point
-  (^[] (gen)))
-                         
 ;;;============================================================
 ;;; Writer
 ;;;
