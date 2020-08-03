@@ -1295,3 +1295,12 @@ Supported by the module @code{srfi-189}.
 
 MaybeとEither: オプショナルなコンテナ型
 モジュール@code{srfi-189}でサポートされます。
+
+
+srfi-193, srfi-193
+()
+
+Command lines
+Supported by the module @code{srfi-193}.
+
+Command lines
