@@ -387,7 +387,7 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
 
         Scm_PutzUnsafe("#\\", -1, port);
         if (ch <= 0x20)       cname = char_names[ch];
-        else if (ch == 0x7f)  cname = "del";
+        else if (ch == 0x7f)  cname = "delete";
         else {
             switch (Scm_CharGeneralCategory(ch)) {
             case SCM_CHAR_CATEGORY_Mn:
