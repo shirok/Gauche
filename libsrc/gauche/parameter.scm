@@ -117,7 +117,7 @@
 
 (define-syntax parameterize
   (syntax-rules ()
-    [(_ () . body) (begin . body)]
+    [(_ () . body) (let () . body)]
     [(_ ((param val)) . body)
      (let ([P param] [V val] [restarted #f])
        (dynamic-wind
@@ -138,7 +138,7 @@
                 (set! S (map (^[p] (p)) P))))
          (^[] (unless restarted
                 (set! S (map (^[p v] (p v)) P V)))
-           . body)
+           (let () . body))
          (^[] (set! restarted #t)
               (set! S (map (^[p v] (%restore-parameter p v)) P S)))))]
     [(_ . x) (syntax-rules "Invalid parameterize form:" (parameterize . x))]))

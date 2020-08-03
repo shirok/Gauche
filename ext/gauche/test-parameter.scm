@@ -208,6 +208,22 @@
              (c (+ (x) 1))
              (reverse a)))))
 
+;; <body> must allow declaration
+;; https://github.com/shirok/Gauche/issues/707
+(test* "Body must allow declarations"
+       '(#t . #t)
+       (let ()
+         (define u (make-parameter #f))
+         (define v (make-parameter #f))
+         (parameterize ((u #t) (v #t))
+           (define x (cons (u) (v)))
+           x)))
+
+(test* "Body must allow declarations"
+       '(4 . 4)
+       (parameterize ()
+         (define x 4)
+         (cons x x)))
 
 ;; Note: ext/threads has extra tests for parameter/thread cooperation.
 
