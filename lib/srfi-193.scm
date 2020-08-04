@@ -11,7 +11,7 @@
 ;; utility
 (define (filename->command-name path)
   (cond-expand
-   [gauche.os.windes
+   [gauche.os.windows
     (regexp-replace #/\.(exe|scm)$/ (sys-basename path) "")]
    [else
     (regexp-replace #/\.scm$/ (sys-basename path) "")]))
