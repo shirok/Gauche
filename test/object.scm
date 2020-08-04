@@ -823,6 +823,31 @@
          (hash-table-delete! xht (make <cmp> :x (vector (cons 'a 'b) 3+3i)))
          (hash-table-get xht (make <cmp> :x (vector (cons 'a 'b) 3+3i)) #f)))
 
+;; Allowing to use user-defined objects in a hashtable with
+;; a comparator with default-hash.
+;; We use eq-/eqv-hash regardless of the compoarator's hash setting
+;; If the equality predicate is eq?/eqv?.  See srfi-125.
+;; Also https://github.com/shirok/Gauche/issues/708
+(define-class <user-defined-hashed> ()
+  ((a :init-keyword :a)))
+
+(let ([eqtab (make-hash-table (make-eq-comparator))]
+      [eqvtab (make-hash-table (make-eqv-comparator))]
+      [x0 (make <user-defined-hashed> :a 1)]
+      [x1 (make <user-defined-hashed> :a 2)])
+  (hash-table-put! eqtab x0 1)
+  (hash-table-put! eqtab x1 2)
+  (hash-table-put! eqvtab x0 3)
+  (hash-table-put! eqvtab x1 4)
+
+  (test* "user-defined object in eq/eqv comparator"
+         '(1 2)
+         (map (cut hash-table-get eqtab <>) (list x0 x1)))
+  (test* "user-defined object in eq/eqv comparator"
+         '(3 4)
+         (map (cut hash-table-get eqvtab <>) (list x0 x1)))
+  )
+
 ;;----------------------------------------------------------------
 (test-section "object-apply protocol")
 

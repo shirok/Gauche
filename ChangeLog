@@ -1,3 +1,12 @@
+2020-08-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm (make-hash-table): If a comparator whose equality
+	  predicate is eq?/eqv?, we use eq-/eqv-hash regardless of comparator's
+	  hash function.  It is permitted by srfi-125, and it allows
+	  objects that doesn't have hash method can still be used
+	  with eq/eqv based hashtables.
+	  https://github.com/shirok/Gauche/issues/708
+
 2020-07-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (<box>): Rename <%box> to <box>, for there's no reason

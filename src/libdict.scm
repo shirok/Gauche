@@ -221,10 +221,18 @@
        (error "make-hash-table requires a comparator or \
                one of the symbols in eq?, eqv?, equal? or string=?, but got:"
               comparator))
+     ;; If comparator's equality predicate is eq?/eqv?, we ignore
+     ;; the its hash function and force using eq-/eqv-hash,
+     ;; as permitted in srfi-125.  It allows object that doesn't have
+     ;; custom hash method can still be used with hashtables based on
+     ;; (make-eq[v]-comparator).
+     ;; https://github.com/shirok/Gauche/issues/708
      (cond
-      [(eq? comparator eq-comparator)
+      [(or (eq? comparator eq-comparator)
+           (eq? (comparator-equality-predicate comparator) eq?))
        (make-hash-table 'eq? init-size)]
-      [(eq? comparator eqv-comparator)
+      [(or (eq? comparator eqv-comparator)
+           (eq? (comparator-equality-predicate comparator) eqv?))
        (make-hash-table 'eqv? init-size)]
       [(eq? comparator equal-comparator)
        (make-hash-table 'equal? init-size)]
