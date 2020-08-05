@@ -48,4 +48,53 @@
                   [d (generator->list (json-generator input))]
                   [e (generator->list (json-generator input))])
              (list a b c d e))))
+
+  (test* "json-read" (eof-object)
+         (call-with-input-string "" json-read))
+
+  (test* "json-read" 12345
+         (call-with-input-string "12345 6789" json-read))
+
+  (test* "json-fold" '#(1 2 3 ((a . 4) (b . 5)) null #t #f ((z . #())))
+         (let ()
+           ;; our json-read doesn't use json-fold, so we roll our own
+           ;; to test json-fold.
+           (define (%json-read port)
+             (define (array-start _) '())
+             (define (array-end items) (reverse-list->vector items))
+             (define (object-start _) '())
+             (define (object-end plis)
+               (map (^[kv] (cons (string->symbol (car kv)) (cadr kv))) 
+                    (slices (reverse plis) 2)))
+             (define (proc obj seed)
+               (if (undefined? seed)
+                 obj
+                 (cons obj seed)))
+             (let1 out (json-fold proc 
+                                  array-start array-end 
+                                  object-start object-end
+                                  (undefined) port)
+               (if (undefined? out)
+                 (eof-object)
+                 out)))
+           (call-with-input-string "[ \n\
+                                    1, \n\
+                                    2, \n\
+                                    3, \n\
+                                    { \"a\" : 4, \n\
+                                      \"b\" : 5 }, \n\
+                                    null, true, false, \n\
+                                    {\"z\":[]} ]"
+             %json-read)))
+
+  (test* "json-read" '#(1 2 3 ((a . 4) (b . 5)) null #t #f ((z . #())))
+         (call-with-input-string "[ \n\
+                                    1, \n\
+                                    2, \n\
+                                    3, \n\
+                                    { \"a\" : 4, \n\
+                                      \"b\" : 5 }, \n\
+                                    null, true, false, \n\
+                                    {\"z\":[]} ]"
+           json-read))
   )

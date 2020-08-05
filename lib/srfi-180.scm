@@ -35,15 +35,15 @@
 
 (define-module srfi-180
   (use gauche.parameter)
-  (use parser.peg)                      ;<parse-error>
+  (use parser.peg)
   (use rfc.json)
   (export json-error? json-error-reason json-null?
 
           json-nesting-depth-limit  ; in rfc.json
           json-number-of-character-limit
 
-          json-generator ;json-fold
-          ;;json-read json-lines-read json-sequence-read
+          json-generator json-fold
+          json-read json-lines-read ; json-sequence-read
           ;;json-accumulator json-write
           ))
 (select-module srfi-180)
@@ -66,22 +66,26 @@
 ;; we use peek-char to keep the last read char in the port, since
 ;; lseq read ahead one character and we don't want that character to
 ;; be missed in the subsequent read from the port.
-(define (port->json-lseq port)
+(define (port/gen->json-lseq port)
   (define nchars 0)
-  (generator->lseq
-   (^[]
-     (unless (= nchars 0) (read-char port))
-     (let1 c (peek-char port)
-       (cond [(eof-object? c) c]
-             [(>= nchars (json-number-of-character-limit))
-              (error <json-parse-error>
-                     "Input length exceeds json-number-of-character-limit")]
-             [else (inc! nchars) c])))))
+  (if (port? port)
+    (generator->lseq
+     (^[]
+       (unless (= nchars 0) (read-char port))
+       (let1 c (peek-char port)
+         (cond [(eof-object? c) c]
+               [(>= nchars (json-number-of-character-limit))
+                (error <json-parse-error>
+                       "Input length exceeds json-number-of-character-limit")]
+               [else (inc! nchars) c]))))
+    (generator->lseq port)))            ;assume it's a char-generator
 
-;; stream tokenizer.  
+;; API: streaming parser
+;; NB: srfi's json-generator doesn't take a char generator, but for
+;; the upper layers, we accept it for the convenience.
 (define (json-generator :optional (port (current-input-port)))
   (define inner-gen
-    (peg-parser->generator json-tokenizer (port->json-lseq port)))
+    (peg-parser->generator json-tokenizer (port/gen->json-lseq port)))
   (define (nexttok)
     (guard (e ([<parse-error> e]
                ;; not to expose parser.peg's <parse-error>.
@@ -178,4 +182,58 @@
   (define gen init)
   ;; Entry point
   (^[] (gen)))
-                         
+
+;; API
+(define (json-fold proc array-start array-end object-start object-end seed
+                   :optional (port-or-generator (current-input-port)))
+  (define gen (json-generator port-or-generator))
+  (define (rec seed stack)
+    (let1 tok (gen)
+      (cond [(eof-object? tok) seed]
+            [(eq? tok 'array-start) (rec (array-start seed) (cons seed stack))]
+            [(eq? tok 'array-end) (rec (proc (array-end seed) (car stack))
+                                    (cdr stack))]
+            [(eq? tok 'object-start) (rec (object-start seed)
+                                       (cons seed stack))]
+            [(eq? tok 'object-end) (rec (proc (object-end seed) (car stack))
+                                     (cdr stack))]
+            [else (rec (proc tok seed) stack)])))
+  (rec seed '()))
+
+;; Common utility to adapt rfc.json with srfi-180 API.  We skip
+;; json-fold/json-generator stuff entirely.
+(define (with-json-parser proc lseq)
+  (parameterize ((json-special-handler (^x (case x
+                                             [(true) #t]
+                                             [(false) #f]
+                                             [else x])))
+                 (json-object-handler (^x (map (^p `(,(string->symbol (car p))
+                                                     . ,(cdr p)))
+                                               x))))
+    (guard (e ([<parse-error> e]
+               ;; not to expose parser.peg's <parse-error>.
+               (error <json-parse-error>
+                      :position (~ e'position) :objects (~ e'objects)
+                      :message (~ e'message))))
+      (proc lseq))))
+  
+;; API
+;; We skip json-fold/json-generator stuff entirely.
+(define (json-read :optional (port-or-generator (current-input-port)))
+  (with-json-parser
+   (^s (values-ref (peg-run-parser json-parser s) 0))
+   (port/gen->json-lseq port-or-generator)))
+
+;; API
+(define (json-lines-read :optional (port-or-generator (current-input-port)))
+  (let1 lseq (port/gen->json-lseq port-or-generator)
+    (^[]
+      (with-json-parser
+       (^s (receive (r next) (peg-run-parser json-parser s)
+             (set! lseq next)
+             r))
+       lseq))))
+
+;; API
+;(define (json-sequence-read :optional (port-or-generator (current-input-port)))
+  
