@@ -168,11 +168,12 @@
       ;; uses eq? or eqv? for the comparison, we can do better (using
       ;; eq-hash or eqv-hash) but with the layer of customiation it is
       ;; quite difficult to know.  So here we are.
-      ;; (This depends on the current salt, so it can't be used as a
-      ;; portable hash.  We assume if you want to hash your object portably
-      ;; you should define object-hash.)
-      (let1 v (* (hash-salt) (eq-hash 57))
-        (logxor (ash v -32) v))))
+      (let1 v (eq-hash 57)  ;Grothendieck prime, for no reason.
+        ;; If we're not computing a portable hash, sprinkle a grain of salt.
+        (if (eq? (%current-recursive-hash) default-hash)
+          (let1 v1 (* (hash-salt) v)
+            (logxor (ash v1 -32) v1))
+          v))))
 
 ;;;
 ;;; Identity - using compiler macro

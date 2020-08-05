@@ -987,6 +987,31 @@ hash values.
   (combine-hash-value (rec-hash (ref a 'x))
                       (rec-hash (abs (ref a 'y)))))
 @end example
+
+@c EN
+Note: The base method of @code{object-hash} hashes any object
+to a single hash value (the actual value depends on @code{hash-salt}
+if @code{object-hash} is called from @code{default-hash},
+and a fixed constant value otherwise.
+It's because object's equality semantics can be customized separately,
+and we can't compute a non-constant hash value without knowing the
+equality semantics.
+
+This behavior is the last ``safety net''; in general, you should define
+@code{object-hash} method on your class if the instances of your class
+can ever be hashed.
+@c JP
+註: @code{object-hash}のベースメソッドは、どんな引数に対しても
+単一の値を返します (具体的な値は、@code{object-hash}が
+@code{default-hash}から呼ばれた場合は@code{hash-salt}に依存します。
+それ以外の場合は固定値です)。
+これは、オブジェクトの等価性が自由に設定できるからで、
+等価性を知らずに意味のあるハッシュ値を計算できないあらです。
+
+この振る舞いは最後の安全ネットと考えるべきで、一般には自分で定義したクラスのインスタンスが
+ハッシュされる可能性があるなら、必ず@code{object-hash}メソッドを定義するように
+してください。
+@c COMMON
 @end deffn
 
 @deffn {Method} object-hash (obj <top>) rec-hash
