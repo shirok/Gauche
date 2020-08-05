@@ -733,8 +733,10 @@
 ;;----------------------------------------------------------------
 (test-section "object hash protocol")
 
-(test* "object-hash" (test-error)
-       (hash (make <cmp> :x (list 1 2))))
+;; Without definining object-hash, it returns a constant value
+(test* "object-hash" #t
+       (eqv? (hash (make <cmp> :x (list 1 2)))
+             (hash (make <cmp> :x (list 1 2)))))
 
 (define-method object-hash ((obj <cmp>))
   (+ (hash (slot-ref obj 'x)) 1))

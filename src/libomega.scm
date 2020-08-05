@@ -160,9 +160,15 @@
 ;; delegate to one-arg in order to maintain the backward compatibility.
 ;; See below for two-arg object-has base method.
 (define-method object-hash (a)
-  (if-let1 c (%choose-comparator-1 a)
-    (comparator-hash c a)
-    (errorf "Object ~s is not hashable" a)))
+  (or (and-let* ([c (%choose-comparator-1 a)]
+                 [ (comparator-hashable? c) ])
+        (comparator-hash c a))
+      ;; default-hash needs to accept arbitrary Scheme object, so object-hash
+      ;; must return something.  If we can know that the user-defined type
+      ;; uses eq? or eqv? for the comparison, we can do better (using
+      ;; eq-hash or eqv-hash) but with the layer of customiation it is
+      ;; quite difficult to know.  So here we are.
+      57))
 
 ;;;
 ;;; Identity - using compiler macro
@@ -214,6 +220,11 @@
 
 (select-module gauche.internal)
 
+;; %call-object-hash is called from equal_hash_common (hash.c) to invoke
+;; object-hash method.  HASH argument is either default-hash or portable-hash,
+;; and salt argument is #f (for default-hash, since it takes salt value from
+;; hash-salt parameter) or an exact integer (for portable-hash).
+;;
 ;; TODO: We may memoize hash&salt pair so that we can avoid
 ;; closure allocation for every recursive call; the memoization also
 ;; benefits bypassing dynamic-wind in object-hash.

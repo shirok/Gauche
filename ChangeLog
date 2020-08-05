@@ -1,3 +1,13 @@
+2020-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libomega.scm (object-hash): Let the base method of object-hash
+	  return a constant value.  We can't make it error if we want
+	  default-hash to accept arbitrary Scheme value, and we can't
+	  compute a non-constant hash value without knowing equality semantics.
+	  We'll encourage users to define object-hash method for user-defined
+	  classes if their instances are ever hashed.
+	  https://github.com/shirok/Gauche/issues/708
+
 2020-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libdict.scm (make-hash-table): If a comparator whose equality
