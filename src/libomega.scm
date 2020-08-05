@@ -168,7 +168,11 @@
       ;; uses eq? or eqv? for the comparison, we can do better (using
       ;; eq-hash or eqv-hash) but with the layer of customiation it is
       ;; quite difficult to know.  So here we are.
-      57))
+      ;; (This depends on the current salt, so it can't be used as a
+      ;; portable hash.  We assume if you want to hash your object portably
+      ;; you should define object-hash.)
+      (let1 v (* (hash-salt) (eq-hash 57))
+        (logxor (ash v -32) v))))
 
 ;;;
 ;;; Identity - using compiler macro
