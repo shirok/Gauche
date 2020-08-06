@@ -36,6 +36,7 @@
 (define-module srfi-180
   (use gauche.parameter)
   (use parser.peg)
+  (use scheme.list)
   (use rfc.json)
   (export json-error? json-error-reason json-null?
 
@@ -43,7 +44,7 @@
           json-number-of-character-limit
 
           json-generator json-fold
-          json-read json-lines-read ; json-sequence-read
+          json-read json-lines-read json-sequence-read
           ;;json-accumulator json-write
           ))
 (select-module srfi-180)
@@ -235,5 +236,25 @@
        lseq))))
 
 ;; API
-;(define (json-sequence-read :optional (port-or-generator (current-input-port)))
-  
+;; <json-sequence> : ( #x1e json-text )*
+;; Skip unparsable json-text.
+(define (json-sequence-read :optional (port-or-generator (current-input-port)))
+  (define (skip-to-rs lseq)
+    (drop-while (^c (not (eqv? c #\x1e))) lseq))
+  (define (skip-rs lseq)
+    (drop-while (^c (eqv? c #\x1e)) lseq))
+  (define (fetch lseq)
+    (let1 start (skip-rs lseq)
+      (if (null? start)
+        (values (eof-object) '())
+        (receive (json next)
+            (guard (e [(<json-parse-error> e) 
+                       (values 'error (skip-to-rs start))])
+              (with-json-parser (cut peg-run-parser json-parser <>) start))
+          (if (eq? json 'error)
+            (fetch next)
+            (values json next))))))
+  (let1 lseq (skip-to-rs (port/gen->json-lseq port-or-generator))
+    (^[] (receive (json next) (fetch lseq)
+           (set! lseq next)
+           json))))

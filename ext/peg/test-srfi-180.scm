@@ -97,4 +97,24 @@
                                     null, true, false, \n\
                                     {\"z\":[]} ]"
            json-read))
+
+  (test* "json-lines-read"
+         '(null 123 #(1 2 3) ((a . 1) (b . ((x . #(2 3))))))
+         (generator->list
+          (call-with-input-string "null\n\
+                                  123\n\
+                                  [1, 2, 3]\n\
+                                  {\"a\":1, \"b\": {\"x\": [2, 3]}}"
+            json-lines-read)))
+
+  (test* "json-sequence-read"
+         '(123 #(1 2 3) #t ((a . 1) (b . ((x . #(2 3))))))
+         (generator->list
+          (call-with-input-string "null\n\x1e;\
+                                  123 \x1e;\x1e;\
+                                  [1, 2, 3]\n\
+                                  true \x1e;\
+                                  [true, \x1e;\
+                                  {\"a\":1, \"b\": {\"x\": [2, 3]}}"
+            json-sequence-read)))
   )
