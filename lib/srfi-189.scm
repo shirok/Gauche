@@ -71,12 +71,20 @@
 (select-module srfi-189)
 
 (define-class <maybe> () ())
+(define-method initialize ((obj <maybe>) initargs)
+  (when (eq? (class-of obj) <maybe>)
+    (error "You can't instantiate <maybe> directly."))
+  (next-method))
 
 (define-class <just> (<maybe>)
   ((objs :init-keyword :objs)))
 (define-class <nothing> (<maybe>) ())
 
 (define-class <either> () ())
+(define-method initialize ((obj <either>) initargs)
+  (when (eq? (class-of obj) <either>)
+    (error "You can't instantiate <either> directly."))
+  (next-method))
 
 (define-class <right> (<either>)
   ((objs :init-keyword :objs)))
