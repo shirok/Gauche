@@ -7405,12 +7405,31 @@ as its payload.
 @deftpx {Class} <just>
 @deftpx {Class} <nothing>
 @c MOD srfi-189
+Maybe classes.  @code{<just>} and @code{<nothing>} are subclasses of
+@code{<maybe>}.  An instance of @code{<just>} carries zero or more
+values (payload), while an instance of @code{<nothing>} doesn't carry
+information.
+
+The @code{<maybe>} class is an abstract class and can't
+create an instance of its own.
+Instances of @code{<just>} and @code{<nothing>} should be created with
+constructor procedures @code{just} and @code{nothing}.
 @end deftp
 
 @deftp {Class} <either>
 @deftpx {Class} <right>
 @deftpx {Class} <left>
 @c MOD srfi-189
+Either classes.  @code{<right>} and @code{<left>} are subclasses of
+@code{<either>}.  An instance of either class carry zero or more
+values (payload); it is customary to use @code{<right>} to propagate
+the legitimate results of compuation, while use @code{<left>} to
+propagate erroneous conditions whose payload describes what's wrong.
+
+The @code{<either>} class is an abstract class and can't
+create an instance of its own.
+Instances of @code{<right>} and @code{<left>} should be created with
+constructor procedures @code{right} and @code{left}.
 @end deftp
 
 @defun maybe? obj
@@ -7418,6 +7437,9 @@ as its payload.
 @defunx nothing? obj
 @c MOD srfi-189
 [SRFI-189]
+Type predicates.
+Returns @code{#t} iff @var{obj} is a Maybe, a Just, or a Nothing,
+respectively.
 @end defun
 
 @defun either? obj
@@ -7425,16 +7447,28 @@ as its payload.
 @defunx left? obj
 @c MOD srfi-189
 [SRFI-189]
+Type predicates.
+Returns @code{#t} iff @var{obj} is a Either, a Right, or a Left,
+respectively.
 @end defun
 
 @defun maybe= elt= maybe1 maybe @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Equality predicate of Maybes.  It returns @code{#t} iff
+all of @var{maybe1} @var{maybe} @dots{} are Nothings,
+or Justs with their respective payload objects are the same
+using @var{elt=}.
 @end defun
 
 @defun either= elt= either1 either @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Equality predicate of Eithers.  It returns @code{#t} iff
+all of @var{either11} @var{either} @dots{} are the same
+types (all Rights, or all Lefts), with
+respective payload objects are the same
+using @var{elt=}.
 @end defun
 
 @node Maybe and Either constructors, Maybe and Either accessors, Maybe and Either types and predicates, Maybe and Either optional container types
@@ -7443,17 +7477,21 @@ as its payload.
 @defun just obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Returns a Just with @var{obj} @dots{} as its payload.
 @end defun
 
 @defun nothing
 @c MOD srfi-189
 [SRFI-189]
+Returns a Nothing.
 @end defun
 
 @defun right obj @dots{}
 @defunx left obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Returns a Right or a Left respectively, with @var{obj} @dots{}
+as its payload.
 @end defun
 
 @defun list->just objs
@@ -7461,21 +7499,32 @@ as its payload.
 @defunx list->left objs
 @c MOD srfi-189
 [SRFI-189]
+Returns a Just, Right or Left respectively, with
+@var{objs} as its payload.
 @end defun
 
 @defun maybe->either maybe obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+The @var{maybe} argument must be a Maybe.
+If it is a Just, then a Right with the same payload is returned.
+If it is a Nothing, a Left with @var{obj} @dots{} as its payload.
 @end defun
 
 @defun either->maybe either
 @c MOD srfi-189
 [SRFI-189]
+The @var{either} argument must be an Either.
+If it is a Right, then a Just with the same payload is returned.
+If it is a Left, a Nothing is returned.
 @end defun
 
 @defun either-swap either
 @c MOD srfi-189
 [SRFI-189]
+The @var{either} argument must be an Either.
+If it is a Right, a Left with the same payload argument is returned.
+If it is a Left, a Right with the same payload argument is returned.
 @end defun
 
 @node Maybe and Either accessors, Maybe and Either sequence operations, Maybe and Either constructors, Maybe and Either optional container types
