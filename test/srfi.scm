@@ -2795,6 +2795,9 @@
   (include "include/srfi-175-tests"))
 
 ;;-----------------------------------------------------------------------
+;; NB: srfi-180 depends on ext/peg, so it is tested in it.
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-185")
 ;; NB: srfi-185 conflicts with srfi-118, so we import it in a separate module.
 

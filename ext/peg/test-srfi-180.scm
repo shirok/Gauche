@@ -117,4 +117,35 @@
                                   [true, \x1e;\
                                   {\"a\":1, \"b\": {\"x\": [2, 3]}}"
             json-sequence-read)))
+
+  (test* "json-accumulator"
+         "[1,\"abc\",{xyz:{},pqr:null},true,false,[]]"
+         (call-with-output-string
+           (^p (let1 a (json-accumulator p)
+                 (a 'array-start)
+                 (a 1)
+                 (a "abc")
+                 (a 'object-start)
+                 (a "xyz")
+                 (a 'object-start)
+                 (a 'object-end)
+                 (a "pqr")
+                 (a 'null)
+                 (a 'object-end)
+                 (a #t)
+                 (a #f)
+                 (a 'array-start)
+                 (a 'array-end)
+                 (a 'array-end)
+                 (a (eof-object))))))
+
+  (test* "json-write"
+         "{\"a\":3,\"b\":[1,2,3],\"c\":{},\"d\":[true,false,null],\"e\":[]}"
+         (call-with-output-string 
+           (cut json-write '((a . 3)
+                             (b . #(1 2 3))
+                             (c . ())
+                             (d . #(#t #f null))
+                             (e . #()))
+                <>)))
   )

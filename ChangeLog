@@ -1,5 +1,7 @@
 2020-08-08  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-180.scm: Finishing support of srfi-180.
+
 	* lib/rfc/json.scm (construct-json): rfc7159 loosened the restriction
 	  of rfc4627 that the toplevel object must be an array or an object.
 	  Updated the code to allow that.

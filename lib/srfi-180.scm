@@ -35,6 +35,7 @@
 
 (define-module srfi-180
   (use gauche.parameter)
+  (use gauche.vport)
   (use parser.peg)
   (use scheme.list)
   (use rfc.json)
@@ -45,7 +46,7 @@
 
           json-generator json-fold
           json-read json-lines-read json-sequence-read
-          ;;json-accumulator json-write
+          json-accumulator json-write
           ))
 (select-module srfi-180)
 
@@ -258,3 +259,81 @@
     (^[] (receive (json next) (fetch lseq)
            (set! lseq next)
            json))))
+
+;; API
+(define (json-accumulator port-or-accumulator)
+  (define acc (if (port? port-or-accumulator)
+                (^o (if (string? o)
+                      (write-string o port-or-accumulator)
+                      (write-char o port-or-accumulator)))
+                port-or-accumulator))
+  (define (err-input obj)
+    (error <json-construct-error>
+           :message (format "Unexpected token ~a as json-accumulator input" 
+                            obj)))
+  (define stack '()) ; (kind . #<proc>)
+
+  (define (push-state!) (push! stack gen))
+  (define (pop-state! tok)
+    (when (null? stack) (err-input tok))
+    (set! gen (pop! stack)))
+
+  (define (value obj)
+    (cond
+     [(eof-object? obj)]
+     [(eq? obj 'array-start) (acc #\[) (push-state!) (set! gen a0)]
+     [(eq? obj 'object-start) (acc #\{) (push-state!) (set! gen k0)]
+     [(or (eq? obj 'null) (boolean? obj)
+          (string? obj) (number? obj))
+      (acc (construct-json-string obj))]
+     [else (err-input obj)]))
+
+  (define (init obj)
+    (set! gen fini)
+    (value obj))
+
+  (define (fini obj)
+    (unless (eof-object? obj)
+      (error <json-construct-error>
+             :message "json-accumulator no longer accepting events.")))
+
+  ;; initial element of array
+  (define (a0 obj)
+    (if (eq? obj 'array-end)
+      (begin (acc #\]) (pop-state! obj))
+      (begin (set! gen a1) (value obj))))
+
+  ;; subsequent element of array
+  (define (a1 obj)
+    (if (eq? obj 'array-end)
+      (begin (acc #\]) (pop-state! obj))
+      (begin (acc #\,) (value obj))))
+
+  ;; initial key of object
+  (define (k0 obj)
+    (cond
+     [(eq? obj 'object-end) (acc #\}) (pop-state! obj)]
+     [(string? obj) (acc obj) (set! gen v)]
+     [else (err-input obj)]))
+
+  ;; value of object
+  (define (v obj)
+    (set! gen k1)
+    (acc #\:)
+    (value obj))
+
+  ;; subsequent key of object
+  (define (k1 obj)
+    (cond
+     [(eq? obj 'object-end) (acc #\}) (pop-state! obj)]
+     [(string? obj) (acc #\,) (acc obj) (set! gen v)]
+     [else (err-input obj)]))
+
+  (define gen init)
+  (^[obj] (gen obj)))
+
+;; API
+(define (json-write obj :optional (port-or-accumulator (current-output-port)))
+  (construct-json obj (if (port? port-or-accumulator)
+                        port-or-accumulator
+                        (open-output-accumulator port-or-accumulator))))
