@@ -1,5 +1,9 @@
 2020-08-08  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/json.scm (construct-json): rfc7159 loosened the restriction
+	  of rfc4627 that the toplevel object must be an array or an object.
+	  Updated the code to allow that.
+
 	* ext/vport/vport.scm (open-output-accumulator): Added procedures
 	  to convert accumulators to an output port.
 

@@ -1013,7 +1013,7 @@
   (define (t obj)
     (test* #"writer error ~obj" (test-error <json-construct-error>)
            (construct-json-string obj)))
-  (t "a")
+  (t 'a)
   (t '#(1 2 x))
   (t '(("a" . 2) 9)))
 

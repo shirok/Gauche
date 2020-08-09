@@ -15370,9 +15370,6 @@ Creates JSON representation of Scheme object @var{obj}.
 @code{construct-json} writes out the result to @var{output-port},
 whose default is the current output port.  @code{construct-json-string}
 returns the result in a string.
-Note that RFC4627 defines JSON text to be an object or an array;
-so @var{obj} must be a Scheme object that can be mapped to
-either a JSON object or a JSON array.
 
 If @var{obj} contains a Scheme object that cannot be mapped
 to JSON representation, a @code{<json-construct-error>} condition
@@ -15383,9 +15380,6 @@ Scheme objects are mapped to JSON as follows:
 Schemeオブジェクト@var{obj}のJSON表現を作ります。
 @code{construct-json}は結果を@var{output-port}に書き出します。デフォルトは
 current-output-portです。@code{construct-json-string}は結果を文字列で返します。
-RFC4627はJSONテキストはobjectかarrayであると定めているので、
-@var{obj}はJSONオブジェクトかJSON配列へと変換できるSchemeオブジェクト
-でなければなりません。
 
 @var{obj}がJSONにマップできないオブジェクトを含んでいた場合は
 @code{<json-construct-error>}コンディションが投げられます。

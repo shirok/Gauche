@@ -284,12 +284,7 @@
 
 (define (construct-json x :optional (oport (current-output-port)))
   (with-output-to-port oport
-    (^()
-      (cond [(or (list? x) (is-a? x <dictionary>)) (print-object x)]
-            [(and (is-a? x <sequence>) (not (string? x))) (print-array x)]
-            [else (error <json-construct-error> :object x
-                         "construct-json expects a list or a vector, \
-                          but got" x)]))))
+    (^() (print-value x))))
 
 (define (construct-json-string x)
   (call-with-output-string (cut construct-json x <>)))
