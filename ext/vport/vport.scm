@@ -46,6 +46,8 @@
           open-input-char-list open-input-byte-list get-remaining-input-list
           open-input-char-generator open-input-byte-generator
           get-remaining-input-generator
+          open-output-char-accumulator open-output-byte-accumulator
+          open-output-accumulator
           ))
 (select-module gauche.vport)
 
@@ -276,3 +278,25 @@
     eof-object))
 
 (define (%gprepend lis gen) (gunfold null? car cdr lis (^_ gen)))
+
+;;=======================================================
+;; A port write to accumulator
+;;
+
+(define (open-output-char-accumulator acc)
+  (define (putc c) (acc c))
+  (define (puts s) (string-for-each acc s))
+  (define (close) (acc (eof-object)))
+  (make <virtual-output-port> :putc putc :puts puts :close close))
+
+(define (open-output-byte-accumulator acc)
+  (define (putb b) (acc b))
+  (define (close) (acc (eof-object)))
+  (make <virtual-output-port> :putb putb :close close))
+
+(define (open-output-accumulator acc)
+  (define (putb b) (acc b))
+  (define (putc c) (acc c))
+  (define (puts s) (acc s))
+  (define (close) (acc (eof-object)))
+  (make <virtual-output-port> :putb putb :putc putc :puts puts :close close))

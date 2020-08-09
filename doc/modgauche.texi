@@ -26652,6 +26652,77 @@ input list ports.
 @end defun
 
 @c EN
+@subsubheading Accumulator ports
+@c JP
+@subsubheading アキュムレータポート
+@c COMMON
+
+@c EN
+Accumulators are dual to generators; it's a procedure that accepts a value
+at a time, and the end of the value is indicated by EOF.
+@xref{R7RS generators}, for the basic operations of accumulators.
+
+The following procedures turns an accumulator that accepts characters
+or octets into an output port.
+@c JP
+アキュムレータはジェネレータの双対です。値を一回にひとつづつ受け取る手続きで、
+値の末端はEOFで示されます。
+アキュムレータの操作については@ref{R7RS generators}を参照してください。
+
+以下の手続きは、文字またはバイトを受け取るアキュムレータを出力ポートに変換します。
+@c COMMON
+
+@defun open-output-char-accumulator acc
+@c MOD gauche.vport
+@c EN
+Returns an output port that sends the output characters to an
+accumulator @code{acc}, which takes a character as the argument.
+When the returned output port is closed, EOF is passed to @var{acc}.
+
+Note: The behavior is undefined if you try to perform binary output
+to the returned output port.
+@c JP
+@var{acc}は文字を受け取るアキュムレータです。
+出力される文字を@var{acc}に送る出力ポートを返します。
+出力ポートがクローズされると、@var{acc}にEOFが渡されます。
+
+註: 返される出力ポートにバイナリ出力を行った場合の動作は未定義です。
+@c COMMON
+@end defun
+
+@defun open-output-char-accumulator acc
+@c MOD gauche.vport
+@c EN
+Returns an output port that sends the output bytes to an
+accumulator @code{acc}, which takes a byte as the argument.
+When the returned output port is closed, EOF is passed to @var{acc}.
+
+A character sent to the output port is converted to octets in
+the Gauche's native encoding.
+@c JP
+@var{acc}はバイト(オクテット)を受け取るアキュムレータです。
+出力されるバイトを@var{acc}に送る出力ポートを返します。
+出力ポートがクローズされると、@var{acc}にEOFが渡されます。
+
+文字が出力された場合は、Gaucheの内部エンコーディングにしたがってオクテット列に
+変換されて@var{acc}に送られます。
+@c COMMON
+@end defun
+
+@defun open-output-accumulator acc
+@c MOD gauche.vport
+@c EN
+The accumulator @var{acc} must accept a byte, a character or a string.
+Returns an output port that sends the output data to the @var{acc}.
+When the returned output port is closed, EOF is passed to @var{acc}.
+@c JP
+@var{acc}はバイト(オクテット)、文字、文字列を受け取るアキュムレータです。
+出力データを@var{acc}に送る出力ポートを返します。
+出力ポートがクローズされると、@var{acc}にEOFが渡されます。
+@c COMMON
+@end defun
+
+@c EN
 @subsubheading Note on finalization
 @c JP
 @subsubheading ファイナライズに関する注意

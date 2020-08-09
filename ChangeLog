@@ -1,3 +1,8 @@
+2020-08-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport/vport.scm (open-output-accumulator): Added procedures
+	  to convert accumulators to an output port.
+
 2020-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/libomega.scm (object-hash): Let the base method of object-hash

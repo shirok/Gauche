@@ -517,4 +517,25 @@
                       (^p (generator->list
                            (get-remaining-input-generator p))))
 
+;;-----------------------------------------------------------
+(test-section "output-accumulator-port")
+
+(let ([data '()]
+      [finished #f])
+  (define (acc x)
+    (if (eof-object? x)
+      (begin (set! finished (reverse-list->string data))
+             (set! data '()))
+      (push! data x)))
+
+  (define accout (open-output-char-accumulator acc))
+
+  (test* "output char accumulator" "abcdef"
+         (begin
+           (write-char #\a accout)
+           (write 'bcd accout)
+           (display "ef" accout)
+           (close-output-port accout)
+           finished)))
+
 (test-end)
