@@ -1275,6 +1275,20 @@ The @code{version-alist} procedure is built-in.
 @code{version-alist}手続きは組み込みです。
 
 
+srfi-180, srfi-180
+()
+
+JSON
+Supported by the module @code{srfi-180}.
+Note that Gauche also has @code{rfc.json},
+and @code{srfi-180} is implemented on top of it.
+
+JSON
+モジュール@code{srfi-180}でサポートされます。
+Gaucheには@code{rfc.json}もあって、@code{srfi-180}は
+@code{rfc.json}の上に実装されています。
+
+
 srfi-185, srfi-185
 ()
 
