@@ -15197,16 +15197,36 @@ The input position, counted in characters, where the error occurred.
 @end defivar
 @end deftp
 
+@deffn {Parameter} json-nesting-depth-limit
+[SRFI-180]
+@c MOD rfc.json
+@c EN
+Its value must be a real number, specifying the maximum nesting depth
+of JSON text that can be parsed by @code{parse-json}.  If the input
+exceeds the value, an @code{<json-parse-error>} is thrown.
+The default value is @code{+inf.0}.
+@c JP
+このパラメータの値は実数でなければなりません。
+@code{parse-json}がパーズするJSONテキストに許される最大のネストの深さを指定します。
+入力のネスト深さがこのパラメータの値を越えた場合、@code{<json-parse-error>}が
+投げられます。
+デフォルトは@code{+inf.0}です。
+@c COMMON
+@end deffn
+
+
 @defun parse-json :optional input-port
 @c MOD rfc.json
 @c EN
 Reads and parses the JSON representation from @var{input-port} (default is
 the current input port), and returns the result in an S-expression.
-May raise a @code{<json-parse-error>} condition when parse error occurs.
+May raise a @code{<json-parse-error>} condition when parse error occurs,
+or the nesting level exceeds the value of @code{json-nesting-depth-limit}.
 @c JP
 JSON表記を@var{input-port} (省略された場合はcurrent-input-port)から
 読み込みパーズして、結果をS式で返します。
-パーズエラーが起きた場合は@code{<json-parse-error>}コンディションを投げます。
+パーズエラーが起きたり、ネストレベルが@code{json-nesting-depth-limit}の
+値を超過した場合は@code{<json-parse-error>}コンディションを投げます。
 @c COMMON
 
 @c EN

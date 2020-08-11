@@ -59,8 +59,9 @@ srfi N is supported by Gauche.)
 * Hooks (srfi)::                srfi-173
 * POSIX timespecs::             srfi-174
 * ASCII character library::     srfi-175
+* JSON::                        srfi-180
 * Linear adjustable-lenght strings::  srfi-185
-* Maybe and Either optional container types:: srfi-189
+* Maybe and Either optional container types::  srfi-189
 @end menu
 
 
@@ -6733,7 +6734,7 @@ affected by the current hash salt value (@pxref{Hashing}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node ASCII character library, Linear adjustable-lenght strings, POSIX timespecs, Library modules - SRFIs
+@node ASCII character library, JSON, POSIX timespecs, Library modules - SRFIs
 @section @code{srfi-175} - ASCII character library
 @c NODE ASCII文字ライブラリ, @code{srfi-175} - ASCII文字ライブラリ
 
@@ -7209,7 +7210,154 @@ See also @code{digit->integer} (@pxref{Characters}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Linear adjustable-lenght strings, Maybe and Either optional container types, ASCII character library, Library modules - SRFIs
+@node JSON, Linear adjustable-lenght strings, ASCII character library, Library modules - SRFIs
+@section @code{srfi-180} - JSON
+
+@deftp {Module} srfi-180
+@mdindex srfi-180
+This srfi defines the means of parsing and constructin JSON.
+
+In Gauche, this module is implemented on top of @code{rfc.json} module
+(@pxref{JSON parsing and construction}).
+Notably, the parameter @code{json-nesting-depth-limit} is the same
+as the one in @code{rfc.json}.
+
+Gauche's @code{rfc.json} is more flexible in terms of mapping
+JSON objects to Scheme objects.  On the other hand, @code{srfi-180}
+provides a streaming parser/generator, which allows the caller
+to process input as it is read, instead of waiting the entire
+input to be parsed.
+@end deftp
+
+@subheading Predicates and parameters
+
+@defun json-error? obj
+[SRFI-180]
+@c MOD srfi-180
+JSON reader and writer raise a condition that satisfies
+this predicate when it encounters invalid JSON syntax and/or object,
+or the input exceeds the limits specified by
+@code{json-nesting-depth-limit} or
+@code{json-number-of-character-limit} parameters.
+
+Since @code{srfi-180} is implemented on top of @code{rfc.json},
+which raises a condition @code{<json-parse-error>} for input and
+@code{<json-construct-error>} for the output, this predicate simply
+returns @code{#t} iff @var{obj} is an instance of either class.
+@xref{JSON parsing and construction}, for the detail of these conditions.
+@end defun
+
+@defun json-error-reason err
+[SRFI-180]
+@c MOD srfi-180
+Returns a string explaining the reasonfor the error @var{err},
+if @var{err} is a JSON error object (an object that satisfies
+@code{json-error?}).
+
+In Gauche, a JSON error object is an instance of either
+@code{<json-parse-error>} or @code{<json-construct-error>})
+conditions, and @code{json-error-reason} simply returns the content of
+its @code{message} slot.
+@end defun
+
+@defun json-null? obj
+[SRFI-180]
+@c MOD srfi-180
+Returns @code{#t} iff @var{obj} is the symbol @code{null}.
+@end defun
+
+@deffn {Parameter} json-number-of-character-limit
+[SRFI-180]
+@c MOD srfi-180
+A parameter that holds a real value.  If the number of characters
+of input JSON text exceeds the value while @code{json-generator},
+@code{json-fold} or @code{json-read} is processing the input,
+a JSON error is thrown.
+@end deffn
+
+@subheading JSON reader
+
+@defun json-generator :optional port-or-generator
+[SRFI-180]
+@c MOD srfi-180
+Streaming parser.  The input @var{port-or-generator} must be
+an input port, or a char generator.
+
+Each time it is called, it returns one of the following values, parsed
+from the input.
+
+@table @asis
+@item string
+JSON string.
+@item real number
+JSON number.
+@item @code{#t}, @code{#f}
+JSON @code{true} and @code{false}
+@item @code{null}
+JSON @code{null}
+@item @code{array-start}
+The beginning of an array.  What follows is the array's element,
+up to the matching @code{array-end}.
+@item @code{array-end}
+The ending of an array.
+@item @code{object-start}
+The beginning of an object.  What follows is alternating
+string keys and JSON values, up to the matching @code{object-end}.
+@item EOF
+After one top-level JSON value is read, the generator returns EOF.
+@end table
+
+The generator internally tracks the state, and raises
+@code{<json-parse-error>} when the input contains invalid JSON text.
+See also @code{json-error?} above.
+
+If the input contains more than one toplevel JSON value, you have to
+call @code{json-generator} after the previous generator is exhausted.
+
+Note that if a toplevel JSON value is a number, @code{true}, @code{false}
+or @code{null}, the parser need to read one character ahead to recognize
+the value.  So the subsequent call of @code{json-generator} won't read
+a character immediately following those values.
+
+Generally, multiple toplevel values uses delimiters for each values
+so it won't be an issue.  See @code{json-lines-read} and
+@code{json-sequence-read} below.
+@end defun
+
+@defun json-fold proc array-start array-end object-start object-end seed :optional port-or-generator
+[SRFI-180]
+@c MOD srfi-180
+@end defun
+
+@defun json-read :optional port-or-generator
+[SRFI-180]
+@c MOD srfi-180
+@end defun
+
+@defun json-lines-read :optional port-or-generator
+[SRFI-180]
+@c MOD srfi-180
+@end defun
+
+@defun json-sequence-read :optional port-or-generator
+[SRFI-180]
+@c MOD srfi-180
+@end defun
+
+@subheading JSON writer
+
+@defun json-accumulator port-or-accumlator
+[SRFI-180]
+@c MOD srfi-180
+@end defun
+
+@defun json-write obj :optional port-or-accumulator
+[SRFI-180]
+@c MOD srfi-180
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Linear adjustable-lenght strings, Maybe and Either optional container types, JSON, Library modules - SRFIs
 @section @code{srfi-185} - Linear adjustable-lenght strings
 @c NODE 線形更新な可変長文字列, @code{srfi-185} - 線形更新な可変長文字列
 

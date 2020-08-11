@@ -1279,12 +1279,12 @@ srfi-180, srfi-180
 ()
 
 JSON
-Supported by the module @code{srfi-180}.
+Supported by the module @code{srfi-180} (@pxref{JSON}).
 Note that Gauche also has @code{rfc.json},
 and @code{srfi-180} is implemented on top of it.
 
 JSON
-モジュール@code{srfi-180}でサポートされます。
+モジュール@code{srfi-180}でサポートされます (@ref{JSON}参照)。
 Gaucheには@code{rfc.json}もあって、@code{srfi-180}は
 @code{rfc.json}の上に実装されています。
 
