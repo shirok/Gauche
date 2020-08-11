@@ -102,27 +102,11 @@
 ;; lists and vectors.  We want to pass down the controls (for
 ;; print-base etc.), but the system's writer directly recurse into
 ;; %pretty-print if print-pretty is true, causing infinite loop.
-;; So we drop pretty-print.  It is, however, 
+;; So we drop pretty-print.
 (define (rec-writer c)
   (let ([w  (~ c'writer)]
         [c2 (write-controls-copy (~ c'controls) :pretty #f)])
     (^x (w x c2))))
-
-;; scan obj to find out shared structure and mark it in rp-shared.
-(define (scan-shared! obj level len c)
-  (define dict (rp-shared c))
-  (define counter 0)
-  (let rec ([obj obj] [level level] [len len])
-    (unless (or (>* level (rp-level c))
-                (>* len (rp-length c))
-                (simple-obj? obj))
-      (hash-table-update! dict obj (cut + <> 1) 0)
-      (cond [(pair? obj)
-             (rec (car obj) (+ level 1) 0)
-             (rec (cdr obj) level (+ len 1))]
-            [(vector? obj)
-             (dotimes [i (min* (vector-length obj) (rp-level c))]
-               (rec (vector-ref obj i) (+ level 1) 0))]))))
 
 (define (need-label? obj c) (> (hash-table-get (rp-shared c) obj 0) 1))
 (define (has-label? obj c) (<= (hash-table-get (rp-shared c) obj 1) 0))
@@ -326,13 +310,12 @@
            [(s . es)  (render s ind port) (loop es)])))]
     [else (display stree port)]))
 
-;; Stitch together
+;; Stitch together.  This is called from Scm_Write() family.
 (define-in-module gauche (%pretty-print obj port shared-table controls)
+  (assume shared-table)
   (let1 context (make <pp-context>
                   :controls controls
-                  :shared (or shared-table (make-hash-table 'eq?)))
-    (unless shared-table
-      (scan-shared! obj 0 0 context))
+                  :shared shared-table)
     (let* ([layouter (layout obj 0 context)]
            [memo (make-memo-hash)]
            [fstree (car (layouter (rp-width context) memo))])
