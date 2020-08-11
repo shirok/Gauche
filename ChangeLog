@@ -1,3 +1,9 @@
+2020-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm (layout-misc): Fix circular structure printing
+	  in case when the cycle begins in the middle of a list.
+	  https://github.com/shirok/Gauche/issues/713
+
 2020-08-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-180.scm: Finishing support of srfi-180.

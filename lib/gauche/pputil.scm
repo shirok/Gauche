@@ -207,9 +207,11 @@
          (if (>=* len (rp-length c))
            (reverse `(,dots ,@rs))
            (let1 r (fn l)
-             (if (has-label? lis c)
-               (reverse `(,(layout-ref lis c) ,dot ,r ,@rs))
-               (loop lis (+ len 1) (cons r rs)))))]
+             (cond [(has-label? lis c)
+                    (reverse `(,(layout-ref lis c) ,dot ,r ,@rs))]
+                   [(need-label? lis c)
+                    (reverse `(,(fn lis) ,dot ,r ,@rs))]
+                   [else (loop lis (+ len 1) (cons r rs))])))]
         [x (reverse `(,(fn x) ,dot ,@rs))])))
 
   (cond [(pair? obj)

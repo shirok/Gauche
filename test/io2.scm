@@ -690,6 +690,9 @@
 (test* "label (issue #484)" "#0=(a #1=(b #0# #1#))\n"
        (call-with-output-string
          (cut pprint '#0=(a #1=(b #0# #1#)) :port <>)))
+(test* "label (issue #713)" "#0=(1 . #1=((2 . #1#) 3 . #0#))\n"
+       (call-with-output-string
+         (cut pprint '#0=(1 . #1=((2 . #1#) 3 . #0#)) :port <>)))
 
 (test* "shorthand notation" "('a `b ,c ,@d `(e ,f 'g ,@h))\n"
        (call-with-output-string
