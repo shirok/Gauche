@@ -4257,7 +4257,8 @@ must either (1) allocate and return a larger vector/uvector of the same
 type of the passed backing storage, (2) return a symbol @code{error},
 or (3) return a symbol @code{overwrite}.  If it returns a vector/uvector,
 it will be used as the new backing storage.  The returned vector doesn't need
-to be initialized; the ring buffer routine takes care of it.
+to be initialized; the ring buffer routine takes care of copying the
+necessary data.
 If it returns @code{error},
 an error (``buffer is full'') is thrown.  If it returns @code{overwrite},
 the new element overwrites the existing element (as if one element
@@ -4282,7 +4283,7 @@ from the other end is popped and discarded.)
 @c EN
 Passing a symbol @code{error} or @code{overwrite} to @var{overflow-handler}
 is a shorthand of passing a procedure that unconditionally returns
-@var{error} or @code{overwrite}, respectively.
+@code{error} or @code{overwrite}, respectively.
 @c JP
 @var{overflow-handler}引数にシンボル@code{error}か@code{overwrite}
 を渡した場合は、あたかもそれらのシンボルを無条件に返すoverflow handlerが
@@ -4484,7 +4485,7 @@ An error is signaled if the index is out of bounds.
 This module implements skew binary random-access list (we call it skew-list
 for short).  It's an immutable
 data structure that has properties of both list and vector; constant
-time to take the first element (car) and append an eleemnt in front
+time to take the first element (car) and append an element in front
 of existing one (cons), O(log n) to take the rest of
 the elements (cdr), and O(log n) for indexed access, wher n is
 the number of elements.
