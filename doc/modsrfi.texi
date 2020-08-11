@@ -7303,6 +7303,8 @@ The ending of an array.
 @item @code{object-start}
 The beginning of an object.  What follows is alternating
 string keys and JSON values, up to the matching @code{object-end}.
+@item @code{object-end}
+The ending of an object.
 @item EOF
 After one top-level JSON value is read, the generator returns EOF.
 @end table
@@ -7327,21 +7329,102 @@ so it won't be an issue.  See @code{json-lines-read} and
 @defun json-fold proc array-start array-end object-start object-end seed :optional port-or-generator
 [SRFI-180]
 @c MOD srfi-180
+A procedure to translate JSON pasring result to Scheme object on the fly.
+
+The @var{port-or-generator} argument is either an input port,
+or a char generator, defaulted to the current input port.
+It is first passed to @code{json-generator} to
+get a generator of parser events.  Then, @code{json-fold} retrieves
+value from the generator and take one of the following actions:
+
+@itemize
+@item
+If it generates a string, a number, a boolean or @code{null},
+calls @code{(proc obj seed)} where @var{obj} is the generated value
+and @var{seed} is the current seed value, and make the result a new seed value.
+@item
+If it generates @code{array-start}, save the current seed, calls
+@code{(array-start seed)} and make the result a new seed value.
+@item
+If it generates @code{array-end}, calls @code{(array-end seed)}, let
+the result be @var{arr}, recover the seed value saved
+at the corresponding @code{array-start}, and calls
+@code{(proc arr recovered-seed)}.  Let the result a new seed value.
+@item
+If it generates @code{object-start}, save the current seed, calls
+@code{(object-start seed)} and make the result a new seed value.
+@item
+If it generates @code{object-end}, calls @code{(object-end seed)}, let
+the result be @var{obj}, recover the seed value saved
+at the corresponding @code{object-start}, and calls
+@code{(proc obj recovered-seed)}.  Let the result a new seed value.
+@item
+If it generates EOF, returns the seed value as the result of
+@code{json-fold}.
+@end itemize
 @end defun
 
 @defun json-read :optional port-or-generator
 [SRFI-180]
 @c MOD srfi-180
+Read one JSON value or object from @var{port-or-generator}, which
+should be an input port or a char generator.  If it is omitted,
+the current input port is used.
+
+JSON strings and numbers are mapped to Scheme strings and numbers.
+JSON @code{true} and @code{false} become @code{#t} and @code{#f}.
+JSON @code{null} becomes a symbol @code{null}.
+JSON arrays become Scheme vectors, and JSON objects
+become Scheme alist, in which keys are converted to symbols.
+
+If the input contains invalid JSON text, a @code{<json-parse-error>}
+is thrown.
+
+See also @code{parse-json} in @code{rfc.json}
+(@pxref{JSON parsing and construction}).
+
+@example
+(call-with-input-string 
+  "[@{\"a\":1@}, @{\"b\":true, \"c\":\"foo\"@}, null]"
+  json-read)
+  @result{} #(((a . 1))
+      ((b . #t) (c . "foo"))
+      null)
+@end example
 @end defun
 
 @defun json-lines-read :optional port-or-generator
 [SRFI-180]
 @c MOD srfi-180
+Read JSON Lines format
+(@url{http://jsonlines.org/}), which contains multiple
+toplevel JSON values separated with @code{#\newline}.
+The input @var{port-or-generator} should be an input port
+or a char generator, defaulted to the current input port.
+
+See @code{json-read} above about the mapping from JSON values to Scheme
+values.
+
+Returns a list of read JSON values.  A @code{<json-parse-error>}
+is thrown if it encounters invalid JSON text.
 @end defun
 
 @defun json-sequence-read :optional port-or-generator
 [SRFI-180]
 @c MOD srfi-180
+Read JSON Text Sequence format (RFC7464, @url{https://tools.ietf.org/html/rfc7464}) from @var{port-or-generator}, which should be an input port
+or a char generator, defaulted to the current input port.
+
+JSON Text Sequence can contain multiple JSON values,
+each one leaded by one or more consecutive U+001E.
+If it encounters text unparsable as JSON, that segment (until next U+001E)
+is silently ignored.  Returns a list of read JSON values.
+
+See @code{json-read} above about the mapping from JSON values to Scheme
+values.
+
+See also @code{construct-json} in @code{rfc.json}
+(@pxref{JSON parsing and construction}).
 @end defun
 
 @subheading JSON writer
@@ -7349,11 +7432,19 @@ so it won't be an issue.  See @code{json-lines-read} and
 @defun json-accumulator port-or-accumlator
 [SRFI-180]
 @c MOD srfi-180
+This is dual to @code{json-generator}.  The @code{port-or-accumulator}
+should be an output port or an accumulator that accepts a character or
+a string.  This procedure
+returns an accumulator that accepts the events such as
+@code{json-generator} generates.  
 @end defun
 
 @defun json-write obj :optional port-or-accumulator
 [SRFI-180]
 @c MOD srfi-180
+Write @var{obj} as a JSON to @var{port-or-accumulator}, which
+must be an output port or an accumulator that accepts a character or
+a string.
 @end defun
 
 @c ----------------------------------------------------------------------
