@@ -12402,6 +12402,7 @@ notation.
 @end deftp
 
 @defun sys-gethostbyname name
+@c MOD gauche.net
 @c EN
 Looks up a host named @var{name}.
 If found, returns a @code{<sys-hostent>} object.
