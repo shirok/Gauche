@@ -72,6 +72,7 @@
        (cond
         [(identifier? req)
          (and-let1 p (assq (identifier->symbol req) features)
+           ((with-module gauche.internal %check-feature-id) (car p))
            (if (null? (cdr p)) seed (cons (cadr p) seed)))]
         [(not (pair? req)) (error "Invalid cond-expand feature-id:" req)]
         [else
@@ -126,6 +127,14 @@
         [else (rec (cdr cls))]))
 
      (rec (cdr f)))))
+
+;; transitional
+(with-module gauche.internal
+  (define (%check-feature-id sym)
+    (when (and (#/^srfi-\d+$/ (symbol->string sym))
+               (not (vm-compiler-flag-is-set? SCM_COMPILE_SRFI_FEATURE_ID)))
+      (warn "Feature identifier ~a is deprecated.  Use (library ~a)\n"
+            sym sym))))
 
 ;;; quasirename
 

@@ -3361,4 +3361,13 @@ void Scm__InitVM(void)
     if (Scm_GetEnv("GAUCHE_MUTABLE_LITERALS") != NULL) {
         SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_MUTABLE_LITERALS);
     }
+    /* NB: In 0.9.10, we warn srfi-N feature ID only when requested.
+       We'll reverse the default in the later releases. */
+    SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_SRFI_FEATURE_ID);
+    if (Scm_GetEnv("GAUCHE_WARN_SRFI_FEATURE_ID") != NULL) {
+        SCM_VM_COMPILER_FLAG_CLEAR(rootVM, SCM_COMPILE_SRFI_FEATURE_ID);
+    }
+    else if (Scm_GetEnv("GAUCHE_ALLOW_SRFI_FEATURE_ID") != NULL) {
+        SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_SRFI_FEATURE_ID);
+    }
 }

@@ -199,6 +199,8 @@ void usage(int errorp)
             "      option above.\n"
             "  GAUCHE_REPL_NO_PPRINT\n"
             "      If set, suppress using pretty printer in REPL.\n"
+            "  GAUCHE_WARN_SRFI_FEATURE_ID\n"
+            "      If set, warn if srfi-N is used as a feature id in cond-expand.\n"
             "  GAUCHE_SUPPRESS_WARNING\n"
             "      Suppress warnings displayed by ``warn''.  This should be a quick-fix\n"
             "      when you need to get rid of warnings but do not have time to fix the\n"

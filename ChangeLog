@@ -1,3 +1,11 @@
+2020-08-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h, src/vm.c: Add SCM_COMPILE_SRFI_FEATURE_ID flag.
+	* src/libmacro.scm (cond-expand): Warn srfi-N feature id is used
+	  when SCM_COMPILE_SRFI_FEATURE_ID flag isn't set.
+	  This is to gradually retire usage of srfi-N as a feature id.
+	  Ref. https://github.com/shirok/Gauche/issues/709
+
 2020-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/pputil.scm (layout-misc): Fix circular structure printing

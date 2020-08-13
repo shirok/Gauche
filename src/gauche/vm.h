@@ -648,7 +648,9 @@ enum {
                                               (pass2/dissolve-apply) */
     SCM_COMPILE_LEGACY_DEFINE = (1L<<11),  /* Do not insert toplevel binding
                                               at compile-time. */
-    SCM_COMPILE_MUTABLE_LITERALS = (1L<<12) /* Literal pairs are mutable */
+    SCM_COMPILE_MUTABLE_LITERALS = (1L<<12),/* Literal pairs are mutable */
+    SCM_COMPILE_SRFI_FEATURE_ID = (1L<<13)  /* Allow srfi-N feature id in
+                                               cond-expand */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))
