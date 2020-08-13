@@ -184,9 +184,7 @@
 (define (test-runner-get)
   (let ((r (test-runner-current)))
     (if (not r)
-	(cond-expand
-	 (srfi-23 (error "test-runner not initialized - test-begin missing?"))
-	 (else #t)))
+      (error "test-runner not initialized - test-begin missing?"))
     r))
 
 (define (%test-specifier-matches spec runner)
