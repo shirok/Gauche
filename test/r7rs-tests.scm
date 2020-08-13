@@ -98,7 +98,7 @@
              (gauche:list* 'a 'b))
           (find-module 'user))))
 
-;; in this test, cond-expand inserts (use srfi-42).  see we can handle it.
+;; cond-expand with library form
 (define-module cond-expand-test2.user)
 (test* "cond-expand in library decl 2" '(0 1 2 3 4 5 6 7 8 9)
        (begin
@@ -107,7 +107,9 @@
              (import (scheme base))
              (export xs)
              (cond-expand
-              (srfi-42 (begin (define xs (list-ec (: x 10) x))))
+              ((library (srfi 42))
+               (import (srfi 42))
+               (begin (define xs (list-ec (: x 10) x))))
               (else)))
           (find-module 'user))
          (eval
@@ -116,11 +118,30 @@
              xs)
           (find-module 'user))))
 
+;; This test uses srfi-N as a feature identifier; we deprecate such usage.
+;; ;; in this test, cond-expand inserts (use srfi-42).  see we can handle it.
+;; (define-module cond-expand-test3.user)
+;; (test* "cond-expand in library decl 3" '(0 1 2 3 4 5 6 7 8 9)
+;;        (begin
+;;          (eval
+;;           '(define-library (cond-expand-test3)
+;;              (import (scheme base))
+;;              (export xs)
+;;              (cond-expand
+;;               (srfi-42 (begin (define xs (list-ec (: x 10) x))))
+;;               (else)))
+;;           (find-module 'user))
+;;          (eval
+;;           '(with-module cond-expand-test3.user
+;;              (import cond-expand-test3)
+;;              xs)
+;;           (find-module 'user))))
+
 ;; in this test, cond-expand expands into none
-(test* "cond-expand in library decl 3" #t
+(test* "cond-expand in library decl 4" #t
        (begin
          (eval
-          '(define-library (cond-expand-test3)
+          '(define-library (cond-expand-test4)
              (import (scheme base))
              (cond-expand
               (gauche)

@@ -12,19 +12,21 @@
 (test-section "srfi-0")
 
 (test* "cond-expand" 0
-       (cond-expand [srfi-0 0] [else 1]))
+       (cond-expand [(library srfi-0) 0] [else 1]))
 (test* "cond-expand" 1
        (cond-expand [hogehoge 0] [else 1]))
 (test* "cond-expand" 0
-       (cond-expand [(and srfi-0 srfi-1) 0] [else 1]))
+       (cond-expand [(and (library srfi-0) (library srfi-1)) 0] [else 1]))
 (test* "cond-expand" #t
-       (cond-expand [(and srfi-2 srfi-1) (procedure? xcons)] [else #f]))
+       (cond-expand [(and (library srfi-2) (library srfi-1)) 
+                     (import srfi-1) (procedure? xcons)] 
+                    [else #f]))
 (test* "cond-expand" 0
-       (cond-expand [(or hogehoge srfi-1) 0] [else 1]))
+       (cond-expand [(or hogehoge (library srfi-1)) 0] [else 1]))
 (test* "cond-expand" 0
-       (cond-expand [(or srfi-1 hogehoge) 0] [else 1]))
+       (cond-expand [(or (library srfi-1) hogehoge) 0] [else 1]))
 (test* "cond-expand" 1
-       (cond-expand [(or (not srfi-1) hogehoge) 0] [else 1]))
+       (cond-expand [(or (not (library srfi-1)) hogehoge) 0] [else 1]))
 (test* "cond-expand" 0
        (cond-expand [gauche 0] [else 1]))
 (test* "cond-expand" 0
@@ -2349,6 +2351,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-132")
 (use srfi-132)
+(use srfi-1)
 (test-module 'srfi-132)
 
 ;; partition-in-place! is not external, but it is such a fundamental
