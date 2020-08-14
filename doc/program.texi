@@ -382,7 +382,7 @@ that extends the @code{r7rs} module, which defines two R7RS forms,
 @code{import} and @code{define-library}.
 
 If you invoke @code{gosh} into an interactive REPL mode with @code{-r7} option,
-all standard R7RS-small libraries (except @code{(scheme r5rs)} are already
+all standard R7RS-small libraries (except @code{(scheme r5rs)}) are already
 imported for your convenience.
 
 @xref{Library modules - R7RS standard libraries}, for the details on
@@ -844,29 +844,13 @@ Emacsのバッファ内で@code{gosh}が走ります。
 @c COMMON
 
 @c EN
-If you set an environment variable @code{GAUCHE_READ_EDIT} and the
-terminal is capable of cursor control, @code{gosh} starts with
-an experimental line-editor.  After typing input, you can move back
-and change text, or invoke older input to edit, with Emacs-like key
-bindings.  This feature is experimental---only very rudimental editor
-operations are supported, and you may experience weird behaviors.
-Let us know if you encounter buggy behaviors.
-
-When @code{gosh} is invoked with read-edit mode,
-you see the prompt @code{gosh$}, instead of the default
-@code{gosh>}.
+You can turn on input-editing by an
+environment variable @code{GAUCHE_READ_EDIT} or a command-line option
+@code{-fread-edit}.  @xref{Input editing}, for the details.
 @c JP
-もし@code{GAUCHE_READ_EDIT}環境変数が設定されていて、
-端末がカーソルコントロール可能であれば、@code{gosh}は
-実験的な行エディタを使うモードで起動します。
-このモードでは、Emacsライクなキーバインディングで、
-入力をタイプした後で戻ってテキストを変更したり、
-過去の履歴を呼び出して編集したりできます。
-まだ実験段階であり、ごく原始的なエディタ操作しか実装されていません。
-また奇妙な動作をするかもしれません。おかしな動作をみつけたら報告してください。
-
-@code{gosh}がread-editモードで起動された場合、
-プロンプトはデフォルトの@code{gosh>}ではなく@code{gosh$}になります。
+@code{GAUCHE_READ_EDIT}環境変数や@code{-fread-edit}オプションによって、
+入力のエディットが可能になります。
+詳しくは@ref{Input editing}を参照してください。
 @c COMMON
 
 @c EN
@@ -896,6 +880,14 @@ REPLに入ると、Gaucheはプロンプトを出してScheme式の入力を待�
 @example
 gosh>
 @end example
+
+@c EN
+(If you enable input editing, the prompt shows @code{gosh$} instead
+of @code{gosh>}.  @xref{Input editing}, for the details.)
+@c JP
+(入力編集機能をオンにしている場合は、プロンプトが@code{gosh>}ではなく
+@code{gosh$}になります。詳しくは@ref{Input editing}を参照してください。)
+@c COMMON
 
 @c EN
 After you complete a Scheme expression and type ENTER,

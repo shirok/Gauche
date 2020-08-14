@@ -7772,60 +7772,128 @@ If it is a Left, a Right with the same payload argument is returned.
 @defun maybe-ref maybe failure :optional success
 @c MOD srfi-189
 [SRFI-189]
+The @var{maybe} arugment must be a Maybe.  If it's a Nothing,
+a procedure @var{failure} is tail-called with no arguments.
+If it's Just, a procedure @var{success} is tail-called with its
+payload object(s).  If @var{success} is omitted, @code{values} is used.
+
+@example
+(maybe-ref (just 1 2) (^[] (error 'huh?)) +)
+  @result{} 3
+@end example
 @end defun
 
 @defun either-ref either failure :optional success
 @c MOD srfi-189
 [SRFI-189]
+The @var{either} argument must be an Either.
+If it's a Left, a procedure @var{failure} is called with
+its payload object(s).  If it's a Right, a procedure
+@var{success} is called with its payload object(s).
+If @var{success} is omitted, @code{values} is used.
 @end defun
 
 @defun maybe-ref/default maybe default @dots{}
 @c MOD srfi-189
 [SRFI-189]
+The @var{maybe} argument must be a Maybe.  If it's a Nothing,
+@var{default} @dots{} are returned as multiple values.
+If it's a Just, its payload object(s) is/are returned as multiple values.
 @end defun
 
 @defun either-ref/default maybe default @dots{}
 @c MOD srfi-189
 [SRFI-189]
+The @var{either} argument must be an Either.  If it's a Left,
+@var{default} @dots{} are returned as multiple values (the Left's payload
+is discarded).
+If it's a Right, its payload object(s) is/are returned as multiple values.
 @end defun
 
 @defun maybe-join maybe
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe} is a Nothing,
+it is returned.  If it's a Maybe and its only payload is a Maybe,
+the inner Maybe is returned.  Other cases raise an error.
 @end defun
 
 @defun either-join either
 @c MOD srfi-189
 [SRFI-189]
+If @var{either} is a Left, it is returned.
+If it is a Right and its only payload is an Either,
+the inner Either is returned.  Other cases raise an error.
 @end defun
 
 @defun maybe-bind maybe mproc mproc2 @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Monadic @var{bind} operation.  The @var{maybe} argument must be a Maybe.
+If it is a Nothing, it is returned.
+If it is a Just, its payload object(s) is/are applied to a procedure
+@var{mproc}, which must return a Maybe.  If @var{mproc2} @dots{} are
+given, the same operation is repeated on them.
+
+@example
+(maybe-bind m p p2)
+  @equiv{} (maybe-bind (maybe-bind m p) p2)
+@end example
 @end defun
 
 @defun either-bind either mproc mproc2 @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Monadic @var{bind} operation.  The @var{either} argument must be an Either.
+If it is a Left, it is returned as is.
+If it is a Right, its payload object(s) is/are applied to a procedure
+@var{mproc}, which must return an Either.  If @var{mproc2} @dots{} are
+given, the same operation is repeated on them.
+
+@example
+(either-bind e p p2)
+  @equiv{} (either-bind (either-bind e p) p2)
+@end example
 @end defun
 
 @defun maybe-compose mproc mproc2 @dots{}
+@defunx either-compose mproc mproc2 @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Each argument must be a procedure taking zero or more arguments
+and return a Maybe/an Either.   Returns a procedure that accepts zero or more
+arguments and returns a Maybe/an Either.
+
+When the returned procedure is called, it first calls @var{mproc};
+if it returns a Nothing/Left, or there's no more mprocs, the result is
+returned.  If the result is a Just, its payload is applied
+to the next mproc, and so on.
+
+@example
+(maybe-bind m p p2 ...)
+  @result{} (maybe-ref m (^[] (nothing))
+              (maybe-compose p p2 ...))
+@end example
 @end defun
 
-@defun either-compose mproc mproc2 @dots{}
-@c MOD srfi-189
-[SRFI-189]
-@end defun
 
 @node Maybe and Either sequence operations, Maybe and Either protocol converters, Maybe and Either accessors, Maybe and Either optional container types
 @subsection Sequence operations
+
+A Maybe and an Either can be a container of zero or one element, and
+we have several procedures that employ this view.
+(Note: For this purpose, we treat multiple payload values as a whole,
+since they are processed in one step---as if we don't regard
+multiple procedure arguments and multiple return values as a sequence
+of individual values.)
 
 @defun maybe-length maybe
 @defunx either-length either
 @c MOD srfi-189
 [SRFI-189]
+Returns 0 if @var{maybe}/@var{either} is a Nothing/Left, and
+1 if it is a Just/Right.  An error is thrown if the argument
+isn't a Maybe/an Either.
 @end defun
 
 @defun maybe-filter pred maybe
