@@ -2135,7 +2135,6 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
     if (ep) {
         /* There's an escape point defined by with-error-handler. */
-        ScmObj target, current;
         ScmObj vmhandlers = vm->handlers;
         ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
         int numVals = 0;
@@ -2153,14 +2152,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
            If an error is raised within the dynamic handlers, it will be
            captured by the same error handler. */
         if (ep->rewindBefore) {
-            target = ep->handlers;
-            current = vm->handlers;
-            for (ScmObj hp=current; SCM_PAIRP(hp) && (hp!=target);
-                 hp=SCM_CDR(hp)) {
-                ScmObj handler = SCM_CDAR(hp);
-                vm->handlers = SCM_CDR(hp);
-                Scm_ApplyRec(handler, SCM_NIL);
-            }
+            call_dynamic_handlers(ep->handlers, vm->handlers);
         }
 
         /* Call the error handler and save the results.
@@ -2184,15 +2176,9 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
                 for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
             }
 
+            /* call dynamic handlers to rewind */
             if (!ep->rewindBefore) {
-                target = ep->handlers;
-                current = vm->handlers;
-                for (ScmObj hp=current; SCM_PAIRP(hp) && (hp!=target);
-                     hp=SCM_CDR(hp)) {
-                    ScmObj handler = SCM_CDAR(hp);
-                    vm->handlers = SCM_CDR(hp);
-                    Scm_ApplyRec(handler, SCM_NIL);
-                }
+                call_dynamic_handlers(ep->handlers, vm->handlers);
             }
         }
         SCM_WHEN_ERROR {
@@ -2212,20 +2198,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             vm->escapePoint = ep;
             SCM_VM_FLOATING_EP_SET(vm, ep->floating);
 
-            /* reenter dynamic-winds */
-            target = vmhandlers;
-            current = ep->handlers;
-            ScmObj hrev = SCM_NIL;
-            for (ScmObj hp=target; SCM_PAIRP(hp) && (hp!=current);
-                 hp=SCM_CDR(hp)) {
-                hrev = Scm_Cons(hp, hrev);
-            }
-            ScmObj p;
-            SCM_FOR_EACH(p, hrev) {
-                ScmObj handler = SCM_CAAR(SCM_CAR(p));
-                Scm_ApplyRec(handler, SCM_NIL);
-                vm->handlers = SCM_CAR(p);
-            }
+            /* call dynamic handlers to reenter dynamic-winds */
+            call_dynamic_handlers(vmhandlers, ep->handlers);
 
             /* reraise and return */
             vm->exceptionHandler = ep->xhandler;
