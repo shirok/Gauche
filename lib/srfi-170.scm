@@ -10,7 +10,9 @@
   (use srfi-13)
   (use srfi-19)
   (use file.util)
-  (export open-file
+  (export posix-error? posix-error-name 
+
+          open-file
           open/read open/write open/read+write open/append
           open/create open/exclusive open/nofollow open/truncate
           fdes->textual-input-port
@@ -97,6 +99,14 @@
           terminal?
           ))
 (select-module srfi-170)
+
+;; Errors
+
+(define (posix-error? obj) (<system-error> obj))
+
+(define (posix-error-name obj)
+  (assume (posix-error? obj))
+  (sys-errno->symbol (condition-ref obj 'errno)))
 
 ;; 3.2 I/O
 
