@@ -69,7 +69,7 @@
              +- <io-no-such-file-error>           ; ditto (*)
 
  SRFI-35 does not make distinction between primary inheritance and mixin
- inheritance; the <condition-mixin> subtree is Gauche's convention.  The
+ inheritance; the <mixin-condition> subtree is Gauche's convention.  The
  default error reporting routine treats mixins specially.
 
  (*) Those classes are defined, but not yet used.
