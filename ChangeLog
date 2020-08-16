@@ -1,3 +1,8 @@
+2020-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c (Scm_SigFillSetMostly): Allow SIGCONT to be handled
+	  in Gauche by default.
+
 2020-08-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h, src/vm.c: Add SCM_COMPILE_SRFI_FEATURE_ID flag.

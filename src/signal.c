@@ -376,9 +376,6 @@ void Scm_SigFillSetMostly(sigset_t *set) /* out */
 #ifdef SIGKILL
     sigdelset(set, SIGKILL);
 #endif
-#ifdef SIGCONT
-    sigdelset(set, SIGCONT);
-#endif
 #ifdef SIGSTOP
     sigdelset(set, SIGSTOP);
 #endif
