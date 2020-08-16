@@ -187,18 +187,6 @@
 ;; NB: For the consistency with read-line, the returned string won't include
 ;; the final newline.
 (define (read-line/edit ctx)
-  (reset-undo-info! ctx)
-  (reset-last-yank! ctx)
-  ($ call-with-console (~ ctx'console)
-     (^[con]
-       (guard (e [(and (<unhandled-signal-error> e)
-                       (eqv? (~ e'signal) SIGINT))
-                  (putstr (~ ctx'console) "\r\nInput interrupted\r\n")
-                  ""]
-                 [else (raise e)])
-         (%read-line-int con ctx)))))
-
-(define (%read-line-int con ctx)
   (define buffer (make-gap-buffer))
   (define (eofread)
     (if (> (gap-buffer-content-length buffer) 0)
@@ -264,7 +252,7 @@
          ;; the existing input.
          (gap-buffer-move! buffer 0 'end)
          (redisplay ctx buffer)
-         (putstr con "\r\n")
+         (putstr (~ ctx'console) "\r\n")
          (commit-history ctx buffer)]
         ['undone (reset-last-yank! ctx)
                  (clear-mark! ctx buffer)
@@ -288,20 +276,37 @@
      [else
       (error "[internal] do not know how to handle key:" h)]))
 
-  ;; Initialization
-  (ensure-bottom-room con) ; workaround for windows IME glitch
-  (show-prompt ctx)
-  (init-screen-params ctx)
-  ;; Main loop.  Get a key and invoke associated command.
-  (let loop ([redisp #f])
+  ;; Internal loop
+  ;; Pass true to redisp to cause buffer to be redisplayed before
+  ;; accepting a new edit command.
+  ;; Returns a string or #<eof>
+  (define (edit-loop redisp)
     ;; NB: If next char is ready, don't bother to redisplay and
     ;; just carry over redisp flag.
-    (let* ([redisp (if (and redisp (not (chready? con)))
+    (let* ([redisp (if (and redisp (not (chready? (~ ctx'console))))
                      (begin (redisplay ctx buffer) #f)
                      redisp)]
            [ch (next-keystroke ctx)]
            [h (keymap-ref (~ ctx'keymap) ch)])
-      (handle-command h ch loop redisp))))
+      (handle-command h ch edit-loop redisp)))
+
+  ;;
+  ;; Main body
+  ;;
+  (reset-undo-info! ctx)
+  (reset-last-yank! ctx)
+  ($ call-with-console (~ ctx'console)
+     (^_
+      (ensure-bottom-room (~ ctx'console)) ; workaround for windows IME glitch
+      (show-prompt ctx)
+      (init-screen-params ctx)
+      (guard (e [(and (<unhandled-signal-error> e)
+                      (eqv? (~ e'signal) SIGINT))
+                 (putstr (~ ctx'console) "\r\nInput interrupted\r\n")
+                 ""]
+                [else (raise e)])
+        ;; Initialization
+        (edit-loop #f)))))
 
 ;; Check some parameters of screen.
 (define (init-screen-params ctx)
