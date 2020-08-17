@@ -382,4 +382,40 @@ typedef ScmUVector ScmF64Vector;
 /* Retrieves underlying byte array */
 const uint8_t *Scm_GetBytes(ScmObj str_or_uvec, ScmSize *size);
 
+/*
+ * Bitvectors (srfi-178)
+ *
+ *   We could view a bitvector as u1vector, but the operations on bitvectors
+ *   are sufficiently different from uniform vectors, so we made them
+ *   disjoint.
+ */
+
+typedef struct ScmBitvectorRec {
+    SCM_HEADER;
+    ScmWord size_flags;         /* (len<<1)|immutable */
+    ScmBits *bits;
+} ScmBitvector;
+
+SCM_CLASS_DECL(Scm_BitvectorClass);
+#define SCM_CLASS_BITVECTOR         (&Scm_BitvectorClass)
+#define SCM_BITVECTOR(obj)          ((ScmBitvector*)(obj))
+#define SCM_BITVECTORP(obj)         Scm_TypeP(obj, SCM_CLASS_BITVECTOR)
+#define SCM_BITVECTOR_OWNER(obj)    (SCM_BITVECTOR(obj)->owner)
+#define SCM_BITVECTOR_ELEMENTS(obj) (SCM_BITVECTOR(obj)->elements)
+
+#define SCM_BITVECTOR_SIZE(obj)     (SCM_BITVECTOR(obj)->size_flags >> 1)
+#define SCM_BITVECTOR_IMMUTABLE_P(obj) (SCM_BITVECTOR(obj)->size_flags & 1)
+#define SCM_BITVECTOR_IMMUTABLE_SET(obj, flag)    \
+    ((flag)                                     \
+     ? (SCM_BITVECTOR(obj)->size_flags |= 1)      \
+     : (SCM_BITVECTOR(obj)->size_flags &= ~1))
+
+#define SCM_BITVECTOR_CHECK_MUTABLE(obj)                 \
+  do { if (SCM_BITVECTOR_IMMUTABLE_P(obj)) {             \
+    Scm_Error("bitvector is immutable: %S", obj); \
+  }} while (0)
+
+SCM_EXTERN ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init);
+SCM_EXTERN ScmObj Scm_ListToBitvector(ScmObj lis);
+
 #endif /*GAUCHE_VECTOR_H*/

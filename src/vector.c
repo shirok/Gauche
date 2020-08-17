@@ -798,6 +798,73 @@ DEF_CMP(C64, c64, ScmFloatComplex, common_eqv, c64lt)
 DEF_CMP(C128, c128, ScmDoubleComplex, common_eqv, c128lt)
 
 /*=====================================================================
+ * Bitvectors
+ */
+
+static void bitvector_print(ScmObj obj, 
+                            ScmPort *port, 
+                            ScmWriteContext *ctx SCM_UNUSED)
+{
+    ScmBitvector *v = SCM_BITVECTOR(obj);
+    SCM_PUTZ("#*", -1, port);
+    for (int i=0; i<SCM_BITVECTOR_SIZE(v); i++) {
+        if (SCM_BITS_TEST(v->bits, i)) SCM_PUTC('1', port);
+        else SCM_PUTC('0', port);
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_BitvectorClass, bitvector_print, NULL,
+                               NULL, NULL, SCM_CLASS_SEQUENCE_CPL,
+                               SCM_CLASS_AGGREGATE);
+
+
+static int bit2int(ScmObj bit)
+{
+    if (SCM_EQ(bit, SCM_TRUE) || SCM_EQ(bit, SCM_MAKE_INT(1))) return TRUE;
+    if (SCM_FALSEP(bit) || SCM_EQ(bit, SCM_MAKE_INT(0))) return FALSE;
+    Scm_Error("bit value must be 0, 1, #f or #t, but got: %S", bit);
+    return 0;                   /* dummy */
+}
+
+/* init can be 0, 1, #f or #t. */
+ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init)
+{
+    if (size < 0) {
+        Scm_Error("bitvector size must be a positive integer, but got %d", size);
+    }
+    ScmBitvector *v = SCM_NEW(ScmBitvector);
+    SCM_SET_CLASS(v, SCM_CLASS_BITVECTOR);
+    v->size_flags = (size << 1);
+    v->bits = Scm_MakeBits(size);
+    
+    int fill = bit2int(init);
+
+    for (int i=0; i<size; i++) {
+        if (fill) SCM_BITS_SET(v->bits, i);
+        else      SCM_BITS_RESET(v->bits, i);
+    }
+    return SCM_OBJ(v);
+}
+
+ScmObj Scm_ListToBitvector(ScmObj lis) 
+{
+    ScmSmallInt len = Scm_Length(lis);
+    if (len < 0) {
+        Scm_Error("proper list required, but got: %S", lis);
+    }
+    
+    ScmBitvector *v = SCM_BITVECTOR(Scm_MakeBitvector(len, SCM_FALSE));
+    ScmObj cp;
+    ScmSmallInt i = 0;
+    SCM_FOR_EACH(cp, lis) {
+        if (bit2int(SCM_CAR(cp))) SCM_BITS_SET(v->bits, i);
+        else                      SCM_BITS_RESET(v->bits, i);
+        i++;
+    }
+    return SCM_OBJ(v);
+}
+
+/*=====================================================================
  * Utility
  */
 

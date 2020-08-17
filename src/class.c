@@ -3537,6 +3537,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_C32VECTOR,        "<c32vector>");
     CINIT(SCM_CLASS_C64VECTOR,        "<c64vector>");
     CINIT(SCM_CLASS_C128VECTOR,       "<c128vector>");
+    CINIT(SCM_CLASS_BITVECTOR,        "<bitvector>");
 
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");

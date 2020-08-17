@@ -307,6 +307,14 @@
   SCM_UVECTORP)
 
 ;;;
+;;; Bitvectors
+;;;
+
+(define-cproc bitvector (:rest bits) Scm_ListToBitvector)
+(define-cproc list->bitvector (bits) Scm_ListToBitvector)
+
+
+;;;
 ;;; Flat vector API (interact with underlying C array)
 ;;;
 
@@ -464,3 +472,4 @@
                                    ceil::size_t*)
    ::size_t (%binary-search (ScmDoubleComplex) common-eqv dc-lt))
  )
+
