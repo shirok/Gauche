@@ -69,6 +69,7 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx);
+static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx);
 static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref);
 static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx);
@@ -587,9 +588,14 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case '*': {
                 reject_in_r7(port, ctx, "#*");
                 /* #*"...." byte string
-                   #*01001001 for bit vector, maybe in future. */
+                   #*01001001 for bit vector. */
+                return read_sharp_asterisk(port, ctx);
+                
+
                 int c2 = Scm_GetcUnsafe(port);
                 if (c2 == '"') return read_string(port, TRUE, ctx);
+                
+                
                 Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
                 return SCM_UNDEFINED; /* dummy */
             }
@@ -1794,6 +1800,46 @@ static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
     } else {
         return read_sharp_word_1(port, ch, ctx);
     }
+}
+
+/*----------------------------------------------------------------
+ * #*"....", #*1010010...
+ */
+static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx)
+{
+    /* NB: Zero-length bitvector is '#*', and a double-quote is a delimiter,
+       so #*"..." can be interpreted as a zero-length bitvector followed by
+       an ordinary string.  We should reconsider the incomplete string syntax.
+    */
+    int c = Scm_GetcUnsafe(port);
+    if (c == '"') return read_string(port, TRUE, ctx);
+
+    ScmDString ds;
+    Scm_DStringInit(&ds);
+    for (;;) {
+        switch (c) {
+        case EOF:
+            goto finish;
+        case '(': case ')': case '"': case '|': case ';':
+            Scm_UngetcUnsafe(c, port);
+            goto finish;
+        case '0': case '1':
+            Scm_DStringPutc(&ds, c);
+            break;
+        default:
+            if ((SCM_CHAR_ASCII_P(c) && isspace(c))
+                || (!SCM_CHAR_ASCII_P(c) && SCM_CHAR_EXTRA_WHITESPACE(c))) {
+                Scm_UngetcUnsafe(c, port);
+                goto finish;
+            }
+            Scm_ReadError(port, "Invalid char in bitvector literal: %C", c);
+        }
+        c = Scm_GetcUnsafe(port);
+    }
+
+ finish:;
+    ScmObj s = Scm_DStringGet(&ds, 0);
+    return Scm_StringToBitvector(SCM_STRING(s), FALSE);
 }
 
 /* OBSOLETED: gauche.uvector used to call this to set up reader pointer.

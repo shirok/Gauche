@@ -801,16 +801,20 @@ DEF_CMP(C128, c128, ScmDoubleComplex, common_eqv, c128lt)
  * Bitvectors
  */
 
-static void bitvector_print(ScmObj obj, 
-                            ScmPort *port, 
-                            ScmWriteContext *ctx SCM_UNUSED)
+static void bitvector_write_int(ScmBitvector *v, int prefix, ScmPort *port)
 {
-    ScmBitvector *v = SCM_BITVECTOR(obj);
-    SCM_PUTZ("#*", -1, port);
+    if (prefix) Scm_Putz("#*", -1, port);
     for (int i=0; i<SCM_BITVECTOR_SIZE(v); i++) {
         if (SCM_BITS_TEST(v->bits, i)) SCM_PUTC('1', port);
         else SCM_PUTC('0', port);
     }
+}
+
+static void bitvector_print(ScmObj obj, 
+                            ScmPort *port, 
+                            ScmWriteContext *ctx SCM_UNUSED)
+{
+    bitvector_write_int(SCM_BITVECTOR(obj), TRUE, port);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_BitvectorClass, bitvector_print, NULL,
@@ -862,6 +866,41 @@ ScmObj Scm_ListToBitvector(ScmObj lis)
         i++;
     }
     return SCM_OBJ(v);
+}
+
+/* Parse string of 0's and 1's to a bitvector.  If PREFIX is true,      
+   "#*" prefix is assumed.  Returns #f if unparsable. */
+
+ScmObj Scm_StringToBitvector(ScmString *s, int prefix)
+{
+    const ScmStringBody *b = SCM_STRING_BODY(s);
+    const char *p = SCM_STRING_BODY_START(b);
+    /* multibyte string can't be a bitvector literal. */
+    if (SCM_STRING_BODY_SIZE(b) != SCM_STRING_BODY_LENGTH(b)) return SCM_FALSE;
+    ScmSmallInt len = SCM_STRING_BODY_LENGTH(b);
+    
+    if (prefix) {
+        if (len < 2) return SCM_FALSE;
+        if (strncmp(p, "#*", 2) != 0) return SCM_FALSE;
+        p += 2;
+        len -= 2;
+    }
+
+    ScmBitvector *v = SCM_BITVECTOR(Scm_MakeBitvector(len, SCM_FALSE));
+    int i = 0;
+    for (; i < len; p++, i++) {
+        if (*p == '0')      SCM_BITS_RESET(v->bits, i);
+        else if (*p == '1') SCM_BITS_SET(v->bits, i);
+        else return SCM_FALSE;
+    }
+    return SCM_OBJ(v);
+}
+
+ScmObj Scm_BitvectorToString(ScmBitvector *v, int prefix)
+{
+    ScmObj out = Scm_MakeOutputStringPort(TRUE);
+    bitvector_write_int(v, prefix, SCM_PORT(out));
+    return Scm_GetOutputString(SCM_PORT(out), 0);
 }
 
 /*=====================================================================

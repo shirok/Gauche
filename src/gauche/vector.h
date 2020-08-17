@@ -418,4 +418,7 @@ SCM_CLASS_DECL(Scm_BitvectorClass);
 SCM_EXTERN ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init);
 SCM_EXTERN ScmObj Scm_ListToBitvector(ScmObj lis);
 
+SCM_EXTERN ScmObj Scm_StringToBitvector(ScmString *s, int prefix);
+SCM_EXTERN ScmObj Scm_BitvectorToString(ScmBitvector *v, int prefix);
+
 #endif /*GAUCHE_VECTOR_H*/

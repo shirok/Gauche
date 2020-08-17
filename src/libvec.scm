@@ -313,6 +313,28 @@
 (define-cproc bitvector (:rest bits) Scm_ListToBitvector)
 (define-cproc list->bitvector (bits) Scm_ListToBitvector)
 
+(define-cproc string->bitvector (s::<string>) 
+  (return (Scm_StringToBitvector s TRUE)))
+(define-cproc bitvector->string (v::<bitvector>) 
+  (return (Scm_BitvectorToString v TRUE)))
+
+(define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum>
+                                                :optional fallback)
+  (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
+    (if (SCM_UNDEFINEDP fallback)
+      (Scm_Error "bitvector index out of range: %l" i)
+      (return fallback)))
+  (return (?: (SCM_BITS_TEST (-> v bits) i) 
+              (SCM_MAKE_INT 1)
+              (SCM_MAKE_INT 0))))
+
+(define-cproc bitvector-ref/bool (v::<bitvector> i::<fixnum>
+                                                :optional fallback)
+  (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
+    (if (SCM_UNDEFINEDP fallback)
+      (Scm_Error "bitvector index out of range: %l" i)
+      (return fallback)))
+  (return (?: (SCM_BITS_TEST (-> v bits) i) SCM_TRUE SCM_FALSE)))
 
 ;;;
 ;;; Flat vector API (interact with underlying C array)

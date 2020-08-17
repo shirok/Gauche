@@ -230,6 +230,7 @@
    (<c32vector> "ScmUVector*" "c32vector" "SCM_C32VECTORP" "SCM_C32VECTOR")
    (<c64vector> "ScmUVector*" "c64vector" "SCM_C64VECTORP" "SCM_C64VECTOR")
    (<c128vector> "ScmUVector*" "c128vector" "SCM_C128VECTORP" "SCM_C128VECTOR")
+   (<bitvector> "ScmBitvector*" "bitvector" "SCM_BITVECTORP" "SCM_BITVECTOR")
    (<string> "ScmString*" "string" "SCM_STRINGP" "SCM_STRING")
    (<string-cursor> "ScmObj" "string cursor" "Scm_StringCursorP" "")
    (<symbol> "ScmSymbol*" "symbol" "SCM_SYMBOLP" "SCM_SYMBOL")
