@@ -7900,18 +7900,56 @@ isn't a Maybe/an Either.
 @defunx either-filter pred either obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe}/@var{either} is a Nothing/Left,
+returns a Nothing/a Left of @var{obj} @dots{}.
+If @var{maybe}/@var{either} is a Just/a Right, apply @var{pred} on
+its payload value(s).  If @var{pred} returns a true value,
+@var{maybe}/@var{either} is returned; otherwise,
+a Nothing/a Left of @var{obj} @dots{} is returned.
+
+An error is thrown if @var{maybe}/@var{either} isn't a Maybe/an Either.
 @end defun
 
 @defun maybe-remove pred maybe
 @defunx either-remove pred either obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Like @code{maybe-filter}/@code{either-filter}, but the meaning of
+@var{pred} is reversed.
 @end defun
 
-@defun maybe-sequence input cmap :optional aggregator
-@defunx either-sequence input cmap :optional aggregator
+@defun maybe-sequence mappable cmap :optional aggregator
+@defunx either-sequence mappable cmap :optional aggregator
 @c MOD srfi-189
 [SRFI-189]
+This converts a collection of Maybes/Eithers to a Mayber/an Either of
+a collection.  The input collection and the collection in the output can
+be of different type.
+
+It's easier to explain using Haskell-ish type signatures, although
+it's not precisely specified.  Suppose @code{Container x} is
+some kind of a collection of
+type @var{x}, and @code{a*} is multiple values of arbitrary types.
+
+@example
+Mappable   = Container Maybe a*
+CMap       = ((Maybe a* -> b) -> Container Maybe a* -> Container' b
+Aggregator = a* -> b
+
+maybe-sequence :: Mappable -> CMap -> Aggregator -> Container' b
+@end example
+
+The @var{cmap} maps @var{proc} over the input container (@var{mappable}),
+and gathers the result into another container.  It can be any containers,
+as long as it matches the @var{mappable} argument.  For example, @var{mappable}
+may be a vector of Maybes, and @var{cmap} can be @code{vector-map}--in that case,
+both @code{Container} and @code{Container'} are @code{Vector}.
+Or, @var{mappable} may be a list of Maybes, and @var{cmap} can be
+@code{(cut map-to <string> <> <>)}, then @code{Container} is a list and
+@code{Container'} is a string.
+
+The types @code{a*} and @code{b} is determined by the @var{aggregator}
+procedure, whose default value is @code{list}.
 @end defun
 
 @defun maybe-map proc maybe
