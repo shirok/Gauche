@@ -15488,7 +15488,8 @@ running subprocess, and a process object.
 @c COMMON
 
 @c EN
-@var{Command} can be a string or a list.
+@var{Command} can be a string, a list of command name and arguments,
+or a list of lists of command name and arguments.
 
 If it is a string, it is passed to @code{/bin/sh}.
 You can use shell metacharacters in this form, such as
@@ -15499,7 +15500,7 @@ if you don't want the shell to interpret them.
 The @code{shell-escape-string} function described below might
 be a help.
 @c JP
-@var{command}は文字列かリストです。
+@var{command}は文字列か、コマンド名と引数のリストか、「コマンド名と引数のリスト」のリストです。
 
 文字列の場合、それは@code{/bin/sh}に渡されます。
 環境変数の置換やグロブパターン、リダイレクトなどのシェルの機能が
@@ -15511,14 +15512,16 @@ be a help.
 @c COMMON
 
 @c EN
-If @var{command} is a list, each element is converted to a
+If @var{command} is a list (but not a list of lists),
+each element is converted to a
 string by @code{x->string} and then passed directly to @code{sys-exec}
 (the @code{car} of the list is used as both the command path
 and the first element of argv, i.e. @code{argv[0]}).
 Use this form if you want to avoid the shell from interfering;
 i.e. you don't need to escape special characters.
 @c JP
-@var{command}がリストの場合は、各要素が@code{x->string}で文字列に
+@var{command}がリスト(ただしリストのリストではない)の場合は、
+各要素が@code{x->string}で文字列に
 変換された後に、@code{sys-exec}を使って直接コマンドを起動します
 (リストの@code{car}がコマンドのパス名と@code{argv[0]}の両方に使われます)。
 シェルの介入を避けたい場合はこの形式を使うと良いでしょう。
@@ -15535,6 +15538,29 @@ You can change these by giving file pathnames to @var{input} and
 標準エラー出力は呼び出したプロセスと共有されます。
 @var{input}と@var{error}キーワード引数にパス名を与えることで、
 これらの出力をリダイレクトすることができます。
+@c COMMON
+
+@c EN
+If @var{command} is a list of lists, it creates a command pipeline,
+as in @code{run-pipeline} (@pxref{Running process pipeline}).
+Each inner list should consists of a command path, followed by command-line
+arguments.  They are applied on @code{x->string} before passed to
+@code{sys-exec}.
+The stdout of the last command is available from the returned input port,
+and the stdin of the first command is provided by @var{input} keyword
+arguments, or @code{/dev/null} by default.  The stderr of all the commands
+goes to @var{error} keyword arguments if given, or shared with
+the caller process's stderr.
+@c JP
+@var{command}がリストのリストの場合は、コマンドパイプラインが作られます
+(@code{run-pipeline}, @ref{Running process pipeline}参照)。
+内側のリストは、コマンドパスとそのコマンドへの引数で、@code{x->string}で文字列に
+変換された後、@code{sys-exec}に渡されます。
+最後のコマンドの標準出力を、返されるポートから読み出すことができます。
+最初のコマンドの標準入力は、@var{input}キーワード引数にパス名が渡されれば
+そのファイルから、そうでなければ@code{/dev/null}から供給されます。
+各コマンドの標準エラー出力は、@var{error}キーワード引数にパス名が渡されればそのファイルに、
+そうでなければ呼び出したプロセスの標準エラー出力に流れます。
 @c COMMON
 
 @c EN
