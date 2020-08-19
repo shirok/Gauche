@@ -810,7 +810,10 @@
 ;; Internal utilities for process ports
 ;;
 
-;; If the given command is a string, return an argv to use /bin/sh.
+;; COMMAND can be a string, a list, or a list of lists.
+;; If it is a string, call it via /bin/sh.
+;; If it is a simple list, treat it as args.
+;; If it is a nested list, cuse run-pipeline.
 ;; NB: on Windows we need to use cmd.exe.  But its command-line parsing
 ;; rule is too broken to use reliably.  Another possibility is to implement
 ;; much of high-level /bin/sh functionalities in Scheme, so that we can
@@ -819,18 +822,21 @@
 ;; from opts.  These can be passed down from high-level APIs but only used
 ;; by wrap-*-process-port.
 (define (%apply-run-process command stdin stdout stderr host opts)
-  (let-keywords opts ([encoding #f]
-                      [conversion-buffer-size 0]
-                      . opts)
-    (apply run-process
-           (cond [(string? command)
-                  (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
-                               [else              `("/bin/sh" "-c" ,command)])]
-                 [(list? command) command]
-                 [else (error "Bad command spec" command)])
-           :input stdin :output stdout :host host
-           (cond [(string? stderr) `(:error ,stderr ,@opts)]
-                 [else opts]))))
+  (define rest (delete-keywords '(:encoding :conversion-buffer-size) opts))
+  (define (rc cmd)
+    (apply run-process cmd :input stdin :output stdout :host host
+           (cond [(string? stderr) `(:error ,stderr ,@rest)]
+                 [else rest])))
+  (cond [(string? command)
+         (rc (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
+                          [else              `("/bin/sh" "-c" ,command)]))]
+        [(and (list? command) (every list? command))
+         (apply run-pipeline command
+                :input stdin :output stdout
+                (cond [(string? stderr) `(:error ,stderr ,@rest)]
+                      [else rest]))]
+        [(list? command) (rc command)]
+        [else (error "Bad command spec" command)]))
 
 ;; Possibly wrap the process port by a conversion port
 (define (wrap-input-process-port process opts)

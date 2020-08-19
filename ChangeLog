@@ -1,3 +1,8 @@
+2020-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/process.scm: Allow command pipeline in process port API
+	  https://github.com/shirok/Gauche/issues/717
+
 2020-08-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vector.h (ScmBitvector), src/vector.c: Start adding

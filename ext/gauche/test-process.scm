@@ -552,6 +552,17 @@
        (process-output->string (cmd-in-subdir cat "probe")
                                :directory "test2.o"))
 
+;; process pipeline and port
+(let ()
+  (rmrf "test.o")
+  (with-output-to-file "test.o"
+    (^[] (for-each print '("banana" "habana" "tabata" "cabara"))))
+  (test* "process-output->string with pipeline"
+         '("banana" "habana")
+         (process-output->string-list `(,(cmd cat "test.o")
+                                        ,(cmd grep "bana"))))
+  )
+
 (rmrf "test2.o")
 
 (rmrf "testc.o")
