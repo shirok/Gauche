@@ -2422,6 +2422,8 @@ R7RS-large defines @code{fixnum?} in @code{scheme.fixnum} library;
 Portable Scheme programs don't need to care about the internal
 representation of integer.   These are for certain low-level
 routines that does particular optimization.
+
+@xref{R7RS fixnum}, for the comprehensive fixnum library.
 @c JP
 @var{n}が正確な整数で、かつ内部的にそれぞれ@emph{fixnum}もしくは@emph{bignum}
 で表現されているときに@code{#t}を返します。R7RS-largeは
@@ -2429,6 +2431,8 @@ routines that does particular optimization.
 @code{bignum?}はGauche拡張です。
 通常のSchemeプログラムは整数の内部表現を気にする必要はありません。
 これらの手続きは、ある種の最適化を行う低レベル手続きのために用意されています。
+
+fixnumを扱う包括的なライブラリは@ref{R7RS fixnum}を参照してください。
 @c COMMON
 @end defun
 
@@ -8464,11 +8468,9 @@ returns a new set, while the latter may reuse the given charset.
 @deftp {Builtin Class} <string>
 @clindex string
 @c EN
-A string class.   In Gauche, a string can be viewed in two ways:
-a sequence of characters, or a sequence of bytes.
+A string class.
 @c JP
-文字列のクラスです。Gaucheでは、文字列は文字のシーケンスともバイトのシーケンスとも
-みなすことができます。
+文字列のクラスです。
 @c COMMON
 @end deftp
 
