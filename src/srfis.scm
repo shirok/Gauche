@@ -644,10 +644,10 @@ srfi-64, srfi-64
 ()
 
 A Scheme API for test suites
-Supported by the module @code{srfi-64}.
+Supported by the module @code{srfi-64}. @xref{A Scheme API for test suites}.
 
 テストスイートのためのScheme API
-モジュール@code{srfi-64}でサポートされます。
+モジュール@code{srfi-64}でサポートされます。@ref{A Scheme API for test suites}参照。
 
 
 srfi-66, srfi-66

@@ -41,6 +41,7 @@ srfi N is supported by Gauche.)
 * Vector library (Legacy)::     srfi-43
 * Requiring extensions::        srfi-55
 * Integers as bits::            srfi-60
+* A Scheme API for test suites:: srfi-64
 * Octet vectors::               srfi-66
 * Basic hash tables::           srfi-69
 * Octet-addressed binary blocks::  srfi-74
@@ -4016,7 +4017,7 @@ Roughly corresponds to Gauche's @code{use} forms:
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Integers as bits, Octet vectors, Requiring extensions, Library modules - SRFIs
+@node Integers as bits, A Scheme API for test suites, Requiring extensions, Library modules - SRFIs
 @section @code{srfi-60} - Integers as bits
 @c NODE 整数に対するビット操作, @code{srfi-60} - 整数に対するビット操作
 
@@ -4131,7 +4132,54 @@ order (LSB first) (@pxref{R7RS bitwise operations}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Octet vectors, Basic hash tables, Integers as bits, Library modules - SRFIs
+@node A Scheme API for test suites, Octet vectors, Integers as bits, Library modules - SRFIs
+@section @code{srfi-64} - A Scheme API for test suites
+@c NODE SchemeテストスイートAPI, @code{srfi-64} - SchemeテストスイートAPI
+
+@deftp {Module} srfi-64
+@mdindex srfi-64
+This module defines API to write a portable test suite.  In Gauche,
+it is adapted to work with @code{gauche.test} native test framework
+(@pxref{Unit testing}).
+
+If srfi-64 tests are run with the default runner during @code{gauche.test}
+is active, the tests becomes a part of the whole @code{gauche.test} suite.
+
+The recommended way is to write a test suite in pure srfi-64, then include
+it from the gauche test script:
+
+@example
+(use gauche.test)
+(test-start "the tests")
+;; portable test
+(include "test-suite-in-srfi-64")
+
+;; gauche-specific test, if needed
+...
+
+(test-end)
+@end example
+
+If @file{test-suite-in-srfi-64.scm} is run by itself, it uses srfi-64's
+default reporting system.  If it is run within @code{gauche.test} script,
+the results are reported via @code{gauche.test}, consolidated with other
+Gauche test results.
+@end deftp
+
+@menu
+* Srfi-64 test API::
+* Srfi-64 test runner::
+@end menu
+
+@node Srfi-64 test API, Srfi-64 test runner, A Scheme API for test suites, A Scheme API for test suites
+@subsection Test API
+
+@node Srfi-64 test runner,  , Srfi-64 test API, A Scheme API for test suites
+@subsection Test runner
+
+
+@c ----------------------------------------------------------------------
+@node Octet vectors, Basic hash tables, A Scheme API for test suites, Library modules - SRFIs
 @section @code{srfi-66} - Octet vectors
 @c NODE オクテットベクタ, @code{srfi-66} - オクテットベクタ
 
