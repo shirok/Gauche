@@ -156,7 +156,7 @@
                         (quasirename %id
                           `(lambda ,real-args ,@body)))])
       (receive (true-name getter-name) (%check-setter-name name)
-        (let1 gf (gensym)
+        (let1 gf (gensym "gf")
           (quasirename %id
             `(rlet1 ,gf (%ensure-generic-function ',true-name (current-module))
                (add-method! ,gf (make <method>
