@@ -28,13 +28,16 @@ Schemeに触れるのが初めての読者は、何らかのチュートリア�
 @c EN
 This manual only deals with Scheme side of things.  Gauche has
 another face, a C interface.   Details of it will be discussed
-in a separate document to be written.
+in a separate document.  See @file{gauche-dev.texi} in the source
+distribution for the work-in-progress of such document.
 Those who want to use Gauche as an embedded language, or want
 to write an extension, need that volume.
 @c JP
 このマニュアルでは、GaucheのScheme言語としての面のみを扱います。
 GaucheはC言語から呼べる汎用リスト処理ライブラリとしての側面も持っていますが、
-それは別ドキュメントで解説する予定です。Gaucheを組み込み言語として使いたい、
+それは別ドキュメントで解説されます。配布ソース中の@file{gauche-dev.texi}に
+書きかけのドキュメントがあります。
+Gaucheを組み込み言語として使いたい、
 もしくはGaucheをC言語で拡張したいという読者はそのドキュメントが必要となります。
 @c COMMON
 
@@ -589,7 +592,7 @@ RnRS libraries are more static than Gauche modules; you cannot
 add definitions to exiting libraries within RnRS, for example.)
 @c JP
 (註: RnRSライブラリは、厳密に言えばGaucheのモジュールよりも抽象的な概念です。
-RnRSでは処理系がライブラリを様々な方法で実装できるように規程しています。
+RnRSでは処理系がライブラリを様々な方法で実装できるように規定しています。
 Gaucheではたまたま、モジュールという仕組みを使ってRnRSライブラリのの概念が
 実現されているということです。ポータブルなR7RSライブラリを書く時は、
 Gauche特有のモジュールのセマンティクスに依存しないように気をつけてください。
