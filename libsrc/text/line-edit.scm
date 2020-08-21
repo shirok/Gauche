@@ -1313,6 +1313,8 @@
 (define-key *default-keymap* (ctrl #\k) kill-line)
 (define-key *default-keymap* (ctrl #\l) refresh-display)
 (define-key *default-keymap* (ctrl #\m) commit-or-newline) ; return
+;; ; return after being put in background and back in foreground
+(define-key *default-keymap* #\newline commit-or-newline)
 (define-key *default-keymap* (ctrl #\n) next-line-or-history)
 ;;(define-key *default-keymap* (ctrl #\o) undefined-command)
 (define-key *default-keymap* (ctrl #\p) prev-line-or-history)
