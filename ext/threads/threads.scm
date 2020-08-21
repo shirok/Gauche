@@ -273,14 +273,13 @@
        (with-lock timeout timeout-val timeout-vals (apply proc vals)))
      (^[proc timeout timeout-val timeout-vals]
        (with-lock timeout timeout-val timeout-vals
-                  (call-with-values (cut apply proc vals)
-                    (^ vs
-                      (unless (= (length vs) (length vals))
-                        (errorf "atomic-update!: procedure returned wrong \
+                  (receive newvals (apply proc vals)
+                    (unless (>= (length newvals) (length vals))
+                      (errorf "atomic-update!: procedure returned too few \
                                    number of values (~a, while ~a expected)"
-                                (length vs) (length vals)))
-                      (set! vals vs)
-                      (apply values vals))))))))
+                              (length newvals) (length vals)))
+                    (set! vals (take newvals (length vals)))
+                    (apply values newvals)))))))
 
 (define (atomic atom proc :optional (timeout #f) (timeout-val #f) :rest vals)
   (unless (atom? atom) (error "atom required, but got:" atom))

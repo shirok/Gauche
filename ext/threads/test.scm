@@ -504,6 +504,12 @@
          (for-each thread-join! ts)
          (atom-ref a)))
 
+(test* "atomic-update! extra values" '(2 3 4)
+       (let ([a (atom 1 2)])
+         (values->list
+          (atomic-update! a
+                          (^[x y] (values (+ x 1) (+ y 1) (+ x y 1)))))))
+
 ;;---------------------------------------------------------------------
 (test-section "threads and promise")
 

@@ -20808,8 +20808,10 @@ Calls @var{proc} with the current values in @var{atom}
 while locking @var{atom}, and updates the values in @var{atom}
 by the returned values from @var{proc}.
 @var{proc} must take as many arguments as the number of
-values @var{atom} has, and must return the same number of
-values.
+values @var{atom} has, and must return the at least the same number of
+values.  If @var{proc} returns more than the number of values @var{atom}
+holds, the extra values are not used to update the @var{atom}, but
+is included in the return values of @code{atomic-update!}.
 
 The returned value(s) of @code{atomic-update!} is what
 @var{proc} returns, unless timeout occurs.
@@ -20826,8 +20828,8 @@ The following example shows a thread-safe counter.
 
 
 Note: The term @emph{atom} in historical Lisps
-meant objects that are not a cons cell (pair).  Back then
-cons cells were the only aggregated datatype and there were
+meant an object that is not a cons cell (pair).  Back then
+cons cells were the only aggregate datatype and there were
 few other datatypes (numbers and symbols), so having a
 complementary term to cells made sense.
 
