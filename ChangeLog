@@ -1,3 +1,12 @@
+2020-08-22  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/line-edit.scm (read-line/edit): Install SIGCONT handler
+	  to handle the case when REPL is stopped by shell's job control and
+	  then restarted.  Singal handler has global effect, so it may
+	  interfere with the application---in which case we may provide an
+	  option to turn it off.  For now, let's see how it goes.
+	  Cf. https://github.com/shirok/Gauche/issues/715
+
 2020-08-21  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/console.scm (canonical-mode?): Add an API to query

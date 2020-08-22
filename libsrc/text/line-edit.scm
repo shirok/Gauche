@@ -33,6 +33,9 @@
 
 (define-module text.line-edit
   (use gauche.generator)
+  (use gauche.parameter)
+  (use gauche.threads)
+  (use gauche.unicode)
   (use data.ring-buffer)
   (use data.queue)
   (use file.util)
@@ -41,7 +44,6 @@
   (use text.console.wide-char-setting)
   (use text.gap-buffer)
   (use text.pager)
-  (use gauche.unicode)
   (export <line-edit-context> read-line/edit
           save-line-edit-history
           load-line-edit-history
@@ -183,6 +185,56 @@
              (display #\newline (current-error-port))])
     (%save-history ctx path)))
 
+;; Global SIGCONT handler
+;;  Since we, as a library, don't have control of sigmasks in all threads, 
+;;  so we don't know which thread the sigcont handler is invoked.
+
+;;  *sigcont-observer* is an atom of these values:
+;;   - list of threads running read-line/edit
+;;   - list of threads that haven't handled SIGCONT
+;;
+;;  When SIGCONT handler is called, it copies the first value to the second.
+;;  When read-line/edit attempt to read from console, it checks the second
+;;  value to see if the calling thread is in it.  If so, remove the thread
+;;  from it, and reset the console.
+
+;;  NB: First call to read-line/edit installs global SIGCONT handler.
+;;  We can't localize the effect.  If you want to handle SIGCONT yourself,
+;;  you can't use read-line/edit.  (We may be able to offer an option to
+;;  handle SIGCONT or not, but it'll be pretty hairy to make it safe.)
+
+(define *sigcont-observers* (atom '() '()))
+
+(define (%sigcont-handler sig)
+  (when (eqv? sig SIGCONT)
+    (atomic-update! *sigcont-observers* (^[ts _] (values ts ts)))))
+
+(define (%sigcont-observe)
+  (let1 t (current-thread)
+    (atomic-update! *sigcont-observers*
+                    (^[ts notifiee]
+                      (when (null? ts)
+                        (set-signal-handler! SIGCONT %sigcont-handler))
+                      (values (if (memq t ts) ts (cons t ts))
+                              notifiee)))))
+
+(define (%sigcont-unobserve)
+  (let1 t (current-thread)
+    (atomic-update! *sigcont-observers*
+                    (^[ts notifiee]
+                      (let1 ts. (delete t ts)
+                        (when (null? ts)
+                          (set-signal-handler! SIGCONT #t))
+                        (values (delete t ts) notifiee))))))
+
+(define (%sigcont-received?)
+  (let1 t (current-thread)
+    (values-ref (atomic-update! *sigcont-observers*
+                                (^[ts notifiee]
+                                  (values ts (delete t notifiee)
+                                          (boolean (memq t notifiee)))))
+                2)))
+
 ;; Entry point API
 ;; NB: For the consistency with read-line, the returned string won't include
 ;; the final newline.
@@ -290,23 +342,36 @@
            [h (keymap-ref (~ ctx'keymap) ch)])
       (handle-command h ch edit-loop redisp)))
 
+  ;; The 'main' routine of the editor.  Called while the console is set up
+  ;; for the editing.  Returns edited string.   Can bail out by an error.
+  ;; This routine may be reentered if SIGCONT happens.
+  (define (edit-main redisp)
+    (dynamic-wind
+      %sigcont-observe
+      (^[]
+        (ensure-bottom-room (~ ctx'console)) ; workaround for windows IME glitch
+        (when redisp (reset-terminal (~ ctx'console)))
+        (show-prompt ctx)
+        (init-screen-params ctx)
+        (edit-loop redisp))
+      %sigcont-unobserve))
+
   ;;
   ;; Main body
   ;;
   (reset-undo-info! ctx)
   (reset-last-yank! ctx)
-  ($ call-with-console (~ ctx'console)
-     (^_
-      (ensure-bottom-room (~ ctx'console)) ; workaround for windows IME glitch
-      (show-prompt ctx)
-      (init-screen-params ctx)
-      (guard (e [(and (<unhandled-signal-error> e)
-                      (eqv? (~ e'signal) SIGINT))
-                 (putstr (~ ctx'console) "\r\nInput interrupted\r\n")
-                 ""]
-                [else (raise e)])
-        ;; Initialization
-        (edit-loop #f)))))
+  (let reenter ([refresh? #f])
+    (let1 r (guard (e [(and (<unhandled-signal-error> e)
+                            (eqv? (~ e'signal) SIGINT))
+                       (display "\nInput interrupted\n")
+                       ""]
+                      [(eq? e 'sigcont-received) e]
+                      [else (raise e)])
+              (call-with-console (~ ctx'console) (^_ (edit-main refresh?))))
+    (if (eq? r 'sigcont-received)
+      (reenter #t)
+      r))))
 
 ;; Check some parameters of screen.
 (define (init-screen-params ctx)
@@ -336,9 +401,22 @@
         (set! (~ ctx'initpos-x) x)))))
 
 ;; Fetch next keystroke.
+;; Note: If we've received SIGCONT and the terminal has been turned back to
+;; the canonical mode, it is likely that we've stopped and then resumed
+;; by shell job control.  The user may have tried several keystrokes, but
+;; they won't be sent to us until the user type Enter.  We'll discard all
+;; those keys, then raises 'sigcont-received, which causes read-line/edit
+;; to reset the terminal mode and redisplay the buffer.
 (define (next-keystroke ctx)
   (if (queue-empty? (~ ctx'keystroke-queue))
-    (getch (~ ctx'console))
+    (let1 ch (getch (~ ctx'console))
+      (if (and (%sigcont-received?)
+               (canonical-mode? (~ ctx'console)))
+        (let loop ()
+          (let1 ch (getch (~ ctx'console) 10000) ;10ms wait
+            (unless ch (raise 'sigcont-received))
+            (loop)))
+        ch))
     (queue-pop! (~ ctx'keystroke-queue))))
 
 ;; Show prompt.  Returns the current column.
