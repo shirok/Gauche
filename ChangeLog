@@ -1,5 +1,10 @@
 2020-08-21  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/text/console.scm (canonical-mode?): Add an API to query
+	  if the terminal is in canonical (line editing) mode.  Useful to
+	  detect when a process wakes up by SIGCONT and see if the terminal
+	  setting has been changed by shell job control.
+
 	* ext/threads/threads.scm (atomic-update!): Allow proc to return more
 	  values than the atom holds.  It is useful if one wants to update
 	  atom state and compute something using before-update values.

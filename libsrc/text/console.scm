@@ -41,7 +41,7 @@
   (export <vt100> <windows-console>
 
           call-with-console
-          putch putstr getch get-raw-chars chready? beep
+          putch putstr getch get-raw-chars chready? canonical-mode? beep
           query-screen-size query-cursor-position move-cursor-to
           hide-cursor show-cursor cursor-down/scroll-up cursor-up/scroll-down
           reset-terminal clear-screen clear-to-eol clear-to-eos
@@ -176,6 +176,15 @@
 (define-method chready? ((con <vt100>))
   (or (not (queue-empty? (~ con'input-buffer)))
       (char-ready? (~ con'iport))))
+
+;; Returns #t if the console is 'canonical' mode, that is, line editing
+;; is done in the console driver.  Usually you don't need to query such a
+;; thing because you set up the console mode by yourself, but when the process
+;; is stopped by job control and the resumed by SIGCONT, the console mode
+;; may have been changed.
+(define-method canonical-mode? ((con <vt100>))
+  (not (zero? (logand (~ (sys-tcgetattr (~ con'iport)) 'lflag)
+                      ICANON))))
 
 (define-method beep ((con <vt100>)) (putch con #\alarm))
 

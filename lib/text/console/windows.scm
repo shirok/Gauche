@@ -218,6 +218,11 @@
   (%getch-sub con)
   (not (queue-empty? (~ con'keybuf))))
 
+;; Windows console doesn't have different modes.  It's mostly irrelevant
+;; for it also lacks shell job control.  We just return #t for the completeness.
+(define-method canonical-mode? ((con <windows-console>))
+  #t)
+
 (define-method query-cursor-position ((con <windows-console>))
   (let1 cinfo (sys-get-console-screen-buffer-info (get-ohandle))
     (values (slot-ref cinfo'cursor-position.y)
