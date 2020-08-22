@@ -205,8 +205,12 @@
 
 (define *sigcont-observers* (atom '() '()))
 
+;; Windows doesn't define SIGCONT, and we precompile this module so we can't
+;; use cond-expand.
+(define *sigcont* (global-variable-ref (find-module 'gauche) 'SIGCONT 0))
+
 (define (%sigcont-handler sig)
-  (when (eqv? sig SIGCONT)
+  (when (eqv? sig *sigcont*)
     (atomic-update! *sigcont-observers* (^[ts _] (values ts ts)))))
 
 (define (%sigcont-observe)
@@ -214,7 +218,7 @@
     (atomic-update! *sigcont-observers*
                     (^[ts notifiee]
                       (when (null? ts)
-                        (set-signal-handler! SIGCONT %sigcont-handler))
+                        (set-signal-handler! *sigcont* %sigcont-handler))
                       (values (if (memq t ts) ts (cons t ts))
                               notifiee)))))
 
@@ -224,7 +228,7 @@
                     (^[ts notifiee]
                       (let1 ts. (delete t ts)
                         (when (null? ts)
-                          (set-signal-handler! SIGCONT #t))
+                          (set-signal-handler! *sigcont* #t))
                         (values (delete t ts) notifiee))))))
 
 (define (%sigcont-received?)
