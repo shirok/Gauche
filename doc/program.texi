@@ -1476,6 +1476,16 @@ You can type @code{M-h h} to see a brief summary of editor features,
 そして@code{M-h k}に続いてキーを打つことでそのキーの機能のヘルプを見ることができます。
 (ヘルプが@code{C-h}でないのは、backspaceと同じキーコードだからです。)
 @c COMMON
+@item
+@c EN
+If you suspend @code{gosh}, then resume it by shell's job control feature
+(e.g. @code{C-z}, then @code{fg}).
+type ENTER to regain editing screen.
+@c JP
+もしシェルのジョブコントロール機能で@code{gosh}を一回止めてからまた再開した場合
+(@code{C-z}で止めて@code{fg}で再開するなど)、ENTERをタイプすることで
+編集画面がリストアされます。
+@c COMMON
 @end itemize
 
 @c EN

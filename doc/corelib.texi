@@ -25720,7 +25720,7 @@ behavior for each signal is as in the following table.
 @c COMMON
 
 @table @code
-@item SIGABRT, SIGILL, SIGKILL, SIGCONT, SIGSTOP, SIGSEGV, SIGBUS
+@item SIGABRT, SIGILL, SIGKILL, SIGSTOP, SIGSEGV, SIGBUS
 @c EN
 Cannot be handled in Scheme.  @code{Gosh} follows the system's
 default behavior.
@@ -25731,12 +25731,23 @@ Schemeでは処理できません。@code{gosh}ではこれらのシグナルを
 @item SIGCHLD, SIGTSTP, SIGTTIN, SIGTTOU, SIGWINCH
 @c EN
 No signal handles are installed for these signals by @code{gosh},
-       so the process follows the system's default behavior.
-       Scheme programs can install its own signal handler if necessary.
+so the process follows the system's default behavior.
+A Scheme programs can install its own signal handler if necessary.
 @c JP
 @code{gosh}は初期状態ではこれらのシグナルのハンドラを設定せず、
-       システムのデフォルトの振るまいに任せます。Schemeプログラムは必要ならば
-       これらのシグナルのハンドラを設定できます。
+システムのデフォルトの振るまいに任せます。Schemeプログラムは必要ならば
+これらのシグナルのハンドラを設定できます。
+@c COMMON
+@item SIGCONT
+@c EN
+If @code{gosh} is running with input editing mode, a signal handler
+is installed to restore terminal status.  Otherwise, no signal
+handler is installed by default, and a Scheme program can
+install its own signal handler if necessary.
+@c JP
+@code{gosh}が入力編集モードで起動している場合は、端末状態を回復する
+シグナルハンドラが設定されています。それ以外の場合はシグナルハンドラは
+設定されず、Schemeプログラムは必要ならば独自のハンドラを設定できます。
 @c COMMON
 @item SIGHUP, SIGQUIT, SIGTERM
 @c EN
