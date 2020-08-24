@@ -10,17 +10,17 @@
   (use srfi-13)
   (use srfi-19)
   (use file.util)
-  (export posix-error? posix-error-name 
+  (export posix-error? posix-error-name posix-error-message
 
           open-file
           open/read open/write open/read+write open/append
           open/create open/exclusive open/nofollow open/truncate
-          fdes->textual-input-port
-          fdes->binary-input-port
-          fdes->textual-output-port
-          fdes->binary-output-port
-          port-fdes
-          close-fdes
+          fd->textual-input-port
+          fd->binary-input-port
+          fd->textual-output-port
+          fd->binary-output-port
+          port-fd
+          close-fd
 
           create-directory
           create-fifo
@@ -31,7 +31,6 @@
           delete-directory
           set-file-mode
           set-file-owner
-          set-file-group
           set-file-timespecs
           truncate-file
 
@@ -54,6 +53,8 @@
           file-info-fifo?
           file-info-symlink?
           file-info-regular?
+          file-info-socket?
+          file-info-device?
 
           directory-files
           make-directory-files-generator
@@ -69,7 +70,7 @@
 
           umask set-umask!
           current-directory set-current-directory!
-          pid parent-pid process-group
+          pid
           nice
           user-uid user-gid
           user-effective-uid user-effective-gid
@@ -108,6 +109,10 @@
   (assume (posix-error? obj))
   (sys-errno->symbol (condition-ref obj 'errno)))
 
+(define (posix-error-message obj)
+  (assume (posix-error? obj))
+  (sys-strerror (condition-ref obj 'errno)))
+
 ;; 3.2 I/O
 
 (define-constant open/read       O_RDONLY)
@@ -132,18 +137,18 @@
     [(line)  (if in? :modest :line)]
     [else (error "Invalid buffering-mode: Must be one of (none block line), but got:" sym)]))
 
-(define (fdes->textual-input-port fd :optional (bufmode 'block))
+(define (fd->textual-input-port fd :optional (bufmode 'block))
   (open-input-fd-port fd :buffering (%bufmode bufmode #t)))
-(define (fdes->binary-input-port fd :optional (bufmode 'block))
+(define (fd->binary-input-port fd :optional (bufmode 'block))
   (open-input-fd-port fd :buffering (%bufmode bufmode #t)))
-(define (fdes->textual-output-port fd :optional (bufmode 'block))
+(define (fd->textual-output-port fd :optional (bufmode 'block))
   (open-output-fd-port fd :buffering (%bufmode bufmode #f)))
-(define (fdes->binary-output-port fd :optional (bufmode 'block))
+(define (fd->binary-output-port fd :optional (bufmode 'block))
   (open-output-fd-port fd :buffering (%bufmode bufmode #f)))
 
-(define (port-fdes port) (port-file-number port))
+(define (port-fd port) (port-file-number port))
 
-(define (close-fdes fd) (sys-close fd))
+(define (close-fd fd) (sys-close fd))
 
 ;; 3.3 File system
 
@@ -170,8 +175,7 @@
 (define (delete-directory name) (sys-rmdir name))
 
 (define (set-file-mode name mode) (sys-chmod name mode))
-(define (set-file-owner name uid) (sys-chown name uid -1))
-(define (set-file-group name gid) (sys-chown name -1 gid))
+(define (set-file-owner name uid gid) (sys-chown name uid gid))
 
 (define-constant timespec/now 'timespec/now)
 (define-constant timespec/omit 'timespec/omit)
@@ -254,6 +258,12 @@
 (define (file-info-regular? stat)
   (assume-type stat <sys-stat>)
   (eq? (~ stat'type) 'regular))
+(define (file-info-socket? stat)
+  (assume-type stat <sys-stat>)
+  (eq? (~ stat'type) 'socket))
+(define (file-info-device? stat)
+  (assume-type stat <sys-stat>)
+  (memq (~ stat'type) '(block character)))
 
 (define (directory-files dir :optional (dot? #f))
   (directory-list dir 
@@ -318,11 +328,6 @@
 (define (set-current-directory! dir) (current-directory dir))
 
 (define (pid) (sys-getpid))
-(define (parent-pid) (sys-getppid))
-(define (process-group) 
-  (cond-expand
-   [gauche.os.windows (error "process-group is not supported on this platform")]
-   [else (sys-getpgrp)]))
 
 (define (nice :optional (delta 1)) 
   (cond-expand 
@@ -398,11 +403,9 @@
 
 (define (posix-time) (current-time))
 
-(define monotonic-time
-  (let1 last-time (current-time)
-    (^[] (let1 now (current-time)
-           (when (time<=? last-time now) (set! last-time now))
-           last-time))))
+(define (monotonic-time) 
+  (receive (s ns) (sys-clock-gettime-monotonic)
+    (make-time 'time-monotonic s ns)))
 
 ;;
 ;; 3.11 Environment variables

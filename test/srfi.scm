@@ -2729,7 +2729,7 @@
                                                           open/create
                                                           open/exclusive)
                                                 #o600)
-                               (close-fdes z)
+                               (close-fd z)
                                f))
                          "test.o/")
                  (boolean (#/^test.o\/\w+/ ff))))
