@@ -627,10 +627,16 @@ static void process_command_args(ScmObj cmd_args)
                              SCM_FALSE, 0);
             break;
         case 'e':
-            if (Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
-                                SCM_OBJ(Scm_UserModule()),
-                                &epak) < 0) {
-                error_exit(epak.exception);
+            /* -e option may have multiple sexprs */
+            {
+                ScmObj p = Scm_MakeInputStringPort(SCM_STRING(v), TRUE);
+                epak.module = Scm_UserModule();
+                ScmObj form;
+                while ((form = Scm_Read(p)) != SCM_EOF) {
+                    if (Scm_Eval(form, SCM_OBJ(epak.module), &epak) < 0) {
+                        error_exit(epak.exception);
+                    }
+                }
             }
             break;
         case 'E':

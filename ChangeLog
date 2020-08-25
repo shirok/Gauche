@@ -1,3 +1,7 @@
+2020-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: Allow multiple S-exprs in -e option.
+
 2020-08-22  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/line-edit.scm (read-line/edit): Install SIGCONT handler
