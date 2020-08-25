@@ -1801,18 +1801,25 @@ static ScmObj safe_eval_thunk(ScmObj *args SCM_UNUSED,
                               void *data)
 {
     struct eval_packet_rec *epak = (struct eval_packet_rec*)data;
+    ScmObj r;
 
     switch (epak->kind) {
     case SAFE_EVAL_CSTRING:
-        return Scm_VMEval(Scm_ReadFromCString(epak->cstr), epak->env);
+        r = Scm_VMEval(Scm_ReadFromCString(epak->cstr), epak->env);
+        break;
     case SAFE_EVAL:
-        return Scm_VMEval(epak->arg0, epak->env);
+        r = Scm_VMEval(epak->arg0, epak->env);
+        break;
     case SAFE_APPLY:
-        return Scm_VMApply(epak->arg0, epak->args);
+        r = Scm_VMApply(epak->arg0, epak->args);
+        break;
     default:
         Scm_Panic("safe_eval_subr: bad kind");
         return SCM_UNBOUND;     /* dummy */
     }
+    /* If expressino was select-module, the current module may be changed. */
+    epak->env = SCM_OBJ(SCM_CURRENT_MODULE());
+    return r;
 }
 
 static ScmObj safe_eval_int(ScmObj *args SCM_UNUSED,
@@ -1850,6 +1857,9 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
                 result->results[i] = vm->vals[i-1];
             }
             result->exception = SCM_FALSE;
+            if (SCM_MODULEP(epak.env)) {
+                result->module = SCM_MODULE(epak.env);
+            }
         }
         return vm->numVals;
     } else {
