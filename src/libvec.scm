@@ -310,15 +310,18 @@
 ;;; Bitvectors
 ;;;
 
-(define-cproc bitvector (:rest bits) Scm_ListToBitvector)
-(define-cproc list->bitvector (bits) Scm_ListToBitvector)
+(define-cproc bitvector (:rest bits) Scm_ListToBitvector) ;srfi-178
+(define-cproc list->bitvector (bits) Scm_ListToBitvector) ;srfi-178
 
-(define-cproc string->bitvector (s::<string>) 
+(define-cproc string->bitvector (s::<string>) ;srfi-178
   (return (Scm_StringToBitvector s TRUE)))
-(define-cproc bitvector->string (v::<bitvector>) 
+(define-cproc bitvector->string (v::<bitvector>) ;srfi-178
   (return (Scm_BitvectorToString v TRUE)))
 
-(define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum>
+(define-cproc bit->integer (bit) ::<int> Scm_Bit2Int) ;srfi-178
+(define-cproc bit->boolean (bit) ::<boolean> Scm_Bit2Int) ;srfi-178
+
+(define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum> ;srfi-178
                                                 :optional fallback)
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
     (if (SCM_UNDEFINEDP fallback)
@@ -328,13 +331,18 @@
               (SCM_MAKE_INT 1)
               (SCM_MAKE_INT 0))))
 
-(define-cproc bitvector-ref/bool (v::<bitvector> i::<fixnum>
-                                                :optional fallback)
+(define-cproc bitvector-ref/bool (v::<bitvector> i::<fixnum> ;srfi-178
+                                                 :optional fallback)
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
     (if (SCM_UNDEFINEDP fallback)
       (Scm_Error "bitvector index out of range: %l" i)
       (return fallback)))
   (return (?: (SCM_BITS_TEST (-> v bits) i) SCM_TRUE SCM_FALSE)))
+
+(define-cproc bitvector-copy (v::<bitvector> 
+                              :optional (start::<fixnum> 0)
+                                        (end::<fixnum> -1))
+  Scm_BitvectorCopy)
 
 ;;;
 ;;; Flat vector API (interact with underlying C array)

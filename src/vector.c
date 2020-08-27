@@ -822,12 +822,20 @@ SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_BitvectorClass, bitvector_print, NULL,
                                SCM_CLASS_AGGREGATE);
 
 
-static int bit2int(ScmObj bit)
+int Scm_Bit2Int(ScmObj bit)
 {
     if (SCM_EQ(bit, SCM_TRUE) || SCM_EQ(bit, SCM_MAKE_INT(1))) return TRUE;
     if (SCM_FALSEP(bit) || SCM_EQ(bit, SCM_MAKE_INT(0))) return FALSE;
     Scm_Error("bit value must be 0, 1, #f or #t, but got: %S", bit);
     return 0;                   /* dummy */
+}
+
+ScmObj Scm_Bit2Bool(ScmObj bit)
+{
+    if (SCM_EQ(bit, SCM_TRUE) || SCM_EQ(bit, SCM_MAKE_INT(1))) return SCM_TRUE;
+    if (SCM_FALSEP(bit) || SCM_EQ(bit, SCM_MAKE_INT(0))) return SCM_FALSE;
+    Scm_Error("bit value must be 0, 1, #f or #t, but got: %S", bit);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /* init can be 0, 1, #f or #t. */
@@ -841,12 +849,8 @@ ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init)
     v->size_flags = (size << 1);
     v->bits = Scm_MakeBits(size);
     
-    int fill = bit2int(init);
-
-    for (int i=0; i<size; i++) {
-        if (fill) SCM_BITS_SET(v->bits, i);
-        else      SCM_BITS_RESET(v->bits, i);
-    }
+    int fill = Scm_Bit2Int(init);
+    Scm_BitsFill(v->bits, 0, size, fill);
     return SCM_OBJ(v);
 }
 
@@ -861,8 +865,8 @@ ScmObj Scm_ListToBitvector(ScmObj lis)
     ScmObj cp;
     ScmSmallInt i = 0;
     SCM_FOR_EACH(cp, lis) {
-        if (bit2int(SCM_CAR(cp))) SCM_BITS_SET(v->bits, i);
-        else                      SCM_BITS_RESET(v->bits, i);
+        if (Scm_Bit2Int(SCM_CAR(cp))) SCM_BITS_SET(v->bits, i);
+        else                          SCM_BITS_RESET(v->bits, i);
         i++;
     }
     return SCM_OBJ(v);
@@ -902,6 +906,29 @@ ScmObj Scm_BitvectorToString(ScmBitvector *v, int prefix)
     bitvector_write_int(v, prefix, SCM_PORT(out));
     return Scm_GetOutputString(SCM_PORT(out), 0);
 }
+
+ScmObj Scm_BitvectorCopy(ScmBitvector *v, ScmSmallInt start, ScmSmallInt end)
+{
+    ScmSmallInt size = SCM_BITVECTOR_SIZE(v);
+    SCM_CHECK_START_END(start, end, size);
+    ScmBitvector *vv = SCM_BITVECTOR(Scm_MakeBitvector(end-start, SCM_FALSE));
+    Scm_BitsCopyX(vv->bits, 0, v->bits, start, end);
+    return SCM_OBJ(vv);
+}
+
+ScmObj Scm_BitvectorCopyX(ScmBitvector *dest, ScmSmallInt dstart,
+                          ScmBitvector *src,
+                          ScmSmallInt sstart, ScmSmallInt send)
+{
+    SCM_BITVECTOR_CHECK_MUTABLE(dest);
+    ScmSmallInt ssize = SCM_BITVECTOR_SIZE(src);
+    SCM_CHECK_START_END(sstart, send, ssize);
+    ScmSmallInt dsize = SCM_BITVECTOR_SIZE(dest);
+    ScmSmallInt dend = dstart + dsize;
+    if (dstart > disze || dstart < 0 || 
+    
+}
+
 
 /*=====================================================================
  * Utility

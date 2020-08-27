@@ -415,8 +415,13 @@ SCM_CLASS_DECL(Scm_BitvectorClass);
     Scm_Error("bitvector is immutable: %S", obj); \
   }} while (0)
 
+SCM_EXTERN int    Scm_Bit2Int(ScmObj bit);
+SCM_EXTERN ScmObj Scm_Bit2Bool(ScmObj bit);
 SCM_EXTERN ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init);
 SCM_EXTERN ScmObj Scm_ListToBitvector(ScmObj lis);
+SCM_EXTERN ScmObj Scm_BitvectorCopy(ScmBitvector *v, 
+                                    ScmSmallInt start,
+                                    ScmSmallInt end);
 
 SCM_EXTERN ScmObj Scm_StringToBitvector(ScmString *s, int prefix);
 SCM_EXTERN ScmObj Scm_BitvectorToString(ScmBitvector *v, int prefix);
