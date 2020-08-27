@@ -916,20 +916,6 @@ ScmObj Scm_BitvectorCopy(ScmBitvector *v, ScmSmallInt start, ScmSmallInt end)
     return SCM_OBJ(vv);
 }
 
-ScmObj Scm_BitvectorCopyX(ScmBitvector *dest, ScmSmallInt dstart,
-                          ScmBitvector *src,
-                          ScmSmallInt sstart, ScmSmallInt send)
-{
-    SCM_BITVECTOR_CHECK_MUTABLE(dest);
-    ScmSmallInt ssize = SCM_BITVECTOR_SIZE(src);
-    SCM_CHECK_START_END(sstart, send, ssize);
-    ScmSmallInt dsize = SCM_BITVECTOR_SIZE(dest);
-    ScmSmallInt dend = dstart + dsize;
-    if (dstart > disze || dstart < 0 || 
-    
-}
-
-
 /*=====================================================================
  * Utility
  */
