@@ -1,5 +1,11 @@
 2020-08-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c, src/string.c: Changed incomplete string literal to
+	  #**"...", for #*"..." conflicts with bitvector literals (we thought
+	  it wouldn't, but overlooked that '#*' can be a valid bitvector
+	  literal.)  The reader allows old syntax depending on reader lexical
+	  mode.
+
 	* src/main.c (further_options): If -fwarn-legacy-sytnax is given,
 	  don't forget to change the reader syntax mode of SCM_CURIN, which
 	  has already been opened.  The setting of Scm_SetReaderLexicalMode only

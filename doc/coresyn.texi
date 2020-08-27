@@ -329,9 +329,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#*}
 @c EN
- @tab If followed by a double quote, denotes an incomplete string.  @xref{Strings}.
+ @tab Bitvector or an incomplete string.  @xref{Strings}.
 @c JP
- @tab 二重引用符がこれに続くときは、不完全な文字列を表します。@ref{Strings}参照。
+ @tab ビットベクタあるいは不完全な文字列。@ref{Strings}参照。
 @c COMMON
 @item @code{#+}
 @c EN

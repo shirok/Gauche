@@ -1570,7 +1570,9 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             const char *cp = SCM_STRING_BODY_START(b);
             ScmSmallInt size = SCM_STRING_BODY_SIZE(b);
             if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
-                SCM_PUTZ("#*\"", -1, port);
+                /* TODO: Should we provide legacy-compatible writer mode,
+                   which puts #*"..." instead? */
+                SCM_PUTZ("#**\"", -1, port);
             } else {
                 SCM_PUTC('"', port);
             }

@@ -8727,8 +8727,8 @@ behavior, but prints warning when it finds legacy syntax.
 @c COMMON
 @end deftp
 
-@deftp {Reader Syntax} @code{#*"}@dots{}@code{"}
-@lxindex #*
+@deftp {Reader Syntax} @code{#**"}@dots{}@code{"}
+@lxindex #**
 @c EN
 Denotes incomplete string.  The same escape sequences as the complete
 string syntax are recognized.
@@ -8738,15 +8738,54 @@ string syntax are recognized.
 @c COMMON
 
 @c EN
-Rationale of the syntax: '@code{#*}' is used for bit vector
-in Common Lisp.  Since an incomplete strings is really a byte vector,
-it has similarity.  (Bit vector can be added later, if necessary,
-and two can coexist).
+Rationale of the syntax: @code{#*} is used for bit vectors.
+Since an incomplete strings is really a byte vector,
+it has similarity.
 @c JP
-'@code{#*}' という構文はCommon Lispでビットベクタの表記に使われています。
+@code{#*} という構文はCommon Lispでビットベクタの表記に使われています。
 不完全な文字列は実際はバイトベクタであることから、類似点を認めてこの構文を
-採用しました。(もし将来必要になってビットベクタが実装されたとしても、
-この構文と共存できます)。
+採用しました。
+@c COMMON
+
+@c EN
+Note: We used @code{#*"...."} for an incomplete string on 0.9.9 and
+before.  It turned out that it couldn't coexist with bitvectors, for
+@code{#*} is a valid bitvector literal (zero-length vector), and
+@code{"} is a delimiter, so @code{#*"...."} can be parsed as
+a zero-length bitvector followed by a string.  From 0.9.10, we changed
+the incomplete string literal to @code{#**"..."}.  It's a bit lengthy,
+but incomplete strings are anomalies and shouldn't be used often anyway.
+
+For the backward compatibility, @code{#*"..."} is still read as an
+incomplete string literal, unless the reader lexical mode
+is @code{strict-r7} (@pxref{Reader lexical mode}, for the details).
+If the reader lexical mode is @code{warn-legacy}, it is read as
+an incomplete string, but a warning is issued.
+If the mode is @code{strict-r7}, it is read as a zero-length
+bitvector followed by a string.
+
+In future releasers, @code{#*"..."} would be warned by default,
+and later we'll gradually move to @code{strict-r7} behavior.
+@c JP
+註: 0.9.9までは、不完全文字列リテラルとして@code{#*"..."}を使っていました。
+しかし、それはビットベクタリテラルと共存できないことが判明しました。
+@code{#*}は有効なビットベクタリテラル(長さ0のビットベクタ)で、
+また@code{"}はデリミタなので、@code{#*"...."}は長さ0のビットベクタと
+通常の文字列、とパーズできてしまいます。
+0.9.10からは、不完全文字列リテラルは@code{#**"..."}になりました。
+ちょっと長いですが、もともと不完全文字列は例外的に現れるもので、
+積極的に使うべきではありません。
+
+後方互換性のため、デフォルトでは@code{#*"..."}はリーダー字句モードが
+@code{strict-r7}でない限りは不完全文字列リテラルとして読まれます。
+(リーダー字句モードについては@ref{Reader lexical mode}参照。)
+リーダ字句モードが@code{warn-legacy}だった場合は、
+このリテラルは不完全文字列として読まれますが、警告が出されます。
+リーダ字句モードが@code{strict-r7}であれば、
+このリテラルは長さ0のビットベクタと、通常の文字列として読まれます。
+
+将来のリリースでは、デフォルトで@code{#*"..."}は警告を出すようにし、
+その後@code{strict-r7}の振る舞いに移行する予定です。
 @c COMMON
 @end deftp
 

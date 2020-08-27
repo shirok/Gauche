@@ -587,17 +587,9 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 return read_num_prefixed(port, c1, ctx);
             case '*': {
                 reject_in_r7(port, ctx, "#*");
-                /* #*"...." byte string
+                /* #**"...." byte string
                    #*01001001 for bit vector. */
                 return read_sharp_asterisk(port, ctx);
-                
-
-                int c2 = Scm_GetcUnsafe(port);
-                if (c2 == '"') return read_string(port, TRUE, ctx);
-                
-                
-                Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
-                return SCM_UNDEFINED; /* dummy */
             }
             case ':': {
                 reject_in_r7(port, ctx, "#:");
@@ -1803,17 +1795,54 @@ static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
 }
 
 /*----------------------------------------------------------------
- * #*"....", #*1010010...
+ * #**"....", #*1010010...
  */
 static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx)
 {
-    /* NB: Zero-length bitvector is '#*', and a double-quote is a delimiter,
-       so #*"..." can be interpreted as a zero-length bitvector followed by
-       an ordinary string.  We should reconsider the incomplete string syntax.
-    */
-    int c = Scm_GetcUnsafe(port);
-    if (c == '"') return read_string(port, TRUE, ctx);
+    /* We used to use #*"..." for incomplete string literals, but it turned
+       out it can be read as an zero-length bitvector #* followed by an
+       ordinary string (since a double quote is a <delimiter> in R7RS).
+       
+       So we changed the literal to #**"..." (yeah, ugly, but incomplete
+       strings are anomalies and shouldn't be used often). 
 
+       The reader behavior can be customized by reader-lexical-mode:
+
+         permissive (default) - For the next release, #*"..." is read as
+             an incomplete string, without warning.  In future, it warns.
+         legacy - #*"..." is read as an incomplete string, without warning.
+         warn-legacy - #*"..." is read as an incomplete string, but warns.
+         strict-r7 - #*"..." is read as a zero-length bitvector followed by
+                     a string.  #**"..." is rejected.
+    */
+
+    int c = Scm_GetcUnsafe(port);
+    if (c == '*') {
+        c = Scm_GetcUnsafe(port);
+        if (c == '"') return read_string(port, TRUE, ctx);
+        Scm_ReadError(port, "Invalid #* syntax: #**%C", c);
+    }   
+    if (c == '"') {
+        ScmObj m = Scm_GetPortReaderLexicalMode(port);
+        if (SCM_EQ(m, SCM_SYM_PERMISSIVE)) {
+            /* TRANSIENT: We switch this default behavior to warn in future */
+            return read_string(port, TRUE, ctx);
+        }
+        if (SCM_EQ(m, SCM_SYM_LEGACY)) {
+            return read_string(port, TRUE, ctx);
+        }
+        if (SCM_EQ(m, SCM_SYM_WARN_LEGACY)) {
+            Scm_Warn("Deprecated incomplete string syntax #*\"...\" at %A:%d",
+                     Scm_PortName(port), Scm_PortLine(port));
+            return read_string(port, TRUE, ctx);
+        }
+        if (SCM_EQ(m, SCM_SYM_STRICT_R7)) {
+            Scm_UngetcUnsafe(c, port);
+            return Scm_MakeBitvector(0, SCM_FALSE);
+        }
+        Scm_Panic("invalid reader-lexical-mode");
+    }
+    
     ScmDString ds;
     Scm_DStringInit(&ds);
     for (;;) {
