@@ -1,3 +1,10 @@
+2020-08-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (further_options): If -fwarn-legacy-sytnax is given,
+	  don't forget to change the reader syntax mode of SCM_CURIN, which
+	  has already been opened.  The setting of Scm_SetReaderLexicalMode only
+	  affects the ports opened after the change.
+
 2020-08-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: Allow multiple S-exprs in -e option.

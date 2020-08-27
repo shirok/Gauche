@@ -303,6 +303,8 @@ void further_options(const char *optarg)
     }
     else if (strcmp(optarg, "warn-legacy-syntax") == 0) {
         Scm_SetReaderLexicalMode(SCM_INTERN("warn-legacy"));
+        /* standard input port is already initialized, so we should switch it */
+        Scm_SetPortReaderLexicalMode(SCM_CURIN, SCM_INTERN("warn-legacy"));
     }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
