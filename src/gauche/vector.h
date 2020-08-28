@@ -422,6 +422,9 @@ SCM_EXTERN ScmObj Scm_ListToBitvector(ScmObj lis);
 SCM_EXTERN ScmObj Scm_BitvectorCopy(ScmBitvector *v, 
                                     ScmSmallInt start,
                                     ScmSmallInt end);
+SCM_EXTERN ScmObj Scm_BitvectorCopyX(ScmBitvector *dest, ScmSmallInt dstart,
+                                     ScmBitvector *src,
+                                     ScmSmallInt sstart, ScmSmallInt send);
 
 SCM_EXTERN ScmObj Scm_StringToBitvector(ScmString *s, int prefix);
 SCM_EXTERN ScmObj Scm_BitvectorToString(ScmBitvector *v, int prefix);

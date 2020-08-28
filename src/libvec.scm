@@ -344,6 +344,13 @@
                                         (end::<fixnum> -1))
   Scm_BitvectorCopy)
 
+(define-cproc bitvector-copy! (dest::<bitvector>
+                               dstart::<fixnum>
+                               src::<bitvector>
+                               :optional (start::<fixnum> 0)
+                                         (end::<fixnum> -1))
+  Scm_BitvectorCopyX)
+
 ;;;
 ;;; Flat vector API (interact with underlying C array)
 ;;;
