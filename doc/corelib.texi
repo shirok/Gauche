@@ -12095,6 +12095,30 @@ renumber capturing groups to make them consistent.)
 @section Vectors
 @c NODE ベクタ
 
+@c EN
+Vectors are fixed-size, O(1) accessible sequence of values.
+Scheme has traditionally offered a vector of arbitrary objects, which is
+described in @ref{Ordinary vectors}.
+In R7RS-large, there're also homogeneous numeric vectors (uvectors),
+which can contain fixed range of numeric objects efficiently.
+We explain them in @ref{Uniform vectors}.
+Gauche also supports bitvectors, which can contain sequence of bits.
+@xref{Bitvectors}, for the details.
+@c JP
+ベクタは固定長でO(1)アクセス可能な値の並びです。
+Schemeは伝統的に、任意の値を格納できるベクタを提供してきました。
+これは@ref{Ordinary vectors}で説明されます。
+@c COMMON
+
+@menu
+* Ordinary vectors::
+* Uniform vectors::
+* Bitvectors::
+@end menu
+
+@node Ordinary vectors, Uniform vectors, Vectors, Vectors
+@subsection Ordinary vectors
+
 @deftp {Builtin Class} <vector>
 @clindex vector
 @c EN
@@ -12573,6 +12597,156 @@ This is equivalent to SRFI-43's @code{vector-for-each}.
 @ref{Vector library (Legacy)}参照。
 @c COMMON
 @end defun
+
+@node Uniform vectors, Bitvectors, Ordinary vectors, Vectors
+@subsection Uniform vectors
+
+@c EN
+Uniform vectors, or homogeneous numeric vectors, are a special
+type of vectors whose elements are of the same numeric type.
+It was introduced originally as srfi-4, revised by srfi-160,
+and now a part of R7RS large (as @code{scheme.vector.@@}).
+@c JP
+ユニフォームベクタ、あるいは同質な数値ベクタは、
+要素として特定の数値型のみを格納する特別なベクタです。
+もともとsrfi-4として導入され、srfi-160で改訂されたのち、
+R7RS largeの一部となりました(@code{scheme.vector.@@}モジュール)。
+@c COMMON
+
+@c EN
+The @code{@@} part is actually one of the following tags, indicating
+the type of elements:
+@c JP
+@code{@@}の部分は実際には要素の型を示す以下のタグのいずれかです。
+@c COMMON
+
+@table @code
+@item u8
+@c EN
+Unsigned 8-bit integer - an exact integer between 0 and 255.
+@c JP
+8ビット符号無し整数 - 0から255までの正確な整数。
+@c COMMON
+@item s8
+@c EN
+Signed 8-bit integer - an exact integer between -128 and 127.
+@c JP
+8ビット符号つき整数 - -128から127までの正確な整数。
+@c COMMON
+@item u16
+@c EN
+Unsigned 16-bit integer - an exact integer between 0 and 65535.
+@c JP
+16ビット符号無し整数 - 0から65535までの正確な整数。
+@c COMMON
+@item s16
+@c EN
+Signed 16-bit integer - an exact integer between -32678 and 32767.
+@c JP
+16ビット符号つき整数 - -32768から32767までの正確な整数。
+@c COMMON
+@item u32
+@c EN
+Unsigned 32-bit integer - an exact integer between 0 and 2^32 - 1.
+@c JP
+32ビット符号無し整数 - 0から 2^32 - 1 までの正確な整数。
+@c COMMON
+@item s32
+@c EN
+Signed 32-bit integer - an exact integer between -(2^31) and 2^31 - 1.
+@c JP
+32ビット符号つき整数 - -(2^31) から 2^31 - 1 までの正確な整数。
+@c COMMON
+@item u64
+@c EN
+Unsigned 64-bit integer - an exact integer between 0 and 2^64 - 1.
+@c JP
+64ビット符号無し整数 - 0から 2^64 - 1 までの正確な整数。
+@c COMMON
+@item s64
+@c EN
+Signed 64-bit integer - an exact integer between -(2^63) and 2^63 - 1.
+@c JP
+64ビット符号つき整数 - -(2^63) から 2^63 - 1 までの正確な整数。
+@c COMMON
+@item f16
+@c EN
+16-bit floating point number (10-bit mantissa and 5-bit exponent),
+as inexact real.
+@c JP
+16ビット浮動小数点数(仮数部10ビット、指数部5ビット)で表される不正確な実数
+@c COMMON
+@item f32
+@c EN
+IEEE single-precision floating point number
+as inexact real.
+@c JP
+IEEE単精度浮動小数点数で表される不正確な実数
+@c COMMON
+@item f64
+@c EN
+IEEE double-precision floating point number
+as inexact real.
+@c JP
+IEEE倍精度浮動小数点数で表される不正確な実数
+@c COMMON
+@item c32
+@c EN
+Inexact complex, consists of a pair of 16-bit floating point numbers.
+@c JP
+2つの16ビット浮動小数点数で表される不正確な複素数
+@c COMMON
+@item c64
+@c EN
+Inexact complex, consists of a pair of IEEE single-precision floating
+point numbers.
+@c JP
+2つのIEEE単精度浮動小数点数で表される不正確な複素数
+@c COMMON
+@item c128
+@c EN
+Inexact complex, consists of a pair of IEEE double-precision floating
+point numbers.
+@c JP
+2つのIEEE倍精度浮動小数点数で表される不正確な複素数
+@c COMMON
+@end table
+
+@c EN
+There are some advantages of using uniform vectors over normal
+(heterogeneous) vectors.  It may be more compact than the normal
+vectors.  Some operations (especially Gauche's extension of vector
+arithmetic operations) can bypass type check and conversion of
+individual elements, thus be more efficient.  And it is much easier
+and efficient to communicate with external libraries that require
+homogeneous array of numbers; for example, OpenGL binding of Gauche
+uses uniform vectors extensively.
+@c JP
+通常のベクタではなくユニフォームベクタを使うことにより得られる利点がいくつかあります。
+まず、ユニフォームベクタは通常のベクタよりもコンパクトです。
+いくつかのオペレーション(特に、Gaucheの拡張仕様であるベクタ上の数値演算)では、
+型検査と型変換を個々の要素に対して行わなくても良いため、
+極めて効率の良い演算が可能です。さらに、
+数値の配列を扱う外部のライブラリとのインタフェースが容易です。
+例えば、GaucheのOpenGLバインディングではユニフォームベクタを多用しています。
+@c COMMON
+
+@c EN
+Gauche has only a handful primitive operations on uniform vectors
+as a built-in, but the @code{gauche.uvector} module, or
+@code{scheme.vector.@@} module (@code{(scheme vector @@)} library
+in R7RS programs), provide a complehensive set of operations.
+@xref{Uniform vector library}, and @pxref{R7RS uniform vectors}.
+@c JP
+Gaucheは組み込みではごく基本的な手続きしか提供しませんが、
+@code{gauche.uvector}モジュールや@code{scheme.vector.@@}モジュール
+(R7RSでは@code{(scheme vector @@)}ライブラリ)では包括的な操作を提供しています。
+@ref{Uniform vector library}および@ref{R7RS uniform vectors}参照。
+@c COMMON
+
+
+@node Bitvectors,  , Uniform vectors, Vectors
+@subsection Bitvectors
 
 @c ----------------------------------------------------------------------
 @node Hashtables, Treemaps, Vectors, Core library

@@ -39,7 +39,7 @@
 * Threads::                     gauche.threads
 * Measure timings::             gauche.time
 * Unicode utilities::           gauche.unicode
-* Uniform vectors::             gauche.uvector
+* Uniform vector library::      gauche.uvector
 * Comparing version numbers::   gauche.version
 * Virtual ports::               gauche.vport
 @end menu
@@ -21473,7 +21473,7 @@ spend in process-A and process-B inside a loop.
 @end example
 
 @c ----------------------------------------------------------------------
-@node Unicode utilities, Uniform vectors, Measure timings, Library modules - Gauche extensions
+@node Unicode utilities, Uniform vector library, Measure timings, Library modules - Gauche extensions
 @section @code{gauche.unicode} - Unicode utilities
 @c NODE Unicodeユーティリティ, @code{gauche.unicode} - Unicodeユーティリティ
 
@@ -22314,146 +22314,41 @@ The meaning of this property is explained in Unicode standard annex #11,
 
 
 @c ----------------------------------------------------------------------
-@node Uniform vectors, Comparing version numbers, Unicode utilities, Library modules - Gauche extensions
-@section @code{gauche.uvector} - Uniform vectors
-@c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
+@node Uniform vector library, Comparing version numbers, Unicode utilities, Library modules - Gauche extensions
+@section @code{gauche.uvector} - Uniform vector library
+@c NODE ユニフォームベクタライブラリ, @code{gauche.uvector} - ユニフォームベクタライブラリ
 
 @deftp {Module} gauche.uvector
 @mdindex gauche.uvector
 @c EN
-Provides procedures that work on vectors
-whose elements are of the same numeric type,
-as defined in srfi-160 (formerly srfi-4),
-which has become R7RS large (as @code{scheme.vector.@@}.
+Provides procedures that work on uniform vectors
+(@pxref{Uniform vectors}).
+This module is a superset of R7RS uniform vector library
+(@code{scheme.vector.@@}) and srfi-4.
 @c JP
-srfi-160 (元srfi-4) に規定されている、
-要素が同一の数値型であるようなベクタに作用する手続きを提供します。
-srfi-160はR7RS largeの一部(@code{scheme.vector.@@})になりました。
+ユニフォームベクタを扱う手続きを提供します
+(@ref{Uniform vectors}参照)。
+このモジュールは、R7RSユニフォームベクタライブラリ
+(@code{scheme.vector.@@})とsrfi-4のスーパーセットです。
 @c COMMON
 
 @c EN
-The @code{@@} part is actually one of the following tags, indicating
-the type of elements:
+The @code{@@} part is actually one of @code{u8}, @code{s8}, @code{u16},
+@code{s16}, @code{u32}, @code{s32}, @code{u64}, @code{s64},
+@code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64} or @code{c128}.
 @c JP
-@code{@@}の部分は実際には要素の型を示す以下のタグのいずれかです。
+@code{@@}の部分は実際には要素の型を示す次タグのいずれかです:
+@code{u8}, @code{s8}, @code{u16},
+@code{s16}, @code{u32}, @code{s32}, @code{u64}, @code{s64},
+@code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64}, @code{c128}。
 @c COMMON
 
-@table @code
-@item u8
-@c EN
-Unsigned 8-bit integer - an exact integer between 0 and 255.
-@c JP
-8ビット符号無し整数 - 0から255までの正確な整数。
-@c COMMON
-@item s8
-@c EN
-Signed 8-bit integer - an exact integer between -128 and 127.
-@c JP
-8ビット符号つき整数 - -128から127までの正確な整数。
-@c COMMON
-@item u16
-@c EN
-Unsigned 16-bit integer - an exact integer between 0 and 65535.
-@c JP
-16ビット符号無し整数 - 0から65535までの正確な整数。
-@c COMMON
-@item s16
-@c EN
-Signed 16-bit integer - an exact integer between -32678 and 32767.
-@c JP
-16ビット符号つき整数 - -32768から32767までの正確な整数。
-@c COMMON
-@item u32
-@c EN
-Unsigned 32-bit integer - an exact integer between 0 and 2^32 - 1.
-@c JP
-32ビット符号無し整数 - 0から 2^32 - 1 までの正確な整数。
-@c COMMON
-@item s32
-@c EN
-Signed 32-bit integer - an exact integer between -(2^31) and 2^31 - 1.
-@c JP
-32ビット符号つき整数 - -(2^31) から 2^31 - 1 までの正確な整数。
-@c COMMON
-@item u64
-@c EN
-Unsigned 64-bit integer - an exact integer between 0 and 2^64 - 1.
-@c JP
-64ビット符号無し整数 - 0から 2^64 - 1 までの正確な整数。
-@c COMMON
-@item s64
-@c EN
-Signed 64-bit integer - an exact integer between -(2^63) and 2^63 - 1.
-@c JP
-64ビット符号つき整数 - -(2^63) から 2^63 - 1 までの正確な整数。
-@c COMMON
-@item f16
-@c EN
-16-bit floating point number (10-bit mantissa and 5-bit exponent),
-as inexact real.
-@c JP
-16ビット浮動小数点数(仮数部10ビット、指数部5ビット)で表される不正確な実数
-@c COMMON
-@item f32
-@c EN
-IEEE single-precision floating point number
-as inexact real.
-@c JP
-IEEE単精度浮動小数点数で表される不正確な実数
-@c COMMON
-@item f64
-@c EN
-IEEE double-precision floating point number
-as inexact real.
-@c JP
-IEEE倍精度浮動小数点数で表される不正確な実数
-@c COMMON
-@item c32
-@c EN
-Inexact complex, consists of a pair of 16-bit floating point numbers.
-@c JP
-2つの16ビット浮動小数点数で表される不正確な複素数
-@c COMMON
-@item c64
-@c EN
-Inexact complex, consists of a pair of IEEE single-precision floating
-point numbers.
-@c JP
-2つのIEEE単精度浮動小数点数で表される不正確な複素数
-@c COMMON
-@item c128
-@c EN
-Inexact complex, consists of a pair of IEEE double-precision floating
-point numbers.
-@c JP
-2つのIEEE倍精度浮動小数点数で表される不正確な複素数
-@c COMMON
-@end table
-
-@c EN
-There are some advantages of using uniform vectors over normal
-(heterogeneous) vectors.  It may be more compact than the normal
-vectors.  Some operations (especially Gauche's extension of vector
-arithmetic operations) can bypass type check and conversion of
-individual elements, thus be more efficient.  And it is much easier
-and efficient to communicate with external libraries that require
-homogeneous array of numbers; for example, OpenGL binding of Gauche
-uses uniform vectors extensively.
-@c JP
-通常のベクタではなくユニフォームベクタを使うことにより得られる利点がいくつかあります。
-まず、ユニフォームベクタは通常のベクタよりもコンパクトです。
-いくつかのオペレーション(特に、Gaucheの拡張仕様であるベクタ上の数値演算)では、
-型検査と型変換を個々の要素に対して行わなくても良いため、
-極めて効率の良い演算が可能です。さらに、
-数値の配列を扱う外部のライブラリとのインタフェースが容易です。
-例えば、GaucheのOpenGLバインディングではユニフォームベクタを多用しています。
-@c COMMON
 @end deftp
 
 @c EN
-Gauche's implementation is a superset of srfi-160 in a few ways:
+Gauche's extension to srfi-160 is as follows:
 @c JP
-Gaucheの実装はsrfi-160のスーパーセットで、次の機能が追加されています：
+Gaucheで拡張されている機能は次のとおりです:
 @c COMMON
 @itemize @bullet
 @item
@@ -22580,7 +22475,7 @@ On the other hand, using @code{gauche.uvector} imports all the bindings.
 * Bytevector compatibility::
 @end menu
 
-@node Uvector basic operations, Uvector conversion operations, Uniform vectors, Uniform vectors
+@node Uvector basic operations, Uvector conversion operations, Uniform vector library, Uniform vector library
 @subsection Uvector basic operations
 @c NODE ユニフォームベクタの基本操作
 
@@ -23855,7 +23750,7 @@ does not support @var{skip} and @var{rounding} arguments.
 @c COMMON
 @end defun
 
-@node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, Uniform vectors
+@node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, Uniform vector library
 @subsection Uvector conversion operations
 @c NODE ユニフォームベクタの変換
 
@@ -24421,7 +24316,7 @@ alignment constraint.
 
 
 
-@node Uvector numeric operations, Uvector block I/O, Uvector conversion operations, Uniform vectors
+@node Uvector numeric operations, Uvector block I/O, Uvector conversion operations, Uniform vector library
 @subsection Uvector numeric operations
 @c NODE ユニフォームベクタの数値演算
 
@@ -24869,7 +24764,7 @@ Both return the clamped vector.
 @end deffn
 
 
-@node Uvector block I/O, Bytevector compatibility, Uvector numeric operations, Uniform vectors
+@node Uvector block I/O, Bytevector compatibility, Uvector numeric operations, Uniform vector library
 @subsection Uvector block I/O
 @c NODE ユニフォームベクタのブロック入出力
 
@@ -25122,7 +25017,7 @@ compatibility, but new code should use @code{write-uvector}.
 @end defun
 
 
-@node Bytevector compatibility,  , Uvector block I/O, Uniform vectors
+@node Bytevector compatibility,  , Uvector block I/O, Uniform vector library
 @subsection Bytevector compatibility
 @c NODE バイトベクタ互換性
 
@@ -25351,7 +25246,7 @@ taking optional @var{start}/@var{end} arguments.
 
 
 @c ----------------------------------------------------------------------
-@node Comparing version numbers, Virtual ports, Uniform vectors, Library modules - Gauche extensions
+@node Comparing version numbers, Virtual ports, Uniform vector library, Library modules - Gauche extensions
 @section @code{gauche.version} - Comparing version numbers
 @c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
 
