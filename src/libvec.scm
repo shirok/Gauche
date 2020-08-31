@@ -354,6 +354,14 @@
       (return fallback)))
   (return (?: (SCM_BITS_TEST (-> v bits) i) SCM_TRUE SCM_FALSE)))
 
+(define-cproc bitvector-set! (v::<bitvector> i::<fixnum> b) ::<void>
+  (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
+    (Scm_Error "bitvector index out of range: %l" i))
+  (SCM_BITVECTOR_CHECK_MUTABLE v)
+  (if (Scm_Bit2Int b)
+    (SCM_BITS_SET (-> v bits) i)
+    (SCM_BITS_RESET (-> v bits) i)))
+
 (define-cproc bitvector-copy (v::<bitvector> 
                               :optional (start::<fixnum> 0)
                                         (end::<fixnum> -1))

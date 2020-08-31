@@ -13125,9 +13125,60 @@ if you import @code{gauche.collection}.
 @end deffn
 
 
-
 @node Bitvectors, Weak vectors, Uniform vectors, Vector family
 @subsection Bitvectors
+
+@c EN
+Bitvectors
+@c JP
+@c COMMON
+
+@deftp {Builtin class} <bitvector>
+@clindex bitvector
+@end deftp
+
+@deftp {Reader Syntax} @code{#*@var{b}@dots{}}
+@lxindex #*
+[SRFI-178]
+@end deftp
+
+@defun bit->integer
+@defunx bit->boolean
+[SRFI-178]
+@end defun
+
+@defun bitvector b @dots{}
+[SRFI-178]
+@end defun
+
+@defun list->bitvector lis
+[SRFI-178]
+@end defun
+
+@defun string->bitvector s
+[SRFI-178]
+@end defun
+
+@defun bitvector->string bv
+[SRFI-178]
+@end defun
+
+@defun bitvector-ref/int bv k :optional fallback
+@defunx bitvector-ref/bool bv k :optional fallback
+[SRFI-178]
+@end defun
+
+@defun bitvector-set! bv k bit
+[SRFI-178]
+@end defun
+
+@defun bitvector-copy bv :optional start end
+[SRFI-178]
+@end defun
+
+@defun bitvector-copy! target tstart src :optional sstart send
+[SRFI-178]
+@end defun
 
 @node Weak vectors,  , Bitvectors, Vector family
 @subsection Weak vectors
