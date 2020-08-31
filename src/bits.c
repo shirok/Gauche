@@ -41,7 +41,10 @@
 
 ScmBits *Scm_MakeBits(int numbits)
 {
-    return SCM_NEW_ATOMIC_ARRAY(ScmBits, SCM_BITS_NUM_WORDS(numbits));
+    size_t nw = SCM_BITS_NUM_WORDS(numbits);
+    ScmBits *bits = SCM_NEW_ATOMIC_ARRAY(ScmBits, nw);
+    memset(bits, 0, nw * SIZEOF_LONG);
+    return bits;
 }
 
 void Scm_BitsCopyX(ScmBits *target, int tstart,
