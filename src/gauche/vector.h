@@ -400,8 +400,7 @@ SCM_CLASS_DECL(Scm_BitvectorClass);
 #define SCM_CLASS_BITVECTOR         (&Scm_BitvectorClass)
 #define SCM_BITVECTOR(obj)          ((ScmBitvector*)(obj))
 #define SCM_BITVECTORP(obj)         Scm_TypeP(obj, SCM_CLASS_BITVECTOR)
-#define SCM_BITVECTOR_OWNER(obj)    (SCM_BITVECTOR(obj)->owner)
-#define SCM_BITVECTOR_ELEMENTS(obj) (SCM_BITVECTOR(obj)->elements)
+#define SCM_BITVECTOR_BITS(obj)     (SCM_BITVECTOR(obj)->bits)
 
 #define SCM_BITVECTOR_SIZE(obj)     (SCM_BITVECTOR(obj)->size_flags >> 1)
 #define SCM_BITVECTOR_IMMUTABLE_P(obj) (SCM_BITVECTOR(obj)->size_flags & 1)

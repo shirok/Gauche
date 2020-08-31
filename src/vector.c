@@ -817,7 +817,29 @@ static void bitvector_print(ScmObj obj,
     bitvector_write_int(SCM_BITVECTOR(obj), TRUE, port);
 }
 
-SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_BitvectorClass, bitvector_print, NULL,
+static int bitvector_compare(ScmObj x, ScmObj y, int equalp SCM_UNUSED)
+{
+    SCM_ASSERT(SCM_BITVECTORP(x)&&SCM_BITVECTORP(y));
+    ScmBits *bx = SCM_BITVECTOR_BITS(x);
+    ScmBits *by = SCM_BITVECTOR_BITS(y);
+    ScmWord xlen = SCM_BITVECTOR_SIZE(x);
+    ScmWord ylen = SCM_BITVECTOR_SIZE(y);
+
+    /* NB: The ordering is somewhat counterintuitive, for the bits are
+       stored in little-endian.  That is, #*0100 comes after #*1000.
+       This is a lot faster.  Srfi-178 doesn't define the ordering. */
+    if (xlen < ylen) return -1;
+    if (xlen > ylen) return 1;
+    size_t nw = SCM_BITS_NUM_WORDS(xlen);
+    for (size_t i = 0; i < nw; i++, bx++, by++) {
+        if (*bx < *by) return -1;
+        if (*bx > *by) return 1;
+    }
+    return 0;
+}
+
+SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_BitvectorClass,
+                               bitvector_print, bitvector_compare,
                                NULL, NULL, SCM_CLASS_SEQUENCE_CPL,
                                SCM_CLASS_AGGREGATE);
 
@@ -848,7 +870,7 @@ ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init)
     SCM_SET_CLASS(v, SCM_CLASS_BITVECTOR);
     v->size_flags = (size << 1);
     v->bits = Scm_MakeBits(size);
-    
+
     int fill = Scm_Bit2Int(init);
     Scm_BitsFill(v->bits, 0, size, fill);
     return SCM_OBJ(v);
