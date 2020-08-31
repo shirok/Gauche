@@ -306,6 +306,21 @@
 (define-cproc uvector? (obj) ::<boolean> :constant
   SCM_UVECTORP)
 
+(define-cproc u8vector? (x) ::<boolean> SCM_U8VECTORP)
+(define-cproc s8vector? (x) ::<boolean> SCM_S8VECTORP)
+(define-cproc u16vector? (x) ::<boolean> SCM_U16VECTORP)
+(define-cproc s16vector? (x) ::<boolean> SCM_U16VECTORP)
+(define-cproc u32vector? (x) ::<boolean> SCM_U32VECTORP)
+(define-cproc s32vector? (x) ::<boolean> SCM_U32VECTORP)
+(define-cproc u64vector? (x) ::<boolean> SCM_U64VECTORP)
+(define-cproc s64vector? (x) ::<boolean> SCM_U64VECTORP)
+(define-cproc f16vector? (x) ::<boolean> SCM_F16VECTORP)
+(define-cproc f32vector? (x) ::<boolean> SCM_F32VECTORP)
+(define-cproc f64vector? (x) ::<boolean> SCM_F64VECTORP)
+(define-cproc c32vector? (x) ::<boolean> SCM_C32VECTORP)
+(define-cproc c64vector? (x) ::<boolean> SCM_C64VECTORP)
+(define-cproc c128vector? (x) ::<boolean> SCM_C128VECTORP)
+
 ;;;
 ;;; Bitvectors
 ;;;
