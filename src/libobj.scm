@@ -773,16 +773,27 @@
 
 ;; gauche.sequence has the generic version for <sequence>, but these
 ;; shortcuts would be faster.
+;; NB: (ref <bitvector> k) has a choice of using /int or /bool.  We chose
+;; int, somewhat arbitrary but more intuitive with correspondence of the
+;; literal bitvector notation.
 (define-method ref :locked ((obj <list>) (index <integer>))
   (list-ref obj index))
 (define-method ref :locked ((obj <vector>) (index <integer>))
   (vector-ref obj index))
+(define-method ref :locked ((obj <uvector>) (index <integer>))
+  (uvector-ref obj index))
+(define-method ref :locked ((obj <bitvector>) (index <integer>))
+  (bitvector-ref/int obj index))
 (define-method ref :locked ((obj <string>) (index <integer>))
   (string-ref obj index))
 (define-method (setter ref) :locked ((obj <list>) (index <integer>) val)
   (set-car! (list-tail obj index) val))
 (define-method (setter ref) :locked ((obj <vector>) (index <integer>) val)
   (vector-set! obj index val))
+(define-method (setter ref) :locked ((obj <uvector>) (index <integer>) val)
+  (uvector-set! obj index val))
+(define-method (setter ref) :locked ((obj <bitvector>) (index <integer>) val)
+  (bitvector-set! obj index val))
 (define-method (setter ref) :locked ((obj <string>) (index <integer>) val)
   (string-set! obj index val))
 
