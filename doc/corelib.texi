@@ -16,7 +16,7 @@
 * Character sets::
 * Strings::
 * Regular expressions::
-* Vectors::
+* Vector family::
 * Hashtables::
 * Treemaps::
 * Weak pointers::
@@ -10446,7 +10446,7 @@ Gaucheの内部エンコーディングがutf-8であれば、この手続きは
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular expressions, Vectors, Strings, Core library
+@node Regular expressions, Vector family, Strings, Core library
 @section Regular expressions
 @c NODE 正規表現
 
@@ -12091,33 +12091,41 @@ renumber capturing groups to make them consistent.)
 @end smallexample
 
 @c ----------------------------------------------------------------------
-@node Vectors, Hashtables, Regular expressions, Core library
+@node Vector family, Hashtables, Regular expressions, Core library
 @section Vectors
-@c NODE ベクタ
+@c NODE ベクタの仲間
 
 @c EN
 Vectors are fixed-size, O(1) accessible sequence of values.
 Scheme has traditionally offered a vector of arbitrary objects, which is
-described in @ref{Ordinary vectors}.
+described in @ref{Vectors}.
+
 In R7RS-large, there're also homogeneous numeric vectors (uvectors),
 which can contain fixed range of numeric objects efficiently.
 We explain them in @ref{Uniform vectors}.
+
 Gauche also supports bitvectors, which can contain sequence of bits.
 @xref{Bitvectors}, for the details.
 @c JP
 ベクタは固定長でO(1)アクセス可能な値の並びです。
 Schemeは伝統的に、任意の値を格納できるベクタを提供してきました。
-これは@ref{Ordinary vectors}で説明されます。
+これは@ref{Vectors}で説明されます。
+
+R7RS-largeでは、均質な数値型だけを効率よく格納できるベクタ(uvector)も定義されています。
+@ref{Uniform vectors}を見てください。
+
+Gaucheはまた、ビット列を格納するビットベクタも提供します。
+@ref{Bitvectors}で説明します。
 @c COMMON
 
 @menu
-* Ordinary vectors::
+* Vectors::
 * Uniform vectors::
 * Bitvectors::
 @end menu
 
-@node Ordinary vectors, Uniform vectors, Vectors, Vectors
-@subsection Ordinary vectors
+@node Vectors, Uniform vectors, Vector family, Vector family
+@subsection Vectors
 
 @deftp {Builtin Class} <vector>
 @clindex vector
@@ -12598,7 +12606,7 @@ This is equivalent to SRFI-43's @code{vector-for-each}.
 @c COMMON
 @end defun
 
-@node Uniform vectors, Bitvectors, Ordinary vectors, Vectors
+@node Uniform vectors, Bitvectors, Vectors, Vector family
 @subsection Uniform vectors
 
 @c EN
@@ -12745,11 +12753,11 @@ Gaucheは組み込みではごく基本的な手続きしか提供しません�
 @c COMMON
 
 
-@node Bitvectors,  , Uniform vectors, Vectors
+@node Bitvectors,  , Uniform vectors, Vector family
 @subsection Bitvectors
 
 @c ----------------------------------------------------------------------
-@node Hashtables, Treemaps, Vectors, Core library
+@node Hashtables, Treemaps, Vector family, Core library
 @section Hashtables
 @c NODE ハッシュテーブル
 
