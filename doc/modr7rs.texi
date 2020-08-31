@@ -7006,13 +7006,13 @@ defined as srfi-142.
 
 @c EN
 Gauche supports weak pointers in the form of weak vectors
-(@pxref{Weak pointers}), but it is known that a simple weak
+(@pxref{Weak vectors}), but it is known that a simple weak
 pointer (a single pointer that doesn't prevent the pointed
 object from being collected) isn't enough to implement
 weak key-value association such as mappings.
 @c JP
 Gaucheはweak vectorとして弱参照を提供しています
-(@ref{Weak pointers}参照)が、単なるweak pointer (それに指されている
+(@ref{Weak vectors}参照)が、単なるweak pointer (それに指されている
 オブジェクトの回収を許す) だけでは、mappingのようなキーと値を関連付ける
 データ構造で弱参照を実現するには不十分なことが知られています。
 @c COMMON

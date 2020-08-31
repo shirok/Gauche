@@ -19,7 +19,6 @@
 * Vector family::
 * Hashtables::
 * Treemaps::
-* Weak pointers::
 * Procedures and continuations::
 * Lazy evaluation::
 * Exceptions::
@@ -12106,6 +12105,9 @@ We explain them in @ref{Uniform vectors}.
 
 Gauche also supports bitvectors, which can contain sequence of bits.
 @xref{Bitvectors}, for the details.
+
+Finally, weak vectors are a vector of arbitrary objects using
+weak pointers.  @xref{Weak vectors}.
 @c JP
 ベクタは固定長でO(1)アクセス可能な値の並びです。
 Schemeは伝統的に、任意の値を格納できるベクタを提供してきました。
@@ -12116,12 +12118,16 @@ R7RS-largeでは、均質な数値型だけを効率よく格納できるベク�
 
 Gaucheはまた、ビット列を格納するビットベクタも提供します。
 @ref{Bitvectors}で説明します。
+
+最後に、weakベクタは任意の要素をweakポインタを使って格納できるベクタです。
+@ref{Weak vectors}参照。
 @c COMMON
 
 @menu
 * Vectors::
 * Uniform vectors::
 * Bitvectors::
+* Weak vectors::
 @end menu
 
 @node Vectors, Uniform vectors, Vector family, Vector family
@@ -12789,11 +12795,25 @@ The base class of uniform vector classes.  It inherits @code{<sequence>}
 A class for @@vector, where @code{@@} is one of the uvector tags
 (@code{u8}, @code{s8}, @dots{}).
 It inherits @code{<uvector>}.
+
+It implements sequence protocol (@pxref{Sequence framework})), 
+so you can convert a sequence of
+real numbers into a uvector using @code{coerce-to}, 
+if every elements is valid for the uvector.
 @c JP
 @@vectorのクラス。@code{@@}の部分はuvectorタグ
 (@code{u8}、@code{s8}、@dots{}) です。
 @code{<uvector>}を継承します。
+
+sequenceプロトコル(@ref{Sequence framework}参照)を実装しているので、
+数値の並びを@code{coerce-to}を使ってuvectorに変換することができます。
+ただし各要素はuvectorの要素として有効な範囲の値でなればなりません。
 @c COMMON
+
+@example
+(use gauche.sequence)
+(coerce-to <u8vector> '(1 2 3)) @result{} #u8(1 2 3)
+@end example
 @end deftp
 
 @c EN
@@ -13106,8 +13126,125 @@ if you import @code{gauche.collection}.
 
 
 
-@node Bitvectors,  , Uniform vectors, Vector family
+@node Bitvectors, Weak vectors, Uniform vectors, Vector family
 @subsection Bitvectors
+
+@node Weak vectors,  , Bitvectors, Vector family
+@subsection Weak vectors
+@c NODE Weakベクタ
+
+@c EN
+A weak pointer is a reference to an object that doesn't prevent
+the object from being garbage-collected.
+Gauche provides weak pointers as a @emph{weak vector} object.
+A weak vector is like a vector of objects, except each object
+can be garbage collected if it is not referenced from objects
+other than weak vectors.   If the object is collected, the
+entry of the weak vector is replaced for @code{#f.}
+@c JP
+Weak ポインタとは、それが参照しているオブジェクトがガベージコレクトされることを
+許すようなポインタです。
+Gaucheは@emph{weak ベクタ}オブジェクトによってweak ポインタの機能を提供します。
+Weak ベクタは通常のベクタに似ていますが、要素のオブジェクトがweak ベクタ以外から
+参照されていない場合、オブジェクトはガベージコレクトされ、weak ベクタの該当するエントリは
+@code{#f}で置き換えられます。
+@c COMMON
+@example
+gosh> (define v (make-weak-vector 1))
+v
+gosh> (weak-vector-ref v 0)
+#f
+gosh> (weak-vector-set! v 0 (cons 1 1))
+#<undef>
+gosh> (weak-vector-ref v 0)
+(1 . 1)
+gosh> (gc)
+#<undef>
+gosh> (gc)
+#<undef>
+gosh> (weak-vector-ref v 0)
+#f
+@end example
+
+@c EN
+@xref{R7RS ephemerons}, for R7RS-large way of weak pointers.
+@c JP
+R7RS-largeでのweakポインタについては@ref{R7RS ephemerons}を参照してください。
+@c COMMON
+
+@deftp {Builtin Class} <weak-vector>
+@clindex weak-vector
+@c EN
+The weak vector class.  Inherits @code{<sequence>} and @code{<collection>},
+so you can use
+@code{gauche.collection} (@pxref{Collection framework}) and
+@code{gauche.sequence} (@pxref{Sequence framework}).
+@c JP
+Weak ベクタのクラスです。@code{<sequence>}と@code{<collection>}を継承しているので、
+@code{gauche.collection} (@ref{Collection framework}参照) と
+@code{gauche.sequence} (@ref{Sequence framework}参照) も使えます。
+@c COMMON
+@example
+(coerce-to <weak-vector> '(1 2 3 4))
+  @result{} a weak vector with four elements
+@end example
+@end deftp
+
+@defun make-weak-vector size
+@c EN
+Creates and returns a weak vector of size @var{size}.
+@c JP
+大きさ@var{size}のweak ベクタを作成して返します。
+@c COMMON
+@end defun
+
+@defun weak-vector-length wvec
+@c EN
+Returns the length of a weak vector @var{wvec}.
+@c JP
+weak ベクタ @var{wvec}の大きさを返します。
+@c COMMON
+@end defun
+
+@defun weak-vector-ref wvec k :optional fallback
+@c EN
+Returns @var{k}-th element of a weak vector @var{wvec}.
+
+By default, @code{weak-vector-ref} signals an error if @var{k} is
+negative, or greater than or equal to the size of @var{wvec}.
+However, if an optional argument @var{fallback} is given,
+it is returned for such case.
+
+If the element has been garbage collected, this procedure returns
+@var{fallback} if it is provided,  @code{#f} otherwise.
+
+With @code{gauche.sequence} module,
+you can also use a method @code{ref}.
+@c JP
+weak ベクタ @var{wvec}の@var{k}番目の要素を返します。
+
+@code{weak-vector-ref}は@var{k}が負の値であったりベクタの長さより
+大きかったりした場合はエラーを通知します。但し、省略可能な引数@var{fallback}
+が与えられている場合はその値が返されます。
+
+該当する要素が既にガベージコレクトされていた場合、@var{fallback}が
+与えられていればそれが、そうでなければ@code{#f}が返されます。
+
+@code{gauche.sequence}モジュールをロードしていれば、
+メソッド@code{ref}も同じ目的で使えます。
+@c COMMON
+@end defun
+
+@defun weak-vector-set! wvec k obj
+@c EN
+Sets @var{k}-th element of the weak vector @var{wvec} to @var{obj}.
+It is an error if @var{k} is negative or greater than or equal to the
+size of @var{wec}.
+@c JP
+weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します。
+@var{k}が負数であったりベクタの長さより大きい場合はエラーとなります。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Hashtables, Treemaps, Vector family, Core library
@@ -14023,7 +14160,7 @@ xorは、@var{ht1}か@var{ht2}の一方のみに含まれる要素のみを集�
 
 
 @c ----------------------------------------------------------------------
-@node Treemaps, Weak pointers, Hashtables, Core library
+@node Treemaps, Procedures and continuations, Hashtables, Core library
 @section Treemaps
 @c NODE ツリーマップ
 
@@ -14574,119 +14711,7 @@ of tree maps which share the same comparator.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Weak pointers, Procedures and continuations, Treemaps, Core library
-@section Weak pointers
-@c NODE Weak ポインタ
-
-@c EN
-A weak pointer is a reference to an object that doesn't prevent
-the object from being garbage-collected.
-Gauche provides weak pointers as a @emph{weak vector} object.
-A weak vector is like a vector of objects, except each object
-can be garbage collected if it is not referenced from objects
-other than weak vectors.   If the object is collected, the
-entry of the weak vector is replaced for @code{#f.}
-@c JP
-Weak ポインタとは、それが参照しているオブジェクトがガベージコレクトされることを
-許すようなポインタです。
-Gaucheは@emph{weak ベクタ}オブジェクトによってweak ポインタの機能を提供します。
-Weak ベクタは通常のベクタに似ていますが、要素のオブジェクトがweak ベクタ以外から
-参照されていない場合、オブジェクトはガベージコレクトされ、weak ベクタの該当するエントリは
-@code{#f}で置き換えられます。
-@c COMMON
-@example
-gosh> (define v (make-weak-vector 1))
-v
-gosh> (weak-vector-ref v 0)
-#f
-gosh> (weak-vector-set! v 0 (cons 1 1))
-#<undef>
-gosh> (weak-vector-ref v 0)
-(1 . 1)
-gosh> (gc)
-#<undef>
-gosh> (gc)
-#<undef>
-gosh> (weak-vector-ref v 0)
-#f
-@end example
-
-@deftp {Builtin Class} <weak-vector>
-@clindex weak-vector
-@c EN
-The weak vector class.  Inherits @code{<sequence>} and @code{<collection>},
-so you can use
-@code{gauche.collection} (@pxref{Collection framework}) and
-@code{gauche.sequence} (@pxref{Sequence framework}).
-@c JP
-Weak ベクタのクラスです。@code{<sequence>}と@code{<collection>}を継承しているので、
-@code{gauche.collection} (@ref{Collection framework}参照) と
-@code{gauche.sequence} (@ref{Sequence framework}参照) も使えます。
-@c COMMON
-@example
-(coerce-to <weak-vector> '(1 2 3 4))
-  @result{} a weak vector with four elements
-@end example
-@end deftp
-
-@defun make-weak-vector size
-@c EN
-Creates and returns a weak vector of size @var{size}.
-@c JP
-大きさ@var{size}のweak ベクタを作成して返します。
-@c COMMON
-@end defun
-
-@defun weak-vector-length wvec
-@c EN
-Returns the length of a weak vector @var{wvec}.
-@c JP
-weak ベクタ @var{wvec}の大きさを返します。
-@c COMMON
-@end defun
-
-@defun weak-vector-ref wvec k :optional fallback
-@c EN
-Returns @var{k}-th element of a weak vector @var{wvec}.
-
-By default, @code{weak-vector-ref} signals an error if @var{k} is
-negative, or greater than or equal to the size of @var{wvec}.
-However, if an optional argument @var{fallback} is given,
-it is returned for such case.
-
-If the element has been garbage collected, this procedure returns
-@var{fallback} if it is provided,  @code{#f} otherwise.
-
-With @code{gauche.sequence} module,
-you can also use a method @code{ref}.
-@c JP
-weak ベクタ @var{wvec}の@var{k}番目の要素を返します。
-
-@code{weak-vector-ref}は@var{k}が負の値であったりベクタの長さより
-大きかったりした場合はエラーを通知します。但し、省略可能な引数@var{fallback}
-が与えられている場合はその値が返されます。
-
-該当する要素が既にガベージコレクトされていた場合、@var{fallback}が
-与えられていればそれが、そうでなければ@code{#f}が返されます。
-
-@code{gauche.sequence}モジュールをロードしていれば、
-メソッド@code{ref}も同じ目的で使えます。
-@c COMMON
-@end defun
-
-@defun weak-vector-set! wvec k obj
-@c EN
-Sets @var{k}-th element of the weak vector @var{wvec} to @var{obj}.
-It is an error if @var{k} is negative or greater than or equal to the
-size of @var{wec}.
-@c JP
-weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します。
-@var{k}が負数であったりベクタの長さより大きい場合はエラーとなります。
-@c COMMON
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Procedures and continuations, Lazy evaluation, Weak pointers, Core library
+@node Procedures and continuations, Lazy evaluation, Treemaps, Core library
 @section Procedures and continuations
 @c NODE 手続きと継続
 
