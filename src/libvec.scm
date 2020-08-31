@@ -325,6 +325,10 @@
 ;;; Bitvectors
 ;;;
 
+(define-cproc bitvector? (obj) ::<boolean> SCM_BITVECTORP) ;srfi-178
+(define-cproc bitvector-length (v::<bitvector>) ::<int>    ;srfi-178
+  SCM_BITVECTOR_SIZE)
+
 (define-cproc bitvector (:rest bits) Scm_ListToBitvector) ;srfi-178
 (define-cproc list->bitvector (bits) Scm_ListToBitvector) ;srfi-178
 
@@ -336,13 +340,23 @@
 (define-cproc bit->integer (bit) ::<int> Scm_Bit2Int) ;srfi-178
 (define-cproc bit->boolean (bit) ::<boolean> Scm_Bit2Int) ;srfi-178
 
+(define (bitvector=? . vs)             ;srfi-178
+  ;; we can compare bitvectors using equal?.  just extra type checking.
+  (or (null? vs)
+      (if-let1 z (find (^x (not (bitvector? x))) vs)
+        (error "Bitvector required, but got:" z)
+        (let loop ([v (car vs)] [vs (cdr vs)])
+          (or (null? vs)
+              (and (equal? v (car vs))
+                   (loop (car vs) (cdr vs))))))))
+
 (define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum> ;srfi-178
                                                 :optional fallback)
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
     (if (SCM_UNDEFINEDP fallback)
       (Scm_Error "bitvector index out of range: %l" i)
       (return fallback)))
-  (return (?: (SCM_BITS_TEST (-> v bits) i) 
+  (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i) 
               (SCM_MAKE_INT 1)
               (SCM_MAKE_INT 0))))
 
@@ -352,26 +366,26 @@
     (if (SCM_UNDEFINEDP fallback)
       (Scm_Error "bitvector index out of range: %l" i)
       (return fallback)))
-  (return (?: (SCM_BITS_TEST (-> v bits) i) SCM_TRUE SCM_FALSE)))
+  (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i) SCM_TRUE SCM_FALSE)))
 
-(define-cproc bitvector-set! (v::<bitvector> i::<fixnum> b) ::<void>
+(define-cproc bitvector-set! (v::<bitvector> i::<fixnum> b) ::<void> ;srfi-178
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
     (Scm_Error "bitvector index out of range: %l" i))
   (SCM_BITVECTOR_CHECK_MUTABLE v)
   (if (Scm_Bit2Int b)
-    (SCM_BITS_SET (-> v bits) i)
-    (SCM_BITS_RESET (-> v bits) i)))
+    (SCM_BITS_SET (SCM_BITVECTOR_BITS v) i)
+    (SCM_BITS_RESET (SCM_BITVECTOR_BITS v) i)))
 
 (define-cproc bitvector-copy (v::<bitvector> 
                               :optional (start::<fixnum> 0)
-                                        (end::<fixnum> -1))
+                                        (end::<fixnum> -1)) ;srfi-178
   Scm_BitvectorCopy)
 
 (define-cproc bitvector-copy! (dest::<bitvector>
                                dstart::<fixnum>
                                src::<bitvector>
                                :optional (start::<fixnum> 0)
-                                         (end::<fixnum> -1))
+                                         (end::<fixnum> -1)) ;srfi-178
   Scm_BitvectorCopyX)
 
 ;;;
