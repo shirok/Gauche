@@ -22479,89 +22479,18 @@ On the other hand, using @code{gauche.uvector} imports all the bindings.
 @subsection Uvector basic operations
 @c NODE ユニフォームベクタの基本操作
 
-@deftp {Builtin Class} <@@vector>
-@clindex s8vector
-@clindex u8vector
-@clindex s16vector
-@clindex u16vector
-@clindex s32vector
-@clindex u32vector
-@clindex s64vector
-@clindex u64vector
-@clindex f16vector
-@clindex f32vector
-@clindex f64vector
-@clindex c32vector
-@clindex c64vector
-@clindex c128vector
-@c MOD gauche.uvector
 @c EN
-A class for @@vector.  It inherits @code{<sequence>}.
+The following procedures are built-in; @pxref{Uniform vectors}:
 @c JP
-@@vectorのクラス。@code{<sequence>}を継承します。
+次の手続きは組み込みです。@ref{Uniform vectors}参照:
 @c COMMON
-@end deftp
 
-@deftp {Reader Syntax} @code{#@@(@var{n} @dots{})}
-@lxindex #s8
-@lxindex #u8
-@lxindex #s16
-@lxindex #u16
-@lxindex #s32
-@lxindex #u32
-@lxindex #s64
-@lxindex #u64
-@lxindex #f16
-@lxindex #f32
-@lxindex #f64
-@lxindex #c32
-@lxindex #c64
-@lxindex #c128
-@c EN
-Denotes a literal homogeneous vector.
-@c JP
-リテラルの単一型のベクタを記述します。
-@c COMMON
 @example
-#s8(3 -2 4)
-#u32(4154 88357 2 323)
-#f32(3.14 0.554525 -3.342)
+uvector?          @@vector?
+uvector-ref       @@vector-ref
+uvector-set!      @@vector-set!
+uvector-length
 @end example
-@end deftp
-
-@deffn {Function} @@vector? obj
-@findex s8vector?
-@findex u8vector?
-@findex s16vector?
-@findex u16vector?
-@findex s32vector?
-@findex u32vector?
-@findex s64vector?
-@findex u64vector?
-@findex f16vector?
-@findex f32vector?
-@findex f64vector?
-@findex c32vector?
-@findex c64vector?
-@findex c128vector?
-[R7RS vector.@@]
-@c MOD gauche.uvector
-@c EN
-Returns @code{#t} iff @var{obj} is a @@vector, @code{#f} otherwise.
-@c JP
-@var{obj}が@@vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
-@c COMMON
-@end deffn
-
-@defun uvector? obj
-@c MOD gauche.uvector
-@c EN
-Returns @code{#t} iff @var{obj} is of any uniform vector type.
-@c JP
-@var{obj}がいずれかの型のユニフォームベクタなら@code{#t}を、
-そうでなければ@code{#f}を返します。
-@c COMMON
-@end defun
 
 @deffn {Function} @@? obj
 @findex s8?
@@ -22786,19 +22715,6 @@ if you import @code{gauche.collection}
 @end example
 @end deffn
 
-@defun uvector-length uvector
-@c MOD gauche.uvector
-@c EN
-This is a generic version of @code{@@vector-length}; you
-can pass any instance of uniform vector, and it returns the number
-of its elements.
-@c JP
-これは@code{@@vector-length}の汎用バージョンです。
-どんな型のユニフォームベクタでも渡すことができ、
-その要素数が返されます。
-@c COMMON
-@end defun
-
 @defun uvector-size uvector :optional start end
 @c MOD gauche.uvector
 @c EN
@@ -22850,145 +22766,6 @@ An error is raised when @var{class} is not a uvector class.
 (uvector-class-element-size <u8vector>)  @result{} 1
 (uvector-class-element-size <s64vector>) @result{} 8
 @end example
-@end defun
-
-
-@deffn {Function} @@vector-ref vec k :optional fallback
-@findex u8vector-ref
-@findex s8vector-ref
-@findex u16vector-ref
-@findex s16vector-ref
-@findex u32vector-ref
-@findex s32vector-ref
-@findex u64vector-ref
-@findex s64vector-ref
-@findex f16vector-ref
-@findex f32vector-ref
-@findex f64vector-ref
-@findex c32vector-ref
-@findex c64vector-ref
-@findex c128vector-ref
-[R7RS vector.@@]
-@c MOD gauche.uvector
-@c EN
-Returns the @var{k}-th element of @@vector @var{vec}.
-
-If the index @var{k} is out of the valid range, an error is signaled
-unless an optional argument @var{fallback} is given; in that case,
-@var{fallback} is returned.
-
-Note that the generic function @code{ref} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-@@vector @var{vec}の@var{k}番目の要素を返します。
-
-@var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
-省略可能な引数@var{fallback}が与えられている場合はそれが返されます。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{ref}を使うこともできます。
-@c COMMON
-
-@example
-(u16vector-ref '#u16(111 222 333) 1) @result{} 222
-
-(use gauche.collection)
-(ref '#u16(111 222 333) 1) @result{} 222
-@end example
-@end deffn
-
-@defun uvector-ref vec k :optional fallback
-@c MOD gauche.uvector
-@c EN
-Generic version of @code{@@vector-ref}.
-It can take any kind of uniform vector to @var{vec},
-and returns its @var{k}-th element.
-If the index @var{k} is out of the valid range, an error is signaled
-unless an optional argument @var{fallback} is given; in that case,
-@var{fallback} is returned.
-
-This is handy to write a generic code that works on any kind of
-uniform vector, but this is slower than the specific versions.
-Gauche's compiler recognizes the specific versions of referencer and
-generate very efficient code for them, while this generic version
-becomes a normal procedure call.   In inner-loop it can make a big
-difference.
-
-@code{(setter uvector-ref)} is @code{uvector-set!}.
-@c JP
-@code{@@vector-ref}の汎用バージョンです。
-@var{vec}にどんな種類のユニフォームベクタを取ることができ、
-その@var{k}番めの要素を返します。
-@var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
-省略可能な引数@var{fallback}が与えられている場合はそれが返されます。
-
-この手続きは様々な種類のユニフォームベクタに対して動作するような一般的なコードを
-書く際にとても便利ですが、それぞれの種類のユニフォームベクタ専用の
-アクセサに比べると遅いです。Gaucheのコンパイラは@code{@@vector-ref}の
-呼び出しを認識して非常に効率の良いコードを出すのに対し、
-この手続きは通常の手続き呼び出しになるからです。内部のループ内で呼び出す場合、
-これは大きな差になるかもしれません。
-
-なお、@code{(setter uvector-ref)}は@code{uvector-set!}です。
-@c COMMON
-@end defun
-
-@deffn {Function} @@vector-set! vec k n :optional clamp
-@findex u8vector-set!
-@findex s8vector-set!
-@findex u16vector-set!
-@findex s16vector-set!
-@findex u32vector-set!
-@findex s32vector-set!
-@findex u64vector-set!
-@findex s64vector-set!
-@findex f16vector-set!
-@findex f32vector-set!
-@findex f64vector-set!
-@findex c32vector-set!
-@findex c64vector-set!
-@findex c128vector-set!
-[R7RS vector.@@]
-@c MOD gauche.uvector
-@c EN
-Sets a number @var{n} to the @var{k}-th element of @@vector @var{vec}.
-Optional @var{clamp} argument specifies the behavior when
-@var{n} is out of valid range.   Default is to signal an error.
-
-Note that the setter of the generic function @code{ref} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-@@vector @var{vec}の@var{k}番目の要素に数値@var{n}をセットします。
-省略可能な引数@var{clamp}が、@var{n}が正しい範囲外の数であった場合の動作を指定します。
-デフォルトではエラーが通知されます。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{ref}のsetter手続きを使うこともできます。
-@c COMMON
-@example
-(let ((v (s32vector -439 852 8933)))
-  (s32vector-set! v 1 4)
-  v)
- @result{} #s32vector(-439 4 8933)
-
-(use gauche.collection)
-(let ((v (s32vector -439 852 8933)))
-  (set! (ref v 1) 4)
-  v)
- @result{} #s32vector(-439 4 8933)
-@end example
-@end deffn
-
-@defun uvector-set! vec k val
-@c MOD gauche.uvector
-@c EN
-Generic version of @code{@@vector-set!}.  It can handle any
-kind of uniform vectors, but a bit slower than the specific versions.
-@c JP
-@code{@@vector-set!}の汎用バージョンです。全ての種類の
-ユニフォームベクタを扱えますが、特定のユニフォームベクタ用のセッターを
-使うよりやや遅いです。
-@c COMMON
 @end defun
 
 @deffn {Function} @@vector-swap! vec i j

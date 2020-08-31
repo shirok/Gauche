@@ -12092,7 +12092,7 @@ renumber capturing groups to make them consistent.)
 
 @c ----------------------------------------------------------------------
 @node Vector family, Hashtables, Regular expressions, Core library
-@section Vectors
+@section Vector family
 @c NODE ベクタの仲間
 
 @c EN
@@ -12751,6 +12751,359 @@ Gaucheは組み込みではごく基本的な手続きしか提供しません�
 (R7RSでは@code{(scheme vector @@)}ライブラリ)では包括的な操作を提供しています。
 @ref{Uniform vector library}および@ref{R7RS uniform vectors}参照。
 @c COMMON
+
+@c EN
+@subsubheading Uvector classes
+@c JP
+@subsubheading uvectorクラス
+@c COMMON
+
+@deftp {Abstract Class} <uvector>
+@c EN
+The base class of uniform vector classes.  It inherits @code{<sequence>}
+(@pxref{Sequence framework}).
+@c JP
+ユニフォームベクタクラスのベースクラスです。@code{<sequence>}を継承します
+(@ref{Sequence framework}参照)。
+@c COMMON
+@end deftp
+
+
+@deftp {Builtin Class} <@@vector>
+@clindex s8vector
+@clindex u8vector
+@clindex s16vector
+@clindex u16vector
+@clindex s32vector
+@clindex u32vector
+@clindex s64vector
+@clindex u64vector
+@clindex f16vector
+@clindex f32vector
+@clindex f64vector
+@clindex c32vector
+@clindex c64vector
+@clindex c128vector
+@c MOD gauche.uvector
+@c EN
+A class for @@vector, where @code{@@} is one of the uvector tags
+(@code{u8}, @code{s8}, @dots{}).
+It inherits @code{<uvector>}.
+@c JP
+@@vectorのクラス。@code{@@}の部分はuvectorタグ
+(@code{u8}、@code{s8}、@dots{}) です。
+@code{<uvector>}を継承します。
+@c COMMON
+@end deftp
+
+@c EN
+@subsubheading Uvector literals
+@c JP
+@subsubheading uvectorリテラル
+@c COMMON
+
+@deftp {Reader Syntax} @code{#u8(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#s8(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#u16(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#s16(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#u32(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#s32(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#u64(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#s64(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#f16(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#f32(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#f64(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#c32(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#c64(@var{n} @dots{})}
+@deftpx {Reader Syntax} @code{#c128(@var{n} @dots{})}
+@lxindex #s8
+@lxindex #u8
+@lxindex #s16
+@lxindex #u16
+@lxindex #s32
+@lxindex #u32
+@lxindex #s64
+@lxindex #u64
+@lxindex #f16
+@lxindex #f32
+@lxindex #f64
+@lxindex #c32
+@lxindex #c64
+@lxindex #c128
+@c EN
+Denotes a literal homogeneous vector.
+
+(Note: R7RS bytevector is the same as u8vector, and can be written
+as @code{#u8(@dots{})}.)
+@c JP
+リテラルの単一型のベクタを記述します。
+
+(註: R7RSのバイトベクタはu8vectorと同じで、@code{#u8(@dots{})}で表記できます。)
+@c COMMON
+@example
+#s8(3 -2 4)
+#u32(4154 88357 2 323)
+#f32(3.14 0.554525 -3.342)
+@end example
+@end deftp
+
+@c EN
+@subsubheading Uvector generic operations
+@c JP
+@subsubheading uvectorのジェネリックな操作
+@c COMMON
+
+@defun uvector? obj
+@c EN
+Returns @code{#t} iff @var{obj} is one of the uniform vectors.
+See below for predicates for specific type of uvector.
+@c JP
+@var{obj}がユニフォームベクタのいずれかなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+特定の型のuvectorを検査する述語については後で説明します。
+@c COMMON
+@end defun
+
+@defun uvector-length uv
+@c EN
+Returns the length (the number of elements) of uvector @var{uv}.
+An error is raised if @var{uv} is not a uvector.
+
+Type specific length procedures are provided in @code{scheme.vector.@@}
+and @code{gauche.uvector} (@pxref{Uniform vector library}).
+
+To get the size of the binary data the content of the uvector actually
+occupies, use @code{uvector-size} in @code{gauche.uvector}.
+@c JP
+uvector@var{uv}の長さ(要素数)を返します。
+@var{uv}がuvectorでなければエラーを投げます。
+
+特定の型のuvectorの長さを取る手続きは、@code{scheme.vector.@@}および
+@code{gauche.uvector}にあります (@ref{Uniform vector library}参照)。
+
+uvectorの内容がバイナリデータとして占有する大きさを知りたければ、
+@code{gauche.uvector}の@code{uvector-size}が使えます。
+@c COMMON
+@end defun
+
+@defun uvector-ref uv k :optional fallback
+@c EN
+Generic uvector accessor.  Returns @var{k}-th element of a uniform
+vector @var{uv}.  If @var{k} is out-of-range, @var{fallback} is
+returned if provided, or an error is thrown otherwise.
+
+This is handy to write a generic code that works on any kind of
+uniform vector, but this is slower than the specific versions.
+Gauche's compiler recognizes the specific versions of referencer and
+generate very efficient code for them, while this generic version
+becomes a normal procedure call.   In inner-loop it can make a big
+difference.
+
+See below for the type-specific accessors.
+
+@code{(setter uvector-ref)} is @code{uvector-set!}.
+@c JP
+汎用的なuvectorのアクセサです。uvector @var{uv}の@var{k}番目の
+要素を返します。@var{k}が範囲外の場合、@var{fallback}が与えられていればそれが
+返され、そうでなければエラーが投げられます。
+
+この手続きは様々な種類のユニフォームベクタに対して動作するような一般的なコードを
+書く際にとても便利ですが、それぞれの種類のユニフォームベクタ専用の
+アクセサに比べると遅いです。Gaucheのコンパイラは@code{@@vector-ref}の
+呼び出しを認識して非常に効率の良いコードを出すのに対し、
+この手続きは通常の手続き呼び出しになるからです。内部のループ内で呼び出す場合、
+これは大きな差になるかもしれません。
+
+型ごと専用のアクセサは下で説明します。
+
+なお、@code{(setter uvector-ref)}は@code{uvector-set!}です。
+@c COMMON
+@end defun
+
+@defun uvector-set! uv k val :optional clamp
+@c MOD gauche.uvector
+@c EN
+Generic uvector setter.  Mutate @var{k}-th element of
+uvector @var{uv} with @var{val}.
+An error is thrown if @var{k} is out-of-range, or @var{uv} is immutable.
+
+Optional @var{clamp} argument specifies the behavior when
+@var{val} is out of valid range.  It can be @code{#f} or
+one of the symbols @code{low}, @code{high}, or @code{both}.
+@xref{Uniform vector library}, for the meanings of the clamp argument.
+The default is @code{#f}, which raises an error on out-of-range value.
+@c JP
+汎用的なuvectorのセッターです。uvector @var{uv}の@var{k}番目の要素を
+@var{val}で置き換えます。
+@var{k}が範囲外であったり、
+@var{uv}が変更不可である場合はエラーが投げられます。
+
+省略可能な引数@var{clamp}が、@var{val}が正しい範囲外の数であった場合の動作を指定します。
+この引数は@code{#f}か、
+シンボル@code{low}、@code{high}、@code{both}のいずれかでなければなりません。
+この意味については@ref{Uniform vector library}を参照してください。
+デフォルトは@code{#f}で、範囲外の値についてはエラーを投げます。
+@c COMMON
+@end defun
+
+
+@c EN
+@subsubheading Uvector type-specific operations
+@c JP
+@subsubheading uvectorの型ごとの操作
+@c COMMON
+
+@c EN
+Type-specific predicates, accessors and modifiers are provided in the core
+library; all the rest are in @code{scheme.vector.@@} or @code{gauche.uvector}
+(@pxref{Uniform vector library}).
+@c JP
+型ごとの述語、アクセサ、セッタはここで提供されます。
+他の手続きについては@code{scheme.vector.@@}や@code{gauche.uvector}を
+利用してください (@ref{Uniform vector library}参照)。
+@c COMMON
+
+@deffn {Function} @@vector? obj
+@findex s8vector?
+@findex u8vector?
+@findex s16vector?
+@findex u16vector?
+@findex s32vector?
+@findex u32vector?
+@findex s64vector?
+@findex u64vector?
+@findex f16vector?
+@findex f32vector?
+@findex f64vector?
+@findex c32vector?
+@findex c64vector?
+@findex c128vector?
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+Returns @code{#t} iff @var{obj} is a @@vector, @code{#f} otherwise.
+The @code{@@} part is one of the uvector tags (@code{u8} etc.).
+@c JP
+@var{obj}が@@vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
+@code{@@}の部分はuvectorタグ(@code{u8}等)です。
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-ref vec k :optional fallback
+@findex u8vector-ref
+@findex s8vector-ref
+@findex u16vector-ref
+@findex s16vector-ref
+@findex u32vector-ref
+@findex s32vector-ref
+@findex u64vector-ref
+@findex s64vector-ref
+@findex f16vector-ref
+@findex f32vector-ref
+@findex f64vector-ref
+@findex c32vector-ref
+@findex c64vector-ref
+@findex c128vector-ref
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+Returns the @var{k}-th element of @@vector @var{vec}.
+The @code{@@} part is one of the uvector tags (@code{u8} etc.).
+
+If the index @var{k} is out of the valid range, an error is signaled
+unless an optional argument @var{fallback} is given; in that case,
+@var{fallback} is returned.
+
+Note that the generic function @code{ref} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@@vector @var{vec}の@var{k}番目の要素を返します。
+@code{@@}の部分はuvectorタグ(@code{u8}等)です。
+
+@var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
+省略可能な引数@var{fallback}が与えられている場合はそれが返されます。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{ref}を使うこともできます。
+@c COMMON
+
+@example
+(u16vector-ref '#u16(111 222 333) 1) @result{} 222
+
+(use gauche.collection)
+(ref '#u16(111 222 333) 1) @result{} 222
+@end example
+
+@c EN
+Setter of @code{@@vector-ref} is @code{@@vector-set!}.
+@c JP
+@code{@@vector-ref}のsetterは@code{@@vector-set!}です。
+@c COMMON
+
+@example
+(use gauche.uvector)
+(define v (u8vector 1 2 3))
+(set! (u8vector-ref v 1) 99)
+
+v @result{} #u8(1 99 3)
+@end example
+@end deffn
+
+@deffn {Function} @@vector-set! vec k n :optional clamp
+@findex u8vector-set!
+@findex s8vector-set!
+@findex u16vector-set!
+@findex s16vector-set!
+@findex u32vector-set!
+@findex s32vector-set!
+@findex u64vector-set!
+@findex s64vector-set!
+@findex f16vector-set!
+@findex f32vector-set!
+@findex f64vector-set!
+@findex c32vector-set!
+@findex c64vector-set!
+@findex c128vector-set!
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+Sets a number @var{n} to the @var{k}-th element of @@vector @var{vec}.
+The @code{@@} part is one of the uvector tags (@code{u8} etc.).
+
+Optional @var{clamp} argument specifies the behavior when
+@var{n} is out of valid range.   It can be @code{#f} or
+one of the symbols @code{low}, @code{high}, or @code{both}.
+@xref{Uniform vector library}, for the meanings of the clamp argument.
+The default is @code{#f}, which raises an error on out-of-range value.
+
+Note that the setter of the generic function @code{ref} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@@vector @var{vec}の@var{k}番目の要素に数値@var{n}をセットします。
+@code{@@}の部分はuvectorタグ(@code{u8}等)です。
+省略可能な引数@var{clamp}が、@var{n}が正しい範囲外の数であった場合の動作を指定します。
+この引数は@code{#f}か、
+シンボル@code{low}、@code{high}、@code{both}のいずれかでなければなりません。
+この意味については@ref{Uniform vector library}を参照してください。
+デフォルトは@code{#f}で、範囲外の値についてはエラーを投げます。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{ref}のsetter手続きを使うこともできます。
+@c COMMON
+@example
+(let ((v (s32vector -439 852 8933)))
+  (s32vector-set! v 1 4)
+  v)
+ @result{} #s32vector(-439 4 8933)
+
+(use gauche.collection)
+(let ((v (s32vector -439 852 8933)))
+  (set! (ref v 1) 4)
+  v)
+ @result{} #s32vector(-439 4 8933)
+@end example
+@end deffn
+
 
 
 @node Bitvectors,  , Uniform vectors, Vector family
