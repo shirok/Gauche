@@ -12132,6 +12132,7 @@ Gaucheはまた、ビット列を格納するビットベクタも提供しま�
 
 @node Vectors, Uniform vectors, Vector family, Vector family
 @subsection Vectors
+@c NODE ベクタ
 
 @deftp {Builtin Class} <vector>
 @clindex vector
@@ -12614,6 +12615,7 @@ This is equivalent to SRFI-43's @code{vector-for-each}.
 
 @node Uniform vectors, Bitvectors, Vectors, Vector family
 @subsection Uniform vectors
+@c NODE ユニフォームベクタ
 
 @c EN
 Uniform vectors, or homogeneous numeric vectors, are a special
@@ -13127,14 +13129,32 @@ if you import @code{gauche.collection}.
 
 @node Bitvectors, Weak vectors, Uniform vectors, Vector family
 @subsection Bitvectors
+@c NODE ビットベクタ
 
 @c EN
-Bitvectors
+A bitvector is a sequence of bits.  Each bit can be considered either
+an exact integer 0/1, or a boolean values @code{#f}/@code{#t}.
+In the former view, it is similar to a uniform vector, but it has the 
+interface sufficiently different from uvectors and we provided it as
+a disjoint type.
+
+Gauche provides a handful of procedures in the core.
+SRFI-178 provides comprehensive bitvector library.
 @c JP
+ビットベクタはビットの並びです。各「ビット」は、0/1の数値としても、
+@code{#f}/@code{#t}の論理値としても解釈可能です。
+最初の見方では、ビットベクタをユニフォームベクタの一種と考えることもできますが、
+インタフェースがそこそこ違っているので、別の型としました。
+
+Gaucheはコアでごく基本的な手続きを提供します。
+SRFI-178に包括的なビットベクタライブラリがあります。
 @c COMMON
 
 @deftp {Builtin class} <bitvector>
 @clindex bitvector
+Bitvector class.  Inherits @code{<sequence>}, so generic sequence opertaions
+can be used.  (Generic @code{ref} uses @code{bitvector-ref/int}, for
+it matches the external representation of a bitvector.)
 @end deftp
 
 @deftp {Reader Syntax} @code{#*@var{b}@dots{}}
@@ -13142,13 +13162,26 @@ Bitvectors
 [SRFI-178]
 @end deftp
 
-@defun bit->integer
-@defunx bit->boolean
+@defun bit->integer bit
+@defunx bit->boolean bit
 [SRFI-178]
+Many bitvector operations can accept bit as a boolean (@code{#f}/@code{#t})
+or an exact integer (0/1).  These are utility procedures to obtain
+desired type.  The @var{bit} argument must be either one of @code{#f}, @code{#t},
+0 or 1.  They return 0/1 and @code{#f}/@code{#t}, respectively.
 @end defun
 
 @defun bitvector b @dots{}
 [SRFI-178]
+Creates and returns a bitvector whose elements are @var{b} @dots{}.
+Each argument must be a bit (boolean or 0 or 1).
+@end defun
+
+@defun make-bitvector len :optional init
+[SRFI-178]
+Creates and returns a bitvector with length @var{len}, and all elements
+being initialized by @var{init}, which must be a bit
+(boolean or 0 or 1).
 @end defun
 
 @defun list->bitvector lis
