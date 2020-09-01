@@ -32,6 +32,7 @@
 ;;;
 
 (define-module srfi-178
+  (use util.match)
   (export 
    ;; bit conversion
    bit->integer bit->boolean            ;built-in
@@ -123,7 +124,66 @@
    ))
 (select-module srfi-178)
 
-;; Predicates
+;;; Constructors
+
+;; make-bitvector, bitvector - built-in
+
+(define (bitvector-unfold f len . seeds)
+  (let1 v (make-bitvector len)
+    (let loop ([k 0] [seeds seeds])
+      (if (= k len)
+        v
+        (receive (b . seeds) (apply f k seeds)
+          (bitvector-set! v k b)
+          (loop (+ k 1) seeds))))))
+
+(define (bitvector-unfold-right f len . seeds)
+  (let1 v (make-bitvector len)
+    (let loop ([k (- len 1)] [seeds seeds])
+      (if (< k 0)
+        v
+        (receive (b . seeds) (apply f k seeds)
+          (bitvector-set! v k b)
+          (loop (- k 1) seeds))))))
+
+;; bitvector-copy - built-in
+
+(define (bitvector-reverse-copy bv :optional (s 0) e)
+  (let1 e (if (undefined? e) (bitvector-length bv) e)
+    ;; can be more efficient
+    (rlet1 r (bitvector-copy bv s e)
+      (bitvector-reverse! r))))
+
+(define (bitvector-append . bvs) (bitvector-concatenate bvs))
+
+(define (bitvector-concatenate bvs)
+  (let1 len (fold (^[v l] (+ l (bitvector-length v))) 0 bvs)
+    (rlet1 r (make-bitvector len)
+      (let loop ([k 0] [bvs bvs])
+        (unless (null? bvs)
+          (bitvector-copy! r k (car bvs))
+          (loop (+ k (bitvector-length (car bvs))) (cdr bvs)))))))
+
+(define (bitvector-append-subbitvectors . args)
+  (define (check xs len)
+    (match xs
+      [() len]
+      [(bv s e) 
+       (assume-type bv <bitvector>)
+       (assume (and (exact-integer? s) (exact-integer? e)))
+       (assume (<= s e))
+       (check (cdddr xs) (+ len (- e s)))]
+      [_ (error "number of arguments must be multiples of 3, but got" args)])) 
+ (receive (srcs len) (check args 0)
+    (rlet1 r (make-bitvector len)
+      (let loop ([k 0] [srcs srcs])
+        (match srcs
+          [((bv s e) . srcs)
+           (bitvector-copy! r k bv s e)
+           (loop (+ k (- e s)) (cdr srcs))]
+          [_ #f])))))
+
+;;; Predicates
 
 ;; bitvector? - built-in
 
@@ -141,7 +201,186 @@
               (and (equal? v (car vs))
                    (loop (car vs) (cdr vs))))))))
 
-;; Basic operations
+;;; Selectors
+
+;; bitvector-ref/int, bitvector-ref/bool, bitvector-length - built-in
+
+;;; Iteration
+
+(define (bitvector-take bv n) (bitvector-copy bv 0 n))
+(define (bitvector-take-right bv n)
+  (let1 len (bitvector-length bv)
+    (assume (<= n len))
+    (bitvector-copy bv (- len n) len)))
+(define (bitvector-drop bv n)
+  (let1 len (bitvector-length bv)
+    (assume (<= n len))
+    (bitvector-copy bv n len)))
+(define (bitvector-drop-right bv n)
+  (let1 len (bitvector-length bv)
+    (assume (<= n len))
+    (bitvector-copy bv 0 (- len n))))
+
+(define (bitvector-segment bv n)
+  (let loop ([len (bitvector-length bv)]
+             [k 0]
+             [r '()])
+    (if (>= (+ k n) len)
+      (reverse (cons bv r))
+      (loop len (+ k n) (cons (bitvector-copy bv k (+ k n)) r)))))
+
+;; captures common pattern of iterators
+(define-syntax bv-iterator
+  (syntax-rules ()
+    [(_ ref (arg ... bv bvs) len body1 bodyn)
+     (case-lambda
+       [(arg ... bv)                    ;short path
+        (let1 len (bitvector-length bv)
+          body1)]
+       [(arg ...) (error "At least one bitvector is required")]
+       [(arg ... . bvs)
+        (let ([len (bitvector-length (car bvs))])
+          (unless (every (^v (= len (bitvector-length v))) (cdr bvs))
+            (error "bitvectors must be of the same length" bvs))
+          bodyn)])]))
+
+(define-inline (*ref bvs ref k) (map (^v (ref v k)) bvs))
+
+(define (%gen-fold ref)
+  (bv-iterator ref (kons knil bv bvs) len
+               (let loop ([k 0] [knil knil])
+                 (if (= k len) knil (loop (+ k 1) (kons knil (ref bv k)))))
+               (let loop ([k 0] [knil knil])
+                 (if (= k len) 
+                   knil
+                   (loop (+ k 1)
+                         (apply kons knil (*ref bvs ref k)))))))
+
+(define bitvector-fold/int  (%gen-fold bitvector-ref/int))
+(define bitvector-fold/bool (%gen-fold bitvector-ref/bool))
+
+(define (%gen-fold-right ref)
+  (bv-iterator ref (kons knil bv bvs) len
+               (let loop ([k (- len 1)] [knil knil])
+                 (if (< k 0) knil (loop (- k 1) (kons knil (ref bv k)))))
+               (let loop ([k (- len 1)] [knil knil])
+                 (if (< k 0)
+                   knil
+                   (loop (- k 1)
+                         (apply kons knil (*ref bvs ref k)))))))
+
+(define bitvector-fold-right/int (%gen-fold-right bitvector-ref/int))
+(define bitvector-fold-right/bool (%gen-fold-right bitvector-ref/bool))
+
+(define (%gen-map ref)
+  (bv-iterator ref (f bv bvs) len
+               ;; we don't need to worry about restart-safety      
+               (rlet1 r (make-bitvector len)
+                 (let loop ([k 0])
+                   (unless (= k len)
+                     (bitvector-set! r k (f (ref bv k)))
+                     (loop (+ k 1)))))
+               (rlet1 r (make-bitvector len)
+                 (let loop ([k 0])
+                   (unless (= k len)
+                     (bitvector-set! r k (apply f (*ref bvs ref k)))
+                     (loop (+ k 1)))))))
+
+(define bitvector-map/int (%gen-map bitvector-ref/int))
+(define bitvector-map/bool (%gen-map bitvector-ref/bool))
+
+(define (%gen-map! ref)
+  (bv-iterator ref (f bv bvs) len
+               (let loop ([k 0])
+                 (unless (= k len)
+                   (bitvector-set! bv k (f (ref bv k)))
+                   (loop (+ k 1))))
+               (let loop ([k 0])
+                 (unless (= k len)
+                   (bitvector-set! (car bvs) k 
+                                   (apply f (*ref bvs ref k)))
+                   (loop (+ k 1))))))
+
+(define bitvector-map!/int (%gen-map! bitvector-ref/int))
+(define bitvector-map!/bool (%gen-map! bitvector-ref/bool))
+
+(define (%gen-map->list ref)
+  (bv-iterator ref (f bv bvs) len
+               (let loop ([k (- len 1)] [r '()])
+                 (if (< k 0)
+                   r   
+                   (loop (- k 1) (cons (f (ref bv k)) r))))
+               (let loop ([k (- len 1)] [r '()])
+                 (if (< k 0)
+                   r   
+                   (loop (- k 1) 
+                         (cons (apply f (*ref bvs ref k)) r))))))
+
+(define bitvector-map>list/int (%gen-map->list bitvector-ref/int))
+(define bitvector-map>list/bool (%gen-map->list bitvector-ref/bool))
+
+(define (%gen-for-each ref)
+  (bv-iterator ref (f bv bvs) len
+               (let loop ([k 0])
+                 (unless (= k len)
+                   (f (ref bv k))
+                   (loop (+ k 1))))
+               (let loop ([k 0])
+                 (unless (= k len)
+                   (apply f (*ref bvs ref k))
+                   (loop (+ k 1))))))
+
+(define bitvector-for-each/int (%gen-for-each bitvector-ref/int))
+(define bitvector-for-each/bool (%gen-for-each bitvector-ref/bool))
+
+;;; Prefix, suffix etc
+
+(define (bitvector-prefix-length bv1 bv2) 'writeme)
+(define (bitvector-suffix-length bv1 bv2) 'writeme)
+
+(define (bitvector-prefix? bv1 bv2) 'writeme)
+(define (bitvector-suffix? bv1 bv2) 'writeme)
+
+(define (bitvector-pad bit bv len) 'writeme)
+(define (bitvector-pad-right bit bv len) 'writeme)
+
+(define (bitvector-trim bit bv) 'writeme)
+(define (bitvector-trim-right bit bv) 'writeme)
+(define (bitvector-trim-both bit bv) 'writeme)
+
+;;; Mutators
+
+;; bitvector-set!, bitvector-copy! - built-in
+
+(define (bitvector-swap! bv i j)
+  (let1 t (bitvector-ref/int bv i)
+    (bitvector-set! bv i (bitvector-ref/int bv j))
+    (bitvector-set! bv j t)))
+
+(define (bitvector-reverse! bv :optional (s 0) e)
+  (assume-type bv <bitvector>)
+  (let ([e (if (undefined? e) (bitvector-length bv))])
+    (assume (and (exact-integer? s) (exact-integer? e) (<= s e)))
+    (let loop ([s s] [e e])
+      (when (< s e)
+        (bitvector-swap! bv s e)
+        (loop (+ s 1) (- e 1))))))
+
+(define (bitvector-reverse-copy! target tstart src :optional (sstart 0) send)
+  (let1 send (if (undefined? send) (bitvector-length src) send)
+    (assume (and (exact-integer? sstart) (exact-integer? send) (<= sstart send)))
+    (assume (exact-integer? tstart))
+    (let loop ([i (- send 1)] [j tstart])
+      (when (<= sstart i)
+        (bitvector-set! target j (bitvector-ref/int src i))
+        (loop (- i 1) (+ j 1))))))
+
+;;; Conversion
+
+
+  
+
+;;; Basic operations
 
 (inline-stub
  (define-cise-stmt %bv-op
