@@ -329,6 +329,8 @@
 (define-cproc bitvector-length (v::<bitvector>) ::<int>    ;srfi-178
   SCM_BITVECTOR_SIZE)
 
+(define-cproc make-bitvector (len::<fixnum> :optional (init #f)) ;srfi-178
+  Scm_MakeBitvector)
 (define-cproc bitvector (:rest bits) Scm_ListToBitvector) ;srfi-178
 (define-cproc list->bitvector (bits) Scm_ListToBitvector) ;srfi-178
 
@@ -339,16 +341,6 @@
 
 (define-cproc bit->integer (bit) ::<int> Scm_Bit2Int) ;srfi-178
 (define-cproc bit->boolean (bit) ::<boolean> Scm_Bit2Int) ;srfi-178
-
-(define (bitvector=? . vs)             ;srfi-178
-  ;; we can compare bitvectors using equal?.  just extra type checking.
-  (or (null? vs)
-      (if-let1 z (find (^x (not (bitvector? x))) vs)
-        (error "Bitvector required, but got:" z)
-        (let loop ([v (car vs)] [vs (cdr vs)])
-          (or (null? vs)
-              (and (equal? v (car vs))
-                   (loop (car vs) (cdr vs))))))))
 
 (define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum> ;srfi-178
                                                 :optional fallback)
@@ -391,6 +383,8 @@
 ;;;
 ;;; Flat vector API (interact with underlying C array)
 ;;;
+
+(select-module gauche)
 
 (inline-stub
  (.define common_eqv (a b) (== a b))

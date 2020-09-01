@@ -111,6 +111,7 @@ test.record
 /ext/srfi/srfi-43.c
 /ext/srfi/srfi-133.c
 /ext/srfi/srfi-144.c
+/ext/srfi/srfi-178.c
 /ext/sxml/sxml--serializer.c
 /ext/sxml/sxml--ssax.c
 /ext/sxml/sxml--sxpath.c
