@@ -1306,11 +1306,11 @@ srfi-185, srfi-185
 
 Linear adjustable-length strings
 Supported by the module @code{srfi-185}.
-@xref{Linear adjustable-lenght strings}.
+@xref{Linear adjustable-length strings}.
 
 線形更新な可変長文字列
 モジュール@code{srfi-185}でサポートされます。
-@ref{Linear adjustable-lenght strings}参照。
+@ref{Linear adjustable-length strings}参照。
 
 
 srfi-189, srfi-189

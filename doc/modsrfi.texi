@@ -62,7 +62,7 @@ srfi N is supported by Gauche.)
 * ASCII character library::     srfi-175
 * Bitvector library::           srfi-178
 * JSON::                        srfi-180
-* Linear adjustable-lenght strings::  srfi-185
+* Linear adjustable-length strings::  srfi-185
 * Maybe and Either optional container types::  srfi-189
 @end menu
 
@@ -7572,7 +7572,7 @@ bitvector-set!    bitvector-copy     bitvector-copy!
 
 
 @c ----------------------------------------------------------------------
-@node JSON, Linear adjustable-lenght strings, Bitvector library, Library modules - SRFIs
+@node JSON, Linear adjustable-length strings, Bitvector library, Library modules - SRFIs
 @section @code{srfi-180} - JSON
 
 @deftp {Module} srfi-180
@@ -7810,8 +7810,8 @@ a string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Linear adjustable-lenght strings, Maybe and Either optional container types, JSON, Library modules - SRFIs
-@section @code{srfi-185} - Linear adjustable-lenght strings
+@node Linear adjustable-length strings, Maybe and Either optional container types, JSON, Library modules - SRFIs
+@section @code{srfi-185} - Linear adjustable-length strings
 @c NODE 線形更新な可変長文字列, @code{srfi-185} - 線形更新な可変長文字列
 
 @deftp {Module} srfi-185
@@ -7964,7 +7964,7 @@ srfi-118 (@ref{Simple adjustable-size strings}参照)を使っているコード
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Maybe and Either optional container types,  , Linear adjustable-lenght strings, Library modules - SRFIs
+@node Maybe and Either optional container types,  , Linear adjustable-length strings, Library modules - SRFIs
 @section @code{srfi-189} - Maybe and Either: optional container types
 @c NODE MaybeとEither、オプショナルなコンテナ型, @code{srfi-189} - MaybeとEither、オプショナルなコンテナ型
 
