@@ -8726,68 +8726,6 @@ behavior, but prints warning when it finds legacy syntax.
 @c COMMON
 @end deftp
 
-@deftp {Reader Syntax} @code{#**"}@dots{}@code{"}
-@lxindex #**
-@c EN
-Denotes incomplete string.  The same escape sequences as the complete
-string syntax are recognized.
-@c JP
-不完全な文字列のリテラル表記です。完全な文字列と同様のエスケープシーケンスが
-使えます。
-@c COMMON
-
-@c EN
-Rationale of the syntax: @code{#*} is used for bit vectors.
-Since an incomplete strings is really a byte vector,
-it has similarity.
-@c JP
-@code{#*} という構文はCommon Lispでビットベクタの表記に使われています。
-不完全な文字列は実際はバイトベクタであることから、類似点を認めてこの構文を
-採用しました。
-@c COMMON
-
-@c EN
-Note: We used @code{#*"...."} for an incomplete string on 0.9.9 and
-before.  It turned out that it couldn't coexist with bitvectors, for
-@code{#*} is a valid bitvector literal (zero-length vector), and
-@code{"} is a delimiter, so @code{#*"...."} can be parsed as
-a zero-length bitvector followed by a string.  From 0.9.10, we changed
-the incomplete string literal to @code{#**"..."}.  It's a bit lengthy,
-but incomplete strings are anomalies and shouldn't be used often anyway.
-
-For the backward compatibility, @code{#*"..."} is still read as an
-incomplete string literal, unless the reader lexical mode
-is @code{strict-r7} (@pxref{Reader lexical mode}, for the details).
-If the reader lexical mode is @code{warn-legacy}, it is read as
-an incomplete string, but a warning is issued.
-If the mode is @code{strict-r7}, it is read as a zero-length
-bitvector followed by a string.
-
-In future releasers, @code{#*"..."} would be warned by default,
-and later we'll gradually move to @code{strict-r7} behavior.
-@c JP
-註: 0.9.9までは、不完全文字列リテラルとして@code{#*"..."}を使っていました。
-しかし、それはビットベクタリテラルと共存できないことが判明しました。
-@code{#*}は有効なビットベクタリテラル(長さ0のビットベクタ)で、
-また@code{"}はデリミタなので、@code{#*"...."}は長さ0のビットベクタと
-通常の文字列、とパーズできてしまいます。
-0.9.10からは、不完全文字列リテラルは@code{#**"..."}になりました。
-ちょっと長いですが、もともと不完全文字列は例外的に現れるもので、
-積極的に使うべきではありません。
-
-後方互換性のため、デフォルトでは@code{#*"..."}はリーダー字句モードが
-@code{strict-r7}でない限りは不完全文字列リテラルとして読まれます。
-(リーダー字句モードについては@ref{Reader lexical mode}参照。)
-リーダ字句モードが@code{warn-legacy}だった場合は、
-このリテラルは不完全文字列として読まれますが、警告が出されます。
-リーダ字句モードが@code{strict-r7}であれば、
-このリテラルは長さ0のビットベクタと、通常の文字列として読まれます。
-
-将来のリリースでは、デフォルトで@code{#*"..."}は警告を出すようにし、
-その後@code{strict-r7}の振る舞いに移行する予定です。
-@c COMMON
-@end deftp
-
 
 @node String predicates, String constructors, String syntax, Strings
 @subsection String predicates
@@ -10348,12 +10286,74 @@ In fact, we're planning to remove it in the future releases.
 
 @c EN
 Just in case, if you happen to get an incomplete string,
-you can convert it to a complete string by the following
-procedure:
+you can convert it to a complete string by @code{string-incomplete->complete}.
 @c JP
-万が一、不完全文字列に出会ってしまったら以下の手続を使って完全文字列に
-変換することができます。
+万が一、不完全文字列に出会ってしまったら
+@code{string-incomplete->complete}で完全な文字列に変換することができます。
 @c COMMON
+
+@deftp {Reader Syntax} @code{#**"}@dots{}@code{"}
+@lxindex #**
+@c EN
+Denotes incomplete string.  The same escape sequences as the complete
+string syntax are recognized.
+@c JP
+不完全な文字列のリテラル表記です。完全な文字列と同様のエスケープシーケンスが
+使えます。
+@c COMMON
+
+@c EN
+Rationale of the syntax: @code{#*} is used for bit vectors.
+Since an incomplete strings is really a byte vector,
+it has similarity.
+@c JP
+@code{#*} という構文はCommon Lispでビットベクタの表記に使われています。
+不完全な文字列は実際はバイトベクタであることから、類似点を認めてこの構文を
+採用しました。
+@c COMMON
+
+@c EN
+Note: We used @code{#*"...."} for an incomplete string on 0.9.9 and
+before.  It turned out that it couldn't coexist with bitvectors, for
+@code{#*} is a valid bitvector literal (zero-length vector), and
+@code{"} is a delimiter, so @code{#*"...."} can be parsed as
+a zero-length bitvector followed by a string.  From 0.9.10, we changed
+the incomplete string literal to @code{#**"..."}.  It's a bit lengthy,
+but incomplete strings are anomalies and shouldn't be used often anyway.
+
+For the backward compatibility, @code{#*"..."} is still read as an
+incomplete string literal, unless the reader lexical mode
+is @code{strict-r7} (@pxref{Reader lexical mode}, for the details).
+If the reader lexical mode is @code{warn-legacy}, it is read as
+an incomplete string, but a warning is issued.
+If the mode is @code{strict-r7}, it is read as a zero-length
+bitvector followed by a string.
+
+In future releasers, @code{#*"..."} would be warned by default,
+and later we'll gradually move to @code{strict-r7} behavior.
+@c JP
+註: 0.9.9までは、不完全文字列リテラルとして@code{#*"..."}を使っていました。
+しかし、それはビットベクタリテラルと共存できないことが判明しました。
+@code{#*}は有効なビットベクタリテラル(長さ0のビットベクタ)で、
+また@code{"}はデリミタなので、@code{#*"...."}は長さ0のビットベクタと
+通常の文字列、とパーズできてしまいます。
+0.9.10からは、不完全文字列リテラルは@code{#**"..."}になりました。
+ちょっと長いですが、もともと不完全文字列は例外的に現れるもので、
+積極的に使うべきではありません。
+
+後方互換性のため、デフォルトでは@code{#*"..."}はリーダー字句モードが
+@code{strict-r7}でない限りは不完全文字列リテラルとして読まれます。
+(リーダー字句モードについては@ref{Reader lexical mode}参照。)
+リーダ字句モードが@code{warn-legacy}だった場合は、
+このリテラルは不完全文字列として読まれますが、警告が出されます。
+リーダ字句モードが@code{strict-r7}であれば、
+このリテラルは長さ0のビットベクタと、通常の文字列として読まれます。
+
+将来のリリースでは、デフォルトで@code{#*"..."}は警告を出すようにし、
+その後@code{strict-r7}の振る舞いに移行する予定です。
+@c COMMON
+@end deftp
+
 
 @defun string-incomplete->complete str :optional handling filler
 @c EN
@@ -13162,6 +13162,34 @@ it matches the external representation of a bitvector.)
 @deftp {Reader Syntax} @code{#*@var{b}@dots{}}
 @lxindex #*
 [SRFI-178]
+A bitvector literal is @code{#*} followed by zero or more binary digits
+@code{0} or @code{1}.
+
+@example
+#*10010010           ; bitvector of length 8
+#*                   ; bitvector of length 0
+@end example
+
+A bitvector literal is delimited by one of delimiter character or an EOF.
+
+@example
+#*10010abc           ; error
+#*10001(a b c)       ; a bitvector, followed by a list
+@end example
+
+Note: With this rule, @code{#*"..."} should be read as a zero-length
+bitvector followed by a string, for @code{"} is a delimiter.  However,
+Gauche used that syntax for incomplete strings (our overlook!).
+Since incomplete string literals is rare (incomplete strings are
+something that unexpectedly happen in the practical situation, but
+not to be used actively), we changed incomplete string literals to
+@code{#**"..."} (@pxref{Incomplete strings}).
+
+For the backward compatibility, the current version reads @code{#*"..."}
+is read as an incomplete string.  If the reader lexical mode is
+@code{warn-legacy} (@pxref{Reader lexical mode}), such literals are
+warned.  We'll gradually migrate to make @code{#*"..."} read
+as a bytevector followed by a string.
 @end deftp
 
 @defun bit->integer bit
@@ -13184,35 +13212,114 @@ Each argument must be a bit (boolean or 0 or 1).
 Creates and returns a bitvector with length @var{len}, and all elements
 being initialized by @var{init}, which must be a bit
 (boolean or 0 or 1).
+
+If @var{init} is omitted, the content of the bitvector is undefined
+(currently we fill it with 0, but don't count on it.)
+
+@example
+(make-bitvector 5 #f)  @result{} #*00000
+(make-bitvector 7 1)   @result{} #*1111111
+@end example
 @end defun
 
 @defun list->bitvector lis
 [SRFI-178]
+@var{Lis} must be a list of bits (0, 1 or booleans).  Returns a bitvector
+whose elements consist of elements of @var{lis}.
+
+@example
+(list->bitvector '(#t #f #t #t #f))  @result{} #*10110
+(list->bitvector '(0 1 1 1 0 1 0 1)) @result{} #*01110101
+@end example
 @end defun
 
 @defun string->bitvector s
 [SRFI-178]
+If @var{s} is a valid bitvector literal (@code{#*@var{b}...} where @var{b}
+is either @code{0} or @code{1}), returns a bitvector represented by
+the string.  Otherwise, @code{#f} is returned.
+
+@example
+(string->bitvector "#*1010001") @result{} #*1010001
+(string->bitvector "#*1001020") @result{} #f
+@end example
+
+Note that this isn't a sequence-conversion, but rather a conversion to
+external representation.
 @end defun
 
 @defun bitvector->string bv
 [SRFI-178]
+Convert a bitvector @var{bv} to a string representation @code{#*@var{b}...}.
+
+@example
+(bitvector->string #*1001010) @result{} "#*1001010"
+@end example
+
+Note that this isn't a sequence-conversion, but rather a conversion to
+external representation.
 @end defun
 
 @defun bitvector-ref/int bv k :optional fallback
 @defunx bitvector-ref/bool bv k :optional fallback
-[SRFI-178]
+[SRFI-178+]
+Retrieves the @var{k}-th bit of a bitvector @var{bv} as an integer or
+a boolean value, respectively.  If @var{k} is out of range,
+@var{fallback} is returned if it is given, or an error is raised otherwise.
+The @var{fallback} argument is Gauche's extension.
+
+@example
+(bitvector-ref/int #*1010001 0)  @result{} 1
+(bitvector-ref/bool #*1010001 0) @result{} #t
+@end example
+
+If you use a universal accessor @code{ref}/@code{~}, it returns
+the bit value as an integer (@pxref{Universal accessor}).
+
+@example
+(~ #*11001001 1) @result{} 1
+@end example
 @end defun
 
 @defun bitvector-set! bv k bit
 [SRFI-178]
+Sets the @var{k}-th bit of a bitvector @var{bv} with @var{bit}, which must
+be either one of 0, 1, @code{#f} or @code{#t}.  An error is raised
+if @var{k} is out of range.
+
+Since a bitvector is a sequence, you can also use
+@code{(setter ref)}/@code{(setter ~)}:
+
+@example
+(rlet1 z (make-bitvector 5 0)
+  (set! (~ z 2) #t))
+  @result{} #00100
+@end example
 @end defun
 
 @defun bitvector-copy bv :optional start end
 [SRFI-178]
+Returns a copy of a bitvector @var{bv}.  If optional @var{start} and
+@var{end} indexes are given, the copy is limited in that range,
+where @var{start} is inclusive and @var{end} is exclusive.
+
+@example
+(bitvector-copy #*101001000 3)   @result{} #*001000
+(bitvector-copy #*100101000 2 7) @result{} #*01010
+@end example
 @end defun
 
 @defun bitvector-copy! target tstart src :optional sstart send
 [SRFI-178]
+Copy a bitvector @var{src} into a mutable bitvector @var{target} starting
+from @var{tstart}, mutating @var{target}.  Optional @var{sstart} and
+@var{send} delimits the range in @var{src}.
+
+@example
+(rlet1 v (make-bitvector 10 0)
+  (bitvector-copy! v 3 #*101101110 2 6))
+  @result{} #*0001101000
+@end example
 @end defun
 
 @node Weak vectors,  , Bitvectors, Vector family
