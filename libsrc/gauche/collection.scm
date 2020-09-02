@@ -89,7 +89,7 @@
 
 (define-method call-with-iterator ((coll <bitvector>) proc
                                    :key (start 0) :allow-other-keys)
-  (*vector-iter bitvector-length bitvector-ref coll proc start))
+  (*vector-iter bitvector-length bitvector-ref/int coll proc start))
 
 (define-method call-with-iterator ((coll <weak-vector>) proc
                                    :key (start 0) :allow-other-keys)
