@@ -846,8 +846,8 @@ SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_BitvectorClass,
 
 int Scm_Bit2Int(ScmObj bit)
 {
-    if (SCM_EQ(bit, SCM_TRUE) || SCM_EQ(bit, SCM_MAKE_INT(1))) return TRUE;
-    if (SCM_FALSEP(bit) || SCM_EQ(bit, SCM_MAKE_INT(0))) return FALSE;
+    if (SCM_EQ(bit, SCM_TRUE) || SCM_EQ(bit, SCM_MAKE_INT(1))) return 1;
+    if (SCM_FALSEP(bit) || SCM_EQ(bit, SCM_MAKE_INT(0))) return 0;
     Scm_Error("bit value must be 0, 1, #f or #t, but got: %S", bit);
     return 0;                   /* dummy */
 }
@@ -946,9 +946,10 @@ ScmObj Scm_BitvectorCopyX(ScmBitvector *dest, ScmSmallInt dstart,
     ScmSmallInt ssize = SCM_BITVECTOR_SIZE(src);
     SCM_CHECK_START_END(sstart, send, ssize);
     ScmSmallInt dsize = SCM_BITVECTOR_SIZE(dest);
-    ScmSmallInt dend = dstart + dsize;
+    ScmSmallInt dend = dstart + send - sstart;
     if (dstart > dsize || dstart < 0 || dend > dsize) {
-        Scm_Error("destination index out of range");
+        Scm_Error("destination index out of range (size=%ld, start=%ld, end=%ld)",
+                  dsize, dstart, dend);
     }
 
     Scm_BitsCopyX(dest->bits, dstart, src->bits, sstart, send);
