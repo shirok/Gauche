@@ -41,7 +41,7 @@ srfi N is supported by Gauche.)
 * Vector library (Legacy)::     srfi-43
 * Requiring extensions::        srfi-55
 * Integers as bits::            srfi-60
-* A Scheme API for test suites:: srfi-64
+* A Scheme API for test suites::  srfi-64
 * Octet vectors::               srfi-66
 * Basic hash tables::           srfi-69
 * Octet-addressed binary blocks::  srfi-74
@@ -60,6 +60,7 @@ srfi N is supported by Gauche.)
 * Hooks (srfi)::                srfi-173
 * POSIX timespecs::             srfi-174
 * ASCII character library::     srfi-175
+* Bitvector library::           srfi-178
 * JSON::                        srfi-180
 * Linear adjustable-lenght strings::  srfi-185
 * Maybe and Either optional container types::  srfi-189
@@ -6782,7 +6783,7 @@ affected by the current hash salt value (@pxref{Hashing}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node ASCII character library, JSON, POSIX timespecs, Library modules - SRFIs
+@node ASCII character library, Bitvector library, POSIX timespecs, Library modules - SRFIs
 @section @code{srfi-175} - ASCII character library
 @c NODE ASCII文字ライブラリ, @code{srfi-175} - ASCII文字ライブラリ
 
@@ -7258,7 +7259,320 @@ See also @code{digit->integer} (@pxref{Characters}).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node JSON, Linear adjustable-lenght strings, ASCII character library, Library modules - SRFIs
+@node Bitvector library, JSON, ASCII character library, Library modules - SRFIs
+@section @code{srfi-178} - Bitvector library
+@c NODE ビットベクタライブラリ, @code{srfi-178} - ビットベクタライブラリ
+
+@deftp {Module} srfi-178
+@mdindex srfi-178
+Gauche supports bitvectors as a native type, but the core library only
+offers a handful of primitives.  This module complements the comprehensive
+operations on bitvectors.
+
+The following procedures are built-in.  @xref{Bitvectors}, for the description.
+
+@example
+bit->integer      bit->boolean
+bitvector         make-bitvector     list->bitvector
+bitvector?        bitvector-length
+string->bitvector bitvector->string
+bitvector-ref/int bitvector-ref/bool
+bitvector-set!    bitvector-copy     bitvector-copy!
+@end example
+@end deftp
+
+@subheading Constructors
+
+@defun bitvector-unfold f length seed @dots{}
+@defunx bitvector-unfold-right f length seed @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-reverse-copy bv :optional start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-append bv @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-concatenate bvs
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-append-subbitvectors bv start end @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Predicates
+
+@defun bitvector-emtpy? bv
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector=? bv @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Iteration
+
+@defun bitvector-take bv n
+@defunx bitvector-take-right bv n
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-drop bv n
+@defunx bitvector-drop-right bv n
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-segment bv n
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-fold/int kons knil bv1 bv2 @dots{}
+@defunx bitvector-fold/bool kons knil bv1 bv2 @dots{}
+@defunx bitvector-fold-right/int kons knil bv1 bv2 @dots{}
+@defunx bitvector-fold-right/bool kons knil bv1 bv2 @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-map/int f bv1 bv2 @dots{}
+@defunx bitvector-map/bool f bv1 bv2 @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-map!/int f bv1 bv2 @dots{}
+@defunx bitvector-map!/bool f bv1 bv2 @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-map->list/int f bv1 bv2 @dots{}
+@defunx bitvector-map->list/bool f bv1 bv2 @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-for-reach/int f bv1 bv2 @dots{}
+@defunx bitvector-for-reach/bool f bv1 bv2 @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Prefixes, suffixes, trimming and padding
+
+@defun bitvector-prefix-length bv1 bv2
+@defunx bitvector-suffix-length bv1 bv2
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-prefix? needle haystack
+@defunx bitvector-suffix? needle haystack
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-pad bit bv len
+@defunx bitvector-pad-right bit bv len
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-trim bit bv
+@defunx bitvector-trim-right bit bv
+@defunx bitvector-trim-both bit bv
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Mutators
+
+@defun bitvector-swap! bv i j
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-reverse! bv :optional start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-reverse-copy! to tstart from :optional start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Conversion
+
+@defun bitvector->list/int bv :optional start end
+@defunx bitvector->list/bool bv :optional start end
+@defunx reverse-bitvector->list/int bv :optional start end
+@defunx reverse-bitvector->list/bool bv :optional start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun reverse-list->bitvector lis
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector->vector/int bv :optional start end
+@defunx bitvector->vector/bool bv :optional start end
+@defunx revrese-bitvector->vector/int bv :optional start end
+@defunx reverse-bitvector->vector/bool bv :optional start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun vector->bitvetor vec
+@defunx reverse-vector->bitvector vec
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector->integer bv
+@defunx integer->bitvector n :optional len
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Generators
+
+@defun make-bitvector/int-generator bv
+@defunx make-bitvector/bool-generator bv
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun make-bitvector-accumulator
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Bitwise operations
+
+@defun bitvector-not bv
+@defunx bitvector-not! bv
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-and bv1 bv2 bv @dots{}
+@defunx bitvector-and! bv1 bv2 bv @dots{}
+@defunx bitvector-ior bv1 bv2 bv @dots{}
+@defunx bitvector-ior! bv1 bv2 bv @dots{}
+@defunx bitvector-xor bv1 bv2 bv @dots{}
+@defunx bitvector-xor! bv1 bv2 bv @dots{}
+@defunx bitvector-eqv bv1 bv2 bv @dots{}
+@defunx bitvector-eqv! bv1 bv2 bv @dots{}
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-nand bv1 bv2
+@defunx bitvector-nand! bv1 bv2
+@defunx bitvector-nor bv1 bv2
+@defunx bitvector-nor! bv1 bv2
+@defunx bitvector-andc1 bv1 bv2
+@defunx bitvector-andc1! bv1 bv2
+@defunx bitvector-andc2 bv1 bv2
+@defunx bitvector-andc2! bv1 bv2
+@defunx bitvector-orc1 bv1 bv2
+@defunx bitvector-orc1! bv1 bv2
+@defunx bitvector-orc2 bv1 bv2
+@defunx bitvector-orc2! bv1 bv2
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Quasi-integer operations
+
+@defun bitvector-logical-shift bv count bit
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-count bit bv
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-count-run bit bv start
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-if bv-if bv-then bv-else
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-first-bit bit bv
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@subheading Bit field operations
+
+@defun bitvector-field-any? bv start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-field-every? bv start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-field-clear bv start end
+@defunx bitvector-field-clear! bv start end
+@defunx bitvector-field-set bv start end
+@defunx bitvector-field-set! bv start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-field-replace to from start end
+@defunx bitvector-field-replace! to from start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-field-replace-same to from start end
+@defunx bitvector-field-replace-same! to from start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-field-rotate bv count start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+@defun bitvector-field-flip bv start end
+@defunx bitvector-field-flip! bv start end
+[SRFI-178]
+@c MOD srfi-178
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node JSON, Linear adjustable-lenght strings, Bitvector library, Library modules - SRFIs
 @section @code{srfi-180} - JSON
 
 @deftp {Module} srfi-180

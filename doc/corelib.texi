@@ -13140,6 +13140,7 @@ a disjoint type.
 
 Gauche provides a handful of procedures in the core.
 SRFI-178 provides comprehensive bitvector library.
+@xref{Bitvector library}, for the details.
 @c JP
 ビットベクタはビットの並びです。各「ビット」は、0/1の数値としても、
 @code{#f}/@code{#t}の論理値としても解釈可能です。
@@ -13148,6 +13149,7 @@ SRFI-178 provides comprehensive bitvector library.
 
 Gaucheはコアでごく基本的な手続きを提供します。
 SRFI-178に包括的なビットベクタライブラリがあります。
+@ref{Bitvector library}を参照してください。
 @c COMMON
 
 @deftp {Builtin class} <bitvector>

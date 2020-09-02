@@ -1280,11 +1280,11 @@ srfi-178, srfi-178
 
 Bitvector library
 The basic support is built-in (@pxref{Bitvectors}).
-Complete support is in the module @code{srfi-178}.
+Complete support is in the module @code{srfi-178} (@pxref{Bitvector library}.
 
 ビットベクタライブラリ
 基本的なサポートは組み込みです (@ref{Bitvectors}参照)。
-完全なサポートはモジュール@code{srfi-178}にあります。
+完全なサポートはモジュール@code{srfi-178}にあります(@ref{Bitvector library}参照)。
 
 
 srfi-180, srfi-180
