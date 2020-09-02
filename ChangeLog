@@ -1,3 +1,13 @@
+2020-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-178.scm: finished implementation.
+
+	* libsrc/gauche/sequence.scm (subseq): Dropped the undocumented feature
+	  that subseq accepts negative value as END, counting from the end
+	  of the sequence.  It will get in a way if more sequence types defines
+	  specialized method, for such convention isn't widely adopted for
+	  type-specific procedures.
+
 2020-08-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c, src/string.c: Changed incomplete string literal to

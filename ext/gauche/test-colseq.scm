@@ -413,26 +413,22 @@
        (subseq '(1 2 3 4 5) 2))
 (test* "subseq (list)" '(3 4)
        (subseq '(1 2 3 4 5) 2 4))
-(test* "subseq (list)" '(1 2 3 4)
-       (subseq '(1 2 3 4 5) 0 -1))
 (test* "subseq (vector)" '#(3 4 5)
        (subseq '#(1 2 3 4 5) 2))
 (test* "subseq (vector)" '#(3 4)
        (subseq '#(1 2 3 4 5) 2 4))
-(test* "subseq (vector)" '#(1 2 3 4)
-       (subseq '#(1 2 3 4 5) 0 -1))
+(test* "subseq (bitvector)" '#*0011001
+       (subseq '#*1010011001 3))
+(test* "subseq (bitvector)" '#*0011
+       (subseq '#*1010011001 3 7))
 (test* "subseq (string)" "345"
        (subseq "12345" 2))
 (test* "subseq (string)" "34"
        (subseq "12345" 2 4))
-(test* "subseq (string)" "1234"
-       (subseq "12345" 0 -1))
 (test* "subseq (custom)" '("3" "4" "5")
        (slot-ref (subseq (sseq 1 2 3 4 5) 2) 'strings))
 (test* "subseq (custom)" '("3" "4")
        (slot-ref (subseq (sseq 1 2 3 4 5) 2 4) 'strings))
-(test* "subseq (custom)" '("1" "2" "3" "4")
-       (slot-ref (subseq (sseq 1 2 3 4 5) 0 -1) 'strings))
 
 (test* "for-each-with-index (list)" '((2 . c) (1 . b) (0 . a))
        (rlet1 r '()

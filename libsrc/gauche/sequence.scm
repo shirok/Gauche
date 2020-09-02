@@ -56,6 +56,7 @@
 
 (define-method referencer ((obj <list>))   list-ref)
 (define-method referencer ((obj <vector>)) vector-ref)
+(define-method referencer ((obj <bitvector>)) bitvector-ref/int)
 (define-method referencer ((obj <weak-vector>)) weak-vector-ref)
 (define-method referencer ((obj <string>)) string-ref)
 
@@ -75,6 +76,7 @@
 
 (define-method modifier ((obj <list>)) list-set!)
 (define-method modifier ((obj <vector>)) vector-set!)
+(define-method modifier ((obj <bitvector>)) bitvector-set!)
 (define-method modifier ((obj <weak-vector>)) weak-vector-set!)
 (define-method modifier ((obj <string>)) string-set!)
 
@@ -101,13 +103,17 @@
   (subseq seq start (size-of seq)))
 
 (define-method subseq ((seq <sequence>) start end)
-  (when (< end 0) (set! end (modulo end (size-of seq))))
   (when (> start end)
     (errorf "start ~a must be smaller than or equal to end ~a" start end))
   (let1 size (- end start)
     (with-builder ((class-of seq) add! get :size size)
       (with-iterator (seq end? next :start start)
         (dotimes [i size (get)] (add! (next)))))))
+
+(define-method subseq ((seq <vector>) . args)
+  (apply vector-copy seq args))
+(define-method subseq ((seq <bitvector>) . args)
+  (apply bitvector-copy seq args))
 
 (define-method (setter subseq) ((seq <sequence>) start vals)
   (with-iterator (vals end? next)
@@ -121,6 +127,11 @@
         [(>= index end)]
       (when (end?) (error "not enough values for (setter subseq)" vals))
       (set! (ref seq index) (next)))))
+
+(define-method (setter subseq) ((seq <vector>) start end (vals <vector>))
+  (vector-copy! seq start vals 0 (- end start)))
+(define-method (setter subseq) ((seq <bitvector>) start end (vals <bitvector>))
+  (bitvector-copy! seq start vals 0 (- end start)))
 
 ;; fold-right --------------------------------------------
 
