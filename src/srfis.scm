@@ -1275,6 +1275,18 @@ The @code{version-alist} procedure is built-in.
 @code{version-alist}手続きは組み込みです。
 
 
+srfi-178, srfi-178
+()
+
+Bitvector library
+The basic support is built-in (@pxref{Bitvectors}).
+Complete support is in the module @code{srfi-178}.
+
+ビットベクタライブラリ
+基本的なサポートは組み込みです (@ref{Bitvectors}参照)。
+完全なサポートはモジュール@code{srfi-178}にあります。
+
+
 srfi-180, srfi-180
 ()
 
