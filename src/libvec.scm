@@ -345,8 +345,8 @@
 (define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum> ;srfi-178
                                                 :optional fallback)
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
-    (if (SCM_UNDEFINEDP fallback)
-      (Scm_Error "bitvector index out of range: %l" i)
+    (if (SCM_UNBOUNDP fallback)
+      (Scm_Error "bitvector index out of range: %ld" i)
       (return fallback)))
   (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i) 
               (SCM_MAKE_INT 1)
@@ -355,14 +355,14 @@
 (define-cproc bitvector-ref/bool (v::<bitvector> i::<fixnum> ;srfi-178
                                                  :optional fallback)
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
-    (if (SCM_UNDEFINEDP fallback)
-      (Scm_Error "bitvector index out of range: %l" i)
+    (if (SCM_UNBOUNDP fallback)
+      (Scm_Error "bitvector index out of range: %ld" i)
       (return fallback)))
   (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i) SCM_TRUE SCM_FALSE)))
 
 (define-cproc bitvector-set! (v::<bitvector> i::<fixnum> b) ::<void> ;srfi-178
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
-    (Scm_Error "bitvector index out of range: %l" i))
+    (Scm_Error "bitvector index out of range: %ld" i))
   (SCM_BITVECTOR_CHECK_MUTABLE v)
   (if (Scm_Bit2Int b)
     (SCM_BITS_SET (SCM_BITVECTOR_BITS v) i)
