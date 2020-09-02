@@ -69,17 +69,31 @@
   (let1 p (if start (list-tail coll start) coll)
     (proc (cut null? p) (^[] (pop! p)))))
 
+(define-syntax *vector-iter
+  (syntax-rules ()
+    [(_ %length %ref coll proc start)
+     (let1 len (%length coll)
+       (proc (cut >= start len)
+             (^[] (rlet1 v (%ref coll start) (inc! start)))))]))
+
 (define-method call-with-iterator ((coll <vector>) proc
                                    :key (start 0) :allow-other-keys)
-  (let1 len (vector-length coll)
-    (proc (cut >= start len)
-          (^[] (begin0 (vector-ref coll start) (inc! start))))))
+  (*vector-iter vector-length vector-ref coll proc start))
+
+;; NB: gauche.uvector defines more specific iterator for each
+;; concrete uvector types.  This is a fallback when the user only
+;; loads gauche.collection.
+(define-method call-with-iterator ((coll <uvector>) proc
+                                   :key (start 0) :allow-other-keys)
+  (*vector-iter uvector-length uvector-ref coll proc start))
+
+(define-method call-with-iterator ((coll <bitvector>) proc
+                                   :key (start 0) :allow-other-keys)
+  (*vector-iter bitvector-length bitvector-ref coll proc start))
 
 (define-method call-with-iterator ((coll <weak-vector>) proc
                                    :key (start 0) :allow-other-keys)
-  (let1 len (weak-vector-length coll)
-    (proc (cut >= start len)
-          (^[] (begin0 (weak-vector-ref coll start) (inc! start))))))
+  (*vector-iter weak-vector-length weak-vector-ref coll proc start))
 
 (define-method call-with-iterator ((coll <string>) proc
                                    :key (start #f) :allow-other-keys)
@@ -151,22 +165,44 @@
       (proc (cut enqueue! q <>)
             (cut list->vector (queue->list q))))))
 
+(define-syntax *vector-builder
+  (syntax-rules ()
+    [(_ %make %set! %list-> class proc size)
+     (if size
+       (let ([v (%make size)]
+             [i 0])
+         (proc (^[item] (when (< i size)
+                          (%set! v i item)
+                          (inc! i)))
+               (^[] v)))
+       (let1 q (make-queue)
+         (proc (cut enqueue! q <>)
+               (cut %list-> (queue->list q)))))]))     
+
+;; NB: We don't have list->uvector in core yet, so builder definition is
+;; in gauche.uvector.  It should be here, though.
+
+(define-method call-with-builder ((class <vector-meta>) proc
+                                  :key (size #f) :allow-other-keys)
+  (*vector-builder make-vector vector-set! list->vector class proc size))
+
+(define-method call-with-builder ((class <bitvector-meta>) proc
+                                  :key (size #f) :allow-other-keys)
+  (*vector-builder make-bitvector bitvector-set! list->bitvector 
+                   class proc size))
+
 (define-method call-with-builder ((class <weak-vector-meta>) proc
                                   :key (size #f) :allow-other-keys)
-  (if size
-    (let ([v (make-weak-vector size)]
-          [i 0])
-      (proc (^[item] (when (< i size)
-                       (weak-vector-set! v i item)
-                       (inc! i)))
-            (^[] v)))
-    (let ([q (make-queue)]
-          [cnt 0])
-      (proc (^[item] (enqueue! q item) (inc! cnt))
-            (^[] (let1 v (make-weak-vector cnt)
-                   (do ([i 0 (+ i 1)])
-                       [(= i cnt) v]
-                     (weak-vector-set! v i (dequeue! q)))))))))
+  (*vector-builder make-weak-vector weak-vector-set! %list->weak-vector
+                   class proc size))
+
+(define (%list->weak-vector lis)
+  (rlet1 v (make-weak-vector (length lis))
+    ;; for-each-with-index is in gauche.sequence, so we roll on our own
+    (do ([lis lis (cdr lis)]
+         [i   0   (+ i 1)])
+        [(null? lis)]
+      (weak-vector-set! v i (car lis)))))
 
 (define-method call-with-builder ((class <string-meta>) proc :allow-other-keys)
   (let1 s (open-output-string)
@@ -207,6 +243,8 @@
                 (error "character required to build a char-set, but got" c))
               ((with-module gauche.internal %char-set-add-chars!) cs (list c)))
           (^[] cs))))
+
+
 
 ;; utility.  return minimum size of collections if it's easily known, or #f.
 (define (maybe-minimum-size col more)
@@ -392,16 +430,24 @@
   (delay (size-of coll)))
 
 ;; shortcut
+;; NB: For uvectors, gauche.uvector defines more specific method for each
+;; concrete uvector types.  This is a fallback when the user only
+;; loads gauche.collection.
 (define-method size-of ((coll <list>))        (length coll))
 (define-method size-of ((coll <vector>))      (vector-length coll))
 (define-method size-of ((coll <weak-vector>)) (weak-vector-length coll))
 (define-method size-of ((coll <string>))      (string-length coll))
 (define-method size-of ((coll <char-set>))    (char-set-size coll))
+(define-method size-of ((coll <uvector>))     (uvector-length coll))
+(define-method size-of ((coll <bitvector>))   (bitvector-length coll))
 
 (define-method lazy-size-of ((coll <list>))        (length coll))
 (define-method lazy-size-of ((coll <vector>))      (vector-length coll))
 (define-method lazy-size-of ((coll <weak-vector>)) (weak-vector-length coll))
 (define-method lazy-size-of ((coll <string>))      (string-length coll))
+(define-method lazy-size-of ((coll <char-set>))    (char-set-size coll))
+(define-method lazy-size-of ((coll <uvector>))     (uvector-length coll))
+(define-method lazy-size-of ((coll <bitvector>))   (bitvector-length coll))
 
 ;; find -------------------------------------------------
 
