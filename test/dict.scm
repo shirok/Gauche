@@ -97,6 +97,8 @@
 (let* ([m0 (alist->hash-table '((a . 0) (b . 1) (c . 2)) 'eq?)]
        [m1 (alist->hash-table '((a . 10) (d . 11)) 'eq?)]
        [sm (make-stacked-map m1 m0)])
+  (test* "stacked map comparator" eq-comparator
+         (dict-comparator sm))
   (test* "stacked map search" '(10 1 2 11 none)
          (map (cut dict-get sm <> 'none) '(a b c d e)))
   (test* "stacked map search" (test-error)

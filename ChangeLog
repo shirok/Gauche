@@ -1,3 +1,8 @@
+2020-09-02  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm: Revised <stacked-map>; make it
+	  comparator-aware.  Add a couple of methods.
+
 2020-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-178.scm: finished implementation.

@@ -47,8 +47,9 @@
           bimap-left bimap-left-get bimap-left-exists? bimap-left-delete!
           bimap-right bimap-right-get bimap-right-exists? bimap-right-delete!
 
-          <stacked-map> make-stacked-map
+          <stacked-map> make-stacked-map stacked-map-stack
           stacked-map-push! stacked-map-pop! stacked-map-depth
+          stacked-map-entry-update! stacked-map-entry-delete!
           ))
 (select-module gauche.dictionary)
 
@@ -379,25 +380,37 @@
 
 (define-class <stacked-map-meta> (<class>) ())
 
-;; Unique-dict-maker is a thunk that creates a new dictionary
-;; to be used to check key uniqueness.  When a stacked map is
-;; traversed (e.g. by dict-fold), a new unique-dict is created
-;; and keys are stored as the traversal progresses, and used to
-;; filter out already-seen keys.  You can give it #f to turn off
-;; unique-key check.
-
 (define-class <stacked-map> (<dictionary>)
-  ((stack     :init-keyword :stack :init-value '())
-   (unique-dict-maker :init-keyword :unique-dict-maker
-                      :init-value (cut make-hash-table 'eqv?)))
+  ((key-comparator :init-keyword :key-comparator :init-value default-comparator)
+   (stack     :init-keyword :stack :init-value '())
+   ;; Unique-dict-maker is a thunk that creates a new dictionary
+   ;; to be used to check key uniqueness.  When a stacked map is
+   ;; traversed (e.g. by dict-fold), a new unique-dict is created
+   ;; and keys are stored as the traversal progresses, and used to
+   ;; filter out already-seen keys.
+   (unique-dict-maker))
   :metaclass <stacked-map-meta>)
 
-(define (make-stacked-map . maps)
-  (make <stacked-map> :stack maps))
+(define-method initialize ((self <stacked-map>) initargs)
+  (next-method)
+  (unless (slot-bound? self 'unique-dict-maker)
+    (let1 cmpr (slot-ref self 'key-comparator)
+      (slot-set! self 'unique-dict-maker
+                 (if (comparator-hashable? cmpr)
+                   (cut make-hash-table cmpr)
+                   (cut make-tree-map cmpr))))))
 
-;; TODO: Fix ugly name.
-(define (make-stacked-map-with-unique-dict-maker thunk . maps)
-  (make <stacked-map> :stack maps :unique-dict-maker thunk))
+(define (make-stacked-map cmpr . maps)
+  (if (comparator? cmpr)
+    (make <stacked-map> :key-comparator cmpr :stack maps)
+    (make <stacked-map> 
+      :key-comparator (dict-comparator cmpr) ; cmpt is the first map
+      :stack (cons cmpr maps))))
+
+(define-method stacked-map-stack ((smap <stacked-map>) (dict <dictionary>))
+  (make <stacked-map> 
+    :key-comparator (slot-ref smap 'key-comparator)
+    :stack (cons dict (slot-ref smap 'stack))))
 
 (define-method stacked-map-push! ((smap <stacked-map>) (dict <dictionary>))
   (slot-push! smap 'stack dict))
@@ -405,6 +418,19 @@
   (slot-pop! smap 'stack))
 (define-method stacked-map-depth ((smap <stacked-map>))
   (length (slot-ref smap 'stack)))
+
+;; These two alters the specific map that contains the key.
+(define-method stacked-map-entry-update! ((smap <stacked-map>) key proc 
+                                          :optional fallback)
+  (let loop ([ms (slot-ref smap 'stack)])
+    (cond [(null? ms) #f]
+          [(dict-get (car ms) key) (dict-update! (car ms) key proc fallback)]
+          [else (loop (cdr ms))])))
+(define-method stacked-map-entry-delete! ((smap <stacked-map>) key)
+  (let loop ([ms (slot-ref smap 'stack)])
+    (cond [(null? ms) #f]
+          [(dict-get (car ms) key) (dict-delete! (car ms) key) #t]
+          [else (loop (cdr ms))])))
 
 (define-method dict-exists? ((smap <stacked-map>) key)
   (any (cut dict-exists? <> key) (slot-ref smap 'stack)))
@@ -427,6 +453,9 @@
 ;; This deletes entry from *all* dicts.
 (define-method dict-delete! ((smap <stacked-map>) key)
   (for-each (cut dict-delete! <> key) (slot-ref smap 'stack)))
+
+(define-method dict-comparator ((smap <stacked-map>))
+  (slot-ref smap 'key-comparator))
 
 (define-method dict-fold ((smap <stacked-map>) proc seed)
   (let1 udict (and-let* ([thunk (slot-ref smap 'unique-dict-maker)])
