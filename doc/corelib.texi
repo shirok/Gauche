@@ -17,8 +17,7 @@
 * Strings::
 * Regular expressions::
 * Vector family::
-* Hashtables::
-* Treemaps::
+* Dictionaries::
 * Procedures and continuations::
 * Lazy evaluation::
 * Exceptions::
@@ -12090,7 +12089,7 @@ renumber capturing groups to make them consistent.)
 @end smallexample
 
 @c ----------------------------------------------------------------------
-@node Vector family, Hashtables, Regular expressions, Core library
+@node Vector family, Dictionaries, Regular expressions, Core library
 @section Vector family
 @c NODE ベクタの仲間
 
@@ -13440,8 +13439,43 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Hashtables, Treemaps, Vector family, Core library
-@section Hashtables
+@node Dictionaries, Procedures and continuations, Vector family, Core library
+@section Dictionaries
+@c NODE ディクショナリ
+
+@c EN
+A dictionary is a data structure that associates key to value.
+Gauche provides hashtables (@pxref{Hashtables}) and treemaps (@pxref{Treemaps})
+as the built-in dictionaries.  Some additional libraries provide more
+dictionary-type data structures.
+
+A generic interface is defined as a dictionary framework 
+(@pxref{Dictionary framework}), by which you can use dictionaries without
+knowing its details. 
+
+R7RS also defines an abstract dictionary interface as @emph{mapping};
+@pxref{R7RS mappings}, for the details.
+@c JP
+ディクショナリは、キーと値を結びつけるデータ構造です。
+Gaucheは組み込みのディクショナリとして、ハッシュテーブル(@ref{Hashtables}参照)と
+ツリーマップ(@ref{Treemaps}参照)を用意しています。
+ライブラリには他にもディクショナリとして振る舞うデータ構造がいくつか提供されます。
+
+さらに、ディクショナリ汎用のインタフェースが、
+ディクショナリフレームワークとして提供されます (@ref{Dictionary framework}参照)。
+ディクショナリの種類に関わらない操作を書くのに使えます。
+
+R7RSでは、抽象化されたディクショナリインタフェースを@emph{マッピング}として定義しています。
+@ref{R7RS mappings}を参照してください。
+@c COMMON
+
+@menu
+* Hashtables::
+* Treemaps::
+@end menu
+
+@node Hashtables, Treemaps, Dictionaries, Dictionaries
+@subsection Hashtables
 @c NODE ハッシュテーブル
 
 @c EN
@@ -14353,8 +14387,8 @@ xorは、@var{ht1}か@var{ht2}の一方のみに含まれる要素のみを集�
 
 
 @c ----------------------------------------------------------------------
-@node Treemaps, Procedures and continuations, Hashtables, Core library
-@section Treemaps
+@node Treemaps,  , Hashtables, Dictionaries
+@subsection Treemaps
 @c NODE ツリーマップ
 
 @deftp {Builtin Class} <tree-map>
@@ -14904,7 +14938,7 @@ of tree maps which share the same comparator.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Procedures and continuations, Lazy evaluation, Treemaps, Core library
+@node Procedures and continuations, Lazy evaluation, Dictionaries, Core library
 @section Procedures and continuations
 @c NODE 手続きと継続
 
