@@ -7439,8 +7439,8 @@ bitvector-set!    bitvector-copy     bitvector-copy!
 @c MOD srfi-178
 @end defun
 
-@defun vector->bitvetor vec
-@defunx reverse-vector->bitvector vec
+@defun vector->bitvetor vec :optional start end
+@defunx reverse-vector->bitvector vec :optional start end
 [SRFI-178]
 @c MOD srfi-178
 @end defun

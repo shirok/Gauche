@@ -517,7 +517,6 @@
           (vector-set! v j (bitvector-ref/bool bv k))
           (loop (- k 1) (+ j 1)))))))
 
-;; NB: optional start/end is Gauche's extension
 (define (vector->bitvector vec :optional start end)
   (with-range (vec start end)
     (rlet1 bv (make-bitvector (- end start))
@@ -526,7 +525,6 @@
           (bitvector-set! bv k (vector-ref vec j))
           (loop (+ k 1) (+ j 1)))))))
 
-;; NB: optional start/end is Gauche's extension
 (define (reverse-vector->bitvector vec :optional start end)
   (with-range (vec start end)
     (rlet1 bv (make-bitvector (- end start))
