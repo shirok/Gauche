@@ -46,7 +46,23 @@
   )
 (select-module gauche.collection)
 
-;; utility - we can't depend on data.queue, so this is a simple
+;; Avoid hairy dependency issues
+(autoload gauche.uvector
+          u8vector-length 
+          s8vector-length
+          u16vector-length
+          s16vector-length
+          u32vector-length
+          s32vector-length
+          u64vector-length
+          s64vector-length
+          f16vector-length
+          f32vector-length
+          f64vector-length
+          c32vector-length
+          c64vector-length
+          c128vector-length)
+
 ;; alternative.
 (define (make-queue)   (let1 anchor (list #f) (cons anchor anchor)))
 (define (enqueue! q x) (set! (cddr q) (list x)) (set! (cdr q) (cddr q)))
@@ -76,24 +92,38 @@
        (proc (cut >= start len)
              (^[] (rlet1 v (%ref coll start) (inc! start)))))]))
 
-(define-method call-with-iterator ((coll <vector>) proc
-                                   :key (start 0) :allow-other-keys)
-  (*vector-iter vector-length vector-ref coll proc start))
+(define-syntax define-vector-iterator
+  (er-macro-transformer
+   (^[f r c]
+     (let* ([type (cadr f)]
+            [%class (r (symbol-append '< type '>))]
+            [%length (r (symbol-append type '-length))]
+            [%ref    (r (if (c (r type) (r'bitvector))
+                          'bitvector-ref/int
+                          (symbol-append type '-ref)))])
+       (quasirename r
+         `(define-method call-with-iterator ((coll ,%class) proc
+                                             ,':key (start 0)
+                                             ,':allow-other-keys)
+            (*vector-iter ,%length ,%ref coll proc start)))))))
 
-;; NB: gauche.uvector defines more specific iterator for each
-;; concrete uvector types.  This is a fallback when the user only
-;; loads gauche.collection.
-(define-method call-with-iterator ((coll <uvector>) proc
-                                   :key (start 0) :allow-other-keys)
-  (*vector-iter uvector-length uvector-ref coll proc start))
-
-(define-method call-with-iterator ((coll <bitvector>) proc
-                                   :key (start 0) :allow-other-keys)
-  (*vector-iter bitvector-length bitvector-ref/int coll proc start))
-
-(define-method call-with-iterator ((coll <weak-vector>) proc
-                                   :key (start 0) :allow-other-keys)
-  (*vector-iter weak-vector-length weak-vector-ref coll proc start))
+(define-vector-iterator vector)
+(define-vector-iterator u8vector)
+(define-vector-iterator s8vector)
+(define-vector-iterator u16vector)
+(define-vector-iterator s16vector)
+(define-vector-iterator u32vector)
+(define-vector-iterator s32vector)
+(define-vector-iterator u64vector)
+(define-vector-iterator s64vector)
+(define-vector-iterator f16vector)
+(define-vector-iterator f32vector)
+(define-vector-iterator f64vector)
+(define-vector-iterator c32vector)
+(define-vector-iterator c64vector)
+(define-vector-iterator c128vector)
+(define-vector-iterator bitvector)
+(define-vector-iterator weak-vector)
 
 (define-method call-with-iterator ((coll <string>) proc
                                    :key (start #f) :allow-other-keys)

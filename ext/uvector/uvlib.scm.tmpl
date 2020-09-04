@@ -580,10 +580,8 @@
 ;;; Sequence protocol implementation
 ;;;
 
-(define-method call-with-iterator ((v <${t}vector>) proc :key (start #f))
-  (let* ([len (${t}vector-length v)] [i (or start 0)])
-    (proc (^[] (>= i len))
-          (^[] (rlet1 r (${t}vector-ref v i) (inc! i))))))
+;; call-with-iterator - in gauche.collection
+
 (define-method call-with-builder ((v <${t}vector-meta>) proc :key (size #f))
   (if size
     (let ([v (make-${t}vector size)] [i 0])
