@@ -5,6 +5,9 @@
 	  write-bytevectr etc.) into Gauche side.  It is easier to run
 	  a snippet written for r7rs without loading full r7rs.
 
+	* lib/srfi-181.scm: Added.  Currently it's a copy of the reference
+	  implementation.  Need customize on transcoded port.
+
 2020-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/dictionary.scm: Revised <stacked-map>; make it
