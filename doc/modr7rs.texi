@@ -933,8 +933,9 @@ scheme-report-environment null-environment
 input-port? output-port? port? current-input-port current-output-port
 current-error-port close-port close-input-port close-output-port
 open-input-string open-output-string get-output-string
-read-char peek-char read-line eof-object? eof-object char-ready?
-newline write-char
+read-char peek-char read-u8 peek-u8
+read-line eof-object? eof-object char-ready? u8-ready?
+newline write-char write-u8
 @end example
 @end table
 
@@ -1165,20 +1166,6 @@ R7RS procedures only deal with @code{<u8vector>}.
 @c COMMON
 @end defun
 
-@defun read-u8 :optional iport
-@defunx peek-u8 :optional iport
-@defunx u8-ready? :optional iport
-[R7RS base]
-@c MOD scheme.base
-@c EN
-These are aliases to @code{read-byte}, @code{peek-byte} and @code{byte-ready?},
-respectively.
-@c JP
-それぞれ@code{read-byte}、@code{peek-byte}、@code{byte-ready?}と
-同じです。
-@c COMMON
-@end defun
-
 @defun read-bytevector size :optional iport
 [R7RS base]
 @c MOD scheme.base
@@ -1197,16 +1184,6 @@ Equivalent to @code{(read-uvector <u8vector> size iport)}.
 An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
 @c JP
 @code{read-uvector!}の別名です。@ref{Uvector block I/O}参照。
-@c COMMON
-@end defun
-
-@defun write-u8
-[R7RS base]
-@c MOD scheme.base
-@c EN
-An alias to @code{write-byte}.
-@c JP
-@code{write-byte}の別名です。
 @c COMMON
 @end defun
 

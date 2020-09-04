@@ -21073,37 +21073,45 @@ to deal with invalid characters).
 @end defun
 
 @defun read-byte :optional iport
+@defunx read-u8 :optional iport
+[R7RS base]
 @c EN
 Reads one byte from an input port @var{iport}, and returns it as an integer
 in the range between 0 and 255.
 If @var{iport} has already reached EOF, an eof object is returned.
 
-This is called @code{read-u8} in R7RS.
+This is traditionally called @code{read-byte}, and
+R7RS calls it @code{read-u8}.  You can use either.
 @c JP
 入力ポート@var{iport}から1バイト読み込み、0から255までの整数値として返します。
 @var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
 
-R7RSではread-u8と呼ばれています。
+これは伝統的に@code{read-byte}と呼ばれてきましたが、
+R7RSでは@code{read-u8}と名づけています。どちらも使えます。
 @c COMMON
 @end defun
 
 @defun peek-byte :optional iport
+@defunx peek-u8  :optional iport
+[R7RS base]
 @c EN
 Peeks one byte at the head of an input port @var{iport}, and returns
 it as an integer in the range between 0 and 255.
 If @var{iport} has already reached EOF, an eof object is returned.
 
-This is called @code{peek-u8} in R7RS.
+This is traditionally called @code{peek-byte}, and
+R7RS calls it @code{peek-u8}.  You can use either.
 @c JP
 入力ポート@var{iport}の先頭の1バイトを見て、それを0から255までの整数値として返します。
 @var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
 
-R7RSでは@code{peek-u8}と呼ばれています。
+これは伝統的に@code{peek-byte}と呼ばれてきましたが、
+R7RSでは@code{peek-u8}と名づけています。どちらも使えます。
 @c COMMON
 @end defun
 
 @defun read-line :optional iport allow-byte-string?
-[R7RS+]
+[R7RS base]
 @c EN
 Reads one line (a sequence of characters terminated by newline or EOF)
 and returns a string.  The terminating newline is not included.
@@ -21266,15 +21274,19 @@ sequence, then use input string port to read characters.)
 @end defun
 
 @defun byte-ready? :optional port
+@defunx u8-ready?  :optional port
+[R7RS base]
 @c EN
 If one byte (octet) is ready to be read from @var{port}, returns
 @code{#t}.
 
-In R7RS, this procedure is called @code{u8-ready?}
+This is traditionally called @code{byte-ready?}, and
+R7RS calls it @code{u8-ready?}.  You can use either.
 @c JP
 @var{port}から1バイトをすぐに読み込める状態なら@code{#t}を返します。
 
-R7RSではこの手続きは@code{u8-ready?}と呼ばれています。
+これは伝統的に@code{byte-ready?}と呼ばれてきましたが、
+R7RSでは@code{u8-ready?}と名づけています。どちらも使えます。
 @c COMMON
 @end defun
 
@@ -22934,16 +22946,20 @@ Write a single character @var{char} to the output port @var{port}.
 @end defun
 
 @defun write-byte byte :optional port
+@defunx write-u8 byte :optional port
+[R7RS base]
 @c EN
 Write a byte @var{byte} to the port.
 @var{byte} must be an exact integer in range between 0 and 255.
 
-This procedure is called @code{write-u8} in R7RS.
+This is traditionally called @code{write-byte}, and
+R7RS calls it @code{write-u8}.  You can use either.
 @c JP
 出力ポートに1バイトのデータ@var{byte}を書き出します。
 @var{byte}は0から255の間の正確な整数でなければなりません。
 
-この手続きはR7RSでは@code{write-u8}と呼ばれています。
+これは伝統的に@code{write-byte}と呼ばれてきましたが、
+R7RSでは@code{write-u8}と名づけています。どちらも使えます。
 @c COMMON
 @end defun
 
