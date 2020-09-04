@@ -49,7 +49,9 @@
   (export make-uvector
 
           open-output-uvector get-output-uvector port->uvector
-          read-block! read-uvector read-uvector! referencer
+          read-block! read-uvector read-uvector!
+          read-bytevector read-bytevector!
+          referencer
 
           string->s8vector string->s8vector!
           string->u8vector string->u8vector!
@@ -62,7 +64,7 @@
           uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
           uvector->list uvector->vector uvector-swap-bytes uvector-swap-bytes!
 
-          write-block write-uvector
+          write-block write-uvector write-bytevector
 
           ;; R7RS compatibility (scheme base) and (scheme bytevector)
           bytevector bytevector? make-bytevector bytevector-fill!
@@ -428,6 +430,20 @@
                                         (endian::<symbol>? #f))
    Scm_WriteBlock)
  )
+
+;; R7RS bytevectors
+(define (read-bytevector k :optional (port (current-input-port)))
+  (read-uvector <u8vector> k port))
+(define (read-bytevector! bv :optional (port (current-input-port))
+                          (start 0)
+                          (end (uvector-length bv)))
+  (assume-type bv <u8vector>)
+  (read-uvector! bv port start end))
+(define (write-bytevector bv :optional (port (current-output-port))
+                                       (start 0)
+                                       (end (uvector-length bv)))
+  (assume-type bv <u8vector>)
+  (write-uvector bv port start end))
 
 ;; copy
 (inline-stub

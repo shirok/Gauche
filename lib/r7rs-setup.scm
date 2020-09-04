@@ -249,7 +249,7 @@
           )
 
   (autoload gauche.vport
-            open-input-uvector open-output-uvector get-output-uvector)
+            open-input-bytevector open-output-bytevector get-output-bytevector)
 
   ;; 4.1 Primitive expression types
   ;; quote, if, lambda, include, include-ci
@@ -371,30 +371,13 @@
   ;; current-error-port close-port close-input-port close-output-port
   ;; open-input-string open-output-string get-output-string read-string
   ;; read-char peek-char read-line eof-object? eof-object char-ready?
-  ;; newline write-char write-string
+  ;; newline write-char write-string u8-ready? read-u8 peek-u8 write-u8
+  ;; open-input-bytevector open-output-bytevector get-output-bytevector
+  ;; read-bytevector read-bytevector! write-bytevector
   (define (textual-port? p) (port? p))    ; gauche's port can handle both
   (define (binary-port? p) (port? p))     ; gauche's port can handle both
   (define (input-port-open? p) (and (input-port? p) (not (port-closed? p))))
   (define (output-port-open? p) (and (output-port? p) (not (port-closed? p))))
-  (define (open-input-bytevector bv)
-    (assume-type bv <u8vector>)
-    (open-input-uvector bv))
-  (define (open-output-bytevector) (open-output-uvector))
-  (define (get-output-bytevector port)
-    (or (get-output-uvector port)
-        (error "get-output-bytevector needs a output uvector port, but got:"
-               port)))
-  (define-inline read-u8 read-byte)
-  (define-inline peek-u8 peek-byte)
-  (define u8-ready? byte-ready?)
-  (define (read-bytevector k :optional (port (current-input-port)))
-    (read-uvector <u8vector> k port))
-  (define (read-bytevector! bv :optional (port (current-input-port))
-                                         (start 0)
-                                         (end (u8vector-length bv)))
-    (read-block! bv port start end))
-  (define-inline write-u8 write-byte)
-  (define write-bytevector write-uvector)
   (define flush-output-port flush)
 
   ;; 6.14 System interface

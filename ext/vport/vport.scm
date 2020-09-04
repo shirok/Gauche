@@ -41,7 +41,9 @@
           <buffered-input-port>
           <buffered-output-port>
           open-input-uvector
+          open-input-bytevector
           open-output-uvector get-output-uvector
+          open-output-bytevector get-output-bytevector
           open-input-limited-length-port
           open-input-char-list open-input-byte-list get-remaining-input-list
           open-input-char-generator open-input-byte-generator
@@ -84,6 +86,10 @@
              (set! index (clamp (+ len offset) 0 len))])
       index)
     (make <buffered-input-port> :fill filler :seek seeker)))
+
+(define (open-input-bytevector bv) ; R7RS
+  (assume-type bv <u8vector>)
+  (open-input-uvector bv))
 
 ;; For output uvector, we keep backing storage info in port attributes so that
 ;; we can retrieve it by get-output-uvector.
@@ -175,6 +181,12 @@
           (if shared
             vec
             (uvector-copy vec)))))))
+
+(define (open-output-bytevector) (open-output-uvector)) ;R7RS
+(define (get-output-bytevector port)
+  (or (get-output-uvector port)
+      (error "get-output-bytevector needs a output uvector port, but got:" 
+             port)))  
 
 ;;=======================================================
 ;; A port with limited-length input/output

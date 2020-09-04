@@ -1,3 +1,10 @@
+2020-09-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs-setup.scm, src/libio.scm, ext/vport/vport.scm,
+	  ext/uvector/uvector.scm: Move R7RS binary i/o stuff (read-u8,
+	  write-bytevectr etc.) into Gauche side.  It is easier to run
+	  a snippet written for r7rs without loading full r7rs.
+
 2020-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/dictionary.scm: Revised <stacked-map>; make it

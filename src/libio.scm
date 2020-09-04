@@ -535,14 +535,20 @@
 (define-cproc byte-ready? (:optional (port::<input-port> (current-input-port)))
   ::<boolean> Scm_ByteReady)
 
+(define u8-ready? byte-ready?)          ;R7RS
+
 (define-cproc read-byte (:optional (port::<input-port> (current-input-port)))
   (let* ([b::int])
     (SCM_GETB b port)
     (return (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
 
+(define read-u8 read-byte)              ;R7RS
+
 (define-cproc peek-byte (:optional (port::<input-port> (current-input-port)))
   (let* ([b::int (Scm_Peekb port)])
     (return (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
+
+(define peek-u8 peek-byte)              ;R7RS
 
 (define-cproc read-line (:optional (port::<input-port> (current-input-port))
                                    (allowbytestr #f))
@@ -767,6 +773,8 @@
     (Scm_Error "argument out of range: %ld" byte))
   (SCM_PUTB byte port)
   (return 1))
+
+(define write-u8 write-byte)            ;R7RS
 
 (define-cproc write-limited (obj limit::<fixnum>
                                  :optional (port (current-output-port)))
