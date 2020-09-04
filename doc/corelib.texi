@@ -13153,67 +13153,124 @@ SRFI-178に包括的なビットベクタライブラリがあります。
 
 @deftp {Builtin class} <bitvector>
 @clindex bitvector
+@c EN
 Bitvector class.  Inherits @code{<sequence>}, so generic sequence opertaions
 can be used.  (Generic @code{ref} uses @code{bitvector-ref/int}, for
 it matches the external representation of a bitvector.)
+@c JP
+ビットベクタクラス。@code{<sequence>}を継承し、ジェネリックなシーケンス操作も使えます。
+(ジェネリックな@code{ref}については、
+外部表現との親和性から@code{bitvector-ref/int}が使われます)。
+@c COMMON
 @end deftp
 
 @deftp {Reader Syntax} @code{#*@var{b}@dots{}}
 @lxindex #*
 [SRFI-178]
+@c EN
 A bitvector literal is @code{#*} followed by zero or more binary digits
 @code{0} or @code{1}.
+@c JP
+ビットベクタリテラルは、@code{#*}のあとに@code{0}や@code{1}が0個以上続いたものです。
+@c COMMON
 
 @example
 #*10010010           ; bitvector of length 8
 #*                   ; bitvector of length 0
 @end example
 
+@c EN
 A bitvector literal is delimited by one of delimiter character or an EOF.
+@c JP
+ビットベクタリテラルはデリミタ文字かEOFで区切られます。
+@c COMMON
 
 @example
 #*10010abc           ; error
 #*10001(a b c)       ; a bitvector, followed by a list
 @end example
 
+@c EN
 Note: With this rule, @code{#*"..."} should be read as a zero-length
 bitvector followed by a string, for @code{"} is a delimiter.  However,
 Gauche used that syntax for incomplete strings (our overlook!).
 Since incomplete string literals is rare (incomplete strings are
 something that unexpectedly happen in the practical situation, but
 not to be used actively), we changed incomplete string literals to
-@code{#**"..."} (@pxref{Incomplete strings}).
+@code{#**"..."} since 0.9.10 (@pxref{Incomplete strings}).
+@c JP
+註: このルールでは、@code{#*"..."}は、
+長さゼロのビットベクタと文字列、と解釈されるべきです。@code{"}は区切り文字ですから。
+しかし、Gaucheでは長らくこの構文を不完全文字列に使っていました。
+(長さゼロのビットベクタがあることを見落としてました!)
+不完全文字列の外部表記が必要になることは滅多にないので
+(不完全文字列は現実のデータを扱う際にどうしても「生じてしまう」もので、
+積極的に使うべきではありません)、
+その表記は0.9.10から@code{#**"..."}に変更されました (@ref{Incomplete strings})。
+@c COMMON
 
+@c EN
 For the backward compatibility, the current version reads @code{#*"..."}
 is read as an incomplete string.  If the reader lexical mode is
 @code{warn-legacy} (@pxref{Reader lexical mode}), such literals are
 warned.  We'll gradually migrate to make @code{#*"..."} read
 as a bytevector followed by a string.
+@c JP
+後方互換性のため、現在のバージョンでは@code{#*"..."}は不完全文字列として読まれます。
+リーダー字句モードが@code{warn-legacy}であれば、この形のリテラルに対して警告が出されます
+(@ref{Reader lexical mode})。
+将来的には@code{#*"..."}はビットベクタと文字列として読まれるように徐々に以降する予定です。
+@c COMMON
 @end deftp
 
 @defun bit->integer bit
 @defunx bit->boolean bit
 [SRFI-178]
+@c EN
 Many bitvector operations can accept bit as a boolean (@code{#f}/@code{#t})
 or an exact integer (0/1).  These are utility procedures to obtain
 desired type.  The @var{bit} argument must be either one of @code{#f}, @code{#t},
 0 or 1.  They return 0/1 and @code{#f}/@code{#t}, respectively.
+An error is signalled if @var{bit} is other than those values.
+@c JP
+ビットベクタAPIでビットが必要なところには、論理値(@code{#f}/@code{#t})あるいは
+正確な整数 (0/1)を渡すことができます。これらの手続きは有効なビット値をそれぞれ0/1もしくは
+@code{#f}/@code{#t}に揃えます。@var{bit}が有効なビット値でなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun bitvector b @dots{}
 [SRFI-178]
+@c EN
 Creates and returns a bitvector whose elements are @var{b} @dots{}.
 Each argument must be a bit (boolean or 0 or 1).
+@c JP
+要素が@var{b} @dots{}であるビットベクタを作って返します。
+各引数はビット値でなければなりません (論理値か0か1)。
+@c COMMON
+
+@example
+(bitvector 0 1 0 0 1 0 0 0 1) @result{} #*010010001
+(bitvector) @result{} #*
+@end example
 @end defun
 
 @defun make-bitvector len :optional init
 [SRFI-178]
+@c EN
 Creates and returns a bitvector with length @var{len}, and all elements
 being initialized by @var{init}, which must be a bit
 (boolean or 0 or 1).
 
 If @var{init} is omitted, the content of the bitvector is undefined
 (currently we fill it with 0, but don't count on it.)
+@c JP
+長さ@var{len}のビットベクタを作って返します。各要素は@var{init}で初期化されます。
+@var{init}はビット値(論理値か0か1)でなければなりません。
+
+@var{init}が省略された場合、ビットベクタの内容は未定義です。
+(今のところ0で初期化されますが、それをあてにしてはいけません)。
+@c COMMON
 
 @example
 (make-bitvector 5 #f)  @result{} #*00000
@@ -13223,8 +13280,13 @@ If @var{init} is omitted, the content of the bitvector is undefined
 
 @defun list->bitvector lis
 [SRFI-178]
+@c EN
 @var{Lis} must be a list of bits (0, 1 or booleans).  Returns a bitvector
 whose elements consist of elements of @var{lis}.
+@c JP
+@var{lis}はビット値(論理値、0、1)のリストでなければなりません。
+それらの値を要素とするビットベクタを作って返します。
+@c COMMON
 
 @example
 (list->bitvector '(#t #f #t #t #f))  @result{} #*10110
@@ -13234,46 +13296,76 @@ whose elements consist of elements of @var{lis}.
 
 @defun string->bitvector s
 [SRFI-178]
+@c EN
 If @var{s} is a valid bitvector literal (@code{#*@var{b}...} where @var{b}
 is either @code{0} or @code{1}), returns a bitvector represented by
 the string.  Otherwise, @code{#f} is returned.
+@c JP
+@code{s}がビットベクタリテラルとして有効な文字列
+(@code{#*@var{b}...}で@var{b}が@code{0}か@code{1})
+であれば、それで表現されるビットベクタを返します。そうでなければ@code{#f}が返されます。
+@c COMMON
 
 @example
 (string->bitvector "#*1010001") @result{} #*1010001
 (string->bitvector "#*1001020") @result{} #f
 @end example
 
-Note that this isn't a sequence-conversion, but rather a conversion to
+@c EN
+Note that this isn't a sequence-conversion, but rather a conversion from
 external representation.
+@c JP
+これはシーケンスとしての変換ではなく、外部表現からの変換であることに注意してください。
+@c COMMON
 @end defun
 
 @defun bitvector->string bv
 [SRFI-178]
+@c EN
 Convert a bitvector @var{bv} to a string representation @code{#*@var{b}...}.
+@c JP
+ビットベクタ@var{bv}の外部表現@code{#*@var{b}...}を文字列として返します。
+@c COMMON
 
 @example
 (bitvector->string #*1001010) @result{} "#*1001010"
 @end example
 
+@c EN
 Note that this isn't a sequence-conversion, but rather a conversion to
 external representation.
+@c JP
+これはシーケンスとしての変換ではなく、外部表現への変換であることに注意してください。
+@c COMMON
 @end defun
 
 @defun bitvector-ref/int bv k :optional fallback
 @defunx bitvector-ref/bool bv k :optional fallback
 [SRFI-178+]
+@c EN
 Retrieves the @var{k}-th bit of a bitvector @var{bv} as an integer or
 a boolean value, respectively.  If @var{k} is out of range,
 @var{fallback} is returned if it is given, or an error is raised otherwise.
 The @var{fallback} argument is Gauche's extension.
+@c JP
+ビットベクタ@var{bv}の@var{k}番目の要素を、それぞれ整数0/1か論理値として返します。
+@var{k}が範囲外だった場合、@var{fallback}が与えられていればそれが返され、
+与えられていなければエラーが投げられます。
+@var{fallback}引数はGaucheの拡張です。
+@c COMMON
 
 @example
 (bitvector-ref/int #*1010001 0)  @result{} 1
 (bitvector-ref/bool #*1010001 0) @result{} #t
 @end example
 
+@c EN
 If you use a universal accessor @code{ref}/@code{~}, it returns
 the bit value as an integer (@pxref{Universal accessor}).
+@c JP
+万能アクセサ@code{ref}/@code{~}をビットベクタに使った場合は、
+整数値が返されます (@ref{Universal accessor})。
+@c COMMON
 
 @example
 (~ #*11001001 1) @result{} 1
@@ -13282,12 +13374,26 @@ the bit value as an integer (@pxref{Universal accessor}).
 
 @defun bitvector-set! bv k bit
 [SRFI-178]
+@c EN
 Sets the @var{k}-th bit of a bitvector @var{bv} with @var{bit}, which must
 be either one of 0, 1, @code{#f} or @code{#t}.  An error is raised
 if @var{k} is out of range.
+@c JP
+ビットベクタ@var{bv}の@var{k}番目の要素にビット値@var{bit}をセットします。
+@var{bit}は0、1、@code{#f}、@code{#t}のいずれかでなければなりません。
+@var{k}が範囲外ならエラーが投げられます。
+@c COMMON
 
+@c EN
+This procedure is set as the setter of @code{bitvector-ref/int} and
+@code{bitvector-ref/bool}.
 Since a bitvector is a sequence, you can also use
 @code{(setter ref)}/@code{(setter ~)}:
+@c JP
+この手続きは@code{bitvector-ref/int}と@code{bitvector-ref/bool}のsetterとして
+設定されています。また、ビットベクタはシーケンスなので、
+@code{(setter ref)}/@code{(setter ~)}も使えます。
+@c COMMON
 
 @example
 (rlet1 z (make-bitvector 5 0)
@@ -13298,9 +13404,15 @@ Since a bitvector is a sequence, you can also use
 
 @defun bitvector-copy bv :optional start end
 [SRFI-178]
+@c EN
 Returns a copy of a bitvector @var{bv}.  If optional @var{start} and
 @var{end} indexes are given, the copy is limited in that range,
 where @var{start} is inclusive and @var{end} is exclusive.
+@c JP
+ビットベクタ@var{bv}のコピーを作って返します。
+省略可能引数@var{start}、@var{end}でインデックスが与えられた場合は、
+その範囲内がコピーされます。@var{start}は含まれ、@var{end}は含まれません。
+@c COMMON
 
 @example
 (bitvector-copy #*101001000 3)   @result{} #*001000
@@ -13310,9 +13422,16 @@ where @var{start} is inclusive and @var{end} is exclusive.
 
 @defun bitvector-copy! target tstart src :optional sstart send
 [SRFI-178]
+@c EN
 Copy a bitvector @var{src} into a mutable bitvector @var{target} starting
 from @var{tstart}, mutating @var{target}.  Optional @var{sstart} and
 @var{send} delimits the range in @var{src}.
+@c JP
+ビットベクタ@var{src}の内容を、
+変更可能なビットベクタ@var{target}の@var{tstart}インデックス以降にコピーして
+@var{target}の内容を書き換えます。省略可能な@var{sstart}、@var{send}は
+@var{src}のコピーされる範囲を限定します。
+@c COMMON
 
 @example
 (rlet1 v (make-bitvector 10 0)
