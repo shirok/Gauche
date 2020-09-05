@@ -961,6 +961,19 @@ R7RSのバイトベクタはGaucheのu8vectorと同じです。
 bytevector         bytevector?       make-bytevector
 bytevector-length  bytevector-u8-ref bytevector-u8-set!
 bytevector-copy    bytevector-copy!  bytevector-append
+read-bytevector    read-bytevector!  write-bytevector
+@end example
+
+@c EN
+The following procedures are the same as @code{gauche.vport}'s
+(@pxref{Virtual ports}).
+@c JP
+以下の手続きは@code{gauche.vport}のものと同じです。
+(@ref{Virtual ports}参照)。
+@c COMMON
+
+@example
+open-input-bytevector open-output-bytevector get-output-bytevector
 @end example
 
 @c EN
@@ -1147,55 +1160,6 @@ it is not closed.
 @c COMMON
 @end defun
 
-@defun open-input-bytevector u8vector
-@defunx open-output-bytevector
-@defunx get-output-bytevector port
-[R7RS base]
-@c MOD scheme.base
-@c EN
-These are basically the same as @code{open-input-uvector},
-@code{open-output-uvector} and @var{get-output-uvector}
-in @code{gauche.vport} (@pxref{Virtual ports}), except that
-R7RS procedures only deal with @code{<u8vector>}.
-@c JP
-これらは基本的に@code{gauche.vport}の
-@code{open-input-uvector}、
-@code{open-output-uvector}、@var{get-output-uvector}
-とそれぞれ同じです(@ref{Virtual ports}参照)。
-但しR7RS版は@code{<u8vector>}しか受け付けません。
-@c COMMON
-@end defun
-
-@defun read-bytevector size :optional iport
-[R7RS base]
-@c MOD scheme.base
-@c EN
-Equivalent to @code{(read-uvector <u8vector> size iport)}.
-@c JP
-@code{(read-uvector <u8vector> size iport)}と等価です。
-@c COMMON
-@xref{Uvector block I/O}.
-@end defun
-
-@defun read-bytevector! bv :optional iport start end
-[R7RS base]
-@c MOD scheme.base
-@c EN
-An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
-@c JP
-@code{read-uvector!}の別名です。@ref{Uvector block I/O}参照。
-@c COMMON
-@end defun
-
-@defun write-bytevector bv :optional oport start end
-[R7RS base]
-@c MOD scheme.base
-@c EN
-Equivalent to @code{write-uvector}.  @xref{Uvector block I/O}.
-@c JP
-@code{write-uvector}と同じです。@ref{Uvector block I/O}参照。
-@c COMMON
-@end defun
 
 @defun flush-output-port :optional oport
 [R7RS base]

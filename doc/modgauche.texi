@@ -24625,13 +24625,17 @@ until EOF, use @code{port->uvector} below.
 入力データの大きさが不明で、EOFまで全てを読み込みたい場合は、下の
 @code{port->uvector}を使ってください。
 @c COMMON
+@end defun
 
+@defun read-bytevector size :optional iport
+[R7RS base]
+@c MOD gauche.uvector
 @c EN
-R7RS has @code{read-bytevector}; it is the same as passing @code{<u8vector>}
-to @code{read-uvector}.
+Equivalent to @code{(read-uvector <u8vector> size iport)}.
+This is an R7RS base procedure.
 @c JP
-R7RSには@code{read-bytevector}があります。これは@code{read-uvector}に
-@code{<u8vector>}を渡すのと等価です。
+@code{(read-uvector <u8vector> size iport)}と等価です。
+R7RS baseにある手続きです。
 @c COMMON
 @end defun
 
@@ -24748,6 +24752,19 @@ This procedure is parallel to @code{port->string} etc.
 @c COMMON
 @end defun
 
+@defun read-bytevector! bv :optional iport start end
+[R7RS base]
+@c MOD gauche.uvector.
+@c EN
+Similar to @code{read-uvector!}, but @var{bv} must be a u8vector.
+This is an R7RS base procedure.
+@c JP
+@code{read-uvector!}と似ていますが、@var{bv}はu8vectorでなければなりません。
+これはR7RS baseにある手続きです。
+@c COMMON
+@end defun
+
+
 @defun write-uvector vec :optional oport start end endian
 @c MOD gauche.uvector
 @c EN
@@ -24782,6 +24799,18 @@ is used (@pxref{Endianness}).
 @c COMMON
 @end defun
 
+@defun write-bytevector bv :optional oport start end
+[R7RS base]
+@c MOD gauche.uvector
+@c EN
+Similar to @code{write-uvector}, but @var{bv} must be a u8vector.
+This is an R7RS base procedure.
+@c JP
+@code{write-uvector}と似ていますが、@var{bv}はu8vectorでなければなりません。
+R7RS baseの手続きです。
+@c COMMON
+@end defun
+
 @defun write-block vec :optional oport start end endian
 @c MOD gauche.uvector
 @c EN
@@ -24792,6 +24821,7 @@ compatibility, but new code should use @code{write-uvector}.
 新しいコードでは@code{write-uvector}を使ってください。
 @c COMMON
 @end defun
+
 
 
 @node Bytevector compatibility,  , Uvector block I/O, Uniform vector library
@@ -26086,6 +26116,19 @@ EOFが返されます。シーク操作も実装されています。
 @c COMMON
 @end defun
 
+@defun open-input-bytevector u8vector
+[R7RS base]
+@c MOD gauche.vport
+@c EN
+Similar to @code{open-input-uvector},
+but the argument must be an u8vector.
+This is an R7RS base procedure.
+@c JP
+@code{open-input-uvector}と似ていますが、引数はu8vectorでなければなりません。
+R7RS baseの手続きです。
+@c COMMON
+@end defun
+
 @defun open-output-uvector :optional uvector :key extendable
 @c MOD gauche.vport
 @c EN
@@ -26152,6 +26195,20 @@ number along @code{SEEK_END} to @code{port-seek}).
 @c COMMON
 @end defun
 
+@defun open-output-bytevector
+[R7RS base]
+@c MOD gauche.vport
+@c EN
+Same as @code{open-output-uvector} without arguments.
+Uses extenable u8vector as the buffer.
+This is an R7RS base procedure.
+@c JP
+@code{open-output-uvector}を引数なしで呼ぶのと同じです。
+必要に応じて伸長するu8vectorをバッファに使います。
+R7RS baseの手続きです。
+@c COMMON
+@end defun
+
 @defun get-output-uvector port :key shared
 @c MOD gauche.vport
 @c EN
@@ -26203,6 +26260,23 @@ uvectorの型が@code{s8vector}や@code{u8vector}以外である場合、
 返されたベクタの内容が書き換わってしまう可能性があることに注意してください。
 @c COMMON
 @end defun
+
+@defun get-output-bytevector port
+[R7RS base]
+@c MOD gauche.vport
+@c EN
+Extract the data put to an bytevector output port as an u8vector.
+The port must be created by @code{open-output-bytevector} or
+@code{open-output-uvector}.
+This is an R7RS base procedure.
+@c JP
+バイトベクタ出力ポートに出力されたデータをu8vectorとして取り出して返します。
+@var{port}は@code{open-output-bytevector}か
+@code{open-output-uvector}で作られたものでなければなりません。
+R7RS baseの手続きです。
+@c COMMON
+@end defun
+
 
 @c EN
 @subsubheading List ports
