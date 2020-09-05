@@ -538,4 +538,28 @@
            (close-output-port accout)
            finished)))
 
+;;-----------------------------------------------------------
+(test-section "srfi-181 and 192")
+
+(define-module srfi-181-tests
+  (use gauche.test)
+  (use gauche.uvector)
+  (use srfi-1)
+  (use srfi-13)
+  (use srfi-64)
+  (use srfi-181)
+  (use srfi-192)
+  (use scheme.base :only (bytevector 
+                          bytevector-copy
+                          bytevector-u8-ref
+                          flush-output-port))
+
+  (test-module 'srfi-181)
+  (test-module 'srfi-192)
+
+  (define-syntax import (syntax-rules () ((_ . _) #f)))
+
+  (include "../../test/include/srfi-181-192-tests.scm")
+  )
+
 (test-end)

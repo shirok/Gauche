@@ -2801,6 +2801,9 @@
 ;; NB: srfi-180 depends on ext/peg, so it is tested in it.
 
 ;;-----------------------------------------------------------------------
+;; NB: srfi-181 is tested in gauche.vport
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-185")
 ;; NB: srfi-185 conflicts with srfi-118, so we import it in a separate module.
 
@@ -2844,5 +2847,8 @@
   (use srfi-78)                         ; check
   (use scheme.base :only (raise-continuable error-object?))
   (include "include/srfi-189-tests"))
+
+;;-----------------------------------------------------------------------
+;; NB: srfi-192 is tested in gauche.vport
 
 (test-end)

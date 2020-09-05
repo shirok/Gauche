@@ -127,6 +127,12 @@
     :flush (^[] (and flush (flush)))
     :close close))
 
+(define (make-custom-binary-input/output-port id read! write!
+                                              get-position set-position!
+                                              close :optional (flush #f))
+  ;; Gauche hasn't support bidirectional port yet
+  (error "bidirectional port hasn't been supported yet."))
+
 (define (make-file-error . objs)
   ;; As of 0.9.9, Gauche uses ad-hoc way to determine file-error--
   ;; that is, a <system-error> with certain errnos is a file error. 
