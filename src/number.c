@@ -242,7 +242,25 @@ void check_armendian()
 }
 #endif  /*DOUBLE_ARMENDIAN*/
 
-static ScmPrimitiveParameter *default_endian;
+/* This is lazyily initialized, for at the time number.c is initialized,
+   not sufficient infrastructure is booted to initialize a parameter.
+ */
+static ScmPrimitiveParameter *default_endian = NULL;
+static ScmInternalMutex default_endian_mutex;
+
+static void init_default_endian()
+{
+    if (default_endian == NULL) {
+        SCM_INTERNAL_MUTEX_LOCK(default_endian_mutex);
+        if (default_endian == NULL) {
+            default_endian =  
+                Scm_BindPrimitiveParameter(Scm_GaucheModule(), "default-endian",
+                                           SCM_OBJ(Scm_NativeEndian()), 0);
+
+        }
+        SCM_INTERNAL_MUTEX_UNLOCK(default_endian_mutex);
+    }
+}
 
 ScmObj Scm_NativeEndian()
 {
@@ -258,6 +276,7 @@ ScmObj Scm_NativeEndian()
 
 ScmObj Scm_DefaultEndian(void)
 {
+    init_default_endian();
     return Scm_PrimitiveParameterRef(Scm_VM(), default_endian);
 }
 
@@ -265,6 +284,7 @@ void Scm_SetDefaultEndian(ScmObj endian)
 {
     /* We trust the caller passes one of symbols big-endian, little-endian
        or arm-little-endian. */
+    init_default_endian();
     Scm_PrimitiveParameterSet(Scm_VM(), default_endian, endian);
 }
 
@@ -4628,9 +4648,7 @@ void Scm__InitNumber(void)
     check_armendian();
 #endif /*DOUBLE_ARMENDIAN*/
 
-    default_endian =
-        Scm_BindPrimitiveParameter(Scm_GaucheModule(), "default-endian",
-                                   SCM_OBJ(Scm_NativeEndian()), 0);
+    (void)SCM_INTERNAL_MUTEX_INIT(default_endian_mutex);
 
 #ifdef COUNT_FLONUM_ALLOC
     Scm_AddCleanupHandler(report_flonum_count, NULL);

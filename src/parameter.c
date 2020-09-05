@@ -163,7 +163,7 @@ static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
 }
 
 /* 
- * Create primitive parameter, which is a SUBR
+ * Create a primitive parameter
  */
 ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                   ScmObj name,
@@ -194,6 +194,31 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     p->initialValue = initval;
     p->flags = flags;
     return p;
+}
+
+/* 
+ * Create a SUBR that embeds a primitive parameter.
+ */
+static ScmObj prim_param_proc(ScmObj *argv, int argc, void *data)
+{
+    ScmPrimitiveParameter *p = SCM_PRIMITIVE_PARAMETER(data);
+    SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(p));
+    SCM_ASSERT(argc == 1);
+    if (SCM_PAIRP(argv[0])) {
+        if (SCM_PAIRP(SCM_CDR(argv[0]))) {
+            Scm_Error("Wrong number of arguments for a parameter:"
+                      " 0 or 1 argument(s) expected, but got %S", argv[0]);
+        }
+        return Scm_PrimitiveParameterSet(Scm_VM(), p, SCM_CAR(argv[0]));
+    } else {
+        return Scm_PrimitiveParameterRef(Scm_VM(), p);
+    }
+}
+
+ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
+{
+    /* NB: We save p to the info field as well for the introspection. */
+    return Scm_MakeSubr(prim_param_proc, p, 0, 1, SCM_OBJ(p));
 }
 
 /*
@@ -233,7 +258,7 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
     return oldval;
 }
 
-/* Convenience function.  Create a primitive parameter and bind
+/* Convenience function.  Create a primitive parameter subr and bind
    it to NAME in MOD. */
 ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
                                                   const char *name,
@@ -243,7 +268,8 @@ ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
     ScmPrimitiveParameter *p = 
         Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
                                    SCM_INTERN(name), initval, flags);
-    Scm_Define(mod, SCM_SYMBOL(p->name), SCM_OBJ(p));
+    ScmObj subr = Scm_MakePrimitiveParameterSubr(p);
+    Scm_Define(mod, SCM_SYMBOL(p->name), subr);
     return p;
 }
 

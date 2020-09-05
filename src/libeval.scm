@@ -526,11 +526,10 @@
  (initcode
   (Scm_BindPrimitiveParameter (Scm_GaucheModule) "exit-handler"
                               SCM_FALSE 0)))
-(%primitive-parameter-set! exit-handler 
-                           (^[code fmt args]
-                             (when fmt
-                               (apply format (standard-error-port) fmt args)
-                               (newline (standard-error-port)))))
+(exit-handler (^[code fmt args]
+                (when fmt
+                  (apply format (standard-error-port) fmt args)
+                  (newline (standard-error-port)))))
 
 ;; API
 (define-in-module gauche (exit :optional (code 0) (fmt #f) :rest args)

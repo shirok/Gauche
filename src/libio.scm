@@ -413,12 +413,14 @@
 
 ;; useful for error messages
 (define (port-position-prefix port)
-  (if-let1 n (port-name port)
-    (let1 l (port-current-line port)
-      (if (positive? l)
-        (format #f "~s:line ~a: " n l)
-        (format #f "~s: " n))
-      "")))
+  (if (port? port)
+    (if-let1 n (port-name port)
+      (let1 l (port-current-line port)
+        (if (positive? l)
+          (format #f "~s:line ~a: " n l)
+          (format #f "~s: " n))
+        ""))
+    "???"))
 
 (select-module gauche.internal)
 

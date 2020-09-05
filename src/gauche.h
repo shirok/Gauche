@@ -1465,6 +1465,11 @@ struct ScmProcedureRec {
                    insert reference to the proc, for it may not be
                    serializable for AOT compilation).
 
+           - A <primitive-parameter> or <parameter> object.  R7RS requires
+             parameters to be a procedure, responding #t to procedure?.
+             We need to adapt Gauche parameter into that, saving the
+             actual parameter instance here.
+
            - Subr's name, as a string or a symbol.  This is the old format.
              It may also the case that subr is created from C function
              Scm_MakeSubr(), for it's cumbersome in C routine to construct

@@ -1,3 +1,10 @@
+2020-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c: Make BindPrimitiveParameter wraps primitive
+	  parameter with subr.  In R7RS, parameters should behave strictly
+	  as a procedure, e.g. must respond #t to procedure?.
+	  Rel: https://github.com/shirok/Gauche/issues/720
+
 2020-09-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs-setup.scm, src/libio.scm, ext/vport/vport.scm,

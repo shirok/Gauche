@@ -99,7 +99,12 @@
 (define-cproc least-fixnum ()    ::<long> (return SCM_SMALL_INT_MIN))
 (define-cproc greatest-fixnum () ::<long> (return SCM_SMALL_INT_MAX))
 
-;; default-endian is defined in Scm__InitNumber().
+(inline-stub
+ (initcode
+  ;; default-endian is defined in number.c.  This call ensures it is
+  ;; initialized.
+  (Scm_DefaultEndian)))
+
 (define-cproc native-endian () Scm_NativeEndian)
 
 ;; DBL_EPSILON, etc.
@@ -899,6 +904,3 @@
           (Scm_Error "clamp argument must be either 'both, 'high, 'low or #f, \
                     but got %S" clamp)])
    (return SCM_CLAMP_ERROR)))
-
-
-

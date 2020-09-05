@@ -68,6 +68,7 @@ SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                              ScmObj name,
                                                              ScmObj initval,
                                                              u_long flags);
+SCM_EXTERN ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p);
 SCM_EXTERN ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, 
                                             const ScmPrimitiveParameter *p);
 SCM_EXTERN ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, 
