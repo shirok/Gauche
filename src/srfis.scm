@@ -1301,6 +1301,22 @@ Gaucheには@code{rfc.json}もあって、@code{srfi-180}は
 @code{rfc.json}の上に実装されています。
 
 
+srfi-181, srfi-181
+()
+
+Custom ports
+Supported by the module @code{srfi-181}.
+Gauche has an original custom port mechanism (@pxref{Virtual ports}), and
+This srfi is built in top of it.  There are some protocol mismatch and
+not all srfi-181 features are supporetd yet.
+
+カスタムポート
+モジュール@code{srfi-181}でサポートされます。
+Gaucheは独自のカスタムポートメカニズムを持っており(@ref{Virtual ports}参照)、
+このsrfiはその上に作られています。ただ、
+プロトコルの不一致からsrfi-181の全機能をサポートするにまだ至っていません。
+
+
 srfi-185, srfi-185
 ()
 
@@ -1321,3 +1337,18 @@ Supported by the module @code{srfi-189}.
 
 MaybeとEither: オプショナルなコンテナ型
 モジュール@code{srfi-189}でサポートされます。
+
+
+srfi-192, srfi-192
+()
+
+Port positioning
+Supported by the module @code{srfi-192}.
+Gauche's port already has positining mechanism, and this srfi is
+an adapter to it.
+
+ポート位置
+モジュール@code{srfi-192}でサポートされます。
+Gaucheのポートは既に位置の問い合わせと設定機能を持っており、
+このsrfiはその上に作られています。
+
