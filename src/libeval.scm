@@ -504,7 +504,8 @@
   (return (Scm_PrimitiveParameterRef (Scm_VM) p)))
 (define-cproc %primitive-parameter-set! (p::<primitive-parameter> val)
   (return (Scm_PrimitiveParameterSet (Scm_VM) p val)))
-
+(define-cproc %make-parameter-subr (p::<primitive-parameter>)
+  Scm_MakePrimitiveParameterSubr)
 
 ;;;
 ;;; System termination

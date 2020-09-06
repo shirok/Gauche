@@ -50,7 +50,9 @@
    storage.  It doesn't have extra features such as filter
    procedure or hooks.  It is useful for the parameter that needs
    to be accessed from C as well.
-   Scheme-level <parameter> object is built on top of this.
+   
+   ScmParameter is Scheme's <parameter> object.  It inherits
+   primitive parameter, but adds some bells and whistles.
 */
 typedef struct ScmPrimitiveParameterRec ScmPrimitiveParameter;
 
@@ -59,6 +61,7 @@ SCM_CLASS_DECL(Scm_PrimitiveParameterClass);
 #define SCM_PRIMITIVE_PARAMETER(obj)   ((ScmPrimitiveParameter*)obj)
 #define SCM_PRIMITIVE_PARAMETER_P(obj) SCM_ISA(obj,SCM_CLASS_PRIMITIVE_PARAMETER)
 
+/* Flag value for Scm_MakePrimitiveParameter */
 enum {
     /* value may be a promise; dereference automaticlaly forces it */
     SCM_PARAMETER_LAZY = (1UL << 0)

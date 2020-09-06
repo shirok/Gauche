@@ -44,7 +44,7 @@
 
 (autoload gauche.hook make-hook add-hook! delete-hook! run-hook)
 
-(define-class <parameter> ()
+(define-class <parameter> (<primitive-parameter>)
   (;; all slots should be private
    (setter)
    (getter)
@@ -58,13 +58,10 @@
   (let* ([pre-hook #f]
          [post-hook #f]
          [filter (get-keyword :filter initargs #f)]
-         [init-value (let1 v (get-keyword :init-value initargs #f)
-                       (if filter (filter v) v))]
-         [prim (make <primitive-parameter> :initial-value init-value)]
          [get (^[] ((with-module gauche.internal %primitive-parameter-ref)
-                    prim))]
+                    self))]
          [set (^v ((with-module gauche.internal %primitive-parameter-set!)
-                   prim v))])
+                   self v))])
     (slot-set! self 'getter get)
     (slot-set! self 'setter
                (if filter
@@ -82,13 +79,13 @@
                          (when pre-hook (run-hook pre-hook old val))
                          (set val)
                          (when post-hook (run-hook post-hook old val)))))
-      (let-syntax ([hook-ref
-                    (syntax-rules ()
-                      [(_ var) (^() (or var (rlet1 h (make-hook 2)
-                                              (set! var h))))])])
-        (slot-set! self 'pre-observers (hook-ref pre-hook))
-        (slot-set! self 'post-observers (hook-ref post-hook)))
-      ))
+    (let-syntax ([hook-ref
+                  (syntax-rules ()
+                    [(_ var) (^() (or var (rlet1 h (make-hook 2)
+                                            (set! var h))))])])
+      (slot-set! self 'pre-observers (hook-ref pre-hook))
+      (slot-set! self 'post-observers (hook-ref post-hook)))
+    ))
 
 (define-method object-apply ((self <parameter>))
   ((slot-ref self 'getter)))
@@ -101,7 +98,10 @@
   (obj value))
 
 (define (make-parameter value :optional (filter #f))
-  (make <parameter> :filter filter :init-value value))
+  (let1 v (if filter (filter value) value)
+    (make <parameter> 
+      :filter filter
+      :initial-value v)))
 
 ;; restore parameter value after parameterize body.  we need to bypass
 ;; the filter procedure (fix for the bug reported by Joo ChurlSoo.

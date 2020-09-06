@@ -35,6 +35,7 @@
 #define GAUCHE_PRIV_PARAMETERP_H
 
 /* We keep the definition private, so that we can extend it later. */
+
 struct ScmPrimitiveParameterRec {
     SCM_INSTANCE_HEADER;
     ScmObj name;                /* for debugging. #f or symbol. */

@@ -180,7 +180,6 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
        with klass == SCM_CLASS_PRIMITIVE_PARAMETER, so we hard-wire the
        case.
      */
-    
     ScmPrimitiveParameter *p;
     if (SCM_EQ(klass, SCM_CLASS_PRIMITIVE_PARAMETER)) {
         p = SCM_NEW(ScmPrimitiveParameter);
@@ -215,10 +214,32 @@ static ScmObj prim_param_proc(ScmObj *argv, int argc, void *data)
     }
 }
 
+static ScmObj general_param_proc(ScmObj *argv, int argc, void *data)
+{
+    ScmPrimitiveParameter *p = SCM_PRIMITIVE_PARAMETER(data);
+    SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(p));
+    SCM_ASSERT(argc == 1);
+    ScmObj object_apply = SCM_OBJ(&Scm_GenericObjectApply);
+
+    if (SCM_PAIRP(argv[0])) {
+        if (SCM_PAIRP(SCM_CDR(argv[0]))) {
+            Scm_Error("Wrong number of arguments for a parameter:"
+                      " 0 or 1 argument(s) expected, but got %S", argv[0]);
+        }
+        return Scm_VMApply2(object_apply, SCM_OBJ(p), SCM_CAR(argv[0]));
+    } else {
+        return Scm_VMApply1(object_apply, SCM_OBJ(p));
+    }
+}
+
 ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
 {
     /* NB: We save p to the info field as well for the introspection. */
-    return Scm_MakeSubr(prim_param_proc, p, 0, 1, SCM_OBJ(p));
+    if (SCM_EQ(Scm_ClassOf(SCM_OBJ(p)), SCM_CLASS_PRIMITIVE_PARAMETER)) {
+        return Scm_MakeSubr(prim_param_proc, p, 0, 1, SCM_OBJ(p));
+    } else {
+        return Scm_MakeSubr(general_param_proc, p, 0, 1, SCM_OBJ(p));
+    }
 }
 
 /*
