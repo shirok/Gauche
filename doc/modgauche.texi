@@ -12907,6 +12907,17 @@ when you test the parameter @var{p} with
 @c COMMON
 @end defun
 
+@defun parameter? obj
+@c EN
+Returns @code{#t} iff @var{obj} is an object created by
+@code{make-parameter}.
+@c JP
+@var{obj}が@code{make-parameter}で作られたものであった場合は@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+
 @defmac parameterize ((param value) @dots{}) body @dots{}
 [SRFI-39]
 @c MOD gauche.parameter
