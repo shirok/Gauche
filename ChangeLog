@@ -1,3 +1,9 @@
+2020-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/libparam.scm, libsrc/gauche/parameter.scm: Move make-parameter
+	  and parameterize into core.  gauche.parameter is kept for the
+	  backward compatibility and some fluff (observers).
+
 2020-09-05  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/parameter.scm: Make <parameter> a subclass of

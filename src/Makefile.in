@@ -233,7 +233,8 @@ libgauche_OBJECTS = \
 	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
 	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmacbase.$(OBJEXT) \
 	libmacro.$(OBJEXT) libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
-	libobj.$(OBJEXT) libomega.$(OBJEXT) libproc.$(OBJEXT) \
+	libobj.$(OBJEXT) libomega.$(OBJEXT) \
+	libparam.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
 	libsys.$(OBJEXT) libvec.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
@@ -314,6 +315,7 @@ libmisc.c    : libmisc.scm $(PRECOMP_DEPENDENCY)
 libnum.c     : libnum.scm $(PRECOMP_DEPENDENCY)
 libobj.c     : libobj.scm $(PRECOMP_DEPENDENCY)
 libomega.c   : libomega.scm $(PRECOMP_DEPENDENCY)
+libparam.c   : libparam.scm $(PRECOMP_DEPENDENCY)
 libproc.c    : libproc.scm $(PRECOMP_DEPENDENCY)
 librx.c      : librx.scm $(PRECOMP_DEPENDENCY)
 libsrfis.c   : libsrfis.scm $(PRECOMP_DEPENDENCY)

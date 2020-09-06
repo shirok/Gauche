@@ -48,49 +48,36 @@
 
 (autoload gauche.hook make-hook add-hook! delete-hook! run-hook)
 
-;; Must not be instantiated directly.  Always calls 
-(define-class <parameter> (<primitive-parameter>)
-  (;; all slots should be private
-   (setter)
-   (getter)
-   (restorer)                           ;used to restore previous value
-   (pre-observers)
-   (post-observers)
-   ))
+;; <parameter>, make-parameter, parameter?, procedure-parameter
+;; parameterize - built-in
 
-(define-method initialize ((self <parameter>) initargs)
-  (next-method)
-  (let* ([pre-hook #f]
-         [post-hook #f]
-         [filter (get-keyword :filter initargs #f)]
-         [get (^[] ((with-module gauche.internal %primitive-parameter-ref)
-                    self))]
-         [set (^v ((with-module gauche.internal %primitive-parameter-set!)
-                   self v))])
-    (slot-set! self 'getter get)
-    (slot-set! self 'setter
-               (if filter
-                 (^(val) (let1 new (filter val)
-                           (rlet1 old (get)
-                             (when pre-hook (run-hook pre-hook old new))
-                             (set new)
-                             (when post-hook (run-hook post-hook old new)))))
+;; This module only deals with hooks and some backward compatibility stuff
+
+(define (%ensure-hooks param)
+  (unless (slot-bound? param 'pre-observers)
+    (print "poing")
+    (let ([get (^[] ((with-module gauche.internal %primitive-parameter-ref)
+                     param))]
+          [set (^v ((with-module gauche.internal %primitive-parameter-set!)
+                    param v))]
+          [filter (slot-ref param 'filter)])
+      (define (observed-set! old new)
+        (run-hook (slot-ref param 'pre-observers) old new)
+        (set new)
+        (run-hook (slot-ref param 'post-observers) old new))
+
+      (slot-set! param 'setter
+                 (if filter
+                   (^(val) (let1 new (filter val)
+                             (rlet1 old (get)
+                               (observed-set! old new))))
+                   (^(val) (rlet1 old (get)
+                             (observed-set! old val)))))
+      (slot-set! param 'restorer          ;bypass filter proc
                  (^(val) (rlet1 old (get)
-                           (when pre-hook (run-hook pre-hook old val))
-                           (set val)
-                           (when post-hook (run-hook post-hook old val))))))
-    (slot-set! self 'restorer          ;bypass filter proc
-               (^(val) (rlet1 old (get)
-                         (when pre-hook (run-hook pre-hook old val))
-                         (set val)
-                         (when post-hook (run-hook post-hook old val)))))
-    (let-syntax ([hook-ref
-                  (syntax-rules ()
-                    [(_ var) (^() (or var (rlet1 h (make-hook 2)
-                                            (set! var h))))])])
-      (slot-set! self 'pre-observers (hook-ref pre-hook))
-      (slot-set! self 'post-observers (hook-ref post-hook)))
-    ))
+                           (observed-set! old val))))
+      (slot-set! param 'pre-observers (make-hook 2))
+      (slot-set! param 'post-observers (make-hook 2)))))
 
 (define-method object-apply ((self <parameter>))
   ((slot-ref self 'getter)))
@@ -102,82 +89,21 @@
 (define-method (setter object-apply) ((obj <parameter>) value)
   (obj value))
 
-;; This used to return <parameter> instance up to 0.9.9.  However, R7RS
-;; requires this to return a procedure.
-(define (make-parameter value :optional (filter #f))
-  (let* ([v (if filter (filter value) value)]
-         [p (make <parameter> 
-              :filter filter
-              :initial-value v)])
-    (getter-with-setter
-     ((with-module gauche.internal %make-parameter-subr) p)
-     (^[val] ((slot-ref p 'setter) val)))))
-
-(define (parameter? obj)
-  (and (procedure? obj)
-       (is-a? (procedure-info obj) <parameter>)))
-
-(define (procedure-parameter proc)
-  (and-let* ([ (procedure? proc) ]
-             [p (procedure-info proc)]
-             [ (is-a? p <parameter>) ])
-    p))
-
-;; restore parameter value after parameterize body.  we need to bypass
-;; the filter procedure (fix for the bug reported by Joo ChurlSoo.
-;; NB: For historical reasons, PARAMETERIZE may be used with paremeter-like
-;; procedures.
-(define (%restore-parameter param prev-val)
-  (cond
-   [(parameter? param)
-    ((slot-ref (procedure-parameter param)'restorer) prev-val)]
-   [(is-a? param <parameter>)
-    ((slot-ref param'restorer) prev-val)]
-   [(is-a? param <primitive-parameter>)
-    ((with-module gauche.internal %primitive-parameter-set!) param prev-val)]
-   [else (param prev-val)]))
-
-(define-syntax parameterize
-  (syntax-rules ()
-    [(_ () . body) (let () . body)]
-    [(_ ((param val)) . body)
-     (let ([P param] [V val] [restarted #f])
-       (dynamic-wind
-         (^[] (if restarted
-                (set! V (%restore-parameter P V))
-                (set! V (P V))))
-         (^[] . body)
-         (^[] (set! restarted #t)
-              (set! V (%restore-parameter P V)))))]
-    [(_ ((param val) ...) . body)
-     (let ([P (list param ...)]
-           [V (list val ...)]
-           [S '()]                      ;saved values
-           [restarted #f])
-       (dynamic-wind
-         (^[] (if restarted
-                (set! S (map (^[p v] (%restore-parameter p v)) P S))
-                (set! S (map (^[p] (p)) P))))
-         (^[] (unless restarted
-                (set! S (map (^[p v] (p v)) P V)))
-           (let () . body))
-         (^[] (set! restarted #t)
-              (set! S (map (^[p v] (%restore-parameter p v)) P S)))))]
-    [(_ . x) (syntax-rules "Invalid parameterize form:" (parameterize . x))]))
-
-;; hooks
-
 (define-method parameter-pre-observers ((self <parameter>))
-  ((ref self 'pre-observers)))
+  (%ensure-hooks self)
+  (ref self 'pre-observers))
 (define-method parameter-pre-observers ((self <procedure>))
-  (or (parameter-pre-observers self)
-      (error "parameter procedure required, but got:" self)))
+  (if-let1 p (procedure-parameter self)
+    (parameter-pre-observers p)
+    (error "parameter procedure required, but got:" self)))
 
 (define-method parameter-post-observers ((self <parameter>))
-  ((ref self 'post-observers)))
-(define-method parameter-pre-observers ((self <procedure>))
-  (or (parameter-post-observers self)
-      (error "parameter procedure required, but got:" self)))
+  (%ensure-hooks self)
+  (ref self 'post-observers))
+(define-method parameter-post-observers ((self <procedure>))
+  (if-let1 p (procedure-parameter self)
+    (parameter-post-observers p)
+    (error "parameter procedure required, but got:" self)))
 
 (define-method parameter-observer-add! ((self <parameter>) proc . args)
   (let-optionals* args ((when 'after)
