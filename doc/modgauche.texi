@@ -12880,6 +12880,31 @@ can raise an error or reject to change the parameter's value.
 なります。@var{filter}はエラーを報告したりパラメータの値を変えずに置くことも
 可能です。
 @c COMMON
+
+@c EN
+NB: In 0.9.9 and before, this procedure returns a parameter
+object, and we used @code{object-apply} method to make it behave
+like a procedure.  However, R7RS explicitly defines the return
+values to be a procedure; notably, portable code expects
+@code{(procedure? (make-parameter 'z))} returns @code{#t}.
+
+As of 0.9.10, we switched @code{make-procedure} to return
+a procedure.  It won't change the external behavior, except
+when you test the parameter @var{p} with
+@code{(is-a? p <parameter>)}; you have to use @code{parameter?} instead.
+@c JP
+註: 0.9.9までは、この手続きはパラメータオブジェクトを返していました。
+パラメータオブジェクトは @code{object-apply}メソッドによって手続きであるかのように
+振る舞います。しかし、R7RSは@code{make-parameter}が手続きを返すように
+規定しており、ポータブルなコードでは
+@code{(procedure? (make-parameter 'z))}は@code{#t}でなければなりません。
+
+0.9.10から、@code{make-procedure}は手続きを返すようになりました。
+通常のパラメータの使い方をしている限り、外部に見える振る舞いは変わりません。
+ただし、@code{make-parameter}で作られたオブジェクトかどうかを
+@code{(is-a? p <parameter>)}でテストしているコードは
+後述する@code{parameter?}を使うように変更する必要があります。
+@c COMMON
 @end defun
 
 @defmac parameterize ((param value) @dots{}) body @dots{}
