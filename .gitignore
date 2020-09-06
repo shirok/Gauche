@@ -218,6 +218,7 @@ test.record
 /src/libnum.c
 /src/libobj.c
 /src/libomega.c
+/src/libparam.c
 /src/libproc.c
 /src/librx.c
 /src/libsrfis.scm
