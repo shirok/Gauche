@@ -1,3 +1,12 @@
+2020-09-05  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/parameter.scm: Make <parameter> a subclass of
+	  <primitive-parameter>, and make make-parameter return a procedure.
+	  The latter is to conforms R7RS.
+	  The code that tested if obj is a parameter by is-a? should now use
+	  parameter?.  The code that uses parameters in the standard way
+	  doesn't need to be changed.
+
 2020-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-192.scm: Added.  Currently it's a copy of the reference

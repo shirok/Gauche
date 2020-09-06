@@ -485,7 +485,7 @@
 (use gauche.parameter)
 
 (test* "http-user-agent" #"gauche.http/~(gauche-version)"
-       (and (is-a? http-user-agent <parameter>)
+       (and (parameter? http-user-agent)
             (http-user-agent)))
 
 (test* "http-compose-query" "/search?q=foo%20bar&n=20"

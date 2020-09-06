@@ -34,7 +34,11 @@
 ;; The API is upper-compatible to ChezScheme and Chicken's.
 
 (define-module gauche.parameter
-  (export <parameter> make-parameter parameterize
+  (export <parameter>
+          make-parameter 
+          parameter?
+          procedure-parameter
+          parameterize
           parameter-pre-observers
           parameter-post-observers
           parameter-observer-add!
@@ -44,6 +48,7 @@
 
 (autoload gauche.hook make-hook add-hook! delete-hook! run-hook)
 
+;; Must not be instantiated directly.  Always calls 
 (define-class <parameter> (<primitive-parameter>)
   (;; all slots should be private
    (setter)
@@ -97,11 +102,26 @@
 (define-method (setter object-apply) ((obj <parameter>) value)
   (obj value))
 
+;; This used to return <parameter> instance up to 0.9.9.  However, R7RS
+;; requires this to return a procedure.
 (define (make-parameter value :optional (filter #f))
-  (let1 v (if filter (filter value) value)
-    (make <parameter> 
-      :filter filter
-      :initial-value v)))
+  (let* ([v (if filter (filter value) value)]
+         [p (make <parameter> 
+              :filter filter
+              :initial-value v)])
+    (getter-with-setter
+     ((with-module gauche.internal %make-parameter-subr) p)
+     (^[val] ((slot-ref p 'setter) val)))))
+
+(define (parameter? obj)
+  (and (procedure? obj)
+       (is-a? (procedure-info obj) <parameter>)))
+
+(define (procedure-parameter proc)
+  (and-let* ([ (procedure? proc) ]
+             [p (procedure-info proc)]
+             [ (is-a? p <parameter>) ])
+    p))
 
 ;; restore parameter value after parameterize body.  we need to bypass
 ;; the filter procedure (fix for the bug reported by Joo ChurlSoo.
@@ -109,6 +129,8 @@
 ;; procedures.
 (define (%restore-parameter param prev-val)
   (cond
+   [(parameter? param)
+    ((slot-ref (procedure-parameter param)'restorer) prev-val)]
    [(is-a? param <parameter>)
     ((slot-ref param'restorer) prev-val)]
    [(is-a? param <primitive-parameter>)
@@ -147,9 +169,15 @@
 
 (define-method parameter-pre-observers ((self <parameter>))
   ((ref self 'pre-observers)))
+(define-method parameter-pre-observers ((self <procedure>))
+  (or (parameter-pre-observers self)
+      (error "parameter procedure required, but got:" self)))
 
 (define-method parameter-post-observers ((self <parameter>))
   ((ref self 'post-observers)))
+(define-method parameter-pre-observers ((self <procedure>))
+  (or (parameter-post-observers self)
+      (error "parameter procedure required, but got:" self)))
 
 (define-method parameter-observer-add! ((self <parameter>) proc . args)
   (let-optionals* args ((when 'after)
@@ -163,6 +191,10 @@
                    (parameter-post-observers self))
                proc
                (eq? where 'append))))
+(define-method parameter-observer-add! ((self <procedure>) proc . args)
+  (if (parameter? self)
+    (apply parameter-observer-add! (procedure-parameter self) proc args)
+    (error "parameter procedure required, but got:" self)))
 
 (define-method parameter-observer-delete! ((self <parameter>) proc . args)
   (let ((where (get-optional args #f)))
@@ -171,7 +203,9 @@
     (unless (eq? where 'before)
       (delete-hook! (parameter-post-observers self) proc))
     ))
-
-
+(define-method parameter-observer-delete! ((self <procedure>) proc . args)
+  (if (parameter? self)
+    (apply parameter-observer-delete! (procedure-parameter self) proc args)
+    (error "parameter procedure required, but got:" self)))
 
 
