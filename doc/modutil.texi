@@ -15353,7 +15353,6 @@ JSONオブジェクトのキーと値をconsしたもののリスト、
 @c COMMON
 
 @example
-(use gauche.parameter)
 (parameterize ([json-object-handler (cut alist->hash-table <> 'string=?)])
   (parse-json-string "@{\"a\":1, \"b\":2@}"))
  @result{} #<hash-table ...>

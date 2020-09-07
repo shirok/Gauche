@@ -503,13 +503,11 @@ srfi-39, gauche.parameter
 
 Parameter objects
 This has become a part of R7RS small.
-Supported by the module @code{gauche.parameter}.
-@xref{Parameters}.
+Built-in (@pxref{Parameters}).
 
 パラメータオブジェクト
 これはR7RS smallの一部になりました。
-モジュール@code{gauche.parameter}でサポートされます。
-@ref{Parameters}参照。
+組み込みです。@ref{Parameters}参照。
 
 
 srfi-40, util.stream

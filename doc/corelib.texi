@@ -19,6 +19,7 @@
 * Vector family::
 * Dictionaries::
 * Procedures and continuations::
+* Parameters::
 * Lazy evaluation::
 * Exceptions::
 * Eval and repl::
@@ -15057,7 +15058,7 @@ of tree maps which share the same comparator.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Procedures and continuations, Lazy evaluation, Dictionaries, Core library
+@node Procedures and continuations, Parameters, Dictionaries, Core library
 @section Procedures and continuations
 @c NODE 手続きと継続
 
@@ -16630,9 +16631,200 @@ you can use @code{gfilter} and @code{generator->list}.
 @c COMMON
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Parameters, Lazy evaluation, Procedures and continuations, Core library
+@section Parameters
+@c NODE パラメータ
+
+@c EN
+A @emph{parameter} is Scheme's way to implement dynamically scoped states.
+In Gauche, it also realizes thread-local storage.
+It is codified in srfi-39 and incorporated into R7RS.
+@c JP
+「パラメータ」はSchemeで動的スコープを持つ状態を実現します。
+Gaucheではスレッドローカルな状態の格納にも使えます。
+もともとsrfi-39で仕様が定められ、R7RSからは言語の一部になりました。
+@c COMMON
+
+@c EN
+It is a special procedure created by @code{make-parameter}.  It accepts
+zero or one argument.  When called without an argument, it returns the
+current value.  If an argument is passed, it alters its current value
+with the given value, and returns the previous value.
+@c JP
+@c COMMON
+
+@c EN
+Using @code{parameterize} macro, which is similar to @code{let} syntactially,
+rebinds the parameters' value during execution of its body, dynamically
+rather than lexically.
+@c JP
+@code{parameterize}マクロは@code{let}に構文的に似ていて、
+本体の実行の間、パラメータの値を一時的に置き換えます。
+これは字句的(静的スコープ)ではなく動的スコープで動作します。
+@c COMMON
+
+@example
+(define var (make-parameter 0))
+
+(define (show-var) (print (var)))
+
+(show-var)  ; prints 0
+
+(parameterize ((var 1))
+  (show-var))    ; prints 1
+
+
+(define f)
+
+(parameterize ((var 2))
+  (set! f (lambda () (show-var))))
+
+(f) ; prints 0, since its out of the dynamic extent of var=2
+@end example
+
+@c EN
+If a control trasfers from or to @code{parameterize}'s body by
+continuations,
+the parameter refers to the value corresponding the dynamic envrionment
+it is accessed.
+@c JP
+継続などにより制御が@code{parameterize}の本体から飛び出したり本体へ飛び込んだり
+した場合、パラメータは常にそれがアクセスされる動的環境のもとでの値を返します。
+@c COMMON
+
+@c EN
+Gauche enhances R7RS parameters in a few ways.
+@c JP
+GaucheはR7RSのパラメータを次のとおり拡張しています。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+It is thread-local.  A parameter created in one thread can be used
+from other threads, but the storage is independent.  When a new thread
+is created, it inherits the values of existing parameters.
+@c JP
+スレッドローカルです。ひとつのスレッドで作られたパラメータは他のスレッドからも
+アクセスできますが、参照される領域はスレッドごとに独立しています。
+新たなスレッドが作られた時、それまでにあるパラメータの値は引き継がれます。
+@c COMMON
+@item
+@c EN
+You can attach observer procedures to a parameter, which is invoked
+whenever the value of the parameter is altered, either directly
+or by @code{parameterize}.   (This feature is only available
+when you use @code{gauche.parameter} module, @pxref{Parameters (extra)}).
+@c JP
+パラメータに監視手続きをつけることができます。パラメータの値が変わる度に
+(@code{parameterize}でも直接設定でも)監視手続きが呼ばれます。
+(この機能は@code{gauche.parameter}をuseすることで使えるようになります。
+@ref{Parameters (extra)}参照。
+@c COMMON
+@item
+@c EN
+You can use generaized @code{set!} with parameters.
+@c JP
+パラメータに対しても一般化された@code{set!}を使えます。
+@c COMMON
+@example
+(define p (make-parameter 'a))
+(p) @result{} a
+(set! (p) 'b)
+(p) @result{} b
+@end example
+@end itemize
+@c JP
+@c COMMON
+
+@defun make-parameter value :optional filter
+[R7RS base]
+@c EN
+Creates a parameter whose initial value is @var{value}.
+If an optional argument @var{filter} is given, it must be
+a procedure that takes one argument and returns one value;
+whenever the parameter's value is about to change, the procedure
+is called with the given value, and the value the procedure
+returns will be the parameter's value.  The filter procedure
+can raise an error or reject to change the parameter's value.
+@c JP
+初期値が@var{value}であるパラメータを作成します。
+もし省略可能な引数@var{filter}が与えられた場合、
+それは一つの引数を取る手続きでなければなりません。
+パラメータの値が変更されようとした時、@var{filter}は与えられた値を
+引数として呼ばれ、@var{filter}が返した値がパラメータの新しい値と
+なります。@var{filter}はエラーを報告したりパラメータの値を変えずに置くことも
+可能です。
+@c COMMON
+
+@c EN
+NB: In 0.9.9 and before, this procedure returns a parameter
+object, and we used @code{object-apply} method to make it behave
+like a procedure.  However, R7RS explicitly defines the return
+values to be a procedure; notably, portable code expects
+@code{(procedure? (make-parameter 'z))} returns @code{#t}.
+
+As of 0.9.10, we switched @code{make-procedure} to return
+a procedure.  It won't change the external behavior, except
+when you test the parameter @var{p} with
+@code{(is-a? p <parameter>)}; you have to use @code{parameter?} instead.
+@c JP
+註: 0.9.9までは、この手続きはパラメータオブジェクトを返していました。
+パラメータオブジェクトは @code{object-apply}メソッドによって手続きであるかのように
+振る舞います。しかし、R7RSは@code{make-parameter}が手続きを返すように
+規定しており、ポータブルなコードでは
+@code{(procedure? (make-parameter 'z))}は@code{#t}でなければなりません。
+
+0.9.10から、@code{make-procedure}は手続きを返すようになりました。
+通常のパラメータの使い方をしている限り、外部に見える振る舞いは変わりません。
+ただし、@code{make-parameter}で作られたオブジェクトかどうかを
+@code{(is-a? p <parameter>)}でテストしているコードは
+後述する@code{parameter?}を使うように変更する必要があります。
+@c COMMON
+@end defun
+
+@defmac parameterize ((param value) @dots{}) body @dots{}
+[R7RS base]
+@c EN
+Evaluates @var{body} @dots{}, with
+change parameter @var{param}'s value to the given @var{value} within
+the dynamic scope of @var{body} @dots{}.
+Returns the value(s) of the result of the last @var{body}.
+@c JP
+@var{body} @dots{}を評価します。
+但し、@var{body} @dots{} の実行中のみ、パラメータ@var{param}の値を
+@var{value}に変更します。最後の@var{body}の返した値を返します。
+@c COMMON
+@end defmac
+
+@c EN
+Some examples:
+@c JP
+例：
+@c COMMON
+@example
+(define a (make-parameter 1))
+(a) @result{} 1
+(a 2) @result{} 1
+(a) @result{} 2
+(parameterize ((a 3))
+  (a)) @result{} 3
+(a) @result{} 2
+@end example
+
+@defun parameter? obj
+@c EN
+Returns @code{#t} iff @var{obj} is an object created by
+@code{make-parameter}.
+@c JP
+@var{obj}が@code{make-parameter}で作られたものであった場合は@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
 
 @c ------------------------------------------------------------
-@node Lazy evaluation, Exceptions, Procedures and continuations, Core library
+@node Lazy evaluation, Exceptions, Parameters, Core library
 @section  Lazy evaluation
 @c NODE 遅延評価
 

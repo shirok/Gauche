@@ -25,7 +25,7 @@
 * Slot with validator::         gauche.mop.validator
 * Networking::                  gauche.net
 * Package metainformation::     gauche.package
-* Parameters::                  gauche.parameter
+* Parameters (extra)::
 * Parsing command-line options::  gauche.parseopt
 * Partial continuations::       gauche.partcont
 * High-level process interface::  gauche.process
@@ -1369,7 +1369,6 @@ After running this code you'll get @code{my-cfile.c} and
 @code{my-cfile.h} in the current directory.
 
 @example
-(use gauche.parameter)
 (use gauche.cgen)
 
 (define *unit* (make <cgen-unit> :name "my-cfile"))
@@ -12685,7 +12684,7 @@ netdbインタフェースのScheme APIは必要な箇所ではこれらの関�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Package metainformation, Parameters, Networking, Library modules - Gauche extensions
+@node Package metainformation, Parameters (extra), Networking, Library modules - Gauche extensions
 @section @code{gauche.package} - Package metainformation
 @c NODE パッケージメタ情報, @code{gauche.package} - パッケージメタ情報
 
@@ -12744,211 +12743,30 @@ description files, and search installed @file{*.gpd} files.
 
 
 @c ----------------------------------------------------------------------
-@node Parameters, Parsing command-line options, Package metainformation, Library modules - Gauche extensions
-@section @code{gauche.parameter} - Parameters
-@c NODE パラメータ, @code{gauche.parameter} - パラメータ
+@node Parameters (extra), Parsing command-line options, Package metainformation, Library modules - Gauche extensions
+@section @code{gauche.parameter} - Parameters (extra)
+@c NODE パラメータ(追加), @code{gauche.parameter} - パラメータ(追加)
 
 @deftp {Module} gauche.parameter
 @mdindex gauche.parameter
 @c EN
-A @emph{parameter} is something like a stateful procedure that takes zero or
-one argument.
-If no argument is given, the parameter returns the current value it is keeping.
-If single argument is given, it will be the current value of the parameter.
-A parameter has several advantages over global variables to store
-states.
-@c JP
-「パラメータ」は基本的にゼロもしくは一個の引数を取る状態を持つ手続きとみなせます。
-引数が与えられなかった場合、それは内部に保持した値を返します。
-一つの引数が与えられた場合、その値が新たなパラメータ内部の値となり、
-変更前の値が返されます。
-パラメータは状態を保持する手段として、
-単なるグローバル変数に比べていくつかの利点を持っています。
-@c COMMON
+Parameters are now built-in, so you no longer need to @code{use} this
+module for basic parameter functionalities.
+This module is provided mainly so that the existing code with
+@code{(use gauche.parameter)} won't get an error.
 
-@c EN
-Value of parameters are kept for each thread, so you can use
-a parameter as a thread-local storage.  When a new thread is
-created, it inherits a copy of parameters from its creator thread.
+It also provides a less-frequenlty used parameter observer interface.
 @c JP
-パラメータの値はスレッド毎に保持されるので、
-パラメータをスレッドローカルな格納領域として利用することができます。
-新たに作られたスレッドは、その作成元のスレッドのパラメータのコピーを
-受け取ります。
-@c COMMON
+パラメータは組み込みになったので、パラメータの基本機能を使うだけなら
+このモジュールを@code{use}する必要はありません。
+このモジュールは主として、@code{(use gauche.parameter)}している既存のコードが
+エラーにならないために存在しています。
 
-@c EN
-You can give a "filter procedure" that checks the new
-value before setting it as the parameter value,
-so that you can guarantee the value of the parameter is always sane.
-@c JP
-パラメータに値がセットされるときに、指定の「フィルタ手続き」を呼んで
-値を検査することができます。これにより、パラメータの値が常に正当なもので
-あることを保証できます。
-@c COMMON
-
-@c EN
-With the macro @code{parameterize}, you can change the parameter's
-value within certain dynamic scope.   It can effectively
-replace dynamically scoped variables.
-@c JP
-マクロ@code{parameterize}により、特定のダイナミックスコープの中だけ
-パラメータの値を変えることができます。これは、実質的にダイナミックスコープを
-持つ変数を置き換えることができます。
-@c COMMON
-
-@c EN
-You can also register callback procedures to be called whenever
-the value of the parameter is changed.   It can effectively
-replace so-called "traced variables"
-@c JP
-また、パラメータの値が変更されたときに呼ばれるコールバック手続きを
-登録しておくこともできます。これによって実質的に、いわゆる
-「traceされた変数」を置き換えることができます。
-@c COMMON
-
-@c EN
-The basic parameter object feature is defined in SRFI-39.
-It also can be found in other Scheme implementations,
-including ChezScheme, Chicken and MzScheme.
-Gauche's one is upper compatible to SRFI-39.
-@c JP
-パラメータオブジェクトの基本的な機能はSRFI-39で定義されています。
-この機能はまた、ChezScheme、Chicken、MzSchemeなどいくつかのScheme処理系に
-見られます。GaucheのパラメータはSRFI-39の上位互換になっています。
+また、あまり使われないパラメータオブザーバのインタフェースがこのモジュールで提供されます。
 @c COMMON
 @end deftp
 
-@deftp {Class} <parameter>
-@clindex parameter
-@c MOD gauche.parameter
-@c EN
-A parameter class.  A @code{object-apply} method is defined
-so that a parameter can be used as if it were a procedure.
-@c JP
-パラメータのクラスです。@code{object-apply}メソッドが定義されているので、
-パラメータオブジェクトは普通の手続きと同様に使うことが出来ます。
-@c COMMON
-
-@example
-;; p is a parameter with initial value 2
-(define p (make-parameter 2))
-
-;; calling p with no arguments returns the current value
-(p) @result{} 2
-
-;; modify p's value to 3
-(p 3)
-
-(p) @result{} 3
-
-;; you can also use generalized set (srfi-17)
-(set! (p) 5)
-
-(p) @result{} 5
-
-;; using parameterize dynamically changes p's value.
-
-(define (get-p) (p))
-
-(parameterize ([p 7])
-  (get-p)) @result{} 7
-
-(get-p)    @result{} 5
-@end example
-
-
-@end deftp
-
-@defun make-parameter value :optional filter
-[SRFI-39]
-@c MOD gauche.parameter
-@c EN
-Creates a parameter whose initial value is @var{value}.
-If an optional argument @var{filter} is given, it must be
-a procedure that takes one argument and returns one value;
-whenever the parameter's value is about to change, the procedure
-is called with the given value, and the value the procedure
-returns will be the parameter's value.  The filter procedure
-can raise an error or reject to change the parameter's value.
-@c JP
-初期値が@var{value}であるパラメータを作成します。
-もし省略可能な引数@var{filter}が与えられた場合、
-それは一つの引数を取る手続きでなければなりません。
-パラメータの値が変更されようとした時、@var{filter}は与えられた値を
-引数として呼ばれ、@var{filter}が返した値がパラメータの新しい値と
-なります。@var{filter}はエラーを報告したりパラメータの値を変えずに置くことも
-可能です。
-@c COMMON
-
-@c EN
-NB: In 0.9.9 and before, this procedure returns a parameter
-object, and we used @code{object-apply} method to make it behave
-like a procedure.  However, R7RS explicitly defines the return
-values to be a procedure; notably, portable code expects
-@code{(procedure? (make-parameter 'z))} returns @code{#t}.
-
-As of 0.9.10, we switched @code{make-procedure} to return
-a procedure.  It won't change the external behavior, except
-when you test the parameter @var{p} with
-@code{(is-a? p <parameter>)}; you have to use @code{parameter?} instead.
-@c JP
-註: 0.9.9までは、この手続きはパラメータオブジェクトを返していました。
-パラメータオブジェクトは @code{object-apply}メソッドによって手続きであるかのように
-振る舞います。しかし、R7RSは@code{make-parameter}が手続きを返すように
-規定しており、ポータブルなコードでは
-@code{(procedure? (make-parameter 'z))}は@code{#t}でなければなりません。
-
-0.9.10から、@code{make-procedure}は手続きを返すようになりました。
-通常のパラメータの使い方をしている限り、外部に見える振る舞いは変わりません。
-ただし、@code{make-parameter}で作られたオブジェクトかどうかを
-@code{(is-a? p <parameter>)}でテストしているコードは
-後述する@code{parameter?}を使うように変更する必要があります。
-@c COMMON
-@end defun
-
-@defun parameter? obj
-@c EN
-Returns @code{#t} iff @var{obj} is an object created by
-@code{make-parameter}.
-@c JP
-@var{obj}が@code{make-parameter}で作られたものであった場合は@code{#t}を、
-そうでなければ@code{#f}を返します。
-@c COMMON
-@end defun
-
-
-@defmac parameterize ((param value) @dots{}) body @dots{}
-[SRFI-39]
-@c MOD gauche.parameter
-@c EN
-Evaluates @var{body} @dots{}, with
-change parameter @var{param}'s value to the given @var{value} within
-the dynamic scope of @var{body} @dots{}.
-Returns the value(s) of the result of the last @var{body}.
-@c JP
-@var{body} @dots{}を評価します。
-但し、@var{body} @dots{} の実行中のみ、パラメータ@var{param}の値を
-@var{value}に変更します。最後@var{body}の返した値を返します。
-@c COMMON
-@end defmac
-
-@c EN
-Some examples:
-@c JP
-例：
-@c COMMON
-@example
-(define a (make-parameter 1))
-(a) @result{} 1
-(a 2) @result{} 1
-(a) @result{} 2
-(parameterize ((a 3))
-  (a)) @result{} 3
-(a) @result{} 2
-@end example
-
-@deffn {Method} parameter-observer-add! (p <parameter>) proc :optional when where
+@defun parameter-observer-add! p proc :optional when where
 @c MOD gauche.parameter
 @c EN
 Adds @var{proc} to "observer" procedures of a parameter @var{p}.
@@ -12999,9 +12817,10 @@ the observer list is shared by all threads.
 @emph{注意}: パラメータの値自身がスレッドローカルであっても、
 オブザーバのリストは全てのスレッドで共有されます。
 @c COMMON
-@end deffn
+@end defun
 
-@deffn {Method} parameter-observer-delete! (p <parameter>) proc :optional when
+
+@defun parameter-observer-delete! p proc :optional when
 @c MOD gauche.parameter
 @c EN
 Deletes @var{proc} from observer procedure list of a parameter @var{p}.
@@ -13017,10 +12836,10 @@ from both lists.
 @var{proc}をどちらのリストから削除するかを指定することができます。
 @var{when}引数が省略されると、@var{proc}は両方のリストから削除されます。
 @c COMMON
-@end deffn
+@end defun
 
-@deffn {Method} parameter-pre-observers (p <parameter>)
-@deffnx {Method} parameter-post-observers (p <parameter>)
+@defun parameter-pre-observers p
+@defunx parameter-post-observers p
 @c MOD gauche.parameter
 @c EN
 Returns a hook object (@pxref{Hooks}) that keeps
@@ -13035,10 +12854,11 @@ these hook objects are shared by all threads.
 @emph{注意}: パラメータの値自身がスレッドローカルであっても、
 オブザーバのリストは全てのスレッドで共有されます。
 @c COMMON
-@end deffn
+@end defun
+
 
 @c ----------------------------------------------------------------------
-@node Parsing command-line options, Partial continuations, Parameters, Library modules - Gauche extensions
+@node Parsing command-line options, Partial continuations, Parameters (extra), Library modules - Gauche extensions
 @section @code{gauche.parseopt} - Parsing command-line options
 @c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
