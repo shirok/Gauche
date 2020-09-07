@@ -31,7 +31,23 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; The API is upper-compatible to ChezScheme and Chicken's.
+;; The basic parameter support is now built-in.  The following procedures
+;; and a macro is defined in src/libparam.scm:
+;;
+;;    <parameter>, make-parameter, parameter?, procedure-parameter
+;;    parameterize
+;;
+;; This module serves two purposes:
+;;   - Make existing code that uses gauche.parameter keep working
+;;   - Augument parameters with the less-frequently used feature, observers.
+;;
+;; New code doesn't need to use gauche.parameter unless it uses the
+;; observer feature.
+;;
+;; Note: (object-apply <parameter> ...) is only defined here.  Since
+;; make-parameter returns a procedure rather than <parameter>, it is no
+;; longer relevant.  We only supply it just in case when existing code
+;; doing something tricky--such code surely uses gauche.parameter.
 
 (define-module gauche.parameter
   (export <parameter>
@@ -48,14 +64,10 @@
 
 (autoload gauche.hook make-hook add-hook! delete-hook! run-hook)
 
-;; <parameter>, make-parameter, parameter?, procedure-parameter
-;; parameterize - built-in
-
-;; This module only deals with hooks and some backward compatibility stuff
-
+;; When an observer is first set, replace setter and restorer
+;; to take into account of observers.
 (define (%ensure-hooks param)
   (unless (slot-bound? param 'pre-observers)
-    (print "poing")
     (let ([get (^[] ((with-module gauche.internal %primitive-parameter-ref)
                      param))]
           [set (^v ((with-module gauche.internal %primitive-parameter-set!)
@@ -80,7 +92,7 @@
       (slot-set! param 'post-observers (make-hook 2)))))
 
 (define-method object-apply ((self <parameter>))
-  ((slot-ref self 'getter)))
+  ((with-module gauche.internal %primitive-parameter-ref) self))
 
 (define-method object-apply ((self <parameter>) newval)
   ((slot-ref self 'setter) newval))
@@ -94,7 +106,7 @@
   (ref self 'pre-observers))
 (define-method parameter-pre-observers ((self <procedure>))
   (if-let1 p (procedure-parameter self)
-    (parameter-pre-observers p)
+    (ref p 'pre-observers)
     (error "parameter procedure required, but got:" self)))
 
 (define-method parameter-post-observers ((self <parameter>))
@@ -102,33 +114,32 @@
   (ref self 'post-observers))
 (define-method parameter-post-observers ((self <procedure>))
   (if-let1 p (procedure-parameter self)
-    (parameter-post-observers p)
+    (ref p 'post-observers)
     (error "parameter procedure required, but got:" self)))
 
-(define-method parameter-observer-add! ((self <parameter>) proc . args)
-  (let-optionals* args ((when 'after)
-                        (where 'append))
-    (unless (memq when '(before after))
-      (error "`when' argument of parameter-observer-add! must be either 'before or 'after" when))
-    (unless (memq where '(prepend append))
-      (error "`where' argument of parameter-observer-add! must be either 'prepend or 'append" when))
-    (add-hook! (if (eq? when 'before)
-                   (parameter-pre-observers self)
-                   (parameter-post-observers self))
-               proc
-               (eq? where 'append))))
+(define-method parameter-observer-add! ((self <parameter>) proc
+                                        :optional (when 'after)
+                                        (where 'append))
+  (unless (memq when '(before after))
+    (error "`when' argument of parameter-observer-add! must be either 'before or 'after" when))
+  (unless (memq where '(prepend append))
+    (error "`where' argument of parameter-observer-add! must be either 'prepend or 'append" when))
+  (add-hook! (if (eq? when 'before)
+               (parameter-pre-observers self)
+               (parameter-post-observers self))
+             proc
+             (eq? where 'append)))
 (define-method parameter-observer-add! ((self <procedure>) proc . args)
   (if (parameter? self)
     (apply parameter-observer-add! (procedure-parameter self) proc args)
     (error "parameter procedure required, but got:" self)))
 
-(define-method parameter-observer-delete! ((self <parameter>) proc . args)
-  (let ((where (get-optional args #f)))
-    (unless (eq? where 'after)
-      (delete-hook! (parameter-pre-observers self) proc))
-    (unless (eq? where 'before)
-      (delete-hook! (parameter-post-observers self) proc))
-    ))
+(define-method parameter-observer-delete! ((self <parameter>) proc
+                                           :optional (where #f))
+  (unless (eq? where 'after)
+    (delete-hook! (parameter-pre-observers self) proc))
+  (unless (eq? where 'before)
+    (delete-hook! (parameter-post-observers self) proc)))
 (define-method parameter-observer-delete! ((self <procedure>) proc . args)
   (if (parameter? self)
     (apply parameter-observer-delete! (procedure-parameter self) proc args)

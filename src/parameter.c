@@ -219,16 +219,19 @@ static ScmObj general_param_proc(ScmObj *argv, int argc, void *data)
     ScmPrimitiveParameter *p = SCM_PRIMITIVE_PARAMETER(data);
     SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(p));
     SCM_ASSERT(argc == 1);
-    ScmObj object_apply = SCM_OBJ(&Scm_GenericObjectApply);
 
     if (SCM_PAIRP(argv[0])) {
         if (SCM_PAIRP(SCM_CDR(argv[0]))) {
             Scm_Error("Wrong number of arguments for a parameter:"
                       " 0 or 1 argument(s) expected, but got %S", argv[0]);
         }
-        return Scm_VMApply2(object_apply, SCM_OBJ(p), SCM_CAR(argv[0]));
+
+        static ScmObj parameter_set_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(parameter_set_proc, "%parameter-set!",
+                      Scm_GaucheInternalModule());
+        return Scm_VMApply2(parameter_set_proc, SCM_OBJ(p), SCM_CAR(argv[0]));
     } else {
-        return Scm_VMApply1(object_apply, SCM_OBJ(p));
+        return Scm_PrimitiveParameterRef(Scm_VM(), p);
     }
 }
 

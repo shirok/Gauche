@@ -66,7 +66,6 @@
    ;; when observers are set.
    (filter :init-keyword :filter :init-value #f)
    (setter)
-   (getter)
    (restorer)                          ;used to restore previous value
    (pre-observers)
    (post-observers)
@@ -93,13 +92,15 @@
 
 (select-module gauche.internal)
 
+(define (%parameter-set! param val)     ;called from general_param_proc
+  ((slot-ref param 'setter) val))
+
 (define-method initialize ((self <parameter>) initargs)
   (next-method)
-  (let ([filter (get-keyword :filter initargs #f)]
+  (let ([filter (slot-ref self 'filter)]
         [get (^[] (%primitive-parameter-ref self))]
         [set (^v (%primitive-parameter-set! self v))])
     ;; Those callback may be overwritten if hooks are set.
-    (slot-set! self 'getter get)
     (slot-set! self 'setter
                (if filter
                  (^(val) (let1 new (filter val)
@@ -117,10 +118,10 @@
 ;; procedures.
 (define (%restore-parameter param prev-val)
   (cond
-   [(parameter? param)
-    ((slot-ref (procedure-parameter param)'restorer) prev-val)]
-   [(is-a? param <parameter>)
-    ((slot-ref param'restorer) prev-val)]
+   [(procedure-parameter param) => (^p ((slot-ref p'restorer) prev-val))]
+   ;; <parameter> and <primitive-parameter> should never be used directly,
+   ;; but for the backward compatibility:
+   [(is-a? param <parameter>) ((slot-ref param'restorer) prev-val)]
    [(is-a? param <primitive-parameter>)
     ((with-module gauche.internal %primitive-parameter-set!) param prev-val)]
    [else (param prev-val)]))
