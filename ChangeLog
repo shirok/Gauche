@@ -1,3 +1,7 @@
+2020-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* doc/modgauche.texi: Document <stacked-map>.
+
 2020-09-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libparam.scm, libsrc/gauche/parameter.scm: Move make-parameter

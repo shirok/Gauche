@@ -25,7 +25,7 @@
 * Slot with validator::         gauche.mop.validator
 * Networking::                  gauche.net
 * Package metainformation::     gauche.package
-* Parameters (extra)::
+* Parameters (extra)::          gauche.parameter
 * Parsing command-line options::  gauche.parseopt
 * Partial continuations::       gauche.partcont
 * High-level process interface::  gauche.process
@@ -6411,6 +6411,9 @@ You don't need to provide every dictionary interface.
 @subsection Generic dictionaries
 @c NODE 汎用ディクショナリ
 
+@subsubheading Bimap
+
+
 @deftp {Class} <bimap>
 @clindex bimap
 @c MOD gauche.dictionary
@@ -6517,6 +6520,92 @@ Deletes an relation with the given left key or right key from @var{bimap}.
 Both left and right maps are modified so that the consistency is maintained.
 If there's no relations with given key, these are noop.
 @end defun
+
+@subsubheading Stacked map
+
+@deftp {Class} <stacked-map>
+Stacked map allows you to stack (layer) multiple maps (dictionaries)
+and treat as if they are a single map.  
+The upper map "shadows" the lower maps.  Think of nested scopes, for
+example.
+
+As a dictionary, it behaves as follows:
+
+@itemize @bullet
+@item
+The @code{dict-get} operation searches the given key from the top
+dictionary to the bottom dictionary, returns the first found entry.
+@item
+The @code{dict-put!} operation always put the entry to the topmost
+dictionary.  If there's an entry with the same key exists in a
+lower dictionary, it will be shadowed.
+If you want to alter the existing entry of non-top dictionary,
+use @code{stacked-map-entry-update!}.
+@item
+The @code{dict-delete!} operations deletes all the entries with the
+given key from all the dictionaries.  This is for consistency as
+a dictionary---you don't want an entry pop up after deleting it.
+If you want to delete only from the first entry in the stack,
+use @code{stacked-map-entry-delete!}.
+@item
+The @code{dict-fold} operation traverse all the dictionaries
+from top to bottom.  When there are duplicate keys, the second and after
+will be skipped.
+@end itemize
+@end deftp
+
+
+@defun make-stacked-map dic dic2 @dots{}
+@defunx make-stacked-map key-comparator dic dic2 @dots{}
+Creates a new stacked map with the given dictionaries
+@var{dic} @var{dic2} @dots{}, where @var{dic} is the topmost dictionary.
+You can give a comparator
+@var{key-comparator} to be used to compare keys during
+traversal with @code{dict-fold}.  If @var{key-comparator} is
+omitted, the comparator from @var{dic} is used.
+The key comparator is returned from @code{dict-comparator}
+on the stacked map.
+@end defun
+
+@deffn {Method} staked-map-stack (smap <stacked-map>) (dic <dictionary>)
+Creates a new stacked map, adding @var{dic} on top of the existing
+stacked map @var{smap}.  The key comparator is inherited from
+@var{smap}.
+@end deffn
+
+@deffn {Method} staked-map-push! (smap <stacked-map>) (dic <dictionary>)
+Adds @var{dic} on top of the dictionaries @var{smap} holds.
+@end deffn
+
+@deffn {Method} staked-map-pop! (smap <stacked-map>)
+Remove the topmost dictionary @var{smap} holds.  An error is signaled
+if you attempt to pop from an @var{smap} that has no dictionaries.
+@end deffn
+
+@deffn {Method} staked-map-depth (smap <stacked-map>)
+Returns a number of dictionaries @var{smap} has.
+@end deffn
+
+@deffn {Method} staked-map-entry-update! (smap <stacked-map>) key proc :optional fallback
+Run @code{(dict-update! d @var{key} @var{proc} @var{fallback})} on the
+first dictionary @code{d} that has the given key.
+
+This differs from running @code{dict-update!} on @var{smap}; if the topmost
+dictionary doesn't have an entry with @var{key} but some lower dictionary has,
+@code{dict-update!} takes the existing value and applies @var{proc} to it,
+then insert the result to the topmost dictionary, while the original entry
+remains intact.
+@end deffn
+
+@deffn {Method} staked-map-entry-delete! (smap <stacked-map>) key
+Deletes the first entry with @var{key}.  If there's another entry
+with @var{key} in a lower dictionary, it will become visible.
+
+This differs from running @code{dict-delete!} on @var{smap}; it
+deletes all entries with @var{key}, so that @code{dict-exists?}
+after @code{dict-delete!} is guaranteed to return @code{#f}.
+@end deffn
+
 
 @c ----------------------------------------------------------------------
 @node Low-level file operations, Generators, Dictionary framework, Library modules - Gauche extensions
