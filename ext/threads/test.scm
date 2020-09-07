@@ -441,8 +441,6 @@
 ;;---------------------------------------------------------------------
 (test-section "thread-local parameters")
 
-(use gauche.parameter)
-
 (define *thr1-val* #f)
 (define *thr2-val* #f)
 

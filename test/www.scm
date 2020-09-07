@@ -3,7 +3,6 @@
 ;;
 
 (use gauche.test)
-(use gauche.parameter)
 (use gauche.charconv)
 (use text.tree)
 (use rfc.822)

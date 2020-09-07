@@ -482,7 +482,6 @@
 
 (use rfc.822)
 (use rfc.mime)
-(use gauche.parameter)
 
 (test* "http-user-agent" #"gauche.http/~(gauche-version)"
        (and (parameter? http-user-agent)

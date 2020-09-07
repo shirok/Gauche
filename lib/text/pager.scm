@@ -35,7 +35,6 @@
 
 (define-module text.pager
   (use gauche.process)
-  (use gauche.parameter)
   (use gauche.termios)
   (use text.console)
   (use file.util)

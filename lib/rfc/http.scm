@@ -50,7 +50,6 @@
   (use rfc.uri)
   (use rfc.base64)
   (use gauche.net)
-  (use gauche.parameter)
   (use gauche.charconv)
   (use gauche.sequence)
   (use gauche.uvector)

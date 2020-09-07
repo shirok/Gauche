@@ -36,7 +36,6 @@
 (define-module rfc.uuid
   (use gauche.record)
   (use gauche.uvector)
-  (use gauche.parameter)
   (use gauche.threads)
   (use binary.io)
   (use srfi-27)

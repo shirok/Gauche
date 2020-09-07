@@ -37,7 +37,6 @@
 
 (define-module srfi-78
   (use gauche.test)
-  (use gauche.parameter)
   (use srfi-42)
   (use util.match)
   (export check check-ec check-report check-set-mode! check-reset!

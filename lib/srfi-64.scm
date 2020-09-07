@@ -43,7 +43,6 @@
 
 (define-module srfi-64
   (use gauche.record)
-  (use gauche.parameter)
   (use gauche.test :prefix test:)
   (export test-begin
           test-end test-assert test-eqv test-eq test-equal

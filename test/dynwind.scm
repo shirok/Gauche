@@ -3,7 +3,6 @@
 ;;
 
 (use gauche.test)
-(use gauche.parameter)
 
 (test-start "dynamic-wind and call/cc")
 

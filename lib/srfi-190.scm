@@ -36,7 +36,6 @@
 
 (define-module srfi-190
   (use gauche.generator)
-  (use gauche.parameter)
   (export coroutine-generator yield define-coroutine-generator))
 (select-module srfi-190)
 

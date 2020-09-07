@@ -24,7 +24,6 @@
   (use file.util)
   (use srfi-13)
   (use gauche.libutil)
-  (use gauche.parameter)
   (export reload reload-modified-modules
           module-reload-rules reload-verbose)
   )

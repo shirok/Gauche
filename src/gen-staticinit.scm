@@ -21,7 +21,6 @@
 ;; you don't want the standalone binary to depend on libmbedtls DSO.
 
 (use gauche.generator)
-(use gauche.parameter)
 (use gauche.process)
 (use gauche.config)
 (use gauche.cgen.precomp)

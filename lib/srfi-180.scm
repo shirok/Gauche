@@ -34,7 +34,6 @@
 ;; A wrapper of rfc.json
 
 (define-module srfi-180
-  (use gauche.parameter)
   (use gauche.vport)
   (use parser.peg)
   (use scheme.list)

@@ -34,7 +34,6 @@
 ;; This file is autoloaded
 
 (select-module gauche.object)
-(use gauche.parameter) ;; used by instance update protocol
 (use srfi-1)           ;; used by instance update protocol
 
 ;;----------------------------------------------------------------

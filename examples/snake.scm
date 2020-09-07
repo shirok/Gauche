@@ -3,7 +3,6 @@
 ;;
 
 (use gauche.termios)
-(use gauche.parameter)
 (use gauche.array)
 (use util.match)
 (use srfi-27)

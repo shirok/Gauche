@@ -34,7 +34,6 @@
 ;;; http://www.ietf.org/rfc/rfc7159.txt
 
 (define-module rfc.json
-  (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.generator)
   (use parser.peg)

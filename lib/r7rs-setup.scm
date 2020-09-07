@@ -195,7 +195,6 @@
 (define-module scheme.base
   (use gauche.uvector)
   (use gauche.record)
-  (use gauche.parameter)
   (use gauche.unicode)
   (use srfi-13)
 

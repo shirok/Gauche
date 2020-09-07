@@ -33,7 +33,6 @@
 
 (define-module gauche.regexp.sre
   (use gauche.generator)
-  (use gauche.parameter)
   (use gauche.unicode)
   (use scheme.list)
   (use scheme.charset)

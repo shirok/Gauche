@@ -4,7 +4,6 @@
 ;;;
 
 (define-module srfi-155
-  (use gauche.parameter)
   (use scheme.lazy :rename ((delay scheme-delay)
                             (delay-force scheme-delay-force)))
   (use srfi-154)

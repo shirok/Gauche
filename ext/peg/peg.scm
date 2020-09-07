@@ -38,7 +38,6 @@
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)
-  (use gauche.parameter)
   (use text.tree)
   (use util.match)
   (export <parse-error>

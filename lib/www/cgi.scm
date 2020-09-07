@@ -43,7 +43,6 @@
   (use rfc.uri)
   (use rfc.mime)
   (use rfc.822)
-  (use gauche.parameter)
   (use gauche.charconv)
   (use gauche.uvector)
   (use text.tree)

@@ -3,7 +3,6 @@
 ;;
 
 (use gauche.test)
-(use gauche.parameter)
 (use compat.chibi-test)
 
 (test-start "SRFIs")
@@ -2607,7 +2606,6 @@
 (define-module srfi-154-tests
   (use srfi-64)
   (use srfi-154)
-  (use gauche.parameter)
   (use compat.r7rs-srfi-tests)
   (include "include/srfi-154-tests.scm")
   (run-tests))
@@ -2621,7 +2619,6 @@
   (use srfi-64)
   (use srfi-154)
   (use srfi-155)
-  (use gauche.parameter)
   (use compat.r7rs-srfi-tests)
   (include "include/srfi-155-tests.scm")
   (run-tests))
@@ -2688,7 +2685,6 @@
   (use file.util)
   (use gauche.test)
   (use gauche.generator)
-  (use gauche.parameter)
 
   (when (file-exists? "test.o")
     (if (file-is-directory? "test.o")

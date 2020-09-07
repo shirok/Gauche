@@ -33,7 +33,6 @@
 
 (define-module gauche.time
   (use srfi-11)
-  (use gauche.parameter)
   (use gauche.record)
   (use util.match)
   (export time time-this time-these report-time-results time-these/report

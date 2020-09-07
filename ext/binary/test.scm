@@ -5,7 +5,6 @@
 (use gauche.test)
 (use gauche.uvector)
 (use gauche.collection)
-(use gauche.parameter)
 (use srfi-1)
 
 (test-start "binary")

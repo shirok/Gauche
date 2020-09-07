@@ -40,7 +40,6 @@
   (use math.mt-random)
   (use gauche.uvector)
   (use gauche.generator)
-  (use gauche.parameter)
   (use gauche.sequence)
   
   (export make-random-data-state random-data-seed with-random-data-seed

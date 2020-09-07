@@ -42,7 +42,6 @@
   (use gauche.process)
   (use gauche.config)
   (use gauche.sequence)
-  (use gauche.parameter)
   (export info info-page info-search)
   )
 (select-module gauche.interactive.info)

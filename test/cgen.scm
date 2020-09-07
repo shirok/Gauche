@@ -3,7 +3,6 @@
 ;;
 
 (use gauche.test)
-(use gauche.parameter)
 (use file.util)
 (use gauche.cgen)
 

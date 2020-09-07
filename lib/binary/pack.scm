@@ -20,7 +20,6 @@
   (use srfi-14)   ;; char-set library
   (use text.parse)
   (use gauche.uvector)
-  (use gauche.parameter)
   (use binary.io)
   (export pack unpack unpack-skip make-packer))
 (select-module binary.pack)

@@ -8,7 +8,6 @@
   (use gauche.net)
   (use gauche.threads)
   (use gauche.charconv)
-  (use gauche.parameter)
   (export-all))
 (select-module net.client)
 

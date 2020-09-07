@@ -3,7 +3,6 @@
 ;;
 
 (use gauche.test)
-(use gauche.parameter)
 (use srfi-1)
 
 (test-start "uniform vector and array")

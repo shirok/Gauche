@@ -8,7 +8,6 @@
 ;; at the initialization.  Run this script with and without it 
 
 (use gauche.sequence)
-(use gauche.parameter)
 (use gauche.time)
 (use util.match)
 (use data.sparse)

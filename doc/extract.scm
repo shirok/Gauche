@@ -15,7 +15,6 @@
 
 (use gauche.parseopt)
 (use gauche.charconv)
-(use gauche.parameter)
 (use srfi-13)
 (use file.util)
 (use util.levenshtein)

@@ -5,7 +5,6 @@
 (define-module srfi-170
   (use gauche.fcntl)
   (use gauche.generator)
-  (use gauche.parameter)
   (use data.random)
   (use srfi-13)
   (use srfi-19)

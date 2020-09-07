@@ -37,7 +37,6 @@
   (use srfi-1)
   (use srfi-13)
   (use gauche.fcntl)
-  (use gauche.parameter)
   (export <log-drain>
           log-open
           log-format

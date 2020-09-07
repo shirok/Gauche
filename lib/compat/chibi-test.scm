@@ -3,7 +3,6 @@
 ;;
 
 (define-module compat.chibi-test
-  (use gauche.parameter)
   (use gauche.test)
   (use util.match)
   (export chibi-test current-test-comparator))

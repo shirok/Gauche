@@ -70,7 +70,6 @@
 ;; TODO: Caching test results
 
 (define-module gauche.configure
-  (use gauche.parameter)
   (use gauche.generator)
   (use gauche.dictionary)
   (use gauche.parseopt)
