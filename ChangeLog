@@ -1,3 +1,8 @@
+2020-09-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm: open-{input|output}-fd-port and port-file-number
+	  now have an option to dup the fd.
+
 2020-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modgauche.texi: Document <stacked-map>.

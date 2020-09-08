@@ -111,9 +111,15 @@
 (define-cproc port-name (port::<port>) Scm_PortName)
 (define-cproc port-current-line (port::<port>) ::<fixnum> Scm_PortLine)
 
-(define-cproc port-file-number (port::<port>)
+(define-cproc port-file-number (port::<port> :optional (dup?::<boolean> #f))
   (let* ([i::int (Scm_PortFileNo port)])
-    (return (?: (< i 0) SCM_FALSE (Scm_MakeInteger i)))))
+    (when (< i 0) (return SCM_FALSE))
+    (when dup?
+      (let* ([r::int 0])
+        (SCM_SYSCALL r (dup i))
+        (when (< r 0) (Scm_SysError "dup(2) failed"))
+        (set! i r)))
+    (return (Scm_MakeInteger i))))
 (define-cproc port-fd-dup! (dst::<port> src::<port>) ::<void> Scm_PortFdDup)
 
 (define-cproc port-attribute-set! (port::<port> key val)

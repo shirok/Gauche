@@ -20173,13 +20173,22 @@ sequential character I/O on it.  Otherwise, this returns -1.
 @c COMMON
 @end defun
 
-@defun port-file-number port
+@defun port-file-number port :optional dup?
 @c EN
 Returns an integer file descriptor, if the @var{port} is associated
 to the system file I/O.  Returns @code{#f} otherwise.
+
+If a true value is passed to @var{dup?}, the procedure calls @code{dup(2)}
+and returns a duplicated file descriptor.  In such case, the returned
+file descriptor can be closed independently with the port, and it is
+caller's responsibility to close it (by @code{sys-close}) once it's done.
 @c JP
 @var{port}がファイルに関連付けられている場合、そのファイルディスクリプタ番号を
 返します。それ以外の場合は@code{#f}を返します。
+
+@var{dup?}引数に真の値が与えられると、この手続きは@code{dup(2)}を呼んで
+複製したファイルディスクリプタを返します。この場合、返されたファイルディスクリプタは
+呼び出し側が責任を持って閉じなければなりません (@code{sys-close}が使えます)。
 @c COMMON
 @end defun
 
