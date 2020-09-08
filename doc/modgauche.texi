@@ -16007,7 +16007,7 @@ record constructors, accessors or modifiers.
 
 
 @defmac define-record-type type-spec ctor-spec pred-spec field-spec @dots{}
-[SRFI-9][SRFI-99+]
+[R7RS base][SRFI-9][SRFI-99+]
 @c MOD gauche.record
 Defines a record type, and optionally defines
 a constructor, a predicate, and field accessors and modifiers.
