@@ -20795,15 +20795,28 @@ Creates and returns an input or output port on top of the given
 file descriptor.  @var{Buffering} specifies the buffering mode
 as described in @code{open-input-file} entry above; the default
 is @code{:full}.  @var{Name} is used for the created port's name
-and returned by @code{port-name}.  A boolean flag @code{owner?}
-specifies whether @var{fd} should be closed when the port is closed.
+and returned by @code{port-name}.
+
+A boolean flag @code{owner?} specifies whether @var{fd} should be
+closed when the port is closed.  If it is @code{#f}, closing port
+doesn't close @var{fd}.  If it s @code{#t}, closing port automatically
+closes @code{fd}.  It can also be a symbol @code{dup}, in which case
+@code{fd} is duplicated (by @code{dup(2)} system call) and the
+resulting port owns the new fd which will be closed automatically--but
+@var{fd} itself remains open, and can be closed independently.
 @c JP
 与えられたファイルディスクリプタにアクセスする入力または出力ポートを
 作成して返します。@var{buffering} は@code{open-input-file} の項で
 説明されたポートのバッファリングモードを指定します。デフォルトは@code{:full}です。
 @var{name}は@code{port-name}によって返されるポートの名前を指定します。
+
 @var{owner?} は、このポートを閉じた時に@var{fd}もクローズすべきかどうかを
-指定するブーリアン値です。
+指定します。@code{#f}ならポートを閉じても@var{fd}はそのままです。
+@code{#t}ならポートを閉じた時に@var{fd}も自動的に閉じられます。
+また、シンボル@code{dup}を渡すこともできて、その場合は内部で@var{fd}が
+@code{dup(2)}システムコールによって複製され、新しいfdをポートが所有します。
+新たなfdはポートが閉じると自動的に閉じられますが、@var{fd}自体は閉じられません。
+また、@var{fd}をポートとは独立して閉じることができます。
 @c COMMON
 @end defun
 

@@ -265,21 +265,41 @@
 
 (define-cproc open-input-fd-port (fd::<fixnum>
                                   :key (buffering #f)
-                                  (owner?::<boolean> #f)
+                                  (owner? #f)
                                   (name #f))
   (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_INPUT
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %ld" fd))
-    (return (Scm_MakePortWithFd name SCM_PORT_INPUT fd bufmode ownerP))))
+    (cond
+     [(SCM_EQ owner? 'dup) 
+      (let* ([r::int 0])
+        (SCM_SYSCALL r (dup fd))
+        (when (< r 0) (Scm_SysError "dup(2) failed"))
+        (set! fd r))]
+     [(not (SCM_BOOLP owner?))
+      (Scm_Error "owner? argument must be either #f, #t or a symbol dup, \n\
+                  but go t%S" owner?)])
+    (return (Scm_MakePortWithFd name SCM_PORT_INPUT fd bufmode
+                                (not (not (SCM_FALSEP owner?)))))))
 
 (define-cproc open-output-fd-port (fd::<fixnum>
                                    :key (buffering #f)
-                                   (owner?::<boolean> #f)
+                                   (owner? #f)
                                    (name #f))
   (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_OUTPUT
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
-    (return (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode owner?))))
+    (cond
+     [(SCM_EQ owner? 'dup) 
+      (let* ([r::int 0])
+        (SCM_SYSCALL r (dup fd))
+        (when (< r 0) (Scm_SysError "dup(2) failed"))
+        (set! fd r))]
+     [(not (SCM_BOOLP owner?))
+      (Scm_Error "owner? argument must be either #f, #t or a symbol dup, \n\
+                  but go t%S" owner?)])
+    (return (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode 
+                                (not (not (SCM_FALSEP owner?)))))))
 
 ;; Buffered port
 (select-module gauche)
