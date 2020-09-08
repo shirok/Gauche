@@ -18,7 +18,7 @@
           fd->binary-input-port
           fd->textual-output-port
           fd->binary-output-port
-          port-fd
+          port-internal-fd
           close-fd
 
           create-directory
@@ -29,7 +29,7 @@
           rename-file
           delete-directory
           set-file-mode
-          set-file-owner
+          set-file-owner owner/unchanged group/unchanged
           set-file-timespecs
           truncate-file
 
@@ -137,15 +137,17 @@
     [else (error "Invalid buffering-mode: Must be one of (none block line), but got:" sym)]))
 
 (define (fd->textual-input-port fd :optional (bufmode 'block))
-  (open-input-fd-port fd :buffering (%bufmode bufmode #t)))
+  (open-input-fd-port fd :buffering (%bufmode bufmode #t) :owner? 'dup))
 (define (fd->binary-input-port fd :optional (bufmode 'block))
-  (open-input-fd-port fd :buffering (%bufmode bufmode #t)))
+  (open-input-fd-port fd :buffering (%bufmode bufmode #t) :owner? 'dup))
 (define (fd->textual-output-port fd :optional (bufmode 'block))
-  (open-output-fd-port fd :buffering (%bufmode bufmode #f)))
+  (open-output-fd-port fd :buffering (%bufmode bufmode #f) :owner? 'dup))
 (define (fd->binary-output-port fd :optional (bufmode 'block))
-  (open-output-fd-port fd :buffering (%bufmode bufmode #f)))
+  (open-output-fd-port fd :buffering (%bufmode bufmode #f) :owner? 'dup))
 
-(define (port-fd port) (port-file-number port))
+(define (port-internal-fd port) (port-file-number port))
+
+(define (port->fd port) (port-file-number port #t))
 
 (define (close-fd fd) (sys-close fd))
 
@@ -173,19 +175,20 @@
 
 (define (delete-directory name) (sys-rmdir name))
 
-(define (set-file-mode name mode) (sys-chmod name mode))
+(define-constant owner/unchanged -1)
+(define-constant group/unchanged -1)
 (define (set-file-owner name uid gid) (sys-chown name uid gid))
 
-(define-constant timespec/now 'timespec/now)
-(define-constant timespec/omit 'timespec/omit)
+(define-constant time/now       'time/now)
+(define-constant time/unchanged 'time/unchanged)
 
-(define (set-file-timespecs fname :optional (atime 'timespec/now)
-                                            (mtime 'timespec/now))
+(define (set-file-timespecs fname :optional (atime 'time/now)
+                                            (mtime 'time/now))
   (define-syntax argcheck
     (syntax-rules ()
       [(_ x)
-       (cond [(eq? x 'timespec/now) #f]
-             [(eq? x 'timespec/omit) #t]
+       (cond [(eq? x 'time/now) #f]
+             [(eq? x 'time/unchanged) #t]
              [else (assume-type x <time>)])]))
   (sys-utime fname (argcheck atime) (argcheck mtime)))
 
@@ -263,6 +266,8 @@
 (define (file-info-device? stat)
   (assume-type stat <sys-stat>)
   (memq (~ stat'type) '(block character)))
+
+(define (set-file-mode name bits) (sys-chmod name bits))
 
 (define (directory-files dir :optional (dot? #f))
   (directory-list dir 
