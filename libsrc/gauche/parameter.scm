@@ -80,69 +80,54 @@
 
       (slot-set! param 'setter
                  (if filter
-                   (^(val) (let1 new (filter val)
-                             (rlet1 old (get)
-                               (observed-set! old new))))
-                   (^(val) (rlet1 old (get)
-                             (observed-set! old val)))))
+                   (^v (rlet1 old (get)
+                         (observed-set! old (filter v))))
+                   (^v (rlet1 old (get)
+                         (observed-set! old v)))))
       (slot-set! param 'restorer          ;bypass filter proc
-                 (^(val) (rlet1 old (get)
-                           (observed-set! old val))))
+                 (^v (rlet1 old (get)
+                       (observed-set! old v))))
       (slot-set! param 'pre-observers (make-hook 2))
       (slot-set! param 'post-observers (make-hook 2)))))
 
+;; For the backward compatibility.  
 (define-method object-apply ((self <parameter>))
   ((with-module gauche.internal %primitive-parameter-ref) self))
-
 (define-method object-apply ((self <parameter>) newval)
   ((slot-ref self 'setter) newval))
-
-;; Allow (set! (parameter) value).  By KOGURO, Naoki
 (define-method (setter object-apply) ((obj <parameter>) value)
   (obj value))
 
-(define-method parameter-pre-observers ((self <parameter>))
-  (%ensure-hooks self)
-  (ref self 'pre-observers))
-(define-method parameter-pre-observers ((self <procedure>))
-  (if-let1 p (procedure-parameter self)
-    (ref p 'pre-observers)
-    (error "parameter procedure required, but got:" self)))
+(define (parameter-pre-observers param)
+  (cond [(procedure-parameter param) => parameter-pre-observers]
+        [(is-a? param <parameter>)
+         (%ensure-hooks param)
+         (slot-ref param 'pre-observers)]
+        [else
+         (error "parameter procedure required, but got:" param)]))
 
-(define-method parameter-post-observers ((self <parameter>))
-  (%ensure-hooks self)
-  (ref self 'post-observers))
-(define-method parameter-post-observers ((self <procedure>))
-  (if-let1 p (procedure-parameter self)
-    (ref p 'post-observers)
-    (error "parameter procedure required, but got:" self)))
+(define (parameter-post-observers param)
+  (cond [(procedure-parameter param) => parameter-post-observers]
+        [(is-a? param <parameter>)
+         (%ensure-hooks param)
+         (slot-ref param 'post-observers)]
+        [else
+         (error "parameter procedure required, but got:" param)]))
 
-(define-method parameter-observer-add! ((self <parameter>) proc
-                                        :optional (when 'after)
-                                        (where 'append))
+(define (parameter-observer-add! param proc :optional (when 'after)
+                                                      (where 'append))
   (unless (memq when '(before after))
     (error "`when' argument of parameter-observer-add! must be either 'before or 'after" when))
   (unless (memq where '(prepend append))
     (error "`where' argument of parameter-observer-add! must be either 'prepend or 'append" when))
   (add-hook! (if (eq? when 'before)
-               (parameter-pre-observers self)
-               (parameter-post-observers self))
+               (parameter-pre-observers param)
+               (parameter-post-observers param))
              proc
              (eq? where 'append)))
-(define-method parameter-observer-add! ((self <procedure>) proc . args)
-  (if (parameter? self)
-    (apply parameter-observer-add! (procedure-parameter self) proc args)
-    (error "parameter procedure required, but got:" self)))
 
-(define-method parameter-observer-delete! ((self <parameter>) proc
-                                           :optional (where #f))
+(define (parameter-observer-delete! param proc :optional (where #f))
   (unless (eq? where 'after)
-    (delete-hook! (parameter-pre-observers self) proc))
+    (delete-hook! (parameter-pre-observers param) proc))
   (unless (eq? where 'before)
-    (delete-hook! (parameter-post-observers self) proc)))
-(define-method parameter-observer-delete! ((self <procedure>) proc . args)
-  (if (parameter? self)
-    (apply parameter-observer-delete! (procedure-parameter self) proc args)
-    (error "parameter procedure required, but got:" self)))
-
-
+    (delete-hook! (parameter-post-observers param) proc)))

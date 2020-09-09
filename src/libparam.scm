@@ -103,14 +103,13 @@
     ;; Those callback may be overwritten if hooks are set.
     (slot-set! self 'setter
                (if filter
-                 (^(val) (let1 new (filter val)
-                           (rlet1 old (get)
-                             (set new))))
-                 (^(val) (rlet1 old (get)
-                           (set val)))))
+                 (^v (rlet1 old (get)
+                       (set (filter v))))
+                 (^v (rlet1 old (get)
+                       (set v)))))
     (slot-set! self 'restorer          ;bypass filter proc
-               (^(val) (rlet1 old (get)
-                         (set val))))))
+               (^v (rlet1 old (get)
+                     (set v))))))
 
 ;; restore parameter value after parameterize body.  we need to bypass
 ;; the filter procedure (fix for the bug reported by Joo ChurlSoo.
