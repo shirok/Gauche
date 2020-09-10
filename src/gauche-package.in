@@ -401,7 +401,9 @@ Options:
       (let* ([package-name*  (rxmatch-case package-name
                                (#/^Gauche-(.*)/ (#f rest) rest)
                                (else package-name))]
-             [srcdir (or tmpl-dir (sys-dirname (gauche-library-directory)))]
+             [srcdir (or tmpl-dir
+                         (build-path (sys-dirname (gauche-library-directory))
+                                     "package-templates"))]
              [dstdir (or pkg-dir package-name)])
         (copy-templates srcdir dstdir package-name
                         :module-name (and module-name

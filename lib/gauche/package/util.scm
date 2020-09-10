@@ -155,7 +155,7 @@
                           '("package.scm" "Makefile.in" "extension.c"
                             "extension.h" "extensionlib.stub"
                             "module.scm" "test.scm"))]
-      (let* ([src-path (build-path srcdir #"template.~file")]
+      (let* ([src-path (build-path srcdir file)]
              [dst-name (regexp-replace*
                         file
                         #/extension/ extension-name

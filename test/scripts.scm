@@ -176,10 +176,14 @@
                        (newline out)))
                    :input infile
                    :output outfile))
-    (filter-copy (build-path extdir "template.configure") "test.o/configure")
-    (filter-copy (build-path extdir "template.configure-compat") "test.o/configure-compat")
-    (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
-    (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
+    (filter-copy (build-path extdir "package-templates" "configure")
+                 "test.o/configure")
+    (filter-copy (build-path extdir "package-templates" "configure-compat")
+                 "test.o/configure-compat")
+    (filter-copy (build-path extdir "package-templates" "package.scm")
+                 "test.o/package.scm")
+    (filter-copy (build-path extdir "package-templates" "Makefile.in")
+                 "test.o/Makefile.in")
 
     (with-output-to-file "test.o/src/Makefile.in"
       (^[]
@@ -274,8 +278,10 @@
                        (newline out)))
                    :input infile
                    :output outfile))
-    (filter-copy (build-path extdir "template.package.scm") "test.o/package.scm")
-    (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
+    (filter-copy (build-path extdir "package-templates" "package.scm")
+                 "test.o/package.scm")
+    (filter-copy (build-path extdir "package-templates" "Makefile.in")
+                 "test.o/Makefile.in")
 
     (with-output-to-file "test.o/configure"
       (^[]
@@ -484,7 +490,8 @@
       `(../gosh -ftest
                 ,(build-path *top-srcdir* "src" "gauche-package.in") 
                 generate 
-                --template-dir ,(build-path *top-srcdir* "ext")
+                --template-dir ,(build-path *top-srcdir* "ext"
+                                            "package-templates")
                 Test test.module)
       `(,gauche-package generate Test test.module)))
   (define compile-command
@@ -503,7 +510,7 @@
              (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
              (define top-srcdir ,*top-srcdir*)
              ;; This is used to copy templates from.
-             (define (gauche-library-directory) #"~|top-srcdir|/ext/x")
+             (define (gauche-library-directory) #"~|top-srcdir|/ext/templates/x")
              ;; Intercept gauche-config to override compiler flags
              (define gauche-config-orig
                (with-module gauche.config gauche-config))

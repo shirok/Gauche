@@ -1,3 +1,8 @@
+2020-09-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/template.*: Moved package template files under
+	  package-templates subdirectory.
+
 2020-09-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm: open-{input|output}-fd-port and port-file-number
