@@ -1,6 +1,8 @@
-;;
-;; srfi-193 is still draft; the API may change
-;;
+;;;
+;;; srfi-193 - Command line
+;;;
+;;;   Public Domain
+;;;
 
 (define-module srfi-193
   (use file.util)

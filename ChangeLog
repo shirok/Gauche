@@ -1,3 +1,7 @@
+2020-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: Make srfi-193 official, as it is finalized.
+
 2020-09-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in: Add --scheme-only option.
