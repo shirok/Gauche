@@ -379,6 +379,7 @@ Options:
 Options:
   --autoconf         : generate configure.ac to be processed with GNU autoconf,
                        instead of a Scheme configure script.
+  -S|scheme-only     : generate a package that is implemented in pure Scheme.
   --template-dir=DIR : directory where template files are stored.  By default,
                        they are stored along installed Gauche libraries.
   --package-dir=DIR  : the directory where the files are generated.  By default,
@@ -387,6 +388,7 @@ Options:
 ")
   (let-args args ([autoconf "autoconf"] 
                   [verbose  "v|verbose"]
+                  [scheme-only "S|scheme-only"]
                   [tmpl-dir "template-dir=s"]
                   [pkg-dir  "package-dir=s"]
                   . args)
@@ -408,6 +410,7 @@ Options:
         (copy-templates srcdir dstdir package-name
                         :module-name (and module-name
                                           (string->symbol module-name))
+                        :scheme-only scheme-only
                         :use-autoconf autoconf
                         :verbose verbose)))))
 

@@ -1,5 +1,7 @@
 2020-09-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in: Add --scheme-only option.
+
 	* ext/template.*: Moved package template files under
 	  package-templates subdirectory.
 

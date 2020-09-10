@@ -116,6 +116,7 @@
 (define (copy-templates srcdir dstdir package-name 
                         :key (module-name #f)
                              (use-autoconf #f)
+                             (scheme-only #f)
                              (verbose #f))
   (assume-type package-name <string>)
   (let* ([extension-name (string-tr package-name "A-Za-z_-" "a-za-z__")]
@@ -152,15 +153,20 @@
     (dolist [file (append (if use-autoconf
                             '("configure.ac")
                             '("configure" "configure-compat"))
-                          '("package.scm" "Makefile.in" "extension.c"
-                            "extension.h" "extensionlib.stub"
-                            "module.scm" "test.scm"))]
+                          (if scheme-only
+                            '("Makefile-pure-scheme.in"
+                              "module-pure-scheme.scm")
+                            '("Makefile.in" "extension.c"
+                              "extension.h" "extensionlib.stub"
+                              "module.scm" ))
+                          '("package.scm" "test.scm"))]
       (let* ([src-path (build-path srcdir file)]
              [dst-name (regexp-replace*
                         file
                         #/extension/ extension-name
-                        #/module/ (sys-basename module-path))]
-             [dst-path (if (equal? file "module.scm")
+                        #/module/ (sys-basename module-path)
+                        #/-pure-scheme/ "")]
+             [dst-path (if (#/^module/ file)
                          (build-path dstdir dst-subdir dst-name)
                          (build-path dstdir dst-name))])
         (filter-copy src-path dst-path
