@@ -43,6 +43,7 @@
   (use gauche.parameter)
   (use gauche.cgen.cise)
   (use gauche.cgen.stub)
+  (use gauche.cgen.precomp)
   (use file.util)
   (export gauche-package-compile-and-link
           gauche-package-compile
@@ -82,15 +83,24 @@
     (let1 ofile (or output (sys-basename (path-swap-extension file OBJEXT)))
       (unless (and (file-exists? ofile)
                    (file-mtime>? ofile file))
-        (if (equal? (path-extension file) "stub")
+        (cond
+         [(equal? (path-extension file) "scm")
+          (let1 cfile (path-swap-extension file "c")
+            (unwind-protect
+                (begin (cgen-precompile file)
+                       (do-compile (or cc CC) cfile ofile
+                                   (or cppflags "") (or cflags "")))
+              (unless keep-c (sys-unlink cfile))))]
+         [(equal? (path-extension file) "stub")
           (let1 cfile (path-swap-extension file "c")
             (unwind-protect
                 (begin (cgen-genstub file)
                        (do-compile (or cc CC) cfile ofile
                                    (or cppflags "") (or cflags "")))
-              (unless keep-c (sys-unlink cfile))))
+              (unless keep-c (sys-unlink cfile))))]
+         [else
           (do-compile (or cc CC) file ofile
-                      (or cppflags "") (or cflags "")))))))
+                      (or cppflags "") (or cflags ""))])))))
 
 (define (do-compile cc cfile ofile cppflags cflags)
   (run #"~cc -c ~cppflags ~(INCDIR) ~cflags ~CFLAGS -o '~ofile' '~cfile'"))
