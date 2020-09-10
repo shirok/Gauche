@@ -496,13 +496,17 @@
                 Test test.tester)
       `(,gauche-package generate
                         ,@(cond-list [scheme-only? "--scheme-only"])
-                        Test test.module)))
+                        Test test.tester)))
   (define compile-command
     (if in-place?
       `(../../gosh -q -I../../../src -I../../../lib
                    ../run compile
                    --verbose test test.c testlib.stub)
       `(,gauche-package compile --verbose test test.c testlib.stub)))    
+  (define test-command
+    (if in-place?
+      `(../../gosh -ftest -I. ./test.scm)
+      `(,(build-path (gauche-architecture-directory) "gosh") -I. ./test.scm)))
 
   (when in-place?
     (with-output-to-file "test.o/run"
@@ -549,6 +553,15 @@
              (process-wait p)
              ;; if compilation fails, returns the output for better diagnostics.
              (or (zero? (process-exit-status p)) o))))
+
+  (test* "running test" #t
+         (let* ([p ($ run-process
+                      test-command
+                      :redirects  '((>& 2 1) (> 1 out)) 
+                      :directory "test.o/Test")]
+                [o (port->string (process-output p 'out))])
+           (process-wait p)
+           (or (zero? (process-exit-status p)) o)))
   )
 
 (wrap-with-test-directory (cut package-generate-tests #f) '("test.o"))
