@@ -26,10 +26,10 @@ DESTDIR     =
 GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install.in -C
 TEMPLATE_INST_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@/$(GAUCHE_VERSION)/package-templates
 
-TEMPLATES = Makefile.in configure configure.ac \
+TEMPLATES = Makefile.in Makefile-pure-scheme.in configure configure.ac \
 	    configure-compat \
 	    extension.h extension.c \
-	    extensionlib.stub module.scm \
+	    extensionlib.stub module.scm module-pure-scheme.scm \
 	    package.scm test.scm
 
 all: $(SUBDIRS)
