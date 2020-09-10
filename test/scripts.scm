@@ -472,7 +472,7 @@
 (test-script
  (build-path (or (sys-getenv "top_srcdir") "..") "src" "gauche-package.in"))
 
-(define (package-generate-tests)
+(define (package-generate-tests scheme-only?)
   (define (file-check name)
     (test* #"checking existence of ~name" #t
            (file-exists? #"test.o/Test/~name")))
@@ -490,10 +490,13 @@
       `(../gosh -ftest
                 ,(build-path *top-srcdir* "src" "gauche-package.in") 
                 generate 
+                ,@(cond-list [scheme-only? "--scheme-only"])
                 --template-dir ,(build-path *top-srcdir* "ext"
                                             "package-templates")
-                Test test.module)
-      `(,gauche-package generate Test test.module)))
+                Test test.tester)
+      `(,gauche-package generate
+                        ,@(cond-list [scheme-only? "--scheme-only"])
+                        Test test.module)))
   (define compile-command
     (if in-place?
       `(../../gosh -q -I../../../src -I../../../lib
@@ -524,26 +527,32 @@
 
   (test-log "Running ~a" generate-command)
   
-  ($ run-process generate-command
-     :output :null :error :null :wait #t :directory "test.o/")
+  ($ run-process generate-command :wait #t :directory "test.o/")
 
-  (for-each file-check '("configure" "Makefile.in"
-                         "test.c" "test.h" "test.scm" "testlib.stub"
-                         "test/module.scm"))
+  (for-each file-check
+            (if scheme-only?
+              '("configure" "Makefile.in" "package.scm"
+                "test.scm" "test/tester.scm")
+              '("configure" "Makefile.in" "package.scm"
+                "test.c" "test.h" "test.scm" "testlib.stub"
+                "test/tester.scm")))
 
   (test-log "Running ~a" compile-command)
-  
-  (test* "gauche-package compile" #t
-         (let* ([p ($ run-process
-                      compile-command
-                      :redirects '((>& 2 1) (> 1 out)) :directory "test.o/Test")]
-                [o (port->string (process-output p 'out))])
-           (process-wait p)
-           ;; if compilation fails, returns the output for better diagnostics.
-           (or (zero? (process-exit-status p)) o)))
+
+  (unless scheme-only?
+    (test* "gauche-package compile" #t
+           (let* ([p ($ run-process
+                        compile-command
+                        :redirects '((>& 2 1) (> 1 out)) 
+                        :directory "test.o/Test")]
+                  [o (port->string (process-output p 'out))])
+             (process-wait p)
+             ;; if compilation fails, returns the output for better diagnostics.
+             (or (zero? (process-exit-status p)) o))))
   )
 
-(wrap-with-test-directory package-generate-tests '("test.o"))
+(wrap-with-test-directory (cut package-generate-tests #f) '("test.o"))
+(wrap-with-test-directory (cut package-generate-tests #t) '("test.o"))
 
 ;;=======================================================================
 (test-section "precomp")
