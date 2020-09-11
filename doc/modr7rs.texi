@@ -1708,12 +1708,21 @@ the exit code argument (@pxref{Program termination}).
 
 @deftp {Module} scheme.read
 @mdindex scheme.read
+@c EN
 Exports bindings of R7RS @code{(scheme read)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme read))}.
 
 The only binding exported from this module is @code{read},
 which is the same as Gauche's built-in.  @xref{Reading data}.
+@c JP
+R7RS @code{(scheme read)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、
+@code{(import (scheme read))}とすることでこれらの名前が使えるようになります。
+
+このモジュールからエクスポートされるのは@code{read}のみで、
+これはGaucheでは組み込みになっています。@ref{Reading data}参照。
+@c COMMON
 @end deftp
 
 @node R7RS repl, R7RS time, R7RS read, R7RS small language
@@ -1722,12 +1731,21 @@ which is the same as Gauche's built-in.  @xref{Reading data}.
 
 @deftp {Module} scheme.repl
 @mdindex scheme.repl
+@c EN
 Exports bindings of R7RS @code{(scheme repl)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme repl))}.
 
 The only binding exported from this module is @code{interaction-environment},
 which is the same as Gauche's built-in.  @xref{Eval and repl}.
+@c JP
+R7RS @code{(scheme repl)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、
+@code{(import (scheme repl))}とすることでこれらの名前が使えるようになります。
+
+このモジュールからエクスポートされるのは@code{interaction-environment}のみで、
+これはGaucheでは組み込みになっています。@ref{Eval and repl}参照。
+@c COMMON
 @end deftp
 
 
@@ -1737,21 +1755,36 @@ which is the same as Gauche's built-in.  @xref{Eval and repl}.
 
 @deftp {Module} scheme.time
 @mdindex scheme.time
+@c EN
 Exports bindings of R7RS @code{(scheme time)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme time))}.
+@c JP
+R7RS @code{(scheme time)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、
+@code{(import (scheme time))}とすることでこれらの名前が使えるようになります。
+@c COMMON
 @end deftp
 
 @defun current-second
 [R7RS time]
 @c MOD scheme.time
+@c EN
 Returns a real number represents the number of seconds since
 the midnight of Jan. 1, 1970 TAI (which is 23:59:52, Dec 31, 1969 UTC, that
 is, -8 seconds before Unix Epoch.)  Number of leap seconds were
 inserted since then, and as of 2014, UTC is 35 seconds behind TAI.  That means
 the number returned is 27 seconds larger than the unix time,
 which is returned from @code{sys-time} or @code{sys-gettimeofday}.
+@c JP
+国際原子時(TAI)の1970年1月1日0時から現在までの経過秒数を実数で返します。
+(これは、Unix Epochの8秒前、国際標準時(UTC)で1969年12月31日23:59:52に相当します)。
+この起点以来、閏秒がしばしば挿入されてきて、2014年現在、UTCはTAIより35秒遅れています。
+すなわち、この手続きが返す秒数は、@code{sys-time}や@code{sys-gettimeofday}が
+返すUnix timeより27秒大きい値です。
+@c COMMON
 
+@c EN
 The reason that R7RS adopts TAI is that it is monotonic and suitable
 to take difference of two timepoints.  The unix time returned by
 @code{sys-time} and @code{sys-gettimeofday} are defined in terms of
@@ -1759,28 +1792,57 @@ UTC date and time, so if the interval spans across leap seconds,
 it won't reflect the actual number of seconds in the interval.
 (The precise definition is given in section 4.15 of
 IEEE Std 1003.1, 2013 Edition, a.k.a Single Unix Specification 4.)
+@c JP
+R7RSがTAIを採用したのは、それが狭義単調増加であり、二つの時刻の差をとるのに
+適しているからです。@code{sys-time}や@code{sys-gettimeofday}は
+UTCの日付と時間に基づいているので、二つの時刻が閏秒を挟んでいた場合、
+差は経過秒数を表しません。
+(Unix Timeの正確な定義については、
+IEEE Std 1003.1, 2013年版の4.15節、いわゆるSingle Unix Specification 4を参照)。
+@c COMMON
 
+@c EN
 However, since we don't know yet when the next leap second happen,
 the current implementation just uses a fixed amount of offset
 from the unix time.
+@c JP
+ただ、次にいつ閏秒が来るかはわからないので、現在の実装では単純に
+Unix Timeから固定オフセットを引いています。
+@c COMMON
 
+@c EN
 Just be aware the difference, or you'll be surprised if you
 pass the return value of @code{current-second} to the UTC time
 formatter such as @code{sys-strftime}, or compare it with
 the file timestamps which uses the unix time.  You can convert
 between TAI and UTC using srfi-19 (@pxref{SRFI-19 Date}).
+@c JP
+この差異があることは頭の隅に留めておいてください。
+でないと、@code{current-second}の戻り値を
+@code{sys-strftime}などUTC時刻のフォーマッタに渡したり、
+Unix Timeで表されたタイムスタンプと比較した時にびっくりするかもしれません。
+TAIとUTCはsrfi-19で変換できます (@ref{SRFI-19 Date})。
+@c COMMON
 @end defun
 
 @defun current-jiffy
 [R7RS time]
 @c MOD scheme.time
+@c EN
 Returns an exact integer measuring a real (wallclock) time elapsed
 since some point in the past, which does not change while a
-process is running.  The time unit is @code{(/ jiffies-per-second)}-th
+process is running.  The time unit is a @code{jiffies-per-second}-th
 second.
 
 The absolute value of current jiffies doesn't matter, but
 the difference can be used to measure the time interval.
+@c JP
+過去のどこかの時点を基準とする、実経過時間を正確な整数で返します。
+基準時点はプロセスの起動ごとに変わるかもしれません。
+1単位は1秒の@code{jiffies-per-second}分の1です。
+
+「現在のjiffy値」の絶対値に意味はありません。差を取って経過時間を測るのに使います。
+@c COMMON
 @end defun
 
 @defun jiffies-per-second
