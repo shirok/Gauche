@@ -1848,8 +1848,10 @@ the difference can be used to measure the time interval.
 @defun jiffies-per-second
 [R7RS time]
 @c MOD scheme.time
+@c EN
 Returns a constant to tell how many time units used in @code{current-jiffy}
-consists of a second.  Currently this is 10^9 on 64bit architectures
+consists of a second.  In the current Gauche implementation,
+this is 10^9 on 64bit architectures
 (that is, nanosecond resolution) and 10^4 on 32bit architectures
 (100 microseconds resolution).
 
@@ -1857,13 +1859,29 @@ The resolution for 32bit architectures
 is unfortunately rather coarse, but if we make it finer
 the current jiffy value easily becomes bignums, taking time
 to allocate and operate, beating the purpose of benchmarking.
-With the current choice, we have 53,867 seconds before we spill
-into bignum.   On 64bit architectures we have enough bits
+With the current choice, we have 53,867 seconds since process start
+before we spill into bignum on 32bit architecture.
+On 64bit architectures we have enough bits
 not to worry about bignums, with nanosecond resolution.
 
 If you want to do more finer benchmarks on 32bit machines,
 you need to roll your own with @code{sys-clock-gettime-monotonic} or
 @code{sys-gettimeofday}.
+@c JP
+@code{current-jiffy}が返す時間単位が、1秒あたりいくつあるかを示す定数を返します。
+現在のGaucheの実装では、64ビットアークテクチャで10^9 (ナノ秒単位)、
+32ビットアーキテクチャで10^4 (100マイクロ秒単位)です。
+
+32ビットアーキテクチャでの分解能がかなり粗いですが、
+jiffy値がbignumにオーバーフローするのを防ぐ方を優先しました。
+bignumになるとアロケーションが頻繁に起きるのでベンチマークに干渉してしまいます。
+現在の数値では、32ビットアーキテクチャだとプロセス開始後53,867杪でbignumになります。
+64ビットアーキテクチャではナノ秒単位で測ってもbignumになることを
+現実的に心配する必要はありません。
+
+32ビットアーキテクチャでより精度の高いベンチマークを取りたい場合は、
+@code{sys-clock-gettime-monotonic}や@code{sys-gettimeofday}を使ってください。
+@c COMMON
 @end defun
 
 
@@ -1873,12 +1891,21 @@ you need to roll your own with @code{sys-clock-gettime-monotonic} or
 
 @deftp {Module} scheme.write
 @mdindex scheme.write
+@c EN
 Exports bindings of R7RS @code{(scheme write)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme write))}.
 
 This module provides the following bindings, all of which are
 Gauche built-in (@pxref{Object output}).
+@c JP
+R7RS @code{(scheme write)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、
+@code{(import (scheme write))}とすることでこれらの名前が使えるようになります。
+
+このモジュールからは以下の束縛がエクスポートされます。
+いずれもGauche組み込みです (@ref{Object output}参照)。
+@c COMMON
 
 @example
 display write write-shared write-simple
@@ -1891,11 +1918,19 @@ display write write-shared write-simple
 
 @deftp {Module} scheme.r5rs
 @mdindex scheme.r5rs
+@c EN
 This module is to provide R5RS environment in R7RS programs.
 The following bindings are exported.  Note that @code{lambda}
 is @code{scheme#lambda}, without the support of
 extended formals (@code{:optional} etc.)
 @xref{Making procedures}, for the details of extended formals.
+@c JP
+このモジュールは、R7RSプログラム内でR5RS環境を実現します。
+次に挙げる束縛がエクスポートされます。
+ここでの@code{lambda}は@code{scheme#lambda}で、
+Gaucheの拡張機能 (@code{:optional}など) は認識されないことに注意してください。
+拡張された引数リストについては@ref{Making procedures}参照。
+@c COMMON
 
 @example
 * + - / < <= = > >= abs acos and angle append apply asin assoc assq
@@ -2652,6 +2687,7 @@ Gaucheの組み込み手続きでサポートされています
 @defun vector-unfold f length seed @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Creates a vector of length @var{length}, filling elements
 left to right by calling @var{f} repeatedly.
 
@@ -2660,6 +2696,14 @@ one plus number of seed values, and must return the same number
 of values.  The first argument is the index.  The first return
 value is used for the element of the result vector, and the
 rest of return values are passed to the next call of @var{f}.
+@c JP
+長さ@var{length}のベクタを作って返します。要素は左から右に、
+@var{f}を繰り返し呼ぶことで計算されます。
+
+手続き@var{f}は、@var{seed}の数よりひとつ多い引数を取り、同数の値を返さなければなりません。
+引数の最初に渡されるのはインデックスです。戻り値の最初の値がそのインデックスの要素の初期値に
+使われ、残りの戻り値が次のシード値となります。
+@c COMMON
 
 @example
 (vector-unfold (^[i] (* i i)) 5)
@@ -2669,6 +2713,19 @@ rest of return values are passed to the next call of @var{f}.
  @result{} #((0 . 1) (1 . 2) (2 . 4) (3 . 8)
     (4 . 16) (5 . 32) (6 . 64) (7 . 128))
 @end example
+
+@c EN
+Note: This protocol is different from the list @code{unfold}
+and most of other @code{*-unfold} constructors (@pxref{R7RS lists}).  
+For fixed-length strcuctures like vectors,
+it makes more sense to know the final length beforehand, rather than
+checking the termination condition for each iteration.
+@c JP
+註: このプロトコルは、リストの@code{unfold}コンストラクタや、それに倣った
+多くの@code{*-unfold}コンストラクタと異なることに注意してください。
+ベクタのような固定長構造体では、終端条件を繰り返しの度に検査するより、
+最初から長さが分かっている方が意味があります。
+@c COMMON
 @end defun
 
 @defun vector-unfold-right f length seed @dots{}
