@@ -1356,8 +1356,9 @@ srfi-193, srfi-193
 
 Command line
 Two procedures, @code{command-line} and @code{script-file}, are
-built-in.  Other APIs are provided by the module @code{srfi-193}.
+built-in.  Other APIs are provided by the module @code{srfi-193}
+(@pxref{Command line}).
 
 コマンドライン
 @code{command-line}と@code{script-file}の二つの手続きは組み込みです。
-他のAPIはモジュール@code{srfi-193}で提供されます。
+他のAPIはモジュール@code{srfi-193}で提供されます (@ref{Command line}参照)。

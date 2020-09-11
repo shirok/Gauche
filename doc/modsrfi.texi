@@ -64,6 +64,7 @@ srfi N is supported by Gauche.)
 * JSON::                        srfi-180
 * Linear adjustable-length strings::  srfi-185
 * Maybe and Either optional container types::  srfi-189
+* Command line::                srfi-193
 @end menu
 
 
@@ -7964,7 +7965,7 @@ srfi-118 (@ref{Simple adjustable-size strings}参照)を使っているコード
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Maybe and Either optional container types,  , Linear adjustable-length strings, Library modules - SRFIs
+@node Maybe and Either optional container types, Command line, Linear adjustable-length strings, Library modules - SRFIs
 @section @code{srfi-189} - Maybe and Either: optional container types
 @c NODE MaybeとEither、オプショナルなコンテナ型, @code{srfi-189} - MaybeとEither、オプショナルなコンテナ型
 
@@ -8520,6 +8521,47 @@ procedure, whose default value is @code{list}.
 @defun try-merge maybe @dots{}
 @c MOD srfi-189
 [SRFI-189]
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Command line,  , Maybe and Either optional container types, Library modules - SRFIs
+@section @code{srfi-193} - Command line
+@c NODE コマンドライン,  @code{srfi-193} - コマンドライン
+
+@deftp {Module} srfi-193
+@mdindex srfi-193
+This srfi clarifying how the command line arguments can be accessed
+via R7RS @code{command-line}, plus a few supporting APIs.
+
+The following procedures are built-in.  @xref{Command-line arguments},
+for the details.
+
+@example
+command-line          script-file
+@end example
+@end deftp
+
+@defun command-name
+[SRFI-193]
+@c MOD srfi-193
+If the first element of @code{command-line} is an empty string,
+returns @code{#f}.  Otherwise, returns the first element without directory
+name and obvious extension (@code{.scm}, @code{.exe}) stripped.
+
+This is useful for diagnostic messages, for example.
+@end defun
+
+@defun command-args
+[SRFI-193]
+@c MOD srfi-193
+Returns the cdr of @code{command-line}.
+@end defun
+
+@defun script-directory
+[SRFI-193]
+@c MOD srfi-193
+Returns the directory part of @code{script-file}.  It always ends with
+the directory separator.
 @end defun
 
 @c Local variables:

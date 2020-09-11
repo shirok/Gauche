@@ -53,10 +53,7 @@ static const ScmPrimitiveParameter *script_file = NULL;
  * and *argv* gets the rest of arguments.
  *
  * Note that this is likely to be called before VM loop starts.
- * Scm_Error isn't much useful yet.  In case of error, we emit warning.
- *
- * NB: `os-command-line' is a provisional name.  We'll adjust it as how
- * command-line srfi comes out.
+ * Scm_Error isn't much useful yet.
  */
 #if GAUCHE_API_VERSION < 1000
 ScmObj Scm_InitCommandLine(int argc, const char *argv[])

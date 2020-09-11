@@ -24681,7 +24681,7 @@ That said, here are how to access the command-line arguments:
 @c COMMON
 
 @deffn {Parameter} command-line
-[R7RS+]
+[R7RS+][SRFI-193]
 @c EN
 When called without arguments, it returns a list of command-line arguments,
 including the program name in the first element, as a list of strings.
@@ -24716,6 +24716,27 @@ switch the value of @code{command-line} dynamically
 R7RSは、ゼロ引数の@code{command-line}のみ定義しています。
 @c COMMON
 @end deffn
+
+@deffn {Parameter} script-file
+[SRFI-193]
+@c EN
+While a Scheme program is run as a @emph{script}, this parameter holds
+the absolute path of the Scheme source file being run.  Run as a script
+means either it is passed as the script file to @code{gosh}, or
+the file is directly @code{load}ed from the toplevel REPL.
+
+If this function is called from the context outside of script execution,
+@code{#f} is returned.
+@c JP
+Schemeプログラムが@emph{スクリプト}として実行されている期間中、
+このパラメータはそのスクリプトの絶対パスを保持しています。
+スクリプトとして実行とは、@code{gosh}にスクリプトファイルとして渡されるか、
+トップレベルREPLから直接@code{load}される場合です。
+
+この関数がスクリプト実行期間中以外に呼ばれた場合は@code{#f}が返ります。
+@c COMMON
+@end deffn
+
 
 @defvar *program-name*
 @defvarx *argv*
