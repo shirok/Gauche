@@ -102,6 +102,9 @@ typedef struct ScmPortBufferRec {
 
 /* The function table of procedural port. */
 
+/* 
+ * 
+ */
 typedef struct ScmPortVTableRec {
     int     (*Getb)(ScmPort *p);
     int     (*Getc)(ScmPort *p);
@@ -143,7 +146,7 @@ struct ScmPortRec {
 
     ScmChar ungotten;           /* ungotten character.
                                    SCM_CHAR_INVALID if empty. */
-    ScmObj name;                /* port's name.  Can be any Scheme object. */
+    ScmObj reserved;            /* unused */
 
     ScmInternalFastlock lock;   /* for port mutex */
     ScmVM *lockOwner;           /* for port mutex; owner of the lock */
@@ -174,12 +177,8 @@ struct ScmPortRec {
         ScmPortVTable vt;       /* virtual port */
     } src;
 
-    /* Port attibutes.
-     * NB: Before we release 0.9.4, we might merge this into port->data and/or
-     * port->name.
-     */
-    ScmObj attrs;               /* port attibutes.  use Scm_PortAttr* API to
-                                   access. */
+    /* Port attibutes.  Use Scm_PortAttr* API to access. */
+    ScmObj attrs;
 };
 
 /* Port direction.
@@ -414,6 +413,17 @@ SCM_EXTERN ScmObj Scm_SetCurrentErrorPort(ScmPort *port);
  * String ports
  */
 
+enum {
+    SCM_PORT_STRING_PRIVATE = 1 /* for flags arg */
+};
+
+SCM_EXTERN ScmObj Scm_MakeInputStringPortWithName(ScmString *str,
+                                                  ScmObj name,
+                                                  u_long flags);
+SCM_EXTERN ScmObj Scm_MakeOutputStringPortWithName(ScmObj name,
+                                                   u_long flags);
+
+/* these two are deprecated */
 SCM_EXTERN ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep);
 SCM_EXTERN ScmObj Scm_MakeOutputStringPort(int privatep);
 
@@ -425,9 +435,16 @@ SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags);
  * Other type of ports
  */
 
+SCM_EXTERN ScmObj Scm_MakeVirtualPortWithName(ScmClass *klass,
+                                              ScmObj name, int direction,
+                                              const ScmPortVTable *vtable,
+                                              u_long flags);
+
+/* deprecated */
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(ScmClass *klass,
                                       int direction,
                                       const ScmPortVTable *vtable);
+
 SCM_EXTERN ScmObj Scm_MakeBufferedPort(ScmClass *klass,
                                        ScmObj name, int direction,
                                        int ownerp,

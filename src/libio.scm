@@ -386,22 +386,16 @@
 ;;   port source path.  Until then, be careful to name the ports.
 (select-module gauche)
 
-(define-cproc open-input-string (string::<string> :key (private?::<boolean> #f)
-                                                       name)
-  (let* ([p (Scm_MakeInputStringPort string private?)])
-    ;; NB: We don't have an API to set port name in the constructor; but
-    ;; this is a bad manner.  Don't duplicate this.
-    (unless (SCM_UNBOUNDP name)
-      (set! (-> (SCM_PORT p) name) name))
-    (return p)))
+(define-cproc open-input-string (string::<string>
+                                 :key (private?::<boolean> #f)
+                                      (name "(input string port)"))
+  (let* ([flags::u_long (?: private? SCM_PORT_STRING_PRIVATE 0)])
+    (return (Scm_MakeInputStringPortWithName string name flags))))
 
-(define-cproc open-output-string (:key (private?::<boolean> #f) name)
-  (let* ([p (Scm_MakeOutputStringPort private?)])
-    ;; NB: We don't have an API to set port name in the constructor; but
-    ;; this is a bad manner.  Don't duplicate this.
-    (unless (SCM_UNBOUNDP name)
-      (set! (-> (SCM_PORT p) name) name))
-    (return p)))
+(define-cproc open-output-string (:key (private?::<boolean> #f)
+                                       (name "(output string port)"))
+  (let* ([flags::u_long (?: private? SCM_PORT_STRING_PRIVATE 0)])
+    (return (Scm_MakeOutputStringPortWithName name flags))))
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
   (return (Scm_GetOutputString oport 0)))

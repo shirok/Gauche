@@ -183,7 +183,7 @@ static void port_finalize(ScmObj obj, void* data SCM_UNUSED)
  *   If this port owns the underlying file descriptor/stream,
  *   ownerp must be TRUE.
  */
-static ScmPort *make_port(ScmClass *klass, int dir, int type)
+static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
 {
     ScmPort *port = SCM_NEW_INSTANCE(ScmPort, klass);
     port->direction = dir & SCM_PORT_IOMASK;
@@ -197,13 +197,15 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
         SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)
         ? SCM_PORT_CASE_FOLD
         : 0;
-    port->name = SCM_FALSE;
+    port->reserved = SCM_FALSE;
     (void)SCM_INTERNAL_FASTLOCK_INIT(port->lock);
     port->lockOwner = NULL;
     port->lockCount = 0;
     port->writeState = NULL;
-    port->attrs = SCM_NIL;
     port->line = 1;
+    /* We set name attribute as read-only attribute.  See portapi.c
+       for the format of attrs. */
+    port->attrs = SCM_LIST1(Scm_Cons(SCM_SYM_NAME, Scm_Cons(name, SCM_FALSE)));
 
     Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
 
@@ -252,7 +254,7 @@ ScmObj Scm_VMWithPortLocking(ScmPort *port SCM_UNUSED, ScmObj closure)
 
 ScmObj Scm_PortName(ScmPort *port)
 {
-    return port->name;
+    return Scm_PortAttrGet(port, SCM_SYM_NAME, SCM_FALSE);
 }
 
 int Scm_PortLine(ScmPort *port)
@@ -587,8 +589,7 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
 
     if (size == 0) size = SCM_PORT_DEFAULT_BUFSIZ;
     if (buf == NULL) buf = SCM_NEW_ATOMIC2(char*, size);
-    ScmPort *p = make_port(klass, dir, SCM_PORT_FILE);
-    p->name = name;
+    ScmPort *p = make_port(klass, name, dir, SCM_PORT_FILE);
     p->ownerp = ownerp;
     p->src.buf.buffer = buf;
     if ((dir & SCM_PORT_IOMASK) == SCM_PORT_INPUT) {
@@ -1240,26 +1241,40 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
  * String port
  */
 
-ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
+ScmObj Scm_MakeInputStringPortWithName(ScmString *str, ScmObj name,
+                                       u_long flags)
 {
-    ScmPort *p = make_port(SCM_CLASS_PORT, SCM_PORT_INPUT, SCM_PORT_ISTR);
+    ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_INPUT, SCM_PORT_ISTR);
     ScmSmallInt size;
     const char *s = Scm_GetStringContent(str, &size, NULL, NULL);
     p->src.istr.start = s;
     p->src.istr.current = s;
     p->src.istr.end = s + size;
-    SCM_PORT(p)->name = SCM_MAKE_STR("(input string port)");
-    if (privatep) PORT_PRELOCK(p, Scm_VM());
+    if (flags&SCM_PORT_STRING_PRIVATE) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }
 
+/* deprecated */
+ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
+{
+    return Scm_MakeInputStringPortWithName(str,
+                                           SCM_MAKE_STR("(input string port)"),
+                                           (privatep?SCM_PORT_STRING_PRIVATE:0));
+}
+
+ScmObj Scm_MakeOutputStringPortWithName(ScmObj name, u_long flags)
+{
+    ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_OUTPUT, SCM_PORT_OSTR);
+    Scm_DStringInit(&p->src.ostr);
+    if (flags&SCM_PORT_STRING_PRIVATE) PORT_PRELOCK(p, Scm_VM());
+    return SCM_OBJ(p);
+}
+
+/* deprecated */
 ScmObj Scm_MakeOutputStringPort(int privatep)
 {
-    ScmPort *p = make_port(SCM_CLASS_PORT, SCM_PORT_OUTPUT, SCM_PORT_OSTR);
-    Scm_DStringInit(&p->src.ostr);
-    SCM_PORT(p)->name = SCM_MAKE_STR("(output string port)");
-    if (privatep) PORT_PRELOCK(p, Scm_VM());
-    return SCM_OBJ(p);
+    return Scm_MakeOutputStringPortWithName(SCM_MAKE_STR("(output string port)"),
+                                            (privatep?SCM_PORT_STRING_PRIVATE:0));
 }
 
 ScmObj Scm_GetOutputString(ScmPort *port, int flags)
@@ -1418,10 +1433,12 @@ static void null_flush(ScmPort *dummy SCM_UNUSED)
 {
 }
 
-ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
-                           const ScmPortVTable *vtable)
+ScmObj Scm_MakeVirtualPortWithName(ScmClass *klass, ScmObj name,
+                                   int direction,
+                                   const ScmPortVTable *vtable,
+                                   u_long flags SCM_UNUSED)
 {
-    ScmPort *p = make_port(klass, direction, SCM_PORT_PROC);
+    ScmPort *p = make_port(klass, name, direction, SCM_PORT_PROC);
 
     /* Copy vtable, and ensure all entries contain some ptr */
     p->src.vt = *vtable;
@@ -1436,6 +1453,14 @@ ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
     if (!p->src.vt.Flush) p->src.vt.Flush = null_flush;
     /* Close and Seek can be left NULL */
     return SCM_OBJ(p);
+}
+
+/* deprecated */
+ScmObj Scm_MakeVirtualPort(ScmClass *klass,
+                           int direction,
+                           const ScmPortVTable *vtable)
+{
+    return Scm_MakeVirtualPortWithName(klass, SCM_FALSE, direction, vtable, 0);
 }
 
 /*===============================================================

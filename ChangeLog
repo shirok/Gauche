@@ -1,5 +1,7 @@
 2020-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c: Make port-name an attribute.
+
 	* src/portapi.c: Add a new port attribute entry that is read-only
 	  and undeletable; it's for the system-reserved attributes such as
 	  'name'.

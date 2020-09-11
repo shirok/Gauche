@@ -217,6 +217,8 @@
     ;; to support scheme.bytevector (move this up on 1.0 release)
     (big                       SCM_SYM_BIG)
     (little                    SCM_SYM_LITTLE)
+    ;; port attibute
+    (name                      SCM_SYM_NAME)
     ))
 
 

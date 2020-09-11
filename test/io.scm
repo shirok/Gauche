@@ -137,16 +137,25 @@
          (port-attribute-set! p 'my-attribute3 20))
   (test* "port-attributes" '((my-attribute . ok)
                              (my-attribute2 . 103)
-                             (my-attribute3 . 12))
+                             (my-attribute3 . 12)
+                             (name . "tmp.o"))
          (alist-delete 'reader-lexical-mode
                        (sort (port-attributes p)
                              string<?
                              ($ symbol->string $ car $))))
-  (test* "port-attribute-delete!" '((my-attribute3 . 13))
+  (test* "port-attribute-delete!" '((my-attribute3 . 13) (name . "tmp.o"))
          (begin
            (port-attribute-delete! p 'my-attribute)
            (port-attribute-delete! p 'my-attribute2)
            (alist-delete 'reader-lexical-mode (port-attributes p))))
+
+  ;; make sure 'name' attribute is read-only and undeletable
+  (test* "name attribute is read-only" (test-error <error> #/read-only/)
+         (port-attribute-set! p 'name "foo"))
+  (test* "name attribute is undeletable" (test-error <error> #/not deletable/)
+         (port-attribute-delete! p 'name))
+  (test* "name attribute is overridable" (test-error <error> #/Couldn't create/)
+         (port-attribute-create! p 'name (^ _ #f)))
   )
 
 ;;-------------------------------------------------------------------
