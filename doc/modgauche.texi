@@ -20674,22 +20674,37 @@ Unblocks all the threads waiting on @var{cv}.
 @subsubheading アトム
 @c COMMON
 
+@c EN
 An atom is a convenient wrapper to make operations on a
 given set of objects thread-safe.  Instead of defining
 thread-safe counterparts of every structure, you can easily
 wrap an existing data structures to make it thread-safe.
+@c JP
+アトムはオブジェクトの集まりをスレッドセーフに簡単に扱うことができるラッパーです。
+それぞれの構造に対応するスレッドセーフ版を作るかわりに、
+既にあるいくつかのデータをまとめて包んでスレッドセーフにできます。
+@c COMMON
 
 @defun atom val @dots{}
 @c MOD gauche.threads
+@c EN
 Creates and returns an atom object with @var{val} @dots{} as the
 initial values.
+@c JP
+@var{val} @dots{}を初期値に持つアトムオブジェクトを作って返します。
+@c COMMON
 @end defun
 
 @defun atom? obj
 @c MOD gauche.threads
+@c EN
 Returns @code{#t} iff @var{obj} is an atom.
+@c JP
+@var{obj}がアトムなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
+@c EN
 The following procedures can be used to @emph{atomically}
 access and update the content of an atom.   They commonly
 take optional @var{timeout} and @var{timeout-val} arguments,
@@ -20697,7 +20712,17 @@ both are defaulted to @code{#f}.  In some cases, the procedure
 takes more than one @var{timeout-val} arguments.
 With the default value @code{#f} as @var{timeout} argument,
 those procedures blocks until they acquire a lock.
+@c JP
+以下の手続きは、アトムの中身に@emph{アトミック}にアクセスしたり、
+それをアップデートするのに使えます。共通する省略可能引数として、
+@var{timeout}と@var{timeout-val}を取ります。
+これらのデフォルト値は@code{#f}です。手続きによっては一つ以上の@var{timeout-val}
+を取ることがあります。
+@var{timeout}引数がデフォルト値@code{#f}であれば、
+以下の手続きはロックが得られるまでブロックします。
+@c COMMON
 
+@c EN
 The timeout arguments can be used to modify the behavior when
 the lock cannot be acquired in timely manner.
 @var{timeout} may be a @code{<time>} object (@pxref{Time})
@@ -20708,11 +20733,25 @@ and the value given to @var{timeout-val} is returned.
 In @code{atomic} and @code{atomic-update!}, you can make them return
 multiple timeout values, by giving 
 more than one @var{timeout-val} arguments.
+@c JP
+@var{timeout}引数はすぐにロックが得られなかった場合の動作を変更します。
+@var{timeout}引数には、絶対的な時刻を指定する@code{<time>}オブジェクト
+(@ref{Time}参照)か、相対的な時刻を秒数で指定する実数を渡すことができます。
+指定された時刻が過ぎたら、以下の手続きはロックを獲得するのを諦めて、
+@var{timeout-val}に指定された値を返します。
+@code{atomic}と@code{atomic-update!}は一つ以上の値を返し得るので、
+一つ以上の@var{timeout-val}を渡せます。
+@c COMMON
 
 @defun atom-ref atom :optional index timeout timeout-val
 @c MOD gauche.threads
+@c EN
 Returns @var{index}-th value of @var{atom}.
 See above for @var{timeout} and @var{timeout-val} arguments.
+@c JP
+アトム@var{atom}の@var{index}番目の値を返します。
+@var{timeout}と@var{timeout-val}については上記参照。
+@c COMMON
 
 @example
 (define a (atom 'a 'b))
@@ -20724,17 +20763,32 @@ See above for @var{timeout} and @var{timeout-val} arguments.
 
 @defun atomic atom proc :optional timeout timeout-val timeout-val2 @dots{}
 @c MOD gauche.threads
+@c EN
 Calls @var{proc} with the current values in @var{atom},
 while locking @var{atom}.  @var{proc} must take
 as many arguments as the number of values @var{atom} has.
+@c JP
+@var{atom}をロックして、@var{proc}を現在の@var{atom}の値に適用します。
+@var{proc}は@var{atom}の値の数だけの引数を取ることができなければなりません。
+@c COMMON
 
+@c EN
 The returned value(s) of @var{proc} is the result of
 @code{atomic}, unless timeout occurs.
 See above for @var{timeout} and @var{timeout-val} arguments.
+@c JP
+タイムアウトが起こらない限り、@var{proc}が返した値が@code{atomic}の返り値となります。
+@var{timeout}と@var{timeout-val}については上記参照。
+@c COMMON
 
+@c EN
 For example, the @code{ref/count} procedure
 in the following example counts the number of times
 the hashtable is referenced in thread-safe way.
+@c JP
+例えば次の@code{ref/count}は、
+ハッシュテーブルが参照された回数を数えるスレッドセーフな手続きです。
+@c COMMON
 
 @example
 (define a (atom (make-hash-table 'eq?) (list 0)))
@@ -20749,6 +20803,7 @@ the hashtable is referenced in thread-safe way.
 
 @defun atomic-update! atom proc :optional timeout timeout-val timeout-val2 @dots{}
 @c MOD gauche.threads
+@c EN
 Calls @var{proc} with the current values in @var{atom}
 while locking @var{atom}, and updates the values in @var{atom}
 by the returned values from @var{proc}.
@@ -20757,12 +20812,30 @@ values @var{atom} has, and must return the at least the same number of
 values.  If @var{proc} returns more than the number of values @var{atom}
 holds, the extra values are not used to update the @var{atom}, but
 is included in the return values of @code{atomic-update!}.
+@c JP
+@var{atom}をロックして、その値を引数として@var{proc}を呼び、
+@var{proc}の戻り値を@var{atom}の新たな値とします。
+@var{proc}は@var{atom}の値の数だけ引数を取らねばならず、
+また@var{atom}の値の数以上の戻り値を返さねばなりません。
+@var{proc}が@var{atom}の値の数以上の値を返した場合、
+余分な値は@var{atom}を更新するのには使われませんが、
+@code{atomic-update!}の結果には含まれます。
+@c COMMON
 
+@c EN
 The returned value(s) of @code{atomic-update!} is what
 @var{proc} returns, unless timeout occurs.
 See above for @var{timeout} and @var{timeout-val} arguments.
+@c JP
+@code{atomic-update!}の戻り値は、タイムアウトが起こらなければ@var{proc}の戻り値です。
+@var{timeout}と@var{timeout-val}については上記参照。
+@c COMMON
 
+@c EN
 The following example shows a thread-safe counter.
+@c JP
+下はスレッドセーフなカウンタです。
+@c COMMON
 
 @example
 (define a (atom 0))
@@ -20771,25 +20844,48 @@ The following example shows a thread-safe counter.
 @end example
 @end defun
 
-
+@c EN
 Note: The term @emph{atom} in historical Lisps
 meant an object that is not a cons cell (pair).  Back then
 cons cells were the only aggregate datatype and there were
 few other datatypes (numbers and symbols), so having a
 complementary term to cells made sense.
+@c JP
+@emph{atom}は古のLispでは「コンスセル(ペア)でないもの」を指していました。
+当時、コンスセルは唯一の複合型であり、他の型もごくわずか(数値とシンボル)だったので、
+セルでなものを指すことには意味がありました。
+@c COMMON
 
+@c EN
 Although it still appears in introductory Lisp tutorials,
 modern Lisps, including Scheme, has so many datatypes and it makes
-little sense to have a specific term for non-aggregate types.
+little sense to have a specific term for non-pair types.
+@c JP
+今でもatomはLispのチュートリアルで目にすることがありますが、
+Schemeをはじめ現代のLispではたくさんのデータ型があり、
+コンスセル以外をひとまとめにする用語を使う意味がほとんどありません。
+@c COMMON
 
+@c EN
 Clojure adopted the term @emph{atom} for thread-safe (atomic)
 primitive data, and we followed it.
+@c JP
+Clojureはatomをスレッドセーフ(アトミック)な基本データに使ったので、
+Gaucheもそれに倣うことにしました。
+@c COMMON
 
+@c EN
 Note: The constructor of atom is not @code{make-atom}
 but @code{atom}, following the convention of @code{list}/@code{make-list},
 @code{vector}/@code{make-vector}, and @code{string}/@code{make-string};
 that is, the name without @code{make-} takes its elements as
 variable number of arguments.
+@c JP
+註: コンストラクタが@code{make-atom}ではなく@code{atom}なのは、
+@code{list}/@code{make-list}、@code{vector}/@code{make-vector}、
+@code{string}/@code{make-string}などの慣習に従っています。
+つまり、@code{make-}のない手続きは、各要素を可変長引数の形で取ります。
+@c COMMON
 
 @node Thread exceptions,  , Synchronization primitives, Threads
 @subsection Thread exceptions
