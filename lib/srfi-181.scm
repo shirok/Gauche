@@ -130,8 +130,21 @@
 (define (make-custom-binary-input/output-port id read! write!
                                               get-position set-position!
                                               close :optional (flush #f))
-  ;; Gauche hasn't support bidirectional port yet
-  (error "bidirectional port hasn't been supported yet."))
+  ;; We don't have buffered bidirectional port.  Using virtual i/o port
+  ;; is less efficient, for I/O is done one byte at a time.
+  (define buf (make-u8vector 1))
+
+  (make <virtual-io-port>
+    :name id
+    :getb (^[] (let1 r (read! buf 0 1)
+                 (if (zero? r)
+                   (eof-object)
+                   (u8vector-ref buf 0))))
+    :putb (^b (u8vector-set! buf 0 b)
+              (write! buf 0 1))
+    :seek (make-seeker get-position set-position!)
+    :close close
+    :flush flush))
 
 (define (make-file-error . objs)
   ;; As of 0.9.9, Gauche uses ad-hoc way to determine file-error--
