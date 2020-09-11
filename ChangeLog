@@ -1,3 +1,9 @@
+2020-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c: Add a new port attribute entry that is read-only
+	  and undeletable; it's for the system-reserved attributes such as
+	  'name'.
+
 2020-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfis.scm: Make srfi-193 official, as it is finalized.

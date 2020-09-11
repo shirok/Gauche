@@ -1102,13 +1102,20 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
  * Port attributes are stored in alist.  Each entry is either one
  * of the following form:
  *  (key value)          Just a value
+ *  (key value . #f)     Just a value, read-only.  This is a system
+ *                       attribute; no public interface to create this
+ *                       kind of API is provided.  It is also undeletable.
+ *                       (Currently, only the internal port constructor
+ *                       creates this kind of attributes.)
  *  (key getter setter)  Procedurally handled value.  Getter will be
  *                       called as (getter port [fallback]), and Setter
  *                       will be called as (setter port value).
  *                       Setter can be #f if the attr is read-only.
  *                       Port is locked while getter and setter is called.
  *
- * The latter type of attribute can be created by Scm_PortAttrCreate.
+ * The third type of attribute can be created by Scm_PortAttrCreate.
+ *
+ * TODO: probably we want deletable and undeletable procedural values.
  */
 
 #ifdef SAFE_PORT_OP
@@ -1170,15 +1177,17 @@ ScmObj Scm_PortAttrSetUnsafe(ScmPort *p, ScmObj key, ScmObj val)
             } else {
                 SAFE_CALL(p, Scm_ApplyRec2(setter, SCM_OBJ(p), val));
             }
-        } else {
+        } else if (SCM_NULLP(SCM_CDDR(v))) {
             SCM_SET_CAR_UNCHECKED(SCM_CDR(v), val);
+        } else {
+            err_readonly = TRUE;
         }
     } else {
         p->attrs = Scm_Cons(SCM_LIST2(key, val), p->attrs);
     }
     UNLOCK(p);
     if (err_readonly) {
-        Scm_Error("Port attribute %A is read-only in port: %S",
+        Scm_Error("Port attribute '%A' is read-only in port: %S",
                   key, SCM_OBJ(p));
     }
     return SCM_MAKE_BOOL(exists);
@@ -1220,11 +1229,21 @@ ScmObj Scm_PortAttrDelete(ScmPort *p, ScmObj key)
 ScmObj Scm_PortAttrDeleteUnsafe(ScmPort *p, ScmObj key)
 #endif
 {
+    int err_undeletable = FALSE;
     VMDECL;
     SHORTCUT(p, return Scm_PortAttrDeleteUnsafe(p, key););
     LOCK(p);
-    p->attrs = Scm_AssocDelete(key, p->attrs, SCM_CMP_EQ);
+    ScmObj v = Scm_Assq(key, p->attrs);
+    if (SCM_PAIRP(v) && SCM_PAIRP(SCM_CDR(v)) && SCM_FALSEP(SCM_CDDR(v))) {
+        err_undeletable = TRUE;
+    } else {
+        p->attrs = Scm_AssocDelete(key, p->attrs, SCM_CMP_EQ);
+    }
     UNLOCK(p);
+    if (err_undeletable) {
+        Scm_Error("Port attribute '%A' is not deletable from port: %S",
+                  key, SCM_OBJ(p));
+    }
     return SCM_UNDEFINED;       /* we may return more useful info in future */
 }
 
