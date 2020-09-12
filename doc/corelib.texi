@@ -16080,6 +16080,25 @@ Gauche組み込みオブジェクトのうち、@code{<regexp>}オブジェク�
 います。@ref{Regular expressions}を参照して下さい。
 @c COMMON
 
+@c EN
+Note: Defining @code{object-apply} method affect globally.  Although it is cool
+to define @code{object-apply} on strings as in the above example,
+it is not recommended as a general trick, for
+it'll change the behavior of string across the entire program.
+
+Keep the above example personal experiments.  In general, you should
+only define @code{object-apply} on your own classes.
+@c JP
+註: @code{object-apply}メソッドの定義はグローバルに影響します。
+上の例のように文字列に@code{object-apply}を定義するのはおもしろいですが、
+一般的なトリックとしては推奨されません。これによってプログラム全体での
+文字列の振る舞いが変わってしまうからです。
+
+上の例は個人的な実験に留めておきましょう。一般的には、
+自分で定義したクラスに対してのみ@code{object-apply}を定義するのが良いです。
+@c COMMON
+
+
 @deffn {Generic Function} {(setter object-apply)} @var{object} @var{arg} @dots{} @var{value}
 @c EN
 If a form of applying an applicable object appears in the first position
