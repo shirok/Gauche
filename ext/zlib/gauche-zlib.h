@@ -63,7 +63,7 @@ typedef struct ScmZlibInfoRec {
     ScmObj dict_adler;
 } ScmZlibInfo;
 
-#define SCM_PORT_ZLIB_INFO(p) ((ScmZlibInfo*)(p)->src.buf.data)
+#define SCM_PORT_ZLIB_INFO(p) ((ScmZlibInfo*)Scm_PortBufferStruct(p)->data)
 #define SCM_PORT_ZSTREAM(p)   (SCM_PORT_ZLIB_INFO(p)->strm)
 
 SCM_CLASS_DECL(Scm_DeflatingPortClass);

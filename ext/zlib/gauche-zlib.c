@@ -229,7 +229,7 @@ static ScmSize deflate_flusher(ScmPort *port, ScmSize cnt, int forcep)
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
     ScmSize total = 0;
-    unsigned char *inbuf = (unsigned char*)port->src.buf.buffer;
+    unsigned char *inbuf = (u_char*)Scm_PortBufferStruct(port)->buffer;
     unsigned char outbuf[CHUNK];
 
     strm->next_in = inbuf;
@@ -264,7 +264,7 @@ static void deflate_closer(ScmPort *port)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
-    unsigned char *inbuf = (unsigned char*)port->src.buf.buffer;
+    unsigned char *inbuf = (u_char*)Scm_PortBufferStruct(port)->buffer;
     unsigned char outbuf[CHUNK];
 
     strm->next_in = inbuf;
@@ -369,7 +369,7 @@ static ScmSize inflate_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
-    unsigned char *outbuf = (unsigned char*)port->src.buf.end;
+    unsigned char *outbuf = (u_char*)Scm_PortBufferStruct(port)->end;
     int r;
 
     if (info->stream_endp) return 0;
@@ -514,7 +514,7 @@ ScmObj Scm_InflateSync(ScmPort *port)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
-    unsigned char *outbuf = (unsigned char*)port->src.buf.end;
+    unsigned char *outbuf = (u_char*)Scm_PortBufferStruct(port)->end;
     unsigned long curr_in = strm->total_in;
 
     if (info->stream_endp) return SCM_FALSE;

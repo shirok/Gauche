@@ -62,6 +62,8 @@ static struct {
     ScmInternalMutex mutex;
 } ucsconv;
 
+#define CONV_INFO(port)  ((ScmConvInfo*)(PORT_BUF(port)->data))
+
 /*------------------------------------------------------------
  * Query
  */
@@ -118,13 +120,13 @@ static conv_guess *findGuessingProc(const char *code)
 
 static int conv_fileno(ScmPort *port)
 {
-    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
+    ScmConvInfo *info = CONV_INFO(port);
     return Scm_PortFileNo(info->remote);
 }
 
 static int conv_ready(ScmPort *port)
 {
-    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
+    ScmConvInfo *info = CONV_INFO(port);
     /* This isn't accurate, but for now ... */
     return Scm_CharReady(info->remote);
 }
@@ -146,9 +148,9 @@ static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *
 
 static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 {
-    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
+    ScmConvInfo *info = CONV_INFO(port);
     const char *inbuf = info->buf;
-    char *outbuf = port->src.buf.end;
+    char *outbuf = PORT_BUF(port)->end;
 
     if (info->remoteClosed) return 0;
 
@@ -246,7 +248,7 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 
 static void conv_input_closer(ScmPort *p)
 {
-    ScmConvInfo *info = (ScmConvInfo*)p->src.buf.data;
+    ScmConvInfo *info = CONV_INFO(p);
     jconv_close(info);
     if (info->ownerp) {
         Scm_ClosePort(info->remote);
@@ -360,7 +362,7 @@ static ScmPort *coding_aware_conv(ScmPort *src, const char *encoding)
 
 static void conv_output_closer(ScmPort *port)
 {
-    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
+    ScmConvInfo *info = CONV_INFO(port);
 
     /* if there's remaining bytes in buf, send them to the remote port. */
     if (info->ptr > info->buf) {
@@ -391,10 +393,10 @@ static void conv_output_closer(ScmPort *port)
 
 static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
 {
-    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
+    ScmConvInfo *info = CONV_INFO(port);
     ScmSize inroom = SCM_PORT_BUFFER_AVAIL(port);
     ScmSize len = inroom;
-    const char *inbuf = port->src.buf.buffer;
+    const char *inbuf = PORT_BUF(port)->buffer;
 
     for (;;) {
         /* Conversion. */

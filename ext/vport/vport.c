@@ -34,6 +34,7 @@
 #include <gauche.h>
 #include <gauche/class.h>
 #include <gauche/extend.h>
+#include <gauche/priv/portP.h>
 
 #include "vport.h"
 
@@ -86,12 +87,14 @@ typedef struct vport_rec {
     ScmObj seek_proc;           /* (Offset, Whence) -> Offset */
 } vport;
 
+#define VPORT(port)   ((vport*)PORT_VT(port)->data)
+
 /*------------------------------------------------------------
  * Vport Getb
  */
 static int vport_getb(ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (SCM_FALSEP(data->getb_proc)) {
@@ -126,7 +129,7 @@ static int vport_getb(ScmPort *p)
  */
 static int vport_getc(ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (SCM_FALSEP(data->getc_proc)) {
@@ -161,7 +164,7 @@ static int vport_getc(ScmPort *p)
  */
 static ScmSize vport_getz(char *buf, ScmSize buflen, ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->gets_proc)) {
@@ -196,7 +199,7 @@ static ScmSize vport_getz(char *buf, ScmSize buflen, ScmPort *p)
  */
 static int vport_ready(ScmPort *p, int charp)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->ready_proc)) {
@@ -214,7 +217,7 @@ static int vport_ready(ScmPort *p, int charp)
  */
 static void vport_putb(ScmByte b, ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (SCM_FALSEP(data->putb_proc)) {
@@ -238,7 +241,7 @@ static void vport_putb(ScmByte b, ScmPort *p)
  */
 static void vport_putc(ScmChar c, ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (SCM_FALSEP(data->putc_proc)) {
@@ -263,7 +266,7 @@ static void vport_putc(ScmChar c, ScmPort *p)
  */
 static void vport_putz(const char *buf, ScmSize size, ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->puts_proc)) {
@@ -286,7 +289,7 @@ static void vport_putz(const char *buf, ScmSize size, ScmPort *p)
  */
 static void vport_puts(ScmString *s, ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     const ScmStringBody *b = SCM_STRING_BODY(s);
     SCM_ASSERT(data != NULL);
 
@@ -316,7 +319,7 @@ static void vport_puts(ScmString *s, ScmPort *p)
  */
 static void vport_flush(ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->flush_proc)) {
         Scm_ApplyRec(data->flush_proc, SCM_NIL);
@@ -328,7 +331,7 @@ static void vport_flush(ScmPort *p)
  */
 static void vport_close(ScmPort *p)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->close_proc)) {
         Scm_ApplyRec(data->close_proc, SCM_NIL);
@@ -340,7 +343,7 @@ static void vport_close(ScmPort *p)
  */
 static off_t vport_seek(ScmPort *p, off_t off, int whence)
 {
-    vport *data = (vport*)p->src.vt.data;
+    vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->seek_proc)) {
         ScmObj r = Scm_ApplyRec(data->seek_proc,
@@ -397,7 +400,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     }
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     ScmObj port = Scm_MakeVirtualPortWithName(klass, name, dir, &vtab, 0);
-    SCM_PORT(port)->src.vt.data = data;
+    PORT_VT(port)->data = data;
     return port;
 }
 
@@ -415,13 +418,13 @@ static void vport_print(ScmObj obj, ScmPort *port,
 #define VPORT_ACC(name)                                                 \
     static ScmObj SCM_CPP_CAT3(vport_,name,_get) (ScmObj p)             \
     {                                                                   \
-        vport *data = (vport*)SCM_PORT(p)->src.vt.data;                 \
+        vport *data = VPORT(p);                                         \
         SCM_ASSERT(data != NULL);                                       \
         return data->SCM_CPP_CAT(name,_proc);                           \
     }                                                                   \
     static void SCM_CPP_CAT3(vport_,name,_set) (ScmObj p, ScmObj v)     \
     {                                                                   \
-        vport *data = (vport*)SCM_PORT(p)->src.vt.data;                 \
+        vport *data = VPORT(p);                                         \
         SCM_ASSERT(data != NULL);                                       \
         data->SCM_CPP_CAT(name,_proc) = v;                              \
     }
@@ -504,18 +507,20 @@ typedef struct bport_rec {
     ScmObj seek_proc;           /* (Offset, Whence) -> Offset */
 } bport;
 
+#define BPORT(port)   ((bport*)PORT_BUF(port)->data)
+
 /*------------------------------------------------------------
  * Bport fill
  */
 static ScmSize bport_fill(ScmPort *p, ScmSize cnt)
 {
-    bport *data = (bport*)p->src.buf.data;
+    bport *data = BPORT(p);
     SCM_ASSERT(data != NULL);
     if (SCM_FALSEP(data->fill_proc)) {
         return 0;               /* indicates EOF */
     }
     ScmObj vec =
-        Scm_MakeU8VectorFromArrayShared(cnt, (unsigned char*)p->src.buf.buffer);
+        Scm_MakeU8VectorFromArrayShared(cnt, (u_char*)PORT_BUF(p)->buffer);
     ScmObj r = Scm_ApplyRec(data->fill_proc, SCM_LIST1(vec));
     if (SCM_INTP(r)) return SCM_INT_VALUE(r);
     else if (SCM_EOFP(r)) return 0;
@@ -527,13 +532,13 @@ static ScmSize bport_fill(ScmPort *p, ScmSize cnt)
  */
 static ScmSize bport_flush(ScmPort *p, ScmSize cnt, int forcep)
 {
-    bport *data = (bport*)p->src.buf.data;
+    bport *data = BPORT(p);
     SCM_ASSERT(data != NULL);
     if (SCM_FALSEP(data->flush_proc)) {
         return cnt;             /* blackhole */
     }
     ScmObj vec = 
-        Scm_MakeU8VectorFromArrayShared(cnt, (unsigned char*)p->src.buf.buffer);
+        Scm_MakeU8VectorFromArrayShared(cnt, (u_char*)PORT_BUF(p)->buffer);
     ScmObj r = Scm_ApplyRec(data->flush_proc,
                             SCM_LIST2(vec, SCM_MAKE_BOOL(forcep)));
     if (SCM_INTP(r)) return SCM_INT_VALUE(r);
@@ -546,7 +551,7 @@ static ScmSize bport_flush(ScmPort *p, ScmSize cnt, int forcep)
  */
 static void bport_close(ScmPort *p)
 {
-    bport *data = (bport*)p->src.buf.data;
+    bport *data = BPORT(p);
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->close_proc)) {
         Scm_ApplyRec(data->close_proc, SCM_NIL);
@@ -558,7 +563,7 @@ static void bport_close(ScmPort *p)
  */
 static int bport_ready(ScmPort *p)
 {
-    bport *data = (bport*)p->src.buf.data;
+    bport *data = BPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->ready_proc)) {
@@ -575,7 +580,7 @@ static int bport_ready(ScmPort *p)
  */
 static int bport_filenum(ScmPort *p)
 {
-    bport *data = (bport*)p->src.buf.data;
+    bport *data = BPORT(p);
     SCM_ASSERT(data != NULL);
 
     if (SCM_FALSEP(data->filenum_proc)) {
@@ -592,7 +597,7 @@ static int bport_filenum(ScmPort *p)
  */
 static off_t bport_seek(ScmPort *p, off_t off, int whence)
 {
-    bport *data = (bport*)p->src.buf.data;
+    bport *data = BPORT(p);
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->seek_proc)) {
         ScmObj r = Scm_ApplyRec(data->seek_proc,
@@ -659,13 +664,13 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
 #define BPORT_ACC(name)                                                 \
     static ScmObj SCM_CPP_CAT3(bport_,name,_get) (ScmObj p)             \
     {                                                                   \
-        bport *data = (bport*)SCM_PORT(p)->src.buf.data;                \
+        bport *data = BPORT(p);                                         \
         SCM_ASSERT(data != NULL);                                       \
         return data->SCM_CPP_CAT(name,_proc);                           \
     }                                                                   \
     static void SCM_CPP_CAT3(bport_,name,_set) (ScmObj p, ScmObj v)     \
     {                                                                   \
-        bport *data = (bport*)SCM_PORT(p)->src.buf.data;                \
+        bport *data = BPORT(p);                                         \
         SCM_ASSERT(data != NULL);                                       \
         data->SCM_CPP_CAT(name,_proc) = v;                              \
     }
