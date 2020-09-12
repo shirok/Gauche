@@ -101,10 +101,6 @@ typedef struct ScmPortBufferRec {
     (int)((p)->src.buf.current-(p)->src.buf.buffer)
 
 /* The function table of procedural port. */
-
-/* 
- * 
- */
 typedef struct ScmPortVTableRec {
     int     (*Getb)(ScmPort *p);
     int     (*Getc)(ScmPort *p);
@@ -243,20 +239,6 @@ enum ScmPortFlags {
                                     registered for flushing. */
 };
 
-#if 0 /* not implemented */
-/* Incomplete character handling policy.
-   When Scm_Getc encounters a byte sequence that doesn't consist a valid
-   multibyte character, it may take one of the following actions,
-   according to the port's icpolicy field. */
-enum ScmPortICPolicy {
-    SCM_PORT_IC_ERROR,          /* signal an error */
-    SCM_PORT_IC_IGNORE,         /* ignore bytes until Getc finds a
-                                   valid multibyte character */
-    SCM_PORT_IC_REPLACE,        /* replace invalid byte to a designated
-                                   character. */
-};
-#endif
-
 /*================================================================
  * Generic operations
  */
@@ -268,16 +250,12 @@ enum ScmPortICPolicy {
 #define SCM_PORT_TYPE(obj)      (SCM_PORT(obj)->type)
 #define SCM_PORT_DIR(obj)       (SCM_PORT(obj)->direction)
 #define SCM_PORT_FLAGS(obj)     (SCM_PORT(obj)->flags)
-#define SCM_PORT_ICPOLICY(obj)  (SCM_PORT(obj)->icpolicy)
 
 #define SCM_PORT_CASE_FOLDING(obj) (SCM_PORT_FLAGS(obj)&SCM_PORT_CASE_FOLD)
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT(obj)->closed)
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
 #define SCM_PORT_ERROR_OCCURRED_P(obj) (SCM_PORT(obj)->error)
-
-#define SCM_PORT_BUFFER_DATA(obj)  (SCM_PORT(obj)->src.buf.data)
-#define SCM_PORT_VIRTUAL_DATA(obj) (SCM_PORT(obj)->src.vt.data)
 
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))
