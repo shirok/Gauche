@@ -314,18 +314,18 @@
  ;; NB: the interface may be changed soon!!
  (define-cfn bufport-closer (p::ScmPort*) ::void :static
    (when (== (SCM_PORT_DIR p) SCM_PORT_OUTPUT)
-     (let* ((scmflusher (SCM_OBJ (ref (-> p src) buf data)))
-            (siz::int (cast int (- (ref (-> p src) buf current)
-                                   (ref (-> p src) buf buffer)))))
+     (let* ((scmflusher (SCM_OBJ (-> (PORT_BUF p) data)))
+            (siz::int (cast int (- (-> (PORT_BUF p) current)
+                                   (-> (PORT_BUF p) buffer)))))
        (when (> siz 0)
          (Scm_ApplyRec1 scmflusher
-                        (Scm_MakeString (ref (-> p src) buf buffer) siz siz
+                        (Scm_MakeString (-> (PORT_BUF p) buffer) siz siz
                                         (logior SCM_STRING_INCOMPLETE
                                                 SCM_STRING_COPYING))))
        (Scm_ApplyRec1 scmflusher SCM_FALSE))))
 
  (define-cfn bufport-filler (p::ScmPort* cnt::ScmSize) ::ScmSize :static
-   (let* ([scmfiller (SCM_OBJ (ref (-> p src) buf data))]
+   (let* ([scmfiller (SCM_OBJ (-> (PORT_BUF p) data))]
           [r (Scm_ApplyRec1 scmfiller (Scm_MakeInteger cnt))])
      (cond [(or (SCM_EOFP r) (SCM_FALSEP r)) (return 0)]
            [(not (SCM_STRINGP r))
@@ -333,7 +333,7 @@
      (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY r)]
             [siz::ScmSize (SCM_STRING_BODY_SIZE b)])
        (when (> siz cnt) (set! siz cnt)) ; for safety
-       (memcpy (ref (-> p src) buf end) (SCM_STRING_BODY_START b) siz)
+       (memcpy (-> (PORT_BUF p) end) (SCM_STRING_BODY_START b) siz)
        (return (SCM_STRING_BODY_SIZE b)))))
  )
 
@@ -355,8 +355,8 @@
  (define-cfn bufport-flusher (p::ScmPort* cnt::ScmSize forcep::int)
    ::ScmSize :static
    (cast void forcep) ; suppress unused var warning
-   (let* ([scmflusher (SCM_OBJ (ref (-> p src) buf data))]
-          [s (Scm_MakeString (ref (-> p src) buf buffer) cnt cnt
+   (let* ([scmflusher (SCM_OBJ (-> (PORT_BUF p) data))]
+          [s (Scm_MakeString (-> (PORT_BUF p) buffer) cnt cnt
                              (logior SCM_STRING_INCOMPLETE SCM_STRING_COPYING))])
      (Scm_ApplyRec1 scmflusher s)
      (return cnt)))

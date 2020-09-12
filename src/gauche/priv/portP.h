@@ -59,6 +59,13 @@ void Scm__SetupPortsForWindows(int has_console);
 #define PORT_LOCK_OWNER_P(port, vm) \
     ((port)->lockOwner == (vm))
 
+/* Internal intreface to retrieve src member.
+   For public use, we have Scm_PortBufferStruct() etc. */
+#define PORT_BUF(port)     (&SCM_PORT(port)->src.buf)
+#define PORT_ISTR(port)    (&SCM_PORT(port)->src.istr)
+#define PORT_OSTR(port)    (&SCM_PORT(port)->src.ostr)
+#define PORT_VT(port)      (&SCM_PORT(port)->src.vt)
+    
 /*================================================================
  * Locking the ports
  *

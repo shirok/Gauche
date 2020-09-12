@@ -597,7 +597,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     for (;;) {
     write1:
         if (ctx->flags & WRITE_LIMITED) {
-            if (port->src.ostr.length >= ctx->limit) return;
+            if (PORT_OSTR(port)->length >= ctx->limit) return;
         }
 
         /* number may be heap allocated, but we don't use srfi-38 notation. */

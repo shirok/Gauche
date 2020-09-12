@@ -117,22 +117,22 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
-        if (p->src.buf.current >= p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, p->src.buf.current - p->src.buf.buffer, FALSE));
+        if (PORT_BUF(p)->current >= PORT_BUF(p)->end) {
+            SAFE_CALL(p, bufport_flush(p, PORT_BUF(p)->current - PORT_BUF(p)->buffer, FALSE));
         }
-        SCM_ASSERT(p->src.buf.current < p->src.buf.end);
-        *p->src.buf.current++ = b;
+        SCM_ASSERT(PORT_BUF(p)->current < PORT_BUF(p)->end);
+        *PORT_BUF(p)->current++ = b;
         if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, 1, FALSE));
         }
         UNLOCK(p);
         break;
     case SCM_PORT_OSTR:
-        SCM_DSTRING_PUTB(&p->src.ostr, b);
+        SCM_DSTRING_PUTB(PORT_OSTR(p), b);
         UNLOCK(p);
         break;
     case SCM_PORT_PROC:
-        SAFE_CALL(p, p->src.vt.Putb(b, p));
+        SAFE_CALL(p, PORT_VT(p)->Putb(b, p));
         UNLOCK(p);
         break;
     default:
@@ -161,12 +161,12 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
         volatile int nb = SCM_CHAR_NBYTES(c);
-        if (p->src.buf.current+nb > p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, p->src.buf.current - p->src.buf.buffer, FALSE));
+        if (PORT_BUF(p)->current+nb > PORT_BUF(p)->end) {
+            SAFE_CALL(p, bufport_flush(p, PORT_BUF(p)->current - PORT_BUF(p)->buffer, FALSE));
         }
-        SCM_ASSERT(p->src.buf.current+nb <= p->src.buf.end);
-        SCM_CHAR_PUT(p->src.buf.current, c);
-        p->src.buf.current += nb;
+        SCM_ASSERT(PORT_BUF(p)->current+nb <= PORT_BUF(p)->end);
+        SCM_CHAR_PUT(PORT_BUF(p)->current, c);
+        PORT_BUF(p)->current += nb;
         if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             if (c == '\n') {
                 SAFE_CALL(p, bufport_flush(p, nb, FALSE));
@@ -178,11 +178,11 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         break;
     }
     case SCM_PORT_OSTR:
-        SCM_DSTRING_PUTC(&p->src.ostr, c);
+        SCM_DSTRING_PUTC(PORT_OSTR(p), c);
         UNLOCK(p);
         break;
     case SCM_PORT_PROC:
-        SAFE_CALL(p, p->src.vt.Putc(c, p));
+        SAFE_CALL(p, PORT_VT(p)->Putc(c, p));
         UNLOCK(p);
         break;
     default:
@@ -215,10 +215,10 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         SAFE_CALL(p, bufport_write(p, ss, size));
 
         if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
-            const char *cp = p->src.buf.current;
-            while (cp-- > p->src.buf.buffer) {
+            const char *cp = PORT_BUF(p)->current;
+            while (cp-- > PORT_BUF(p)->buffer) {
                 if (*cp == '\n') {
-                    SAFE_CALL(p, bufport_flush(p, cp - p->src.buf.current, FALSE));
+                    SAFE_CALL(p, bufport_flush(p, cp - PORT_BUF(p)->current, FALSE));
                     break;
                 }
             }
@@ -229,11 +229,11 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         break;
     }
     case SCM_PORT_OSTR:
-        Scm_DStringAdd(&p->src.ostr, s);
+        Scm_DStringAdd(PORT_OSTR(p), s);
         UNLOCK(p);
         break;
     case SCM_PORT_PROC:
-        SAFE_CALL(p, p->src.vt.Puts(s, p));
+        SAFE_CALL(p, PORT_VT(p)->Puts(s, p));
         UNLOCK(p);
         break;
     default:
@@ -263,10 +263,10 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
     case SCM_PORT_FILE:
         SAFE_CALL(p, bufport_write(p, s, siz));
         if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
-            const char *cp = p->src.buf.current;
-            while (cp-- > p->src.buf.buffer) {
+            const char *cp = PORT_BUF(p)->current;
+            while (cp-- > PORT_BUF(p)->buffer) {
                 if (*cp == '\n') {
-                    SAFE_CALL(p, bufport_flush(p, (cp - p->src.buf.current), FALSE));
+                    SAFE_CALL(p, bufport_flush(p, (cp - PORT_BUF(p)->current), FALSE));
                     break;
                 }
             }
@@ -276,11 +276,11 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
         UNLOCK(p);
         break;
     case SCM_PORT_OSTR:
-        Scm_DStringPutz(&p->src.ostr, s, siz);
+        Scm_DStringPutz(PORT_OSTR(p), s, siz);
         UNLOCK(p);
         break;
     case SCM_PORT_PROC:
-        SAFE_CALL(p, p->src.vt.Putz(s, siz, p));
+        SAFE_CALL(p, PORT_VT(p)->Putz(s, siz, p));
         UNLOCK(p);
         break;
     default:
@@ -314,7 +314,7 @@ void Scm_FlushUnsafe(ScmPort *p)
         UNLOCK(p);
         break;
     case SCM_PORT_PROC:
-        SAFE_CALL(p, p->src.vt.Flush(p));
+        SAFE_CALL(p, PORT_VT(p)->Flush(p));
         UNLOCK(p);
         break;
     default:
@@ -514,7 +514,7 @@ int Scm_GetbUnsafe(ScmPort *p)
     } else {
         switch (SCM_PORT_TYPE(p)) {
         case SCM_PORT_FILE:
-            if (p->src.buf.current >= p->src.buf.end) {
+            if (PORT_BUF(p)->current >= PORT_BUF(p)->end) {
                 ScmSize r = 0;
                 SAFE_CALL(p, r = bufport_fill(p, 1, FALSE));
                 if (r == 0) {
@@ -522,14 +522,14 @@ int Scm_GetbUnsafe(ScmPort *p)
                     return EOF;
                 }
             }
-            b = (unsigned char)*p->src.buf.current++;
+            b = (unsigned char)*PORT_BUF(p)->current++;
             break;
         case SCM_PORT_ISTR:
-            if (p->src.istr.current >= p->src.istr.end) b = EOF;
-            else b = (unsigned char)*p->src.istr.current++;
+            if (PORT_ISTR(p)->current >= PORT_ISTR(p)->end) b = EOF;
+            else b = (unsigned char)*PORT_ISTR(p)->current++;
             break;
         case SCM_PORT_PROC:
-            SAFE_CALL(p, b = p->src.vt.Getb(p));
+            SAFE_CALL(p, b = PORT_VT(p)->Getb(p));
             break;
         default:
             UNLOCK(p);
@@ -611,7 +611,7 @@ int Scm_GetcUnsafe(ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
         int c = 0;
-        if (p->src.buf.current >= p->src.buf.end) {
+        if (PORT_BUF(p)->current >= PORT_BUF(p)->end) {
             ScmSize r = 0;
             SAFE_CALL(p, r = bufport_fill(p, 1, FALSE));
             if (r == 0) {
@@ -619,19 +619,19 @@ int Scm_GetcUnsafe(ScmPort *p)
                 return EOF;
             }
         }
-        int first = (unsigned char)*p->src.buf.current++;
+        int first = (unsigned char)*PORT_BUF(p)->current++;
         int nb = SCM_CHAR_NFOLLOWS(first);
         p->bytes++;
         if (nb > 0) {
-            if (p->src.buf.current + nb > p->src.buf.end) {
+            if (PORT_BUF(p)->current + nb > PORT_BUF(p)->end) {
                 /* The buffer doesn't have enough bytes to consist a char.
                    move the incomplete char to the scratch buffer and try
                    to fetch the rest of the char. */
                 volatile int rest;
                 volatile ScmSize filled = 0;
-                p->scrcnt = (unsigned char)(p->src.buf.end - p->src.buf.current + 1);
-                memcpy(p->scratch, p->src.buf.current-1, p->scrcnt);
-                p->src.buf.current = p->src.buf.end;
+                p->scrcnt = (unsigned char)(PORT_BUF(p)->end - PORT_BUF(p)->current + 1);
+                memcpy(p->scratch, PORT_BUF(p)->current-1, p->scrcnt);
+                PORT_BUF(p)->current = PORT_BUF(p)->end;
                 rest = nb + 1 - p->scrcnt;
                 for (;;) {
                     SAFE_CALL(p, filled = bufport_fill(p, rest, FALSE));
@@ -642,22 +642,22 @@ int Scm_GetcUnsafe(ScmPort *p)
                                       "encountered EOF in middle of a multibyte character from port %S", p);
                     }
                     if (filled >= rest) {
-                        memcpy(p->scratch+p->scrcnt, p->src.buf.current, rest);
+                        memcpy(p->scratch+p->scrcnt, PORT_BUF(p)->current, rest);
                         p->scrcnt += rest;
-                        p->src.buf.current += rest;
+                        PORT_BUF(p)->current += rest;
                         break;
                     } else {
-                        memcpy(p->scratch+p->scrcnt, p->src.buf.current, filled);
+                        memcpy(p->scratch+p->scrcnt, PORT_BUF(p)->current, filled);
                         p->scrcnt += filled;
-                        p->src.buf.current = p->src.buf.end;
+                        PORT_BUF(p)->current = PORT_BUF(p)->end;
                         rest -= filled;
                     }
                 }
                 SCM_CHAR_GET(p->scratch, c);
                 p->scrcnt = 0;
             } else {
-                SCM_CHAR_GET(p->src.buf.current-1, c);
-                p->src.buf.current += nb;
+                SCM_CHAR_GET(PORT_BUF(p)->current-1, c);
+                PORT_BUF(p)->current += nb;
             }
             p->bytes += nb;
         } else {
@@ -668,23 +668,23 @@ int Scm_GetcUnsafe(ScmPort *p)
         return c;
     }
     case SCM_PORT_ISTR: {
-        if (p->src.istr.current >= p->src.istr.end) {
+        if (PORT_ISTR(p)->current >= PORT_ISTR(p)->end) {
             UNLOCK(p);
             return EOF;
         }
         int c = 0;
-        int first = (unsigned char)*p->src.istr.current++;
+        int first = (unsigned char)*PORT_ISTR(p)->current++;
         int nb = SCM_CHAR_NFOLLOWS(first);
         p->bytes++;
         if (nb > 0) {
-            if (p->src.istr.current + nb > p->src.istr.end) {
+            if (PORT_ISTR(p)->current + nb > PORT_ISTR(p)->end) {
                 /* TODO: make this behavior customizable */
                 UNLOCK(p);
                 Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                               "encountered EOF in middle of a multibyte character from port %S", p);
             }
-            SCM_CHAR_GET(p->src.istr.current-1, c);
-            p->src.istr.current += nb;
+            SCM_CHAR_GET(PORT_ISTR(p)->current-1, c);
+            PORT_ISTR(p)->current += nb;
             p->bytes += nb;
         } else {
             c = first;
@@ -695,7 +695,7 @@ int Scm_GetcUnsafe(ScmPort *p)
     }
     case SCM_PORT_PROC: {
         int c = 0;
-        SAFE_CALL(p, c = p->src.vt.Getc(p));
+        SAFE_CALL(p, c = PORT_VT(p)->Getc(p));
         if (c == '\n') p->line++;
         UNLOCK(p);
         return c;
@@ -743,15 +743,15 @@ static ScmSize getz_scratch_unsafe(char *buf, ScmSize buflen, ScmPort *p)
 #define GETZ_ISTR getz_istr
 static ScmSize getz_istr(ScmPort *p, char *buf, ScmSize buflen)
 {
-    if (p->src.istr.current + buflen >= p->src.istr.end) {
-        if (p->src.istr.current >= p->src.istr.end) return EOF;
-        ScmSize siz = p->src.istr.end - p->src.istr.current;
-        memcpy(buf, p->src.istr.current, siz);
-        p->src.istr.current = p->src.istr.end;
+    if (PORT_ISTR(p)->current + buflen >= PORT_ISTR(p)->end) {
+        if (PORT_ISTR(p)->current >= PORT_ISTR(p)->end) return EOF;
+        ScmSize siz = PORT_ISTR(p)->end - PORT_ISTR(p)->current;
+        memcpy(buf, PORT_ISTR(p)->current, siz);
+        PORT_ISTR(p)->current = PORT_ISTR(p)->end;
         return siz;
     } else {
-        memcpy(buf, p->src.istr.current, buflen);
-        p->src.istr.current += buflen;
+        memcpy(buf, PORT_ISTR(p)->current, buflen);
+        PORT_ISTR(p)->current += buflen;
         return buflen;
     }
 }
@@ -799,7 +799,7 @@ ScmSize Scm_GetzUnsafe(char *buf, ScmSize buflen, ScmPort *p)
     }
     case SCM_PORT_PROC: {
         ScmSize r = 0;
-        SAFE_CALL(p, r = p->src.vt.Getz(buf, buflen, p));
+        SAFE_CALL(p, r = PORT_VT(p)->Getz(buf, buflen, p));
         p->bytes += r;
         UNLOCK(p);
         return r;
@@ -895,14 +895,14 @@ int Scm_ByteReadyUnsafe(ScmPort *p)
     } else {
         switch (SCM_PORT_TYPE(p)) {
         case SCM_PORT_FILE:
-            if (p->src.buf.current < p->src.buf.end) r = TRUE;
-            else if (p->src.buf.ready == NULL) r = TRUE;
+            if (PORT_BUF(p)->current < PORT_BUF(p)->end) r = TRUE;
+            else if (PORT_BUF(p)->ready == NULL) r = TRUE;
             else {
-                SAFE_CALL(p, r = (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK));
+                SAFE_CALL(p, r = (PORT_BUF(p)->ready(p) != SCM_FD_WOULDBLOCK));
             }
             break;
         case SCM_PORT_PROC:
-            SAFE_CALL(p, r = p->src.vt.Ready(p, FALSE));
+            SAFE_CALL(p, r = PORT_VT(p)->Ready(p, FALSE));
             break;
         default:
             r = TRUE;
@@ -931,14 +931,14 @@ int Scm_CharReadyUnsafe(ScmPort *p)
     else {
         switch (SCM_PORT_TYPE(p)) {
         case SCM_PORT_FILE:
-            if (p->src.buf.current < p->src.buf.end) r = TRUE;
-            else if (p->src.buf.ready == NULL) r = TRUE;
+            if (PORT_BUF(p)->current < PORT_BUF(p)->end) r = TRUE;
+            else if (PORT_BUF(p)->ready == NULL) r = TRUE;
             else {
-                SAFE_CALL(p, r = (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK));
+                SAFE_CALL(p, r = (PORT_BUF(p)->ready(p) != SCM_FD_WOULDBLOCK));
             }
             break;
         case SCM_PORT_PROC:
-            SAFE_CALL(p, r = p->src.vt.Ready(p, TRUE));
+            SAFE_CALL(p, r = PORT_VT(p)->Ready(p, TRUE));
             break;
         default:
             r = TRUE;
@@ -986,19 +986,19 @@ static off_t seek_istr(ScmPort *p, off_t o, int whence, int is_telling)
 {
     off_t r;
     if (is_telling) {
-        r = (off_t)(p->src.istr.current - p->src.istr.start);
+        r = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
     } else {
         long z = (long)o;
         if (whence == SEEK_CUR) {
-            z += (long)(p->src.istr.current - p->src.istr.start);
+            z += (long)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
         } else if (whence == SEEK_END) {
-            z += (long)(p->src.istr.end - p->src.istr.start);
+            z += (long)(PORT_ISTR(p)->end - PORT_ISTR(p)->start);
         }
-        if (z < 0 || z > (long)(p->src.istr.end - p->src.istr.start)) {
+        if (z < 0 || z > (long)(PORT_ISTR(p)->end - PORT_ISTR(p)->start)) {
             r = (off_t)-1;
         } else {
-            p->src.istr.current = p->src.istr.start + z;
-            r = (off_t)(p->src.istr.current - p->src.istr.start);
+            PORT_ISTR(p)->current = PORT_ISTR(p)->start + z;
+            r = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
         }
         p->ungotten = SCM_CHAR_INVALID;
         p->scrcnt = 0;
@@ -1043,31 +1043,31 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         /* NB: the following doesn't work if we have bidirectional port.
            In such case we need to keep whether the last call of buffer
            handling routine was input or output. */
-        if (!p->src.buf.seeker) break;
+        if (!PORT_BUF(p)->seeker) break;
         if (is_telling) {
-            SAFE_CALL(p, r = p->src.buf.seeker(p, 0, SEEK_CUR));
+            SAFE_CALL(p, r = PORT_BUF(p)->seeker(p, 0, SEEK_CUR));
             if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
-                r -= (off_t)(p->src.buf.end - p->src.buf.current);
+                r -= (off_t)(PORT_BUF(p)->end - PORT_BUF(p)->current);
             } else {
-                r += (off_t)(p->src.buf.current - p->src.buf.buffer);
+                r += (off_t)(PORT_BUF(p)->current - PORT_BUF(p)->buffer);
             }
         } else {
             /* NB: possible optimization: the specified position is within
                the current buffer, we can avoid calling seeker. */
             if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
-                char *c = p->src.buf.current; /* save current ptr */
+                char *c = PORT_BUF(p)->current; /* save current ptr */
                 if (whence == SEEK_CUR) {
-                    o -= (off_t)(p->src.buf.end - c);
+                    o -= (off_t)(PORT_BUF(p)->end - c);
                 }
-                p->src.buf.current = p->src.buf.end; /* invalidate buffer */
-                SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
+                PORT_BUF(p)->current = PORT_BUF(p)->end; /* invalidate buffer */
+                SAFE_CALL(p, r = PORT_BUF(p)->seeker(p, o, whence));
                 if (r == (off_t)-1) {
                     /* This may happened if seeker somehow gave up */
-                    p->src.buf.current = c;
+                    PORT_BUF(p)->current = c;
                 }
             } else {
                 SAFE_CALL(p, bufport_flush(p, 0, TRUE));
-                SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
+                SAFE_CALL(p, r = PORT_BUF(p)->seeker(p, o, whence));
             }
         }
         break;
@@ -1076,15 +1076,15 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         break;
     case SCM_PORT_OSTR:
         if (is_telling) {
-            r = (off_t)Scm_DStringSize(&(p->src.ostr));
+            r = (off_t)Scm_DStringSize(PORT_OSTR(p));
         } else {
             /* Not supported yet */
             r = (off_t)-1;
         }
         break;
     case SCM_PORT_PROC:
-        if (p->src.vt.Seek) {
-            SAFE_CALL(p, r = p->src.vt.Seek(p, o, whence));
+        if (PORT_VT(p)->Seek) {
+            SAFE_CALL(p, r = PORT_VT(p)->Seek(p, o, whence));
         }
         break;
     }

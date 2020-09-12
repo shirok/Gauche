@@ -48,9 +48,9 @@
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
 #define SCM_PORT_BUFFER_MODE(obj) \
-    (SCM_PORT(obj)->src.buf.mode & SCM_PORT_BUFFER_MODE_MASK)
+    (PORT_BUF(obj)->mode & SCM_PORT_BUFFER_MODE_MASK)
 #define SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(obj) \
-    (SCM_PORT(obj)->src.buf.mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
+    (PORT_BUF(obj)->mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
 
 /* Parameter location for the global reader lexical mode, from which
    ports inherit. */
@@ -157,10 +157,11 @@ static void port_cleanup(ScmPort *port)
                 unregister_buffered_port(port);
             }
         }
-        if (port->ownerp && port->src.buf.closer) port->src.buf.closer(port);
+        ScmPortBuffer *buf = Scm_PortBufferStruct(port);
+        if (port->ownerp && buf->closer) buf->closer(port);
         break;
     case SCM_PORT_PROC:
-        if (port->src.vt.Close) port->src.vt.Close(port);
+        if (PORT_VT(port)->Close) PORT_VT(port)->Close(port);
         break;
     default:
         break;
@@ -278,12 +279,40 @@ static void port_print(ScmObj obj, ScmPort *port,
 int Scm_PortFileNo(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
-        if (port->src.buf.filenum) return port->src.buf.filenum(port);
+        ScmPortBuffer *buf = Scm_PortBufferStruct(port);
+        if (buf->filenum) return buf->filenum(port);
         else return -1;
     } else {
         /* TODO: proc port */
         return -1;
     }
+}
+
+/* Returns a pointer to the 'src' strcuture.  User code should use this
+ * instead of directly referring to 'src' member.
+ */
+ScmPortBuffer *Scm_PortBufferStruct(ScmPort *port)
+{
+    SCM_ASSERT(port->type == SCM_PORT_FILE);
+    return PORT_BUF(port);
+}
+
+ScmPortInputString *Scm_PortInputStringStruct(ScmPort *port)
+{
+    SCM_ASSERT(port->type == SCM_PORT_ISTR);
+    return PORT_ISTR(port);
+}
+
+ScmDString *Scm_PortOutputDString(ScmPort *port)
+{
+    SCM_ASSERT(port->type == SCM_PORT_OSTR);
+    return PORT_OSTR(port);
+}
+
+ScmPortVTable *Scm_PortVTableStruct(ScmPort *port)
+{
+    SCM_ASSERT(port->type == SCM_PORT_PROC);
+    return PORT_VT(port);
 }
 
 /* Duplicates the file descriptor of the source port, and set it to
@@ -317,8 +346,8 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
         /* discard the current buffer */
         ScmVM *vm = Scm_VM();
         PORT_LOCK(dst, vm);
-        dst->src.buf.current = dst->src.buf.buffer;
-        dst->src.buf.end = dst->src.buf.buffer;
+        PORT_BUF(dst)->current = PORT_BUF(dst)->buffer;
+        PORT_BUF(dst)->end = PORT_BUF(dst)->buffer;
         PORT_UNLOCK(dst);
     } else {
         /* flush the current buffer */
@@ -591,26 +620,26 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
     if (buf == NULL) buf = SCM_NEW_ATOMIC2(char*, size);
     ScmPort *p = make_port(klass, name, dir, SCM_PORT_FILE);
     p->ownerp = ownerp;
-    p->src.buf.buffer = buf;
+    PORT_BUF(p)->buffer = buf;
     if ((dir & SCM_PORT_IOMASK) == SCM_PORT_INPUT) {
-        p->src.buf.current = p->src.buf.buffer;
-        p->src.buf.end = p->src.buf.buffer;
+        PORT_BUF(p)->current = PORT_BUF(p)->buffer;
+        PORT_BUF(p)->end = PORT_BUF(p)->buffer;
     } else {
-        p->src.buf.current = p->src.buf.buffer;
-        p->src.buf.end = p->src.buf.buffer + size;
+        PORT_BUF(p)->current = PORT_BUF(p)->buffer;
+        PORT_BUF(p)->end = PORT_BUF(p)->buffer + size;
     }
     if (dir == SCM_PORT_OUTPUT_TRANSIENT) {
         SCM_PORT_FLAGS(p) |= SCM_PORT_TRANSIENT;
     }
-    p->src.buf.size = size;
-    p->src.buf.mode = bufrec->mode;
-    p->src.buf.filler = bufrec->filler;
-    p->src.buf.flusher = bufrec->flusher;
-    p->src.buf.closer = bufrec->closer;
-    p->src.buf.ready = bufrec->ready;
-    p->src.buf.filenum = bufrec->filenum;
-    p->src.buf.seeker = bufrec->seeker;
-    p->src.buf.data = bufrec->data;
+    PORT_BUF(p)->size = size;
+    PORT_BUF(p)->mode = bufrec->mode;
+    PORT_BUF(p)->filler = bufrec->filler;
+    PORT_BUF(p)->flusher = bufrec->flusher;
+    PORT_BUF(p)->closer = bufrec->closer;
+    PORT_BUF(p)->ready = bufrec->ready;
+    PORT_BUF(p)->filenum = bufrec->filenum;
+    PORT_BUF(p)->seeker = bufrec->seeker;
+    PORT_BUF(p)->data = bufrec->data;
     /* NB: DIR may be SCM_PORT_OUTPUT_TRANSIENT; in that case we don't
        register the buffer. */
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
@@ -625,8 +654,8 @@ int Scm_GetPortBufferingMode(ScmPort *port)
 
 void Scm_SetPortBufferingMode(ScmPort *port, int mode)
 {
-    port->src.buf.mode =
-        (port->src.buf.mode & ~SCM_PORT_BUFFER_MODE_MASK)
+    PORT_BUF(port)->mode =
+        (PORT_BUF(port)->mode & ~SCM_PORT_BUFFER_MODE_MASK)
         | (mode & SCM_PORT_BUFFER_MODE_MASK);
 }
 
@@ -638,9 +667,9 @@ int Scm_GetPortBufferSigpipeSensitive(ScmPort *port)
 void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
 {
     if (sensitive) {
-        port->src.buf.mode |=  SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
+        PORT_BUF(port)->mode |=  SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
     } else {
-        port->src.buf.mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
+        PORT_BUF(port)->mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
     }
 }
 
@@ -717,9 +746,9 @@ static void bufport_flush(ScmPort *p, ScmSize cnt, int forcep)
 
     if (cursiz == 0) return;
     if (cnt <= 0)  { cnt = cursiz; }
-    ScmSize nwrote = p->src.buf.flusher(p, cnt, forcep);
+    ScmSize nwrote = PORT_BUF(p)->flusher(p, cnt, forcep);
     if (nwrote < 0) {
-        p->src.buf.current = p->src.buf.buffer; /* for safety */
+        PORT_BUF(p)->current = PORT_BUF(p)->buffer; /* for safety */
         p->error = TRUE;
         /* TODO: can we raise an error here, or should we propagate
            it to the caller? */
@@ -727,11 +756,11 @@ static void bufport_flush(ScmPort *p, ScmSize cnt, int forcep)
                       "Couldn't flush port %S due to an error", p);
     }
     if (nwrote >= 0 && nwrote < cursiz) {
-        memmove(p->src.buf.buffer, p->src.buf.buffer+nwrote,
+        memmove(PORT_BUF(p)->buffer, PORT_BUF(p)->buffer+nwrote,
                 cursiz-nwrote);
-        p->src.buf.current -= nwrote;
+        PORT_BUF(p)->current -= nwrote;
     } else {
-        p->src.buf.current = p->src.buf.buffer;
+        PORT_BUF(p)->current = PORT_BUF(p)->buffer;
     }
 }
 
@@ -740,14 +769,14 @@ static void bufport_flush(ScmPort *p, ScmSize cnt, int forcep)
 static void bufport_write(ScmPort *p, const char *src, ScmSize siz)
 {
     do {
-        ScmSize room = p->src.buf.end - p->src.buf.current;
+        ScmSize room = PORT_BUF(p)->end - PORT_BUF(p)->current;
         if (room >= siz) {
-            memcpy(p->src.buf.current, src, siz);
-            p->src.buf.current += siz;
+            memcpy(PORT_BUF(p)->current, src, siz);
+            PORT_BUF(p)->current += siz;
             siz = 0;
         } else {
-            memcpy(p->src.buf.current, src, room);
-            p->src.buf.current += room;
+            memcpy(PORT_BUF(p)->current, src, room);
+            PORT_BUF(p)->current += room;
             siz -= room;
             src += room;
             bufport_flush(p, 0, FALSE);
@@ -762,14 +791,14 @@ static void bufport_write(ScmPort *p, const char *src, ScmSize siz)
  */
 static ScmSize bufport_fill(ScmPort *p, ScmSize min, int allow_less)
 {
-    ScmSize cursiz = p->src.buf.end - p->src.buf.current;
+    ScmSize cursiz = PORT_BUF(p)->end - PORT_BUF(p)->current;
     ScmSize nread = 0, toread;
     if (cursiz > 0) {
-        memmove(p->src.buf.buffer, p->src.buf.current, cursiz);
-        p->src.buf.current = p->src.buf.buffer;
-        p->src.buf.end = p->src.buf.current + cursiz;
+        memmove(PORT_BUF(p)->buffer, PORT_BUF(p)->current, cursiz);
+        PORT_BUF(p)->current = PORT_BUF(p)->buffer;
+        PORT_BUF(p)->end = PORT_BUF(p)->current + cursiz;
     } else {
-        p->src.buf.current = p->src.buf.end = p->src.buf.buffer;
+        PORT_BUF(p)->current = PORT_BUF(p)->end = PORT_BUF(p)->buffer;
     }
     if (min <= 0) min = SCM_PORT_BUFFER_ROOM(p);
     if (SCM_PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_NONE) {
@@ -779,10 +808,10 @@ static ScmSize bufport_fill(ScmPort *p, ScmSize min, int allow_less)
     }
 
     do {
-        ScmSize r = p->src.buf.filler(p, toread-nread);
+        ScmSize r = PORT_BUF(p)->filler(p, toread-nread);
         if (r <= 0) break;
         nread += r;
-        p->src.buf.end += r;
+        PORT_BUF(p)->end += r;
     } while (!allow_less && nread < min);
     return nread;
 }
@@ -801,12 +830,12 @@ static ScmSize bufport_fill(ScmPort *p, ScmSize min, int allow_less)
 static ScmSize bufport_read(ScmPort *p, char *dst, ScmSize siz)
 {
     ScmSize nread = 0;
-    ScmSize avail = p->src.buf.end - p->src.buf.current;
+    ScmSize avail = PORT_BUF(p)->end - PORT_BUF(p)->current;
 
     ScmSize req = MIN(siz, avail);
     if (req > 0) {
-        memcpy(dst, p->src.buf.current, req);
-        p->src.buf.current += req;
+        memcpy(dst, PORT_BUF(p)->current, req);
+        PORT_BUF(p)->current += req;
         nread += req;
         siz -= req;
         dst += req;
@@ -816,23 +845,23 @@ static ScmSize bufport_read(ScmPort *p, char *dst, ScmSize siz)
            some data from the remanings in the buffer, and it is enough
            if buffering mode is not full. */
         if (nread && (SCM_PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_FULL)) {
-            if (p->src.buf.ready
-                && p->src.buf.ready(p) == SCM_FD_WOULDBLOCK) {
+            if (PORT_BUF(p)->ready
+                && PORT_BUF(p)->ready(p) == SCM_FD_WOULDBLOCK) {
                 break;
             }
         }
 
-        ScmSize req = MIN(siz, p->src.buf.size);
+        ScmSize req = MIN(siz, PORT_BUF(p)->size);
         ScmSize r = bufport_fill(p, req, TRUE);
         if (r <= 0) break; /* EOF or an error*/
         if (r >= siz) {
-            memcpy(dst, p->src.buf.current, siz);
-            p->src.buf.current += siz;
+            memcpy(dst, PORT_BUF(p)->current, siz);
+            PORT_BUF(p)->current += siz;
             nread += siz;
             break;
         } else {
-            memcpy(dst, p->src.buf.current, r);
-            p->src.buf.current += r;
+            memcpy(dst, PORT_BUF(p)->current, r);
+            PORT_BUF(p)->current += r;
             nread += r;
             siz -= r;
             dst += r;
@@ -1052,13 +1081,13 @@ typedef struct file_port_data_rec {
     int fd;
 } file_port_data;
 
-#define FILE_PORT_DATA(p) ((file_port_data*)(p->src.buf.data))
+#define FILE_PORT_DATA(p) ((file_port_data*)(PORT_BUF(p)->data))
 
 static ScmSize file_filler(ScmPort *p, ScmSize cnt)
 {
     ScmSize nread = 0;
     int fd = FILE_PORT_DATA(p)->fd;
-    char *datptr = p->src.buf.end;
+    char *datptr = PORT_BUF(p)->end;
     SCM_ASSERT(fd >= 0);
     while (nread == 0) {
         ScmSize r;
@@ -1083,7 +1112,7 @@ static ScmSize file_flusher(ScmPort *p, ScmSize cnt, int forcep)
     ScmSize nwrote = 0;
     ScmSize datsiz = SCM_PORT_BUFFER_AVAIL(p);
     int fd = FILE_PORT_DATA(p)->fd;
-    char *datptr = p->src.buf.buffer;
+    char *datptr = PORT_BUF(p)->buffer;
 
     SCM_ASSERT(fd >= 0);
     while ((!forcep && nwrote == 0)
@@ -1145,7 +1174,7 @@ static off_t file_seeker(ScmPort *p, off_t offset, int whence)
 /* Kludge: We should have better way */
 static int file_buffered_port_p(ScmPort *p)
 {
-    return (p->src.buf.filenum == file_filenum);
+    return (PORT_BUF(p)->filenum == file_filenum);
 }
 
 static void file_buffered_port_set_fd(ScmPort *p, int fd)
@@ -1247,9 +1276,9 @@ ScmObj Scm_MakeInputStringPortWithName(ScmString *str, ScmObj name,
     ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_INPUT, SCM_PORT_ISTR);
     ScmSmallInt size;
     const char *s = Scm_GetStringContent(str, &size, NULL, NULL);
-    p->src.istr.start = s;
-    p->src.istr.current = s;
-    p->src.istr.end = s + size;
+    PORT_ISTR(p)->start = s;
+    PORT_ISTR(p)->current = s;
+    PORT_ISTR(p)->end = s + size;
     if (flags&SCM_PORT_STRING_PRIVATE) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }
@@ -1265,7 +1294,7 @@ ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 ScmObj Scm_MakeOutputStringPortWithName(ScmObj name, u_long flags)
 {
     ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_OUTPUT, SCM_PORT_OSTR);
-    Scm_DStringInit(&p->src.ostr);
+    Scm_DStringInit(PORT_OSTR(p));
     if (flags&SCM_PORT_STRING_PRIVATE) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }
@@ -1283,7 +1312,7 @@ ScmObj Scm_GetOutputString(ScmPort *port, int flags)
         Scm_Error("output string port required, but got %S", port);
     ScmVM *vm = Scm_VM();
     PORT_LOCK(port, vm);
-    ScmObj r = Scm_DStringGet(&SCM_PORT(port)->src.ostr, flags);
+    ScmObj r = Scm_DStringGet(PORT_OSTR(port), flags);
     PORT_UNLOCK(port);
     return r;
 }
@@ -1292,7 +1321,7 @@ ScmObj Scm_GetOutputStringUnsafe(ScmPort *port, int flags)
 {
     if (SCM_PORT_TYPE(port) != SCM_PORT_OSTR)
         Scm_Error("output string port required, but got %S", port);
-    return Scm_DStringGet(&SCM_PORT(port)->src.ostr, flags);
+    return Scm_DStringGet(PORT_OSTR(port), flags);
 }
 
 #if GAUCHE_API_VERSION < 1000
@@ -1321,8 +1350,8 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
         Scm_Error("input string port required, but got %S", port);
     /* NB: we don't need to lock the port, since the string body
        the port is pointing won't be changed. */
-    const char *ep = port->src.istr.end;
-    const char *cp = port->src.istr.current;
+    const char *ep = PORT_ISTR(port)->end;
+    const char *cp = PORT_ISTR(port)->current;
     /* Things gets complicated if there's an ungotten char or bytes.
        We want to share the string body whenever possible, so we
        first check the ungotten stuff matches the content of the
@@ -1331,7 +1360,7 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
         char cbuf[SCM_CHAR_MAX_BYTES];
         int nbytes = SCM_CHAR_NBYTES(port->ungotten);
         SCM_CHAR_PUT(cbuf, port->ungotten);
-        const char *sp = port->src.istr.start;
+        const char *sp = PORT_ISTR(port)->start;
         if (cp - sp >= nbytes
             && memcmp(cp - nbytes, cbuf, nbytes) == 0) {
             cp -= nbytes;       /* we can reuse buffer */
@@ -1342,7 +1371,7 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
                                                   cbuf, nbytes, flags);
         }
     } else if (port->scrcnt > 0) {
-        const char *sp = port->src.istr.start;
+        const char *sp = PORT_ISTR(port)->start;
         if (cp - sp >= (int)port->scrcnt
             && memcmp(cp - port->scrcnt, port->scratch, port->scrcnt) == 0) {
             cp -= port->scrcnt; /* we can reuse buffer */
@@ -1441,16 +1470,16 @@ ScmObj Scm_MakeVirtualPortWithName(ScmClass *klass, ScmObj name,
     ScmPort *p = make_port(klass, name, direction, SCM_PORT_PROC);
 
     /* Copy vtable, and ensure all entries contain some ptr */
-    p->src.vt = *vtable;
-    if (!p->src.vt.Getb)  p->src.vt.Getb = null_getb;
-    if (!p->src.vt.Getc)  p->src.vt.Getc = null_getc;
-    if (!p->src.vt.Getz)  p->src.vt.Getz = null_getz;
-    if (!p->src.vt.Ready) p->src.vt.Ready = null_ready;
-    if (!p->src.vt.Putb)  p->src.vt.Putb = null_putb;
-    if (!p->src.vt.Putc)  p->src.vt.Putc = null_putc;
-    if (!p->src.vt.Putz)  p->src.vt.Putz = null_putz;
-    if (!p->src.vt.Puts)  p->src.vt.Puts = null_puts;
-    if (!p->src.vt.Flush) p->src.vt.Flush = null_flush;
+    *PORT_VT(p) = *vtable;
+    if (!PORT_VT(p)->Getb)  PORT_VT(p)->Getb = null_getb;
+    if (!PORT_VT(p)->Getc)  PORT_VT(p)->Getc = null_getc;
+    if (!PORT_VT(p)->Getz)  PORT_VT(p)->Getz = null_getz;
+    if (!PORT_VT(p)->Ready) PORT_VT(p)->Ready = null_ready;
+    if (!PORT_VT(p)->Putb)  PORT_VT(p)->Putb = null_putb;
+    if (!PORT_VT(p)->Putc)  PORT_VT(p)->Putc = null_putc;
+    if (!PORT_VT(p)->Putz)  PORT_VT(p)->Putz = null_putz;
+    if (!PORT_VT(p)->Puts)  PORT_VT(p)->Puts = null_puts;
+    if (!PORT_VT(p)->Flush) PORT_VT(p)->Flush = null_flush;
     /* Close and Seek can be left NULL */
     return SCM_OBJ(p);
 }
@@ -1613,8 +1642,8 @@ static void coding_port_recognize_encoding(ScmPort *port,
 static ScmSize coding_filler(ScmPort *p, ScmSize cnt)
 {
     ScmSize nread = 0;
-    coding_port_data *data = (coding_port_data*)p->src.buf.data;
-    char *datptr = p->src.buf.end;
+    coding_port_data *data = (coding_port_data*)PORT_BUF(p)->data;
+    char *datptr = PORT_BUF(p)->end;
 
     SCM_ASSERT(data->source);
 
@@ -1651,7 +1680,7 @@ static ScmSize coding_filler(ScmPort *p, ScmSize cnt)
 
 static void coding_closer(ScmPort *p)
 {
-    coding_port_data *data = (coding_port_data*)p->src.buf.data;
+    coding_port_data *data = (coding_port_data*)PORT_BUF(p)->data;
     if (data->source) {
         Scm_ClosePort(data->source);
         data->source = NULL;
@@ -1660,7 +1689,7 @@ static void coding_closer(ScmPort *p)
 
 static int coding_ready(ScmPort *p)
 {
-    coding_port_data *data = (coding_port_data*)p->src.buf.data;
+    coding_port_data *data = (coding_port_data*)PORT_BUF(p)->data;
     if (data->source == NULL) return TRUE;
     if (data->state == CODING_PORT_RECOGNIZED) {
         return SCM_FD_READY;
@@ -1671,7 +1700,7 @@ static int coding_ready(ScmPort *p)
 
 static int coding_filenum(ScmPort *p)
 {
-    coding_port_data *data = (coding_port_data*)p->src.buf.data;
+    coding_port_data *data = (coding_port_data*)PORT_BUF(p)->data;
     if (data->source == NULL) return -1;
     return Scm_PortFileNo(data->source);
 }

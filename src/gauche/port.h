@@ -116,6 +116,14 @@ typedef struct ScmPortVTableRec {
     void    *data;
 } ScmPortVTable;
 
+/* Input string port */
+typedef struct ScmPortInputStringRec {
+    const char *start;
+    const char *current;
+    const char *end;
+} ScmPortInputString;
+
+
 /* The main port structure.
  * Regardless of the port type, the port structure caches at most
  * one character, in order to realize `peek-char' (Scheme) or `Ungetc' (C)
@@ -137,6 +145,13 @@ struct ScmPortRec {
     u_int error     : 1;        /* Error has been occurred */
 
     u_int flags     : 5;        /* see ScmPortFlags below */
+
+    /* What follows should be considered private fields and shouldn't
+     * be directly accessed by the user code.  The source/sink structures
+     * can be retrieved via Scm_PortBufferStruct(), 
+     * Scm_PortInputStringStruct(), and Scm_PortOutputDString().
+     * In future we'll hide those internal fields.
+     */
 
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
 
@@ -161,14 +176,11 @@ struct ScmPortRec {
     u_long line;                /* line counter */
     u_long bytes;               /* byte counter */
 
-    /* The source or the sink of the port. */
+    /* The source or the sink of the port.   Use specialized accessor
+       functions to retrieve one of those union members. */
     union {
         ScmPortBuffer buf;      /* buffered port */
-        struct {
-            const char *start;
-            const char *current;
-            const char *end;
-        } istr;                 /* input string port */
+        ScmPortInputString istr;
         ScmDString ostr;        /* output string port */
         ScmPortVTable vt;       /* virtual port */
     } src;
@@ -310,6 +322,11 @@ SCM_EXTERN int    Scm_ByteReady(ScmPort *port);
 SCM_EXTERN int    Scm_ByteReadyUnsafe(ScmPort *port);
 SCM_EXTERN int    Scm_CharReady(ScmPort *port);
 SCM_EXTERN int    Scm_CharReadyUnsafe(ScmPort *port);
+
+SCM_EXTERN ScmPortBuffer      *Scm_PortBufferStruct(ScmPort *port);
+SCM_EXTERN ScmPortInputString *Scm_PortInputStringStruct(ScmPort *port);
+SCM_EXTERN ScmDString         *Scm_PortOutputDString(ScmPort *port);
+SCM_EXTERN ScmPortVTable      *Scm_PortVTableStruct(ScmPort *port);
 
 SCM_EXTERN void   Scm_ClosePort(ScmPort *port);
 
