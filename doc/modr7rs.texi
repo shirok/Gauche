@@ -2731,14 +2731,25 @@ checking the termination condition for each iteration.
 @defun vector-unfold-right f length seed @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Creates a vector of length @var{length}, filling elements
 right to left by calling @var{f} repeatedly.
+@c JP
+長さ@var{length}のベクタを作って返します。要素は右から左に、
+@var{f}を繰り返し呼ぶことで計算されます。
+@c COMMON
 
+@c EN
 The procedure @var{f} must take as many arguments as
 one plus number of seed values, and must return the same number
 of values.  The first argument is the index.  The first return
 value is used for the element of the result vector, and the
 rest of return values are passed to the next call of @var{f}.
+@c JP
+手続き@var{f}は、@var{seed}の数よりひとつ多い引数を取り、同数の値を返さなければなりません。
+引数の最初に渡されるのはインデックスです。戻り値の最初の値がそのインデックスの要素の初期値に
+使われ、残りの戻り値が次のシード値となります。
+@c COMMON
 
 @example
 (vector-unfold-right (^[i] (* i i)) 5)
@@ -2753,9 +2764,14 @@ rest of return values are passed to the next call of @var{f}.
 @defun vector-reverse-copy vec :optional start end
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Copies the vector @var{vec} with reversing its elements.
 Optional @var{start} and @var{end} arguments can limit
 the range of the input.
+@c JP
+ベクタ@var{vec}を要素を逆順にしてコピーします。
+省略可能引数@var{start}と@var{end}は元のベクタから取り出す範囲を限定します。
+@c COMMON
 
 @example
 (vector-reverse-copy '#(a b c d e) 1 4)
@@ -2766,23 +2782,39 @@ the range of the input.
 @defun vector-concatenate list-of-vectors
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Same as @code{(apply vector-append list-of-vectors)}.
+@c JP
+@code{(apply vector-append list-of-vectors)}と同じです。
+@c COMMON
 @end defun
 
 @defun vector-append-subvectors spec @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 The number of arguments must be multiple of 3.  The argument list
 must be in the following format, where each @var{vecN} is
-a vector, and @code{startN} and @code{endN} are nonnegative integers:
+a vector, and @code{startN} and @code{endN} are nonnegative exact integers:
+@c JP
+引数の数は3の倍数でなければなりません。
+引数リストは次の形式をとります。ここで、@var{vecN}はベクタ、
+@var{startN}と@var{endN}は非負の正確な整数です。
+@c COMMON
 
 @example
 vec1 start1 end1 vec2 start2 end2 @dots{}
 @end example
 
+@c EN
 This procedure creates a new vector by concatenating subvectors
 specified by each triplet.  That is, it works as if it's the following
 code, except it avoids copying each subvector:
+@c JP
+この手続きは、それぞれの3つ組で指定される部分ベクタをつなぎ合わせたベクタを
+作って返します。つまり、以下のコードと同様の動作をしますが、
+各部分ベクタのコピーは避けられます。
+@c COMMON
 
 @example
 (vector-append (vector-copy vec1 start1 end1)
@@ -2790,7 +2822,11 @@ code, except it avoids copying each subvector:
                @dots{})
 @end example
 
+@c EN
 Here's an example:
+@c JP
+例を示します:
+@c COMMON
 
 @example
 (vector-append-subvectors '#(a b c d e) 0 3
