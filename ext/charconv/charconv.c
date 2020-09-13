@@ -162,7 +162,7 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
     if (nread <= 0) {
         /* input reached EOF.  finish the output state */
         if (insize == 0) {
-            ScmSize outroom = SCM_PORT_BUFFER_ROOM(port);
+            ScmSize outroom = Scm_PortBufferRoom(port);
             ScmSize result = jconv_reset(info, outbuf, outroom);
             if (result == OUTPUT_NOT_ENOUGH) {
                 /* The port buffer doesn't have enough space to contain the
@@ -189,7 +189,7 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 
     /* Conversion. */
     ScmSize inroom = insize;
-    ScmSize outroom = SCM_PORT_BUFFER_ROOM(port);
+    ScmSize outroom = Scm_PortBufferRoom(port);
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "=> in(%p)%d out(%p)%d\n", inbuf, insize, outbuf, outroom);
@@ -394,7 +394,7 @@ static void conv_output_closer(ScmPort *port)
 static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
 {
     ScmConvInfo *info = CONV_INFO(port);
-    ScmSize inroom = SCM_PORT_BUFFER_AVAIL(port);
+    ScmSize inroom = Scm_PortBufferAvail(port);
     ScmSize len = inroom;
     const char *inbuf = PORT_BUF(port)->buffer;
 

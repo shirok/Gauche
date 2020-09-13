@@ -90,16 +90,6 @@ typedef struct ScmPortBufferRec {
     void *data;
 } ScmPortBuffer;
 
-/* For input buffered port, returns the size of room that can be filled
-   by the filler */
-#define SCM_PORT_BUFFER_ROOM(p) \
-    (int)((p)->src.buf.buffer+(p)->src.buf.size-(p)->src.buf.end)
-
-/* For output buffered port, returns the size of available data that can
-   be flushed by the flusher */
-#define SCM_PORT_BUFFER_AVAIL(p) \
-    (int)((p)->src.buf.current-(p)->src.buf.buffer)
-
 /* The function table of procedural port. */
 typedef struct ScmPortVTableRec {
     int     (*Getb)(ScmPort *p);
@@ -283,6 +273,9 @@ enum ScmPortFlags {
 #define SCM_GETB(b, p)     (b = Scm_Getb(SCM_PORT(p)))
 #define SCM_GETC(c, p)     (c = Scm_Getc(SCM_PORT(p)))
 
+#define SCM_PORT_BUFFER_ROOM(p)  Scm_PortBufferRoom(p)
+#define SCM_PORT_BUFFER_AVAIL(p) Scm_PortBufferAvail(p)
+
 SCM_CLASS_DECL(Scm_PortClass);
 #define SCM_CLASS_PORT                (&Scm_PortClass)
 
@@ -328,6 +321,9 @@ SCM_EXTERN ScmPortBuffer      *Scm_PortBufferStruct(ScmPort *port);
 SCM_EXTERN ScmPortInputString *Scm_PortInputStringStruct(ScmPort *port);
 SCM_EXTERN ScmDString         *Scm_PortOutputDString(ScmPort *port);
 SCM_EXTERN ScmPortVTable      *Scm_PortVTableStruct(ScmPort *port);
+
+SCM_EXTERN ScmSize  Scm_PortBufferRoom(ScmPort *port);
+SCM_EXTERN ScmSize  Scm_PortBufferAvail(ScmPort *port);
 
 SCM_EXTERN ScmWriteState *Scm_PortWriteState(ScmPort *);
 SCM_EXTERN void           Scm_PortWriteStateSet(ScmPort *, ScmWriteState*);

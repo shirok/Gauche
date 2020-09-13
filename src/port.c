@@ -47,13 +47,17 @@
 #define MAX(a, b) ((a)>(b)? (a) : (b))
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
-#define PORT_BUFFER_MODE(obj) \
-    (PORT_BUF(obj)->mode & SCM_PORT_BUFFER_MODE_MASK)
-#define PORT_BUFFER_SIGPIPE_SENSITIVE_P(obj) \
-    (PORT_BUF(obj)->mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
+#define PORT_BUFFER_MODE(p) \
+    (PORT_BUF(p)->mode & SCM_PORT_BUFFER_MODE_MASK)
+#define PORT_BUFFER_SIGPIPE_SENSITIVE_P(p) \
+    (PORT_BUF(p)->mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
+#define PORT_BUFFER_ROOM(p) \
+    (PORT_BUF(p)->buffer + PORT_BUF(p)->size - PORT_BUF(p)->end)
+#define PORT_BUFFER_AVAIL(p) \
+    (PORT_BUF(p)->current - PORT_BUF(p)->buffer)
 
-#define PORT_LINE(obj)    (SCM_PORT(obj)->line)
-#define PORT_BYTES(obj)   (SCM_PORT(obj)->bytes)
+#define PORT_LINE(p)    (SCM_PORT(p)->line)
+#define PORT_BYTES(p)   (SCM_PORT(p)->bytes)
 
 /* Parameter location for the global reader lexical mode, from which
    ports inherit. */
@@ -322,6 +326,21 @@ ScmPortVTable *Scm_PortVTableStruct(ScmPort *port)
     SCM_ASSERT(port->type == SCM_PORT_PROC);
     return PORT_VT(port);
 }
+
+/* For input buffered port, returns the size of room that can be filled
+   by the filler */
+ScmSize Scm_PortBufferRoom(ScmPort *port)
+{
+    return PORT_BUFFER_ROOM(port);
+}
+
+/* For output buffered port, returns the size of available data that can
+   be flushed by the flusher */
+ScmSize Scm_PortBufferAvail(ScmPort *port)
+{
+    return PORT_BUFFER_AVAIL(port);
+}
+
 
 ScmWriteState *Scm_PortWriteState(ScmPort *port)
 {
@@ -760,7 +779,7 @@ ScmObj Scm_ReaderLexicalMode()
    guarantee to output cnt bytes.  */
 static void bufport_flush(ScmPort *p, ScmSize cnt, int forcep)
 {
-    ScmSize cursiz = SCM_PORT_BUFFER_AVAIL(p);
+    ScmSize cursiz = PORT_BUFFER_AVAIL(p);
 
     if (cursiz == 0) return;
     if (cnt <= 0)  { cnt = cursiz; }
@@ -818,9 +837,9 @@ static ScmSize bufport_fill(ScmPort *p, ScmSize min, int allow_less)
     } else {
         PORT_BUF(p)->current = PORT_BUF(p)->end = PORT_BUF(p)->buffer;
     }
-    if (min <= 0) min = SCM_PORT_BUFFER_ROOM(p);
+    if (min <= 0) min = PORT_BUFFER_ROOM(p);
     if (PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_NONE) {
-        toread = SCM_PORT_BUFFER_ROOM(p);
+        toread = PORT_BUFFER_ROOM(p);
     } else {
         toread = min;
     }
@@ -1128,7 +1147,7 @@ static ScmSize file_filler(ScmPort *p, ScmSize cnt)
 static ScmSize file_flusher(ScmPort *p, ScmSize cnt, int forcep)
 {
     ScmSize nwrote = 0;
-    ScmSize datsiz = SCM_PORT_BUFFER_AVAIL(p);
+    ScmSize datsiz = PORT_BUFFER_AVAIL(p);
     int fd = FILE_PORT_DATA(p)->fd;
     char *datptr = PORT_BUF(p)->buffer;
 

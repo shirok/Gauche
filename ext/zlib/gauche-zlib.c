@@ -233,7 +233,7 @@ static ScmSize deflate_flusher(ScmPort *port, ScmSize cnt, int forcep)
     unsigned char outbuf[CHUNK];
 
     strm->next_in = inbuf;
-    strm->avail_in = SCM_PORT_BUFFER_AVAIL(port);
+    strm->avail_in = Scm_PortBufferAvail(port);
 
     if (info->flush == Z_NO_FLUSH && forcep) {
         info->flush = Z_SYNC_FLUSH;
@@ -268,7 +268,7 @@ static void deflate_closer(ScmPort *port)
     unsigned char outbuf[CHUNK];
 
     strm->next_in = inbuf;
-    strm->avail_in = SCM_PORT_BUFFER_AVAIL(port);
+    strm->avail_in = Scm_PortBufferAvail(port);
     strm->next_out = outbuf;
     strm->avail_out = CHUNK;
 
@@ -391,7 +391,7 @@ static ScmSize inflate_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 
     strm->next_in = (unsigned char*)info->buf;
     strm->next_out = outbuf;
-    strm->avail_out = SCM_PORT_BUFFER_ROOM(port);
+    strm->avail_out = Scm_PortBufferRoom(port);
 
   redo:
     r = inflate(strm, Z_SYNC_FLUSH);
@@ -537,7 +537,7 @@ ScmObj Scm_InflateSync(ScmPort *port)
 
         strm->next_in = (unsigned char*)info->buf;
         strm->next_out = outbuf;
-        strm->avail_out = SCM_PORT_BUFFER_ROOM(port);
+        strm->avail_out = Scm_PortBufferRoom(port);
 
         r = inflateSync(strm);
         SCM_ASSERT(r != Z_STREAM_ERROR);
