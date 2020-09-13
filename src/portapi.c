@@ -122,7 +122,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
         }
         SCM_ASSERT(PORT_BUF(p)->current < PORT_BUF(p)->end);
         *PORT_BUF(p)->current++ = b;
-        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
+        if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, 1, FALSE));
         }
         UNLOCK(p);
@@ -167,11 +167,11 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         SCM_ASSERT(PORT_BUF(p)->current+nb <= PORT_BUF(p)->end);
         SCM_CHAR_PUT(PORT_BUF(p)->current, c);
         PORT_BUF(p)->current += nb;
-        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
+        if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             if (c == '\n') {
                 SAFE_CALL(p, bufport_flush(p, nb, FALSE));
             }
-        } else if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
+        } else if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, nb, FALSE));
         }
         UNLOCK(p);
@@ -214,7 +214,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         const char *ss = Scm_GetStringContent(s, &size, NULL, NULL);
         SAFE_CALL(p, bufport_write(p, ss, size));
 
-        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
+        if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             const char *cp = PORT_BUF(p)->current;
             while (cp-- > PORT_BUF(p)->buffer) {
                 if (*cp == '\n') {
@@ -222,7 +222,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
                     break;
                 }
             }
-        } else if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
+        } else if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, 0, TRUE));
         }
         UNLOCK(p);
@@ -262,7 +262,7 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         SAFE_CALL(p, bufport_write(p, s, siz));
-        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
+        if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             const char *cp = PORT_BUF(p)->current;
             while (cp-- > PORT_BUF(p)->buffer) {
                 if (*cp == '\n') {
@@ -270,7 +270,7 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
                     break;
                 }
             }
-        } else if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
+        } else if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, 0, TRUE));
         }
         UNLOCK(p);
@@ -536,9 +536,9 @@ int Scm_GetbUnsafe(ScmPort *p)
             Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                           "bad port type for input: %S", p);
         }
-        p->bytes++;
+        PORT_BYTES(p)++;
         /* we may mix binary/textual input, so we keep lines updated too. */
-        if (b == '\n') p->line++;
+        if (b == '\n') PORT_LINE(p)++;
     }
     UNLOCK(p);
     return b;
@@ -623,7 +623,7 @@ int Scm_GetcUnsafe(ScmPort *p)
         }
         int first = (unsigned char)*PORT_BUF(p)->current++;
         int nb = SCM_CHAR_NFOLLOWS(first);
-        p->bytes++;
+        PORT_BYTES(p)++;
         if (nb > 0) {
             if (PORT_BUF(p)->current + nb > PORT_BUF(p)->end) {
                 /* The buffer doesn't have enough bytes to consist a char.
@@ -661,10 +661,10 @@ int Scm_GetcUnsafe(ScmPort *p)
                 SCM_CHAR_GET(PORT_BUF(p)->current-1, c);
                 PORT_BUF(p)->current += nb;
             }
-            p->bytes += nb;
+            PORT_BYTES(p) += nb;
         } else {
             c = first;
-            if (c == '\n') p->line++;
+            if (c == '\n') PORT_LINE(p)++;
         }
         UNLOCK(p);
         return c;
@@ -677,7 +677,7 @@ int Scm_GetcUnsafe(ScmPort *p)
         int c = 0;
         int first = (unsigned char)*PORT_ISTR(p)->current++;
         int nb = SCM_CHAR_NFOLLOWS(first);
-        p->bytes++;
+        PORT_BYTES(p)++;
         if (nb > 0) {
             if (PORT_ISTR(p)->current + nb > PORT_ISTR(p)->end) {
                 /* TODO: make this behavior customizable */
@@ -687,10 +687,10 @@ int Scm_GetcUnsafe(ScmPort *p)
             }
             SCM_CHAR_GET(PORT_ISTR(p)->current-1, c);
             PORT_ISTR(p)->current += nb;
-            p->bytes += nb;
+            PORT_BYTES(p) += nb;
         } else {
             c = first;
-            if (c == '\n') p->line++;
+            if (c == '\n') PORT_LINE(p)++;
         }
         UNLOCK(p);
         return c;
@@ -698,7 +698,7 @@ int Scm_GetcUnsafe(ScmPort *p)
     case SCM_PORT_PROC: {
         int c = 0;
         SAFE_CALL(p, c = PORT_VT(p)->Getc(p));
-        if (c == '\n') p->line++;
+        if (c == '\n') PORT_LINE(p)++;
         UNLOCK(p);
         return c;
     }
@@ -788,21 +788,21 @@ ScmSize Scm_GetzUnsafe(char *buf, ScmSize buflen, ScmPort *p)
     case SCM_PORT_FILE: {
         ScmSize siz = 0;
         SAFE_CALL(p, siz = bufport_read(p, buf, buflen));
-        p->bytes += siz;
+        PORT_BYTES(p) += siz;
         UNLOCK(p);
         if (siz == 0) return EOF;
         else return siz;
     }
     case SCM_PORT_ISTR: {
         ScmSize r = GETZ_ISTR(p, buf, buflen);
-        p->bytes += r;
+        PORT_BYTES(p) += r;
         UNLOCK(p);
         return r;
     }
     case SCM_PORT_PROC: {
         ScmSize r = 0;
         SAFE_CALL(p, r = PORT_VT(p)->Getz(buf, buflen, p));
-        p->bytes += r;
+        PORT_BYTES(p) += r;
         UNLOCK(p);
         return r;
     }
@@ -855,7 +855,7 @@ ScmObj readline_body(ScmPort *p)
         SCM_DSTRING_PUTB(&ds, b1);
         b1 = Scm_GetbUnsafe(p);
     }
-    p->line++;
+    PORT_LINE(p)++;
     return Scm_DStringGet(&ds, 0);
 }
 #endif /* READLINE_AUX */

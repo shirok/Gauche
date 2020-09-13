@@ -47,10 +47,13 @@
 #define MAX(a, b) ((a)>(b)? (a) : (b))
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
-#define SCM_PORT_BUFFER_MODE(obj) \
+#define PORT_BUFFER_MODE(obj) \
     (PORT_BUF(obj)->mode & SCM_PORT_BUFFER_MODE_MASK)
-#define SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(obj) \
+#define PORT_BUFFER_SIGPIPE_SENSITIVE_P(obj) \
     (PORT_BUF(obj)->mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
+
+#define PORT_LINE(obj)    (SCM_PORT(obj)->line)
+#define PORT_BYTES(obj)   (SCM_PORT(obj)->bytes)
 
 /* Parameter location for the global reader lexical mode, from which
    ports inherit. */
@@ -260,12 +263,12 @@ ScmObj Scm_PortName(ScmPort *port)
 
 ScmSize Scm_PortLine(ScmPort *port)
 {
-    return port->line;
+    return PORT_LINE(port);
 }
 
 ScmSize Scm_PortBytes(ScmPort *port)
 {
-    return port->bytes;
+    return PORT_BYTES(port);
 }
 
 static void port_print(ScmObj obj, ScmPort *port, 
@@ -664,7 +667,7 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
 /* some accessor APIs */
 int Scm_GetPortBufferingMode(ScmPort *port)
 {
-    return SCM_PORT_BUFFER_MODE(port);
+    return PORT_BUFFER_MODE(port);
 }
 
 void Scm_SetPortBufferingMode(ScmPort *port, int mode)
@@ -676,7 +679,7 @@ void Scm_SetPortBufferingMode(ScmPort *port, int mode)
 
 int Scm_GetPortBufferSigpipeSensitive(ScmPort *port)
 {
-    return (SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(port) != FALSE);
+    return (PORT_BUFFER_SIGPIPE_SENSITIVE_P(port) != FALSE);
 }
 
 void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
@@ -816,7 +819,7 @@ static ScmSize bufport_fill(ScmPort *p, ScmSize min, int allow_less)
         PORT_BUF(p)->current = PORT_BUF(p)->end = PORT_BUF(p)->buffer;
     }
     if (min <= 0) min = SCM_PORT_BUFFER_ROOM(p);
-    if (SCM_PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_NONE) {
+    if (PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_NONE) {
         toread = SCM_PORT_BUFFER_ROOM(p);
     } else {
         toread = min;
@@ -859,7 +862,7 @@ static ScmSize bufport_read(ScmPort *p, char *dst, ScmSize siz)
         /* We check data availability first, since we might already get
            some data from the remanings in the buffer, and it is enough
            if buffering mode is not full. */
-        if (nread && (SCM_PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_FULL)) {
+        if (nread && (PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_FULL)) {
             if (PORT_BUF(p)->ready
                 && PORT_BUF(p)->ready(p) == SCM_FD_WOULDBLOCK) {
                 break;
@@ -1056,7 +1059,7 @@ int Scm_KeywordToBufferingMode(ScmObj flag, int direction, int fallback)
 ScmObj Scm_GetPortBufferingModeAsKeyword(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
-        switch (SCM_PORT_BUFFER_MODE(port)) {
+        switch (PORT_BUFFER_MODE(port)) {
         case SCM_PORT_BUFFER_FULL: return key_full;
         case SCM_PORT_BUFFER_NONE: return key_none;
         default:
@@ -1136,7 +1139,7 @@ static ScmSize file_flusher(ScmPort *p, ScmSize cnt, int forcep)
         errno = 0;
         SCM_SYSCALL(r, write(fd, datptr, datsiz-nwrote));
         if (r < 0) {
-            if (SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(p)) {
+            if (PORT_BUFFER_SIGPIPE_SENSITIVE_P(p)) {
                 /* (sort of) emulate termination by SIGPIPE.
                    NB: The difference is visible from the outside world
                    as the process exit status differ (WIFEXITED
