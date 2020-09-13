@@ -258,9 +258,14 @@ ScmObj Scm_PortName(ScmPort *port)
     return Scm_PortAttrGet(port, SCM_SYM_NAME, SCM_FALSE);
 }
 
-int Scm_PortLine(ScmPort *port)
+ScmSize Scm_PortLine(ScmPort *port)
 {
     return port->line;
+}
+
+ScmSize Scm_PortBytes(ScmPort *port)
+{
+    return port->bytes;
 }
 
 static void port_print(ScmObj obj, ScmPort *port, 

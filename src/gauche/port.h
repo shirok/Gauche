@@ -173,8 +173,8 @@ struct ScmPortRec {
        We don't have character counter, since it is difficult to track
        (read-line uses byte read; see Scm_ReadLine in portapi.c).
      */
-    u_long line;                /* line counter */
-    u_long bytes;               /* byte counter */
+    ScmSize line;               /* line counter */
+    ScmSize bytes;              /* byte counter */
 
     /* The source or the sink of the port.   Use specialized accessor
        functions to retrieve one of those union members. */
@@ -312,7 +312,8 @@ SCM_EXTERN void   Scm_SetPortReaderLexicalMode(ScmPort *port, ScmObj obj);
 SCM_EXTERN void   Scm_FlushAllPorts(int exitting);
 
 SCM_EXTERN ScmObj Scm_PortName(ScmPort *port);
-SCM_EXTERN int    Scm_PortLine(ScmPort *port);
+SCM_EXTERN ScmSize Scm_PortLine(ScmPort *port);
+SCM_EXTERN ScmSize Scm_PortBytes(ScmPort *port);
 SCM_EXTERN ScmObj Scm_PortSeek(ScmPort *port, ScmObj off, int whence);
 SCM_EXTERN ScmObj Scm_PortSeekUnsafe(ScmPort *port, ScmObj off, int whence);
 SCM_EXTERN int    Scm_PortFileNo(ScmPort *port);

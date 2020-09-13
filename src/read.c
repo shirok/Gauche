@@ -236,7 +236,7 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
 {
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     ScmObj name = Scm_PortName(port);
-    int line = Scm_PortLine(port);
+    ScmSize line = Scm_PortLine(port);
 
     Scm_Printf(SCM_PORT(ostr), "Read error at %S:",
                SCM_STRINGP(name)? name : SCM_OBJ(SCM_MAKE_STR("??")));
@@ -416,7 +416,7 @@ static void read_nested_comment(ScmPort *port,
                                 ScmReadContext *ctx SCM_UNUSED)
 {
     int nesting = 0;
-    int line = Scm_PortLine(port);
+    ScmSize line = Scm_PortLine(port);
 
     for (ScmChar c = Scm_GetcUnsafe(port);;) {
         switch (c) {
@@ -455,12 +455,7 @@ static void read_comment(ScmPort *port) /* leading semicolon is already read */
         /* NB: comment may contain unexpected character code.
            for the safety, we read bytes here. */
         int c = Scm_GetbUnsafe(port);
-        if (c == '\n') {
-            /* oops.  ugly. */
-            port->line++;
-            break;
-        }
-        if (c == EOF) break;
+        if (c == '\n' || c == EOF) break;
     }
 }
 
@@ -951,7 +946,7 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     int has_ref;
-    int line = -1;
+    ScmSize line = -1;
 
     if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
 
@@ -972,7 +967,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     int has_ref;
-    int line = -1;
+    ScmSize line = -1;
     ScmObj r;
 
     if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
@@ -984,7 +979,7 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 {
-    int line = -1;
+    ScmSize line = -1;
     ScmObj r;
 
     if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
@@ -1592,7 +1587,8 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
                       next);
     }
 
-    int has_ref, line = -1;
+    int has_ref;
+    ScmSize line = -1;
     if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
 
     ScmObj form = read_list_int(port, ')', ctx, &has_ref, line);
@@ -1653,7 +1649,7 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
        parser that strictly covers both situation.
     */
     int c2 = Scm_GetcUnsafe(port);
-    if (port->bytes == 3 && (c2 == '/' || c2 == ' ' || c2 == '\n')) {
+    if (Scm_PortBytes(port) == 3 && (c2 == '/' || c2 == ' ' || c2 == '\n')) {
         /* shebang */
         for (;;) {
             if (c2 == '\n') return SCM_UNDEFINED;
@@ -1832,7 +1828,7 @@ static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx)
             return read_string(port, TRUE, ctx);
         }
         if (SCM_EQ(m, SCM_SYM_WARN_LEGACY)) {
-            Scm_Warn("Deprecated incomplete string syntax #*\"...\" at %A:%d",
+            Scm_Warn("Deprecated incomplete string syntax #*\"...\" at %A:%ld",
                      Scm_PortName(port), Scm_PortLine(port));
             return read_string(port, TRUE, ctx);
         }

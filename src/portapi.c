@@ -537,6 +537,8 @@ int Scm_GetbUnsafe(ScmPort *p)
                           "bad port type for input: %S", p);
         }
         p->bytes++;
+        /* we may mix binary/textual input, so we keep lines updated too. */
+        if (b == '\n') p->line++;
     }
     UNLOCK(p);
     return b;
