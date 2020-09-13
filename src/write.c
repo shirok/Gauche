@@ -167,9 +167,9 @@ ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto SCM_UNUSED)
 static void cleanup_port_write_state(ScmPort *port)
 {
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
-    if (port->writeState != NULL) {
-        ScmWriteState *s = port->writeState;
-        port->writeState = NULL;
+    ScmWriteState *s = Scm_PortWriteState(port);
+    if (s != NULL) {
+        Scm_PortWriteStateSet(port, NULL);
         /* The table for recursive/shared detection should be GC'ed after
            we drop the reference to it.  However, the table can be quite big
            after doing write-shared on a large graph, and our implementation of
@@ -284,7 +284,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     }
 
     ScmObj out = Scm_MakeOutputStringPort(TRUE);
-    SCM_PORT(out)->writeState = SCM_PORT(port)->writeState;
+    Scm_PortWriteStateSet(SCM_PORT(out), Scm_PortWriteState(port));
     ScmWriteContext ctx;
     write_context_init(&ctx, mode, 0, width);
 
@@ -428,7 +428,8 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
  */
 ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    const ScmWriteControls *wp = Scm_GetWriteControls(ctx, port->writeState);
+    const ScmWriteControls *wp = 
+        Scm_GetWriteControls(ctx, Scm_PortWriteState(port));
     
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
@@ -540,8 +541,9 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static void write_walk(ScmObj obj, ScmPort *port)
 {
     static ScmObj proc = SCM_UNDEFINED;
-    SCM_ASSERT(port->writeState);
-    ScmHashTable *ht = port->writeState->sharedTable;
+    ScmWriteState *s = Scm_PortWriteState(port);
+    SCM_ASSERT(s);
+    ScmHashTable *ht = s->sharedTable;
     SCM_ASSERT(ht != NULL);
     SCM_BIND_PROC(proc, "%write-walk-rec", Scm_GaucheInternalModule());
     Scm_ApplyRec3(proc, obj, SCM_OBJ(port), SCM_OBJ(ht));
@@ -563,7 +565,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     char numbuf[50];  /* enough to contain long number */
     ScmObj stack = SCM_NIL;
-    ScmWriteState *st = port->writeState;
+    ScmWriteState *st = Scm_PortWriteState(port);
     ScmHashTable *ht = (st? st->sharedTable : NULL);
     const ScmWriteControls *wp = Scm_GetWriteControls(ctx, st);
     int stack_depth = 0;        /* only used when !ht */
@@ -625,7 +627,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 goto next;
             } else if (k > 1) {
                 /* This object will be seen again. Put a reference tag. */
-                ScmWriteState *s = port->writeState;
+                ScmWriteState *s = Scm_PortWriteState(port);
                 snprintf(numbuf, 50, "#%d=", s->sharedCounter);
                 Scm_HashTableSet(ht, obj, SCM_MAKE_INT(-s->sharedCounter), 0);
                 s->sharedCounter++;
@@ -784,7 +786,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    by the caller even if we throw an error during write. */
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    SCM_ASSERT(port->writeState == NULL);
+    SCM_ASSERT(Scm_PortWriteState(port) == NULL);
 
     /* pass 1 */
     port->flags |= SCM_PORT_WALKING;
@@ -792,7 +794,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmWriteState *s = Scm_MakeWriteState(NULL);
     s->sharedTable = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     s->controls = ctx->controls;
-    port->writeState = s;
+    Scm_PortWriteStateSet(port, s);
 
     write_walk(obj, port);
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);

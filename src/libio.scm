@@ -481,11 +481,10 @@
 (define-cproc %port-write-state (port::<port>)
   (setter (port::<port> obj) ::<void>
           (if (SCM_WRITE_STATE_P obj)
-            (set! (-> port writeState) (SCM_WRITE_STATE obj))
-            (set! (-> port writeState) NULL)))
-  (return (?: (-> port writeState)
-              (SCM_OBJ (-> port writeState))
-              SCM_FALSE)))
+            (Scm_PortWriteStateSet port (SCM_WRITE_STATE obj))
+            (Scm_PortWriteStateSet port NULL)))
+  (let* ([r::ScmWriteState* (Scm_PortWriteState port)])
+    (return (?: r (SCM_OBJ r) SCM_FALSE))))
 
 (define-cproc %port-lock! (port::<port>) ::<void>
   (let* ([vm::ScmVM* (Scm_VM)])

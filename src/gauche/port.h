@@ -328,6 +328,9 @@ SCM_EXTERN ScmPortInputString *Scm_PortInputStringStruct(ScmPort *port);
 SCM_EXTERN ScmDString         *Scm_PortOutputDString(ScmPort *port);
 SCM_EXTERN ScmPortVTable      *Scm_PortVTableStruct(ScmPort *port);
 
+SCM_EXTERN ScmWriteState *Scm_PortWriteState(ScmPort *);
+SCM_EXTERN void           Scm_PortWriteStateSet(ScmPort *, ScmWriteState*);
+
 SCM_EXTERN void   Scm_ClosePort(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_VMWithPortLocking(ScmPort *port,

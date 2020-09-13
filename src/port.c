@@ -315,6 +315,16 @@ ScmPortVTable *Scm_PortVTableStruct(ScmPort *port)
     return PORT_VT(port);
 }
 
+ScmWriteState *Scm_PortWriteState(ScmPort *port)
+{
+    return port->writeState;
+}
+
+void Scm_PortWriteStateSet(ScmPort *port, ScmWriteState *ws)
+{
+    port->writeState = ws;
+}
+
 /* Duplicates the file descriptor of the source port, and set it to
    the destination port.  Both source and destination port must be
    file ports.
