@@ -262,19 +262,22 @@ enum ScmPortFlags {
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))
 
+/* The following macros are for the backward compatibility; their use is
+   deprecated.  (We used to have these macros directly access ScmPort
+   structure to eliminate function call overhead.  It turned out 
+   it matters little.   Use function APIs.) */
 #define SCM_PUTB(b, p)     Scm_Putb(b, SCM_PORT(p))
 #define SCM_PUTC(c, p)     Scm_Putc(c, SCM_PORT(p))
 #define SCM_PUTZ(s, l, p)  Scm_Putz(s, l, SCM_PORT(p))
 #define SCM_PUTS(s, p)     Scm_Puts(SCM_STRING(s), SCM_PORT(p))
 #define SCM_FLUSH(p)       Scm_Flush(SCM_PORT(p))
 #define SCM_PUTNL(p)       SCM_PUTC('\n', p)
-
 #define SCM_UNGETC(c, port) Scm_Ungetc(c, SCM_PORT(port))
 #define SCM_GETB(b, p)     (b = Scm_Getb(SCM_PORT(p)))
 #define SCM_GETC(c, p)     (c = Scm_Getc(SCM_PORT(p)))
-
 #define SCM_PORT_BUFFER_ROOM(p)  Scm_PortBufferRoom(p)
 #define SCM_PORT_BUFFER_AVAIL(p) Scm_PortBufferAvail(p)
+
 
 SCM_CLASS_DECL(Scm_PortClass);
 #define SCM_CLASS_PORT                (&Scm_PortClass)
