@@ -144,7 +144,7 @@ struct ScmPortRec {
        We tested to use a pointer to the real struct, but I/O intensive
        benchmark showed 2-3% reduction of speed.  So we avoid indirection.
      */
-    char opaque[24 * SIZEOF_LONG];
+    char opaque[24 * SIZEOF_LONG + sizeof(ScmInternalFastlock)];
 };
 
 /* Port direction.

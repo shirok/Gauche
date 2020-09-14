@@ -1830,7 +1830,9 @@ ScmObj Scm_SetCurrentErrorPort(ScmPort *port)
 void Scm__InitPort(void)
 {
     if (sizeof(ScmPort) < sizeof(ScmPortImpl)) {
-        Scm_Panic("sizeof(ScmPort) is smaller than sizeof(ScmPortImpl)");
+	fprintf(stderr, "sizeof(ScmPort) [%ld] is smaller than sizeof(ScmPortImpl) [%ld]\n",
+		sizeof(ScmPort), sizeof(ScmPortImpl));
+        Scm_Panic("Implementation error.  Exitting.");
     }
     
     (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
