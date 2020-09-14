@@ -7288,26 +7288,68 @@ bitvector-set!    bitvector-copy     bitvector-copy!
 @defunx bitvector-unfold-right f length seed @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Creates a bitvector of length @var{length}, and fill its contents by
+repeatedly applying @var{f}.  The procedure @var{f} must take one more
+than the number of seeds, and must return the same number
+of values.  First, @var{f} is applied to the index and @var{seed} @dots{},
+then its first return value (which must be a bit, i.e. 0, 1 or a boolean
+value) is used to initialize the first element of the bitvector,
+and the rest of the return value is used as the next argument to @var{f}.
+It is repeated @var{length} times.
+
+While @code{bitvector-unfold} fills the bits from left to right,
+@code{bitvector-unfold-right} does from right to left.
+
+@example
+(use math.prime)
+(bitvector-unfold (^[index n]
+                    (values (small-prime? n) (+ n 1))) 
+                  20 0)
+  @result{} #*00110101000101000101
+(bitvector-unfold-right (^[index n] 
+                          (values (small-prime? n) (+ n 1))) 
+                        20 0)
+  @result{} #*10100010100010101100  
+@end example
+
+Note: This procedure follows the protocol of @code{vector-unfold}
+(@pxref{R7RS vectors}), and has a different protocol from other
+@code{unfold} procedures (@pxref{R7RS lists}).
 @end defun
 
 @defun bitvector-reverse-copy bv :optional start end
 [SRFI-178]
 @c MOD srfi-178
+Copies a bitvector @var{bv} in reverse order.  Optional @var{start}
+and @var{end} arguments limits the range of the input.
+
+@example
+(bitvector-reverse-copy #*10110011100011110000 4 16)
+  @result{} #*111100011100
+@end example
 @end defun
 
 @defun bitvector-append bv @dots{}
 [SRFI-178]
 @c MOD srfi-178
+All arguments must be bytevectors.  Returns a fresh bytevector
+which is concatenation of all arguments.
 @end defun
 
 @defun bitvector-concatenate bvs
 [SRFI-178]
+The argument must be a list of bytevectors.  Returns a fresh bytevector
+which is concatenation of all arguments.
 @c MOD srfi-178
 @end defun
 
 @defun bitvector-append-subbitvectors bv start end @dots{}
 [SRFI-178]
 @c MOD srfi-178
+The number of arguments must be a multiple of 3.  Each triplet of
+the arguments is a bytevector followed by start and end index,
+specifying the input bytevector range.  Returns a fresh bytevector
+which is concatenation of all the subvectors.
 @end defun
 
 @subheading Predicates
@@ -7315,11 +7357,14 @@ bitvector-set!    bitvector-copy     bitvector-copy!
 @defun bitvector-emtpy? bv
 [SRFI-178]
 @c MOD srfi-178
+Returns @code{#t} iff @var{bv} is an empty bytevector.
 @end defun
 
 @defun bitvector=? bv @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Returns @code{#t} iff all the bytevectors have the same content.
+If there's zero or one argument, it returns @code{#t}.
 @end defun
 
 @subheading Iteration
