@@ -56,8 +56,11 @@
 #define PORT_BUFFER_AVAIL(p) \
     (PORT_BUF(p)->current - PORT_BUF(p)->buffer)
 
-#define PORT_LINE(p)    (SCM_PORT(p)->line)
-#define PORT_BYTES(p)   (SCM_PORT(p)->bytes)
+#define PORT_UNGOTTEN(p) (P_(p)->ungotten)
+#define PORT_SCRATCH(p)  (P_(p)->scratch)
+#define PORT_LINE(p)     (P_(p)->line)
+#define PORT_BYTES(p)    (P_(p)->bytes)
+#define PORT_ATTRS(p)    (P_(p)->attrs)
 
 /* Parameter location for the global reader lexical mode, from which
    ports inherit. */
@@ -173,7 +176,7 @@ static void port_cleanup(ScmPort *port)
     default:
         break;
     }
-    (void)SCM_INTERNAL_FASTLOCK_DESTROY(port->lock);
+    (void)SCM_INTERNAL_FASTLOCK_DESTROY(P_(port)->lock);
 
     SCM_PORT_CLOSED_P(port) = TRUE;
     /* avoid unnecessary finalization */
@@ -193,7 +196,8 @@ static void port_finalize(ScmObj obj, void* data SCM_UNUSED)
  */
 static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
 {
-    ScmPort *port = SCM_NEW_INSTANCE(ScmPort, klass);
+    ScmPortImpl *port = (ScmPortImpl*)SCM_NEW_INSTANCE(ScmPort, klass);
+
     port->direction = dir & SCM_PORT_IOMASK;
     port->type = type;
     port->scrcnt = 0;
@@ -218,10 +222,11 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
 
     /* Default reader lexical mode */
-    Scm_PortAttrSetUnsafe(port, SCM_SYM_READER_LEXICAL_MODE,
+    Scm_PortAttrSetUnsafe(SCM_PORT(port),
+                          SCM_SYM_READER_LEXICAL_MODE,
                           Scm_ReaderLexicalMode());
 
-    return port;
+    return SCM_PORT(port);
 }
 
 /*
@@ -344,12 +349,12 @@ ScmSize Scm_PortBufferAvail(ScmPort *port)
 
 ScmWriteState *Scm_PortWriteState(ScmPort *port)
 {
-    return port->writeState;
+    return P_(port)->writeState;
 }
 
 void Scm_PortWriteStateSet(ScmPort *port, ScmWriteState *ws)
 {
-    port->writeState = ws;
+    P_(port)->writeState = ws;
 }
 
 /* Duplicates the file descriptor of the source port, and set it to
@@ -1393,10 +1398,10 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
        We want to share the string body whenever possible, so we
        first check the ungotten stuff matches the content of the
        buffer. */
-    if (port->ungotten != SCM_CHAR_INVALID) {
+    if (PORT_UNGOTTEN(port) != SCM_CHAR_INVALID) {
         char cbuf[SCM_CHAR_MAX_BYTES];
-        int nbytes = SCM_CHAR_NBYTES(port->ungotten);
-        SCM_CHAR_PUT(cbuf, port->ungotten);
+        int nbytes = SCM_CHAR_NBYTES(PORT_UNGOTTEN(port));
+        SCM_CHAR_PUT(cbuf, PORT_UNGOTTEN(port));
         const char *sp = PORT_ISTR(port)->start;
         if (cp - sp >= nbytes
             && memcmp(cp - nbytes, cbuf, nbytes) == 0) {
@@ -1410,13 +1415,13 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
     } else if (port->scrcnt > 0) {
         const char *sp = PORT_ISTR(port)->start;
         if (cp - sp >= (int)port->scrcnt
-            && memcmp(cp - port->scrcnt, port->scratch, port->scrcnt) == 0) {
+            && memcmp(cp - port->scrcnt, PORT_SCRATCH(port), port->scrcnt) == 0) {
             cp -= port->scrcnt; /* we can reuse buffer */
             return Scm_MakeString(cp, (int)(ep-cp), -1, flags);
         } else {
             /* we need to copy */
             return get_remaining_input_string_aux(cp, ep-cp,
-                                                  port->scratch,
+                                                  PORT_SCRATCH(port),
                                                   port->scrcnt, flags);
         }
     } else {
@@ -1824,6 +1829,10 @@ ScmObj Scm_SetCurrentErrorPort(ScmPort *port)
 
 void Scm__InitPort(void)
 {
+    if (sizeof(ScmPort) < sizeof(ScmPortImpl)) {
+        Scm_Panic("sizeof(ScmPort) is smaller than sizeof(ScmPortImpl)");
+    }
+    
     (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
     active_buffered_ports.ports = SCM_WEAK_VECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
 

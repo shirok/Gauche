@@ -140,7 +140,7 @@ static int vport_getc(ScmPort *p)
         ScmObj b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
         if (!SCM_INTP(b)) return EOF;
         buf[0] = (char)SCM_INT_VALUE(b);
-        int n = SCM_CHAR_NFOLLOWS(p->scratch[0]);
+        int n = SCM_CHAR_NFOLLOWS(P_(p)->scratch[0]);
         for (int i=0; i<n; i++) {
             b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
             if (!SCM_INTP(b)) {

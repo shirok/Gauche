@@ -337,12 +337,12 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
     VMDECL;
     SHORTCUT(p, Scm_UngetcUnsafe(c, p); return);
     LOCK(p);
-    if (p->ungotten != SCM_CHAR_INVALID
+    if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID
         || p->scrcnt != 0) {
         Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                       "pushback buffer overflow on port %S", p);
     }
-    p->ungotten = c;
+    PORT_UNGOTTEN(p) = c;
     UNLOCK(p);
 }
 
@@ -355,10 +355,10 @@ ScmChar Scm_PeekcUnsafe(ScmPort *p)
     VMDECL;
     SHORTCUT(p, return Scm_PeekcUnsafe(p));
     LOCK(p);
-    ScmChar ch = p->ungotten;
+    ScmChar ch = PORT_UNGOTTEN(p);
     if (ch == SCM_CHAR_INVALID) {
         ch = Scm_GetcUnsafe(p);
-        p->ungotten = ch;
+        PORT_UNGOTTEN(p) = ch;
     }
     UNLOCK(p);
     return ch;
@@ -375,7 +375,7 @@ ScmObj Scm_UngottenCharsUnsafe(ScmPort *p)
     VMDECL;
     SHORTCUT(p, return Scm_UngottenCharsUnsafe(p));
     LOCK(p);
-    ScmChar ch = p->ungotten;
+    ScmChar ch = PORT_UNGOTTEN(p);
     UNLOCK(p);
     if (ch == SCM_CHAR_INVALID) {
         return SCM_NIL;
@@ -397,12 +397,12 @@ void Scm_UngetbUnsafe(int b, ScmPort *p)
     VMDECL;
     SHORTCUT(p, Scm_UngetbUnsafe(b, p); return);
     LOCK(p);
-    if (p->ungotten != SCM_CHAR_INVALID
+    if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID
         || p->scrcnt >= SCM_CHAR_MAX_BYTES) {
         Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                       "pushback buffer overflow on port %S", p);
     }
-    p->scratch[p->scrcnt++] = b;
+    PORT_SCRATCH(p)[p->scrcnt++] = b;
     UNLOCK(p);
 }
 
@@ -417,7 +417,7 @@ int Scm_PeekbUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_PeekbUnsafe(p));
     LOCK(p);
     if (p->scrcnt > 0) {
-        b = (unsigned char)p->scratch[0];
+        b = (unsigned char)PORT_SCRATCH(p)[0];
     } else {
         SCM_GETB(b, p);
         if (b >= 0) {
@@ -425,12 +425,12 @@ int Scm_PeekbUnsafe(ScmPort *p)
                 /* unshift scratch buffer */
                 SCM_ASSERT(p->scrcnt < SCM_CHAR_MAX_BYTES);
                 for (int i=p->scrcnt; i>0; i--) {
-                    p->scratch[i] = p->scratch[i-1];
+                    PORT_SCRATCH(p)[i] = PORT_SCRATCH(p)[i-1];
                 }
-                p->scratch[0] = b;
+                PORT_SCRATCH(p)[0] = b;
                 p->scrcnt++;
             } else {
-                p->scratch[0] = b;
+                PORT_SCRATCH(p)[0] = b;
                 p->scrcnt = 1;
             }
         }
@@ -449,7 +449,7 @@ ScmObj Scm_UngottenBytesUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_UngottenBytesUnsafe(p));
     char buf[SCM_CHAR_MAX_BYTES];
     LOCK(p);
-    for (int i=0; i<p->scrcnt; i++) buf[i] = p->scratch[i];
+    for (int i=0; i<p->scrcnt; i++) buf[i] = PORT_SCRATCH(p)[i];
     int n = p->scrcnt;
     UNLOCK(p);
     ScmObj h = SCM_NIL, t = SCM_NIL;
@@ -470,14 +470,14 @@ ScmObj Scm_UngottenBytesUnsafe(ScmPort *p)
 static inline void shift_scratch(ScmPort *p, int off)
 {
     for (u_int i=0; i<p->scrcnt; i++) {
-        p->scratch[i] = p->scratch[i+off];
+        PORT_SCRATCH(p)[i] = PORT_SCRATCH(p)[i+off];
     }
 }
 
 /* handle the case that there's remaining data in the scratch buffer */
 static int getb_scratch(ScmPort *p)
 {
-    int b = (unsigned char)p->scratch[0];
+    int b = (unsigned char)PORT_SCRATCH(p)[0];
     p->scrcnt--;
     shift_scratch(p, 1);
     return b;
@@ -486,9 +486,9 @@ static int getb_scratch(ScmPort *p)
 /* handle the case that there's an ungotten char */
 static int getb_ungotten(ScmPort *p)
 {
-    SCM_CHAR_PUT(p->scratch, p->ungotten);
-    p->scrcnt = SCM_CHAR_NBYTES(p->ungotten);
-    p->ungotten = SCM_CHAR_INVALID;
+    SCM_CHAR_PUT(PORT_SCRATCH(p), PORT_UNGOTTEN(p));
+    p->scrcnt = SCM_CHAR_NBYTES(PORT_UNGOTTEN(p));
+    PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
     return getb_scratch(p);
 }
 #endif /*SHIFT_SCRATCH*/
@@ -509,7 +509,7 @@ int Scm_GetbUnsafe(ScmPort *p)
     /* check if there's "pushed back" stuff */
     if (p->scrcnt) {
         b = getb_scratch(p);
-    } else if (p->ungotten != SCM_CHAR_INVALID) {
+    } else if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) {
         b = getb_ungotten(p);
     } else {
         switch (SCM_PORT_TYPE(p)) {
@@ -558,10 +558,10 @@ static int getc_scratch_unsafe(ScmPort *p)
 #endif
 {
     char tbuf[SCM_CHAR_MAX_BYTES];
-    int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]);
+    int nb = SCM_CHAR_NFOLLOWS(PORT_SCRATCH(p)[0]);
     int curr = p->scrcnt;
 
-    memcpy(tbuf, p->scratch, curr);
+    memcpy(tbuf, PORT_SCRATCH(p), curr);
     p->scrcnt = 0;
     for (volatile int i=curr; i<=nb; i++) {
         int r = EOF;
@@ -581,7 +581,7 @@ static int getc_scratch_unsafe(ScmPort *p)
            an incomplete string when accumulated), while keeping the
            remaining bytes in the scrach buffer. */
         ch = (ScmChar)(tbuf[0] & 0xff);
-        memcpy(p->scratch, tbuf+1, nb);
+        memcpy(PORT_SCRATCH(p), tbuf+1, nb);
         p->scrcnt = nb;
     }
     return ch;
@@ -603,9 +603,9 @@ int Scm_GetcUnsafe(ScmPort *p)
         UNLOCK(p);
         return r;
     }
-    if (p->ungotten != SCM_CHAR_INVALID) {
-        int c = p->ungotten;
-        p->ungotten = SCM_CHAR_INVALID;
+    if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) {
+        int c = PORT_UNGOTTEN(p);
+        PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
         UNLOCK(p);
         return c;
     }
@@ -632,7 +632,7 @@ int Scm_GetcUnsafe(ScmPort *p)
                 volatile int rest;
                 volatile ScmSize filled = 0;
                 p->scrcnt = (unsigned char)(PORT_BUF(p)->end - PORT_BUF(p)->current + 1);
-                memcpy(p->scratch, PORT_BUF(p)->current-1, p->scrcnt);
+                memcpy(PORT_SCRATCH(p), PORT_BUF(p)->current-1, p->scrcnt);
                 PORT_BUF(p)->current = PORT_BUF(p)->end;
                 rest = nb + 1 - p->scrcnt;
                 for (;;) {
@@ -644,18 +644,18 @@ int Scm_GetcUnsafe(ScmPort *p)
                                       "encountered EOF in middle of a multibyte character from port %S", p);
                     }
                     if (filled >= rest) {
-                        memcpy(p->scratch+p->scrcnt, PORT_BUF(p)->current, rest);
+                        memcpy(PORT_SCRATCH(p)+p->scrcnt, PORT_BUF(p)->current, rest);
                         p->scrcnt += rest;
                         PORT_BUF(p)->current += rest;
                         break;
                     } else {
-                        memcpy(p->scratch+p->scrcnt, PORT_BUF(p)->current, filled);
+                        memcpy(PORT_SCRATCH(p)+p->scrcnt, PORT_BUF(p)->current, filled);
                         p->scrcnt += filled;
                         PORT_BUF(p)->current = PORT_BUF(p)->end;
                         rest -= filled;
                     }
                 }
-                SCM_CHAR_GET(p->scratch, c);
+                SCM_CHAR_GET(PORT_SCRATCH(p), c);
                 p->scrcnt = 0;
             } else {
                 SCM_CHAR_GET(PORT_BUF(p)->current-1, c);
@@ -727,12 +727,12 @@ static ScmSize getz_scratch_unsafe(char *buf, ScmSize buflen, ScmPort *p)
 #endif
 {
     if (p->scrcnt >= (size_t)buflen) {
-        memcpy(buf, p->scratch, buflen);
+        memcpy(buf, PORT_SCRATCH(p), buflen);
         p->scrcnt -= buflen;
         shift_scratch(p, buflen);
         return buflen;
     } else {
-        memcpy(buf, p->scratch, p->scrcnt);
+        memcpy(buf, PORT_SCRATCH(p), p->scrcnt);
         ScmSize i = p->scrcnt;
         p->scrcnt = 0;
         ScmSize n = 0;
@@ -775,10 +775,10 @@ ScmSize Scm_GetzUnsafe(char *buf, ScmSize buflen, ScmPort *p)
         UNLOCK(p);
         return r;
     }
-    if (p->ungotten != SCM_CHAR_INVALID) {
-        p->scrcnt = SCM_CHAR_NBYTES(p->ungotten);
-        SCM_CHAR_PUT(p->scratch, p->ungotten);
-        p->ungotten = SCM_CHAR_INVALID;
+    if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) {
+        p->scrcnt = SCM_CHAR_NBYTES(PORT_UNGOTTEN(p));
+        SCM_CHAR_PUT(PORT_SCRATCH(p), PORT_UNGOTTEN(p));
+        PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
         ScmSize r = GETZ_SCRATCH(buf, buflen, p);
         UNLOCK(p);
         return r;
@@ -891,7 +891,7 @@ int Scm_ByteReadyUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_ByteReadyUnsafe(p));
     if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
     LOCK(p);
-    if (p->ungotten != SCM_CHAR_INVALID
+    if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID
         || p->scrcnt > 0) {
         r = TRUE;
     } else {
@@ -929,7 +929,7 @@ int Scm_CharReadyUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_CharReadyUnsafe(p));
     if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
     LOCK(p);
-    if (p->ungotten != SCM_CHAR_INVALID) r = TRUE;
+    if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) r = TRUE;
     else {
         switch (SCM_PORT_TYPE(p)) {
         case SCM_PORT_FILE:
@@ -975,8 +975,8 @@ int Scm_CharReadyUnsafe(ScmPort *p)
 static off_t port_pending_bytes(ScmPort *p)
 {
     off_t unread_bytes = p->scrcnt;
-    if (p->ungotten != SCM_CHAR_INVALID) {
-        unread_bytes += SCM_CHAR_NBYTES(p->ungotten);
+    if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) {
+        unread_bytes += SCM_CHAR_NBYTES(PORT_UNGOTTEN(p));
     }
     return unread_bytes;
 }
@@ -1002,7 +1002,7 @@ static off_t seek_istr(ScmPort *p, off_t o, int whence, int is_telling)
             PORT_ISTR(p)->current = PORT_ISTR(p)->start + z;
             r = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
         }
-        p->ungotten = SCM_CHAR_INVALID;
+        PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
         p->scrcnt = 0;
     }
     return r;
@@ -1032,7 +1032,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     if (!is_telling) {
         /* Unless we're telling, we discard pending bytes. */
         p->scrcnt = 0;
-        p->ungotten = SCM_CHAR_INVALID;
+        PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
         /* ... and adjust offset, when it's relative. */
         if (whence == SEEK_CUR) o -= pending;
     }
@@ -1130,7 +1130,7 @@ ScmObj Scm_PortAttrGetUnsafe(ScmPort *p, ScmObj key, ScmObj fallback)
     VMDECL;
     SHORTCUT(p, return Scm_PortAttrGetUnsafe(p, key, fallback););
     LOCK(p);
-    ScmObj v = Scm_Assq(key, p->attrs);
+    ScmObj v = Scm_Assq(key, PORT_ATTRS(p));
     if (SCM_PAIRP(v)) {
         SCM_ASSERT(SCM_PAIRP(SCM_CDR(v)));
         if (SCM_PAIRP(SCM_CDDR(v))) {
@@ -1167,7 +1167,7 @@ ScmObj Scm_PortAttrSetUnsafe(ScmPort *p, ScmObj key, ScmObj val)
     VMDECL;
     SHORTCUT(p, return Scm_PortAttrSetUnsafe(p, key, val););
     LOCK(p);
-    ScmObj v = Scm_Assq(key, p->attrs);
+    ScmObj v = Scm_Assq(key, PORT_ATTRS(p));
     if (SCM_PAIRP(v)) {
         SCM_ASSERT(SCM_PAIRP(SCM_CDR(v)));
         exists = TRUE;
@@ -1185,7 +1185,7 @@ ScmObj Scm_PortAttrSetUnsafe(ScmPort *p, ScmObj key, ScmObj val)
             err_readonly = TRUE;
         }
     } else {
-        p->attrs = Scm_Cons(SCM_LIST2(key, val), p->attrs);
+        PORT_ATTRS(p) = Scm_Cons(SCM_LIST2(key, val), PORT_ATTRS(p));
     }
     UNLOCK(p);
     if (err_readonly) {
@@ -1211,9 +1211,9 @@ ScmObj Scm_PortAttrCreateUnsafe(ScmPort *p, ScmObj key, ScmObj get, ScmObj set)
                     ? SCM_LIST2(key, SCM_FALSE)
                     : SCM_LIST3(key, get, set));
     LOCK(p);
-    ScmObj v = Scm_Assq(key, p->attrs);
+    ScmObj v = Scm_Assq(key, PORT_ATTRS(p));
     if (SCM_FALSEP(v)) {
-        p->attrs = Scm_Cons(entry, p->attrs);
+        PORT_ATTRS(p) = Scm_Cons(entry, PORT_ATTRS(p));
     } else {
         err_exists = TRUE;
     }
@@ -1235,11 +1235,11 @@ ScmObj Scm_PortAttrDeleteUnsafe(ScmPort *p, ScmObj key)
     VMDECL;
     SHORTCUT(p, return Scm_PortAttrDeleteUnsafe(p, key););
     LOCK(p);
-    ScmObj v = Scm_Assq(key, p->attrs);
+    ScmObj v = Scm_Assq(key, PORT_ATTRS(p));
     if (SCM_PAIRP(v) && SCM_PAIRP(SCM_CDR(v)) && SCM_FALSEP(SCM_CDDR(v))) {
         err_undeletable = TRUE;
     } else {
-        p->attrs = Scm_AssocDelete(key, p->attrs, SCM_CMP_EQ);
+        PORT_ATTRS(p) = Scm_AssocDelete(key, PORT_ATTRS(p), SCM_CMP_EQ);
     }
     UNLOCK(p);
     if (err_undeletable) {
@@ -1260,7 +1260,7 @@ ScmObj Scm_PortAttrsUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_PortAttrsUnsafe(p););
     LOCK(p);
     ScmObj cp;
-    SCM_FOR_EACH(cp, p->attrs) {
+    SCM_FOR_EACH(cp, PORT_ATTRS(p)) {
         ScmObj k = SCM_CAAR(cp);
         ScmObj v = Scm_PortAttrGetUnsafe(p, k, SCM_UNBOUND);
         SCM_APPEND1(h, t, Scm_Cons(k, v));

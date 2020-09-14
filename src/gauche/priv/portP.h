@@ -37,6 +37,62 @@
 #include "gauche/priv/writerP.h"
 
 /*================================================================
+ * Real port structure
+ *
+ *  ScmPort is actually ScmPortImpl.
+ */
+
+/*
+ * Regardless of the port type, the port structure caches at most
+ * one character, in order to realize `peek-char' (Scheme) or `Ungetc' (C)
+ * operation.   'scratch', 'scrcnt', and 'ungotten' fields are used for
+ * that purpose, and outside routine shouldn't touch these fields.
+ * See portapi.c for the detailed semantics.
+ */
+
+typedef struct ScmPortImplRec {
+    SCM_PORT_HEADER;
+
+    char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
+
+    ScmChar ungotten;           /* ungotten character.
+                                   SCM_CHAR_INVALID if empty. */
+    ScmObj reserved;            /* unused */
+
+    ScmInternalFastlock lock;   /* for port mutex */
+    ScmVM *lockOwner;           /* for port mutex; owner of the lock */
+    int lockCount;              /* for port mutex; # of recursive locks */
+
+    ScmWriteState *writeState;  /* used internally */
+
+    /* Input counters.  these doesn't take account of ungetting and
+       seeking: Ungetting doesn't affect those counters (you can think
+       that ungetting are handled above the counting layer).
+       Seeking invalidates counters; if you seek, the values of the counters
+       become bogus.
+       We don't have character counter, since it is difficult to track
+       (read-line uses byte read; see Scm_ReadLine in portapi.c).
+     */
+    ScmSize line;               /* line counter */
+    ScmSize bytes;              /* byte counter */
+
+    /* The source or the sink of the port.   Use specialized accessor
+       functions to retrieve one of those union members. */
+    union {
+        ScmPortBuffer buf;      /* buffered port */
+        ScmPortInputString istr;
+        ScmDString ostr;        /* output string port */
+        ScmPortVTable vt;       /* virtual port */
+    } src;
+
+    /* Port attibutes.  Use Scm_PortAttr* API to access. */
+    ScmObj attrs;
+    
+} ScmPortImpl;
+
+#define P_(p)   ((ScmPortImpl*)(p))
+
+/*================================================================
  * Some private APIs
  */
 
@@ -54,17 +110,17 @@ void Scm__SetupPortsForWindows(int has_console);
     (SCM_PORTP(port) && (SCM_PORT(port)->flags & SCM_PORT_WRITESS))
 
 #define PORT_RECURSIVE_P(port) \
-    ((port)->writeState != NULL)
+    (P_(port)->writeState != NULL)
 
 #define PORT_LOCK_OWNER_P(port, vm) \
-    ((port)->lockOwner == (vm))
+    (P_(port)->lockOwner == (vm))
 
 /* Internal intreface to retrieve src member.
    For public use, we have Scm_PortBufferStruct() etc. */
-#define PORT_BUF(port)     (&SCM_PORT(port)->src.buf)
-#define PORT_ISTR(port)    (&SCM_PORT(port)->src.istr)
-#define PORT_OSTR(port)    (&SCM_PORT(port)->src.ostr)
-#define PORT_VT(port)      (&SCM_PORT(port)->src.vt)
+#define PORT_BUF(port)     (&P_(port)->src.buf)
+#define PORT_ISTR(port)    (&P_(port)->src.istr)
+#define PORT_OSTR(port)    (&P_(port)->src.ostr)
+#define PORT_VT(port)      (&P_(port)->src.vt)
     
 /*================================================================
  * Locking the ports
@@ -106,31 +162,31 @@ void Scm__SetupPortsForWindows(int has_console);
 /* Lock a port P.  Can perform recursive lock. */
 #define PORT_LOCK(p, vm)                                        \
     do {                                                        \
-      if (p->lockOwner != vm) {                                 \
+        if (P_(p)->lockOwner != vm) {                           \
           for (;;) {                                            \
               ScmVM* owner__;                                   \
-              (void)SCM_INTERNAL_FASTLOCK_LOCK(p->lock);        \
-              owner__ = p->lockOwner;                           \
+              (void)SCM_INTERNAL_FASTLOCK_LOCK(P_(p)->lock);    \
+              owner__ = P_(p)->lockOwner;                       \
               if (owner__ == NULL                               \
                   || (owner__->state == SCM_VM_TERMINATED)) {   \
-                  p->lockOwner = vm;                            \
-                  p->lockCount = 1;                             \
+                  P_(p)->lockOwner = vm;                        \
+                  P_(p)->lockCount = 1;                         \
               }                                                 \
-              (void)SCM_INTERNAL_FASTLOCK_UNLOCK(p->lock);      \
-              if (p->lockOwner == vm) break;                    \
+              (void)SCM_INTERNAL_FASTLOCK_UNLOCK(P_(p)->lock);  \
+              if (P_(p)->lockOwner == vm) break;                \
               Scm_YieldCPU();                                   \
           }                                                     \
       } else {                                                  \
-          p->lockCount++;                                       \
+            P_(p)->lockCount++;                                 \
       }                                                         \
     } while (0)
 
 /* Unlock a port P.  Assumes the calling thread has the lock */
 #define PORT_UNLOCK(p)                                  \
     do {                                                \
-        if (--p->lockCount <= 0) {                      \
+        if (--P_(p)->lockCount <= 0) {                  \
             SCM_INTERNAL_SYNC();                        \
-            p->lockOwner = NULL;                        \
+            P_(p)->lockOwner = NULL;                    \
         } \
     } while (0)
 
@@ -152,7 +208,7 @@ void Scm__SetupPortsForWindows(int has_console);
        } SCM_END_PROTECT;                       \
     } while (0)
 
-#define PORT_LOCKED(p, vm) (((p)->lockOwner == (vm)))
+#define PORT_LOCKED(p, vm) ((P_(p)->lockOwner == (vm)))
 
 /* Should be used in the constructor of private ports.
    Mark the port locked by vm, so that it can be used exclusively by
@@ -160,8 +216,8 @@ void Scm__SetupPortsForWindows(int has_console);
 
 #define PORT_PRELOCK(p, vm)                     \
    do {                                         \
-     p->lockOwner = vm;                         \
-     p->lockCount = 1;                          \
+       P_(p)->lockOwner = vm;                   \
+       P_(p)->lockCount = 1;                    \
    } while (0)
 
 

@@ -113,70 +113,38 @@ typedef struct ScmPortInputStringRec {
     const char *end;
 } ScmPortInputString;
 
-
-/* The main port structure.
- * Regardless of the port type, the port structure caches at most
- * one character, in order to realize `peek-char' (Scheme) or `Ungetc' (C)
- * operation.   'scratch', 'scrcnt', and 'ungotten' fields are used for
- * that purpose, and outside routine shouldn't touch these fields.
- * See portapi.c for the detailed semantics.
+/*
+ * We don't expose much about ScmPort struct to the user.  A bunch of
+ * flags are public, but most of the stuff are hidden.  See priv/portP.h
+ * for the 'real' definition.
+ *
+ * ScmPort should never be allocated directly, or statically.  Port
+ * constructors properly initializes hidden fields.
  */
 
+#define SCM_PORT_HEADER                                                 \
+    SCM_INSTANCE_HEADER;                                                \
+    u_int direction : 2;        /* SCM_PORT_INPUT or SCM_PORT_OUTPUT.   \
+                                   There may be I/O port in future. */  \
+    u_int type      : 2;        /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */    \
+    u_int scrcnt    : 3;        /* # of bytes in the scratch buffer */  \
+                                                                        \
+    u_int ownerp    : 1;        /* TRUE if this port owns underlying    \
+                                   file pointer */                      \
+    u_int closed    : 1;        /* TRUE if this port is closed */       \
+    u_int error     : 1;        /* Error has been occurred */           \
+                                                                        \
+    u_int flags     : 5         /* see ScmPortFlags below */
+    
 struct ScmPortRec {
-    SCM_INSTANCE_HEADER;
-    u_int direction : 2;        /* SCM_PORT_INPUT or SCM_PORT_OUTPUT.
-                                   There may be I/O port in future. */
-    u_int type      : 2;        /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
-    u_int scrcnt    : 3;        /* # of bytes in the scratch buffer */
-
-    u_int ownerp    : 1;        /* TRUE if this port owns underlying
-                                   file pointer */
-    u_int closed    : 1;        /* TRUE if this port is closed */
-    u_int error     : 1;        /* Error has been occurred */
-
-    u_int flags     : 5;        /* see ScmPortFlags below */
-
-    /* What follows should be considered private fields and shouldn't
-     * be directly accessed by the user code.  The source/sink structures
-     * can be retrieved via Scm_PortBufferStruct(), 
-     * Scm_PortInputStringStruct(), and Scm_PortOutputDString().
-     * In future we'll hide those internal fields.
+    SCM_PORT_HEADER;
+    /* See portP.h for the real definition.  The magic number is chosen
+       so that ScmPort has enough size to contain the real struct.
+       
+       We tested to use a pointer to the real struct, but I/O intensive
+       benchmark showed 2-3% reduction of speed.  So we avoid indirection.
      */
-
-    char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
-
-    ScmChar ungotten;           /* ungotten character.
-                                   SCM_CHAR_INVALID if empty. */
-    ScmObj reserved;            /* unused */
-
-    ScmInternalFastlock lock;   /* for port mutex */
-    ScmVM *lockOwner;           /* for port mutex; owner of the lock */
-    int lockCount;              /* for port mutex; # of recursive locks */
-
-    ScmWriteState *writeState;  /* used internally */
-
-    /* Input counters.  these doesn't take account of ungetting and
-       seeking: Ungetting doesn't affect those counters (you can think
-       that ungetting are handled above the counting layer).
-       Seeking invalidates counters; if you seek, the values of the counters
-       become bogus.
-       We don't have character counter, since it is difficult to track
-       (read-line uses byte read; see Scm_ReadLine in portapi.c).
-     */
-    ScmSize line;               /* line counter */
-    ScmSize bytes;              /* byte counter */
-
-    /* The source or the sink of the port.   Use specialized accessor
-       functions to retrieve one of those union members. */
-    union {
-        ScmPortBuffer buf;      /* buffered port */
-        ScmPortInputString istr;
-        ScmDString ostr;        /* output string port */
-        ScmPortVTable vt;       /* virtual port */
-    } src;
-
-    /* Port attibutes.  Use Scm_PortAttr* API to access. */
-    ScmObj attrs;
+    char opaque[24 * SIZEOF_LONG];
 };
 
 /* Port direction.

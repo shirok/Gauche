@@ -1,3 +1,12 @@
+2020-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/port.h (ScmPort): INCOMPATIBLE CHANGE: Hide most of
+	  ScmPort guts from the user.  User code that directly accesses
+	  fields of ScmPort needs to be changed to use the public access
+	  functions.
+	  The actual struct definition is moved to src/gauche/priv/portP.h.
+	  This change is to give flexibility in the future port enhancement.
+
 2020-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c: Make port-name an attribute.
