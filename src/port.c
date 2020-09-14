@@ -1831,9 +1831,9 @@ void Scm__InitPort(void)
 {
     if (sizeof(ScmPort) < sizeof(ScmPortImpl)) {
 	fprintf(stderr,
-		"sizeof(ScmPort) [%"PRIdMAX"] is smaller than "
-		"sizeof(ScmPortImpl) [%"PRIdMAX"]\n",
-		sizeof(ScmPort), sizeof(ScmPortImpl));
+		"sizeof(ScmPort) [%"PRIdPTR"] is smaller than "
+		"sizeof(ScmPortImpl) [%"PRIdPTR"]\n",
+		SCM_WORD(sizeof(ScmPort)), SCM_WORD(sizeof(ScmPortImpl)));
         Scm_Panic("Implementation error.  Exitting.");
     }
     
