@@ -643,6 +643,7 @@ SCM_EXTERN ScmObj Scm_Values4(ScmObj val0, ScmObj val1, ScmObj val2,
                               ScmObj val3);
 SCM_EXTERN ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2,
                               ScmObj val3, ScmObj val4);
+SCM_EXTERN ScmObj Scm_ValuesFromArray(ScmObj *argv, ScmSmallInt argc);
 
 /* CPS API for evaluating Scheme fragments on VM. */
 SCM_EXTERN ScmObj Scm_VMApply(ScmObj proc, ScmObj args);

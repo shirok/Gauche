@@ -1,3 +1,7 @@
+2020-09-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_ValuesFromArray): Added.
+
 2020-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/port.h (ScmPort): INCOMPATIBLE CHANGE: Hide most of

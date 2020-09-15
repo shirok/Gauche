@@ -2864,7 +2864,6 @@ ScmObj Scm_VMValues2(ScmVM *vm, ScmObj val0, ScmObj val1)
     return val0;
 }
 
-
 ScmObj Scm_Values2(ScmObj val0, ScmObj val1)
 {
     return Scm_VMValues2(theVM, val0, val1);
@@ -2916,6 +2915,26 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1,
     return Scm_VMValues5(theVM, val0, val1, val2, val3, val4);
 }
 
+ScmObj Scm_VMValuesFromArray(ScmVM *vm, ScmObj *argv, ScmSmallInt argc)
+{
+    if (argc == 0) {
+        vm->numVals = 0;
+        return SCM_UNDEFINED;
+    }
+    for (ScmSmallInt i=1; i<argc; i++) {
+        if (i >= SCM_VM_MAX_VALUES) {
+            Scm_Error("too many values (%d)", argc);
+        }
+        vm->vals[i-1] = argv[i];
+    }
+    vm->numVals = argc;
+    return argv[0];
+}
+
+ScmObj Scm_ValuesFromArray(ScmObj *argv, ScmSmallInt argc)
+{
+    return Scm_VMValuesFromArray(theVM, argv, argc);
+}
 
 /*==================================================================
  * Queued handler processing.
