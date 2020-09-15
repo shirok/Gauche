@@ -424,7 +424,7 @@ static ScmObj ax_close(ScmTLS *tls)
         t->conn = 0;
         t->extensions = NULL;
         t->server_name = NULL;
-        t->common.in_port = t->common.out_port = SCM_UNDEFINED;
+        t->common.in_port = t->common.out_port = SCM_FALSE;
     }
 
     return SCM_UNDEFINED;
@@ -475,7 +475,7 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     t->conn = NULL;
     t->extensions = ssl_ext_new();
     t->server_name = SCM_STRING(server_name);
-    t->common.in_port = t->common.out_port = SCM_UNDEFINED;
+    t->common.in_port = t->common.out_port = SCM_FALSE;
 
     t->common.connect = ax_connect;
     t->common.accept = ax_accept;
