@@ -678,9 +678,8 @@ SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetCallTraceLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
 
-/* A box is to keep a reference.  It is mainly used for mutable local variables.
- */
-
+/* A box is to keep a reference.  Internally, it is used for mutable
+   local variables.  srfi-111 defines Scheme interface. */
 typedef struct ScmBoxRec {
     SCM_HEADER;
     ScmObj value;
@@ -694,6 +693,26 @@ SCM_CLASS_DECL(Scm_BoxClass);
 #define SCM_BOX_SET(obj, val)    (SCM_BOX(obj)->value = (val))
 
 SCM_EXTERN ScmBox *Scm_MakeBox(ScmObj value);
+
+/* An mv-box is multi-valued box.  Srfi-195 extends srfi-111 to support
+   arbitrary number of values in a box.  We use a different type <mv-box>,
+   in order to keep the one-value box lightweight. */
+typedef struct ScmMVBoxRec {
+    SCM_HEADER;
+    ScmSmallInt size;
+    ScmObj values[1];            /* variable length */
+} ScmMVBox;
+
+SCM_CLASS_DECL(Scm_MVBoxClass);
+#define SCM_CLASS_MVBOX            (&Scm_MVBoxClass)
+#define SCM_MVBOX(obj)             ((ScmMVBox*)(obj))
+#define SCM_MVBOXP(obj)            (SCM_XTYPEP(obj, SCM_CLASS_MVBOX))
+#define SCM_MVBOX_SIZE(obj)        (SCM_MVBOX(obj)->size)
+#define SCM_MVBOX_VALUES(obj)      (SCM_MVBOX(obj)->values)
+#define SCM_MVBOX_SET(obj, k, val) (SCM_MVBOX(obj)->values[k] = (val))
+
+SCM_EXTERN ScmMVBox *Scm_MakeMVBox(ScmSmallInt size, ScmObj init);
+SCM_EXTERN ScmMVBox *Scm_ListToMVBox(ScmObj elts);
 
 /*---------------------------------------------------------
  * CLASS

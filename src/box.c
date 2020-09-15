@@ -34,6 +34,10 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 
+/* Srfi-195 extends box type to allow muliple values.  We use separate
+   types for single-value box and multi-value box, for we want to optimize
+   single-value box; it is used internally for mutable local variables. */
+
 /* Box is a heap-allocated object that can hold one Scheme value.
  * It is internally used to realize indirection for mutable local
  * variables.   Conceptually, the compiler translates initialization,
@@ -94,3 +98,75 @@ ScmBox *Scm_MakeBox(ScmObj value)
     SCM_BOX_SET(b, value);
     return b;
 }
+
+/* MVBox is a box that can hold multiple values.
+ */
+
+static void mvbox_print(ScmObj obj, ScmPort *port,
+                        ScmWriteContext *ctx SCM_UNUSED)
+{
+    Scm_Printf(port, "#<mv-box(%d)", SCM_MVBOX_SIZE(obj));
+    ScmObj *vs = SCM_MVBOX_VALUES(obj);
+    for (ScmSmallInt i = 0; i < SCM_MVBOX_SIZE(obj); i++) {
+        Scm_Printf(port, " %S", vs[i]);
+    }
+    Scm_Printf(port, ">");
+}
+
+static int mvbox_compare(ScmObj x, ScmObj y, int equalp)
+{
+    ScmMVBox *mx = SCM_MVBOX(x);
+    ScmMVBox *my = SCM_MVBOX(y);
+    if (equalp) {
+        /* should return 0 if x == y */
+        if (mx->size != my->size) return 1;
+        for (ScmSmallInt i=0; i<mx->size; i++) {
+            if (!Scm_EqualP(mx->values[i], my->values[i])) return 1;
+        }
+        return 0;
+    } else {
+        if (mx->size < my->size) return -1;
+        if (mx->size > my->size) return 1;
+        for (ScmSmallInt i=0; i<mx->size; i++) {
+            int r = Scm_Compare(mx->values[i], my->values[i]);
+            if (r < 0 || r > 0) return r;
+        }
+        return 0;
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_MVBoxClass, mvbox_print, mvbox_compare,
+                         NULL, NULL, SCM_CLASS_DEFAULT_CPL);
+
+static ScmMVBox *make_mvbox(ScmSmallInt size)
+{
+    SCM_ASSERT(size == 0 || size >= 2);
+    ScmSmallInt allocsize = (size == 0)? 1 : size;
+    ScmMVBox *b =
+        SCM_NEW2(ScmMVBox*, sizeof(ScmMVBox) + allocsize*sizeof(ScmObj));
+    SCM_SET_CLASS(b, &Scm_MVBoxClass);
+    b->size = size;
+    return b;
+}
+
+ScmMVBox *Scm_MakeMVBox(ScmSmallInt size, ScmObj init)
+{
+    ScmMVBox *b = make_mvbox(size);
+    for (ScmSmallInt i=0; i<size; i++) {
+        b->values[i] = init;
+    }
+    return b;
+}
+
+ScmMVBox *Scm_ListToMVBox(ScmObj elts)
+{
+    ScmSmallInt size = Scm_Length(elts);
+    if (size < 0) Scm_Error("Improper list not allowed: %S", elts);
+    ScmMVBox *b = make_mvbox(size);
+    for (ScmSmallInt i=0; i<size; i++, elts = SCM_CDR(elts)) {
+        b->values[i] = SCM_CAR(elts);
+    }
+    return b;
+}
+
+

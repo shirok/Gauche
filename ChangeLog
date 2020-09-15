@@ -1,5 +1,8 @@
 2020-09-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/box.c: Added srfi-195 multi-valued box support.  We use separate
+	  type for mv-box, for we want to keep single-value box lightweight.
+
 	* src/vm.c (Scm_ValuesFromArray): Added.
 
 2020-09-13  Shiro Kawai  <shiro@acm.org>

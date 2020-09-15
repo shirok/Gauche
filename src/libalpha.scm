@@ -125,14 +125,41 @@
   Scm_Setter)
 
 ;;;
-;;;  srfi-111 box
+;;;  srfi-111 & srfi-195 box
 ;;;
 
 ;; We use them in equal? implementation as well, so here we go...
-(define-cproc box (v) (return (SCM_OBJ (Scm_MakeBox v))))
-(define-cproc box? (v) ::<boolean> (return (SCM_BOXP v)))
-(define-cproc unbox (b::<box>) (return (SCM_BOX_VALUE b)))
-(define-cproc set-box! (b::<box> v) ::<void> (SCM_BOX_SET b v))
+(define-cproc box (:optarray (argv argc 1) :rest rest)
+  (cond
+   [(== argc 0) (return (SCM_OBJ (Scm_MakeMVBox 0 SCM_FALSE)))]
+   [(SCM_NULLP rest) (return (SCM_OBJ (Scm_MakeBox (aref argv 0))))]
+   [else (return (SCM_OBJ (Scm_ListToMVBox (Scm_Cons (aref argv 0) rest))))]))
+
+(define-cproc box? (v) ::<boolean> (return (or (SCM_BOXP v) (SCM_MVBOXP v))))
+
+(define-cproc unbox (b)
+  (cond
+   [(SCM_BOXP b) (return (SCM_BOX_VALUE b))]
+   [(SCM_MVBOXP b) (return (Scm_ValuesFromArray (SCM_MVBOX_VALUES b)
+                                                (SCM_MVBOX_SIZE b)))]
+   [else (SCM_TYPE_ERROR b "<box> or <mv-box>") (return SCM_UNDEFINED)]))
+
+(define-cproc set-box! (b :rest vs) ::<void>
+  (cond
+   [(SCM_BOXP b) 
+    (unless (and (SCM_PAIRP vs) (SCM_NULLP (SCM_CDR vs)))
+      (Scm_Error "Wrong number of values to set to a single-value box %S: %S"
+                 b vs))
+    (SCM_BOX_SET b (SCM_CAR vs))]
+   [(SCM_MVBOXP b)
+    (let* ([argc::ScmSmallInt (Scm_Length vs)]
+           [i::ScmSmallInt 0])
+      (unless (== argc (SCM_MVBOX_SIZE b))
+        (Scm_Error "Wrong number of values to set to a multi-value box %S: %S"
+                   b vs))
+      (for (() (< i argc) (begin (post++ i) (set! vs (SCM_CDR vs))))
+        (set! (aref (SCM_MVBOX_VALUES b) i) (SCM_CAR vs))))]
+   [else (SCM_TYPE_ERROR b "<box> or <mv-box>")]))
 
 ;;;
 ;;;  case-lambda support

@@ -3420,6 +3420,7 @@ void Scm__InitClass(void)
 
     /* box.c */
     CINIT(SCM_CLASS_BOX,    "<box>");
+    CINIT(SCM_CLASS_MVBOX,  "<mv-box>");
     
     /* class.c */
     CINIT(SCM_CLASS_BOOL,   "<boolean>");
