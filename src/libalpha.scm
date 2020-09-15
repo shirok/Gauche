@@ -161,6 +161,36 @@
         (set! (aref (SCM_MVBOX_VALUES b) i) (SCM_CAR vs))))]
    [else (SCM_TYPE_ERROR b "<box> or <mv-box>")]))
 
+(define-cproc box-arity (b) ::<int>
+  (cond
+   [(SCM_BOXP b) (return 1)]
+   [(SCM_MVBOXP b) (return (SCM_MVBOX_SIZE b))]
+   [else (SCM_TYPE_ERROR b "<box> or <mv-box>")]))
+
+(define-cproc unbox-value (b i::<fixnum>)
+  (cond
+   [(SCM_BOXP b) 
+    (unless (== i 0) (Scm_Error "index out of range for %S: %d" b i))
+    (return (SCM_BOX_VALUE b))]
+   [(SCM_MVBOXP b)
+    (unless (and (<= 0 i)
+                 (< i (SCM_MVBOX_SIZE b)))
+      (Scm_Error "index out of range for %S: %d" b i))
+    (return (aref (SCM_MVBOX_VALUES b) i))]
+   [else (SCM_TYPE_ERROR b "<box> or <mv-box>")]))
+
+(define-cproc set-box-value! (b i::<fixnum> val) ::<void>
+  (cond
+   [(SCM_BOXP b) 
+    (unless (== i 0) (Scm_Error "index out of range for %S: %d" b i))
+    (SCM_BOX_SET b val)]
+   [(SCM_MVBOXP b)
+    (unless (and (<= 0 i)
+                 (< i (SCM_MVBOX_SIZE b)))
+      (Scm_Error "index out of range for %S: %d" b i))
+    (set! (aref (SCM_MVBOX_VALUES b) i) val)]
+   [else (SCM_TYPE_ERROR b "<box> or <mv-box>")]))
+
 ;;;
 ;;;  case-lambda support
 ;;;
