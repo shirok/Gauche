@@ -784,7 +784,7 @@ Supported by the module @code{srfi-106}.  @xref{Basic socket interface}.
 モジュール@code{srfi-106}でサポートされます。@ref{Basic socket interface}参照。
 
 
-srfi-111, srfi-111
+srfi-111
 (box box? unbox set-box!)
 
 Boxes
@@ -1362,3 +1362,13 @@ built-in.  Other APIs are provided by the module @code{srfi-193}
 コマンドライン
 @code{command-line}と@code{script-file}の二つの手続きは組み込みです。
 他のAPIはモジュール@code{srfi-193}で提供されます (@ref{Command line}参照)。
+
+
+srfi-195
+(box box? unbox set-box! box-arity unbox-value set-box-value!)
+
+Multiple-value boxes
+Built-in.
+
+多値ボックス
+組み込みです。

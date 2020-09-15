@@ -1854,17 +1854,21 @@
   )
 
 ;;-----------------------------------------------------------------------
-(test-section "srfi-111")
+(test-section "srfi-111 & srfi-195")
 (use srfi-111)
 (test-module 'srfi-111)
+(use srfi-195)
+(test-module 'srfi-195)
 
-;; srfi-111 is built-in.
 (test* "box primitives"
-       '(#t #f 2 3)
+       '(#t 1 #f 2)
        (let1 b (box 2)
-         (list (box? b) (box? 2) (unbox b)
-               (begin(set-box! b 3)
-                     (unbox b)))))
+         (list (box? b) (box-arity b) (box? 2) (unbox b))))
+
+(test* "box setter" 3
+       (let1 b (box 2)
+         (set-box! b 3)
+         (unbox b)))
 
 (test* "box compare"
        '(#t #f #f #t #f)
@@ -1876,6 +1880,42 @@
                (equal? b1 2)
                (eqv?   b1 b1)
                (eqv?   b1 b2))))
+
+(test* "mv box" '(#t 3 (a b c))
+       (let1 b (box 'a 'b 'c)
+         (list (box? b)
+               (box-arity b)
+               (values->list (unbox b)))))
+
+(test* "mv box set" '(d e f)
+       (let1 b (box 'a 'b 'c)
+         (set-box! b 'd 'e 'f)
+         (values->list (unbox b))))
+
+(test* "mv box (zero value)" '(#t 0 ())
+       (let1 b (box)
+         (list (box? b) (box-arity b) (values->list (unbox b)))))
+
+(test* "mv box index ref" 'b
+       (let1 b (box 'a 'b 'c)
+         (unbox-value b 1)))
+
+(test* "mv box index set" '(a e c)
+       (let1 b (box 'a 'b 'c)
+         (set-box-value! b 1 'e)
+         (values->list (unbox b))))
+
+(test* "box error handling" (test-error <error> #/out of range/)
+       (unbox-value (box) 0))
+
+(test* "box error handling" (test-error <error> #/out of range/)
+       (unbox-value (box 1) 1))
+
+(test* "box error handling" (test-error <error> #/Wrong number/)
+       (set-box! (box 1) 2 3))
+
+(test* "box error handling" (test-error <error> #/Wrong number/)
+       (set-box! (box 1 2) 3))
 
 ;;-----------------------------------------------------------------------
 ;; srfi-113 depends on srfi-114, so we test this first.
