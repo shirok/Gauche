@@ -373,7 +373,7 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
     t->conn = ssl_client_new(t->ctx, fd, 0, 0, t->extensions);
     int r = ssl_handshake_status(t->conn);
     if (r != SSL_OK) {
-        Scm_Error("TLS handshake failed: %d", r);
+        Scm_Error("TLS handshake failed. Possibly no supported ciphers. (code=%d)", r);
     }
     return SCM_OBJ(t);
 }
