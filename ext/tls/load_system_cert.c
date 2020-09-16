@@ -49,7 +49,8 @@ static ScmObj system_cert_loader(ScmTLS *t,
 {
     /* For other platforms, we use heuristics. */
     const char *cacert_paths[] = {
-        "/etc/ssl/certs/ca-certificates.crt",
+        "/etc/ssl/certs/ca-certificates.crt", /* ubnutu */
+	"/usr/local/etc/openssl/cert.pem",    /* osx homebrew openssl */
         NULL
     };
 
