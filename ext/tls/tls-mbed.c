@@ -78,48 +78,32 @@ typedef struct ScmMbedTLSRec {
     ScmString *server_name;
 } ScmMbedTLS;
 
+/* 
+ * 'system ca-bundle support
+ */
+#include "load_system_cert.c"
 
 #ifdef HAVE_WINCRYPT_H
-static inline ScmObj load_system_cert(ScmMbedTLS *t)
+static int mem_loader(ScmTLS *t, BYTE *pbCertEncoded, DWORD cbCertEncoded)
 {
-    const HCERTSTORE h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
-                                       X509_ASN_ENCODING,
-                                       0,
-                                       (CERT_STORE_SHARE_STORE_FLAG |
-                                        CERT_STORE_SHARE_CONTEXT_FLAG |
-                                        CERT_STORE_OPEN_EXISTING_FLAG |
-                                        CERT_STORE_READONLY_FLAG |
-                                        CERT_SYSTEM_STORE_LOCAL_MACHINE),
-                                       TEXT("Root"));
-    if (h == NULL) {
-        Scm_Warn("Can't open certificate store");
-        return SCM_FALSE;
-    }
+    return mbedtls_x509_crt_parse_der(&((ScmMbedTLS*)t)->ca, 
+                                      pbCertEncoded, 
+                                      cbCertEncoded);
+}
 
-    if(!CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL)) {
-        Scm_Warn("Can't resync certificate store");
-        CertCloseStore(h, 0);
-        return SCM_FALSE;
-    }
-
-
-    PCCERT_CONTEXT ctx = NULL;
-    while(1) {
-        ctx = CertEnumCertificatesInStore(h, ctx);
-
-        if (ctx == NULL) { break; }
-
-        int st = mbedtls_x509_crt_parse_der(&t->ca, ctx->pbCertEncoded, ctx->cbCertEncoded);
-        if(st != 0) {
-            Scm_Warn("Certificate is not accepted: %d", st);
-        }
-    }
-
-    CertCloseStore(h, 0);
-    return SCM_TRUE;
+static ScmObj load_system_cert(ScmMbedTLS *t)
+{
+    return system_cert_loader((ScmTLS*)t, mem_loader);
 }
 #else
-static inline ScmObj load_system_cert(ScmMbedTLS *t SCM_UNUSED) { return SCM_FALSE; }
+static int file_loader(ScmTLS *t, const char *path)
+{
+    return mbedtls_x509_crt_parse_file(&((ScmMbedTLS*)t)->ca, path);
+}
+
+static ScmObj load_system_cert(ScmMbedTLS *t SCM_UNUSED) { 
+    return system_cert_loader((ScmTLS*)t, file_loader);
+}
 #endif
 
 

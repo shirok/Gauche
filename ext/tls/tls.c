@@ -198,6 +198,9 @@ void Scm_Init_tls(ScmModule *mod)
                                      SCM_FALSE,
 #endif
                                      SCM_PARAMETER_LAZY);
+
+    /* tls-ca-bundle-path paramter.  It can be #f, 'system, 
+       or a string pathname */
     ca_bundle_path =
         Scm_BindPrimitiveParameter(mod, "tls-ca-bundle-path",
                                    default_ca_bundle(), 0);
@@ -282,48 +285,33 @@ static const char *tls_strerror(int code)
     return Scm_GetStringConst(SCM_STRING(z));
 }
 
+/* 
+ * 'system ca-bundle support
+ */
+#include "load_system_cert.c"
+
 #ifdef HAVE_WINCRYPT_H
-static inline ScmObj load_system_cert(ScmAxTLS *t)
+static int mem_loader(ScmTLS *t, BYTE *pbCertEncoded, DWORD cbCertEncoded)
 {
-    const HCERTSTORE h = CertOpenStore(CERT_STORE_PROV_SYSTEM,
-                                       X509_ASN_ENCODING,
-                                       0,
-                                       (CERT_STORE_SHARE_STORE_FLAG |
-                                        CERT_STORE_SHARE_CONTEXT_FLAG |
-                                        CERT_STORE_OPEN_EXISTING_FLAG |
-                                        CERT_STORE_READONLY_FLAG |
-                                        CERT_SYSTEM_STORE_LOCAL_MACHINE),
-                                       TEXT("Root"));
-    if (h == NULL) {
-        Scm_Warn("Can't open certificate store");
-        return SCM_FALSE;
-    }
-
-    if(!CertControlStore(h, 0, CERT_STORE_CTRL_AUTO_RESYNC, NULL)) {
-        Scm_Warn("Can't resync certificate store");
-        CertCloseStore(h, 0);
-        return SCM_FALSE;
-    }
-
-
-    PCCERT_CONTEXT ctx = NULL;
-    while(1) {
-        ctx = CertEnumCertificatesInStore(h, ctx);
-
-        if (ctx == NULL) { break; }
-
-        int st = ssl_obj_memory_load(t->ctx, SSL_OBJ_X509_CACERT, ctx->pbCertEncoded, ctx->cbCertEncoded, NULL);
-        if(st != SSL_OK) {
-            Scm_Warn("Certificate is not accepted: %d", st);
-        }
-    }
-
-    CertCloseStore(h, 0);
-    return SCM_TRUE;
+    return ssl_obj_memory_load(((ScmAxTLS*)t)->ctx, SSL_OBJ_X509_CACERT,
+                               pbCertEncoded, cbCertEncoded, NULL);
 }
-#else
-static inline ScmObj load_system_cert(ScmAxTLS *t SCM_UNUSED) { return SCM_FALSE; }
-#endif
+
+static ScmObj load_system_cert(ScmAxTLS *t)
+{
+    return system_cert_loader((ScmTLS*)t, mem_loader);
+}
+#else  /*! HAVE_WINCRYPT_H */
+
+static int file_loader(ScmTLS *t, const char *path)
+{
+    return ssl_obj_load(((ScmAxTLS*)t)->ctx, SSL_OBJ_X509_CACERT, path, NULL);
+}
+
+static inline ScmObj load_system_cert(ScmAxTLS *t) {
+    return system_cert_loader((ScmTLS*)t, file_loader);
+}
+#endif /*! HAVE_WINCRYPT_H */
 
 
 static void ax_context_check(ScmAxTLS* t, const char* op)

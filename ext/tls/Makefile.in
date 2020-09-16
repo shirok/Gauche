@@ -71,9 +71,13 @@ rfc--tls.$(SOEXT) : $(TLS_OBJECTS)
 tls.sci rfc--tls.c : tls.scm
 	$(PRECOMP) -e -P -o rfc--tls $(srcdir)/tls.scm
 
+tls.o : tls.c load_system_cert.c
+
 rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS)
 	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(EXT_LIBGAUCHE) \
 	   $(MBEDTLS_LIBS) $(SYSTEM_CERT_LIBS)
+
+tls-mbed.o : tls-mbed.c load_system_cert.c
 
 # For out-of-source-tree build
 axtls_dirs :

@@ -1,3 +1,9 @@
+2020-09-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Refactor load_system_cert().  Try known ca-bundle.crt path
+	  for 'system' ca-bundle on non-Windows platforms.
+	  Cf. https://github.com/shirok/Gauche/issues/365
+
 2020-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/box.c: Added srfi-195 multi-valued box support.  We use separate
