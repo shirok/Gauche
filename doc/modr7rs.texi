@@ -2845,19 +2845,40 @@ Here's an example:
 @defun vector-empty? vec
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Returns @code{#t} if @var{vec}'s length is zero, and
 @code{#f} if @var{vec}'s length is more than zero.
 Signals an error if @var{vec} is not a vector.
+@c JP
+ベクター@var{vec}の長さが0なら@code{#t}を、1以上なら@code{#f}を返します。
+@var{vec}がベクタでなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun vector= elt= vec @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Compares @var{vec}s element-wise, using given predicate @var{elt=}.
 Returns @code{#t} iff lengths of all the vectors are the same,
 and every corresponding elements are equal by @var{elt=}.
+
 @var{Elt=} is always called with two arguments and must
 return @code{#t} iff two are the same.
+
+When zero or one vector is passed, @var{elt=} won't be called
+and @var{vector=} always returns @code{#t}.
+@c JP
+@var{vec} @dots{}を要素ごとに比較してゆきます。要素間の比較には@var{elt=}が使われます。
+全てのベクタ引数が同じ長さで、対応する要素が@var{elt=}によって等しかった場合に、@code{#t}
+が返されます。
+
+@var{elt=}は常に二つの引数を取り、
+等しければ@code{#t}を、そうでなければ@code{#f}を返します。
+
+ゼロ個か1個のベクタが渡された場合は、@var{elt=}は全く呼ばれず、
+@code{vector=}は常に@code{#t}を返します。
+@c COMMON
 @end defun
 
 @c EN
@@ -2869,6 +2890,7 @@ return @code{#t} iff two are the same.
 @defun vector-fold kons knil vec1 vec2 @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 @var{Kons} is a procedure that takes @var{n}+1 arguments, where
 @var{n} is the number of given vectors.  For each element of the
 given vectors, @var{kons} is called as
@@ -2876,17 +2898,42 @@ given vectors, @var{kons} is called as
 where and @var{e_ni} is the @var{i}-th element
 of the vector @var{n}.  If the lengths of the vectors differ,
 iteration stops when the shortest vector is exhausted.
+@c JP
+@var{kons}は与えられたベクタ引数@var{vec1} @var{vec2} @dots{}
+の数よりひとつ多い引数を取る手続きです。
+各ベクタの@var{i}番目の要素@var{e_1i} @var{e_2i} @dots{})に
+対して、@var{kons}が
+@code{(@var{kons} @var{seed} @var{e_1i} @var{e_2i} @dots{})}
+のように順次呼ばれます。ベクタの長さが異なっていた場合、最も短いベクタが尽きたところで
+繰り返しは停止します。
+@c COMMON
 
+@c EN
 The initial value of @var{seed} is @var{knil}, and the return value
 from @var{kons} is used as the next seed value.  The last return value
 of @var{kons} is returned from @code{vector-fold}.
+@c JP
+@var{seed}の初期値は@var{knil}で、@var{kons}の戻り値が次の@var{seed}として
+使われます。最後の@var{kons}の戻り値が@code{vector-fold}の戻り値となります。
+@c COMMON
 
+@c EN
 The iteration is strictly left to right.
+@c JP
+繰り返しはベクタの左から右へと進みます。
+@c COMMON
 
+@c EN
 Note that the seed value precedes elements, which is opposite to
 @code{fold} (@pxref{Mapping over collection}).  It's an unfortunate
 historical glitch; @code{vector-fold-left} would be more consistent
 name.
+@c JP
+@var{seed}引数が要素の前に来ることに注意してください。これは
+@code{fold} (@ref{Mapping over collection}参照)とは逆です。
+歴史的に生じた不幸なすれちがいです。
+@code{vector-fold-left}であれば一貫性があったでしょう。
+@c COMMON
 
 @example
 (vector-fold (^[a b] (cons b a)) '() '#(a b c d))
@@ -2897,16 +2944,37 @@ name.
 @defun vector-fold-right kons knil vec1 vec2 @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Like @code{vector-fold}, but elements in the @var{vec1} @var{vec2} @dots{}
 are visited from right to left.
 
+If the lengths of the vectors differ, this procedure only looks up to
+the number of elements of the shortest vector and ignores any excessive
+elements.  See the second example below.
+@c JP
+@code{vector-fold}と似ていますが、@var{vec1} @var{vec2} @dots{}の各要素は
+右から左へと読まれます。
+
+ベクタの長さが異なる場合は、最も短いベクタの要素数までを見て、残りは無視します。
+下の2番目の例を見てください。
+@c COMMON
+
+@c EN
 Unlike @code{fold-right} (@pxref{Mapping over sequences}),
-the procedure @var{kons} takes the accumulated value in the
+the procedure @var{kons} takes the seed value in the
 first argument.
+@c JP
+@code{fold-right} (@ref{Mapping over sequences}参照)とは異なり、
+@var{kons}はシード値を最初の引数として受け取ります。
+@c COMMON
 
 @example
 (vector-fold-right (^[a b] (cons b a)) '() '#(a b c d))
   @result{} (a b c d)
+
+(vector-fold-right (^[s x y] (cons (list x y) s)) '()
+                   '#(a b c) '#(1 2 3 4))
+  @result{} ((a 1) (b 2) (c 3))                   
 @end example
 @end defun
 
