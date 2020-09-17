@@ -800,6 +800,41 @@ ScmObj Scm_ReaderLexicalMode()
     return Scm_PrimitiveParameterRef(Scm_VM(), readerLexicalMode);
 }
 
+/* Query whether the port is positinable.  If setp is false, returns
+   if port can get current pos.  If setp is true, returns if port
+   can set pos.
+   Note: For the buffering and procedural ports, if the user used old
+   protocol (using seeker), we can't exactly know if get/set position
+   is possible or not.
+ */
+int Scm_PortPositionable(ScmPort *port, int setp)
+{
+    switch (SCM_PORT_TYPE(port)) {
+    case SCM_PORT_FILE:
+        if (setp) {
+            if (PORT_BUF(port)->setpos || PORT_BUF(port)->seeker) return TRUE;
+            else return FALSE;
+        } else {
+            if (PORT_BUF(port)->getpos || PORT_BUF(port)->seeker) return TRUE;
+            else return FALSE;
+        }
+    case SCM_PORT_PROC:
+        if (setp) {
+            if (PORT_VT(port)->SetPos || PORT_VT(port)->Seek) return TRUE;
+            else return FALSE;
+        } else {
+            if (PORT_VT(port)->GetPos || PORT_VT(port)->Seek) return TRUE;
+            else return FALSE;
+        }
+    case SCM_PORT_ISTR:
+        return TRUE;
+    case SCM_PORT_OSTR:
+        if (setp) return FALSE; /* we haven't supported setpos for ostr */
+        else      return TRUE;
+    }
+}
+
+
 /* flushes the buffer, to make a room of cnt bytes.
    cnt == 0 means all the available data.   Note that, unless forcep == TRUE,
    this function only does "best effort" to make room, but doesn't
