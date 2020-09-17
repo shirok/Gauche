@@ -390,12 +390,12 @@
                                  :key (private?::<boolean> #f)
                                       (name "(input string port)"))
   (let* ([flags::u_long (?: private? SCM_PORT_STRING_PRIVATE 0)])
-    (return (Scm_MakeInputStringPortWithName string name flags))))
+    (return (Scm_MakeInputStringPortFull string name flags))))
 
 (define-cproc open-output-string (:key (private?::<boolean> #f)
                                        (name "(output string port)"))
   (let* ([flags::u_long (?: private? SCM_PORT_STRING_PRIVATE 0)])
-    (return (Scm_MakeOutputStringPortWithName name flags))))
+    (return (Scm_MakeOutputStringPortFull name flags))))
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
   (return (Scm_GetOutputString oport 0)))

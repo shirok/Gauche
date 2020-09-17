@@ -193,6 +193,11 @@ enum ScmFdReadyResult {
     SCM_FD_UNKNOWN
 };
 
+/* The flag bits passed to 'flags' argument of various port constructors */
+enum ScmPortConstructorFlag {
+    SCM_PORT_OWNER = (1L<<0)    /* Set the ownerp flag of the port */
+};
+
 /* Other flags used internally */
 /* NB: The first two flags only matter when port->recursiveContext is set,
    and they're transient by nature.  See write.c for the details. */
@@ -383,11 +388,11 @@ enum {
     SCM_PORT_STRING_PRIVATE = 1 /* for flags arg */
 };
 
-SCM_EXTERN ScmObj Scm_MakeInputStringPortWithName(ScmString *str,
-                                                  ScmObj name,
-                                                  u_long flags);
-SCM_EXTERN ScmObj Scm_MakeOutputStringPortWithName(ScmObj name,
-                                                   u_long flags);
+SCM_EXTERN ScmObj Scm_MakeInputStringPortFull(ScmString *str,
+                                              ScmObj name,
+                                              u_long flags);
+SCM_EXTERN ScmObj Scm_MakeOutputStringPortFull(ScmObj name,
+                                               u_long flags);
 
 /* these two are deprecated */
 SCM_EXTERN ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep);
@@ -401,20 +406,28 @@ SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags);
  * Other type of ports
  */
 
-SCM_EXTERN ScmObj Scm_MakeVirtualPortWithName(ScmClass *klass,
-                                              ScmObj name, int direction,
-                                              const ScmPortVTable *vtable,
-                                              u_long flags);
+SCM_EXTERN ScmObj Scm_MakeVirtualPortFull(ScmClass *klass,
+                                          ScmObj name, int direction,
+                                          const ScmPortVTable *vtable,
+                                          u_long flags);
 
 /* deprecated */
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(ScmClass *klass,
                                       int direction,
                                       const ScmPortVTable *vtable);
 
+
+SCM_EXTERN ScmObj Scm_MakeBufferedPortFull(ScmClass *klass,
+                                           ScmObj name, int direction,
+                                           ScmPortBuffer *bufrec,
+                                           u_long flags);
+
+/* deprecated */
 SCM_EXTERN ScmObj Scm_MakeBufferedPort(ScmClass *klass,
                                        ScmObj name, int direction,
                                        int ownerp,
                                        ScmPortBuffer *bufrec);
+
 SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
                                      int direction,
                                      int fd,

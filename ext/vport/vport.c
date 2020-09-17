@@ -399,7 +399,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Panic("vport_allocate: implementation error (class wiring screwed?)");
     }
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
-    ScmObj port = Scm_MakeVirtualPortWithName(klass, name, dir, &vtab, 0);
+    ScmObj port = Scm_MakeVirtualPortFull(klass, name, dir, &vtab, 0);
     PORT_VT(port)->data = data;
     return port;
 }

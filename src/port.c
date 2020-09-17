@@ -649,11 +649,11 @@ int Scm_FdReady(int fd, int dir)
 
 #define SCM_PORT_DEFAULT_BUFSIZ 8192
 
-ScmObj Scm_MakeBufferedPort(ScmClass *klass,
-                            ScmObj name,
-                            int dir,     /* direction */
-                            int ownerp,  /* owner flag*/
-                            ScmPortBuffer *bufrec)
+ScmObj Scm_MakeBufferedPortFull(ScmClass *klass,
+                                ScmObj name,
+                                int dir,     /* direction */
+                                ScmPortBuffer *bufrec,
+                                u_long flags)
 {
     ScmSize size = bufrec->size;
     char *buf = bufrec->buffer;
@@ -661,7 +661,7 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
     if (size == 0) size = SCM_PORT_DEFAULT_BUFSIZ;
     if (buf == NULL) buf = SCM_NEW_ATOMIC2(char*, size);
     ScmPort *p = make_port(klass, name, dir, SCM_PORT_FILE);
-    p->ownerp = ownerp;
+    p->ownerp = flags & SCM_PORT_OWNER;
     PORT_BUF(p)->buffer = buf;
     if ((dir & SCM_PORT_IOMASK) == SCM_PORT_INPUT) {
         PORT_BUF(p)->current = PORT_BUF(p)->buffer;
@@ -686,6 +686,17 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
        register the buffer. */
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
     return SCM_OBJ(p);
+}
+
+/* deprecated */
+ScmObj Scm_MakeBufferedPort(ScmClass *klass,
+                            ScmObj name,
+                            int dir,     /* direction */
+                            int ownerp,
+                            ScmPortBuffer *bufrec)
+{
+    return Scm_MakeBufferedPortFull(klass, name, dir, bufrec,
+                                    (ownerp? SCM_PORT_OWNER : 0));
 }
 
 /* some accessor APIs */
@@ -1312,8 +1323,8 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
  * String port
  */
 
-ScmObj Scm_MakeInputStringPortWithName(ScmString *str, ScmObj name,
-                                       u_long flags)
+ScmObj Scm_MakeInputStringPortFull(ScmString *str, ScmObj name,
+                                   u_long flags)
 {
     ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_INPUT, SCM_PORT_ISTR);
     ScmSmallInt size;
@@ -1328,12 +1339,12 @@ ScmObj Scm_MakeInputStringPortWithName(ScmString *str, ScmObj name,
 /* deprecated */
 ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 {
-    return Scm_MakeInputStringPortWithName(str,
-                                           SCM_MAKE_STR("(input string port)"),
-                                           (privatep?SCM_PORT_STRING_PRIVATE:0));
+    return Scm_MakeInputStringPortFull(str,
+                                       SCM_MAKE_STR("(input string port)"),
+                                       (privatep?SCM_PORT_STRING_PRIVATE:0));
 }
 
-ScmObj Scm_MakeOutputStringPortWithName(ScmObj name, u_long flags)
+ScmObj Scm_MakeOutputStringPortFull(ScmObj name, u_long flags)
 {
     ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_OUTPUT, SCM_PORT_OSTR);
     Scm_DStringInit(PORT_OSTR(p));
@@ -1344,8 +1355,8 @@ ScmObj Scm_MakeOutputStringPortWithName(ScmObj name, u_long flags)
 /* deprecated */
 ScmObj Scm_MakeOutputStringPort(int privatep)
 {
-    return Scm_MakeOutputStringPortWithName(SCM_MAKE_STR("(output string port)"),
-                                            (privatep?SCM_PORT_STRING_PRIVATE:0));
+    return Scm_MakeOutputStringPortFull(SCM_MAKE_STR("(output string port)"),
+                                        (privatep?SCM_PORT_STRING_PRIVATE:0));
 }
 
 ScmObj Scm_GetOutputString(ScmPort *port, int flags)
@@ -1504,10 +1515,10 @@ static void null_flush(ScmPort *dummy SCM_UNUSED)
 {
 }
 
-ScmObj Scm_MakeVirtualPortWithName(ScmClass *klass, ScmObj name,
-                                   int direction,
-                                   const ScmPortVTable *vtable,
-                                   u_long flags SCM_UNUSED)
+ScmObj Scm_MakeVirtualPortFull(ScmClass *klass, ScmObj name,
+                               int direction,
+                               const ScmPortVTable *vtable,
+                               u_long flags SCM_UNUSED)
 {
     ScmPort *p = make_port(klass, name, direction, SCM_PORT_PROC);
 
@@ -1531,7 +1542,7 @@ ScmObj Scm_MakeVirtualPort(ScmClass *klass,
                            int direction,
                            const ScmPortVTable *vtable)
 {
-    return Scm_MakeVirtualPortWithName(klass, SCM_FALSE, direction, vtable, 0);
+    return Scm_MakeVirtualPortFull(klass, SCM_FALSE, direction, vtable, 0);
 }
 
 /*===============================================================
