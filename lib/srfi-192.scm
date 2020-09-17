@@ -15,18 +15,11 @@
           set-port-position!))
 (select-module srfi-192)
 
-(define (port-has-port-position? port)
-  (assume (port? port))
-  (boolean (port-tell port)))
+;; port-has-port-position? and port-has-set-port-position!? - built-in
 
 (define (port-position port)
   (assume (port? port))
   (port-tell port))
-
-(define (port-has-set-port-position!? port)
-  (assume (port? port))
-  ;; NB: We should have the way to specifically query the port is seekable.
-  (boolean (port-tell port)))
 
 (define (set-port-position! port pos)
   (assume (port? port))

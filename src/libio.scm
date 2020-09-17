@@ -416,6 +416,12 @@
 ;; Miscellaneous
 ;;
 
+;; srfi-191
+(define-cproc port-has-port-position? (port::<port>) ::<boolean>
+  (return (Scm_PortPositionable port FALSE)))
+(define-cproc port-has-set-port-position!? (port::<port>) ::<boolean>
+  (return (Scm_PortPositionable port TRUE)))
+
 (select-module gauche)
 (inline-stub
  (define-enum SEEK_SET)
