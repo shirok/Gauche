@@ -88,6 +88,14 @@ typedef struct ScmPortBufferRec {
     int  (*filenum)(ScmPort *p);
     off_t (*seeker)(ScmPort *p, off_t offset, int whence);
     void *data;
+
+    /* The following fields are added in 0.9.10.  When you pass ScmPortBuffer
+       to the constructor, those fields are looked at only when you specify
+       SCM_PORT_WITH_POSITION.  They are needed to fully support srfi-192-style
+       port positioning. */
+    ScmObj (*getpos)(ScmPort *p);
+    ScmObj (*setpos)(ScmPort *p, ScmObj pos);
+    u_long flags;               /* reserved */
 } ScmPortBuffer;
 
 /* The function table of procedural port. */
@@ -104,6 +112,14 @@ typedef struct ScmPortVTableRec {
     void    (*Close)(ScmPort *p);
     off_t   (*Seek)(ScmPort *p, off_t off, int whence);
     void    *data;
+
+    /* The following fields are added in 0.9.10.  When you pass ScmPortBuffer
+       to the constructor, those fields are looked at only when you specify
+       SCM_PORT_WITH_POSITION.  They are needed to fully support srfi-192-style
+       port positioning. */
+    ScmObj (*GetPos)(ScmPort *p);
+    ScmObj (*SetPos)(ScmPort *p, ScmObj pos);
+    u_long flags;               /* reserved */
 } ScmPortVTable;
 
 /* Input string port */
@@ -144,7 +160,7 @@ struct ScmPortRec {
        We tested to use a pointer to the real struct, but I/O intensive
        benchmark showed 2-3% reduction of speed.  So we avoid indirection.
      */
-    char opaque[26*sizeof(ScmWord) + sizeof(ScmInternalFastlock)];
+    char opaque[29*sizeof(ScmWord) + sizeof(ScmInternalFastlock)];
 };
 
 /* Port direction.
@@ -195,7 +211,9 @@ enum ScmFdReadyResult {
 
 /* The flag bits passed to 'flags' argument of various port constructors */
 enum ScmPortConstructorFlag {
-    SCM_PORT_OWNER = (1L<<0)    /* Set the ownerp flag of the port */
+    SCM_PORT_OWNER = (1L<<0),        /* Set the ownerp flag of the port */
+    SCM_PORT_WITH_POSITION = (1L<<1) /* The additional getpos/setpos fields
+                                        are looked at. */
 };
 
 /* Other flags used internally */

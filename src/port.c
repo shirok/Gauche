@@ -682,6 +682,17 @@ ScmObj Scm_MakeBufferedPortFull(ScmClass *klass,
     PORT_BUF(p)->filenum = bufrec->filenum;
     PORT_BUF(p)->seeker = bufrec->seeker;
     PORT_BUF(p)->data = bufrec->data;
+
+    if (flags & SCM_PORT_WITH_POSITION) {
+        PORT_BUF(p)->getpos = bufrec->getpos;
+        PORT_BUF(p)->setpos = bufrec->setpos;
+        PORT_BUF(p)->flags  = bufrec->flags;
+    } else {
+        PORT_BUF(p)->getpos = NULL;
+        PORT_BUF(p)->setpos = NULL;
+        PORT_BUF(p)->flags = 0;
+    }
+
     /* NB: DIR may be SCM_PORT_OUTPUT_TRANSIENT; in that case we don't
        register the buffer. */
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
@@ -1522,18 +1533,42 @@ ScmObj Scm_MakeVirtualPortFull(ScmClass *klass, ScmObj name,
 {
     ScmPort *p = make_port(klass, name, direction, SCM_PORT_PROC);
 
-    /* Copy vtable, and ensure all entries contain some ptr */
-    *PORT_VT(p) = *vtable;
-    if (!PORT_VT(p)->Getb)  PORT_VT(p)->Getb = null_getb;
-    if (!PORT_VT(p)->Getc)  PORT_VT(p)->Getc = null_getc;
-    if (!PORT_VT(p)->Getz)  PORT_VT(p)->Getz = null_getz;
-    if (!PORT_VT(p)->Ready) PORT_VT(p)->Ready = null_ready;
-    if (!PORT_VT(p)->Putb)  PORT_VT(p)->Putb = null_putb;
-    if (!PORT_VT(p)->Putc)  PORT_VT(p)->Putc = null_putc;
-    if (!PORT_VT(p)->Putz)  PORT_VT(p)->Putz = null_putz;
-    if (!PORT_VT(p)->Puts)  PORT_VT(p)->Puts = null_puts;
-    if (!PORT_VT(p)->Flush) PORT_VT(p)->Flush = null_flush;
-    /* Close and Seek can be left NULL */
+    /* Initialize default values */
+    PORT_VT(p)->Getb = null_getb;
+    PORT_VT(p)->Getc = null_getc;
+    PORT_VT(p)->Getz = null_getz;
+    PORT_VT(p)->Ready = null_ready;
+    PORT_VT(p)->Putb = null_putb;
+    PORT_VT(p)->Putc = null_putc;
+    PORT_VT(p)->Putz = null_putz;
+    PORT_VT(p)->Puts = null_puts;
+    PORT_VT(p)->Flush = null_flush;
+    PORT_VT(p)->Close = NULL;
+    PORT_VT(p)->Seek = NULL;
+    PORT_VT(p)->data = NULL;
+    PORT_VT(p)->GetPos = NULL;
+    PORT_VT(p)->SetPos = NULL;
+    PORT_VT(p)->flags = 0;
+    
+    if (vtable->Getb)  PORT_VT(p)->Getb   = vtable->Getb;
+    if (vtable->Getc)  PORT_VT(p)->Getc   = vtable->Getc;
+    if (vtable->Getz)  PORT_VT(p)->Getz   = vtable->Getz;
+    if (vtable->Ready) PORT_VT(p)->Ready  = vtable->Ready;
+    if (vtable->Putb)  PORT_VT(p)->Putb   = vtable->Putb;
+    if (vtable->Putc)  PORT_VT(p)->Putc   = vtable->Putc;
+    if (vtable->Putz)  PORT_VT(p)->Putz   = vtable->Putz;
+    if (vtable->Puts)  PORT_VT(p)->Puts   = vtable->Puts;
+    if (vtable->Flush) PORT_VT(p)->Flush  = vtable->Flush;
+    if (vtable->Close) PORT_VT(p)->Close  = vtable->Close;
+    if (vtable->Seek)  PORT_VT(p)->Seek   = vtable->Seek;
+    PORT_VT(p)->data = vtable->data;
+
+    if (flags & SCM_PORT_WITH_POSITION) {
+        if (vtable->GetPos) PORT_VT(p)->GetPos = vtable->GetPos;
+        if (vtable->SetPos) PORT_VT(p)->SetPos = vtable->SetPos;
+        PORT_VT(p)->flags = vtable->flags;
+    }
+
     return SCM_OBJ(p);
 }
 
