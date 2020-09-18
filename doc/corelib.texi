@@ -16840,6 +16840,16 @@ Returns @code{#t} iff @var{obj} is an object created by
 @var{obj}が@code{make-parameter}で作られたものであった場合は@code{#t}を、
 そうでなければ@code{#f}を返します。
 @c COMMON
+
+@c EN
+Note: Some built-in procedures such as @code{current-input-port}
+behaves like parameters.  They aren't created by @code{make-parameter},
+though, and returns @code{#f} for @code{parameter?}.
+@c JP
+註: 組み込みの手続きの中には、パラメータのように動作するものがあります
+(例: @code{current-input-port})。しかしそれらは、@code{make-parameter}で
+作られたものでない限り、@code{parameter?}に対して@code{#f}を返します。
+@c COMMON
 @end defun
 
 @c ------------------------------------------------------------
