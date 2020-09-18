@@ -788,12 +788,12 @@ srfi-111
 (box box? unbox set-box!)
 
 Boxes
-This has become a part of R7RS large.
-Supported by the module @code{scheme.box}.  @xref{R7RS boxes}.
+This has become a part of R7RS large as @code{scheme.box}.
+Gauche has it as built-in.  @xref{Boxes}.
 
 ボックス
-これはR7RS largeの一部となりました。
-モジュール@code{scheme.box}でサポートされます。@ref{R7RS boxes}参照。
+これは@code{scheme.box}としてR7RS largeの一部となりました。
+Gaucheは組み込みでサポートしています。@ref{Boxes}参照。
 
 
 srfi-112, srfi-112
@@ -1368,7 +1368,7 @@ srfi-195
 (box box? unbox set-box! box-arity unbox-value set-box-value!)
 
 Multiple-value boxes
-Built-in.
+Built-in.  @xref{Boxes}.
 
 多値ボックス
-組み込みです。
+組み込みです。@ref{Boxes}参照。
