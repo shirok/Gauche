@@ -6676,56 +6676,13 @@ with the different argument order.
 
 @deftp {Module} scheme.box
 @mdindex scheme.box
-This module defines the box datatype, which is a simple
-container that can hold one Scheme object.  It can be used
-as a minimal data storage, or a sort of mutable indirect
-``pointer''.
+Gauche supports boxes built-in (@pxref{Boxes}), so this module
+is merely a facade that exports the following identifiers:
 
-Traditionally a pair (with ignoring its cdr) or a single-element vector
-has been used for this purpose; in modern Scheme you can also define
-a record type with one mutable field.  Nevertheless,
-a box is very common abstraction to describe various
-algorithms, and having common interface to it is useful.
-
-The srfi leaves some details to implementations.  Here are our choices:
-@itemize
-@item
-We don't support autoboxing; that is, it is an error to pass non-box
-value to the procedure expecting boxed value and vice versa.
-@item
-Comparing two boxes with @code{equal?} compares their contents when
-two are not @code{eqv?}.  In the spec, when two boxes are @code{eqv?}
-then they must also be @code{equal?} to each other, but it's up
-to the implementation when two are not @code{eqv?}.
-@end itemize
-
-When you're writing portable code, be careful not to depend on the
-@code{equal?} behavior.
+@example
+box    box?    unbox    set-box!
+@end example
 @end deftp
-
-@defun box val
-[R7RS box]
-@c MOD scheme.box
-Returns a fresh box object that contains the value @code{val}.
-@end defun
-
-@defun box? obj
-[R7RS box]
-@c MOD scheme.box
-Returns @code{#t} iff @var{obj} is a box object.
-@end defun
-
-@defun unbox box
-[R7RS box]
-@c MOD scheme.box
-Returns @var{box}'s content.
-@end defun
-
-@defun set-box! box val
-[R7RS box]
-@c MOD scheme.box
-Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
-@end defun
 
 @node R7RS list queues, R7RS ephemerons, R7RS boxes, R7RS large
 @subsection @code{scheme.list-queue} - R7RS list queues

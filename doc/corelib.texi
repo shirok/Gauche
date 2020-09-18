@@ -20,6 +20,7 @@
 * Dictionaries::
 * Procedures and continuations::
 * Parameters::
+* Boxes::
 * Lazy evaluation::
 * Exceptions::
 * Eval and repl::
@@ -16651,7 +16652,7 @@ you can use @code{gfilter} and @code{generator->list}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parameters, Lazy evaluation, Procedures and continuations, Core library
+@node Parameters, Boxes, Procedures and continuations, Core library
 @section Parameters
 @c NODE パラメータ
 
@@ -16853,7 +16854,79 @@ though, and returns @code{#f} for @code{parameter?}.
 @end defun
 
 @c ------------------------------------------------------------
-@node Lazy evaluation, Exceptions, Parameters, Core library
+@node Boxes, Lazy evaluation, Parameters, Core library
+@section  Boxes
+@c NODE ボックス
+
+A box is a mutable container that can hold (possibly multiple) values.
+It can be used as a minimal data storage, or a sort of mutable indirect
+``pointer''.
+
+Traditionally, a list or a vector has been used for this purpose.
+However, such datatypes imply sequences of objects,   Using boxes
+emphasizes your intention is just for indirection, and not so much for
+sequencing.
+
+It is originally introduced by srfi-111, which was later adopted in
+R7RS-large as @code{scheme.box}.  Srfi-195 enhances it to deal with
+multiple values.
+
+The srfis leaves some details to implementations.  Here are our choices:
+@itemize
+@item
+We don't support autoboxing; that is, it is an error to pass non-box
+value to the procedure expecting boxed value and vice versa.
+@item
+Comparing two boxes with @code{equal?} compares their contents when
+two are not @code{eqv?}.  In the spec, when two boxes are @code{eqv?}
+then they must also be @code{equal?} to each other, but it's up
+to the implementation when two are not @code{eqv?}.
+@end itemize
+
+When you're writing portable code, be careful not to depend on the
+@code{equal?} behavior.
+
+@defun box val @dots{}
+[R7RS box][SRFI-195]
+Returns a fresh box object that contains the value @code{val} @dots{}.
+@end defun
+
+@defun box? obj
+[R7RS box]
+Returns @code{#t} iff @var{obj} is a box object.
+@end defun
+
+@defun box-arity box
+[SRFI-195]
+Returns the number of values @var{box} holds.
+@end defun
+
+@defun unbox box
+[R7RS box]
+Returns @var{box}'s content.  If @var{box} has @var{n} values,
+it returns @var{n} values.
+@end defun
+
+@defun unbox-value box i
+[SRFI-195]
+Returns @var{i}-th value held in @var{box}.
+@end defun
+
+@defun set-box! box val @dots{}
+[R7RS box][SRFI-195]
+Alters the content of @var{box} with @var{val} @dots{}.
+The numer of values must match the arity of the box.
+Returns unspecified value.
+@end defun
+
+@defun set-box-value! box i val
+[SRFI-195]
+Alters @var{i}-th value of @var{box} with @var{val}.
+Returns unspecified value.
+@end defun
+
+@c ------------------------------------------------------------
+@node Lazy evaluation, Exceptions, Boxes, Core library
 @section  Lazy evaluation
 @c NODE 遅延評価
 
