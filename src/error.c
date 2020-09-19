@@ -240,6 +240,9 @@ SCM_DEFINE_BASE_CLASS(Scm_IODecodingErrorClass, ScmIODecodingError,
 SCM_DEFINE_BASE_CLASS(Scm_IOEncodingErrorClass, ScmIOEncodingError,
                       message_print, NULL, NULL,
                       porterror_allocate, encoding_error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOInvalidPositionErrorClass, ScmIOInvalidPositionError,
+                      message_print, NULL, NULL,
+                      porterror_allocate, porterror_cpl);
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
@@ -814,6 +817,8 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
         peclass = SCM_CLASS_IO_DECODING_ERROR; break;
     case SCM_PORT_ERROR_ENCODING:
         peclass = SCM_CLASS_IO_ENCODING_ERROR; break;
+    case SCM_PORT_ERROR_SEEK:
+        peclass = SCM_CLASS_IO_INVALID_POSITION_ERROR; break;
     default:
         peclass = SCM_CLASS_PORT_ERROR; break;
     }
@@ -1099,6 +1104,10 @@ void Scm__InitExceptions(void)
                                 porterror_slots, 0);
     Scm_InitStaticClassWithMeta(SCM_CLASS_IO_ENCODING_ERROR,
                                 "<io-encoding-error>",
+                                mod, cond_meta, SCM_FALSE,
+                                porterror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_IO_INVALID_POSITION_ERROR,
+                                "<io-invalid-position-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 porterror_slots, 0);
 

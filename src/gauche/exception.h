@@ -206,6 +206,7 @@ typedef ScmPortError ScmIOClosedError;
 typedef ScmPortError ScmIOUnitError;
 typedef ScmPortError ScmIODecodingError;
 typedef ScmPortError ScmIOEncodingError;
+typedef ScmPortError ScmIOInvalidPositionError;
 
 SCM_CLASS_DECL(Scm_IOReadErrorClass);
 #define SCM_CLASS_IO_READ_ERROR      (&Scm_IOReadErrorClass)
@@ -220,6 +221,8 @@ SCM_CLASS_DECL(Scm_IODecodingErrorClass);
 #define SCM_CLASS_IO_DECODING_ERROR  (&Scm_IODecodingErrorClass)
 SCM_CLASS_DECL(Scm_IOEncodingErrorClass);
 #define SCM_CLASS_IO_ENCODING_ERROR  (&Scm_IOEncodingErrorClass)
+SCM_CLASS_DECL(Scm_IOInvalidPositionErrorClass);
+#define SCM_CLASS_IO_INVALID_POSITION_ERROR  (&Scm_IOInvalidPositionErrorClass)
 
 /*---------------------------------------------------
  * Compounders

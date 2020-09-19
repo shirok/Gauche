@@ -1,3 +1,8 @@
+2020-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c: Add <io-invalid-position-error> as a subclass of
+	  <port-error>.
+
 2020-09-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Refactor load_system_cert().  Try known ca-bundle.crt path
