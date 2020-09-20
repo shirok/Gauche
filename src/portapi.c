@@ -984,33 +984,43 @@ static off_t port_pending_bytes(ScmPort *p)
 
 #ifndef SEEK_ISTR               /* common part */
 #define SEEK_ISTR seek_istr
-static off_t seek_istr(ScmPort *p, off_t o, int whence, int is_telling)
+static ScmObj seek_istr(ScmPort *p, ScmObj off, int whence, int is_telling)
 {
-    off_t r;
+    /* If the port is istr, offset must always be an integer. */
+    off_t o = Scm_IntegerToOffset(off);
+    off_t rr;
     if (is_telling) {
-        r = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
+        rr = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
     } else {
-        long z = (long)o;
         if (whence == SEEK_CUR) {
-            z += (long)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
+            o += (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
         } else if (whence == SEEK_END) {
-            z += (long)(PORT_ISTR(p)->end - PORT_ISTR(p)->start);
+            o += (off_t)(PORT_ISTR(p)->end - PORT_ISTR(p)->start);
         }
-        if (z < 0 || z > (long)(PORT_ISTR(p)->end - PORT_ISTR(p)->start)) {
-            r = (off_t)-1;
+        if (o < 0 || o > (off_t)(PORT_ISTR(p)->end - PORT_ISTR(p)->start)) {
+            rr = (off_t)-1;
         } else {
-            PORT_ISTR(p)->current = PORT_ISTR(p)->start + z;
-            r = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
+            PORT_ISTR(p)->current = PORT_ISTR(p)->start + o;
+            rr = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
         }
         PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
         p->scrcnt = 0;
     }
-    return r;
+    return Scm_OffsetToInteger(rr);
 }
 #endif /*SEEK_ISTR*/
 
+
+/* srfi-181 allows port positions to be any Scheme object, so
+   off argument and return value can be any Scheme object---if it's
+   not an exact integer, it should be an object returned by getpos
+   callback.
+   If the port only has seeker callback, it must be an exact integer.
+   If the port implements setpos callback, whence must be SEEK_SET
+   for setting position.
+ */
 #ifdef SAFE_PORT_OP
-ScmObj Scm_PortSeek(ScmPort *p, ScmObj off, int whence)
+ScmObj Scm_PortSeek(ScmPort *p, volatile ScmObj off, int whence)
 #else
 ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
 #endif
@@ -1022,9 +1032,9 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
                       "attempt to seek on closed port: %S", p);
     }
 
-    off_t r = (off_t)-1;
-    off_t o = Scm_IntegerToOffset(off);
-    int is_telling = (whence == SEEK_CUR && o == 0);
+    ScmObj r = SCM_UNDEFINED;
+    off_t rr = (off_t)-1;
+    int is_telling = (whence == SEEK_CUR && off == SCM_MAKE_INT(0));
 
     LOCK(p);
 
@@ -1033,12 +1043,32 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         /* Unless we're telling, we discard pending bytes. */
         p->scrcnt = 0;
         PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
-        /* ... and adjust offset, when it's relative. */
-        if (whence == SEEK_CUR) o -= pending;
+        /* ... and adjust offset, when it's relative.
+           NB: This only matters if the port has seeker protocol, instead
+           of getpos/setpos protocol. */
+        if (whence == SEEK_CUR && SCM_INTEGERP(off)) {
+            off = Scm_Sub(off, SCM_MAKE_INT(pending));
+        }
     }
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
+        /* getpos/setpos protocol.  
+           FIXME: We have to adjust pending bytes. */
+        if (is_telling && PORT_BUF(p)->getpos) {
+            r = PORT_BUF(p)->getpos(p);
+            break;
+        }
+        if (!is_telling && PORT_BUF(p)->setpos) {
+            if (whence != SEEK_SET) {
+                Scm_PortError(p, SCM_PORT_ERROR_SEEK,
+                              "this port only supports SEEK_SET "
+                              "to set position.");
+            }
+            r = PORT_BUF(p)->setpos(p, off);
+            break;
+        }
+
         /* NB: we might be able to skip calling seeker if we keep the
            # of bytes read or write so far, but such count may be off
            when the port has been experienced an error condition. */
@@ -1047,55 +1077,80 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
            handling routine was input or output. */
         if (!PORT_BUF(p)->seeker) break;
         if (is_telling) {
-            SAFE_CALL(p, r = PORT_BUF(p)->seeker(p, 0, SEEK_CUR));
+            SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 0, SEEK_CUR));
             if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
-                r -= (off_t)(PORT_BUF(p)->end - PORT_BUF(p)->current);
+                rr -= (off_t)(PORT_BUF(p)->end - PORT_BUF(p)->current);
             } else {
-                r += (off_t)(PORT_BUF(p)->current - PORT_BUF(p)->buffer);
+                rr += (off_t)(PORT_BUF(p)->current - PORT_BUF(p)->buffer);
             }
+            r = Scm_OffsetToInteger(rr);
         } else {
             /* NB: possible optimization: the specified position is within
                the current buffer, we can avoid calling seeker. */
             if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
                 char *c = PORT_BUF(p)->current; /* save current ptr */
                 if (whence == SEEK_CUR) {
-                    o -= (off_t)(PORT_BUF(p)->end - c);
+                    off = Scm_Sub(off, Scm_MakeIntegerU(PORT_BUF(p)->end - c));
                 }
                 PORT_BUF(p)->current = PORT_BUF(p)->end; /* invalidate buffer */
-                SAFE_CALL(p, r = PORT_BUF(p)->seeker(p, o, whence));
-                if (r == (off_t)-1) {
+                SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 
+                                                      Scm_IntegerToOffset(off),
+                                                      whence));
+                if (rr == (off_t)-1) {
                     /* This may happened if seeker somehow gave up */
                     PORT_BUF(p)->current = c;
                 }
+                r = Scm_OffsetToInteger(rr);
             } else {
                 SAFE_CALL(p, bufport_flush(p, 0, TRUE));
-                SAFE_CALL(p, r = PORT_BUF(p)->seeker(p, o, whence));
+                SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 
+                                                      Scm_IntegerToOffset(off),
+                                                      whence));
+                r = Scm_OffsetToInteger(rr);
             }
         }
         break;
-    case SCM_PORT_ISTR:
-        r = SEEK_ISTR(p, o, whence, is_telling);
+    case SCM_PORT_ISTR: 
+        r = SEEK_ISTR(p, off, whence, is_telling);
         break;
     case SCM_PORT_OSTR:
         if (is_telling) {
-            r = (off_t)Scm_DStringSize(PORT_OSTR(p));
+            rr = (off_t)Scm_DStringSize(PORT_OSTR(p));
         } else {
             /* Not supported yet */
-            r = (off_t)-1;
+            rr = (off_t)-1;
         }
+        r = Scm_OffsetToInteger(rr);
         break;
     case SCM_PORT_PROC:
+        if (is_telling && PORT_VT(p)->GetPos) {
+            r = PORT_VT(p)->GetPos(p);
+            break;
+        }
+        if (!is_telling && PORT_VT(p)->SetPos) {
+            if (whence != SEEK_SET) {
+                Scm_PortError(p, SCM_PORT_ERROR_SEEK,
+                              "this port only supports SEEK_SET "
+                              "to set position.");
+            }
+            r = PORT_BUF(p)->setpos(p, off);
+            break;
+        }
         if (PORT_VT(p)->Seek) {
-            SAFE_CALL(p, r = PORT_VT(p)->Seek(p, o, whence));
+            SAFE_CALL(p, rr = PORT_VT(p)->Seek(p,
+                                               Scm_IntegerToOffset(off),
+                                               whence));
+            r = Scm_OffsetToInteger(rr);
         }
         break;
     }
     UNLOCK(p);
-    if (r == (off_t)-1) return SCM_FALSE;
+    if (r == SCM_MAKE_INT(-1)) return SCM_FALSE;
 
-    if (is_telling) r -= pending;
-    
-    return Scm_OffsetToInteger(r);
+    if (is_telling && SCM_INTEGERP(r)) {
+        r = Scm_Sub(r, SCM_MAKE_INT(pending));
+    }
+    return r;
 }
 
 /*=================================================================
