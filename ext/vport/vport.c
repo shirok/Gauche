@@ -85,6 +85,8 @@ typedef struct vport_rec {
     ScmObj flush_proc;          /* () -> () */
     ScmObj close_proc;          /* () -> () */
     ScmObj seek_proc;           /* (Offset, Whence) -> Offset */
+    ScmObj getpos_proc;         /* () -> Pos */
+    ScmObj setpos_proc;         /* (Pos) -> () */
 } vport;
 
 #define VPORT(port)   ((vport*)PORT_VT(port)->data)
@@ -356,6 +358,34 @@ static off_t vport_seek(ScmPort *p, off_t off, int whence)
     return (off_t)-1;
 }
 
+static ScmObj vport_getpos(ScmPort *p)
+{
+    vport *data = VPORT(p);
+    SCM_ASSERT(data != NULL);
+    if (!SCM_FALSEP(data->getpos_proc)) {
+        return Scm_ApplyRec(data->getpos_proc, SCM_NIL);
+    } else if (!SCM_FALSEP(data->seek_proc)) {
+        return Scm_ApplyRec(data->seek_proc,
+                            SCM_LIST2(SCM_MAKE_INT(0), 
+                                      SCM_MAKE_INT(SEEK_CUR)));
+    }
+    return SCM_UNDEFINED;
+}
+
+static ScmObj vport_setpos(ScmPort *p, ScmObj pos)
+{
+    vport *data = VPORT(p);
+    SCM_ASSERT(data != NULL);
+    if (!SCM_FALSEP(data->setpos_proc)) {
+        Scm_ApplyRec(data->setpos_proc, SCM_LIST1(pos));
+    } else if (!SCM_FALSEP(data->seek_proc)) {
+        Scm_ApplyRec(data->seek_proc,
+                     SCM_LIST2(pos, SCM_MAKE_INT(SEEK_SET)));
+    }
+    return SCM_UNDEFINED;
+}
+
+
 /*------------------------------------------------------------
  * Allocation & wiring
  */
@@ -374,6 +404,8 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     data->flush_proc = SCM_FALSE;
     data->close_proc = SCM_FALSE;
     data->seek_proc = SCM_FALSE;
+    data->getpos_proc = SCM_FALSE;
+    data->setpos_proc = SCM_FALSE;
 
     ScmPortVTable vtab;
     vtab.Getb = vport_getb;
@@ -387,6 +419,8 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     vtab.Flush = vport_flush;
     vtab.Close = vport_close;
     vtab.Seek  = vport_seek;
+    vtab.GetPos = vport_getpos;
+    vtab.SetPos = vport_setpos;
 
     int dir = 0;
     if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_INPUT_PORT)) {
@@ -399,7 +433,8 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Panic("vport_allocate: implementation error (class wiring screwed?)");
     }
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
-    ScmObj port = Scm_MakeVirtualPortFull(klass, name, dir, &vtab, 0);
+    ScmObj port = Scm_MakeVirtualPortFull(klass, name, dir, &vtab, 
+                                          SCM_PORT_WITH_POSITION);
     PORT_VT(port)->data = data;
     return port;
 }
@@ -439,6 +474,8 @@ VPORT_ACC(puts)
 VPORT_ACC(flush)
 VPORT_ACC(close)
 VPORT_ACC(seek)
+VPORT_ACC(getpos)
+VPORT_ACC(setpos)
 
 #define VPORT_SLOT(name)                                \
     SCM_CLASS_SLOT_SPEC(#name,                          \
@@ -452,6 +489,8 @@ static ScmClassStaticSlotSpec viport_slots[] = {
     VPORT_SLOT(ready),
     VPORT_SLOT(close),
     VPORT_SLOT(seek),
+    VPORT_SLOT(getpos),
+    VPORT_SLOT(setpos),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
@@ -462,6 +501,8 @@ static ScmClassStaticSlotSpec voport_slots[] = {
     VPORT_SLOT(flush),
     VPORT_SLOT(close),
     VPORT_SLOT(seek),
+    VPORT_SLOT(getpos),
+    VPORT_SLOT(setpos),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
@@ -476,6 +517,8 @@ static ScmClassStaticSlotSpec vioport_slots[] = {
     VPORT_SLOT(flush),
     VPORT_SLOT(close),
     VPORT_SLOT(seek),
+    VPORT_SLOT(getpos),
+    VPORT_SLOT(setpos),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
