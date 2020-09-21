@@ -1059,12 +1059,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
             r = PORT_BUF(p)->getpos(p);
             break;
         }
-        if (!is_telling && PORT_BUF(p)->setpos) {
-            if (whence != SEEK_SET) {
-                Scm_PortError(p, SCM_PORT_ERROR_SEEK,
-                              "this port only supports SEEK_SET "
-                              "to set position.");
-            }
+        if (!is_telling && PORT_BUF(p)->setpos && whence == SEEK_SET) {
             r = PORT_BUF(p)->setpos(p, off);
             break;
         }
@@ -1127,12 +1122,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
             r = PORT_VT(p)->GetPos(p);
             break;
         }
-        if (!is_telling && PORT_VT(p)->SetPos) {
-            if (whence != SEEK_SET) {
-                Scm_PortError(p, SCM_PORT_ERROR_SEEK,
-                              "this port only supports SEEK_SET "
-                              "to set position.");
-            }
+        if (!is_telling && PORT_VT(p)->SetPos && whence == SEEK_SET) {
             r = PORT_BUF(p)->setpos(p, off);
             break;
         }
