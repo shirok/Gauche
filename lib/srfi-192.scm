@@ -9,21 +9,11 @@
 
 (define-module srfi-192
   (export make-i/o-invalid-position-error
-          port-has-port-position?
-          port-position
-          port-has-set-port-position!?
-          set-port-position!))
+          port-has-port-position?       ;built-in
+          port-position                 ;built-in
+          port-has-set-port-position!?  ;built-in
+          set-port-position!))          ;built-in
 (select-module srfi-192)
-
-;; port-has-port-position? and port-has-set-port-position!? - built-in
-
-(define (port-position port)
-  (assume (port? port))
-  (port-tell port))
-
-(define (set-port-position! port pos)
-  (assume (port? port))
-  (port-seek port pos))
 
 ;; It'd be natural for this condition to inherit <port-error>, but
 ;; the public constructor doens't take the port.  So we implement it

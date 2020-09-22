@@ -422,6 +422,11 @@
 (define-cproc port-has-set-port-position!? (port::<port>) ::<boolean>
   (return (Scm_PortPositionable port TRUE)))
 
+(define-cproc port-position (port::<port>)
+  (return (Scm_PortSeek port '0 SEEK_CUR)))
+(define-cproc set-port-position! (port::<port> pos)
+  (return (Scm_PortSeek port pos SEEK_SET)))
+
 (select-module gauche)
 (inline-stub
  (define-enum SEEK_SET)
