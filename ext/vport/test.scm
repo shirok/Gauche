@@ -211,6 +211,38 @@
   (test* "write, then read 2" "PQRde12345" (port->string p))
   )
 
+(let ([data (make-vector 100)]
+      [pos 0]
+      [end 0])
+  (define p (make <virtual-io-port>
+              :getc (^[]
+                      (if (>= pos end)
+                        (eof-object)
+                        (begin0 (vector-ref data pos)
+                          (inc! pos))))
+              :putc (^c
+                     (vector-set! data pos c)
+                     (inc! pos)
+                     (set! end (max pos end)))
+              :getpos (^[] pos)
+              :setpos (^p (set! pos p))))
+  (vector-copy! data 0 '#(#\a #\b #\c #\d #\e))
+  (inc! end 5)
+  (test* "read from io port" "abcde" (port->string p))
+  (test* "port-tell" 5 (port-position p))
+  (write-char #\X p)
+  (write-char #\Y p)
+  (write-char #\Z p)
+  (set-port-position! p 0)
+  (test* "write, then read" "abcdeXYZ" (port->string p))
+  (set-port-position! p 5)
+  (write-string "PQR" p)
+  (set-port-position! p 0)
+  (write-string "12345" p)
+  (set-port-position! p 0)
+  (test* "write, then read 2" "12345PQR" (port->string p))
+  )
+
 ;;-----------------------------------------------------------
 (test-section "buffered-input-port")
 
