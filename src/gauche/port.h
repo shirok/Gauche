@@ -232,6 +232,17 @@ enum ScmPortFlags {
                                     registered for flushing. */
 };
 
+/* The flag bits for ScmPortBuffer.flags and ScmPortVTable.flags */
+enum ScmPortAdditionalFlags {
+    /* These two flags can disable getpos/setpos callbacks.  It is
+       useful that the user need to set these callbacks but they
+       don't necessarily work depending on the port status.
+       If disabled, Scm_PortPositionable() returns FALSE for the
+       corresponding query. */
+    SCM_PORT_DISABLE_GETPOS = (1L<<0),
+    SCM_PORT_DISABLE_SETPOS = (1L<<1)
+};
+
 /*================================================================
  * Generic operations
  */

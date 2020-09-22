@@ -812,19 +812,19 @@ int Scm_PortPositionable(ScmPort *port, int setp)
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
         if (setp) {
-            if (PORT_BUF(port)->setpos || PORT_BUF(port)->seeker) return TRUE;
-            else return FALSE;
+            return ((PORT_BUF(port)->setpos || PORT_BUF(port)->seeker)
+                    && !(PORT_BUF(port)->flags & SCM_PORT_DISABLE_SETPOS));
         } else {
-            if (PORT_BUF(port)->getpos || PORT_BUF(port)->seeker) return TRUE;
-            else return FALSE;
+            return ((PORT_BUF(port)->getpos || PORT_BUF(port)->seeker)
+                    && !(PORT_BUF(port)->flags & SCM_PORT_DISABLE_GETPOS));
         }
     case SCM_PORT_PROC:
         if (setp) {
-            if (PORT_VT(port)->SetPos || PORT_VT(port)->Seek) return TRUE;
-            else return FALSE;
+            return ((PORT_VT(port)->SetPos || PORT_VT(port)->Seek)
+                    && !(PORT_VT(port)->flags & SCM_PORT_DISABLE_SETPOS));
         } else {
-            if (PORT_VT(port)->GetPos || PORT_VT(port)->Seek) return TRUE;
-            else return FALSE;
+            return ((PORT_VT(port)->GetPos || PORT_VT(port)->Seek)
+                    && !(PORT_VT(port)->flags & SCM_PORT_DISABLE_GETPOS));
         }
     case SCM_PORT_ISTR:
         return TRUE;
