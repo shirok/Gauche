@@ -1055,6 +1055,15 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     case SCM_PORT_FILE:
         /* getpos/setpos protocol.  
            FIXME: We have to adjust pending bytes. */
+        if (is_telling && (PORT_BUF(p)->flags & SCM_PORT_DISABLE_GETPOS)) {
+            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
+                          "getting port position is disabled");
+        }
+        if (!is_telling && (PORT_BUF(p)->flags & SCM_PORT_DISABLE_SETPOS)) {
+            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
+                          "setting port position is disabled");
+        }
+
         if (is_telling && PORT_BUF(p)->getpos) {
             r = PORT_BUF(p)->getpos(p);
             break;
@@ -1118,6 +1127,14 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         r = Scm_OffsetToInteger(rr);
         break;
     case SCM_PORT_PROC:
+        if (is_telling && (PORT_VT(p)->flags & SCM_PORT_DISABLE_GETPOS)) {
+            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
+                          "getting port position is disabled");
+        }
+        if (!is_telling && (PORT_VT(p)->flags & SCM_PORT_DISABLE_SETPOS)) {
+            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
+                          "setting port position is disabled");
+        }
         if (is_telling && PORT_VT(p)->GetPos) {
             r = PORT_VT(p)->GetPos(p);
             break;

@@ -421,6 +421,8 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     vtab.Seek  = vport_seek;
     vtab.GetPos = vport_getpos;
     vtab.SetPos = vport_setpos;
+    /* we enable these when appropriate slot is set */
+    vtab.flags = SCM_PORT_DISABLE_GETPOS | SCM_PORT_DISABLE_SETPOS;
 
     int dir = 0;
     if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_INPUT_PORT)) {
@@ -450,19 +452,23 @@ static void vport_print(ScmObj obj, ScmPort *port,
 }
 
 /* Accessors */
-#define VPORT_ACC(name)                                                 \
-    static ScmObj SCM_CPP_CAT3(vport_,name,_get) (ScmObj p)             \
-    {                                                                   \
-        vport *data = VPORT(p);                                         \
-        SCM_ASSERT(data != NULL);                                       \
-        return data->SCM_CPP_CAT(name,_proc);                           \
-    }                                                                   \
+#define VPORT_GET(name)                                         \
+    static ScmObj SCM_CPP_CAT3(vport_,name,_get) (ScmObj p)     \
+    {                                                           \
+        vport *data = VPORT(p);                                 \
+        SCM_ASSERT(data != NULL);                               \
+        return data->SCM_CPP_CAT(name,_proc);                   \
+    }
+
+#define VPORT_SET(name)                                                 \
     static void SCM_CPP_CAT3(vport_,name,_set) (ScmObj p, ScmObj v)     \
     {                                                                   \
         vport *data = VPORT(p);                                         \
         SCM_ASSERT(data != NULL);                                       \
         data->SCM_CPP_CAT(name,_proc) = v;                              \
     }
+
+#define VPORT_ACC(name)   VPORT_GET(name) VPORT_SET(name)
 
 VPORT_ACC(getb)
 VPORT_ACC(getc)
@@ -473,9 +479,49 @@ VPORT_ACC(putc)
 VPORT_ACC(puts)
 VPORT_ACC(flush)
 VPORT_ACC(close)
-VPORT_ACC(seek)
-VPORT_ACC(getpos)
-VPORT_ACC(setpos)
+
+VPORT_GET(seek)
+VPORT_GET(getpos)
+VPORT_GET(setpos)
+
+static void positionable_check(ScmPortVTable *vt, vport *data)
+{
+    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->getpos_proc)) {
+        vt->flags |= SCM_PORT_DISABLE_GETPOS;
+    } else {
+        vt->flags &= ~SCM_PORT_DISABLE_GETPOS;
+    }
+
+    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->setpos_proc)) {
+        vt->flags |= SCM_PORT_DISABLE_SETPOS;
+    } else {
+        vt->flags &= ~SCM_PORT_DISABLE_SETPOS;
+    }
+}
+
+static void vport_seek_set(ScmObj p, ScmObj v)
+{
+    vport *data = VPORT(p);
+    SCM_ASSERT(data != NULL);
+    data->seek_proc = v;
+    positionable_check(Scm_PortVTableStruct(SCM_PORT(p)), data);
+}
+
+static void vport_getpos_set(ScmObj p, ScmObj v)
+{
+    vport *data = VPORT(p);
+    SCM_ASSERT(data != NULL);
+    data->getpos_proc = v;
+    positionable_check(Scm_PortVTableStruct(SCM_PORT(p)), data);
+}
+
+static void vport_setpos_set(ScmObj p, ScmObj v)
+{
+    vport *data = VPORT(p);
+    SCM_ASSERT(data != NULL);
+    data->setpos_proc = v;
+    positionable_check(Scm_PortVTableStruct(SCM_PORT(p)), data);
+}
 
 #define VPORT_SLOT(name)                                \
     SCM_CLASS_SLOT_SPEC(#name,                          \
