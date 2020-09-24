@@ -66,7 +66,8 @@
                      (if (zero? n)
                        (eof-object)
                        (vector-ref buf 0))))
-        :seek (make-seeker get-position set-position!)
+        :getpos get-position
+        :setpos set-position!
         :close close))
     ;; <buffered-input-port> uses u8vector for the buffer, so we have
     ;; to convert it.
@@ -123,7 +124,8 @@
                 (do-ec (: c (index i) s)
                        (vector-set! cbuf i c))
                 (write! cbuf 0 siz)))
-    :seek (make-seeker get-position set-position!)
+    :getpos get-position
+    :setpos set-position!
     :flush (^[] (and flush (flush)))
     :close close))
 
@@ -142,7 +144,8 @@
                    (u8vector-ref buf 0))))
     :putb (^b (u8vector-set! buf 0 b)
               (write! buf 0 1))
-    :seek (make-seeker get-position set-position!)
+    :getpos get-position
+    :setpos set-position!
     :close close
     :flush flush))
 
