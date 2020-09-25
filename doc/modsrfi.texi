@@ -7373,17 +7373,31 @@ If there's zero or one argument, it returns @code{#t}.
 @defunx bitvector-take-right bv n
 [SRFI-178]
 @c MOD srfi-178
+Returns a new bitvector with the first/last @var{n} bits of a bitvector @var{bv}.
+An error is thrown if length of @var{bv} is less than @var{n}.
+
+In Gauche, you can also use generic @code{(subseq bv 0 n)} to take the
+first @var{n} bits.  @xref{Sequence framework}.
 @end defun
 
 @defun bitvector-drop bv n
 @defunx bitvector-drop-right bv n
 [SRFI-178]
 @c MOD srfi-178
+Returns a new bitvector with bits except first/last @var{n} bits of 
+a bitvector @var{bv}.
+An error is thrown if length of @var{bv} is less than @var{n}.
+
+In Gauche, you can also use generic @code{(subseq bv n)}
+to drop the first @var{n} bits.  @xref{Sequence framework}.
 @end defun
 
 @defun bitvector-segment bv n
 [SRFI-178]
 @c MOD srfi-178
+Slices a bitvector @var{bv} with @var{n}-bits each, and returns
+a list of bitvectors.  If the length of @var{bv} isn't a multiple
+of @var{n}, the last bitvector may be shorter.
 @end defun
 
 @defun bitvector-fold/int kons knil bv1 bv2 @dots{}
@@ -8364,24 +8378,40 @@ procedure, whose default value is @code{list}.
 @defunx either-map proc either
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe}/@var{either} is a Nothing/Left, it is returned as is.
+If it is a Just/Right, its payload value(s) is/are passed to @var{proc},
+and the result is returned.
 @end defun
 
 @defun maybe-for-each proc maybe
 @defunx either-for-each proc either
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe}/@var{either} is a Nothing/Left, these procedures do nothing.
+Otherwise, @var{proc} is applied to the argument's payload values.
+The result of @var{proc} is discarded.  Returns an unspecified vlaue.
 @end defun
 
 @defun maybe-fold kons knil maybe
 @defunx either-fold kons knil either
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe}/@var{either} is a Nothing/Left, @var{knil} is returned.
+Otherwise, @var{kons} is called with the argument's payload values, plus
+@var{knil}.  What @var{kons} returns becomes the result.
 @end defun
 
 @defun maybe-unfold p f g seed @dots{}
 @defunx either-unfold p f g seed @dots{}
 @c MOD srfi-189
 [SRFI-189]
+First, the stop predicate @var{p} is applied to @var{seed} @dots{}.
+If it returns a true value, a Nothing / a Left of @var{seed} @dots{} is
+returned.  Otherwise, @var{g} is applied to @var{seed} @dots{},
+which should return the same number of values as seeds, and passed
+to @var{p}.  If @var{p} returns false, it is an error.
+If @var{p} returns true, @var{mapper} is applied to @var{seed} @dots{},
+then the results are wrapped in a Just/Right to be returned.
 @end defun
 
 
@@ -8391,81 +8421,140 @@ procedure, whose default value is @code{list}.
 @defun maybe->list maybe
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe} is a Just, returns a list of its payload values.
+If it is a Nothing, an empty list is retured.
 @end defun
 
 @defun list->maybe lis
 @c MOD srfi-189
 [SRFI-189]
+If @var{lis} is an empty list, a Nothing is returned.
+Otherwise, a Just that has elements in @var{lis} as payload values
+is returned.
+
+Note that @code{(list->maybe (maybe->list x))} isn't an identity
+mapping---if @var{x} is a Just with zero payload values, you'll get
+a Nothing.
 @end defun
 
 @defun either->list either
 @c MOD srfi-189
 [SRFI-189]
+If @var{either} is a Right, returns a list of its payload values.
+If it is a Left, returns an empty string.
 @end defun
 
 @defun list->either lis obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+If @var{lis} is an empty list, a Left of @var{obj} @dots{} is returned.
+Otherwise, a Right that has elements in @var{lis} as payload values
+is returned.
 @end defun
 
 @defun maybe->truth maybe
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe} is a Nothing, @code{#f} is returned.
+Otherwise, it must be a Just with one value, and its value is returned.
+
+If @var{maybe} is a Just and it doesn't have exactly one value, an error
+is thrown.  If you want to deal with arbitrary number of payload values,
+use @code{maybe->list-truth}.
 @end defun
 
-@defun truth->maybe ojb
+@defun truth->maybe obj
 @c MOD srfi-189
 [SRFI-189]
+If @var{obj} is @code{#f}, returns a Nothing.
+Otherwise, returns a Just with @var{obj} as its payload.
+
+Note that @code{(truth->maybe (maybe->truth x))} isn't an identity mapping---
+if @var{x} is a Just wrapping @code{#f}, you'll get a Nothing.
 @end defun
 
 @defun either->truth either
 @c MOD srfi-189
 [SRFI-189]
+If @var{either} is a Left, @code{#f} is returned.
+Otherwise, it must be a Right with one value, and its value is returned.
+
+If @var{either} is a Right and it doesn't have exactly one value, an error
+is thrown.  If you want to deal with arbitrary number of payload values,
+use @code{either->list-truth}.
 @end defun
 
 @defun truth->either obj fail-obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+If @var{obj} is @code{#f}, returns a Left with @var{fail-obj} @dots{} is
+returned.
+Otherwise, returns a Right with @var{obj} as its payload.
 @end defun
 
 @defun maybe->list-truth maybe
 @c MOD srfi-189
 [SRFI-189]
+Like @code{maybe->list}, it returns @code{#f} if @var{maybe} is a Nothing.
+If @var{maybe} is a Just, however, it returns a list of its payload values.
 @end defun
 
 @defun list-truth->maybe lis-or-false
 @c MOD srfi-189
 [SRFI-189]
+The argument must be @code{#f} of a list.  If it is @code{#f}, a Nothing
+is returned.  If it is a list, a Just with elements of the list is
+returned.
+
+@code{(list-truth->maybe (maybe->list-truth x))} is an identity mapping.
 @end defun
 
 @defun either->list-truth either
 @c MOD srfi-189
 [SRFI-189]
+Like @code{either->list}, it returns @code{#f} if @var{either} is a Left.
+If @var{either} is a Right, however, it returns a list of its payload values.
 @end defun
 
 @defun list-truth->either lis-or-false fail-objs @dots{}
 @c MOD srfi-189
 [SRFI-189]
+The @var{list-or-false} argument must be @code{#f} of a list.  
+If it is @code{#f}, a Left with @var{fail-objs} @dots{}
+is returned.  If it is a list, a Right with elements of the list is
+returned.
 @end defun
 
 @defun maybe->generation maybe
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe} is a Nothing, an EOF object is returned.
+Otherwise, it must be a Just with one value, and its value is returned.
+If @var{maybe} is a Just and it doesn't have exactly one value, an error
+is thrown.
 @end defun
 
 @defun generation->maybe obj
 @c MOD srfi-189
 [SRFI-189]
+If @var{obj} is an EOF value, a Nothing is returned.
+Otherwise, a Just wrapping @var{obj} is returned.
 @end defun
 
 @defun either->generation either
 @c MOD srfi-189
 [SRFI-189]
+If @var{either} is a Left, an EOF object is returned.
+Otherwise, it must be a Right with one value, and its value is returned.
+If @var{either} is a Right and it doesn't have exactly one value, an error
+is thrown.
 @end defun
 
 @defun generation->either obj fail-objs @dots{}
 @c MOD srfi-189
 [SRFI-189]
+If @var{obj} is an EOF value, a Left with @var{fail-objs} @dots{} is returned.
+Otherwise, a Right wrapping @var{obj} is returned.
 @end defun
 
 @defun maybe->values maybe
