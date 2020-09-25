@@ -5392,53 +5392,91 @@ for example.
 
 @deftp {Module} srfi-112
 @mdindex srfi-112
+@c EN
 This srfi provides a portable way to obtain runtime information.
+@c JP
+このsrfiは実行時の情報を問い合わせるポータブルな方法を提供します。
+@c COMMON
 @end deftp
 
 @defun implementation-name
 [SRFI-112]
 @c MOD srfi-112
+@c EN
+The name of the implementation.
 Returns a string @code{"Gauche"}.
+@c JP
+実装の名前。文字列@code{"Gauche"}が返ります。
+@c COMMON
 @end defun
 
 @defun implementation-version
 [SRFI-112]
 @c MOD srfi-112
+@c EN
 Returns a string of Gauche's version.  The same as @code{gauche-version}
 (@pxref{Environment inquiry}).
+@c JP
+Gaucheのバージョンを示す文字列が返ります。
+@code{gauche-version}と同じです (@ref{Environment inquiry}参照)。
+@c COMMON
 @end defun
 
 @defun cpu-architecture
 [SRFI-112]
 @c MOD srfi-112
+@c EN
 Returns a string of CPU architecture info, such as @code{"x86_64"}.
 Same as the @code{machine} field of the return value of @code{sys-uname}
 (@pxref{System inquiry}).
+@c JP
+CPUアーキテクチャの情報(@code{"x86_64"}など)を文字列で返します。
+@code{sys-uname}の@code{machine}フィールドと同じです(@ref{System inquiry}参照)。
+@c COMMON
 @end defun
 
 @defun machine-name
 [SRFI-112]
 @c MOD srfi-112
+@c EN
 Returns the host name.  Same as the @code{nodename} field of
 the return value of @code{sys-uname}.
 (@pxref{System inquiry}).
+@c JP
+ホスト名を返します。@code{sys-uname}の@code{nodename}フィールドと同じです
+(@ref{System inquiry}参照)。
+@c COMMON
 @end defun
 
 @defun os-name
 [SRFI-112]
 @c MOD srfi-112
+@c EN
 Returns the OS name.  Same as the @code{sysname} field
 of the return value of @code{sys-uname}.
+@c JP
+OSの名前を返します。@code{sys-uname}の@code{sysname}フィールドと同じです
+(@ref{System inquiry}参照)。
+@c COMMON
 @end defun
 
 @defun os-version
 [SRFI-112]
 @c MOD srfi-112
+@c EN
 Returns the OS version.  Same as the @code{release} field
 of the return value of @code{sys-uname}.
+@c JP
+OSのバージョンを返します。@code{sys-uname}の@code{release}フィールドと同じです
+(@ref{System inquiry}参照)。
+@c COMMON
 @end defun
 
-Here's an example of output:
+@c EN
+Here's an example of output.  It is likely to differ on your environment.
+@c JP
+出力の例を示します。あなたの実行環境では多分違った値になるでしょう。
+@c COMMON
 
 @example
 gosh> (implementation-name)
@@ -7430,6 +7468,7 @@ of @var{n}, the last bitvector may be shorter.
 @defunx bitvector-for-reach/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD srfi-178
+
 @end defun
 
 @subheading Prefixes, suffixes, trimming and padding
@@ -7438,18 +7477,43 @@ of @var{n}, the last bitvector may be shorter.
 @defunx bitvector-suffix-length bv1 bv2
 [SRFI-178]
 @c MOD srfi-178
+Returns the length of common prefix/suffix of two bitvectors
+@var{bv1} and @var{bv2}.
+
+@example
+(bitvector-prefix-length #*1100101001 #*110001101) @result{} 4
+(bitvector-suffix-length #*1100101001 #*110001101) @result{} 2
+@end example
 @end defun
 
 @defun bitvector-prefix? needle haystack
 @defunx bitvector-suffix? needle haystack
 [SRFI-178]
 @c MOD srfi-178
+Both arguments must be bitvectors.  Returns @code{#t}
+iff  @var{needle} is a prefix/suffix of @var{haystack}.
+
+@example
+(bitvector-prefix? #*101 #*1010100) @result{} #t
+(bitvector-prefix? #*101 #*1000110) @result{} #f
+(bitvector-suffix? #*110 #*1000110) @result{} #t
+(bitvector-suffix? #*110 #*1010100) @result{} #f
+@end example
 @end defun
 
 @defun bitvector-pad bit bv len
 @defunx bitvector-pad-right bit bv len
 [SRFI-178]
 @c MOD srfi-178
+If the length of a bitvector @var{bv} is smaller than @var{len},
+returns a bitvector of length @var{len} by adding @var{bit} before/after
+@var{bv}.  If the length of @var{bv} is equal to or greater than @var{len},
+@var{bv} is returned as is.
+
+@example
+(bitvector-pad 1 #*00010 10) @result{} #*1111100010
+(bitvector-pad-right 1 #*00010 10) @result{} #*0001011111
+@end example
 @end defun
 
 @defun bitvector-trim bit bv
@@ -7457,7 +7521,16 @@ of @var{n}, the last bitvector may be shorter.
 @defunx bitvector-trim-both bit bv
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector without preceding and/or trailing consecutive
+@var{bit} from @var{bv}.
+
+@example
+(bitvector-trim 0 #*000101000) @result{} #*101000
+(bitvector-trim-right 0 #*000101000) @result{} #*000101
+(bitvector-trim-both 0 #*000101000) @result{} #*101
+@end example
 @end defun
+
 
 @subheading Mutators
 
