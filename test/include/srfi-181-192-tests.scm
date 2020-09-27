@@ -209,7 +209,7 @@
 
  ;; NB: This test still fails.  port-position doesn't invoke get-position.
  (set-port-position! p saved-pos)
- '(test-eqv (string-ref data 2) (peek-char p))
+ (test-eqv (string-ref data 2) (peek-char p))
 
  (test-assert (begin (close-port p)
                      closed))

@@ -49,7 +49,7 @@
  *   (This level of buffering is common to all input port types, and
  *   distinct from the buffering of 'buffered' (file) port type.)
  *
- *   'Ungotten' field keeps SCM_CHAR_INVALID if there's no buffered
+ *   'Ungotten' field keeps SCM__CHAR_INVALID if there's no buffered
  *   character.  Otherwise, its value is the buffered character.
  *   The number of bytes in the 'scratch' array is kept in 'scrcnt'
  *   field.  If 'scrcnt' field is not zero, there's data in the
@@ -183,6 +183,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         break;
     case SCM_PORT_PROC:
         SAFE_CALL(p, PORT_VT(p)->Putc(c, p));
+        PORT_SAVED_POS(p) = SCM_UNBOUND;
         UNLOCK(p);
         break;
     default:
@@ -234,6 +235,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         break;
     case SCM_PORT_PROC:
         SAFE_CALL(p, PORT_VT(p)->Puts(s, p));
+        PORT_SAVED_POS(p) = SCM_UNBOUND;
         UNLOCK(p);
         break;
     default:
@@ -281,6 +283,7 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
         break;
     case SCM_PORT_PROC:
         SAFE_CALL(p, PORT_VT(p)->Putz(s, siz, p));
+        PORT_SAVED_POS(p) = SCM_UNBOUND;
         UNLOCK(p);
         break;
     default:
@@ -342,6 +345,7 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
         Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                       "pushback buffer overflow on port %S", p);
     }
+    PORT_SAVED_POS(p) = SCM_UNBOUND;
     PORT_UNGOTTEN(p) = c;
     UNLOCK(p);
 }
@@ -357,8 +361,17 @@ ScmChar Scm_PeekcUnsafe(ScmPort *p)
     LOCK(p);
     ScmChar ch = PORT_UNGOTTEN(p);
     if (ch == SCM_CHAR_INVALID) {
+        ScmObj saved_pos = SCM_UNBOUND;
+        PORT_SAVED_POS(p) = SCM_UNBOUND;
+        if (SCM_PORT_TYPE(p) == SCM_PORT_PROC 
+            && Scm_PortPositionable(p, FALSE)) {
+            saved_pos = Scm_PortSeekUnsafe(p, SCM_MAKE_INT(0), SEEK_CUR);
+        }
         ch = Scm_GetcUnsafe(p);
         PORT_UNGOTTEN(p) = ch;
+        if (!SCM_UNBOUNDP(saved_pos)) {
+            PORT_SAVED_POS(p) = saved_pos;
+        }
     }
     UNLOCK(p);
     return ch;
@@ -697,6 +710,7 @@ int Scm_GetcUnsafe(ScmPort *p)
     }
     case SCM_PORT_PROC: {
         int c = 0;
+        PORT_SAVED_POS(p) = SCM_UNBOUND;
         SAFE_CALL(p, c = PORT_VT(p)->Getc(p));
         if (c == '\n') PORT_LINE(p)++;
         UNLOCK(p);
@@ -801,6 +815,7 @@ ScmSize Scm_GetzUnsafe(char *buf, ScmSize buflen, ScmPort *p)
     }
     case SCM_PORT_PROC: {
         ScmSize r = 0;
+        PORT_SAVED_POS(p) = SCM_UNBOUND;
         SAFE_CALL(p, r = PORT_VT(p)->Getz(buf, buflen, p));
         PORT_BYTES(p) += r;
         UNLOCK(p);
@@ -1010,7 +1025,6 @@ static ScmObj seek_istr(ScmPort *p, ScmObj off, int whence, int is_telling)
 }
 #endif /*SEEK_ISTR*/
 
-
 /* srfi-181 allows port positions to be any Scheme object, so
    off argument and return value can be any Scheme object---if it's
    not an exact integer, it should be an object returned by getpos
@@ -1046,7 +1060,9 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         /* ... and adjust offset, when it's relative.
            NB: This only matters if the port has seeker protocol, instead
            of getpos/setpos protocol. */
-        if (whence == SEEK_CUR && SCM_INTEGERP(off)) {
+        if (SCM_PORT_TYPE(p) != SCM_PORT_PROC
+            && whence == SEEK_CUR
+            && SCM_INTEGERP(off)) {
             off = Scm_Sub(off, SCM_MAKE_INT(pending));
         }
     }
@@ -1136,14 +1152,19 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
                           "setting port position is disabled");
         }
         if (is_telling && PORT_VT(p)->GetPos) {
-            r = PORT_VT(p)->GetPos(p);
+            r = PORT_SAVED_POS(p);
+            if (SCM_UNBOUNDP(r)) {
+                r = PORT_VT(p)->GetPos(p);
+            }
             break;
         }
         if (!is_telling && PORT_VT(p)->SetPos && whence == SEEK_SET) {
             r = PORT_BUF(p)->setpos(p, off);
+            PORT_SAVED_POS(p) = SCM_UNBOUND;
             break;
         }
         if (PORT_VT(p)->Seek) {
+            PORT_SAVED_POS(p) = SCM_UNBOUND;
             SAFE_CALL(p, rr = PORT_VT(p)->Seek(p,
                                                Scm_IntegerToOffset(off),
                                                whence));
@@ -1152,10 +1173,12 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         break;
     }
     UNLOCK(p);
-    if (r == SCM_MAKE_INT(-1)) return SCM_FALSE;
 
-    if (is_telling && SCM_INTEGERP(r)) {
-        r = Scm_Sub(r, SCM_MAKE_INT(pending));
+    if (SCM_PORT_TYPE(p) != SCM_PORT_PROC) {
+        if (r == SCM_MAKE_INT(-1)) return SCM_FALSE;
+        if (is_telling && SCM_INTEGERP(r) && SCM_UNBOUNDP(PORT_SAVED_POS(p))) {
+            r = Scm_Sub(r, SCM_MAKE_INT(pending));
+        }
     }
     return r;
 }

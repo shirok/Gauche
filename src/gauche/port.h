@@ -95,7 +95,7 @@ typedef struct ScmPortBufferRec {
        port positioning. */
     ScmObj (*getpos)(ScmPort *p);
     ScmObj (*setpos)(ScmPort *p, ScmObj pos);
-    u_long flags;               /* reserved */
+    u_long flags;               /* See ScmPortAdditionalFlags below */
 } ScmPortBuffer;
 
 /* The function table of procedural port. */
@@ -119,7 +119,7 @@ typedef struct ScmPortVTableRec {
        port positioning. */
     ScmObj (*GetPos)(ScmPort *p);
     ScmObj (*SetPos)(ScmPort *p, ScmObj pos);
-    u_long flags;               /* reserved */
+    u_long flags;               /* See ScmPortAdditionalFlags below */
 } ScmPortVTable;
 
 /* Input string port */

@@ -56,11 +56,12 @@
 #define PORT_BUFFER_AVAIL(p) \
     (PORT_BUF(p)->current - PORT_BUF(p)->buffer)
 
-#define PORT_UNGOTTEN(p) (P_(p)->ungotten)
-#define PORT_SCRATCH(p)  (P_(p)->scratch)
-#define PORT_LINE(p)     (P_(p)->line)
-#define PORT_BYTES(p)    (P_(p)->bytes)
-#define PORT_ATTRS(p)    (P_(p)->attrs)
+#define PORT_UNGOTTEN(p)  (P_(p)->ungotten)
+#define PORT_SCRATCH(p)   (P_(p)->scratch)
+#define PORT_LINE(p)      (P_(p)->line)
+#define PORT_BYTES(p)     (P_(p)->bytes)
+#define PORT_ATTRS(p)     (P_(p)->attrs)
+#define PORT_SAVED_POS(p) (P_(p)->savedPos)
 
 /* Parameter location for the global reader lexical mode, from which
    ports inherit. */
@@ -209,7 +210,7 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
         SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)
         ? SCM_PORT_CASE_FOLD
         : 0;
-    port->reserved = SCM_FALSE;
+    port->savedPos = SCM_UNBOUND;
     (void)SCM_INTERNAL_FASTLOCK_INIT(port->lock);
     port->lockOwner = NULL;
     port->lockCount = 0;

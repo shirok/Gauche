@@ -48,6 +48,12 @@
  * operation.   'scratch', 'scrcnt', and 'ungotten' fields are used for
  * that purpose, and outside routine shouldn't touch these fields.
  * See portapi.c for the detailed semantics.
+ *
+ * Supporting custom ports (r6rs, srfi-181) complicates the interaction
+ * between an 'ungotten' character and port position.  The position of custom
+ * ports can be arbitrary object, and it is opaque outside of the custom
+ * port implementation.  So the port layer can't adjust the position.
+ * Instead, peek-char/byte has to prefetch the position to remember.
  */
 
 typedef struct ScmPortImplRec {
@@ -57,7 +63,8 @@ typedef struct ScmPortImplRec {
 
     ScmChar ungotten;           /* ungotten character.
                                    SCM_CHAR_INVALID if empty. */
-    ScmObj reserved;            /* unused */
+    ScmObj savedPos;            /* When we peek-char/byte on custom port,
+                                   we need to cache the position. */
 
     ScmInternalFastlock lock;   /* for port mutex */
     ScmVM *lockOwner;           /* for port mutex; owner of the lock */
