@@ -207,7 +207,6 @@
              (read-string 997 p))
  (test-equal (eof-object) (read-char p))
 
- ;; NB: This test still fails.  port-position doesn't invoke get-position.
  (set-port-position! p saved-pos)
  (test-eqv (string-ref data 2) (peek-char p))
 
