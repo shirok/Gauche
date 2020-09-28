@@ -1,5 +1,9 @@
 2020-09-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c: Add a secret feature to show initialization progress
+	  if env var GAUCHE_DEBUG_INITIALIZATION is set.  This helps when
+	  things got derailed during core initialization.
+
 	* src/module.c (Scm_FindModule), lib/gauche/cgen/precomp.scm:
 	  Distinguish a module created explicitly (by define-module
 	  or find-module) and implicitly (via identifier literals).

@@ -136,6 +136,16 @@ static int scheme_initialized = FALSE;
 void Scm_Init(const char *signature)
 {
     if (scheme_initialized) return;
+
+    int debug_init = FALSE;
+    if (Scm_GetEnv("GAUCHE_DEBUG_INITIALIZATION") != NULL) {
+        debug_init = TRUE;
+    }
+#define CALL_INIT(f)                                            \
+    do {                                                        \
+        if (debug_init) fprintf(stderr, "Calling %s...\n", #f); \
+        f();                                                    \
+    } while (0)
     
     /* make sure the main program links the same version of libgauche */
     if (strcmp(signature, GAUCHE_SIGNATURE) != 0) {
@@ -158,67 +168,67 @@ void Scm_Init(const char *signature)
 
     /* Initialize components.  The order is important, for some components
        rely on the other components to be initialized. */
-    Scm__InitParameter();
-    Scm__InitVM();
-    Scm__InitHash();
-    Scm__InitSymbol();
-    Scm__InitModule();
-    Scm__InitNumber();
-    Scm__InitChar();
-    Scm__InitClass();
-    Scm__InitList();
-    Scm__InitCollection();
-    Scm__InitExceptions();
-    Scm__InitProc();
-    Scm__InitPort();
-    Scm__InitWrite();
-    Scm__InitMacro();
-    Scm__InitLoad();
-    Scm__InitRegexp();
-    Scm__InitRead();
-    Scm__InitSignal();
-    Scm__InitSystem();
-    Scm__InitComparator();
-    Scm__InitExecenv();
+    CALL_INIT(Scm__InitParameter);
+    CALL_INIT(Scm__InitVM);
+    CALL_INIT(Scm__InitHash);
+    CALL_INIT(Scm__InitSymbol);
+    CALL_INIT(Scm__InitModule);
+    CALL_INIT(Scm__InitNumber);
+    CALL_INIT(Scm__InitChar);
+    CALL_INIT(Scm__InitClass);
+    CALL_INIT(Scm__InitList);
+    CALL_INIT(Scm__InitCollection);
+    CALL_INIT(Scm__InitExceptions);
+    CALL_INIT(Scm__InitProc);
+    CALL_INIT(Scm__InitPort);
+    CALL_INIT(Scm__InitWrite);
+    CALL_INIT(Scm__InitMacro);
+    CALL_INIT(Scm__InitLoad);
+    CALL_INIT(Scm__InitRegexp);
+    CALL_INIT(Scm__InitRead);
+    CALL_INIT(Scm__InitSignal);
+    CALL_INIT(Scm__InitSystem);
+    CALL_INIT(Scm__InitComparator);
+    CALL_INIT(Scm__InitExecenv);
 
-    Scm_Init_libalpha();
-    Scm_Init_libbool();
-    Scm_Init_libchar();
-    Scm_Init_libcode();
-    Scm_Init_libcmp();
-    Scm_Init_libdict();
-    Scm_Init_libeval();
-    Scm_Init_libexc();
-    Scm_Init_libfmt();
-    Scm_Init_libio();
-    Scm_Init_liblazy();
-    Scm_Init_liblist();
-    Scm_Init_libmisc();
-    Scm_Init_libmod();
-    Scm_Init_libnum();
-    Scm_Init_libobj();
-    Scm_Init_libproc();
-    Scm_Init_librx();
-    Scm_Init_libsrfis();
-    Scm_Init_libstr();
-    Scm_Init_libsym();
-    Scm_Init_libsys();
-    Scm_Init_libvec();
-    Scm_Init_libmacbase();
-    Scm_Init_compile();
-    Scm_Init_libmacro();
-    Scm_Init_libparam();
-    Scm_Init_libomega();
+    CALL_INIT(Scm_Init_libalpha);
+    CALL_INIT(Scm_Init_libbool);
+    CALL_INIT(Scm_Init_libchar);
+    CALL_INIT(Scm_Init_libcode);
+    CALL_INIT(Scm_Init_libcmp);
+    CALL_INIT(Scm_Init_libdict);
+    CALL_INIT(Scm_Init_libeval);
+    CALL_INIT(Scm_Init_libexc);
+    CALL_INIT(Scm_Init_libfmt);
+    CALL_INIT(Scm_Init_libio);
+    CALL_INIT(Scm_Init_liblazy);
+    CALL_INIT(Scm_Init_liblist);
+    CALL_INIT(Scm_Init_libmisc);
+    CALL_INIT(Scm_Init_libmod);
+    CALL_INIT(Scm_Init_libnum);
+    CALL_INIT(Scm_Init_libobj);
+    CALL_INIT(Scm_Init_libproc);
+    CALL_INIT(Scm_Init_librx);
+    CALL_INIT(Scm_Init_libsrfis);
+    CALL_INIT(Scm_Init_libstr);
+    CALL_INIT(Scm_Init_libsym);
+    CALL_INIT(Scm_Init_libsys);
+    CALL_INIT(Scm_Init_libvec);
+    CALL_INIT(Scm_Init_libmacbase);
+    CALL_INIT(Scm_Init_compile);
+    CALL_INIT(Scm_Init_libmacro);
+    CALL_INIT(Scm_Init_libparam);
+    CALL_INIT(Scm_Init_libomega);
 
-    Scm__InitCompaux();
+    CALL_INIT(Scm__InitCompaux);
 
     Scm_SelectModule(Scm_GaucheModule());
-    Scm__InitAutoloads();
+    CALL_INIT(Scm__InitAutoloads);
 
     Scm_SelectModule(Scm_UserModule());
 
     /* Final setup of cond-features alist. */
-    init_cond_features();
+    CALL_INIT(init_cond_features);
 
 #ifdef GAUCHE_USE_PTHREADS
     /* a trick to make sure the gc thread object is linked */
