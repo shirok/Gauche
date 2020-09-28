@@ -35,15 +35,9 @@
 
 ;; Register built-in modules as provided, so that (use <built-in-modue>) won't
 ;; complain.
-;; Kludge: util.match and gauche.interpolate are external files, but references
-;; to them are created in the compiled core code, since macros defined in them
-;; are expanded during compilation.  We need a better solution than this, for
-;; new code would introduce further dependency; but for the time being, this
-;; will do.
 (dolist [m (all-modules)]
   (let1 n (module-name m)
-    (unless (memq n '(util.match gauche.interpolate gauche.common-macros))
-      (provide (module-name->path n)))))
+    (provide (module-name->path n))))
 
 ;;;
 ;;; Object system finish-up
