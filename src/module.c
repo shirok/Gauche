@@ -163,12 +163,6 @@ static void init_module(ScmModule *m, ScmObj name, ScmHashTable *internal)
     m->origin = m->prefix = SCM_FALSE;
     m->sealed = FALSE;
     m->placeholding = FALSE;
-
-    if (name == SCM_INTERN("A") || name == SCM_INTERN("B")
-        || name == SCM_INTERN("C")) {
-        Scm_Printf(SCM_CURERR, "making %S\n", name);
-    }
-    
 }
 
 /* Internal */
