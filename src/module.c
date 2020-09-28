@@ -162,6 +162,7 @@ static void init_module(ScmModule *m, ScmObj name, ScmHashTable *internal)
     m->external = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     m->origin = m->prefix = SCM_FALSE;
     m->sealed = FALSE;
+    m->placeholding = FALSE;
 
     if (name == SCM_INTERN("A") || name == SCM_INTERN("B")
         || name == SCM_INTERN("C")) {
@@ -813,6 +814,15 @@ ScmModule *Scm_FindModule(ScmSymbol *name, int flags)
         int created;
         ScmModule *m = lookup_module_create(name, &created);
         SCM_ASSERT(m != NULL);
+        /* If the module is ever called with CREATE and PLACEHOLDING flag,
+           turn placeholding flag on.  The flag is cleared if the module
+           is ever called with CREATE but without PLACEHOLDING. */
+        if (created && (flags & SCM_FIND_MODULE_PLACEHOLDING)) {
+            m->placeholding = TRUE;
+        }
+        if (!(flags & SCM_FIND_MODULE_PLACEHOLDING)) {
+            m->placeholding = FALSE;
+        }
         return m;
     } else {
         ScmModule *m = lookup_module(name);
@@ -836,7 +846,10 @@ ScmObj Scm_AllModules(void)
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(modules.table));
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        SCM_APPEND1(h, t, SCM_DICT_VALUE(e));
+        ScmModule *m = SCM_MODULE(SCM_DICT_VALUE(e));
+        if (!m->placeholding) {
+            SCM_APPEND1(h, t, SCM_DICT_VALUE(e));
+        }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return h;

@@ -1053,8 +1053,13 @@
               :name name :name-literal (cgen-literal name)))))
   (init (self)
     (unless (predefined-module (~ self'value))
+      ;; Module literals are emitted only related with macro hygiene.  In that
+      ;; case, the module is created without loading its actual body, so
+      ;; we mark it as 'placeholding'.  The placeholding module won't show
+      ;; up in (all-modules).  Once (define-module ...) is evaluated by loading
+      ;; the module, it becomes 'real' module.
       (format #t "  ~a = SCM_OBJ(Scm_FindModule(SCM_SYMBOL(~a), \
-                                     SCM_FIND_MODULE_CREATE)); \
+                         SCM_FIND_MODULE_CREATE|SCM_FIND_MODULE_PLACEHOLDING)); \
                   /* module ~a */\n"
               (~ self'c-name)
               (cgen-cexpr (~ self'name-literal))

@@ -69,6 +69,9 @@ struct ScmModuleRec {
     ScmObj info;                /* alist of metainfo; e.g.
                                    (source-info . <string>) */
     int    sealed;              /* if true, no modification is allowed */
+    int    placeholding;        /* if true, this module is created just for
+                                   hygienic identifiers, and the module body
+                                   isn't loaded. */
 };
 
 #define SCM_MODULE(obj)       ((ScmModule*)(obj))
@@ -132,9 +135,12 @@ SCM_EXTERN void   Scm_ModuleSeal(ScmModule *mod);
    module doesn't exist.  This change should be transparent as far
    as the caller's using Gauche's definition of TRUE. */
 enum {
-    SCM_FIND_MODULE_CREATE = 1, /* Create if there's no named module */
-    SCM_FIND_MODULE_QUIET  = 2  /* Do not signal an error if there's no
-                                   named module, but return NULL instead. */
+    SCM_FIND_MODULE_CREATE = (1L<<0), /* Create if there's no named module */
+    SCM_FIND_MODULE_QUIET  = (1L<<1), /* Do not signal an error if there's no
+                                         named module, but return NULL 
+                                         instead. */
+    SCM_FIND_MODULE_PLACEHOLDING = (1L<<2) /* If module is newly created,
+                                              mark it as placeholding. */
 };
 
 #define SCM_FIND_MODULE(name, flags) \

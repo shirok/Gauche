@@ -1,3 +1,11 @@
+2020-09-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_FindModule), lib/gauche/cgen/precomp.scm:
+	  Distinguish a module created explicitly (by define-module
+	  or find-module) and implicitly (via identifier literals).
+	  If a module is created only because of identifiers embedded
+	  in macro output, it shouldn't appear in (all-modules).
+
 2020-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c: Add <io-invalid-position-error> as a subclass of
