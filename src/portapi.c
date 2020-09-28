@@ -87,6 +87,11 @@
     } while (0)
 #endif /* CLOSE_CHECK */
 
+#ifndef UNSAVE_POS
+#define UNSAVE_POS(port) PORT_SAVED_POS(port) = SCM_UNBOUND
+#endif  /* UNSAVE_POS */
+
+
 /* In the walk pass of multi-pass writing (see write.c), we set
    SCM_PORT_WALKING flag of the port.  Usually Scm_Write family recognizes
    the flag and suppress output.  However, in case if low-level port API
@@ -183,7 +188,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         break;
     case SCM_PORT_PROC:
         SAFE_CALL(p, PORT_VT(p)->Putc(c, p));
-        PORT_SAVED_POS(p) = SCM_UNBOUND;
+        UNSAVE_POS(p);
         UNLOCK(p);
         break;
     default:
@@ -235,7 +240,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         break;
     case SCM_PORT_PROC:
         SAFE_CALL(p, PORT_VT(p)->Puts(s, p));
-        PORT_SAVED_POS(p) = SCM_UNBOUND;
+        UNSAVE_POS(p);
         UNLOCK(p);
         break;
     default:
@@ -283,7 +288,7 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
         break;
     case SCM_PORT_PROC:
         SAFE_CALL(p, PORT_VT(p)->Putz(s, siz, p));
-        PORT_SAVED_POS(p) = SCM_UNBOUND;
+        UNSAVE_POS(p);
         UNLOCK(p);
         break;
     default:
@@ -345,7 +350,7 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
         Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                       "pushback buffer overflow on port %S", p);
     }
-    PORT_SAVED_POS(p) = SCM_UNBOUND;
+    UNSAVE_POS(p);
     PORT_UNGOTTEN(p) = c;
     UNLOCK(p);
 }
@@ -362,7 +367,7 @@ ScmChar Scm_PeekcUnsafe(ScmPort *p)
     ScmChar ch = PORT_UNGOTTEN(p);
     if (ch == SCM_CHAR_INVALID) {
         ScmObj saved_pos = SCM_UNBOUND;
-        PORT_SAVED_POS(p) = SCM_UNBOUND;
+        UNSAVE_POS(p);
         if (SCM_PORT_TYPE(p) == SCM_PORT_PROC 
             && Scm_PortPositionable(p, FALSE)) {
             saved_pos = Scm_PortSeekUnsafe(p, SCM_MAKE_INT(0), SEEK_CUR);
@@ -710,7 +715,7 @@ int Scm_GetcUnsafe(ScmPort *p)
     }
     case SCM_PORT_PROC: {
         int c = 0;
-        PORT_SAVED_POS(p) = SCM_UNBOUND;
+        UNSAVE_POS(p);
         SAFE_CALL(p, c = PORT_VT(p)->Getc(p));
         if (c == '\n') PORT_LINE(p)++;
         UNLOCK(p);
@@ -815,7 +820,7 @@ ScmSize Scm_GetzUnsafe(char *buf, ScmSize buflen, ScmPort *p)
     }
     case SCM_PORT_PROC: {
         ScmSize r = 0;
-        PORT_SAVED_POS(p) = SCM_UNBOUND;
+        UNSAVE_POS(p);
         SAFE_CALL(p, r = PORT_VT(p)->Getz(buf, buflen, p));
         PORT_BYTES(p) += r;
         UNLOCK(p);
@@ -1154,17 +1159,17 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         if (is_telling && PORT_VT(p)->GetPos) {
             r = PORT_SAVED_POS(p);
             if (SCM_UNBOUNDP(r)) {
-                r = PORT_VT(p)->GetPos(p);
+                SAFE_CALL(p, r = PORT_VT(p)->GetPos(p));
             }
             break;
         }
         if (!is_telling && PORT_VT(p)->SetPos && whence == SEEK_SET) {
-            r = PORT_BUF(p)->setpos(p, off);
-            PORT_SAVED_POS(p) = SCM_UNBOUND;
+            UNSAVE_POS(p);
+            SAFE_CALL(p, r = PORT_VT(p)->SetPos(p, off));
             break;
         }
         if (PORT_VT(p)->Seek) {
-            PORT_SAVED_POS(p) = SCM_UNBOUND;
+            UNSAVE_POS(p);
             SAFE_CALL(p, rr = PORT_VT(p)->Seek(p,
                                                Scm_IntegerToOffset(off),
                                                whence));
