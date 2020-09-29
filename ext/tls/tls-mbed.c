@@ -40,6 +40,13 @@
 #include <wincrypt.h>
 #endif
 
+/* This is a 'success' code of AxTLS.  mbedtls x509 routine returns 0
+   on success, which happens to be the same as SSL_OK.
+   We just need this in case we're configured with mbedtls and without axtls.
+ */
+#ifndef SSL_OK
+#define SSL_OK 0
+#endif
 
 /*
  * Class
