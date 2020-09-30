@@ -50,6 +50,8 @@ static ScmObj system_cert_loader(ScmTLS *t,
     /* For other platforms, we use heuristics. */
     const char *cacert_paths[] = {
         "/etc/ssl/certs/ca-certificates.crt", /* ubnutu */
+        "/usr/share/pki/ca-trust-source/ca-bundle.trust.crt", /* fedora */
+        "/etc/pki/tls/certs/ca-budle.crt",    /* fedora (compat) */
 	"/usr/local/etc/openssl/cert.pem",    /* osx homebrew openssl */
         NULL
     };
