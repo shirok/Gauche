@@ -196,7 +196,8 @@
     (and (pair? x)
          ($ (with-module gauche.internal pair-attribute-get)
             x 'source-info #f)))
-  (or (extract (~ proc'info))
+  (or (and (slot-exists? proc 'info)
+           (extract (~ proc'info)))
       (extract (source-code proc))))
 
 ;; disassembler ------------------------------------------------
