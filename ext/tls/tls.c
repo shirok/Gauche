@@ -74,6 +74,8 @@ static void tls_print(ScmObj obj, ScmPort* port,
 
 static ScmPrimitiveParameter *ca_bundle_path;
 static ScmPrimitiveParameter *default_tls_class;
+static ScmObj s_system;
+static ScmObj s_check;
 static ScmObj k_options;
 static ScmObj k_num_sessions;
 #if defined(GAUCHE_USE_AXTLS)
@@ -195,7 +197,9 @@ static inline ScmObj default_ca_bundle(void)
 #if defined(GAUCHE_CA_BUNDLE_FILE)
     return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
 #elif defined(GAUCHE_CA_BUNDLE_SYSTEM)
-    return SCM_INTERN(GAUCHE_CA_SYSTEM);
+    return s_system;
+#elif defined(GAUCHE_CA_BUNDLE_CHECK)
+    return s_check;
 #else
     return SCM_FALSE;
 #endif    
@@ -207,14 +211,21 @@ void Scm_Init_tls(ScmModule *mod)
 #if defined(GAUCHE_USE_AXTLS)
     Scm_InitStaticClass(&Scm_AxTLSClass, "<ax-tls>", mod, NULL, 0);
 #endif
+
+    s_system = SCM_INTERN("system");
+    s_check = SCM_INTERN("check");
+
     /* Set default-tls-class to be lazy (see tls.scm for the reason) */
     default_tls_class =
         Scm_BindPrimitiveParameter(mod, "default-tls-class",
                                    SCM_FALSE,
                                    SCM_PARAMETER_LAZY);
 
-    /* tls-ca-bundle-path paramter.  It can be #f, 'system, 
-       or a string pathname */
+    /* tls-ca-bundle-path paramter.  It can be 'check, 'system, #f,
+       or a string pathname.
+       If it is 'check, we check the system ca-bundle at the initialization
+       time (see tls.scm) and switch it to either 'system or #f.  So the
+       user will never see 'check. */
     ca_bundle_path =
         Scm_BindPrimitiveParameter(mod, "tls-ca-bundle-path",
                                    default_ca_bundle(), 0);

@@ -18,7 +18,7 @@ AC_ARG_WITH(tls,
   AS_HELP_STRING([--with-tls=TLSLIB,...],
   [Select which TLS libraries to be compiled.  Currently we support 'axtls'
    (to use bundled source of Cameron Rich's axTLS) and 'mbedtls' (to use mbed
-   TLS).  By default, available libraries are autodetected.  Specify this
+   TLS).  By default, available libraries are auto-detected.  Specify this
    option only when you want to exclude some of the libraries.
    Specify --with-tls=no to disable tls support.]),
   [
@@ -120,9 +120,15 @@ AC_ARG_WITH([ca-bundle],
   AS_HELP_STRING([--with-ca-bundle=/path/to/ca-bundle.crt],
 		 [Specify the default CA certificate bundle file path for 
                   TLS certificate validation. This file is required to use 
-                  mbed TLS. If set "system", use system certificate store.]),
+                  mbed TLS. If set "check", check the availability at runtime.
+                  If set "system", use system certificate store.
+                  Default is "check".]),
   [
     AS_CASE([$with_ca_bundle],
+        [check],  [AC_DEFINE([GAUCHE_CA_BUNDLE_CHECK],  1, [Define to check system CA availability at runtime])
+                   TLS_CA_TYPE=check
+                   TLS_CA_PATH=
+                  ],
         [no],     [AC_DEFINE([GAUCHE_CA_BUNDLE_NONE],   1, [Define not to use CA])
                    TLS_CA_TYPE=none
                    TLS_CA_PATH=
@@ -138,8 +144,8 @@ AC_ARG_WITH([ca-bundle],
                   ]
      )
   ], [
-    AC_DEFINE([GAUCHE_CA_BUNDLE_NONE], 1)
-    TLS_CA_TYPE=none
+    AC_DEFINE([GAUCHE_CA_BUNDLE_CHECK], 1)
+    TLS_CA_TYPE=check
     TLS_CA_PATH=
   ])
 

@@ -1,3 +1,11 @@
+2020-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.ac: Make the default of --with-ca-bundle to "check".
+	  It checks the system ca-bundle availability at initialization and
+	  set tls-ca-bundle-path to either 'system or #f.
+	  This allows the use to explicitly disable default ca bundle path
+	  by saying --with-ca-bundle=no.
+
 2020-09-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.c: Changed handling of default tls-ca-bundle-path

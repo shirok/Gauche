@@ -70,9 +70,10 @@
    ;; Set rfc.tls.mbed to be autoladed when <mbed-tls> is used.
    (autoload rfc.tls.mbed <mbed-tls>)
    (export <mbed-tls>)
-   (when (and (not (tls-ca-bundle-path))
-              (%tls-system-ca-bundle-available?))
-     (tls-ca-bundle-path 'system))
+   (when (eq? (tls-ca-bundle-path) 'check)
+     (if (%tls-system-ca-bundle-available?)
+       (tls-ca-bundle-path 'system)
+       (tls-ca-bundle-path #f)))
    (if (and (not (tls-ca-bundle-path))
             (global-variable-bound? (find-module 'rfc.tls) '<ax-tls>))
      ;; if system ca-bundle isn't available, we give up mbed-tls.
@@ -80,6 +81,10 @@
      (default-tls-class (delay <mbed-tls>)))
    ]
   [else
+   ;; For the backward compatibility, the default configuration with only
+   ;; axtls assumes tls-ca-bundle-path is #f.
+   (when (eq? (tls-ca-bundle-path) 'check)
+     (tls-ca-bundle-path #f))
    (default-tls-class (delay <ax-tls>))]))
 
 (inline-stub

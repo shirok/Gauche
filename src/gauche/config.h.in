@@ -20,6 +20,9 @@
 /* CA file path */
 #undef GAUCHE_CA_BUNDLE
 
+/* Define to check CA availability at runtime */
+#undef GAUCHE_CA_BUNDLE_CHECK
+
 /* Define to use file CA */
 #undef GAUCHE_CA_BUNDLE_FILE
 
