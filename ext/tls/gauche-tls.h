@@ -45,6 +45,13 @@
 
 #define GAUCHE_CA_SYSTEM "system"
 
+/* We try these paths to find ca certs on Unix-like platforms */
+#define SYSTEM_CA_CERT_PATHS                                            \
+    "/etc/ssl/certs/ca-certificates.crt", /* ubnutu */                  \
+    "/usr/share/pki/ca-trust-source/ca-bundle.trust.crt", /* fedora */  \
+    "/etc/pki/tls/certs/ca-budle.crt",    /* fedora (compat) */         \
+    "/usr/local/etc/openssl/cert.pem"     /* osx homebrew openssl */
+
 #if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
 #endif  /* GAUCHE_USE_MBEDTLS */

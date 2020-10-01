@@ -47,17 +47,22 @@ static ScmObj system_cert_loader(ScmTLS *t,
 static ScmObj system_cert_loader(ScmTLS *t,
                                  int (*file_loader)(ScmTLS*, const char *))
 {
-    /* For other platforms, we use heuristics. */
-    const char *cacert_paths[] = {
-        "/etc/ssl/certs/ca-certificates.crt", /* ubnutu */
-        "/usr/share/pki/ca-trust-source/ca-bundle.trust.crt", /* fedora */
-        "/etc/pki/tls/certs/ca-budle.crt",    /* fedora (compat) */
-	"/usr/local/etc/openssl/cert.pem",    /* osx homebrew openssl */
+    static const char *cacert_paths[] = {
+        SYSTEM_CA_CERT_PATHS,
         NULL
     };
-
-    for (const char **p = cacert_paths; *p != NULL; p++) {
-        int st = file_loader(t, *p);
+    static const char *cert_path = NULL;
+    
+    if (cert_path == NULL) {
+        for (const char **p = cacert_paths; *p != NULL; p++) {
+            int st = file_loader(t, *p);
+            if (st == SSL_OK) {
+                cert_path = *p;
+                return SCM_TRUE;
+            }
+        }
+    } else {
+        int st = file_loader(t, cert_path);
         if (st == SSL_OK) return SCM_TRUE;
     }
     return SCM_FALSE;
