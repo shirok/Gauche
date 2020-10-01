@@ -70,8 +70,12 @@
    ;; Set rfc.tls.mbed to be autoladed when <mbed-tls> is used.
    (autoload rfc.tls.mbed <mbed-tls>)
    (export <mbed-tls>)
+   (when (and (not (tls-ca-bundle-path))
+              (%tls-system-ca-bundle-available?))
+     (tls-ca-bundle-path 'system))
    (if (and (not (tls-ca-bundle-path))
             (global-variable-bound? (find-module 'rfc.tls) '<ax-tls>))
+     ;; if system ca-bundle isn't available, we give up mbed-tls.
      (default-tls-class (delay <ax-tls>))
      (default-tls-class (delay <mbed-tls>)))
    ]
@@ -145,6 +149,10 @@
 (define (tls-destroy t)
   (%tls-destroy t)
   (socket-close (tls-socket t)))
+
+;; Internal
+(define-cproc %tls-system-ca-bundle-available? () ::<boolean>
+  Scm_TLSSystemCABundleAvailable)
 
 (define (make-tls-input-port tls)
   (rlet1 ip (make <virtual-input-port>)

@@ -129,6 +129,8 @@ extern ScmObj Scm_TLSAccept(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
 extern ScmObj Scm_TLSSocket(ScmTLS *t);
 
+extern int    Scm_TLSSystemCABundleAvailable(void);
+
 /*
    KZ: presumably due to block sizes imposed by the crypto algorithms
    used, TLSRead() doesn't take a desired size and instead returns

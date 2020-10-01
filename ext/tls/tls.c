@@ -170,18 +170,12 @@ ScmObj Scm_TLSSocket(ScmTLS* t)
     return t->sock;
 }
 
-static inline ScmObj default_ca_bundle(void)
+int Scm_TLSSystemCABundleAvailable(void)
 {
-#if defined(GAUCHE_CA_BUNDLE_FILE)
-    return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
-#elif defined(GAUCHE_CA_BUNDLE_SYSTEM)
-    return SCM_INTERN(GAUCHE_CA_SYSTEM);
-#else
-    /* Determine if system CA cert is available. */
-#  if HAVE_WINCRYPT_H
+#if HAVE_WINCRYPT_H
     /* On Windows, we can count on system's cert store. */
-    return SCM_INTERN(GAUCHE_CA_SYSTEM);
-#  else   /* !HAVE_WINCRYPT_H */
+    return TRUE;
+#else   /* !HAVE_WINCRYPT_H */
     static const char *cacert_paths[] = {
         SYSTEM_CA_CERT_PATHS,
         NULL
@@ -189,11 +183,21 @@ static inline ScmObj default_ca_bundle(void)
 
     for (const char **p = cacert_paths; *p != NULL; p++) {
         if (access(*p, R_OK) == 0) {
-            return SCM_INTERN(GAUCHE_CA_SYSTEM);
+            return TRUE;
         }
     }
+    return FALSE;
+#endif  /* !HAVE_WINCRYPT_H */
+}
+
+static inline ScmObj default_ca_bundle(void)
+{
+#if defined(GAUCHE_CA_BUNDLE_FILE)
+    return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
+#elif defined(GAUCHE_CA_BUNDLE_SYSTEM)
+    return SCM_INTERN(GAUCHE_CA_SYSTEM);
+#else
     return SCM_FALSE;
-#  endif  /* !HAVE_WINCRYPT_H */
 #endif    
 }
 
