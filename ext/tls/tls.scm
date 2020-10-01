@@ -58,20 +58,25 @@
 
 (export-if-defined <ax-tls>)
 
+;; The initialization of default-tls-class depends on the availability
+;; of classes and tls-ca-bundle-path.
+;;
+;; If tls-ca-bundle-path is #f, we favor <ax-tls>, for <mbed-tls> doensn't work
+;; without ca-bundle.  Othwerise, we favor <mbed-tls>.
+
 (without-precompiling
  (cond-expand
   [gauche.net.tls.mbedtls
    ;; Set rfc.tls.mbed to be autoladed when <mbed-tls> is used.
    (autoload rfc.tls.mbed <mbed-tls>)
    (export <mbed-tls>)
-   ;; We also set default-tls-class to be <mbed-tls> if <ax-tls> isn't
-   ;; configured to be used.  Note that we can't directly refer to
-   ;; <mbed-tls> here, since it will trigger the autoload.  We set
-   ;; default-tls-class to be lazy parameter, so we can wrap the value
-   ;; with delay.
-   (unless (default-tls-class)
-     (default-tls-class (delay <mbed-tls>)))]
-  [else]))
+   (if (and (not (tls-ca-bundle-path))
+            (global-variable-bound? (find-module 'rfc.tls) '<ax-tls>))
+     (default-tls-class (delay <ax-tls>))
+     (default-tls-class (delay <mbed-tls>)))
+   ]
+  [else
+   (default-tls-class (delay <ax-tls>))]))
 
 (inline-stub
  (declcode

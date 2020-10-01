@@ -1,3 +1,9 @@
+2020-09-30  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.c: Changed handling of default tls-ca-bundle-path
+	  and default-tls-class.  If we find system ca bundle in initialization,
+	  we favor <mbed-tls>.
+
 2020-09-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c: Add a secret feature to show initialization progress

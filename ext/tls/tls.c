@@ -172,15 +172,29 @@ ScmObj Scm_TLSSocket(ScmTLS* t)
 
 static inline ScmObj default_ca_bundle(void)
 {
-#if   defined(GAUCHE_CA_BUNDLE_NONE)
-    return SCM_FALSE;
+#if defined(GAUCHE_CA_BUNDLE_FILE)
+    return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
 #elif defined(GAUCHE_CA_BUNDLE_SYSTEM)
     return SCM_INTERN(GAUCHE_CA_SYSTEM);
-#elif defined(GAUCHE_CA_BUNDLE_FILE)
-    return SCM_MAKE_STR(GAUCHE_CA_BUNDLE);
 #else
-#error Unknown CA bundle
-#endif
+    /* Determine if system CA cert is available. */
+#  if HAVE_WINCRYPT_H
+    /* On Windows, we can count on system's cert store. */
+    return SCM_INTERN(GAUCHE_CA_SYSTEM);
+#  else   /* !HAVE_WINCRYPT_H */
+    static const char *cacert_paths[] = {
+        SYSTEM_CA_CERT_PATHS,
+        NULL
+    };
+
+    for (const char **p = cacert_paths; *p != NULL; p++) {
+        if (access(*p, R_OK) == 0) {
+            return SCM_INTERN(GAUCHE_CA_SYSTEM);
+        }
+    }
+    return SCM_FALSE;
+#  endif  /* !HAVE_WINCRYPT_H */
+#endif    
 }
 
 void Scm_Init_tls(ScmModule *mod)
@@ -192,12 +206,8 @@ void Scm_Init_tls(ScmModule *mod)
     /* Set default-tls-class to be lazy (see tls.scm for the reason) */
     default_tls_class =
         Scm_BindPrimitiveParameter(mod, "default-tls-class",
-#if defined(GAUCHE_USE_AXTLS)
-                                     SCM_OBJ(&Scm_AxTLSClass),
-#else
-                                     SCM_FALSE,
-#endif
-                                     SCM_PARAMETER_LAZY);
+                                   SCM_FALSE,
+                                   SCM_PARAMETER_LAZY);
 
     /* tls-ca-bundle-path paramter.  It can be #f, 'system, 
        or a string pathname */
