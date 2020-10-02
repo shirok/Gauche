@@ -36,6 +36,8 @@
 #include "gauche-tls.h"
 #include <gauche/extend.h>
 
+#include "load_system_cert.c"
+
 /*
  * Class
  */
@@ -178,17 +180,25 @@ int Scm_TLSSystemCABundleAvailable(void)
     /* On Windows, we can count on system's cert store. */
     return TRUE;
 #else   /* !HAVE_WINCRYPT_H */
-    static const char *cacert_paths[] = {
-        SYSTEM_CA_CERT_PATHS,
-        NULL
-    };
+    static ScmObj available = SCM_UNDEFINED;
+    
+    if (SCM_UNDEFINEDP(available)) {
+        const char *cacert_paths[] = {
+            SYSTEM_CA_CERT_PATHS,
+            in_gauche_cacert_path(),
+            NULL
+        };
 
-    for (const char **p = cacert_paths; *p != NULL; p++) {
-        if (access(*p, R_OK) == 0) {
-            return TRUE;
+        const char **p = cacert_paths; 
+        for (;*p != NULL; p++) {
+            if (access(*p, R_OK) == 0) {
+                available = SCM_TRUE;
+                break;
+            }
         }
+        if (*p == NULL) available = SCM_FALSE;
     }
-    return FALSE;
+    return SCM_BOOL_VALUE(available);
 #endif  /* !HAVE_WINCRYPT_H */
 }
 
@@ -313,8 +323,6 @@ static const char *tls_strerror(int code)
 /* 
  * 'system ca-bundle support
  */
-#include "load_system_cert.c"
-
 #ifdef HAVE_WINCRYPT_H
 static int mem_loader(ScmTLS *t, BYTE *pbCertEncoded, DWORD cbCertEncoded)
 {
