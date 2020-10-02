@@ -16625,7 +16625,7 @@ Gaucheをインストールした後、次のコマンドを実行してくだ�
 @c COMMON
 
 @example
-gosh rfc/tls/get-cacert
+gosh rfc/tls/get-cacert.scm
 @end example
 
 @c EN

@@ -9,7 +9,7 @@ include ../Makefile.ext
 SCM_CATEGORY = rfc
 
 LIBFILES = rfc--tls.$(SOEXT) rfc--tls--mbed.$(SOEXT)
-SCMFILES = tls.sci tls/mbed.scm tls/get-cacert
+SCMFILES = tls.sci tls/mbed.scm tls/get-cacert.scm
 
 OBJECTS = $(TLS_OBJECTS) $(MBED_OBJECTS)
 
