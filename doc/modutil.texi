@@ -16568,37 +16568,197 @@ in an incomplete string.
 
 @deftp {Module} rfc.tls
 @mdindex rfc.tls
+@c EN
 This module handles secure connection over TCP socket.
-This module is used by @code{rfc.http} (@pxref{HTTP}).
+This module is used by @code{rfc.http} to realize https connection
+(@pxref{HTTP}).
+@c JP
+このモジュールはTCPソケット上のセキュアな接続を処理します。
+@code{rfc.http}で、https接続を実現するのに使われています
+(@ref{HTTP}参照)。
+@c COMMON
+@end deftp
 
-We haven't yet got other use cases than https connections, 
-so we're not sure how API of this layer should look like.  At this
-moment, we document the minimal features you need to know to use
-the TLS layer with @code{rfc.http}.
+@subheading CA certificates
 
-Gauche supports two TLS subsystems - one based on axTLS
+@c EN
+You need CA certificates to verify server certificates properly.
+Gauche doesn't have its own CA certificates, and relies on the
+system's certificate store by default.  On Unix-based systems,
+we search several known locations: On popular Linux distributions
+we recommend you to install @code{ca-certificates} package (or similar one).
+On OSX, we recommend to install openssl via Homebrew.  On Windows,
+we use system's certificate store via Wincrypt API.
+@c JP
+サーバの認証を適切に行うためには、CA証明書が必要です。
+Gaucheは自前でCA証明書を持っておらず、デフォルトでシステムのCA証明書バンドルを利用します。
+Unixベースのシステムでは、いくつかのよくあるパスを探索します。
+例えばLinuxディストリビューションなら@code{ca-certificates}やそれに類する
+パッケージをインストールしておくと良いでしょう。
+OSXではopensslをHomebrewでインストールしておくのをおすすめします。
+WindowsではWincrypt API経由でシステムの証明書ストアを使います。
+@c COMMON
+
+@c EN
+With the default configuration, Gauche checks the availability of the system's
+certificate store at initilization and use one if available.  You can explicitly
+give the path of CA certificate bundle, or disable it and provide
+individual certificate per connection.
+@c JP
+デフォルトのコンフィグレーションでは、Gaucheは初期化時にシステムのCA証明書バンドルを探し、
+見つかればそれを使うようになっています。かわりとなるCA証明書バンドルのパスを指定したり、
+接続毎に独自の証明書を与えることもできます。
+@c COMMON
+
+@c EN
+If, for some reasons, you cannot install system-wide CA certificate bundle,
+you can also download Curl's CA certificate bundle 
+@url{https://curl.haxx.se/ca/cacert.pem}, and install it in
+Gauche installation directory.  We have a convenience script.
+After installing Gauche, run the following command:
+@c JP
+もし、何らかの理由で、システム全体で使えるCA証明書バンドルがインストールできない場合、
+独自にCurlのCA証明書バンドルを@url{https://curl.haxx.se/ca/cacert.pem}から
+ダウンロードしてGaucheのインストールディレクトリに置いておくことができます。
+便利なスクリプトが用意してあります。
+Gaucheをインストールした後、次のコマンドを実行してください。
+@c COMMON
+
+@example
+gosh rfc/tls/get-cacert
+@end example
+
+@c EN
+You need curl installed on your system.  If you've installed
+Gauche with root priviledge, you'll be asked sudo password to install
+the CA bundle file.
+
+If you decided to do this, make sure you run the above command occasionally
+to get updated CA certificate bundles, for certificates may expire or
+be revoked.
+@c JP
+curlがシステムにインストールされている必要があります。また、Gaucheをインストールする時に
+root権限で行ったのであれば、このコマンドがCA証明書バンドルをインストールする時に
+sudoのパスワードを尋ねるでしょう。
+
+もしこの方法を取ることに決めたなら、時々このコマンドを実行してCA証明書バンドルを
+最新版に更新するのを忘れないようにしてください。
+CA証明書は期限が切れたり無効化されることがあります。
+@c COMMON
+
+@deffn {Parameter} tls-ca-bundle-path :optional path
+@c MOD rfc.tls
+@c EN
+Holds CA certificate bundle to be used.  The value
+can be either a string path to a CA bundle file, a symbol @code{system},
+or @code{#f}.
+@c JP
+CA証明書バンドルのパスを保持しています。値は、CA証明書バンドルファイルの
+パス名、シンボル@code{system}、あるいは@code{#f}のいずれかです。
+@c COMMON
+
+@c EN
+If it is @code{system}, Gauche uses system's default bundle.  
+An error is signaled on connection
+if Gauche can't find one.
+@c JP
+この値が@code{system}の場合、Gaucheはシステムのデフォルトの証明書バンドルを
+使おうとします。もしそれが見つからなければ接続時にエラーが報告されます。
+@c COMMON
+
+@c EN
+If it is @code{#f}, CA certificate won't be loaded automatically,
+and you have to manually load one using @code{tls-load-object}.
+@c JP
+この値が@code{#f}の場合、CA証明書は自動的にロードされないので、
+@code{tls-load-object}を使って自分で適切な証明書をロードしてやる必要があります。
+@c COMMON
+
+@c EN
+With the default configuration, Gauche scans the system CA bundle
+when @code{rfc.tls} module is initialized, and if it finds one,
+@code{tls-ca-bundle-path} is set to @code{system}; otherwise,
+@code{tls-ca-bundle-path} is set to @code{#f}.  So if you're using
+with default configuration and you see its value is @code{system},
+you can count on the system CA certificate bundle.
+@c JP
+デフォルトのコンフィグレーションでは、Gaucheは@code{rfc.tls}モジュール初期化時に
+システムのCA証明書バンドルが使えるかどうか調べて、使えるなら@code{tls-ca-bundle-path}の
+初期値を@code{system}に、使えないなら@code{#f}にセットします。
+したがって、デフォルトのコンフィグレーションで使っている限り、
+この値が@code{system}であればシステムのCA証明書を使えると考えて良いでしょう。
+@c COMMON
+
+@c EN
+This default behavior may be altered if Gauche is configured
+with @code{--with-ca-bundle} option.  You can execute
+@code{gauche-config --reconfigure} command to see if
+special @code{--with-ca-bundle} option is given.
+@c JP
+このデフォルトの振る舞いはconfigure時に@code{--with-ca-bundle}オプションで
+変えられます。使っているGaucheのコンフィグレーションが変えられているかどうかは、
+@code{gauche-config --reconfigure}コマンドを実行して@code{--with-ca-bundle}
+オプションがあるかどうかを見ればわかります。
+@c COMMON
+@end deffn
+
+
+@subheading Supported TLS subsystems
+
+@c EN
+Gauche supports two TLS subsystems - one based on AxTLS
 (@url{http://axtls.sourceforge.net/}), and the other based on
-mbedTLS (@url{https://tls.mbed.org/}).  Whether they're included
-depends on the configuration options.  By default, axTLS support
-is compiled in, and mbedTLS support is only included if the build
-platform has mbedTLS library installed.  And axTLS is set to be used
-by default.
+MbedTLS (@url{https://tls.mbed.org/}).  Whether they're included
+depends on the configuration options.  By default, AxTLS support
+is compiled in, and MbedTLS support is included if the build
+platform has MbedTLS library installed. 
+@c JP
+Gaucheは二つのTLSサブシステムをサポートしています。
+ひとつはAxTLS(@url{http://axtls.sourceforge.net/})、
+もうひとつはMbedTLS(@url{https://tls.mbed.org/})です。
+configureのオプションによって組み込まれるものが変わりますが、
+デフォルトではAxTLSは常に組み込まれ、
+MbedTLSはビルド時にシステムにインストールされていれば組み込まれます。
+@c COMMON
 
+@c EN
+AxTLS library has advanage of being included in Gauche, so that
+it won't depend on external library, however, its supported ciphers
+are limited, and it can't connect to some https sites.  MbedTLS has
+wider cipher support, but it requires MbedTLS dynamic libraries
+(e.g. @file{libmbedtls.so}) at runtime.
+@c JP
+AxTLSライブラリはGaucheの一部としてコンパイルされるので、
+使うのに外部ライブラリに依存しないという利点がありますが、
+サポートしている暗号スイートが限られていて、時々接続できないhttpsサイトがあります。
+一方、MbedTLSは幅広い暗号スイートをサポートしていますが、実行時に
+MbedTLSの動的ライブラリ(@file{libmbedtls.so}など)を必要とします。
+@c COMMON
+
+@c EN
+Gauche chooses available TLS subsystem at runtime, so the user usually
+does not need to worry about the difference.  If you're building Gauche
+by yourself, we recommend to use the default configuration, on a system
+that has MbedTLS installed.   That will give you the most flexible choice.
+@c JP
+Gaucheは実行時に使える範囲で適切なTLSサブシステムを選択するので、
+ユーザが違いを意識する必要はほとんどありません。自分でGaucheをビルドする場合は、
+MbedTLSがインストールされた環境で、デフォルトのコンフィグレーションでビルドすることを
+推奨します。それが最も柔軟な選択となるでしょう。
+@c COMMON
+
+@c EN
 Whether the running Gauche has any of TLS support can be checked with
 a feature identifier @code{gauche.net.tls}.  Availability of each
 individual subsystems can be checked with feature identifiers
 @code{gauche.net.tls.axtls} and @code{gauche.net.tls.mbedtls}, respectively.
 @xref{Feature conditional}, for more about feature identifiers.
-
-In the current version, we verify certificates by default.
-You need to specify the location of CA certificates
-explicitly when you want to verify, unless the CA certificate location
-is specified at the configuration time.  In future, we might set the
-default CA certificate file automatically so that users don't need
-to bother by default, but not now.
-@end deftp
-
-@subheading Supported TLS subsystems
+@c JP
+Gaucheに何らかのTLSサポートが組み込まれているかどうかは機能識別子
+@code{gauche.net.tls}で、それぞれのサブシステムが使えるかどうかは
+機能識別子@code{gauche.net.tls.axtls}と@code{gauche.net.tls.mbedtls}で
+検査できます。機能識別子については@ref{Feature conditional}を参照してください。
+@c COMMON
 
 @deftp {Class} <tls>
 @clindex tls
@@ -16618,33 +16778,12 @@ A class that implements axTLS subsystem interface.
 A class that implements mbedTLS subsystem interface.
 @end deftp
 
-@subheading User configurable parameters
-
 @deffn {Parameter} default-tls-class :optional class
 @c MOD rfc.tls
 Set/get the default TLS subsystem to be used.  Without arguments, it
 return a class (either @code{<ax-tls>} or @code{<mbed-tls>} to be used.
 With one argument, which must be either @code{<ax-tls>} or @code{<mbed-tls>},
 changes the default and returns the previous value.
-@end deffn
-
-@deffn {Parameter} tls-ca-bundle-path :optional path
-@c MOD rfc.tls
-Set/get the CA certificate bundle path to be used.  Without arguments, it
-returns the current path.  With one argument, a pathname to the CA bundle
-file, updates the parameter to the new value and returns the previous value.
-
-Some platform can load CA bundle from system certificate store.
-If you sets @code{path} to symbol @code{system} on such platform,
-use system certificate store as CA certificate bundle.
-
-If you use mbedTLS with CA bundle file, you need to set this value to the
-valid CA bundle file path.
-Unfortunately there's no globally agreed location for such file.
-If you need one, one choice is to fetch it from 
-@url{https://curl.haxx.se/ca/cacert.pem}, store it locally and set its path
-to @code{tls-ca-bundle-path}.  (We can't automatically do that, since
-we can't securely fetch the file before we get valid CA certs!)
 @end deffn
 
 @subheading TLS interface
