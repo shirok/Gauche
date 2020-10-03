@@ -267,19 +267,21 @@ ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
                                  ScmObj val)
 {
-    ScmObj oldval;
+    ScmObj oldval = SCM_UNBOUND;
     ScmVMParameterTable *t = vm->parameters;
     if (p->index >= t->size) {
         ensure_parameter_slot(t, p->index);
-        oldval = p->initialValue;
     } else {
         oldval = t->vector[p->index];
-        if (SCM_UNBOUNDP(oldval)) {
-            oldval = p->initialValue;
-        }
     }
+    if (SCM_UNBOUNDP(oldval)) {
+        oldval = p->initialValue;
+    }
+
     t->vector[p->index] = val;
-    return oldval;
+    
+    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(oldval);
+    else return oldval;
 }
 
 /* Convenience function.  Create a primitive parameter subr and bind
