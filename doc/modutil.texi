@@ -16669,9 +16669,13 @@ if Gauche can't find one.
 @c EN
 If it is @code{#f}, CA certificate won't be loaded automatically,
 and you have to manually load one using @code{tls-load-object}.
+(Note: This option is only valid with @code{<ax-tls>}.  If you're using
+@code{<mbed-tls>}, you need valid CA certificate bundle.)
 @c JP
 この値が@code{#f}の場合、CA証明書は自動的にロードされないので、
 @code{tls-load-object}を使って自分で適切な証明書をロードしてやる必要があります。
+(このオプションは@code{<ax-tls>}のみ有効です。
+@code{<mbed-tls>}を使う場合は、必ず有効なCA証明書バンドルが必要です。)
 @c COMMON
 
 @c EN
@@ -16796,15 +16800,15 @@ The returned TLS instance can be used for the tls procedures below.
 The arguments must be a keyword-value list, and passed to the constructor
 of the TLS class.
 
-@code{<axtls>} supports the following arguments:
-
 @table @code
 @item :server-name
 Server name to be used for TLS Server Name Indication extension.
 @item :num-sessions
+[AxTLS only]
 The number of sessions ot be used for session caching.
-0 indicates no sessino caching.
+0 indicates no sessino caching. 
 @item :options
+[AxTLS only]
 Bitflags of options.  Logical OR of the following numeric constants.
 @end table
 
@@ -16862,6 +16866,9 @@ If @var{tls} is not connected, @code{#f} is returned.
 
 @defun tls-load-object tls type filename :optional password
 @c MOD rfc.tls
+This procedure is only meaningful for @code{<axl-tls>}.  For @code{<mbed-tls>},
+this procedure does nothing.
+
 Load private keys or certificates stored in a file specified by
 @var{filenames}.  The type of object is specified by @var{type}
 argument with one of the following numberic constants.  If the file
