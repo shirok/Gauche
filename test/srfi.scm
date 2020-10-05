@@ -2761,11 +2761,12 @@
         (test* "call-with-temporary-filename"
                #t
                (let1 ff (call-with-temporary-filename
-                         (^f (let1 z (open-file f (logior open/read+write
-                                                          open/create
-                                                          open/exclusive)
+                         (^f (let1 z (open-file f 'binary-output
+                                                (logior open/read+write
+                                                        open/create
+                                                        open/exclusive)
                                                 #o600)
-                               (close-fd z)
+                               (close-port z)
                                f))
                          "test.o/")
                  (boolean (#/^test.o\/\w+/ ff))))

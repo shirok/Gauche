@@ -11,15 +11,9 @@
   (use file.util)
   (export posix-error? posix-error-name posix-error-message
 
-          open-file
+          open-file fd->port
           open/read open/write open/read+write open/append
           open/create open/exclusive open/nofollow open/truncate
-          fd->textual-input-port
-          fd->binary-input-port
-          fd->textual-output-port
-          fd->binary-output-port
-          port-internal-fd
-          close-fd
 
           create-directory
           create-fifo
@@ -126,30 +120,25 @@
                                   0))
 (define-constant open/truncate   O_TRUNC)
 
-(define (open-file fname flags :optional permission-bits)
-  (sys-open fname flags permission-bits))
+(define (open-file fname port-type flags
+                   :optional (permission-bits #o666) 
+                             (buffer-mode 'buffer-block))
+  (fd->port (sys-open fname flags permission-bits) port-type buffer-mode))
 
-(define (%bufmode sym in?)
-  (case sym
-    [(none)  :none]
-    [(block) :full]
-    [(line)  (if in? :modest :line)]
-    [else (error "Invalid buffering-mode: Must be one of (none block line), but got:" sym)]))
-
-(define (fd->textual-input-port fd :optional (bufmode 'block))
-  (open-input-fd-port fd :buffering (%bufmode bufmode #t) :owner? 'dup))
-(define (fd->binary-input-port fd :optional (bufmode 'block))
-  (open-input-fd-port fd :buffering (%bufmode bufmode #t) :owner? 'dup))
-(define (fd->textual-output-port fd :optional (bufmode 'block))
-  (open-output-fd-port fd :buffering (%bufmode bufmode #f) :owner? 'dup))
-(define (fd->binary-output-port fd :optional (bufmode 'block))
-  (open-output-fd-port fd :buffering (%bufmode bufmode #f) :owner? 'dup))
-
-(define (port-internal-fd port) (port-file-number port))
-
-(define (port->fd port) (port-file-number port #t))
-
-(define (close-fd fd) (sys-close fd))
+(define (fd->port fd port-type :optional (buffer-mode 'buffer-block))
+  (define (%bufmode sym in?)
+    (ecase sym
+      [(buffer-none)  :none]
+      [(buffer-block) :full]
+      [(buffer-line)  (if in? :modest :line)]))
+  ;; We don't distinguish textual/binary port.
+  (ecase port-type
+    [(binary-input textual-nput)
+     (open-input-fd-port fd :buffering (%bufmode buffer-mode #t) :owner? #f)]
+    [(binary-output textual-output)
+     (open-output-fd-port fd :buffering (%bufmode buffer-mode #f) :owner? #f)]
+    [(binary-input/output)
+     (error "Bidirectional port is not supported yet.")]))
 
 ;; 3.3 File system
 
