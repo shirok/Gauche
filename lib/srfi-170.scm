@@ -123,9 +123,12 @@
 (define (open-file fname port-type flags
                    :optional (permission-bits #o666) 
                              (buffer-mode 'buffer-block))
-  (fd->port (sys-open fname flags permission-bits) port-type buffer-mode))
+  (%fd->port (sys-open fname flags permission-bits) port-type buffer-mode #t))
 
 (define (fd->port fd port-type :optional (buffer-mode 'buffer-block))
+  (%fd->port fd port-type buffer-mode #f))
+
+(define (%fd->port fd port-type bufmode owner?)
   (define (%bufmode sym in?)
     (ecase sym
       [(buffer-none)  :none]
@@ -134,9 +137,9 @@
   ;; We don't distinguish textual/binary port.
   (ecase port-type
     [(binary-input textual-nput)
-     (open-input-fd-port fd :buffering (%bufmode buffer-mode #t) :owner? #f)]
+     (open-input-fd-port fd :buffering (%bufmode bufmode #t) :owner? owner?)]
     [(binary-output textual-output)
-     (open-output-fd-port fd :buffering (%bufmode buffer-mode #f) :owner? #f)]
+     (open-output-fd-port fd :buffering (%bufmode bufmode #f) :owner? owner?)]
     [(binary-input/output)
      (error "Bidirectional port is not supported yet.")]))
 
