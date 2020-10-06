@@ -1,3 +1,9 @@
+2020-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (open-input-fd-port, open-output-fd-port): There was a
+	  bug that owner? argument logic is reversed.  It was introduced when
+	  we add support of 'dup a month ago.
+
 2020-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls/get-cacert: Provide a script to download cacert.pem from

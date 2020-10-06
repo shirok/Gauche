@@ -286,7 +286,7 @@
       (Scm_Error "owner? argument must be either #f, #t or a symbol dup, \n\
                   but go t%S" owner?)])
     (return (Scm_MakePortWithFd name SCM_PORT_INPUT fd bufmode
-                                (not (not (SCM_FALSEP owner?)))))))
+                                (not (SCM_FALSEP owner?))))))
 
 (define-cproc open-output-fd-port (fd::<fixnum>
                                    :key (buffering #f)
@@ -305,7 +305,7 @@
       (Scm_Error "owner? argument must be either #f, #t or a symbol dup, \n\
                   but go t%S" owner?)])
     (return (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode 
-                                (not (not (SCM_FALSEP owner?)))))))
+                                (not (SCM_FALSEP owner?))))))
 
 ;; Buffered port
 (select-module gauche)
