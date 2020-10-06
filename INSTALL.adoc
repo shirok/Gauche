@@ -65,6 +65,7 @@ Unix環境の標準的なビルドツールに加え、以下のツールとラ�
 も使えません)
 - Gzip - 同じくドキュメントビルド時に使われます。
 - Libiconv - 文字エンコーディング変換に使われます。下の説明も参照。
+- link:https://tls.mbed.org/[Mbed TLS] - TLS/SSL接続に使われます。下の説明も参照。
 
 他のオプショナルなライブラリについては以下で順次説明します。
 
@@ -82,6 +83,7 @@ document won't be installed.  (You need info document to use online document
 browsing from REPL.)
 - Gzip - also used during document building.
 - Libiconv - Used for character encoding conversion.  See below.
+- link:https://tls.mbed.org/[Mbed TLS] - Used for TLS/SSL connection.  See below.
 
 There are other optional libraries, which will be explained below.
 
@@ -353,6 +355,19 @@ endif::EN[]
 `--with-tls=axtls,mbedtls` :: (default) include TLS/SSL support using
                             axTLS library (source is included in Gauche),
                             and mbedTLS library (installed on the system).
+
+ifdef::JA[]
+
+endif::JA[]
+できるだけMbed TLSを使うことを推奨します。AxTLSはサポートしている暗号スイートに
+限りがあり、相手が正当な証明書を持っていても接続できないことがあります。
+詳しくはマニュアルのrfc.tlsの項を参照してください。
+ifdef::EN[]
+We recommend using Mbed TLS, for AxTLS has less support on ciphers
+sometimes it fails to connect to a peer with a valid certificate.
+See the manual entry of rfc.tls for the details.
+endif::EN[]
+
 
 ifdef::JA[]
 == DBMデータベースのサポート
