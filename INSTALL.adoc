@@ -357,11 +357,10 @@ endif::EN[]
                             and mbedTLS library (installed on the system).
 
 ifdef::JA[]
-
-endif::JA[]
 できるだけMbed TLSを使うことを推奨します。AxTLSはサポートしている暗号スイートに
 限りがあり、相手が正当な証明書を持っていても接続できないことがあります。
 詳しくはマニュアルのrfc.tlsの項を参照してください。
+endif::JA[]
 ifdef::EN[]
 We recommend using Mbed TLS, for AxTLS has less support on ciphers
 sometimes it fails to connect to a peer with a valid certificate.
