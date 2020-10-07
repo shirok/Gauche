@@ -43,7 +43,6 @@
 #include <ctype.h>
 
 static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs);
-static void   message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs);
@@ -79,7 +78,7 @@ SCM_DEFINE_BASE_CLASS(Scm_ConditionClass, ScmInstance,
                       NULL, NULL, NULL, 
                       condition_allocate, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_BASE_CLASS(Scm_MessageConditionClass, ScmMessageCondition,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       message_allocate, condition_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_SeriousConditionClass, ScmSeriousCondition,
                       NULL, NULL, NULL,
@@ -93,8 +92,9 @@ static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(SCM_NEW_INSTANCE(ScmCondition, klass));
 }
 
-static void message_print(ScmObj obj, ScmPort *port, 
-                          ScmWriteContext *ctx SCM_UNUSED)
+/* We expose this, for other condition subclasses may share this. */
+void Scm_MessageConditionPrint(ScmObj obj, ScmPort *port, 
+                               ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);
     Scm_Printf(port, "#<%A \"%30.1A\">",
@@ -205,43 +205,43 @@ static ScmClass *encoding_error_cpl[] = {
 };
 
 SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       message_allocate, error_cpl+1);
 SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       syserror_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_UnhandledSignalErrorClass, ScmUnhandledSignalError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       sigerror_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       readerror_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOErrorClass, ScmIOError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       message_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_PortErrorClass, ScmPortError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, porterror_cpl+1);
 SCM_DEFINE_BASE_CLASS(Scm_IOReadErrorClass, ScmIOReadError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOWriteErrorClass, ScmIOWriteError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOClosedErrorClass, ScmIOClosedError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOUnitErrorClass, ScmIOUnitError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IODecodingErrorClass, ScmIODecodingError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, decoding_error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOEncodingErrorClass, ScmIOEncodingError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, encoding_error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOInvalidPositionErrorClass, ScmIOInvalidPositionError,
-                      message_print, NULL, NULL,
+                      Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)

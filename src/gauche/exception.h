@@ -118,6 +118,10 @@ SCM_CLASS_DECL(Scm_MessageConditionClass);
 #define SCM_MESSAGE_CONDITION_P(obj) SCM_ISA(obj, SCM_CLASS_MESSAGE_CONDITION)
 #define SCM_MESSAGE_CONDITION(obj)   ((ScmMessageCondition*)(obj))
 
+/* default 'print' procedure for class definition */
+SCM_EXTERN void Scm_MessageConditionPrint(ScmObj obj, ScmPort *port,
+                                          ScmWriteContext *ctx);
+
 /* <serious-condition> : condition which can't be restarted */
 typedef ScmCondition ScmSeriousCondition;
 
