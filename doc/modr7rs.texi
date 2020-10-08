@@ -11629,32 +11629,59 @@ R7RS baseおよび@code{gauche.unicode}に含まれる同名の手続きと引�
 
 @defmac endianness symbol
 [R7RS bytevector]
+@c EN
 If @var{symbol} is a valid endianness symbol, returns it.  Otherwise,
 raise an error at macro-expansion time.   Useful to catch an error early,
 and explicitly indicates you mean endianness.
 
 Valid symbols are listed in @ref{Endianness}.  Only @code{big} and
 @code{little} are portable.
+@c JP
+@var{symbol}がエンディアンを示すシンボルであればそれをそのまま返し、
+そうでなければマクロ展開時にエラーを投げます。
+エラーを早期に検出するのに役立ちます。
+また、シンボルがエンディアンを示すという意図を明確にできます。
+
+有効なシンボルは@ref{Endianness}を参照してください。
+@code{big}と@code{little}だけがポータブルです。
+@c COMMON
 @end defmac
 
 @defun native-endianness
 [R7RS bytevector]
+@c EN
 Returns a symbol representing the native endianness.
 Same as Gauche's built-in @code{native-endian} (@pxref{Endianness}).
+@c JP
+システムのネイティブなエンディアンを示すシンボルを返します。
+Gauche組み込みの@code{native-endian}と同じです(@ref{Endianness}参照)。
+@c COMMON
 @end defun
 
 
 @defun bytevector-uint-ref bv pos endian size
 @defunx bytevector-sint-ref bv pos endian size
 [R7RS bytevector]
+@c EN
 Read @var{size} octets from u8vector @var{bv}, starting from @var{pos}-th
-octed, as an unsigned or signed integer, respectively.
+octet, as an unsigned or signed integer, respectively.
 Similar to @code{binary.io}'s @code{get-uint} and @code{get-sint},
 with different argument order.
+@c JP
+u8vector @var{bv}の、@var{pos}番めのオクテットから@var{size}オクテットを、
+それぞれ符号なしと符号あり整数として読み取ります。
+@code{binary.io}モジュールの@code{get-uint}と@code{get-sint}に似ていますが、
+引数の順序は異なります。
+@c COMMON
 
+@c EN
 They accept all valid endianness symbols in Gauche, but
-the portable code should only use @code{big} and @var{little} for
+the portable code should only use @code{big} and @code{little} for
 @var{endian} argument.
+@c JP
+@var{endian}にはエンディアンを示すシンボルを渡します。
+@code{bit}と@code{little}のみがポータブルに使えます。
+@c COMMON
 @end defun
 
 @defun bytevector-uint-set! bv pos val endian size
