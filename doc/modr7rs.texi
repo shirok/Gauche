@@ -3453,10 +3453,17 @@ arguments differently. (@xref{Sorting and merging}.)
 @defun list-sorted? elt< lis
 [R7RS sort]
 @c MOD scheme.sort
-Returns true if the list @var{list} is sorted according to the
+@c EN
+Returns true iff the list @var{list} is sorted according to the
 ordering predicate @var{elt<}.
 
 See also @code{sorted?} in @ref{Sorting and merging}.
+@c JP
+リスト@var{list}が、順序述語@var{elt<}での比較において既にソート済みであれば
+真を、そうでなければ偽を返します。
+
+@ref{Sorting and merging}の@code{sorted?}も参照。
+@c COMMON
 @end defun
 
 
@@ -3464,6 +3471,7 @@ See also @code{sorted?} in @ref{Sorting and merging}.
 @defunx list-merge! elt< lis1 lis2
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Given two sorted lists @var{lis1} and @var{lis2}, returns
 a new sorted list according to the ordering predicate @var{elt<}.
 
@@ -3471,6 +3479,15 @@ Note that @code{list-merge!} works in-place, that is, all the pairs
 in @var{lis1} and @var{lis2} are reused.
 
 See also @code{merge} and @var{merge!} in @ref{Sorting and merging}.
+@c JP
+ソート済みの二つのリスト@var{lis1}と@var{lis2}を合わせて、
+ソート済みのひとつのリストにして返します。要素は順序述語@var{elt<}で比較されます。
+
+@code{list-merge!}は、結果のリストを得るために@var{lis1}と@var{lis2}の
+メモリを破壊的に再利用します。
+
+@ref{Sorting and merging}の@code{merge}および@code{merge!}も参照。
+@c COMMON
 @end defun
 
 @defun vector-sort elt< vec :optional start end
