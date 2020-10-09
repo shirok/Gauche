@@ -1305,14 +1305,12 @@ srfi-181, srfi-181
 Custom ports
 Supported by the module @code{srfi-181}.
 Gauche has an original custom port mechanism (@pxref{Virtual ports}), and
-This srfi is built in top of it.  There are some protocol mismatch and
-not all srfi-181 features are supporetd yet.
+This srfi is built in top of it.
 
 カスタムポート
 モジュール@code{srfi-181}でサポートされます。
 Gaucheは独自のカスタムポートメカニズムを持っており(@ref{Virtual ports}参照)、
-このsrfiはその上に作られています。ただ、
-プロトコルの不一致からsrfi-181の全機能をサポートするにまだ至っていません。
+このsrfiはその上に作られています。
 
 
 srfi-185, srfi-185
