@@ -187,6 +187,7 @@ Sets various flags.
   no-source-info  don't retain source information.
   read-edit       enable input editing mode, if terminal supports it.
   no-read-edit    disable input editing mode.
+  safe-string-cursors performs extra validation for use of string cursors.
   warn-legacy-syntax print warning when legacy Gauche syntax
                   is encountered.
   test            assume being run in the build tree; tries to
