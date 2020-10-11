@@ -444,11 +444,13 @@
  //        printf("Header tests failed\n"); TTY_FLUSH();
 --- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 19:39:35.000000000 +0900
 +++ b/axTLS/ssl/test/killopenssl.sh	2019-06-08 02:22:45.000000000 +0900
-@@ -1,2 +1,3 @@
+@@ -1,2 +1,5 @@
  #!/bin/sh
 -ps -ef|grep openssl | /usr/bin/awk '{print $2}' |xargs kill -9
-+awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
-+rm -f ../ssl/openssl.pid
++if [ -f "../ssl/openssl.pid" ]; then
++    awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
++    rm -f ../ssl/openssl.pid
++fi
 --- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 19:39:35.000000000 +0900
 +++ b/axTLS/ssl/test/killgnutls.sh	2019-06-08 02:22:45.000000000 +0900
 @@ -1,2 +1,2 @@
