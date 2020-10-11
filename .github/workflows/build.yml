@@ -25,7 +25,7 @@ jobs:
         ./get-gauche.sh --auto --home
     - name: Add Gauche path
       run: |
-        echo "::set-env name=PATH::$HOME/bin:$PATH"
+        echo "PATH=$HOME/bin:$PATH" >> $GITHUB_ENV
     - name: Run Gauche once
       run: |
         gosh -V
@@ -67,7 +67,7 @@ jobs:
         ./get-gauche.sh --auto --home
     - name: Add Gauche path
       run: |
-        echo "::set-env name=PATH::$HOME/bin:$PATH"
+        echo "PATH=$HOME/bin:$PATH" >> $GITHUB_ENV
     - name: Run Gauche once
       run: |
         gosh -V
@@ -140,7 +140,7 @@ jobs:
         cmd.exe //c "start /wait msiexec /a $GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}"
     - name: Add Gauche path
       run: |
-        echo "::set-env name=PATH::$env:GAUCHE_PATH;$env:PATH"
+        echo "PATH=$env:GAUCHE_PATH;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Run Gauche once
       shell: msys2 {0}
       run: |
