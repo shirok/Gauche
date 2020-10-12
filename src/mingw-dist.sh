@@ -49,6 +49,7 @@ while [ "$#" -gt 0 ]; do
   case $1 in
     --with-gl)   WITH_GL=yes; shift;;
     --with-installer) INSTALLER=yes; shift;;
+    --with-mbedtls) MBEDTLS=yes; shift;;
     --with-zip) ZIP_ARCHIVE=yes; shift;;
     --skip-config) SKIP_CONFIG=yes; shift;;
     -*)
@@ -56,6 +57,10 @@ while [ "$#" -gt 0 ]; do
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
      echo "  --with-installer:  Creates binary installer using Wix.  'candle.exe' and"
      echo "      'light.exe' must be visible in PATH."
+     echo "  --with-mbedtls: Include MbedTLS.  MbedTLS library"
+     echo "      'mingw-w64-{i686|x86_64}-mbettls' must be installed."
+     echo "      If you create an installer with this option, the binary"
+     echo "      will also be covered by Apache License 2.0 for MbedTLS."
      echo "  --with-zip:  Creates Zip archive using p7zip. '7z.exe' must be visible"
      echo "      in PATH."
      echo "  --skip-config:  Skip cleanup and configuration."
@@ -74,6 +79,12 @@ if [ "$INSTALLER" = yes ]; then
   if test -e "$wix_path"; then echo "Wix SDK found: $wix_path"
   else echo "--installer: Cannot find Wix SDK.  Aborting."; exit 1
   fi
+fi
+
+if [ "$MBEDTLS" = yes ]; then
+  tlslibs=axtls,mbedtls
+else
+  tlslibs=axtls
 fi
 
 # check gosh
@@ -106,7 +117,7 @@ if [ "$SKIP_CONFIG" != yes ]; then
   rm -rf $distdir
   ./configure --prefix=$distdir --enable-threads=win32 \
               --enable-multibyte=utf8 --enable-ipv6=yes \
-	      --with-tls=axtls \
+	      --with-tls=$tlslibs \
               --with-dbm=ndbm,odbm $buildopt
 fi
 make
@@ -127,6 +138,11 @@ case "$MSYSTEM" in
   *)
     mingw_dll="mingwm10.dll";;
 esac
+
+if [ "$MBEDTLS" = yes ]; then
+    mingw_dll="$mingw_dll libmbedcrypto.dll libmbedtls.dll libmbedx509.dll"
+fi
+
 if [ -n "$mingw_dll" ]; then
   for dll in $mingw_dll; do
     if [ -f $mingwdir/bin/$dll ]; then
