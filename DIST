@@ -79,8 +79,8 @@ do_release () {
 
 do_mingw_installer () {
     do_gen
-    MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
-    MSYSTEM=MINGW32 src/mingw-dist.sh --with-gl --with-installer
+    MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer --with-mbedtls
+    MSYSTEM=MINGW32 src/mingw-dist.sh --with-gl --with-installer --with-mbedtls
 }
 
 do_clean_build_test () {
