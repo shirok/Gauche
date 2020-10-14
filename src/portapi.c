@@ -347,6 +347,7 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
     LOCK(p);
     if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID
         || p->scrcnt != 0) {
+        UNLOCK(p);
         Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                       "pushback buffer overflow on port %S", p);
     }
@@ -366,13 +367,13 @@ ScmChar Scm_PeekcUnsafe(ScmPort *p)
     LOCK(p);
     ScmChar ch = PORT_UNGOTTEN(p);
     if (ch == SCM_CHAR_INVALID) {
-        ScmObj saved_pos = SCM_UNBOUND;
+        volatile ScmObj saved_pos = SCM_UNBOUND;
         UNSAVE_POS(p);
         if (SCM_PORT_TYPE(p) == SCM_PORT_PROC 
             && Scm_PortPositionable(p, FALSE)) {
-            saved_pos = Scm_PortSeekUnsafe(p, SCM_MAKE_INT(0), SEEK_CUR);
+            SAFE_CALL(p, saved_pos = Scm_PortSeekUnsafe(p, SCM_MAKE_INT(0), SEEK_CUR));
         }
-        ch = Scm_GetcUnsafe(p);
+        SAFE_CALL(p, ch = Scm_GetcUnsafe(p));
         PORT_UNGOTTEN(p) = ch;
         if (!SCM_UNBOUNDP(saved_pos)) {
             PORT_SAVED_POS(p) = saved_pos;
@@ -417,6 +418,7 @@ void Scm_UngetbUnsafe(int b, ScmPort *p)
     LOCK(p);
     if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID
         || p->scrcnt >= SCM_CHAR_MAX_BYTES) {
+        UNLOCK(p);
         Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                       "pushback buffer overflow on port %S", p);
     }
