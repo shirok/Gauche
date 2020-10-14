@@ -134,6 +134,27 @@ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
 ----
 
 
+== Build with MbedTLS
+
+If you've installed MinGW mbedtls library, you can build Gauche with it.
+
+By default, mingw version includes AxTLS as the TLS support.  Unfortunately
+AxTLS doesn't support all ciphers, and sometimes fail to connect to the
+peer which doesn't employ ciphers AxTLS supports.  Using MbedTLS enables
+much wider connectively.
+
+To include MbedTLS support, give `--with-mbedtls` option:
+
+[source,sh]
+----
+MSYSTEM=MINGW64 src/mingw-dist.sh --with-mbedtls
+----
+
+Note: If you build a Gauche binary, it includes mbedtls libarary which
+is covered by Apache License 2.0.  Distributing the binary will be covered
+by that license, as well as BSDL.
+
+
 == Build installer
 
 Make sure `candle.exe` and `light.exe` (WiX toolset) are in the `PATH`.
