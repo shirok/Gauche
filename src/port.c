@@ -714,11 +714,15 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
 /* some accessor APIs */
 int Scm_GetPortBufferingMode(ScmPort *port)
 {
-    return PORT_BUFFER_MODE(port);
+    if (port->type == SCM_PORT_FILE) return PORT_BUFFER_MODE(port);
+    else return SCM_PORT_BUFFER_NONE;
 }
 
 void Scm_SetPortBufferingMode(ScmPort *port, int mode)
 {
+    if (port->type != SCM_PORT_FILE) {
+        Scm_Error("Can't set buffering mode to non-buffered port: %S", port);
+    }
     PORT_BUF(port)->mode =
         (PORT_BUF(port)->mode & ~SCM_PORT_BUFFER_MODE_MASK)
         | (mode & SCM_PORT_BUFFER_MODE_MASK);
@@ -726,11 +730,19 @@ void Scm_SetPortBufferingMode(ScmPort *port, int mode)
 
 int Scm_GetPortBufferSigpipeSensitive(ScmPort *port)
 {
-    return (PORT_BUFFER_SIGPIPE_SENSITIVE_P(port) != FALSE);
+    if (port->type == SCM_PORT_FILE) {
+        return (PORT_BUFFER_SIGPIPE_SENSITIVE_P(port) != FALSE);
+    } else {
+        return FALSE;
+    }
 }
 
 void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
 {
+    if (port->type != SCM_PORT_FILE) {
+        Scm_Error("Can't set sigpipe sensitivity to non-buffered port: %S",
+                  port);
+    }
     if (sensitive) {
         PORT_BUF(port)->mode |=  SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
     } else {
@@ -834,7 +846,6 @@ int Scm_PortPositionable(ScmPort *port, int setp)
         else      return TRUE;
     }
 }
-
 
 /* flushes the buffer, to make a room of cnt bytes.
    cnt == 0 means all the available data.   Note that, unless forcep == TRUE,
