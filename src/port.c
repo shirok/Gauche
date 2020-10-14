@@ -337,6 +337,7 @@ ScmPortVTable *Scm_PortVTableStruct(ScmPort *port)
    by the filler */
 ScmSize Scm_PortBufferRoom(ScmPort *port)
 {
+    SCM_ASSERT(port->type == SCM_PORT_FILE);
     return PORT_BUFFER_ROOM(port);
 }
 
@@ -344,9 +345,9 @@ ScmSize Scm_PortBufferRoom(ScmPort *port)
    be flushed by the flusher */
 ScmSize Scm_PortBufferAvail(ScmPort *port)
 {
+    SCM_ASSERT(port->type == SCM_PORT_FILE);
     return PORT_BUFFER_AVAIL(port);
 }
-
 
 ScmWriteState *Scm_PortWriteState(ScmPort *port)
 {
@@ -356,6 +357,141 @@ ScmWriteState *Scm_PortWriteState(ScmPort *port)
 void Scm_PortWriteStateSet(ScmPort *port, ScmWriteState *ws)
 {
     P_(port)->writeState = ws;
+}
+
+int Scm_GetPortBufferingMode(ScmPort *port)
+{
+    if (port->type == SCM_PORT_FILE) return PORT_BUFFER_MODE(port);
+    else return SCM_PORT_BUFFER_NONE;
+}
+
+void Scm_SetPortBufferingMode(ScmPort *port, int mode)
+{
+    if (port->type != SCM_PORT_FILE) {
+        Scm_Error("Can't set buffering mode to non-buffered port: %S", port);
+    }
+    PORT_BUF(port)->mode =
+        (PORT_BUF(port)->mode & ~SCM_PORT_BUFFER_MODE_MASK)
+        | (mode & SCM_PORT_BUFFER_MODE_MASK);
+}
+
+int Scm_GetPortBufferSigpipeSensitive(ScmPort *port)
+{
+    if (port->type == SCM_PORT_FILE) {
+        return (PORT_BUFFER_SIGPIPE_SENSITIVE_P(port) != FALSE);
+    } else {
+        return FALSE;
+    }
+}
+
+void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
+{
+    if (port->type != SCM_PORT_FILE) {
+        Scm_Error("Can't set sigpipe sensitivity to non-buffered port: %S",
+                  port);
+    }
+    if (sensitive) {
+        PORT_BUF(port)->mode |=  SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
+    } else {
+        PORT_BUF(port)->mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
+    }
+}
+
+/* Port case folding mode is usually set at port creation, according
+   to the VM's case folding mode.   In rare occasion we need to switch
+   it (but it's not generally recommended). */
+int Scm_GetPortCaseFolding(ScmPort *port)
+{
+    return (SCM_PORT_CASE_FOLDING(port) != FALSE);
+}
+
+void Scm_SetPortCaseFolding(ScmPort *port, int folding)
+{
+    if (folding) {
+        SCM_PORT_FLAGS(port) |=  SCM_PORT_CASE_FOLD;
+    } else {
+        SCM_PORT_FLAGS(port) &= ~SCM_PORT_CASE_FOLD;
+    }
+}
+
+/* Port's reader lexical mode is set at port creation, taken from
+   readerLexicalMode parameter.  It may be altered by reader directive
+   such as #!r7rs.
+   The possible value is the same as the global reader lexical mode,
+   i.e.  one of the symbols legacy, warn-legacy, permissive or strict-r7.
+*/
+ScmObj Scm_GetPortReaderLexicalMode(ScmPort *port)
+{
+    /* We let it throw an error if there's no reader-lexical-mode attr.
+       It must be set in the constructor. */
+    return Scm_PortAttrGet(port, SCM_SYM_READER_LEXICAL_MODE, SCM_UNBOUND);
+}
+
+void Scm_SetPortReaderLexicalMode(ScmPort *port, ScmObj mode)
+{
+    /*The check is duplicatd in Scm_SetReaderLexicalMode; refactoring needed.*/
+    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
+          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
+        Scm_Error("reader-lexical-mode must be one of the following symbols:"
+                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
+                  mode);
+    }
+    Scm_PortAttrSet(port, SCM_SYM_READER_LEXICAL_MODE, mode);
+}
+
+/* global reader lexical mode. */
+ScmObj Scm_SetReaderLexicalMode(ScmObj mode)
+{
+    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
+          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
+        Scm_Error("reader-lexical-mode must be one of the following symbols:"
+                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
+                  mode);
+    }
+    return Scm_PrimitiveParameterSet(Scm_VM(), readerLexicalMode, mode);
+}
+
+ScmObj Scm_ReaderLexicalMode()
+{
+    return Scm_PrimitiveParameterRef(Scm_VM(), readerLexicalMode);
+}
+
+/* Query whether the port is positinable.  If setp is false, returns
+   if port can get current pos.  If setp is true, returns if port
+   can set pos.
+   Note: For the buffering and procedural ports, if the user used old
+   protocol (using seeker), we can't exactly know if get/set position
+   is possible or not.
+ */
+int Scm_PortPositionable(ScmPort *port, int setp)
+{
+    switch (SCM_PORT_TYPE(port)) {
+    case SCM_PORT_FILE:
+        if (setp) {
+            return ((PORT_BUF(port)->setpos || PORT_BUF(port)->seeker)
+                    && !(PORT_BUF(port)->flags & SCM_PORT_DISABLE_SETPOS));
+        } else {
+            return ((PORT_BUF(port)->getpos || PORT_BUF(port)->seeker)
+                    && !(PORT_BUF(port)->flags & SCM_PORT_DISABLE_GETPOS));
+        }
+    case SCM_PORT_PROC:
+        if (setp) {
+            return ((PORT_VT(port)->SetPos || PORT_VT(port)->Seek)
+                    && !(PORT_VT(port)->flags & SCM_PORT_DISABLE_SETPOS));
+        } else {
+            return ((PORT_VT(port)->GetPos || PORT_VT(port)->Seek)
+                    && !(PORT_VT(port)->flags & SCM_PORT_DISABLE_GETPOS));
+        }
+    case SCM_PORT_ISTR:
+        return TRUE;
+    case SCM_PORT_OSTR:
+        if (setp) return FALSE; /* we haven't supported setpos for ostr */
+        else      return TRUE;
+    }
 }
 
 /* Duplicates the file descriptor of the source port, and set it to
@@ -709,142 +845,6 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
 {
     return Scm_MakeBufferedPortFull(klass, name, dir, bufrec,
                                     (ownerp? SCM_PORT_OWNER : 0));
-}
-
-/* some accessor APIs */
-int Scm_GetPortBufferingMode(ScmPort *port)
-{
-    if (port->type == SCM_PORT_FILE) return PORT_BUFFER_MODE(port);
-    else return SCM_PORT_BUFFER_NONE;
-}
-
-void Scm_SetPortBufferingMode(ScmPort *port, int mode)
-{
-    if (port->type != SCM_PORT_FILE) {
-        Scm_Error("Can't set buffering mode to non-buffered port: %S", port);
-    }
-    PORT_BUF(port)->mode =
-        (PORT_BUF(port)->mode & ~SCM_PORT_BUFFER_MODE_MASK)
-        | (mode & SCM_PORT_BUFFER_MODE_MASK);
-}
-
-int Scm_GetPortBufferSigpipeSensitive(ScmPort *port)
-{
-    if (port->type == SCM_PORT_FILE) {
-        return (PORT_BUFFER_SIGPIPE_SENSITIVE_P(port) != FALSE);
-    } else {
-        return FALSE;
-    }
-}
-
-void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
-{
-    if (port->type != SCM_PORT_FILE) {
-        Scm_Error("Can't set sigpipe sensitivity to non-buffered port: %S",
-                  port);
-    }
-    if (sensitive) {
-        PORT_BUF(port)->mode |=  SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
-    } else {
-        PORT_BUF(port)->mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
-    }
-}
-
-/* Port case folding mode is usually set at port creation, according
-   to the VM's case folding mode.   In rare occasion we need to switch
-   it (but it's not generally recommended). */
-int Scm_GetPortCaseFolding(ScmPort *port)
-{
-    return (SCM_PORT_CASE_FOLDING(port) != FALSE);
-}
-
-void Scm_SetPortCaseFolding(ScmPort *port, int folding)
-{
-    if (folding) {
-        SCM_PORT_FLAGS(port) |=  SCM_PORT_CASE_FOLD;
-    } else {
-        SCM_PORT_FLAGS(port) &= ~SCM_PORT_CASE_FOLD;
-    }
-}
-
-/* Port's reader lexical mode is set at port creation, taken from
-   readerLexicalMode parameter.  It may be altered by reader directive
-   such as #!r7rs.
-   The possible value is the same as the global reader lexical mode,
-   i.e.  one of the symbols legacy, warn-legacy, permissive or strict-r7.
-*/
-ScmObj Scm_GetPortReaderLexicalMode(ScmPort *port)
-{
-    /* We let it throw an error if there's no reader-lexical-mode attr.
-       It must be set in the constructor. */
-    return Scm_PortAttrGet(port, SCM_SYM_READER_LEXICAL_MODE, SCM_UNBOUND);
-}
-
-void Scm_SetPortReaderLexicalMode(ScmPort *port, ScmObj mode)
-{
-    /*The check is duplicatd in Scm_SetReaderLexicalMode; refactoring needed.*/
-    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
-          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
-          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
-          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
-        Scm_Error("reader-lexical-mode must be one of the following symbols:"
-                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
-                  mode);
-    }
-    Scm_PortAttrSet(port, SCM_SYM_READER_LEXICAL_MODE, mode);
-}
-
-/* global reader lexical mode. */
-ScmObj Scm_SetReaderLexicalMode(ScmObj mode)
-{
-    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
-          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
-          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
-          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
-        Scm_Error("reader-lexical-mode must be one of the following symbols:"
-                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
-                  mode);
-    }
-    return Scm_PrimitiveParameterSet(Scm_VM(), readerLexicalMode, mode);
-}
-
-ScmObj Scm_ReaderLexicalMode()
-{
-    return Scm_PrimitiveParameterRef(Scm_VM(), readerLexicalMode);
-}
-
-/* Query whether the port is positinable.  If setp is false, returns
-   if port can get current pos.  If setp is true, returns if port
-   can set pos.
-   Note: For the buffering and procedural ports, if the user used old
-   protocol (using seeker), we can't exactly know if get/set position
-   is possible or not.
- */
-int Scm_PortPositionable(ScmPort *port, int setp)
-{
-    switch (SCM_PORT_TYPE(port)) {
-    case SCM_PORT_FILE:
-        if (setp) {
-            return ((PORT_BUF(port)->setpos || PORT_BUF(port)->seeker)
-                    && !(PORT_BUF(port)->flags & SCM_PORT_DISABLE_SETPOS));
-        } else {
-            return ((PORT_BUF(port)->getpos || PORT_BUF(port)->seeker)
-                    && !(PORT_BUF(port)->flags & SCM_PORT_DISABLE_GETPOS));
-        }
-    case SCM_PORT_PROC:
-        if (setp) {
-            return ((PORT_VT(port)->SetPos || PORT_VT(port)->Seek)
-                    && !(PORT_VT(port)->flags & SCM_PORT_DISABLE_SETPOS));
-        } else {
-            return ((PORT_VT(port)->GetPos || PORT_VT(port)->Seek)
-                    && !(PORT_VT(port)->flags & SCM_PORT_DISABLE_GETPOS));
-        }
-    case SCM_PORT_ISTR:
-        return TRUE;
-    case SCM_PORT_OSTR:
-        if (setp) return FALSE; /* we haven't supported setpos for ostr */
-        else      return TRUE;
-    }
 }
 
 /* flushes the buffer, to make a room of cnt bytes.
