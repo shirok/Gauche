@@ -140,7 +140,8 @@ case "$MSYSTEM" in
 esac
 
 if [ "$MBEDTLS" = yes ]; then
-    mingw_dll="$mingw_dll libmbedcrypto.dll libmbedtls.dll libmbedx509.dll"
+    # Note: mbedtls depends on libgcc
+    mingw_dll="$mingw_dll libmbedcrypto.dll libmbedtls.dll libmbedx509.dll libgcc_s_seh-1.dll"
 fi
 
 if [ -n "$mingw_dll" ]; then
