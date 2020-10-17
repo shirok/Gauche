@@ -11704,41 +11704,76 @@ the portable code should only use @code{big} and @code{little} for
 @defun bytevector-uint-set! bv pos val endian size
 @defunx bytevector-sint-set! bv pos val endian size
 [R7RS bytevector]
+@c EN
 Store an unsigned or signed integer @var{val} into an u8vector
 @var{bv} starting from @var{pos}-th octet, for @var{size} octets,
 respectively.
 Similar to @code{binary.io}'s @code{put-uint!} and @code{put-sint!},
 with different argument order.
+@c JP
+それぞれ、符号なし、および符号つき整数@var{val}をu8vector @var{bv}の
+@var{pos}番目のオクテットから@var{size}オクテットにわたって格納します。
+@code{binary.io}の@code{put-uint!}および@code{put-sint!}と
+引数の順序以外は同じです。
+@c COMMON
 
+@c EN
 They accept all valid endianness symbols in Gauche, but
 the portable code should only use @code{big} and @var{little} for
 @var{endian} argument.
+@c JP
+@var{endian}引数には、Gaucheが許すエンディアンを示すシンボルなら何でも渡せますが、
+ポータブルなコードで使えるのは@code{big}と@var{little}だけです。
+@c COMMON
 @end defun
 
 @defun bytevector->uint-list bv endian size
 @defunx bytevector->sint-list bv endian size
 [R7RS bytevector]
+@c EN
 Convert the u8vector @var{bv} to a list of unsigned or signed integer,
 each of which is represented by @var{size}-octets.
 The length of @var{bv} must be a multiple of @var{size}; otherwise
 an error is signaled.
+@c JP
+u8vector @var{bv}から@var{size}オクテットづつ取り出し、それをそれぞれ符号なし、
+および符号つき整数と解釈して、その整数のリストを返します。
+@var{bv}の長さが@var{size}の整数倍でなければエラーが投げられます。
+@c COMMON
 
+@c EN
 They accept all valid endianness symbols in Gauche, but
 the portable code should only use @code{big} and @var{little} for
 @var{endian} argument.
+@c JP
+@var{endian}引数には、Gaucheが許すエンディアンを示すシンボルなら何でも渡せますが、
+ポータブルなコードで使えるのは@code{big}と@var{little}だけです。
+@c COMMON
 @end defun
 
 @defun uint-list->bytevector lis endian size
 @defunx sint-list->bytevector lis endian size
 [R7RS bytevector]
+@c EN
 @var{Lis} must be a list of unsigned or signed integers, respectively.
 Creates a u8vector of length @code{(* size (length lis))}, and
 stores each integer into the u8vector using @var{size} octets,
 and returns the u8vector.
+@c JP
+@var{lis}はそれぞれ符号なしまたは符号つき整数のリストでなければなりません。
+@code{(* size (length lis))}のu8vectorが作られて、
+先頭から@var{size}オクテットごとに、リストの整数が詰められてゆきます。
+そしてそのu8vectorが返されます。
+@c COMMON
 
+@c EN
 They accept all valid endianness symbols in Gauche, but
 the portable code should only use @code{big} and @var{little} for
 @var{endian} argument.
+@c JP
+@var{endian}引数には、Gaucheが許すエンディアンを示すシンボルなら何でも渡せますが、
+ポータブルなコードで使えるのは@code{big}と@var{little}だけです。
+@c COMMON
 @end defun
 
 @defun bytevector-u16-ref bv k endian
