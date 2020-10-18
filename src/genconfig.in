@@ -268,6 +268,7 @@ int main(int argc, char **argv)
     (void)&mbs2wcs; /* suppress unused function warning */
     (void)&wcs2mbs;
 #endif /* (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
+    (void)get_libgauche_path();	 /* ditto */
 
     if (argc < 2) usage();
     if (strcmp(argv[1], "--fixup-extension") == 0) {

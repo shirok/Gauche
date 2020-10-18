@@ -56,6 +56,7 @@
                                subst::<const-cstring>)
    ::<const-cstring>
    (cast void replace_install_dir) ; to avoid unused warning
+   (cast void get_libgauche_path)  ; ditto
    (return (substitute_all input mark subst))))
 
 ;; Entry point
