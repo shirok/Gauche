@@ -492,6 +492,7 @@ int Scm_PortPositionable(ScmPort *port, int setp)
         if (setp) return FALSE; /* we haven't supported setpos for ostr */
         else      return TRUE;
     }
+    return FALSE;		/* dummy */
 }
 
 /* Duplicates the file descriptor of the source port, and set it to
