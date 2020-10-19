@@ -41,7 +41,6 @@
   (use gauche.connection)
   (use srfi-13)
   (use srfi-14)
-  (use srfi-19)
   (export <process> <process-abnormal-exit>
           run-process do-process do-process!
           process? process-alive? process-pid
@@ -77,6 +76,11 @@
           wrap-with-input-conversion wrap-with-output-conversion)
 (autoload gauche.uvector
           write-uvector)
+
+;; Avoid build dependency issue
+(autoload srfi-19 
+          make-time add-duration time>?)
+
 
 (define-class <process> ()
   ((pid       :init-value -1 :getter process-pid)
@@ -520,7 +524,7 @@
                                         (raise-error? #f))
   (define limit (and max-wait 
                      (add-duration (current-time)
-                                   (make-time time-duration
+                                   (make-time 'time-duration
                                               (modulo max-wait #e1e9)
                                               (quotient max-wait #e1e9)))))
   (let loop ([count 0])
