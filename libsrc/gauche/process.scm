@@ -49,6 +49,7 @@
           process-upstreams
           process-wait process-wait/poll process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
+          process-terminate-gracefully
           process-list
           run-pipeline do-pipeline
           ;; process ports
@@ -541,6 +542,30 @@
   (cond-expand
    [gauche.os.windows (undefined)]
    [else (process-send-signal process SIGCONT)]))
+
+(define (process-terminate-gracefully process 
+                                      :key (ask #f)
+                                           (ask-interval #e50e6) ;ns
+                                           (ask-retry 1)
+                                           (signals `(,SIGTERM 
+                                                      ,SIGTERM
+                                                      ,SIGKILL))
+                                           (signal-interval #e50e6) ;ns
+                                           )
+  ;; each branch returns #t on successful termination
+  (or (and ask
+           (let loop ([count 0])
+             (and (< count ask-retry)
+                  (guard ([else #f])
+                    (ask count)
+                    #t)
+                  (or (process-wait/poll process :max-wait ask-interval)
+                      (loop (+ count 1))))))
+      (let loop ([signals signals])
+        (and (pair? signals)
+             (begin (process-send-signal process (car signals)) #t)
+             (or (process-wait/poll process :max-wait signal-interval)
+                 (loop (cdr signals)))))))
 
 ;;-----------------------------------------------------------------
 ;; pipeline

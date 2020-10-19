@@ -1,6 +1,7 @@
 2020-10-18  Shiro Kawai  <shiro@acm.org>
 
-	* libsrc/gauche/process.scm (process-wait/poll): Added.
+	* libsrc/gauche/process.scm (process-wait/poll)
+	  (process-terminate-gracefuly): Added.
 
 2020-10-14  Shiro Kawai  <shiro@acm.org>
 
