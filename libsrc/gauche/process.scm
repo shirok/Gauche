@@ -41,12 +41,13 @@
   (use gauche.connection)
   (use srfi-13)
   (use srfi-14)
+  (use srfi-19)
   (export <process> <process-abnormal-exit>
           run-process do-process do-process!
           process? process-alive? process-pid
           process-command process-input process-output process-error
           process-upstreams
-          process-wait process-wait-any process-exit-status
+          process-wait process-wait/poll process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
           process-list
           run-pipeline do-pipeline
@@ -511,6 +512,21 @@
                 (set! (ref p 'pid) #f)
                 (when raise-error? (%check-normal-exit p))
                 p)))))
+
+(define (process-wait/poll process :key (interval #e2e6) ; ns
+                                        (max-wait #f) ; ns
+                                        (continue-test #f)
+                                        (raise-error? #f))
+  (define limit (and max-wait 
+                     (add-duration (current-time)
+                                   (make-time time-duration
+                                              (modulo max-wait #e1e9)
+                                              (quotient max-wait #e1e9)))))
+  (let loop ([count 0])
+    (cond [(and limit (time>? (current-time) limit)) #f]
+          [(process-wait process #t raise-error?) #t]
+          [(and continue-test (not (continue-test count))) #f]
+          [else (sys-nanosleep interval) (loop (+ count 1))])))
 
 ;; signal
 (define (process-send-signal process signal)

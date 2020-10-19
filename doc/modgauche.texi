@@ -15365,6 +15365,57 @@ If there's no child processes, this procedure immediately returns @code{#f}.
 @c COMMON
 @end defun
 
+@defun process-wait/poll process :key interval max-wait continue-test raise-error?
+@c MOD gauche.process
+@c EN
+Polls wait status of @var{process} periodically, sleeping 
+@var{interval} nanoseconds (default 2e6 ns, i.e. 2ms) between each poll.
+It returns as soon as it finds the process has exitted and its status is 
+retrieved.
+
+If @var{max-wait} is given and not @code{#f}, it species maximum duration
+in nanoseconds to keep polling.  Once the duration expires, the procedure
+gives up and return.  If it is not given or @code{#f},
+the procedure keeps polling until the process exits.
+
+The @var{continue-test}, if given and not @code{#f}, must be a procedure
+that takes one argument, poll count.  It is called after each unsuccessul
+polling (that is, the process hasn't been exitted), and the argument begins
+with 0 and incretemented for each callback.  The procedure can return
+@code{#f} to give up polling.  When it returns a true value, polling continues.
+
+The @var{raise-error?} argument is the same as @code{process-wait}; an
+error is raised if @var{process}'s exit status isn't zero.
+
+The procedure returns @code{#t} if the process exitted, and @code{#f} if
+it has given up.  The process's exit status should be retrieved
+with @code{process-exit-status} from @var{process}.
+@c JP
+@var{process}の終了ステータスを、@var{interval}ナノ秒間隔でポーリングします
+(デフォルトは2e6ns=2msです)。@var{process}が終了していることを見つけたら
+終了ステータスを回収して直ちに戻ります。
+
+@var{max-wait}が指定されて@code{#f}でなければ、それはポーリングを続ける期間の
+最大値をナノ秒単位で指定します。その期間が過ぎたら、この手続きは諦めて戻ります。
+指定されないか@code{#f}の場合は、プロセスが終了するまでポーリングしつづけます。
+
+@var{continue-test}が与えられて@code{#f}でなければ、
+それは1引数の手続きでなければなりません。
+ポーリングでプロセスが終了してなかったら、その度にこの手続きが呼ばれます。
+引数はポーリングした回数で、0から始まりポーリングの度に1つづつ増えてゆきます。
+この手続きが@code{#f}を返したら、その時点でポーリングは打ちきられ
+@code{process-wait/poll}は直ちに戻ります。
+真の値を返したらポーリングは継続されます。
+
+@var{raise-error?}は@code{process-wait}と同じで、
+@var{process}の終了ステータスが0でなければエラーを投げます。
+
+戻り値は、プロセスが終了してステータスを回収できれば@code{#t}、
+途中で諦めた場合は@code{#f}となります。終了ステータス自体は
+@var{process}から@code{process-exit-status}で読み出してください。
+@c COMMON
+@end defun
+
 
 @defun process-exit-status process
 @c MOD gauche.process
