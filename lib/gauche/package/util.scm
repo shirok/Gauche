@@ -124,6 +124,7 @@
                           (string->symbol extension-name))]
          [module-path (module-name->path module-name)]
          [dst-subdir  (sys-dirname module-path)]
+         [gversion    (gauche-version)]
          [author-name (%author-name)])
 
     (define (filter-copy src dst executables configure-name)
@@ -142,6 +143,7 @@
                             #/@@extname@@/ extension-name
                             #/@@EXTNAME@@/ EXTENSION-NAME
                             #/@@configure@@/ configure-name
+                            #/@@gauche-version@@/ gversion
                             #/@@author@@/ author-name)
                            out)
                           (newline out))
