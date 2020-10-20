@@ -250,10 +250,11 @@
 
 (define (%canon-redirects redirects in out err)
   (rlet1 redirs
-      `(,@redirects
-        ,@(if in  `((< 0 ,(if (eq? in  :pipe) 'stdin  in))) '())
-        ,@(if out `((> 1 ,(if (eq? out :pipe) 'stdout out))) '())
-        ,@(if err `((> 2 ,(if (eq? err :pipe) 'stderr err))) '()))
+      (cond-list
+       [#t @ redirects]
+       [in  `(< 0 ,(if (eq? in  :pipe) 'stdin  in))]
+       [out `(> 1 ,(if (eq? out :pipe) 'stdout out))]
+       [err `(> 2 ,(if (eq? err :pipe) 'stderr err))])
     ;; Reject if the same pipe appears more than once in the reirect list.
     ;; We do allow the same file appears more than once; e.g. redirecting
     ;; both 1 and 2 to "/dev/null".
