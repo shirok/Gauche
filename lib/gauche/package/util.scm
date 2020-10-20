@@ -123,7 +123,8 @@
          [module-name (or module-name
                           (string->symbol extension-name))]
          [module-path (module-name->path module-name)]
-         [dst-subdir  (sys-dirname module-path)])
+         [dst-subdir  (sys-dirname module-path)]
+         [author-name (%author-name)])
 
     (define (filter-copy src dst executables configure-name)
       (let1 EXTENSION-NAME (string-upcase extension-name)
@@ -140,7 +141,8 @@
                             #/@@modpath@@/ (module-name->path module-name)
                             #/@@extname@@/ extension-name
                             #/@@EXTNAME@@/ EXTENSION-NAME
-                            #/@@configure@@/ configure-name)
+                            #/@@configure@@/ configure-name
+                            #/@@author@@/ author-name)
                            out)
                           (newline out))
                         (cut read-line in)))
@@ -172,3 +174,16 @@
         (filter-copy src-path dst-path
                      '("configure")
                      (if use-autoconf "configure" ""))))))
+
+;; Retrieve author name and email from git config, if possible
+(define (%author-name)
+  (or (and-let* ([git (find-file-in-paths "git" :extensions '("exe"))]
+                 [name  (process-output->string '(git config user.name)
+                                                :on-abnormal-exit :ignore)]
+                 [ (and name (not (string-null? name))) ]
+                 [email (process-output->string '(git config user.email)
+                                                :on-abnormal-exit :ignore)]
+                 [ (and email (not (string-null? email))) ])
+        (write-to-string #"~name <~|email|>"))
+      ""))
+    

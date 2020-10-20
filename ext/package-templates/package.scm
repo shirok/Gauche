@@ -26,7 +26,7 @@
   ;; List name and contact info of authors.
   ;; e.g. ("Eva Lu Ator <eval@example.com>"
   ;;       "Alyssa P. Hacker <lisper@example.com>")
-  :authors ()
+  :authors (@@author@@)
 
   ;; List name and contact info of package maintainers, if they differ
   ;; from authors.

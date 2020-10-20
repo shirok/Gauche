@@ -167,7 +167,9 @@
     (define (filter-copy infile outfile)
       (file-filter (^[in out]
                      (dolist [line (port->string-list in)]
-                       (display ($ regexp-replace-all* line #/@@/ ""
+                       (display ($ regexp-replace-all* line
+                                   #/@@author@@/ ""
+                                   #/@@/ ""
                                    #/\(cf-output-default\)/
                                    "(cf-define 'HAVE_STDIO_H \"1\")\n\
                                     (cf-config-headers \"config.h\")\n\
@@ -274,7 +276,10 @@
     (define (filter-copy infile outfile)
       (file-filter (^[in out]
                      (dolist [line (port->string-list in)]
-                       (display ($ regexp-replace-all* line #/@@/ "") out)
+                       (display (regexp-replace-all* line
+                                                     #/@@author@@/ ""
+                                                     #/@@/ "")
+                                out)
                        (newline out)))
                    :input infile
                    :output outfile))

@@ -1,5 +1,8 @@
 2020-10-19  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/package/util.scm (copy-templates): Fill authors name
+	  of the package.scm from git config output, if available.
+
 	* libsrc/gauche/process.scm (run-process): Allow :merge to :error
 	  keyword arg, for the shorthand of :redirect ((>& 2 1)).
 	  This is especially useful for higher-level utilities such as
