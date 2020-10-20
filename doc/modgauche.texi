@@ -14669,14 +14669,15 @@ you can use @code{>} like the following:
 @deftpx {Subprocess argument} error @var{sink}
 @c EN
 Redirects child's standard i/o.
-@var{source} and @var{sink} may be either a string, a keyword @code{:null},
-a keyword @code{:pipe}, an integer file descriptor or a symbol.
+@var{source} and @var{sink} may be either a string, one
+of keywords @code{:null}, @code{:pipe}, or @code{merge},
+an integer file descriptor, or a symbol.
 
 These are really shorthand notations of the @var{redirects} argument:
 @c JP
 サブプロセスの標準入出力を制御します。
 @var{source}及び@var{sink}は、文字列、キーワード @code{:pipe}、
-キーワード@code{:null}、整数のファイルディスクリプタ、もしくはシンボルです。
+@code{:null}、@code{:merge}、整数のファイルディスクリプタ、もしくはシンボルです。
 
 実のところ、これらは@var{redirects}引数の略記にすぎません。
 @c COMMON
@@ -14721,6 +14722,17 @@ to @code{(process-output p 'stderr)}.)
 省略されるとそれぞれ@code{stdin}, @code{stdout}をデフォルトとし、
 また@code{(process-error p)}は@code{(process-output p 'stderr)}と
 等価だからです)
+@c COMMON
+
+@c EN
+The keyword @code{:merge} can only be used for @code{:error} keyword
+argument, and it is a shorthand notation of
+@code{:redirects '((>& 2 1))}, that is, merge the child process's
+stderr into child process's stdout.
+@c JP
+キーワード@code{:merge}は@code{:error}キーワード引数のみに有効で、
+@code{:redirects '((>& 2 1))}の略記になります。
+すなわち、子プロセスのstderrを子プロセスのstdoutにマージします。
 @c COMMON
 
 @c EN
@@ -15031,14 +15043,14 @@ The process ports explained in the next section also use process objects.
 @c EN
 The @code{<process>} class keeps track of
 the child processes spawned by high-level APIs such
-as @code{run-process} or @code{open-input-process}.
+as @code{run-process} or @code{open-input-process-port}.
 The exit status of such children must be collected by
 @code{process-wait} or @code{process-wait-any} calls,
 which also do some bookkeeping.   Using
 the low-level process calls such as @code{sys-wait} or
 @code{sys-waitpid} directly will cause inconsistent state.
 @c JP
-@code{<process>}クラスは、@code{run-process}や@code{open-input-process}
+@code{<process>}クラスは、@code{run-process}や@code{open-input-process-port}
 といった高レベルAPIで作られた子プロセスの状態を管理しています。
 それらの子プロセスの終了ステータスをとるには、
 @code{process-wait}や@code{process-wait-any}といった
@@ -15830,6 +15842,10 @@ characters are stripped.
 
 Internally, @var{command} is run by @code{call-with-input-process},
 to which keyword arguments are passed.
+
+(Tip: To receive stderr output of the child process in the result as well,
+pass @code{:merge} to @code{:error}.  See @code{run-process} above
+for the details.)
 @c JP
 @var{command} を実行し、その(標準出力への)出力を回収して返します。
 @code{process-output->string} は @var{command} からの全ての出力を連結し
@@ -15842,6 +15858,10 @@ to which keyword arguments are passed.
 内部的には、@var{command} は @code{call-with-input-process} により
 実行されます。キーワード引数は@code{call-with-input-process}に
 そのまま渡されます。
+
+(ヒント: 子プロセスのstderr出力も一緒に結果として得たい場合は、
+@code{:error}引数に@code{:merge}を渡します。
+詳しくは上の@code{run-process}の項を見てください。)
 @c COMMON
 @example
 (process-output->string '(uname -smp))

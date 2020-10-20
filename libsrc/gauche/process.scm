@@ -254,7 +254,10 @@
        [#t @ redirects]
        [in  `(< 0 ,(if (eq? in  :pipe) 'stdin  in))]
        [out `(> 1 ,(if (eq? out :pipe) 'stdout out))]
-       [err `(> 2 ,(if (eq? err :pipe) 'stderr err))])
+       [err (case err
+              [(:pipe)  '(> 2 stderr)]
+              [(:merge) '(>& 2 1)]
+              [else `(> 2 ,err)])])
     ;; Reject if the same pipe appears more than once in the reirect list.
     ;; We do allow the same file appears more than once; e.g. redirecting
     ;; both 1 and 2 to "/dev/null".
@@ -871,8 +874,10 @@
   (define rest (delete-keywords '(:encoding :conversion-buffer-size) opts))
   (define (rc cmd)
     (apply run-process cmd :input stdin :output stdout :host host
-           (cond [(string? stderr) `(:error ,stderr ,@rest)]
-                 [else rest])))
+           (cond [(or (string? stderr) (keyword? stderr))
+                  `(:error ,stderr ,@rest)]
+                 [(or (undefined? stderr) (not stderr)) rest]
+                 [else (error "Invalid :error argument:" stderr)])))
   (cond [(string? command)
          (rc (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
                           [else              `("/bin/sh" "-c" ,command)]))]
