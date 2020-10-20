@@ -48,7 +48,7 @@
           process-upstreams
           process-wait process-wait/poll process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
-          process-terminate-gracefully
+          process-shutdown
           process-list
           run-pipeline do-pipeline
           ;; process ports
@@ -551,15 +551,15 @@
    [gauche.os.windows (undefined)]
    [else (process-send-signal process SIGCONT)]))
 
-(define (process-terminate-gracefully process 
-                                      :key (ask #f)
-                                           (ask-interval #e50e6) ;ns
-                                           (ask-retry 1)
-                                           (signals `(,SIGTERM 
-                                                      ,SIGTERM
-                                                      ,SIGKILL))
-                                           (signal-interval #e50e6) ;ns
-                                           )
+(define (process-shutdown process 
+                          :key (ask #f)
+                               (ask-interval #e50e6) ;ns
+                               (ask-retry 1)
+                               (signals `(,SIGTERM 
+                                          ,SIGTERM
+                                          ,SIGKILL))
+                               (signal-interval #e50e6) ;ns
+                               )
   ;; each branch returns #t on successful termination
   (or (and ask
            (let loop ([count 0])
@@ -951,32 +951,18 @@
     [(both)  (close-port (process-input p))
              (close-port (process-output p))]))
 
-;; Trick - we want to terminate the process gracefully.  In typical cases,
-;; the process exits when its input is closed.  So, we first close
-;; the port then polls the process exit status a few times.  If the process
-;; doesn't exit, we send SIGTERM and polls again.  If that doesn't work,
-;; we send SIGKILL.  The connection interface is high level enough that
-;; the process's exit status isn't supposed to matter.
-(define (%kill-process p)
-  (or (process-wait p #t)
-      (begin (sys-nanosleep #e50e6)     ; 50ms
-             (process-wait p #t))
-      (begin (sys-nanosleep #e100e6)    ; 100ms
-             (process-wait p #t))
-      (begin (process-send-signal p SIGTERM)
-             (process-wait p #t))
-      (begin (sys-nanosleep #e200e6)    ; 200ms
-             (process-wait p #t))
-      (begin (process-kill p)
-             (process-wait p))))
-
 (define-method connection-shutdown ((c <process-connection>) how)
   (let1 p (~ c'process)
     (%close-ports p how)
     (when (and (port-closed? (process-input p))
                (port-closed? (process-output p))
                (not (process-exit-status p)))
-      (%kill-process p))))
+      ;; Usually, closing process-input should cause the process to exit.
+      ;; We try 150ms after closing, then send signals.
+      (process-shutdown p 
+                        :ask identity ;; doesn't matter
+                        :ask-interval #e150e6 ; 50ms
+                        :signal-interval #e100e6))))
 
 (define-method connection-close ((c <process-connection>))
   (%close-ports (~ c'process) 'both))

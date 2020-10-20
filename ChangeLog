@@ -1,3 +1,9 @@
+2020-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/process.scm (process-shutdown): Rename from
+	  process-terminate-gracefully.  It's shorter, more appripriate,
+	  and in sync with (connection-shutdown <process-connection>).
+
 2020-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/util.scm (copy-templates): Fill authors name

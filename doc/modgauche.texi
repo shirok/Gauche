@@ -15480,7 +15480,7 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @c COMMON
 @end defun
 
-@defun process-terminate-gracefully process :key ask ask-interval ask-retry signals signal-interval
+@defun process-shutdown process :key ask ask-interval ask-retry signals signal-interval
 Tries to terminate @var{process} in the gradually escalating means.
 
 The @var{ask} argument is, if not @code{#f}, a procedure taking one argument,
@@ -15488,7 +15488,7 @@ the retry count.  The @var{ask} procedure is responsible to interact with
 @var{process} in a proper protocol (e.g. send @code{exit} command via
 comminucation channel).  After @var{ask} is executed (the return value
 is ignored), the process's status is monitored, and 
-@code{process-terminate-gracefully} returns @code{#t} as soon as the
+@code{process-shutdown} returns @code{#t} as soon as the
 process exits.  If the process doesn't exit, the procedure repeats
 calling @var{ask} up to @var{retry} times, with @var{ask-interval} nanoseconds
 delay inbetween, incrementing the retry count
@@ -15498,7 +15498,7 @@ The default value of @var{ask} is @code{#f}, @var{ask-interval} is
 
 If the first step fails, this procedure starts sending signals.
 The process's status is checked every time after a signal is sent.
-As soon as the process exists, @code{process-terminate-gracefully}
+As soon as the process exists, @code{process-shutdown}
 returns @code{#t}.
 The sequence of signals is specified by @var{signals} argument,
 and the interval of sending signals is specified by @var{signal-interval}
