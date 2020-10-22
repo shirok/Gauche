@@ -178,6 +178,7 @@ test.record
 /lib/parser/
 /lib/rfc/sha1.scm
 /lib/rfc/tls/mbed.scm
+/lib/rfc/tls/get-cacert.scm
 /lib/rfc/zlib.scm
 /lib/srfi/*.scm
 /lib/sxml/
