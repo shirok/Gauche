@@ -1347,7 +1347,18 @@ but works on a string instead of a list.
 @defun string-for-each-index proc s :optional start end
 [SRFI-13]
 @c MOD srfi-13
-Call @var{proc} on each index of the string @var{s}.
+@c EN
+Call @var{proc} on each index of the string @var{s}, from left to right.
+The result of @var{proc} is discarded.
+The optional @var{start} and @var{end} arguments can be an integer
+index or a string cursor, restricting the range
+of the input string to be traversed.
+@c JP
+@var{proc}を@var{s}の各文字について、左から右の順に呼びます。@var{proc}の結果は
+捨てられます。
+省略可能な@var{start}と@var{end}引数は整数の文字インデックスか
+文字列カーソルで、対象となる文字列の範囲を制限します。
+@c COMMON
 @end defun
 
 @node SRFI-13 String rotation, SRFI-13 Other string operations, SRFI-13 String mapping, String library
@@ -1357,12 +1368,26 @@ Call @var{proc} on each index of the string @var{s}.
 @defun xsubstring s from :optional to start end
 [SRFI-13]
 @c MOD srfi-13
+@c EN
 Takes a substring of infinite repetition of string @var{s}
 between index @var{from} (inclusive) and index @var{to} (exclusive).
+If @var{to} is omitted, the length of @var{s} is assumed.
+@c JP
+@var{s}が左右に無限に繰り替えされているとみなし、その整数インデックス
+の@var{from}から@var{to}までを切り出して返します。
+@var{to}が省略された場合は@var{s}の長さが使われます。
+@c COMMON
 
+@c EN
 For example, if @var{s} is @code{"abcde"}, we repeat it
 infinitely to both sides.  So @var{5n}-th character for integer @var{n}
 is always @code{#\a}, which extends negative @var{n} as well.
+@c JP
+例えば、@var{s}が@code{abcde}の場合、まずそれを無限の
+文字列@code{...abcdeabcdeabcde...}とみなします。
+つまり整数@var{n}に対して@var{5n}番目の文字は常に@code{#\a}です。
+これは@var{n}が負の領域にも拡張されます。
+@c COMMON
 
 @example
 (xsubstring "abcde" 2 10)
@@ -1370,11 +1395,28 @@ is always @code{#\a}, which extends negative @var{n} as well.
 (xsubstring "abcde" -9 -2)
   @result{} "bcdeabc"
 @end example
+
+@c EN
+The optional @var{start} and @var{end} arguments can be an integer
+index or a string cursor, it works as
+@code{(xsubstring (substring s start end) from to)}.
+@c JP
+省略可能な@var{start}と@var{end}引数は整数の文字インデックスか
+文字列カーソルで、与えられた場合、
+@code{(xsubstring (substring s start end) from to)}と同じ動作となります。
+@c COMMON
 @end defun
 
 @defun string-xcopy! target tstart s sfrom :optional sto start end
 [SRFI-13]
 @c MOD srfi-13
+@c EN
+It works as 
+@code{(string-copy! target tstart (xsubstring s sfrom sto start end))}.
+@c JP
+@code{(string-copy! target tstart (xsubstring s sfrom sto start end))}
+と同じ動作をします。
+@c COMMON
 @end defun
 
 @node SRFI-13 Other string operations, SRFI-13 String filtering, SRFI-13 String rotation, String library
