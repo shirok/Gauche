@@ -973,8 +973,31 @@ int Scm_CharReadyUnsafe(ScmPort *p)
 }
 
 /*=================================================================
- * PortSeek
+ * Port Positioning
  */
+
+/* Originally we modeled our port positioning after POSIX fseek/ftell;
+   the position is represented by integer offset, seek can be absolute,
+   relative to current pos, or relative to the end of file, and tell
+   is the same as seek(0, SEEK_CUR).
+
+   This doesn't go well with R6RS/SRFI-192 semantics. Integer offset of
+   textual port is hard to define portably.  Should it be character count,
+   or internal byte offset?  An implementation may only have either one
+   available (Gauche has only internal byte offset for file ports, 
+   for example).
+
+   Srfi-181/192 allows user-defined procedures of custom ports return
+   arbitrary Scheme object as a position, so we can't do any operation
+   on it in the port layer.  The custom port is only handled via
+   SCM_PORT_PROC.  So we treat it specially--for peek-char and peek-byte,
+   we save the current position before fetching a new character, and
+   port-position returns the saved position if there's any.  It only
+   happens when the port type is SCM_PORT_PROC.
+   (SCM_PORT_FILE also have getpos/setpos callback, but the implementation
+   must return a byte offset, for we have to adjust what's in the buffer.)
+ */
+
 
 /* For the sake of seek/tell, we treat scratch buffer and ungotten char
    (collectively we call them pending bytes here) as if it's a cache---
@@ -1032,6 +1055,86 @@ static ScmObj seek_istr(ScmPort *p, ScmObj off, int whence, int is_telling)
 }
 #endif /*SEEK_ISTR*/
 
+#ifdef SAFE_PORT_OP
+ScmObj Scm_GetPortPosition(ScmPort *p)
+#else
+ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
+#endif
+{
+    VMDECL;
+    SHORTCUT(p, return Scm_GetPortPositionUnsafe(p));
+    if (SCM_PORT_CLOSED_P(p)) {
+        Scm_PortError(p, SCM_PORT_ERROR_CLOSED,
+                      "attempt to take a position of a closed port: %S", p);
+    }
+
+    ScmObj r = SCM_MAKE_INT(0);
+    volatile off_t pending_bytes = port_pending_bytes(p);
+    int err_disabled = FALSE;
+
+    LOCK(p);
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        if (PORT_BUF(p)->flags & SCM_PORT_DISABLE_GETPOS) {
+            err_disabled = TRUE;
+            break;
+        }
+        if (PORT_BUF(p)->getpos) {
+            SAFE_CALL(p, r = PORT_BUF(p)->getpos(p));
+        } else if (PORT_BUF(p)->seeker) {
+            off_t rr;
+            SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 0, SEEK_CUR));
+            if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
+                rr -= (off_t)(PORT_BUF(p)->end - PORT_BUF(p)->current);
+            } else {
+                rr += (off_t)(PORT_BUF(p)->current - PORT_BUF(p)->buffer);
+            }
+            r = Scm_OffsetToInteger(rr);
+        }
+        break;
+    case SCM_PORT_ISTR: 
+        r = SEEK_ISTR(p, SCM_MAKE_INT(0), SEEK_CUR, TRUE);
+        break;
+    case SCM_PORT_OSTR:
+        r = Scm_MakeInteger(Scm_DStringSize(PORT_OSTR(p)));
+        break;
+    case SCM_PORT_PROC:
+        /* For procedural bytes, the positioning of pending bytes is
+           taken care of by PORT_SAVED_POS, so we set pending_bytes to 0.*/
+        pending_bytes = 0;
+        if (PORT_VT(p)->flags & SCM_PORT_DISABLE_GETPOS) {
+            err_disabled = TRUE;
+            break;
+        }
+        if (PORT_VT(p)->GetPos) {
+            r = PORT_SAVED_POS(p);
+            if (SCM_UNBOUNDP(r)) {
+                SAFE_CALL(p, r = PORT_VT(p)->GetPos(p));
+            }
+        } else if (PORT_VT(p)->Seek) {
+            off_t rr;
+            UNSAVE_POS(p);
+            SAFE_CALL(p, rr = PORT_VT(p)->Seek(p, 0, SEEK_CUR));
+            r = Scm_OffsetToInteger(rr);
+        }
+        break;
+    }
+    UNLOCK(p);
+
+    if (err_disabled) {
+        Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
+                      "getting port position is disabled");
+    }
+
+    if (pending_bytes > 0) {
+        if (r == SCM_MAKE_INT(-1)) return SCM_FALSE;
+        if (!SCM_INTEGERP(r)) return FALSE;
+        r = Scm_Sub(r, Scm_OffsetToInteger(pending_bytes));
+    }
+    return r;
+}
+
+
 /* srfi-181 allows port positions to be any Scheme object, so
    off argument and return value can be any Scheme object---if it's
    not an exact integer, it should be an object returned by getpos
@@ -1057,8 +1160,15 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     off_t rr = (off_t)-1;
     int is_telling = (whence == SEEK_CUR && off == SCM_MAKE_INT(0));
 
+
     LOCK(p);
 
+    if (is_telling) {
+        r = Scm_GetPortPositionUnsafe(p);
+        UNLOCK(p);
+        return r;
+    }
+    
     volatile off_t pending = port_pending_bytes(p);
     if (!is_telling) {
         /* Unless we're telling, we discard pending bytes. */
