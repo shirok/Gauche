@@ -1029,28 +1029,24 @@ static off_t port_pending_bytes(ScmPort *p)
 
 #ifndef SEEK_ISTR               /* common part */
 #define SEEK_ISTR seek_istr
-static ScmObj seek_istr(ScmPort *p, ScmObj off, int whence, int is_telling)
+static ScmObj seek_istr(ScmPort *p, ScmObj off, int whence)
 {
     /* If the port is istr, offset must always be an integer. */
     off_t o = Scm_IntegerToOffset(off);
     off_t rr;
-    if (is_telling) {
-        rr = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
-    } else {
-        if (whence == SEEK_CUR) {
-            o += (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
-        } else if (whence == SEEK_END) {
-            o += (off_t)(PORT_ISTR(p)->end - PORT_ISTR(p)->start);
-        }
-        if (o < 0 || o > (off_t)(PORT_ISTR(p)->end - PORT_ISTR(p)->start)) {
-            rr = (off_t)-1;
-        } else {
-            PORT_ISTR(p)->current = PORT_ISTR(p)->start + o;
-            rr = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
-        }
-        PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
-        p->scrcnt = 0;
+    if (whence == SEEK_CUR) {
+        o += (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
+    } else if (whence == SEEK_END) {
+        o += (off_t)(PORT_ISTR(p)->end - PORT_ISTR(p)->start);
     }
+    if (o < 0 || o > (off_t)(PORT_ISTR(p)->end - PORT_ISTR(p)->start)) {
+        rr = (off_t)-1;
+    } else {
+        PORT_ISTR(p)->current = PORT_ISTR(p)->start + o;
+        rr = (off_t)(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
+    }
+    PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
+    p->scrcnt = 0;
     if (rr == (off_t)-1) return SCM_FALSE;
     return Scm_OffsetToInteger(rr);
 }
@@ -1094,7 +1090,7 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
         }
         break;
     case SCM_PORT_ISTR: 
-        r = SEEK_ISTR(p, SCM_MAKE_INT(0), SEEK_CUR, TRUE);
+        r = Scm_OffsetToInteger(PORT_ISTR(p)->current - PORT_ISTR(p)->start);
         break;
     case SCM_PORT_OSTR:
         r = Scm_MakeInteger(Scm_DStringSize(PORT_OSTR(p)));
@@ -1209,7 +1205,7 @@ static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
         }
         break;
     case SCM_PORT_ISTR: 
-        r = SEEK_ISTR(p, off, whence, FALSE);
+        r = SEEK_ISTR(p, off, whence);
         break;
     case SCM_PORT_OSTR:
         /* Not supported yet */
