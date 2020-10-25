@@ -1051,6 +1051,7 @@ static ScmObj seek_istr(ScmPort *p, ScmObj off, int whence, int is_telling)
         PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
         p->scrcnt = 0;
     }
+    if (rr == (off_t)-1) return SCM_FALSE;
     return Scm_OffsetToInteger(rr);
 }
 #endif /*SEEK_ISTR*/
@@ -1134,6 +1135,121 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
     return r;
 }
 
+/* Common routine for Scm_SetPortPosition and Scm_PortSeek. */
+#ifndef SET_PORT_POSITION
+#define SET_PORT_POSITION
+static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
+{
+    VMDECL;
+
+    LOCK(p);
+
+    volatile ScmObj off = pos;
+    ScmObj r = SCM_UNDEFINED;
+    int err_disabled = FALSE;
+    off_t pending = port_pending_bytes(p);
+    /* We discard pending bytes. */
+    p->scrcnt = 0;
+    PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
+    /* ... and adjust offset, when it's relative.
+       NB: This only matters if the port has seeker protocol, instead
+       of getpos/setpos protocol. */
+    if (SCM_PORT_TYPE(p) != SCM_PORT_PROC
+        && whence == SEEK_CUR
+        && SCM_INTEGERP(off)) {
+        off = Scm_Sub(off, SCM_MAKE_INT(pending));
+    }
+
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        if (PORT_BUF(p)->flags & SCM_PORT_DISABLE_SETPOS) {
+            err_disabled = TRUE;
+            break;
+        }
+
+        if (PORT_BUF(p)->setpos && whence == SEEK_SET) {
+            r = PORT_BUF(p)->setpos(p, off);
+            break;
+        }
+
+        /* NB: we might be able to skip calling seeker if we keep the
+           # of bytes read or write so far, but such count may be off
+           when the port has been experienced an error condition. */
+        /* NB: the following doesn't work if we have bidirectional port.
+           In such case we need to keep whether the last call of buffer
+           handling routine was input or output. */
+        if (PORT_BUF(p)->seeker) {
+            /* NB: possible optimization: the specified position is within
+               the current buffer, we can avoid calling seeker. */
+            off_t rr;
+            if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
+                char *c = PORT_BUF(p)->current; /* save current ptr */
+                if (whence == SEEK_CUR) {
+                    off = Scm_Sub(off, Scm_MakeIntegerU(PORT_BUF(p)->end - c));
+                }
+                PORT_BUF(p)->current = PORT_BUF(p)->end; /* invalidate buffer */
+                SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 
+                                                      Scm_IntegerToOffset(off),
+                                                      whence));
+                if (rr == (off_t)-1) {
+                    /* This may happened if seeker somehow gave up */
+                    PORT_BUF(p)->current = c;
+                }
+            } else {
+                SAFE_CALL(p, bufport_flush(p, 0, TRUE));
+                SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 
+                                                      Scm_IntegerToOffset(off),
+                                                      whence));
+            }
+            if (rr == (off_t)-1) {
+                r = SCM_FALSE;
+            } else {
+                r = Scm_OffsetToInteger(rr);
+            }
+        }
+        break;
+    case SCM_PORT_ISTR: 
+        r = SEEK_ISTR(p, off, whence, FALSE);
+        break;
+    case SCM_PORT_OSTR:
+        /* Not supported yet */
+        r = SCM_FALSE;
+        break;
+    case SCM_PORT_PROC:
+        if (PORT_VT(p)->flags & SCM_PORT_DISABLE_SETPOS) {
+            err_disabled = TRUE;
+            break;
+        }
+        if (PORT_VT(p)->SetPos && whence == SEEK_SET) {
+            UNSAVE_POS(p);
+            SAFE_CALL(p, r = PORT_VT(p)->SetPos(p, off));
+            break;
+        }
+        if (PORT_VT(p)->Seek) {
+            UNSAVE_POS(p);
+            off_t rr;
+            SAFE_CALL(p, rr = PORT_VT(p)->Seek(p,
+                                               Scm_IntegerToOffset(off),
+                                               whence));
+            r = Scm_OffsetToInteger(rr);
+        }
+        break;
+    }
+    UNLOCK(p);
+
+    if (err_disabled) {
+        Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
+                      "setting port position is disabled");
+    }
+    return r;
+}
+
+ScmObj Scm_SetPortPosition(ScmPort *p, ScmObj pos)
+{
+    return set_port_position(p, pos, SEEK_SET);
+}
+#endif  /* SET_PORT_POSITION  */
+
 
 /* srfi-181 allows port positions to be any Scheme object, so
    off argument and return value can be any Scheme object---if it's
@@ -1149,155 +1265,11 @@ ScmObj Scm_PortSeek(ScmPort *p, volatile ScmObj off, int whence)
 ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
 #endif
 {
-    VMDECL;
-    SHORTCUT(p, return Scm_PortSeekUnsafe(p, off, whence));
-    if (SCM_PORT_CLOSED_P(p)) {
-        Scm_PortError(p, SCM_PORT_ERROR_CLOSED,
-                      "attempt to seek on closed port: %S", p);
+    if (whence == SEEK_CUR && off == SCM_MAKE_INT(0)) {
+        return Scm_GetPortPosition(p);
+    } else {
+        return set_port_position(p, off, whence);
     }
-
-    ScmObj r = SCM_UNDEFINED;
-    off_t rr = (off_t)-1;
-    int is_telling = (whence == SEEK_CUR && off == SCM_MAKE_INT(0));
-
-
-    LOCK(p);
-
-    if (is_telling) {
-        r = Scm_GetPortPositionUnsafe(p);
-        UNLOCK(p);
-        return r;
-    }
-    
-    volatile off_t pending = port_pending_bytes(p);
-    if (!is_telling) {
-        /* Unless we're telling, we discard pending bytes. */
-        p->scrcnt = 0;
-        PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
-        /* ... and adjust offset, when it's relative.
-           NB: This only matters if the port has seeker protocol, instead
-           of getpos/setpos protocol. */
-        if (SCM_PORT_TYPE(p) != SCM_PORT_PROC
-            && whence == SEEK_CUR
-            && SCM_INTEGERP(off)) {
-            off = Scm_Sub(off, SCM_MAKE_INT(pending));
-        }
-    }
-
-    switch (SCM_PORT_TYPE(p)) {
-    case SCM_PORT_FILE:
-        /* getpos/setpos protocol.  
-           FIXME: We have to adjust pending bytes. */
-        if (is_telling && (PORT_BUF(p)->flags & SCM_PORT_DISABLE_GETPOS)) {
-            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
-                          "getting port position is disabled");
-        }
-        if (!is_telling && (PORT_BUF(p)->flags & SCM_PORT_DISABLE_SETPOS)) {
-            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
-                          "setting port position is disabled");
-        }
-
-        if (is_telling && PORT_BUF(p)->getpos) {
-            r = PORT_BUF(p)->getpos(p);
-            break;
-        }
-        if (!is_telling && PORT_BUF(p)->setpos && whence == SEEK_SET) {
-            r = PORT_BUF(p)->setpos(p, off);
-            break;
-        }
-
-        /* NB: we might be able to skip calling seeker if we keep the
-           # of bytes read or write so far, but such count may be off
-           when the port has been experienced an error condition. */
-        /* NB: the following doesn't work if we have bidirectional port.
-           In such case we need to keep whether the last call of buffer
-           handling routine was input or output. */
-        if (!PORT_BUF(p)->seeker) break;
-        if (is_telling) {
-            SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 0, SEEK_CUR));
-            if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
-                rr -= (off_t)(PORT_BUF(p)->end - PORT_BUF(p)->current);
-            } else {
-                rr += (off_t)(PORT_BUF(p)->current - PORT_BUF(p)->buffer);
-            }
-            r = Scm_OffsetToInteger(rr);
-        } else {
-            /* NB: possible optimization: the specified position is within
-               the current buffer, we can avoid calling seeker. */
-            if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
-                char *c = PORT_BUF(p)->current; /* save current ptr */
-                if (whence == SEEK_CUR) {
-                    off = Scm_Sub(off, Scm_MakeIntegerU(PORT_BUF(p)->end - c));
-                }
-                PORT_BUF(p)->current = PORT_BUF(p)->end; /* invalidate buffer */
-                SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 
-                                                      Scm_IntegerToOffset(off),
-                                                      whence));
-                if (rr == (off_t)-1) {
-                    /* This may happened if seeker somehow gave up */
-                    PORT_BUF(p)->current = c;
-                }
-                r = Scm_OffsetToInteger(rr);
-            } else {
-                SAFE_CALL(p, bufport_flush(p, 0, TRUE));
-                SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 
-                                                      Scm_IntegerToOffset(off),
-                                                      whence));
-                r = Scm_OffsetToInteger(rr);
-            }
-        }
-        break;
-    case SCM_PORT_ISTR: 
-        r = SEEK_ISTR(p, off, whence, is_telling);
-        break;
-    case SCM_PORT_OSTR:
-        if (is_telling) {
-            rr = (off_t)Scm_DStringSize(PORT_OSTR(p));
-        } else {
-            /* Not supported yet */
-            rr = (off_t)-1;
-        }
-        r = Scm_OffsetToInteger(rr);
-        break;
-    case SCM_PORT_PROC:
-        if (is_telling && (PORT_VT(p)->flags & SCM_PORT_DISABLE_GETPOS)) {
-            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
-                          "getting port position is disabled");
-        }
-        if (!is_telling && (PORT_VT(p)->flags & SCM_PORT_DISABLE_SETPOS)) {
-            Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
-                          "setting port position is disabled");
-        }
-        if (is_telling && PORT_VT(p)->GetPos) {
-            r = PORT_SAVED_POS(p);
-            if (SCM_UNBOUNDP(r)) {
-                SAFE_CALL(p, r = PORT_VT(p)->GetPos(p));
-            }
-            break;
-        }
-        if (!is_telling && PORT_VT(p)->SetPos && whence == SEEK_SET) {
-            UNSAVE_POS(p);
-            SAFE_CALL(p, r = PORT_VT(p)->SetPos(p, off));
-            break;
-        }
-        if (PORT_VT(p)->Seek) {
-            UNSAVE_POS(p);
-            SAFE_CALL(p, rr = PORT_VT(p)->Seek(p,
-                                               Scm_IntegerToOffset(off),
-                                               whence));
-            r = Scm_OffsetToInteger(rr);
-        }
-        break;
-    }
-    UNLOCK(p);
-
-    if (SCM_PORT_TYPE(p) != SCM_PORT_PROC) {
-        if (r == SCM_MAKE_INT(-1)) return SCM_FALSE;
-        if (is_telling && SCM_INTEGERP(r) && SCM_UNBOUNDP(PORT_SAVED_POS(p))) {
-            r = Scm_Sub(r, SCM_MAKE_INT(pending));
-        }
-    }
-    return r;
 }
 
 /*=================================================================

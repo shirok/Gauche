@@ -425,7 +425,7 @@
 (define-cproc port-position (port::<port>)
   (return (Scm_GetPortPosition port)))
 (define-cproc set-port-position! (port::<port> pos)
-  (return (Scm_PortSeek port pos SEEK_SET)))
+  (return (Scm_SetPortPosition port pos)))
 
 (select-module gauche)
 (inline-stub
