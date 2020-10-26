@@ -20294,7 +20294,134 @@ caller's responsibility to close it (by @code{sys-close}) once it's done.
 @c COMMON
 @end defun
 
+@defun port-position port
+[SRFI-192]
+@c EN
+Returns the current position of @var{port}.  For the input port,
+the current position is where the next data will be read from,
+and for the output port, it is where the next data will be written to.
+(Note that @code{peek-char}/@code{peek-byte} won't move the current position).
+
+If @var{port} is a simple file port or a string port, the position is
+represented as an integer byte offset from the top of the stream.
+If it is more complicated ports, such as the one doing the character encoding
+conversion, the port position may not be available, or returned
+object may not correspond to the byte offset.
+If @var{port} is a procedural (virtual) port (@pxref{Virtual ports}), 
+the returned value can
+be an arbitrary Scheme object, it can only
+be valid to be used for @code{set-port-position!}.
+
+An error is thrown if @var{port} doesn't support port positions.
+You can use @code{port-has-port-position?} to check if the port supports
+port positions.
+
+For portable code: srfi-192 defines the following conditions.
+
+@itemize @bullet
+@item
+Return value is an arbitrary Scheme object and you should treat it as an
+opaque object.  In general, it is only
+safe to pass it to the @code{set-port-position!} on the same port.
+@item
+If the port is a binary port and the returned position is a nonnegative
+exact integer, it represents the byte offset of the position.
+@end itemize
+@c JP
+@var{port}の現在の位置を返します。現在の位置とは、
+入力ポートでは次の読み込みでデータが読まれる位置、
+出力ポートでは次の書き込みでデータが書かれる位置です。
+(@code{peek-char}/@code{peek-byte}では現在の位置は動きません)。
+
+@var{port}が単純なファイルポートや文字列ポートなら、
+ポートの位置はストリームの先頭からのバイトオフセットを表す正確な整数です。
+より複雑なポート、例えば文字エンコーディング変換ポートでは、
+ポート位置を取ることはできないか、取れた場合でもその値はバイトオフセットに対応するとは
+限りません。
+仮想ポート(@ref{Virtual ports}参照)では、現在位置は任意のSchemeオブジェクトで、
+@code{set-port-position!}に渡す以外に使うことはできません。
+
+@var{port}がポート位置をサポートしていなければエラーが投げられます。
+ポート位置をサポートしているかどうかは@code{port-has-port-position?}で調べられます。
+
+ポータブルなコードを書くときは、以下のsrfi-192の条件に気をつけてください。
+
+@itemize @bullet
+@item
+ポート位置は任意のSchemeオブジェクトであり、
+同じポートに対して@code{set-port-position!}するのにだけ使うことができます。
+@item
+ただし、ポートがバイナリポートで、位置が正確な非負整数の場合は、
+それはバイトオフセットを表しています。
+@end itemize
+@c COMMON
+@end defun
+
+@defun port-has-port-position? port
+[SRFI-192]
+@c EN
+Returns @code{#t} iff the port supports @code{port-position} procedure.
+@c JP
+ポートが@code{port-position}手続きをサポートしていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun set-port-position! port pos
+[SRFI-192]
+@c EN
+Sets the current position of @var{port} to @var{pos}.  For the input port,
+the current position is where the next data will be read from,
+and for the output port, it is where the next data will be written to.
+
+Interpretation of @var{pos} is up to the @var{port},
+and generally it  must be an object returned previously
+by @code{port-position} on the same port.  If @var{port} is a simple
+file port (a port opened on file, without CES conversion) or
+an input string port, you may pass a nonnegative exact integer as the byte
+offset.
+
+An error is signaled if the position is not settable, or @var{pos} is
+not acceptable as a position for @var{port}.  You can check if position
+of @var{port} is settable by @code{port-has-set-port-position!?}.
+@c JP
+@var{pos}を@var{port}の現在の位置としてセットします。
+現在の位置とは、
+入力ポートでは次の読み込みでデータが読まれる位置、
+出力ポートでは次の書き込みでデータが書かれる位置です。
+
+@var{pos}の解釈は@var{port}に依存します。一般的には、
+@var{port}に対する@code{port-position}で以前返されたオブジェクトしか渡せません。
+ただし、@var{port}が単純なファイルポート(ファイルに対してオープンされ、
+文字コード変換などを行っていないポート)や入力文字列ポートならば、
+非負の正確な整数をバイトオフセットとして渡すことができます。
+
+ポートが位置のセットを許さない場合や、@var{pos}が位置として不正な場合は
+エラーが投げられます。@var{port}に位置がセットできるかどうかは
+@code{port-has-set-port-position!?}で検査できます。
+@c COMMON
+@end defun
+
+@defun port-has-set-port-position!? port
+[SRFI-192]
+@c EN
+Returns @code{#t} iff the port supports @code{set-port-position!} procedure.
+@c JP
+ポートが@code{set-port-position!}手続きをサポートしていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+
 @defun port-seek port offset :optional whence
+@c EN
+(This procedure is deprecated.  Use @code{port-position} and
+@code{set-port-position!} for the new code.
+@c JP
+(この手続きは非推奨です。新しいコードには@code{port-position}および
+@code{set-port-position!}を使ってください)。
+@c COMMON
+
 @c EN
 If the given @var{port} allows random access, this procedure sets
 the read/write pointer of the @var{port} according to the given @var{offset}
