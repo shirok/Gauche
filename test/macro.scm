@@ -257,6 +257,26 @@
              (foo 4)
              bar))))
 
+;; Mixing syntax-rules and er-macro requires unhygienic identifiers to be
+;; explicitly "injected".
+;; (This does not work with the current compiler)
+
+;; (define-syntax eri-test-loop
+;;   (eri-macro-transformer
+;;    (lambda (x r c i)
+;;      (let ((body (cdr x)))
+;;        `(,(r 'call-with-current-continuation)
+;;          (,(r 'lambda) (,(i 'exiit))
+;;           (,(r 'let) ,(r 'f) () ,@body (,(r 'f)))))))))
+
+;; (define-syntax eri-test-foo
+;;   (syntax-rules ()
+;;     ((_ x) (eri-test-loop (exiit x)))))
+
+;; (test* "Mixing syntax-rules and eri-macro" 'yot
+;;        (let ((exiit 42))
+;;          (eri-test-foo exiit)))
+
 ;;----------------------------------------------------------------------
 ;; basic tests
 

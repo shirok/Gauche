@@ -789,8 +789,21 @@
                                                 ,(cenv-module cenv)
                                                 ',(cenv-exp-name cenv))
               cenv)
-       (pass1 `(,%make-er-transformer. ,xformer ,cenv) cenv))]
+       (pass1 `(,%make-er-transformer. ,xformer ,cenv #f) cenv))]
     [_ (error "syntax-error: malformed er-macro-transformer:" form)]))
+
+(define-pass1-syntax (eri-macro-transformer form cenv) :gauche
+  (match form
+    [(_ xformer)
+     ;; See the comment above in er-macro-transformer
+     (if (cenv-toplevel? cenv)
+       (pass1 `(,%make-er-transformer/toplevel. ,xformer
+                                                ,(cenv-module cenv)
+                                                ',(cenv-exp-name cenv)
+                                                #t)
+              cenv)
+       (pass1 `(,%make-er-transformer. ,xformer ,cenv #t) cenv))]
+    [_ (error "syntax-error: malformed eri-macro-transformer:" form)]))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form

@@ -1601,27 +1601,37 @@
    Scm__ERCompare)
  )
 
-;; xformer :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
-(define (%make-er-transformer xformer def-env)
+;; xformer  :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
+;; xformer+ :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool), (Sym -> Sym)) -> Sexpr
+(define (%make-er-transformer xformer def-env :optional (has-inject? #f))
   (define def-module (cenv-module def-env))
   (define def-frames (cenv-frames def-env))
   (define (expand form use-env)
     (define use-module (cenv-module use-env))
     (define use-frames (cenv-frames use-env))
     (let1 dict '()
-      (xformer form
-               (^[sym]
-                 (receive [id dict_] (er-rename sym dict def-module def-frames)
-                   (set! dict dict_)
-                   id))
-               (^[a b] (er-compare a b use-module use-frames)))))
+      (define (%rename sym)
+        (receive [id dict_] (er-rename sym dict def-module def-frames)
+          (set! dict dict_)
+          id))
+      (define (%compare a b) (er-compare a b use-module use-frames))
+      (define (%inject sym)
+        (receive [id dict_] (er-rename sym dict use-module use-frames)
+          (set! dict dict_)
+          id))
+      (if has-inject?
+        (xformer form %rename %compare %inject)
+        (xformer form %rename %compare))))
   (%make-macro-transformer (cenv-exp-name def-env) expand))
 
 ;; Call to this procedure can be inserted in the output of er-macro expander
 ;; and emitted in the precompiled file, so do not change this API unless
 ;; you're sure no existing precompiled code refers to this.
-(define (%make-er-transformer/toplevel xformer def-module def-name)
-  (%make-er-transformer xformer (%make-cenv def-module '() def-name)))
+(define (%make-er-transformer/toplevel xformer def-module def-name 
+                                       :optional (has-inject? #f))
+  (%make-er-transformer xformer 
+                        (%make-cenv def-module '() def-name)
+                        has-inject?))
 
 ;; Returns an S-expr all macros in which are expanded.
 ;; The resulting form may not be equivalent to the input form, though,
