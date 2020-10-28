@@ -36,6 +36,7 @@
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
                      <gauche/class.h>
+                     <gauche/exception.h>
                      <gauche/priv/portP.h>
                      <gauche/priv/writerP.h>
                      <stdlib.h>
@@ -426,6 +427,9 @@
   (return (Scm_GetPortPosition port)))
 (define-cproc set-port-position! (port::<port> pos)
   (return (Scm_SetPortPosition port pos)))
+
+(define-cproc i/o-invalid-position-error? (obj) ::<boolean>
+  (Scm_ConditionHasType obj SCM_CLASS_IO_INVALID_POSITION_ERROR_MIXIN))
 
 (select-module gauche)
 (inline-stub

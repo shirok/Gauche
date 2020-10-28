@@ -320,6 +320,18 @@
    ((expr))
    (allocator (c "compile_error_mixin_allocate")))
 
+ (define-cfn io-invalid-position-error-mixin-allocate (klass::ScmClass* initargs) :static
+   (cast void initargs)                 ;suppress unused warning
+   (let* ([c::ScmIOInvalidPositionErrorMixin* (SCM_NEW_INSTANCE ScmIOInvalidPositionErrorMixin klass)])
+     (set! (-> c position) SCM_UNDEFINED)
+     (return (SCM_OBJ c))))
+
+ (define-cclass <io-invalid-position-error-mixin>
+   "ScmIOInvalidPositionErrorMixin*" "Scm_IOInvalidPositionErrorMixinClass"
+   (c "mixin_condition_cpa")
+   ((position))
+   (allocator (c "io_invalid_position_error_mixin_allocate")))
+
  ;; Filename errors are defined in srfi-36.  Internally most of those filename
  ;; errors occur as <system-error> first; we compound the following conditions
  ;; as needed.  In C name we use "Mixin", but in Scheme we follow srfi-36
