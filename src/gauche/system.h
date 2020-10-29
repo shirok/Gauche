@@ -112,6 +112,16 @@ SCM_CLASS_DECL(Scm_SysStatClass);
 
 SCM_EXTERN ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
 
+typedef struct ScmSysStatvfsRec {
+    SCM_HEADER;
+    struct statvfs vfs;
+} ScmSysStatvfs;
+
+SCM_CLASS_DECL(Scm_SysStatvfsClass);
+#define SCM_CLASS_SYS_STATVFS    (&Scm_SysStatvfsClass)
+#define SCM_SYS_STATVFS(obj)     ((ScmSysStatvfs*)(obj))
+#define SCM_SYS_STATVFS_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_STATVFS))
+
 /*==============================================================
  * Time
  */

@@ -54,6 +54,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <stdarg.h>
 #include <setjmp.h>
 #include <limits.h>

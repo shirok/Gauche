@@ -37,6 +37,7 @@
 (select-module gauche)
 (inline-stub
  (declcode
+  (.include <gauche/class.h>)
   (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
   (.cond ["TIME_WITH_SYS_TIME" (.include <sys/time.h> <time.h>)]
          ["HAVE_SYS_TIME_H"    (.include <sys/time.h>)]
@@ -748,6 +749,44 @@
     (utime-ts (& (aref tss 1)) mtime)
     (SCM_SYSCALL r (utimensat AT_FDCWD path tss 0))
     (when (< r 0) (Scm_SysError "utimensat failed on %s" path))))
+
+;;---------------------------------------------------------------------
+;; sys/statvfs.h
+
+(inline-stub
+ (define-cclass <sys-statvfs> "ScmSysStatvfs*" "Scm_SysStatvfsClass"
+   (c "SCM_CLASS_DEFAULT_CPL")
+   ((bsize    :setter #f
+              :getter "return Scm_MakeIntegerU(obj->vfs.f_bsize);")
+    (frsize   :setter #f
+              :getter "return Scm_MakeIntegerU(obj->vfs.f_frsize);")
+    (blocks   :setter #f
+              :getter "return Scm_OffsetToInteger(obj->vfs.f_blocks);")
+    (bfree    :setter #f
+              :getter "return Scm_OffsetToInteger(obj->vfs.f_bfree);")
+    (bavail   :setter #f
+              :getter "return Scm_OffsetToInteger(obj->vfs.f_bavail);")
+    (files    :setter #f
+              :getter "return Scm_OffsetToInteger(obj->vfs.f_files);")
+    (ffree    :setter #f
+              :getter "return Scm_OffsetToInteger(obj->vfs.f_ffree);")
+    (favail   :setter #f
+              :getter "return Scm_OffsetToInteger(obj->vfs.f_favail);")
+    (fsid     :setter #f
+              :getter "return Scm_MakeIntegerU(obj->vfs.f_fsid);")
+    (flag     :setter #f
+              :getter "return Scm_MakeIntegerU(obj->vfs.f_flag);")
+    (namemax  :setter #f
+              :getter "return Scm_MakeIntegerU(obj->vfs.f_namemax);")
+    )))
+             
+(define-cproc sys-statvfs (path::<const-cstring>)
+  (let* ([vfs::ScmSysStatvfs* (SCM_NEW ScmSysStatvfs)]
+         [r::int 0])
+    (SCM_SET_CLASS vfs SCM_CLASS_SYS_STATVFS)
+    (SCM_SYSCALL r (statvfs path (& (-> vfs vfs))))
+    (when (< r 0) (Scm_SysError "statvfs failed on %s" path))
+    (return (SCM_OBJ vfs))))
 
 ;;---------------------------------------------------------------------
 ;; sys/times.h
