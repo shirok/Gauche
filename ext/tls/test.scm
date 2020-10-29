@@ -87,6 +87,7 @@
           (print #"    exec \"~|openssl-cmd|\" \"$@\"")
           (print  "fi")]
          [else
+          (print "echo \"Starting openssl in `pwd`\" >&2")
           (print #"exec \"~|openssl-cmd|\" \"$@\"")])))
     (sys-chmod "kick_openssl.sh" #o755))
 
@@ -95,7 +96,7 @@
           (run-process `(./ssltest
                          ,@(cond-list [openssl-cmd "--exttest"]))
                        :directory "axTLS/ssl"
-                       :output "ssltest.log"
+                       ;:output "ssltest.log"
                        :wait #t)))
 
   ;; On MSYS (mintty), winpty with '-Xallow-non-tty' option changes tty

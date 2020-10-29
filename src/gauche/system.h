@@ -118,7 +118,9 @@ SCM_EXTERN ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
 
 typedef struct ScmSysStatvfsRec {
     SCM_HEADER;
+#if HAVE_SYS_STATVFS_H
     struct statvfs vfs;
+#endif
 } ScmSysStatvfs;
 
 SCM_CLASS_DECL(Scm_SysStatvfsClass);
