@@ -305,6 +305,16 @@
                     (sys-fstatvfs path-or-port))
       (* (~ statvfs'frsize)
          (~ statvfs'bfree)))]
+   [gauche.os.windows
+    (use os.windows)
+    (let1 path (cond [(string? path-or-port) path-or-port]
+                     [(and (port? path-or-port)
+                           (port-file-number path-or-port))
+                      (port-name path-or-port)]
+                     [else
+                      (error "file-space: Invalid or unsupported path-or-port:"
+                             path-or-port)])
+      (list-ref (sys-get-disk-free-space-ex path) 2))]
    [else
     (error "file-space isn't supported on this platform yet.")]))
 
