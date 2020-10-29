@@ -788,6 +788,16 @@
     (when (< r 0) (Scm_SysError "statvfs failed on %s" path))
     (return (SCM_OBJ vfs))))
 
+(define-cproc sys-fstatvfs (port-or-fd)
+  (let* ([vfs::ScmSysStatvfs* (SCM_NEW ScmSysStatvfs)]
+         [fd::int (Scm_GetPortFd port-or-fd FALSE)]
+         [r::int 0])
+    (SCM_SET_CLASS vfs SCM_CLASS_SYS_STATVFS)
+    (cond [(< fd 0) (return SCM_FALSE)]
+          [else (SCM_SYSCALL r (fstatvfs fd (& (-> vfs vfs))))
+                (when (< r 0) (Scm_SysError "fstatvfs failed for %d" fd))
+                (return (SCM_OBJ vfs))])))
+
 ;;---------------------------------------------------------------------
 ;; sys/times.h
 
