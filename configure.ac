@@ -400,6 +400,7 @@ AC_CHECK_HEADERS(time.h sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h)
 AC_CHECK_HEADERS(unistd.h rpc/types.h malloc.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
 AC_CHECK_HEADERS(pty.h util.h bsd/libutil.h libutil.h sys/loadavg.h sys/resource.h)
+AC_CHECK_HEADERS(sys/statvfs.h)
 
 dnl glibc specific
 AC_CHECK_HEADERS(fpu_control.h)

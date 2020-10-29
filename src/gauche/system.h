@@ -36,6 +36,10 @@
 
 /* This file provides some OS abstraction layer for Gauche. */
 
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+
 /*==============================================================
  * System call wrapper
  */
