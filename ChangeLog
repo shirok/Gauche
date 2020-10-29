@@ -1,5 +1,7 @@
 2020-10-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-170.scm: Catch up with the final srfi.
+
 	* src/libsys.scm: Add <sys-statvfs> class and sys-statvfs(2) interface.
 
 2020-10-20  Shiro Kawai  <shiro@acm.org>

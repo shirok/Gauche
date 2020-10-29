@@ -11,9 +11,12 @@
   (use file.util)
   (export posix-error? posix-error-name posix-error-message
 
+          binary-input textual-input
+          binary-output textual-output
+          binary-input/output
+          buffer-none buffer-block buffer-line
+          open/append open/create open/exclusive open/nofollow open/truncate
           open-file fd->port
-          open/read open/write open/read+write open/append
-          open/create open/exclusive open/nofollow open/truncate
 
           create-directory
           create-fifo
@@ -24,7 +27,7 @@
           delete-directory
           set-file-mode
           set-file-owner owner/unchanged group/unchanged
-          set-file-timespecs
+          set-file-timespecs time/now time/unchanged
           truncate-file
 
           file-info
@@ -56,6 +59,7 @@
           close-directory
 
           real-path
+          file-space
 
           temp-file-prefix
           create-temp-file
@@ -108,12 +112,18 @@
 
 ;; 3.2 I/O
 
-(define-constant open/read       O_RDONLY)
-(define-constant open/write      O_WRONLY)
-(define-constant open/read+write O_RDWR)
-(define-constant open/append     O_APPEND)
-(define-constant open/create     O_CREAT)
-(define-constant open/exclusive  O_EXCL)
+(define-constant binary-input 'binary-input)
+(define-constant binary-output 'binary-output)
+(define-constant textual-input 'textual-input)
+(define-constant textual-output 'textual-output)
+(define-constant binary-input/output 'binary-input/output)
+(define-constant buffer-none 'buffer-none)
+(define-constant buffer-block 'buffer-block)
+(define-constant buffer-line 'buffer-line)
+
+(define-constant open/append O_APPEND)
+(define-constant open/create O_CREAT)
+(define-constant open/exclusive O_EXCL)
 (define-constant open/nofollow   (global-variable-ref 
                                   (find-module 'gauche.fcntl)
                                   'O_NOFOLLOW
@@ -122,13 +132,15 @@
 
 (define (open-file fname port-type flags
                    :optional (permission-bits #o666) 
-                             (buffer-mode 'buffer-block))
-  (%fd->port (sys-open fname flags permission-bits) port-type buffer-mode #t))
+                             (buffer-mode buffer-block))
+  (define xflags
+    (case port-type
+      [(binary-input textual-input) (logior flags O_RDONLY)]
+      [(binary-output textual-output) (logior flags O_WRONLY)]
+      [(binary-input/output) (logior flags O_RDWR)]))
+  (fd->port (sys-open fname xflags permission-bits) port-type buffer-mode))
 
-(define (fd->port fd port-type :optional (buffer-mode 'buffer-block))
-  (%fd->port fd port-type buffer-mode #f))
-
-(define (%fd->port fd port-type bufmode owner?)
+(define (fd->port fd port-type :optional (buffer-mode buffer-block))
   (define (%bufmode sym in?)
     (ecase sym
       [(buffer-none)  :none]
@@ -137,17 +149,17 @@
   ;; We don't distinguish textual/binary port.
   (ecase port-type
     [(binary-input textual-nput)
-     (open-input-fd-port fd :buffering (%bufmode bufmode #t) :owner? owner?)]
+     (open-input-fd-port fd :buffering (%bufmode buffer-mode #t) :owner? #t)]
     [(binary-output textual-output)
-     (open-output-fd-port fd :buffering (%bufmode bufmode #f) :owner? owner?)]
+     (open-output-fd-port fd :buffering (%bufmode buffer-mode #f) :owner? #t)]
     [(binary-input/output)
      (error "Bidirectional port is not supported yet.")]))
 
 ;; 3.3 File system
 
-(define (create-directory name :optional perm)
+(define (create-directory name :optional (perm #o775))
   (sys-mkdir name perm))
-(define (create-fifo name :optional perm)
+(define (create-fifo name :optional (perm #o664))
   (cond-expand
    [gauche.os.windows (error "create-fifo is not supported on this platform.")]
    [else (sys-mkfifo name perm)]))
@@ -173,7 +185,6 @@
 
 (define-constant time/now       'time/now)
 (define-constant time/unchanged 'time/unchanged)
-
 (define (set-file-timespecs fname :optional (atime 'time/now)
                                             (mtime 'time/now))
   (define-syntax argcheck
@@ -285,6 +296,13 @@
   (undefined))
 
 (define (real-path path) (sys-realpath path))
+
+(define (file-space path-or-port)
+  (let1 statvfs (if (string? path-or-port)
+                  (sys-statvfs path-or-port)
+                  (sys-fstatvfs path-or-port))
+    (* (~ statvfs'bsize)
+       (~ statvfs'bfree))))
 
 (define temp-file-prefix 
   (make-parameter (build-path (temporary-directory)
@@ -401,7 +419,7 @@
 
 (define (monotonic-time) 
   (receive (s ns) (sys-clock-gettime-monotonic)
-    (make-time 'time-monotonic s ns)))
+    (make-time 'time-monotonic ns s)))
 
 ;;
 ;; 3.11 Environment variables

@@ -2762,8 +2762,7 @@
                #t
                (let1 ff (call-with-temporary-filename
                          (^f (let1 z (open-file f 'binary-output
-                                                (logior open/read+write
-                                                        open/create
+                                                (logior open/create
                                                         open/exclusive)
                                                 #o600)
                                (close-port z)
