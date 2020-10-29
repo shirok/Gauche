@@ -43,9 +43,6 @@
           F_RDLCK  F_WRLCK  F_UNLCK
           O_RDONLY O_WRONLY O_RDWR   O_APPEND O_CREAT
           O_EXCL   O_ACCMODE O_TRUNC
-
-          <sys-statvfs>
-          sys-statvfs sys-fstatvfs
           )
   )
 (select-module gauche.fcntl)
@@ -178,6 +175,9 @@
                    (return (SCM_OBJ vfs))])))
    ) ; defined(HAVE_SYS_STATVFS_H)
  )
+
+(export-if-defined <sys-statvfs>
+                   sys-statvfs sys-fstatvfs)
 
 (inline-stub
  (declare-cfn Scm_Init_fcntl () ::void)
