@@ -181,9 +181,11 @@
 (define (%author-name)
   (or (and-let* ([git (find-file-in-paths "git" :extensions '("exe"))]
                  [name  (process-output->string '(git config user.name)
+                                                :error :null
                                                 :on-abnormal-exit :ignore)]
                  [ (and name (not (string-null? name))) ]
                  [email (process-output->string '(git config user.email)
+                                                :error :null
                                                 :on-abnormal-exit :ignore)]
                  [ (and email (not (string-null? email))) ])
         (write-to-string #"~name <~|email|>"))
