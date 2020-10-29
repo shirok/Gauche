@@ -298,11 +298,15 @@
 (define (real-path path) (sys-realpath path))
 
 (define (file-space path-or-port)
-  (let1 statvfs (if (string? path-or-port)
-                  (sys-statvfs path-or-port)
-                  (sys-fstatvfs path-or-port))
-    (* (~ statvfs'bsize)
-       (~ statvfs'bfree))))
+  (cond-expand
+   [gauche.sys.statvfs
+    (let1 statvfs (if (string? path-or-port)
+                    (sys-statvfs path-or-port)
+                    (sys-fstatvfs path-or-port))
+      (* (~ statvfs'bsize)
+         (~ statvfs'bfree)))]
+   [else
+    (error "file-space isn't supported on this platform yet.")]))
 
 (define temp-file-prefix 
   (make-parameter (build-path (temporary-directory)
