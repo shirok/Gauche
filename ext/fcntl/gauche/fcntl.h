@@ -55,4 +55,18 @@ SCM_CLASS_DECL(Scm_SysFlockClass);
 extern ScmObj Scm_MakeSysFlock(void);
 extern ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg);
 
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+
+typedef struct ScmSysStatvfsRec {
+    SCM_HEADER;
+    struct statvfs vfs;
+} ScmSysStatvfs;
+
+SCM_CLASS_DECL(Scm_SysStatvfsClass);
+#define SCM_CLASS_SYS_STATVFS    (&Scm_SysStatvfsClass)
+#define SCM_SYS_STATVFS(obj)     ((ScmSysStatvfs*)(obj))
+#define SCM_SYS_STATVFS_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_STATVFS))
+#endif  /* HAVE_SYS_STATVFS_H */
+
 #endif /* GAUCHE_FCNTL_H */

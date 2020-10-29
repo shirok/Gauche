@@ -67,7 +67,6 @@ check gauche.sys.crypt NULL HAVE_CRYPT
 check gauche.sys.symlink NULL HAVE_SYMLINK
 check gauche.sys.readlink NULL HAVE_READLINK
 check gauche.sys.select NULL HAVE_SELECT
-check gauche.sys.statvfs NULL HAVE_SYS_STATVFS_H
 
 check gauche.net.ipv6 gauche.net HAVE_IPV6
 check gauche.sys.openpty gauche.termios HAVE_OPENPTY
@@ -75,6 +74,7 @@ check gauche.sys.forkpty gauche.termios HAVE_FORKPTY
 check gauche.sys.syslog gauche.syslog HAVE_SYSLOG
 check gauche.sys.setlogmask gauche.syslog HAVE_SETLOGMASK
 check gauche.sys.fcntl gauche.fcntl HAVE_FCNTL
+check gauche.sys.statvfs gauche.fcntl HAVE_SYS_STATVFS_H
 
 mv $features_c_tmp $features_c
 mv $features_flags_tmp $features_flags

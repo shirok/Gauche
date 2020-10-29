@@ -36,10 +36,6 @@
 
 /* This file provides some OS abstraction layer for Gauche. */
 
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#endif
-
 /*==============================================================
  * System call wrapper
  */
@@ -115,16 +111,6 @@ SCM_CLASS_DECL(Scm_SysStatClass);
 #define SCM_SYS_STAT_STAT(obj) (&SCM_SYS_STAT(obj)->statrec)
 
 SCM_EXTERN ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
-
-typedef struct ScmSysStatvfsRec {
-    SCM_HEADER;
-    struct statvfs vfs;
-} ScmSysStatvfs;
-
-SCM_CLASS_DECL(Scm_SysStatvfsClass);
-#define SCM_CLASS_SYS_STATVFS    (&Scm_SysStatvfsClass)
-#define SCM_SYS_STATVFS(obj)     ((ScmSysStatvfs*)(obj))
-#define SCM_SYS_STATVFS_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_STATVFS))
 
 /*==============================================================
  * Time
