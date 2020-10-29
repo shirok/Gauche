@@ -303,7 +303,7 @@
     (let1 statvfs (if (string? path-or-port)
                     (sys-statvfs path-or-port)
                     (sys-fstatvfs path-or-port))
-      (* (~ statvfs'bsize)
+      (* (~ statvfs'frsize)
          (~ statvfs'bfree)))]
    [else
     (error "file-space isn't supported on this platform yet.")]))
