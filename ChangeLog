@@ -1,5 +1,7 @@
 2020-10-29  Shiro Kawai  <shiro@acm.org>
 
+	* ext/windows/windows.stub (sys-get-disk-free-space-ex): Added.
+
 	* src/libsys.scm, ext/fcntl/fcntl.scm: Move statvfs stuff to
 	  gauche.fcntl, for it is less frequently used.
 

@@ -40,6 +40,21 @@
 ;;  sys-get-osfhandle
 
 ;;====================================================================
+;; Fileapi
+;;
+
+(define-cproc sys-get-disk-free-space-ex (path::<const-cstring>)
+  (let* ([wpath::LPTSTR (SCM_MBS2WCS path)]
+         [avail::ULARGE_INTEGER]
+         [total::ULARGE_INTEGER]
+         [tfree::ULARGE_INTEGER]
+         [r::BOOL (GetDiskFreeSpaceEx wpath (& avail) (& total) (& tfree))])
+    (when (== r 0) (Scm_SysError "GetDiskFreeSpaceEx failed on path %s" path))
+    (return (SCM_LIST3 (Scm_OffsetToInteger (ref avail QuadPart))
+                       (Scm_OffsetToInteger (ref total QuadPart))
+                       (Scm_OffsetToInteger (ref tfree QuadPart))))))
+
+;;====================================================================
 ;; MessageBox
 ;;
 

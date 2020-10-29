@@ -35,6 +35,9 @@
 
 (define-module os.windows
   (export
+   ;; Fileapi
+   sys-get-disk-free-space-ex
+
    ;; MessageBox
    MB_ABORTRETRYIGNORE MB_CANCELTRYCONTINUE MB_HELP MB_OK MB_OKCANCEL
    MB_RETRYCANCEL MB_YESNO MB_YESNOCANCEL
