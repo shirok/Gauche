@@ -8795,8 +8795,13 @@ but sometimes this macro makes the imperative code more readable:
 @defunx generator-every pred gen
 [SRFI-158]
 @c MOD gauche.generator
+@c EN
 Like @code{any} and @code{every} (@pxref{Walking over lists}), but
 works on a generator.
+@c JP
+@code{any}、@code{every} (@pxref{Walking over lists}) と同じですが、
+ジェネレータに対して使えます。
+@c COMMON
 @end defun
 
 @defun generator-count pred gen
@@ -8815,6 +8820,38 @@ As a side effect, @var{gen} is exhausted.
 @defun generator-unfold gen unfold arg @dots{}
 [SRFI-158]
 @c MOD gauche.generator
+@c EN
+Apply @var{unfold} using the values generated from a generator @var{gen}
+as seeds.  It is equivalent to the following expression:
+@c JP
+@var{gen}が生成する値をseedとして@var{unfold}を適用します。次の式と同じです:
+@c COMMON
+
+@code{(@var{unfold} eof-object? identity (^_ (@var{gen})) (@var{gen}) @var{arg} @dots{})}
+
+@c EN
+The @var{unfold} procedure must have the signature
+@code{(unfold stop? mapper successor seed arg @dots{})}, like @code{unfold}
+in @code{scheme.list} (@pxref{R7RS lists}).
+@c JP
+@var{unfold}手続きは、
+@code{scheme.list}モジュールの@code{unfold}(@pxref{R7RS lists}参照)のように、
+次のとおり引数を取らなければなりません:
+@code{(unfold stop? mapper successor seed arg @dots{})}。
+@c COMMON
+
+@c EN
+It can be seen as a general method to convert a generator to a sequence,
+an inverse of @code{x->generator}.
+@c JP
+これはジェネレータをシーケンスに変換する一般的な方法と見ることができます。
+@code{x->generator}の反対です。
+@c COMMON
+
+@example
+(generator-unfold (x->generator "abc") string-unfold)
+  @result{} "abc"
+@end example
 @end defun
 
 
