@@ -349,11 +349,11 @@
 
 (define (umask) (sys-umask))
 
-(define (set-umask! umask) (sys-umask umask))
+(define (set-umask! umask) (sys-umask umask) (undefined))
 
 ;; srfi-170#current-directory is a subset of file.util#current-directory
 
-(define (set-current-directory! dir) (current-directory dir))
+(define (set-current-directory! dir) (current-directory dir) (undefined))
 
 (define (pid) (sys-getpid))
 
