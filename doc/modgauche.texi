@@ -6615,11 +6615,10 @@ after @code{dict-delete!} is guaranteed to return @code{#f}.
 @deftp {Module} gauche.fcntl
 @mdindex gauche.fcntl
 @c EN
-Provides an interface to @code{fcntl(2)}, including
-advisory file locking.
+Provides interface for low-level filesystem operations,
+including @code{fcntl(2)}.
 @c JP
-アドバイザリ・ファイルロックを含む、
-@code{fcntl(2)}へのインタフェースを提供します。
+@code{fcntl(2)}を含む、低レベルのファイルシステム操作のインタフェースを提供します。
 @c COMMON
 @end deftp
 
@@ -6977,6 +6976,143 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @c COMMON
 @end defivar
 @end deftp
+
+
+@defun sys-statvfs path
+@defunx sys-fstatvfs port-or-fd
+@c MOD gauche.fcntl
+@c EN
+Interface to POSIX @code{statvfs} and @code{fstatvfs}.
+
+Returns information about the filesystem where @var{path}, or
+a file associated to @var{port-or-fd}, as @code{<sys-statvfs>} instance
+described below.
+
+These procedures are only defined if the system supports them.
+You can use the feature identifier @code{gauche.sys.statvfs}
+for the availability (@pxref{Feature conditional}).
+@c JP
+POSIX @code{statvfs}および@code{fstatvfs}へのインタフェースです。
+
+@var{path}、もしくは@var{port-or-fd}に結びついたファイルが存在するファイルシステムの情報を
+下に説明する@code{<sys-statvfs>}のインスタンスとして返します。
+
+これらの手続きは対応するPOSIXシステムコールが提供されているシステムでのみ
+定義されます。使えるかどうかは、機能識別子@code{gauche.sys.statvfs}で
+検査できます (@ref{Feature conditional}参照)。
+@c COMMON
+
+@example
+(cond-expand
+  [gauche.sys.statvfs
+    (... code using sys-statvfs ...)]
+  [else
+    (... alternative code ...)])
+@end example
+@end defun
+
+@deftp {Builtin Class} <sys-statvfs>
+@clindex sys-statvfs
+@c MOD gauche.fcntl
+@c EN
+POSIX @code{struct statvfs}.
+This class is only defined if a feature @code{gauche.sys.statvfs} is
+provided.
+@c JP
+POSIXの@code{struct statvfs}です。
+機能識別子 @code{gauche.sys.statvfs}が提供されている場合のみ定義されます。
+@c COMMON
+
+@defivar {<sys-statvfs>} bsize
+@c EN
+Filesystem block size.
+@c JP
+ファイルシステムのブロックサイズ。
+@c COMMON
+@end defivar
+
+@defivar {<sys-statvfs>} frsize
+@c EN
+Fragment size.
+@c JP
+フラグメントサイズ。
+@c COMMON
+@end defivar
+
+@defivar {<sys-statvfs>} blocks
+@defivarx {<sys-statvfs>} bfree
+@defivarx {<sys-statvfs>} bavail
+@c EN
+Number of blocks, number of free blocks, and number of free blocks
+for unprivileged users, in @code{frsize} units.
+@c JP
+ファイルシステムが格納できるブロック数、未使用ブロック数、
+非特権ユーザが使える未使用ブロック数を、@code{frsize}を単位として表します。
+@c COMMON
+@end defivar
+
+@defivar {<sys-statvfs>} files
+@defivarx {<sys-statvfs>} ffree
+@defivarx {<sys-statvfs>} favail
+@c EN
+Number of inodes, number of free inodes, and number of free inodes
+for unprivileged users.
+@c JP
+ファイルシステム中の全inode数、未使用inode数、非特権ユーザが使える未使用inode数です。
+@c COMMON
+@end defivar
+
+@defivar {<sys-statvfs>} fsid
+@c EN
+An exact integer filesystem ID.  
+@c JP
+ファイルシステムID。正確な整数です。
+@c COMMON
+@end defivar
+
+@defivar {<sys-statvfs>} flag
+@c EN
+An exact integer, logical IOR of the bitflags.
+Portable bitflag values is provided with constants
+@code{ST_NOSUID} a @code{ST_RDONLY}.
+@c JP
+正確な整数。ビットフラグのORです。
+ポータブルなビットフラグ値として、定数@code{ST_NOSUID}と@code{ST_RDONLY}が定義されています。
+@c COMMON
+@end defivar
+
+@defivar {<sys-statvfs>} namemax
+@c EN
+Maximum filename length.
+@c JP
+ファイル名の長さの上限。
+@c COMMON
+@end defivar
+@end deftp
+
+@defvr {Constant} ST_NOSUID
+@defvrx {Constant} ST_RDONLY
+@c MOD gauche.fcntl
+@c EN
+Bitflag values that can be used in @code{flag} slot of @code{<sys-statvfs>}.
+These constants are only defined if a feature @code{gauche.sys.statvfs} is
+provided.
+
+If @code{ST_NOSUID} bit is on, suid and sgid bits of the files on this
+filesystem are ignored by @code{exec(3)}.
+
+If @code{ST_RDONLY} bit is on, the filesystem is mounted read-only. 
+@c JP
+@code{<sys-statvfs>}の@code{flag}スロットに使えるビットフラグ値です。
+これらは機能識別子 @code{gauche.sys.statvfs}が提供されている場合のみ定義されます。
+
+@code{ST_NOSUID}ビットが立っていたら、@code{exec(3)}はこのファイルシステム中のファイルの
+suidビットとsgidビットを無視します。
+
+@code{ST_RDONLY}ビットが立っていたら、このファイルシステムは読み取り専用でマウントされています。
+@c COMMON
+@end defvr
+
 
 @c ----------------------------------------------------------------------
 @node Generators, Hooks, Low-level file operations, Library modules - Gauche extensions
