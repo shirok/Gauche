@@ -173,11 +173,15 @@
              [else (SCM_SYSCALL r (fstatvfs fd (& (-> vfs vfs))))
                    (when (< r 0) (Scm_SysError "fstatvfs failed for %d" fd))
                    (return (SCM_OBJ vfs))])))
+
+   (define-enum ST_NOSUID)
+   (define-enum ST_RDONLY)
    ) ; defined(HAVE_SYS_STATVFS_H)
  )
 
 (export-if-defined <sys-statvfs>
-                   sys-statvfs sys-fstatvfs)
+                   sys-statvfs sys-fstatvfs
+                   ST_NOSUID ST_RDONLY)
 
 (inline-stub
  (declare-cfn Scm_Init_fcntl () ::void)
