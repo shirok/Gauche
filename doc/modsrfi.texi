@@ -7245,9 +7245,14 @@ the same as @var{hook}'s arity.
 
 @deftp {Module} srfi-174
 @mdindex srfi-174
-Supports timespec record commonly used in POSIX interface.
-In Gauche, the timespec object is the same as built-in @code{<time>} object
-of @code{time-utc} type.
+Note: This srfi is originally intended to be used with srfi-170
+(@pxref{POSIX API}), but it turned out this was not enough to support
+the latter--notably, we need srfi-19 type argument in the constructor.
+
+Consequently, it is likely that this srfi will be superseded later.
+We deprecate using this srfi; if you need a portable time representation,
+srfi-19 is the best choice at this moment.  @xref{Time data types and procedures},
+for the details.
 @end deftp
 
 @defun timespec secs nsecs
