@@ -57,6 +57,7 @@ srfi N is supported by Gauche.)
 * First-class dynamic extents::  srfi-154
 * Homogeneous numeric vector libraries::  srfi-160
 * Comparator sublibrary::       srfi-162
+* POSIX API::                   srfi-170
 * Hooks (srfi)::                srfi-173
 * POSIX timespecs::             srfi-174
 * ASCII character library::     srfi-175
@@ -6624,7 +6625,7 @@ This module only exports the procedures defined in @code{srfi-160}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Comparator sublibrary, Hooks (srfi), Homogeneous numeric vector libraries, Library modules - SRFIs
+@node Comparator sublibrary, POSIX API, Homogeneous numeric vector libraries, Library modules - SRFIs
 @section @code{srfi-162} - Comparator sublibrary
 @c NODE 比較器のサブライブラリ, @code{srfi-162} - 比較器のサブライブラリ
 
@@ -6668,7 +6669,461 @@ by @var{comparator}.  It is an error if @var{list} is empty.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Hooks (srfi), POSIX timespecs, Comparator sublibrary, Library modules - SRFIs
+@node POSIX API, Hooks (srfi), Comparator sublibrary, Library modules - SRFIs
+@section @code{srfi-170} - POSIX API
+
+@deftp {Module} srfi-170
+@mdindex srfi-170
+This module provides a portable interface to a part of POSIX API,
+mainly filesystem interface.
+
+In Gauche, it is a thin wrapper of Gauche's native system interface
+(@pxref{System interface}).  You may want to use this module for
+a portable code.
+@end deftp
+
+@subheading POSIX Error
+
+@defun posix-error? obj
+[SRFI-170]
+@c MOD srfi-170
+Returns @code{#t} iff @var{obj} is a condition thrown due to
+underlying POSIX-layer error.  On Gauche, POSIX-layer condition
+is the same as @code{<system-error>} (@pxref{Conditions}).
+@end defun
+
+@defun posix-error-name err
+[SRFI-170]
+@c MOD srfi-170
+The argument must be a POSIX-layer condition (@code{<system-error>} object).
+Returns the POSIX error name such as @code{ENOENT}.
+
+See also @code{sys-errno->symbol} (@pxref{System inquiry}).
+@end defun
+
+@defun posix-error-message err
+[SRFI-170]
+@c MOD srfi-170
+The argument must be a POSIX-layer condition (@code{<system-error>} object).
+Returns the error message describing the error.
+
+See also @code{sys-strerror} (@pxref{System inquiry}).
+@end defun
+
+@subheading I/O
+
+@defun open-file fname port-type flags :optional permission buffer-mode
+[SRFI-170]
+@c MOD srfi-170
+@end defun
+
+@defun fd->port fd port-type :optional buffer-mode
+[SRFI-170]
+@c MOD srfi-170
+@end defun
+
+@defvr {Constant} binary-input
+@defvrx {Constant} textual-input
+@defvrx {Constant} binary-output
+@defvrx {Constant} textual-output
+@defvrx {Constant} binary-input/output
+[SRFI-170]
+@c MOD srfi-170
+@end defvr
+
+@defvr {Constant} buffer-none
+@defvrx {Constant} buffer-block
+@defvrx {Constant} buffer-line
+[SRFI-170]
+@c MOD srfi-170
+@end defvr
+
+@defvr {Constant} open/append
+@defvrx {Constant} open/create
+@defvrx {Constant} open/exclusive
+@defvrx {Constant} open/nofollow
+@defvrx {Constant} open/truncate
+[SRFI-170]
+@c MOD srfi-170
+@end defvr
+
+@subheading File System
+
+@defun create-directory fname :optional permission
+@defunx create-fifo fname :optional permission
+@defunx create-hard-link old-fname new-fname
+@defunx create-symlink old-fname new-fname
+[SRFI-170]
+@c MOD srfi-170
+Corresponds to Gauche's built-in @code{sys-mkdir}, @code{sys-mkfifo},
+@code{sys-link} and @code{sys-symlink}.
+
+The default value of @var{permission} is @code{#o775} for 
+@code{create-directory}, and @code{#o664} for @code{create-fifo}
+(It's not optoinal for Gauche's built-in).
+
+On Windows, @code{create-fifo} and @code{create-symlink} are
+not supported.  Procedures exist, but raise an error when called.
+@end defun
+
+@defun read-symlink name
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-readlink}.
+@end defun
+
+@defun rename-file old new
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-rename}.
+@end defun
+
+@defun delete-directory name
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-rmdir}.  The directory must be empty.
+@end defun
+
+@defun set-file-owner fname uid gid
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-chown}.  The @var{uid} and @var{gid} arguments
+should be an integer uid/gid, or the value of the constant
+@code{owner/unchanged} and @code{group/unchanged}, respectively,
+to indicate to keep the original value.
+@end defun
+
+@defvr {Constant} owner/unchanged
+@defvrx {Constant} group/unchanged
+[SRFI-170]
+@c MOD srfi-170
+Constants to be passed as @var{uid} and @var{gid} arguments
+of @code{set-file-owner}, respectively.
+@end defvr
+
+
+@defun set-file-times funame :optional atime mtime
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-utime}.  The @var{atime} and @var{mtime}
+arguments must be a @code{<time>} object (@pxref{Time}), or
+either one of the values of constants @code{time/now} or
+@code{time/unchanged}.  The constant @code{time/now}
+indicates the time when the procedure is called,
+and the constant @code{time/unchanged} indicates the
+corresponding timestamp remains the same.
+@end defun
+
+@defvr {Constant} time/now
+@defvrx {Constant} time/unchanged
+[SRFI-170]
+@c MOD srfi-170
+Constants that can be passed to @var{atime} and @var{mtime}
+arguments of @code{set-file-times}.
+@end defvr
+
+@defun truncate-file fname-or-port len
+[SRFI-170]
+@c MOD srfi-170
+The first argument can be a string filename or a open port associated
+to a file.  If it is a filename, @code{sys-truncate} is called,
+and if it is a port, @code{sys-ftruncate} is called.
+@end defun
+
+@defun file-info fname-or-port follow?
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-stat}, @code{sys-lstat} or @code{sys-fstat}.
+
+The first argument can be a string filename or a open port associated
+to a file.  If it is a filename, @code{sys-stat} or @code{sys-lstat}
+is called depending on whether @var{follow?} is @code{#t} or @code{#f}.
+If it is a port, @code{sys-fstat} is called.
+
+Returns a file-info object, which is a @code{<sys-stat>} instance
+in Gauche (@pxref{File stats}).
+@end defun
+
+@defun file-info? obj
+[SRFI-170]
+@c MOD srfi-170
+Returns @code{#t} iff @var{obj} is a file-info object, which is
+a @code{<sys-stat>} instance in Gauche (@pxref{File stats}).
+@end defun
+
+@defun file-info:device file-info
+@defunx file-info:inode file-info
+@defunx file-info:mode file-info
+@defunx file-info:nlinks file-info
+@defunx file-info:uid file-info
+@defunx file-info:gid file-info
+@defunx file-info:rdev file-info
+@defunx file-info:size file-info
+@defunx file-info:blksize file-info
+@defunx file-info:blocks file-info
+@defunx file-info:atime file-info
+@defunx file-info:mtime file-info
+@defunx file-info:ctime file-info
+[SRFI-170]
+@c MOD srfi-170
+Accessorso of file-info object (@code{<sys-stat>}) (@pxref{File stats}).
+Access its @code{dev}, @code{ino}, @code{mode}, @code{nlink},
+@code{uid}, @code{gid}, @code{rdev}, @code{size},
+@code{blksize}, @code{blocks}, @code{atim}, @code{mtim}, @code{ctim}
+slots, respectively.
+
+Note: @code{<sys-stat>}'s @code{atime}, @code{mtime} and @code{ctime}
+contains integer for the backward compatibility, while
+@code{file-info:atime}, @code{file-info:mtime} and @code{file-info:ctime}
+returns @code{<time>} object.
+@end defun
+
+@defun file-info-directory? file-info
+@defunx file-info-fifo? file-info
+@defunx file-info-symlink? file-info
+@defunx file-info-regular? file-info
+@defunx file-info-socket? file-info
+@defunx file-info-device? file-info
+[SRFI-170]
+@c MOD srfi-170
+Returns true iff the file-info object (@code{<sys-stat>} is of the
+respective type.  (@code{file-info-device?} returns true if
+the file is either block or character device).
+It corresponds to the @code{type} slot of @code{<sys-stat>}.
+@end defun
+
+@defun set-file-mode fname mode-bits
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-chmod}.
+@end defun
+
+@defun directory-files dir :optional dotfiles?
+[SRFI-170]
+@c MOD srfi-170
+Returns a list of filenames in the directory named @var{dir}.
+Similar to @code{directory-list} in @code{file.util}
+(@pxref{Directory utilities}), but (1) it never includes
+@code{.} and @code{..} (as true value is given to @code{:children?}
+argument of @code{directory-list}), and (2) it doesn't include
+files beginning with @code{.} by default, unless @code{dotfiles?} is true.
+@end defun
+
+@defun make-directory-files-generator dir :optional dotfiles?
+[SRFI-170]
+@c MOD srfi-170
+Returns a generator (@pxref{Generators}) that generates file names
+in the directory named @var{dir}.  The names never include
+@code{.} and @code{..}, and the filenames beginning with @code{.} is
+omitted unless @var{dotfiles?} is true.
+@end defun
+
+@defun open-directory dir :optional dotfiles?
+@defunx read-directory dir-object
+@defunx close-directory dir-object
+[SRFI-170]
+@c MOD srfi-170
+This is a directory scanner API more close to POSIX @code{opendir},
+@code{readdir} and @code{closedir}.  A directory object is opened
+with @code{open-directory}, and its entries (filenames) can be read
+one by one using @code{read-directory}.  If the file names are exausted,
+@code{read-directory} returns an EOF object.  A directory object
+must be closed with @code{close-directory}.
+
+The filenames to be retrieved are the same as @code{directory-files}; that is,
+@code{.} and @code{..} are never included, and names beginning with @code{.}
+is exluded unless @var{dotfiles?} is true.
+@end defun
+
+@defun real-path path
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-realpath}.
+@end defun
+
+@defun file-space path-or-port
+[SRFI-170]
+@c MOD srfi-170
+Returns the free space of a file system where a file specified by
+@var{path-or-port} resides, in number of bytes.
+@end defun
+
+@deffn {Parameter} temp-file-prefix
+[SRFI-170]
+@c MOD srfi-170
+@end deffn
+
+@defun create-temp-file :optional prefix
+[SRFI-170]
+@c MOD srfi-170
+@end defun
+
+@defun call-with-temporary-filename maker :optional prefix
+[SRFI-170]
+@c MOD srfi-170
+@end defun
+
+@subheading Process state
+
+Note: For srfi-170's @code{current-directory}, we reuse
+@code{file.util}'s one.  @xref{Directory utilities}, for the description.
+
+@defun umask
+[SRFI-170]
+@c MOD srfi-170
+Returns the current umask value.
+Gauche's @code{sys-umask} without argument.
+@end defun
+
+@defun set-umask! mask
+[SRFI-170]
+@c MOD srfi-170
+Sets @var{mask}, which must be a nonnegative exact integer, 
+as the current umask.
+Gauche's @code{sys-umask}, except that it returns unspecified value.
+@end defun
+
+@defun set-current-directory! dir
+[SRFI-170]
+@c MOD srfi-170
+Sets the process's current working directory to @var{dir}.
+Gauche's @code{sys-chdir}.
+It can also be done with @code{current-working-directory} in @code{file.util}
+(@pxref{Directory utilities}).
+@end defun
+
+@defun pid
+[SRFI-170]
+@c MOD srfi-170
+Returns the current process id.  Gauche's @code{sys-getpid}.
+@end defun
+
+@defun nice :optional delta
+[SRFI-170]
+@c MOD srfi-170
+Increments the current process's nice value by @var{delta}, which must
+be an exact integer.  The lower the nice value is, the more chance
+the process gets run.  If omitted, @var{delta} is assumed to be 1.
+Gauche's @code{sys-nice}.
+@end defun
+
+@defun user-uid
+@defunx user-gid
+@defunx user-effective-uid
+@defunx user-effecitve-gid
+@defunx user-supplementary-gids
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-getuid}, @code{sys-getgid}, @code{sys-geteuid},
+@code{sys-getegid}, and @code{sys-getgroups}, respectievly.
+@end defun
+
+@subheading User and group database access
+
+@defun user-info uid-or-name
+[SRFI-170]
+@c MOD srfi-170
+Returns a user-info object, which is a @code{<sys-passwd>} instance
+in Gauche, of a user specified by @var{uid-or-name}, which must be
+an exact integer uid or a string username.
+If it is an uid, @var{sys-getpwuid} is called, and if it is a username
+@code{sys-getpwnam} is called.
+@end defun
+
+@defun user-info? obj
+[SRFI-170]
+@c MOD srfi-170
+Returns @code{#t} iff @var{obj} is a user-info object (@code{<sys-passwd>}).
+@end defun
+
+@defun user-info:name uinfo
+@defunx user-info:uid uinfo
+@defunx user-info:gid uinfo
+@defunx user-info:home-dir uinfo
+@defunx user-info:shell uinfo
+@defunx user-info:full-name uinfo
+[SRFI-170]
+@c MOD srfi-170
+Returns the value of @var{name}, @code{uid}, @code{gid}, @code{dir},
+@code{shell} and @var{gecos} slots of a user-info object (@code{<sys-passwd})
+@var{uinfo}.
+@end defun
+
+@defun user-info:parsed-full-name uinfo
+[SRFI-170]
+@c MOD srfi-170
+@end defun
+
+@defun group-info gid-or-name
+[SRFI-170]
+@c MOD srfi-170
+Returns a group-info object, which is a @code{<sys-group>} instance
+in Gauche, of a group specified by @var{gid-or-name}, which must be
+an exact integer gid or a string groupname.
+If it is an gid, @var{sys-getgrgid} is called, and if it is a groupname
+@code{sys-getgrnam} is called.
+@end defun
+
+@defun group-info? obj
+[SRFI-170]
+@c MOD srfi-170
+Returns @code{#t} iff @var{obj} is a group-info object (@code{<sys-group}).
+@end defun
+
+@defun group-info:name ginfo
+@defunx group-info:gid ginfo
+[SRFI-170]
+@c MOD srfi-170
+Returns the value of @code{name} and @code{gid} slot of a group info
+(@code{<sys-group>}).
+@end defun
+
+@subheading Time
+
+@defun posix-time
+[SRFI-170]
+@c MOD srfi-170
+Same as @code{current-time} (@pxref{Time}).  Return value is a @code{<time>}
+instance of @code{time-utc}.
+@end defun
+
+@defun monotonic-time
+[SRFI-170]
+@c MOD srfi-170
+Returns a @code{<time>} instance of @code{time-monotonic}, representing
+a elapsed time since an unspecified epoch.  It is guaranteed to monotonically
+increasing during the lifetime of the process, even if the system clock
+is modified.
+@end defun
+
+@subheading Environment variables
+
+@xref{Accessing environment variables}, for getting environment variables.
+This srfi defines the means to modify them.
+
+@defun set-enviroment-variable! name value
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-setenv} with the third argument being @code{#t}
+(overwrite the existing value).
+@end defun
+
+@defun delete-environment-variable! name
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-unsetenv}.
+@end defun
+
+@subheading Terminal device control
+
+@defun terminal? port
+[SRFI-170]
+@c MOD srfi-170
+Gauche's @code{sys-isatty}.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Hooks (srfi), POSIX timespecs, POSIX API, Library modules - SRFIs
 @section @code{srfi-173} - Hooks (srfi)
 @c NODE フック(srfi), @code{srfi-173} - フック(srfi)
 

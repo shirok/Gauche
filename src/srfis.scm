@@ -1225,6 +1225,16 @@ Supported by the module @code{srfi-162}.  @xref{Comparator sublibrary}.
 モジュール@code{srfi-162}でサポートされます。@ref{Comparator sublibrary}参照。
 
 
+srfi-170, srfi-170
+()
+
+POSIX API
+Supported by the module @code{srfi-170}.  @xref{POSIX API}.
+
+POSIX API
+モジュール@code{srfi-170}でサポートされます。@ref{POSIX API}参照。
+
+
 srfi-173, srfi-173
 ()
 

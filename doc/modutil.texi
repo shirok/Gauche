@@ -8504,12 +8504,18 @@ signaled.
 
 This function is in ChezScheme, MzScheme and some other Scheme
 implementations.
+
+SRFI-170 defines @code{current-directory} without arguments, to return
+the current working directory.
 @c JP
 引数無しで呼ばれた場合、カレントディレクトリを返します。
 文字列@var{new-directory}が与えられた場合はプロセスのカレントディレクトリを
 @var{new-directory}に変更します。変更が出来なかった場合はエラーとなります。
 
 この関数はChezSchemeやMzSchemeなどいくつかのScheme処理系に見られます。
+
+SRFI-170は引数を取らない@code{current-directory}を定義しています。
+現在のディレクトリを返すのは一緒です。
 @c COMMON
 @end defun
 
