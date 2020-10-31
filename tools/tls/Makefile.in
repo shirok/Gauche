@@ -1,0 +1,42 @@
+#
+# Build mbedtls along Gauche
+#
+
+.PHONY: mbedtls
+
+LN_S = @LN_S@
+
+FETCHED = mbedtls-$(MBEDTLS_VERSION) v$(MBEDTLS_VERSION).tgz
+CONFIG_GENERATED = Makefile
+
+MBEDTLS_VERSION = 2.24.0
+MBEDTLS_SOURCE  = https://github.com/ARMmbed/mbedtls/archive/v$(MBEDTLS_VERSION).tar.gz
+
+MBEDTLS_LIBS = libmbedtls.a libmbedx509.a libmbedcrypto.a
+
+all: mbedtls
+
+mbedtls: include/mbedtls $(MBEDTLS_LIBS)
+
+include/mbedtls: mbedtls-$(MBEDTLS_VERSION)
+	mkdir -p include
+	cd include && $(LN_S) ../mbedtls-$(MBEDTLS_VERSION)/include/mbedtls .
+
+$(MBEDTLS_LIBS): mbedtls-$(MBEDTLS_VERSION)
+	cd mbedtls-$(MBEDTLS_VERSION) && cmake . && make -f CMakefiles/Makefile2 library/all && cd library && cp $(MBEDTLS_LIBS) ../..
+
+mbedtls-$(MBEDTLS_VERSION):
+	curl -f -L -o v$(MBEDTLS_VERSION).tgz $(MBEDTLS_SOURCE)
+	tar xzvf v$(MBEDTLS_VERSION).tgz
+	rm v$(MBEDTLS_VERSION).tgz
+
+clean:
+	rm -rf include/mbedtls
+	rm -rf $(MBEDTLS_LIBS)
+	cd mbedtls-$(MBEDTLS_VERSION) && $(MAKE) -q clean ; true
+
+distclean: clean
+	rm -rf $(FETCHED)
+
+maintainer-clean: clean
+	rm -rf $(FETCHED) $(CONFIG_GENERATED)

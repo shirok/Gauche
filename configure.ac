@@ -933,7 +933,9 @@ AC_CONFIG_FILES([
           examples/standalone/Makefile
           gc/configure.gnu-gauche:tools/gc-configure.gnu-gauche.in
           Gauche.spec
+          tools/Makefile
           tools/scoop/Makefile
+          tools/tls/Makefile
          ])
 AC_CONFIG_COMMANDS([VERSION],
                    [echo "${GAUCHE_VERSION}" > VERSION],

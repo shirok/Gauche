@@ -1,3 +1,8 @@
+2020-10-30  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.ac, tools/tls: Adding configure option to build mbedtls
+	  inside the build tree.
+
 2020-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/windows/windows.stub (sys-get-disk-free-space-ex): Added.
