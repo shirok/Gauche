@@ -17,9 +17,10 @@ TLSLIBS=axtls,mbedtls
 AC_ARG_WITH(tls,
   AS_HELP_STRING([--with-tls=TLSLIB,...],
   [Select which TLS libraries to be compiled.  Currently we support 'axtls'
-   (to use bundled source of Cameron Rich's axTLS) and 'mbedtls' (to use mbed
-   TLS).  By default, available libraries are auto-detected.  Specify this
-   option only when you want to exclude some of the libraries.
+   (to use bundled source of Cameron Rich's axTLS), 'mbedtls' (to use mbed
+   TLS in the system library), and 'mbedtls-internal' (to use mbed TLS 
+   compiled with Gauche).
+   By default, available libraries are auto-detected.
    Specify --with-tls=no to disable tls support.]),
   [
     AS_CASE([$with_tls],
@@ -28,28 +29,44 @@ AC_ARG_WITH(tls,
                  [TLSLIBS="$with_tls"])
   ])
 
+dnl Validate TLSLIB and handle mbedtls-internal
+mbed_specified=no
 
 GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes="@%:@"
 GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no=
 
-AC_ARG_WITH(internal-mbedtls,
-  AS_HELP_STRING([--with-internal-mbedtls],
-  [Download and build mbedtls, instead of using system's mbedtls library.
-   Use this only if you can't count on the deployment target having mbedtls
-   runtime.  The resulting DSO file (rfc--tls--mbedtls.{so,dll}) is covered
-   with Apache License 2.0 of MbedTLS.]),
-  [
-    AS_CASE([$with_internal_mbedtls],
-      [no|none], [],
-                 [MBEDTLS_CFLAGS="-I ../../tools/tls/include"
-                  MBEDTLS_LDFLAGS="-L ../../tools/tls"
-                  GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes=
-                  GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no="@%:@"])
-  ])
+for tls in `echo $TLSLIBS | tr ',' ' '`
+do
+AS_CASE([$tls],
+  [axtls], [],
+  [mbedtls],
+           [AS_IF([test $mbed_specified = yes], [
+              AC_MSG_ERROR([You can only specify either one of 'mbedtls' or
+                           'mbedtls-internal' in --with-tls option])
+            ], [
+              mbed_specified=yes
+            ])],
+  [mbedtls-internal],
+           [AS_IF([test $mbed_specified = yes], [
+              AC_MSG_ERROR([You can only specify either one of 'mbedtls' or
+                            'mbedtls-internal' in --with-tls option])
+            ], [
+              mbed_specified=yes
+              MBEDTLS_CFLAGS="-I ../../tools/tls/include"
+              MBEDTLS_LDFLAGS="-L ../../tools/tls"
+              GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes=
+              GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no="@%:@"
+            ])],
+           [
+            AC_MSG_ERROR([Invalid ---with-tls choice; it must be comma-separated
+                          words of axtls, mbedtls or mbedtls-internal.])
+           ])
+done
 
 AC_SUBST(GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes)
 AC_SUBST(GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no)
 
+dnl For the backward compatibility
 AC_ARG_ENABLE(tls,
   AS_HELP_STRING([--enable-tls=TLSLIB,...],
   [Obsoleted.  Same as --with-tls=TLSLIB,... for the compatibility.]),
@@ -86,15 +103,15 @@ AS_IF([echo $TLSLIBS | grep -F -w -q axtls], [
 
 dnl mbedtls
 AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
-  CFLAGS_SAVE=$(CFLAGS)
-  CFLAGS="$(MBEDTLS_INCLUDES) $(CFLAGS)"
+  CFLAGS_SAVE=$CFLAGS
+  CFLAGS="$MBEDTLS_INCLUDES $CFLAGS"
   AC_CHECK_HEADER([mbedtls/net_sockets.h],
     [AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1, 
                [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
     [AC_CHECK_HEADER([mbedtls/net.h],
       [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
       [mbedtls_unavailable=yes])])
-  CFLAGS=$(CFLAGS_SAVE)
+  CFLAGS=${CFLAGS_SAVE}
 
   dnl We don't want to include mbedtls libraries in generic LIBS
   LDFLAGS_SAVE=${LDFLAGS}
