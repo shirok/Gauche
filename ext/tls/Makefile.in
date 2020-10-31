@@ -18,6 +18,7 @@ TLS_OBJECTS = rfc--tls.$(OBJEXT) \
               $(EXTRA_OBJECTS)
 
 MBED_OBJECTS = tls-mbed.$(OBJEXT)
+MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
 MBEDTLS_LIBS = @MBEDTLS_LIBS@
 SYSTEM_CERT_LIBS = @SYSTEM_CERT_LIBS@
 
@@ -56,8 +57,13 @@ SSLTEST_GENERATED = axTLS/ssl/test/ssltest.mod.c
 SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 
 @GAUCHE_TLS_SWITCH_AXTLS_TEST@EXTRA_TEST_BIN = $(SSLTEST)
-
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
+
+MBEDTLS_INTERNAL = $(top_builddir)/tools/libmbedtls.a
+
+@GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes@MBED_DEP = $(MBEDTLS_INTERNAL)
+@GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no@MBED_DEP =
+
 
 GENERATED = Makefile kick_openssl.sh
 XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs
@@ -73,11 +79,15 @@ tls.sci rfc--tls.c : tls.scm
 
 tls.o : tls.c load_system_cert.c
 
-rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS)
+rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS) $(MBED_DEP)
 	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(EXT_LIBGAUCHE) \
 	   $(MBEDTLS_LIBS) $(SYSTEM_CERT_LIBS)
 
 tls-mbed.o : tls-mbed.c load_system_cert.c
+	$(COMPILE) $(MBEDTLS_CFLAGS) -c $(srcdir)/tls-mbed.c
+
+$(MBEDTLS_INTERNAL) :
+	cd $(top_builddir)/tools/tls; $(MAKE)
 
 # For out-of-source-tree build
 axtls_dirs :

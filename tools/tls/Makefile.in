@@ -12,26 +12,31 @@ CONFIG_GENERATED = Makefile
 MBEDTLS_VERSION = 2.24.0
 MBEDTLS_SOURCE  = https://github.com/ARMmbed/mbedtls/archive/v$(MBEDTLS_VERSION).tar.gz
 
-MBEDTLS_LIBS = libmbedtls.a libmbedx509.a libmbedcrypto.a
+MBEDTLS_LIBS_XTRA = libmbedx509.a libmbedcrypto.a
+MBEDTLS_LIBS = libmbedtls.a $(MBEDTLS_LIBS_XTRA)
 
 all: mbedtls
 
 mbedtls: include/mbedtls $(MBEDTLS_LIBS)
 
-include/mbedtls: mbedtls-$(MBEDTLS_VERSION)
-	mkdir -p include
+include/mbedtls: libmbedtls.a
+	rm -rf include
+	mkdir include
 	cd include && $(LN_S) ../mbedtls-$(MBEDTLS_VERSION)/include/mbedtls .
 
-$(MBEDTLS_LIBS): mbedtls-$(MBEDTLS_VERSION)
-	cd mbedtls-$(MBEDTLS_VERSION) && cmake . && make -f CMakefiles/Makefile2 library/all && cd library && cp $(MBEDTLS_LIBS) ../..
+$(MBEDTLS_LIBS_XTRA) : libmbedtls.a
+
+libmbedtls.a: mbedtls-$(MBEDTLS_VERSION)
+	cd mbedtls-$(MBEDTLS_VERSION) && cmake . && make -f CMakeFiles/Makefile2 library/all && cd library && cp $(MBEDTLS_LIBS) ../..
 
 mbedtls-$(MBEDTLS_VERSION):
 	curl -f -L -o v$(MBEDTLS_VERSION).tgz $(MBEDTLS_SOURCE)
 	tar xzvf v$(MBEDTLS_VERSION).tgz
 	rm v$(MBEDTLS_VERSION).tgz
+	echo 'set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")' >> mbedtls-$(MBEDTLS_VERSION)/library/CMakeLists.txt
 
 clean:
-	rm -rf include/mbedtls
+	rm -rf include
 	rm -rf $(MBEDTLS_LIBS)
 	cd mbedtls-$(MBEDTLS_VERSION) && $(MAKE) -q clean ; true
 
