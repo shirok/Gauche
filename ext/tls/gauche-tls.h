@@ -69,6 +69,14 @@
 
 #endif  /*GAUCHE_USE_MBEDTLS*/
 
+/* This is a 'success' code of AxTLS.  mbedtls x509 routine returns 0
+   on success, which happens to be the same as SSL_OK.
+   We just need this in case we're configured with mbedtls and without axtls.
+ */
+#ifndef SSL_OK
+#define SSL_OK 0
+#endif
+
 #ifndef GAUCHE_USE_AXTLS
 /* dummy symbols */
 #define SSL_CLIENT_AUTHENTICATION               0x00010000
