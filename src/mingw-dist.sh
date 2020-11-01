@@ -50,6 +50,7 @@ while [ "$#" -gt 0 ]; do
     --with-gl)   WITH_GL=yes; shift;;
     --with-installer) INSTALLER=yes; shift;;
     --with-mbedtls) MBEDTLS=yes; shift;;
+    --with-mbedtls=dll) MBEDTLS=dll; shift;;
     --with-zip) ZIP_ARCHIVE=yes; shift;;
     --skip-config) SKIP_CONFIG=yes; shift;;
     -*)
@@ -57,10 +58,16 @@ while [ "$#" -gt 0 ]; do
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
      echo "  --with-installer:  Creates binary installer using Wix.  'candle.exe' and"
      echo "      'light.exe' must be visible in PATH."
-     echo "  --with-mbedtls: Include MbedTLS.  MbedTLS library"
-     echo "      'mingw-w64-{i686|x86_64}-mbettls' must be installed."
+     echo "  --with-mbedtls: Include MbedTLS."
      echo "      If you create an installer with this option, the binary"
      echo "      will also be covered by Apache License 2.0 for MbedTLS."
+     echo "      This option comes with two flavors:"
+     echo "      * If you simply say --with-mbedtls, we build MbedTLS from source"
+     echo "        and bundle it with extension modules, so you don't need MbedTLS"
+     echo "        DLL on the system.  You need CMake, though."
+     echo "      * If you say --with-mbedtls=dll, we build to link with MbedTLS"
+     echo "        DLL installed on the system.  You need mingw-w64-{i686|x86_64}-mbedtls."
+     echo "        If you choose this option, those DLLs in turn depends on libgcc DLL."
      echo "  --with-zip:  Creates Zip archive using p7zip. '7z.exe' must be visible"
      echo "      in PATH."
      echo "  --skip-config:  Skip cleanup and configuration."
@@ -82,6 +89,8 @@ if [ "$INSTALLER" = yes ]; then
 fi
 
 if [ "$MBEDTLS" = yes ]; then
+  tlslibs=axtls,mbedtls-internal
+elif [ "$MBEDTLS" = dll ]; then
   tlslibs=axtls,mbedtls
 else
   tlslibs=axtls
@@ -139,9 +148,10 @@ case "$MSYSTEM" in
     mingw_dll="mingwm10.dll";;
 esac
 
-if [ "$MBEDTLS" = yes ]; then
-    # Note: mbedtls depends on libgcc
-    mingw_dll="$mingw_dll libmbedcrypto.dll libmbedtls.dll libmbedx509.dll libgcc_s_seh-1.dll"
+# If we use external mbedtls, we need these DLLs.
+# NB: those dlls also depend on libgcc.
+if [ "$MBEDTLS" = dll ]; then
+  mingw_dll="$mingw_dll libmbedcrypto.dll libmbedtls.dll libmbedx509.dll"
 fi
 
 if [ -n "$mingw_dll" ]; then
