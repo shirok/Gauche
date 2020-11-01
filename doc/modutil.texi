@@ -62,6 +62,7 @@
 * CSV tables::                  text.csv
 * Calculate difference of text streams::  text.diff
 * EDN parsing and construction::  text.edn
+* Running external editor::     text.external-editor
 * Localized messages::          text.gettext
 * Simple HTML document construction::  text.html-lite
 * Display with pager::          text.pager
@@ -23215,7 +23216,7 @@ displays:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node EDN parsing and construction, Localized messages, Calculate difference of text streams, Library modules - Utilities
+@node EDN parsing and construction, Running external editor, Calculate difference of text streams, Library modules - Utilities
 @section @code{text.edn} - EDN parsing and construction
 @c NODE EDNのパーズと構築, @code{text.edn} - EDNのパーズと構築
 
@@ -23690,11 +23691,104 @@ GaucheオブジェクトをEDNタグつきオブジェクトとして書き出�
 @end example
 @end deffn
 
+@c ----------------------------------------------------------------------
+@node Running external editor, Localized messages, EDN parsing and construction, Library modules - Utilities
+@section @code{text.external-editor} - Running external editor
+@c NODE 外部エディタの起動, @code{text.external-editor} - 外部エディタの起動
 
+@deftp {Module} text.external-editor
+@mdindex text.external-editor
+A convenience module to invoke external editor program.
+This is mainly to be used from REPL, but can be useful for
+other purposes.
+@end deftp
 
+@defun ed path-or-proc :key editor load-after
+@c MOD text.external-editor
+Starts an external editor.  The editor program path is determined
+in the following order:
+
+@itemize @bullet
+@item
+The @var{editor} keyword argument, if it's a string.
+@item
+The value of @code{*editor*} in the user module, if defined.
+@item
+The value of the environment variable @code{GAUCHE_EDITOR}.
+@item
+The value of the environment variable @code{EDITOR}.
+@item
+If none works, the behavior depends on the value of :editor keyword
+argument:
+@table @code
+@item #f
+Just returns @code{#f}.
+@item error
+Throws an error.
+@item ask
+Asks the user.
+@item message
+Prints message and returns @code{#f}.
+@end table
+@end itemize
+
+Returns @code{#t} for normal termination.
+
+The editor program may be called in one of the following way:
+
+@example
+EDITOR filename
+EDITOR +lineno filename
+@end example
+
+The latter expects to locate the cursor on the specified line number
+in the filename.
+
+The file to open is determined by a generic function @code{ed-pick-file}.
+It should return @code{(@var{filename} @var{lineno})},
+or @code{#f} to indicate that it couldn't determine the file to edit.
+
+The @var{load-after} argument controls whether the file is loaded
+into the process after the file is modified.  It must be one of
+the following values:
+@table @code
+@item #t
+Load the file once editor exits and the file is modified.
+@item #f
+Do not load the file.
+@item ask
+Ask the user if the file should be loaded or not.
+@end table
+
+NB: Common Lisp's @code{ed} can be invoked without argument.  For our usage,
+though, that feature doesn't seem too useful---it's more likely that
+repl IS inside an editor so we only need to open a specific file in
+a buffer.  Emacsclient requires filename, so it further complicates things.
+For now we just require one argument.
+@end defun
+
+@defun ed-string string :key editor
+@c MOD text.external-editor
+Invoke an external editor (as described in @code{ed}) with @var{string}
+being the initial content.  Once editor exits,
+returns the edited content as a string.
+@end defun
+
+@deffn {Generic Function} ed-pick-file obj
+@c MOD text.external-editor
+Determine what to edit.  It must return a list of
+filename and line number, or @code{#f} if it can't find appropriate file to
+edit.
+
+Methos for strings, procedures and @code{<top>} are already defined.
+If @var{obj} is a string, it is taken as a filename.
+If @var{obj} is a procedure and its source location is available,
+the source file and the location is returned.
+Otherwise, @code{#f} is returned.
+@end deffn
 
 @c ----------------------------------------------------------------------
-@node Localized messages, Simple HTML document construction, EDN parsing and construction, Library modules - Utilities
+@node Localized messages, Simple HTML document construction, Running external editor, Library modules - Utilities
 @section @code{text.gettext} - Localized messages
 @c NODE 地域化メッセージ, @code{text.gettext} - 地域化メッセージ
 
