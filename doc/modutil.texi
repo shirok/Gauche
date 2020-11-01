@@ -64,6 +64,7 @@
 * EDN parsing and construction::  text.edn
 * Localized messages::          text.gettext
 * Simple HTML document construction::  text.html-lite
+* Display with pager::          text.pager
 * Parsing input stream::        text.parse
 * Showing progress on text terminals::  text.progress
 * SQL parsing and construction::  text.sql
@@ -23952,7 +23953,7 @@ accessor procedure by yourself.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple HTML document construction, Parsing input stream, Localized messages, Library modules - Utilities
+@node Simple HTML document construction, Display with pager, Localized messages, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
 @c NODE シンプルなHTMLドキュメントの構築, @code{text.html-lite} - シンプルなHTMLドキュメントの構築
 
@@ -24260,7 +24261,52 @@ approach.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Parsing input stream, Showing progress on text terminals, Simple HTML document construction, Library modules - Utilities
+@node Display with pager, Parsing input stream, Simple HTML document construction, Library modules - Utilities
+@section @code{text.pager} - Display with pager
+@c NODE ページャーを用いた出力, @code{text.pager} - ページャーを用いた出力
+
+@deftp {Module} text.pager
+@mdindex text.pager
+A convenience module to present long text nicely to the user.
+@end deftp
+
+@deffn {Parameter} pager-program
+@c MOD text.pager
+A parameter containing a list of pager program and its arguments
+(e.g. @code{("/usr/bin/less" "-M")}).
+
+The program must take input from the standard input.
+
+The default value is taken from the environment variable @code{PAGER}
+if set, or either @code{less} or @code{more} if those programs are
+available on the system.
+@end deffn
+
+@defun display/pager string
+@c MOD text.pager
+Display @var{string} by a pager subprocess specified by the parameter
+@code{pager-program}.  The procedure returns when the subprocess exits.
+
+If the terminal is not suitable for control
+(e.g. @code{TERM} is @code{dumb} or @code{emacs}), @var{string} is
+simply @code{display}ed without a pager.
+
+If you're running MinGW version of @code{gosh} on mintty,
+calling subprocess pager doesn't work well, so the procedure
+emulate the pager behavior (@code{pager-program} is ignored).
+@end defun
+
+@defun with-output-to-pager thunk
+@c MOD text.pager
+Call @var{thunk} with its current output port to a string buffer,
+then show the buffered output using @code{display/pager}.
+
+Note that the output begins after @var{thunk} returns.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Parsing input stream, Showing progress on text terminals, Display with pager, Library modules - Utilities
 @section @code{text.parse} - Parsing input stream
 @c NODE 入力ストリームのパージング, @code{text.parse} - 入力ストリームのパージング
 
