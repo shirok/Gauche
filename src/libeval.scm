@@ -444,10 +444,11 @@
            (let loop2 ()
              (prompter)
              (let1 exp (reader)
-               (and (not (eof-object? exp))
-                    (receive results (evaluator exp (vm-current-module))
-                      (apply printer results)
-                      (loop2)))))))
+               (if (eof-object? exp)
+                 (begin (newline) #f)
+                 (receive results (evaluator exp (vm-current-module))
+                   (apply printer results)
+                   (loop2)))))))
        (loop1)))))
 
 ;;;
