@@ -1724,14 +1724,31 @@ identifier.  Returns @code{#f} otherwise.
 
 Note: In R6RS, @code{identifier?} only returns @code{#t} for an
 identifier object, which is of a disjoint type from symbols.
+You can use @code{wrapped-identifier?} below to check if an object
+is an identifier other than a symbol.
 @c JP
 @var{obj}がシンボルもしくは包まれた識別子である場合に@code{#t}を、
 そうでなければ@code{#f}を返します。
 
 R6RSでは、@code{identifier?}はシンボルとdisjointな型を持つ「識別子オブジェクト」
 についてのみ@code{#t}を返す、と規定されています。
+オブジェクトがシンボルでない識別子であることを確かめたい場合は、
+下の@code{wrapped-identifier?}が使えます。
 @c COMMON
 @end defun
+
+@defun wrapped-identifier? obj
+@c EN
+Returns @code{#t} iff @var{obj} is a wrapped identifier.
+
+This is R6RS's @code{identifier?}.
+@c JP
+@var{obj}が包まれた識別子なら@code{#t}を、そうでなければ@code{#f}を返します。
+
+R6RSの@code{identifier?}に相当します。
+@c COMMON
+@end defun
+
 
 @defun identifier->symbol obj
 @c EN

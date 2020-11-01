@@ -5386,7 +5386,7 @@ An error is signaled if other symbols are passed.
 
 @c ----------------------------------------------------------------------
 @node Purely functional random-access pairs and lists, Portable runtime environment inquiry, Basic socket interface, Library modules - SRFIs
-@section @code{srfi-101} - Purely functional random-access
+@section @code{srfi-101} - Purely functional random-access pairs and lists
 @c NODE 純粋に関数的でランダムアクセス可能なペアとリスト, @code{srfi-101} - 純粋に関数的でランダムアクセス可能なペアとリスト
 
 @deftp {Module} srfi-101
