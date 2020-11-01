@@ -496,8 +496,8 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c \
-	    libmacbase.c libmacro.c \
-	    libmisc.c libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
+	    libmacbase.c libmacro.c libmisc.c libmod.c libnum.c \
+	    libobj.c libparam.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
 	           features.c features.flags
