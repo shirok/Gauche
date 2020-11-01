@@ -59,7 +59,7 @@ SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 @GAUCHE_TLS_SWITCH_AXTLS_TEST@EXTRA_TEST_BIN = $(SSLTEST)
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
 
-MBEDTLS_INTERNAL = $(top_builddir)/tools/libmbedtls.a
+MBEDTLS_INTERNAL = $(top_builddir)/tools/tls/include/mbedtls/ssl.h
 
 @GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes@MBED_DEP = $(MBEDTLS_INTERNAL)
 @GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no@MBED_DEP =
@@ -79,11 +79,11 @@ tls.sci rfc--tls.c : tls.scm
 
 tls.o : tls.c load_system_cert.c
 
-rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS) $(MBED_DEP)
+rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS)
 	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(EXT_LIBGAUCHE) \
 	   $(MBEDTLS_LIBS) $(SYSTEM_CERT_LIBS)
 
-tls-mbed.o : tls-mbed.c load_system_cert.c
+tls-mbed.o : tls-mbed.c load_system_cert.c $(MBED_DEP)
 	$(COMPILE) $(MBEDTLS_CFLAGS) -c $(srcdir)/tls-mbed.c
 
 $(MBEDTLS_INTERNAL) :
