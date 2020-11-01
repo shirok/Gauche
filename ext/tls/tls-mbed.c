@@ -129,7 +129,7 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     }
 
     if (t->conn.fd >= 0) {
-        Scm_SysError("attempt to connect already-connected TLS %S", t);
+        Scm_Error("attempt to connect already-connected TLS %S", t);
     }
     t->conn.fd = fd;
 
@@ -195,7 +195,7 @@ static ScmObj mbed_accept(ScmTLS* tls, int fd)
     }
 
     if (t->conn.fd >= 0) {
-        Scm_SysError("attempt to connect already-connected TLS %S", t);
+        Scm_Error("attempt to connect already-connected TLS %S", t);
     }
     t->conn.fd = fd;
 
