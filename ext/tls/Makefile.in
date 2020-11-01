@@ -81,7 +81,7 @@ tls.o : tls.c load_system_cert.c
 
 rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS)
 	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(EXT_LIBGAUCHE) \
-	   $(MBEDTLS_LIBS) $(SYSTEM_CERT_LIBS)
+	   $(MBEDTLS_LIBS) $(LIBS) $(SYSTEM_CERT_LIBS)
 
 tls-mbed.o : tls-mbed.c load_system_cert.c $(MBED_DEP)
 	$(COMPILE) $(MBEDTLS_CFLAGS) -c $(srcdir)/tls-mbed.c
