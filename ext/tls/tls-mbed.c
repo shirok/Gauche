@@ -45,15 +45,7 @@
  */
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs);
-
-static void mbedtls_print(ScmObj obj, ScmPort* port,
-                          ScmWriteContext* ctx SCM_UNUSED)
-{
-    Scm_Printf(port, "#<%A", Scm_ShortClassName(SCM_CLASS_OF(obj)));
-    /* at the moment there's not much to print, so we leave this hole
-       for future development. */
-    Scm_Printf(port, ">");
-}
+static void mbedtls_print(ScmObj, ScmPort*, ScmWriteContext*);
 
 /* NB: We avoid referring Scm_TLSClass statically, since it is in another
    DSO module and some OS doesn't resolve inter-DSO static data.  We
@@ -286,6 +278,21 @@ static void mbed_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmTLS *t = (ScmTLS*)obj;
     mbed_close(t);
+}
+
+static void mbedtls_print(ScmObj obj, ScmPort* port,
+                          ScmWriteContext* ctx SCM_UNUSED)
+{
+    ScmMbedTLS *t = (ScmMbedTLS*)obj;
+
+    Scm_Printf(port, "#<%A", Scm_ShortClassName(SCM_CLASS_OF(obj)));
+    if (t->server_name) {
+        Scm_Printf(port, " %S", t->server_name);
+    }
+    if (t->conn.fd >= 0) {
+        Scm_Printf(port, " (connected)");
+    }
+    Scm_Printf(port, ">");
 }
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
