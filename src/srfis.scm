@@ -1338,7 +1338,7 @@ Supported by the module @code{srfi-185}.
 srfi-189, srfi-189
 ()
 
-Maybe and Either: optioanl container types
+Maybe and Either: optional container types
 Supported by the module @code{srfi-189}.
 
 MaybeとEither: オプショナルなコンテナ型
