@@ -29,17 +29,19 @@ static ScmObj system_cert_loader(ScmTLS *t,
 
 
     PCCERT_CONTEXT ctx = NULL;
+    int num_loaded_certs = 0;
     while(1) {
         ctx = CertEnumCertificatesInStore(h, ctx);
 
         if (ctx == NULL) { break; }
 
+        /* We allow loading certs fail, for it is merely unsupported. */
         int st = mem_loader(t, ctx->pbCertEncoded, ctx->cbCertEncoded);
-        if(st != 0) {
-            Scm_Warn("Certificate is not accepted: %d", st);
-        }
+        if(st == 0) num_loaded_certs++;
     }
-
+    if (num_loaded_certs == 0) {
+        Scm_Warn("No valid certificate found in the system's cert store");
+    }
     CertCloseStore(h, 0);
     return SCM_TRUE;
 }
