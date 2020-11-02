@@ -6524,6 +6524,7 @@ If there's no relations with given key, these are noop.
 @subsubheading Stacked map
 
 @deftp {Class} <stacked-map>
+@c MOD gauche.dictionary
 Stacked map allows you to stack (layer) multiple maps (dictionaries)
 and treat as if they are a single map.  
 The upper map "shadows" the lower maps.  Think of nested scopes, for
@@ -6976,6 +6977,52 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @c COMMON
 @end defivar
 @end deftp
+
+
+@defun sys-open path flags :optional mode
+@c MOD gauche.fcntl
+@c EN
+A low-level interface corresponds to POSIX open().
+Open a file named by @var{path}, and returns an integer file descriptor.
+The file descriptor should be closed with @code{sys-close},
+or can be turned into a port by @code{open-@{input|output@}-fd-oprt}
+and to be closed when the port is closed.
+
+This is provided for the code that needs to deal with low-level fd.
+Unless absolutely necessary, user code should use
+high-level @code{open-@{input|output@}-file}.
+
+The @var{flags} argument is a logical ior of
+bitmasks @code{O_RDONLY}, @code{O_WRONLY}, @code{O_RDWR},
+@code{O_APPEND}, @code{O_CREAT}, @code{O_EXCL}, @code{O_TRUNC},
+@code{O_CLOEXEC}, @code{O_NOCTTY}, @code{O_NOFOLLOW},
+@code{O_NONBLOCK} and @code{O_ASYNC}.  Either one of
+@code{O_RDONLY}, @code{O_WRONLY} or @code{O_RDWR} must present.
+
+The @var{mode} argument specifies the permission bits
+when a new file is created.  The default is @code{#o664}.
+@c JP
+POSIX open()への低レベルインタフェースです。
+@var{path}で指定されるファイルをオープンして、整数のファイルディスクリプタを返します。
+ファイルディスクリプタは@code{sys-close}でクローズするか、
+@code{open-@{input|output@}-fd-oprt}でポートに変換して
+ポートがクローズされた時に一緒にクローズすることができます。
+
+この手続きはfdを直接触る必要がある低レベルコードのために提供されています。
+どうしても必要な場合以外には、高レベルの@code{open-@{input|output@}-file}を使ってください。
+
+@var{flags}引数は次のビットマスクの論理和です:
+@code{O_RDONLY}, @code{O_WRONLY}, @code{O_RDWR},
+@code{O_APPEND}, @code{O_CREAT}, @code{O_EXCL}, @code{O_TRUNC},
+@code{O_CLOEXEC}, @code{O_NOCTTY}, @code{O_NOFOLLOW},
+@code{O_NONBLOCK}, @code{O_ASYNC}。
+このうち@code{O_RDONLY}, @code{O_WRONLY}, @code{O_RDWR}のどれかひとつは
+指定しなければなりません。
+
+@var{mode}引数はファイルが新たに作られた時のパーミッションです。
+デフォルトは@code{#o664}です。
+@c COMMON
+@end defun
 
 
 @defun sys-statvfs path

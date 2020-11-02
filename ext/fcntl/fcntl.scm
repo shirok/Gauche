@@ -118,7 +118,7 @@
  ;; Unless absolutely necessary, user code should use
  ;; high-level open-{input|output}-file.
  (define-cproc sys-open (path::<const-cstring> flags::<int> 
-                                               :optional (mode::<ulong> 0))
+                                               :optional (mode::<ulong> #o664))
    ::<int>
    (let* ([fd::int 0])
     (SCM_SYSCALL fd (open path flags mode))
