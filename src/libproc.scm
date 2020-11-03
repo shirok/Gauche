@@ -76,6 +76,18 @@
 (define-cproc %reset (proc) (return (Scm_VMReset proc)))
 
 ;;;
+;;; Useful gadgets
+;;;
+
+(select-module gauche)
+;; 'values' could be used, but sometimes handy to be explicit that
+;; we're dealing with a single value.
+(define-inline (identity x) x)
+
+;; more verbose than its definition, but it shows the intention clearly.
+(define-inline (constantly val) (^ _ val))
+
+;;;
 ;;; Generator primitives
 ;;;
 

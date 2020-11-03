@@ -170,24 +170,6 @@
           v))))
 
 ;;;
-;;; Identity - using compiler macro
-;;;
-
-;; 'values' could be used, but sometimes handy to be explicit that
-;; we're dealing with a single value.  Besides, if it is used directly,
-;; we can optimize it away (useful when used as a default value in macro).
-;; This needs to be here, after compiler and macro system has been booted.
-(select-module gauche)
-(define-hybrid-syntax identity 
-  (let ([identity (^[val] val)]) ; to attach name to the clojure
-    identity)
-  (er-macro-transformer 
-   (^[f r c] 
-     (if (and (pair? f) (pair? (cdr f)) (null? (cddr f)))
-       (cadr f)
-       (error "Wrong number of arguments for identity:" f)))))
-
-;;;
 ;;; Hash function fixup
 ;;;
 
