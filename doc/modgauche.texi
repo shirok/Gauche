@@ -7733,10 +7733,10 @@ See also @code{literate} in @code{gauche.lazy}
 @c JP
 @code{giterate1}を別に用意しているのは、それが極めて速いからです
 (@code{giterate}に比べても10%ほど速いです)。
-@c COMMON
 
 @code{gauche.lazy}の@code{literate}も参照
 (@ref{Lazy sequence utilities})。
+@c COMMON
 @end defun
 
 
