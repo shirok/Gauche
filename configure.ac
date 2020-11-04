@@ -867,12 +867,13 @@ m4_include([ext/zlib/zlib.ac])
 m4_include([ext/tls/tls.ac])
 
 dnl Setup STATIC_LIBS
-STATIC_LIBS=
-for lib in $EXT_LIBS $LIBS; do
-  AS_IF([ echo "${STATIC_LIBS}" | grep -F -w -e "${lib}" > /dev/null 2>&1 ],
-        [], dnl lib is alreay in STATIC_LIBS.  do nothing
-        [STATIC_LIBS="$STATIC_LIBS $lib"])
-done
+#STATIC_LIBS=
+#for lib in $EXT_LIBS $LIBS; do
+#  AS_IF([ echo "${STATIC_LIBS}" | grep -F -w -e "${lib}" > /dev/null 2>&1 ],
+#        [], dnl lib is alreay in STATIC_LIBS.  do nothing
+#        [STATIC_LIBS="$STATIC_LIBS $lib"])
+#done
+STATIC_LIBS="$EXT_LIBS $LIBS"
 STATIC_LIBS="`echo $LIBGAUCHE_STATIC | sed s/^lib/-l/` $STATIC_LIBS"
 AC_SUBST(STATIC_LIBS)
 
