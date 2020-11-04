@@ -56,6 +56,12 @@ AS_CASE([$tls],
               MBEDTLS_LDFLAGS="-L ../../tools/tls"
               GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes=
               GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no="@%:@"
+              AS_CASE([$host],
+                [*mingw*], [
+                  AS_IF([cmake -G 2>&1 | grep -q 'MSYS Makefiles'], [
+                    MBEDTLS_CMAKE_OPTIONS="-G'MSYS Makefiles'"
+                  ])
+                ])
             ])],
            [
             AC_MSG_ERROR([Invalid ---with-tls choice; it must be comma-separated
@@ -138,6 +144,7 @@ AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
       AC_DEFINE(GAUCHE_USE_MBEDTLS, 1, [Define if you use mbed TLS])
       AC_SUBST(MBEDTLS_CFLAGS)
       AC_SUBST(MBEDTLS_LIBS)
+      AC_SUBST(MBEDTLS_CMAKE_OPTIONS)
       GAUCHE_TLS_TYPES="mbedtls $GAUCHE_TLS_TYPES"
       GAUCHE_TLS_SWITCH_MBEDTLS=
       GAUCHE_TLS_SWITCH_NONE="@%:@"

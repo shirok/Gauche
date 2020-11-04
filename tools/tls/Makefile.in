@@ -30,7 +30,11 @@ include/mbedtls: libmbedtls.a
 $(MBEDTLS_LIBS_XTRA) : libmbedtls.a
 
 libmbedtls.a: mbedtls-$(MBEDTLS_VERSION)
-	cd mbedtls-$(MBEDTLS_VERSION) && cmake . && make -f CMakeFiles/Makefile2 library/all && cd library && cp $(MBEDTLS_LIBS) ../..
+	cd mbedtls-$(MBEDTLS_VERSION)                \
+	 && cmake @MBEDTLS_CMAKE_OPTIONS@ .          \
+	 && make -f CMakeFiles/Makefile2 library/all \
+	 && cd library                               \
+	 && cp $(MBEDTLS_LIBS) ../..
 
 mbedtls-$(MBEDTLS_VERSION): v$(MBEDTLS_VERSION).tgz
 	tar xzvf v$(MBEDTLS_VERSION).tgz
