@@ -3206,6 +3206,7 @@ CLOS 風のオブジェクトシステムでは、オブジェクトシステム
 * Customizing slot access::
 * Method instantiation::
 * Customizing method application::
+* Customizing class redefinition::
 @end menu
 
 
@@ -3964,7 +3965,7 @@ gosh> (ref foo'v)
 @deffn {Method} make (class <method>) :rest initargs
 @end deffn
 
-@node Customizing method application,  , Method instantiation, Metaobject protocol
+@node Customizing method application, Customizing class redefinition, Method instantiation, Metaobject protocol
 @subsection Customizing method application
 @c NODE メソッド適用のカスタマイズ
 
@@ -3982,6 +3983,38 @@ gosh> (ref foo'v)
 
 @deffn {Generic Function} apply-method gf method build-next args
 @end deffn
+
+@node Customizing class redefinition,  , Customizing method application, Metaobject protocol
+@subsection Customizing class redefinition
+@c NODE クラスの再定義のカスタマイズ
+
+@deffn {Generic Function} class-redefinition old-class new-class
+When a class is redefined (@pxref{Class redefinition}), 
+a new class metaobject is instantiated by 
+@code{(make @var{metaclass} @var{initargs} @dots{})},
+then generic function is called with the old class metaobject and
+new class metaobject.  It should transform the information in the
+old class into the new class.
+
+The default method, @code{(class-redefinition @var{<class>} @var{<class>})},
+takes care of updating all the methods referencing to the old class,
+and propagate changes to the superclasses and subclasses.  If you
+customize this method, you should call the default method
+with @code{next-method} to make sure those basic bookkeeping is done,
+or unexpected things can happen.
+
+Class redefinition mutates lots of structures.  If you throw an error
+in middle of it, the internal state can be left inconsistent.
+
+Internally, the system uses a single mutex dedicated for the class redefition
+so that only one thread can execute it at a time.  You don't need to worry
+about other thread stepping on during @code{class-redefinition} method
+(Other thread can still be running for other operations, though, so
+if you touch objects that can be touched from outside of class redefinition,
+you should mutex it.)
+@end deffn
+
+
 
 @c Local variables:
 @c mode: texinfo

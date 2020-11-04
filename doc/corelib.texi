@@ -14256,7 +14256,7 @@ R7RS版は、効率を除けば次のとおり動作します。
 @c COMMON
 
 @example
-(hash-table-put! ht key (updater (hash-table-ref-r7 ht key failure success)))
+(hash-table-put! ht key (updater (hash-table-ref ht key failure success)))
 @end example
 @end defun
 
