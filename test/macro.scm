@@ -1859,6 +1859,21 @@
 (test* "hygienic let-keyword expansion" '(1 2 3 4)
        ((with-module let-keyword-hygeiene-use call-klambda) 1 2 3 4))
 
+;; Cf. http://chaton.practical-scheme.net/gauche/a/2020/11/05#entry-5fa3ba50-dc7d3
+(define-syntax let-keywords-hygiene-test-1-inner
+  (er-macro-transformer
+   (^[f r c]
+     (let-keywords (cdr f) ([a 1]
+                            [b 2])
+       (quasirename r `(+ ,a ,b))))))
+(define-syntax let-keywords-hygiene-test-1-outer
+  (syntax-rules ()
+    [(_ x) (let-keywords-hygiene-test-1-inner :b x)]))
+
+(test* "hygienic let-keyword match" 10
+       (let-keywords-hygiene-test-1-outer 9))
+
+
 ;;----------------------------------------------------------------------
 ;; srfi-147 begin
 ;; (not yest supported)

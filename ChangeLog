@@ -1,5 +1,10 @@
 2020-11-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmacro.scm (%let-keywords-rec): Compare input as bare symbol
+	  against potential keywords.  This may not be ideal, for hygiene is
+	  not preserved.  Since keywords are from gauche.keyword module,
+	  we should be able to compare it hygienically.
+
 	* src/libmacbase.scm (unwrap-syntax-1): Added.
 
 2020-10-30  Shiro Kawai  <shiro@acm.org>

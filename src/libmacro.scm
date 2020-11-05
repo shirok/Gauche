@@ -1201,7 +1201,7 @@
               [(null? (cdr ,argvar))
                (error "keyword list not even" ,argvar)]
               [else
-               (case (car ,argvar)
+               (case (unwrap-syntax-1 (car ,argvar))
                  ,@(map (^[key]
                           (quasirename rename
                             `((,key)
