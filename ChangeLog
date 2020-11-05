@@ -1,5 +1,8 @@
 2020-11-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-1.scm (pass1/extended-lambda-body): Fix ((:key var) init)
+	  pattern handling when GAUCHE_KEYWORD_DISJOINT=1.
+
 	* src/libmacro.scm (%let-keywords-rec): Compare input as bare symbol
 	  against potential keywords.  This may not be ideal, for hygiene is
 	  not preserved.  Since keywords are from gauche.keyword module,

@@ -1357,7 +1357,7 @@
       (let1 args (map (match-lambda
                         [[? identifier? o] o]
                         [(([? keyword-like? key] o) init)
-                         (let1 k (identifier->symbol key)
+                         (let1 k (unwrap-syntax-1 key)
                            `(,o ,k ,init))]
                         [(o init) `(,o ,init)]
                         [_ (error "illegal keyword argument spec in " kargs)])
