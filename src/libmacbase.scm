@@ -76,6 +76,13 @@
   (return (Scm_UnwrapSyntax2 form to_immutable)))
 
 ;; API
+;; Unwrap only if obj is an identifier.
+(define-cproc unwrap-syntax-1 (obj)
+  (if (SCM_IDENTIFIERP obj)
+    (return (SCM_OBJ (Scm_UnwrapIdentifier (SCM_IDENTIFIER obj))))
+    (return obj)))
+
+;; API
 ;; This preserves identity of local identifiers by suffixing it.
 ;; The identity of toplevel identifiers are still not preserved across modules.
 (select-module gauche.internal)

@@ -1,3 +1,7 @@
+2020-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacbase.scm (unwrap-syntax-1): Added.
+
 2020-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.ac, tools/tls: Adding configure option to build mbedtls
