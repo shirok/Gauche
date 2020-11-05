@@ -1,5 +1,7 @@
 2020-11-05  Shiro Kawai  <shiro@acm.org>
 
+	* Document identity and constantly.
+
 	* src/compile-1.scm (pass1/extended-lambda-body): Fix ((:key var) init)
 	  pattern handling when GAUCHE_KEYWORD_DISJOINT=1.
 

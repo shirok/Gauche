@@ -15575,6 +15575,30 @@ for example.
 @c COMMON
 @end defun
 
+@defun identity obj
+@c EN
+Returns @var{obj}.  Handy to pass to a procedure that expects
+a procedure taking one argument and returning one value.
+You can pass @code{values}, too,
+but with @code{identity} you can explicitly indicate you're dealing with one
+argument and one value.
+@c JP
+@var{obj}を返します。1引数で1戻り値の手続きを引数として期待しているところに
+渡すのに便利です。@code{values}を使うこともできますが、
+@code{identity}を使うと1引数1戻り値であることを明示できます。
+@c COMMON
+@end defun
+
+@defun constantly obj
+@c EN
+Returns a procedure that takes arbitrary number of arguments, discards
+them, and returns @var{obj}.  Same as @code{(^ _ obj)}.
+@c JP
+任意個の引数をとり、それらを無視して@var{obj}を返す関数を返します。
+@code{(^ _ obj)}と同じです。
+@c COMMON
+@end defun
+
 @defun complement pred
 @c EN
 Returns a procedure that reverses the meaning of the predicate @var{pred}.
