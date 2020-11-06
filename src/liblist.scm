@@ -141,7 +141,12 @@
     (let* ([n::ScmSmallInt (SCM_INT_VALUE k)])
       (dolist [_ list] (when (<= (post-- n) 0) (return FALSE)))
       (return (<= 0 n)))
-    (return TRUE)))  ; k is bignum. it is impossible to have that long list.
+    ;; k is bignum. it is impossible to have that long list, but list
+    ;; can be circular, so we need to scan list entirely anyway.
+    (if (< (Scm_Sign k) 0)
+      (return FALSE)
+      (let* ([ln::ScmSmallInt (Scm_Length list)])
+        (return (>= ln 0))))))
 (define-cproc length=? (list k::<integer>) ::<boolean> :constant
   (if (SCM_INTP k)
     (let* ([n::ScmSmallInt (SCM_INT_VALUE k)])
