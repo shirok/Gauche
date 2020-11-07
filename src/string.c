@@ -1614,6 +1614,12 @@ int Scm_StringBodyFastIndexableP(const ScmStringBody *sb)
             || SCM_STRING_BODY_HAS_INDEX(sb));
 }
 
+static size_t compute_index_size(const ScmStringBody *sb, int interval)
+{
+    ScmSmallInt len = SCM_STRING_BODY_LENGTH(sb);
+    return ((len + interval - 1)/interval) + 1;
+}
+
 static void *build_index_array(const ScmStringBody *sb)
 {
     /* Signature byte is repeated in the first element of the vector */
@@ -1625,7 +1631,7 @@ static void *build_index_array(const ScmStringBody *sb)
 #define BUILD_ARRAY(type_, typeenum_, shift_, sigrep_)                  \
     do {                                                                \
         int interval = 1 << (shift_);                                   \
-        size_t index_size = SCM_STRING_BODY_LENGTH(sb) / interval;      \
+        size_t index_size = compute_index_size(sb, interval);           \
         type_ *vec = SCM_NEW_ATOMIC_ARRAY(type_, index_size);           \
         u_long sig = STRING_INDEX_SIGNATURE(shift_, typeenum_);         \
         vec[0] = sigrep_(type_,sig);                                    \
