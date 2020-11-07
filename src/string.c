@@ -551,19 +551,25 @@ static const char *index2ptr(const ScmStringBody *body,
     }
     ScmStringIndex *index = STRING_INDEX(body->index);
     ScmSmallInt off = 0;
-    ScmSmallInt array_off = nchars>>STRING_INDEX_SHIFT(index);
-    if (array_off != 0) {
+    ScmSmallInt array_off = (nchars>>STRING_INDEX_SHIFT(index))+1;
+    /* If array_off is 1, we don't need lookup - the character is in the
+       first segment. */
+    if (array_off > 1) {
         switch (STRING_INDEX_TYPE(index)) {
         case STRING_INDEX8:
+            SCM_ASSERT(array_off < (ScmSmallInt)index->index8[1]);
             off = index->index8[array_off];
             break;
         case STRING_INDEX16:
+            SCM_ASSERT(array_off < (ScmSmallInt)index->index16[1]);
             off = index->index16[array_off];
             break;
         case STRING_INDEX32:
+            SCM_ASSERT(array_off < (ScmSmallInt)index->index32[1]);
             off = index->index32[array_off];
             break;
         case STRING_INDEX64:
+            SCM_ASSERT(array_off < (ScmSmallInt)index->index64[1]);
             off = index->index64[array_off];
             break;
         default:
@@ -1617,6 +1623,9 @@ int Scm_StringBodyFastIndexableP(const ScmStringBody *sb)
 static size_t compute_index_size(const ScmStringBody *sb, int interval)
 {
     ScmSmallInt len = SCM_STRING_BODY_LENGTH(sb);
+    /* We don't store the first entry (0th character == 0th byte), and
+       we use two extra entry for the signature and index_size.  So
+       we need +1. */
     return ((len + interval - 1)/interval) + 1;
 }
 
@@ -1635,8 +1644,9 @@ static void *build_index_array(const ScmStringBody *sb)
         type_ *vec = SCM_NEW_ATOMIC_ARRAY(type_, index_size);           \
         u_long sig = STRING_INDEX_SIGNATURE(shift_, typeenum_);         \
         vec[0] = sigrep_(type_,sig);                                    \
+        vec[1] = (type_)index_size;                                     \
         const char *p = SCM_STRING_BODY_START(sb);                      \
-        for (size_t i = 1; i < index_size; i++) {                       \
+        for (size_t i = 2; i < index_size; i++) {                       \
             const char *q = forward_pos(sb, p, interval);               \
             vec[i] = (type_)(q - SCM_STRING_BODY_START(sb));            \
             p = q;                                                      \
@@ -1689,28 +1699,40 @@ void Scm_StringBodyIndexDump(const ScmStringBody *sb, ScmPort *port)
         return;
     }
     int interval = STRING_INDEX_INTERVAL(index);
-    size_t index_size = SCM_STRING_BODY_LENGTH(sb)/interval;
+    size_t index_size = 0;
 
     switch (STRING_INDEX_TYPE(index)) {
-    case STRING_INDEX8:  Scm_Printf(port, "index8  "); break;
-    case STRING_INDEX16: Scm_Printf(port, "index16 "); break;
-    case STRING_INDEX32: Scm_Printf(port, "index32 "); break;
-    case STRING_INDEX64: Scm_Printf(port, "index64 "); break;
-    default:       Scm_Printf(port, "unknown(%02x) ", 
-                              (uint8_t)STRING_INDEX_TYPE(index));
+    case STRING_INDEX8:  
+        Scm_Printf(port, "index8  "); 
+        index_size = (size_t)index->index8[1];
+        break;
+    case STRING_INDEX16: 
+        Scm_Printf(port, "index16 ");   
+        index_size = (size_t)index->index16[1];
+        break;
+    case STRING_INDEX32:
+        Scm_Printf(port, "index32 "); 
+        index_size = (size_t)index->index32[1];
+        break;
+    case STRING_INDEX64: 
+        Scm_Printf(port, "index64 ");
+        index_size = (size_t)index->index64[1];
+        break;
+    default:    
+        Scm_Printf(port, "unknown(%02x) ", (uint8_t)STRING_INDEX_TYPE(index));
     }
-    Scm_Printf(port, " interval %d  size %d\n", interval, index_size);
+    Scm_Printf(port, " interval %d  size %d\n", interval, index_size-1);
     Scm_Printf(port, "        0         0\n");
-    for (size_t i = 1; i < index_size; i++) {
+    for (size_t i = 2; i < index_size; i++) {
         switch (STRING_INDEX_TYPE(index)) {
         case STRING_INDEX8:
-            Scm_Printf(port, " %8ld  %8u\n", i, index->index8[i]); break;
+            Scm_Printf(port, " %8ld  %8u\n", i-1, index->index8[i]); break;
         case STRING_INDEX16:
-            Scm_Printf(port, " %8ld  %8u\n", i, index->index16[i]); break;
+            Scm_Printf(port, " %8ld  %8u\n", i-1, index->index16[i]); break;
         case STRING_INDEX32:
-            Scm_Printf(port, " %8ld  %8u\n", i, index->index32[i]); break;
+            Scm_Printf(port, " %8ld  %8u\n", i-1, index->index32[i]); break;
         case STRING_INDEX64:
-            Scm_Printf(port, " %8ld  %8lu\n",i, index->index64[i]); break;
+            Scm_Printf(port, " %8ld  %8lu\n",i-1, index->index64[i]); break;
         }
     }
 }

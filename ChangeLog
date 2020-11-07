@@ -2,6 +2,9 @@
 
 	* src/string.c (build_index_array): Fixed another bug that the
 	  index array is allocated too short.
+	  Also changed to store the index array size in the second word of
+	  the index array.  By doing so we can check the accidental out-of-bound
+	  access.
 
 2020-11-06  Shiro Kawai  <shiro@acm.org>
 
