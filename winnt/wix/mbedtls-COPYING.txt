@@ -1,4 +1,4 @@
-Copyright and license terms of bin/libmbed*.dll ---------------------------
+Copyright and license terms of MbedTLS ---------------------------
 
                                  Apache License
                            Version 2.0, January 2004

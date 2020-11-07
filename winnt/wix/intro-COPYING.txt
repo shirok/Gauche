@@ -19,6 +19,14 @@ revised BSD license, except the following component:
    gauche--charconv.dll, you *must* provide the files that are
    sufficient to rebuild gauche--charconv.dll itself with different
    versions of libiconv.
+   The license document is included below.
+
+* lib/gauche-$ABI_VERSION/$VERSION/$ARCH/rfc--tls--mbed.dll
+  lib/gauche-$ABI_VERSION/$VERSION/$ARCH/libgauche-static-$ABI_VERSION.a
+
+   This DLL and archive includes MbedTLS, which is covered by Apache
+   License 2.0.  The license document is included below.  You can
+   redistibute them with the license document.
 
 Here's the end of the summary.  The following is the actual copyright
 holders and the exact terms of license for various components of the software.
