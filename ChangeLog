@@ -1,5 +1,9 @@
 2020-11-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/string.c (build_index_array): Fix: The signature byte is supposed
+	  to be repeated in the first element of the vector, so it can work
+	  for any endianness, but it didn't.
+
 	* src/liblist.scm (length<=?): Fix integer overflow bug. Also,
 	  if list is circular we treat it infinitely long.
 

@@ -1616,12 +1616,19 @@ int Scm_StringBodyFastIndexableP(const ScmStringBody *sb)
 
 static void *build_index_array(const ScmStringBody *sb)
 {
-#define BUILD_ARRAY(type_, typeenum_, shift_)                           \
+    /* Signature byte is repeated in the first element of the vector */
+#define SIG8(type,sig)    (type)(sig)
+#define SIG16(type,sig)   ((type)((sig)<<8)|(sig))
+#define SIG32(type,sig)   ((type)(SIG16(type,sig)<<16)|SIG16(type,sig))
+#define SIG64(type,sig)   ((type)(SIG32(type,sig)<<32)|SIG32(type,sig))
+
+#define BUILD_ARRAY(type_, typeenum_, shift_, sigrep_)                  \
     do {                                                                \
         int interval = 1 << (shift_);                                   \
         size_t index_size = SCM_STRING_BODY_LENGTH(sb) / interval;      \
         type_ *vec = SCM_NEW_ATOMIC_ARRAY(type_, index_size);           \
-        vec[0] = STRING_INDEX_SIGNATURE(shift_, typeenum_);             \
+        u_long sig = STRING_INDEX_SIGNATURE(shift_, typeenum_);         \
+        vec[0] = sigrep_(type_,sig);                                    \
         const char *p = SCM_STRING_BODY_START(sb);                      \
         for (size_t i = 1; i < index_size; i++) {                       \
             const char *q = forward_pos(sb, p, interval);               \
@@ -1635,26 +1642,26 @@ static void *build_index_array(const ScmStringBody *sb)
        as long as the last indexed character is within the range.  But
        checking it is too much. */
     if (sb->size < 256) {
-        BUILD_ARRAY(uint8_t, STRING_INDEX8, 4);
+        BUILD_ARRAY(uint8_t, STRING_INDEX8, 4, SIG8);
     } else if (sb->size < 8192) {
         /* 32 chars interval */
-        BUILD_ARRAY(uint16_t, STRING_INDEX16, 5);
+        BUILD_ARRAY(uint16_t, STRING_INDEX16, 5, SIG16);
     } else if (sb->size < 65536) {
         /* 64 chars interval */
-        BUILD_ARRAY(uint16_t, STRING_INDEX16, 6);
+        BUILD_ARRAY(uint16_t, STRING_INDEX16, 6, SIG16);
     }
 #if SIZEOF_LONG == 4
     else {
         /* 128 chars interval */
-        BUILD_ARRAY(uint32_t, STRING_INDEX32, 7);
+        BUILD_ARRAY(uint32_t, STRING_INDEX32, 7, SIG32);
     }
 #else /* SIZEOF_LONG != 4 */
     else if (sb->size < (1L<<32)) {
         /* 128 chars interval */
-        BUILD_ARRAY(uint32_t, STRING_INDEX32, 7);
+        BUILD_ARRAY(uint32_t, STRING_INDEX32, 7, SIG32);
     } else {
         /* 256 chars interval */
-        BUILD_ARRAY(uint32_t, STRING_INDEX64, 8);
+        BUILD_ARRAY(uint64_t, STRING_INDEX64, 8, SIG64);
     }
 #endif
 #undef BUILD_ARRAY
