@@ -1349,14 +1349,16 @@ srfi-192, srfi-192
 ()
 
 Port positioning
-Supported by the module @code{srfi-192}.
-Gauche's port already has positining mechanism, and this srfi is
-an adapter to it.
+Gauche's port already has positining mechanism, so main procedures
+are built-in (@pxref{Common port operations}).
+A few additional procedures are provided by the module @code{srfi-192}
+(@pxref{Port positioning}).
 
 ポート位置
-モジュール@code{srfi-192}でサポートされます。
 Gaucheのポートは既に位置の問い合わせと設定機能を持っており、
-このsrfiはその上に作られています。
+主要な手続きは組み込みになっています(@ref{Common port operations}参照)。
+組み込みでない追加手続きはモジュール@code{srfi-192}にあります
+(@ref{Port positioning}参照)。
 
 
 srfi-193, srfi-193

@@ -63,8 +63,10 @@ srfi N is supported by Gauche.)
 * ASCII character library::     srfi-175
 * Bitvector library::           srfi-178
 * JSON::                        srfi-180
+* Custom ports::                srfi-181
 * Linear adjustable-length strings::  srfi-185
 * Maybe and Either optional container types::  srfi-189
+* Port positioning::            srfi-192
 * Command line::                srfi-193
 @end menu
 
@@ -8205,9 +8207,8 @@ Returns a bitvector without preceding and/or trailing consecutive
 @c MOD srfi-178
 @end defun
 
-
 @c ----------------------------------------------------------------------
-@node JSON, Linear adjustable-length strings, Bitvector library, Library modules - SRFIs
+@node JSON, Custom ports, Bitvector library, Library modules - SRFIs
 @section @code{srfi-180} - JSON
 
 @deftp {Module} srfi-180
@@ -8445,7 +8446,83 @@ a string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Linear adjustable-length strings, Maybe and Either optional container types, JSON, Library modules - SRFIs
+@node Custom ports, Linear adjustable-length strings, JSON, Library modules - SRFIs
+@section @code{srfi-181} - Custom ports
+@c NODE カスタムポート, @code{srfi-181} - カスタムポート
+
+@deftp {Module} srfi-181
+@mdindex srfi-181
+This srfi defins a way to implement a port in Scheme.
+Gauche has native support of such ports (@pxref{Virtual ports}),
+but this srfi is useful for portable code.
+
+The interface is upper compatible to R6RS.
+
+Note that R7RS Scheme distinguishes binary and textual ports,
+while Gauche ports can handle both.
+@end deftp
+
+@defun make-custom-binary-input-port id read! get-pos set-pos! close
+@defunx make-custom-textual-input-port id read! get-pos set-pos! close
+[SRFI-181]
+@c MOD srfi-181
+Creates a new binary and textual input port and returns it, respectively.
+
+The @var{id} argument is an arbitrary Scheme procedure.  SRFI doesn't
+specify how it is used.  In Gauche, @var{id} will be returned
+with @code{port-name} procedure (@pxref{Common port operations}).
+
+The @var{read!} argument is a procedure to be called
+as @code{(read! @var{buffer} @var{start} @var{count})}.
+For @code{make-custom-binary-input-port}, @var{buffer} is a bytevector.
+For @code{make-custom-textual-input-port}, @var{buffer} is either
+a string or a vector of characters (Gauche's implementation always
+use a vector, but portable code should handle both).
+
+It should generate up to @var{count} bytes/characters of data and fill 
+@var{buffer} beginning from @var{start}, then return the number of 
+bytes/characters generated.
+It should generate at least 1 byte/character if there's still data. 
+To indicate the end of the data, it writs no data and returns 0.
+
+The @var{get-pos} argument is a procedure to be called without arguments,
+and returns an implementation-dependent object that indicates
+the current position of the input stream.  The `current position' is
+where next @var{read!} will generate the data.  This can be @code{#f}
+if the port doesn't provide positions.
+
+For @code{make-custom-binary-input-port}, there's a special rule that
+if @var{get-pos} returns an exact integer, it should be a byte position
+in the stream.
+
+The @var{set-pos!} argument is a procedure to be called with one argument, 
+a new position.
+It should set the source's position so that next @var{read!} starts
+generating data from there.  The passed position is something that has
+been returned by @var{get-pos}, or, for @code{make-custom-binary-input-port},
+an exact integer that indicates the byte offset from the beginning of
+the input.   This argument can be @code{#f} if the port doesn't
+support setting positions.  The returned value of @var{set-pos!} is
+ignored.
+
+If the position passed to @var{set-pos!} is invalid,
+an error that satisfy @code{i/o-invalid-position-error?} should be
+thrown.  Portably, it can be done by throwing a condition created
+by @code{make-i/o-invalid-position-error} (@pxref{Port positioning}).
+For Gauche-specific code, you can throw a compound condition
+with @code{<io-invalid-position-error-mixin>}.
+
+The @var{close} argument is a procedure to be called without
+argument, when the port is closed.  It can be @code{#f} if you
+don't need a special cleanup.
+@end defun
+
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Linear adjustable-length strings, Maybe and Either optional container types, Custom ports, Library modules - SRFIs
 @section @code{srfi-185} - Linear adjustable-length strings
 @c NODE 線形更新な可変長文字列, @code{srfi-185} - 線形更新な可変長文字列
 
@@ -8599,7 +8676,7 @@ srfi-118 (@ref{Simple adjustable-size strings}参照)を使っているコード
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Maybe and Either optional container types, Command line, Linear adjustable-length strings, Library modules - SRFIs
+@node Maybe and Either optional container types, Port positioning, Linear adjustable-length strings, Library modules - SRFIs
 @section @code{srfi-189} - Maybe and Either: optional container types
 @c NODE MaybeとEither、オプショナルなコンテナ型, @code{srfi-189} - MaybeとEither、オプショナルなコンテナ型
 
@@ -9233,7 +9310,38 @@ Otherwise, a Right wrapping @var{obj} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Command line,  , Maybe and Either optional container types, Library modules - SRFIs
+@node Port positioning, Command line, Maybe and Either optional container types, Library modules - SRFIs
+@section @code{srfi-192} - Port positioning
+@c NODE ポート位置,  @code{srfi-192} - ポート位置
+
+@deftp {Module} srfi-192
+@mdindex srfi-192
+This srfi defines procedures to get and set the current position of
+the port.
+
+This feature is already supported in the Gauche core, so the following
+procedure is described in @ref{Common port operations}.
+@example
+port-position
+port-has-port-position?
+set-port-position!
+port-has-set-port-position?
+@end example
+@end deftp
+
+@defun i/o-invalid-position-error? obj
+[SRFI-192]
+@c MOD srfi-192
+@end defun
+
+@defun make-i/o-invalid-position-error pos
+[SRFI-192]
+@c MOD srfi-192
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Command line,  , Port positioning, Library modules - SRFIs
 @section @code{srfi-193} - Command line
 @c NODE コマンドライン,  @code{srfi-193} - コマンドライン
 
