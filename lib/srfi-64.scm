@@ -642,7 +642,7 @@
        (%test-comp2body r comp expected expr)))
     ((%test-comp2 comp expected expr)
      (let* ((r (test-runner-get)))
-       (test-result-alist! r '())
+       (test-result-alist! r (list (cons 'test-name 'expr)))
        (%test-comp2body r comp expected expr)))))
 (define-syntax test-equal
   (syntax-rules ()
