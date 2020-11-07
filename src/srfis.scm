@@ -1313,12 +1313,12 @@ srfi-181, srfi-181
 ()
 
 Custom ports
-Supported by the module @code{srfi-181}.
+Supported by the module @code{srfi-181} (@pxref{Custom ports}).
 Gauche has an original custom port mechanism (@pxref{Virtual ports}), and
 This srfi is built in top of it.
 
 カスタムポート
-モジュール@code{srfi-181}でサポートされます。
+モジュール@code{srfi-181}でサポートされます (@ref{Custom ports}参照)。
 Gaucheは独自のカスタムポートメカニズムを持っており(@ref{Virtual ports}参照)、
 このsrfiはその上に作られています。
 
