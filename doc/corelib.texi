@@ -5014,7 +5014,7 @@ it returns @code{#f}.
 @c EN
 Returns @code{#t} iff @var{x} is a (possibly improper) list whose length is
 equal to, less than, less than or equal to, greater than, or greater than
-or equal to @var{k}, respectively.
+or equal to an exact integer @var{k}, respectively.
 This procedure only follows the list up to the @var{k} items, so
 it doesn't realize elements of lazy sequence more than
 needed (@xref{Lazy sequences}, for the lazy sequences).
@@ -5024,7 +5024,7 @@ the cdr of the last pair isn't counted; that is, a non-pair object
 has length 0, and @code{(a . b)} has length 1.
 A circular list is treated as if it has infinite length.
 @c JP
-それぞれ、リスト@var{x}の長さがkと等しいか、k未満か、k以下か、kより大きいか、
+それぞれ、リスト@var{x}の長さが正確な整数kと等しいか、k未満か、k以下か、kより大きいか、
 k以上かの場合に@code{#t}を、そうでなければ@code{#f}を返します。
 この関数は@var{k}要素までしかリストを辿らないので、特に@var{x}が遅延シーケンス
 (@ref{Lazy sequences}参照)である場合に、必要以上にリストを実体化しなくて済みます。
