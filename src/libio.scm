@@ -428,11 +428,6 @@
 (define-cproc set-port-position! (port::<port> pos)
   (return (Scm_SetPortPosition port pos)))
 
-(define-cproc i/o-invalid-position-error? (obj) ::<boolean>
-  (return 
-   (Scm_ConditionHasType obj
-                         (SCM_OBJ SCM_CLASS_IO_INVALID_POSITION_ERROR_MIXIN))))
-
 (select-module gauche)
 (inline-stub
  (define-enum SEEK_SET)

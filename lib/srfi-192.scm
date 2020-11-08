@@ -1,6 +1,6 @@
 (define-module srfi-192
   (export make-i/o-invalid-position-error
-          i/o-invalid-position-error?   ;built-in
+          i/o-invalid-position-error?
           port-has-port-position?       ;built-in
           port-position                 ;built-in
           port-has-set-port-position!?  ;built-in
@@ -13,3 +13,6 @@
 ;; <port-error>.
 (define (make-i/o-invalid-position-error position)
   (make <io-invalid-position-error-mixin> :position position))
+
+(define (i/o-invalid-position-error? obj)
+  (condition-has-type? obj <io-invalid-position-error-mixin>))
