@@ -31,19 +31,6 @@
 
 (define-constant *buffer-size* 1024)
 
-(define (make-seeker get-position set-position!)
-  (^[offset whence]
-    (if (and (= offset 0) (eq? whence SEEK_CUR))
-      (and get-position (get-position))
-      (and set-position!
-           (cond
-            [(eqv? whence SEEK_SET) (set-position! offset)]
-            [(eqv? whence SEEK_CUR)
-             (and get-position
-                  (set-position! (+ offset (get-position))))]
-            [(eqv? whence SEEK_END) #f]            ; unsupportable
-            )))))
-
 (define (make-custom-binary-input-port id read!
                                        get-position set-position!
                                        close)
@@ -52,7 +39,8 @@
   (make <buffered-input-port>
     :name id
     :fill filler
-    :seek (make-seeker get-position set-position!)
+    :getpos get-position
+    :setpos set-position!
     :close close))
 
 (define (make-custom-textual-input-port id read!
@@ -106,7 +94,8 @@
   (make <buffered-output-port>
     :name id
     :flush flusher
-    :seek (make-seeker get-position set-position!)
+    :getpos get-position
+    :setpos set-position!
     :close close))
 
 ;; For textual output, <buffered-output-port> is inconvenient,

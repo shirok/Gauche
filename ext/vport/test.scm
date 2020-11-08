@@ -293,10 +293,11 @@
                   size))
         )))
   (test* "buffered-input-port w/o seeker"
-         '(0 1 #f 2)
+         '(0 1 #t 2)
          (let* ([a (read-byte in)]
                 [b (read-byte in)]
-                [s (port-seek in 5 SEEK_SET)] ;this shouldn't move the point
+                [s (guard (e [(<port-error> e) #t])
+                     (port-seek in 5 SEEK_SET))] ;this shouldn't move the point
                 [c (read-byte in)])
            (list a b s c)))
   )

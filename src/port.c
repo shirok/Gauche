@@ -460,7 +460,7 @@ ScmObj Scm_ReaderLexicalMode()
     return Scm_PrimitiveParameterRef(Scm_VM(), readerLexicalMode);
 }
 
-/* Query whether the port is positinable.  If setp is false, returns
+/* Query whether the port is positoinable.  If setp is false, returns
    if port can get current pos.  If setp is true, returns if port
    can set pos.
    Note: For the buffering and procedural ports, if the user used old

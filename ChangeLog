@@ -1,5 +1,9 @@
 2020-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/portapi.c (Scm_GetPortPosition), ext/vport/vport.c:
+	  Support getpos/setpos slots.  It allows srfi-181 get-position/
+	  set-position! to be directly mapped to vport slots.
+
 	* src/string.c (build_index_array): Fixed another bug that the
 	  index array is allocated too short.
 	  Also changed to store the index array size in the second word of

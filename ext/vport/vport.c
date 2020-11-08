@@ -418,9 +418,10 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     vtab.Puts = vport_puts;
     vtab.Flush = vport_flush;
     vtab.Close = vport_close;
-    vtab.Seek  = vport_seek;
-    vtab.GetPos = vport_getpos;
-    vtab.SetPos = vport_setpos;
+    /* these procedures will be set according to the slot values */
+    vtab.Seek  = NULL;
+    vtab.GetPos = NULL;
+    vtab.SetPos = NULL;
     /* we enable these when appropriate slot is set */
     vtab.flags = SCM_PORT_DISABLE_GETPOS | SCM_PORT_DISABLE_SETPOS;
 
@@ -484,7 +485,7 @@ VPORT_GET(seek)
 VPORT_GET(getpos)
 VPORT_GET(setpos)
 
-static void positionable_check(ScmPortVTable *vt, vport *data)
+static void vport_positionable_check(ScmPortVTable *vt, vport *data)
 {
     if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->getpos_proc)) {
         vt->flags |= SCM_PORT_DISABLE_GETPOS;
@@ -504,7 +505,13 @@ static void vport_seek_set(ScmObj p, ScmObj v)
     vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
     data->seek_proc = v;
-    positionable_check(Scm_PortVTableStruct(SCM_PORT(p)), data);
+    ScmPortVTable *vt = Scm_PortVTableStruct(SCM_PORT(p));
+    if (SCM_FALSEP(v)) {
+        vt->Seek = NULL;
+    } else {
+        vt->Seek = vport_seek;
+    }
+    vport_positionable_check(vt, data);
 }
 
 static void vport_getpos_set(ScmObj p, ScmObj v)
@@ -512,7 +519,13 @@ static void vport_getpos_set(ScmObj p, ScmObj v)
     vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
     data->getpos_proc = v;
-    positionable_check(Scm_PortVTableStruct(SCM_PORT(p)), data);
+    ScmPortVTable *vt = Scm_PortVTableStruct(SCM_PORT(p));
+    if (SCM_FALSEP(v)) {
+        vt->GetPos = NULL;
+    } else {
+        vt->GetPos = vport_getpos;
+    }
+    vport_positionable_check(vt, data);
 }
 
 static void vport_setpos_set(ScmObj p, ScmObj v)
@@ -520,7 +533,13 @@ static void vport_setpos_set(ScmObj p, ScmObj v)
     vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
     data->setpos_proc = v;
-    positionable_check(Scm_PortVTableStruct(SCM_PORT(p)), data);
+    ScmPortVTable *vt = Scm_PortVTableStruct(SCM_PORT(p));
+    if (SCM_FALSEP(v)) {
+        vt->SetPos = NULL;
+    } else {
+        vt->SetPos = vport_setpos;
+    }
+    vport_positionable_check(vt, data);
 }
 
 #define VPORT_SLOT(name)                                \
@@ -593,7 +612,9 @@ typedef struct bport_rec {
     ScmObj close_proc;          /* () -> () */
     ScmObj ready_proc;          /* () -> Bool */
     ScmObj filenum_proc;        /* () -> Maybe Int */
-    ScmObj seek_proc;           /* (Offset, Whence) -> Offset */
+    ScmObj getpos_proc;         /* () -> Maybe Int */
+    ScmObj setpos_proc;         /* (Int) ->  () */
+    ScmObj seek_proc;           /* (Offset, Whence) -> Offset */    
 } bport;
 
 #define BPORT(port)   ((bport*)PORT_BUF(port)->data)
@@ -682,8 +703,30 @@ static int bport_filenum(ScmPort *p)
 }
 
 /*------------------------------------------------------------
- * Bport seek
+ * Bport positioning
  */
+static ScmObj bport_getpos(ScmPort *p)
+{
+    bport *data = BPORT(p);
+    SCM_ASSERT(data != NULL);
+    if (!SCM_FALSEP(data->getpos_proc)) {
+        return Scm_ApplyRec(data->getpos_proc, SCM_NIL);
+    } else {
+        return SCM_FALSE;
+    }
+}
+
+static ScmObj bport_setpos(ScmPort *p, ScmObj pos)
+{
+    bport *data = BPORT(p);
+    SCM_ASSERT(data != NULL);
+    if (!SCM_FALSEP(data->setpos_proc)) {
+        return Scm_ApplyRec(data->setpos_proc, SCM_LIST1(pos));
+    } else {
+        return SCM_FALSE;
+    }
+}
+
 static off_t bport_seek(ScmPort *p, off_t off, int whence)
 {
     bport *data = BPORT(p);
@@ -714,6 +757,8 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     data->close_proc = SCM_FALSE;
     data->ready_proc = SCM_FALSE;
     data->filenum_proc = SCM_FALSE;
+    data->getpos_proc = SCM_FALSE;
+    data->setpos_proc = SCM_FALSE;
     data->seek_proc  = SCM_FALSE;
 
     ScmPortBuffer buf;
@@ -733,8 +778,13 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     buf.closer  = bport_close;
     buf.ready   = bport_ready;
     buf.filenum = bport_filenum;
-    buf.seeker  = bport_seek;
     buf.data    = data;
+    /* these procedures will be set according to the slot values */
+    buf.seeker  = NULL;
+    buf.getpos  = NULL;
+    buf.setpos  = NULL;
+    /* we enable these when appropriate slot is set */
+    buf.flags = SCM_PORT_DISABLE_GETPOS | SCM_PORT_DISABLE_SETPOS;
 
     int dir = 0;
     if (Scm_SubtypeP(klass, SCM_CLASS_BUFFERED_INPUT_PORT)) {
@@ -745,31 +795,96 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Panic("bport_allocate: implementation error (class wiring screwed?)");
     }
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
-    ScmObj port = Scm_MakeBufferedPort(klass, name, dir, TRUE, &buf);
+    ScmObj port = Scm_MakeBufferedPortFull(klass, name, dir, &buf,
+                                           (SCM_PORT_OWNER|SCM_PORT_WITH_POSITION));
     return port;
 }
 
 /* Accessors */
-#define BPORT_ACC(name)                                                 \
+#define BPORT_GET(name)                                                 \
     static ScmObj SCM_CPP_CAT3(bport_,name,_get) (ScmObj p)             \
     {                                                                   \
         bport *data = BPORT(p);                                         \
         SCM_ASSERT(data != NULL);                                       \
         return data->SCM_CPP_CAT(name,_proc);                           \
-    }                                                                   \
+    }
+
+#define BPORT_SET(name)                                                 \
     static void SCM_CPP_CAT3(bport_,name,_set) (ScmObj p, ScmObj v)     \
     {                                                                   \
         bport *data = BPORT(p);                                         \
         SCM_ASSERT(data != NULL);                                       \
         data->SCM_CPP_CAT(name,_proc) = v;                              \
     }
+    
+#define BPORT_ACC(name)   BPORT_GET(name) BPORT_SET(name)
 
 BPORT_ACC(fill)
 BPORT_ACC(ready)
 BPORT_ACC(flush)
 BPORT_ACC(close)
 BPORT_ACC(filenum)
-BPORT_ACC(seek)
+
+BPORT_GET(seek)
+BPORT_GET(getpos)
+BPORT_GET(setpos)
+
+static void bport_positionable_check(ScmPortBuffer *b, bport *data)
+{
+    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->getpos_proc)) {
+        b->flags |= SCM_PORT_DISABLE_GETPOS;
+    } else {
+        b->flags &= ~SCM_PORT_DISABLE_GETPOS;
+    }
+
+    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->setpos_proc)) {
+        b->flags |= SCM_PORT_DISABLE_SETPOS;
+    } else {
+        b->flags &= ~SCM_PORT_DISABLE_SETPOS;
+    }
+}
+
+static void bport_seek_set(ScmObj p, ScmObj v)
+{
+    bport *data = BPORT(p);
+    SCM_ASSERT(data != NULL);
+    data->seek_proc = v;
+    ScmPortBuffer *b = Scm_PortBufferStruct(SCM_PORT(p));
+    if (SCM_FALSEP(v)) {
+        b->seeker = NULL;
+    } else {
+        b->seeker = bport_seek;
+    }
+    bport_positionable_check(b, data);
+}
+
+static void bport_getpos_set(ScmObj p, ScmObj v)
+{
+    bport *data = BPORT(p);
+    SCM_ASSERT(data != NULL);
+    data->getpos_proc = v;
+    ScmPortBuffer *b = Scm_PortBufferStruct(SCM_PORT(p));
+    if (SCM_FALSEP(v)) {
+        b->getpos = NULL;
+    } else {
+        b->getpos = bport_getpos;
+    }
+    bport_positionable_check(b, data);
+}
+
+static void bport_setpos_set(ScmObj p, ScmObj v)
+{
+    bport *data = BPORT(p);
+    SCM_ASSERT(data != NULL);
+    data->setpos_proc = v;
+    ScmPortBuffer *b = Scm_PortBufferStruct(SCM_PORT(p));
+    if (SCM_FALSEP(v)) {
+        b->setpos = NULL;
+    } else {
+        b->setpos = bport_setpos;
+    }
+    bport_positionable_check(b, data);
+}
 
 #define BPORT_SLOT(name)                                \
     SCM_CLASS_SLOT_SPEC(#name,                          \
@@ -782,6 +897,8 @@ static ScmClassStaticSlotSpec biport_slots[] = {
     BPORT_SLOT(close),
     BPORT_SLOT(filenum),
     BPORT_SLOT(seek),
+    BPORT_SLOT(getpos),
+    BPORT_SLOT(setpos),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
@@ -790,6 +907,8 @@ static ScmClassStaticSlotSpec boport_slots[] = {
     BPORT_SLOT(close),
     BPORT_SLOT(filenum),
     BPORT_SLOT(seek),
+    BPORT_SLOT(getpos),
+    BPORT_SLOT(setpos),
     SCM_CLASS_SLOT_SPEC_END()
 };
 

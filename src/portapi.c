@@ -1068,6 +1068,7 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
     ScmObj r = SCM_MAKE_INT(0);
     volatile off_t pending_bytes = port_pending_bytes(p);
     int err_disabled = FALSE;
+    int err_badpos = FALSE;
 
     LOCK(p);
     switch (SCM_PORT_TYPE(p)) {
@@ -1076,11 +1077,22 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
             err_disabled = TRUE;
             break;
         }
-        if (PORT_BUF(p)->getpos) {
-            SAFE_CALL(p, r = PORT_BUF(p)->getpos(p));
-        } else if (PORT_BUF(p)->seeker) {
+        {
             off_t rr;
-            SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 0, SEEK_CUR));
+            if (PORT_BUF(p)->getpos) {
+                SAFE_CALL(p, r = PORT_BUF(p)->getpos(p));
+                if (!SCM_INTEGERP(r)) {
+                    err_badpos = TRUE;
+                    break;
+                }
+                rr = Scm_IntegerToOffset(r);
+            } else if (PORT_BUF(p)->seeker) {
+                SAFE_CALL(p, rr = PORT_BUF(p)->seeker(p, 0, SEEK_CUR));
+            } else {
+                err_disabled = TRUE;
+                break;
+            }
+            
             if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
                 rr -= (off_t)(PORT_BUF(p)->end - PORT_BUF(p)->current);
             } else {
@@ -1121,6 +1133,10 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
     if (err_disabled) {
         Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
                       "getting port position is disabled");
+    }
+    if (err_badpos) {
+        Scm_PortError(p, SCM_PORT_ERROR_SEEK, 
+                      "getpos method returned invalid position: %S", r);
     }
 
     if (pending_bytes > 0) {
