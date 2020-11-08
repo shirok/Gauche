@@ -1073,10 +1073,6 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
     LOCK(p);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
-        if (PORT_BUF(p)->flags & SCM_PORT_DISABLE_GETPOS) {
-            err_disabled = TRUE;
-            break;
-        }
         {
             off_t rr;
             if (PORT_BUF(p)->getpos) {
@@ -1111,10 +1107,6 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
         /* For procedural bytes, the positioning of pending bytes is
            taken care of by PORT_SAVED_POS, so we set pending_bytes to 0.*/
         pending_bytes = 0;
-        if (PORT_VT(p)->flags & SCM_PORT_DISABLE_GETPOS) {
-            err_disabled = TRUE;
-            break;
-        }
         if (PORT_VT(p)->GetPos) {
             r = PORT_SAVED_POS(p);
             if (SCM_UNBOUNDP(r)) {
@@ -1125,6 +1117,8 @@ ScmObj Scm_GetPortPositionUnsafe(ScmPort *p)
             UNSAVE_POS(p);
             SAFE_CALL(p, rr = PORT_VT(p)->Seek(p, 0, SEEK_CUR));
             r = Scm_OffsetToInteger(rr);
+        } else {
+            err_disabled = TRUE;
         }
         break;
     }
@@ -1174,11 +1168,6 @@ static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
-        if (PORT_BUF(p)->flags & SCM_PORT_DISABLE_SETPOS) {
-            err_disabled = TRUE;
-            break;
-        }
-
         if (PORT_BUF(p)->setpos && whence == SEEK_SET) {
             r = PORT_BUF(p)->setpos(p, off);
             break;
@@ -1218,6 +1207,8 @@ static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
             } else {
                 r = Scm_OffsetToInteger(rr);
             }
+        } else {
+            err_disabled = TRUE;
         }
         break;
     case SCM_PORT_ISTR: 
@@ -1228,10 +1219,6 @@ static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
         r = SCM_FALSE;
         break;
     case SCM_PORT_PROC:
-        if (PORT_VT(p)->flags & SCM_PORT_DISABLE_SETPOS) {
-            err_disabled = TRUE;
-            break;
-        }
         if (PORT_VT(p)->SetPos && whence == SEEK_SET) {
             UNSAVE_POS(p);
             SAFE_CALL(p, r = PORT_VT(p)->SetPos(p, off));
@@ -1244,6 +1231,8 @@ static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
                                                Scm_IntegerToOffset(off),
                                                whence));
             r = Scm_OffsetToInteger(rr);
+        } else {
+            err_disabled = TRUE;
         }
         break;
     }

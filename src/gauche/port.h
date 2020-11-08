@@ -95,7 +95,7 @@ typedef struct ScmPortBufferRec {
        port positioning. */
     ScmObj (*getpos)(ScmPort *p);
     ScmObj (*setpos)(ScmPort *p, ScmObj pos);
-    u_long flags;               /* See ScmPortAdditionalFlags below */
+    u_long flags;               /* reserved */
 } ScmPortBuffer;
 
 /* The function table of procedural port. */
@@ -119,7 +119,7 @@ typedef struct ScmPortVTableRec {
        port positioning. */
     ScmObj (*GetPos)(ScmPort *p);
     ScmObj (*SetPos)(ScmPort *p, ScmObj pos);
-    u_long flags;               /* See ScmPortAdditionalFlags below */
+    u_long flags;               /* reserved */
 } ScmPortVTable;
 
 /* Input string port */
@@ -230,17 +230,6 @@ enum ScmPortFlags {
     SCM_PORT_TRANSIENT = (1L<<4) /* a buffered output port that's used
                                     transiently and doesn't need to be
                                     registered for flushing. */
-};
-
-/* The flag bits for ScmPortBuffer.flags and ScmPortVTable.flags */
-enum ScmPortAdditionalFlags {
-    /* These two flags can disable getpos/setpos callbacks.  It is
-       useful that the user need to set these callbacks but they
-       don't necessarily work depending on the port status.
-       If disabled, Scm_PortPositionable() returns FALSE for the
-       corresponding query. */
-    SCM_PORT_DISABLE_GETPOS = (1L<<0),
-    SCM_PORT_DISABLE_SETPOS = (1L<<1)
 };
 
 /*================================================================

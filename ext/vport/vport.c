@@ -422,8 +422,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     vtab.Seek  = NULL;
     vtab.GetPos = NULL;
     vtab.SetPos = NULL;
-    /* we enable these when appropriate slot is set */
-    vtab.flags = SCM_PORT_DISABLE_GETPOS | SCM_PORT_DISABLE_SETPOS;
+    vtab.flags = 0;
 
     int dir = 0;
     if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_INPUT_PORT)) {
@@ -485,21 +484,6 @@ VPORT_GET(seek)
 VPORT_GET(getpos)
 VPORT_GET(setpos)
 
-static void vport_positionable_check(ScmPortVTable *vt, vport *data)
-{
-    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->getpos_proc)) {
-        vt->flags |= SCM_PORT_DISABLE_GETPOS;
-    } else {
-        vt->flags &= ~SCM_PORT_DISABLE_GETPOS;
-    }
-
-    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->setpos_proc)) {
-        vt->flags |= SCM_PORT_DISABLE_SETPOS;
-    } else {
-        vt->flags &= ~SCM_PORT_DISABLE_SETPOS;
-    }
-}
-
 static void vport_seek_set(ScmObj p, ScmObj v)
 {
     vport *data = VPORT(p);
@@ -511,7 +495,6 @@ static void vport_seek_set(ScmObj p, ScmObj v)
     } else {
         vt->Seek = vport_seek;
     }
-    vport_positionable_check(vt, data);
 }
 
 static void vport_getpos_set(ScmObj p, ScmObj v)
@@ -525,7 +508,6 @@ static void vport_getpos_set(ScmObj p, ScmObj v)
     } else {
         vt->GetPos = vport_getpos;
     }
-    vport_positionable_check(vt, data);
 }
 
 static void vport_setpos_set(ScmObj p, ScmObj v)
@@ -539,7 +521,6 @@ static void vport_setpos_set(ScmObj p, ScmObj v)
     } else {
         vt->SetPos = vport_setpos;
     }
-    vport_positionable_check(vt, data);
 }
 
 #define VPORT_SLOT(name)                                \
@@ -783,8 +764,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     buf.seeker  = NULL;
     buf.getpos  = NULL;
     buf.setpos  = NULL;
-    /* we enable these when appropriate slot is set */
-    buf.flags = SCM_PORT_DISABLE_GETPOS | SCM_PORT_DISABLE_SETPOS;
+    buf.flags = 0;
 
     int dir = 0;
     if (Scm_SubtypeP(klass, SCM_CLASS_BUFFERED_INPUT_PORT)) {
@@ -829,21 +809,6 @@ BPORT_GET(seek)
 BPORT_GET(getpos)
 BPORT_GET(setpos)
 
-static void bport_positionable_check(ScmPortBuffer *b, bport *data)
-{
-    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->getpos_proc)) {
-        b->flags |= SCM_PORT_DISABLE_GETPOS;
-    } else {
-        b->flags &= ~SCM_PORT_DISABLE_GETPOS;
-    }
-
-    if (SCM_FALSEP(data->seek_proc) && SCM_FALSEP(data->setpos_proc)) {
-        b->flags |= SCM_PORT_DISABLE_SETPOS;
-    } else {
-        b->flags &= ~SCM_PORT_DISABLE_SETPOS;
-    }
-}
-
 static void bport_seek_set(ScmObj p, ScmObj v)
 {
     bport *data = BPORT(p);
@@ -855,7 +820,6 @@ static void bport_seek_set(ScmObj p, ScmObj v)
     } else {
         b->seeker = bport_seek;
     }
-    bport_positionable_check(b, data);
 }
 
 static void bport_getpos_set(ScmObj p, ScmObj v)
@@ -869,7 +833,6 @@ static void bport_getpos_set(ScmObj p, ScmObj v)
     } else {
         b->getpos = bport_getpos;
     }
-    bport_positionable_check(b, data);
 }
 
 static void bport_setpos_set(ScmObj p, ScmObj v)
@@ -883,7 +846,6 @@ static void bport_setpos_set(ScmObj p, ScmObj v)
     } else {
         b->setpos = bport_setpos;
     }
-    bport_positionable_check(b, data);
 }
 
 #define BPORT_SLOT(name)                                \
