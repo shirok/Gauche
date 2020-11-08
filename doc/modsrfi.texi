@@ -8462,6 +8462,8 @@ Note that R7RS Scheme distinguishes binary and textual ports,
 while Gauche ports can handle both.
 @end deftp
 
+@subheading Creating custom ports
+
 @defun make-custom-binary-input-port id read! get-pos set-pos! close
 @defunx make-custom-textual-input-port id read! get-pos set-pos! close
 [SRFI-181]
@@ -8517,6 +8519,79 @@ argument, when the port is closed.  It can be @code{#f} if you
 don't need a special cleanup.
 @end defun
 
+@defun make-custom-binary-output-port id write! get-pos set-pos! close :optional flush
+@defunx make-custom-textual-output-port id write! get-pos set-pos! close :optional flush
+[SRFI-181]
+@c MOD srfi-181
+Creates a new binary and textual out port and returns it, respectively.
+
+The @var{id} argument is an arbitrary Scheme procedure.  SRFI doesn't
+specify how it is used.  In Gauche, @var{id} will be returned
+with @code{port-name} procedure (@pxref{Common port operations}).
+
+The @var{write!} argument is a procedure to be called as
+@code{(write! @var{buffer} @var{start} @var{count})}.
+For @code{make-custom-binary-output-port}, @var{buffer} is a bytevector.
+For @code{make-custom-textual-output-port}, @var{buffer} is either
+a string or a vector of characters (Gauche's implementation always
+use a vector, but portable code should handle both).
+
+The @var{write!} procedure needs to consume data in @var{buffer}
+starting from @var{start}, upto @var{count} items.  It must return
+the actual number of items consumed.
+
+The @var{get-pos} argument should be a procedure without taking argument,
+or @code{#f}.  If it is a procedure, it should return the position
+of the sink where the next @var{write!} writes to.  The position
+can be an arbitrary Scheme object, but for
+@code{make-custom-binary-output-port}, a position represented as
+an exact integer should correspond to the byte offset in the port.
+
+The @var{set-pos!} argument is a procedure to be called with one argument, 
+a new position.
+It should set the sink's position so that next @var{write!} starts
+to write data from there.  The passed position is something that has
+been returned by @var{get-pos}, or, for @code{make-custom-binary-output-port},
+an exact integer that indicates the byte offset from the beginning of
+the output.   This argument can be @code{#f} if the port doesn't
+support setting positions.  The returned value of @var{set-pos!} is
+ignored.
+
+If the position passed to @var{set-pos!} is invalid,
+an error that satisfy @code{i/o-invalid-position-error?} should be
+thrown.  Portably, it can be done by throwing a condition created
+by @code{make-i/o-invalid-position-error} (@pxref{Port positioning}).
+For Gauche-specific code, you can throw a compound condition
+with @code{<io-invalid-position-error-mixin>}.
+
+The @var{close} argument is a procedure to be called without
+argument, when the port is closed.  It can be @code{#f} if you
+don't need a special cleanup.
+
+The @var{flush} argument, if provided and not @code{#f}, 
+should be a procedure taking no arguments.  It is called when
+the port is requested to flush the data buffered in the sink, if any.
+@end defun
+
+@defun make-custom-binary-input/output-port id read! write! get-pos set-pos! close :optional flush
+[SRFI-181]
+@c MOD srfi-181
+Creates a bidirectional binary i/o port.  Since Gauche doesn't distinguish
+binary and textual ports, you can use the returned port for textual i/o as well,
+but portable code must avoid it.
+
+(The reason textual input/output port is not defined in the SRFI is that
+it is difficult to define a consistent semantics agnostic to the internal
+representation of character stream.  In Gauche, we immediately convert
+characters to the octet stream of internal character encoding.)
+
+The arguments, @var{id}, @var{read!}, @var{write!},
+@var{get-pos}, @var{set-pos!}, @var{close} and @var{flush} are
+the same as @code{make-custom-binary-input-port} and
+@code{make-custom-binary-output-port}.
+@end defun
+
+@subheading Transcoded ports
 
 
 
