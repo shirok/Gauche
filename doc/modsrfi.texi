@@ -9404,16 +9404,33 @@ port-has-set-port-position?
 @end example
 @end deftp
 
-@defun i/o-invalid-position-error? obj
-[SRFI-192]
-@c MOD srfi-192
-@end defun
-
 @defun make-i/o-invalid-position-error pos
 [SRFI-192]
 @c MOD srfi-192
+This portably creates a condition suitable to be raised from
+@code{set-port-position!} when the given position object can't
+be accepted.  The @var{pos} argument is the offending position object.
+
+In Gauche, such condition is represented by 
+@code{<io-invalid-position-error-mixin>} class.
+It is usually compounded with @code{<port-error>} object, which includes
+the port information.
+
+If you raise a condition created with this procedure from
+the @code{set-position!} callback of the custom ports
+(@pxref{Custom ports}), Gauche wraps it with @code{<port-error>}
+object.
 @end defun
 
+@defun i/o-invalid-position-error? obj
+[SRFI-192]
+@c MOD srfi-192
+Returns @code{#t} iff @var{obj} is an i/o-invalid-position-errro
+condition (or a compound condition that includes it).
+
+In Gauche, it is the same as
+@code{(condition-has-type? @var{obj} <io-invalid-position-error-mixin>)}.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Command line,  , Port positioning, Library modules - SRFIs
