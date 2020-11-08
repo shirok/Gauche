@@ -31,17 +31,33 @@
 
 (define-constant *buffer-size* 1024)
 
+(define-syntax wrap-setpos
+  (syntax-rules ()
+    [(_ setpos portvar)
+     (and setpos
+          (^[pos] (guard (e [(<io-invalid-position-error-mixin> e)
+                             (raise
+                              (condition
+                               (<port-error>
+                                (port portvar)
+                                (message (format "Invalid position object: ~s" (~ e'position))))
+                               (<io-invalid-position-error-mixin>
+                                (position (~ e'position)))))]
+                            [else (raise e)])
+                    (setpos pos))))]))
+
 (define (make-custom-binary-input-port id read!
                                        get-position set-position!
                                        close)
   (define (filler buf)
     (read! buf 0 (u8vector-length buf)))
-  (make <buffered-input-port>
-    :name id
-    :fill filler
-    :getpos get-position
-    :setpos set-position!
-    :close close))
+  (letrec ([p (make <buffered-input-port>
+                :name id
+                :fill filler
+                :getpos get-position
+                :setpos (wrap-setpos set-position! p)
+                :close close)])
+    p))
 
 (define (make-custom-textual-input-port id read!
                                         get-position set-position!
@@ -49,14 +65,15 @@
   (if (or get-position set-position!)
     ;; If positioning is required, we can't buffer characters.
     (let ([buf (make-vector 1)])
-      (make <virtual-input-port>
-        :getc (^[] (let1 n (read! buf 0 1)
-                     (if (zero? n)
-                       (eof-object)
-                       (vector-ref buf 0))))
-        :getpos get-position
-        :setpos set-position!
-        :close close))
+      (letrec ([p (make <virtual-input-port>
+                    :getc (^[] (let1 n (read! buf 0 1)
+                                 (if (zero? n)
+                                   (eof-object)
+                                   (vector-ref buf 0))))
+                    :getpos get-position
+                    :setpos (wrap-setpos set-position! p)
+                    :close close)])
+        p))
     ;; <buffered-input-port> uses u8vector for the buffer, so we have
     ;; to convert it.
     (let ([cbuf #f])                     ;vector, allocated on demand
@@ -91,12 +108,13 @@
               len)
             (let1 n (write! buf pos (- len pos))
               (loop (+ pos n))))))))
-  (make <buffered-output-port>
-    :name id
-    :flush flusher
-    :getpos get-position
-    :setpos set-position!
-    :close close))
+  (letrec ([p (make <buffered-output-port>
+                :name id
+                :flush flusher
+                :getpos get-position
+                :setpos (wrap-setpos set-position! p)
+                :close close)])
+    p))
 
 ;; For textual output, <buffered-output-port> is inconvenient,
 ;; for the passed u8vector may end in the middle of multibyte character.
@@ -104,19 +122,20 @@
                                          get-position set-position!
                                          close :optional (flush #f))
   (define cbuf (make-vector 1))
-  (make <virtual-output-port>
-    :name id
-    :putc (^c (vector-set! cbuf 0 c) (write! cbuf 0 1))
-    :puts (^s (let1 siz (string-length s)
-                (when (< (vector-length cbuf) siz)
-                  (set! cbuf (make-vector siz)))
-                (do-ec (: c (index i) s)
-                       (vector-set! cbuf i c))
-                (write! cbuf 0 siz)))
-    :getpos get-position
-    :setpos set-position!
-    :flush (^[] (and flush (flush)))
-    :close close))
+  (letrec ([p (make <virtual-output-port>
+                :name id
+                :putc (^c (vector-set! cbuf 0 c) (write! cbuf 0 1))
+                :puts (^s (let1 siz (string-length s)
+                            (when (< (vector-length cbuf) siz)
+                              (set! cbuf (make-vector siz)))
+                            (do-ec (: c (index i) s)
+                                   (vector-set! cbuf i c))
+                            (write! cbuf 0 siz)))
+                :getpos get-position
+                :setpos (wrap-setpos set-position! p)
+                :flush (^[] (and flush (flush)))
+                :close close)])
+    p))
 
 (define (make-custom-binary-input/output-port id read! write!
                                               get-position set-position!
@@ -125,18 +144,19 @@
   ;; is less efficient, for I/O is done one byte at a time.
   (define buf (make-u8vector 1))
 
-  (make <virtual-io-port>
-    :name id
-    :getb (^[] (let1 r (read! buf 0 1)
-                 (if (zero? r)
-                   (eof-object)
-                   (u8vector-ref buf 0))))
-    :putb (^b (u8vector-set! buf 0 b)
-              (write! buf 0 1))
-    :getpos get-position
-    :setpos set-position!
-    :close close
-    :flush flush))
+  (letrec ([p (make <virtual-io-port>
+                :name id
+                :getb (^[] (let1 r (read! buf 0 1)
+                             (if (zero? r)
+                               (eof-object)
+                               (u8vector-ref buf 0))))
+                :putb (^b (u8vector-set! buf 0 b)
+                          (write! buf 0 1))
+                :getpos get-position
+                :setpos (wrap-setpos set-position! p)
+                :close close
+                :flush flush)])
+    p))
 
 (define (make-file-error . objs)
   ;; As of 0.9.9, Gauche uses ad-hoc way to determine file-error--
