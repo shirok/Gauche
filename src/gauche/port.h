@@ -92,9 +92,9 @@ typedef struct ScmPortBufferRec {
     /* The following fields are added in 0.9.10.  When you pass ScmPortBuffer
        to the constructor, those fields are looked at only when you specify
        SCM_PORT_WITH_POSITION.  They are needed to fully support srfi-192-style
-       port positioning. */
+       port positioning.   See the Port Positioning Interface below. */
     ScmObj (*getpos)(ScmPort *p);
-    ScmObj (*setpos)(ScmPort *p, ScmObj pos);
+    void   (*setpos)(ScmPort *p, ScmObj pos);
     u_long flags;               /* reserved */
 } ScmPortBuffer;
 
@@ -116,9 +116,9 @@ typedef struct ScmPortVTableRec {
     /* The following fields are added in 0.9.10.  When you pass ScmPortBuffer
        to the constructor, those fields are looked at only when you specify
        SCM_PORT_WITH_POSITION.  They are needed to fully support srfi-192-style
-       port positioning. */
+       port positioning.   See the Port Positioning Interface below. */
     ScmObj (*GetPos)(ScmPort *p);
-    ScmObj (*SetPos)(ScmPort *p, ScmObj pos);
+    void   (*SetPos)(ScmPort *p, ScmObj pos);
     u_long flags;               /* reserved */
 } ScmPortVTable;
 
@@ -128,6 +128,51 @@ typedef struct ScmPortInputStringRec {
     const char *current;
     const char *end;
 } ScmPortInputString;
+
+/* Note on Port Positioning Interface
+
+   Gauche historically supported lseek(2) style interface, which can handle
+   both getting and setting the position.  R6RS introduced
+   port-position and set-port-position! interface, which then adopted as
+   SRFI-192.  It requires different strategy than lseek interface.
+   
+   1) SRFI-192 allows port position can be gotten but not be set, and that
+      needs to be queried by port-has-set-port-position!?.  With lseek API,
+      port position is either totally unavaiable or can be gotten/set.
+      (seek callback may raise an error when setting is not supported, but
+      it can't be queried.)
+
+   2) SRFI-192 allows arbitrary Scheme object as the position, while lseek
+      API assumes integer byte offset.  Indeed, for the textual port, meaning
+      of byte offset is vague.
+
+   3) Lseek allows position to be set relative to the current position or
+      to the end of the file.  SRFI-192 set-port-position! is always the
+      absolute position.
+   
+  To support both interface, we have these hooks in SCM_PORT_FILE and 
+  SCM_PORT_PROC type of ports (the field names differ for the historical
+  reasons):
+
+     off_t SEEK(ScmPort*, off_t, int)    ;; seeker, Seek
+     ScmObj GETPOS(ScmPort*)             ;; getpos, GetPos
+     void SETPOS(ScmPort*, ScmObj)       ;; setpos, SetPos
+
+  GETPOS/SETPOS takes precedence to SEEK.
+
+  Port is port-has-port-position? if it has either GETPOS or SEEK handler,
+  and port-has-set-port-position!? if it has either SETPOS or SEEK handler.
+
+  For SCM_PORT_BUF, the position returned by GETPOS and that SETPOS takes
+  must be an exact Scheme integer, representing the integer byte offset.
+  Since the input is buffered, we need to calculate the actual position
+  in the buffer, from the source position returned by GETPOS.
+
+  For SCM_PORT_PROC, we treat the position as an opaque object.  Note that
+  input port has a small buffer for peeked byte/character, that makes
+  things complicated.  Since we can't adjust the opaque position, we instead
+  call GETPOS before peek and remember the position.
+ */
 
 /*
  * We don't expose much about ScmPort struct to the user.  A bunch of

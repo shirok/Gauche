@@ -976,28 +976,7 @@ int Scm_CharReadyUnsafe(ScmPort *p)
  * Port Positioning
  */
 
-/* Originally we modeled our port positioning after POSIX fseek/ftell;
-   the position is represented by integer offset, seek can be absolute,
-   relative to current pos, or relative to the end of file, and tell
-   is the same as seek(0, SEEK_CUR).
-
-   This doesn't go well with R6RS/SRFI-192 semantics. Integer offset of
-   textual port is hard to define portably.  Should it be character count,
-   or internal byte offset?  An implementation may only have either one
-   available (Gauche has only internal byte offset for file ports, 
-   for example).
-
-   Srfi-181/192 allows user-defined procedures of custom ports return
-   arbitrary Scheme object as a position, so we can't do any operation
-   on it in the port layer.  The custom port is only handled via
-   SCM_PORT_PROC.  So we treat it specially--for peek-char and peek-byte,
-   we save the current position before fetching a new character, and
-   port-position returns the saved position if there's any.  It only
-   happens when the port type is SCM_PORT_PROC.
-   (SCM_PORT_FILE also have getpos/setpos callback, but the implementation
-   must return a byte offset, for we have to adjust what's in the buffer.)
- */
-
+/* See the comment in port.h (Port Positioning Interface) */
 
 /* For the sake of seek/tell, we treat scratch buffer and ungotten char
    (collectively we call them pending bytes here) as if it's a cache---
@@ -1169,7 +1148,8 @@ static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (PORT_BUF(p)->setpos && whence == SEEK_SET) {
-            r = PORT_BUF(p)->setpos(p, off);
+            SAFE_CALL(p, PORT_BUF(p)->setpos(p, off));
+            r = off;
             break;
         }
 
@@ -1221,10 +1201,9 @@ static ScmObj set_port_position(ScmPort *p, ScmObj pos, int whence)
     case SCM_PORT_PROC:
         if (PORT_VT(p)->SetPos && whence == SEEK_SET) {
             UNSAVE_POS(p);
-            SAFE_CALL(p, r = PORT_VT(p)->SetPos(p, off));
-            break;
-        }
-        if (PORT_VT(p)->Seek) {
+            SAFE_CALL(p, PORT_VT(p)->SetPos(p, off));
+            r = off;
+        } else if (PORT_VT(p)->Seek) {
             UNSAVE_POS(p);
             off_t rr;
             SAFE_CALL(p, rr = PORT_VT(p)->Seek(p,

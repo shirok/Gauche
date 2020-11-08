@@ -372,7 +372,7 @@ static ScmObj vport_getpos(ScmPort *p)
     return SCM_UNDEFINED;
 }
 
-static ScmObj vport_setpos(ScmPort *p, ScmObj pos)
+static void vport_setpos(ScmPort *p, ScmObj pos)
 {
     vport *data = VPORT(p);
     SCM_ASSERT(data != NULL);
@@ -382,7 +382,6 @@ static ScmObj vport_setpos(ScmPort *p, ScmObj pos)
         Scm_ApplyRec(data->seek_proc,
                      SCM_LIST2(pos, SCM_MAKE_INT(SEEK_SET)));
     }
-    return SCM_UNDEFINED;
 }
 
 
@@ -697,14 +696,12 @@ static ScmObj bport_getpos(ScmPort *p)
     }
 }
 
-static ScmObj bport_setpos(ScmPort *p, ScmObj pos)
+static void bport_setpos(ScmPort *p, ScmObj pos)
 {
     bport *data = BPORT(p);
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->setpos_proc)) {
-        return Scm_ApplyRec(data->setpos_proc, SCM_LIST1(pos));
-    } else {
-        return SCM_FALSE;
+        Scm_ApplyRec(data->setpos_proc, SCM_LIST1(pos));
     }
 }
 
