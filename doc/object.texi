@@ -3532,7 +3532,7 @@ Scheme 定義のクラスは、@code{scheme} というシンボルを持って�
 @subsubheading @code{<class>} 用の initialize メソッド
 @c COMMON
 
-@deffn {Method} initialize (class <class>) :rest initargs
+@deffn {Method} initialize (class <class>) initargs
 @c EN
 The @code{define-class} macro expands into a call of
 @code{(make <class> @dots{})}, which allocates a class metaobject
