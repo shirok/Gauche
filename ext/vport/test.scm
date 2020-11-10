@@ -625,11 +625,6 @@
   (use gauche.uvector)  ; uvector is tested before vport
   (use srfi-181)
 
-  (define (check expected actual)
-    (if (list? expected)
-      (any (^z (equal? z actual)) expected)
-      (equal? expected actual)))
-
   (define (import-test codec external-data internal-string)
     (let1 native-codec (~ (native-transcoder)'codec)
       (test* `(bytevector->string (,(~ codec'name) -> ,(~ native-codec'name)))
@@ -637,16 +632,14 @@
              (bytevector->string external-data 
                                  (make-transcoder codec
                                                   (native-eol-style)
-                                                  'replace))
-             check)
+                                                  'replace)))
       (test* `(port (,(~ codec'name) -> ,(~ native-codec'name)))
              internal-string
              (port->string
               (transcoded-port (open-input-bytevector external-data)
                                (make-transcoder codec
                                                 (native-eol-style)
-                                                'replace)))
-             check)))
+                                                'replace))))))
   (define (export-test codec internal-string external-data)
     (let1 native-codec (~ (native-transcoder)'codec)
       (test* `(string->bytevector (,(~ native-codec'name) -> ,(~ codec'name)))
@@ -654,8 +647,7 @@
              (string->bytevector internal-string
                                  (make-transcoder codec
                                                   (native-eol-style)
-                                                  'replace))
-             check)
+                                                  'replace)))
       (test* `(port (,(~ native-codec'name) -> ,(~ codec'name)))
              external-data
              (let* ([buf (open-output-bytevector)]
@@ -665,8 +657,7 @@
                                                          'replace))])
                (display internal-string p)
                (flush p)
-               (get-output-bytevector buf))
-             check)))
+               (get-output-bytevector buf)))))
 
   (define (roundtrip-test codec external-data internal-string)
     (import-test codec external-data internal-string)
@@ -691,8 +682,9 @@
                  "A\u00c2B")
     (export-test (make-codec 'utf-16)
                  "A\u00c2B"
-                 '(#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
-                   #u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)))
+                 (test-one-of
+                  '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
+                  '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)))
     ]
    [else])
   )
