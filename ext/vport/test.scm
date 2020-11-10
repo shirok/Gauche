@@ -692,7 +692,7 @@
     (export-test (make-codec 'utf-16)
                  "A\u00c2B"
                  '(#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
-                   #u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)))
+                   #u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)))
     ]
    [else])
   )
