@@ -7,6 +7,7 @@
   (use gauche.record)
   (use gauche.vport)
   (use gauche.uvector)
+  (use gauche.charconv)
   (use srfi-42)
   (export make-custom-binary-input-port
           make-custom-textual-input-port
@@ -170,12 +171,14 @@
 ;;; Transcoders
 ;;;
 
-;; NB: Right now, it's just from the reference implementation and
-;; only supports ascii, latin-1, utf-8 and utf-16.  We'll adapt
-;; this to gauche.charconv later.
+;; Since we already have gauche.charconv, we don't use srfi-181 layer
+;; to implement transcoded ports.
 
-(define-record-type unknown-encoding-error
-  (make-unknown-encoding-error name)
+;; TODO: newline style and decoding/encoding error is temporarily
+;; unsupported.  We'll support them in gauche.charconv and propagate it
+;; to this layer.
+
+(define-condition-type <unknown-encoding-error> <error>
   unknown-encoding-error?
   (name unknown-encoding-error-name))
 
@@ -193,39 +196,40 @@
 (define-record-type codec
   (%make-codec name)
   codec?
-  (name codec-name)) ; canonical symbol
+  (name codec-name))
+(define-method write-object ((c codec) port)
+  (format port "#<codec ~s>" (codec-name c)))
 
-(define *supported-codecs*
-  ;; ((canonical-symbol name ...) ...)
-  '((ascii    "ascii" "us-ascii" "iso-ir-6"
-              "ansi_x3.4-1968" "ansi_x3.4-1986" "iso-646.irv:1991"
-              "iso-646-us" "us" "ibm367" "cp367" "csascii")
-    (latin-1  "latin-1" "iso-8859-1:1987" "iso-8859-1" "iso-ir-100"
-              "iso_8859-1" "latin1" "l1" "ibm819" "cp819"
-              "csisolatin1")
-    (utf-8    "utf-8" "csutf8")
-    (utf-16   "utf-16" "csutf16"))
-  )
+;; CES 'none' is kind of special---you can treat octet stream as any 
+;; single-byte encoding.  However, srfi-181 transcoder needs to assume
+;; specific internal encoding, so we treat 'none' as Latin1.
+(define *native-codec-name*
+  (cond-expand
+   [gauche.ces.none 'latin1]
+   [else (gauche-character-encoding)]))
 
 (define (make-codec name)
-  ;; We support latin-1, utf-8 and utf-16
-  (let ((codec-entry (find (lambda (entry)
-                             (member name (cdr entry) string-ci=?))
-                           *supported-codecs*)))
-    (if codec-entry
-      (%make-codec (car codec-entry))
-      (raise (make-unknown-encoding-error name)))))
+  (if (and (ces-conversion-supported? *native-codec-name* name)
+           (ces-conversion-supported? name *native-codec-name*))
+    (%make-codec name)
+    (error <unknown-encoding-error>
+           :name name
+           "Unknown encoding:" name)))
 
+(define *native-codec* (make-codec *native-codec-name*))
 (define *ascii-codec* (make-codec "ascii"))
-(define *latin-1-codec* (make-codec "latin-1"))
-(define *utf-8-codec* (make-codec "utf-8"))
-(define *utf-16-codec* (make-codec "utf-16"))
-
+(define *latin-1-codec* (make-codec "latin1"))
 (define (latin-1-codec) *latin-1-codec*)
-(define (utf-8-codec) *utf-8-codec*)
-(define (utf-16-codec) *utf-16-codec*)
 
-(define-record-type transcoder
+(cond-expand
+ [gauche.ces.none]
+ [else
+  (define *utf-8-codec* (make-codec "utf-8"))
+  (define *utf-16-codec* (make-codec "utf-16"))
+  (define (utf-8-codec) *utf-8-codec*)
+  (define (utf-16-codec) *utf-16-codec*)])
+
+(define-record-type <transcoder>
   (%make-transcoder codec eol-style handling-mode)
   transcoder?
   (codec transcoder-codec)
@@ -246,171 +250,34 @@
 (define (native-eol-style) 'lf)
 
 (define (native-transcoder)
-  (make-transcoder *ascii-codec* (native-eol-style) 'replace))
-
-;; actual transcoding
-
-(define (make-filler read-1)
-  (lambda (buf start count)
-    (let loop ((i start)
-               (k 0))
-      (if (= k count)
-        k
-        (let ((c (read-1)))
-          (if (eof-object? c)
-            k
-            (begin
-              ((if (string? buf) string-set! vector-set!) buf i c)
-              (loop (+ i 1) (+ k 1)))))))))
-
-;; read latin-1 or utf-8 source into ascii.
-(define (make-u8-ascii-read! source eol-style handling)
-  (define (read-1)
-    (let ((b (read-u8 source)))
-      (cond ((eof-object? b) b)
-            ((>= b #x80) (if (eq? handling 'replace)
-                           #\?
-                           (raise (make-i/o-decoding-error
-                                   "input byte out of range"))))
-            ((= b #x0d) (if (eq? eol-style 'none)
-                          #\return
-                          (let ((b2 (peek-u8 source)))
-                            (when (= b2 #x0a)
-                              (read-u8 source))
-                            #\newline)))
-            (else (integer->char b)))))
-  (make-filler read-1))
-
-;; read utf-16 source into ascii
-(define (make-u16-ascii-read! source eol-style handling)
-  (define endianness #f)
-  (define (read-1)
-    (let ((b0 (read-u8 source)))
-      (if (eof-object? b0)
-        b0
-        (let ((b1 (read-u8 source)))
-          (if (eof-object? b1)
-            (raise (make-i/o-decoding-error "lone utf-16 octet"))
-            (case endianness
-              ((big)    (decode-1 b0 b1))
-              ((little) (decode-1 b1 b0))
-              (else
-               (cond ((and (= b0 #xfe) (= b1 #xff))
-                      (set! endianness 'big)
-                      (read-1))
-                     ((and (= b0 #xff) (= b1 #xfe))
-                      (set! endianness 'little)
-                      (read-1))
-                     (else (decode-1 b0 b1)) ;; BE by default
-                     ))))))))
-  (define (decode-1 hi lo)
-    (cond ((and (zero? hi) (< lo #x80))
-           (if (and (= lo #x0d) (not (eq? eol-style 'none)))
-             (let ((b2 (peek-u8 source)))
-               (when (= b2 #x0a)
-                 (read-u8 source))
-               #\newline)
-             (integer->char lo)))
-          ((eq? handling 'replace) #\?)
-          (else (make-i/o-decoding-error "input bytes out of range"))))
-  (make-filler read-1))
-
-(define (make-flusher write-1)
-  (lambda (buf start count)
-    (let loop ((i start)
-               (k 0))
-      (if (= k count)
-        k
-        (let ((c ((if (string? buf) string-ref vector-ref) buf i)))
-          (write-1 c)
-          (loop (+ i 1) (+ k 1)))))))
-
-;; Write a character C to SINK as a single byte.  Handlng EOL style.
-;; Returns a new pending-return value.
-(define (output-1b c sink eol-style pending-return)
-  (define (nl)
-    (case eol-style
-      ((none lf) (write-u8 #x0a sink))
-      ((cr)      (write-u8 #x0d sink))
-      ((crlf)    (write-u8 #x0d sink) (write-u8 #x0a sink))))
-  (cond ((eq? eol-style 'none)          ; we don't need to worry newlines
-         (write-u8 (char->integer c) sink) #f)
-        ((eqv? c #\return) (when pending-return (nl)) #t)
-        ((eqv? c #\newline) (nl) #f)
-        (pending-return (nl) (write-u8 (char->integer c) sink) #f)
-        (else (write-u8 (char->integer c) sink) #f)))
-
-(define (make-u8-ascii-write! sink eol-style handling)
-  (define pending-return #f)
-  (define (write-1 c)
-    (set! pending-return (output-1b c sink eol-style pending-return)))
-  (make-flusher write-1))
-
-(define (make-u16-ascii-write! sink eol-style handling)
-  ;; we assume BE
-  (define bom-written? #f)
-  (define pending-return #f)
-  (define (write-1 c)
-    (unless bom-written?
-      (write-u8 #xfe sink)
-      (write-u8 #xff sink)
-      (set! bom-written? #t))
-    (write-u8 0 sink)
-    (set! pending-return (output-1b c sink eol-style pending-return)))
-  (make-flusher write-1))
+  (make-transcoder *native-codec* (native-eol-style) 'replace))
 
 ;; API
 (define (transcoded-port inner transcoder)
-  (define (closer) (close-port inner))
-  (define (port-id)
-    (string-append "transcoding "
-                   (if (input-port? inner) "from " "to ")
-                   (symbol->string (codec-name (transcoder-codec transcoder)))))
-  (unless (transcoder? transcoder)
-    (error "transcoder required, but got" transcoder))
-  (let ((eol (transcoder-eol-style transcoder))
-        (handling (transcoder-handling-mode transcoder)))
-    (cond
-     ((input-port? inner)
-      (case (codec-name (transcoder-codec transcoder))
-        ((ascii latin-1 utf-8)
-         (make-custom-textual-input-port (port-id)
-                                         (make-u8-ascii-read! inner eol handling)
-                                         #f #f closer))
-        ((utf-16)
-         (make-custom-textual-input-port (port-id)
-                                         (make-u16-ascii-read! inner eol handling)
-                                         #f #f closer))))
-     ((output-port? inner)
-      (case (codec-name (transcoder-codec transcoder))
-        ((ascii latin-1 utf-8)
-         (make-custom-textual-output-port (port-id)
-                                          (make-u8-ascii-write! inner eol handling)
-                                          #f #f closer))
-        ((utf-16)
-         (make-custom-textual-output-port (port-id)
-                                          (make-u16-ascii-write! inner eol handling)
-                                          #f #f closer))))
-     (else
-      (error "port required, but got" inner)))))
+  (assume-type transcoder <transcoder>)
+  (cond
+   [(input-port? inner)
+    (open-input-conversion-port inner 
+                                (~ transcoder'codec'name)
+                                :owner? #t
+                                :handling (~ transcoder'handling-mode))]
+   [(output-port? inner)
+    (open-output-conversion-port inner 
+                                 (~ transcoder'codec'name)
+                                 :owner? #t
+                                 :handling (~ transcoder'handling-mode))]
+   [else
+    (error "port required, but got:" inner)]))
 
 (define (bytevector->string bytevector transcoder)
-  (let ((src (transcoded-port (open-input-bytevector bytevector) transcoder))
-        (sink (open-output-string)))
-    (let loop ((c (read-char src)))
-      (if (eof-object? c)
-        (get-output-string sink)
-        (begin
-          (write-char c sink)
-          (loop (read-char src)))))))
+  (assume-type bytevector <u8vector>)
+  (assume-type transcoder <transcoder>)
+  (ces-convert-to <string> bytevector
+                  (codec-name (transcoder-codec transcoder))))
 
 (define (string->bytevector string transcoder)
-  (let* ((src (open-input-string string))
-         (dest (open-output-bytevector))
-         (sink (transcoded-port dest transcoder)))
-    (let loop ((c (read-char src)))
-      (if (eof-object? c)
-        (get-output-bytevector dest)
-        (begin
-          (write-char c sink)
-          (loop (read-char src)))))))
+  (assume-type string <string>)
+  (assume-type transcoder <transcoder>)
+  (ces-convert-to <u8vector> string
+                  *native-codec-name*
+                  (codec-name (transcoder-codec transcoder))))

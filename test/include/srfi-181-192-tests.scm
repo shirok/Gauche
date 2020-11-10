@@ -453,7 +453,11 @@
    (test-equal "written expr 2" data (read p)))
  )
 
-(test-group
+;;
+;; For Gauche - transcoder tests are done in gauche.charconv
+;;
+
+'(test-group
  "transcoded input"
  ;; This test assumes native transcoder supports ascii range
  (test-equal "native" "ABCD"
@@ -509,7 +513,7 @@
               '(none lf crlf)))
  )
 
-(test-group
+'(test-group
  "transcoded output"
  ;; This test assumes native transcoder supports ascii range
  (test-equal "native" '#u8(#x41 #x42 #x43 #x44)

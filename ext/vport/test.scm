@@ -618,4 +618,83 @@
            (set-port-position! p 'foo)))
   )
 
+(define-module srfi-181-transcoder
+  (use gauche.test)
+  (use gauche.vport)
+  (use gauche.charconv) ; chaconv is tested before vport
+  (use gauche.uvector)  ; uvector is tested before vport
+  (use srfi-181)
+
+  (define (check expected actual)
+    (if (list? expected)
+      (any (^z (equal? z actual)) expected)
+      (equal? expected actual)))
+
+  (define (import-test codec external-data internal-string)
+    (let1 native-codec (~ (native-transcoder)'codec)
+      (test* `(bytevector->string (,(~ codec'name) -> ,(~ native-codec'name)))
+             internal-string
+             (bytevector->string external-data 
+                                 (make-transcoder codec
+                                                  (native-eol-style)
+                                                  'replace))
+             check)
+      (test* `(port (,(~ codec'name) -> ,(~ native-codec'name)))
+             internal-string
+             (port->string
+              (transcoded-port (open-input-bytevector external-data)
+                               (make-transcoder codec
+                                                (native-eol-style)
+                                                'replace)))
+             check)))
+  (define (export-test codec internal-string external-data)
+    (let1 native-codec (~ (native-transcoder)'codec)
+      (test* `(string->bytevector (,(~ native-codec'name) -> ,(~ codec'name)))
+             external-data
+             (string->bytevector internal-string
+                                 (make-transcoder codec
+                                                  (native-eol-style)
+                                                  'replace))
+             check)
+      (test* `(port (,(~ native-codec'name) -> ,(~ codec'name)))
+             external-data
+             (let* ([buf (open-output-bytevector)]
+                    [p (transcoded-port buf
+                                        (make-transcoder codec
+                                                         (native-eol-style)
+                                                         'replace))])
+               (display internal-string p)
+               (flush p)
+               (get-output-bytevector buf))
+             check)))
+
+  (define (roundtrip-test codec external-data internal-string)
+    (import-test codec external-data internal-string)
+    (export-test codec internal-string external-data))
+                   
+  (cond-expand
+   [gauche.ces.utf8
+    (roundtrip-test (make-codec 'latin1)
+                    '#u8(#x41 #xc2 #x42)
+                    "A\u00c2B")
+    (roundtrip-test (make-codec 'utf-16be)
+                    '#u8(#x00 #x41 #x00 #xc2 #x00 #x42)
+                    "A\u00c2B")
+    (roundtrip-test (make-codec 'utf-16le)
+                    '#u8(#x41 #x00 #xc2 #x00 #x42 #x00)
+                    "A\u00c2B")
+    (import-test (make-codec 'utf-16)
+                 '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)
+                 "A\u00c2B")
+    (import-test (make-codec 'utf-16)
+                 '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
+                 "A\u00c2B")
+    (export-test (make-codec 'utf-16)
+                 "A\u00c2B"
+                 '(#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
+                   #u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)))
+    ]
+   [else])
+  )
+
 (test-end)

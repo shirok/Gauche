@@ -1,3 +1,8 @@
+2020-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-181.scm (transcoded-port, bytevector->string)
+	  (string->bytevector): Reimplement on top of gauche.charconv.
+
 2020-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (Scm_GetPortPosition), ext/vport/vport.c:
