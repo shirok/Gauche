@@ -276,12 +276,15 @@
                                             to-code
                                             :key (from-code #f)
                                                  (buffer-size::<fixnum> 0)
-                                                 (owner? #f))
+                                                 (owner? #f)
+                                                 (handling #f))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")]
           [flags::u_long 0])
      (unless (SCM_FALSEP ownerP)
        (logior= flags CVPORT_OWNER))
+     (when (SCM_EQ handling 'replace)
+       (logior= flags CVPORT_REPLACE))
      (return (Scm_MakeOutputConversionPort sink tc fc buffer_size flags))))
 
  (define-cproc ces-guess-from-string (string::<string> scheme::<string>)
