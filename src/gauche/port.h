@@ -341,6 +341,8 @@ SCM_EXTERN void   Scm_SetPortCaseFolding(ScmPort *port, int flag);
 SCM_EXTERN ScmObj Scm_GetPortReaderLexicalMode(ScmPort *port);
 SCM_EXTERN void   Scm_SetPortReaderLexicalMode(ScmPort *port, ScmObj obj);
 
+SCM_EXTERN void   Scm_SetPortErrorOccurred(ScmPort *port, int val);
+
 SCM_EXTERN int    Scm_PortPositionable(ScmPort *port, int setp);
 
 SCM_EXTERN void   Scm_FlushAllPorts(int exitting);

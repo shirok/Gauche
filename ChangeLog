@@ -1,3 +1,10 @@
+2020-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_PortError): Set PORT_ERROR_OCCURRED flag of the
+	  port within this procedure.  If a port raised an error and left open
+	  with an inconsitent state, Scm_Cleanup tries to flush it when the
+	  process exit and bad things can happen.
+
 2020-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-181.scm (transcoded-port, bytevector->string)

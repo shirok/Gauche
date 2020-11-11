@@ -460,6 +460,12 @@ ScmObj Scm_ReaderLexicalMode()
     return Scm_PrimitiveParameterRef(Scm_VM(), readerLexicalMode);
 }
 
+/* flag can be checked with SCM_PORT_ERROR_OCCURRED_P()  */
+void Scm_SetPortErrorOccurred(ScmPort *port, int flag)
+{
+    port->error = flag;
+}
+
 /* Query whether the port is positoinable.  If setp is false, returns
    if port can get current pos.  If setp is true, returns if port
    can set pos.

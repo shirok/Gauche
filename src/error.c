@@ -795,6 +795,8 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
     ScmVM *vm = Scm_VM();
     SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg);
 
+    Scm_SetPortErrorOccurred(port, TRUE);
+
     ScmObj ostr;
     if (en != 0) SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
     else         SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
