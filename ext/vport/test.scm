@@ -625,66 +625,77 @@
   (use gauche.uvector)  ; uvector is tested before vport
   (use srfi-181)
 
-  (define (import-test codec external-data internal-string)
+  (define (import-test codec external-data internal-string handling)
     (let1 native-codec (~ (native-transcoder)'codec)
       (test* `(bytevector->string (,(~ codec'name) -> ,(~ native-codec'name)))
              internal-string
              (bytevector->string external-data 
                                  (make-transcoder codec
                                                   (native-eol-style)
-                                                  'replace)))
+                                                  handling)))
       (test* `(port (,(~ codec'name) -> ,(~ native-codec'name)))
              internal-string
-             (port->string
-              (transcoded-port (open-input-bytevector external-data)
-                               (make-transcoder codec
-                                                (native-eol-style)
-                                                'replace))))))
-  (define (export-test codec internal-string external-data)
+             (let1 p
+                 (transcoded-port (open-input-bytevector external-data)
+                                  (make-transcoder codec
+                                                   (native-eol-style)
+                                                   handling))
+               (begin0 (port->string p)
+                 (close-port p))))))
+  (define (export-test codec internal-string external-data handling)
     (let1 native-codec (~ (native-transcoder)'codec)
       (test* `(string->bytevector (,(~ native-codec'name) -> ,(~ codec'name)))
              external-data
              (string->bytevector internal-string
                                  (make-transcoder codec
                                                   (native-eol-style)
-                                                  'replace)))
+                                                  handling)))
       (test* `(port (,(~ native-codec'name) -> ,(~ codec'name)))
              external-data
              (let* ([buf (open-output-bytevector)]
                     [p (transcoded-port buf
                                         (make-transcoder codec
                                                          (native-eol-style)
-                                                         'replace))])
+                                                         handling))])
                (display internal-string p)
                (flush p)
-               (get-output-bytevector buf)))))
+               (begin0 (get-output-bytevector buf)
+                 (close-port p))))))
 
-  (define (roundtrip-test codec external-data internal-string)
-    (import-test codec external-data internal-string)
-    (export-test codec internal-string external-data))
+  (define (roundtrip-test codec external-data internal-string handling)
+    (import-test codec external-data internal-string handling)
+    (export-test codec internal-string external-data handling))
                    
   (cond-expand
    [gauche.ces.utf8
     (roundtrip-test (make-codec 'latin1)
                     '#u8(#x41 #xc2 #x42)
-                    "A\u00c2B")
+                    "A\u00c2B" 'replace)
     (roundtrip-test (make-codec 'utf-16be)
                     '#u8(#x00 #x41 #x00 #xc2 #x00 #x42)
-                    "A\u00c2B")
+                    "A\u00c2B" 'replace)
     (roundtrip-test (make-codec 'utf-16le)
                     '#u8(#x41 #x00 #xc2 #x00 #x42 #x00)
-                    "A\u00c2B")
+                    "A\u00c2B" 'replace)
     (import-test (make-codec 'utf-16)
                  '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)
-                 "A\u00c2B")
+                 "A\u00c2B" 'replace)
     (import-test (make-codec 'utf-16)
                  '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
-                 "A\u00c2B")
+                 "A\u00c2B" 'replace)
     (export-test (make-codec 'utf-16)
                  "A\u00c2B"
                  (test-one-of
                   '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
-                  '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)))
+                  '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42))
+                 'replace)
+    
+    (import-test (make-codec 'utf-16be)
+                 '#u8(#xdc #x00)
+                 (test-error <io-decoding-error>) 'raise)
+    (export-test (make-codec 'ascii)
+                 "A\u3000"
+                 (test-error <io-encoding-error>) 'raise)
     ]
    [else])
   )

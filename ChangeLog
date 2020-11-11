@@ -1,5 +1,10 @@
 2020-11-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-181.scm (i/o-decoding-error?, i/o-encoding-error?):
+	  Use built-in <io-decoding-error> and <io-encoding-error>, which
+	  gauche.characonv raises.
+	  NB: We don't have i/o-encoding-error-char support yet.
+
 	* src/error.c (Scm_PortError): Set PORT_ERROR_OCCURRED flag of the
 	  port within this procedure.  If a port raised an error and left open
 	  with an inconsitent state, Scm_Cleanup tries to flush it when the

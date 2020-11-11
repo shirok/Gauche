@@ -182,16 +182,13 @@
   unknown-encoding-error?
   (name unknown-encoding-error-name))
 
-(define-record-type i/o-decoding-error
-  (make-i/o-decoding-error message)
-  i/o-decoding-error?
-  (message i/o-decoding-error-message))
+(define (i/o-decoding-error? obj)
+  (condition-has-type? obj <io-decoding-error>))
 
-(define-record-type i/o-encoding-error
-  (make-i/o-encoding-error char message)
-  i/o-encoding-error?
-  (message i/o-encoding-error-message)
-  (char i/o-encoding-error-char))
+(define (i/o-encoding-error? obj)
+  (condition-has-type? obj <io-encoding-error>))
+
+(define (i/o-encoding-error-char obj) 'writeme)
 
 (define-record-type codec
   (%make-codec name)
@@ -278,6 +275,14 @@
 (define (string->bytevector string transcoder)
   (assume-type string <string>)
   (assume-type transcoder <transcoder>)
-  (ces-convert-to <u8vector> string
-                  *native-codec-name*
-                  (codec-name (transcoder-codec transcoder))))
+  ;; ces-convert-to doesn't distinguish 'decoding' and 'encoding', so
+  ;; it always raises <io-decoding-error> if input is invalid.
+  ;; In srfi-181, we should treat it as encoding error.
+  (guard (e [(<io-decoding-error> e)
+             (error <io-encoding-error>
+                    :port (~ e'port)
+                    :message (~ e'message))]
+            [else (raise e)])
+    (ces-convert-to <u8vector> string
+                    *native-codec-name*
+                    (codec-name (transcoder-codec transcoder)))))
