@@ -479,6 +479,10 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->ptr = cinfo->buf;
 
+    if (flags & CVPORT_REPLACE) {
+        jconv_set_replacement(cinfo);
+    }
+
     ScmPortBuffer bufrec;
     memset(&bufrec, 0, sizeof(bufrec));
     bufrec.size = cinfo->bufsiz;
