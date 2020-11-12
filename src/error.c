@@ -272,6 +272,7 @@ static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     ScmPortError *e = SCM_NEW_INSTANCE(ScmPortError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
+    e->auxinfo = SCM_NIL;          /* set by initialize */
     return SCM_OBJ(e);
 }
 
@@ -357,6 +358,21 @@ static void porterror_port_set(ScmPortError *obj, ScmObj val)
     obj->port = SCM_FALSEP(val)? NULL : SCM_PORT(val);
 }
 
+#if 0 /* for now, we hide this from Scheme */
+static ScmObj porterror_auxinfo_get(ScmPortError *obj)
+{
+    return obj->auxinfo;
+}
+
+static void porterror_auxinfo_set(ScmPortError *obj, ScmObj val)
+{
+    if (!SCM_LISTP(val)) {
+        Scm_Error("list required, but got %S", val);
+    }
+    obj->auxinfo = val;
+}
+#endif
+
 static ScmClassStaticSlotSpec syserror_slots[] = {
     SCM_CLASS_SLOT_SPEC("errno", syserror_number_get, syserror_number_set),
     SCM_CLASS_SLOT_SPEC_END()
@@ -378,6 +394,7 @@ static ScmClassStaticSlotSpec readerror_slots[] = {
 
 static ScmClassStaticSlotSpec porterror_slots[] = {
     SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
+    //SCM_CLASS_SLOT_SPEC("auxinfo", porterror_auxinfo_get, porterror_auxinfo_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
@@ -789,17 +806,16 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
  * If errno isn't zero, it also creates a <system-error> and throws
  * a compound condition of both.
  */
-void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
+void raise_port_error(ScmVM *vm, ScmPort *port, int reason, ScmObj auxinfo,
+                      int orig_errno, const char *msg, va_list args)
 {
-    int en = get_errno();       /* must take this before Scm_VM() */
-    ScmVM *vm = Scm_VM();
-    SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg);
-
     Scm_SetPortErrorOccurred(port, TRUE);
 
-    ScmObj ostr;
-    if (en != 0) SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
-    else         SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+    Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
+    ScmObj syserr = get_syserrmsg(orig_errno);
+    Scm_Putz(": ", -1, SCM_PORT(ostr));
+    Scm_Puts(SCM_STRING(syserr), SCM_PORT(ostr));
     ScmObj smsg = Scm_GetOutputString(SCM_PORT(ostr), TRUE);
 
     ScmClass *peclass;
@@ -825,13 +841,40 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
     ScmObj pe = porterror_allocate(peclass, SCM_NIL);
     SCM_ERROR(pe)->message = SCM_LIST2(smsg, smsg);
     SCM_PORT_ERROR(pe)->port = port;
+    SCM_PORT_ERROR(pe)->auxinfo = auxinfo;
 
     ScmObj e = pe;
-    if (en != 0) {
-        e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeSystemError(smsg, en),
+    if (orig_errno != 0) {
+        e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeSystemError(smsg, orig_errno),
                                                 pe));
     }
     Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);
+}
+
+void Scm_PortErrorWithAux(ScmPort *port, int reason, ScmObj auxinfo,
+                          const char *msg, ...)
+{
+    int en = get_errno();       /* must take this before Scm_VM() */
+    ScmVM *vm = Scm_VM();
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg);
+
+    va_list ap;
+    va_start(ap, msg);
+    raise_port_error(vm, port, reason, auxinfo, en, msg, ap);
+    va_end(ap);
+    Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
+}
+
+void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
+{
+    int en = get_errno();       /* must take this before Scm_VM() */
+    ScmVM *vm = Scm_VM();
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm, msg);
+
+    va_list ap;
+    va_start(ap, msg);
+    raise_port_error(vm, port, reason, SCM_NIL, en, msg, ap);
+    va_end(ap);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 

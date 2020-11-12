@@ -195,6 +195,8 @@ SCM_CLASS_DECL(Scm_IOErrorClass);
 typedef struct ScmPortErrorRec {
     ScmIOError common;
     ScmPort *port;              /* The port where I/O error occurs */
+    ScmObj  auxinfo;            /* alist of auxiliary info, depending on the
+                                   subclases.  */
 } ScmPortError;
 
 SCM_CLASS_DECL(Scm_PortErrorClass);

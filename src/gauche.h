@@ -1874,7 +1874,11 @@ SCM_EXTERN void Scm_Error(const char *msg, ...) SCM_NORETURN;
 SCM_EXTERN void Scm_SysError(const char *msg, ...) SCM_NORETURN;
 SCM_EXTERN void Scm_TypeError(const char *what,
                               const char *expected, ScmObj got) SCM_NORETURN;
-SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, const char *msg, ...) SCM_NORETURN;
+SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, 
+                              const char *msg, ...) SCM_NORETURN;
+SCM_EXTERN void Scm_PortErrorWithAux(ScmPort *port, int reason,
+                                     ScmObj auxinfo,
+                                     const char *msg, ...) SCM_NORETURN;
 
 /* common pattern */
 #define SCM_TYPE_ERROR(arg, expected)  Scm_TypeError(#arg, expected, arg)

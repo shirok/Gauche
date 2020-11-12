@@ -9,6 +9,9 @@
 	  port within this procedure.  If a port raised an error and left open
 	  with an inconsitent state, Scm_Cleanup tries to flush it when the
 	  process exit and bad things can happen.
+	  (Scm_PortErrorWithAux): Enhanced ScmPortError condition to allow
+	  keeping extra 'auxinfo', which should be an alist.  Its content
+	  depends on the actual class of the port error.
 
 2020-11-09  Shiro Kawai  <shiro@acm.org>
 
