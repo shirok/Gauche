@@ -32,18 +32,20 @@
 
 (define-constant *buffer-size* 1024)
 
+;; If set-position! method raises a condition <io-invalid-position-error>
+;; using srfi-192's make-i/o-invalid-position-error, we intercept it
+;; to add port info.
 (define-syntax wrap-setpos
   (syntax-rules ()
     [(_ setpos portvar)
      (and setpos
-          (^[pos] (guard (e [(<io-invalid-position-error-mixin> e)
-                             (raise
-                              (condition
-                               (<port-error>
-                                (port portvar)
-                                (message (format "Invalid position object: ~s" (~ e'position))))
-                               (<io-invalid-position-error-mixin>
-                                (position (~ e'position)))))]
+          (^[pos] (guard (e [(and (<io-invalid-position-error> e)
+                                  (not (~ e'port)))
+                             (errorf <io-invalid-position-error>
+                                     :port portvar
+                                     :position (~ e'position)
+                                     "Invalid position object: ~s" 
+                                     (~ e'position))]
                             [else (raise e)])
                     (setpos pos))))]))
 

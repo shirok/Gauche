@@ -611,8 +611,7 @@
   (test* "invalid-position-error"
          "Invalid position object: foo"
          (guard (e [else
-                    (and (condition-has-type? e <port-error>)
-                         (condition-has-type? e <io-invalid-position-error-mixin>)
+                    (and (condition-has-type? e <io-invalid-position-error>)
                          (eq? (condition-ref e 'port) p)
                          (~ e'message))])
            (set-port-position! p 'foo)))

@@ -53,6 +53,7 @@
     |                        +- <io-encoding-error>  ; (srfi-186)
     |                   +- <io-closed-error> ; srfi-36
     |                   +- <io-unit-error>
+    |                   +- <io-invalid-position-error> ; srfi-192
     +- <thread-exception> ; srfi-18
     |    +- <join-timeout-exception>      ; srfi-18
     |    +- <abandoned-mutex-exception>   ; srfi-18
@@ -62,12 +63,11 @@
          +- <load-condition-mixin> ; compounded to an error during loading
          +- <compile-error-mixin>  ; compounded to an error during compiling
          +- <io-filename-error>    ; srfi-36; compounded to <system-error> (*)
-         |   +- <io-malformed-filename-error>     ; ditto (*)
-         |   +- <io-protection-error>             ; ditto (*)
-         |   |    +- <io-file-is-read-only-error> ; ditto (*)
-         |   +- <io-file-already-exists-error>    ; ditto (*)
-         |   +- <io-no-such-file-error>           ; ditto (*)
-         +- <io-invalid-position-error-mixin> ; srfi-192
+             +- <io-malformed-filename-error>     ; ditto (*)
+             +- <io-protection-error>             ; ditto (*)
+             |    +- <io-file-is-read-only-error> ; ditto (*)
+             +- <io-file-already-exists-error>    ; ditto (*)
+             +- <io-no-such-file-error>           ; ditto (*)
 
  SRFI-35 does not make distinction between primary inheritance and mixin
  inheritance; the <mixin-condition> subtree is Gauche's convention.  The
@@ -213,6 +213,7 @@ typedef ScmPortError ScmIOClosedError;
 typedef ScmPortError ScmIOUnitError;
 typedef ScmPortError ScmIODecodingError;
 typedef ScmPortError ScmIOEncodingError;
+typedef ScmPortError ScmIOInvalidPositionError;
 
 SCM_CLASS_DECL(Scm_IOReadErrorClass);
 #define SCM_CLASS_IO_READ_ERROR      (&Scm_IOReadErrorClass)
@@ -227,8 +228,8 @@ SCM_CLASS_DECL(Scm_IODecodingErrorClass);
 #define SCM_CLASS_IO_DECODING_ERROR  (&Scm_IODecodingErrorClass)
 SCM_CLASS_DECL(Scm_IOEncodingErrorClass);
 #define SCM_CLASS_IO_ENCODING_ERROR  (&Scm_IOEncodingErrorClass)
-
-/* NB: invalid-position-error is implemented as mixin; see below. */
+SCM_CLASS_DECL(Scm_IOInvalidPositionErrorClass);
+#define SCM_CLASS_IO_INVALID_POSITION_ERROR  (&Scm_IOInvalidPositionErrorClass)
 
 /*---------------------------------------------------
  * Compounders
@@ -349,14 +350,5 @@ SCM_CLASS_DECL(Scm_FileProtectionErrorMixinClass);
 SCM_CLASS_DECL(Scm_FileIsReadOnlyErrorMixinClass);
 SCM_CLASS_DECL(Scm_FileAlreadyExistsErrorMixinClass);
 SCM_CLASS_DECL(Scm_NoSuchFileErrorMixinClass);
-
-typedef struct ScmIOInvalidPositionErrorMixinRec {
-    ScmCondition common;
-    ScmObj position;
-} ScmIOInvalidPositionErrorMixin;
-    
-SCM_CLASS_DECL(Scm_IOInvalidPositionErrorMixinClass);
-#define SCM_CLASS_IO_INVALID_POSITION_ERROR_MIXIN (&Scm_IOInvalidPositionErrorMixinClass)
-#define SCM_IO_INVALID_POSITION_ERROR_MIXIN(obj) ((ScmIOInvalidPositionErrorMixin*)(obj))
 
 #endif /*GAUCHE_EXCEPTION_H*/

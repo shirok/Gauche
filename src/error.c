@@ -240,6 +240,9 @@ SCM_DEFINE_BASE_CLASS(Scm_IODecodingErrorClass, ScmIODecodingError,
 SCM_DEFINE_BASE_CLASS(Scm_IOEncodingErrorClass, ScmIOEncodingError,
                       Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, encoding_error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOInvalidPositionErrorClass, ScmIOInvalidPositionError,
+                      Scm_MessageConditionPrint, NULL, NULL,
+                      porterror_allocate, porterror_cpl);
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
@@ -384,6 +387,18 @@ static void porterror_offending_char_set(ScmPortError *obj, ScmObj val)
     porterror_auxinfo_setter(obj, sym_offending_char, val);
 }
 
+static ScmObj sym_position;     /* 'position */
+
+static ScmObj porterror_position_get(ScmPortError *obj)
+{
+    return porterror_auxinfo_getter(obj, sym_position);
+}
+
+static void porterror_position_set(ScmPortError *obj, ScmObj val)
+{
+    porterror_auxinfo_setter(obj, sym_position, val);
+}
+
 static ScmClassStaticSlotSpec syserror_slots[] = {
     SCM_CLASS_SLOT_SPEC("errno", syserror_number_get, syserror_number_set),
     SCM_CLASS_SLOT_SPEC_END()
@@ -413,6 +428,14 @@ static ScmClassStaticSlotSpec encodingerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("offending-char", 
                         porterror_offending_char_get, 
                         porterror_offending_char_set),
+    SCM_CLASS_SLOT_SPEC_END()
+};
+    
+static ScmClassStaticSlotSpec invalidpositionerror_slots[] = {
+    SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
+    SCM_CLASS_SLOT_SPEC("position", 
+                        porterror_position_get, 
+                        porterror_position_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
     
@@ -853,6 +876,8 @@ void raise_port_error(ScmVM *vm, ScmPort *port, int reason, ScmObj auxinfo,
         peclass = SCM_CLASS_IO_ENCODING_ERROR; break;
     case SCM_PORT_ERROR_SEEK:
         peclass = SCM_CLASS_PORT_ERROR; break;
+    case SCM_PORT_ERROR_INVALID_POSITION:
+        peclass = SCM_CLASS_IO_INVALID_POSITION_ERROR; break;
     default:
         peclass = SCM_CLASS_PORT_ERROR; break;
     }
@@ -1167,6 +1192,10 @@ void Scm__InitExceptions(void)
                                 "<io-encoding-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 encodingerror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_IO_INVALID_POSITION_ERROR,
+                                "<io-invalid-position-error>",
+                                mod, cond_meta, SCM_FALSE,
+                                invalidpositionerror_slots, 0);
 
     Scm_InitStaticClassWithMeta(SCM_CLASS_COMPOUND_CONDITION,
                                 "<compound-condition>",
@@ -1176,4 +1205,7 @@ void Scm__InitExceptions(void)
                                 "<serious-compound-condition>",
                                 mod, cond_meta, com_ser_supers,
                                 compound_slots, 0);
+
+    sym_offending_char = SCM_INTERN("offending-char");
+    sym_position = SCM_INTERN("position");
 }
