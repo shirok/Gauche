@@ -358,20 +358,31 @@ static void porterror_port_set(ScmPortError *obj, ScmObj val)
     obj->port = SCM_FALSEP(val)? NULL : SCM_PORT(val);
 }
 
-#if 0 /* for now, we hide this from Scheme */
-static ScmObj porterror_auxinfo_get(ScmPortError *obj)
+static ScmObj porterror_auxinfo_getter(ScmPortError *obj, ScmObj key)
 {
-    return obj->auxinfo;
+    ScmObj p = Scm_Assq(key, obj->auxinfo);
+    if (SCM_PAIRP(p)) return SCM_CDR(p);
+    return SCM_FALSE;
 }
 
-static void porterror_auxinfo_set(ScmPortError *obj, ScmObj val)
+static void porterror_auxinfo_setter(ScmPortError *obj, ScmObj key, ScmObj val)
 {
-    if (!SCM_LISTP(val)) {
-        Scm_Error("list required, but got %S", val);
-    }
-    obj->auxinfo = val;
+    ScmObj p = Scm_Assq(key, obj->auxinfo);
+    if (SCM_PAIRP(p)) SCM_SET_CDR(p, val);
+    else obj->auxinfo = Scm_Acons(key, val, obj->auxinfo);
 }
-#endif
+
+static ScmObj sym_offending_char; /* 'offending-char */
+
+static ScmObj porterror_offending_char_get(ScmPortError *obj)
+{
+    return porterror_auxinfo_getter(obj, sym_offending_char);
+}
+
+static void porterror_offending_char_set(ScmPortError *obj, ScmObj val)
+{
+    porterror_auxinfo_setter(obj, sym_offending_char, val);
+}
 
 static ScmClassStaticSlotSpec syserror_slots[] = {
     SCM_CLASS_SLOT_SPEC("errno", syserror_number_get, syserror_number_set),
@@ -394,9 +405,17 @@ static ScmClassStaticSlotSpec readerror_slots[] = {
 
 static ScmClassStaticSlotSpec porterror_slots[] = {
     SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
-    //SCM_CLASS_SLOT_SPEC("auxinfo", porterror_auxinfo_get, porterror_auxinfo_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
+
+static ScmClassStaticSlotSpec encodingerror_slots[] = {
+    SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
+    SCM_CLASS_SLOT_SPEC("offending-char", 
+                        porterror_offending_char_get, 
+                        porterror_offending_char_set),
+    SCM_CLASS_SLOT_SPEC_END()
+};
+    
 
 /*------------------------------------------------------------
  * Compound conditions
@@ -1147,7 +1166,7 @@ void Scm__InitExceptions(void)
     Scm_InitStaticClassWithMeta(SCM_CLASS_IO_ENCODING_ERROR,
                                 "<io-encoding-error>",
                                 mod, cond_meta, SCM_FALSE,
-                                porterror_slots, 0);
+                                encodingerror_slots, 0);
 
     Scm_InitStaticClassWithMeta(SCM_CLASS_COMPOUND_CONDITION,
                                 "<compound-condition>",
