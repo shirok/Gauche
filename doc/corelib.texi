@@ -19079,9 +19079,12 @@ SRFI condition type, the class has the SRFI name as well.
               +- <io-error>
                    +- <port-error>
                         +- <io-read-error>
+                        |    +- <io-decoding-error>
                         +- <io-write-error>
+                        |    +- <io-encoding-error>
                         +- <io-closed-error>
                         +- <io-unit-error>
+                        +- <io-invalid-position-error>
 @end example
 
 @c EN
