@@ -87,7 +87,7 @@ const char* Scm_GetCESName(ScmObj code, const char *argname)
 
 int Scm_ConversionSupportedP(const char *from, const char *to)
 {
-    ScmConvInfo *cinfo = jconv_open(to, from);
+    ScmConvInfo *cinfo = jconv_open(to, from, TRUE);
     if (cinfo == NULL) return FALSE;
     jconv_close(cinfo);
     return TRUE;
@@ -290,7 +290,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
         fromCode = guessed;
     }
 
-    ScmConvInfo *cinfo = jconv_open(toCode, fromCode);
+    ScmConvInfo *cinfo = jconv_open(toCode, fromCode, TRUE);
     if (cinfo == NULL) {
         Scm_Error("conversion from code %s to code %s is not supported",
                   fromCode, toCode);
@@ -467,7 +467,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
         bufsiz = MINIMUM_CONVERSION_BUFFER_SIZE;
     }
 
-    ScmConvInfo *cinfo = jconv_open(toCode, fromCode);
+    ScmConvInfo *cinfo = jconv_open(toCode, fromCode, TRUE);
     if (cinfo == NULL) {
         Scm_Error("conversion from code %s to code %s is not supported",
                   fromCode, toCode);
@@ -624,11 +624,11 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__charconv(void)
 #if   defined(GAUCHE_CHAR_ENCODING_UTF_8)
     ucsconv.ucs2char = ucsconv.char2ucs = NULL;
 #elif defined(GAUCHE_CHAR_ENCODING_EUC_JP)
-    ucsconv.ucs2char = jconv_open("EUCJP", "UTF-8");
-    ucsconv.char2ucs = jconv_open("UTF-8", "EUCJP");
+    ucsconv.ucs2char = jconv_open("EUCJP", "UTF-8", TRUE);
+    ucsconv.char2ucs = jconv_open("UTF-8", "EUCJP", TRUE);
 #elif defined(GAUCHE_CHAR_ENCODING_SJIS)
-    ucsconv.ucs2char = jconv_open("SJIS", "UTF-8");
-    ucsconv.char2ucs = jconv_open("UTF-8", "SJIS");
+    ucsconv.ucs2char = jconv_open("SJIS", "UTF-8", TRUE);
+    ucsconv.char2ucs = jconv_open("UTF-8", "SJIS", TRUE);
 #else
     ucsconv.ucs2char = ucsconv.char2ucs = NULL;
 #endif

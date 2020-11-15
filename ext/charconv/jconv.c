@@ -1363,7 +1363,8 @@ static ScmSize jconv_iconv_reset(ScmConvInfo *cinfo, char *optr, ScmSize oroom)
  *  Returns ScmConvInfo, setting up some fields.
  *  If no conversion is possible, returns NULL.
  */
-ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
+ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
+                        int useIconv)
 {
     ScmConvHandler handler = NULL;
     ScmConvProc convproc[2];
@@ -1379,16 +1380,20 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
         convproc[0] = convproc[1] = NULL;
         reset = NULL;
     } else if (incode < 0 || outcode < 0) {
+        if (useIconv) {
 #ifdef HAVE_ICONV_H
-        /* try iconv */
-        handle = iconv_open(toCode, fromCode);
-        if (handle == (iconv_t)-1) return NULL;
-        handler = jconv_iconv;
-        convproc[0] = convproc[1] = NULL;
-        reset = jconv_iconv_reset;
+            /* try iconv */
+            handle = iconv_open(toCode, fromCode);
+            if (handle == (iconv_t)-1) return NULL;
+            handler = jconv_iconv;
+            convproc[0] = convproc[1] = NULL;
+            reset = jconv_iconv_reset;
 #else /*!HAVE_ICONV_H*/
-        return NULL;
+            return NULL;
 #endif
+        } else {
+            return NULL;
+        }
     } else if (incode == outcode) {
         /* pattern (1) */
         handler = jconv_ident;

@@ -115,7 +115,9 @@ extern const char *Scm_GuessCES(const char *code,
 #define INPUT_NOT_ENOUGH  (-2)
 #define OUTPUT_NOT_ENOUGH (-3)
 
-extern ScmConvInfo *jconv_open(const char *toCode, const char *fromCode);
+extern ScmConvInfo *jconv_open(const char *toCode, 
+                               const char *fromCode,
+                               int useIconv);
 extern int jconv_close(ScmConvInfo*);
 extern ScmSize jconv(ScmConvInfo*, const char **inptr, ScmSize *inroom,
                      char **outptr, ScmSize *outroom);
