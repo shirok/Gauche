@@ -87,9 +87,9 @@ const char* Scm_GetCESName(ScmObj code, const char *argname)
 
 int Scm_ConversionSupportedP(const char *from, const char *to)
 {
-    ScmConvInfo *info = jconv_open(to, from);
-    if (info == NULL) return FALSE;
-    jconv_close(info);
+    ScmConvInfo *cinfo = jconv_open(to, from);
+    if (cinfo == NULL) return FALSE;
+    jconv_close(cinfo);
     return TRUE;
 }
 
@@ -120,15 +120,15 @@ static conv_guess *findGuessingProc(const char *code)
 
 static int conv_fileno(ScmPort *port)
 {
-    ScmConvInfo *info = CONV_INFO(port);
-    return Scm_PortFileNo(info->remote);
+    ScmConvInfo *cinfo = CONV_INFO(port);
+    return Scm_PortFileNo(cinfo->remote);
 }
 
 static int conv_ready(ScmPort *port)
 {
-    ScmConvInfo *info = CONV_INFO(port);
+    ScmConvInfo *cinfo = CONV_INFO(port);
     /* This isn't accurate, but for now ... */
-    return Scm_CharReady(info->remote);
+    return Scm_CharReady(cinfo->remote);
 }
 
 static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *to)
@@ -143,27 +143,27 @@ static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *
 /*------------------------------------------------------------
  * Input conversion
  *
- *  <-- Buffered port <--- filler <--(info->buf)--- getz(remote)
+ *  <-- Buffered port <--- filler <--(cinfo->buf)--- getz(remote)
  */
 
 static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
 {
-    ScmConvInfo *info = CONV_INFO(port);
-    const char *inbuf = info->buf;
+    ScmConvInfo *cinfo = CONV_INFO(port);
+    const char *inbuf = cinfo->buf;
     char *outbuf = PORT_BUF(port)->end;
 
-    if (info->remoteClosed) return 0;
+    if (cinfo->remoteClosed) return 0;
 
     /* Fill the input buffer.  There may be some remaining bytes in the
        inbuf from the last conversion (insize), so we try to fill the
        rest. */
-    ScmSize insize = info->ptr - info->buf;
-    ScmSize nread = Scm_Getz(info->ptr, info->bufsiz - insize, info->remote);
+    ScmSize insize = cinfo->ptr - cinfo->buf;
+    ScmSize nread = Scm_Getz(cinfo->ptr, cinfo->bufsiz - insize, cinfo->remote);
     if (nread <= 0) {
         /* input reached EOF.  finish the output state */
         if (insize == 0) {
             ScmSize outroom = Scm_PortBufferRoom(port);
-            ScmSize result = jconv_reset(info, outbuf, outroom);
+            ScmSize result = jconv_reset(cinfo, outbuf, outroom);
             if (result == OUTPUT_NOT_ENOUGH) {
                 /* The port buffer doesn't have enough space to contain the
                    finishing sequence.  Its unusual, for the port buffer
@@ -171,14 +171,14 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
                    sequence is usually just a few bytes.
                    We signal an error. */
                 Scm_Error("couldn't flush the ending escape sequence in the character encoding conversion port (%s -> %s).  possibly an implementation error",
-                          info->fromCode, info->toCode);
+                          cinfo->fromCode, cinfo->toCode);
                 }
-            if (info->ownerp) {
-                Scm_ClosePort(info->remote);
-                info->remoteClosed = TRUE;
+            if (cinfo->ownerp) {
+                Scm_ClosePort(cinfo->remote);
+                cinfo->remoteClosed = TRUE;
             }
 #ifdef JCONV_DEBUG
-            fprintf(stderr, "<= r=%d (reset), out(%p)%d\n",
+            fprintf(stderr, "<= r=%ld (reset), out(%p)%ld\n",
                     result, outbuf, outroom);
 #endif
             return (ScmSize)result;
@@ -192,11 +192,11 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
     ScmSize outroom = Scm_PortBufferRoom(port);
 
 #ifdef JCONV_DEBUG
-    fprintf(stderr, "=> in(%p)%d out(%p)%d\n", inbuf, insize, outbuf, outroom);
+    fprintf(stderr, "=> in(%p)%ld out(%p)%ld\n", inbuf, insize, outbuf, outroom);
 #endif
-    ScmSize result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
+    ScmSize result = jconv(cinfo, &inbuf, &inroom, &outbuf, &outroom);
 #ifdef JCONV_DEBUG
-    fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
+    fprintf(stderr, "<= r=%ld, in(%p)%ld out(%p)%ld\n",
             result, inbuf, inroom, outbuf, outroom);
 #endif
     /* we've got an error. */
@@ -205,28 +205,28 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
            end of the input buffer, or the output buffer is full.
            We shift the unconverted bytes to the beginning of input
            buffer. */
-        memmove(info->buf, info->buf+insize-inroom, inroom);
-        info->ptr = info->buf + inroom;
-        return info->bufsiz - (ScmSize)outroom;
+        memmove(cinfo->buf, cinfo->buf+insize-inroom, inroom);
+        cinfo->ptr = cinfo->buf + inroom;
+        return cinfo->bufsiz - (ScmSize)outroom;
     } else if (result == ILLEGAL_SEQUENCE) {
         /* input sequence can't be represented by the destination CES. */
-        if (info->replacep) {
-            if (outroom < info->replaceSize) {
+        if (cinfo->replacep) {
+            if (outroom < cinfo->replaceSize) {
                 /* We don't have enough room to place replace char, so
                    we stop before the bad char and let it be handled
                    in the next callback. */
-                memmove(info->buf, info->buf+insize-inroom, inroom);
-                info->ptr = info->buf + inroom;
-                return info->bufsiz - (ScmSize)outroom;
+                memmove(cinfo->buf, cinfo->buf+insize-inroom, inroom);
+                cinfo->ptr = cinfo->buf + inroom;
+                return cinfo->bufsiz - (ScmSize)outroom;
             } else {
-                memmove(info->buf, info->buf+insize-inroom+1, inroom-1);
-                info->ptr = info->buf + inroom - 1;
-                memcpy(outbuf, info->replaceSeq, info->replaceSize);
-                return info->bufsiz - (ScmSize)(outroom - info->replaceSize);
+                memmove(cinfo->buf, cinfo->buf+insize-inroom+1, inroom-1);
+                cinfo->ptr = cinfo->buf + inroom - 1;
+                memcpy(outbuf, cinfo->replaceSeq, cinfo->replaceSize);
+                return cinfo->bufsiz - (ScmSize)(outroom - cinfo->replaceSize);
             }
         } else {
             ScmSize cnt = inroom >= 6 ? 6 : (ScmSize)inroom;
-            ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
+            ScmObj s = Scm_MakeString(cinfo->buf+insize-inroom, cnt, cnt,
                                       SCM_STRING_COPYING|SCM_STRING_INCOMPLETE);
             Scm_PortError(port, SCM_PORT_ERROR_DECODING,
                           "invalid character sequence in the input stream: %S ...", s);
@@ -237,22 +237,22 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
     /* NB: There are cases that some bytes are left in the input buffer
        even iconv returns positive value.  We need to shift those bytes. */
     if (inroom > 0) {
-        memmove(info->buf, info->buf+insize-inroom, inroom);
-        info->ptr = info->buf + inroom;
-        return info->bufsiz - (ScmSize)outroom;
+        memmove(cinfo->buf, cinfo->buf+insize-inroom, inroom);
+        cinfo->ptr = cinfo->buf + inroom;
+        return cinfo->bufsiz - (ScmSize)outroom;
     } else {
-        info->ptr = info->buf;
-        return info->bufsiz - (ScmSize)outroom;
+        cinfo->ptr = cinfo->buf;
+        return cinfo->bufsiz - (ScmSize)outroom;
     }
 }
 
 static void conv_input_closer(ScmPort *p)
 {
-    ScmConvInfo *info = CONV_INFO(p);
-    jconv_close(info);
-    if (info->ownerp) {
-        Scm_ClosePort(info->remote);
-        info->remoteClosed = TRUE;
+    ScmConvInfo *cinfo = CONV_INFO(p);
+    jconv_close(cinfo);
+    if (cinfo->ownerp) {
+        Scm_ClosePort(cinfo->remote);
+        cinfo->remoteClosed = TRUE;
     }
 }
 
@@ -342,7 +342,7 @@ static ScmPort *coding_aware_conv(ScmPort *src, const char *encoding)
 /*------------------------------------------------------------
  * Output conversion
  *
- *   Buffered port ----> flusher -->(info->buf)--> putz(remote)
+ *   Buffered port ----> flusher -->(cinfo->buf)--> putz(remote)
  */
 
 /* NB: Glibc-2.1.2's iconv() has a bug in SJIS handling.  If output
@@ -362,54 +362,54 @@ static ScmPort *coding_aware_conv(ScmPort *src, const char *encoding)
 
 static void conv_output_closer(ScmPort *port)
 {
-    ScmConvInfo *info = CONV_INFO(port);
+    ScmConvInfo *cinfo = CONV_INFO(port);
 
     /* if there's remaining bytes in buf, send them to the remote port. */
-    if (info->ptr > info->buf) {
-        Scm_Putz(info->buf, (int)(info->ptr - info->buf), info->remote);
-        info->ptr = info->buf;
+    if (cinfo->ptr > cinfo->buf) {
+        Scm_Putz(cinfo->buf, (int)(cinfo->ptr - cinfo->buf), cinfo->remote);
+        cinfo->ptr = cinfo->buf;
     }
     /* sends out the closing sequence, if any */
-    ScmSize r = jconv_reset(info, info->buf, info->bufsiz);
+    ScmSize r = jconv_reset(cinfo, cinfo->buf, cinfo->bufsiz);
 #ifdef JCONV_DEBUG
-    fprintf(stderr, "<= r=%d(reset), buf(%p)\n",
-            r, info->buf);
+    fprintf(stderr, "<= r=%ld(reset), buf(%p)\n",
+            r, cinfo->buf);
 #endif
     if (r < 0) {
         Scm_Error("something wrong in resetting output character encoding conversion (%s -> %s).  possibly an implementation error.",
-                  info->fromCode, info->toCode);
+                  cinfo->fromCode, cinfo->toCode);
     }
     if (r > 0) {
-        Scm_Putz(info->buf, (ScmSize)r, info->remote);
+        Scm_Putz(cinfo->buf, (ScmSize)r, cinfo->remote);
     }
     /* flush remove port */
-    Scm_Flush(info->remote);
-    if (info->ownerp) {
-        Scm_ClosePort(info->remote);
-        info->remoteClosed = TRUE;
+    Scm_Flush(cinfo->remote);
+    if (cinfo->ownerp) {
+        Scm_ClosePort(cinfo->remote);
+        cinfo->remoteClosed = TRUE;
     }
-    jconv_close(info);
+    jconv_close(cinfo);
 }
 
 static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
 {
-    ScmConvInfo *info = CONV_INFO(port);
+    ScmConvInfo *cinfo = CONV_INFO(port);
     ScmSize inroom = Scm_PortBufferAvail(port);
     ScmSize len = inroom;
     const char *inbuf = PORT_BUF(port)->buffer;
 
     for (;;) {
         /* Conversion. */
-        char *outbuf = info->ptr;
-        ScmSize outroom = info->bufsiz - (info->ptr - info->buf);
+        char *outbuf = cinfo->ptr;
+        ScmSize outroom = cinfo->bufsiz - (cinfo->ptr - cinfo->buf);
 #ifdef JCONV_DEBUG
-        fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
-                inbuf, len, inroom,
-                info->buf, info->ptr, outroom);
+        fprintf(stderr, "=> in(%p,%p)%ld out(%p,%p)%ld\n",
+                inbuf, inbuf+len, inroom,
+                cinfo->buf, cinfo->ptr, outroom);
 #endif
-        ScmSize result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
+        ScmSize result = jconv(cinfo, &inbuf, &inroom, &outbuf, &outroom);
 #ifdef JCONV_DEBUG
-        fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
+        fprintf(stderr, "<= r=%ld, in(%p)%ld out(%p)%ld\n",
                 result, inbuf, inroom, outbuf, outroom);
 #endif
         if (result == INPUT_NOT_ENOUGH) {
@@ -418,19 +418,19 @@ static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
                end of the input buffer.  We just return # of bytes
                flushed.  (Shifting unconverted characters is done by
                buffered port routine) */
-            info->ptr = outbuf;
+            cinfo->ptr = outbuf;
 #else
             /* See the above notes.  We always flush the output buffer
                here, so that we can avoid output buffer overrun. */
-            Scm_Putz(info->buf, (ScmSize)(outbuf - info->buf), info->remote);
-            info->ptr = info->buf;
+            Scm_Putz(cinfo->buf, (ScmSize)(outbuf - cinfo->buf), cinfo->remote);
+            cinfo->ptr = cinfo->buf;
 #endif
             return (ScmSize)(len - inroom);
         } else if (result == OUTPUT_NOT_ENOUGH) {
             /* Output buffer got full.  Flush it, and continue
                conversion. */
-            Scm_Putz(info->buf, (ScmSize)(outbuf - info->buf), info->remote);
-            info->ptr = info->buf;
+            Scm_Putz(cinfo->buf, (ScmSize)(outbuf - cinfo->buf), cinfo->remote);
+            cinfo->ptr = cinfo->buf;
             continue;
         } else if (result == ILLEGAL_SEQUENCE) {
             /* it's likely that input contains invalid sequence.
@@ -441,12 +441,12 @@ static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
         } else {
 #ifndef GLIBC_2_1_ICONV_BUG
             /* Conversion is done completely.  Update outptr. */
-            info->ptr = outbuf;
+            cinfo->ptr = outbuf;
 #else
             /* See the above notes.  We always flush the output buffer here,
                so that we can avoid output buffer overrun. */
-            Scm_Putz(info->buf, (ScmSize)(outbuf - info->buf), info->remote);
-            info->ptr = info->buf;
+            Scm_Putz(cinfo->buf, (ScmSize)(outbuf - cinfo->buf), cinfo->remote);
+            cinfo->ptr = cinfo->buf;
 #endif
             if (forcep && len - inroom != cnt) continue;
             return len - inroom;

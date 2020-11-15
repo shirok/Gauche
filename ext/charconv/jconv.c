@@ -1210,12 +1210,12 @@ static int conv_name_find(const char *name)
 */
 
 /* case (1) */
-static ScmSize jconv_ident(ScmConvInfo *info SCM_UNUSED, const char **iptr,
+static ScmSize jconv_ident(ScmConvInfo *cinfo SCM_UNUSED, const char **iptr,
                            ScmSize *iroom, char **optr, ScmSize *oroom)
 {
     ScmSize inroom = *iroom, outroom = *oroom;
 #ifdef JCONV_DEBUG
-    fprintf(stderr, "jconv_ident %s->%s\n", info->fromCode, info->toCode);
+    fprintf(stderr, "jconv_ident %s->%s\n", cinfo->fromCode, cinfo->toCode);
 #endif
     if (inroom <= outroom) {
         memcpy(*optr, *iptr, inroom);
@@ -1235,22 +1235,22 @@ static ScmSize jconv_ident(ScmConvInfo *info SCM_UNUSED, const char **iptr,
 }
 
 /* case (2) or (3) */
-static ScmSize jconv_1tier(ScmConvInfo *info, const char **iptr,
+static ScmSize jconv_1tier(ScmConvInfo *cinfo, const char **iptr,
                            ScmSize *iroom, char **optr, ScmSize *oroom)
 {
-    ScmConvProc cvt = info->convproc[0];
+    ScmConvProc cvt = cinfo->convproc[0];
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
     ScmSize converted = 0;
 
 #ifdef JCONV_DEBUG
-    fprintf(stderr, "jconv_1tier %s->%s\n", info->fromCode, info->toCode);
+    fprintf(stderr, "jconv_1tier %s->%s\n", cinfo->fromCode, cinfo->toCode);
 #endif
     SCM_ASSERT(cvt != NULL);
     while (inr > 0 && outr > 0) {
         ScmSize outchars;
-        ScmSize inchars = cvt(info, inp, inr, outp, outr, &outchars);
+        ScmSize inchars = cvt(cinfo, inp, inr, outp, outr, &outchars);
         if (ERRP(inchars)) {
             converted = inchars;
             break;
@@ -1271,23 +1271,23 @@ static ScmSize jconv_1tier(ScmConvInfo *info, const char **iptr,
 
 /* case (4) */
 #define INTBUFSIZ 20            /* intermediate buffer size */
-static ScmSize jconv_2tier(ScmConvInfo *info, const char **iptr, ScmSize *iroom,
+static ScmSize jconv_2tier(ScmConvInfo *cinfo, const char **iptr, ScmSize *iroom,
                            char **optr, ScmSize *oroom)
 {
     char buf[INTBUFSIZ];
-    ScmConvProc icvt = info->convproc[0];
-    ScmConvProc ocvt = info->convproc[1];
+    ScmConvProc icvt = cinfo->convproc[0];
+    ScmConvProc ocvt = cinfo->convproc[1];
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
     ScmSize converted = 0;
 
 #ifdef JCONV_DEBUG
-    fprintf(stderr, "jconv_2tier %s->%s\n", info->fromCode, info->toCode);
+    fprintf(stderr, "jconv_2tier %s->%s\n", cinfo->fromCode, cinfo->toCode);
 #endif
     while (inr > 0 && outr > 0) {
         ScmSize outchars, bufchars;
-        ScmSize inchars = icvt(info, inp, inr, buf, INTBUFSIZ, &bufchars);
+        ScmSize inchars = icvt(cinfo, inp, inr, buf, INTBUFSIZ, &bufchars);
         if (ERRP(inchars)) {
             converted = inchars;
             break;
@@ -1295,7 +1295,7 @@ static ScmSize jconv_2tier(ScmConvInfo *info, const char **iptr, ScmSize *iroom,
         if (bufchars == 0) {
             outchars = 0;
         } else {
-            bufchars = ocvt(info, buf, bufchars, outp, outr, &outchars);
+            bufchars = ocvt(cinfo, buf, bufchars, outp, outr, &outchars);
             if (ERRP(bufchars)) {
                 converted = bufchars;
                 break;
@@ -1322,17 +1322,17 @@ static ScmSize jconv_2tier(ScmConvInfo *info, const char **iptr, ScmSize *iroom,
  * reset sequence; the first call should emit the sequence, but the second
  * call shouldn't.
  */
-static ScmSize jconv_iconv(ScmConvInfo *info, const char **iptr, ScmSize *iroom,
+static ScmSize jconv_iconv(ScmConvInfo *cinfo, const char **iptr, ScmSize *iroom,
                            char **optr, ScmSize *oroom)
 {
 #ifdef JCONV_DEBUG
-    fprintf(stderr, "jconv_iconv %s->%s\n", info->fromCode, info->toCode);
+    fprintf(stderr, "jconv_iconv %s->%s\n", cinfo->fromCode, cinfo->toCode);
 #endif
     size_t ir = *iroom, or = *oroom;
-    size_t r = iconv(info->handle, (char **)iptr, &ir, optr, &or);
+    size_t r = iconv(cinfo->handle, (char **)iptr, &ir, optr, &or);
     *iroom = ir;
     *oroom = or;
-    info->ostate = JIS_UNKNOWN;
+    cinfo->ostate = JIS_UNKNOWN;
     if (r == (size_t)-1) {
         if (errno == EINVAL) return INPUT_NOT_ENOUGH;
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
@@ -1343,17 +1343,17 @@ static ScmSize jconv_iconv(ScmConvInfo *info, const char **iptr, ScmSize *iroom,
 }
 
 /* reset routine for iconv */
-static ScmSize jconv_iconv_reset(ScmConvInfo *info, char *optr, ScmSize oroom)
+static ScmSize jconv_iconv_reset(ScmConvInfo *cinfo, char *optr, ScmSize oroom)
 {
     ScmSize oroom_prev = oroom;
-    if (info->ostate == JIS_ASCII) return 0;
+    if (cinfo->ostate == JIS_ASCII) return 0;
     size_t or = oroom;
-    size_t r = iconv(info->handle, NULL, 0, &optr, &or);
+    size_t r = iconv(cinfo->handle, NULL, 0, &optr, &or);
     if (r == (size_t)-1) {
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
         Scm_Panic("jconv_iconv_reset: unknown error number %d\n", errno);
     }
-    info->ostate = JIS_ASCII;
+    cinfo->ostate = JIS_ASCII;
     return oroom_prev - (ScmSize)or;
 }
 #endif /*HAVE_ICONV_H*/
@@ -1413,58 +1413,58 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
         convproc[1] = conv_converter[outcode].outconv;
         reset = conv_converter[outcode].reset;
     }
-    ScmConvInfo *info;
-    info = SCM_NEW(ScmConvInfo);
-    info->jconv = handler;
-    info->convproc[0] = convproc[0];
-    info->convproc[1] = convproc[1];
-    info->reset = reset;
-    info->handle = handle;
-    info->toCode = toCode;
-    info->istate = info->ostate = JIS_ASCII;
-    info->fromCode = fromCode;
+    ScmConvInfo *cinfo;
+    cinfo = SCM_NEW(ScmConvInfo);
+    cinfo->jconv = handler;
+    cinfo->convproc[0] = convproc[0];
+    cinfo->convproc[1] = convproc[1];
+    cinfo->reset = reset;
+    cinfo->handle = handle;
+    cinfo->toCode = toCode;
+    cinfo->istate = cinfo->ostate = JIS_ASCII;
+    cinfo->fromCode = fromCode;
     /* The replacement settings can be modified by jconv_set_replacement */
-    info->replacep = FALSE;
-    info->replaceSize = 0;
-    info->replaceSeq = NULL;
-    return info;
+    cinfo->replacep = FALSE;
+    cinfo->replaceSize = 0;
+    cinfo->replaceSeq = NULL;
+    return cinfo;
 }
 
 /*------------------------------------------------------------------
  * JCONV_SET_REPLACEMENT
  *   Setting up replacement sequence according to the toCode.
  */
-void jconv_set_replacement(ScmConvInfo *info)
+void jconv_set_replacement(ScmConvInfo *cinfo)
 {
     static ScmObj ces_replacement_proc = SCM_UNDEFINED;
     SCM_BIND_PROC(ces_replacement_proc, "%ces-replacement",
                   Scm_FindModule(SCM_SYMBOL(SCM_INTERN("gauche.charconv")), 0));
     ScmObj replacements = Scm_ApplyRec1(ces_replacement_proc,
-                                        SCM_MAKE_STR(info->toCode));
+                                        SCM_MAKE_STR(cinfo->toCode));
     ScmSize i = Scm_Length(replacements);
     if (i > 0) {
-        info->replacep = TRUE;
-        info->replaceSize = i;
+        cinfo->replacep = TRUE;
+        cinfo->replaceSize = i;
         char *replaceSeq = SCM_NEW_ATOMIC_ARRAY(char, i);
         for (int j = 0; j < i; j++) {
             SCM_ASSERT(SCM_PAIRP(replacements));
             replaceSeq[j] = SCM_INT_VALUE(SCM_CAR(replacements));
             replacements = SCM_CDR(replacements);
         }
-        info->replaceSeq = replaceSeq;
+        cinfo->replaceSeq = replaceSeq;
     }
 }
 
 /*------------------------------------------------------------------
  * JCONV_CLOSE
  */
-int jconv_close(ScmConvInfo *info)
+int jconv_close(ScmConvInfo *cinfo)
 {
     int r = 0;
 #ifdef HAVE_ICONV_H
-    if (info->handle != (iconv_t)-1) {
-        r = iconv_close(info->handle);
-        info->handle = (iconv_t)-1;
+    if (cinfo->handle != (iconv_t)-1) {
+        r = iconv_close(cinfo->handle);
+        cinfo->handle = (iconv_t)-1;
     }
 #endif /*HAVE_ICONV_H*/
     return r;
@@ -1473,21 +1473,21 @@ int jconv_close(ScmConvInfo *info)
 /*------------------------------------------------------------------
  * JCONV - main conversion routine
  */
-ScmSize jconv(ScmConvInfo *info,
+ScmSize jconv(ScmConvInfo *cinfo,
               const char **inptr, ScmSize *inroom,
               char **outptr, ScmSize *outroom)
 {
-    SCM_ASSERT(info->jconv != NULL);
-    return info->jconv(info, inptr, inroom, outptr, outroom);
+    SCM_ASSERT(cinfo->jconv != NULL);
+    return cinfo->jconv(cinfo, inptr, inroom, outptr, outroom);
 }
 
 /*------------------------------------------------------------------
  * JCONV_RESET - reset
  */
-ScmSize jconv_reset(ScmConvInfo *info, char *outptr, ScmSize outroom)
+ScmSize jconv_reset(ScmConvInfo *cinfo, char *outptr, ScmSize outroom)
 {
-    if (info->reset) {
-        return info->reset(info, outptr, outroom);
+    if (cinfo->reset) {
+        return cinfo->reset(cinfo, outptr, outroom);
     } else {
         return 0;
     }
