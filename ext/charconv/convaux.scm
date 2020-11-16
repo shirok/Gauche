@@ -251,17 +251,22 @@
  (declcode
   (.include "charconv.h"))
 
- (define-cproc ces-conversion-supported? (from to) ::<boolean>
+ (define-cproc ces-conversion-supported? (from to :key (use-iconv #t))
+   ::<boolean>
    (let* ([cfrom::(const char*) (Scm_GetCESName from "from-code")]
-          [cto  ::(const char*) (Scm_GetCESName to "to-code")])
-     (return (Scm_ConversionSupportedP cfrom cto))))
+          [cto  ::(const char*) (Scm_GetCESName to "to-code")]
+          [flags::u_long 0])
+     (unless (SCM_FALSEP use-iconv)
+       (logior= flags CVPORT_ICONV))
+     (return (Scm_ConversionSupportedP cfrom cto flags))))
 
  (define-cproc open-input-conversion-port (source::<input-port>
                                            from-code
                                            :key (to-code #f)
                                                 (buffer-size::<fixnum> 0)
                                                 (owner? #f)
-                                                (handling #f))
+                                                (handling #f)
+                                                (use-iconv #t))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")]
           [flags::u_long 0])
@@ -269,6 +274,8 @@
        (logior= flags CVPORT_OWNER))
      (when (SCM_EQ handling 'replace)
        (logior= flags CVPORT_REPLACE))
+     (unless (SCM_FALSEP use-iconv)
+       (logior= flags CVPORT_ICONV))
      (return (Scm_MakeInputConversionPort source fc tc buffer_size
                                           flags))))
 
@@ -277,7 +284,8 @@
                                             :key (from-code #f)
                                                  (buffer-size::<fixnum> 0)
                                                  (owner? #f)
-                                                 (handling #f))
+                                                 (handling #f)
+                                                 (use-iconv #t))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")]
           [flags::u_long 0])
@@ -285,6 +293,8 @@
        (logior= flags CVPORT_OWNER))
      (when (SCM_EQ handling 'replace)
        (logior= flags CVPORT_REPLACE))
+     (unless (SCM_FALSEP use-iconv)
+       (logior= flags CVPORT_ICONV))
      (return (Scm_MakeOutputConversionPort sink tc fc buffer_size flags))))
 
  (define-cproc ces-guess-from-string (string::<string> scheme::<string>)

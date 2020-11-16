@@ -70,12 +70,15 @@ typedef struct ScmConvInfoRec {
     char *ptr;                  /* current ptr in the internal conv buf */
 } ScmConvInfo;
 
-/* bitmask for 'flags' argument */
+/* Bitmask for 'flags' argument.
+   Scm_ConversionSupportedP only recognizes CVPORT_ICONV. */
 enum {
     CVPORT_OWNER = (1L<<0),     /* Close the inner port if the conversion port
                                    is closed. */
-    CVPORT_REPLACE = (1L<<1)    /* Use replacement character for illegal 
+    CVPORT_REPLACE = (1L<<1),   /* Use replacement character for illegal 
                                    sequences instead of signaling an error */
+    CVPORT_ICONV = (1L<<2)      /* If conversion isn't supported natively,
+                                   try to use iconv. */
 };
 
 extern ScmObj Scm_MakeInputConversionPort(ScmPort *source,
@@ -94,7 +97,8 @@ typedef const char *(*ScmCodeGuessingProc)(const char *buf,
                                            void *data);
 
 extern const char *Scm_GetCESName(ScmObj code, const char *argname);
-extern int Scm_ConversionSupportedP(const char *from, const char *to);
+extern int Scm_ConversionSupportedP(const char *from, const char *to,
+                                    u_long flags);
 
 extern void Scm_RegisterCodeGuessingProc(const char *code,
                                          ScmCodeGuessingProc proc,

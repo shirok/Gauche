@@ -85,9 +85,10 @@ const char* Scm_GetCESName(ScmObj code, const char *argname)
     return c;
 }
 
-int Scm_ConversionSupportedP(const char *from, const char *to)
+int Scm_ConversionSupportedP(const char *from, const char *to, u_long flags)
 {
-    ScmConvInfo *cinfo = jconv_open(to, from, TRUE);
+    int use_iconv = (flags&CVPORT_ICONV) != 0;
+    ScmConvInfo *cinfo = jconv_open(to, from, use_iconv);
     if (cinfo == NULL) return FALSE;
     jconv_close(cinfo);
     return TRUE;
@@ -290,7 +291,8 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
         fromCode = guessed;
     }
 
-    ScmConvInfo *cinfo = jconv_open(toCode, fromCode, TRUE);
+    int use_iconv = (flags & CVPORT_ICONV) != 0;
+    ScmConvInfo *cinfo = jconv_open(toCode, fromCode, use_iconv);
     if (cinfo == NULL) {
         Scm_Error("conversion from code %s to code %s is not supported",
                   fromCode, toCode);
@@ -467,7 +469,8 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
         bufsiz = MINIMUM_CONVERSION_BUFFER_SIZE;
     }
 
-    ScmConvInfo *cinfo = jconv_open(toCode, fromCode, TRUE);
+    int use_iconv = (flags & CVPORT_ICONV) != 0;
+    ScmConvInfo *cinfo = jconv_open(toCode, fromCode, use_iconv);
     if (cinfo == NULL) {
         Scm_Error("conversion from code %s to code %s is not supported",
                   fromCode, toCode);
