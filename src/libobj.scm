@@ -216,6 +216,20 @@
 ;; Class
 ;;
 
+;; TEMPORARY: We need to detect keywords such as :metaclass, :slots
+;; or :supers at macro-expansion time.  If the define-class form
+;; is macro-generated, however, these keywords may be renamed, so
+;; we can't simply use get-keyword.  This will eventually addressed
+;; when we rewrote define-class expander as macro.  Meanwhile,
+;; this ad-hoc solution would work.
+
+(define (%get-keyword key args default)
+  (let loop ((as args))
+    (cond [(null? as) default]
+          [(null? (cdr as)) (error "Key-value list is not even:" args)]
+          [(eqv? key (unwrap-syntax-1 (car as))) (cadr as)]
+          [else (loop (cddr as))])))
+
 ;; TRANSIENT: We should employ er-macro-transformer to expand
 ;; define-class etc., but this file need to be compiled by 0.9.5
 ;; and we've improved the transformer since then.  So we postponed
@@ -226,7 +240,7 @@
 ;  (%expand-define-class name supers slots options))
 
 (define (%expand-define-class name supers slots options)
-  (let* ([metaclass (or (get-keyword :metaclass options #f)
+  (let* ([metaclass (or (%get-keyword :metaclass options #f)
                         (quasirename %id
                           `(%get-default-metaclass (list ,@supers))))]
          [slot-defs (map %process-slot-definition slots)]
@@ -304,8 +318,8 @@
 
 (define-method initialize :locked ((class <class>) initargs)
   (next-method)
-  (let* ([slots  (get-keyword :slots  initargs '())]
-         [sup    (get-keyword :supers initargs '())]
+  (let* ([slots  (%get-keyword :slots  initargs '())]
+         [sup    (%get-keyword :supers initargs '())]
          ;;  NB: we always add <object> to the direct supers, for C defined
          ;;  base classes may not be inheriting from it.
          [supers (append sup (list <object>))])

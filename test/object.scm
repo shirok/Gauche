@@ -1621,5 +1621,21 @@
 (test* "object-hygiene-1-c" 4
        (let1 z (make <object-hygiene-1> :c 4)
          (object-hygiene-1-c z)))
+
+;; Hygienic keyword match.
+;; http://chaton.practical-scheme.net/gauche/a/2020/11/15#entry-5fb18659-edde4
+
+(define-module object-hygiene-2
+  (export <foo-meta> <foo>)
+  (define-class <foo-meta> (<class>) ())
+  (define-syntax define-foo
+    (syntax-rules ()
+      ((_ name) (define-class name () () :metaclass <foo-meta>))))
+  (define-foo <foo>)
+  )
+
+(import (object-hygiene-2 :prefix oh2:))
+(test* "hygienic keyword match" oh2:<foo-meta>
+       (class-of oh2:<foo>))
   
 (test-end)
