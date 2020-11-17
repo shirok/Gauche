@@ -6717,6 +6717,36 @@ See also @code{sys-strerror} (@pxref{System inquiry}).
 @defun open-file fname port-type flags :optional permission buffer-mode
 [SRFI-170]
 @c MOD srfi-170
+Opens a file named by @var{fname} and returns a port to read or write
+the file.  You have finer control than
+@code{open-input-file}/@code{open-output-file}.
+
+The @code{port-type} argument must be either one of the value
+of the constant @code{binary-input}, @code{textual-input},
+@code{binary-output}, @code{textual-output} and
+@code{binary-input/output}.  The direction of the returned port
+is determined by this argument.
+
+Gauche doesn't distinguish textual ports and binary ports.
+
+The @var{flags} argument is a bitwise ior of
+zero or more of the following bitmasks:
+@code{open/append}, @code{open/create}, @code{open/exclusive},
+@code{open/nofollow} and @code{open/truncate}.  These corresponds
+to the POSIX flags @code{O_APPEND}, @code{O_CREAT}, @code{O_EXCL},
+@code{O_NOFOLLOW} and @code{O_TRUNC}.  Gauche exposes the POSIX flags
+in @code{gauche.fcntl} (@pxref{Low-level file operations}).
+
+Note: POSIX @code{open(2)} also requires one of the bitmasks
+@code{O_RDONLY}, @code{O_WRONLY} and @code{O_RDWR}.  These flags
+are deduced from the @var{port-type} argument.
+
+The optional @var{permission} is an integer permission bits
+to be used when a new file is created.  The actual permission bits
+are also affected by the current @code{umask}.
+
+The optional @var{buffer-mode} is a value of either one of the followings:
+@code{buffer-none}, @code{buffer-block}, and @code{buffer-line}.
 @end defun
 
 @defun fd->port fd port-type :optional buffer-mode
