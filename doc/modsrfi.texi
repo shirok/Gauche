@@ -6752,6 +6752,19 @@ The optional @var{buffer-mode} is a value of either one of the followings:
 @defun fd->port fd port-type :optional buffer-mode
 [SRFI-170]
 @c MOD srfi-170
+Creates a Scheme port wrapping an integer file descriptor @var{fd}.
+The descriptor shouldn't be used by other Scheme ports.  After calling
+this procedure, no I/O should be done via @var{fd} directly; the descriptor
+is ``owned'' by the port, and will be closed once the port is closed.
+
+The @code{port-type} argument must be either one of the value
+of the constant @code{binary-input}, @code{textual-input},
+@code{binary-output}, @code{textual-output} and
+@code{binary-input/output}.  The direction must match how @var{fd} was
+opened.
+
+The optional @var{buffer-mode} is a value of either one of the followings:
+@code{buffer-none}, @code{buffer-block}, and @code{buffer-line}.
 @end defun
 
 @defvr {Constant} binary-input
@@ -6761,6 +6774,8 @@ The optional @var{buffer-mode} is a value of either one of the followings:
 @defvrx {Constant} binary-input/output
 [SRFI-170]
 @c MOD srfi-170
+Constants to be used as @var{port-type} argument of
+@code{open-file} and @code{fd->port}.
 @end defvr
 
 @defvr {Constant} buffer-none
@@ -6768,6 +6783,8 @@ The optional @var{buffer-mode} is a value of either one of the followings:
 @defvrx {Constant} buffer-line
 [SRFI-170]
 @c MOD srfi-170
+Constants to be used as @var{buffer-mode} argument of
+@code{open-file} and @code{fd->port}.
 @end defvr
 
 @defvr {Constant} open/append
@@ -6777,6 +6794,8 @@ The optional @var{buffer-mode} is a value of either one of the followings:
 @defvrx {Constant} open/truncate
 [SRFI-170]
 @c MOD srfi-170
+Bitmask constants to be used as @var{flags} argument of
+@code{open-file}.
 @end defvr
 
 @subheading File System
@@ -6983,6 +7002,12 @@ Returns the free space of a file system where a file specified by
 @deffn {Parameter} temp-file-prefix
 [SRFI-170]
 @c MOD srfi-170
+A parameter holding a path prefix to be used by @code{create-temp-file}
+and @code{call-with-temporary-filename}.  In Gauche,
+the default value is set to
+@code{(build-path (temporary-directory) (x->string (sys-getpid)))}.
+@xref{Temporary files and directories}, for the description of
+@code{temporary-directory}.
 @end deffn
 
 @defun create-temp-file :optional prefix
