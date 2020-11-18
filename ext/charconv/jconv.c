@@ -50,7 +50,7 @@
 #define INCHK(n)   do{if ((int)inroom < (n)) return INPUT_NOT_ENOUGH;}while(0)
 #define OUTCHK(n)  do{if ((int)outroom < (n)) return OUTPUT_NOT_ENOUGH;}while(0)
 
-#define ERRP(n)    ((n)==INPUT_NOT_ENOUGH||(n)==OUTPUT_NOT_ENOUGH||(n)==ILLEGAL_SEQUENCE)
+#define ERRP(n)    ((n) < 0)
 
 /* Fill outptr with substitution character.  Can return jconv error code. */
 static inline int do_subst(ScmConvInfo *cinfo,
@@ -59,7 +59,7 @@ static inline int do_subst(ScmConvInfo *cinfo,
                            ScmSize *outchars)
 {
     if (cinfo->replaceSize == 0) {
-        return ILLEGAL_SEQUENCE;
+        return NO_OUTPUT_CHAR;
     }
     OUTCHK(cinfo->replaceSize);
     for (int i = 0; i < cinfo->replaceSize; i++) {
@@ -74,6 +74,28 @@ static inline int do_subst(ScmConvInfo *cinfo,
         int i = do_subst(cinfo, outptr, outroom, outchars);     \
         if (i < 0) return i;                                    \
     } while (0)
+
+/******************************************************************
+ * 
+ *  Single-unit handling routines
+ *
+ *  This section defines routines that converts single input unit
+ *  to single output unit, optionally affecting the state.
+ *  A unit is usually a character, but sometimes one input character
+ *  may be mapped to more than one output characters, or a sequence of
+ *  input characters is mapped to one output character.
+ *
+ *  The routine returns the number of input octets consumed, and
+ *  sets the number of output octets emitted in *outchars.
+ *  If an errornous condition occurs, it returns one of the following
+ *  error code, and not update *outchars.
+ *
+ *  ILLEGAL_SEQUENCE  - Input contains illegal sequence.
+ *  INPUT_NOT_ENOUGH  - Input sequence ends prematurely.
+ *  OUTPUT_NOT_ENOUGH - Output buffer is too small.
+ *  NO_OUTPUT_CHAR    - Input unit can't be represented in output CES.
+ *
+ *****************************************************************/
 
 /*=================================================================
  * Shift JIS
@@ -1111,8 +1133,10 @@ static ScmSize pivot(ScmConvInfo *cinfo SCM_UNUSED,
     return 0;
 }
 
-/*=================================================================
- * JCONV - the entry
+/******************************************************************
+ * 
+ * Actual conversion
+ *
  */
 
 /* canonical code designator */

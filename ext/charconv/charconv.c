@@ -209,7 +209,7 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
         memmove(cinfo->buf, cinfo->buf+insize-inroom, inroom);
         cinfo->ptr = cinfo->buf + inroom;
         return cinfo->bufsiz - (ScmSize)outroom;
-    } else if (result == ILLEGAL_SEQUENCE) {
+    } else if (result == ILLEGAL_SEQUENCE || result == NO_OUTPUT_CHAR) {
         /* input sequence can't be represented by the destination CES. */
         if (cinfo->replacep) {
             if (outroom < cinfo->replaceSize) {
@@ -434,7 +434,7 @@ static ScmSize conv_output_flusher(ScmPort *port, ScmSize cnt, int forcep)
             Scm_Putz(cinfo->buf, (ScmSize)(outbuf - cinfo->buf), cinfo->remote);
             cinfo->ptr = cinfo->buf;
             continue;
-        } else if (result == ILLEGAL_SEQUENCE) {
+        } else if (result == ILLEGAL_SEQUENCE || result == NO_OUTPUT_CHAR) {
             /* it's likely that input contains invalid sequence.
                TODO: we should handle this case gracefully. */
             Scm_PortError(port, SCM_PORT_ERROR_ENCODING,
@@ -543,7 +543,7 @@ static ScmChar ucstochar(int ucs4)
     if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
         Scm_Error("can't convert UCS4 code %d to a character: implementation problem?", ucs4);
     }
-    if (r == ILLEGAL_SEQUENCE) {
+    if (r == ILLEGAL_SEQUENCE || r == NO_OUTPUT_CHAR) {
         return SCM_CHAR_INVALID;
     } else {
         ScmChar out;
@@ -574,7 +574,7 @@ static int chartoucs(ScmChar ch)
     if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
         Scm_Error("can't convert character %u to UCS4 code: implementation problem?", ch);
     }
-    if (r == ILLEGAL_SEQUENCE) {
+    if (r == ILLEGAL_SEQUENCE || r == NO_OUTPUT_CHAR) {
         return -1;
     } else {
         unsigned char *ucp = (unsigned char*)outbuf;

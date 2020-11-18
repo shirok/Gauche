@@ -115,9 +115,10 @@ extern const char *Scm_GuessCES(const char *code,
  */
 
 /* jconv error code */
-#define ILLEGAL_SEQUENCE  (-1)
-#define INPUT_NOT_ENOUGH  (-2)
-#define OUTPUT_NOT_ENOUGH (-3)
+#define ILLEGAL_SEQUENCE  (-1)  /* input contains illegal sequence */
+#define INPUT_NOT_ENOUGH  (-2)  /* input terminates prematurely */
+#define OUTPUT_NOT_ENOUGH (-3)  /* output buffer is too small */
+#define NO_OUTPUT_CHAR    (-4)  /* char can't be represented in output CES */
 
 extern ScmConvInfo *jconv_open(const char *toCode, 
                                const char *fromCode,
