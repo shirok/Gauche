@@ -27695,7 +27695,7 @@ the latter of which became a part of R7RS large (as @code{(scheme stream)},
 
 Gauche has a built-in lazy sequences (@pxref{Lazy sequences}), which is
 a lazy stream integrated to a list so that you can use all list procedures
-on it.  Lazy streams provided in this module is somewhat heavier than
+on it.  Lazy streams provided in this module are somewhat heavier than
 lazy sequences and you need to use special procedures,
 but it is strictly lazy (while a lazy sequence evaluates one element ahead)
 and portable.
@@ -27793,7 +27793,7 @@ Returns the first element of the stream @var{s}.
 @c EN
 Returns the remaining elements of the stream @var{s}, as a stream.
 @c JP
-ストリーム@var{s}の最初の要素をのぞいたのこりの要素をストリームとして
+ストリーム@var{s}の最初の要素を除いた残りの要素をストリームとして
 返します。
 @c COMMON
 @end defun
@@ -28713,26 +28713,48 @@ satisfy @var{pred}.
 @defunx stream->list n stream
 [R7RS stream]
 @c MOD util.stream
+@c EN
 Converts a stream to a list.  In the first form, all elements from
 @var{stream} are taken (thus it never returns if @var{stream} is infinite).
 In the second form, at most @var{n} elements are taken, where
 @var{n} must be a nonnegative exact integer.
 
 Note: In usual Scheme conventions, the optional @var{n} comes after
-the main argument (@var{stream}).  
+the main argument (@var{stream}).
+@c JP
+ストリームをリストに変換します。最初の形式では、@var{stream}の全ての要素が
+取り出されます (従って@var{stream}が無限ストリームであればこの関数は永遠に戻りません)。
+二番めの形式では最大で@var{n}要素までがストリームから取り出されそのリストが返されます。
+@var{n}は非負の正確な整数でなければなりません。
+
+註:通常のSchemeの慣例では、省略可能な@var{n}は@var{stream}の後に来ますが、
+この関数はそうでないことに注意。
+@c COMMON
 @end defun
 
 @defun stream->string stream
 @c MOD util.stream
-Converts a stream to a list.
+@c EN
+Converts a stream to a string.
 All elements of @var{stream} must be characters, or an error is signaled.
+@c JP
+ストリームを文字列に変換します。
+@var{stream}の全ての要素は文字でなければなりません。
+そうでない場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 
 @defun stream-lines stream
 @c MOD util.stream
+@c EN
 Splits @var{stream} where its element equals to @code{#\n}, and
-returns a stream of splitted streams.
+returns a stream of splitted streams.  The character @code{#\n} won't
+be included in the results.
+@c JP
+@var{stream}を、文字@code{#\n}が要素である箇所で分割し、
+分割されたストリームのストリームを返します。@code{#\n}自体は結果に含まれません。
+@c COMMON
 
 @example
 (stream->list
@@ -28744,16 +28766,31 @@ returns a stream of splitted streams.
 
 @defun stream= elt= stream @dots{}
 @c MOD util.stream
+@c EN
 Returns true iff each corresponding element of @var{stream} @dots{}
-are the same in terms of @var{elt=}.  This procedure won't terminate
-if any of @var{stream}s is infinite.
+are the same in terms of @var{elt=}, which takes two arguments.
+This procedure won't terminate
+if all of @var{stream}s is infinite.
+@c JP
+引数のストリームの全ての対応する要素がそれぞれ、2引数を取る@var{elt=}で比較して等しい場合に
+@code{#t}を、そうでなければ@code{#f}を返します。
+全ての@var{stream}が無限である場合、この手続きは終了しません。
+@c COMMON
 @end defun
 
 @defun stream-prefix= stream prefix :optional elt=
 @c MOD util.stream
+@c EN
 Compares initial elements of @var{stream} against
-a list @var{prefix} by @var{elt=}.  Only as many elements of @var{stream}
+a list @var{prefix} by @var{elt=}.  Returns true iff they match.
+Only as many elements of @var{stream}
 as @var{prefix} has are checked.
+@c JP
+@var{stream}の最初の方の要素をリスト@var{prefix}と比較します。各要素は
+@var{elt=}で比較されます。@var{prefix}と全てマッチしたら@code{#t}を、
+そうでなければ@code{#f}を返します。最大でも@var{prefix}の要素分だけ@var{stream}から
+要素が取り出されます。
+@c COMMON
 @end defun
 
 @defun stream-caar s
@@ -28868,22 +28905,39 @@ inserted between elements of @var{stream}.
 
 @defun stream-split stream pred
 @c MOD util.stream
+Split @var{stream} on elements that satisfy @var{pred},
+and returns a stream of splitted streams.  The delimiting element
+won't be included in the result.
 @end defun
 
 @defun stream-last stream
 @c MOD util.stream
+Returns the last element of @var{stream}.  If @var{stream} is infinite,
+this procedure won't return.
 @end defun
 
 @defun stream-last-n stream count
 @c MOD util.stream
+Returns a stream that contains the last @var{count} elements
+in @var{stream}.  The @var{count} argument must be a nonnegative exact
+integer.  If the length of @var{stream} is smaller than @var{count},
+the resulting stream is the same as @var{stream}.
+If @var{stream} is infinite,
+this procedure won't return.
 @end defun
 
 @defun stream-butlast stream
 @c MOD util.stream
+Returns a stream which is the same as @var{stream} but without the
+last element.  If @var{stream} is empty, an empty stream is returned.
 @end defun
 
 @defun stream-butlast-n stream count
 @c MOD util.stream
+Returns a stream which is the same as @var{stream} but without the
+last @var{count} elements.  The @var{count} argument must be a nonnegative exact
+integer.  If @var{stream} is shorter than @var{count}, a null stream
+is returned.
 @end defun
 
 @defun stream-length stream
@@ -28896,6 +28950,9 @@ is infinite.
 @defun stream-length>= stream n
 @defunx stream-length= stream n
 @c MOD util.stream
+Returns true iff the length of @var{stream} is greater than or equal to,
+and exactly equal to, @var{n}, respectively.
+These procedures only realizes @var{stream} up to @var{n} elements.
 @end defun
 
 @defun stream-reverse stream :optional tail-stream
