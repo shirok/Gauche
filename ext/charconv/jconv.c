@@ -150,7 +150,7 @@ static inline int do_subst(ScmConvInfo *cinfo,
  *     JIS X 0213 to EUC-JP is a straightfoward conversion.
  */
 
-static ScmSize sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
+static ScmSize sjis_eucj(ScmConvInfo *cinfo SCM_UNUSED,
                          const char *inptr, ScmSize inroom,
                          char *outptr, ScmSize outroom, 
                          ScmSize *outchars)
@@ -293,7 +293,7 @@ static ScmSize sjis2eucj(ScmConvInfo *cinfo SCM_UNUSED,
  *     s2 is mapped with the same rule above.
  */
 
-static ScmSize eucj2sjis(ScmConvInfo *cinfo SCM_UNUSED,
+static ScmSize eucj_sjis(ScmConvInfo *cinfo SCM_UNUSED,
                          const char *inptr, ScmSize inroom,
                          char *outptr, ScmSize outroom,
                          ScmSize *outchars)
@@ -617,7 +617,7 @@ static inline ScmSize utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 }
 
 /* Body of UTF8 -> EUC_JP conversion */
-static ScmSize utf2eucj(ScmConvInfo *cinfo,     
+static ScmSize utf8_eucj(ScmConvInfo *cinfo,     
                         const char *inptr, ScmSize inroom,
                         char *outptr, ScmSize outroom,
                         ScmSize *outchars)
@@ -720,9 +720,9 @@ void jconv_ucs4_to_utf8(unsigned int ucs, char *cp)
 /* Given 'encoded' ucs, emit utf8.  'Encoded' ucs is the entry of the
    conversion table.  If ucs >= 0x100000, it is composed by two UCS2
    character.  Otherwise, it is one UCS4 character. */
-static inline ScmSize eucj2utf_emit_utf(unsigned int ucs, ScmSize inchars,
-                                        char *outptr, ScmSize outroom,
-                                        ScmSize *outchars)
+static inline ScmSize eucj_utf8_emit_utf(unsigned int ucs, ScmSize inchars,
+                                         char *outptr, ScmSize outroom,
+                                         ScmSize *outchars)
 {
     if (ucs < 0x100000) {
         int outreq = UCS2UTF_NBYTES(ucs);
@@ -743,7 +743,7 @@ static inline ScmSize eucj2utf_emit_utf(unsigned int ucs, ScmSize inchars,
     return inchars;
 }
 
-static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
+static ScmSize eucj_utf8(ScmConvInfo *cinfo SCM_UNUSED,
                         const char *inptr, ScmSize inroom,
                         char *outptr, ScmSize outroom, ScmSize *outchars)
 {
@@ -755,7 +755,7 @@ static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
             unsigned char e1 = (unsigned char)inptr[1];
             if (e1 < 0xa1 || e1 > 0xdf) return ILLEGAL_SEQUENCE;
             unsigned int ucs = 0xff61 + (e1 - 0xa1);
-            return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
+            return eucj_utf8_emit_utf(ucs, 2, outptr, outroom, outchars);
         }
         else if (e0 == 0x8f) {
             /* JIS X 0213 plane 2 */
@@ -774,7 +774,7 @@ static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
             }
             unsigned int ucs = euc_jisx0213_2_to_ucs2[index][e2 - 0xa1];
             if (ucs != 0) {
-                return eucj2utf_emit_utf(ucs, 3, outptr, outroom, outchars);
+                return eucj_utf8_emit_utf(ucs, 3, outptr, outroom, outchars);
             }
             DO_SUBST;
             return 3;
@@ -793,7 +793,7 @@ static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
         if (e1 < 0xa1 || e1 > 0xfe) return ILLEGAL_SEQUENCE;
         unsigned int ucs = euc_jisx0213_1_to_ucs2[e0 - 0xa1][e1 - 0xa1];
         if (ucs != 0) {
-            return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
+            return eucj_utf8_emit_utf(ucs, 2, outptr, outroom, outchars);
         }
         DO_SUBST;
         return 2;
@@ -807,30 +807,30 @@ static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
  * We convert a unit via eucjp.
  */
 
-static ScmSize utf2sjis(ScmConvInfo *cinfo,     
-                        const char *inptr, ScmSize inroom,
-                        char *outptr, ScmSize outroom,
-                        ScmSize *outchars)
+static ScmSize utf8_sjis(ScmConvInfo *cinfo,     
+                         const char *inptr, ScmSize inroom,
+                         char *outptr, ScmSize outroom,
+                         ScmSize *outchars)
 {
     char buf[3];
     ScmSize bufcount;
-    ScmSize r = utf2eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
+    ScmSize r = utf8_eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
     if (r < 0) return r;
-    ScmSize r2 = eucj2sjis(cinfo, buf, bufcount, outptr, outroom, outchars);
+    ScmSize r2 = eucj_sjis(cinfo, buf, bufcount, outptr, outroom, outchars);
     if (r2 < 0) return r2;
     return r;
 }
 
-static ScmSize sjis2utf(ScmConvInfo *cinfo,     
-                        const char *inptr, ScmSize inroom,
-                        char *outptr, ScmSize outroom,
-                        ScmSize *outchars)
+static ScmSize sjis_utf8(ScmConvInfo *cinfo,     
+                         const char *inptr, ScmSize inroom,
+                         char *outptr, ScmSize outroom,
+                         ScmSize *outchars)
 {
     char buf[3];
     ScmSize bufcount;
-    ScmSize r = sjis2eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
+    ScmSize r = sjis_eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
     if (r < 0) return r;
-    ScmSize r2 = eucj2utf(cinfo, buf, bufcount, outptr, outroom, outchars);
+    ScmSize r2 = eucj_utf8(cinfo, buf, bufcount, outptr, outroom, outchars);
     if (r2 < 0) return r2;
     return r;
 }
@@ -946,7 +946,7 @@ static ScmSize jis_esc(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom)
 }
 
 /* main routine for iso2022-jp -> euc_jp */
-static ScmSize jis2eucj(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
+static ScmSize jis_eucj(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
                         char *outptr, ScmSize outroom, ScmSize *outchars)
 {
     ScmSize inoffset = 0;
@@ -1074,7 +1074,7 @@ static ScmSize jis_ensure_state(ScmConvInfo *cinfo, int newstate,
     return esclen;
 }
 
-static ScmSize eucj2jis(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
+static ScmSize eucj_jis(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
                         char *outptr, ScmSize outroom, ScmSize *outchars)
 {
     unsigned char e0 = inptr[0];
@@ -1194,32 +1194,32 @@ static struct conv_converter_rec {
     /* in : EUCJ */
     {
         { pivot, NULL, NULL },              /* out: EUCJ */
-        { eucj2sjis, NULL, NULL },          /* out: SJIS */
-        { eucj2utf, NULL, NULL },           /* out: UTF8 */
-        { eucj2jis, NULL, jis_reset },      /* out: ISO2022JP */
+        { eucj_sjis, NULL, NULL },          /* out: SJIS */
+        { eucj_utf8, NULL, NULL },           /* out: UTF8 */
+        { eucj_jis, NULL, jis_reset },      /* out: ISO2022JP */
         { pivot, NULL, NULL }               /* out: NONE */
     },
     /* in: SJIS */
     {
-        { sjis2eucj, NULL, NULL },          /* out: EUCJ */
+        { sjis_eucj, NULL, NULL },          /* out: EUCJ */
         { pivot, NULL, NULL },              /* out: SJIS */
-        { sjis2utf, NULL, NULL },           /* out: UTF8 */
-        { sjis2eucj, eucj2jis, jis_reset }, /* out: ISO2022JP */
+        { sjis_utf8, NULL, NULL },           /* out: UTF8 */
+        { sjis_eucj, eucj_jis, jis_reset }, /* out: ISO2022JP */
         { pivot, NULL, NULL }               /* out: NONE */
     },
     /* in: UTF8 */
     {
-        { utf2eucj, NULL, NULL },           /* out: EUCJ */
-        { utf2sjis, NULL, NULL },           /* out: SJIS */
+        { utf8_eucj, NULL, NULL },          /* out: EUCJ */
+        { utf8_sjis, NULL, NULL },          /* out: SJIS */
         { pivot, NULL, NULL },              /* out: UTF8 */
-        { utf2eucj, eucj2jis, jis_reset },  /* out: ISO2022JP */
+        { utf8_eucj, eucj_jis, jis_reset },  /* out: ISO2022JP */
         { pivot, NULL, NULL }               /* out: NONE */
     },
     /* in: ISO2022JP */
     {
-        { jis2eucj, NULL, jis_reset },      /* out: EUCJ */
-        { jis2eucj, eucj2sjis, jis_reset }, /* out: SJIS */
-        { jis2eucj, eucj2utf, jis_reset },  /* out: UTF8 */
+        { jis_eucj, NULL, jis_reset },      /* out: EUCJ */
+        { jis_eucj, eucj_sjis, jis_reset }, /* out: SJIS */
+        { jis_eucj, eucj_utf8, jis_reset },  /* out: UTF8 */
         { pivot, NULL, jis_reset },         /* out: ISO2022JP */
         { pivot, NULL, NULL }               /* out: NONE */
     },
