@@ -39,9 +39,6 @@
 /* This file handles conversion among UTF8, Shift-JIS, EUC_JP, and ISO2022JP.
  * Shift-JIS and EUC_JP are based on JIS X 0213:2000.  ISO2022JP partially
  * handles ISO2022-JP-3 as well.
- *
- * EUC_JP is used as a 'pivot' encoding, for it can naturally handle
- * JISX 0201, JISX 0208, JISX 0212 and JISx 0213 characters.
  */
 
 #include <ctype.h>
@@ -806,6 +803,38 @@ static ScmSize eucj2utf(ScmConvInfo *cinfo SCM_UNUSED,
     return 1;
 }
 
+/* [UTF8 <-> SJIS Conversion]
+ * We convert a unit via eucjp.
+ */
+
+static ScmSize utf2sjis(ScmConvInfo *cinfo,     
+                        const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom,
+                        ScmSize *outchars)
+{
+    char buf[3];
+    ScmSize bufcount;
+    ScmSize r = utf2eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
+    if (r < 0) return r;
+    ScmSize r2 = eucj2sjis(cinfo, buf, bufcount, outptr, outroom, outchars);
+    if (r2 < 0) return r2;
+    return r;
+}
+
+static ScmSize sjis2utf(ScmConvInfo *cinfo,     
+                        const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom,
+                        ScmSize *outchars)
+{
+    char buf[3];
+    ScmSize bufcount;
+    ScmSize r = sjis2eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
+    if (r < 0) return r;
+    ScmSize r2 = eucj2utf(cinfo, buf, bufcount, outptr, outroom, outchars);
+    if (r2 < 0) return r2;
+    return r;
+}
+
 /*=================================================================
  * ISO2022-JP
  */
@@ -1148,22 +1177,60 @@ enum {
     JCODE_NONE,    /* a special entry standing for byte stream */
 #if 0
     JCODE_ISO2022JP-2,
-    JCODE_ISO2022JP-3
+    JCODE_ISO2022JP-3,
 #endif
+    NUM_JCODES
 };
 
 /* map canonical code designator to inconv and outconv.  the order of
-   entry must match with the above designators. */
+   entry must match with the above designators. 
+   conv_converter[incode][outcode] returns the appropriate 
+*/
 static struct conv_converter_rec {
     ScmConvProc inconv;
     ScmConvProc outconv;
     ScmConvReset reset;
-} conv_converter[] = {
-    { pivot, pivot, NULL },              /* EUCJ */
-    { sjis2eucj, eucj2sjis, NULL },      /* SJIS */
-    { utf2eucj,  eucj2utf,  NULL },      /* UTF8 */
-    { jis2eucj,  eucj2jis,  jis_reset }, /* ISO2022JP */
-    { pivot, pivot, NULL },              /* NONE */
+} conv_converter[NUM_JCODES][NUM_JCODES] = {
+    /* in : EUCJ */
+    {
+        { pivot, NULL, NULL },              /* out: EUCJ */
+        { eucj2sjis, NULL, NULL },          /* out: SJIS */
+        { eucj2utf, NULL, NULL },           /* out: UTF8 */
+        { eucj2jis, NULL, jis_reset },      /* out: ISO2022JP */
+        { pivot, NULL, NULL }               /* out: NONE */
+    },
+    /* in: SJIS */
+    {
+        { sjis2eucj, NULL, NULL },          /* out: EUCJ */
+        { pivot, NULL, NULL },              /* out: SJIS */
+        { sjis2utf, NULL, NULL },           /* out: UTF8 */
+        { sjis2eucj, eucj2jis, jis_reset }, /* out: ISO2022JP */
+        { pivot, NULL, NULL }               /* out: NONE */
+    },
+    /* in: UTF8 */
+    {
+        { utf2eucj, NULL, NULL },           /* out: EUCJ */
+        { utf2sjis, NULL, NULL },           /* out: SJIS */
+        { pivot, NULL, NULL },              /* out: UTF8 */
+        { utf2eucj, eucj2jis, jis_reset },  /* out: ISO2022JP */
+        { pivot, NULL, NULL }               /* out: NONE */
+    },
+    /* in: ISO2022JP */
+    {
+        { jis2eucj, NULL, jis_reset },      /* out: EUCJ */
+        { jis2eucj, eucj2sjis, jis_reset }, /* out: SJIS */
+        { jis2eucj, eucj2utf, jis_reset },  /* out: UTF8 */
+        { pivot, NULL, jis_reset },         /* out: ISO2022JP */
+        { pivot, NULL, NULL }               /* out: NONE */
+    },
+    /* in: NONE */
+    {
+        { pivot, NULL, NULL },              /* out: EUCJ */
+        { pivot, NULL, NULL },              /* out: SJIS */
+        { pivot, NULL, NULL },              /* out: UTF8 */
+        { pivot, NULL, NULL },              /* out: ISO2022JP */
+        { pivot, NULL, NULL }               /* out: NONE */
+    }
 };
 
 /* map convesion name to the canonical code */
@@ -1423,24 +1490,15 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
         handler = jconv_ident;
         convproc[0] = convproc[1] = NULL;
         reset = NULL;
-    } else if (incode == JCODE_EUCJ) {
-        /* pattern (2) */
-        handler = jconv_1tier;
-        convproc[0] = conv_converter[outcode].outconv;
-        convproc[1] = NULL;
-        reset = conv_converter[outcode].reset;
-    } else if (outcode == JCODE_EUCJ) {
-        /* pattern (3) */
-        handler = jconv_1tier;
-        convproc[0] = conv_converter[incode].inconv;
-        convproc[1] = NULL;
-        reset = NULL;
-    } else {
-        /* pattern (4) */
-        handler = jconv_2tier;
-        convproc[0] = conv_converter[incode].inconv;
-        convproc[1] = conv_converter[outcode].outconv;
-        reset = conv_converter[outcode].reset;
+    } else  {
+        convproc[0] = conv_converter[incode][outcode].inconv;
+        convproc[1] = conv_converter[incode][outcode].outconv;
+        if (convproc[1] == NULL) {
+            handler = jconv_1tier;
+        } else {
+            handler = jconv_2tier;
+        }
+        reset = conv_converter[incode][outcode].reset;
     }
     ScmConvInfo *cinfo;
     cinfo = SCM_NEW(ScmConvInfo);

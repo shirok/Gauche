@@ -1,3 +1,10 @@
+2020-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/jconv.c: Drop euc-jp pivoting.  To widen supported
+	  CESes, fixing the pivot encoding is cumbersome.  Instead, each
+	  pair of {in-code, out-code} can choose suitable intermediate
+	  encoding if necessary.
+
 2020-11-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (%expand-define-class): Fix hygienic keyword match
