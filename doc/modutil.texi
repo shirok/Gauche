@@ -63,6 +63,7 @@
 * Calculate difference of text streams::  text.diff
 * EDN parsing and construction::  text.edn
 * Running external editor::     text.external-editor
+* Gap buffer::                  text.gap-buffer
 * Localized messages::          text.gettext
 * Simple HTML document construction::  text.html-lite
 * Display with pager::          text.pager
@@ -23692,7 +23693,7 @@ GaucheオブジェクトをEDNタグつきオブジェクトとして書き出�
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Running external editor, Localized messages, EDN parsing and construction, Library modules - Utilities
+@node Running external editor, Gap buffer, EDN parsing and construction, Library modules - Utilities
 @section @code{text.external-editor} - Running external editor
 @c NODE 外部エディタの起動, @code{text.external-editor} - 外部エディタの起動
 
@@ -23788,7 +23789,102 @@ Otherwise, @code{#f} is returned.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Localized messages, Simple HTML document construction, Running external editor, Library modules - Utilities
+@node Gap buffer, Localized messages, Running external editor, Library modules - Utilities
+@section @code{text.gap-buffer} - Gap buffer
+@c NODE ギャップバッファ, @code{text.gap-buffer} - ギャップバッファ
+
+@deftp {Module} text.gap-buffer
+@mdindex text.gap-buffer
+This module provides a gap buffer, a data structure useful for
+editable text.
+
+A gap buffer is a vector of characters with a ``cursor'', where
+you can insert or delete a character in O(1) time.  Most of
+the editing API operate on the current cursor position.
+@end deftp
+
+@defun make-gap-buffer :key initial-capacity
+@c MOD text.gap-buffer
+Creates a fresh gap buffer and returns it.  The initial content
+is emtpy.
+
+The keyword argument
+@var{initial-capacity} must be a positive exact integer if given,
+and specifies the initial capacity of the buffer.  The buffer is
+automatically extended if necessary, so the argument is only a 
+hint; if you know you'll insert a long string, for example,
+you can create a buffer that's large enough to hold it to avoid
+reallocation overhead.
+@end defun
+
+@defun string->gap-buffer string :optional pos whence start end
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer? obj
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-copy gbuf
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer->string gbuf  :optional start end
+@defunx gap-buffer->generator gbuf :optional start end
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-pos gbuf
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-capacity gbuf
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-content-length gbuf
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-gap-at? gbuf whence
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-ref gbuf index :optional fallback
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-set! gbuf index char
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-move! gbuf pos whence
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-insert! gbuf content
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-delete! gbuf size
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-clear! gbuf
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-replace! gbuf size content
+@c MOD text.gap-buffer
+@end defun
+
+@defun gap-buffer-edit! gbuf edit-command
+@c MOD text.gap-buffer
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Localized messages, Simple HTML document construction, Gap buffer, Library modules - Utilities
 @section @code{text.gettext} - Localized messages
 @c NODE 地域化メッセージ, @code{text.gettext} - 地域化メッセージ
 
