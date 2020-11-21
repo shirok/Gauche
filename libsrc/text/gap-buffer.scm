@@ -46,7 +46,7 @@
           gap-buffer? gap-buffer-capacity gap-buffer-content-length
           gap-buffer-pos gap-buffer-gap-at? gap-buffer-ref
           gap-buffer-gap-start gap-buffer-gap-end gap-buffer-move!
-          gap-buffer-insert! gap-buffer-delete! gap-buffer-change!
+          gap-buffer-insert! gap-buffer-delete! gap-buffer-replace!
           gap-buffer-clear!
           gap-buffer-edit!
           gap-buffer->generator gap-buffer->string)
@@ -240,7 +240,7 @@
 ;; API
 ;; Delete SIZE from the current pos, then insert content.
 ;; For the convenience.
-(define (gap-buffer-change! gbuf size content)
+(define (gap-buffer-replace! gbuf size content)
   (gap-buffer-delete! gbuf size)
   (gap-buffer-insert! gbuf content))
 
@@ -276,7 +276,7 @@
     [('c pos len str) 
      (let* ([cpos (mov! pos)]
             [s (gap-buffer->string gbuf cpos (+ cpos len))])
-       (gap-buffer-change! gbuf len str)
+       (gap-buffer-replace! gbuf len str)
        `(c ,cpos ,(string-length str) ,s))]
     [_ (error "Invalid edit-command:" edit-command)]))
 

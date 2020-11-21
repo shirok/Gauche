@@ -1,3 +1,8 @@
+2020-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/gap-buffer.scm (gap-buffer-replace!): Renamed from
+	  gap-buffer-change!, for the consistency and clarity.
+
 2020-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/jconv.c: Drop euc-jp pivoting.  To widen supported

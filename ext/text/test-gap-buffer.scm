@@ -53,9 +53,9 @@
   (test* "delete"
          (test-error)
          (gap-buffer-visualize (gap-buffer-delete! gbuf 100)))
-  (test* "change"
+  (test* "replace"
          "abcdef______________________________________1234567890123456789e"
-         (gap-buffer-visualize (gap-buffer-change! gbuf 5 "def")))
+         (gap-buffer-visualize (gap-buffer-replace! gbuf 5 "def")))
   )
 
 (let1 gbuf (string->gap-buffer "abcde")
