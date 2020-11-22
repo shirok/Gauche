@@ -23819,67 +23819,141 @@ reallocation overhead.
 
 @defun string->gap-buffer string :optional pos whence start end
 @c MOD text.gap-buffer
+Creates a gap buffer large enough to contain the given @var{string},
+and returns it.
+
+The initial cursor position is set at the end of the string by default.
+The @var{pos} and @var{whence} argument can set the initial
+cursor position.  The @var{whence} argument must be either a symbol
+@code{beginning} or a symbol @code{end}, and @var{pos} must be an exact
+integer offset from the whence.  For example, @var{pos} = 10 and 
+@var{whence} = @code{beginning} sets the cursor at the 10th character
+of the string from the beginning, and @var{pos} = -1 and @var{whence} = 
+@code{end} sets the cursor position at one character before the end
+of the string.  If the combination of @var{pos} and @var{whence}
+points the outside of the string, an error is signaled.
+
+The optional @var{start} and @var{end} trims the input string before 
+creating the gap buffer.
 @end defun
 
 @defun gap-buffer? obj
 @c MOD text.gap-buffer
+Returns @code{#t} iff @var{obj} is a gap buffer.
 @end defun
 
 @defun gap-buffer-copy gbuf
 @c MOD text.gap-buffer
+Returns a fresh copy of a gap buffer @var{gbuf}, with the same content
+and cursor position.
 @end defun
 
-@defun gap-buffer->string gbuf  :optional start end
+@defun gap-buffer->string gbuf :optional start end
 @defunx gap-buffer->generator gbuf :optional start end
 @c MOD text.gap-buffer
+Retrieve the content of a gap buffer @var{gbuf} as a string or
+a generator of characters, respectively.  The optional @var{start} and
+@var{end} arguments are nonnegative exact integers of character index
+in the content of the buffer, and limits the output within the specified
+range.
+
+If you modify the content of gap buffer before the returned generator
+is exhausted, consistent behavior isn't guaranteed.
 @end defun
 
 @defun gap-buffer-pos gbuf
 @c MOD text.gap-buffer
+Returns the current cursor position of @var{gbuf}, in a nonnegative
+exact integer.
 @end defun
 
 @defun gap-buffer-capacity gbuf
 @c MOD text.gap-buffer
+Returns the currently allocated storage size of @var{gbuf}.
+If you insert more characters into @var{gbuf}, the storage is automatically
+expanded.
 @end defun
 
 @defun gap-buffer-content-length gbuf
 @c MOD text.gap-buffer
+Returns the length of current content of @var{gbuf},
+in the number of characters.
 @end defun
 
 @defun gap-buffer-gap-at? gbuf whence
 @c MOD text.gap-buffer
+The @var{whence} argument must be either a symbol @code{beginning}
+or a symbol @code{end}.  Returns @code{#t} iff the current cursor position
+of @var{gbuf} is at the beginning or at the end, respectively.
 @end defun
 
 @defun gap-buffer-ref gbuf index :optional fallback
 @c MOD text.gap-buffer
+Returns @var{index}-th character of @var{gbuf}.  If @var{index} is
+out of range, @var{fallback} is returned if given, or an error
+is raised.
 @end defun
 
 @defun gap-buffer-set! gbuf index char
 @c MOD text.gap-buffer
+Replaces @var{index}-th character of @var{gbuf} with @var{char}.
+If @var{index} is out of range, an error is signaled.
 @end defun
 
-@defun gap-buffer-move! gbuf pos whence
+@defun gap-buffer-move! gbuf pos :optional whence
 @c MOD text.gap-buffer
+Moves the cursor position of @var{gbuf} to a position @var{pos}, which
+must be an exact integer.  The position @var{pos} is relative to
+@var{whence}, which must be either one of the symbols @code{beginning},
+@var{current} or @code{end}.
 @end defun
 
 @defun gap-buffer-insert! gbuf content
 @c MOD text.gap-buffer
+Inserts @var{content}, which must be a character or a string,
+at the current cursor position of @var{gbuf}.
+The current cursor position is moved to the end of the inserted content.
 @end defun
 
 @defun gap-buffer-delete! gbuf size
 @c MOD text.gap-buffer
+Delets @var{size} characters from the current cursor position
+of @var{gbuf}.  It is an error if @var{size} overruns.
 @end defun
 
 @defun gap-buffer-clear! gbuf
 @c MOD text.gap-buffer
+Makes @var{gbuf} empty.
 @end defun
 
 @defun gap-buffer-replace! gbuf size content
 @c MOD text.gap-buffer
+This is a combination of @code{(gap-buffer-delete! gbuf size)} and
+@code{(gap-buffer-insert! gbuf content)}. 
+The @var{size} argument must be a nonnegative exact integer,
+and the @var{content} argument must be either a string or a character.
 @end defun
 
 @defun gap-buffer-edit! gbuf edit-command
 @c MOD text.gap-buffer
+This is a convenience procedure to ``replay'' editing of the gap buffer
+@var{gbuf}.  The @var{edit-command} argument must be either one of the
+following:
+
+@table @code
+@item (i @var{pos} @var{string})
+Insert @var{string} at a position @var{pos}.
+@item (d @var{pos} @var{length})
+Delete @var{length} characters from a position @var{pos}.
+@item (c @var{pos} @var{length} @var{string})
+Change: Delets @var{length} characters from a position @var{pos},
+then insert @var{string}.
+@end table
+
+Here, @var{pos} must be a nonnegative exact integer specifying the
+position in the gap buffer.
+
+One of the appliations of this procedure is to handle undo/redo list.
 @end defun
 
 
