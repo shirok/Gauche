@@ -19626,6 +19626,32 @@ portability, though.
 @c COMMON
 @end defun
 
+@defun condition-message condition :optional fallback
+@c EN
+This is a convenience procedure to retrieve a message if
+@var{condition} has a type @code{<message-condition>},
+and returns @var{fallback} otherwise.  If @var{fallback}
+is omitted, @code{#f} is assumed.
+
+Often, in a generic routine you want to intercept a raised
+condition and retrieve a message for logging or user feedback.
+Since any object can be raised in Scheme, an exception may not
+contain the message slot, and you need to check the type
+of the condition.  We've written such code enough so that we
+add this procedure.
+@c JP
+@var{condition}が@code{<message-condition>}を持っていれば
+その@code{message}スロットを、そうでなければ@var{fallback}を返す手続きです。
+@var{fallback}が省略された場合は@code{#f}が指定されたとみなします。
+
+投げられたコンディションを一度捕まえてメッセージを記録したりユーザに見せたりする
+一般的なコードはよくあります。Schemeでは任意のオブジェクトを@code{raise}できるため、
+捕まえたコンディションがメッセージスロットを持っているとは限りません。
+従ってそういったコードはいちいちコンディションの型を検査して分岐することになります。
+そのパターンは充分によくあるので、この手続きが追加されました。
+@c COMMON
+@end defun
+
 @defun make-compound-condition condition0 condition1 @dots{}
 [SRFI-35]
 @c EN

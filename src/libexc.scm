@@ -63,6 +63,14 @@
 
 (define-cproc condition-type-name (c) Scm_ConditionTypeName)
 
+;; A convenience procedure; safe for non-message condition objects.
+;; (cf. error-object-message of r7rs)
+(define (condition-message e :optional (fallback #f))
+  (if (and (condition? e)
+           (condition-has-type? e <message-condition>))
+    (condition-ref e 'message)
+    fallback))
+
 (define (print-default-error-heading exc out)
   (guard (e [else (display "*** ERROR:" out)
                   (display exc out)
