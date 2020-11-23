@@ -51,7 +51,7 @@
   (%start-class-redefinition! old) ;; MT safety
   (guard (e [else
              (%commit-class-redefinition! old #f)
-             (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent" old)])
+             (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent: ~a\n" old (condition-message e))])
     (class-redefinition old new)
     (%commit-class-redefinition! old new)))
 
