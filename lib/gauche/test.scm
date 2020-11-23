@@ -247,9 +247,7 @@
                       (make <test-error> :condition e
                             :class (class-of e)
                             :message
-                            (if (condition-has-type? e <message-condition>)
-                              (slot-ref e 'message)
-                              e))])
+                            (condition-message e e))])
              (thunk)))
          args))
 

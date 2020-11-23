@@ -7,7 +7,7 @@
 ;; level, since the error console will be immediately gone after program
 ;; exits in non-console mode.
 (define (main args)
-  (guard (e [else (sys-message-box #f (format "ERROR: ~a" (~ e'message))
+  (guard (e [else (sys-message-box #f (format "ERROR: ~a" (condition-message e))
                                    (sys-basename *program-name*)
                                    (logior MB_OK MB_ICONERROR))])
     (sys-sleep 1)

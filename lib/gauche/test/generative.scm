@@ -168,8 +168,7 @@
   (let1 result
       (guard (e [else (throw-failure (test-error
                                       (class-of e)
-                                      (and (<message-condition> e)
-                                           (~ e 'message))))])
+                                      (condition-message e)))])
         (thunk))
     (unless (cmp expected result)
       (throw-failure result))))

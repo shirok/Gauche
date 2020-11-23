@@ -201,7 +201,7 @@
              ;; not to expose parser.peg's <parse-error>.
              (error <json-parse-error>
                     :position (~ e'position) :objects (~ e'objects)
-                    :message (~ e'message))])
+                    :message (condition-message e e))])
     (peg-parse-port json-parser port)))
 
 (define (parse-json-string str)

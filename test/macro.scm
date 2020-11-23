@@ -1662,7 +1662,7 @@
       (lambda ()
         (guard [e (else (let1 xs (filter <compile-error-mixin>
                                          (slot-ref e '%conditions))
-                          (cons (slot-ref e 'message)
+                          (cons (condition-message e e)
                                 (map (lambda (x) (slot-ref x 'expr)) xs))))]
           (eval '(list (test-syntax-error x y z))
                 (interaction-environment)))))
@@ -1673,7 +1673,7 @@
       (lambda ()
         (guard [e (else (let1 xs (filter <compile-error-mixin>
                                          (slot-ref e '%conditions))
-                          (cons (slot-ref e 'message)
+                          (cons (condition-message e e)
                                 (map (lambda (x) (slot-ref x 'expr)) xs))))]
           (eval '(list (test-syntax-error x y))
                 (interaction-environment)))))

@@ -4,7 +4,7 @@
 
 (define (main _)
   (for-each (^c (write c) (newline))
-            (call-with-console (guard (e [else (exit 1 (~ e'message))])
+            (call-with-console (guard (e [else (exit 1 (condition-message e))])
                                  (make-default-console))
                                get-raw-chars))
   0)

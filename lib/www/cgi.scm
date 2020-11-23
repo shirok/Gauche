@@ -429,7 +429,7 @@
     ,(html:html
       (html:head (html:title "Error"))
       (html:body (html:h1 "Error")
-                 (html:p (html-escape-string (slot-ref e 'message)))))))
+                 (html:p (html-escape-string (condition-message e e)))))))
 
 (define (cgi-default-output tree)
   (if (ces-equivalent? (gauche-character-encoding)

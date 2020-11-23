@@ -727,7 +727,7 @@
       (with-error-handler
           (lambda (err)
             (and (cond ((regexp? expected)
-                        (rxmatch expected (slot-ref err 'message)))
+                        (rxmatch expected (condition-message err "")))
                        ((procedure? expected)
                         (expected err))
                        (else

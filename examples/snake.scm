@@ -9,7 +9,7 @@
 (use text.console)
 
 (define (main args)
-  (call-with-console (guard (e [else (exit 1 (~ e'message))])
+  (call-with-console (guard (e [else (exit 1 (condition-message e))])
                        (make-default-console))
                      game)
   0)

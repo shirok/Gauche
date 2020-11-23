@@ -9,7 +9,7 @@
 (use gauche.listener :only (complete-sexp?))
 
 (define (main args)
-  (let* ([con (guard (e [else (exit 1 (~ e'message))])
+  (let* ([con (guard (e [else (exit 1 (condition-message e))])
                 (make-default-console))]
          [count 0]
          [ctx (make <line-edit-context>

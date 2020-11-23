@@ -190,7 +190,8 @@ Content-Length: 4349
                  (begin
                    (test* (format "rfc822-write-headers error (~a)" expect)
                           expect
-                          (guard (e (else (rxmatch-case (ref e'message)
+                          (guard (e (else (rxmatch-case 
+                                              (condition-message e "")
                                             [#/\(([\w-]+)\)/ (_ m) m]
                                             [else e])))
                             (with-output-to-string
