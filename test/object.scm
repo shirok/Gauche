@@ -539,10 +539,8 @@
              (ref <y> 'redefined)))
 
 (test* "subclass redefinition <y> (links)"
-       '(#f #f #f #f #f)
+       '(#f #f #f)
        (list (eq? <y> <y>-orig)
-             (not (memq <y> (ref <x> 'direct-subclasses)))
-             (not (memq <y>-orig (ref <x>-orig 'direct-subclasses)))
              (not (memq <x> (ref <y> 'direct-supers)))
              (not (memq <x>-orig (ref <y>-orig 'direct-supers)))))
 
@@ -552,10 +550,8 @@
             (list <x>-orig <x> <y>-orig <y>)))
 
 (test* "subclass redefinition <w> (links)"
-       '(#f #f #f #f #f)
+       '(#f #f #f)
        (list (eq? <w> <w>-orig)
-             (not (memq <w> (ref <y> 'direct-subclasses)))
-             (not (memq <w>-orig (ref <y>-orig 'direct-subclasses)))
              (not (memq <y> (ref <w> 'direct-supers)))
              (not (memq <y>-orig (ref <w>-orig 'direct-supers)))))
 
@@ -1445,6 +1441,26 @@
                                   unknown "alan")
        (map (cut slot-ref *member-ted* <>)
             '(full-name occupation sex cname)))
+
+;;----------------------------------------------------------------
+(test-section "class redefinition (part 3 - multiple inheritance)")
+
+;; http://chaton.practical-scheme.net/gauche/a/2020/11/22#entry-5fbab148-42ea5
+(define-module redefinition-3
+  (use gauche.test)
+  (define-class <foo> () ())
+  (define-class <bar> () ())
+  (define-class <foobar> (<foo> <bar>) ())
+  (define <foobar>-save <foobar>)
+
+  ;; This triggers redefinition of <foo> AND <foobar>.
+  (eval '(define-class <foo> () ()) (current-module))
+
+  ;; Make sure reference to the old <foobar> isn't 
+  (test* "multiple inheriance redefinition" '(#t #f)
+         (list (boolean (memq <foobar> (~ <bar>'direct-subclasses)))
+               (boolean (memq <foobar>-save (~ <bar>'direct-subclasses)))))
+  )
 
 ;;----------------------------------------------------------------
 (test-section "method application customization")

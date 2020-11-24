@@ -91,14 +91,6 @@
          [new-sub  (apply make metaclass
                           (fix-initargs initargs supers metaclass))])
     (redefine-class! sub new-sub)
-    ;; Trick: redefine-class! above removes subclass form original
-    ;; superclass's direct-subclass list, but we want to keep it.
-    ;; so we add to it again.  We can't do this within class-redefinition,
-    ;; for we don't know if it is called on the top of redefinition
-    ;; or in the subclasses' redefinition.
-    (for-each (^[sup] (%add-direct-subclass! sup sub))
-              (class-direct-supers sub))
-    ;; If the subclass has global bindings, replace them.
     (%replace-class-binding! sub new-sub)))
 
 ;;----------------------------------------------------------------

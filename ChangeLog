@@ -1,3 +1,24 @@
+2020-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/redefutil.scm (update-direct-subclass!): Do not recover
+	  direct-subclasses link of the parent of redefined class.
+
+	  Suppose we have a class <foo> and its subclass <bar>.  When we
+	  redefine <foo>, <bar> is also redefined since its slots and/or
+	  CPL may change.  We want to keep both parent-child relationship of
+	  old <foo> - old <bar>, and new <foo> - new <bar>, for it may matter
+	  during transition (including instance update, which occur the
+	  later timing).  However, if <bar> has more than one parents, say
+	  <foo> and <baz>, the old code makes <baz> refer to both old <bar>
+	  and new <bar>, causing issues.
+
+	  Since direct-subclasses link isn't used much except class
+	  redefinition, we make a choice that redefined class won't appear
+	  in the direc-subclasses list (the redefined class still keeps
+	  direct-supers link).
+
+          http://chaton.practical-scheme.net/gauche/a/2020/11/22#entry-5fbab148-42ea5
+
 2020-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm (condition-message): Added.
