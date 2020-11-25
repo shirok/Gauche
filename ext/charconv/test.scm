@@ -12,19 +12,20 @@
   (string-complete->incomplete
    (call-with-input-file file port->byte-string)))
 
-(define (file->string-conv/in file from . to)
+(define (file->string-conv/in file from . args)
   (string-complete->incomplete
    (call-with-input-file file
      (lambda (f)
-       (port->byte-string  (apply open-input-conversion-port f from to))))))
+       (port->byte-string  (apply open-input-conversion-port f from args))))))
 
-(define (file->string-conv/out file to from reader writer)
+(define (file->string-conv/out file to from reader writer . args)
   (string-complete->incomplete
    (call-with-output-string
      (lambda (out)
        (call-with-input-file file
          (lambda (in)
-           (let ((cv (open-output-conversion-port out to :from-code from)))
+           (let ((cv (apply open-output-conversion-port out to
+                            :from-code from args)))
              (let loop ((data (reader in)))
                (if (eof-object? data)
                    (close-output-port cv)
@@ -71,22 +72,24 @@
 ;;--------------------------------------------------------------------
 (test-section "input conversion")
 
-(define (test-input file from to . guesser)
-  (let* ((realfrom (if (null? guesser) from (car guesser)))
+(define (test-input file from to :key (guesser #f) (handling #f))
+  (let* ((realfrom (or guesser from))
          (infostr  (format #f "~a.~a (~a) => ~a" file from realfrom to))
          (fromfile (format #f "~a.~a" file from))
          (tofile   (format #f "~a.~a" file to)))
     (if (ces-conversion-supported? from to)
-        (if (supported-character-encoding? to)
-            (test infostr
-                  (file->string tofile)
-                  (lambda () (file->string-conv/in fromfile realfrom)))
-            (test infostr
-                  (file->string tofile)
-                  (lambda () (file->string-conv/in fromfile realfrom
-                                                   :to-code to))))
-        (test infostr "(not supported)"
-              (lambda () "(not supported)")))
+      (if (supported-character-encoding? to)
+        (test infostr
+              (file->string tofile)
+              (lambda () (file->string-conv/in fromfile realfrom
+                                               :handling handling)))
+        (test infostr
+              (file->string tofile)
+              (lambda () (file->string-conv/in fromfile realfrom
+                                               :to-code to
+                                               :handling handling))))
+      (test infostr "(not supported)"
+            (lambda () "(not supported)")))
     ))
 
 (map-test test-input "data/jp1"
@@ -105,19 +108,31 @@
           '("EUCKR" "UTF-8" "ISO2022KR")
           '("EUCKR" "UTF-8" "ISO2022KR"))
 
+;; handling replace
+(map-test (lambda (file from to)
+            (test-input file from to :handling 'replace))
+          "data/jp1"
+          '("ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("ASCII"))
+'(map-test (lambda (file from to)
+            (test-input file from to :handling 'replace))
+          "data/jp2"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("ASCII"))
+
 ;; autodetect tester
 (map-test (lambda (file from to)
-            (test-input file from to "*JP"))
+            (test-input file from to :guesser "*JP"))
           "data/jp1"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test (lambda (file from to)
-            (test-input file from to "*JP"))
+            (test-input file from to :guesser "*JP"))
           "data/jp2"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test (lambda (file from to)
-            (test-input file from to "*JP"))
+            (test-input file from to :guesser "*JP"))
           "data/jp3"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
@@ -292,7 +307,7 @@
        (ces-convert #u8(#x61 #xe3 #x81 #x82 #x62 #xe3 #x81
                        #x84 #x63 #xe3 #x81 #x86)
                     'utf-8 'ascii))
-(test* "utf-8 -> ascii replacement" "a???b???c???"
+(test* "utf-8 -> ascii replacement" "a?b?c?"
        (ces-convert #u8(#x61 #xe3 #x81 #x82 #x62 #xe3 #x81
                         #x84 #x63 #xe3 #x81 #x86)
                     'utf-8 'ascii 'replace))

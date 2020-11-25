@@ -72,6 +72,18 @@ static inline int do_subst(ScmConvInfo *cinfo,
         if (i < 0) return i;                                    \
     } while (0)
 
+/* ISO2022-JP input states */
+enum {
+    JIS_ASCII,
+    JIS_ROMAN,
+    JIS_KANA,
+    JIS_78,
+    JIS_0212,
+    JIS_0213_1,
+    JIS_0213_2,
+    JIS_UNKNOWN,
+};
+
 /******************************************************************
  * 
  *  Single-unit handling routines
@@ -93,6 +105,411 @@ static inline int do_subst(ScmConvInfo *cinfo,
  *  NO_OUTPUT_CHAR    - Input unit can't be represented in output CES.
  *
  *****************************************************************/
+
+/*=================================================================
+ * EUC-JP
+ */
+
+/* EUC_JISX0213 -> Shift_JIS
+ *
+ * Mapping anormalities
+ *
+ *   0x80--0xa0 except 0x8e and 0x8f : C1 region.
+ *          Doesn't have corresponding SJIS bytes,
+ *          so mapped to substitution char.
+ *   0xff : reserved byte.  mapped to substitution char.
+ *
+ * Conversion scheme
+ *   0x00-0x7f : corresponding ASCII range.
+ *   0x80--0x8d : substitution char.
+ *   0x8e : leading byte of JISX 0201 kana
+ *   0x8f : leading byte of JISX 0212 or JISX 0213 plane 2
+ *   0x90--0xa0 : substitution char.
+ *   0xa1--0xfe : first byte (e1) of JISX 0213 plane 1
+ *   0xff : substitution char
+ *
+ *   For double or trible-byte character, subsequent byte has to be in
+ *   the range between 0xa1 and 0xfe inclusive.  If not, it is replaced
+ *   for the substitution character.
+ *
+ *   If the first byte is in the range of 0xa1--0xfe, two bytes (e1, e2)
+ *   is mapped to SJIS (s1, s2) by:
+ *
+ *     s1 = (e1 - 0xa0 + 0x101)/2 if 0xa1 <= e1 <= 0xde
+ *          (e1 - 0xa0 + 0x181)/2 if 0xdf <= e1 <= 0xfe
+ *     s2 = (e2 - 0xa0 + 0x3f) if odd?(e1) && 0xa1 <= e2 <= 0xdf
+ *          (e2 - 0xa0 + 0x40) if odd?(e1) && 0xe0 <= e2 <= 0xfe
+ *          (e2 - 0xa0 + 0x9e) if even?(e1)
+ *
+ *   If the first byte is 0x8f, the second byte (e1) and the third byte
+ *   (e2) is mapped to SJIS (s1, s2) by:
+ *     if (0xee <= e1 <= 0xfe)  s1 = (e1 - 0xa0 + 0x19b)/2
+ *     otherwise, follow the table:
+ *       e1 == 0xa1 or 0xa8  => s1 = 0xf0
+ *       e1 == 0xa3 or 0xa4  => s1 = 0xf1
+ *       e1 == 0xa5 or 0xac  => s1 = 0xf2
+ *       e1 == 0xae or 0xad  => s1 = 0xf3
+ *       e1 == 0xaf          => s1 = 0xf4
+ *     If e1 is other value, it is JISX0212; we use substitution char.
+ *     s2 is mapped with the same rule above.
+ */
+
+static ScmSize eucj_sjis(ScmConvInfo *cinfo SCM_UNUSED,
+                         const char *inptr, ScmSize inroom,
+                         char *outptr, ScmSize outroom,
+                         ScmSize *outchars)
+{
+    unsigned char e1 = inptr[0];
+    if (e1 <= 0x7f) {
+        outptr[0] = e1;
+        *outchars = 1;
+        return 1;
+    }
+    if (e1 >= 0xa1 && e1 <= 0xfe) {
+        /* double byte char (JISX 0213 plane 1) */
+        unsigned char s1, s2;
+        INCHK(2);
+        unsigned char e2 = inptr[1];
+        if (e2 < 0xa1 || e2 == 0xff) {
+            DO_SUBST;
+            return 2;
+        }
+        OUTCHK(2);
+        if (e1 <= 0xde) s1 = (e1 - 0xa0 + 0x101)/2;
+        else            s1 = (e1 - 0xa0 + 0x181)/2;
+        if (e1%2 == 0) {
+            s2 = e2 - 0xa0 + 0x9e;
+        } else {
+            if (e2 <= 0xdf) s2 = e2 - 0xa0 + 0x3f;
+            else            s2 = e2 - 0xa0 + 0x40;
+        }
+        outptr[0] = s1;
+        outptr[1] = s2;
+        *outchars = 2;
+        return 2;
+    }
+    if (e1 == 0x8e) {
+        /* JISX 0201 kana */
+        INCHK(2);
+        unsigned char e2 = inptr[1];
+        if (e2 < 0xa1 || e2 == 0xff) {
+            DO_SUBST;
+        } else {
+            outptr[0] = e2;
+            *outchars = 1;
+        }
+        return 2;
+    }
+    if (e1 == 0x8f) {
+        /* triple byte char */
+        unsigned char s1, s2;
+        static const unsigned char cvt[] = { 0xf0, 0, 0xf1, 0xf1, 0xf2, 0, 0, 0xf0, 0, 0, 0, 0xf2, 0xf3, 0xf3, 0xf4 };
+
+        INCHK(3);
+        OUTCHK(2);
+        e1 = inptr[1];
+        unsigned char e2 = inptr[2];
+        if (e1 < 0xa1 || e1 == 0xff || e2 < 0xa1 || e2 == 0xff) {
+            DO_SUBST;
+            return 3;
+        }
+        if (e1 >= 0xee) {
+            s1 = (e1 - 0xa0 + 0x19b)/2;
+        } else if (e1 >= 0xb0) {
+            DO_SUBST;
+            return 3;
+        } else {
+            s1 = cvt[e1-0xa1];
+            if (s1 == 0) {
+                DO_SUBST;
+                return 3;
+            }
+        }
+        if (e1%2 == 0) {
+            s2 = e2 - 0xa0 + 0x9e;
+        } else {
+            if (e2 < 0xdf) s2 = e2 - 0xa0 + 0x3f;
+            else           s2 = e2 - 0xa0 + 0x40;
+        }
+        outptr[0] = s1;
+        outptr[1] = s2;
+        *outchars = 2;
+        return 3;
+    }
+    /* no corresponding char */
+    DO_SUBST;
+    return 1;
+}
+
+/* [EUC_JP -> UTF8 conversion]
+ *
+ * Conversion strategy:
+ *   If euc0 is in ASCII range, or C1 range except 0x8e or 0x8f, map it as is.
+ *   If euc0 is 0x8e, use JISX0201-KANA table.
+ *   If euc0 is 0x8f, use JISX0213 plane 2 table.
+ *   If euc0 is in [0xa1-0xfe], use JISX0213 plane1 table.
+ *   If euc0 is 0xa0 or 0xff, return ILLEGAL_SEQUENCE.
+ *
+ * JISX0213 plane2 table is consisted by a 2-level tree.  The first-level
+ * returns an index to the second-level table by (euc1 - 0xa1).  Only the
+ * range of JISX0213 defined region is converted; JISX0212 region will be
+ * mapped to the substitution char.
+ */
+
+#include "eucj2ucs.c"
+
+/* UTF8 utility.  Similar stuff is included in gauche/char_utf_8.h
+   if the native encoding is UTF8, but not otherwise.
+   So I include them here as well. */
+
+void jconv_ucs4_to_utf8(unsigned int ucs, char *cp)
+{
+    if (ucs < 0x80) {
+        *cp = ucs;
+    }
+    else if (ucs < 0x800) {
+        *cp++ = ((ucs>>6)&0x1f) | 0xc0;
+        *cp = (ucs&0x3f) | 0x80;
+    }
+    else if (ucs < 0x10000) {
+        *cp++ = ((ucs>>12)&0x0f) | 0xe0;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp = (ucs&0x3f) | 0x80;
+    }
+    else if (ucs < 0x200000) {
+        *cp++ = ((ucs>>18)&0x07) | 0xf0;
+        *cp++ = ((ucs>>12)&0x3f) | 0x80;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp = (ucs&0x3f) | 0x80;
+    }
+    else if (ucs < 0x4000000) {
+        *cp++ = ((ucs>>24)&0x03) | 0xf8;
+        *cp++ = ((ucs>>18)&0x3f) | 0x80;
+        *cp++ = ((ucs>>12)&0x3f) | 0x80;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp = (ucs&0x3f) | 0x80;
+    } else {
+        *cp++ = ((ucs>>30)&0x1) | 0xfc;
+        *cp++ = ((ucs>>24)&0x3f) | 0x80;
+        *cp++ = ((ucs>>18)&0x3f) | 0x80;
+        *cp++ = ((ucs>>12)&0x3f) | 0x80;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp++ = (ucs&0x3f) | 0x80;
+    }
+}
+
+/* Given 'encoded' ucs, emit utf8.  'Encoded' ucs is the entry of the
+   conversion table.  If ucs >= 0x100000, it is composed by two UCS2
+   character.  Otherwise, it is one UCS4 character. */
+static inline ScmSize eucj_utf8_emit_utf(unsigned int ucs, ScmSize inchars,
+                                         char *outptr, ScmSize outroom,
+                                         ScmSize *outchars)
+{
+    if (ucs < 0x100000) {
+        int outreq = UCS2UTF_NBYTES(ucs);
+        OUTCHK(outreq);
+        jconv_ucs4_to_utf8(ucs, outptr);
+        *outchars = outreq;
+    } else {
+        /* we need two UCS characters */
+        unsigned int ucs0 = (ucs >> 16) & 0xffff;
+        unsigned int ucs1 = ucs & 0xfff;
+        int outreq0 = UCS2UTF_NBYTES(ucs0);
+        int outreq1 = UCS2UTF_NBYTES(ucs1);
+        OUTCHK(outreq0+outreq1);
+        jconv_ucs4_to_utf8(ucs0, outptr);
+        jconv_ucs4_to_utf8(ucs1, outptr+outreq0);
+        *outchars = outreq0+outreq1;
+    }
+    return inchars;
+}
+
+static ScmSize eucj_utf8(ScmConvInfo *cinfo SCM_UNUSED,
+                        const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom, ScmSize *outchars)
+{
+    unsigned char e0 = (unsigned char)inptr[0];
+    if (e0 < 0xa0) {
+        if (e0 == 0x8e) {
+            /* JIS X 0201 KANA */
+            INCHK(2);
+            unsigned char e1 = (unsigned char)inptr[1];
+            if (e1 < 0xa1 || e1 > 0xdf) return ILLEGAL_SEQUENCE;
+            unsigned int ucs = 0xff61 + (e1 - 0xa1);
+            return eucj_utf8_emit_utf(ucs, 2, outptr, outroom, outchars);
+        }
+        else if (e0 == 0x8f) {
+            /* JIS X 0213 plane 2 */
+            int index;
+
+            INCHK(3);
+            unsigned char e1 = (unsigned char)inptr[1];
+            unsigned char e2 = (unsigned char)inptr[2];
+            if (e1 < 0xa1 || e1 > 0xfe || e2 < 0xa1 || e2 > 0xfe) {
+                return ILLEGAL_SEQUENCE;
+            }
+            index = euc_jisx0213_2_index[e1 - 0xa1];
+            if (index < 0) {
+                DO_SUBST;
+                return 3;
+            }
+            unsigned int ucs = euc_jisx0213_2_to_ucs2[index][e2 - 0xa1];
+            if (ucs != 0) {
+                return eucj_utf8_emit_utf(ucs, 3, outptr, outroom, outchars);
+            }
+            DO_SUBST;
+            return 3;
+        }
+        else {
+            /* ASCII or C1 region */
+            outptr[0] = e0;
+            *outchars = 1;
+            return 1;
+        }
+    }
+    if (e0 > 0xa0 && e0 < 0xff) {
+        /* JIS X 0213 plane 1 */
+        INCHK(2);
+        unsigned char e1 = (unsigned char)inptr[1];
+        if (e1 < 0xa1 || e1 > 0xfe) return ILLEGAL_SEQUENCE;
+        unsigned int ucs = euc_jisx0213_1_to_ucs2[e0 - 0xa1][e1 - 0xa1];
+        if (ucs != 0) {
+            return eucj_utf8_emit_utf(ucs, 2, outptr, outroom, outchars);
+        }
+        DO_SUBST;
+        return 2;
+    }
+    /* e0 == 0xa0 */
+    DO_SUBST;
+    return 1;
+}
+
+/* EUC_JP -> ISO2022JP(-3)
+ *
+ * For now, I follow the strategy of iso2022jp-3-compatible behavior.
+ */
+
+/* ensure the current state is newstate.  returns # of output chars.
+   may return OUTPUT_NOT_ENOUGH. */
+static ScmSize jis_ensure_state(ScmConvInfo *cinfo, int newstate, 
+                                ScmSize outbytes, 
+                                char *outptr, ScmSize outroom)
+{
+    const char *escseq = NULL;
+    ScmSize esclen = 0;
+
+    if (cinfo->ostate == newstate) {
+        OUTCHK(outbytes);
+        return 0;
+    }
+    switch (newstate) {
+    case JIS_ASCII:
+        escseq = "\033(B";  esclen = 3; break;
+    case JIS_KANA:
+        escseq = "\033(I";  esclen = 3; break;
+    case JIS_0213_1:
+        escseq = "\033$B";  esclen = 3; break;
+    case JIS_0213_2:
+        escseq = "\033$(P"; esclen = 4; break;
+    case JIS_0212:
+        escseq = "\033$(D"; esclen = 4; break;
+    default:
+        /* Can't be here */
+        Scm_Panic("something wrong in jis_ensure_state: implementation error?");
+        return 0;               /* dummy */
+    }
+    OUTCHK(esclen + outbytes);
+    memcpy(outptr, escseq, esclen);
+    cinfo->ostate = newstate;
+    return esclen;
+}
+
+static ScmSize eucj_jis(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
+                        char *outptr, ScmSize outroom, ScmSize *outchars)
+{
+    unsigned char e0 = inptr[0];
+    if (e0 < 0x80) {
+        ScmSize outoffset = jis_ensure_state(cinfo, JIS_ASCII, 1, outptr, outroom);
+        if (ERRP(outoffset)) return outoffset;
+        outptr[outoffset] = e0;
+        *outchars = outoffset+1;
+        return 1;
+    } else if (e0 == 0x8e) {
+        INCHK(2);
+        unsigned char e1 = inptr[1];
+        if (e1 > 0xa0 && e1 < 0xff) {
+            ScmSize outoffset = jis_ensure_state(cinfo, JIS_KANA, 1, outptr, outroom);
+            if (ERRP(outoffset)) return outoffset;
+            outptr[outoffset] = e1 - 0x80;
+            *outchars = outoffset+1;
+            return 2;
+        }
+    } else if (e0 == 0x8f) {
+        INCHK(3);
+        e0 = inptr[1];
+        unsigned char e1 = inptr[2];
+        if (e0 > 0xa0 && e0 < 0xff && e1 > 0xa0 && e1 < 0xff) {
+            int newstate = JIS_0212;
+            switch (e0) {
+            case 0xa1:; case 0xa3:; case 0xa4:; case 0xa5:;
+            case 0xa8:; case 0xac:; case 0xad:; case 0xae:; case 0xaf:;
+                newstate = JIS_0213_2; break;
+            default:
+                if (e0 >= 0xee) newstate = JIS_0213_2;
+            }
+            ScmSize outoffset = jis_ensure_state(cinfo, newstate, 2, outptr, outroom);
+            outptr[outoffset] = e0 - 0x80;
+            outptr[outoffset+1] = e1 - 0x80;
+            *outchars = outoffset+1;
+            return 3;
+        }
+    } else if (e0 > 0xa0 && e0 < 0xff) {
+        INCHK(2);
+        unsigned char e1 = inptr[1];
+        if (e1 > 0xa0 && e1 < 0xff) {
+            ScmSize outoffset = jis_ensure_state(cinfo, JIS_0213_1, 2, outptr, outroom);
+            if (ERRP(outoffset)) return outoffset;
+            outptr[outoffset] = e0 - 0x80;
+            outptr[outoffset+1] = e1 - 0x80;
+            *outchars = outoffset+2;
+            return 2;
+        }
+    }
+    return ILLEGAL_SEQUENCE;
+}
+
+
+/* EUC-JP -> ASCII */
+static ScmSize eucj_ascii(ScmConvInfo *cinfo,
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    unsigned char e1 = inptr[0];
+    if (e1 <= 0x7f) {
+        outptr[0] = e1;
+        *outchars = 1;
+        return 1;
+    }
+    if (e1 >= 0xa1 && e1 <= 0xfe) {
+        /* double byte char (JISX 0213 plane 1) */
+        INCHK(2);
+        DO_SUBST;
+        return 2;
+    }
+    if (e1 == 0x8e) {
+        INCHK(2);
+        DO_SUBST;
+        return 2;
+    }
+    if (e1 == 0x8f) {
+        INCHK(3);
+        DO_SUBST;
+        return 3;
+    }
+    DO_SUBST;
+    return 1;
+}
 
 /*=================================================================
  * Shift JIS
@@ -249,135 +666,30 @@ static ScmSize sjis_eucj(ScmConvInfo *cinfo SCM_UNUSED,
     return 2;
 }
 
-/* EUC_JISX0213 -> Shift_JIS
- *
- * Mapping anormalities
- *
- *   0x80--0xa0 except 0x8e and 0x8f : C1 region.
- *          Doesn't have corresponding SJIS bytes,
- *          so mapped to substitution char.
- *   0xff : reserved byte.  mapped to substitution char.
- *
- * Conversion scheme
- *   0x00-0x7f : corresponding ASCII range.
- *   0x80--0x8d : substitution char.
- *   0x8e : leading byte of JISX 0201 kana
- *   0x8f : leading byte of JISX 0212 or JISX 0213 plane 2
- *   0x90--0xa0 : substitution char.
- *   0xa1--0xfe : first byte (e1) of JISX 0213 plane 1
- *   0xff : substitution char
- *
- *   For double or trible-byte character, subsequent byte has to be in
- *   the range between 0xa1 and 0xfe inclusive.  If not, it is replaced
- *   for the substitution character.
- *
- *   If the first byte is in the range of 0xa1--0xfe, two bytes (e1, e2)
- *   is mapped to SJIS (s1, s2) by:
- *
- *     s1 = (e1 - 0xa0 + 0x101)/2 if 0xa1 <= e1 <= 0xde
- *          (e1 - 0xa0 + 0x181)/2 if 0xdf <= e1 <= 0xfe
- *     s2 = (e2 - 0xa0 + 0x3f) if odd?(e1) && 0xa1 <= e2 <= 0xdf
- *          (e2 - 0xa0 + 0x40) if odd?(e1) && 0xe0 <= e2 <= 0xfe
- *          (e2 - 0xa0 + 0x9e) if even?(e1)
- *
- *   If the first byte is 0x8f, the second byte (e1) and the third byte
- *   (e2) is mapped to SJIS (s1, s2) by:
- *     if (0xee <= e1 <= 0xfe)  s1 = (e1 - 0xa0 + 0x19b)/2
- *     otherwise, follow the table:
- *       e1 == 0xa1 or 0xa8  => s1 = 0xf0
- *       e1 == 0xa3 or 0xa4  => s1 = 0xf1
- *       e1 == 0xa5 or 0xac  => s1 = 0xf2
- *       e1 == 0xae or 0xad  => s1 = 0xf3
- *       e1 == 0xaf          => s1 = 0xf4
- *     If e1 is other value, it is JISX0212; we use substitution char.
- *     s2 is mapped with the same rule above.
- */
+/* SJIS -> ASCII */
 
-static ScmSize eucj_sjis(ScmConvInfo *cinfo SCM_UNUSED,
-                         const char *inptr, ScmSize inroom,
-                         char *outptr, ScmSize outroom,
-                         ScmSize *outchars)
+static ScmSize sjis_ascii(ScmConvInfo *cinfo,
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
 {
-    unsigned char e1 = inptr[0];
-    if (e1 <= 0x7f) {
-        outptr[0] = e1;
+    unsigned char s1 = inptr[0];
+    if (s1 <= 0x7f) {
+        outptr[0] = s1;
         *outchars = 1;
         return 1;
     }
-    if (e1 >= 0xa1 && e1 <= 0xfe) {
-        /* double byte char (JISX 0213 plane 1) */
-        unsigned char s1, s2;
+    if ((s1 > 0x80 && s1 < 0xa0) || (s1 >= 0xe0 && s1 < 0xfc)) {
         INCHK(2);
-        unsigned char e2 = inptr[1];
-        if (e2 < 0xa1 || e2 == 0xff) {
-            DO_SUBST;
-            return 2;
-        }
-        OUTCHK(2);
-        if (e1 <= 0xde) s1 = (e1 - 0xa0 + 0x101)/2;
-        else            s1 = (e1 - 0xa0 + 0x181)/2;
-        if (e1%2 == 0) {
-            s2 = e2 - 0xa0 + 0x9e;
-        } else {
-            if (e2 <= 0xdf) s2 = e2 - 0xa0 + 0x3f;
-            else            s2 = e2 - 0xa0 + 0x40;
-        }
-        outptr[0] = s1;
-        outptr[1] = s2;
-        *outchars = 2;
+        DO_SUBST;
+        *outchars = cinfo->replaceSize;
         return 2;
     }
-    if (e1 == 0x8e) {
-        /* JISX 0201 kana */
-        INCHK(2);
-        unsigned char e2 = inptr[1];
-        if (e2 < 0xa1 || e2 == 0xff) {
-            DO_SUBST;
-        } else {
-            outptr[0] = e2;
-            *outchars = 1;
-        }
-        return 2;
+    else {
+        DO_SUBST;
+        *outchars = cinfo->replaceSize;
+        return 1;
     }
-    if (e1 == 0x8f) {
-        /* triple byte char */
-        unsigned char s1, s2;
-        static const unsigned char cvt[] = { 0xf0, 0, 0xf1, 0xf1, 0xf2, 0, 0, 0xf0, 0, 0, 0, 0xf2, 0xf3, 0xf3, 0xf4 };
-
-        INCHK(3);
-        OUTCHK(2);
-        e1 = inptr[1];
-        unsigned char e2 = inptr[2];
-        if (e1 < 0xa1 || e1 == 0xff || e2 < 0xa1 || e2 == 0xff) {
-            DO_SUBST;
-            return 3;
-        }
-        if (e1 >= 0xee) {
-            s1 = (e1 - 0xa0 + 0x19b)/2;
-        } else if (e1 >= 0xb0) {
-            DO_SUBST;
-            return 3;
-        } else {
-            s1 = cvt[e1-0xa1];
-            if (s1 == 0) {
-                DO_SUBST;
-                return 3;
-            }
-        }
-        if (e1%2 == 0) {
-            s2 = e2 - 0xa0 + 0x9e;
-        } else {
-            if (e2 < 0xdf) s2 = e2 - 0xa0 + 0x3f;
-            else           s2 = e2 - 0xa0 + 0x40;
-        }
-        outptr[0] = s1;
-        outptr[1] = s2;
-        *outchars = 2;
-        return 3;
-    }
-    /* no corresponding char */
-    DO_SUBST;
-    return 1;
 }
 
 /*=================================================================
@@ -660,149 +972,6 @@ static ScmSize utf8_eucj(ScmConvInfo *cinfo,
     return ILLEGAL_SEQUENCE;
 }
 
-/* [EUC_JP -> UTF8 conversion]
- *
- * Conversion strategy:
- *   If euc0 is in ASCII range, or C1 range except 0x8e or 0x8f, map it as is.
- *   If euc0 is 0x8e, use JISX0201-KANA table.
- *   If euc0 is 0x8f, use JISX0213 plane 2 table.
- *   If euc0 is in [0xa1-0xfe], use JISX0213 plane1 table.
- *   If euc0 is 0xa0 or 0xff, return ILLEGAL_SEQUENCE.
- *
- * JISX0213 plane2 table is consisted by a 2-level tree.  The first-level
- * returns an index to the second-level table by (euc1 - 0xa1).  Only the
- * range of JISX0213 defined region is converted; JISX0212 region will be
- * mapped to the substitution char.
- */
-
-#include "eucj2ucs.c"
-
-/* UTF8 utility.  Similar stuff is included in gauche/char_utf_8.h
-   if the native encoding is UTF8, but not otherwise.
-   So I include them here as well. */
-
-void jconv_ucs4_to_utf8(unsigned int ucs, char *cp)
-{
-    if (ucs < 0x80) {
-        *cp = ucs;
-    }
-    else if (ucs < 0x800) {
-        *cp++ = ((ucs>>6)&0x1f) | 0xc0;
-        *cp = (ucs&0x3f) | 0x80;
-    }
-    else if (ucs < 0x10000) {
-        *cp++ = ((ucs>>12)&0x0f) | 0xe0;
-        *cp++ = ((ucs>>6)&0x3f) | 0x80;
-        *cp = (ucs&0x3f) | 0x80;
-    }
-    else if (ucs < 0x200000) {
-        *cp++ = ((ucs>>18)&0x07) | 0xf0;
-        *cp++ = ((ucs>>12)&0x3f) | 0x80;
-        *cp++ = ((ucs>>6)&0x3f) | 0x80;
-        *cp = (ucs&0x3f) | 0x80;
-    }
-    else if (ucs < 0x4000000) {
-        *cp++ = ((ucs>>24)&0x03) | 0xf8;
-        *cp++ = ((ucs>>18)&0x3f) | 0x80;
-        *cp++ = ((ucs>>12)&0x3f) | 0x80;
-        *cp++ = ((ucs>>6)&0x3f) | 0x80;
-        *cp = (ucs&0x3f) | 0x80;
-    } else {
-        *cp++ = ((ucs>>30)&0x1) | 0xfc;
-        *cp++ = ((ucs>>24)&0x3f) | 0x80;
-        *cp++ = ((ucs>>18)&0x3f) | 0x80;
-        *cp++ = ((ucs>>12)&0x3f) | 0x80;
-        *cp++ = ((ucs>>6)&0x3f) | 0x80;
-        *cp++ = (ucs&0x3f) | 0x80;
-    }
-}
-
-/* Given 'encoded' ucs, emit utf8.  'Encoded' ucs is the entry of the
-   conversion table.  If ucs >= 0x100000, it is composed by two UCS2
-   character.  Otherwise, it is one UCS4 character. */
-static inline ScmSize eucj_utf8_emit_utf(unsigned int ucs, ScmSize inchars,
-                                         char *outptr, ScmSize outroom,
-                                         ScmSize *outchars)
-{
-    if (ucs < 0x100000) {
-        int outreq = UCS2UTF_NBYTES(ucs);
-        OUTCHK(outreq);
-        jconv_ucs4_to_utf8(ucs, outptr);
-        *outchars = outreq;
-    } else {
-        /* we need two UCS characters */
-        unsigned int ucs0 = (ucs >> 16) & 0xffff;
-        unsigned int ucs1 = ucs & 0xfff;
-        int outreq0 = UCS2UTF_NBYTES(ucs0);
-        int outreq1 = UCS2UTF_NBYTES(ucs1);
-        OUTCHK(outreq0+outreq1);
-        jconv_ucs4_to_utf8(ucs0, outptr);
-        jconv_ucs4_to_utf8(ucs1, outptr+outreq0);
-        *outchars = outreq0+outreq1;
-    }
-    return inchars;
-}
-
-static ScmSize eucj_utf8(ScmConvInfo *cinfo SCM_UNUSED,
-                        const char *inptr, ScmSize inroom,
-                        char *outptr, ScmSize outroom, ScmSize *outchars)
-{
-    unsigned char e0 = (unsigned char)inptr[0];
-    if (e0 < 0xa0) {
-        if (e0 == 0x8e) {
-            /* JIS X 0201 KANA */
-            INCHK(2);
-            unsigned char e1 = (unsigned char)inptr[1];
-            if (e1 < 0xa1 || e1 > 0xdf) return ILLEGAL_SEQUENCE;
-            unsigned int ucs = 0xff61 + (e1 - 0xa1);
-            return eucj_utf8_emit_utf(ucs, 2, outptr, outroom, outchars);
-        }
-        else if (e0 == 0x8f) {
-            /* JIS X 0213 plane 2 */
-            int index;
-
-            INCHK(3);
-            unsigned char e1 = (unsigned char)inptr[1];
-            unsigned char e2 = (unsigned char)inptr[2];
-            if (e1 < 0xa1 || e1 > 0xfe || e2 < 0xa1 || e2 > 0xfe) {
-                return ILLEGAL_SEQUENCE;
-            }
-            index = euc_jisx0213_2_index[e1 - 0xa1];
-            if (index < 0) {
-                DO_SUBST;
-                return 3;
-            }
-            unsigned int ucs = euc_jisx0213_2_to_ucs2[index][e2 - 0xa1];
-            if (ucs != 0) {
-                return eucj_utf8_emit_utf(ucs, 3, outptr, outroom, outchars);
-            }
-            DO_SUBST;
-            return 3;
-        }
-        else {
-            /* ASCII or C1 region */
-            outptr[0] = e0;
-            *outchars = 1;
-            return 1;
-        }
-    }
-    if (e0 > 0xa0 && e0 < 0xff) {
-        /* JIS X 0213 plane 1 */
-        INCHK(2);
-        unsigned char e1 = (unsigned char)inptr[1];
-        if (e1 < 0xa1 || e1 > 0xfe) return ILLEGAL_SEQUENCE;
-        unsigned int ucs = euc_jisx0213_1_to_ucs2[e0 - 0xa1][e1 - 0xa1];
-        if (ucs != 0) {
-            return eucj_utf8_emit_utf(ucs, 2, outptr, outroom, outchars);
-        }
-        DO_SUBST;
-        return 2;
-    }
-    /* e0 == 0xa0 */
-    DO_SUBST;
-    return 1;
-}
-
 /* [UTF8 <-> SJIS Conversion]
  * We convert a unit via eucjp.
  */
@@ -833,6 +1002,44 @@ static ScmSize sjis_utf8(ScmConvInfo *cinfo,
     ScmSize r2 = eucj_utf8(cinfo, buf, bufcount, outptr, outroom, outchars);
     if (r2 < 0) return r2;
     return r;
+}
+
+/* UTF8 -> ASCII */
+
+static ScmSize utf8_ascii(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    unsigned char u0 = (unsigned char)inptr[0];
+    if (u0 <= 0x7f) {
+        outptr[0] = u0;
+        *outchars = 1;
+        return 1;
+    } else if (u0 <= 0xbf) {
+        return ILLEGAL_SEQUENCE;
+    } else if (u0 <= 0xdf) {
+        INCHK(2);
+        DO_SUBST;
+        return 2;
+    } else if (u0 <= 0xef) {
+        INCHK(3);
+        DO_SUBST;
+        return 3;
+    } else if (u0 <= 0xf7) {
+        INCHK(4);
+        DO_SUBST;
+        return 4;
+    } else if (u0 <= 0xfb) {
+        INCHK(5);
+        DO_SUBST;
+        return 5;
+    } else if (u0 <= 0xfd) {
+        INCHK(6);
+        DO_SUBST;
+        return 6;
+    }
+    return ILLEGAL_SEQUENCE;
 }
 
 /*=================================================================
@@ -871,18 +1078,6 @@ static ScmSize sjis_utf8(ScmConvInfo *cinfo,
  *
  * JIS8 kana is allowed.
  */
-
-/* input states */
-enum {
-    JIS_ASCII,
-    JIS_ROMAN,
-    JIS_KANA,
-    JIS_78,
-    JIS_0212,
-    JIS_0213_1,
-    JIS_0213_2,
-    JIS_UNKNOWN,
-};
 
 /* deal with escape sequence.  escape byte itself is already consumed.
    returns # of input bytes consumed by the escape sequence,
@@ -1034,100 +1229,6 @@ static ScmSize jis_eucj(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
     return ILLEGAL_SEQUENCE;
 }
 
-/* EUC_JP -> ISO2022JP(-3)
- *
- * For now, I follow the strategy of iso2022jp-3-compatible behavior.
- */
-
-/* ensure the current state is newstate.  returns # of output chars.
-   may return OUTPUT_NOT_ENOUGH. */
-static ScmSize jis_ensure_state(ScmConvInfo *cinfo, int newstate, 
-                                ScmSize outbytes, 
-                                char *outptr, ScmSize outroom)
-{
-    const char *escseq = NULL;
-    ScmSize esclen = 0;
-
-    if (cinfo->ostate == newstate) {
-        OUTCHK(outbytes);
-        return 0;
-    }
-    switch (newstate) {
-    case JIS_ASCII:
-        escseq = "\033(B";  esclen = 3; break;
-    case JIS_KANA:
-        escseq = "\033(I";  esclen = 3; break;
-    case JIS_0213_1:
-        escseq = "\033$B";  esclen = 3; break;
-    case JIS_0213_2:
-        escseq = "\033$(P"; esclen = 4; break;
-    case JIS_0212:
-        escseq = "\033$(D"; esclen = 4; break;
-    default:
-        /* Can't be here */
-        Scm_Panic("something wrong in jis_ensure_state: implementation error?");
-        return 0;               /* dummy */
-    }
-    OUTCHK(esclen + outbytes);
-    memcpy(outptr, escseq, esclen);
-    cinfo->ostate = newstate;
-    return esclen;
-}
-
-static ScmSize eucj_jis(ScmConvInfo *cinfo, const char *inptr, ScmSize inroom,
-                        char *outptr, ScmSize outroom, ScmSize *outchars)
-{
-    unsigned char e0 = inptr[0];
-    if (e0 < 0x80) {
-        ScmSize outoffset = jis_ensure_state(cinfo, JIS_ASCII, 1, outptr, outroom);
-        if (ERRP(outoffset)) return outoffset;
-        outptr[outoffset] = e0;
-        *outchars = outoffset+1;
-        return 1;
-    } else if (e0 == 0x8e) {
-        INCHK(2);
-        unsigned char e1 = inptr[1];
-        if (e1 > 0xa0 && e1 < 0xff) {
-            ScmSize outoffset = jis_ensure_state(cinfo, JIS_KANA, 1, outptr, outroom);
-            if (ERRP(outoffset)) return outoffset;
-            outptr[outoffset] = e1 - 0x80;
-            *outchars = outoffset+1;
-            return 2;
-        }
-    } else if (e0 == 0x8f) {
-        INCHK(3);
-        e0 = inptr[1];
-        unsigned char e1 = inptr[2];
-        if (e0 > 0xa0 && e0 < 0xff && e1 > 0xa0 && e1 < 0xff) {
-            int newstate = JIS_0212;
-            switch (e0) {
-            case 0xa1:; case 0xa3:; case 0xa4:; case 0xa5:;
-            case 0xa8:; case 0xac:; case 0xad:; case 0xae:; case 0xaf:;
-                newstate = JIS_0213_2; break;
-            default:
-                if (e0 >= 0xee) newstate = JIS_0213_2;
-            }
-            ScmSize outoffset = jis_ensure_state(cinfo, newstate, 2, outptr, outroom);
-            outptr[outoffset] = e0 - 0x80;
-            outptr[outoffset+1] = e1 - 0x80;
-            *outchars = outoffset+1;
-            return 3;
-        }
-    } else if (e0 > 0xa0 && e0 < 0xff) {
-        INCHK(2);
-        unsigned char e1 = inptr[1];
-        if (e1 > 0xa0 && e1 < 0xff) {
-            ScmSize outoffset = jis_ensure_state(cinfo, JIS_0213_1, 2, outptr, outroom);
-            if (ERRP(outoffset)) return outoffset;
-            outptr[outoffset] = e0 - 0x80;
-            outptr[outoffset+1] = e1 - 0x80;
-            *outchars = outoffset+2;
-            return 2;
-        }
-    }
-    return ILLEGAL_SEQUENCE;
-}
-
 /* reset proc */
 static ScmSize jis_reset(ScmConvInfo *cinfo, char *outptr, ScmSize outroom)
 {
@@ -1147,12 +1248,28 @@ static ScmSize jis_reset(ScmConvInfo *cinfo, char *outptr, ScmSize outroom)
 }
 
 /*=================================================================
- * EUC_JP
+ * ASCII
  */
 
-/* EUC_JP is a pivot code, so we don't need to convert.  This function
-   is just a placeholder. */
-static ScmSize pivot(ScmConvInfo *cinfo SCM_UNUSED,
+/* ASCII -> X */
+
+static ScmSize ascii_x(ScmConvInfo *cinfo SCM_UNUSED,
+                       const char *inptr,
+                       ScmSize inroom SCM_UNUSED,
+                       char *outptr,
+                       ScmSize outroom SCM_UNUSED,
+                       ScmSize *outchars)
+{
+    outptr[0] = inptr[0];
+    *outchars = 1;
+    return 1;
+}
+
+/*=================================================================
+ * Placeholder
+ */
+
+static ScmSize ident(ScmConvInfo *cinfo SCM_UNUSED,
                      const char *inptr SCM_UNUSED,
                      ScmSize inroom SCM_UNUSED,
                      char *outptr SCM_UNUSED,
@@ -1170,6 +1287,7 @@ static ScmSize pivot(ScmConvInfo *cinfo SCM_UNUSED,
 
 /* canonical code designator */
 enum {
+    JCODE_ASCII,
     JCODE_EUCJ,
     JCODE_SJIS,
     JCODE_UTF8,
@@ -1191,45 +1309,59 @@ static struct conv_converter_rec {
     ScmConvProc outconv;
     ScmConvReset reset;
 } conv_converter[NUM_JCODES][NUM_JCODES] = {
+    /* in : ASCII */
+    {
+        { ident, NULL, NULL },              /* out: ASCII */
+        { ascii_x, NULL, NULL },            /* out: EUCJ */
+        { ascii_x, NULL, NULL },            /* out: SJIS */
+        { ascii_x, NULL, NULL },            /* out: UTF8 */
+        { ascii_x, eucj_jis, jis_reset },   /* out: ISO2022JP */
+        { ident, NULL, NULL },              /* out: NONE */
+    },
     /* in : EUCJ */
     {
-        { pivot, NULL, NULL },              /* out: EUCJ */
+        { eucj_ascii, NULL, NULL },         /* out: ASCII */
+        { ident, NULL, NULL },              /* out: EUCJ */
         { eucj_sjis, NULL, NULL },          /* out: SJIS */
-        { eucj_utf8, NULL, NULL },           /* out: UTF8 */
+        { eucj_utf8, NULL, NULL },          /* out: UTF8 */
         { eucj_jis, NULL, jis_reset },      /* out: ISO2022JP */
-        { pivot, NULL, NULL }               /* out: NONE */
+        { ident, NULL, NULL }               /* out: NONE */
     },
     /* in: SJIS */
     {
+        { sjis_ascii, NULL, NULL },         /* out: ASCII */
         { sjis_eucj, NULL, NULL },          /* out: EUCJ */
-        { pivot, NULL, NULL },              /* out: SJIS */
-        { sjis_utf8, NULL, NULL },           /* out: UTF8 */
+        { ident, NULL, NULL },              /* out: SJIS */
+        { sjis_utf8, NULL, NULL },          /* out: UTF8 */
         { sjis_eucj, eucj_jis, jis_reset }, /* out: ISO2022JP */
-        { pivot, NULL, NULL }               /* out: NONE */
+        { ident, NULL, NULL }               /* out: NONE */
     },
     /* in: UTF8 */
     {
+        { utf8_ascii, NULL, NULL },         /* out: ASCII */
         { utf8_eucj, NULL, NULL },          /* out: EUCJ */
         { utf8_sjis, NULL, NULL },          /* out: SJIS */
-        { pivot, NULL, NULL },              /* out: UTF8 */
+        { ident, NULL, NULL },              /* out: UTF8 */
         { utf8_eucj, eucj_jis, jis_reset },  /* out: ISO2022JP */
-        { pivot, NULL, NULL }               /* out: NONE */
+        { ident, NULL, NULL }               /* out: NONE */
     },
     /* in: ISO2022JP */
     {
-        { jis_eucj, NULL, jis_reset },      /* out: EUCJ */
-        { jis_eucj, eucj_sjis, jis_reset }, /* out: SJIS */
-        { jis_eucj, eucj_utf8, jis_reset },  /* out: UTF8 */
-        { pivot, NULL, jis_reset },         /* out: ISO2022JP */
-        { pivot, NULL, NULL }               /* out: NONE */
+        { jis_eucj, eucj_ascii, NULL },     /* out: ASCII */
+        { jis_eucj, NULL, NULL },           /* out: EUCJ */
+        { jis_eucj, eucj_sjis, NULL },      /* out: SJIS */
+        { jis_eucj, eucj_utf8, NULL },      /* out: UTF8 */
+        { ident, NULL, jis_reset },         /* out: ISO2022JP */
+        { ident, NULL, NULL }               /* out: NONE */
     },
     /* in: NONE */
     {
-        { pivot, NULL, NULL },              /* out: EUCJ */
-        { pivot, NULL, NULL },              /* out: SJIS */
-        { pivot, NULL, NULL },              /* out: UTF8 */
-        { pivot, NULL, NULL },              /* out: ISO2022JP */
-        { pivot, NULL, NULL }               /* out: NONE */
+        { ident, NULL, NULL },               /* out: ASCII */
+        { ident, NULL, NULL },              /* out: EUCJ */
+        { ident, NULL, NULL },              /* out: SJIS */
+        { ident, NULL, NULL },              /* out: UTF8 */
+        { ident, NULL, NULL },              /* out: ISO2022JP */
+        { ident, NULL, NULL }               /* out: NONE */
     }
 };
 
@@ -1238,6 +1370,14 @@ static struct conv_support_rec {
     const char *name;
     int code;
 } conv_supports[] = {
+    { "ascii",        JCODE_ASCII },
+    { "us-ascii",     JCODE_ASCII },
+    { "iso-ir-6",     JCODE_ASCII },
+    { "iso-646-us",   JCODE_ASCII },
+    { "us",           JCODE_ASCII },
+    { "ibm367",       JCODE_ASCII },
+    { "cp367",        JCODE_ASCII },
+    { "csascii",      JCODE_ASCII },
     { "euc_jp",       JCODE_EUCJ },
     { "eucjp",        JCODE_EUCJ },
     { "eucj",         JCODE_EUCJ },
@@ -1458,26 +1598,26 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
                         int useIconv)
 {
     ScmConvHandler handler = NULL;
-    ScmConvProc convproc[2];
-    ScmConvReset reset;
+    ScmConvProc convproc[2] = {NULL, NULL};
+    ScmConvReset reset = NULL;
     iconv_t handle = (iconv_t)-1;
 
     int incode  = conv_name_find(fromCode);
     int outcode = conv_name_find(toCode);
 
-    if (incode == JCODE_NONE || outcode == JCODE_NONE) {
-        /* conversion to/from none means no conversion */
-        handler = jconv_ident;
-        convproc[0] = convproc[1] = NULL;
-        reset = NULL;
-    } else if (incode < 0 || outcode < 0) {
+    if (incode >= 0 && outcode >= 0) {
+        convproc[0] = conv_converter[incode][outcode].inconv;
+        convproc[1] = conv_converter[incode][outcode].outconv;
+        reset = conv_converter[incode][outcode].reset;
+    }
+
+    if (convproc[0] == NULL) {
         if (useIconv) {
 #ifdef HAVE_ICONV_H
             /* try iconv */
             handle = iconv_open(toCode, fromCode);
             if (handle == (iconv_t)-1) return NULL;
             handler = jconv_iconv;
-            convproc[0] = convproc[1] = NULL;
             reset = jconv_iconv_reset;
 #else /*!HAVE_ICONV_H*/
             return NULL;
@@ -1485,21 +1625,14 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
         } else {
             return NULL;
         }
-    } else if (incode == outcode) {
-        /* pattern (1) */
+    } else if (convproc[0] == ident) {
         handler = jconv_ident;
-        convproc[0] = convproc[1] = NULL;
-        reset = NULL;
-    } else  {
-        convproc[0] = conv_converter[incode][outcode].inconv;
-        convproc[1] = conv_converter[incode][outcode].outconv;
-        if (convproc[1] == NULL) {
-            handler = jconv_1tier;
-        } else {
-            handler = jconv_2tier;
-        }
-        reset = conv_converter[incode][outcode].reset;
+    } else if (convproc[1] == NULL) {
+        handler = jconv_1tier;
+    } else {
+        handler = jconv_2tier;
     }
+
     ScmConvInfo *cinfo;
     cinfo = SCM_NEW(ScmConvInfo);
     cinfo->jconv = handler;

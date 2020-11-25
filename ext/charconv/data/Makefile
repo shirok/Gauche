@@ -16,11 +16,17 @@ GENERATED = jp1.SJIS jp1.UTF-8 jp1.ISO2022JP \
 .EUCJP.ISO2022JP:
 	nkf -E -j -x $< > $@
 
+.EUCJP.ASCII:
+	iconv -f EUC-JP -t ASCII//TRANSLIT $< > $@
+
 .EUCKR.UTF-8:
 	iconv -f EUC-KR -t UTF-8 $< > $@
 
 .EUCKR.ISO2022KR:
 	iconv -f EUC-KR -t ISO2022KR $< > $@
+
+.EUCKR.ASCII:
+	iconv -f EUC-KR -t ASCII//TRANSLIT $< > $@
 
 all: $(GENERATED)
 
