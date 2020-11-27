@@ -66,10 +66,13 @@
           remove-files delete-files
           null-device console-device
           file->string file->string-list file->list file->sexp-list
+          file->bytevector
           string->file string-list->file list->file sexp-list->file
           <lock-file-failure> with-lock-file
           ))
 (select-module file.util)
+
+(autoload gauche.uvector port->uvector)
 
 ;; Common util.  Returns #f if PATH does not exist.
 
@@ -841,6 +844,9 @@
 
 (define (file->string file . opts)
   (apply call-with-input-file file (%maybe port->string) opts))
+
+(define (file->bytevector file . opts)
+  (apply call-with-input-file file (%maybe port->uvector) opts))
 
 (define (file->list reader file . opts)
   (apply call-with-input-file file (%maybe (cut port->list reader <>)) opts))
