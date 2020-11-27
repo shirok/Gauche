@@ -119,6 +119,11 @@
           "data/jp2"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("ASCII"))
+(map-test (lambda (file from to)
+            (test-input file from to :handling 'replace))
+          "data/lat1"
+          '("ISO8859-1")
+          '("ASCII" "ISO8859-1" "EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 ;; autodetect tester
 (map-test (lambda (file from to)

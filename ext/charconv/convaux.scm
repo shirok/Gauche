@@ -121,8 +121,11 @@
    ;; For unicode, we use U+FFFD Replacement Character.
    [(ces-equivalent? "utf8" ces)  '(#xef #xbf #xbd)]
    ;; For jis-family, we use U+3013 Geta Mark (JIS 020E)
+   ;; NB: iso-2022-jp is generated via eucjp, so it is suffice to give
+   ;; the replacement char in eucjp.
    [(ces-equivalent? "eucjp" ces) '(#xa2 #xae)]
    [(ces-equivalent? "sjis" ces) '(#x81 #xac)]
+   [(ces-equivalent? "iso2022jp" ces) '(#xa2 #xae)]
    ;; 1-byte encoding, we use '?'
    [(ces-equivalent? "ascii" ces) '(#x3f)]
    [(ces-equivalent? "iso88591" ces) '(#x3f)]

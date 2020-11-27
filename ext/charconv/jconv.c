@@ -1248,6 +1248,63 @@ static ScmSize jis_reset(ScmConvInfo *cinfo, char *outptr, ScmSize outroom)
 }
 
 /*=================================================================
+ * ISO8859-1
+ */
+
+static ScmSize lat1_utf8(ScmConvInfo *cinfo SCM_UNUSED,
+                         const char *inptr,
+                         ScmSize inroom SCM_UNUSED,
+                         char *outptr,
+                         ScmSize outroom,
+                         ScmSize *outchars)
+{
+    unsigned char c = inptr[0];
+    if (c <= 0x7f) {
+        outptr[0] = c;
+        *outchars = 1;
+    } else {
+        OUTCHK(2);
+        outptr[0] = 0xc0 + (c >> 6);
+        outptr[1] = 0x80 + (c & 0x3f);
+        *outchars = 2;
+    }
+    return 1;
+}
+
+static ScmSize lat1_eucj(ScmConvInfo *cinfo,
+                         const char *inptr,
+                         ScmSize inroom,
+                         char *outptr,
+                         ScmSize outroom,
+                         ScmSize *outchars)
+{
+    char buf[2];
+    ScmSize nbuf;
+    ScmSize r = lat1_utf8(cinfo, inptr, inroom, buf, 2, &nbuf);
+    if (r < 0) return r; 
+    r = utf8_eucj(cinfo, buf, nbuf, outptr, outroom, outchars);
+    if (r < 0) return r;
+    return 1;
+}
+
+static ScmSize lat1_ascii(ScmConvInfo *cinfo,
+                          const char *inptr,
+                          ScmSize inroom SCM_UNUSED,
+                          char *outptr,
+                          ScmSize outroom,
+                          ScmSize *outchars)
+{
+    unsigned char c = inptr[0];
+    if (c <= 0x7f) {
+        outptr[0] = c;
+        *outchars = 1;
+    } else {
+        DO_SUBST;
+    }
+    return 1;
+}
+
+/*=================================================================
  * ASCII
  */
 
@@ -1292,6 +1349,7 @@ enum {
     JCODE_SJIS,
     JCODE_UTF8,
     JCODE_ISO2022JP,
+    JCODE_ISO8859_1,
     JCODE_NONE,    /* a special entry standing for byte stream */
 #if 0
     JCODE_ISO2022JP-2,
@@ -1316,6 +1374,7 @@ static struct conv_converter_rec {
         { ascii_x, NULL, NULL },            /* out: SJIS */
         { ascii_x, NULL, NULL },            /* out: UTF8 */
         { ascii_x, eucj_jis, jis_reset },   /* out: ISO2022JP */
+        { ascii_x, NULL, NULL },            /* out: ISO8859-1 */
         { ident, NULL, NULL },              /* out: NONE */
     },
     /* in : EUCJ */
@@ -1325,7 +1384,8 @@ static struct conv_converter_rec {
         { eucj_sjis, NULL, NULL },          /* out: SJIS */
         { eucj_utf8, NULL, NULL },          /* out: UTF8 */
         { eucj_jis, NULL, jis_reset },      /* out: ISO2022JP */
-        { ident, NULL, NULL }               /* out: NONE */
+        { NULL, NULL, NULL },               /* out: ISO8859-1 */
+        { ident, NULL, NULL },              /* out: NONE */
     },
     /* in: SJIS */
     {
@@ -1334,6 +1394,7 @@ static struct conv_converter_rec {
         { ident, NULL, NULL },              /* out: SJIS */
         { sjis_utf8, NULL, NULL },          /* out: UTF8 */
         { sjis_eucj, eucj_jis, jis_reset }, /* out: ISO2022JP */
+        { NULL, NULL, NULL },               /* out: ISO8859-1 */
         { ident, NULL, NULL }               /* out: NONE */
     },
     /* in: UTF8 */
@@ -1343,6 +1404,7 @@ static struct conv_converter_rec {
         { utf8_sjis, NULL, NULL },          /* out: SJIS */
         { ident, NULL, NULL },              /* out: UTF8 */
         { utf8_eucj, eucj_jis, jis_reset },  /* out: ISO2022JP */
+        { NULL, NULL, NULL },               /* out: ISO8859-1 */
         { ident, NULL, NULL }               /* out: NONE */
     },
     /* in: ISO2022JP */
@@ -1352,6 +1414,17 @@ static struct conv_converter_rec {
         { jis_eucj, eucj_sjis, NULL },      /* out: SJIS */
         { jis_eucj, eucj_utf8, NULL },      /* out: UTF8 */
         { ident, NULL, jis_reset },         /* out: ISO2022JP */
+        { NULL, NULL, NULL },               /* out: ISO8859-1 */
+        { ident, NULL, NULL }               /* out: NONE */
+    },
+    /* in: ISO8859-1 */
+    {
+        { lat1_ascii, NULL, NULL },         /* out: ASCII */
+        { lat1_eucj, NULL, NULL },          /* out: EUCJ */
+        { lat1_eucj, eucj_sjis, NULL },     /* out: SJIS */
+        { lat1_utf8, NULL, NULL },          /* out: UTF8 */
+        { lat1_eucj, eucj_jis, jis_reset }, /* out: ISO2022JP */
+        { ident, NULL, NULL },              /* out: ISO8859-1 */
         { ident, NULL, NULL }               /* out: NONE */
     },
     /* in: NONE */
@@ -1361,6 +1434,7 @@ static struct conv_converter_rec {
         { ident, NULL, NULL },              /* out: SJIS */
         { ident, NULL, NULL },              /* out: UTF8 */
         { ident, NULL, NULL },              /* out: ISO2022JP */
+        { ident, NULL, NULL },              /* out: ISO8859-1 */
         { ident, NULL, NULL }               /* out: NONE */
     }
 };
@@ -1397,6 +1471,10 @@ static struct conv_support_rec {
     { "iso-2022jp-2", JCODE_ISO2022JP },
     { "iso2022jp-3",  JCODE_ISO2022JP },
     { "iso-2022jp-3", JCODE_ISO2022JP },
+    { "iso8859-1",    JCODE_ISO8859_1 },
+    { "iso-8859-1",   JCODE_ISO8859_1 },
+    { "latin1",       JCODE_ISO8859_1 },
+    { "latin-1",      JCODE_ISO8859_1 },
     { "none",         JCODE_NONE },
     { NULL, 0 }
 };
