@@ -72,6 +72,8 @@ static inline int do_subst(ScmConvInfo *cinfo,
         if (i < 0) return i;                                    \
     } while (0)
 
+/* Input state is kept in cinfo->istate.  */
+
 /* ISO2022-JP input states */
 enum {
     JIS_ASCII,
@@ -82,6 +84,15 @@ enum {
     JIS_0213_1,
     JIS_0213_2,
     JIS_UNKNOWN,
+};
+
+/* UTF-16/32 input states */
+enum {
+    UTF_DEFAULT,              /* no char has been read.  once a char or BOM
+                                 is read, istate is set to either one of
+                                 the followings. */
+    UTF_BE,                   /* BOM read, BE */
+    UTF_LE,                   /* BOM read, LE */
 };
 
 /******************************************************************
@@ -295,6 +306,58 @@ void jconv_ucs4_to_utf8(unsigned int ucs, char *cp)
         *cp++ = ((ucs>>12)&0x3f) | 0x80;
         *cp++ = ((ucs>>6)&0x3f) | 0x80;
         *cp++ = (ucs&0x3f) | 0x80;
+    }
+}
+
+/* Returns # of input chars, or negative error code on error */
+int jconv_utf8_to_ucs4(const char *cp, ScmSize size, ScmChar *ucs)
+{
+    u_char u0 = cp[0];
+    if (u0 < 0x80) {
+        *ucs = u0;
+        return 1;
+    } else if (u0 < 0xc0) {
+        return ILLEGAL_SEQUENCE;
+    } else if (u0 < 0xe0) {
+        if (size < 2) return INPUT_NOT_ENOUGH;
+        u_char u1 = cp[1];
+        ScmChar ch = ((u0 & 0x1f) << 6) | (u1 & 0x3f);
+        if (ch < 0x80) return ILLEGAL_SEQUENCE;
+        *ucs = ch;
+        return 2;
+    } else if (u0 < 0xf0) {
+        if (size < 3) return INPUT_NOT_ENOUGH;
+        u_char u1 = cp[1], u2 = cp[2];
+        ScmChar ch = ((u0 & 0x0f) << 12) | ((u1 & 0x3f) << 6) | (u2 & 0x3f);
+        if (ch < 0x800) return ILLEGAL_SEQUENCE;
+        *ucs = ch;
+        return 3;
+    } else if (u0 < 0xf8) {
+        if (size < 4) return INPUT_NOT_ENOUGH;
+        u_char u1 = cp[1], u2 = cp[2], u3 = cp[3];
+        ScmChar ch = ((u0 & 0x07) << 18) | ((u1 & 0x3f) << 12)
+            | ((u2 & 0x3f) << 6) | (u3 & 0x3f);
+        if (ch < 0x10000) return ILLEGAL_SEQUENCE;
+        *ucs = ch;
+        return 4;
+    } else if (u0 < 0xfc) {
+        if (size < 5) return INPUT_NOT_ENOUGH;
+        u_char u1 = cp[1], u2 = cp[2], u3 = cp[3], u4 = cp[4];
+        ScmChar ch = ((u0 & 0x03) << 24) | ((u1 & 0x3f) << 18)
+            | ((u2 & 0x3f) << 12) | ((u3 & 0x3f) << 6) | (u4 & 0x3f);
+        if (ch < 0x8000000) return ILLEGAL_SEQUENCE;
+        *ucs = ch;
+        return 5;
+    } else if (u0 < 0xfe) {
+        if (size < 6) return INPUT_NOT_ENOUGH;
+        u_char u1 = cp[1], u2 = cp[2], u3 = cp[3], u4 = cp[4], u5 = cp[5];
+        ScmChar ch = ((u0 & 0x01) << 30) | ((u1 & 0x3f) << 24)
+            | ((u2 & 0x3f) << 18) | ((u3 & 0x3f) << 12)
+            | ((u4 & 0x3f) << 6) | (u5 & 0x3f);
+        *ucs = ch;
+        return 6;
+    } else {
+        return ILLEGAL_SEQUENCE;
     }
 }
 
@@ -1004,6 +1067,76 @@ static ScmSize sjis_utf8(ScmConvInfo *cinfo,
     return r;
 }
 
+/* UTF8 -> UTF16 */
+static ScmSize utf8_utf16(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    ScmSize reqsize = 0;
+    int ostate = cinfo->ostate;
+    int need_bom = FALSE;
+    ScmChar ch;
+    
+    if (ostate == UTF_DEFAULT) {
+        reqsize += 2;
+        need_bom = TRUE;
+        ostate = UTF_BE;
+    }
+    int r = jconv_utf8_to_ucs4(inptr, inroom, &ch);
+    if (r < 0) return r;
+    if (ch < 0x10000) reqsize += 2;
+    else reqsize += 4;
+    
+    OUTCHK(reqsize);
+    if (need_bom) {
+        if (ostate == UTF_BE) {
+            outptr[0] = 0xfe;
+            outptr[1] = 0xff;
+        } else {
+            outptr[1] = 0xfe;
+            outptr[0] = 0xff;
+        }
+        outptr += 2;
+    }
+    if (ch < 0x10000) {
+        char u[2];
+        u[0] = (ch >> 8) & 0xff;
+        u[1] = ch & 0xff;
+        if (ostate == UTF_BE) {
+            outptr[0] = u[0];
+            outptr[1] = u[1];
+        } else {
+            outptr[1] = u[0];
+            outptr[0] = u[1];
+        }
+    } else {
+        ch -= 0x10000;
+        char u[2];
+        u[0] = 0xd8 + ((ch >> 18) & 0x03);
+        u[1] = (ch >> 10) & 0xff;
+        if (ostate == UTF_BE) {
+            outptr[0] = u[0];
+            outptr[1] = u[1];
+        } else {
+            outptr[1] = u[0];
+            outptr[0] = u[1];
+        }
+        u[0] = 0xdc + ((ch >> 8) & 0x03);
+        u[1] = ch & 0xff;
+        if (ostate == UTF_BE) {
+            outptr[2] = u[0];
+            outptr[3] = u[1];
+        } else {
+            outptr[3] = u[0];
+            outptr[2] = u[1];
+        }
+    }
+    cinfo->ostate = ostate;
+    *outchars = reqsize;
+    return r;
+}
+
 /* UTF8 -> ASCII */
 
 static ScmSize utf8_ascii(ScmConvInfo *cinfo,     
@@ -1040,6 +1173,190 @@ static ScmSize utf8_ascii(ScmConvInfo *cinfo,
         return 6;
     }
     return ILLEGAL_SEQUENCE;
+}
+
+/*=================================================================
+ * UTF16
+ */
+
+/* For now, we first convert it to utf8, for we already have the table
+   directly supports utf8.  Theoretically though, having ucs4 to
+   jis table would speed it up. */
+
+static ScmSize utf16_utf8(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    INCHK(2);
+    int istate = cinfo->istate;
+    ScmSize inread = 0;
+    if (istate == UTF_DEFAULT) {
+        if ((u_char)inptr[0] == 0xfe && (u_char)inptr[1] == 0xff) {
+            inptr += 2;
+            inroom -= 2;
+            inread += 2;
+            INCHK(2);
+            istate = UTF_BE;
+        } else if ((u_char)inptr[0] == 0xff && (u_char)inptr[1] == 0xfe) {
+            inptr += 2;
+            inroom -= 2;
+            inread += 2;
+            INCHK(2);
+            istate = UTF_LE;
+        } else {
+            /* Arbitrary choice */
+            istate = UTF_BE;
+        }
+    }
+    
+    u_char u[2];
+    if (istate == UTF_BE) {
+        u[0] = inptr[0];
+        u[1] = inptr[1];
+    } else {
+        u[0] = inptr[1];
+        u[1] = inptr[0];
+    }
+
+    ScmChar ch;
+
+    if ((u[0] & 0xdc) == 0xd8) {
+        /* surrogate */
+        inptr += 2;
+        inroom -= 2;
+        INCHK(2);
+        u_char v[2];
+        if (istate == UTF_BE) {
+            v[0] = inptr[0];
+            v[1] = inptr[1];
+        } else {
+            v[0] = inptr[1];
+            v[1] = inptr[0];
+        }
+        if ((v[1] & 0xdc) == 0xdc) {
+            ch = (((u[0] & 0x03) << 18)
+                  | (u[1] << 10)
+                  | ((v[0] & 0x03) << 8)
+                  | v[1])
+                + 0x10000;
+            inread += 4;
+        } else {
+            /* We only have first half of a surrogate pair.
+               We leave the second character in the input, and try to
+               substitute the first. */
+            DO_SUBST;
+            cinfo->istate = istate;
+            return inread;
+        }
+    } else if ((u[0] & 0xdc) == 0xdc) {
+        /* Stray second half of a surrogate pair. */
+        DO_SUBST;
+        return inread;
+    } else {
+        inread += 2;
+        ch = (u[0] << 8) + u[1];
+    }
+
+    int outreq = UCS2UTF_NBYTES(ch);
+    OUTCHK(outreq);
+    jconv_ucs4_to_utf8(ch, outptr);
+    cinfo->istate = istate;
+    *outchars = outreq;
+    return inread;
+}
+
+/* This handles BOM stuff.   It is pretty twisted, for we need to keep the
+   internal state consistent even when we return an error. */
+static ScmSize utf16_utf16(ScmConvInfo *cinfo,     
+                           const char *inptr, ScmSize inroom,
+                           char *outptr, ScmSize outroom,
+                           ScmSize *outchars)
+{
+    ScmSize consumed = 0;
+    ScmSize emitted = 0;
+
+    if (cinfo->istate == UTF_DEFAULT || cinfo->ostate == UTF_DEFAULT) {
+        /* We come here only at the beginning.  */
+        int istate = 0;
+
+        if (cinfo->istate == UTF_DEFAULT) {
+            INCHK(2);
+            if ((u_char)inptr[0] == 0xfe && (u_char)inptr[1] == 0xff) {
+                consumed += 2;
+                istate = UTF_BE;
+                inptr += 2;
+                inroom -= 2;
+            } else if ((u_char)inptr[0] == 0xff && (u_char)inptr[1] == 0xfe) {
+                consumed += 2;
+                istate = UTF_LE;
+                inptr += 2;
+                inroom -= 2;
+            }
+        }
+        INCHK(2);
+        if (cinfo->ostate == UTF_DEFAULT) {
+            OUTCHK(4);
+            outptr[0] = 0xfe;
+            outptr[1] = 0xff;
+            outptr += 2;
+            outroom -= 2;
+            emitted += 2;
+            cinfo->ostate = UTF_BE;
+        } else {
+            OUTCHK(2);
+        }
+        cinfo->istate = istate;
+    } else {
+        INCHK(2);
+        OUTCHK(2);
+    }
+    
+    char u[2];
+    if (cinfo->istate == UTF_BE) {
+        u[0] = inptr[0];
+        u[1] = inptr[1];
+    } else {
+        u[1] = inptr[0];
+        u[0] = inptr[1];
+    }
+    if (cinfo->ostate == UTF_BE) {
+        outptr[0] = u[0];
+        outptr[1] = u[1];
+    } else {
+        outptr[1] = u[0];
+        outptr[0] = u[1];
+    }
+    *outchars = emitted + 2;
+    return consumed + 2;
+}
+
+static ScmSize utf16_eucj(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    char buf[6];
+    ScmSize nbuf;
+    ScmSize r = utf16_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
+    if (r < 0) return r;
+    ScmSize r2 = utf8_eucj(cinfo, buf, nbuf, outptr, outroom, outchars);
+    if (r2 < 0) return r2;
+    return r;
+}
+
+static ScmSize eucj_utf16(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    char buf[6];
+    ScmSize nbuf;
+    ScmSize r = eucj_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
+    if (r < 0) return r;
+    ScmSize r2 = utf8_utf16(cinfo, buf, nbuf, outptr, outroom, outchars);
+    if (r2 < 0) return r2;
+    return r;
 }
 
 /*=================================================================
@@ -1348,6 +1665,9 @@ enum {
     JCODE_EUCJ,
     JCODE_SJIS,
     JCODE_UTF8,
+    JCODE_UTF16,
+    JCODE_UTF16BE,
+    JCODE_UTF16LE,
     JCODE_ISO2022JP,
     JCODE_ISO8859_1,
     JCODE_NONE,    /* a special entry standing for byte stream */
@@ -1360,82 +1680,147 @@ enum {
 
 /* map canonical code designator to inconv and outconv.  the order of
    entry must match with the above designators. 
-   conv_converter[incode][outcode] returns the appropriate 
+   conv_converter[incode][outcode] returns the appropriate combiniation
+   of routines.
+   NB: It is tedious to maintain this table; we'll eventually generate
+   this from some DSL.
 */
 static struct conv_converter_rec {
     ScmConvProc inconv;
     ScmConvProc outconv;
     ScmConvReset reset;
+    int istate;                 /* initial input state */
+    int ostate;                 /* initial output state */
 } conv_converter[NUM_JCODES][NUM_JCODES] = {
     /* in : ASCII */
     {
-        { ident, NULL, NULL },              /* out: ASCII */
-        { ascii_x, NULL, NULL },            /* out: EUCJ */
-        { ascii_x, NULL, NULL },            /* out: SJIS */
-        { ascii_x, NULL, NULL },            /* out: UTF8 */
-        { ascii_x, eucj_jis, jis_reset },   /* out: ISO2022JP */
-        { ascii_x, NULL, NULL },            /* out: ISO8859-1 */
-        { ident, NULL, NULL },              /* out: NONE */
+        { ident, NULL, NULL, 0, 0 },              /* out: ASCII */
+        { ascii_x, NULL, NULL, 0, 0 },            /* out: EUCJ */
+        { ascii_x, NULL, NULL, 0, 0 },            /* out: SJIS */
+        { ascii_x, NULL, NULL, 0, 0 },            /* out: UTF8 */
+        { utf8_utf16, NULL, NULL, 0, 0 },         /* out: UTF16 */
+        { utf8_utf16, NULL, NULL, 0, UTF_BE },    /* out: UTF16BE */
+        { utf8_utf16, NULL, NULL, 0, UTF_LE },    /* out: UTF16LE */
+        { ascii_x, eucj_jis, jis_reset, 0, 0 },   /* out: ISO2022JP */
+        { ascii_x, NULL, NULL, 0, 0 },            /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
     },
     /* in : EUCJ */
     {
-        { eucj_ascii, NULL, NULL },         /* out: ASCII */
-        { ident, NULL, NULL },              /* out: EUCJ */
-        { eucj_sjis, NULL, NULL },          /* out: SJIS */
-        { eucj_utf8, NULL, NULL },          /* out: UTF8 */
-        { eucj_jis, NULL, jis_reset },      /* out: ISO2022JP */
-        { NULL, NULL, NULL },               /* out: ISO8859-1 */
-        { ident, NULL, NULL },              /* out: NONE */
+        { eucj_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
+        { ident, NULL, NULL, 0, 0 },              /* out: EUCJ */
+        { eucj_sjis, NULL, NULL, 0, 0 },          /* out: SJIS */
+        { eucj_utf8, NULL, NULL, 0, 0 },          /* out: UTF8 */
+        { eucj_utf16, NULL, NULL, 0, 0 },         /* out: UTF16 */
+        { eucj_utf16, NULL, NULL, 0, UTF_BE },    /* out: UTF16BE */
+        { eucj_utf16, NULL, NULL, 0, UTF_LE },    /* out: UTF16LE */
+        { eucj_jis, NULL, jis_reset, 0, 0 },      /* out: ISO2022JP */
+        { NULL, NULL, NULL, 0, 0 },               /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
     },
     /* in: SJIS */
     {
-        { sjis_ascii, NULL, NULL },         /* out: ASCII */
-        { sjis_eucj, NULL, NULL },          /* out: EUCJ */
-        { ident, NULL, NULL },              /* out: SJIS */
-        { sjis_utf8, NULL, NULL },          /* out: UTF8 */
-        { sjis_eucj, eucj_jis, jis_reset }, /* out: ISO2022JP */
-        { NULL, NULL, NULL },               /* out: ISO8859-1 */
-        { ident, NULL, NULL }               /* out: NONE */
+        { sjis_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
+        { sjis_eucj, NULL, NULL, 0, 0 },          /* out: EUCJ */
+        { ident, NULL, NULL, 0, 0 },              /* out: SJIS */
+        { sjis_utf8, NULL, NULL, 0, 0 },          /* out: UTF8 */
+        { sjis_utf8, utf8_utf16, NULL, 0, 0 },    /* out: UTF16 */
+        { sjis_utf8, utf8_utf16, NULL, 0, UTF_BE },/* out: UTF16BE */
+        { sjis_utf8, utf8_utf16, NULL, 0, UTF_LE },/* out: UTF16LE */
+        { sjis_eucj, eucj_jis, jis_reset, 0, 0 }, /* out: ISO2022JP */
+        { NULL, NULL, NULL, 0, 0 },               /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
     },
     /* in: UTF8 */
     {
-        { utf8_ascii, NULL, NULL },         /* out: ASCII */
-        { utf8_eucj, NULL, NULL },          /* out: EUCJ */
-        { utf8_sjis, NULL, NULL },          /* out: SJIS */
-        { ident, NULL, NULL },              /* out: UTF8 */
-        { utf8_eucj, eucj_jis, jis_reset },  /* out: ISO2022JP */
-        { NULL, NULL, NULL },               /* out: ISO8859-1 */
-        { ident, NULL, NULL }               /* out: NONE */
+        { utf8_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
+        { utf8_eucj, NULL, NULL, 0, 0 },          /* out: EUCJ */
+        { utf8_sjis, NULL, NULL, 0, 0 },          /* out: SJIS */
+        { ident, NULL, NULL, 0, 0 },              /* out: UTF8 */
+        { utf8_utf16, NULL, NULL, 0, 0 },         /* out: UTF16 */
+        { utf8_utf16, NULL, NULL, 0, UTF_BE },    /* out: UTF16BE */
+        { utf8_utf16, NULL, NULL, 0, UTF_LE },    /* out: UTF16LE */
+        { utf8_eucj, eucj_jis, jis_reset, 0, 0 }, /* out: ISO2022JP */
+        { NULL, NULL, NULL, 0, 0 },               /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
+    },
+    /* in: UTF16 */
+    {
+        { utf16_utf8, utf8_ascii, NULL, 0, 0 },   /* out: ASCII */
+        { utf16_eucj, NULL, NULL, 0, 0 },         /* out: EUCJ */
+        { utf16_eucj, eucj_sjis, NULL, 0, 0 },    /* out: SJIS */
+        { utf16_utf8, NULL, NULL, 0, 0 },         /* out: UTF8 */
+        { utf16_utf16, NULL, NULL, 0, 0 },        /* out: UTF16 */
+        { utf16_utf16, NULL, NULL, 0, UTF_BE },   /* out: UTF16BE */
+        { utf16_utf16, NULL, NULL, 0, UTF_LE },   /* out: UTF16LE */
+        { utf16_eucj, eucj_jis, jis_reset, 0, 0 },/* out: ISO2022JP */
+        { NULL, NULL, NULL, 0, 0 },               /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
+    },
+    /* in: UTF16BE */
+    {
+        { utf16_utf8, utf8_ascii, NULL, UTF_BE, 0 },   /* out: ASCII */
+        { utf16_eucj, NULL, NULL, UTF_BE, 0 },         /* out: EUCJ */
+        { utf16_eucj, eucj_sjis, NULL, UTF_BE, 0 },    /* out: SJIS */
+        { utf16_utf8, NULL, NULL, UTF_BE, 0 },         /* out: UTF8 */
+        { utf16_utf16, NULL, NULL, 0, 0 },             /* out: UTF16 */
+        { utf16_utf16, NULL, NULL, 0, UTF_BE },        /* out: UTF16BE */
+        { utf16_utf16, NULL, NULL, 0, UTF_LE },        /* out: UTF16LE */
+        { utf16_eucj, eucj_jis, jis_reset, UTF_BE, 0 },/* out: ISO2022JP */
+        { NULL, NULL, NULL, UTF_BE, 0 },               /* out: ISO8859-1 */
+        { ident, NULL, NULL, UTF_BE, 0 },              /* out: NONE */
+    },
+    /* in: UTF16LE */
+    {
+        { utf16_utf8, utf8_ascii, NULL, UTF_LE, 0 },   /* out: ASCII */
+        { utf16_eucj, NULL, NULL, UTF_LE, 0 },         /* out: EUCJ */
+        { utf16_eucj, eucj_sjis, NULL, UTF_LE, 0 },    /* out: SJIS */
+        { utf16_utf8, NULL, NULL, UTF_LE, 0 },         /* out: UTF8 */
+        { utf16_utf16, NULL, NULL, 0, 0 },             /* out: UTF16 */
+        { utf16_utf16, NULL, NULL, 0, UTF_BE },        /* out: UTF16BE */
+        { utf16_utf16, NULL, NULL, 0, UTF_LE },        /* out: UTF16LE */
+        { utf16_eucj, eucj_jis, jis_reset, UTF_LE, 0 },/* out: ISO2022JP */
+        { NULL, NULL, NULL, UTF_LE, 0 },               /* out: ISO8859-1 */
+        { ident, NULL, NULL, UTF_LE, 0 },              /* out: NONE */
     },
     /* in: ISO2022JP */
     {
-        { jis_eucj, eucj_ascii, NULL },     /* out: ASCII */
-        { jis_eucj, NULL, NULL },           /* out: EUCJ */
-        { jis_eucj, eucj_sjis, NULL },      /* out: SJIS */
-        { jis_eucj, eucj_utf8, NULL },      /* out: UTF8 */
-        { ident, NULL, jis_reset },         /* out: ISO2022JP */
-        { NULL, NULL, NULL },               /* out: ISO8859-1 */
-        { ident, NULL, NULL }               /* out: NONE */
+        { jis_eucj, eucj_ascii, NULL, 0, 0 },     /* out: ASCII */
+        { jis_eucj, NULL, NULL, 0, 0 },           /* out: EUCJ */
+        { jis_eucj, eucj_sjis, NULL, 0, 0 },      /* out: SJIS */
+        { jis_eucj, eucj_utf8, NULL, 0, 0 },      /* out: UTF8 */
+        { jis_eucj, eucj_utf16, NULL, 0, 0 },     /* out: UTF16 */
+        { jis_eucj, eucj_utf16, NULL, 0, UTF_BE },/* out: UTF16BE */
+        { jis_eucj, eucj_utf16, NULL, 0, UTF_LE },/* out: UTF16LE */
+        { ident, NULL, jis_reset, 0, 0 },         /* out: ISO2022JP */
+        { NULL, NULL, NULL, 0, 0 },               /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
     },
     /* in: ISO8859-1 */
     {
-        { lat1_ascii, NULL, NULL },         /* out: ASCII */
-        { lat1_eucj, NULL, NULL },          /* out: EUCJ */
-        { lat1_eucj, eucj_sjis, NULL },     /* out: SJIS */
-        { lat1_utf8, NULL, NULL },          /* out: UTF8 */
-        { lat1_eucj, eucj_jis, jis_reset }, /* out: ISO2022JP */
-        { ident, NULL, NULL },              /* out: ISO8859-1 */
-        { ident, NULL, NULL }               /* out: NONE */
+        { lat1_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
+        { lat1_eucj, NULL, NULL, 0, 0 },          /* out: EUCJ */
+        { lat1_eucj, eucj_sjis, NULL, 0, 0 },     /* out: SJIS */
+        { lat1_utf8, NULL, NULL, 0, 0 },          /* out: UTF8 */
+        { lat1_utf8, utf8_utf16, NULL, 0, 0 },    /* out: UTF16 */
+        { lat1_utf8, utf8_utf16, NULL, 0, UTF_BE },/* out: UTF16BE */
+        { lat1_utf8, utf8_utf16, NULL, 0, UTF_LE },/* out: UTF16LE */
+        { lat1_eucj, eucj_jis, jis_reset, 0, 0 }, /* out: ISO2022JP */
+        { ident, NULL, NULL, 0, 0 },              /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
     },
     /* in: NONE */
     {
-        { ident, NULL, NULL },               /* out: ASCII */
-        { ident, NULL, NULL },              /* out: EUCJ */
-        { ident, NULL, NULL },              /* out: SJIS */
-        { ident, NULL, NULL },              /* out: UTF8 */
-        { ident, NULL, NULL },              /* out: ISO2022JP */
-        { ident, NULL, NULL },              /* out: ISO8859-1 */
-        { ident, NULL, NULL }               /* out: NONE */
+        { ident, NULL, NULL, 0, 0 },               /* out: ASCII */
+        { ident, NULL, NULL, 0, 0 },              /* out: EUCJ */
+        { ident, NULL, NULL, 0, 0 },              /* out: SJIS */
+        { ident, NULL, NULL, 0, 0 },              /* out: UTF8 */
+        { ident, NULL, NULL, 0, 0 },              /* out: UTF16 */
+        { ident, NULL, NULL, 0, 0 },              /* out: UTF16BE */
+        { ident, NULL, NULL, 0, 0 },              /* out: UTF16LE */
+        { ident, NULL, NULL, 0, 0 },              /* out: ISO2022JP */
+        { ident, NULL, NULL, 0, 0 },              /* out: ISO8859-1 */
+        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
     }
 };
 
@@ -1445,36 +1830,29 @@ static struct conv_support_rec {
     int code;
 } conv_supports[] = {
     { "ascii",        JCODE_ASCII },
-    { "us-ascii",     JCODE_ASCII },
-    { "iso-ir-6",     JCODE_ASCII },
-    { "iso-646-us",   JCODE_ASCII },
+    { "usascii",      JCODE_ASCII },
+    { "isoir6",       JCODE_ASCII },
+    { "iso646us",     JCODE_ASCII },
     { "us",           JCODE_ASCII },
     { "ibm367",       JCODE_ASCII },
     { "cp367",        JCODE_ASCII },
     { "csascii",      JCODE_ASCII },
-    { "euc_jp",       JCODE_EUCJ },
     { "eucjp",        JCODE_EUCJ },
     { "eucj",         JCODE_EUCJ },
-    { "euc_jisx0213", JCODE_EUCJ },
-    { "shift_jis",    JCODE_SJIS },
+    { "eucjisx0213",  JCODE_EUCJ },
     { "shiftjis",     JCODE_SJIS },
     { "sjis",         JCODE_SJIS },
-    { "utf-8",        JCODE_UTF8 },
     { "utf8",         JCODE_UTF8 },
+    { "utf16",        JCODE_UTF16 },
+    { "utf16be",      JCODE_UTF16BE },
+    { "utf16le",      JCODE_UTF16LE },
     { "iso2022jp",    JCODE_ISO2022JP },
-    { "iso2022-jp",   JCODE_ISO2022JP },
-    { "iso-2022-jp",  JCODE_ISO2022JP },
     { "csiso2022jp",  JCODE_ISO2022JP },
-    { "iso2022jp-1",  JCODE_ISO2022JP },
-    { "iso-2022jp-1", JCODE_ISO2022JP },
-    { "iso2022jp-2",  JCODE_ISO2022JP },
-    { "iso-2022jp-2", JCODE_ISO2022JP },
-    { "iso2022jp-3",  JCODE_ISO2022JP },
-    { "iso-2022jp-3", JCODE_ISO2022JP },
-    { "iso8859-1",    JCODE_ISO8859_1 },
-    { "iso-8859-1",   JCODE_ISO8859_1 },
+    { "iso2022jp1",   JCODE_ISO2022JP },
+    { "iso2022jp2",   JCODE_ISO2022JP },
+    { "iso2022jp3",   JCODE_ISO2022JP },
+    { "iso88591",     JCODE_ISO8859_1 },
     { "latin1",       JCODE_ISO8859_1 },
-    { "latin-1",      JCODE_ISO8859_1 },
     { "none",         JCODE_NONE },
     { NULL, 0 }
 };
@@ -1482,11 +1860,12 @@ static struct conv_support_rec {
 static int conv_name_match(const char *s, const char *t)
 {
     const char *p, *q;
-    for (p=s, q=t; *p && *q; p++, q++) {
+    for (p=s, q=t; *p && *q; p++) {
         if (*p == '-' || *p == '_') {
-            if (*q != '-' && *q != '_') return FALSE;
+            continue;           /* ignore '-' and '_' */
         } else {
             if (tolower(*p) != tolower(*q)) return FALSE;
+            q++;
         }
     }
     if (*p || *q) return FALSE;
@@ -1719,7 +2098,8 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
     cinfo->reset = reset;
     cinfo->handle = handle;
     cinfo->toCode = toCode;
-    cinfo->istate = cinfo->ostate = JIS_ASCII;
+    cinfo->istate = conv_converter[incode][outcode].istate;
+    cinfo->ostate = conv_converter[incode][outcode].ostate;
     cinfo->fromCode = fromCode;
     /* The replacement settings can be modified by jconv_set_replacement */
     cinfo->replacep = FALSE;

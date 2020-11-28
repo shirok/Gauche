@@ -129,7 +129,10 @@ extern ScmSize jconv(ScmConvInfo*, const char **inptr, ScmSize *inroom,
 extern ScmSize jconv_reset(ScmConvInfo *, char *outptr, ScmSize outroom);
 extern void jconv_set_replacement(ScmConvInfo *info);
 
-/* Given UCS char, return # of bytes required for UTF8 encoding. */
+/* Given UCS char, return # of bytes required for UTF8 encoding.
+   We have these in char_utf8.h, but it is only available when the
+   native encoding is utf-8.   Eventually we need to factor these out.
+ */
 #define UCS2UTF_NBYTES(ucs)                      \
     (((ucs) < 0x80) ? 1 :                        \
      (((ucs) < 0x800) ? 2 :                      \
@@ -138,6 +141,9 @@ extern void jconv_set_replacement(ScmConvInfo *info);
         (((ucs) < 0x4000000) ? 5 : 6)))))
 
 extern void jconv_ucs4_to_utf8(unsigned int ucs, char *cp);
+extern int  jconv_utf8_to_ucs4(const char *cp,
+                               ScmSize size,
+                               ScmChar *ucs);   /* out */
 
 SCM_DECL_END
 

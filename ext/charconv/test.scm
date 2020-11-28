@@ -93,7 +93,7 @@
     ))
 
 (map-test test-input "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP" "UTF-16" "UTF-16BE" "UTF-16LE")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-input "data/jp2"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
