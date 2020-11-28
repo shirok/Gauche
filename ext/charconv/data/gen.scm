@@ -6,23 +6,28 @@
 (use gauche.charconv)
 
 ;; Latin-1 test dataset
-(define (do-lat1 suffix emitter)
-  (with-output-to-file #"lat1.~suffix"
+(define (do-lat1 suffix emitter exclude-b5?)
+  (with-output-to-file #"~(if exclude-b5? 'lat1x 'lat1).~suffix"
     (^[] (dotimes [n 256]
            (cond [(<= n #x7f) (write-byte n)]
+                 [(and exclude-b5? (= n #xb5))]
                  [(<= #xa0 n) (emitter n)])
            (when (zero? (modulo (+ n 1) 16)) (newline))))))
 
+(define (do-lat1* suffix emitter)
+  (do-lat1 suffix emitter #f)
+  (do-lat1 suffix emitter #t))
+  
 (define (lat1.iso8859-1)
-  (do-lat1 "ISO8859-1" write-byte))
+  (do-lat1* "ISO8859-1" write-byte))
 
 (define (lat1.ascii)
-  (do-lat1 "ASCII" (^b (write-char #\?))))
+  (do-lat1 "ASCII" (^b (write-char #\?)) #f))
 
 (define (lat1.utf-8)
-  (do-lat1 "UTF-8"
-           (^b (write-byte (+ #xc0 (ash b -6)))
-               (write-byte (+ #x80 (logand b #x3f))))))
+  (do-lat1* "UTF-8"
+            (^b (write-byte (+ #xc0 (ash b -6)))
+                (write-byte (+ #x80 (logand b #x3f))))))
 
 ;; NB: U+00B5 (MICRO SIGN) doesn't have a corresponding JIS character.
 ;; We could've mapped it ot greek mu, but then we'll lose round-trip identity.
@@ -136,24 +141,24 @@
          (string-split *lat1-eucjp-data* #\newline))))
 
 (define (lat1.eucjp)
-  (do-lat1 "EUCJP"
-           (^b (let1 c (vector-ref *lat1-eucjp-table* (- b #xa0))
-                 (if (<= c #xff)
-                   (write-byte c)
-                   (begin
-                     (write-byte (ash c -8))
-                     (write-byte (logand c #xff))))))))
+  (do-lat1* "EUCJP"
+            (^b (let1 c (vector-ref *lat1-eucjp-table* (- b #xa0))
+                  (if (<= c #xff)
+                    (write-byte c)
+                    (begin
+                      (write-byte (ash c -8))
+                      (write-byte (logand c #xff))))))))
 
 (define (lat1.sjis)
-  (do-lat1 "SJIS"
-           (^b (let1 c (vector-ref *lat1-eucjp-table* (- b #xa0))
-                 (if (<= c #xff)
-                   (write-byte c)
-                   (let1 m (open-output-string)
-                     (write-byte (ash c -8) m)
-                     (write-byte (logand c #xff) m)
-                     (display (ces-convert (get-output-string m)
-                                           'eucjp 'sjis))))))))
+  (do-lat1* "SJIS"
+            (^b (let1 c (vector-ref *lat1-eucjp-table* (- b #xa0))
+                  (if (<= c #xff)
+                    (write-byte c)
+                    (let1 m (open-output-string)
+                      (write-byte (ash c -8) m)
+                      (write-byte (logand c #xff) m)
+                      (display (ces-convert (get-output-string m)
+                                            'eucjp 'sjis))))))))
 
 
 (define (lat1.iso2022-jp)

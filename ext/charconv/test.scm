@@ -94,7 +94,7 @@
 
 (map-test test-input "data/jp1"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP" "UTF-16" "UTF-16BE" "UTF-16LE")
-          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP" "UTF-16BE" "UTF-16LE"))
 (map-test test-input "data/jp2"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
@@ -124,6 +124,11 @@
           "data/lat1"
           '("ISO8859-1")
           '("ASCII" "ISO8859-1" "EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test (lambda (file from to)
+            (test-input file from to :handling 'replace))
+          "data/lat1x"
+          '("ISO8859-1" "EUCJP" "UTF-8" "SJIS")
+          '("ISO8859-1"))
 
 ;; autodetect tester
 (map-test (lambda (file from to)
@@ -178,8 +183,8 @@
     (else '())))
 
 (map-test test-output/byte "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP" "UTF-16" "UTF-16BE" "UTF-16LE")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP" "UTF-16BE" "UTF-16LE"))
 (map-test test-output/chunk256 "data/jp1"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
