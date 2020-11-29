@@ -43,6 +43,7 @@
 
 #include <ctype.h>
 #include "charconv.h"
+#include "jconv_tab.h"
 
 #define INCHK(n)   do{if ((int)inroom < (n)) return INPUT_NOT_ENOUGH;}while(0)
 #define OUTCHK(n)  do{if ((int)outroom < (n)) return OUTPUT_NOT_ENOUGH;}while(0)
@@ -71,29 +72,6 @@ static inline int do_subst(ScmConvInfo *cinfo,
         int i = do_subst(cinfo, outptr, outroom, outchars);     \
         if (i < 0) return i;                                    \
     } while (0)
-
-/* Input state is kept in cinfo->istate.  */
-
-/* ISO2022-JP input states */
-enum {
-    JIS_ASCII,
-    JIS_ROMAN,
-    JIS_KANA,
-    JIS_78,
-    JIS_0212,
-    JIS_0213_1,
-    JIS_0213_2,
-    JIS_UNKNOWN,
-};
-
-/* UTF-16/32 input states */
-enum {
-    UTF_DEFAULT,              /* no char has been read.  once a char or BOM
-                                 is read, istate is set to either one of
-                                 the followings. */
-    UTF_BE,                   /* BOM read, BE */
-    UTF_LE,                   /* BOM read, LE */
-};
 
 /******************************************************************
  * 
@@ -1680,25 +1658,6 @@ static ScmSize ident(ScmConvInfo *cinfo SCM_UNUSED,
  *
  */
 
-/* canonical code designator */
-enum {
-    JCODE_ASCII,
-    JCODE_EUCJ,
-    JCODE_SJIS,
-    JCODE_UTF8,
-    JCODE_UTF16,
-    JCODE_UTF16BE,
-    JCODE_UTF16LE,
-    JCODE_ISO2022JP,
-    JCODE_ISO8859_1,
-    JCODE_NONE,    /* a special entry standing for byte stream */
-#if 0
-    JCODE_ISO2022JP-2,
-    JCODE_ISO2022JP-3,
-#endif
-    NUM_JCODES
-};
-
 /* map canonical code designator to inconv and outconv.  the order of
    entry must match with the above designators. 
    conv_converter[incode][outcode] returns the appropriate combiniation
@@ -1846,37 +1805,12 @@ static struct conv_converter_rec {
 };
 
 /* map convesion name to the canonical code */
-static struct conv_support_rec {
+struct conv_support_rec {
     const char *name;
     int code;
-} conv_supports[] = {
-    { "ascii",        JCODE_ASCII },
-    { "usascii",      JCODE_ASCII },
-    { "isoir6",       JCODE_ASCII },
-    { "iso646us",     JCODE_ASCII },
-    { "us",           JCODE_ASCII },
-    { "ibm367",       JCODE_ASCII },
-    { "cp367",        JCODE_ASCII },
-    { "csascii",      JCODE_ASCII },
-    { "eucjp",        JCODE_EUCJ },
-    { "eucj",         JCODE_EUCJ },
-    { "eucjisx0213",  JCODE_EUCJ },
-    { "shiftjis",     JCODE_SJIS },
-    { "sjis",         JCODE_SJIS },
-    { "utf8",         JCODE_UTF8 },
-    { "utf16",        JCODE_UTF16 },
-    { "utf16be",      JCODE_UTF16BE },
-    { "utf16le",      JCODE_UTF16LE },
-    { "iso2022jp",    JCODE_ISO2022JP },
-    { "csiso2022jp",  JCODE_ISO2022JP },
-    { "iso2022jp1",   JCODE_ISO2022JP },
-    { "iso2022jp2",   JCODE_ISO2022JP },
-    { "iso2022jp3",   JCODE_ISO2022JP },
-    { "iso88591",     JCODE_ISO8859_1 },
-    { "latin1",       JCODE_ISO8859_1 },
-    { "none",         JCODE_NONE },
-    { NULL, 0 }
 };
+
+#include "jconv_tab.c"
 
 static int conv_name_match(const char *s, const char *t)
 {
