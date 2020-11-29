@@ -75,6 +75,8 @@ test.record
 /ext/charconv/convaux.c
 /ext/charconv/eucj2ucs.c
 /ext/charconv/guess_tab.c
+/ext/charconv/jconv_tab.h
+/ext/charconv/jconv_tab.c
 /ext/charconv/ucs2eucj.c
 /ext/data/data--queue.c
 /ext/data/data--ring-buffer.c
