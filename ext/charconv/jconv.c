@@ -50,6 +50,8 @@
 
 #define ERRP(n)    ((n) < 0)
 
+#define INTERMEDIATE_BUF_SIZE  6
+
 /* Fill outptr with substitution character.  Can return jconv error code. */
 static inline int do_subst(ScmConvInfo *cinfo,
                            char *outptr, 

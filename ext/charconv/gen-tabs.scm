@@ -77,10 +77,22 @@
 ;; Conversion is defined with one or two procedure name(s).
 
 (define-class <conversion> (<instance-pool-mixin>)
-  ((procs :init-keyword :procs)          ;name(s) of conversion routinens
+  ((procs :init-keyword :procs)          ;name(s) of conversion routines
    (from  :init-keyword :from)           ;list of encodings
    (to    :init-keyword :to)             ;list of encodings
+   (proc-name :init-value #f)            ;final proc name (automatically set)
    ))
+
+(define-method initialize ((c <conversion>) initargs)
+  (define (ssplit sym) (string-split (x->string sym) #\_))
+  (next-method)
+  (match (~ c 'procs)
+    [(f0) (set! (~ c'proc-name) f0)]
+    ;; autogenerate fused function name
+    [(f0 f1) 
+     (set! (~ c'proc-name) #"~(car (ssplit f0))_~(cadr (ssplit f1))")]
+    [(f0 f1 f2) 
+     (set! (~ c'proc-name) #"~(car (ssplit f0))_~(cadr (ssplit f2))")]))
 
 (define-syntax define-conversion
   (syntax-rules ()
@@ -101,16 +113,35 @@
        (format "    { ~a, ~a, ~a, ~a, ~a }," f1 f2 (or reset 'NULL)
                (or istate 0) (or ostate 0) )
        oname))
+  (define (emit-fused-proc proc-name procs)
+    (cgen-body #"static ScmSize ~proc-name(ScmConvInfo *cinfo,"
+               #"    const char *inptr, ScmSize inroom,"
+               #"    char *outptr, ScmSize outroom, ScmSize *outchars)"
+               #"{")
+    (match-let1 (f0 f1) procs
+      (cgen-body #"    char buf[INTERMEDIATE_BUF_SIZE];"
+                 #"    ScmSize bufcount;"
+                 #"    ScmSize r0 = ~f0(cinfo, inptr, inroom,"
+                 #"       buf, INTERMEDIATE_BUF_SIZE, &bufcount);"
+                 #"    if (r0 < 0) return r0;"
+                 #"    if (bufcount == 0) { *outchars = 0; return r0; }"
+                 #"    ScmSize r1 = ~f1(cinfo, buf, bufcount,"
+                 #"       outptr, outroom, outchars);"
+                 #"    if (r1 < 0) return r1;"
+                 #"    return r0;"))
+    (cgen-body "}" ""))
 
   ;; Generate declartions in the header file
   (let1 protos '()
     (do-ec (: f (instance-pool->list <conversion>))
-           (: p (~ f'procs))
-           (if (not (memq p protos)))
+           (if (not (member (~ f'proc-name) protos)))
            (begin
-             (cgen-extern #"static ScmSize ~p(ScmConvInfo*, const char*,"
-                          "   ScmSize, char*, ScmSize, ScmSize*);")
-             (push! protos p))))
+             (cgen-extern #"static ScmSize ~(~ f'proc-name)(ScmConvInfo*,"
+                          #"    const char*, ScmSize,"
+                          #"    char*, ScmSize, ScmSize*);")
+             (when (= (length (~ f'procs)) 2)
+               (emit-fused-proc (~ f'proc-name) (~ f'procs)))
+             (push! protos (~ f'proc-name)))))
 
   (cgen-body "static struct conv_converter_rec"
              " conv_converter[NUM_JCODES][NUM_JCODES] = {")
@@ -120,10 +151,9 @@
                #"  {")
     (dolist [t (encoding-schemes)]
       (if-let1 c (find-conversion f t)
-        (cgen-body (apply fmt-entry 
-                          (~ t'name) (~ t'reset) 
-                          (~ f'initial-state) (~ t'initial-state)
-                          (~ c'procs)))
+        (cgen-body (fmt-entry (~ t'name) (~ t'reset) 
+                              (~ f'initial-state) (~ t'initial-state)
+                              (~ c'proc-name)))
         (if (or (eq? f t)
                 (eq? (~ f'name) 'none)
                 (eq? (~ t'name) 'none))
