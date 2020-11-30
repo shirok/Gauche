@@ -1758,26 +1758,6 @@ static ScmSize ascii_x(ScmConvInfo *cinfo SCM_UNUSED,
     return 1;
 }
 
-static ScmSize ascii_utf16(ScmConvInfo *cinfo,
-                           const char *inptr,
-                           ScmSize inroom,
-                           char *outptr,
-                           ScmSize outroom,
-                           ScmSize *outchars)
-{
-    return utf8_utf16(cinfo, inptr, inroom, outptr, outroom, outchars);
-}
-
-static ScmSize ascii_utf32(ScmConvInfo *cinfo,
-                           const char *inptr,
-                           ScmSize inroom,
-                           char *outptr,
-                           ScmSize outroom,
-                           ScmSize *outchars)
-{
-    return utf8_utf32(cinfo, inptr, inroom, outptr, outroom, outchars);
-}
-
 /*=================================================================
  * Placeholder
  */

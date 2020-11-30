@@ -238,8 +238,8 @@
 
 
 (define-conversion ascii_x (ascii) (eucj sjis utf8 iso2022jp iso8859-1))
-(define-conversion ascii_utf16 (ascii) (utf16 utf16be utf16le))
-(define-conversion ascii_utf32 (ascii) (utf32 utf32be utf32le))
+(define-conversion utf8_utf16 (ascii) (utf16 utf16be utf16le))
+(define-conversion utf8_utf32 (ascii) (utf32 utf32be utf32le))
 
 (define-conversion eucj_ascii (eucj) (ascii))
 (define-conversion eucj_sjis  (eucj) (sjis))
