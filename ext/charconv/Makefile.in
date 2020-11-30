@@ -47,8 +47,8 @@ jconv_tab.c : jconv_tab.h
 jconv_tab.h : gen-tabs.scm
 	$(GOSH) $(srcdir)/gen-tabs.scm jconv_tab
 
-guess_tab.c : guess.scm
-	$(GOSH) $(srcdir)/guess.scm guess_tab.c
+guess_tab.c : gen-guess.scm
+	$(GOSH) $(srcdir)/gen-guess.scm guess_tab.c
 
 pre-package-data :
 	cd data; $(MAKE) GOSH=$(GOSH)
