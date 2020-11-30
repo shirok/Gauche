@@ -182,6 +182,21 @@
   :states '(UTF_DEFAULT UTF_BE UTF_LE)
   :initial-state 'UTF_LE)
 
+(define-encoding-scheme utf32 JCODE_UTF32
+  ("utf32")
+  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :initial-state 'UTF_DEFAULT)
+
+(define-encoding-scheme utf32be JCODE_UTF32BE
+  ("utf32be")
+  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :initial-state 'UTF_BE)
+
+(define-encoding-scheme utf32le JCODE_UTF32LE
+  ("utf32le")
+  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :initial-state 'UTF_LE)
+
 (define-encoding-scheme iso2022jp JCODE_ISO2022JP
   ("iso2022jp" "csiso2022jp" "iso2022jp1" "iso2022jp2" "iso2022jp3")
   :states '(JIS_ASCII JIS_ROMAN JIS_KANA JIS_78 JIS_0212 JIS_0213_1 JIS_0213_2
@@ -199,11 +214,13 @@
 
 (define-conversion ascii_x (ascii) (eucj sjis utf8 iso2022jp iso8859-1))
 (define-conversion ascii_utf16 (ascii) (utf16 utf16be utf16le))
+(define-conversion ascii_utf32 (ascii) (utf32 utf32be utf32le))
 
 (define-conversion eucj_ascii (eucj) (ascii))
 (define-conversion eucj_sjis  (eucj) (sjis))
 (define-conversion eucj_utf8  (eucj) (utf8))
 (define-conversion eucj_utf16 (eucj) (utf16 utf16be utf16le))
+(define-conversion eucj_utf32 (eucj) (utf32 utf32be utf32le))
 (define-conversion eucj_jis   (eucj) (iso2022jp))
 (define-conversion eucj_lat1  (eucj) (iso8859-1))
 
@@ -211,6 +228,7 @@
 (define-conversion sjis_eucj  (sjis) (eucj))
 (define-conversion sjis_utf8  (sjis) (utf8))
 (define-conversion (sjis_utf8 utf8_utf16) (sjis) (utf16 utf16be utf16le))
+(define-conversion (sjis_utf8 utf8_utf32) (sjis) (utf32 utf32be utf32le))
 (define-conversion (sjis_eucj eucj_jis) (sjis) (iso2022jp))
 (define-conversion (sjis_eucj eucj_lat1) (sjis) (iso8859-1))
 
@@ -218,6 +236,7 @@
 (define-conversion utf8_eucj  (utf8) (eucj))
 (define-conversion utf8_sjis  (utf8) (sjis))
 (define-conversion utf8_utf16 (utf8) (utf16 utf16be utf16le))
+(define-conversion utf8_utf32 (utf8) (utf32 utf32be utf32le))
 (define-conversion (utf8_eucj eucj_jis) (utf8) (iso2022jp))
 (define-conversion utf8_lat1  (utf8) (iso8859-1))
 
@@ -226,14 +245,25 @@
 (define-conversion (utf16_eucj eucj_sjis) (utf16 utf16be utf16le) (sjis))
 (define-conversion utf16_utf8 (utf16 utf16be utf16le) (utf8))
 (define-conversion utf16_utf16 (utf16 utf16be utf16le) (utf16 utf16be utf16le))
+(define-conversion (utf16_utf8 utf8_utf32) (utf16 utf16be utf16le) (utf32 utf32be utf32le))
 (define-conversion (utf16_eucj eucj_jis) (utf16 utf16be utf16le) (iso2022jp))
 (define-conversion (utf16_utf8 utf8_lat1) (utf16 utf16be utf16le) (iso8859-1))
+
+(define-conversion (utf32_utf8 utf8_ascii) (utf32 utf32be utf32le) (ascii))
+(define-conversion utf32_eucj (utf32 utf32be utf32le) (eucj))
+(define-conversion (utf32_eucj eucj_sjis) (utf32 utf32be utf32le) (sjis))
+(define-conversion utf32_utf8 (utf32 utf32be utf32le) (utf8))
+(define-conversion (utf32_utf8 utf8_utf16) (utf32 utf32be utf32le) (utf16 utf16le utf16be))
+(define-conversion utf32_utf32 (utf32 utf32be utf32le) (utf32 utf32be utf32le))
+(define-conversion (utf32_eucj eucj_jis) (utf32 utf32be utf32le) (iso2022jp))
+(define-conversion (utf32_utf8 utf8_lat1) (utf32 utf32be utf32le) (iso8859-1))
 
 (define-conversion (jis_eucj eucj_ascii) (iso2022jp) (ascii))
 (define-conversion jis_eucj (iso2022jp) (eucj))
 (define-conversion (jis_eucj eucj_sjis) (iso2022jp) (sjis))
 (define-conversion (jis_eucj eucj_utf8) (iso2022jp) (utf8))
 (define-conversion (jis_eucj eucj_utf16) (iso2022jp) (utf16 utf16be utf16le))
+(define-conversion (jis_eucj eucj_utf32) (iso2022jp) (utf32 utf32be utf32le))
 (define-conversion (jis_eucj eucj_lat1) (iso2022jp) (iso8859-1))
 
 (define-conversion lat1_ascii (iso8859-1) (ascii))
@@ -241,6 +271,7 @@
 (define-conversion (lat1_eucj eucj_sjis) (iso8859-1) (sjis))
 (define-conversion lat1_utf8 (iso8859-1) (utf8))
 (define-conversion (lat1_utf8 utf8_utf16) (iso8859-1) (utf16 utf16be utf16le))
+(define-conversion (lat1_utf8 utf8_utf32) (iso8859-1) (utf32 utf32be utf32le))
 (define-conversion (lat1_eucj eucj_jis) (iso8859-1) (iso2022jp))
 
 

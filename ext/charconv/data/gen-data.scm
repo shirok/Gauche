@@ -184,11 +184,30 @@
   (generate "lat1")
   (generate "lat1x"))
 
+(define (lat1.utf-32)
+  (define (expand vec be?)
+    (do-ec (: b vec)
+           (if be? 
+             (begin (dotimes [3] (write-byte 0)) (write-byte b))
+             (begin (write-byte b) (dotimes [3] (write-byte 0))))))
+  (define (generate name)
+    (let1 vec (call-with-input-file #"~|name|.ISO8859-1" port->uvector)
+      (with-output-to-file #"~|name|.UTF-32BE"
+        (cut expand vec #t))
+      (with-output-to-file #"~|name|.UTF-32LE"
+        (cut expand vec #f))
+      (with-output-to-file #"~|name|.UTF-32"
+        (^[] (write-byte 0) (write-byte 0) (write-byte #xfe) (write-byte #xff)
+          (expand vec #t)))))
+  (generate "lat1")
+  (generate "lat1x"))
+
 (define (gen-lat1)
   (lat1.iso8859-1)
   (lat1.ascii)
   (lat1.utf-8)
   (lat1.utf-16)
+  (lat1.utf-32)
   (lat1.eucjp)
   (lat1.sjis)
   (lat1.iso2022-jp))

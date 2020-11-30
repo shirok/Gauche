@@ -1136,6 +1136,57 @@ static ScmSize utf8_utf16(ScmConvInfo *cinfo,
     return r;
 }
 
+/* UTF8 -> UTF32 */
+static ScmSize utf8_utf32(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    ScmSize reqsize = 0;
+    int ostate = cinfo->ostate;
+    int need_bom = FALSE;
+    ScmChar ch;
+    
+    if (ostate == UTF_DEFAULT) {
+        reqsize += 4;
+        need_bom = TRUE;
+        ostate = UTF_BE;
+    }
+    int r = jconv_utf8_to_ucs4(inptr, inroom, &ch);
+    if (r < 0) return r;
+    reqsize += 4;
+    
+    OUTCHK(reqsize);
+    if (need_bom) {
+        if (ostate == UTF_BE) {
+            outptr[0] = 0;
+            outptr[1] = 0;
+            outptr[2] = 0xfe;
+            outptr[3] = 0xff;
+        } else {
+            outptr[3] = 0;
+            outptr[2] = 0;
+            outptr[1] = 0xfe;
+            outptr[0] = 0xff;
+        }
+        outptr += 4;
+    }
+    if (ostate == UTF_BE) {
+        outptr[0] = (ch >> 24) & 0xff;
+        outptr[1] = (ch >> 16) & 0xff;
+        outptr[2] = (ch >> 8) & 0xff;
+        outptr[3] = ch & 0xff;
+    } else {
+        outptr[3] = (ch >> 24) & 0xff;
+        outptr[2] = (ch >> 16) & 0xff;
+        outptr[1] = (ch >> 8) & 0xff;
+        outptr[0] = ch & 0xff;
+    }
+    cinfo->ostate = ostate;
+    *outchars = reqsize;
+    return r;
+}
+
 /* UTF8 -> Latin1 */
 static ScmSize utf8_lat1(ScmConvInfo *cinfo,     
                          const char *inptr, ScmSize inroom,
@@ -1354,6 +1405,177 @@ static ScmSize eucj_utf16(ScmConvInfo *cinfo,
     ScmSize r = eucj_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
     if (r < 0) return r;
     ScmSize r2 = utf8_utf16(cinfo, buf, nbuf, outptr, outroom, outchars);
+    if (r2 < 0) return r2;
+    return r;
+}
+
+/*=================================================================
+ * UTF32
+ */
+
+static ScmSize utf32_utf8(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    INCHK(4);
+    int istate = cinfo->istate;
+    ScmSize inread = 0;
+    if (istate == UTF_DEFAULT) {
+        if ((u_char)inptr[0] == 0
+            && (u_char)inptr[1] == 0
+            && (u_char)inptr[2] == 0xfe
+            && (u_char)inptr[3] == 0xff) {
+            inptr += 4;
+            inroom -= 4;
+            inread += 4;
+            INCHK(4);
+            istate = UTF_BE;
+        } else if ((u_char)inptr[0] == 0xff    
+                   && (u_char)inptr[1] == 0xfe
+                   && (u_char)inptr[2] == 0
+                   && (u_char)inptr[3] == 0) {
+            inptr += 4;
+            inroom -= 4;
+            inread += 4;
+            INCHK(4);
+            istate = UTF_LE;
+        } else {
+            /* Arbitrary choice */
+            istate = UTF_BE;
+        }
+    }
+    
+    u_char u[4];
+    if (istate == UTF_BE) {
+        u[0] = inptr[0];
+        u[1] = inptr[1];
+        u[2] = inptr[2];
+        u[3] = inptr[3];
+    } else {
+        u[0] = inptr[3];
+        u[1] = inptr[2];
+        u[2] = inptr[1];
+        u[3] = inptr[0];
+    }
+    inread += 4;
+
+    ScmChar ch = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
+
+    int outreq = UCS2UTF_NBYTES(ch);
+    OUTCHK(outreq);
+    jconv_ucs4_to_utf8(ch, outptr);
+    cinfo->istate = istate;
+    *outchars = outreq;
+    return inread;
+}
+
+/* This handles BOM stuff. */
+static ScmSize utf32_utf32(ScmConvInfo *cinfo,     
+                           const char *inptr, ScmSize inroom,
+                           char *outptr, ScmSize outroom,
+                           ScmSize *outchars)
+{
+    ScmSize consumed = 0;
+    ScmSize emitted = 0;
+
+    if (cinfo->istate == UTF_DEFAULT || cinfo->ostate == UTF_DEFAULT) {
+        /* We come here only at the beginning.  */
+        int istate = 0;
+
+        if (cinfo->istate == UTF_DEFAULT) {
+            INCHK(4);
+            if ((u_char)inptr[0] == 0
+                && (u_char)inptr[1] == 0
+                && (u_char)inptr[2] == 0xfe
+                && (u_char)inptr[3] == 0xff) {
+                consumed += 4;
+                istate = UTF_BE;
+                inptr += 4;
+                inroom -= 4;
+            } else if ((u_char)inptr[0] == 0xff 
+                       && (u_char)inptr[1] == 0xfe
+                       && (u_char)inptr[2] == 0
+                       && (u_char)inptr[3] == 0) {
+                consumed += 4;
+                istate = UTF_LE;
+                inptr += 4;
+                inroom -= 4;
+            } else {
+                istate = UTF_BE;
+            }
+        }
+        INCHK(4);
+        if (cinfo->ostate == UTF_DEFAULT) {
+            OUTCHK(8);
+            outptr[0] = 0;
+            outptr[1] = 0;
+            outptr[2] = 0xfe;
+            outptr[3] = 0xff;
+            outptr += 4;
+            outroom -= 4;
+            emitted += 4;
+            cinfo->ostate = UTF_BE;
+        } else {
+            OUTCHK(4);
+        }
+        cinfo->istate = istate;
+    } else {
+        INCHK(4);
+        OUTCHK(4);
+    }
+    
+    char u[4];
+    if (cinfo->istate == UTF_BE) {
+        u[0] = inptr[0];
+        u[1] = inptr[1];
+        u[2] = inptr[2];
+        u[3] = inptr[3];
+    } else {
+        u[3] = inptr[0];
+        u[2] = inptr[1];
+        u[1] = inptr[2];
+        u[0] = inptr[3];
+    }
+    if (cinfo->ostate == UTF_BE) {
+        outptr[0] = u[0];
+        outptr[1] = u[1];
+        outptr[2] = u[2];
+        outptr[3] = u[3];
+    } else {
+        outptr[3] = u[0];
+        outptr[2] = u[1];
+        outptr[1] = u[2];
+        outptr[0] = u[3];
+    }
+    *outchars = emitted + 4;
+    return consumed + 4;
+}
+
+static ScmSize utf32_eucj(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    char buf[6];
+    ScmSize nbuf;
+    ScmSize r = utf32_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
+    if (r < 0) return r;
+    ScmSize r2 = utf8_eucj(cinfo, buf, nbuf, outptr, outroom, outchars);
+    if (r2 < 0) return r2;
+    return r;
+}
+
+static ScmSize eucj_utf32(ScmConvInfo *cinfo,     
+                          const char *inptr, ScmSize inroom,
+                          char *outptr, ScmSize outroom,
+                          ScmSize *outchars)
+{
+    char buf[6];
+    ScmSize nbuf;
+    ScmSize r = eucj_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
+    if (r < 0) return r;
+    ScmSize r2 = utf8_utf32(cinfo, buf, nbuf, outptr, outroom, outchars);
     if (r2 < 0) return r2;
     return r;
 }
@@ -1638,14 +1860,24 @@ static ScmSize ascii_x(ScmConvInfo *cinfo SCM_UNUSED,
     return 1;
 }
 
-static ScmSize ascii_utf16(ScmConvInfo *cinfo SCM_UNUSED,
+static ScmSize ascii_utf16(ScmConvInfo *cinfo,
                            const char *inptr,
-                           ScmSize inroom SCM_UNUSED,
+                           ScmSize inroom,
                            char *outptr,
-                           ScmSize outroom SCM_UNUSED,
+                           ScmSize outroom,
                            ScmSize *outchars)
 {
     return utf8_utf16(cinfo, inptr, inroom, outptr, outroom, outchars);
+}
+
+static ScmSize ascii_utf32(ScmConvInfo *cinfo,
+                           const char *inptr,
+                           ScmSize inroom,
+                           char *outptr,
+                           ScmSize outroom,
+                           ScmSize *outchars)
+{
+    return utf8_utf32(cinfo, inptr, inroom, outptr, outroom, outchars);
 }
 
 /*=================================================================
