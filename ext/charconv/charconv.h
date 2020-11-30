@@ -50,7 +50,7 @@ typedef ScmSize (*ScmConvHandler)(struct ScmConvInfoRec*, const char **,
 /* Packaging conversion context info.*/
 typedef struct ScmConvInfoRec {
     ScmConvHandler jconv;       /* jconv handler */
-    ScmConvProc convproc[2];    /* conversion routine */
+    ScmConvProc convert;        /* 1-character conversion routine */
     ScmConvReset reset;         /* reset routine */
     iconv_t handle;             /* iconv handle, if the conversion is
                                    handled by iconv */

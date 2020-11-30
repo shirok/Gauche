@@ -107,10 +107,10 @@
               (memq (~ to'name) (~ c'to))))))
 
 (define (emit-conversion-matrix)
-  (define (fmt-entry oname reset istate ostate :optional (f1 'NULL) (f2 'NULL))
+  (define (fmt-entry oname conv reset istate ostate)
     ($ format
        "~60a /* ~a */"
-       (format "    { ~a, ~a, ~a, ~a, ~a }," f1 f2 (or reset 'NULL)
+       (format "    { ~a, ~a, ~a, ~a }," conv (or reset 'NULL)
                (or istate 0) (or ostate 0) )
        oname))
   (define (emit-fused-proc proc-name procs)
@@ -151,18 +151,13 @@
                #"  {")
     (dolist [t (encoding-schemes)]
       (if-let1 c (find-conversion f t)
-        (cgen-body (fmt-entry (~ t'name) (~ t'reset) 
-                              (~ f'initial-state) (~ t'initial-state)
-                              (~ c'proc-name)))
+        (cgen-body (fmt-entry (~ t'name) (~ c'proc-name) (~ t'reset) 
+                              (~ f'initial-state) (~ t'initial-state)))
         (if (or (eq? f t)
                 (eq? (~ f'name) 'none)
                 (eq? (~ t'name) 'none))
-          (cgen-body (format "~60a /* ~a */"
-                             "    { ident, NULL, NULL, 0, 0},"
-                             (~ t'name)))
-          (cgen-body (format "~60a /* ~a */"
-                             "    { NULL, NULL, NULL, 0, 0},"
-                             (~ t'name))))))
+          (cgen-body (fmt-entry (~ t'name) "ident" #f 0 0))
+          (cgen-body (fmt-entry (~ t'name) 'NULL #f 0 0)))))
     (cgen-body #"  },"))
   (cgen-body "};")
   )

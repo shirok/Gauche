@@ -1910,8 +1910,7 @@ static ScmSize ident(ScmConvInfo *cinfo SCM_UNUSED,
    this from some DSL.
 */
 struct conv_converter_rec {
-    ScmConvProc inconv;
-    ScmConvProc outconv;
+    ScmConvProc conv;
     ScmConvReset reset;
     int istate;                 /* initial input state */
     int ostate;                 /* initial output state */
@@ -1951,21 +1950,9 @@ static int conv_name_find(const char *name)
     return -1;
 }
 
-/* Internal conversion handler.
-   There are five cases to handle:
-   (1) fromCode === toCode
-     jconv just copies input to output.  I take speed than safety; input
-     is not checked if it is conforming fromCode.
-   (2) fromCode === pivot, toCode =/= pivot, and pivot->toCode supported.
-   (3) fromCode =/= pivot, toCode === pivot, and fromCode->pivot supported.
-     we just need one conversion subroutine.
-   (4) fromCode =/= pivot, toCode =/= pivot, and fromCode->pivot->toCode
-     supported.  we use two conversion subroutine cascaded.
-   (5) other cases;
-     we delegate the job to iconv.
-*/
+/* Internal conversion handler. */
 
-/* case (1) */
+/* when we can just pass-through input to output */
 static ScmSize jconv_ident(ScmConvInfo *cinfo SCM_UNUSED, const char **iptr,
                            ScmSize *iroom, char **optr, ScmSize *oroom)
 {
@@ -1990,11 +1977,11 @@ static ScmSize jconv_ident(ScmConvInfo *cinfo SCM_UNUSED, const char **iptr,
     }
 }
 
-/* case (2) or (3) */
+/* calling conversion routine for each char */
 static ScmSize jconv_1tier(ScmConvInfo *cinfo, const char **iptr,
                            ScmSize *iroom, char **optr, ScmSize *oroom)
 {
-    ScmConvProc cvt = cinfo->convproc[0];
+    ScmConvProc cvt = cinfo->convert;
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
@@ -2025,52 +2012,7 @@ static ScmSize jconv_1tier(ScmConvInfo *cinfo, const char **iptr,
     return converted;
 }
 
-/* case (4) */
-#define INTBUFSIZ 20            /* intermediate buffer size */
-static ScmSize jconv_2tier(ScmConvInfo *cinfo, const char **iptr, ScmSize *iroom,
-                           char **optr, ScmSize *oroom)
-{
-    char buf[INTBUFSIZ];
-    ScmConvProc icvt = cinfo->convproc[0];
-    ScmConvProc ocvt = cinfo->convproc[1];
-    const char *inp = *iptr;
-    char *outp = *optr;
-    int inr = (int)*iroom, outr = (int)*oroom;
-    ScmSize converted = 0;
-
-#ifdef JCONV_DEBUG
-    fprintf(stderr, "jconv_2tier %s->%s\n", cinfo->fromCode, cinfo->toCode);
-#endif
-    while (inr > 0 && outr > 0) {
-        ScmSize outchars, bufchars;
-        ScmSize inchars = icvt(cinfo, inp, inr, buf, INTBUFSIZ, &bufchars);
-        if (ERRP(inchars)) {
-            converted = inchars;
-            break;
-        }
-        if (bufchars == 0) {
-            outchars = 0;
-        } else {
-            bufchars = ocvt(cinfo, buf, bufchars, outp, outr, &outchars);
-            if (ERRP(bufchars)) {
-                converted = bufchars;
-                break;
-            }
-        }
-        converted += inchars;
-        inp += inchars;
-        inr -= (int)inchars;
-        outp += outchars;
-        outr -= (int)outchars;
-    }
-    *iptr = inp;
-    *iroom = inr;
-    *optr = outp;
-    *oroom = outr;
-    return converted;
-}
-
-/* case (5) */
+/* When we delegate conversion to iconv(3) */
 #ifdef HAVE_ICONV_H
 /* NB: although iconv manages states, we need to keep track of whether
  * we're sure in default status (JIS_ASCII) or not (we use JIS_UNKNOWN for it).
@@ -2123,7 +2065,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
                         int useIconv)
 {
     ScmConvHandler handler = NULL;
-    ScmConvProc convproc[2] = {NULL, NULL};
+    ScmConvProc convert = NULL;
     ScmConvReset reset = NULL;
     int istate = 0, ostate = 0;
     iconv_t handle = (iconv_t)-1;
@@ -2132,14 +2074,13 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
     int outcode = conv_name_find(toCode);
 
     if (incode >= 0 && outcode >= 0) {
-        convproc[0] = conv_converter[incode][outcode].inconv;
-        convproc[1] = conv_converter[incode][outcode].outconv;
+        convert = conv_converter[incode][outcode].conv;
         reset = conv_converter[incode][outcode].reset;
         istate = conv_converter[incode][outcode].istate;
         ostate = conv_converter[incode][outcode].ostate;
     }
 
-    if (convproc[0] == NULL) {
+    if (convert == NULL) {
         if (useIconv) {
 #ifdef HAVE_ICONV_H
             /* try iconv */
@@ -2153,19 +2094,16 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
         } else {
             return NULL;
         }
-    } else if (convproc[0] == ident) {
+    } else if (convert == ident) {
         handler = jconv_ident;
-    } else if (convproc[1] == NULL) {
+    } else  {
         handler = jconv_1tier;
-    } else {
-        handler = jconv_2tier;
     }
 
     ScmConvInfo *cinfo;
     cinfo = SCM_NEW(ScmConvInfo);
     cinfo->jconv = handler;
-    cinfo->convproc[0] = convproc[0];
-    cinfo->convproc[1] = convproc[1];
+    cinfo->convert = convert;
     cinfo->reset = reset;
     cinfo->handle = handle;
     cinfo->toCode = toCode;
