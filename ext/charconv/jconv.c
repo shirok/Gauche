@@ -1036,38 +1036,6 @@ static ScmSize utf8_eucj(ScmConvInfo *cinfo,
     return ILLEGAL_SEQUENCE;
 }
 
-/* [UTF8 <-> SJIS Conversion]
- * We convert a unit via eucjp.
- */
-
-static ScmSize utf8_sjis(ScmConvInfo *cinfo,     
-                         const char *inptr, ScmSize inroom,
-                         char *outptr, ScmSize outroom,
-                         ScmSize *outchars)
-{
-    char buf[3];
-    ScmSize bufcount;
-    ScmSize r = utf8_eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
-    if (r < 0) return r;
-    ScmSize r2 = eucj_sjis(cinfo, buf, bufcount, outptr, outroom, outchars);
-    if (r2 < 0) return r2;
-    return r;
-}
-
-static ScmSize sjis_utf8(ScmConvInfo *cinfo,     
-                         const char *inptr, ScmSize inroom,
-                         char *outptr, ScmSize outroom,
-                         ScmSize *outchars)
-{
-    char buf[3];
-    ScmSize bufcount;
-    ScmSize r = sjis_eucj(cinfo, inptr, inroom, buf, 3, &bufcount);
-    if (r < 0) return r;
-    ScmSize r2 = eucj_utf8(cinfo, buf, bufcount, outptr, outroom, outchars);
-    if (r2 < 0) return r2;
-    return r;
-}
-
 /* UTF8 -> UTF16 */
 static ScmSize utf8_utf16(ScmConvInfo *cinfo,     
                           const char *inptr, ScmSize inroom,
@@ -1383,34 +1351,6 @@ static ScmSize utf16_utf16(ScmConvInfo *cinfo,
     return consumed + 2;
 }
 
-static ScmSize utf16_eucj(ScmConvInfo *cinfo,     
-                          const char *inptr, ScmSize inroom,
-                          char *outptr, ScmSize outroom,
-                          ScmSize *outchars)
-{
-    char buf[6];
-    ScmSize nbuf;
-    ScmSize r = utf16_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
-    if (r < 0) return r;
-    ScmSize r2 = utf8_eucj(cinfo, buf, nbuf, outptr, outroom, outchars);
-    if (r2 < 0) return r2;
-    return r;
-}
-
-static ScmSize eucj_utf16(ScmConvInfo *cinfo,     
-                          const char *inptr, ScmSize inroom,
-                          char *outptr, ScmSize outroom,
-                          ScmSize *outchars)
-{
-    char buf[6];
-    ScmSize nbuf;
-    ScmSize r = eucj_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
-    if (r < 0) return r;
-    ScmSize r2 = utf8_utf16(cinfo, buf, nbuf, outptr, outroom, outchars);
-    if (r2 < 0) return r2;
-    return r;
-}
-
 /*=================================================================
  * UTF32
  */
@@ -1552,34 +1492,6 @@ static ScmSize utf32_utf32(ScmConvInfo *cinfo,
     }
     *outchars = emitted + 4;
     return consumed + 4;
-}
-
-static ScmSize utf32_eucj(ScmConvInfo *cinfo,     
-                          const char *inptr, ScmSize inroom,
-                          char *outptr, ScmSize outroom,
-                          ScmSize *outchars)
-{
-    char buf[6];
-    ScmSize nbuf;
-    ScmSize r = utf32_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
-    if (r < 0) return r;
-    ScmSize r2 = utf8_eucj(cinfo, buf, nbuf, outptr, outroom, outchars);
-    if (r2 < 0) return r2;
-    return r;
-}
-
-static ScmSize eucj_utf32(ScmConvInfo *cinfo,     
-                          const char *inptr, ScmSize inroom,
-                          char *outptr, ScmSize outroom,
-                          ScmSize *outchars)
-{
-    char buf[6];
-    ScmSize nbuf;
-    ScmSize r = eucj_utf8(cinfo, inptr, inroom, buf, 6, &nbuf);
-    if (r < 0) return r;
-    ScmSize r2 = utf8_utf32(cinfo, buf, nbuf, outptr, outroom, outchars);
-    if (r2 < 0) return r2;
-    return r;
 }
 
 /*=================================================================
@@ -1808,22 +1720,6 @@ static ScmSize lat1_utf8(ScmConvInfo *cinfo SCM_UNUSED,
         outptr[1] = 0x80 + (c & 0x3f);
         *outchars = 2;
     }
-    return 1;
-}
-
-static ScmSize lat1_eucj(ScmConvInfo *cinfo,
-                         const char *inptr,
-                         ScmSize inroom,
-                         char *outptr,
-                         ScmSize outroom,
-                         ScmSize *outchars)
-{
-    char buf[2];
-    ScmSize nbuf;
-    ScmSize r = lat1_utf8(cinfo, inptr, inroom, buf, 2, &nbuf);
-    if (r < 0) return r; 
-    r = utf8_eucj(cinfo, buf, nbuf, outptr, outroom, outchars);
-    if (r < 0) return r;
     return 1;
 }
 
