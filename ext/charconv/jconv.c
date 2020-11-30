@@ -1891,6 +1891,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
     ScmConvHandler handler = NULL;
     ScmConvProc convproc[2] = {NULL, NULL};
     ScmConvReset reset = NULL;
+    int istate = 0, ostate = 0;
     iconv_t handle = (iconv_t)-1;
 
     int incode  = conv_name_find(fromCode);
@@ -1900,6 +1901,8 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
         convproc[0] = conv_converter[incode][outcode].inconv;
         convproc[1] = conv_converter[incode][outcode].outconv;
         reset = conv_converter[incode][outcode].reset;
+        istate = conv_converter[incode][outcode].istate;
+        ostate = conv_converter[incode][outcode].ostate;
     }
 
     if (convproc[0] == NULL) {
@@ -1932,8 +1935,8 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
     cinfo->reset = reset;
     cinfo->handle = handle;
     cinfo->toCode = toCode;
-    cinfo->istate = conv_converter[incode][outcode].istate;
-    cinfo->ostate = conv_converter[incode][outcode].ostate;
+    cinfo->istate = istate;
+    cinfo->ostate = ostate;
     cinfo->fromCode = fromCode;
     /* The replacement settings can be modified by jconv_set_replacement */
     cinfo->replacep = FALSE;
