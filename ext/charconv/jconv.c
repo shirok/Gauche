@@ -1638,6 +1638,16 @@ static ScmSize ascii_x(ScmConvInfo *cinfo SCM_UNUSED,
     return 1;
 }
 
+static ScmSize ascii_utf16(ScmConvInfo *cinfo SCM_UNUSED,
+                           const char *inptr,
+                           ScmSize inroom SCM_UNUSED,
+                           char *outptr,
+                           ScmSize outroom SCM_UNUSED,
+                           ScmSize *outchars)
+{
+    return utf8_utf16(cinfo, inptr, inroom, outptr, outroom, outchars);
+}
+
 /*=================================================================
  * Placeholder
  */
@@ -1665,143 +1675,12 @@ static ScmSize ident(ScmConvInfo *cinfo SCM_UNUSED,
    NB: It is tedious to maintain this table; we'll eventually generate
    this from some DSL.
 */
-static struct conv_converter_rec {
+struct conv_converter_rec {
     ScmConvProc inconv;
     ScmConvProc outconv;
     ScmConvReset reset;
     int istate;                 /* initial input state */
     int ostate;                 /* initial output state */
-} conv_converter[NUM_JCODES][NUM_JCODES] = {
-    /* in : ASCII */
-    {
-        { ident, NULL, NULL, 0, 0 },              /* out: ASCII */
-        { ascii_x, NULL, NULL, 0, 0 },            /* out: EUCJ */
-        { ascii_x, NULL, NULL, 0, 0 },            /* out: SJIS */
-        { ascii_x, NULL, NULL, 0, 0 },            /* out: UTF8 */
-        { utf8_utf16, NULL, NULL, 0, 0 },         /* out: UTF16 */
-        { utf8_utf16, NULL, NULL, 0, UTF_BE },    /* out: UTF16BE */
-        { utf8_utf16, NULL, NULL, 0, UTF_LE },    /* out: UTF16LE */
-        { ascii_x, eucj_jis, jis_reset, 0, 0 },   /* out: ISO2022JP */
-        { ascii_x, NULL, NULL, 0, 0 },            /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    },
-    /* in : EUCJ */
-    {
-        { eucj_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
-        { ident, NULL, NULL, 0, 0 },              /* out: EUCJ */
-        { eucj_sjis, NULL, NULL, 0, 0 },          /* out: SJIS */
-        { eucj_utf8, NULL, NULL, 0, 0 },          /* out: UTF8 */
-        { eucj_utf16, NULL, NULL, 0, 0 },         /* out: UTF16 */
-        { eucj_utf16, NULL, NULL, 0, UTF_BE },    /* out: UTF16BE */
-        { eucj_utf16, NULL, NULL, 0, UTF_LE },    /* out: UTF16LE */
-        { eucj_jis, NULL, jis_reset, 0, 0 },      /* out: ISO2022JP */
-        { eucj_lat1, NULL, NULL, 0, 0 },          /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    },
-    /* in: SJIS */
-    {
-        { sjis_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
-        { sjis_eucj, NULL, NULL, 0, 0 },          /* out: EUCJ */
-        { ident, NULL, NULL, 0, 0 },              /* out: SJIS */
-        { sjis_utf8, NULL, NULL, 0, 0 },          /* out: UTF8 */
-        { sjis_utf8, utf8_utf16, NULL, 0, 0 },    /* out: UTF16 */
-        { sjis_utf8, utf8_utf16, NULL, 0, UTF_BE },/* out: UTF16BE */
-        { sjis_utf8, utf8_utf16, NULL, 0, UTF_LE },/* out: UTF16LE */
-        { sjis_eucj, eucj_jis, jis_reset, 0, 0 }, /* out: ISO2022JP */
-        { sjis_eucj, eucj_lat1, NULL, 0, 0 },     /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    },
-    /* in: UTF8 */
-    {
-        { utf8_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
-        { utf8_eucj, NULL, NULL, 0, 0 },          /* out: EUCJ */
-        { utf8_sjis, NULL, NULL, 0, 0 },          /* out: SJIS */
-        { ident, NULL, NULL, 0, 0 },              /* out: UTF8 */
-        { utf8_utf16, NULL, NULL, 0, 0 },         /* out: UTF16 */
-        { utf8_utf16, NULL, NULL, 0, UTF_BE },    /* out: UTF16BE */
-        { utf8_utf16, NULL, NULL, 0, UTF_LE },    /* out: UTF16LE */
-        { utf8_eucj, eucj_jis, jis_reset, 0, 0 }, /* out: ISO2022JP */
-        { utf8_lat1, NULL, NULL, 0, 0 },          /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    },
-    /* in: UTF16 */
-    {
-        { utf16_utf8, utf8_ascii, NULL, 0, 0 },   /* out: ASCII */
-        { utf16_eucj, NULL, NULL, 0, 0 },         /* out: EUCJ */
-        { utf16_eucj, eucj_sjis, NULL, 0, 0 },    /* out: SJIS */
-        { utf16_utf8, NULL, NULL, 0, 0 },         /* out: UTF8 */
-        { utf16_utf16, NULL, NULL, 0, 0 },        /* out: UTF16 */
-        { utf16_utf16, NULL, NULL, 0, UTF_BE },   /* out: UTF16BE */
-        { utf16_utf16, NULL, NULL, 0, UTF_LE },   /* out: UTF16LE */
-        { utf16_eucj, eucj_jis, jis_reset, 0, 0 },/* out: ISO2022JP */
-        { utf16_utf8, utf8_lat1, NULL, 0, 0 },    /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    },
-    /* in: UTF16BE */
-    {
-        { utf16_utf8, utf8_ascii, NULL, UTF_BE, 0 },   /* out: ASCII */
-        { utf16_eucj, NULL, NULL, UTF_BE, 0 },         /* out: EUCJ */
-        { utf16_eucj, eucj_sjis, NULL, UTF_BE, 0 },    /* out: SJIS */
-        { utf16_utf8, NULL, NULL, UTF_BE, 0 },         /* out: UTF8 */
-        { utf16_utf16, NULL, NULL, UTF_BE, 0 },        /* out: UTF16 */
-        { utf16_utf16, NULL, NULL, UTF_BE, UTF_BE },   /* out: UTF16BE */
-        { utf16_utf16, NULL, NULL, UTF_BE, UTF_LE },   /* out: UTF16LE */
-        { utf16_eucj, eucj_jis, jis_reset, UTF_BE, 0 },/* out: ISO2022JP */
-        { utf16_utf8, utf8_lat1, NULL, 0, 0 },         /* out: ISO8859-1 */
-        { ident, NULL, NULL, UTF_BE, 0 },              /* out: NONE */
-    },
-    /* in: UTF16LE */
-    {
-        { utf16_utf8, utf8_ascii, NULL, UTF_LE, 0 },   /* out: ASCII */
-        { utf16_eucj, NULL, NULL, UTF_LE, 0 },         /* out: EUCJ */
-        { utf16_eucj, eucj_sjis, NULL, UTF_LE, 0 },    /* out: SJIS */
-        { utf16_utf8, NULL, NULL, UTF_LE, 0 },         /* out: UTF8 */
-        { utf16_utf16, NULL, NULL, UTF_LE, 0 },        /* out: UTF16 */
-        { utf16_utf16, NULL, NULL, UTF_LE, UTF_BE },   /* out: UTF16BE */
-        { utf16_utf16, NULL, NULL, UTF_LE, UTF_LE },   /* out: UTF16LE */
-        { utf16_eucj, eucj_jis, jis_reset, UTF_LE, 0 },/* out: ISO2022JP */
-        { utf16_utf8, utf8_lat1, NULL, 0, 0 },         /* out: ISO8859-1 */
-        { ident, NULL, NULL, UTF_LE, 0 },              /* out: NONE */
-    },
-    /* in: ISO2022JP */
-    {
-        { jis_eucj, eucj_ascii, NULL, 0, 0 },     /* out: ASCII */
-        { jis_eucj, NULL, NULL, 0, 0 },           /* out: EUCJ */
-        { jis_eucj, eucj_sjis, NULL, 0, 0 },      /* out: SJIS */
-        { jis_eucj, eucj_utf8, NULL, 0, 0 },      /* out: UTF8 */
-        { jis_eucj, eucj_utf16, NULL, 0, 0 },     /* out: UTF16 */
-        { jis_eucj, eucj_utf16, NULL, 0, UTF_BE },/* out: UTF16BE */
-        { jis_eucj, eucj_utf16, NULL, 0, UTF_LE },/* out: UTF16LE */
-        { ident, NULL, jis_reset, 0, 0 },         /* out: ISO2022JP */
-        { jis_eucj, eucj_lat1, NULL, 0, 0 },      /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    },
-    /* in: ISO8859-1 */
-    {
-        { lat1_ascii, NULL, NULL, 0, 0 },         /* out: ASCII */
-        { lat1_eucj, NULL, NULL, 0, 0 },          /* out: EUCJ */
-        { lat1_eucj, eucj_sjis, NULL, 0, 0 },     /* out: SJIS */
-        { lat1_utf8, NULL, NULL, 0, 0 },          /* out: UTF8 */
-        { lat1_utf8, utf8_utf16, NULL, 0, 0 },    /* out: UTF16 */
-        { lat1_utf8, utf8_utf16, NULL, 0, UTF_BE },/* out: UTF16BE */
-        { lat1_utf8, utf8_utf16, NULL, 0, UTF_LE },/* out: UTF16LE */
-        { lat1_eucj, eucj_jis, jis_reset, 0, 0 }, /* out: ISO2022JP */
-        { ident, NULL, NULL, 0, 0 },              /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    },
-    /* in: NONE */
-    {
-        { ident, NULL, NULL, 0, 0 },               /* out: ASCII */
-        { ident, NULL, NULL, 0, 0 },              /* out: EUCJ */
-        { ident, NULL, NULL, 0, 0 },              /* out: SJIS */
-        { ident, NULL, NULL, 0, 0 },              /* out: UTF8 */
-        { ident, NULL, NULL, 0, 0 },              /* out: UTF16 */
-        { ident, NULL, NULL, 0, 0 },              /* out: UTF16BE */
-        { ident, NULL, NULL, 0, 0 },              /* out: UTF16LE */
-        { ident, NULL, NULL, 0, 0 },              /* out: ISO2022JP */
-        { ident, NULL, NULL, 0, 0 },              /* out: ISO8859-1 */
-        { ident, NULL, NULL, 0, 0 },              /* out: NONE */
-    }
 };
 
 /* map convesion name to the canonical code */

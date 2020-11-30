@@ -37,10 +37,14 @@ jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c jconv_tab.h jconv_tab.c
 
 guess.$(OBJEXT) : guess_tab.c guess.c
 
-eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
+ucs2eucj.c : eucj2ucs.c
+
+eucj2ucs.c : cvt.scm euc-jp-2000-std.txt
 	$(GOSH) $(srcdir)/cvt.scm $(srcdir)/euc-jp-2000-std.txt
 
-jconv_tab.h jconv_tab.c : gen-tabs.scm
+jconv_tab.c : jconv_tab.h
+
+jconv_tab.h : gen-tabs.scm
 	$(GOSH) $(srcdir)/gen-tabs.scm jconv_tab
 
 guess_tab.c : guess.scm
