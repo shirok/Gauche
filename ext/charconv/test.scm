@@ -123,11 +123,12 @@
             (test-input file from to :handling 'replace))
           "data/lat1"
           '("ISO8859-1")
-          '("ASCII" "ISO8859-1" "EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+          '("ASCII" "ISO8859-1" "EUCJP" "UTF-8"
+            "UTF-16" "UTF-16BE" "UTF-16LE" "SJIS" "ISO2022JP"))
 (map-test (lambda (file from to)
             (test-input file from to :handling 'replace))
           "data/lat1x"
-          '("ISO8859-1" "EUCJP" "UTF-8" "SJIS")
+          '("ISO8859-1" "EUCJP" "UTF-8" "SJIS" "UTF-16" "UTF-16BE" "UTF-16LE")
           '("ISO8859-1"))
 
 ;; autodetect tester

@@ -4,6 +4,8 @@
 
 (use file.util)
 (use gauche.charconv)
+(use gauche.uvector)
+(use srfi-42)
 
 ;; Latin-1 test dataset
 (define (do-lat1 suffix emitter exclude-b5?)
@@ -160,16 +162,33 @@
                       (display (ces-convert (get-output-string m)
                                             'eucjp 'sjis))))))))
 
-
 (define (lat1.iso2022-jp)
   (with-output-to-file #"lat1.ISO2022JP"
     (^[] (display 
           (ces-convert (file->string "lat1.EUCJP") 'eucjp 'iso2022-jp)))))
 
+(define (lat1.utf-16)
+  (define (expand vec be?)
+    (do-ec (: b vec)
+           (if be? 
+             (begin (write-byte 0) (write-byte b))
+             (begin (write-byte b) (write-byte 0)))))
+  (define (generate name)
+    (let1 vec (call-with-input-file #"~|name|.ISO8859-1" port->uvector)
+      (with-output-to-file #"~|name|.UTF-16BE"
+        (cut expand vec #t))
+      (with-output-to-file #"~|name|.UTF-16LE"
+        (cut expand vec #f))
+      (with-output-to-file #"~|name|.UTF-16"
+        (^[] (write-byte #xfe) (write-byte #xff) (expand vec #t)))))
+  (generate "lat1")
+  (generate "lat1x"))
+
 (define (gen-lat1)
   (lat1.iso8859-1)
   (lat1.ascii)
   (lat1.utf-8)
+  (lat1.utf-16)
   (lat1.eucjp)
   (lat1.sjis)
   (lat1.iso2022-jp))
