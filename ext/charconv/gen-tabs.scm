@@ -140,7 +140,10 @@
 (define (main args)
   (match (cdr args)
     [(outfile)
-     (parameterize ([cgen-current-unit (make <cgen-unit> :name outfile)])
+     (parameterize ([cgen-current-unit (make <cgen-unit> 
+                                         :name outfile
+                                         :init-prologue ""
+                                         :init-epilogue "")])
        (emit-encoding-tables)
        (emit-conversion-matrix)
        (cgen-emit-c (cgen-current-unit))
