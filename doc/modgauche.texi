@@ -6504,7 +6504,7 @@ the key, @code{#t} otherwise.
 @c MOD gauche.dictionary
 Put a relation (@var{x}, @var{y}) into the bimap.
 After this, @code{(bimap-left-get @var{x})} will return @var{y},
-and @code{(bimap-left-get @var{y})} will return @var{x}.
+and @code{(bimap-right-get @var{y})} will return @var{x}.
 
 If the bimap already have relations with @var{x} and/or @var{y},
 the conflict is handled according to the value of @var{on-conflict};
