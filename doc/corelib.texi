@@ -7183,7 +7183,7 @@ list of @code{(gauche base)}.)
 
 @deftp {Reader Syntax} @code{#\@i{charname}}
 @lxindex #\
-[R7RS]
+[R7RS+]
 @c EN
 Denotes a literal character.
 
@@ -7208,6 +7208,10 @@ Carriage return (ASCII #x0d)
 Horizontal tab (ASCII #x09)
 @item page
 Form feed (ASCII #x0c)
+@item alarm
+Bell (ASCII #x07)
+@item backspace
+Backspace (ASCII #x08)
 @item escape, esc
 Escape (ASCII #x1b)
 @item delete, del
@@ -7247,6 +7251,10 @@ the new code. (See the compatibility note below).
 水平タブ (ASCII #x09)
 @item page
 フォームフィード、改ページ (ASCII #x0c)
+@item alarm
+ベル (ASCII #x07)
+@item backspace
+バックスペース (ASCII #x08)
 @item escape, esc
 エスケープ (ASCII #x1b)
 @item delete, del
