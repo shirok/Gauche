@@ -39,8 +39,8 @@ guess.$(OBJEXT) : guess_tab.c guess.c
 
 ucs2eucj.c : eucj2ucs.c
 
-eucj2ucs.c : cvt.scm euc-jp-2000-std.txt
-	$(GOSH) $(srcdir)/cvt.scm $(srcdir)/euc-jp-2000-std.txt
+eucj2ucs.c : gen-eucjtab.scm euc-jp-2000-std.txt
+	$(GOSH) $(srcdir)/gen-eucjtab.scm $(srcdir)/euc-jp-2000-std.txt
 
 jconv_tab.c : jconv_tab.h
 
