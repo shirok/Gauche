@@ -21908,7 +21908,7 @@ Gaucheが@code{utf-8}でコンパイルされている場合、コードポイ�
 
 @c EN
 The procedures in this group operate on codepoints represented as integers.
-In the following descriptions, `octets' refers to an integer
+In the following descriptions, an octet refers to an integer
 between 0 to 255, inclusive.
 @c JP
 このグループの手続きは、整数で表現されたコードポイントを扱います。
