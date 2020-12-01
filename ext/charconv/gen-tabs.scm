@@ -78,8 +78,8 @@
 
 (define-class <conversion> (<instance-pool-mixin>)
   ((procs :init-keyword :procs)          ;name(s) of conversion routines
-   (from  :init-keyword :from)           ;list of encodings
-   (to    :init-keyword :to)             ;list of encodings
+   (from  :init-keyword :from)           ;list of encoding names
+   (to    :init-keyword :to)             ;list of encoding names
    (proc-name :init-value #f)            ;final proc name (automatically set)
    ))
 
@@ -101,10 +101,52 @@
     [(_ proc from to)
      (make <conversion> :procs '(proc) :from 'from :to 'to)]))     
 
+;; Find a conversion from FROM encoding to TO encoding (both <encoding-scheme>).
+;; If it's not defined, we search for a combination and fuse them.
+;;  - If there's a direct path from->utf8 and utf8->to, use them.
+;;  - If there's a direct path from->eucj and eucj->to, use them.
+;;  - Otherwise, we search direct path hopping eucj and utf8.
+;; Here, 'direct path' means the converion is supported natively and not
+;; fused.
 (define (find-conversion from to)
-  ($ instance-pool-find <conversion>
-     (^c (and (memq (~ from'name) (~ c'from))
-              (memq (~ to'name) (~ c'to))))))
+  (define (find-1 f t)
+    ($ instance-pool-find <conversion>
+       (^c (and (memq (~ f'name) (~ c'from))
+                (memq (~ t'name) (~ c'to))))))
+  (define (direct-path? c)
+    (= (length (~ c'procs)) 1)) 
+  (define (find-direct f t)
+    (and-let1 c (find-1 f t)
+      (and (direct-path? c) c)))
+  (define (find-1hop f t pivot)
+    (and-let* ([->pivot (find-direct f pivot)]
+               [pivot-> (find-direct pivot t)])
+      (make <conversion> :from from :to to
+            :procs (list (~ ->pivot'proc-name) (~ pivot->'proc-name)))))
+  (define (find-2hop f t)
+    (or (and-let1 ->eucj (find-direct f eucj)
+          (if-let1 c (find-1 eucj t)
+            (make <conversion> :from f :to t
+                  :procs (list (~ ->eucj'proc-name) (~ c'proc-name)))
+            (and-let1 c2 (find-direct utf8 t)
+              (let1 c1 (make <conversion> :from eucj :to t
+                             :procs (list 'eucj_utf8 (~ c2'proc-name)))
+                (make <conversion> :from f :to t
+                      :procs (list (~ ->eucj'proc-name) (~ c1'proc-name)))))))
+        (and-let1 eucj-> (find-direct eucj t)
+          (if-let1 c (find-1 f eucj)
+            (make <conversion> :from f :to t
+                  :procs (list (~ c'proc-name) (~ eucj->'proc-name)))
+            (and-let1 c1 (find-direct f utf8)
+              (let1 c2 (make <conversion> :from f :to eucj
+                             :procs (list (~ c1'proc-name) 'utf8_eucj))
+                (make <conversion> :from f :to t
+                      :procs (list (~ c2'proc-name) (~ eucj->'proc-name)))))))))
+  (or (find-1 from to)
+      (and (not (eq? from to))
+           (or (find-1hop from to utf8)
+               (find-1hop from to eucj)
+               (find-2hop from to)))))
 
 (define (emit-conversion-matrix)
   (define (fmt-entry oname conv reset istate ostate)
@@ -114,7 +156,8 @@
                (or istate 0) (or ostate 0) )
        oname))
   (define (emit-fused-proc proc-name procs)
-    (cgen-body #"static ScmSize ~proc-name(ScmConvInfo *cinfo,"
+    (cgen-body #"/* ~proc-name : ~(car procs) + ~(cadr procs) */"
+               #"static ScmSize ~proc-name(ScmConvInfo *cinfo,"
                #"    const char *inptr, ScmSize inroom,"
                #"    char *outptr, ScmSize outroom, ScmSize *outchars)"
                #"{")
@@ -131,18 +174,8 @@
                  #"    return r0;"))
     (cgen-body "}" ""))
 
-  ;; Generate declartions in the header file
-  (let1 protos '()
-    (do-ec (: f (instance-pool->list <conversion>))
-           (if (not (member (~ f'proc-name) protos)))
-           (begin
-             (cgen-extern #"static ScmSize ~(~ f'proc-name)(ScmConvInfo*,"
-                          #"    const char*, ScmSize,"
-                          #"    char*, ScmSize, ScmSize*);")
-             (when (= (length (~ f'procs)) 2)
-               (emit-fused-proc (~ f'proc-name) (~ f'procs)))
-             (push! protos (~ f'proc-name)))))
-
+  ;; Find available conversion routines and initialize coversion matrix.
+  ;; Some conversions are automatically generated in this process.
   (cgen-body "static struct conv_converter_rec"
              " conv_converter[NUM_JCODES][NUM_JCODES] = {")
 
@@ -159,7 +192,19 @@
           (cgen-body (fmt-entry (~ t'name) "ident" #f 0 0))
           (cgen-body (fmt-entry (~ t'name) 'NULL #f 0 0)))))
     (cgen-body #"  },"))
-  (cgen-body "};")
+  (cgen-body "};" "")
+
+  ;; Generate declartions in the header file, and fused conversion definitions
+  (let1 protos '()
+    (do-ec (: f (instance-pool->list <conversion>))
+           (if (not (member (~ f'proc-name) protos)))
+           (begin
+             (cgen-extern #"static ScmSize ~(~ f'proc-name)(ScmConvInfo*,"
+                          #"    const char*, ScmSize,"
+                          #"    char*, ScmSize, ScmSize*);")
+             (when (= (length (~ f'procs)) 2)
+               (emit-fused-proc (~ f'proc-name) (~ f'procs)))
+             (push! protos (~ f'proc-name)))))
   )
 
 (define (main args)
@@ -245,60 +290,26 @@
 (define-conversion eucj_ascii (eucj) (ascii))
 (define-conversion eucj_sjis  (eucj) (sjis))
 (define-conversion eucj_utf8  (eucj) (utf8))
-(define-conversion (eucj_utf8 utf8_utf16) (eucj) (utf16 utf16be utf16le))
-(define-conversion (eucj_utf8 utf8_utf32) (eucj) (utf32 utf32be utf32le))
 (define-conversion eucj_jis   (eucj) (iso2022jp))
 (define-conversion eucj_lat1  (eucj) (iso8859-1))
 
 (define-conversion sjis_ascii (sjis) (ascii))
 (define-conversion sjis_eucj  (sjis) (eucj))
-(define-conversion (sjis_eucj eucj_utf8) (sjis) (utf8))
-(define-conversion (sjis_utf8 utf8_utf16) (sjis) (utf16 utf16be utf16le))
-(define-conversion (sjis_utf8 utf8_utf32) (sjis) (utf32 utf32be utf32le))
-(define-conversion (sjis_eucj eucj_jis) (sjis) (iso2022jp))
-(define-conversion (sjis_eucj eucj_lat1) (sjis) (iso8859-1))
 
 (define-conversion utf8_ascii (utf8) (ascii))
 (define-conversion utf8_eucj  (utf8) (eucj))
-(define-conversion (utf8_eucj eucj_sjis)  (utf8) (sjis))
 (define-conversion utf8_utf16 (utf8) (utf16 utf16be utf16le))
 (define-conversion utf8_utf32 (utf8) (utf32 utf32be utf32le))
-(define-conversion (utf8_eucj eucj_jis) (utf8) (iso2022jp))
 (define-conversion utf8_lat1  (utf8) (iso8859-1))
 
-(define-conversion (utf16_utf8 utf8_ascii) (utf16 utf16be utf16le) (ascii))
-(define-conversion (utf16_utf8 utf8_eucj) (utf16 utf16be utf16le) (eucj))
-(define-conversion (utf16_eucj eucj_sjis) (utf16 utf16be utf16le) (sjis))
 (define-conversion utf16_utf8 (utf16 utf16be utf16le) (utf8))
 (define-conversion utf16_utf16 (utf16 utf16be utf16le) (utf16 utf16be utf16le))
-(define-conversion (utf16_utf8 utf8_utf32) (utf16 utf16be utf16le) (utf32 utf32be utf32le))
-(define-conversion (utf16_eucj eucj_jis) (utf16 utf16be utf16le) (iso2022jp))
-(define-conversion (utf16_utf8 utf8_lat1) (utf16 utf16be utf16le) (iso8859-1))
 
-(define-conversion (utf32_utf8 utf8_ascii) (utf32 utf32be utf32le) (ascii))
-(define-conversion (utf32_utf8 utf8_eucj) (utf32 utf32be utf32le) (eucj))
-(define-conversion (utf32_eucj eucj_sjis) (utf32 utf32be utf32le) (sjis))
 (define-conversion utf32_utf8 (utf32 utf32be utf32le) (utf8))
-(define-conversion (utf32_utf8 utf8_utf16) (utf32 utf32be utf32le) (utf16 utf16le utf16be))
 (define-conversion utf32_utf32 (utf32 utf32be utf32le) (utf32 utf32be utf32le))
-(define-conversion (utf32_eucj eucj_jis) (utf32 utf32be utf32le) (iso2022jp))
-(define-conversion (utf32_utf8 utf8_lat1) (utf32 utf32be utf32le) (iso8859-1))
 
-(define-conversion (jis_eucj eucj_ascii) (iso2022jp) (ascii))
 (define-conversion jis_eucj (iso2022jp) (eucj))
-(define-conversion (jis_eucj eucj_sjis) (iso2022jp) (sjis))
-(define-conversion (jis_eucj eucj_utf8) (iso2022jp) (utf8))
-(define-conversion (jis_eucj eucj_utf16) (iso2022jp) (utf16 utf16be utf16le))
-(define-conversion (jis_eucj eucj_utf32) (iso2022jp) (utf32 utf32be utf32le))
-(define-conversion (jis_eucj eucj_lat1) (iso2022jp) (iso8859-1))
 
 (define-conversion lat1_ascii (iso8859-1) (ascii))
-(define-conversion (lat1_utf8 utf8_eucj) (iso8859-1) (eucj))
-(define-conversion (lat1_eucj eucj_sjis) (iso8859-1) (sjis))
 (define-conversion lat1_utf8 (iso8859-1) (utf8))
-(define-conversion (lat1_utf8 utf8_utf16) (iso8859-1) (utf16 utf16be utf16le))
-(define-conversion (lat1_utf8 utf8_utf32) (iso8859-1) (utf32 utf32be utf32le))
-(define-conversion (lat1_eucj eucj_jis) (iso8859-1) (iso2022jp))
-
-
   
