@@ -40,8 +40,8 @@ guess.$(OBJEXT) : guess_tab.c guess.c
 
 ucs2eucj.c : eucj2ucs.c
 
-eucj2ucs.c : gen-eucjtab.scm data/euc-jp-2000-std.txt
-	$(GOSH) $(srcdir)/gen-eucjtab.scm $(srcdir)/data/euc-jp-2000-std.txt
+eucj2ucs.c : gen-eucjtab.scm data/euc-jp-2004-std.txt
+	$(GOSH) $(srcdir)/gen-eucjtab.scm $(srcdir)/data/euc-jp-2004-std.txt
 
 jconv_tab.c : jconv_tab.h
 

@@ -1,22 +1,23 @@
-## EUC-JISX0213 (JIS X 0213:2000 Appendix 3) vs Unicode mapping table
-##
-## Date: 16 Apr 2002 13:10:00 GMT
+## EUC-JIS-2004 (JIS X 0213:2004 Appendix 3) vs Unicode mapping table
+## 
+## Date: 3 May 2009
 ## License:
 ## 	Copyright (C) 2001 earthian@tama.or.jp, All Rights Reserved.
 ## 	Copyright (C) 2001 I'O, All Rights Reserved.
+## 	Copyright (C) 2006, 2009 Project X0213, All Rights Reserved.
 ## 	You can use, modify, distribute this table freely.
 ## Note:
 ## 	[1983]	JIS codepoint defined by JIS X 0208-1983
 ## 	[1990]	JIS codepoint defined by JIS X 0208-1990
 ## 	[2000]	JIS codepoint defined by JIS X 0213:2000
+## 	[2004]	JIS codepoint defined by JIS X 0213:2004
 ## 	[Unicode3.1]	UCS codepoint defined by Unicode 3.1
 ## 	[Unicode3.2]	UCS codepoint defined by Unicode 3.2
 ## 	Fullwidth	UCS fullwidth form (U+Fxxx)
 ## 	Windows 	Windows (CP932) mapping
-## 	Private 	UCS private area mapping
 ## 	Some 0213 character can't represent by one UCS character.
 ## 	In this table, such characters are described as 'U+xxxx+xxxx'.
-##
+## 
 ## JIS	Unicode	Name	Note
 0x00	U+0000	# <control>
 0x01	U+0001	# <control>
@@ -288,7 +289,7 @@
 0xA2AC	U+2191	# UPWARDS ARROW
 0xA2AD	U+2193	# DOWNWARDS ARROW
 0xA2AE	U+3013	# GETA MARK
-0xA2AF	U+FF07	# FULLWIDTH APOSTROPHE
+0xA2AF	U+FF07	# FULLWIDTH APOSTROPHE	[2000]
 0xA2B0	U+FF02	# FULLWIDTH QUOTATION MARK	[2000]
 0xA2B1	U+FF0D	# FULLWIDTH HYPHEN-MINUS	[2000]
 0xA2B2	U+FF5E	# FULLWIDTH TILDE	[2000]
@@ -327,8 +328,8 @@
 0xA2D3	U+2297	# CIRCLED TIMES	[2000]
 0xA2D4	U+2225	# PARALLEL TO	[2000]
 0xA2D5	U+2226	# NOT PARALLEL TO	[2000]
-0xA2D6	U+2985	# LEFT WHITE PARENTHESIS	[2000]	[Unicode3.2]
-0xA2D7	U+2986	# RIGHT WHITE PARENTHESIS	[2000]	[Unicode3.2]
+0xA2D6	U+FF5F	# FULLWIDTH LEFT WHITE PARENTHESIS	[2000]	[Unicode3.2]
+0xA2D7	U+FF60	# FULLWIDTH RIGHT WHITE PARENTHESIS	[2000]	[Unicode3.2]
 0xA2D8	U+3018	# LEFT WHITE TORTOISE SHELL BRACKET	[2000]
 0xA2D9	U+3019	# RIGHT WHITE TORTOISE SHELL BRACKET	[2000]
 0xA2DA	U+3016	# LEFT WHITE LENTICULAR BRACKET	[2000]
@@ -548,11 +549,11 @@
 0xA4F4	U+3094	# HIRAGANA LETTER VU	[2000]
 0xA4F5	U+3095	# HIRAGANA LETTER SMALL KA	[2000]	[Unicode3.2]
 0xA4F6	U+3096	# HIRAGANA LETTER SMALL KE	[2000]	[Unicode3.2]
-0xA4F7	U+304B+309A	# 	[2000]	Private: U+F711
-0xA4F8	U+304D+309A	# 	[2000]	Private: U+F712
-0xA4F9	U+304F+309A	# 	[2000]	Private: U+F713
-0xA4FA	U+3051+309A	# 	[2000]	Private: U+F714
-0xA4FB	U+3053+309A	# 	[2000]	Private: U+F715
+0xA4F7	U+304B+309A	# 	[2000]
+0xA4F8	U+304D+309A	# 	[2000]
+0xA4F9	U+304F+309A	# 	[2000]
+0xA4FA	U+3051+309A	# 	[2000]
+0xA4FB	U+3053+309A	# 	[2000]
 0xA4FC		# <reserved>
 0xA4FD		# <reserved>
 0xA4FE		# <reserved>
@@ -642,14 +643,14 @@
 0xA5F4	U+30F4	# KATAKANA LETTER VU
 0xA5F5	U+30F5	# KATAKANA LETTER SMALL KA
 0xA5F6	U+30F6	# KATAKANA LETTER SMALL KE
-0xA5F7	U+30AB+309A	# 	[2000]	Private: U+F716
-0xA5F8	U+30AD+309A	# 	[2000]	Private: U+F717
-0xA5F9	U+30AF+309A	# 	[2000]	Private: U+F718
-0xA5FA	U+30B1+309A	# 	[2000]	Private: U+F719
-0xA5FB	U+30B3+309A	# 	[2000]	Private: U+F71A
-0xA5FC	U+30BB+309A	# 	[2000]	Private: U+F71B
-0xA5FD	U+30C4+309A	# 	[2000]	Private: U+F71C
-0xA5FE	U+30C8+309A	# 	[2000]	Private: U+F71D
+0xA5F7	U+30AB+309A	# 	[2000]
+0xA5F8	U+30AD+309A	# 	[2000]
+0xA5F9	U+30AF+309A	# 	[2000]
+0xA5FA	U+30B1+309A	# 	[2000]
+0xA5FB	U+30B3+309A	# 	[2000]
+0xA5FC	U+30BB+309A	# 	[2000]
+0xA5FD	U+30C4+309A	# 	[2000]
+0xA5FE	U+30C8+309A	# 	[2000]
 0xA6A1	U+0391	# GREEK CAPITAL LETTER ALPHA
 0xA6A2	U+0392	# GREEK CAPITAL LETTER BETA
 0xA6A3	U+0393	# GREEK CAPITAL LETTER GAMMA
@@ -737,7 +738,7 @@
 0xA6F5	U+31F7	# KATAKANA LETTER SMALL HU	[2000]	[Unicode3.2]
 0xA6F6	U+31F8	# KATAKANA LETTER SMALL HE	[2000]	[Unicode3.2]
 0xA6F7	U+31F9	# KATAKANA LETTER SMALL HO	[2000]	[Unicode3.2]
-0xA6F8	U+31F7+309A	# 	[2000]	Private: U+F734
+0xA6F8	U+31F7+309A	# 	[2000]
 0xA6F9	U+31FA	# KATAKANA LETTER SMALL MU	[2000]	[Unicode3.2]
 0xA6FA	U+31FB	# KATAKANA LETTER SMALL RA	[2000]	[Unicode3.2]
 0xA6FB	U+31FC	# KATAKANA LETTER SMALL RI	[2000]	[Unicode3.2]
@@ -1155,18 +1156,18 @@
 0xABC1	U+027A	# LATIN SMALL LETTER TURNED R WITH LONG LEG	[2000]
 0xABC2	U+0267	# LATIN SMALL LETTER HENG WITH HOOK	[2000]
 0xABC3	U+025A	# LATIN SMALL LETTER SCHWA WITH HOOK	[2000]
-0xABC4	U+00E6+0300	# 	[2000]	Private: U+F76A
+0xABC4	U+00E6+0300	# 	[2000]
 0xABC5	U+01FD	# LATIN SMALL LETTER AE WITH ACUTE 	[2000]
 0xABC6	U+1F70	# GREEK SMALL LETTER ALPHA WITH VARIA	[2000]
 0xABC7	U+1F71	# GREEK SMALL LETTER ALPHA WITH OXIA	[2000]
-0xABC8	U+0254+0300	# 	[2000]	Private: U+F76B
-0xABC9	U+0254+0301	# 	[2000]	Private: U+F76C
-0xABCA	U+028C+0300	# 	[2000]	Private: U+F76D
-0xABCB	U+028C+0301	# 	[2000]	Private: U+F76E
-0xABCC	U+0259+0300	# 	[2000]	Private: U+F76F
-0xABCD	U+0259+0301	# 	[2000]	Private: U+F770
-0xABCE	U+025A+0300	# 	[2000]	Private: U+F771
-0xABCF	U+025A+0301	# 	[2000]	Private: U+F772
+0xABC8	U+0254+0300	# 	[2000]
+0xABC9	U+0254+0301	# 	[2000]
+0xABCA	U+028C+0300	# 	[2000]
+0xABCB	U+028C+0301	# 	[2000]
+0xABCC	U+0259+0300	# 	[2000]
+0xABCD	U+0259+0301	# 	[2000]
+0xABCE	U+025A+0300	# 	[2000]
+0xABCF	U+025A+0301	# 	[2000]
 0xABD0	U+1F72	# GREEK SMALL LETTER EPSILON WITH VARIA	[2000]
 0xABD1	U+1F73	# GREEK SMALL LETTER EPSILON WITH OXIA	[2000]
 0xABD2	U+0361	# COMBINING DOUBLE INVERTED BREVE	[2000]
@@ -1188,8 +1189,8 @@
 0xABE2	U+02E7	# MODIFIER LETTER MID TONE BAR	[2000]
 0xABE3	U+02E8	# MODIFIER LETTER LOW TONE BAR	[2000]
 0xABE4	U+02E9	# MODIFIER LETTER EXTRA-LOW TONE BAR	[2000]
-0xABE5	U+02E9+02E5	# 	[2000]	Private: U+F773
-0xABE6	U+02E5+02E9	# 	[2000]	Private: U+F774
+0xABE5	U+02E9+02E5	# 	[2000]
+0xABE6	U+02E5+02E9	# 	[2000]
 0xABE7	U+0325	# COMBINING RING BELOW	[2000]
 0xABE8	U+032C	# COMBINING CARON BELOW	[2000]
 0xABE9	U+0339	# COMBINING RIGHT HALF RING BELOW	[2000]
@@ -1402,8 +1403,8 @@
 0xADFC		# <reserved>	Windows: U+222A
 0xADFD	U+2756	# BLACK DIAMOND MINUS WHITE X	[2000]
 0xADFE	U+261E	# WHITE RIGHT POINTING INDEX	[2000]
-0xAEA1		# <reserved>
-0xAEA2	U+2000B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F780
+0xAEA1	U+4FF1	# <cjk>	[2004]
+0xAEA2	U+2000B	# <cjk>	[2000]	[Unicode3.1]
 0xAEA3	U+3402	# <cjk>	[2000]
 0xAEA4	U+4E28	# <cjk>	[2000]
 0xAEA5	U+4E2F	# <cjk>	[2000]
@@ -1529,7 +1530,7 @@
 0xAFBF	U+56C9	# <cjk>	[2000]
 0xAFC0	U+56CA	# <cjk>	[2000]
 0xAFC1	U+570A	# <cjk>	[2000]
-0xAFC2	U+2123D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F78A
+0xAFC2	U+2123D	# <cjk>	[2000]	[Unicode3.1]
 0xAFC3	U+5721	# <cjk>	[2000]
 0xAFC4	U+572F	# <cjk>	[2000]
 0xAFC5	U+5733	# <cjk>	[2000]
@@ -1539,7 +1540,7 @@
 0xAFC9	U+577C	# <cjk>	[2000]
 0xAFCA	U+579C	# <cjk>	[2000]
 0xAFCB	U+FA0F	# CJK COMPATIBILITY IDEOGRAPH-FA0F	[2000]
-0xAFCC	U+2131B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F78B
+0xAFCC	U+2131B	# <cjk>	[2000]	[Unicode3.1]
 0xAFCD	U+57B8	# <cjk>	[2000]
 0xAFCE	U+57C7	# <cjk>	[2000]
 0xAFCF	U+57C8	# <cjk>	[2000]
@@ -1559,7 +1560,7 @@
 0xAFDD	U+589E	# <cjk>	[2000]
 0xAFDE	U+FA3A	# CJK COMPATIBILITY IDEOGRAPH-FA3A	[2000]	[Unicode3.2]
 0xAFDF	U+58A9	# <cjk>	[2000]
-0xAFE0	U+2146E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F78E
+0xAFE0	U+2146E	# <cjk>	[2000]	[Unicode3.1]
 0xAFE1	U+58D2	# <cjk>	[2000]
 0xAFE2	U+58CE	# <cjk>	[2000]
 0xAFE3	U+58D4	# <cjk>	[2000]
@@ -1586,10 +1587,10 @@
 0xAFF8	U+5A9E	# <cjk>	[2000]
 0xAFF9	U+5AA7	# <cjk>	[2000]
 0xAFFA	U+5AC4	# <cjk>	[2000]
-0xAFFB	U+218BD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F78F
+0xAFFB	U+218BD	# <cjk>	[2000]	[Unicode3.1]
 0xAFFC	U+5B19	# <cjk>	[2000]
 0xAFFD	U+5B25	# <cjk>	[2000]
-0xAFFE		# <reserved>
+0xAFFE	U+525D	# <cjk>	[2004]
 0xB0A1	U+4E9C	# <cjk>
 0xB0A2	U+5516	# <cjk>
 0xB0A3	U+5A03	# <cjk>
@@ -4555,7 +4556,7 @@
 0xCFD1	U+6E7E	# <cjk>
 0xCFD2	U+7897	# <cjk>
 0xCFD3	U+8155	# <cjk>
-0xCFD4		# <reserved>
+0xCFD4	U+20B9F	# <cjk>	[2004]	[Unicode3.1]
 0xCFD5	U+5B41	# <cjk>	[2000]
 0xCFD6	U+5B56	# <cjk>	[2000]
 0xCFD7	U+5B7D	# <cjk>	[2000]
@@ -4570,7 +4571,7 @@
 0xCFE0	U+5C62	# <cjk>	[2000]
 0xCFE1	U+FA3B	# CJK COMPATIBILITY IDEOGRAPH-FA3B	[2000]	[Unicode3.2]
 0xCFE2	U+FA3C	# CJK COMPATIBILITY IDEOGRAPH-FA3C	[2000]	[Unicode3.2]
-0xCFE3	U+216B4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F792
+0xCFE3	U+216B4	# <cjk>	[2000]	[Unicode3.1]
 0xCFE4	U+5C7A	# <cjk>	[2000]
 0xCFE5	U+5C8F	# <cjk>	[2000]
 0xCFE6	U+5C9F	# <cjk>	[2000]
@@ -4581,7 +4582,7 @@
 0xCFEB	U+5CD0	# <cjk>	[2000]
 0xCFEC	U+5CD2	# <cjk>	[2000]
 0xCFED	U+5CF4	# <cjk>	[2000]
-0xCFEE	U+21E34	# <cjk>	[2000]	[Unicode3.1]	Private: U+F793
+0xCFEE	U+21E34	# <cjk>	[2000]	[Unicode3.1]
 0xCFEF	U+37E2	# <cjk>	[2000]
 0xCFF0	U+5D0D	# <cjk>	[2000]
 0xCFF1	U+5D27	# <cjk>	[2000]
@@ -4597,7 +4598,7 @@
 0xCFFB	U+5DA7	# <cjk>	[2000]
 0xCFFC	U+5DB8	# <cjk>	[2000]
 0xCFFD	U+5DCB	# <cjk>	[2000]
-0xCFFE		# <reserved>
+0xCFFE	U+541E	# <cjk>	[2004]
 0xD0A1	U+5F0C	# <cjk>
 0xD0A2	U+4E10	# <cjk>
 0xD0A3	U+4E15	# <cjk>
@@ -7988,7 +7989,7 @@
 0xF4A4	U+7464	# <cjk>	[1983]
 0xF4A5	U+51DC	# <cjk>	[1990]
 0xF4A6	U+7199	# <cjk>	[1990]
-0xF4A7		# <reserved>
+0xF4A7	U+5653	# <cjk>	[2004]
 0xF4A8	U+5DE2	# <cjk>	[2000]
 0xF4A9	U+5E14	# <cjk>	[2000]
 0xF4AA	U+5E18	# <cjk>	[2000]
@@ -8101,7 +8102,7 @@
 0xF5B7	U+66FB	# <cjk>	[2000]
 0xF5B8	U+6648	# <cjk>	[2000]
 0xF5B9	U+664C	# <cjk>	[2000]
-0xF5BA	U+231C4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F79A
+0xF5BA	U+231C4	# <cjk>	[2000]	[Unicode3.1]
 0xF5BB	U+6659	# <cjk>	[2000]
 0xF5BC	U+665A	# <cjk>	[2000]
 0xF5BD	U+6661	# <cjk>	[2000]
@@ -8157,7 +8158,7 @@
 0xF5EF	U+68FC	# <cjk>	[2000]
 0xF5F0	U+690A	# <cjk>	[2000]
 0xF5F1	U+6949	# <cjk>	[2000]
-0xF5F2	U+235C4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F79D
+0xF5F2	U+235C4	# <cjk>	[2000]	[Unicode3.1]
 0xF5F3	U+6935	# <cjk>	[2000]
 0xF5F4	U+6942	# <cjk>	[2000]
 0xF5F5	U+6957	# <cjk>	[2000]
@@ -8178,7 +8179,7 @@
 0xF6A6	U+69F6	# <cjk>	[2000]
 0xF6A7	U+6A0F	# <cjk>	[2000]
 0xF6A8	U+6A15	# <cjk>	[2000]
-0xF6A9	U+2373F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F79F
+0xF6A9	U+2373F	# <cjk>	[2000]	[Unicode3.1]
 0xF6AA	U+6A3B	# <cjk>	[2000]
 0xF6AB	U+6A3E	# <cjk>	[2000]
 0xF6AC	U+6A45	# <cjk>	[2000]
@@ -8187,7 +8188,7 @@
 0xF6AF	U+6A5B	# <cjk>	[2000]
 0xF6B0	U+6A6B	# <cjk>	[2000]
 0xF6B1	U+6A73	# <cjk>	[2000]
-0xF6B2	U+23763	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7A0
+0xF6B2	U+23763	# <cjk>	[2000]	[Unicode3.1]
 0xF6B3	U+6A89	# <cjk>	[2000]
 0xF6B4	U+6A94	# <cjk>	[2000]
 0xF6B5	U+6A9D	# <cjk>	[2000]
@@ -8233,7 +8234,7 @@
 0xF6DD	U+6CE0	# <cjk>	[2000]
 0xF6DE	U+6CEB	# <cjk>	[2000]
 0xF6DF	U+6CEE	# <cjk>	[2000]
-0xF6E0	U+23CFE	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7A1
+0xF6E0	U+23CFE	# <cjk>	[2000]	[Unicode3.1]
 0xF6E1	U+6D04	# <cjk>	[2000]
 0xF6E2	U+6D0E	# <cjk>	[2000]
 0xF6E3	U+6D2E	# <cjk>	[2000]
@@ -8339,7 +8340,7 @@
 0xF7E9	U+72BE	# <cjk>	[2000]
 0xF7EA	U+72C0	# <cjk>	[2000]
 0xF7EB	U+72FB	# <cjk>	[2000]
-0xF7EC	U+247F1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7A6
+0xF7EC	U+247F1	# <cjk>	[2000]	[Unicode3.1]
 0xF7ED	U+7327	# <cjk>	[2000]
 0xF7EE	U+7328	# <cjk>	[2000]
 0xF7EF	U+FA16	# CJK COMPATIBILITY IDEOGRAPH-FA16	[2000]
@@ -8451,7 +8452,7 @@
 0xF8FB	U+77AA	# <cjk>	[2000]
 0xF8FC	U+77E0	# <cjk>	[2000]
 0xF8FD	U+782D	# <cjk>	[2000]
-0xF8FE	U+2548E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7A8
+0xF8FE	U+2548E	# <cjk>	[2000]	[Unicode3.1]
 0xF9A1	U+7843	# <cjk>	[2000]
 0xF9A2	U+784E	# <cjk>	[2000]
 0xF9A3	U+784F	# <cjk>	[2000]
@@ -8460,7 +8461,7 @@
 0xF9A6	U+786E	# <cjk>	[2000]
 0xF9A7	U+FA4B	# CJK COMPATIBILITY IDEOGRAPH-FA4B	[2000]	[Unicode3.2]
 0xF9A8	U+78B0	# <cjk>	[2000]
-0xF9A9	U+2550E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7AA
+0xF9A9	U+2550E	# <cjk>	[2000]	[Unicode3.1]
 0xF9AA	U+78AD	# <cjk>	[2000]
 0xF9AB	U+78E4	# <cjk>	[2000]
 0xF9AC	U+78F2	# <cjk>	[2000]
@@ -8490,7 +8491,7 @@
 0xF9C4	U+79B8	# <cjk>	[2000]
 0xF9C5	U+79C8	# <cjk>	[2000]
 0xF9C6	U+79CA	# <cjk>	[2000]
-0xF9C7	U+25771	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7B3
+0xF9C7	U+25771	# <cjk>	[2000]	[Unicode3.1]
 0xF9C8	U+79D4	# <cjk>	[2000]
 0xF9C9	U+79DE	# <cjk>	[2000]
 0xF9CA	U+79EB	# <cjk>	[2000]
@@ -8503,7 +8504,7 @@
 0xF9D1	U+FA55	# CJK COMPATIBILITY IDEOGRAPH-FA55	[2000]	[Unicode3.2]
 0xF9D2	U+7A85	# <cjk>	[2000]
 0xF9D3	U+7AA0	# <cjk>	[2000]
-0xF9D4	U+259C4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7B6
+0xF9D4	U+259C4	# <cjk>	[2000]	[Unicode3.1]
 0xF9D5	U+7AB3	# <cjk>	[2000]
 0xF9D6	U+7ABB	# <cjk>	[2000]
 0xF9D7	U+7ACE	# <cjk>	[2000]
@@ -8529,7 +8530,7 @@
 0xF9EB	U+7C33	# <cjk>	[2000]
 0xF9EC	U+7C36	# <cjk>	[2000]
 0xF9ED	U+4264	# <cjk>	[2000]
-0xF9EE	U+25DA1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7B8
+0xF9EE	U+25DA1	# <cjk>	[2000]	[Unicode3.1]
 0xF9EF	U+7C59	# <cjk>	[2000]
 0xF9F0	U+7C6D	# <cjk>	[2000]
 0xF9F1	U+7C79	# <cjk>	[2000]
@@ -8606,7 +8607,7 @@
 0xFADA	U+445B	# <cjk>	[2000]
 0xFADB	U+8260	# <cjk>	[2000]
 0xFADC	U+8274	# <cjk>	[2000]
-0xFADD	U+26AFF	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7BE
+0xFADD	U+26AFF	# <cjk>	[2000]	[Unicode3.1]
 0xFADE	U+828E	# <cjk>	[2000]
 0xFADF	U+82A1	# <cjk>	[2000]
 0xFAE0	U+82A3	# <cjk>	[2000]
@@ -8658,7 +8659,7 @@
 0xFBB0	U+84BA	# <cjk>	[2000]
 0xFBB1	U+84C0	# <cjk>	[2000]
 0xFBB2	U+84C2	# <cjk>	[2000]
-0xFBB3	U+26E40	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7C0
+0xFBB3	U+26E40	# <cjk>	[2000]	[Unicode3.1]
 0xFBB4	U+8532	# <cjk>	[2000]
 0xFBB5	U+851E	# <cjk>	[2000]
 0xFBB6	U+8523	# <cjk>	[2000]
@@ -8680,7 +8681,7 @@
 0xFBC6	U+8604	# <cjk>	[2000]
 0xFBC7	U+8605	# <cjk>	[2000]
 0xFBC8	U+8610	# <cjk>	[2000]
-0xFBC9	U+270F4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7C1
+0xFBC9	U+270F4	# <cjk>	[2000]	[Unicode3.1]
 0xFBCA	U+8618	# <cjk>	[2000]
 0xFBCB	U+8629	# <cjk>	[2000]
 0xFBCC	U+8638	# <cjk>	[2000]
@@ -8715,7 +8716,7 @@
 0xFBE9	U+88AA	# <cjk>	[2000]
 0xFBEA	U+88CA	# <cjk>	[2000]
 0xFBEB	U+88CE	# <cjk>	[2000]
-0xFBEC	U+27684	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7C2
+0xFBEC	U+27684	# <cjk>	[2000]	[Unicode3.1]
 0xFBED	U+88F5	# <cjk>	[2000]
 0xFBEE	U+891C	# <cjk>	[2000]
 0xFBEF	U+FA60	# CJK COMPATIBILITY IDEOGRAPH-FA60	[2000]	[Unicode3.2]
@@ -8774,7 +8775,7 @@
 0xFCC6	U+8E3D	# <cjk>	[2000]
 0xFCC7	U+8E70	# <cjk>	[2000]
 0xFCC8	U+8E7B	# <cjk>	[2000]
-0xFCC9	U+28277	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7C9
+0xFCC9	U+28277	# <cjk>	[2000]	[Unicode3.1]
 0xFCCA	U+8EC0	# <cjk>	[2000]
 0xFCCB	U+4844	# <cjk>	[2000]
 0xFCCC	U+8EFA	# <cjk>	[2000]
@@ -8782,7 +8783,7 @@
 0xFCCE	U+8F2D	# <cjk>	[2000]
 0xFCCF	U+8F36	# <cjk>	[2000]
 0xFCD0	U+8F54	# <cjk>	[2000]
-0xFCD1	U+283CD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7CA
+0xFCD1	U+283CD	# <cjk>	[2000]	[Unicode3.1]
 0xFCD2	U+8FA6	# <cjk>	[2000]
 0xFCD3	U+8FB5	# <cjk>	[2000]
 0xFCD4	U+8FE4	# <cjk>	[2000]
@@ -8991,7 +8992,7 @@
 0xFEE3	U+9DAC	# <cjk>	[2000]
 0xFEE4	U+9DBC	# <cjk>	[2000]
 0xFEE5	U+9DD7	# <cjk>	[2000]
-0xFEE6	U+2A190	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D0
+0xFEE6	U+2A190	# <cjk>	[2000]	[Unicode3.1]
 0xFEE7	U+9DE7	# <cjk>	[2000]
 0xFEE8	U+9E07	# <cjk>	[2000]
 0xFEE9	U+9E15	# <cjk>	[2000]
@@ -9011,11 +9012,11 @@
 0xFEF7	U+9F94	# <cjk>	[2000]
 0xFEF8	U+9F97	# <cjk>	[2000]
 0xFEF9	U+9FA2	# <cjk>	[2000]
-0xFEFA		# <reserved>
-0xFEFB		# <reserved>
-0xFEFC		# <reserved>
-0xFEFD		# <reserved>
-0xFEFE		# <reserved>
+0xFEFA	U+59F8	# <cjk>	[2004]
+0xFEFB	U+5C5B	# <cjk>	[2004]
+0xFEFC	U+5E77	# <cjk>	[2004]
+0xFEFD	U+7626	# <cjk>	[2004]
+0xFEFE	U+7E6B	# <cjk>	[2004]
 0x8EA1	U+FF61	# HALFWIDTH IDEOGRAPHIC FULL STOP
 0x8EA2	U+FF62	# HALFWIDTH LEFT CORNER BRACKET
 0x8EA3	U+FF63	# HALFWIDTH RIGHT CORNER BRACKET
@@ -9077,8 +9078,8 @@
 0x8EDB	U+FF9B	# HALFWIDTH KATAKANA LETTER RO
 0x8EDC	U+FF9C	# HALFWIDTH KATAKANA LETTER WA
 0x8EDD	U+FF9D	# HALFWIDTH KATAKANA LETTER N
-0x8EDE	U+FF9E	# HALFWIDTH KATAKANA VOICED SOUND MARK
-0x8EDF	U+FF9F	# HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK
+0x8EDE	U+FF9E	# HALFWIDTH KATAKANA VOICED SOUND MARK 
+0x8EDF	U+FF9F	# HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK 
 0x8EE0		# <reserved>
 0x8EE1		# <reserved>
 0x8EE2		# <reserved>
@@ -9110,7 +9111,7 @@
 0x8EFC		# <reserved>
 0x8EFD		# <reserved>
 0x8EFE		# <reserved>
-0x8FA1A1	U+20089	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D1
+0x8FA1A1	U+20089	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1A2	U+4E02	# <cjk>	[2000]
 0x8FA1A3	U+4E0F	# <cjk>	[2000]
 0x8FA1A4	U+4E12	# <cjk>	[2000]
@@ -9120,10 +9121,10 @@
 0x8FA1A8	U+4E40	# <cjk>	[2000]
 0x8FA1A9	U+4E47	# <cjk>	[2000]
 0x8FA1AA	U+4E48	# <cjk>	[2000]
-0x8FA1AB	U+200A2	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D2
+0x8FA1AB	U+200A2	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1AC	U+4E51	# <cjk>	[2000]
 0x8FA1AD	U+3406	# <cjk>	[2000]
-0x8FA1AE	U+200A4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D3
+0x8FA1AE	U+200A4	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1AF	U+4E5A	# <cjk>	[2000]
 0x8FA1B0	U+4E69	# <cjk>	[2000]
 0x8FA1B1	U+4E9D	# <cjk>	[2000]
@@ -9131,7 +9132,7 @@
 0x8FA1B3	U+342E	# <cjk>	[2000]
 0x8FA1B4	U+4EB9	# <cjk>	[2000]
 0x8FA1B5	U+4EBB	# <cjk>	[2000]
-0x8FA1B6	U+201A2	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D4
+0x8FA1B6	U+201A2	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1B7	U+4EBC	# <cjk>	[2000]
 0x8FA1B8	U+4EC3	# <cjk>	[2000]
 0x8FA1B9	U+4EC8	# <cjk>	[2000]
@@ -9147,7 +9148,7 @@
 0x8FA1C3	U+4F3E	# <cjk>	[2000]
 0x8FA1C4	U+4F54	# <cjk>	[2000]
 0x8FA1C5	U+4F58	# <cjk>	[2000]
-0x8FA1C6	U+20213	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D5
+0x8FA1C6	U+20213	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1C7	U+4F77	# <cjk>	[2000]
 0x8FA1C8	U+4F78	# <cjk>	[2000]
 0x8FA1C9	U+4F7A	# <cjk>	[2000]
@@ -9189,28 +9190,28 @@
 0x8FA1ED	U+5096	# <cjk>	[2000]
 0x8FA1EE	U+509C	# <cjk>	[2000]
 0x8FA1EF	U+50AA	# <cjk>	[2000]
-0x8FA1F0	U+2032B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D6
+0x8FA1F0	U+2032B	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1F1	U+50B1	# <cjk>	[2000]
 0x8FA1F2	U+50BA	# <cjk>	[2000]
 0x8FA1F3	U+50BB	# <cjk>	[2000]
 0x8FA1F4	U+50C4	# <cjk>	[2000]
 0x8FA1F5	U+50C7	# <cjk>	[2000]
 0x8FA1F6	U+50F3	# <cjk>	[2000]
-0x8FA1F7	U+20381	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D7
+0x8FA1F7	U+20381	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1F8	U+50CE	# <cjk>	[2000]
-0x8FA1F9	U+20371	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D8
+0x8FA1F9	U+20371	# <cjk>	[2000]	[Unicode3.1]
 0x8FA1FA	U+50D4	# <cjk>	[2000]
 0x8FA1FB	U+50D9	# <cjk>	[2000]
 0x8FA1FC	U+50E1	# <cjk>	[2000]
 0x8FA1FD	U+50E9	# <cjk>	[2000]
 0x8FA1FE	U+3492	# <cjk>	[2000]
 0x8FA3A1	U+5108	# <cjk>	[2000]
-0x8FA3A2	U+203F9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7D9
+0x8FA3A2	U+203F9	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3A3	U+5117	# <cjk>	[2000]
 0x8FA3A4	U+511B	# <cjk>	[2000]
-0x8FA3A5	U+2044A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7DA
+0x8FA3A5	U+2044A	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3A6	U+5160	# <cjk>	[2000]
-0x8FA3A7	U+20509	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7DB
+0x8FA3A7	U+20509	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3A8	U+5173	# <cjk>	[2000]
 0x8FA3A9	U+5183	# <cjk>	[2000]
 0x8FA3AA	U+518B	# <cjk>	[2000]
@@ -9220,23 +9221,23 @@
 0x8FA3AE	U+51AD	# <cjk>	[2000]
 0x8FA3AF	U+34C7	# <cjk>	[2000]
 0x8FA3B0	U+51BC	# <cjk>	[2000]
-0x8FA3B1	U+205D6	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7DC
-0x8FA3B2	U+20628	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7DD
+0x8FA3B1	U+205D6	# <cjk>	[2000]	[Unicode3.1]
+0x8FA3B2	U+20628	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3B3	U+51F3	# <cjk>	[2000]
 0x8FA3B4	U+51F4	# <cjk>	[2000]
 0x8FA3B5	U+5202	# <cjk>	[2000]
 0x8FA3B6	U+5212	# <cjk>	[2000]
 0x8FA3B7	U+5216	# <cjk>	[2000]
-0x8FA3B8	U+2074F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7DE
+0x8FA3B8	U+2074F	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3B9	U+5255	# <cjk>	[2000]
 0x8FA3BA	U+525C	# <cjk>	[2000]
 0x8FA3BB	U+526C	# <cjk>	[2000]
 0x8FA3BC	U+5277	# <cjk>	[2000]
 0x8FA3BD	U+5284	# <cjk>	[2000]
 0x8FA3BE	U+5282	# <cjk>	[2000]
-0x8FA3BF	U+20807	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7DF
+0x8FA3BF	U+20807	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3C0	U+5298	# <cjk>	[2000]
-0x8FA3C1	U+2083A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E0
+0x8FA3C1	U+2083A	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3C2	U+52A4	# <cjk>	[2000]
 0x8FA3C3	U+52A6	# <cjk>	[2000]
 0x8FA3C4	U+52AF	# <cjk>	[2000]
@@ -9245,7 +9246,7 @@
 0x8FA3C7	U+52CA	# <cjk>	[2000]
 0x8FA3C8	U+351F	# <cjk>	[2000]
 0x8FA3C9	U+52D1	# <cjk>	[2000]
-0x8FA3CA	U+208B9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E1
+0x8FA3CA	U+208B9	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3CB	U+52F7	# <cjk>	[2000]
 0x8FA3CC	U+530A	# <cjk>	[2000]
 0x8FA3CD	U+530B	# <cjk>	[2000]
@@ -9253,17 +9254,17 @@
 0x8FA3CF	U+5335	# <cjk>	[2000]
 0x8FA3D0	U+533E	# <cjk>	[2000]
 0x8FA3D1	U+5342	# <cjk>	[2000]
-0x8FA3D2	U+2097C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E2
-0x8FA3D3	U+2099D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E3
+0x8FA3D2	U+2097C	# <cjk>	[2000]	[Unicode3.1]
+0x8FA3D3	U+2099D	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3D4	U+5367	# <cjk>	[2000]
 0x8FA3D5	U+536C	# <cjk>	[2000]
 0x8FA3D6	U+537A	# <cjk>	[2000]
 0x8FA3D7	U+53A4	# <cjk>	[2000]
 0x8FA3D8	U+53B4	# <cjk>	[2000]
-0x8FA3D9	U+20AD3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E4
+0x8FA3D9	U+20AD3	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3DA	U+53B7	# <cjk>	[2000]
 0x8FA3DB	U+53C0	# <cjk>	[2000]
-0x8FA3DC	U+20B1D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E5
+0x8FA3DC	U+20B1D	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3DD	U+355D	# <cjk>	[2000]
 0x8FA3DE	U+355E	# <cjk>	[2000]
 0x8FA3DF	U+53D5	# <cjk>	[2000]
@@ -9290,7 +9291,7 @@
 0x8FA3F4	U+54BA	# <cjk>	[2000]
 0x8FA3F5	U+54BF	# <cjk>	[2000]
 0x8FA3F6	U+54C3	# <cjk>	[2000]
-0x8FA3F7	U+20D45	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E6
+0x8FA3F7	U+20D45	# <cjk>	[2000]	[Unicode3.1]
 0x8FA3F8	U+54EC	# <cjk>	[2000]
 0x8FA3F9	U+54EF	# <cjk>	[2000]
 0x8FA3FA	U+54F1	# <cjk>	[2000]
@@ -9307,15 +9308,15 @@
 0x8FA4A7	U+5560	# <cjk>	[2000]
 0x8FA4A8	U+5561	# <cjk>	[2000]
 0x8FA4A9	U+5564	# <cjk>	[2000]
-0x8FA4AA	U+20DE1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E7
+0x8FA4AA	U+20DE1	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4AB	U+557D	# <cjk>	[2000]
 0x8FA4AC	U+5582	# <cjk>	[2000]
 0x8FA4AD	U+5588	# <cjk>	[2000]
 0x8FA4AE	U+5591	# <cjk>	[2000]
 0x8FA4AF	U+35C5	# <cjk>	[2000]
 0x8FA4B0	U+55D2	# <cjk>	[2000]
-0x8FA4B1	U+20E95	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E8
-0x8FA4B2	U+20E6D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7E9
+0x8FA4B1	U+20E95	# <cjk>	[2000]	[Unicode3.1]
+0x8FA4B2	U+20E6D	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4B3	U+55BF	# <cjk>	[2000]
 0x8FA4B4	U+55C9	# <cjk>	[2000]
 0x8FA4B5	U+55CC	# <cjk>	[2000]
@@ -9323,10 +9324,10 @@
 0x8FA4B7	U+55DD	# <cjk>	[2000]
 0x8FA4B8	U+35DA	# <cjk>	[2000]
 0x8FA4B9	U+55E2	# <cjk>	[2000]
-0x8FA4BA	U+20E64	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7EA
+0x8FA4BA	U+20E64	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4BB	U+55E9	# <cjk>	[2000]
 0x8FA4BC	U+5628	# <cjk>	[2000]
-0x8FA4BD	U+20F5F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7EB
+0x8FA4BD	U+20F5F	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4BE	U+5607	# <cjk>	[2000]
 0x8FA4BF	U+5610	# <cjk>	[2000]
 0x8FA4C0	U+5630	# <cjk>	[2000]
@@ -9354,35 +9355,35 @@
 0x8FA4D6	U+56E8	# <cjk>	[2000]
 0x8FA4D7	U+56F6	# <cjk>	[2000]
 0x8FA4D8	U+56F7	# <cjk>	[2000]
-0x8FA4D9	U+21201	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7EC
+0x8FA4D9	U+21201	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4DA	U+5715	# <cjk>	[2000]
 0x8FA4DB	U+5723	# <cjk>	[2000]
-0x8FA4DC	U+21255	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7ED
+0x8FA4DC	U+21255	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4DD	U+5729	# <cjk>	[2000]
-0x8FA4DE	U+2127B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7EE
+0x8FA4DE	U+2127B	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4DF	U+5745	# <cjk>	[2000]
 0x8FA4E0	U+5746	# <cjk>	[2000]
 0x8FA4E1	U+574C	# <cjk>	[2000]
 0x8FA4E2	U+574D	# <cjk>	[2000]
-0x8FA4E3	U+21274	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7EF
+0x8FA4E3	U+21274	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4E4	U+5768	# <cjk>	[2000]
 0x8FA4E5	U+576F	# <cjk>	[2000]
 0x8FA4E6	U+5773	# <cjk>	[2000]
 0x8FA4E7	U+5774	# <cjk>	[2000]
 0x8FA4E8	U+5775	# <cjk>	[2000]
 0x8FA4E9	U+577B	# <cjk>	[2000]
-0x8FA4EA	U+212E4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F0
-0x8FA4EB	U+212D7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F1
+0x8FA4EA	U+212E4	# <cjk>	[2000]	[Unicode3.1]
+0x8FA4EB	U+212D7	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4EC	U+57AC	# <cjk>	[2000]
 0x8FA4ED	U+579A	# <cjk>	[2000]
 0x8FA4EE	U+579D	# <cjk>	[2000]
 0x8FA4EF	U+579E	# <cjk>	[2000]
 0x8FA4F0	U+57A8	# <cjk>	[2000]
 0x8FA4F1	U+57D7	# <cjk>	[2000]
-0x8FA4F2	U+212FD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F2
+0x8FA4F2	U+212FD	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4F3	U+57CC	# <cjk>	[2000]
-0x8FA4F4	U+21336	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F3
-0x8FA4F5	U+21344	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F4
+0x8FA4F4	U+21336	# <cjk>	[2000]	[Unicode3.1]
+0x8FA4F5	U+21344	# <cjk>	[2000]	[Unicode3.1]
 0x8FA4F6	U+57DE	# <cjk>	[2000]
 0x8FA4F7	U+57E6	# <cjk>	[2000]
 0x8FA4F8	U+57F0	# <cjk>	[2000]
@@ -9396,7 +9397,7 @@
 0x8FA5A2	U+5827	# <cjk>	[2000]
 0x8FA5A3	U+5832	# <cjk>	[2000]
 0x8FA5A4	U+5839	# <cjk>	[2000]
-0x8FA5A5	U+213C4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F5
+0x8FA5A5	U+213C4	# <cjk>	[2000]	[Unicode3.1]
 0x8FA5A6	U+5849	# <cjk>	[2000]
 0x8FA5A7	U+584C	# <cjk>	[2000]
 0x8FA5A8	U+5867	# <cjk>	[2000]
@@ -9409,7 +9410,7 @@
 0x8FA5AF	U+589D	# <cjk>	[2000]
 0x8FA5B0	U+58AA	# <cjk>	[2000]
 0x8FA5B1	U+58B1	# <cjk>	[2000]
-0x8FA5B2	U+2146D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F6
+0x8FA5B2	U+2146D	# <cjk>	[2000]	[Unicode3.1]
 0x8FA5B3	U+58C3	# <cjk>	[2000]
 0x8FA5B4	U+58CD	# <cjk>	[2000]
 0x8FA5B5	U+58E2	# <cjk>	[2000]
@@ -9421,16 +9422,16 @@
 0x8FA5BB	U+590D	# <cjk>	[2000]
 0x8FA5BC	U+5914	# <cjk>	[2000]
 0x8FA5BD	U+5924	# <cjk>	[2000]
-0x8FA5BE	U+215D7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F7
+0x8FA5BE	U+215D7	# <cjk>	[2000]	[Unicode3.1]
 0x8FA5BF	U+3691	# <cjk>	[2000]
 0x8FA5C0	U+593D	# <cjk>	[2000]
 0x8FA5C1	U+3699	# <cjk>	[2000]
 0x8FA5C2	U+5946	# <cjk>	[2000]
 0x8FA5C3	U+3696	# <cjk>	[2000]
-0x8FA5C4	U+26C29	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F8
+0x8FA5C4	U+26C29	# <cjk>	[2000]	[Unicode3.1]
 0x8FA5C5	U+595B	# <cjk>	[2000]
 0x8FA5C6	U+595F	# <cjk>	[2000]
-0x8FA5C7	U+21647	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7F9
+0x8FA5C7	U+21647	# <cjk>	[2000]	[Unicode3.1]
 0x8FA5C8	U+5975	# <cjk>	[2000]
 0x8FA5C9	U+5976	# <cjk>	[2000]
 0x8FA5CA	U+597C	# <cjk>	[2000]
@@ -9444,8 +9445,8 @@
 0x8FA5D2	U+59E4	# <cjk>	[2000]
 0x8FA5D3	U+59E7	# <cjk>	[2000]
 0x8FA5D4	U+59EE	# <cjk>	[2000]
-0x8FA5D5	U+21706	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7FA
-0x8FA5D6	U+21742	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7FB
+0x8FA5D5	U+21706	# <cjk>	[2000]	[Unicode3.1]
+0x8FA5D6	U+21742	# <cjk>	[2000]	[Unicode3.1]
 0x8FA5D7	U+36CF	# <cjk>	[2000]
 0x8FA5D8	U+5A0C	# <cjk>	[2000]
 0x8FA5D9	U+5A0D	# <cjk>	[2000]
@@ -9485,7 +9486,7 @@
 0x8FA5FB	U+5B7F	# <cjk>	[2000]
 0x8FA5FC	U+5B81	# <cjk>	[2000]
 0x8FA5FD	U+5B84	# <cjk>	[2000]
-0x8FA5FE	U+219C3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7FC
+0x8FA5FE	U+219C3	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8A1	U+5B96	# <cjk>	[2000]
 0x8FA8A2	U+5BAC	# <cjk>	[2000]
 0x8FA8A3	U+3761	# <cjk>	[2000]
@@ -9501,34 +9502,34 @@
 0x8FA8AD	U+5C03	# <cjk>	[2000]
 0x8FA8AE	U+5C29	# <cjk>	[2000]
 0x8FA8AF	U+5C30	# <cjk>	[2000]
-0x8FA8B0	U+21C56	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7FD
+0x8FA8B0	U+21C56	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8B1	U+5C5F	# <cjk>	[2000]
 0x8FA8B2	U+5C63	# <cjk>	[2000]
 0x8FA8B3	U+5C67	# <cjk>	[2000]
 0x8FA8B4	U+5C68	# <cjk>	[2000]
 0x8FA8B5	U+5C69	# <cjk>	[2000]
 0x8FA8B6	U+5C70	# <cjk>	[2000]
-0x8FA8B7	U+21D2D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7FE
-0x8FA8B8	U+21D45	# <cjk>	[2000]	[Unicode3.1]	Private: U+F7FF
+0x8FA8B7	U+21D2D	# <cjk>	[2000]	[Unicode3.1]
+0x8FA8B8	U+21D45	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8B9	U+5C7C	# <cjk>	[2000]
-0x8FA8BA	U+21D78	# <cjk>	[2000]	[Unicode3.1]	Private: U+F800
-0x8FA8BB	U+21D62	# <cjk>	[2000]	[Unicode3.1]	Private: U+F801
+0x8FA8BA	U+21D78	# <cjk>	[2000]	[Unicode3.1]
+0x8FA8BB	U+21D62	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8BC	U+5C88	# <cjk>	[2000]
 0x8FA8BD	U+5C8A	# <cjk>	[2000]
 0x8FA8BE	U+37C1	# <cjk>	[2000]
-0x8FA8BF	U+21DA1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F802
-0x8FA8C0	U+21D9C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F803
+0x8FA8BF	U+21DA1	# <cjk>	[2000]	[Unicode3.1]
+0x8FA8C0	U+21D9C	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8C1	U+5CA0	# <cjk>	[2000]
 0x8FA8C2	U+5CA2	# <cjk>	[2000]
 0x8FA8C3	U+5CA6	# <cjk>	[2000]
 0x8FA8C4	U+5CA7	# <cjk>	[2000]
-0x8FA8C5	U+21D92	# <cjk>	[2000]	[Unicode3.1]	Private: U+F804
+0x8FA8C5	U+21D92	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8C6	U+5CAD	# <cjk>	[2000]
 0x8FA8C7	U+5CB5	# <cjk>	[2000]
-0x8FA8C8	U+21DB7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F805
+0x8FA8C8	U+21DB7	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8C9	U+5CC9	# <cjk>	[2000]
-0x8FA8CA	U+21DE0	# <cjk>	[2000]	[Unicode3.1]	Private: U+F806
-0x8FA8CB	U+21E33	# <cjk>	[2000]	[Unicode3.1]	Private: U+F807
+0x8FA8CA	U+21DE0	# <cjk>	[2000]	[Unicode3.1]
+0x8FA8CB	U+21E33	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8CC	U+5D06	# <cjk>	[2000]
 0x8FA8CD	U+5D10	# <cjk>	[2000]
 0x8FA8CE	U+5D2B	# <cjk>	[2000]
@@ -9544,7 +9545,7 @@
 0x8FA8D8	U+5D6A	# <cjk>	[2000]
 0x8FA8D9	U+37F4	# <cjk>	[2000]
 0x8FA8DA	U+5D70	# <cjk>	[2000]
-0x8FA8DB	U+21F1E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F808
+0x8FA8DB	U+21F1E	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8DC	U+37FD	# <cjk>	[2000]
 0x8FA8DD	U+5D88	# <cjk>	[2000]
 0x8FA8DE	U+3800	# <cjk>	[2000]
@@ -9555,13 +9556,13 @@
 0x8FA8E3	U+5DB0	# <cjk>	[2000]
 0x8FA8E4	U+5DB2	# <cjk>	[2000]
 0x8FA8E5	U+5DB4	# <cjk>	[2000]
-0x8FA8E6	U+21F76	# <cjk>	[2000]	[Unicode3.1]	Private: U+F809
+0x8FA8E6	U+21F76	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8E7	U+5DB9	# <cjk>	[2000]
 0x8FA8E8	U+5DD1	# <cjk>	[2000]
 0x8FA8E9	U+5DD7	# <cjk>	[2000]
 0x8FA8EA	U+5DD8	# <cjk>	[2000]
 0x8FA8EB	U+5DE0	# <cjk>	[2000]
-0x8FA8EC	U+21FFA	# <cjk>	[2000]	[Unicode3.1]	Private: U+F80A
+0x8FA8EC	U+21FFA	# <cjk>	[2000]	[Unicode3.1]
 0x8FA8ED	U+5DE4	# <cjk>	[2000]
 0x8FA8EE	U+5DE9	# <cjk>	[2000]
 0x8FA8EF	U+382F	# <cjk>	[2000]
@@ -9581,7 +9582,7 @@
 0x8FA8FD	U+5E6C	# <cjk>	[2000]
 0x8FA8FE	U+5E6D	# <cjk>	[2000]
 0x8FACA1	U+5E6E	# <cjk>	[2000]
-0x8FACA2	U+2217B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F80B
+0x8FACA2	U+2217B	# <cjk>	[2000]	[Unicode3.1]
 0x8FACA3	U+5EA5	# <cjk>	[2000]
 0x8FACA4	U+5EAA	# <cjk>	[2000]
 0x8FACA5	U+5EAC	# <cjk>	[2000]
@@ -9590,12 +9591,12 @@
 0x8FACA8	U+5EC6	# <cjk>	[2000]
 0x8FACA9	U+5ED2	# <cjk>	[2000]
 0x8FACAA	U+5ED9	# <cjk>	[2000]
-0x8FACAB	U+2231E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F80C
+0x8FACAB	U+2231E	# <cjk>	[2000]	[Unicode3.1]
 0x8FACAC	U+5EFD	# <cjk>	[2000]
 0x8FACAD	U+5F08	# <cjk>	[2000]
 0x8FACAE	U+5F0E	# <cjk>	[2000]
 0x8FACAF	U+5F1C	# <cjk>	[2000]
-0x8FACB0	U+223AD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F80D
+0x8FACB0	U+223AD	# <cjk>	[2000]	[Unicode3.1]
 0x8FACB1	U+5F1E	# <cjk>	[2000]
 0x8FACB2	U+5F47	# <cjk>	[2000]
 0x8FACB3	U+5F63	# <cjk>	[2000]
@@ -9627,7 +9628,7 @@
 0x8FACCD	U+608A	# <cjk>	[2000]
 0x8FACCE	U+6095	# <cjk>	[2000]
 0x8FACCF	U+60A8	# <cjk>	[2000]
-0x8FACD0	U+226F3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F80E
+0x8FACD0	U+226F3	# <cjk>	[2000]	[Unicode3.1]
 0x8FACD1	U+60B0	# <cjk>	[2000]
 0x8FACD2	U+60B1	# <cjk>	[2000]
 0x8FACD3	U+60BE	# <cjk>	[2000]
@@ -9648,7 +9649,7 @@
 0x8FACE2	U+6146	# <cjk>	[2000]
 0x8FACE3	U+6160	# <cjk>	[2000]
 0x8FACE4	U+617C	# <cjk>	[2000]
-0x8FACE5	U+2285B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F80F
+0x8FACE5	U+2285B	# <cjk>	[2000]	[Unicode3.1]
 0x8FACE6	U+6192	# <cjk>	[2000]
 0x8FACE7	U+6193	# <cjk>	[2000]
 0x8FACE8	U+6197	# <cjk>	[2000]
@@ -9656,12 +9657,12 @@
 0x8FACEA	U+61A5	# <cjk>	[2000]
 0x8FACEB	U+61A8	# <cjk>	[2000]
 0x8FACEC	U+61AD	# <cjk>	[2000]
-0x8FACED	U+228AB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F810
+0x8FACED	U+228AB	# <cjk>	[2000]	[Unicode3.1]
 0x8FACEE	U+61D5	# <cjk>	[2000]
 0x8FACEF	U+61DD	# <cjk>	[2000]
 0x8FACF0	U+61DF	# <cjk>	[2000]
 0x8FACF1	U+61F5	# <cjk>	[2000]
-0x8FACF2	U+2298F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F811
+0x8FACF2	U+2298F	# <cjk>	[2000]	[Unicode3.1]
 0x8FACF3	U+6215	# <cjk>	[2000]
 0x8FACF4	U+6223	# <cjk>	[2000]
 0x8FACF5	U+6229	# <cjk>	[2000]
@@ -9677,13 +9678,13 @@
 0x8FADA1	U+6299	# <cjk>	[2000]
 0x8FADA2	U+62A6	# <cjk>	[2000]
 0x8FADA3	U+62D5	# <cjk>	[2000]
-0x8FADA4	U+22AB8	# <cjk>	[2000]	[Unicode3.1]	Private: U+F812
+0x8FADA4	U+22AB8	# <cjk>	[2000]	[Unicode3.1]
 0x8FADA5	U+62FD	# <cjk>	[2000]
 0x8FADA6	U+6303	# <cjk>	[2000]
 0x8FADA7	U+630D	# <cjk>	[2000]
 0x8FADA8	U+6310	# <cjk>	[2000]
-0x8FADA9	U+22B4F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F813
-0x8FADAA	U+22B50	# <cjk>	[2000]	[Unicode3.1]	Private: U+F814
+0x8FADA9	U+22B4F	# <cjk>	[2000]	[Unicode3.1]
+0x8FADAA	U+22B50	# <cjk>	[2000]	[Unicode3.1]
 0x8FADAB	U+6332	# <cjk>	[2000]
 0x8FADAC	U+6335	# <cjk>	[2000]
 0x8FADAD	U+633B	# <cjk>	[2000]
@@ -9691,14 +9692,14 @@
 0x8FADAF	U+6341	# <cjk>	[2000]
 0x8FADB0	U+6344	# <cjk>	[2000]
 0x8FADB1	U+634E	# <cjk>	[2000]
-0x8FADB2	U+22B46	# <cjk>	[2000]	[Unicode3.1]	Private: U+F815
+0x8FADB2	U+22B46	# <cjk>	[2000]	[Unicode3.1]
 0x8FADB3	U+6359	# <cjk>	[2000]
-0x8FADB4	U+22C1D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F816
-0x8FADB5	U+22BA6	# <cjk>	[2000]	[Unicode3.1]	Private: U+F817
+0x8FADB4	U+22C1D	# <cjk>	[2000]	[Unicode3.1]
+0x8FADB5	U+22BA6	# <cjk>	[2000]	[Unicode3.1]
 0x8FADB6	U+636C	# <cjk>	[2000]
 0x8FADB7	U+6384	# <cjk>	[2000]
 0x8FADB8	U+6399	# <cjk>	[2000]
-0x8FADB9	U+22C24	# <cjk>	[2000]	[Unicode3.1]	Private: U+F818
+0x8FADB9	U+22C24	# <cjk>	[2000]	[Unicode3.1]
 0x8FADBA	U+6394	# <cjk>	[2000]
 0x8FADBB	U+63BD	# <cjk>	[2000]
 0x8FADBC	U+63F7	# <cjk>	[2000]
@@ -9727,7 +9728,7 @@
 0x8FADD3	U+64CC	# <cjk>	[2000]
 0x8FADD4	U+64D5	# <cjk>	[2000]
 0x8FADD5	U+64D7	# <cjk>	[2000]
-0x8FADD6	U+22DE1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F819
+0x8FADD6	U+22DE1	# <cjk>	[2000]	[Unicode3.1]
 0x8FADD7	U+64E4	# <cjk>	[2000]
 0x8FADD8	U+64E5	# <cjk>	[2000]
 0x8FADD9	U+64FF	# <cjk>	[2000]
@@ -9766,12 +9767,12 @@
 0x8FADFA	U+6651	# <cjk>	[2000]
 0x8FADFB	U+664E	# <cjk>	[2000]
 0x8FADFC	U+3AEA	# <cjk>	[2000]
-0x8FADFD	U+231C3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F81A
+0x8FADFD	U+231C3	# <cjk>	[2000]	[Unicode3.1]
 0x8FADFE	U+6657	# <cjk>	[2000]
 0x8FAEA1	U+665B	# <cjk>	[2000]
 0x8FAEA2	U+6663	# <cjk>	[2000]
-0x8FAEA3	U+231F5	# <cjk>	[2000]	[Unicode3.1]	Private: U+F81B
-0x8FAEA4	U+231B6	# <cjk>	[2000]	[Unicode3.1]	Private: U+F81C
+0x8FAEA3	U+231F5	# <cjk>	[2000]	[Unicode3.1]
+0x8FAEA4	U+231B6	# <cjk>	[2000]	[Unicode3.1]
 0x8FAEA5	U+666A	# <cjk>	[2000]
 0x8FAEA6	U+666B	# <cjk>	[2000]
 0x8FAEA7	U+666C	# <cjk>	[2000]
@@ -9793,22 +9794,22 @@
 0x8FAEB7	U+6701	# <cjk>	[2000]
 0x8FAEB8	U+6705	# <cjk>	[2000]
 0x8FAEB9	U+6712	# <cjk>	[2000]
-0x8FAEBA	U+23372	# <cjk>	[2000]	[Unicode3.1]	Private: U+F81D
+0x8FAEBA	U+23372	# <cjk>	[2000]	[Unicode3.1]
 0x8FAEBB	U+6719	# <cjk>	[2000]
-0x8FAEBC	U+233D3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F81E
-0x8FAEBD	U+233D2	# <cjk>	[2000]	[Unicode3.1]	Private: U+F81F
+0x8FAEBC	U+233D3	# <cjk>	[2000]	[Unicode3.1]
+0x8FAEBD	U+233D2	# <cjk>	[2000]	[Unicode3.1]
 0x8FAEBE	U+674C	# <cjk>	[2000]
 0x8FAEBF	U+674D	# <cjk>	[2000]
 0x8FAEC0	U+6754	# <cjk>	[2000]
 0x8FAEC1	U+675D	# <cjk>	[2000]
-0x8FAEC2	U+233D0	# <cjk>	[2000]	[Unicode3.1]	Private: U+F820
-0x8FAEC3	U+233E4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F821
-0x8FAEC4	U+233D5	# <cjk>	[2000]	[Unicode3.1]	Private: U+F822
+0x8FAEC2	U+233D0	# <cjk>	[2000]	[Unicode3.1]
+0x8FAEC3	U+233E4	# <cjk>	[2000]	[Unicode3.1]
+0x8FAEC4	U+233D5	# <cjk>	[2000]	[Unicode3.1]
 0x8FAEC5	U+6774	# <cjk>	[2000]
 0x8FAEC6	U+6776	# <cjk>	[2000]
-0x8FAEC7	U+233DA	# <cjk>	[2000]	[Unicode3.1]	Private: U+F823
+0x8FAEC7	U+233DA	# <cjk>	[2000]	[Unicode3.1]
 0x8FAEC8	U+6792	# <cjk>	[2000]
-0x8FAEC9	U+233DF	# <cjk>	[2000]	[Unicode3.1]	Private: U+F824
+0x8FAEC9	U+233DF	# <cjk>	[2000]	[Unicode3.1]
 0x8FAECA	U+8363	# <cjk>	[2000]
 0x8FAECB	U+6810	# <cjk>	[2000]
 0x8FAECC	U+67B0	# <cjk>	[2000]
@@ -9820,13 +9821,13 @@
 0x8FAED2	U+67DB	# <cjk>	[2000]
 0x8FAED3	U+67F0	# <cjk>	[2000]
 0x8FAED4	U+67F7	# <cjk>	[2000]
-0x8FAED5	U+2344A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F825
-0x8FAED6	U+23451	# <cjk>	[2000]	[Unicode3.1]	Private: U+F826
-0x8FAED7	U+2344B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F827
+0x8FAED5	U+2344A	# <cjk>	[2000]	[Unicode3.1]
+0x8FAED6	U+23451	# <cjk>	[2000]	[Unicode3.1]
+0x8FAED7	U+2344B	# <cjk>	[2000]	[Unicode3.1]
 0x8FAED8	U+6818	# <cjk>	[2000]
 0x8FAED9	U+681F	# <cjk>	[2000]
 0x8FAEDA	U+682D	# <cjk>	[2000]
-0x8FAEDB	U+23465	# <cjk>	[2000]	[Unicode3.1]	Private: U+F828
+0x8FAEDB	U+23465	# <cjk>	[2000]	[Unicode3.1]
 0x8FAEDC	U+6833	# <cjk>	[2000]
 0x8FAEDD	U+683B	# <cjk>	[2000]
 0x8FAEDE	U+683E	# <cjk>	[2000]
@@ -9854,8 +9855,8 @@
 0x8FAEF4	U+68B4	# <cjk>	[2000]
 0x8FAEF5	U+68BB	# <cjk>	[2000]
 0x8FAEF6	U+68FB	# <cjk>	[2000]
-0x8FAEF7	U+234E4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F829
-0x8FAEF8	U+2355A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F82A
+0x8FAEF7	U+234E4	# <cjk>	[2000]	[Unicode3.1]
+0x8FAEF8	U+2355A	# <cjk>	[2000]	[Unicode3.1]
 0x8FAEF9	U+FA13	# CJK COMPATIBILITY IDEOGRAPH-FA13	[2000]
 0x8FAEFA	U+68C3	# <cjk>	[2000]
 0x8FAEFB	U+68C5	# <cjk>	[2000]
@@ -9871,7 +9872,7 @@
 0x8FAFA7	U+6907	# <cjk>	[2000]
 0x8FAFA8	U+3B87	# <cjk>	[2000]
 0x8FAFA9	U+3B88	# <cjk>	[2000]
-0x8FAFAA	U+23594	# <cjk>	[2000]	[Unicode3.1]	Private: U+F82B
+0x8FAFAA	U+23594	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFAB	U+693B	# <cjk>	[2000]
 0x8FAFAC	U+3B8D	# <cjk>	[2000]
 0x8FAFAD	U+6946	# <cjk>	[2000]
@@ -9892,11 +9893,11 @@
 0x8FAFBC	U+69C0	# <cjk>	[2000]
 0x8FAFBD	U+69D1	# <cjk>	[2000]
 0x8FAFBE	U+69D6	# <cjk>	[2000]
-0x8FAFBF	U+23639	# <cjk>	[2000]	[Unicode3.1]	Private: U+F82C
-0x8FAFC0	U+23647	# <cjk>	[2000]	[Unicode3.1]	Private: U+F82D
+0x8FAFBF	U+23639	# <cjk>	[2000]	[Unicode3.1]
+0x8FAFC0	U+23647	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFC1	U+6A30	# <cjk>	[2000]
-0x8FAFC2	U+23638	# <cjk>	[2000]	[Unicode3.1]	Private: U+F82E
-0x8FAFC3	U+2363A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F82F
+0x8FAFC2	U+23638	# <cjk>	[2000]	[Unicode3.1]
+0x8FAFC3	U+2363A	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFC4	U+69E3	# <cjk>	[2000]
 0x8FAFC5	U+69EE	# <cjk>	[2000]
 0x8FAFC6	U+69EF	# <cjk>	[2000]
@@ -9907,7 +9908,7 @@
 0x8FAFCB	U+6A11	# <cjk>	[2000]
 0x8FAFCC	U+6A1A	# <cjk>	[2000]
 0x8FAFCD	U+6A1D	# <cjk>	[2000]
-0x8FAFCE	U+2371C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F830
+0x8FAFCE	U+2371C	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFCF	U+6A32	# <cjk>	[2000]
 0x8FAFD0	U+6A33	# <cjk>	[2000]
 0x8FAFD1	U+6A34	# <cjk>	[2000]
@@ -9918,7 +9919,7 @@
 0x8FAFD6	U+6A4E	# <cjk>	[2000]
 0x8FAFD7	U+6A52	# <cjk>	[2000]
 0x8FAFD8	U+6A64	# <cjk>	[2000]
-0x8FAFD9	U+2370C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F831
+0x8FAFD9	U+2370C	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFDA	U+6A7E	# <cjk>	[2000]
 0x8FAFDB	U+6A83	# <cjk>	[2000]
 0x8FAFDC	U+6A8B	# <cjk>	[2000]
@@ -9926,7 +9927,7 @@
 0x8FAFDE	U+6A91	# <cjk>	[2000]
 0x8FAFDF	U+6A9F	# <cjk>	[2000]
 0x8FAFE0	U+6AA1	# <cjk>	[2000]
-0x8FAFE1	U+23764	# <cjk>	[2000]	[Unicode3.1]	Private: U+F832
+0x8FAFE1	U+23764	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFE2	U+6AAB	# <cjk>	[2000]
 0x8FAFE3	U+6ABD	# <cjk>	[2000]
 0x8FAFE4	U+6AC6	# <cjk>	[2000]
@@ -9934,19 +9935,19 @@
 0x8FAFE6	U+6AD0	# <cjk>	[2000]
 0x8FAFE7	U+6ADC	# <cjk>	[2000]
 0x8FAFE8	U+6ADD	# <cjk>	[2000]
-0x8FAFE9	U+237FF	# <cjk>	[2000]	[Unicode3.1]	Private: U+F833
-0x8FAFEA	U+237E7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F834
+0x8FAFE9	U+237FF	# <cjk>	[2000]	[Unicode3.1]
+0x8FAFEA	U+237E7	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFEB	U+6AEC	# <cjk>	[2000]
 0x8FAFEC	U+6AF1	# <cjk>	[2000]
 0x8FAFED	U+6AF2	# <cjk>	[2000]
 0x8FAFEE	U+6AF3	# <cjk>	[2000]
 0x8FAFEF	U+6AFD	# <cjk>	[2000]
-0x8FAFF0	U+23824	# <cjk>	[2000]	[Unicode3.1]	Private: U+F835
+0x8FAFF0	U+23824	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFF1	U+6B0B	# <cjk>	[2000]
 0x8FAFF2	U+6B0F	# <cjk>	[2000]
 0x8FAFF3	U+6B10	# <cjk>	[2000]
 0x8FAFF4	U+6B11	# <cjk>	[2000]
-0x8FAFF5	U+2383D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F836
+0x8FAFF5	U+2383D	# <cjk>	[2000]	[Unicode3.1]
 0x8FAFF6	U+6B17	# <cjk>	[2000]
 0x8FAFF7	U+3C26	# <cjk>	[2000]
 0x8FAFF8	U+6B2F	# <cjk>	[2000]
@@ -9958,7 +9959,7 @@
 0x8FAFFE	U+6B81	# <cjk>	[2000]
 0x8FEEA1	U+6B9B	# <cjk>	[2000]
 0x8FEEA2	U+6BAE	# <cjk>	[2000]
-0x8FEEA3	U+23A98	# <cjk>	[2000]	[Unicode3.1]	Private: U+F837
+0x8FEEA3	U+23A98	# <cjk>	[2000]	[Unicode3.1]
 0x8FEEA4	U+6BBD	# <cjk>	[2000]
 0x8FEEA5	U+6BBE	# <cjk>	[2000]
 0x8FEEA6	U+6BC7	# <cjk>	[2000]
@@ -9975,7 +9976,7 @@
 0x8FEEB1	U+6C35	# <cjk>	[2000]
 0x8FEEB2	U+6C36	# <cjk>	[2000]
 0x8FEEB3	U+6C3A	# <cjk>	[2000]
-0x8FEEB4	U+23C7F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F838
+0x8FEEB4	U+23C7F	# <cjk>	[2000]	[Unicode3.1]
 0x8FEEB5	U+6C3F	# <cjk>	[2000]
 0x8FEEB6	U+6C4D	# <cjk>	[2000]
 0x8FEEB7	U+6C5B	# <cjk>	[2000]
@@ -9996,7 +9997,7 @@
 0x8FEEC6	U+6CE9	# <cjk>	[2000]
 0x8FEEC7	U+6CEC	# <cjk>	[2000]
 0x8FEEC8	U+6CED	# <cjk>	[2000]
-0x8FEEC9	U+23D00	# <cjk>	[2000]	[Unicode3.1]	Private: U+F839
+0x8FEEC9	U+23D00	# <cjk>	[2000]	[Unicode3.1]
 0x8FEECA	U+6D00	# <cjk>	[2000]
 0x8FEECB	U+6D0A	# <cjk>	[2000]
 0x8FEECC	U+6D24	# <cjk>	[2000]
@@ -10015,11 +10016,11 @@
 0x8FEED9	U+6D8D	# <cjk>	[2000]
 0x8FEEDA	U+6D91	# <cjk>	[2000]
 0x8FEEDB	U+6D98	# <cjk>	[2000]
-0x8FEEDC	U+23D40	# <cjk>	[2000]	[Unicode3.1]	Private: U+F83A
+0x8FEEDC	U+23D40	# <cjk>	[2000]	[Unicode3.1]
 0x8FEEDD	U+6E17	# <cjk>	[2000]
-0x8FEEDE	U+23DFA	# <cjk>	[2000]	[Unicode3.1]	Private: U+F83B
-0x8FEEDF	U+23DF9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F83C
-0x8FEEE0	U+23DD3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F83D
+0x8FEEDE	U+23DFA	# <cjk>	[2000]	[Unicode3.1]
+0x8FEEDF	U+23DF9	# <cjk>	[2000]	[Unicode3.1]
+0x8FEEE0	U+23DD3	# <cjk>	[2000]	[Unicode3.1]
 0x8FEEE1	U+6DAB	# <cjk>	[2000]
 0x8FEEE2	U+6DAE	# <cjk>	[2000]
 0x8FEEE3	U+6DB4	# <cjk>	[2000]
@@ -10067,7 +10068,7 @@
 0x8FEFAF	U+6F25	# <cjk>	[2000]
 0x8FEFB0	U+6F36	# <cjk>	[2000]
 0x8FEFB1	U+6F3C	# <cjk>	[2000]
-0x8FEFB2	U+23F7E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F83E
+0x8FEFB2	U+23F7E	# <cjk>	[2000]	[Unicode3.1]
 0x8FEFB3	U+6F52	# <cjk>	[2000]
 0x8FEFB4	U+6F57	# <cjk>	[2000]
 0x8FEFB5	U+6F5A	# <cjk>	[2000]
@@ -10088,13 +10089,13 @@
 0x8FEFC4	U+6FDA	# <cjk>	[2000]
 0x8FEFC5	U+6FDE	# <cjk>	[2000]
 0x8FEFC6	U+6FE9	# <cjk>	[2000]
-0x8FEFC7	U+24096	# <cjk>	[2000]	[Unicode3.1]	Private: U+F83F
+0x8FEFC7	U+24096	# <cjk>	[2000]	[Unicode3.1]
 0x8FEFC8	U+6FFC	# <cjk>	[2000]
 0x8FEFC9	U+7000	# <cjk>	[2000]
 0x8FEFCA	U+7007	# <cjk>	[2000]
 0x8FEFCB	U+700A	# <cjk>	[2000]
 0x8FEFCC	U+7023	# <cjk>	[2000]
-0x8FEFCD	U+24103	# <cjk>	[2000]	[Unicode3.1]	Private: U+F840
+0x8FEFCD	U+24103	# <cjk>	[2000]	[Unicode3.1]
 0x8FEFCE	U+7039	# <cjk>	[2000]
 0x8FEFCF	U+703A	# <cjk>	[2000]
 0x8FEFD0	U+703C	# <cjk>	[2000]
@@ -10114,10 +10115,10 @@
 0x8FEFDE	U+7095	# <cjk>	[2000]
 0x8FEFDF	U+7097	# <cjk>	[2000]
 0x8FEFE0	U+70BB	# <cjk>	[2000]
-0x8FEFE1	U+241C6	# <cjk>	[2000]	[Unicode3.1]	Private: U+F841
+0x8FEFE1	U+241C6	# <cjk>	[2000]	[Unicode3.1]
 0x8FEFE2	U+709F	# <cjk>	[2000]
 0x8FEFE3	U+70B1	# <cjk>	[2000]
-0x8FEFE4	U+241FE	# <cjk>	[2000]	[Unicode3.1]	Private: U+F842
+0x8FEFE4	U+241FE	# <cjk>	[2000]	[Unicode3.1]
 0x8FEFE5	U+70EC	# <cjk>	[2000]
 0x8FEFE6	U+70CA	# <cjk>	[2000]
 0x8FEFE7	U+70D1	# <cjk>	[2000]
@@ -10145,7 +10146,7 @@
 0x8FEFFD	U+71AE	# <cjk>	[2000]
 0x8FEFFE	U+71AF	# <cjk>	[2000]
 0x8FF0A1	U+71B3	# <cjk>	[2000]
-0x8FF0A2	U+243BC	# <cjk>	[2000]	[Unicode3.1]	Private: U+F843
+0x8FF0A2	U+243BC	# <cjk>	[2000]	[Unicode3.1]
 0x8FF0A3	U+71CB	# <cjk>	[2000]
 0x8FF0A4	U+71D3	# <cjk>	[2000]
 0x8FF0A5	U+71D9	# <cjk>	[2000]
@@ -10162,13 +10163,13 @@
 0x8FF0B0	U+7253	# <cjk>	[2000]
 0x8FF0B1	U+7257	# <cjk>	[2000]
 0x8FF0B2	U+7263	# <cjk>	[2000]
-0x8FF0B3	U+24629	# <cjk>	[2000]	[Unicode3.1]	Private: U+F845
+0x8FF0B3	U+24629	# <cjk>	[2000]	[Unicode3.1]
 0x8FF0B4	U+726E	# <cjk>	[2000]
 0x8FF0B5	U+726F	# <cjk>	[2000]
 0x8FF0B6	U+7278	# <cjk>	[2000]
 0x8FF0B7	U+727F	# <cjk>	[2000]
 0x8FF0B8	U+728E	# <cjk>	[2000]
-0x8FF0B9	U+246A5	# <cjk>	[2000]	[Unicode3.1]	Private: U+F846
+0x8FF0B9	U+246A5	# <cjk>	[2000]	[Unicode3.1]
 0x8FF0BA	U+72AD	# <cjk>	[2000]
 0x8FF0BB	U+72AE	# <cjk>	[2000]
 0x8FF0BC	U+72B0	# <cjk>	[2000]
@@ -10194,7 +10195,7 @@
 0x8FF0D0	U+3E94	# <cjk>	[2000]
 0x8FF0D1	U+736B	# <cjk>	[2000]
 0x8FF0D2	U+736C	# <cjk>	[2000]
-0x8FF0D3	U+24896	# <cjk>	[2000]	[Unicode3.1]	Private: U+F847
+0x8FF0D3	U+24896	# <cjk>	[2000]	[Unicode3.1]
 0x8FF0D4	U+736E	# <cjk>	[2000]
 0x8FF0D5	U+736F	# <cjk>	[2000]
 0x8FF0D6	U+7371	# <cjk>	[2000]
@@ -10234,7 +10235,7 @@
 0x8FF0F8	U+7481	# <cjk>	[2000]
 0x8FF0F9	U+7485	# <cjk>	[2000]
 0x8FF0FA	U+7488	# <cjk>	[2000]
-0x8FF0FB	U+24A4D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F848
+0x8FF0FB	U+24A4D	# <cjk>	[2000]	[Unicode3.1]
 0x8FF0FC	U+7492	# <cjk>	[2000]
 0x8FF0FD	U+7497	# <cjk>	[2000]
 0x8FF0FE	U+7499	# <cjk>	[2000]
@@ -10251,14 +10252,14 @@
 0x8FF1AB	U+74DE	# <cjk>	[2000]
 0x8FF1AC	U+74EF	# <cjk>	[2000]
 0x8FF1AD	U+74EB	# <cjk>	[2000]
-0x8FF1AE	U+24B56	# <cjk>	[2000]	[Unicode3.1]	Private: U+F849
+0x8FF1AE	U+24B56	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1AF	U+74FA	# <cjk>	[2000]
-0x8FF1B0	U+24B6F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F84A
+0x8FF1B0	U+24B6F	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1B1	U+7520	# <cjk>	[2000]
 0x8FF1B2	U+7524	# <cjk>	[2000]
 0x8FF1B3	U+752A	# <cjk>	[2000]
 0x8FF1B4	U+3F57	# <cjk>	[2000]
-0x8FF1B5	U+24C16	# <cjk>	[2000]	[Unicode3.1]	Private: U+F84B
+0x8FF1B5	U+24C16	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1B6	U+753D	# <cjk>	[2000]
 0x8FF1B7	U+753E	# <cjk>	[2000]
 0x8FF1B8	U+7540	# <cjk>	[2000]
@@ -10273,7 +10274,7 @@
 0x8FF1C1	U+757D	# <cjk>	[2000]
 0x8FF1C2	U+757E	# <cjk>	[2000]
 0x8FF1C3	U+7581	# <cjk>	[2000]
-0x8FF1C4	U+24D14	# <cjk>	[2000]	[Unicode3.1]	Private: U+F84C
+0x8FF1C4	U+24D14	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1C5	U+758C	# <cjk>	[2000]
 0x8FF1C6	U+3F75	# <cjk>	[2000]
 0x8FF1C7	U+75A2	# <cjk>	[2000]
@@ -10298,19 +10299,19 @@
 0x8FF1DA	U+7607	# <cjk>	[2000]
 0x8FF1DB	U+760F	# <cjk>	[2000]
 0x8FF1DC	U+3FAE	# <cjk>	[2000]
-0x8FF1DD	U+24E0E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F84D
+0x8FF1DD	U+24E0E	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1DE	U+7613	# <cjk>	[2000]
 0x8FF1DF	U+761B	# <cjk>	[2000]
 0x8FF1E0	U+761C	# <cjk>	[2000]
-0x8FF1E1	U+24E37	# <cjk>	[2000]	[Unicode3.1]	Private: U+F84E
+0x8FF1E1	U+24E37	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1E2	U+7625	# <cjk>	[2000]
 0x8FF1E3	U+7628	# <cjk>	[2000]
 0x8FF1E4	U+763C	# <cjk>	[2000]
 0x8FF1E5	U+7633	# <cjk>	[2000]
-0x8FF1E6	U+24E6A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F84F
+0x8FF1E6	U+24E6A	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1E7	U+3FC9	# <cjk>	[2000]
 0x8FF1E8	U+7641	# <cjk>	[2000]
-0x8FF1E9	U+24E8B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F850
+0x8FF1E9	U+24E8B	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1EA	U+7649	# <cjk>	[2000]
 0x8FF1EB	U+7655	# <cjk>	[2000]
 0x8FF1EC	U+3FD7	# <cjk>	[2000]
@@ -10322,28 +10323,28 @@
 0x8FF1F2	U+76A7	# <cjk>	[2000]
 0x8FF1F3	U+76A8	# <cjk>	[2000]
 0x8FF1F4	U+76AF	# <cjk>	[2000]
-0x8FF1F5	U+2504A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F851
+0x8FF1F5	U+2504A	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1F6	U+76C9	# <cjk>	[2000]
-0x8FF1F7	U+25055	# <cjk>	[2000]	[Unicode3.1]	Private: U+F852
+0x8FF1F7	U+25055	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1F8	U+76E8	# <cjk>	[2000]
 0x8FF1F9	U+76EC	# <cjk>	[2000]
-0x8FF1FA	U+25122	# <cjk>	[2000]	[Unicode3.1]	Private: U+F853
+0x8FF1FA	U+25122	# <cjk>	[2000]	[Unicode3.1]
 0x8FF1FB	U+7717	# <cjk>	[2000]
 0x8FF1FC	U+771A	# <cjk>	[2000]
 0x8FF1FD	U+772D	# <cjk>	[2000]
 0x8FF1FE	U+7735	# <cjk>	[2000]
-0x8FF2A1	U+251A9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F854
+0x8FF2A1	U+251A9	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2A2	U+4039	# <cjk>	[2000]
-0x8FF2A3	U+251E5	# <cjk>	[2000]	[Unicode3.1]	Private: U+F855
-0x8FF2A4	U+251CD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F856
+0x8FF2A3	U+251E5	# <cjk>	[2000]	[Unicode3.1]
+0x8FF2A4	U+251CD	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2A5	U+7758	# <cjk>	[2000]
 0x8FF2A6	U+7760	# <cjk>	[2000]
 0x8FF2A7	U+776A	# <cjk>	[2000]
-0x8FF2A8	U+2521E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F857
+0x8FF2A8	U+2521E	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2A9	U+7772	# <cjk>	[2000]
 0x8FF2AA	U+777C	# <cjk>	[2000]
 0x8FF2AB	U+777D	# <cjk>	[2000]
-0x8FF2AC	U+2524C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F858
+0x8FF2AC	U+2524C	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2AD	U+4058	# <cjk>	[2000]
 0x8FF2AE	U+779A	# <cjk>	[2000]
 0x8FF2AF	U+779F	# <cjk>	[2000]
@@ -10360,7 +10361,7 @@
 0x8FF2BA	U+77F0	# <cjk>	[2000]
 0x8FF2BB	U+77F4	# <cjk>	[2000]
 0x8FF2BC	U+77FB	# <cjk>	[2000]
-0x8FF2BD	U+2542E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F859
+0x8FF2BD	U+2542E	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2BE	U+7805	# <cjk>	[2000]
 0x8FF2BF	U+7806	# <cjk>	[2000]
 0x8FF2C0	U+7809	# <cjk>	[2000]
@@ -10371,7 +10372,7 @@
 0x8FF2C5	U+7847	# <cjk>	[2000]
 0x8FF2C6	U+7864	# <cjk>	[2000]
 0x8FF2C7	U+786A	# <cjk>	[2000]
-0x8FF2C8	U+254D9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F85A
+0x8FF2C8	U+254D9	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2C9	U+788A	# <cjk>	[2000]
 0x8FF2CA	U+7894	# <cjk>	[2000]
 0x8FF2CB	U+78A4	# <cjk>	[2000]
@@ -10390,7 +10391,7 @@
 0x8FF2D8	U+78FA	# <cjk>	[2000]
 0x8FF2D9	U+78FB	# <cjk>	[2000]
 0x8FF2DA	U+78FE	# <cjk>	[2000]
-0x8FF2DB	U+255A7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F85B
+0x8FF2DB	U+255A7	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2DC	U+7910	# <cjk>	[2000]
 0x8FF2DD	U+791B	# <cjk>	[2000]
 0x8FF2DE	U+7930	# <cjk>	[2000]
@@ -10416,8 +10417,8 @@
 0x8FF2F2	U+79CD	# <cjk>	[2000]
 0x8FF2F3	U+79D6	# <cjk>	[2000]
 0x8FF2F4	U+4148	# <cjk>	[2000]
-0x8FF2F5	U+257A9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F85C
-0x8FF2F6	U+257B4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F85D
+0x8FF2F5	U+257A9	# <cjk>	[2000]	[Unicode3.1]
+0x8FF2F6	U+257B4	# <cjk>	[2000]	[Unicode3.1]
 0x8FF2F7	U+414F	# <cjk>	[2000]
 0x8FF2F8	U+7A0A	# <cjk>	[2000]
 0x8FF2F9	U+7A11	# <cjk>	[2000]
@@ -10443,7 +10444,7 @@
 0x8FF3AF	U+7A90	# <cjk>	[2000]
 0x8FF3B0	U+7AA3	# <cjk>	[2000]
 0x8FF3B1	U+7AAC	# <cjk>	[2000]
-0x8FF3B2	U+259D4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F85E
+0x8FF3B2	U+259D4	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3B3	U+41B4	# <cjk>	[2000]
 0x8FF3B4	U+7AB9	# <cjk>	[2000]
 0x8FF3B5	U+7ABC	# <cjk>	[2000]
@@ -10454,10 +10455,10 @@
 0x8FF3BA	U+7AE7	# <cjk>	[2000]
 0x8FF3BB	U+7AE8	# <cjk>	[2000]
 0x8FF3BC	U+7AF4	# <cjk>	[2000]
-0x8FF3BD	U+25AE4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F85F
-0x8FF3BE	U+25AE3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F860
+0x8FF3BD	U+25AE4	# <cjk>	[2000]	[Unicode3.1]
+0x8FF3BE	U+25AE3	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3BF	U+7B07	# <cjk>	[2000]
-0x8FF3C0	U+25AF1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F861
+0x8FF3C0	U+25AF1	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3C1	U+7B3D	# <cjk>	[2000]
 0x8FF3C2	U+7B27	# <cjk>	[2000]
 0x8FF3C3	U+7B2A	# <cjk>	[2000]
@@ -10475,7 +10476,7 @@
 0x8FF3CF	U+7B66	# <cjk>	[2000]
 0x8FF3D0	U+7B69	# <cjk>	[2000]
 0x8FF3D1	U+7B73	# <cjk>	[2000]
-0x8FF3D2	U+25BB2	# <cjk>	[2000]	[Unicode3.1]	Private: U+F862
+0x8FF3D2	U+25BB2	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3D3	U+4207	# <cjk>	[2000]
 0x8FF3D4	U+7B90	# <cjk>	[2000]
 0x8FF3D5	U+7B91	# <cjk>	[2000]
@@ -10486,8 +10487,8 @@
 0x8FF3DA	U+7BBC	# <cjk>	[2000]
 0x8FF3DB	U+7BC5	# <cjk>	[2000]
 0x8FF3DC	U+7BCA	# <cjk>	[2000]
-0x8FF3DD	U+25C4B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F863
-0x8FF3DE	U+25C64	# <cjk>	[2000]	[Unicode3.1]	Private: U+F864
+0x8FF3DD	U+25C4B	# <cjk>	[2000]	[Unicode3.1]
+0x8FF3DE	U+25C64	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3DF	U+7BD4	# <cjk>	[2000]
 0x8FF3E0	U+7BD6	# <cjk>	[2000]
 0x8FF3E1	U+7BDA	# <cjk>	[2000]
@@ -10508,39 +10509,39 @@
 0x8FF3F0	U+7C6E	# <cjk>	[2000]
 0x8FF3F1	U+7C6F	# <cjk>	[2000]
 0x8FF3F2	U+7C70	# <cjk>	[2000]
-0x8FF3F3	U+25E2E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F865
-0x8FF3F4	U+25E56	# <cjk>	[2000]	[Unicode3.1]	Private: U+F866
-0x8FF3F5	U+25E65	# <cjk>	[2000]	[Unicode3.1]	Private: U+F867
+0x8FF3F3	U+25E2E	# <cjk>	[2000]	[Unicode3.1]
+0x8FF3F4	U+25E56	# <cjk>	[2000]	[Unicode3.1]
+0x8FF3F5	U+25E65	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3F6	U+7CA6	# <cjk>	[2000]
-0x8FF3F7	U+25E62	# <cjk>	[2000]	[Unicode3.1]	Private: U+F868
+0x8FF3F7	U+25E62	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3F8	U+7CB6	# <cjk>	[2000]
 0x8FF3F9	U+7CB7	# <cjk>	[2000]
 0x8FF3FA	U+7CBF	# <cjk>	[2000]
-0x8FF3FB	U+25ED8	# <cjk>	[2000]	[Unicode3.1]	Private: U+F869
+0x8FF3FB	U+25ED8	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3FC	U+7CC4	# <cjk>	[2000]
-0x8FF3FD	U+25EC2	# <cjk>	[2000]	[Unicode3.1]	Private: U+F86A
+0x8FF3FD	U+25EC2	# <cjk>	[2000]	[Unicode3.1]
 0x8FF3FE	U+7CC8	# <cjk>	[2000]
 0x8FF4A1	U+7CCD	# <cjk>	[2000]
-0x8FF4A2	U+25EE8	# <cjk>	[2000]	[Unicode3.1]	Private: U+F86B
+0x8FF4A2	U+25EE8	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4A3	U+7CD7	# <cjk>	[2000]
-0x8FF4A4	U+25F23	# <cjk>	[2000]	[Unicode3.1]	Private: U+F86C
+0x8FF4A4	U+25F23	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4A5	U+7CE6	# <cjk>	[2000]
 0x8FF4A6	U+7CEB	# <cjk>	[2000]
-0x8FF4A7	U+25F5C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F86D
+0x8FF4A7	U+25F5C	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4A8	U+7CF5	# <cjk>	[2000]
 0x8FF4A9	U+7D03	# <cjk>	[2000]
 0x8FF4AA	U+7D09	# <cjk>	[2000]
 0x8FF4AB	U+42C6	# <cjk>	[2000]
 0x8FF4AC	U+7D12	# <cjk>	[2000]
 0x8FF4AD	U+7D1E	# <cjk>	[2000]
-0x8FF4AE	U+25FE0	# <cjk>	[2000]	[Unicode3.1]	Private: U+F86E
-0x8FF4AF	U+25FD4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F86F
+0x8FF4AE	U+25FE0	# <cjk>	[2000]	[Unicode3.1]
+0x8FF4AF	U+25FD4	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4B0	U+7D3D	# <cjk>	[2000]
 0x8FF4B1	U+7D3E	# <cjk>	[2000]
 0x8FF4B2	U+7D40	# <cjk>	[2000]
 0x8FF4B3	U+7D47	# <cjk>	[2000]
-0x8FF4B4	U+2600C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F870
-0x8FF4B5	U+25FFB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F871
+0x8FF4B4	U+2600C	# <cjk>	[2000]	[Unicode3.1]
+0x8FF4B5	U+25FFB	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4B6	U+42D6	# <cjk>	[2000]
 0x8FF4B7	U+7D59	# <cjk>	[2000]
 0x8FF4B8	U+7D5A	# <cjk>	[2000]
@@ -10548,12 +10549,12 @@
 0x8FF4BA	U+7D70	# <cjk>	[2000]
 0x8FF4BB	U+42DD	# <cjk>	[2000]
 0x8FF4BC	U+7D7F	# <cjk>	[2000]
-0x8FF4BD	U+26017	# <cjk>	[2000]	[Unicode3.1]	Private: U+F872
+0x8FF4BD	U+26017	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4BE	U+7D86	# <cjk>	[2000]
 0x8FF4BF	U+7D88	# <cjk>	[2000]
 0x8FF4C0	U+7D8C	# <cjk>	[2000]
 0x8FF4C1	U+7D97	# <cjk>	[2000]
-0x8FF4C2	U+26060	# <cjk>	[2000]	[Unicode3.1]	Private: U+F873
+0x8FF4C2	U+26060	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4C3	U+7D9D	# <cjk>	[2000]
 0x8FF4C4	U+7DA7	# <cjk>	[2000]
 0x8FF4C5	U+7DAA	# <cjk>	[2000]
@@ -10566,7 +10567,7 @@
 0x8FF4CC	U+7DF1	# <cjk>	[2000]
 0x8FF4CD	U+7DF9	# <cjk>	[2000]
 0x8FF4CE	U+4302	# <cjk>	[2000]
-0x8FF4CF	U+260ED	# <cjk>	[2000]	[Unicode3.1]	Private: U+F874
+0x8FF4CF	U+260ED	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4D0	U+FA58	# CJK COMPATIBILITY IDEOGRAPH-FA58	[2000]	[Unicode3.2]
 0x8FF4D1	U+7E10	# <cjk>	[2000]
 0x8FF4D2	U+7E17	# <cjk>	[2000]
@@ -10592,23 +10593,23 @@
 0x8FF4E6	U+7F44	# <cjk>	[2000]
 0x8FF4E7	U+7F4F	# <cjk>	[2000]
 0x8FF4E8	U+34C1	# <cjk>	[2000]
-0x8FF4E9	U+26270	# <cjk>	[2000]	[Unicode3.1]	Private: U+F876
+0x8FF4E9	U+26270	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4EA	U+7F52	# <cjk>	[2000]
-0x8FF4EB	U+26286	# <cjk>	[2000]	[Unicode3.1]	Private: U+F877
+0x8FF4EB	U+26286	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4EC	U+7F61	# <cjk>	[2000]
 0x8FF4ED	U+7F63	# <cjk>	[2000]
 0x8FF4EE	U+7F64	# <cjk>	[2000]
 0x8FF4EF	U+7F6D	# <cjk>	[2000]
 0x8FF4F0	U+7F7D	# <cjk>	[2000]
 0x8FF4F1	U+7F7E	# <cjk>	[2000]
-0x8FF4F2	U+2634C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F878
+0x8FF4F2	U+2634C	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4F3	U+7F90	# <cjk>	[2000]
 0x8FF4F4	U+517B	# <cjk>	[2000]
-0x8FF4F5	U+23D0E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F879
+0x8FF4F5	U+23D0E	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4F6	U+7F96	# <cjk>	[2000]
 0x8FF4F7	U+7F9C	# <cjk>	[2000]
 0x8FF4F8	U+7FAD	# <cjk>	[2000]
-0x8FF4F9	U+26402	# <cjk>	[2000]	[Unicode3.1]	Private: U+F87A
+0x8FF4F9	U+26402	# <cjk>	[2000]	[Unicode3.1]
 0x8FF4FA	U+7FC3	# <cjk>	[2000]
 0x8FF4FB	U+7FCF	# <cjk>	[2000]
 0x8FF4FC	U+7FE3	# <cjk>	[2000]
@@ -10634,12 +10635,12 @@
 0x8FF5B2	U+80A4	# <cjk>	[2000]
 0x8FF5B3	U+80A7	# <cjk>	[2000]
 0x8FF5B4	U+80B8	# <cjk>	[2000]
-0x8FF5B5	U+2667E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F87B
+0x8FF5B5	U+2667E	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5B6	U+80C5	# <cjk>	[2000]
 0x8FF5B7	U+80D5	# <cjk>	[2000]
 0x8FF5B8	U+80D8	# <cjk>	[2000]
 0x8FF5B9	U+80E6	# <cjk>	[2000]
-0x8FF5BA	U+266B0	# <cjk>	[2000]	[Unicode3.1]	Private: U+F87C
+0x8FF5BA	U+266B0	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5BB	U+810D	# <cjk>	[2000]
 0x8FF5BC	U+80F5	# <cjk>	[2000]
 0x8FF5BD	U+80FB	# <cjk>	[2000]
@@ -10651,7 +10652,7 @@
 0x8FF5C3	U+8124	# <cjk>	[2000]
 0x8FF5C4	U+8127	# <cjk>	[2000]
 0x8FF5C5	U+812C	# <cjk>	[2000]
-0x8FF5C6	U+2671D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F87D
+0x8FF5C6	U+2671D	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5C7	U+813D	# <cjk>	[2000]
 0x8FF5C8	U+4408	# <cjk>	[2000]
 0x8FF5C9	U+8169	# <cjk>	[2000]
@@ -10667,36 +10668,36 @@
 0x8FF5D3	U+81C3	# <cjk>	[2000]
 0x8FF5D4	U+81D6	# <cjk>	[2000]
 0x8FF5D5	U+81DB	# <cjk>	[2000]
-0x8FF5D6	U+268DD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F87E
+0x8FF5D6	U+268DD	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5D7	U+81E4	# <cjk>	[2000]
-0x8FF5D8	U+268EA	# <cjk>	[2000]	[Unicode3.1]	Private: U+F87F
+0x8FF5D8	U+268EA	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5D9	U+81EC	# <cjk>	[2000]
-0x8FF5DA	U+26951	# <cjk>	[2000]	[Unicode3.1]	Private: U+F880
+0x8FF5DA	U+26951	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5DB	U+81FD	# <cjk>	[2000]
 0x8FF5DC	U+81FF	# <cjk>	[2000]
-0x8FF5DD	U+2696F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F881
+0x8FF5DD	U+2696F	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5DE	U+8204	# <cjk>	[2000]
-0x8FF5DF	U+269DD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F882
+0x8FF5DF	U+269DD	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5E0	U+8219	# <cjk>	[2000]
 0x8FF5E1	U+8221	# <cjk>	[2000]
 0x8FF5E2	U+8222	# <cjk>	[2000]
-0x8FF5E3	U+26A1E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F883
+0x8FF5E3	U+26A1E	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5E4	U+8232	# <cjk>	[2000]
 0x8FF5E5	U+8234	# <cjk>	[2000]
 0x8FF5E6	U+823C	# <cjk>	[2000]
 0x8FF5E7	U+8246	# <cjk>	[2000]
 0x8FF5E8	U+8249	# <cjk>	[2000]
 0x8FF5E9	U+8245	# <cjk>	[2000]
-0x8FF5EA	U+26A58	# <cjk>	[2000]	[Unicode3.1]	Private: U+F884
+0x8FF5EA	U+26A58	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5EB	U+824B	# <cjk>	[2000]
 0x8FF5EC	U+4476	# <cjk>	[2000]
 0x8FF5ED	U+824F	# <cjk>	[2000]
 0x8FF5EE	U+447A	# <cjk>	[2000]
 0x8FF5EF	U+8257	# <cjk>	[2000]
-0x8FF5F0	U+26A8C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F885
+0x8FF5F0	U+26A8C	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5F1	U+825C	# <cjk>	[2000]
 0x8FF5F2	U+8263	# <cjk>	[2000]
-0x8FF5F3	U+26AB7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F886
+0x8FF5F3	U+26AB7	# <cjk>	[2000]	[Unicode3.1]
 0x8FF5F4	U+FA5D	# CJK COMPATIBILITY IDEOGRAPH-FA5D	[2000]	[Unicode3.2]
 0x8FF5F5	U+FA5E	# CJK COMPATIBILITY IDEOGRAPH-FA5E	[2000]	[Unicode3.2]
 0x8FF5F6	U+8279	# <cjk>	[2000]
@@ -10743,7 +10744,7 @@
 0x8FF6C1	U+840F	# <cjk>	[2000]
 0x8FF6C2	U+8411	# <cjk>	[2000]
 0x8FF6C3	U+8415	# <cjk>	[2000]
-0x8FF6C4	U+26C73	# <cjk>	[2000]	[Unicode3.1]	Private: U+F889
+0x8FF6C4	U+26C73	# <cjk>	[2000]	[Unicode3.1]
 0x8FF6C5	U+8417	# <cjk>	[2000]
 0x8FF6C6	U+8439	# <cjk>	[2000]
 0x8FF6C7	U+844A	# <cjk>	[2000]
@@ -10753,7 +10754,7 @@
 0x8FF6CB	U+8459	# <cjk>	[2000]
 0x8FF6CC	U+845A	# <cjk>	[2000]
 0x8FF6CD	U+845C	# <cjk>	[2000]
-0x8FF6CE	U+26CDD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F88A
+0x8FF6CE	U+26CDD	# <cjk>	[2000]	[Unicode3.1]
 0x8FF6CF	U+8465	# <cjk>	[2000]
 0x8FF6D0	U+8476	# <cjk>	[2000]
 0x8FF6D1	U+8478	# <cjk>	[2000]
@@ -10768,7 +10769,7 @@
 0x8FF6DA	U+84CE	# <cjk>	[2000]
 0x8FF6DB	U+84CF	# <cjk>	[2000]
 0x8FF6DC	U+84D3	# <cjk>	[2000]
-0x8FF6DD	U+26E65	# <cjk>	[2000]	[Unicode3.1]	Private: U+F88B
+0x8FF6DD	U+26E65	# <cjk>	[2000]	[Unicode3.1]
 0x8FF6DE	U+84E7	# <cjk>	[2000]
 0x8FF6DF	U+84EA	# <cjk>	[2000]
 0x8FF6E0	U+84EF	# <cjk>	[2000]
@@ -10792,7 +10793,7 @@
 0x8FF6F2	U+855E	# <cjk>	[2000]
 0x8FF6F3	U+8561	# <cjk>	[2000]
 0x8FF6F4	U+8562	# <cjk>	[2000]
-0x8FF6F5	U+26F94	# <cjk>	[2000]	[Unicode3.1]	Private: U+F88C
+0x8FF6F5	U+26F94	# <cjk>	[2000]	[Unicode3.1]
 0x8FF6F6	U+857B	# <cjk>	[2000]
 0x8FF6F7	U+857D	# <cjk>	[2000]
 0x8FF6F8	U+857F	# <cjk>	[2000]
@@ -10801,9 +10802,9 @@
 0x8FF6FB	U+8593	# <cjk>	[2000]
 0x8FF6FC	U+859D	# <cjk>	[2000]
 0x8FF6FD	U+859F	# <cjk>	[2000]
-0x8FF6FE	U+26FF8	# <cjk>	[2000]	[Unicode3.1]	Private: U+F88D
-0x8FF7A1	U+26FF6	# <cjk>	[2000]	[Unicode3.1]	Private: U+F88E
-0x8FF7A2	U+26FF7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F88F
+0x8FF6FE	U+26FF8	# <cjk>	[2000]	[Unicode3.1]
+0x8FF7A1	U+26FF6	# <cjk>	[2000]	[Unicode3.1]
+0x8FF7A2	U+26FF7	# <cjk>	[2000]	[Unicode3.1]
 0x8FF7A3	U+85B7	# <cjk>	[2000]
 0x8FF7A4	U+85BC	# <cjk>	[2000]
 0x8FF7A5	U+85C7	# <cjk>	[2000]
@@ -10820,10 +10821,10 @@
 0x8FF7B0	U+8621	# <cjk>	[2000]
 0x8FF7B1	U+8624	# <cjk>	[2000]
 0x8FF7B2	U+8627	# <cjk>	[2000]
-0x8FF7B3	U+2710D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F890
+0x8FF7B3	U+2710D	# <cjk>	[2000]	[Unicode3.1]
 0x8FF7B4	U+8639	# <cjk>	[2000]
 0x8FF7B5	U+863C	# <cjk>	[2000]
-0x8FF7B6	U+27139	# <cjk>	[2000]	[Unicode3.1]	Private: U+F891
+0x8FF7B6	U+27139	# <cjk>	[2000]	[Unicode3.1]
 0x8FF7B7	U+8640	# <cjk>	[2000]
 0x8FF7B8	U+FA20	# CJK COMPATIBILITY IDEOGRAPH-FA20	[2000]
 0x8FF7B9	U+8653	# <cjk>	[2000]
@@ -10869,22 +10870,22 @@
 0x8FF7E1	U+8765	# <cjk>	[2000]
 0x8FF7E2	U+8772	# <cjk>	[2000]
 0x8FF7E3	U+877C	# <cjk>	[2000]
-0x8FF7E4	U+273DB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F892
-0x8FF7E5	U+273DA	# <cjk>	[2000]	[Unicode3.1]	Private: U+F893
+0x8FF7E4	U+273DB	# <cjk>	[2000]	[Unicode3.1]
+0x8FF7E5	U+273DA	# <cjk>	[2000]	[Unicode3.1]
 0x8FF7E6	U+87A7	# <cjk>	[2000]
 0x8FF7E7	U+8789	# <cjk>	[2000]
 0x8FF7E8	U+878B	# <cjk>	[2000]
 0x8FF7E9	U+8793	# <cjk>	[2000]
 0x8FF7EA	U+87A0	# <cjk>	[2000]
-0x8FF7EB	U+273FE	# <cjk>	[2000]	[Unicode3.1]	Private: U+F894
+0x8FF7EB	U+273FE	# <cjk>	[2000]	[Unicode3.1]
 0x8FF7EC	U+45E5	# <cjk>	[2000]
 0x8FF7ED	U+87BE	# <cjk>	[2000]
-0x8FF7EE	U+27410	# <cjk>	[2000]	[Unicode3.1]	Private: U+F895
+0x8FF7EE	U+27410	# <cjk>	[2000]	[Unicode3.1]
 0x8FF7EF	U+87C1	# <cjk>	[2000]
 0x8FF7F0	U+87CE	# <cjk>	[2000]
 0x8FF7F1	U+87F5	# <cjk>	[2000]
 0x8FF7F2	U+87DF	# <cjk>	[2000]
-0x8FF7F3	U+27449	# <cjk>	[2000]	[Unicode3.1]	Private: U+F896
+0x8FF7F3	U+27449	# <cjk>	[2000]	[Unicode3.1]
 0x8FF7F4	U+87E3	# <cjk>	[2000]
 0x8FF7F5	U+87E5	# <cjk>	[2000]
 0x8FF7F6	U+87E6	# <cjk>	[2000]
@@ -10904,10 +10905,10 @@
 0x8FF8A6	U+8858	# <cjk>	[2000]
 0x8FF8A7	U+885F	# <cjk>	[2000]
 0x8FF8A8	U+8864	# <cjk>	[2000]
-0x8FF8A9	U+27615	# <cjk>	[2000]	[Unicode3.1]	Private: U+F897
-0x8FF8AA	U+27614	# <cjk>	[2000]	[Unicode3.1]	Private: U+F898
+0x8FF8A9	U+27615	# <cjk>	[2000]	[Unicode3.1]
+0x8FF8AA	U+27614	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8AB	U+8869	# <cjk>	[2000]
-0x8FF8AC	U+27631	# <cjk>	[2000]	[Unicode3.1]	Private: U+F899
+0x8FF8AC	U+27631	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8AD	U+886F	# <cjk>	[2000]
 0x8FF8AE	U+88A0	# <cjk>	[2000]
 0x8FF8AF	U+88BC	# <cjk>	[2000]
@@ -10915,7 +10916,7 @@
 0x8FF8B1	U+88BE	# <cjk>	[2000]
 0x8FF8B2	U+88C0	# <cjk>	[2000]
 0x8FF8B3	U+88D2	# <cjk>	[2000]
-0x8FF8B4	U+27693	# <cjk>	[2000]	[Unicode3.1]	Private: U+F89A
+0x8FF8B4	U+27693	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8B5	U+88D1	# <cjk>	[2000]
 0x8FF8B6	U+88D3	# <cjk>	[2000]
 0x8FF8B7	U+88DB	# <cjk>	[2000]
@@ -10923,13 +10924,13 @@
 0x8FF8B9	U+88F1	# <cjk>	[2000]
 0x8FF8BA	U+4641	# <cjk>	[2000]
 0x8FF8BB	U+8901	# <cjk>	[2000]
-0x8FF8BC	U+2770E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F89B
+0x8FF8BC	U+2770E	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8BD	U+8937	# <cjk>	[2000]
-0x8FF8BE	U+27723	# <cjk>	[2000]	[Unicode3.1]	Private: U+F89C
+0x8FF8BE	U+27723	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8BF	U+8942	# <cjk>	[2000]
 0x8FF8C0	U+8945	# <cjk>	[2000]
 0x8FF8C1	U+8949	# <cjk>	[2000]
-0x8FF8C2	U+27752	# <cjk>	[2000]	[Unicode3.1]	Private: U+F89D
+0x8FF8C2	U+27752	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8C3	U+4665	# <cjk>	[2000]
 0x8FF8C4	U+8962	# <cjk>	[2000]
 0x8FF8C5	U+8980	# <cjk>	[2000]
@@ -10949,7 +10950,7 @@
 0x8FF8D3	U+46AF	# <cjk>	[2000]
 0x8FF8D4	U+8A11	# <cjk>	[2000]
 0x8FF8D5	U+8A14	# <cjk>	[2000]
-0x8FF8D6	U+27985	# <cjk>	[2000]	[Unicode3.1]	Private: U+F89E
+0x8FF8D6	U+27985	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8D7	U+8A21	# <cjk>	[2000]
 0x8FF8D8	U+8A35	# <cjk>	[2000]
 0x8FF8D9	U+8A3E	# <cjk>	[2000]
@@ -10962,7 +10963,7 @@
 0x8FF8E0	U+8ABE	# <cjk>	[2000]
 0x8FF8E1	U+8AD7	# <cjk>	[2000]
 0x8FF8E2	U+8AFC	# <cjk>	[2000]
-0x8FF8E3	U+27A84	# <cjk>	[2000]	[Unicode3.1]	Private: U+F89F
+0x8FF8E3	U+27A84	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8E4	U+8B0A	# <cjk>	[2000]
 0x8FF8E5	U+8B05	# <cjk>	[2000]
 0x8FF8E6	U+8B0D	# <cjk>	[2000]
@@ -10982,10 +10983,10 @@
 0x8FF8F4	U+8B9C	# <cjk>	[2000]
 0x8FF8F5	U+8B9E	# <cjk>	[2000]
 0x8FF8F6	U+8C39	# <cjk>	[2000]
-0x8FF8F7	U+27BB3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A0
+0x8FF8F7	U+27BB3	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8F8	U+8C3D	# <cjk>	[2000]
-0x8FF8F9	U+27BBE	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A1
-0x8FF8FA	U+27BC7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A2
+0x8FF8F9	U+27BBE	# <cjk>	[2000]	[Unicode3.1]
+0x8FF8FA	U+27BC7	# <cjk>	[2000]	[Unicode3.1]
 0x8FF8FB	U+8C45	# <cjk>	[2000]
 0x8FF8FC	U+8C47	# <cjk>	[2000]
 0x8FF8FD	U+8C4F	# <cjk>	[2000]
@@ -10994,7 +10995,7 @@
 0x8FF9A2	U+8C69	# <cjk>	[2000]
 0x8FF9A3	U+8C6D	# <cjk>	[2000]
 0x8FF9A4	U+8C73	# <cjk>	[2000]
-0x8FF9A5	U+27CB8	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A3
+0x8FF9A5	U+27CB8	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9A6	U+8C93	# <cjk>	[2000]
 0x8FF9A7	U+8C92	# <cjk>	[2000]
 0x8FF9A8	U+8C99	# <cjk>	[2000]
@@ -11004,17 +11005,17 @@
 0x8FF9AC	U+8CD6	# <cjk>	[2000]
 0x8FF9AD	U+8CD5	# <cjk>	[2000]
 0x8FF9AE	U+8CD9	# <cjk>	[2000]
-0x8FF9AF	U+27DA0	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A4
+0x8FF9AF	U+27DA0	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9B0	U+8CF0	# <cjk>	[2000]
 0x8FF9B1	U+8CF1	# <cjk>	[2000]
-0x8FF9B2	U+27E10	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A5
+0x8FF9B2	U+27E10	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9B3	U+8D09	# <cjk>	[2000]
 0x8FF9B4	U+8D0E	# <cjk>	[2000]
 0x8FF9B5	U+8D6C	# <cjk>	[2000]
 0x8FF9B6	U+8D84	# <cjk>	[2000]
 0x8FF9B7	U+8D95	# <cjk>	[2000]
 0x8FF9B8	U+8DA6	# <cjk>	[2000]
-0x8FF9B9	U+27FB7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A6
+0x8FF9B9	U+27FB7	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9BA	U+8DC6	# <cjk>	[2000]
 0x8FF9BB	U+8DC8	# <cjk>	[2000]
 0x8FF9BC	U+8DD9	# <cjk>	[2000]
@@ -11023,13 +11024,13 @@
 0x8FF9BF	U+47FD	# <cjk>	[2000]
 0x8FF9C0	U+8DFD	# <cjk>	[2000]
 0x8FF9C1	U+8E06	# <cjk>	[2000]
-0x8FF9C2	U+2808A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A7
+0x8FF9C2	U+2808A	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9C3	U+8E14	# <cjk>	[2000]
 0x8FF9C4	U+8E16	# <cjk>	[2000]
 0x8FF9C5	U+8E21	# <cjk>	[2000]
 0x8FF9C6	U+8E22	# <cjk>	[2000]
 0x8FF9C7	U+8E27	# <cjk>	[2000]
-0x8FF9C8	U+280BB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A8
+0x8FF9C8	U+280BB	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9C9	U+4816	# <cjk>	[2000]
 0x8FF9CA	U+8E36	# <cjk>	[2000]
 0x8FF9CB	U+8E39	# <cjk>	[2000]
@@ -11046,12 +11047,12 @@
 0x8FF9D6	U+8EB5	# <cjk>	[2000]
 0x8FF9D7	U+8EB6	# <cjk>	[2000]
 0x8FF9D8	U+8EBB	# <cjk>	[2000]
-0x8FF9D9	U+28282	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8A9
+0x8FF9D9	U+28282	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9DA	U+8ED1	# <cjk>	[2000]
 0x8FF9DB	U+8ED4	# <cjk>	[2000]
 0x8FF9DC	U+484E	# <cjk>	[2000]
 0x8FF9DD	U+8EF9	# <cjk>	[2000]
-0x8FF9DE	U+282F3	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8AA
+0x8FF9DE	U+282F3	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9DF	U+8F00	# <cjk>	[2000]
 0x8FF9E0	U+8F08	# <cjk>	[2000]
 0x8FF9E1	U+8F17	# <cjk>	[2000]
@@ -11059,12 +11060,12 @@
 0x8FF9E3	U+8F40	# <cjk>	[2000]
 0x8FF9E4	U+8F4A	# <cjk>	[2000]
 0x8FF9E5	U+8F58	# <cjk>	[2000]
-0x8FF9E6	U+2840C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8AB
+0x8FF9E6	U+2840C	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9E7	U+8FA4	# <cjk>	[2000]
 0x8FF9E8	U+8FB4	# <cjk>	[2000]
 0x8FF9E9	U+FA66	# CJK COMPATIBILITY IDEOGRAPH-FA66	[2000]	[Unicode3.2]
 0x8FF9EA	U+8FB6	# <cjk>	[2000]
-0x8FF9EB	U+28455	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8AD
+0x8FF9EB	U+28455	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9EC	U+8FC1	# <cjk>	[2000]
 0x8FF9ED	U+8FC6	# <cjk>	[2000]
 0x8FF9EE	U+FA24	# CJK COMPATIBILITY IDEOGRAPH-FA24	[2000]
@@ -11079,12 +11080,12 @@
 0x8FF9F7	U+9002	# <cjk>	[2000]
 0x8FF9F8	U+900C	# <cjk>	[2000]
 0x8FF9F9	U+9037	# <cjk>	[2000]
-0x8FF9FA	U+2856B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8AE
+0x8FF9FA	U+2856B	# <cjk>	[2000]	[Unicode3.1]
 0x8FF9FB	U+9043	# <cjk>	[2000]
 0x8FF9FC	U+9044	# <cjk>	[2000]
 0x8FF9FD	U+905D	# <cjk>	[2000]
-0x8FF9FE	U+285C8	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8AF
-0x8FFAA1	U+285C9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B0
+0x8FF9FE	U+285C8	# <cjk>	[2000]	[Unicode3.1]
+0x8FFAA1	U+285C9	# <cjk>	[2000]	[Unicode3.1]
 0x8FFAA2	U+9085	# <cjk>	[2000]
 0x8FFAA3	U+908C	# <cjk>	[2000]
 0x8FFAA4	U+9090	# <cjk>	[2000]
@@ -11095,10 +11096,10 @@
 0x8FFAA9	U+90B6	# <cjk>	[2000]
 0x8FFAAA	U+90C3	# <cjk>	[2000]
 0x8FFAAB	U+90C8	# <cjk>	[2000]
-0x8FFAAC	U+286D7	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B1
+0x8FFAAC	U+286D7	# <cjk>	[2000]	[Unicode3.1]
 0x8FFAAD	U+90DC	# <cjk>	[2000]
 0x8FFAAE	U+90DF	# <cjk>	[2000]
-0x8FFAAF	U+286FA	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B2
+0x8FFAAF	U+286FA	# <cjk>	[2000]	[Unicode3.1]
 0x8FFAB0	U+90F6	# <cjk>	[2000]
 0x8FFAB1	U+90F2	# <cjk>	[2000]
 0x8FFAB2	U+9100	# <cjk>	[2000]
@@ -11130,15 +11131,15 @@
 0x8FFACC	U+91C3	# <cjk>	[2000]
 0x8FFACD	U+91C4	# <cjk>	[2000]
 0x8FFACE	U+91DA	# <cjk>	[2000]
-0x8FFACF	U+28949	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B3
-0x8FFAD0	U+28946	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B4
+0x8FFACF	U+28949	# <cjk>	[2000]	[Unicode3.1]
+0x8FFAD0	U+28946	# <cjk>	[2000]	[Unicode3.1]
 0x8FFAD1	U+91EC	# <cjk>	[2000]
 0x8FFAD2	U+91EE	# <cjk>	[2000]
 0x8FFAD3	U+9201	# <cjk>	[2000]
 0x8FFAD4	U+920A	# <cjk>	[2000]
 0x8FFAD5	U+9216	# <cjk>	[2000]
 0x8FFAD6	U+9217	# <cjk>	[2000]
-0x8FFAD7	U+2896B	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B5
+0x8FFAD7	U+2896B	# <cjk>	[2000]	[Unicode3.1]
 0x8FFAD8	U+9233	# <cjk>	[2000]
 0x8FFAD9	U+9242	# <cjk>	[2000]
 0x8FFADA	U+9247	# <cjk>	[2000]
@@ -11152,8 +11153,8 @@
 0x8FFAE2	U+9265	# <cjk>	[2000]
 0x8FFAE3	U+9267	# <cjk>	[2000]
 0x8FFAE4	U+9268	# <cjk>	[2000]
-0x8FFAE5	U+28987	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B6
-0x8FFAE6	U+28988	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B7
+0x8FFAE5	U+28987	# <cjk>	[2000]	[Unicode3.1]
+0x8FFAE6	U+28988	# <cjk>	[2000]	[Unicode3.1]
 0x8FFAE7	U+927C	# <cjk>	[2000]
 0x8FFAE8	U+927D	# <cjk>	[2000]
 0x8FFAE9	U+927F	# <cjk>	[2000]
@@ -11164,8 +11165,8 @@
 0x8FFAEE	U+929F	# <cjk>	[2000]
 0x8FFAEF	U+92A7	# <cjk>	[2000]
 0x8FFAF0	U+92AB	# <cjk>	[2000]
-0x8FFAF1	U+289BA	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B8
-0x8FFAF2	U+289BB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8B9
+0x8FFAF1	U+289BA	# <cjk>	[2000]	[Unicode3.1]
+0x8FFAF2	U+289BB	# <cjk>	[2000]	[Unicode3.1]
 0x8FFAF3	U+92B2	# <cjk>	[2000]
 0x8FFAF4	U+92BF	# <cjk>	[2000]
 0x8FFAF5	U+92C0	# <cjk>	[2000]
@@ -11177,8 +11178,8 @@
 0x8FFAFB	U+92E5	# <cjk>	[2000]
 0x8FFAFC	U+92E7	# <cjk>	[2000]
 0x8FFAFD	U+9311	# <cjk>	[2000]
-0x8FFAFE	U+28A1E	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8BA
-0x8FFBA1	U+28A29	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8BB
+0x8FFAFE	U+28A1E	# <cjk>	[2000]	[Unicode3.1]
+0x8FFBA1	U+28A29	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBA2	U+92F7	# <cjk>	[2000]
 0x8FFBA3	U+92F9	# <cjk>	[2000]
 0x8FFBA4	U+92FB	# <cjk>	[2000]
@@ -11189,8 +11190,8 @@
 0x8FFBA9	U+931E	# <cjk>	[2000]
 0x8FFBAA	U+9327	# <cjk>	[2000]
 0x8FFBAB	U+9329	# <cjk>	[2000]
-0x8FFBAC	U+28A71	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8BC
-0x8FFBAD	U+28A43	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8BD
+0x8FFBAC	U+28A71	# <cjk>	[2000]	[Unicode3.1]
+0x8FFBAD	U+28A43	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBAE	U+9347	# <cjk>	[2000]
 0x8FFBAF	U+9351	# <cjk>	[2000]
 0x8FFBB0	U+9357	# <cjk>	[2000]
@@ -11199,15 +11200,15 @@
 0x8FFBB3	U+9371	# <cjk>	[2000]
 0x8FFBB4	U+9373	# <cjk>	[2000]
 0x8FFBB5	U+93A1	# <cjk>	[2000]
-0x8FFBB6	U+28A99	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8BE
-0x8FFBB7	U+28ACD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8BF
+0x8FFBB6	U+28A99	# <cjk>	[2000]	[Unicode3.1]
+0x8FFBB7	U+28ACD	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBB8	U+9388	# <cjk>	[2000]
 0x8FFBB9	U+938B	# <cjk>	[2000]
 0x8FFBBA	U+938F	# <cjk>	[2000]
 0x8FFBBB	U+939E	# <cjk>	[2000]
 0x8FFBBC	U+93F5	# <cjk>	[2000]
-0x8FFBBD	U+28AE4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C0
-0x8FFBBE	U+28ADD	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C1
+0x8FFBBD	U+28AE4	# <cjk>	[2000]	[Unicode3.1]
+0x8FFBBE	U+28ADD	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBBF	U+93F1	# <cjk>	[2000]
 0x8FFBC0	U+93C1	# <cjk>	[2000]
 0x8FFBC1	U+93C7	# <cjk>	[2000]
@@ -11223,8 +11224,8 @@
 0x8FFBCB	U+9434	# <cjk>	[2000]
 0x8FFBCC	U+943B	# <cjk>	[2000]
 0x8FFBCD	U+9445	# <cjk>	[2000]
-0x8FFBCE	U+28BC1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C2
-0x8FFBCF	U+28BEF	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C3
+0x8FFBCE	U+28BC1	# <cjk>	[2000]	[Unicode3.1]
+0x8FFBCF	U+28BEF	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBD0	U+946D	# <cjk>	[2000]
 0x8FFBD1	U+946F	# <cjk>	[2000]
 0x8FFBD2	U+9578	# <cjk>	[2000]
@@ -11232,25 +11233,25 @@
 0x8FFBD4	U+9586	# <cjk>	[2000]
 0x8FFBD5	U+958C	# <cjk>	[2000]
 0x8FFBD6	U+958D	# <cjk>	[2000]
-0x8FFBD7	U+28D10	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C4
+0x8FFBD7	U+28D10	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBD8	U+95AB	# <cjk>	[2000]
 0x8FFBD9	U+95B4	# <cjk>	[2000]
-0x8FFBDA	U+28D71	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C5
+0x8FFBDA	U+28D71	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBDB	U+95C8	# <cjk>	[2000]
-0x8FFBDC	U+28DFB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C6
-0x8FFBDD	U+28E1F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C7
+0x8FFBDC	U+28DFB	# <cjk>	[2000]	[Unicode3.1]
+0x8FFBDD	U+28E1F	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBDE	U+962C	# <cjk>	[2000]
 0x8FFBDF	U+9633	# <cjk>	[2000]
 0x8FFBE0	U+9634	# <cjk>	[2000]
-0x8FFBE1	U+28E36	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C8
+0x8FFBE1	U+28E36	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBE2	U+963C	# <cjk>	[2000]
 0x8FFBE3	U+9641	# <cjk>	[2000]
 0x8FFBE4	U+9661	# <cjk>	[2000]
-0x8FFBE5	U+28E89	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8C9
+0x8FFBE5	U+28E89	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBE6	U+9682	# <cjk>	[2000]
-0x8FFBE7	U+28EEB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8CA
+0x8FFBE7	U+28EEB	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBE8	U+969A	# <cjk>	[2000]
-0x8FFBE9	U+28F32	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8CB
+0x8FFBE9	U+28F32	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBEA	U+49E7	# <cjk>	[2000]
 0x8FFBEB	U+96A9	# <cjk>	[2000]
 0x8FFBEC	U+96AF	# <cjk>	[2000]
@@ -11258,7 +11259,7 @@
 0x8FFBEE	U+96BA	# <cjk>	[2000]
 0x8FFBEF	U+96BD	# <cjk>	[2000]
 0x8FFBF0	U+49FA	# <cjk>	[2000]
-0x8FFBF1	U+28FF8	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8CC
+0x8FFBF1	U+28FF8	# <cjk>	[2000]	[Unicode3.1]
 0x8FFBF2	U+96D8	# <cjk>	[2000]
 0x8FFBF3	U+96DA	# <cjk>	[2000]
 0x8FFBF4	U+96DD	# <cjk>	[2000]
@@ -11273,8 +11274,8 @@
 0x8FFBFD	U+9757	# <cjk>	[2000]
 0x8FFBFE	U+975B	# <cjk>	[2000]
 0x8FFCA1	U+976A	# <cjk>	[2000]
-0x8FFCA2	U+292A0	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8CD
-0x8FFCA3	U+292B1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8CE
+0x8FFCA2	U+292A0	# <cjk>	[2000]	[Unicode3.1]
+0x8FFCA3	U+292B1	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCA4	U+9796	# <cjk>	[2000]
 0x8FFCA5	U+979A	# <cjk>	[2000]
 0x8FFCA6	U+979E	# <cjk>	[2000]
@@ -11295,7 +11296,7 @@
 0x8FFCB5	U+9814	# <cjk>	[2000]
 0x8FFCB6	U+9816	# <cjk>	[2000]
 0x8FFCB7	U+4ABC	# <cjk>	[2000]
-0x8FFCB8	U+29490	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8CF
+0x8FFCB8	U+29490	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCB9	U+9823	# <cjk>	[2000]
 0x8FFCBA	U+9832	# <cjk>	[2000]
 0x8FFCBB	U+9833	# <cjk>	[2000]
@@ -11305,7 +11306,7 @@
 0x8FFCBF	U+98AB	# <cjk>	[2000]
 0x8FFCC0	U+98AD	# <cjk>	[2000]
 0x8FFCC1	U+98B0	# <cjk>	[2000]
-0x8FFCC2	U+295CF	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D0
+0x8FFCC2	U+295CF	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCC3	U+98B7	# <cjk>	[2000]
 0x8FFCC4	U+98B8	# <cjk>	[2000]
 0x8FFCC5	U+98BB	# <cjk>	[2000]
@@ -11315,7 +11316,7 @@
 0x8FFCC9	U+98C7	# <cjk>	[2000]
 0x8FFCCA	U+98CB	# <cjk>	[2000]
 0x8FFCCB	U+98E0	# <cjk>	[2000]
-0x8FFCCC	U+2967F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D1
+0x8FFCCC	U+2967F	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCCD	U+98E1	# <cjk>	[2000]
 0x8FFCCE	U+98E3	# <cjk>	[2000]
 0x8FFCCF	U+98E5	# <cjk>	[2000]
@@ -11325,14 +11326,14 @@
 0x8FFCD3	U+98F3	# <cjk>	[2000]
 0x8FFCD4	U+9908	# <cjk>	[2000]
 0x8FFCD5	U+4B3B	# <cjk>	[2000]
-0x8FFCD6	U+296F0	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D2
+0x8FFCD6	U+296F0	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCD7	U+9916	# <cjk>	[2000]
 0x8FFCD8	U+9917	# <cjk>	[2000]
-0x8FFCD9	U+29719	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D3
+0x8FFCD9	U+29719	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCDA	U+991A	# <cjk>	[2000]
 0x8FFCDB	U+991B	# <cjk>	[2000]
 0x8FFCDC	U+991C	# <cjk>	[2000]
-0x8FFCDD	U+29750	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D4
+0x8FFCDD	U+29750	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCDE	U+9931	# <cjk>	[2000]
 0x8FFCDF	U+9932	# <cjk>	[2000]
 0x8FFCE0	U+9933	# <cjk>	[2000]
@@ -11357,7 +11358,7 @@
 0x8FFCF3	U+99D4	# <cjk>	[2000]
 0x8FFCF4	U+99D9	# <cjk>	[2000]
 0x8FFCF5	U+99DE	# <cjk>	[2000]
-0x8FFCF6	U+298C6	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D5
+0x8FFCF6	U+298C6	# <cjk>	[2000]	[Unicode3.1]
 0x8FFCF7	U+99F0	# <cjk>	[2000]
 0x8FFCF8	U+99F9	# <cjk>	[2000]
 0x8FFCF9	U+99FC	# <cjk>	[2000]
@@ -11377,7 +11378,7 @@
 0x8FFDA9	U+9AB7	# <cjk>	[2000]
 0x8FFDAA	U+4BD2	# <cjk>	[2000]
 0x8FFDAB	U+9AB9	# <cjk>	[2000]
-0x8FFDAC	U+29A72	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D6
+0x8FFDAC	U+29A72	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDAD	U+9AC6	# <cjk>	[2000]
 0x8FFDAE	U+9AD0	# <cjk>	[2000]
 0x8FFDAF	U+9AD2	# <cjk>	[2000]
@@ -11392,7 +11393,7 @@
 0x8FFDB8	U+9B10	# <cjk>	[2000]
 0x8FFDB9	U+9B12	# <cjk>	[2000]
 0x8FFDBA	U+9B16	# <cjk>	[2000]
-0x8FFDBB	U+9B1D	# <cjk>	[2000]
+0x8FFDBB	U+9B1C	# <cjk>	[2000]
 0x8FFDBC	U+9B2B	# <cjk>	[2000]
 0x8FFDBD	U+9B33	# <cjk>	[2000]
 0x8FFDBE	U+9B3D	# <cjk>	[2000]
@@ -11408,8 +11409,8 @@
 0x8FFDC8	U+9BA6	# <cjk>	[2000]
 0x8FFDC9	U+9BAC	# <cjk>	[2000]
 0x8FFDCA	U+9BB1	# <cjk>	[2000]
-0x8FFDCB	U+29DDB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D7
-0x8FFDCC	U+29E3D	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D8
+0x8FFDCB	U+29DDB	# <cjk>	[2000]	[Unicode3.1]
+0x8FFDCC	U+29E3D	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDCD	U+9BB2	# <cjk>	[2000]
 0x8FFDCE	U+9BB8	# <cjk>	[2000]
 0x8FFDCF	U+9BBE	# <cjk>	[2000]
@@ -11422,11 +11423,11 @@
 0x8FFDD6	U+9BEB	# <cjk>	[2000]
 0x8FFDD7	U+9BEF	# <cjk>	[2000]
 0x8FFDD8	U+9BEE	# <cjk>	[2000]
-0x8FFDD9	U+29E15	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8D9
+0x8FFDD9	U+29E15	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDDA	U+9BFA	# <cjk>	[2000]
-0x8FFDDB	U+29E8A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8DA
+0x8FFDDB	U+29E8A	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDDC	U+9BF7	# <cjk>	[2000]
-0x8FFDDD	U+29E49	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8DB
+0x8FFDDD	U+29E49	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDDE	U+9C16	# <cjk>	[2000]
 0x8FFDDF	U+9C18	# <cjk>	[2000]
 0x8FFDE0	U+9C19	# <cjk>	[2000]
@@ -11436,16 +11437,16 @@
 0x8FFDE4	U+9C27	# <cjk>	[2000]
 0x8FFDE5	U+9C29	# <cjk>	[2000]
 0x8FFDE6	U+9C2A	# <cjk>	[2000]
-0x8FFDE7	U+29EC4	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8DC
+0x8FFDE7	U+29EC4	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDE8	U+9C31	# <cjk>	[2000]
 0x8FFDE9	U+9C36	# <cjk>	[2000]
 0x8FFDEA	U+9C37	# <cjk>	[2000]
 0x8FFDEB	U+9C45	# <cjk>	[2000]
 0x8FFDEC	U+9C5C	# <cjk>	[2000]
-0x8FFDED	U+29EE9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8DD
+0x8FFDED	U+29EE9	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDEE	U+9C49	# <cjk>	[2000]
 0x8FFDEF	U+9C4A	# <cjk>	[2000]
-0x8FFDF0	U+29EDB	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8DE
+0x8FFDF0	U+29EDB	# <cjk>	[2000]	[Unicode3.1]
 0x8FFDF1	U+9C54	# <cjk>	[2000]
 0x8FFDF2	U+9C58	# <cjk>	[2000]
 0x8FFDF3	U+9C5B	# <cjk>	[2000]
@@ -11464,23 +11465,23 @@
 0x8FFEA2	U+9CF2	# <cjk>	[2000]
 0x8FFEA3	U+9D0B	# <cjk>	[2000]
 0x8FFEA4	U+9D02	# <cjk>	[2000]
-0x8FFEA5	U+29FCE	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8DF
+0x8FFEA5	U+29FCE	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEA6	U+9D11	# <cjk>	[2000]
 0x8FFEA7	U+9D17	# <cjk>	[2000]
 0x8FFEA8	U+9D18	# <cjk>	[2000]
-0x8FFEA9	U+2A02F	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E0
+0x8FFEA9	U+2A02F	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEAA	U+4CC4	# <cjk>	[2000]
-0x8FFEAB	U+2A01A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E1
+0x8FFEAB	U+2A01A	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEAC	U+9D32	# <cjk>	[2000]
 0x8FFEAD	U+4CD1	# <cjk>	[2000]
 0x8FFEAE	U+9D42	# <cjk>	[2000]
 0x8FFEAF	U+9D4A	# <cjk>	[2000]
 0x8FFEB0	U+9D5F	# <cjk>	[2000]
 0x8FFEB1	U+9D62	# <cjk>	[2000]
-0x8FFEB2	U+2A0F9	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E2
+0x8FFEB2	U+2A0F9	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEB3	U+9D69	# <cjk>	[2000]
 0x8FFEB4	U+9D6B	# <cjk>	[2000]
-0x8FFEB5	U+2A082	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E3
+0x8FFEB5	U+2A082	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEB6	U+9D73	# <cjk>	[2000]
 0x8FFEB7	U+9D76	# <cjk>	[2000]
 0x8FFEB8	U+9D77	# <cjk>	[2000]
@@ -11510,14 +11511,14 @@
 0x8FFED0	U+9E1C	# <cjk>	[2000]
 0x8FFED1	U+9E1D	# <cjk>	[2000]
 0x8FFED2	U+9E7B	# <cjk>	[2000]
-0x8FFED3	U+22218	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E4
+0x8FFED3	U+22218	# <cjk>	[2000]	[Unicode3.1]
 0x8FFED4	U+9E80	# <cjk>	[2000]
 0x8FFED5	U+9E85	# <cjk>	[2000]
 0x8FFED6	U+9E9B	# <cjk>	[2000]
 0x8FFED7	U+9EA8	# <cjk>	[2000]
-0x8FFED8	U+2A38C	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E5
+0x8FFED8	U+2A38C	# <cjk>	[2000]	[Unicode3.1]
 0x8FFED9	U+9EBD	# <cjk>	[2000]
-0x8FFEDA	U+2A437	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E6
+0x8FFEDA	U+2A437	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEDB	U+9EDF	# <cjk>	[2000]
 0x8FFEDC	U+9EE7	# <cjk>	[2000]
 0x8FFEDD	U+9EEE	# <cjk>	[2000]
@@ -11537,12 +11538,12 @@
 0x8FFEEB	U+9F53	# <cjk>	[2000]
 0x8FFEEC	U+9F55	# <cjk>	[2000]
 0x8FFEED	U+9F58	# <cjk>	[2000]
-0x8FFEEE	U+2A5F1	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E7
+0x8FFEEE	U+2A5F1	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEEF	U+9F5D	# <cjk>	[2000]
-0x8FFEF0	U+2A602	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E8
+0x8FFEF0	U+2A602	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEF1	U+9F69	# <cjk>	[2000]
-0x8FFEF2	U+2A61A	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8E9
+0x8FFEF2	U+2A61A	# <cjk>	[2000]	[Unicode3.1]
 0x8FFEF3	U+9F6D	# <cjk>	[2000]
 0x8FFEF4	U+9F70	# <cjk>	[2000]
 0x8FFEF5	U+9F75	# <cjk>	[2000]
-0x8FFEF6	U+2A6B2	# <cjk>	[2000]	[Unicode3.1]	Private: U+F8EA
+0x8FFEF6	U+2A6B2	# <cjk>	[2000]	[Unicode3.1]
