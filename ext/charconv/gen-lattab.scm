@@ -7,7 +7,6 @@
 
 (use file.util)
 (use gauche.dictionary)
-(use gauche.unicode)
 (use gauche.collection)
 (use gauche.cgen)
 (use util.match)
@@ -151,6 +150,17 @@
   (cgen-body "    { DO_SUBST; }")
   (cgen-body "    return nread;")
   (cgen-body "}"))
+
+;; This is in gauche.unicode, but we can't depend on it yet during
+;; building charconv.
+;; For Latin-N set, we only need to take care up to 3-octet ranges.
+(define (ucs4->utf8 code)
+  (cond [(< code #x80)  `(,code)]
+        [(< code #x800) `(,(logior (ash code -6) #xc0)
+                          ,(logior (logand code #x3f) #x80))]
+        [else           `(,(logior (ash code -12) #xe0)
+                          ,(logior (logand (ash code -6) #x3f) #x80)
+                          ,(logior (logand code #x3f) #x80))]))
 
 (define (main args)
   (match (cdr args)
