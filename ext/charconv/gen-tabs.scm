@@ -273,13 +273,23 @@
   :initial-state 'JIS_ASCII
   :reset "jis_reset")
 
-(define-encoding-scheme iso8859-1 JCODE_ISO8859_1
-  ("iso88591" "latin1"))
+(define-encoding-scheme iso8859-1  JCODE_ISO8859_1 ("iso88591" "latin1"))
+(define-encoding-scheme iso8859-2  JCODE_ISO8859_2 ("iso88592" "latin2"))
+(define-encoding-scheme iso8859-3  JCODE_ISO8859_3 ("iso88593" "latin3"))
+(define-encoding-scheme iso8859-4  JCODE_ISO8859_4 ("iso88594" "latin4"))
+(define-encoding-scheme iso8859-5  JCODE_ISO8859_5 ("iso88595" "latin5"))
+(define-encoding-scheme iso8859-6  JCODE_ISO8859_6 ("iso88596" "latin6"))
+(define-encoding-scheme iso8859-7  JCODE_ISO8859_7 ("iso88597" "latin7"))
+(define-encoding-scheme iso8859-8  JCODE_ISO8859_8 ("iso88598" "latin8"))
+(define-encoding-scheme iso8859-9  JCODE_ISO8859_9 ("iso88599" "latin9"))
+(define-encoding-scheme iso8859-10 JCODE_ISO8859_10 ("iso885910" "latin10"))
+(define-encoding-scheme iso8859-11 JCODE_ISO8859_11("iso885911" "latin11"))
+(define-encoding-scheme iso8859-13 JCODE_ISO8859_13 ("iso885913" "latin13"))
+(define-encoding-scheme iso8859-14 JCODE_ISO8859_14 ("iso885914" "latin14"))
+(define-encoding-scheme iso8859-15 JCODE_ISO8859_15 ("iso885915" "latin15"))
+(define-encoding-scheme iso8859-16 JCODE_ISO8859_16 ("iso885916" "latin16"))
 
-(define-encoding-scheme none JCODE_NONE
-  ("none"))
-
-
+(define-encoding-scheme none JCODE_NONE ("none"))
 
 (define-conversion ascii_x (ascii) (eucj sjis utf8 iso2022jp iso8859-1))
 (define-conversion utf8_utf16 (ascii) (utf16 utf16be utf16le))
@@ -299,6 +309,20 @@
 (define-conversion utf8_utf16 (utf8) (utf16 utf16be utf16le))
 (define-conversion utf8_utf32 (utf8) (utf32 utf32be utf32le))
 (define-conversion utf8_lat1  (utf8) (iso8859-1))
+(define-conversion utf8_lat2  (utf8) (iso8859-2))
+(define-conversion utf8_lat3  (utf8) (iso8859-3))
+(define-conversion utf8_lat4  (utf8) (iso8859-4))
+(define-conversion utf8_lat5  (utf8) (iso8859-5))
+(define-conversion utf8_lat6  (utf8) (iso8859-6))
+(define-conversion utf8_lat7  (utf8) (iso8859-7))
+(define-conversion utf8_lat8  (utf8) (iso8859-8))
+(define-conversion utf8_lat9  (utf8) (iso8859-9))
+(define-conversion utf8_lat10 (utf8) (iso8859-10))
+(define-conversion utf8_lat11 (utf8) (iso8859-11))
+(define-conversion utf8_lat13 (utf8) (iso8859-13))
+(define-conversion utf8_lat14 (utf8) (iso8859-14))
+(define-conversion utf8_lat15 (utf8) (iso8859-15))
+(define-conversion utf8_lat16 (utf8) (iso8859-16))
 
 (define-conversion utf16_utf8 (utf16 utf16be utf16le) (utf8))
 (define-conversion utf16_utf16 (utf16 utf16be utf16le) (utf16 utf16be utf16le))
@@ -310,4 +334,20 @@
 
 (define-conversion lat1_ascii (iso8859-1) (ascii))
 (define-conversion lat1_utf8 (iso8859-1) (utf8))
+
+(define-conversion lat2_utf8 (iso8859-2) (utf8))
+(define-conversion lat3_utf8 (iso8859-3) (utf8))
+(define-conversion lat4_utf8 (iso8859-4) (utf8))
+(define-conversion lat5_utf8 (iso8859-5) (utf8))
+(define-conversion lat6_utf8 (iso8859-6) (utf8))
+(define-conversion lat7_utf8 (iso8859-7) (utf8))
+(define-conversion lat8_utf8 (iso8859-8) (utf8))
+(define-conversion lat9_utf8 (iso8859-9) (utf8))
+(define-conversion lat10_utf8 (iso8859-10) (utf8))
+(define-conversion lat11_utf8 (iso8859-11) (utf8))
+(define-conversion lat13_utf8 (iso8859-13) (utf8))
+(define-conversion lat14_utf8 (iso8859-14) (utf8))
+(define-conversion lat15_utf8 (iso8859-15) (utf8))
+(define-conversion lat15_utf8 (iso8859-15) (utf8))
+(define-conversion lat16_utf8 (iso8859-16) (utf8))
   

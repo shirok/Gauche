@@ -3,9 +3,10 @@ top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
 GENERATED = Makefile iconv-adapter.h eucj2ucs.c ucs2eucj.c guess_tab.c \
-	    jconv_tab.h jconv_tab.c
+	    jconv_tab.h jconv_tab.c latin_tab.h latin_tab.c
 XCLEANFILES = convaux.c
-PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c jconv_tab.h pre-package-data
+PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c jconv_tab.h latin_tab.h \
+                    pre-package-data
 
 include ../Makefile.ext
 
@@ -33,7 +34,7 @@ convaux.c : convaux.scm
 
 $(OBJECTS) : charconv.h iconv-adapter.h
 
-jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c jconv_tab.h jconv_tab.c
+jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c jconv_tab.h jconv_tab.c latin_tab.h latin_tab.h
 
 guess.$(OBJEXT) : guess_tab.c guess.c
 
@@ -46,6 +47,11 @@ jconv_tab.c : jconv_tab.h
 
 jconv_tab.h : gen-tabs.scm
 	$(GOSH) $(srcdir)/gen-tabs.scm jconv_tab
+
+latin_tab.c : latin_tab.h
+
+latin_tab.h : gen-lattab.scm
+	$(GOSH) $(srcdir)/gen-lattab.scm $(srcdir)/data
 
 guess_tab.c : gen-guess.scm
 	$(GOSH) $(srcdir)/gen-guess.scm guess_tab.c

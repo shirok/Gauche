@@ -44,6 +44,7 @@
 #include <ctype.h>
 #include "charconv.h"
 #include "jconv_tab.h"
+#include "latin_tab.h"
 
 #define INCHK(n)   do{if ((int)inroom < (n)) return INPUT_NOT_ENOUGH;}while(0)
 #define OUTCHK(n)  do{if ((int)outroom < (n)) return OUTPUT_NOT_ENOUGH;}while(0)
@@ -1799,6 +1800,7 @@ struct conv_support_rec {
 };
 
 #include "jconv_tab.c"
+#include "latin_tab.c"
 
 static int conv_name_match(const char *s, const char *t)
 {
