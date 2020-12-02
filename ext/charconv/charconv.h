@@ -41,17 +41,17 @@ SCM_DECL_BEGIN
 
 struct ScmConvInfoRec;
 
-typedef ScmSize (*ScmConvProc)(struct ScmConvInfoRec*, const char*, ScmSize,
-                               char*, ScmSize, ScmSize*);
-typedef ScmSize (*ScmConvReset)(struct ScmConvInfoRec*, char*, ScmSize);
-typedef ScmSize (*ScmConvHandler)(struct ScmConvInfoRec*, const char **,
-                                  ScmSize*, char**, ScmSize*);
+typedef ScmSize ScmConvProc(struct ScmConvInfoRec*, const char*, ScmSize,
+                            char*, ScmSize, ScmSize*);
+typedef ScmSize ScmConvReset(struct ScmConvInfoRec*, char*, ScmSize);
+typedef ScmSize ScmConvHandler(struct ScmConvInfoRec*, const char **,
+                               ScmSize*, char**, ScmSize*);
 
 /* Packaging conversion context info.*/
 typedef struct ScmConvInfoRec {
-    ScmConvHandler jconv;       /* jconv handler */
-    ScmConvProc convert;        /* 1-character conversion routine */
-    ScmConvReset reset;         /* reset routine */
+    ScmConvHandler *jconv;      /* jconv handler */
+    ScmConvProc *convert;       /* 1-character conversion routine */
+    ScmConvReset *reset;        /* reset routine */
     iconv_t handle;             /* iconv handle, if the conversion is
                                    handled by iconv */
     const char *fromCode;       /* convert from ... */

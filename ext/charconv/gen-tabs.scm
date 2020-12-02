@@ -199,9 +199,7 @@
     (do-ec (: f (instance-pool->list <conversion>))
            (if (not (member (~ f'proc-name) protos)))
            (begin
-             (cgen-extern #"static ScmSize ~(~ f'proc-name)(ScmConvInfo*,"
-                          #"    const char*, ScmSize,"
-                          #"    char*, ScmSize, ScmSize*);")
+             (cgen-extern #"static ScmConvProc ~(~ f'proc-name);")
              (when (= (length (~ f'procs)) 2)
                (emit-fused-proc (~ f'proc-name) (~ f'procs)))
              (push! protos (~ f'proc-name)))))

@@ -1786,8 +1786,8 @@ static ScmSize ident(ScmConvInfo *cinfo SCM_UNUSED,
    this from some DSL.
 */
 struct conv_converter_rec {
-    ScmConvProc conv;
-    ScmConvReset reset;
+    ScmConvProc *conv;
+    ScmConvReset *reset;
     int istate;                 /* initial input state */
     int ostate;                 /* initial output state */
 };
@@ -1857,7 +1857,7 @@ static ScmSize jconv_ident(ScmConvInfo *cinfo SCM_UNUSED, const char **iptr,
 static ScmSize jconv_1tier(ScmConvInfo *cinfo, const char **iptr,
                            ScmSize *iroom, char **optr, ScmSize *oroom)
 {
-    ScmConvProc cvt = cinfo->convert;
+    ScmConvProc *cvt = cinfo->convert;
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
@@ -1940,9 +1940,9 @@ static ScmSize jconv_iconv_reset(ScmConvInfo *cinfo, char *optr, ScmSize oroom)
 ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
                         int useIconv)
 {
-    ScmConvHandler handler = NULL;
-    ScmConvProc convert = NULL;
-    ScmConvReset reset = NULL;
+    ScmConvHandler *handler = NULL;
+    ScmConvProc *convert = NULL;
+    ScmConvReset *reset = NULL;
     int istate = 0, ostate = 0;
     iconv_t handle = (iconv_t)-1;
 
