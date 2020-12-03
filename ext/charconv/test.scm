@@ -155,6 +155,14 @@
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
+;; UTF BOM handling
+(let ()
+  (define (bom-test bom-src)
+    (equal? (call-with-input-file "data/jp1.UTF-8" port->string)
+            (call-with-input-file bom-src port->string)))
+  (bom-test "data/jp1.UTF-16-BOMBE")
+  (bom-test "data/jp1.UTF-16-BOMLE"))
+
 ;;--------------------------------------------------------------------
 (test-section "output conversion")
 
