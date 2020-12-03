@@ -114,7 +114,7 @@
           "data/jp1"
           '("ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("ASCII"))
-'(map-test (lambda (file from to)
+(map-test (lambda (file from to)
             (test-input file from to :handling 'replace))
           "data/jp2"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
@@ -251,6 +251,11 @@
 (map-test test-output/chunk20 "data/kr1"
           '("EUCKR" "UTF-8" "ISO2022KR")
           '("EUCKR" "UTF-8" "ISO2022KR"))
+
+(dolist [n '(1 2 3 4 5 6 7 8 9 10 11 13 14 15 16)]
+  (map-test test-output/chunk20 #"data/lat~|n|"
+            `(,#"ISO8859-~|n|" "UTF-16BE")
+            `(,#"ISO8859-~|n|" "UTF-16BE")))
 
 ;;--------------------------------------------------------------------
 (test-section "open -> #f")
