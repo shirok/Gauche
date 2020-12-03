@@ -7,7 +7,10 @@
 (use gauche.uvector)
 (use srfi-42)
 
-;; Latin-1 test dataset
+;;;
+;;; Latin-1 test dataset
+;;;
+
 (define (do-lat1 suffix emitter exclude-b5?)
   (with-output-to-file #"~(if exclude-b5? 'lat1x 'lat1).~suffix"
     (^[] (dotimes [n 256]
@@ -213,8 +216,37 @@
   (lat1.iso2022-jp))
 
 ;;;
+;;; Latin-N test dataset
+;;;
+
+;; We just test latin-N <-> utf16
+(define (do-latN n)
+  (define alis
+    (filter-map (^l (rxmatch-if (#/0x([[:xdigit:]]+)\s+0x([[:xdigit:]]+)/ l)
+                        [_ code ucs]
+                      (cons (string->number code 16) (string->number ucs 16))
+                      #f))
+                (file->string-list #"8859-~|n|.TXT")))
+  (when (= n 7)
+    (pprint alis :level #f :length #f
+            :controls (make-write-controls :base 16 :radix #t)))
+  (with-output-to-file #"lat~|n|.ISO8859-~|n|"
+    (^[] (dolist [p alis] (write-byte (car p)))))
+  (with-output-to-file #"lat~|n|.UTF-16BE"
+    (^[] (dolist [p alis]
+           (when (= n 7)
+             (format (current-error-port) "~4,'0x\n" (cdr p)))
+           (write-byte (ash (cdr p) -8))
+           (write-byte (logand (cdr p) #xff))))))
+
+(define (gen-latN)
+  (for-each do-latN '(2 3 4 5 6 7 8 9 10 11 13 14 15 16)))
+
+;;;
 
 (define (main args)
-  (gen-lat1))
+  (gen-lat1)
+  (gen-latN))
+
 
                

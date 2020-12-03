@@ -34,7 +34,7 @@ convaux.c : convaux.scm
 
 $(OBJECTS) : charconv.h iconv-adapter.h
 
-jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c jconv_tab.h jconv_tab.c latin_tab.h latin_tab.h
+jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c jconv_tab.h jconv_tab.c latin_tab.h latin_tab.c
 
 guess.$(OBJEXT) : guess_tab.c guess.c
 

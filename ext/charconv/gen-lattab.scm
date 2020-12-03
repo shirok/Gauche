@@ -36,35 +36,42 @@
   (cgen-extern #"static ScmConvProc ~|procname|;")
 
   (cgen-body ""
-             #"static ScmSize ~|procname|(ScmConvInfo *cinfo SCM_UNUSED,"
+             #"static ScmSize ~|procname|(ScmConvInfo *cinfo,"
              #"    const char *inptr, ScmSize inroom SCM_UNUSED,"
              #"    char *outptr, ScmSize outroom, ScmSize *outchars)"
              #"{"
              #"    static u_char tab[] = {")
-  (do-ec (: code (index n) (sort (hash-table-keys (bimap-left (~ ces'bimap)))))
-         (let1 utf8 (ucs4->utf8 (bimap-left-get (~ ces'bimap) code))
+  (do-ec (: code #xa0 #x100)
+         (let* ([ucs (hash-table-get (bimap-left (~ ces'bimap)) code 0)]
+                [utf8 (take* (ucs4->utf8 ucs) 3 #t 0)])
            (cgen-body
             (format "        0x~2,'0x,0x~2,'0x,0x~2,'0x, /* ~2,'0x */"
-                    (car utf8) (cadr utf8) 
-                    (if (null? (cddr utf8)) 0 (caddr utf8))
-                    (+ #xa0 n)))))
+                    (car utf8) (cadr utf8) (caddr utf8)
+                    code))))
   (cgen-body #"    };"
              #"    u_char c = *inptr;"
-             #"    if (c < 0xa0) {"
+             #"    if (c < 0x80) {"
              #"        *outptr = c;"
              #"        *outchars = 1;"
+             #"    } else if (c < 0xa0) {"
+             #"        OUTCHK(2);"
+             #"        outptr[0] = 0xc2;"
+             #"        outptr[1] = c;"
+             #"        *outchars = 2;"
              #"    } else {"
              #"        int index = (c - 0xa0) * 3;"
-             #"        if (tab[index + 2] == 0) {"
+             #"        if (tab[index] == 0) {"
+             #"            DO_SUBST;"
+             #"        } else if (tab[index + 2] == 0) {"
              #"            OUTCHK(2);"
-             #"            outptr[0] = tab[0];"
-             #"            outptr[1] = tab[1];"
+             #"            outptr[0] = tab[index];"
+             #"            outptr[1] = tab[index+1];"
              #"            *outchars = 2;"
              #"        } else {"
              #"            OUTCHK(3);"
-             #"            outptr[0] = tab[0];"
-             #"            outptr[1] = tab[1];"
-             #"            outptr[2] = tab[2];"
+             #"            outptr[0] = tab[index];"
+             #"            outptr[1] = tab[index+1];"
+             #"            outptr[2] = tab[index+2];"
              #"            *outchars = 3;"
              #"        }"
              #"    }"
@@ -109,13 +116,12 @@
   (define (gen-linear pfx branches)
     (cgen-body "        u_char u1 = inptr[1];")
     (dolist [br branches]
-      (cgen-body (format "        if (u1 == 0x~2,'0x) {" (car br)))
-      (if (pair? (cdr br))
-        (cgen-body "            u_char u2 = inptr[2];"
-                   (format "            if (u2 == 0x~2,'0x) {" (cadr br))
-                   (format "                *outptr = 0x~2,'0x;" (cddr br))
-                   "            } else { DO_SUBST; }")
-        (cgen-body (format "            *outptr = 0x~2,'0x;" (cdr br))))
+      (if (not (pair? (cdr br)))
+        (cgen-body (format "        if (u1 == 0x~2,'0x) {" (car br))
+                   (format "            *outptr = 0x~2,'0x;" (cdr br)))
+        (cgen-body (format "        if (u1 == 0x~2,'0x &&" (car br))
+                   (format "            (u_char)inptr[2] == 0x~2,'0x) {" (cadr br))
+                   (format "            *outptr = 0x~2,'0x;" (cddr br))))
       (cgen-body "        } else"))
     (cgen-body "        { DO_SUBST; }"))
 
@@ -139,6 +145,10 @@
              #"    else if (u0 < 0xfe) { nread = 6; }"
              #"    else { return ILLEGAL_SEQUENCE; }"
              #"    INCHK(nread);")
+
+  (cgen-body "    if (u0 == 0xc2 && (u_char)inptr[1] >= 0x80 && (u_char)inptr[1] < 0xa0) {")
+  (cgen-body "        outptr[0] = inptr[1];  /* 0x80 - 0x9f */")
+  (cgen-body "    } else")
   (dolist [group grouped]
     (define pfx (format "~2,'0x" (car group)))
     (cgen-body #"    if (u0 == 0x~|pfx|) {")
@@ -148,6 +158,7 @@
       (gen-lookup pfx (cdr group)))
     (cgen-body "    } else"))
   (cgen-body "    { DO_SUBST; }")
+  (cgen-body "    *outchars = 1;")
   (cgen-body "    return nread;")
   (cgen-body "}"))
 

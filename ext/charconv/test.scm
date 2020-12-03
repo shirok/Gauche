@@ -133,6 +133,10 @@
             "UTF-16" "UTF-16BE" "UTF-16LE"
             "UTF-32" "UTF-32BE" "UTF-32LE")
           '("ISO8859-1"))
+(dolist [n '(2 3 4 5 6 7 8 9 10 11 13 14 15 16)]
+  (map-test test-input #"data/lat~|n|"
+            `(,#"ISO8859-~|n|" "UTF-16BE")
+            `(,#"ISO8859-~|n|" "UTF-16BE")))
 
 ;; autodetect tester
 (map-test (lambda (file from to)
