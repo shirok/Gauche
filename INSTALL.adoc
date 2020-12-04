@@ -214,18 +214,17 @@ endif::EN[]
 
 
 ifdef::JA[]
-Gaucheは代表的な日本語文字エンコーディングを認識し変換することが
-できますが、それ以外のエンコーディングに関しては、iconvが利用可能で
-あればそれを利用して変換を行います。
-iconvが標準でインストールされていないシステムでは、
+GaucheはUnicode(UTF-8, 16, 32)、Latin-N、および代表的な日本語文字エンコーディングを
+認識し変換することができますが、それ以外のエンコーディングに関しては、iconvが利用可能で
+あればそれを利用して変換を行います。iconvが標準でインストールされていないシステムでは、
 `--with-iconv` オプションで外部のiconvライブラリを利用することができます。
 endif::JA[]
 ifdef::EN[]
-Gauche can recognize and converts typical japanese character
-encodings, but delegates other conversion work to iconv library
-(when available).   If your system does not have iconv installed,
-you can specify the location of your external
-iconv library by `--with-iconv` option.
+Gauche can recognize and converts Unicode (UTF-8, 16, 32), Latin-N, and
+typical japanese character encodings, but delegates other conversion work 
+to iconv library (when available).   If your system does not have iconv 
+installed in the standard location, you can specify the location of your 
+external iconv library by `--with-iconv` option.
 endif::EN[]
 
 [source,sh]
