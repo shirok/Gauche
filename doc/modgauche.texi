@@ -2714,29 +2714,31 @@ CES @var{ces-b}でエンコードされた文字列が、システムの知る�
 @end defun
 
 @c EN
-Conversion between common japanese CESes (EUC_JP, Shift JIS, UTF-8
-and ISO2022-JP) of the character set JIS X 0201 and JIS X 0213
-is handled by Gauche's built-in algorithm (see below for details).
-When other CES name is given, Gauche uses
-@code{iconv(3)} if it is linked.
-@c JP
-日本語の文字集合JIS X 0201及びJIS X 0213のエンコーディング
-(EUC_JP、Shift JIS、UTF-8及びISO2022-JP) 間の変換に関しては、
-Gaucheが内部に変換アルゴリズムを持っています (詳細は下の注記を参照)。
-それ以外のCESに関しては、リンクされていればGaucheは@code{iconv(3)}を用いて
-変換を行います。
-@c COMMON
+When Gauche's internal conversion routine encounters a character that can't
+be mapped, the behaivor depends on the @emph{handling mode} of the conversion
+port.  If the handling mode is @code{raise}, an @code{<io-encoding-error>}
+is thrown.  If the handling mode is @code{replace},
+the character is replaced with a replacement character.
 
-@c EN
-When Gauche's conversion routine encounters a character that can't
-be mapped, it replaces the character for "geta mark" (U+3013)
-if it's a multibyte character in the input encoding, or for '?' if it's
-a singlebyte character in the input encoding.
+A replacement character is U+FFFD (REPLACEMENT CHARACTER) if it is
+available.  For Japanese encodings, U+FFFD isn't available, and
+we use U+3013 (geta mark), for it is traditionally used as the
+replacement character.  If neither one is available,
+@code{?} is used.
+
 If that happens in iconv, handling of such character depends
 on iconv implementation (glibc implementation returns an error).
 @c JP
-出力CESへマップ不可能な入力文字に出会った場合、Gaucheの変換ルーチンは
-その文字が入力CESでマルチバイトである場合はgeta mark '〓' (U+3013) に、
+出力CESへマップ不可能な入力文字に出会った場合のGaucheの内部変換ルーチンの動作は、
+変換ポートのエラーハンドリングモードで決まります。
+ハンドリングモードが@code{raise}なら@code{<io-encoding-error>}が投げられます。
+ハンドリングモードが@code{replace}なら、その文字は置換文字に置き換えられます。
+
+変換先の文字エンコーディングで UniocdeのU+FFFD (REPLACEMENT CHARACTER)
+が使えればそれが置換文字となります。日本語エンコーディングではその文字は
+使えませんが、伝統的にgeta mark '〓' (U+3013) が使われてきたので
+それに準じてU+3013を使います。どちらの文字も使えなければ@code{?}に置換します。
+
 入力CESでシングルバイトである場合は '?' に置換します。
 iconvによる変換でマップ不可能な文字に出会った場合の処理はiconvの実装に
 依存します(例えばglibcではエラーとなります)。
@@ -2744,10 +2746,10 @@ iconvによる変換でマップ不可能な文字に出会った場合の処理
 
 @c EN
 If the conversion routine encounters an input sequence that
-is illegal in the input CES, an error is signaled.
+is illegal in the input CES, an @code{<io-decoding-error>} is signaled.
 @c JP
 変換ルーチンが、入力CESとして不正な入力文字列に出会った場合は
-エラーが報告されます。
+@code{<io-decoding-error>}が報告されます。
 @c COMMON
 
 @c EN
@@ -2800,12 +2802,12 @@ ASCII (REVERSE SOLIDUSとTILDE) にマップされます。
 
 @item UTF-8, UTF8
 @c EN
-Unicode 3.2.  Note that some JIS X 0213 characters are mapped to Extension B
+Unicode.  Note that some JIS X 0213 characters are mapped to Extension B
 (U+20000 and up).
 Some JIS X 0213 characters are mapped to two
 unicode characters (one base character plus a combining character).
 @c JP
-Unicode 3.2です。JIS X 0213中の文字のいくつかはExtension B (U+20000〜)
+Unicodeです。JIS X 0213中の文字のいくつかはExtension B (U+20000〜)
 にマップされます。JIS X 0213中の他の文字のいくつかは2つのUnicode文字
 (base character + combining character)にマップされます。
 @c COMMON
