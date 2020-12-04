@@ -2546,15 +2546,20 @@ is given to the file stream creating functions
 @c COMMON
 
 @c EN
-As of release 0.5.6, Gauche natively supports conversions between
+Gauche natively supports conversions between
+Unicode transfer encodings (UTF-8, UTF-16, UTF-16BE, UTF-16LE,
+UTF-32, UTF-32BE, UTF-32LE), Latin-N encodings
+(ISO8859-1 to 16), and
 typical Japanese character encodings: ISO2022JP, ISO2022JP-3,
-EUC-JP (EUC-JISX0213), Shift_JISX0213, UTF-8 (Unicode 3.2).
+EUC-JP (EUC-JISX0213), Shift_JISX0213.
 Conversions between other encodings are handled by @code{iconv(3)}.
 @xref{Supported character encoding schemes}, for details.
 @c JP
-リリース0.5.6より、Gaucheは日本語の主要エンコーディング
-(ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213),
-UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
+Gaucheは自前で、Unicode Transfer Encoding (UTF-8, UTF-16, UTF-16BE, UTF-16LE,
+UTF-32, UTF-32BE, UTF-32LE)、Latin-N (ISO8859-1から16)、
+そして主要な日本語エンコーディング
+(ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213))、
+の間の変換を行います。
 上記以外のコードとの変換は@code{iconv(3)}を利用します。
 サポートされるコーディングシステムに関する詳細は
 @ref{Supported character encoding schemes}を参照して下さい。
