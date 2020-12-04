@@ -8648,7 +8648,110 @@ the same as @code{make-custom-binary-input-port} and
 
 @subheading Transcoded ports
 
+A transcoded port is a portable way to read/write characters in
+an encodings other than the system's default one.  This API is
+defined first in R6RS, and adopted in srfi-181.
 
+In srfi-181 (and R6RS) world, strings and characters are all
+an abstract entity without the concept of encodings (internally,
+you can think them being encoded in the system's native encoding),
+and the explicit encodings only matter when you refer to the outside
+resource, e.g. files or a binary data represented in a bytevector.
+Therefore, conversions are only defined between binary ports (external world)
+and textual ports (internal), or a bytevector (external world) and
+a string (internal).
+
+Here's some terms:
+
+@table @emph
+@item Codec
+A codec names a character encoding scheme.
+@item EOL-style
+Specifies (non)converson of EOL character(s).
+@item Transcoder
+A transcoder bundles a codec, an eol-style, and error handling mode.
+@end table
+
+@subsubheading Transcoders
+
+@defun make-transcoder codec eol-style handling-mode
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun native-transcoder
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun transcoded-port binary-port transcoder
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun bytevector->string bytevector transcoder
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun string->bytevector string transcoder
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+
+@subsubheading Codecs
+
+@defun make-codec name
+[SRFI-181]
+@c MOD srfi-181
+Returns a coded representing a character encoding scheme named by
+@var{name}.  A portable code should only use string for @var{name},
+while Gauche accepts a symbol as well.
+
+Note: It may raise an 
+@end defun
+
+@defun unknown-encoding-error? obj
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun unknown-encoding-error-name obj
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun latin-1-codec
+@defunx utf-8-codec
+@defunx utf-16-codec
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@subsubheading EOL style
+
+@defun native-eol-style
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@subsubheading Transcoding errors
+
+@defun i/o-decoding-error? obj
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun i/o-encoding-error? obj
+[SRFI-181]
+@c MOD srfi-181
+@end defun
+
+@defun i/o-encoding-error-char i/o-encoding-condition
+[SRFI-181]
+@c MOD srfi-181
+@end defun
 
 
 @c ----------------------------------------------------------------------
