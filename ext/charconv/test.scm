@@ -157,9 +157,11 @@
 
 ;; UTF BOM handling
 (let ()
+  (define (f n) #"~(sys-dirname (current-load-path))/~n")
+
   (define (bom-test bom-src)
-    (equal? (call-with-input-file "data/jp1.UTF-8" port->string)
-            (call-with-input-file bom-src port->string)))
+    (equal? (call-with-input-file (f "data/jp1.UTF-8") port->string)
+            (call-with-input-file (f bom-src) port->string)))
   (bom-test "data/jp1.UTF-16-BOMBE")
   (bom-test "data/jp1.UTF-16-BOMLE"))
 
