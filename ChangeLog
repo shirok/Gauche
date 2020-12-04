@@ -1,3 +1,7 @@
+2020-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-181.scm: Properly support all eol-styles.
+
 2020-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv: Support iso8859-N (N = [2-11,13-16])

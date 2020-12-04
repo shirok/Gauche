@@ -234,6 +234,9 @@
   (codec transcoder-codec)
   (eol-style transcoder-eol-style)
   (handling-mode transcoder-handling-mode))
+(define-method write-object ((obj <transcoder>) port)
+  (format port "#<transcoder ~a ~a ~a>"
+          (~ obj'codec) (~ obj'eol-style) (~ obj'handling-mode)))
 
 (define (make-transcoder codec eol-style handling-mode)
   (unless (codec? codec)
@@ -246,45 +249,120 @@
            handling-mode))
   (%make-transcoder codec eol-style handling-mode))
 
-(define (native-eol-style) 'lf)
+(define (native-eol-style) 'none)
 
 (define (native-transcoder)
   (make-transcoder *native-codec* (native-eol-style) 'replace))
+
+;; wrapper for eol translation
+;; Ideally eol-translation should be handled directly in the port layer
+;; to be efficient.  For the time being, though, we use a vport wrapper
+;; to fulfill the requirement.
+(define (eol-iport iport)
+  (define (getb)
+    (let1 b (read-byte iport)
+      (cond [(eof-object? b) b]
+            [(eqv? b #x0d)
+             (let1 b2 (peek-byte iport)
+               (if (eqv? b2 #x0a)
+                 (read-byte iport) ;just return #\newline
+                 #x0a))]
+            [else b])))
+  (define (getc)
+    (let1 c (read-char iport)
+      (cond [(eof-object? c) c]
+            [(eqv? c #\return)
+             (let1 c2 (peek-char iport)
+               (if (eqv? c2 #\newline)
+                 (read-char iport) ;just return #\newline
+                 #\newline))]
+            [else c])))
+  (make <virtual-input-port> :getb getb :getc getc))
+
+(define (eol-lf-oport oport)
+  (define got-return #f)
+  (define (putx ch-or-byte)
+    (case ch-or-byte
+      [(#\return #x0d) 
+       (when got-return (write-char #\newline oport))
+       (set! got-return #t)]
+      [(#\newline #x0a) (write-char #\newline oport)
+       (set! got-return #f)]
+      [else (when got-return (write-char #\newline oport))
+            (if (integer? ch-or-byte)
+              (write-byte ch-or-byte oport)
+              (write-char ch-or-byte oport))
+            (set! got-return #f)]))
+  (make <virtual-output-port> :putb putx :putc putx))
+
+(define (eol-crlf-oport oport)
+  (define got-return #f)
+  (define (putx ch-or-byte)
+    (case ch-or-byte
+      [(#\return #x0d)
+       (when got-return (display "\r\n" oport))
+       (set! got-return #t)]
+      [(#\newline #x0a) (display "\r\n" oport)
+       (set! got-return #f)]
+      [else
+       (when got-return (display "\r\n" oport))
+       (if (integer? ch-or-byte)
+         (write-byte ch-or-byte oport)
+         (write-char ch-or-byte oport))
+       (set! got-return #f)]))
+  (make <virtual-output-port> :putb putx :putc putx))
 
 ;; API
 (define (transcoded-port inner transcoder)
   (assume-type transcoder <transcoder>)
   (cond
    [(input-port? inner)
-    (open-input-conversion-port inner 
-                                (~ transcoder'codec'name)
-                                :owner? #t
-                                :handling (~ transcoder'handling-mode))]
+    (let1 p (case (~ transcoder'eol-style)
+              [(lf crlf)   (eol-iport inner)]
+              [else inner])
+      (open-input-conversion-port p
+                                  (~ transcoder'codec'name)
+                                  :owner? #t
+                                  :handling (~ transcoder'handling-mode)))]
    [(output-port? inner)
-    (open-output-conversion-port inner 
-                                 (~ transcoder'codec'name)
-                                 :owner? #t
-                                 :handling (~ transcoder'handling-mode))]
+    (let1 p (case (~ transcoder'eol-style)
+              [(lf)   (eol-lf-oport inner)]
+              [(crlf) (eol-crlf-oport inner)]
+              [else inner])
+      (open-output-conversion-port p
+                                   (~ transcoder'codec'name)
+                                   :owner? #t
+                                   :handling (~ transcoder'handling-mode)))]
    [else
     (error "port required, but got:" inner)]))
 
 (define (bytevector->string bytevector transcoder)
   (assume-type bytevector <u8vector>)
   (assume-type transcoder <transcoder>)
-  (ces-convert-to <string> bytevector
-                  (codec-name (transcoder-codec transcoder))))
+  (if (eq? (~ transcoder'eol-style) 'none)
+    (ces-convert-to <string> bytevector
+                    (codec-name (transcoder-codec transcoder)))
+    (port->string
+     (transcoded-port (open-input-bytevector bytevector) transcoder))))
 
 (define (string->bytevector string transcoder)
   (assume-type string <string>)
   (assume-type transcoder <transcoder>)
-  ;; ces-convert-to doesn't distinguish 'decoding' and 'encoding', so
-  ;; it always raises <io-decoding-error> if input is invalid.
-  ;; In srfi-181, we should treat it as encoding error.
-  (guard (e [(<io-decoding-error> e)
-             (error <io-encoding-error>
-                    :port (~ e'port)
-                    :message (~ e'message))]
-            [else (raise e)])
-    (ces-convert-to <u8vector> string
-                    *native-codec-name*
-                    (codec-name (transcoder-codec transcoder)))))
+  (if (eq? (~ transcoder'eol-style) 'none)
+    ;; ces-convert-to doesn't distinguish 'decoding' and 'encoding', so
+    ;; it always raises <io-decoding-error> if input is invalid.
+    ;; In srfi-181, we should treat it as encoding error.
+    (guard (e [(<io-decoding-error> e)
+               (error <io-encoding-error>
+                      :port (~ e'port)
+                      :message (~ e'message))]
+              [else (raise e)])
+      (ces-convert-to <u8vector> string
+                      *native-codec-name*
+                      (codec-name (transcoder-codec transcoder))))
+    (let* ([sink (open-output-bytevector)]
+           [p (transcoded-port sink transcoder)])
+      (display string p)
+      (flush p)
+      (begin0 (get-output-bytevector sink)
+        (close-output-port p)))))

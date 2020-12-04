@@ -454,41 +454,43 @@
  )
 
 ;;
-;; For Gauche - transcoder tests are done in gauche.charconv
+;; For Gauche - comprehensive transcoder tests are done in gauche.charconv.
+;; The reference implementation test assumes the native encoding is ascii,
+;; so we skip such tests.
 ;;
 
-'(test-group
+(test-group
  "transcoded input"
  ;; This test assumes native transcoder supports ascii range
  (test-equal "native" "ABCD"
              (bytevector->string '#u8(#x41 #x42 #x43 #x44)
                                  (native-transcoder)))
- (test-equal "latin1 -> ascii" "ABC???XYZ???"
+ '(test-equal "latin1 -> ascii" "ABC???XYZ???"
              (bytevector->string '#u8(#x41 #x42 #x43 #xa1 #xa2 #xa3
                                       #x58 #x59 #x5a #xc1 #xc2 #xc3)
                                  (make-transcoder (latin-1-codec)
                                                   (native-eol-style)
                                                   'replace)))
- (test-assert "latin1 raise"
+ '(test-assert "latin1 raise"
               (guard (e ((i/o-decoding-error? e)))
                 (bytevector->string '#u8(#xc1)
                                     (make-transcoder (latin-1-codec)
                                                      (native-eol-style)
                                                      'raise))
                 #f))
- (test-equal "utf-16 (bom, be) -> ascii" "AB??CD"
+ '(test-equal "utf-16 (bom, be) -> ascii" "AB??CD"
              (bytevector->string '#u8(#xfe #xff #x00 #x41 #x00 #x42
                                       #x30 #x00 #x00 #xc1 #x00 #x43 #x00 #x44)
                                  (make-transcoder (utf-16-codec)
                                                   (native-eol-style)
                                                   'replace)))
- (test-equal "utf-16 (bom, le) -> ascii" "AB??CD"
+ '(test-equal "utf-16 (bom, le) -> ascii" "AB??CD"
              (bytevector->string '#u8(#xff #xfe #x41 #x00 #x42 #x00
                                       #x00 #x30 #xc1 #x00 #x43 #x00 #x44 #x00)
                                  (make-transcoder (utf-16-codec)
                                                   (native-eol-style)
                                                   'replace)))
- (test-equal "utf-16 (native) -> ascii" "AB??CD"
+ '(test-equal "utf-16 (native) -> ascii" "AB??CD"
              (bytevector->string
               (if (equal? (bytevector->string '#u8(#x00 #x41)
                                               (make-transcoder (utf-16-codec)
@@ -513,7 +515,7 @@
               '(none lf crlf)))
  )
 
-'(test-group
+(test-group
  "transcoded output"
  ;; This test assumes native transcoder supports ascii range
  (test-equal "native" '#u8(#x41 #x42 #x43 #x44)
