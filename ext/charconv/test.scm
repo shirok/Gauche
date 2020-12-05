@@ -72,7 +72,7 @@
 ;;--------------------------------------------------------------------
 (test-section "input conversion")
 
-(define (test-input file from to :key (guesser #f) (handling #f))
+(define (test-input file from to :key (guesser #f) handling)
   (let* ((realfrom (or guesser from))
          (infostr  (format #f "~a.~a (~a) => ~a" file from realfrom to))
          (fromfile (format #f "~a.~a" file from))

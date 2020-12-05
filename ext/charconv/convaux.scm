@@ -161,7 +161,7 @@
 
 ;; Convert string or uvector -> string or uvector
 (define (ces-convert-to class input fromcode
-                        :optional (tocode #f) (handling #f))
+                        :optional (tocode #f) handling)
   (receive (inp isize) (%ces-input input)
     (receive (out get) (%ces-output class)
       (let1 in ($ open-input-conversion-port inp fromcode
@@ -173,7 +173,7 @@
         (begin0 (get out)
           (close-output-port out))))))
 
-(define (ces-convert input fromcode :optional (tocode #f) (handling #f))
+(define (ces-convert input fromcode :optional (tocode #f) handling)
   (ces-convert-to <string> input fromcode tocode handling))
 
 ;; "Wrap" the given port for convering to/from native encoding if needed.
@@ -268,15 +268,19 @@
                                            :key (to-code #f)
                                                 (buffer-size::<fixnum> 0)
                                                 (owner? #f)
-                                                (handling #f)
+                                                handling
                                                 (use-iconv #t))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")]
           [flags::u_long 0])
      (unless (SCM_FALSEP ownerP)
        (logior= flags CVPORT_OWNER))
-     (when (SCM_EQ handling 'replace)
-       (logior= flags CVPORT_REPLACE))
+     (cond [(SCM_EQ handling 'replace) (logior= flags CVPORT_REPLACE)]
+           [(or (SCM_UNBOUNDP handling)
+                (SCM_UNDEFINEDP handling)
+                (SCM_EQ handling 'raise))]
+           [else (Scm_Error ":handling argument must be either raise or \
+                             replace, but got: %S" handling)])
      (unless (SCM_FALSEP use-iconv)
        (logior= flags CVPORT_ICONV))
      (return (Scm_MakeInputConversionPort source fc tc buffer_size
@@ -287,15 +291,19 @@
                                             :key (from-code #f)
                                                  (buffer-size::<fixnum> 0)
                                                  (owner? #f)
-                                                 (handling #f)
+                                                 handling
                                                  (use-iconv #t))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")]
           [flags::u_long 0])
      (unless (SCM_FALSEP ownerP)
        (logior= flags CVPORT_OWNER))
-     (when (SCM_EQ handling 'replace)
-       (logior= flags CVPORT_REPLACE))
+     (cond [(SCM_EQ handling 'replace) (logior= flags CVPORT_REPLACE)]
+           [(or (SCM_UNBOUNDP handling)
+                (SCM_UNDEFINEDP handling)
+                (SCM_EQ handling 'raise))]
+           [else (Scm_Error ":handling argument must be either raise or \
+                             replace, but got: %S" handling)])
      (unless (SCM_FALSEP use-iconv)
        (logior= flags CVPORT_ICONV))
      (return (Scm_MakeOutputConversionPort sink tc fc buffer_size flags))))
