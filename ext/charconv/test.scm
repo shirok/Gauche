@@ -343,18 +343,18 @@
 (test* "utf-8 -> ascii replacement" "a?b?c?"
        (ces-convert #u8(#x61 #xe3 #x81 #x82 #x62 #xe3 #x81
                         #x84 #x63 #xe3 #x81 #x86)
-                    'utf-8 'ascii 'replace))
+                    'utf-8 'ascii :handling 'replace))
 
 (let ([src #u8(#x61 #xe2 #x98 #xba #x62 #xe2 #x9b #xb1 #x63)])
   ;; src is #\a + snowman + #\b + umbrella + #\c
   (test* "utf-8 -> eucjp noreplacement" (test-error <io-decoding-error>)
        (ces-convert-to <u8vector> src 'utf-8 'eucjp))
   (test* "utf-8 -> eucjp replacement" '#u8(#x61 #xa2 #xae #x62 #xa2 #xae #x63)
-       (ces-convert-to <u8vector> src 'utf-8 'eucjp 'replace))
+       (ces-convert-to <u8vector> src 'utf-8 'eucjp :handling 'replace))
   (test* "utf-8 -> sjis noreplacement" (test-error <io-decoding-error>)
        (ces-convert-to <u8vector> src 'utf-8 'sjis))
   (test* "utf-8 -> sjis replacement" '#u8(#x61 #x81 #xac #x62 #x81 #xac #x63)
-       (ces-convert-to <u8vector> src 'utf-8 'sjis 'replace))
+       (ces-convert-to <u8vector> src 'utf-8 'sjis :handling 'replace))
   )
 
 ;;--------------------------------------------------------------------

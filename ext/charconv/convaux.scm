@@ -161,20 +161,24 @@
 
 ;; Convert string or uvector -> string or uvector
 (define (ces-convert-to class input fromcode
-                        :optional (tocode #f) handling)
+                        :optional (tocode #f) 
+                        :key handling (use-iconv #t))
   (receive (inp isize) (%ces-input input)
     (receive (out get) (%ces-output class)
       (let1 in ($ open-input-conversion-port inp fromcode
                   :to-code tocode :buffer-size isize 
-                  :owner? #t :handling handling)
+                  :owner? #t :handling handling :use-iconv use-iconv)
         (copy-port in out :unit 'byte)
         (close-input-port in)
         (flush out)
         (begin0 (get out)
           (close-output-port out))))))
 
-(define (ces-convert input fromcode :optional (tocode #f) handling)
-  (ces-convert-to <string> input fromcode tocode handling))
+(define (ces-convert input fromcode 
+                     :optional (tocode #f)
+                     :key handling (use-iconv #t))
+  (ces-convert-to <string> input fromcode tocode 
+                  :handling handling :use-iconv use-iconv))
 
 ;; "Wrap" the given port for convering to/from native encoding if needed.
 ;; Unlike open-*-conversion-port, these return port itself if the conversion

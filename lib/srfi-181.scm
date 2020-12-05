@@ -323,7 +323,8 @@
       (open-input-conversion-port p
                                   (~ transcoder'codec'name)
                                   :owner? #t
-                                  :handling (~ transcoder'handling-mode)))]
+                                  :handling (~ transcoder'handling-mode)
+                                  :use-iconv #f))]
    [(output-port? inner)
     (let1 p (case (~ transcoder'eol-style)
               [(lf)   (eol-lf-oport inner)]
@@ -332,7 +333,8 @@
       (open-output-conversion-port p
                                    (~ transcoder'codec'name)
                                    :owner? #t
-                                   :handling (~ transcoder'handling-mode)))]
+                                   :handling (~ transcoder'handling-mode)
+                                   :use-iconv #f))]
    [else
     (error "port required, but got:" inner)]))
 
@@ -341,7 +343,10 @@
   (assume-type transcoder <transcoder>)
   (if (eq? (~ transcoder'eol-style) 'none)
     (ces-convert-to <string> bytevector
-                    (codec-name (transcoder-codec transcoder)))
+                    (codec-name (transcoder-codec transcoder))
+                    *native-codec-name*
+                    :handling (transcoder-handling-mode transcoder)
+                    :use-iconv #f)
     (port->string
      (transcoded-port (open-input-bytevector bytevector) transcoder))))
 
@@ -359,7 +364,9 @@
               [else (raise e)])
       (ces-convert-to <u8vector> string
                       *native-codec-name*
-                      (codec-name (transcoder-codec transcoder))))
+                      (codec-name (transcoder-codec transcoder))
+                      :handling (transcoder-handling-mode transcoder)
+                      :use-iconv #f))
     (let* ([sink (open-output-bytevector)]
            [p (transcoded-port sink transcoder)])
       (display string p)
