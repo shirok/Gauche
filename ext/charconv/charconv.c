@@ -64,11 +64,12 @@ static struct {
 
 #define CONV_INFO(port)  ((ScmConvInfo*)(PORT_BUF(port)->data))
 
-/* control whether we delegate conversion to iconv */
-static const ScmPrimitiveParameter *use_iconv = NULL;
+/* external library to delegate conversion */
+static const ScmPrimitiveParameter *ext_conv = NULL;
+static ScmObj sym_iconv;  /* symbol 'iconv */
 
 #define USE_ICONV_P() \
-    (!SCM_FALSEP(Scm_PrimitiveParameterRef(Scm_VM(), use_iconv)))
+    (SCM_EQ(Scm_PrimitiveParameterRef(Scm_VM(), ext_conv), sym_iconv))
 
 /*------------------------------------------------------------
  * Query
@@ -646,9 +647,10 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__charconv(void)
     Scm_Init_convaux();
 
     ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.charconv", 0));
-    use_iconv = Scm_BindPrimitiveParameter(mod, "charconv-use-iconv",
-                                           SCM_TRUE, 0);
-                                           
+    sym_iconv = SCM_INTERN("iconv");
+    ext_conv = Scm_BindPrimitiveParameter(mod, "external-conversion-library",
+                                          sym_iconv, 0);
+
     Scm__InstallCharconvHooks(ucstochar, chartoucs);
     Scm__InstallCodingAwarePortHook(coding_aware_conv);
 }

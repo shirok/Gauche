@@ -320,7 +320,7 @@
     (let1 p (case (~ transcoder'eol-style)
               [(lf crlf)   (eol-iport inner)]
               [else inner])
-      (parameterize ((charconv-use-iconv #f))
+      (parameterize ((external-conversion-library #f))
         (open-input-conversion-port p
                                     (~ transcoder'codec'name)
                                     :owner? #t
@@ -330,7 +330,7 @@
               [(lf)   (eol-lf-oport inner)]
               [(crlf) (eol-crlf-oport inner)]
               [else inner])
-      (parameterize ((charconv-use-iconv #f))
+      (parameterize ((external-conversion-library #f))
         (open-output-conversion-port p
                                      (~ transcoder'codec'name)
                                      :owner? #t
@@ -342,7 +342,7 @@
   (assume-type bytevector <u8vector>)
   (assume-type transcoder <transcoder>)
   (if (eq? (~ transcoder'eol-style) 'none)
-    (parameterize ((charconv-use-iconv #f))
+    (parameterize ((external-conversion-library #f))
       (ces-convert-to <string> bytevector
                       (codec-name (transcoder-codec transcoder))
                       *native-codec-name*
@@ -362,7 +362,7 @@
                       :port (~ e'port)
                       :message (~ e'message))]
               [else (raise e)])
-      (parameterize ((charconv-use-iconv #f))
+      (parameterize ((external-conversion-library #f))
         (ces-convert-to <u8vector> string
                         *native-codec-name*
                         (codec-name (transcoder-codec transcoder))
