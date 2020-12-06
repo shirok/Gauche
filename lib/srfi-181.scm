@@ -320,21 +320,21 @@
     (let1 p (case (~ transcoder'eol-style)
               [(lf crlf)   (eol-iport inner)]
               [else inner])
-      (open-input-conversion-port p
-                                  (~ transcoder'codec'name)
-                                  :owner? #t
-                                  :handling (~ transcoder'handling-mode)
-                                  :use-iconv #f))]
+      (parameterize ((charconv-use-iconv #f))
+        (open-input-conversion-port p
+                                    (~ transcoder'codec'name)
+                                    :owner? #t
+                                    :handling (~ transcoder'handling-mode))))]
    [(output-port? inner)
     (let1 p (case (~ transcoder'eol-style)
               [(lf)   (eol-lf-oport inner)]
               [(crlf) (eol-crlf-oport inner)]
               [else inner])
-      (open-output-conversion-port p
-                                   (~ transcoder'codec'name)
-                                   :owner? #t
-                                   :handling (~ transcoder'handling-mode)
-                                   :use-iconv #f))]
+      (parameterize ((charconv-use-iconv #f))
+        (open-output-conversion-port p
+                                     (~ transcoder'codec'name)
+                                     :owner? #t
+                                     :handling (~ transcoder'handling-mode))))]
    [else
     (error "port required, but got:" inner)]))
 
@@ -342,11 +342,11 @@
   (assume-type bytevector <u8vector>)
   (assume-type transcoder <transcoder>)
   (if (eq? (~ transcoder'eol-style) 'none)
-    (ces-convert-to <string> bytevector
-                    (codec-name (transcoder-codec transcoder))
-                    *native-codec-name*
-                    :handling (transcoder-handling-mode transcoder)
-                    :use-iconv #f)
+    (parameterize ((charconv-use-iconv #f))
+      (ces-convert-to <string> bytevector
+                      (codec-name (transcoder-codec transcoder))
+                      *native-codec-name*
+                      :handling (transcoder-handling-mode transcoder)))
     (port->string
      (transcoded-port (open-input-bytevector bytevector) transcoder))))
 
@@ -362,11 +362,11 @@
                       :port (~ e'port)
                       :message (~ e'message))]
               [else (raise e)])
-      (ces-convert-to <u8vector> string
-                      *native-codec-name*
-                      (codec-name (transcoder-codec transcoder))
-                      :handling (transcoder-handling-mode transcoder)
-                      :use-iconv #f))
+      (parameterize ((charconv-use-iconv #f))
+        (ces-convert-to <u8vector> string
+                        *native-codec-name*
+                        (codec-name (transcoder-codec transcoder))
+                        :handling (transcoder-handling-mode transcoder))))
     (let* ([sink (open-output-bytevector)]
            [p (transcoded-port sink transcoder)])
       (display string p)

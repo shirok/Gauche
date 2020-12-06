@@ -47,6 +47,7 @@
           call-with-output-conversion
           with-input-conversion
           with-output-conversion
+          charconv-use-iconv
           ))
 (select-module gauche.charconv)
 

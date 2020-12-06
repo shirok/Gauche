@@ -77,8 +77,6 @@ enum {
                                    is closed. */
     CVPORT_REPLACE = (1L<<1),   /* Use replacement character for illegal 
                                    sequences instead of signaling an error */
-    CVPORT_ICONV = (1L<<2)      /* If conversion isn't supported natively,
-                                   try to use iconv. */
 };
 
 extern ScmObj Scm_MakeInputConversionPort(ScmPort *source,
