@@ -2544,26 +2544,6 @@ is given to the file stream creating functions
 @code{call-with-output-file}等のファイルストリームを作成する手続きに
 @code{:encoding}キーワード引数が与えられた場合に暗黙にロードされます。
 @c COMMON
-
-@c EN
-Gauche natively supports conversions between
-Unicode transfer encodings (UTF-8, UTF-16, UTF-16BE, UTF-16LE,
-UTF-32, UTF-32BE, UTF-32LE), Latin-N encodings
-(ISO8859-1 to 16), and
-typical Japanese character encodings: ISO2022JP, ISO2022JP-3,
-EUC-JP (EUC-JISX0213), Shift_JISX0213.
-Conversions between other encodings are handled by @code{iconv(3)}.
-@xref{Supported character encoding schemes}, for details.
-@c JP
-Gaucheは自前で、Unicode Transfer Encoding (UTF-8, UTF-16, UTF-16BE, UTF-16LE,
-UTF-32, UTF-32BE, UTF-32LE)、Latin-N (ISO8859-1から16)、
-そして主要な日本語エンコーディング
-(ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213))、
-の間の変換を行います。
-上記以外のコードとの変換は@code{iconv(3)}を利用します。
-サポートされるコーディングシステムに関する詳細は
-@ref{Supported character encoding schemes}を参照して下さい。
-@c COMMON
 @end deftp
 
 @menu
@@ -2597,6 +2577,55 @@ CES名 "none" は特殊です。Gaucheのネイティブエンコーディング
 @c COMMON
 
 @c EN
+Gauche natively supports conversions between
+Unicode transfer encodings (UTF-8, UTF-16, UTF-16BE, UTF-16LE,
+UTF-32, UTF-32BE, UTF-32LE), Latin-N encodings
+(ISO8859-1 to 16), and
+typical Japanese character encodings: ISO2022JP, ISO2022JP-3,
+EUC-JP (EUC-JISX0213), Shift_JISX0213.
+@c JP
+Gaucheは自前で、Unicode Transfer Encoding (UTF-8, UTF-16, UTF-16BE, UTF-16LE,
+UTF-32, UTF-32BE, UTF-32LE)、Latin-N (ISO8859-1から16)、
+そして主要な日本語エンコーディング
+(ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213))、
+の間の変換を行います。
+@c COMMON
+
+@c EN
+Conversions between other encodings are handled by @code{iconv(3)}
+by default.  However, @code{iconv(3)} API lacks a feature to customize
+the behavior when an input character can't be encoded in the output CES.
+If you need to be sensitive about it, you can disable delegation to
+@code{iconv(3)} by the following parameter.
+@c JP
+上記以外のコードとの変換はデフォルトで@code{iconv(3)}を利用します。
+ただ、@code{iconv(3)}のAPIには、出力CESでエンコードできない文字が入力に
+含まれていた場合の振る舞いをカスタマイズするインタフェースがありません。
+そこまでの制御が必要なら、次のパラメータで@code{iconv(3)}の使用を止めることができます。
+@c COMMON
+
+@deffn {Parameter} external-conversion-library
+@c EN
+The value of this parameter can be a symbol @code{iconv} or @code{#f}.
+The default value is @code{iconv}.
+
+Conversion ports opened during this parameter being @code{iconv}
+will use @code{iconv(3)} library if the requested conversion isn't
+supported by Gauche's native converters.
+This only affect when the conversion port
+is opened---once it is opened, this parameter value is irrelevant.
+@c JP
+このパラメータの値はシンボル@code{iconv}か@code{#f}でなければなりません。
+デフォルトの値は@code{iconv}です。
+
+このパラメータの値が@code{iconv}である間にオープンされた変換ポートは、
+要求された変換がGauche内部でサポートされていなかった場合に@code{iconv(3)}ライブラリを
+使います。変換ポートがopenされる時点でのパラメータの値が重要です--一旦オープンされたら、
+パラメータの値はそのポートの動作に影響を与えません。
+@c COMMON
+@end deffn
+
+@c EN
 You can check whether the specific conversion is supported on
 your system or not, by the following function.
 @c JP
@@ -2620,6 +2649,9 @@ Also note that this procedure always returns @code{#t}
 if @var{from-ces} and/or @var{to-ces} is "none",
 for conversion to/from CES "none" always succeeds (in fact, it does nothing).
 
+This procedure may be affected by the value of the parameter
+@code{external-conversion-library}.
+
 @example
 ;; see if you can convert the internal encoding to EUC-JP
 (ces-conversion-supported? (gauche-character-encoding) "euc-jp")
@@ -2637,6 +2669,8 @@ UnicodeにはEUC-JPにない文字も含まれています)。
 
 @var{from-ces}か@var{to-ces}が "none" ならばこの手続きは常に@code{#t}を
 返します。なぜならそのような変換は常に成功するからです(何も変換しないわけですが)。
+
+この手続きは、パラメータ@code{external-conversion-library}に影響を受けます。
 
 @example
 ;; 内部エンコーディングからEUC-JPに変換できるか?
@@ -2759,6 +2793,8 @@ conversion whenever possible.  This even maps the undefined codepoint
 properly.  Between Unicode (UTF-8) and EUC_JP, Gauche uses lookup tables.
 Between Unicode and Shift JIS or ISO2022JP, Gauche converts the
 input CES to EUC_JP, then convert it to the output CES.
+ISO8859-N are converted to Unicode using tables, then converted to
+the output CES if necessary.
 If the same CES is specified for input and output, Gauche's conversion
 routine just copies input characters to output characters, without
 checking the validity of the encodings.
@@ -2769,6 +2805,7 @@ EUC_JP、Shift JIS、及びISO2022JP間の変換は可能な限り計算で行�
 Unicode(UTF-8)とEUC_JP間の変換はテーブルルックアップによって行われます。
 UnicodeとShift JISまたはISO2022JP間の変換は、入力CESを一度EUC_JPに
 変換し、それを出力CESに変換することによって行います。
+ISO8859-NはUnicodeにへテーブルで変換され、必要ならばそこから出力CESに変換されます。
 入力と出力のCESがGaucheの内部アルゴリズムがサポートする範囲で等しかった場合、
 Gaucheの変換ルーチンはエンコーディングの正当性はチェックせず、
 単に入力を出力にコピーします。
@@ -2915,7 +2952,7 @@ usually in favor of the native CES.
 @subsection Conversion ports
 @c NODE 変換ポート
 
-@defun open-input-conversion-port source from-code :key to-code buffer-size owner?
+@defun open-input-conversion-port source from-code :key to-code buffer-size owner? handling
 @c MOD gauche.charconv
 @c EN
 Takes an input port @var{source}, which feeds characters
@@ -2940,6 +2977,41 @@ for typical cases.
 @c JP
 @var{buffer-size}は変換のための内部バッファのサイズを指定します。
 省略時のサイズは1Kバイト程で、通常の使用には問題ないサイズです。
+@c COMMON
+
+@c EN
+@var{hanlding} argument specifies the behavior when the output CES
+doesn't have the corresponding character of input.  It can be a symbol
+@code{raise} to raise an @code{<io-encoding-error>} in such cases,
+or a symbol @code{replace} to replace the character with a replacement
+character appropriate in the output CES.  If omitted, @code{raise}
+is assumed.
+@c JP
+@var{handling}引数は、出力CESに入力に対応する文字がない場合の動作を指定します。
+引数はシンボル@code{raise}か@code{replace}でなければなりません。
+@code{raise}の場合は、@code{<io-encoding-error>}が投げられます。
+@var{replace}の場合は、出力CESに応じた適切な置換文字が代わりに出力されます。
+省略された場合は@code{raise}の動作となります。
+@c COMMON
+
+@c EN
+Note that @code{iconv(3)} library API doesn't offer an option to
+choose the handling mode. So when the conversion is delegated to
+@code{iconv(3)}, @var{handling} is ignored and the behavior follows
+the underlying @code{iconv(3)} implementation.  If you need to make
+sure @var{handling} is honored, you can bind the parameter
+@code{external-conversion-library} to @code{#f} when calling
+this procedure; then the conversion port won't
+use @code{iconv(3)} and raises unsupported encodings error if the
+conversion can't be handled entirely within Gauche.
+@c JP
+@code{iconv(3)}ライブラリは、ハンドリングモードを指定するAPIを持っていないことに
+注意してください。変換が@code{iconv(3)}に任されると、@var{handling}の指定は
+無視され、動作は@code{iconv(3)}の実装に依存します。
+@var{handling}の指定通りに動いて欲しい場合は、パラメータ
+@code{external-conversion-library}を@code{#f}に束縛している環境で
+この手続きを呼んでください。そうすると、変換ポートは@code{iconv(3)}を使わず、
+Gauche内部で変換できない場合はエラーを投げます。
 @c COMMON
 
 @c EN
@@ -3004,7 +3076,7 @@ For example, the following code copies a file @file{unknown.txt} to a file
 @end defun
 
 
-@defun open-output-conversion-port sink to-code :key from-code buffer-size owner?
+@defun open-output-conversion-port sink to-code :key from-code buffer-size owner? handling
 @c MOD gauche.charconv
 @c EN
 Creates and returns an output port that converts
@@ -3041,10 +3113,18 @@ and true, however, it closes @var{sink} when it is closed.
 @var{owner?}に真の値を与えれば、出力変換ポートのクローズ時に@var{sink}を
 クローズするようにできます。
 @c COMMON
+
+@c EN
+The @var{handling} keyword argument is the same
+as @code{open-input-conversion-port}.
+@c JP
+@var{handling}キーワード引数は、
+@code{open-input-conversion-port}と同じです。
+@c COMMON
 @end defun
 
-@defun ces-convert-to return-type source from-code :optional to-code
-@defunx ces-convert source from-code :optional to-code
+@defun ces-convert-to return-type source from-code :optional to-code :key handling
+@defunx ces-convert source from-code :optional to-code :key handling
 @c MOD gauche.charconv
 @c EN
 Convert @var{source}, which is a string or an u8vector
@@ -3088,10 +3168,25 @@ multibyte sequence in CES other than the native encoding.
 @c JP
 @var{from-code}にはCES推測アルゴリズム名("*JP"など)を与えることができます。
 @c COMMON
+
+@c EN
+The keyword argument @var{handling} controls
+the behavior when input contains a character that can't be encoded
+in the output.  See @code{open-input-conversion-port} above for the
+description.  By default, an @code{<io-encoding-error>} is raised,
+except when the conversion is delegated to @code{iconv(3)}, in which case
+the behavior depends on the external library.
+@c JP
+キーワード引数@var{handling}は出力側でエンコードできない文字が
+入力された場合の振る舞いを指定します。上の@code{open-input-conversion-port}の
+説明を参照してください。デフォルトでは@code{<io-encoding-error>}が投げられます
+(ただし、変換が@code{iconv(3)}に任された場合、
+その振る舞いは外部ライブラリの実装に依存します)。
+@c COMMON
 @end defun
 
-@defun call-with-input-conversion iport proc :key encoding conversion-buffer-size
-@defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size
+@defun call-with-input-conversion iport proc :key encoding conversion-buffer-size handling
+@defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size handling
 @c MOD gauche.charconv
 @c EN
 These procedures can be used to perform character I/O with
@@ -3171,8 +3266,8 @@ Gauche の内部エンコーディングをもつ文字を書き込むことが�
 @c COMMON
 @end defun
 
-@defun with-input-conversion iport thunk :key encoding conversion-buffer-size
-@defunx with-output-conversion oport thunk :key encoding conversion-buffer-size
+@defun with-input-conversion iport thunk :key encoding conversion-buffer-size handling
+@defunx with-output-conversion oport thunk :key encoding conversion-buffer-size handling
 @c MOD gauche.charconv
 @c EN
 Similar to @code{call-with-*-conversion},
@@ -3188,8 +3283,8 @@ The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
 @c COMMON
 @end defun
 
-@defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size
-@defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size
+@defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size handling
+@defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size handling
 @c MOD gauche.charconv
 @c EN
 Convenient procedures to avoid adding unnecessary conversion port.
@@ -3206,7 +3301,7 @@ won't be flushed.  (Some conversion requires trailing sequence that
 is generated only when the conversion port is closing, so simply
 calling @code{flush} isn't enough.)
 
-The @var{buffer-size} argument is passed to
+The @var{buffer-size} and @var{handling} arguments are passed to
 the @code{open-*-conversion-port}.
 @c JP
 不要な変換ポートを作らないようにする便利な手続きです。
@@ -3222,7 +3317,7 @@ the @code{open-*-conversion-port}.
 (変換によっては、ポートが閉じられる時点で終了シーケンスを書き出すものがあるので、
 単にポートを@code{flush}するだけでは不十分です)。
 
-@code{:buffer-size} 引数はそのまま
+@var{buffer-size}と@var{handling}引数はそのまま
 変換ポート作成手続きに渡されます。
 @c COMMON
 @end defun
