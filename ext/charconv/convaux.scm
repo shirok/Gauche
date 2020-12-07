@@ -162,12 +162,12 @@
 ;; Convert string or uvector -> string or uvector
 (define (ces-convert-to class input fromcode
                         :optional (tocode #f) 
-                        :key handling)
+                        :key illegal-output)
   (receive (inp isize) (%ces-input input)
     (receive (out get) (%ces-output class)
       (let1 in ($ open-input-conversion-port inp fromcode
                   :to-code tocode :buffer-size isize 
-                  :owner? #t :handling handling)
+                  :owner? #t :illegal-output illegal-output)
         (copy-port in out :unit 'byte)
         (close-input-port in)
         (flush out)
@@ -176,8 +176,8 @@
 
 (define (ces-convert input fromcode 
                      :optional (tocode #f)
-                     :key handling)
-  (ces-convert-to <string> input fromcode tocode :handling handling))
+                     :key illegal-output)
+  (ces-convert-to <string> input fromcode tocode :illegal-output illegal-output))
 
 ;; "Wrap" the given port for convering to/from native encoding if needed.
 ;; Unlike open-*-conversion-port, these return port itself if the conversion
@@ -203,12 +203,12 @@
                                     :key ((:encoding from-code)
                                           (gauche-character-encoding))
                                          ((:conversion-buffer-size bufsiz) 0)
-                                         handling)
+                                         illegal-output)
   (if (ces-upper-compatible? (gauche-character-encoding) from-code)
     (proc port)
     (let1 cvp (open-input-conversion-port port from-code
                                           :owner? #f :buffer-size bufsiz
-                                          :handling handling)
+                                          :illegal-output illegal-output)
       (unwind-protect (proc cvp)
         (close-input-port cvp)))))
 
@@ -216,12 +216,12 @@
                                      :key ((:encoding to-code)
                                            (gauche-character-encoding))
                                           ((:conversion-buffer-size bufsiz) 0)
-                                          handling)
+                                          illegal-output)
   (if (ces-upper-compatible? (gauche-character-encoding) to-code)
     (proc port)
     (let1 cvp (open-output-conversion-port port to-code
                                            :owner? #f :buffer-size bufsiz
-                                           :handling handling)
+                                           :illegal-output illegal-output)
       (unwind-protect (proc cvp)
         (close-output-port cvp)))))
 
@@ -239,24 +239,24 @@
 ;; open-{input|output}-file when :encoding argument is given.
 (define (%open-input-file/conv name :key (encoding #f)
                                          ((:conversion-buffer-size bufsiz) 0)
-                                         ((:conversion-handling-mode handling) 'raise)
+                                         ((:conversion-illegal-output illegal-output) 'raise)
                                     :allow-other-keys rest)
   (and-let* ([port (apply (with-module gauche.internal %open-input-file)
                           name rest)])
     (wrap-with-input-conversion port encoding
                                 :buffer-size bufsiz
                                 :owner? #t
-                                :handling handling)))
+                                :illegal-output illegal-output)))
 
 (define (%open-output-file/conv name :key (encoding #f)
                                           ((:conversion-buffer-size bufsiz) 0)
-                                          ((:conversion-handling-mode handling) 'raise)
+                                          ((:conversion-illegal-output illegal-output) 'raise)
                                      :allow-other-keys rest)
   (and-let* ([port (apply (with-module gauche.internal %open-output-file)
                           name rest)])
     (wrap-with-output-conversion port encoding
                                  :buffer-size bufsiz :owner? #t
-                                 :handling handling)))
+                                 :illegal-output illegal-output)))
 
 ;;
 ;; Low-level API
@@ -278,18 +278,18 @@
                                            :key (to-code #f)
                                                 (buffer-size::<fixnum> 0)
                                                 (owner? #f)
-                                                handling)
+                                                illegal-output)
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")]
           [flags::u_long 0])
      (unless (SCM_FALSEP ownerP)
        (logior= flags CVPORT_OWNER))
-     (cond [(SCM_EQ handling 'replace) (logior= flags CVPORT_REPLACE)]
-           [(or (SCM_UNBOUNDP handling)
-                (SCM_UNDEFINEDP handling)
-                (SCM_EQ handling 'raise))]
-           [else (Scm_Error ":handling argument must be either raise or \
-                             replace, but got: %S" handling)])
+     (cond [(SCM_EQ illegal-output 'replace) (logior= flags CVPORT_REPLACE)]
+           [(or (SCM_UNBOUNDP illegal-output)
+                (SCM_UNDEFINEDP illegal-output)
+                (SCM_EQ illegal-output 'raise))]
+           [else (Scm_Error ":illegal-output argument must be either raise or \
+                             replace, but got: %S" illegal-output)])
      (return (Scm_MakeInputConversionPort source fc tc buffer_size
                                           flags))))
 
@@ -298,18 +298,18 @@
                                             :key (from-code #f)
                                                  (buffer-size::<fixnum> 0)
                                                  (owner? #f)
-                                                 handling)
+                                                 illegal-output)
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")]
           [flags::u_long 0])
      (unless (SCM_FALSEP ownerP)
        (logior= flags CVPORT_OWNER))
-     (cond [(SCM_EQ handling 'replace) (logior= flags CVPORT_REPLACE)]
-           [(or (SCM_UNBOUNDP handling)
-                (SCM_UNDEFINEDP handling)
-                (SCM_EQ handling 'raise))]
-           [else (Scm_Error ":handling argument must be either raise or \
-                             replace, but got: %S" handling)])
+     (cond [(SCM_EQ illegal-output 'replace) (logior= flags CVPORT_REPLACE)]
+           [(or (SCM_UNBOUNDP illegal-output)
+                (SCM_UNDEFINEDP illegal-output)
+                (SCM_EQ illegal-output 'raise))]
+           [else (Scm_Error ":illegal-output argument must be either raise or \
+                             replace, but got: %S" illegal-output)])
      (return (Scm_MakeOutputConversionPort sink tc fc buffer_size flags))))
 
  (define-cproc ces-guess-from-string (string::<string> scheme::<string>)

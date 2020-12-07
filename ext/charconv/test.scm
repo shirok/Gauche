@@ -72,7 +72,7 @@
 ;;--------------------------------------------------------------------
 (test-section "input conversion")
 
-(define (test-input file from to :key (guesser #f) handling)
+(define (test-input file from to :key (guesser #f) illegal-output)
   (let* ((realfrom (or guesser from))
          (infostr  (format #f "~a.~a (~a) => ~a" file from realfrom to))
          (fromfile (format #f "~a.~a" file from))
@@ -82,12 +82,12 @@
         (test infostr
               (file->string tofile)
               (lambda () (file->string-conv/in fromfile realfrom
-                                               :handling handling)))
+                                               :illegal-output illegal-output)))
         (test infostr
               (file->string tofile)
               (lambda () (file->string-conv/in fromfile realfrom
                                                :to-code to
-                                               :handling handling))))
+                                               :illegal-output illegal-output))))
       (test infostr "(not supported)"
             (lambda () "(not supported)")))
     ))
@@ -108,26 +108,26 @@
           '("EUCKR" "UTF-8" "ISO2022KR")
           '("EUCKR" "UTF-8" "ISO2022KR"))
 
-;; handling replace
+;; illegal-output replace
 (map-test (lambda (file from to)
-            (test-input file from to :handling 'replace))
+            (test-input file from to :illegal-output 'replace))
           "data/jp1"
           '("ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("ASCII"))
 (map-test (lambda (file from to)
-            (test-input file from to :handling 'replace))
+            (test-input file from to :illegal-output 'replace))
           "data/jp2"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("ASCII"))
 (map-test (lambda (file from to)
-            (test-input file from to :handling 'replace))
+            (test-input file from to :illegal-output 'replace))
           "data/lat1"
           '("ISO8859-1")
           '("ASCII" "ISO8859-1" "EUCJP" "SJIS" "ISO2022JP" "UTF-8"
             "UTF-16" "UTF-16BE" "UTF-16LE" 
             "UTF-32" "UTF-32BE" "UTF-32LE"))
 (map-test (lambda (file from to)
-            (test-input file from to :handling 'replace))
+            (test-input file from to :illegal-output 'replace))
           "data/lat1x"
           '("ISO8859-1" "EUCJP" "UTF-8" "SJIS" 
             "UTF-16" "UTF-16BE" "UTF-16LE"
@@ -155,7 +155,7 @@
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
-;; UTF BOM handling
+;; UTF BOM illegal-output
 (let ()
   (define (f n) #"~(sys-dirname (current-load-path))/~n")
 
@@ -335,7 +335,7 @@
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 ;;-------------------------------------------------------------------
-(test-section "replacement handling")
+(test-section "replacement illegal-output")
 (test* "utf-8 -> ascii noreplacement" (test-error <io-decoding-error>)
        (ces-convert #u8(#x61 #xe3 #x81 #x82 #x62 #xe3 #x81
                        #x84 #x63 #xe3 #x81 #x86)
@@ -343,18 +343,18 @@
 (test* "utf-8 -> ascii replacement" "a?b?c?"
        (ces-convert #u8(#x61 #xe3 #x81 #x82 #x62 #xe3 #x81
                         #x84 #x63 #xe3 #x81 #x86)
-                    'utf-8 'ascii :handling 'replace))
+                    'utf-8 'ascii :illegal-output 'replace))
 
 (let ([src #u8(#x61 #xe2 #x98 #xba #x62 #xe2 #x9b #xb1 #x63)])
   ;; src is #\a + snowman + #\b + umbrella + #\c
   (test* "utf-8 -> eucjp noreplacement" (test-error <io-decoding-error>)
        (ces-convert-to <u8vector> src 'utf-8 'eucjp))
   (test* "utf-8 -> eucjp replacement" '#u8(#x61 #xa2 #xae #x62 #xa2 #xae #x63)
-       (ces-convert-to <u8vector> src 'utf-8 'eucjp :handling 'replace))
+       (ces-convert-to <u8vector> src 'utf-8 'eucjp :illegal-output 'replace))
   (test* "utf-8 -> sjis noreplacement" (test-error <io-decoding-error>)
        (ces-convert-to <u8vector> src 'utf-8 'sjis))
   (test* "utf-8 -> sjis replacement" '#u8(#x61 #x81 #xac #x62 #x81 #xac #x63)
-       (ces-convert-to <u8vector> src 'utf-8 'sjis :handling 'replace))
+       (ces-convert-to <u8vector> src 'utf-8 'sjis :illegal-output 'replace))
   )
 
 ;;--------------------------------------------------------------------
