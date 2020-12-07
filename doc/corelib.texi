@@ -20650,8 +20650,8 @@ Returns number of characters copied when @var{unit} is a symbol
 @subsection File ports
 @c NODE ファイルポート
 
-@defun open-input-file filename :key if-does-not-exist buffering element-type encoding conversion-buffer-size
-@defunx open-output-file filename :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
+@defun open-input-file filename :key if-does-not-exist buffering element-type encoding conversion-buffer-size conversion-illegal-output
+@defunx open-output-file filename :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size conversion-illegal-output
 [R7RS+]
 @c EN
 Opens a file @var{filename} for input or output, and
@@ -20907,6 +20907,21 @@ routine can have more data before deciding the encoding.
 この引数を指定する必要は滅多にありませんが、入力ファイルの文字エンコーディングを
 推測しなければならない場合、大きめのバッファサイズの方が精度が上がります。
 推測ルーチンがより多くのデータを見て文字エンコーディングを決定できるからです。
+@c COMMON
+
+@item :conversion-illegal-output
+@c EN
+This argument may be used with the @var{encoding} argument to specify
+the behavior when the source character can't be mapped to the destination
+character.  It must be either a symbol @code{raise} or a symbol
+@code{replace}, and is passed as @var{illegal-output} argument to the
+conversion port.  @xref{Conversion ports}, for the details.
+@c JP
+この引数は@var{encode}引数と一緒に使うことで、
+文字エンコーディング変換において、元の文字に対応する文字が変換先に無い場合の振る舞いを
+指定できます。値はシンボル@code{raise}か@code{replace}でなければならず、
+それはそのまま変換ポートの@var{illegal-output}引数に渡されます。
+詳しくは@ref{Conversion ports}を参照してください。
 @c COMMON
 @end table
 

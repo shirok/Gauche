@@ -2749,9 +2749,11 @@ CES @var{ces-b}でエンコードされた文字列が、システムの知る�
 
 @c EN
 When Gauche's internal conversion routine encounters a character that can't
-be mapped, the behaivor depends on the @emph{handling mode} of the conversion
-port.  If the handling mode is @code{raise}, an @code{<io-encoding-error>}
-is thrown.  If the handling mode is @code{replace},
+be mapped, the behaivor depends on the @emph{illegal output handling mode} 
+of the conversion port, specified by @var{illegal-output} keyword
+arguments.
+If the mode is @code{raise}, an @code{<io-encoding-error>}
+is thrown.  If the mode is @code{replace},
 the character is replaced with a replacement character.
 
 A replacement character is U+FFFD (REPLACEMENT CHARACTER) if it is
@@ -2764,9 +2766,10 @@ If that happens in iconv, handling of such character depends
 on iconv implementation (glibc implementation returns an error).
 @c JP
 出力CESへマップ不可能な入力文字に出会った場合のGaucheの内部変換ルーチンの動作は、
-変換ポートのエラーハンドリングモードで決まります。
-ハンドリングモードが@code{raise}なら@code{<io-encoding-error>}が投げられます。
-ハンドリングモードが@code{replace}なら、その文字は置換文字に置き換えられます。
+@var{illegal-output}キーワード引数で指定される
+変換ポートの不正出力ハンドリングモードで決まります。
+モードが@code{raise}なら@code{<io-encoding-error>}が投げられます。
+モードが@code{replace}なら、その文字は置換文字に置き換えられます。
 
 変換先の文字エンコーディングで UniocdeのU+FFFD (REPLACEMENT CHARACTER)
 が使えればそれが置換文字となります。日本語エンコーディングではその文字は
@@ -2952,7 +2955,7 @@ usually in favor of the native CES.
 @subsection Conversion ports
 @c NODE 変換ポート
 
-@defun open-input-conversion-port source from-code :key to-code buffer-size owner? handling
+@defun open-input-conversion-port source from-code :key to-code buffer-size owner? illegal-output
 @c MOD gauche.charconv
 @c EN
 Takes an input port @var{source}, which feeds characters
@@ -2987,7 +2990,7 @@ or a symbol @code{replace} to replace the character with a replacement
 character appropriate in the output CES.  If omitted, @code{raise}
 is assumed.
 @c JP
-@var{handling}引数は、出力CESに入力に対応する文字がない場合の動作を指定します。
+@var{illegal-output}引数は、出力CESに入力に対応する文字がない場合の動作を指定します。
 引数はシンボル@code{raise}か@code{replace}でなければなりません。
 @code{raise}の場合は、@code{<io-encoding-error>}が投げられます。
 @var{replace}の場合は、出力CESに応じた適切な置換文字が代わりに出力されます。
@@ -2996,19 +2999,19 @@ is assumed.
 
 @c EN
 Note that @code{iconv(3)} library API doesn't offer an option to
-choose the handling mode. So when the conversion is delegated to
-@code{iconv(3)}, @var{handling} is ignored and the behavior follows
+choose the illegal-output handling mode. So when the conversion is delegated to
+@code{iconv(3)}, @var{illegal-output} is ignored and the behavior follows
 the underlying @code{iconv(3)} implementation.  If you need to make
-sure @var{handling} is honored, you can bind the parameter
+sure @var{illegal-output} is honored, you can bind the parameter
 @code{external-conversion-library} to @code{#f} when calling
 this procedure; then the conversion port won't
 use @code{iconv(3)} and raises unsupported encodings error if the
 conversion can't be handled entirely within Gauche.
 @c JP
 @code{iconv(3)}ライブラリは、ハンドリングモードを指定するAPIを持っていないことに
-注意してください。変換が@code{iconv(3)}に任されると、@var{handling}の指定は
+注意してください。変換が@code{iconv(3)}に任されると、@var{illegal-output}の指定は
 無視され、動作は@code{iconv(3)}の実装に依存します。
-@var{handling}の指定通りに動いて欲しい場合は、パラメータ
+@var{illegal-output}の指定通りに動いて欲しい場合は、パラメータ
 @code{external-conversion-library}を@code{#f}に束縛している環境で
 この手続きを呼んでください。そうすると、変換ポートは@code{iconv(3)}を使わず、
 Gauche内部で変換できない場合はエラーを投げます。
@@ -3076,7 +3079,7 @@ For example, the following code copies a file @file{unknown.txt} to a file
 @end defun
 
 
-@defun open-output-conversion-port sink to-code :key from-code buffer-size owner? handling
+@defun open-output-conversion-port sink to-code :key from-code buffer-size owner? illegal-output
 @c MOD gauche.charconv
 @c EN
 Creates and returns an output port that converts
@@ -3115,16 +3118,16 @@ and true, however, it closes @var{sink} when it is closed.
 @c COMMON
 
 @c EN
-The @var{handling} keyword argument is the same
+The @var{illegal-output} keyword argument is the same
 as @code{open-input-conversion-port}.
 @c JP
-@var{handling}キーワード引数は、
+@var{illegal-output}キーワード引数は、
 @code{open-input-conversion-port}と同じです。
 @c COMMON
 @end defun
 
-@defun ces-convert-to return-type source from-code :optional to-code :key handling
-@defunx ces-convert source from-code :optional to-code :key handling
+@defun ces-convert-to return-type source from-code :optional to-code :key illegal-output
+@defunx ces-convert source from-code :optional to-code :key illegal-output
 @c MOD gauche.charconv
 @c EN
 Convert @var{source}, which is a string or an u8vector
@@ -3170,14 +3173,14 @@ multibyte sequence in CES other than the native encoding.
 @c COMMON
 
 @c EN
-The keyword argument @var{handling} controls
+The keyword argument @var{illegal-output} controls
 the behavior when input contains a character that can't be encoded
 in the output.  See @code{open-input-conversion-port} above for the
 description.  By default, an @code{<io-encoding-error>} is raised,
 except when the conversion is delegated to @code{iconv(3)}, in which case
 the behavior depends on the external library.
 @c JP
-キーワード引数@var{handling}は出力側でエンコードできない文字が
+キーワード引数@var{illegal-output}は出力側でエンコードできない文字が
 入力された場合の振る舞いを指定します。上の@code{open-input-conversion-port}の
 説明を参照してください。デフォルトでは@code{<io-encoding-error>}が投げられます
 (ただし、変換が@code{iconv(3)}に任された場合、
@@ -3185,8 +3188,8 @@ the behavior depends on the external library.
 @c COMMON
 @end defun
 
-@defun call-with-input-conversion iport proc :key encoding conversion-buffer-size handling
-@defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size handling
+@defun call-with-input-conversion iport proc :key encoding conversion-buffer-size illegal-output
+@defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size illegal-output
 @c MOD gauche.charconv
 @c EN
 These procedures can be used to perform character I/O with
@@ -3266,8 +3269,8 @@ Gauche の内部エンコーディングをもつ文字を書き込むことが�
 @c COMMON
 @end defun
 
-@defun with-input-conversion iport thunk :key encoding conversion-buffer-size handling
-@defunx with-output-conversion oport thunk :key encoding conversion-buffer-size handling
+@defun with-input-conversion iport thunk :key encoding conversion-buffer-size illegal-output
+@defunx with-output-conversion oport thunk :key encoding conversion-buffer-size illegal-output
 @c MOD gauche.charconv
 @c EN
 Similar to @code{call-with-*-conversion},
@@ -3283,8 +3286,8 @@ The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
 @c COMMON
 @end defun
 
-@defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size handling
-@defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size handling
+@defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size illegal-output
+@defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size illegal-output
 @c MOD gauche.charconv
 @c EN
 Convenient procedures to avoid adding unnecessary conversion port.
@@ -3301,7 +3304,7 @@ won't be flushed.  (Some conversion requires trailing sequence that
 is generated only when the conversion port is closing, so simply
 calling @code{flush} isn't enough.)
 
-The @var{buffer-size} and @var{handling} arguments are passed to
+The @var{buffer-size} and @var{illegal-output} arguments are passed to
 the @code{open-*-conversion-port}.
 @c JP
 不要な変換ポートを作らないようにする便利な手続きです。
@@ -3317,7 +3320,7 @@ the @code{open-*-conversion-port}.
 (変換によっては、ポートが閉じられる時点で終了シーケンスを書き出すものがあるので、
 単にポートを@code{flush}するだけでは不十分です)。
 
-@var{buffer-size}と@var{handling}引数はそのまま
+@var{buffer-size}と@var{illegal-output}引数はそのまま
 変換ポート作成手続きに渡されます。
 @c COMMON
 @end defun
