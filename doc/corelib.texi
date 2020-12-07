@@ -7693,7 +7693,7 @@ Another optional @var{basechar2} argument is used for integers over 10.
 The default value is @code{#\a}.  You can pass @code{#\A} to get
 upper-case hex digits, for example.
 @c JP
-もうひとるの省略可能引数@var{basechar2}は、10を越える整数に使う文字の起点を
+もうひとつの省略可能引数@var{basechar2}は、10を越える整数に使う文字の起点を
 指定します。デフォルトは@code{#\a}です。ここに@code{#\A}を渡せば、
 16進数表記で小文字のかわりに大文字を使うようになります。
 @c COMMON

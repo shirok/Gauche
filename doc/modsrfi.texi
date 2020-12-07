@@ -8677,28 +8677,55 @@ A transcoder bundles a codec, an eol-style, and error handling mode.
 @defun make-transcoder codec eol-style handling-mode
 [SRFI-181]
 @c MOD srfi-181
+Creates and returns a transcoder with the given parameters.
+A transcoder is an immutable object.
 @end defun
 
 @defun native-transcoder
 [SRFI-181]
 @c MOD srfi-181
+Returns a singleton of the transcoder representing systems native
+(internal) codec and eol-style.  In Gauche, the native codec
+is the same as Gauche's native encoding 
+(returned by @code{gauche-character-encoding}, @pxref{Characters}),
+and eol-style is @code{none}.
 @end defun
 
 @defun transcoded-port binary-port transcoder
 [SRFI-181]
 @c MOD srfi-181
+Creates a transcoded port wrapping @var{binary-port}, performing the
+conversion specified by @var{transcoder}.
+
+If @var{binary-port} is an input port, it returns an input port,
+converting the CES specified in @var{transcoder} to the system's
+native encoding.
+
+If @var{binary-port} is an output port, it returns an output port,
+converting the system's native encoding to the CES specified in
+@var{transcoder}.
+
+In Gauche, conversion is done by conversion ports.
+@xref{Conversion ports}, for the details.
 @end defun
 
 @defun bytevector->string bytevector transcoder
 [SRFI-181]
 @c MOD srfi-181
+Decode the binary data in @var{bytevector} as the CES specified
+by @var{transcoder}, and returns a string in the native encoding.
+
+It is a wrapper of Gauche's @code{ces-convert}; @pxref{Conversion ports}.
 @end defun
 
 @defun string->bytevector string transcoder
 [SRFI-181]
 @c MOD srfi-181
-@end defun
+Encode the string in the CES specified by @var{transcoder},
+and returns a bytevector.
 
+It is a wrapper of Gauche's @code{ces-convert-to}; @pxref{Conversion ports}.
+@end defun
 
 @subsubheading Codecs
 
@@ -8709,17 +8736,23 @@ Returns a coded representing a character encoding scheme named by
 @var{name}.  A portable code should only use string for @var{name},
 while Gauche accepts a symbol as well.
 
-Note: It may raise an 
+If @var{name} isn't recognized as a supported codec name,
+a condition that satisfies @code{unknown-encoding-error?} is thrown.
 @end defun
 
 @defun unknown-encoding-error? obj
 [SRFI-181]
 @c MOD srfi-181
+If the system sees unknown or unsupported codec, a condition
+that satisfies this predicate is thrown.
 @end defun
 
 @defun unknown-encoding-error-name obj
 [SRFI-181]
 @c MOD srfi-181
+The argument must be an unknown encoding error condition
+that satisfies @code{unknown-encoding-error?}.  It returns
+the name that caused the condition to be thrown.
 @end defun
 
 @defun latin-1-codec
@@ -8727,6 +8760,12 @@ Note: It may raise an
 @defunx utf-16-codec
 [SRFI-181]
 @c MOD srfi-181
+A pre-defined codecs for @code{latin-1} (ISO8859-1),
+@code{utf-8}, and @code{utf-16}.
+
+The @code{utf-16} codec recognizes
+BOM when used for input; if no BOM is found, UTF-16BE is assumed.
+When used for output, @code{utf-16} always attaches BOM.
 @end defun
 
 @subsubheading EOL style
@@ -8734,6 +8773,7 @@ Note: It may raise an
 @defun native-eol-style
 [SRFI-181]
 @c MOD srfi-181
+Returns the default eol style.  In Gauche, it is @code{none}.
 @end defun
 
 @subsubheading Transcoding errors
@@ -8741,16 +8781,27 @@ Note: It may raise an
 @defun i/o-decoding-error? obj
 [SRFI-181]
 @c MOD srfi-181
+When an input transcoded port encounters a sequence that's not valid
+for the input codec, a condition that satisfies this predicate
+is thrown.
+
+In Gauche, such condition is @code{<io-decoding-error>}.
 @end defun
 
 @defun i/o-encoding-error? obj
 [SRFI-181]
 @c MOD srfi-181
+When an output transcoded port encounters a character that can't be
+encoded in the output codec, and the handling mode is @code{raise},
+a condition that satisfies this predicate is thrown.
+
+In Gauche, such condition is @code{<io-encoding-error>}.
 @end defun
 
 @defun i/o-encoding-error-char i/o-encoding-condition
 [SRFI-181]
 @c MOD srfi-181
+Retries the character that caused the @code{<io-encoding-error>} is thrown.
 @end defun
 
 
