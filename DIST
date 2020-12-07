@@ -72,6 +72,7 @@ do_pdf () {
 
 # hidden command - only meaningful on the release engineer's machine
 do_release () {
+    check_version
     do_tgz
     do_pdf
     gpg --detach-sign --armor -o ../Gauche-$VERSION.tgz.asc ../Gauche-$VERSION.tgz
@@ -81,6 +82,17 @@ do_mingw_installer () {
     do_gen
     MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer --with-mbedtls
     MSYSTEM=MINGW32 src/mingw-dist.sh --with-gl --with-installer --with-mbedtls
+}
+
+do_mingw_sign () {
+    check_version
+    vault_dir=$HOME/sites/practical-scheme.net/vault
+    gpg --detach-sign --armor \
+        -o $vault_dir/Gauche-mingw-$VERSION-32bit.msi.asc \
+        $vault_dir/Gauche-mingw-$VERSION-32bit.msi
+    gpg --detach-sign --armor \
+        -o $vault_dir/Gauche-mingw-$VERSION-64bit.msi.asc \
+        $vault_dir/Gauche-mingw-$VERSION-64bit.msi
 }
 
 do_clean_build_test () {
@@ -114,6 +126,7 @@ case $1 in
     tgz)   do_tgz ;;
     release) do_release ;;
     mingw-installer)  do_mingw_installer ;;
+    mingw-sign)       do_mingw_sign ;;
     clean-build-test) do_clean_build_test ;;
     self-host-test)   do_self_host_test ;;
     *) usage ;;
