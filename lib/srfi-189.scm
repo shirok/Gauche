@@ -441,68 +441,59 @@
 (define-syntax maybe-if
   (syntax-rules ()
     [(_ expr justx nothingx)
-     (let1 x expr
-       (assume-type x <maybe>)
-       (if (just? expr) justx nothingx))]))
+     (if (just? (assume-type expr <maybe>)) justx nothingx)]))
 
 (define-syntax maybe-and
   (syntax-rules ()
     [(_) (just "empty maybe-and")]
-    [(_ x) (begin (assume-type x <maybe>) x)]
-    [(_ x . xs) (cond [(nothing? x) x]
-                      [(just? x) (maybe-and . xs)]
-                      [else (assume-type x <maybe>)])]))
+    [(_ x) (assume-type x <maybe>)]
+    [(_ x . xs) (let1 t (assume-type x <maybe>)
+                  (if (nothing? t) t (maybe-and . xs)))]))
 
 (define-syntax either-and
   (syntax-rules ()
     [(_) (right "empty either-and")]
-    [(_ x) (begin (assume-type x <either>) x)]
-    [(_ x . xs) (cond [(left? x) x]
-                      [(right? x) (either-and . xs)]
-                      [else (assume-type x <either>)])]))
+    [(_ x) (assume-type x <either>)]
+    [(_ x . xs) (let1 t (assume-type x <either>)
+                  (if (left? t) t (either-and . xs)))]))
 
 (define-syntax maybe-or
   (syntax-rules ()
     [(_) (nothing)]
-    [(_ x) (begin (assume-type x <maybe>) x)]
-    [(_ x . xs) (cond [(just? x) x]
-                      [(nothing? x) (maybe-or . xs)]
-                      [else (assume-type x <maybe>)])]))
+    [(_ x) (assume-type x <maybe>)]
+    [(_ x . xs) (let1 t (assume-type x <maybe>)
+                  (if (just? t) t (maybe-or . xs)))]))
 
 (define-syntax either-or
   (syntax-rules ()
     [(_) (left "empty either-or")]
-    [(_ x) (begin (assume-type x <either>) x)]
-    [(_ x . xs) (cond [(right? x) x]
-                      [(left? x) (either-or . xs)]
-                      [else (assume-type x <either>)])]))
+    [(_ x) (assume-type x <either>)]
+    [(_ x . xs) (let1 t (assume-type x <either>)
+                  (if (right? t) t (either-or . xs)))]))
 
 (define-syntax maybe-let*
   (syntax-rules ()
     ;; empty body case
-    [(_ ()) (just #t)]
-    [(_ ((var expr))) (rlet1 t expr
-                        (assume-type t <maybe>))]
-    [(_ ((expr)))     (rlet1 t expr
-                        (assume-type t <maybe>))]
+    [(_ ()) (just #t)] 
+    [(_ ((var expr))) (assume-type expr <maybe>)]
+    [(_ ((expr)))     (assume-type expr <maybe>)]
     [(_ (var))        (assume-type var <maybe>)]
     ;; normal case
     [(_ () . body) (receive xs (let () . body) (list->just xs))]
     [(_ ((var expr) . claws) . body)
-     (let1 t expr
-       (cond [(nothing? t) (nothing)]
-             [(just? t) (let ((var (%ref1 t)))
-                          (maybe-let* claws . body))]
-             [else (assume-type t <maybe>)]))]
+     (let1 t (assume-type expr <maybe>)
+       (if (nothing? t)
+         t
+         (let ((var (%ref1 t)))
+           (maybe-let* claws . body))))]
     [(_ ((expr) . claws) . body)
-     (let1 t expr
-       (cond [(nothing? t) (nothing)]
-             [(just? t) (maybe-let* claws . body)]
-             [else (assume-type t <maybe>)]))]
+     (if (nothing? (assume-type expr <maybe>))
+       (nothing)
+       (maybe-let* claws . body))]
     [(_ (var . claws) . body)
-     (cond [(nothing? var) (nothing)]
-           [(just? var) (maybe-let* claws . body)]
-           [else (assume-type var <maybe>)])]))
+     (if (nothing? (assume-type var <maybe>))
+       (nothing)
+       (maybe-let* claws . body))]))
 
 (define-syntax maybe-let*-values
   (syntax-rules ()
@@ -511,8 +502,7 @@
     [(_ ((formals expr))) (rlet1 t expr
                             ;; Just make sure formals match the contained values
                             (maybe-ref t nothing (^ formals #f)))]
-    [(_ ((expr)))     (rlet1 t expr
-                        (assume-type t <maybe>))]
+    [(_ ((expr)))     (assume-type expr <maybe>)]
     [(_ (var))        (assume-type var <maybe>)]
     ;; normal case
     [(_ () . body) (receive xs (let () . body) (list->just xs))]
@@ -520,41 +510,33 @@
      (maybe-ref expr nothing
                 (^ formals (maybe-let*-values claws . body)))]
     [(_ ((expr) . claws) . body)
-     (let1 t expr
-       (cond [(nothing? t) (nothing)]
-             [(just? t) (maybe-let*-values claws . body)]
-             [else (assume-type t <maybe>)]))]
+     (if (nothing? (assume-type expr <maybe>))
+       (nothing)
+       (maybe-let*-values claws . body))]
     [(_ (var . claws) . body)
-     (cond [(nothing? var) (nothing)]
-           [(just? var) (maybe-let*-values claws . body)] 
-          [else (assume-type var <maybe>)])]))
+     (if (nothing? (assume-type var <maybe>))
+       (nothing)
+       (maybe-let*-values claws . body))]))
 
 (define-syntax either-let*
   (syntax-rules ()
     ;; empty body case
     [(_ ()) (right #t)]
-    [(_ ((var expr))) (rlet1 t expr
-                        (assume-type t <either>))]
-    [(_ ((expr)))     (rlet1 t expr
-                        (assume-type t <either>))]
+    [(_ ((var expr))) (assume-type expr <either>)]
+    [(_ ((expr)))     (assume-type expr <either>)]
     [(_ (var))        (assume-type var <either>)]
     ;; normal case
     [(_ () . body) (receive xs (let () . body) (list->right xs))]
     [(_ ((var expr) . claws) . body)
-     (let1 t expr
-       (cond [(left? t) t]
-             [(right? t) (let ((var (%ref1 t)))
-                           (either-let* claws . body))]
-             [else (assume-type t <either>)]))]
+     (let1 t (assume-type expr <either>)
+       (if (left? t) t (let ((var (%ref1 t)))
+                         (either-let* claws . body))))]
     [(_ ((expr) . claws) . body)
-     (let1 t expr
-       (cond [(left? t) t]
-             [(right? t) (either-let* claws . body)]
-             [else (assume-type t <either>)]))]
+     (let1 t (assume-type expr <either>)
+       (if (left? t) t (either-let* claws . body)))]
     [(_ (var . claws) . body)
-     (cond [(left? var) var]
-           [(right? var) (either-let* claws . body)]
-           [else (assume-type var <either>)])]))
+     (let1 t (assume-type var <either>)
+       (if (left? t) t (either-let* claws . body)))]))
 
 (define-syntax either-let*-values
   (syntax-rules ()
@@ -572,14 +554,12 @@
      (either-ref expr left
                  (^ formals (either-let*-values claws . body)))]
     [(_ ((expr) . claws) . body)
-     (let1 t expr
-       (cond [(left? t) t]
-             [(right? t) (either-let*-values claws . body)]
-             [else (assume-type t <either>)]))]
+     (let1 t (assume-type expr <either>)
+       (if (left? t) t (either-let*-values claws . body)))]
     [(_ (var . claws) . body)
-     (cond [(left? var) var]
-           [(right? var) (either-let*-values claws . body)]
-           [else (assume-type var <either>)])]))
+     (if (left? (assume-type var <either>))
+       var
+       (either-let*-values claws . body))]))
 
 (define-syntax either-guard
   (syntax-rules ()
@@ -598,8 +578,7 @@
 
 (define (tri=? maybe . maybes)
   (define (rec val maybe maybes)
-    (assume-type maybe <maybe>)
-    (if (nothing? maybe)
+    (if (nothing? (assume-type maybe <maybe>))
       (just #f)
       (if (boolean=? val (boolean (%ref1 maybe)))
         (if (null? maybes)
@@ -607,8 +586,7 @@
           (rec val (car maybes) (cdr maybes)))
         (just #f))))
       
-  (assume-type maybe <maybe>)
-  (if (nothing? maybe)
+  (if (nothing? (assume-type maybe <maybe>))
     (just #f)
     (let1 v (%ref1 maybe)
       (if (null? maybes)
@@ -621,8 +599,7 @@
       (just #t)
       (let ([maybe (car maybes)]
             [maybes (cdr maybes)])
-        (assume-type maybe <maybe>)
-        (if (nothing? maybe)
+        (if (nothing? (assume-type maybe <maybe>))
           maybe
           (if-let1 v (%ref1 maybe)
             (rec maybes)                
@@ -635,8 +612,7 @@
       (just #f)
       (let ([maybe (car maybes)]
             [maybes (cdr maybes)])
-        (assume-type maybe <maybe>)
-        (if (nothing? maybe)
+        (if (nothing? (assume-type maybe <maybe>))
           maybe
           (if-let1 v (%ref1 maybe)
             maybe
@@ -649,8 +625,7 @@
       (nothing)
       (let ([maybe (car maybes)]
             [maybes (cdr maybes)])
-        (assume-type maybe <maybe>)
-        (if (nothing? maybe)
+        (if (nothing? (assume-type maybe <maybe>))
           (rec maybes)
           maybe))))
   (rec maybes))
