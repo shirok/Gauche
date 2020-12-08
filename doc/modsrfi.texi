@@ -8003,31 +8003,62 @@ of @var{n}, the last bitvector may be shorter.
 @defunx bitvector-fold-right/bool kons knil bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Fold @var{kons} over the elements of bitvectors with @var{knil} as
+the initial state value.
+
+The @var{kons} procedure is always called as
+@code{(kons state e1 e2 @dots{})}, where @var{e1} @var{e2} @dots{}
+are elements from each bitvectors, as integer 0/1 (for @code{/int} procdures)
+or boolean @code{#f}/@code{#t} (for @code{/bool} procedures).
+This is the same order as @code{vector-fold} in
+@code{scheme.vector} module (@pxref{R7RS vectors}).
+(Note that list @code{fold} procedure calls the @var{knil} procedure
+with different order; @pxref{Walking over lists}).
+
+All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
 @defun bitvector-map/int f bv1 bv2 @dots{}
 @defunx bitvector-map/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Apply a procedure @var{f} over each element taken from given bitvectors.
+The result of the procedure is gathered as a fresh bitvector and returned.
+
+All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
 @defun bitvector-map!/int f bv1 bv2 @dots{}
 @defunx bitvector-map!/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Apply a procedure @var{f} over each element taken from given bitvectors.
+The result of the procedure is set into @var{bv1}.
+
+These procedure returns undefined value; you should count on the
+side effect onto @var{bv1.}
+
+All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
 @defun bitvector-map->list/int f bv1 bv2 @dots{}
 @defunx bitvector-map->list/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Apply a procedure @var{f} over each element taken from given bitvectors.
+The result of the procedure is gathered as a list and returned.
+
+All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
 @defun bitvector-for-reach/int f bv1 bv2 @dots{}
 @defunx bitvector-for-reach/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Apply a procedure @var{f} over each element taken from given bitvectors.
+The result of the procedure is discarded.
 
+All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
 @subheading Prefixes, suffixes, trimming and padding
@@ -8096,16 +8127,23 @@ Returns a bitvector without preceding and/or trailing consecutive
 @defun bitvector-swap! bv i j
 [SRFI-178]
 @c MOD srfi-178
+Swap the @var{i}-th value and @var{j}-th value of a bitvector @var{bv}.
+If the index is out of range, an error is thrown.
 @end defun
 
 @defun bitvector-reverse! bv :optional start end
 [SRFI-178]
 @c MOD srfi-178
+Reverse the order of the content of a bitvector @var{bv} destructively.
+The optional @var{start}/@var{end} indexes limit the range of the operation;
+elements outside of the range won't be affected.
 @end defun
 
 @defun bitvector-reverse-copy! to tstart from :optional start end
 [SRFI-178]
 @c MOD srfi-178
+Same as @code{(bitvector-copy! to start (bitvector-reverse-copy from start end))}, 
+but potentially more efficient.
 @end defun
 
 @subheading Conversion
