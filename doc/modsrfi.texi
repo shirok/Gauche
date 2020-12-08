@@ -9496,36 +9496,66 @@ Otherwise, a Right wrapping @var{obj} is returned.
 @defun maybe->values maybe
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe} is a Just, returns its payload as multiple values.
+If it is a Nothing, returns no values.
+(Note that a Just with zero values also returns no values.)
 @end defun
 
 @defun values->maybe producer
 @c MOD srfi-189
 [SRFI-189]
+It first invokes a procedure @var{producer} with no values.
+If it returns zero values, a Nothing is returned; otherwise,
+a Just with those values are returned.
 @end defun
 
 @defun either->values either
 @c MOD srfi-189
 [SRFI-189]
+If @var{either} is a Right, returns its payload as multiple values.
+If it is a Left, returns no values.
+(Note that a Right with zero values also returns no values.)
 @end defun
 
-@defun values->either producer
+@defun values->either producer fail-obj @dots{}
 @c MOD srfi-189
 [SRFI-189]
+It first invokes a procedure @var{producer} with no values.
+If it returns zero values, a Left with @var{fail-obj} @dots{} as
+its payload is returned.
+If it returns one or more values,
+a Right with those values are returned.
 @end defun
 
 @defun maybe->two-values maybe
 @c MOD srfi-189
 [SRFI-189]
+If @var{maybe} is a Just with exactly one value, the value and @code{#t}
+is returned.  If @var{maybe} is a Nothing, two @code{#f} is returned.
+An error is thrown if @var{maybe} has a Just with zero or more than two
+values.
 @end defun
 
 @defun two-values->maybe producer
 @c MOD srfi-189
 [SRFI-189]
+The inverse of @code{maybe->two-values}.  A procedure @var{producer}
+is called with no arguments.  It must return two values, a possible
+payload value, and a boolean.  If the second value is true,
+a Just with the first value is returned.  If the second value is @code{#f},
+a Nothing is returned (the first return value is ignored).
 @end defun
 
 @defun exception->either pred thunk
 @c MOD srfi-189
 [SRFI-189]
+A procedure @var{thunk} is called without argument, wrapped by an
+exception handler.  If @var{thunk} raises a condition, it is
+examined by @var{pred}.  If @var{pred} returns true on the condition, 
+the exception is wrapped by a Left and returned.  
+If @var{pred} returns @code{#f}, the exception is reraised.
+If no exception is raised, the result(s) of @var{thunk} is wrapped
+by a Right and returned.
 @end defun
 
 @node Maybe and Either syntactic utilities, Trivalent logic, Maybe and Either protocol converters, Maybe and Either optional container types
@@ -9534,24 +9564,42 @@ Otherwise, a Right wrapping @var{obj} is returned.
 @defmac maybe-if mtest then else
 @c MOD srfi-189
 [SRFI-189]
+If the @var{mtest} expression yields a Just, evaluates @var{then}.
+If the @var{mtest} expression yeilds a Nothing, evaluates @var{else}.
+If the @var{mtest} expression doesn't produce a Maybe, an error
+is thrown.
 @end defmac
 
 @defmac maybe-and maybe @dots{}
 @defmacx either-and either @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Evaluates @var{maybe}/@var{either} from left to right, as far as
+each yields a Just/Right.  If every expression yields a Just/Right,
+the last one is returned.  If it encounters an expression that
+yields a Nothing/Left, it stops evaluating the rest of expressions and
+returns the Nothing/Left.
+
+If expressions yield something other than Maybe/Either, an error is thrown.
 @end defmac
 
 @defmac maybe-or maybe @dots{}
 @defmacx either-or either @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Evaluates @var{maybe}/@var{either} from left to right, as far as
+each yields a Nothing/Left.   If it encounters an expression that
+yields a Just/Right, it stops evaluating the rest of expressions and
+returns it.  
+
+If expressions yield something other than Maybe/Either, an error is thrown.
 @end defmac
 
 @defmac maybe-let* ( claw @dots{} ) body @dots{}
 @defmacx either-let* ( claw @dots{} ) body @dots{}
 @c MOD srfi-189
 [SRFI-189]
+This is a Maybe/Either version of @code{and-let*}.
 @end defmac
 
 @defmac maybe-let*-values ( mv-claw @dots{} ) body @dots{}
