@@ -3338,7 +3338,7 @@ M_74207281 (2^74207281 - 1)
 Gamma function and natural logarithmic of absolute value of Gamma function.
 
 NB: Mathematically these functions are defined in complex domain, but
-currently we only supports real number argument.
+currently we only support real number argument.
 @c JP
 ガンマ関数と、ガンマ関数の絶対値の自然対数です。
 
@@ -4655,18 +4655,27 @@ See also @code{proper-list?}, @code{circular-list?} and
 @defun proper-list? x
 [R7RS list]
 @c EN
-Returns @code{#t} if x is a proper list.
+Returns @code{#t} fif x is a proper list, that is, a finite list
+terminated by @code{()}.
 @c JP
-@var{x} が真性リストであれば @code{#t} を返します。
+@var{x} が真性リスト、つまり@code{()}で終端された有限のリストであれば
+@code{#t} を、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
 @defun circular-list? x
 [R7RS list]
 @c EN
-Returns @code{#t} if x is a circular list.
+Returns @code{#t} if x is a circular list.  A list is circular if
+you follow @code{cdr} of the pairs you'll eventually get to a pair
+you already visited.  It doesn't necessary that the head of the list
+@var{x} is a part of the circle.  A list isn't circular by the
+cycle that involves @var{car} of the paris.
 @c JP
-@var{x} が循環リストであれば @code{#t} を返します。
+@var{x} が循環リストであれば @code{#t} を返します。リストを@code{cdr}方向に
+辿って行って、既に訪れたペアに出会ったら、それは循環リストです。
+リストの頭 (@code{x}) が循環に含まれている必要はありません。
+また、@code{car}方向への循環があってもそれだけでは循環リストとはみなされません。
 @c COMMON
 @end defun
 

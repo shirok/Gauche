@@ -1956,8 +1956,9 @@ gosh> (real-sqrt -1)
 @end example
 
 @c EN
-Note: This form is advisory---it isn't guaranteed for an error is signaled when
-@var{test-expr} fails.  For example, we may add an optimization
+Note: This form is advisory---it isn't guaranteed for an error to be 
+signaled when @var{test-expr} fails.  
+For example, we may add an optimization
 option that omits testing in speed-optimized code in future.
 We may also enhance the compiler to generate better code using the
 given information---for example, in the above @code{real-sqrt} code,
@@ -1980,11 +1981,21 @@ Use this form to inform the compiler and the reader your intention.
 
 @defmac assume-type expr type
 @c EN
-Check if the value of expression @var{expr} has type @var{type}.
+Evaluates @var{expr}, and Checks if the value has type @var{type}.
 If not, raises an error.  The result of @var{expr} is returned.
 @c JP
-@var{expr}の値が型@var{type}かどうかチェックし、
-そうでなければエラーを投げます。@var{expr}の値が返されます。
+@var{expr}を評価し、その値が型@var{type}かどうかチェックします。
+型が合わなければエラーを投げます。@var{expr}の値が返されます。
+@c COMMON
+
+@c EN
+As @var{type}, you can specify a Gauche class.  The value is of type
+if it satisfies @code{(is-a? value type)}
+(@pxref{Types and classes}).
+@c JP
+@var{type}にはGaucheのクラスを指定できます。
+値がその型かどうかは@code{(is-a? value type)}で判定されます
+(@ref{Types and classes}参照)。
 @c COMMON
 
 @c EN
@@ -2013,7 +2024,7 @@ future compilers for optimizations.
 @c EN
 Creates a local scope where @var{var} @dots{} are bound to the
 value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
-@var{var}s must be symbols, and there shouldn't be a duplication.
+@var{Var}s must be symbols, and there shouldn't be duplicates.
 The value(s) of the last expression of @var{body} @dots{} becomes
 the value(s) of this form.
 @c JP
@@ -2098,7 +2109,7 @@ The value of @var{cons} isn't required until @var{list} is actually applied.)
 This example happens to work with @code{letrec} in the current Gauche, but
 it is not guaranteed to keep working in future.  You just should not
 rely on evaluation order when you use @code{letrec}.
-In retrospect, it would be a lot simpler if we only have @code{letrec*}.
+In retrospect, it would be a lot simpler if we only had @code{letrec*}.
 Unfortunately @code{letrec} preceded for long time in Scheme history
 and it's hard to remove that.  Besides, @code{letrec} does have more
 opportunities to optimize than @code{letrec*}.
