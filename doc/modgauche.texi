@@ -5391,6 +5391,16 @@ This corresponds to autoconf's @code{AC_DEFINE}.
 @c COMMON
 @end defun
 
+@defun cf-defined? symbol
+@c MOD gauche.configure
+@c EN
+Returns @code{#t} iff @var{symbol} is @code{cf-define}d.
+@c JP
+@var{symbol}が@code{cf-define}されていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
 @defun cf-subst symbol value
 @c MOD gauche.configure
 Registers a substitution parameter @var{symbol} with @var{value}.

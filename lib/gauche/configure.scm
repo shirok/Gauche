@@ -93,7 +93,7 @@
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error cf-msg-notice
           cf-echo
           cf-make-gpd
-          cf-define cf-subst cf-subst-append cf-subst-prepend
+          cf-define cf-defined? cf-subst cf-subst-append cf-subst-prepend
           cf-arg-var cf-have-subst? cf-ref cf$
           with-cf-subst
           cf-config-headers cf-output cf-output-default cf-show-substs
@@ -631,6 +631,11 @@
 (define (cf-define symbol :optional (value 1))
   (assume-type symbol <symbol>)
   (dict-put! (~ (ensure-package)'defs) symbol value))
+
+;; API
+(define (cf-defined? symbol)
+  (assume-type symbol <symbol>)
+  (dict-exists? (~ (ensure-package)'defs) symbol))
 
 ;; API
 ;; Like AC_SUBST, but we require value (instead of implicitly referencing
@@ -1364,7 +1369,7 @@
 ;; Feature Test API
 ;; Like AC_CHECK_LIB
 (define (cf-check-lib lib fn
-                      :key (other-libs '()) 
+                      :key (other-libs '())
                            (if-found default-lib-found)
                            (if-not-found default-lib-not-found))
   (let1 includes (cf-includes-default)
