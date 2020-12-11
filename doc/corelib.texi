@@ -15594,15 +15594,9 @@ for example.
 
 @defun identity obj
 @c EN
-Returns @var{obj}.  Handy to pass to a procedure that expects
-a procedure taking one argument and returning one value.
-You can pass @code{values}, too,
-but with @code{identity} you can explicitly indicate you're dealing with one
-argument and one value.
+Returns @var{obj}.
 @c JP
-@var{obj}を返します。1引数で1戻り値の手続きを引数として期待しているところに
-渡すのに便利です。@code{values}を使うこともできますが、
-@code{identity}を使うと1引数1戻り値であることを明示できます。
+@var{obj}を返します。
 @c COMMON
 @end defun
 
