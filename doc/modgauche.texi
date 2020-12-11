@@ -5565,14 +5565,16 @@ if @code{CXX} is not set, but @code{CCC} is set, then we set
 @code{CXX} by the value of @code{CCC} and skip searching.
 @end defun
 
-@defun cf-check-header header :key includes
+@defun cf-header-available? header :key includes
+@defunx cf-check-header header :key includes
 @c MOD gauche.configure
 Check if a header file @var{header} exists and usable, by
 compiling a source program of the current language
-that includes the named header
-file.  This is intended to be used as a predicate---returns @code{#t}
-if the header is usable, @code{#f} if not.
-This corresponds to autoconf's @code{AC_CHECK_HEADER}.
+that includes the named header file.
+Return @code{#t} if the header is usable, @code{#f} if not.
+
+Both procedure does the same thing.  The name @code{cf-check-header}
+corresponds to autoconf's @code{AC_CHECK_HEADER}.  
 
 If @var{header} requires other headers being included or
 preprocessor symbols defined before it,
@@ -5598,6 +5600,8 @@ depending on the result.)
 Codify a common pattern of checking the availability of headers and
 sets C preprocessor definitions.
 This corresponds to autoconf's @code{AC_CHECK_HEADERS}.
+This procedure is invoked for the side effects,
+and returns an undefined vlaue.
 
 See this example:
 
@@ -5644,11 +5648,14 @@ Usually you don't need to call this explicitly.  Not giving the
 called implicitly.
 @end defun
 
-@defun cf-check-type type :key includes
+@defun cf-type-available? type :key includes
+@defunx cf-check-type type :key includes
 @c MOD gauche.configure
-Tests if @var{type} is defined as a type name.  This can be used
-as predicate---it returns @code{#t} if @var{type} is defined,
-@code{#f} otherwise.   This corresponds to @code{AC_CHECK_TYPE}.
+Test if @var{type} is defined as a type name.
+Return @code{#t} if @var{type} is defined, @code{#f} otherwise.
+
+Two procedures are the same.  The name @code{cf-check-type}
+corresponds to @code{AC_CHECK_TYPE}.
 
 A list of strings given to @var{includes} are emitted to the
 C source file before the inclusion of the testing header.  You can
@@ -5664,9 +5671,12 @@ see it is defined as a type.  If it is,
 defines @code{HAVE_@var{type}}, and calls @var{if-found} with the
 type as an argument if provide.  If the type is not defined and
 @var{if-not-found} is provided, calls it with the type as an argument.
-This corresponds to autoconf's @code{AC_CHECK_TYPES}.
 
 The argument @var{includes} is passed to @code{cf-check-type}.
+
+This corresponds to autoconf's @code{AC_CHECK_TYPES}.
+
+Returns an undefiend value.  This procedure is for side effects.
 
 @example
 ;; May define HAVE_PTRDIFF_T and/or HAVE_UNSIGNED_LONG_LONG_INT
@@ -5680,12 +5690,16 @@ The argument @var{includes} is passed to @code{cf-check-type}.
 @end example
 @end defun
 
-@defun cf-check-decl symbol :key includes
+@defun cf-decl-available? symbol :key includes
+@defunx cf-check-decl symbol :key includes
 @c MOD gauche.configure
-Tests if @var{symbol} is declared as a cpp macro, a variable,
-a constant, or a function.   This can be used
-as predicate---it returns @code{#t} if @var{type} is defined,
-@code{#f} otherwise.   This corresponds to autoconf's @code{AC_CHECK_DECL}.
+Test if @var{symbol} is declared as a cpp macro, a variable,
+a constant, or a function.
+Return @code{#t} if @var{type} is defined,
+@code{#f} otherwise.   
+
+Two procedures are the same.  The name @code{cf-check-decl} corresponds
+to autoconf's @code{AC_CHECK_DECL}.
 
 A list of strings given to @var{includes} are emitted to the
 C source file before the inclusion of the testing header.  You can
@@ -5705,25 +5719,28 @@ This corresponds to autoconf's @code{AC_CHECK_DECLS}.
 
 The argument @var{includes} is passed to @code{cf-check-decl}.
 
+This procedure returns an undefined value.  This procedure is for
+side effects.
+
 Note that, unlike other @code{cf-check-*} routines which leave
 @code{HAVE_*} macro undefined when the item isn't found, this one
 always defines the macro and differentiate the result with its value.
 This behavior is the same as @code{AC_CHECK_DECLS}.
 @end defun
 
-@defun cf-check-member aggregate.member :key includes
+@defun cf-member-available? aggregate.member :key includes
+@defunx cf-check-member aggregate.member :key includes
 @c MOD gauche.configure
 The @var{aggregate.member} argument is a string of aggregate type name
 and its member concatenated by a dot, e.g. @code{"struct password.pw_gecos"}.
 It can also be a submember, e.g. @code{"struct foo.bar.baz"}.
 The @var{aggregate} part can be any type name (typedef-ed name is ok).
 
-This corresponds to autoconf's @code{AC_CHECK_MEMBER}.
-
 This test checks if @var{member} is a member of @var{aggregate}, and
 returns @code{#t} if so, or returns @code{#f} if not.
-This procedure is intended to be used as a predicate; it doesn't have
-side effects.
+
+Two procedures are the same.  The name @code{cf-check-member}
+corresponds to autoconf's @code{AC_CHECK_MEMBER}.
 
 A list of strings given to @var{includes} are emitted to the
 C source file before the inclusion of the testing header.  You can
@@ -5751,18 +5768,22 @@ The @var{include} argument is passed to @code{cf-check-member}.
 (cf-check-members '("struct stat.st_rdev"
                     "struct stat.st_blksize"))
 @end example
+
+This procedure is for side effects, and returns an undefined value.
 @end defun
 
-@defun cf-check-func func
+@defun cf-func-available? func
+@defunx cf-check-func func
 @c MOD gauche.configure
 See if a function @var{func} is available.  This emits C code
 to call @var{func} (with dummy declaration) and tries to compile and link,
 using current value of substitution parameter @code{LIBS}.
+The value of @code{cf-includes-default} is at the top of the emitted C code.
 
-This procedure is meant to be used as predicate; it returns @code{#t}
-if @var{func} is available, @code{#f} otherwise.
+They return @code{#t} if @var{func} is available, @code{#f} otherwise.
 
-This corresponds to autoconf's @code{AC_CHECK_FUNC}.
+Two procedures are the same.  The name @code{cf-check-func}
+corresponds to autoconf's @code{AC_CHECK_FUNC}.
 @end defun
 
 @defun cf-check-funcs funcs :key if-found if-not-found
@@ -5772,15 +5793,21 @@ to determine availability.  If it is available, define
 @code{HAVE_@var{func}}, and calls @code{if-found} with @var{func}
 if provided.  If it is not available, calls @code{if-not-found}
 with @var{func} if provided.
+
 This corresponds to autoconf's @code{AC_CHECK_FUNCS}.
+
+This procedure is for side effects, and returns an undefined value.
 @end defun
 
-
-
-@defun cf-check-lib lib fn :key other-libs if-found if-not-found
+@defun cf-lib-available?  lib fn :key other-libs if-found if-not-found
+@defunx cf-check-lib lib fn :key other-libs if-found if-not-found
 @c MOD gauche.configure
 See if a library @var{lib} can be linked and a function @var{fn} in it
-is callable.  This corresponds to autoconf's @code{AC_CHECK_LIB}.
+is callable.  Return @code{#t} it is, @code{#t} if not.
+
+Two procedures are the same.  The name @code{cf-check-lib}
+corresponds to autoconf's @code{AC_CHECK_LIB}.
+
 Give the name you pass after @code{-l} option to @var{lib};
 for example, if you want to check availability of @code{libm}, you can
 say as follows:
@@ -5797,10 +5824,12 @@ libraries, it should be listed in @var{other-libs}:
 (cf-check-lib "Xt" "XtDisplay" :other-libs '("-lX11" "-lSM" "-lICE"))
 @end example
 
-If compilation and linking succeeds, @var{if-found} is called at the
+If compilation and linking succeeds, 
+@var{if-found} is called at the
 tail position with
 the library name (@code{"m"} and @code{"Xt"} in the above examples,
-respectively) as the argument.  The default behavior is to add
+respectively) as the argument. 
+The default behavior is to add
 @code{-l@var{lib}} in the left of substitution parameter @code{LIBS},
 and set @code{HAVE_LIB@var{lib}} definition, then
 returns @code{#t}.
@@ -5810,13 +5839,17 @@ the tail position with the library name.  The default behavior is
 to return @code{#f}.
 
 The default behavior of @var{if-found} and @var{if-not-found} allows
-@code{cf-check-lib} to be used as predicate as well.  For example,
-you can write like this:
+@code{cf-check-lib} to be used as predicate as well.  If you merery
+want to take an action depending on whether the library is found or
+not, you can write like this:
 
 @example
 (unless (cf-check-lib "foo" "foo_fn)
   ... do something if libfoo isn't available ...)
 @end example
+
+Use @var{if-found} and/or @var{if-not-found} only if you want to
+override the default behaviors.
 @end defun
 
 @defun cf-search-libs fn libs :key other-libs if-found if-not-found
@@ -5847,6 +5880,8 @@ does nothing and just returns @code{#f}.
 
 The default behavior of @var{if-found} and @var{if-not-found} allows
 @code{cf-search-libs} to be used as predicate as well.
+
+This procedure is for side effects, and returns an undefiend vlaue.
 @end defun
 
 

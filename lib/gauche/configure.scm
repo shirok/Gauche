@@ -104,13 +104,14 @@
           cf-lang-program cf-lang-io-program cf-lang-call
           cf-try-compile cf-try-compile-and-link
 
-          cf-check-header cf-check-headers cf-includes-default
-          cf-check-type cf-check-types
-          cf-check-decl cf-check-decls
-          cf-check-member cf-check-members
+          cf-check-header cf-header-available? cf-check-headers
+          cf-includes-default
+          cf-check-type cf-type-available? cf-check-types
+          cf-check-decl cf-decl-available? cf-check-decls
+          cf-check-member cf-member-available? cf-check-members
           
-          cf-check-func cf-check-funcs
-          cf-check-lib cf-search-libs
+          cf-check-func cf-func-available? cf-check-funcs
+          cf-check-lib cf-lib-available? cf-search-libs
           ))
 (select-module gauche.configure)
 
@@ -1218,7 +1219,7 @@
 ;; Feature Test API
 ;; Like AC_CHECK_HEADER.
 ;; Returns #t on success, #f on failure.
-(define (cf-check-header header-file :key (includes #f))
+(define (cf-header-available? header-file :key (includes #f))
   (let1 includes (or includes (cf-includes-default))
     (cf-msg-checking "~a usability" header-file)
     (rlet1 result (cf-try-compile (list includes
@@ -1226,6 +1227,7 @@
                                         #"#include <~|header-file|>\n")
                                   "")
       (cf-msg-result (if result "yes" "no")))))
+(define cf-check-header cf-header-available?) ;; autoconf compatible name
 
 ;; Feature Test API
 ;; Like AC_CHECK_HEADERS.  Besides the check, it defines HAVE_<header-file>
@@ -1243,7 +1245,7 @@
 ;; Returns #t on success, #f on failure.
 ;; If TYPE is a valid type, sizeof(TYPE) compiles and sizeof((TYPE)) fails.
 ;; The second test is needed in case TYPE happens to be a variable.
-(define (cf-check-type type :key (includes #f))
+(define (cf-type-available? type :key (includes #f))
   (let1 includes (or includes (cf-includes-default))
     (cf-msg-checking "for ~a" type)
     (rlet1 result
@@ -1252,6 +1254,7 @@
              (not (cf-try-compile (list includes)
                                   #"if (sizeof ((~|type|))) return 0;")))
       (cf-msg-result (if result "yes" "no")))))
+(define cf-check-type cf-type-available?)  ; autoconf-compatible name
 
 ;; Feature Test API
 ;; Like AC_CHECK_TYPES.
@@ -1269,7 +1272,7 @@
 ;; Like AC_CHECK_DECL
 ;; Returns #t on success, #f on failure.
 ;; Check SYMBOL is declared as a macro, a constant, a variable or a function.
-(define (cf-check-decl symbol :key (includes #f))
+(define (cf-decl-available? symbol :key (includes #f))
   (let1 includes (or includes (cf-includes-default))
     (cf-msg-checking "whether ~a is declared" symbol)
     (rlet1 result
@@ -1279,6 +1282,7 @@
                               #"#endif\n"
                               "return 0;"))
       (cf-msg-result (if result "yes" "no")))))
+(define cf-check-decl cf-decl-available?)  ;autoconf-compatible name
 
 ;; Feature Test API
 ;; Like AC_CHECK_DECLS
@@ -1298,7 +1302,7 @@
 ;; Feature Test API
 ;; Like AC_CHECK_MEMBER
 ;; Works as a predicate
-(define (cf-check-member aggregate.member :key (includes #f))
+(define (cf-member-available? aggregate.member :key (includes #f))
   (receive (aggr memb) (string-scan aggregate.member #\. 'both)
     (unless (and aggr memb)
       (error "cf-check-member: argument doesn't contain a dot:"
@@ -1313,6 +1317,7 @@
                               (list #"static ~aggr ac_aggr;\n"
                                     #"if (sizeof ac_aggr.~|memb|) return 0;")))
         (cf-msg-result (if result "yes" "no"))))))
+(define cf-check-member cf-member-available?) ;autoconf-compatible name
 
 ;; Feature Test API
 ;; Like AC_CHECK_MEMBERS
@@ -1329,7 +1334,7 @@
 ;; Like AC_CHECK_FUNC
 ;; NB: autoconf has language-dependent methods (AC_LANG_FUNC_LINK_TRY)
 ;; For now, we hardcode C.
-(define (cf-check-func func)
+(define (cf-func-available? func)
   (let1 includes (cf-includes-default)
     (cf-msg-checking #"for ~func")
     (rlet1 result ($ cf-try-compile-and-link
@@ -1346,6 +1351,7 @@
                        ,#"char ~func ();\n")
                      `(,#"return ~func ();"))
       (cf-msg-result (if result "yes" "no")))))
+(define cf-check-func cf-func-available?)  ;autoconf-compatible name
 
 ;; Feature Test API
 ;; Like AC_CHECK_FUNCS
@@ -1368,10 +1374,10 @@
 
 ;; Feature Test API
 ;; Like AC_CHECK_LIB
-(define (cf-check-lib lib fn
-                      :key (other-libs '())
-                           (if-found default-lib-found)
-                           (if-not-found default-lib-not-found))
+(define (cf-lib-available? lib fn
+                        :key (other-libs '())
+                        (if-found default-lib-found)
+                        (if-not-found default-lib-not-found))
   (let1 includes (cf-includes-default)
     (cf-msg-checking "for ~a in -l~a" fn lib)
     (if (with-cf-subst
@@ -1384,6 +1390,7 @@
       (begin
         (cf-msg-result "no")
         (if-not-found lib)))))
+(define cf-check-lib cf-lib-available?)    ;autoconf-compatible name
 
 (define (default-lib-search-found libname)
   (when libname
