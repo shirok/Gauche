@@ -1,5 +1,7 @@
 2020-12-10  Shiro Kawai  <shiro@acm.org>
 
+	* Release 0.9.10
+
 	* lib/gauche/configure.scm: Define more descriptive alias for feature
 	  check predicate, e.g. cf-check-header == cf-header-available?.
 	  It is so confusing that cf-check-header is a predicate while
