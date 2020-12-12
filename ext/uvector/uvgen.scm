@@ -7,7 +7,6 @@
 (use file.util)
 (use gauche.sequence)
 (use gauche.parseopt)
-(use gauche.parameter)
 
 (define p print)
 

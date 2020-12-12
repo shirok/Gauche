@@ -5,7 +5,6 @@
 (use srfi-1)
 (use file.util)
 (use gauche.cgen)
-(use gauche.parameter)
 (use gauche.sequence)
 
 (define *unit*

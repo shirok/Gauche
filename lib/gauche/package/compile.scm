@@ -40,7 +40,6 @@
   (use gauche.package)
   (use gauche.package.util)
   (use gauche.config)
-  (use gauche.parameter)
   (use gauche.cgen.cise)
   (use gauche.cgen.stub)
   (use gauche.cgen.precomp)

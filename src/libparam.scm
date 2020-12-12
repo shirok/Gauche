@@ -44,7 +44,6 @@
 ;;;
 
 ;; Parameter internal API
-;; These will be called by the public API in gauche.parameter.
 (select-module gauche.internal)
 
 (define-cproc %primitive-parameter-ref (p::<primitive-parameter>)

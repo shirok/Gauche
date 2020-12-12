@@ -38,7 +38,6 @@
 
 (define-module gauche.test.generative
   (use gauche.test)
-  (use gauche.parameter)
   (use gauche.generator)
   (use data.random)
   (export check check-seed check-amount make-checker ensure)

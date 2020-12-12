@@ -34,7 +34,6 @@
 (define-module gauche.cgen.standalone
   (use gauche.cgen)
   (use gauche.config)
-  (use gauche.parameter)
   (use gauche.process)
   (use srfi-13)
   (use srfi-42)

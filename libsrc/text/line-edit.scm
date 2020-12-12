@@ -33,7 +33,6 @@
 
 (define-module text.line-edit
   (use gauche.generator)
-  (use gauche.parameter)
   (use gauche.threads)
   (use gauche.unicode)
   (use data.ring-buffer)

@@ -35,7 +35,6 @@
   (use srfi-1)
   (use srfi-13)
   (use srfi-42)
-  (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.cgen.unit)
   (use util.match)

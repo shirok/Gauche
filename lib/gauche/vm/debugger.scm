@@ -34,7 +34,6 @@
 (define-module gauche.vm.debugger
   (use srfi-1)
   (use srfi-13)
-  (use gauche.parameter)
   (export debug-print debug-print-width
           debug-print-pre debug-print-post
           debug-source-info))

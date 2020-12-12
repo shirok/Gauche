@@ -39,7 +39,6 @@
   (use text.tr)
   (use text.tree)
   (use file.util)
-  (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.mop.instance-pool)
   (use gauche.cgen.type)

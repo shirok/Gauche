@@ -34,7 +34,6 @@
 (define-module gauche.cgen.cise
   (use srfi-13)
   (use gauche.sequence)
-  (use gauche.parameter)
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
   (use gauche.experimental.lamb)

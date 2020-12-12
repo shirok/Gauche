@@ -36,7 +36,6 @@
   (use srfi-42)
   (use util.match)
   (use file.util)
-  (use gauche.parameter)
   (use gauche.sequence)
   (export <cgen-unit> cgen-current-unit
           cgen-unit-c-file cgen-unit-init-name cgen-unit-h-file

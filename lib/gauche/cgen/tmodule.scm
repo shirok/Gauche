@@ -42,7 +42,6 @@
 (define-module gauche.cgen.tmodule
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
-  (use gauche.parameter)
   (export <tmodule> current-tmodule-class
           current-tmodule tmodule-cname current-tmodule-cname
           all-tmodules find-tmodule select-tmodule

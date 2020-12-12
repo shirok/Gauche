@@ -44,7 +44,6 @@
   (use rfc.uri)
   (use file.util)
   (use gauche.package.util)
-  (use gauche.parameter)
   (export gauche-package-ensure))
 (select-module gauche.package.fetch)
 

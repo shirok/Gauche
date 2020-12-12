@@ -35,7 +35,6 @@
 
 (define-module gauche.package.util
   (use gauche.process)
-  (use gauche.parameter)
   (use gauche.termios)
   (use gauche.package)
   (use util.match)

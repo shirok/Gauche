@@ -40,7 +40,6 @@
   (use gauche.package)
   (use gauche.package.util)
   (use gauche.package.fetch)
-  (use gauche.parameter)
   (use file.util)
   (use util.match)
   (export gauche-package-build gauche-package-tarball))

@@ -41,7 +41,6 @@
   (use gauche.cgen.stub)
   (use gauche.cgen.tmodule)
   (use gauche.vm.insn)
-  (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.experimental.lamb)
   (use file.util)

@@ -41,7 +41,6 @@
 (define-module file.util
   (use srfi-13)
   (use util.match)
-  (use gauche.parameter)
   (export current-directory directory-list directory-list2 directory-fold
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*

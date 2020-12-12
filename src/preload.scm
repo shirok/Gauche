@@ -13,7 +13,6 @@
 (use gauche.sequence)
 (use gauche.dictionary)
 (use gauche.hook)
-(use gauche.parameter)
 (use gauche.uvector)
 (use gauche.regexp)
 (use gauche.record)

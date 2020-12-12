@@ -50,11 +50,11 @@
 ;; doing something tricky--such code surely uses gauche.parameter.
 
 (define-module gauche.parameter
-  (export <parameter>
-          make-parameter 
-          parameter?
-          procedure-parameter
-          parameterize
+  (export <parameter>                   ;built-in
+          make-parameter                ;built-in
+          parameter?                    ;built-in
+          procedure-parameter           ;built-in
+          parameterize                  ;built-in
           parameter-pre-observers
           parameter-post-observers
           parameter-observer-add!
