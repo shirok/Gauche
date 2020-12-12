@@ -498,8 +498,8 @@ Built-in.  See @ref{Reading data} and @ref{Output}.
 組み込みです。@ref{Reading data}と@ref{Output}参照。
 
 
-srfi-39, gauche.parameter
-()
+srfi-39
+(make-parameter parameterize)
 
 Parameter objects
 This has become a part of R7RS small.
