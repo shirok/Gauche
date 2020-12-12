@@ -107,7 +107,7 @@ jobs:
           devtool_path: D:\devtool32
     env:
       GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
-      GAUCHE_INSTALLER_URL: https://prdownloads.sourceforge.net/gauche
+      GAUCHE_INSTALLER_URL: https://practical-scheme.net/gauche/releases/latest.${{ matrix.bit }}bit.msi
       GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
       TESTLOG_NAME: testlog-windows-${{ matrix.arch }}
       TESTLOG_PATH: testlog-windows-${{ matrix.arch }}
@@ -135,7 +135,7 @@ jobs:
         echo $GAUCHE_INSTALLER_VERSION
         GAUCHE_INSTALLER=Gauche-mingw-$GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi
         echo $GAUCHE_INSTALLER
-        curl -f -L -o $GAUCHE_INSTALLER $GAUCHE_INSTALLER_URL/$GAUCHE_INSTALLER
+        curl -f -L -o $GAUCHE_INSTALLER $GAUCHE_INSTALLER_URL
         ls -l
         cmd.exe //c "start /wait msiexec /a $GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}"
     - name: Add Gauche path
