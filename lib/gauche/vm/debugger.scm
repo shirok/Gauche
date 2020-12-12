@@ -40,18 +40,6 @@
           debug-source-info))
 (select-module gauche.vm.debugger)
 
-;; TRANSIENT: In 0.9.10, this is moved to the core (libeval), but
-;; we need a definition here to compile 0.9.10 with 0.9.9.
-;; Remove after 0.9.10 release.
-(define (debug-source-info obj)
-  (and-let1 sis ((with-module gauche.internal %source-info) obj)
-    (any (^[si] ;; si :: (<file> <line> <form>)
-           (and (car si) (cadr si)
-                (if (eq? (caddr si) obj)
-                  `(,(car si) ,(cadr si))
-                  si)))
-         (reverse sis))))
-
 (define debug-print-width (make-parameter 65))
 
 ;; Debug print stub ------------------------------------------

@@ -680,7 +680,7 @@
 ;; Returns ((<file1> <line1> <form1>) (<file2> <line2> <form2>) ...)
 ;; Where <form1> is a result of macro expansion of <form2> etc.
 ;; <fileN> and <lineN> can be #f if unknown.
-;; For public use, gauche.vm.debugger#debug-source-info is provided.
+;; For public use, debug-source-info below should be provided.
 (select-module gauche.internal)
 (define (%source-info obj)
   (let loop ([obj obj] [r '()])
