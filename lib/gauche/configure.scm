@@ -823,7 +823,7 @@
         (^[m]
           (let1 name (string->symbol (m 1))
             (or (dict-get substs name #f)
-                (begin (warn "@~a@ isn't substituted." name)
+                (begin (warn "@~a@ isn't substituted.\n" name)
                        #"@~|name|@")))))))
   ;; We use '/' in the replaced pathname even on Windows; that's what
   ;; autoconf-generated configure does, and it's less likely to confuse
