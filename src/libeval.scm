@@ -570,25 +570,6 @@
 (define-cproc %gauche-libgauche-path () Scm_LibgauchePath)
 (define-cproc %gauche-executable-path () Scm_ExecutablePath)
 
-;; srfi-176
-(define-in-module gauche (version-alist)
-  (let1 fs ((with-module gauche.internal cond-features))
-    `((version ,(gauche-version))
-      (command "gosh")
-      (scheme.id gauche)
-      (languages scheme r5rs r7rs)
-      (encodings ,(gauche-character-encoding))
-      (website "https://practical-scheme.net/gauche")
-      (build.platform ,(gauche-architecture))
-      (scheme.path ,@*load-path*)
-      (gauche.threads ,(cond
-                        [(assq 'gauche.sys.pthreads fs) 'pthreads]
-                        [(assq 'gauche.sys.wthreads fs) 'wthreads]
-                        [else 'none]))
-      (gauche.net.tls ,@(cond-list
-                         [(assq 'gauche.net.tls.axtls fs) 'axtls]
-                         [(assq 'gauche.net.tls.mbedtls fs) 'mbedtls])))))
-
 ;;
 ;; External view of VM.
 ;;

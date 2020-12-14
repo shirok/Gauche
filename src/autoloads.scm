@@ -183,6 +183,8 @@
 
 (autoload gauche.pputil   %pretty-print pprint)
 
+(autoload gauche.version-alist version-alist)
+
 ;; Autoloading r7rs-setup allows Gauche-native programs to load R7RS library
 ;; seamlessly.
 (autoload r7rs-setup (:macro define-library))

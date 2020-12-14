@@ -62,6 +62,7 @@ int interactive_mode = FALSE;   /* force interactive mode */
 int test_mode = FALSE;          /* add . and ../lib implicitly  */
 int profiling_mode = FALSE;     /* profile the script? */
 int stats_mode = FALSE;         /* collect stats (EXPERIMENTAL) */
+int version_mode = FALSE;       /* show version and exit (-V option) */
 
 ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
                                    processed before entering repl.
@@ -385,7 +386,7 @@ int parse_options(int argc, char *argv[])
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
         case 'q': load_initfile = FALSE; break;
-        case 'V': version(); break;
+        case 'V': version_mode = TRUE; break;
         case 'f': further_options(optarg); break;
         case 'p': profiler_options(optarg); break;
         case 'F': feature_options(optarg); break;
@@ -819,6 +820,10 @@ int main(int ac, char **av)
        loading init file.   This is to help development of Gauche
        itself; normal user should never need this. */
     if (test_mode) test_paths_setup(av);
+
+    /* If -V is given, show version info and exit 
+       (must come after test_mode setup)  */
+    if (version_mode) version();
 
     /* prepare *program-name* and *argv* */
     if (argind < argc) {
