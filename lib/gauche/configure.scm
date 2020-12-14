@@ -807,7 +807,14 @@
   (define base-substs (~ pa'substs))
   (define (make-defs)
     (if (null? (~ pa'config.h))
-      (string-join (dict-map (~ pa'defs) (^[k v] #"-D~|k|=~|v|")) " ")
+      (string-join
+       (dict-map (~ pa'defs)
+                 (^[k v] 
+                   (let1 vv ($ regexp-replace-all* (x->string v)
+                               #/\\/ "\\\\\\\\"
+                               #/\"/ "\\\\\"")
+                     #"-D~|k|=~|vv|")))
+       " ")
       "-DHAVE_CONFIG_H"))
   (define (make-subst path-prefix)
     (receive (srcdir top_srcdir builddir top_builddir)
