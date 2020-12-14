@@ -12715,7 +12715,7 @@ Provided as a common pattern.
 @c MOD parser.peg
 Returns a parser that accepts exaclty @var{n} occurences of @var{p}.
 On success, @code{$repeat} yields a list of results of @var{p},
-while @var{$repeat_} discards the results of @var{p} and faster.
+while @code{$repeat_} discards the results of @var{p} and faster.
 
 Same as @code{($many p n n)} and @code{($many_ p n n)}.
 Provided as a common pattern.
