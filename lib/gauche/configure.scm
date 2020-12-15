@@ -897,7 +897,33 @@
       (cf-msg-notice "configure: creating ~a" (car h))
       (file-filter-for-each (make-config.h) :input inf :output (car h)
                             :temporary-file #t :leave-unchanged #t)))
+
+  ;; Record output variables and definitions to config.log
+  (log-output-substs)
+  (log-output-defs)
   )
+
+(define (log-output-substs)
+  (log-format ".")
+  (log-format "## ----------------- ##")
+  (log-format "## Output variables. ##")
+  (log-format "## ----------------- ##")
+  (log-format ".")
+  ($ hash-table-for-each
+     (~ (current-package)'substs)
+     (^[k v] 
+       (log-format "~a=~a" k (shell-escape-string (x->string v))))))
+
+(define (log-output-defs)
+  (log-format ".")
+  (log-format "## ------------ ##")
+  (log-format "## Definitions. ##")
+  (log-format "## ------------ ##")
+  (log-format ".")
+  ($ hash-table-for-each
+     (~ (current-package)'defs)
+     (^[k v] 
+       (log-format "#define ~a ~a" k (or v "/**/")))))
 
 ;; API
 ;; Show definitions.
