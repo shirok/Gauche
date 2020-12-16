@@ -11785,16 +11785,28 @@ the portable code should only use @code{big} and @var{little} for
 @defunx bytevector-ieee-single-ref bv k endian
 @defunx bytevector-ieee-double-ref bv k endian
 [R7RS bytevector]
+@c EN
 Retrieve a numerical value from a u8vector @var{bv} starting at
 index @var{k}, using @var{endian}.  These are the same as
 @code{get-u16}, @dots{} in @code{binary.io}, except that
 all arguments are mandatory.  (Note that
 @code{ieee-single} and @code{ieee-double} corresponds to @code{f32} and
-@code{f64}).  @xref{Binary I/O}), for the details.
+@code{f64})).  @xref{Binary I/O}, for the details.
 
 They accept all valid endianness symbols in Gauche, but
 the portable code should only use @code{big} and @var{little} for
 @var{endian} argument.
+@c JP
+u8vector @var{bv}の@var{k}バイト目から所定のバイト数を、@var{endian}で指定された
+バイトオーダーを使って、数値として読み取ります。
+これらは引数が全て必須なのを除けば、
+Gaucheの@code{binary.io}にある@code{get-u16} @dots{}と同じです
+(@code{ieee-single}と@code{ieee-double}は@code{f32}と@code{f64}に相当します)。
+詳しくは@ref{Binary I/O}を参照してください。
+
+@var{endian}引数には、Gaucheが許すエンディアンを示すシンボルなら何でも渡せますが、
+ポータブルなコードで使えるのは@code{big}と@var{little}だけです。
+@c COMMON
 @end defun
 
 @defun bytevector-u16-native-ref bv k
@@ -11806,7 +11818,12 @@ the portable code should only use @code{big} and @var{little} for
 @defunx bytevector-ieee-single-native-ref bv k
 @defunx bytevector-ieee-double-native-ref bv k
 [R7RS bytevector]
+@c EN
 Like @code{bytevector-u16-ref} etc., but uses native endianness.
+@c JP
+システムのネイティブバイトオーダーを使うこと以外は
+@code{bytevector-u16-ref} @dots{}と同じです。
+@c COMMON
 @end defun
 
 @defun bytevector-u16-set! bv k val endian
@@ -11818,6 +11835,7 @@ Like @code{bytevector-u16-ref} etc., but uses native endianness.
 @defunx bytevector-ieee-single-set! bv k val endian
 @defunx bytevector-ieee-double-set! bv k val endian
 [R7RS bytevector]
+@c EN
 Store a numerical value into a u8vector @var{bv} starting at
 index @var{k}, using @var{endian}.  These are the same as
 @code{put-u16!}, @dots{} in @code{binary.io}, except that
@@ -11828,6 +11846,17 @@ all arguments are mandatory.  (Note that
 They accept all valid endianness symbols in Gauche, but
 the portable code should only use @code{big} and @var{little} for
 @var{endian} argument.
+@c JP
+数値をu8vector @var{bv}の@var{k}バイト目から所定のバイト数ぶん、
+@var{endian}で指定されたバイトオーダーを使って、格納します。
+これらは引数が全て必須なのを除けば、
+Gaucheの@code{binary.io}にある@code{put-u16!} @dots{}と同じです
+(@code{ieee-single}と@code{ieee-double}は@code{f32}と@code{f64}に相当します)。
+詳しくは@ref{Binary I/O}を参照してください。
+
+@var{endian}引数には、Gaucheが許すエンディアンを示すシンボルなら何でも渡せますが、
+ポータブルなコードで使えるのは@code{big}と@var{little}だけです。
+@c COMMON
 @end defun
 
 @defun bytevector-u16-native-set! bv k val
@@ -11839,7 +11868,12 @@ the portable code should only use @code{big} and @var{little} for
 @defunx bytevector-ieee-single-native-set! bv k val
 @defunx bytevector-ieee-double-native-set! bv k val
 [R7RS bytevector]
+@c EN
 Like @code{bytevector-u16-set!} etc., but uses native endianness.
+@c JP
+システムのネイティブバイトオーダーを使うこと以外は
+@code{bytevector-u16-set!} @dots{}と同じです。
+@c COMMON
 @end defun
 
 @node R7RS combinator formatting,  , R7RS bytevectors, R7RS large
