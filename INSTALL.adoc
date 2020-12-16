@@ -57,7 +57,9 @@ endif::EN[]
 
 
 ifdef::JA[]
-Unix環境の標準的なビルドツールに加え、以下のツールとライブラリをあらかじめ入れておくことを
+Unix環境の標準的なビルドツールとGNU makeが必要です。
+
+それに加え、以下のツールとライブラリをあらかじめ入れておくことを
 推奨します。無くてもGaucheはビルドできますが、一部機能が使えなくなります。
 
 - Makeinfo (バージョン5.0以降) - infoドキュメントをビルドするのに使います。
@@ -73,7 +75,10 @@ Windows上では、MSYS/MinGWを使ってビルドできます。
 詳しくはlink:doc/HOWTO-mingw.adoc[]を参照してください。
 endif::JA[]
 ifdef::EN[]
-Other than standard build tools on Unix environment, the following
+You need the standard build tools of the Unix environment, and
+GNU make.
+
+Besides that, the following
 tools and libraries are recommended to have.  You can build Gauche without
 them, but some features won't be available.
 
