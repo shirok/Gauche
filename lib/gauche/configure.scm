@@ -909,10 +909,9 @@
   (log-format "## Output variables. ##")
   (log-format "## ----------------- ##")
   (log-format ".")
-  ($ hash-table-for-each
-     (~ (current-package)'substs)
-     (^[k v] 
-       (log-format "~a=~a" k (shell-escape-string (x->string v))))))
+  (dolist [k (sort (hash-table-keys (~ (current-package)'substs)))]
+    (log-format "~a=~a" k (shell-escape-string
+                           (hash-table-get (~ (current-package)'substs) k)))))
 
 (define (log-output-defs)
   (log-format ".")
@@ -920,10 +919,9 @@
   (log-format "## Definitions. ##")
   (log-format "## ------------ ##")
   (log-format ".")
-  ($ hash-table-for-each
-     (~ (current-package)'defs)
-     (^[k v] 
-       (log-format "#define ~a ~a" k (or v "/**/")))))
+  (dolist [k (sort (hash-table-keys (~ (current-package)'defs)))]
+    (log-format "#define ~a ~a" k 
+                (or (hash-table-get (~ (current-package)'defs) k) "/**/"))))
 
 ;; API
 ;; Show definitions.
