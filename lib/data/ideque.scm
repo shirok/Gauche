@@ -231,12 +231,12 @@
 (define (%ideque-drop dq n)             ; n is within the range
   (match-let1 ($ <ideque> lenf f lenr r) dq
     (if (<= n lenf)
-      (check n (drop f n) lenr r)
+      (check (- lenf n) (drop f n) lenr r)
       (let1 lenr. (- lenr (- n lenf))
         (check 0 '() lenr. (take r lenr.))))))
 
 (define (%check-length dq n)
-  (unless (<= 0 n (- (ideque-length dq) 1))
+  (unless (<= 0 n (ideque-length dq))
     (error "argument is out of range:" n)))
 
 ;; API [srfi-134]

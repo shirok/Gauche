@@ -50,6 +50,12 @@
  (test-assert (ideque-empty? (ideque-remove-back (ideque 1))))
  (test 0 (ideque-front (ideque-add-front (ideque 1 2 3) 0)))
  (test 0 (ideque-back (ideque-add-back (ideque 1 2 3) 0)))
+ ;; loss of front ideque
+ (let ((id (ideque #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f)))
+   (set! id (ideque-remove-front (ideque-add-back id 1)))
+   (set! id (ideque-remove-front (ideque-add-back id 1)))
+   (set! id (ideque-remove-front (ideque-add-back id 1)))
+   (test #f (ideque-front (ideque-take-right id 12)))) 
  )
 
 (test-group "ideque/other-accessors"
@@ -63,7 +69,11 @@
                          (map ideque->list xs))))
                lis)))
  (check 'ideque-take ideque-take take 7)
+ (test '(1 2 3 4) (ideque->list (ideque-take (ideque 1 2 3 4) 4)))
+ (test '(1 2 3 4) (ideque->list (ideque-take-right (ideque 1 2 3 4) 4)))
  (check 'ideque-drop ideque-drop drop 6)
+ (test '() (ideque->list (ideque-drop (ideque 1 2 3 4) 4)))
+ (test '() (ideque->list (ideque-drop-right (ideque 1 2 3 4) 4)))
  (check 'ideque-split-at ideque-split-at split-at 8)
  ;; out-of-range conditions
  (test-error (ideque->list (ideque-take (ideque 1 2 3 4 5 6 7) 10)))
