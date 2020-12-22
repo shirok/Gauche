@@ -22535,7 +22535,7 @@ input.
 
 @deffn {Generic function} query-cursor-position console
 @c MOD text.console
-Returns two values, the current cursor's x and y position.
+Returns two values, the current cursor's y and x position.
 The top-left corner is (0,0).
 @end deffn
 
@@ -23905,7 +23905,7 @@ If @var{index} is out of range, an error is signaled.
 Moves the cursor position of @var{gbuf} to a position @var{pos}, which
 must be an exact integer.  The position @var{pos} is relative to
 @var{whence}, which must be either one of the symbols @code{beginning},
-@var{current} or @code{end}.
+@code{current} or @code{end}.
 @end defun
 
 @defun gap-buffer-insert! gbuf content
@@ -23917,7 +23917,7 @@ The current cursor position is moved to the end of the inserted content.
 
 @defun gap-buffer-delete! gbuf size
 @c MOD text.gap-buffer
-Delets @var{size} characters from the current cursor position
+Deletes @var{size} characters from the current cursor position
 of @var{gbuf}.  It is an error if @var{size} overruns.
 @end defun
 
@@ -23946,7 +23946,7 @@ Insert @var{string} at a position @var{pos}.
 @item (d @var{pos} @var{length})
 Delete @var{length} characters from a position @var{pos}.
 @item (c @var{pos} @var{length} @var{string})
-Change: Delets @var{length} characters from a position @var{pos},
+Change: Delete @var{length} characters from a position @var{pos},
 then insert @var{string}.
 @end table
 

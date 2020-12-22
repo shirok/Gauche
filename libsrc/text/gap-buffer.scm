@@ -44,7 +44,7 @@
   (use util.match)
   (export make-gap-buffer string->gap-buffer gap-buffer-copy
           gap-buffer? gap-buffer-capacity gap-buffer-content-length
-          gap-buffer-pos gap-buffer-gap-at? gap-buffer-ref
+          gap-buffer-pos gap-buffer-gap-at? gap-buffer-ref gap-buffer-set!
           gap-buffer-gap-start gap-buffer-gap-end gap-buffer-move!
           gap-buffer-insert! gap-buffer-delete! gap-buffer-replace!
           gap-buffer-clear!
