@@ -490,7 +490,7 @@
   (check-arg symbol? name)
   (check-arg string? c-name)
   (let1 literal (make-literal name :c-name c-name)
-    (cgen-decl #`"#define ,c-name (,(cgen-c-name literal))")
+    (cgen-decl #"#define ~c-name (~(cgen-c-name literal))")
     (cgen-add! literal)))
 
 ;;-------------------------------------------------------------------
@@ -503,7 +503,7 @@
         [symbol  (make-literal name)]
         [initval (make-literal init)])
     (when c-name
-      (cgen-decl #`"#define ,c-name (,(cgen-cexpr symbol))"))
+      (cgen-decl #"#define ~c-name (~(cgen-cexpr symbol))"))
     (cgen-init (format "  Scm_MakeBinding(SCM_MODULE(~a), SCM_SYMBOL(~a), ~a, ~a);\n"
                        (current-tmodule-cname)
                        (cgen-cexpr symbol)
@@ -522,12 +522,12 @@
 
 (define-form-parser define-enum (name)
   (check-arg symbol? name)
-  (variable-parser-common #t name (list 'c #`"Scm_MakeInteger(,name)") '()))
+  (variable-parser-common #t name (list 'c #"Scm_MakeInteger(~name)") '()))
 
 (define-form-parser define-enum-conditionally (name)
   (check-arg symbol? name)
   (cgen-with-cpp-condition `(defined ,name)
-    (variable-parser-common #t name (list 'c #`"Scm_MakeInteger(,name)") '())))
+    (variable-parser-common #t name (list 'c #"Scm_MakeInteger(~name)") '())))
 
 ;;-------------------------------------------------------------------
 ;; (define-keyword scheme-name c-name)
@@ -536,7 +536,7 @@
   (check-arg symbol? name)
   (check-arg string? c-name)
   (let1 literal (make-literal (make-keyword name) :c-name c-name)
-    (cgen-decl #`"#define ,c-name (,(cgen-c-name literal))")
+    (cgen-decl #"#define ~c-name (~(cgen-c-name literal))")
     (cgen-add! literal)))
 
 ;;===================================================================
@@ -720,7 +720,7 @@
           (assign-proc-info! cproc)
           (cgen-add! cproc))))))
 
-(define-method c-stub-name ((cproc <cproc>)) #`",(~ cproc'c-name)__STUB")
+(define-method c-stub-name ((cproc <cproc>)) #"~(~ cproc'c-name)__STUB")
 
 ;; Get stub name of the named cproc in the current unit.
 (define (cproc-stub-c-name scheme-name)
@@ -987,7 +987,7 @@
       (receive (body rettype) (extract-rettype (cdr decl))
         (let1 setter (make <cproc>
                        :scheme-name `(setter ,(~ cproc'scheme-name))
-                       :c-name #`",(~ cproc'c-name)_SETTER"
+                       :c-name #"~(~ cproc'c-name)_SETTER"
                        :proc-name (make-literal (x->string `(setter ,(~ cproc'scheme-name))))
                        :args args :return-type rettype
                        :keyword-args keyargs
@@ -995,7 +995,7 @@
                        :num-optargs nopts
                        :have-rest-arg? rest?
                        :allow-other-keys? other-keys?)
-          (set! (~ cproc'setter) #`",(~ setter'c-name)__STUB")
+          (set! (~ cproc'setter) #"~(~ setter'c-name)__STUB")
           (process-body setter body)
           (cgen-add! setter))))]))
 
@@ -1008,8 +1008,8 @@
                  ", "))
   (define (typed-result rettype c-func-name)
     (push-stmt! cproc "{")
-    (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
-    (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
+    (push-stmt! cproc #"~(~ rettype'c-type) SCM_RESULT;")
+    (push-stmt! cproc #"SCM_RESULT = ~c-func-name(~(args));")
     (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
@@ -1022,7 +1022,7 @@
             (process-call-spec cproc `(,rt ,expr)) ; for transition
             (typed-result *scm-type* expr)))]
        [('<void> [? check-expr expr])
-        (push-stmt! cproc #`",expr(,(args));")
+        (push-stmt! cproc #"~expr(~(args));")
         (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
         (push-stmt! cproc "SCM_STUB_RETURN:") ; label
         (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
@@ -1047,8 +1047,8 @@
                  expr
                  (call-with-output-string (cut cise-render expr <> 'expr)))
       (push-stmt! cproc "{")
-      (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
-      (push-stmt! cproc #`" SCM_RESULT = (,expr);")
+      (push-stmt! cproc #"~(~ rettype'c-type) SCM_RESULT;")
+      (push-stmt! cproc #" SCM_RESULT = (~expr);")
       (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
       (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
@@ -1094,7 +1094,7 @@
                         (cise-render-to-string stmt))))
   (define (typed-result rettype stmts)
     (push-stmt! cproc "{")
-    (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
+    (push-stmt! cproc #"~(~ rettype'c-type) SCM_RESULT;")
     (for-each expand-stmt stmts)
     (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
@@ -1103,7 +1103,7 @@
   (define (typed-results rettypes stmts)
     (let1 nrets (length rettypes)
       (for-each-with-index
-       (^[i rettype] (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT,i;"))
+       (^[i rettype] (push-stmt! cproc #"~(~ rettype'c-type) SCM_RESULT~i;"))
        rettypes)
       (push-stmt! cproc "{")
       (for-each expand-stmt stmts)
@@ -1111,7 +1111,7 @@
       (let1 results
           (string-join
            (map-with-index (^[i rettype]
-                             (cgen-box-expr rettype #`"SCM_RESULT,i"))
+                             (cgen-box-expr rettype #"SCM_RESULT~i"))
                            rettypes)
            ",")
         (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
@@ -1120,12 +1120,12 @@
                     (case nrets
                       [(0) (cgen-return-stmt "Scm_Values(SCM_NIL)")]
                       [(1) (cgen-return-stmt results)]
-                      [(2) (cgen-return-stmt #`"Scm_Values2(,results)")]
-                      [(3) (cgen-return-stmt #`"Scm_Values3(,results)")]
-                      [(4) (cgen-return-stmt #`"Scm_Values4(,results)")]
-                      [(5) (cgen-return-stmt #`"Scm_Values5(,results)")]
+                      [(2) (cgen-return-stmt #"Scm_Values2(~results)")]
+                      [(3) (cgen-return-stmt #"Scm_Values3(~results)")]
+                      [(4) (cgen-return-stmt #"Scm_Values4(~results)")]
+                      [(5) (cgen-return-stmt #"Scm_Values5(~results)")]
                       [else (cgen-return-stmt
-                             #`"Scm_Values(Scm_List(,results,, NULL))")]))
+                             #"Scm_Values(Scm_List(~results, NULL))")]))
         )))
   ($ with-return-types rettype
      $ with-cise-ambient cproc
@@ -1644,24 +1644,24 @@
   (let1 allocator (~ self'allocator)
     (cond [(c-literal-expr allocator)]
           [(not allocator) "NULL"]
-          [else #`",(~ self'c-name)_ALLOCATE"])))
+          [else #"~(~ self'c-name)_ALLOCATE"])))
 
 (define-method c-printer-name ((self <cclass>))
   (let1 printer (~ self'printer)
     (cond [(c-literal-expr printer)]
           [(not printer) "NULL"]
-          [else #`",(~ self'c-name)_PRINT"])))
+          [else #"~(~ self'c-name)_PRINT"])))
 
 (define-method c-comparer-name ((self <cclass>))
   (let1 comparer (~ self'comparer)
     (cond [(c-literal-expr comparer)]
           [(not comparer) "NULL"]
-          [else #`",(~ self'c-name)_COMPARE"])))
+          [else #"~(~ self'c-name)_COMPARE"])))
 
 (define-method c-slot-spec-name ((self <cclass>))
   (if (null? (~ self'slot-spec))
     "NULL"
-    #`",(~ self'c-name)__SLOTS"))
+    #"~(~ self'c-name)__SLOTS"))
 
 (define (cclass-emit-standard-decls self)
   (let1 type (cgen-type-from-name (~ self'scheme-name))
@@ -1725,7 +1725,7 @@
 (define-method cpa-name ((self <cclass>))
   (cond [(null? (~ self'cpa)) "SCM_CLASS_DEFAULT_CPL"]
         [(c-literal-expr (~ self'cpa))]
-        [else #`",(~ self'c-name)_CPL"]))
+        [else #"~(~ self'c-name)_CPL"]))
 
 (define-method emit-cpa ((self <cclass>))
   (let1 cpa (~ self'cpa)
@@ -1758,13 +1758,13 @@
   (let1 getter (~ slot'getter)
     (or
      (c-literal-expr getter)
-     #`",(~ slot'cclass'c-name)_,(get-c-name \"\" (~ slot'scheme-name))_GET")))
+     #"~(~ slot'cclass'c-name)_~(get-c-name \"\" (~ slot'scheme-name))_GET")))
 
 (define-method slot-setter-name ((slot <cslot>))
   (let1 setter (~ slot'setter)
     (cond [(c-literal-expr setter)]
           [(not setter) "NULL"]
-          [else #`",(~ slot'cclass'c-name)_,(get-c-name \"\" (~ slot'scheme-name))_SET"])))
+          [else #"~(~ slot'cclass'c-name)_~(get-c-name \"\" (~ slot'scheme-name))_SET"])))
 
 (define-method emit-getter-n-setter ((slot <cslot>))
   (unless (c-literal? (~ slot'getter)) (emit-getter slot))
@@ -1782,7 +1782,7 @@
           [(string? (~ slot'c-spec))
            (f "  return ~a;" (cgen-box-expr type (~ slot'c-spec)))]
           [else
-           (f "  return ~a;" (cgen-box-expr type #`"obj->,(~ slot'c-name)"))])
+           (f "  return ~a;" (cgen-box-expr type #"obj->~(~ slot'c-name)"))])
     (p "}")
     (p "")))
 
