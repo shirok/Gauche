@@ -1,3 +1,8 @@
+2020-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm (sys-ctermid): Fix a bug accessing local memory
+	  out of its extent. https://github.com/shirok/Gauche/issues/740
+
 2020-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/version-alist.scm (version-alist): Make it autoloaded

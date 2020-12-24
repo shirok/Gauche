@@ -460,11 +460,11 @@
 (define-cproc sys-mkdtemp (template::<string>) Scm_SysMkdtemp)
 
 ;; ctermid
-(define-cproc sys-ctermid () ::<const-cstring>
+(define-cproc sys-ctermid ()
   (.if "defined(GAUCHE_WINDOWS)"
-       (return "CON")
+       (return '"CON")
        (let* ([buf::(.array char [(+ L_ctermid 1)])])
-         (return (ctermid buf)))))
+         (return (SCM_MAKE_STR_COPYING (ctermid buf))))))
 
 ;;---------------------------------------------------------------------
 ;; stdlib.h
