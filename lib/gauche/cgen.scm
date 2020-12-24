@@ -31,7 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; *EXPERIMENTAL*
 ;; gauche.cgen.* modules are intended to provide a common framework
 ;; to generate C code from Scheme.  They will be used for stub
 ;; generators or any other kind of automatic code generation.
