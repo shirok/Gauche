@@ -131,6 +131,9 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
+* Sat Dec 10 2020 Shiro Kawai
+- Gauche release 0.9.10
+
 * Sat Dec 14 2019 Shiro Kawai
 - Gauche release 0.9.9
 
