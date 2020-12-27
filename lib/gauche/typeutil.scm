@@ -80,10 +80,6 @@
 (define-method allocate-instance ((z <type-instance-meta>) initargs)
   (error "Abstract type intance cannot instantiate a concrete object:" z))
 
-;; base method
-(define-method of-type? (obj (type <class>))
-  (is-a? obj type))
-
 ;; Utility to create reasonable name
 (define (make-compound-type-name op-name classes)
   ($ string->symbol 
