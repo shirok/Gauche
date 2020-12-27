@@ -1,3 +1,8 @@
+2020-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/typteutil.scm: Add experimentally.  Abstract type
+	  utitilies for type checking.
+
 2020-12-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm (sys-ctermid): Fix a bug accessing local memory
