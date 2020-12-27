@@ -39,20 +39,20 @@
 
 (define-module gauche.typeutil
   (use util.match)
-  (export define-type-operator of-type?
-          <type-operator-meta> <type-inscance-meta>
-          <or> <tuple>)
+  (export define-type-constructor of-type?
+          <type-constructor-meta> <type-instance-meta>
+          <or> <?> <tuple>)
   )
 (select-module gauche.typeutil)
 
-;; Metaclass: <type-operator-meta>
+;; Metaclass: <type-constructor-meta>
 ;;   Instance classes of this metaclass are used to create an abstract types.
 ;;   They have object-apply method, and each intance class can be used
 ;;   as a procedure that takes classes and returns a class.
-(define-class <type-operator-meta> (<class>)
+(define-class <type-constructor-meta> (<class>)
   ())
 
-(define-syntax define-type-operator
+(define-syntax define-type-constructor
   (er-macro-transformer
    (^[f r c]
      (match f
@@ -66,7 +66,7 @@
                         supers)])
           (quasirename r
             `(begin
-               (define-class ,meta-name (<type-operator-meta>) ())
+               (define-class ,meta-name (<type-constructor-meta>) ())
                (define-class ,name ,supers ,slots
                  :metaclass ,meta-name
                  ,@opts))))]))))
@@ -88,10 +88,12 @@
      (string-join (map ($ symbol->string $ class-name $) classes) " ")
      ">"))
 
+;;;
 ;;; Class: <or>
 ;;;   Creates a union type.
+;;;
 
-(define-type-operator <or> ()
+(define-type-constructor <or> ()
   ((members :init-keyword :members)))
 
 (define-method object-apply ((k <or-meta>) . args)
@@ -103,10 +105,29 @@
 (define-method of-type? (obj (type <or>))
   (any (cut of-type? obj <>) (~ type'members)))
 
+;;;
+;;; Class: <?>
+;;;   Creates a boolean-optional type, that is, <type> or #f.
+;;;
+
+(define-type-constructor <?> ()
+  ((primary-type :init-keyword :primary-type)))
+
+(define-method object-apply ((k <?-meta>) ptype)
+  (assume (is-a? ptype <class>))
+  (make <?>
+    :name (make-compound-type-name '? `(,ptype))
+    :primary-type ptype))
+
+(define-method of-type? (obj (type <?>))
+  (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
+
+;;;
 ;;; Class: <tuple>
 ;;;   Fixed-lenght list, each element having its own type constraints.
+;;;
 
-(define-type-operator <tuple> ()
+(define-type-constructor <tuple> ()
   ((elements :init-keyword :elements)))
 
 (define-method object-apply ((k <tuple-meta>) . args)
