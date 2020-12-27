@@ -794,7 +794,7 @@
        [(_ expr type)
         (quasirename r
           `(let1 v ,expr
-             (if (is-a? v ,type)
+             (if (of-type? v ,type)
                v
                (type-error ',expr ,type v))))]))))
 
