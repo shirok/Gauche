@@ -183,7 +183,7 @@
 
 (autoload gauche.pputil   %pretty-print pprint)
 
-(autoload gauche.typeutil <or> <?> <tuple>)
+(autoload gauche.typeutil <^> <or> <?> <tuple>)
 
 (autoload gauche.version-alist version-alist)
 

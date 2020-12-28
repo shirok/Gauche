@@ -45,4 +45,26 @@
                    ((#\a) . #f)
                    (("a") . #f)))
 
+(validation-test (<^> '* :- '*)
+                 `((,car . #t)
+                   (,cons . #t)
+                   (1 . #f)
+                   (#/abc/ . #t)))
+
+(validation-test (<^> <top> :- '*)
+                 `((,car . #t)
+                   (,cons . #f)
+                   (,list . #t)
+                   (,current-input-port . #t)
+                   (,(lambda () #f) . #f)))
+
+(validation-test (<^> :- '*)
+                 `((,(lambda () #f) . #t)
+                   (,car . #f)
+                   (,list . #t)))
+
+(validation-test (<^> <top> <top> :- '*)
+                 `((,cons . #t)
+                   (,car . #f)))
+
 (test-end)

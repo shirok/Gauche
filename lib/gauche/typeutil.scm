@@ -41,7 +41,7 @@
   (use util.match)
   (export define-type-constructor of-type?
           <type-constructor-meta> <type-instance-meta>
-          <or> <?> <tuple>)
+          <^> <or> <?> <tuple>)
   )
 (select-module gauche.typeutil)
 
@@ -85,8 +85,80 @@
   ($ string->symbol 
      $ string-append "<"
      (x->string op-name) " "
-     (string-join (map ($ symbol->string $ class-name $) classes) " ")
+     (string-join (map (^k (if (is-a? k <class>)
+                             ($ symbol->string $ class-name k)
+                             (x->string k)))
+                       classes)
+                  " ")
      ">"))
+
+;;;
+;;; Class: <^>  (maybe we want to name it <λ>)
+;;;   Creates a function type.
+;;;   The signature can be specified as
+;;;
+;;;       <argtype1> <argtype2> ... :- <rettype1> <rettype2> ...
+;;;
+;;;   Argument types and/or return types can be also a single symbol '*,
+;;;   indicating arbitrary number of args/values.   That is, any procedure
+;;;   can be of type '* :- '*.
+;;;
+;;;   NB: Currently we don't keep the return value info in procedure, so
+;;;   we only allow "wild card" '* as the results.
+;;;
+;;;   TODO: How to type optional, keyword and rest arguments?
+;;;
+
+(define-type-constructor <^> ()
+  ((arguments :init-keyword :arguments)
+   (results :init-keyword :results)))
+
+(define-method object-apply ((k <^-meta>) . rest)
+  (define (scan-args xs as)
+    (match xs
+      [() (error "Missing ':-' in the procedure type constructor arguments:" 
+                 rest)]
+      [(':- . xs) (scan-results xs (reverse as) '())]
+      [('* ':- . xs)
+       (if (null? as)
+         (scan-results xs '* '())
+         (error "Invalid '* in the procedure type constructor arguments:"
+                rest))]
+      [else
+       (if (is-a? (car xs) <class>) 
+         (scan-args (cdr xs) (cons (car xs) as))
+         (error "Non-class argument in the procedure type constructor:"
+                (car xs)))]))
+  (define (scan-results xs args rs)
+    (cond [(null? xs) (values args (reverse rs))]
+          [(and (null? rs) (eq? (car xs) '*) (null? (cdr xs)))
+           (values args '*)]
+          [(is-a? (car xs) <class>) 
+           (scan-results (cdr xs) args (cons (car xs) as))]
+          [else
+           (error "Non-class argument in the procedure type constructor:"
+                  (car xs))]))
+
+  (receive (args results) (scan-args rest '())
+    (unless (eq? results '*)
+      (error "Result type must be '*, for we don't support result type checking \
+              yet:" results))
+    (make <^>
+      :name (make-compound-type-name '^ rest)
+      :arguments args
+      :results results)))
+
+(define-method of-type? (obj (type <^>))
+  (if (eq? (~ type'arguments) '*)
+    (or (is-a? obj <procedure>)
+        (is-a? obj <generic>)
+        (is-a? obj <method>)
+        (let1 k (class-of obj)
+          (let loop ([ms (~ object-apply'methods)])
+            (cond [(null? ms) #f]
+                  [(subtype? k (car (~ (car ms)'specializers)))]
+                  [else (loop (cdr ms))]))))
+    (apply applicable? obj (~ type'arguments))))
 
 ;;;
 ;;; Class: <or>
