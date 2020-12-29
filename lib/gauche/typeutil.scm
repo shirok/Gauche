@@ -41,7 +41,7 @@
   (use util.match)
   (export define-type-constructor of-type?
           <type-constructor-meta> <type-instance-meta>
-          <^> </> <?> <tuple>)
+          <^> </> <?> <tuple> <List>)
   )
 (select-module gauche.typeutil)
 
@@ -217,3 +217,53 @@
            (of-type? (car obj) (car elts))
            (loop (cdr obj) (cdr elts))))))
 
+;;;
+;;; Class: <List>
+;;;   A list of specified types.
+;;;
+
+(define-type-constructor <List> ()
+  ((element-type :init-keyword :element-type)
+   (min-length :init-keyword :min-length :init-value #f)
+   (max-length :init-keyword :max-length :init-value #f)))
+
+(define-method object-apply ((k <List-meta>) etype :optional (min #f) (max #f))
+  (assume-type etype <class>)
+  (assume-type min (<?> <integer>))
+  (assume-type max (<?> <integer>))
+  (make <List>
+    :name (string->symbol
+           (string-append "<List "
+                          (x->string (class-name etype))
+                          (if min
+                            (if max
+                              (if (= min max)
+                                (format " ~d" min)
+                                (format " ~d..~d" min max))
+                              (format " ~d.." min))
+                            (if max
+                              (format " ..~d" max)
+                              ""))
+                          ">"))
+    :element-type etype
+    :min-length min
+    :max-length max))
+
+(define-method of-type? (obj (type <List>))
+  (let ([et (~ type'element-type)]
+        [mi (~ type'min-length)]
+        [ma (~ type'max-length)])
+    (if (not (or mi ma))
+      ;; simple case
+      (let loop ([obj obj])
+        (cond [(null? obj) #t]
+              [(not (pair? obj)) #f]
+              [(of-type? (car obj) et) (loop (cdr obj))]
+              [else #f]))
+      ;; general case
+      (let loop ([obj obj] [n 0])
+        (cond [(null? obj) (or (not mi) (<= mi n))]
+              [(and ma (<= ma n)) #f]
+              [(not (pair? obj)) #f]
+              [(of-type? (car obj) et) (loop (cdr obj) (+ n 1))]
+              [else #f])))))
