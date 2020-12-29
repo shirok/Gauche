@@ -80,16 +80,30 @@
 (define-method allocate-instance ((z <type-instance-meta>) initargs)
   (error "Abstract type intance cannot instantiate a concrete object:" z))
 
-;; Utility to create reasonable name
+;; Utilities to create reasonable name
+(define (join-class-names classes)
+  (string-join (map (^k (if (is-a? k <class>)
+                          ($ symbol->string $ class-name k)
+                          (x->string k)))
+                    classes)
+               " " 'prefix))
+
 (define (make-compound-type-name op-name classes)
   ($ string->symbol 
-     $ string-append "<"
-     (x->string op-name) " "
-     (string-join (map (^k (if (is-a? k <class>)
-                             ($ symbol->string $ class-name k)
-                             (x->string k)))
-                       classes)
-                  " ")
+     $ string-append "<" (x->string op-name) (join-class-names classes) ">"))
+
+(define (make-min-max-len-type-name op-name classes min max)
+  ($ string->symbol
+     $ string-append "<" (x->string op-name) (join-class-names classes)
+     (if min
+       (if max
+         (if (= min max)
+           (format " ~d" min)
+           (format " ~d..~d" min max))
+         (format " ~d.." min))
+       (if max
+         (format " ..~d" max)
+         ""))
      ">"))
 
 ;;;
@@ -232,19 +246,7 @@
   (assume-type min (<?> <integer>))
   (assume-type max (<?> <integer>))
   (make <List>
-    :name (string->symbol
-           (string-append "<List "
-                          (x->string (class-name etype))
-                          (if min
-                            (if max
-                              (if (= min max)
-                                (format " ~d" min)
-                                (format " ~d..~d" min max))
-                              (format " ~d.." min))
-                            (if max
-                              (format " ..~d" max)
-                              ""))
-                          ">"))
+    :name (make-min-max-len-type-name 'List (list etype) min max)
     :element-type etype
     :min-length min
     :max-length max))
