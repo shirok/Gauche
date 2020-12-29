@@ -14,7 +14,7 @@
            (cdr p)
            (of-type? (car p) type))))
 
-(validation-test (<or> <string> <integer>)
+(validation-test (</> <string> <integer>)
                  '(("abc" . #t)
                    (123 . #t)
                    (abc . #f)

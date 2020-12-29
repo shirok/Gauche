@@ -41,7 +41,7 @@
   (use util.match)
   (export define-type-constructor of-type?
           <type-constructor-meta> <type-instance-meta>
-          <^> <or> <?> <tuple>)
+          <^> </> <?> <tuple>)
   )
 (select-module gauche.typeutil)
 
@@ -161,20 +161,20 @@
     (apply applicable? obj (~ type'arguments))))
 
 ;;;
-;;; Class: <or>
+;;; Class: </>
 ;;;   Creates a union type.
 ;;;
 
-(define-type-constructor <or> ()
+(define-type-constructor </> ()
   ((members :init-keyword :members)))
 
-(define-method object-apply ((k <or-meta>) . args)
+(define-method object-apply ((k </-meta>) . args)
   (assume (every (cut is-a? <> <class>) args))
-  (make <or> 
-    :name (make-compound-type-name 'or args)
+  (make </> 
+    :name (make-compound-type-name '/ args)
     :members args))
 
-(define-method of-type? (obj (type <or>))
+(define-method of-type? (obj (type </>))
   (any (cut of-type? obj <>) (~ type'members)))
 
 ;;;
@@ -216,5 +216,4 @@
            (pair? elts)
            (of-type? (car obj) (car elts))
            (loop (cdr obj) (cdr elts))))))
-
 
