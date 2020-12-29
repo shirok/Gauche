@@ -41,7 +41,7 @@
   (use util.match)
   (export define-type-constructor of-type?
           <type-constructor-meta> <type-instance-meta>
-          <^> </> <?> <tuple> <List>)
+          <^> </> <?> <Tuple> <List>)
   )
 (select-module gauche.typeutil)
 
@@ -195,20 +195,20 @@
   (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
 
 ;;;
-;;; Class: <tuple>
+;;; Class: <Tuple>
 ;;;   Fixed-lenght list, each element having its own type constraints.
 ;;;
 
-(define-type-constructor <tuple> ()
+(define-type-constructor <Tuple> ()
   ((elements :init-keyword :elements)))
 
-(define-method object-apply ((k <tuple-meta>) . args)
+(define-method object-apply ((k <Tuple-meta>) . args)
   (assume (every (cut is-a? <> <class>) args))
-  (make <tuple>
-    :name (make-compound-type-name 'tuple args)
+  (make <Tuple>
+    :name (make-compound-type-name 'Tuple args)
     :elements args))
 
-(define-method of-type? (obj (type <tuple>))
+(define-method of-type? (obj (type <Tuple>))
   (let loop ((obj obj) (elts (~ type'elements)))
     (if (null? obj)
       (null? elts)

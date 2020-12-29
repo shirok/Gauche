@@ -22,7 +22,7 @@
                    (#t . #f)
                    (("abc") . #f)))
 
-(validation-test (<tuple> <char> <integer> <symbol>)
+(validation-test (<Tuple> <char> <integer> <symbol>)
                  '(((#\a 1 a) . #t)
                    ((#\a 1) . #f)
                    (() . #f)
@@ -35,7 +35,7 @@
                    (#t . #f)
                    (3.5 . #f)))
 
-(validation-test (<tuple> (<?> <char>) (<?> <string>))
+(validation-test (<Tuple> (<?> <char>) (<?> <string>))
                  '((3 . #f)
                    ((#\a "a") . #t)
                    ((#f "a") . #t)
