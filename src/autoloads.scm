@@ -183,7 +183,7 @@
 
 (autoload gauche.pputil   %pretty-print pprint)
 
-(autoload gauche.typeutil <^> </> <?> <Tuple> <List>)
+(autoload gauche.typeutil <^> </> <?> <Tuple> <List> <Vector>)
 
 (autoload gauche.version-alist version-alist)
 

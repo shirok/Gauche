@@ -41,7 +41,7 @@
   (use util.match)
   (export define-type-constructor of-type?
           <type-constructor-meta> <type-instance-meta>
-          <^> </> <?> <Tuple> <List>)
+          <^> </> <?> <Tuple> <List> <Vector>)
   )
 (select-module gauche.typeutil)
 
@@ -269,3 +269,36 @@
               [(not (pair? obj)) #f]
               [(of-type? (car obj) et) (loop (cdr obj) (+ n 1))]
               [else #f])))))
+
+;;;
+;;; <Vector> element-type [min-length [max-length]]
+;;;
+
+(define-type-constructor <Vector> ()
+  ((element-type :init-keyword :element-type)
+   (min-length :init-keyword :min-length :init-value #f)
+   (max-length :init-keyword :max-length :init-value #f)))
+
+(define-method object-apply ((k <Vector-meta>) etype 
+                             :optional (min #f) (max #f))
+  (assume-type etype <class>)
+  (assume-type min (<?> <integer>))
+  (assume-type max (<?> <integer>))
+  (make <Vector>
+    :name (make-min-max-len-type-name 'Vector (list etype) min max)
+    :element-type etype
+    :min-length min
+    :max-length max))
+
+(define-method of-type? (obj (type <Vector>))
+  (and (vector? obj)
+       (let ([et (~ type'element-type)]
+             [mi (~ type'min-length)]
+             [ma (~ type'max-length)]
+             [len (vector-length obj)])
+         (and (or (not mi) (<= mi len))
+              (or (not ma) (<= len ma))
+              (let loop ([i 0])
+                (cond [(= i len) #t]
+                      [(of-type? (vector-ref obj i) et) (loop (+ i 1))]
+                      [else #f]))))))
