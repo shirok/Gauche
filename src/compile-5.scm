@@ -612,11 +612,12 @@
           (compiled-code-emit1i! ccb BOX k (lvar-name (car lvs))))
         (loop (cdr lvs) (- k 1))))
     ;; Save list of unused arguments in the attributes of (car signature-info).
-    (pair-attribute-set! (car (slot-ref ccb 'signature-info))
-                         'unused-args
-                         (filter-map (^[lv] (and (zero? (lvar-ref-count lv))
-                                                 (lvar-name lv)))
-                                     ($lambda-lvars iform)))
+    (let1 uargs (filter-map (^[lv] (and (zero? (lvar-ref-count lv))
+                                        (lvar-name lv)))
+                            ($lambda-lvars iform))
+      (unless (null? uargs)
+        (pair-attribute-set! (car (slot-ref ccb 'signature-info))
+                             'unused-args uargs)))
     ;; Run pass5 on body
     (pass5 ($lambda-body iform)
            ccb
