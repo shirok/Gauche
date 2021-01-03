@@ -586,6 +586,11 @@
    (bind-info         :initform #f :init-keyword :bind-info)
       ;; (module-name::<symbol> proc-name::<symbol>), if known.
       ;; Will be saved in pair attributes of info.
+   (type-string       :initform #f :init-keyword :signature-string)
+      ;; A string encoding type signature of this procedure.
+      ;; e.g. "(<string> <integer> :- <char>)"
+      ;; We use a string to be dumped in the C code, and parse it only when
+      ;; type information is needed.  
    (info              :initform #f)
       ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
@@ -657,6 +662,9 @@
        (push! (~ procstub'forward-decls)
               (cise-ambient-decl-strings (cise-ambient))))]))
 
+;; (define (compute-type-string procstub)
+;;   (define (arg-types args)
+;;     (let loop ([args args] (
 
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)

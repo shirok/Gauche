@@ -4070,17 +4070,34 @@ Roughly corresponds to Gauche's @code{use} forms:
 
 @deftp {Module} srfi-60
 @mdindex srfi-60
+@c EN
 This srfi provides bit operations on integers, regarding them
 as 2's complement representation.  It is compatible to SLIB's @code{logical}
 module.
+@c JP
+このsrfiは、2の補数表現とみなした正確な整数に対するビット演算を提供します。
+SLIBの@code{logical}モジュールと互換です。
+@c COMMON
 
+@c EN
 The newer srfi-151 (@pxref{R7RS bitwise operations}) provides the same
 functionality and more, with more consistent naming.  We recommend
 new code to use srfi-151, while we keep srfi-60 for the backward
 compatibility.
+@c JP
+より新しいsrfi-151 (@ref{R7RS bitwise operations})はこのsrfiの機能を
+カバーし、新しい機能を加え、さらに一貫性のある名前を採用しています。
+新に書くコードにはsrfi-151を使ってください。
+srfi-60は後方互換性のために残されています。
+@c COMMON
 
+@c EN
 The following procedures are Gauche built-in.
 @xref{Basic bitwise operations}, for the description.
+@c JP
+以下の手続きはGauche組み込みです。
+@ref{Basic bitwise operations}を参照してください。
+@c COMMON
 
 @example
 lognot           logand           logior           logxor
@@ -4088,8 +4105,13 @@ logtest          logcount         integer-length   logbit?
 copy-bit         bit-field        copy-bit-field   ash
 @end example
 
+@c EN
 The following procedures are defined in srfi-151.
 @xref{R7RS bitwise operations}, for the description.
+@c JP
+以下の手続きはsrfi-151で定義されています。
+@ref{R7RS bitwise operations}を参照してください。
+@c COMMON
 
 @example
 bitwise-not      bitwise-and      bitwise-ior      bitwise-xor
