@@ -4120,75 +4120,128 @@ copy-bit         first-set-bit
 @end example
 @end deftp
 
+@c EN
 We describe procedures that are unique in srfi-60 below.
+@c JP
+srfi-60特有の手続きを以下に説明します。
+@c COMMON
 
 @defun bitwise-merge mask n0 n1
 [SRFI-60]
 @c MOD srfi-60
+@c EN
 Same as @code{bitwise-if} (@pxref{R7RS bitwise operations}).
+@c JP
+@code{bitwise-if}と同じです(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun any-bits-set? mask n
 [SRFI-60]
 @c MOD srfi-60
+@c EN
 Same as builtin @code{logtest} (@pxref{Basic bitwise operations}).
 It is also called @code{any-bit-set?} in srfi-151 (@pxref{R7RS bitwise operations}).
+@c JP
+組み込みの@code{logtest}と同じです (@ref{Basic bitwise operations}参照)。
+srfi-151では@code{any-bit-set?}と呼ばれています
+(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun log2-binary-factors n
 [SRFI-60]
 @c MOD srfi-60
+@c EN
 It is also called as @code{first-set-bit} in this srfi, which is also
 in srfi-151 (@pxref{R7RS bitwise operations}).
 This is equivalent to Gauche's built-in  @code{twos-exponent-factor}
 (@pxref{Basic bitwise operations}).
+@c JP
+これはこのsrfiの@code{first-set-bit}の別名で、@code{first-set-bit}の方は
+srfi-151で提供されています(@ref{R7RS bitwise operations}参照)。
+また、Gaucheの組み込みである@code{twos-exponent-factor}とも同じです
+(@ref{Basic bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun rotate-bit-field n count start end
 [SRFI-60]
 @c MOD srfi-60
+@c EN
 This is equivalent to @code{bit-field-rotate} in srfi-151
 (@pxref{R7RS bitwise operations}).
+@c JP
+srfi-151の@code{bit-field-rotate}と同じです(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun reverse-bit-field n start end
 [SRFI-60]
 @c MOD srfi-60
+@c EN
 This is equivalent to @code{bit-field-reverse} in srfi-151
 (@pxref{R7RS bitwise operations}).
+@c JP
+srfi-151の@code{bit-field-reverse}と同じです(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun integer->list n :optional len
 [SRFI-60]
 @c MOD srfi-60
+@c EN
 Breaks @var{n} to each bits, representing @code{1} as @code{#t} and
 @code{0} as @code{#f}, LSB last, and returns a list of them.
 If a nonnegative integer @var{len} is given, it specifies the length
 of the result.   If it is omitted, @code{(integer-length n)} is used.
+@c JP
+整数nをビットに分割し、論理値のリストとして返します。
+@code{1}であるビットが@code{#t}に、
+@code{0}であるビットが@code{#f}にマップされます。MSBが最初、LSBが最後になります。
+非負整数@var{len}が与えられた場合は、それが結果の長さを指定します。
+そうでなければ @code{(integer-length n)}が結果の長さになります。
+@c COMMON
 
 @example
 (integer->list 10)   @result{} (#t #f #t #f)
 (integer->list 10 6) @result{} (#f #f #t #f #t #f)
 @end example
 
+@c EN
 Srfi-151 has similar procedure @code{bits->list}, with a reversed bit
 order (LSB first) (@pxref{R7RS bitwise operations}).
+@c JP
+srfi-151の@code{bits->list}は、ビット順が逆 (LSBが最初) であることを除けば
+これと同じです(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun list->integer lis
 [SRFI-60]
 @c MOD srfi-60
+@c EN
 Takes a list of boolean values, replaces the true value for @code{1}
 and the false value for @code{0}, and compose an integer regarding
 each value as a binary digit.  If @var{n} is nonnegative integer,
 @code{(eqv? (list->integer (integer->list n)) n)} is true.
+@c JP
+論理値のリストを取り、@code{#t}を@code{1}、@code{#f}を@code{0}と解釈して、
+各ビットからなる整数を返します。@var{n}を非負整数とすると、
+@code{(eqv? (list->integer (integer->list n)) n)}が成り立ちます。
+@c COMMON
 
 @example
 (list->integer '(#f #t #f #t #f)) @result{} 10
 @end example
 
+@c EN
 Srfi-151 has similar procedure @code{list->bits}, with a reversed bit
 order (LSB first) (@pxref{R7RS bitwise operations}).
+@c JP
+srfi-151の@code{list->bits}は、ビット順が逆 (LSBが最初) であることを除けば
+これと同じです(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @defun booleans->integer bool @dots{}
@@ -4196,8 +4249,13 @@ order (LSB first) (@pxref{R7RS bitwise operations}).
 @c MOD srfi-60
 @equiv{} @code{(list->integer (list @var{bool} @dots{}))}
 
+@c EN
 Srfi-151 has similar procedure @code{bits}, with a reversed bit
 order (LSB first) (@pxref{R7RS bitwise operations}).
+@c JP
+srfi-151の@code{bits}は、ビット順が逆 (LSBが最初) であることを除けば
+これと同じです(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -4207,15 +4265,31 @@ order (LSB first) (@pxref{R7RS bitwise operations}).
 
 @deftp {Module} srfi-64
 @mdindex srfi-64
+@c EN
 This module defines API to write a portable test suite.  In Gauche,
 it is adapted to work with @code{gauche.test} native test framework
 (@pxref{Unit testing}).
+@c JP
+このモジュールはポータブルなテストスイートを書くAPIを提供します。
+Gaucheでは、このsrfiは@code{gauche.test}と協調して動くようになっています
+(@ref{Unit testing}参照)。
+@c COMMON
 
+@c EN
 If srfi-64 tests are run with the default runner during @code{gauche.test}
 is active, the tests becomes a part of the whole @code{gauche.test} suite.
+@c JP
+@code{gauche.test}が有効な状態で、srfi-64テストをデフォルトのrunnerを使って走らせた場合、
+それらのテストは@code{gauche.test}の一部として実行されます。
+@c COMMON
 
+@c EN
 The recommended way is to write a test suite in pure srfi-64, then include
 it from the gauche test script:
+@c JP
+推奨されるテストの書き方は、ポータブルなテストをsrfi-64のみで書き、
+Gaucheテストスクリプトから次のとおりincludeすることです。
+@c COMMON
 
 @example
 (use gauche.test)
@@ -4229,10 +4303,17 @@ it from the gauche test script:
 (test-end)
 @end example
 
+@c EN
 If @file{test-suite-in-srfi-64.scm} is run by itself, it uses srfi-64's
 default reporting system.  If it is run within @code{gauche.test} script,
 the results are reported via @code{gauche.test}, consolidated with other
 Gauche test results.
+@c JP
+@file{test-suite-in-srfi-64.scm}をそれ単独で走らせた場合は、
+srfi-64のデフォルトのテスト報告形式で結果が報告されます。
+@code{gauche.test}スクリプトからincludeして走らせた場合は、
+結果が@code{gauche.test}の報告形式を使って、他のGaucheテストと合わせて報告されます。
+@c COMMON
 @end deftp
 
 @menu
