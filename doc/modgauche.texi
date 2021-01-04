@@ -10977,6 +10977,7 @@ the code runs without logging.
 
 @deftp {Module} gauche.mop.propagate
 @mdindex gauche.mop.propagate
+@c EN
 Provides a metaclass to add @code{:propagated} slot allocation option.
 
 When a slot allocation has @code{:propagated}, access
@@ -10984,13 +10985,29 @@ to the slot is redirected to other object's slot.
 It is handy for composite objects to keep external
 interface simple, for access to the slot of inner objects
 can be disguised as if it is a slot of the parent object.
+@c JP
+スロットの@code{:allocation}オプションに@code{:propagated}を追加するメタクラスを提供します。
+
+アロケーションが@code{:propagated}であるスロットへのアクセスは、
+指定された他のオブジェクトのスロットへのアクセスにリダイレクトされます。
+コンポジットしたオブジェクトの外部インタフェースを簡便に保ちたい時に便利です。
+内部オブジェクトの持つスロットへのアクセスを、
+親オブジェクトのスロットであるかのように見せられるからです。
+@c COMMON
 @end deftp
 
+@c EN
 An example would work better than explanation.
 Suppose you have a @code{<rect>} class to represent
 generic rectangular area, and you want to use it when you create
 a @code{<viewport>} class by composition, instead of
 inheritance.  A simple way would be as follows:
+@c JP
+説明よりまず例を示したほうがわかりやすいでしょう。
+長方形の領域を表す@code{<rect>}という抽象クラスがある時、
+それを継承ではなくコンポジションによって@code{<viewport>}クラスを作ることを
+考えます。簡単な方法は次のようになるでしょう:
+@c COMMON
 
 @example
 (define-class <rect> ()
@@ -11003,16 +11020,31 @@ inheritance.  A simple way would be as follows:
    ))
 @end example
 
+@c EN
 With this definition, whenever you want to access the viewport's
 width or height, you have to go through @code{<rect>} object, e.g.
 @code{(~ viewport'dimension'width)}.  This is not only cumbersome,
 but the users of viewport class have to know that how the
 viewport is composed (it's not necessarily a bad thing,
 but sometimes you may want to hide it).
+@c JP
+この定義だと、viewportの高さや幅にアクセスした場合、
+@code{(~ viewport'dimension'width)}のように
+常に@code{<rect>}オブジェクトを経由しなければならなくなります。
+これは煩わしいだけでなく、viewportクラスのユーザが、
+viewportがどう構成されているかを知っていなければならないということでもあります
+(必ずしも悪いことではないですが、時にはそれを隠したいこともあります)。
+@c COMMON
 
+@c EN
 Using @code{gauche.mop.propagate}, you can define slots
 @code{width} and @code{height} in @code{<viewport>} class
 that are proxies of @code{<rect>}'s slots.
+@c JP
+@code{gauche.mop.propagate}を使うと、
+@code{<viewport>}クラスに@code{width}と@code{height}スロットを定義して、
+それ経由で内部の@code{<rect>}クラスへアクセスさせることができます。
+@c COMMON
 
 @example
 (use gauche.mop.propagate)
@@ -11029,18 +11061,34 @@ that are proxies of @code{<rect>}'s slots.
               :init-keyword :height)))
 @end example
 
+@c EN
 With @code{:propagated} allocation, the slots are not actually
 allocated in @code{<viewport>} instance, and accesses to the
 slots are redirected to the object in the slot specified by
 @code{:propagate} slot option---in this case, the @code{dimension} slot.
 It is somewhat similar to the virtual slots, but it's more convenient
 for you don't explicitly write procedures to redirect the access.
+@c JP
+@code{:allocation}に@code{:propagated}が指定されると、
+そのスロットは@code{<viewport>}インスタンス内にはアロケートされません。
+そのスロットへのアクセスは、@code{:propagate}スロットオプションで指定される
+スロット(上の例では@code{dimension}スロット)に格納されたオブジェクトへと
+リダイレクトされます。
+仮想スロットの一種とも言えますが、アクセス手続きを書く必要がありません。
+@c COMMON
 
+@c EN
 Now you can treat @code{width} and @code{height} as if they
 are slots of @code{<viewport>}.   You can even make them
 initialize via @code{init-keyword} (but you can't use
 @code{:init-form} or @code{:init-value}; if you want to specify
 default values, give the default values to the actual object).
+@c JP
+こうすると、@code{width}と@code{height}スロットが@code{<viewport>}クラスの
+スロットであるかのように扱えます。@code{init-keyword}による初期化も行えます。
+(ただ、@code{:init-form}や@code{:init-value}は使えません。
+初期値は実体を持つオブジェクトで指定してください)。
+@c COMMON
 
 @example
 gosh> (define vp (make <viewport> :width 640 :height 480))
@@ -11057,43 +11105,85 @@ gosh> (~ vp'width)
 800
 @end example
 
+@c EN
 Here's two classes that enables this feature.
 Usually all you have to do is to inherit @code{<propagate-mixin>} class.
+@c JP
+以下の2つのクラスがこれを可能にしています。
+通常、ユーザは@code{<propagate-mixin>}クラスを継承するだけで充分です。
+@c COMMON
 
 @deftp {Class} <propagate-meta>
 @clindex propagate-meta
 @c MOD gauche.mop.propagate
+@c EN
 Adds @code{:propagated} slot allocation.
 The propagated slot has to have @code{:propagate} slot option
 which specifies the name of the slot that points to an object
 that actually holds the value of the slot.
 If a slot has @code{:propagated} slot allocation but
 does not have @code{:propagate} slot option, an error is signaled.
+@c JP
+スロットアロケーションに@code{:propagated}を追加します。
+propagatedが指定されたスロットは、実体を持つオブジェクトを指定する
+@code{:propagate}スロットオプションを持たねばなりません。
+アロケーションが@code{:propagated}スロットであるにもかかわらず
+@code{:propagate}スロットオプションが指定されていない場合は、エラーが投げられます。
+@c COMMON
 
+@c EN
 The @code{:propagate} slot option should have a value
 of either a symbol, or a list of two symbols.
+@c JP
+@code{:propagate}スロットオプションは、シンボルもしくは2つのシンボルからなる
+リストを取ります。
+@c COMMON
 
+@c EN
 If it is a symbol, it names the slot that contains an
 object, whose slot with the same name of the propagate slot
 holds the value.
+@c JP
+単なるシンボルであった場合、それは内部オブジェクトを格納しているスロットの名前です。
+このスロットへのアクセスは、指定されたスロットが保持する内部オブジェクトの同名の
+スロットへのアクセスにリダイレクトされます。
+@c COMMON
 
+@c EN
 If it is a list of two symbols as @code{(X Y)}, then
 the access to this propagated slot actually works as
 @code{(slot-ref (slot-ref obj X) Y)}.
+@c JP
+二つのシンボルからなるリストであった場合、例えばそれを@code{(X Y)}とすると、
+このスロットへのアクセスは@code{(slot-ref (slot-ref obj X) Y)}になります。
+@c COMMON
 
+@c EN
 If you want to make a propagated slot initializable by
 init-keywords, make sure the slot holding the actual object
 comes before the propagated slots.  Slot initialization proceeds
 in the order of appearance by default, and you want the
 actual object is created before setting values.
+@c JP
+propagatedスロットを@code{init-keyword}で初期化可能にしたい場合、
+propagateするオブジェクトをpropagatedスロットより前に置くようにしてください。
+スロットの初期化はデフォルトでスロットの出現順に行われます。
+内部オブジェクトの実体が先に作られていないと、そのスロットに初期値を設定できません。
+@c COMMON
 @end deftp
 
 @deftp {Class} <propagate-mixin>
 @clindex propagate-mixin
 @c MOD gauche.mop.propagate
+@c EN
 This is a convenience mixin class.   Instead of giving
 @code{:metaclass <propagate-meta>}, you can just inherit
 this calss to make propagated slots available.
+@c JP
+これは簡便のためのmixinクラスです。
+クラス定義で@code{:metaclass <propagate-meta>}を指定するかわりに、
+このmixinクラスを継承すれば、propagatedスロットが使えるようになります。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
