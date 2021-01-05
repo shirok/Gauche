@@ -694,10 +694,7 @@
                    "SCM_OBJ(SCM_CLASS_STATIC_TAG(Scm_VectorClass)) /* <vector> */"
                    (format "SCM_VECTOR_SIZE_SLOT_INITIALIZER(~a, ~a)" 
                            (length literals)
-                           ;; TRANSIENT: 0.9.9 doesn't have vector-immutable?
-                           (if-let1 pred (global-variable-ref 'gauche 'vector-immutable? #f)
-                             (if (pred value) "TRUE" "FALSE")
-                             "FALSE"))
+                           (if (vector-immutable? value) "TRUE" "FALSE"))
                    (map (^[lit] (if (cgen-literal-static? lit)
                                   (cgen-cexpr lit)
                                   "SCM_UNDEFINED"))
