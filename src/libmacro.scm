@@ -148,22 +148,19 @@
    (^[f r c]
      (define unquote. (r'unquote))
      (define (unquote? x)
-       ;; TRANSIENT: After 1.0, we won't need 'symbol?'
-       (and (or (symbol? x) (identifier? x))
+       (and (identifier? x)
             (c (r x) unquote.)))
      (define unquote-splicing. (r'unquote-splicing))
      (define (unquote-splicing? x)
        (and (identifier? x)
             (c (r x) unquote-splicing.)))
      (define (unquote*? x)
-       ;; TRANSIENT: After 1.0, we won't need 'symbol?'
-       (and (or (symbol? x) (identifier? x))
+       (and (identifier? x)
             (or (c (r x) unquote.)
                 (c (r x) unquote-splicing.))))
      (define quasiquote. (r'quasiquote))
      (define (quasiquote? x)
-       ;; TRANSIENT: After 1.0, we won't need 'symbol?'
-       (and (or (symbol? x) (identifier? x))
+       (and (identifier? x)
             (c (r x) quasiquote.)))
      (define cons. (r'cons))
      (define list. (r'list))
@@ -197,8 +194,7 @@
                 `(,cons. ',op ,xxs))))]
          [(? pair?)       (quasi* obj level)]
          [(? vector?)     (quasi-vector obj level)]
-         ;; TRANSIENT: identifier?
-         [(or (? symbol?) (? identifier?)) `(,rename. ',obj)]
+         [(? identifier?) `(,rename. ',obj)]
          [_  `',obj]))
 
      ;; In the spliceable context.  objs is always a list.

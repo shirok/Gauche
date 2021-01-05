@@ -371,8 +371,6 @@
     [(x . y)     form]   ; already stree
     ['|#reset-line| '|#reset-line|] ; special directive to reset line info
     [[? type-decl-initial?] (wrap-expr (cise-render-typed-var form "" env) env)]
-    ;; TRANSIENT: After 1.0, we can consolidate the following two clauses
-    [[? symbol?] (wrap-expr (cise-render-identifier form) env)]
     [[? identifier?] (wrap-expr (cise-render-identifier (unwrap-syntax form))
                                 env)]
     [[? string?] (wrap-expr (write-to-string form) env)]
