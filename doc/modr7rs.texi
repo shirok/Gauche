@@ -5635,107 +5635,163 @@ Returns an ideque with the given elements.
 @defun ideque-unfold p f g seed
 [R7RS ideque]
 @c MOD scheme.ideque
+Construct an ideque in the same way as @code{unfold} (@pxref{R7RS lists}),
+that is, a predicate @var{p} is applied to a current state value;
+if it returns true, the iteration stops.  Otherwise, an item
+generator function @var{f} is applied to the current state value,
+and its value becomes an element of the ideque.  Then a
+next state function @code{g} is applied to the current state value,
+and its result becomes the next state value, and we iterate.
+The result of @var{f} is gathered in order, and becomes the content
+of the returned ideque.
+The @var{seed} argument specifies the initial state value.
 @end defun
 
 @defun ideque-unfold-right p f g seed
 [R7RS ideque]
 @c MOD scheme.ideque
+Similar to @code{ideque-unfold}, but the generated elements are
+stored in the reverse order in the resulting ideque.
 @end defun
 
 @defun ideque-tabulate size init
 [R7RS ideque]
 @c MOD scheme.ideque
+Create an ideque of length @var{size}, whose @var{i}-th element
+is computed by @code{(init @var{i})}.
 @end defun
 
-@defun ideque? idq
+@defun ideque? obj
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns true iff @code{obj} is an ideque.
 @end defun
 
 @defun ideque-empty? idq
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns true iff an ideque @var{idq} is empty.
 @end defun
 
 @defun ideque-add-front idq x
 @defunx ideque-add-back idq x
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns an ideque with an item @var{x} added to the front or back of @var{idq}.
+This is O(1) operation.
 @end defun
 
 @defun ideque-front idq
 @defunx ideque-back idq
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns the front or back element of @var{idq}.  An error is thrown
+if @var{idq} is empty.  This is O(1) operation.
 @end defun
 
 @defun ideque-remove-front idq
 @defunx ideque-remove-back idq
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns an ideque with the front or back element of @var{idq} removed.
+An error is thrown if @var{idq} is empty.  This is O(1) operation.
 @end defun
 
 @defun ideque-reverse idq
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns an ideque with the elements of @var{idq} in reverse order.
+This is O(1) operation.
 @end defun
 
-@defun ideque= idq idq2 @dots{}
+@defun ideque= elt= idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns @code{#t} iff all ideques are of the same length,
+and each corresponding element compares equal by @var{elt=}, which
+is called with two arguments, one element from i-th ideque and
+another element from (i+1)-th ideque.
+
+If zero or one ideque is given, @var{elt=} won't be called at all
+and this procedure returns @code{#t}.
 @end defun
 
 @defun ideque-ref idq n
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns @var{n}-th element of @var{idq}.  An error is signaled if
+@var{n} is out of range.
 @end defun
 
 @defun ideque-take idq n
 @defunx ideque-take-right idq n
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns an ideque that has first or last @var{n} elements of @var{idq}.
 @end defun
 
 @defun ideque-drop idq n
 @defunx ideque-drop-right idq n
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns an ideque that has elements of @var{idq} with
+first or last @var{n} elements removed.
 @end defun
 
 @defun ideque-split-at idq n
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns two ideques, the first one is @code{(ideque-take idq n)} and
+the second one is @code{(ideque-drop idq n)}.
 @end defun
 
 @defun ideque-length idq
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns the length of @var{idq}.
 @end defun
 
 @defun ideque-append idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns an ideque that concatenates contents of given ideques.
 @end defun
 
 @defun ideque-zip idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+Returns an ideque whose i-th element is a list of i-th elements of given
+ideques.  If the length of given ideques differ, the result terminates
+at the shortest ideque.
 @end defun
 
 @defun ideque-map proc idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+Applies @var{proc} to each element of @var{idq}, and returns
+an ideque containins the results in order.  The dynamic order of
+calls of @var{proc} is unspecified.
 @end defun
 
 @defun ideque-filter-map proc idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+Applies @var{proc} to each element of @var{idq}, and returns
+an ideque containins the results in order, except @code{#f}.
+The dynamic order of calls of @var{proc} is unspecified.
 @end defun
 
 @defun ideque-for-each proc idq @dots{}
 @defunx ideque-for-each-right proc idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+Applies @var{proc} to each element of @var{idq} from left to right
+(@code{ideque-for-each}) or right to left (@code{ideque-for-each-right}).
+
+If more than one ideques are given, @var{proc} gets as many arguments
+as the given ideques, each argument taken from each ideque.
+
+Returns an unspecified value.
 @end defun
 
 @defun ideque-fold proc knil idq @dots{}
