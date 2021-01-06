@@ -782,11 +782,19 @@
 ;;; Extended pairs
 ;;;
 
-(select-module gauche.internal)
-;; Pair attributes
-;;
-;;  Pair attributes are almost exclusively used to attach source-code
-;;  information to s-exprs.
+(select-module gauche)
+
+(define-cproc extended-pair? (obj) ::<boolean> SCM_EXTENDED_PAIR_P)
+(define-cproc extended-cons (car cdr :optional (attrs ()))
+  (let* ([z (Scm_ExtendedCons car cdr)])
+    (unless (SCM_NULLP attrs)
+      (for-each (lambda (p)
+                  (unless (SCM_PAIRP p)
+                    (Scm_Error "Assoc list required, but got: %S" attrs))
+                  (Scm_PairAttrSet (SCM_PAIR z) (SCM_CAR p) (SCM_CDR p)))
+                (Scm_Reverse attrs)))
+    (return z)))
+(define-cproc extended-list (elt :rest more) Scm_ExtendedCons)
 
 (define-cproc pair-attributes (pair::<pair>) Scm_PairAttr)
 
@@ -796,6 +804,3 @@
 (define-cproc pair-attribute-set! (pair::<pair> key value)
   (return (Scm_PairAttrSet (SCM_PAIR pair) key value)))
 
-(define-cproc extended-pair? (obj) ::<boolean> SCM_EXTENDED_PAIR_P)
-(define-cproc extended-cons (car cdr) Scm_ExtendedCons)
-(define-cproc extended-list (elt :rest more) Scm_ExtendedCons)

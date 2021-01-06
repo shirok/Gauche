@@ -680,20 +680,22 @@
 ;;--------------------------------------------------------------------------
 (test-section "extended pairs")
 
-(let ([extended-cons  (with-module gauche.internal extended-cons)]
-      [extended-pair? (with-module gauche.internal extended-pair?)]
-      [pair-attributes (with-module gauche.internal pair-attributes)]
-      [pair-attribute-get (with-module gauche.internal pair-attribute-get)]
-      [pair-attribute-set! (with-module gauche.internal pair-attribute-set!)])
+(let ()
   (test* "extended pair" #f (extended-pair? (cons 1 2)))
   ;(test* "extended pair" #t (extended-pair? '(1 2)))
   (test* "extended pair" #t (extended-pair? (extended-cons 1 2)))
   (test* "pair-attributes" '() (pair-attributes (cons 1 2)))
   (test* "pair-attributes" '() (pair-attributes (ipair 1 2)))
   (test* "pair-attributes" '() (pair-attributes (extended-cons 1 2)))
+  (test* "pair-attributes" '((a . b) (c d))
+         (pair-attributes (extended-cons 1 2 '((a . b) (c d)))))
   (test* "pair-attributes-get/set!" 'hoi
          (let1 z (extended-cons 1 2)
            (pair-attribute-set! z 'foo 'hoi)
+           (pair-attribute-get z 'foo)))
+  (test* "pair-attributes-get/set!" 'poi
+         (let1 z (extended-cons 1 2 '((foo . hoi)))
+           (pair-attribute-set! z 'foo 'poi)
            (pair-attribute-get z 'foo)))
   (test* "set-car! to extended pair" '(3 . 2)
          (rlet1 z (extended-cons 1 2)

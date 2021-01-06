@@ -1,5 +1,8 @@
 2021-01-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/liblist.scm: Make extended pairs public.  Add optional arg
+	  to extended-cons to specify initial attributes.
+
 	* src/lazy.c: Make a lazy pair turn into an extended pair
 	  (it happens to be the case in older versions, but no longer in
 	  0.9.10 when we changed extended pair layout.  Now it is the case
