@@ -328,5 +328,11 @@
 (test* "lcons*" 1 (car (lcons* 1 2 (error "ouch"))))
 (test* "lcons*" *test-error* (cadr (lcons* 1 2 (error "ouch"))))
 
+;; See if a lazy pair becomes an extended pair
+(test* "lazy pair -> extended pair" '((ping . pong))
+       (let1 z (lcons 'a '())
+         ((with-module gauche.internal pair-attribute-set!) z 'ping 'pong)
+         ((with-module gauche.internal pair-attributes) z)))
+
 (test-end)
 

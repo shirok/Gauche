@@ -72,6 +72,20 @@ typedef struct ScmExtendedPairDescriptorRec {
     void (*setCdr)(ScmObj, ScmObj);
 } ScmExtendedPairDescriptor;
 
+/* 
+
+   ScmRealExtendedPair --> +--------------+  masked lower 3 bits
+                           |   desc + 7   | -------> ScmExtendedPairDescriptor
+   ScmObj ---------------> +--------------+
+                           |     car      |
+                           +--------------+
+                           |     cdr      |
+                           +--------------+
+                           |    attrs     |
+                           +--------------+
+
+ */
+
 typedef struct ScmRealExtendedPairRec {
     ScmWord hiddenTag;
     ScmExtendedPair data;
@@ -83,6 +97,7 @@ enum {
 };
 
 SCM_EXTERN ScmExtendedPairDescriptor *Scm__GetExtendedPairDescriptor(ScmObj);
+SCM_EXTERN ScmExtendedPairDescriptor *Scm__GetDefaultExtendedPairDesctiptor(void);
 SCM_EXTERN void Scm__InitIPairClass(ScmClass *klass);
 
 #endif /*GAUCHE_PRIV_PAIRP_H*/

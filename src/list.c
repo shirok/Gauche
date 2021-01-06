@@ -799,6 +799,12 @@ ScmExtendedPairDescriptor *Scm__GetExtendedPairDescriptor(ScmObj p)
     return (ScmExtendedPairDescriptor *)(z->hiddenTag-7);
 }
 
+/* Returns vanilla extended pair descriptor */
+ScmExtendedPairDescriptor *Scm__GetDefaultExtendedPairDesctiptor()
+{
+    return &mpair_desc;
+}
+
 ScmObj Scm_PairAttr(ScmPair *pair)
 {
     if (SCM_EXTENDED_PAIR_P(pair)) {
