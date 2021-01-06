@@ -417,7 +417,17 @@ ScmObj Scm_Force(ScmObj obj)
   Each step of the state transitions (0)->(1)->(2)->(3)->(4)->(5) and
   (0)->(1)->(2')->(3')->(4') are atomic, so the observer see either
   one of those states.
+
+  The generator can actually return multiple values, to tailor the
+  resulting list.
+
+    primary value   - the next element
+    secondary value - if returned and not #f, this becomes the next generator
+
+  This is useful to implement lcons, but we keep it a 'hidden' feature
+  for now, to see if it is general enough.
  */
+
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_LazyPairClass, NULL);
 
@@ -475,9 +485,9 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
             int extra_frame_pushed = Scm__VMProtectStack(vm);
             SCM_UNWIND_PROTECT {
                 ScmObj val = Scm_ApplyRec0(lp->data.generator);
-                ScmObj newgen = ((vm->numVals == 1)
-                                 ? lp->data.generator
-                                 : vm->vals[0]);
+                ScmObj newgen = ((vm->numVals >= 2 && !SCM_FALSEP(vm->vals[0]))
+                                 ? vm->vals[0]
+                                 : lp->data.generator);
                 vm->numVals = 1; /* make sure the extra val won't leak out */
 
                 if (SCM_EOFP(val)) {
