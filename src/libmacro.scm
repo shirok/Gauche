@@ -306,8 +306,7 @@
   (er-macro-transformer
    (^[f r c]
      (let ([args (map unwrap-syntax (cdr f))]
-           [original ((with-module gauche.internal pair-attribute-get)
-                      f 'original #f)])
+           [original (pair-attribute-get f 'original #f)])
        (if original
          (raise (make-compound-condition
                  (apply make-error (car args) (cdr args))
@@ -318,8 +317,7 @@
   (er-macro-transformer
    (^[f r c]
      (let ([args (map unwrap-syntax (cdr f))]
-           [original ((with-module gauche.internal pair-attribute-get)
-                      f 'original #f)])
+           [original (pair-attribute-get f 'original #f)])
        (if original
          (raise (make-compound-condition
                  (make-error (apply format/ss (car args) (cdr args)))

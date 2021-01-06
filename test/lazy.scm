@@ -331,8 +331,8 @@
 ;; See if a lazy pair becomes an extended pair
 (test* "lazy pair -> extended pair" '((ping . pong))
        (let1 z (lcons 'a '())
-         ((with-module gauche.internal pair-attribute-set!) z 'ping 'pong)
-         ((with-module gauche.internal pair-attributes) z)))
+         (pair-attribute-set! z 'ping 'pong)
+         (pair-attributes z)))
 
 (test-end)
 

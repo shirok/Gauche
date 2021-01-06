@@ -173,8 +173,7 @@
 (define (%original-source src) ; internal
   (and (pair? src)
        (let loop ([src src])
-         (if-let1 orig ((with-module gauche.internal pair-attribute-get)
-                        src 'original #f)
+         (if-let1 orig (pair-attribute-get src 'original #f)
            (loop orig)
            src))))
 

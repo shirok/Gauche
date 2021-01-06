@@ -349,6 +349,8 @@
   (with-module gauche.internal vm-eval-situation))
 (define global-eq?? (with-module gauche.internal global-eq??))
 (define make-identifier (with-module gauche.internal make-identifier))
+
+;; TRANSIENT: These two are needed to compile in 0.9.10; remove on next release
 (define pair-attributes (with-module gauche.internal pair-attributes))
 (define pair-attribute-get (with-module gauche.internal pair-attribute-get))
 
