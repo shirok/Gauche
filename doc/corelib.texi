@@ -4477,6 +4477,7 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 * Walking over lists::
 * Other list procedures::
 * Association lists::
+* Extended pairs and pair attributes::
 @end menu
 
 @node Pair and null class, Mutable and immutable pairs, Pairs and lists, Pairs and lists
@@ -6068,7 +6069,7 @@ instead of @code{equal?}.
 @end example
 @end defun
 
-@node Association lists,  , Other list procedures, Pairs and lists
+@node Association lists, Extended pairs and pair attributes, Other list procedures, Pairs and lists
 @subsection Association lists
 @c NODE 連想リスト
 
@@ -6400,6 +6401,124 @@ So we added a special update procedure.
 更新することが出来ます。しかし連想リストはちょっと特殊で、リストと型的に区別
 できないため、@code{~}が使えません。連想リストはまた、関数的に使われることも
 多いため、専用の更新手続きを用意しました。
+@c COMMON
+@end defun
+
+@node Extended pairs and pair attributes,  , Association lists, Pairs and lists
+@subsection Extended pairs and pair attributes
+@c NODE 拡張ペアとペア属性
+
+@c EN
+Gauche has a special kind of pairs, called @emph{extended pairs}.
+It behaves exactly the same as ordinary pairs, but you can associate
+an attribute list to it.  Gauche uses it to keep source-code
+location information, for example.
+@c JP
+Gaucheは、拡張ペア (extended pair) と呼ばれる特別なペアを持っています。
+これは通常のペアと同じように振る舞いますが、属性リストを付加することができます。
+例えば、Gaucheはソースコードの位置情報を保持するのに拡張ペアを使っています。
+@c COMMON
+
+@c EN
+Extended pairs don't incur any overhead in accessing it; @code{set-car!}
+and @code{set-cdr!} has a little overhead (another reason you should avoid
+mutatiion!).
+Internally it takes up twice
+of memory than the ordinary pairs.
+@c JP
+拡張ペアのアクセスにオーバーヘッドは全くありません。@code{set-car!}と@code{set-cdr!}
+には少しだけオーバヘッドがあります (できるだけ副作用を避けましょう!)。
+内部的に、拡張ペアは通常のペアの倍のメモリを使います。
+@c COMMON
+
+@c EN
+Keep in mind that code using extended pairs is not easily ported to
+other Scheme implementations, although the
+feature can be emulated with a separate weak hash table.  
+@c JP
+拡張ペアを使ったコードは、弱参照ハッシュテーブルでエミュレートできるとはいえ、
+他のScheme処理系には簡単に移植できないことに留意してください。
+@c COMMON
+
+@defun extended-pair? obj
+@c EN
+Returns @code{#t} iff @var{obj} is an extended pair.
+@c JP
+@var{obj}が拡張ペアなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun extended-cons car cdr :optional attrs
+@c EN
+Returns an extended pair of @var{car} and @var{cdr}.
+If an optional @var{attrs} argument is given, it must be an alist,
+specifying initial pair attributes.  By default, the pair attributes
+of the created extended pair is empty.
+@c JP
+@var{car}と@var{cdr}からなる拡張ペアを作って返します。
+@var{attrs}引数が与えられた場合、
+それはペア属性の初期値を指定する連想リストでなければなりません。
+デフォルトでは作られる拡張ペアのペア属性は空です。
+@c COMMON
+@end defun
+
+@defun extended-list obj obj2 @dots{}
+@c EN
+Creates and returns a list of @var{obj} @var{obj2} @dots{}, but its
+first pair is an extended pair.  Note that the subsequent pairs are
+ordinary pairs.
+@c JP
+@var{obj} @var{obj2} @dots{}からなるリストを作って返しますが、
+最初のペアが拡張ペアになっています。二番目以降のペアは通常のペアです。
+@c COMMON
+@end defun
+
+@defun pair-attributes pair
+@c EN
+Returns pair attributes of @var{pair} as an alist.
+You can pass an ordinary pair, in which case an empty list is returned.
+@c JP
+@var{pair}のペア属性を連想リストとして返します。
+通常のペアを引数に渡すこともできます。その場合は常に空リストが返ります。
+@c COMMON
+
+@example
+(pair-attributes (extended-cons 'a 'b '((c . d) (e . f))))
+  @result{} ((c . d) (e . f))
+
+(pair-attributes (cons 'a 'b)
+  @result{} ()
+@end example
+@end defun
+
+@defun pair-attribute-get pair key :optional default
+@c EN
+Returns the value associated to the key @var{key} in the pair attributes
+of @var{pair}.  @var{Key} can be any Scheme object, and compared with @code{eq?}.
+If there's no value associated with the given key,
+@var{default} is returned if it is given, otherwise an error is signaled.
+
+You can pass an ordinary pair as @var{pair}; in that case, it is treated
+with empty pair attributes.
+@c JP
+@var{pair}のペア属性のうち、キー@var{key}に結びつけられた値を返します。
+@var{key}は任意のSchemeオブジェクトで、@code{eq?}で比較されます。
+キーに結びついた値がない場合、@var{default}が与えられていればそれが返され、
+与えられていなければエラーが投げられます。
+
+通常のペアを@var{pair}に渡すこともできます。その場合、ペア属性は空として扱われます。
+@c COMMON
+@end defun
+
+@defun pair-attribute-set! pair key value
+@c EN
+Adds a pair attribute of @var{key} with @var{value} to an extended pair
+@var{pair}.  @var{Key} and @var{value} can be any Scheme object.
+An error is thrown if @var{pair} is not an exteded pair.
+@c JP
+拡張ペア@var{pair}のペア属性@var{key}に値@var{value}をセットします。
+@var{key}と@var{value}は任意のSchemeオブジェクトです。
+@var{pair}が拡張ペアでなければエラーが投げられます。
 @c COMMON
 @end defun
 
