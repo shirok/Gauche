@@ -774,7 +774,7 @@
       (let1 val (assoc-ref alist key '() eq)
         (assoc-adjoin alist key (rec val (car keys) (cdr keys)) eq))))
   (if (null? keys)
-    (error "nees at least one key in assoc-update")
+    (error "needs at least one key in assoc-update")
     (rec alist (car keys) (cdr keys))))
 
 
