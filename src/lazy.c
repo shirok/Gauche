@@ -418,11 +418,22 @@ ScmObj Scm_Force(ScmObj obj)
   (0)->(1)->(2')->(3')->(4') are atomic, so the observer see either
   one of those states.
 
+  The generator can optionally generate pair attributes along the item
+  value, to be set once a lazy pair is forced.  We should compute one item
+  ahead, however, so we need to save this extra pair attributes somewhere.
+  We use a box having two values, the item and the attributes, in place of
+  item.  It's ugly, but it is a rare case and we don't want to incur extra
+  words for each lazy pairs.
+
+
+  [Generator protocol]
+
   The generator can actually return multiple values, to tailor the
   resulting list.
 
     primary value   - the next element
-    secondary value - if returned and not #f, this becomes the next generator
+    2nd value - if returned and not #f, this becomes the next generator
+    3rd value - if returned, specifies pair attributes.
 
   This is useful to implement lcons, but we keep it a 'hidden' feature
   for now, to see if it is general enough.
@@ -444,15 +455,62 @@ typedef struct ScmRealLazyPairRec {
     ScmLazyPair data;
 } ScmRealLazyPair;
 
-ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator)
+/* Clean up pair attribute list given from outside.
+   (1) We need to copy it so that future mutation won't interfere
+   (2) If the given obj contains bad items, we simply ignore it,
+       for raising error lazily isn't useful.
+*/
+static ScmObj copy_attrs(ScmObj attrs)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL, cp;
+    SCM_FOR_EACH(cp, attrs) {
+        if (SCM_PAIRP(SCM_CAR(cp))) {
+            SCM_APPEND1(h, t, Scm_Cons(SCM_CAAR(cp), SCM_CDAR(cp)));
+        }
+    }
+    return h;
+}
+
+ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator, ScmObj attrs)
 {
     ScmRealLazyPair *z = SCM_NEW(ScmRealLazyPair);
     z->owner = (ScmAtomicWord)0;
     ScmLazyPair *r = &z->data;
     SCM_SET_CLASS(r, SCM_CLASS_LAZY_PAIR);
     r->generator = generator;
-    r->item = item;
+    if (!SCM_NULLP(attrs) || SCM_MVBOXP(item)) {
+        ScmMVBox *b = Scm_MakeMVBox(2, SCM_UNDEFINED);
+        SCM_MVBOX_SET(b, 0, item);
+        SCM_MVBOX_SET(b, 1, copy_attrs(attrs));
+        r->item = SCM_OBJ(b);
+    } else {
+        r->item = item;
+    }
     return SCM_OBJ(r);
+}
+
+/* This can return () */
+ScmObj Scm_GeneratorToLazyPair(ScmObj generator)
+{
+    ScmVM *vm = Scm_VM();
+    /* This may be called with incomplete VM stack, so we protect it. */
+    int extra_frame_pushed = Scm__VMProtectStack(vm);
+    ScmObj val = Scm_ApplyRec0(generator);
+    ScmObj r = SCM_NIL;
+
+    if (!SCM_EOFP(val)) {
+        ScmObj newgen = ((vm->numVals >= 2 && !SCM_FALSEP(vm->vals[0]))
+                         ? vm->vals[0]
+                         : generator);
+        ScmObj attrs  = ((vm->numVals >= 3)
+                         ? vm->vals[1]
+                         : SCM_NIL);
+        vm->numVals = 1; /* make sure the extra vals won't leak out */
+        r = Scm_MakeLazyPair(val, newgen, attrs);
+    }
+
+    if (extra_frame_pushed) Scm__VMUnprotectStack(vm);
+    return r;
 }
 
 #define REAL_LAZY_PAIR(obj) \
@@ -480,24 +538,15 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
         if (AO_compare_and_swap_full(&lp->owner, zero, SCM_WORD(vm))) {
             /* Here we own the lazy pair. */
             volatile ScmObj item = lp->data.item;
-            /* Calling generator might change VM state, so we protect
-               incomplete stack frame if there's any. */
-            int extra_frame_pushed = Scm__VMProtectStack(vm);
-            SCM_UNWIND_PROTECT {
-                ScmObj val = Scm_ApplyRec0(lp->data.generator);
-                ScmObj newgen = ((vm->numVals >= 2 && !SCM_FALSEP(vm->vals[0]))
-                                 ? vm->vals[0]
-                                 : lp->data.generator);
-                vm->numVals = 1; /* make sure the extra val won't leak out */
+            volatile ScmObj attrs = SCM_NIL;
+            if (SCM_MVBOXP(item)) {
+                attrs = SCM_MVBOX_VALUES(item)[1];
+                item = SCM_MVBOX_VALUES(item)[0];
+            }
 
-                if (SCM_EOFP(val)) {
-                    lp->data.item = SCM_NIL;
-                    lp->data.generator = SCM_NIL;
-                } else {
-                    ScmObj newlp = Scm_MakeLazyPair(val, newgen);
-                    lp->data.item = newlp;
-                    lp->data.generator = SCM_NIL;
-                }
+            SCM_UNWIND_PROTECT {
+                lp->data.item = Scm_GeneratorToLazyPair(lp->data.generator);
+                lp->data.generator = attrs;
                 AO_nop_full();
                 lp->owner = XPAIR_DESC();
                 AO_nop_full();
@@ -506,9 +555,6 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
                 lp->owner = (ScmAtomicWord)0; /*NB: See above about error handling*/
                 SCM_NEXT_HANDLER;
             } SCM_END_PROTECT;
-            if (extra_frame_pushed) {
-                Scm__VMUnprotectStack(vm);
-            }
             return SCM_OBJ(&lp->data); /* lp is now an (extended) pair */
         }
         /* Check if we're already working on forcing this pair.  Unlike

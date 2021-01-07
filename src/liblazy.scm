@@ -60,7 +60,7 @@
 
 (select-module gauche.internal)
 
-(define-cproc %make-lazy-pair (item generator) Scm_MakeLazyPair)
+(define-cproc %make-lazy-pair (item generator attrs) Scm_MakeLazyPair)
 
 (define-cproc %decompose-lazy-pair (obj) :: (<top> <top>)
   (let* ([item] [generator])
@@ -78,7 +78,7 @@
 ;; A primitive for corecursion.
 ;; See libmacro.scm for lcons macro.
 (define (%lcons item thunk)
-  (%make-lazy-pair item (^[] (%decompose-lazy-pair (thunk)))))
+  (%make-lazy-pair item (^[] (%decompose-lazy-pair (thunk))) '()))
 
 ;; lazy sequence primitives
 ;;   These are so fundamental that they deserve to be in core.
@@ -87,15 +87,14 @@
 ;; Fundamental constructor
 ;; generator->lseq generator
 ;; generator->lseq item ... generator
+(define-cproc %generator->lazy-pair (gen) Scm_GeneratorToLazyPair)
+
 (define-in-module gauche (generator->lseq item . args)
   (if (null? args)
-    (let ([r (item)]) ; item is a generator
-      (if (eof-object? r)
-        '()
-        (%make-lazy-pair r item)))
+    (%generator->lazy-pair item); item is a generator
     (let rec ([item item] [args args])
       (if (null? (cdr args))
-        (%make-lazy-pair item (car args))
+        (%make-lazy-pair item (car args) '())
         (cons item (rec (car args) (cdr args)))))))
 
 ;; For convenience.

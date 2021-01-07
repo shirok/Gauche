@@ -333,6 +333,27 @@
        (let1 z (lcons 'a '())
          (pair-attribute-set! z 'ping 'pong)
          (pair-attributes z)))
+(test* "lazy pair -> extended pair (attrs)"
+       '((1 (count . 1))
+         (2 (count . 2))
+         (3 (count . 3))
+         (4 (count . 4))
+         (5 (count . 5)))
+       (let* ([count 0]
+              [z (generator->lseq (^[] 
+                                    (inc! count)
+                                    (values count #f `((count . ,count)))))])
+         (map cons
+              (take z 5)
+              (map (^i (pair-attributes (drop z i))) (iota 5)))))
+(test* "lazy pair -> extended pair (robustness against invalid attrs 1)"
+       '()
+       (let1 z (generator->lseq (^[] (values 1 #f 'a)))
+         (pair-attributes z)))
+(test* "lazy pair -> extended pair (robustness against invalid attrs 2)"
+       '((a . b) (d . e))
+       (let1 z (generator->lseq (^[] (values 1 #f '((a . b) c (d . e) . f))))
+         (pair-attributes z)))
 
 (test-end)
 
