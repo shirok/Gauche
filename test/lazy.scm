@@ -342,17 +342,17 @@
        (let* ([count 0]
               [z (generator->lseq (^[] 
                                     (inc! count)
-                                    (values count #f `((count . ,count)))))])
+                                    (values count `((count . ,count)))))])
          (map cons
               (take z 5)
               (map (^i (pair-attributes (drop z i))) (iota 5)))))
 (test* "lazy pair -> extended pair (robustness against invalid attrs 1)"
        '()
-       (let1 z (generator->lseq (^[] (values 1 #f 'a)))
+       (let1 z (generator->lseq (^[] (values 1 'a)))
          (pair-attributes z)))
 (test* "lazy pair -> extended pair (robustness against invalid attrs 2)"
        '((a . b) (d . e))
-       (let1 z (generator->lseq (^[] (values 1 #f '((a . b) c (d . e) . f))))
+       (let1 z (generator->lseq (^[] (values 1 '((a . b) c (d . e) . f))))
          (pair-attributes z)))
 
 (test-end)

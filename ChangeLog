@@ -6,6 +6,11 @@
 	  ABI INCOMPATIBLE CHANGE: Scm_MakeLazyPair now takes the third
 	  argument.  I presume nobody is calling such obscture API directly.
 
+	  Also we changed internal protocol of generator output so that
+	  eliminated Scm_DecomposeLazyPair; it is also technially an
+	  incompatible ABI change, though I also presume nobody is directly
+	  calling this.
+
 2021-01-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm: Make extended pairs public.  Add optional arg

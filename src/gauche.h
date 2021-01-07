@@ -1847,7 +1847,6 @@ SCM_CLASS_DECL(Scm_LazyPairClass);
 
 SCM_EXTERN ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator, ScmObj attrs);
 SCM_EXTERN ScmObj Scm_GeneratorToLazyPair(ScmObj generator);
-SCM_EXTERN int    Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator);
 SCM_EXTERN ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp);
 SCM_EXTERN int Scm_PairP(ScmObj x);
 

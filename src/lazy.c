@@ -428,15 +428,21 @@ ScmObj Scm_Force(ScmObj obj)
 
   [Generator protocol]
 
-  The generator can actually return multiple values, to tailor the
-  resulting list.
+  We actually allows some variations on what generator returns.  The one
+  other than single value return is experimental.
 
-    primary value   - the next element
-    2nd value - if returned and not #f, this becomes the next generator
-    3rd value - if returned, specifies pair attributes.
+  - If the generator returns just one value, it is the next element.
+    (The basic, publicly advertised interface).
 
-  This is useful to implement lcons, but we keep it a 'hidden' feature
-  for now, to see if it is general enough.
+  - If the generator returns more than one value, the second value
+    can be a list, or #f.
+
+    -- If it is a list, it specifies the pair attributes to be attached
+       to the pair.
+    -- If it is #f, the first value is acutally a lazy pair to be chained,
+       or nil.
+
+  The latter is used to implement lcons.
  */
 
 
@@ -497,18 +503,23 @@ ScmObj Scm_GeneratorToLazyPair(ScmObj generator)
     int extra_frame_pushed = Scm__VMProtectStack(vm);
     ScmObj val = Scm_ApplyRec0(generator);
     ScmObj r = SCM_NIL;
+    ScmObj val1 = SCM_NIL;
 
-    if (!SCM_EOFP(val)) {
-        ScmObj newgen = ((vm->numVals >= 2 && !SCM_FALSEP(vm->vals[0]))
-                         ? vm->vals[0]
-                         : generator);
-        ScmObj attrs  = ((vm->numVals >= 3)
-                         ? vm->vals[1]
-                         : SCM_NIL);
-        vm->numVals = 1; /* make sure the extra vals won't leak out */
-        r = Scm_MakeLazyPair(val, newgen, attrs);
+    if (vm->numVals == 1 || !SCM_FALSEP(val1 = vm->vals[0])) {
+        if (!SCM_EOFP(val)) {
+            r = Scm_MakeLazyPair(val, generator, val1);
+        }
+    } else {
+        /* Generator returns lazy pair diretly.
+           Check LAZY_PAIR_P first to avoid forcing it */
+        if (SCM_LAZY_PAIR_P(val) || SCM_LISTP(val)) {
+            r = val;
+        }
+        /* If lcons's second argument doesn't yield a () or a pair,
+           we just treat it as if () is returned.  Since it is delayed
+           evaluation, raising error won't help. */
     }
-
+    vm->numVals = 1; /* make sure the extra vals won't leak out */
     if (extra_frame_pushed) Scm__VMUnprotectStack(vm);
     return r;
 }
@@ -574,58 +585,6 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
         }
     } while (lp->owner == 0); /* we retry if the previous owner abandoned. */
     return SCM_OBJ(lp);
-}
-
-/* Extract item and generator from lazy pair OBJ, without forcing it.
-   If OBJ is a lazy pair, item and generator is filled and TRUE is returned.
-   If OBJ is an ordinary pair (including the case that it was a lazy pair
-   but forced during execution of Scm_DecomposeLazyPair), returns its CAR
-   and a generator that returns its CDR.
-   Otherwise, returns FALSE.  */
-static ScmObj dummy_gen(ScmObj *args SCM_UNUSED,
-                        int nargs SCM_UNUSED,
-                        void *data)
-{
-    ScmObj item;
-    ScmObj generator;
-    if (Scm_DecomposeLazyPair(SCM_OBJ(data), &item, &generator)) {
-        return Scm_Values2(item, generator);
-    } else {
-        return Scm_Values2(SCM_EOF, SCM_FALSE);
-    }
-}
-
-int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
-{
- retry:
-    if (SCM_LAZY_PAIR_P(obj)) {
-        volatile ScmRealLazyPair *lp = REAL_LAZY_PAIR(obj);
-        static const ScmTimeSpec req = {0, 1000000};
-        ScmTimeSpec rem;
-        ScmVM *vm = Scm_VM();
-        ScmAtomicWord zero = 0;	/* Need to use C11 intrinsic */
-
-        if (AO_compare_and_swap_full(&lp->owner, zero, SCM_WORD(vm))) {
-            *item = lp->data.item;
-            *generator = lp->data.generator;
-            AO_nop_full();
-            lp->owner = XPAIR_DESC();
-            return TRUE;
-        }
-
-        /* Somebody else is working on OBJ.  Retry. */
-        Scm_NanoSleep(&req, &rem);
-        goto retry;
-    }
-    if (SCM_PAIRP(obj)) {
-        ScmObj next;
-        *item = SCM_CAR(obj);
-        next = SCM_NULLP(SCM_CDR(obj)) ? SCM_EOF : SCM_CDR(obj);
-        *generator = Scm_MakeSubr(dummy_gen, (void*)next, 0, 0, SCM_FALSE);
-        return TRUE;
-    } else {
-        return FALSE;
-    }
 }
 
 int Scm_PairP(ScmObj x)

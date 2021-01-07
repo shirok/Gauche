@@ -62,14 +62,6 @@
 
 (define-cproc %make-lazy-pair (item generator attrs) Scm_MakeLazyPair)
 
-(define-cproc %decompose-lazy-pair (obj) :: (<top> <top>)
-  (let* ([item] [generator])
-    (let* ([r::int (Scm_DecomposeLazyPair obj (& item) (& generator))])
-      (cond [r (return item generator)]
-            ;; NB: there's a possibility that obj has been forced by
-            ;; some other thread; handle it.
-            [else (return SCM_EOF SCM_FALSE)]))))
-
 (define-cproc %force-lazy-pair (lp)
   (if (SCM_LAZY_PAIR_P lp)
     (return (Scm_ForceLazyPair (SCM_LAZY_PAIR lp)))
@@ -78,7 +70,7 @@
 ;; A primitive for corecursion.
 ;; See libmacro.scm for lcons macro.
 (define (%lcons item thunk)
-  (%make-lazy-pair item (^[] (%decompose-lazy-pair (thunk))) '()))
+  (%make-lazy-pair item (^[] (values (thunk) #f)) '()))
 
 ;; lazy sequence primitives
 ;;   These are so fundamental that they deserve to be in core.
