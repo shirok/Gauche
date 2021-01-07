@@ -1,3 +1,14 @@
+2021-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblazy.scm, src/lazy.c (Scm_LazyCons): Further simplify
+	  lazy pair protocol.  Basically, we have two kinds of lazy pairs--
+	  one that the generator yields next element, and the one that the
+	  generator yields next pair.  We can separeate two by the constructor,
+	  instead of fiddling the return value(s) of the generator.
+	  For the Scheme world, the former is created by generator->lseq and
+	  the latter is created by lcons.  How we distinguish two kinds
+	  internally is hidden in lazy.c.
+
 2021-01-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/lazy.c: Experimentally allow the generator to generate

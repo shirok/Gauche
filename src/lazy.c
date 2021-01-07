@@ -418,31 +418,18 @@ ScmObj Scm_Force(ScmObj obj)
   (0)->(1)->(2')->(3')->(4') are atomic, so the observer see either
   one of those states.
 
-  The generator can optionally generate pair attributes along the item
-  value, to be set once a lazy pair is forced.  We should compute one item
-  ahead, however, so we need to save this extra pair attributes somewhere.
-  We use a box having two values, the item and the attributes, in place of
-  item.  It's ugly, but it is a rare case and we don't want to incur extra
-  words for each lazy pairs.
+  [Extended protocol]
 
+  Experimentally, the generator can return more than just the next item.
 
-  [Generator protocol]
+  - It can return the second value as pair attribute alist, to be attached
+    to the pair containing the generated item.
 
-  We actually allows some variations on what generator returns.  The one
-  other than single value return is experimental.
-
-  - If the generator returns just one value, it is the next element.
-    (The basic, publicly advertised interface).
-
-  - If the generator returns more than one value, the second value
-    can be a list, or #f.
-
-    -- If it is a list, it specifies the pair attributes to be attached
-       to the pair.
-    -- If it is #f, the first value is acutally a lazy pair to be chained,
-       or nil.
-
-  The latter is used to implement lcons.
+  - It can return a (lazy) pair or (), instead of just an item.  This is
+    useful to implement lcons.  We need a special marker to distinguish
+    such generator from the ordinary one that returns a pair as an element.
+    So such lazy pair should be constructed with Scm_LazyCons, instead of
+    Scm_MakeLazyPair.
  */
 
 
@@ -477,7 +464,7 @@ static ScmObj copy_attrs(ScmObj attrs)
     return h;
 }
 
-ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator, ScmObj attrs)
+static ScmObj make_lazy_pair(ScmObj item, ScmObj generator, ScmObj attrs)
 {
     ScmRealLazyPair *z = SCM_NEW(ScmRealLazyPair);
     z->owner = (ScmAtomicWord)0;
@@ -495,19 +482,53 @@ ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator, ScmObj attrs)
     return SCM_OBJ(r);
 }
 
+ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator, ScmObj attrs)
+{
+    /* A check to eliminate the caller accidentally create a 'marked' lazy
+       pair.  Using cons as a generator to mark it is just a provisional
+       solution, so do not count on it. */
+    if (SCM_PAIRP(generator)) {
+        Scm_Error("generator must be a procedure, but got: %S", generator);
+    }
+    return make_lazy_pair(item, generator, attrs);
+}
+
+ScmObj Scm_LazyCons(ScmObj item, ScmObj thunk, ScmObj attrs)
+{
+    /* A 'marked' lazy pair, where thunk returns the next pair instead of
+       next item.   Provisionally, we insert extra indirection in generator
+       slot to mark it.  It may change in future, so external code shouldn't
+       count on it. */
+    return make_lazy_pair(item, SCM_LIST1(thunk), attrs);
+}
+
 /* This can return () */
-ScmObj Scm_GeneratorToLazyPair(ScmObj generator)
+static ScmObj generator_to_lazy_pair(ScmObj generator)
 {
     ScmVM *vm = Scm_VM();
+    int lazy_cons = FALSE;
+
+    if (SCM_PAIRP(generator)) {
+        /* 'marked' */
+        generator = SCM_CAR(generator);
+        lazy_cons = TRUE;
+    }
+
     /* This may be called with incomplete VM stack, so we protect it. */
     int extra_frame_pushed = Scm__VMProtectStack(vm);
+
     ScmObj val = Scm_ApplyRec0(generator);
     ScmObj r = SCM_NIL;
-    ScmObj val1 = SCM_NIL;
 
-    if (vm->numVals == 1 || !SCM_FALSEP(val1 = vm->vals[0])) {
-        if (!SCM_EOFP(val)) {
-            r = Scm_MakeLazyPair(val, generator, val1);
+    if (!lazy_cons) {
+        /* standard lazy pair.  val is the next item. */
+        if (SCM_EOFP(val)) {
+            r = SCM_NIL;
+        } else {
+            ScmObj attrs = ((vm->numVals > 1)
+                            ? vm->vals[0] /* second value */
+                            : SCM_NIL);
+            r = Scm_MakeLazyPair(val, generator, attrs);
         }
     } else {
         /* Generator returns lazy pair diretly.
@@ -522,6 +543,17 @@ ScmObj Scm_GeneratorToLazyPair(ScmObj generator)
     vm->numVals = 1; /* make sure the extra vals won't leak out */
     if (extra_frame_pushed) Scm__VMUnprotectStack(vm);
     return r;
+}
+
+ScmObj Scm_GeneratorToLazyPair(ScmObj generator)
+{
+    /* A check to eliminate the caller accidentally create a 'marked' lazy
+       pair.  Using cons as a generator to mark it is just a provisional
+       solution, so do not count on it. */
+    if (SCM_PAIRP(generator)) {
+        Scm_Error("generator must be a procedure, but got: %S", generator);
+    }
+    return generator_to_lazy_pair(generator);
 }
 
 #define REAL_LAZY_PAIR(obj) \
@@ -556,7 +588,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
             }
 
             SCM_UNWIND_PROTECT {
-                lp->data.item = Scm_GeneratorToLazyPair(lp->data.generator);
+                lp->data.item = generator_to_lazy_pair(lp->data.generator);
                 lp->data.generator = attrs;
                 AO_nop_full();
                 lp->owner = XPAIR_DESC();

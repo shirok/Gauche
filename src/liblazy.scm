@@ -60,37 +60,36 @@
 
 (select-module gauche.internal)
 
-(define-cproc %make-lazy-pair (item generator attrs) Scm_MakeLazyPair)
-
-(define-cproc %force-lazy-pair (lp)
-  (if (SCM_LAZY_PAIR_P lp)
-    (return (Scm_ForceLazyPair (SCM_LAZY_PAIR lp)))
-    (return lp)))
-
 ;; A primitive for corecursion.
 ;; See libmacro.scm for lcons macro.
-(define (%lcons item thunk)
-  (%make-lazy-pair item (^[] (values (thunk) #f)) '()))
+(define-cproc %lcons (item thunk) (return (Scm_LazyCons item thunk SCM_NIL)))
 
 ;; lazy sequence primitives
 ;;   These are so fundamental that they deserve to be in core.
 ;;   Auxiliary utilities are provided in gauche.lazy module.
 
+(select-module gauche)
+
 ;; Fundamental constructor
 ;; generator->lseq generator
 ;; generator->lseq item ... generator
-(define-cproc %generator->lazy-pair (gen) Scm_GeneratorToLazyPair)
-
-(define-in-module gauche (generator->lseq item . args)
-  (if (null? args)
-    (%generator->lazy-pair item); item is a generator
-    (let rec ([item item] [args args])
-      (if (null? (cdr args))
-        (%make-lazy-pair item (car args) '())
-        (cons item (rec (car args) (cdr args)))))))
+(define-cproc generator->lseq (item :rest args)
+  (if (SCM_NULLP args)
+    (return (Scm_GeneratorToLazyPair item)) ;item is a generator
+    (let* ([h SCM_NIL] [t SCM_NIL])
+      (for ()
+        (when (SCM_NULLP (SCM_CDR args))
+          (if (SCM_NULLP t)
+            (return (Scm_MakeLazyPair item (SCM_CAR args) SCM_NIL))
+            (begin
+              (SCM_SET_CDR t (Scm_MakeLazyPair item (SCM_CAR args) SCM_NIL))
+              (return h))))
+        (SCM_APPEND1 h t item)
+        (set! item (SCM_CAR args))
+        (set! args (SCM_CDR args))))))
 
 ;; For convenience.
-(define-in-module gauche (lrange start :optional (end +inf.0) (step 1))
+(define (lrange start :optional (end +inf.0) (step 1))
   (cond [(or (and (> step 0) (>= start end))
              (and (< step 0) (<= start end))) '()]
         [(= step 0) (generator->lseq (^[] start))]
@@ -113,7 +112,7 @@
                                   (if (> r end) r (eof-object))))
                               )))]))
 
-(define-in-module gauche (liota :optional (count +inf.0) (start 0) (step 1))
+(define (liota :optional (count +inf.0) (start 0) (step 1))
   (let1 count (if (< count 0) +inf.0 count) ; like stream-iota
     (define gen
       (if (and (exact? start) (exact? step))
@@ -130,11 +129,11 @@
                    (rlet1 v (+ start (* k step)) (inc! k) (dec! count))))))))
     (generator->lseq gen)))
 
-(define-in-module gauche (port->char-lseq :optional (port (current-input-port)))
+(define (port->char-lseq :optional (port (current-input-port)))
   (generator->lseq (cut read-char port)))
-(define-in-module gauche (port->byte-lseq :optional (port (current-input-port)))
+(define (port->byte-lseq :optional (port (current-input-port)))
   (generator->lseq (cut read-byte port)))
-(define-in-module gauche (port->string-lseq :optional (port (current-input-port)))
+(define (port->string-lseq :optional (port (current-input-port)))
   (generator->lseq (cut read-line port)))
-(define-in-module gauche (port->sexp-lseq :optional (port (current-input-port)))
+(define (port->sexp-lseq :optional (port (current-input-port)))
   (generator->lseq (cut read port)))
