@@ -14,6 +14,7 @@
 ;;  - srfi-42 list-ec
 ;;  - generator
 ;;  - lazy sequence
+;;  - co-recursion using lcons
 (define (integer-sequence n)
   (define (simple n)
     (let loop ([k 0] [r '()])
@@ -30,13 +31,20 @@
           (loop (g) (cons k r))))))
   (define (laz n)
     (lrange 0 n))
+  (define (corec n)
+    (define (rec k)
+      (if (= k n)
+        '()
+        (lcons k (rec (+ k 1)))))
+    (rec 0))
 
   (time-these/report
    '(cpu 5)
-   `((lazy-seq    . ,(^[] (length (laz n))))
-     (generator   . ,(^[] (length (genr n))))
-     (list-ec     . ,(^[] (length (ec n))))
-     (simple-loop . ,(^[] (length (simple n))))))
+   `((lazy-seq     . ,(^[] (length (laz n))))
+     (co-recursion . ,(^[] (length (corec n))))
+     (generator    . ,(^[] (length (genr n))))
+     (list-ec      . ,(^[] (length (ec n))))
+     (simple-loop  . ,(^[] (length (simple n))))))
   )
 
 #|
