@@ -590,7 +590,6 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
             SCM_UNWIND_PROTECT {
                 lp->data.item = generator_to_lazy_pair(lp->data.generator);
                 lp->data.generator = attrs;
-                AO_nop_full();
                 lp->owner = XPAIR_DESC();
                 AO_nop_full();
                 SCM_SET_CAR_UNCHECKED(obj, item); /* Overwrite LazyPair tag */
