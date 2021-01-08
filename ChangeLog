@@ -1,5 +1,8 @@
 2021-01-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmacro.scm (lcons): Experimental: Allow optional attrs argument
+	  to specify pair attributes.
+
 	* src/liblazy.scm, src/lazy.c (Scm_LazyCons): Further simplify
 	  lazy pair protocol.  Basically, we have two kinds of lazy pairs--
 	  one that the generator yields next element, and the one that the

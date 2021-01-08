@@ -62,7 +62,8 @@
 
 ;; A primitive for corecursion.
 ;; See libmacro.scm for lcons macro.
-(define-cproc %lcons (item thunk) (return (Scm_LazyCons item thunk SCM_NIL)))
+(define-cproc %lcons (item thunk :optional (attrs ()))
+  (return (Scm_LazyCons item thunk attrs)))
 
 ;; lazy sequence primitives
 ;;   These are so fundamental that they deserve to be in core.

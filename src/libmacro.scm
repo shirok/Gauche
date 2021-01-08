@@ -1236,7 +1236,10 @@
      (match f
        [(_ x y)
         (quasirename r
-          `(,(with-module gauche.internal %lcons) ,x (lambda () ,y)))]))))
+          `(,(with-module gauche.internal %lcons) ,x (lambda () ,y)))]
+       [(_ x y attrs)
+        (quasirename r
+          `(,(with-module gauche.internal %lcons) ,x (lambda () ,y) ,attrs))]))))
 
 (define-syntax lcons*
   (er-macro-transformer

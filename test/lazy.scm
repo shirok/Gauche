@@ -355,5 +355,17 @@
        (let1 z (generator->lseq (^[] (values 1 '((a . b) c (d . e) . f))))
          (pair-attributes z)))
 
+(test* "lazy pair -> extended pair (using lcons)"
+       '((0 (x . 0))
+         (1 (x . 2))
+         (2 (x . 4))
+         (3 (x . 6))
+         (4 (x . 8)))
+       (let1 z (let loop ((n 0))
+                 (lcons n (loop (+ n 1)) `((x . ,(* n 2)))))
+         (map cons
+              (take z 5)
+              (map (^i (pair-attributes (drop z i))) (iota 5)))))
+
 (test-end)
 
