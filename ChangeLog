@@ -1,3 +1,9 @@
+2021-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/lazy.scm (port->char-lseq/position): Generating lseq
+	  with input position carried in pair attributes.
+
+
 2021-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (lcons): Experimental: Allow optional attrs argument

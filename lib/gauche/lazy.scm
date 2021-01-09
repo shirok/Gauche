@@ -43,7 +43,8 @@
   (export x->lseq lunfold literate
           lmap lmap-accum lappend lappend-map lconcatenate
           linterweave lfilter lfilter-map lstate-filter
-          ltake ltake-while lrxmatch lslices))
+          ltake ltake-while lrxmatch lslices
+          generator->lseq/position port->char-lseq/position lseq-position))
 (select-module gauche.lazy)
 
 ;; Universal coercer.
@@ -157,3 +158,52 @@
   (generator->lseq (grxmatch rx seq)))
 (define (lslices seq k :optional (fill? #f) (padding #f))
   (generator->lseq (gslices seq k fill? padding)))
+
+;; Lseq with 'position'
+;;
+
+(define (generator->lseq/position char-gen :key (source-name #f)
+                                                (start-line 1)
+                                                (start-column 1)
+                                                (start-position 0))
+  ;; The treemap of the tracker keeps integer-char-pos -> line-number
+  ;; for characters at the beginning of line.  It is pointed from the cdr
+  ;; of the input-char-position pair attribute.
+  (define tracker (cons (make-tree-map) source-name))
+  (define line-count start-line)
+  (define char-count 0)
+  (define eol #f)                       ;#t after #\newline is seen
+  (define (gen)
+    (glet1 ch (char-gen)
+      (let ([pos char-count])
+        (inc! char-count)
+        (when eol
+          (inc! line-count)
+          (tree-map-put! (car tracker) pos line-count)
+          (set! eol #f))
+        (when (eqv? ch #\newline)
+          (set! eol #t))
+        (values ch `((input-position . (,pos . ,tracker)))))))
+  (tree-map-put! (car tracker) 
+                 (+ (- start-position start-column) 1)
+                 start-line)
+  (generator->lseq gen))
+
+(define (lseq-position s)
+  (and-let1 p (pair-attribute-get s 'input-position #f)
+    (let ([pos (car p)]
+          [src (cddr p)])
+      (receive (bol-pos line) (tree-map-floor (cadr p) pos)
+        `(:source ,src
+                  :line ,line
+                  :column ,(+ 1 (- pos bol-pos))
+                  :pos ,pos)))))
+
+(define (port->char-lseq/position :optional (port (current-input-port))
+                                  :key (source-name #f)
+                                       (start-line 1)
+                                       (start-column 1)
+                                       (start-position 0)
+                                  :rest keys)
+  (let1 name (or source-name (port-name port))
+    (apply generator->lseq/position (cut read-char port) keys)))
