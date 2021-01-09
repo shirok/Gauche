@@ -189,15 +189,17 @@
                  start-line)
   (generator->lseq gen))
 
+;; Actually 's' doesn't need to be a lseq.  Better name?
 (define (lseq-position s)
-  (and-let1 p (pair-attribute-get s 'input-position #f)
-    (let ([pos (car p)]
-          [src (cddr p)])
-      (receive (bol-pos line) (tree-map-floor (cadr p) pos)
-        `(:source ,src
-                  :line ,line
-                  :column ,(+ 1 (- pos bol-pos))
-                  :pos ,pos)))))
+  (and (pair? s)
+       (and-let1 p (pair-attribute-get s 'input-position #f)
+         (let ([pos (car p)]
+               [src (cddr p)])
+           (receive (bol-pos line) (tree-map-floor (cadr p) pos)
+             `(:source ,src
+                       :line ,line
+                       :column ,(+ 1 (- pos bol-pos))
+                       :pos ,pos))))))
 
 (define (port->char-lseq/position :optional (port (current-input-port))
                                   :key (source-name #f)
