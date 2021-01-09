@@ -45,7 +45,7 @@
 
           peg-run-parser
           peg-parse-string peg-parse-port
-          peg-parser->generator ;experimental
+          peg-parser->generator peg-parser->lseq
 
           parse-success?
           return-result return-failure
@@ -317,6 +317,24 @@
                     (raise (construct-peg-parser-error r v s s1))]
                    [(eof-object? v) (set! s '()) v]
                    [else (set! s s1) (rope-finalize v)]))))))
+
+;; API
+;;  Returns an lseq
+;;  Input position info is propagated if available
+(define (peg-parser->lseq parser src)
+  (let1 s (%->lseq src)
+    (generator->lseq
+     (^[] (if (null? s)
+            (eof-object)
+            (receive (r v s1) (parser s)
+              ;; TODO: Refactor this part and similar part above
+              (let1 val (cond [(not (parse-success? r))
+                               (raise (construct-peg-parser-error r v s s1))]
+                              [(eof-object? v) (set! s '()) v]
+                              [else (set! s s1) (rope-finalize v)])
+                (if-let1 pos (lseq-position s)
+                  (values val pos)
+                  val))))))))
 
 ;;;============================================================
 ;;; Lazily-constructed string
