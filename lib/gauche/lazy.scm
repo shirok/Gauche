@@ -44,6 +44,7 @@
           lmap lmap-accum lappend lappend-map lconcatenate
           linterweave lfilter lfilter-map lstate-filter
           ltake ltake-while lrxmatch lslices
+          lseq->list
           generator->lseq/position port->char-lseq/position lseq-position))
 (select-module gauche.lazy)
 
@@ -159,9 +160,12 @@
 (define (lslices seq k :optional (fill? #f) (padding #f))
   (generator->lseq (gslices seq k fill? padding)))
 
-;; Lseq with 'position'
-;;
+;; Realize all elements
+;;   Use length+ to allow improper or circular lists.
+(define (lseq->list s) (length+ s) s)
 
+;; EXPERIMENTAL
+;; Lseq with 'position' attached in pair attributes
 (define (generator->lseq/position char-gen :key (source-name #f)
                                                 (start-line 1)
                                                 (start-column 1)

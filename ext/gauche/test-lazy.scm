@@ -46,6 +46,12 @@
   (test-eager-lazy "lslices" lslices slices '(1 2 3 4 5 6 7) 2 #t 'z)
   )
 
+(test* "lazyness - eager evaluation"
+       '(#\a #\b #\c #\d #\e)
+       (with-input-from-string "abcde"
+         (^[] (begin0 (lseq->list (generator->lseq read-char))
+                (close-input-port (current-input-port))))))
+
 (test* "lazyness - coercion" '(1 2 3 4 5)
        (lmap identity '#(1 2 3 4 5)))
 (test* "lazyness - coercion" '(#\a #\b #\c #\d #\e)

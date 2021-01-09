@@ -9744,6 +9744,21 @@ routine of the REPL.
 @c COMMON
 @end defun
 
+@defun lseq->list obj
+@c MOD gauche.lazy
+@c EN
+Returns @var{obj}, but if it is an lseq, fully computes all values.
+It is useful when you need to ensure necessary compuatation is done
+by certain moment, e.g. you want to ensure all data is read from a port before
+closing it.
+@c JP
+@var{obj}を返しますが、それがlseqであった場合、その要素を全て計算します。
+ある時点までに必要な計算が全て行われることを保証したい場合に便利です。
+例えばポートから遅延計算でデータを読み出している場合に、
+ポートを閉じる時点で全てのデータが読まれたことを保証したい、といった場合です。
+@c COMMON
+@end defun
+
 @defun lunfold p f g seed :optional tail-gen
 @c MOD gauche.lazy
 @c EN

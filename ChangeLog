@@ -1,3 +1,7 @@
+2021-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/lazy.scm (lseq->list): Added.
+
 2021-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/lazy.scm (port->char-lseq/position): Generating lseq
