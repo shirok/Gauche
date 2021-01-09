@@ -35,6 +35,7 @@
 (use srfi-1)
 (use srfi-13)
 (use gauche.generator)
+(use gauche.lazy)
 
 (test-start "parser.peg")
 
@@ -499,6 +500,16 @@
   (test* "nested compound error"
          (test-error <parse-error> "expecting one of (#\\c #\\a #\\b) at 1")
          (peg-parse-string p2 "dd")))
+
+;; position
+(test* "error position handling"
+       (test-error <parse-error> 
+                   "expecting #[\\u000aa] at \"input.txt\":2:3, but got #\\b")
+       (peg-run-parser ($many ($. #[a\n]) 10)
+                       (port->char-lseq/position 
+                        (open-input-string "aaaaa\naabaa")
+                        :source-name "input.txt")))
+                         
 
 ;;;============================================================
 ;;; Optional arg for peg-parse-string and peg-parse-port

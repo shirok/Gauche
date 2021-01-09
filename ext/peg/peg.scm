@@ -210,11 +210,11 @@
             [unexps (assoc-ref grps 'fail-unexpect)])
         (tree->string
          (if msgs
-           (cons (or-concat msgs) (format " at ~s" pos))
+           (cons (or-concat msgs) (format " at ~a" pos))
            (cons (or-concat (cond-list
                              [exps (compound-exps exps)]
                              [unexps (compound-unexps unexps)]))
-                 (format " at ~s" pos)))))))
+                 (format " at ~a" pos)))))))
   (define (or-concat lis)
     (define (rec lis)
       (match lis
@@ -234,7 +234,7 @@
       [(xs ...) (format "not expecting any of ~s" xs)]))
   (define (message objs pos nexttok)
     (case type
-      [(fail-message)  (format "~a at ~s" objs pos)] ;objs is a string message
+      [(fail-message)  (format "~a at ~a" objs pos)] ;objs is a string message
       [(fail-expect)
        (if (char? objs)
          (format "expecting ~s at ~a, but got ~s" objs pos nexttok)
@@ -254,13 +254,19 @@
                     'position pos 'type type 'objects objs 'token nexttok
                     'message (message objs pos nexttok))))
 
+(define (%get-input-pos head s)
+  (if-let1 pos (lseq-position s)
+    (format "~s:~a:~a"
+            (or (get-keyword :source pos) "(unknown input)")
+            (get-keyword :line pos)
+            (get-keyword :column pos))
+    (let loop ([c 0] [head head])
+      (cond [(eq? head s) c]
+            [(null? head) "(unknown position)"]
+            [else (loop (+ c 1) (cdr head))]))))
+            
 (define (construct-peg-parser-error r v s s1)
-  (make-peg-parse-error r v
-                        (let loop ([c 0] [s s])
-                          (cond [(eq? s1 s) c]
-                                [(null? s) 0] ;!!
-                                [else (loop (+ c 1) (cdr s))]))
-                        s1))
+  (make-peg-parse-error r v (%get-input-pos s s1) s1))
 
 ;; API
 ;;   Default driver.  Returns parsed value and next stream
