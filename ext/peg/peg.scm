@@ -232,19 +232,26 @@
     (match (delete-duplicates unexps equal?)
       [(x) (format "not expecting ~s" x)]
       [(xs ...) (format "not expecting any of ~s" xs)]))
+  (define pos-fmt
+    (if (pair? pos)
+      (format "~s:~a:~a"
+              (or (get-keyword :source pos) "(unknown input)")
+              (get-keyword :line pos)
+              (get-keyword :column pos))
+      pos))
   (define (message objs pos nexttok)
     (case type
-      [(fail-message)  (format "~a at ~a" objs pos)] ;objs is a string message
+      [(fail-message)  (format "~a at ~a" objs pos-fmt)] ;objs is a string message
       [(fail-expect)
        (if (char? objs)
-         (format "expecting ~s at ~a, but got ~s" objs pos nexttok)
-         (format "expecting ~a at ~a, but got ~s" objs pos nexttok))]
+         (format "expecting ~s at ~a, but got ~s" objs pos-fmt nexttok)
+         (format "expecting ~a at ~a, but got ~s" objs pos-fmt nexttok))]
       [(fail-unexpect)
        (if (char? objs)
-         (format "expecting but ~s at ~a, and got ~s" objs pos nexttok)
-         (format "expecting but ~a at ~a, and got ~s" objs pos nexttok))]
+         (format "expecting but ~s at ~a, and got ~s" objs pos-fmt nexttok)
+         (format "expecting but ~a at ~a, and got ~s" objs pos-fmt nexttok))]
       [(fail-compound) (analyze-compound-error objs pos)]
-      [else (format "unknown parser error at ~a: ~a" pos objs)]  ;for safety
+      [else (format "unknown parser error at ~a: ~a" pos-fmt objs)]  ;for safety
       ))
   (let ([nexttok (if (pair? seq) (car seq) (eof-object))]
         [objs (if (eq? type 'fail-compound)
@@ -255,15 +262,11 @@
                     'message (message objs pos nexttok))))
 
 (define (%get-input-pos head s)
-  (if-let1 pos (lseq-position s)
-    (format "~s:~a:~a"
-            (or (get-keyword :source pos) "(unknown input)")
-            (get-keyword :line pos)
-            (get-keyword :column pos))
-    (let loop ([c 0] [head head])
-      (cond [(eq? head s) c]
-            [(null? head) "(unknown position)"]
-            [else (loop (+ c 1) (cdr head))]))))
+  (or (lseq-position s)
+      (let loop ([c 0] [head head])
+        (cond [(eq? head s) c]
+              [(null? head) "(unknown position)"]
+              [else (loop (+ c 1) (cdr head))]))))
             
 (define (construct-peg-parser-error r v s s1)
   (make-peg-parse-error r v (%get-input-pos s s1) s1))

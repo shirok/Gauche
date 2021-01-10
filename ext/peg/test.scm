@@ -509,7 +509,14 @@
                        (port->char-lseq/position 
                         (open-input-string "aaaaa\naabaa")
                         :source-name "input.txt")))
-                         
+
+(test* "error position handling (<parse-error> slots)"
+       '(:source "input.txt" :line 2 :column 3 :pos 8)
+       (guard (e [(<parse-error> e) (~ e'position)])
+         (peg-run-parser ($many ($. #[a\n]) 10)
+                         (port->char-lseq/position 
+                          (open-input-string "aaaaa\naabaa")
+                          :source-name "input.txt"))))
 
 ;;;============================================================
 ;;; Optional arg for peg-parse-string and peg-parse-port

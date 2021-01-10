@@ -12137,8 +12137,19 @@ This slot is inherited from @code{<error>}.  Contains string error message.
 @end defivar
 
 @defivar <parse-error> position
-The position the failure occurs, counted by the number of tokens
-from the beginning of the input.
+The position the failure occured.
+
+The exact meaning of this value depends on how you call the parser driver.
+
+At minimum, when you call it on a bare list or a string/port (using
+@code{peg-parse-string}/@code{peg-parse-port}), the parser driver
+counts the number of elements took from the input and put it here,
+for it is the only available information.  Note that the number
+may not be what you want, e.g. if you start parsing in the middle of
+the stream.
+
+We're preparing alternative means to track input positions.  So expect
+values other than an exact integer here.
 @end defivar
 
 @defivar <parse-error> type
