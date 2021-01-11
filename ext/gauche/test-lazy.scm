@@ -102,10 +102,10 @@
          (map (^[c i]
                 (let1 p (lseq-position (drop z i))
                   (format "~a:~a:~a(~a) ~a" 
-                          (get-keyword :source p)
-                          (get-keyword :line p)
-                          (get-keyword :column p)
-                          (get-keyword :pos p)
+                          (sequence-position-source p)
+                          (sequence-position-line p)
+                          (sequence-position-column p)
+                          (sequence-position-item-count p)
                           c)))
               z
               (iota len)))

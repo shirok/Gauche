@@ -233,11 +233,11 @@
       [(x) (format "not expecting ~s" x)]
       [(xs ...) (format "not expecting any of ~s" xs)]))
   (define pos-fmt
-    (if (pair? pos)
+    (if (sequence-position? pos)
       (format "~s:~a:~a"
-              (or (get-keyword :source pos) "(unknown input)")
-              (get-keyword :line pos)
-              (get-keyword :column pos))
+              (or (sequence-position-source pos) "(unknown input)")
+              (sequence-position-line pos)
+              (sequence-position-column pos))
       pos))
   (define (message objs pos nexttok)
     (case type

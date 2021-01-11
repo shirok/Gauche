@@ -57,6 +57,8 @@ dbm : gauche threads
 
 data : uvector srfi
 
+peg : gauche
+
 rfc: gauche srfi util
 
 test : check

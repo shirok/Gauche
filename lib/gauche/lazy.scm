@@ -39,13 +39,17 @@
 
 (define-module gauche.lazy
   (use srfi-1)
+  (use gauche.record)
   (use gauche.generator)
   (export x->lseq lunfold literate
           lmap lmap-accum lappend lappend-map lconcatenate
           linterweave lfilter lfilter-map lstate-filter
           ltake ltake-while lrxmatch lslices
           lseq->list
-          generator->lseq/position port->char-lseq/position lseq-position))
+          generator->lseq/position port->char-lseq/position lseq-position
+          <sequence-position> sequence-position?
+          sequence-position-source sequence-position-line
+          sequence-position-column sequence-position-item-count))
 (select-module gauche.lazy)
 
 ;; Universal coercer.
@@ -166,6 +170,16 @@
 
 ;; EXPERIMENTAL
 ;; Lseq with 'position' attached in pair attributes
+
+(define-record-type <sequence-position>
+  ;; this constructor is only for internal use
+  (%make-sequence-position source line column item-count)
+  sequence-position?
+  (source     sequence-position-source)
+  (line       sequence-position-line)
+  (column     sequence-position-column)
+  (item-count sequence-position-item-count))
+
 (define (generator->lseq/position char-gen :key (source-name #f)
                                                 (start-line 1)
                                                 (start-column 1)
@@ -200,10 +214,7 @@
          (let ([pos (car p)]
                [src (cddr p)])
            (receive (bol-pos line) (tree-map-floor (cadr p) pos)
-             `(:source ,src
-                       :line ,line
-                       :column ,(+ 1 (- pos bol-pos))
-                       :pos ,pos))))))
+             (%make-sequence-position src line (+ 1 (- pos bol-pos)) pos))))))
 
 (define (port->char-lseq/position :optional (port (current-input-port))
                                   :key (source-name #f)

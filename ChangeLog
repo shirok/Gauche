@@ -1,3 +1,13 @@
+2021-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/lazy.scm (<sequence-position>): OK, let's make it a
+	  record to give it a solid interface and keep the option of future
+	  extension without clients depending on internal stuff too much.
+	  One concern is a performance, but we should solve it with better
+	  optimization of record types.
+	  At this moment, we don't expose constructor of the position, though;
+	  it can still be constructed with 'make'.
+
 2021-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/lazy.scm (lseq->list): Added.
