@@ -183,7 +183,7 @@
 (define (generator->lseq/position char-gen :key (source-name #f)
                                                 (start-line 1)
                                                 (start-column 1)
-                                                (start-position 0))
+                                                (start-item-count 0))
   ;; The treemap of the tracker keeps integer-char-pos -> line-number
   ;; for characters at the beginning of line.  It is pointed from the cdr
   ;; of the input-char-position pair attribute.
@@ -203,7 +203,7 @@
           (set! eol #t))
         (values ch `((input-position . (,pos . ,tracker)))))))
   (tree-map-put! (car tracker) 
-                 (+ (- start-position start-column) 1)
+                 (+ (- start-item-count start-column) 1)
                  start-line)
   (generator->lseq gen))
 
@@ -220,7 +220,7 @@
                                   :key (source-name #f)
                                        (start-line 1)
                                        (start-column 1)
-                                       (start-position 0)
+                                       (start-item-count 0)
                                   :rest keys)
   (let1 name (or source-name (port-name port))
     (apply generator->lseq/position (cut read-char port) keys)))
