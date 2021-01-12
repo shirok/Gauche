@@ -9711,6 +9711,25 @@ you want to use @code{lmap}.
 といった場合には@code{lmap}を使いましょう。
 @c COMMON
 
+@menu
+* Lazy sequence constructors::
+* Lazy sequence operations::
+* Lazy sequence with positions::
+@end menu
+
+@node Lazy sequence constructors, Lazy sequence operations, Lazy sequence utilities, Lazy sequence utilities
+@subsection Lazy sequence constructors
+@c NODE 遅延シーケンスのコンストラクタ
+
+@c EN
+You can construct lazy sequences with 
+built-in @code{generator->lseq} and @code{lcons}.
+This module provides a few more constructors.
+@c JP
+遅延シーケンスは組み込みの@code{generator->lseq}や@code{lcons}で作ることができます。
+このモジュールでは追加でいくつかのコンストラクタを用意しています。
+@c COMMON
+
 @defun x->lseq obj
 @c MOD gauche.lazy
 @c EN
@@ -9741,21 +9760,6 @@ But that's because the lazy sequence is forced by the output
 routine of the REPL.
 @c JP
 実際には、返された遅延シーケンスがREPLの出力ルーチンによってforceされてリストになっています。
-@c COMMON
-@end defun
-
-@defun lseq->list obj
-@c MOD gauche.lazy
-@c EN
-Returns @var{obj}, but if it is an lseq, fully computes all values.
-It is useful when you need to ensure necessary compuatation is done
-by certain moment, e.g. you want to ensure all data is read from a port before
-closing it.
-@c JP
-@var{obj}を返しますが、それがlseqであった場合、その要素を全て計算します。
-ある時点までに必要な計算が全て行われることを保証したい場合に便利です。
-例えばポートから遅延計算でデータを読み出している場合に、
-ポートを閉じる時点で全てのデータが読まれたことを保証したい、といった場合です。
 @c COMMON
 @end defun
 
@@ -9820,6 +9824,24 @@ See also @code{util.stream}, which as @code{stream-iterate}
 @end example
 @end defun
 
+@node Lazy sequence operations, Lazy sequence with positions, Lazy sequence constructors, Lazy sequence utilities
+@subsection Lazy sequence operations
+@c NODE 遅延シーケンスの操作
+
+@defun lseq->list obj
+@c MOD gauche.lazy
+@c EN
+Returns @var{obj}, but if it is an lseq, fully computes all values.
+It is useful when you need to ensure necessary compuatation is done
+by certain moment, e.g. you want to ensure all data is read from a port before
+closing it.
+@c JP
+@var{obj}を返しますが、それがlseqであった場合、その要素を全て計算します。
+ある時点までに必要な計算が全て行われることを保証したい場合に便利です。
+例えばポートから遅延計算でデータを読み出している場合に、
+ポートを閉じる時点で全てのデータが読まれたことを保証したい、といった場合です。
+@c COMMON
+@end defun
 
 @defun lmap proc seq seq2 @dots{}
 @c MOD gauche.lazy
@@ -9840,7 +9862,7 @@ Application of @var{proc} will be delayed as needed.
 @c EN
 ;; If you use map instead of lmap, this won't return
 @c JP
-;; lmapのかわりにmapを使うとこの式の評価は終わらない
+p;; lmapのかわりにmapを使うとこの式の評価は終わらない
 @c COMMON
 (use math.prime)
 (take (lmap (pa$ * 2) *primes*) 10)
@@ -10149,6 +10171,67 @@ Lazy version of @code{slices} (@pxref{List accessors and modifiers}).
   @result{} ((a b) (c d) (e f))
 @end example
 @end defun
+
+@node Lazy sequence with positions,  , Lazy sequence operations, Lazy sequence utilities
+@subsection Lazy sequence with positions
+@c NODE 位置情報つき遅延シーケンス
+
+@c EN
+Treating input data stream as a lazy sequence is a powerful abstraction;
+especially, it allows unlimited lookahead with simple list manipulation.
+@c JP
+入力データストリームを遅延シーケンスとして取り扱うのは強力な抽象化です。
+とりわけ、単純なリスト操作を使って制限の無い先読みを実現できます。
+@c COMMON
+
+@c EN
+However, you'll have a difficulty when you want to know the position
+of the input data within the input stream, e.g. for an error message.
+Unlike reading from a port, which gives you the current input position,
+a lazy sequence just looks like a list and unknown amout of data
+may be prefetched from the real source.
+@c JP
+しかし、データの入力ストリーム内での位置情報を、例えばエラーメッセージのために取りたいといった
+ことは難しくなります。ポートから読んでいる場合は、ポートに問い合わせれば現在の位置を
+教えてくれます。しかし遅延シーケンスは普通のリストと同じように見え、
+入力ソースに問い合わせようにも既にデータは先読みされてしまっているかもしれません。
+@c COMMON
+
+@c EN
+Gauche has special pair objects, called extended pairs, that can
+carry auxiliary information (@pxref{Extended pairs and pair attributes}).
+You can create a lazy sequence that carries positional information
+using the feature.
+@c JP
+Gaucheは拡張ペアと呼ばれる、補助的な情報を保持できる特別なペアを持っています
+(@ref{Extended pairs and pair attributes}参照)。それを利用して、
+遅延シーケンスに入力位置情報を持たせることができます。
+@c COMMON
+
+@deftp {Class} <sequence-position>
+@c MOD gauche.lazy
+@end deftp
+
+@defun sequence-position-source
+@defunx sequence-position-line
+@defunx sequence-position-column
+@defunx sequence-position-item-count
+@c MOD gauche.lazy
+@end defun
+
+@defun port->char-lseq/position :optional port :key source-name start-line start-column start-item-count
+@c MOD gauche.lazy
+@end defun
+
+
+@defun generator->lseq/position char-gen :key source-name start-line start-column start-item-count
+@c MOD gauche.lazy
+@end defun
+
+@defun lseq-position seq
+@c MOD gauche.lazy
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Listener, User-level logging, Lazy sequence utilities, Library modules - Gauche extensions
