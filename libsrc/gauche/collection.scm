@@ -471,7 +471,7 @@
 (define-method size-of ((coll <uvector>))     (uvector-length coll))
 (define-method size-of ((coll <bitvector>))   (bitvector-length coll))
 
-(define-method lazy-size-of ((coll <list>))        (length coll))
+(define-method lazy-size-of ((coll <list>))        (delay (length coll)))
 (define-method lazy-size-of ((coll <vector>))      (vector-length coll))
 (define-method lazy-size-of ((coll <weak-vector>)) (weak-vector-length coll))
 (define-method lazy-size-of ((coll <string>))      (string-length coll))
