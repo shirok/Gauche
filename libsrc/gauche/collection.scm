@@ -184,30 +184,32 @@
 
 (define-method call-with-builder ((class <vector-meta>) proc
                                   :key (size #f) :allow-other-keys)
-  (if size
-    (let ([v (make-vector size)]
-          [i 0])
-      (proc (^[item] (when (< i size)
-                       (vector-set! v i item)
-                       (inc! i)))
-            (^[] v)))
-    (let1 q (make-queue)
-      (proc (cut enqueue! q <>)
-            (cut list->vector (queue->list q))))))
+  (let1 size (force size)
+    (if size
+      (let ([v (make-vector size)]
+            [i 0])
+        (proc (^[item] (when (< i size)
+                         (vector-set! v i item)
+                         (inc! i)))
+              (^[] v)))
+      (let1 q (make-queue)
+        (proc (cut enqueue! q <>)
+              (cut list->vector (queue->list q)))))))
 
 (define-syntax *vector-builder
   (syntax-rules ()
     [(_ %make %set! %list-> class proc size)
-     (if size
-       (let ([v (%make size)]
-             [i 0])
-         (proc (^[item] (when (< i size)
-                          (%set! v i item)
-                          (inc! i)))
-               (^[] v)))
-       (let1 q (make-queue)
-         (proc (cut enqueue! q <>)
-               (cut %list-> (queue->list q)))))]))     
+     (let1 size (force size)
+       (if size
+         (let ([v (%make size)]
+               [i 0])
+           (proc (^[item] (when (< i size)
+                            (%set! v i item)
+                            (inc! i)))
+                 (^[] v)))
+         (let1 q (make-queue)
+           (proc (cut enqueue! q <>)
+                 (cut %list-> (queue->list q))))))]))     
 
 ;; NB: We don't have list->uvector in core yet, so builder definition is
 ;; in gauche.uvector.  It should be here, though.
