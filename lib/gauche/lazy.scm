@@ -223,4 +223,5 @@
                                        (start-item-count 0)
                                   :rest keys)
   (let1 name (or source-name (port-name port))
-    (apply generator->lseq/position (cut read-char port) keys)))
+    (apply generator->lseq/position (cut read-char port)
+           :source-name name (delete-keyword :source-name keys))))
