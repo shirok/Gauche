@@ -67,12 +67,15 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%tT|" c))
-    (define directive-param-spec ; (type max-#-of-params)
+    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%tT|(){}[];" c))
+    (define directive-param-spec ; (type max-#-of-params [token-id])
       '((S 5) (A 5) (W 0) (C 0)
         (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5) ($ 4) (? 0)
         ;; single-character instertion
-        (~ #\~) (% #\newline) (T #\tab) (|\|| #\page)))
+        (~ 1 #\~) (% 1 #\newline) (T 1 #\tab) (|\|| 1 #\page)
+        ;; tokens for structures
+        (|(| 0 paren) (|)| 0 thesis) (|[| 1 bra) (|]| 0 cket)
+        (|{| 0 curly) (|}| 0 brace) (|\;| 0 sep)))
     (define (flag? c) (memv c '(#\@ #\:)))
     (define (next p)
       (rlet1 c (read-char p)
@@ -154,14 +157,16 @@
                     [(flag? (car ps)) (outer (cdr ps) (cons (car ps) fs))]
                     [(eq? (car ps) 'empty) (outer (cdr ps) fs)]
                     [else (values fs (reverse! ps))]))
-          (let* ([spec (assq (car directive) directive-param-spec)]
-                 [nparams (if (char? (cadr spec)) 1 (cadr spec))])
+          (receive (nparams type)
+              (match (assq (car directive) directive-param-spec)
+                [(_ nparams) (values nparams (car directive))]
+                [(_ nparams dir) (values nparams dir)])
             (unless (length<=? params nparams)
               (errorf "Too many parameters for directive `~a' in ~s"
                       (car directive) (fmtstr p)))
-            (if (char? (cadr spec))
-              (char-node flags params (cadr spec))
-              (list* (car directive) flags params))))
+            (if (char? type)
+              (char-node flags params type)
+              (list* type flags params))))
         directive))
     ;; single character node optimization
     (define (char-node flags params char)
@@ -612,7 +617,7 @@
     [('? fs)      (make-format-recur src fs)]
     [('* fs . ps) (make-format-jump src ps fs)]
     [('char fs c . ps) (make-format-single src c ps fs)]
-    [_ (error "boo!")]))
+    [_ (error "Unsupported formatter directive:" tree)]))
 
 ;; Toplevel compiler
 ;; Returns formatter procedure
