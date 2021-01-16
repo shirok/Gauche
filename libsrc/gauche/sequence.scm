@@ -55,6 +55,9 @@
 ;; used by shuffle
 (autoload srfi-27 default-random-source random-source-make-integers)
 
+(autoload srfi-152 string-fold-right)
+(autoload scheme.vector vector-fold-right)
+
 (define-method referencer ((obj <list>))   list-ref)
 (define-method referencer ((obj <vector>)) vector-ref)
 (define-method referencer ((obj <bitvector>)) bitvector-ref/int)
@@ -254,6 +257,16 @@
 
 (define-method fold-right (proc seed (seq1 <list>) (seq2 <list>))
   ((with-module gauche fold-right) proc seed seq1 seq2))
+
+;; shortcut
+(define-method fold-right (proc seed (seq <string>))
+  (string-fold-right proc seed seq))
+
+(define-method fold-right (proc seed (seq <vector>))
+  (vector-fold-right (^ (r e) (proc e r)) seed seq))
+
+(define-method fold-right (proc seed (seq1 <vector>) (seq2 <vector>))
+  (vector-fold-right (^ (r e1 e2) (proc e1 e2 r)) seed seq1 seq2))
 
 ;; mapping with index ------------------------------------
 
