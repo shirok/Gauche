@@ -38,6 +38,7 @@
 (define-module gauche.sequence
   (extend gauche.collection)
   (export referencer modifier subseq
+          call-with-reverse-iterator call-with-reverse-iterators
           fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
           find-index find-with-index group-sequence group-contiguous-sequence
@@ -132,6 +133,80 @@
   (vector-copy! seq start vals 0 (- end start)))
 (define-method (setter subseq) ((seq <bitvector>) start end (vals <bitvector>))
   (bitvector-copy! seq start vals 0 (- end start)))
+
+;; reverse iterator ------------------------------------
+
+(define-method call-with-reverse-iterator ((str <string>) proc
+                                           :key
+                                           (start (string-cursor-start str))
+                                           (end (string-cursor-end str))
+                                           :allow-other-keys)
+  (let ((start (string-index->cursor str start))
+        (cur (string-index->cursor str end)))
+    (proc (cut string-cursor<=? cur start)
+          (^[]
+            (set! cur (string-cursor-prev str cur))
+            (string-ref str cur)))))
+
+(define-syntax *vector-reverse-iter
+  (syntax-rules ()
+    [(_ %ref coll proc start end)
+     (proc (cut <= end start)
+           (^[] (%ref coll (dec! end))))]))
+
+(define-syntax define-vector-reverse-iterator
+  (er-macro-transformer
+   (^[f r c]
+     (let* ([type (cadr f)]
+            [%class (r (symbol-append '< type '>))]
+            [%length (r (symbol-append type '-length))]
+            [%ref    (r (if (c (r type) (r'bitvector))
+                          'bitvector-ref/int
+                          (symbol-append type '-ref)))])
+       (quasirename r
+         `(define-method call-with-reverse-iterator ((coll ,%class) proc
+                                                     ,':key
+                                                     (start 0)
+                                                     (end (,%length coll))
+                                                     ,':allow-other-keys)
+            (*vector-reverse-iter ,%ref coll proc start end)))))))
+
+(define-vector-reverse-iterator vector)
+(define-vector-reverse-iterator u8vector)
+(define-vector-reverse-iterator s8vector)
+(define-vector-reverse-iterator u16vector)
+(define-vector-reverse-iterator s16vector)
+(define-vector-reverse-iterator u32vector)
+(define-vector-reverse-iterator s32vector)
+(define-vector-reverse-iterator u64vector)
+(define-vector-reverse-iterator s64vector)
+(define-vector-reverse-iterator f16vector)
+(define-vector-reverse-iterator f32vector)
+(define-vector-reverse-iterator f64vector)
+(define-vector-reverse-iterator c32vector)
+(define-vector-reverse-iterator c64vector)
+(define-vector-reverse-iterator c128vector)
+(define-vector-reverse-iterator bitvector)
+(define-vector-reverse-iterator weak-vector)
+
+(define-method call-with-reverse-iterator ((coll <tree-map>) proc :allow-other-keys)
+  (let ([eof-marker (cons #f #f)]
+        [iter ((with-module gauche.internal %tree-map-iter) coll)])
+    (receive (k v) (iter eof-marker #t)
+      (proc (cut eq? k eof-marker)
+            (^[] (begin0 (cons k v)
+                   (set!-values (k v) (iter eof-marker #t))))))))
+
+(define (call-with-reverse-iterators colls proc)
+  (let loop ([colls colls]
+             [eprocs '()]
+             [nprocs '()])
+    (if (null? colls)
+      (proc (reverse! eprocs) (reverse! nprocs))
+      (call-with-reverse-iterator
+       (car colls)
+       (^[end? next]
+         (loop (cdr colls) (cons end? eprocs) (cons next nprocs)))))))
 
 ;; fold-right --------------------------------------------
 
@@ -345,7 +420,7 @@
             (reverse! results)
             (reverse! `((,start ,last) ,@(cdr results)))))
         (reverse! (map reverse! results))))))
-                                          
+
 (define-method delete-neighbor-dups ((seq <sequence>)
                                      :key ((:key key-proc) identity)
                                           ((:test test-proc) eqv?)
@@ -395,7 +470,7 @@
 ;; NB: We can't define generic version, since there's no generic way
 ;; for length-changing mutation.  Each capable sequence should implement
 ;; the method.  Here we only provide for <list>.
-(define-method delete-neighbor-dups-squeeze! ((seq <list>)            
+(define-method delete-neighbor-dups-squeeze! ((seq <list>)
                                               :key ((:key key-proc) identity)
                                                    ((:test test-proc) eqv?)
                                                    (start 0)
@@ -596,4 +671,3 @@
   ;; string-set! is super-slow, so we provide the alternative.
   ((with-module gauche.internal %string-replace-body!)
    seq (apply shuffle seq args)))
-
