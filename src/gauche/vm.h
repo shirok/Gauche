@@ -425,6 +425,7 @@ struct ScmVMRec {
     /* Escape handling */
     ScmObj exceptionHandler;    /* the current exception handler installed by
                                    with-exception-handler. */
+    ScmObj exceptionHandlerStack; /* chained previous handlers. */
     ScmEscapePoint *escapePoint;/* chain of escape points (a kind of one-shot
                                    continuation).  used by system's default
                                    exception handler to escape from the error

@@ -239,6 +239,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->handlers = SCM_NIL;
 
     v->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
+    v->exceptionHandlerStack = SCM_NIL;
     v->escapePoint = v->escapePointFloating = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
@@ -2431,15 +2432,20 @@ static ScmObj install_xhandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data)
 {
-    theVM->exceptionHandler = SCM_OBJ(data);
+    ScmVM *vm = theVM;
+    ScmObj chain = SCM_OBJ(data);
+    vm->exceptionHandler = SCM_CAR(chain);
+    vm->exceptionHandlerStack = SCM_CDR(chain);
     return SCM_UNDEFINED;
 }
 
 ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
 {
-    ScmObj current = theVM->exceptionHandler;
-    ScmObj before = Scm_MakeSubr(install_xhandler, handler, 0, 0, SCM_FALSE);
-    ScmObj after  = Scm_MakeSubr(install_xhandler, current, 0, 0, SCM_FALSE);
+    ScmVM *vm = theVM;
+    ScmObj oldchain = Scm_Cons(vm->exceptionHandler, vm->exceptionHandlerStack);
+    ScmObj newchain = Scm_Cons(handler, oldchain);
+    ScmObj before = Scm_MakeSubr(install_xhandler, newchain, 0, 0, SCM_FALSE);
+    ScmObj after  = Scm_MakeSubr(install_xhandler, oldchain, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, thunk, after);
 }
 
