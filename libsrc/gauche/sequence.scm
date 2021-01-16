@@ -214,20 +214,39 @@
 
 (define-method fold-right (proc seed (seq <sequence>) . more)
   (if (null? more)
-    (with-iterator (seq end? next)
-      (let rec ()
-        (if (end?)
-          seed
-          (let1 elt (next)
-            (proc elt (rec))))))
-    (call-with-iterators
-     (cons seq more)
-     (^[ends? nexts]
-       (let rec ()
-         (if (any (cut <>) ends?)
-           seed
-           (let1 elts (map (cut <>) nexts)
-             (apply proc (append! elts (list (rec)))))))))))
+    (if (applicable? call-with-reverse-iterator (class-of seq) <bottom>)
+      (call-with-reverse-iterator
+       seq
+       (^[end? next]
+         (let loop ([acc seed])
+           (if (end?)
+             acc
+             (loop (proc (next) acc))))))
+      (with-iterator (seq end? next)
+        (let rec ()
+          (if (end?)
+            seed
+            (let1 elt (next)
+              (proc elt (rec)))))))
+    (let1 seqs (cons seq more)
+      (if (every (^ (seq)
+                   (applicable? call-with-reverse-iterator (class-of seq) <bottom>))
+                 seqs)
+        (call-with-reverse-iterators
+         seqs
+         (^[ends? nexts]
+           (let loop ([acc seed])
+             (if (any (cut <>) ends?)
+               acc
+               (loop (apply proc (append! (map (cut <>) nexts) (list acc))))))))
+        (call-with-iterators
+            seqs
+          (^[ends? nexts]
+            (let rec ()
+              (if (any (cut <>) ends?)
+                seed
+                (let1 elts (map (cut <>) nexts)
+                  (apply proc (append! elts (list (rec)))))))))))))
 
 ;; for list arguments, built-in fold-right is faster.
 (define-method fold-right (proc seed (seq <list>))
