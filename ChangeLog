@@ -1,3 +1,15 @@
+2021-01-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMThrowException): Changed the semantics of
+	  with-exception-handler from srfi-18 to srfi-34/R7RS.  Srfi-18's
+	  semantics aims at minimalism and the user should be responsible
+	  to avoid infinite recursion of the handler; unfortunately, it seems
+	  that users casually use it without being aware of the pitfall.
+	  Almost all srfi-18 code should work with srfi-34 semantics.
+	  A contrived counterexample may be to recurse into the current
+	  exception handler via 'raise', but the same can be achieved more
+	  easily and explicitly.
+
 2021-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/lazy.scm (<sequence-position>): OK, let's make it a

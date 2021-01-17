@@ -2327,8 +2327,18 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
 {
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
 
-    if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
-        vm->val0 = Scm_ApplyRec(vm->exceptionHandler, SCM_LIST1(exception));
+    ScmObj eh = vm->exceptionHandler;
+    ScmObj ehstack = vm->exceptionHandlerStack;
+
+    /* SRFI-34/R7RS semantics - we invoke exception handler while the handler
+       chain is popped. */
+    if (!SCM_NULLP(ehstack)) {
+        vm->exceptionHandler = SCM_CAR(ehstack);
+        vm->exceptionHandlerStack = SCM_CDR(ehstack);
+    }
+    
+    if (eh != DEFAULT_EXCEPTION_HANDLER) {
+        vm->val0 = Scm_ApplyRec(eh, SCM_LIST1(exception));
         if (SCM_SERIOUS_CONDITION_P(exception)
             || raise_flags&SCM_RAISE_NON_CONTINUABLE) {
             /* the user-installed exception handler returned while it
@@ -2338,6 +2348,9 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
             vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
+        /* Continuable exception. Recover exception handler settings. */
+        vm->exceptionHandler = eh;
+        vm->exceptionHandlerStack = ehstack;
         return vm->val0;
     }
     return Scm_VMDefaultExceptionHandler(exception);
