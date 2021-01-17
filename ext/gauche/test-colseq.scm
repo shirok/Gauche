@@ -27,6 +27,14 @@
     (proc (^[] (null? p))
           (^[] (pop! p)))))
 
+(define-method call-with-reverse-iterator ((seq <string-seq>) proc
+                                           :key (start #f) (end #f)
+                                           :allow-other-keys)
+  (let* ([ss (slot-ref seq 'strings)]
+         [p  (reverse (subseq ss (or start 0) (or end (length ss))))])
+    (proc (^[] (null? p))
+          (^[] (pop! p)))))
+
 (define-method call-with-builder ((seq <string-seq-meta>) proc . _)
   (let1 q (make-queue)
     (proc (^[item] (enqueue! q (x->string item)))
@@ -39,6 +47,9 @@
 (define-method modifier ((seq <string-seq>))
   (lambda (o i v)
     (set! (ref (slot-ref o 'strings) i) (x->string v))))
+
+(define-method object-equal? ((a <string-seq>) (b <string-seq>))
+  (equal? (slot-ref a 'strings) (slot-ref b 'strings)))
 
 (define (sseq . elements)
   (make <string-seq> :strings (map x->string elements)))
@@ -569,6 +580,25 @@
        (fold-right cons* '() "abcdef" '#(0 1 2 3) '(u v w x y z)))
 (test* "fold-right (different lengths)" '(#\a 0 u #\b 1 v)
        (fold-right cons* '() "ab" '#(0 1 2 3 4) '(u v w x y z)))
+
+;; reverse iterator
+(define (generic-reverse seq start end)
+  ($ call-with-builder (class-of seq)
+     (^[add! get]
+       ($ call-with-reverse-iterator seq
+          (^[end? next]
+            (let loop ()
+              (if (end?)
+                (get)
+                (begin (add! (next)) (loop)))))
+          :start start :end end))))
+
+(test* "reverse iterator (vector)" '#(d c)
+       (generic-reverse '#(a b c d e) 2 4))
+(test* "reverse iterator (string)" "dc"
+       (generic-reverse "abcde" 2 4))
+(test* "reverse iterator (custom)" (sseq 'd 'c)
+       (generic-reverse (sseq 'a 'b 'c 'd 'e) 2 4))
 
 (test* "group-sequence" '((1 1 1) (2) (3) (4 4) (2 2) (3) (1 1) (3))
        (group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3)))
