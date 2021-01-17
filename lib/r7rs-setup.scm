@@ -239,7 +239,7 @@
           syntax-rules truncate truncate-remainder u8-ready?  unquote
           utf8->string vector vector->string vector-copy vector-fill!
           vector-length vector-ref vector?
-          (rename r7rs:with-exception-handler with-exception-handler)
+          with-exception-handler
           write-char write-u8 string-fill!  string-length string-ref string<=?
           string=?  string>?  substring symbol=?  syntax-error textual-port?
           truncate-quotient truncate/ unless unquote-splicing values
@@ -322,20 +322,7 @@
 
   ;; 6.11 Exceptions
   ;; error - built-in
-
-  ;; NB: In Gauche, 'with-exception-handler' is srfi-18 version.
-  (define (r7rs:with-exception-handler handler thunk)
-    (let* ([old (current-exception-handler)]
-           [new (^[exc]
-                  (with-exception-handler
-                   old
-                   (^[]
-                     (if (condition-has-type? exc <serious-condition>)
-                       (begin
-                         (handler exc)
-                         (raise exc))
-                       (handler exc)))))])
-      (with-exception-handler new thunk)))
+  ;; with-exception-handler - built-in
 
   ;; NB: In Gauche, 'raise' is continuable as far as the thrown exception
   ;; isn't fatal.
