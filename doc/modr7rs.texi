@@ -994,36 +994,13 @@ utf8->string       string->utf8
 @subheading 制御機能
 @c COMMON
 
-@defun with-exception-handler handler thunk
-[R7RS base]
-@c MOD scheme.base
 @c EN
-@var{handler} is evaluated in the dynamic environment of the call to
-@var{handler}, except that the current exception handler is that in
-place for the call to @code{with-exception-handler}.
-
-If the exception is not continuable, it is reraised after evaluating
-@var{handler} and handled by the exception handler in place for the
-call to @code{with-exception-handler}.
+The procedure @code{with-exception-handler} is the same as Gauche's built-in.
+@xref{Handling exceptions}, for the explanation.
 @c JP
-@var{handler}は、@var{handler}呼び出し時の動的環境で評価されます。
-ただし、@var{handler}内における例外ハンドラは、
-@code{with-exception-handler}呼び出し時の例外ハンドラになります。
-
-例外が継続不可能な場合、@var{handler}の評価後にさらに例外が発生し、それは
-@code{with-exception-handler}呼び出し時の例外ハンドラで処理されます。
+手続き@code{with-exception-handler}はGauche組み込みのものと同じです。
+@ref{Handling exceptions}で説明してあります。
 @c COMMON
-
-@c EN
-This slightly differs from Gauche's built-in @code{with-exception-handler},
-which calls @var{handler} without replacing the current exception handler.
-@xref{Handling exceptions}, for the details.
-@c JP
-これはGaucheの組み込みの@code{with-exception-handler}と微妙に異なります。
-組み込みの方は、現在の例外ハンドラを置き換えずに@var{handler}を呼び出します。
-詳しくは@ref{Handling exceptions}を参照してください。
-@c COMMON
-@end defun
 
 @defun raise obj
 @defunx raise-continuable obj
