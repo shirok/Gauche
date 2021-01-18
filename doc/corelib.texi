@@ -16482,7 +16482,8 @@ Since the control may return to @var{body}, the situation
 a context switch.
 
 For resource clean-up, you can use exception handling mechanism
-such as @code{guard} and @code{unwind-protect} (@pxref{Handling exceptions}),
+such as @code{guard} and @code{unwind-protect}
+(@pxref{High-level exception handling mechanism}),
 which is built on top of @code{dynamic-wind}.
 
 As a rule of thumb, @var{after} should do things that can be
@@ -16497,7 +16498,7 @@ reverted by @var{before}, such as manipulating error handler stack
 @code{dynamic-wind}が管理するのはむしろコンテキストスイッチに近い状況です。
 
 リソースの後処理には、@code{guard}や@code{unwind-protect}などの例外処理
-が使えます(@ref{Handling exceptions}参照)。
+が使えます(@ref{High-level exception handling mechanism}参照)。
 それらは@code{dynamic-wind}を使って構築されています。
 
 基本的な指針として、@var{after}は常に@var{before}によって効果を戻せる
@@ -18607,11 +18608,15 @@ R7RSは@code{raise-continuable}という別の手続きで、ハンドラから
 @subsection Handling exceptions
 @c NODE 例外の処理
 
-@c EN
-@subsubheading High-level exception handling mechanism
-@c JP
-@subsubheading 上位レベルの例外処理機構
-@c COMMON
+@menu
+* High-level exception handling mechanism::
+* Behavior of unhandled exception::
+* Low-level exception handling mechanism::
+@end menu
+
+@node High-level exception handling mechanism, Behavior of unhandled exception, Handling exceptions, Handling exceptions
+@subsubsection High-level exception handling mechanism
+@c NODE 上位レベルの例外処理機構
 
 @defmac guard (var clause @dots{}) body @dots{}
 [R7RS base]
@@ -18907,12 +18912,9 @@ should be written like this:
 @end example
 @end defun
 
-
-@c EN
-@subsubheading Behavior of unhandled exception
-@c JP
-@subsubheading 処理されなかった例外のふるまい
-@c COMMON
+@node Behavior of unhandled exception, Low-level exception handling mechanism, High-level exception handling mechanism, Handling exceptions
+@subsubsection Behavior of unhandled exception
+@c NODE 処理されなかった例外のふるまい
 
 @c EN
 If an exception is raised where no program-defined exception handler is
@@ -19025,11 +19027,9 @@ attach stack trace info to @code{<condition>} object in future.
 @end defun
 
 
-@c EN
-@subsubheading Low-level exception handling mechanism
-@c JP
-@subsubheading 下位レベルの例外処理機構
-@c COMMON
+@node Low-level exception handling mechanism,  , Behavior of unhandled exception, Handling exceptions
+@subsubsection Low-level exception handling mechanism
+@c NODE 下位レベルの例外処理機構
 
 @c EN
 This layer provides SRFI-18 compatible simple exception mechanism.
@@ -21219,13 +21219,13 @@ Note that if a continuation captured outside @code{call-with-input-file}
 et al. is invoked inside @var{proc}, the port is not closed.
 It is possible that the control returns later into the @var{proc},
 if a continuation is captured in it (e.g. coroutines).
-The low-level exceptions (@pxref{Handling exceptions})
+The low-level exceptions (@pxref{Low-level exception handling mechanism})
 also doesn't ensure closing the port.
 @c JP
 @code{call-with-input-file}の外で捕捉された継続を@var{proc}内で呼んだ場合には
 ポートは閉じられないことに注意して下さい。後で@var{proc}へと制御が戻ってくるかも
 しれないからです (コルーチン等)。また、
-低レベルの例外メカニズム(@ref{Handling exceptions}
+低レベルの例外メカニズム(@ref{Low-level exception handling mechanism}
 参照)を利用した場合、エラー時にポートを閉じるのはプログラマの責任になります。
 @c COMMON
 

@@ -996,10 +996,10 @@ utf8->string       string->utf8
 
 @c EN
 The procedure @code{with-exception-handler} is the same as Gauche's built-in.
-@xref{Handling exceptions}, for the explanation.
+@xref{Low-level exception handling mechanism}, for the explanation.
 @c JP
 手続き@code{with-exception-handler}はGauche組み込みのものと同じです。
-@ref{Handling exceptions}で説明してあります。
+@ref{Low-level exception handling mechanism}で説明してあります。
 @c COMMON
 
 @defun raise obj
