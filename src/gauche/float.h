@@ -108,11 +108,11 @@ typedef double          ScmLongDouble;
 #define SCM_FLT_POSITIVE_INFINITY  (1.0f/0.0f)
 #endif
 
-#ifndef SCM_FTL_NEGATIVE_INFINITY
+#ifndef SCM_FLT_NEGATIVE_INFINITY
 #define SCM_FLT_NEGATIVE_INFINITY  (-1.0f/0.0f)
 #endif
 
-#ifndef SCM_FTL_NAN
+#ifndef SCM_FLT_NAN
 #define SCM_FLT_NAN           (0.0f/0.0f)
 #endif
 
