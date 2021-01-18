@@ -19065,61 +19065,63 @@ Returns the current exception handler.
 @end defun
 
 @defun with-exception-handler handler thunk
-[SRFI-18]
+[R7RS base][SRFI-34]
 @c EN
 A procedure @var{handler} must take one argument.  This procedure
 sets @var{handler} to the current exception handler and calls
 @var{thunk}.
-(Note that this slightly differs from R7RS @code{with-exception-handler};
+(Note that this slightly differs from SRFI-18 @code{with-exception-handler};
 we'll explain it below.)
 @c JP
 @var{handler}は1引数を取る手続きです。この手続きは、@var{handler}を
 現在の例外ハンドラにセットし、@var{thunk}を呼び出します。
-(この手続きはR7RSの@code{with-exception-handler}と微妙に異なります。)
+(この手続きはSRFI-18の@code{with-exception-handler}と微妙に異なります。)
 @c COMMON
 @end defun
 
 @c EN
 When an exception is raised by @code{raise} or @code{error},
 @var{handler} is called with the thrown condition in the
-exactly same dynamic environment of @code{raise} or @code{error}.
-It means the exception handler is also the same,
-so calling @code{raise} in @var{handler} reinvokes @var{handler} again.
-It also means that when @var{handler} returns, it returns from
-@var{raise}.
-
-The behavior is specified in SRFI-18, intending this procedure
-to be the most primitive building block of exception handling mechanism.
-If you need to switch handlers, you can do it by yourself.
-
-If you need the typical semantics where raising exception in
-the exception handler is handled by outer handler, you should use @code{guard}.
-Use this procedure only when you want to play with the most
-primitive layer of exception handling.
-
-R7RS has a procedure with the same name, but has one difference---it
-changes the active exception handler to the ``outer'' handler before
-calling @var{handler}.  @xref{R7RS base library}, for the description
-of R7RS's @code{with-exception-handler}.
+exactly same dynamic environment of @code{raise} or @code{error},
+except that the exception handler at the time @code{with-exception-handler}
+is called is restored.
 @c JP
 例外が@code{raise}や@code{error}で通知されると、
 投げられたコンディションを引数として@var{handler}が
-呼び出し元と全く同じ動的環境で呼び出されます。
-つまり、@var{handler}中で@code{raise}を呼び出すと、再び@var{handler}が呼ばれます。
-また、@var{handler}から戻ると、制御は@code{raise}の呼び出し元に戻ります。
+呼び出し元の動的環境のうち、例外ハンドラだけが@code{with-exception-handler}
+呼び出し時点のものに置き換えられた環境で呼び出されます。
+@c COMMON
 
-この振る舞いはSRFI-18により定義されました。これは、この手続きが例外制御の
-最もプリミティブな構成要素になることを意図しています。
-例外処理中にアクティブなハンドラを切り替えたければ、自分でそう書く必要があります。
+@c EN
+Note: SRFI-18 specifies the exception handler installed with
+@code{with-exception-handler} will be called with exactly the same
+dynamic environment, including the exception handler settings.
+It means if an exception is raised within the handler, it will be
+caught with the same handler.  The reasoning is that
+@code{with-exception-handler} is the bottom layer and kept as simple
+as possible, and further semantics should be built on top of it.
 
-通常、例外処理中に例外が発生したら、それは「外側の」ハンドラで処理したいでしょう。
-そういった典型的な使い方には、@code{guard}を使ってください。
-この手続きはあくまで、例外処理の最も低層にアクセスしたい時のみ使うとよいでしょう。
+Until 0.9.10 we supported SRFI-18 semantics natively, and provided
+R7RS semantics on top of it.  However, the bare SRFI-18 semantics
+turned out to be error prone--users tended to assume errors from a handler
+would be handled by outer handler, and were perplexed when they ran into
+infinite recursion of handlers (which eventually caused a segfault, for
+the recursion eats up C stack).  We decided to switch to R7RS semantics,
+for it is virtually always what users want.
+@c JP
+註: SRFI-18の@code{with-exception-handler}では、
+例外ハンドラは例外発生箇所と全く同じ動的環境で呼び出されるとしています。
+つまり例外ハンドラ中で例外が発生すると、同じハンドラが再び呼ばれます。
+これは、@code{with-exception-handler}を最も基本的なレイヤとして、
+その上に必要なセマンティクスを実装することが意図されていたからです。
 
-R7RSにも同名の手続きがありますが、一つだけ違いがあります。
-R7RS版は@var{handler}を呼び出す前に現在の例外ハンドラを一つ「外側」の例外ハンドラに
-置き換えます。R7RSの@code{with-exception-handler}の説明は
-@ref{R7RS base library}を参照してください。
+0.9.10まではGaucheの組み込みの@code{with-exception-handler}はSRFI-18の
+セマンティクスで、その上にR7RSの@code{with-exception-handler}が実装されていました。
+しかし、SRFI-18セマンティクスは非常に使い方を間違えられやすかったのです。
+ユーザはハンドラ中で発生した例外は外側のハンドラで処理されると思い込みがちでした。
+正しくハンドラの置き換えを行わないと、ハンドラ中の例外はハンドラへの無限再帰を引き起こし、
+Cのスタックを食いつぶしてsegfaultします。実質的に全ての場合においてユーザが期待するのは
+R7RSセマンティクスなので、切り替えることにしました。
 @c COMMON
 
 @c EN
@@ -19159,11 +19161,15 @@ the following conceptual Scheme code.
 (define (current-exception-handler) (car %xh))
 
 (define (raise exn)
-  (receive r ((car %xh) exn)
-    (when (uncontinuable-exception? exn)
-      (set! %xh (cdr %xh))
-      (raise (@r{@i{make-error}} "returned from uncontinuable exception")))
-    (apply values r)))
+  (let ((prev %xh))
+    (dynamic-wind
+      (lambda () (set! %xh (cdr %xh)))
+      (lambda ()
+        (receive r ((current-exception-handler) exn)
+          (if (uncontinuable-exception? exn)
+            (raise (@r{@i{make-error}} "returned from uncontinuable exception"))
+            (apply values r))))
+      (lambda () (set! %xh prev)))))
 
 (define (with-exception-handler handler thunk)
   (let ((prev %xh))
