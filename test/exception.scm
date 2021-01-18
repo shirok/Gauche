@@ -167,6 +167,36 @@
   )
 
 ;;--------------------------------------------------------------------
+(test-section "with-exception-handler")
+
+(test* "with-exception-handler" '(got oops)
+       (call/cc
+        (lambda (ret)
+          (with-exception-handler
+           (lambda (e) (ret `(got ,e)))
+           (lambda () (raise 'oops) 'huh?)))))
+
+(test* "with-exception-handler (returning)" 'huh?
+       (with-exception-handler
+        (lambda (e) `(got ,e))
+        (lambda () (raise 'oops) 'huh?)))
+
+(test* "with-exception-handler (returning mv)" '(aha! oops)
+       (values->list
+        (with-exception-handler
+         (lambda (e) (values 'aha! e))
+         (lambda () (raise 'oops)))))
+
+;; Now built-in with-exception-hanlder has r7rs semantics
+(test* "with-exception-handler (raise in handler)"  '(outer (inner oops))
+       (with-exception-handler
+        (lambda (e) `(outer ,e))
+        (lambda ()
+          (with-exception-handler
+           (lambda (e) (raise `(inner ,e)))
+           (lambda () (raise 'oops))))))
+
+;;--------------------------------------------------------------------
 (test-section "guard")
 
 (test* "guard" '(symbol . a)
