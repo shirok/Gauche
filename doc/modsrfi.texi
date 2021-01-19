@@ -9836,11 +9836,21 @@ In Gauche, it is the same as
 
 @deftp {Module} srfi-193
 @mdindex srfi-193
+@c EN
 This srfi clarifying how the command line arguments can be accessed
 via R7RS @code{command-line}, plus a few supporting APIs.
+@c JP
+このsrfiは、R7RSの@code{command-line}が返す値についての仕様を
+明確化し、またいくつかのサポートAPIを定義しています。
+@c COMMON
 
+@c EN
 The following procedures are built-in.  @xref{Command-line arguments},
 for the details.
+@c JP
+次の手続きは組み込みになっています。
+@ref{Command-line arguments}を参照してください。
+@c COMMON
 
 @example
 command-line          script-file
@@ -9850,24 +9860,70 @@ command-line          script-file
 @defun command-name
 [SRFI-193]
 @c MOD srfi-193
+@c EN
 If the first element of @code{command-line} is an empty string,
 returns @code{#f}.  Otherwise, returns the first element without directory
 name and obvious extension (@code{.scm}, @code{.exe}) stripped.
+@c JP
+@code{command-line}の最初の要素が空文字列であれば@code{#f}を、
+そうでなければ@code{command-line}の最初の要素からディレクトリパスと
+典型的な拡張子(@code{.scm}、@code{.exe})を除いた名前を返します。
+@c COMMON
 
+@c EN
+For example, if you run a Scheme script @code{foo.scm}
+as a program, this procedure returns @code{foo}.  If you compile
+your script to an executable on Windows as the name
+@code{/usr/local/bin/foo.exe}, this procedure still returns @code{foo}.
+In general, if you are running a Scheme program as some sort of 'command',
+this procedure returns its name.  The exception is when you're running
+a REPL, in which case this procedure returns @code{#f}.
+@c JP
+例えば、Schemeスクリプトを@code{/usr/local/bin/foo.scm}を
+プログラムとして走らせたら、この手続きは@code{foo}を返します。
+このスクリプトをWindows実行可能形式にコンパイルして
+@code{/usr/local/bin/foo.exe}に置いたとしても、やはりこの手続きは@code{foo}を返します。
+一般に、Schemeプログラムを何らかの形で「コマンド」として走らせた場合、
+その「コマンド名」にふさわしいものが返されます。例外はREPLを走らせている場合で、
+@code{#f}が返されます。
+@c COMMON 
+
+@c EN
 This is useful for diagnostic messages, for example.
+@c JP
+これは診断メッセージ等に便利です。
+@c COMMON
 @end defun
 
 @defun command-args
 [SRFI-193]
 @c MOD srfi-193
-Returns the cdr of @code{command-line}.
+@c EN
+Returns the cdr of @code{(command-line)}.
+@c JP
+@code{(commnand-line)}のcdrを返します。
+@c COMMON
 @end defun
 
 @defun script-directory
 [SRFI-193]
 @c MOD srfi-193
-Returns the directory part of @code{script-file}.  It always ends with
-the directory separator.
+@c EN
+Returns the directory part of @code{(script-file)}, if it has a string path.
+It always ends with the directory separator.
+If @code{(script-file)} is @code{#f}, @code{#f} is returned.
+@c JP
+@code{(script-file)}の値が文字列なら、そのディレクトリ部分を返します。
+この場合、返される文字列の末尾は必ずディレクトリ区切り文字になっています。
+@code{(script-file)}が@code{#f}なら@code{#f}が返されます。
+@c COMMON
+
+@c EN
+This is useful, for example, to find an auxiliary files relative to the
+script location.
+@c JP
+これは例えば、補助ファイルをスクリプトからの相対位置で探すのに便利です。
+@c COMMON
 @end defun
 
 @c Local variables:
