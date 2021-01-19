@@ -74,7 +74,10 @@
        (if (null? msgs)
          (apply make msg keys)
          (apply make msg
-                :message (%make-error-message (car msgs) (cdr msgs)) keys)))]
+                :message (%make-error-message (car msgs) (cdr msgs))
+                :message-prefix (car msgs)
+                :message-args (cdr msgs)
+                keys)))]
     [else (apply make-error msg args)])))
 
 (define-in-module gauche (errorf fmt . args)

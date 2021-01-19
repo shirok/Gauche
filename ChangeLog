@@ -1,3 +1,8 @@
+2021-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (error): Initialize message-prefix and message-args
+	  when it is invoked as (error <error> args ...).
+
 2021-01-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_VMThrowException): Changed the semantics of
