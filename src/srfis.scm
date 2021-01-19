@@ -446,14 +446,10 @@ srfi-34
 Exception Handling for Programs
 This has become a part of R7RS small.
 Built-in.  @xref{Exceptions}.
-(However, Gauche implements srfi-18's semantics of @code{raise} literally,
-which differs slightly from srfi-34's.  This may be changed in future.)
 
 プログラムの例外処理
 これはR7RS smallの一部になりました。
 組み込みです。@ref{Exceptions}参照。
-(但し、Gaucheは@code{raise}に関してはsrfi-18のセマンティクスを文字通り
-実装していて、それはsrfi-34と若干異なります。将来はsrfi-34に合わせるかもしれません。)
 
 
 srfi-35
