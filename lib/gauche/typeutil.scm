@@ -78,7 +78,7 @@
   ())
 
 (define-method allocate-instance ((z <type-instance-meta>) initargs)
-  (error "Abstract type intance cannot instantiate a concrete object:" z))
+  (error "Abstract type instance cannot instantiate a concrete object:" z))
 
 ;; Utilities to create reasonable name
 (define (join-class-names classes)
