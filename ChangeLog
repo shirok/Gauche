@@ -1,5 +1,9 @@
 2021-01-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/libcode.scm (<compiled-code>): Removed obsoleted 'info' and
+	  'arg-info' slots from the defintiion.  They're now
+	  'debug-info' and 'signature-info'.  We switched so long ago
+	  so we supposed it's about time.
 	* src/libstr.scm, src/string.c: Removed string pointer code.
 
 2021-01-19  Shiro Kawai  <shiro@acm.org>

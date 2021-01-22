@@ -215,10 +215,7 @@
     (full-name :c-spec "Scm_CompiledCodeFullName(obj)" :setter #f)
     (size :type <fixnum> :c-name "codeSize" :setter #f)
     (max-stack :type <fixnum> :c-name "maxstack" :setter #f)
-    (intermediate-form :c-name "intermediateForm" :setter #f)
-    ;; TRANSIENT: For the backward compatibility - will be gone soon
-    (info :c-name "debugInfo" :setter #f)
-    (arg-info :c-name "signatureInfo" :setter #f))
+    (intermediate-form :c-name "intermediateForm" :setter #f))
    (printer (Scm_Printf port "#<compiled-code %S@%p>"
                         (Scm_CompiledCodeFullName (SCM_COMPILED_CODE obj))
                         obj)))
