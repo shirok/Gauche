@@ -645,50 +645,6 @@
       )))
 
 ;;
-;; String pointers (OBSOLETED)
-;;
-
-(select-module gauche)
-
-(inline-stub
-(.if "GAUCHE_STRING_POINTER"
-     (begin
-       ;; string pointer
-       (define-type <string-pointer> "ScmStringPointer*" "string pointer"
-         "SCM_STRING_POINTERP" "SCM_STRING_POINTER")
-
-       (define-cproc make-string-pointer (str::<string>
-                                          :optional (index::<fixnum> 0)
-                                          (start::<fixnum> 0)
-                                          (end::<fixnum> -1))
-         Scm_MakeStringPointer)
-       (define-cproc string-pointer? (obj) ::<boolean> SCM_STRING_POINTERP)
-
-       (define-cproc string-pointer-ref (sp::<string-pointer>)
-         Scm_StringPointerRef)
-       (define-cproc string-pointer-next! (sp::<string-pointer>)
-         Scm_StringPointerNext)
-       (define-cproc string-pointer-prev! (sp::<string-pointer>)
-         Scm_StringPointerPrev)
-       (define-cproc string-pointer-set! (sp::<string-pointer> index::<fixnum>)
-         Scm_StringPointerSet)
-       (define-cproc string-pointer-substring (sp::<string-pointer> :key (after #f))
-         (return (Scm_StringPointerSubstring sp (not (SCM_FALSEP after)))))
-       (define-cproc string-pointer-index (sp::<string-pointer>) ::<int>
-         (return (-> sp index)))
-       (define-cproc string-pointer-copy (sp::<string-pointer>)
-         Scm_StringPointerCopy)
-       (define-cproc string-pointer-byte-index (sp::<string-pointer>) ::<int>
-         (return (cast int (- (-> sp current) (-> sp start))))))))
-
-(select-module gauche.internal)
-(inline-stub
-(.if "GAUCHE_STRING_POINTER"
-       (define-cproc %string-pointer-dump (sp::<string-pointer>) ::<void>
-         Scm_StringPointerDump)
-       ))
-
-;;
 ;; String cursors
 ;;
 

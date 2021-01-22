@@ -1,3 +1,7 @@
+2021-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/libstr.scm, src/string.c: Removed string pointer code.
+
 2021-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/libalpha.scm (error): Initialize message-prefix and message-args

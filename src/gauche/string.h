@@ -419,37 +419,4 @@ SCM_EXTERN void Scm__DStringRealloc(ScmDString *dstr, ScmSmallInt min_incr);
  */
 SCM_EXTERN char *Scm_StrdupPartial(const char *src, size_t size);
 
-#if GAUCHE_STRING_POINTER
-/*
- * String pointers (OBSOLETED)
- */
-
-/* Efficient way to access string from Scheme */
-typedef struct ScmStringPointerRec {
-    SCM_HEADER;
-    ScmSmallInt length;
-    ScmSmallInt size;
-    const char *start;
-    ScmSmallInt index;
-    const char *current;
-} ScmStringPointer;
-
-SCM_CLASS_DECL(Scm_StringPointerClass);
-#define SCM_CLASS_STRING_POINTER  (&Scm_StringPointerClass)
-#define SCM_STRING_POINTERP(obj)  SCM_XTYPEP(obj, SCM_CLASS_STRING_POINTER)
-#define SCM_STRING_POINTER(obj)   ((ScmStringPointer*)obj)
-
-SCM_EXTERN ScmObj Scm_MakeStringPointer(ScmString *src, ScmSmallInt index,
-                                        ScmSmallInt start, ScmSmallInt end);
-SCM_EXTERN ScmObj Scm_StringPointerRef(ScmStringPointer *sp);
-SCM_EXTERN ScmObj Scm_StringPointerNext(ScmStringPointer *sp);
-SCM_EXTERN ScmObj Scm_StringPointerPrev(ScmStringPointer *sp);
-SCM_EXTERN ScmObj Scm_StringPointerSet(ScmStringPointer *sp,
-                                       ScmSmallInt index);
-SCM_EXTERN ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
-SCM_EXTERN ScmObj Scm_StringPointerCopy(ScmStringPointer *sp);
-SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
-
-#endif /*GAUCHE_STRING_POINTER*/
-
 #endif /* GAUCHE_STRING_H */

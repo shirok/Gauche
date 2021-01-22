@@ -133,10 +133,6 @@ SCM_DECL_BEGIN
 /* Temporary - to test alignment of pairs */
 #define GAUCHE_CHECK_PAIR_ALIGNMENT 0
 
-/* TRANSIENT: Define this to 1 to include (obsoleted) string pointer functions.
-   It will be completely gone soon. */
-#define GAUCHE_STRING_POINTER 0
-
 /* Enable an option to make keywords and symbols disjoint.
    (Transient: Will be gone once we completely migrate to
    unified keyword-symbol system */

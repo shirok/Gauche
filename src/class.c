@@ -3506,9 +3506,6 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_STRING,           "<string>");
     BINIT(SCM_CLASS_STRING_CURSOR,    "<string-cursor>", NULL);
     BINIT(SCM_CLASS_STRING_CURSOR_LARGE, "<string-cursor-large>", NULL);
-#if GAUCHE_STRING_POINTER
-    CINIT(SCM_CLASS_STRING_POINTER,   "<string-pointer>");
-#endif
 
     /* symbol.c */
     CINIT(SCM_CLASS_SYMBOL,           "<symbol>");
