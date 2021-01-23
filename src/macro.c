@@ -81,14 +81,14 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmModule *mod, ScmObj handler)
  */
 
 ScmObj Scm_MakeMacro(ScmObj name, ScmObj transformer,
-                     ScmObj src, ScmObj describer)
+                     ScmObj info, u_long flags)
 {
     ScmMacro *s = SCM_NEW(ScmMacro);
     SCM_SET_CLASS(s, SCM_CLASS_MACRO);
     s->name = name;
     s->transformer = transformer;
-    s->src = src;
-    s->describer = describer;
+    s->info_alist = info;
+    s->flags = flags;
     return SCM_OBJ(s);
 }
 
@@ -234,7 +234,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
                                      sizeof(AUTOLOAD_MACRO_SUFFIX)-1,
                                      sizeof(AUTOLOAD_MACRO_SUFFIX)-1);
     return Scm_MakeMacro(Scm_MakeSymbol(SCM_STRING(name1), FALSE),
-                         transformer, SCM_FALSE, SCM_FALSE);
+                         transformer, SCM_NIL, 0);
 }
 
 /*===================================================================
@@ -1001,7 +1001,9 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
                                        SCM_MODULE(mod), env);
     ScmObj sr_xform = Scm_MakeSubr(synrule_transform, sr,
                                    2, 0, SCM_FALSE);
-    return Scm_MakeMacro(name, sr_xform, src, SCM_FALSE);
+    return Scm_MakeMacro(name, sr_xform, 
+                         SCM_LIST1(Scm_Cons(SCM_SYM_SOURCE, src)), 
+                         0);
 }
 
 /*===================================================================

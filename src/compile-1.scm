@@ -705,7 +705,7 @@
   (let* ([proc (eval expr (cenv-module cenv))]
          [trans (%make-macro-transformer name
                                          (^[form env] (apply proc (cdr form)))
-                                         expr #f)]
+                                         `((source . ,expr)))]
          ;; See the "Hygiene alert" in pass1/define.
          [id (if (wrapped-identifier? name)
                (%rename-toplevel-identifier! name)

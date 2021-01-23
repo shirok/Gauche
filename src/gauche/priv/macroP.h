@@ -37,7 +37,9 @@
 
 SCM_DECL_BEGIN
 
-/* Syntax is a built-in procedure to compile given form. */
+/* Syntax is a built-in procedure to compile given form.
+   Since its handler needs to access compiler's internal IForm,
+   we don't allow users to create new ScmSyntax. */
 struct ScmSyntaxRec {
     SCM_HEADER;
     ScmSymbol *name;         /* for debugging.  can be NULL */
@@ -54,8 +56,11 @@ struct ScmMacroRec {
     SCM_HEADER;
     ScmObj name;             /* for debugging.  */
     ScmObj transformer;      /* (Sexpr, CEnv) -> Sexpr */
-    ScmObj src;              /* for debugging.  #f if n/a */
-    ScmObj describer;        /* for debugging.  Maybe ((Macro, Port) -> ()) */
+    ScmObj info_alist;       /* for debugging.  possible elements are:
+                                (source . S-expr)  ; transformer source
+                                (source-info . (file line))
+                              */
+    u_long flags;            /* reserved */
 };
 
 /*

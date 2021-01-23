@@ -130,8 +130,8 @@
    (c "SCM_CLASS_DEFAULT_CPL")
    ((name         :setter #f)
     (transformer  :setter #f)
-    (source       :c-name "src" :setter #f)
-    (describer    :setter #f))
+    (info-alist   :c-name "info_alist" :setter #f)
+    (flags        :type <ulong> :setter #f))
    (printer (Scm_Printf port "#<macro %A>" (-> (SCM_MACRO obj) name)))))
 
 ;;;

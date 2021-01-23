@@ -755,7 +755,7 @@
           (,%define ,name (,%macro ',name
                                    (,%lambda (,form ,env)
                                              (,%apply ,expr (,%cdr ,form)))
-                                   ',expr))
+                                   '((source . ,expr))))
           ((with-module gauche define-macro) ,name ,expr)))
       `((with-module gauche define-macro) ,name ,expr)))
 

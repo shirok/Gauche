@@ -1,3 +1,13 @@
+2021-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (Scm_MakeMacro): Switch macro internal fields; making
+	  'source' field to more general alist, and ditch 'describer' field
+	  (One time I had a plan to use it for better macro debugging, but
+	  now we have macro tracer and I'm no longer sure what I had in mind
+	  then).  We have flags field instead, but reserved for future use.
+	  Technically this is API change, but noboty external should be
+	  affected.
+
 2021-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/libcode.scm (<compiled-code>): Removed obsoleted 'info' and

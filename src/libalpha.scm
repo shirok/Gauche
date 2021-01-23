@@ -344,5 +344,6 @@
 (with-module gauche.internal)
 ;; proc :: Sexpr, Cenv -> Sexpr
 (define-cproc %make-macro-transformer (name transformer
-                                       :optional (src #f) (describer #f))
+                                       :optional (info ())
+                                                 (flags::<ulong> 0))
   Scm_MakeMacro)

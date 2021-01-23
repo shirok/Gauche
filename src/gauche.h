@@ -1795,8 +1795,10 @@ SCM_CLASS_DECL(Scm_SyntaxClass);
 SCM_CLASS_DECL(Scm_MacroClass);
 #define SCM_CLASS_MACRO            (&Scm_MacroClass)
 
-SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name, ScmObj transformer,
-                                ScmObj src, ScmObj describer);
+SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name, 
+                                ScmObj transformer,
+                                ScmObj info, /* alist */
+                                u_long flags);
 SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
 SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 

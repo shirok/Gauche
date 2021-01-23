@@ -218,6 +218,8 @@
     (little                    SCM_SYM_LITTLE)
     ;; port attibute
     (name                      SCM_SYM_NAME)
+    ;; macro source info
+    (source                    SCM_SYM_SOURCE)
     ))
 
 
