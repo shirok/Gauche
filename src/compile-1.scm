@@ -794,26 +794,42 @@
      ;; to make cenv as a record.  For now, we take advantage that unquoted
      ;; vector evaluates to itself, and insert cenv without quoting.  This
      ;; has to change if we prohibit unquoted vector literals.
-     (if (cenv-toplevel? cenv)
-       (pass1 `(,%make-er-transformer/toplevel. ,xformer
-                                                ,(cenv-module cenv)
-                                                ',(cenv-exp-name cenv))
-              cenv)
-       (pass1 `(,%make-er-transformer. ,xformer ,cenv) cenv))]
+     (let1 info (%er-macro-info-alist form)
+       (if (cenv-toplevel? cenv)
+         (pass1 `(,%make-er-transformer/toplevel. ,xformer
+                                                  ,(cenv-module cenv)
+                                                  ',(cenv-exp-name cenv)
+                                                  :info-alist ',info)
+                cenv)
+         (pass1 `(,%make-er-transformer. ,xformer ,cenv
+                                         :info-alist ',info) 
+                cenv)))]
     [_ (error "syntax-error: malformed er-macro-transformer:" form)]))
 
 (define-pass1-syntax (eri-macro-transformer form cenv) :gauche
   (match form
     [(_ xformer)
      ;; See the comment above in er-macro-transformer
-     (if (cenv-toplevel? cenv)
-       (pass1 `(,%make-er-transformer/toplevel. ,xformer
-                                                ,(cenv-module cenv)
-                                                ',(cenv-exp-name cenv)
-                                                :has-inject? #t)
-              cenv)
-       (pass1 `(,%make-er-transformer. ,xformer ,cenv :has-inject?) cenv))]
+     (let1 info (%er-macro-info-alist form)
+       (if (cenv-toplevel? cenv)
+         (pass1 `(,%make-er-transformer/toplevel. ,xformer
+                                                  ,(cenv-module cenv)
+                                                  ',(cenv-exp-name cenv)
+                                                  :has-inject? #t
+                                                  :info-alist ',info)
+                cenv)
+         (pass1 `(,%make-er-transformer. ,xformer ,cenv :has-inject? #t
+                                         :info-alist ',info)
+                cenv)))]
     [_ (error "syntax-error: malformed eri-macro-transformer:" form)]))
+
+(define (%er-macro-info-alist form)
+  ;; We don't save source---it's not so much useful, and we don't want it to
+  ;; take up space in precompiled code.
+  (or (and-let* ([ (pair? form) ]
+                 [si (pair-attribute-get form 'source-info #f)])
+        `((source-info . ,si)))
+      '()))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form

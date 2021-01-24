@@ -1603,7 +1603,9 @@
 
 ;; xformer  :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
 ;; xformer+ :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool), (Sym -> Sym)) -> Sexpr
-(define (%make-er-transformer xformer def-env :key (has-inject? #f))
+(define (%make-er-transformer xformer def-env
+                              :key (has-inject? #f)
+                                   (info-alist '()))
   (define def-module (cenv-module def-env))
   (define def-frames (cenv-frames def-env))
   (define (expand form use-env)
@@ -1622,16 +1624,18 @@
       (if has-inject?
         (xformer form %rename %compare %inject)
         (xformer form %rename %compare))))
-  (%make-macro-transformer (cenv-exp-name def-env) expand))
+  (%make-macro-transformer (cenv-exp-name def-env) expand info-alist))
 
 ;; Call to this procedure can be inserted in the output of er-macro expander
 ;; and emitted in the precompiled file, so do not change this API unless
 ;; you're sure no existing precompiled code refers to this.
 (define (%make-er-transformer/toplevel xformer def-module def-name 
-                                       :key (has-inject? #f))
+                                       :key (has-inject? #f)
+                                            (info-alist '()))
   (%make-er-transformer xformer 
                         (%make-cenv def-module '() def-name)
-                        :has-inject? has-inject?))
+                        :has-inject? has-inject?
+                        :info-alist info-alist))
 
 ;; Returns an S-expr all macros in which are expanded.
 ;; The resulting form may not be equivalent to the input form, though,
