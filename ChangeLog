@@ -1,3 +1,8 @@
+2021-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (describe): Show source info for macro
+	  description if available.
+
 2021-01-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (Scm_MakeMacro): Switch macro internal fields; making

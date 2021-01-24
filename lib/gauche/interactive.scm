@@ -171,9 +171,16 @@
 
 (define-method describe ((p <procedure>))
   (describe-common p)
-  (if-let1 source (source-location p)
+  (and-let1 source (source-location p)
     (format #t "Defined at ~s:~d\n" (car source) (cadr source)))
   (describe-slots p)
+  (values))
+
+(define-method describe ((m <macro>))
+  (describe-common m)
+  (and-let1 source (assq-ref (~ m'info-alist) 'source-info)
+    (format #t "Defined at ~s:~d\n" (car source) (cadr source)))
+  (describe-slots m)
   (values))
 
 (define d describe)
