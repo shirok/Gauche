@@ -1001,9 +1001,20 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
                                        SCM_MODULE(mod), env);
     ScmObj sr_xform = Scm_MakeSubr(synrule_transform, sr,
                                    2, 0, SCM_FALSE);
-    return Scm_MakeMacro(name, sr_xform, 
-                         SCM_LIST1(Scm_Cons(SCM_SYM_SOURCE, src)), 
-                         0);
+
+    ScmObj info = SCM_NIL, info_tail = SCM_NIL;
+    if (SCM_PAIRP(src)) {
+        SCM_APPEND1(info, info_tail, Scm_Cons(SCM_SYM_SOURCE, src));
+        ScmObj source_info = Scm_PairAttrGet(SCM_PAIR(src), 
+                                             SCM_SYM_SOURCE_INFO,
+                                             SCM_FALSE);
+        if (SCM_PAIRP(source_info)) {
+            SCM_APPEND1(info, info_tail, 
+                        Scm_Cons(SCM_SYM_SOURCE_INFO, source_info));
+        }
+    }
+
+    return Scm_MakeMacro(name, sr_xform, info, 0);
 }
 
 /*===================================================================

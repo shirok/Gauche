@@ -694,18 +694,28 @@
   (check-toplevel form cenv)
   (match form
     [(_ (name . formals) body ...)
-     (pass1/define-macro form name `(,lambda. ,formals ,@body) cenv)]
+     ($ pass1/define-macro form name
+        (with-source-info `(,lambda. ,formals ,@body) form)
+        cenv)]
     [(_ name expr)
      (pass1/define-macro form name expr cenv)]
     [_ (error "syntax-error:" form)]))
+
+(define (with-source-info obj src)
+  (or (and-let* ([ (pair? obj) ]
+                 [si (debug-source-info src)])
+        (extended-cons (car obj) (cdr obj) `((source-info . ,si))))
+      obj))
 
 (define (pass1/define-macro src name expr cenv)
   (unless (identifier? name) (error "syntax-error:" src))
   ;; TODO: macro autoload
   (let* ([proc (eval expr (cenv-module cenv))]
-         [trans (%make-macro-transformer name
-                                         (^[form env] (apply proc (cdr form)))
-                                         `((source . ,expr)))]
+         [source-info (debug-source-info expr)]
+         [trans ($ %make-macro-transformer name
+                   (^[form env] (apply proc (cdr form)))
+                   `((source . ,expr)
+                     ,@(cond-list [source-info `(source-info . ,source-info)])))]
          ;; See the "Hygiene alert" in pass1/define.
          [id (if (wrapped-identifier? name)
                (%rename-toplevel-identifier! name)
