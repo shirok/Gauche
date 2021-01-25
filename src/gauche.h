@@ -34,14 +34,6 @@
 #ifndef GAUCHE_H
 #define GAUCHE_H
 
-/* GAUCHE_API_VERSION is GAUCHE_MAJOR_VERSION*1000 + revision.
-   The revision is only incremented when we change API, which we expect
-   rare during the same major revision. */
-#ifndef GAUCHE_API_VERSION
-#define GAUCHE_API_VERSION  97
-//#define GAUCHE_API_VERSION 1000
-#endif
-
 /* Read config.h _before_ other headers, for it may affect the behavior
    of system header files.  Currently the only known instance of it is
    sigwait() on Solaris---we need to define _POSIX_PTHREAD_SEMANTICS to
@@ -49,6 +41,19 @@
    instances. */
 #include <gauche/config.h>
 #include <gauche/config_threads.h>
+
+/* GAUCHE_API_VERSION is GAUCHE_MAJOR_VERSION*1000 + revision.
+   The revision is only incremented when we change API, which we expect
+   rare during the same major revision.
+
+   As of 0.9.10, API_VERSION is 97, corresponding to libgauche-0.97.so.
+
+   This can be overridden by --with-api-version configure option.
+ */
+#ifndef GAUCHE_API_VERSION
+#define GAUCHE_API_VERSION  97
+//#define GAUCHE_API_VERSION 1000
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

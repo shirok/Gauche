@@ -203,6 +203,23 @@ AC_SUBST(SLIB_DIR)
 AC_DEFINE_UNQUOTED(SLIB_DIR, "$SLIB_DIR", [Slib installation path])
 
 dnl ----------------------------------------------------------
+dnl  with-api-version=N
+dnl
+
+AC_ARG_WITH(api-version,
+  AS_HELP_STRING([--with-api-version=N],
+                 [Compile Gauche with the given API version N, where N is
+a positive integer calculated as API_MAJOR_VERSION * 1000 + API_MINOR_VERSION.
+This is for developers to test their code with the specified API version.
+Available API versions may differ for each release; consult release notes
+for the details.]),
+ [ AS_IF([echo "$with_api_version" | grep -E '^[[0-9]]+$' > /dev/null ],
+         [AC_MSG_RESULT([Overriding API version with $with_api_version])],
+         [AC_MSG_ERROR([The argument of --with-api-version must be a positive integer, but got "$with_api_version"])])
+   AC_DEFINE(GAUCHE_API_VERSION, $with_api_version, [Overriding API VERSION])
+ ])
+
+dnl ----------------------------------------------------------
 dnl  with-local=PATH:...
 dnl
 AC_ARG_WITH(local,

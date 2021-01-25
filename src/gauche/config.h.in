@@ -14,8 +14,11 @@
 /* Define to use mixed endian ARM processor */
 #undef DOUBLE_ARMENDIAN
 
-/* Gauche ABI version string */
+/* Define to Gauche ABI version string */
 #undef GAUCHE_ABI_VERSION
+
+/* Define to override Gauche API version number */
+#undef GAUCHE_API_VERSION
 
 /* CA file path */
 #undef GAUCHE_CA_BUNDLE
