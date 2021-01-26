@@ -36,6 +36,7 @@
 #include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/procP.h"
 
 /*=================================================================
  * Classes

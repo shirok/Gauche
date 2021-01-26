@@ -1402,9 +1402,19 @@ struct ScmProcedureRec {
     unsigned int constant : 1;     /* constant procedure. see below. */
     unsigned int leaf     : 1;     /* leaf procedure/method */
     unsigned int reserved : 1;     /* unused yet. */
+#if GAUCHE_API_VERSION >= 98
+    unsigned int reserved32 : 32;  /* unused yet. */
+#endif /*GAUCHE_API_VERSION >= 98*/
     ScmObj info;                   /* source code info (see below) */
     ScmObj setter;                 /* setter, if exists. */
     ScmObj inliner;                /* inliner information (see below) */
+#if GAUCHE_API_VERSION >= 98
+    void *typeHint;                /* info to be used for type checking.
+                                      shouldn't be accessed directly, for
+                                      we do some tricky stuff here.  API will
+                                      be provided.
+                                    */
+#endif /*GAUCHE_API_VERSION >= 98*/
 };
 
 /* About locked slot:
@@ -1580,23 +1590,17 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     (SCM_PROCEDUREP(obj)&& \
      (  (!SCM_PROCEDURE_OPTIONAL(obj)&&SCM_PROCEDURE_REQUIRED(obj)==0) \
       ||(SCM_PROCEDURE_OPTIONAL(obj))))
-#define SCM_PROCEDURE_INIT(obj, req, opt, typ, inf)     \
-    SCM_PROCEDURE(obj)->required = req,                 \
-    SCM_PROCEDURE(obj)->optional = opt,                 \
-    SCM_PROCEDURE(obj)->type = typ,                     \
-    SCM_PROCEDURE(obj)->locked = FALSE,                 \
-    SCM_PROCEDURE(obj)->currying = FALSE,               \
-    SCM_PROCEDURE(obj)->constant = FALSE,               \
-    SCM_PROCEDURE(obj)->leaf = FALSE,                   \
-    SCM_PROCEDURE(obj)->reserved = 0,                   \
-    SCM_PROCEDURE(obj)->info = inf,                     \
-    SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
-    SCM_PROCEDURE(obj)->inliner = SCM_FALSE
 
 /* This is internal - should never be used directly */
+#if GAUCHE_API_VERSION >= 98
+#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
+    { { klass, NULL }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0, 0,    \
+      (inf), SCM_FALSE, (inl), NULL }
+#else  /* GAUCHE_API_VERSION < 98 */
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
     { { klass, NULL }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0,       \
       (inf), SCM_FALSE, (inl) }
+#endif /* GAUCHE_API_VERSION < 98 */
 
 SCM_EXTERN ScmObj Scm_CopyProcedure(ScmProcedure *proc);
 SCM_EXTERN ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given,

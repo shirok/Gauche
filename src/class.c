@@ -41,6 +41,7 @@
 #include "gauche/priv/pairP.h"
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/dispatchP.h"
+#include "gauche/priv/procP.h"
 #include "gauche/priv/stringP.h"
 
 /* Some routines uses small array on stack to keep data about
