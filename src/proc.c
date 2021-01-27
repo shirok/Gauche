@@ -84,7 +84,7 @@ void Scm__ProcedureInit(ScmProcedure *proc,
     proc->inliner = SCM_FALSE;
 #if GAUCHE_API_VERSION >= 98
     proc->reserved32 = 0;
-    proc->typeHint = NULL;
+    proc->typeHint = SCM_FALSE;
 #endif /*GAUCHE_API_VERSION >= 98*/
 }
 

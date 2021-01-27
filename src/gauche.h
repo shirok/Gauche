@@ -1409,11 +1409,11 @@ struct ScmProcedureRec {
     ScmObj setter;                 /* setter, if exists. */
     ScmObj inliner;                /* inliner information (see below) */
 #if GAUCHE_API_VERSION >= 98
-    void *typeHint;                /* info to be used for type checking.
-                                      shouldn't be accessed directly, for
-                                      we do some tricky stuff here.  API will
-                                      be provided.
-                                    */
+    ScmObj typeHint;               /* info to be used for type checking.
+                                     shouldn't be accessed directly, for
+                                     we do some tricky stuff here.  API will
+                                     be provided.
+                                   */
 #endif /*GAUCHE_API_VERSION >= 98*/
 };
 
@@ -1595,7 +1595,7 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
 #if GAUCHE_API_VERSION >= 98
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
     { { klass, NULL }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0, 0,    \
-      (inf), SCM_FALSE, (inl), NULL }
+      (inf), SCM_FALSE, (inl), SCM_FALSE }
 #else  /* GAUCHE_API_VERSION < 98 */
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
     { { klass, NULL }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0,       \
