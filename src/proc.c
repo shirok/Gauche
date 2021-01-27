@@ -62,6 +62,33 @@ static void proc_print(ScmObj obj, ScmPort *port,
 }
 
 /*=================================================================
+ * Common
+ */
+
+void Scm__ProcedureInit(ScmProcedure *proc,
+                        int type, /* ScmProcedureType */
+                        int required,
+                        int optional,
+                        ScmObj info)
+{
+    proc->required = required;
+    proc->optional = optional;
+    proc->type = type;
+    proc->locked = FALSE;
+    proc->currying = FALSE;
+    proc->constant = FALSE;
+    proc->leaf = FALSE;
+    proc->reserved = 0;
+    proc->info = info;
+    proc->setter = SCM_FALSE;
+    proc->inliner = SCM_FALSE;
+#if GAUCHE_API_VERSION >= 98
+    proc->reserved32 = 0;
+    proc->typeHint = NULL;
+#endif /*GAUCHE_API_VERSION >= 98*/
+}
+
+/*=================================================================
  * Closure
  */
 
@@ -85,7 +112,7 @@ ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
     int opt = SCM_COMPILED_CODE_OPTIONAL_ARGS(code);
 
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
-    SCM_PROCEDURE_INIT(c, req, opt, SCM_PROC_CLOSURE, info);
+    Scm__ProcedureInit(SCM_PROCEDURE(c), SCM_PROC_CLOSURE, req, opt, info);
     c->code = code;
     c->env = env;
     SCM_PROCEDURE(c)->inliner = SCM_COMPILED_CODE(code)->intermediateForm;
@@ -104,7 +131,8 @@ ScmObj Scm_MakeSubr(ScmSubrProc *func,
 {
     ScmSubr *s = SCM_NEW(ScmSubr);
     SCM_SET_CLASS(s, SCM_CLASS_PROCEDURE);
-    SCM_PROCEDURE_INIT(s, required, optional, SCM_PROC_SUBR, info);
+    Scm__ProcedureInit(SCM_PROCEDURE(s), SCM_PROC_SUBR, 
+                       required, optional, info);
     s->func = func;
     s->data = data;
     return SCM_OBJ(s);

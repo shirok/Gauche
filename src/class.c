@@ -2061,7 +2061,7 @@ static ScmObj fallback_compare(ScmObj *argv, int argc, ScmGeneric *gf)
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmGeneric *gf = SCM_NEW_INSTANCE(ScmGeneric, klass);
-    SCM_PROCEDURE_INIT(gf, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
+    Scm__ProcedureInit(SCM_PROCEDURE(gf), SCM_PROC_GENERIC, 0, 0, SCM_FALSE);
     gf->methods = SCM_NIL;
     gf->dispatcher = NULL;
     gf->fallback = Scm_NoNextMethod;
@@ -2428,12 +2428,12 @@ void Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port)
 
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
-    ScmMethod *instance = SCM_NEW_INSTANCE(ScmMethod, klass);
-    SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_METHOD, SCM_FALSE);
-    instance->generic = NULL;
-    instance->specializers = NULL;
-    instance->func = NULL;
-    return SCM_OBJ(instance);
+    ScmMethod *meth = SCM_NEW_INSTANCE(ScmMethod, klass);
+    Scm__ProcedureInit(SCM_PROCEDURE(meth), SCM_PROC_METHOD, 0, 0, SCM_FALSE);
+    meth->generic = NULL;
+    meth->specializers = NULL;
+    meth->func = NULL;
+    return SCM_OBJ(meth);
 }
 
 static void method_print(ScmObj obj, ScmPort *port, 
@@ -2798,7 +2798,7 @@ ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
 {
     ScmNextMethod *nm = SCM_NEW(ScmNextMethod);
     SCM_SET_CLASS(nm, SCM_CLASS_NEXT_METHOD);
-    SCM_PROCEDURE_INIT(nm, 0, 0, SCM_PROC_NEXT_METHOD, SCM_FALSE);
+    Scm__ProcedureInit(SCM_PROCEDURE(nm), SCM_PROC_NEXT_METHOD, 0, 0, SCM_FALSE);
     nm->generic = gf;
     nm->methods = methods;
     if (copyargs) {
