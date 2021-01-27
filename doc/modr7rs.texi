@@ -8401,6 +8401,7 @@ This is an alias of @code{rxmatch-substrings}
 @deftpx {Module} scheme.mapping.hash
 @mdindex scheme.mapping
 @mdindex scheme.mapping.hash
+@c EN
 This module defines immutable mappings from keys to values.
 Originally called @code{srfi-146} and @code{srfi-146.hash}.
 
@@ -8408,8 +8409,9 @@ The @code{scheme.mapping} module provides @emph{mapping} objects,
 where keys have total order.  The @code{scheme.mapping.hash} module
 provides @code{hashmap} objects, where keys can be hashed.
 
-Currently, Gauche uses built-in @code{<tree-map>} for the mapping object,
-and built-in @code{<hash-table>} for the hashmap object.
+Currently, Gauche uses built-in @code{<tree-map>} for the mapping object
+(@pxref{Treemaps}),
+and built-in @code{<hash-table>} for the hashmap object (@pxref{Hashtables}).
 The actual implementation
 may be changed in future versions, so the user must not rely on the
 underlying implementations.
@@ -8419,6 +8421,28 @@ The modules also provide ``linear update'' APIs, which is @emph{allowed}
 to mutate the mappings passed to the arguments, under assumption
 that the argument won't be used afterwards.  The linear update APIs
 are marked with @code{!} at the end of the name.
+You should always use the returned value of the linear update APIs,
+for the side effect isn't guaranteed.
+@c JP
+このモジュールは、キーから値への変更不可なマッピングを提供します。
+元は@code{srfi-146}および@code{srfi-146.hash}として規定されました。
+
+@code{scheme.mapping}モジュールは、キー間に全順序を定義できる@emph{mapping}オブジェクトを、
+@code{scheme.mapping.hash}モジュールは、ハッシュ可能なキーを使う@emph{hashmap}オブジェクト
+を提供します。
+
+今のところ、Gaucheはmappingとして組み込みの@code{<tree-map>}を (@ref{Treemaps})、
+hashmapとして組み込みの@code{<hash-table>}を使っています。
+実際の実装は将来変わるかもしれないので、このモジュールを使う場合は具体的なデータ構造を
+仮定しないようにしてください。
+
+呼び出し側では、mappingやhashmapは変更不可なオブジェクトとして扱わなければなりません。
+このモジュールでは「線形更新」版のAPIも提供されています。これは、
+呼び出し側で引数に渡すmappingやhashmapに二度とアクセスしない、という契約のもとに、
+渡されたmappingやhashmapを再利用するかもしれないインタフェースです。
+線形更新版のAPIは名前の末尾に@code{!}がつきます。
+ですが副作用は保証されていないので、線形更新版でも常に戻り値を利用する必要があります。
+@c COMMON
 @end deftp
 
 @menu
@@ -8434,23 +8458,48 @@ are marked with @code{!} at the end of the name.
 @deftp {Class} <mapping>
 @clindex mapping
 @c MOD scheme.mapping
+@c EN
+The class for the mappings.
 On Gauche, this is just an alias of @code{<tree-map>}.
+@c JP
+mappingのクラス。Gaucheでは単に@code{<tree-map>}の別名です。
+@c COMMON
 @end deftp
 
+@c EN
 @subsubheading Constructors
+@c JP
+@subsubheading コンストラクタ
+@c COMMON
 
 @defun mapping comparator key value @dots{}
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Creates a new mapping with the given @var{comparator},
 whose initial content is
 provided by @var{key} @var{value} @dots{}.
+@c JP
+@var{comparator}をキーの比較に用いる新たなmappingを作って返します。
+@var{key} @var{value} @dots{} がキー-値の組の初期値となります。
+@c COMMON
 
-The @var{comparator} argument must be a comparator
+@c EN
+The @var{comparator} argument must be a comparator, 
+with comparison/ordering procedure
 (@pxref{Basic comparators}).
+@c JP
+@var{comparator}は、順序手続きか比較手続きを持つ比較器でなければなりません
+(@ref{Basic comparators}参照)。
+@c COMMON
 
+@c EN
 The @var{key} @var{value} @dots{} arguments must be
 even length, alternating keys and values.
+@c JP
+残りの引数 @var{key} @var{value} @dots{} は偶数個でなければならず、
+引数はキーと値を交互に並べたものです。
+@c COMMON
 
 @example
 (define m (mapping default-comparator 'a 1 'b 2))
@@ -8463,26 +8512,54 @@ even length, alternating keys and values.
 @defun mapping-unfold p f g seed comparator
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Creates a new mapping, whose content is populated by
 three procedures, @var{p}, @var{f} and @var{g}, and
 a seed value @var{seed}, as follows.
+@c JP
+新たなmappingを作って返します。作られるmappingの内容は、
+3つの手続き@var{p}、@var{f}、@var{g}と初期シード値@var{seed}で決まります。
+@c COMMON
 
+@c EN
 In each iteration, we have a current seed value, whose initial
 value is @var{seed}.
+@c JP
+繰り返しごとに、「現在のシード値」が参照されます。シード値の初期値は@var{seed}です。
+@c COMMON
 
+@c EN
 First, @var{p}, a stop predicate, is applied to the current
 seed value. If it returns true, we stop iteration and returns
 the new mapping.
+@c JP
+まず、現在のシード値に@var{p} (停止述語)が適用されます。それが真の値を返したら、
+繰り返しは終了し、それまでに生成されたエントリを持つmappingが返されます。
+@c COMMON
 
+@c EN
 Next, @var{f} is applied to the current seed value.  It must
 return two values.  The first one is for a key and the second
 one for the value.  We add this pair to the mapping.
+@c JP
+次に、@var{f}が現在のシード値に適用されます。これは二つの値を返さなければなりません。
+最初の戻り値がキー、次の戻り値が値と解釈されます。この組がmappingに足されます。
+@c COMMON
 
+@c EN
 Then, @var{g} is applied to the current seed value.  The result
 becomes the seed value of the next iteration.  And we iterate.
+@c JP
+それから、@var{g}が現在のシード値に適用されます。その戻り値が次の繰り返しでの
+シード値となります。これを繰り返します。
+@c COMMON
 
+@c EN
 The following example creates a mapping that maps ASCII characters
 to their character codes:
+@c JP
+次の例は、ASCII文字をASCIIコードにマップするmappingを返します。
+@c COMMON
 
 @example
 (mapping-unfold (cut >= <> 128)
