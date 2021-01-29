@@ -1,3 +1,8 @@
+2021-01-28  Shiro Kawai  <shiro@acm.org>
+
+	* doc/modgauche.texi: Add doc of gauche.mop.instance-pool; make it
+	  official.
+
 2021-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): Show source info for macro

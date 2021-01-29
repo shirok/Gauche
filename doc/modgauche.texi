@@ -20,6 +20,7 @@
 * Lazy sequence utilities::     gauche.lazy
 * Listener::                    gauche.listener
 * User-level logging::          gauche.logger
+* Instance pools::              gauche.mop.instance-pool
 * Propagating slot access::     gauche.mop.propagate
 * Singleton::                   gauche.mop.singleton
 * Slot with validator::         gauche.mop.validator
@@ -10805,7 +10806,7 @@ this program on the machine accessible from outside network!)
 @end example
 
 @c ----------------------------------------------------------------------
-@node User-level logging, Propagating slot access, Listener, Library modules - Gauche extensions
+@node User-level logging, Instance pools, Listener, Library modules - Gauche extensions
 @section @code{gauche.logger} - User-level logging
 @c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
@@ -11159,7 +11160,98 @@ the code runs without logging.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Propagating slot access, Singleton, User-level logging, Library modules - Gauche extensions
+@node Instance pools, Propagating slot access, User-level logging, Library modules - Gauche extensions
+@section @code{gauche.mop.instance-pool} - Instance pools
+@c NODE インスタンスプール, @code{gauche.mop.instance-pool} - インスタンスプール
+
+@deftp {Module} gauche.mop.instance-pool
+@mdindex gauche.mop.instance-pool
+Sometimes, you want to track all instances created from a class.
+This module provies tools to do that.
+
+An @emph{instance pool} class is a class that keeps the list of instances
+of itself and its subclasses.  
+
+A class that inherits @code{<instance-pool-mixin>} directly becomes a 'root'
+class of the pool.  Instances of the subclass of the root class will
+be added to the pool.
+
+An application can have multiple root classes.  If a class inherits
+from two or more pooled classes, its instances will be added to
+all the pools.
+
+The actual implementation of how to manage pools can be customizable
+by subclassing @code{<instance-pool-meta>} and overloading methods.
+
+Note that instance pools are global---it keeps all the instances
+ever created, unless explicitly cleared.
+@end deftp
+
+@deftp {Class} <instance-pool-meta>
+@clindex instance-pool-meta
+@c MOD gauche.mop.instance-pool
+A metaclass that adds a class the capability of tracking its instances.
+By default, instance of itself and its subclasses are tracked.
+@end deftp
+
+@deftp {Class} <instance-pool-mixin>
+@clindex instance-pool-mixin
+@c MOD gauche.mop.instance-pool
+A mixin class that makes the class that directly inherits this mixin
+an instance of @code{<instnace-pool-meta>}.  You can use this mixin
+class, instead of using metaclass explicitly, to make a class
+a root of the pool.
+@end deftp
+
+@deffn {Generic Function} instance-pool->list class
+@c MOD gauche.mop.instance-pool
+Returns a list of instances in the pool of @var{class}, 
+which should be an instance
+of @code{<instance-pool-meta>}.
+The list is fresly constructuted every time it is called.
+The order of instances are not specified.
+@end deffn
+
+@deffn {Generic Function} instance-pool-find class pred
+@c MOD gauche.mop.instance-pool
+Returns an instance of @var{class} which satisfies the predicate @var{pred}.
+If no instance satisfies it, @code{#f} is returned.
+@end deffn
+
+@deffn {Generic Function} instance-pool-remove! class pred
+@c MOD gauche.mop.instance-pool
+Remove all instances that satisfies the predicate @var{pred}
+from the pool of @var{class}.
+@end deffn
+
+@deffn {Generic Function} instance-pool-fold class kons knil
+@c MOD gauche.mop.instance-pool
+Calls @var{kons} over every instance in the pool of @var{class},
+with the current accumulated value.  The initial value is @var{knil},
+and each return value of @var{kons} is used as the next value.
+The last return value of @var{kons} is returned from the function.
+
+It is functionally equivalent with the following, except that it may
+be more efficient (without creating intermediate list).  Also, the
+order of instances are not guaranteed to be the same as
+@code{instance-pool->list} returns.
+@example
+(fold kons knil (instance-pool->list class))
+@end example
+@end deffn
+
+@deffn {Generic Function} instance-pool-map class proc
+@deffnx {Generic Function} instance-pool-for-each class proc
+@c MOD gauche.mop.instance-pool
+Apply @var{proc} on each instances in the pool of @var{class};
+@code{instance-pool-map} gathers the results into a list and returns it,
+while @code{instance-pool-for-each} discards the result of @var{proc}.
+
+The order in which instances are visited is not specified.
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Propagating slot access, Singleton, Instance pools, Library modules - Gauche extensions
 @section @code{gauche.mop.propagate} - Propagating slot access
 @c NODE スロットアクセスの伝播, @code{gauche.mop.propagate} - スロットアクセスの伝播
 
