@@ -1041,7 +1041,7 @@
     (push-stmt! cproc #"SCM_RESULT = ~c-func-name(~(args));")
     (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
-    (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
+    (push-stmt! cproc (cgen-return-stmt (cgen-box-tail-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   ($ with-cise-ambient cproc
      (match form
@@ -1080,7 +1080,7 @@
       (push-stmt! cproc #" SCM_RESULT = (~expr);")
       (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
-      (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
+      (push-stmt! cproc (cgen-return-stmt (cgen-box-tail-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
   ($ with-cise-ambient cproc
      (match form
@@ -1127,7 +1127,7 @@
     (for-each expand-stmt stmts)
     (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
-    (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
+    (push-stmt! cproc (cgen-return-stmt (cgen-box-tail-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (define (typed-results rettypes stmts)
     (let1 nrets (length rettypes)
@@ -1140,7 +1140,7 @@
       (let1 results
           (string-join
            (map-with-index (^[i rettype]
-                             (cgen-box-expr rettype #"SCM_RESULT~i"))
+                             (cgen-box-tail-expr rettype #"SCM_RESULT~i"))
                            rettypes)
            ",")
         (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
@@ -1807,9 +1807,9 @@
     (p "  "(~ class-type'c-type)" obj = "(cgen-unbox-expr class-type "OBJARG")";")
     (cond [(string? (~ slot'getter)) (p (~ slot'getter))]
           [(string? (~ slot'c-spec))
-           (f "  return ~a;" (cgen-box-expr type (~ slot'c-spec)))]
+           (f "  return ~a;" (cgen-box-tail-expr type (~ slot'c-spec)))]
           [else
-           (f "  return ~a;" (cgen-box-expr type #"obj->~(~ slot'c-name)"))])
+           (f "  return ~a;" (cgen-box-tail-expr type #"obj->~(~ slot'c-name)"))])
     (p "}")
     (p "")))
 
