@@ -36,6 +36,7 @@
   (use text.tr)
   (use gauche.mop.instance-pool)
   (export <cgen-type> cgen-type-from-name make-cgen-type
+          cgen-boxer-name cgen-unboxer-name cgen-pred-name
           cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
           cgen-type-maybe? cgen-return-stmt
           cgen-type->scheme-type-name)
@@ -163,6 +164,11 @@
 (define (cgen-type-maybe? type)
   (boolean (~ type'%maybe)))
 
+;; These could be #f
+(define (cgen-boxer-name type) (~ type'%boxer))
+(define (cgen-unboxer-name type) (~ type'%unboxer))
+(define (cgen-pred-name type) (~ type'%c-predicate))
+
 ;; Create a new cgen-type.
 ;; Many cgen-types follows a specific convention to name boxer/unboxer etc,
 ;; and make-cgen-type assumes the convention if they are not provided.
@@ -209,7 +215,7 @@
    (<uint8>   "u_int" "8bit unsigned integer" "SCM_UINTP" "Scm_GetIntegerU8" "Scm_MakeIntegerU")
    (<uint16>  "u_int" "16bit unsigned integer" "SCM_UINTP" "Scm_GetIntegerU16" "Scm_MakeIntegerU")
    (<uint32>  "u_int" "32bit unsigned integer" "SCM_UINTEGERP" "Scm_GetIntegerU32" "Scm_MakeIntegerU")
-   (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_VMReturnFlonum")
+   (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
    (<double>  "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
 
    ;; Basic immediate types
@@ -310,7 +316,7 @@
       #"~|boxer|(~c-expr)")))
 
 (define (cgen-box-tail-expr type c-expr)
-  (let1 boxer (if (eq? (~ type'name) '<real>)
+  (let1 boxer (if (memq (~ type'name) '(<real> <float>))
                 "Scm_VMReturnFlonum"
                 (or (~ type'%boxer) ""))
     (if (cgen-type-maybe? type)
