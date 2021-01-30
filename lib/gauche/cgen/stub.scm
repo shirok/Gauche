@@ -1693,8 +1693,8 @@
 (define (cclass-emit-standard-decls self)
   (let1 type (cgen-type-from-name (~ self'scheme-name))
     (p "SCM_CLASS_DECL("(~ self'c-name)");")
-    (p "#define "(cgen-unbox-expr type "obj")" (("(~ self'c-type)")obj)")
-    (p "#define "(cgen-pred-expr type "obj")" SCM_XTYPEP(obj, (&"(~ self'c-name)"))")
+    (p "#define "(cgen-unboxer-name type)"(obj) (("(~ self'c-type)")obj)")
+    (p "#define "(cgen-pred-name type)"(obj) SCM_XTYPEP(obj, (&"(~ self'c-name)"))")
     ))
 
 (define-method cgen-emit-body ((self <cclass>))
@@ -1915,11 +1915,11 @@
   (when (~ self'private)
     (let1 type (cgen-type-from-name (~ self'scheme-name))
       (p "static ScmClass *" (~ self'c-name) ";")
-      (p "#define "(cgen-unbox-expr type "obj")
+      (p "#define "(cgen-unboxer-name type)"(obj)"
          " SCM_FOREIGN_POINTER_REF("(~ self'c-type)", obj)")
-      (p "#define "(cgen-pred-expr type "obj")
+      (p "#define "(cgen-pred-name type)"(obj)"
          " SCM_XTYPEP(obj, "(~ self'c-name)")")
-      (p "#define "(cgen-box-expr type "ptr")
+      (p "#define "(cgen-boxer-name type)"(ptr)"
          " Scm_MakeForeignPointer("(~ self'c-name)", ptr)")))
   )
 
