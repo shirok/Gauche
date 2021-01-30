@@ -36,7 +36,8 @@
   (use text.tr)
   (use gauche.mop.instance-pool)
   (export <cgen-type> cgen-type-from-name make-cgen-type
-          cgen-box-expr cgen-unbox-expr cgen-pred-expr cgen-return-stmt
+          cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
+          cgen-return-stmt
           cgen-type->scheme-type-name)
   )
 (select-module gauche.cgen.type)
@@ -184,9 +185,11 @@
 (for-each
  (cut apply make-cgen-type <>)
  '(;; Numeric types
+   ;; NB: The boxer of <real> may be substituted when cgen-box-tail-expr
+   ;; is used.
    (<fixnum>  "ScmSmallInt" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
    (<integer> "ScmObj" "exact integer" "SCM_INTEGERP" "")
-   (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
+   (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
    (<number>  "ScmObj" "number" "SCM_NUMBERP" "")
    (<int>     "int" "C integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
    (<long>    "long" "C long integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
@@ -288,11 +291,24 @@
 ;;
 ;; Generating C expressions from type info
 ;;
+;;   cgen-box-tail-expr can be used when the generated value will be
+;;   immediately returned from SUBR.  The only difference from cgen-box-expr
+;;   is the case for <real>, that can use register-allocated flonumbs
+;;   in that case.
+;;
 
 (define (cgen-box-expr type c-expr)
   (if (~ type'maybe)
     #"SCM_MAKE_MAYBE(~(~ type'boxer), ~c-expr)"
     #"~(~ type'boxer)(~c-expr)"))
+
+(define (cgen-box-tail-expr type c-expr)
+  (let1 boxer (if (eq? (~ type'name) '<real>)
+                "Scm_VMReturnFlonum"
+                (~ type'boxer))
+    (if (~ type'maybe)
+      #"SCM_MAKE_MAYBE(~|boxer|, ~c-expr)"
+      #"~|boxer|(~c-expr)")))
 
 (define (cgen-unbox-expr type c-expr)
   (if (~ type'maybe)

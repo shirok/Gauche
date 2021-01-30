@@ -1,3 +1,13 @@
+2021-01-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/type.scm (cgen-box-tail-expr): Separate box-expr
+	  and box-tail-expr, the latter to be used when boxed value will
+	  immediately be returned to the VM.  Only <real> type needs the
+	  distinction, to utilize VM flonum registers.  NB: If there's a code
+	  that directly accesses <cgen-type>'boxer (which it shouldn't do),
+	  this change may slow it down, for boxer of <real> is now
+	  Scm_MakeFlonum.  It should use cgen-box-tail-expr.
+
 2021-01-28  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modgauche.texi: Add doc of gauche.mop.instance-pool; make it
