@@ -1321,14 +1321,10 @@
   (p "  int "(get-c-name "" (~ arg'count-var))";"))
 
 (define (emit-arg-unbox-rec arg)
-  (let1 pred (~ arg'type'c-predicate)
-    (when (and pred (not (string-null? pred)))
-      (f "  if (!~a) Scm_Error(\"~a required, but got %S\", ~a);"
-         (cgen-pred-expr (~ arg'type) (~ arg'scm-name))
-         (~ arg'type'description) (~ arg'scm-name)))
-    (if (~ arg'type'unboxer)
-      (p "  "(~ arg'c-name)" = "(cgen-unbox-expr (~ arg'type) (~ arg'scm-name))";")
-      (p "  "(~ arg'c-name)" = "(~ arg'scm-name)";"))))
+  (f "  if (!~a) Scm_Error(\"~a required, but got %S\", ~a);"
+     (cgen-pred-expr (~ arg'type) (~ arg'scm-name))
+     (~ arg'type'description) (~ arg'scm-name))
+  (p "  "(~ arg'c-name)" = "(cgen-unbox-expr (~ arg'type) (~ arg'scm-name))";"))
 
 (define-method emit-arg-unbox ((arg <required-arg>))
   (p "  "(~ arg'scm-name)" = SCM_SUBRARGS["(~ arg'count)"];")
@@ -1697,8 +1693,8 @@
 (define (cclass-emit-standard-decls self)
   (let1 type (cgen-type-from-name (~ self'scheme-name))
     (p "SCM_CLASS_DECL("(~ self'c-name)");")
-    (p "#define "(~ type'unboxer)"(obj) (("(~ self'c-type)")obj)")
-    (p "#define "(~ type'c-predicate)"(obj) SCM_XTYPEP(obj, (&"(~ self'c-name)"))")
+    (p "#define "(cgen-unbox-expr type "obj")" (("(~ self'c-type)")obj)")
+    (p "#define "(cgen-pred-expr type "obj")" SCM_XTYPEP(obj, (&"(~ self'c-name)"))")
     ))
 
 (define-method cgen-emit-body ((self <cclass>))
@@ -1828,8 +1824,8 @@
       (p (~ slot'setter))
       (begin
         (unless (eq? type *scm-type*)
-          (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
-             (~ type'c-predicate) (~ type'c-type)))
+          (f "  if (!~a) Scm_Error(\"~a required, but got %S\", value);"
+             (cgen-pred-expr type "value") (~ type'c-type)))
         (if (~ slot'c-spec)
           (f "  ~a = ~a;" (~ slot'c-spec) (cgen-unbox-expr type "value"))
           (f "  obj->~a = ~a;" (~ slot'c-name) (cgen-unbox-expr type "value")))))
@@ -1919,12 +1915,12 @@
   (when (~ self'private)
     (let1 type (cgen-type-from-name (~ self'scheme-name))
       (p "static ScmClass *" (~ self'c-name) ";")
-      (p "#define "(~ type'unboxer)"(obj) "
-         "SCM_FOREIGN_POINTER_REF("(~ self'c-type)", obj)")
-      (p "#define "(~ type'c-predicate)"(obj) "
-         "SCM_XTYPEP(obj, "(~ self'c-name)")")
-      (p "#define "(~ type'boxer)"(ptr) "
-         "Scm_MakeForeignPointer("(~ self'c-name)", ptr)")))
+      (p "#define "(cgen-unbox-expr type "obj")
+         " SCM_FOREIGN_POINTER_REF("(~ self'c-type)", obj)")
+      (p "#define "(cgen-pred-expr type "obj")
+         " SCM_XTYPEP(obj, "(~ self'c-name)")")
+      (p "#define "(cgen-box-expr type "ptr")
+         " Scm_MakeForeignPointer("(~ self'c-name)", ptr)")))
   )
 
 (define-method cgen-emit-init ((self <c-ptr>))

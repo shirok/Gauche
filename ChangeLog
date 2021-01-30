@@ -7,6 +7,10 @@
 	  that directly accesses <cgen-type>'boxer (which it shouldn't do),
 	  this change may slow it down, for boxer of <real> is now
 	  Scm_MakeFlonum.  It should use cgen-box-tail-expr.
+	  (<cgen-type>): Change slot name of c-predicate, unboxer, boxer and
+	  maybe, to make it private.  Those info should be accessed via
+	  cgen-pred-expr, cgen-unbox-expr, cgen-box[-tail]-expr, and
+	  cgen-type-maybe?.
 
 2021-01-28  Shiro Kawai  <shiro@acm.org>
 

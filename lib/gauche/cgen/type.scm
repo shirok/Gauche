@@ -37,7 +37,7 @@
   (use gauche.mop.instance-pool)
   (export <cgen-type> cgen-type-from-name make-cgen-type
           cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
-          cgen-return-stmt
+          cgen-type-maybe? cgen-return-stmt
           cgen-type->scheme-type-name)
   )
 (select-module gauche.cgen.type)
@@ -129,16 +129,18 @@
    ;; ::<string> - C type name this stub type represents
    (description :init-keyword :description)
    ;; ::<string> - used in the type error message
-   (c-predicate :init-keyword :c-predicate)
+
+   ;; The following field should be private.  Use cgen-box-expr etc.
+   (%c-predicate :init-keyword :c-predicate)
    ;; ::<string> - name of a C function (macro) to find out the given
    ;;              ScmObj has a valid type for this stub type.
-   (unboxer     :init-keyword :unboxer)
+   (%unboxer     :init-keyword :unboxer)
    ;; ::<string> - name of a C function (macro) that takes Scheme object
    ;;              and returns a C object.
-   (boxer       :init-keyword :boxer :init-value "SCM_OBJ_SAFE")
+   (%boxer       :init-keyword :boxer :init-value "SCM_OBJ_SAFE")
    ;; ::<string> - name of a C function (macro) that takes C object
    ;;              and returns a Scheme Object.
-   (maybe       :init-keyword :maybe       :init-value #f)
+   (%maybe       :init-keyword :maybe       :init-value #f)
    ;; ::<type>? - base type, if this is 'maybe' qualified type.
    ))
 
@@ -152,10 +154,14 @@
                  (basetype (cgen-type-from-name basename)))
         (make <cgen-type> :name name :c-type (~ basetype'c-type)
               :description #"~(~ basetype'description) or #f"
-              :c-predicate (~ basetype'c-predicate)
-              :unboxer     (~ basetype'unboxer)
-              :boxer       (~ basetype'boxer)
+              :c-predicate (~ basetype'%c-predicate)
+              :unboxer     (~ basetype'%unboxer)
+              :boxer       (~ basetype'%boxer)
               :maybe       basetype))))
+
+;; accessor
+(define (cgen-type-maybe? type)
+  (boolean (~ type'%maybe)))
 
 ;; Create a new cgen-type.
 ;; Many cgen-types follows a specific convention to name boxer/unboxer etc,
@@ -284,7 +290,7 @@
       [(<float> <double>) '<real>]
       [(<const-cstring>) '<string>]
       [else => identity]))
-  (if-let1 inner (~ cgen-type'maybe)
+  (if-let1 inner (~ cgen-type'%maybe)
     `(<?> ,(base-name inner))
     (base-name cgen-type)))
 
@@ -298,27 +304,31 @@
 ;;
 
 (define (cgen-box-expr type c-expr)
-  (if (~ type'maybe)
-    #"SCM_MAKE_MAYBE(~(~ type'boxer), ~c-expr)"
-    #"~(~ type'boxer)(~c-expr)"))
+  (let1 boxer (or (~ type'%boxer) "")
+    (if (cgen-type-maybe? type)
+      #"SCM_MAKE_MAYBE(~|boxer|, ~c-expr)"
+      #"~|boxer|(~c-expr)")))
 
 (define (cgen-box-tail-expr type c-expr)
   (let1 boxer (if (eq? (~ type'name) '<real>)
                 "Scm_VMReturnFlonum"
-                (~ type'boxer))
-    (if (~ type'maybe)
+                (or (~ type'%boxer) ""))
+    (if (cgen-type-maybe? type)
       #"SCM_MAKE_MAYBE(~|boxer|, ~c-expr)"
       #"~|boxer|(~c-expr)")))
 
 (define (cgen-unbox-expr type c-expr)
-  (if (~ type'maybe)
-    #"SCM_MAYBE(~(~ type'unboxer), ~c-expr)"
-    #"~(~ type'unboxer)(~c-expr)"))
+  (let1 unboxer (or (~ type'%unboxer) "")
+    (if (cgen-type-maybe? type)
+      #"SCM_MAYBE(~|unboxer|, ~c-expr)"
+      #"~|unboxer|(~c-expr)")))
 
 (define (cgen-pred-expr type c-expr)
-  (if (~ type'maybe)
-    #"SCM_MAYBE_P(~(~ type'c-predicate), ~c-expr)"
-    #"~(~ type'c-predicate)(~c-expr)"))
+  (if-let1 pred (~ type'%c-predicate)
+    (if (cgen-type-maybe? type)
+      #"SCM_MAYBE_P(~|pred|, ~c-expr)"
+      #"~|pred|(~c-expr)")
+    "TRUE"))
 
 (define (cgen-return-stmt expr)
   #"SCM_RETURN(~expr);")
