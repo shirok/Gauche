@@ -194,6 +194,28 @@
  [else])
 
 ;;--------------------------------------------------------------------
+;; control.future
+;;
+
+(cond-expand
+ [gauche.sys.threads
+  (test-section "control.future")
+  (use control.future)
+  (test-module 'control.future)
+
+  (test* "simple future" '(#t 3)
+         (let1 f (future 3)
+           (list (future? f)
+                 (touch f))))
+  (let1 f (future (error "oops"))
+    (test* "future error handling (delayed)" #t
+           (future? f))
+    (test* "future error handling (propagated)" (test-error <error> "oops")
+           (touch f)))
+  ]
+ [else])
+
+;;--------------------------------------------------------------------
 ;; control.mapper
 ;;
 (test-section "control.mapper")

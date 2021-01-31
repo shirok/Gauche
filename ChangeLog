@@ -1,5 +1,9 @@
 2021-01-31  Shiro Kawai  <shiro@acm.org>
 
+	* lib/control/future.scm: Added.  This is a provisional impl.
+	  We'd like to use implicit thread pool to avoid thread creation
+	  overhead.
+
 	* src/vector.c, src/libvec.scm (make-view-uvector): Provides the means
 	  to access memory region via uvector.
 
