@@ -331,15 +331,22 @@ ScmObj Scm_GetCwd(void)
  * Mmap (sys/mman.h)
  */
 
+#if defined(HAVE_SYS_MMAN_H)
 static void mem_print(ScmObj obj, ScmPort *port, 
                       ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmMemoryRegion *m = SCM_MEMORY_REGION(obj);
+
+    
     Scm_Printf(port, "#<memory-region %p[%lx] (%s%s%s)>", m->ptr, m->size,
                (m->prot & PROT_READ)?  "r":"",
                (m->prot & PROT_WRITE)? "w":"",
                (m->prot & PROT_EXEC)?  "x":"");
 }
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_MemoryRegionClass,
+                         mem_print, NULL, NULL, NULL, 
+                         SCM_CLASS_DEFAULT_CPL);
 
 static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
@@ -351,12 +358,6 @@ static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
         m->ptr = NULL;
     }
 }
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_MemoryRegionClass,
-                         mem_print, NULL, NULL, NULL, 
-                         SCM_CLASS_DEFAULT_CPL);
-
-#if defined(HAVE_SYS_MMAN_H)
 
 ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
                    int prot, int flags)
@@ -374,7 +375,6 @@ ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
     Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
     return SCM_OBJ(m);
 }
-
 #endif /* HAVE_SYS_MMAN_H*/
 
 /*===============================================================
@@ -3282,7 +3282,9 @@ void Scm__InitSystem(void)
     Scm_InitStaticClass(&Scm_SysTmClass, "<sys-tm>", mod, tm_slots, 0);
     Scm_InitStaticClass(&Scm_SysGroupClass, "<sys-group>", mod, grp_slots, 0);
     Scm_InitStaticClass(&Scm_SysPasswdClass, "<sys-passwd>", mod, pwd_slots, 0);
+#if defined(HAVE_SYS_MMAN_H)    
     Scm_InitStaticClass(&Scm_MemoryRegionClass, "<memory-region>", mod, NULL, 0);
+#endif
 #ifdef HAVE_SELECT
     Scm_InitStaticClass(&Scm_SysFdsetClass, "<sys-fdset>", mod, NULL, 0);
 #endif
