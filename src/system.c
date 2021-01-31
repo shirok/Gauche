@@ -333,7 +333,10 @@ static void mem_print(ScmObj obj, ScmPort *port,
                       ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmMemoryRegion *m = SCM_MEMORY_REGION(obj);
-    Scm_Printf(port, "#<memory-region %p[%lx]>", m->ptr, m->size);
+    Scm_Printf(port, "#<memory-region %p[%lx] (%s%s%s)>", m->ptr, m->size,
+               (m->prot & PROT_READ)?  "r":"",
+               (m->prot & PROT_WRITE)? "w":"",
+               (m->prot & PROT_EXEC)?  "x":"");
 }
 
 static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
@@ -352,17 +355,18 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_MemoryRegionClass,
                          SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
-                   int prot, int mapflags)
+                   int prot, int flags)
 {
     void *ptr;
-    SCM_SYSCALL3(ptr, mmap(addrhint, len, prot, mapflags, fd, off), 
+    SCM_SYSCALL3(ptr, mmap(addrhint, len, prot, flags, fd, off), 
                  ptr == MAP_FAILED);
     if (ptr == MAP_FAILED) Scm_SysError("mmap failed");
     ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
     SCM_SET_CLASS(m, SCM_CLASS_MEMORY_REGION);
     m->ptr = ptr;
     m->size = len;
-    m->flags = 0;
+    m->prot = prot;
+    m->flags = flags;
     Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
     return SCM_OBJ(m);
 }

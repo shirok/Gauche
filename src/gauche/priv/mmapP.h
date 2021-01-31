@@ -38,7 +38,8 @@ typedef struct ScmMemoryRegionRec {
     SCM_HEADER;
     void   *ptr;
     size_t size;
-    u_long flags;
+    int prot;
+    int flags;
 } ScmMemoryRegion;
 
 SCM_CLASS_DECL(Scm_MemoryRegionClass);
@@ -47,6 +48,6 @@ SCM_CLASS_DECL(Scm_MemoryRegionClass);
 #define SCM_MEMORY_REGION_P(obj) SCM_XTYPEP(obj, SCM_CLASS_MEMORY_REGION)
 
 SCM_EXTERN ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off, 
-                              int prot, int mapflags);
+                              int prot, int flags);
 
 #endif /*GAUCHE_PRIV_MMAPP_H*/
