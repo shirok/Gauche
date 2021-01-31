@@ -325,8 +325,9 @@
 (define-cproc make-view-uvector (mem klass::<class> size::<fixnum>
                                      :optional (offset::<fixnum> 0)
                                                (immutable?::<boolean> #f))
-  (unless (SCM_MEMORY_REGION_P mem)
-    (SCM_TYPE_ERROR mem "<memory-region>"))
+  (.when "defined(HAVE_SYS_MMAN_H)"
+    (unless (SCM_MEMORY_REGION_P mem)
+      (SCM_TYPE_ERROR mem "<memory-region>")))
   (return (Scm_MakeViewUVector (SCM_MEMORY_REGION mem)
                                klass
                                size offset immutable?)))
