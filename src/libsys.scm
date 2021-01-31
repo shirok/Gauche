@@ -38,8 +38,7 @@
 (inline-stub
  (declcode
   (.include <gauche/class.h> <gauche/priv/mmapP.h>)
-  (.include <stdlib.h> <locale.h> <math.h> 
-            <sys/mman.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
+  (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
   (.cond ["TIME_WITH_SYS_TIME" (.include <sys/time.h> <time.h>)]
          ["HAVE_SYS_TIME_H"    (.include <sys/time.h>)]
          [else                 (.include <time.h>)])
@@ -50,6 +49,7 @@
   (.if "HAVE_SYS_RESOURCE_H" (.include <sys/resource.h>))
   (.if "HAVE_SYS_LOADAVG_H"  (.include <sys/loadavg.h>))
   (.if "HAVE_UNISTD_H"       (.include <unistd.h>))
+  (.if "HAVE_SYS_MMAN_H"     (.include <sys/mman.h>))
 
   (.if "defined(GAUCHE_WINDOWS)"
        (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
@@ -576,32 +576,42 @@
 ;; sys/mman.h
 
 (define-cproc sys-mmap (maybe-port prot::<int> flags::<int>
-                        :key size off)
-  (let* ([fd::int -1] [isize::size_t 0] [ioff::off_t 0])
-    (cond [(SCM_PORTP maybe-port)
-           (set! fd (Scm_PortFileNo (SCM_PORT maybe-port)))
-           (when (< fd 0)
-             (Scm_Error "non-file-backed port can't be used to mmap: %S"
-                        maybe-port))]
-          [(SCM_FALSEP maybe-port)]
-          [else (SCM_TYPE_ERROR maybe-port "port or #f")])
-    (cond [(SCM_UNBOUNDP size)]
-          [(SCM_INTEGERP size) (set! isize (Scm_IntegerToSize size))]
-          [else (SCM_TYPE_ERROR size "integer suitable for size_t")])
-    (cond [(SCM_UNBOUNDP off)]
-          [(SCM_INTEGERP off) (set! ioff (Scm_IntegerToOffset off))]
-          [else (SCM_TYPE_ERROR off "integer suitable for off_t")])
-    (return (Scm_SysMmap NULL fd isize ioff prot flags))))
+                                   :key size off)
+  (.if "defined(HAVE_SYS_MMAN_H)"
+       (let* ([fd::int -1] [isize::size_t 0] [ioff::off_t 0])
+         (cond [(SCM_PORTP maybe-port)
+                (set! fd (Scm_PortFileNo (SCM_PORT maybe-port)))
+                (when (< fd 0)
+                  (Scm_Error "non-file-backed port can't be used to mmap: %S"
+                             maybe-port))]
+               [(SCM_FALSEP maybe-port)]
+               [else (SCM_TYPE_ERROR maybe-port "port or #f")])
+         (cond [(SCM_UNBOUNDP size)]
+               [(SCM_INTEGERP size) (set! isize (Scm_IntegerToSize size))]
+               [else (SCM_TYPE_ERROR size "integer suitable for size_t")])
+         (cond [(SCM_UNBOUNDP off)]
+               [(SCM_INTEGERP off) (set! ioff (Scm_IntegerToOffset off))]
+               [else (SCM_TYPE_ERROR off "integer suitable for off_t")])
+         (return (Scm_SysMmap NULL fd isize ioff prot flags)))
+       (begin
+         (cast void maybe-port)
+         (cast void prot)
+         (cast void flags)
+         (cast void size)
+         (cast void off)
+         (Scm_Error "sys-mmap is not supported on this platform.")
+         (return SCM_UNDEFINED))))
 
 (inline-stub
- (define-enum PROT_EXEC)
- (define-enum PROT_READ)
- (define-enum PROT_WRITE)
- (define-enum PROT_NONE)
- (define-enum MAP_SHARED)
- (define-enum MAP_PRIVATE)
- (define-enum MAP_ANONYMOUS))
- 
+ (.when "defined(HAVE_SYS_MMAN_H)"
+   (define-enum PROT_EXEC)
+   (define-enum PROT_READ)
+   (define-enum PROT_WRITE)
+   (define-enum PROT_NONE)
+   (define-enum MAP_SHARED)
+   (define-enum MAP_PRIVATE)
+   (define-enum MAP_ANONYMOUS)))
+
 ;;---------------------------------------------------------------------
 ;; sys/resource.h
 

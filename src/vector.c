@@ -36,7 +36,9 @@
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/mmapP.h"
 
+#if defined(HAVE_SYS_MMAN_H)
 #include <sys/mman.h>
+#endif
 
 /* Catch integer overflow.
    NB: If total size is too big, GC_malloc aborts.  But we have to prevent
@@ -815,6 +817,7 @@ ScmObj Scm_MakeViewUVector(ScmMemoryRegion *mem, ScmClass *klass,
                            ScmSmallInt len, ScmSmallInt offset,
                            int immutable)
 {
+#if defined(HAVE_SYS_MMAN_H)
     if (offset < 0) Scm_Error("offset must be positive, but got %ld", offset);
     int esize = Scm_UVectorElementSize(klass);
     if (esize < 0) Scm_Error("uvector class required, but got: %S", klass);
@@ -826,6 +829,10 @@ ScmObj Scm_MakeViewUVector(ScmMemoryRegion *mem, ScmClass *klass,
     if (!(mem->prot & PROT_WRITE)) immutable = TRUE;
     return Scm_MakeUVectorFull(klass, len, mem->ptr + offset, immutable,
                                (void*)mem);
+#else /*!defined(HAVE_SYS_MMAN_H)*/
+    Scm_Error("make-view-uvector isn't supported on this platform.");
+    return SCM_UNDEFINED;       /* dummy */
+#endif
 }
 
 /*=====================================================================

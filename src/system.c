@@ -43,7 +43,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <math.h>
@@ -85,6 +84,9 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
 #endif
 #ifdef HAVE_SCHED_H
 #include <sched.h>
+#endif
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
 #endif
 
 /*
@@ -354,6 +356,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_MemoryRegionClass,
                          mem_print, NULL, NULL, NULL, 
                          SCM_CLASS_DEFAULT_CPL);
 
+#if defined(HAVE_SYS_MMAN_H)
+
 ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
                    int prot, int flags)
 {
@@ -370,6 +374,8 @@ ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
     Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
     return SCM_OBJ(m);
 }
+
+#endif /* HAVE_SYS_MMAN_H*/
 
 /*===============================================================
  * Pathname manipulation
