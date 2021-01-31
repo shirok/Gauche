@@ -35,7 +35,8 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>)
-           (.include <gauche/priv/vectorP.h>)))
+           (.include <gauche/priv/vectorP.h>)
+           (.include <gauche/priv/mmapP.h>)))
 
 ;;;
 ;;; Standard Vector
@@ -320,6 +321,15 @@
 (define-cproc c32vector? (x) ::<boolean> SCM_C32VECTORP)
 (define-cproc c64vector? (x) ::<boolean> SCM_C64VECTORP)
 (define-cproc c128vector? (x) ::<boolean> SCM_C128VECTORP)
+
+(define-cproc make-view-uvector (mem klass::<class> size::<fixnum>
+                                     :optional (offset::<fixnum> 0)
+                                               (immutable?::<boolean> #f))
+  (unless (SCM_MEMORY_REGION_P mem)
+    (SCM_TYPE_ERROR mem "<memory-region>"))
+  (return (Scm_MakeViewUVector (SCM_MEMORY_REGION mem)
+                               klass
+                               size offset immutable?)))
 
 ;;;
 ;;; Bitvectors

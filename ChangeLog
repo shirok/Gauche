@@ -1,3 +1,8 @@
+2021-01-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.c, src/libvec.scm (make-view-uvector): Provides the means
+	  to access memory region via uvector.
+
 2021-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c, src/libsys.scm (sys-mmap): Added mmap interface.

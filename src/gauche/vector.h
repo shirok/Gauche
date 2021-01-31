@@ -376,6 +376,13 @@ typedef ScmUVector ScmF32Vector;
 typedef ScmUVector ScmF64Vector;
 
 /* 
+ * View memory as an uvector
+ */
+ScmObj Scm_MakeViewUVector(ScmMemoryRegion *mem, ScmClass *klass,
+                           ScmSmallInt len, ScmSmallInt offset,
+                           int immutable);
+
+/* 
  * String/uvector common utility
  */
 

@@ -34,6 +34,9 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/writerP.h"
+#include "gauche/priv/mmapP.h"
+
+#include <sys/mman.h>
 
 /* Catch integer overflow.
    NB: If total size is too big, GC_malloc aborts.  But we have to prevent
@@ -796,6 +799,34 @@ DEF_CMP(F64, f64, double, common_eqv, common_lt)
 DEF_CMP(C32, c32, ScmHalfComplex, c32eqv, c32lt)
 DEF_CMP(C64, c64, ScmFloatComplex, common_eqv, c64lt)
 DEF_CMP(C128, c128, ScmDoubleComplex, common_eqv, c128lt)
+
+/* 
+ * Extract mmapped region
+ */
+
+/* Returns a uvector of KLASS with length LEN, that provides a view
+   to the memory region MEM starting from OFFSET.
+   LEN can be negative, in that case byte OFFSET to the end of the memory region
+   is viewed.  If MEM is mapped read-only, the resulting uvector becomes
+   immutable.  Otherwise, the resulting vector's immutablity is
+   defined by IMMUTABLE flag.
+ */
+ScmObj Scm_MakeViewUVector(ScmMemoryRegion *mem, ScmClass *klass,
+                           ScmSmallInt len, ScmSmallInt offset,
+                           int immutable)
+{
+    if (offset < 0) Scm_Error("offset must be positive, but got %ld", offset);
+    int esize = Scm_UVectorElementSize(klass);
+    if (esize < 0) Scm_Error("uvector class required, but got: %S", klass);
+    if ((offset % esize) != 0) {
+        Scm_Error("offset %ld is not properly aligned for %S", offset, klass);
+    }
+    if (len < 0) len = (mem->size - offset)/esize;
+
+    if (!(mem->prot & PROT_WRITE)) immutable = TRUE;
+    return Scm_MakeUVectorFull(klass, len, mem->ptr + offset, immutable,
+                               (void*)mem);
+}
 
 /*=====================================================================
  * Bitvectors
