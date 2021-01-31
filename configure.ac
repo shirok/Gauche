@@ -459,6 +459,7 @@ AC_STRUCT_TM
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(intptr_t)
+AC_CHECK_SIZEOF(size_t)
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_TYPES([long long, long double])
 AC_CHECK_TYPES([struct timespec])

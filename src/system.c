@@ -93,9 +93,27 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
  */
 
 /*===============================================================
- * Conversion between off_t and Scheme integer.
+ * Conversion between size_t/off_t and Scheme integer.
  * off_t can be either 32bit or 64bit.
  */
+size_t Scm_IntegerToSize(ScmObj i)
+{
+    if (SCM_INTP(i) && SCM_INT_VALUE(i) >= 0) {
+        return (size_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i) && SCM_BIGNUM_SIGN(i) >= 0) {
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+        return (size_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_SIZE_T == 8
+        return (size_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+        /* I don't think there's such an architecture. */
+# error "size_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as size_t: %S", i);
+    return (size_t)-1;       /* dummy */
+}
+
 off_t Scm_IntegerToOffset(ScmObj i)
 {
     if (SCM_INTP(i)) {
@@ -112,6 +130,17 @@ off_t Scm_IntegerToOffset(ScmObj i)
     }
     Scm_Error("bad value as offset: %S", i);
     return (off_t)-1;       /* dummy */
+}
+
+ScmObj Scm_SizeToInteger(size_t off)
+{
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+    return Scm_MakeInteger(off);
+#elif SIZEOF_SIZE_T == 8
+    return Scm_MakeInteger64((int64_t)off);
+#else
+# error "size_t size on this platform is not suported."
+#endif
 }
 
 ScmObj Scm_OffsetToInteger(off_t off)

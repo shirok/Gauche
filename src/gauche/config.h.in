@@ -504,6 +504,9 @@
 /* The size of `rlim_t', as computed by sizeof. */
 #undef SIZEOF_RLIM_T
 
+/* The size of `size_t', as computed by sizeof. */
+#undef SIZEOF_SIZE_T
+
 /* Slib installation path */
 #undef SLIB_DIR
 
