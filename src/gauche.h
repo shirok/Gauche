@@ -567,6 +567,7 @@ typedef struct ScmMethodRec         ScmMethod;
 typedef struct ScmNextMethodRec     ScmNextMethod;
 typedef struct ScmSyntaxRec         ScmSyntax;
 typedef struct ScmMacroRec          ScmMacro;
+typedef struct ScmMemoryRegionRec   ScmMemoryRegion;   /* see mmapP.h */
 typedef struct ScmPromiseRec        ScmPromise;
 typedef struct ScmRegexpRec         ScmRegexp;
 typedef struct ScmRegMatchRec       ScmRegMatch;

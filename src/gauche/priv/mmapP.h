@@ -34,13 +34,13 @@
 #ifndef GAUCHE_PRIV_MMAPP_H
 #define GAUCHE_PRIV_MMAPP_H
 
-typedef struct ScmMemoryRegionRec {
+struct ScmMemoryRegionRec {
     SCM_HEADER;
     void   *ptr;
     size_t size;
     int prot;
     int flags;
-} ScmMemoryRegion;
+};
 
 SCM_CLASS_DECL(Scm_MemoryRegionClass);
 #define SCM_CLASS_MEMORY_REGION  (&Scm_MemoryRegionClass)
