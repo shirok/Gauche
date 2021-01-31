@@ -36,12 +36,14 @@
 #include "gauche/class.h"
 #include "gauche/bignum.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/mmapP.h"
 
 #include <locale.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <math.h>
@@ -292,6 +294,48 @@ ScmObj Scm_GetCwd(void)
     return Scm_MakeString(buf, -1, -1, SCM_STRING_COPYING);
 #endif /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
 #undef CHAR_T
+}
+
+/*===============================================================
+ * Mmap (sys/mman.h)
+ */
+
+static void mem_print(ScmObj obj, ScmPort *port, 
+                      ScmWriteContext *ctx SCM_UNUSED)
+{
+    ScmMemoryRegion *m = SCM_MEMORY_REGION(obj);
+    Scm_Printf(port, "#<memory-region %p[%lx]>", m->ptr, m->size);
+}
+
+static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
+{
+    ScmMemoryRegion *m = SCM_MEMORY_REGION(obj);
+    if (m->ptr != NULL) {
+        int r;
+        SCM_SYSCALL(r, munmap(m->ptr, m->size));
+        if (r < 0) Scm_Warn("munmap failed");
+        m->ptr = NULL;
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_MemoryRegionClass,
+                         mem_print, NULL, NULL, NULL, 
+                         SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
+                   int prot, int mapflags)
+{
+    void *ptr;
+    SCM_SYSCALL3(ptr, mmap(addrhint, len, prot, mapflags, fd, off), 
+                 ptr == MAP_FAILED);
+    if (ptr == MAP_FAILED) Scm_SysError("mmap failed");
+    ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
+    SCM_SET_CLASS(m, SCM_CLASS_MEMORY_REGION);
+    m->ptr = ptr;
+    m->size = len;
+    m->flags = 0;
+    Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
+    return SCM_OBJ(m);
 }
 
 /*===============================================================
@@ -3199,6 +3243,7 @@ void Scm__InitSystem(void)
     Scm_InitStaticClass(&Scm_SysTmClass, "<sys-tm>", mod, tm_slots, 0);
     Scm_InitStaticClass(&Scm_SysGroupClass, "<sys-group>", mod, grp_slots, 0);
     Scm_InitStaticClass(&Scm_SysPasswdClass, "<sys-passwd>", mod, pwd_slots, 0);
+    Scm_InitStaticClass(&Scm_MemoryRegionClass, "<memory-region>", mod, NULL, 0);
 #ifdef HAVE_SELECT
     Scm_InitStaticClass(&Scm_SysFdsetClass, "<sys-fdset>", mod, NULL, 0);
 #endif
