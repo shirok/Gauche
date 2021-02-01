@@ -1226,11 +1226,12 @@ Gaucheでは@code{future-get}と呼ぶことにしました。
 @c MOD control.future
 @c EN
 Returns a future object, which run the compuatation of @var{expr} in
-a separate thread.  The result of @var{expr} can be retrieved by
-@code{future-get}.
+a separate thread.  The result(s) of @var{expr} can be retrieved by
+@code{future-get}.   Note that @var{expr} can yield multiple values.
 @c JP
 @var{expr}を別スレッドで計算するfutureオブジェクトを返します。
 @var{expr}の結果は@code{future-get}で取り出せます。
+(@var{expr}は多値を生成することもできます)。
 @c COMMON
 
 @c EN
@@ -1242,6 +1243,24 @@ is not caught, its delivery is delayed until you call @code{future-get}.
 ただし、@var{expr}が捕捉されない例外を投げた場合は、@code{future-get}が呼ばれるまで
 その例外の配送は遅延されます。
 @c COMMON
+
+@c EN
+The following exmaple runs HTTP access concurrently with other computation,
+and retrieves the result later.
+@c JP
+次の例では、HTTPアクセスを他の計算と並行して走らせて、後で結果を取り出しています。
+@c COMMON
+
+@example
+(use control.future)
+(use rfc.http)
+
+(let1 f (future (http-get "example.com" "/"))
+  ... some computation ...
+  (receive (code headers body) (future-get f)
+    ...))
+@end example
+
 @end defmac
 
 @defun make-future thunk
@@ -1271,7 +1290,7 @@ Returns @code{#t} if @var{obj} is a future, @code{#f} otherwise.
 @defun future-get future :optional timeout timeout-val
 @c MOD control.future
 @c EN
-The argument must be a future.  Retrieve the result of @var{future}.
+The argument must be a future.  Retrieve the result(s) of @var{future}.
 @c JP
 引数はfutureでなければなりません。@var{future}の結果を取り出します。
 @c COMMON
